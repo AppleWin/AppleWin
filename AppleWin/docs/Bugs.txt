@@ -80,17 +80,17 @@ However, there are more recent versions of AppleWin available.
 
 --------------
 
-07/08/04: IanH@cableone.net
+07/08/04: IanH
 i found a crash bug. in full screen , if you move the mouse up and down the right side of the screen, it crashes without a message. i'm using win2k w/ sp4
 
-17/05/04: Joshua Bell [mailto:inexorabletash@hotmail.com]
+17/05/04: Joshua Bell
 The calibration on first boot seems to have some issues on Windows XP Pro. This is frequently reported to the newsgroups. I haven't been able to figure out why. If you can get past the calibration it works just fine. 
 
-16/05/04: rfoxwell@wso.williams.edu [mailto:rfoxwell@wso.williams.edu]
+16/05/04: rfoxwell
 - Win2K, DirectX9.0a & "Turtle Beach Santa Cruz" soundcard: MB output results in a horrid squeals/beep sound.
 + Sent a new build of AW (w/MAME AY8910 code). This resulted in a crash: "AW has generated errors and will be closed by Windows".
 
-09/02/04: HeavyMetalBCAD@aol.com
+09/02/04: HeavyMetalBCAD
 Whenever I run AppleWin in full screen mode it always eventually 
 messes up (usually when i go to switch to a new game). Basically what happens is 
 it shuts down, or minimizes itself preventing me from keeping it full screen. 

@@ -4,7 +4,7 @@ Requests (Wishlist):
 Priority:
 . Right-click on drive icon to eject disk
 . Shift keys map to button#2
-. Ramworks support (see AppleWin 2.0 project src)
+. DONE: Ramworks support (see AppleWin 2.0 project src)
 . DONE: Shift+Ins to paste from clipboard
 . DONE: Cmd-line switches for: d1, d2, full-screen
 
