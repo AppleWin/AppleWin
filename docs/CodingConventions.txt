@@ -30,10 +30,7 @@ This is for shared vars, enums, structs, classes, etc.
 EG. const/enum/struct
 Obviously not for global funcs or vars.
 
-1.4: .cpp files can drop the AW_ prefix
-EG. Rename AW_Mockingboard.cpp to Mockingboard.cpp
-
-1.5: PCH (stdhdr.h)
+1.4: PCH (StdAfx.h)
 Could ditch this.
 Does this gain anything for such a simple project?
 
@@ -111,8 +108,7 @@ Try to use const/enum instead of #define
 Always use bool instead of BOOL
 
 2.5: File header
-Just description of module
-No copyright or other (legal) notice to be used
+GPL header, followed by description of module & author.
 
 2.6: Indentation
 Tabs favoured over spaces.
