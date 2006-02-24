@@ -1,3 +1,14 @@
+1.12.8.0 bugs:
+
+. When running any program, when I go to reset the machine by clicking on the Apple logo again,
+  it never seems to reset cleanly and a bunch of garbage usually starts cycling through the screen.
+. I notice the behavior with running Maniac Mansion is still present, where if you simply select
+  the Disk 1 and then start the emulator, it will get stuck shortly after accessing the disk drive
+  for a moment. But if, after selecting Disk 1, I start the debugger and then issue the "G" command,
+  it runs just fine.
+
+--------------
+
 1.12.7.2 bugs:
 
 . FIXED: BRK opcode only pushes PC+1, not PC+2 to stack
