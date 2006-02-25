@@ -8,6 +8,10 @@ Priority:
 . DONE: Shift+Ins to paste from clipboard
 . DONE: Cmd-line switches for: d1, d2, full-screen
 
+Post 1.12.8.0:
+- I have multiple controllers and was wondering if a future version of the emulator
+  could support selecting the joystick you want to use in the emulator.
+
 Post 1.12.7.0:
 - Light-gun support (if pixel under mouse is set, then set $C061.b7 (Richard Jackson))
 

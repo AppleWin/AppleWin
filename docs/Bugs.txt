@@ -6,6 +6,8 @@
   the Disk 1 and then start the emulator, it will get stuck shortly after accessing the disk drive
   for a moment. But if, after selecting Disk 1, I start the debugger and then issue the "G" command,
   it runs just fine.
+. Jumpan doesn't seem to respond correctly to the controller, it moves in one direction only.
+  I'm unsure if this is an emulation problem or bad disk image. [TC: Unconfirmed]
 
 --------------
 
