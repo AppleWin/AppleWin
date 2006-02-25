@@ -23,6 +23,12 @@ Acknowledgements:
 - SSI263 phoneme samples from Chris Foxwell (still missing phoneme #0!)
 - Harddisk card: source module & f/w by Robert Hoem
 
+1.12.9.0 - 25 Feb 2006
+----------------------
+- Moved source to BerliOS & released under GPL
+- Debugger v2.4.2.16:
+  + Breakpoint on memory address added: BPM address[,length]
+  
 1.12.8.0 - 22 Feb 2006
 ----------------------
 - *** Major re-write of debugger by Michael Pohoreski ***
@@ -30,7 +36,7 @@ Acknowledgements:
     + Syntax coloring, navigation, execution (eg. step-out), view memory as varying Ascii types
     + Symbol maintenance (main, user, source), source-level debugging, mini-calculator
     + Breakpoints: conditional on register, profiling + much more
-  . See: http://www.tomcharlesworth.pwp.blueyonder.co.uk/Intro_To_New_Debugger.htm
+  . See: http://applewin.berlios.de/Intro_To_New_Debugger.htm
 - Fixed speaker volume not being set correctly at start-up
 - Fixed emulation speed control (was only running at 1MHz)
 - Fixed internal ADC: was flagged as write to memory
