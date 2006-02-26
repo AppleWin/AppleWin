@@ -724,10 +724,38 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
 
     case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
-      if (usingcursor)
-        JoySetButton(1,(message == WM_RBUTTONDOWN));
-      RelayEvent(message,wparam,lparam);
-      break;
+		// Right Click on Drive Icon -- eject Disk
+		if ((buttonover == -1) && (message == WM_RBUTTONUP)) // HACK: BUTTON_NONE
+		{
+			int x = LOWORD(lparam);
+			int y = HIWORD(lparam);
+
+			if ((x >= buttonx) &&
+				(y >= buttony) &&
+				(y <= buttony+BUTTONS*BUTTONCY))
+			{
+				int iButton = (y-buttony-1)/BUTTONCY;
+				int iDrive = iButton - BTN_DRIVE1;
+				if ((iButton == BTN_DRIVE1) || (iButton == BTN_DRIVE2))
+				{
+					if (KeybGetShiftStatus())
+						DiskProtect( iDrive, true );
+					else
+					if (KeybGetCtrlStatus())
+						DiskProtect( iDrive, false );
+					else
+						DiskEject( iDrive );
+					FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+					DrawButton((HDC)0,iButton);
+				}			
+			}
+		}
+		if (usingcursor)
+		{
+			JoySetButton(1,(message == WM_RBUTTONDOWN));
+		}
+		RelayEvent(message,wparam,lparam);
+		break;
 
     case WM_SYSCOLORCHANGE:
       DeleteGdiObjects();
