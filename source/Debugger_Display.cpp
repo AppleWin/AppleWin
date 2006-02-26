@@ -516,7 +516,7 @@ void DrawBreakpoints (HDC dc, int line)
 	rect.bottom += g_nFontHeight;
 
 	int iBreakpoint;
-	for (iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++ )
+	for (iBreakpoint = 0; iBreakpoint < NUM_BREAKPOINTS; iBreakpoint++ )
 	{
 		Breakpoint_t *pBP = &g_aBreakpoints[iBreakpoint];
 		WORD nLength   = pBP->nLength;
