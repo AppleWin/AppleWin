@@ -2,7 +2,12 @@ Requests (Wishlist):
 ====================
 
 Priority:
-. Right-click on drive icon to eject disk
+. DONE: Right-click on drive icon to eject disk
+   Shift-Right-Click to turn Write Protection ON
+   Ctrl-Right-Click to turn Write Protection OFF
+. DONE? (use '\') SCR shows what the Apple monitor should look like at the current point
+  Still forthcoming: TEXT1, TEXT2, GR, DGR, HGR, HGR2, DHGR, DHGR2
+. DONE: Use MT# MA# to dump memory as text.
 . Shift keys map to button#2
 . DONE: Ramworks support (see AppleWin 2.0 project src)
 . DONE: Shift+Ins to paste from clipboard
