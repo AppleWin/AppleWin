@@ -65,11 +65,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{ TOKEN_PERCENT     , TYPE_OPERATOR, TEXT('%')  }, // mod
 		{ TOKEN_PIPE        , TYPE_OPERATOR, TEXT('|')  }, // bit-or
 		{ TOKEN_PLUS        , TYPE_OPERATOR, TEXT('+')  }, // add
+//		{ TOKEN_QUESTION    , TYPE_OPERATOR, TEXT('?')  }, // Not a token 1) wildcard needs to stay together with other chars
 		{ TOKEN_QUOTED      , TYPE_QUOTED  , TEXT('"')  },
 		{ TOKEN_RIGHT_PAREN , TYPE_OPERATOR, TEXT(')')  },
 		{ TOKEN_SEMI        , TYPE_STRING  , TEXT(';')  },
 		{ TOKEN_SPACE       , TYPE_STRING  , TEXT(' ')  } // space is also a delimiter between tokens/args
-//		{ TOKEN_STAR        , TYPE_OPERATOR, TEXT('*')  },
+//		{ TOKEN_STAR        , TYPE_OPERATOR, TEXT('*')  }, // Not a token 1) wildcard needs to stay together with other chars
 //		{ TOKEN_TAB         , TYPE_STRING  , TEXT('\t') }
 //		{ TOKEN_TILDE       , TYPE_OPERATOR, TEXT('~')  }, // C/C++: Not.  Used for console.
 	};

@@ -43,8 +43,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// TCHAR DEBUG_VERSION = "0.0.0.0"; // App Version
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,0);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,1);
 
+// .1 SH Address,Len Byte [Byte ..]
 // 2.5 split Debugger files
 
 // .21 Changed: Branch indicator now a little bigger +3 in DebugInitialize() (easier to read), indented ^,V to make the < stand out
@@ -808,6 +809,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("WATCHES")    , NULL, PARAM_CAT_WATCHES     },
 		{TEXT("WINDOW")     , NULL, PARAM_CAT_WINDOW      },
 		{TEXT("ZEROPAGE")   , NULL, PARAM_CAT_ZEROPAGE    },	
+// Memory
+		{TEXT("?")          , NULL, PARAM_MEM_SEARCH_WILD },
+//		{TEXT("*")          , NULL, PARAM_MEM_SEARCH_BYTE },
 // Source level debugging
 		{TEXT("MEM")        , NULL, PARAM_SRC_MEMORY      },
 		{TEXT("MEMORY")     , NULL, PARAM_SRC_MEMORY      },
@@ -3482,8 +3486,8 @@ Update_t CmdMemoryMove (int nArgs)
 //===========================================================================
 Update_t CmdMemorySearch (int nArgs)
 {
-	if (nArgs < 3)
-		Help_Arg_1( CMD_MEMORY_SEARCH );
+	if (nArgs < 2)
+		return Help_Arg_1( CMD_MEMORY_SEARCH );
 
 	 if (g_aArgs[2].sArg[0] == TEXT('\"'))
 		CmdMemorySearchText( nArgs );
@@ -3509,20 +3513,219 @@ Update_t CmdMemorySearchLowBit (int nArgs)
 //===========================================================================
 bool _GetStartEnd( WORD & nAddressStart_, WORD & nAddressEnd_ )
 {
-	nAddressStart_ = g_aArgs[1].nVal1 ? g_aArgs[1].nVal1 : GetAddressFromSymbol( g_aArgs[1].sArg );
-	nAddressEnd_   = g_aArgs[2].nVal1 ? g_aArgs[2].nVal1 : GetAddressFromSymbol( g_aArgs[2].sArg );
+	nAddressStart_ = g_aArgs[1].nVal1; 
+	nAddressEnd_   = nAddressStart_ + g_aArgs[1].nVal2; 
 	return true;
 }
 
 //===========================================================================
 Update_t CmdMemorySearchHex (int nArgs)
 {
-	WORD nAddrStart;
-	WORD nAddrEnd;
-	_GetStartEnd( nAddrStart, nAddrEnd );
-// TODO: if (!_tcscmp(g_aArgs[nArgs].sArg,TEXT("*"))) { }
-// TODO: if (!_tcscmp(g_aArgs[nArgs].sArg,TEXT("?"))) { }
+	if (nArgs < 2)
+		return HelpLastCommand();
+
+	WORD nAddressStart;
+	WORD nAddressEnd;
+	_GetStartEnd( nAddressStart, nAddressEnd );
+
+	// S start,len #
+	int nMinLen = nArgs - 2;
+
+	bool bHaveWildCards = false;
+	int iArg;
+
+	vector<MemorySearch_t> vMemorySearch;
+	MemorySearch_e         tLastType = MEM_SEARCH_BYTE_N_WILD;
+	
+	vector<int> vMatches;
+
+	// Get search "string"
+	Arg_t *pArg = & g_aArgs[ 2 ];
+	
+	WORD nTarget;
+	for (iArg = 2; iArg <= nArgs; iArg++, pArg++ )
+	{
+		MemorySearch_t ms;
+
+		nTarget = pArg->nVal1;
+		ms.m_nValue = nTarget & 0xFF;
+		ms.m_iType = MEM_SEARCH_BYTE_EXACT;
+
+		if (nTarget > 0xFF) // searching for 16-bit address
+		{
+			vMemorySearch.push_back( ms );
+			ms.m_nValue = (nTarget >> 8);
+
+			tLastType = ms.m_iType;
+		}
+		else
+		{
+			TCHAR *pByte = pArg->sArg;
+
+			if (pArg->nArgLen > 2)
+				goto _Help;
+			
+			if (pArg->nArgLen == 1)
+			{
+				if (pByte[0] == g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName[0])
+				{
+					ms.m_iType = MEM_SEARCH_BYTE_1_WILD;
+				}
+			}
+			else
+			{
+				if (pByte[0] == g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName[0])
+				{
+					ms.m_iType = MEM_SEARCH_NIB_LOW_EXACT;
+					ms.m_nValue = pArg->nVal1 & 0x0F;
+				}
+
+				if (pByte[1] == g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName[0])
+				{
+					if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
+					{
+						ms.m_iType = MEM_SEARCH_BYTE_N_WILD;
+					}
+					else
+					{
+						ms.m_iType = MEM_SEARCH_NIB_HIGH_EXACT;
+						ms.m_nValue = (pArg->nVal1 << 4) & 0xF0;
+					}
+				}
+			}
+		}
+
+		// skip over multiple byte_wild, since they are redundent
+		// xx ?? ?? xx
+		//       ^
+		//       redundant
+		if ((tLastType == MEM_SEARCH_BYTE_N_WILD) && (ms.m_iType == MEM_SEARCH_BYTE_N_WILD))
+			continue;
+
+		vMemorySearch.push_back( ms );
+		tLastType = ms.m_iType;
+	}
+	
+	TCHAR sMatches[ CONSOLE_WIDTH ] = TEXT("");
+	int   nMatches = 0; // string length, for word-wrap
+
+	int   nFound = 0;
+
+	WORD nAddress;
+	for( nAddress = nAddressStart; nAddress < nAddressEnd; nAddress++ )
+	{
+		bool bMatchAll = true;
+
+		WORD nAddress2 = nAddress;
+
+		int nMemBlocks = vMemorySearch.size();
+		for (int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
+		{
+			MemorySearch_t ms = vMemorySearch.at( iBlock );
+			ms.m_bFound = false;
+		
+			if ((ms.m_iType == MEM_SEARCH_BYTE_EXACT    ) || 
+				(ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT) ||
+				(ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT ))
+			{
+				BYTE nTarget = *(mem + nAddress2);
+	
+				if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
+					nTarget &= 0x0F;
+
+				if (ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT)
+					nTarget &= 0xF0;
+				
+				if (ms.m_nValue == nTarget)
+				{ // ms.m_nAddress = nAddress2;
+					ms.m_bFound = true;
+					continue;
+				}
+				else
+				{
+					bMatchAll = false;
+					break;
+				}
+			}
+			else
+			if (ms.m_iType == MEM_SEARCH_BYTE_1_WILD)
+			{
+				// match by definition
+			}
+			else
+			{
+				// start 2ndary search
+				// if next block matches, then this block matches (since we are wild)
+				if ((iBlock + 1) == nMemBlocks) // there is no next block, hence we match
+					continue;
+					
+				MemorySearch_t ms2 = vMemorySearch.at( iBlock + 1 );
+
+				WORD nAddress3 = nAddress2;
+				for (nAddress3 = nAddress2; nAddress3 < nAddressEnd; nAddress3++ )
+				{
+					if ((ms.m_iType == MEM_SEARCH_BYTE_EXACT    ) || 
+						(ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT) ||
+						(ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT ))
+					{
+						BYTE nTarget = *(mem + nAddress3);
+			
+						if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
+							nTarget &= 0x0F;
+
+						if (ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT)
+							nTarget &= 0xF0;
+						
+						if (ms.m_nValue == nTarget)
+						{
+							nAddress2 = nAddress3;
+							continue;
+						}
+						else
+						{
+							bMatchAll = false;
+							break;
+						}
+					}
+
+				}
+			}
+		}
+
+		if (bMatchAll)
+		{
+			nFound++;
+
+			TCHAR sText[ CONSOLE_WIDTH ];
+			wsprintf( sText, "%2d:$%04X ", nFound, nAddress );
+			int nLen = _tcslen( sText );
+
+			// Fit on same line?
+			if ((nMatches + nLen) > (g_nConsoleDisplayWidth)) // CONSOLE_WIDTH
+			{
+				ConsoleDisplayPush( sMatches );
+				_tcscpy( sMatches, sText );
+				nMatches = nLen;
+			}
+			else
+			{
+				_tcscat( sMatches, sText );
+				nMatches += nLen;
+			}
+		}
+	}
+	ConsoleDisplayPush( sMatches );
+
+	wsprintf( sMatches, "Total: %d  (#$%04X)", nFound, nFound );
+	ConsoleDisplayPush( sMatches );
+
+	vMemorySearch.erase( vMemorySearch.begin(), vMemorySearch.end() );
 	return UPDATE_CONSOLE_DISPLAY;
+
+
+_Help:
+	vMemorySearch.erase( vMemorySearch.begin(), vMemorySearch.end() );
+	return HelpLastCommand();
 }
 
 //===========================================================================
@@ -4720,58 +4923,6 @@ Update_t CmdTraceLine (int nArgs)
 	DebugContinueStepping();
 
 	return UPDATE_ALL; // TODO: Verify // 0
-}
-
-
-// Variables ______________________________________________________________________________________
-
-
-//===========================================================================
-Update_t CmdVarsClear (int nArgs)
-{
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t CmdVarsDefine (int nArgs)
-{
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t CmdVarsDefineInt8 (int nArgs)
-{
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t CmdVarsDefineInt16 (int nArgs)
-{
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t CmdVarsList (int nArgs)
-{
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t CmdVarsLoad        (int nArgs)
-{
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t CmdVarsSave        (int nArgs)
-{
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t CmdVarsSet         (int nArgs)
-{
-	return UPDATE_CONSOLE_DISPLAY;
 }
 
 

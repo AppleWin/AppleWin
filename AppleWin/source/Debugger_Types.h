@@ -531,15 +531,6 @@
 //		, CMD_SYMBOLS_LOAD_1
 //		, CMD_SYMBOLS_LOAD_2
 //		, CMD_SYMBOLS_SAVE
-// Variables
-//		, CMD_VARIABLES_CLEAR
-//		, CMD_VARIABLES_DEFINE
-//		, CMD_VARIABLES_DEFINE_INT8
-//		, CMD_VARIABLES_DEFINE_INT16
-//		, CMD_VARIABLES_LIST
-//		, CMD_VARIABLES_LOAD
-//		, CMD_VARIABLES_SAVE
-//		, CMD_VARIABLES_SET
 // Watch
 		, CMD_WATCH_ADD
 		, CMD_WATCH_CLEAR
@@ -711,16 +702,6 @@
 	Update_t CmdSymbolsUser     (int nArgs);
 	Update_t CmdSymbolsSave     (int nArgs);
 	Update_t CmdSymbolsSource   (int nArgs);
-// Vars
-//	Update_t CmdVarsAdd         (int nArgs);
-	Update_t CmdVarsClear       (int nArgs);
-	Update_t CmdVarsDefine      (int nArgs);
-	Update_t CmdVarsDefineInt8  (int nArgs);
-	Update_t CmdVarsDefineInt16 (int nArgs);
-	Update_t CmdVarsList        (int nArgs);
-	Update_t CmdVarsLoad        (int nArgs);
-	Update_t CmdVarsSave        (int nArgs);
-	Update_t CmdVarsSet         (int nArgs);
 // Watch
 	Update_t CmdWatchAdd     (int nArgs);
 	Update_t CmdWatchClear   (int nArgs);
@@ -993,6 +974,25 @@
 		NUM_MEM_MINI_DUMPS = 2
 	};
 
+	enum MemorySearch_e
+	{
+		MEM_SEARCH_BYTE_EXACT    , // xx
+		MEM_SEARCH_NIB_LOW_EXACT , // ?x
+		MEM_SEARCH_NIB_HIGH_EXACT, // x?
+		MEM_SEARCH_BYTE_1_WILD   , // ?
+		MEM_SEARCH_BYTE_N_WILD   , // ??
+
+		MEM_SEARCH_TYPE_MASK = (1 << 16) - 1,
+		MEM_SEARCH_FOUND     = (1 << 16)
+	};
+
+	struct MemorySearch_t
+	{
+		BYTE           m_nValue;
+		MemorySearch_e m_iType;
+		bool           m_bFound;
+	};
+
 // Parameters _____________________________________________________________________________________
 
 	/* i.e.
@@ -1156,7 +1156,13 @@
 	, _PARAM_HELPCATEGORIES_END
 	,  PARAM_HELPCATEGORIES_NUM = _PARAM_HELPCATEGORIES_END - _PARAM_HELPCATEGORIES_BEGIN
 
-	, _PARAM_SOURCE_BEGIN = _PARAM_HELPCATEGORIES_END  // Daisy Chain
+	, _PARAM_MEM_SEARCH_BEGIN = _PARAM_HELPCATEGORIES_END  // Daisy Chain
+		, PARAM_MEM_SEARCH_WILD = _PARAM_MEM_SEARCH_BEGIN
+//		, PARAM_MEM_SEARCH_BYTE
+	, _PARAM_MEM_SEARCH_END
+	,  PARAM_MEM_SEARCH_NUM = _PARAM_MEM_SEARCH_END - _PARAM_MEM_SEARCH_BEGIN
+
+	, _PARAM_SOURCE_BEGIN = _PARAM_MEM_SEARCH_END  // Daisy Chain
 		, PARAM_SRC_MEMORY = _PARAM_SOURCE_BEGIN
 		,_PARAM_SRC_MEMORY  // alias MEM = MEMORY
 		, PARAM_SRC_SYMBOLS
