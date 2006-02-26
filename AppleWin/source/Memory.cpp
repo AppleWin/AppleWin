@@ -908,9 +908,12 @@ void MemInitialize () {
 #endif
 
   // READ THE APPLE FIRMWARE ROMS INTO THE ROM IMAGE
+	TCHAR sRomFileName[ 128 ];
+	_tcscpy( sRomFileName, apple2e ? TEXT("APPLE2E.ROM") : TEXT("APPLE2.ROM") );
+
   TCHAR filename[MAX_PATH];
   _tcscpy(filename,progdir);
-  _tcscat(filename,apple2e ? TEXT("APPLE2E.ROM") : TEXT("APPLE2.ROM"));
+  _tcscat(filename,sRomFileName );
   HANDLE file = CreateFile(filename,
                            GENERIC_READ,
                            FILE_SHARE_READ,
@@ -918,18 +921,23 @@ void MemInitialize () {
                            OPEN_EXISTING,
                            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,
                            NULL);
-  if (file == INVALID_HANDLE_VALUE) {
-    MessageBox(GetDesktopWindow(),
-               TEXT("Unable to open the required firmware ROM data file."),
+	if (file == INVALID_HANDLE_VALUE)
+	{
+		TCHAR sText[ 256 ];
+		wsprintf( sText, TEXT("Unable to open the required firmware ROM data file.\n\nFile: %s."), sRomFileName );
+
+		MessageBox(GetDesktopWindow(),
+               sText,
                TITLE,
                MB_ICONSTOP | MB_SETFOREGROUND);
-    ExitProcess(1);
-  }
+		ExitProcess(1);
+	}
+
   DWORD bytesread;
-  ReadFile(file,memrom,0x5000,&bytesread,NULL);
+  ReadFile(file,memrom,0x5000,&bytesread,NULL); // HACK: Magic #
   CloseHandle(file);
 
-  // REMOVE A WAIT ROUTINE FROM THE DISK CONTROLLER'S FIRMWARE
+  // TODO/FIXME: HACK! REMOVE A WAIT ROUTINE FROM THE DISK CONTROLLER'S FIRMWARE
   {
     *(memrom+0x064C) = 0xA9;
     *(memrom+0x064D) = 0x00;
