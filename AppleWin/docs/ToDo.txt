@@ -25,3 +25,9 @@ So that the sound is continuous when dragging the window or starting other appli
 . Support for zipped disk images (r/w) & harddisk images (read-only, but maybe write too?)
 
 . Save-state supporting Phasor, harddisk & Ramworks III
+
+. Floating-bus support (using Nick Westgate's code)
+For Drol, Lock'n'Chase, TetrisII, etc
+
+. Support for switching display modes mid-frame
+To support Bob Bishop's intros
