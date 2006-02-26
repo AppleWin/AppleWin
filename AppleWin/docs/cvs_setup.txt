@@ -1,0 +1,73 @@
+Setting up CVS for AppleWin
+
+
+1. Create an account BerliOS
+http://developer.berlios.de/
+
+
+2. Download and install TortoiseCVS.
+a) http://www.tortoisecvs.org/
+b) Reboot Windows (Grr...)
+
+
+3. Generate a SSH2 key, using "puttygen"
+Recommend: using a pass-phrase
+Recommend: using comment:
+  <username>@shell.berlios.de
+
+Depending on where you installed TortoiseCVS, puttgen.exe will be located there.
+i.e.
+ \Programs\VersionControl\TortoiseCVS\puttygen.exe
+
+(You could also optionally, install PuTTY from http://www.chiark.greenend.org.uk/~sgtatham/putty/ )
+i.e.
+ \Programs\Shell\PuTTY\puttygen.exe
+
+
+4. In your home directory, make a sub-directory called: .ssh
+i.e.
+ \users\<username>\.ssh
+
+
+5. Save your public key into your home directory
+i.e.
+  <username>\.ssh\identity.pub
+
+6. Save your private key into your home directory
+i.e.
+ <username>\.ssh\identity
+
+
+7. Upload your Public SSH key to BerliOS
+a) http://developer.berlios.de/
+b) Account Options
+c) Edit Keys (at bottom of webpage)
+d) copy from puttygen, and paste into web form
+e) Verify: CVS/SVN/SSH Shared Keys: 1 <-- was zero
+
+
+8. Using Windows Explorer, navigate to the parent directory where you will download AppleWin
+i.e.
+ <username>\Projects\
+
+
+9. Right Click on the directory, select CVS, Preferences
+a) TortoiseCVS should appear. Select "Advanced"
+b) Home Folder: uncheck, always recalculate home folder
+c) Enter your home directory, for "Custom Home folder"
+
+
+10. Make sure you have the environment variable "CVS_RSH" set to "ssh" (without the quotes).
+Right-click the My Computer icon on your desktop, Properties, Advanced, Environment variables button.
+
+
+11. Right click on the AppleWin Parent directory, CVS Checkout
+a) set CVSROOT:
+	:ext:<username>@cvs.applewin.berlios.de:/cvsroot/applewin
+
+b) set Module:
+	AppleWin
+c) select OK, and wait to fetch the complete AppleWin directory
+
+
+12. Start hacking the code!
