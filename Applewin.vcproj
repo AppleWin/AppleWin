@@ -5,6 +5,7 @@
 	Name="AppleWin"
 	ProjectGUID="{C4C93CFD-5B6C-41C5-BF90-17119186120F}"
 	SccProjectName="APPLEWIN"
+	SccAuxPath=""
 	SccLocalPath=".">
 	<Platforms>
 		<Platform
@@ -163,12 +164,6 @@
 				RelativePath=".\source\CPU.h">
 			</File>
 			<File
-				RelativePath=".\source\Debug.cpp">
-			</File>
-			<File
-				RelativePath=".\source\Debug.h">
-			</File>
-			<File
 				RelativePath=".\source\Disk.cpp">
 			</File>
 			<File
@@ -259,11 +254,60 @@
 				RelativePath=".\source\Speaker.h">
 			</File>
 			<File
+				RelativePath=".\source\Util_MemoryTextFile.cpp">
+			</File>
+			<File
+				RelativePath=".\source\Util_MemoryTextFile.h">
+			</File>
+			<File
 				RelativePath=".\source\Video.cpp">
 			</File>
 			<File
 				RelativePath=".\source\Video.h">
 			</File>
+			<Filter
+				Name="Debugger"
+				Filter="">
+				<File
+					RelativePath=".\source\Debug.cpp">
+				</File>
+				<File
+					RelativePath=".\source\Debug.h">
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Assembler.cpp">
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Assembler.h">
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Console.cpp">
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Console.h">
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Display.cpp">
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Display.h">
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Help.cpp">
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Help.h">
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Parser.cpp">
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Parser.h">
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Types.h">
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Docs"
