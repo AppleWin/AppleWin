@@ -136,7 +136,7 @@
 
 	enum
 	{
-		MAX_BREAKPOINTS = 5
+		NUM_BREAKPOINTS = 5
 	};
 
 	/*
