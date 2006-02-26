@@ -27,32 +27,40 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 // disable warning C4786: symbol greater than 255 character:
-#pragma warning(disable: 4786)
+//#pragma warning(disable: 4786)
 
 #include "StdAfx.h"
 #pragma  hdrstop
+
 
 // NEW UI debugging
 //	#define DEBUG_FORCE_DISPLAY 1
 //  #define DEBUG_COMMAND_HELP  1
 // #define DEBUG_ASM_HASH 1
 
-// enable warning C4786: symbol greater than 255 character:
-//#pragma warning(enable: 4786)
-
-	// TCHAR DEBUG_VERSION = "0.0.0.0"; // App Version
-	#define DEBUGGER_VERSION MAKE_VERSION(2,4,2,16);
-
 // TODO: COLOR RESET
 // TODO: COLOR SAVE ["filename"]
 // TODO: COLOR LOAD ["filename"]
+
+	// TCHAR DEBUG_VERSION = "0.0.0.0"; // App Version
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,0);
+
+// 2.5 split Debugger files
+
+// .21 Changed: Branch indicator now a little bigger +3 in DebugInitialize() (easier to read), indented ^,V to make the < stand out
+//     U 300
+//     E 300 D0 80 D0 FE D0 00
+// .20 Added: BW is now a seperate color scheme
+// .19 Added: ECHO   CmdConfigEcho(), g_pConsoleFirstArg, and ArgsGet()
+// .18 Changed: BPX now defaults to setting breakpoint at cursor.
+// .17 Changed: BP now defaults to setting breakpoint at PC.
 
 // Patch 22
 // .16 fixed BPM. i.e. BPM C400,100.  Boot: ulti4bo.dsk, breaks at: 81BC: STA ($88),Y    $0088=$C480 ... C483: A0
 
 // Patch 21
 // .15 Fixed: CmdRegisterSet() equal sign is now optional. i.e. R A [=] Y
-// .14 Optimized: ArgsParse()
+// .14 Optimized: ArgsCook()
 // .13 Fixed: HELP "..." on ambigious command displays potential commands
 // .12 Added: Token %, calculator mod
 // .11 Added: Token /, calculator div
@@ -79,7 +87,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //    FONT MODE 0  Classic line spacing  (19 lines: 301 .. 313)
 //    FONT MODE 1  Improved line spacing (20 lines: 301 .. 314)
 //    FONT MODE 2  Optimal line spacing  (22 lines: 301 .. 316)
-// .7 Fixed: ArgsParse() wasn't parsing #value properly. i.e. CALC #A+0A
+// .7 Fixed: ArgsCook() wasn't parsing #value properly. i.e. CALC #A+0A
 // .6 Cleanup: DrawWatches()
 
 // Patch 19
@@ -242,108 +250,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // 6 added source level debuggig back-end
 // 5 fixed "SYM 0" bug
 
-	inline void  UnpackVersion( const unsigned int nVersion,
-		int & nMajor_, int & nMinor_, int & nFixMajor_ , int & nFixMinor_ )
-	{
-		nMajor_    = (nVersion >> 24) & 0xFF;
-		nMinor_    = (nVersion >> 16) & 0xFF;
-		nFixMajor_ = (nVersion >>  8) & 0xFF;
-		nFixMinor_ = (nVersion >>  0) & 0xFF;
-	}
 
-	const int MAX_BREAKPOINTS       = 5;
-	const int MAX_WATCHES           = 5;
-	const int MAX_ZEROPAGE_POINTERS = 5;
-
-	const unsigned int _6502_ZEROPAGE_END    = 0x00FF;
-	const unsigned int _6502_STACK_END       = 0x01FF;
-	const unsigned int _6502_IO_BEGIN        = 0xC000;
-	const unsigned int _6502_IO_END          = 0xC0FF;
-	const unsigned int _6502_BEG_MEM_ADDRESS = 0x0000;
-	const unsigned int _6502_END_MEM_ADDRESS = 0xFFFF;
+// Public _________________________________________________________________________________________
 
 
-// Addressing _____________________________________________________________________________________
+// Breakpoints ________________________________________________________________
 
-	AddressingMode_t g_aOpmodes[ NUM_ADDRESSING_MODES ] =
-	{ // Outut, but eventually used for Input when Assembler is working.
-		{TEXT("")        , 1 , "(implied)"              }, // (implied)
-        {TEXT("")        , 1 , "n/a 1"         }, // INVALID1
-        {TEXT("")        , 2 , "n/a 2"         }, // INVALID2
-        {TEXT("")        , 3 , "n/a 3"         }, // INVALID3
-		{TEXT("%02X")    , 2 , "Immediate"     }, // AM_M // #$%02X -> %02X
-        {TEXT("%04X")    , 3 , "Absolute"      }, // AM_A
-        {TEXT("%02X")    , 2 , "Zero Page"     }, // AM_Z
-        {TEXT("%04X,X")  , 3 , "Absolute,X"    }, // AM_AX     // %s,X
-        {TEXT("%04X,Y")  , 3 , "Absolute,Y"    }, // AM_AY     // %s,Y
-        {TEXT("%02X,X")  , 2 , "Zero Page,X"   }, // AM_ZX     // %s,X
-        {TEXT("%02X,Y")  , 2 , "Zero Page,Y"   }, // AM_ZY     // %s,Y
-        {TEXT("%s")      , 2 , "Relative"      }, // AM_R
-        {TEXT("(%02X,X)"), 2 , "(Zero Page),X" }, // AM_IZX ADDR_INDX     // ($%02X,X) -> %s,X 
-        {TEXT("(%04X,X)"), 3 , "(Absolute),X"  }, // AM_IAX ADDR_ABSIINDX // ($%04X,X) -> %s,X
-        {TEXT("(%02X),Y"), 2 , "(Zero Page),Y" }, // AM_NZY ADDR_INDY     // ($%02X),Y
-        {TEXT("(%02X)")  , 2 , "(Zero Page)"   }, // AM_NZ ADDR_IZPG     // ($%02X) -> $%02X
-        {TEXT("(%04X)")  , 3 , "(Absolute)"    }  // AM_NA ADDR_IABS     // (%04X) -> %s
-	};
-
-
-// Args ___________________________________________________________________________________________
-	int   g_nArgRaw;
-	Arg_t g_aArgRaw[ MAX_ARGS ]; // pre-processing
-
-	Arg_t g_aArgs  [ MAX_ARGS ]; // post-processing
-
-
-	const TCHAR CHAR_LF    = 0x0D;
-	const TCHAR CHAR_CR    = 0x0A;
-	const TCHAR CHAR_SPACE = TEXT(' ');
-	const TCHAR CHAR_TAB   = TEXT('\t');
-	const TCHAR CHAR_QUOTED= TEXT('"' );
-
-	// NOTE: Token_e and g_aTokens must match!
-	const TokenTable_t g_aTokens[ NUM_TOKENS ] =
-	{ // Input
-		{ TOKEN_ALPHANUMERIC, TYPE_STRING  , 0          }, // Default, if doen't match anything else
-		{ TOKEN_AMPERSAND   , TYPE_OPERATOR, TEXT('&')  }, // bit-and
-//		{ TOKEN_AT          , TYPE_OPERATOR, TEXT('@')  }, // force Register? or PointerDeref?
-		{ TOKEN_BSLASH      , TYPE_OPERATOR, TEXT('\\') },
-		{ TOKEN_CARET       , TYPE_OPERATOR, TEXT('^')  }, // bit-eor, C/C++: xor, Math: POWER
-		{ TOKEN_COLON       , TYPE_OPERATOR, TEXT(':')  }, 
-		{ TOKEN_COMMA       , TYPE_OPERATOR, TEXT(',')  },
-		{ TOKEN_DOLLAR      , TYPE_STRING  , TEXT('$')  },
-		{ TOKEN_EQUAL       , TYPE_OPERATOR, TEXT('=')  },
-		{ TOKEN_EXCLAMATION , TYPE_OPERATOR, TEXT('!')  }, // NOT
-		{ TOKEN_FSLASH      , TYPE_OPERATOR, TEXT('/')  }, // div
-		{ TOKEN_GREATER_THAN, TYPE_OPERATOR, TEXT('>')  }, // TODO/FIXME: Parser will break up '>=' (needed for uber breakpoints)
-		{ TOKEN_HASH        , TYPE_OPERATOR, TEXT('#')  },
-		{ TOKEN_LEFT_PAREN  , TYPE_OPERATOR, TEXT('(')  },
-		{ TOKEN_LESS_THAN   , TYPE_OPERATOR, TEXT('<')  },
-		{ TOKEN_MINUS       , TYPE_OPERATOR, TEXT('-')  }, // sub
-//		{ TOKEN_TILDE       , TYPE_OPERATOR, TEXT('~')  }, // C/C++: Not.  Used for console.
-		{ TOKEN_PERCENT     , TYPE_OPERATOR, TEXT('%')  }, // mod
-		{ TOKEN_PIPE        , TYPE_OPERATOR, TEXT('|')  }, // bit-or
-		{ TOKEN_PLUS        , TYPE_OPERATOR, TEXT('+')  }, // add
-		{ TOKEN_QUOTED      , TYPE_QUOTED  , TEXT('"')  },
-		{ TOKEN_RIGHT_PAREN , TYPE_OPERATOR, TEXT(')')  },
-		{ TOKEN_SEMI        , TYPE_STRING  , TEXT(';')  },
-		{ TOKEN_SPACE       , TYPE_STRING  , TEXT(' ')  } // space is also a delimiter between tokens/args
-//		{ TOKEN_STAR        , TYPE_OPERATOR, TEXT('*')  },
-//		{ TOKEN_TAB         , TYPE_STRING  , TEXT('\t') }
-	};
-
-//	const TokenTable_t g_aTokens2[  ] =
-//	{ // Input
-//		{ TOKEN_GREATER_EQUAL,TYPE_OPERATOR, TEXT(">=\x00") }, // TODO/FIXME: Parser will break up '>=' (needed for uber breakpoints)
-//		{ TOKEN_LESS_EQUAL  , TYPE_OPERATOR, TEXT("<=\x00") }, // TODO/FIXME: Parser will break up '<=' (needed for uber breakpoints)
-//	}
-
-// Breakpoints ____________________________________________________________________________________
 	int          g_nBreakpoints = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
 	// NOTE: Breakpoint_Source_t and g_aBreakpointSource must match!
 	const TCHAR *g_aBreakpointSource[ NUM_BREAKPOINT_SOURCES ] =
-	{	// Used to be one char, since ArgsParse also uses // TODO/FIXME: Parser use Param[] ?
+	{	// Used to be one char, since ArgsCook also uses // TODO/FIXME: Parser use Param[] ?
 		// Used for both Input & Output!
 		// Regs
 		TEXT("A"), // Reg A
@@ -369,7 +287,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	};
 
 	// Note: BreakpointOperator_t, _PARAM_BREAKPOINT_, and g_aBreakpointSymbols must match!
-	TCHAR *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS] =
+	const TCHAR *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ] =
 	{	// Output: Must be 2 chars!
 		TEXT("<="), // LESS_EQAUL
 		TEXT("< "), // LESS_THAN
@@ -424,7 +342,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("TF")          , CmdTraceFile         , CMD_TRACE_FILE           , "Save trace to filename" },
 		{TEXT("TL")          , CmdTraceLine         , CMD_TRACE_LINE           , "Trace (with cycle counting)" },
 	// Breakpoints
-		{TEXT("BP")          , CmdBreakpoint        , CMD_BREAKPOINT           , "Access breakpoint options" },
+		{TEXT("BP")          , CmdBreakpointMenu    , CMD_BREAKPOINT           , "Access breakpoint options" },
 		{TEXT("BPA")         , CmdBreakpointAddSmart, CMD_BREAKPOINT_ADD_SMART , "Add (smart) breakpoint" },
 //		{TEXT("BPP")         , CmdBreakpointAddFlag , CMD_BREAKPOINT_ADD_FLAG  , "Add breakpoint on flags" },
 		{TEXT("BPR")         , CmdBreakpointAddReg  , CMD_BREAKPOINT_ADD_REG   , "Add breakpoint on register value"      }, // NOTE! Different from SoftICE !!!!
@@ -442,8 +360,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("BENCHMARK")   , CmdBenchmark         , CMD_BENCHMARK            , "Benchmark the emulator" },
 		{TEXT("PROFILE")     , CmdProfile           , CMD_PROFILE              , "List/Save 6502 profiling" },
 	// Config
+		{TEXT("BW")          , CmdConfigColorMono   , CMD_CONFIG_BW            , "Sets/Shows RGB for Black & White scheme" },
 		{TEXT("COLOR")       , CmdConfigColorMono   , CMD_CONFIG_COLOR         , "Sets/Shows RGB for color scheme" },
-		{TEXT("CONFIG")      , CmdConfig            , CMD_CONFIG               , "Access config options" },
+		{TEXT("CONFIG")      , CmdConfigMenu        , CMD_CONFIG_MENU          , "Access config options" },
+		{TEXT("ECHO")        , CmdConfigEcho        , CMD_CONFIG_ECHO          , "Echo string, or toggle command echoing" },
 		{TEXT("FONT")        , CmdConfigFont        , CMD_CONFIG_FONT          , "Shows current font or sets new one" },
 		{TEXT("HCOLOR")      , CmdConfigHColor      , CMD_CONFIG_HCOLOR        , "Sets/Shows colors mapped to Apple HGR" },
 		{TEXT("LOAD")        , CmdConfigLoad        , CMD_CONFIG_LOAD          , "Load debugger configuration" },
@@ -464,6 +384,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("PAGEDN"     ) , CmdCursorPageDown    , CMD_CURSOR_PAGE_DOWN     , "Scroll down one scren"  }, 
 		{TEXT("PAGEDOWN256") , CmdCursorPageDown256 , CMD_CURSOR_PAGE_DOWN_256 , "Scroll down 256 bytes"  }, // Shift
 		{TEXT("PAGEDOWN4K" ) , CmdCursorPageDown4K  , CMD_CURSOR_PAGE_DOWN_4K  , "Scroll down 4096 bytes" }, // Ctrl
+	// Disk
+		{TEXT("DISK")        , CmdDisk              , CMD_DISK                 , "Access Disk Drive Functions" },
 	// Flags
 //		{TEXT("FC")          , CmdFlag              , CMD_FLAG_CLEAR , "Clear specified Flag"           }, // NVRBDIZC see AW_CPU.cpp AF_*
 		{TEXT("CL")          , CmdFlag              , CMD_FLAG_CLEAR , "Clear specified Flag"           }, // NVRBDIZC see AW_CPU.cpp AF_*
@@ -627,7 +549,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("MF")          , CmdMemoryFill        , CMD_MEMORY_FILL          },
 		{TEXT("MM")          , CmdMemoryMove        , CMD_MEMORY_MOVE          },
 		{TEXT("MS")          , CmdMemorySearch      , CMD_MEMORY_SEARCH        }, // CmdMemorySearch
-		{TEXT("BW")          , CmdConfigColorMono   , CMD_CONFIG_MONOCHROME    },
 		{TEXT("P0")          , CmdZeroPagePointer   , CMD_ZEROPAGE_POINTER_0   },
 		{TEXT("P1")          , CmdZeroPagePointer   , CMD_ZEROPAGE_POINTER_1   },
 		{TEXT("P2")          , CmdZeroPagePointer   , CMD_ZEROPAGE_POINTER_2   },
@@ -661,7 +582,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	const int NUM_COMMANDS_WITH_ALIASES = sizeof(g_aCommands) / sizeof (Command_t); // Determined at compile-time ;-)
 
 
-// Color __________________________________________________________________________________________
+// Color ______________________________________________________________________
 
 	int g_iColorScheme = SCHEME_COLOR;
 
@@ -713,8 +634,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		R7,    // FG_DISASM_BP_S_X    // Y8 lookes better on Info Cyan // R6
 		W5,    // FG_DISASM_BP_0_X 
 
-		W8, B8, // BG_DISASM_C        FG_DISASM_C
-		Y8, B8, // BG_DISASM_PC_C     FG_DISASM_PC_C
+		W8, K0, // BG_DISASM_C        FG_DISASM_C     // B8 -> K0
+		Y8, K0, // BG_DISASM_PC_C     FG_DISASM_PC_C  // K8 -> K0
 		Y4, W8, // BG_DISASM_PC_X     FG_DISASM_PC_X
 
 		W8,     // FG_DISASM_ADDRESS
@@ -762,57 +683,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	COLORREF g_aColors[ NUM_COLOR_SCHEMES ][ NUM_COLORS ];
 
-
-// Console ________________________________________________________________________________________
-
-	// See ConsoleInputReset() for why the console input
-	// is tied to the zero'th output of g_aConsoleDisplay
-	// and not using a seperate var: g_aConsoleInput[ CONSOLE_WIDTH ];
-	//
-	//          :          g_aConsoleBuffer[4] |      ^ g_aConsoleDisplay[5]        :
-	//          :          g_aConsoleBuffer[3] |      | g_aConsoleDisplay[4]  <-  g_nConsoleDisplayTotal
-	// g_nConsoleBuffer -> g_aConsoleBuffer[2] |      | g_aConsoleDisplay[3]        :
-	//          :          g_aConsoleBuffer[1] v      | g_aConsoleDisplay[2]        :
-	//          .          g_aConsoleBuffer[0] -----> | g_aConsoleDisplay[1]        .
-	//                                                | 
-	//                            ConsoleInput ---->  | g_aConsoleDisplay[0]   
-	//
-	const int CONSOLE_HEIGHT = 384; // Lines, was 128, but need ~ 256+16 for PROFILE LIST
-	const int CONSOLE_WIDTH  =  80;
-
-	// Buffer
-		bool  g_bConsoleBufferPaused = false; // buffered output is waiting for user to continue
-		int   g_nConsoleBuffer = 0;
-		TCHAR g_aConsoleBuffer[ CONSOLE_HEIGHT ][ CONSOLE_WIDTH ]; // TODO: stl::vector< line_t >
-
-	// Display
-		TCHAR g_aConsolePrompt[] = TEXT(">!"); // input, assembler
-		TCHAR g_sConsolePrompt[] = TEXT(">"); // No, NOT Integer Basic!  The nostalgic '*' "Monitor" doesn't look as good, IMHO. :-(
-		bool  g_bConsoleFullWidth = false;
-
-		int   g_iConsoleDisplayStart  = 0; // to allow scrolling
-		int   g_nConsoleDisplayTotal  = 0; // number of lines added to console
-		int   g_nConsoleDisplayHeight = 0;
-		int   g_nConsoleDisplayWidth  = 0;
-		TCHAR g_aConsoleDisplay[ CONSOLE_HEIGHT ][ CONSOLE_WIDTH ];
-
-	// Input History
-		int   g_nHistoryLinesStart = 0;
-		int   g_nHistoryLinesTotal = 0; // number of commands entered
-		TCHAR g_aHistoryLines[ CONSOLE_HEIGHT ][ CONSOLE_WIDTH ] = {TEXT("")};
-
-	// Input Line
-		// Raw input Line (has prompt)
-		const int CONSOLE_FIRST_LINE = 1; // where ConsoleDisplay is pushed up from
-		TCHAR * const g_aConsoleInput = g_aConsoleDisplay[0];
-		// Cooked input line (no prompt)
-		int           g_nConsoleInputChars  = 0;
-		TCHAR *       g_pConsoleInput       = 0; // points to past prompt
-		bool          g_bConsoleInputQuoted = false; // Allows lower-case to be entered
-		bool          g_bConsoleInputSkip   = false;
+	COLORREF DebuggerGetColor ( int iColor );
 
 
-// Cursor _________________________________________________________________________________________
+// Cursor _____________________________________________________________________
 
 	WORD g_nDisasmTopAddress = 0;
 	WORD g_nDisasmBotAddress = 0;
@@ -824,492 +698,50 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	int  g_nDisasmWinHeight = 0;
 
-// Disassembly
-	bool  g_bConfigDisasmOpcodeSpaces = true; // TODO: CONFIG DISASM SPACE  [0|1]
-	bool  g_bConfigDisasmAddressColon = true; // TODO: CONFIG DISASM COLON  [0|1]
-	bool  g_bConfigDisasmFancyBranch  = true; // TODO: CONFIG DISASM BRANCH [0|1]
 //	TCHAR g_aConfigDisasmAddressColon[] = TEXT(" :");
 
-	/*
-		* Wingdings
-			\xE1   Up Arrow
-			\xE2   Down Arrow
-		* Webdings // M$ Font
-			\x35   Up Arrow
-			\x33   Left Arrow
-			\x36   Down Arrow
-		* Symols
-			\xAD   Up Arrow
-			\xAF   Down Arrow
-	*/
-	TCHAR g_sConfigBranchIndicatorUp   [] = TEXT("^\x35"); // was \x18 ?? // string
-	TCHAR g_sConfigBranchIndicatorEqual[] = TEXT("=\x33"); // was \x18 ?? // string
-	TCHAR g_sConfigBranchIndicatorDown [] = TEXT("v\x36"); // was \x19 ?? // string
+	extern const int WINDOW_DATA_BYTES_PER_LINE = 8;
 
-// Drawing
-	// Width
-		const int DISPLAY_WIDTH  = 560;
-		#define  SCREENSPLIT1    356	// Horizontal Column (pixels?) of Stack & Regs
-//		#define  SCREENSPLIT2    456	// Horizontal Column (pixels?) of BPs, Watches & Mem
-		const int SCREENSPLIT2 = 456-7; // moved left one "char" to show PC in breakpoint:
-		
-		const int DISPLAY_BP_COLUMN      = SCREENSPLIT2;
-		const int DISPLAY_MINI_CONSOLE   = SCREENSPLIT1 -  6; // - 1 chars
-		const int DISPLAY_DISASM_RIGHT   = SCREENSPLIT1 -  6; // - 1 char
-		const int DISPLAY_FLAG_COLUMN    = SCREENSPLIT1 + 63;
-		const int DISPLAY_MINIMEM_COLUMN = SCREENSPLIT2 +  7;
-		const int DISPLAY_REGS_COLUMN    = SCREENSPLIT1;
-		const int DISPLAY_STACK_COLUMN   = SCREENSPLIT1;
-		const int DISPLAY_TARGETS_COLUMN = SCREENSPLIT1;
-		const int DISPLAY_WATCHES_COLUMN = SCREENSPLIT2;
-		const int DISPLAY_ZEROPAGE_COLUMN= SCREENSPLIT1;
-
-	// Height
-//		const int DISPLAY_LINES  =  24; // FIXME: Should be pixels
-		// 304 = bottom of disassembly
-		// 368 = bottom console
-		// 384 = 16 * 24 very bottom
-		const int DEFAULT_HEIGHT = 16;
-		const int DISPLAY_HEIGHT = 384; // 368; // DISPLAY_LINES * g_nFontHeight;
-
-		const int WINDOW_DATA_BYTES_PER_LINE = 8;
 // Font
-	FontConfig_t g_aFontConfig[ NUM_FONTS  ];
-
 	TCHAR     g_sFontNameDefault[ MAX_FONT_NAME ] = TEXT("Courier New");
-//	TCHAR     g_sFontNameCustom [ MAX_FONT_NAME ] = TEXT("Courier New"); // Arial
 	TCHAR     g_sFontNameConsole[ MAX_FONT_NAME ] = TEXT("Courier New");
 	TCHAR     g_sFontNameDisasm [ MAX_FONT_NAME ] = TEXT("Courier New");
 	TCHAR     g_sFontNameInfo   [ MAX_FONT_NAME ] = TEXT("Courier New");
 	TCHAR     g_sFontNameBranch [ MAX_FONT_NAME ] = TEXT("Webdings");
-	int       g_nFontHeight = 15; // 13 -> 12 Lucida Console is readable
 	int       g_iFontSpacing = FONT_SPACING_CLEAN;
-//	int       g_nFontWidthAvg = 0;
-//	int       g_nFontWidthMax = 0;
-//	HFONT     g_hFontDebugger = (HFONT)0;
-//	HFONT     g_hFontDisasm   = (HFONT)0;
 	HFONT     g_hFontWebDings  = (HFONT)0;
 
+	// TODO: This really needs to be phased out, and use the ConfigFont[] settings
+	int       g_nFontHeight = 15; // 13 -> 12 Lucida Console is readable
 
-		const int MIN_DISPLAY_CONSOLE_LINES =  4; // doesn't include ConsoleInput
+	const int MIN_DISPLAY_CONSOLE_LINES =  4; // doesn't include ConsoleInput
 
-		int g_nTotalLines = 0; // DISPLAY_HEIGHT / g_nFontHeight;
-		int MAX_DISPLAY_DISASM_LINES   = 0; // g_nTotalLines -  MIN_DISPLAY_CONSOLE_LINES; // 19;
+	int g_nTotalLines = 0; // DISPLAY_HEIGHT / g_nFontHeight;
+	int MAX_DISPLAY_DISASM_LINES   = 0; // g_nTotalLines -  MIN_DISPLAY_CONSOLE_LINES; // 19;
 
-		int MAX_DISPLAY_STACK_LINES    =  8;
-		int MAX_DISPLAY_CONSOLE_LINES  =  0; // MAX_DISPLAY_DISASM_LINES + MIN_DISPLAY_CONSOLE_LINES; // 23
-
-
-// Instructions / Opcodes _________________________________________________________________________
+	int MAX_DISPLAY_CONSOLE_LINES  =  0; // MAX_DISPLAY_DISASM_LINES + MIN_DISPLAY_CONSOLE_LINES; // 23
 
 
-// @reference: http://www.6502.org/tutorials/compare_instructions.html
-// 10   signed: BPL BGE 
-// B0 unsigned: BCS BGE
-
-	int g_bOpcodesHashed = false;
-	int g_aOpcodesHash[ NUM_OPCODES ]; // for faster mnemonic lookup, for the assembler
-	
-#define R_ MEM_R
-#define _W MEM_W
-#define RW MEM_R | MEM_W
-#define _S MEM_S
-#define im MEM_IM
-#define SW MEM_S | MEM_WI
-#define SR MEM_S | MEM_RI
-const Opcodes_t g_aOpcodes65C02[ NUM_OPCODES ] =
-{
-	{"BRK", 0     ,  0}, {"ORA", AM_IZX, R_}, {"NOP", AM_2  , 0 }, {"NOP", AM_1  , 0 }, // 00 .. 03
-	{"TSB", AM_Z  , _W}, {"ORA", AM_Z  , R_}, {"ASL", AM_Z  , RW}, {"NOP", AM_1  , 0 }, // 04 .. 07
-	{"PHP", 0     , SW}, {"ORA", AM_M  , im}, {"ASL", 0     ,  0}, {"NOP", AM_1  , 0 }, // 08 .. 0B
-	{"TSB", AM_A  , _W}, {"ORA", AM_A  , R_}, {"ASL", AM_A  , RW}, {"NOP", AM_3  , 0 }, // 0C .. 0F
-	{"BPL", AM_R  ,  0}, {"ORA", AM_NZY, R_}, {"ORA", AM_NZ , R_}, {"NOP", AM_1  , 0 }, // 10 .. 13
-	{"TRB", AM_Z  , _W}, {"ORA", AM_ZX , R_}, {"ASL", AM_ZX , RW}, {"NOP", AM_1  , 0 }, // 14 .. 17
-	{"CLC", 0     ,  0}, {"ORA", AM_AY , R_}, {"INA", 0     ,  0}, {"NOP", AM_1  , 0 }, // 18 .. 1B
-	{"TRB", AM_A  , _W}, {"ORA", AM_AX , R_}, {"ASL", AM_AX , RW}, {"NOP", AM_1  , 0 }, // 1C .. 1F
-
-	{"JSR", AM_A  , SW}, {"AND", AM_IZX, R_}, {"NOP", AM_2  ,  0}, {"NOP", AM_1  , 0 }, // 20 .. 23
-	{"BIT", AM_Z  , R_}, {"AND", AM_Z  , R_}, {"ROL", AM_Z  , RW}, {"NOP", AM_1  , 0 }, // 24 .. 27
-	{"PLP", 0     , SR}, {"AND", AM_M  , im}, {"ROL", 0     ,  0}, {"NOP", AM_1  , 0 }, // 28 .. 2B
-	{"BIT", AM_A  , R_}, {"AND", AM_A  , R_}, {"ROL", AM_A  , RW}, {"NOP", AM_3  , 0 }, // 2C .. 2F
-	{"BMI", AM_R  ,  0}, {"AND", AM_NZY, R_}, {"AND", AM_NZ , R_}, {"NOP", AM_1  , 0 }, // 30 .. 33
-	{"BIT", AM_ZX , R_}, {"AND", AM_ZX , R_}, {"ROL", AM_ZX , RW}, {"NOP", AM_1  , 0 }, // 34 .. 37
-	{"SEC", 0     ,  0}, {"AND", AM_AY , R_}, {"DEA", 0     ,  0}, {"NOP", AM_1  , 0 }, // 38 .. 3B
-	{"BIT", AM_AX , R_}, {"AND", AM_AX , R_}, {"ROL", AM_AX , RW}, {"NOP", AM_1  , 0 }, // 3C .. 3F
-
-	{"RTI", 0     ,  0}, {"EOR", AM_IZX, R_}, {"NOP", AM_2  ,  0}, {"NOP", AM_1  , 0 }, // 40 .. 43
-	{"NOP", AM_2  ,  0}, {"EOR", AM_Z  , R_}, {"LSR", AM_Z  , _W}, {"NOP", AM_1  , 0 }, // 44 .. 47
-	{"PHA", 0     , SW}, {"EOR", AM_M  , im}, {"LSR", 0     ,  0}, {"NOP", AM_1  , 0 }, // 48 .. 4B
-	{"JMP", AM_A  ,  0}, {"EOR", AM_A  , R_}, {"LSR", AM_A  , _W}, {"NOP", AM_1  , 0 }, // 4C .. 4F
-	{"BVC", AM_R  ,  0}, {"EOR", AM_NZY, R_}, {"EOR", AM_NZ , R_}, {"NOP", AM_1  , 0 }, // 50 .. 53
-	{"NOP", AM_2  ,  0}, {"EOR", AM_ZX , R_}, {"LSR", AM_ZX , _W}, {"NOP", AM_1  , 0 }, // 54 .. 57
-	{"CLI", 0     ,  0}, {"EOR", AM_AY , R_}, {"PHY", 0     , SW}, {"NOP", AM_1  , 0 }, // 58 .. 5B
-	{"NOP", AM_3  ,  0}, {"EOR", AM_AX , R_}, {"LSR", AM_AX , RW}, {"NOP", AM_1  , 0 }, // 5C .. 5F
-
-	{"RTS", 0     , SR}, {"ADC", AM_IZX, R_}, {"NOP", AM_2  ,  0}, {"NOP", AM_1  , 0 }, // 60 .. 63
-	{"STZ", AM_Z  , _W}, {"ADC", AM_Z  , R_}, {"ROR", AM_Z  , RW}, {"NOP", AM_1  , 0 }, // 64 .. 67
-	{"PLA", 0     , SR}, {"ADC", AM_M  , im}, {"ROR", 0     ,  0}, {"NOP", AM_1  , 0 }, // 68 .. 6B
-	{"JMP", AM_NA ,  0}, {"ADC", AM_A  , R_}, {"ROR", AM_A  , RW}, {"NOP", AM_1  , 0 }, // 6C .. 6F
-	{"BVS", AM_R  ,  0}, {"ADC", AM_NZY, R_}, {"ADC", AM_NZ , R_}, {"NOP", AM_1  , 0 }, // 70 .. 73
-	{"STZ", AM_ZX , _W}, {"ADC", AM_ZX , R_}, {"ROR", AM_ZX , RW}, {"NOP", AM_1  , 0 }, // 74 .. 77
-	{"SEI", 0     ,  0}, {"ADC", AM_AY , R_}, {"PLY", 0     , SR}, {"NOP", AM_1  , 0 }, // 78 .. 7B
-	{"JMP", AM_IAX,  0}, {"ADC", AM_AX , R_}, {"ROR", AM_AX , RW}, {"NOP", AM_1  , 0 }, // 7C .. 7F
-
-	{"BRA", AM_R  ,  0}, {"STA", AM_IZX, _W}, {"NOP", AM_2  ,  0}, {"NOP", AM_1  , 0 }, // 80 .. 83
-	{"STY", AM_Z  , _W}, {"STA", AM_Z  , _W}, {"STX", AM_Z  , _W}, {"NOP", AM_1  , 0 }, // 84 .. 87
-	{"DEY", 0     ,  0}, {"BIT", AM_M  , im}, {"TXA", 0     ,  0}, {"NOP", AM_1  , 0 }, // 88 .. 8B
-	{"STY", AM_A  , _W}, {"STA", AM_A  , _W}, {"STX", AM_A  , _W}, {"NOP", AM_1  , 0 }, // 8C .. 8F
-	{"BCC", AM_R  ,  0}, {"STA", AM_NZY, _W}, {"STA", AM_NZ , _W}, {"NOP", AM_1  , 0 }, // 90 .. 93
-	{"STY", AM_ZX , _W}, {"STA", AM_ZX , _W}, {"STX", AM_ZY , _W}, {"NOP", AM_1  , 0 }, // 94 .. 97
-	{"TYA", 0     ,  0}, {"STA", AM_AY , _W}, {"TXS", 0     ,  0}, {"NOP", AM_1  , 0 }, // 98 .. 9B
-	{"STZ", AM_A  , _W}, {"STA", AM_AX , _W}, {"STZ", AM_AX , _W}, {"NOP", AM_1  , 0 }, // 9C .. 9F
-
-	{"LDY", AM_M  , im}, {"LDA", AM_IZX, R_}, {"LDX", AM_M  , im}, {"NOP", AM_1  , 0 }, // A0 .. A3
-	{"LDY", AM_Z  , R_}, {"LDA", AM_Z  , R_}, {"LDX", AM_Z  , R_}, {"NOP", AM_1  , 0 }, // A4 .. A7
-	{"TAY", 0     ,  0}, {"LDA", AM_M  , im}, {"TAX", 0     , 0 }, {"NOP", AM_1  , 0 }, // A8 .. AB
-	{"LDY", AM_A  , R_}, {"LDA", AM_A  , R_}, {"LDX", AM_A  , R_}, {"NOP", AM_1  , 0 }, // AC .. AF
-	{"BCS", AM_R  ,  0}, {"LDA", AM_NZY, R_}, {"LDA", AM_NZ , R_}, {"NOP", AM_1  , 0 }, // B0 .. B3
-	{"LDY", AM_ZX , R_}, {"LDA", AM_ZX , R_}, {"LDX", AM_ZY , R_}, {"NOP", AM_1  , 0 }, // B4 .. B7
-	{"CLV", 0     ,  0}, {"LDA", AM_AY , R_}, {"TSX", 0     , 0 }, {"NOP", AM_1  , 0 }, // B8 .. BB
-	{"LDY", AM_AX , R_}, {"LDA", AM_AX , R_}, {"LDX", AM_AY , R_}, {"NOP", AM_1  , 0 }, // BC .. BF
-
-	{"CPY", AM_M  , im}, {"CMP", AM_IZX, R_}, {"NOP", AM_2  ,  0}, {"NOP", AM_1  , 0 }, // C0 .. C3
-	{"CPY", AM_Z  , R_}, {"CMP", AM_Z  , R_}, {"DEC", AM_Z  , RW}, {"NOP", AM_1  , 0 }, // C4 .. C7
-	{"INY", 0     ,  0}, {"CMP", AM_M  , im}, {"DEX", 0     ,  0}, {"NOP", AM_1  , 0 }, // C8 .. CB
-	{"CPY", AM_A  , R_}, {"CMP", AM_A  , R_}, {"DEC", AM_A  , RW}, {"NOP", AM_1  , 0 }, // CC .. CF
-	{"BNE", AM_R  ,  0}, {"CMP", AM_NZY, R_}, {"CMP", AM_NZ ,  0}, {"NOP", AM_1  , 0 }, // D0 .. D3
-	{"NOP", AM_2  ,  0}, {"CMP", AM_ZX , R_}, {"DEC", AM_ZX , RW}, {"NOP", AM_1  , 0 }, // D4 .. D7
-	{"CLD", 0     ,  0}, {"CMP", AM_AY , R_}, {"PHX", 0     ,  0}, {"NOP", AM_1  , 0 }, // D8 .. DB
-	{"NOP", AM_3  ,  0}, {"CMP", AM_AX , R_}, {"DEC", AM_AX , RW}, {"NOP", AM_1  , 0 }, // DC .. DF
-
-	{"CPX", AM_M  , im}, {"SBC", AM_IZX, R_}, {"NOP", AM_2  ,  0}, {"NOP", AM_1  , 0 }, // E0 .. E3
-	{"CPX", AM_Z  , R_}, {"SBC", AM_Z  , R_}, {"INC", AM_Z  , RW}, {"NOP", AM_1  , 0 }, // E4 .. E7
-	{"INX", 0     ,  0}, {"SBC", AM_M  , R_}, {"NOP", 0     ,  0}, {"NOP", AM_1  , 0 }, // E8 .. EB
-	{"CPX", AM_A  , R_}, {"SBC", AM_A  , R_}, {"INC", AM_A  , RW}, {"NOP", AM_1  , 0 }, // EC .. EF
-	{"BEQ", AM_R  ,  0}, {"SBC", AM_NZY, R_}, {"SBC", AM_NZ ,  0}, {"NOP", AM_1  , 0 }, // F0 .. F3
-	{"NOP", AM_2  ,  0}, {"SBC", AM_ZX , R_}, {"INC", AM_ZX , RW}, {"NOP", AM_1  , 0 }, // F4 .. F7
-	{"SED", 0     ,  0}, {"SBC", AM_AY , R_}, {"PLX", 0     ,  0}, {"NOP", AM_1  , 0 }, // F8 .. FB
-	{"NOP", AM_3  ,  0}, {"SBC", AM_AX , R_}, {"INC", AM_AX , RW}, {"NOP", AM_1  , 0 }  // FF .. FF
-};
-
-const Opcodes_t g_aOpcodes6502[ NUM_OPCODES ] =
-{ // Should match Cpu.cpp InternalCpuExecute() switch (*(mem+regs.pc++)) !!
-
-/*
-	Based on: http://axis.llx.com/~nparker/a2/opcodes.html
-
-	If you really want to know what the undocumented --- (n/a) opcodes do, see:
-	http://www.strotmann.de/twiki/bin/view/APG/AsmUnusedOpcodes
-
-	x0     x1         x2       x3   x4       x5       x6       x7   x8   x9       xA      xB   xC        xD       xE      	xF
-0x	BRK    ORA (d,X)  ---      ---  tsb d    ORA d    ASL d    ---  PHP  ORA #    ASL A  ---  tsb a      ORA a    ASL a   	---
-1x	BPL r  ORA (d),Y  ora (d)  ---  trb d    ORA d,X  ASL d,X  ---  CLC  ORA a,Y  ina A  ---  trb a      ORA a,X  ASL a,X 	---
-2x	JSR a  AND (d,X)  ---      ---  BIT d    AND d    ROL d    ---  PLP  AND #    ROL A  ---  BIT a      AND a    ROL a   	---
-3x	BMI r  AND (d),Y  and (d)  ---  bit d,X  AND d,X  ROL d,X  ---  SEC  AND a,Y  dea A  ---  bit a,X    AND a,X  ROL a,X 	---
-4x	RTI    EOR (d,X)  ---      ---  ---      EOR d    LSR d    ---  PHA  EOR #    LSR A  ---  JMP a      EOR a    LSR a   	---
-5x	BVC r  EOR (d),Y  eor (d)  ---  ---      EOR d,X  LSR d,X  ---  CLI  EOR a,Y  phy    ---  ---        EOR a,X  LSR a,X 	---
-6x	RTS    ADC (d,X)  ---      ---  stz d    ADC d    ROR d    ---  PLA  ADC #    ROR A  ---  JMP (a)    ADC a    ROR a   	---
-7x	BVS r  ADC (d),Y  adc (d)  ---  stz d,X  ADC d,X  ROR d,X  ---  SEI  ADC a,Y  ply    ---  jmp (a,X)  ADC a,X  ROR a,X 	---
-8x	bra r  STA (d,X)  ---      ---  STY d    STA d    STX d    ---  DEY  bit #    TXA    ---  STY a      STA a    STX a   	---
-9x	BCC r  STA (d),Y  sta (d)  ---  STY d,X  STA d,X  STX d,Y  ---  TYA  STA a,Y  TXS    ---  Stz a      STA a,X  stz a,X 	---
-Ax	LDY #  LDA (d,X)  LDX #    ---  LDY d    LDA d    LDX d    ---  TAY  LDA #    TAX    ---  LDY a      LDA a    LDX a   	---
-Bx	BCS r  LDA (d),Y  lda (d)  ---  LDY d,X  LDA d,X  LDX d,Y  ---  CLV  LDA a,Y  TSX    ---  LDY a,X    LDA a,X  LDX a,Y 	---
-Cx	CPY #  CMP (d,X)  ---      ---  CPY d    CMP d    DEC d    ---  INY  CMP #    DEX    ---  CPY a      CMP a    DEC a   	---
-Dx	BNE r  CMP (d),Y  cmp (d)  ---  ---      CMP d,X  DEC d,X  ---  CLD  CMP a,Y  phx    ---  ---        CMP a,X  DEC a,X 	---
-Ex	CPX #  SBC (d,X)  ---      ---  CPX d    SBC d    INC d    ---  INX  SBC #    NOP    ---  CPX a      SBC a    INC a   	---
-Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y  plx    ---  ---        SBC a,X  INC a,X 	---
-
-	Legend:
-		UPPERCASE 6502
-		lowercase 65C02
-			80
-			12, 32, 52, 72, 92, B2, D2, F2
-			04, 14, 34, 64, 74
-			89
-			1A, 3A, 5A, 7A, DA, FA
-			0C, 1C, 3C, 7C, 9C;
-		# Immediate
-		A Accumulator (implicit for mnemonic)
-		a absolute
-		r Relative
-		d Destination
-		z Zero Page
-		d,x
-		(d,X)
-		(d),Y
-
-*/
-	// x3 x7 xB xF are never used
-	{TEXT("BRK"), 0             , 0  }, // 00h
-	{TEXT("ORA"), ADDR_INDX     , R_ }, // 01h
-	{TEXT("NOP"), ADDR_INVALID2 , 0  }, // 02h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 03h
-	{TEXT("TSB"), ADDR_ZP      , _W  }, // 04h // 65C02
-	{TEXT("ORA"), ADDR_ZP      , R_  }, // 05h
-	{TEXT("ASL"), ADDR_ZP      , _W  }, // 06h // MEM_R ?
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 07h
-	{TEXT("PHP"), 0             , SW }, // 08h
-	{TEXT("ORA"), ADDR_IMM      , im }, // 09h
-	{TEXT("ASL"), 0             , 0  }, // 0Ah // MEM_IMPLICIT
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 0Bh
-	{TEXT("TSB"), ADDR_ABS      , _W }, // 0Ch // 65C02
-	{TEXT("ORA"), ADDR_ABS      , R_ }, // 0Dh
-	{TEXT("ASL"), ADDR_ABS      , _W }, // 0Eh // MEM_R ?
-	{TEXT("NOP"), ADDR_INVALID3 , 0  }, // 0Fh
-	{TEXT("BPL"), ADDR_REL      , 0  }, // 10h // signed: BGE @reference: http://www.6502.org/tutorials/compare_instructions.html
-	{TEXT("ORA"), ADDR_INDY     , R_ }, // 11h
-	{TEXT("ORA"), ADDR_IZPG     , R_ }, // 12h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 13h
-	{TEXT("TRB"), ADDR_ZP       , _W }, // 14h
-	{TEXT("ORA"), ADDR_ZP_X     , R_ }, // 15h
-	{TEXT("ASL"), ADDR_ZP_X     , _W }, // 16h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 17h
-	{TEXT("CLC"), 0             , 0  }, // 18h
-	{TEXT("ORA"), ADDR_ABSY     , R_ }, // 19h
-	{TEXT("INA"), 0             , 0  }, // 1Ah INC A
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 1Bh
-	{TEXT("TRB"), ADDR_ABS      , _W }, // 1Ch
-	{TEXT("ORA"), ADDR_ABSX     , R_ }, // 1Dh
-	{TEXT("ASL"), ADDR_ABSX          }, // 1Eh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 1Fh
-	{TEXT("JSR"), ADDR_ABS           }, // 20h
-	{TEXT("AND"), ADDR_INDX          }, // 21h
-	{TEXT("NOP"), ADDR_INVALID2 , 0  }, // 22h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 23h
-	{TEXT("BIT"), ADDR_ZP            }, // 24h
-	{TEXT("AND"), ADDR_ZP            }, // 25h
-	{TEXT("ROL"), ADDR_ZP            }, // 26h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 27h
-	{TEXT("PLP"), 0                  }, // 28h
-	{TEXT("AND"), ADDR_IMM           }, // 29h
-	{TEXT("ROL"), 0                  }, // 2Ah
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 2Bh
-	{TEXT("BIT"), ADDR_ABS           }, // 2Ch
-	{TEXT("AND"), ADDR_ABS           }, // 2Dh
-	{TEXT("ROL"), ADDR_ABS           }, // 2Eh
-	{TEXT("NOP"), ADDR_INVALID3 , 0  }, // 2Fh
-	{TEXT("BMI"), ADDR_REL           }, // 30h
-	{TEXT("AND"), ADDR_INDY          }, // 31h
-	{TEXT("AND"), ADDR_IZPG          }, // 32h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 33h
-	{TEXT("BIT"), ADDR_ZP_X          }, // 34h
-	{TEXT("AND"), ADDR_ZP_X          }, // 35h
-	{TEXT("ROL"), ADDR_ZP_X          }, // 36h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 37h
-	{TEXT("SEC"), 0                  }, // 38h
-	{TEXT("AND"), ADDR_ABSY          }, // 39h
-	{TEXT("DEA"), 0                  }, // 3Ah
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 3Bh
-	{TEXT("BIT"), ADDR_ABSX          }, // 3Ch
-	{TEXT("AND"), ADDR_ABSX          }, // 3Dh
-	{TEXT("ROL"), ADDR_ABSX          }, // 3Eh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 3Fh
-	{TEXT("RTI"), 0             , 0  }, // 40h
-	{TEXT("EOR"), ADDR_INDX          }, // 41h
-	{TEXT("NOP"), ADDR_INVALID2 , 0  }, // 42h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 43h
-	{TEXT("NOP"), ADDR_INVALID2 , 0  }, // 44h
-	{TEXT("EOR"), ADDR_ZP            }, // 45h
-	{TEXT("LSR"), ADDR_ZP       , _W }, // 46h // MEM_R ?
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 47h
-	{TEXT("PHA"), 0                  }, // 48h // MEM_WRITE_IMPLIED | MEM_STACK
-	{TEXT("EOR"), ADDR_IMM           }, // 49h
-	{TEXT("LSR"), 0                  }, // 4Ah
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 4Bh
-	{TEXT("JMP"), ADDR_ABS           }, // 4Ch
-	{TEXT("EOR"), ADDR_ABS           }, // 4Dh
-	{TEXT("LSR"), ADDR_ABS      , _W }, // 4Eh // MEM_R ?
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 4Fh
-	{TEXT("BVC"), ADDR_REL           }, // 50h
-	{TEXT("EOR"), ADDR_INDY          }, // 51h
-	{TEXT("EOR"), ADDR_IZPG          }, // 52h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 53h
-	{TEXT("NOP"), ADDR_INVALID2 , 0  }, // 54h
-	{TEXT("EOR"), ADDR_ZP_X          }, // 55h
-	{TEXT("LSR"), ADDR_ZP_X     , _W }, // 56h // MEM_R ?
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 57h
-	{TEXT("CLI"), 0                  }, // 58h
-	{TEXT("EOR"), ADDR_ABSY          }, // 59h
-	{TEXT("PHY"), 0                  }, // 5Ah
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 5Bh
-	{TEXT("NOP"), ADDR_INVALID3 , 0  }, // 5Ch
-	{TEXT("EOR"), ADDR_ABSX          }, // 5Dh
-	{TEXT("LSR"), ADDR_ABSX          }, // 5Eh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 5Fh
-	{TEXT("RTS"), 0             , SR }, // 60h
-	{TEXT("ADC"), ADDR_INDX          }, // 61h
-	{TEXT("NOP"), ADDR_INVALID2 , 0  }, // 62h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 63h
-	{TEXT("STZ"), ADDR_ZP            }, // 64h
-	{TEXT("ADC"), ADDR_ZP            }, // 65h
-	{TEXT("ROR"), ADDR_ZP            }, // 66h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 67h
-	{TEXT("PLA"), 0             , SW }, // 68h
-	{TEXT("ADC"), ADDR_IMM           }, // 69h
-	{TEXT("ROR"), 0                  }, // 6Ah
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 6Bh
-	{TEXT("JMP"), ADDR_IABS          }, // 6Ch
-	{TEXT("ADC"), ADDR_ABS           }, // 6Dh
-	{TEXT("ROR"), ADDR_ABS           }, // 6Eh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 6Fh
-	{TEXT("BVS"), ADDR_REL           }, // 70h
-	{TEXT("ADC"), ADDR_INDY          }, // 71h
-	{TEXT("ADC"), ADDR_IZPG          }, // 72h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 73h 
-	{TEXT("STZ"), ADDR_ZP_X          }, // 74h
-	{TEXT("ADC"), ADDR_ZP_X          }, // 75h
-	{TEXT("ROR"), ADDR_ZP_X          }, // 76h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 77h
-	{TEXT("SEI"), 0                  }, // 78h
-	{TEXT("ADC"), ADDR_ABSY          }, // 79h
-	{TEXT("PLY"), 0             , SR }, // 7Ah
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 7Bh
-	{TEXT("JMP"), ADDR_ABSIINDX      }, // 7Ch
-	{TEXT("ADC"), ADDR_ABSX          }, // 7Dh
-	{TEXT("ROR"), ADDR_ABSX          }, // 7Eh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 7Fh
-	{TEXT("BRA"), ADDR_REL           }, // 80h
-	{TEXT("STA"), ADDR_INDX     , _W }, // 81h
-	{TEXT("NOP"), ADDR_INVALID2 , 0  }, // 82h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 83h
-	{TEXT("STY"), ADDR_ZP       , _W }, // 84h
-	{TEXT("STA"), ADDR_ZP       , _W }, // 85h
-	{TEXT("STX"), ADDR_ZP       , _W }, // 86h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 87h
-	{TEXT("DEY"), 0             , 0  }, // 88h // Explicit
-	{TEXT("BIT"), ADDR_IMM           }, // 89h
-	{TEXT("TXA"), 0             , 0  }, // 8Ah // Explicit
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 8Bh
-	{TEXT("STY"), ADDR_ABS      , _W }, // 8Ch
-	{TEXT("STA"), ADDR_ABS      , _W }, // 8Dh
-	{TEXT("STX"), ADDR_ABS      , _W }, // 8Eh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 8Fh
-	{TEXT("BCC"), ADDR_REL      , 0  }, // 90h // MEM_IMMEDIATE
-	{TEXT("STA"), ADDR_INDY     , _W }, // 91h
-	{TEXT("STA"), ADDR_IZPG     , _W }, // 92h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 93h
-	{TEXT("STY"), ADDR_ZP_X     , _W }, // 94h
-	{TEXT("STA"), ADDR_ZP_X     , _W }, // 95h
-	{TEXT("STX"), ADDR_ZP_Y     , _W }, // 96h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 97h
-	{TEXT("TYA"), 0             , 0  }, // 98h // Explicit
-	{TEXT("STA"), ADDR_ABSY     , _W }, // 99h
-	{TEXT("TXS"), 0             , 0  }, // 9Ah // EXplicit
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 9Bh
-	{TEXT("STZ"), ADDR_ABS      , _W }, // 9Ch
-	{TEXT("STA"), ADDR_ABSX     , _W }, // 9Dh
-	{TEXT("STZ"), ADDR_ABSX     , _W }, // 9Eh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // 9Fh
-	{TEXT("LDY"), ADDR_IMM      , 0  }, // A0h // MEM_IMMEDIATE
-	{TEXT("LDA"), ADDR_INDX     , R_ }, // A1h
-	{TEXT("LDX"), ADDR_IMM      , 0  }, // A2h // MEM_IMMEDIATE
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // A3h
-	{TEXT("LDY"), ADDR_ZP       , R_ }, // A4h
-	{TEXT("LDA"), ADDR_ZP       , R_ }, // A5h
-	{TEXT("LDX"), ADDR_ZP       , R_ }, // A6h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // A7h
-	{TEXT("TAY"), 0             , 0  }, // A8h // Explicit
-	{TEXT("LDA"), ADDR_IMM      , 0  }, // A9h // MEM_IMMEDIATE
-	{TEXT("TAX"), 0             , 0  }, // AAh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // ABh
-	{TEXT("LDY"), ADDR_ABS      , R_ }, // ACh
-	{TEXT("LDA"), ADDR_ABS      , R_ }, // ADh
-	{TEXT("LDX"), ADDR_ABS      , R_ }, // AEh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // AFh
-	{TEXT("BCS"), ADDR_REL      , 0  }, // B0h // MEM_IMMEDIATE // unsigned: BGE
-	{TEXT("LDA"), ADDR_INDY     , R_ }, // B1h
-	{TEXT("LDA"), ADDR_IZPG     , R_ }, // B2h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // B3h
-	{TEXT("LDY"), ADDR_ZP_X     , R_ }, // B4h
-	{TEXT("LDA"), ADDR_ZP_X     , R_ }, // B5h
-	{TEXT("LDX"), ADDR_ZP_Y     , R_ }, // B6h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // B7h
-	{TEXT("CLV"), 0             , 0  }, // B8h // Explicit
-	{TEXT("LDA"), ADDR_ABSY     , R_ }, // B9h
-	{TEXT("TSX"), 0             , 0  }, // BAh // Explicit
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // BBh
-	{TEXT("LDY"), ADDR_ABSX     , R_ }, // BCh
-	{TEXT("LDA"), ADDR_ABSX     , R_ }, // BDh
-	{TEXT("LDX"), ADDR_ABSY     , R_ }, // BEh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // BFh
-	{TEXT("CPY"), ADDR_IMM           }, // C0h
-	{TEXT("CMP"), ADDR_INDX          }, // C1h
-	{TEXT("NOP"), ADDR_INVALID2 , 0  }, // C2h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // C3h
-	{TEXT("CPY"), ADDR_ZP            }, // C4h
-	{TEXT("CMP"), ADDR_ZP            }, // C5h
-	{TEXT("DEC"), ADDR_ZP            }, // C6h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // C7h
-	{TEXT("INY"), 0                  }, // C8h
-	{TEXT("CMP"), ADDR_IMM           }, // C9h
-	{TEXT("DEX"), 0                  }, // CAh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // CBh
-	{TEXT("CPY"), ADDR_ABS           }, // CCh
-	{TEXT("CMP"), ADDR_ABS           }, // CDh
-	{TEXT("DEC"), ADDR_ABS           }, // CEh
-	{TEXT("NOP"), ADDR_INVALID1      }, // CFh
-	{TEXT("BNE"), ADDR_REL           }, // D0h
-	{TEXT("CMP"), ADDR_INDY          }, // D1h
-	{TEXT("CMP"), ADDR_IZPG          }, // D2h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // D3h
-	{TEXT("NOP"), ADDR_INVALID2 , 0  }, // D4h
-	{TEXT("CMP"), ADDR_ZP_X          }, // D5h
-	{TEXT("DEC"), ADDR_ZP_X          }, // D6h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // D7h
-	{TEXT("CLD"), 0                  }, // D8h
-	{TEXT("CMP"), ADDR_ABSY          }, // D9h
-	{TEXT("PHX"), 0                  }, // DAh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // DBh
-	{TEXT("NOP"), ADDR_INVALID3 , 0  }, // DCh
-	{TEXT("CMP"), ADDR_ABSX          }, // DDh
-	{TEXT("DEC"), ADDR_ABSX          }, // DEh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // DFh
-	{TEXT("CPX"), ADDR_IMM           }, // E0h
-	{TEXT("SBC"), ADDR_INDX          }, // E1h
-	{TEXT("NOP"), ADDR_INVALID2 , 0  }, // E2h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // E3h
-	{TEXT("CPX"), ADDR_ZP            }, // E4h
-	{TEXT("SBC"), ADDR_ZP            }, // E5h
-	{TEXT("INC"), ADDR_ZP            }, // E6h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // E7h
-	{TEXT("INX"), 0                  }, // E8h
-	{TEXT("SBC"), ADDR_IMM           }, // E9h
-	{TEXT("NOP"), 0             , 0  }, // EAh
-	{TEXT("NOP"), ADDR_INVALID1      }, // EBh
-	{TEXT("CPX"), ADDR_ABS           }, // ECh
-	{TEXT("SBC"), ADDR_ABS           }, // EDh
-	{TEXT("INC"), ADDR_ABS           }, // EEh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // EFh
-	{TEXT("BEQ"), ADDR_REL           }, // F0h
-	{TEXT("SBC"), ADDR_INDY          }, // F1h
-	{TEXT("SBC"), ADDR_IZPG          }, // F2h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // F3h
-	{TEXT("NOP"), ADDR_INVALID2 , 0  }, // F4h
-	{TEXT("SBC"), ADDR_ZP_X          }, // F5h
-	{TEXT("INC"), ADDR_ZP_X          }, // F6h
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // F7h
-	{TEXT("SED"), 0                  }, // F8h
-	{TEXT("SBC"), ADDR_ABSY          }, // F9h
-	{TEXT("PLX"), 0                  }, // FAh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }, // FBh
-	{TEXT("NOP"), ADDR_INVALID3 , 0  }, // FCh
-	{TEXT("SBC"), ADDR_ABSX          }, // FDh
-	{TEXT("INC"), ADDR_ABSX          }, // FEh
-	{TEXT("NOP"), ADDR_INVALID1 , 0  }  // FFh
-};
-
-#undef R_
-#undef _W
-#undef RW
-#undef _S
-#undef im
-#undef SW
-#undef SR
-
-	const Opcodes_t *g_aOpcodes = NULL; // & g_aOpcodes65C02[ 0 ];
+// Disassembly
+	bool  g_bConfigDisasmOpcodeSpaces = true; // TODO: CONFIG SPACE  [0|1]
+	bool  g_bConfigDisasmAddressColon = true; // TODO: CONFIG COLON  [0|1]
+	int   g_iConfigDisasmBranchType = DISASM_BRANCH_FANCY; // TODO: CONFIG BRANCH [0|1]
 
 
-// Memory _________________________________________________________________________________________
+// Display ____________________________________________________________________
+
+	void UpdateDisplay( Update_t bUpdate );
+
+
+// Memory _____________________________________________________________________
+
+	const unsigned int _6502_ZEROPAGE_END    = 0x00FF;
+	const unsigned int _6502_STACK_END       = 0x01FF;
+	const unsigned int _6502_IO_BEGIN        = 0xC000;
+	const unsigned int _6502_IO_END          = 0xC0FF;
+	const unsigned int _6502_BEG_MEM_ADDRESS = 0x0000;
+	const unsigned int _6502_END_MEM_ADDRESS = 0xFFFF;
+
 	MemoryDump_t g_aMemDump[ NUM_MEM_DUMPS ];
 
 
@@ -1346,10 +778,15 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 		{TEXT("R")          , NULL, PARAM_FLAG_R         }, // --1- ---- Reserved
 		{TEXT("V")          , NULL, PARAM_FLAG_V         }, // -1-- ---- Overflow
 		{TEXT("N")          , NULL, PARAM_FLAG_N         }, // 1--- ---- Sign
-// Font
+// Disk
+		{TEXT("EJECT")      , NULL, PARAM_DISK_EJECT     },
+		{TEXT("PROTECT")    , NULL, PARAM_DISK_PROTECT   },
+		{TEXT("READ")       , NULL, PARAM_DISK_READ      },
+// Font (Config)
 		{TEXT("MODE")       , NULL, PARAM_FONT_MODE      }, // also INFO, CONSOLE, DISASM (from Window)
 // General
 		{TEXT("FIND")       , NULL, PARAM_FIND           },
+		{TEXT("BRANCH")     , NULL, PARAM_BRANCH         },
 		{TEXT("CLEAR")      , NULL, PARAM_CLEAR          },
 		{TEXT("LOAD")       , NULL, PARAM_LOAD           },
 		{TEXT("LIST")       , NULL, PARAM_LIST           },
@@ -1426,15 +863,11 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 
 	TCHAR  g_aSourceFileName[ MAX_PATH ] = TEXT("");
 	TCHAR  g_aSourceFontName[ MAX_FONT_NAME ] = TEXT("Arial");
-	int    g_nSourceBuffer =    0; // Allocated bytes for buffer
-	char  *g_pSourceBuffer = NULL; // Buffer of File
-	vector<char *> g_vSourceLines; // array of pointers to start of lines
 
-	int   g_iSourceDisplayStart  = 0;
-//	int   g_nSourceDisplayTotal  = 0;
+	MemoryTextFile_t g_AssemblerSourceBuffer;
 
+	int    g_iSourceDisplayStart  = 0;
 	int    g_nSourceAssembleBytes = 0;
-	int    g_nSourceAssemblyLines = 0;
 	int    g_nSourceAssemblySymbols = 0;
 
 	// TODO: Support multiple source filenames
@@ -1461,7 +894,7 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 
 // Watches ________________________________________________________________________________________
 	int       g_nWatches = 0;
-	Watches_t g_aWatches[ MAX_WATCHES ]; // use vector<Watch_t> ??
+	Watches_t g_aWatches[ MAX_WATCHES ]; // TODO: use vector<Watch_t> ??
 
 
 // Window _________________________________________________________________________________________
@@ -1475,6 +908,7 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 	ZeroPagePointers_t g_aZeroPagePointers[ MAX_ZEROPAGE_POINTERS ]; // TODO: use vector<> ?
 
 
+// TODO: // CONFIG SAVE --> VERSION #
 	enum DebugConfigVersion_e
 	{
 		VERSION_0,
@@ -1493,121 +927,40 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 
 	BOOL      fulldisp      = 0;
 	WORD      lastpc        = 0;
-	LPBYTE    membank       = NULL;
 
 	BOOL      g_bProfiling       = 0;
 	int       g_nDebugSteps      = 0;
 	DWORD     g_nDebugStepCycles = 0;
 	int       g_nDebugStepStart  = 0;
-	int       g_nDebugStepUntil  = -1;
+	int       g_nDebugStepUntil  = -1; // HACK: MAGIC #
 
 	int       g_nDebugSkipStart = 0;
 	int       g_nDebugSkipLen   = 0;
 
 	FILE     *g_hTraceFile       = NULL;
 
-// PUBLIC
 	DWORD     extbench      = 0;
 	bool      g_bDebuggerViewingAppleOutput = false;
 
+// Private ________________________________________________________________________________________
+
+
 // Prototypes _______________________________________________________________
 
-// Command Processing
-	Update_t Help_Arg_1( int iCommandHelp );
-	int _Arg_1     ( int nValue );
-	int _Arg_1     ( LPTSTR pName );
-	int _Arg_Shift ( int iSrc, int iEnd, int iDst = 0 );
-	void ArgsClear ();
-	int  ArgsGet   (TCHAR *pInput);
-	int  ArgsParse (const int nArgs);
+static	int ParseInput   ( LPTSTR pConsoleInput, bool bCook = true );
+static	Update_t ExecuteCommand ( int nArgs );
 
-	void DisplayAmbigiousCommands ( int nFound );
-
-	enum Match_e
-	{
-		MATCH_EXACT,
-		MATCH_FUZZY
-	};
-	int FindParam( LPTSTR pLookupName, Match_e eMatch, int & iParam_, const int iParamBegin = 0, const int iParamEnd = NUM_PARAMS - 1 );
-	int FindCommand( LPTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ = NULL );
-
-	int ParseConsoleInput( LPTSTR pConsoleInput );
-
-// Console
-//	DWORD _Color( int iWidget );
-
-	// Buffered
-	void     ConsoleBufferToDisplay();
-	LPCSTR   ConsoleBufferPeek();
-	void     ConsoleBufferPop();
-	bool     ConsoleBufferPush( const TCHAR * pString );
-
-	// Display
-	Update_t ConsoleDisplayError (LPCTSTR errortext);
-	void     ConsoleDisplayPause ();
-	void     ConsoleDisplayPush  ( LPCSTR pText );
-	Update_t ConsoleUpdate       ();
-
-	// Input
-	void     ConsoleInputToDisplay();
-	LPCSTR   ConsoleInputPeek     ();
-	bool     ConsoleInputClear    ();
-	bool     ConsoleInputBackSpace();
-	bool     ConsoleInputChar     ( TCHAR ch );
-	void     ConsoleInputReset    ();
-	int      ConsoleInputTabCompletion();
-
-	// Scrolling
-	Update_t ConsoleScrollHome   ();
-	Update_t ConsoleScrollEnd    ();
-	Update_t ConsoleScrollUp     ( int nLines );
-	Update_t ConsoleScrollDn     ( int nLines );
-	Update_t ConsoleScrollPageUp ();
-	Update_t ConsoleScrollPageDn ();
-
-// Source Level Debugging
-	bool BufferAssemblyListing ( TCHAR * pFileName );
-	bool ParseAssemblyListing  ( bool bBytesToMemory, bool bAddSymbols );
-
-// Font
-	void _UpdateWindowFontHeights(int nFontHeight);
+// Colors
+static	void _ConfigColorsReset();
 
 // Drawing
-	COLORREF DebugGetColor ( int iColor );
-	bool DebugSetColor ( const int iScheme, const int iColor, const COLORREF nColor );
-	void _CmdColorGet ( const int iScheme, const int iColor );
+static	bool DebuggerSetColor ( const int iScheme, const int iColor, const COLORREF nColor );
+static	void _CmdColorGet ( const int iScheme, const int iColor );
 
-	HDC g_hDC = 0;
-
-	int DebugDrawText      ( LPCTSTR pText, RECT & rRect );
-	int DebugDrawTextFixed ( LPCTSTR pText, RECT & rRect );
-	int DebugDrawTextLine  ( LPCTSTR pText, RECT & rRect );
-	int DebugDrawTextHorz  ( LPCTSTR pText, RECT & rRect );
+// Font
+static	void _UpdateWindowFontHeights(int nFontHeight);
 
 
-	void DrawWindow_Source      (Update_t bUpdate);
-
-	void DrawSubWindow_IO       (Update_t bUpdate);
-	void DrawSubWindow_Source1  (Update_t bUpdate);
-	void DrawSubWindow_Source2  (Update_t bUpdate);
-	void DrawSubWindow_Symbols  (Update_t bUpdate);
-	void DrawSubWindow_ZeroPage (Update_t bUpdate);
-
-	void DrawBreakpoints      (HDC dc, int line);
-	void DrawConsoleInput     (HDC dc);
-	void DrawConsoleLine      (LPCSTR pText, int y);
-	WORD DrawDisassemblyLine  (HDC dc, int line, WORD offset, LPTSTR text);
-	void DrawFlags            (HDC dc, int line, WORD nRegFlags, LPTSTR pFlagNames_);
-	void DrawMemory           (HDC dc, int line, int iMem );
-	void DrawRegister         (HDC dc, int line, LPCTSTR name, int bytes, WORD value, int iSource = 0 );
-	void DrawStack            (HDC dc, int line);
-	void DrawTargets          (HDC dc, int line);
-	void DrawWatches          (HDC dc, int line);
-	void DrawZeroPagePointers (HDC dc, int line);
-
-	void UpdateDisplay( Update_t bUpdate );
-
-// Symbol Table / Memory
 	Update_t _CmdSymbolsClear      ( Symbols_e eSymbolTable );
 	Update_t _CmdSymbolsCommon     ( int nArgs, int bSymbolTables );
 	Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables );
@@ -1616,12 +969,10 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 	bool _CmdSymbolList_Address2Symbol( int nAddress   , int bSymbolTables );
 	bool _CmdSymbolList_Symbol2Address( LPCTSTR pSymbol, int bSymbolTables );
 
-	bool FindAddressFromSymbol( LPCSTR pSymbol, WORD * pAddress_ = NULL, int * iTable_ = NULL );
-	WORD GetAddressFromSymbol (LPCTSTR symbol); // -PATCH MJP, HACK: returned 0 if symbol not found
+// Source Level Debugging
+static	bool BufferAssemblyListing ( TCHAR * pFileName );
+static	bool ParseAssemblyListing  ( bool bBytesToMemory, bool bAddSymbols );
 
-	LPCTSTR FindSymbolFromAddress (WORD nAdress, int * iTable_ = NULL );
-	LPCTSTR GetSymbol   (WORD nAddress, int nBytes);
-	bool Get6502Targets (int *pTemp_, int *pFinal_, int *pBytes_ );
 
 // Window
 	void _WindowJoin    ();
@@ -1635,21 +986,9 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 	Update_t _CmdWindowViewFull   (int iNewWindow);
 	Update_t _CmdWindowViewCommon (int iNewWindow);
 
-
 // Utility
 	BYTE  Chars2ToByte( char *pText );
 	bool  IsHexString( LPCSTR pText );
-
-	int          RemoveWhiteSpaceReverse    (       char *pSrc );
-	const TCHAR* SkipEOL                    ( const TCHAR *pSrc );
-	const TCHAR* SkipUntilChar              ( const TCHAR *pSrc, const TCHAR nDelim );
-	const TCHAR* SkipUntilEOL               ( const TCHAR *pSrc );
-	const TCHAR* SkipWhiteSpace             ( const TCHAR *pSrc );
-	const TCHAR* SkipUntilWhiteSpace        ( const TCHAR *pSrc );
-	const TCHAR* SkipUntilTab               ( const TCHAR *pSrc);
-	const TCHAR* SkipWhiteSpaceReverse      ( const TCHAR *pSrc, const TCHAR *pStart );
-	const TCHAR* SkipUntilWhiteSpaceReverse ( const TCHAR *pSrc, const TCHAR *pStart );
-	void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDstSize, int nTabStop = 0 );
 
 	bool  StringCat( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
 	bool  TestStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
@@ -1659,17 +998,6 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 	char FormatCharTxtAsci ( const BYTE b, bool *pWasAsci_ );
 	char FormatCharTxtHigh ( const BYTE b, bool *pWasHi_ );
 	char FormatChar4Font ( const BYTE b, bool *pWasHi_, bool *pWasLo_ );
-	void SetupColorsHiLoBits ( HDC dc, bool bHiBit, bool bLoBit, 
-		const int iBackground, const int iForeground,
-		const int iColorHiBG , /*const int iColorHiFG,
-		const int iColorLoBG , */const int iColorLoFG );
-	char ColorizeSpecialChar( HDC hDC, TCHAR * sText, BYTE nData, const MemoryView_e iView,
-		const int iTxtBackground  = BG_INFO     , const int iTxtForeground  = FG_DISASM_CHAR,
-		const int iHighBackground = BG_INFO_CHAR, const int iHighForeground = FG_INFO_CHAR_HI,
-		const int iLowBackground  = BG_INFO_CHAR, const int iLowForeground  = FG_INFO_CHAR_LO );
-
-	int FormatDisassemblyLine(  WORD nOffset, int iMode, int nOpBytes,
-		char *sAddress_, char *sOpCodes_, char *sTarget_, char *sTargetOffset_, int & nTargetOffset_, char * sImmediate_, char & nImmediate_, char *sBranch_ );
 
 //	bool CheckBreakpoint (WORD address, BOOL memory);
 	bool CheckBreakpointsIO   ();
@@ -1687,190 +1015,7 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 	void DisasmCalcTopBotAddress ();
 	WORD DisasmCalcAddressFromLines( WORD iAddress, int nLines );
 
-	int  _6502GetOpmodeOpbyte( const int iAddress, int & iOpmode_, int & nOpbyte_ );
-	void _6502GetOpcodeOpmode( int & iOpcode_, int & iOpmode_, int & nOpbyte_ );
 	
-// Utility ________________________________________________________________________________________
-
-
-int _6502GetOpmodeOpbyte( const int iAddress, int & iOpmode_, int & nOpbyte_ )
-{
-	int iOpcode_ = *(mem + iAddress);
-	iOpmode_ = g_aOpcodes[ iOpcode_ ].nAddressMode;
-	nOpbyte_ = g_aOpmodes[ iOpmode_ ].m_nBytes;
-
-#if _DEBUG
-	if (iOpcode_ >= NUM_OPCODES)
-	{
-		bool bStop = true;
-	}
-#endif
-
-	return iOpcode_;
-}
-
-inline
-void _6502GetOpcodeOpmodeOpbyte( int & iOpcode_, int & iOpmode_, int & nOpbyte_ )
-{
-	iOpcode_ = _6502GetOpmodeOpbyte( regs.pc, iOpmode_, nOpbyte_ );
-}
-
-
-//===========================================================================
-char  FormatCharTxtAsci ( const BYTE b, bool * pWasAsci_ )
-{
-	if (pWasAsci_)
-		*pWasAsci_ = false;
-
-	char c = (b & 0x7F);
-	if (b <= 0x7F)
-	{
-		if (pWasAsci_)
-		{
-			*pWasAsci_ = true;			
-		}
-	}
-	return c;
-}
-
-//===========================================================================
-char  FormatCharTxtCtrl ( const BYTE b, bool * pWasCtrl_ )
-{
-	if (pWasCtrl_)
-		*pWasCtrl_ = false;
-
-	char c = (b & 0x7F); // .32 Changed: Lo now maps High Ascii to printable chars. i.e. ML1 D0D0
-	if (b < 0x20) // SPACE
-	{
-		if (pWasCtrl_)
-		{
-			*pWasCtrl_ = true;			
-		}
-		c = b + '@'; // map ctrl chars to visible
-	}
-	return c;
-}
-
-//===========================================================================
-char  FormatCharTxtHigh ( const BYTE b, bool *pWasHi_ )
-{
-	if (pWasHi_)
-		*pWasHi_ = false;
-
-	char c = b;
-	if (b > 0x7F)
-	{
-		if (pWasHi_)
-		{
-			*pWasHi_ = true;			
-		}
-		c = (b & 0x7F);
-	}
-	return c;
-}
-
-
-//===========================================================================
-char FormatChar4Font ( const BYTE b, bool *pWasHi_, bool *pWasLo_ )
-{
-	// Most Windows Fonts don't have (printable) glyphs for control chars
-	BYTE b1 = FormatCharTxtHigh( b , pWasHi_ );
-	BYTE b2 = FormatCharTxtCtrl( b1, pWasLo_ );
-	return b2;
-}
-
-
-//===========================================================================
-void SetupColorsHiLoBits ( HDC hDC, bool bHighBit, bool bCtrlBit,
-	const int iBackground, const int iForeground,
-	const int iColorHiBG , const int iColorHiFG,
-	const int iColorLoBG , const int iColorLoFG )
-{
-	// 4 cases: 
-	// Hi Lo Background Foreground -> just map Lo -> FG, Hi -> BG
-	// 0  0  normal     normal     BG_INFO        FG_DISASM_CHAR   (dark cyan bright cyan)
-	// 0  1  normal     LoFG       BG_INFO        FG_DISASM_OPCODE (dark cyan yellow)
-	// 1  0  HiBG       normal     BG_INFO_CHAR   FG_DISASM_CHAR   (mid cyan  bright cyan)
-	// 1  1  HiBG       LoFG       BG_INFO_CHAR   FG_DISASM_OPCODE (mid cyan  yellow)
-
-	SetBkColor(   hDC, DebugGetColor( iBackground ));
-	SetTextColor( hDC, DebugGetColor( iForeground ));
-
-	if (bHighBit)
-	{
-		SetBkColor(   hDC, DebugGetColor( iColorHiBG ));
-		SetTextColor( hDC, DebugGetColor( iColorHiFG )); // was iForeground
-	}
-
-	if (bCtrlBit)
-	{
-		SetBkColor(   hDC, DebugGetColor( iColorLoBG ));
-		SetTextColor( hDC, DebugGetColor( iColorLoFG ));
-	}
-}
-
-
-// To flush out color bugs... swap: iAsciBackground & iHighBackground
-//===========================================================================
-char ColorizeSpecialChar( HDC hDC, TCHAR * sText, BYTE nData, const MemoryView_e iView,
-		const int iAsciBackground /*= 0           */, const int iTextForeground /*= FG_DISASM_CHAR */,
-		const int iHighBackground /*= BG_INFO_CHAR*/, const int iHighForeground /*= FG_INFO_CHAR_HI*/,
-		const int iCtrlBackground /*= BG_INFO_CHAR*/, const int iCtrlForeground /*= FG_INFO_CHAR_LO*/ )
-{
-	bool bHighBit = false;
-	bool bAsciBit = false;
-	bool bCtrlBit = false;
-
-	int iTextBG = iAsciBackground;
-	int iHighBG = iHighBackground;
-	int iCtrlBG = iCtrlBackground;
-	int iTextFG = iTextForeground;
-	int iHighFG = iHighForeground;
-	int iCtrlFG = iCtrlForeground;
-
-	BYTE nByte = FormatCharTxtHigh( nData, & bHighBit );
-	char nChar = FormatCharTxtCtrl( nByte, & bCtrlBit );
-
-	switch (iView)
-	{
-		case MEM_VIEW_ASCII:
-			iHighBG = iTextBG;
-			iCtrlBG = iTextBG;
-			break;
-		case MEM_VIEW_APPLE:
-			iHighBG = iTextBG;
-			if (!bHighBit)
-			{
-				iTextBG = iCtrlBG;
-			}
-						
-			if (bCtrlBit)
-			{
-				iTextFG = iCtrlFG;
-				if (bHighBit)
-				{
-					iHighFG = iTextFG;
-				}
-			}
-			bCtrlBit = false;
-			break;
-		default: break;
-	}
-
-	if (sText)
-		wsprintf( sText, TEXT("%c"), nChar );
-
-	if (hDC)
-	{
-		SetupColorsHiLoBits( hDC, bHighBit, bCtrlBit
-			, iTextBG, iTextFG // FG_DISASM_CHAR   
-			, iHighBG, iHighFG // BG_INFO_CHAR     
-			, iCtrlBG, iCtrlFG // FG_DISASM_OPCODE 
-		);
-	}
-	return nChar;
-}
-
 
 //===========================================================================
 LPCTSTR FormatAddress( WORD nAddress, int nBytes )
@@ -1886,149 +1031,6 @@ LPCTSTR FormatAddress( WORD nAddress, int nBytes )
 	return sSymbol;
 }
 
-
-//===========================================================================
-void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDstSize, int nTabStop )
-{
-	int nLen = _tcslen( pText );
-
-	int TAB_SPACING = 8;
-	int TAB_SPACING_1 = 16;
-	int TAB_SPACING_2 = 21;
-
-	if (nTabStop)
-		TAB_SPACING = nTabStop;
-
-	LPCTSTR pSrc = pText;
-	LPTSTR  pDst = pDeTabified_;
-
-	int iTab = 0; // number of tabs seen
-	int nTab = 0; // gap left to next tab
-	int nGap = 0; // actual gap
-	int nCur = 0; // current cursor position
-	while (pSrc && *pSrc && (nCur < nDstSize))
-	{
-		if (*pSrc == CHAR_TAB)
-		{
-			if (nTabStop)
-			{
-				nTab = nCur % TAB_SPACING;
-				nGap = (TAB_SPACING - nTab);
-			}
-			else
-			{
-				if (nCur <= TAB_SPACING_1)
-				{
-					nGap = (TAB_SPACING_1 - nCur);
-				}
-				else
-				if (nCur <= TAB_SPACING_2)
-				{
-					nGap = (TAB_SPACING_2 - nCur);
-				}
-				else
-				{
-					nTab = nCur % TAB_SPACING;
-					nGap = (TAB_SPACING - nTab);
-				}
-			}
-			
-
-			if ((nCur + nGap) >= nDstSize)
-				break;
-
-			for( int iSpc = 0; iSpc < nGap; iSpc++ )
-			{
-				*pDst++ = CHAR_SPACE;
-			}
-			nCur += nGap;
-		}
-		else
-		if ((*pSrc == CHAR_LF) || (*pSrc == CHAR_CR))
-		{
-			*pDst++ = 0; // *pSrc;
-			nCur++;
-		}
-		else
-		{
-			*pDst++ = *pSrc;
-			nCur++;
-		}
-		pSrc++;
-	}	
-	*pDst = 0;
-}
-
-
-/*
-	String types:
-
-	http://www.codeproject.com/cpp/unicode.asp
-
-				TEXT()       _tcsrev
-	_UNICODE    Unicode      _wcsrev
-	_MBCS       Multi-byte   _mbsrev
-	n/a         ASCIi        strrev
-
-*/
-
-// tests if pSrc fits into pDst
-// returns true if pSrc safely fits into pDst, else false (pSrc would of overflowed pDst)
-//===========================================================================
-bool TestStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
-{
-	int nLenDst = _tcslen( pDst );
-	int nLenSrc = _tcslen( pSrc );
-	int nSpcDst = nDstSize - nLenDst;
-	int nChars  = MIN( nLenSrc, nSpcDst );
-
-	bool bOverflow = (nSpcDst < nLenSrc);
-	if (bOverflow)
-	{
-		return false;
-	}
-	return true;
-}
-
-
-// tests if pSrc fits into pDst
-// returns true if pSrc safely fits into pDst, else false (pSrc would of overflowed pDst)
-//===========================================================================
-bool TryStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
-{
-	int nLenDst = _tcslen( pDst );
-	int nLenSrc = _tcslen( pSrc );
-	int nSpcDst = nDstSize - nLenDst;
-	int nChars  = MIN( nLenSrc, nSpcDst );
-
-	bool bOverflow = (nSpcDst < nLenSrc);
-	if (bOverflow)
-	{
-		return false;
-	}
-	
-	_tcsncat( pDst, pSrc, nChars );
-	return true;
-}
-
-// cats string as much as possible
-// returns true if pSrc safely fits into pDst, else false (pSrc would of overflowed pDst)
-//===========================================================================
-bool StringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
-{
-	int nLenDst = _tcslen( pDst );
-	int nLenSrc = _tcslen( pSrc );
-	int nSpcDst = nDstSize - nLenDst;
-	int nChars  = MIN( nLenSrc, nSpcDst );
-
-	_tcsncat( pDst, pSrc, nChars );
-
-	bool bOverflow = (nSpcDst < nLenSrc);
-	if (bOverflow)
-		return false;
-		
-	return true;
-}
 
 //===========================================================================
 inline
@@ -2058,219 +1060,6 @@ bool IsHexString ( LPCSTR pText )
 		pText++;
 	}
 	return true;
-}
-
-
-// @return Length of new string
-//===========================================================================
-int RemoveWhiteSpaceReverse ( TCHAR *pSrc )
-{
-	int   nLen = _tcslen( pSrc );
-	char *pDst = pSrc + nLen;
-	while (nLen--)
-	{
-		pDst--;
-		if (*pDst == CHAR_SPACE)
-		{
-			*pDst = 0;
-		}
-		else
-		{
-			break;
-		}
-	}
-	return nLen;
-}
-
-
-//===========================================================================
-inline
-const TCHAR* SkipEOL ( const TCHAR *pSrc )
-{
-	while (pSrc && ((*pSrc == CHAR_LF) || (*pSrc == CHAR_CR)))
-	{
-		pSrc++;
-	}
-	return pSrc;
-}
-
-//===========================================================================
-//const char* SkipUntilChar ( const char *pSrc, const char nDelim )
-const TCHAR* SkipUntilChar ( const TCHAR *pSrc, const TCHAR nDelim )
-{
-	while (pSrc && (*pSrc))
-	{
-		if (*pSrc == nDelim)
-			break;
-		pSrc++;
-	}
-	return pSrc;
-}
-
-//===========================================================================
-const TCHAR * FindTokenOrAlphaNumeric ( const TCHAR *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e * pToken_ )
-{
-	if (pToken_)
-		*pToken_ = NO_TOKEN;
-
-	const TCHAR *pEnd = pSrc;
-
-	if (pSrc && (*pSrc))
-	{
-		if (isalnum( *pSrc ))
-		{
-			if (pToken_)
-				*pToken_ = TOKEN_ALPHANUMERIC;
-		}			
-		else
-		{
-			const TokenTable_t *pEntry = aTokens;
-			const TCHAR        *pToken = NULL;
-			for (int iToken = 0; iToken < nTokens; iToken++ )
-			{
-				pToken = & (pEntry->sToken);
-				if (*pSrc == *pToken)
-				{
-					if (pToken_)
-						*pToken_ = (ArgToken_e) iToken;
-					pEnd = pSrc + 1; // _tcslen( pToken );
-					break;
-				}
-				pEntry++;
-			}
-		}
-	}
-	return pEnd;
-}
-
-//===========================================================================
-const TCHAR* SkipUntilToken ( const TCHAR *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e *pToken_ )
-{
-	if ( pToken_)
-		*pToken_ = NO_TOKEN;
-
-
-	while (pSrc && (*pSrc))
-	{
-		// Common case is TOKEN_ALPHANUMERIC, so continue until we don't have one
-//		if (isalnum( *pSrc ))
-//		{
-//			if ( pToken_)
-//			{
-//				*pToken_ = TOKEN_ALPHANUMERIC;
-//			}
-//			return pSrc;
-//		}			
-
-		const TokenTable_t *pEntry = aTokens;
-		const TCHAR        *pToken = NULL;
-		for (int iToken = 0; iToken < nTokens; iToken++ )
-		{
-			pToken = & (pEntry->sToken);
-			if (*pSrc == *pToken)
-			{
-				if ( pToken_)
-				{
-					*pToken_ = (ArgToken_e) iToken;
-				}
-				return pSrc;
-			}
-			pEntry++;
-		}
-		pSrc++;
-	}
-	return pSrc;
-}
-
-//===========================================================================
-inline
-// const char* SkipUntilEOL ( const char *pSrc )
-const TCHAR* SkipUntilEOL ( const TCHAR *pSrc )
-{
-
-	while (pSrc && (*pSrc))
-	{
-		if ((*pSrc == CHAR_LF) || (*pSrc == CHAR_CR))
-		{
-			break;
-		}
-		pSrc++;
-	}
-	return pSrc;
-}
-
-//===========================================================================
-inline
-//const char* SkipWhiteSpace ( const char *pSrc )
-const TCHAR* SkipWhiteSpace ( const TCHAR *pSrc )
-{
-	while (pSrc && ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB)))
-	{
-		pSrc++;
-	}
-	return pSrc;
-}
-
-//===========================================================================
-inline
-//const char* SkipUntilWhiteSpace ( const char *pSrc )
-const TCHAR* SkipUntilWhiteSpace ( const TCHAR *pSrc )
-{
-	while (pSrc && (*pSrc))
-	{
-		if ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB))
-		{
-			break;
-		}
-		pSrc++;
-	}
-	return pSrc;
-}
-
-//===========================================================================
-inline
-//const char* SkipUntilTab ( const char *pSrc )
-const TCHAR* SkipUntilTab ( const TCHAR *pSrc )
-{
-	while (pSrc && (*pSrc))
-	{
-		if (*pSrc == CHAR_TAB)
-		{
-			break;
-		}
-		pSrc++;
-	}
-	return pSrc;
-}
-
-// @param pStart Start of line.
-//===========================================================================
-inline
-//const char *SkipWhiteSpaceReverse ( const char *pSrc, const char *pStart )
-const TCHAR *SkipWhiteSpaceReverse ( const TCHAR *pSrc, const TCHAR *pStart )
-{
-	while (pSrc && ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB)) && (pSrc > pStart))
-	{
-		pSrc--;
-	}
-	return pSrc;
-}
-
-// @param pStart Start of line.
-//===========================================================================
-inline
-//const char *SkipUntilWhiteSpaceReverse ( const char *pSrc, const char *pStart )
-const TCHAR *SkipUntilWhiteSpaceReverse ( const TCHAR *pSrc, const TCHAR *pStart )
-{
-	while (pSrc && (pSrc > pStart))
-	{
-		if ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB))
-		{
-			break;		
-		}
-		pSrc--;
-	}
-	return pSrc;
 }
 
 
@@ -2365,6 +1154,7 @@ bool _CheckBreakpointValue( Breakpoint_t *pBP, int nVal )
 }
 
 
+//===========================================================================
 bool CheckBreakpointsIO ()
 {
 	const int NUM_TARGETS = 2;
@@ -2467,693 +1257,85 @@ BOOL CheckJump (WORD targetaddress)
 }
 
 
-// Console ________________________________________________________________________________________
-
-//===========================================================================
-LPCSTR ConsoleBufferPeek()
-{
-	return g_aConsoleBuffer[ 0 ];
-}
-
-
-// Add string to buffered output
-// Shifts the buffered console output lines "Up"
-//===========================================================================
-bool ConsoleBufferPush( const TCHAR * pString ) // LPCSTR
-{
-	if (g_nConsoleBuffer < CONSOLE_HEIGHT)
-	{
-		int nLen = _tcslen( pString );
-		if (nLen < g_nConsoleDisplayWidth)
-		{
-			_tcscpy( g_aConsoleBuffer[ g_nConsoleBuffer ], pString );
-			g_nConsoleBuffer++;
-			return true;
-		}
-		else
-		{
-#if _DEBUG
-//			TCHAR sText[ CONSOLE_WIDTH * 2 ];
-//			sprintf( sText, "ConsoleBufferPush(pString) > g_nConsoleDisplayWidth: %d", g_nConsoleDisplayWidth );
-//			MessageBox( framewindow, sText, "Warning", MB_OK );
-#endif
-			// push multiple lines
-			while ((nLen >= g_nConsoleDisplayWidth) && (g_nConsoleBuffer < CONSOLE_HEIGHT))
-			{
-//				_tcsncpy( g_aConsoleBuffer[ g_nConsoleBuffer ], pString, (g_nConsoleDisplayWidth-1) );
-//				pString += g_nConsoleDisplayWidth;
-				_tcsncpy( g_aConsoleBuffer[ g_nConsoleBuffer ], pString, (CONSOLE_WIDTH-1) );
-				pString += (CONSOLE_WIDTH-1);
-				g_nConsoleBuffer++;
-				nLen = _tcslen( pString );
-			}
-			return true;
-		}
-	}
-
-	// TODO: Warning: Too much output.
-	return false;
-}
-
-// Shifts the buffered console output "down"
-//===========================================================================
-void ConsoleBufferPop()
-{
-	int y = 0;
-	while (y < g_nConsoleBuffer)
-	{
-		_tcscpy( g_aConsoleBuffer[ y ], g_aConsoleBuffer[ y+1 ] );
-		y++;
-	}
-
-	g_nConsoleBuffer--;
-	if (g_nConsoleBuffer < 0)
-		g_nConsoleBuffer = 0;
-}
-
-// Remove string from buffered output
-//===========================================================================
-void ConsoleBufferToDisplay()
-{
-	ConsoleDisplayPush( ConsoleBufferPeek() );
-	ConsoleBufferPop();
-}
-
-//===========================================================================
-Update_t ConsoleDisplayError (LPCTSTR pText)
-{
-	ConsoleBufferPush( pText );
-	return ConsoleUpdate();
-}
-
-// ConsoleDisplayPush()
-// Shifts the console display lines "up"
-//===========================================================================
-void ConsoleDisplayPush( LPCSTR pText )
-{
-	int nLen = MIN( g_nConsoleDisplayTotal, CONSOLE_HEIGHT - 1 - CONSOLE_FIRST_LINE);
-	while (nLen--)
-	{
-		_tcsncpy(
-			g_aConsoleDisplay[(nLen + 1 + CONSOLE_FIRST_LINE )],
-			g_aConsoleDisplay[nLen + CONSOLE_FIRST_LINE],
-			CONSOLE_WIDTH );
-	}
-
-	if (pText)
-		_tcsncpy( g_aConsoleDisplay[ CONSOLE_FIRST_LINE ], pText, CONSOLE_WIDTH );
-
-	g_nConsoleDisplayTotal++;
-	if (g_nConsoleDisplayTotal > (CONSOLE_HEIGHT - CONSOLE_FIRST_LINE))
-		g_nConsoleDisplayTotal = (CONSOLE_HEIGHT - CONSOLE_FIRST_LINE);
-
-}
-
-
-//===========================================================================
-void ConsoleDisplayPause()
-{
-	if (g_nConsoleBuffer)
-	{
-		_tcscpy( g_pConsoleInput, TEXT("...press SPACE continue, ESC skip..." ) );
-		g_bConsoleBufferPaused = true;
-	}
-	else
-	{
-		ConsoleInputReset();
-	}
-}
-
-//===========================================================================
-bool ConsoleInputBackSpace()
-{
-	if (g_nConsoleInputChars)
-	{
-		g_nConsoleInputChars--;
-
-		if (g_pConsoleInput[ g_nConsoleInputChars ] == TEXT('"'))
-			g_bConsoleInputQuoted = ! g_bConsoleInputQuoted;
-
-		g_pConsoleInput[ g_nConsoleInputChars ] = 0;
-		return true;
-	}
-	return false;
-}
-
-//===========================================================================
-bool ConsoleInputClear()
-{
-	if (g_nConsoleInputChars)
-	{
-		ZeroMemory( g_pConsoleInput, g_nConsoleDisplayWidth );
-		g_nConsoleInputChars = 0;
-		return true;
-	}
-	return false;
-}
-
-//===========================================================================
-bool ConsoleInputChar( TCHAR ch )
-{
-	if (g_nConsoleInputChars < g_nConsoleDisplayWidth) // bug? include prompt?
-	{
-		g_pConsoleInput[ g_nConsoleInputChars ] = ch;
-		g_nConsoleInputChars++;
-		return true;
-	}
-	return false;
-}
-
-//===========================================================================
-LPCSTR ConsoleInputPeek()
-{
-	return g_aConsoleDisplay[0];
-}
-
-//===========================================================================
-void ConsoleInputReset ()
-{
-	// Not using g_aConsoleInput since we get drawing of the input Line for "Free"
-	// Even if we add console scrolling, we don't need any special logic to draw the input line.
-	g_bConsoleInputQuoted = false;
-
-	ZeroMemory( g_aConsoleInput, CONSOLE_WIDTH );
-	_tcscpy( g_aConsoleInput, g_sConsolePrompt );
-	_tcscat( g_aConsoleInput, TEXT(" " ) );
-
-	int nLen = _tcslen( g_aConsoleInput );
-	g_pConsoleInput = &g_aConsoleInput[nLen];
-	g_nConsoleInputChars = 0;
-}
-
-//===========================================================================
-int ConsoleInputTabCompletion ()
-{
-	return UPDATE_CONSOLE_INPUT;
-}
-
-//===========================================================================
-Update_t ConsoleScrollHome ()
-{
-	g_iConsoleDisplayStart = g_nConsoleDisplayTotal - CONSOLE_FIRST_LINE;
-	if (g_iConsoleDisplayStart < 0)
-		g_iConsoleDisplayStart = 0;
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t ConsoleScrollEnd ()
-{
-	g_iConsoleDisplayStart = 0;
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t ConsoleScrollUp ( int nLines )
-{
-	g_iConsoleDisplayStart += nLines;
-
-	if (g_iConsoleDisplayStart > (g_nConsoleDisplayTotal - CONSOLE_FIRST_LINE))
-		g_iConsoleDisplayStart = (g_nConsoleDisplayTotal - CONSOLE_FIRST_LINE);
-
-	if (g_iConsoleDisplayStart < 0)
-		g_iConsoleDisplayStart = 0;
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t ConsoleScrollDn ( int nLines )
-{
-	g_iConsoleDisplayStart -= nLines;
-	if (g_iConsoleDisplayStart < 0)
-		g_iConsoleDisplayStart = 0;
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t ConsoleScrollPageUp ()
-{
-	ConsoleScrollUp( g_nConsoleDisplayHeight - CONSOLE_FIRST_LINE );
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t ConsoleScrollPageDn()
-{
-	ConsoleScrollDn( g_nConsoleDisplayHeight - CONSOLE_FIRST_LINE );
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-void ConsoleBufferTryUnpause (int nLines)
-{
-	for( int y = 0; y < nLines; y++ )
-	{
-		ConsoleBufferToDisplay();
-	}
-
-	g_bConsoleBufferPaused = false;
-	if (g_nConsoleBuffer)
-	{
-		g_bConsoleBufferPaused = true;
-		ConsoleDisplayPause();
-	}
-}
-
-//===========================================================================
-Update_t ConsoleUpdate()
-{
-	if (! g_bConsoleBufferPaused)
-	{
-		int nLines = MIN( g_nConsoleBuffer, g_nConsoleDisplayHeight - 1);
-		ConsoleBufferTryUnpause( nLines );
-	}
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
 
 
 
 // Commands _______________________________________________________________________________________
 
 
-//===========================================================================
-int HashMnemonic( const TCHAR * pMnemonic )
+Update_t _CmdAssemble( WORD nAddress, int iArg, int nArgs )
 {
-	const TCHAR *pText = pMnemonic;
-	int nMnemonicHash = 0;
-	int iHighBits;
+	bool bHaveLabel = false;
 
-	const int    NUM_LOW_BITS = 19; // 24 -> 19 prime
-	const int    NUM_MSK_BITS =  5; //  4 ->  5 prime
-	const Hash_t BIT_MSK_HIGH = ((1 << NUM_MSK_BITS) - 1) << NUM_LOW_BITS;
+	// if AlphaNumeric
+	ArgToken_e iTokenSrc = NO_TOKEN;
+	ParserFindToken( g_pConsoleInput, g_aTokens, NUM_TOKENS, &iTokenSrc );
 
-	for( int iChar = 0; iChar < 4; iChar++ )
-	{	
-		nMnemonicHash = (nMnemonicHash << NUM_MSK_BITS) + *pText;
-		iHighBits = (nMnemonicHash & BIT_MSK_HIGH);
-		if (iHighBits)
-		{
-			nMnemonicHash = (nMnemonicHash ^ (iHighBits >> NUM_LOW_BITS)) & ~ BIT_MSK_HIGH;
-		}
-		pText++;
-	}
-
-	return nMnemonicHash;
-}
-
-
-//===========================================================================
-void _CmdAssembleHashOpcodes()
-{
-	int nMnemonicHash;
-	int iOpcode;
-
-	for( iOpcode = 0; iOpcode < NUM_OPCODES; iOpcode++ )
+	if (iTokenSrc == NO_TOKEN) // is TOKEN_ALPHANUMERIC
+	if (g_pConsoleInput[0] != CHAR_SPACE)
 	{
-		const TCHAR *pMnemonic = g_aOpcodes65C02[ iOpcode ].sMnemonic;
-		nMnemonicHash = HashMnemonic( pMnemonic );
-		g_aOpcodesHash[ iOpcode ] = nMnemonicHash;
-	}
-}
+		bHaveLabel = true;
 
+		// Symbol
+		char *pSymbolName = g_aArgs[ iArg ].sArg; // pArg->sArg;
+		SymbolUpdate( SYMBOLS_SRC, pSymbolName, nAddress, false, true ); // bool bRemoveSymbol, bool bUpdateSymbol )
 
-//===========================================================================
-void _CmdAssembleHashDump()
-{
-// #if DEBUG_ASM_HASH
-	vector<HashOpcode_t> vHashes;
-	HashOpcode_t         tHash;
-	TCHAR                sText[ CONSOLE_WIDTH ];
-
-	int iOpcode;
-	for( iOpcode = 0; iOpcode < NUM_OPCODES; iOpcode++ )
-	{
-		tHash.m_iOpcode = iOpcode;
-		tHash.m_nValue  = g_aOpcodesHash[ iOpcode ]; 
-		vHashes.push_back( tHash );
+		iArg++;
 	}	
-	
-	sort( vHashes.begin(), vHashes.end(), HashOpcode_t() );
 
-	Hash_t nPrevHash = vHashes.at( 0 ).m_nValue;
-	Hash_t nThisHash = 0;
-
-	for( iOpcode = 0; iOpcode < NUM_OPCODES; iOpcode++ )
-	{
-		tHash = vHashes.at( iOpcode );
-
-		Hash_t iThisHash = tHash.m_nValue;
-		int    nOpcode   = tHash.m_iOpcode;
-		int    nOpmode   = g_aOpcodes[ nOpcode ].nAddressMode;
-
-		wsprintf( sText, "%08X %02X %s %s"
-			, iThisHash
-			, nOpcode
-			, g_aOpcodes65C02[ nOpcode ].sMnemonic
-			, g_aOpmodes[ nOpmode  ].m_sName
-		);
-		ConsoleBufferPush( sText );
-		nThisHash++;
+	bool bStatus = Assemble( iArg, nArgs, nAddress );
+	if ( bStatus)
+		return UPDATE_ALL;
 		
-//		if (nPrevHash != iThisHash)
-//		{
-//			wsprintf( sText, "Total: %d", nThisHash );
-//			ConsoleBufferPush( sText );
-//			nThisHash = 0;
-//		}
-	}
-
-	ConsoleUpdate();
-//#endif
+	return UPDATE_CONSOLE_DISPLAY; // UPDATE_NOTHING;
 }
-
-
-//===========================================================================
-bool AssemblerOpcodeIsBranch( int nOpcode )
-{
-	// 76543210 Bit
-	// xxx10000 Branch
-
-	if (nOpcode == OPCODE_BRA)
-		return true;
-
-	if ((nOpcode & 0x1F) != 0x10) // low nibble not zero?
-		return false;
-
-	if ((nOpcode >> 4) & 1)
-		return true;
-	
-//		(nOpcode == 0x10) || // BPL
-//		(nOpcode == 0x30) || // BMI
-//		(nOpcode == 0x50) || // BVC
-//		(nOpcode == 0x70) || // BVS
-//		(nOpcode == 0x90) || // BCC
-//		(nOpcode == 0xB0) || // BCS
-//		(nOpcode == 0xD0) || // BNE
-//		(nOpcode == 0xF0) || // BEQ
-	return false;
-}
-
-
-//===========================================================================
-bool AssemblerGetAddressingMode( int nArgs, WORD nAddress, vector<int> vOpcodes )
-{
-	bool bHaveComma      = false;
-	bool bHaveHash       = false;
-	bool bHaveDollar     = false;
-	bool bHaveLeftParen  = false;
-	bool bHaveRightParen = false;
-	bool bHaveParen      = false;
-	bool bHaveRegisterX  = false;
-	bool bHaveRegisterY  = false;
-	bool bHaveZeroPage   = false;
-
-//	int iArgRawMnemonic = 0;
-	int iArg;
-
-	// Sync up to Raw Args for matching mnemonic
-	iArg = 3;
-	Arg_t *pArg = &g_aArgRaw[ iArg ];
-
-	// Process them instead of the cooked args, since we need the orginal tokens
-	int  iAddressMode = AM_IMPLIED;
-	int  nBytes  = 0;
-	WORD nTarget = 0;
-
-		while (iArg <= g_nArgRaw)
-		{
-			int iToken = pArg->eToken;
-			int iType  = pArg->bType;
-
-			if (iToken == TOKEN_HASH)
-			{
-				if (bHaveHash)
-				{
-					ConsoleBufferPush( TEXT( " Syntax Error: Extra '#'" ) ); // No thanks, we already have one
-					return false;
-				}
-				bHaveHash = true;
-
-				iAddressMode = AM_M; // Immediate
-				nTarget = pArg[1].nVal1;
-				nBytes = 1;
-			}
-			else
-			if (iToken == TOKEN_DOLLAR)
-			{
-				if (bHaveDollar)
-				{
-					ConsoleBufferPush( TEXT( " Syntax Error: Extra '$'" ) ); // No thanks, we already have one
-					return false;
-				}
-				bHaveDollar = true;
-				
-				iAddressMode = AM_A; // Absolute
-				nTarget = pArg[1].nVal1;
-				nBytes = 2;
-
-				if (nTarget <= _6502_ZEROPAGE_END)
-				{
-					iAddressMode = AM_Z;
-					nBytes = 1;
-				}
-			}
-			else
-			if (iToken == TOKEN_LEFT_PAREN)
-			{
-				if (bHaveLeftParen)
-				{
-					ConsoleBufferPush( TEXT( " Syntax Error: Extra '('" ) ); // No thanks, we already have one
-					return false;
-				}
-				bHaveLeftParen = true;
-
-				// Indexed or Indirect
-				iAddressMode = AM_IZX;
-			}
-			else
-			if (iToken == TOKEN_RIGHT_PAREN)
-			{
-				if (bHaveRightParen)
-				{
-					ConsoleBufferPush( TEXT( " Syntax Error: Extra ')'" ) ); // No thanks, we already have one
-					return false;
-				}
-				bHaveRightParen = true;
-
-				// Indexed or Indirect
-				iAddressMode = AM_IZX;
-			}
-			else
-			if (iToken == TOKEN_COMMA)
-			{
-				if (bHaveComma)
-				{
-					ConsoleBufferPush( TEXT( " Syntax Error: Extra ','" ) ); // No thanks, we already have one
-					return false;
-				}
-				bHaveComma = true;
-				// We should have address by now
-			}
-			else
-			if (iToken = TOKEN_ALPHANUMERIC)
-			{
-				if (pArg->nArgLen == 1)
-				{
-					if (pArg->sArg[0] == 'X')
-					{
-						if (! bHaveComma)
-						{
-							ConsoleBufferPush( TEXT( " Syntax Error: Missing ','" ) );
-							return false;
-						}
-						bHaveRegisterX = true;
-					}
-					if (pArg->sArg[0] == 'Y')
-					{
-						if (! bHaveComma)
-						{
-							ConsoleBufferPush( TEXT( " Syntax Error: Missing ','" ) );
-							return false;
-						}
-						bHaveRegisterY = true;
-					}
-				}
-			}
-/*
-			if (iType & TYPE_VALUE)
-			{
-				iAddressMode = AM_M; // Immediate
-				nTarget = g_aArgs[ iArg ].nVal1;
-				nBytes = 1;
-			}
-			if (iType & TYPE_ADDRESS)
-			{
-				iAddressMode = AM_A; // Absolute
-				nTarget = g_aArgs[ iArg ].nVal1;
-				nBytes = 2;
-
-				if (nTarget <= _6502_ZEROPAGE_END)
-				{
-					iAddressMode = AM_Z;
-					nBytes = 1;
-				}
-			}
-*/
-
-			iArg++;
-		}
-
-		if ((  bHaveLeftParen) && (! bHaveRightParen))
-		{
-			ConsoleBufferPush( TEXT( " Syntax Error: Missing ')'" ) );
-			return false;
-		}
-
-		if ((! bHaveLeftParen) && (  bHaveRightParen))
-		{
-			ConsoleBufferPush( TEXT( " Syntax Error: Missing '('" ) );
-			return false;
-		}
-
-		if (bHaveComma)
-		{
-			if ((! bHaveRegisterX) && (! bHaveRegisterY))
-			{
-				ConsoleBufferPush( TEXT( " Syntax Error: Index 'X' or 'Y'" ) );
-				return false;
-			}
-		}
-
-		bHaveParen = (bHaveLeftParen || bHaveRightParen);
-		if (! bHaveParen)
-		{
-			if (bHaveComma)
-			{
-				if (bHaveRegisterX)
-				{
-					iAddressMode = AM_AX;
-					nBytes = 2;
-					if (nTarget <= _6502_ZEROPAGE_END)
-					{
-						iAddressMode = AM_ZX;
-						nBytes = 1;
-					}
-				}
-				if (bHaveRegisterY)
-				{
-					iAddressMode = AM_AY;
-					nBytes = 2;
-					if (nTarget <= _6502_ZEROPAGE_END)
-					{
-						iAddressMode = AM_ZY;
-						nBytes = 1;
-					}
-				}
-			}
-		}		
-
-		int iOpcode;
-		int nOpcodes = vOpcodes.size();
-
-		for( iOpcode = 0; iOpcode < nOpcodes; iOpcode++ )
-		{
-			int nOpcode = vOpcodes.at( iOpcode ); // m_iOpcode;
-			int nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
-
-			if (AssemblerOpcodeIsBranch( nOpcode))
-				nOpmode = AM_R;
-
-			if (nOpmode == iAddressMode)
-			{
-				*(memdirty + (nAddress >> 8)) |= 1;
-				*(mem + nAddress) = (BYTE) nOpcode;
-
-				if (nBytes > 0)
-					*(mem + nAddress + 1) = (BYTE)(nTarget >> 0);
-
-				if (nBytes > 1)
-					*(mem + nAddress + 2) = (BYTE)(nTarget >> 8);
-
-				break;
-			}
-
-			return true;
-		}
-
-	return false;
-}
-
 
 //===========================================================================
 Update_t CmdAssemble (int nArgs)
 {
-	if (! g_bOpcodesHashed)
+	if (! g_bAssemblerOpcodesHashed)
 	{
-		_CmdAssembleHashOpcodes();
-		g_bOpcodesHashed = true;
+		AssemblerStartup();
+		g_bAssemblerOpcodesHashed = true;
 	}
+
+	// 0 : A
+	// 1 : A address
+	// 2+: A address mnemonic...
 
 	if (! nArgs)
-		return Help_Arg_1( CMD_ASSEMBLE );
-	
-	if (nArgs == 1) // undocumented ASM *
 	{
-		if (_tcscmp( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ) == 0)
+//		return Help_Arg_1( CMD_ASSEMBLE );
+
+		// Start assembler, continue with last assembled address
+		AssemblerOn();
+		return UPDATE_CONSOLE_DISPLAY;
+	}
+		
+	g_nAssemblerAddress = g_aArgs[1].nVal1;
+
+	if (nArgs == 1)
+	{
+		// undocumented ASM *
+ 		if (_tcscmp( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ) == 0)
 		{
 			_CmdAssembleHashDump();
-
-			return UPDATE_CONSOLE_DISPLAY;
 		}
 
-//		g_nAssemblerAddress = g_aArgs[1].nVal1;
-		return Help_Arg_1( CMD_ASSEMBLE );
-	}
-
-	if (nArgs < 2)
-		return Help_Arg_1( CMD_ASSEMBLE );
-
-	WORD nAddress = g_aArgs[1].nVal1;
-
-	TCHAR *pMnemonic = g_aArgs[2].sArg;
-	int nMnemonicHash = HashMnemonic( pMnemonic );
-
-	vector<int> vOpcodes; // Candiate opcodes
-	int iOpcode;
+		AssemblerOn();
+		return UPDATE_CONSOLE_DISPLAY;
 	
-	// Ugh! Linear search.
-	for( iOpcode = 0; iOpcode < NUM_OPCODES; iOpcode++ )
-	{
-		if (nMnemonicHash == g_aOpcodesHash[ iOpcode ])
-		{
-			vOpcodes.push_back( iOpcode );
-		}
+//		return Help_Arg_1( CMD_ASSEMBLE );
 	}
 
-	int nOpcodes = vOpcodes.size();
-	if (! nOpcodes)
+	if (nArgs > 1)
 	{
-		ConsoleBufferPush( TEXT(" Syntax Error: Invalid mnemonic") );
+		return _CmdAssemble( g_nAssemblerAddress, 2, nArgs ); // disasm, memory, watches, zeropage
 	}
-	else
-	if (nOpcodes == 1)
-	{
-		*(memdirty + (nAddress >> 8)) |= 1;
 
-		int nOpcode = vOpcodes.at( 0 );
-		*(mem + nAddress) = (BYTE) nOpcode;
-	}
-	else // ambigious -- need to parse Addressing Mode
-	{
-		bool bStatus = AssemblerGetAddressingMode( nArgs, nAddress, vOpcodes );
-	}
+//		return Help_Arg_1( CMD_ASSEMBLE );
+	// g_nAssemblerAddress; // g_aArgs[1].nVal1;
+//	return ConsoleUpdate();
 
 	return UPDATE_CONSOLE_DISPLAY;
 }
@@ -3273,18 +1455,19 @@ Update_t CmdJSR (int nArgs)
 	return UPDATE_ALL;
 }
 
+
 //===========================================================================
 Update_t CmdNOP (int nArgs)
 {
 	int iOpcode;
 	int iOpmode;
-	int nOpbyte;
+	int nOpbytes;
 
- 	_6502GetOpcodeOpmodeOpbyte( iOpcode, iOpmode, nOpbyte );
+ 	_6502GetOpcodeOpmodeOpbytes( iOpcode, iOpmode, nOpbytes );
 
-	while (nOpbyte--)
+	while (nOpbytes--)
 	{
-		*(mem+regs.pc + nOpbyte) = 0xEA;
+		*(mem+regs.pc + nOpbytes) = 0xEA;
 	}
 
 	return UPDATE_ALL;
@@ -3434,10 +1617,14 @@ _Help:
 
 // Menu: LOAD SAVE RESET
 //===========================================================================
-Update_t CmdBreakpoint (int nArgs)
+Update_t CmdBreakpointMenu (int nArgs)
 {
 	// This is temporary until the menu is in.
-	CmdBreakpointAddPC( nArgs );
+	if (! nArgs)
+	{
+		g_aArgs[1].nVal1 = regs.pc;
+		CmdBreakpointAddPC( 1 );
+	}
 
 	return UPDATE_CONSOLE_DISPLAY;
 }
@@ -3619,7 +1806,8 @@ Update_t CmdBreakpointAddPC (int nArgs)
 	if (!nArgs)
 	{
 		nArgs = 1;
-		g_aArgs[1].nVal1 = regs.pc;
+//		g_aArgs[1].nVal1 = regs.pc;
+		g_aArgs[1].nVal1 = g_nDisasmCurAddress;
 	}
 
 	bool bHaveSrc = false;
@@ -3708,7 +1896,7 @@ Update_t CmdBreakpointAddMem  (int nArgs)
 
 
 //===========================================================================
-void _Clear( Breakpoint_t * aBreakWatchZero, int iBreakpoint )
+void _BreakpointClear( Breakpoint_t * aBreakWatchZero, int iBreakpoint )
 {
 	aBreakWatchZero[iBreakpoint].bSet = false;
 	aBreakWatchZero[iBreakpoint].bEnabled = false;
@@ -3733,7 +1921,7 @@ void _ClearViaArgs( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, i
 			{
 				if (aBreakWatchZero[iBWZ].bSet)
 				{
-					_Clear( aBreakWatchZero, iBWZ );
+					_BreakpointClear( aBreakWatchZero, iBWZ );
 					gnBWZ--;
 				}
 			}
@@ -3743,7 +1931,7 @@ void _ClearViaArgs( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, i
 		{
 			if (aBreakWatchZero[iBWZ-1].bSet)
 			{
-				_Clear( aBreakWatchZero, iBWZ - 1 );
+				_BreakpointClear( aBreakWatchZero, iBWZ - 1 );
 				gnBWZ--;
 			}
 		}
@@ -3794,7 +1982,7 @@ Update_t CmdBreakpointClear (int nArgs)
 			if ((g_aBreakpoints[iBreakpoint].bSet) && 
 				(g_aBreakpoints[iBreakpoint].nAddress == regs.pc)) // TODO: FIXME
 			{
-				_Clear( g_aBreakpoints, iBreakpoint );
+				_BreakpointClear( g_aBreakpoints, iBreakpoint );
 				g_nBreakpoints--;
 			}
 		}
@@ -3846,6 +2034,7 @@ Update_t CmdBreakpointEnable (int nArgs) {
 	return UPDATE_BREAKPOINTS;
 }
 
+
 void _ListBreakWatchZero( Breakpoint_t * aBreakWatchZero, int iBWZ )
 {
 	static TCHAR sText[ CONSOLE_WIDTH ];
@@ -3868,6 +2057,7 @@ void _ListBreakWatchZero( Breakpoint_t * aBreakWatchZero, int iBWZ )
 	);
 	ConsoleBufferPush( sText );
 }
+
 
 //===========================================================================
 Update_t CmdBreakpointList (int nArgs)
@@ -3921,7 +2111,29 @@ Update_t CmdBreakpointSave (int nArgs)
 // Config _________________________________________________________________________________________
 
 //===========================================================================
-Update_t CmdConfig (int nArgs)
+Update_t CmdConfigEcho (int nArgs)
+{
+	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("");
+
+	if (g_aArgs[1].bType & TYPE_QUOTED)
+	{
+		ConsoleDisplayPush( g_aArgs[1].sArg );
+	}
+	else
+	{
+		const TCHAR *pText = g_pConsoleFirstArg; // ConsoleInputPeek();
+		if (pText)
+		{
+			ConsoleDisplayPush( pText );
+		}
+	}
+
+	return ConsoleUpdate();
+}
+
+
+//===========================================================================
+Update_t CmdConfigMenu (int nArgs)
 {
 	if (nArgs)
 	{
@@ -3957,7 +2169,7 @@ Update_t CmdConfig (int nArgs)
 //===========================================================================
 Update_t CmdConfigLoad (int nArgs)
 {
-	// TODO: CmdRun( gaFileNameConfig )
+	// TODO: CmdConfigRun( gaFileNameConfig )
 	
 //	TCHAR sFileNameConfig[ MAX_PATH ];
 	if (! nArgs)
@@ -3971,9 +2183,57 @@ Update_t CmdConfigLoad (int nArgs)
 }
 
 
+//===========================================================================
 Update_t CmdConfigRun (int nArgs)
 {
-	return UPDATE_CONSOLE_DISPLAY;
+	if (! nArgs)
+		return Help_Arg_1( CMD_CONFIG_RUN );
+
+	if (nArgs != 1)
+		return Help_Arg_1( CMD_CONFIG_RUN );
+	
+	// Read in script
+	MemoryTextFile_t script;
+
+	TCHAR * pFileName = g_aArgs[ 1 ].sArg;
+
+	TCHAR sFileName[ MAX_PATH ];
+	TCHAR sMiniFileName[ CONSOLE_WIDTH ];
+
+//	if (g_aArgs[1].bType & TYPE_QUOTED)
+
+	strcpy( sMiniFileName, pFileName );
+	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
+
+	_tcscpy(sFileName, progdir);
+	_tcscat(sFileName, sMiniFileName);
+
+//				const int MAX_MINI_FILENAME = 20;
+//				TCHAR sMiniFileName[ MAX_MINI_FILENAME + 1 ];
+//				_tcsncpy( sMiniFileName, pFileName, MAX_MINI_FILENAME - 1 );
+
+	if (script.Read( sFileName ))
+	{
+		int iLine = 0;
+		int nLine = script.GetNumLines();
+
+		Update_t bUpdateDisplay = UPDATE_NOTHING;	
+
+		for( int iLine = 0; iLine < nLine; iLine++ )
+		{
+			script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
+			bUpdateDisplay |= DebuggerProcessCommand( false );
+		}
+	}
+	else
+	{
+		TCHAR sText[ CONSOLE_WIDTH ];
+		wsprintf( sText, "Couldn't load filename: %s", sFileName );
+		ConsoleBufferPush( sText );
+
+	}	
+
+	return ConsoleUpdate();
 }
 
 
@@ -3999,6 +2259,8 @@ Update_t CmdConfigSave (int nArgs)
 		int   nLen;
 		DWORD nPut;
 
+	// FIXME: Shouldn be saving in Text format, not binary!
+
 		int nVersion = CURRENT_VERSION;
 		pSrc = (void *) &nVersion;
 		nLen = sizeof( nVersion );
@@ -4019,6 +2281,9 @@ Update_t CmdConfigSave (int nArgs)
 	}
 	return UPDATE_CONSOLE_DISPLAY;
 }
+
+
+// Font - Config __________________________________________________________________________________
 
 
 //===========================================================================
@@ -4115,38 +2380,9 @@ Update_t CmdConfigFont (int nArgs)
 	return Help_Arg_1( CMD_CONFIG_FONT );
 }
 
-int GetConsoleHeightPixels()
-{
-	int nHeight = nHeight = g_aFontConfig[ FONT_CONSOLE ]._nFontHeight; // _nLineHeight; // _nFontHeight;
-
-	if (g_iFontSpacing == FONT_SPACING_CLEAN)
-	{
-//	int nHeight = g_aFontConfig[ FONT_DEFAULT ]._nFontHeight + 1; // "Classic" Height/Spacing
-		nHeight++; // "Classic" Height/Spacing
-	}
-	else
-	if (g_iFontSpacing == FONT_SPACING_COMPRESSED)
-	{
-		// default case handled
-	}
-	else
-	if (g_iFontSpacing == FONT_SPACING_CLASSIC)
-	{
-		nHeight++;
-	}
-	
-	return nHeight;
-}
-
-int GetConsoleTopPixels( int y )
-{
-	int nLineHeight = GetConsoleHeightPixels();
-	int nTop = DISPLAY_HEIGHT - ((y + 1) * nLineHeight); // DISPLAY_HEIGHT - (y * nFontHeight); // ((g_nTotalLines - y) * g_nFontHeight; // 368 = 23 lines * 16 pixels/line // MAX_DISPLAY_CONSOLE_LINES
-	return nTop;
-}
-
 
 // Only for FONT_DISASM_DEFAULT !
+//===========================================================================
 void _UpdateWindowFontHeights( int nFontHeight )
 {
 	if (nFontHeight)
@@ -4416,18 +2652,18 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
 			}
 
 			int iOpmode;
-			int nOpbyte;
-			_6502GetOpmodeOpbyte( iAddress, iOpmode, nOpbyte );
+			int nOpbytes;
+			_6502GetOpmodeOpbytes( iAddress, iOpmode, nOpbytes );
 
 			// .20 Fixed: DisasmCalcTopFromCurAddress()
 			//if ((eMode >= ADDR_INVALID1) && (eMode <= ADDR_INVALID3))
 			{
 #if 0 // _DEBUG
 				TCHAR sText[ CONSOLE_WIDTH ];
-				wsprintf( sText, "%04X : %d bytes\n", iAddress, nOpbyte );
+				wsprintf( sText, "%04X : %d bytes\n", iAddress, nOpbytes );
 				OutputDebugString( sText );
 #endif
-				iAddress += nOpbyte;
+				iAddress += nOpbytes;
 			}
 		}
 		if (bFound)
@@ -4471,9 +2707,9 @@ WORD DisasmCalcAddressFromLines( WORD iAddress, int nLines )
 	while (nLines-- > 0)
 	{
 		int iOpmode;
-		int nOpbyte;
-		_6502GetOpmodeOpbyte( iAddress, iOpmode, nOpbyte );
-		iAddress += nOpbyte;
+		int nOpbytes;
+		_6502GetOpmodeOpbytes( iAddress, iOpmode, nOpbytes );
+		iAddress += nOpbytes;
 	}
 	return iAddress;
 }
@@ -4499,8 +2735,8 @@ void DisasmCalcTopBotAddress ()
 Update_t CmdCursorLineDown (int nArgs)
 {
 	int iOpmode; 
-	int nOpbyte;
-	_6502GetOpmodeOpbyte( g_nDisasmCurAddress, iOpmode, nOpbyte ); // g_nDisasmTopAddress
+	int nOpbytes;
+	_6502GetOpmodeOpbytes( g_nDisasmCurAddress, iOpmode, nOpbytes ); // g_nDisasmTopAddress
 
 	if (g_iWindowThis == WINDOW_DATA)
 	{
@@ -4509,17 +2745,17 @@ Update_t CmdCursorLineDown (int nArgs)
 	else
 	if (nArgs)
 	{
-		nOpbyte = nArgs; // HACKL g_aArgs[1].val
+		nOpbytes = nArgs; // HACKL g_aArgs[1].val
 
-		g_nDisasmTopAddress += nOpbyte;
-		g_nDisasmCurAddress += nOpbyte;
-		g_nDisasmBotAddress += nOpbyte;
+		g_nDisasmTopAddress += nOpbytes;
+		g_nDisasmCurAddress += nOpbytes;
+		g_nDisasmBotAddress += nOpbytes;
 	}
 	else
 	{
 		// Works except on one case: G FB53, SPACE, DOWN
 		WORD nTop = g_nDisasmTopAddress;
-		WORD nCur = g_nDisasmCurAddress + nOpbyte;
+		WORD nCur = g_nDisasmCurAddress + nOpbytes;
 		if (g_bDisasmCurBad)
 		{
 			g_nDisasmCurAddress = nCur;
@@ -4907,583 +3143,66 @@ Update_t CmdFlag (int nArgs)
 }
 
 
-// Help ___________________________________________________________________________________________
-
-
-// Loads the arguments with the command to get help on and call display help.
-//===========================================================================
-Update_t Help_Arg_1( int iCommandHelp )
+// Disk ___________________________________________________________________________________________
+Update_t CmdDisk ( int nArgs)
 {
-	_Arg_1( iCommandHelp );
-
-	wsprintf( g_aArgs[ 1 ].sArg, g_aCommands[ iCommandHelp ].m_sName ); // .3 Fixed: Help_Arg_1() now copies command name into arg.name
-
-	return CmdHelpSpecific( 1 );
-}
-
-
-
-//===========================================================================
-void _CmdHelpSpecific()
-{
-
-}
-
-
-//===========================================================================
-Update_t CmdMOTD( int nArgs )
-{
-	TCHAR sText[ CONSOLE_WIDTH ];
-
-	ConsoleBufferPush( TEXT(" Apple ][+ //e Emulator for Windows") );
-	CmdVersion(0);
-	CmdSymbols(0);
-	wsprintf( sText, "  '~' console, '%s' (specific), '%s' (all)"
-		 , g_aCommands[ CMD_HELP_SPECIFIC ].m_sName
-//		 , g_aCommands[ CMD_HELP_SPECIFIC ].pHelpSummary
-		 , g_aCommands[ CMD_HELP_LIST     ].m_sName
-//		 , g_aCommands[ CMD_HELP_LIST     ].pHelpSummary
-	);
-	ConsoleBufferPush( sText );
-
-	ConsoleUpdate();
-
-	return UPDATE_ALL;
-}
-
-
-// Help on specific command
-//===========================================================================
-Update_t CmdHelpSpecific (int nArgs)
-{
-	int iArg;
-	TCHAR sText[ CONSOLE_WIDTH ];
-	ZeroMemory( sText, CONSOLE_WIDTH );
-
 	if (! nArgs)
-	{
-//		ConsoleBufferPush( TEXT(" [] = optional, {} = mandatory.  Categories are: ") );
+		goto _Help;
 
-		_tcscpy( sText, TEXT("Usage: [{ ") );
-		for (int iCategory = _PARAM_HELPCATEGORIES_BEGIN ; iCategory < _PARAM_HELPCATEGORIES_END; iCategory++)
-		{
-			TCHAR *pName = g_aParameters[ iCategory ].m_sName;
-			if (! TestStringCat( sText, pName, g_nConsoleDisplayWidth - 3 )) // CONSOLE_WIDTH
-			{
-				ConsoleBufferPush( sText );
-				_tcscpy( sText, TEXT("    ") );
-			}
+	if (nArgs < 2)
+		goto _Help;
 
-			StringCat( sText, pName, CONSOLE_WIDTH );
-			if (iCategory < (_PARAM_HELPCATEGORIES_END - 1))
-			{
-				StringCat( sText, TEXT(" | "), CONSOLE_WIDTH );
-			}
-		}
-		StringCat( sText, TEXT(" }]"), CONSOLE_WIDTH );
-		ConsoleBufferPush( sText );
+	int iDrive = g_aArgs[ 1 ].nVal1;
 
-		wsprintf( sText, TEXT("Note: [] = optional, {} = mandatory"), CONSOLE_WIDTH );
-		ConsoleBufferPush( sText );
-	}
-
-
-	bool bAllCommands = false;
-	bool bCategory = false;
-
-	if (! _tcscmp( g_aArgs[1].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
-	{
-		bAllCommands = true;
-		nArgs = NUM_COMMANDS;
-	}
-
-	// If Help on category, push command name as arg
-	int nNewArgs  = 0;
-	int iCmdBegin = 0;
-	int iCmdEnd   = 0;
-	for (iArg = 1; iArg <= nArgs; iArg++ )
-	{
-		int iParam;
-		int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_EXACT, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
-		switch( iParam )
-		{
-			case PARAM_CAT_BREAKPOINTS: iCmdBegin = CMD_BREAKPOINT      ; iCmdEnd = CMD_BREAKPOINT_SAVE    + 1; break;
-			case PARAM_CAT_CONFIG     : iCmdBegin = CMD_CONFIG_COLOR    ; iCmdEnd = CMD_CONFIG_SAVE        + 1; break;
-			case PARAM_CAT_CPU        : iCmdBegin = CMD_ASSEMBLE        ; iCmdEnd = CMD_TRACE_LINE         + 1; break;
-			case PARAM_CAT_FLAGS      : iCmdBegin = CMD_FLAG_CLEAR      ; iCmdEnd = CMD_FLAG_SET_N         + 1; break;
-			case PARAM_CAT_MEMORY     : iCmdBegin = CMD_MEMORY_COMPARE  ; iCmdEnd = CMD_MEMORY_FILL        + 1; break;
-			case PARAM_CAT_SYMBOLS    : iCmdBegin = CMD_SYMBOLS_LOOKUP  ; iCmdEnd = CMD_SYMBOLS_LIST       + 1; break;
-			case PARAM_CAT_WATCHES    : iCmdBegin = CMD_WATCH_ADD       ; iCmdEnd = CMD_WATCH_LIST         + 1; break;
-			case PARAM_CAT_WINDOW     : iCmdBegin = CMD_WINDOW          ; iCmdEnd = CMD_WINDOW_OUTPUT      + 1; break;
-			case PARAM_CAT_ZEROPAGE   : iCmdBegin = CMD_ZEROPAGE_POINTER; iCmdEnd = CMD_ZEROPAGE_POINTER_SAVE+1;break;
-			default: break;
-		}
-		nNewArgs = (iCmdEnd - iCmdBegin);
-		if (nNewArgs > 0)
-			break;
-	}
-
-	if (nNewArgs > 0)
-	{
-		bCategory = true;
-
-		nArgs = nNewArgs;
-		for (iArg = 1; iArg <= nArgs; iArg++ )
-		{
-			g_aArgs[ iArg ].nVal2 = iCmdBegin + iArg - 1;
-		}
-	}
-
-	CmdFuncPtr_t pFunction;
+	if ((iDrive < 1) || (iDrive > 2))
+		return HelpLastCommand();
 	
-	for (iArg = 1; iArg <= nArgs; iArg++ )
-	{	
-		int iCommand = 0;
-		int nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
+	iDrive--;
 
-		if (bCategory)
-		{
-			iCommand = g_aArgs[iArg].nVal2;
-		}
+	int iParam = 0;
+	int nFound = FindParam( g_aArgs[ 2 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
 
-		if (bAllCommands)
-		{
-			iCommand = iArg;
-			if (iCommand == NUM_COMMANDS) // skip: Internal Consistency Check __COMMANDS_VERIFY_TXT__
-				continue;
-		}
+	if (! nFound)
+		goto _Help;
 
-		if (nFound > 1)
-		{
-			DisplayAmbigiousCommands( nFound );
-		}
-
-		if (iCommand > NUM_COMMANDS)
-			continue;
-
-		if ((nArgs == 1) && (! nFound))
-			iCommand = g_aArgs[iArg].nVal1;
-
-		Command_t *pCommand = & g_aCommands[ iCommand ];
-
-		if (! nFound)
-		{
-			iCommand = NUM_COMMANDS;
-			pCommand = NULL;
-		}
-		
-		if (nFound && (! bAllCommands))
-		{
-			TCHAR sCategory[ CONSOLE_WIDTH ];
-			int iCmd = g_aCommands[ iCommand ].iCommand; // Unaliased command
-
-			// HACK: Major kludge to display category!!!
-			if (iCmd <= CMD_TRACE_LINE)
-				wsprintf( sCategory, "Main" );
-			else
-			if (iCmd <= CMD_BREAKPOINT_SAVE)
-				wsprintf( sCategory, "Breakpoint" );
-			else
-			if (iCmd <= CMD_PROFILE)
-				wsprintf( sCategory, "Profile" );
-			else
-			if (iCmd <= CMD_CONFIG_SAVE)
-				wsprintf( sCategory, "Config" );
-			else
-			if (iCmd <= CMD_CURSOR_PAGE_DOWN_4K)
-				wsprintf( sCategory, "Scrolling" );
-			else
-			if (iCmd <= CMD_FLAG_SET_N)
-				wsprintf( sCategory, "Flags" );
-			else
-			if (iCmd <= CMD_MOTD)
-				wsprintf( sCategory, "Help" );
-			else
-			if (iCmd <= CMD_MEMORY_FILL)
-				wsprintf( sCategory, "Memory" );
-			else
-			if (iCmd <= CMD_REGISTER_SET)
-				wsprintf( sCategory, "Registers" );
-			else
-			if (iCmd <= CMD_SYNC)
-				wsprintf( sCategory, "Source" );
-			else
-			if (iCmd <= CMD_STACK_PUSH)
-				wsprintf( sCategory, "Stack" );
-			else
-			if (iCmd <= CMD_SYMBOLS_LIST)
-				wsprintf( sCategory, "Symbols" );
-			else
-			if (iCmd <= CMD_WATCH_SAVE)
-				wsprintf( sCategory, "Watch" );
-			else
-			if (iCmd <= CMD_WINDOW_OUTPUT)
-				wsprintf( sCategory, "Window" );
-			else
-			if (iCmd <= CMD_ZEROPAGE_POINTER_SAVE)
-				wsprintf( sCategory, "Zero Page" );
-			else
-				wsprintf( sCategory, "Unknown!" );
-
-			wsprintf( sText, "Category: %s", sCategory );
-			ConsoleBufferPush( sText );
-		}
-		
-		if (pCommand)
-		{
-			char *pHelp = pCommand->pHelpSummary;
-			if (pHelp)
-			{
-				wsprintf( sText, "%s, ", pCommand->m_sName );
-				if (! TryStringCat( sText, pHelp, g_nConsoleDisplayWidth ))
-				{
-					if (! TryStringCat( sText, pHelp, CONSOLE_WIDTH ))
-					{
-						StringCat( sText, pHelp, CONSOLE_WIDTH );
-						ConsoleBufferPush( sText );
-					}
-				}
-				ConsoleBufferPush( sText );
-			}
-			else
-			{
-				wsprintf( sText, "%s", pCommand->m_sName );
-				ConsoleBufferPush( sText );
-	#if DEBUG_COMMAND_HELP
-				if (! bAllCommands) // Release version doesn't display message
-				{			
-					wsprintf( sText, "Missing Summary Help: %s", g_aCommands[ iCommand ].aName );
-					ConsoleBufferPush( sText );
-				}
-	#endif
-			}
-		}		
-
-		// MASTER HELP
-		switch (iCommand)
-		{	
-	// CPU / General
-		case CMD_ASSEMBLE:
-			ConsoleBufferPush( TEXT(" Built-in assember isn't functional yet.") );
-			break;
-		case CMD_UNASSEMBLE:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol}") );
-			ConsoleBufferPush( TEXT("  Disassembles memory.") );
-			break;
-		case CMD_CALC:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol | + | - }"    ) );
-			ConsoleBufferPush( TEXT(" Output order is: Hex Bin Dec Char"     ) );
-			ConsoleBufferPush( TEXT("  Note: symbols take piority."          ) );
-			ConsoleBufferPush( TEXT("i.e. #A (if you don't want accum. val)" ) );
-			ConsoleBufferPush( TEXT("i.e. #F (if you don't want flags val)"  ) );
-			break;
-		case CMD_GO:
-			ConsoleBufferPush( TEXT(" Usage: [address | symbol [Skip,End]]") );
-			ConsoleBufferPush( TEXT(" Skip: Start address to skip stepping" ) );
-			ConsoleBufferPush( TEXT(" End : End address to skip stepping" ) );
-			ConsoleBufferPush( TEXT("  If the Program Counter is outside the" ) );
-			ConsoleBufferPush( TEXT(" skip range, resumes single-stepping." ) );
-			ConsoleBufferPush( TEXT("  Can be used to skip ROM/OS/user code." ));
-			ConsoleBufferPush( TEXT(" i.e.  G C600 F000,FFFF" ) );
-			break;
-		case CMD_NOP:
-			ConsoleBufferPush( TEXT("  Puts a NOP opcode at current instruction") );
-			break;
-		case CMD_JSR:
-			ConsoleBufferPush( TEXT(" Usage: {symbol | address}") );
-			ConsoleBufferPush( TEXT("  Pushes PC on stack; calls the named subroutine.") );
-			break;
-		case CMD_PROFILE:
-			wsprintf( sText, TEXT(" Usage: [%s | %s | %s]")
-				, g_aParameters[ PARAM_RESET ].m_sName
-				, g_aParameters[ PARAM_SAVE  ].m_sName
-				, g_aParameters[ PARAM_LIST  ].m_sName
-			);
-			ConsoleBufferPush( sText );
-			ConsoleBufferPush( TEXT(" No arguments resets the profile.") );
-			break;
-		case CMD_SOURCE:
-			ConsoleBufferPush( TEXT(" Reads assembler source file." ) );
-			wsprintf( sText, TEXT(" Usage: [ %s | %s ] \"filename\""            ), g_aParameters[ PARAM_SRC_MEMORY  ].m_sName, g_aParameters[ PARAM_SRC_SYMBOLS ].m_sName ); ConsoleBufferPush( sText );
-			wsprintf( sText, TEXT("   %s: read source bytes into memory."        ), g_aParameters[ PARAM_SRC_MEMORY  ].m_sName ); ConsoleBufferPush( sText );
-			wsprintf( sText, TEXT("   %s: read symbols into Source symbol table."), g_aParameters[ PARAM_SRC_SYMBOLS ].m_sName ); ConsoleBufferPush( sText );
-			wsprintf( sText, TEXT(" Supports: %s."                              ), g_aParameters[ PARAM_SRC_MERLIN  ].m_sName ); ConsoleBufferPush( sText );
-			break;
-		case CMD_STEP_OUT: 
-			ConsoleBufferPush( TEXT("  Steps out of current subroutine") );
-			ConsoleBufferPush( TEXT("  Hotkey: Ctrl-Space" ) );
-			break;
-		case CMD_STEP_OVER: // Bad name? FIXME/TODO: do we need to rename?
-			ConsoleBufferPush( TEXT(" Usage: [#]") );
-			ConsoleBufferPush( TEXT("  Steps, # times, thru current instruction") );
-			ConsoleBufferPush( TEXT("  JSR will be stepped into AND out of.") );
-			ConsoleBufferPush( TEXT("  Hotkey: Ctrl-Space" ) );
-			break;
-		case CMD_TRACE:
-			ConsoleBufferPush( TEXT(" Usage: [#]") );
-			ConsoleBufferPush( TEXT("  Traces, # times, current instruction(s)") );
-			ConsoleBufferPush( TEXT("  JSR will be stepped into") );
-			ConsoleBufferPush( TEXT("  Hotkey: Shift-Space" ) );
-		case CMD_TRACE_FILE:
-			ConsoleBufferPush( TEXT(" Usage: [filename]") );
-			break;
-		case CMD_TRACE_LINE:
-			ConsoleBufferPush( TEXT(" Usage: [#]") );
-			ConsoleBufferPush( TEXT("  Traces into current instruction") );
-			ConsoleBufferPush( TEXT("  with cycle counting." ) );
-			break;
-	// Breakpoints
-		case CMD_BREAKPOINT:
-			wsprintf( sText, " Maximum breakpoints are: %d", MAX_BREAKPOINTS );
-			ConsoleBufferPush( sText );
-			break;
-		case CMD_BREAKPOINT_ADD_REG:
-			ConsoleBufferPush( TEXT(" Usage: [A|X|Y|PC|S] [<,=,>] value") );
-			ConsoleBufferPush( TEXT("  Set breakpoint when reg is [op] value") );
-			break;
-		case CMD_BREAKPOINT_ADD_SMART:
-		case CMD_BREAKPOINT_ADD_PC:
-			ConsoleBufferPush( TEXT(" Usage: [address]") );
-			ConsoleBufferPush( TEXT("  Sets a breakpoint at the current PC") );
-			ConsoleBufferPush( TEXT("  or at the specified address.") );
-			break;
-		case CMD_BREAKPOINT_ENABLE:
-			ConsoleBufferPush( TEXT(" Usage: [# [,#] | *]") );
-			ConsoleBufferPush( TEXT("  Re-enables breakpoint previously set, or all.") );
-			break;
-	// Config - Color
-		case CMD_CONFIG_COLOR:
-			ConsoleBufferPush( TEXT(" Usage: [{#} | {# RR GG BB}]" ) );
-			ConsoleBufferPush( TEXT("  0 params: switch to 'color' scheme" ) );
-			ConsoleBufferPush( TEXT("  1 param : dumps R G B for scheme 'color'") );
-			ConsoleBufferPush( TEXT("  4 params: sets  R G B for scheme 'color'" ) );
-			break;
-		case CMD_CONFIG_MONOCHROME:
-			ConsoleBufferPush( TEXT(" Usage: [{#} | {# RR GG BB}]" ) );
-			ConsoleBufferPush( TEXT("  0 params: switch to 'monochrome' scheme" ) );
-			ConsoleBufferPush( TEXT("  1 param : dumps R G B for scheme 'monochrome'") );
-			ConsoleBufferPush( TEXT("  4 params: sets  R G B for scheme 'monochrome'" ) );
-			break;
-		case CMD_OUTPUT:
-			ConsoleBufferPush( TEXT(" Usage: {address8 | address16 | symbol} ## [##]") );
-			ConsoleBufferPush( TEXT("  Ouput a byte or word to the IO address $C0xx" ) );
-			break;
-	// Config - Font
-		case CMD_CONFIG_FONT:
-			wsprintf( sText, TEXT(" Usage: [%s | %s] \"FontName\" [Height]" ),
-				g_aParameters[ PARAM_FONT_MODE ].m_sName, g_aParameters[ PARAM_DISASM ].m_sName );
-			ConsoleBufferPush( sText );
-			ConsoleBufferPush( TEXT(" i.e. FONT \"Courier\" 12" ) );
-			ConsoleBufferPush( TEXT(" i.e. FONT \"Lucida Console\" 12" ) );
-			wsprintf( sText, TEXT(" %s Controls line spacing."), g_aParameters[ PARAM_FONT_MODE ].m_sName );
-			ConsoleBufferPush( sText );
-			wsprintf( sText, TEXT(" Valid values are: %d, %d, %d." ),
-				FONT_SPACING_CLASSIC, FONT_SPACING_CLEAN, FONT_SPACING_COMPRESSED );
-			ConsoleBufferPush( sText );
-			break;
-	// Memory
-		case CMD_MEMORY_ENTER_BYTE:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol} ## [## ... ##]") );
-			ConsoleBufferPush( TEXT("  Sets memory to the specified 8-Bit Values (bytes)" ) );
-			break;
-		case CMD_MEMORY_ENTER_WORD:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol} #### [#### ... ####]") );
-			ConsoleBufferPush( TEXT("  Sets memory to the specified 16-Bit Values (words)" ) );
-			break;
-		case CMD_MEMORY_FILL:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol} {address | symbol} ##" ) ); 
-			ConsoleBufferPush( TEXT("  Fills the memory range with the specified byte" ) );
-			ConsoleBufferPush( TEXT("  Can't fill IO address $C0xx" ) );
-			break;
-//		case CMD_MEM_MINI_DUMP_ASC_1:
-//		case CMD_MEM_MINI_DUMP_ASC_2:
-		case CMD_MEM_MINI_DUMP_ASCII_1:
-		case CMD_MEM_MINI_DUMP_ASCII_2:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol}") ); 
-			ConsoleBufferPush( TEXT("  Displays ASCII text in the Mini-Memory area") ); 
-			ConsoleBufferPush( TEXT("  ASCII control chars are hilighted") );
-			ConsoleBufferPush( TEXT("  ASCII hi-bit chars are normal") ); 
-//			break;
-//		case CMD_MEM_MINI_DUMP_TXT_LO_1:
-//		case CMD_MEM_MINI_DUMP_TXT_LO_2:
-		case CMD_MEM_MINI_DUMP_APPLE_1:
-		case CMD_MEM_MINI_DUMP_APPLE_2:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol}") ); 
-			ConsoleBufferPush( TEXT("  Displays APPLE text in the Mini-Memory area") ); 
-			ConsoleBufferPush( TEXT("  APPLE control chars are inverse") );
-			ConsoleBufferPush( TEXT("  APPLE hi-bit chars are normal") ); 
-			break;
-//		case CMD_MEM_MINI_DUMP_TXT_HI_1:
-//		case CMD_MEM_MINI_DUMP_TXT_HI_2:
-//			ConsoleBufferPush( TEXT(" Usage: {address | symbol}") ); 
-//			ConsoleBufferPush( TEXT("  Displays text in the Memory Mini-Dump area") ); 
-//			ConsoleBufferPush( TEXT("  ASCII chars with the hi-bit set, is inverse") ); 
-			break;
-	// Symbols
-		case CMD_SYMBOLS_MAIN:
-		case CMD_SYMBOLS_USER:
-		case CMD_SYMBOLS_SRC :
-//			ConsoleBufferPush( TEXT(" Usage: [ ON | OFF | symbol | address ]" ) );
-//			ConsoleBufferPush( TEXT(" Usage: [ LOAD [\"filename\"] | SAVE \"filename\"]" ) ); 
-//			ConsoleBufferPush( TEXT("  ON  : Turns symbols on in the disasm window" ) );
-//			ConsoleBufferPush( TEXT("  OFF : Turns symbols off in the disasm window" ) );
-//			ConsoleBufferPush( TEXT("  LOAD: Loads symbols from last/default filename" ) );
-//			ConsoleBufferPush( TEXT("  SAVE: Saves symbol table to file" ) );
-//			ConsoleBufferPush( TEXT(" CLEAR: Clears the symbol table" ) );
-			ConsoleBufferPush( TEXT(" Usage: [ ... | symbol | address ]") );
-			ConsoleBufferPush( TEXT(" Where ... is one of:" ) );
-			wsprintf( sText, TEXT("  %s  " ": Turns symbols on in the disasm window"        ), g_aParameters[ PARAM_ON    ].m_sName ); ConsoleBufferPush( sText );
-			wsprintf( sText, TEXT("  %s "  ": Turns symbols off in the disasm window"       ), g_aParameters[ PARAM_OFF   ].m_sName ); ConsoleBufferPush( sText );
-			wsprintf( sText, TEXT("  %s"   ": Loads symbols from last/default \"filename\"" ), g_aParameters[ PARAM_SAVE  ].m_sName ); ConsoleBufferPush( sText );
-			wsprintf( sText, TEXT("  %s"   ": Saves symbol table to \"filename\""           ), g_aParameters[ PARAM_LOAD  ].m_sName ); ConsoleBufferPush( sText );
-			wsprintf( sText, TEXT(" %s"    ": Clears the symbol table"                      ), g_aParameters[ PARAM_CLEAR ].m_sName ); ConsoleBufferPush( sText );
-			break;
-	// Watches
-		case CMD_WATCH_ADD:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol}" ) );
-			ConsoleBufferPush( TEXT("  Adds the specified memory location to the watch window." ) );
-			break;
-	// Window
-		case CMD_WINDOW_CODE    : // summary is good enough
-		case CMD_WINDOW_CODE_2  : // summary is good enough
-		case CMD_WINDOW_SOURCE_2: // summary is good enough
-			break;
-
-	// Misc
-		case CMD_VERSION:
-			ConsoleBufferPush( TEXT(" Usage: [*]") );
-			ConsoleBufferPush( TEXT("  * Display extra internal stats" ) );
-			break;
-		default:
-			if (bAllCommands)
-				break;
-#if DEBUG_COMMAND_HELP
-			wsprintf( sText, "Command help not done yet: %s", g_aCommands[ iCommand ].aName );
-			ConsoleBufferPush( sText );
-#endif
-			if ((! nFound) || (! pCommand))
-			{
-				wsprintf( sText, " Invalid command." );
-				ConsoleBufferPush( sText );
-			}
-			break;
-		}
-
-	}
-	
-	return ConsoleUpdate();
-}
-
-//===========================================================================
-Update_t CmdHelpList (int nArgs)
-{
-	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("Commands: ");
-	int nLenLine = _tcslen( sText );
-	int y = 0;
-	int nLinesScrolled = 0;
-
-	int nMaxWidth = g_nConsoleDisplayWidth - 1;
-	int iCommand;
-
-/*
-	if (! g_vSortedCommands.size())
+	if (iParam == PARAM_DISK_EJECT)
 	{
-		for (iCommand = 0; iCommand < NUM_COMMANDS_WITH_ALIASES; iCommand++ )
-		{
-//			TCHAR *pName = g_aCommands[ iCommand ].aName );
-			g_vSortedCommands.push_back( g_aCommands[ iCommand ] );
-		}
+		if (nArgs > 2)
+			goto _Help;
 
-		std::sort( g_vSortedCommands.begin(), g_vSortedCommands.end(), commands_functor_compare() );
+		DiskEject( iDrive );
+		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
-	int nCommands = g_vSortedCommands.size();
-*/
-	for( iCommand = 0; iCommand < NUM_COMMANDS_WITH_ALIASES; iCommand++ ) // aliases are not printed
+	else
+	if (iParam == PARAM_DISK_PROTECT)
 	{
-//		Command_t *pCommand = & g_vSortedCommands.at( iCommand );
-		Command_t *pCommand = & g_aCommands[ iCommand ];
-		TCHAR     *pName = pCommand->m_sName;
+		if (nArgs > 3)
+			goto _Help;
 
-		if (! pCommand->pFunction)
-			continue; // not implemented function
+		bool bProtect = true;
 
-		int nLenCmd = _tcslen( pName );
-		if ((nLenLine + nLenCmd) < (nMaxWidth))
-		{
-			_tcscat( sText, pName );
-		}
-		else
-		{
-			ConsoleBufferPush( sText );
-			nLenLine = 1;
-			_tcscpy( sText, TEXT(" " ) );
-			_tcscat( sText, pName );
-		}
-		
-		_tcscat( sText, TEXT(" ") );
-		nLenLine += (nLenCmd + 1);
+		if (nArgs == 3)
+			bProtect = g_aArgs[ 3 ].nVal1 ? true : false;
+
+		DiskProtect( iDrive, bProtect );
+		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
+	else
+	{
+		if (nArgs != 3)
+			goto _Help;
 
-	ConsoleBufferPush( sText );
-	ConsoleUpdate();
+		LPCTSTR pDiskName = g_aArgs[ 3 ].sArg;
+
+		// DISK # "Diskname"
+		DiskInsert( iDrive, pDiskName, true, false ); // write_protected, dont_create
+		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+	}
 
 	return UPDATE_CONSOLE_DISPLAY;
-}
 
-	
-//===========================================================================
-Update_t CmdVersion (int nArgs)
-{
-	TCHAR sText[ CONSOLE_WIDTH ];
-
-	unsigned int nVersion = DEBUGGER_VERSION;
-	int nMajor;
-	int nMinor;
-	int nFixMajor;
-	int nFixMinor;
-	UnpackVersion( nVersion, nMajor, nMinor, nFixMajor, nFixMinor );
-
-//	wsprintf( sText, "Version" );	ConsoleBufferPush( sText );
-	wsprintf( sText, "  Emulator: %s    Debugger: %d.%d.%d.%d"
-		, VERSIONSTRING
-		, nMajor, nMinor, nFixMajor, nFixMinor );
-	ConsoleBufferPush( sText );
-
-	if (nArgs)
-	{
-		for (int iArg = 1; iArg <= nArgs; iArg++ )
-		{
-			if (_tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ) == 0)
-			{
-				wsprintf( sText, "  Arg: %d bytes * %d = %d bytes",
-					sizeof(Arg_t), MAX_ARGS, sizeof(g_aArgs) );
-				ConsoleBufferPush( sText );
-
-				wsprintf( sText, "  Console: %d bytes * %d height = %d bytes",
-					sizeof( g_aConsoleDisplay[0] ), CONSOLE_HEIGHT, sizeof(g_aConsoleDisplay) );
-				ConsoleBufferPush( sText );
-
-				wsprintf( sText, "  Commands: %d   (Aliased: %d)   Params: %d",
-					NUM_COMMANDS, NUM_COMMANDS_WITH_ALIASES, NUM_PARAMS );
-				ConsoleBufferPush( sText );
-
-				wsprintf( sText, "  Cursor(%d)  T: %04X  C: %04X  B: %04X %c D: %02X", // Top, Cur, Bot, Delta
-					g_nDisasmCurLine, g_nDisasmTopAddress, g_nDisasmCurAddress, g_nDisasmBotAddress,
-					g_bDisasmCurBad ? TEXT('*') : TEXT(' ')
-					, g_nDisasmBotAddress - g_nDisasmTopAddress
-				);
-				ConsoleBufferPush( sText );
-
-				CmdConfigGetFont( 0 );
-
-				break;
-			}
-			else
-				return Help_Arg_1( CMD_VERSION );
-		}
-	}
-
-	return ConsoleUpdate();
+_Help:
+	return HelpLastCommand();
 }
 
 
@@ -5519,27 +3238,27 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 #ifdef SUPPORT_Z80_EMU
 	else if(strcmp(g_aArgs[1].sArg, "*AF") == 0)
 	{
-		nAddress = *(WORD*)(membank+REG_AF);
+		nAddress = *(WORD*)(mem + REG_AF);
 		bUpdate = true;
 	}
 	else if(strcmp(g_aArgs[1].sArg, "*BC") == 0)
 	{
-		nAddress = *(WORD*)(membank+REG_BC);
+		nAddress = *(WORD*)(mem + REG_BC);
 		bUpdate = true;
 	}
 	else if(strcmp(g_aArgs[1].sArg, "*DE") == 0)
 	{
-		nAddress = *(WORD*)(membank+REG_DE);
+		nAddress = *(WORD*)(mem + REG_DE);
 		bUpdate = true;
 	}
 	else if(strcmp(g_aArgs[1].sArg, "*HL") == 0)
 	{
-		nAddress = *(WORD*)(membank+REG_HL);
+		nAddress = *(WORD*)(mem + REG_HL);
 		bUpdate = true;
 	}
 	else if(strcmp(g_aArgs[1].sArg, "*IX") == 0)
 	{
-		nAddress = *(WORD*)(membank+REG_IX);
+		nAddress = *(WORD*)(mem + REG_IX);
 		bUpdate = true;
 	}
 #endif
@@ -5692,7 +3411,7 @@ Update_t CmdMemoryEnterByte (int nArgs)
 	WORD nAddress = g_aArgs[1].nVal1;
 	while (nArgs >= 2)
 	{
-		*(membank+nAddress+nArgs-2)  = (BYTE)g_aArgs[nArgs].nVal1;
+		*(mem + nAddress+nArgs-2)  = (BYTE)g_aArgs[nArgs].nVal1;
 		*(memdirty+(nAddress >> 8)) = 1;
 		nArgs--;
 	}
@@ -5716,8 +3435,8 @@ Update_t CmdMemoryEnterWord (int nArgs)
 		WORD nData = g_aArgs[nArgs].nVal1;
 
 		// Little Endian
-		*(membank + nAddress + nArgs - 2)  = (BYTE)(nData >> 0);
-		*(membank + nAddress + nArgs - 1)  = (BYTE)(nData >> 8);
+		*(mem + nAddress + nArgs - 2)  = (BYTE)(nData >> 0);
+		*(mem + nAddress + nArgs - 1)  = (BYTE)(nData >> 8);
 
 		*(memdirty+(nAddress >> 8)) |= 1;
 		nArgs--;
@@ -5739,7 +3458,7 @@ Update_t CmdMemoryFill (int nArgs)
 	{
 		if ((nAddress < _6502_IO_BEGIN) || (nAddress > _6502_IO_END))
 		{
-			*(membank+nAddress) = (BYTE)(g_aArgs[2].nVal1 & 0xFF); // HACK: Undocumented fill with ZERO
+			*(mem + nAddress) = (BYTE)(g_aArgs[2].nVal1 & 0xFF); // HACK: Undocumented fill with ZERO
 		}
 		nAddress++;
 	}
@@ -5880,65 +3599,65 @@ bool BufferAssemblyListing( TCHAR *pFileName )
 	if (! pFileName)
 		return bStatus;
 
-	FILE *hFile = fopen(pFileName,"rt");
+	g_AssemblerSourceBuffer.Reset();
+	g_AssemblerSourceBuffer.Read( pFileName );
 
-	if (hFile)
-	{
-		fseek( hFile, 0, SEEK_END );
-		long nSize = ftell( hFile );
-		fseek( hFile, 0, SEEK_SET );
-
-		if (nSize > 0)
-			g_nSourceBuffer = nSize;
-
-		g_pSourceBuffer = new char [ nSize + 1 ];
-		ZeroMemory( g_pSourceBuffer, nSize + 1 );
-
-		fread( (void*)g_pSourceBuffer, nSize, 1, hFile );
-		fclose(hFile);
-
-		g_vSourceLines.erase( g_vSourceLines.begin(), g_vSourceLines.end() );
-
-		g_nSourceAssemblyLines = 0;
-
-		char *pBegin = g_pSourceBuffer;
-		char *pEnd = NULL;
-		char *pEnd2;
-		while (pBegin)
-		{
-			g_nSourceAssemblyLines++;
-			g_vSourceLines.push_back( pBegin );
-
-			pEnd = const_cast<char*>( SkipUntilEOL( pBegin ));
-			pEnd2 = const_cast<char*>( SkipEOL( pEnd ));
-			if (pEnd)
-			{
-				*pEnd = 0;
-			}
-			if (! *pEnd2)
-			{
-				break;
-			}
-			pBegin = pEnd2;
-//			*(pEnd-1) = 0;
-//			if (! pEnd)
-//			{
-//				break;
-//			}
-//			pEnd = const_cast<char*>( SkipEOL( pEnd ));
-//			pBegin = pEnd;
-		}			
-		bStatus = true;
-	}
-
-	if (g_nSourceAssemblyLines)
+	if (g_AssemblerSourceBuffer.GetNumLines())
 	{
 		g_bSourceLevelDebugging = true;
+		bStatus = true;
 	}
 
 	return bStatus;
 }
 
+
+//===========================================================================
+int FindSourceLine( WORD nAddress )
+{
+	int iAddress = 0;
+	int iLine = 0;
+	int iSourceLine = NO_SOURCE_LINE;
+
+//	iterate of <address,line>
+//	probably should be sorted by address
+//	then can do binary search
+//	iSourceLine = g_aSourceDebug.find( nAddress );
+#if 0 // _DEBUG
+	{
+		TCHAR sText[ CONSOLE_WIDTH ];
+		for (int i = 0; i < g_vSourceLines.size(); i++ )
+		{
+			wsprintf( sText, "%d: %s\n", i, g_vSourceLines[ i ] );
+			OutputDebugString( sText );
+		}
+	}
+#endif
+
+	SourceAssembly_t::iterator iSource = g_aSourceDebug.begin();
+	while (iSource != g_aSourceDebug.end() )
+	{
+		iAddress = iSource->first;
+		iLine = iSource->second;
+
+#if 0 // _DEBUG
+	TCHAR sText[ CONSOLE_WIDTH ];
+	wsprintf( sText, "%04X -> %d line\n", iAddress, iLine );
+	OutputDebugString( sText );
+#endif
+
+		if (iAddress == nAddress)
+		{
+			iSourceLine = iLine;
+			break;
+		}
+
+		iSource++;
+	}
+	// not found
+
+	return iSourceLine;
+}
 
 //===========================================================================
 bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
@@ -5970,12 +3689,10 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 	bool bFourBytes = false;		
 	BYTE nByte4 = 0;
 
-
-	int nLines = g_vSourceLines.size();
+	int nLines = g_AssemblerSourceBuffer.GetNumLines();
 	for( int iLine = 0; iLine < nLines; iLine++ )
 	{
-		ZeroMemory( sText, MAX_LINE );
-		strncpy( sText, g_vSourceLines[ iLine ], MAX_LINE-1 );
+		g_AssemblerSourceBuffer.GetLine( iLine, sText, MAX_LINE - 1 );
 
 		DWORD nAddress = INVALID_ADDRESS;
 
@@ -6112,24 +3829,27 @@ Update_t CmdSource (int nArgs)
 				_tcscpy(sFileName,progdir);
 				_tcscat(sFileName, pFileName);
 
+				const int MAX_MINI_FILENAME = 20;
+				TCHAR sMiniFileName[ MAX_MINI_FILENAME + 1 ];
+				_tcsncpy( sMiniFileName, pFileName, MAX_MINI_FILENAME - 1 );
+				sMiniFileName[ MAX_MINI_FILENAME ] = 0;
+
+
 				if (BufferAssemblyListing( sFileName ))
 				{
 					_tcscpy( g_aSourceFileName, pFileName );
 
 					if (! ParseAssemblyListing( g_bSourceAddMemory, g_bSourceAddSymbols ))
 					{
-						const int MAX_MINI_FILENAME = 20;
-						TCHAR sMiniFileName[ MAX_MINI_FILENAME + 1 ];
-						_tcsncpy( sMiniFileName, pFileName, MAX_MINI_FILENAME - 1 );
-						sMiniFileName[ MAX_MINI_FILENAME ] = 0;
-
 						wsprintf( sFileName, "Couldn't load filename: %s", sMiniFileName );
 						ConsoleBufferPush( sFileName );
 					}
 					else
 					{
 						TCHAR sText[ CONSOLE_WIDTH ];
-						wsprintf( sFileName, "  Read: %d lines, %d symbols", g_nSourceAssemblyLines, g_nSourceAssemblySymbols );
+						wsprintf( sFileName, "  Read: %d lines, %d symbols"
+							, g_AssemblerSourceBuffer.GetNumLines() // g_nSourceAssemblyLines
+							, g_nSourceAssemblySymbols );
 						
 						if (g_nSourceAssembleBytes)
 						{
@@ -6138,6 +3858,11 @@ Update_t CmdSource (int nArgs)
 						}
 						ConsoleBufferPush( sFileName );
 					}
+				}
+				else
+				{
+					wsprintf( sFileName, "Error reading: %s", sMiniFileName );
+					ConsoleBufferPush( sFileName );
 				}
 			}
 		}
@@ -6654,6 +4379,58 @@ Update_t _CmdSymbolsClear( Symbols_e eSymbolTable )
 
 
 //===========================================================================
+void SymbolUpdate( Symbols_e eSymbolTable, char *pSymbolName, WORD nAddress, bool bRemoveSymbol, bool bUpdateSymbol )
+{
+	if (bRemoveSymbol)
+		pSymbolName = g_aArgs[2].sArg;
+
+	if (_tcslen( pSymbolName ) < MAX_SYMBOLS_LEN)
+	{
+		WORD nAddressPrev;
+		int  iTable;
+		bool bExists = FindAddressFromSymbol( pSymbolName, &nAddressPrev, &iTable );
+
+		if (bExists)
+		{
+			if (iTable == eSymbolTable)
+			{
+				if (bRemoveSymbol)
+				{
+					ConsoleBufferPush( TEXT(" Removing symbol." ) );
+				}
+
+				g_aSymbols[ eSymbolTable ].erase( nAddressPrev );
+
+				if (bUpdateSymbol)
+				{
+					ConsoleBufferPush( TEXT(" Updating symbol to new address." ) );
+				}
+			}
+		}					
+		else
+		{
+			if (bRemoveSymbol)
+			{
+				ConsoleBufferPush( TEXT(" Symbol not in table." ) );
+			}
+		}
+
+		if (bUpdateSymbol)
+		{
+#if _DEBUG
+			LPCTSTR pSymbol = FindSymbolFromAddress( nAddress, &iTable );
+			{
+				// Found another symbol for this address.  Harmless.
+				// TODO: Probably should check if same name?
+			}
+#endif
+			g_aSymbols[ eSymbolTable ][ nAddress ] = pSymbolName;
+		}
+	}
+}
+
+
+//===========================================================================
 Update_t _CmdSymbolsUpdate( int nArgs )
 {
 	bool bRemoveSymbol = false;
@@ -6670,54 +4447,8 @@ Update_t _CmdSymbolsUpdate( int nArgs )
 		TCHAR *pSymbolName = g_aArgs[1].sArg;
 		WORD   nAddress    = g_aArgs[3].nVal1;
 
-		if (bRemoveSymbol)
-			pSymbolName = g_aArgs[2].sArg;
-
-		if (_tcslen( pSymbolName ) < MAX_SYMBOLS_LEN)
-		{
-			WORD nAddressPrev;
-			int  iTable;
-			bool bExists = FindAddressFromSymbol( pSymbolName, &nAddressPrev, &iTable );
-
-			if (bExists)
-			{
-				if (iTable == SYMBOLS_USER)
-				{
-					if (bRemoveSymbol)
-					{
-						ConsoleBufferPush( TEXT(" Removing symbol." ) );
-					}
-
-					g_aSymbols[SYMBOLS_USER].erase( nAddressPrev );
-
-					if (bUpdateSymbol)
-					{
-						ConsoleBufferPush( TEXT(" Updating symbol to new address." ) );
-					}
-				}
-			}					
-			else
-			{
-				if (bRemoveSymbol)
-				{
-					ConsoleBufferPush( TEXT(" Symbol not in table." ) );
-				}
-			}
-
-			if (bUpdateSymbol)
-			{
-#if _DEBUG
-				LPCTSTR pSymbol = FindSymbolFromAddress( nAddress, &iTable );
-				{
-					// Found another symbol for this address.  Harmless.
-					// TODO: Probably should check if same name?
-				}
-#endif
-				g_aSymbols[SYMBOLS_USER][ nAddress ] = pSymbolName;
-			}
-
-			return ConsoleUpdate();
-		}
+		SymbolUpdate( SYMBOLS_USER, pSymbolName, nAddress, bRemoveSymbol, bUpdateSymbol );
+		return ConsoleUpdate();
 	}
 
 	return UPDATE_NOTHING;
@@ -7169,7 +4900,7 @@ Update_t CmdWatchSave (int nArgs)
 }
 
 
-// Window _________________________________________________________________________________________
+// Color __________________________________________________________________________________________
 
 void _ColorPrint( int iColor, COLORREF nColor )
 {
@@ -7188,7 +4919,7 @@ void _CmdColorGet( const int iScheme, const int iColor )
 	{
 //	COLORREF nColor = g_aColors[ iScheme ][ iColor ];
 		DebugColors_e eColor = static_cast<DebugColors_e>( iColor );
-		COLORREF nColor = DebugGetColor( eColor );
+		COLORREF nColor = DebuggerGetColor( eColor );
 		_ColorPrint( iColor, nColor );
 	}
 	else
@@ -7200,7 +4931,7 @@ void _CmdColorGet( const int iScheme, const int iColor )
 }
 
 //===========================================================================
-inline COLORREF DebugGetColor( int iColor )
+inline COLORREF DebuggerGetColor( int iColor )
 {
 	COLORREF nColor = RGB(0,255,255); // 0xFFFF00; // Hot Pink! -- so we notice errors. Not that there is anything wrong with pink...
 
@@ -7209,20 +4940,11 @@ inline COLORREF DebugGetColor( int iColor )
 		nColor = g_aColors[ g_iColorScheme ][ iColor ];
 	}
 
-/*
-	if (SCHEME_COLOR == g_iColorScheme)
-//		nColor = gaColorValue[ iColor ];
-//		nColor = gaColorPalette[ g_aColorIndex[ iColor ] ];
-	else
-	if (SCHEME_MONO == g_iColorScheme)
-		nColor = gaMonoValue[ iColor ];
-//			nColor = gaMonoPalette[ g_aColorIndex[ iColor ] ];
-*/
 	return nColor;
 }
 
 
-bool DebugSetColor( const int iScheme, const int iColor, const COLORREF nColor )
+bool DebuggerSetColor( const int iScheme, const int iColor, const COLORREF nColor )
 {
 	bool bStatus = false;
 	if ((g_iColorScheme < NUM_COLOR_SCHEMES) && (iColor < NUM_COLORS))
@@ -7242,6 +4964,8 @@ Update_t CmdConfigColorMono (int nArgs)
 		iScheme = SCHEME_COLOR;
 	if (g_iCommand == CMD_CONFIG_MONOCHROME)
 		iScheme = SCHEME_MONO;
+	if (g_iCommand == CMD_CONFIG_BW)
+		iScheme = SCHEME_BW;
 
 	if ((iScheme < 0) || (iScheme > NUM_COLOR_SCHEMES)) // sanity check
 		iScheme = SCHEME_COLOR;
@@ -7249,32 +4973,61 @@ Update_t CmdConfigColorMono (int nArgs)
 	if (! nArgs)
 	{
 		g_iColorScheme = iScheme;
-		UpdateDisplay( UPDATE_BACKGROUND ); // 1
+		UpdateDisplay( UPDATE_BACKGROUND );
 		return UPDATE_ALL;
 	}
 
-	if ((nArgs != 1) && (nArgs != 4))
-		return Help_Arg_1( g_iCommand );
+//	if ((nArgs != 1) && (nArgs != 4))
+	if (nArgs > 4)
+		return HelpLastCommand();
 
 	int iColor = g_aArgs[ 1 ].nVal1;
 	if ((iColor < 0) || iColor >= NUM_COLORS)
-		return Help_Arg_1( g_iCommand );
+		return HelpLastCommand();
 
-	if (nArgs == 1)
-	{	// Dump Color
-		_CmdColorGet( iScheme, iColor );
-		return ConsoleUpdate();
+	int iParam;
+	int nFound = FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_GENERAL_BEGIN, _PARAM_GENERAL_END );
+
+	if (nFound)
+	{
+		if (iParam == PARAM_RESET)
+		{
+			_ConfigColorsReset();
+			ConsoleBufferPush( TEXT(" Resetting colors." ) );
+		}
+		else
+		if (iParam == PARAM_SAVE)
+		{
+		}
+		else
+		if (iParam == PARAM_LOAD)
+		{
+		}
+		else
+			return HelpLastCommand();
 	}
 	else
-	{	// Set Color
-		int R = g_aArgs[2].nVal1 & 0xFF;
-		int G = g_aArgs[3].nVal1 & 0xFF;
-		int B = g_aArgs[4].nVal1 & 0xFF;
-		COLORREF nColor = RGB(R,G,B);
+	{
+		if (nArgs == 1)
+		{	// Dump Color
+			_CmdColorGet( iScheme, iColor );
+			return ConsoleUpdate();
+		}
+		else
+		if (nArgs == 4)
+		{	// Set Color
+			int R = g_aArgs[2].nVal1 & 0xFF;
+			int G = g_aArgs[3].nVal1 & 0xFF;
+			int B = g_aArgs[4].nVal1 & 0xFF;
+			COLORREF nColor = RGB(R,G,B);
 
-		DebugSetColor( iScheme, iColor, nColor );
-		return UPDATE_ALL;
+			DebuggerSetColor( iScheme, iColor, nColor );
+		}
+		else
+			return HelpLastCommand();
 	}
+
+	return UPDATE_ALL;
 }
 
 Update_t CmdConfigHColor (int nArgs)
@@ -7296,7 +5049,7 @@ Update_t CmdConfigHColor (int nArgs)
 	}
 	else
 	{	// Set Color
-//		DebugSetColor( iScheme, iColor );
+//		DebuggerSetColor( iScheme, iColor );
 		return UPDATE_ALL;
 	}
 }
@@ -7814,1759 +5567,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 
 // Drawing ________________________________________________________________________________________
 
-//===========================================================================
-void DrawBreakpoints (HDC dc, int line)
-{
-	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
-		return;
 
-	RECT rect;
-	rect.left   = DISPLAY_BP_COLUMN;
-	rect.top    = (line * g_nFontHeight);
-	rect.right  = DISPLAY_WIDTH;
-	rect.bottom = rect.top + g_nFontHeight;
-
-	const int MAX_BP_LEN = 16;
-	TCHAR sText[16] = TEXT("Breakpoints"); // TODO: Move to BP1
-
-	SetBkColor(dc, DebugGetColor( BG_INFO )); // COLOR_BG_DATA
-	SetTextColor(dc, DebugGetColor( FG_INFO_TITLE )); //COLOR_STATIC
-	DebugDrawText( sText, rect );
-	rect.top    += g_nFontHeight;
-	rect.bottom += g_nFontHeight;
-
-	int iBreakpoint;
-	for (iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++ )
-	{
-		Breakpoint_t *pBP = &g_aBreakpoints[iBreakpoint];
-		WORD nLength   = pBP->nLength;
-
-#if DEBUG_FORCE_DISPLAY
-		nLength = 2;
-#endif
-		if (nLength)
-		{
-			bool bSet      = pBP->bSet;
-			bool bEnabled  = pBP->bEnabled;
-			WORD nAddress1 = pBP->nAddress;
-			WORD nAddress2 = nAddress1 + nLength - 1;
-			
-			RECT rect2;
-			rect2 = rect;
-			
-			SetBkColor( dc, DebugGetColor( BG_INFO ));
-			SetTextColor( dc, DebugGetColor( FG_INFO_BULLET ) );
-			wsprintf( sText, TEXT("%d"), iBreakpoint+1 );
-			DebugDrawTextFixed( sText, rect2 );
-
-			SetTextColor( dc, DebugGetColor( FG_INFO_OPERATOR ) );
-			_tcscpy( sText, TEXT(":") );
-			DebugDrawTextFixed( sText, rect2 );
-
-#if DEBUG_FORCE_DISPLAY
-	pBP->eSource = (BreakpointSource_t) iBreakpoint;
-#endif
-			SetTextColor( dc, DebugGetColor( FG_INFO_REG ) );
-			int nRegLen = DebugDrawTextFixed( g_aBreakpointSource[ pBP->eSource ], rect2 );
-
-			// Pad to 2 chars
-			if (nRegLen < 2) // (g_aBreakpointSource[ pBP->eSource ][1] == 0) // HACK: Avoid strlen()
-				rect2.left += g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
-
-			SetBkColor( dc, DebugGetColor( BG_INFO ));
-			SetTextColor( dc, DebugGetColor( FG_INFO_BULLET ) );
-#if DEBUG_FORCE_DISPLAY
-	if (iBreakpoint < 3)
-		pBP->eOperator = (BreakpointOperator_t)(iBreakpoint * 2);
-	else
-		pBP->eOperator = (BreakpointOperator_t)(iBreakpoint-3 + BP_OP_READ);
-#endif
-			DebugDrawTextFixed( g_aBreakpointSymbols [ pBP->eOperator ], rect2 );
-
-			DebugColors_e iForeground;
-			DebugColors_e iBackground = BG_INFO;
-
-			if (bSet)
-			{
-				if (bEnabled)
-				{
-					iBackground = BG_DISASM_BP_S_C;
-//					iForeground = FG_DISASM_BP_S_X;
-					iForeground = FG_DISASM_BP_S_C;
-				}
-				else
-				{
-					iForeground = FG_DISASM_BP_0_X;
-				}
-			}
-			else
-			{
-				iForeground = FG_INFO_TITLE;
-			}
-
-			SetBkColor( dc, DebugGetColor( iBackground ) );
-			SetTextColor( dc, DebugGetColor( iForeground ) );
-
-#if DEBUG_FORCE_DISPLAY
-	int iColor = R8 + (iBreakpoint*2);
-	COLORREF nColor = gaColorPalette[ iColor ];
-	if (iBreakpoint >= 4)
-	{
-		SetBkColor  ( dc, DebugGetColor( BG_DISASM_BP_S_C ) );
-		nColor = DebugGetColor( FG_DISASM_BP_S_C );
-	}
-	SetTextColor( dc, nColor );
-#endif
-
-			wsprintf( sText, TEXT("%04X"), nAddress1 );
-			DebugDrawTextFixed( sText, rect2 );
-
-			if (nLength > 1)
-			{
-				SetBkColor( dc, DebugGetColor( BG_INFO ) );
-				SetTextColor( dc, DebugGetColor( FG_INFO_OPERATOR ) );
-
-//				if (g_bConfigDisasmOpcodeSpaces)
-//				{
-//					DebugDrawTextHorz( TEXT(" "), rect2 );
-//					rect2.left += g_nFontWidthAvg;
-//				}
-
-				DebugDrawTextFixed( TEXT("-"), rect2 );
-//				rect2.left += g_nFontWidthAvg;
-//				if (g_bConfigDisasmOpcodeSpaces) // TODO: Might have to remove spaces, for BPIO... addr-addr xx
-//				{
-//					rect2.left += g_nFontWidthAvg;
-//				}
-
-				SetBkColor( dc, DebugGetColor( iBackground ) );
-				SetTextColor( dc, DebugGetColor( iForeground ) );
-#if DEBUG_FORCE_DISPLAY
-	iColor++;
-	COLORREF nColor = gaColorPalette[ iColor ];
-	if (iBreakpoint >= 4)
-	{
-		nColor = DebugGetColor( BG_INFO );
-		SetBkColor( dc, nColor );
-		nColor = DebugGetColor( FG_DISASM_BP_S_X );
-	}
-	SetTextColor( dc, nColor );
-#endif
-				wsprintf( sText, TEXT("%04X"), nAddress2 );
-				DebugDrawTextFixed( sText, rect2 );
-			}
-
-			// Bugfix: Rest of line is still breakpoint background color
-			SetBkColor(dc, DebugGetColor( BG_INFO )); // COLOR_BG_DATA
-			SetTextColor(dc, DebugGetColor( FG_INFO_TITLE )); //COLOR_STATIC
-			DebugDrawTextHorz( TEXT(" "), rect2 );
-
-		}
-		rect.top    += g_nFontHeight;
-		rect.bottom += g_nFontHeight;
-	}
-}
-
-
-//===========================================================================
-void DrawConsoleInput( HDC dc )
-{
-	g_hDC = dc;
-
-	SetTextColor( g_hDC, DebugGetColor( FG_CONSOLE_INPUT ));
-	SetBkColor(   g_hDC, DebugGetColor( BG_CONSOLE_INPUT ));
-
-	DrawConsoleLine( g_aConsoleInput, 0 );
-}
-
-//===========================================================================
-void DrawConsoleLine( LPCSTR pText, int y )
-{
-	if (y < 0)
-		return;
-
-//	int nHeight = WindowGetHeight( g_iWindowThis );
-	int nLineHeight = GetConsoleHeightPixels();
-
-	RECT rect;
-	rect.left   = 0;
-//	rect.top    = (g_nTotalLines - y) * nFontHeight; // DISPLAY_HEIGHT - (y * nFontHeight); // ((g_nTotalLines - y) * g_nFontHeight; // 368 = 23 lines * 16 pixels/line // MAX_DISPLAY_CONSOLE_LINES
-
-	rect.top    = GetConsoleTopPixels( y );
-	rect.bottom = rect.top + nLineHeight; //g_nFontHeight;
-
-	// Default: (356-14) = 342 pixels ~= 48 chars (7 pixel width)
-	//	rect.right = SCREENSPLIT1-14;
-//	rect.right = (g_nConsoleDisplayWidth * g_nFontWidthAvg) + (g_nFontWidthAvg - 1);
-
-	int nMiniConsoleRight = DISPLAY_MINI_CONSOLE; // (g_nConsoleDisplayWidth * g_nFontWidthAvg) + (g_nFontWidthAvg * 2); // +14
-	int nFullConsoleRight = DISPLAY_WIDTH;
-	int nRight = g_bConsoleFullWidth ? nFullConsoleRight : nMiniConsoleRight;
-	rect.right = nRight;
-
-	DebugDrawText( pText, rect );
-}
-
-
-// Disassembly formatting flags returned
-//===========================================================================
-int FormatDisassemblyLine( WORD nOffset, int iMode, int nOpBytes,
-	char *sAddress_, char *sOpCodes_, char *sTarget_, char *sTargetOffset_, int & nTargetOffset_, char * sImmediate_, char & nImmediate_, char *sBranch_ )
-{
-	const int nMaxOpcodes = 3;
-	unsigned int nMinBytesLen = (nMaxOpcodes * (2 + g_bConfigDisasmOpcodeSpaces)); // 2 char for byte (or 3 with space)
-
-	int bDisasmFormatFlags = 0;
-
-	// Composite string that has the symbol or target nAddress
-	WORD nTarget = 0;
-	nTargetOffset_ = 0;
-
-//	if (g_aOpmodes[ iMode ]._sFormat[0])
-	if ((iMode != AM_IMPLIED) &&
-		(iMode != AM_1) &&
-		(iMode != AM_2) &&
-		(iMode != AM_3))
-	{
-		nTarget = *(LPWORD)(mem+nOffset+1);
-		if (nOpBytes == 2)
-			nTarget &= 0xFF;
-
-		if (iMode == AM_R) // Relative ADDR_REL)
-		{
-			nTarget = nOffset+2+(int)(signed char)nTarget;
-
-			// Always show branch indicators
-			//	if ((nOffset == regs.pc) && CheckJump(nAddress))
-			bDisasmFormatFlags |= DISASM_BRANCH_INDICATOR;
-
-			if (nTarget < nOffset)
-			{
-				wsprintf( sBranch_, TEXT("%c"), g_sConfigBranchIndicatorUp[ g_bConfigDisasmFancyBranch ] );
-			}
-			else
-			if (nTarget > nOffset)
-			{
-				wsprintf( sBranch_, TEXT("%c"), g_sConfigBranchIndicatorDown[ g_bConfigDisasmFancyBranch ] );
-			}
-			else
-			{
-				wsprintf( sBranch_, TEXT("%c"), g_sConfigBranchIndicatorEqual[ g_bConfigDisasmFancyBranch ] );
-			}
-		}
-
-//		if (_tcsstr(g_aOpmodes[ iMode ]._sFormat,TEXT("%s")))
-//		if ((iMode >= ADDR_ABS) && (iMode <= ADDR_IABS))
-		if ((iMode == ADDR_ABS ) ||
-			(iMode == ADDR_ZP ) ||
-			(iMode == ADDR_ABSX) ||
-			(iMode == ADDR_ABSY) ||
-			(iMode == ADDR_ZP_X) ||
-			(iMode == ADDR_ZP_Y) ||
-			(iMode == ADDR_REL ) ||
-			(iMode == ADDR_INDX) ||
-			(iMode == ADDR_ABSIINDX) ||
-			(iMode == ADDR_INDY) ||
-			(iMode == ADDR_ABS ) ||
-			(iMode == ADDR_IZPG) ||
-			(iMode == ADDR_IABS))
-		{
-			LPCTSTR pTarget = NULL;
-			LPCTSTR pSymbol = FindSymbolFromAddress( nTarget );
-			if (pSymbol)
-			{
-				bDisasmFormatFlags |= DISASM_TARGET_SYMBOL;
-				pTarget = pSymbol;
-			}
-
-			if (! (bDisasmFormatFlags & DISASM_TARGET_SYMBOL))
-			{
-				pSymbol = FindSymbolFromAddress( nTarget - 1 );
-				if (pSymbol)
-				{
-					bDisasmFormatFlags |= DISASM_TARGET_SYMBOL;
-					bDisasmFormatFlags |= DISASM_TARGET_OFFSET;
-					pTarget = pSymbol;
-					nTargetOffset_ = +1; // U FA82   LDA #3F1 BREAK+1
-				}
-			}
-			
-			if (! (bDisasmFormatFlags & DISASM_TARGET_SYMBOL))
-			{
-				pSymbol = FindSymbolFromAddress( nTarget + 1 );
-				if (pSymbol)
-				{
-					bDisasmFormatFlags |= DISASM_TARGET_SYMBOL;
-					bDisasmFormatFlags |= DISASM_TARGET_OFFSET;
-					pTarget = pSymbol;
-					nTargetOffset_ = -1; // U FA82 LDA #3F3 BREAK-1
-				}
-			}
-
-			if (! (bDisasmFormatFlags & DISASM_TARGET_SYMBOL))
-			{
-					pTarget = FormatAddress( nTarget, nOpBytes );
-			}				
-
-//			wsprintf( sTarget, g_aOpmodes[ iMode ]._sFormat, pTarget );
-			if (bDisasmFormatFlags & DISASM_TARGET_OFFSET)
-			{
-				int nAbsTargetOffset =  (nTargetOffset_ > 0) ? nTargetOffset_ : -nTargetOffset_;
-				wsprintf( sTargetOffset_, "%d", nAbsTargetOffset );
-			}
-			wsprintf( sTarget_, "%s", pTarget );
-		}
-		else
-		if (iMode == AM_M)
-		{
-//			wsprintf( sTarget, g_aOpmodes[ iMode ]._sFormat, (unsigned)nTarget );
-			wsprintf( sTarget_, "%02X", (unsigned)nTarget );
-
-			if (iMode == ADDR_IMM)
-			{
-				bDisasmFormatFlags |= DISASM_IMMEDIATE_CHAR;
-				nImmediate_ = (BYTE) nTarget;
-				wsprintf( sImmediate_, "%c", FormatCharTxtCtrl( FormatCharTxtHigh( nImmediate_, NULL ), NULL ) );
-			}
-		}
-	}
-
-	wsprintf( sAddress_, "%04X", nOffset );
-
-	// Opcode Bytes
-	TCHAR *pDst = sOpCodes_;
-	for( int iBytes = 0; iBytes < nOpBytes; iBytes++ )
-	{
-		BYTE nMem = (unsigned)*(mem+nOffset+iBytes);
-		wsprintf( pDst, TEXT("%02X"), nMem ); // sBytes+_tcslen(sBytes)
-		pDst += 2;
-
-		if (g_bConfigDisasmOpcodeSpaces)
-		{
-			_tcscat( pDst, TEXT(" " ) );
-		}
-		pDst++;
-	}
-    while (_tcslen(sOpCodes_) < nMinBytesLen)
-	{
-		_tcscat( sOpCodes_, TEXT(" ") );
-	}
-
-	return bDisasmFormatFlags;
-}	
-
-
-//===========================================================================
-WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nOffset, LPTSTR text)
-{
-	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
-		return 0;
-
-	const int nMaxAddressLen = 40;
-	const int nMaxOpcodes = 3;
-
-	int iOpcode;
-	int iOpmode;
-	int nOpbyte;
-	iOpcode = _6502GetOpmodeOpbyte( nOffset, iOpmode, nOpbyte );
-
-	TCHAR sAddress  [ 5];
-	TCHAR sOpcodes  [(nMaxOpcodes*3)+1] = TEXT("");
-	TCHAR sTarget   [nMaxAddressLen] = TEXT("");
-	TCHAR sTargetOffset[ 4 ] = TEXT(""); // +/- 255, realistically +/-1
-	int   nTargetOffset;
-	char  nImmediate = 0;
-	TCHAR sImmediate[ 4 ]; // 'c'
-	TCHAR sBranch   [ 2 ]; // ^
-
-	bool bTargetIndirect = false;
-	bool bTargetX = false;
-	bool bTargetY = false;
-
-	if ((iOpmode >= ADDR_INDX) && (iOpmode <= ADDR_IABS))
-		bTargetIndirect = true;
-
-	if ((iOpmode == ADDR_ABSX) || (iOpmode == ADDR_ZP_X) || (iOpmode == ADDR_INDX) || (iOpmode == ADDR_ABSIINDX))
-		bTargetX = true;
-
-	if ((iOpmode == ADDR_ABSY) || (iOpmode == ADDR_ZP_Y))
-		bTargetY = true;
-
-	int bDisasmFormatFlags = FormatDisassemblyLine( nOffset, iOpmode, nOpbyte,
-		sAddress, sOpcodes, sTarget, sTargetOffset, nTargetOffset, sImmediate, nImmediate, sBranch );
-
-//	wsprintf(sLine,
-//           TEXT("%04X%c %s  %-9s %s %s"),
-//           (unsigned)nOffset,
-//			g_aConfigDisasmAddressColon[ g_bConfigDisasmAddressColon ],
-//           (LPCTSTR)sBytes,
-//           (LPCTSTR)GetSymbol(nOffset,0),              // Label
-//           (LPCTSTR)g_aOpcodes[nOpcode].mnemonic, // Instruct
-//           (LPCTSTR)sTarget);                          // Target
-
-
-	//> Address Seperator Opcodes   Label Mnemonic Target [Immediate] [Branch]
-	//> xxxx: xx xx xx   LABEL    MNEMONIC    'E' v
-	//>       ^          ^        ^           ^   ^
-	//>       6          17       27          41  46
-	const int nDefaultFontWidth = 7; // g_aFontConfig[FONT_DISASM_DEFAULT]._nFontWidth or g_nFontWidthAvg
-	int X_OPCODE      =  6 * nDefaultFontWidth;
-	int X_LABEL       = 17 * nDefaultFontWidth;
-	int X_INSTRUCTION = 27 * nDefaultFontWidth;
-	int X_IMMEDIATE   = 41 * nDefaultFontWidth;
-	int X_BRANCH      = 46 * nDefaultFontWidth;
-
-	const int DISASM_SYMBOL_LEN = 9;
-
-	if (dc)
-	{
-		int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight; // _nFontHeight; // g_nFontHeight
-
-		RECT linerect;
-		linerect.left   = 0;
-		linerect.top    = iLine * nFontHeight;
-		linerect.right  = DISPLAY_DISASM_RIGHT; // HACK: MAGIC #: 14 -> g_nFontWidthAvg
-		linerect.bottom = linerect.top + nFontHeight;
-
-//		BOOL bp = g_nBreakpoints && CheckBreakpoint(nOffset,nOffset == regs.pc);
-
-		bool bBreakpointActive;
-		bool bBreakpointEnable;
-		GetBreakpointInfo( nOffset, bBreakpointActive, bBreakpointEnable );
-		bool bAddressAtPC = (nOffset == regs.pc);
-
-		DebugColors_e iBackground = BG_DISASM_1;
-		DebugColors_e iForeground = FG_DISASM_MNEMONIC; // FG_DISASM_TEXT;
-		bool bCursorLine = false;
-
-		if (((! g_bDisasmCurBad) && (iLine == g_nDisasmCurLine))
-			|| (g_bDisasmCurBad && (iLine == 0)))
-		{
-			bCursorLine = true;
-
-			// Breakpoint,
-			if (bBreakpointActive)
-			{
-				if (bBreakpointEnable)
-				{
-					iBackground = BG_DISASM_BP_S_C; iForeground = FG_DISASM_BP_S_C; 
-				}
-				else
-				{
-					iBackground = BG_DISASM_BP_0_C; iForeground = FG_DISASM_BP_0_C;
-				}
-			}
-			else
-			if (bAddressAtPC)
-			{
-				iBackground = BG_DISASM_PC_C; iForeground = FG_DISASM_PC_C;
-			}
-			else
-			{
-				iBackground = BG_DISASM_C; iForeground = FG_DISASM_C;
-				// HACK?  Sync Cursor back up to Address
-				// The cursor line may of had to be been moved, due to Disasm Singularity.
-				g_nDisasmCurAddress = nOffset; 
-			}
-		}
-		else
-		{
-			if (iLine & 1)
-			{
-				iBackground = BG_DISASM_1;
-			}
-			else
-			{
-				iBackground = BG_DISASM_2;
-			}
-
-			// This address has a breakpoint, but the cursor is not on it (atm)
-			if (bBreakpointActive)
-			{
-				if (bBreakpointEnable) 
-				{
-					iForeground = FG_DISASM_BP_S_X; // Red (old Yellow)
-				}
-				else
-				{
-					iForeground = FG_DISASM_BP_0_X; // Yellow
-				}				
-			}
-			else
-			if (bAddressAtPC)
-			{
-				iBackground = BG_DISASM_PC_X; iForeground = FG_DISASM_PC_X;
-			}
-			else
-			{
-				iForeground = FG_DISASM_MNEMONIC;
-			}
-		}
-		SetBkColor(   dc, DebugGetColor( iBackground ) );
-		SetTextColor( dc, DebugGetColor( iForeground ) );
-
-	// Address
-		if (! bCursorLine)
-			SetTextColor( dc, DebugGetColor( FG_DISASM_ADDRESS ) );
-		DebugDrawTextHorz( (LPCTSTR) sAddress, linerect );
-
-	// Address Seperator		
-		if (! bCursorLine)
-			SetTextColor( dc, DebugGetColor( FG_DISASM_OPERATOR ) );
-		if (g_bConfigDisasmAddressColon)
-			DebugDrawTextHorz( TEXT(":"), linerect );
-
-	// Opcodes
-		linerect.left = X_OPCODE;
-
-		if (! bCursorLine)
-			SetTextColor( dc, DebugGetColor( FG_DISASM_OPCODE ) );
-//		DebugDrawTextHorz( TEXT(" "), linerect );
-		DebugDrawTextHorz( (LPCTSTR) sOpcodes, linerect );
-//		DebugDrawTextHorz( TEXT("  "), linerect );
-
-	// Label
-		linerect.left = X_LABEL;
-
-		LPCSTR pSymbol = FindSymbolFromAddress( nOffset );
-		if (pSymbol)
-		{
-			if (! bCursorLine)
-				SetTextColor( dc, DebugGetColor( FG_DISASM_SYMBOL ) );
-			DebugDrawTextHorz( pSymbol, linerect );
-		}	
-//		linerect.left += (g_nFontWidthAvg * DISASM_SYMBOL_LEN);
-//		DebugDrawTextHorz( TEXT(" "), linerect );
-
-	// Instruction
-		linerect.left = X_INSTRUCTION;
-
-		if (! bCursorLine)
-			SetTextColor( dc, DebugGetColor( iForeground ) );
-
-		LPCTSTR pMnemonic = g_aOpcodes[ iOpcode ].sMnemonic;
-		DebugDrawTextHorz( pMnemonic, linerect );
-
-		DebugDrawTextHorz( TEXT(" "), linerect );
-
-	// Target
-		if (iOpmode == ADDR_IMM)
-		{
-			if (! bCursorLine)
-				SetTextColor( dc, DebugGetColor( FG_DISASM_OPERATOR ));	
-			DebugDrawTextHorz( TEXT("#$"), linerect );
-		}
-
-		if (bTargetIndirect)
-		{
-			if (! bCursorLine)
-				SetTextColor( dc, DebugGetColor( FG_DISASM_OPERATOR ));	
-			DebugDrawTextHorz( TEXT("("), linerect );
-		}
-
-		char *pTarget = sTarget;
-		if (*pTarget == '$')
-		{
-			pTarget++;
-			if (! bCursorLine)
-				SetTextColor( dc, DebugGetColor( FG_DISASM_OPERATOR ));	
-			DebugDrawTextHorz( TEXT("$"), linerect );
-		}
-
-		if (! bCursorLine)
-		{
-			if (bDisasmFormatFlags & DISASM_TARGET_SYMBOL)
-			{
-				SetTextColor( dc, DebugGetColor( FG_DISASM_SYMBOL ) );
-			}
-			else
-			{
-				if (bDisasmFormatFlags & DISASM_IMMEDIATE_CHAR)
-				{
-					SetTextColor( dc, DebugGetColor( FG_DISASM_OPCODE ) );
-				}
-				else	
-				{
-					SetTextColor( dc, DebugGetColor( FG_DISASM_TARGET ) );
-				}
-			}
-		}
-		DebugDrawTextHorz( pTarget, linerect );
-//		DebugDrawTextHorz( TEXT(" "), linerect );
-
-		// Target Offset +/-		
-		if (bDisasmFormatFlags & DISASM_TARGET_OFFSET)
-		{
-			if (! bCursorLine)
-				SetTextColor( dc, DebugGetColor( FG_DISASM_OPERATOR ));	
-
-			if (nTargetOffset > 0)
-				DebugDrawTextHorz( TEXT("+" ), linerect );
-			if (nTargetOffset < 0)
-				DebugDrawTextHorz( TEXT("-" ), linerect );
-
-			if (! bCursorLine)
-			{
-				SetTextColor( dc, DebugGetColor( FG_DISASM_OPCODE )); // Technically, not a hex number, but decimal
-			}		
-			DebugDrawTextHorz( sTargetOffset, linerect );
-		}
-		// Indirect Target Regs
-		if (bTargetIndirect || bTargetX || bTargetY)
-		{
-			if (! bCursorLine)
-				SetTextColor( dc, DebugGetColor( FG_DISASM_OPERATOR ));	
-
-			if (bTargetX)
-				DebugDrawTextHorz( TEXT(",X"), linerect );
-
-			if (bTargetY)
-				DebugDrawTextHorz( TEXT(",Y"), linerect );
-
-			if (bTargetIndirect)
-				DebugDrawTextHorz( TEXT(")"), linerect );
-
-			if (iOpmode == ADDR_INDY)
-				DebugDrawTextHorz( TEXT(",Y"), linerect );
-		}
-
-	// Immediate Char
-		linerect.left = X_IMMEDIATE;
-
-		if (bDisasmFormatFlags & DISASM_IMMEDIATE_CHAR)
-		{
-			if (! bCursorLine)
-			{
-				SetTextColor( dc, DebugGetColor( FG_DISASM_OPERATOR ) );
-			}
-			DebugDrawTextHorz( TEXT("'"), linerect ); // TEXT("    '")
-
-			if (! bCursorLine)
-			{
-				ColorizeSpecialChar( dc, NULL, nImmediate, MEM_VIEW_ASCII, iBackground );
-//					iBackground, FG_INFO_CHAR_HI, FG_DISASM_CHAR, FG_INFO_CHAR_LO );
-			}
-			DebugDrawTextHorz( sImmediate, linerect );
-
-			SetBkColor(   dc, DebugGetColor( iBackground ) ); // Hack: Colorize can "color bleed to EOL"
-			if (! bCursorLine)
-			{
-				SetTextColor( dc, DebugGetColor( FG_DISASM_OPERATOR ) );
-			}
-			DebugDrawTextHorz( TEXT("'"), linerect );
-		}
-	
-	// Branch Indicator		
-		linerect.left = X_BRANCH;
-
-		if (bDisasmFormatFlags & DISASM_BRANCH_INDICATOR)
-		{
-			if (! bCursorLine)
-			{
-				SetTextColor( dc, DebugGetColor( FG_DISASM_BRANCH ) );
-			}
-
-			if (g_bConfigDisasmFancyBranch)
-				SelectObject( dc, g_aFontConfig[ FONT_DISASM_BRANCH ]._hFont );  // g_hFontWebDings
-
-			DebugDrawText( sBranch, linerect );
-
-			if (g_bConfigDisasmFancyBranch)
-				SelectObject( dc, g_aFontConfig[ FONT_DISASM_DEFAULT ]._hFont ); // g_hFontDisasm
-		}
-	}
-
-	return nOpbyte;
-}
-
-// Optionally copy the flags to pText_
-//===========================================================================
-void DrawFlags (HDC dc, int line, WORD nRegFlags, LPTSTR pFlagNames_)
-{
-	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
-		return;
-
-	TCHAR sFlagNames[ _6502_NUM_FLAGS+1 ] = TEXT(""); // = TEXT("NVRBDIZC"); // copy from g_aFlagNames
-	TCHAR sText[2] = TEXT("?");
-	RECT  rect;
-
-	if (dc)
-	{
-		rect.left   = DISPLAY_FLAG_COLUMN;
-		rect.top    = line * g_nFontHeight;
-		rect.right  = rect.left + 9;
-		rect.bottom = rect.top + g_nFontHeight;
-		SetBkColor(dc, DebugGetColor( BG_INFO )); // COLOR_BG_DATA
-	}
-
-	int iFlag = 0;
-	int nFlag = _6502_NUM_FLAGS;
-	while (nFlag--)
-	{
-		iFlag = BP_SRC_FLAG_C + (_6502_NUM_FLAGS - nFlag - 1);
-
-		bool bSet = (nRegFlags & 1);
-		if (dc)
-		{
-
-//			sText[0] = g_aFlagNames[ MAX_FLAGS - iFlag - 1]; // mnemonic[iFlag]; // mnemonic is reversed
-			sText[0] = g_aBreakpointSource[ iFlag ][0];
-			if (bSet)
-			{
-				SetBkColor( dc, DebugGetColor( BG_INFO_INVERSE ));
-				SetTextColor( dc, DebugGetColor( FG_INFO_INVERSE ));
-			}
-			else
-			{
-				SetBkColor(dc, DebugGetColor( BG_INFO ));
-				SetTextColor( dc, DebugGetColor( FG_INFO_TITLE ));
-			}
-			DebugDrawText( sText, rect );
-			rect.left  -= 9; // HACK: Font Width
-			rect.right -= 9; // HACK: Font Width
-		}
-
-		if (pFlagNames_)
-		{
-			if (! bSet) //(nFlags & 1))
-			{
-				sFlagNames[nFlag] = TEXT('.');
-			}
-			else
-			{
-				sFlagNames[nFlag] = g_aBreakpointSource[ iFlag ][0]; 
-			}
-		}
-
-		nRegFlags >>= 1;
-	}
-
-	if (pFlagNames_)
-		_tcscpy(pFlagNames_,sFlagNames);
-}
-
-//===========================================================================
-void DrawMemory (HDC hDC, int line, int iMemDump )
-{
-	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
-		return;
-
-	MemoryDump_t* pMD = &g_aMemDump[ iMemDump ];
-
-	USHORT       nAddr   = pMD->nAddress;
-	DEVICE_e     eDevice = pMD->eDevice;
-	MemoryView_e iView   = pMD->eView;
-
-	SS_CARD_MOCKINGBOARD SS_MB;
-
-	if ((eDevice == DEV_SY6522) || (eDevice == DEV_AY8910))
-		MB_GetSnapshot(&SS_MB, 4+(nAddr>>1));		// Slot4 or Slot5
-
-	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
-
-	RECT rect;
-	rect.left   = DISPLAY_MINIMEM_COLUMN - nFontWidth;
-	rect.top    = (line * g_nFontHeight);
-	rect.right  = DISPLAY_WIDTH;
-	rect.bottom = rect.top + g_nFontHeight;
-
-
-	const int MAX_MEM_VIEW_TXT = 16;
-	TCHAR sText[ MAX_MEM_VIEW_TXT * 2 ];
-	TCHAR sData[ MAX_MEM_VIEW_TXT * 2 ];
-
-	TCHAR sType   [ 4 ] = TEXT("Mem");
-	TCHAR sAddress[ 8 ] = TEXT("");
-
-	int iForeground = FG_INFO_OPCODE;
-	int iBackground = BG_INFO;
-
-	if (eDevice == DEV_SY6522)
-	{
-//		wsprintf(sData,TEXT("Mem at SY#%d"), nAddr);
-		wsprintf( sAddress,TEXT("SY#%d"), nAddr );
-	}
-	else if(eDevice == DEV_AY8910)
-	{
-//		wsprintf(sData,TEXT("Mem at AY#%d"), nAddr);
-		wsprintf( sAddress,TEXT("AY#%d"), nAddr );
-	}
-	else
-	{
-		wsprintf( sAddress,TEXT("%04X"),(unsigned)nAddr);
-
-		if (iView == MEM_VIEW_HEX)
-			wsprintf( sType, TEXT("HEX") );
-		else
-		if (iView == MEM_VIEW_ASCII)
-			wsprintf( sType, TEXT("ASCII") );
-		else
-			wsprintf( sType, TEXT("TEXT") );
-	}
-
-	RECT rect2;
-
-	rect2 = rect;	
-	SetTextColor( hDC, DebugGetColor( FG_INFO_TITLE ));
-	SetBkColor( hDC, DebugGetColor( BG_INFO ));
-	DebugDrawTextFixed( sType, rect2 );
-
-	SetTextColor( hDC, DebugGetColor( FG_INFO_OPERATOR ));
-	DebugDrawTextFixed( TEXT(" at " ), rect2 );
-
-	SetTextColor( hDC, DebugGetColor( FG_INFO_ADDRESS ));
-	DebugDrawTextLine( sAddress, rect2 );
-
-	rect.top    = rect2.top;
-	rect.bottom = rect2.bottom;
-
-	sData[0] = 0;
-
-	WORD iAddress = nAddr;
-
-	if( (eDevice == DEV_SY6522) || (eDevice == DEV_AY8910) )
-	{
-		iAddress = 0;
-	}
-
-	int nLines = 4;
-	int nCols = 4;
-
-	if (iView != MEM_VIEW_HEX)
-	{
-		nCols = MAX_MEM_VIEW_TXT;
-	}
-	rect.right  = MAX( rect.left + (nFontWidth * nCols), DISPLAY_WIDTH );
-
-	SetTextColor( hDC, DebugGetColor( FG_INFO_OPCODE ));
-
-	for (int iLine = 0; iLine < nLines; iLine++ )
-	{
-		RECT rect2;
-		rect2 = rect;
-
-		if (iView == MEM_VIEW_HEX)
-		{
-			wsprintf( sText, TEXT("%04X"), iAddress );
-			SetTextColor( hDC, DebugGetColor( FG_INFO_ADDRESS ));
-			DebugDrawTextFixed( sText, rect2 );
-
-			SetTextColor( hDC, DebugGetColor( FG_INFO_OPERATOR ));
-			DebugDrawTextFixed( TEXT(":"), rect2 );
-		}
-
-		for (int iCol = 0; iCol < nCols; iCol++)
-		{
-			bool bHiBit = false;
-			bool bLoBit = false;
-
-			SetBkColor  ( hDC, DebugGetColor( iBackground ));
-			SetTextColor( hDC, DebugGetColor( iForeground ));
-
-// .12 Bugfix: DrawMemory() should draw memory byte for IO address: ML1 C000
-//			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
-//			{
-//				wsprintf( sText, TEXT("IO ") );
-//			}
-//			else
-			if (eDevice == DEV_SY6522)
-			{
-				wsprintf( sText, TEXT("%02X "), (unsigned) ((BYTE*)&SS_MB.Unit[nAddr & 1].RegsSY6522)[iAddress] );
-			}
-			else
-			if (eDevice == DEV_AY8910)
-			{
-				wsprintf( sText, TEXT("%02X "), (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress] );
-			}
-			else
-			{
-				BYTE nData = (unsigned)*(LPBYTE)(membank+iAddress);
-				sText[0] = 0;
-
-				char c = nData;
-
-				if (iView == MEM_VIEW_HEX)
-				{
-					if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
-					{
-						SetTextColor( hDC, DebugGetColor( FG_INFO_IO_BYTE ));
-					}
-					wsprintf(sText, TEXT("%02X "), nData );
-				}
-				else
-				{
-// .12 Bugfix: DrawMemory() should draw memory byte for IO address: ML1 C000
-					if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
-						iBackground = BG_INFO_IO_BYTE;
-
-					ColorizeSpecialChar( hDC, sText, nData, iView, iBackground );
-				}
-			}
-			int nChars = DebugDrawTextFixed( sText, rect2 ); // DebugDrawTextFixed()
-
-			iAddress++;
-		}
-		rect.top    += g_nFontHeight; // TODO/FIXME: g_nFontHeight;
-		rect.bottom += g_nFontHeight; // TODO/FIXME: g_nFontHeight;
-		sData[0] = 0;
-	}
-}
-
-//===========================================================================
-void DrawRegister (HDC dc, int line, LPCTSTR name, const int nBytes, const WORD nValue, int iSource )
-{
-	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
-		return;
-
-	RECT rect;
-	rect.left   = DISPLAY_REGS_COLUMN;
-	rect.top    = line * g_nFontHeight;
-	rect.right  = rect.left + 40; // TODO:FIXME: g_nFontWidthAvg * 
-	rect.bottom = rect.top + g_nFontHeight;
-
-	if ((PARAM_REG_A  == iSource) ||
-		(PARAM_REG_X  == iSource) ||
-		(PARAM_REG_Y  == iSource) ||
-		(PARAM_REG_PC == iSource) ||
-		(PARAM_REG_SP == iSource))
-	{		
-		SetTextColor(dc, DebugGetColor( FG_INFO_REG ));
-	}
-	else
-	{
-		SetTextColor(dc, DebugGetColor( FG_INFO_TITLE ));
-	}
-	SetBkColor(dc, DebugGetColor( BG_INFO ));
-	DebugDrawText( name, rect );
-
-	unsigned int nData = nValue;
-	int nOffset = 6;
-
-	TCHAR sValue[8];
-
-	if (PARAM_REG_SP == iSource)
-	{
-		WORD nStackDepth = _6502_STACK_END - nValue;
-		wsprintf( sValue, "%02X", nStackDepth );
-		int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
-		rect.left += (2 * nFontWidth) + (nFontWidth >> 1); // 2.5 looks a tad nicer then 2
-
-		// ## = Stack Depth (in bytes)
-		SetTextColor(dc, DebugGetColor( FG_INFO_OPERATOR )); // FG_INFO_OPCODE, FG_INFO_TITLE
-		DebugDrawText( sValue, rect );
-	}
-
-	if (nBytes == 2)
-	{
-		wsprintf(sValue,TEXT("%04X"), nData);
-	}
-	else
-	{
-		rect.left  = DISPLAY_REGS_COLUMN + 21; // HACK: MAGIC #: 21 // +3 chars
-		rect.right = SCREENSPLIT2;
-
-		SetTextColor(dc, DebugGetColor( FG_INFO_OPERATOR ));
-		DebugDrawTextFixed( TEXT("'"), rect ); // DebugDrawTextFixed
-
-		ColorizeSpecialChar( dc, sValue, nData, MEM_VIEW_ASCII ); // MEM_VIEW_APPLE for inverse background little hard on the eyes
-		DebugDrawTextFixed( sValue, rect ); // DebugDrawTextFixed()
-
-		SetBkColor(dc, DebugGetColor( BG_INFO ));
-		SetTextColor(dc, DebugGetColor( FG_INFO_OPERATOR ));
-		DebugDrawTextFixed( TEXT("'"), rect ); // DebugDrawTextFixed()
-
-		wsprintf(sValue,TEXT("  %02X"), nData );
-	}
-
-	// Needs to be far enough over, since 4 chars of ZeroPage symbol also calls us
-	rect.left  = DISPLAY_REGS_COLUMN + (nOffset * g_aFontConfig[ FONT_INFO ]._nFontWidthAvg); // HACK: MAGIC #: 40 
-	rect.right = SCREENSPLIT2;
-
-	if ((PARAM_REG_PC == iSource) || (PARAM_REG_SP == iSource)) // Stack Pointer is target address, but doesn't look as good.
-	{
-		SetTextColor(dc, DebugGetColor( FG_INFO_ADDRESS ));
-	}
-	else
-	{
-		SetTextColor(dc, DebugGetColor( FG_INFO_OPCODE )); // FG_DISASM_OPCODE
-	}
-	DebugDrawText( sValue, rect );
-}
-
-//===========================================================================
-void DrawStack (HDC dc, int line)
-{
-	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
-		return;
-
-	unsigned nAddress = regs.sp;
-#if DEBUG_FORCE_DISPLAY
-	nAddress = 0x100;
-#endif
-
-	int      iStack   = 0;
-	while (iStack < MAX_DISPLAY_STACK_LINES)
-	{
-		nAddress++;
-
-		RECT rect;
-		rect.left   = DISPLAY_STACK_COLUMN;
-		rect.top    = (iStack+line) * g_nFontHeight;
-		rect.right  = DISPLAY_STACK_COLUMN + 40; // TODO/FIXME/HACK MAGIC #: g_nFontWidthAvg * 
-		rect.bottom = rect.top + g_nFontHeight;
-
-		SetTextColor(dc, DebugGetColor( FG_INFO_TITLE )); // [COLOR_STATIC
-		SetBkColor(dc, DebugGetColor( BG_INFO )); // COLOR_BG_DATA
-
-		TCHAR sText[8] = TEXT("");
-		if (nAddress <= _6502_STACK_END)
-		{
-			wsprintf(sText,TEXT("%04X"),nAddress);
-		}
-
-//		ExtTextOut(dc,rect.left,rect.top,
-//			ETO_CLIPPED | ETO_OPAQUE,&rect,
-//			sText,_tcslen(sText),NULL);
-		DebugDrawText( sText, rect );
-
-		rect.left   = DISPLAY_STACK_COLUMN + 40; // TODO/FIXME/HACK MAGIC #: g_nFontWidthAvg * 
-		rect.right  = SCREENSPLIT2;
-		SetTextColor(dc, DebugGetColor( FG_INFO_OPCODE )); // COLOR_FG_DATA_TEXT
-
-		if (nAddress <= _6502_STACK_END)
-		{
-			wsprintf(sText,TEXT("%02X"),(unsigned)*(LPBYTE)(mem+nAddress));
-		}
-//		ExtTextOut(dc,rect.left,rect.top,
-//			ETO_CLIPPED | ETO_OPAQUE,&rect,
-//			sText,_tcslen(sText),NULL);
-		DebugDrawText( sText, rect );
-	    iStack++;
-	}
-}
-
-//===========================================================================
-void DrawTargets (HDC dc, int line)
-{
-	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
-		return;
-
-	int aTarget[2];
-	Get6502Targets( &aTarget[0],&aTarget[1], NULL );
-
-	RECT rect;
-	
-	int iAddress = 2;
-	while (iAddress--)
-	{
-		// .6 Bugfix: DrawTargets() should draw target byte for IO address: R PC FB33
-//		if ((aTarget[iAddress] >= _6502_IO_BEGIN) && (aTarget[iAddress] <= _6502_IO_END))
-//			aTarget[iAddress] = NO_6502_TARGET;
-
-		TCHAR sAddress[8] = TEXT("");
-		TCHAR sData[8]   = TEXT("");
-
-#if DEBUG_FORCE_DISPLAY
-		if (aTarget[iAddress] == NO_6502_TARGET)
-			aTarget[iAddress] = 0;
-#endif
-		if (aTarget[iAddress] != NO_6502_TARGET)
-		{
-			wsprintf(sAddress,TEXT("%04X"),aTarget[iAddress]);
-			if (iAddress)
-				wsprintf(sData,TEXT("%02X"),*(LPBYTE)(mem+aTarget[iAddress]));
-			else
-				wsprintf(sData,TEXT("%04X"),*(LPWORD)(mem+aTarget[iAddress]));
-		}
-
-		rect.left   = DISPLAY_TARGETS_COLUMN;
-		rect.top    = (line+iAddress) * g_nFontHeight;
-		int nColumn = DISPLAY_TARGETS_COLUMN + 40; // TODO/FIXME/HACK MAGIC #: g_nFontWidthAvg * 
-		rect.right  = nColumn;
-		rect.bottom = rect.top + g_nFontHeight;
-
-		if (iAddress == 0)
-			SetTextColor(dc, DebugGetColor( FG_INFO_TITLE )); // Temp Address
-		else
-			SetTextColor(dc, DebugGetColor( FG_INFO_ADDRESS )); // Target Address
-
-		SetBkColor(dc, DebugGetColor( BG_INFO ));
-		DebugDrawText( sAddress, rect );
-
-		rect.left  = nColumn; // SCREENSPLIT1+40; // + 40
-		rect.right = SCREENSPLIT2;
-
-		if (iAddress == 0)
-			SetTextColor(dc, DebugGetColor( FG_INFO_ADDRESS )); // Temp Target
-		else
-			SetTextColor(dc, DebugGetColor( FG_INFO_OPCODE )); // Target Bytes
-
-		DebugDrawText( sData, rect );
-  }
-}
-
-//===========================================================================
-void DrawWatches (HDC dc, int line)
-{
-	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
-		return;
-
-	RECT rect;
-	rect.left   = DISPLAY_WATCHES_COLUMN;
-	rect.top    = (line * g_nFontHeight);
-	rect.right  = DISPLAY_WIDTH;
-	rect.bottom = rect.top + g_nFontHeight;
-
-	TCHAR sText[16] = TEXT("Watches");
-	SetTextColor(dc, DebugGetColor( FG_INFO_TITLE ));
-	SetBkColor(dc, DebugGetColor( BG_INFO ));
-	DebugDrawTextLine( sText, rect );
-
-	int iWatch;
-	for (iWatch = 0; iWatch < MAX_WATCHES; iWatch++ )
-	{
-#if DEBUG_FORCE_DISPLAY
-		if (true)
-#else
-		if (g_aWatches[iWatch].bEnabled)
-#endif
-		{
-			RECT rect2 = rect;
-
-			wsprintf( sText,TEXT("%d"),iWatch+1  );
-			SetTextColor( dc, DebugGetColor( FG_INFO_BULLET ));
-			DebugDrawTextFixed( sText, rect2 );
-			
-			wsprintf( sText,TEXT(":") );
-			SetTextColor( dc, DebugGetColor( FG_INFO_OPERATOR ));
-			DebugDrawTextFixed( sText, rect2 );
-
-			wsprintf( sText,TEXT(" %04X"), g_aWatches[iWatch].nAddress );
-			SetTextColor( dc, DebugGetColor( FG_INFO_ADDRESS ));
-			DebugDrawTextFixed( sText, rect2 );
-
-			wsprintf(sText,TEXT(" %02X"),(unsigned)*(LPBYTE)(mem+g_aWatches[iWatch].nAddress));
-			SetTextColor(dc, DebugGetColor( FG_INFO_OPCODE ));
-			DebugDrawTextFixed( sText, rect2 );
-		}
-
-		rect.top    += g_nFontHeight; // HACK: 
-		rect.bottom += g_nFontHeight; // HACK:
-	}
-}
-
-
-//===========================================================================
-void DrawZeroPagePointers(HDC dc, int line)
-{
-	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
-		return;
-
-	for(int iZP = 0; iZP < MAX_ZEROPAGE_POINTERS; iZP++)
-	{
-		RECT rect;
-		rect.left   = DISPLAY_ZEROPAGE_COLUMN;
-		rect.top    = (line+iZP) * g_nFontHeight;
-		rect.right  = SCREENSPLIT2; // TODO/FIXME:
-		rect.bottom = rect.top + g_nFontHeight;
-
-		TCHAR sText[8] = TEXT("       ");
-
-		SetTextColor(dc, DebugGetColor( FG_INFO_TITLE )); // COLOR_STATIC
-		SetBkColor(dc, DebugGetColor( BG_INFO ));
-		DebugDrawText( sText, rect );
-
-		Breakpoint_t *pZP = &g_aZeroPagePointers[iZP];
-		bool bEnabled = pZP->bEnabled;
-
-#if DEBUG_FORCE_DISPLAY
-		bEnabled = true;
-#endif
-
-		if (bEnabled)
-//		if (g_aZeroPagePointers[iZP].bSet) // TODO: Only list enanbled ones
-		{
-			const UINT nSymbolLen = 4;
-			char szZP[nSymbolLen+1];
-
-			BYTE nZPAddr1 = (g_aZeroPagePointers[iZP].nAddress  ) & 0xFF; // +MJP missig: "& 0xFF", or "(BYTE) ..."
-			BYTE nZPAddr2 = (g_aZeroPagePointers[iZP].nAddress+1) & 0xFF;
-
-			// Get nZPAddr1 last (for when neither symbol is not found - GetSymbol() return ptr to static buffer)
-			const char* pszSymbol2 = GetSymbol(nZPAddr2, 2);		// 2:8-bit value (if symbol not found)
-			const char* pszSymbol1 = GetSymbol(nZPAddr1, 2);		// 2:8-bit value (if symbol not found)
-
-			if( (strlen(pszSymbol1)==1) && (strlen(pszSymbol2)==1) )
-			{
-				sprintf(szZP, "%s%s", pszSymbol1, pszSymbol2);
-			}
-			else
-			{
-				memcpy(szZP, pszSymbol1, nSymbolLen);
-				szZP[nSymbolLen] = 0;
-			}
-
-			WORD nZPPtr = (WORD)membank[nZPAddr1] | ((WORD)membank[nZPAddr2]<<8);
-			DrawRegister(dc, line+iZP, szZP, 2, nZPPtr);
-		}
-	}
-}
-
-
-//===========================================================================
-int _Arg_1( int nValue )
-{
-	g_aArgs[1].nVal1 = nValue;
-	return 1;
-}
-	
-//===========================================================================
-int _Arg_1( LPTSTR pName )
-{
-	int nLen = _tcslen( g_aArgs[1].sArg );
-	if (nLen < MAX_ARG_LEN)
-	{
-		_tcscpy( g_aArgs[1].sArg, pName );
-	}
-	else
-	{
-		_tcsncpy( g_aArgs[1].sArg, pName, MAX_ARG_LEN - 1 );
-	}
-	return 1;
-}
-
-/**
-	@description Copies Args[iSrc .. iEnd] to Args[0]
-	@param iSrc First argument to copy
-	@param iEnd Last argument to end
-	@return nArgs Number of new args
-	Usually called as: nArgs = _Arg_Shift( iArg, nArgs );
-//=========================================================================== */
-int _Arg_Shift( int iSrc, int iEnd, int iDst )
-{
-	if (iDst < 0)
-		return ARG_SYNTAX_ERROR;
-	if (iDst > MAX_ARGS)
-		return ARG_SYNTAX_ERROR;
-
-	int nArgs = (iEnd - iSrc);
-	int nLen = nArgs + 1;
-
-	if ((iDst + nLen) > MAX_ARGS)
-		return ARG_SYNTAX_ERROR;
-
-	while (nLen--)
-	{
-		g_aArgs[iDst] = g_aArgs[iSrc];
-		iSrc++;
-		iDst++;
-	}
-	return nArgs;
-}
-
-
-//===========================================================================
-void ArgsClear ()
-{
-	Arg_t *pArg = &g_aArgs[0];
-
-	for (int iArg = 0; iArg < MAX_ARGS; iArg++ )
-	{
-		pArg->bSymbol = false;
-		pArg->eDevice = NUM_DEVICES; // none
-		pArg->eToken  = NO_TOKEN   ; // none
-		pArg->bType   = TYPE_STRING;
-		pArg->nVal1   = 0;
-		pArg->nVal2   = 0;
-		pArg->sArg[0] = 0;
-
-		pArg++;
-	}
-}
-
-
-// Processes the raw args, turning them into tokens and types.
-//===========================================================================
-int	ArgsGet ( TCHAR * pInput )
-{
-	LPCTSTR pSrc = pInput;
-	LPCTSTR pEnd = NULL;
-	int     nBuf;
-
-	ArgToken_e iTokenSrc = NO_TOKEN;
-	ArgToken_e iTokenEnd = NO_TOKEN;
-	ArgType_e  iType     = TYPE_STRING;
-	int     nLen;
-
-	int     iArg = 0;
-	int     nArg = 0;
-	Arg_t  *pArg = &g_aArgRaw[0]; // &g_aArgs[0];
-
-	// BP FAC8:FACA // Range=3
-	// BP FAC8,2    // Length=2
-	// ^ ^^   ^^
-	// | ||   |pSrc
-	// | ||   pSrc
-	// | |pSrc
-	// | pEnd
-	// pSrc
-	while ((*pSrc) && (iArg < MAX_ARGS))
-	{
-		// Technically, there shouldn't be any leading spaces,
-		// since pressing the spacebar is an alias for TRACE.
-		// However, there is spaces between arguments
-		pSrc = const_cast<char*>( SkipWhiteSpace( pSrc ));
-
-		if (pSrc)
-		{
-			pEnd = FindTokenOrAlphaNumeric( pSrc, g_aTokens, NUM_TOKENS, &iTokenSrc );
-			if ((iTokenSrc == NO_TOKEN) || (iTokenSrc == TOKEN_ALPHANUMERIC))
-			{
-				pEnd = SkipUntilToken( pSrc+1, g_aTokens, NUM_TOKENS, &iTokenEnd );
-			}
-
-			if (iTokenSrc == NO_TOKEN)
-			{
-				iTokenSrc = TOKEN_ALPHANUMERIC;
-			}
-
-			iType = g_aTokens[ iTokenSrc ].eType;
-
-			if (iTokenSrc == TOKEN_SEMI)
-			{
-				// TODO - command seperator, must handle non-quoted though!
-			}
-
-			if (iTokenSrc == TOKEN_QUOTED)
-			{
-				pSrc++; // Don't store start of quote
-				pEnd = SkipUntilChar( pSrc, CHAR_QUOTED );
-			}
-
-			if (pEnd)
-			{
-				nBuf = pEnd - pSrc;
-			}
-
-			if (nBuf > 0)
-			{
-				nLen = MIN( nBuf, MAX_ARG_LEN-1 );
-				_tcsncpy( pArg->sArg, pSrc, nLen );
-				pArg->sArg[ nLen ] = 0;			
-				pArg->nArgLen      = nLen;
-				pArg->eToken       = iTokenSrc;
-				pArg->bType        = iType;
-
-				if (iTokenSrc == TOKEN_QUOTED)
-				{
-					pEnd++; // Don't store end of quote
-				}
-
-				pSrc = pEnd;
-				iArg++;
-				pArg++;
-			}
-		}
-	}
-
-	if (iArg)
-	{
-		nArg = iArg - 1; // first arg is command
-	}
-
-	g_nArgRaw = nArg;
-
-	return nArg;
-}
-
-
-//===========================================================================
-bool ArgsGetRegisterValue( Arg_t *pArg, WORD * pAddressValue_ )
-{
-	bool bStatus = false;
-
-	if (pArg && pAddressValue_)
-	{
-		// Check if we refer to reg A X Y P S
-		for( int iReg = 0; iReg < (NUM_BREAKPOINT_SOURCES-1); iReg++ )
-		{
-			// Skip Opcode/Instruction/Mnemonic
-			if (iReg == BP_SRC_OPCODE)
-				continue;
-
-			// Skip individual flag names
-			if ((iReg >= BP_SRC_FLAG_C) && (iReg <= BP_SRC_FLAG_N))
-				continue;
-
-			// Handle one char names
-			if ((pArg->nArgLen == 1) && (pArg->sArg[0] == g_aBreakpointSource[ iReg ][0]))
-			{
-				switch( iReg )
-				{
-					case BP_SRC_REG_A : *pAddressValue_ = regs.a  & 0xFF; bStatus = true; break;
-					case BP_SRC_REG_P : *pAddressValue_ = regs.ps & 0xFF; bStatus = true; break;
-					case BP_SRC_REG_X : *pAddressValue_ = regs.x  & 0xFF; bStatus = true; break;
-					case BP_SRC_REG_Y : *pAddressValue_ = regs.y  & 0xFF; bStatus = true; break;
-					case BP_SRC_REG_S : *pAddressValue_ = regs.sp       ; bStatus = true; break;
-					default:
-						break;
-				}
-			}
-			else
-			if (iReg == BP_SRC_REG_PC)
-			{
-				if ((pArg->nArgLen == 2) && (_tcscmp( pArg->sArg, g_aBreakpointSource[ iReg ] ) == 0))
-				{
-					*pAddressValue_ = regs.pc       ; bStatus = true; break;
-				}
-			}
-		}
-	}
-	return bStatus;
-}
-
-
-//===========================================================================
-bool ArgsGetValue( Arg_t *pArg, WORD * pAddressValue_ )
-{
-	const int BASE = 16; // hex
-	TCHAR *pSrc = & (pArg->sArg[ 0 ]);
-	TCHAR *pEnd = NULL;
-
-	if (pArg && pAddressValue_)
-	{
-		*pAddressValue_ = (WORD)(_tcstoul( pSrc, &pEnd, BASE) & _6502_END_MEM_ADDRESS);
-		return true;
-	}
-	return false;
-}
-
-
-//===========================================================================
-bool ArgsGetImmediateValue( Arg_t *pArg, WORD * pAddressValue_ )
-{
-	if (pArg && pAddressValue_)
-	{
-		if (pArg->eToken == TOKEN_HASH)
-		{
-			pArg++;
-			return ArgsGetValue( pArg, pAddressValue_ );
-		}
-	}
-
-	return false;
-}
-
-
-//===========================================================================
-void ArgsRawParse( void )
-{
-	const int BASE = 16; // hex
-	TCHAR *pSrc  = NULL;
-	TCHAR *pEnd  = NULL;
-
-	int    iArg = 1;
-	Arg_t *pArg = & g_aArgRaw[ iArg ];
-	int    nArg = g_nArgRaw;
-
-	WORD   nAddressArg;
-	WORD   nAddressSymbol;
-	WORD   nAddressValue;
-	int    nParamLen = 0;
-
-	while (iArg <= nArg)
-	{
-		pSrc  = & (pArg->sArg[ 0 ]);
-
-		nAddressArg = (WORD)(_tcstoul( pSrc, &pEnd, BASE) & _6502_END_MEM_ADDRESS);
-		nAddressValue = nAddressArg;
-
-		bool bFound = false;
-		if (! (pArg->bType & TYPE_NO_SYM))
-		{
-			bFound = FindAddressFromSymbol( pSrc, & nAddressSymbol );
-			if (bFound)
-			{
-				nAddressValue = nAddressSymbol;
-				pArg->bSymbol = true;
-			}
-		}
-
-		if (! (pArg->bType & TYPE_VALUE)) // already up to date?
-			pArg->nVal1 = nAddressValue;
-
-		pArg->bType |= TYPE_ADDRESS;
-
-		iArg++;
-		pArg++;
-	}
-}
-
-
-// Note: The number of args can be changed via:
-//   address1,length    Length
-//   address1:address2  Range
-//   address1+delta     Delta
-//   address1-delta     Delta
-//===========================================================================
-int ArgsParse( const int nArgs )
-{
-	const int BASE = 16; // hex
-	TCHAR *pSrc  = NULL;
-	TCHAR *pEnd2 = NULL;
-
-	int    nArg = nArgs;
-	int    iArg = 1;
-	Arg_t *pArg = NULL; 
-	Arg_t *pPrev = NULL;
-	Arg_t *pNext = NULL;
-
-	WORD   nAddressArg;
-	WORD   nAddressRHS;
-	WORD   nAddressSym;
-	WORD   nAddressVal;
-	int    nParamLen = 0;
-	int    nArgsLeft = 0;
-
-	while (iArg <= nArg)
-	{
-		pArg  = & (g_aArgs[ iArg ]);
-		pSrc  = & (pArg->sArg[ 0 ]);
-
-		if (pArg->eToken == TOKEN_DOLLAR) // address
-		{
-// TODO: Need to flag was a DOLLAR token for assembler
-			pNext = NULL;
-
-			nArgsLeft = (nArg - iArg);
-			if (nArgsLeft > 0)
-			{
-				pNext = pArg + 1;
-
-				_Arg_Shift( iArg + 1, nArgs, iArg );
-				nArg--;
-				iArg--; // inc for start of next loop
-
-				// Don't do register lookup
-				pArg->bType |= TYPE_NO_REG;
-			}
-			else
-				return ARG_SYNTAX_ERROR;
-		}
-
-		if (pArg->bType & TYPE_OPERATOR) // prev op type == address?
-		{
-			pPrev = NULL; // pLHS
-			pNext = NULL; // pRHS
-			nParamLen = 0;
-
-			if (pArg->eToken == TOKEN_HASH) // HASH    # immediate
-				nParamLen = 1;
-
-			nArgsLeft = (nArg - iArg);
-			if (nArgsLeft < nParamLen)
-			{
-				return ARG_SYNTAX_ERROR;
-			}
-
-			pPrev = pArg - 1;
-
-			if (nArgsLeft > 0) // These ops take at least 1 argument
-			{
-				pNext = pArg + 1;
-				pSrc = &pNext->sArg[0];
-
-				nAddressVal = 0;
-				if (ArgsGetValue( pNext, & nAddressRHS ))
-					nAddressVal = nAddressRHS;
-
-				bool bFound = FindAddressFromSymbol( pSrc, & nAddressSym );
-				if (bFound)
-				{
-					nAddressVal = nAddressSym;
-					pArg->bSymbol = true;
-				}
-
-				if (pArg->eToken == TOKEN_COMMA) // COMMMA , length
-				{
-					pPrev->nVal2  = nAddressVal;
-					pPrev->eToken = TOKEN_COMMA;
-					pPrev->bType |= TYPE_ADDRESS;
-					pPrev->bType |= TYPE_LENGTH;
-					nParamLen = 2;
-				}
-
-				if (pArg->eToken == TOKEN_COLON) // COLON  : range
-				{
-					pPrev->nVal2  = nAddressVal;
-					pPrev->eToken = TOKEN_COLON;
-					pPrev->bType |= TYPE_ADDRESS;
-					pPrev->bType |= TYPE_RANGE;
-					nParamLen = 2;
-				}
-
-				if (pArg->eToken == TOKEN_AMPERSAND) // AND   & delta
-				{
-					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
-					{
-						  ArgsGetRegisterValue( pNext, & nAddressRHS );
-					}
-					pPrev->nVal1 &= nAddressRHS;
-					pPrev->bType |= TYPE_VALUE; // signal already up to date
-					nParamLen = 2;
-				}								
-
-				if (pArg->eToken == TOKEN_PIPE) // OR   | delta
-				{
-					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
-					{
-						  ArgsGetRegisterValue( pNext, & nAddressRHS );
-					}
-					pPrev->nVal1 |= nAddressRHS;
-					pPrev->bType |= TYPE_VALUE; // signal already up to date
-					nParamLen = 2;
-				}								
-
-				if (pArg->eToken == TOKEN_CARET) // XOR   ^ delta
-				{
-					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
-					{
-						  ArgsGetRegisterValue( pNext, & nAddressRHS );
-					}
-					pPrev->nVal1 ^= nAddressRHS;
-					pPrev->bType |= TYPE_VALUE; // signal already up to date
-					nParamLen = 2;
-				}								
-
-				if (pArg->eToken == TOKEN_PLUS) // PLUS   + delta
-				{
-					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
-					{
-						  ArgsGetRegisterValue( pNext, & nAddressRHS );
-					}
-					pPrev->nVal1 += nAddressRHS;
-					pPrev->bType |= TYPE_VALUE; // signal already up to date
-					nParamLen = 2;
-				}
-
-				if (pArg->eToken == TOKEN_MINUS) // MINUS  - delta
-				{
-					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
-					{
-						ArgsGetRegisterValue( pNext, & nAddressRHS );
-					}
-					pPrev->nVal1 -= nAddressRHS;
-					pPrev->bType |= TYPE_VALUE; // signal already up to date
-					nParamLen = 2;
-				}
-
-				if (pArg->eToken == TOKEN_PERCENT) // PERCENT % delta
-				{
-					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
-					{
-						ArgsGetRegisterValue( pNext, & nAddressRHS );
-					}
-					pPrev->nVal1 %= nAddressRHS;
-					pPrev->bType |= TYPE_VALUE; // signal already up to date
-					nParamLen = 2;
-				}
-
-				if (pArg->eToken == TOKEN_FSLASH) // FORWARD SLASH / delta
-				{
-					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
-					{
-						ArgsGetRegisterValue( pNext, & nAddressRHS );
-					}
-					pPrev->nVal1 /= nAddressRHS;
-					pPrev->bType |= TYPE_VALUE; // signal already up to date
-					nParamLen = 2;
-				}
-
-				if (pArg->eToken == TOKEN_EQUAL) // EQUAL  = assign
-				{
-					pPrev->nVal1 = nAddressRHS; 
-					pPrev->bType |= TYPE_VALUE; // signal already up to date
-					nParamLen = 0; // need token for Smart BreakPoints
-				}					
-
-				if (pArg->eToken == TOKEN_HASH) // HASH    # immediate
-				{
-					_Arg_Shift( iArg + nParamLen, nArgs, iArg );
-					nArg--;
-
-					pArg->nVal1   = nAddressRHS;
-					pArg->bSymbol = false;
-					pArg->bType   = TYPE_VALUE | TYPE_ADDRESS | TYPE_NO_REG | TYPE_NO_SYM;
-					nParamLen = 0;
-				}
-
-				if (pArg->eToken == TOKEN_LESS_THAN) // <
-				{
-					nParamLen = 0;
-				}
-
-				if (pArg->eToken == TOKEN_GREATER_THAN) // >
-				{
-					nParamLen = 0;
-				}
-
-				if (pArg->eToken == TOKEN_EXCLAMATION) // NOT_EQUAL !
-				{
-					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
-					{
-						if (! ArgsGetRegisterValue( pNext, & nAddressRHS ))
-						{
-							nAddressRHS = nAddressVal;
-						}
-					}
-					pArg->nVal1 = ~nAddressRHS;
-					pArg->bType |= TYPE_VALUE; // signal already up to date
-					// Don't remove, since "SYM ! symbol" needs token to remove symbol
-				}
-				
-				if (nParamLen)
-				{
-					_Arg_Shift( iArg + nParamLen, nArgs, iArg );
-					nArg -= nParamLen;
-					iArg = 0; // reset args, to handle multiple operators
-				}
-			}
-			else
-				return ARG_SYNTAX_ERROR;
-		}
-		else // not an operator, try (1) address, (2) symbol lookup
-		{
-			nAddressArg = (WORD)(_tcstoul( pSrc, &pEnd2, BASE) & _6502_END_MEM_ADDRESS);
-
-			if (! (pArg->bType & TYPE_NO_REG))
-			{
-				ArgsGetRegisterValue( pArg, & nAddressArg );
-			}
-
-			nAddressVal = nAddressArg;
-
-			bool bFound = false;
-			if (! (pArg->bType & TYPE_NO_SYM))
-			{
-				bFound = FindAddressFromSymbol( pSrc, & nAddressSym );
-				if (bFound)
-				{
-					nAddressVal = nAddressSym;
-					pArg->bSymbol = true;
-				}
-			}
-
-			if (! (pArg->bType & TYPE_VALUE)) // already up to date?
-				pArg->nVal1 = nAddressVal;
-
-			pArg->bType |= TYPE_ADDRESS;
-		}
-
-		iArg++;
-	}
-
-	return nArg;
-}
 
 
 // Note: Range is [iParamBegin,iParamEnd], not the usually (STL) expected [iParamBegin,iParamEnd)
@@ -9630,10 +5631,15 @@ int FindCommand( LPTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 	if (! nLen)
 		return nFound;
 
+	char sCommand[ CONSOLE_WIDTH ];
+	strcpy( sCommand, pName );
+	strupr( sCommand );
+
 	while ((iCommand < NUM_COMMANDS_WITH_ALIASES)) // && (name[0] >= g_aCommands[iCommand].aName[0])) Command no longer in Alphabetical order
 	{
 		TCHAR *pCommandName = g_aCommands[iCommand].m_sName;
-		if (! _tcsncmp(pName, pCommandName, nLen))
+//		int iCmp = strcasecmp( sCommand, pCommandName, nLen )
+		if (! _tcsncmp(sCommand, pCommandName, nLen))
 		{
 			pFunction_ = g_aCommands[iCommand].pFunction;
 			if (pFunction_)
@@ -9697,12 +5703,10 @@ void DisplayAmbigiousCommands( int nFound )
 //===========================================================================
 Update_t ExecuteCommand (int nArgs) 
 {
-	LPTSTR name = _tcstok( g_pConsoleInput,TEXT(" ,-="));
-	if (!name)
-		name = g_pConsoleInput;
+	TCHAR * pCommand = & g_aArgs[ 0 ].sArg[0];
 
-	CmdFuncPtr_t pCommand = NULL;
-	int nFound = FindCommand( name, pCommand );
+	CmdFuncPtr_t pFunction = NULL;
+	int nFound = FindCommand( pCommand, pFunction );
 
 	if (nFound > 1)
 	{
@@ -9713,8 +5717,8 @@ Update_t ExecuteCommand (int nArgs)
 //		return ConsoleDisplayError( gaPotentialCommands );
 	}
 	else
-	if (pCommand)
-		return pCommand(nArgs);
+	if (pFunction)
+		return pFunction(nArgs);
 	else
 		return ConsoleDisplayError(TEXT("Illegal Command"));
 }
@@ -9897,7 +5901,7 @@ void OutputTraceLine ()
 }
 
 //===========================================================================
-int ParseConsoleInput ( LPTSTR pConsoleInput )
+int ParseInput ( LPTSTR pConsoleInput, bool bCook )
 {
 	int nArg = 0;
 
@@ -9913,7 +5917,8 @@ int ParseConsoleInput ( LPTSTR pConsoleInput )
 		g_aArgs[ iArg ] = g_aArgRaw[ iArg ];
 	}
 
-	nArg = ArgsParse( nArg ); // Cook them
+	if (bCook)
+		nArg = ArgsCook( nArg ); // Cook them
 
 	return nArg;
 }
@@ -10211,60 +6216,6 @@ bool ProfileSave()
 }
 
 
-//===========================================================================
-int DebugDrawText ( LPCTSTR pText, RECT & rRect )
-{
-	int nLen = _tcslen( pText );
-	ExtTextOut( g_hDC,
-		rRect.left, rRect.top,
-		ETO_CLIPPED | ETO_OPAQUE, &rRect,
-		pText, nLen,
-		NULL );
-	return nLen;
-}
-
-
-// Also moves cursor 'non proportional' font width, using FONT_INFO
-//===========================================================================
-int DebugDrawTextFixed ( LPCTSTR pText, RECT & rRect )
-{
-	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
-
-	int nChars = DebugDrawText( pText, rRect );
-	rRect.left += (nFontWidth * nChars);
-	return nChars;
-}
-
-
-//===========================================================================
-int DebugDrawTextLine ( LPCTSTR pText, RECT & rRect )
-{
-	int nChars = DebugDrawText( pText, rRect );
-	rRect.top    += g_nFontHeight;
-	rRect.bottom += g_nFontHeight;
-	return nChars;
-}
-
-
-// Moves cursor 'proportional' font width
-//===========================================================================
-int DebugDrawTextHorz ( LPCTSTR pText, RECT & rRect )
-{
-	int nFontWidth = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
-
-	SIZE size;
-	int nChars = DebugDrawText( pText, rRect );
-	if (GetTextExtentPoint32( g_hDC, pText, nChars,  &size ))
-	{
-		rRect.left += size.cx;
-	}
-	else
-	{
-		rRect.left += (nFontWidth * nChars);
-	}
-	return nChars;
-}
-
 
 //  _____________________________________________________________________________________
 // |                                                                                     |
@@ -10275,58 +6226,16 @@ int DebugDrawTextHorz ( LPCTSTR pText, RECT & rRect )
 //===========================================================================
 void DebugBegin ()
 {
-	//	ConsoleInputReset(); already called in DebugInitialize()
-	TCHAR sText[ CONSOLE_WIDTH ];
+	// This is called every time the emulator is reset.
 
-	if (_tcscmp( g_aCommands[ NUM_COMMANDS ].m_sName, TEXT(__COMMANDS_VERIFY_TXT__)))
-	{
-		wsprintf( sText, "*** ERROR *** Commands mis-matched!" );
-		MessageBox( framewindow, sText, TEXT("ERROR"), MB_OK );
-	}
-
-	if (_tcscmp( g_aParameters[ NUM_PARAMS ].m_sName, TEXT(__PARAMS_VERIFY_TXT__)))
-	{
-		wsprintf( sText, "*** ERROR *** Parameters mis-matched!" );
-		MessageBox( framewindow, sText, TEXT("ERROR"), MB_OK );
-	}
-
-	// Check all summary help to see if it fits within the console
-	for (int iCmd = 0; iCmd < NUM_COMMANDS; iCmd++ )
-	{	
-		char *pHelp = g_aCommands[ iCmd ].pHelpSummary;
-		if (pHelp)
-		{
-			int nLen = _tcslen( pHelp ) + 2;
-			if (nLen > CONSOLE_WIDTH)
-			{
-				wsprintf( sText, TEXT("Warning: %s help is %d chars"),
-					pHelp, nLen );
-				ConsoleBufferPush( sText );
-			}
-		}
-	}
-	
-
-#if _DEBUG
-//g_bConsoleBufferPaused = true;
-#endif
-
-	CmdMOTD(0);
-	
 	if (cpuemtype == CPU_FASTPAGING)
 	{
 		MemSetFastPaging(0);
 	}
 
-	if (!membank)
-	{
-		membank = mem;
-	}
-
 	mode = MODE_DEBUG;
 	FrameRefreshStatus(DRAW_TITLE);
 
-// TODO:FIXME //e uses 65C02, ][ uses 6502
 	if (apple2e)
 		g_aOpcodes = & g_aOpcodes65C02[ 0 ]; // Enhanced Apple //e
 	else
@@ -10451,633 +6360,6 @@ void DebugDestroy ()
 }
 
 
-// Sub Window _____________________________________________________________________________________
-
-//===========================================================================
-bool CanDrawDebugger()
-{
-	if (g_bDebuggerViewingAppleOutput)
-		return false;
-
-	if ((mode == MODE_DEBUG) || (mode == MODE_STEPPING))
-		return true;
-
-	return false;
-}
-
-
-//===========================================================================
-void DrawWindowBottom ( Update_t bUpdate, int iWindow )
-{
-	if (! g_aWindowConfig[ iWindow ].bSplit)
-		return;
-
-	WindowSplit_t * pWindow = &g_aWindowConfig[ iWindow ];
-
-//	if (pWindow->eBot == WINDOW_DATA)
-//	{
-//		DrawWindow_Data( bUpdate, false );
-//	}
-	
-	if (pWindow->eBot == WINDOW_SOURCE)
-		DrawSubWindow_Source2( bUpdate );
-}
-
-//===========================================================================
-void DrawSubWindow_Code ( int iWindow )
-{
-	int nLines = g_nDisasmWinHeight;
-
-	// Check if we have a bad disasm
-	// BUG: This still doesn't catch all cases
-	// G FB53, SPACE, PgDn * 
-	// Note: DrawDisassemblyLine() has kludge.
-//		DisasmCalcTopFromCurAddress( false );
-	// These should be functionally equivalent.
-	//	DisasmCalcTopFromCurAddress();
-	//	DisasmCalcBotFromTopAddress();
-	SelectObject( g_hDC, g_aFontConfig[ FONT_DISASM_DEFAULT ]._hFont ); // g_hFontDisasm 
-
-	WORD nAddress = g_nDisasmTopAddress; // g_nDisasmCurAddress;
-	for (int iLine = 0; iLine < nLines; iLine++ )
-	{
-		nAddress += DrawDisassemblyLine( g_hDC, iLine, nAddress, NULL);
-	}
-
-	SelectObject( g_hDC, g_aFontConfig[ FONT_INFO ]._hFont ); // g_hFontDebugger
-}
-
-//===========================================================================
-void DrawSubWindow_Console (Update_t bUpdate)
-{
-	if (! CanDrawDebugger())
-		return;
-
-	SelectObject( g_hDC, g_aFontConfig[ FONT_CONSOLE ]._hFont );
-
-//	static TCHAR sConsoleBlank[ CONSOLE_WIDTH ];
-	
-	if ((bUpdate & UPDATE_CONSOLE_INPUT) || (bUpdate & UPDATE_CONSOLE_DISPLAY))
-	{
-		SetTextColor( g_hDC, DebugGetColor( FG_CONSOLE_OUTPUT )); // COLOR_FG_CONSOLE
-		SetBkColor(   g_hDC, DebugGetColor( BG_CONSOLE_OUTPUT )); // COLOR_BG_CONSOLE
-
-//		int nLines = MIN(g_nConsoleDisplayTotal - g_iConsoleDisplayStart, g_nConsoleDisplayHeight);
-		int iLine = g_iConsoleDisplayStart + CONSOLE_FIRST_LINE;
-		for (int y = 0; y < g_nConsoleDisplayHeight ; y++ )
-		{
-			if (iLine <= (g_nConsoleDisplayTotal + CONSOLE_FIRST_LINE))
-			{
-				DrawConsoleLine( g_aConsoleDisplay[ iLine ], y+1 );
-			}
-			iLine++;
-//			else
-//				DrawConsoleLine( sConsoleBlank, y );
-		}
-
-		DrawConsoleInput( g_hDC );
-	}
-}	
-
-//===========================================================================
-void DrawSubWindow_Data (Update_t bUpdate)
-{
-	HDC hDC = g_hDC;
-	int iBackground;	
-
-	const int nMaxOpcodes = WINDOW_DATA_BYTES_PER_LINE;
-	TCHAR sAddress  [ 5];
-	TCHAR sOpcodes  [(nMaxOpcodes*3)+1] = TEXT("");
-	TCHAR sImmediate[ 4 ]; // 'c'
-
-	const int nDefaultFontWidth = 7; // g_aFontConfig[FONT_DISASM_DEFAULT]._nFontWidth or g_nFontWidthAvg
-	int X_OPCODE      =  6                    * nDefaultFontWidth;
-	int X_CHAR        = (6 + (nMaxOpcodes*3)) * nDefaultFontWidth;
-
-	int iMemDump = 0;
-
-	MemoryDump_t* pMD = &g_aMemDump[ iMemDump ];
-	USHORT       nAddress = pMD->nAddress;
-	DEVICE_e     eDevice  = pMD->eDevice;
-	MemoryView_e iView    = pMD->eView;
-
-	if (!pMD->bActive)
-		return;
-
-	int  iByte;
-	WORD iAddress = nAddress;
-
-	int iLine;
-	int nLines = g_nDisasmWinHeight;
-
-	for (iLine = 0; iLine < nLines; iLine++ )
-	{
-		iAddress = nAddress;
-
-	// Format
-		wsprintf( sAddress, TEXT("%04X"), iAddress );
-
-		sOpcodes[0] = 0;
-		for ( iByte = 0; iByte < nMaxOpcodes; iByte++ )
-		{
-			BYTE nData = (unsigned)*(LPBYTE)(membank + iAddress + iByte);
-			wsprintf( &sOpcodes[ iByte * 3 ], TEXT("%02X "), nData );
-		}
-		sOpcodes[ nMaxOpcodes * 3 ] = 0;
-
-		int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight;
-
-	// Draw
-		RECT rect;
-		rect.left   = 0;
-		rect.top    = iLine * nFontHeight;
-		rect.right  = DISPLAY_DISASM_RIGHT;
-		rect.bottom = rect.top + nFontHeight;
-
-		if (iLine & 1)
-		{
-			iBackground = BG_DATA_1;
-		}
-		else
-		{
-			iBackground = BG_DATA_2;
-		}
-		SetBkColor( hDC, DebugGetColor( iBackground ) );
-
-		SetTextColor( hDC, DebugGetColor( FG_DISASM_ADDRESS ) );
-		DebugDrawTextHorz( (LPCTSTR) sAddress, rect );
-
-		SetTextColor( hDC, DebugGetColor( FG_DISASM_OPERATOR ) );
-		if (g_bConfigDisasmAddressColon)
-			DebugDrawTextHorz( TEXT(":"), rect );
-
-		rect.left = X_OPCODE;
-
-		SetTextColor( hDC, DebugGetColor( FG_DATA_BYTE ) );
-		DebugDrawTextHorz( (LPCTSTR) sOpcodes, rect );
-
-		rect.left = X_CHAR;
-
-	// Seperator
-		SetTextColor( hDC, DebugGetColor( FG_DISASM_OPERATOR ));
-		DebugDrawTextHorz( (LPCSTR) TEXT("  |  " ), rect );
-
-
-	// Plain Text
-		SetTextColor( hDC, DebugGetColor( FG_DISASM_CHAR ) );
-
-		MemoryView_e eView = pMD->eView;
-		if ((eView != MEM_VIEW_ASCII) && (eView != MEM_VIEW_APPLE))
-			eView = MEM_VIEW_ASCII;
-
-		iAddress = nAddress;
-		for (iByte = 0; iByte < nMaxOpcodes; iByte++ )
-		{
-			BYTE nImmediate = (unsigned)*(LPBYTE)(membank + iAddress);
-			int iTextBackground = iBackground;
-			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
-			{
-				iTextBackground = BG_INFO_IO_BYTE;
-			}
-
-			ColorizeSpecialChar( hDC, sImmediate, (BYTE) nImmediate, eView, iBackground );
-			DebugDrawTextHorz( (LPCSTR) sImmediate, rect );
-
-			iAddress++;
-		}
-/*
-	// Colorized Text
-		iAddress = nAddress;
-		for (iByte = 0; iByte < nMaxOpcodes; iByte++ )
-		{
-			BYTE nImmediate = (unsigned)*(LPBYTE)(membank + iAddress);
-			int iTextBackground = iBackground; // BG_INFO_CHAR;
-//pMD->eView == MEM_VIEW_HEX
-			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
-				iTextBackground = BG_INFO_IO_BYTE;
-
-			ColorizeSpecialChar( hDC, sImmediate, (BYTE) nImmediate, MEM_VIEW_APPLE, iBackground );
-			DebugDrawTextHorz( (LPCSTR) sImmediate, rect );
-
-			iAddress++;
-		}
-
-		SetBkColor( hDC, DebugGetColor( iBackground ) ); // Hack, colorize Char background "spills over to EOL"
-		DebugDrawTextHorz( (LPCSTR) TEXT(" " ), rect );
-*/
-		SetBkColor( hDC, DebugGetColor( iBackground ) ); // HACK: Colorize() can "spill over" to EOL
-
-		SetTextColor( hDC, DebugGetColor( FG_DISASM_OPERATOR ));
-		DebugDrawTextHorz( (LPCSTR) TEXT("  |  " ), rect );
-
-		nAddress += nMaxOpcodes;
-	}
-}
-
-
-// DrawRegisters();
-//===========================================================================
-void DrawSubWindow_Info( int iWindow )
-{
-	if (g_iWindowThis == WINDOW_CONSOLE)
-		return;
-
-	const TCHAR **sReg = g_aBreakpointSource;
-
-	DrawStack(g_hDC,0);
-	DrawTargets(g_hDC,9);
-	DrawRegister(g_hDC,12, sReg[ BP_SRC_REG_A ] , 1, regs.a , PARAM_REG_A  );
-	DrawRegister(g_hDC,13, sReg[ BP_SRC_REG_X ] , 1, regs.x , PARAM_REG_X  );
-	DrawRegister(g_hDC,14, sReg[ BP_SRC_REG_Y ] , 1, regs.y , PARAM_REG_Y  );
-	DrawRegister(g_hDC,15, sReg[ BP_SRC_REG_PC] , 2, regs.pc, PARAM_REG_PC );
-	DrawRegister(g_hDC,16, sReg[ BP_SRC_REG_S ] , 2, regs.sp, PARAM_REG_SP );
-	DrawFlags(g_hDC,17,regs.ps,NULL);
-	DrawZeroPagePointers(g_hDC,19);
-
-#if defined(SUPPORT_Z80_EMU) && defined(OUTPUT_Z80_REGS)
-	DrawRegister(g_hDC,19,TEXT("AF"),2,*(WORD*)(membank+REG_AF));
-	DrawRegister(g_hDC,20,TEXT("BC"),2,*(WORD*)(membank+REG_BC));
-	DrawRegister(g_hDC,21,TEXT("DE"),2,*(WORD*)(membank+REG_DE));
-	DrawRegister(g_hDC,22,TEXT("HL"),2,*(WORD*)(membank+REG_HL));
-	DrawRegister(g_hDC,23,TEXT("IX"),2,*(WORD*)(membank+REG_IX));
-#endif
-
-#if DEBUG_FORCE_DISPLAY
-	if (true)
-#else
-	if (g_nBreakpoints)
-#endif
-		DrawBreakpoints(g_hDC,0);
-
-#if DEBUG_FORCE_DISPLAY
-	if (true)
-#else
-	if (g_nWatches)
-#endif
-		DrawWatches(g_hDC,7);
-
-#if DEBUG_FORCE_DISPLAY
-	if (true)
-#else
-	if (g_aMemDump[0].bActive)
-#endif
-		DrawMemory(g_hDC, 14, 0 ); // g_aMemDump[0].nAddress, g_aMemDump[0].eDevice);
-
-#if DEBUG_FORCE_DISPLAY
-	if (true)
-#else
-	if (g_aMemDump[1].bActive)
-#endif
-		DrawMemory(g_hDC, 19, 1 ); // g_aMemDump[1].nAddress, g_aMemDump[1].eDevice);
-
-}
-
-//===========================================================================
-void DrawSubWindow_IO (Update_t bUpdate)
-{
-}
-
-//===========================================================================
-void DrawSubWindow_Source (Update_t bUpdate)
-{
-}
-
-
-//===========================================================================
-int FindSourceLine( WORD nAddress )
-{
-	int iAddress = 0;
-	int iLine = 0;
-	int iSourceLine = NO_SOURCE_LINE;
-
-//	iterate of <address,line>
-//	probably should be sorted by address
-//	then can do binary search
-//	iSourceLine = g_aSourceDebug.find( nAddress );
-#if 0 // _DEBUG
-	{
-		TCHAR sText[ CONSOLE_WIDTH ];
-		for (int i = 0; i < g_vSourceLines.size(); i++ )
-		{
-			wsprintf( sText, "%d: %s\n", i, g_vSourceLines[ i ] );
-			OutputDebugString( sText );
-		}
-	}
-#endif
-
-	SourceAssembly_t::iterator iSource = g_aSourceDebug.begin();
-	while (iSource != g_aSourceDebug.end() )
-	{
-		iAddress = iSource->first;
-		iLine = iSource->second;
-
-#if 0 // _DEBUG
-	TCHAR sText[ CONSOLE_WIDTH ];
-	wsprintf( sText, "%04X -> %d line\n", iAddress, iLine );
-	OutputDebugString( sText );
-#endif
-
-		if (iAddress == nAddress)
-		{
-			iSourceLine = iLine;
-			break;
-		}
-
-		iSource++;
-	}
-	// not found
-
-	return iSourceLine;
-}
-
-//===========================================================================
-void DrawSourceLine( int iSourceLine, RECT &rect )
-{
-	TCHAR sLine[ CONSOLE_WIDTH ];
-
-	ZeroMemory( sLine, CONSOLE_WIDTH );
-	if ((iSourceLine >=0) && (iSourceLine < g_nSourceAssemblyLines))
-	{
-		char * pSource = g_vSourceLines[ iSourceLine ];
-
-//		int nLenSrc = _tcslen( pSource );
-//		if (nLenSrc >= CONSOLE_WIDTH)
-//			bool bStop = true;
-
-		TextConvertTabsToSpaces( sLine, pSource, CONSOLE_WIDTH-1 ); // bugfix 2,3,1,15: fence-post error, buffer over-run
-
-//		int nLenTab = _tcslen( sLine );
-	}
-	else
-	{
-		_tcscpy( sLine, TEXT(" "));
-	}
-
-	DebugDrawText( sLine, rect );
-	rect.top += g_nFontHeight;
-//	iSourceLine++;
-}
-
-//===========================================================================
-void DrawSubWindow_Source2 (Update_t bUpdate)
-{
-//	if (! g_bSourceLevelDebugging)
-//		return;
-
-	SetTextColor( g_hDC, DebugGetColor( FG_SOURCE ));
-
-	int iSource = g_iSourceDisplayStart;
-	int nLines = g_nDisasmWinHeight;
-
-	int y = g_nDisasmWinHeight;
-	int nHeight = g_nDisasmWinHeight;
-
-	if (g_aWindowConfig[ g_iWindowThis ].bSplit) // HACK: Split Window Height is odd, so bottom window gets +1 height
-		nHeight++;
-
-	RECT rect;
-	rect.top    = (y * g_nFontHeight);
-	rect.bottom = rect.top + (nHeight * g_nFontHeight);
-	rect.left = 0;
-	rect.right = DISPLAY_DISASM_RIGHT; // HACK: MAGIC #: 7
-
-// Draw Title
-	TCHAR sTitle[ CONSOLE_WIDTH ];
-	TCHAR sText [ CONSOLE_WIDTH ];
-	_tcscpy( sTitle, TEXT("   Source: "));
-	_tcsncpy( sText, g_aSourceFileName, g_nConsoleDisplayWidth - _tcslen( sTitle ) - 1 );
-	_tcscat( sTitle, sText );
-
-	SetBkColor(   g_hDC, DebugGetColor( BG_SOURCE_TITLE ));
-	SetTextColor( g_hDC, DebugGetColor( FG_SOURCE_TITLE ));
-	DebugDrawText( sTitle, rect );
-	rect.top += g_nFontHeight;
-
-// Draw Source Lines
-	int iBackground;
-	int iForeground;
-
-	int iSourceCursor = 2; // (g_nDisasmWinHeight / 2);
-	int iSourceLine = FindSourceLine( regs.pc );
-
-	if (iSourceLine == NO_SOURCE_LINE)
-	{
-		iSourceCursor = NO_SOURCE_LINE;
-	}
-	else
-	{
-		iSourceLine -= iSourceCursor;
-		if (iSourceLine < 0)
-			iSourceLine = 0;
-	}
-
-	for( int iLine = 0; iLine < nLines; iLine++ )
-	{
-		if (iLine != iSourceCursor)
-		{
-			iBackground = BG_SOURCE_1;
-			if (iLine & 1)
-				iBackground = BG_SOURCE_2;
-			iForeground = FG_SOURCE;
-		}
-		else
-		{
-			// Hilighted cursor line
-			iBackground = BG_DISASM_PC_X; // _C
-			iForeground = FG_DISASM_PC_X; // _C
-		}
-		SetBkColor(   g_hDC, DebugGetColor( iBackground ));
-		SetTextColor( g_hDC, DebugGetColor( iForeground ));
-
-		DrawSourceLine( iSourceLine, rect );
-		iSourceLine++;
-	}
-}
-
-//===========================================================================
-void DrawSubWindow_Symbols (Update_t bUpdate)
-{
-}
-
-//===========================================================================
-void DrawSubWindow_ZeroPage (Update_t bUpdate)
-{
-}
-
-// Main Windows ___________________________________________________________________________________
-
-//===========================================================================
-void DrawWindow_Code( Update_t bUpdate )
-{
-	DrawSubWindow_Code( g_iWindowThis );
-
-//	DrawWindowTop( g_iWindowThis );
-	DrawWindowBottom( bUpdate, g_iWindowThis );
-
-	DrawSubWindow_Info( g_iWindowThis );
-}
-
-//===========================================================================
-void DrawWindow_Console( Update_t bUpdate )
-{
-	// Nothing to do, except draw background, since text handled by DrawSubWindow_Console()
-    RECT viewportrect;
-    viewportrect.left   = 0;
-    viewportrect.top    = 0;
-    viewportrect.right  = DISPLAY_WIDTH;
-    viewportrect.bottom = DISPLAY_HEIGHT - DEFAULT_HEIGHT; // 368 = 23 lines // TODO/FIXME
-
-// TODO/FIXME: COLOR_BG_CODE -> g_iWindowThis, once all tab backgrounds are listed first in g_aColors !
-    SetBkColor(g_hDC, DebugGetColor( BG_DISASM_2 )); // COLOR_BG_CODE
-	// Can't use DebugDrawText, since we don't ned the CLIPPED flag
-	// TODO: add default param OPAQUE|CLIPPED
-    ExtTextOut( g_hDC
-		,0,0
-		,ETO_OPAQUE
-		,&viewportrect
-		,TEXT("")
-		,0
-		,NULL
-	);
-}
-
-//===========================================================================
-void DrawWindow_Data( Update_t bUpdate )
-{
-	DrawSubWindow_Data( g_iWindowThis );
-	DrawSubWindow_Info( g_iWindowThis );
-}
-
-//===========================================================================
-void DrawWindow_IO( Update_t bUpdate )
-{
-	DrawSubWindow_IO( g_iWindowThis );
-	DrawSubWindow_Info( g_iWindowThis );
-}
-
-//===========================================================================
-void DrawWindow_Source( Update_t bUpdate )
-{
-	DrawSubWindow_Source( g_iWindowThis );
-	DrawSubWindow_Info( g_iWindowThis );
-}
-
-//===========================================================================
-void DrawWindow_Symbols( Update_t bUpdate )
-{
-	DrawSubWindow_Symbols( g_iWindowThis );
-	DrawSubWindow_Info( g_iWindowThis );
-}
-
-void DrawWindow_ZeroPage( Update_t bUpdate )
-{
-	DrawSubWindow_ZeroPage( g_iWindowThis );
-	DrawSubWindow_Info( g_iWindowThis );
-}
-
-//===========================================================================
-void DrawWindowBackground_Main( int g_iWindowThis )
-{
-    RECT viewportrect;
-    viewportrect.left   = 0;
-    viewportrect.top    = 0;
-    viewportrect.right  = SCREENSPLIT1 - 6; // HACK: MAGIC #: 14 -> 6 -> (g_nFonWidthAvg-1)
-    viewportrect.bottom = DISPLAY_HEIGHT - DEFAULT_HEIGHT; // 368 = 23 lines // TODO/FIXME
-// g_nFontHeight * g_nDisasmWinHeight; // 304
-
-// TODO/FIXME: COLOR_BG_CODE -> g_iWindowThis, once all tab backgrounds are listed first in g_aColors !
-
-    SetBkColor(g_hDC, DebugGetColor( BG_DISASM_1 )); // COLOR_BG_CODE
-	// Can't use DebugDrawText, since we don't need CLIPPED
-    ExtTextOut(g_hDC,0,0,ETO_OPAQUE,&viewportrect,TEXT(""),0,NULL);
-}
-
-//===========================================================================
-void DrawWindowBackground_Info( int g_iWindowThis )
-{
-    RECT viewportrect;
-    viewportrect.top    = 0;
-    viewportrect.left   = SCREENSPLIT1 - 6; // 14 // HACK: MAGIC #: 14 -> (g_nFontWidthAvg-1)
-    viewportrect.right  = 560;
-    viewportrect.bottom = DISPLAY_HEIGHT; //g_nFontHeight * MAX_DISPLAY_INFO_LINES; // 384
-
-	SetBkColor(g_hDC, DebugGetColor( BG_INFO )); // COLOR_BG_DATA
-	// Can't use DebugDrawText, since we don't need CLIPPED
-	ExtTextOut(g_hDC,0,0,ETO_OPAQUE,&viewportrect,TEXT(""),0,NULL);
-}
-
-
-//===========================================================================
-void UpdateDisplay (Update_t bUpdate)
-{
-	g_hDC = FrameGetDC();
-
-	SelectObject( g_hDC, g_aFontConfig[ FONT_INFO ]._hFont ); // g_hFontDebugger
-
-	SetTextAlign(g_hDC,TA_TOP | TA_LEFT);
-
-	if ((bUpdate & UPDATE_BREAKPOINTS)
-		|| (bUpdate & UPDATE_DISASM)
-		|| (bUpdate & UPDATE_FLAGS)
-		|| (bUpdate & UPDATE_MEM_DUMP)
-		|| (bUpdate & UPDATE_REGS)
-		|| (bUpdate & UPDATE_STACK)
-		|| (bUpdate & UPDATE_SYMBOLS)
-		|| (bUpdate & UPDATE_TARGETS)
-		|| (bUpdate & UPDATE_WATCH)
-		|| (bUpdate & UPDATE_ZERO_PAGE))
-	{
-		bUpdate |= UPDATE_BACKGROUND;
-		bUpdate |= UPDATE_CONSOLE_INPUT;
-	}
-	
-	if (bUpdate & UPDATE_BACKGROUND)
-	{
-		if (g_iWindowThis != WINDOW_CONSOLE)
-		{
-			DrawWindowBackground_Main( g_iWindowThis );
-			DrawWindowBackground_Info( g_iWindowThis );
-		}
-	}
-	
-	switch( g_iWindowThis )
-	{
-		case WINDOW_CODE:
-			DrawWindow_Code( bUpdate );
-			break;
-
-		case WINDOW_CONSOLE:
-			DrawWindow_Console( bUpdate );
-			break;
-
-		case WINDOW_DATA:
-			DrawWindow_Data( bUpdate );
-			break;
-
-		case WINDOW_IO:
-			DrawWindow_IO( bUpdate );
-
-		case WINDOW_SOURCE:
-			DrawWindow_Source( bUpdate );
-
-		case WINDOW_SYMBOLS:
-			DrawWindow_Symbols( bUpdate );
-			break;
-
-		case WINDOW_ZEROPAGE:
-			DrawWindow_ZeroPage( bUpdate );
-
-		default:
-			break;
-	}
-
-	if ((bUpdate & UPDATE_CONSOLE_DISPLAY) || (bUpdate & UPDATE_CONSOLE_INPUT))
-		DrawSubWindow_Console( bUpdate );
-
-	FrameReleaseDC();
-	g_hDC = 0;
-}
-
 //===========================================================================
 void DebugEnd ()
 {
@@ -11095,6 +6377,7 @@ void DebugEnd ()
 		g_hTraceFile = NULL;
 	}
 }
+
 
 #if _DEBUG
 #define DEBUG_COLOR_RAMP 0
@@ -11133,7 +6416,7 @@ void _SetupColorRamp( const int iPrimary, int & iColor_ )
 }
 #endif // _DEBUG
 
-void _CmdColorsReset()
+void _ConfigColorsReset()
 {
 //	int iColor = 1; // black only has one level, skip it, since black levels same as white levels
 //	for (int iPrimary = 1; iPrimary < 8; iPrimary++ )
@@ -11154,10 +6437,21 @@ void _CmdColorsReset()
 		// There are many, many ways of shifting the color domain to the monochrome domain
 		// NTSC uses 3x3 matrix, could map RGB -> wavelength, etc.
 		int M = (R + G + B) / 3; // Monochrome component
-		COLORREF nMono = RGB(M,M,M);
 
-		DebugSetColor( SCHEME_COLOR, iColor, nColor );
-		DebugSetColor( SCHEME_MONO , iColor, nMono );
+		int nThreshold = 64;
+		
+		int BW;
+		if (M < nThreshold)
+			BW = 0;
+		else
+			BW = 255;
+
+		COLORREF nMono = RGB(M,M,M);
+		COLORREF nBW   = RGB(BW,BW,BW);
+
+		DebuggerSetColor( SCHEME_COLOR, iColor, nColor );
+		DebuggerSetColor( SCHEME_MONO , iColor, nMono );
+		DebuggerSetColor( SCHEME_BW   , iColor, nBW );
 	}
 }
 
@@ -11182,7 +6476,7 @@ void DebugInitialize ()
 
 	WindowUpdateDisasmSize();
 
-	_CmdColorsReset();
+	_ConfigColorsReset();
 
 	WindowUpdateConsoleDisplayedSize();
 
@@ -11207,7 +6501,7 @@ void DebugInitialize ()
 	_CmdConfigFont( FONT_INFO          , g_sFontNameInfo   , FIXED_PITCH | FF_MODERN      , g_nFontHeight ); // DEFAULT_CHARSET
 	_CmdConfigFont( FONT_CONSOLE       , g_sFontNameConsole, FIXED_PITCH | FF_MODERN      , g_nFontHeight ); // DEFAULT_CHARSET
 	_CmdConfigFont( FONT_DISASM_DEFAULT, g_sFontNameDisasm , FIXED_PITCH | FF_MODERN      , g_nFontHeight ); // OEM_CHARSET
-	_CmdConfigFont( FONT_DISASM_BRANCH , g_sFontNameBranch , DEFAULT_PITCH | FF_DECORATIVE, g_nFontHeight ); // DEFAULT_CHARSET
+	_CmdConfigFont( FONT_DISASM_BRANCH , g_sFontNameBranch , DEFAULT_PITCH | FF_DECORATIVE, g_nFontHeight+3); // DEFAULT_CHARSET
 
 /*
 	g_hFontDebugger = CreateFont( 
@@ -11245,20 +6539,59 @@ void DebugInitialize ()
 //	if (g_hFontWebDings)
 	if (g_aFontConfig[ FONT_DISASM_BRANCH ]._hFont)
 	{
-		g_bConfigDisasmFancyBranch = true;
+		g_iConfigDisasmBranchType = DISASM_BRANCH_FANCY;
 	}
 	else
 	{
-		g_bConfigDisasmFancyBranch = false;
+		g_iConfigDisasmBranchType = DISASM_BRANCH_PLAIN;
 	}	
+
+
+	//	ConsoleInputReset(); already called in DebugInitialize()
+	TCHAR sText[ CONSOLE_WIDTH ];
+
+	if (_tcscmp( g_aCommands[ NUM_COMMANDS ].m_sName, TEXT(__COMMANDS_VERIFY_TXT__)))
+	{
+		wsprintf( sText, "*** ERROR *** Commands mis-matched!" );
+		MessageBox( framewindow, sText, TEXT("ERROR"), MB_OK );
+	}
+
+	if (_tcscmp( g_aParameters[ NUM_PARAMS ].m_sName, TEXT(__PARAMS_VERIFY_TXT__)))
+	{
+		wsprintf( sText, "*** ERROR *** Parameters mis-matched!" );
+		MessageBox( framewindow, sText, TEXT("ERROR"), MB_OK );
+	}
+
+	// Check all summary help to see if it fits within the console
+	for (int iCmd = 0; iCmd < NUM_COMMANDS; iCmd++ )
+	{	
+		char *pHelp = g_aCommands[ iCmd ].pHelpSummary;
+		if (pHelp)
+		{
+			int nLen = _tcslen( pHelp ) + 2;
+			if (nLen > CONSOLE_WIDTH)
+			{
+				wsprintf( sText, TEXT("Warning: %s help is %d chars"),
+					pHelp, nLen );
+				ConsoleBufferPush( sText );
+			}
+		}
+	}
+	
+#if _DEBUG
+//g_bConsoleBufferPaused = true;
+#endif
+
+	CmdMOTD(0);
 }
 
 
 // Add character to the input line
 //===========================================================================
-void DebugProcessChar (TCHAR ch)
+void DebuggerInputConsoleChar( TCHAR ch )
+//void DebugProcessChar (TCHAR ch)
 {
-	if ((mode == MODE_STEPPING) && (ch == TEXT('\x1B'))) // HACK: ESCAPE
+	if ((mode == MODE_STEPPING) && (ch == CHAR_ESCAPE))
 		g_nDebugSteps = 0;
 
 	if (mode != MODE_DEBUG)
@@ -11267,10 +6600,14 @@ void DebugProcessChar (TCHAR ch)
 	if (g_bConsoleBufferPaused)
 		return;
 
-	// If don't have console input, don't pass space to the input line
-	if ((ch == TEXT(' ')) && (!g_nConsoleInputChars))
-		return;
-
+	if (ch == CHAR_SPACE)
+	{
+		// If don't have console input, don't pass space to the input line
+		// exception: pass to assembler
+		if ((! g_nConsoleInputChars) && (! g_bAssemblerInput))
+			return;
+	}
+	
 	if (g_nConsoleInputChars > (g_nConsoleDisplayWidth-1))
 		return;
 
@@ -11280,7 +6617,7 @@ void DebugProcessChar (TCHAR ch)
 		return;
 	}
 
-	if ((ch >= ' ') && (ch <= 126)) // HACK MAGIC # 32 -> ' ', # 126 
+	if ((ch >= CHAR_SPACE) && (ch <= 126)) // HACK MAGIC # 32 -> ' ', # 126 
 	{
 		if (ch == TEXT('"'))
 			g_bConsoleInputQuoted = ! g_bConsoleInputQuoted;
@@ -11297,8 +6634,70 @@ void DebugProcessChar (TCHAR ch)
 	}
 }
 
+
+// Triggered when ENTER is pressed, or via script
 //===========================================================================
-void DebugProcessCommand (int keycode)
+Update_t DebuggerProcessCommand( const bool bEchoConsoleInput )
+{
+	Update_t bUpdateDisplay = UPDATE_NOTHING;
+
+	TCHAR sText[ CONSOLE_WIDTH ];
+
+	if (bEchoConsoleInput)
+		ConsoleDisplayPush( ConsoleInputPeek() );
+
+	if (g_bAssemblerInput)
+	{
+		if (g_nConsoleInputChars)
+		{
+			ParseInput( g_pConsoleInput, false ); // Don't cook the args
+			bUpdateDisplay |= _CmdAssemble( g_nAssemblerAddress, 0, g_nArgRaw );
+		}
+		else
+		{
+			AssemblerOff();
+
+			int nDelayedTargets = AssemblerDelayedTargetsSize();
+			if (nDelayedTargets)
+			{
+				wsprintf( sText, " Asm: %d sym declared, not defined", nDelayedTargets );
+				ConsoleDisplayPush( sText );
+				bUpdateDisplay |= UPDATE_CONSOLE_DISPLAY;
+			}
+		}
+		ConsoleInputReset();
+		bUpdateDisplay |= UPDATE_CONSOLE_DISPLAY;
+		ConsoleUpdate(); // udpate console, don't pause
+	}
+	else
+	if (g_nConsoleInputChars)
+	{
+		// BufferedInputPush( 
+		// Handle Buffered Input
+		// while ( BufferedInputPeek() )
+		int nArgs = ParseInput( g_pConsoleInput );
+		if (nArgs == ARG_SYNTAX_ERROR)
+		{
+			wsprintf( sText, "Syntax error: %s", g_aArgs[0].sArg );
+			bUpdateDisplay |= ConsoleDisplayError( sText );
+		}
+		else
+		{
+			bUpdateDisplay |= ExecuteCommand( nArgs ); // ParseInput());
+		}
+		
+		if (!g_bConsoleBufferPaused)
+		{
+			ConsoleInputReset();
+		}
+	}
+
+	return bUpdateDisplay;
+}
+
+//===========================================================================
+void DebuggerProcessKey( int keycode )
+//void DebugProcessCommand (int keycode)
 {
 	if (mode != MODE_DEBUG)
 		return;
@@ -11354,25 +6753,8 @@ void DebugProcessCommand (int keycode)
 	}
 	else if (keycode == VK_RETURN)
 	{
-		ConsoleDisplayPush( ConsoleInputPeek() );
+		bUpdateDisplay |= DebuggerProcessCommand( true ); // copy console input to console output
 
-		if (g_nConsoleInputChars)
-		{
-			int nArgs = ParseConsoleInput( g_pConsoleInput );
-			if (nArgs == ARG_SYNTAX_ERROR)
-			{
-				TCHAR sText[ CONSOLE_WIDTH ];
-				wsprintf( sText, "Syntax error: %s", g_aArgs[0].sArg );
-				bUpdateDisplay |= ConsoleDisplayError( sText );
-			}
-			else
-				bUpdateDisplay |= ExecuteCommand( nArgs ); // ParseConsoleInput());
-
-			if (!g_bConsoleBufferPaused)
-			{
-				ConsoleInputReset();
-			}
-		}
 	}
 	else if (keycode == VK_OEM_3) // Tilde ~
 	{
@@ -11411,13 +6793,24 @@ void DebugProcessCommand (int keycode)
 				break;
 			}
 			case VK_SPACE:
-				if (KeybGetShiftStatus())
-					bUpdateDisplay |= CmdStepOut(0);
+				if (g_bAssemblerInput)
+				{
+//					if (g_nConsoleInputChars)
+//					{
+//						ParseInput( g_pConsoleInput, false ); // Don't cook the args
+//						bUpdateDisplay |= _CmdAssemble( g_nAssemblerAddress, 0, g_nArgRaw );
+//					}
+				}
 				else
-				if (KeybGetCtrlStatus())
-					bUpdateDisplay |= CmdStepOver(0);
-				else
-					bUpdateDisplay |= CmdTrace(0);
+				{				
+					if (KeybGetShiftStatus())
+						bUpdateDisplay |= CmdStepOut(0);
+					else
+					if (KeybGetCtrlStatus())
+						bUpdateDisplay |= CmdStepOver(0);
+					else
+						bUpdateDisplay |= CmdTrace(0);
+				}
 				break;
 
 			case VK_HOME:
