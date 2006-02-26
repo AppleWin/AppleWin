@@ -444,7 +444,9 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
           ((mode == MODE_STEPPING) && (wparam != TEXT('\x1B'))))
         KeybQueueKeypress((int)wparam,ASCII);
       else if ((mode == MODE_DEBUG) || (mode == MODE_STEPPING))
-        DebugProcessChar((TCHAR)wparam);
+//        DebugProcessChar((TCHAR)wparam);
+        DebuggerInputConsoleChar((TCHAR)wparam);
+
       break;
 
     case WM_CREATE:
@@ -587,7 +589,8 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
 			  SoundCore_SetFade(FADE_IN);
 			  break;
           case MODE_STEPPING:
-			  DebugProcessChar(TEXT('\x1B'));
+//			  DebugProcessChar(TEXT('\x1B'));
+				DebuggerInputConsoleChar( TEXT('\x1B') ); // HACK: MAGIC #
 			  break;
         }
         DrawStatusArea((HDC)0,DRAW_TITLE);
@@ -606,7 +609,9 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
           KeybQueueKeypress((int)wparam,NOT_ASCII);
       }
       else if (mode == MODE_DEBUG)
-        DebugProcessCommand(wparam);
+//        DebugProcessCommand(wparam);
+        DebuggerProcessKey(wparam);
+
       if (wparam == VK_F10) {
         SetUsingCursor(0);
         return 0;
@@ -884,7 +889,8 @@ void ProcessButtonClick (int button) {
       if (mode == MODE_LOGO)
         ResetMachineState();
       if (mode == MODE_STEPPING)
-        DebugProcessChar(TEXT('\x1B'));
+//        DebugProcessChar(TEXT('\x1B'));
+			DebuggerInputConsoleChar( TEXT('\x1B') ); // HACK: MAGIC #
       else if (mode == MODE_DEBUG)
         ProcessButtonClick(BTN_RUN);
       else {
