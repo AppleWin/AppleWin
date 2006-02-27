@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,8);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,9);
 
 
 // Public _________________________________________________________________________________________
@@ -5666,10 +5666,64 @@ void DisplayAmbigiousCommands( int nFound )
 //===========================================================================
 Update_t ExecuteCommand (int nArgs) 
 {
-	TCHAR * pCommand = & g_aArgs[ 0 ].sArg[0];
+	Arg_t * pArg     = & g_aArgs[ 0 ];
+	TCHAR * pCommand = & pArg->sArg[0];
 
 	CmdFuncPtr_t pFunction = NULL;
 	int nFound = FindCommand( pCommand, pFunction );
+
+	if (! nFound)
+	{
+		int nLen = _tcslen( pCommand);
+		if (nLen < 6)
+		{
+			// verify pCommand[ 0 .. (nLen-1) ] is hex digit
+			bool bIsHex = true;
+			for (int iChar = 0; iChar < (nLen - 1); iChar++ )
+			{
+				if (isdigit(pCommand[iChar]))
+					continue;
+				else
+				if (pCommand[iChar] >= 'A' && pCommand[iChar] <= 'F')
+					continue;
+				else
+				{
+					bIsHex = false;
+					break;
+				}
+			}
+			
+			if (bIsHex)
+			{
+				WORD nAddress = 0;
+
+				// Support Apple Monitor commands
+				// ####G -> JMP $adress
+				if (pCommand[nLen-1] == 'G')
+				{
+					pCommand[nLen-1] = 0;
+					ArgsGetValue( pArg, & nAddress );
+
+					regs.pc = nAddress;
+//					pFunction = g_aCommands[ CMD_GO ].pFunction;
+//					nFound = 1;
+					mode = MODE_RUNNING; // exit the debugger
+				}
+				// ####L -> Unassemble $address
+				if (pCommand[nLen-1] == 'L')
+				{
+					pCommand[nLen-1] = 0;
+					ArgsGetValue( pArg, & nAddress );
+
+					pArg++;
+					pArg->nVal1 = nAddress;
+					nArgs++;
+					pFunction = g_aCommands[ CMD_UNASSEMBLE ].pFunction;
+					nFound = 1;
+				}					
+			}
+		}
+	}
 
 	if (nFound > 1)
 	{
@@ -6190,6 +6244,7 @@ bool ProfileSave()
 void DebugBegin ()
 {
 	// This is called every time the emulator is reset.
+	// And everytime the debugger is entered.
 
 	if (cpuemtype == CPU_FASTPAGING)
 	{
@@ -6210,7 +6265,7 @@ void DebugBegin ()
 	g_nDisasmCurAddress = regs.pc;
 	DisasmCalcTopBotAddress();
 
-	UpdateDisplay( UPDATE_ALL ); // 1
+	UpdateDisplay( UPDATE_ALL );
 }
 
 //===========================================================================
@@ -6222,16 +6277,14 @@ void DebugContinueStepping ()
 	{
 		if ((regs.pc >= g_nDebugSkipStart) && (regs.pc < (g_nDebugSkipStart + g_nDebugSkipLen)))
 		{
-			// Enter go mode
+			// Enter turbo debugger mode -- UI not updated, etc.
 			g_nDebugSteps = -1;
-//			g_nDebugStepUntil = -1; // Could already be set via G
 			mode = MODE_STEPPING;
 		}
 		else
 		{
-			// Enter step mode
+			// Enter normal debugger mode -- UI updated every instruction, etc.
 			g_nDebugSteps = 1;
-//			g_nDebugStepUntil = -1; // Could already be set via G
 			mode = MODE_STEPPING;
 		}
 	}
@@ -6554,8 +6607,8 @@ void DebugInitialize ()
 void DebuggerInputConsoleChar( TCHAR ch )
 //void DebugProcessChar (TCHAR ch)
 {
-	if ((mode == MODE_STEPPING) && (ch == CHAR_ESCAPE))
-		g_nDebugSteps = 0;
+	if ((mode == MODE_STEPPING) && (ch == DEBUG_EXIT_KEY))
+		g_nDebugSteps = 0; // Exit Debugger
 
 	if (mode != MODE_DEBUG)
 		return;
