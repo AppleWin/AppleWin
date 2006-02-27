@@ -112,6 +112,11 @@ using namespace std;
 
 // Prototypes _______________________________________________________________
 
+	enum
+	{
+		DEBUG_EXIT_KEY = 0x1B // Escape
+	};
+
 	void	DebugBegin ();
 	void	DebugContinueStepping ();
 	void	DebugDestroy ();
