@@ -1,5 +1,10 @@
 /*
 
+.11 Console sometimes wouldn't draw due to g_bDebuggerViewingAppleOutput being still incorrectly set to true
+.10 Added: double forward slash on command line now ignores rest of command (same as C++ comment)
+.9 Added: Legacy Apple "Monitor" Commands in ExecuteCommand()
+	####G  (JMP $Address)
+	####L  (Unassemble)
 .8 Fixed console input length not updated from script line length in CmdConfigRun()
 .7 Fixed script read hang in GetLinePointers()
 .6 Fixed Assembler storing one too many bytes in AssemblerPokeAddress()
