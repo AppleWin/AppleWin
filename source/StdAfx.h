@@ -1,3 +1,6 @@
+// Not needed in VC7.1, but needed in VC Express
+#include <tchar.h> 
+
 #include <crtdbg.h>
 #include <dsound.h>
 #include <dshow.h>
