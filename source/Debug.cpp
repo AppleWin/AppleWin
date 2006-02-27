@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,7);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,8);
 
 
 // Public _________________________________________________________________________________________
@@ -2008,7 +2008,12 @@ Update_t CmdConfigRun (int nArgs)
 		return Help_Arg_1( CMD_CONFIG_RUN );
 	
 	// Read in script
-	MemoryTextFile_t script;
+	// could be made global, to cache last run.
+	// Opens up the possibility of:
+	// CHEAT [ON | OFF] -> re-run script
+	// with conditional logic
+	// IF @ON ....
+	MemoryTextFile_t script; 
 
 	TCHAR * pFileName = g_aArgs[ 1 ].sArg;
 
@@ -2023,10 +2028,6 @@ Update_t CmdConfigRun (int nArgs)
 	_tcscpy(sFileName, progdir);
 	_tcscat(sFileName, sMiniFileName);
 
-//				const int MAX_MINI_FILENAME = 20;
-//				TCHAR sMiniFileName[ MAX_MINI_FILENAME + 1 ];
-//				_tcsncpy( sMiniFileName, pFileName, MAX_MINI_FILENAME - 1 );
-
 	if (script.Read( sFileName ))
 	{
 		int iLine = 0;
@@ -2037,6 +2038,7 @@ Update_t CmdConfigRun (int nArgs)
 		for( int iLine = 0; iLine < nLine; iLine++ )
 		{
 			script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
+			g_nConsoleInputChars = strlen( g_pConsoleInput );
 			bUpdateDisplay |= DebuggerProcessCommand( false );
 		}
 	}
@@ -2045,7 +2047,6 @@ Update_t CmdConfigRun (int nArgs)
 		TCHAR sText[ CONSOLE_WIDTH ];
 		wsprintf( sText, "Couldn't load filename: %s", sFileName );
 		ConsoleBufferPush( sText );
-
 	}	
 
 	return ConsoleUpdate();

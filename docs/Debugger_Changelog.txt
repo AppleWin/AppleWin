@@ -1,5 +1,6 @@
 /*
 
+.8 Fixed console input length not updated from script line length in CmdConfigRun()
 .7 Fixed script read hang in GetLinePointers()
 .6 Fixed Assembler storing one too many bytes in AssemblerPokeAddress()
 .5 Fixed Assembler not parsing target address in AssemblerGetArgs()
