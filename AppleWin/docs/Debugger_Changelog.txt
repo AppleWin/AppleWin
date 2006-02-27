@@ -1,5 +1,6 @@
 /*
 
+.14 Fixed Parses not to cook the args, until right before eating them
 .13 Fixed script to not append filename extension
 .12 Fixed command // to be comment
 .11 Console sometimes wouldn't draw due to g_bDebuggerViewingAppleOutput being still incorrectly set to true
