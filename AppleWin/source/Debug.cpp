@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,9);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,11);
 
 
 // Public _________________________________________________________________________________________
@@ -6264,6 +6264,8 @@ void DebugBegin ()
 
 	g_nDisasmCurAddress = regs.pc;
 	DisasmCalcTopBotAddress();
+
+	g_bDebuggerViewingAppleOutput = false;
 
 	UpdateDisplay( UPDATE_ALL );
 }
