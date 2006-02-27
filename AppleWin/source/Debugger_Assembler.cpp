@@ -584,10 +584,10 @@ int AssemblerPokeAddress( const int Opcode, const int nOpmode, const WORD nBaseA
 	*(memdirty + (nBaseAddress >> 8)) |= 1;
 //	*(mem + nBaseAddress) = (BYTE) nOpcode;
 
-	if (nOpbytes > 0)
+	if (nOpbytes > 1)
 		*(mem + nBaseAddress + 1) = (BYTE)(nTargetOffset >> 0);
 
-	if (nOpbytes > 1)
+	if (nOpbytes > 2)
 		*(mem + nBaseAddress + 2) = (BYTE)(nTargetOffset >> 8);
 
 	return nOpbytes;
@@ -797,21 +797,27 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 				}
 				else
 				{
-					DelayedTarget_t tDelayedTarget;
+					// if valid hex address, don't have delayed target
+					TCHAR sAddress[ 32 ];
+					wsprintf( sAddress, "%X", m_nAsmTargetAddress);
+					if (_tcscmp( sAddress, pArg->sArg))
+					{
+						DelayedTarget_t tDelayedTarget;
 
-					tDelayedTarget.m_nBaseAddress = nBaseAddress;
-					strncpy( tDelayedTarget.m_sAddress, pArg->sArg, MAX_SYMBOLS_LEN );
-					tDelayedTarget.m_sAddress[ MAX_SYMBOLS_LEN ] = 0;
+						tDelayedTarget.m_nBaseAddress = nBaseAddress;
+						strncpy( tDelayedTarget.m_sAddress, pArg->sArg, MAX_SYMBOLS_LEN );
+						tDelayedTarget.m_sAddress[ MAX_SYMBOLS_LEN ] = 0;
 
-					// Flag this target that we need to update it when we have the relevent info
-					m_bDelayedTargetsDirty = true;
+						// Flag this target that we need to update it when we have the relevent info
+						m_bDelayedTargetsDirty = true;
 
-					tDelayedTarget.m_nOpcode = 0;
-					tDelayedTarget.m_iOpmode = m_iAsmAddressMode;
-					
-					m_vDelayedTargets.push_back( tDelayedTarget );
+						tDelayedTarget.m_nOpcode = 0;
+						tDelayedTarget.m_iOpmode = m_iAsmAddressMode;
+						
+						m_vDelayedTargets.push_back( tDelayedTarget );
 
-					m_nAsmTargetAddress = 0;
+						m_nAsmTargetAddress = 0;
+					}
 				}
 
 				if ((m_iAsmAddressMode != AM_M) &&
@@ -1027,6 +1033,9 @@ void AssemblerProcessDelayedSymols()
 				}
 			}
 		}
+
+		if (! bModified)
+			break;
 	}
 }
 
