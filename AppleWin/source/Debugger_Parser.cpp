@@ -549,10 +549,17 @@ int ArgsCook ( const int nArgs )
 
 				if (pArg->eToken == TOKEN_FSLASH) // FORWARD SLASH / delta
 				{
+					if (pNext->eToken == TOKEN_FSLASH) // Comment
+					{					
+						nArg = iArg - 1;
+						return nArg;
+					}
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
 					{
 						ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
+					if (! nAddressRHS)
+						nAddressRHS = 1; // divide by zero bug
 					pPrev->nVal1 /= nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
