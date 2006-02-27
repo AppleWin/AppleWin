@@ -752,7 +752,7 @@ static DWORD InternalCpuExecute (DWORD totalcycles)
       case 0xF4:       INVALID2      CYC(4)  break;
       case 0xF5:       ZPGX SBC      CYC(4)  break;
       case 0xF6:       ZPGX INC      CYC(6)  break;
-      case 0xF7:       INVALID1      CYC(1)  break;
+      case 0xF7:       INVALID2      CYC(1)  break; // Lock N' Chase calls $F3D4
       case 0xF8:       SED           CYC(2)  break;
       case 0xF9:       ABSY SBC      CYC(4)  break;
       case 0xFA: CMOS  PLX           CYC(4)  break;
