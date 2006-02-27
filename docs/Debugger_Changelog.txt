@@ -1,6 +1,15 @@
 /*
 
-.3 Cleaned up Breakpoint code
+.7 Fixed script read hang in GetLinePointers()
+.6 Fixed Assembler storing one too many bytes in AssemblerPokeAddress()
+.5 Fixed Assembler not parsing target address in AssemblerGetArgs()
+	A 40C7
+	 BRA $40D7
+.4 Fixed Assembler hang in AssemblerProcessDelayedSymols()
+	A 40C7
+	 BRA $40D7
+.3 Fixed BPM to break ON the trigger, not after
+	Cleaned up Breakpoint code
 .2 Fixed BP address[,Length] to re-direct to BPX
 .1 Search Hex
 	SH Address,Len Byte [Byte ..]
