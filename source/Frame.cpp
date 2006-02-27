@@ -589,8 +589,7 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
 			  SoundCore_SetFade(FADE_IN);
 			  break;
           case MODE_STEPPING:
-//			  DebugProcessChar(TEXT('\x1B'));
-				DebuggerInputConsoleChar( TEXT('\x1B') ); // HACK: MAGIC #
+				DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
 			  break;
         }
         DrawStatusArea((HDC)0,DRAW_TITLE);
@@ -889,8 +888,7 @@ void ProcessButtonClick (int button) {
       if (mode == MODE_LOGO)
         ResetMachineState();
       if (mode == MODE_STEPPING)
-//        DebugProcessChar(TEXT('\x1B'));
-			DebuggerInputConsoleChar( TEXT('\x1B') ); // HACK: MAGIC #
+			DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
       else if (mode == MODE_DEBUG)
         ProcessButtonClick(BTN_RUN);
       else {
