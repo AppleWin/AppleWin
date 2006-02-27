@@ -3,7 +3,7 @@
 
 // MemoryTextFile _________________________________________________________________________________
 
-const int EOL_TERM = 0;
+const int EOL_NULL = 0;
 
 //===========================================================================
 bool MemoryTextFile_t::Read( char *pFileName )
@@ -23,7 +23,7 @@ bool MemoryTextFile_t::Read( char *pFileName )
 		char *pBuffer = & m_vBuffer.at(0);
 		fread( (void*)pBuffer, nSize, 1, hFile );
 
-		m_vBuffer.push_back( EOL_TERM );
+		m_vBuffer.push_back( EOL_NULL );
 
 		fclose(hFile);
 
@@ -70,7 +70,7 @@ void MemoryTextFile_t::GetLinePointers()
 
 		pEnd = const_cast<char*>( SkipUntilEOL( pBegin ));
 
-		if (*pEnd != EOL_TERM)
+		if (*pEnd == EOL_NULL)
 		{
 			// Found EOL via null
 			pStartNextLine = pEnd + 1;
@@ -88,7 +88,7 @@ void MemoryTextFile_t::GetLinePointers()
 			}
 
 			// assert( pEnd != NULL	);
-			*pEnd = EOL_TERM;
+			*pEnd = EOL_NULL;
 		}
 		pBegin = pStartNextLine;
 	}			
@@ -104,16 +104,16 @@ void MemoryTextFile_t::PushLine( char *pLine )
 	while (pSrc && *pSrc)
 	{
 		if (*pSrc == CHAR_CR)
-			m_vBuffer.push_back( EOL_TERM );
+			m_vBuffer.push_back( EOL_NULL );
 		else
 		if (*pSrc == CHAR_LF)			
-			m_vBuffer.push_back( EOL_TERM );
+			m_vBuffer.push_back( EOL_NULL );
 		else
 			m_vBuffer.push_back( *pSrc );
 
 		pSrc++;		
 	}
-	m_vBuffer.push_back( EOL_TERM );
+	m_vBuffer.push_back( EOL_NULL );
 
 	m_bDirty = true;
 }
