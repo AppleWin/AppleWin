@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,11);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,14);
 
 
 // Public _________________________________________________________________________________________
@@ -2023,7 +2023,7 @@ Update_t CmdConfigRun (int nArgs)
 //	if (g_aArgs[1].bType & TYPE_QUOTED)
 
 	strcpy( sMiniFileName, pFileName );
-	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
+//	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
 	_tcscpy(sFileName, progdir);
 	_tcscat(sFileName, sMiniFileName);
@@ -5723,6 +5723,16 @@ Update_t ExecuteCommand (int nArgs)
 				}					
 			}
 		}
+
+		if (pArg->eToken == TOKEN_FSLASH)
+		{
+			pArg++;
+			if (pArg->eToken == TOKEN_FSLASH)
+			{
+				nFound = 1;
+				pFunction = NULL;
+			}
+		}
 	}
 
 	if (nFound > 1)
@@ -5733,9 +5743,22 @@ Update_t ExecuteCommand (int nArgs)
 		return ConsoleUpdate();
 //		return ConsoleDisplayError( gaPotentialCommands );
 	}
-	else
-	if (pFunction)
-		return pFunction(nArgs);
+
+	if (nFound)
+	{
+		bool bCook = true;
+		if (g_iCommand == CMD_CONFIG_ECHO)
+			bCook = false;
+
+		int nArgsCooked = nArgs;
+		if (bCook)
+			nArgsCooked = ArgsCook( nArgs ); // Cook them
+
+		if (pFunction)
+			return pFunction( nArgsCooked ); // Eat them
+
+		return UPDATE_CONSOLE_DISPLAY;
+	}
 	else
 		return ConsoleDisplayError(TEXT("Illegal Command"));
 }
@@ -5934,8 +5957,8 @@ int ParseInput ( LPTSTR pConsoleInput, bool bCook )
 		g_aArgs[ iArg ] = g_aArgRaw[ iArg ];
 	}
 
-	if (bCook)
-		nArg = ArgsCook( nArg ); // Cook them
+//	if (bCook)
+//		nArg = ArgsCook( nArg ); // Cook them
 
 	return nArg;
 }
