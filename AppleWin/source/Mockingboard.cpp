@@ -1245,7 +1245,8 @@ void MB_Initialize()
 	{
 		memset(&g_MB,0,sizeof(g_MB));
 
-		for(int i=0; i<NUM_VOICES; i++)
+		int i;
+		for(i=0; i<NUM_VOICES; i++)
 			ppAYVoiceBuffer[i] = new short [SAMPLE_RATE];	// Buffer can hold a max of 1 seconds worth of samples
 
 		AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
