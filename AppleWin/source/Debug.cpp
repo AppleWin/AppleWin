@@ -785,9 +785,6 @@ static	bool ParseAssemblyListing  ( bool bBytesToMemory, bool bAddSymbols );
 	Update_t _CmdWindowViewCommon (int iNewWindow);
 
 // Utility
-	BYTE  Chars2ToByte( char *pText );
-	bool  IsHexString( LPCSTR pText );
-
 	bool  StringCat( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
 	bool  TestStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
 	bool  TryStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
@@ -827,37 +824,6 @@ LPCTSTR FormatAddress( WORD nAddress, int nBytes )
 		default:	sSymbol[0] = 0; break; // clear since is static
 	}
 	return sSymbol;
-}
-
-
-//===========================================================================
-inline
-BYTE Chars2ToByte ( char *pText )
-{
-	BYTE n = ((pText[0] <= '@') ? (pText[0] - '0') : (pText[0] - 'A' + 10)) << 4;
-		n += ((pText[1] <= '@') ? (pText[1] - '0') : (pText[1] - 'A' + 10)) << 0;
-	return n;
-}
-
-//===========================================================================
-inline
-bool IsHexString ( LPCSTR pText )
-{
-//	static const TCHAR sHex[] = "0123456789ABCDEF";
-
-	while (*pText)
-	{
-		if (*pText < TEXT('0'))
-			return false;
-		if (*pText > TEXT('f'))
-			return false;
-		if ((*pText > TEXT('9')) && (*pText < TEXT('A')) ||
-			((*pText > TEXT('F') && (*pText < TEXT('a')))))
-			return false;
-
-		pText++;
-	}
-	return true;
 }
 
 
@@ -3727,7 +3693,8 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 			{
 				char *pEnd = p + 1;				
 				char *pStart;
-				for (int iByte = 0; iByte < 3; iByte++ )
+				int  iByte;
+				for (iByte = 0; iByte < 4; iByte++ ) // BUG: Some assemblers also put 4 bytes on a line
 				{
 					// xx xx xx
 					// ^ ^
@@ -3742,8 +3709,11 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 						break;
 					}
 					*pEnd = 0;
-					BYTE nByte = Chars2ToByte( pStart );
-					*(mem + ((WORD)nAddress) + iByte ) = nByte;
+					if (TextIsHexByte( pStart ))
+					{
+						BYTE nByte = TextConvert2CharsToByte( pStart );
+						*(mem + ((WORD)nAddress) + iByte ) = nByte;
+					}
 				}
 				g_nSourceAssembleBytes += iByte;
 			}
@@ -4091,7 +4061,7 @@ bool String2Address( LPCTSTR pText, WORD & nAddress_ )
 
 	if (pText[0] == TEXT('$'))
 	{
-		if (!IsHexString( pText+1))
+		if (!TextIsHexString( pText+1))
 			return false;
 
 		_tcscpy( sHexApple, TEXT("0x") );
@@ -4103,14 +4073,14 @@ bool String2Address( LPCTSTR pText, WORD & nAddress_ )
 	{
 		if ((pText[1] == TEXT('X')) || pText[1] == TEXT('x'))
 		{
-			if (!IsHexString( pText+2))
+			if (!TextIsHexString( pText+2))
 				return false;
 
 			TCHAR *pEnd;
 			nAddress_ = (WORD) _tcstol( pText, &pEnd, 16 );
 			return true;
 		}
-		if (IsHexString( pText ))
+		if (TextIsHexString( pText ))
 		{
 			TCHAR *pEnd;
 			nAddress_ = (WORD) _tcstol( pText, &pEnd, 16 );
