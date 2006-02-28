@@ -436,7 +436,8 @@ void DrawDHiResSource () {
       int color[SIZE];
       ZeroMemory(color,sizeof(color));
       unsigned pattern = MAKEWORD(byteval,column);
-      for (int pixel = 1; pixel < 15; pixel++) {
+      int pixel;
+      for (pixel = 1; pixel < 15; pixel++) {
         if (pattern & (1 << pixel)) {
           int pixelcolor = 1 << ((pixel-OFFSET) & 3);
           if ((pixel >=  OFFSET+2) && (pixel < SIZE+OFFSET+2) && (pattern & (0x7 << (pixel-4))))
@@ -494,7 +495,8 @@ void DrawHiResSource () {
       pixelon[ 9] = column & 1;
       pixelon[10] = column & 2;
       int bitval = 1;
-      for (int pixel  = 2; pixel < 9; pixel++) {
+      int pixel;
+      for (pixel  = 2; pixel < 9; pixel++) {
         pixelon[pixel] = ((byteval & bitval) != 0);
         bitval <<= 1;
       }
@@ -1197,7 +1199,27 @@ void VideoCheckPage (BOOL force) {
 //===========================================================================
 BYTE __stdcall VideoCheckVbl (WORD, BYTE, BYTE, BYTE, ULONG)
 {
-  return MemReturnRandomData(dwVBlCounter <= nVBlStop_NTSC);
+	/*
+		// Drol Hangs when finished
+		68DE A5 02    LDX #02
+		68E0 AD 50 C0 LDA TXTCLR
+		68E3 C9 80    CMP #80
+		68E5 D0 F7    BNE $68DE
+
+		6957 A5 02    LDX #02
+		6959 AD 50 C0 LDA TXTCLR
+		695C C9 80    CMP #80
+		695E D0 F7    BNE $68DE
+
+		69D3 A5 02    LDX #02
+		69D5 AD 50 C0 LDA TXTCLR
+		69D8 C9 80    CMP #80
+		69DA D0 F7    BNE $68DE
+	*/		
+	if (dwVBlCounter <= nVBlStop_NTSC)
+		return MemReturnRandomData(dwVBlCounter <= nVBlStop_NTSC);
+	else
+		return 0x80;
 }
 
 //===========================================================================
