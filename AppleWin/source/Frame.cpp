@@ -52,7 +52,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 static HBITMAP capsbitmap[2];
-static HBITMAP diskbitmap[3];
+static HBITMAP diskbitmap[ NUM_DISK_STATUS ];
+
 static HBITMAP buttonbitmap[BUTTONS];
 
 static BOOL    active          = 0;
@@ -83,12 +84,12 @@ static LPDIRECTDRAWSURFACE surface    = (LPDIRECTDRAWSURFACE)0;
 
 void    DrawStatusArea (HDC passdc, BOOL drawflags);
 void    ProcessButtonClick (int button);
+void	ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive);
 void    RelayEvent (UINT message, WPARAM wparam, LPARAM lparam);
 void    ResetMachineState ();
 void    SetFullScreenMode ();
 void    SetNormalMode ();
 void    SetUsingCursor (BOOL);
-
 
 //===========================================================================
 void CreateGdiObjects () {
@@ -108,9 +109,12 @@ void CreateGdiObjects () {
   buttonbitmap[BTN_SETUP  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("SETUP_BUTTON"));
   capsbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSOFF_BITMAP"));
   capsbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSON_BITMAP"));
-  diskbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKOFF_BITMAP"));
-  diskbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKREAD_BITMAP"));
-  diskbitmap[2] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKWRITE_BITMAP"));
+
+  diskbitmap[ DISK_STATUS_OFF  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKOFF_BITMAP"));
+  diskbitmap[ DISK_STATUS_READ ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKREAD_BITMAP"));
+  diskbitmap[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKWRITE_BITMAP"));
+  diskbitmap[ DISK_STATUS_PROT ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKPROT_BITMAP"));
+  
   btnfacebrush    = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
   btnfacepen      = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNFACE));
   btnhighlightpen = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNHIGHLIGHT));
@@ -128,7 +132,7 @@ void DeleteGdiObjects () {
     DeleteObject(buttonbitmap[loop]);
   for (loop = 0; loop < 2; loop++)
     DeleteObject(capsbitmap[loop]);
-  for (loop = 0; loop < 3; loop++)
+  for (loop = 0; loop < NUM_DISK_STATUS; loop++)
     DeleteObject(diskbitmap[loop]);
   DeleteObject(btnfacebrush);
   DeleteObject(btnfacepen);
@@ -329,19 +333,19 @@ void DrawStatusArea (HDC passdc, int drawflags) {
   HDC  dc     = (passdc ? passdc : GetDC(framewindow));
   int  x      = buttonx;
   int  y      = buttony+BUTTONS*BUTTONCY+1;
-  int  drive1 = 0;
-  int  drive2 = 0;
+  int  iDrive1Status = DISK_STATUS_OFF;
+  int  iDrive2Status = DISK_STATUS_OFF;
   BOOL caps   = 0;
-  DiskGetLightStatus(&drive1,&drive2);
+  DiskGetLightStatus(&iDrive1Status,&iDrive2Status);
   KeybGetCapsStatus(&caps);
   if (fullscreen) {
     SelectObject(dc,smallfont);
     SetBkMode(dc,OPAQUE);
     SetBkColor(dc,RGB(0,0,0));
     SetTextAlign(dc,TA_LEFT | TA_TOP);
-    SetTextColor(dc,RGB((drive1==2 ? 255 : 0),(drive1==1 ? 255 : 0),0));
+    SetTextColor(dc,RGB((iDrive1Status==2 ? 255 : 0),(iDrive1Status==1 ? 255 : 0),0));
     TextOut(dc,x+ 3,y+2,TEXT("1"),1);
-    SetTextColor(dc,RGB((drive2==2 ? 255 : 0),(drive2==1 ? 255 : 0),0));
+    SetTextColor(dc,RGB((iDrive2Status==2 ? 255 : 0),(iDrive2Status==1 ? 255 : 0),0));
     TextOut(dc,x+13,y+2,TEXT("2"),1);
     if (apple2e) {
       SetTextAlign(dc,TA_RIGHT | TA_TOP);
@@ -371,8 +375,8 @@ void DrawStatusArea (HDC passdc, int drawflags) {
     }
     if (drawflags & DRAW_LEDS) {
       RECT rect = {0,0,8,8};
-      DrawBitmapRect(dc,x+12,y+8,&rect,diskbitmap[drive1]);
-      DrawBitmapRect(dc,x+30,y+8,&rect,diskbitmap[drive2]);
+      DrawBitmapRect(dc,x+12,y+8,&rect,diskbitmap[iDrive1Status]);
+      DrawBitmapRect(dc,x+30,y+8,&rect,diskbitmap[iDrive2Status]);
       if (apple2e) {
         RECT rect = {0,0,30,8};
         DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[caps != 0]);
@@ -742,13 +746,32 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
 				int iDrive = iButton - BTN_DRIVE1;
 				if ((iButton == BTN_DRIVE1) || (iButton == BTN_DRIVE2))
 				{
+/*
 					if (KeybGetShiftStatus())
 						DiskProtect( iDrive, true );
 					else
 					if (KeybGetCtrlStatus())
 						DiskProtect( iDrive, false );
 					else
-						DiskEject( iDrive );
+*/
+					{
+						RECT  rect;    // client area             
+						POINT pt;   // location of mouse click  
+
+   						// Get the bounding rectangle of the client area. 
+						GetClientRect(window, (LPRECT) &rect); 
+			 
+						// Get the client coordinates for the mouse click.  
+						pt.x = GET_X_LPARAM(lparam); 
+						pt.y = GET_Y_LPARAM(lparam); 
+			 
+						// If the mouse click took place inside the client 
+						// area, execute the application-defined function 
+						// that displays the shortcut menu. 
+						if (PtInRect((LPRECT) &rect, pt)) 
+							ProcessDiskPopupMenu( window, pt, iDrive ); 
+                	}
+
 					FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 					DrawButton((HDC)0,iButton);
 				}			
@@ -836,6 +859,8 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
   return DefWindowProc(window,message,wparam,lparam);
 }
 
+
+
 //===========================================================================
 void ProcessButtonClick (int button) {
 
@@ -909,6 +934,52 @@ void ProcessButtonClick (int button) {
 	  SoundCore_SetFade(FADE_IN);
   }
 }
+
+
+//===========================================================================
+void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive) 
+{
+	// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/resources/menus/usingmenus.asp
+	// http://www.codeproject.com/menu/MenusForBeginners.asp?df=100&forumid=67645&exp=0&select=903061
+
+	HMENU hmenu;            // menu template
+	HMENU hmenuTrackPopup;  // shortcut menu
+
+	//  Load the menu template containing the shortcut menu from the 
+	//  application's resources. 
+	hmenu = LoadMenu(instance, MAKEINTRESOURCE(ID_MENU_DISK_POPUP)); 
+	if (hmenu == NULL) 
+		return; 
+
+	// Get the first shortcut menu in the menu template. This is the 
+	// menu that TrackPopupMenu displays. 
+	hmenuTrackPopup = GetSubMenu(hmenu, 0); 
+
+	// TrackPopup uses screen coordinates, so convert the 
+	// coordinates of the mouse click to screen coordinates. 
+	ClientToScreen(hwnd, (LPPOINT) &pt); 
+
+	// Draw and track the shortcut menu.  
+	int iCommand = TrackPopupMenu(
+		hmenuTrackPopup
+		, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RETURNCMD
+		, pt.x, pt.y
+		, 0
+		, hwnd, NULL ); 
+
+	if (iCommand == ID_DISKMENU_EJECT)
+		DiskEject( iDrive );
+	else
+	if (iCommand == ID_DISKMENU_WRITEPROTECTION_ON)
+		DiskProtect( iDrive, true );
+	else
+	if (iCommand == ID_DISKMENU_WRITEPROTECTION_OFF)
+		DiskProtect( iDrive, false );
+
+	// Destroy the menu. 
+	DestroyMenu(hmenu); 
+} 
+
 
 //===========================================================================
 void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
