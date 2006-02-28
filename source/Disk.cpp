@@ -63,6 +63,8 @@ static BOOL      floppymotoron   = 0;
 static BOOL      floppywritemode = 0;
 
 static void ChecSpinning();
+static Disk_Status_e GetDriveLightStatus( const int iDrive );
+static bool IsDriveValid( const int iDrive );
 static void ReadTrack (int drive);
 static void RemoveDisk (int drive);
 static void WriteTrack (int drive);
@@ -74,6 +76,30 @@ void CheckSpinning () {
     g_aFloppyDisk[currdrive].spinning = 20000;
   if (modechange)
     FrameRefreshStatus(DRAW_LEDS);
+}
+
+//===========================================================================
+Disk_Status_e GetDriveLightStatus( const int iDrive )
+{
+	if (IsDriveValid( iDrive ))
+	{
+		Disk_t *pFloppy = & g_aFloppyDisk[ iDrive ];
+
+		if (pFloppy->spinning)
+		{
+			if (pFloppy->writeprotected)
+				return DISK_STATUS_PROT;
+
+			if (pFloppy->writelight)
+				return DISK_STATUS_WRITE;
+			else
+				return DISK_STATUS_READ;
+		}
+		else
+			return DISK_STATUS_OFF;
+	}
+
+	return DISK_STATUS_OFF;
 }
 
 //===========================================================================
@@ -299,14 +325,17 @@ LPCTSTR DiskGetFullName (int drive) {
   return g_aFloppyDisk[drive].fullname;
 }
 
+
 //===========================================================================
-void DiskGetLightStatus (int *drive1, int *drive2) {
-  *drive1 = g_aFloppyDisk[0].spinning ? g_aFloppyDisk[0].writelight ? 2
-                                                      : 1
-                               : 0;
-  *drive2 = g_aFloppyDisk[1].spinning ? g_aFloppyDisk[1].writelight ? 2
-                                                      : 1
-                               : 0;
+void DiskGetLightStatus (int *pDisk1Status_, int *pDisk2Status_)
+{
+//	*drive1 = g_aFloppyDisk[0].spinning ? g_aFloppyDisk[0].writelight ? 2 : 1 : 0;
+//	*drive2 = g_aFloppyDisk[1].spinning ? g_aFloppyDisk[1].writelight ? 2 : 1 : 0;
+
+	if (pDisk1Status_)
+		*pDisk1Status_ = GetDriveLightStatus( 0 );
+	if (pDisk2Status_)
+		*pDisk2Status_ = GetDriveLightStatus( 1 );
 }
 
 //===========================================================================
@@ -321,7 +350,7 @@ void DiskInitialize () {
     ZeroMemory(&g_aFloppyDisk[loop],sizeof(Disk_t ));
   TCHAR imagefilename[MAX_PATH];
   _tcscpy(imagefilename,progdir);
-  _tcscat(imagefilename,TEXT("MASTER.DSK"));
+  _tcscat(imagefilename,TEXT("MASTER.DSK")); // TODO: Should remember last disk by user
   DiskInsert(0,imagefilename,0,0);
 }
 
