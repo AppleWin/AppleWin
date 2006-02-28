@@ -62,6 +62,7 @@ CHARSET40               BITMAP                  "CHARSET4.BMP"
 DISKOFF_BITMAP          BITMAP                  "DISKOFF.BMP"
 DISKREAD_BITMAP         BITMAP                  "DISKREAD.BMP"
 DISKWRITE_BITMAP        BITMAP                  "DISKWRIT.BMP"
+DISKPROT_BITMAP         BITMAP                  "DISKPROT.BMP"
 CAPSOFF_BITMAP          BITMAP                  "CAPSOFF.BMP"
 CAPSON_BITMAP           BITMAP                  "CAPSON.BMP"
 HELP_BUTTON             BITMAP                  "HELP.BMP"
@@ -265,14 +266,15 @@ END
 // Data
 //
 
-IDR_HDDRVR          RCDATA                  "Hddrvr.bin"
+IDR_HDDRVR  RCDATA                                    "Hddrvr.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Menu
 //
 
-IDR_MENU1 MENU 
+IDR_MENU MENU 
 BEGIN
     POPUP "&File"
     BEGIN
@@ -284,6 +286,18 @@ BEGIN
         MENUITEM "&About",                      IDM_ABOUT
     END
 END
+
+ID_MENU_DISK_POPUP MENU 
+BEGIN
+    POPUP "Disk Menu"
+    BEGIN
+        MENUITEM "&Eject",                      ID_DISKMENU_EJECT
+        MENUITEM "&Write protection: ON",       ID_DISKMENU_WRITEPROTECTION_ON
+        MENUITEM "W&rite protection: OFF",      ID_DISKMENU_WRITEPROTECTION_OFF
+
+    END
+END
+
 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
