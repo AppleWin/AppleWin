@@ -1194,7 +1194,7 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 	{
 		nCols = MAX_MEM_VIEW_TXT;
 	}
-	rect.right  = MAX( rect.left + (nFontWidth * nCols), DISPLAY_WIDTH );
+	rect.right = DISPLAY_WIDTH;
 
 	SetTextColor( hDC, DebuggerGetColor( FG_INFO_OPCODE ));
 
