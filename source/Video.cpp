@@ -1200,7 +1200,7 @@ void VideoCheckPage (BOOL force) {
 BYTE __stdcall VideoCheckVbl (WORD, BYTE, BYTE, BYTE, ULONG)
 {
 	/*
-		// Drol Hangs when finished
+		// Drol expects = 80
 		68DE A5 02    LDX #02
 		68E0 AD 50 C0 LDA TXTCLR
 		68E3 C9 80    CMP #80
@@ -1215,9 +1215,16 @@ BYTE __stdcall VideoCheckVbl (WORD, BYTE, BYTE, BYTE, ULONG)
 		69D5 AD 50 C0 LDA TXTCLR
 		69D8 C9 80    CMP #80
 		69DA D0 F7    BNE $68DE
+
+		// Karateka expects < 80
+		// Returns 00 or FF on Apple ][
+		07DE AD 19 C0 LDA RDVBLBAR
+		07E1 30 FB    BMI $7DE
 	*/		
+
+//		return MemReturnRandomData(dwVBlCounter <= nVBlStop_NTSC);
 	if (dwVBlCounter <= nVBlStop_NTSC)
-		return MemReturnRandomData(dwVBlCounter <= nVBlStop_NTSC);
+		return 0x00;
 	else
 		return 0x80;
 }
