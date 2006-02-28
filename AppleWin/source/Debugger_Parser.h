@@ -55,112 +55,116 @@ inline	const char* SkipEOL                    ( const char *pSrc )
 		return pSrc;
 	}
 */
-inline	const char* EatEOL                    ( const char *pSrc )
-	{
-		if (pSrc)
-		{
-			if (*pSrc == CHAR_LF)
-				pSrc++;
-				
-			if (*pSrc == CHAR_CR)
-				pSrc++;
-		}
-		return pSrc;
-	}
-inline	const char* SkipWhiteSpace             ( const char *pSrc )
-	{
-		while (pSrc && ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB)))
-		{
-			pSrc++;
-		}
-		return pSrc;
-	}
-inline	const char* SkipWhiteSpaceReverse      ( const char *pSrc, const char *pStart )
-	{
-		while (pSrc && ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB)) && (pSrc > pStart))
-		{
-			pSrc--;
-		}
-		return pSrc;
-	}
 
+inline	const char* EatEOL                    ( const char *pSrc )
+		{
+			if (pSrc)
+			{
+				if (*pSrc == CHAR_LF)
+					pSrc++;
+					
+				if (*pSrc == CHAR_CR)
+					pSrc++;
+			}
+			return pSrc;
+		}
+
+inline	const char* SkipWhiteSpace             ( const char *pSrc )
+		{
+			while (pSrc && ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB)))
+			{
+				pSrc++;
+			}
+			return pSrc;
+		}
+
+inline	const char* SkipWhiteSpaceReverse      ( const char *pSrc, const char *pStart )
+		{
+			while (pSrc && ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB)) && (pSrc > pStart))
+			{
+				pSrc--;
+			}
+			return pSrc;
+		}
 
 inline	const char* SkipUntilChar              ( const char *pSrc, const char nDelim )
-{
-	while (pSrc && (*pSrc))
-	{
-		if (*pSrc == nDelim)
-			break;
-		pSrc++;
-	}
-	return pSrc;
-}
-inline	const char* SkipUntilEOL               ( const char *pSrc )
-	{
-		// EOL delims: NULL, LF, CR
-		while (pSrc && (*pSrc))
 		{
-			if ((*pSrc == CHAR_LF) || (*pSrc == CHAR_CR))
+			while (pSrc && (*pSrc))
 			{
-				break;
+				if (*pSrc == nDelim)
+					break;
+				pSrc++;
 			}
-			pSrc++;
+			return pSrc;
 		}
-		return pSrc;
-	}
+
+inline	const char* SkipUntilEOL               ( const char *pSrc )
+		{
+			// EOL delims: NULL, LF, CR
+			while (pSrc && (*pSrc))
+			{
+				if ((*pSrc == CHAR_LF) || (*pSrc == CHAR_CR))
+				{
+					break;
+				}
+				pSrc++;
+			}
+			return pSrc;
+		}
 
 inline	const char* SkipUntilTab               ( const char *pSrc)
-	{
-		while (pSrc && (*pSrc))
 		{
-			if (*pSrc == CHAR_TAB)
+			while (pSrc && (*pSrc))
 			{
-				break;
+				if (*pSrc == CHAR_TAB)
+				{
+					break;
+				}
+				pSrc++;
 			}
-			pSrc++;
+			return pSrc;
 		}
-		return pSrc;
-	}
 
 inline	const char* SkipUntilToken             ( const char *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e *pToken_ )
-{
-	if ( pToken_)
-		*pToken_ = NO_TOKEN;
-
-	while (pSrc && (*pSrc))
 	{
-		if (ParserFindToken( pSrc, aTokens, nTokens, pToken_ ))
-			return pSrc;
+		if ( pToken_)
+			*pToken_ = NO_TOKEN;
 
-		pSrc++;
-	}
-	return pSrc;
-}
-inline	const char* SkipUntilWhiteSpace        ( const char *pSrc )
-	{
 		while (pSrc && (*pSrc))
 		{
-			if ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB))
-			{
-				break;
-			}
+			if (ParserFindToken( pSrc, aTokens, nTokens, pToken_ ))
+				return pSrc;
+
 			pSrc++;
 		}
 		return pSrc;
 	}
 
-inline	const char* SkipUntilWhiteSpaceReverse ( const char *pSrc, const char *pStart )
-	{
-		while (pSrc && (pSrc > pStart))
+inline	const char* SkipUntilWhiteSpace        ( const char *pSrc )
 		{
-			if ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB))
+			while (pSrc && (*pSrc))
 			{
-				break;		
+				if ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB))
+				{
+					break;
+				}
+				pSrc++;
 			}
-			pSrc--;
+			return pSrc;
 		}
-		return pSrc;
-	}
+
+inline	const char* SkipUntilWhiteSpaceReverse ( const char *pSrc, const char *pStart )
+		{
+			while (pSrc && (pSrc > pStart))
+			{
+				if ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB))
+				{
+					break;		
+				}
+				pSrc--;
+			}
+			return pSrc;
+		}
 
 
 /*
@@ -180,5 +184,54 @@ inline	const char* SkipUntilWhiteSpaceReverse ( const char *pSrc, const char *pS
 	int          RemoveWhiteSpaceReverse    (       char *pSrc );
 // TextExpandTabsToSpaces
 	void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDstSize, int nTabStop = 0 );
+
+
+/** Assumes text are valid hex digits!
+//=========================================================================== */
+inline	BYTE TextConvert2CharsToByte ( char *pText )
+		{
+			BYTE n = ((pText[0] <= '@') ? (pText[0] - '0') : (pText[0] - 'A' + 10)) << 4;
+				n += ((pText[1] <= '@') ? (pText[1] - '0') : (pText[1] - 'A' + 10)) << 0;
+			return n;
+		}
+
+//===========================================================================
+inline	bool TextIsHexChar( char nChar )
+		{
+			if ((nChar >= '0') && (nChar <= '9'))
+				return true;
+				
+			if ((nChar >= 'A') && (nChar <= 'F'))
+				return true;
+				
+			if ((nChar >= 'a') && (nChar <= 'f'))
+				return true;
+				
+			return false;
+		}
+
+
+//===========================================================================
+inline	bool TextIsHexByte( char *pText )
+		{
+			if (TextIsHexChar( pText[0] ) && 
+				TextIsHexChar( pText[1] ))
+				return true;
+
+			return false;
+		}
+
+//===========================================================================
+inline	bool TextIsHexString ( LPCSTR pText )
+	{
+		while (*pText)
+		{
+			if (! TextIsHexChar( *pText ))
+				return false;
+
+			pText++;
+		}
+		return true;
+	}
 
 #endif
