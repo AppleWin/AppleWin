@@ -54,19 +54,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
    LR: Lo-Res   HR: Hi-Res   DHR: Double Hi-Res */
 
+
+#define HALF_SHIFT_DITHER 0
+
+
 // STANDARD WINDOWS COLORS
-/*
-#define  BLACK            0x00
-#define  DARK_RED         0x01
-#define  DARK_GREEN       0x02
-#define  DARK_YELLOW      0x03
-#define  DARK_BLUE        0x04
-#define  DARK_MAGENTA     0x05
-#define  DARK_CYAN        0x06
-#define  LIGHT_GRAY       0x07
-#define  MONEY_GREEN      0x08
-#define  SKY_BLUE         0x09
-*/
 #define  CREAM            0xF6
 #define  MEDIUM_GRAY      0xF7
 #define  DARK_GRAY        0xF8
@@ -93,6 +85,7 @@ enum Color_Palette_Index_e
 	, MONEY_GREEN      
 	, SKY_BLUE         
 
+// OUR CUSTOM COLORS
 	, DEEP_RED         
 	, LIGHT_BLUE       
 	, BROWN            
@@ -100,7 +93,7 @@ enum Color_Palette_Index_e
 	, PINK             
 	, AQUA             
 
-	// CUSTOM HGR COLORS (don't change order) - For tv emulation mode
+// CUSTOM HGR COLORS (don't change order) - For tv emulation mode
 	, HGR_BLACK        
 	, HGR_WHITE        
 	, HGR_BLUE         
@@ -114,41 +107,16 @@ enum Color_Palette_Index_e
 	, HGR_PURPLE       
 	, HGR_PINK         
 
+// USER CUSTOMIZABLE COLOR
 	, MONOCHROME_CUSTOM
+
+// Pre-set "Monochromes"
 	, MONOCHROME_AMBER
 	, MONOCHROME_GREEN
 	, MONOCHROME_WHITE
 
 	, NUM_COLOR_PALETTE
 };
-
-
-// OUR CUSTOM COLORS
-/*
-#define  DEEP_RED         0x0A
-#define  LIGHT_BLUE       0x0B
-#define  BROWN            0x0C
-#define  ORANGE           0X0D
-#define  PINK             0x0E
-#define  AQUA             0x0F
-
-// CUSTOM HGR COLORS (don't change values) - For tv emulation mode
-#define  HGR_BLACK        0x10
-#define  HGR_WHITE        0x11
-#define  HGR_BLUE         0x12
-#define  HGR_RED          0x13
-#define  HGR_GREEN        0x14
-#define  HGR_MAGENTA      0x15
-#define  HGR_GREY1        0x16
-#define  HGR_GREY2        0x17
-#define  HGR_YELLOW       0x18
-#define  HGR_AQUA         0x19
-#define  HGR_PURPLE       0x1A
-#define  HGR_PINK         0x1B
-
-// USER CUSTOMIZABLE COLOR
-#define  MONOCHROME       0x20
-*/
 
 
 #define  SRCOFFS_40COL    0
@@ -625,7 +593,9 @@ void DrawHiResSourceHalfShiftDim ()
 					if (aPixels[iPixel])
 					{
 						if (aPixels[iPixel-1] || aPixels[iPixel+1])
+						{
 							color = CM_White;
+						}
 						else
 							color = ((odd ^ (iPixel&1)) << 1) | hibit;
 					}
@@ -709,6 +679,25 @@ void DrawHiResSourceHalfShiftDim ()
 							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_BLACK );
 							break;
 						case CM_White :
+
+#if HALF_SHIFT_DIM
+							// 50% dither -- would look OK, except Gumball, on the "Gumball" font has splotches
+//							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_WHITE );
+//							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_WHITE );
+//							if (! hibit)
+//							{
+//								SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj ,y  , HGR_WHITE );
+//								SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj ,y+1, HGR_WHITE );
+//							}
+
+							// 75% dither -- looks kind of nice actually.  Passes the Gumball cutscene quality test!
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_WHITE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_WHITE );
+
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj ,y  , LIGHT_GRAY );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj ,y+1, LIGHT_GRAY );
+#else
+							// Don't dither / half-shift white, since DROL cutscene looks bad :(
 							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_WHITE );
 							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_WHITE );
 							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_WHITE ); // LIGHT_GRAY <- for that half scan-line look
@@ -722,6 +711,7 @@ void DrawHiResSourceHalfShiftDim ()
 									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_WHITE ); // LIGHT_GRAY HGR_GREY1
 								}
 							}
+#endif
 							break;
 						default:
 							break;
