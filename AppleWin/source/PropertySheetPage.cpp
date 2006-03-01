@@ -72,10 +72,17 @@ TCHAR   soundchoices[]    =  TEXT("Disabled\0")
                              TEXT("PC Speaker (translated)\0")
                              TEXT("Sound Card\0");
 
-TCHAR   videochoices[]    =  TEXT("Monochrome\0")
-                             TEXT("Color (standard)\0")
-                             TEXT("Color (text optimized)\0")
-                             TEXT("Color (TV emulation)\0");
+// Must match VT_NUM_MODES!
+TCHAR   videochoices[]    =
+	TEXT("Monochrome (Custom)\0")
+	TEXT("Color (standard)\0")
+	TEXT("Color (text optimized)\0")
+	TEXT("Color (TV emulation)\0")
+	TEXT("Color (Half-Shift)\0")
+	TEXT("Monochrome - Amber\0")
+	TEXT("Monochrome - Green\0")
+	TEXT("Monochrome - White\0")
+	;
 
 TCHAR   discchoices[]     =  TEXT("Authentic Speed\0")
                              TEXT("Enhanced Speed\0");
