@@ -659,16 +659,16 @@ void DrawHiResSourceHalfShiftDim ()
 							break;
 						case CM_Orange:
 							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_RED  );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y  , DARK_RED );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y  , BROWN ); // DARK_RED is a bit "too" red
 							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_RED  );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y+1, DARK_RED );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y+1, BROWN ); // DARK_RED is a bit "too" red
 							// Prevent column gaps
 							if (hibit)
 							{
 								if (iPixel <= 2)
 								{
-									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , DARK_RED );
-									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, DARK_RED );
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , BROWN ); // DARK_RED is a bit "too" red
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, BROWN ); // DARK_RED is a bit "too" red
 								}
 							}
 							break;
