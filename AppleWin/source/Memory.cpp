@@ -965,7 +965,20 @@ void MemReset ()
 
   // INITIALIZE THE RAM IMAGES
   ZeroMemory(memaux ,0x10000);
+
   ZeroMemory(memmain,0x10000);
+
+	// TODO: Verify the RAM pattern is still valid for an Apple //e
+	int iByte;
+	for( iByte = 0x0000; iByte < 0xC000; )
+	{
+		iByte++;
+		iByte++;
+
+		memmain[ iByte++ ] = 0xFF;
+		memmain[ iByte++ ] = 0xFF;
+	}
+
 
   // SET UP THE MEMORY IMAGE
   mem   = memimage;
