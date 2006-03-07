@@ -1,4 +1,6 @@
 Setting up CVS for AppleWin
+Revision 2
++ Added diff/merge
 
 
 1. Create an account BerliOS
@@ -8,6 +10,14 @@ http://developer.berlios.de/
 2. Download and install TortoiseCVS.
 a) http://www.tortoisecvs.org/
 b) Reboot Windows (Grr...)
+
+If you don't want to use TortoiseCVs, you can use
+
+i) WinCVS (which also has a Mac OS X port, called MacCVS)
+http://www.wincvs.org/
+
+ii) cvsnt:
+http://www.march-hare.com/cvspro/
 
 
 3. Generate a SSH2 key, using "puttygen"
@@ -19,19 +29,24 @@ Depending on where you installed TortoiseCVS, puttgen.exe will be located there.
 i.e.
  \Programs\VersionControl\TortoiseCVS\puttygen.exe
 
-(You could also optionally, install PuTTY from http://www.chiark.greenend.org.uk/~sgtatham/putty/ )
-i.e.
- \Programs\Shell\PuTTY\puttygen.exe
+You could also optionally, install PuTTY from:
+http://www.chiark.greenend.org.uk/~sgtatham/putty/
+
+And depending on where you installed it to:
+ C:\Program Files\Putty\puttgygen.exe
+ P:\Programs\Util\Shell\PuTTY\puttygen.exe
 
 
 4. In your home directory, make a sub-directory called: .ssh
 i.e.
+ C:\Document and Settings\<username>\.ssh
  \users\<username>\.ssh
 
 
 5. Save your public key into your home directory
 i.e.
   <username>\.ssh\identity.pub
+
 
 6. Save your private key into your home directory
 i.e.
@@ -51,23 +66,43 @@ i.e.
  <username>\Projects\
 
 
-9. Right Click on the directory, select CVS, Preferences
+9. If you have TortoiseCVS installed, right Click on the directory, select CVS, Preferences
 a) TortoiseCVS should appear. Select "Advanced"
 b) Home Folder: uncheck, always recalculate home folder
 c) Enter your home directory, for "Custom Home folder"
 
 
-10. Make sure you have the environment variable "CVS_RSH" set to "ssh" (without the quotes).
+10. (Optional)
+To set the environment variable "CVS_RSH" to "ssh" (without the quotes):
 Right-click the My Computer icon on your desktop, Properties, Advanced, Environment variables button.
 
 
-11. Right click on the AppleWin Parent directory, CVS Checkout
-a) set CVSROOT:
+11. Setting CVSROOT.
+a) If you use TortoiseCVS, right click on the AppleWin Parent directory, CVS Checkout,
+and set CVSROOT to:
 	:ext:<username>@cvs.applewin.berlios.de:/cvsroot/applewin
 
-b) set Module:
+b) set Module (case sensitive!) to:
 	AppleWin
-c) select OK, and wait to fetch the complete AppleWin directory
+c) select OK, and wait to fetch the complete AppleWin directory.
+
+If you use another cvs client, such as WinCVS, or CVSNT, this may work:
+	:ssh:<username>@cvs.applewin.berlios.de:/cvsroot/applewin
+
+If you enter the wrong init param, you may have to rename/delete your local AppleWin folder.
+If you still have problems, you may have to remove the SSH entry from the registry.
+HKEY_CURRENT_USER\Software\SimonTatham\Putty\SshHostKeys
+
+You shouldn't have to edit, but if you do, this CVS config file is plain text:
+AppleWin\CVS\Root
 
 
-12. Start hacking the code!
+12. You can download a free source-code 'diff' & 'merge' app for win32
+(which integrates into TortoiseCVS) from here:
+http://winmerge.sourceforge.net/
+
+Alternatively you can download a free source-code 'diff' for Win32 here:
+http://www.prestosoft.com/ps.asp?page=edp_examdiff
+
+
+13. Start hacking the code!
