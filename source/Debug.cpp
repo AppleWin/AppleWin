@@ -2966,7 +2966,7 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs == 3)
 			bProtect = g_aArgs[ 3 ].nVal1 ? true : false;
 
-		DiskProtect( iDrive, bProtect );
+		DiskSetProtect( iDrive, bProtect );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
