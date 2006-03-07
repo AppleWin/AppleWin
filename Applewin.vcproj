@@ -376,6 +376,9 @@
 				RelativePath="RESOURCE\DISKOFF.BMP">
 			</File>
 			<File
+				RelativePath=".\resource\Diskprot.bmp">
+			</File>
+			<File
 				RelativePath="RESOURCE\DISKREAD.BMP">
 			</File>
 			<File
