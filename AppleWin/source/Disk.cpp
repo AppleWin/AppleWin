@@ -408,7 +408,20 @@ void DiskNotifyInvalidImage (LPCTSTR imagefilename,int error)
 
 
 //===========================================================================
-void DiskProtect( const int iDrive, const bool bWriteProtect )
+bool DiskGetProtect( const int iDrive )
+{
+	if (IsDriveValid( iDrive ))
+	{
+		Disk_t *pFloppy = &g_aFloppyDisk[ iDrive ];
+		if (pFloppy->writeprotected)
+			return true;
+	}
+	return false;
+}
+
+
+//===========================================================================
+void DiskSetProtect( const int iDrive, const bool bWriteProtect )
 {
 	if (IsDriveValid( iDrive ))
 	{
