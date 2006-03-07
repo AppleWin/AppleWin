@@ -959,6 +959,15 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	// coordinates of the mouse click to screen coordinates. 
 	ClientToScreen(hwnd, (LPPOINT) &pt); 
 
+	int iMenuItem = ID_DISKMENU_WRITEPROTECTION_OFF;
+	if (DiskGetProtect( iDrive ))
+		iMenuItem = ID_DISKMENU_WRITEPROTECTION_ON;
+
+	CheckMenuItem( hmenu,
+		iMenuItem,
+		MF_CHECKED // MF_BYPOSITION     
+	);
+
 	// Draw and track the shortcut menu.  
 	int iCommand = TrackPopupMenu(
 		hmenuTrackPopup
@@ -971,10 +980,10 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		DiskEject( iDrive );
 	else
 	if (iCommand == ID_DISKMENU_WRITEPROTECTION_ON)
-		DiskProtect( iDrive, true );
+		DiskSetProtect( iDrive, true );
 	else
 	if (iCommand == ID_DISKMENU_WRITEPROTECTION_OFF)
-		DiskProtect( iDrive, false );
+		DiskSetProtect( iDrive, false );
 
 	// Destroy the menu. 
 	DestroyMenu(hmenu); 
