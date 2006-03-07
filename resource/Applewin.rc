@@ -292,12 +292,12 @@ BEGIN
     POPUP "Disk Menu"
     BEGIN
         MENUITEM "&Eject",                      ID_DISKMENU_EJECT
-        MENUITEM "&Write protection: ON",       ID_DISKMENU_WRITEPROTECTION_ON
-        MENUITEM "W&rite protection: OFF",      ID_DISKMENU_WRITEPROTECTION_OFF
+        MENUITEM "Read / &Write",               ID_DISKMENU_WRITEPROTECTION_OFF
+
+        MENUITEM "&Read only",                  ID_DISKMENU_WRITEPROTECTION_ON
 
     END
 END
-
 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
