@@ -1,6 +1,12 @@
 Setting up CVS for AppleWin
+Revision 3
++ Added pass-phrase, pageant, putty info
 Revision 2
 + Added diff/merge
+
+
+This is the step-by-step tutorial in getting CVS setup for AppleWin.
+There are a few steps, but each one is quick and easy to do.
 
 
 1. Create an account BerliOS
@@ -11,7 +17,10 @@ http://developer.berlios.de/
 a) http://www.tortoisecvs.org/
 b) Reboot Windows (Grr...)
 
-If you don't want to use TortoiseCVs, you can use
+You can find a tutorial on how to use TortoiseCVS here:
+http://cedric.babault.free.fr/TortoiseCVSDoc/UserGuide_en.html
+
+If you don't want to use TortoiseCVs, you have a few options:
 
 i) WinCVS (which also has a Mac OS X port, called MacCVS)
 http://www.wincvs.org/
@@ -25,17 +34,17 @@ Recommend: using a pass-phrase
 Recommend: using comment:
   <username>@shell.berlios.de
 
-Depending on where you installed TortoiseCVS, puttgen.exe will be located there.
+If you installed TortoiseCVS, you will notice it includes an older version of puttygen.exe:
 i.e.
+ \Program Files\TortoiseCVS\puttygen.exe
  \Programs\VersionControl\TortoiseCVS\puttygen.exe
 
-You could also optionally, install PuTTY from:
+You can find the latest PuTTY here:
 http://www.chiark.greenend.org.uk/~sgtatham/putty/
 
 And depending on where you installed it to:
  C:\Program Files\Putty\puttgygen.exe
  P:\Programs\Util\Shell\PuTTY\puttygen.exe
-
 
 4. In your home directory, make a sub-directory called: .ssh
 i.e.
@@ -60,41 +69,63 @@ c) Edit Keys (at bottom of webpage)
 d) copy from puttygen, and paste into web form
 e) Verify: CVS/SVN/SSH Shared Keys: 1 <-- was zero
 
+You will have to use your pass-phrase (may be up to a few hours),
+until BerliOS recognizes the uploaded ssh2 key.
+
 
 8. Using Windows Explorer, navigate to the parent directory where you will download AppleWin
 i.e.
  <username>\Projects\
+ P:\<username>\Projects\
 
 
-9. If you have TortoiseCVS installed, right Click on the directory, select CVS, Preferences
-a) TortoiseCVS should appear. Select "Advanced"
-b) Home Folder: uncheck, always recalculate home folder
-c) Enter your home directory, for "Custom Home folder"
+9. (Optional) Specify a home folder.
+
+If you have TortoiseCVS installed:
+a) right Click on any directory
+b) select CVS
+c) Preferences.
+   TortoiseCVS should appear.
+d) Select "Advanced" Tab
+e) Home Folder: uncheck, always recalculate home folder
+f) Enter your home directory, for "Custom Home folder"
 
 
-10. (Optional)
+10. (Optional) Set CVS environment variable: CVS_RSH
+If you are using TortoiseCVS you can skip this step.
+(TortoiseCVS uses 'plink' -- command line wrapper for ssh.)
+
+For other cvs clients, you may need to set CVS_RSH:
 To set the environment variable "CVS_RSH" to "ssh" (without the quotes):
 Right-click the My Computer icon on your desktop, Properties, Advanced, Environment variables button.
 
 
 11. Setting CVSROOT.
-a) If you use TortoiseCVS, right click on the AppleWin Parent directory, CVS Checkout,
+If you use TortoiseCVS
+a) right click on the AppleWin Parent directory (the folder where AppleWin will be downloaded to)
+b) CVS Checkout,
 and set CVSROOT to:
 	:ext:<username>@cvs.applewin.berlios.de:/cvsroot/applewin
 
-b) set Module (case sensitive!) to:
+c) set Module (case sensitive!) to:
 	AppleWin
-c) select OK, and wait to fetch the complete AppleWin directory.
+d) select OK, and wait to fetch the complete AppleWin directory.
+
+Troubleshooting:
+* You can delete "Previous CVSROOTs":
+  Right click on folder, CVS, Checkout, select appropiate, delete key
+  You will have to press OK for the old entries to be deleted.  
+  When you do, a fetch attempt will also be made.
+* If you enter the wrong init param, you may have to rename / delete your local AppleWin folder!
+* If you still have problems, you may have to remove the SSH (host) entry from the registry:
+  i.e.
+     HKEY_CURRENT_USER\Software\SimonTatham\Putty\SshHostKeys
+
+* You shouldn't have to edit, but if you need to, this CVS config file is plain text:
+  AppleWin\CVS\Root
 
 If you use another cvs client, such as WinCVS, or CVSNT, this may work:
 	:ssh:<username>@cvs.applewin.berlios.de:/cvsroot/applewin
-
-If you enter the wrong init param, you may have to rename/delete your local AppleWin folder.
-If you still have problems, you may have to remove the SSH entry from the registry.
-HKEY_CURRENT_USER\Software\SimonTatham\Putty\SshHostKeys
-
-You shouldn't have to edit, but if you do, this CVS config file is plain text:
-AppleWin\CVS\Root
 
 
 12. You can download a free source-code 'diff' & 'merge' app for win32
@@ -106,3 +137,29 @@ http://www.prestosoft.com/ps.asp?page=edp_examdiff
 
 
 13. Start hacking the code!
+
+
+14. Automatically use your SSH2 key, instead of manually typing your pass-phrase.
+If you generated a SSH2 private/public key, and have uploaded it to BerliOS,
+you can tell TortoiseCVS to use your SSH2 key-pair instead of asking for your pass-phrase on every CVS action.
+
+If you have PuTTY (pageant) installed:
+a) Run pageant
+   C:\Program Files\PuTTY\pageant.exe
+
+If you get a configuration error when starting pageant.exe on Win XP, this provides a workaround:
+http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/xp-wont-run
+
+b) Right Click on pageant in the system tool bar
+c) Add key
+d) Select your private key
+   <username>\.ssh\identity.ppk
+
+If you have TortoiseCVS installed:
+a) right Click on any directory
+b) select CVS
+c) Preferences.
+   TortoiseCVS should appear.
+d) Select "Tools" Tab
+e) To the SSH paramaters, add: -2
+
