@@ -365,7 +365,7 @@ int DiskInsert (int drive, LPCTSTR imagefilename, BOOL writeprotected, BOOL crea
                         &fptr->imagehandle,
                         &fptr->writeprotected,
                         createifnecessary);
-  if (!error)
+  if (error == IMAGE_ERROR_NONE)
     GetImageTitle(imagefilename,fptr);
   return error;
 }
