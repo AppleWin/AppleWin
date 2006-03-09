@@ -594,6 +594,8 @@ static LPBYTE  memrom       = NULL;
 static BOOL    modechanging = 0;
 DWORD          pages        = 0;
 
+MemoryInitPattern_e g_eMemoryInitPattern = MIP_FF_FF_00_00;
+
 #ifdef RAMWORKS
 UINT			g_uMaxExPages	= 1;			// user requested ram pages
 static LPBYTE	RWpages[128];					// pointers to RW memory banks
@@ -968,17 +970,19 @@ void MemReset ()
 
   ZeroMemory(memmain,0x10000);
 
-	// TODO: Verify the RAM pattern is still valid for an Apple //e
 	int iByte;
-	for( iByte = 0x0000; iByte < 0xC000; )
+
+	if (g_eMemoryInitPattern == MIP_FF_FF_00_00)
 	{
-		iByte++;
-		iByte++;
+		for( iByte = 0x0000; iByte < 0xC000; )
+		{
+			memmain[ iByte++ ] = 0xFF;
+			memmain[ iByte++ ] = 0xFF;
 
-		memmain[ iByte++ ] = 0xFF;
-		memmain[ iByte++ ] = 0xFF;
+			iByte++;
+			iByte++;
+		}
 	}
-
 
   // SET UP THE MEMORY IMAGE
   mem   = memimage;
