@@ -938,7 +938,12 @@ BOOL Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 	if(bCharChanged || (bCharFlashing && g_bTextFlashFlag))
 	{
 		bool bInvert = bCharFlashing ? g_bTextFlashState : false;
-		
+
+		// Apple ][ inits memory to FF,FF,00,00
+		// The 7F char is same as (inverse) space
+		if (ch == 0xFF)
+			ch = 32;
+
 		CopySource(xpixel,ypixel,
 			14,16,
 			SRCOFFS_40COL+((ch & 0x0F) << 4),
@@ -1507,9 +1512,11 @@ BYTE __stdcall VideoCheckVbl (WORD, BYTE, BYTE, BYTE, ULONG)
 		69DA D0 F7    BNE $68DE
 
 		// Karateka expects < 80
-		// Returns 00 or FF on Apple ][
 		07DE AD 19 C0 LDA RDVBLBAR
 		07E1 30 FB    BMI $7DE
+
+		77A1 AD 19 C0 LDA RDVBLBAR
+		77A4 30 FB    BMI $7DE
 
 		// Gumball expects non-zero low-nibble on VBL
 		BBB5 A5 60    LDA $60
@@ -1523,7 +1530,7 @@ BYTE __stdcall VideoCheckVbl (WORD, BYTE, BYTE, BYTE, ULONG)
 
 //		return MemReturnRandomData(dwVBlCounter <= nVBlStop_NTSC);
 	if (dwVBlCounter <= nVBlStop_NTSC)
-		return 0x00;
+		return (BYTE)(dwVBlCounter & 0x7F); // 0x00;
 	else
 		return 0x80 | ((BYTE)(dwVBlCounter & 1));
  }
