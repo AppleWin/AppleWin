@@ -379,13 +379,18 @@ void ArgsRawParse ( void )
 }
 
 
-// Note: The number of args can be changed via:
-//   address1,length    Length
-//   address1:address2  Range
-//   address1+delta     Delta
-//   address1-delta     Delta
-//===========================================================================
-int ArgsCook ( const int nArgs )
+/**
+	@param nArgs         Number of raw args.
+	@param bProcessMask  Bit-flags of which arg operators to process.
+
+	Note: The number of args can be changed via:
+
+	address1,length    Length
+		address1:address2  Range
+		address1+delta     Delta
+		address1-delta     Delta
+//=========================================================================== */
+int ArgsCook ( const int nArgs, const int bProcessMask )
 {
 	const int BASE = 16; // hex
 	TCHAR *pSrc  = NULL;
@@ -409,6 +414,7 @@ int ArgsCook ( const int nArgs )
 		pArg  = & (g_aArgs[ iArg ]);
 		pSrc  = & (pArg->sArg[ 0 ]);
 
+		if (bProcessMask & (1 << TOKEN_DOLLAR))
 		if (pArg->eToken == TOKEN_DOLLAR) // address
 		{
 // TODO: Need to flag was a DOLLAR token for assembler
@@ -463,6 +469,7 @@ int ArgsCook ( const int nArgs )
 					pArg->bSymbol = true;
 				}
 
+				if (bProcessMask & (1 << TOKEN_COMMA))
 				if (pArg->eToken == TOKEN_COMMA) // COMMMA , length
 				{
 					pPrev->nVal2  = nAddressVal;
@@ -472,6 +479,7 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 2;
 				}
 
+				if (bProcessMask & (1 << TOKEN_COLON))
 				if (pArg->eToken == TOKEN_COLON) // COLON  : range
 				{
 					pPrev->nVal2  = nAddressVal;
@@ -481,6 +489,7 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 2;
 				}
 
+				if (bProcessMask & (1 << TOKEN_AMPERSAND))
 				if (pArg->eToken == TOKEN_AMPERSAND) // AND   & delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
@@ -492,6 +501,7 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 2;
 				}								
 
+				if (bProcessMask & (1 << TOKEN_PIPE))
 				if (pArg->eToken == TOKEN_PIPE) // OR   | delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
@@ -503,6 +513,7 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 2;
 				}								
 
+				if (bProcessMask & (1 << TOKEN_CARET))
 				if (pArg->eToken == TOKEN_CARET) // XOR   ^ delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
@@ -514,6 +525,7 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 2;
 				}								
 
+				if (bProcessMask & (1 << TOKEN_PLUS))
 				if (pArg->eToken == TOKEN_PLUS) // PLUS   + delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
@@ -525,6 +537,7 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 2;
 				}
 
+				if (bProcessMask & (1 << TOKEN_MINUS))
 				if (pArg->eToken == TOKEN_MINUS) // MINUS  - delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
@@ -536,6 +549,7 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 2;
 				}
 
+				if (bProcessMask & (1 << TOKEN_PERCENT))
 				if (pArg->eToken == TOKEN_PERCENT) // PERCENT % delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
@@ -547,6 +561,7 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 2;
 				}
 
+				if (bProcessMask & (1 << TOKEN_FSLASH))
 				if (pArg->eToken == TOKEN_FSLASH) // FORWARD SLASH / delta
 				{
 					if (pNext->eToken == TOKEN_FSLASH) // Comment
@@ -565,6 +580,7 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 2;
 				}
 
+				if (bProcessMask & (1 << TOKEN_EQUAL))
 				if (pArg->eToken == TOKEN_EQUAL) // EQUAL  = assign
 				{
 					pPrev->nVal1 = nAddressRHS; 
@@ -572,6 +588,7 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 0; // need token for Smart BreakPoints
 				}					
 
+				if (bProcessMask & (1 << TOKEN_HASH))
 				if (pArg->eToken == TOKEN_HASH) // HASH    # immediate
 				{
 					_Arg_Shift( iArg + nParamLen, nArgs, iArg );
@@ -583,16 +600,19 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 0;
 				}
 
+				if (bProcessMask & (1 << TOKEN_LESS_THAN))
 				if (pArg->eToken == TOKEN_LESS_THAN) // <
 				{
 					nParamLen = 0;
 				}
 
+				if (bProcessMask & (1 << TOKEN_GREATER_THAN))
 				if (pArg->eToken == TOKEN_GREATER_THAN) // >
 				{
 					nParamLen = 0;
 				}
 
+				if (bProcessMask & (1 << TOKEN_EXCLAMATION))
 				if (pArg->eToken == TOKEN_EXCLAMATION) // NOT_EQUAL !
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))

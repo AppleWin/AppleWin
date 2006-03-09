@@ -38,7 +38,7 @@
 	int	 ArgsGet ( TCHAR * pInput );
 	bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ );
 	void ArgsRawParse ( void );
-	int  ArgsCook ( const int nArgs ); // ArgsRawCook
+	int ArgsCook ( const int nArgs, const int bProcessMask );  // ArgsRawCook
 
 // Token
 	const char * ParserFindToken( const char *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e * pToken_ );
