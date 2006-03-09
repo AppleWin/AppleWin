@@ -1,5 +1,14 @@
 #pragma once
 
+enum MemoryInitPattern_e
+{
+	  MIP_ZERO
+	, MIP_FF_FF_00_00
+
+	, NUM_MIP
+};
+extern MemoryInitPattern_e g_eMemoryInitPattern;
+
 extern iofunction ioread[0x100];
 extern iofunction iowrite[0x100];
 extern LPBYTE     memshadow[MAXIMAGES][0x100];
