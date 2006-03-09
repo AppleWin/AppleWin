@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,15);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,16);
 
 
 // Public _________________________________________________________________________________________
@@ -5642,6 +5642,8 @@ Update_t ExecuteCommand (int nArgs)
 	CmdFuncPtr_t pFunction = NULL;
 	int nFound = FindCommand( pCommand, pFunction );
 
+	int nCookMask = (1 << NUM_TOKENS) - 1; // ArgToken_e used as bit mask!
+
 	if (! nFound)
 	{
 		int nLen = _tcslen( pCommand);
@@ -5675,22 +5677,55 @@ Update_t ExecuteCommand (int nArgs)
 					ArgsGetValue( pArg, & nAddress );
 
 					regs.pc = nAddress;
-//					pFunction = g_aCommands[ CMD_GO ].pFunction;
-//					nFound = 1;
 					mode = MODE_RUNNING; // exit the debugger
+
+					nFound = 1;
+					g_iCommand = CMD_CONFIG_ECHO; // hack: don't cook args
 				}
+
 				// ####L -> Unassemble $address
 				if (pCommand[nLen-1] == 'L')
 				{
 					pCommand[nLen-1] = 0;
 					ArgsGetValue( pArg, & nAddress );
 
+					g_iCommand = CMD_UNASSEMBLE;
+
+					// replace: addrL
+					// with:    comamnd addr
+					pArg[1] = pArg[0];
+					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
+					pArg->nArgLen = strlen( pArg->sArg );
+
 					pArg++;
 					pArg->nVal1 = nAddress;
 					nArgs++;
-					pFunction = g_aCommands[ CMD_UNASSEMBLE ].pFunction;
+					pFunction = g_aCommands[ g_iCommand ].pFunction;
 					nFound = 1;
 				}					
+
+				// address: byte ...
+				if ((pArg+1)->eToken == TOKEN_COLON)
+				{
+					g_iCommand = CMD_MEMORY_ENTER_BYTE;
+
+					// replace: addr :
+					// with:    comamnd addr
+					pArg[1] = pArg[0];
+
+					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
+					pArg->nArgLen = strlen( pArg->sArg );
+
+//					nCookMask &= ~ (1 << TOKEN_COLON);
+//					nArgs++;
+
+					pFunction = g_aCommands[ g_iCommand ].pFunction;
+					nFound = 1;
+				}
+
+				// TODO: display memory at address
+				// addr1 [addr2] -> display byte at address
+				// MDB memory display byte (is deprecated, so can be re-used)
 			}
 		}
 
@@ -5722,7 +5757,7 @@ Update_t ExecuteCommand (int nArgs)
 
 		int nArgsCooked = nArgs;
 		if (bCook)
-			nArgsCooked = ArgsCook( nArgs ); // Cook them
+			nArgsCooked = ArgsCook( nArgs, nCookMask ); // Cook them
 
 		if (pFunction)
 			return pFunction( nArgsCooked ); // Eat them
@@ -5872,6 +5907,8 @@ bool Get6502Targets (int *pTemp_, int *pFinal_, int * pBytes_)
 //===========================================================================
 bool InternalSingleStep ()
 {
+	static DWORD dwCyclesThisFrame = 0;
+
 	bool bResult = false;
 	_try
 	{
@@ -5881,7 +5918,15 @@ bool InternalSingleStep ()
 		g_aProfileOpcodes[ nOpcode ].m_nCount++;
 		g_aProfileOpmodes[ nOpmode ].m_nCount++;
 
-		CpuExecute(g_nDebugStepCycles);
+		DWORD dwExecutedCycles = CpuExecute(g_nDebugStepCycles);
+		dwCyclesThisFrame += dwExecutedCycles;
+
+		if (dwCyclesThisFrame >= dwClksPerFrame)
+		{
+			dwCyclesThisFrame -= dwClksPerFrame;
+		}
+		VideoUpdateVbl( dwCyclesThisFrame );
+
 		bResult = true;
 	}
 	_except (EXCEPTION_EXECUTE_HANDLER)
