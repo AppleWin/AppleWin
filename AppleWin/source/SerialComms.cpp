@@ -21,7 +21,7 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/* Description: Enhanced //e & //c serial port emulation
+/* Description: Serial port emulation: not SSC, but similar (same?) regs
  *
  * Author: Various
  */
