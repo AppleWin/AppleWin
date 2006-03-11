@@ -1,3 +1,52 @@
+1.12.9.0 bugs:
+
+Repro steps:
+
+1. Unzip the AppleWin.ZIP distribution and place in a path with spaces,
+e.g.: C:\Emulation\Apple II\AppleWin1.12.9.0
+2. Run AppleWin, then exit.
+3. Try to double-click on a .DSK file
+
+Result:
+
+Windows cannot find 'C:\Emulation\Apple II\Disk Images\Airheart.dsk'. Make
+sure you typed the name correctly, and then try again. To search for a file,
+click the Start button, and then click Search.
+
+Reason:
+
+Look in the registry:
+
+HKCR\DiskImage\shell\open\command
+    (Default) = C:\Emulation\Apple II\AppleWin1.12.9.0\Applewin.exe %1
+
+Note that the path name doesn't have quotes - without this DDE won't work.
+
+Fix:
+
+AppleWin should be populating the regkey with quotes around the path of the
+executable, e.g.:
+
+    (Default) = "C:\Emulation\Apple II\AppleWin1.12.9.0\Applewin.exe" %1
+
+Fixing the regkey manually doesn't work, since AppleWin slams it on next
+launch. 
+
+You also want quotes around the "%1".  It's possible to be confused by
+spaces in the file argument too. 
+
+--------------
+
+The Tab and Esc keys are blocked system wide when AppleWin is running.
+
+This is unfortunate as I'm using a Norton Commander clone in Windows
+for nearly all file handling and the Tab key switches between both file
+windows and the Esc key quits the file viewer.
+
+Alt-Tab works, however. 
+
+--------------
+
 1.12.8.0 bugs:
 
 . When running any program, when I go to reset the machine by clicking on the Apple logo again,
