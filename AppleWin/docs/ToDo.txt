@@ -1,5 +1,5 @@
-To-do list
-==========
+To-do list (Tom)
+================
 
 This is a (non-exhaustive) list of stuff that I personally would like to get done:
 
@@ -13,8 +13,6 @@ b) probably fix the problem with other processes having problems playing sound a
 same time as AppleWin. (Although I've not experienced this)
 c) hopefully simplify things :)
 
-. Ditch support for sound via the PC speaker.
-
 . Run emulation (or message-pump?) in a seperate thread.
 So that the sound is continuous when dragging the window or starting other applications, etc.
 
@@ -26,8 +24,23 @@ So that the sound is continuous when dragging the window or starting other appli
 
 . Save-state supporting Phasor, harddisk & Ramworks III
 
-. Floating-bus support (using Nick Westgate's code)
+. [NICK] Floating-bus support (using Nick Westgate's code)
 For Drol, Lock'n'Chase, TetrisII, etc
 
 . Support for switching display modes mid-frame
 To support Bob Bishop's intros
+
+---
+
+Plans for (1st pass) cleaning up are:
+. Ditch the x86 code to access the PC speaker + ditch PC speaker support
+. Ditch DLL support completely & re-factor any code that jumps through hoops to be compatible with DLLs:
+	namely CpuCalcCycles() & CPU_FASTPAGING, etc.
+. The arrays ioread[] & iowrite[] in Memory.cpp should be switched from units of 1 byte to 16 bytes.
+  This will yield 256 entries spanning [$C000…$CFFF] – currently it’s only [$C000…$C0FF]. This will mean that:
+	a) cards with I/O mapped above $C0FF (eg Mockingboard, Mouse?) don’t have to be kludged as in the READ/WRITE macros in CPU.cpp
+	b) $CFFF (ROMs out) can be emulated
+. Talking of CPU.cpp & those macros: I’d prefer to replace them with inline funcs. Maintenance of these
+  macros is a bitch & they can’t be single-stepped. Inline funs should yield the same code (in release build)
+  as the macros.
+
