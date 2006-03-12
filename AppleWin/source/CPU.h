@@ -22,6 +22,7 @@ void    CpuDestroy ();
 void    CpuCalcCycles(ULONG nCyclesLeft);
 DWORD   CpuExecute (DWORD);
 void    CpuGetCode (WORD,LPBYTE *,DWORD *);
+ULONG   CpuGetCyclesThisFrame();
 void    CpuInitialize ();
 void    CpuReinitialize ();
 void    CpuResetCompilerData ();

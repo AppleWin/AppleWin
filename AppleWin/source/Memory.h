@@ -24,9 +24,12 @@ extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)
 #endif
 
 void    MemDestroy ();
+bool    MemGet80Store();
 LPBYTE  MemGetAuxPtr (WORD);
 LPBYTE  MemGetMainPtr (WORD);
 void    MemInitialize ();
+BYTE    MemReadFloatingBus();
+BYTE    MemReadFloatingBus(BYTE highbit);
 void    MemReset ();
 void    MemResetPaging ();
 BYTE    MemReturnRandomData (BYTE highbit);

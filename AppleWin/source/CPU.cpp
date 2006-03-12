@@ -104,6 +104,8 @@ unsigned __int64 g_nCumulativeCycles = 0;
 static ULONG g_nCyclesSubmitted;	// Number of cycles submitted to CpuExecute()
 static ULONG g_nCyclesExecuted;
 
+static signed long nInternalCyclesLeft;
+
 /****************************************************************************
 *
 *  GENERAL PURPOSE MACROS
@@ -132,10 +134,10 @@ static ULONG g_nCyclesExecuted;
                    regs.sp = 0x1FF;
 #define READ     (                                                          \
                     ((addr & 0xFF00) == 0xC000)                             \
-                    ? ioread[addr & 0xFF](regs.pc,(BYTE)addr,0,0,nCyclesLeft)         \
+                    ? ioread[addr & 0xFF](regs.pc,(BYTE)addr,0,0,nInternalCyclesLeft) \
                     : (                                                     \
                         (((addr & 0xFF00) == 0xC400) || ((addr & 0xFF00) == 0xC500)) \
-                        ? CxReadFunc(regs.pc, addr, 0, 0, nCyclesLeft)                \
+                        ? CxReadFunc(regs.pc, addr, 0, 0, nInternalCyclesLeft) \
                         : *(mem+addr)                                       \
                       )                                                     \
                  )
@@ -152,9 +154,9 @@ static ULONG g_nCyclesExecuted;
                    if (page)                                                \
                      *(page+(addr & 0xFF)) = (BYTE)(a);                     \
                    else if ((addr & 0xFF00) == 0xC000)                      \
-                     iowrite[addr & 0xFF](regs.pc,(BYTE)addr,1,(BYTE)(a),nCyclesLeft); \
+                     iowrite[addr & 0xFF](regs.pc,(BYTE)addr,1,(BYTE)(a),nInternalCyclesLeft); \
                    else if(((addr & 0xFF00) == 0xC400) || ((addr & 0xFF00) == 0xC500)) \
-                     CxWriteFunc(regs.pc, addr, 1, (BYTE)(a), nCyclesLeft);           \
+                     CxWriteFunc(regs.pc, addr, 1, (BYTE)(a), nInternalCyclesLeft); \
                  }
 
 //
@@ -483,7 +485,7 @@ static DWORD InternalCpuExecute (DWORD totalcycles)
 
   do
   {
-    signed long nCyclesLeft = (totalcycles<<8) - (cycles<<8);
+    nInternalCyclesLeft = (totalcycles<<8) - (cycles<<8);
     USHORT uExtraCycles = 0;
 
     if(regs.bIRQ && !(regs.ps & AF_INTERRUPT))
@@ -815,6 +817,14 @@ void CpuCalcCycles(ULONG nCyclesLeft)
 
 	if (cpuexecutefunc[cpuemtype])
 		MB_UpdateCycles((USHORT) nCycles);	// OLD: Support external dll emulator
+}
+
+//===========================================================================
+
+ULONG CpuGetCyclesThisFrame()
+{
+	CpuCalcCycles(nInternalCyclesLeft); // TODO: simplify the whole cycle system!
+	return g_dwCyclesThisFrame + g_nCyclesExecuted;
 }
 
 //===========================================================================

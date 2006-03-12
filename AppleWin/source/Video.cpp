@@ -150,6 +150,23 @@ enum Color_Palette_Index_e
 
 #define  HGR_MATRIX_YOFFSET 2	// For tv emulation mode
 
+// video scanner constants
+int const kHBurstClock      =    53; // clock when Color Burst starts
+int const kHBurstClocks     =     4; // clocks per Color Burst duration
+int const kHClock0State     =  0x18; // H[543210] = 011000
+int const kHClocks          =    65; // clocks per horizontal scan (including HBL)
+int const kHPEClock         =    40; // clock when HPE (horizontal preset enable) goes low
+int const kHPresetClock     =    41; // clock when H state presets
+int const kHSyncClock       =    49; // clock when HSync starts
+int const kHSyncClocks      =     4; // clocks per HSync duration
+int const kNTSCScanLines    =   262; // total scan lines including VBL (NTSC)
+int const kNTSCVSyncLine    =   224; // line when VSync starts (NTSC)
+int const kPALScanLines     =   312; // total scan lines including VBL (PAL)
+int const kPALVSyncLine     =   264; // line when VSync starts (PAL)
+int const kVLine0State      = 0x100; // V[543210CBA] = 100000000
+int const kVPresetLine      =   256; // line when V state presets
+int const kVSyncLines       =     4; // lines per VSync duration
+
 typedef BOOL (*UpdateFunc_t)(int,int,int,int,int);
 
 static BYTE          celldirty[40][32];
@@ -194,6 +211,8 @@ DWORD     videotype        = VT_COLOR_TVEMU;
 
 static bool g_bTextFlashState = false;
 static bool g_bTextFlashFlag = false;
+
+static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 //-------------------------------------
 
@@ -1430,7 +1449,7 @@ void VideoBenchmark () {
         DiskUpdatePosition(executedcycles);
         JoyUpdatePosition();
         VideoUpdateVbl(0);
-      }
+	  }
     }
     if (cycle & 1)
       FillMemory(mem+0x2000,0x2000,0xAA);
@@ -1465,7 +1484,7 @@ void VideoBenchmark () {
 //===========================================================================
 BYTE __stdcall VideoCheckMode (WORD, BYTE address, BYTE, BYTE, ULONG) {
   if (address == 0x7F)
-    return MemReturnRandomData(SW_DHIRES != 0);
+    return MemReadFloatingBus(SW_DHIRES != 0);
   else {
     BOOL result = 0;
     switch (address) {
@@ -1526,13 +1545,18 @@ BYTE __stdcall VideoCheckVbl (WORD, BYTE, BYTE, BYTE, ULONG)
 		BBBE F0 F5    BEQ $BBB5
 		BBC0 C9 0F    CMP #$0F
 		BBC2 F0 F1    BEQ $BBB5
-	*/		
 
 //		return MemReturnRandomData(dwVBlCounter <= nVBlStop_NTSC);
 	if (dwVBlCounter <= nVBlStop_NTSC)
 		return (BYTE)(dwVBlCounter & 0x7F); // 0x00;
 	else
 		return 0x80 | ((BYTE)(dwVBlCounter & 1));
+	*/
+
+	bool bVblBar;
+	VideoGetScannerAddress(&bVblBar);
+    BYTE r = KeybGetKeycode();
+    return (r & ~0x80) | ((bVblBar) ? 0x80 : 0);
  }
 
 //===========================================================================
@@ -1957,10 +1981,7 @@ BYTE __stdcall VideoSetMode (WORD, BYTE address, BYTE write, BYTE, ULONG) {
     }
     lastpageflip = emulmsec;
   }
-  if (address == 0x50)
-    return VideoCheckVbl(0,0,0,0,0);
-  else
-    return MemReturnRandomData(1);
+  return MemReadFloatingBus();
 }
 
 //===========================================================================
@@ -2006,6 +2027,8 @@ DWORD VideoGetSnapshot(SS_IO_Video* pSS)
 	return 0;
 }
 
+//===========================================================================
+
 DWORD VideoSetSnapshot(SS_IO_Video* pSS)
 {
 	charoffs = !pSS->bAltCharSet ? 0 : 256;
@@ -2018,3 +2041,116 @@ DWORD VideoSetSnapshot(SS_IO_Video* pSS)
 
 	return 0;
 }
+
+//===========================================================================
+
+WORD VideoGetScannerAddress(bool* pbVblBar_OUT)
+{
+    // get video scanner position
+    //
+    int nCycles = CpuGetCyclesThisFrame();
+
+    // machine state switches
+    //
+	int nHires    = (SW_HIRES) ? 1 : 0;
+    int nPage2    = (SW_PAGE2) ? 1 : 0;
+    int n80Store = (MemGet80Store()) ? 1 : 0;
+
+    // calculate video parameters according to display standard
+    //
+    int nScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+    int nVSyncLine  = bVideoScannerNTSC ? kNTSCVSyncLine : kPALVSyncLine;
+    int nScanCycles = nScanLines * kHClocks;
+
+    // calculate horizontal scanning state
+    //
+    int nHClock = (nCycles + kHPEClock) % kHClocks; // which horizontal scanning clock
+    int nHState = kHClock0State + nHClock; // H state bits
+    if (nHClock >= kHPresetClock) // check for horizontal preset
+    {
+        nHState -= 1; // correct for state preset (two 0 states)
+    }
+    int h_0 = (nHState >> 0) & 1; // get horizontal state bits
+    int h_1 = (nHState >> 1) & 1;
+    int h_2 = (nHState >> 2) & 1;
+    int h_3 = (nHState >> 3) & 1;
+    int h_4 = (nHState >> 4) & 1;
+    int h_5 = (nHState >> 5) & 1;
+
+    // calculate vertical scanning state
+    //
+    int nVLine  = nCycles / kHClocks; // which vertical scanning line
+    int nVState = kVLine0State + nVLine; // V state bits
+    if ((nVLine >= kVPresetLine)) // check for previous vertical state preset
+    {
+        nVState -= nScanLines; // compensate for preset
+    }
+    int v_A = (nVState >> 0) & 1; // get vertical state bits
+    int v_B = (nVState >> 1) & 1;
+    int v_C = (nVState >> 2) & 1;
+    int v_0 = (nVState >> 3) & 1;
+    int v_1 = (nVState >> 4) & 1;
+    int v_2 = (nVState >> 5) & 1;
+    int v_3 = (nVState >> 6) & 1;
+    int v_4 = (nVState >> 7) & 1;
+    int v_5 = (nVState >> 8) & 1;
+
+    // calculate scanning memory address
+    //
+    if (SW_HIRES && SW_MIXED && (v_4 & v_2))
+    {
+        nHires = 0; // (address is in text memory)
+    }
+
+    int nAddend0 = 0x68; // 1            1            0            1
+    int nAddend1 =              (h_5 << 5) | (h_4 << 4) | (h_3 << 3);
+    int nAddend2 = (v_4 << 6) | (v_3 << 5) | (v_4 << 4) | (v_3 << 3);
+    int nSum     = (nAddend0 + nAddend1 + nAddend2) & (0x0F << 3);
+
+    int nAddress = 0;
+    nAddress |= h_0 << 0; // a0
+    nAddress |= h_1 << 1; // a1
+    nAddress |= h_2 << 2; // a2
+    nAddress |= nSum;     // a3 - aa6
+    nAddress |= v_0 << 7; // a7
+    nAddress |= v_1 << 8; // a8
+    nAddress |= v_2 << 9; // a9
+    nAddress |= ((nHires) ? v_A : (1 ^ (nPage2 & (1 ^ n80Store)))) << 10; // a10
+    nAddress |= ((nHires) ? v_B : (nPage2 & (1 ^ n80Store))) << 11; // a11
+    if (nHires) // hires?
+    {
+        // Y: insert hires only address bits
+        //
+        nAddress |= v_C << 12; // a12
+        nAddress |= (1 ^ (nPage2 & (1 ^ n80Store))) << 13; // a13
+        nAddress |= (nPage2 & (1 ^ n80Store)) << 14; // a14
+    }
+    else
+    {
+        // N: text, so no higher address bits unless Apple ][, not Apple //e
+        //
+        if ((!apple2e) && // Apple ][?
+            (kHPEClock <= nHClock) && // Y: HBL?
+            (nHClock <= (kHClocks - 1)))
+        {
+            nAddress |= 1 << 12; // Y: a12 (add $1000 to address!)
+        }
+    }
+
+    // update VBL' state
+    //
+	if (pbVblBar_OUT != NULL)
+	{
+		if (v_4 & v_3) // VBL?
+		{
+			*pbVblBar_OUT = false; // Y: VBL' is false
+		}
+		else
+		{
+			*pbVblBar_OUT = true; // N: VBL' is true
+		}
+	}
+    return static_cast<WORD>(nAddress);
+}
+
+//===========================================================================

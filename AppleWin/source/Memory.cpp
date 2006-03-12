@@ -616,37 +616,14 @@ void BackMainImage () {
 
 //===========================================================================
 BYTE __stdcall NullIo (WORD programcounter, BYTE address, BYTE write, BYTE value, ULONG nCycles) {
-  if ((address & 0xF0) == 0xA0) {
-    static const BYTE retval[16] = {0x58,0xFC,0x5B,0xFF,0x58,0xFC,0x5B,0xFF,
-                                    0x0B,0x10,0x00,0x00,0xFF,0xFF,0xFF,0xFF};
-    return retval[address & 15];
-  }
-  else if ((address >= 0xB0) && (address <= 0xCF)) {
-    BYTE r = (BYTE)(rand() & 0xFF);
-    if (r >= 0x10)
-      return 0xA0;
-    else if (r >= 8)
-      return (r > 0xC) ? 0xFF : 0x00;
-    else
-      return (address & 0xF7);
-  }
-  else if ((address & 0xF0) == 0xD0) {
-    BYTE r = (BYTE)(rand() & 0xFF);
-    if (r >= 0xC0)
-      return 0xC0;
-    else if (r >= 0x80)
-      return 0x80;
-    else if ((address == 0xD0) || (address == 0xDF))
-      return 0;
-    else if (r >= 0x40)
-      return 0x40;
-    else if (r >= 0x30)
-      return 0x90;
-    else
-      return 0;
-  }
-  else
-    return MemReturnRandomData(1);
+	if (!write)
+	{
+		return MemReadFloatingBus();
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 //===========================================================================
@@ -838,6 +815,13 @@ void MemDestroy () {
 }
 
 //===========================================================================
+
+bool MemGet80Store()
+{
+	return SW_80STORE != 0;
+}
+
+//===========================================================================
 LPBYTE MemGetAuxPtr (WORD offset)
 {
 	LPBYTE lpMem = (memshadow[image][(offset >> 8)] == (memaux+(offset & 0xFF00)))
@@ -1019,6 +1003,21 @@ BYTE MemReturnRandomData (BYTE highbit) {
 }
 
 //===========================================================================
+
+BYTE MemReadFloatingBus()
+{
+  return*(LPBYTE)(mem + VideoGetScannerAddress());
+}
+
+//===========================================================================
+
+BYTE MemReadFloatingBus(BYTE const highbit)
+{
+  BYTE r = *(LPBYTE)(mem + VideoGetScannerAddress());
+  return (r & ~0x80) | ((highbit) ? 0x80 : 0);
+}
+
+//===========================================================================
 void MemSetFastPaging (BOOL on) {
   if (fastpaging && modechanging) {
     modechanging = 0;
@@ -1110,13 +1109,13 @@ BYTE __stdcall MemSetPaging (WORD programcounter, BYTE address, BYTE write, BYTE
   if ((address >= 4) && (address <= 5) &&
       ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
     modechanging = 1;
-    return write ? 0 : MemReturnRandomData(1);
+    return write ? 0 : MemReadFloatingBus(1);
   }
   if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&
       (((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||
        ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))) {
     modechanging = 1;
-    return write ? 0 : MemReturnRandomData(1);
+    return write ? 0 : MemReadFloatingBus(1);
   }
 
   // IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
@@ -1142,10 +1141,9 @@ BYTE __stdcall MemSetPaging (WORD programcounter, BYTE address, BYTE write, BYTE
   }
 
   if ((address <= 1) || ((address >= 0x54) && (address <= 0x57)))
-    VideoSetMode(programcounter,address,write,value,0);
-  return write ? 0
-               : MemReturnRandomData(((address == 0x54) || (address == 0x55))
-                                       ? (SW_PAGE2 != 0) : 1);
+    return VideoSetMode(programcounter,address,write,value,0);
+
+  return write ? 0 : MemReadFloatingBus();
 }
 
 //===========================================================================

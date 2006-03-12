@@ -395,7 +395,7 @@ BYTE __stdcall JoyReadButton (WORD, BYTE address, BYTE, BYTE, ULONG)
       break;
 
   }
-  return MemReturnRandomData(pressed);
+  return MemReadFloatingBus(pressed);
 }
 
 //===========================================================================
@@ -431,7 +431,7 @@ BYTE __stdcall JoyReadPosition (WORD programcounter, BYTE address, BYTE, BYTE, U
 
 	BOOL nPdlCntrActive = g_nCumulativeCycles <= (g_nJoyCntrResetCycle + (unsigned __int64) ((double)nPdlPos * PDL_CNTR_INTERVAL));
 
-	return MemReturnRandomData(nPdlCntrActive);
+	return MemReadFloatingBus(nPdlCntrActive);
 }
 
 //===========================================================================
@@ -453,7 +453,7 @@ BYTE __stdcall JoyResetPosition (WORD, BYTE, BYTE, BYTE, ULONG nCyclesLeft)
 	if(joyinfo[joytype[1]].device == DEVICE_JOYSTICK)
 		CheckJoystick1();
 
-	return MemReturnRandomData(1);
+	return MemReadFloatingBus();
 }
 
 //===========================================================================
