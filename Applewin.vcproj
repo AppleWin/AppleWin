@@ -332,6 +332,12 @@
 			Name="Resources"
 			Filter=".txt,.ico,.bmp,.rc">
 			<File
+				RelativePath=".\resource\Apple2.rom">
+			</File>
+			<File
+				RelativePath=".\resource\Apple2e.rom">
+			</File>
+			<File
 				RelativePath=".\resource\Applewin.bmp">
 			</File>
 			<File
