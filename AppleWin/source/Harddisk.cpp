@@ -248,7 +248,7 @@ VOID HD_Load_Rom(LPBYTE lpMemRom)
 	if(!g_bHD_Enabled)
 		return;
 
-	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_HDDRVR), RT_RCDATA);
+	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_HDDRVR), "FIRMWARE");
 	if(hResInfo == NULL)
 		return;
 
