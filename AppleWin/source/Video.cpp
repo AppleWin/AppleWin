@@ -939,10 +939,11 @@ BOOL Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 	{
 		bool bInvert = bCharFlashing ? g_bTextFlashState : false;
 
-		// Apple ][ inits memory to FF,FF,00,00
-		// The 7F char is same as (inverse) space
-		if (ch == 0xFF)
-			ch = 32;
+		// The Apple ][ does not have a checkerboard glyph.
+		// The FF char is same as (inverse) space.
+		if (! apple2e)
+			if (ch == 0xFF)
+				ch = 32;
 
 		CopySource(xpixel,ypixel,
 			14,16,
