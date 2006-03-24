@@ -233,22 +233,22 @@ iofunction ioread[0x100]  = {KeybReadData,       // $C000
                              NullIo,             // $C0AD
                              NullIo,             // $C0AE
                              NullIo,             // $C0AF
-                             NullIo,             // $C0B0
-                             NullIo,             // $C0B1
-                             NullIo,             // $C0B2
-                             NullIo,             // $C0B3
-                             NullIo,             // $C0B4
-                             NullIo,             // $C0B5
-                             NullIo,             // $C0B6
-                             NullIo,             // $C0B7
-                             NullIo,             // $C0B8
-                             NullIo,             // $C0B9
-                             NullIo,             // $C0BA
-                             NullIo,             // $C0BB
-                             NullIo,             // $C0BC
-                             NullIo,             // $C0BD
-                             NullIo,             // $C0BE
-                             NullIo,             // $C0BF
+                             TfeIo,              // $C0B0
+                             TfeIo,              // $C0B1
+                             TfeIo,              // $C0B2
+                             TfeIo,              // $C0B3
+                             TfeIo,              // $C0B4
+                             TfeIo,              // $C0B5
+                             TfeIo,              // $C0B6
+                             TfeIo,              // $C0B7
+                             TfeIo,              // $C0B8
+                             TfeIo,              // $C0B9
+                             TfeIo,              // $C0BA
+                             TfeIo,              // $C0BB
+                             TfeIo,              // $C0BC
+                             TfeIo,              // $C0BD
+                             TfeIo,              // $C0BE
+                             TfeIo,              // $C0BF
                              PhasorIO,           // $C0C0
                              PhasorIO,           // $C0C1
                              PhasorIO,           // $C0C2
@@ -496,22 +496,22 @@ iofunction iowrite[0x100] = {MemSetPaging,       // $C000
                              NullIo,             // $C0AD
                              NullIo,             // $C0AE
                              NullIo,             // $C0AF
-                             NullIo,             // $C0B0
-                             NullIo,             // $C0B1
-                             NullIo,             // $C0B2
-                             NullIo,             // $C0B3
-                             NullIo,             // $C0B4
-                             NullIo,             // $C0B5
-                             NullIo,             // $C0B6
-                             NullIo,             // $C0B7
-                             NullIo,             // $C0B8
-                             NullIo,             // $C0B9
-                             NullIo,             // $C0BA
-                             NullIo,             // $C0BB
-                             NullIo,             // $C0BC
-                             NullIo,             // $C0BD
-                             NullIo,             // $C0BE
-                             NullIo,             // $C0BF
+                             TfeIo,              // $C0B0
+                             TfeIo,              // $C0B1
+                             TfeIo,              // $C0B2
+                             TfeIo,              // $C0B3
+                             TfeIo,              // $C0B4
+                             TfeIo,              // $C0B5
+                             TfeIo,              // $C0B6
+                             TfeIo,              // $C0B7
+                             TfeIo,              // $C0B8
+                             TfeIo,              // $C0B9
+                             TfeIo,              // $C0BA
+                             TfeIo,              // $C0BB
+                             TfeIo,              // $C0BC
+                             TfeIo,              // $C0BD
+                             TfeIo,              // $C0BE
+                             TfeIo,              // $C0BF
                              PhasorIO,           // $C0C0
                              PhasorIO,           // $C0C1
                              PhasorIO,           // $C0C2

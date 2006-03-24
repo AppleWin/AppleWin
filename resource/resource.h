@@ -31,6 +31,7 @@
 #define IDR_APPLE2_ROM                  126
 #define IDR_APPLE2E_ROM                 127
 #define IDC_MB_ENABLE                   130
+#define IDD_TFE_SETTINGS_DIALOG         131
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -53,6 +54,18 @@
 #define IDC_SPIN_YTRIM                  1027
 #define IDC_PHASOR_ENABLE               1029
 #define IDC_SOUNDCARD_DISABLE           1030
+#define IDC_TFE_SETTINGS_ENABLE_T       1031
+#define IDC_TFE_SETTINGS_ENABLE         1032
+#define IDC_TFE_SETTINGS_INTERFACE_T    1033
+#define IDC_TFE_SETTINGS_INTERFACE      1034
+#define IDC_TFE_SETTINGS_INTERFACE_NAME 1035
+#define IDC_TFE_SETTINGS_INTERFACE_DESC 1036
+#define IDS_TFE_CAPTION                 1037
+#define IDS_TFE_ETHERNET                1038
+#define IDS_TFE_INTERFACE               1039
+#define IDS_OK                          1040
+#define IDS_CANCEL                      1041
+#define IDC_ETHERNET                    1042
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
@@ -65,9 +78,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        131
+#define _APS_NEXT_RESOURCE_VALUE        132
 #define _APS_NEXT_COMMAND_VALUE         40007
-#define _APS_NEXT_CONTROL_VALUE         1031
-#define _APS_NEXT_SYMED_VALUE           105
+#define _APS_NEXT_CONTROL_VALUE         1043
+#define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

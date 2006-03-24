@@ -1,11 +1,10 @@
-<?xml version="1.0" encoding="shift_jis"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="Applewin"
 	ProjectGUID="{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}"
-	SccProjectName="APPLEWIN"
-	SccLocalPath="."
+	RootNamespace="Applewin"
 	>
 	<Platforms>
 		<Platform
@@ -424,6 +423,66 @@
 				</File>
 				<File
 					RelativePath=".\source\Debugger_Types.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Uthernet"
+				>
+				<File
+					RelativePath=".\source\Tfe\Bittypes.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Bpf.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Ip6_misc.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Pcap-stdinc.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Pcap.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Tfe.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Tfe.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Tfearch.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Tfearch.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Tfesupp.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Tfesupp.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Types.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Uilib.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Uilib.h"
 					>
 				</File>
 			</Filter>
