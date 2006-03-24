@@ -1,0 +1,58 @@
+** *Uthernet ethernet emulation setup instructions. ***
+
+March 19 2006 - R. Glenn Jones
+
+To enable Ethernet support in Applewin you must first download and
+install Winpcap.
+
+An Alternative to downloading winpcap is to get the Ethereal package which
+includes winpcap along with Ethereal network analyzer code. To use Ethereal to
+capture traffic (other then your own) you must be plugged into a shared hub vs a
+switch. If you plan on doing any network programming ethereal is a definite must
+have.
+
+Winpcap: http://www.winpcap.org/install/default.htm or Ethereal: http://www.ethereal.com/download.html
+
+After Applewin starts, select the settings ICON and then select the Ethernet settings button.
+
+Uthernet will be disabled. Select Uthernet from the list of available
+ethernet emulations (currently the only one).
+
+Select the ethernet interface you want to work with. This must be a physical ethernet interface.
+
+If you have more then one interface you may need to select them in turn
+in order to get the text description for each interface vs what winpcap
+likes to use for a reference. Select Ok. and then close Applewin.
+*Note:* Wireless does not work with winpcap.
+
+NOTE: Due to a current limitation you must exit Applewin and re-run
+Applewin for 'a' ethernet interface change to take effect.
+
+In order to test the Ethernet emulation out you should grab a copy of Contiki for the Apple II here
+
+http://www.a2retrosystems.com/downloads.htm
+
+Grab the 80 Col. Primary Disk and Supplementary Disk images if using Apple //e emulation or the 40 Col 
+versions if running Apple II+ emulation. You should also grab a copy of the Uthernet/Contiki getting 
+started guide http://www.a2retrosystems.com/a2UtherManual.pdf
+
+When you run applewin again, select the contiki80pri.dsk image. Boot AppleWin.
+
+Once Contiki is loaded then press Enter to clear the welcome screen and press ESC for a menu.
+
+Choose Directory Application and then select configuration edit program. Tab down to the Slot param
+and change it to '3'. The emulation only works in slot 3. 
+
+If you do not have DHCP support in your local Lan then setup your static IP address information here as well. Save and exit.
+
+If you have DHCP support in your local lan then press ESC and choose Directory Application again, and then select DHCP client.
+
+Hit eneter on request Address and you should see the IP information updated. Close the window and then press ESC again.
+
+Select the web browser and hit Enter a couple of times.
+Adam Dunkels web site should show up if things are working properly.
+
+Try a few other web sites if the first one isn't working in case it is temporarily down.
+You may also need to configure/disable your firewall if you are having problems.
+
+Glenn

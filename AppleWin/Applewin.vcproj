@@ -308,6 +308,52 @@
 					RelativePath=".\source\Debugger_Types.h">
 				</File>
 			</Filter>
+			<Filter
+				Name="Uthernet"
+				Filter="">
+				<File
+					RelativePath=".\source\bittypes.h">
+				</File>
+				<File
+					RelativePath=".\source\Bpf.h">
+				</File>
+				<File
+					RelativePath=".\source\Ip6_misc.h">
+				</File>
+				<File
+					RelativePath=".\source\Pcap-stdinc.h">
+				</File>
+				<File
+					RelativePath=".\source\Pcap.h">
+				</File>
+				<File
+					RelativePath=".\source\Tfe.cpp">
+				</File>
+				<File
+					RelativePath=".\source\Tfe.h">
+				</File>
+				<File
+					RelativePath=".\source\Tfearch.cpp">
+				</File>
+				<File
+					RelativePath=".\source\Tfearch.h">
+				</File>
+				<File
+					RelativePath=".\source\Tfesupp.cpp">
+				</File>
+				<File
+					RelativePath=".\source\Tfesupp.h">
+				</File>
+				<File
+					RelativePath=".\source\Types.h">
+				</File>
+				<File
+					RelativePath=".\source\Uilib.cpp">
+				</File>
+				<File
+					RelativePath=".\source\Uilib.h">
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Docs"

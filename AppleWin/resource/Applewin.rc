@@ -46,6 +46,23 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_TFE_CAPTION         "Ethernet Settings"
+    IDS_TFE_ETHERNET        "Ethernet"
+    IDS_TFE_INTERFACE       "Interface"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_OK                          "OK"
+    IDS_CANCEL                      "Cancel"
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -102,6 +119,7 @@ BEGIN
     COMBOBOX        IDC_SERIALPORT,45,48,100,100,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Monochrome Color...",IDC_MONOCOLOR,15,90,80,14
+    PUSHBUTTON      "Ethernet Settings...",IDC_ETHERNET,15,70,78,14
 END
 
 IDD_PROPPAGE_INPUT DIALOGEX 0, 0, 210, 221
@@ -198,6 +216,22 @@ BEGIN
     GROUPBOX        "Harddisk Controller",IDC_STATIC,2,113,205,71
 END
 
+IDD_TFE_SETTINGS_DIALOG DIALOG DISCARDABLE  0, 0, 270, 100
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Ethernet Settings"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Ethernet",IDC_TFE_SETTINGS_ENABLE_T,9,7,30,8
+    COMBOBOX        IDC_TFE_SETTINGS_ENABLE,45,5,50,80,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Interface",IDC_TFE_SETTINGS_INTERFACE_T,9,24,30,8
+    COMBOBOX        IDC_TFE_SETTINGS_INTERFACE,45,22,200,80,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "",IDC_TFE_SETTINGS_INTERFACE_NAME,9,44,250,8
+    LTEXT           "",IDC_TFE_SETTINGS_INTERFACE_DESC,9,60,250,8
+    DEFPUSHBUTTON   "Ok",IDOK,20,75,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,80,75,50,14
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -267,6 +301,7 @@ END
 //
 
 IDR_HDDRVR              FIRMWARE                "Hddrvr.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

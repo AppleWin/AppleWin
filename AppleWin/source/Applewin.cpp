@@ -356,6 +356,7 @@ void LoadConfiguration () {
   LOAD(TEXT("Enhance Disk Speed"),(DWORD *)&enhancedisk);
   LOAD(TEXT("Video Emulation")   ,&videotype);
   LOAD(TEXT("Monochrome Color")  ,&monochrome);
+  LOAD(TEXT("Uthernet Active")  ,(DWORD *)&tfe_enabled);
 
   SetCurrentCLK6502();
 
@@ -403,6 +404,11 @@ void LoadConfiguration () {
   RegLoadString(TEXT("Preferences"),TEXT("Starting Directory"),1,szDirectory,MAX_PATH);
 
   SetCurrentDirectory(szDirectory);
+  
+  char szUthernetInt[MAX_PATH] = {0};
+  RegLoadString(TEXT("Configuration"),TEXT("Uthernet Interface"),1,szUthernetInt,MAX_PATH);  
+  update_tfe_interface(szUthernetInt,NULL);
+
 }
 
 //===========================================================================
@@ -639,8 +645,9 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		MemInitialize();
 		VideoInitialize();
 		FrameCreateWindow();
+	   tfe_init();
         Snapshot_Startup();		// Do this after everything has been init'ed
-
+    
 		if(bSetFullScreen)
 		{
 			PostMessage(framewindow, WM_KEYDOWN, VK_F1+BTN_FULLSCR, 0);
@@ -665,6 +672,8 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	DSUninit();
 	SysClk_UninitTimer();
 	CoUninitialize();
+	
+	tfe_shutdown();
 	
 	if(g_fh)
 	{
