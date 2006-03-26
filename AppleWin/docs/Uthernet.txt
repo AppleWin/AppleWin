@@ -1,47 +1,34 @@
-** *Uthernet ethernet emulation setup instructions. ***
+*** Uthernet ethernet emulation setup instructions. ***
 
-March 19 2006 - R. Glenn Jones
+Updated - March 26 2006 - R. Glenn Jones
 
-To enable Ethernet support in AppleWin you must first download and
-install WinPcap.
+Note: Uthernet (TFE) support in Applewin was made possible by implementing the GPL source written by Spiro Trikaliotis for the Vice emulator - http://www.viceteam.org/
 
-An Alternative to downloading WinPcap is to get the Ethereal package which
-includes WinPcap along with Ethereal network analyzer code. To use Ethereal to
-capture traffic (other then your own) you must be plugged into a shared hub vs a
-switch. If you plan on doing any network programming ethereal is a definite must
-have.
+To enable Ethernet support in AppleWin you must first download and install WinPcap.
+
+An Alternative to downloading WinPcap is to get the Ethereal package which includes WinPcap along with Ethereal network analyzer code. To use Ethereal to capture traffic (other then your own) you must be plugged into a shared hub vs a switch. If you plan on doing any network programming ethereal is a definite must have.
 
 WinPcap: http://www.WinPcap.org/install/default.htm or Ethereal: http://www.ethereal.com/download.html
 
 After AppleWin starts, select the settings ICON and then select the Ethernet settings button.
 
-Uthernet will be disabled. Select Uthernet from the list of available
-ethernet emulations (currently the only one).
+Uthernet will be disabled. Select Uthernet from the list of available ethernet emulations (currently the only one).
 
 Select the ethernet interface you want to work with. This must be a physical ethernet interface.
 
-If you have more then one interface you may need to select them in turn
-in order to get the text description for each interface vs what WinPcap
-likes to use for a reference. Select Ok. and then close AppleWin.
-*Note:* Wireless does not work with WinPcap.
+If you have more then one interface you may need to select them in turn in order to get the text description for each interface vs what WinPcap likes to use for a reference. Select Ok. and then close AppleWin. *Note:* Wireless does not work with WinPcap.
 
-NOTE: Due to a current limitation you must exit AppleWin and re-run
-AppleWin for 'a' ethernet interface change to take effect.
+NOTE: Due to a current limitation you must exit AppleWin and re-run AppleWin for 'a' ethernet interface change to take effect.
 
-In order to test the Ethernet emulation out you should grab a copy of Contiki for the Apple II here
+In order to test the Ethernet emulation out you should grab a copy of Contiki for the Apple II here - http://www.a2retrosystems.com/downloads.htm
 
-http://www.a2retrosystems.com/downloads.htm
-
-Grab the 80 Col. Primary Disk and Supplementary Disk images if using Apple //e emulation or the 40 Col 
-versions if running Apple II+ emulation. You should also grab a copy of the Uthernet/Contiki getting 
-started guide http://www.a2retrosystems.com/a2UtherManual.pdf
+Grab the 80 Col. Primary Disk and Supplementary Disk images if using Apple //e emulation or the 40 Col versions if running Apple II+ emulation. You should also grab a copy of the Uthernet/Contiki getting started guide http://www.a2retrosystems.com/a2UtherManual.pdf
 
 When you run AppleWin again, select the contiki80pri.dsk image. Boot AppleWin.
 
 Once Contiki is loaded then press Enter to clear the welcome screen and press ESC for a menu.
 
-Choose Directory Application and then select configuration edit program. Tab down to the Slot param
-and change it to '3'. The emulation only works in slot 3. 
+Choose Directory Application and then select configuration edit program. Tab down to the Slot param and change it to '3'. The emulation only works in slot 3. 
 
 If you do not have DHCP support in your local Lan then setup your static IP address information here as well. Save and exit.
 
@@ -63,3 +50,4 @@ Troubleshooting
 ---------------
 
 If you have ZoneAlarm running then try disabling it inorder to access the web.
+if you are still having difficulty then you should refer to the VICE network support page for additional information - http://vicekb.trikaliotis.net/13-005.shtml
