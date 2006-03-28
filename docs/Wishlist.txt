@@ -26,6 +26,14 @@ Priority:
 . DONE: Shift+Ins to paste from clipboard
 . DONE: Cmd-line switches for: d1, d2, full-screen
 
+
+Post 1.12.9.1:
+- Could you add the possibility to create save state with the name of the disk image loaded
+  For example, I am playing to Lode Runner (Lode Runner.dsk)
+  Pressing F11 or another key would create an file named Lode Runner.aws
+  Now, if I change the image disk (MoonPatrol.dsk), pressing Ctrl+F12 would load MoonPatrol.aws
+  Like that, there is not risk to erase accidently or "unqiue" save state named SaveState.aws
+
 Post 1.12.8.0:
 - I have multiple controllers and was wondering if a future version of the emulator
   could support selecting the joystick you want to use in the emulator.
