@@ -1,0 +1,28 @@
+Setting up SVN for AppleWin
+===========================
+
+(This doc assumes you started with cvs_setup.txt)
+
+
+1. Download and install TortoiseSVN.
+a) http://tortoisesvn.sourceforge.net/
+b) Reboot Windows (Grr...)
+
+==========
+
+Start by reading the TortoiseSVN help... or just dive right in :)
+
+
+To browse the svn repository using:
+a) Web browser (WebSVN) : http://svn.berlios.de/wsvn/applewin
+b) Windows Explorer: TortoiseSVN -> Repro-browser
+
+
+Use 'SVN Checkout...' off the right-context menu in a Windows folder.
+
+URL of repository:
+http://svn.berlios.de/svnroot/repos/applewin/trunk
+(to get trunk)
+
+http://svn.berlios.de/svnroot/repos/applewin
+(to get everything! Or use [...] to browse for your specific branch)
