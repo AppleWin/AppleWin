@@ -1045,6 +1045,7 @@ void SetFullScreenMode () {
 //===========================================================================
 void SetNormalMode () {
   fullscreen = 0;
+  buttonover = -1;
   buttonx    = BUTTONX;
   buttony    = BUTTONY;
   viewportx  = VIEWPORTX;
