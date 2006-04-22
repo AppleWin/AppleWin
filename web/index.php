@@ -187,7 +187,7 @@ i.e. Drol now longer stalls at the cutscene.<br>
 <p><font face="Tahoma"><u>1.12.7.1 - 08 Jan 2006</u><br>
 
 
-- Fixed cmd-line switches -d1/-d1 to work with filenames with spaces<br>
+- Fixed cmd-line switches -d1/-d2 to work with filenames with spaces<br>
 
 
 - Reset: Init Phasor back to Mockingboard mode<br>
