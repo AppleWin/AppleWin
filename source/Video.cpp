@@ -960,7 +960,7 @@ BOOL Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 
 		// Apple ][ inits memory to FF,FF,00,00
 		// The 7F char is same as (inverse) space
-		if (ch == 0xFF)
+		if ((! apple2e) && (ch == 0xFF))
 			ch = 32;
 
 		CopySource(xpixel,ypixel,
