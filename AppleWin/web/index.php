@@ -27,7 +27,7 @@ The SVN repository is located here: <a href="https://developer.berlios.de/projec
 	<li>New: Uthernet card support<br></li>
 	<ul>
 		<li>Allows internet access when used with the Contiki OS<br></li>
-		<li>See: http://applewin.berlios.de/Uthernet.txt<br></li>
+		<li>See: <a href="Uthernet.txt">Uthernet.txt</a><br></li>
 	</ul>
 	<li>New: Floating bus support<br></li>
 	<ul>
