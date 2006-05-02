@@ -983,7 +983,7 @@ void MemReset ()
   // INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
   ResetPaging(1);
   regs.pc = *(LPWORD)(mem+0xFFFC);
-  regs.bIRQ = 0;
+  CpuIrqReset();
 }
 
 //===========================================================================

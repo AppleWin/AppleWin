@@ -1,7 +1,8 @@
 #pragma once
 
 const double _M14 = 14.31818e6;
-const double CLK_6502 = (_M14 / 14.0);
+const double CLK_6502 = (_M14 / 14.0);	// 1022727 + 1/7
+//const double CLK_6502 = 23 * 44100;			// 1014300
 
 const UINT uCyclesPerLine			= 65;	// 25 cycles of HBL & 40 cycles of HBL'
 const UINT uVisibleLinesPerFrame	= 64*3;	// 192
@@ -71,3 +72,4 @@ typedef BYTE (__stdcall *cxfunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE
 
 typedef struct _IMAGE__ { int unused; } *HIMAGE;
 
+enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC};

@@ -1,6 +1,7 @@
 #pragma once
 
 extern bool       g_bMBTimerIrqActive;
+extern UINT32	g_uTimer1IrqCount;	// DEBUG
 
 void	MB_Initialize();
 void	MB_Reinitialize();
