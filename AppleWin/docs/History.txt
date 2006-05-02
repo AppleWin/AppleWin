@@ -1,12 +1,18 @@
-AppleWin 1.12 history
-=====================
+AppleWin history
+================
 
 This version of AppleWin is based directly on Oliver Schmidt's 1.10.4 source.
-In an effort to distinguish any subsequent releases I make from the other
-variants of AppleWin, my release numbering system shall be 1.12.xx.
+The release numbering used to be restricted to 1.12.x, but we have now decided
+to lift this restriction.
+
+Bug reports should be submitted here:
+https://developer.berlios.de/bugs/?func=addbug&group_id=6117
+
+Feature requests should be submitted here:
+https://developer.berlios.de/feature/?func=addfeature&group_id=6117
 
 Tom Charlesworth
-tomcharlesworth AT blueyonder.co.uk
+tomch at users.berlios.de
 
 
 Restrictions/bugs:
@@ -18,10 +24,68 @@ Restrictions/bugs:
 
 
 Acknowledgements:
+- Floating bus support by Nick Westgate
+- Uthernet card by Glenn Jones (adapted from VICE's TFE by Spiro Trikaliotis)
 - Debugger rewrite by Michael Pohoreski
 - TV emulation mode by Thomas Stahl
-- SSI263 phoneme samples from Chris Foxwell (still missing phoneme #0!)
+- SSI263 phoneme samples from Chris Foxwell
 - Harddisk card: source module & f/w by Robert Hoem
+
+
+1.13.0 - 02 May 2006
+--------------------
+* New: Uthernet card support
+  . Allows internet access when used with the Contiki OS
+  . See: http://applewin.berlios.de/Uthernet.txt
+* New: Floating bus support
+  . Fixes the hang at Drol's cut-scene
+  . Bob Bishop's Money Munchers is a little bit closer to working
+* Change: Added support for SSC receive IRQ (eg. Z-Link)
+* Fix: Checkerboard cursor back for //e mode
+* Fix: [Bug #6778] enable harddisk not working in 1.12.9.1
+* Fix: [Bug #6790] Right click menu stops working on drives
+* Fix: [Bug #7231] AppleWin installed in path with spaces
+
+1.12.9.1 - 10 Mar 2006
+----------------------
+* Right-Click on drive icon for disk popup menu. Options are:
+        o Eject disk
+        o Read only (write protection on.)
+        o Read / Write (write protection off.)
+        Note: If a file is read-only, the Read only option will be checked.
+* Fixed invalid F7 opcode addressing mode, so Lock N' Chase is now playable.
+* Video Blanking Timing now has preliminary support.
+    i.e. Drol now longer stalls at the cutscene.
+    Note: The VBL is not exact timing (yet), so some games like Karateka might exhibit a little choppiness.
+* Debugger 2.5.0.16
+        o New Command: #G, same as Apple "Monitor" go command, where # is an hex address.
+            i.e. C600G
+        o New Command: #L, same as Apple "Monitor" list command, where # is an hex address.
+            i.e. 300L
+        o New Command: //
+        Starts a line comment anywhere in the line.
+        o New Command: RUN "filename", to run a debugger script
+        o New Command: ECHO ...
+        Text may be quoted: ECHO "...text..."
+        Echo the current line, since scripts don't echo their commands.
+        o New Command: SH address ## [? ?? ##]
+            You can now search memory!
+            i.e.
+            SH 800,8000 AD ? C0 // search for one byte gap, AD xx C0
+            SH 800,8000 C030 // search for two bytes: 30 C0
+        o Mini-Assembler preview:
+        Note: None of the indexed/indirect modes are working (yet), expressions are not evaluated.
+            usage: A address
+            usage: A
+            The assembler prompt is the '!' -- for your mini-assembler fans ;-)
+            The format is: label mnemonic []
+            To exit the assembler, press Enter without any input.
+            The spacebar to execute the next instruction is disabled while in assembler mode. You must press space, if you don't wish to define a label.
+        o Fixed Console sometimes not drawing.
+        o Fixed UI bug: Memory View text over-writing buttons.
+        o Changed BPX to now defaults to setting breakpoint at cursor.
+        o Changed BP to now default to setting breakpoint at Program Counter (PC)
+        o Added new color scheme: BW. (This used to be an alias for MONO before.)
 
 1.12.9.0 - 25 Feb 2006
 ----------------------
