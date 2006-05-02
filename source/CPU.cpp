@@ -106,6 +106,14 @@ static ULONG g_nCyclesExecuted;
 
 static signed long nInternalCyclesLeft;
 
+//
+
+// Assume all interrupt sources assert until the device is told to stop:
+// - eg by r/w to device's register or a machine reset
+
+static CRITICAL_SECTION g_CriticalSection;	// To guard /g_bmIRQ/
+static volatile UINT32 g_bmIRQ = 0;
+
 /****************************************************************************
 *
 *  GENERAL PURPOSE MACROS
@@ -488,21 +496,6 @@ static DWORD InternalCpuExecute (DWORD totalcycles)
     nInternalCyclesLeft = (totalcycles<<8) - (cycles<<8);
     USHORT uExtraCycles = 0;
 
-    if(regs.bIRQ && !(regs.ps & AF_INTERRUPT))
-	{
-		g_nCycleIrqStart = g_nCumulativeCycles + cycles;
-		regs.bIRQ = 0;
-        PUSH(regs.pc >> 8)
-        PUSH(regs.pc & 0xFF)
-        EF_TO_AF
-        regs.ps |= AF_RESERVED;
-        PUSH(regs.ps)
-        regs.ps |= AF_INTERRUPT;
-		regs.pc = * (WORD*) (mem+0xFFFE);
-		CYC(7)
-		continue;
-	}
-
     switch (*(mem+regs.pc++)) 
 	{
       case 0x00:       BRK           CYC(7)  break;
@@ -764,6 +757,20 @@ static DWORD InternalCpuExecute (DWORD totalcycles)
       case 0xFE:       ABSX INC      CYC(6)  break;
       case 0xFF:       INVALID1      CYC(1)  break;
     }
+
+    if(g_bmIRQ && !(regs.ps & AF_INTERRUPT))
+	{
+		// IRQ signals are deasserted when a specific r/w operation is done on device
+		g_nCycleIrqStart = g_nCumulativeCycles + cycles;
+        PUSH(regs.pc >> 8)
+        PUSH(regs.pc & 0xFF)
+        EF_TO_AF
+        regs.ps |= AF_RESERVED;
+        PUSH(regs.ps)
+        regs.ps |= AF_INTERRUPT;
+		regs.pc = * (WORD*) (mem+0xFFFE);
+		CYC(7)
+	}
   }
   while (cycles < totalcycles);
   EF_TO_AF
@@ -784,6 +791,8 @@ void CpuDestroy () {
     cpugetcodefunc[loop] = NULL;
     cpulibrary[loop]     = (HINSTANCE)0;
   }
+
+  	DeleteCriticalSection(&g_CriticalSection);
 }
 
 //===========================================================================
@@ -902,9 +911,15 @@ void CpuInitialize () {
   regs.ps = 0x20;
   regs.pc = *(LPWORD)(mem+0xFFFC);
   regs.sp = 0x01FF;
-  regs.bIRQ = 0;
+
+	InitializeCriticalSection(&g_CriticalSection);
+	CpuIrqReset();
 
 #ifdef _X86_
+	// TO DO:
+	// . FreeLibrary isn't being called if DLLs' version is too low
+	// . This code is going to get ditched, so ignore this!
+
   if (mem) {
     TCHAR filename[MAX_PATH];
     _tcscpy(filename,progdir);
@@ -998,11 +1013,27 @@ BOOL CpuSupportsFastPaging () {
 }
 
 //===========================================================================
-void CpuIRQ()
+
+void CpuIrqReset()
 {
-	regs.bIRQ = 1;
+	EnterCriticalSection(&g_CriticalSection);
+	g_bmIRQ = 0;
+	LeaveCriticalSection(&g_CriticalSection);
 }
 
+void CpuIrqAssert(eIRQSRC Device)
+{
+	EnterCriticalSection(&g_CriticalSection);
+	g_bmIRQ |= 1<<Device;
+	LeaveCriticalSection(&g_CriticalSection);
+}
+
+void CpuIrqDeassert(eIRQSRC Device)
+{
+	EnterCriticalSection(&g_CriticalSection);
+	g_bmIRQ &= ~(1<<Device);
+	LeaveCriticalSection(&g_CriticalSection);
+}
 //===========================================================================
 
 DWORD CpuGetSnapshot(SS_CPU6502* pSS)
@@ -1026,7 +1057,7 @@ DWORD CpuSetSnapshot(SS_CPU6502* pSS)
 	regs.ps = pSS->P;
 	regs.sp = (USHORT)pSS->S + 0x100;
 	regs.pc = pSS->PC;
-	regs.bIRQ = 0;
+	CpuIrqReset();
 	g_nCumulativeCycles = pSS->g_nCumulativeCycles;
 
 	return 0;

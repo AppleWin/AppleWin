@@ -359,9 +359,6 @@
 			Name="Docs"
 			Filter="">
 			<File
-				RelativePath=".\docs\Bugs.txt">
-			</File>
-			<File
 				RelativePath=".\docs\CodingConventions.txt">
 			</File>
 			<File

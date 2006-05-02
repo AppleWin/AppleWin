@@ -34,6 +34,11 @@
 #include <crtdbg.h>
 #include "ay8910.h"
 
+#include "Common.h"
+#include "Structs.h"
+#include "Applewin.h"		// For g_fh
+#include "Mockingboard.h"	// For g_uTimer1IrqCount
+
 ///////////////////////////////////////////////////////////
 // typedefs & dummy funcs to allow MAME code to compile:
 
@@ -105,7 +110,56 @@ struct AY8910
 
 static struct AY8910 AYPSG[MAX_8910];		/* array of PSG's */
 
+static bool g_bAYReset = false;		// Doing AY8910_reset()
 
+//-----------------------------------------------------------------------------
+
+//#define LOG_AY8910
+#ifdef LOG_AY8910
+static void LogAY8910(int n, int r, UINT uFreq)
+{
+	// TO DO: Determine freq from 6522 timer
+
+	if ((g_fh == NULL) || g_bAYReset)
+		return;
+
+	static UINT nCnt = 0;
+	const UINT nNumAYs = 4;				// 1..4
+	if((r == 0))
+	{
+		if(nCnt == 0)
+		{
+			fprintf(g_fh, "Time : ");
+			for(UINT i=0; i<nNumAYs; i++)
+				fprintf(g_fh, "APer BPer CPer NP EN AV BV CV  ");
+			fprintf(g_fh, "\n");
+		}
+
+		fprintf(g_fh, "%02d.%02d: ", g_uTimer1IrqCount/uFreq, g_uTimer1IrqCount%uFreq);
+
+		for(int j=0; j<n*(3*5+5*3+1); j++)
+			fprintf(g_fh, " ");
+
+		UINT i=n;
+		{
+			UCHAR* pAYRegs = &AYPSG[i].Regs[0];
+			fprintf(g_fh, "%04X ", *(USHORT*)&pAYRegs[AY_AFINE]);
+			fprintf(g_fh, "%04X ", *(USHORT*)&pAYRegs[AY_BFINE]);
+			fprintf(g_fh, "%04X ", *(USHORT*)&pAYRegs[AY_CFINE]);
+			fprintf(g_fh, "%02X ", pAYRegs[AY_NOISEPER]);
+			fprintf(g_fh, "%02X ", pAYRegs[AY_ENABLE]);
+			fprintf(g_fh, "%02X ", pAYRegs[AY_AVOL]);
+			fprintf(g_fh, "%02X ", pAYRegs[AY_BVOL]);
+			fprintf(g_fh, "%02X  ", pAYRegs[AY_CVOL]);
+		}
+		fprintf(g_fh, "\n");
+
+		nCnt++;
+	}
+}
+#endif
+
+//-----------------------------------------------------------------------------
 
 void _AYWriteReg(int n, int r, int v)
 {
@@ -115,27 +169,8 @@ void _AYWriteReg(int n, int r, int v)
 
 	PSG->Regs[r] = v;
 
-//#define LOG_AY8910
 #ifdef LOG_AY8910
-	extern FILE*      g_fh;				// Filehandle for log file
-	static UINT nCnt = 0;
-	if((n == 0) && (r == 0) && g_fh)
-	{
-		if(nCnt == 0)
-			fprintf(g_fh, "Time : APer BPer CPer NP EN AV BV CV\n");
-
-		fprintf(g_fh, "%02d.%02d: ", nCnt/60, nCnt%60);
-		nCnt++;
-
-		fprintf(g_fh, "%04X ", *(USHORT*)&PSG->Regs[AY_AFINE]);
-		fprintf(g_fh, "%04X ", *(USHORT*)&PSG->Regs[AY_BFINE]);
-		fprintf(g_fh, "%04X ", *(USHORT*)&PSG->Regs[AY_CFINE]);
-		fprintf(g_fh, "%02X ", PSG->Regs[AY_NOISEPER]);
-		fprintf(g_fh, "%02X ", PSG->Regs[AY_ENABLE]);
-		fprintf(g_fh, "%02X ", PSG->Regs[AY_AVOL]);
-		fprintf(g_fh, "%02X ", PSG->Regs[AY_BVOL]);
-		fprintf(g_fh, "%02X\n", PSG->Regs[AY_CVOL]);
-	}
+	LogAY8910(n, r, 60);
 #endif
 
 	/* A note about the period of tones, noise and envelope: for speed reasons,*/
@@ -692,6 +727,8 @@ void ay8910_write_ym(int chip, int addr, int data)
 
 void AY8910_reset(int chip)
 {
+	g_bAYReset = true;
+
 	int i;
 	struct AY8910 *PSG = &AYPSG[chip];
 
@@ -706,6 +743,8 @@ void AY8910_reset(int chip)
 		_AYWriteReg(chip,i,0);	/* AYWriteReg() uses the timer system; we cannot */
 								/* call it at this time because the timer system */
 								/* has not been initialized. */
+
+	g_bAYReset = false;
 }
 
 //-------------------------------------

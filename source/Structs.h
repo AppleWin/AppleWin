@@ -1,4 +1,6 @@
-//
+// Structs used by save-state file
+
+// *** DON'T CHANGE ANY STRUCT WITHOUT CONSIDERING BACKWARDS COMPATIBILITY WITH .AWS FORMAT ***
 
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
@@ -34,6 +36,8 @@ typedef struct
 	// IRQ = OR-sum of all interrupt sources
 } SS_CPU6502;
 
+const UINT uRecvBufferSize = 9;
+
 typedef struct
 {
 	DWORD  baudrate;
@@ -42,7 +46,7 @@ typedef struct
 	DWORD  comminactivity;	// If non-zero then COM port open
 	BYTE   controlbyte;
 	BYTE   parity;
-	BYTE   recvbuffer[9];
+	BYTE   recvbuffer[uRecvBufferSize];
 	DWORD  recvbytes;
 	BYTE   stopbits;
 } SS_IO_Comms;
@@ -232,7 +236,7 @@ typedef struct
 	BYTE CtrlArtAmp;
 	BYTE FilterFreq;
 	//
-	BYTE CurrentMode;
+	BYTE CurrentMode;		// b7:6=Mode; b0=D7 pin (for IRQ)
 } SSI263A;
 
 typedef struct
