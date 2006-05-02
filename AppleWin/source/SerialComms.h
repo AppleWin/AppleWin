@@ -6,6 +6,8 @@ void    CommDestroy ();
 void    CommReset ();
 void    CommSetSerialPort (HWND,DWORD);
 void    CommUpdate (DWORD);
+bool	CommThInit();
+void	CommThUninit();
 DWORD   CommGetSnapshot(SS_IO_Comms* pSS);
 DWORD   CommSetSnapshot(SS_IO_Comms* pSS);
 
