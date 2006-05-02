@@ -7,7 +7,7 @@
 <body alink="gold" background="background.gif" bgcolor="mediumpurple" link="orange" text="powderblue" vlink="plum">
 <p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.13.0</font></u></font></p>
 <p align="center"><font face="Tahoma"><img src="applewin.gif" title="" alt="Apple //e Emulator Logo" height="384" width="560"></font></p>
-<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.12.9.1.zip">Version 1.13.0</a><br>
+<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.13.0.zip">Version 1.13.0</a><br>
 <a href="#OldReleases">Download older releases</a><br>
 </font></p>
 
