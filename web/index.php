@@ -21,7 +21,7 @@ The SVN repository is located here: <a href="https://developer.berlios.de/projec
 <p><font face="Tahoma"></font><br></p>
 
 
-<p><font face="Tahoma"><u>1.12.3 - 02 May 2006</u></font></p>
+<p><font face="Tahoma"><u>1.13.0 - 02 May 2006</u></font></p>
 <p><font face="Tahoma">
 <ul>
 	<li>New: Uthernet card support<br></li>
