@@ -32,6 +32,10 @@ Acknowledgements:
 - Harddisk card: source module & f/w by Robert Hoem
 
 
+1.13.1 - 07 May 2006
+--------------------
+* Fix: [Bug #7375]  Crashes on Win98/ME
+
 1.13.0 - 02 May 2006
 --------------------
 * New: Uthernet card support
