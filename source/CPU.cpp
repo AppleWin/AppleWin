@@ -111,6 +111,7 @@ static signed long nInternalCyclesLeft;
 // Assume all interrupt sources assert until the device is told to stop:
 // - eg by r/w to device's register or a machine reset
 
+static bool g_bCritSectionValid = false;	// Deleting CritialSection when not valid causes crash on Win98
 static CRITICAL_SECTION g_CriticalSection;	// To guard /g_bmIRQ/
 static volatile UINT32 g_bmIRQ = 0;
 
@@ -792,7 +793,11 @@ void CpuDestroy () {
     cpulibrary[loop]     = (HINSTANCE)0;
   }
 
-  	DeleteCriticalSection(&g_CriticalSection);
+	if (g_bCritSectionValid)
+	{
+  		DeleteCriticalSection(&g_CriticalSection);
+		g_bCritSectionValid = false;
+	}
 }
 
 //===========================================================================
@@ -913,6 +918,7 @@ void CpuInitialize () {
   regs.sp = 0x01FF;
 
 	InitializeCriticalSection(&g_CriticalSection);
+	g_bCritSectionValid = true;
 	CpuIrqReset();
 
 #ifdef _X86_
@@ -1016,23 +1022,26 @@ BOOL CpuSupportsFastPaging () {
 
 void CpuIrqReset()
 {
-	EnterCriticalSection(&g_CriticalSection);
+	_ASSERT(g_bCritSectionValid);
+	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
 	g_bmIRQ = 0;
-	LeaveCriticalSection(&g_CriticalSection);
+	if (g_bCritSectionValid) LeaveCriticalSection(&g_CriticalSection);
 }
 
 void CpuIrqAssert(eIRQSRC Device)
 {
-	EnterCriticalSection(&g_CriticalSection);
+	_ASSERT(g_bCritSectionValid);
+	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
 	g_bmIRQ |= 1<<Device;
-	LeaveCriticalSection(&g_CriticalSection);
+	if (g_bCritSectionValid) LeaveCriticalSection(&g_CriticalSection);
 }
 
 void CpuIrqDeassert(eIRQSRC Device)
 {
-	EnterCriticalSection(&g_CriticalSection);
+	_ASSERT(g_bCritSectionValid);
+	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
 	g_bmIRQ &= ~(1<<Device);
-	LeaveCriticalSection(&g_CriticalSection);
+	if (g_bCritSectionValid) LeaveCriticalSection(&g_CriticalSection);
 }
 //===========================================================================
 
