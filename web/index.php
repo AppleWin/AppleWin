@@ -3,11 +3,10 @@
   <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
   <link rel="shortcut icon" href="applewin.ico">
   <title>Apple //e Emulator for Windows</title></head>
-
 <body alink="gold" background="background.gif" bgcolor="mediumpurple" link="orange" text="powderblue" vlink="plum">
-<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.13.0</font></u></font></p>
+<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.13.1</font></u></font></p>
 <p align="center"><font face="Tahoma"><img src="applewin.gif" title="" alt="Apple //e Emulator Logo" height="384" width="560"></font></p>
-<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.13.0.zip">Version 1.13.0</a><br>
+<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.13.1.zip">Version 1.13.1</a><br>
 <a href="#OldReleases">Download older releases</a><br>
 </font></p>
 
@@ -20,6 +19,10 @@ The SVN repository is located here: <a href="https://developer.berlios.de/projec
 </font></p>
 <p><font face="Tahoma"></font><br></p>
 
+
+<p><font face="Tahoma"><u>1.13.1 - 07 May 2006</u></font></p>
+<font face="Tahoma">
+<ul><li>Fix: [Bug #7375] &nbsp;Crashes on Win98/ME</li></ul></font>
 
 <p><font face="Tahoma"><u>1.13.0 - 02 May 2006</u></font></p>
 <p><font face="Tahoma">
@@ -218,6 +221,7 @@ find didn't appear to support it:<br>
 
 <p><font face="Tahoma"><font face="Tahoma"><u><a name="OldReleases"></a>Old releases:</u></font></font></p>
 <p><font face="Tahoma"><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.13.0.zip">Version 1.13.0</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.12.9.1.zip">Version 1.12.9.1</a><br>
   Download <a href="http://download.berlios.de/applewin/AppleWin1.12.6.0.zip">Version 1.12.6.0</a><br>
   Download <a href="http://download.berlios.de/applewin/AppleWin1.10.4.zip">Version 1.10.4</a> (Oliver Schmidt's last version)<br>
