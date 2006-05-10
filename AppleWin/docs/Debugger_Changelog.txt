@@ -1,5 +1,38 @@
 /*
 
+.23 Moved columns of disasm for instructions, and target values over one char left, to leave whitespace past the target 'char' on the end
+.22 Disasm window now shows target values for indirect, and indexed addressing modes.
+    i.e.
+0:34 12 00 00 AA 99
+D0:16 03
+1234:56 78 9A
+R X D0
+R Y 2
+300:A9 55      // LDA #$55
+302:4C 89 67   // JMP $6789
+305:AD 01 00   // LDA $0001 = 12
+308:A5 00      // LDA $00 = #34
+30A:DE 00 00   // DEC $0000,X $D0=FF
+30D:BE 02 00   // LDX $0002,Y
+310:B4 35      // LDY $30,X
+312:B6 00       // LDX $00,Y $02=0
+314:D0 02
+316:A1 00      // LDA ($00,X)
+318: 7C 00 00  // JMP ($0000,X)
+31B:B1 00      // LDA ($00),Y
+31D:B2 00      // LDA ($00)
+31F:6C 02 00 // JMP ($0002) = ($0000) -> 1234
+
+.21 Fixed: Disasm display of "Zeropage, X" and "Zeropage, Y" targets weren't wrapping on the zero-page.
+.20 Single quoted chars in search are treated as opposite high-bit.
+    i.e. S D000,FFFF "NEX" 'T' searches for NEXT, with the 'T' having the high-bit set.
+    NEW: S search text or hex
+    NEW: SA search ASCII text (single quote refers to Apple Text)
+    NEW: ST search Apple text (single quote refers to ASCII text)
+.19 Search Results can now be (de) referenced via @
+.18 New operator @
+
+.17 Fixed bug in _GetStartEnd(). i.e. D000,FFFF -> D000,CFFF (nothing searched!)
 .16 Added: addr:byte [byte]
 .15
 .14 Fixed Parses not to cook the args, until right before eating them
