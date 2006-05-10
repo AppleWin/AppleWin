@@ -103,22 +103,24 @@
 		, AM_I = NUM_ADDRESSING_MODES, // for assemler
 
 	// Deprecated
+	/*
 		ADDR_INVALID1  =  1,
 		ADDR_INVALID2  =  2,
 		ADDR_INVALID3  =  3,
 		ADDR_IMM       =  4, // Immediate
 		ADDR_ABS       =  5, // Absolute
-		ADDR_ZP        =  6, // Zeropage     // ADDR_ZPG
+		ADDR_ZP        =  6, // Zeropage
 		ADDR_ABSX      =  7, // Absolute + X
 		ADDR_ABSY      =  8, // Absolute + Y
-		ADDR_ZP_X      =  9, // Zeropage + X // ADDR_ZPGX
-		ADDR_ZP_Y      = 10, // Zeropage + Y // ADDR_ZPGY
+		ADDR_ZP_X      =  9, // Zeropage + X
+		ADDR_ZP_Y      = 10, // Zeropage + Y
 		ADDR_REL       = 11, // Relative
 		ADDR_INDX      = 12, // Indexed (Zeropage) Indirect
 		ADDR_ABSIINDX  = 13, // Indexed (Absolute) Indirect
 		ADDR_INDY      = 14, // Indirect (Zeropage) Indexed
 		ADDR_IZPG      = 15, // Indirect (Zeropage)
 		ADDR_IABS      = 16, // Indirect Absolute (i.e. JMP)
+	*/
 	};
 
 
@@ -503,8 +505,7 @@
 		, CMD_MEMORY_MOVE
 		, CMD_MEMORY_SEARCH
 		, CMD_MEMORY_SEARCH_ASCII   // Ascii Text
-		, CMD_MEMORY_SEARCH_TXT_LO  // Control Chars
-		, CMD_MEMORY_SEARCH_TXT_HI  // Flashing Chars, Hi-Bit Set
+		, CMD_MEMORY_SEARCH_APPLE   // Flashing Chars, Hi-Bit Set
 		, CMD_MEMORY_SEARCH_HEX
 		, CMD_MEMORY_FILL
 // Registers - CPU
@@ -678,10 +679,11 @@
 	Update_t CmdMemoryFill         (int nArgs);
 	Update_t CmdMemoryMove         (int nArgs);
 	Update_t CmdMemorySearch       (int nArgs);
-	Update_t CmdMemorySearchLowBit (int nArgs);
-	Update_t CmdMemorySearchHiBit  (int nArgs);
+//	Update_t CmdMemorySearchLowBit (int nArgs);
+//	Update_t CmdMemorySearchHiBit  (int nArgs);
+	Update_t CmdMemorySearchAscii  (int nArgs);
+	Update_t CmdMemorySearchApple  (int nArgs);
 	Update_t CmdMemorySearchHex    (int nArgs);
-	Update_t CmdMemorySearchText   (int nArgs);
 // Registers
 	Update_t CmdRegisterSet     (int nArgs);
 // Source Level Debugging
@@ -775,6 +777,8 @@
 		DISASM_TARGET_SYMBOL    = (1 << 1),
 		DISASM_TARGET_OFFSET    = (1 << 2),
 		DISASM_BRANCH_INDICATOR = (1 << 3),
+		DISASM_TARGET_POINTER   = (1 << 4),
+		DISASM_TARGET_VALUE     = (1 << 5),
 	};
 
 	enum DisasmBranch_e
@@ -873,12 +877,12 @@
 
 	enum Opcode_e
 	{
-		OPCODE_BRA         = 0x80,
+		OPCODE_BRA     = 0x80,
 
-		OPCODE_JSR         = 0x20,
-		OPCODE_JMP_ABS     = 0x4C,
-		OPCODE_JMP_IABS    = 0x6C,
-		OPCODE_JMP_ABSINDX = 0x7C,
+		OPCODE_JSR     = 0x20,
+		OPCODE_JMP_A   = 0x4C, // Absolute
+		OPCODE_JMP_NA  = 0x6C, // Indirect Absolute
+		OPCODE_JMP_IAX = 0x7C, // Indexed (Absolute Indirect, X)
 	};
 
 	// Note: "int" causes overflow when profiling for any amount of time.
@@ -988,10 +992,13 @@
 
 	struct MemorySearch_t
 	{
-		BYTE           m_nValue;
-		MemorySearch_e m_iType;
-		bool           m_bFound;
+		BYTE           m_nValue  ; // search value
+		MemorySearch_e m_iType   ; // 
+		bool           m_bFound  ; // 
 	};
+
+	typedef vector<MemorySearch_t> MemorySearchValues_t;
+	typedef vector<int>            MemorySearchResults_t;
 
 // Parameters _____________________________________________________________________________________
 
@@ -1004,7 +1011,7 @@
 	{
 		  TOKEN_ALPHANUMERIC // 
 		, TOKEN_AMPERSAND    // &
-//		, TOKEN_AT           // @  TODO: pointer reference. i.e. U @3F0
+		, TOKEN_AT           // @  results dereference. i.e. S 0,FFFF C030; L @1
 		, TOKEN_BSLASH       // \xx Hex Literal
 		, TOKEN_CARET        // ^
 //		, TOKEN_CHAR
@@ -1023,7 +1030,8 @@
 		, TOKEN_PERCENT      // %
 		, TOKEN_PIPE         // |
 		, TOKEN_PLUS         // + Delta  Argument1 += Argument2
-		, TOKEN_QUOTED       // "
+		, TOKEN_QUOTE_SINGLE // '
+		, TOKEN_QUOTE_DOUBLE // "
 		, TOKEN_RIGHT_PAREN  // )
 		, TOKEN_SEMI         // ; Command Seperator
 		, TOKEN_SPACE        //   Token Delimiter
@@ -1041,13 +1049,14 @@
 	{
 		  TYPE_ADDRESS  = (1 << 0) // $#### or $symbolname
 		, TYPE_OPERATOR = (1 << 1)
-		, TYPE_QUOTED   = (1 << 2) // "..."
-		, TYPE_STRING   = (1 << 3) // LOAD
-		, TYPE_RANGE    = (1 << 4)
-		, TYPE_LENGTH   = (1 << 5)
-		, TYPE_VALUE    = (1 << 6)
-		, TYPE_NO_REG   = (1 << 7) // Don't do register value -> Argument.nValue
-		, TYPE_NO_SYM   = (1 << 8) // Don't do symbol lookup  -> Argument.nValue
+		, TYPE_QUOTED_1 = (1 << 2)
+		, TYPE_QUOTED_2 = (1 << 3) // "..."
+		, TYPE_STRING   = (1 << 4) // LOAD
+		, TYPE_RANGE    = (1 << 5)
+		, TYPE_LENGTH   = (1 << 6)
+		, TYPE_VALUE    = (1 << 7)
+		, TYPE_NO_REG   = (1 << 8) // Don't do register value -> Argument.nValue
+		, TYPE_NO_SYM   = (1 << 9) // Don't do symbol lookup  -> Argument.nValue
 	};
 
 	struct TokenTable_t
