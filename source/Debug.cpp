@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,16);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,23);
 
 
 // Public _________________________________________________________________________________________
@@ -234,10 +234,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("E")           , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    },
 		{TEXT("EW")          , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    },
 		{TEXT("M")           , CmdMemoryMove        , CMD_MEMORY_MOVE          },
-		{TEXT("S")           , CmdMemorySearch      , CMD_MEMORY_SEARCH        },
-		{TEXT("SA")          , CmdMemorySearchText  , CMD_MEMORY_SEARCH_ASCII  }, // Search Ascii
-		{TEXT("SAL")         , CmdMemorySearchLowBit, CMD_MEMORY_SEARCH_TXT_LO }, // Search Ascii Low
-		{TEXT("SAH")         , CmdMemorySearchHiBit , CMD_MEMORY_SEARCH_TXT_HI }, // Search "Ascii" High
+		{TEXT("S")           , CmdMemorySearch      , CMD_MEMORY_SEARCH        , "Search for text for hex values" },
+		{TEXT("SA")          , CmdMemorySearchAscii,  CMD_MEMORY_SEARCH_ASCII  , "Search ASCII text" }, // Search ASCII
+		{TEXT("ST")          , CmdMemorySearchApple , CMD_MEMORY_SEARCH_APPLE  , "Search Apple text (hi-bit)" }, // Search Apple Text
 		{TEXT("SH")          , CmdMemorySearchHex   , CMD_MEMORY_SEARCH_HEX    }, // Search Hex
 		{TEXT("F")           , CmdMemoryFill        , CMD_MEMORY_FILL          },
 	// Registers
@@ -538,6 +537,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	const unsigned int _6502_END_MEM_ADDRESS = 0xFFFF;
 
 	MemoryDump_t g_aMemDump[ NUM_MEM_DUMPS ];
+
+	// Made global so operator @# can be used with other commands.
+	MemorySearchResults_t g_vMemorySearchResults;
 
 
 // Parameters _____________________________________________________________________________________
@@ -934,7 +936,7 @@ bool CheckBreakpointsIO ()
 	int  iTarget;
 	int  nAddress;
 
-	Get6502Targets( &aTarget[0], &aTarget[1], &nBytes );
+	Get6502Targets( regs.pc, &aTarget[0], &aTarget[1], &nBytes );
 	
 	if (nBytes)
 	{
@@ -1896,7 +1898,7 @@ Update_t CmdConfigEcho (int nArgs)
 {
 	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("");
 
-	if (g_aArgs[1].bType & TYPE_QUOTED)
+	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 	{
 		ConsoleDisplayPush( g_aArgs[1].sArg );
 	}
@@ -1986,7 +1988,7 @@ Update_t CmdConfigRun (int nArgs)
 	TCHAR sFileName[ MAX_PATH ];
 	TCHAR sMiniFileName[ CONSOLE_WIDTH ];
 
-//	if (g_aArgs[1].bType & TYPE_QUOTED)
+//	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 
 	strcpy( sMiniFileName, pFileName );
 //	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
@@ -2346,7 +2348,7 @@ Update_t CmdConfigSetFont (int nArgs)
 				case PARAM_INFO   : iFontTarget = FONT_INFO          ; iFontPitch = FIXED_PITCH   | FF_MODERN    ; bHaveTarget = true; break;
 				case PARAM_CONSOLE: iFontTarget = FONT_CONSOLE       ; iFontPitch = DEFAULT_PITCH | FF_DECORATIVE; bHaveTarget = true; break;
 				default:
-					if (g_aArgs[2].bType != TOKEN_QUOTED)
+					if (g_aArgs[2].bType != TOKEN_QUOTE_DOUBLE)
 						return Help_Arg_1( CMD_CONFIG_FONT );
 					break;
 			}
@@ -3261,133 +3263,30 @@ Update_t CmdMemoryMove (int nArgs)
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
-//===========================================================================
-Update_t CmdMemorySearch (int nArgs)
-{
-	if (nArgs < 2)
-		return Help_Arg_1( CMD_MEMORY_SEARCH );
-
-	 if (g_aArgs[2].sArg[0] == TEXT('\"'))
-		CmdMemorySearchText( nArgs );
-	else
-		CmdMemorySearchHex( nArgs );
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-// Search for Ascii Hi-Bit set
-//===========================================================================
-Update_t CmdMemorySearchHiBit (int nArgs)
-{
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
-Update_t CmdMemorySearchLowBit (int nArgs)
-{
-	return UPDATE_CONSOLE_DISPLAY;
-}
 
 //===========================================================================
 bool _GetStartEnd( WORD & nAddressStart_, WORD & nAddressEnd_ )
 {
 	nAddressStart_ = g_aArgs[1].nVal1; 
-	nAddressEnd_   = nAddressStart_ + g_aArgs[1].nVal2; 
+	int nEnd = nAddressStart_ + g_aArgs[1].nVal2;
+
+	// .17 Bug Fix: D000,FFFF -> D000,CFFF (nothing searched!)
+	if (nEnd > _6502_END_MEM_ADDRESS)
+		nEnd = _6502_END_MEM_ADDRESS;
+
+	nAddressEnd_  = nEnd;
 	return true;
 }
 
+
 //===========================================================================
-Update_t CmdMemorySearchHex (int nArgs)
+int _SearchMemoryFind(
+	MemorySearchValues_t vMemorySearchValues,
+	WORD nAddressStart,
+	WORD nAddressEnd )
 {
-	if (nArgs < 2)
-		return HelpLastCommand();
-
-	WORD nAddressStart;
-	WORD nAddressEnd;
-	_GetStartEnd( nAddressStart, nAddressEnd );
-
-	// S start,len #
-	int nMinLen = nArgs - 2;
-
-	bool bHaveWildCards = false;
-	int iArg;
-
-	vector<MemorySearch_t> vMemorySearch;
-	MemorySearch_e         tLastType = MEM_SEARCH_BYTE_N_WILD;
-	
-	vector<int> vMatches;
-
-	// Get search "string"
-	Arg_t *pArg = & g_aArgs[ 2 ];
-	
-	WORD nTarget;
-	for (iArg = 2; iArg <= nArgs; iArg++, pArg++ )
-	{
-		MemorySearch_t ms;
-
-		nTarget = pArg->nVal1;
-		ms.m_nValue = nTarget & 0xFF;
-		ms.m_iType = MEM_SEARCH_BYTE_EXACT;
-
-		if (nTarget > 0xFF) // searching for 16-bit address
-		{
-			vMemorySearch.push_back( ms );
-			ms.m_nValue = (nTarget >> 8);
-
-			tLastType = ms.m_iType;
-		}
-		else
-		{
-			TCHAR *pByte = pArg->sArg;
-
-			if (pArg->nArgLen > 2)
-				goto _Help;
-			
-			if (pArg->nArgLen == 1)
-			{
-				if (pByte[0] == g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName[0])
-				{
-					ms.m_iType = MEM_SEARCH_BYTE_1_WILD;
-				}
-			}
-			else
-			{
-				if (pByte[0] == g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName[0])
-				{
-					ms.m_iType = MEM_SEARCH_NIB_LOW_EXACT;
-					ms.m_nValue = pArg->nVal1 & 0x0F;
-				}
-
-				if (pByte[1] == g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName[0])
-				{
-					if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
-					{
-						ms.m_iType = MEM_SEARCH_BYTE_N_WILD;
-					}
-					else
-					{
-						ms.m_iType = MEM_SEARCH_NIB_HIGH_EXACT;
-						ms.m_nValue = (pArg->nVal1 << 4) & 0xF0;
-					}
-				}
-			}
-		}
-
-		// skip over multiple byte_wild, since they are redundent
-		// xx ?? ?? xx
-		//       ^
-		//       redundant
-		if ((tLastType == MEM_SEARCH_BYTE_N_WILD) && (ms.m_iType == MEM_SEARCH_BYTE_N_WILD))
-			continue;
-
-		vMemorySearch.push_back( ms );
-		tLastType = ms.m_iType;
-	}
-	
-	TCHAR sMatches[ CONSOLE_WIDTH ] = TEXT("");
-	int   nMatches = 0; // string length, for word-wrap
-
 	int   nFound = 0;
+	g_vMemorySearchResults.erase( g_vMemorySearchResults.begin(), g_vMemorySearchResults.end() );
 
 	WORD nAddress;
 	for( nAddress = nAddressStart; nAddress < nAddressEnd; nAddress++ )
@@ -3396,10 +3295,10 @@ Update_t CmdMemorySearchHex (int nArgs)
 
 		WORD nAddress2 = nAddress;
 
-		int nMemBlocks = vMemorySearch.size();
+		int nMemBlocks = vMemorySearchValues.size();
 		for (int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
 		{
-			MemorySearch_t ms = vMemorySearch.at( iBlock );
+			MemorySearch_t ms = vMemorySearchValues.at( iBlock );
 			ms.m_bFound = false;
 		
 			if ((ms.m_iType == MEM_SEARCH_BYTE_EXACT    ) || 
@@ -3437,7 +3336,7 @@ Update_t CmdMemorySearchHex (int nArgs)
 				if ((iBlock + 1) == nMemBlocks) // there is no next block, hence we match
 					continue;
 					
-				MemorySearch_t ms2 = vMemorySearch.at( iBlock + 1 );
+				MemorySearch_t ms2 = vMemorySearchValues.at( iBlock + 1 );
 
 				WORD nAddress3 = nAddress2;
 				for (nAddress3 = nAddress2; nAddress3 < nAddressEnd; nAddress3++ )
@@ -3474,49 +3373,242 @@ Update_t CmdMemorySearchHex (int nArgs)
 		{
 			nFound++;
 
-			TCHAR sText[ CONSOLE_WIDTH ];
-			wsprintf( sText, "%2d:$%04X ", nFound, nAddress );
+			// Save the search result
+			g_vMemorySearchResults.push_back( nAddress );
+		}
+	}
+
+	return nFound;
+}
+
+
+//===========================================================================
+Update_t _SearchMemoryDisplay()
+{
+	int nFound = g_vMemorySearchResults.size();
+
+	TCHAR sMatches[ CONSOLE_WIDTH ] = TEXT("");
+	int   nThisLineLen = 0; // string length of matches for this line, for word-wrap
+
+	if (nFound)
+	{
+		TCHAR sText[ CONSOLE_WIDTH ];
+
+		int iFound = 0;
+		while (iFound < nFound)
+		{
+			WORD nAddress = g_vMemorySearchResults.at( iFound );
+
+			wsprintf( sText, "%2d:$%04X ", iFound, nAddress );
 			int nLen = _tcslen( sText );
 
 			// Fit on same line?
-			if ((nMatches + nLen) > (g_nConsoleDisplayWidth)) // CONSOLE_WIDTH
+			if ((nThisLineLen + nLen) > (g_nConsoleDisplayWidth)) // CONSOLE_WIDTH
 			{
 				ConsoleDisplayPush( sMatches );
 				_tcscpy( sMatches, sText );
-				nMatches = nLen;
+				nThisLineLen = nLen;
 			}
 			else
 			{
 				_tcscat( sMatches, sText );
-				nMatches += nLen;
+				nThisLineLen += nLen;
 			}
+
+			iFound++;
 		}
+		ConsoleDisplayPush( sMatches );
 	}
-	ConsoleDisplayPush( sMatches );
 
 	wsprintf( sMatches, "Total: %d  (#$%04X)", nFound, nFound );
 	ConsoleDisplayPush( sMatches );
 
-	vMemorySearch.erase( vMemorySearch.begin(), vMemorySearch.end() );
+	// g_vMemorySearchResults is cleared in DebugEnd()
+
 	return UPDATE_CONSOLE_DISPLAY;
+}
 
 
-_Help:
-	vMemorySearch.erase( vMemorySearch.begin(), vMemorySearch.end() );
-	return HelpLastCommand();
+//===========================================================================
+Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
+{
+	WORD nAddressStart;
+	WORD nAddressEnd;
+	_GetStartEnd( nAddressStart, nAddressEnd );
+
+	// S start,len #
+	int nMinLen = nArgs - 2;
+
+	bool bHaveWildCards = false;
+	int iArg;
+
+	MemorySearchValues_t vMemorySearchValues;
+	MemorySearch_e       tLastType = MEM_SEARCH_BYTE_N_WILD;
+	
+	// Get search "string"
+	Arg_t *pArg = & g_aArgs[ 2 ];
+	
+	WORD nTarget;
+	for (iArg = 2; iArg <= nArgs; iArg++, pArg++ )
+	{
+		MemorySearch_t ms;
+
+		nTarget = pArg->nVal1;
+		ms.m_nValue = nTarget & 0xFF;
+		ms.m_iType = MEM_SEARCH_BYTE_EXACT;
+
+		if (nTarget > 0xFF) // searching for 16-bit address
+		{
+			vMemorySearchValues.push_back( ms );
+			ms.m_nValue = (nTarget >> 8);
+
+			tLastType = ms.m_iType;
+		}
+		else
+		{
+			TCHAR *pByte = pArg->sArg;
+
+			
+			if (pArg->bType & TYPE_QUOTED_1)
+			{
+				ms.m_iType = MEM_SEARCH_BYTE_EXACT;
+				ms.m_bFound = false;
+				ms.m_nValue = pArg->sArg[ 0 ];
+
+				if (! bTextIsAscii) // NOTE: Single quote chars is opposite hi-bit !!!
+					ms.m_nValue &= 0x7F;
+				else
+					ms.m_nValue |= 0x80;
+			}
+			else
+			if (pArg->bType & TYPE_QUOTED_2)
+			{
+				// Convert string to hex byte(s)
+				int iChar = 0;
+				int nChars = pArg->nArgLen;
+
+				if (nChars)
+				{
+					ms.m_iType = MEM_SEARCH_BYTE_EXACT;
+					ms.m_bFound = false;
+
+					nChars--; // last char is handle in common case below
+					while (iChar < nChars)
+					{
+						ms.m_nValue = pArg->sArg[ iChar ];
+
+						// Ascii (Low-Bit)
+						// Apple (High-Bit)
+						if (bTextIsAscii)
+							ms.m_nValue &= 0x7F;
+						else
+							ms.m_nValue |= 0x80;
+
+						vMemorySearchValues.push_back( ms );
+						iChar++;
+					}
+
+					ms.m_nValue = pArg->sArg[ iChar ];
+				}
+			}
+			else
+			{
+				// must be numeric .. make sure not too big
+				if (pArg->nArgLen > 2)
+				{
+					vMemorySearchValues.erase( vMemorySearchValues.begin(), vMemorySearchValues.end() );
+					return HelpLastCommand();
+				}
+
+				if (pArg->nArgLen == 1)
+				{
+					if (pByte[0] == g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName[0]) // Hack: hard-coded one char token
+					{
+						ms.m_iType = MEM_SEARCH_BYTE_1_WILD;
+					}
+				}
+				else
+				{
+					if (pByte[0] == g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName[0]) // Hack: hard-coded one char token
+					{
+						ms.m_iType = MEM_SEARCH_NIB_LOW_EXACT;
+						ms.m_nValue = pArg->nVal1 & 0x0F;
+					}
+
+					if (pByte[1] == g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName[0]) // Hack: hard-coded one char token
+					{
+						if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
+						{
+							ms.m_iType = MEM_SEARCH_BYTE_N_WILD;
+						}
+						else
+						{
+							ms.m_iType = MEM_SEARCH_NIB_HIGH_EXACT;
+							ms.m_nValue = (pArg->nVal1 << 4) & 0xF0;
+						}
+					}
+				}
+			}
+		}
+
+		// skip over multiple byte_wild, since they are redundent
+		// xx ?? ?? xx
+		//       ^
+		//       redundant
+		if ((tLastType == MEM_SEARCH_BYTE_N_WILD) && (ms.m_iType == MEM_SEARCH_BYTE_N_WILD))
+			continue;
+
+		vMemorySearchValues.push_back( ms );
+		tLastType = ms.m_iType;
+	}
+
+	_SearchMemoryFind( vMemorySearchValues, nAddressStart, nAddressEnd );
+	vMemorySearchValues.erase( vMemorySearchValues.begin(), vMemorySearchValues.end() );
+
+	return _SearchMemoryDisplay();
+}
+
+
+//===========================================================================
+Update_t CmdMemorySearch (int nArgs)
+{
+	if (nArgs < 2)
+		return HelpLastCommand();
+
+	return _CmdMemorySearch( nArgs, true );
+
+	return UPDATE_CONSOLE_DISPLAY;
+}
+
+
+// Search for ASCII text (no Hi-Bit set)
+//===========================================================================
+Update_t CmdMemorySearchAscii (int nArgs)
+{
+	if (nArgs < 2)
+		return HelpLastCommand();
+
+	return _CmdMemorySearch( nArgs, true );
+}
+
+// Search for Apple text (Hi-Bit set)
+//===========================================================================
+Update_t CmdMemorySearchApple (int nArgs)
+{
+	if (nArgs < 2)
+		return HelpLastCommand();
+
+	return _CmdMemorySearch( nArgs, false );
 }
 
 //===========================================================================
-Update_t CmdMemorySearchText (int nArgs)
+Update_t CmdMemorySearchHex (int nArgs)
 {
-	WORD nAddrStart;
-	WORD nAddrEnd;
-	_GetStartEnd( nAddrStart, nAddrEnd );
+	if (nArgs < 2)
+		return HelpLastCommand();
 
-	return UPDATE_CONSOLE_DISPLAY;
+	return _CmdMemorySearch( nArgs, true );
 }
-
-
 
 
 // Registers ______________________________________________________________________________________
@@ -5773,28 +5865,28 @@ Update_t ExecuteCommand (int nArgs)
 // ________________________________________________________________________________________________
 
 //===========================================================================
-bool Get6502Targets (int *pTemp_, int *pFinal_, int * pBytes_)
+bool Get6502Targets ( WORD nAddress, int *pTargetPartial_, int *pTargetPointer_, int * pBytes_)
 {
 	bool bStatus = false;
 
-	if (! pTemp_)
+	if (! pTargetPartial_)
 		return bStatus;
 
-	if (! pFinal_)
+	if (! pTargetPointer_)
 		return bStatus;
 
 //	if (! pBytes_)
 //		return bStatus;
 
-	*pTemp_   = NO_6502_TARGET;
-	*pFinal_  = NO_6502_TARGET;
+	*pTargetPartial_   = NO_6502_TARGET;
+	*pTargetPointer_  = NO_6502_TARGET;
 
 	if (pBytes_)
 		*pBytes_  = 0;	
 
 	bStatus   = true;
 
-	WORD nAddress  = regs.pc;
+//	WORD nAddress  = regs.pc;
 	BYTE nOpcode   = *(LPBYTE)(mem + nAddress    );
 	BYTE nTarget8  = *(LPBYTE)(mem + nAddress + 1);
 	WORD nTarget16 = *(LPWORD)(mem + nAddress + 1);
@@ -5803,77 +5895,77 @@ bool Get6502Targets (int *pTemp_, int *pFinal_, int * pBytes_)
 
 	switch (eMode)
 	{
-		case ADDR_ABS:
-			*pFinal_ = nTarget16;
+		case AM_A: // $Absolute
+			*pTargetPointer_ = nTarget16;
 			if (pBytes_)
 				*pBytes_ = 2;
 			break;
 
-		case ADDR_ABSIINDX:
+		case AM_IAX: // Indexed (Absolute) Indirect
 			nTarget16 += regs.x;
-			*pTemp_    = nTarget16;
-			*pFinal_   = *(LPWORD)(mem + nTarget16);
+			*pTargetPartial_    = nTarget16;
+			*pTargetPointer_   = *(LPWORD)(mem + nTarget16);
 			if (pBytes_)
 				*pBytes_   = 2;
 			break;
 
-		case ADDR_ABSX:
+		case AM_AX: // Absolute, X
 			nTarget16 += regs.x;
-			*pFinal_   = nTarget16;
+			*pTargetPointer_   = nTarget16;
 			if (pBytes_)
 				*pBytes_   = 2;
 			break;
 
-		case ADDR_ABSY:
+		case AM_AY: // Absolute, Y
 			nTarget16 += regs.y;
-			*pFinal_   = nTarget16;
+			*pTargetPointer_   = nTarget16;
 			if (pBytes_)
 				*pBytes_   = 2;
 			break;
 
-		case ADDR_IABS:
-			*pTemp_    = nTarget16;
-			*pFinal_   = *(LPWORD)(mem + nTarget16);
+		case AM_NA: // Indirect (Absolute) i.e. JMP
+			*pTargetPartial_    = nTarget16;
+			*pTargetPointer_   = *(LPWORD)(mem + nTarget16);
 			if (pBytes_)
 				*pBytes_   = 2;
 			break;
 
-		case ADDR_INDX:
+		case AM_IZX: // Indexed (Zeropage Indirect, X)
 			nTarget8  += regs.x;
-			*pTemp_    = nTarget8;
-			*pFinal_   = *(LPWORD)(mem + nTarget8);
+			*pTargetPartial_    = nTarget8;
+			*pTargetPointer_   = *(LPWORD)(mem + nTarget8);
 			if (pBytes_)
 				*pBytes_   = 2;
 			break;
 
-		case ADDR_INDY:
-			*pTemp_    = nTarget8;
-			*pFinal_   = (*(LPWORD)(mem + nTarget8)) + regs.y;
+		case AM_NZY: // Indirect (Zeropage) Indexed, Y
+			*pTargetPartial_    = nTarget8;
+			*pTargetPointer_   = (*(LPWORD)(mem + nTarget8)) + regs.y;
 			if (pBytes_)
 				*pBytes_   = 1;
 			break;
 
-		case ADDR_IZPG:
-			*pTemp_    = nTarget8;
-			*pFinal_   = *(LPWORD)(mem + nTarget8);
+		case AM_NZ: // Indirect (Zeropage)
+			*pTargetPartial_    = nTarget8;
+			*pTargetPointer_   = *(LPWORD)(mem + nTarget8);
 			if (pBytes_)
 				*pBytes_   = 2;
 			break;
 
-		case ADDR_ZP:
-			*pFinal_   = nTarget8;
+		case AM_Z: // Zeropage
+			*pTargetPointer_   = nTarget8;
 			if (pBytes_)
 				*pBytes_   = 1;
 			break;
 
-		case ADDR_ZP_X:
-			*pFinal_   = nTarget8 + regs.x; // shouldn't this wrap around?
+		case AM_ZX: // Zeropage, X
+			*pTargetPointer_   = (nTarget8 + regs.x) & 0xFF; // .21 Bugfix: shouldn't this wrap around? Yes.
 			if (pBytes_)
 				*pBytes_   = 1;
 			break;
 
-		case ADDR_ZP_Y:
-			*pFinal_   = nTarget8 + regs.y; // shouldn't this wrap around?
+		case AM_ZY: // Zeropage, Y
+			*pTargetPointer_   = (nTarget8 + regs.y) & 0xFF; // .21 Bugfix: shouldn't this wrap around? Yes.
 			if (pBytes_)
 				*pBytes_   = 1;
 			break;
@@ -5891,18 +5983,19 @@ bool Get6502Targets (int *pTemp_, int *pFinal_, int * pBytes_)
 //	   (!_tcscmp(g_aOpcodes[*(mem+regs.pc)].mnemonic,TEXT("JSR")))))
 
 	// If 6502 is jumping, don't show byte [nAddressTarget]
-	if ((*pFinal_ >= 0) &&
-		((nOpcode == OPCODE_JSR        ) || // 0x20
-		 (nOpcode == OPCODE_JMP_ABS    ) || // 0x4C
-		 (nOpcode == OPCODE_JMP_IABS   ) || // 0x6C
-		 (nOpcode == OPCODE_JMP_ABSINDX)))  // 0x7C
+	if ((*pTargetPointer_ >= 0) &&
+		((nOpcode == OPCODE_JSR    ) || // 0x20
+		 (nOpcode == OPCODE_JMP_A  )))  // 0x4C
+//		 (nOpcode == OPCODE_JMP_NA ) || // 0x6C
+//		 (nOpcode == OPCODE_JMP_IAX)))  // 0x7C
 	{
-		*pFinal_ = NO_6502_TARGET;
+		*pTargetPointer_ = NO_6502_TARGET;
 		if (pBytes_)
 			*pBytes_ = 0;
 	}
 	return bStatus;
 }
+
 
 //===========================================================================
 bool InternalSingleStep ()
@@ -6295,10 +6388,10 @@ void DebugBegin ()
 	if (apple2e)
 		g_aOpcodes = & g_aOpcodes65C02[ 0 ]; // Enhanced Apple //e
 	else
-		g_aOpcodes = & g_aOpcodes6502[ 0 ]; // Original Apple ][
+		g_aOpcodes = & g_aOpcodes6502[ 0 ]; // Original Apple ][ ][+
 
-	g_aOpmodes[ ADDR_INVALID2 ].m_nBytes = apple2e ? 2 : 1;
-	g_aOpmodes[ ADDR_INVALID3 ].m_nBytes = apple2e ? 3 : 1;
+	g_aOpmodes[ AM_2 ].m_nBytes = apple2e ? 2 : 1;
+	g_aOpmodes[ AM_3 ].m_nBytes = apple2e ? 3 : 1;
 
 	g_nDisasmCurAddress = regs.pc;
 	DisasmCalcTopBotAddress();
@@ -6432,6 +6525,9 @@ void DebugEnd ()
 		fclose(g_hTraceFile);
 		g_hTraceFile = NULL;
 	}
+
+
+	g_vMemorySearchResults.erase( g_vMemorySearchResults.begin(), g_vMemorySearchResults.end() );
 }
 
 

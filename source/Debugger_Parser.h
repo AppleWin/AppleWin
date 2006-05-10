@@ -5,7 +5,8 @@
 	#define CHAR_CR     '\x0A'
 	#define CHAR_SPACE  ' '
 	#define CHAR_TAB    '\t'
-	#define CHAR_QUOTED '"' 
+	#define CHAR_QUOTE_DOUBLE '"' 
+	#define CHAR_QUOTE_SINGLE '\''
 	#define CHAR_ESCAPE '\x1B'
 
 // Globals __________________________________________________________________
@@ -22,7 +23,8 @@
 	extern	const TCHAR TCHAR_CR    ;//= 0x0A;
 	extern	const TCHAR TCHAR_SPACE ;//= TEXT(' ');
 	extern	const TCHAR TCHAR_TAB   ;//= TEXT('\t');
-	extern	const TCHAR TCHAR_QUOTED;//= TEXT('"' );
+	extern	const TCHAR TCHAR_QUOTE_DOUBLE;
+	extern	const TCHAR TCHAR_QUOTE_SINGLE;
 
 // Prototypes _______________________________________________________________
 

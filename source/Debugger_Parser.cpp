@@ -39,16 +39,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	const TCHAR TCHAR_CR     = TEXT('\x0A');
 	const TCHAR TCHAR_SPACE  = TEXT(' ');
 	const TCHAR TCHAR_TAB    = TEXT('\t');
-	const TCHAR TCHAR_QUOTED = TEXT('"');
+//	const TCHAR TCHAR_QUOTED = TEXT('"');
+	const TCHAR TCHAR_QUOTE_DOUBLE = TEXT('"');
+	const TCHAR TCHAR_QUOTE_SINGLE = TEXT('\'');
 	const TCHAR TCHAR_ESCAPE = TEXT('\x1B');
 
 
-	// NOTE: Token_e and g_aTokens must match!
+	// NOTE: ArgToken_e and g_aTokens must match!
 	const TokenTable_t g_aTokens[ NUM_TOKENS ] =
 	{ // Input
 		{ TOKEN_ALPHANUMERIC, TYPE_STRING  , 0          }, // Default, if doen't match anything else
 		{ TOKEN_AMPERSAND   , TYPE_OPERATOR, TEXT('&')  }, // bit-and
-//		{ TOKEN_AT          , TYPE_OPERATOR, TEXT('@')  }, // force Register? or PointerDeref?
+		{ TOKEN_AT          , TYPE_OPERATOR, TEXT('@')  }, // reference results 
 		{ TOKEN_BSLASH      , TYPE_OPERATOR, TEXT('\\') },
 		{ TOKEN_CARET       , TYPE_OPERATOR, TEXT('^')  }, // bit-eor, C/C++: xor, Math: POWER
 		{ TOKEN_COLON       , TYPE_OPERATOR, TEXT(':')  }, 
@@ -66,7 +68,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{ TOKEN_PIPE        , TYPE_OPERATOR, TEXT('|')  }, // bit-or
 		{ TOKEN_PLUS        , TYPE_OPERATOR, TEXT('+')  }, // add
 //		{ TOKEN_QUESTION    , TYPE_OPERATOR, TEXT('?')  }, // Not a token 1) wildcard needs to stay together with other chars
-		{ TOKEN_QUOTED      , TYPE_QUOTED  , TEXT('"')  },
+		{ TOKEN_QUOTE_SINGLE, TYPE_QUOTED_1, TEXT('\'') },
+		{ TOKEN_QUOTE_DOUBLE, TYPE_QUOTED_2, TEXT('"')  }, // for strings
 		{ TOKEN_RIGHT_PAREN , TYPE_OPERATOR, TEXT(')')  },
 		{ TOKEN_SEMI        , TYPE_STRING  , TEXT(';')  },
 		{ TOKEN_SPACE       , TYPE_STRING  , TEXT(' ')  } // space is also a delimiter between tokens/args
@@ -240,10 +243,16 @@ int	ArgsGet ( TCHAR * pInput )
 				// TODO - command seperator, must handle non-quoted though!
 			}
 
-			if (iTokenSrc == TOKEN_QUOTED)
+			if (iTokenSrc == TOKEN_QUOTE_DOUBLE)
 			{
 				pSrc++; // Don't store start of quote
-				pEnd = SkipUntilChar( pSrc, CHAR_QUOTED );
+				pEnd = SkipUntilChar( pSrc, CHAR_QUOTE_DOUBLE );
+			}
+			else
+			if (iTokenSrc == TOKEN_QUOTE_SINGLE)
+			{
+				pSrc++; // Don't store start of quote
+				pEnd = SkipUntilChar( pSrc, CHAR_QUOTE_SINGLE );
 			}
 
 			if (pEnd)
@@ -260,8 +269,18 @@ int	ArgsGet ( TCHAR * pInput )
 				pArg->eToken       = iTokenSrc;
 				pArg->bType        = iType;
 
-				if (iTokenSrc == TOKEN_QUOTED)
+				if (iTokenSrc == TOKEN_QUOTE_DOUBLE)
 				{
+					pEnd++; 
+				}
+				else
+				if (iTokenSrc == TOKEN_QUOTE_SINGLE)
+				{
+					if (nLen > 1)
+					{
+						// Technically, chars aren't allowed to be multi-char
+					}
+
 					pEnd++; 
 				}
 
@@ -588,12 +607,29 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					nParamLen = 0; // need token for Smart BreakPoints
 				}					
 
-				if (bProcessMask & (1 << TOKEN_HASH))
-				if (pArg->eToken == TOKEN_HASH) // HASH    # immediate
+				if (bProcessMask & (1 << TOKEN_AT))
+				if (pArg->eToken == TOKEN_AT) // AT @ pointer de-reference
 				{
+					nParamLen = 1;
 					_Arg_Shift( iArg + nParamLen, nArgs, iArg );
 					nArg--;
 
+					pArg->nVal1   = 0; // nAddressRHS;
+					pArg->bSymbol = false;
+
+					int nPointers = g_vMemorySearchResults.size();
+					if ((nPointers) &&
+						(nAddressRHS < nPointers))
+					{
+						pArg->nVal1   = g_vMemorySearchResults.at( nAddressRHS );
+						pArg->bType   = TYPE_VALUE | TYPE_ADDRESS | TYPE_NO_REG | TYPE_NO_SYM;
+					}
+					nParamLen = 0;
+				}
+				
+				if (bProcessMask & (1 << TOKEN_HASH))
+				if (pArg->eToken == TOKEN_HASH) // HASH    # immediate
+				{
 					pArg->nVal1   = nAddressRHS;
 					pArg->bSymbol = false;
 					pArg->bType   = TYPE_VALUE | TYPE_ADDRESS | TYPE_NO_REG | TYPE_NO_SYM;

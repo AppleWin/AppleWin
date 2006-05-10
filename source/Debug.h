@@ -62,6 +62,9 @@ using namespace std;
 // Memory
 	extern MemoryDump_t g_aMemDump[ NUM_MEM_DUMPS ];
 
+//	extern MemorySearchArray_t g_vMemSearchMatches;
+	extern vector<int> g_vMemorySearchResults;
+
 // Source Level Debugging
 	extern TCHAR  g_aSourceFileName[ MAX_PATH ];
 	extern MemoryTextFile_t g_AssemblerSourceBuffer;
@@ -106,7 +109,7 @@ using namespace std;
 	LPCTSTR FindSymbolFromAddress (WORD nAdress, int * iTable_ = NULL );
 	LPCTSTR GetSymbol   (WORD nAddress, int nBytes);
 
-	bool Get6502Targets (int *pTemp_, int *pFinal_, int *pBytes_ );
+	bool Get6502Targets ( WORD nAddress, int *pTemp_, int *pFinal_, int *pBytes_ );
 
 	Update_t DebuggerProcessCommand( const bool bEchoConsoleInput );
 
