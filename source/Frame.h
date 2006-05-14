@@ -2,7 +2,7 @@
 
 enum {NOT_ASCII=0, ASCII};
 
-extern HWND       framewindow;
+extern HWND       g_hFrameWindow;
 extern BOOL       fullscreen;
 
 void    FrameCreateWindow ();

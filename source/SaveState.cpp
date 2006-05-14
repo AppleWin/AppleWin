@@ -152,7 +152,7 @@ void Snapshot_LoadState()
 	}
 	catch(int)
 	{
-		MessageBox(	framewindow,
+		MessageBox(	g_hFrameWindow,
 					szMessage,
 					TEXT("Load State"),
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);

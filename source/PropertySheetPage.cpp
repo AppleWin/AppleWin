@@ -244,7 +244,7 @@ static void ConfigDlg_OK(HWND window, BOOL afterclose)
 	//
 
 	if (afterclose)
-		PostMessage(framewindow,afterclose,0,0);
+		PostMessage(g_hFrameWindow,afterclose,0,0);
 }
 
 static void ConfigDlg_CANCEL(HWND window)
@@ -423,7 +423,7 @@ static void InputDlg_OK(HWND window, BOOL afterclose)
 	//
 
 	if (afterclose)
-		PostMessage(framewindow,afterclose,0,0);
+		PostMessage(g_hFrameWindow,afterclose,0,0);
 }
 
 static void InputDlg_CANCEL(HWND window)
@@ -558,7 +558,7 @@ static void SoundDlg_OK(HWND window, BOOL afterclose, UINT uNewSoundcardType)
 	//
 
 	if (afterclose)
-		PostMessage(framewindow,afterclose,0,0);
+		PostMessage(g_hFrameWindow,afterclose,0,0);
 }
 
 static void SoundDlg_CANCEL(HWND window)
@@ -694,7 +694,7 @@ static void SaveStateDlg_OK(HWND window, BOOL afterclose)
 	//
 
 	if (afterclose)
-		PostMessage(framewindow,afterclose,0,0);
+		PostMessage(g_hFrameWindow,afterclose,0,0);
 }
 
 static void SaveStateDlg_CANCEL(HWND window)
@@ -855,7 +855,7 @@ static void DiskDlg_OK(HWND window, BOOL afterclose)
 	//
 
 	if (afterclose)
-		PostMessage(framewindow,afterclose,0,0);
+		PostMessage(g_hFrameWindow,afterclose,0,0);
 }
 
 static void DiskDlg_CANCEL(HWND window)
@@ -1228,7 +1228,7 @@ void PSP_Init()
 
 	PropSheetHeader.dwSize = sizeof(PROPSHEETHEADER);
 	PropSheetHeader.dwFlags = PSH_NOAPPLYNOW | /* PSH_NOCONTEXTHELP | */ PSH_PROPSHEETPAGE;
-	PropSheetHeader.hwndParent = framewindow;
+	PropSheetHeader.hwndParent = g_hFrameWindow;
 	PropSheetHeader.pszCaption = "AppleWin Configuration";
 	PropSheetHeader.nPages = PG_NUM_SHEETS;
 	PropSheetHeader.nStartPage = g_nLastPage;

@@ -619,7 +619,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	// Initialize COM
 	CoInitialize( NULL );
 	SysClk_InitTimer();
-//	DSInit();	// Done when framewindow is created (WM_CREATE)
+//	DSInit();	// Done when g_hFrameWindow is created (WM_CREATE)
 
 	// DO ONE-TIME INITIALIZATION
 	instance = passinstance;
@@ -662,15 +662,15 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
     
 		if(bSetFullScreen)
 		{
-			PostMessage(framewindow, WM_KEYDOWN, VK_F1+BTN_FULLSCR, 0);
-			PostMessage(framewindow, WM_KEYUP,   VK_F1+BTN_FULLSCR, 0);
+			PostMessage(g_hFrameWindow, WM_KEYDOWN, VK_F1+BTN_FULLSCR, 0);
+			PostMessage(g_hFrameWindow, WM_KEYUP,   VK_F1+BTN_FULLSCR, 0);
 			bSetFullScreen = false;
 		}
 
 		if(bBoot)
 		{
-			PostMessage(framewindow, WM_KEYDOWN, VK_F1+BTN_RUN, 0);
-			PostMessage(framewindow, WM_KEYUP,   VK_F1+BTN_RUN, 0);
+			PostMessage(g_hFrameWindow, WM_KEYDOWN, VK_F1+BTN_RUN, 0);
+			PostMessage(g_hFrameWindow, WM_KEYUP,   VK_F1+BTN_RUN, 0);
 			bBoot = false;
 		}
 
