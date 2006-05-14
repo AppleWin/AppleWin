@@ -80,7 +80,7 @@
 	*/
 	enum AddressingMode_e // ADDRESSING_MODES_e
 	{
-		  AM_IMPLIED
+		  AM_IMPLIED // Note: SetDebugBreakOnInvalid() assumes this order of first 4 entries
 		, AM_1    //    Invalid 1 Byte
 		, AM_2    //    Invalid 2 Bytes
 		, AM_3    //    Invalid 3 Bytes
@@ -387,6 +387,8 @@
 // Main / CPU
 		  CMD_ASSEMBLE
 		, CMD_UNASSEMBLE
+		, CMD_BREAK_INVALID
+		, CMD_BREAK_OPCODE
 		, CMD_CALC
 		, CMD_GO
 		, CMD_INPUT
@@ -590,20 +592,22 @@
 
 
 // CPU
-	Update_t CmdAssemble   (int nArgs);
-	Update_t CmdUnassemble (int nArgs); // code dump, aka, Unassemble
-	Update_t CmdCalculator (int nArgs);
-	Update_t CmdGo         (int nArgs);
-	Update_t CmdInput      (int nArgs);
-	Update_t CmdJSR        (int nArgs);
-	Update_t CmdNOP        (int nArgs);
-	Update_t CmdOutput     (int nArgs);
-	Update_t CmdFeedKey    (int nArgs);
-	Update_t CmdStepOut    (int nArgs);
-	Update_t CmdStepOver   (int nArgs);
-	Update_t CmdTrace      (int nArgs);  // alias for CmdStepIn
-	Update_t CmdTraceFile  (int nArgs);
-	Update_t CmdTraceLine  (int nArgs);
+	Update_t CmdAssemble    (int nArgs);
+	Update_t CmdUnassemble  (int nArgs); // code dump, aka, Unassemble
+	Update_t CmdBreakInvalid(int nArgs); // Breakpoint IFF Full-speed!
+	Update_t CmdBreakOpcode (int nArgs); // Breakpoint IFF Full-speed!
+	Update_t CmdCalculator  (int nArgs);
+	Update_t CmdGo          (int nArgs);
+	Update_t CmdInput       (int nArgs);
+	Update_t CmdJSR         (int nArgs);
+	Update_t CmdNOP         (int nArgs);
+	Update_t CmdOutput      (int nArgs);
+	Update_t CmdFeedKey     (int nArgs);
+	Update_t CmdStepOut     (int nArgs);
+	Update_t CmdStepOver    (int nArgs);
+	Update_t CmdTrace       (int nArgs);  // alias for CmdStepIn
+	Update_t CmdTraceFile   (int nArgs);
+	Update_t CmdTraceLine   (int nArgs);
 
 // Breakpoints
 	Update_t CmdBreakpointMenu    (int nArgs);

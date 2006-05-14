@@ -51,6 +51,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Breakpoints ________________________________________________________________
 
+	// Full-Speed debugging
+	int g_nDebugOnBreakInvalid = 0;
+	int g_iDebugOnOpcode       = 0;
+
 	int          g_nBreakpoints = 0;
 	Breakpoint_t g_aBreakpoints[ NUM_BREAKPOINTS ];
 
@@ -124,6 +128,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// CPU (Main)
 		{TEXT("A")           , CmdAssemble          , CMD_ASSEMBLE             , "Assemble instructions"      },
 		{TEXT("U")           , CmdUnassemble        , CMD_UNASSEMBLE           , "Disassemble instructions"   },
+		{TEXT("BRK")         , CmdBreakInvalid      , CMD_BREAK_INVALID        , "Enter debugger on BRK or INVALID" },
+		{TEXT("BRKOP")       , CmdBreakOpcode       , CMD_BREAK_OPCODE         , "Enter debugger on opcode"   },
 		{TEXT("CALC")        , CmdCalculator        , CMD_CALC                 , "Display mini calc result"   },
 		{TEXT("GOTO")        , CmdGo                , CMD_GO                   , "Run [until PC = address]"   },
 		{TEXT("I")           , CmdInput             , CMD_INPUT                , "Input from IO $C0xx"        },
@@ -832,6 +838,144 @@ LPCTSTR FormatAddress( WORD nAddress, int nBytes )
 // Breakpoints ____________________________________________________________________________________
 
 
+//===========================================================================
+Update_t CmdBreakInvalid (int nArgs) // Breakpoint IFF Full-speed!
+{
+	if ((nArgs > 2) || (nArgs == 0))
+		goto _Help;
+
+	int iType = 0; // default to BRK
+	int nActive;
+
+//	if (nArgs == 2)
+	iType = g_aArgs[ 1 ].nVal1;
+
+	// Cases:
+	// 0.  CMD            // display
+	// 1a. CMD #          // display
+	// 1b. CMD ON | OFF   //set      
+	// 1c. CMD ?          // error
+	// 2a. CMD # ON | OFF // set
+	// 2b. CMD # ?        // error
+	TCHAR sText[ CONSOLE_WIDTH ];
+	bool bValidParam = true;
+
+	int iParamArg = nArgs;
+	int iParam;
+	int nFound = FindParam( g_aArgs[ iParamArg ].sArg, MATCH_EXACT, iParam, _PARAM_GENERAL_BEGIN, _PARAM_GENERAL_END );
+
+	if (nFound)
+	{
+		if (iParam == PARAM_ON)
+			nActive = 1;
+		else
+		if (iParam == PARAM_OFF)
+			nActive = 0;
+		else
+			bValidParam = false;
+	}
+	else
+		bValidParam = false;
+
+	if (nArgs == 1)
+	{
+		if (! nFound) // bValidParam) // case 1a or 1c
+		{
+			if ((iType < 0) || (iType > AM_3))
+				goto _Help;
+
+			if (IsDebugBreakOnInvalid( iType ))
+				iParam = PARAM_ON;
+			else
+				iParam = PARAM_OFF;
+		}
+		else // case 1b
+		{
+			SetDebugBreakOnInvalid( iType, nActive );
+		}
+		
+		if (iType == 0)
+			wsprintf( sText, TEXT("Enter debugger on BRK opcode: %s"), g_aParameters[ iParam ].m_sName );
+		else
+			wsprintf( sText, TEXT("Enter debugger on INVALID %1X opcode: %s"), iType, g_aParameters[ iParam ].m_sName );
+		ConsoleBufferPush( sText );
+		return ConsoleUpdate();
+ 	}
+	else	
+	if (nArgs == 2)
+	{
+		if (! bValidParam) // case 2b
+		{
+			goto _Help;
+		}
+		else // case 2a (or not 2b ;-)
+		{
+			if ((iType < 0) || (iType > AM_3))
+				goto _Help;
+
+			SetDebugBreakOnInvalid( iType, nActive );
+
+			if (iType == 0)
+				wsprintf( sText, TEXT("Enter debugger on BRK opcode: %s"), g_aParameters[ iParam ].m_sName );
+			else
+				wsprintf( sText, TEXT("Enter debugger on INVALID %1X opcode: %s"), iType, g_aParameters[ iParam ].m_sName );
+			ConsoleBufferPush( sText );
+			return ConsoleUpdate();
+		}
+ 	}
+
+	return UPDATE_CONSOLE_DISPLAY;
+
+_Help:
+		return HelpLastCommand();
+}
+
+
+//===========================================================================
+Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
+{
+	TCHAR sText[ CONSOLE_WIDTH ];
+
+	if (nArgs > 1)
+		return HelpLastCommand();
+
+	TCHAR sAction[ CONSOLE_WIDTH ] = TEXT("Current"); // default to display
+
+	if (nArgs == 1)
+	{
+		int iOpcode = g_aArgs[ 1] .nVal1;
+		g_iDebugOnOpcode = iOpcode & 0xFF;
+
+		_tcscpy( sAction, TEXT("Setting") );
+
+		if (iOpcode >= NUM_OPCODES)
+		{
+			wsprintf( sText, TEXT("Warning: clamping opcode: %02X"), g_iDebugOnOpcode );
+			ConsoleBufferPush( sText );
+			return ConsoleUpdate();
+		}
+	}
+
+	if (g_iDebugOnOpcode == 0)
+		// Show what the current break opcode is
+		wsprintf( sText, TEXT("%s break on opcode: None")
+			, sAction
+			, g_iDebugOnOpcode
+			, g_aOpcodes65C02[ g_iDebugOnOpcode ].sMnemonic
+		);
+	else
+		// Show what the current break opcode is
+		wsprintf( sText, TEXT("%s break on opcode: %02X %s")
+			, sAction
+			, g_iDebugOnOpcode
+			, g_aOpcodes65C02[ g_iDebugOnOpcode ].sMnemonic
+		);
+
+	ConsoleBufferPush( sText );
+	return ConsoleUpdate();
+}
+
+
 // bool bBP = g_nBreakpoints && CheckBreakpoint(nOffset,nOffset == regs.pc);
 //===========================================================================
 bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakpointEnable_ )
@@ -1172,6 +1316,7 @@ Update_t CmdCalculator (int nArgs)
 	ConsoleBufferPush( sText );
 	return ConsoleUpdate();
 }
+
 
 //===========================================================================
 Update_t CmdFeedKey (int nArgs)
@@ -2479,7 +2624,7 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
 				"\tLen: %04X\n"
 				"\tMissed: %04X"),
 				g_nDisasmCurAddress - nLen, nLen, g_nDisasmCurAddress );
-			MessageBox( framewindow, sText, "ERROR", MB_OK );
+			MessageBox( g_hFrameWindow, sText, "ERROR", MB_OK );
 #endif
 	}
  }
@@ -4951,7 +5096,7 @@ void _CmdColorGet( const int iScheme, const int iColor )
 	{
 		TCHAR sText[ CONSOLE_WIDTH ];
 		wsprintf( sText, "Color: %d\nOut of range!", iColor );
-		MessageBox( framewindow, sText, TEXT("ERROR"), MB_OK );
+		MessageBox( g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
 	}
 }
 
@@ -6705,13 +6850,13 @@ void DebugInitialize ()
 	if (_tcscmp( g_aCommands[ NUM_COMMANDS ].m_sName, TEXT(__COMMANDS_VERIFY_TXT__)))
 	{
 		wsprintf( sText, "*** ERROR *** Commands mis-matched!" );
-		MessageBox( framewindow, sText, TEXT("ERROR"), MB_OK );
+		MessageBox( g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
 	}
 
 	if (_tcscmp( g_aParameters[ NUM_PARAMS ].m_sName, TEXT(__PARAMS_VERIFY_TXT__)))
 	{
 		wsprintf( sText, "*** ERROR *** Parameters mis-matched!" );
-		MessageBox( framewindow, sText, TEXT("ERROR"), MB_OK );
+		MessageBox( g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
 	}
 
 	// Check all summary help to see if it fits within the console
