@@ -6882,6 +6882,9 @@ void DebugInitialize ()
 	CmdMOTD(0);
 }
 
+// wparam = 0x16
+// lparam = 0x002f 0x0001
+// insert = VK_INSERT
 
 // Add character to the input line
 //===========================================================================
@@ -6928,6 +6931,70 @@ void DebuggerInputConsoleChar( TCHAR ch )
 		HDC dc = FrameGetDC();
 		DrawConsoleInput( dc );
 		FrameReleaseDC();
+	}
+	else
+	if (ch == 0x16) // HACK: Ctrl-V.  WTF!?
+	{
+		// Clipboard paste
+
+        if (!IsClipboardFormatAvailable(CF_TEXT)) 
+            return; 
+
+        if (!OpenClipboard( g_hFrameWindow )) 
+            return; 
+ 
+		HGLOBAL hClipboard;
+		LPTSTR  pData;
+
+        hClipboard = GetClipboardData(CF_TEXT); 
+        if (hClipboard != NULL) 
+        { 
+            pData = (char*) GlobalLock(hClipboard); 
+            if (pData != NULL) 
+            { 
+				LPTSTR pSrc = pData;
+				char c;
+
+				while (true)
+				{
+					c = *pSrc++;
+
+					if (! c)
+						break;
+
+					if (c == CHAR_CR)
+					{
+#if WIN32						
+						// Eat char
+#endif
+#if MACOSX
+						#pragma error( "TODO: Mac port - handle CR/LF")
+#endif
+					}
+					else
+					if (c == CHAR_LF)
+					{
+#if WIN32						
+						DebuggerProcessCommand( true );	
+#endif
+#if MACOSX
+						#pragma error( "TODO: Mac port - handle CR/LF")
+#endif
+					}
+					else
+					{
+						// If we didn't want verbatim, we could do:
+						// DebuggerInputConsoleChar( c );
+						if ((c >= CHAR_SPACE) && (c <= 126)) // HACK MAGIC # 32 -> ' ', # 126 
+							ConsoleInputChar( c );
+					}
+				}
+                GlobalUnlock(hClipboard); 
+            } 
+        } 
+        CloseClipboard(); 
+ 
+		UpdateDisplay( UPDATE_CONSOLE_DISPLAY );
 	}
 }
 
@@ -7067,6 +7134,34 @@ void DebuggerProcessKey( int keycode )
 		bUpdateDisplay |= UPDATE_ALL;
 		g_bConsoleInputSkip = true; // don't pass to DebugProcessChar()
 	}
+
+
+// Clipboard support
+/*
+	if (!IsClipboardFormatAvailable(CF_TEXT))
+		return;
+	
+	if (!OpenClipboard(g_hFrameWindow))
+		return;
+	
+	hglb = GetClipboardData(CF_TEXT);
+	if (hglb == NULL)
+	{	
+		CloseClipboard();
+		return;
+	}
+
+	lptstr = (char*) GlobalLock(hglb);
+	if (lptstr == NULL)
+	{	
+		CloseClipboard();
+		return;
+	}
+*/
+//	else if (keycode == )
+//	{
+//	}
+
 	else
 	{	
 		switch (keycode)
