@@ -69,7 +69,7 @@ static int     buttony         = BUTTONY;
 static HRGN    clipregion      = (HRGN)0;
 static HDC     framedc         = (HDC)0;
 static RECT    framerect       = {0,0,0,0};
-HWND    framewindow     = (HWND)0;
+HWND    g_hFrameWindow     = (HWND)0;
 BOOL    fullscreen      = 0;
 static BOOL    helpquit        = 0;
 static BOOL    painting        = 0;
@@ -173,7 +173,7 @@ void DrawBitmapRect (HDC dc, int x, int y, LPRECT rect, HBITMAP bitmap) {
 //===========================================================================
 void DrawButton (HDC passdc, int number) {
   FrameReleaseDC();
-  HDC dc = (passdc ? passdc : GetDC(framewindow));
+  HDC dc = (passdc ? passdc : GetDC(g_hFrameWindow));
   int x  = buttonx;
   int y  = buttony+number*BUTTONCY;
   if (number == buttondown) {
@@ -205,7 +205,7 @@ void DrawButton (HDC passdc, int number) {
                NULL);
   }
   if (!passdc)
-    ReleaseDC(framewindow,dc);
+    ReleaseDC(g_hFrameWindow,dc);
 }
 
 //===========================================================================
@@ -213,7 +213,7 @@ void DrawCrosshairs (int x, int y) {
   static int lastx = 0;
   static int lasty = 0;
   FrameReleaseDC();
-  HDC dc = GetDC(framewindow);
+  HDC dc = GetDC(g_hFrameWindow);
 #define LINE(x1,y1,x2,y2) MoveToEx(dc,x1,y1,NULL); LineTo(dc,x2,y2);
 
   // ERASE THE OLD CROSSHAIRS
@@ -275,15 +275,15 @@ void DrawCrosshairs (int x, int y) {
 #undef LINE
   lastx = x;
   lasty = y;
-  ReleaseDC(framewindow,dc);
+  ReleaseDC(g_hFrameWindow,dc);
 }
 
 //===========================================================================
 void DrawFrameWindow () {
   FrameReleaseDC();
   PAINTSTRUCT ps;
-  HDC         dc = (painting ? BeginPaint(framewindow,&ps)
-                             : GetDC(framewindow));
+  HDC         dc = (painting ? BeginPaint(g_hFrameWindow,&ps)
+                             : GetDC(g_hFrameWindow));
   VideoRealizePalette(dc);
 
   if (!fullscreen) {
@@ -314,9 +314,9 @@ void DrawFrameWindow () {
   // DRAW THE STATUS AREA
   DrawStatusArea(dc,DRAW_BACKGROUND | DRAW_LEDS);
   if (painting)
-    EndPaint(framewindow,&ps);
+    EndPaint(g_hFrameWindow,&ps);
   else
-    ReleaseDC(framewindow,dc);
+    ReleaseDC(g_hFrameWindow,dc);
 
   // DRAW THE CONTENTS OF THE EMULATED SCREEN
   if (mode == MODE_LOGO)
@@ -330,7 +330,7 @@ void DrawFrameWindow () {
 //===========================================================================
 void DrawStatusArea (HDC passdc, int drawflags) {
   FrameReleaseDC();
-  HDC  dc     = (passdc ? passdc : GetDC(framewindow));
+  HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
   int  x      = buttonx;
   int  y      = buttony+BUTTONS*BUTTONCY+1;
   int  iDrive1Status = DISK_STATUS_OFF;
@@ -389,7 +389,7 @@ void DrawStatusArea (HDC passdc, int drawflags) {
         case MODE_PAUSED:   _tcscat(title,TEXT(" [Paused]"));    break;
         case MODE_STEPPING: _tcscat(title,TEXT(" [Stepping]"));  break;
       }
-      SendMessage(framewindow,WM_SETTEXT,0,(LPARAM)title);
+      SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)title);
     }
 	if (drawflags & DRAW_BUTTON_DRIVES)
 	{
@@ -398,7 +398,7 @@ void DrawStatusArea (HDC passdc, int drawflags) {
 	}
   }
   if (!passdc)
-    ReleaseDC(framewindow,dc);
+    ReleaseDC(g_hFrameWindow,dc);
 }
 
 //===========================================================================
@@ -408,7 +408,7 @@ void EraseButton (int number) {
   rect.right  = rect.left+BUTTONCX;
   rect.top    = buttony+number*BUTTONCY;
   rect.bottom = rect.top+BUTTONCY;
-  InvalidateRect(framewindow,&rect,1);
+  InvalidateRect(g_hFrameWindow,&rect,1);
 }
 
 //===========================================================================
@@ -454,7 +454,7 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
       break;
 
     case WM_CREATE:
-      framewindow = window;
+      g_hFrameWindow = window;
       CreateGdiObjects();
 	  DSInit();
       MB_Initialize();
@@ -813,7 +813,7 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
 
     case WM_USER_BENCHMARK: {
       if (mode != MODE_LOGO)
-        if (MessageBox(framewindow,
+        if (MessageBox(g_hFrameWindow,
                        TEXT("Running the benchmarks will reset the state of ")
                        TEXT("the emulated machine, causing you to lose any ")
                        TEXT("unsaved work.\n\n")
@@ -836,7 +836,7 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
 	  // . Changed Apple computer type (][+ or //e)
 	  // . Changed disk speed (normal or enhanced)
       if (mode != MODE_LOGO)
-        if (MessageBox(framewindow,
+        if (MessageBox(g_hFrameWindow,
                        TEXT("Restarting the emulator will reset the state ")
                        TEXT("of the emulated machine, causing you to lose any ")
                        TEXT("unsaved work.\n\n")
@@ -873,7 +873,7 @@ void ProcessButtonClick (int button) {
         TCHAR filename[MAX_PATH];
         _tcscpy(filename,progdir);
         _tcscat(filename,TEXT("APPLEWIN.CHM"));
-        HtmlHelp(framewindow,filename,HH_DISPLAY_TOC,0);
+        HtmlHelp(g_hFrameWindow,filename,HH_DISPLAY_TOC,0);
         helpquit = 1;
       }
       break;
@@ -995,7 +995,7 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
   if (fullscreen)
     return;
   MSG msg;
-  msg.hwnd    = framewindow;
+  msg.hwnd    = g_hFrameWindow;
   msg.message = message;
   msg.wParam  = wparam;
   msg.lParam  = lparam;
@@ -1026,20 +1026,20 @@ void SetFullScreenMode () {
   buttony    = FSBUTTONY;
   viewportx  = FSVIEWPORTX;
   viewporty  = FSVIEWPORTY;
-  GetWindowRect(framewindow,&framerect);
-  SetWindowLong(framewindow,GWL_STYLE,WS_POPUP | WS_SYSMENU | WS_VISIBLE);
+  GetWindowRect(g_hFrameWindow,&framerect);
+  SetWindowLong(g_hFrameWindow,GWL_STYLE,WS_POPUP | WS_SYSMENU | WS_VISIBLE);
   DDSURFACEDESC ddsd;
   ddsd.dwSize = sizeof(ddsd);
   ddsd.dwFlags = DDSD_CAPS;
   ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
   if (DirectDrawCreate(NULL,&directdraw,NULL) != DD_OK ||
-      directdraw->SetCooperativeLevel(framewindow,DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN) != DD_OK ||
+      directdraw->SetCooperativeLevel(g_hFrameWindow,DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN) != DD_OK ||
       directdraw->SetDisplayMode(640,480,8) != DD_OK ||
       directdraw->CreateSurface(&ddsd,&surface,NULL) != DD_OK) {
     SetNormalMode();
     return;
   }
-  InvalidateRect(framewindow,NULL,1);
+  InvalidateRect(g_hFrameWindow,NULL,1);
 }
 
 //===========================================================================
@@ -1052,10 +1052,10 @@ void SetNormalMode () {
   viewporty  = VIEWPORTY;
   directdraw->RestoreDisplayMode();
   directdraw->SetCooperativeLevel(NULL,DDSCL_NORMAL);
-  SetWindowLong(framewindow,GWL_STYLE,
+  SetWindowLong(g_hFrameWindow,GWL_STYLE,
                 WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
                 WS_VISIBLE);
-  SetWindowPos(framewindow,0,framerect.left,
+  SetWindowPos(g_hFrameWindow,0,framerect.left,
                              framerect.top,
                              framerect.right - framerect.left,
                              framerect.bottom - framerect.top,
@@ -1074,18 +1074,18 @@ void SetUsingCursor (BOOL newvalue) {
     return;
   usingcursor = newvalue;
   if (usingcursor) {
-    SetCapture(framewindow);
+    SetCapture(g_hFrameWindow);
     RECT rect = {viewportx+2,
                  viewporty+2,
                  viewportx+VIEWPORTCX-1,
                  viewporty+VIEWPORTCY-1};
-    ClientToScreen(framewindow,(LPPOINT)&rect.left);
-    ClientToScreen(framewindow,(LPPOINT)&rect.right);
+    ClientToScreen(g_hFrameWindow,(LPPOINT)&rect.left);
+    ClientToScreen(g_hFrameWindow,(LPPOINT)&rect.right);
     ClipCursor(&rect);
     ShowCursor(0);
     POINT pt;
     GetCursorPos(&pt);
-    ScreenToClient(framewindow,&pt);
+    ScreenToClient(g_hFrameWindow,&pt);
     DrawCrosshairs(pt.x,pt.y);
   }
   else {
@@ -1116,7 +1116,7 @@ void FrameCreateWindow () {
   int ypos;
   if (!RegLoadValue(TEXT("Preferences"),TEXT("Window Y-Position"),1,(DWORD *)&ypos))
     ypos = (GetSystemMetrics(SM_CYSCREEN)-height) >> 1;
-  framewindow = CreateWindow(TEXT("APPLE2FRAME"),apple2e ? TITLE
+  g_hFrameWindow = CreateWindow(TEXT("APPLE2FRAME"),apple2e ? TITLE
                                                          : TEXT("Apple ][+ Emulator"),
                              WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
                              WS_VISIBLE,
@@ -1125,11 +1125,11 @@ void FrameCreateWindow () {
   InitCommonControls();
   tooltipwindow = CreateWindow(TOOLTIPS_CLASS,NULL,TTS_ALWAYSTIP, 
                                CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT, 
-                               framewindow,(HMENU)0,instance,NULL); 
+                               g_hFrameWindow,(HMENU)0,instance,NULL); 
   TOOLINFO toolinfo;
   toolinfo.cbSize = sizeof(toolinfo);
   toolinfo.uFlags = TTF_CENTERTIP;
-  toolinfo.hwnd = framewindow;
+  toolinfo.hwnd = g_hFrameWindow;
   toolinfo.hinst = instance;
   toolinfo.lpszText = LPSTR_TEXTCALLBACK;
   toolinfo.rect.left  = BUTTONX;
@@ -1147,7 +1147,7 @@ void FrameCreateWindow () {
 //===========================================================================
 HDC FrameGetDC () {
   if (!framedc) {
-    framedc = GetDC(framewindow);
+    framedc = GetDC(g_hFrameWindow);
     SetViewportOrgEx(framedc,viewportx,viewporty,NULL);
   }
   return framedc;
@@ -1202,7 +1202,7 @@ void FrameRegisterClass () {
 void FrameReleaseDC () {
   if (framedc) {
     SetViewportOrgEx(framedc,0,0,NULL);
-    ReleaseDC(framewindow,framedc);
+    ReleaseDC(g_hFrameWindow,framedc);
     framedc = (HDC)0;
   }
 }

@@ -495,7 +495,7 @@ bool DSInit()
 		return false;
 	}
 
-	hr = g_lpDS->SetCooperativeLevel(framewindow, DSSCL_NORMAL);
+	hr = g_lpDS->SetCooperativeLevel(g_hFrameWindow, DSSCL_NORMAL);
 	if(FAILED(hr))
 	{
 		if(g_fh) fprintf(g_fh, "SetCooperativeLevel failed (%08X)\n",hr);

@@ -320,7 +320,7 @@ void HD_Select(int nDrive)
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn,sizeof(OPENFILENAME));
 	ofn.lStructSize     = sizeof(OPENFILENAME);
-	ofn.hwndOwner       = framewindow;
+	ofn.hwndOwner       = g_hFrameWindow;
 	ofn.hInstance       = instance;
 	ofn.lpstrFilter     = TEXT("Hard Disk Images (*.hdv)\0*.hdv\0");
 	ofn.lpstrFile       = filename;

@@ -105,7 +105,7 @@ static void DisplayBenchmarkResults ()
            TEXT("This benchmark took %u.%02u seconds."),
            (unsigned)(totaltime / 1000),
            (unsigned)((totaltime / 10) % 100));
-  MessageBox(framewindow,
+  MessageBox(g_hFrameWindow,
              buffer,
              TEXT("Benchmark Results"),
              MB_ICONINFORMATION | MB_SETFOREGROUND);
