@@ -1,5 +1,9 @@
 /*
 
+3.0 Ctrl-V (paste) now works.
+2.0 BRKOP ## support
+2.5.1.0 BRK ON|OFF support
+
 .23 Moved columns of disasm for instructions, and target values over one char left, to leave whitespace past the target 'char' on the end
 .22 Disasm window now shows target values for indirect, and indexed addressing modes.
     i.e.
