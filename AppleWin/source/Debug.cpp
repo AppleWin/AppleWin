@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,0,23);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,3,0);
 
 
 // Public _________________________________________________________________________________________
