@@ -1,5 +1,11 @@
 /*
 
+2.5.3.x
+.4 added HELP DISASM
+.3 added DISASM [BRANCH | COLON | OPCODE | SPACES] #
+.2 fixed HELP CONFIG not working
+.1 Linards put undocumented mnemonics in lowercase
+
 3.0 Ctrl-V (paste) now works.
 2.0 BRKOP ## support
 2.5.1.0 BRK ON|OFF support
