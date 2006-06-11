@@ -241,6 +241,7 @@ Update_t CmdHelpSpecific (int nArgs)
 		if (bCategory)
 		{
 			iCommand = g_aArgs[iArg].nVal2;
+			nFound = 1;
 		}
 
 		if (bAllCommands)
@@ -554,8 +555,9 @@ Update_t CmdHelpSpecific (int nArgs)
 		default:
 			if (bAllCommands)
 				break;
-#if DEBUG_COMMAND_HELP
-			wsprintf( sText, "Command help not done yet: %s", g_aCommands[ iCommand ].aName );
+//#if DEBUG_COMMAND_HELP
+#if _DEBUG
+			wsprintf( sText, "Command help not done yet: %s", g_aCommands[ iCommand ].m_sName );
 			ConsoleBufferPush( sText );
 #endif
 			if ((! nFound) || (! pCommand))
