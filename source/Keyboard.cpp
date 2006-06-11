@@ -32,13 +32,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static bool g_bKeybBufferEnable = false;
 
 #define KEY_OLD
-#define OLIVER_SCHMIDT_FIX2	// PC's delete key maps to Apple's DEL key
 
-#ifdef OLIVER_SCHMIDT_FIX2
-static BYTE asciicode[10] = {0x08,0x0B,0x15,0x0A,0x00,0x00,0x00,0x00,0x00,0x7F};	// Convert PC arrow keys to Apple keycodes
-#else
-static BYTE asciicode[4] = {0x08,0x0B,0x15,0x0A};	// Convert PC arrow keys to Apple keycodes
-#endif
+static BYTE asciicode[2][10] = {{0x08,0x0D,0x15,0x2F,0x00,0x00,0x00,0x00,0x00,0x00},
+                                {0x08,0x0B,0x15,0x0A,0x00,0x00,0x00,0x00,0x00,0x7F}};	// Convert PC arrow keys to Apple keycodes
 
 static bool  gbShiftKey = false; // +PATCH MJP
 static bool  gbCtrlKey  = false; // +PATCH MJP
@@ -148,21 +144,34 @@ DWORD KeybGetNumQueries ()	// Used in determining 'idleness' of Apple system
 //===========================================================================
 void KeybQueueKeypress (int key, BOOL bASCII)
 {
+        static bool bFreshReset;
+
 	if (bASCII == ASCII)
-	{
+	{       
+	        if (bFreshReset && key == 0x03) {
+			bFreshReset = 0;
+	                return; // Swallow spurious CTRL-C caused by CTRL-BREAK
+	        }
+	        bFreshReset = 0;
 		if (key > 0x7F)
 			return;
 
-		if ((key >= 'a') && (key <= 'z') && (capslock || !apple2e))
-			keycode = key - ('a'-'A');
+		if (apple2e) 
+		        if (capslock && (key >= 'a') && (key <='z'))
+		                keycode = key - 32;
+		         else
+			        keycode = key;
 		else
-			keycode = key;
+                        if (key >= '`')
+			        keycode = key - 32;
+			else
+			        keycode = key;
 
 		lastvirtkey = LOBYTE(VkKeyScan(key));
 	}
 	else
 	{
-		if ((key == VK_CANCEL) && ((!apple2e) || (GetKeyState(VK_CONTROL) < 0)) )
+		if ((key == VK_CANCEL) && (GetKeyState(VK_CONTROL) < 0))
 		{
 			// Ctrl+Reset
 			if (apple2e)
@@ -170,14 +179,16 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 
 			DiskReset();
 			KeybReset();
-			VideoResetState();	// Switch Alternate char set off
+			if (apple2e)
+			        VideoResetState();	// Switch Alternate char set off
 			MB_Reset();
 
 #ifndef KEY_OLD
 			g_nNextInIdx = g_nNextOutIdx = g_nKeyBufferCnt = 0;
 #endif
 
-			CpuInitialize();
+			CpuReset();
+			bFreshReset = 1;
 			return;
 		}
 
@@ -188,19 +199,11 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			return;
 		}
 
-#ifdef OLIVER_SCHMIDT_FIX2
-		if (!((key >= VK_LEFT) && (key <= VK_DELETE) && asciicode[key - VK_LEFT]))
+		if (!((key >= VK_LEFT) && (key <= VK_DELETE) && asciicode[apple2e][key - VK_LEFT]))
 			return;
 
-		keycode = asciicode[key - VK_LEFT];		// Convert to Apple arrow keycode
+		keycode = asciicode[apple2e][key - VK_LEFT];		// Convert to Apple arrow keycode
 		lastvirtkey = key;
-#else
-		if (!((key >= VK_LEFT) && (key <= VK_DOWN)))
-			return;
-
-		keycode = asciicode[key - VK_LEFT];		// Convert to Apple arrow keycode
-		lastvirtkey = key;
-#endif
 	}
 #ifdef KEY_OLD
 	keywaiting = 1;

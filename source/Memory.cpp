@@ -898,11 +898,14 @@ void MemInitialize () {
 	const UINT ROM_SIZE = 0x5000; // HACK: Magic #
 
 	HRSRC hResInfo = apple2e	? FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2E_ROM), "ROM")
-								: FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_ROM), "ROM");
+	                                : (apple2plus ? FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2PLUS_ROM), "ROM")
+					              : FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2ORIG_ROM), "ROM"));
 	if(hResInfo == NULL)
 	{
 		TCHAR sRomFileName[ 128 ];
-		_tcscpy( sRomFileName, apple2e ? TEXT("APPLE2E.ROM") : TEXT("APPLE2.ROM") );
+		_tcscpy( sRomFileName, apple2e ? TEXT("APPLE2E.ROM")
+					       : (apple2plus ? TEXT("APPLE2PLUS.ROM")
+					                     : TEXT("APPLE2ORIG.ROM")));
 
 		TCHAR sText[ 256 ];
 		wsprintf( sText, TEXT("Unable to open the required firmware ROM data file.\n\nFile: %s."), sRomFileName );
@@ -982,8 +985,7 @@ void MemReset ()
 
   // INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
   ResetPaging(1);
-  regs.pc = *(LPWORD)(mem+0xFFFC);
-  CpuIrqReset();
+  regs.bRESET = 1;
 }
 
 //===========================================================================

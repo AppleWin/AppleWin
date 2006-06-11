@@ -120,7 +120,8 @@ enum Color_Palette_Index_e
 
 
 #define  SRCOFFS_40COL    0
-#define  SRCOFFS_80COL    (SRCOFFS_40COL  +  256)
+#define  SRCOFFS_IIPLUS   (SRCOFFS_40COL  + 256) 
+#define  SRCOFFS_80COL    (SRCOFFS_IIPLUS + 256)
 #define  SRCOFFS_LORES    (SRCOFFS_80COL  +  128)
 #define  SRCOFFS_HIRES    (SRCOFFS_LORES  +   16)
 #define  SRCOFFS_DHIRES   (SRCOFFS_HIRES  +  512)
@@ -906,10 +907,18 @@ void DrawMonoLoResSource () {
 void DrawMonoTextSource (HDC dc) {
   HDC     memdc  = CreateCompatibleDC(dc);
   HBITMAP bitmap = LoadBitmap(instance,TEXT("CHARSET40"));
-  HBRUSH  brush  = CreateSolidBrush(monochrome);
+  HBRUSH brush;
+  switch (videotype)
+  {
+	case VT_MONO_AMBER: brush = CreateSolidBrush(RGB(0xFF,0x80,0x00)); break;
+	case VT_MONO_GREEN: brush = CreateSolidBrush(RGB(0x00,0xC0,0x00)); break;
+	case VT_MONO_WHITE: brush = CreateSolidBrush(RGB(0xFF,0xFF,0xFF)); break;
+	default           : brush = CreateSolidBrush(monochrome); break;
+  }
   SelectObject(memdc,bitmap);
   SelectObject(dc,brush);
   BitBlt(dc,SRCOFFS_40COL,0,256,512,memdc,0,0,MERGECOPY);
+  BitBlt(dc,SRCOFFS_IIPLUS,0,256,256,memdc,0,512,MERGECOPY);
   StretchBlt(dc,SRCOFFS_80COL,0,128,512,memdc,0,0,256,512,MERGECOPY);
   SelectObject(dc,GetStockObject(NULL_BRUSH));
   DeleteObject(brush);
@@ -923,6 +932,7 @@ void DrawTextSource (HDC dc) {
   HBITMAP bitmap = LoadBitmap(instance,TEXT("CHARSET40"));
   SelectObject(memdc,bitmap);
   BitBlt(dc,SRCOFFS_40COL,0,256,512,memdc,0,0,SRCCOPY);
+  BitBlt(dc,SRCOFFS_IIPLUS,0,256,256,memdc,0,512,SRCCOPY);
   StretchBlt(dc,SRCOFFS_80COL,0,128,512,memdc,0,0,256,512,SRCCOPY);
   DeleteDC(memdc);
   DeleteObject(bitmap);
@@ -958,15 +968,10 @@ BOOL Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 	{
 		bool bInvert = bCharFlashing ? g_bTextFlashState : false;
 
-		// Apple ][ inits memory to FF,FF,00,00
-		// The 7F char is same as (inverse) space
-		if ((! apple2e) && (ch == 0xFF))
-			ch = 32;
-
 		CopySource(xpixel,ypixel,
-			14,16,
-			SRCOFFS_40COL+((ch & 0x0F) << 4),
-			(ch & 0xF0)+charoffs + (bInvert?0x40:0x00));
+			       14,16,
+				   (apple2e?SRCOFFS_40COL:SRCOFFS_IIPLUS)+((ch & 0x0F) << 4),
+				   (ch & 0xF0)+charoffs + (bInvert?0x40:0x00));
 
 		return 1;
 	}
@@ -1931,10 +1936,10 @@ BYTE __stdcall VideoSetMode (WORD, BYTE address, BYTE write, BYTE, ULONG) {
   switch (address) {
     case 0x00: vidmode &= ~VF_MASK2;   break;
     case 0x01: vidmode |=  VF_MASK2;   break;
-    case 0x0C: vidmode &= ~VF_80COL;   break;
-    case 0x0D: vidmode |=  VF_80COL;   break;
-    case 0x0E: charoffs = 0;           break;	// Alternate char set off
-    case 0x0F: charoffs = 256;         break;	// Alternate char set on
+    case 0x0C: if (apple2e) vidmode &= ~VF_80COL;   break;
+    case 0x0D: if (apple2e) vidmode |=  VF_80COL;   break;
+    case 0x0E: if (apple2e) charoffs = 0;           break;	// Alternate char set off
+    case 0x0F: if (apple2e) charoffs = 256;         break;	// Alternate char set on
     case 0x50: vidmode &= ~VF_TEXT;    break;
     case 0x51: vidmode |=  VF_TEXT;    break;
     case 0x52: vidmode &= ~VF_MIXED;   break;
@@ -1943,8 +1948,8 @@ BYTE __stdcall VideoSetMode (WORD, BYTE address, BYTE write, BYTE, ULONG) {
     case 0x55: vidmode |=  VF_PAGE2;   break;
     case 0x56: vidmode &= ~VF_HIRES;   break;
     case 0x57: vidmode |=  VF_HIRES;   break;
-    case 0x5E: vidmode |=  VF_DHIRES;  break;
-    case 0x5F: vidmode &= ~VF_DHIRES;  break;
+    case 0x5E: if (apple2e) vidmode |=  VF_DHIRES;  break;
+    case 0x5F: if (apple2e) vidmode &= ~VF_DHIRES;  break;
   }
   if (SW_MASK2)
     vidmode &= ~VF_PAGE2;
@@ -2000,7 +2005,7 @@ void VideoUpdateFlash()
 
 	nTextFlashCnt++;
 
-	if(nTextFlashCnt == 60/4)	// Flash rate = 4Hz (every 250ms)
+	if(nTextFlashCnt == 60/6)	// Flash rate = 6Hz (every 166ms)
 	{
 		nTextFlashCnt = 0;
 		g_bTextFlashState = !g_bTextFlashState;

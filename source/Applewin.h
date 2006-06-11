@@ -3,6 +3,7 @@
 extern char VERSIONSTRING[];	// Contructed in WinMain()
 
 extern BOOL       apple2e;
+extern BOOL       apple2plus;
 extern BOOL       behind;
 extern DWORD      cumulativecycles;
 extern DWORD      cyclenum;
