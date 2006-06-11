@@ -430,8 +430,8 @@ int FormatDisassemblyLine( WORD nBaseAddress, int iOpcode, int iOpmode, int nOpB
 		if (g_bConfigDisasmOpcodeSpaces)
 		{
 			_tcscat( pDst, TEXT(" " ) );
+			pDst++; // 2.5.3.3 fix
 		}
-		pDst++;
 	}
     while (_tcslen(sOpCodes_) < nMinBytesLen)
 	{
@@ -822,11 +822,54 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 	//>       ^          ^        ^           ^   ^
 	//>       6          17       27          41  46
 	const int nDefaultFontWidth = 7; // g_aFontConfig[FONT_DISASM_DEFAULT]._nFontWidth or g_nFontWidthAvg
-	int X_OPCODE      =  6 * nDefaultFontWidth;
-	int X_LABEL       = 17 * nDefaultFontWidth;
-	int X_INSTRUCTION = 26 * nDefaultFontWidth; // 27
-	int X_IMMEDIATE   = 40 * nDefaultFontWidth; // 41
-	int X_BRANCH      = 46 * nDefaultFontWidth;
+
+
+	enum TabStop_e
+	{
+		  TS_OPCODE
+		, TS_LABEL
+		, TS_INSTRUCTION
+		, TS_IMMEDIATE
+		, TS_BRANCH
+		, _NUM_TAB_STOPS
+	};
+
+	int aTabs[ _NUM_TAB_STOPS ] =
+	{ 6, 16, 26, 40, 46 }; // 17, 27, 41
+
+	if (! g_bConfigDisasmAddressColon)
+	{
+		aTabs[ TS_OPCODE ] -= 1;
+	}
+
+	if ((g_bConfigDisasmOpcodesView) && (! g_bConfigDisasmOpcodeSpaces))
+	{
+		aTabs[ TS_LABEL       ] -= 3;
+		aTabs[ TS_INSTRUCTION ] -= 2;
+		aTabs[ TS_IMMEDIATE   ] -= 1;
+	}
+	
+	const int OPCODE_TO_LABEL_SPACE = aTabs[ TS_INSTRUCTION ] - aTabs[ TS_LABEL ];
+
+	int iTab = 0;
+	int nSpacer = 9;
+	for (iTab = 0; iTab < _NUM_TAB_STOPS; iTab++ )
+	{
+		if (! g_bConfigDisasmOpcodesView)
+		{
+			aTabs[ iTab ] -= nSpacer;
+			if (nSpacer > 0)
+				nSpacer -= 2;
+		}
+
+		aTabs[ iTab ] *= nDefaultFontWidth;
+	}	
+
+//	int X_OPCODE      =  6 * nDefaultFontWidth;
+//	int X_LABEL       = 17 * nDefaultFontWidth;
+//	int X_INSTRUCTION = 26 * nDefaultFontWidth; // 27
+//	int X_IMMEDIATE   = 40 * nDefaultFontWidth; // 41
+//	int X_BRANCH      = 46 * nDefaultFontWidth;
 
 	const int DISASM_SYMBOL_LEN = 9;
 
@@ -929,16 +972,18 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 			DebugDrawTextHorz( TEXT(":"), linerect );
 
 	// Opcodes
-		linerect.left = X_OPCODE;
+		linerect.left = aTabs[ TS_OPCODE ];
 
 		if (! bCursorLine)
 			SetTextColor( dc, DebuggerGetColor( FG_DISASM_OPCODE ) );
 //		DebugDrawTextHorz( TEXT(" "), linerect );
-		DebugDrawTextHorz( (LPCTSTR) sOpcodes, linerect );
+
+		if (g_bConfigDisasmOpcodesView)
+			DebugDrawTextHorz( (LPCTSTR) sOpcodes, linerect );
 //		DebugDrawTextHorz( TEXT("  "), linerect );
 
 	// Label
-		linerect.left = X_LABEL;
+		linerect.left = aTabs[ TS_LABEL ];
 
 		LPCSTR pSymbol = FindSymbolFromAddress( nBaseAddress );
 		if (pSymbol)
@@ -951,7 +996,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 //		DebugDrawTextHorz( TEXT(" "), linerect );
 
 	// Instruction
-		linerect.left = X_INSTRUCTION;
+		linerect.left = aTabs[ TS_INSTRUCTION ];
 
 		if (! bCursorLine)
 			SetTextColor( dc, DebuggerGetColor( iForeground ) );
@@ -1044,7 +1089,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		}
 
 	// Immediate Char
-		linerect.left = X_IMMEDIATE;
+		linerect.left = aTabs[ TS_IMMEDIATE ];
 
 	// Memory Pointer and Value
 		if (bDisasmFormatFlags & DISASM_TARGET_POINTER) // (bTargetValue)
@@ -1106,7 +1151,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 //		}
 	
 	// Branch Indicator		
-		linerect.left = X_BRANCH;
+		linerect.left = aTabs[ TS_BRANCH ];
 
 		if (bDisasmFormatFlags & DISASM_BRANCH_INDICATOR)
 		{

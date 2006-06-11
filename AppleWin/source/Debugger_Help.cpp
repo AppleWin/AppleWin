@@ -450,6 +450,12 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( TEXT("  Re-enables breakpoint previously set, or all.") );
 			break;
 	// Config - Color
+		case CMD_CONFIG_MENU:
+			ConsoleBufferPush( TEXT(" Load/Save configuration, or change disasm view options.\n" ) );
+			wsprintf( sText, TEXT("  %s"   ": Loads config from last/default \"filename\"" ), g_aParameters[ PARAM_SAVE  ].m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText, TEXT("  %s"   ": Saves config to \"filename\""           ), g_aParameters[ PARAM_LOAD  ].m_sName ); ConsoleBufferPush( sText );
+			break;
+
 		case CMD_CONFIG_COLOR:
 			ConsoleBufferPush( TEXT(" Usage: [{#} | {# RR GG BB}]" ) );
 			ConsoleBufferPush( TEXT("  0 params: switch to 'color' scheme" ) );
@@ -466,6 +472,30 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( TEXT(" Usage: {address8 | address16 | symbol} ## [##]") );
 			ConsoleBufferPush( TEXT("  Ouput a byte or word to the IO address $C0xx" ) );
 			break;
+	// Config - Diasm
+		case CMD_CONFIG_DISASM:
+			ConsoleBufferPush( TEXT("Note: All commands effect the disassembly view" ) );
+
+			wsprintf( sText, TEXT(" Usage: %s [#]" ), g_aParameters[ PARAM_CONFIG_BRANCH ].m_sName );
+			ConsoleBufferPush( sText );
+			wsprintf( sText, TEXT(" # is from 0 to %d\n"), NUM_DISASM_BRANCH_TYPES - 1 );
+			ConsoleBufferPush( sText );
+			ConsoleBufferPush( TEXT("  Set the type of branch character:" ) );
+			ConsoleBufferPush( TEXT("  0 none, 1 = plain, 2 = fancy" ) );
+
+			wsprintf( sText, TEXT(" Usage: %s [0|1]" ), g_aParameters[ PARAM_CONFIG_COLON ].m_sName );
+			ConsoleBufferPush( sText );
+			ConsoleBufferPush( TEXT("  Display a colon after the address" ) );
+
+			wsprintf( sText, TEXT(" Usage: %s [0|1]" ), g_aParameters[ PARAM_CONFIG_OPCODE ].m_sName );
+			ConsoleBufferPush( sText );
+			ConsoleBufferPush( TEXT("  Display opcode(s) after colon" ) );
+
+			wsprintf( sText, TEXT(" Usage: %s [0|1]" ), g_aParameters[ PARAM_CONFIG_SPACES ].m_sName );
+			ConsoleBufferPush( sText );
+			ConsoleBufferPush( TEXT("  Display spaces between opcodes" ) );
+			break;
+
 	// Config - Font
 		case CMD_CONFIG_FONT:
 			wsprintf( sText, TEXT(" Usage: [%s | %s] \"FontName\" [Height]" ),

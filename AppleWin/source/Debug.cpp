@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,3,2);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,3,4);
 
 
 // Public _________________________________________________________________________________________
@@ -164,6 +164,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("BW")          , CmdConfigColorMono   , CMD_CONFIG_BW            , "Sets/Shows RGB for Black & White scheme" },
 		{TEXT("COLOR")       , CmdConfigColorMono   , CMD_CONFIG_COLOR         , "Sets/Shows RGB for color scheme" },
 		{TEXT("CONFIG")      , CmdConfigMenu        , CMD_CONFIG_MENU          , "Access config options" },
+		{TEXT("DISASM")      , CmdConfigDisasm      , CMD_CONFIG_DISASM        , "Sets disassembly view options." },
 		{TEXT("ECHO")        , CmdConfigEcho        , CMD_CONFIG_ECHO          , "Echo string, or toggle command echoing" },
 		{TEXT("FONT")        , CmdConfigFont        , CMD_CONFIG_FONT          , "Shows current font or sets new one" },
 		{TEXT("HCOLOR")      , CmdConfigHColor      , CMD_CONFIG_HCOLOR        , "Sets/Shows colors mapped to Apple HGR" },
@@ -523,9 +524,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 // Disassembly
-	bool  g_bConfigDisasmOpcodeSpaces = true; // TODO: CONFIG SPACE  [0|1]
-	bool  g_bConfigDisasmAddressColon = true; // TODO: CONFIG COLON  [0|1]
-	int   g_iConfigDisasmBranchType = DISASM_BRANCH_FANCY; // TODO: CONFIG BRANCH [0|1]
+	bool  g_bConfigDisasmOpcodesView  = true;
+	bool  g_bConfigDisasmOpcodeSpaces = true;
+	bool  g_bConfigDisasmAddressColon = true;
+	int   g_iConfigDisasmBranchType = DISASM_BRANCH_FANCY;
 
 
 // Display ____________________________________________________________________
@@ -581,6 +583,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("R")          , NULL, PARAM_FLAG_R         }, // --1- ---- Reserved
 		{TEXT("V")          , NULL, PARAM_FLAG_V         }, // -1-- ---- Overflow
 		{TEXT("N")          , NULL, PARAM_FLAG_N         }, // 1--- ---- Sign
+// Disasm
+		{TEXT("BRANCH")     , NULL, PARAM_CONFIG_BRANCH  },
+		{TEXT("COLON")      , NULL, PARAM_CONFIG_COLON   },
+		{TEXT("OPCODE")     , NULL, PARAM_CONFIG_OPCODE  },
+		{TEXT("SPACES")		, NULL, PARAM_CONFIG_SPACES  },
 // Disk
 		{TEXT("EJECT")      , NULL, PARAM_DISK_EJECT     },
 		{TEXT("PROTECT")    , NULL, PARAM_DISK_PROTECT   },
@@ -2079,6 +2086,8 @@ Update_t CmdConfigMenu (int nArgs)
 					nArgs = _Arg_Shift( iArg, nArgs );
 					return CmdConfigLoad( nArgs );					
 					break;
+
+
 				default:
 				{
 					TCHAR sText[ CONSOLE_WIDTH ];
@@ -2211,6 +2220,70 @@ Update_t CmdConfigSave (int nArgs)
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
+
+// Disasm - Config ________________________________________________________________________________
+
+//===========================================================================
+Update_t CmdConfigDisasm( int nArgs )
+{
+	int iParam = 0;
+
+	for (int iArg = 1; iArg <= nArgs; iArg++ )
+	{
+		if (FindParam( g_aArgs[iArg].sArg, MATCH_FUZZY, iParam ))
+		{
+
+//			if (_tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ) == 0)
+				// All -- for saving
+// 				g_aArgs[ iArg ]
+
+			switch (iParam)
+			{
+				case PARAM_CONFIG_BRANCH:
+					iArg++;
+					if (iArg > 2)
+						return Help_Arg_1( CMD_CONFIG_DISASM ); // CMD_CONFIG_DISASM_BRANCH );
+					
+					
+					g_iConfigDisasmBranchType = g_aArgs[ iArg ].nVal1;
+					if (g_iConfigDisasmBranchType < 0)
+						g_iConfigDisasmBranchType = 0;
+					if (g_iConfigDisasmBranchType >= NUM_DISASM_BRANCH_TYPES)
+						g_iConfigDisasmBranchType = NUM_DISASM_BRANCH_TYPES - 1;
+					break;
+
+				case PARAM_CONFIG_COLON:
+					iArg++;
+					if (iArg > 2)
+						return Help_Arg_1( CMD_CONFIG_DISASM ); // CMD_CONFIG_DISASM_COLON );
+					
+					g_bConfigDisasmAddressColon = (g_aArgs[ iArg ].nVal1 & 1);
+					break;
+
+				case PARAM_CONFIG_OPCODE:
+					iArg++;
+					if (iArg > 2)
+						return Help_Arg_1( CMD_CONFIG_DISASM ); // CMD_CONFIG_DISASM_OPCODE );
+
+					g_bConfigDisasmOpcodesView = (g_aArgs[ iArg ].nVal1 & 1);
+					break;
+
+				case PARAM_CONFIG_SPACES:
+					iArg++;
+					if (iArg > 2)
+						return Help_Arg_1( CMD_CONFIG_DISASM ); // CMD_CONFIG_DISASM_SPACES );
+
+					g_bConfigDisasmOpcodeSpaces = (g_aArgs[ iArg ].nVal1 & 1);
+					break;
+					
+
+				default:
+					return Help_Arg_1( CMD_CONFIG_DISASM ); // CMD_CONFIG_DISASM_OPCODE );
+			}
+		}
+	}
+	return UPDATE_CONSOLE_DISPLAY | UPDATE_DISASM;
+}
 
 // Font - Config __________________________________________________________________________________
 

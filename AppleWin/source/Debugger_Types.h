@@ -429,6 +429,13 @@
 		, CMD_CONFIG_BW         // BW    # rr gg bb
 		, CMD_CONFIG_COLOR      // COLOR # rr gg bb
 		, CMD_CONFIG_MENU
+
+		, CMD_CONFIG_DISASM
+//		, CMD_CONFIG_DISASM_BRANCH
+//		, CMD_CONFIG_DISASM_COLON
+//		, CMD_CONFIG_DISASM_OPCODE
+//		, CMD_CONFIG_DISASM_SPACES
+
 		, CMD_CONFIG_ECHO
 		, CMD_CONFIG_FONT
 //		, CMD_CONFIG_FONT2 // PARAM_FONT_DISASM PARAM_FONT_INFO PARAM_FONT_SOURCE
@@ -636,6 +643,7 @@
 	Update_t CmdConfigBaseHex     (int nArgs);
 	Update_t CmdConfigBaseDec     (int nArgs);
 	Update_t CmdConfigColorMono   (int nArgs);
+	Update_t CmdConfigDisasm      (int nArgs);
 	Update_t CmdConfigEcho        (int nArgs);
 	Update_t CmdConfigFont        (int nArgs);
 	Update_t CmdConfigHColor      (int nArgs);
@@ -1108,13 +1116,13 @@
 
 	// Note: Order must match Breakpoint_Source_t
 	, _PARAM_REGS_BEGIN = _PARAM_BREAKPOINT_END // Daisy Chain
+// Regs
 		, PARAM_REG_A = _PARAM_REGS_BEGIN
 		, PARAM_REG_X
 		, PARAM_REG_Y
-
 		, PARAM_REG_PC // Program Counter
 		, PARAM_REG_SP // Stack Pointer
-
+// Flags
 		, PARAM_FLAGS  // Processor Status
 		, PARAM_FLAG_C // Carry
 		, PARAM_FLAG_Z // Zero
@@ -1127,7 +1135,17 @@
 	, _PARAM_REGS_END
 	,  PARAM_REGS_NUM = _PARAM_REGS_END - _PARAM_REGS_BEGIN
 
-	, _PARAM_DISK_BEGIN = _PARAM_REGS_END // Daisy Chain
+// Disasm
+	, _PARAM_CONFIG_BEGIN = _PARAM_REGS_END // Daisy Chain
+		, PARAM_CONFIG_BRANCH = _PARAM_CONFIG_BEGIN // g_iConfigDisasmBranchType   [0|1|2]
+		, PARAM_CONFIG_COLON  // g_bConfigDisasmAddressColon [0|1]
+		, PARAM_CONFIG_OPCODE // g_bConfigDisasmOpcodesView  [0|1]
+		, PARAM_CONFIG_SPACES // g_bConfigDisasmOpcodeSpaces [0|1]
+	, _PARAM_CONFIG_END
+	, PARAM_CONFIG_NUM = _PARAM_CONFIG_END - _PARAM_CONFIG_BEGIN
+
+// Disk
+	, _PARAM_DISK_BEGIN = _PARAM_CONFIG_END // Daisy Chain
 		, PARAM_DISK_EJECT = _PARAM_DISK_BEGIN // DISK 1 EJECT
 		, PARAM_DISK_PROTECT                   // DISK 1 PROTECT
 		, PARAM_DISK_READ                      // DISK 1 READ Track Sector NumSectors MemAddress
