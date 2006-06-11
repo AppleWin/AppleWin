@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="Applewin"
 	ProjectGUID="{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}"
 	RootNamespace="Applewin"
@@ -516,11 +516,11 @@
 			Filter=".txt,.ico,.bmp,.rc"
 			>
 			<File
-				RelativePath=".\resource\Apple2.rom"
+				RelativePath=".\resource\Apple2e.rom"
 				>
 			</File>
 			<File
-				RelativePath=".\resource\Apple2e.rom"
+				RelativePath=".\resource\Apple2plus.rom"
 				>
 			</File>
 			<File

@@ -304,9 +304,15 @@ static void UpdateIFR(SY6522_AY8910* pMB)
 		bIRQ |= g_MB[i].sy6522.IFR & 0x80;
 
 	if (bIRQ)
-		CpuIrqAssert(IS_6522);
+		if (pMB->nAY8910Number & 1)
+		    CpuNmiAssert(IS_6522);
+		else
+		    CpuIrqAssert(IS_6522);
 	else
-		CpuIrqDeassert(IS_6522);
+		if (pMB->nAY8910Number & 1)
+		    CpuNmiDeassert(IS_6522);
+		else
+		    CpuIrqDeassert(IS_6522);
 }
 
 static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
@@ -568,6 +574,9 @@ static void SSI263_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 
 		// Datasheet is not clear, but a write to DURPHON must clear the IRQ
 		if(g_bPhasorEnable)
+		    if (pMB->nAY8910Number & 1)
+			CpuNmiDeassert(IS_SPEECH);
+		    else
 			CpuIrqDeassert(IS_SPEECH);
 		pMB->sy6522.IFR &= ~IxR_PERIPHERAL;
 		UpdateIFR(pMB);
@@ -895,7 +904,10 @@ static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
 				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
 
 				// Is Phasor's SSI263.IRQ wired directly to IRQ? (Bypassing the 6522)
-				CpuIrqAssert(IS_SPEECH);
+				if (pMB->nAY8910Number & 1)
+				    CpuNmiAssert(IS_SPEECH);
+				else
+				    CpuIrqAssert(IS_SPEECH);
 			}
 		}
 		else

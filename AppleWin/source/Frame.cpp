@@ -384,7 +384,8 @@ void DrawStatusArea (HDC passdc, int drawflags) {
     }
     if (drawflags & DRAW_TITLE) {
       TCHAR title[40];
-      _tcscpy(title,apple2e ? TITLE : TEXT("Apple ][+ Emulator"));
+      _tcscpy(title,apple2e ? TITLE : (apple2plus ? TEXT("Apple ][+ Emulator")
+						  : TEXT("Apple ][ Emulator")));
       switch (mode) {
         case MODE_PAUSED:   _tcscat(title,TEXT(" [Paused]"));    break;
         case MODE_STEPPING: _tcscat(title,TEXT(" [Stepping]"));  break;
@@ -1116,12 +1117,14 @@ void FrameCreateWindow () {
   int ypos;
   if (!RegLoadValue(TEXT("Preferences"),TEXT("Window Y-Position"),1,(DWORD *)&ypos))
     ypos = (GetSystemMetrics(SM_CYSCREEN)-height) >> 1;
-  g_hFrameWindow = CreateWindow(TEXT("APPLE2FRAME"),apple2e ? TITLE
-                                                         : TEXT("Apple ][+ Emulator"),
-                             WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
-                             WS_VISIBLE,
-                             xpos,ypos,width,height,
-                             HWND_DESKTOP,(HMENU)0,instance,NULL);
+  g_hFrameWindow = CreateWindow(TEXT("APPLE2FRAME"),
+				apple2e ? TITLE
+                                        : (apple2plus ? TEXT("Apple ][+ Emulator")
+					              : TEXT("Apple ][ Emulator")),
+				WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
+				WS_MINIMIZEBOX | WS_VISIBLE,
+				xpos,ypos,width,height,
+				HWND_DESKTOP,(HMENU)0,instance,NULL);
   InitCommonControls();
   tooltipwindow = CreateWindow(TOOLTIPS_CLASS,NULL,TTS_ALWAYSTIP, 
                                CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT, 

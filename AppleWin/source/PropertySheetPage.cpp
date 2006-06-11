@@ -35,7 +35,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tfe\Uilib.h"
 
 
-TCHAR   computerchoices[] =  TEXT("Apple ][+\0")
+TCHAR   computerchoices[] =  TEXT("Apple ][ (Original Model)\0")
+			     TEXT("Apple ][+\0")
                              TEXT("Apple //e\0");
 
 TCHAR* szJoyChoice0 = TEXT("Disabled\0");
@@ -206,7 +207,7 @@ static void ConfigDlg_OK(HWND window, BOOL afterclose)
 	DWORD newvidtype    = (DWORD)SendDlgItemMessage(window,IDC_VIDEOTYPE,CB_GETCURSEL,0,0);
 	DWORD newserialport = (DWORD)SendDlgItemMessage(window,IDC_SERIALPORT,CB_GETCURSEL,0,0);
 
-	if (newcomptype != apple2e)
+	if (newcomptype != (apple2e ? 2 : (apple2plus ? 1 : 0)))
 	{
 		if (MessageBox(window,
 			TEXT("You have changed the emulated computer ")
@@ -340,7 +341,7 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
 	{
       g_nLastPage = PG_CONFIG;
 
-      FillComboBox(window,IDC_COMPUTER,computerchoices,apple2e);
+      FillComboBox(window,IDC_COMPUTER,computerchoices,apple2e ? 2 : (apple2plus ? 1 : 0));
       FillComboBox(window,IDC_VIDEOTYPE,videochoices,videotype);
       FillComboBox(window,IDC_SERIALPORT,serialchoices,serialport);
       SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));

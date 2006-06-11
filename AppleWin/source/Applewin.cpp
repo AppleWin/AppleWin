@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 char VERSIONSTRING[] = "xx.yy.zz.ww";
 
 BOOL      apple2e           = 1;
+BOOL      apple2plus        = 1;
 BOOL      behind            = 0;			// Redundant
 DWORD     cumulativecycles  = 0;			// Wraps after ~1hr 9mins
 DWORD     cyclenum          = 0;			// Used by SpkrToggle() for non-wave sound
@@ -347,7 +348,10 @@ void GetProgramDirectory () {
 
 //===========================================================================
 void LoadConfiguration () {
-  LOAD(TEXT("Computer Emulation"),(DWORD *)&apple2e);
+  DWORD comptype;
+  LOAD(TEXT("Computer Emulation"),&comptype);
+  apple2e = (comptype == 2);
+  apple2plus = (comptype == 1);
   LOAD(TEXT("Joystick 0 Emulation"),&joytype[0]);
   LOAD(TEXT("Joystick 1 Emulation"),&joytype[1]);
   LOAD(TEXT("Sound Emulation")   ,&soundtype);

@@ -132,7 +132,7 @@ Update_t CmdMOTD( int nArgs )
 {
 	TCHAR sText[ CONSOLE_WIDTH ];
 
-	ConsoleBufferPush( TEXT(" Apple ][+ //e Emulator for Windows") );
+	ConsoleBufferPush( TEXT(" Apple ][ ][+ //e Emulator for Windows") );
 	CmdVersion(0);
 	CmdSymbols(0);
 	wsprintf( sText, "  '~' console, '%s' (specific), '%s' (all)"

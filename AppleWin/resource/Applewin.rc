@@ -46,6 +46,23 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_TFE_CAPTION         "Ethernet Settings"
+    IDS_TFE_ETHERNET        "Ethernet"
+    IDS_TFE_INTERFACE       "Interface"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_OK                          "OK"
+    IDS_CANCEL                      "Cancel"
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -199,8 +216,8 @@ BEGIN
     GROUPBOX        "Harddisk Controller",IDC_STATIC,2,113,205,71
 END
 
-IDD_TFE_SETTINGS_DIALOG DIALOG  0, 0, 270, 100
-STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+IDD_TFE_SETTINGS_DIALOG DIALOG DISCARDABLE  0, 0, 270, 100
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Ethernet Settings"
 FONT 8, "MS Sans Serif"
 BEGIN
@@ -215,7 +232,6 @@ BEGIN
     DEFPUSHBUTTON   "Ok",IDOK,20,75,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,80,75,50,14
 END
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -233,8 +249,8 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,13,1,0
- PRODUCTVERSION 1,13,1,0
+ FILEVERSION 1,12,9,2
+ PRODUCTVERSION 1,12,9,2
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -252,12 +268,12 @@ BEGIN
             VALUE "Comments", "http://applewin.berlios.de"
             VALUE "CompanyName", "Michael O'Brien, Oliver Schmidt, Tom Charlesworth"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1, 13, 1, 0"
+            VALUE "FileVersion", "1, 12, 9, 2"
             VALUE "InternalName", "APPLEWIN"
             VALUE "LegalCopyright", "© 1994-2006 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1, 13, 1, 0"
+            VALUE "ProductVersion", "1, 12, 9, 2"
         END
     END
     BLOCK "VarFileInfo"
@@ -286,12 +302,14 @@ END
 
 IDR_HDDRVR              FIRMWARE                "Hddrvr.bin"
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // ROM
 //
 
-IDR_APPLE2_ROM          ROM                     "Apple2.rom"
+IDR_APPLE2ORIG_ROM      ROM                     "Apple2orig.rom"
+IDR_APPLE2PLUS_ROM      ROM                     "Apple2plus.rom"
 IDR_APPLE2E_ROM         ROM                     "Apple2e.rom"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -322,25 +340,6 @@ BEGIN
         MENUITEM "&Read only",                  ID_DISKMENU_WRITEPROTECTION_ON
 
     END
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// String Table
-//
-
-STRINGTABLE 
-BEGIN
-    IDS_TFE_CAPTION         "Ethernet Settings"
-    IDS_TFE_ETHERNET        "Ethernet"
-    IDS_TFE_INTERFACE       "Interface"
-END
-
-STRINGTABLE 
-BEGIN
-    IDS_OK                  "OK"
-    IDS_CANCEL              "Cancel"
 END
 
 #endif    // English (U.S.) resources

@@ -28,8 +28,9 @@
 #define IDC_2_0_MHz                     123
 #define IDC_MAX_MHz                     124
 #define IDR_MENU                        125
-#define IDR_APPLE2_ROM                  126
-#define IDR_APPLE2E_ROM                 127
+#define IDR_APPLE2ORIG_ROM              126
+#define IDR_APPLE2PLUS_ROM              127
+#define IDR_APPLE2E_ROM                 128
 #define IDC_MB_ENABLE                   130
 #define IDD_TFE_SETTINGS_DIALOG         131
 #define IDC_KEYB_BUFFER_ENABLE          1005
