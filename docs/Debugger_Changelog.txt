@@ -1,6 +1,8 @@
 /*
 
 2.5.3.x
+.6 added BLOAD addr[,len] "Filename"
+.5 added BSAVE addr,len "Filename"
 .4 added HELP DISASM
 .3 added DISASM [BRANCH | COLON | OPCODE | SPACES] #
 .2 fixed HELP CONFIG not working
