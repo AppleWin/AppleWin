@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,3,4);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,3,6);
 
 
 // Public _________________________________________________________________________________________
@@ -240,7 +240,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("ME")          , CmdMemoryEdit        , CMD_MEMORY_EDIT          }, // TODO: like Copy ][+ Sector Edit
 		{TEXT("E")           , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    },
 		{TEXT("EW")          , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    },
+		{TEXT("BLOAD")       , CmdMemoryLoad        , CMD_MEMORY_LOAD          , "Load a region of memory" },
 		{TEXT("M")           , CmdMemoryMove        , CMD_MEMORY_MOVE          },
+		{TEXT("BSAVE")       , CmdMemorySave        , CMD_MEMORY_SAVE          , "Save a region of memory\n" },
 		{TEXT("S")           , CmdMemorySearch      , CMD_MEMORY_SEARCH        , "Search for text for hex values" },
 		{TEXT("SA")          , CmdMemorySearchAscii,  CMD_MEMORY_SEARCH_ASCII  , "Search ASCII text" }, // Search ASCII
 		{TEXT("ST")          , CmdMemorySearchApple , CMD_MEMORY_SEARCH_APPLE  , "Search Apple text (hi-bit)" }, // Search Apple Text
@@ -800,6 +802,8 @@ static	bool ParseAssemblyListing  ( bool bBytesToMemory, bool bAddSymbols );
 	Update_t _CmdWindowViewCommon (int iNewWindow);
 
 // Utility
+	bool _GetStartEnd( WORD & nAddressStart_, WORD & nAddressEnd_ );
+
 	bool  StringCat( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
 	bool  TestStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
 	bool  TryStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
@@ -3468,6 +3472,71 @@ Update_t CmdMemoryFill (int nArgs)
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
+
+//===========================================================================
+Update_t CmdMemoryLoad (int nArgs)
+{
+	// BLOAD addr[,len] "Filename"
+	if (nArgs != 2)
+		return Help_Arg_1( CMD_MEMORY_LOAD );
+
+	if (nArgs == 2)
+	{
+		WORD nAddressStart;
+		WORD nAddressEnd;
+		if (_GetStartEnd( nAddressStart, nAddressEnd ))
+		{
+			WORD nAddressLen = nAddressEnd - nAddressStart;
+
+			BYTE *pMemory = new BYTE [ _6502_END_MEM_ADDRESS + 1 ]; // default 64K buffer
+			BYTE *pDst = mem + nAddressStart;
+			BYTE *pSrc = pMemory;
+
+			TCHAR sFilePath[ MAX_PATH ];
+			_tcscpy( sFilePath,progdir );
+			_tcscat( sFilePath, g_aArgs[ 2 ].sArg );
+
+			FILE *hFile = fopen( sFilePath, "rb" );
+			if (hFile)
+			{
+				fseek( hFile, 0, SEEK_END );
+				int nFileBytes = ftell( hFile );
+				fseek( hFile, 0, SEEK_SET );
+
+				if (nFileBytes > _6502_END_MEM_ADDRESS)
+					nFileBytes = _6502_END_MEM_ADDRESS + 1; // Bank-switched RAMR/ROM is only 16-bit
+
+				// Caller didnt' specify how many bytes to read, default to them all
+				if (nAddressLen == 0)
+				{
+					nAddressLen = nFileBytes;
+				}							
+
+				size_t nRead = fread( pMemory, nAddressLen, 1, hFile );
+				if (nRead == 1) // (size_t)nLen)
+				{
+					int iByte;
+					for( iByte = 0; iByte < nAddressLen; iByte++ )
+					{
+						*pDst++ = *pSrc++;
+					}
+					ConsoleBufferPush( TEXT( "Loaded.\n" ) );
+				}
+				fclose( hFile );
+			}
+			else
+			{
+				ConsoleBufferPush( TEXT( "Error: Bad filename.\n" ) );
+			}
+			
+			delete [] pMemory;
+		}
+	}
+	
+	return UPDATE_CONSOLE_DISPLAY;
+}
+
+
 //===========================================================================
 Update_t CmdMemoryMove (int nArgs)
 {
@@ -3477,6 +3546,96 @@ Update_t CmdMemoryMove (int nArgs)
 	WORD nSrc = g_aArgs[1].nVal1;
 	WORD nLen = g_aArgs[2].nVal1 - nSrc;
 	WORD nDst = g_aArgs[3].nVal1;
+	
+	return UPDATE_CONSOLE_DISPLAY;
+}
+
+
+//===========================================================================
+Update_t CmdMemorySave (int nArgs)
+{
+	if (nArgs > 2)
+		return Help_Arg_1( CMD_MEMORY_SAVE );
+
+	static WORD nAddressStart = 0;
+	static WORD nAddressEnd   = 0;
+	static WORD nAddressLen   = 0;
+
+	static TCHAR sFileName[ MAX_PATH ];
+	TCHAR sFilePath[ MAX_PATH ];
+	_tcscpy( sFilePath, progdir );
+
+	if (! nArgs)
+	{
+		TCHAR sLast[ CONSOLE_WIDTH ] = TEXT("");
+		if (nAddressLen)
+		{
+			wsprintf( sLast, TEXT("Last saved: $%04X - $%04X, %04X"),
+				nAddressStart, nAddressEnd, nAddressLen );
+		}
+		else
+		{
+			wsprintf( sLast, TEXT( "Last saved: none\n" ) );
+		}				
+		ConsoleBufferPush( sLast );
+	}
+	else
+	{
+		if (_GetStartEnd( nAddressStart, nAddressEnd ))
+		{
+			nAddressLen = nAddressEnd - nAddressStart;
+
+			if ((nAddressLen) && (nAddressLen < _6502_END_MEM_ADDRESS))
+			{
+				// BSAVE addr,len "Filename"
+				if (nArgs == 1)
+				{
+					sprintf( g_aArgs[ 2 ].sArg, "%04X.%04X.bin", nAddressStart, nAddressLen ); // nAddressEnd );
+					nArgs++;;
+				}	
+
+				if (nArgs == 2)
+				{
+					BYTE *pMemory = new BYTE [ nAddressLen ];
+					BYTE *pDst = pMemory;
+					BYTE *pSrc = mem + nAddressStart;
+					
+					int iByte;
+					for( iByte = 0; iByte < nAddressLen; iByte++ )
+					{
+						*pDst++ = *pSrc++;
+					}
+
+					_tcscpy( sFileName, g_aArgs[ 2 ].sArg );
+					_tcscat( sFilePath, sFileName );
+
+					FILE *hFile = fopen( sFilePath, "rb" );
+					if (hFile)
+					{
+						ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting.\n" ) );
+						fclose( hFile );
+					}
+
+					hFile = fopen( sFilePath, "wb" );
+					if (hFile)
+					{
+						size_t nWrote = fwrite( pMemory, nAddressLen, 1, hFile );
+						if (nWrote == 1) // (size_t)nAddressLen)
+						{
+							ConsoleBufferPush( TEXT( "Saved.\n" ) );
+						}
+						else
+						{
+							ConsoleBufferPush( TEXT( "Error saving.\n" ) );
+						}
+						fclose( hFile );
+					}
+					
+					delete [] pMemory;
+				}
+			}
+		}
+	}
 	
 	return UPDATE_CONSOLE_DISPLAY;
 }
