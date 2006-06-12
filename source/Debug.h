@@ -26,8 +26,9 @@ using namespace std;
 	extern const TCHAR *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ];
 
 	// Full-Speed debugging
-	extern int g_nDebugOnBreakInvalid;
-	extern int g_iDebugOnOpcode      ;
+	extern int  g_nDebugOnBreakInvalid;
+	extern int  g_iDebugOnOpcode      ;
+	extern bool g_bDebugDelayBreakCheck;
 
 // Commands
 	extern const int NUM_COMMANDS_WITH_ALIASES; // = sizeof(g_aCommands) / sizeof (Command_t); // Determined at compile-time ;-)

@@ -52,8 +52,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Breakpoints ________________________________________________________________
 
 	// Full-Speed debugging
-	int g_nDebugOnBreakInvalid = 0;
-	int g_iDebugOnOpcode       = 0;
+	int  g_nDebugOnBreakInvalid  = 0;
+	int  g_iDebugOnOpcode        = 0;
+	bool g_bDebugDelayBreakCheck = false;
 
 	int          g_nBreakpoints = 0;
 	Breakpoint_t g_aBreakpoints[ NUM_BREAKPOINTS ];
@@ -969,14 +970,14 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 
 	if (g_iDebugOnOpcode == 0)
 		// Show what the current break opcode is
-		wsprintf( sText, TEXT("%s break on opcode: None")
+		wsprintf( sText, TEXT("%s full speed Break on Opcode: None")
 			, sAction
 			, g_iDebugOnOpcode
 			, g_aOpcodes65C02[ g_iDebugOnOpcode ].sMnemonic
 		);
 	else
 		// Show what the current break opcode is
-		wsprintf( sText, TEXT("%s break on opcode: %02X %s")
+		wsprintf( sText, TEXT("%s full speed Break on Opcode: %02X %s")
 			, sAction
 			, g_iDebugOnOpcode
 			, g_aOpcodes65C02[ g_iDebugOnOpcode ].sMnemonic
@@ -1442,7 +1443,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 {
 	g_bBenchmarking = false;
 	DebugEnd();
-	mode = MODE_RUNNING;
+	g_nAppMode = MODE_RUNNING;
 	FrameRefreshStatus(DRAW_TITLE);
 	VideoRedrawScreen();
 	DWORD currtime = GetTickCount();
@@ -5084,7 +5085,7 @@ Update_t CmdGo (int nArgs)
 //  if (!g_nDebugStepUntil)
 //    g_nDebugStepUntil = GetAddress(g_aArgs[1].sArg);
 
-	mode = MODE_STEPPING;
+	g_nAppMode = MODE_STEPPING;
 	FrameRefreshStatus(DRAW_TITLE);
 
 	return UPDATE_CONSOLE_DISPLAY; // TODO: Verify // 0;
@@ -5141,7 +5142,7 @@ Update_t CmdTrace (int nArgs)
 	g_nDebugStepCycles  = 0;
 	g_nDebugStepStart = regs.pc;
 	g_nDebugStepUntil = -1;
-	mode = MODE_STEPPING;
+	g_nAppMode = MODE_STEPPING;
 	FrameRefreshStatus(DRAW_TITLE);
 	DebugContinueStepping();
 
@@ -5169,7 +5170,7 @@ Update_t CmdTraceLine (int nArgs)
 	g_nDebugStepStart = regs.pc;
 	g_nDebugStepUntil = -1;
 
-	mode = MODE_STEPPING;
+	g_nAppMode = MODE_STEPPING;
 	FrameRefreshStatus(DRAW_TITLE);
 	DebugContinueStepping();
 
@@ -6146,7 +6147,7 @@ Update_t ExecuteCommand (int nArgs)
 					ArgsGetValue( pArg, & nAddress );
 
 					regs.pc = nAddress;
-					mode = MODE_RUNNING; // exit the debugger
+					g_nAppMode = MODE_RUNNING; // exit the debugger
 
 					nFound = 1;
 					g_iCommand = CMD_CONFIG_ECHO; // hack: don't cook args
@@ -6759,7 +6760,7 @@ void DebugBegin ()
 		MemSetFastPaging(0);
 	}
 
-	mode = MODE_DEBUG;
+	g_nAppMode = MODE_DEBUG;
 	FrameRefreshStatus(DRAW_TITLE);
 
 	if (apple2e)
@@ -6787,15 +6788,15 @@ void DebugContinueStepping ()
 	{
 		if ((regs.pc >= g_nDebugSkipStart) && (regs.pc < (g_nDebugSkipStart + g_nDebugSkipLen)))
 		{
-			// Enter turbo debugger mode -- UI not updated, etc.
+			// Enter turbo debugger g_nAppMode -- UI not updated, etc.
 			g_nDebugSteps = -1;
-			mode = MODE_STEPPING;
+			g_nAppMode = MODE_STEPPING;
 		}
 		else
 		{
-			// Enter normal debugger mode -- UI updated every instruction, etc.
+			// Enter normal debugger g_nAppMode -- UI updated every instruction, etc.
 			g_nDebugSteps = 1;
-			mode = MODE_STEPPING;
+			g_nAppMode = MODE_STEPPING;
 		}
 	}
 
@@ -6830,7 +6831,7 @@ void DebugContinueStepping ()
 	}
 	else
 	{
-		mode = MODE_DEBUG;
+		g_nAppMode = MODE_DEBUG;
 		FrameRefreshStatus(DRAW_TITLE);
 // BUG: PageUp, Trace - doesn't center cursor
 
@@ -7123,10 +7124,12 @@ void DebugInitialize ()
 void DebuggerInputConsoleChar( TCHAR ch )
 //void DebugProcessChar (TCHAR ch)
 {
-	if ((mode == MODE_STEPPING) && (ch == DEBUG_EXIT_KEY))
+	if ((g_nAppMode == MODE_STEPPING) && (ch == DEBUG_EXIT_KEY))
+	{
 		g_nDebugSteps = 0; // Exit Debugger
+	}
 
-	if (mode != MODE_DEBUG)
+	if (g_nAppMode != MODE_DEBUG)
 		return;
 
 	if (g_bConsoleBufferPaused)
@@ -7295,14 +7298,14 @@ Update_t DebuggerProcessCommand( const bool bEchoConsoleInput )
 void DebuggerProcessKey( int keycode )
 //void DebugProcessCommand (int keycode)
 {
-	if (mode != MODE_DEBUG)
+	if (g_nAppMode != MODE_DEBUG)
 		return;
 
 	if (g_bDebuggerViewingAppleOutput)
 	{
-		// Normally any key press takes us out of "Viewing Apple Output" mode
-		// VK_F# are already processed, so we can't use them to cycle next video mode
-//		    if ((mode != MODE_LOGO) && (mode != MODE_DEBUG))
+		// Normally any key press takes us out of "Viewing Apple Output" g_nAppMode
+		// VK_F# are already processed, so we can't use them to cycle next video g_nAppMode
+//		    if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		g_bDebuggerViewingAppleOutput = false;
 		UpdateDisplay( UPDATE_ALL ); // 1
 		return;
@@ -7331,7 +7334,7 @@ void DebuggerProcessKey( int keycode )
 	}
 	else
  	// If have console input, don't invoke cursor movement
-	// TODO: Probably should disable all "movement" keys to map them to line editing mode
+	// TODO: Probably should disable all "movement" keys to map them to line editing g_nAppMode
  	if ((keycode == VK_SPACE) && g_nConsoleInputChars)
 		return;
 	else if (keycode == VK_ESCAPE)

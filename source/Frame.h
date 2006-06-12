@@ -12,3 +12,9 @@ void    FrameRefreshStatus (int);
 void    FrameRegisterClass ();
 void    FrameReleaseDC ();
 void    FrameReleaseVideoDC ();
+
+LRESULT CALLBACK FrameWndProc (
+	HWND   window,
+	UINT   message,
+	WPARAM wparam,
+	LPARAM lparam );

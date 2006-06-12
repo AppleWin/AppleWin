@@ -93,7 +93,7 @@ enum Color_Palette_Index_e
 	, PINK             
 	, AQUA             
 
-// CUSTOM HGR COLORS (don't change order) - For tv emulation mode
+// CUSTOM HGR COLORS (don't change order) - For tv emulation g_nAppMode
 	, HGR_BLACK        
 	, HGR_WHITE        
 	, HGR_BLUE         
@@ -149,7 +149,7 @@ enum Color_Palette_Index_e
                                  framebufferinfo->bmiColors[i].rgbGreen = g; \
                                  framebufferinfo->bmiColors[i].rgbBlue  = b;
 
-#define  HGR_MATRIX_YOFFSET 2	// For tv emulation mode
+#define  HGR_MATRIX_YOFFSET 2	// For tv emulation g_nAppMode
 
 // video scanner constants
 int const kHBurstClock      =    53; // clock when Color Burst starts
@@ -188,7 +188,7 @@ static LPBYTE        sourceoffsettable[512];
 static LPBYTE        textauxptr;
 static LPBYTE        textmainptr;
 
-// For tv emulation mode
+// For tv emulation g_nAppMode
 // 2 extra pixels on end?
 static BYTE          hgrpixelmatrix[280][192 + 2 * HGR_MATRIX_YOFFSET];
 static BYTE          colormixbuffer[6];
@@ -286,7 +286,7 @@ void CreateIdentityPalette () {
 	SETFRAMECOLOR(PINK,      0xFF,0x90,0x80);
 	SETFRAMECOLOR(AQUA,      0x40,0xFF,0x90);
 
-	SETFRAMECOLOR(HGR_BLACK,  0x00,0x00,0x00);	// For tv emulation mode
+	SETFRAMECOLOR(HGR_BLACK,  0x00,0x00,0x00);	// For tv emulation g_nAppMode
 	SETFRAMECOLOR(HGR_WHITE,  0xFF,0xFF,0xFE);
 	SETFRAMECOLOR(HGR_BLUE,   0x00,0x80,0xFF);
 	SETFRAMECOLOR(HGR_RED,    0xF0,0x50,0x00);
@@ -516,7 +516,7 @@ void DrawDHiResSource () {
 	  {
 	    /***          
 	    activate for fringe reduction on white hgr text
-	    drawback: loss of color mix patterns in hgr mode.
+	    drawback: loss of color mix patterns in hgr g_nAppMode.
 	    select videotype by index
 	    ***/
 
@@ -623,7 +623,7 @@ void DrawHiResSourceHalfShiftDim ()
 					{
 						/***          
 						activate for fringe reduction on white hgr text - 
-						drawback: loss of color mix patterns in hgr mode.
+						drawback: loss of color mix patterns in hgr g_nAppMode.
 						select videotype by index exclusion
 						***/
 
@@ -792,7 +792,7 @@ void DrawHiResSource ()
 					{
 						/***          
 						activate for fringe reduction on white hgr text - 
-						drawback: loss of color mix patterns in hgr mode.
+						drawback: loss of color mix patterns in hgr g_nAppMode.
 						select videotype by index exclusion
 						***/
 
@@ -1037,7 +1037,7 @@ BOOL UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset) {
 
 
 //===========================================================================
-BYTE MixColors(BYTE c1, BYTE c2) {	// For tv emulation mode
+BYTE MixColors(BYTE c1, BYTE c2) {	// For tv emulation g_nAppMode
 #define COMBINATION(c1,c2,ref1,ref2) (((c1)==(ref1)&&(c2)==(ref2)) || ((c1)==(ref2)&&(c2)==(ref1)))
 
   if (c1 == c2)
@@ -1062,7 +1062,7 @@ BYTE MixColors(BYTE c1, BYTE c2) {	// For tv emulation mode
 
 
 //===========================================================================
-void CreateColorMixMap() {	// For tv emulation mode
+void CreateColorMixMap() {	// For tv emulation g_nAppMode
 #define FROM_NEIGHBOUR 0x00
 
   int t,m,b;
@@ -1102,7 +1102,7 @@ void CreateColorMixMap() {	// For tv emulation mode
 }
 
 //===========================================================================
-void __stdcall MixColorsVertical(int matx, int maty) {	// For tv emulation mode
+void __stdcall MixColorsVertical(int matx, int maty) {	// For tv emulation g_nAppMode
 
   WORD twoHalfPixel;
   int bot1idx, bot2idx;
@@ -1141,7 +1141,7 @@ void __stdcall MixColorsVertical(int matx, int maty) {	// For tv emulation mode
 
 
 //===========================================================================
-void __stdcall CopyMixedSource (int x, int y, int sourcex, int sourcey) {	// For tv emulation mode
+void __stdcall CopyMixedSource (int x, int y, int sourcex, int sourcey) {	// For tv emulation g_nAppMode
 
   LPBYTE currsourceptr = sourceoffsettable[sourcey]+sourcex;
   LPBYTE currdestptr   = frameoffsettable[y<<1] + (x<<1);
@@ -1576,7 +1576,7 @@ void VideoChooseColor () {
   if (ChooseColor(&cc)) {
     monochrome = cc.rgbResult;
     VideoReinitialize();
-    if ((mode != MODE_LOGO) && (mode != MODE_DEBUG))
+    if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
       VideoRedrawScreen();
     RegSaveValue(TEXT("Configuration"),TEXT("Monochrome Color"),1,monochrome);
   }
@@ -2010,7 +2010,7 @@ void VideoUpdateFlash()
 		nTextFlashCnt = 0;
 		g_bTextFlashState = !g_bTextFlashState;
 		
-		// Redraw any FLASHing chars if any text showing. NB. No FLASH mode for 80 cols
+		// Redraw any FLASHing chars if any text showing. NB. No FLASH g_nAppMode for 80 cols
 		if((SW_TEXT || SW_MIXED) && !SW_80COL)
 			g_bTextFlashFlag = true;
 	}

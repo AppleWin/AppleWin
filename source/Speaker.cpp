@@ -509,7 +509,7 @@ void SpkrUpdate (DWORD totalcycles)
 	  else if(g_nCumulativeCycles - g_nSpkrQuietCycleCount > (unsigned __int64)g_fCurrentCLK6502/5)
 	  {
 		  // After 0.2 sec of Apple time, deactivate spkr voice
-		  // . This allows emulator to auto-switch to full-speed mode for fast disk access
+		  // . This allows emulator to auto-switch to full-speed g_nAppMode for fast disk access
 		  Spkr_SetActive(false);
 	  }
   }
@@ -616,7 +616,7 @@ static DWORD dwByteOffset = (DWORD)-1;
 static int nNumSamplesError = 0;
 static int nDbgSpkrCnt = 0;
 
-// FullSpeed mode, 2 cases:
+// FullSpeed g_nAppMode, 2 cases:
 // i) Short burst of full-speed, so PlayCursor doesn't complete sound from previous fixed-speed session.
 // ii) Long burst of full-speed, so PlayCursor completes sound from previous fixed-speed session.
 

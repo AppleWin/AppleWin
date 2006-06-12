@@ -411,7 +411,7 @@ void SoundCore_SetFade(eFADE FadeType)
 {
 	static int nLastMode = -1;
 
-	if(mode == MODE_DEBUG)
+	if(g_nAppMode == MODE_DEBUG)
 		return;
 
 	// Fade in/out just for speaker, the others are demuted/muted
@@ -419,9 +419,9 @@ void SoundCore_SetFade(eFADE FadeType)
 	{
 		for(UINT i=0; i<g_uNumVoices; i++)
 		{
-			// Note: Kludge for fading speaker if curr/last mode is/was MODE_LOGO:
+			// Note: Kludge for fading speaker if curr/last g_nAppMode is/was MODE_LOGO:
 			// . Bug in DirectSound? SpeakerVoice.lpDSBvoice->SetVolume() doesn't work without this!
-			if((g_pVoices[i]->bIsSpeaker) && (mode != MODE_LOGO) && (nLastMode != MODE_LOGO))
+			if((g_pVoices[i]->bIsSpeaker) && (g_nAppMode != MODE_LOGO) && (nLastMode != MODE_LOGO))
 			{
 				g_pVoices[i]->lpDSBvoice->GetVolume(&g_pVoices[i]->nFadeVolume);
 				g_FadeType = FadeType;
@@ -449,7 +449,7 @@ void SoundCore_SetFade(eFADE FadeType)
 		}
 	}
 
-	nLastMode = mode;
+	nLastMode = g_nAppMode;
 }
 
 //-----------------------------------------------------------------------------

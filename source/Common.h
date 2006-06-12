@@ -18,11 +18,20 @@ const DWORD dwClksPerFrame			= uCyclesPerLine * uLinesPerFrame;	// 17030
 // Assume base freqs are 44.1KHz & 48KHz
 const DWORD SPKR_SAMPLE_RATE = 44100;
 
-#define  MODE_LOGO         0
-#define  MODE_PAUSED       1
-#define  MODE_RUNNING      2
-#define  MODE_DEBUG        3
-#define  MODE_STEPPING     4
+enum AppMode_e
+{
+	MODE_LOGO = 0
+	, MODE_PAUSED
+	, MODE_RUNNING
+	, MODE_DEBUG
+	, MODE_STEPPING
+};
+
+//#define  MODE_LOGO         0
+//#define  MODE_PAUSED       1
+//#define  MODE_RUNNING      2
+//#define  MODE_DEBUG        3
+//#define  MODE_STEPPING     4
 
 #define  SPEED_MIN         0
 #define  SPEED_NORMAL      10

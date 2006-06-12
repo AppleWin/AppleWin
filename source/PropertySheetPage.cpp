@@ -224,7 +224,7 @@ static void ConfigDlg_OK(HWND window, BOOL afterclose)
 	{
 		videotype = newvidtype;
 		VideoReinitialize();
-		if ((mode != MODE_LOGO) && (mode != MODE_DEBUG))
+		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 			VideoRedrawScreen();
 	}
 	CommSetSerialPort(window,newserialport);

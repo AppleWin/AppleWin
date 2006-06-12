@@ -126,7 +126,7 @@ bool CanDrawDebugger()
 	if (g_bDebuggerViewingAppleOutput)
 		return false;
 
-	if ((mode == MODE_DEBUG) || (mode == MODE_STEPPING))
+	if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
 		return true;
 
 	return false;
