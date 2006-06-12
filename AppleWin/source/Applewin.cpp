@@ -31,8 +31,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 char VERSIONSTRING[] = "xx.yy.zz.ww";
 
-BOOL      apple2e           = 1;
-BOOL      apple2plus        = 1;
+bool      apple2e           = true;
+bool      apple2plus        = true;
+
 BOOL      behind            = 0;			// Redundant
 DWORD     cumulativecycles  = 0;			// Wraps after ~1hr 9mins
 DWORD     cyclenum          = 0;			// Used by SpkrToggle() for non-wave sound
@@ -42,7 +43,9 @@ bool      g_bFullSpeed      = false;
 HINSTANCE instance          = (HINSTANCE)0;
 static DWORD lastfastpaging = 0;
 static DWORD lasttrimimages = 0;
-int       mode              = MODE_LOGO;
+
+AppMode_e	g_nAppMode = MODE_LOGO;
+
 static int lastmode         = MODE_LOGO;
 DWORD     needsprecision    = 0;			// Redundant
 TCHAR     progdir[MAX_PATH] = TEXT("");
@@ -188,7 +191,7 @@ void ContinueExecution()
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
-		if(mode != MODE_LOGO)
+		if(g_nAppMode != MODE_LOGO)
 		{
 			VideoUpdateFlash();
 
@@ -310,27 +313,38 @@ LRESULT CALLBACK DlgProc (HWND   window,
 }
 
 //===========================================================================
-void EnterMessageLoop () {
-  MSG message;
-  while (GetMessage(&message,0,0,0)) {
-    TranslateMessage(&message);
-    DispatchMessage(&message);
-    while ((mode == MODE_RUNNING) || (mode == MODE_STEPPING))
-      if (PeekMessage(&message,0,0,0,PM_REMOVE)) {
-        if (message.message == WM_QUIT)
-          return;
-        TranslateMessage(&message);
-        DispatchMessage(&message);
-      }
-      else if (mode == MODE_STEPPING)
-        DebugContinueStepping();
-      else {
-        ContinueExecution();
-        if (g_bFullSpeed)
-          ContinueExecution();
-      }
-  }
-  while (PeekMessage(&message,0,0,0,PM_REMOVE)) ;
+void EnterMessageLoop ()
+{
+	MSG message;
+
+	while (GetMessage(&message,0,0,0))
+	{
+		TranslateMessage(&message);
+		DispatchMessage(&message);
+
+		while ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING))
+		{
+			if (PeekMessage(&message,0,0,0,PM_REMOVE))
+			{
+				if (message.message == WM_QUIT)
+					return;
+				TranslateMessage(&message);
+				DispatchMessage(&message);
+			}
+			else if (g_nAppMode == MODE_STEPPING)
+				DebugContinueStepping();
+			else
+			{
+				ContinueExecution();
+				if (g_nAppMode != MODE_DEBUG)
+					if (g_bFullSpeed)
+						ContinueExecution();
+			}
+		}
+	}
+
+	while (PeekMessage(&message,0,0,0,PM_REMOVE))
+		; // intentional null statement
 }
 
 //===========================================================================
@@ -542,7 +556,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 		else if((strcmp(lpCmdLine, "-l") == 0) && (g_fh == NULL))
 		{
-			g_fh = fopen("AppleWin.log", "a+t");	// Open log file (append & text mode)
+			g_fh = fopen("AppleWin.log", "a+t");	// Open log file (append & text g_nAppMode)
 			CHAR aDateStr[80], aTimeStr[80];
 			GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aDateStr, sizeof(aDateStr));
 			GetTimeFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aTimeStr, sizeof(aTimeStr));
@@ -633,7 +647,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	FrameRegisterClass();
 	ImageInitialize();
 	DiskInitialize();
-	CreateColorMixMap();	// For tv emulation mode
+	CreateColorMixMap();	// For tv emulation g_nAppMode
 
 	//
 
@@ -654,7 +668,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	{
 		// DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
 		restart = 0;
-		mode    = MODE_LOGO;
+		g_nAppMode    = MODE_LOGO;
 		LoadConfiguration();
 		DebugInitialize();
 		JoyInitialize();

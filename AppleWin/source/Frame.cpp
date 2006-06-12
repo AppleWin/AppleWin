@@ -319,9 +319,9 @@ void DrawFrameWindow () {
     ReleaseDC(g_hFrameWindow,dc);
 
   // DRAW THE CONTENTS OF THE EMULATED SCREEN
-  if (mode == MODE_LOGO)
+  if (g_nAppMode == MODE_LOGO)
     VideoDisplayLogo();
-  else if (mode == MODE_DEBUG)
+  else if (g_nAppMode == MODE_DEBUG)
     DebugDisplay(1);
   else
     VideoRedrawScreen();
@@ -354,10 +354,10 @@ void DrawStatusArea (HDC passdc, int drawflags) {
       TextOut(dc,x+BUTTONCX,y+2,TEXT("Caps"),4);
     }
     SetTextAlign(dc,TA_CENTER | TA_TOP);
-    SetTextColor(dc,(mode == MODE_PAUSED ||
-                     mode == MODE_STEPPING ? RGB(255,255,255) :
+    SetTextColor(dc,(g_nAppMode == MODE_PAUSED ||
+                     g_nAppMode == MODE_STEPPING ? RGB(255,255,255) :
                                              RGB(  0,  0,  0)));
-    TextOut(dc,x+BUTTONCX/2,y+13,(mode == MODE_PAUSED ? TEXT(" Paused ") :
+    TextOut(dc,x+BUTTONCX/2,y+13,(g_nAppMode == MODE_PAUSED ? TEXT(" Paused ") :
                                                         TEXT("Stepping")),8);
   }
   else {
@@ -386,7 +386,7 @@ void DrawStatusArea (HDC passdc, int drawflags) {
       TCHAR title[40];
       _tcscpy(title,apple2e ? TITLE : (apple2plus ? TEXT("Apple ][+ Emulator")
 						  : TEXT("Apple ][ Emulator")));
-      switch (mode) {
+      switch (g_nAppMode) {
         case MODE_PAUSED:   _tcscat(title,TEXT(" [Paused]"));    break;
         case MODE_STEPPING: _tcscat(title,TEXT(" [Stepping]"));  break;
       }
@@ -445,10 +445,10 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
       break;
 
     case WM_CHAR:
-      if ((mode == MODE_RUNNING) || (mode == MODE_LOGO) ||
-          ((mode == MODE_STEPPING) && (wparam != TEXT('\x1B'))))
+      if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) ||
+          ((g_nAppMode == MODE_STEPPING) && (wparam != TEXT('\x1B'))))
         KeybQueueKeypress((int)wparam,ASCII);
-      else if ((mode == MODE_DEBUG) || (mode == MODE_STEPPING))
+      else if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
 //        DebugProcessChar((TCHAR)wparam);
         DebuggerInputConsoleChar((TCHAR)wparam);
 
@@ -554,7 +554,7 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
         if (videotype >= VT_NUM_MODES)
           videotype = 0;
         VideoReinitialize();
-        if ((mode != MODE_LOGO) || ((mode == MODE_DEBUG) && (g_bDebuggerViewingAppleOutput))) // +PATCH
+        if ((g_nAppMode != MODE_LOGO) || ((g_nAppMode == MODE_DEBUG) && (g_bDebuggerViewingAppleOutput))) // +PATCH
 		{
           VideoRedrawScreen();
           g_bDebuggerViewingAppleOutput = true;  // +PATCH
@@ -583,14 +583,14 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
         KeybToggleCapsLock();
       else if (wparam == VK_PAUSE) {
         SetUsingCursor(0);
-        switch (mode)
+        switch (g_nAppMode)
 		{
           case MODE_RUNNING:
-			  mode = MODE_PAUSED;
+			  g_nAppMode = MODE_PAUSED;
 			  SoundCore_SetFade(FADE_OUT);
 			  break;
           case MODE_PAUSED:
-			  mode = MODE_RUNNING;
+			  g_nAppMode = MODE_RUNNING;
 			  SoundCore_SetFade(FADE_IN);
 			  break;
           case MODE_STEPPING:
@@ -598,21 +598,21 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
 			  break;
         }
         DrawStatusArea((HDC)0,DRAW_TITLE);
-        if ((mode != MODE_LOGO) && (mode != MODE_DEBUG))
+        if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
           VideoRedrawScreen();
         resettiming = 1;
       }
-      else if ((mode == MODE_RUNNING) || (mode == MODE_LOGO) || (mode == MODE_STEPPING))
+      else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) || (g_nAppMode == MODE_STEPPING))
 	  {
 		  // Note about Alt Gr (Right-Alt):
 		  // . WM_KEYDOWN[Left-Control], then:
 		  // . WM_KEYDOWN[Right-Alt]
         BOOL autorep  = ((lparam & 0x40000000) != 0);
         BOOL extended = ((lparam & 0x01000000) != 0);
-        if ((!JoyProcessKey((int)wparam,extended,1,autorep)) && (mode != MODE_LOGO))
+        if ((!JoyProcessKey((int)wparam,extended,1,autorep)) && (g_nAppMode != MODE_LOGO))
           KeybQueueKeypress((int)wparam,NOT_ASCII);
       }
-      else if (mode == MODE_DEBUG)
+      else if (g_nAppMode == MODE_DEBUG)
 //        DebugProcessCommand(wparam);
         DebuggerProcessKey(wparam);
 
@@ -652,7 +652,7 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
           else
             JoySetButton(0,1);
         else if ((x < buttonx) && JoyUsingMouse() &&
-                 ((mode == MODE_RUNNING) || (mode == MODE_STEPPING)))
+                 ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING)))
           SetUsingCursor(1);
       }
       RelayEvent(WM_LBUTTONDOWN,wparam,lparam);
@@ -813,7 +813,7 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
       break;
 
     case WM_USER_BENCHMARK: {
-      if (mode != MODE_LOGO)
+      if (g_nAppMode != MODE_LOGO)
         if (MessageBox(g_hFrameWindow,
                        TEXT("Running the benchmarks will reset the state of ")
                        TEXT("the emulated machine, causing you to lose any ")
@@ -824,7 +824,7 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
           break;
       UpdateWindow(window);
       ResetMachineState();
-      mode = MODE_LOGO;
+      g_nAppMode = MODE_LOGO;
       DrawStatusArea((HDC)0,DRAW_TITLE);
       HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
       VideoBenchmark();
@@ -836,7 +836,7 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
     case WM_USER_RESTART:
 	  // . Changed Apple computer type (][+ or //e)
 	  // . Changed disk speed (normal or enhanced)
-      if (mode != MODE_LOGO)
+      if (g_nAppMode != MODE_LOGO)
         if (MessageBox(g_hFrameWindow,
                        TEXT("Restarting the emulator will reset the state ")
                        TEXT("of the emulated machine, causing you to lose any ")
@@ -880,13 +880,13 @@ void ProcessButtonClick (int button) {
       break;
 
     case BTN_RUN:
-      if (mode == MODE_LOGO)
+      if (g_nAppMode == MODE_LOGO)
         DiskBoot();
-      else if (mode == MODE_RUNNING)
+      else if (g_nAppMode == MODE_RUNNING)
         ResetMachineState();
-      if ((mode == MODE_DEBUG) || (mode == MODE_STEPPING))
+      if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
         DebugEnd();
-      mode = MODE_RUNNING;
+      g_nAppMode = MODE_RUNNING;
       DrawStatusArea((HDC)0,DRAW_TITLE);
       VideoRedrawScreen();
       resettiming = 1;
@@ -911,15 +911,25 @@ void ProcessButtonClick (int button) {
       break;
 
     case BTN_DEBUG:
-      if (mode == MODE_LOGO)
-        ResetMachineState();
-      if (mode == MODE_STEPPING)
+		if (g_nAppMode == MODE_LOGO)
+		{
+			ResetMachineState();
+		}
+
+		if (g_nAppMode == MODE_STEPPING)
+		{
 			DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
-      else if (mode == MODE_DEBUG)
-        ProcessButtonClick(BTN_RUN);
-      else {
-        DebugBegin();
-      }
+		}
+		else
+		if (g_nAppMode == MODE_DEBUG)
+		{
+			g_bDebugDelayBreakCheck = true;
+			ProcessButtonClick(BTN_RUN);
+		}
+		else
+		{
+			DebugBegin();
+		}
       break;
 
     case BTN_SETUP:
@@ -930,7 +940,7 @@ void ProcessButtonClick (int button) {
 
   }
 
-  if((mode != MODE_DEBUG) && (mode != MODE_PAUSED))
+  if((g_nAppMode != MODE_DEBUG) && (g_nAppMode != MODE_PAUSED))
   {
 	  SoundCore_SetFade(FADE_IN);
   }

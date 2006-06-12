@@ -23,7 +23,7 @@
 
 	/*
       +---------------------+--------------------------+
-      |      mode           |     assembler format     |
+      |      g_nAppMode           |     assembler format     |
       +=====================+==========================+
       | Immediate           |          #aa             |
       | Absolute            |          aaaa            |
@@ -43,7 +43,7 @@
 
 	Opcode: opc aaa od
 		opc...od = Mnemonic / Opcode
-		...aaa.. = Addressing mode
+		...aaa.. = Addressing g_nAppMode
 	od = 00
 		000	#Immediate
 		001	Zero page
@@ -291,7 +291,7 @@
 		, FG_DISASM_PC_X     // White      (not cursor)
 
 		, FG_DISASM_ADDRESS  // White   addr
-		, FG_DISASM_OPERATOR // Gray192     :               $ (also around instruction addressing mode)
+		, FG_DISASM_OPERATOR // Gray192     :               $ (also around instruction addressing g_nAppMode)
 		, FG_DISASM_OPCODE   // Yellow       xx xx xx
 		, FG_DISASM_MNEMONIC // White                   LDA
 		, FG_DISASM_TARGET   // Orange                       FAC8
