@@ -511,7 +511,9 @@
 		, CMD_MEMORY_EDIT
 		, CMD_MEMORY_ENTER_BYTE
 		, CMD_MEMORY_ENTER_WORD
+		, CMD_MEMORY_LOAD
 		, CMD_MEMORY_MOVE
+		, CMD_MEMORY_SAVE
 		, CMD_MEMORY_SEARCH
 		, CMD_MEMORY_SEARCH_ASCII   // Ascii Text
 		, CMD_MEMORY_SEARCH_APPLE   // Flashing Chars, Hi-Bit Set
@@ -689,7 +691,9 @@
 	Update_t CmdMemoryEnterByte    (int nArgs);
 	Update_t CmdMemoryEnterWord    (int nArgs);
 	Update_t CmdMemoryFill         (int nArgs);
+	Update_t CmdMemoryLoad         (int nArgs);
 	Update_t CmdMemoryMove         (int nArgs);
+	Update_t CmdMemorySave         (int nArgs);
 	Update_t CmdMemorySearch       (int nArgs);
 //	Update_t CmdMemorySearchLowBit (int nArgs);
 //	Update_t CmdMemorySearchHiBit  (int nArgs);
