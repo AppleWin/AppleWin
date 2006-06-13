@@ -1,6 +1,8 @@
 /*
 
 2.5.3.x
+.8 added DISASM to print current states
+.7 added DISASM TARGET [#]
 .6 added BLOAD addr[,len] "Filename"
 .5 added BSAVE addr,len "Filename"
 .4 added HELP DISASM
