@@ -51,10 +51,12 @@ using namespace std;
 	extern const int WINDOW_DATA_BYTES_PER_LINE;
 
 // Disassembly
-	extern bool  g_bConfigDisasmOpcodesView  ;//= true; // TODO: CONFIG {DISASM} OPCODES [0|1]
-	extern bool  g_bConfigDisasmOpcodeSpaces ;//= true; // TODO: CONFIG {DISASM} SPACE  [0|1]
-	extern bool  g_bConfigDisasmAddressColon ;//= true; // TODO: CONFIG {DISASM} COLON  [0|1]
-	extern int   g_iConfigDisasmBranchType   ;//DISASM_BRANCH_FANCY; // TODO: CONFIG {DISASM} BRANCH [0|1|2]
+	extern bool  g_bConfigDisasmAddressColon ;
+	extern bool  g_bConfigDisasmOpcodesView  ;
+	extern bool  g_bConfigDisasmOpcodeSpaces ;
+	extern int   g_iConfigDisasmTargets      ;
+	extern int   g_iConfigDisasmBranchType   ;
+	extern int   g_bConfigDisasmImmediateChar;
 
 // Display
 	extern bool g_bDebuggerViewingAppleOutput;

@@ -787,22 +787,41 @@
 
 
 // Disassembly ____________________________________________________________________________________
-	enum FormatDisasm_e
-	{
-		DISASM_IMMEDIATE_CHAR   = (1 << 0),
-		DISASM_TARGET_SYMBOL    = (1 << 1),
-		DISASM_TARGET_OFFSET    = (1 << 2),
-		DISASM_BRANCH_INDICATOR = (1 << 3),
-		DISASM_TARGET_POINTER   = (1 << 4),
-		DISASM_TARGET_VALUE     = (1 << 5),
-	};
 
 	enum DisasmBranch_e
 	{
-		DISASM_BRANCH_OFF   = 0,
-		DISASM_BRANCH_PLAIN = 1,
-		DISASM_BRANCH_FANCY = 2,
-		NUM_DISASM_BRANCH_TYPES
+		  DISASM_BRANCH_OFF = 0
+		, DISASM_BRANCH_PLAIN
+		, DISASM_BRANCH_FANCY
+		, NUM_DISASM_BRANCH_TYPES
+	};
+
+	enum DisasmFormat_e
+	{
+		DISASM_FORMAT_CHAR           = (1 << 0),
+		DISASM_FORMAT_SYMBOL         = (1 << 1),
+		DISASM_FORMAT_OFFSET         = (1 << 2),
+		DISASM_FORMAT_BRANCH         = (1 << 3),
+		DISASM_FORMAT_TARGET_POINTER = (1 << 4),
+		DISASM_FORMAT_TARGET_VALUE   = (1 << 5),
+	};
+
+	enum DisasmImmediate_e
+	{
+		  DISASM_IMMED_OFF = 0
+		, DISASM_IMMED_TARGET
+		, DISASM_IMMED_MODE
+		, DISASM_IMMED_BOTH
+		, NUM_DISASM_IMMED_TYPES
+	};
+
+	enum DisasmTargets_e
+	{
+		  DISASM_TARGET_OFF  = 0
+		, DISASM_TARGET_VAL  // Note: Also treated as bit flag !!
+		, DISASM_TARGET_ADDR // Note: Also treated as bit flag !!
+		, DISASM_TARGET_BOTH // Note: Also treated as bit flag !!
+		, NUM_DISASM_TARGET_TYPES
 	};
 	
 // Font ___________________________________________________________________________________________
@@ -1145,6 +1164,7 @@
 		, PARAM_CONFIG_COLON  // g_bConfigDisasmAddressColon [0|1]
 		, PARAM_CONFIG_OPCODE // g_bConfigDisasmOpcodesView  [0|1]
 		, PARAM_CONFIG_SPACES // g_bConfigDisasmOpcodeSpaces [0|1]
+		, PARAM_CONFIG_TARGET // g_iConfigDisasmTargets      [0 | 1 | 2]
 	, _PARAM_CONFIG_END
 	, PARAM_CONFIG_NUM = _PARAM_CONFIG_END - _PARAM_CONFIG_BEGIN
 
