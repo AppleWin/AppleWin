@@ -478,10 +478,10 @@ Update_t CmdHelpSpecific (int nArgs)
 
 			wsprintf( sText, TEXT(" Usage: %s [#]" ), g_aParameters[ PARAM_CONFIG_BRANCH ].m_sName );
 			ConsoleBufferPush( sText );
-			wsprintf( sText, TEXT(" # is from 0 to %d\n"), NUM_DISASM_BRANCH_TYPES - 1 );
-			ConsoleBufferPush( sText );
 			ConsoleBufferPush( TEXT("  Set the type of branch character:" ) );
-			ConsoleBufferPush( TEXT("  0 none, 1 = plain, 2 = fancy" ) );
+			wsprintf( sText, TEXT("  %d off, %d plain, %d fancy" ),
+				 DISASM_BRANCH_OFF, DISASM_BRANCH_PLAIN, DISASM_BRANCH_FANCY );
+			ConsoleBufferPush( sText );
 
 			wsprintf( sText, TEXT(" Usage: %s [0|1]" ), g_aParameters[ PARAM_CONFIG_COLON ].m_sName );
 			ConsoleBufferPush( sText );
@@ -494,6 +494,16 @@ Update_t CmdHelpSpecific (int nArgs)
 			wsprintf( sText, TEXT(" Usage: %s [0|1]" ), g_aParameters[ PARAM_CONFIG_SPACES ].m_sName );
 			ConsoleBufferPush( sText );
 			ConsoleBufferPush( TEXT("  Display spaces between opcodes" ) );
+
+			wsprintf( sText, TEXT(" Usage: %s [#]" ), g_aParameters[ PARAM_CONFIG_TARGET ].m_sName );
+			ConsoleBufferPush( sText );
+			ConsoleBufferPush( TEXT("  Set the type of target address/value displayed:" ) );
+			wsprintf( sText, TEXT("  %d off, %d value only, %d address only, %d both" ),
+				DISASM_TARGET_OFF, DISASM_TARGET_VAL, DISASM_TARGET_ADDR, DISASM_TARGET_BOTH );
+			ConsoleBufferPush( sText );
+
+// ZZZ - CHAR
+
 			break;
 
 	// Config - Font

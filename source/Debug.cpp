@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,3,6);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,3,8);
 
 
 // Public _________________________________________________________________________________________
@@ -527,10 +527,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 // Disassembly
-	bool  g_bConfigDisasmOpcodesView  = true;
-	bool  g_bConfigDisasmOpcodeSpaces = true;
-	bool  g_bConfigDisasmAddressColon = true;
-	int   g_iConfigDisasmBranchType = DISASM_BRANCH_FANCY;
+	bool  g_bConfigDisasmAddressColon  = true;
+	bool  g_bConfigDisasmOpcodesView   = true;
+	bool  g_bConfigDisasmOpcodeSpaces  = true;
+	int   g_iConfigDisasmTargets       = DISASM_TARGET_BOTH;
+	int   g_iConfigDisasmBranchType    = DISASM_BRANCH_FANCY;
+	int   g_bConfigDisasmImmediateChar = DISASM_IMMED_BOTH;
 
 
 // Display ____________________________________________________________________
@@ -591,6 +593,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("COLON")      , NULL, PARAM_CONFIG_COLON   },
 		{TEXT("OPCODE")     , NULL, PARAM_CONFIG_OPCODE  },
 		{TEXT("SPACES")		, NULL, PARAM_CONFIG_SPACES  },
+		{TEXT("TARGET")     , NULL, PARAM_CONFIG_TARGET  },
 // Disk
 		{TEXT("EJECT")      , NULL, PARAM_DISK_EJECT     },
 		{TEXT("PROTECT")    , NULL, PARAM_DISK_PROTECT   },
@@ -2232,60 +2235,122 @@ Update_t CmdConfigSave (int nArgs)
 Update_t CmdConfigDisasm( int nArgs )
 {
 	int iParam = 0;
+	TCHAR sText[ CONSOLE_WIDTH ];
+
+	bool bDisplayCurrentSettings = false;
+
+//	if (_tcscmp( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ) == 0)
+
+	if (! nArgs)
+	{
+		bDisplayCurrentSettings = true;			
+		nArgs = PARAM_CONFIG_NUM;
+	}
+	else
+	{
+		if (nArgs > 2)
+			return Help_Arg_1( CMD_CONFIG_DISASM );
+	}
 
 	for (int iArg = 1; iArg <= nArgs; iArg++ )
 	{
+		if (bDisplayCurrentSettings)
+			iParam = _PARAM_CONFIG_BEGIN + iArg - 1;
+		else
 		if (FindParam( g_aArgs[iArg].sArg, MATCH_FUZZY, iParam ))
 		{
-
-//			if (_tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ) == 0)
-				// All -- for saving
-// 				g_aArgs[ iArg ]
+		}
 
 			switch (iParam)
 			{
 				case PARAM_CONFIG_BRANCH:
-					iArg++;
-					if (iArg > 2)
-						return Help_Arg_1( CMD_CONFIG_DISASM ); // CMD_CONFIG_DISASM_BRANCH );
-					
-					
-					g_iConfigDisasmBranchType = g_aArgs[ iArg ].nVal1;
-					if (g_iConfigDisasmBranchType < 0)
-						g_iConfigDisasmBranchType = 0;
-					if (g_iConfigDisasmBranchType >= NUM_DISASM_BRANCH_TYPES)
-						g_iConfigDisasmBranchType = NUM_DISASM_BRANCH_TYPES - 1;
+					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
+					{					
+						iArg++;
+						g_iConfigDisasmBranchType = g_aArgs[ iArg ].nVal1;
+						if (g_iConfigDisasmBranchType < 0)
+							g_iConfigDisasmBranchType = 0;
+						if (g_iConfigDisasmBranchType >= NUM_DISASM_BRANCH_TYPES)
+							g_iConfigDisasmBranchType = NUM_DISASM_BRANCH_TYPES - 1;
+
+					}
+					else // show current setting
+					{
+						wsprintf( sText, TEXT( "Branch Type: %d" ), g_iConfigDisasmBranchType );
+						ConsoleBufferPush( sText );
+						ConsoleBufferToDisplay();
+					}
 					break;
 
 				case PARAM_CONFIG_COLON:
-					iArg++;
-					if (iArg > 2)
-						return Help_Arg_1( CMD_CONFIG_DISASM ); // CMD_CONFIG_DISASM_COLON );
-					
-					g_bConfigDisasmAddressColon = (g_aArgs[ iArg ].nVal1 & 1);
+					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
+					{					
+						iArg++;
+						g_bConfigDisasmAddressColon = (g_aArgs[ iArg ].nVal1) ? true : false;
+					}
+					else // show current setting
+					{
+						int iState = g_bConfigDisasmAddressColon ? PARAM_ON : PARAM_OFF;
+						wsprintf( sText, TEXT( "Colon: %s" ), g_aParameters[ iState ].m_sName );
+						ConsoleBufferPush( sText );
+						ConsoleBufferToDisplay();
+					}
 					break;
 
 				case PARAM_CONFIG_OPCODE:
-					iArg++;
-					if (iArg > 2)
-						return Help_Arg_1( CMD_CONFIG_DISASM ); // CMD_CONFIG_DISASM_OPCODE );
-
-					g_bConfigDisasmOpcodesView = (g_aArgs[ iArg ].nVal1 & 1);
+					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
+					{
+						iArg++;
+						g_bConfigDisasmOpcodesView = (g_aArgs[ iArg ].nVal1) ? true : false;
+					}
+					else
+					{
+						int iState = g_bConfigDisasmOpcodeSpaces ? PARAM_ON : PARAM_OFF;
+						wsprintf( sText, TEXT( "Opcodes: %s" ), g_aParameters[ iState ].m_sName );
+						ConsoleBufferPush( sText );
+						ConsoleBufferToDisplay();
+					}
 					break;
 
 				case PARAM_CONFIG_SPACES:
-					iArg++;
-					if (iArg > 2)
-						return Help_Arg_1( CMD_CONFIG_DISASM ); // CMD_CONFIG_DISASM_SPACES );
-
-					g_bConfigDisasmOpcodeSpaces = (g_aArgs[ iArg ].nVal1 & 1);
+					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
+					{
+						iArg++;
+						g_bConfigDisasmOpcodeSpaces = (g_aArgs[ iArg ].nVal1) ? true : false;
+					}
+					else
+					{
+						int iState = g_bConfigDisasmOpcodeSpaces ? PARAM_ON : PARAM_OFF;
+						wsprintf( sText, TEXT( "Opcode spaces: %s" ), g_aParameters[ iState ].m_sName );
+						ConsoleBufferPush( sText );
+						ConsoleBufferToDisplay();
+					}
 					break;
 					
+				case PARAM_CONFIG_TARGET:
+					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
+					{					
+						iArg++;
+						g_iConfigDisasmTargets = g_aArgs[ iArg ].nVal1;
+						if (g_iConfigDisasmTargets < 0)
+							g_iConfigDisasmTargets = 0;
+						if (g_iConfigDisasmTargets >= NUM_DISASM_TARGET_TYPES)
+							g_iConfigDisasmTargets = NUM_DISASM_TARGET_TYPES - 1;
+					}
+					else // show current setting
+					{
+						wsprintf( sText, TEXT( "Target: %d" ), g_iConfigDisasmTargets );
+						ConsoleBufferPush( sText );
+						ConsoleBufferToDisplay();
+					}
+					break;
 
 				default:
 					return Help_Arg_1( CMD_CONFIG_DISASM ); // CMD_CONFIG_DISASM_OPCODE );
 			}
-		}
+//		}
+//		else
+//			return Help_Arg_1( CMD_CONFIG_DISASM );
 	}
 	return UPDATE_CONSOLE_DISPLAY | UPDATE_DISASM;
 }

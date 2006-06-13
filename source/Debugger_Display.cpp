@@ -287,7 +287,7 @@ int FormatDisassemblyLine( WORD nBaseAddress, int iOpcode, int iOpmode, int nOpB
 
 			// Always show branch indicators
 			//	if ((nBaseAddress == regs.pc) && CheckJump(nAddress))
-			bDisasmFormatFlags |= DISASM_BRANCH_INDICATOR;
+			bDisasmFormatFlags |= DISASM_FORMAT_BRANCH;
 
 			if (nTarget < nBaseAddress)
 			{
@@ -323,41 +323,41 @@ int FormatDisassemblyLine( WORD nBaseAddress, int iOpcode, int iOpmode, int nOpB
 			LPCTSTR pSymbol = FindSymbolFromAddress( nTarget );
 			if (pSymbol)
 			{
-				bDisasmFormatFlags |= DISASM_TARGET_SYMBOL;
+				bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
 				pTarget = pSymbol;
 			}
 
-			if (! (bDisasmFormatFlags & DISASM_TARGET_SYMBOL))
+			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
 			{
 				pSymbol = FindSymbolFromAddress( nTarget - 1 );
 				if (pSymbol)
 				{
-					bDisasmFormatFlags |= DISASM_TARGET_SYMBOL;
-					bDisasmFormatFlags |= DISASM_TARGET_OFFSET;
+					bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
+					bDisasmFormatFlags |= DISASM_FORMAT_OFFSET;
 					pTarget = pSymbol;
 					nTargetOffset_ = +1; // U FA82   LDA #3F1 BREAK+1
 				}
 			}
 			
-			if (! (bDisasmFormatFlags & DISASM_TARGET_SYMBOL))
+			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
 			{
 				pSymbol = FindSymbolFromAddress( nTarget + 1 );
 				if (pSymbol)
 				{
-					bDisasmFormatFlags |= DISASM_TARGET_SYMBOL;
-					bDisasmFormatFlags |= DISASM_TARGET_OFFSET;
+					bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
+					bDisasmFormatFlags |= DISASM_FORMAT_OFFSET;
 					pTarget = pSymbol;
 					nTargetOffset_ = -1; // U FA82 LDA #3F3 BREAK-1
 				}
 			}
 
-			if (! (bDisasmFormatFlags & DISASM_TARGET_SYMBOL))
+			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
 			{
 					pTarget = FormatAddress( nTarget, nOpBytes );
 			}				
 
 //			wsprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, pTarget );
-			if (bDisasmFormatFlags & DISASM_TARGET_OFFSET)
+			if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
 			{
 				int nAbsTargetOffset =  (nTargetOffset_ > 0) ? nTargetOffset_ : -nTargetOffset_;
 				wsprintf( sTargetOffset_, "%d", nAbsTargetOffset );
@@ -374,7 +374,7 @@ int FormatDisassemblyLine( WORD nBaseAddress, int iOpcode, int iOpmode, int nOpB
 
 			if (nTargetPointer != NO_6502_TARGET)
 			{
-				bDisasmFormatFlags |= DISASM_TARGET_POINTER;
+				bDisasmFormatFlags |= DISASM_FORMAT_TARGET_POINTER;
 
 				nTargetValue = *(LPWORD)(mem+nTargetPointer);
 
@@ -382,15 +382,16 @@ int FormatDisassemblyLine( WORD nBaseAddress, int iOpcode, int iOpmode, int nOpB
 				// nTargetBytes refers to size of pointer, not size of value
 //					wsprintf( sTargetValue_, "%04X", nTargetValue ); // & 0xFFFF
 
-				wsprintf( sTargetPointer_, "%04X", nTargetPointer & 0xFFFF );
+				if (g_iConfigDisasmTargets & DISASM_TARGET_ADDR)
+					wsprintf( sTargetPointer_, "%04X", nTargetPointer & 0xFFFF );
 
 				if (iOpmode != AM_NA ) // Indirect Absolute
 				{
-					bDisasmFormatFlags |= DISASM_TARGET_VALUE;
+					bDisasmFormatFlags |= DISASM_FORMAT_TARGET_VALUE;
+					if (g_iConfigDisasmTargets & DISASM_TARGET_VAL)
+						wsprintf( sTargetValue_, "%02X", nTargetValue & 0xFF );
 
-					wsprintf( sTargetValue_, "%02X", nTargetValue & 0xFF );
-
-					bDisasmFormatFlags |= DISASM_IMMEDIATE_CHAR;
+					bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
 					nImmediate_ = (BYTE) nTargetValue;
 					wsprintf( sImmediate_, "%c", FormatCharTxtCtrl( FormatCharTxtHigh( nImmediate_, NULL ), NULL ) );
 				}
@@ -410,7 +411,7 @@ int FormatDisassemblyLine( WORD nBaseAddress, int iOpcode, int iOpmode, int nOpB
 
 			if (iOpmode == AM_M)
 			{
-				bDisasmFormatFlags |= DISASM_IMMEDIATE_CHAR;
+				bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
 				nImmediate_ = (BYTE) nTarget;
 				wsprintf( sImmediate_, "%c", FormatCharTxtCtrl( FormatCharTxtHigh( nImmediate_, NULL ), NULL ) );
 			}
@@ -831,11 +832,13 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		, TS_INSTRUCTION
 		, TS_IMMEDIATE
 		, TS_BRANCH
+		, TS_CHAR
 		, _NUM_TAB_STOPS
 	};
 
-	int aTabs[ _NUM_TAB_STOPS ] =
-	{ 6, 16, 26, 40, 46 }; // 17, 27, 41
+	float aTabs[ _NUM_TAB_STOPS ] =
+//	{ 6, 16, 26, 41, 46, 49 }; // 17, 27, 41
+	{ 5.75, 15.5, 25, 40.5, 45.5, 48.5 };
 
 	if (! g_bConfigDisasmAddressColon)
 	{
@@ -849,7 +852,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		aTabs[ TS_IMMEDIATE   ] -= 1;
 	}
 	
-	const int OPCODE_TO_LABEL_SPACE = aTabs[ TS_INSTRUCTION ] - aTabs[ TS_LABEL ];
+	const int OPCODE_TO_LABEL_SPACE = static_cast<int>( aTabs[ TS_INSTRUCTION ] - aTabs[ TS_LABEL ] );
 
 	int iTab = 0;
 	int nSpacer = 9;
@@ -972,7 +975,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 			DebugDrawTextHorz( TEXT(":"), linerect );
 
 	// Opcodes
-		linerect.left = aTabs[ TS_OPCODE ];
+		linerect.left = (int) aTabs[ TS_OPCODE ];
 
 		if (! bCursorLine)
 			SetTextColor( dc, DebuggerGetColor( FG_DISASM_OPCODE ) );
@@ -983,7 +986,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 //		DebugDrawTextHorz( TEXT("  "), linerect );
 
 	// Label
-		linerect.left = aTabs[ TS_LABEL ];
+		linerect.left = (int) aTabs[ TS_LABEL ];
 
 		LPCSTR pSymbol = FindSymbolFromAddress( nBaseAddress );
 		if (pSymbol)
@@ -996,7 +999,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 //		DebugDrawTextHorz( TEXT(" "), linerect );
 
 	// Instruction
-		linerect.left = aTabs[ TS_INSTRUCTION ];
+		linerect.left = (int) aTabs[ TS_INSTRUCTION ];
 
 		if (! bCursorLine)
 			SetTextColor( dc, DebuggerGetColor( iForeground ) );
@@ -1032,14 +1035,14 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 
 		if (! bCursorLine)
 		{
-			if (bDisasmFormatFlags & DISASM_TARGET_SYMBOL)
+			if (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL)
 			{
 				SetTextColor( dc, DebuggerGetColor( FG_DISASM_SYMBOL ) );
 			}
 			else
 			{
 				if (iOpmode == AM_M)
-//				if (bDisasmFormatFlags & DISASM_IMMEDIATE_CHAR)
+//				if (bDisasmFormatFlags & DISASM_FORMAT_CHAR)
 				{
 					SetTextColor( dc, DebuggerGetColor( FG_DISASM_OPCODE ) );
 				}
@@ -1053,7 +1056,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 //		DebugDrawTextHorz( TEXT(" "), linerect );
 
 		// Target Offset +/-		
-		if (bDisasmFormatFlags & DISASM_TARGET_OFFSET)
+		if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
 		{
 			if (! bCursorLine)
 				SetTextColor( dc, DebuggerGetColor( FG_DISASM_OPERATOR ));	
@@ -1088,27 +1091,25 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 				DebugDrawTextHorz( TEXT(",Y"), linerect );
 		}
 
-	// Immediate Char
-		linerect.left = aTabs[ TS_IMMEDIATE ];
-
 	// Memory Pointer and Value
-		if (bDisasmFormatFlags & DISASM_TARGET_POINTER) // (bTargetValue)
+		if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER) // (bTargetValue)
 		{
+			linerect.left = (int) aTabs[ TS_IMMEDIATE ]; // TS_IMMEDIATE ];
+
 //			DebugDrawTextHorz( TEXT("  "), linerect );
 
-			// FG_DISASM_TARGET
-			// FG_DISASM_OPERATOR
-			// FG_DISASM_OPCODE
 			if (! bCursorLine)
 				SetTextColor( dc, DebuggerGetColor( FG_DISASM_ADDRESS ));
 
 			DebugDrawTextHorz( sTargetPointer, linerect );
 
-			if (bDisasmFormatFlags & DISASM_TARGET_VALUE)
+			if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_VALUE)
 			{
 				if (! bCursorLine)
 					SetTextColor( dc, DebuggerGetColor( FG_DISASM_OPERATOR ));
-				DebugDrawTextHorz( TEXT(":"), linerect );
+
+				if (g_iConfigDisasmTargets & DISASM_TARGET_BOTH)
+					DebugDrawTextHorz( TEXT(":"), linerect );
 
 				if (! bCursorLine)
 					SetTextColor( dc, DebuggerGetColor( FG_DISASM_OPCODE ));
@@ -1118,15 +1119,18 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 			}
 		}
 
-		if (bDisasmFormatFlags & DISASM_IMMEDIATE_CHAR)
+	// Immediate Char
+		if (bDisasmFormatFlags & DISASM_FORMAT_CHAR)
 		{
+			linerect.left = (int) aTabs[ TS_CHAR ]; // TS_IMMEDIATE ];
+
 			if (! bCursorLine)
 			{
 				SetTextColor( dc, DebuggerGetColor( FG_DISASM_OPERATOR ) );
 			}
 
-		if (! (bDisasmFormatFlags & DISASM_TARGET_POINTER))
-			DebugDrawTextHorz( TEXT("'"), linerect ); // TEXT("    '")
+//			if (! (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER))
+//				DebugDrawTextHorz( TEXT("'"), linerect ); // TEXT("    '")
 
 			if (! bCursorLine)
 			{
@@ -1141,20 +1145,15 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 				SetTextColor( dc, DebuggerGetColor( FG_DISASM_OPERATOR ) );
 			}
 
-		if (! (bDisasmFormatFlags & DISASM_TARGET_POINTER))
-			DebugDrawTextHorz( TEXT("'"), linerect );
+//			if (! (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER))
+//				DebugDrawTextHorz( TEXT("'"), linerect );
 		}
-//		else
-//		if (bTargetIndirect)
-//		{
-//			// Follow indirect targets
-//		}
 	
 	// Branch Indicator		
-		linerect.left = aTabs[ TS_BRANCH ];
-
-		if (bDisasmFormatFlags & DISASM_BRANCH_INDICATOR)
+		if (bDisasmFormatFlags & DISASM_FORMAT_BRANCH)
 		{
+			linerect.left = (int) aTabs[ TS_BRANCH ];
+
 			if (! bCursorLine)
 			{
 				SetTextColor( dc, DebuggerGetColor( FG_DISASM_BRANCH ) );
