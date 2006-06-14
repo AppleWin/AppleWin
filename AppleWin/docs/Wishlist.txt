@@ -1,10 +1,12 @@
 Requests (Wishlist):
 ====================
 
-. Proper mixed-mode displays
-. Proper mouse support
+. Video: Proper mixed-mode displays
+. Video: PrintScreen (save to disk with auto file numbering.)
+. Periphals: Printer support
+. Periphals: Proper mouse support
+. Periphals: Ability to swap ROM cards
 . Support for blind users -- read characters from Apple Text Screen -- relay to Windows Text2Speech API
-. Debugger: shift+ins to paste from clipboard
 . Debugger: TEXT 1 Show 40 Column Text Page 1
 . Debugger: TEXT 2 Show 40 Column Text Page 2
 . Debugger: TEXT80 1 Show 40 Column Text Page 1
@@ -13,6 +15,11 @@ Requests (Wishlist):
 . Debugger: HGR 2 show Hi-Res Page 2 
 . Debugger: DHGR 1 show Double Hi-Res Page 1
 . Debugger: DHGR 2 show Double Hi-Res Page 2 
+. Disk: .zip support (read-only should be fine)
+. Disk: .gz support (read-only should be fine)
+. Disk: .2MG support
+
+. DONE: Debugger: shift+ins to paste from clipboard (use Ctrl-V to paste.)
 
 Priority:
 . DONE: Right-click on drive icon to eject disk
