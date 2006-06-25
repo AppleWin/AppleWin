@@ -1,6 +1,11 @@
 /*
 
-2.5.3.x
+.14 Fixed BLOAD/BSAVE to update console.
+.13 changed BLOAD/BSAVE to use more traditional order of arguments
+.12 Fixed BPA to set breakpoints if no args
+.11 Cleaned up HELP BP
+.10 Cleaned up HELP BREAKPOINTS
+.9 Cleaned up HELP DISASM
 .8 added DISASM to print current states
 .7 added DISASM TARGET [#]
 .6 added BLOAD addr[,len] "Filename"
@@ -9,6 +14,7 @@
 .3 added DISASM [BRANCH | COLON | OPCODE | SPACES] #
 .2 fixed HELP CONFIG not working
 .1 Linards put undocumented mnemonics in lowercase
+2.5.3.x
 
 3.0 Ctrl-V (paste) now works.
 2.0 BRKOP ## support
