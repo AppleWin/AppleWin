@@ -2,8 +2,8 @@
 
 extern char VERSIONSTRING[];	// Contructed in WinMain()
 
-extern bool       apple2e;
-extern bool       apple2plus;
+extern bool       g_bApple2e;
+extern bool       g_bApple2plus;
 
 extern BOOL       behind;
 extern DWORD      cumulativecycles;
@@ -15,7 +15,9 @@ extern HINSTANCE  instance;
 extern AppMode_e g_nAppMode;
 
 extern DWORD      needsprecision;
-extern TCHAR      progdir[MAX_PATH];
+extern TCHAR      g_sProgramDir[MAX_PATH];
+extern TCHAR      g_sCurrentDir[MAX_PATH];
+
 extern BOOL       resettiming;
 extern BOOL       restart;
 

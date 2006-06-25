@@ -848,7 +848,7 @@ static DWORD InternalCpuExecute (DWORD totalcycles)
 	WORD base;
 	bool bBreakOnInvalid = false;  
 
-	if (apple2e)
+	if (g_bApple2e)
 	{
 		do
 		{
@@ -1583,7 +1583,7 @@ DWORD CpuExecute (DWORD cycles)
 
   // IF WE ARE USING THE EXTERNAL 6502 64K EMULATOR, MARK PAGES $40-$BF AS
   // DIRTY, BECAUSE IT DOES NOT KEEP TRACK OF DIRTY PAGES IN THAT RANGE.
-  if ((!apple2e) && cpuexecutefunc[1])
+  if ((!g_bApple2e) && cpuexecutefunc[1])
   {
     int page = 0xC0;
     while (page-- > 0x40)
@@ -1630,18 +1630,18 @@ void CpuInitialize () {
 
   if (mem) {
     TCHAR filename[MAX_PATH];
-    _tcscpy(filename,progdir);
+    _tcscpy(filename,g_sProgramDir);
     _tcscat(filename,TEXT("65C02C.DLL"));
     cpulibrary[CPU_COMPILING] = LoadLibrary(filename);
-    _tcscpy(filename,progdir);
-    _tcscat(filename,apple2e ? TEXT("65C02.DLL") : TEXT("6502.DLL"));
+    _tcscpy(filename,g_sProgramDir);
+    _tcscat(filename,g_bApple2e ? TEXT("65C02.DLL") : TEXT("6502.DLL"));
     cpulibrary[CPU_INTERPRETIVE] = LoadLibrary(filename);
     if (!cpulibrary[CPU_INTERPRETIVE]) {
-      _tcscpy(filename,progdir);
+      _tcscpy(filename,g_sProgramDir);
       _tcscat(filename,TEXT("65C02.DLL"));
       cpulibrary[CPU_INTERPRETIVE] = LoadLibrary(filename);
     }
-    _tcscpy(filename,progdir);
+    _tcscpy(filename,g_sProgramDir);
     _tcscat(filename,TEXT("65C02P.DLL"));
     cpulibrary[CPU_FASTPAGING] = LoadLibrary(filename);
     if (!cpulibrary[CPU_COMPILING])

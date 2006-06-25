@@ -31,8 +31,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 char VERSIONSTRING[] = "xx.yy.zz.ww";
 
-bool      apple2e           = true;
-bool      apple2plus        = true;
+bool      g_bApple2e           = true;
+bool      g_bApple2plus        = true;
 
 BOOL      behind            = 0;			// Redundant
 DWORD     cumulativecycles  = 0;			// Wraps after ~1hr 9mins
@@ -48,7 +48,8 @@ AppMode_e	g_nAppMode = MODE_LOGO;
 
 static int lastmode         = MODE_LOGO;
 DWORD     needsprecision    = 0;			// Redundant
-TCHAR     progdir[MAX_PATH] = TEXT("");
+TCHAR     g_sProgramDir[MAX_PATH] = TEXT("");
+TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir
 BOOL      resettiming       = 0;			// Redundant
 BOOL      restart           = 0;
 
@@ -349,13 +350,13 @@ void EnterMessageLoop ()
 
 //===========================================================================
 void GetProgramDirectory () {
-  GetModuleFileName((HINSTANCE)0,progdir,MAX_PATH);
-  progdir[MAX_PATH-1] = 0;
-  int loop = _tcslen(progdir);
+  GetModuleFileName((HINSTANCE)0,g_sProgramDir,MAX_PATH);
+  g_sProgramDir[MAX_PATH-1] = 0;
+  int loop = _tcslen(g_sProgramDir);
   while (loop--)
-    if ((progdir[loop] == TEXT('\\')) ||
-        (progdir[loop] == TEXT(':'))) {
-      progdir[loop+1] = 0;
+    if ((g_sProgramDir[loop] == TEXT('\\')) ||
+        (g_sProgramDir[loop] == TEXT(':'))) {
+      g_sProgramDir[loop+1] = 0;
       break;
     }
 }
@@ -364,8 +365,8 @@ void GetProgramDirectory () {
 void LoadConfiguration () {
   DWORD comptype;
   LOAD(TEXT("Computer Emulation"),&comptype);
-  apple2e = (comptype == 2);
-  apple2plus = (comptype == 1);
+  g_bApple2e = (comptype == 2);
+  g_bApple2plus = (comptype == 1);
   LOAD(TEXT("Joystick 0 Emulation"),&joytype[0]);
   LOAD(TEXT("Joystick 1 Emulation"),&joytype[1]);
   LOAD(TEXT("Sound Emulation")   ,&soundtype);
@@ -415,13 +416,9 @@ void LoadConfiguration () {
   RegLoadString(TEXT("Configuration"),TEXT(REGVALUE_SAVESTATE_FILENAME),1,szFilename,sizeof(szFilename));
   Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used
 
-  //
-
-  TCHAR szDirectory[MAX_PATH] = TEXT("");
-
-  RegLoadString(TEXT("Preferences"),TEXT("Starting Directory"),1,szDirectory,MAX_PATH);
-
-  SetCurrentDirectory(szDirectory);
+  // Current/Starting Dir is the "root" of where the user keeps his disk images
+  RegLoadString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,g_sCurrentDir,MAX_PATH);
+  SetCurrentDirectory(g_sCurrentDir);
   
   char szUthernetInt[MAX_PATH] = {0};
   RegLoadString(TEXT("Configuration"),TEXT("Uthernet Interface"),1,szUthernetInt,MAX_PATH);  

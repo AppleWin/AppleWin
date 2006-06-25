@@ -57,6 +57,7 @@ enum AppMode_e
 #define  LOAD(a,b) RegLoadValue(TEXT("Configuration"),a,1,b)
 #define  SAVE(a,b) RegSaveValue(TEXT("Configuration"),a,1,b)
 
+// Configuration
 #define  REGVALUE_SPKR_VOLUME "Speaker Volume"
 #define  REGVALUE_MB_VOLUME "Mockingboard Volume"
 #define  REGVALUE_SOUNDCARD_TYPE "Soundcard Type"
@@ -68,6 +69,9 @@ enum AppMode_e
 #define  REGVALUE_HDD_IMAGE2 "Harddisk Image 2"
 #define  REGVALUE_PDL_XTRIM "PDL X-Trim"
 #define  REGVALUE_PDL_YTRIM "PDL Y-Trim"
+
+// Preferences 
+#define REGVALUE_PREF_START_DIR TEXT("Starting Directory")
 
 #define WM_USER_BENCHMARK	WM_USER+1
 #define WM_USER_RESTART		WM_USER+2
