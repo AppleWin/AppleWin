@@ -32,6 +32,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <assert.h>
 
+// NEW UI debugging
+//	#define DEBUG_FORCE_DISPLAY 1
+
 
 // Public _________________________________________________________________________________________
 
@@ -632,6 +635,8 @@ void DrawBreakpoints (HDC dc, int line)
 			SetTextColor( dc, DebuggerGetColor( iForeground ) );
 
 #if DEBUG_FORCE_DISPLAY
+	extern COLORREF gaColorPalette[ NUM_PALETTE ];
+
 	int iColor = R8 + (iBreakpoint*2);
 	COLORREF nColor = gaColorPalette[ iColor ];
 	if (iBreakpoint >= 4)

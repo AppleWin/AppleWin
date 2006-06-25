@@ -965,8 +965,8 @@
 	extern const unsigned int _6502_STACK_END       ;//= 0x01FF;
 	extern const unsigned int _6502_IO_BEGIN        ;//= 0xC000;
 	extern const unsigned int _6502_IO_END          ;//= 0xC0FF;
-	extern const unsigned int _6502_BEG_MEM_ADDRESS ;//= 0x0000;
-	extern const unsigned int _6502_END_MEM_ADDRESS ;//= 0xFFFF;
+	extern const unsigned int _6502_MEM_BEGIN       ;//= 0x0000;
+	extern const unsigned int _6502_MEM_END         ;//= 0xFFFF;
 
 
 	enum DEVICE_e
