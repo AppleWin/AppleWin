@@ -349,7 +349,7 @@ void DiskInitialize () {
   while (loop--)
     ZeroMemory(&g_aFloppyDisk[loop],sizeof(Disk_t ));
   TCHAR imagefilename[MAX_PATH];
-  _tcscpy(imagefilename,progdir);
+  _tcscpy(imagefilename,g_sProgramDir);
   _tcscat(imagefilename,TEXT("MASTER.DSK")); // TODO: Should remember last disk by user
   DiskInsert(0,imagefilename,0,0);
 }
@@ -469,7 +469,7 @@ void DiskSelectImage (int drive, LPSTR pszFilename)
 
   strcpy(filename, pszFilename);
 
-  RegLoadString(TEXT("Preferences"),TEXT("Starting Directory"),1,directory,MAX_PATH);
+  RegLoadString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,directory,MAX_PATH);
   _tcscpy(title,TEXT("Select Disk Image For Drive "));
   _tcscat(title,drive ? TEXT("2") : TEXT("1"));
 
@@ -497,7 +497,7 @@ void DiskSelectImage (int drive, LPSTR pszFilename)
 	{
       filename[ofn.nFileOffset] = 0;
       if (_tcsicmp(directory,filename))
-        RegSaveString(TEXT("Preferences"),TEXT("Starting Directory"),1,filename);
+        RegSaveString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,filename);
     }
     else
 	{

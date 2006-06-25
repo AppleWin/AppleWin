@@ -347,7 +347,7 @@ void DrawStatusArea (HDC passdc, int drawflags) {
     TextOut(dc,x+ 3,y+2,TEXT("1"),1);
     SetTextColor(dc,RGB((iDrive2Status==2 ? 255 : 0),(iDrive2Status==1 ? 255 : 0),0));
     TextOut(dc,x+13,y+2,TEXT("2"),1);
-    if (apple2e) {
+    if (g_bApple2e) {
       SetTextAlign(dc,TA_RIGHT | TA_TOP);
       SetTextColor(dc,(caps ? RGB(128,128,128) :
                               RGB(  0,  0,  0)));
@@ -377,14 +377,14 @@ void DrawStatusArea (HDC passdc, int drawflags) {
       RECT rect = {0,0,8,8};
       DrawBitmapRect(dc,x+12,y+8,&rect,diskbitmap[iDrive1Status]);
       DrawBitmapRect(dc,x+30,y+8,&rect,diskbitmap[iDrive2Status]);
-      if (apple2e) {
+      if (g_bApple2e) {
         RECT rect = {0,0,30,8};
         DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[caps != 0]);
       }
     }
     if (drawflags & DRAW_TITLE) {
       TCHAR title[40];
-      _tcscpy(title,apple2e ? TITLE : (apple2plus ? TEXT("Apple ][+ Emulator")
+      _tcscpy(title,g_bApple2e ? TITLE : (g_bApple2plus ? TEXT("Apple ][+ Emulator")
 						  : TEXT("Apple ][ Emulator")));
       switch (g_nAppMode) {
         case MODE_PAUSED:   _tcscat(title,TEXT(" [Paused]"));    break;
@@ -872,7 +872,7 @@ void ProcessButtonClick (int button) {
     case BTN_HELP:
       {
         TCHAR filename[MAX_PATH];
-        _tcscpy(filename,progdir);
+        _tcscpy(filename,g_sProgramDir);
         _tcscat(filename,TEXT("APPLEWIN.CHM"));
         HtmlHelp(g_hFrameWindow,filename,HH_DISPLAY_TOC,0);
         helpquit = 1;
@@ -1128,8 +1128,8 @@ void FrameCreateWindow () {
   if (!RegLoadValue(TEXT("Preferences"),TEXT("Window Y-Position"),1,(DWORD *)&ypos))
     ypos = (GetSystemMetrics(SM_CYSCREEN)-height) >> 1;
   g_hFrameWindow = CreateWindow(TEXT("APPLE2FRAME"),
-				apple2e ? TITLE
-                                        : (apple2plus ? TEXT("Apple ][+ Emulator")
+				g_bApple2e ? TITLE
+                                        : (g_bApple2plus ? TEXT("Apple ][+ Emulator")
 					              : TEXT("Apple ][ Emulator")),
 				WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 				WS_MINIMIZEBOX | WS_VISIBLE,
