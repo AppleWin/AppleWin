@@ -195,12 +195,15 @@ Update_t CmdHelpSpecific (int nArgs)
 	}
 
 	// If Help on category, push command name as arg
+	// Mame has categories:
+	//	General, Memory, Execution, Breakpoints, Watchpoints, Expressions, Comments
+	int iParam = 0;
+
 	int nNewArgs  = 0;
 	int iCmdBegin = 0;
 	int iCmdEnd   = 0;
 	for (iArg = 1; iArg <= nArgs; iArg++ )
 	{
-		int iParam;
 		int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_EXACT, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
 		switch( iParam )
 		{
@@ -270,7 +273,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			pCommand = NULL;
 		}
 		
-		if (nFound && (! bAllCommands))
+		if (nFound && (! bAllCommands) && (! bCategory))
 		{
 			TCHAR sCategory[ CONSOLE_WIDTH ];
 			int iCmd = g_aCommands[ iCommand ].iCommand; // Unaliased command
@@ -409,13 +412,13 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 		case CMD_STEP_OUT: 
 			ConsoleBufferPush( TEXT("  Steps out of current subroutine") );
-			ConsoleBufferPush( TEXT("  Hotkey: Ctrl-Space" ) );
+			ConsoleBufferPush( TEXT("  Hotkey: Ctrl-Space" ) ); // TODO: FIXME
 			break;
 		case CMD_STEP_OVER: // Bad name? FIXME/TODO: do we need to rename?
 			ConsoleBufferPush( TEXT(" Usage: [#]") );
 			ConsoleBufferPush( TEXT("  Steps, # times, thru current instruction") );
 			ConsoleBufferPush( TEXT("  JSR will be stepped into AND out of.") );
-			ConsoleBufferPush( TEXT("  Hotkey: Ctrl-Space" ) );
+			ConsoleBufferPush( TEXT("  Hotkey: Ctrl-Space" ) ); // TODO: FIXME
 			break;
 		case CMD_TRACE:
 			ConsoleBufferPush( TEXT(" Usage: [#]") );
@@ -432,28 +435,58 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 	// Breakpoints
 		case CMD_BREAKPOINT:
-			wsprintf( sText, " Maximum breakpoints are: %d", NUM_BREAKPOINTS );
+			wsprintf( sText, " Maximum breakpoints: %d", NUM_BREAKPOINTS );
 			ConsoleBufferPush( sText );
+			wsprintf( sText, TEXT(" Usage: [%s | %s | %s]")
+				, g_aParameters[ PARAM_LOAD  ].m_sName
+                , g_aParameters[ PARAM_SAVE  ].m_sName
+				, g_aParameters[ PARAM_RESET ].m_sName );
+			ConsoleBufferPush( sText );
+			ConsoleBufferPush( TEXT("  Set breakpoint at PC if no args.") );
+			ConsoleBufferPush( TEXT("  Loading/Saving not yet implemented.") );
 			break;
 		case CMD_BREAKPOINT_ADD_REG:
 			ConsoleBufferPush( TEXT(" Usage: [A|X|Y|PC|S] [<,=,>] value") );
 			ConsoleBufferPush( TEXT("  Set breakpoint when reg is [op] value") );
 			break;
 		case CMD_BREAKPOINT_ADD_SMART:
+			ConsoleBufferPush( TEXT(" Usage: [address | register]") );
+			ConsoleBufferPush( TEXT("  If address, sets two breakpoints" ) );
+			ConsoleBufferPush( TEXT("    1. one memory access at address" ) );
+			ConsoleBufferPush( TEXT("    2. if PC reaches address" ) );
+//			"Sets a breakpoint at the current PC or specified address." ) );
+			ConsoleBufferPush( TEXT("  If an IO address, sets breakpoint on IO access.") );
+			ConsoleBufferPush( TEXT("  If register, sets a breakpoint on memory access at address of register.") );
+			break;
 		case CMD_BREAKPOINT_ADD_PC:
 			ConsoleBufferPush( TEXT(" Usage: [address]") );
-			ConsoleBufferPush( TEXT("  Sets a breakpoint at the current PC") );
-			ConsoleBufferPush( TEXT("  or at the specified address.") );
+			ConsoleBufferPush( TEXT("  Sets a breakpoint at the current PC or at the specified address.") );
+			break;
+		case CMD_BREAKPOINT_CLEAR:
+			ConsoleBufferPush( TEXT(" Usage: [# | *]") );
+			ConsoleBufferPush( TEXT("  Clears specified breakpoint, or all.") );
+			wsprintf( sText,  TEXT("  i.e. %s 1" ), pCommand->m_sName );
+			ConsoleBufferPush( sText );
+			break;
+		case CMD_BREAKPOINT_DISABLE:
+			ConsoleBufferPush( TEXT(" Usage: [# [,#] | *]") );
+			ConsoleBufferPush( TEXT("  Disable breakpoint previously set, or all.") );
+			wsprintf( sText,  TEXT("  i.e. %s 1" ), pCommand->m_sName );
+			ConsoleBufferPush( sText );
 			break;
 		case CMD_BREAKPOINT_ENABLE:
 			ConsoleBufferPush( TEXT(" Usage: [# [,#] | *]") );
 			ConsoleBufferPush( TEXT("  Re-enables breakpoint previously set, or all.") );
+			wsprintf( sText,  TEXT("  i.e. %s 1" ), pCommand->m_sName );
+			ConsoleBufferPush( sText );
+			break;
+		case CMD_BREAKPOINT_LIST:
 			break;
 	// Config - Color
 		case CMD_CONFIG_MENU:
-			ConsoleBufferPush( TEXT(" Load/Save configuration, or change disasm view options.\n" ) );
+			ConsoleBufferPush( TEXT(" Load/Save configuration, or change disasm view options." ) );
 			wsprintf( sText, TEXT("  %s"   ": Loads config from last/default \"filename\"" ), g_aParameters[ PARAM_SAVE  ].m_sName ); ConsoleBufferPush( sText );
-			wsprintf( sText, TEXT("  %s"   ": Saves config to \"filename\""           ), g_aParameters[ PARAM_LOAD  ].m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText, TEXT("  %s"   ": Saves config to \"filename\""                ), g_aParameters[ PARAM_LOAD  ].m_sName ); ConsoleBufferPush( sText );
 			break;
 
 		case CMD_CONFIG_COLOR:
@@ -474,38 +507,60 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 	// Config - Diasm
 		case CMD_CONFIG_DISASM:
-			ConsoleBufferPush( TEXT("Note: All commands effect the disassembly view" ) );
+		{
+			ConsoleBufferPush( TEXT(" Note: All arguments effect the disassembly view" ) );
 
-			wsprintf( sText, TEXT(" Usage: %s [#]" ), g_aParameters[ PARAM_CONFIG_BRANCH ].m_sName );
+			wsprintf( sText, TEXT(" Usage: [%s | %s | %s | %s | %s]")
+				, g_aParameters[ PARAM_CONFIG_BRANCH ].m_sName
+                , g_aParameters[ PARAM_CONFIG_COLON  ].m_sName
+				, g_aParameters[ PARAM_CONFIG_OPCODE ].m_sName
+				, g_aParameters[ PARAM_CONFIG_SPACES ].m_sName
+				, g_aParameters[ PARAM_CONFIG_TARGET ].m_sName );
+			ConsoleBufferPush( sText );
+			ConsoleBufferPush( TEXT("  Display current settings if no args." ) );
+
+			iParam = PARAM_CONFIG_BRANCH;
+			wsprintf( sText, TEXT(" Usage: %s [#]" ), g_aParameters[ iParam ].m_sName );
 			ConsoleBufferPush( sText );
 			ConsoleBufferPush( TEXT("  Set the type of branch character:" ) );
 			wsprintf( sText, TEXT("  %d off, %d plain, %d fancy" ),
 				 DISASM_BRANCH_OFF, DISASM_BRANCH_PLAIN, DISASM_BRANCH_FANCY );
 			ConsoleBufferPush( sText );
+			wsprintf( sText,  TEXT("  i.e. %s %s 1" ), pCommand->m_sName, g_aParameters[ iParam ].m_sName );
+			ConsoleBufferPush( sText );
 
-			wsprintf( sText, TEXT(" Usage: %s [0|1]" ), g_aParameters[ PARAM_CONFIG_COLON ].m_sName );
+			iParam = PARAM_CONFIG_COLON;
+			wsprintf( sText, TEXT(" Usage: %s [0|1]" ), g_aParameters[ iParam ].m_sName );
 			ConsoleBufferPush( sText );
 			ConsoleBufferPush( TEXT("  Display a colon after the address" ) );
+			wsprintf( sText, TEXT("  i.e. %s %s 0" ), pCommand->m_sName, g_aParameters[ iParam ].m_sName );
+			ConsoleBufferPush( sText );
 
-			wsprintf( sText, TEXT(" Usage: %s [0|1]" ), g_aParameters[ PARAM_CONFIG_OPCODE ].m_sName );
+			iParam = PARAM_CONFIG_OPCODE;
+			wsprintf( sText, TEXT(" Usage: %s [0|1]" ), g_aParameters[ iParam ].m_sName );
 			ConsoleBufferPush( sText );
 			ConsoleBufferPush( TEXT("  Display opcode(s) after colon" ) );
+			wsprintf( sText, TEXT("  i.e. %s %s 1" ), pCommand->m_sName, g_aParameters[ iParam ].m_sName );
+			ConsoleBufferPush( sText );
 
-			wsprintf( sText, TEXT(" Usage: %s [0|1]" ), g_aParameters[ PARAM_CONFIG_SPACES ].m_sName );
+			iParam = PARAM_CONFIG_SPACES;
+			wsprintf( sText, TEXT(" Usage: %s [0|1]" ), g_aParameters[ iParam ].m_sName );
 			ConsoleBufferPush( sText );
 			ConsoleBufferPush( TEXT("  Display spaces between opcodes" ) );
+			wsprintf( sText, TEXT("  i.e. %s %s 0" ), pCommand->m_sName, g_aParameters[ iParam ].m_sName );
+			ConsoleBufferPush( sText );
 
-			wsprintf( sText, TEXT(" Usage: %s [#]" ), g_aParameters[ PARAM_CONFIG_TARGET ].m_sName );
+			iParam = PARAM_CONFIG_TARGET;
+			wsprintf( sText, TEXT(" Usage: %s [#]" ), g_aParameters[ iParam ].m_sName );
 			ConsoleBufferPush( sText );
 			ConsoleBufferPush( TEXT("  Set the type of target address/value displayed:" ) );
 			wsprintf( sText, TEXT("  %d off, %d value only, %d address only, %d both" ),
 				DISASM_TARGET_OFF, DISASM_TARGET_VAL, DISASM_TARGET_ADDR, DISASM_TARGET_BOTH );
 			ConsoleBufferPush( sText );
-
-// ZZZ - CHAR
-
+			wsprintf( sText, TEXT("  i.e. %s %s %d" ), pCommand->m_sName, g_aParameters[ iParam ].m_sName, DISASM_TARGET_VAL );
+			ConsoleBufferPush( sText );
 			break;
-
+		}
 	// Config - Font
 		case CMD_CONFIG_FONT:
 			wsprintf( sText, TEXT(" Usage: [%s | %s] \"FontName\" [Height]" ),
@@ -519,6 +574,7 @@ Update_t CmdHelpSpecific (int nArgs)
 				FONT_SPACING_CLASSIC, FONT_SPACING_CLEAN, FONT_SPACING_COMPRESSED );
 			ConsoleBufferPush( sText );
 			break;
+
 	// Memory
 		case CMD_MEMORY_ENTER_BYTE:
 			ConsoleBufferPush( TEXT(" Usage: {address | symbol} ## [## ... ##]") );
@@ -557,6 +613,22 @@ Update_t CmdHelpSpecific (int nArgs)
 //			ConsoleBufferPush( TEXT("  Displays text in the Memory Mini-Dump area") ); 
 //			ConsoleBufferPush( TEXT("  ASCII chars with the hi-bit set, is inverse") ); 
 			break;
+
+		case CMD_MEMORY_LOAD:
+			// BLOAD "Filename" addr[,len] 
+			ConsoleBufferPush( TEXT(" Usage: [\"Filename\"] address[,length]" ) );
+			ConsoleBufferPush( TEXT("  If no filename specified, defaults"    ) );
+			ConsoleBufferPush( TEXT("  to the last filename (if possible)"    ) );
+			break;
+
+		case CMD_MEMORY_SAVE:
+			// BSAVE ["Filename"] addr,len 
+			ConsoleBufferPush( TEXT(" Usage: [\"Filename\"] address,length"   ) );
+			ConsoleBufferPush( TEXT("  If no filename specified, defaults to" ) );
+			ConsoleBufferPush( TEXT("  '####.####.bin' with the form"         ) );
+			ConsoleBufferPush( TEXT("  {address}.{length}.bin"                ) );
+			break;
+
 	// Symbols
 		case CMD_SYMBOLS_MAIN:
 		case CMD_SYMBOLS_USER:
@@ -595,16 +667,21 @@ Update_t CmdHelpSpecific (int nArgs)
 		default:
 			if (bAllCommands)
 				break;
-//#if DEBUG_COMMAND_HELP
-#if _DEBUG
-			wsprintf( sText, "Command help not done yet: %s", g_aCommands[ iCommand ].m_sName );
-			ConsoleBufferPush( sText );
-#endif
+
 			if ((! nFound) || (! pCommand))
 			{
 				wsprintf( sText, " Invalid command." );
 				ConsoleBufferPush( sText );
 			}
+			else
+			{
+//#if DEBUG_COMMAND_HELP
+#if _DEBUG
+			wsprintf( sText, "Command help not done yet: %s", g_aCommands[ iCommand ].m_sName );
+			ConsoleBufferPush( sText );
+#endif
+			}
+
 			break;
 		}
 

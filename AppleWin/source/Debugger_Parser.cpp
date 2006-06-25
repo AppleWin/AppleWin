@@ -167,7 +167,7 @@ bool ArgsGetValue ( Arg_t *pArg, WORD * pAddressValue_, const int nBase )
 
 	if (pArg && pAddressValue_)
 	{
-		*pAddressValue_ = (WORD)(_tcstoul( pSrc, &pEnd, nBase) & _6502_END_MEM_ADDRESS);
+		*pAddressValue_ = (WORD)(_tcstoul( pSrc, &pEnd, nBase) & _6502_MEM_END);
 		return true;
 	}
 	return false;
@@ -373,7 +373,7 @@ void ArgsRawParse ( void )
 	{
 		pSrc  = & (pArg->sArg[ 0 ]);
 
-		nAddressArg = (WORD)(_tcstoul( pSrc, &pEnd, BASE) & _6502_END_MEM_ADDRESS);
+		nAddressArg = (WORD)(_tcstoul( pSrc, &pEnd, BASE) & _6502_MEM_END);
 		nAddressValue = nAddressArg;
 
 		bool bFound = false;
@@ -675,7 +675,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 		}
 		else // not an operator, try (1) address, (2) symbol lookup
 		{
-			nAddressArg = (WORD)(_tcstoul( pSrc, &pEnd2, BASE) & _6502_END_MEM_ADDRESS);
+			nAddressArg = (WORD)(_tcstoul( pSrc, &pEnd2, BASE) & _6502_MEM_END);
 
 			if (! (pArg->bType & TYPE_NO_REG))
 			{

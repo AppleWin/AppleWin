@@ -33,8 +33,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma  hdrstop
 
 
-// NEW UI debugging
-//	#define DEBUG_FORCE_DISPLAY 1
 //  #define DEBUG_COMMAND_HELP  1
 // #define DEBUG_ASM_HASH 1
 
@@ -43,7 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,3,8);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,3,14);
 
 
 // Public _________________________________________________________________________________________
@@ -144,17 +142,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("TF")          , CmdTraceFile         , CMD_TRACE_FILE           , "Save trace to filename" },
 		{TEXT("TL")          , CmdTraceLine         , CMD_TRACE_LINE           , "Trace (with cycle counting)" },
 	// Breakpoints
-		{TEXT("BP")          , CmdBreakpointMenu    , CMD_BREAKPOINT           , "Access breakpoint options" },
+		{TEXT("BP")          , CmdBreakpointMenu    , CMD_BREAKPOINT           , "Save/Load Breakpoints" },
 		{TEXT("BPA")         , CmdBreakpointAddSmart, CMD_BREAKPOINT_ADD_SMART , "Add (smart) breakpoint" },
 //		{TEXT("BPP")         , CmdBreakpointAddFlag , CMD_BREAKPOINT_ADD_FLAG  , "Add breakpoint on flags" },
 		{TEXT("BPR")         , CmdBreakpointAddReg  , CMD_BREAKPOINT_ADD_REG   , "Add breakpoint on register value"      }, // NOTE! Different from SoftICE !!!!
 		{TEXT("BPX")         , CmdBreakpointAddPC   , CMD_BREAKPOINT_ADD_PC    , "Add breakpoint at current instruction" },
 		{TEXT("BPIO")        , CmdBreakpointAddIO   , CMD_BREAKPOINT_ADD_IO    , "Add breakpoint for IO address $C0xx"   },
 		{TEXT("BPM")         , CmdBreakpointAddMem  , CMD_BREAKPOINT_ADD_MEM   , "Add breakpoint on memory access"       },  // SoftICE
-		{TEXT("BC")          , CmdBreakpointClear   , CMD_BREAKPOINT_CLEAR     , "Clear breakpoint # or *"               }, // SoftICE
+		{TEXT("BC")          , CmdBreakpointClear   , CMD_BREAKPOINT_CLEAR     , "Clear breakpoint"                      }, // SoftICE
 		{TEXT("BD")          , CmdBreakpointDisable , CMD_BREAKPOINT_DISABLE   , "Disable breakpoint # or *"             }, // SoftICE
-		{TEXT("BPE")         , CmdBreakpointEdit    , CMD_BREAKPOINT_EDIT      , "Edit breakpoint # or *"                }, // SoftICE
-		{TEXT("BE")          , CmdBreakpointEnable  , CMD_BREAKPOINT_ENABLE    , "Enable breakpoint # or *"              }, // SoftICE
+		{TEXT("BPE")         , CmdBreakpointEdit    , CMD_BREAKPOINT_EDIT      , "Edit breakpoint"                       }, // SoftICE
+		{TEXT("BE")          , CmdBreakpointEnable  , CMD_BREAKPOINT_ENABLE    , "Enable breakpoint"                     }, // SoftICE
 		{TEXT("BL")          , CmdBreakpointList    , CMD_BREAKPOINT_LIST      , "List breakpoints"                      }, // SoftICE
 		{TEXT("BPLOAD")      , CmdBreakpointLoad    , CMD_BREAKPOINT_LOAD      , "Loads breakpoints" },
 		{TEXT("BPSAVE")      , CmdBreakpointSave    , CMD_BREAKPOINT_SAVE      , "Saves breakpoints" },
@@ -165,7 +163,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("BW")          , CmdConfigColorMono   , CMD_CONFIG_BW            , "Sets/Shows RGB for Black & White scheme" },
 		{TEXT("COLOR")       , CmdConfigColorMono   , CMD_CONFIG_COLOR         , "Sets/Shows RGB for color scheme" },
 		{TEXT("CONFIG")      , CmdConfigMenu        , CMD_CONFIG_MENU          , "Access config options" },
-		{TEXT("DISASM")      , CmdConfigDisasm      , CMD_CONFIG_DISASM        , "Sets disassembly view options." },
+		{TEXT("DISASM")      , CmdConfigDisasm      , CMD_CONFIG_DISASM        , "Sets/Shows disassembly view options." },
 		{TEXT("ECHO")        , CmdConfigEcho        , CMD_CONFIG_ECHO          , "Echo string, or toggle command echoing" },
 		{TEXT("FONT")        , CmdConfigFont        , CMD_CONFIG_FONT          , "Shows current font or sets new one" },
 		{TEXT("HCOLOR")      , CmdConfigHColor      , CMD_CONFIG_HCOLOR        , "Sets/Shows colors mapped to Apple HGR" },
@@ -243,7 +241,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("EW")          , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    },
 		{TEXT("BLOAD")       , CmdMemoryLoad        , CMD_MEMORY_LOAD          , "Load a region of memory" },
 		{TEXT("M")           , CmdMemoryMove        , CMD_MEMORY_MOVE          },
-		{TEXT("BSAVE")       , CmdMemorySave        , CMD_MEMORY_SAVE          , "Save a region of memory\n" },
+		{TEXT("BSAVE")       , CmdMemorySave        , CMD_MEMORY_SAVE          , "Save a region of memory" },
 		{TEXT("S")           , CmdMemorySearch      , CMD_MEMORY_SEARCH        , "Search for text for hex values" },
 		{TEXT("SA")          , CmdMemorySearchAscii,  CMD_MEMORY_SEARCH_ASCII  , "Search ASCII text" }, // Search ASCII
 		{TEXT("ST")          , CmdMemorySearchApple , CMD_MEMORY_SEARCH_APPLE  , "Search Apple text (hi-bit)" }, // Search Apple Text
@@ -546,8 +544,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	const unsigned int _6502_STACK_END       = 0x01FF;
 	const unsigned int _6502_IO_BEGIN        = 0xC000;
 	const unsigned int _6502_IO_END          = 0xC0FF;
-	const unsigned int _6502_BEG_MEM_ADDRESS = 0x0000;
-	const unsigned int _6502_END_MEM_ADDRESS = 0xFFFF;
+	const unsigned int _6502_MEM_BEGIN = 0x0000;
+	const unsigned int _6502_MEM_END = 0xFFFF;
 
 	MemoryDump_t g_aMemDump[ NUM_MEM_DUMPS ];
 
@@ -806,7 +804,7 @@ static	bool ParseAssemblyListing  ( bool bBytesToMemory, bool bAddSymbols );
 	Update_t _CmdWindowViewCommon (int iNewWindow);
 
 // Utility
-	bool _GetStartEnd( WORD & nAddressStart_, WORD & nAddressEnd_ );
+	bool _GetStartEnd( WORD & nAddressStart_, WORD & nAddressEnd_, const int iArg = 1 );
 
 	bool  StringCat( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
 	bool  TestStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
@@ -1362,7 +1360,7 @@ Update_t CmdJSR (int nArgs)
 	if (! nArgs)
 		return Help_Arg_1( CMD_JSR );
 
-	WORD nAddress = g_aArgs[1].nVal1 & _6502_END_MEM_ADDRESS;
+	WORD nAddress = g_aArgs[1].nVal1 & _6502_MEM_END;
 
 	// Mark Stack Page as dirty
 	*(memdirty+(regs.sp >> 8)) = 1;
@@ -1584,8 +1582,8 @@ Update_t CmdBreakpointAddSmart (int nArgs)
 
 	if (! nArgs)
 	{
-//		return Help_Arg_1( CMD_BREAKPOINT_ADD_SMART );
-		g_aArgs[1].nVal1 = g_nDisasmCurAddress;		
+		nArgs = 1;
+		g_aArgs[ nArgs ].nVal1 = g_nDisasmCurAddress;		
 	}
 
 	if ((nAddress >= _6502_IO_BEGIN) && (nAddress <= _6502_IO_END))
@@ -1730,7 +1728,7 @@ bool _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, B
 		else
 		{
 			// Clamp Length so it stays within the 6502 memory address
-			int nSlack        = (_6502_END_MEM_ADDRESS + 1) - nAddress;
+			int nSlack        = (_6502_MEM_END + 1) - nAddress;
 			int nWantedLength = g_aArgs[iArg].nVal2;
 			nLen = MIN( nSlack, nWantedLength );
 		}
@@ -2155,7 +2153,7 @@ Update_t CmdConfigRun (int nArgs)
 	strcpy( sMiniFileName, pFileName );
 //	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
-	_tcscpy(sFileName, progdir);
+	_tcscpy(sFileName, g_sProgramDir);
 	_tcscat(sFileName, sMiniFileName);
 
 	if (script.Read( sFileName ))
@@ -2188,7 +2186,7 @@ Update_t CmdConfigRun (int nArgs)
 Update_t CmdConfigSave (int nArgs)
 {
 	TCHAR filename[ MAX_PATH ];
-	_tcscpy(filename, progdir);
+	_tcscpy(filename, g_sProgramDir);
 	_tcscat(filename, g_FileNameConfig );
 
 	HANDLE hFile = CreateFile(filename,
@@ -3003,7 +3001,7 @@ void _CursorMoveDownAligned( int nDelta )
 			if (g_aMemDump[0].eDevice == DEV_MEMORY)
 			{
 				g_aMemDump[0].nAddress += nDelta;
-				g_aMemDump[0].nAddress &= _6502_END_MEM_ADDRESS;
+				g_aMemDump[0].nAddress &= _6502_MEM_END;
 			}
 		}
 	}
@@ -3016,7 +3014,7 @@ void _CursorMoveDownAligned( int nDelta )
 		else
 			nNewAddress += (nDelta - (nNewAddress & (nDelta-1))); // .22 Fixed: Shift-PageUp Shift-PageDown Ctrl-PageUp Ctrl-PageDown -> _CursorMoveUpAligned() & _CursorMoveDownAligned()
 
-		g_nDisasmTopAddress = nNewAddress & _6502_END_MEM_ADDRESS; // .21 Fixed: _CursorMoveUpAligned() & _CursorMoveDownAligned() not wrapping around past FF00 to 0, and wrapping around past 0 to FF00
+		g_nDisasmTopAddress = nNewAddress & _6502_MEM_END; // .21 Fixed: _CursorMoveUpAligned() & _CursorMoveDownAligned() not wrapping around past FF00 to 0, and wrapping around past 0 to FF00
 	}
 }
 
@@ -3031,7 +3029,7 @@ void _CursorMoveUpAligned( int nDelta )
 			if (g_aMemDump[0].eDevice == DEV_MEMORY)
 			{
 				g_aMemDump[0].nAddress -= nDelta;
-				g_aMemDump[0].nAddress &= _6502_END_MEM_ADDRESS;
+				g_aMemDump[0].nAddress &= _6502_MEM_END;
 			}
 		}
 	}
@@ -3044,7 +3042,7 @@ void _CursorMoveUpAligned( int nDelta )
 		else
 			nNewAddress -= (nNewAddress & (nDelta-1)); // .22 Fixed: Shift-PageUp Shift-PageDown Ctrl-PageUp Ctrl-PageDown -> _CursorMoveUpAligned() & _CursorMoveDownAligned()
 
-		g_nDisasmTopAddress = nNewAddress & _6502_END_MEM_ADDRESS; // .21 Fixed: _CursorMoveUpAligned() & _CursorMoveDownAligned() not wrapping around past FF00 to 0, and wrapping around past 0 to FF00
+		g_nDisasmTopAddress = nNewAddress & _6502_MEM_END; // .21 Fixed: _CursorMoveUpAligned() & _CursorMoveDownAligned() not wrapping around past FF00 to 0, and wrapping around past 0 to FF00
 	}
 }
 
@@ -3542,7 +3540,7 @@ Update_t CmdMemoryFill (int nArgs)
 //===========================================================================
 Update_t CmdMemoryLoad (int nArgs)
 {
-	// BLOAD addr[,len] "Filename"
+	// BLOAD ["Filename"] addr[,len] 
 	if (nArgs != 2)
 		return Help_Arg_1( CMD_MEMORY_LOAD );
 
@@ -3550,17 +3548,17 @@ Update_t CmdMemoryLoad (int nArgs)
 	{
 		WORD nAddressStart;
 		WORD nAddressEnd;
-		if (_GetStartEnd( nAddressStart, nAddressEnd ))
+		if (_GetStartEnd( nAddressStart, nAddressEnd, 2 ))
 		{
 			WORD nAddressLen = nAddressEnd - nAddressStart;
 
-			BYTE *pMemory = new BYTE [ _6502_END_MEM_ADDRESS + 1 ]; // default 64K buffer
+			BYTE *pMemory = new BYTE [ _6502_MEM_END + 1 ]; // default 64K buffer
 			BYTE *pDst = mem + nAddressStart;
 			BYTE *pSrc = pMemory;
 
 			TCHAR sFilePath[ MAX_PATH ];
-			_tcscpy( sFilePath,progdir );
-			_tcscat( sFilePath, g_aArgs[ 2 ].sArg );
+			_tcscpy( sFilePath,g_sProgramDir );
+			_tcscat( sFilePath, g_aArgs[ 1 ].sArg );
 
 			FILE *hFile = fopen( sFilePath, "rb" );
 			if (hFile)
@@ -3569,8 +3567,8 @@ Update_t CmdMemoryLoad (int nArgs)
 				int nFileBytes = ftell( hFile );
 				fseek( hFile, 0, SEEK_SET );
 
-				if (nFileBytes > _6502_END_MEM_ADDRESS)
-					nFileBytes = _6502_END_MEM_ADDRESS + 1; // Bank-switched RAMR/ROM is only 16-bit
+				if (nFileBytes > _6502_MEM_END)
+					nFileBytes = _6502_MEM_END + 1; // Bank-switched RAMR/ROM is only 16-bit
 
 				// Caller didnt' specify how many bytes to read, default to them all
 				if (nAddressLen == 0)
@@ -3586,20 +3584,20 @@ Update_t CmdMemoryLoad (int nArgs)
 					{
 						*pDst++ = *pSrc++;
 					}
-					ConsoleBufferPush( TEXT( "Loaded.\n" ) );
+					ConsoleBufferPush( TEXT( "Loaded." ) );
 				}
 				fclose( hFile );
 			}
 			else
 			{
-				ConsoleBufferPush( TEXT( "Error: Bad filename.\n" ) );
+				ConsoleBufferPush( TEXT( "Error: Bad filename." ) );
 			}
 			
 			delete [] pMemory;
 		}
 	}
 	
-	return UPDATE_CONSOLE_DISPLAY;
+	return ConsoleUpdate();
 }
 
 
@@ -3629,7 +3627,7 @@ Update_t CmdMemorySave (int nArgs)
 
 	static TCHAR sFileName[ MAX_PATH ];
 	TCHAR sFilePath[ MAX_PATH ];
-	_tcscpy( sFilePath, progdir );
+	_tcscpy( sFilePath, g_sProgramDir );
 
 	if (! nArgs)
 	{
@@ -3641,23 +3639,23 @@ Update_t CmdMemorySave (int nArgs)
 		}
 		else
 		{
-			wsprintf( sLast, TEXT( "Last saved: none\n" ) );
+			wsprintf( sLast, TEXT( "Last saved: none" ) );
 		}				
 		ConsoleBufferPush( sLast );
 	}
 	else
 	{
-		if (_GetStartEnd( nAddressStart, nAddressEnd ))
+		if (_GetStartEnd( nAddressStart, nAddressEnd, nArgs ))
 		{
 			nAddressLen = nAddressEnd - nAddressStart;
 
-			if ((nAddressLen) && (nAddressLen < _6502_END_MEM_ADDRESS))
+			if ((nAddressLen) && (nAddressLen < _6502_MEM_END))
 			{
-				// BSAVE addr,len "Filename"
+				// BSAVE ["Filename"] addr,len 
 				if (nArgs == 1)
 				{
-					sprintf( g_aArgs[ 2 ].sArg, "%04X.%04X.bin", nAddressStart, nAddressLen ); // nAddressEnd );
-					nArgs++;;
+					sprintf( g_aArgs[ 1 ].sArg, "%04X.%04X.bin", nAddressStart, nAddressLen ); // nAddressEnd );
+					nArgs++;
 				}	
 
 				if (nArgs == 2)
@@ -3672,13 +3670,13 @@ Update_t CmdMemorySave (int nArgs)
 						*pDst++ = *pSrc++;
 					}
 
-					_tcscpy( sFileName, g_aArgs[ 2 ].sArg );
+					_tcscpy( sFileName, g_aArgs[ 1 ].sArg );
 					_tcscat( sFilePath, sFileName );
 
 					FILE *hFile = fopen( sFilePath, "rb" );
 					if (hFile)
 					{
-						ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting.\n" ) );
+						ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
 						fclose( hFile );
 					}
 
@@ -3688,11 +3686,11 @@ Update_t CmdMemorySave (int nArgs)
 						size_t nWrote = fwrite( pMemory, nAddressLen, 1, hFile );
 						if (nWrote == 1) // (size_t)nAddressLen)
 						{
-							ConsoleBufferPush( TEXT( "Saved.\n" ) );
+							ConsoleBufferPush( TEXT( "Saved." ) );
 						}
 						else
 						{
-							ConsoleBufferPush( TEXT( "Error saving.\n" ) );
+							ConsoleBufferPush( TEXT( "Error saving." ) );
 						}
 						fclose( hFile );
 					}
@@ -3703,19 +3701,19 @@ Update_t CmdMemorySave (int nArgs)
 		}
 	}
 	
-	return UPDATE_CONSOLE_DISPLAY;
+	return ConsoleUpdate();
 }
 
 
 //===========================================================================
-bool _GetStartEnd( WORD & nAddressStart_, WORD & nAddressEnd_ )
+bool _GetStartEnd( WORD & nAddressStart_, WORD & nAddressEnd_, const int iArg )
 {
-	nAddressStart_ = g_aArgs[1].nVal1; 
-	int nEnd = nAddressStart_ + g_aArgs[1].nVal2;
+	nAddressStart_ = g_aArgs[ iArg ].nVal1; 
+	int nEnd = nAddressStart_ + g_aArgs[ iArg ].nVal2;
 
 	// .17 Bug Fix: D000,FFFF -> D000,CFFF (nothing searched!)
-	if (nEnd > _6502_END_MEM_ADDRESS)
-		nEnd = _6502_END_MEM_ADDRESS;
+	if (nEnd > _6502_MEM_END)
+		nEnd = _6502_MEM_END;
 
 	nAddressEnd_  = nEnd;
 	return true;
@@ -4199,7 +4197,7 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 	g_nSourceAssembleBytes = 0;
 	g_nSourceAssemblySymbols = 0;
 
-	const DWORD INVALID_ADDRESS = _6502_END_MEM_ADDRESS + 1;
+	const DWORD INVALID_ADDRESS = _6502_MEM_END + 1;
 
 	bool bPrevSymbol = false;
 	bool bFourBytes = false;		
@@ -4346,7 +4344,7 @@ Update_t CmdSource (int nArgs)
 			else
 			{
 				TCHAR  sFileName[MAX_PATH];
-				_tcscpy(sFileName,progdir);
+				_tcscpy(sFileName,g_sProgramDir);
 				_tcscat(sFileName, pFileName);
 
 				const int MAX_MINI_FILENAME = 20;
@@ -4776,7 +4774,7 @@ int ParseSymbolTable( TCHAR *pFileName, Symbols_e eWhichTableToLoad )
 Update_t CmdSymbolsLoad (int nArgs)
 {
 	TCHAR sFileName[MAX_PATH];
-	_tcscpy(sFileName,progdir);
+	_tcscpy(sFileName,g_sProgramDir);
 
 	int iWhichTable = (g_iCommand - CMD_SYMBOLS_MAIN);
 	if ((iWhichTable < 0) || (iWhichTable >= NUM_SYMBOL_TABLES))
@@ -4809,7 +4807,7 @@ Update_t CmdSymbolsLoad (int nArgs)
 	{
 		TCHAR *pFileName = g_aArgs[ iArg ].sArg;
 
-		_tcscpy(sFileName,progdir);
+		_tcscpy(sFileName,g_sProgramDir);
 		_tcscat(sFileName, pFileName);
 
 		// Remember File ame of symbols loaded
@@ -5130,7 +5128,7 @@ Update_t CmdGo (int nArgs)
 		g_nDebugSkipStart = g_aArgs[ iArg ].nVal1;
 		WORD nAddress     = g_aArgs[ iArg ].nVal2;
 
-//		int nSlack        = (_6502_END_MEM_ADDRESS + 1) - nAddress;
+//		int nSlack        = (_6502_MEM_END + 1) - nAddress;
 //		int nWantedLength = g_aArgs[iArg].nVal2;
 //		g_nDebugSkipLen   = MIN( nSlack, nWantedLength );
 		int nEnd = nAddress - g_nDebugSkipStart;
@@ -5139,7 +5137,7 @@ Update_t CmdGo (int nArgs)
 		else
 			g_nDebugSkipLen = nAddress - g_nDebugSkipStart;
 
-		g_nDebugSkipLen &= _6502_END_MEM_ADDRESS;			
+		g_nDebugSkipLen &= _6502_MEM_END;			
 	}
 
 //	WORD nAddressSymbol = 0;
@@ -5220,7 +5218,7 @@ Update_t CmdTraceFile (int nArgs) {
 		fclose(g_hTraceFile);
 
 	TCHAR filename[MAX_PATH];
-	_tcscpy(filename,progdir);
+	_tcscpy(filename,g_sProgramDir);
 	_tcscat(filename,(nArgs && g_aArgs[1].sArg[0]) ? g_aArgs[1].sArg : g_FileNameTrace );
 	g_hTraceFile = fopen(filename,TEXT("wt"));
 
@@ -6780,7 +6778,7 @@ bool ProfileSave()
 	bool bStatus = false;
 
 	TCHAR filename[MAX_PATH];
-	_tcscpy(filename,progdir);
+	_tcscpy(filename,g_sProgramDir);
 	_tcscat(filename,g_FileNameProfile ); // TEXT("Profile.txt")); // =PATCH MJP
 
 	FILE *hFile = fopen(filename,TEXT("wt"));
@@ -6828,13 +6826,13 @@ void DebugBegin ()
 	g_nAppMode = MODE_DEBUG;
 	FrameRefreshStatus(DRAW_TITLE);
 
-	if (apple2e)
+	if (g_bApple2e)
 		g_aOpcodes = & g_aOpcodes65C02[ 0 ]; // Enhanced Apple //e
 	else
 		g_aOpcodes = & g_aOpcodes6502[ 0 ]; // Original Apple ][ ][+
 
-	g_aOpmodes[ AM_2 ].m_nBytes = apple2e ? 2 : 1;
-	g_aOpmodes[ AM_3 ].m_nBytes = apple2e ? 3 : 1;
+	g_aOpmodes[ AM_2 ].m_nBytes = g_bApple2e ? 2 : 1;
+	g_aOpmodes[ AM_3 ].m_nBytes = g_bApple2e ? 3 : 1;
 
 	g_nDisasmCurAddress = regs.pc;
 	DisasmCalcTopBotAddress();
@@ -7525,11 +7523,11 @@ void DebuggerProcessKey( int keycode )
 				else
 				{
 					// If you really want $000 at the top of the screen...
-					// g_nDisasmTopAddress = _6502_BEG_MEM_ADDRESS;
+					// g_nDisasmTopAddress = _6502_MEM_BEGIN;
 					// DisasmCalcCurFromTopAddress();
 					// DisasmCalcBotFromTopAddress();
 
-					g_nDisasmCurAddress = _6502_BEG_MEM_ADDRESS;
+					g_nDisasmCurAddress = _6502_MEM_BEGIN;
 					DisasmCalcTopBotAddress();
 				}
 				bUpdateDisplay |= UPDATE_DISASM;
@@ -7555,11 +7553,11 @@ void DebuggerProcessKey( int keycode )
 				else
 				{
 					// If you really want $8000 at the top of the screen...
-					// g_nDisasmTopAddress =  (_6502_END_MEM_ADDRESS / 2) + 1;
+					// g_nDisasmTopAddress =  (_6502_MEM_END / 2) + 1;
 					// DisasmCalcCurFromTopAddress();
 					// DisasmCalcTopBotAddress();
 
-					g_nDisasmCurAddress =  (_6502_END_MEM_ADDRESS / 2) + 1;
+					g_nDisasmCurAddress =  (_6502_MEM_END / 2) + 1;
 					DisasmCalcTopBotAddress();
 				}
 				bUpdateDisplay |= UPDATE_DISASM;
