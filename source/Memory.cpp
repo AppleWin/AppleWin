@@ -854,14 +854,13 @@ LPBYTE MemGetMainPtr (WORD offset) {
 //===========================================================================
 void MemInitialize () {
 
-  // ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA
-  // STRUCTURES
+  // ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
   //
   // THE MEMIMAGE BUFFER CAN CONTAIN EITHER MULTIPLE MEMORY IMAGES OR
   // ONE MEMORY IMAGE WITH COMPILER DATA
-  memaux   = (LPBYTE)VirtualAlloc(NULL,0x10000,MEM_COMMIT,PAGE_READWRITE);
+  memaux   = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE); // _6502_MEM_END //  0x10000
   memdirty = (LPBYTE)VirtualAlloc(NULL,0x100  ,MEM_COMMIT,PAGE_READWRITE);
-  memmain  = (LPBYTE)VirtualAlloc(NULL,0x10000,MEM_COMMIT,PAGE_READWRITE);
+  memmain  = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
   memrom   = (LPBYTE)VirtualAlloc(NULL,0x5000 ,MEM_COMMIT,PAGE_READWRITE);
   memimage = (LPBYTE)VirtualAlloc(NULL,
                                   MAX(0x30000,MAXIMAGES*0x10000),
@@ -895,16 +894,20 @@ void MemInitialize () {
 #endif
 
   // READ THE APPLE FIRMWARE ROMS INTO THE ROM IMAGE
-	const UINT ROM_SIZE = 0x5000; // HACK: Magic #
+	const UINT ROM_SIZE = 0x5000; // HACK: Magic # -- $C000..$FFFF = 4K .. why 5K?
 
-	HRSRC hResInfo = apple2e	? FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2E_ROM), "ROM")
-	                                : (apple2plus ? FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2PLUS_ROM), "ROM")
-					              : FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2ORIG_ROM), "ROM"));
+	HRSRC hResInfo = 
+		g_bApple2e
+		? FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2E_ROM), "ROM")
+		: (g_bApple2plus
+			? FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2PLUS_ROM), "ROM")
+			: FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2ORIG_ROM), "ROM") );
+
 	if(hResInfo == NULL)
 	{
 		TCHAR sRomFileName[ 128 ];
-		_tcscpy( sRomFileName, apple2e ? TEXT("APPLE2E.ROM")
-					       : (apple2plus ? TEXT("APPLE2PLUS.ROM")
+		_tcscpy( sRomFileName, g_bApple2e ? TEXT("APPLE2E.ROM")
+					       : (g_bApple2plus ? TEXT("APPLE2PLUS.ROM")
 					                     : TEXT("APPLE2ORIG.ROM")));
 
 		TCHAR sText[ 256 ];
@@ -1066,7 +1069,7 @@ BYTE __stdcall MemSetPaging (WORD programcounter, BYTE address, BYTE write, BYTE
       memmode |= MF_HIGHRAM;
     lastwriteram = writeram;
   }
-  else if (apple2e)
+  else if (g_bApple2e)
   {
     switch (address)
 	{
@@ -1189,7 +1192,7 @@ BYTE __stdcall CxReadFunc(WORD, WORD nAddr, BYTE, BYTE, ULONG nCyclesLeft)
 
 	CpuCalcCycles(nCyclesLeft);
 	
-	if(!apple2e || SW_SLOTCXROM)
+	if(!g_bApple2e || SW_SLOTCXROM)
 	{
 		if((nPage == 0xC4) || (nPage == 0xC5))
 		{
@@ -1218,7 +1221,7 @@ BYTE __stdcall CxWriteFunc(WORD, WORD nAddr, BYTE, BYTE nValue, ULONG nCyclesLef
 
 	CpuCalcCycles(nCyclesLeft);
 
-	if(!apple2e || SW_SLOTCXROM)
+	if(!g_bApple2e || SW_SLOTCXROM)
 	{
 		if((nPage == 0xC4) || (nPage == 0xC5))
 		{

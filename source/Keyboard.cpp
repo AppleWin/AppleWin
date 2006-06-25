@@ -156,7 +156,7 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 		if (key > 0x7F)
 			return;
 
-		if (apple2e) 
+		if (g_bApple2e) 
 		        if (capslock && (key >= 'a') && (key <='z'))
 		                keycode = key - 32;
 		         else
@@ -174,12 +174,12 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 		if ((key == VK_CANCEL) && (GetKeyState(VK_CONTROL) < 0))
 		{
 			// Ctrl+Reset
-			if (apple2e)
+			if (g_bApple2e)
 				MemResetPaging();
 
 			DiskReset();
 			KeybReset();
-			if (apple2e)
+			if (g_bApple2e)
 			        VideoResetState();	// Switch Alternate char set off
 			MB_Reset();
 
@@ -199,10 +199,10 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			return;
 		}
 
-		if (!((key >= VK_LEFT) && (key <= VK_DELETE) && asciicode[apple2e][key - VK_LEFT]))
+		if (!((key >= VK_LEFT) && (key <= VK_DELETE) && asciicode[g_bApple2e][key - VK_LEFT]))
 			return;
 
-		keycode = asciicode[apple2e][key - VK_LEFT];		// Convert to Apple arrow keycode
+		keycode = asciicode[g_bApple2e][key - VK_LEFT];		// Convert to Apple arrow keycode
 		lastvirtkey = key;
 	}
 #ifdef KEY_OLD
@@ -375,7 +375,7 @@ BYTE __stdcall KeybReadFlag (WORD, BYTE, BYTE, BYTE, ULONG)
 //===========================================================================
 void KeybToggleCapsLock ()
 {
-	if (apple2e)
+	if (g_bApple2e)
 	{
 		capslock = (GetKeyState(VK_CAPITAL) & 1);
 		FrameRefreshStatus(DRAW_LEDS);

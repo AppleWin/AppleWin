@@ -207,14 +207,15 @@ static void ConfigDlg_OK(HWND window, BOOL afterclose)
 	DWORD newvidtype    = (DWORD)SendDlgItemMessage(window,IDC_VIDEOTYPE,CB_GETCURSEL,0,0);
 	DWORD newserialport = (DWORD)SendDlgItemMessage(window,IDC_SERIALPORT,CB_GETCURSEL,0,0);
 
-	if (newcomptype != (apple2e ? 2 : (apple2plus ? 1 : 0)))
+	if (newcomptype != (g_bApple2e ? 2 : (g_bApple2plus ? 1 : 0)))
 	{
 		if (MessageBox(window,
-			TEXT("You have changed the emulated computer ")
-			TEXT("type.  This change will not take effect ")
-			TEXT("until the next time you restart the ")
-			TEXT("emulator.\n\n")
-			TEXT("Would you like to restart the emulator now?"),
+			TEXT(
+			"You have changed the emulated computer "
+			"type.  This change will not take effect "
+			"until the next time you restart the "
+			"emulator.\n\n"
+			"Would you like to restart the emulator now?"),
 			TEXT("Configuration"),
 			MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
 			afterclose = WM_USER_RESTART;
@@ -341,7 +342,7 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
 	{
       g_nLastPage = PG_CONFIG;
 
-      FillComboBox(window,IDC_COMPUTER,computerchoices,apple2e ? 2 : (apple2plus ? 1 : 0));
+      FillComboBox(window,IDC_COMPUTER,computerchoices,g_bApple2e ? 2 : (g_bApple2plus ? 1 : 0));
       FillComboBox(window,IDC_VIDEOTYPE,videochoices,videotype);
       FillComboBox(window,IDC_SERIALPORT,serialchoices,serialport);
       SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
@@ -669,7 +670,7 @@ static void SaveStateUpdate()
 	RegSaveString(TEXT("Configuration"),REGVALUE_SAVESTATE_FILENAME,1,Snapshot_GetFilename());
 
 	if(g_szNewDirectory[0])
-		RegSaveString(TEXT("Preferences"),TEXT("Starting Directory"),1,g_szNewDirectory);
+		RegSaveString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,g_szNewDirectory);
 }
 
 static void SaveStateDlg_OK(HWND window, BOOL afterclose)
@@ -711,7 +712,7 @@ static int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 	
 	strcpy(szFilename, Snapshot_GetFilename());
 	
-	RegLoadString(TEXT("Preferences"),TEXT("Starting Directory"),1,szDirectory,MAX_PATH);
+	RegLoadString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,szDirectory,MAX_PATH);
 	
 	
 	//

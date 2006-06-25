@@ -970,7 +970,7 @@ BOOL Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 
 		CopySource(xpixel,ypixel,
 			       14,16,
-				   (apple2e?SRCOFFS_40COL:SRCOFFS_IIPLUS)+((ch & 0x0F) << 4),
+				   (g_bApple2e?SRCOFFS_40COL:SRCOFFS_IIPLUS)+((ch & 0x0F) << 4),
 				   (ch & 0xF0)+charoffs + (bInvert?0x40:0x00));
 
 		return 1;
@@ -1478,7 +1478,7 @@ void VideoBenchmark () {
            (unsigned)totaltextfps,
            (unsigned)(totalmhz10/10),
            (unsigned)(totalmhz10 % 10),
-           (LPCTSTR)(apple2e ? TEXT("") : TEXT(" (6502)")),
+           (LPCTSTR)(g_bApple2e ? TEXT("") : TEXT(" (6502)")),
            (unsigned)realisticfps);
   MessageBox(g_hFrameWindow,
              outstr,
@@ -1936,10 +1936,10 @@ BYTE __stdcall VideoSetMode (WORD, BYTE address, BYTE write, BYTE, ULONG) {
   switch (address) {
     case 0x00: vidmode &= ~VF_MASK2;   break;
     case 0x01: vidmode |=  VF_MASK2;   break;
-    case 0x0C: if (apple2e) vidmode &= ~VF_80COL;   break;
-    case 0x0D: if (apple2e) vidmode |=  VF_80COL;   break;
-    case 0x0E: if (apple2e) charoffs = 0;           break;	// Alternate char set off
-    case 0x0F: if (apple2e) charoffs = 256;         break;	// Alternate char set on
+    case 0x0C: if (g_bApple2e) vidmode &= ~VF_80COL;   break;
+    case 0x0D: if (g_bApple2e) vidmode |=  VF_80COL;   break;
+    case 0x0E: if (g_bApple2e) charoffs = 0;           break;	// Alternate char set off
+    case 0x0F: if (g_bApple2e) charoffs = 256;         break;	// Alternate char set on
     case 0x50: vidmode &= ~VF_TEXT;    break;
     case 0x51: vidmode |=  VF_TEXT;    break;
     case 0x52: vidmode &= ~VF_MIXED;   break;
@@ -1948,8 +1948,8 @@ BYTE __stdcall VideoSetMode (WORD, BYTE address, BYTE write, BYTE, ULONG) {
     case 0x55: vidmode |=  VF_PAGE2;   break;
     case 0x56: vidmode &= ~VF_HIRES;   break;
     case 0x57: vidmode |=  VF_HIRES;   break;
-    case 0x5E: if (apple2e) vidmode |=  VF_DHIRES;  break;
-    case 0x5F: if (apple2e) vidmode &= ~VF_DHIRES;  break;
+    case 0x5E: if (g_bApple2e) vidmode |=  VF_DHIRES;  break;
+    case 0x5F: if (g_bApple2e) vidmode &= ~VF_DHIRES;  break;
   }
   if (SW_MASK2)
     vidmode &= ~VF_PAGE2;
@@ -2134,7 +2134,7 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT)
     {
         // N: text, so no higher address bits unless Apple ][, not Apple //e
         //
-        if ((!apple2e) && // Apple ][?
+        if ((!g_bApple2e) && // Apple ][?
             (kHPEClock <= nHClock) && // Y: HBL?
             (nHClock <= (kHClocks - 1)))
         {
