@@ -50,7 +50,7 @@ static int lastmode         = MODE_LOGO;
 DWORD     needsprecision    = 0;			// Redundant
 TCHAR     g_sProgramDir[MAX_PATH] = TEXT("");
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir
-BOOL      resettiming       = 0;			// Redundant
+bool      g_bResetTiming    = false;			// Redundant
 BOOL      restart           = 0;
 
 DWORD		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar

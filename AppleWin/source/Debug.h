@@ -20,7 +20,7 @@ using namespace std;
 
 // Breakpoints
 	extern int          g_nBreakpoints;
-	extern Breakpoint_t g_aBreakpoints[ NUM_BREAKPOINTS ];
+	extern Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
 	extern const TCHAR *g_aBreakpointSource [ NUM_BREAKPOINT_SOURCES   ];
 	extern const TCHAR *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ];
@@ -97,6 +97,9 @@ using namespace std;
 
 // Prototypes _______________________________________________________________
 
+// Bookmarks
+	bool Bookmark_Find( const WORD nAddress );
+
 // Breakpoints
 	bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakpointEnable_ );
 
@@ -130,8 +133,6 @@ using namespace std;
 
 	LPCTSTR FindSymbolFromAddress (WORD nAdress, int * iTable_ = NULL );
 	LPCTSTR GetSymbol   (WORD nAddress, int nBytes);
-
-	bool Get6502Targets ( WORD nAddress, int *pTemp_, int *pFinal_, int *pBytes_ );
 
 	Update_t DebuggerProcessCommand( const bool bEchoConsoleInput );
 

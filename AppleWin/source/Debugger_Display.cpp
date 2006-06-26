@@ -373,7 +373,7 @@ int FormatDisassemblyLine( WORD nBaseAddress, int iOpcode, int iOpmode, int nOpB
 			int nTargetPointer;
 			WORD nTargetValue = 0; // de-ref
 			int nTargetBytes;
-			Get6502Targets( nBaseAddress, &nTargetPartial, &nTargetPointer, &nTargetBytes );
+			_6502_GetTargets( nBaseAddress, &nTargetPartial, &nTargetPointer, &nTargetBytes );
 
 			if (nTargetPointer != NO_6502_TARGET)
 			{
@@ -563,7 +563,7 @@ void DrawBreakpoints (HDC dc, int line)
 	rect.bottom += g_nFontHeight;
 
 	int iBreakpoint;
-	for (iBreakpoint = 0; iBreakpoint < NUM_BREAKPOINTS; iBreakpoint++ )
+	for (iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++ )
 	{
 		Breakpoint_t *pBP = &g_aBreakpoints[iBreakpoint];
 		WORD nLength   = pBP->nLength;
@@ -577,6 +577,9 @@ void DrawBreakpoints (HDC dc, int line)
 			bool bEnabled  = pBP->bEnabled;
 			WORD nAddress1 = pBP->nAddress;
 			WORD nAddress2 = nAddress1 + nLength - 1;
+
+			if (! bSet)
+				continue;
 			
 			RECT rect2;
 			rect2 = rect;
@@ -784,7 +787,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 	int iOpcode;
 	int iOpmode;
 	int nOpbytes;
-	iOpcode = _6502GetOpmodeOpbytes( nBaseAddress, iOpmode, nOpbytes );
+	iOpcode = _6502_GetOpmodeOpbytes( nBaseAddress, iOpmode, nOpbytes );
 
 	const int CHARS_FOR_ADDRESS = 8; // 4 digits plus null
 
@@ -897,6 +900,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		bool bBreakpointEnable;
 		GetBreakpointInfo( nBaseAddress, bBreakpointActive, bBreakpointEnable );
 		bool bAddressAtPC = (nBaseAddress == regs.pc);
+		bool bAddressIsBookmark = Bookmark_Find( nBaseAddress );
 
 		DebugColors_e iBackground = BG_DISASM_1;
 		DebugColors_e iForeground = FG_DISASM_MNEMONIC; // FG_DISASM_TEXT;
@@ -965,14 +969,34 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 				iForeground = FG_DISASM_MNEMONIC;
 			}
 		}
-		SetBkColor(   dc, DebuggerGetColor( iBackground ) );
-		SetTextColor( dc, DebuggerGetColor( iForeground ) );
 
+		if (bAddressIsBookmark)
+		{
+			SetBkColor(   dc, DebuggerGetColor( BG_DISASM_BOOKMARK ) );
+			SetTextColor( dc, DebuggerGetColor( FG_DISASM_BOOKMARK ) );
+		}
+		else
+		{
+			SetBkColor(   dc, DebuggerGetColor( iBackground ) );
+			SetTextColor( dc, DebuggerGetColor( iForeground ) );
+		}
+		
 	// Address
 		if (! bCursorLine)
 			SetTextColor( dc, DebuggerGetColor( FG_DISASM_ADDRESS ) );
+//		else
+//		{
+//			SetBkColor(   dc, DebuggerGetColor( FG_DISASM_BOOKMARK ) ); // swapped
+//			SetTextColor( dc, DebuggerGetColor( BG_DISASM_BOOKMARK ) ); // swapped
+//		}		
 		DebugDrawTextHorz( (LPCTSTR) sAddress, linerect );
 
+		if (bAddressIsBookmark)
+		{
+			SetBkColor(   dc, DebuggerGetColor( iBackground ) );
+			SetTextColor( dc, DebuggerGetColor( iForeground ) );
+		}
+		
 	// Address Seperator		
 		if (! bCursorLine)
 			SetTextColor( dc, DebuggerGetColor( FG_DISASM_OPERATOR ) );
@@ -1576,7 +1600,7 @@ void DrawTargets (HDC dc, int line)
 		return;
 
 	int aTarget[2];
-	Get6502Targets( regs.pc, &aTarget[0],&aTarget[1], NULL );
+	_6502_GetTargets( regs.pc, &aTarget[0],&aTarget[1], NULL );
 
 	RECT rect;
 	

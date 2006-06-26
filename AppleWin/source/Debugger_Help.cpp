@@ -435,7 +435,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 	// Breakpoints
 		case CMD_BREAKPOINT:
-			wsprintf( sText, " Maximum breakpoints: %d", NUM_BREAKPOINTS );
+			wsprintf( sText, " Maximum breakpoints: %d", MAX_BREAKPOINTS );
 			ConsoleBufferPush( sText );
 			wsprintf( sText, TEXT(" Usage: [%s | %s | %s]")
 				, g_aParameters[ PARAM_LOAD  ].m_sName

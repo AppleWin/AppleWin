@@ -18,7 +18,7 @@ extern DWORD      needsprecision;
 extern TCHAR      g_sProgramDir[MAX_PATH];
 extern TCHAR      g_sCurrentDir[MAX_PATH];
 
-extern BOOL       resettiming;
+extern bool       g_bResetTiming;
 extern BOOL       restart;
 
 extern DWORD      g_dwSpeed;
