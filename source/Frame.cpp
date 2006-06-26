@@ -56,7 +56,8 @@ static HBITMAP diskbitmap[ NUM_DISK_STATUS ];
 
 static HBITMAP buttonbitmap[BUTTONS];
 
-static BOOL    active          = 0;
+//static BOOL    active          = 0;
+static bool    g_bAppActive = false;
 static HBRUSH  btnfacebrush    = (HBRUSH)0;
 static HPEN    btnfacepen      = (HPEN)0;
 static HPEN    btnhighlightpen = (HPEN)0;
@@ -328,78 +329,96 @@ void DrawFrameWindow () {
 }
 
 //===========================================================================
-void DrawStatusArea (HDC passdc, int drawflags) {
-  FrameReleaseDC();
-  HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
-  int  x      = buttonx;
-  int  y      = buttony+BUTTONS*BUTTONCY+1;
-  int  iDrive1Status = DISK_STATUS_OFF;
-  int  iDrive2Status = DISK_STATUS_OFF;
-  BOOL caps   = 0;
-  DiskGetLightStatus(&iDrive1Status,&iDrive2Status);
-  KeybGetCapsStatus(&caps);
-  if (fullscreen) {
-    SelectObject(dc,smallfont);
-    SetBkMode(dc,OPAQUE);
-    SetBkColor(dc,RGB(0,0,0));
-    SetTextAlign(dc,TA_LEFT | TA_TOP);
-    SetTextColor(dc,RGB((iDrive1Status==2 ? 255 : 0),(iDrive1Status==1 ? 255 : 0),0));
-    TextOut(dc,x+ 3,y+2,TEXT("1"),1);
-    SetTextColor(dc,RGB((iDrive2Status==2 ? 255 : 0),(iDrive2Status==1 ? 255 : 0),0));
-    TextOut(dc,x+13,y+2,TEXT("2"),1);
-    if (g_bApple2e) {
-      SetTextAlign(dc,TA_RIGHT | TA_TOP);
-      SetTextColor(dc,(caps ? RGB(128,128,128) :
-                              RGB(  0,  0,  0)));
-      TextOut(dc,x+BUTTONCX,y+2,TEXT("Caps"),4);
-    }
-    SetTextAlign(dc,TA_CENTER | TA_TOP);
-    SetTextColor(dc,(g_nAppMode == MODE_PAUSED ||
-                     g_nAppMode == MODE_STEPPING ? RGB(255,255,255) :
-                                             RGB(  0,  0,  0)));
-    TextOut(dc,x+BUTTONCX/2,y+13,(g_nAppMode == MODE_PAUSED ? TEXT(" Paused ") :
-                                                        TEXT("Stepping")),8);
-  }
-  else {
-    if (drawflags & DRAW_BACKGROUND) {
-      SelectObject(dc,GetStockObject(NULL_PEN));
-      SelectObject(dc,btnfacebrush);
-      Rectangle(dc,x,y,x+BUTTONCX+2,y+35);
-      Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+31,0);
-      SelectObject(dc,smallfont);
-      SetTextAlign(dc,TA_CENTER | TA_TOP);
-      SetTextColor(dc,RGB(0,0,0));
-      SetBkMode(dc,TRANSPARENT);
-      TextOut(dc,x+ 7,y+7,TEXT("1"),1);
-      TextOut(dc,x+25,y+7,TEXT("2"),1);
-    }
-    if (drawflags & DRAW_LEDS) {
-      RECT rect = {0,0,8,8};
-      DrawBitmapRect(dc,x+12,y+8,&rect,diskbitmap[iDrive1Status]);
-      DrawBitmapRect(dc,x+30,y+8,&rect,diskbitmap[iDrive2Status]);
-      if (g_bApple2e) {
-        RECT rect = {0,0,30,8};
-        DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[caps != 0]);
-      }
-    }
-    if (drawflags & DRAW_TITLE) {
-      TCHAR title[40];
-      _tcscpy(title,g_bApple2e ? TITLE : (g_bApple2plus ? TEXT("Apple ][+ Emulator")
-						  : TEXT("Apple ][ Emulator")));
-      switch (g_nAppMode) {
-        case MODE_PAUSED:   _tcscat(title,TEXT(" [Paused]"));    break;
-        case MODE_STEPPING: _tcscat(title,TEXT(" [Stepping]"));  break;
-      }
-      SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)title);
-    }
-	if (drawflags & DRAW_BUTTON_DRIVES)
+void DrawStatusArea (HDC passdc, int drawflags)
+{
+	FrameReleaseDC();
+	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
+	int  x      = buttonx;
+	int  y      = buttony+BUTTONS*BUTTONCY+1;
+	int  iDrive1Status = DISK_STATUS_OFF;
+	int  iDrive2Status = DISK_STATUS_OFF;
+	bool bCaps   = KeybGetCapsStatus();
+	DiskGetLightStatus(&iDrive1Status,&iDrive2Status);
+
+	if (fullscreen)
 	{
-		DrawButton(dc, BTN_DRIVE1);
-		DrawButton(dc, BTN_DRIVE2);
+		SelectObject(dc,smallfont);
+		SetBkMode(dc,OPAQUE);
+		SetBkColor(dc,RGB(0,0,0));
+		SetTextAlign(dc,TA_LEFT | TA_TOP);
+		SetTextColor(dc,RGB((iDrive1Status==2 ? 255 : 0),(iDrive1Status==1 ? 255 : 0),0));
+		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
+		SetTextColor(dc,RGB((iDrive2Status==2 ? 255 : 0),(iDrive2Status==1 ? 255 : 0),0));
+		TextOut(dc,x+13,y+2,TEXT("2"),1);
+		if (g_bApple2e)
+		{
+			SetTextAlign(dc,TA_RIGHT | TA_TOP);
+			SetTextColor(dc,(bCaps
+				? RGB(128,128,128)
+				: RGB(  0,  0,  0) ));
+			TextOut(dc,x+BUTTONCX,y+2,TEXT("Caps"),4);
+		}
+		SetTextAlign(dc,TA_CENTER | TA_TOP);
+		SetTextColor(dc,(g_nAppMode == MODE_PAUSED || g_nAppMode == MODE_STEPPING
+			? RGB(255,255,255)
+			: RGB(  0,  0,  0)));
+		TextOut(dc,x+BUTTONCX/2,y+13,(g_nAppMode == MODE_PAUSED
+			? TITLE_PAUSED
+			: TITLE_STEPPING) ,8);
 	}
-  }
-  if (!passdc)
-    ReleaseDC(g_hFrameWindow,dc);
+	else
+	{
+		if (drawflags & DRAW_BACKGROUND)
+		{
+			SelectObject(dc,GetStockObject(NULL_PEN));
+			SelectObject(dc,btnfacebrush);
+			Rectangle(dc,x,y,x+BUTTONCX+2,y+35);
+			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+31,0);
+			SelectObject(dc,smallfont);
+			SetTextAlign(dc,TA_CENTER | TA_TOP);
+			SetTextColor(dc,RGB(0,0,0));
+			SetBkMode(dc,TRANSPARENT);
+			TextOut(dc,x+ 7,y+7,TEXT("1"),1);
+			TextOut(dc,x+25,y+7,TEXT("2"),1);
+		}
+		if (drawflags & DRAW_LEDS)
+		{
+			RECT rect = {0,0,8,8};
+			DrawBitmapRect(dc,x+12,y+8,&rect,diskbitmap[iDrive1Status]);
+			DrawBitmapRect(dc,x+30,y+8,&rect,diskbitmap[iDrive2Status]);
+		if (g_bApple2e)
+		{
+			RECT rect = {0,0,30,8};
+			DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]);
+		}
+	}
+
+		if (drawflags & DRAW_TITLE)
+		{
+			TCHAR title[40];
+			_tcscpy(title,g_bApple2e
+				? TITLE_APPLE_2
+				: (g_bApple2plus
+					? TITLE_APPLE_2_PLUS
+					: TITLE_APPLE_2 ));
+
+			switch (g_nAppMode)
+			{
+				case MODE_PAUSED  : _tcscat(title,TEXT(" [")); _tcscat(title,TITLE_PAUSED  ); _tcscat(title,TEXT("]")); break;
+				case MODE_STEPPING: _tcscat(title,TEXT(" [")); _tcscat(title,TITLE_STEPPING); _tcscat(title,TEXT("]")); break;
+			}
+
+			SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)title);
+		}
+		if (drawflags & DRAW_BUTTON_DRIVES)
+		{
+			DrawButton(dc, BTN_DRIVE1);
+			DrawButton(dc, BTN_DRIVE2);
+		}
+	}
+
+	if (!passdc)
+		ReleaseDC(g_hFrameWindow,dc);
 }
 
 //===========================================================================
@@ -413,20 +432,21 @@ void EraseButton (int number) {
 }
 
 //===========================================================================
-LRESULT CALLBACK FrameWndProc (HWND   window,
-                               UINT   message,
-                               WPARAM wparam,
-                               LPARAM lparam) {
-
-  switch (message) {
-
+LRESULT CALLBACK FrameWndProc (
+	HWND   window,
+	UINT   message,
+	WPARAM wparam,
+	LPARAM lparam)
+{
+	switch (message)
+	{
     case WM_ACTIVATE:
       JoyReset();
       SetUsingCursor(0);
       break;
 
     case WM_ACTIVATEAPP:
-      active = wparam;
+      g_bAppActive = (wparam ? true : false);
       break;
 
     case WM_CLOSE:
@@ -444,15 +464,18 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
       }
       break;
 
-    case WM_CHAR:
-      if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) ||
-          ((g_nAppMode == MODE_STEPPING) && (wparam != TEXT('\x1B'))))
-        KeybQueueKeypress((int)wparam,ASCII);
-      else if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
-//        DebugProcessChar((TCHAR)wparam);
-        DebuggerInputConsoleChar((TCHAR)wparam);
-
-      break;
+		case WM_CHAR:
+			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) ||
+				((g_nAppMode == MODE_STEPPING) && (wparam != TEXT('\x1B'))))
+			{
+				KeybQueueKeypress((int)wparam,ASCII);
+			}
+			else
+			if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
+			{
+				DebuggerInputConsoleChar((TCHAR)wparam);
+			}
+			break;
 
     case WM_CREATE:
       g_hFrameWindow = window;
@@ -537,90 +560,94 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
       break;
     }
 
-    case WM_KEYDOWN:
-      KeybUpdateCtrlShiftStatus();
-      if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1)) {
-        SetUsingCursor(0);
-        buttondown = wparam-VK_F1;
-        if (fullscreen && (buttonover != -1)) {
-          if (buttonover != buttondown)
-            EraseButton(buttonover);
-          buttonover = -1;
-        }
-        DrawButton((HDC)0,buttondown);
-      }
-      else if (wparam == VK_F9) {
-        videotype++;	// Cycle through available video modes
-        if (videotype >= VT_NUM_MODES)
-          videotype = 0;
-        VideoReinitialize();
-        if ((g_nAppMode != MODE_LOGO) || ((g_nAppMode == MODE_DEBUG) && (g_bDebuggerViewingAppleOutput))) // +PATCH
+	case WM_KEYDOWN:
+		KeybUpdateCtrlShiftStatus();
+		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
 		{
-          VideoRedrawScreen();
-          g_bDebuggerViewingAppleOutput = true;  // +PATCH
+			SetUsingCursor(0);
+			buttondown = wparam-VK_F1;
+			if (fullscreen && (buttonover != -1)) {
+				if (buttonover != buttondown)
+				EraseButton(buttonover);
+				buttonover = -1;
+			}
+			DrawButton((HDC)0,buttondown);
 		}
-        RegSaveValue(TEXT("Configuration"),TEXT("Video Emulation"),1,videotype);
-      }
-      else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)
-	  {
-		SoundCore_SetFade(FADE_OUT);
-		if(PSP_SaveStateSelectImage(window, true))
+		else if (wparam == VK_F9)
 		{
-			Snapshot_SaveState();
+			videotype++;	// Cycle through available video modes
+			if (videotype >= VT_NUM_MODES)
+				videotype = 0;
+			VideoReinitialize();
+			if ((g_nAppMode != MODE_LOGO) || ((g_nAppMode == MODE_DEBUG) && (g_bDebuggerViewingAppleOutput))) // +PATCH
+			{
+				VideoRedrawScreen();
+				g_bDebuggerViewingAppleOutput = true;  // +PATCH
+			}
+			RegSaveValue(TEXT("Configuration"),TEXT("Video Emulation"),1,videotype);
 		}
-		SoundCore_SetFade(FADE_IN);
-	  }
-	  else if (wparam == VK_F12)										// Load state (F12 or Ctrl+F12)
-	  {
-		SoundCore_SetFade(FADE_OUT);
-		if(PSP_SaveStateSelectImage(window, false))
+		else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)
 		{
-			Snapshot_LoadState();
+			SoundCore_SetFade(FADE_OUT);
+			if(PSP_SaveStateSelectImage(window, true))
+			{
+				Snapshot_SaveState();
+			}
+			SoundCore_SetFade(FADE_IN);
 		}
-		SoundCore_SetFade(FADE_IN);
-	  }
-      else if (wparam == VK_CAPITAL)
-        KeybToggleCapsLock();
-      else if (wparam == VK_PAUSE) {
-        SetUsingCursor(0);
-        switch (g_nAppMode)
+		else if (wparam == VK_F12)										// Load state (F12 or Ctrl+F12)
 		{
-          case MODE_RUNNING:
-			  g_nAppMode = MODE_PAUSED;
-			  SoundCore_SetFade(FADE_OUT);
-			  break;
-          case MODE_PAUSED:
-			  g_nAppMode = MODE_RUNNING;
-			  SoundCore_SetFade(FADE_IN);
-			  break;
-          case MODE_STEPPING:
-				DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
-			  break;
-        }
-        DrawStatusArea((HDC)0,DRAW_TITLE);
-        if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
-          VideoRedrawScreen();
-        resettiming = 1;
-      }
-      else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) || (g_nAppMode == MODE_STEPPING))
-	  {
-		  // Note about Alt Gr (Right-Alt):
-		  // . WM_KEYDOWN[Left-Control], then:
-		  // . WM_KEYDOWN[Right-Alt]
-        BOOL autorep  = ((lparam & 0x40000000) != 0);
-        BOOL extended = ((lparam & 0x01000000) != 0);
-        if ((!JoyProcessKey((int)wparam,extended,1,autorep)) && (g_nAppMode != MODE_LOGO))
-          KeybQueueKeypress((int)wparam,NOT_ASCII);
-      }
-      else if (g_nAppMode == MODE_DEBUG)
-//        DebugProcessCommand(wparam);
-        DebuggerProcessKey(wparam);
+			SoundCore_SetFade(FADE_OUT);
+			if(PSP_SaveStateSelectImage(window, false))
+			{
+				Snapshot_LoadState();
+			}
+			SoundCore_SetFade(FADE_IN);
+		}
+		else if (wparam == VK_CAPITAL)
+			KeybToggleCapsLock();
+		else if (wparam == VK_PAUSE)
+		{
+			SetUsingCursor(0);
+			switch (g_nAppMode)
+			{
+				case MODE_RUNNING:
+					g_nAppMode = MODE_PAUSED;
+					SoundCore_SetFade(FADE_OUT);
+					break;
+				case MODE_PAUSED:
+					g_nAppMode = MODE_RUNNING;
+					SoundCore_SetFade(FADE_IN);
+					break;
+				case MODE_STEPPING:
+					DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
+					break;
+			}
+			DrawStatusArea((HDC)0,DRAW_TITLE);
+			if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
+				VideoRedrawScreen();
+			g_bResetTiming = true;
+		}
+		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) || (g_nAppMode == MODE_STEPPING))
+		{
+			// Note about Alt Gr (Right-Alt):
+			// . WM_KEYDOWN[Left-Control], then:
+			// . WM_KEYDOWN[Right-Alt]
+			BOOL autorep  = ((lparam & 0x40000000) != 0);
+			BOOL extended = ((lparam & 0x01000000) != 0);
+			if ((!JoyProcessKey((int)wparam,extended,1,autorep)) && (g_nAppMode != MODE_LOGO))
+				KeybQueueKeypress((int)wparam,NOT_ASCII);
+		}
+		else if (g_nAppMode == MODE_DEBUG)
+			DebuggerProcessKey(wparam);
 
-      if (wparam == VK_F10) {
-        SetUsingCursor(0);
-        return 0;
-      }
-      break;
+
+		if (wparam == VK_F10)
+		{
+			SetUsingCursor(0);
+			return 0;
+		}
+		break;
 
     case WM_KEYUP:
       if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == (int)wparam-VK_F1)) {
@@ -706,6 +733,26 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
       RelayEvent(WM_MOUSEMOVE,wparam,lparam);
       break;
     }
+
+// VSCROLL 
+// SB_LINEUP // Line Scrolling
+// SB_PAGEUP // Page Scrolling
+	case WM_MOUSEWHEEL:
+		if (g_nAppMode == MODE_DEBUG)
+		{
+			KeybUpdateCtrlShiftStatus();
+			int zDelta = (short) HIWORD( wparam );
+			if (zDelta > 0)
+			{
+				DebuggerProcessKey( VK_UP );
+			}
+			else
+			{
+				DebuggerProcessKey( VK_DOWN );
+			}
+		}
+		break;
+
 
     case WM_NOTIFY:
       if(((LPNMTTDISPINFO)lparam)->hdr.hwndFrom == tooltipwindow &&
@@ -793,7 +840,7 @@ LRESULT CALLBACK FrameWndProc (HWND   window,
     case WM_SYSCOMMAND:
       switch (wparam & 0xFFF0) {
         case SC_KEYMENU:
-          if (fullscreen && active)
+          if (fullscreen && g_bAppActive)
             return 0;
           break;
         case SC_MINIMIZE:
@@ -889,7 +936,7 @@ void ProcessButtonClick (int button) {
       g_nAppMode = MODE_RUNNING;
       DrawStatusArea((HDC)0,DRAW_TITLE);
       VideoRedrawScreen();
-      resettiming = 1;
+      g_bResetTiming = true;
       break;
 
     case BTN_DRIVE1:
@@ -1168,7 +1215,7 @@ HDC FrameGetDC () {
 
 //===========================================================================
 HDC FrameGetVideoDC (LPBYTE *addr, LONG *pitch) {
-  if (fullscreen && active && !painting) {
+  if (fullscreen && g_bAppActive && !painting) {
     RECT rect = {FSVIEWPORTX,
                  FSVIEWPORTY,
                  FSVIEWPORTX+VIEWPORTCX,
@@ -1222,7 +1269,7 @@ void FrameReleaseDC () {
 
 //===========================================================================
 void FrameReleaseVideoDC () {
-  if (fullscreen && active && !painting) {
+  if (fullscreen && g_bAppActive && !painting) {
 
     // THIS IS CORRECT ACCORDING TO THE DIRECTDRAW DOCS
     RECT rect = {FSVIEWPORTX,

@@ -33,12 +33,15 @@ static bool g_bKeybBufferEnable = false;
 
 #define KEY_OLD
 
-static BYTE asciicode[2][10] = {{0x08,0x0D,0x15,0x2F,0x00,0x00,0x00,0x00,0x00,0x00},
-                                {0x08,0x0B,0x15,0x0A,0x00,0x00,0x00,0x00,0x00,0x7F}};	// Convert PC arrow keys to Apple keycodes
+static BYTE asciicode[2][10] = {
+	{0x08,0x0D,0x15,0x2F,0x00,0x00,0x00,0x00,0x00,0x00},
+	{0x08,0x0B,0x15,0x0A,0x00,0x00,0x00,0x00,0x00,0x7F}
+};	// Convert PC arrow keys to Apple keycodes
 
-static bool  gbShiftKey = false; // +PATCH MJP
-static bool  gbCtrlKey  = false; // +PATCH MJP
-static BOOL  capslock        = 1;
+static bool  g_bShiftKey = false;
+static bool  g_bCtrlKey  = false;
+static bool  g_bAltKey   = false;
+static bool  g_bCapsLock = true;
 static int   lastvirtkey     = 0;	// Current PC keycode
 static BYTE  keycode         = 0;	// Current Apple keycode
 static DWORD keyboardqueries = 0;
@@ -103,28 +106,35 @@ void KeybReset()
 //}
 
 //===========================================================================
-void KeybGetCapsStatus (BOOL *status)
+bool KeybGetAltStatus ()
 {
-	*status = capslock;
+	return g_bAltKey;
 }
 
 //===========================================================================
-bool KeybGetShiftStatus ()
+bool KeybGetCapsStatus ()
 {
-	return gbShiftKey;
+	return g_bCapsLock;
 }
 
 //===========================================================================
 bool KeybGetCtrlStatus ()
 {
-	return gbCtrlKey;
+	return g_bCtrlKey;
+}
+
+//===========================================================================
+bool KeybGetShiftStatus ()
+{
+	return g_bShiftKey;
 }
 
 //===========================================================================
 void KeybUpdateCtrlShiftStatus()
 {
-	gbShiftKey = (GetKeyState( VK_SHIFT  ) & 0x8000) ? true : false;
-	gbCtrlKey  = (GetKeyState( VK_CONTROL) & 0x8000) ? true : false;
+	g_bShiftKey = (GetKeyState( VK_SHIFT  ) & KF_UP) ? true : false; // 0x8000 KF_UP
+	g_bCtrlKey  = (GetKeyState( VK_CONTROL) & KF_UP) ? true : false;
+	g_bAltKey   = (GetKeyState( VK_MENU   ) & KF_UP) ? true : false;
 }
 
 //===========================================================================
@@ -144,7 +154,7 @@ DWORD KeybGetNumQueries ()	// Used in determining 'idleness' of Apple system
 //===========================================================================
 void KeybQueueKeypress (int key, BOOL bASCII)
 {
-        static bool bFreshReset;
+	static bool bFreshReset;
 
 	if (bASCII == ASCII)
 	{       
@@ -157,7 +167,7 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			return;
 
 		if (g_bApple2e) 
-		        if (capslock && (key >= 'a') && (key <='z'))
+		        if (g_bCapsLock && (key >= 'a') && (key <='z'))
 		                keycode = key - 32;
 		         else
 			        keycode = key;
@@ -377,7 +387,7 @@ void KeybToggleCapsLock ()
 {
 	if (g_bApple2e)
 	{
-		capslock = (GetKeyState(VK_CAPITAL) & 1);
+		g_bCapsLock = (GetKeyState(VK_CAPITAL) & 1);
 		FrameRefreshStatus(DRAW_LEDS);
 	}
 }

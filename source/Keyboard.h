@@ -3,9 +3,10 @@
 void    ClipboardInitiatePaste();
 
 void    KeybReset();
-void    KeybGetCapsStatus (BOOL *);
-bool    KeybGetShiftStatus();
+bool    KeybGetAltStatus();
+bool    KeybGetCapsStatus();
 bool    KeybGetCtrlStatus();
+bool    KeybGetShiftStatus();
 void    KeybUpdateCtrlShiftStatus();
 BYTE    KeybGetKeycode ();
 DWORD   KeybGetNumQueries ();

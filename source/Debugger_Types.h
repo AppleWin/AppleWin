@@ -134,11 +134,22 @@
 	};
 
 
+// Bookmarks ______________________________________________________________________________________
+
+	enum
+	{
+		MAX_BOOKMARKS = 10
+	};
+
+	extern vector<int> g_aBookmarks;
+
+
 // Breakpoints ____________________________________________________________________________________
 
 	enum
 	{
-		NUM_BREAKPOINTS = 5
+//		NUMBREAKPOINTS = 15
+		MAX_BREAKPOINTS = 15
 	};
 
 	/*
@@ -289,6 +300,9 @@
 
 		, BG_DISASM_PC_X     // Dim Yellow (not cursor)
 		, FG_DISASM_PC_X     // White      (not cursor)
+
+		, BG_DISASM_BOOKMARK // Lite Blue    (always)
+		, FG_DISASM_BOOKMARK // White   addr (always)
 
 		, FG_DISASM_ADDRESS  // White   addr
 		, FG_DISASM_OPERATOR // Gray192     :               $ (also around instruction addressing g_nAppMode)
@@ -655,6 +669,7 @@
 	Update_t CmdConfigSetFont     (int nArgs);
 	Update_t CmdConfigGetFont     (int nArgs);
 // Cursor
+	Update_t CmdCursorFollowTarget(int nArgs);
 	Update_t CmdCursorLineDown    (int nArgs);
 	Update_t CmdCursorLineUp      (int nArgs);
 	Update_t CmdCursorJumpPC      (int nArgs);
@@ -961,6 +976,8 @@
 
 // Memory _________________________________________________________________________________________
 
+	extern const          int _6502_BRANCH_POS      ;//= +127
+	extern const          int _6502_BRANCH_NEG      ;//= -128
 	extern const unsigned int _6502_ZEROPAGE_END    ;//= 0x00FF;
 	extern const unsigned int _6502_STACK_END       ;//= 0x01FF;
 	extern const unsigned int _6502_IO_BEGIN        ;//= 0xC000;

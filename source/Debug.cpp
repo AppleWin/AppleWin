@@ -41,11 +41,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,3,14);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,4,9);
 
 
 // Public _________________________________________________________________________________________
 
+
+// Bookmarks __________________________________________________________________
+	vector<int> g_aBookmarks;
 
 // Breakpoints ________________________________________________________________
 
@@ -55,7 +58,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool g_bDebugDelayBreakCheck = false;
 
 	int          g_nBreakpoints = 0;
-	Breakpoint_t g_aBreakpoints[ NUM_BREAKPOINTS ];
+	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
 	// NOTE: Breakpoint_Source_t and g_aBreakpointSource must match!
 	const TCHAR *g_aBreakpointSource[ NUM_BREAKPOINT_SOURCES ] =
@@ -440,6 +443,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		Y8, K0, // BG_DISASM_PC_C     FG_DISASM_PC_C  // K8 -> K0
 		Y4, W8, // BG_DISASM_PC_X     FG_DISASM_PC_X
 
+		C4, // BG_DISASM_BOOKMARK
+		W8, // FG_DISASM_BOOKMARK
+
 		W8,     // FG_DISASM_ADDRESS
 		G192,   // FG_DISASM_OPERATOR
 		Y8,     // FG_DISASM_OPCODE
@@ -531,6 +537,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int   g_iConfigDisasmTargets       = DISASM_TARGET_BOTH;
 	int   g_iConfigDisasmBranchType    = DISASM_BRANCH_FANCY;
 	int   g_bConfigDisasmImmediateChar = DISASM_IMMED_BOTH;
+	int   g_iConfigDisasmScroll        = 3; // favor 3 byte opcodes
 
 
 // Display ____________________________________________________________________
@@ -540,12 +547,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Memory _____________________________________________________________________
 
+	const          int _6502_BRANCH_POS      = +127;
+	const          int _6502_BRANCH_NEG      = -128;
 	const unsigned int _6502_ZEROPAGE_END    = 0x00FF;
 	const unsigned int _6502_STACK_END       = 0x01FF;
 	const unsigned int _6502_IO_BEGIN        = 0xC000;
 	const unsigned int _6502_IO_END          = 0xC0FF;
 	const unsigned int _6502_MEM_BEGIN = 0x0000;
-	const unsigned int _6502_MEM_END = 0xFFFF;
+	const unsigned int _6502_MEM_END   = 0xFFFF;
 
 	MemoryDump_t g_aMemDump[ NUM_MEM_DUMPS ];
 
@@ -759,6 +768,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	DWORD     extbench      = 0;
 	bool      g_bDebuggerViewingAppleOutput = false;
 
+	bool g_bIgnoreNextKey = false;
+
 // Private ________________________________________________________________________________________
 
 
@@ -847,6 +858,123 @@ LPCTSTR FormatAddress( WORD nAddress, int nBytes )
 	return sSymbol;
 }
 
+
+// Bookmarks __________________________________________________________________
+
+
+//===========================================================================
+bool _Bookmark_Add( const int iBookmark, const WORD nAddress )
+{
+	if (iBookmark < MAX_BOOKMARKS)
+	{
+	//	g_aBookmarks.push_back( nAddress );
+		g_aBookmarks.at( iBookmark ) = nAddress;
+		return true;
+	}
+	
+	return false;
+}
+
+
+//===========================================================================
+bool _Bookmark_Del( const WORD nAddress )
+{
+	bool bDeleted = false;
+	int nSize = g_aBookmarks.size();
+	int iBookmark;
+	for (iBookmark = 0; iBookmark < nSize; iBookmark++ )
+	{
+		if (g_aBookmarks.at( iBookmark ) == nAddress)
+		{
+			g_aBookmarks.at( iBookmark ) = NO_6502_TARGET;
+			bDeleted = true;
+		}
+	}
+	return bDeleted;
+}
+
+bool Bookmark_Find( const WORD nAddress )
+{
+	// Ugh, linear search
+	int nSize = g_aBookmarks.size();
+	int iBookmark;
+	for (iBookmark = 0; iBookmark < nSize; iBookmark++ )
+	{
+		if (g_aBookmarks.at( iBookmark ) == nAddress)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+
+//===========================================================================
+bool _Bookmark_Get( const int iBookmark, WORD & nAddress )
+{
+	int nSize = g_aBookmarks.size();
+	if (iBookmark >= nSize)
+		return false;
+
+	if (g_aBookmarks.at( iBookmark ) != NO_6502_TARGET)
+	{
+		nAddress = g_aBookmarks.at( iBookmark );
+		return true;
+	}
+
+	return false;
+}
+
+
+//===========================================================================
+void _Bookmark_Reset()
+{
+	g_aBookmarks.reserve( MAX_BOOKMARKS );
+	g_aBookmarks.insert( g_aBookmarks.begin(), MAX_BOOKMARKS, NO_6502_TARGET );
+}
+
+
+//===========================================================================
+int _Bookmark_Size()
+{
+	int nTotal = 0;
+	int nSize = g_aBookmarks.size();
+	int iBookmark;
+	for (iBookmark = 0; iBookmark < nSize; iBookmark++ )
+	{
+		if (g_aBookmarks.at( iBookmark ) != NO_6502_TARGET)
+			nTotal++;
+	}
+
+	return nTotal;
+}
+
+
+//===========================================================================
+Update_t CmdBookmarkGoto ( int nArgs )
+{
+	int iBookmark = nArgs;
+	WORD nAddress;
+	if (_Bookmark_Get( iBookmark, nAddress ))
+	{
+		g_nDisasmCurAddress = nAddress;
+		g_nDisasmCurLine = 0;
+		DisasmCalcTopBotAddress();
+	}
+
+	return UPDATE_DISASM;
+}
+
+
+//===========================================================================
+Update_t CmdBookmarkAdd( int nArgs )
+{
+	int iBookmark = nArgs;
+	WORD nAddress = g_nDisasmCurAddress;
+	_Bookmark_Add( iBookmark, nAddress );
+
+	return UPDATE_DISASM;
+}
 
 // Breakpoints ____________________________________________________________________________________
 
@@ -993,7 +1121,7 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 //===========================================================================
 bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakpointEnable_ )
 {
-	for (int iBreakpoint = 0; iBreakpoint < NUM_BREAKPOINTS; iBreakpoint++)
+	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
 	{
 		Breakpoint_t *pBP = &g_aBreakpoints[ iBreakpoint ];
 		
@@ -1093,7 +1221,7 @@ bool CheckBreakpointsIO ()
 	int  iTarget;
 	int  nAddress;
 
-	Get6502Targets( regs.pc, &aTarget[0], &aTarget[1], &nBytes );
+	_6502_GetTargets( regs.pc, &aTarget[0], &aTarget[1], &nBytes );
 	
 	if (nBytes)
 	{
@@ -1102,7 +1230,7 @@ bool CheckBreakpointsIO ()
 			nAddress = aTarget[ iTarget ];
 			if (nAddress != NO_6502_TARGET)
 			{
-				for (int iBreakpoint = 0; iBreakpoint < NUM_BREAKPOINTS; iBreakpoint++)
+				for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
 				{
 					Breakpoint_t *pBP = &g_aBreakpoints[iBreakpoint];
 					if (_BreakpointValid( pBP ))
@@ -1128,7 +1256,7 @@ bool CheckBreakpointsReg ()
 {
 	bool bStatus = false;
 
-	for (int iBreakpoint = 0; iBreakpoint < NUM_BREAKPOINTS; iBreakpoint++)
+	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
 	{
 		Breakpoint_t *pBP = &g_aBreakpoints[iBreakpoint];
 
@@ -1387,7 +1515,7 @@ Update_t CmdNOP (int nArgs)
 	int iOpmode;
 	int nOpbytes;
 
- 	_6502GetOpcodeOpmodeOpbytes( iOpcode, iOpmode, nOpbytes );
+ 	_6502_GetOpcodeOpmodeOpbytes( iOpcode, iOpmode, nOpbytes );
 
 	while (nOpbytes--)
 	{
@@ -1451,7 +1579,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
 	KeybQueueKeypress(TEXT(' '),1);
-	resettiming = 1;
+	g_bResetTiming = true;
 
 	return UPDATE_ALL; // 0;
 }
@@ -1704,13 +1832,13 @@ bool _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, B
 	int iBreakpoint = 0;
 	Breakpoint_t *pBP = & g_aBreakpoints[ iBreakpoint ];
 
-	while ((iBreakpoint < NUM_BREAKPOINTS) && g_aBreakpoints[iBreakpoint].nLength)
+	while ((iBreakpoint < MAX_BREAKPOINTS) && g_aBreakpoints[iBreakpoint].nLength)
 	{
 		iBreakpoint++;
 		pBP++;
 	}
 
-	if (iBreakpoint >= NUM_BREAKPOINTS)
+	if (iBreakpoint >= MAX_BREAKPOINTS)
 	{
 		ConsoleDisplayError(TEXT("All Breakpoints slots are currently in use."));
 		return bStatus;
@@ -1930,11 +2058,11 @@ Update_t CmdBreakpointClear (int nArgs)
 
 	if (!nArgs)
 	{
-		_BreakWatchZero_RemoveAll( g_aBreakpoints, NUM_BREAKPOINTS, g_nBreakpoints );
+		_BreakWatchZero_RemoveAll( g_aBreakpoints, MAX_BREAKPOINTS, g_nBreakpoints );
 	}
 	else
 	{
-		_ClearViaArgs( nArgs, g_aBreakpoints, NUM_BREAKPOINTS, g_nBreakpoints );
+		_ClearViaArgs( nArgs, g_aBreakpoints, MAX_BREAKPOINTS, g_nBreakpoints );
 	}
 
     return UPDATE_DISASM | UPDATE_BREAKPOINTS | UPDATE_CONSOLE_DISPLAY;
@@ -1949,7 +2077,7 @@ Update_t CmdBreakpointDisable (int nArgs)
 	if (! nArgs)
 		return Help_Arg_1( CMD_BREAKPOINT_DISABLE );
 
-	_EnableDisableViaArgs( nArgs, g_aBreakpoints, NUM_BREAKPOINTS, false );
+	_EnableDisableViaArgs( nArgs, g_aBreakpoints, MAX_BREAKPOINTS, false );
 
 	return UPDATE_BREAKPOINTS;
 }
@@ -1970,7 +2098,7 @@ Update_t CmdBreakpointEnable (int nArgs) {
 	if (! nArgs)
 		return Help_Arg_1( CMD_BREAKPOINT_ENABLE );
 
-	_EnableDisableViaArgs( nArgs, g_aBreakpoints, NUM_BREAKPOINTS, true );
+	_EnableDisableViaArgs( nArgs, g_aBreakpoints, MAX_BREAKPOINTS, true );
 
 	return UPDATE_BREAKPOINTS;
 }
@@ -2005,7 +2133,7 @@ Update_t CmdBreakpointList (int nArgs)
 {
 //	ConsoleBufferPush( );
 //	vector<int> vBreakpoints;
-//	int iBreakpoint = NUM_BREAKPOINTS;
+//	int iBreakpoint = MAX_BREAKPOINTS;
 //	while (iBreakpoint--)
 //	{
 //		if (g_aBreakpoints[iBreakpoint].enabled)
@@ -2023,7 +2151,7 @@ Update_t CmdBreakpointList (int nArgs)
 	else
 	{	
 		int iBreakpoint = 0;
-		while (iBreakpoint < NUM_BREAKPOINTS)
+		while (iBreakpoint < MAX_BREAKPOINTS)
 		{
 			if (g_aBreakpoints[ iBreakpoint ].bSet)
 			{
@@ -2709,11 +2837,25 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
 	while (iTop <= iCur)
 	{
 		WORD iAddress = iTop;
+//		int iOpcode;
+		int iOpmode;
+		int nOpbytes;
+
 		for( int iLine = 0; iLine <= nLen; iLine++ ) // min 1 opcode/instruction
 		{
+// a.
+			_6502_GetOpmodeOpbytes( iAddress, iOpmode, nOpbytes );
+// b.
+//			_6502_GetOpcodeOpmodeOpbytes( iOpcode, iOpmode, nOpbytes );
+
 			if (iLine == g_nDisasmCurLine) // && (iAddress == g_nDisasmCurAddress))
 			{
 				if (iAddress == g_nDisasmCurAddress)
+// b.
+//					&& (iOpmode != AM_1) &&
+//					&& (iOpmode != AM_2) &&
+//					&& (iOpmode != AM_3) &&
+//					&& _6502_IsOpcodeValid( iOpcode))
 				{
 					g_nDisasmTopAddress = iTop;
 					bFound = true;
@@ -2721,20 +2863,14 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
 				}
 			}
 
-			int iOpmode;
-			int nOpbytes;
-			_6502GetOpmodeOpbytes( iAddress, iOpmode, nOpbytes );
-
 			// .20 Fixed: DisasmCalcTopFromCurAddress()
 			//if ((eMode >= ADDR_INVALID1) && (eMode <= ADDR_INVALID3))
-			{
 #if 0 // _DEBUG
-				TCHAR sText[ CONSOLE_WIDTH ];
-				wsprintf( sText, "%04X : %d bytes\n", iAddress, nOpbytes );
-				OutputDebugString( sText );
+			TCHAR sText[ CONSOLE_WIDTH ];
+			wsprintf( sText, "%04X : %d bytes\n", iAddress, nOpbytes );
+			OutputDebugString( sText );
 #endif
-				iAddress += nOpbytes;
-			}
+			iAddress += nOpbytes;
 		}
 		if (bFound)
 		{
@@ -2756,7 +2892,7 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
 		g_bDisasmCurBad = true; // Bad Disassembler, no opcode for you!
 
 		// We reall should move the cursor line to the top for one instruction.
-		// Moving the cursor line is not really a good idea, since we're breaking the user paradigm.
+		// Moving the cursor line around is not really a good idea, since we're breaking consistency paradigm for the user.
 		// g_nDisasmCurLine = 0;
 #if 0 // _DEBUG
 			TCHAR sText[ CONSOLE_WIDTH * 2 ];
@@ -2771,29 +2907,35 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
  }
 
 
-
+//===========================================================================
 WORD DisasmCalcAddressFromLines( WORD iAddress, int nLines )
 {
 	while (nLines-- > 0)
 	{
 		int iOpmode;
 		int nOpbytes;
-		_6502GetOpmodeOpbytes( iAddress, iOpmode, nOpbytes );
+		_6502_GetOpmodeOpbytes( iAddress, iOpmode, nOpbytes );
 		iAddress += nOpbytes;
 	}
 	return iAddress;
 }
 
+
+//===========================================================================
 void DisasmCalcCurFromTopAddress()
 {
 	g_nDisasmCurAddress = DisasmCalcAddressFromLines( g_nDisasmTopAddress, g_nDisasmCurLine );
 }
 
+
+//===========================================================================
 void DisasmCalcBotFromTopAddress( )
 {
 	g_nDisasmBotAddress = DisasmCalcAddressFromLines( g_nDisasmTopAddress, g_nDisasmWinHeight );
 }
 
+
+//===========================================================================
 void DisasmCalcTopBotAddress ()
 {
 	DisasmCalcTopFromCurAddress();
@@ -2802,27 +2944,54 @@ void DisasmCalcTopBotAddress ()
 
 
 //===========================================================================
+Update_t CmdCursorFollowTarget ( int nArgs )
+{
+	WORD nAddress = 0;
+	if (_6502_GetTargetAddress( g_nDisasmCurAddress, nAddress ))
+	{
+		g_nDisasmCurAddress = nAddress;
+
+		if (CURSOR_ALIGN_CENTER == nArgs)
+		{
+			WindowUpdateDisasmSize();
+		}
+		else
+		if (CURSOR_ALIGN_TOP == nArgs)
+		{
+			g_nDisasmCurLine = 0;
+		}
+		DisasmCalcTopBotAddress();
+	}
+
+	return UPDATE_ALL;
+}
+
+
+//===========================================================================
 Update_t CmdCursorLineDown (int nArgs)
 {
 	int iOpmode; 
 	int nOpbytes;
-	_6502GetOpmodeOpbytes( g_nDisasmCurAddress, iOpmode, nOpbytes ); // g_nDisasmTopAddress
+	_6502_GetOpmodeOpbytes( g_nDisasmCurAddress, iOpmode, nOpbytes ); // g_nDisasmTopAddress
 
 	if (g_iWindowThis == WINDOW_DATA)
 	{
 		_CursorMoveDownAligned( WINDOW_DATA_BYTES_PER_LINE );
+		DisasmCalcTopBotAddress();
 	}
 	else
-	if (nArgs)
+	if (nArgs) // scroll down by 'n' bytes
 	{
 		nOpbytes = nArgs; // HACKL g_aArgs[1].val
 
 		g_nDisasmTopAddress += nOpbytes;
 		g_nDisasmCurAddress += nOpbytes;
 		g_nDisasmBotAddress += nOpbytes;
+		DisasmCalcTopBotAddress();
 	}
 	else
 	{
+#if DEBUG_SCROLL == 6
 		// Works except on one case: G FB53, SPACE, DOWN
 		WORD nTop = g_nDisasmTopAddress;
 		WORD nCur = g_nDisasmCurAddress + nOpbytes;
@@ -2844,6 +3013,26 @@ Update_t CmdCursorLineDown (int nArgs)
 		DisasmCalcCurFromTopAddress();
 		DisasmCalcBotFromTopAddress();
 		g_bDisasmCurBad = false;
+#endif
+		g_nDisasmCurAddress += nOpbytes;
+
+		_6502_GetOpmodeOpbytes( g_nDisasmTopAddress, iOpmode, nOpbytes );
+		g_nDisasmTopAddress += nOpbytes;
+
+		_6502_GetOpmodeOpbytes( g_nDisasmBotAddress, iOpmode, nOpbytes );
+		g_nDisasmBotAddress += nOpbytes;
+
+		if (g_bDisasmCurBad)
+		{
+//	MessageBox( NULL, TEXT("Bad Disassembly of opcodes"), TEXT("Debugger"), MB_OK );
+
+//			g_nDisasmCurAddress = nCur;
+//			g_bDisasmCurBad = false;
+//			DisasmCalcTopFromCurAddress();
+			DisasmCalcTopBotAddress();
+//			return UPDATE_DISASM;
+		}
+		g_bDisasmCurBad = false;
 	}
 
 	// Can't use use + nBytes due to Disasm Singularity
@@ -2852,10 +3041,18 @@ Update_t CmdCursorLineDown (int nArgs)
 	return UPDATE_DISASM;
 }
 
+// C++ Bug, can't have local structs used in STL containers
+		struct LookAhead_t
+		{
+			int _nAddress;
+			int _iOpcode;
+			int _iOpmode;
+			int _nOpbytes;
+		};
+
 //===========================================================================
 Update_t CmdCursorLineUp (int nArgs)
 {
-	WORD nBest = g_nDisasmTopAddress;
 	int nBytes = 1;
 	
 	if (g_iWindowThis == WINDOW_DATA)
@@ -2873,7 +3070,16 @@ Update_t CmdCursorLineUp (int nArgs)
 	}
 	else
 	{
-		nBytes = 1;
+//		if (! g_nDisasmCurLine)
+//		{
+//			g_nDisasmCurLine = 1;
+//			DisasmCalcTopFromCurAddress( false );
+			
+//			g_nDisasmCurLine = 0;
+//			DisasmCalcCurFromTopAddress();
+//			DisasmCalcBotFromTopAddress();
+//			return UPDATE_DISASM;
+//		}
 
 		// SmartLineUp()
 		// Figure out if we should move up 1, 2, or 3 bytes since we have 2 possible cases:
@@ -2886,6 +3092,9 @@ Update_t CmdCursorLineUp (int nArgs)
 		//    xx-3: 20 A9 xx   JSR $00A9
 		//    xxxx: top of window
 		// 
+#define DEBUG_SCROLL 3
+
+#if DEBUG_SCROLL == 1
 		WORD nCur = g_nDisasmCurAddress - nBytes;
 
 		// Adjust Top until nNewCur is at > Cur
@@ -2894,14 +3103,177 @@ Update_t CmdCursorLineUp (int nArgs)
 			g_nDisasmTopAddress--;
 			DisasmCalcCurFromTopAddress();
 		} while (g_nDisasmCurAddress > nCur);
+#endif
 
-		DisasmCalcCurFromTopAddress();
-		DisasmCalcBotFromTopAddress();
-		g_bDisasmCurBad = false;
+#if DEBUG_SCROLL == 2
+		WORD nCur = g_nDisasmCurAddress - nBytes;
+
+		int iOpcode;
+		int iOpmode;
+		int nOpbytes;
+
+		int aOpBytes[ 4 ]; // index is relative offset from cursor
+		int nLeastDesiredTopAddress = NO_6502_TARGET;
+
+		do
+		{
+			g_nDisasmTopAddress--;
+
+//			_6502_GetOpcodeOpmodeOpbytes( iOpcode, iOpmode, nOpbytes );
+			iOpcode = _6502_GetOpmodeOpbytes( g_nDisasmTopAddress, iOpmode, nOpbytes );
+			aOpBytes[ 1 ] = nOpbytes;
+
+			// Disasm is kept in sync.  Maybe bad opcode, but if no other choices...
+			if (nOpbytes == 1)
+				nLeastDesiredTopAddress = g_nDisasmTopAddress;
+
+			if (   (iOpmode == AM_1)
+				|| (iOpmode == AM_2)
+				|| (iOpmode == AM_3)
+				|| ! _6502_IsOpcodeValid( iOpcode)
+				|| (nOpbytes != 1) )
+			{
+ 				g_nDisasmTopAddress--;
+				DisasmCalcCurFromTopAddress();
+
+				iOpcode = _6502_GetOpmodeOpbytes( g_nDisasmTopAddress, iOpmode, nOpbytes );
+				aOpBytes[ 2 ] = nOpbytes;
+
+				if (   (iOpmode == AM_1)
+					|| (iOpmode == AM_2)
+					|| (iOpmode == AM_3)
+					|| ! _6502_IsOpcodeValid( iOpcode)
+					|| (nOpbytes != 2) )
+				{
+					g_nDisasmTopAddress--;
+					DisasmCalcCurFromTopAddress();
+
+					iOpcode = _6502_GetOpmodeOpbytes( g_nDisasmTopAddress, iOpmode, nOpbytes );
+					aOpBytes[ 3 ] = nOpbytes;
+
+				if (   (iOpmode == AM_1)
+					|| (iOpmode == AM_2)
+					|| (iOpmode == AM_3)
+					|| (nOpbytes != 3) )
+					g_nDisasmTopAddress--;
+					DisasmCalcCurFromTopAddress();
+				}
+			}
+
+			DisasmCalcCurFromTopAddress();
+		} while (g_nDisasmCurAddress > nCur);
+#endif
+#if DEBUG_SCROLL == 3
+		// Isn't this the new DisasmCalcTopFromCurAddress() ??
+		int iOpcode;
+		int iOpmode;
+		int nOpbytes;
+
+		const int MAX_LOOK_AHEAD = g_nDisasmWinHeight;
+
+		static vector<LookAhead_t> aTopCandidates;
+		LookAhead_t tCandidate;
+
+//		if (! aBestTop.capacity() )
+		aTopCandidates.reserve( MAX_LOOK_AHEAD );
+		aTopCandidates.erase( aTopCandidates.begin(), aTopCandidates.end() );
+
+		int nTop = g_nDisasmTopAddress;
+		int iTop = 0;
+		int nCur = 0;
+
+		do
+		{
+			nTop--;
+			nCur = nTop;
+			iTop = (g_nDisasmTopAddress - nTop);
+
+			for (int iLine = 0; iLine < MAX_LOOK_AHEAD; iLine++ )
+			{
+				iOpcode = _6502_GetOpmodeOpbytes( nCur, iOpmode, nOpbytes );
+
+				// If address on iLine = g_nDisasmCurLine + 1
+				if (iLine == (g_nDisasmCurLine + 1))
+				{
+					if (nCur == (g_nDisasmCurAddress))
+					{
+						iOpcode = _6502_GetOpmodeOpbytes( nTop, iOpmode, nOpbytes );
+
+						tCandidate._nAddress = nTop;
+						tCandidate._iOpcode  = iOpcode;
+						tCandidate._iOpmode  = iOpmode;
+						tCandidate._nOpbytes = nOpbytes;
+
+						aTopCandidates.push_back( tCandidate );
+					}
+				}
+				nCur += nOpbytes;
+
+				if (nCur > g_nDisasmCurAddress)
+					break;
+			}
+		} while (iTop < MAX_LOOK_AHEAD);
+
+		int nCandidates = aTopCandidates.size();
+		if (nCandidates)
+		{
+			int iBest = NO_6502_TARGET;
+
+			int iCandidate = 0;
+			for ( ; iCandidate < nCandidates; iCandidate++ )
+			{
+				tCandidate = aTopCandidates.at( iCandidate );
+				iOpcode = tCandidate._iOpcode;
+				iOpmode = tCandidate._iOpmode;
+
+				if (   (iOpmode != AM_1)
+					&& (iOpmode != AM_2)
+					&& (iOpmode != AM_3)
+					&& _6502_IsOpcodeValid( iOpcode ) )
+				{
+					if (g_iConfigDisasmScroll == 1)
+					{
+						// Favor min opbytes
+						if (iBest != NO_6502_TARGET)
+							iBest = iCandidate;
+					}
+					else
+					if (g_iConfigDisasmScroll == 3)
+					{
+						// Favor max opbytes
+						iBest = iCandidate;
+					}
+				}
+			}
+
+			// All were "invalid", pick first choice
+			if (iBest == NO_6502_TARGET)
+				iBest = 0;
+
+			tCandidate = aTopCandidates.at( iBest );
+			g_nDisasmTopAddress = tCandidate._nAddress;
+
+			DisasmCalcCurFromTopAddress();
+			DisasmCalcBotFromTopAddress();
+			g_bDisasmCurBad = false;
+		}
+		else
+		{
+			// Singularity
+			g_bDisasmCurBad = true;
+
+//			g_nDisasmTopAddress--;
+			g_nDisasmCurAddress--;
+//			g_nDisasmBotAddress--;
+			DisasmCalcTopBotAddress();
+		}
+#endif
+
 	}
 	
 	return UPDATE_DISASM;
 }
+
 
 //===========================================================================
 Update_t CmdCursorJumpPC (int nArgs)
@@ -2930,29 +3302,10 @@ Update_t CmdCursorJumpPC (int nArgs)
 
 
 //===========================================================================
-bool _Get6502ReturnAddress( WORD & nAddress_ )
-{
-	unsigned nStack = regs.sp;
-	nStack++;
-
-	if (nStack <= (_6502_STACK_END - 1))
-	{
-		nAddress_ = 0;
-		nAddress_ = (unsigned)*(LPBYTE)(mem + nStack);
-		nStack++;
-		
-		nAddress_ += ((unsigned)*(LPBYTE)(mem + nStack)) << 8;
-		nAddress_++;
-		return true;
-	}
-	return false;
-}
-
-//===========================================================================
 Update_t CmdCursorJumpRetAddr (int nArgs)
 {
-	WORD nAddress;
-	if (_Get6502ReturnAddress( nAddress ))
+	WORD nAddress = 0;
+	if (_6502_GetStackReturnAddress( nAddress ))
 	{	
 		g_nDisasmCurAddress = nAddress;
 
@@ -2971,6 +3324,7 @@ Update_t CmdCursorJumpRetAddr (int nArgs)
 	return UPDATE_ALL;
 }
 
+
 //===========================================================================
 Update_t CmdCursorRunUntil (int nArgs)
 {
@@ -2979,6 +3333,7 @@ Update_t CmdCursorRunUntil (int nArgs)
 }
 
 
+//===========================================================================
 WORD _ClampAddress( int nAddress )
 {
 	if (nAddress < 0)
@@ -3050,7 +3405,7 @@ void _CursorMoveUpAligned( int nDelta )
 //===========================================================================
 Update_t CmdCursorPageDown (int nArgs)
 {
-	int iLines = 1; // show at least 1 line from previous display
+	int iLines = 0; // show at least 1 line from previous display
 	int nLines = WindowGetHeight( g_iWindowThis );
 
 	if (nLines < 2)
@@ -3063,8 +3418,21 @@ Update_t CmdCursorPageDown (int nArgs)
 	}
 	else
 	{
-		while (++iLines < nLines)
-			CmdCursorLineDown(nArgs);
+// 4
+//		while (++iLines < nLines)
+//			CmdCursorLineDown(nArgs);
+
+// 5
+		nLines -= (g_nDisasmCurLine + 1);
+		if (nLines < 1)
+			nLines = 1;
+			
+		while (iLines++ < nLines)
+		{
+			CmdCursorLineDown( 0 ); // nArgs
+		}
+// 6
+
 	}
 
 	return UPDATE_DISASM;
@@ -3090,7 +3458,7 @@ Update_t CmdCursorPageDown4K (int nArgs)
 //===========================================================================
 Update_t CmdCursorPageUp (int nArgs)
 {
-	int iLines = 1; // show at least 1 line from previous display
+	int iLines = 0; // show at least 1 line from previous display
 	int nLines = WindowGetHeight( g_iWindowThis );
 	
 	if (nLines < 2)
@@ -3103,8 +3471,17 @@ Update_t CmdCursorPageUp (int nArgs)
 	}
 	else
 	{
-		while (++iLines < nLines)
-			CmdCursorLineUp(nArgs);
+//		while (++iLines < nLines)
+//			CmdCursorLineUp(nArgs);
+		nLines -= (g_nDisasmCurLine + 1);
+		if (nLines < 1)
+			nLines = 1;
+			
+		while (iLines++ < nLines)
+		{
+			CmdCursorLineUp( 0 ); // smart line up
+			// CmdCursorLineUp( -nLines );
+		}
 	}
 		
 	return UPDATE_DISASM;
@@ -3557,7 +3934,7 @@ Update_t CmdMemoryLoad (int nArgs)
 			BYTE *pSrc = pMemory;
 
 			TCHAR sFilePath[ MAX_PATH ];
-			_tcscpy( sFilePath,g_sProgramDir );
+			_tcscpy( sFilePath, g_sCurrentDir ); // g_sProgramDir
 			_tcscat( sFilePath, g_aArgs[ 1 ].sArg );
 
 			FILE *hFile = fopen( sFilePath, "rb" );
@@ -3618,16 +3995,22 @@ Update_t CmdMemoryMove (int nArgs)
 //===========================================================================
 Update_t CmdMemorySave (int nArgs)
 {
-	if (nArgs > 2)
+	// BSAVE ["Filename"] addr,len 
+	// This is temporarily until the comma operator is fixed
+	//
+
+//	if (nArgs > 2)
+	if (g_nArgRaw > 6)
 		return Help_Arg_1( CMD_MEMORY_SAVE );
 
 	static WORD nAddressStart = 0;
 	static WORD nAddressEnd   = 0;
 	static WORD nAddressLen   = 0;
 
-	static TCHAR sFileName[ MAX_PATH ];
 	TCHAR sFilePath[ MAX_PATH ];
-	_tcscpy( sFilePath, g_sProgramDir );
+	_tcscpy( sFilePath, g_sCurrentDir ); // g_sProgramDir
+
+	TCHAR sFileName[ MAX_PATH ];
 
 	if (! nArgs)
 	{
@@ -3651,8 +4034,8 @@ Update_t CmdMemorySave (int nArgs)
 
 			if ((nAddressLen) && (nAddressLen < _6502_MEM_END))
 			{
-				// BSAVE ["Filename"] addr,len 
 				if (nArgs == 1)
+//				if (g_aArgRaw[1].eToken == TOKEN_COMMA)
 				{
 					sprintf( g_aArgs[ 1 ].sArg, "%04X.%04X.bin", nAddressStart, nAddressLen ); // nAddressEnd );
 					nArgs++;
@@ -5188,7 +5571,7 @@ Update_t CmdStepOut (int nArgs)
 	// TODO: "RET" should probably pop the Call stack
 	// Also see: CmdCursorJumpRetAddr
 	WORD nAddress;
-	if (_Get6502ReturnAddress( nAddress ))
+	if (_6502_GetStackReturnAddress( nAddress ))
 	{
 		nArgs = _Arg_1( nAddress );
 		g_aArgs[1].sArg[0] = 0;
@@ -6305,138 +6688,6 @@ Update_t ExecuteCommand (int nArgs)
 
 // ________________________________________________________________________________________________
 
-//===========================================================================
-bool Get6502Targets ( WORD nAddress, int *pTargetPartial_, int *pTargetPointer_, int * pBytes_)
-{
-	bool bStatus = false;
-
-	if (! pTargetPartial_)
-		return bStatus;
-
-	if (! pTargetPointer_)
-		return bStatus;
-
-//	if (! pBytes_)
-//		return bStatus;
-
-	*pTargetPartial_   = NO_6502_TARGET;
-	*pTargetPointer_  = NO_6502_TARGET;
-
-	if (pBytes_)
-		*pBytes_  = 0;	
-
-	bStatus   = true;
-
-//	WORD nAddress  = regs.pc;
-	BYTE nOpcode   = *(LPBYTE)(mem + nAddress    );
-	BYTE nTarget8  = *(LPBYTE)(mem + nAddress + 1);
-	WORD nTarget16 = *(LPWORD)(mem + nAddress + 1);
-
-	int eMode = g_aOpcodes[ nOpcode ].nAddressMode;
-
-	switch (eMode)
-	{
-		case AM_A: // $Absolute
-			*pTargetPointer_ = nTarget16;
-			if (pBytes_)
-				*pBytes_ = 2;
-			break;
-
-		case AM_IAX: // Indexed (Absolute) Indirect
-			nTarget16 += regs.x;
-			*pTargetPartial_    = nTarget16;
-			*pTargetPointer_   = *(LPWORD)(mem + nTarget16);
-			if (pBytes_)
-				*pBytes_   = 2;
-			break;
-
-		case AM_AX: // Absolute, X
-			nTarget16 += regs.x;
-			*pTargetPointer_   = nTarget16;
-			if (pBytes_)
-				*pBytes_   = 2;
-			break;
-
-		case AM_AY: // Absolute, Y
-			nTarget16 += regs.y;
-			*pTargetPointer_   = nTarget16;
-			if (pBytes_)
-				*pBytes_   = 2;
-			break;
-
-		case AM_NA: // Indirect (Absolute) i.e. JMP
-			*pTargetPartial_    = nTarget16;
-			*pTargetPointer_   = *(LPWORD)(mem + nTarget16);
-			if (pBytes_)
-				*pBytes_   = 2;
-			break;
-
-		case AM_IZX: // Indexed (Zeropage Indirect, X)
-			nTarget8  += regs.x;
-			*pTargetPartial_    = nTarget8;
-			*pTargetPointer_   = *(LPWORD)(mem + nTarget8);
-			if (pBytes_)
-				*pBytes_   = 2;
-			break;
-
-		case AM_NZY: // Indirect (Zeropage) Indexed, Y
-			*pTargetPartial_    = nTarget8;
-			*pTargetPointer_   = (*(LPWORD)(mem + nTarget8)) + regs.y;
-			if (pBytes_)
-				*pBytes_   = 1;
-			break;
-
-		case AM_NZ: // Indirect (Zeropage)
-			*pTargetPartial_    = nTarget8;
-			*pTargetPointer_   = *(LPWORD)(mem + nTarget8);
-			if (pBytes_)
-				*pBytes_   = 2;
-			break;
-
-		case AM_Z: // Zeropage
-			*pTargetPointer_   = nTarget8;
-			if (pBytes_)
-				*pBytes_   = 1;
-			break;
-
-		case AM_ZX: // Zeropage, X
-			*pTargetPointer_   = (nTarget8 + regs.x) & 0xFF; // .21 Bugfix: shouldn't this wrap around? Yes.
-			if (pBytes_)
-				*pBytes_   = 1;
-			break;
-
-		case AM_ZY: // Zeropage, Y
-			*pTargetPointer_   = (nTarget8 + regs.y) & 0xFF; // .21 Bugfix: shouldn't this wrap around? Yes.
-			if (pBytes_)
-				*pBytes_   = 1;
-			break;
-
-		default:
-			if (pBytes_)
-				*pBytes_   = 0;
-			break;
-		
-	}
-
-	// wtf??
-//	if ((*final >= 0) &&
-//	  ((!_tcscmp(g_aOpcodes[*(mem+regs.pc)].mnemonic,TEXT("JMP"))) ||
-//	   (!_tcscmp(g_aOpcodes[*(mem+regs.pc)].mnemonic,TEXT("JSR")))))
-
-	// If 6502 is jumping, don't show byte [nAddressTarget]
-	if ((*pTargetPointer_ >= 0) &&
-		((nOpcode == OPCODE_JSR    ) || // 0x20
-		 (nOpcode == OPCODE_JMP_A  )))  // 0x4C
-//		 (nOpcode == OPCODE_JMP_NA ) || // 0x6C
-//		 (nOpcode == OPCODE_JMP_IAX)))  // 0x7C
-	{
-		*pTargetPointer_ = NO_6502_TARGET;
-		if (pBytes_)
-			*pBytes_ = 0;
-	}
-	return bStatus;
-}
-
 
 //===========================================================================
 bool InternalSingleStep ()
@@ -7074,7 +7325,7 @@ void DebugInitialize ()
 	WindowUpdateConsoleDisplayedSize();
 
 	// CLEAR THE BREAKPOINT AND WATCH TABLES
-	ZeroMemory( g_aBreakpoints     , NUM_BREAKPOINTS       * sizeof(Breakpoint_t));
+	ZeroMemory( g_aBreakpoints     , MAX_BREAKPOINTS       * sizeof(Breakpoint_t));
 	ZeroMemory( g_aWatches         , MAX_WATCHES           * sizeof(Watches_t) );
 	ZeroMemory( g_aZeroPagePointers, MAX_ZEROPAGE_POINTERS * sizeof(ZeroPagePointers_t));
 
@@ -7175,6 +7426,8 @@ void DebugInitialize ()
 //g_bConsoleBufferPaused = true;
 #endif
 
+	_Bookmark_Reset();
+
 	CmdMOTD(0);
 }
 
@@ -7185,7 +7438,6 @@ void DebugInitialize ()
 // Add character to the input line
 //===========================================================================
 void DebuggerInputConsoleChar( TCHAR ch )
-//void DebugProcessChar (TCHAR ch)
 {
 	if ((g_nAppMode == MODE_STEPPING) && (ch == DEBUG_EXIT_KEY))
 	{
@@ -7197,6 +7449,12 @@ void DebuggerInputConsoleChar( TCHAR ch )
 
 	if (g_bConsoleBufferPaused)
 		return;
+
+	if (g_bIgnoreNextKey)
+	{
+		g_bIgnoreNextKey = false;
+		return;
+	}
 
 	if (ch == CHAR_SPACE)
 	{
@@ -7222,6 +7480,7 @@ void DebuggerInputConsoleChar( TCHAR ch )
 
 		if (!g_bConsoleInputQuoted)
 		{
+			// TODO: must fix param matching to ignore case
 			ch = (TCHAR)CharUpper((LPTSTR)ch);
 		}
 		ConsoleInputChar( ch );
@@ -7233,23 +7492,22 @@ void DebuggerInputConsoleChar( TCHAR ch )
 	else
 	if (ch == 0x16) // HACK: Ctrl-V.  WTF!?
 	{
-		// Clipboard paste
+		// Support Clipboard (paste)
+		if (!IsClipboardFormatAvailable(CF_TEXT)) 
+			return;
 
-        if (!IsClipboardFormatAvailable(CF_TEXT)) 
-            return; 
+		if (!OpenClipboard( g_hFrameWindow )) 
+			return;
 
-        if (!OpenClipboard( g_hFrameWindow )) 
-            return; 
- 
 		HGLOBAL hClipboard;
 		LPTSTR  pData;
 
-        hClipboard = GetClipboardData(CF_TEXT); 
-        if (hClipboard != NULL) 
-        { 
-            pData = (char*) GlobalLock(hClipboard); 
-            if (pData != NULL) 
-            { 
+		hClipboard = GetClipboardData(CF_TEXT);
+		if (hClipboard != NULL)
+		{
+			pData = (char*) GlobalLock(hClipboard);
+			if (pData != NULL)
+			{
 				LPTSTR pSrc = pData;
 				char c;
 
@@ -7287,11 +7545,11 @@ void DebuggerInputConsoleChar( TCHAR ch )
 							ConsoleInputChar( c );
 					}
 				}
-                GlobalUnlock(hClipboard); 
-            } 
-        } 
-        CloseClipboard(); 
- 
+				GlobalUnlock(hClipboard);
+			}
+		}
+		CloseClipboard();
+
 		UpdateDisplay( UPDATE_CONSOLE_DISPLAY );
 	}
 }
@@ -7432,34 +7690,6 @@ void DebuggerProcessKey( int keycode )
 		bUpdateDisplay |= UPDATE_ALL;
 		g_bConsoleInputSkip = true; // don't pass to DebugProcessChar()
 	}
-
-
-// Clipboard support
-/*
-	if (!IsClipboardFormatAvailable(CF_TEXT))
-		return;
-	
-	if (!OpenClipboard(g_hFrameWindow))
-		return;
-	
-	hglb = GetClipboardData(CF_TEXT);
-	if (hglb == NULL)
-	{	
-		CloseClipboard();
-		return;
-	}
-
-	lptstr = (char*) GlobalLock(hglb);
-	if (lptstr == NULL)
-	{	
-		CloseClipboard();
-		return;
-	}
-*/
-//	else if (keycode == )
-//	{
-//	}
-
 	else
 	{	
 		switch (keycode)
@@ -7621,9 +7851,6 @@ void DebuggerProcessKey( int keycode )
 				}
 				break;
 
-	// +PATCH MJP
-	//    case VK_UP:     bUpdateDisplay = CmdCursorLineUp(0);    break; // -PATCH
-	//    case VK_DOWN:   bUpdateDisplay = CmdCursorLineDown(0);  break; // -PATCH
 			case VK_UP:
 				if (g_iWindowThis == WINDOW_CONSOLE)
 				{
@@ -7645,11 +7872,11 @@ void DebuggerProcessKey( int keycode )
 				{
 					// Shift the Top offset up by 1 byte
 					// i.e. no smart disassembly like LineUp()
-					// Normally UP moves to the previous g_aOpcodes
+					// Normally UP moves to the previous "line" which may be multiple bytes.
 					if (KeybGetShiftStatus())
 						bUpdateDisplay |= CmdCursorLineUp(1);
 					else
-						bUpdateDisplay |= CmdCursorLineUp(0);
+						bUpdateDisplay |= CmdCursorLineUp(0); // smart disassembly
 				}
 				break;
 
@@ -7691,7 +7918,10 @@ void DebuggerProcessKey( int keycode )
 				if (KeybGetShiftStatus())
 					bUpdateDisplay |= CmdCursorJumpPC( CURSOR_ALIGN_TOP );
 				else
+				if (KeybGetAltStatus())
 					bUpdateDisplay |= CmdCursorJumpPC( CURSOR_ALIGN_CENTER );
+				else
+					bUpdateDisplay |= CmdCursorFollowTarget( CURSOR_ALIGN_TOP );
 				break;
 
 			case VK_LEFT:
@@ -7701,6 +7931,24 @@ void DebuggerProcessKey( int keycode )
 					bUpdateDisplay |= CmdCursorJumpRetAddr( CURSOR_ALIGN_CENTER );
 				break;
 
+			default:
+				if ((keycode >= '0') && (keycode <= '9'))
+				{
+					int iBookmark = keycode - '0';
+					if (KeybGetCtrlStatus() && KeybGetShiftStatus())
+					{
+						bUpdateDisplay |= CmdBookmarkAdd( iBookmark );
+						g_bIgnoreNextKey = true;
+					}
+					else
+					if (KeybGetCtrlStatus())
+					{
+						bUpdateDisplay |= CmdBookmarkGoto( iBookmark );
+						g_bIgnoreNextKey = true;
+					}
+				}
+
+				break;
 		} // switch
 	}
 

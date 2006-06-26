@@ -51,24 +51,30 @@ enum AppMode_e
 #define  BTN_DEBUG         6
 #define  BTN_SETUP         7
 
-#define  MAXIMAGES         16
-#define  TITLE             TEXT("Apple //e Emulator")
+#define	MAXIMAGES          16
+// TODO: Move to StringTable.h
+#define	TITLE_APPLE_2      TEXT("Apple ][ Emulator")
+#define	TITLE_APPLE_2_PLUS TEXT("Apple ][+ Emulator")
+#define	TITLE_APPLE_2_E    TEXT("Apple //e Emulator")
+#define	TITLE              TITLE_APPLE_2_E
+#define TITLE_PAUSED       TEXT(" Paused ")
+#define TITLE_STEPPING     TEXT("Stepping")
 
 #define  LOAD(a,b) RegLoadValue(TEXT("Configuration"),a,1,b)
 #define  SAVE(a,b) RegSaveValue(TEXT("Configuration"),a,1,b)
 
 // Configuration
-#define  REGVALUE_SPKR_VOLUME "Speaker Volume"
-#define  REGVALUE_MB_VOLUME "Mockingboard Volume"
-#define  REGVALUE_SOUNDCARD_TYPE "Soundcard Type"
+#define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
+#define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
+#define  REGVALUE_SOUNDCARD_TYPE     "Soundcard Type"
 #define  REGVALUE_KEYB_BUFFER_ENABLE "Keyboard Buffer Enable"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
-#define  REGVALUE_HDD_ENABLED "Harddisk Enable"
-#define  REGVALUE_HDD_IMAGE1 "Harddisk Image 1"
-#define  REGVALUE_HDD_IMAGE2 "Harddisk Image 2"
-#define  REGVALUE_PDL_XTRIM "PDL X-Trim"
-#define  REGVALUE_PDL_YTRIM "PDL Y-Trim"
+#define  REGVALUE_HDD_ENABLED        "Harddisk Enable"
+#define  REGVALUE_HDD_IMAGE1         "Harddisk Image 1"
+#define  REGVALUE_HDD_IMAGE2         "Harddisk Image 2"
+#define  REGVALUE_PDL_XTRIM          "PDL X-Trim"
+#define  REGVALUE_PDL_YTRIM          "PDL Y-Trim"
 
 // Preferences 
 #define REGVALUE_PREF_START_DIR TEXT("Starting Directory")

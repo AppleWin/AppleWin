@@ -366,7 +366,43 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 
 
 //===========================================================================
-int _6502GetOpmodeOpbytes( const int iAddress, int & iOpmode_, int & nOpbytes_ )
+bool _6502_CalcRelativeOffset( int nOpcode, int nBaseAddress, int nTargetAddress, WORD * pTargetOffset_ )
+{
+	if (_6502_IsOpcodeBranch( nOpcode))
+	{
+		// Branch is
+		//   a) relative to address+2
+		//   b) in 2's compliment
+		//
+		// i.e.
+		//   300: D0 7F -> BNE $381   0x381 - 0x300 = 0x81 +129
+		//   300: D0 80 -> BNE $282   0x282 - 0x300 =      -126
+		//
+		// 300: D0 7E BNE $380
+		// ^    ^   ^      ^
+		// |    |   |      TargetAddress
+		// |    |   TargetOffset
+		// |    Opcode
+		// BaseAddress
+		int nDistance = nTargetAddress - nBaseAddress;
+		if (pTargetOffset_)
+			*pTargetOffset_ = (BYTE)(nDistance - 2); 
+
+		if ((nDistance - 2) > _6502_BRANCH_POS)
+			m_iAsmAddressMode = NUM_OPMODES; // signal bad
+
+		if ((nDistance - 2) < _6502_BRANCH_NEG)
+			m_iAsmAddressMode = NUM_OPMODES; // signal bad
+
+		return true;
+	}
+
+	return false;
+}
+
+
+//===========================================================================
+int  _6502_GetOpmodeOpbytes ( const int iAddress, int & iOpmode_, int & nOpbytes_ )
 {
 	int iOpcode_  = *(mem + iAddress);
 		iOpmode_  = g_aOpcodes[ iOpcode_ ].nAddressMode;
@@ -384,10 +420,258 @@ int _6502GetOpmodeOpbytes( const int iAddress, int & iOpmode_, int & nOpbytes_ )
 
 
 //===========================================================================
-void _6502GetOpcodeOpmodeOpbytes( int & iOpcode_, int & iOpmode_, int & nOpbytes_ )
+void _6502_GetOpcodeOpmodeOpbytes ( int & iOpcode_, int & iOpmode_, int & nOpbytes_ )
 {
-	iOpcode_ = _6502GetOpmodeOpbytes( regs.pc, iOpmode_, nOpbytes_ );
+	iOpcode_ = _6502_GetOpmodeOpbytes( regs.pc, iOpmode_, nOpbytes_ );
 }
+
+//===========================================================================
+bool _6502_GetStackReturnAddress ( WORD & nAddress_ )
+{
+	unsigned nStack = regs.sp;
+	nStack++;
+
+	if (nStack <= (_6502_STACK_END - 1))
+	{
+		nAddress_ = 0;
+		nAddress_ = (unsigned)*(LPBYTE)(mem + nStack);
+		nStack++;
+		
+		nAddress_ += ((unsigned)*(LPBYTE)(mem + nStack)) << 8;
+		nAddress_++;
+		return true;
+	}
+	return false;
+}
+
+
+//===========================================================================
+bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPointer_, int * pTargetBytes_, bool bIgnoreJSRJMP, bool bIgnoreBranch )
+{
+	bool bStatus = false;
+
+	if (! pTargetPartial_)
+		return bStatus;
+
+	if (! pTargetPointer_)
+		return bStatus;
+
+//	if (! pTargetBytes_)
+//		return bStatus;
+
+	*pTargetPartial_  = NO_6502_TARGET;
+	*pTargetPointer_  = NO_6502_TARGET;
+
+	if (pTargetBytes_)
+		*pTargetBytes_  = 0;	
+
+	bStatus   = true;
+
+	BYTE nOpcode   = *(LPBYTE)(mem + nAddress    );
+	BYTE nTarget8  = *(LPBYTE)(mem + nAddress + 1);
+	WORD nTarget16 = *(LPWORD)(mem + nAddress + 1);
+
+	int eMode = g_aOpcodes[ nOpcode ].nAddressMode;
+
+	switch (eMode)
+	{
+		case AM_A: // $Absolute
+			*pTargetPointer_ = nTarget16;
+			if (pTargetBytes_)
+				*pTargetBytes_ = 2;
+			break;
+
+		case AM_IAX: // Indexed (Absolute) Indirect
+			nTarget16 += regs.x;
+			*pTargetPartial_    = nTarget16;
+			*pTargetPointer_    = *(LPWORD)(mem + nTarget16);
+			if (pTargetBytes_)
+				*pTargetBytes_ = 2;
+			break;
+
+		case AM_AX: // Absolute, X
+			nTarget16 += regs.x;
+			*pTargetPointer_   = nTarget16;
+			if (pTargetBytes_)
+				*pTargetBytes_ = 2;
+			break;
+
+		case AM_AY: // Absolute, Y
+			nTarget16 += regs.y;
+			*pTargetPointer_   = nTarget16;
+			if (pTargetBytes_)
+				*pTargetBytes_ = 2;
+			break;
+
+		case AM_NA: // Indirect (Absolute) i.e. JMP
+			*pTargetPartial_    = nTarget16;
+			*pTargetPointer_    = *(LPWORD)(mem + nTarget16);
+			if (pTargetBytes_)
+				*pTargetBytes_ = 2;
+			break;
+
+		case AM_IZX: // Indexed (Zeropage Indirect, X)
+			nTarget8  += regs.x;
+			*pTargetPartial_    = nTarget8;
+			*pTargetPointer_    = *(LPWORD)(mem + nTarget8);
+			if (pTargetBytes_)
+				*pTargetBytes_ = 2;
+			break;
+
+		case AM_NZY: // Indirect (Zeropage) Indexed, Y
+			*pTargetPartial_    = nTarget8;
+			*pTargetPointer_    = (*(LPWORD)(mem + nTarget8)) + regs.y;
+			if (pTargetBytes_)
+				*pTargetBytes_ = 1;
+			break;
+
+		case AM_NZ: // Indirect (Zeropage)
+			*pTargetPartial_    = nTarget8;
+			*pTargetPointer_    = *(LPWORD)(mem + nTarget8);
+			if (pTargetBytes_)
+				*pTargetBytes_ = 2;
+			break;
+
+		case AM_R:
+			if (! bIgnoreBranch)
+			{
+				*pTargetPartial_  = nTarget8;
+				*pTargetPointer_ = nAddress + 2;
+
+				if (nTarget8 <= _6502_BRANCH_POS)
+					*pTargetPointer_ += nTarget8; // +
+				else
+					*pTargetPointer_ -= nTarget8; // -
+
+				*pTargetPointer_ &= _6502_MEM_END;
+
+				if (pTargetBytes_)
+					*pTargetBytes_ = 1;
+			}
+			break;
+
+		case AM_Z: // Zeropage
+			*pTargetPointer_   = nTarget8;
+			if (pTargetBytes_)
+				*pTargetBytes_ = 1;
+			break;
+
+		case AM_ZX: // Zeropage, X
+			*pTargetPointer_   = (nTarget8 + regs.x) & 0xFF; // .21 Bugfix: shouldn't this wrap around? Yes.
+			if (pTargetBytes_)
+				*pTargetBytes_ = 1;
+			break;
+
+		case AM_ZY: // Zeropage, Y
+			*pTargetPointer_   = (nTarget8 + regs.y) & 0xFF; // .21 Bugfix: shouldn't this wrap around? Yes.
+			if (pTargetBytes_)
+				*pTargetBytes_ = 1;
+			break;
+
+		default:
+			if (pTargetBytes_)
+				*pTargetBytes_ = 0;
+			break;
+	}
+
+	if (bIgnoreJSRJMP)
+	{	
+		// If 6502 is jumping, don't show byte [nAddressTarget]
+		if ((*pTargetPointer_ >= 0) && (
+			(nOpcode == OPCODE_JSR    ) || // 0x20
+			(nOpcode == OPCODE_JMP_A  )))  // 0x4C
+//			(nOpcode == OPCODE_JMP_NA ) || // 0x6C
+//			(nOpcode == OPCODE_JMP_IAX)))  // 0x7C
+		{
+			*pTargetPointer_ = NO_6502_TARGET;
+			if (pTargetBytes_)
+				*pTargetBytes_ = 0;
+		}
+	}
+	
+	return bStatus;
+}
+
+
+//===========================================================================
+bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
+{
+	int iOpcode;
+	int iOpmode;
+	int nOpbytes;
+	iOpcode = _6502_GetOpmodeOpbytes( nAddress, iOpmode, nOpbytes );
+
+	// Composite string that has the target nAddress
+//	WORD nTarget = 0;
+	int nTargetOffset_ = 0;
+
+	if ((iOpmode != AM_IMPLIED) &&
+		(iOpmode != AM_1) &&
+		(iOpmode != AM_2) &&
+		(iOpmode != AM_3))
+	{
+		int nTargetPartial;
+		int nTargetPointer;
+		WORD nTargetValue = 0; // de-ref
+		int nTargetBytes;
+		_6502_GetTargets( nAddress, &nTargetPartial, &nTargetPointer, &nTargetBytes, false, false );
+
+//		if (nTargetPointer == NO_6502_TARGET)
+//		{
+//			if (_6502_IsOpcodeBranch( nOpcode )
+//			{
+//				return true;
+//			}
+//		}
+		if (nTargetPointer != NO_6502_TARGET)
+//		else
+		{
+			nTarget_ = nTargetPointer & _6502_MEM_END;
+			return true;
+		}
+	}
+	return false;
+}
+
+//===========================================================================
+bool _6502_IsOpcodeBranch ( int iOpcode )
+{
+	// 76543210 Bit
+	// xxx10000 Branch
+	if (iOpcode == OPCODE_BRA)
+		return true;
+
+	if ((iOpcode & 0x1F) != 0x10) // low nibble not zero?
+		return false;
+
+	if ((iOpcode >> 4) & 1)
+		return true;
+	
+//		(nOpcode == 0x10) || // BPL
+//		(nOpcode == 0x30) || // BMI
+//		(nOpcode == 0x50) || // BVC
+//		(nOpcode == 0x70) || // BVS
+//		(nOpcode == 0x90) || // BCC
+//		(nOpcode == 0xB0) || // BCS
+//		(nOpcode == 0xD0) || // BNE
+//		(nOpcode == 0xF0) || // BEQ
+	return false;
+}
+
+
+//===========================================================================
+bool _6502_IsOpcodeValid ( int iOpcode )
+{
+	if ((iOpcode & 0x3) == 0x3)
+		return false;
+
+	if (islower( g_aOpcodes6502[ iOpcode ].sMnemonic[ 0 ] ))
+		return false;
+
+	return true;
+}
+
+// Assembler ________________________________________________________________
 
 
 //===========================================================================
@@ -502,69 +786,6 @@ void _CmdAssembleHashDump ()
 
 	ConsoleUpdate();
 //#endif
-}
-
-
-//===========================================================================
-bool AssemblerOpcodeIsBranch( int nOpcode )
-{
-	// 76543210 Bit
-	// xxx10000 Branch
-
-	if (nOpcode == OPCODE_BRA)
-		return true;
-
-	if ((nOpcode & 0x1F) != 0x10) // low nibble not zero?
-		return false;
-
-	if ((nOpcode >> 4) & 1)
-		return true;
-	
-//		(nOpcode == 0x10) || // BPL
-//		(nOpcode == 0x30) || // BMI
-//		(nOpcode == 0x50) || // BVC
-//		(nOpcode == 0x70) || // BVS
-//		(nOpcode == 0x90) || // BCC
-//		(nOpcode == 0xB0) || // BCS
-//		(nOpcode == 0xD0) || // BNE
-//		(nOpcode == 0xF0) || // BEQ
-	return false;
-}
-
-
-//===========================================================================
-bool Calc6502RelativeOffset( int nOpcode, int nBaseAddress, int nTargetAddress, WORD * pTargetOffset_ )
-{
-	if (AssemblerOpcodeIsBranch( nOpcode))
-	{
-		// Branch is
-		//   a) relative to address+2
-		//   b) in 2's compliment
-		//
-		// i.e.
-		//   300: D0 7F -> BNE $381   0x381 - 0x300 = 0x81 +129
-		//   300: D0 80 -> BNE $282   0x282 - 0x300 =      -126
-		//
-		// 300: D0 7E BNE $380
-		// ^    ^   ^      ^
-		// |    |   |      TargetAddress
-		// |    |   TargetOffset
-		// |    Opcode
-		// BaseAddress
-		int nDistance = nTargetAddress - nBaseAddress;
-		if (pTargetOffset_)
-			*pTargetOffset_ = (BYTE)(nDistance - 2); 
-
-		if ((nDistance - 2) > 127)
-			m_iAsmAddressMode = NUM_OPMODES; // signal bad
-
-		if ((nDistance - 2) < -128)
-			m_iAsmAddressMode = NUM_OPMODES; // signal bad
-
-		return true;
-	}
-
-	return false;
 }
 
 
@@ -949,7 +1170,7 @@ bool AssemblerUpdateAddressingMode()
 	m_nAsmTargetValue = m_nAsmTargetAddress;
 	
 	int nOpcode = m_vAsmOpcodes.at( 0 ); // branch opcodes don't vary (only 1 Addressing Mode)
-	if (Calc6502RelativeOffset( nOpcode, m_nAsmBaseAddress, m_nAsmTargetAddress, & m_nAsmTargetValue ))
+	if (_6502_CalcRelativeOffset( nOpcode, m_nAsmBaseAddress, m_nAsmTargetAddress, & m_nAsmTargetValue ))
 	{
 		if (m_iAsmAddressMode == NUM_OPMODES)
 			return false;
@@ -1008,7 +1229,7 @@ void AssemblerProcessDelayedSymols()
 				// BaseAddress				
 				WORD nTargetValue = nTargetAddress;
 
-				if (Calc6502RelativeOffset( nOpcode, pTarget->m_nBaseAddress, nTargetAddress, & nTargetValue ))
+				if (_6502_CalcRelativeOffset( nOpcode, pTarget->m_nBaseAddress, nTargetAddress, & nTargetValue ))
 				{
 					if (m_iAsmAddressMode == NUM_OPMODES)
 					{
