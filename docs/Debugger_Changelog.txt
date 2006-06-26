@@ -1,7 +1,41 @@
 /*
 
+2.5.4.x
+.9 Fixed modifier keys (Shift,Ctrl,Alt) not being updated when mouse scrolling.
+.8 Changed scrolling page up & down to not scroll as far.
+.7 Fixed scroll up bug, introduced with new scroll up code
+   R PC FBB4
+   up arrow
+.6 Changed scrolling page up & down, to keep better sync
+	U F700
+	pagedown
+	pageup
+.5 Fixed scrolling page up & down bug, loosing sync of disassembly lines
+	U F500
+	pagedown
+	pageup
+	F500...F526 -> F523 (should be F526, +20 lines)
+.4 Fixed scroll down bug, loosing sync of "top" disassembly
+    U F70F
+    down arrow
+.3 Fixed scroll up bug, loosing sync on disassembly by skipping a mnemonic line:
+   i.e.
+    U FA44 (FA56)
+	up arrow
+.2 Added Ctrl-# to jump to address
+.1 Added Alt-# to set bookmark at address
+.0 Added mouse wheel scrolling in debugger
+2.5.4.x
+
+.16 Swapped -> and Alt ->
+   -> Follow Target at Cursor
+   Alt -> Jump Cursor to PC
+.15 Added Alt -> to follow target at cursor
 .14 Fixed BLOAD/BSAVE to update console.
-.13 changed BLOAD/BSAVE to use more traditional order of arguments
+.13 changed BLOAD/BSAVE to use more traditional order of arguments:
+    The comma after the filename must be left out for the time being.
+	BSAVE "Filename" address,length
+	BLOAD "Filename" address
 .12 Fixed BPA to set breakpoints if no args
 .11 Cleaned up HELP BP
 .10 Cleaned up HELP BREAKPOINTS
