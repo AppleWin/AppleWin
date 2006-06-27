@@ -204,7 +204,8 @@ Update_t CmdHelpSpecific (int nArgs)
 	int iCmdEnd   = 0;
 	for (iArg = 1; iArg <= nArgs; iArg++ )
 	{
-		int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_EXACT, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
+//		int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_EXACT, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
+		int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_FUZZY, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
 		switch( iParam )
 		{
 			case PARAM_CAT_BREAKPOINTS: iCmdBegin = CMD_BREAKPOINT      ; iCmdEnd = CMD_BREAKPOINT_SAVE    + 1; break;
@@ -233,13 +234,7 @@ Update_t CmdHelpSpecific (int nArgs)
 #if DEBUG_VAL_2
 			g_aArgs[ iArg ].nVal2 = iCmdBegin + iArg - 1;
 #endif
-			// insert: ,#
-			_Args_Insert( iArg, nArgs, 2 );
-			g_aArgs[ iArg + 1 ].eToken = TOKEN_COMMA;
-			g_aArgs[ iArg + 2 ].nValue = iCmdBegin + iArg - 1;
-
-			nArgs += 2;
-			iArg  += 2;
+			g_aArgs[ iArg ].nValue = iCmdBegin + iArg - 1;
 		}
 	}
 
@@ -248,20 +243,18 @@ Update_t CmdHelpSpecific (int nArgs)
 	for (iArg = 1; iArg <= nArgs; iArg++ )
 	{	
 		int iCommand = 0;
-		int nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
+		int nFound = 0;
 
 		if (bCategory)
 		{
-			if (g_aArgs[ iArg + 1 ].eToken == TOKEN_COMMA)
-			{
-				if ((iArg + 2) <= nArgs)
-					iCommand = g_aArgs[ iArg + 2 ].nValue;
-			}
 #if DEBUG_VAL_2
 			iCommand = g_aArgs[iArg].nVal2;
 #endif
+			iCommand = g_aArgs[ iArg  ].nValue;
 			nFound = 1;
 		}
+		else
+			nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
 
 		if (bAllCommands)
 		{
@@ -458,7 +451,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( sText );
 			wsprintf( sText, TEXT(" Usage: [%s | %s | %s]")
 				, g_aParameters[ PARAM_LOAD  ].m_sName
-                , g_aParameters[ PARAM_SAVE  ].m_sName
+				, g_aParameters[ PARAM_SAVE  ].m_sName
 				, g_aParameters[ PARAM_RESET ].m_sName );
 			ConsoleBufferPush( sText );
 			ConsoleBufferPush( TEXT("  Set breakpoint at PC if no args.") );

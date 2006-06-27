@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,4,13);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,4,15);
 
 
 // Public _________________________________________________________________________________________
@@ -1851,7 +1851,7 @@ bool _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, B
 #if DEBUG_VAL_2
 		int nLen = g_aArgs[iArg].nVal2;
 #endif
-		int nLen = 1;
+		int nLen = 0;
 
 		if (g_aArgs[ iArg + 1 ].eToken == TOKEN_COMMA)
 			nLen = g_aArgs[ iArg + 2 ].nValue;
