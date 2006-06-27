@@ -520,7 +520,7 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPointer
 
 		case AM_NZY: // Indirect (Zeropage) Indexed, Y
 			*pTargetPartial_    = nTarget8;
-			*pTargetPointer_    = (*(LPWORD)(mem + nTarget8)) + regs.y;
+			*pTargetPointer_    = ((*(LPWORD)(mem + nTarget8)) + regs.y) & _6502_MEM_END; // Bugfix: 
 			if (pTargetBytes_)
 				*pTargetBytes_ = 1;
 			break;

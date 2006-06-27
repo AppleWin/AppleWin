@@ -35,6 +35,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // NEW UI debugging
 //	#define DEBUG_FORCE_DISPLAY 1
 
+	#define DISPLAY_MEMORY_TITLE     1
+//	#define DISPLAY_BREAKPOINT_TITLE 1
+//	#define DISPLAY_WATCH_TITLE      1
 
 // Public _________________________________________________________________________________________
 
@@ -69,7 +72,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_WIDTH  = 560;
 		#define  SCREENSPLIT1    356	// Horizontal Column (pixels?) of Stack & Regs
 //		#define  SCREENSPLIT2    456	// Horizontal Column (pixels?) of BPs, Watches & Mem
-		const int SCREENSPLIT2 = 456-7; // moved left one "char" to show PC in breakpoint:
+//		const int SCREENSPLIT2 = 456-7; // moved left one "char" to show PC in breakpoint:
+		const int SCREENSPLIT2 = SCREENSPLIT1 + (12 * 7); // moved left 3 chars to show B. prefix in breakpoint #, W. prefix in watch #
 		
 		const int DISPLAY_BP_COLUMN      = SCREENSPLIT2;
 		const int DISPLAY_MINI_CONSOLE   = SCREENSPLIT1 -  6; // - 1 chars
@@ -82,7 +86,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_WATCHES_COLUMN = SCREENSPLIT2;
 		const int DISPLAY_ZEROPAGE_COLUMN= SCREENSPLIT1;
 
-		const int MAX_DISPLAY_STACK_LINES    =  8;
+		int MAX_DISPLAY_REGS_LINES        = 6;
+		int MAX_DISPLAY_STACK_LINES       = 8;
+		int MAX_DISPLAY_BREAKPOINTS_LINES = 6; // 5
+		int MAX_DISPLAY_WATCHES_LINES     = 6; // 5
+		int MAX_DISPLAY_MEMORY_LINES_1    = 4;
+		int MAX_DISPLAY_MEMORY_LINES_2    = 2;
+		int MAX_DISPLAY_ZEROPAGE_LINES    = 5;
+		int g_nDisplayMemoryLines;
 
 	// Height
 //		const int DISPLAY_LINES  =  24; // FIXME: Should be pixels
@@ -556,11 +567,15 @@ void DrawBreakpoints (HDC dc, int line)
 	const int MAX_BP_LEN = 16;
 	TCHAR sText[16] = TEXT("Breakpoints"); // TODO: Move to BP1
 
+#if DISPLAY_BREAKPOINT_TITLE
 	SetBkColor(dc, DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
 	SetTextColor(dc, DebuggerGetColor( FG_INFO_TITLE )); //COLOR_STATIC
 	DebugDrawText( sText, rect );
 	rect.top    += g_nFontHeight;
 	rect.bottom += g_nFontHeight;
+#endif
+
+	int nBreakpointsDisplayed = 0;
 
 	int iBreakpoint;
 	for (iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++ )
@@ -578,12 +593,25 @@ void DrawBreakpoints (HDC dc, int line)
 			WORD nAddress1 = pBP->nAddress;
 			WORD nAddress2 = nAddress1 + nLength - 1;
 
+#if DEBUG_FORCE_DISPLAY
+			if (iBreakpoint < MAX_DISPLAY_BREAKPOINTS_LINES)
+				bSet = true;
+#endif
 			if (! bSet)
 				continue;
+
+			nBreakpointsDisplayed++;
+			if (nBreakpointsDisplayed > MAX_DISPLAY_BREAKPOINTS_LINES)
+				break;
 			
 			RECT rect2;
 			rect2 = rect;
 			
+			SetBkColor( dc, DebuggerGetColor( BG_INFO ));
+			SetTextColor( dc, DebuggerGetColor( FG_INFO_TITLE ) );
+			wsprintf( sText, TEXT("B.") );
+			DebugDrawTextFixed( sText, rect2 );
+
 			SetBkColor( dc, DebuggerGetColor( BG_INFO ));
 			SetTextColor( dc, DebuggerGetColor( FG_INFO_BULLET ) );
 			wsprintf( sText, TEXT("%d"), iBreakpoint+1 );
@@ -688,14 +716,14 @@ void DrawBreakpoints (HDC dc, int line)
 				DebugDrawTextFixed( sText, rect2 );
 			}
 
-			// Bugfix: Rest of line is still breakpoint background color
+			// Windows HACK: Bugfix: Rest of line is still breakpoint background color
 			SetBkColor(dc, DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
 			SetTextColor(dc, DebuggerGetColor( FG_INFO_TITLE )); //COLOR_STATIC
 			DebugDrawTextHorz( TEXT(" "), rect2 );
 
+			rect.top    += g_nFontHeight;
+			rect.bottom += g_nFontHeight;
 		}
-		rect.top    += g_nFontHeight;
-		rect.bottom += g_nFontHeight;
 	}
 }
 
@@ -1292,6 +1320,8 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 	rect.right  = DISPLAY_WIDTH;
 	rect.bottom = rect.top + g_nFontHeight;
 
+	RECT rect2;
+	rect2 = rect;
 
 	const int MAX_MEM_VIEW_TXT = 16;
 	TCHAR sText[ MAX_MEM_VIEW_TXT * 2 ];
@@ -1303,6 +1333,7 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 	int iForeground = FG_INFO_OPCODE;
 	int iBackground = BG_INFO;
 
+#if DISPLAY_MEMORY_TITLE
 	if (eDevice == DEV_SY6522)
 	{
 //		wsprintf(sData,TEXT("Mem at SY#%d"), nAddr);
@@ -1326,8 +1357,6 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 			wsprintf( sType, TEXT("TEXT") );
 	}
 
-	RECT rect2;
-
 	rect2 = rect;	
 	SetTextColor( hDC, DebuggerGetColor( FG_INFO_TITLE ));
 	SetBkColor( hDC, DebuggerGetColor( BG_INFO ));
@@ -1338,6 +1367,7 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 
 	SetTextColor( hDC, DebuggerGetColor( FG_INFO_ADDRESS ));
 	DebugDrawTextLine( sAddress, rect2 );
+#endif
 
 	rect.top    = rect2.top;
 	rect.bottom = rect2.bottom;
@@ -1346,25 +1376,26 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 
 	WORD iAddress = nAddr;
 
-	if( (eDevice == DEV_SY6522) || (eDevice == DEV_AY8910) )
-	{
-		iAddress = 0;
-	}
-
-	int nLines = 4;
+	int nLines = g_nDisplayMemoryLines;
 	int nCols = 4;
 
 	if (iView != MEM_VIEW_HEX)
 	{
 		nCols = MAX_MEM_VIEW_TXT;
 	}
-	rect.right = DISPLAY_WIDTH;
+
+	if( (eDevice == DEV_SY6522) || (eDevice == DEV_AY8910) )
+	{
+		iAddress = 0;
+		nCols = 6;
+	}
+
+	rect.right = DISPLAY_WIDTH - 1;
 
 	SetTextColor( hDC, DebuggerGetColor( FG_INFO_OPCODE ));
 
 	for (int iLine = 0; iLine < nLines; iLine++ )
 	{
-		RECT rect2;
 		rect2 = rect;
 
 		if (iView == MEM_VIEW_HEX)
@@ -1393,12 +1424,20 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 //			else
 			if (eDevice == DEV_SY6522)
 			{
-				wsprintf( sText, TEXT("%02X "), (unsigned) ((BYTE*)&SS_MB.Unit[nAddr & 1].RegsSY6522)[iAddress] );
+				wsprintf( sText, TEXT("%02X"), (unsigned) ((BYTE*)&SS_MB.Unit[nAddr & 1].RegsSY6522)[iAddress] );
+				if (iCol & 1)
+					SetTextColor( hDC, DebuggerGetColor( iForeground ));
+				else
+					SetTextColor( hDC, DebuggerGetColor( FG_INFO_ADDRESS ));
 			}
 			else
 			if (eDevice == DEV_AY8910)
 			{
-				wsprintf( sText, TEXT("%02X "), (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress] );
+				wsprintf( sText, TEXT("%02X"), (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress] );
+				if (iCol & 1)
+					SetTextColor( hDC, DebuggerGetColor( iForeground ));
+				else
+					SetTextColor( hDC, DebuggerGetColor( FG_INFO_ADDRESS ));
 			}
 			else
 			{
@@ -1425,11 +1464,15 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 				}
 			}
 			int nChars = DebugDrawTextFixed( sText, rect2 ); // DebugDrawTextFixed()
-
 			iAddress++;
 		}
-		rect.top    += g_nFontHeight; // TODO/FIXME: g_nFontHeight;
-		rect.bottom += g_nFontHeight; // TODO/FIXME: g_nFontHeight;
+		// Windows HACK: Bugfix: Rest of line is still background color
+//		SetBkColor(  hDC, DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
+//		SetTextColor(hDC, DebuggerGetColor( FG_INFO_TITLE )); //COLOR_STATIC
+//		DebugDrawTextHorz( TEXT(" "), rect2 );
+
+		rect.top    += g_nFontHeight;
+		rect.bottom += g_nFontHeight;
 		sData[0] = 0;
 	}
 }
@@ -1557,7 +1600,9 @@ void DrawStack (HDC dc, int line)
 	nAddress = 0x100;
 #endif
 
-	int      iStack   = 0;
+	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
+
+	int    iStack = 0;
 	while (iStack < MAX_DISPLAY_STACK_LINES)
 	{
 		nAddress++;
@@ -1565,30 +1610,33 @@ void DrawStack (HDC dc, int line)
 		RECT rect;
 		rect.left   = DISPLAY_STACK_COLUMN;
 		rect.top    = (iStack+line) * g_nFontHeight;
-		rect.right  = DISPLAY_STACK_COLUMN + 40; // TODO/FIXME/HACK MAGIC #: g_nFontWidthAvg * 
+//		rect.right  = DISPLAY_STACK_COLUMN + 40;
+//		rect.right  = SCREENSPLIT2;
+		rect.right = rect.left + (10 * nFontWidth) + 1;
 		rect.bottom = rect.top + g_nFontHeight;
 
 		SetTextColor(dc, DebuggerGetColor( FG_INFO_TITLE )); // [COLOR_STATIC
-		SetBkColor(dc, DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
+		// BG_SOURCE_2 = grey
+		SetBkColor(dc, DebuggerGetColor( BG_DATA_1 )); // BG_INFO
 
 		TCHAR sText[8] = TEXT("");
 		if (nAddress <= _6502_STACK_END)
 		{
-			wsprintf(sText,TEXT("%04X"),nAddress);
+			wsprintf(sText,TEXT("%04X: "),nAddress);
 		}
 
-		DebugDrawText( sText, rect );
+		DebugDrawTextFixed( sText, rect );
 
-		rect.left   = DISPLAY_STACK_COLUMN + 40; // TODO/FIXME/HACK MAGIC #: g_nFontWidthAvg * 
-		rect.right  = SCREENSPLIT2;
+//		rect.left   = DISPLAY_STACK_COLUMN + 40; // TODO/FIXME/HACK MAGIC #: g_nFontWidthAvg * 
+//		rect.right  = SCREENSPLIT2;
 		SetTextColor(dc, DebuggerGetColor( FG_INFO_OPCODE )); // COLOR_FG_DATA_TEXT
 
 		if (nAddress <= _6502_STACK_END)
 		{
-			wsprintf(sText,TEXT("%02X"),(unsigned)*(LPBYTE)(mem+nAddress));
+			wsprintf(sText,TEXT("  %02X"),(unsigned)*(LPBYTE)(mem+nAddress));
 		}
-		DebugDrawText( sText, rect );
-	    iStack++;
+		DebugDrawTextFixed( sText, rect );
+		iStack++;
 	}
 }
 
@@ -1603,6 +1651,7 @@ void DrawTargets (HDC dc, int line)
 	_6502_GetTargets( regs.pc, &aTarget[0],&aTarget[1], NULL );
 
 	RECT rect;
+	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 	
 	int iAddress = 2;
 	while (iAddress--)
@@ -1611,7 +1660,7 @@ void DrawTargets (HDC dc, int line)
 //		if ((aTarget[iAddress] >= _6502_IO_BEGIN) && (aTarget[iAddress] <= _6502_IO_END))
 //			aTarget[iAddress] = NO_6502_TARGET;
 
-		TCHAR sAddress[8] = TEXT("");
+		TCHAR sAddress[8] = TEXT("-none-");
 		TCHAR sData[8]   = TEXT("");
 
 #if DEBUG_FORCE_DISPLAY
@@ -1629,7 +1678,8 @@ void DrawTargets (HDC dc, int line)
 
 		rect.left   = DISPLAY_TARGETS_COLUMN;
 		rect.top    = (line+iAddress) * g_nFontHeight;
-		int nColumn = DISPLAY_TARGETS_COLUMN + 40; // TODO/FIXME/HACK MAGIC #: g_nFontWidthAvg * 
+//		int nColumn = DISPLAY_TARGETS_COLUMN + 40; // TODO/FIXME/HACK MAGIC #: g_nFontWidthAvg * 
+		int nColumn = rect.left + (7 * nFontWidth);
 		rect.right  = nColumn;
 		rect.bottom = rect.top + g_nFontHeight;
 
@@ -1641,7 +1691,7 @@ void DrawTargets (HDC dc, int line)
 		SetBkColor(dc, DebuggerGetColor( BG_INFO ));
 		DebugDrawText( sAddress, rect );
 
-		rect.left  = nColumn; // SCREENSPLIT1+40; // + 40
+		rect.left  = nColumn;
 		rect.right = SCREENSPLIT2;
 
 		if (iAddress == 0)
@@ -1666,9 +1716,13 @@ void DrawWatches (HDC dc, int line)
 	rect.bottom = rect.top + g_nFontHeight;
 
 	TCHAR sText[16] = TEXT("Watches");
+
+	SetBkColor(dc, DebuggerGetColor( BG_DATA_1 )); // BG_INFO
+
+#if DISPLAY_WATCH_TITLE
 	SetTextColor(dc, DebuggerGetColor( FG_INFO_TITLE ));
-	SetBkColor(dc, DebuggerGetColor( BG_INFO ));
 	DebugDrawTextLine( sText, rect );
+#endif
 
 	int iWatch;
 	for (iWatch = 0; iWatch < MAX_WATCHES; iWatch++ )
@@ -1681,7 +1735,12 @@ void DrawWatches (HDC dc, int line)
 		{
 			RECT rect2 = rect;
 
-			wsprintf( sText,TEXT("%d"),iWatch+1  );
+//			SetBkColor( dc, DebuggerGetColor( BG_INFO ));
+			SetTextColor( dc, DebuggerGetColor( FG_INFO_TITLE ) );
+			wsprintf( sText, TEXT("W.") );
+			DebugDrawTextFixed( sText, rect2 );
+
+			wsprintf( sText,TEXT("%d"),iWatch+1 );
 			SetTextColor( dc, DebuggerGetColor( FG_INFO_BULLET ));
 			DebugDrawTextFixed( sText, rect2 );
 			
@@ -1689,12 +1748,18 @@ void DrawWatches (HDC dc, int line)
 			SetTextColor( dc, DebuggerGetColor( FG_INFO_OPERATOR ));
 			DebugDrawTextFixed( sText, rect2 );
 
-			wsprintf( sText,TEXT(" %04X"), g_aWatches[iWatch].nAddress );
-			SetTextColor( dc, DebuggerGetColor( FG_INFO_ADDRESS ));
+			wsprintf( sText,TEXT("%04X"), g_aWatches[iWatch].nAddress );
+			SetTextColor( dc, DebuggerGetColor( FG_DISASM_ADDRESS ));
 			DebugDrawTextFixed( sText, rect2 );
 
-			wsprintf(sText,TEXT(" %02X"),(unsigned)*(LPBYTE)(mem+g_aWatches[iWatch].nAddress));
+			BYTE nTarget8 = (unsigned)*(LPBYTE)(mem+g_aWatches[iWatch].nAddress);
+			wsprintf(sText,TEXT(" %02X"), nTarget8 );
 			SetTextColor(dc, DebuggerGetColor( FG_INFO_OPCODE ));
+			DebugDrawTextFixed( sText, rect2 );
+
+			WORD nTarget16 = (unsigned)*(LPWORD)(mem+g_aWatches[iWatch].nAddress);
+			wsprintf( sText,TEXT(" %04X"), nTarget16 );
+			SetTextColor( dc, DebuggerGetColor( FG_INFO_ADDRESS ));
 			DebugDrawTextFixed( sText, rect2 );
 		}
 
@@ -1944,15 +2009,26 @@ void DrawSubWindow_Info( int iWindow )
 
 	const TCHAR **sReg = g_aBreakpointSource;
 
-	DrawStack(g_hDC,0);
-	DrawTargets(g_hDC,9);
-	DrawRegister(g_hDC,12, sReg[ BP_SRC_REG_A ] , 1, regs.a , PARAM_REG_A  );
-	DrawRegister(g_hDC,13, sReg[ BP_SRC_REG_X ] , 1, regs.x , PARAM_REG_X  );
-	DrawRegister(g_hDC,14, sReg[ BP_SRC_REG_Y ] , 1, regs.y , PARAM_REG_Y  );
-	DrawRegister(g_hDC,15, sReg[ BP_SRC_REG_PC] , 2, regs.pc, PARAM_REG_PC );
-	DrawRegister(g_hDC,16, sReg[ BP_SRC_REG_S ] , 2, regs.sp, PARAM_REG_SP );
-	DrawFlags(g_hDC,17,regs.ps,NULL);
-	DrawZeroPagePointers(g_hDC,19);
+	int yRegs     = 0; // 12
+	int yStack    = yRegs  + MAX_DISPLAY_REGS_LINES  + 0; // 0
+	int yTarget   = yStack + MAX_DISPLAY_STACK_LINES - 2; // 9
+	int yZeroPage = yStack + MAX_DISPLAY_STACK_LINES + 0; // 19
+
+	DrawRegister( g_hDC,yRegs++, sReg[ BP_SRC_REG_A ] , 1, regs.a , PARAM_REG_A  );
+	DrawRegister( g_hDC,yRegs++, sReg[ BP_SRC_REG_X ] , 1, regs.x , PARAM_REG_X  );
+	DrawRegister( g_hDC,yRegs++, sReg[ BP_SRC_REG_Y ] , 1, regs.y , PARAM_REG_Y  );
+	DrawRegister( g_hDC,yRegs++, sReg[ BP_SRC_REG_PC] , 2, regs.pc, PARAM_REG_PC );
+	DrawRegister( g_hDC,yRegs++, sReg[ BP_SRC_REG_S ] , 2, regs.sp, PARAM_REG_SP );
+	DrawFlags   ( g_hDC,yRegs++, regs.ps, NULL);
+
+	DrawStack(g_hDC, yStack);
+
+	if (g_bConfigInfoTargetPointer)
+	{
+		DrawTargets(g_hDC,yTarget);
+	}
+	
+	DrawZeroPagePointers( g_hDC, yZeroPage );
 
 #if defined(SUPPORT_Z80_EMU) && defined(OUTPUT_Z80_REGS)
 	DrawRegister(g_hDC,19,TEXT("AF"),2,*(WORD*)(membank+REG_AF));
@@ -1962,33 +2038,46 @@ void DrawSubWindow_Info( int iWindow )
 	DrawRegister(g_hDC,23,TEXT("IX"),2,*(WORD*)(membank+REG_IX));
 #endif
 
+	// Right Side
+	int yBreakpoints = 0;
+	int yWatches     = yBreakpoints + MAX_DISPLAY_BREAKPOINTS_LINES; // 7
+	int yMemory      = yWatches     + MAX_DISPLAY_WATCHES_LINES    ; // 14
+
+	if ((MAX_DISPLAY_BREAKPOINTS_LINES + MAX_DISPLAY_WATCHES_LINES) < 12)
+		yWatches++;
+
 #if DEBUG_FORCE_DISPLAY
 	if (true)
 #else
 	if (g_nBreakpoints)
 #endif
-		DrawBreakpoints(g_hDC,0);
+		DrawBreakpoints( g_hDC, yBreakpoints );
 
 #if DEBUG_FORCE_DISPLAY
 	if (true)
 #else
 	if (g_nWatches)
 #endif
-		DrawWatches(g_hDC,7);
+		DrawWatches(g_hDC, yWatches );
+
+	g_nDisplayMemoryLines = MAX_DISPLAY_MEMORY_LINES_1;
 
 #if DEBUG_FORCE_DISPLAY
 	if (true)
 #else
 	if (g_aMemDump[0].bActive)
 #endif
-		DrawMemory(g_hDC, 14, 0 ); // g_aMemDump[0].nAddress, g_aMemDump[0].eDevice);
+		DrawMemory(g_hDC, yMemory, 0 ); // g_aMemDump[0].nAddress, g_aMemDump[0].eDevice);
+
+	yMemory += (g_nDisplayMemoryLines + 1);
+	g_nDisplayMemoryLines = MAX_DISPLAY_MEMORY_LINES_2;
 
 #if DEBUG_FORCE_DISPLAY
 	if (true)
 #else
 	if (g_aMemDump[1].bActive)
 #endif
-		DrawMemory(g_hDC, 19, 1 ); // g_aMemDump[1].nAddress, g_aMemDump[1].eDevice);
+		DrawMemory(g_hDC, yMemory, 1 ); // g_aMemDump[1].nAddress, g_aMemDump[1].eDevice);
 
 }
 
@@ -2182,7 +2271,7 @@ void DrawWindowBackground_Info( int g_iWindowThis )
     RECT viewportrect;
     viewportrect.top    = 0;
     viewportrect.left   = SCREENSPLIT1 - 6; // 14 // HACK: MAGIC #: 14 -> (g_nFontWidthAvg-1)
-    viewportrect.right  = 560;
+    viewportrect.right  = DISPLAY_WIDTH;
     viewportrect.bottom = DISPLAY_HEIGHT; //g_nFontHeight * MAX_DISPLAY_INFO_LINES; // 384
 
 	SetBkColor(g_hDC, DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA

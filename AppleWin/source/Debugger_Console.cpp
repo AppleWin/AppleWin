@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Display
 		TCHAR g_aConsolePrompt[] = TEXT(">!"); // input, assembler // NUM_PROMPTS
 		TCHAR g_sConsolePrompt[] = TEXT(">"); // No, NOT Integer Basic!  The nostalgic '*' "Monitor" doesn't look as good, IMHO. :-(
-		bool  g_bConsoleFullWidth = false;
+		bool  g_bConsoleFullWidth = true; // false
 
 		int   g_iConsoleDisplayStart  = 0; // to allow scrolling
 		int   g_nConsoleDisplayTotal  = 0; // number of lines added to console
