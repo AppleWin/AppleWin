@@ -371,8 +371,9 @@ int DiskInsert (int drive, LPCTSTR imagefilename, BOOL writeprotected, BOOL crea
 }
 
 //===========================================================================
-BOOL DiskIsSpinning () {
-  return floppymotoron;
+BOOL DiskIsSpinning ()
+{
+	return floppymotoron;
 }
 
 //===========================================================================
@@ -380,30 +381,34 @@ void DiskNotifyInvalidImage (LPCTSTR imagefilename,int error)
 {
 	TCHAR buffer[MAX_PATH+128];
 
-  switch (error) {
+	switch (error)
+	{
 
-    case 1:
-      wsprintf(buffer,
-               TEXT("Unable to open the file %s."),
-               (LPCTSTR)imagefilename);
-      break;
+	case 1:
+		wsprintf(
+			buffer,
+			TEXT("Unable to open the file %s."),
+			(LPCTSTR)imagefilename);
+		break;
 
-    case 2:
-      wsprintf(buffer,
-               TEXT("Unable to use the file %s\nbecause the ")
-               TEXT("disk image format is not recognized."),
-               (LPCTSTR)imagefilename);
-      break;
+	case 2:
+		wsprintf(
+			buffer,
+			TEXT("Unable to use the file %s\nbecause the ")
+			TEXT("disk image format is not recognized."),
+			(LPCTSTR)imagefilename);
+		break;
 
-    default:
+	default:
+		// IGNORE OTHER ERRORS SILENTLY
+		return;
+	}
 
-      // IGNORE OTHER ERRORS SILENTLY
-      return;
-  }
-  MessageBox(g_hFrameWindow,
-             buffer,
-             TITLE,
-             MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+	MessageBox(
+		g_hFrameWindow,
+		buffer,
+		g_pAppTitle,
+		MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 }
 
 

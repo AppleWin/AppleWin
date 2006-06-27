@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 char VERSIONSTRING[] = "xx.yy.zz.ww";
 
+TCHAR *g_pAppTitle = TITLE_APPLE_2_E;
+
 bool      g_bApple2e           = true;
 bool      g_bApple2plus        = true;
 

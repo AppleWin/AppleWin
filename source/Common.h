@@ -56,7 +56,8 @@ enum AppMode_e
 #define	TITLE_APPLE_2      TEXT("Apple ][ Emulator")
 #define	TITLE_APPLE_2_PLUS TEXT("Apple ][+ Emulator")
 #define	TITLE_APPLE_2_E    TEXT("Apple //e Emulator")
-#define	TITLE              TITLE_APPLE_2_E
+// #define	TITLE              TITLE_APPLE_2_E
+
 #define TITLE_PAUSED       TEXT(" Paused ")
 #define TITLE_STEPPING     TEXT("Stepping")
 

@@ -1159,49 +1159,73 @@ void SetUsingCursor (BOOL newvalue) {
 //
 
 //===========================================================================
-void FrameCreateWindow () {
-  int width  = VIEWPORTCX + (VIEWPORTX<<1)
-                          + BUTTONCX
-                          + (GetSystemMetrics(SM_CXBORDER)<<1)
-                          + 5;
-  int height = VIEWPORTCY + (VIEWPORTY<<1)
-                          + GetSystemMetrics(SM_CYBORDER)
-                          + GetSystemMetrics(SM_CYCAPTION)
-                          + 5;
-  int xpos;
-  if (!RegLoadValue(TEXT("Preferences"),TEXT("Window X-Position"),1,(DWORD *)&xpos))
-    xpos = (GetSystemMetrics(SM_CXSCREEN)-width) >> 1;
-  int ypos;
-  if (!RegLoadValue(TEXT("Preferences"),TEXT("Window Y-Position"),1,(DWORD *)&ypos))
-    ypos = (GetSystemMetrics(SM_CYSCREEN)-height) >> 1;
-  g_hFrameWindow = CreateWindow(TEXT("APPLE2FRAME"),
-				g_bApple2e ? TITLE
-                                        : (g_bApple2plus ? TEXT("Apple ][+ Emulator")
-					              : TEXT("Apple ][ Emulator")),
-				WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
-				WS_MINIMIZEBOX | WS_VISIBLE,
-				xpos,ypos,width,height,
-				HWND_DESKTOP,(HMENU)0,instance,NULL);
-  InitCommonControls();
-  tooltipwindow = CreateWindow(TOOLTIPS_CLASS,NULL,TTS_ALWAYSTIP, 
-                               CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT, 
-                               g_hFrameWindow,(HMENU)0,instance,NULL); 
-  TOOLINFO toolinfo;
-  toolinfo.cbSize = sizeof(toolinfo);
-  toolinfo.uFlags = TTF_CENTERTIP;
-  toolinfo.hwnd = g_hFrameWindow;
-  toolinfo.hinst = instance;
-  toolinfo.lpszText = LPSTR_TEXTCALLBACK;
-  toolinfo.rect.left  = BUTTONX;
-  toolinfo.rect.right = toolinfo.rect.left+BUTTONCX+1;
-  toolinfo.uId = 0;
-  toolinfo.rect.top    = BUTTONY+BTN_DRIVE1*BUTTONCY+1;
-  toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
-  SendMessage(tooltipwindow,TTM_ADDTOOL,0,(LPARAM)&toolinfo);
-  toolinfo.uId = 1;
-  toolinfo.rect.top    = BUTTONY+BTN_DRIVE2*BUTTONCY+1;
-  toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
-  SendMessage(tooltipwindow,TTM_ADDTOOL,0,(LPARAM)&toolinfo);
+void FrameCreateWindow ()
+{
+	int width  = VIEWPORTCX + (VIEWPORTX<<1)
+							+ BUTTONCX
+							+ (GetSystemMetrics(SM_CXBORDER)<<1)
+							+ 5;
+	int height = VIEWPORTCY + (VIEWPORTY<<1)
+							+ GetSystemMetrics(SM_CYBORDER)
+							+ GetSystemMetrics(SM_CYCAPTION)
+							+ 5;
+	int xpos;
+
+	if (!RegLoadValue(TEXT("Preferences"),TEXT("Window X-Position"),1,(DWORD *)&xpos))
+		xpos = (GetSystemMetrics(SM_CXSCREEN)-width) >> 1;
+
+	int ypos;
+	if (!RegLoadValue(TEXT("Preferences"),TEXT("Window Y-Position"),1,(DWORD *)&ypos))
+		ypos = (GetSystemMetrics(SM_CYSCREEN)-height) >> 1;
+
+	if (g_bApple2e)
+	{
+		g_pAppTitle = TITLE_APPLE_2_E;
+	}
+	else
+	{
+		if (g_bApple2plus)
+			g_pAppTitle = TITLE_APPLE_2_PLUS;
+		else
+			g_pAppTitle = TITLE_APPLE_2;
+	}
+
+	g_hFrameWindow = CreateWindow(
+		TEXT("APPLE2FRAME"),
+//		g_bApple2e
+//		? TITLE_APPLE_2_E
+//        : (g_bApple2plus
+//			? TITLE_APPLE_2_PLUS
+//			: TITLE_APPLE_2),
+		g_pAppTitle,
+		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
+		WS_MINIMIZEBOX | WS_VISIBLE,
+		xpos,ypos,width,height,
+		HWND_DESKTOP,(HMENU)0,instance,NULL );
+
+
+	InitCommonControls();
+	tooltipwindow = CreateWindow(
+		TOOLTIPS_CLASS,NULL,TTS_ALWAYSTIP, 
+		CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT, 
+		g_hFrameWindow,(HMENU)0,instance,NULL ); 
+
+	TOOLINFO toolinfo;
+	toolinfo.cbSize = sizeof(toolinfo);
+	toolinfo.uFlags = TTF_CENTERTIP;
+	toolinfo.hwnd = g_hFrameWindow;
+	toolinfo.hinst = instance;
+	toolinfo.lpszText = LPSTR_TEXTCALLBACK;
+	toolinfo.rect.left  = BUTTONX;
+	toolinfo.rect.right = toolinfo.rect.left+BUTTONCX+1;
+	toolinfo.uId = 0;
+	toolinfo.rect.top    = BUTTONY+BTN_DRIVE1*BUTTONCY+1;
+	toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
+	SendMessage(tooltipwindow,TTM_ADDTOOL,0,(LPARAM)&toolinfo);
+	toolinfo.uId = 1;
+	toolinfo.rect.top    = BUTTONY+BTN_DRIVE2*BUTTONCY+1;
+	toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
+	SendMessage(tooltipwindow,TTM_ADDTOOL,0,(LPARAM)&toolinfo);
 }
 
 //===========================================================================

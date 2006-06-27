@@ -865,25 +865,28 @@ void MemInitialize () {
   memimage = (LPBYTE)VirtualAlloc(NULL,
                                   MAX(0x30000,MAXIMAGES*0x10000),
                                   MEM_RESERVE,PAGE_NOACCESS);
-  if ((!memaux) || (!memdirty) || (!memimage) || (!memmain) || (!memrom)) {
-    MessageBox(GetDesktopWindow(),
-               TEXT("The emulator was unable to allocate the memory it ")
-               TEXT("requires.  Further execution is not possible."),
-               TITLE,
-               MB_ICONSTOP | MB_SETFOREGROUND);
-    ExitProcess(1);
-  }
-  {
-    LPVOID newloc = VirtualAlloc(memimage,0x30000,MEM_COMMIT,PAGE_READWRITE);
-    if (newloc != memimage)
-      MessageBox(GetDesktopWindow(),
-                 TEXT("The emulator has detected a bug in your operating ")
-                 TEXT("system.  While changing the attributes of a memory ")
-                 TEXT("object, the operating system also changed its ")
-                 TEXT("location."),
-                 TITLE,
-                 MB_ICONEXCLAMATION | MB_SETFOREGROUND);
-  }
+
+	if ((!memaux) || (!memdirty) || (!memimage) || (!memmain) || (!memrom))
+	{
+		MessageBox(
+			GetDesktopWindow(),
+			TEXT("The emulator was unable to allocate the memory it ")
+			TEXT("requires.  Further execution is not possible."),
+			g_pAppTitle,
+			MB_ICONSTOP | MB_SETFOREGROUND);
+		ExitProcess(1);
+	}
+
+	LPVOID newloc = VirtualAlloc(memimage,0x30000,MEM_COMMIT,PAGE_READWRITE);
+	if (newloc != memimage)
+		MessageBox(
+			GetDesktopWindow(),
+			TEXT("The emulator has detected a bug in your operating ")
+			TEXT("system.  While changing the attributes of a memory ")
+			TEXT("object, the operating system also changed its ")
+			TEXT("location."),
+			g_pAppTitle,
+			MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
 #ifdef RAMWORKS
 	// allocate memory for RAMWorks III - up to 8MB
@@ -893,7 +896,7 @@ void MemInitialize () {
 		i++;
 #endif
 
-  // READ THE APPLE FIRMWARE ROMS INTO THE ROM IMAGE
+	// READ THE APPLE FIRMWARE ROMS INTO THE ROM IMAGE
 	const UINT ROM_SIZE = 0x5000; // HACK: Magic # -- $C000..$FFFF = 4K .. why 5K?
 
 	HRSRC hResInfo = 
@@ -905,18 +908,22 @@ void MemInitialize () {
 
 	if(hResInfo == NULL)
 	{
-		TCHAR sRomFileName[ 128 ];
-		_tcscpy( sRomFileName, g_bApple2e ? TEXT("APPLE2E.ROM")
-					       : (g_bApple2plus ? TEXT("APPLE2PLUS.ROM")
-					                     : TEXT("APPLE2ORIG.ROM")));
+		TCHAR sRomFileName[ MAX_PATH ];
+		_tcscpy( sRomFileName,
+			g_bApple2e
+			? TEXT("APPLE2E.ROM")
+			: (g_bApple2plus
+				? TEXT("APPLE2PLUS.ROM")
+				: TEXT("APPLE2ORIG.ROM")));
 
-		TCHAR sText[ 256 ];
+		TCHAR sText[ MAX_PATH ];
 		wsprintf( sText, TEXT("Unable to open the required firmware ROM data file.\n\nFile: %s."), sRomFileName );
 
-		MessageBox(GetDesktopWindow(),
-               sText,
-               TITLE,
-               MB_ICONSTOP | MB_SETFOREGROUND);
+		MessageBox(
+			GetDesktopWindow(),
+			sText,
+			g_pAppTitle,
+			MB_ICONSTOP | MB_SETFOREGROUND);
 		ExitProcess(1);
 	}
 
@@ -929,41 +936,39 @@ void MemInitialize () {
 		return;
 
 	BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
-	if(pData == NULL)
+	if (pData == NULL)
 		return;
 
 	memcpy(memrom, pData, ROM_SIZE);
 
-  // TODO/FIXME: HACK! REMOVE A WAIT ROUTINE FROM THE DISK CONTROLLER'S FIRMWARE
-  {
-    *(memrom+0x064C) = 0xA9;
-    *(memrom+0x064D) = 0x00;
-    *(memrom+0x064E) = 0xEA;
-  }
+	// TODO/FIXME: HACK! REMOVE A WAIT ROUTINE FROM THE DISK CONTROLLER'S FIRMWARE
+	*(memrom+0x064C) = 0xA9;
+	*(memrom+0x064D) = 0x00;
+	*(memrom+0x064E) = 0xEA;
 
-  HD_Load_Rom(memrom);	// HDD f/w gets loaded to $C700
+	HD_Load_Rom(memrom);	// HDD f/w gets loaded to $C700
 
-  MemReset();
+	MemReset();
 }
 
 //===========================================================================
 
-// Call by:
+// Called by:
 // . ResetMachineState()	eg. Power-cycle ('Apple-Go' button)
 // . Snapshot_LoadState()
 void MemReset ()
 {
-  // TURN OFF FAST PAGING IF IT IS CURRENTLY ACTIVE
-  MemSetFastPaging(0);
+	// TURN OFF FAST PAGING IF IT IS CURRENTLY ACTIVE
+	MemSetFastPaging(0);
 
-  // INITIALIZE THE PAGING TABLES
-  ZeroMemory(memshadow,MAXIMAGES*256*sizeof(LPBYTE));
-  ZeroMemory(memwrite ,MAXIMAGES*256*sizeof(LPBYTE));
+	// INITIALIZE THE PAGING TABLES
+	ZeroMemory(memshadow,MAXIMAGES*256*sizeof(LPBYTE));
+	ZeroMemory(memwrite ,MAXIMAGES*256*sizeof(LPBYTE));
 
-  // INITIALIZE THE RAM IMAGES
-  ZeroMemory(memaux ,0x10000);
+	// INITIALIZE THE RAM IMAGES
+	ZeroMemory(memaux ,0x10000);
 
-  ZeroMemory(memmain,0x10000);
+	ZeroMemory(memmain,0x10000);
 
 	int iByte;
 
@@ -979,16 +984,16 @@ void MemReset ()
 		}
 	}
 
-  // SET UP THE MEMORY IMAGE
-  mem   = memimage;
-  image = 0;
+	// SET UP THE MEMORY IMAGE
+	mem   = memimage;
+	image = 0;
 
-  // INITIALIZE THE CPU
-  CpuInitialize();
+	// INITIALIZE THE CPU
+	CpuInitialize();
 
-  // INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
-  ResetPaging(1);
-  regs.bRESET = 1;
+	// INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
+	ResetPaging(1);
+	regs.bRESET = 1;
 }
 
 //===========================================================================
