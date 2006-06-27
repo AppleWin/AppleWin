@@ -2,6 +2,8 @@
 
 extern char VERSIONSTRING[];	// Contructed in WinMain()
 
+extern TCHAR     *g_pAppTitle;
+
 extern bool       g_bApple2e;
 extern bool       g_bApple2plus;
 
