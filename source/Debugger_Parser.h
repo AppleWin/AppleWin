@@ -33,6 +33,7 @@
 	int _Arg_1     ( int nValue );
 	int _Arg_1     ( LPTSTR pName );
 	int _Arg_Shift ( int iSrc, int iEnd, int iDst = 0 );
+	int _Args_Insert( int iSrc, int iEnd, int nLen );
 	void ArgsClear ();
 
 	bool ArgsGetValue ( Arg_t *pArg, WORD * pAddressValue_, const int nBase = 16 );

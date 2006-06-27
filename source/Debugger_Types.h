@@ -1122,8 +1122,9 @@
 	{	
 		TCHAR      sArg[ MAX_ARG_LEN ]; // Array chars comes first, for alignment
 		int        nArgLen; // Needed for TextSearch "ABC\x00"
-		WORD       nVal1  ; // 2
-		WORD       nVal2  ; // 2 If we have a Len (,)
+		WORD       nValue ; // 2
+//		WORD       nVal1  ; // 2
+//		WORD       nVal2  ; // 2 If we have a Len (,)
 		// Enums and Bools should come last for alignment
 		ArgToken_e eToken ; // 1/2/4
 		int        bType  ; // 1/2/4 // Flags of ArgType_e

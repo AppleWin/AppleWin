@@ -91,7 +91,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //===========================================================================
 int _Arg_1( int nValue )
 {
-	g_aArgs[1].nVal1 = nValue;
+	g_aArgs[1].nValue = nValue;
 	return 1;
 }
 	
@@ -139,6 +139,28 @@ int _Arg_Shift( int iSrc, int iEnd, int iDst )
 	return nArgs;
 }
 
+//===========================================================================
+int _Args_Insert( int iSrc, int iEnd, int nLen )
+{
+	iSrc += nLen;
+	int iDst = iEnd + nLen;
+
+	if (iDst > MAX_ARGS)
+		return ARG_SYNTAX_ERROR;
+
+	if (iSrc > MAX_ARGS)
+		return ARG_SYNTAX_ERROR;
+	
+	while (nLen--)
+	{
+		g_aArgs[iDst] = g_aArgs[iSrc];
+		iSrc--;
+		iDst--;
+	}
+
+	return 0;
+}
+
 
 //===========================================================================
 void ArgsClear ()
@@ -151,8 +173,10 @@ void ArgsClear ()
 		pArg->eDevice = NUM_DEVICES; // none
 		pArg->eToken  = NO_TOKEN   ; // none
 		pArg->bType   = TYPE_STRING;
-		pArg->nVal1   = 0;
+		pArg->nValue   = 0;
+#if DEBUG_VAL_2
 		pArg->nVal2   = 0;
+#endif
 		pArg->sArg[0] = 0;
 
 		pArg++;
@@ -388,7 +412,7 @@ void ArgsRawParse ( void )
 		}
 
 		if (! (pArg->bType & TYPE_VALUE)) // already up to date?
-			pArg->nVal1 = nAddressValue;
+			pArg->nValue = nAddressValue;
 
 		pArg->bType |= TYPE_ADDRESS;
 
@@ -487,7 +511,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					nAddressVal = nAddressSym;
 					pArg->bSymbol = true;
 				}
-
+/*
 				if (bProcessMask & (1 << TOKEN_COMMA))
 				if (pArg->eToken == TOKEN_COMMA) // COMMMA , length
 				{
@@ -507,7 +531,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					pPrev->bType |= TYPE_RANGE;
 					nParamLen = 2;
 				}
-
+*/
 				if (bProcessMask & (1 << TOKEN_AMPERSAND))
 				if (pArg->eToken == TOKEN_AMPERSAND) // AND   & delta
 				{
@@ -515,7 +539,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					{
 						  ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
-					pPrev->nVal1 &= nAddressRHS;
+					pPrev->nValue &= nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
 				}								
@@ -527,7 +551,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					{
 						  ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
-					pPrev->nVal1 |= nAddressRHS;
+					pPrev->nValue |= nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
 				}								
@@ -539,7 +563,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					{
 						  ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
-					pPrev->nVal1 ^= nAddressRHS;
+					pPrev->nValue ^= nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
 				}								
@@ -551,7 +575,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					{
 						  ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
-					pPrev->nVal1 += nAddressRHS;
+					pPrev->nValue += nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
 				}
@@ -563,7 +587,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					{
 						ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
-					pPrev->nVal1 -= nAddressRHS;
+					pPrev->nValue -= nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
 				}
@@ -575,7 +599,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					{
 						ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
-					pPrev->nVal1 %= nAddressRHS;
+					pPrev->nValue %= nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
 				}
@@ -594,7 +618,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					}
 					if (! nAddressRHS)
 						nAddressRHS = 1; // divide by zero bug
-					pPrev->nVal1 /= nAddressRHS;
+					pPrev->nValue /= nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
 				}
@@ -602,7 +626,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 				if (bProcessMask & (1 << TOKEN_EQUAL))
 				if (pArg->eToken == TOKEN_EQUAL) // EQUAL  = assign
 				{
-					pPrev->nVal1 = nAddressRHS; 
+					pPrev->nValue = nAddressRHS; 
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 0; // need token for Smart BreakPoints
 				}					
@@ -614,14 +638,14 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					_Arg_Shift( iArg + nParamLen, nArgs, iArg );
 					nArg--;
 
-					pArg->nVal1   = 0; // nAddressRHS;
+					pArg->nValue   = 0; // nAddressRHS;
 					pArg->bSymbol = false;
 
 					int nPointers = g_vMemorySearchResults.size();
 					if ((nPointers) &&
 						(nAddressRHS < nPointers))
 					{
-						pArg->nVal1   = g_vMemorySearchResults.at( nAddressRHS );
+						pArg->nValue   = g_vMemorySearchResults.at( nAddressRHS );
 						pArg->bType   = TYPE_VALUE | TYPE_ADDRESS | TYPE_NO_REG | TYPE_NO_SYM;
 					}
 					nParamLen = 0;
@@ -630,7 +654,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 				if (bProcessMask & (1 << TOKEN_HASH))
 				if (pArg->eToken == TOKEN_HASH) // HASH    # immediate
 				{
-					pArg->nVal1   = nAddressRHS;
+					pArg->nValue   = nAddressRHS;
 					pArg->bSymbol = false;
 					pArg->bType   = TYPE_VALUE | TYPE_ADDRESS | TYPE_NO_REG | TYPE_NO_SYM;
 					nParamLen = 0;
@@ -658,7 +682,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 							nAddressRHS = nAddressVal;
 						}
 					}
-					pArg->nVal1 = ~nAddressRHS;
+					pArg->nValue = ~nAddressRHS;
 					pArg->bType |= TYPE_VALUE; // signal already up to date
 					// Don't remove, since "SYM ! symbol" needs token to remove symbol
 				}
@@ -696,7 +720,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 			}
 
 			if (! (pArg->bType & TYPE_VALUE)) // already up to date?
-				pArg->nVal1 = nAddressVal;
+				pArg->nValue = nAddressVal;
 
 			pArg->bType |= TYPE_ADDRESS;
 		}
