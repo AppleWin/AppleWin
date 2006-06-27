@@ -161,11 +161,11 @@ Update_t CmdHelpSpecific (int nArgs)
 	{
 //		ConsoleBufferPush( TEXT(" [] = optional, {} = mandatory.  Categories are: ") );
 
-		_tcscpy( sText, TEXT("Usage: [{ ") );
+		_tcscpy( sText, TEXT("Usage: [< ") );
 		for (int iCategory = _PARAM_HELPCATEGORIES_BEGIN ; iCategory < _PARAM_HELPCATEGORIES_END; iCategory++)
 		{
-			TCHAR *pName = g_aParameters[ iCategory ].m_sName;
-			if (! TestStringCat( sText, pName, g_nConsoleDisplayWidth - 3 )) // CONSOLE_WIDTH
+			TCHAR *pName = g_aParameters[ iCategory ].m_sName; 
+			if (! TestStringCat( sText, pName, CONSOLE_WIDTH - 2 )) // CONSOLE_WIDTH // g_nConsoleDisplayWidth - 3
 			{
 				ConsoleBufferPush( sText );
 				_tcscpy( sText, TEXT("    ") );
@@ -177,10 +177,10 @@ Update_t CmdHelpSpecific (int nArgs)
 				StringCat( sText, TEXT(" | "), CONSOLE_WIDTH );
 			}
 		}
-		StringCat( sText, TEXT(" }]"), CONSOLE_WIDTH );
+		StringCat( sText, TEXT(" >]"), CONSOLE_WIDTH );
 		ConsoleBufferPush( sText );
 
-		wsprintf( sText, TEXT("Note: [] = optional, {} = mandatory"), CONSOLE_WIDTH );
+		wsprintf( sText, TEXT("Note: [] = optional, <> = mandatory"), CONSOLE_WIDTH );
 		ConsoleBufferPush( sText );
 	}
 
@@ -188,7 +188,8 @@ Update_t CmdHelpSpecific (int nArgs)
 	bool bAllCommands = false;
 	bool bCategory = false;
 
-	if (! _tcscmp( g_aArgs[1].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+	if ((! _tcscmp( g_aArgs[1].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName)) ||
+		(! _tcscmp( g_aArgs[1].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName)) )
 	{
 		bAllCommands = true;
 		nArgs = NUM_COMMANDS;
@@ -202,26 +203,30 @@ Update_t CmdHelpSpecific (int nArgs)
 	int nNewArgs  = 0;
 	int iCmdBegin = 0;
 	int iCmdEnd   = 0;
-	for (iArg = 1; iArg <= nArgs; iArg++ )
+
+	if (! bAllCommands)
 	{
-//		int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_EXACT, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
-		int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_FUZZY, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
-		switch( iParam )
+		for (iArg = 1; iArg <= nArgs; iArg++ )
 		{
-			case PARAM_CAT_BREAKPOINTS: iCmdBegin = CMD_BREAKPOINT      ; iCmdEnd = CMD_BREAKPOINT_SAVE    + 1; break;
-			case PARAM_CAT_CONFIG     : iCmdBegin = CMD_CONFIG_COLOR    ; iCmdEnd = CMD_CONFIG_SAVE        + 1; break;
-			case PARAM_CAT_CPU        : iCmdBegin = CMD_ASSEMBLE        ; iCmdEnd = CMD_TRACE_LINE         + 1; break;
-			case PARAM_CAT_FLAGS      : iCmdBegin = CMD_FLAG_CLEAR      ; iCmdEnd = CMD_FLAG_SET_N         + 1; break;
-			case PARAM_CAT_MEMORY     : iCmdBegin = CMD_MEMORY_COMPARE  ; iCmdEnd = CMD_MEMORY_FILL        + 1; break;
-			case PARAM_CAT_SYMBOLS    : iCmdBegin = CMD_SYMBOLS_LOOKUP  ; iCmdEnd = CMD_SYMBOLS_LIST       + 1; break;
-			case PARAM_CAT_WATCHES    : iCmdBegin = CMD_WATCH_ADD       ; iCmdEnd = CMD_WATCH_LIST         + 1; break;
-			case PARAM_CAT_WINDOW     : iCmdBegin = CMD_WINDOW          ; iCmdEnd = CMD_WINDOW_OUTPUT      + 1; break;
-			case PARAM_CAT_ZEROPAGE   : iCmdBegin = CMD_ZEROPAGE_POINTER; iCmdEnd = CMD_ZEROPAGE_POINTER_SAVE+1;break;
-			default: break;
+	//		int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_EXACT, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
+			int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_FUZZY, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
+			switch( iParam )
+			{
+				case PARAM_CAT_BREAKPOINTS: iCmdBegin = CMD_BREAKPOINT      ; iCmdEnd = CMD_BREAKPOINT_SAVE    + 1; break;
+				case PARAM_CAT_CONFIG     : iCmdBegin = CMD_CONFIG_COLOR    ; iCmdEnd = CMD_CONFIG_SAVE        + 1; break;
+				case PARAM_CAT_CPU        : iCmdBegin = CMD_ASSEMBLE        ; iCmdEnd = CMD_TRACE_LINE         + 1; break;
+				case PARAM_CAT_FLAGS      : iCmdBegin = CMD_FLAG_CLEAR      ; iCmdEnd = CMD_FLAG_SET_N         + 1; break;
+				case PARAM_CAT_MEMORY     : iCmdBegin = CMD_MEMORY_COMPARE  ; iCmdEnd = CMD_MEMORY_FILL        + 1; break;
+				case PARAM_CAT_SYMBOLS    : iCmdBegin = CMD_SYMBOLS_LOOKUP  ; iCmdEnd = CMD_SYMBOLS_LIST       + 1; break;
+				case PARAM_CAT_WATCHES    : iCmdBegin = CMD_WATCH_ADD       ; iCmdEnd = CMD_WATCH_LIST         + 1; break;
+				case PARAM_CAT_WINDOW     : iCmdBegin = CMD_WINDOW          ; iCmdEnd = CMD_WINDOW_OUTPUT      + 1; break;
+				case PARAM_CAT_ZEROPAGE   : iCmdBegin = CMD_ZEROPAGE_POINTER; iCmdEnd = CMD_ZEROPAGE_POINTER_SAVE+1;break;
+				default: break;
+			}
+			nNewArgs = (iCmdEnd - iCmdBegin);
+			if (nNewArgs > 0)
+				break;
 		}
-		nNewArgs = (iCmdEnd - iCmdBegin);
-		if (nNewArgs > 0)
-			break;
 	}
 
 	if (nNewArgs > 0)
@@ -254,14 +259,15 @@ Update_t CmdHelpSpecific (int nArgs)
 			nFound = 1;
 		}
 		else
-			nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
-
 		if (bAllCommands)
 		{
 			iCommand = iArg;
 			if (iCommand == NUM_COMMANDS) // skip: Internal Consistency Check __COMMANDS_VERIFY_TXT__
 				continue;
+			nFound = 1;
 		}
+		else
+			nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
 
 		if (nFound > 1)
 		{
@@ -380,13 +386,6 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( TEXT(" Usage: {address | symbol}") );
 			ConsoleBufferPush( TEXT("  Disassembles memory.") );
 			break;
-		case CMD_CALC:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol | + | - }"    ) );
-			ConsoleBufferPush( TEXT(" Output order is: Hex Bin Dec Char"     ) );
-			ConsoleBufferPush( TEXT("  Note: symbols take piority."          ) );
-			ConsoleBufferPush( TEXT("i.e. #A (if you don't want accum. val)" ) );
-			ConsoleBufferPush( TEXT("i.e. #F (if you don't want flags val)"  ) );
-			break;
 		case CMD_GO:
 			ConsoleBufferPush( TEXT(" Usage: address | symbol [Skip,Length]]") );
 			ConsoleBufferPush( TEXT("  addres | symbol [Start:End]") );
@@ -399,12 +398,16 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( TEXT("  G C600 FA00,600" ) );
 			ConsoleBufferPush( TEXT("  G C600 F000:FFFF" ) );
 			break;
-		case CMD_NOP:
-			ConsoleBufferPush( TEXT("  Puts a NOP opcode at current instruction") );
-			break;
 		case CMD_JSR:
 			ConsoleBufferPush( TEXT(" Usage: {symbol | address}") );
 			ConsoleBufferPush( TEXT("  Pushes PC on stack; calls the named subroutine.") );
+			break;
+		case CMD_NOP:
+			ConsoleBufferPush( TEXT("  Puts a NOP opcode at current instruction") );
+			break;
+		case CMD_OUT:
+			ConsoleBufferPush( TEXT(" Usage: {address8 | address16 | symbol} ## [##]") );
+			ConsoleBufferPush( TEXT("  Ouput a byte or word to the IO address $C0xx" ) );
 			break;
 		case CMD_PROFILE:
 			wsprintf( sText, TEXT(" Usage: [%s | %s | %s]")
@@ -512,10 +515,6 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( TEXT("  0 params: switch to 'monochrome' scheme" ) );
 			ConsoleBufferPush( TEXT("  1 param : dumps R G B for scheme 'monochrome'") );
 			ConsoleBufferPush( TEXT("  4 params: sets  R G B for scheme 'monochrome'" ) );
-			break;
-		case CMD_OUTPUT:
-			ConsoleBufferPush( TEXT(" Usage: {address8 | address16 | symbol} ## [##]") );
-			ConsoleBufferPush( TEXT("  Ouput a byte or word to the IO address $C0xx" ) );
 			break;
 	// Config - Diasm
 		case CMD_CONFIG_DISASM:
@@ -628,24 +627,55 @@ Update_t CmdHelpSpecific (int nArgs)
 
 		case CMD_MEMORY_LOAD:
 			// BLOAD "Filename" addr[,len] 
-			ConsoleBufferPush( TEXT(" Usage: [\"Filename\"],address[,length]" ) );
-			ConsoleBufferPush( TEXT("  If no filename specified, defaults to the last filename (if possible)" ) );
-			ConsoleBufferPush( TEXT("  Examples:" ) );
-			ConsoleBufferPush( TEXT("   BSAVE \"test\",FF00,100" ) );
-			ConsoleBufferPush( TEXT("   BLOAD \"test\",2000" ) );
-			break;
-
 		case CMD_MEMORY_SAVE:
 			// BSAVE ["Filename"] addr,len 
-			ConsoleBufferPush( TEXT(" Usage: [\"Filename\"],address[,length]"   ) );
-			ConsoleBufferPush( TEXT("  If no filename specified, defaults to:" ) );
-			ConsoleBufferPush( TEXT("  '####.####.bin' with the form"         ) );
-			ConsoleBufferPush( TEXT("  {address}.{length}.bin"                ) );
+
+			if (iCommand == CMD_MEMORY_LOAD)
+			{
+				ConsoleBufferPush( TEXT(" Usage: [\"Filename\"],address[,length]" ) );
+				ConsoleBufferPush( TEXT("  If no filename specified, defaults to the last filename (if possible)" ) );
+			}
+			if (iCommand == CMD_MEMORY_SAVE)
+			{			
+				ConsoleBufferPush( TEXT(" Usage: [\"Filename\"],address[,length]"   ) );
+				ConsoleBufferPush( TEXT("  If no filename specified, defaults to:" ) );
+				ConsoleBufferPush( TEXT("  '####.####.bin' with the form"         ) );
+				ConsoleBufferPush( TEXT("  {address}.{length}.bin"                ) );
+			}
+			
 			ConsoleBufferPush( TEXT("  Examples:" ) );
 			ConsoleBufferPush( TEXT("   BSAVE \"test\",FF00,100" ) );
 			ConsoleBufferPush( TEXT("   BLOAD \"test\",2000" ) );
 			break;
-
+	// Output
+		case CMD_OUTPUT_CALC:
+			ConsoleBufferPush( TEXT(" Usage: <address | symbol | expression >" ) );
+			ConsoleBufferPush( TEXT("  Expression is one of: + - * / % ^ ~"  ) );
+			ConsoleBufferPush( TEXT(" Output order is: Hex Bin Dec Char"     ) );
+			ConsoleBufferPush( TEXT("  Note: symbols take piority."          ) );
+			ConsoleBufferPush( TEXT("i.e. #A (if you don't want accum. val)" ) );
+			ConsoleBufferPush( TEXT("i.e. #F (if you don't want flags val)"  ) );
+			break;
+		case CMD_OUTPUT_ECHO:
+			ConsoleBufferPush( TEXT(" Usage: string"    ) );
+			ConsoleBufferPush( TEXT(" Examples:"        ) );
+			wsprintf( sText,   TEXT("  %s Checkpoint"), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  %s PC"        ), pCommand->m_sName ); ConsoleBufferPush( sText );
+//			ConsoleBufferPush( TEXT("  Echo the string to the console" ) );
+			break;
+		case CMD_OUTPUT_PRINT: 
+			ConsoleBufferPush( TEXT(" Usage: <string | expression> [, string | expression" ) );
+			ConsoleBufferPush( TEXT(" Examples:") );
+			wsprintf( sText,   TEXT("  %s \"A:\",A,\" X:\",X"), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  %s PC"                ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			break;
+		case CMD_OUTPUT_PRINTF:
+			ConsoleBufferPush( TEXT(" Usage: \"<Text>\" | expression [,]" ) );
+			ConsoleBufferPush( TEXT("  Text may contain formatting flags: %d %x %z" ) );
+			ConsoleBufferPush( TEXT("    %d DEC, %x HEX, %z BIN" ) );
+			ConsoleBufferPush( TEXT(" Examples:") );
+			ConsoleBufferPush( TEXT("  PRINTF \"A Dec: %d\",A,\" Hex: %x\",A,\" Bin: %z\",A" ) );
+			break;
 	// Symbols
 		case CMD_SYMBOLS_MAIN:
 		case CMD_SYMBOLS_USER:
@@ -784,9 +814,11 @@ Update_t CmdVersion (int nArgs)
 
 	if (nArgs)
 	{
-		for (int iArg = 1; iArg <= nArgs; iArg++ )
+		for (int iArg = 1; iArg <= g_nArgRaw; iArg++ )
 		{
-			if (_tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ) == 0)
+			// * PARAM_WILDSTAR -> ? PARAM_MEM_SEARCH_WILD
+			if ((! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
+				(! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
 			{
 				wsprintf( sText, "  Arg: %d bytes * %d = %d bytes",
 					sizeof(Arg_t), MAX_ARGS, sizeof(g_aArgs) );

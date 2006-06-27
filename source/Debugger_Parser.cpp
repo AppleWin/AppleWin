@@ -72,8 +72,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{ TOKEN_QUOTE_DOUBLE, TYPE_QUOTED_2, TEXT('"')  }, // for strings
 		{ TOKEN_RIGHT_PAREN , TYPE_OPERATOR, TEXT(')')  },
 		{ TOKEN_SEMI        , TYPE_STRING  , TEXT(';')  },
-		{ TOKEN_SPACE       , TYPE_STRING  , TEXT(' ')  } // space is also a delimiter between tokens/args
-//		{ TOKEN_STAR        , TYPE_OPERATOR, TEXT('*')  }, // Not a token 1) wildcard needs to stay together with other chars
+		{ TOKEN_SPACE       , TYPE_STRING  , TEXT(' ')  }, // space is also a delimiter between tokens/args
+		{ TOKEN_STAR        , TYPE_OPERATOR, TEXT('*')  }  // Not a token 1) wildcard needs to stay together with other chars
 //		{ TOKEN_TAB         , TYPE_STRING  , TEXT('\t') }
 //		{ TOKEN_TILDE       , TYPE_OPERATOR, TEXT('~')  }, // C/C++: Not.  Used for console.
 	};
@@ -496,6 +496,10 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 
 			pPrev = pArg - 1;
 
+			// Pass wildstar '*' to commands if only arg
+			if ((pArg->eToken == TOKEN_STAR) && (nArg == 1))
+				;
+			else			
 			if (nArgsLeft > 0) // These ops take at least 1 argument
 			{
 				pNext = pArg + 1;
@@ -600,6 +604,18 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 						ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
 					pPrev->nValue %= nAddressRHS;
+					pPrev->bType |= TYPE_VALUE; // signal already up to date
+					nParamLen = 2;
+				}
+
+				if (bProcessMask & (1 << TOKEN_STAR))
+				if (pArg->eToken == TOKEN_STAR) // STAR   * delta
+				{
+					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
+					{
+						  ArgsGetRegisterValue( pNext, & nAddressRHS );
+					}
+					pPrev->nValue *= nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
 				}

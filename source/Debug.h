@@ -18,6 +18,11 @@ using namespace std;
 // Benchmarking
 	extern DWORD      extbench;
 
+// Bookmarks
+	extern int          g_nBookmarks;
+	extern Bookmark_t   g_aBookmarks[ MAX_BOOKMARKS ];
+//	extern vector<int> g_aBookmarks;
+
 // Breakpoints
 	extern int          g_nBreakpoints;
 	extern Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
@@ -50,13 +55,15 @@ using namespace std;
 
 	extern const int WINDOW_DATA_BYTES_PER_LINE;
 
-// Disassembly
+// Config - Disassembly
 	extern bool  g_bConfigDisasmAddressColon ;
 	extern bool  g_bConfigDisasmOpcodesView  ;
 	extern bool  g_bConfigDisasmOpcodeSpaces ;
 	extern int   g_iConfigDisasmTargets      ;
 	extern int   g_iConfigDisasmBranchType   ;
 	extern int   g_bConfigDisasmImmediateChar;
+// Config - Info
+	extern bool  g_bConfigInfoTargetPointer  ;
 
 // Display
 	extern bool g_bDebuggerViewingAppleOutput;

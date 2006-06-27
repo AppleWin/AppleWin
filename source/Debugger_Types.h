@@ -141,14 +141,10 @@
 		MAX_BOOKMARKS = 10
 	};
 
-	extern vector<int> g_aBookmarks;
-
-
 // Breakpoints ____________________________________________________________________________________
 
 	enum
 	{
-//		NUMBREAKPOINTS = 15
 		MAX_BREAKPOINTS = 15
 	};
 
@@ -203,9 +199,9 @@
 		BP_OP_NOT_EQUAL    , // !  REG
 		BP_OP_GREATER_THAN , // >  REG
 		BP_OP_GREATER_EQUAL, // >= REG
-		BP_OP_READ         , // ?  MEM
-		BP_OP_WRITE        , // @  MEM
-		BP_OP_READ_WRITE   , // *  MEM
+		BP_OP_READ         , // @  MEM @ ? *
+		BP_OP_WRITE        , // *  MEM @ ? *
+		BP_OP_READ_WRITE   , // ?  MEM @ ? *
 		NUM_BREAKPOINT_OPERATORS
 	};
 
@@ -219,6 +215,7 @@
 		bool                 bEnabled;
 	};
 
+	typedef Breakpoint_t Bookmark_t;
 	typedef Breakpoint_t Watches_t;
 	typedef Breakpoint_t ZeroPagePointers_t;
 
@@ -399,22 +396,30 @@
 	enum Commands_e
 	{
 // Main / CPU
-		  CMD_ASSEMBLE
-		, CMD_UNASSEMBLE
+		  CMD_CURSOR_JUMP_PC // Shift
+		, CMD_CURSOR_SET_PC  // Ctrl
+		, CMD_ASSEMBLE
 		, CMD_BREAK_INVALID
 		, CMD_BREAK_OPCODE
-		, CMD_CALC
 		, CMD_GO
-		, CMD_INPUT
+		, CMD_IN
 		, CMD_INPUT_KEY
 		, CMD_JSR
-		, CMD_OUTPUT
 		, CMD_NOP
+		, CMD_OUT
 		, CMD_STEP_OVER
 		, CMD_STEP_OUT
 		, CMD_TRACE
 		, CMD_TRACE_FILE
 		, CMD_TRACE_LINE
+		, CMD_UNASSEMBLE
+// Bookmarks
+		, CMD_BOOKMARK_MENU
+		, CMD_BOOKMARK_ADD
+		, CMD_BOOKMARK_CLEAR
+		, CMD_BOOKMARK_LIST
+		, CMD_BOOKMARK_LOAD
+		, CMD_BOOKMARK_SAVE
 // Breakpoints
 		, CMD_BREAKPOINT
 		, CMD_BREAKPOINT_ADD_SMART // smart breakpoint
@@ -424,6 +429,7 @@
 //		,	CMD_BREAKPOINT_EXEC = CMD_BREAKPOINT_ADD_ADDR // alias
 		, CMD_BREAKPOINT_ADD_IO  // break on: [$C000-$C7FF] Load/Store 
 		, CMD_BREAKPOINT_ADD_MEM // break on: [$0000-$FFFF], excluding IO
+
 		, CMD_BREAKPOINT_CLEAR
 //		,	CMD_BREAKPOINT_REMOVE = CMD_BREAKPOINT_CLEAR // alias
 		, CMD_BREAKPOINT_DISABLE
@@ -450,17 +456,13 @@
 //		, CMD_CONFIG_DISASM_OPCODE
 //		, CMD_CONFIG_DISASM_SPACES
 
-		, CMD_CONFIG_ECHO
 		, CMD_CONFIG_FONT
 //		, CMD_CONFIG_FONT2 // PARAM_FONT_DISASM PARAM_FONT_INFO PARAM_FONT_SOURCE
 		, CMD_CONFIG_HCOLOR     // TODO Video :: SETFRAMECOLOR(#,R,G,B)
 		, CMD_CONFIG_LOAD
 		, CMD_CONFIG_MONOCHROME // MONO  # rr gg bb
-		, CMD_CONFIG_RUN
 		, CMD_CONFIG_SAVE
 // Cursor
-		, CMD_CURSOR_JUMP_PC // Shift
-		, CMD_CURSOR_SET_PC  // Ctrl
 		, CMD_CURSOR_JUMP_RET_ADDR
 		, CMD_CURSOR_LINE_UP   // Smart Line Up
 		, CMD_CURSOR_LINE_UP_1 // Shift
@@ -510,7 +512,7 @@
 		, CMD_MEM_MINI_DUMP_HEX_1
 		, CMD_MEM_MINI_DUMP_HEX_2  
 		, _CMD_MEM_MINI_DUMP_HEX_1_3 // alias M1
-        , _CMD_MEM_MINI_DUMP_HEX_2_1 // alias M2
+		, _CMD_MEM_MINI_DUMP_HEX_2_1 // alias M2
 
 		, CMD_MEM_MINI_DUMP_ASCII_1    // ASCII
 		, CMD_MEM_MINI_DUMP_ASCII_2
@@ -533,6 +535,12 @@
 		, CMD_MEMORY_SEARCH_APPLE   // Flashing Chars, Hi-Bit Set
 		, CMD_MEMORY_SEARCH_HEX
 		, CMD_MEMORY_FILL
+// Output
+		, CMD_OUTPUT_CALC
+		, CMD_OUTPUT_ECHO
+		, CMD_OUTPUT_PRINT
+		, CMD_OUTPUT_PRINTF
+		, CMD_OUTPUT_RUN
 // Registers - CPU
 		, CMD_REGISTER_SET
 // Source Level Debugging
@@ -615,23 +623,30 @@
 
 
 // CPU
+	Update_t CmdCursorJumpPC(int nArgs);
+	Update_t CmdCursorSetPC (int nArgs);
 	Update_t CmdAssemble    (int nArgs);
-	Update_t CmdUnassemble  (int nArgs); // code dump, aka, Unassemble
 	Update_t CmdBreakInvalid(int nArgs); // Breakpoint IFF Full-speed!
 	Update_t CmdBreakOpcode (int nArgs); // Breakpoint IFF Full-speed!
-	Update_t CmdCalculator  (int nArgs);
 	Update_t CmdGo          (int nArgs);
-	Update_t CmdInput       (int nArgs);
+	Update_t CmdIn          (int nArgs);
+	Update_t CmdKey         (int nArgs);
 	Update_t CmdJSR         (int nArgs);
 	Update_t CmdNOP         (int nArgs);
-	Update_t CmdOutput      (int nArgs);
-	Update_t CmdFeedKey     (int nArgs);
-	Update_t CmdStepOut     (int nArgs);
+	Update_t CmdOut         (int nArgs);
 	Update_t CmdStepOver    (int nArgs);
+	Update_t CmdStepOut     (int nArgs);
 	Update_t CmdTrace       (int nArgs);  // alias for CmdStepIn
 	Update_t CmdTraceFile   (int nArgs);
 	Update_t CmdTraceLine   (int nArgs);
-
+	Update_t CmdUnassemble  (int nArgs); // code dump, aka, Unassemble
+// Bookmarks
+	Update_t CmdBookmarkMenu   (int nArgs);
+	Update_t CmdBookmarkAdd    (int nArgs);
+	Update_t CmdBookmarkClear  (int nArgs);
+	Update_t CmdBookmarkList   (int nArgs);
+	Update_t CmdBookmarkLoad   (int nArgs);
+	Update_t CmdBookmarkSave   (int nArgs);
 // Breakpoints
 	Update_t CmdBreakpointMenu    (int nArgs);
 	Update_t CmdBreakpointAddSmart(int nArgs);
@@ -660,11 +675,9 @@
 	Update_t CmdConfigBaseDec     (int nArgs);
 	Update_t CmdConfigColorMono   (int nArgs);
 	Update_t CmdConfigDisasm      (int nArgs);
-	Update_t CmdConfigEcho        (int nArgs);
 	Update_t CmdConfigFont        (int nArgs);
 	Update_t CmdConfigHColor      (int nArgs);
 	Update_t CmdConfigLoad        (int nArgs);
-	Update_t CmdConfigRun         (int nArgs);
 	Update_t CmdConfigSave        (int nArgs);
 	Update_t CmdConfigSetFont     (int nArgs);
 	Update_t CmdConfigGetFont     (int nArgs);
@@ -672,10 +685,8 @@
 	Update_t CmdCursorFollowTarget(int nArgs);
 	Update_t CmdCursorLineDown    (int nArgs);
 	Update_t CmdCursorLineUp      (int nArgs);
-	Update_t CmdCursorJumpPC      (int nArgs);
 	Update_t CmdCursorJumpRetAddr (int nArgs);
 	Update_t CmdCursorRunUntil    (int nArgs);
-	Update_t CmdCursorSetPC       (int nArgs);
 	Update_t CmdCursorPageDown    (int nArgs);
 	Update_t CmdCursorPageDown256 (int nArgs);
 	Update_t CmdCursorPageDown4K  (int nArgs);
@@ -689,7 +700,6 @@
 	Update_t CmdHelpSpecific      (int Argss);
 	Update_t CmdVersion           (int nArgs);
 	Update_t CmdMOTD              (int nArgs);
-	
 // Flags
 	Update_t CmdFlag      (int nArgs);
 	Update_t CmdFlagClear (int nArgs);
@@ -715,6 +725,12 @@
 	Update_t CmdMemorySearchAscii  (int nArgs);
 	Update_t CmdMemorySearchApple  (int nArgs);
 	Update_t CmdMemorySearchHex    (int nArgs);
+// Output/Scripts
+	Update_t CmdOutputCalc         (int nArgs);
+	Update_t CmdOutputEcho         (int nArgs);
+	Update_t CmdOutputPrint        (int nArgs);
+	Update_t CmdOutputPrintf       (int nArgs);
+	Update_t CmdOutputRun          (int nArgs);
 // Registers
 	Update_t CmdRegisterSet     (int nArgs);
 // Source Level Debugging
@@ -1087,6 +1103,7 @@
 		, TOKEN_RIGHT_PAREN  // )
 		, TOKEN_SEMI         // ; Command Seperator
 		, TOKEN_SPACE        //   Token Delimiter
+		, TOKEN_STAR         // *
 //		, TOKEN_TAB          // '\t'
 
 		, NUM_TOKENS // signal none, or bad
@@ -1179,10 +1196,11 @@
 // Disasm
 	, _PARAM_CONFIG_BEGIN = _PARAM_REGS_END // Daisy Chain
 		, PARAM_CONFIG_BRANCH = _PARAM_CONFIG_BEGIN // g_iConfigDisasmBranchType   [0|1|2]
-		, PARAM_CONFIG_COLON  // g_bConfigDisasmAddressColon [0|1]
-		, PARAM_CONFIG_OPCODE // g_bConfigDisasmOpcodesView  [0|1]
-		, PARAM_CONFIG_SPACES // g_bConfigDisasmOpcodeSpaces [0|1]
-		, PARAM_CONFIG_TARGET // g_iConfigDisasmTargets      [0 | 1 | 2]
+		, PARAM_CONFIG_COLON   // g_bConfigDisasmAddressColon [0|1]
+		, PARAM_CONFIG_OPCODE  // g_bConfigDisasmOpcodesView  [0|1]
+		, PARAM_CONFIG_POINTER // g_bConfigInfoTargetPointer  [0|1]
+		, PARAM_CONFIG_SPACES  // g_bConfigDisasmOpcodeSpaces [0|1]
+		, PARAM_CONFIG_TARGET  // g_iConfigDisasmTargets      [0|1|2]
 	, _PARAM_CONFIG_END
 	, PARAM_CONFIG_NUM = _PARAM_CONFIG_END - _PARAM_CONFIG_BEGIN
 
@@ -1216,12 +1234,16 @@
 
 	, _PARAM_HELPCATEGORIES_BEGIN = _PARAM_GENERAL_END // Daisy Chain
 		, PARAM_WILDSTAR = _PARAM_HELPCATEGORIES_BEGIN
+		, PARAM_CAT_BOOKMARKS
 		, PARAM_CAT_BREAKPOINTS
 		, PARAM_CAT_CONFIG
 		, PARAM_CAT_CPU        
 		, PARAM_CAT_FLAGS
+		, PARAM_CAT_HELP
 		, PARAM_CAT_MEMORY
 		,_PARAM_CAT_MEM  // alias MEM = MEMORY
+		, PARAM_CAT_OUTPUT
+		, PARAM_CAT_REGISTERS
 		, PARAM_CAT_SYMBOLS
 		, PARAM_CAT_WATCHES    
 		, PARAM_CAT_WINDOW     
@@ -1323,7 +1345,7 @@
 
 	enum
 	{
-		MAX_WATCHES = 5
+		MAX_WATCHES = 6
 	};
 
 
@@ -1356,6 +1378,6 @@
 
 	enum
 	{
-		MAX_ZEROPAGE_POINTERS = 5
+		MAX_ZEROPAGE_POINTERS = 6
 	};
 
