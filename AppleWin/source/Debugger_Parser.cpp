@@ -173,7 +173,7 @@ void ArgsClear ()
 		pArg->eDevice = NUM_DEVICES; // none
 		pArg->eToken  = NO_TOKEN   ; // none
 		pArg->bType   = TYPE_STRING;
-		pArg->nValue   = 0;
+		pArg->nValue  = 0;
 #if DEBUG_VAL_2
 		pArg->nVal2   = 0;
 #endif
