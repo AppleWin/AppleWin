@@ -1,9 +1,11 @@
 /*
 
 2.5.4.x
-.13 Fixed BSAVE syntax parsing
+.15 Fixed Help Category comma syntax parsing
+.14 Fixed BP comma syntax parsing
+.13 Fixed BSAVE comma syntax parsing
 	BSAVE ["Filename"], addr, len 
-.12 Fixed BLOAD syntax parsing
+.12 Fixed BLOAD comma syntax parsing
 	BLOAD ["Filename"], addr[, len] 
 .11 Fixed Go syntax parsing
 	G StopAddress [SkipAddress,Length]
