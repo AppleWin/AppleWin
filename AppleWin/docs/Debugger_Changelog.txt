@@ -1,71 +1,110 @@
 /*
+.7 Extended: command Bookmark List (BML)
+	Also displays maximum bookmarks if no current bookmarks are set.
+.6 Extended: command Breakpoint List (BL)
+	Also displays maximum breakpoints if no current breakpoints are set.
+.5 Extended: command Watch Add (W), and Watch List (WL)
+	Also displays maximum watchpoints if no current watchpoints are set.
+.4 Fixed: memory dump no longer overwrites icons when dumping SY6522 or AY8910
+	MA1 SY
+	MA1 AY
+.3 Fixed: Target display bug
+	_6502_GetTargets() Indirect (Zeropage) Indexed, Y not clamping pointer.
+	F7
+	DISASM POINTER 1
+	R PC FAC7
+	FE:55
+	R Y FF
+.2 Added: new command: DISASM POINTER [0 | 1]
+	Toggles the display of the instruction's target pointer values on / off in the info panel.
+	The default is now off, since the main disasm window shows target values for indirect addressing modes.
+.1 Added: new command: CONFIG STACK #
+	To set the number of lines displayed on the stack.
+	Max value is 8.
+.0 Rearranged/Reorganized info panel to allow full width console
+	- Regs are now listed at the top of the window
+	- Breakpoint title has been removed
+	- Watch title has been removed
+	- Target now shares space with the stack display
+	- Memory Dump 2 is now only 2 lines
+2.5.6.x
 
-2.5.4.x
-.15 Fixed Help Category comma syntax parsing
-.14 Fixed BP comma syntax parsing
-.13 Fixed BSAVE comma syntax parsing
+.4 Added: Help Categories: BOOKMARKS, HELP, OUTPUT
+.3 Re-organized output commands into seperate category.
+	ECHO, CALC, PRINT, PRINTF
+.2 Added: Bookmark commands
+	BM
+	BMA # address   // Bookmark add
+	BMC * | # [, #] // Bookmark clear
+.2 Added: new console output commands: PRINT, PRINTF
+.1 Fixed: '*' operator being treated as operator if only argument
+2.5.5.0 Added multiplication operator: '*'
+
+.15 Fixed: Help Category comma syntax parsing
+.14 Fixed: BP comma syntax parsing
+.13 Fixed: BSAVE comma syntax parsing. Comma after filename is mandatory now.
 	BSAVE ["Filename"], addr, len 
-.12 Fixed BLOAD comma syntax parsing
+.12 Fixed: BLOAD comma syntax parsing. Comma after filename is mandatory now.
 	BLOAD ["Filename"], addr[, len] 
-.11 Fixed Go syntax parsing
+.11 Fixed: Go syntax parsing
 	G StopAddress [SkipAddress,Length]
-.10 Changed internal parsing of comma operator.
+.10 Changed: internal parsing of comma operator.
 	It is now left in the command arguments.
-.9 Fixed modifier keys (Shift,Ctrl,Alt) not being updated when mouse scrolling.
+.9 Fixed: modifier keys (Shift,Ctrl,Alt) not being updated when mouse scrolling.
 .8 Changed scrolling page up & down to not scroll as far.
-.7 Fixed scroll up bug, introduced with new scroll up code
+.7 Fixed: scroll up bug, introduced with new scroll up code
    R PC FBB4
    up arrow
-.6 Changed scrolling page up & down, to keep better sync
+.6 Fixed: scrolling page up & down, to keep better sync
 	U F700
 	pagedown
 	pageup
-.5 Fixed scrolling page up & down bug, loosing sync of disassembly lines
+.5 Fixed: scrolling page up & down bug, loosing sync of disassembly lines
 	U F500
 	pagedown
 	pageup
 	F500...F526 -> F523 (should be F526, +20 lines)
-.4 Fixed scroll down bug, loosing sync of "top" disassembly
+.4 Fixed: scroll down bug, loosing sync of "top" disassembly
     U F70F
     down arrow
-.3 Fixed scroll up bug, loosing sync on disassembly by skipping a mnemonic line:
+.3 Fixed: scroll up bug, loosing sync on disassembly by skipping a mnemonic line:
    i.e.
     U FA44 (FA56)
 	up arrow
-.2 Added Ctrl-# to jump to address
-.1 Added Alt-# to set bookmark at address
-.0 Added mouse wheel scrolling in debugger
+.2 Added: Ctrl-# to jump to address
+.1 Added: Alt-# to set bookmark at address
+.0 Added: mouse wheel scrolling in debugger
 2.5.4.x
 
 .16 Swapped -> and Alt ->
    -> Follow Target at Cursor
    Alt -> Jump Cursor to PC
-.15 Added Alt -> to follow target at cursor
-.14 Fixed BLOAD/BSAVE to update console.
-.13 changed BLOAD/BSAVE to use more traditional order of arguments:
+.15 Added: Alt -> to follow target at cursor
+.14 Fixed: BLOAD/BSAVE to update console.
+.13 Changed: BLOAD/BSAVE to use more traditional order of arguments:
     The comma after the filename must be left out for the time being.
 	BSAVE "Filename" address,length
 	BLOAD "Filename" address
-.12 Fixed BPA to set breakpoints if no args
-.11 Cleaned up HELP BP
-.10 Cleaned up HELP BREAKPOINTS
-.9 Cleaned up HELP DISASM
-.8 added DISASM to print current states
-.7 added DISASM TARGET [#]
-.6 added BLOAD addr[,len] "Filename"
-.5 added BSAVE addr,len "Filename"
-.4 added HELP DISASM
-.3 added DISASM [BRANCH | COLON | OPCODE | SPACES] #
-.2 fixed HELP CONFIG not working
+.12 Fixed: BPA to set breakpoints if no args
+.11 Fixed: Cleaned up HELP BP
+.10 Fixed: Cleaned up HELP BREAKPOINTS
+.9 Fixed: Cleaned up HELP DISASM
+.8 Added: DISASM to print current states
+.7 Added: DISASM TARGET [#]
+.6 Added: BLOAD addr[,len] "Filename"
+.5 Added: BSAVE addr,len "Filename"
+.4 Added: HELP DISASM
+.3 Added: DISASM [BRANCH | COLON | OPCODE | SPACES] #
+.2 Fixed: HELP CONFIG not working
 .1 Linards put undocumented mnemonics in lowercase
 2.5.3.x
 
-3.0 Ctrl-V (paste) now works.
-2.0 BRKOP ## support
-2.5.1.0 BRK ON|OFF support
+3.0 Added: Ctrl-V (paste) now works.
+2.0 Added: BRKOP ## support
+2.5.1.0 Added: BRK ON|OFF support
 
-.23 Moved columns of disasm for instructions, and target values over one char left, to leave whitespace past the target 'char' on the end
-.22 Disasm window now shows target values for indirect, and indexed addressing modes.
+.23 Fixed: Moved columns of disasm for instructions, and target values over one char left, to leave whitespace past the target 'char' on the end
+.22 Added: Disasm window now shows target values for indirect, and indexed addressing modes.
     i.e.
 0:34 12 00 00 AA 99
 D0:16 03
@@ -88,44 +127,44 @@ R Y 2
 31F:6C 02 00 // JMP ($0002) = ($0000) -> 1234
 
 .21 Fixed: Disasm display of "Zeropage, X" and "Zeropage, Y" targets weren't wrapping on the zero-page.
-.20 Single quoted chars in search are treated as opposite high-bit.
+.20 Added: Single quoted chars in search are treated as opposite high-bit.
     i.e. S D000,FFFF "NEX" 'T' searches for NEXT, with the 'T' having the high-bit set.
     NEW: S search text or hex
     NEW: SA search ASCII text (single quote refers to Apple Text)
     NEW: ST search Apple text (single quote refers to ASCII text)
-.19 Search Results can now be (de) referenced via @
-.18 New operator @
+.19 Added: Search Results can now be (de) referenced via @
+.18 Added: new operator '@'
 
 .17 Fixed bug in _GetStartEnd(). i.e. D000,FFFF -> D000,CFFF (nothing searched!)
 .16 Added: addr:byte [byte]
 .15
-.14 Fixed Parses not to cook the args, until right before eating them
-.13 Fixed script to not append filename extension
-.12 Fixed command // to be comment
+.14 Fixed: Parses not to cook the args, until right before eating them
+.13 Fixed: script to not append filename extension
+.12 Fixed: command // to be comment
 .11 Console sometimes wouldn't draw due to g_bDebuggerViewingAppleOutput being still incorrectly set to true
 .10 Added: double forward slash on command line now ignores rest of command (same as C++ comment)
 .9 Added: Legacy Apple "Monitor" Commands in ExecuteCommand()
 	####G  (JMP $Address)
 	####L  (Unassemble)
-.8 Fixed console input length not updated from script line length in CmdConfigRun()
-.7 Fixed script read hang in GetLinePointers()
-.6 Fixed Assembler storing one too many bytes in AssemblerPokeAddress()
-.5 Fixed Assembler not parsing target address in AssemblerGetArgs()
+.8 Fixed: console input length not updated from script line length in CmdConfigRun()
+.7 Fixed: script read hang in GetLinePointers()
+.6 Fixed: Assembler storing one too many bytes in AssemblerPokeAddress()
+.5 Fixed: Assembler not parsing target address in AssemblerGetArgs()
 	A 40C7
 	 BRA $40D7
-.4 Fixed Assembler hang in AssemblerProcessDelayedSymols()
+.4 Fixed: Assembler hang in AssemblerProcessDelayedSymols()
 	A 40C7
 	 BRA $40D7
-.3 Fixed BPM to break ON the trigger, not after
+.3 Fixed: BPM to break ON the trigger, not after
 	Cleaned up Breakpoint code
-.2 Fixed BP address[,Length] to re-direct to BPX
-.1 Search Hex
+.2 Fixed: BP address[,Length] to re-direct to BPX
+.1 Added: Search Hex
 	SH Address,Len Byte [Byte ..]
 	Wildcard support
 	i.e.
 		SH FA00,FF 20 ? ? 20
-.0 DISK # PROTECT [0 | 1]
-.0 DISK # EJECT
+.0 Added: DISK # PROTECT [0 | 1]
+.0 Added: DISK # EJECT
 2.5 split Debugger files
 
 .21 Changed: Branch indicator now a little bigger +3 in DebugInitialize() (easier to read), indented ^,V to make the < stand out
