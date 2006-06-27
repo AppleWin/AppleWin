@@ -18,9 +18,8 @@
 .2 Added: new command: DISASM POINTER [0 | 1]
 	Toggles the display of the instruction's target pointer values on / off in the info panel.
 	The default is now off, since the main disasm window shows target values for indirect addressing modes.
-.1 Added: new command: CONFIG STACK #
-	To set the number of lines displayed on the stack.
-	Max value is 8.
+.1 Added: Increased breakpoints to 15, Watches to 6, Zeropage pointers to 6.
+   Fixed: Display only active breakpoints.
 .0 Rearranged/Reorganized info panel to allow full width console
 	- Regs are now listed at the top of the window
 	- Breakpoint title has been removed
