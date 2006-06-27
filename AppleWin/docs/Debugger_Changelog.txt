@@ -1,6 +1,14 @@
 /*
 
 2.5.4.x
+.13 Fixed BSAVE syntax parsing
+	BSAVE ["Filename"], addr, len 
+.12 Fixed BLOAD syntax parsing
+	BLOAD ["Filename"], addr[, len] 
+.11 Fixed Go syntax parsing
+	G StopAddress [SkipAddress,Length]
+.10 Changed internal parsing of comma operator.
+	It is now left in the command arguments.
 .9 Fixed modifier keys (Shift,Ctrl,Alt) not being updated when mouse scrolling.
 .8 Changed scrolling page up & down to not scroll as far.
 .7 Fixed scroll up bug, introduced with new scroll up code
