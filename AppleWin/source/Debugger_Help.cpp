@@ -230,7 +230,16 @@ Update_t CmdHelpSpecific (int nArgs)
 		nArgs = nNewArgs;
 		for (iArg = 1; iArg <= nArgs; iArg++ )
 		{
+#if DEBUG_VAL_2
 			g_aArgs[ iArg ].nVal2 = iCmdBegin + iArg - 1;
+#endif
+			// insert: ,#
+			_Args_Insert( iArg, nArgs, 2 );
+			g_aArgs[ iArg + 1 ].eToken = TOKEN_COMMA;
+			g_aArgs[ iArg + 2 ].nValue = iCmdBegin + iArg - 1;
+
+			nArgs += 2;
+			iArg  += 2;
 		}
 	}
 
@@ -243,7 +252,14 @@ Update_t CmdHelpSpecific (int nArgs)
 
 		if (bCategory)
 		{
+			if (g_aArgs[ iArg + 1 ].eToken == TOKEN_COMMA)
+			{
+				if ((iArg + 2) <= nArgs)
+					iCommand = g_aArgs[ iArg + 2 ].nValue;
+			}
+#if DEBUG_VAL_2
 			iCommand = g_aArgs[iArg].nVal2;
+#endif
 			nFound = 1;
 		}
 
@@ -263,7 +279,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			continue;
 
 		if ((nArgs == 1) && (! nFound))
-			iCommand = g_aArgs[iArg].nVal1;
+			iCommand = g_aArgs[iArg].nValue;
 
 		Command_t *pCommand = & g_aCommands[ iCommand ];
 
@@ -379,13 +395,16 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( TEXT("i.e. #F (if you don't want flags val)"  ) );
 			break;
 		case CMD_GO:
-			ConsoleBufferPush( TEXT(" Usage: [address | symbol [Skip,End]]") );
-			ConsoleBufferPush( TEXT(" Skip: Start address to skip stepping" ) );
-			ConsoleBufferPush( TEXT(" End : End address to skip stepping" ) );
-			ConsoleBufferPush( TEXT("  If the Program Counter is outside the" ) );
-			ConsoleBufferPush( TEXT(" skip range, resumes single-stepping." ) );
+			ConsoleBufferPush( TEXT(" Usage: address | symbol [Skip,Length]]") );
+			ConsoleBufferPush( TEXT("  addres | symbol [Start:End]") );
+			ConsoleBufferPush( TEXT(" Skip  : Start address to skip stepping" ) );
+			ConsoleBufferPush( TEXT(" Length: Range of bytes past start address to skip stepping" ) );
+			ConsoleBufferPush( TEXT(" End   : Inclusive end address to skip stepping" ) );
+			ConsoleBufferPush( TEXT("  If the Program Counter is outside the skip range, resumes single-stepping." ) );
 			ConsoleBufferPush( TEXT("  Can be used to skip ROM/OS/user code." ));
-			ConsoleBufferPush( TEXT(" i.e.  G C600 F000,FFFF" ) );
+			ConsoleBufferPush( TEXT(" Examples:" ) );
+			ConsoleBufferPush( TEXT("  G C600 FA00,600" ) );
+			ConsoleBufferPush( TEXT("  G C600 F000:FFFF" ) );
 			break;
 		case CMD_NOP:
 			ConsoleBufferPush( TEXT("  Puts a NOP opcode at current instruction") );
@@ -616,17 +635,22 @@ Update_t CmdHelpSpecific (int nArgs)
 
 		case CMD_MEMORY_LOAD:
 			// BLOAD "Filename" addr[,len] 
-			ConsoleBufferPush( TEXT(" Usage: [\"Filename\"] address[,length]" ) );
-			ConsoleBufferPush( TEXT("  If no filename specified, defaults"    ) );
-			ConsoleBufferPush( TEXT("  to the last filename (if possible)"    ) );
+			ConsoleBufferPush( TEXT(" Usage: [\"Filename\"],address[,length]" ) );
+			ConsoleBufferPush( TEXT("  If no filename specified, defaults to the last filename (if possible)" ) );
+			ConsoleBufferPush( TEXT("  Examples:" ) );
+			ConsoleBufferPush( TEXT("   BSAVE \"test\",FF00,100" ) );
+			ConsoleBufferPush( TEXT("   BLOAD \"test\",2000" ) );
 			break;
 
 		case CMD_MEMORY_SAVE:
 			// BSAVE ["Filename"] addr,len 
-			ConsoleBufferPush( TEXT(" Usage: [\"Filename\"] address,length"   ) );
-			ConsoleBufferPush( TEXT("  If no filename specified, defaults to" ) );
+			ConsoleBufferPush( TEXT(" Usage: [\"Filename\"],address[,length]"   ) );
+			ConsoleBufferPush( TEXT("  If no filename specified, defaults to:" ) );
 			ConsoleBufferPush( TEXT("  '####.####.bin' with the form"         ) );
 			ConsoleBufferPush( TEXT("  {address}.{length}.bin"                ) );
+			ConsoleBufferPush( TEXT("  Examples:" ) );
+			ConsoleBufferPush( TEXT("   BSAVE \"test\",FF00,100" ) );
+			ConsoleBufferPush( TEXT("   BLOAD \"test\",2000" ) );
 			break;
 
 	// Symbols
