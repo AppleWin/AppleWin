@@ -6540,15 +6540,16 @@ Update_t _CmdWindowViewFull ( int iNewWindow )
 void WindowUpdateConsoleDisplayedSize()
 {
 	g_nConsoleDisplayHeight = MIN_DISPLAY_CONSOLE_LINES;
-	g_nConsoleDisplayWidth = (CONSOLE_WIDTH / 2) + 8;
+//	g_nConsoleDisplayWidth = (CONSOLE_WIDTH / 2) + 8;
 //	g_bConsoleFullWidth = false;
 
 	if (g_iWindowThis == WINDOW_CONSOLE)
 	{
 		g_nConsoleDisplayHeight = MAX_DISPLAY_CONSOLE_LINES;
-		g_nConsoleDisplayWidth = CONSOLE_WIDTH - 1;
-//		g_bConsoleFullWidth = true;
 	}
+	
+	g_nConsoleDisplayWidth = CONSOLE_WIDTH - 1;
+	g_bConsoleFullWidth = true;
 }
 
 //===========================================================================
