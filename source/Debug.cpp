@@ -4086,7 +4086,13 @@ Update_t CmdMemoryLoad (int nArgs)
 			}
 			else
 			{
-				ConsoleBufferPush( TEXT( "Error: Bad filename." ) );
+				ConsoleBufferPush( TEXT( "ERROR: Bad filename" ) );
+				TCHAR sPath[ MAX_PATH + 8 ] = "Path: ";
+				_tcscat( sPath, g_sCurrentDir );
+				ConsoleBufferPush( sPath );
+				TCHAR sFile[ MAX_PATH + 8 ] = "File: ";
+				_tcscat( sFile, g_sMemoryLoadSaveFileName );
+				ConsoleBufferPush( sFile );
 			}
 			
 			delete [] pMemory;
@@ -4199,7 +4205,6 @@ Update_t CmdMemorySave (int nArgs)
 					{
 						*pDst++ = *pSrc++;
 					}
-
 
 					FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
 					if (hFile)
