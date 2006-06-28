@@ -505,13 +505,13 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 
 		case CMD_CONFIG_COLOR:
-			ConsoleBufferPush( TEXT(" Usage: [{#} | {# RR GG BB}]" ) );
+			ConsoleBufferPush( TEXT(" Usage: [<#> | <# RR GG BB>]" ) );
 			ConsoleBufferPush( TEXT("  0 params: switch to 'color' scheme" ) );
 			ConsoleBufferPush( TEXT("  1 param : dumps R G B for scheme 'color'") );
 			ConsoleBufferPush( TEXT("  4 params: sets  R G B for scheme 'color'" ) );
 			break;
 		case CMD_CONFIG_MONOCHROME:
-			ConsoleBufferPush( TEXT(" Usage: [{#} | {# RR GG BB}]" ) );
+			ConsoleBufferPush( TEXT(" Usage: [<#> | <# RR GG BB>]" ) );
 			ConsoleBufferPush( TEXT("  0 params: switch to 'monochrome' scheme" ) );
 			ConsoleBufferPush( TEXT("  1 param : dumps R G B for scheme 'monochrome'") );
 			ConsoleBufferPush( TEXT("  4 params: sets  R G B for scheme 'monochrome'" ) );
@@ -588,15 +588,15 @@ Update_t CmdHelpSpecific (int nArgs)
 
 	// Memory
 		case CMD_MEMORY_ENTER_BYTE:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol} ## [## ... ##]") );
+			ConsoleBufferPush( TEXT(" Usage: <address | symbol> ## [## ... ##]") );
 			ConsoleBufferPush( TEXT("  Sets memory to the specified 8-Bit Values (bytes)" ) );
 			break;
 		case CMD_MEMORY_ENTER_WORD:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol} #### [#### ... ####]") );
+			ConsoleBufferPush( TEXT(" Usage: <address | symbol> #### [#### ... ####]") );
 			ConsoleBufferPush( TEXT("  Sets memory to the specified 16-Bit Values (words)" ) );
 			break;
 		case CMD_MEMORY_FILL:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol} {address | symbol} ##" ) ); 
+			ConsoleBufferPush( TEXT(" Usage: <address | symbol> <address | symbol> ##" ) ); 
 			ConsoleBufferPush( TEXT("  Fills the memory range with the specified byte" ) );
 			ConsoleBufferPush( TEXT("  Can't fill IO address $C0xx" ) );
 			break;
@@ -604,7 +604,7 @@ Update_t CmdHelpSpecific (int nArgs)
 //		case CMD_MEM_MINI_DUMP_ASC_2:
 		case CMD_MEM_MINI_DUMP_ASCII_1:
 		case CMD_MEM_MINI_DUMP_ASCII_2:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol}") ); 
+			ConsoleBufferPush( TEXT(" Usage: <address | symbol>") ); 
 			ConsoleBufferPush( TEXT("  Displays ASCII text in the Mini-Memory area") ); 
 			ConsoleBufferPush( TEXT("  ASCII control chars are hilighted") );
 			ConsoleBufferPush( TEXT("  ASCII hi-bit chars are normal") ); 
@@ -613,14 +613,14 @@ Update_t CmdHelpSpecific (int nArgs)
 //		case CMD_MEM_MINI_DUMP_TXT_LO_2:
 		case CMD_MEM_MINI_DUMP_APPLE_1:
 		case CMD_MEM_MINI_DUMP_APPLE_2:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol}") ); 
+			ConsoleBufferPush( TEXT(" Usage: <address | symbol>") ); 
 			ConsoleBufferPush( TEXT("  Displays APPLE text in the Mini-Memory area") ); 
 			ConsoleBufferPush( TEXT("  APPLE control chars are inverse") );
 			ConsoleBufferPush( TEXT("  APPLE hi-bit chars are normal") ); 
 			break;
 //		case CMD_MEM_MINI_DUMP_TXT_HI_1:
 //		case CMD_MEM_MINI_DUMP_TXT_HI_2:
-//			ConsoleBufferPush( TEXT(" Usage: {address | symbol}") ); 
+//			ConsoleBufferPush( TEXT(" Usage: <address | symbol>") ); 
 //			ConsoleBufferPush( TEXT("  Displays text in the Memory Mini-Dump area") ); 
 //			ConsoleBufferPush( TEXT("  ASCII chars with the hi-bit set, is inverse") ); 
 			break;
@@ -638,9 +638,8 @@ Update_t CmdHelpSpecific (int nArgs)
 			if (iCommand == CMD_MEMORY_SAVE)
 			{			
 				ConsoleBufferPush( TEXT(" Usage: [\"Filename\"],address[,length]"   ) );
-				ConsoleBufferPush( TEXT("  If no filename specified, defaults to:" ) );
-				ConsoleBufferPush( TEXT("  '####.####.bin' with the form"         ) );
-				ConsoleBufferPush( TEXT("  {address}.{length}.bin"                ) );
+				ConsoleBufferPush( TEXT("  If no filename specified, defaults to: '####.####.bin'" ) );
+				ConsoleBufferPush( TEXT("  Where the form is <address>.<length>.bin"               ) );
 			}
 			
 			ConsoleBufferPush( TEXT("  Examples:" ) );
@@ -664,17 +663,20 @@ Update_t CmdHelpSpecific (int nArgs)
 //			ConsoleBufferPush( TEXT("  Echo the string to the console" ) );
 			break;
 		case CMD_OUTPUT_PRINT: 
-			ConsoleBufferPush( TEXT(" Usage: <string | expression> [, string | expression" ) );
+			ConsoleBufferPush( TEXT(" Usage: <string | expression> [, string | expression]*" ) );
 			ConsoleBufferPush( TEXT(" Examples:") );
 			wsprintf( sText,   TEXT("  %s \"A:\",A,\" X:\",X"), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  %s A,\" \",X,\" \",Y" ), pCommand->m_sName ); ConsoleBufferPush( sText );
 			wsprintf( sText,   TEXT("  %s PC"                ), pCommand->m_sName ); ConsoleBufferPush( sText );
 			break;
 		case CMD_OUTPUT_PRINTF:
-			ConsoleBufferPush( TEXT(" Usage: \"<Text>\" | expression [,]" ) );
-			ConsoleBufferPush( TEXT("  Text may contain formatting flags: %d %x %z" ) );
-			ConsoleBufferPush( TEXT("    %d DEC, %x HEX, %z BIN" ) );
+			ConsoleBufferPush( TEXT(" Usage: <string> [, expression, ...]" ) );
+			ConsoleBufferPush( TEXT("  The string may contain c-style printf formatting flags: %d %x %z %c" ) );
+			ConsoleBufferPush( TEXT("  Where: %d decimal, %x hex, %z binary, %c char, %% percent" ) );
 			ConsoleBufferPush( TEXT(" Examples:") );
-			ConsoleBufferPush( TEXT("  PRINTF \"A Dec: %d\",A,\" Hex: %x\",A,\" Bin: %z\",A" ) );
+			wsprintf( sText  , TEXT("  %s \"Dec: %%d  Hex: %%x  Bin: %%z  Char: %c\",A,A,A,A" ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  %s \"%%x %%x %%x\",A,X,Y"                              ), pCommand->m_sName ); ConsoleBufferPush( sText );
+
 			break;
 	// Symbols
 		case CMD_SYMBOLS_MAIN:
@@ -697,7 +699,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 	// Watches
 		case CMD_WATCH_ADD:
-			ConsoleBufferPush( TEXT(" Usage: {address | symbol}" ) );
+			ConsoleBufferPush( TEXT(" Usage: <address | symbol>" ) );
 			ConsoleBufferPush( TEXT("  Adds the specified memory location to the watch window." ) );
 			break;
 	// Window

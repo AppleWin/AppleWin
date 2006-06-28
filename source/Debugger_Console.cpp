@@ -96,8 +96,10 @@ bool ConsoleBufferPush( const TCHAR * pString ) // LPCSTR
 {
 	if (g_nConsoleBuffer < CONSOLE_HEIGHT)
 	{
+		const int nMaxWidth = CONSOLE_WIDTH-1; // g_nConsoleDisplayWidth;
+
 		int nLen = _tcslen( pString );
-		if (nLen < g_nConsoleDisplayWidth)
+		if (nLen <= nMaxWidth)
 		{
 			_tcscpy( g_aConsoleBuffer[ g_nConsoleBuffer ], pString );
 			g_nConsoleBuffer++;
@@ -106,19 +108,18 @@ bool ConsoleBufferPush( const TCHAR * pString ) // LPCSTR
 		else
 		{
 #if _DEBUG
-//			TCHAR sText[ CONSOLE_WIDTH * 2 ];
-//			sprintf( sText, "ConsoleBufferPush(pString) > g_nConsoleDisplayWidth: %d", g_nConsoleDisplayWidth );
-//			MessageBox( framewindow, sText, "Warning", MB_OK );
+			TCHAR sText[ CONSOLE_WIDTH * 2 ];
+			sprintf( sText, "String length > Console display width\n%d > %d", nLen, g_nConsoleDisplayWidth );
+			MessageBox( g_hFrameWindow, sText, "ConsoleBufferPush(pString)", MB_OK );
 #endif
+
 			// push multiple lines
-			while ((nLen >= g_nConsoleDisplayWidth) && (g_nConsoleBuffer < CONSOLE_HEIGHT))
+			while ((nLen > 0) && (g_nConsoleBuffer < CONSOLE_HEIGHT))
 			{
-//				_tcsncpy( g_aConsoleBuffer[ g_nConsoleBuffer ], pString, (g_nConsoleDisplayWidth-1) );
-//				pString += g_nConsoleDisplayWidth;
-				_tcsncpy( g_aConsoleBuffer[ g_nConsoleBuffer ], pString, (CONSOLE_WIDTH-1) );
-				pString += (CONSOLE_WIDTH-1);
+				_tcsncpy( g_aConsoleBuffer[ g_nConsoleBuffer ], pString, nMaxWidth );
+				pString += nMaxWidth;
 				g_nConsoleBuffer++;
-				nLen = _tcslen( pString );
+				nLen -= nMaxWidth;
 			}
 			return true;
 		}
