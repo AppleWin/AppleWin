@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,6,7);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,6,19);
 
 
 // Public _________________________________________________________________________________________
@@ -4241,17 +4241,33 @@ Update_t CmdMemorySave (int nArgs)
 //===========================================================================
 bool _GetStartEnd( WORD & nAddressStart_, WORD & nAddressEnd_, const int iArg )
 {
-	nAddressStart_ = g_aArgs[ iArg ].nValue; 
+	nAddressStart_ = (unsigned) g_aArgs[ iArg ].nValue; 
+	if (nAddressStart_ > _6502_MEM_END)
+		nAddressStart_ = _6502_MEM_END;
+
+	nAddressEnd_ = 0;
 	int nEnd = 0;
 
 	if (g_aArgs[ iArg + 1 ].eToken == TOKEN_COMMA)
 		nEnd = nAddressStart_ + g_aArgs[ iArg + 2 ].nValue;
+	else
+	if (g_aArgs[ iArg + 1 ].eToken == TOKEN_COLON)
+		nEnd = g_aArgs[ iArg + 2 ].nValue;
+	else
+		return false;
 
 	// .17 Bug Fix: D000,FFFF -> D000,CFFF (nothing searched!)
 	if (nEnd > _6502_MEM_END)
 		nEnd = _6502_MEM_END;
 
 	nAddressEnd_  = nEnd;
+
+	if (nAddressStart_ > nAddressEnd_)
+	{
+		nAddressEnd_   = nAddressStart_;
+		nAddressStart_ = nEnd;
+	}
+	
 	return true;
 }
 
@@ -4264,6 +4280,7 @@ int _SearchMemoryFind(
 {
 	int   nFound = 0;
 	g_vMemorySearchResults.erase( g_vMemorySearchResults.begin(), g_vMemorySearchResults.end() );
+	g_vMemorySearchResults.push_back( NO_6502_TARGET );
 
 	WORD nAddress;
 	for( nAddress = nAddressStart; nAddress < nAddressEnd; nAddress++ )
@@ -4362,17 +4379,17 @@ int _SearchMemoryFind(
 //===========================================================================
 Update_t _SearchMemoryDisplay()
 {
-	int nFound = g_vMemorySearchResults.size();
+	int nFound = g_vMemorySearchResults.size() - 1;
 
 	TCHAR sMatches[ CONSOLE_WIDTH ] = TEXT("");
 	int   nThisLineLen = 0; // string length of matches for this line, for word-wrap
 
-	if (nFound)
+	if (nFound > 0)
 	{
 		TCHAR sText[ CONSOLE_WIDTH ];
 
-		int iFound = 0;
-		while (iFound < nFound)
+		int iFound = 1;
+		while (iFound <= nFound)
 		{
 			WORD nAddress = g_vMemorySearchResults.at( iFound );
 
@@ -4411,10 +4428,14 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 {
 	WORD nAddressStart;
 	WORD nAddressEnd;
-	_GetStartEnd( nAddressStart, nAddressEnd );
+
+	if (! _GetStartEnd( nAddressStart, nAddressEnd ))
+		return ConsoleDisplayError( TEXT("Error: Missing address seperator (comma or colon)" ) );
+
+	int iArgFirstByte = 4;
 
 	// S start,len #
-	int nMinLen = nArgs - 2;
+	int nMinLen = nArgs - (iArgFirstByte - 1);
 
 	bool bHaveWildCards = false;
 	int iArg;
@@ -4423,10 +4444,10 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 	MemorySearch_e       tLastType = MEM_SEARCH_BYTE_N_WILD;
 	
 	// Get search "string"
-	Arg_t *pArg = & g_aArgs[ 2 ];
+	Arg_t *pArg = & g_aArgs[ iArgFirstByte ];
 	
 	WORD nTarget;
-	for (iArg = 2; iArg <= nArgs; iArg++, pArg++ )
+	for (iArg = iArgFirstByte; iArg <= nArgs; iArg++, pArg++ )
 	{
 		MemorySearch_t ms;
 
@@ -4445,17 +4466,34 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 		{
 			TCHAR *pByte = pArg->sArg;
 
-			
 			if (pArg->bType & TYPE_QUOTED_1)
 			{
-				ms.m_iType = MEM_SEARCH_BYTE_EXACT;
-				ms.m_bFound = false;
-				ms.m_nValue = pArg->sArg[ 0 ];
+				// Convert string to hex byte(s)
+				int iChar = 0;
+				int nChars = pArg->nArgLen;
 
-				if (! bTextIsAscii) // NOTE: Single quote chars is opposite hi-bit !!!
-					ms.m_nValue &= 0x7F;
-				else
-					ms.m_nValue |= 0x80;
+				if (nChars)
+				{
+					ms.m_iType = MEM_SEARCH_BYTE_EXACT;
+					ms.m_bFound = false;
+
+					while (iChar < nChars)
+					{
+						ms.m_nValue = pArg->sArg[ iChar ];
+
+						// Ascii (Low-Bit)
+						// Apple (High-Bit)
+//						if (! bTextIsAscii) // NOTE: Single quote chars is opposite hi-bit !!!
+//							ms.m_nValue &= 0x7F;
+//						else
+							ms.m_nValue |= 0x80;
+
+						// last char is handle in common case below
+						iChar++; 
+						if (iChar < nChars)
+							vMemorySearchValues.push_back( ms );
+					}
+				}
 			}
 			else
 			if (pArg->bType & TYPE_QUOTED_2)
@@ -4469,23 +4507,21 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 					ms.m_iType = MEM_SEARCH_BYTE_EXACT;
 					ms.m_bFound = false;
 
-					nChars--; // last char is handle in common case below
 					while (iChar < nChars)
 					{
 						ms.m_nValue = pArg->sArg[ iChar ];
 
 						// Ascii (Low-Bit)
 						// Apple (High-Bit)
-						if (bTextIsAscii)
+//						if (bTextIsAscii)
 							ms.m_nValue &= 0x7F;
-						else
-							ms.m_nValue |= 0x80;
+//						else
+//							ms.m_nValue |= 0x80;
 
-						vMemorySearchValues.push_back( ms );
-						iChar++;
+						iChar++; // last char is handle in common case below
+						if (iChar < nChars) 
+							vMemorySearchValues.push_back( ms );
 					}
-
-					ms.m_nValue = pArg->sArg[ iChar ];
 				}
 			}
 			else
@@ -4549,7 +4585,8 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 //===========================================================================
 Update_t CmdMemorySearch (int nArgs)
 {
-	if (nArgs < 2)
+	// S address,length # [,#]
+	if (nArgs < 4)
 		return HelpLastCommand();
 
 	return _CmdMemorySearch( nArgs, true );
@@ -4562,7 +4599,7 @@ Update_t CmdMemorySearch (int nArgs)
 //===========================================================================
 Update_t CmdMemorySearchAscii (int nArgs)
 {
-	if (nArgs < 2)
+	if (nArgs < 4)
 		return HelpLastCommand();
 
 	return _CmdMemorySearch( nArgs, true );
@@ -4572,7 +4609,7 @@ Update_t CmdMemorySearchAscii (int nArgs)
 //===========================================================================
 Update_t CmdMemorySearchApple (int nArgs)
 {
-	if (nArgs < 2)
+	if (nArgs < 4)
 		return HelpLastCommand();
 
 	return _CmdMemorySearch( nArgs, false );
@@ -4581,7 +4618,7 @@ Update_t CmdMemorySearchApple (int nArgs)
 //===========================================================================
 Update_t CmdMemorySearchHex (int nArgs)
 {
-	if (nArgs < 2)
+	if (nArgs < 4)
 		return HelpLastCommand();
 
 	return _CmdMemorySearch( nArgs, true );
@@ -8074,7 +8111,7 @@ void DebuggerInputConsoleChar( TCHAR ch )
 
 	if ((ch >= CHAR_SPACE) && (ch <= 126)) // HACK MAGIC # 32 -> ' ', # 126 
 	{
-		if (ch == TEXT('"'))
+		if ((ch == TCHAR_QUOTE_DOUBLE) || (ch == TCHAR_QUOTE_SINGLE))
 			g_bConsoleInputQuoted = ! g_bConsoleInputQuoted;
 
 		if (!g_bConsoleInputQuoted)
@@ -8259,11 +8296,13 @@ void DebuggerProcessKey( int keycode )
 		return;
 	else if (keycode == VK_ESCAPE)
 	{
+		g_bConsoleInputQuoted = false;
 		ConsoleInputClear();
 		bUpdateDisplay |= UPDATE_CONSOLE_INPUT;
 	}
 	else if (keycode == VK_BACK)
 	{
+		// Note: Checks prev char if QUTOE - SINGLE or DOUBLE
 		if (! ConsoleInputBackSpace())
 		{
 			// CmdBeep();
