@@ -212,17 +212,23 @@ Update_t CmdHelpSpecific (int nArgs)
 			int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_FUZZY, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
 			switch( iParam )
 			{
-				case PARAM_CAT_BREAKPOINTS: iCmdBegin = CMD_BREAKPOINT      ; iCmdEnd = CMD_BREAKPOINT_SAVE    + 1; break;
-				case PARAM_CAT_CONFIG     : iCmdBegin = CMD_CONFIG_COLOR    ; iCmdEnd = CMD_CONFIG_SAVE        + 1; break;
-				case PARAM_CAT_CPU        : iCmdBegin = CMD_ASSEMBLE        ; iCmdEnd = CMD_TRACE_LINE         + 1; break;
-				case PARAM_CAT_FLAGS      : iCmdBegin = CMD_FLAG_CLEAR      ; iCmdEnd = CMD_FLAG_SET_N         + 1; break;
-				case PARAM_CAT_MEMORY     : iCmdBegin = CMD_MEMORY_COMPARE  ; iCmdEnd = CMD_MEMORY_FILL        + 1; break;
-				case PARAM_CAT_SYMBOLS    : iCmdBegin = CMD_SYMBOLS_LOOKUP  ; iCmdEnd = CMD_SYMBOLS_LIST       + 1; break;
-				case PARAM_CAT_WATCHES    : iCmdBegin = CMD_WATCH_ADD       ; iCmdEnd = CMD_WATCH_LIST         + 1; break;
-				case PARAM_CAT_WINDOW     : iCmdBegin = CMD_WINDOW          ; iCmdEnd = CMD_WINDOW_OUTPUT      + 1; break;
-				case PARAM_CAT_ZEROPAGE   : iCmdBegin = CMD_ZEROPAGE_POINTER; iCmdEnd = CMD_ZEROPAGE_POINTER_SAVE+1;break;
+				case PARAM_CAT_BOOKMARKS  : iCmdBegin = CMD_BOOKMARK_MENU   ; iCmdEnd = CMD_BOOKMARK_SAVE        ; break;
+				case PARAM_CAT_BREAKPOINTS: iCmdBegin = CMD_BREAKPOINT      ; iCmdEnd = CMD_BREAKPOINT_SAVE      ; break;
+				case PARAM_CAT_CONFIG     : iCmdBegin = CMD_CONFIG_COLOR    ; iCmdEnd = CMD_CONFIG_SAVE          ; break;
+				case PARAM_CAT_CPU        : iCmdBegin = CMD_ASSEMBLE        ; iCmdEnd = CMD_UNASSEMBLE           ; break;
+				case PARAM_CAT_FLAGS      : iCmdBegin = CMD_FLAG_CLEAR      ; iCmdEnd = CMD_FLAG_SET_N           ; break;
+				case PARAM_CAT_HELP       : iCmdBegin = CMD_HELP_LIST       ; iCmdEnd = CMD_MOTD                 ; break;
+				case PARAM_CAT_MEMORY     : iCmdBegin = CMD_MEMORY_COMPARE  ; iCmdEnd = CMD_MEMORY_FILL          ; break;
+				case PARAM_CAT_OUTPUT     : iCmdBegin = CMD_OUTPUT_CALC     ; iCmdEnd = CMD_OUTPUT_RUN           ; break;
+				case PARAM_CAT_REGISTERS  : iCmdBegin = CMD_REGISTER_SET    ; iCmdEnd = CMD_REGISTER_SET         ; break;
+				case PARAM_CAT_SYMBOLS    : iCmdBegin = CMD_SYMBOLS_LOOKUP  ; iCmdEnd = CMD_SYMBOLS_LIST         ; break;
+				case PARAM_CAT_WATCHES    : iCmdBegin = CMD_WATCH_ADD       ; iCmdEnd = CMD_WATCH_LIST           ; break;
+				case PARAM_CAT_WINDOW     : iCmdBegin = CMD_WINDOW          ; iCmdEnd = CMD_WINDOW_OUTPUT        ; break;
+				case PARAM_CAT_ZEROPAGE   : iCmdBegin = CMD_ZEROPAGE_POINTER; iCmdEnd = CMD_ZEROPAGE_POINTER_SAVE;break;
 				default: break;
 			}
+			if (iCmdEnd)
+				iCmdEnd++;
 			nNewArgs = (iCmdEnd - iCmdBegin);
 			if (nNewArgs > 0)
 				break;
@@ -294,8 +300,11 @@ Update_t CmdHelpSpecific (int nArgs)
 			int iCmd = g_aCommands[ iCommand ].iCommand; // Unaliased command
 
 			// HACK: Major kludge to display category!!!
-			if (iCmd <= CMD_TRACE_LINE)
+			if (iCmd <= CMD_UNASSEMBLE)
 				wsprintf( sCategory, "Main" );
+			else
+			if (iCmd <= CMD_BOOKMARK_SAVE)
+				wsprintf( sCategory, "Bookmark" );
 			else
 			if (iCmd <= CMD_BREAKPOINT_SAVE)
 				wsprintf( sCategory, "Breakpoint" );
@@ -317,6 +326,9 @@ Update_t CmdHelpSpecific (int nArgs)
 			else
 			if (iCmd <= CMD_MEMORY_FILL)
 				wsprintf( sCategory, "Memory" );
+			else
+			if (iCmd <= CMD_OUTPUT_RUN)
+				wsprintf( sCategory, "Output" );
 			else
 			if (iCmd <= CMD_REGISTER_SET)
 				wsprintf( sCategory, "Registers" );
@@ -448,6 +460,24 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( TEXT("  Traces into current instruction") );
 			ConsoleBufferPush( TEXT("  with cycle counting." ) );
 			break;
+	// Bookmarks
+		case CMD_BOOKMARK_MENU:
+		case CMD_BOOKMARK_ADD:
+			ConsoleBufferPush( TEXT(" Usage: # <address | symbol>") );
+			ConsoleBufferPush( TEXT("  Add specified bookmark.") );
+			wsprintf( sText,  TEXT("  i.e. %s 1 RESET" ), pCommand->m_sName );
+			ConsoleBufferPush( sText );
+			break;
+		case CMD_BOOKMARK_CLEAR:
+			ConsoleBufferPush( TEXT(" Usage: [# | *]") );
+			ConsoleBufferPush( TEXT("  Clears specified bookmark, or all.") );
+			wsprintf( sText,  TEXT("  i.e. %s 1" ), pCommand->m_sName );
+			ConsoleBufferPush( sText );
+			break;
+		case CMD_BOOKMARK_LIST:
+		case CMD_BOOKMARK_LOAD:
+		case CMD_BOOKMARK_SAVE:
+			break;
 	// Breakpoints
 		case CMD_BREAKPOINT:
 			wsprintf( sText, " Maximum breakpoints: %d", MAX_BREAKPOINTS );
@@ -523,7 +553,7 @@ Update_t CmdHelpSpecific (int nArgs)
 
 			wsprintf( sText, TEXT(" Usage: [%s | %s | %s | %s | %s]")
 				, g_aParameters[ PARAM_CONFIG_BRANCH ].m_sName
-                , g_aParameters[ PARAM_CONFIG_COLON  ].m_sName
+				, g_aParameters[ PARAM_CONFIG_COLON  ].m_sName
 				, g_aParameters[ PARAM_CONFIG_OPCODE ].m_sName
 				, g_aParameters[ PARAM_CONFIG_SPACES ].m_sName
 				, g_aParameters[ PARAM_CONFIG_TARGET ].m_sName );
@@ -642,9 +672,54 @@ Update_t CmdHelpSpecific (int nArgs)
 				ConsoleBufferPush( TEXT("  Where the form is <address>.<length>.bin"               ) );
 			}
 			
-			ConsoleBufferPush( TEXT("  Examples:" ) );
+			ConsoleBufferPush( TEXT(" Examples:" ) );
 			ConsoleBufferPush( TEXT("   BSAVE \"test\",FF00,100" ) );
 			ConsoleBufferPush( TEXT("   BLOAD \"test\",2000" ) );
+			break;
+		case CMD_MEMORY_SEARCH:
+			ConsoleBufferPush( TEXT(" Usage: range <\"ASCII text\" | 'apple text' | hex>" ) );
+			ConsoleBufferPush( TEXT("  Where <range> is of the form:" ) );
+			ConsoleBufferPush( TEXT("   address,length" ) );
+			ConsoleBufferPush( TEXT("   start : end" ) );
+			ConsoleBufferPush( TEXT("  Where text is of the form:") );
+			ConsoleBufferPush( TEXT("   \"...\" designate ASCII text") );
+			ConsoleBufferPush( TEXT("   '...' designate Apple High-Bit text") );
+			ConsoleBufferPush( TEXT(" Examples: (Text)" ) );
+			wsprintf( sText,   TEXT("  %s F000,1000 'Apple'   // search High-Bit"  ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  MT1 @2"                                     ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  %s D000:FFFF \"FLAS\"    // search ASCII "  ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  MA1 @1"                                     ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  %s D000,4000 \"EN\" 'D'  // Mixed text"     ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  MT1 @1"                                     ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  %s D000,4000 'Apple' ? ']'"                 ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			break;
+		case CMD_MEMORY_SEARCH_HEX:
+			ConsoleBufferPush( TEXT(" Usage: range [text | byte1 [byte2 ...]]" ) );
+			ConsoleBufferPush( TEXT("  Where <range> is of the form:" ) );
+			ConsoleBufferPush( TEXT("   address , length" ) );
+			ConsoleBufferPush( TEXT("   address : end"    ) );
+			ConsoleBufferPush( TEXT("  Where <byte> is of the form:") );
+			ConsoleBufferPush( TEXT("   ##   match specific byte") );
+			ConsoleBufferPush( TEXT("   #### match specific 16-bit value") );
+			ConsoleBufferPush( TEXT("   ?    match any byte") );
+			ConsoleBufferPush( TEXT("   ?#   match any high nibble, match low nibble to specific number") );
+			ConsoleBufferPush( TEXT("   #?   match specific high nibble, match any low nibble") );
+			ConsoleBufferPush( TEXT(" Examples: (Hex)" ) );
+			wsprintf( sText,   TEXT("  %s F000,1000 AD ? C0" ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  U @1"                 ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  %s F000,1000 ?1 C0"   ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  %s F000,1000 5? C0"   ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  %s F000,1000 10 C?"   ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  U @2 - 1"             ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  %s F000:FFFF C030"    ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			wsprintf( sText,   TEXT("  U @1 - 1"             ), pCommand->m_sName ); ConsoleBufferPush( sText );
+			break;
+		case CMD_MEMORY_SEARCH_APPLE:
+			wsprintf( sText,   TEXT("Deprecated.  Use: %s" ), g_aCommands[ CMD_MEMORY_SEARCH ].m_sName ); ConsoleBufferPush( sText );
+
+			break;
+		case CMD_MEMORY_SEARCH_ASCII:
+			wsprintf( sText,   TEXT("Deprecated.  Use: %s" ), g_aCommands[ CMD_MEMORY_SEARCH ].m_sName ); ConsoleBufferPush( sText );
 			break;
 	// Output
 		case CMD_OUTPUT_CALC:
