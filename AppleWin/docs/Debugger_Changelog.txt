@@ -1,4 +1,17 @@
 /*
+.19 Fixed: Backspace toggles quote state for single quotes now too.
+.18 Changed: Results of searching now start at 1, not zero.
+	i.e.
+	S F000,1000 'Apple'
+	MA1 @1
+.17 Added: HELP S
+.16 Changed: Search Text (S) now uses consistent quoting
+	"...ASCII..."
+	'...High-Bit Apple Text...'
+	Commands: Search Ascii (SA), and Search Apple Text (ST) are now deprecated.
+.15 Fixed: Search Text wasn't allowing multiple apple text chars.
+.14 Single Quoting now allows lower case input
+.13 Fixed: Escape to clear console input, didn't reset quoted flag
 .12 Changed: BLOAD failure now prints path/file it tried.
 .11 Fixed: Memory Searching not handling comma seperating address,length
 .10 Fixed: console not wrapping long lines
