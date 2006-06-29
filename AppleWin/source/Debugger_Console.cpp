@@ -205,7 +205,8 @@ bool ConsoleInputBackSpace()
 	{
 		g_nConsoleInputChars--;
 
-		if (g_pConsoleInput[ g_nConsoleInputChars ] == TEXT('"'))
+		if ((g_pConsoleInput[ g_nConsoleInputChars ] == TCHAR_QUOTE_DOUBLE) ||
+			(g_pConsoleInput[ g_nConsoleInputChars ] == TCHAR_QUOTE_SINGLE))
 			g_bConsoleInputQuoted = ! g_bConsoleInputQuoted;
 
 		g_pConsoleInput[ g_nConsoleInputChars ] = 0;
