@@ -1,4 +1,9 @@
 /*
+.12 Changed: BLOAD failure now prints path/file it tried.
+.11 Fixed: Memory Searching not handling comma seperating address,length
+.10 Fixed: console not wrapping long lines
+.9 Fixed: console resize not set to full width
+.8 Fixed: PRINTF help
 .7 Extended: command Bookmark List (BML)
 	Also displays maximum bookmarks if no current bookmarks are set.
 .6 Extended: command Breakpoint List (BL)
