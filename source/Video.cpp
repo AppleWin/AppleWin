@@ -54,6 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
    LR: Lo-Res   HR: Hi-Res   DHR: Double Hi-Res */
 
+#define FLASH_80_COL 1
 
 #define HALF_SHIFT_DITHER 0
 
@@ -119,21 +120,40 @@ enum Color_Palette_Index_e
 };
 
 
-#define  SRCOFFS_40COL    0
-#define  SRCOFFS_IIPLUS   (SRCOFFS_40COL  + 256) 
-#define  SRCOFFS_80COL    (SRCOFFS_IIPLUS + 256)
-#define  SRCOFFS_LORES    (SRCOFFS_80COL  +  128)
-#define  SRCOFFS_HIRES    (SRCOFFS_LORES  +   16)
-#define  SRCOFFS_DHIRES   (SRCOFFS_HIRES  +  512)
-#define  SRCOFFS_TOTAL    (SRCOFFS_DHIRES + 2560)
+//#define  SRCOFFS_40COL    0
+//#define  SRCOFFS_IIPLUS   (SRCOFFS_40COL  + 256) 
+//#define  SRCOFFS_80COL    (SRCOFFS_IIPLUS + 256)
+//#define  SRCOFFS_LORES    (SRCOFFS_80COL  +  128)
+//#define  SRCOFFS_HIRES    (SRCOFFS_LORES  +   16)
+//#define  SRCOFFS_DHIRES   (SRCOFFS_HIRES  +  512)
+//#define  SRCOFFS_TOTAL    (SRCOFFS_DHIRES + 2560)
 
-#define  VF_80COL         0x00000001
-#define  VF_DHIRES        0x00000002
-#define  VF_HIRES         0x00000004
-#define  VF_MASK2         0x00000008
-#define  VF_MIXED         0x00000010
-#define  VF_PAGE2         0x00000020
-#define  VF_TEXT          0x00000040
+const int SRCOFFS_40COL   = 0;
+const int SRCOFFS_IIPLUS  = (SRCOFFS_40COL  +  256);
+const int SRCOFFS_80COL   = (SRCOFFS_IIPLUS +  256);
+const int SRCOFFS_LORES   = (SRCOFFS_80COL  +  128);
+const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16);
+const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512);
+const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560);
+
+//#define  VF_80COL         0x00000001
+//#define  VF_DHIRES        0x00000002
+//#define  VF_HIRES         0x00000004
+//#define  VF_MASK2         0x00000008
+//#define  VF_MIXED         0x00000010
+//#define  VF_PAGE2         0x00000020
+//#define  VF_TEXT          0x00000040
+
+enum VideoFlag_e
+{
+	VF_80COL  = 0x00000001,
+	VF_DHIRES = 0x00000002,
+	VF_HIRES  = 0x00000004,
+	VF_MASK2  = 0x00000008,
+	VF_MIXED  = 0x00000010,
+	VF_PAGE2  = 0x00000020,
+	VF_TEXT   = 0x00000040
+};
 
 #define  SW_80COL         (vidmode & VF_80COL)
 #define  SW_DHIRES        (vidmode & VF_DHIRES)
@@ -143,7 +163,7 @@ enum Color_Palette_Index_e
 #define  SW_PAGE2         (vidmode & VF_PAGE2)
 #define  SW_TEXT          (vidmode & VF_TEXT)
 
-#define  SETSOURCEPIXEL(x,y,c)  sourceoffsettable[(y)][(x)] = (c)
+#define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
 
 #define  SETFRAMECOLOR(i,r,g,b)  framebufferinfo->bmiColors[i].rgbRed   = r; \
                                  framebufferinfo->bmiColors[i].rgbGreen = g; \
@@ -168,34 +188,41 @@ int const kVLine0State      = 0x100; // V[543210CBA] = 100000000
 int const kVPresetLine      =   256; // line when V state presets
 int const kVSyncLines       =     4; // lines per VSync duration
 
-typedef BOOL (*UpdateFunc_t)(int,int,int,int,int);
+typedef bool (*UpdateFunc_t)(int,int,int,int,int);
 
 static BYTE          celldirty[40][32];
 static COLORREF      customcolors[NUM_COLOR_PALETTE];	// MONOCHROME is last custom color
-static HBITMAP       devicebitmap;
-static HDC           devicedc;
+static HBITMAP       g_hDeviceBitmap;
+static HDC           g_hDeviceDC;
 static LPBYTE        framebufferbits;
 static LPBITMAPINFO  framebufferinfo;
+
+const int MAX_FRAME_Y = 384; // 192 scan lines * 2x zoom = 384
 static LPBYTE        frameoffsettable[384];
-static LPBYTE        hiresauxptr;
-static LPBYTE        hiresmainptr;
-static HBITMAP       logobitmap;
-static HPALETTE      palette;
-static HBITMAP       sourcebitmap;
-static LPBYTE        sourcebits;
-static LPBITMAPINFO  sourceinfo;
-static LPBYTE        sourceoffsettable[512];
-static LPBYTE        textauxptr;
-static LPBYTE        textmainptr;
+static LPBYTE        g_pHiresBank1;
+static LPBYTE        g_pHiresBank0;
+static HBITMAP       g_hLogoBitmap;
+static HPALETTE      g_hPalette;
+
+
+const int APPLE_FONT_WIDTH  = 14;
+const int APPLE_FONT_HEIGHT = 16;
+static HBITMAP       g_hSourceBitmap;
+static LPBYTE        g_pSourcePixels;
+static LPBITMAPINFO  g_pSourceHeader;
+const int MAX_SOURCE_Y = 512;
+static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
+static LPBYTE        g_pTextBank1; // Aux
+static LPBYTE        g_pTextBank0; // Main
 
 // For tv emulation g_nAppMode
-// 2 extra pixels on end?
+// 2 extra scan lines on bottom?
 static BYTE          hgrpixelmatrix[280][192 + 2 * HGR_MATRIX_YOFFSET];
 static BYTE          colormixbuffer[6];
 static WORD          colormixmap[6][6][6];
 //
 
-static int       charoffs         = 0;
+static int       g_nAltCharSetOffset         = 0; // alternate character set
 static BOOL      displaypage2     = 0;
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      framebufferpitch = 0;
@@ -240,7 +267,7 @@ void __stdcall CopySource (int destx, int desty,
                            int sourcex, int sourcey)
 {
   LPBYTE currdestptr   = frameoffsettable [desty]  +destx;
-  LPBYTE currsourceptr = sourceoffsettable[sourcey]+sourcex;
+  LPBYTE currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
   int bytesleft;
   while (ysize--)
   {
@@ -275,8 +302,8 @@ void CreateFrameOffsetTable (LPBYTE addr, LONG pitch) {
 
 //===========================================================================
 void CreateIdentityPalette () {
-  if (palette)
-    DeleteObject(palette);
+  if (g_hPalette)
+    DeleteObject(g_hPalette);
 
 	// SET FRAME BUFFER TABLE ENTRIES TO CUSTOM COLORS
 	SETFRAMECOLOR(DEEP_RED,  0xD0,0x00,0x30);
@@ -320,9 +347,9 @@ void CreateIdentityPalette () {
 		// GET THE PALETTE ENTRIES OF THE LOGO
 		RGBQUAD logotable[256];
 		ZeroMemory(logotable,sizeof(logotable));
-		if (logobitmap) {
+		if (g_hLogoBitmap) {
 			HDC memdc = CreateCompatibleDC(dc);
-			SelectObject(memdc,logobitmap);
+			SelectObject(memdc,g_hLogoBitmap);
 			GetDIBColorTable(memdc,0,colors,logotable);
 			DeleteDC(memdc);
 		}
@@ -390,7 +417,7 @@ void CreateIdentityPalette () {
 		}
 
 		// CREATE THE PALETTE
-		palette = CreatePalette(paldata);
+		g_hPalette = CreatePalette(paldata);
 		VirtualFree(paldata,0,MEM_RELEASE);
 	}
 	else	// OTHERWISE, FILL THE FRAME BUFFER TABLE WITH THE STANDARD WINDOWS COLORS
@@ -417,7 +444,7 @@ void CreateIdentityPalette () {
 		SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF);
 
 
-		palette = (HPALETTE)0;
+		g_hPalette = (HPALETTE)0;
 	}
 
 	ReleaseDC(window,dc);
@@ -426,37 +453,38 @@ void CreateIdentityPalette () {
 //===========================================================================
 void CreateDIBSections () {
 
-  CopyMemory(sourceinfo->bmiColors,framebufferinfo->bmiColors,256*sizeof(RGBQUAD));
+  CopyMemory(g_pSourceHeader->bmiColors,framebufferinfo->bmiColors,256*sizeof(RGBQUAD));
   
   // CREATE THE DEVICE CONTEXT
   HWND window  = GetDesktopWindow();
   HDC dc       = GetDC(window);
-  if (devicedc)
-    DeleteDC(devicedc);
-  devicedc = CreateCompatibleDC(dc);
+  if (g_hDeviceDC)
+    DeleteDC(g_hDeviceDC);
+  g_hDeviceDC = CreateCompatibleDC(dc);
 
   // CREATE THE FRAME BUFFER DIB SECTION
-  if (devicebitmap)
-    DeleteObject(devicebitmap);
-  devicebitmap = CreateDIBSection(dc,framebufferinfo,DIB_RGB_COLORS,
+  if (g_hDeviceBitmap)
+    DeleteObject(g_hDeviceBitmap);
+  g_hDeviceBitmap = CreateDIBSection(dc,framebufferinfo,DIB_RGB_COLORS,
                                   (LPVOID *)&framebufferbits,0,0);
-  SelectObject(devicedc,devicebitmap);
+  SelectObject(g_hDeviceDC,g_hDeviceBitmap);
 
   // CREATE THE SOURCE IMAGE DIB SECTION
   HDC sourcedc = CreateCompatibleDC(dc);
   ReleaseDC(window,dc);
-  if (sourcebitmap)
-    DeleteObject(sourcebitmap);
-  sourcebitmap = CreateDIBSection(sourcedc,sourceinfo,DIB_RGB_COLORS,
-                                  (LPVOID *)&sourcebits,0,0);
-  SelectObject(sourcedc,sourcebitmap);
+  if (g_hSourceBitmap)
+    DeleteObject(g_hSourceBitmap);
+  g_hSourceBitmap = CreateDIBSection(
+	sourcedc,g_pSourceHeader,DIB_RGB_COLORS,
+    (LPVOID *)&g_pSourcePixels,0,0);
+  SelectObject(sourcedc,g_hSourceBitmap);
 
-  // CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE SOURCE IMAGE
-  for (int loop = 0; loop < 512; loop++)
-    sourceoffsettable[loop] = sourcebits+SRCOFFS_TOTAL*(511-loop);
+	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE SOURCE IMAGE
+	for (int y = 0; y < MAX_SOURCE_Y; y++)
+		g_aSourceStartofLine[ y ] = g_pSourcePixels + SRCOFFS_TOTAL*((MAX_SOURCE_Y-1) - y);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory(sourcebits,SRCOFFS_TOTAL*512);
+	ZeroMemory(g_pSourcePixels,SRCOFFS_TOTAL*512);
 
 	if ((videotype != VT_MONO_CUSTOM) &&
 		(videotype != VT_MONO_AMBER ) &&
@@ -927,26 +955,39 @@ void DrawMonoTextSource (HDC dc) {
 }
 
 //===========================================================================
-void DrawTextSource (HDC dc) {
-  HDC     memdc  = CreateCompatibleDC(dc);
-  HBITMAP bitmap = LoadBitmap(instance,TEXT("CHARSET40"));
-  SelectObject(memdc,bitmap);
-  BitBlt(dc,SRCOFFS_40COL,0,256,512,memdc,0,0,SRCCOPY);
-  BitBlt(dc,SRCOFFS_IIPLUS,0,256,256,memdc,0,512,SRCCOPY);
-  StretchBlt(dc,SRCOFFS_80COL,0,128,512,memdc,0,0,256,512,SRCCOPY);
-  DeleteDC(memdc);
-  DeleteObject(bitmap);
+void DrawTextSource (HDC dc)
+{
+	HDC     memdc  = CreateCompatibleDC(dc);
+	HBITMAP bitmap = LoadBitmap(instance,TEXT("CHARSET40"));
+	SelectObject(memdc,bitmap);
+
+	BitBlt(
+		dc                // hdcDest
+		,SRCOFFS_40COL ,0 // nXDest, nYDest
+		,256 ,512         // nWidth, nHeight
+		,memdc            // hdcSrc
+		,0 ,0             // nXSrc, nYSrc
+		,SRCCOPY );       // dwRop
+
+	// Chars for Apple ][
+	BitBlt(dc,SRCOFFS_IIPLUS,0,256,256,memdc,0,512,SRCCOPY);
+
+	// Chars for 80 col mode
+	StretchBlt(dc,SRCOFFS_80COL,0,128,512,memdc,0,0,256,512,SRCCOPY);
+
+	DeleteDC(memdc);
+	DeleteObject(bitmap);
 }
 
 //===========================================================================
 void SetLastDrawnImage () {
-  memcpy(vidlastmem+0x400,textmainptr,0x400);
+  memcpy(vidlastmem+0x400,g_pTextBank0,0x400);
   if (SW_HIRES)
-    memcpy(vidlastmem+0x2000,hiresmainptr,0x2000);
+    memcpy(vidlastmem+0x2000,g_pHiresBank0,0x2000);
   if (SW_DHIRES && SW_HIRES)
-    memcpy(vidlastmem,hiresauxptr,0x2000);
+    memcpy(vidlastmem,g_pHiresBank1,0x2000);
   if (SW_80COL && !SW_HIRES)
-    memcpy(vidlastmem,textauxptr,0x400);
+    memcpy(vidlastmem,g_pTextBank1,0x400);
   int loop;
   for (loop = 0; loop < 256; loop++)
     *(memdirty+loop) &= ~2;
@@ -954,61 +995,103 @@ void SetLastDrawnImage () {
 
 //===========================================================================
 
-BOOL Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
+bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 {
-	BYTE ch = *(textmainptr+offset);
+	BYTE ch = *(g_pTextBank0+offset);
 	bool bCharChanged = (ch != *(vidlastmem+offset+0x400) || redrawfull);
 
 	// FLASHing chars:
 	// - FLASHing if:Alt Char Set is OFF && 0x40<=char<=0x7F
 	// - The inverse of this char is located at: char+0x40
-	bool bCharFlashing = (charoffs == 0) && (ch >= 0x40) && (ch <= 0x7F);
+	bool bCharFlashing = (g_nAltCharSetOffset == 0) && (ch >= 0x40) && (ch <= 0x7F);
 
 	if(bCharChanged || (bCharFlashing && g_bTextFlashFlag))
 	{
 		bool bInvert = bCharFlashing ? g_bTextFlashState : false;
 
 		CopySource(xpixel,ypixel,
-			       14,16,
-				   (g_bApple2e?SRCOFFS_40COL:SRCOFFS_IIPLUS)+((ch & 0x0F) << 4),
-				   (ch & 0xF0)+charoffs + (bInvert?0x40:0x00));
+			APPLE_FONT_WIDTH, APPLE_FONT_HEIGHT,
+			(g_bApple2e
+				? SRCOFFS_40COL
+				: SRCOFFS_IIPLUS) + ((ch & 0x0F) << 4),
+			(ch & 0xF0)+g_nAltCharSetOffset + (bInvert?0x40:0x00));
 
-		return 1;
+		return true;
 	}
-	else
+
+	return false;
+}
+
+inline bool _Update80ColumnCell( BYTE c, const int xPixel, const int yPixel, bool bCharFlashing )
+{
+	bool bInvert = bCharFlashing ? g_bTextFlashState : false;
+
+	CopySource(
+		xPixel, yPixel,
+		(APPLE_FONT_WIDTH / 2), APPLE_FONT_HEIGHT,
+		SRCOFFS_80COL + ((c & 15)<<3),
+		((c >>4) <<4) + g_nAltCharSetOffset + (bInvert ? 0x40 : 0x00));
+
+	return true;
+}
+
+//===========================================================================
+bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset)
+{
+	bool bDirty = false;
+
+#if FLASH_80_COL
+	BYTE c1 = *(g_pTextBank1 + offset); // aux
+	BYTE c0 = *(g_pTextBank0 + offset); // main
+
+	bool bC1Changed = (c1 != *(vidlastmem + offset +     0) || redrawfull);
+	bool bC0Changed = (c0 != *(vidlastmem + offset + 0x400) || redrawfull);
+
+	bool bC1Flashing = (g_nAltCharSetOffset == 0) && (c1 >= 0x40) && (c1 <= 0x7F);
+	bool bC0Flashing = (g_nAltCharSetOffset == 0) && (c0 >= 0x40) && (c0 <= 0x7F);
+
+	if (bC1Changed || (bC1Flashing && g_bTextFlashFlag))
+		bDirty = _Update80ColumnCell( c1, xpixel, ypixel, bC1Flashing );
+
+	if (bC0Changed || (bC0Flashing && g_bTextFlashFlag))
+		bDirty |= _Update80ColumnCell( c0, xpixel + 7, ypixel, bC0Flashing );
+
+#else
+
+	BYTE auxval = *(g_pTextBank1 + offset); // aux
+	BYTE mainval = *(g_pTextBank0 + offset); // main
+
+	if ((auxval  != *(vidlastmem+offset)) ||
+		(mainval != *(vidlastmem+offset+0x400)) ||
+		redrawfull)
 	{
-		return 0;
+		CopySource(xpixel,ypixel,
+			(APPLE_FONT_WIDTH / 2), APPLE_FONT_HEIGHT,
+			SRCOFFS_80COL + ((auxval & 15)<<3),
+			((auxval>>4)<<4) + g_nAltCharSetOffset);
+
+		CopySource(xpixel+7,ypixel,
+			(APPLE_FONT_WIDTH / 2), APPLE_FONT_HEIGHT,
+			SRCOFFS_80COL + ((mainval & 15)<<3),
+			((mainval>>4)<<4) + g_nAltCharSetOffset );
+
+		bDirty = true;
 	}
+#endif
+
+	return bDirty;
 }
 
 //===========================================================================
-BOOL Update80ColCell (int x, int y, int xpixel, int ypixel, int offset) {
-  BYTE auxval  = *(textauxptr +offset);
-  BYTE mainval = *(textmainptr+offset);
-  if ((auxval  != *(vidlastmem+offset)) ||
-      (mainval != *(vidlastmem+offset+0x400)) ||
-      redrawfull) {
-    CopySource(xpixel,ypixel,
-               7,16,
-               SRCOFFS_80COL+((auxval & 15)<<3),((auxval>>4)<<4)+charoffs);
-    CopySource(xpixel+7,ypixel,
-               7,16,
-               SRCOFFS_80COL+((mainval & 15)<<3),((mainval>>4)<<4)+charoffs);
-    return 1;
-  }
-  else
-    return 0;
-}
-
-//===========================================================================
-BOOL UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset) {
-  BOOL dirty   = 0;
-  int  yoffset = 0;
+bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset)
+{
+	bool bDirty = false;
+	int  yoffset = 0;
   while (yoffset < 0x2000) {
-    BYTE byteval1 = (x >  0) ? *(hiresmainptr+offset+yoffset-1) : 0;
-    BYTE byteval2 = *(hiresauxptr +offset+yoffset);
-    BYTE byteval3 = *(hiresmainptr+offset+yoffset);
-    BYTE byteval4 = (x < 39) ? *(hiresauxptr +offset+yoffset+1) : 0;
+    BYTE byteval1 = (x >  0) ? *(g_pHiresBank0+offset+yoffset-1) : 0;
+    BYTE byteval2 = *(g_pHiresBank1 +offset+yoffset);
+    BYTE byteval3 = *(g_pHiresBank0+offset+yoffset);
+    BYTE byteval4 = (x < 39) ? *(g_pHiresBank1 +offset+yoffset+1) : 0;
     if ((byteval2 != *(vidlastmem+offset+yoffset)) ||
         (byteval3 != *(vidlastmem+offset+yoffset+0x2000)) ||
         ((x >  0) && ((byteval1 & 0x70) != (*(vidlastmem+offset+yoffset+0x1FFF) & 0x70))) ||
@@ -1028,11 +1111,12 @@ BOOL UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset) {
 #undef PIXEL
 #undef COLOR
 #undef VALUE
-      dirty = 1;
+      bDirty = true;
     }
     yoffset += 0x400;
   }
-  return dirty;
+  
+	return bDirty;
 }
 
 
@@ -1143,7 +1227,7 @@ void __stdcall MixColorsVertical(int matx, int maty) {	// For tv emulation g_nAp
 //===========================================================================
 void __stdcall CopyMixedSource (int x, int y, int sourcex, int sourcey) {	// For tv emulation g_nAppMode
 
-  LPBYTE currsourceptr = sourceoffsettable[sourcey]+sourcex;
+  LPBYTE currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
   LPBYTE currdestptr   = frameoffsettable[y<<1] + (x<<1);
   LPBYTE currptr;
 
@@ -1181,13 +1265,14 @@ void __stdcall CopyMixedSource (int x, int y, int sourcex, int sourcey) {	// For
 
 
 //===========================================================================
-BOOL UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset) {
-  BOOL dirty   = 0;
-  int  yoffset = 0;
+bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
+{
+	bool bDirty  = false;
+	int  yoffset = 0;
   while (yoffset < 0x2000) {
-    BYTE byteval1 = (x >  0) ? *(hiresmainptr+offset+yoffset-1) : 0;
-    BYTE byteval2 = *(hiresmainptr+offset+yoffset);
-    BYTE byteval3 = (x < 39) ? *(hiresmainptr+offset+yoffset+1) : 0;
+    BYTE byteval1 = (x >  0) ? *(g_pHiresBank0+offset+yoffset-1) : 0;
+    BYTE byteval2 = *(g_pHiresBank0+offset+yoffset);
+    BYTE byteval3 = (x < 39) ? *(g_pHiresBank0+offset+yoffset+1) : 0;
     if ((byteval2 != *(vidlastmem+offset+yoffset+0x2000)) ||
         ((x >  0) && ((byteval1 & 0x60) != (*(vidlastmem+offset+yoffset+0x1FFF) & 0x60))) ||
         ((x < 39) && ((byteval3 & 0x03) != (*(vidlastmem+offset+yoffset+0x2001) & 0x03))) ||
@@ -1206,35 +1291,38 @@ BOOL UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset) {
 					   SRCOFFS_HIRES+COLOFFS+((x & 1) << 4),(((int)byteval2) << 1));
 		}
 #undef COLOFFS
-      dirty = 1;
+      bDirty = true;
     }
     yoffset += 0x400;
   }
-  return dirty;
+
+	return bDirty;
 }
 
 //===========================================================================
-BOOL UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset) {
-  BYTE val = *(textmainptr+offset);
-  if ((val != *(vidlastmem+offset+0x400)) || redrawfull) {
-    CopySource(xpixel,ypixel,
-               14,8,
-               SRCOFFS_LORES+((x & 1) << 1),((val & 0xF) << 4));
-    CopySource(xpixel,ypixel+8,
-               14,8,
-               SRCOFFS_LORES+((x & 1) << 1),(val & 0xF0));
-    return 1;
-  }
-  else
-    return 0;
-}
-
-//===========================================================================
-
-BOOL UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
+bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
 {
-	BYTE auxval  = *(textauxptr +offset);
-	BYTE mainval = *(textmainptr+offset);
+	BYTE val = *(g_pTextBank0+offset);
+	if ((val != *(vidlastmem+offset+0x400)) || redrawfull)
+	{
+		CopySource(xpixel,ypixel,
+			14,8,
+			SRCOFFS_LORES+((x & 1) << 1),((val & 0xF) << 4));
+		CopySource(xpixel,ypixel+8,
+			14,8,
+			SRCOFFS_LORES+((x & 1) << 1),(val & 0xF0));
+		return true;
+	}
+
+	return false;
+}
+
+//===========================================================================
+
+bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
+{
+	BYTE auxval  = *(g_pTextBank1 +offset);
+	BYTE mainval = *(g_pTextBank0+offset);
 
 	if	(	(auxval != *(vidlastmem+offset)) ||
 			(mainval != *(vidlastmem+offset+0x400)) ||
@@ -1242,29 +1330,27 @@ BOOL UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
 		)
 	{
 		CopySource(	xpixel,ypixel,
-					7,8,
-					SRCOFFS_LORES+((x & 1) << 1),((auxval & 0xF) << 4));
+			7,8,
+			SRCOFFS_LORES+((x & 1) << 1),((auxval & 0xF) << 4));
 
 		CopySource(	xpixel,ypixel+8,
-					7,8,
-					SRCOFFS_LORES+((x & 1) << 1),(auxval & 0xF0));
+			7,8,
+			SRCOFFS_LORES+((x & 1) << 1),(auxval & 0xF0));
 
 		//
 
 		CopySource(	xpixel+7,ypixel,
-					7,8,
-					SRCOFFS_LORES+((x & 1) << 1),((mainval & 0xF) << 4));
+			7,8,
+			SRCOFFS_LORES+((x & 1) << 1),((mainval & 0xF) << 4));
 
 		CopySource(	xpixel+7,ypixel+8,
-					7,8,
-					SRCOFFS_LORES+((x & 1) << 1),(mainval & 0xF0));
+			7,8,
+			SRCOFFS_LORES+((x & 1) << 1),(mainval & 0xF0));
 
-		return 1;
+		return true;
 	}
-	else
-	{
-		return 0;
-	}
+
+	return false;
 }
 
 
@@ -1289,7 +1375,7 @@ BOOL VideoApparentlyDirty ()
 	bool bCharFlashing = false;
 
 	// Scan visible text page for any flashing chars
-	if((SW_TEXT || SW_MIXED) && (charoffs == 0))
+	if((SW_TEXT || SW_MIXED) && (g_nAltCharSetOffset == 0))
 	{
 		BYTE* pnMemText = MemGetMainPtr(0x400 << displaypage2);
 
@@ -1496,7 +1582,7 @@ BYTE __stdcall VideoCheckMode (WORD, BYTE address, BYTE, BYTE, ULONG) {
       case 0x1A: result = SW_TEXT;    break;
       case 0x1B: result = SW_MIXED;   break;
       case 0x1D: result = SW_HIRES;   break;
-      case 0x1E: result = charoffs;   break;
+      case 0x1E: result = g_nAltCharSetOffset;   break;
       case 0x1F: result = SW_80COL;   break;
       case 0x7F: result = SW_DHIRES;  break;
     }
@@ -1587,32 +1673,32 @@ void VideoDestroy () {
 
   // DESTROY BUFFERS
   VirtualFree(framebufferinfo,0,MEM_RELEASE);
-  VirtualFree(sourceinfo     ,0,MEM_RELEASE);
+  VirtualFree(g_pSourceHeader     ,0,MEM_RELEASE);
   VirtualFree(vidlastmem     ,0,MEM_RELEASE);
   framebufferinfo = NULL;
-  sourceinfo      = NULL;
+  g_pSourceHeader      = NULL;
   vidlastmem      = NULL;
 
   // DESTROY FRAME BUFFER
-  DeleteDC(devicedc);
-  DeleteObject(devicebitmap);
-  devicedc     = (HDC)0;
-  devicebitmap = (HBITMAP)0;
+  DeleteDC(g_hDeviceDC);
+  DeleteObject(g_hDeviceBitmap);
+  g_hDeviceDC     = (HDC)0;
+  g_hDeviceBitmap = (HBITMAP)0;
 
   // DESTROY SOURCE IMAGE
-  DeleteObject(sourcebitmap);
-  sourcebitmap = (HBITMAP)0;
+  DeleteObject(g_hSourceBitmap);
+  g_hSourceBitmap = (HBITMAP)0;
 
   // DESTROY LOGO
-  if (logobitmap) {
-    DeleteObject(logobitmap);
-    logobitmap = (HBITMAP)0;
+  if (g_hLogoBitmap) {
+    DeleteObject(g_hLogoBitmap);
+    g_hLogoBitmap = (HBITMAP)0;
   }
 
   // DESTROY PALETTE
-  if (palette) {
-    DeleteObject(palette);
-    palette = (HPALETTE)0;
+  if (g_hPalette) {
+    DeleteObject(g_hPalette);
+    g_hPalette = (HPALETTE)0;
   }
 }
 
@@ -1622,9 +1708,9 @@ void VideoDisplayLogo () {
 
   // DRAW THE LOGO
   HBRUSH brush = CreateSolidBrush(PALETTERGB(0x70,0x30,0xE0));
-  if (logobitmap) {
+  if (g_hLogoBitmap) {
     HDC memdc = CreateCompatibleDC(framedc);
-    SelectObject(memdc,logobitmap);
+    SelectObject(memdc,g_hLogoBitmap);
     BitBlt(framedc,0,0,560,384,memdc,0,0,SRCCOPY);
     DeleteDC(memdc);
   }
@@ -1689,7 +1775,7 @@ void VideoInitialize () {
   ZeroMemory(vidlastmem,0x10000);
 
   // LOAD THE LOGO
-  logobitmap = (HBITMAP)LoadImage(instance, MAKEINTRESOURCE(IDB_APPLEWIN), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+  g_hLogoBitmap = (HBITMAP)LoadImage(instance, MAKEINTRESOURCE(IDB_APPLEWIN), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
 
   // CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
   framebufferinfo = (LPBITMAPINFO)VirtualAlloc(NULL,
@@ -1706,18 +1792,18 @@ void VideoInitialize () {
   framebufferinfo->bmiHeader.biClrUsed  = 256;
 
   // CREATE A BITMAPINFO STRUCTURE FOR THE SOURCE IMAGE
-  sourceinfo = (LPBITMAPINFO)VirtualAlloc(NULL,
+  g_pSourceHeader = (LPBITMAPINFO)VirtualAlloc(NULL,
                                           sizeof(BITMAPINFOHEADER)
                                             +256*sizeof(RGBQUAD),
                                           MEM_COMMIT,
                                           PAGE_READWRITE);
-  ZeroMemory(sourceinfo,sizeof(BITMAPINFOHEADER));
-  sourceinfo->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
-  sourceinfo->bmiHeader.biWidth    = SRCOFFS_TOTAL;
-  sourceinfo->bmiHeader.biHeight   = 512;
-  sourceinfo->bmiHeader.biPlanes   = 1;
-  sourceinfo->bmiHeader.biBitCount = 8;
-  sourceinfo->bmiHeader.biClrUsed  = 256;
+  ZeroMemory(g_pSourceHeader,sizeof(BITMAPINFOHEADER));
+  g_pSourceHeader->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
+  g_pSourceHeader->bmiHeader.biWidth    = SRCOFFS_TOTAL;
+  g_pSourceHeader->bmiHeader.biHeight   = 512;
+  g_pSourceHeader->bmiHeader.biPlanes   = 1;
+  g_pSourceHeader->bmiHeader.biBitCount = 8;
+  g_pSourceHeader->bmiHeader.biClrUsed  = 256;
 
   // CREATE AN IDENTITY PALETTE AND FILL IN THE CORRESPONDING COLORS IN
   // THE BITMAPINFO STRUCTURE
@@ -1739,8 +1825,8 @@ void VideoInitialize () {
 
 //===========================================================================
 void VideoRealizePalette (HDC dc) {
-  if (palette) {
-    SelectPalette(dc,palette,0);
+  if (g_hPalette) {
+    SelectPalette(dc,g_hPalette,0);
     RealizePalette(dc);
   }
 }
@@ -1761,17 +1847,23 @@ void VideoRefreshScreen () {
   // CHECK EACH CELL FOR CHANGED BYTES.  REDRAW PIXELS FOR THE CHANGED BYTES
   // IN THE FRAME BUFFER.  MARK CELLS IN WHICH REDRAWING HAS TAKEN PLACE AS
   // DIRTY.
-  hiresauxptr  = MemGetAuxPtr (0x2000 << displaypage2);
-  hiresmainptr = MemGetMainPtr(0x2000 << displaypage2);
-  textauxptr   = MemGetAuxPtr (0x400  << displaypage2);
-  textmainptr  = MemGetMainPtr(0x400  << displaypage2);
+  g_pHiresBank1  = MemGetAuxPtr (0x2000 << displaypage2);
+  g_pHiresBank0 = MemGetMainPtr(0x2000 << displaypage2);
+  g_pTextBank1   = MemGetAuxPtr (0x400  << displaypage2);
+  g_pTextBank0  = MemGetMainPtr(0x400  << displaypage2);
   ZeroMemory(celldirty,40*32);
-  UpdateFunc_t update = SW_TEXT ? SW_80COL ? Update80ColCell
-                                           : Update40ColCell
-                              : SW_HIRES ? (SW_DHIRES && SW_80COL) ? UpdateDHiResCell
-                                                                   : UpdateHiResCell
-                                         : (SW_DHIRES && SW_80COL) ? UpdateDLoResCell
-										                           : UpdateLoResCell;
+  UpdateFunc_t update = SW_TEXT
+	? SW_80COL
+		? Update80ColCell
+		: Update40ColCell
+	: SW_HIRES
+		? (SW_DHIRES && SW_80COL)
+			? UpdateDHiResCell
+			: UpdateHiResCell
+		: (SW_DHIRES && SW_80COL)
+			? UpdateDLoResCell
+			: UpdateLoResCell;
+
   BOOL anydirty = 0;
   int  y        = 0;
   int  ypixel   = 0;
@@ -1813,7 +1905,7 @@ void VideoRefreshScreen () {
   // . Oliver Schmidt gets a flickering mouse cursor with this code
   if (framedc && anydirty)
   {
-	BitBlt(framedc,0,0,560,384,devicedc,0,0,SRCCOPY); 
+	BitBlt(framedc,0,0,560,384,g_hDeviceDC,0,0,SRCCOPY); 
 	GdiFlush();
   }
 #else
@@ -1853,7 +1945,7 @@ void VideoRefreshScreen () {
 				   && celldirty[(startx+x-1) >> 1][y+height])
 			height++;
 		  BitBlt(framedc,start,ypixel,xpixel-start,height << 4,
-				 devicedc,start,ypixel,SRCCOPY);
+				 g_hDeviceDC,start,ypixel,SRCCOPY);
 		  while (height--) {
 			int loop = startx;
 			while (loop < x+(xpixel == 560))
@@ -1894,7 +1986,7 @@ void VideoRefreshScreen () {
 		}
 		if ((start >= 0) && !celldirty[x][y]) {
 		  BitBlt(framedc,xpixel,start,14,ypixel-start,
-				 devicedc,xpixel,start,SRCCOPY);
+				 g_hDeviceDC,xpixel,start,SRCCOPY);
 		  start = -1;
 		}
 		else if ((start == -1) && celldirty[x][y])
@@ -1923,7 +2015,7 @@ void VideoReinitialize () {
 
 //===========================================================================
 void VideoResetState () {
-  charoffs     = 0;
+  g_nAltCharSetOffset     = 0;
   displaypage2 = 0;
   vidmode      = VF_TEXT;
   redrawfull   = 1;
@@ -1932,14 +2024,14 @@ void VideoResetState () {
 //===========================================================================
 BYTE __stdcall VideoSetMode (WORD, BYTE address, BYTE write, BYTE, ULONG) {
   DWORD oldpage2 = SW_PAGE2;
-  int   oldvalue = charoffs+(int)(vidmode & ~(VF_MASK2 | VF_PAGE2));
+  int   oldvalue = g_nAltCharSetOffset+(int)(vidmode & ~(VF_MASK2 | VF_PAGE2));
   switch (address) {
     case 0x00: vidmode &= ~VF_MASK2;   break;
     case 0x01: vidmode |=  VF_MASK2;   break;
     case 0x0C: if (g_bApple2e) vidmode &= ~VF_80COL;   break;
     case 0x0D: if (g_bApple2e) vidmode |=  VF_80COL;   break;
-    case 0x0E: if (g_bApple2e) charoffs = 0;           break;	// Alternate char set off
-    case 0x0F: if (g_bApple2e) charoffs = 256;         break;	// Alternate char set on
+    case 0x0E: if (g_bApple2e) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
+    case 0x0F: if (g_bApple2e) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
     case 0x50: vidmode &= ~VF_TEXT;    break;
     case 0x51: vidmode |=  VF_TEXT;    break;
     case 0x52: vidmode &= ~VF_MIXED;   break;
@@ -1953,7 +2045,7 @@ BYTE __stdcall VideoSetMode (WORD, BYTE address, BYTE write, BYTE, ULONG) {
   }
   if (SW_MASK2)
     vidmode &= ~VF_PAGE2;
-  if (oldvalue != charoffs+(int)(vidmode & ~(VF_MASK2 | VF_PAGE2))) {
+  if (oldvalue != g_nAltCharSetOffset+(int)(vidmode & ~(VF_MASK2 | VF_PAGE2))) {
     graphicsmode = !SW_TEXT;
     redrawfull   = 1;
   }
@@ -2011,7 +2103,7 @@ void VideoUpdateFlash()
 		g_bTextFlashState = !g_bTextFlashState;
 		
 		// Redraw any FLASHing chars if any text showing. NB. No FLASH g_nAppMode for 80 cols
-		if((SW_TEXT || SW_MIXED) && !SW_80COL)
+		if ((SW_TEXT || SW_MIXED) ) // && !SW_80COL) // FIX: 80-Col can flash
 			g_bTextFlashFlag = true;
 	}
 }
@@ -2027,7 +2119,7 @@ bool VideoGetSW80COL()
 
 DWORD VideoGetSnapshot(SS_IO_Video* pSS)
 {
-	pSS->bAltCharSet = !(charoffs == 0);
+	pSS->bAltCharSet = !(g_nAltCharSetOffset == 0);
 	pSS->dwVidMode = vidmode;
 	return 0;
 }
@@ -2036,7 +2128,7 @@ DWORD VideoGetSnapshot(SS_IO_Video* pSS)
 
 DWORD VideoSetSnapshot(SS_IO_Video* pSS)
 {
-	charoffs = !pSS->bAltCharSet ? 0 : 256;
+	g_nAltCharSetOffset = !pSS->bAltCharSet ? 0 : 256;
 	vidmode = pSS->dwVidMode;
 
 	//
