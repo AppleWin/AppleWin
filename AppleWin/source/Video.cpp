@@ -1057,7 +1057,6 @@ bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset)
 		bDirty |= _Update80ColumnCell( c0, xpixel + 7, ypixel, bC0Flashing );
 
 #else
-
 	BYTE auxval = *(g_pTextBank1 + offset); // aux
 	BYTE mainval = *(g_pTextBank0 + offset); // main
 
@@ -2103,7 +2102,7 @@ void VideoUpdateFlash()
 		g_bTextFlashState = !g_bTextFlashState;
 		
 		// Redraw any FLASHing chars if any text showing. NB. No FLASH g_nAppMode for 80 cols
-		if ((SW_TEXT || SW_MIXED) ) // && !SW_80COL) // FIX: 80-Col can flash
+		if ((SW_TEXT || SW_MIXED) ) // && !SW_80COL) // FIX: FLASH 80-Column
 			g_bTextFlashFlag = true;
 	}
 }
