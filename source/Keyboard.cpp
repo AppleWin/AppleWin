@@ -157,26 +157,30 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 	static bool bFreshReset;
 
 	if (bASCII == ASCII)
-	{       
-	        if (bFreshReset && key == 0x03) {
+	{
+		if (bFreshReset && key == 0x03)
+		{
 			bFreshReset = 0;
-	                return; // Swallow spurious CTRL-C caused by CTRL-BREAK
-	        }
-	        bFreshReset = 0;
+			return; // Swallow spurious CTRL-C caused by CTRL-BREAK
+		}
+		bFreshReset = 0;
 		if (key > 0x7F)
 			return;
 
 		if (g_bApple2e) 
-		        if (g_bCapsLock && (key >= 'a') && (key <='z'))
-		                keycode = key - 32;
-		         else
-			        keycode = key;
-		else
-                        if (key >= '`')
-			        keycode = key - 32;
+		{
+			if (g_bCapsLock && (key >= 'a') && (key <='z'))
+				keycode = key - 32;
 			else
-			        keycode = key;
-
+				keycode = key;
+		}
+		else
+		{
+			if (key >= '`')
+				keycode = key - 32;
+			else
+				keycode = key;
+		}
 		lastvirtkey = LOBYTE(VkKeyScan(key));
 	}
 	else
@@ -190,7 +194,7 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			DiskReset();
 			KeybReset();
 			if (g_bApple2e)
-			        VideoResetState();	// Switch Alternate char set off
+				VideoResetState();	// Switch Alternate char set off
 			MB_Reset();
 
 #ifndef KEY_OLD
