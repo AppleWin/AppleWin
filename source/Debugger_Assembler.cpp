@@ -934,7 +934,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 			m_nAsmBytes = 2;
 		}
 		else
-		if (iToken == TOKEN_LEFT_PAREN)
+		if (iToken == TOKEN_PAREN_L)
 		{
 			if (TestFlag( AF_HaveLeftParen ))
 			{
@@ -947,7 +947,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 			m_iAsmAddressMode = AM_I;
 		}
 		else
-		if (iToken == TOKEN_RIGHT_PAREN)
+		if (iToken == TOKEN_PAREN_R)
 		{
 			if (TestFlag( AF_HaveRightParen ))
 			{

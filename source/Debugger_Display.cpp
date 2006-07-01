@@ -88,11 +88,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 		int MAX_DISPLAY_REGS_LINES        = 6;
 		int MAX_DISPLAY_STACK_LINES       = 8;
-		int MAX_DISPLAY_BREAKPOINTS_LINES = 6; // 5
-		int MAX_DISPLAY_WATCHES_LINES     = 6; // 5
-		int MAX_DISPLAY_MEMORY_LINES_1    = 4;
-		int MAX_DISPLAY_MEMORY_LINES_2    = 2;
-		int MAX_DISPLAY_ZEROPAGE_LINES    = 5;
+		int MAX_DISPLAY_BREAKPOINTS_LINES = 7; // 6 // 5
+		int MAX_DISPLAY_WATCHES_LINES     = 8; // 6 // 5
+		int MAX_DISPLAY_MEMORY_LINES_1    = 4; // 4
+		int MAX_DISPLAY_MEMORY_LINES_2    = 4; // 4 // 2
+		int MAX_DISPLAY_ZEROPAGE_LINES    = 8;
 		int g_nDisplayMemoryLines;
 
 	// Height
@@ -150,6 +150,11 @@ bool CanDrawDebugger()
 //===========================================================================
 int DebugDrawText ( LPCTSTR pText, RECT & rRect )
 {
+#if _DEBUG
+	if (! pText)
+		MessageBox( NULL, "pText = NULL!", "DrawText()", MB_OK );
+#endif
+
 	int nLen = _tcslen( pText );
 	ExtTextOut( g_hDC,
 		rRect.left, rRect.top,
@@ -164,10 +169,14 @@ int DebugDrawText ( LPCTSTR pText, RECT & rRect )
 //===========================================================================
 int DebugDrawTextFixed ( LPCTSTR pText, RECT & rRect )
 {
-	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
+	int nChars = 0;
+	if (pText)
+	{
+		int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 
-	int nChars = DebugDrawText( pText, rRect );
-	rRect.left += (nFontWidth * nChars);
+		nChars = DebugDrawText( pText, rRect );
+		rRect.left += (nFontWidth * nChars);
+	}
 	return nChars;
 }
 
@@ -249,7 +258,7 @@ char  FormatCharTxtHigh ( const BYTE b, bool *pWasHi_ )
 	{
 		if (pWasHi_)
 		{
-			*pWasHi_ = true;			
+			*pWasHi_ = true;
 		}
 		c = (b & 0x7F);
 	}
@@ -628,7 +637,7 @@ void DrawBreakpoints (HDC dc, int line)
 			int nRegLen = DebugDrawTextFixed( g_aBreakpointSource[ pBP->eSource ], rect2 );
 
 			// Pad to 2 chars
-			if (nRegLen < 2) // (g_aBreakpointSource[ pBP->eSource ][1] == 0) // HACK: Avoid strlen()
+			if (nRegLen < 2)
 				rect2.left += g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 
 			SetBkColor( dc, DebuggerGetColor( BG_INFO ));
@@ -636,8 +645,8 @@ void DrawBreakpoints (HDC dc, int line)
 #if DEBUG_FORCE_DISPLAY
 	if (iBreakpoint < 3)
 		pBP->eOperator = (BreakpointOperator_t)(iBreakpoint * 2);
-	else
-		pBP->eOperator = (BreakpointOperator_t)(iBreakpoint-3 + BP_OP_READ);
+//	else
+//		pBP->eOperator = (BreakpointOperator_t)(iBreakpoint-3 + BP_OP_READ);
 #endif
 			DebugDrawTextFixed( g_aBreakpointSymbols [ pBP->eOperator ], rect2 );
 
@@ -692,7 +701,7 @@ void DrawBreakpoints (HDC dc, int line)
 //					rect2.left += g_nFontWidthAvg;
 //				}
 
-				DebugDrawTextFixed( TEXT("-"), rect2 );
+				DebugDrawTextFixed( TEXT(":"), rect2 );
 //				rect2.left += g_nFontWidthAvg;
 //				if (g_bConfigDisasmOpcodeSpaces) // TODO: Might have to remove spaces, for BPIO... addr-addr xx
 //				{
@@ -919,7 +928,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		RECT linerect;
 		linerect.left   = 0;
 		linerect.top    = iLine * nFontHeight;
-		linerect.right  = DISPLAY_DISASM_RIGHT; // HACK: MAGIC #: 14 -> g_nFontWidthAvg
+		linerect.right  = DISPLAY_DISASM_RIGHT;
 		linerect.bottom = linerect.top + nFontHeight;
 
 //		BOOL bp = g_nBreakpoints && CheckBreakpoint(nBaseAddress,nBaseAddress == regs.pc);
@@ -1241,11 +1250,20 @@ void DrawFlags (HDC dc, int line, WORD nRegFlags, LPTSTR pFlagNames_)
 	TCHAR sText[2] = TEXT("?");
 	RECT  rect;
 
+	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
+
+	// Regs are 10 chars across
+	// Flags are 8 chars across -- scale "up"
+	int nSpacerWidth = nFontWidth;
+	if (nFontWidth)
+		nSpacerWidth = (10 * nFontWidth) / 8;
+	nSpacerWidth++;
+
 	if (dc)
 	{
 		rect.left   = DISPLAY_FLAG_COLUMN;
 		rect.top    = line * g_nFontHeight;
-		rect.right  = rect.left + 9;
+		rect.right  = rect.left + (10 * nFontWidth);// nSpacerWidth; // nFontWidth = 80's look; // HACK: 9
 		rect.bottom = rect.top + g_nFontHeight;
 		SetBkColor(dc, DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
 	}
@@ -1271,9 +1289,11 @@ void DrawFlags (HDC dc, int line, WORD nRegFlags, LPTSTR pFlagNames_)
 				SetBkColor(dc, DebuggerGetColor( BG_INFO ));
 				SetTextColor( dc, DebuggerGetColor( FG_INFO_TITLE ));
 			}
+
+			rect.left = DISPLAY_FLAG_COLUMN - ((_6502_NUM_FLAGS - 1 - nFlag) * nSpacerWidth);
+			rect.right = rect.left + nSpacerWidth;
+
 			DebugDrawText( sText, rect );
-			rect.left  -= 9; // HACK: Font Width
-			rect.right -= 9; // HACK: Font Width
 		}
 
 		if (pFlagNames_)
@@ -1483,10 +1503,12 @@ void DrawRegister (HDC dc, int line, LPCTSTR name, const int nBytes, const WORD 
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
 
+	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
+
 	RECT rect;
 	rect.left   = DISPLAY_REGS_COLUMN;
 	rect.top    = line * g_nFontHeight;
-	rect.right  = rect.left + 40; // TODO:FIXME: g_nFontWidthAvg * 
+	rect.right  = rect.left + (10 * nFontWidth) + 1;
 	rect.bottom = rect.top + g_nFontHeight;
 
 	if ((PARAM_REG_A  == iSource) ||
@@ -1501,7 +1523,11 @@ void DrawRegister (HDC dc, int line, LPCTSTR name, const int nBytes, const WORD 
 	{
 		SetTextColor(dc, DebuggerGetColor( FG_INFO_TITLE ));
 	}
-	SetBkColor(dc, DebuggerGetColor( BG_INFO ));
+
+	// 2.6.0.0 Alpha - Regs not "boxed"
+	int iBackground = BG_DATA_1;  // BG_INFO
+
+	SetBkColor(dc, DebuggerGetColor( iBackground ));
 	DebugDrawText( name, rect );
 
 	unsigned int nData = nValue;
@@ -1527,16 +1553,17 @@ void DrawRegister (HDC dc, int line, LPCTSTR name, const int nBytes, const WORD 
 	}
 	else
 	{
-		rect.left  = DISPLAY_REGS_COLUMN + 21; // HACK: MAGIC #: 21 // +3 chars
-		rect.right = SCREENSPLIT2;
+		rect.left  = DISPLAY_REGS_COLUMN + (3 * nFontWidth);
+//		rect.right = SCREENSPLIT2;
 
 		SetTextColor(dc, DebuggerGetColor( FG_INFO_OPERATOR ));
 		DebugDrawTextFixed( TEXT("'"), rect ); // DebugDrawTextFixed
 
 		ColorizeSpecialChar( dc, sValue, nData, MEM_VIEW_ASCII ); // MEM_VIEW_APPLE for inverse background little hard on the eyes
+
+		SetBkColor(dc, DebuggerGetColor( iBackground ));
 		DebugDrawTextFixed( sValue, rect ); // DebugDrawTextFixed()
 
-		SetBkColor(dc, DebuggerGetColor( BG_INFO ));
 		SetTextColor(dc, DebuggerGetColor( FG_INFO_OPERATOR ));
 		DebugDrawTextFixed( TEXT("'"), rect ); // DebugDrawTextFixed()
 
@@ -1544,8 +1571,8 @@ void DrawRegister (HDC dc, int line, LPCTSTR name, const int nBytes, const WORD 
 	}
 
 	// Needs to be far enough over, since 4 chars of ZeroPage symbol also calls us
-	rect.left  = DISPLAY_REGS_COLUMN + (nOffset * g_aFontConfig[ FONT_INFO ]._nFontWidthAvg); // HACK: MAGIC #: 40 
-	rect.right = SCREENSPLIT2;
+	rect.left  = DISPLAY_REGS_COLUMN + (nOffset * nFontWidth);
+//	rect.right = SCREENSPLIT2;
 
 	if ((PARAM_REG_PC == iSource) || (PARAM_REG_SP == iSource)) // Stack Pointer is target address, but doesn't look as good.
 	{
@@ -1610,14 +1637,12 @@ void DrawStack (HDC dc, int line)
 		RECT rect;
 		rect.left   = DISPLAY_STACK_COLUMN;
 		rect.top    = (iStack+line) * g_nFontHeight;
-//		rect.right  = DISPLAY_STACK_COLUMN + 40;
-//		rect.right  = SCREENSPLIT2;
 		rect.right = rect.left + (10 * nFontWidth) + 1;
 		rect.bottom = rect.top + g_nFontHeight;
 
 		SetTextColor(dc, DebuggerGetColor( FG_INFO_TITLE )); // [COLOR_STATIC
-		// BG_SOURCE_2 = grey
-		SetBkColor(dc, DebuggerGetColor( BG_DATA_1 )); // BG_INFO
+		// 2.6.0.0 Alpha - Stack was dark cyan BG_DATA_1
+		SetBkColor(dc, DebuggerGetColor( BG_INFO )); // BG_INFO
 
 		TCHAR sText[8] = TEXT("");
 		if (nAddress <= _6502_STACK_END)
@@ -1627,8 +1652,6 @@ void DrawStack (HDC dc, int line)
 
 		DebugDrawTextFixed( sText, rect );
 
-//		rect.left   = DISPLAY_STACK_COLUMN + 40; // TODO/FIXME/HACK MAGIC #: g_nFontWidthAvg * 
-//		rect.right  = SCREENSPLIT2;
 		SetTextColor(dc, DebuggerGetColor( FG_INFO_OPCODE )); // COLOR_FG_DATA_TEXT
 
 		if (nAddress <= _6502_STACK_END)
@@ -1678,7 +1701,6 @@ void DrawTargets (HDC dc, int line)
 
 		rect.left   = DISPLAY_TARGETS_COLUMN;
 		rect.top    = (line+iAddress) * g_nFontHeight;
-//		int nColumn = DISPLAY_TARGETS_COLUMN + 40; // TODO/FIXME/HACK MAGIC #: g_nFontWidthAvg * 
 		int nColumn = rect.left + (7 * nFontWidth);
 		rect.right  = nColumn;
 		rect.bottom = rect.top + g_nFontHeight;
@@ -1763,8 +1785,8 @@ void DrawWatches (HDC dc, int line)
 			DebugDrawTextFixed( sText, rect2 );
 		}
 
-		rect.top    += g_nFontHeight; // HACK: 
-		rect.bottom += g_nFontHeight; // HACK:
+		rect.top    += g_nFontHeight;
+		rect.bottom += g_nFontHeight;
 	}
 }
 
@@ -2251,18 +2273,20 @@ void DrawWindow_ZeroPage( Update_t bUpdate )
 //===========================================================================
 void DrawWindowBackground_Main( int g_iWindowThis )
 {
-    RECT viewportrect;
-    viewportrect.left   = 0;
-    viewportrect.top    = 0;
-    viewportrect.right  = SCREENSPLIT1 - 6; // HACK: MAGIC #: 14 -> 6 -> (g_nFonWidthAvg-1)
-    viewportrect.bottom = DISPLAY_HEIGHT - DEFAULT_HEIGHT; // 368 = 23 lines // TODO/FIXME
+	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
+
+		RECT viewportrect;
+	viewportrect.left   = 0;
+	viewportrect.top    = 0;
+	viewportrect.right  = SCREENSPLIT1 - nFontWidth; // HACK: MAGIC #: 14 -> 6 -> (g_nFonWidthAvg-1)
+	viewportrect.bottom = DISPLAY_HEIGHT - DEFAULT_HEIGHT; // 368 = 23 lines // TODO/FIXME
 // g_nFontHeight * g_nDisasmWinHeight; // 304
 
 // TODO/FIXME: COLOR_BG_CODE -> g_iWindowThis, once all tab backgrounds are listed first in g_aColors !
 
-    SetBkColor(g_hDC, DebuggerGetColor( BG_DISASM_1 )); // COLOR_BG_CODE
+	SetBkColor(g_hDC, DebuggerGetColor( BG_DISASM_1 )); // COLOR_BG_CODE
 	// Can't use DebugDrawText, since we don't need CLIPPED
-    ExtTextOut(g_hDC,0,0,ETO_OPAQUE,&viewportrect,TEXT(""),0,NULL);
+	ExtTextOut(g_hDC,0,0,ETO_OPAQUE,&viewportrect,TEXT(""),0,NULL);
 }
 
 //===========================================================================
