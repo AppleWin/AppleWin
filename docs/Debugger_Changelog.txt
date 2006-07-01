@@ -1,4 +1,35 @@
 /*
+TODO: 2.6.0.0 released with next version of AppleWin (1.12.9.2)
+
+.41 Fixed: Breakpoints now properly handle ranges (both relative and absolute)
+   See HELP BPR
+.40 Changed: Cleaned up Bookmarks, Watches, ZeroPage to be more consistent.
+   Example:
+   ZPA         // list
+   ZPA CV      // add address
+   ZPA 0 CV    // update with new address
+   ZPA 0 CV CH // add/update a sequence
+.39 Changed: Cleaned up many commands and HELP categories.
+.38 Added: BMSAVE Bookmarks are now saved.
+.37 Changed: Breakpoints now recognize op '!=' or '!' for not equal.
+.36 Removed: Command Config menu (OPTION) since it is not needed
+.35 Changed: Command CONFIG renamed to OPTION to prevent same name collision with category
+.34 Fixed: The comment to end-of-line (//) is now a proper token 
+.33 Fixed: Parsing of operators <= >=
+.32 Fixed: HELP SYM displaying help category, not help command.
+.31 Added: Mini-help for Watches
+.30 Fixed: Command aliases are no longer displayed multiple times
+	i.e. HELP BEN // would show BENCHMARK BENCHMARK (BENCH)
+.29 Fixed: Removed hard-coded magic number spacing for Regs on info panel
+.28 Fixed: Commands and params can now be in lowercase
+.27 Fixed: Help now does partial matches. i.e. HELP OP
+.26 Fixed: FONT checking wrong arg count - bug introduced when op * was added.
+.25 Fixed: Console not handling string with length same as console width
+.24 Added: HELP RANGE
+.23 Added: HELP OPERATORS
+.22 Fixed: Memory searching now accepts ranges. see HELP S, HELP SH
+.21 Fixed: Updated BLOAD BSAVE Help
+.20 Fixed: BLOAD, BSAVE now accept ranges.
 .19 Fixed: Backspace toggles quote state for single quotes now too.
 .18 Changed: Results of searching now start at 1, not zero.
 	i.e.
@@ -116,6 +147,8 @@
 .1 Linards put undocumented mnemonics in lowercase
 2.5.3.x
 
+2.5.2.x
+
 3.0 Added: Ctrl-V (paste) now works.
 2.0 Added: BRKOP ## support
 2.5.1.0 Added: BRK ON|OFF support
@@ -153,6 +186,9 @@ R Y 2
 .18 Added: new operator '@'
 
 .17 Fixed bug in _GetStartEnd(). i.e. D000,FFFF -> D000,CFFF (nothing searched!)
+
+2.5.0.16 released with AppleWin 1.12.9.1
+
 .16 Added: addr:byte [byte]
 .15
 .14 Fixed: Parses not to cook the args, until right before eating them
