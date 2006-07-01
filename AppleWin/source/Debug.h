@@ -42,6 +42,9 @@ using namespace std;
 	extern Command_t g_aCommands[];
 	extern Command_t g_aParameters[];
 
+// Config - FileName
+	extern char      g_sFileNameConfig[];
+
 // Cursor
 	extern WORD g_nDisasmTopAddress ;
 	extern WORD g_nDisasmBotAddress ;

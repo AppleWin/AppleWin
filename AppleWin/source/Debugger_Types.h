@@ -14,6 +14,13 @@
 		, _6502_NUM_FLAGS = 8
 	};
 
+	enum RangeType_t
+	{
+		RANGE_MISSING_ARG_2 = 0, // error
+		RANGE_HAS_LEN          , // valid case 1
+		RANGE_HAS_END          , // valid case 2
+	};
+
 	struct AddressingMode_t
 	{
 		TCHAR m_sFormat[ MAX_OPMODE_FORMAT ];
@@ -196,7 +203,8 @@
 		BP_OP_LESS_EQUAL   , // <= REG
 		BP_OP_LESS_THAN    , // <  REG
 		BP_OP_EQUAL        , // =  REG
-		BP_OP_NOT_EQUAL    , // !  REG
+		BP_OP_NOT_EQUAL    , // != REG
+//		BP_OP_NOT_EQUAL_1  , // !  REG
 		BP_OP_GREATER_THAN , // >  REG
 		BP_OP_GREATER_EQUAL, // >= REG
 		BP_OP_READ         , // @  MEM @ ? *
@@ -345,7 +353,14 @@
 		, NUM_COLORS
 	};
 
+// Config _________________________________________________________________________________________
 	
+	enum ConfigSave_t
+	{
+		CONFIG_SAVE_FILE_CREATE,
+		CONFIG_SAVE_FILE_APPEND
+	};
+
 // Commands _______________________________________________________________________________________
 
 	enum Update_e
@@ -395,7 +410,7 @@
 	// NOTE: Commands_e and g_aCommands[] order _MUST_ match !!! Aliases are listed at the end
 	enum Commands_e
 	{
-// Main / CPU
+// CPU
 		  CMD_CURSOR_JUMP_PC // Shift
 		, CMD_CURSOR_SET_PC  // Ctrl
 		, CMD_ASSEMBLE
@@ -407,18 +422,29 @@
 		, CMD_JSR
 		, CMD_NOP
 		, CMD_OUT
+// CPU - Meta Info
+		, CMD_PROFILE
+		, CMD_REGISTER_SET
+// CPU - Stack
+//		, CMD_STACK_LIST
+		, CMD_STACK_POP
+		, CMD_STACK_POP_PSEUDO
+		, CMD_STACK_PUSH
+//		, CMD_STACK_RETURN
 		, CMD_STEP_OVER
 		, CMD_STEP_OUT
+// CPU - Meta Info
 		, CMD_TRACE
 		, CMD_TRACE_FILE
 		, CMD_TRACE_LINE
 		, CMD_UNASSEMBLE
 // Bookmarks
-		, CMD_BOOKMARK_MENU
+		, CMD_BOOKMARK
 		, CMD_BOOKMARK_ADD
 		, CMD_BOOKMARK_CLEAR
 		, CMD_BOOKMARK_LIST
-		, CMD_BOOKMARK_LOAD
+//		, CMD_BOOKMARK_LOAD
+		, CMD_BOOKMARK_GOTO
 		, CMD_BOOKMARK_SAVE
 // Breakpoints
 		, CMD_BREAKPOINT
@@ -436,19 +462,17 @@
 		, CMD_BREAKPOINT_EDIT
 		, CMD_BREAKPOINT_ENABLE
 		, CMD_BREAKPOINT_LIST
-		, CMD_BREAKPOINT_LOAD
+//		, CMD_BREAKPOINT_LOAD
 		, CMD_BREAKPOINT_SAVE
 // Benchmark / Timing
-		, CMD_BENCHMARK
 //		, CMD_BENCHMARK_START
 //		, CMD_BENCHMARK_STOP
-		, CMD_PROFILE
 //		, CMD_PROFILE_START
 //		, CMD_PROFILE_STOP
 // Config (debugger settings)
+		, CMD_BENCHMARK
 		, CMD_CONFIG_BW         // BW    # rr gg bb
 		, CMD_CONFIG_COLOR      // COLOR # rr gg bb
-		, CMD_CONFIG_MENU
 
 		, CMD_CONFIG_DISASM
 //		, CMD_CONFIG_DISASM_BRANCH
@@ -531,8 +555,8 @@
 		, CMD_MEMORY_MOVE
 		, CMD_MEMORY_SAVE
 		, CMD_MEMORY_SEARCH
-		, CMD_MEMORY_SEARCH_ASCII   // Ascii Text
-		, CMD_MEMORY_SEARCH_APPLE   // Flashing Chars, Hi-Bit Set
+//		, CMD_MEMORY_SEARCH_ASCII   // Ascii Text
+//		, CMD_MEMORY_SEARCH_APPLE   // Flashing Chars, Hi-Bit Set
 		, CMD_MEMORY_SEARCH_HEX
 		, CMD_MEMORY_FILL
 // Output
@@ -541,17 +565,9 @@
 		, CMD_OUTPUT_PRINT
 		, CMD_OUTPUT_PRINTF
 		, CMD_OUTPUT_RUN
-// Registers - CPU
-		, CMD_REGISTER_SET
 // Source Level Debugging
 		, CMD_SOURCE
 		, CMD_SYNC
-// Stack - CPU
-//		, CMD_STACK_LIST
-		, CMD_STACK_POP
-		, CMD_STACK_POP_PSEUDO
-		, CMD_STACK_PUSH
-//		, CMD_STACK_RETURN
 // Symbols
 		, CMD_SYMBOLS_LOOKUP
 //		, CMD_SYMBOLS
@@ -566,12 +582,13 @@
 //		, CMD_SYMBOLS_LOAD_2
 //		, CMD_SYMBOLS_SAVE
 // Watch
+		, CMD_WATCH
 		, CMD_WATCH_ADD
 		, CMD_WATCH_CLEAR
 		, CMD_WATCH_DISABLE
 		, CMD_WATCH_ENABLE
 		, CMD_WATCH_LIST
-		, CMD_WATCH_LOAD
+//		, CMD_WATCH_LOAD
 		, CMD_WATCH_SAVE
 // Window
 //		, CMD_WINDOW_COLOR_CUSTOM
@@ -610,12 +627,15 @@
 		, CMD_ZEROPAGE_POINTER_2
 		, CMD_ZEROPAGE_POINTER_3
 		, CMD_ZEROPAGE_POINTER_4
+		, CMD_ZEROPAGE_POINTER_5
+		, CMD_ZEROPAGE_POINTER_6
+		, CMD_ZEROPAGE_POINTER_7
 		, CMD_ZEROPAGE_POINTER_ADD
 		, CMD_ZEROPAGE_POINTER_CLEAR
 		, CMD_ZEROPAGE_POINTER_DISABLE
 		, CMD_ZEROPAGE_POINTER_ENABLE
 		, CMD_ZEROPAGE_POINTER_LIST
-		, CMD_ZEROPAGE_POINTER_LOAD
+//		, CMD_ZEROPAGE_POINTER_LOAD
 		, CMD_ZEROPAGE_POINTER_SAVE
 
 		, NUM_COMMANDS
@@ -641,14 +661,15 @@
 	Update_t CmdTraceLine   (int nArgs);
 	Update_t CmdUnassemble  (int nArgs); // code dump, aka, Unassemble
 // Bookmarks
-	Update_t CmdBookmarkMenu   (int nArgs);
+	Update_t CmdBookmark       (int nArgs);
 	Update_t CmdBookmarkAdd    (int nArgs);
 	Update_t CmdBookmarkClear  (int nArgs);
 	Update_t CmdBookmarkList   (int nArgs);
-	Update_t CmdBookmarkLoad   (int nArgs);
+	Update_t CmdBookmarkGoto   (int nArgs);
+//	Update_t CmdBookmarkLoad   (int nArgs);
 	Update_t CmdBookmarkSave   (int nArgs);
 // Breakpoints
-	Update_t CmdBreakpointMenu    (int nArgs);
+	Update_t CmdBreakpoint        (int nArgs);
 	Update_t CmdBreakpointAddSmart(int nArgs);
 	Update_t CmdBreakpointAddReg  (int nArgs);
 	Update_t CmdBreakpointAddPC   (int nArgs);
@@ -659,7 +680,7 @@
 	Update_t CmdBreakpointEdit    (int nArgs);
 	Update_t CmdBreakpointEnable  (int nArgs);
 	Update_t CmdBreakpointList    (int nArgs);
-	Update_t CmdBreakpointLoad    (int nArgs);
+//	Update_t CmdBreakpointLoad    (int nArgs);
 	Update_t CmdBreakpointSave    (int nArgs);
 // Benchmark
 	Update_t CmdBenchmark      (int nArgs);
@@ -669,10 +690,10 @@
 	Update_t CmdProfileStart   (int nArgs);
 	Update_t CmdProfileStop    (int nArgs);
 // Config
-	Update_t CmdConfigMenu        (int nArgs);
-	Update_t CmdConfigBase        (int nArgs);
-	Update_t CmdConfigBaseHex     (int nArgs);
-	Update_t CmdConfigBaseDec     (int nArgs);
+//	Update_t CmdConfigMenu        (int nArgs);
+//	Update_t CmdConfigBase        (int nArgs);
+//	Update_t CmdConfigBaseHex     (int nArgs);
+//	Update_t CmdConfigBaseDec     (int nArgs);
 	Update_t CmdConfigColorMono   (int nArgs);
 	Update_t CmdConfigDisasm      (int nArgs);
 	Update_t CmdConfigFont        (int nArgs);
@@ -752,12 +773,13 @@
 	Update_t CmdSymbolsSave     (int nArgs);
 	Update_t CmdSymbolsSource   (int nArgs);
 // Watch
+	Update_t CmdWatch        (int nArgs);
 	Update_t CmdWatchAdd     (int nArgs);
 	Update_t CmdWatchClear   (int nArgs);
 	Update_t CmdWatchDisable (int nArgs);
 	Update_t CmdWatchEnable  (int nArgs);
 	Update_t CmdWatchList    (int nArgs);
-	Update_t CmdWatchLoad    (int nArgs);
+//	Update_t CmdWatchLoad    (int nArgs);
 	Update_t CmdWatchSave    (int nArgs);
 // Window
 	Update_t CmdWindow            (int nArgs);
@@ -797,7 +819,7 @@
 	Update_t CmdZeroPageDisable (int nArgs);
 	Update_t CmdZeroPageEnable  (int nArgs);
 	Update_t CmdZeroPageList    (int nArgs);
-	Update_t CmdZeroPageLoad    (int nArgs);
+//	Update_t CmdZeroPageLoad    (int nArgs);
 	Update_t CmdZeroPageSave    (int nArgs);
 	Update_t CmdZeroPagePointer (int nArgs);
 
@@ -1077,14 +1099,19 @@
 	*/
 	enum ArgToken_e // Arg Token Type
 	{
+		// Single Char Tokens must come first
 		  TOKEN_ALPHANUMERIC // 
 		, TOKEN_AMPERSAND    // &
 		, TOKEN_AT           // @  results dereference. i.e. S 0,FFFF C030; L @1
+		, TOKEN_BRACE_L      // {
+		, TOKEN_BRACE_R      // }
+		, TOKEN_BRACKET_L    // [
+		, TOKEN_BRACKET_R    // ]
 		, TOKEN_BSLASH       // \xx Hex Literal
 		, TOKEN_CARET        // ^
 //		, TOKEN_CHAR
-		, TOKEN_COLON        // : Range  Argument1.n2 = Argument2
-		, TOKEN_COMMA        // , Length Argument1.n2 = Argument2
+		, TOKEN_COLON        // : Range 
+		, TOKEN_COMMA        // , Length
 //		, TOKEN_DIGIT
 		, TOKEN_DOLLAR       // $ Address (symbol lookup forced)
 		, TOKEN_EQUAL        // = Assign Argment.n2 = Argument2
@@ -1092,26 +1119,32 @@
 		, TOKEN_FSLASH       // /
 		, TOKEN_GREATER_THAN // > 
 		, TOKEN_HASH         // # Value  no symbol lookup
-		, TOKEN_LEFT_PAREN   // (
 		, TOKEN_LESS_THAN    // <
 		, TOKEN_MINUS        // - Delta  Argument1 -= Argument2
+		, TOKEN_PAREN_L      // (
+		, TOKEN_PAREN_R      // )
 		, TOKEN_PERCENT      // %
 		, TOKEN_PIPE         // |
 		, TOKEN_PLUS         // + Delta  Argument1 += Argument2
 		, TOKEN_QUOTE_SINGLE // '
 		, TOKEN_QUOTE_DOUBLE // "
-		, TOKEN_RIGHT_PAREN  // )
 		, TOKEN_SEMI         // ; Command Seperator
 		, TOKEN_SPACE        //   Token Delimiter
 		, TOKEN_STAR         // *
 //		, TOKEN_TAB          // '\t'
+		, TOKEN_TILDE        // ~
+
+		// Multi char tokens come last
+		, TOKEN_COMMENT_EOL  // //
+		,_TOKEN_FLAG_MULTI = TOKEN_COMMENT_EOL
+		, TOKEN_GREATER_EQUAL// >=
+		, TOKEN_LESS_EQUAL   // <=
+		, TOKEN_NOT_EQUAL    // !=
+//		, TOKEN_COMMENT_1    // /*
+//		, TOKEN_COMMENT_2    // */
 
 		, NUM_TOKENS // signal none, or bad
 		, NO_TOKEN = NUM_TOKENS
-
-	// Merged tokens
-		, TOKEN_LESS_EQUAL    //
-		, TOKEN_GREATER_EQUAL //
 	};
 
 	enum ArgType_e
@@ -1132,7 +1165,7 @@
 	{
 		ArgToken_e eToken;
 		ArgType_e  eType ;
-		TCHAR      sToken; // char intentional
+		char       sToken[4];
 	};
 
 	struct Arg_t
@@ -1159,7 +1192,8 @@
 		, PARAM_BP_LESS_EQUAL = _PARAM_BREAKPOINT_BEGIN   // <=
 		, PARAM_BP_LESS_THAN     // <
 		, PARAM_BP_EQUAL         // =
-		, PARAM_BP_NOT_EQUAL     // !
+		, PARAM_BP_NOT_EQUAL     // !=
+		, PARAM_BP_NOT_EQUAL_1   // !
 		, PARAM_BP_GREATER_THAN  // >
 		, PARAM_BP_GREATER_EQUAL // >=
 		, PARAM_BP_READ          // R
@@ -1220,6 +1254,7 @@
 	, _PARAM_GENERAL_BEGIN = _PARAM_FONT_END // Daisy Chain
 		, PARAM_FIND = _PARAM_GENERAL_BEGIN
 		, PARAM_BRANCH
+		, PARAM_CATEGORY
 		, PARAM_CLEAR
 		, PARAM_LOAD
 		, PARAM_LIST
@@ -1234,20 +1269,22 @@
 
 	, _PARAM_HELPCATEGORIES_BEGIN = _PARAM_GENERAL_END // Daisy Chain
 		, PARAM_WILDSTAR = _PARAM_HELPCATEGORIES_BEGIN
-		, PARAM_CAT_BOOKMARKS
-		, PARAM_CAT_BREAKPOINTS
-		, PARAM_CAT_CONFIG
-		, PARAM_CAT_CPU        
-		, PARAM_CAT_FLAGS
-		, PARAM_CAT_HELP
-		, PARAM_CAT_MEMORY
-		,_PARAM_CAT_MEM  // alias MEM = MEMORY
-		, PARAM_CAT_OUTPUT
-		, PARAM_CAT_REGISTERS
-		, PARAM_CAT_SYMBOLS
-		, PARAM_CAT_WATCHES    
-		, PARAM_CAT_WINDOW     
-		, PARAM_CAT_ZEROPAGE
+		, PARAM_CAT_BOOKMARKS   
+		, PARAM_CAT_BREAKPOINTS 
+		, PARAM_CAT_CONFIG      
+		, PARAM_CAT_CPU         
+//		, PARAM_CAT_EXPRESSION  
+		, PARAM_CAT_FLAGS       
+		, PARAM_CAT_HELP        
+		, PARAM_CAT_MEMORY      
+		, PARAM_CAT_OUTPUT      
+		, PARAM_CAT_OPERATORS   
+		, PARAM_CAT_RANGE       
+//		, PARAM_CAT_REGISTERS   
+		, PARAM_CAT_SYMBOLS     
+		, PARAM_CAT_WATCHES     
+		, PARAM_CAT_WINDOW      
+		, PARAM_CAT_ZEROPAGE    
 	, _PARAM_HELPCATEGORIES_END
 	,  PARAM_HELPCATEGORIES_NUM = _PARAM_HELPCATEGORIES_END - _PARAM_HELPCATEGORIES_BEGIN
 
@@ -1345,7 +1382,7 @@
 
 	enum
 	{
-		MAX_WATCHES = 6
+		MAX_WATCHES = 8
 	};
 
 
@@ -1378,6 +1415,6 @@
 
 	enum
 	{
-		MAX_ZEROPAGE_POINTERS = 6
+		MAX_ZEROPAGE_POINTERS = 8
 	};
 

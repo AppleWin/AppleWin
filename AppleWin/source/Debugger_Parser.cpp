@@ -48,42 +48,44 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// NOTE: ArgToken_e and g_aTokens must match!
 	const TokenTable_t g_aTokens[ NUM_TOKENS ] =
 	{ // Input
-		{ TOKEN_ALPHANUMERIC, TYPE_STRING  , 0          }, // Default, if doen't match anything else
-		{ TOKEN_AMPERSAND   , TYPE_OPERATOR, TEXT('&')  }, // bit-and
-		{ TOKEN_AT          , TYPE_OPERATOR, TEXT('@')  }, // reference results 
-		{ TOKEN_BSLASH      , TYPE_OPERATOR, TEXT('\\') },
-		{ TOKEN_CARET       , TYPE_OPERATOR, TEXT('^')  }, // bit-eor, C/C++: xor, Math: POWER
-		{ TOKEN_COLON       , TYPE_OPERATOR, TEXT(':')  }, 
-		{ TOKEN_COMMA       , TYPE_OPERATOR, TEXT(',')  },
-		{ TOKEN_DOLLAR      , TYPE_STRING  , TEXT('$')  },
-		{ TOKEN_EQUAL       , TYPE_OPERATOR, TEXT('=')  },
-		{ TOKEN_EXCLAMATION , TYPE_OPERATOR, TEXT('!')  }, // NOT
-		{ TOKEN_FSLASH      , TYPE_OPERATOR, TEXT('/')  }, // div
-		{ TOKEN_GREATER_THAN, TYPE_OPERATOR, TEXT('>')  }, // TODO/FIXME: Parser will break up '>=' (needed for uber breakpoints)
-		{ TOKEN_HASH        , TYPE_OPERATOR, TEXT('#')  },
-		{ TOKEN_LEFT_PAREN  , TYPE_OPERATOR, TEXT('(')  },
-		{ TOKEN_LESS_THAN   , TYPE_OPERATOR, TEXT('<')  },
-		{ TOKEN_MINUS       , TYPE_OPERATOR, TEXT('-')  }, // sub
-		{ TOKEN_PERCENT     , TYPE_OPERATOR, TEXT('%')  }, // mod
-		{ TOKEN_PIPE        , TYPE_OPERATOR, TEXT('|')  }, // bit-or
-		{ TOKEN_PLUS        , TYPE_OPERATOR, TEXT('+')  }, // add
+		{ TOKEN_ALPHANUMERIC, TYPE_STRING  , 0    }, // Default, if doen't match anything else
+		{ TOKEN_AMPERSAND   , TYPE_OPERATOR, "&"  }, // bit-and
+		{ TOKEN_AT          , TYPE_OPERATOR, "@"  }, // reference results 
+		{ TOKEN_BRACE_L     , TYPE_STRING  , "{"  },
+		{ TOKEN_BRACE_R     , TYPE_STRING  , "}"  },
+		{ TOKEN_BRACKET_L   , TYPE_STRING  , "["  },
+		{ TOKEN_BRACKET_R   , TYPE_STRING  , "]"  },
+		{ TOKEN_BSLASH      , TYPE_OPERATOR, "\\" },
+		{ TOKEN_CARET       , TYPE_OPERATOR, "^"  }, // bit-eor, C/C++: xor, Math: POWER
+		{ TOKEN_COLON       , TYPE_OPERATOR, ":"  }, 
+		{ TOKEN_COMMA       , TYPE_OPERATOR, ","  },
+		{ TOKEN_DOLLAR      , TYPE_STRING  , "$"  },
+		{ TOKEN_EQUAL       , TYPE_OPERATOR, "="  },
+		{ TOKEN_EXCLAMATION , TYPE_OPERATOR, "!"  }, // NOT
+		{ TOKEN_FSLASH      , TYPE_OPERATOR, "/"  }, // div
+		{ TOKEN_GREATER_THAN, TYPE_OPERATOR, ">"  }, // TODO/FIXME: Parser will break up '>=' (needed for uber breakpoints)
+		{ TOKEN_HASH        , TYPE_OPERATOR, "#"  },
+		{ TOKEN_LESS_THAN   , TYPE_OPERATOR, "<"  },
+		{ TOKEN_MINUS       , TYPE_OPERATOR, "-"  }, // sub
+		{ TOKEN_PAREN_L     , TYPE_OPERATOR, "("  },
+		{ TOKEN_PAREN_R     , TYPE_OPERATOR, ")"  },
+		{ TOKEN_PERCENT     , TYPE_OPERATOR, "%"  }, // mod
+		{ TOKEN_PIPE        , TYPE_OPERATOR, "|"  }, // bit-or
+		{ TOKEN_PLUS        , TYPE_OPERATOR, "+"  }, // add
 //		{ TOKEN_QUESTION    , TYPE_OPERATOR, TEXT('?')  }, // Not a token 1) wildcard needs to stay together with other chars
-		{ TOKEN_QUOTE_SINGLE, TYPE_QUOTED_1, TEXT('\'') },
-		{ TOKEN_QUOTE_DOUBLE, TYPE_QUOTED_2, TEXT('"')  }, // for strings
-		{ TOKEN_RIGHT_PAREN , TYPE_OPERATOR, TEXT(')')  },
-		{ TOKEN_SEMI        , TYPE_STRING  , TEXT(';')  },
-		{ TOKEN_SPACE       , TYPE_STRING  , TEXT(' ')  }, // space is also a delimiter between tokens/args
-		{ TOKEN_STAR        , TYPE_OPERATOR, TEXT('*')  }  // Not a token 1) wildcard needs to stay together with other chars
+		{ TOKEN_QUOTE_SINGLE, TYPE_QUOTED_1, "\'" },
+		{ TOKEN_QUOTE_DOUBLE, TYPE_QUOTED_2, "\"" }, // for strings
+		{ TOKEN_SEMI        , TYPE_STRING  , ";"  },
+		{ TOKEN_SPACE       , TYPE_STRING  , " "  }, // space is also a delimiter between tokens/args
+		{ TOKEN_STAR        , TYPE_OPERATOR, "*"  }, // Not a token 1) wildcard needs to stay together with other chars
 //		{ TOKEN_TAB         , TYPE_STRING  , TEXT('\t') }
-//		{ TOKEN_TILDE       , TYPE_OPERATOR, TEXT('~')  }, // C/C++: Not.  Used for console.
+		{ TOKEN_TILDE       , TYPE_OPERATOR, "~"  }, // C/C++: Not.  Used for console.
+
+		{ TOKEN_COMMENT_EOL , TYPE_STRING  , "//" },
+		{ TOKEN_GREATER_EQUAL,TYPE_OPERATOR, ">=" },
+		{ TOKEN_LESS_EQUAL  , TYPE_OPERATOR, "<=" },
+		{ TOKEN_NOT_EQUAL  , TYPE_OPERATOR , "!=" }
 	};
-
-//	const TokenTable_t g_aTokens2[  ] =
-//	{ // Input
-//		{ TOKEN_GREATER_EQUAL,TYPE_OPERATOR, TEXT(">=\x00") }, // TODO/FIXME: Parser will break up '>=' (needed for uber breakpoints)
-//		{ TOKEN_LESS_EQUAL  , TYPE_OPERATOR, TEXT("<=\x00") }, // TODO/FIXME: Parser will break up '<=' (needed for uber breakpoints)
-//	}
-
 
 // Arg ____________________________________________________________________________________________
 
@@ -255,6 +257,9 @@ int	ArgsGet ( TCHAR * pInput )
 				pEnd = SkipUntilToken( pSrc+1, g_aTokens, NUM_TOKENS, &iTokenEnd );
 			}
 
+			if (iTokenSrc == TOKEN_COMMENT_EOL)
+				break;
+			
 			if (iTokenSrc == NO_TOKEN)
 			{
 				iTokenSrc = TOKEN_ALPHANUMERIC;
@@ -288,7 +293,7 @@ int	ArgsGet ( TCHAR * pInput )
 			{
 				nLen = MIN( nBuf, MAX_ARG_LEN-1 );
 				_tcsncpy( pArg->sArg, pSrc, nLen );
-				pArg->sArg[ nLen ] = 0;			
+				pArg->sArg[ nLen ] = 0;
 				pArg->nArgLen      = nLen;
 				pArg->eToken       = iTokenSrc;
 				pArg->bType        = iType;
@@ -303,8 +308,9 @@ int	ArgsGet ( TCHAR * pInput )
 					if (nLen > 1)
 					{
 						// Technically, chars aren't allowed to be multi-char
+						// But we've extended the syntax to allow the user
+						// to input High-Bit Apple Text
 					}
-
 					pEnd++; 
 				}
 
@@ -689,7 +695,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 				}
 
 				if (bProcessMask & (1 << TOKEN_EXCLAMATION))
-				if (pArg->eToken == TOKEN_EXCLAMATION) // NOT_EQUAL !
+				if (pArg->eToken == TOKEN_EXCLAMATION) // NOT !
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
 					{
@@ -755,18 +761,37 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 //===========================================================================
 const char * ParserFindToken( const char *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e * pToken_ )
 {
-	const TokenTable_t *pToken= aTokens;
-	const TCHAR        *pName = NULL;
-	for (int iToken = 0; iToken < nTokens; iToken++ )
+	if (! pSrc)
+		return NULL;
+
+	const TCHAR        *pName  = NULL;
+	int   iToken;
+
+	// Look-ahead for <=
+	// Look-ahead for >=
+	for (iToken = _TOKEN_FLAG_MULTI; iToken < NUM_TOKENS; iToken++ )
 	{
-		pName = & (pToken->sToken);
+		pName = & (g_aTokens[ iToken ].sToken[0]);
+		if ((pSrc[0] == pName[ 0 ]) &&
+			(pSrc[1] == pName[ 1 ]))
+		{
+			*pToken_ = g_aTokens[ iToken ].eToken;
+			return pSrc + 2;
+		}
+	}
+
+	const TokenTable_t *pToken = aTokens;
+
+	for (iToken = 0; iToken < _TOKEN_FLAG_MULTI; iToken++ )
+	{
+		pName = & (pToken->sToken[0]);
 		if (*pSrc == *pName)
 		{
 			if ( pToken_)
 			{
 				*pToken_ = (ArgToken_e) iToken;
 			}
-			return pSrc;
+			return pSrc + 1;
 		}
 		pToken++;
 	}
@@ -792,9 +817,7 @@ const TCHAR * FindTokenOrAlphaNumeric ( const TCHAR *pSrc, const TokenTable_t *a
 		else
 		{
 			pEnd = ParserFindToken( pSrc, aTokens, nTokens, pToken_ );
-			if (pEnd)
-				pEnd = pSrc + 1; // _tcslen( pToken );
-			else
+			if (! pEnd)
 				pEnd = pSrc;
 		}
 	}
