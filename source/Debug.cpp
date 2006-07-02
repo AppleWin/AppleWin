@@ -44,7 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,6,41);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,6,42);
 
 
 // Public _________________________________________________________________________________________
@@ -647,23 +647,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("START")      , NULL, PARAM_START          }, // benchmark
 		{TEXT("STOP")       , NULL, PARAM_STOP           }, // benchmark
 // Help Categories
-		{TEXT("*")          , NULL, PARAM_WILDSTAR        },
-		{TEXT("BOOKMARKS")  , NULL, PARAM_CAT_BOOKMARKS   },
-		{TEXT("BREAKPOINTS"), NULL, PARAM_CAT_BREAKPOINTS },
-		{TEXT("CONFIG")     , NULL, PARAM_CAT_CONFIG      },
-		{TEXT("CPU")        , NULL, PARAM_CAT_CPU         },
+		{"*"           , NULL, PARAM_WILDSTAR        },
+		{"BOOKMARKS"   , NULL, PARAM_CAT_BOOKMARKS   },
+		{"BREAKPOINTS" , NULL, PARAM_CAT_BREAKPOINTS },
+		{"CONFIG"      , NULL, PARAM_CAT_CONFIG      },
+		{"CPU"         , NULL, PARAM_CAT_CPU         },
 //		{TEXT("EXPRESSION") ,
-		{TEXT("FLAGS")      , NULL, PARAM_CAT_FLAGS       },
-		{TEXT("HELP")       , NULL, PARAM_CAT_HELP        },
-		{TEXT("MEMORY")     , NULL, PARAM_CAT_MEMORY      }, // alias // SOURCE [SYMBOLS] [MEMORY] filename
-		{TEXT("OUTPUT")     , NULL, PARAM_CAT_OUTPUT      },
-		{TEXT("OPERATORS"  ), NULL, PARAM_CAT_OPERATORS   },
-		{TEXT("RANGE"      ), NULL, PARAM_CAT_RANGE       },
+		{"FLAGS"       , NULL, PARAM_CAT_FLAGS       },
+		{"HELP"        , NULL, PARAM_CAT_HELP        },
+		{"KEYBOARD"    , NULL, PARAM_CAT_KEYBOARD    },
+		{"MEMORY"      , NULL, PARAM_CAT_MEMORY      }, // alias // SOURCE [SYMBOLS] [MEMORY] filename
+		{"OUTPUT"      , NULL, PARAM_CAT_OUTPUT      },
+		{"OPERATORS"   , NULL, PARAM_CAT_OPERATORS   },
+		{"RANGE"       , NULL, PARAM_CAT_RANGE       },
 //		{TEXT("REGISTERS")  , NULL, PARAM_CAT_REGISTERS   },
-		{TEXT("SYMBOLS")    , NULL, PARAM_CAT_SYMBOLS     },
-		{TEXT("WATCHES")    , NULL, PARAM_CAT_WATCHES     },
-		{TEXT("WINDOW")     , NULL, PARAM_CAT_WINDOW      },
-		{TEXT("ZEROPAGE")   , NULL, PARAM_CAT_ZEROPAGE    },	
+		{"SYMBOLS"     , NULL, PARAM_CAT_SYMBOLS     },
+		{"WATCHES"     , NULL, PARAM_CAT_WATCHES     },
+		{"WINDOW"      , NULL, PARAM_CAT_WINDOW      },
+		{"ZEROPAGE"    , NULL, PARAM_CAT_ZEROPAGE    },	
 // Memory
 		{TEXT("?")          , NULL, PARAM_MEM_SEARCH_WILD },
 //		{TEXT("*")          , NULL, PARAM_MEM_SEARCH_BYTE },
@@ -8045,6 +8046,43 @@ void DebugBegin ()
 	g_bDebuggerViewingAppleOutput = false;
 
 	UpdateDisplay( UPDATE_ALL );
+
+#if DEBUG_APPLE_FONT
+
+	COLORREF aColors[ 8 ] =
+	{
+		RGB(   0,   0,   0 ), // K
+		RGB( 255,   0,   0 ), // R
+		RGB(   0, 255,   0 ), // G
+		RGB( 255, 255,   0 ), // Y
+		RGB(   0,   0, 255 ), // B
+		RGB( 255,   0, 255 ), // M
+		RGB(   0, 255, 255 ), // C
+		RGB( 255, 255, 255 ), // W
+	};
+
+	int iFG = 7;
+	int iBG = 4;
+
+//	DebuggerSetColorFG( aColors[ iFG ] );
+//	DebuggerSetColorBG( aColors[ iBG ] );
+
+	int iChar = 0;
+	int x = 0;
+	int y = 0;
+	for (iChar = 0; iChar < 256; iChar++)
+	{
+		x = (iChar % 16);
+		y = (iChar / 16);
+
+		iFG = (x >> 1); // (iChar % 8);
+		iBG = (y >> 1) & 7; // (iChar / 8) & 7;
+		DebuggerSetColorFG( aColors[ iFG ] );
+		DebuggerSetColorBG( aColors[ iBG ] );
+
+		DebuggerPrintChar( x * (APPLE_FONT_WIDTH / 2), y * (APPLE_FONT_HEIGHT / 2), iChar );
+	}
+#endif
 }
 
 //===========================================================================
@@ -8152,6 +8190,16 @@ void DebugDestroy ()
 	{
 		_CmdSymbolsClear( (Symbols_e) iTable );
 	}
+
+	SelectObject( g_hDstDC, GetStockObject(NULL_BRUSH) );
+
+	DeleteObject( g_hBrushFG );
+	DeleteObject( g_hBrushBG );
+
+	DeleteDC( g_hDebugFontDC );
+	DeleteObject( g_hDebugFontBitmap );
+
+	ReleaseDC( g_hFrameWindow, g_hDstDC );
 }
 
 
@@ -8172,13 +8220,13 @@ void DebugEnd ()
 		g_hTraceFile = NULL;
 	}
 
-
 	g_vMemorySearchResults.erase( g_vMemorySearchResults.begin(), g_vMemorySearchResults.end() );
 }
 
 
 #if _DEBUG
 #define DEBUG_COLOR_RAMP 0
+//===========================================================================
 void _SetupColorRamp( const int iPrimary, int & iColor_ )
 {
 	TCHAR sRamp[ CONSOLE_WIDTH*2 ] = TEXT("");
@@ -8214,6 +8262,7 @@ void _SetupColorRamp( const int iPrimary, int & iColor_ )
 }
 #endif // _DEBUG
 
+//===========================================================================
 void _ConfigColorsReset()
 {
 //	int iColor = 1; // black only has one level, skip it, since black levels same as white levels
@@ -8258,6 +8307,80 @@ void _ConfigColorsReset()
 void DebugInitialize ()
 {
 	AssemblerOff(); // update prompt
+
+#if _DEBUG
+	DWORD nError = 0;
+#endif
+
+	g_hDstDC = GetDC( g_hFrameWindow );
+#if _DEBUG
+	nError = GetLastError();
+#endif
+
+	// Must select a bitmap into the temp DC !
+	HDC hTmpDC  = CreateCompatibleDC( g_hDstDC );
+
+#if _DEBUG
+	nError = GetLastError();
+#endif
+
+	g_hDebugFontDC = CreateCompatibleDC( g_hDstDC );
+#if _DEBUG
+	nError = GetLastError();
+#endif
+
+#if APPLE_FONT_NEW
+	// Pre-scaled bitmap
+	g_hDebugFontBitmap = LoadBitmap(g_hInstance,TEXT("IDB_DEBUG_FONT_7x8"));
+	SelectObject( g_hDebugFontDC, g_hDebugFontBitmap );
+#else
+	// Scale at run-time
+
+	// Black = Transparent
+	// White = Opaque
+	HBITMAP hTmpBitamp = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
+#if _DEBUG
+	nError = GetLastError();
+#endif
+
+	SelectObject( hTmpDC ,hTmpBitamp);
+#if _DEBUG
+	nError = GetLastError();
+#endif
+
+	g_hDebugFontBrush = GetStockBrush( WHITE_BRUSH );
+	SelectObject(g_hDebugFontDC, g_hDebugFontBrush );
+
+//	SelectObject(hTmpDC, g_hDebugFontBrush );
+
+#if _DEBUG
+	nError = GetLastError();
+#endif
+
+	g_hDebugFontBitmap = CreateCompatibleBitmap(
+		hTmpDC, 
+		APPLE_FONT_X_REGIONSIZE/2, APPLE_FONT_Y_REGIONSIZE/2
+	);
+#if _DEBUG
+	nError = GetLastError();
+#endif
+	SelectObject(g_hDebugFontDC,g_hDebugFontBitmap);
+
+	StretchBlt(
+		g_hDebugFontDC,                                       // HDC hdcDest,                        // handle to destination DC
+		0, 0,                                                 // int nXOriginDest, int nYOriginDest, // y-coord of destination upper-left corner
+		APPLE_FONT_X_REGIONSIZE/2, APPLE_FONT_Y_REGIONSIZE/2, //  int nWidthDest,   int nHeightDest,  
+		hTmpDC,                                               // HDC hdcSrc,                         // handle to source DC
+		0, APPLE_FONT_Y_APPLE_80COL,                          // int nXOriginSrc,  int nYOriginSrc,
+		APPLE_FONT_X_REGIONSIZE, APPLE_FONT_Y_REGIONSIZE,     // int nWidthSrc,    int nHeightSrc,
+		SRCCOPY                                               // DWORD dwRop                         // raster operation code
+	);
+
+	DeleteObject( hTmpBitamp );
+	DeleteObject( hTmpDC );
+#endif
+
+	DeleteDC( g_hDstDC ); g_hDstDC = NULL;
 
 	ZeroMemory( g_aConsoleDisplay, sizeof( g_aConsoleDisplay ) ); // CONSOLE_WIDTH * CONSOLE_HEIGHT );
 	ConsoleInputReset();

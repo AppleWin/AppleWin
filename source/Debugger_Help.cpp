@@ -142,7 +142,7 @@ void Help_Operators()
 	ConsoleBufferPush( TEXT("    -   Subtraction"                         ) );
 	ConsoleBufferPush( TEXT("    *   Multiplication"                      ) );
 	ConsoleBufferPush( TEXT("    /   Division"                            ) );
-	ConsoleBufferPush( TEXT("    %   Modulas / Remainder"                 ) );
+	ConsoleBufferPush( TEXT("    %   Modulas or Remainder"                ) );
 	ConsoleBufferPush( TEXT("  Operators: (Bit Wise)"                     ) );
 	ConsoleBufferPush( TEXT("    &   Bit-wise and (AND)"                  ) );
 	ConsoleBufferPush( TEXT("    |   Bit-wise or  (OR )"                  ) );
@@ -167,11 +167,6 @@ void Help_Operators()
 	int iBreakOp = 0;
 	for( iBreakOp = 0; iBreakOp < NUM_BREAKPOINT_OPERATORS; iBreakOp++ )
 	{
-//		if (iBreakOp == PARAM_BP_LESS_EQUAL)
-//			continue;
-//		if (iBreakOp == PARAM_BP_GREATER_EQUAL)
-//			continue;
-
 		if ((iBreakOp >= PARAM_BP_LESS_EQUAL) &&
 			(iBreakOp <= PARAM_BP_GREATER_EQUAL))
 		{
@@ -180,6 +175,23 @@ void Help_Operators()
 		}
 	}	
 	ConsoleBufferPush( sText );
+}
+
+void Help_KeyboardShortcuts()
+{
+	ConsoleBufferPush("  Scrolling:"                                         );
+	ConsoleBufferPush("    Up Arrow"                                         );
+	ConsoleBufferPush("    Down Arrow"                                       );
+	ConsoleBufferPush("    Shift + Up Arrow"                                 );
+	ConsoleBufferPush("    Shift + Down Arrow"                               );
+	ConsoleBufferPush("    Page Up"                                          );
+	ConsoleBufferPush("    Page Down"                                        );
+	ConsoleBufferPush("    Shift + Page Up"                                  );
+	ConsoleBufferPush("    Shift + Page Down"                                );
+	
+	ConsoleBufferPush("  Bookmarks:"                                         );
+	ConsoleBufferPush("    Ctrl-Shift-#"                                     );
+	ConsoleBufferPush("    Ctrl-#      "                                     );
 }
 
 //===========================================================================
@@ -284,6 +296,16 @@ Update_t CmdHelpSpecific (int nArgs)
 				case PARAM_CAT_CPU        : iCmdBegin = CMD_ASSEMBLE        ; iCmdEnd = CMD_UNASSEMBLE           ; break;
 				case PARAM_CAT_FLAGS      : iCmdBegin = CMD_FLAG_CLEAR      ; iCmdEnd = CMD_FLAG_SET_N           ; break;
 				case PARAM_CAT_HELP       : iCmdBegin = CMD_HELP_LIST       ; iCmdEnd = CMD_MOTD                 ; break;
+				case PARAM_CAT_KEYBOARD   :
+					// HACK: check if we have an exact command match first
+					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
+					if ((!nFound) || (iCommand != CMD_INPUT_KEY))
+					{
+						nArgs = 0;
+						Help_KeyboardShortcuts();
+					}
+					bCategory = false;
+					break;
 				case PARAM_CAT_MEMORY     : iCmdBegin = CMD_MEMORY_COMPARE  ; iCmdEnd = CMD_MEMORY_FILL          ; break;
 				case PARAM_CAT_OUTPUT     : iCmdBegin = CMD_OUTPUT_CALC     ; iCmdEnd = CMD_OUTPUT_RUN           ; break;
 				case PARAM_CAT_SYMBOLS    :
