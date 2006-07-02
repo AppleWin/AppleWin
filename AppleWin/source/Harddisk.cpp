@@ -321,7 +321,7 @@ void HD_Select(int nDrive)
 	ZeroMemory(&ofn,sizeof(OPENFILENAME));
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = g_hFrameWindow;
-	ofn.hInstance       = instance;
+	ofn.hInstance       = g_hInstance;
 	ofn.lpstrFilter     = TEXT("Hard Disk Images (*.hdv)\0*.hdv\0");
 	ofn.lpstrFile       = filename;
 	ofn.nMaxFile        = MAX_PATH;

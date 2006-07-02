@@ -42,7 +42,10 @@ DWORD     cyclenum          = 0;			// Used by SpkrToggle() for non-wave sound
 DWORD     emulmsec          = 0;
 static DWORD emulmsec_frac  = 0;
 bool      g_bFullSpeed      = false;
-HINSTANCE instance          = (HINSTANCE)0;
+
+// Win32
+HINSTANCE g_hInstance          = (HINSTANCE)0;
+
 static DWORD lastfastpaging = 0;
 static DWORD lasttrimimages = 0;
 
@@ -639,7 +642,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 //	DSInit();	// Done when g_hFrameWindow is created (WM_CREATE)
 
 	// DO ONE-TIME INITIALIZATION
-	instance = passinstance;
+	g_hInstance = passinstance;
 	GdiSetBatchLimit(512);
 	GetProgramDirectory();
 	RegisterExtensions();

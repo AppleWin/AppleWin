@@ -12,7 +12,9 @@ extern DWORD      cumulativecycles;
 extern DWORD      cyclenum;
 extern DWORD      emulmsec;
 extern bool       g_bFullSpeed;
-extern HINSTANCE  instance;
+
+// Win32
+extern HINSTANCE  g_hInstance;
 
 extern AppMode_e g_nAppMode;
 

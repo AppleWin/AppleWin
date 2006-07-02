@@ -204,9 +204,6 @@ static LPBYTE        g_pHiresBank0;
 static HBITMAP       g_hLogoBitmap;
 static HPALETTE      g_hPalette;
 
-
-const int APPLE_FONT_WIDTH  = 14;
-const int APPLE_FONT_HEIGHT = 16;
 static HBITMAP       g_hSourceBitmap;
 static LPBYTE        g_pSourcePixels;
 static LPBITMAPINFO  g_pSourceHeader;
@@ -932,33 +929,36 @@ void DrawMonoLoResSource () {
 }
 
 //===========================================================================
-void DrawMonoTextSource (HDC dc) {
-  HDC     memdc  = CreateCompatibleDC(dc);
-  HBITMAP bitmap = LoadBitmap(instance,TEXT("CHARSET40"));
-  HBRUSH brush;
-  switch (videotype)
-  {
-	case VT_MONO_AMBER: brush = CreateSolidBrush(RGB(0xFF,0x80,0x00)); break;
-	case VT_MONO_GREEN: brush = CreateSolidBrush(RGB(0x00,0xC0,0x00)); break;
-	case VT_MONO_WHITE: brush = CreateSolidBrush(RGB(0xFF,0xFF,0xFF)); break;
-	default           : brush = CreateSolidBrush(monochrome); break;
-  }
-  SelectObject(memdc,bitmap);
-  SelectObject(dc,brush);
-  BitBlt(dc,SRCOFFS_40COL,0,256,512,memdc,0,0,MERGECOPY);
-  BitBlt(dc,SRCOFFS_IIPLUS,0,256,256,memdc,0,512,MERGECOPY);
-  StretchBlt(dc,SRCOFFS_80COL,0,128,512,memdc,0,0,256,512,MERGECOPY);
-  SelectObject(dc,GetStockObject(NULL_BRUSH));
-  DeleteObject(brush);
-  DeleteDC(memdc);
-  DeleteObject(bitmap);
+void DrawMonoTextSource (HDC hDstDC)
+{
+	HDC     hSrcDC  = CreateCompatibleDC(hDstDC);
+	HBITMAP hBitmap = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
+	HBRUSH hBrush;
+	switch (videotype)
+	{
+		case VT_MONO_AMBER: hBrush = CreateSolidBrush(RGB(0xFF,0x80,0x00)); break;
+		case VT_MONO_GREEN: hBrush = CreateSolidBrush(RGB(0x00,0xC0,0x00)); break;
+		case VT_MONO_WHITE: hBrush = CreateSolidBrush(RGB(0xFF,0xFF,0xFF)); break;
+		default           : hBrush = CreateSolidBrush(monochrome); break;
+	}
+	SelectObject(hSrcDC,hBitmap);
+	SelectObject(hDstDC,hBrush);
+
+	// TODO: Update with APPLE_FONT_Y_ values
+	BitBlt(hDstDC,SRCOFFS_40COL,0,256,512,hSrcDC,0,0,MERGECOPY);
+	BitBlt(hDstDC,SRCOFFS_IIPLUS,0,256,256,hSrcDC,0,512,MERGECOPY);
+	StretchBlt(hDstDC,SRCOFFS_80COL,0,128,512,hSrcDC,0,0,256,512,MERGECOPY);
+	SelectObject(hDstDC,GetStockObject(NULL_BRUSH));
+	DeleteObject(hBrush);
+	DeleteDC(hSrcDC);
+	DeleteObject(hBitmap);
 }
 
 //===========================================================================
 void DrawTextSource (HDC dc)
 {
 	HDC     memdc  = CreateCompatibleDC(dc);
-	HBITMAP bitmap = LoadBitmap(instance,TEXT("CHARSET40"));
+	HBITMAP bitmap = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
 	SelectObject(memdc,bitmap);
 
 	BitBlt(
@@ -1774,7 +1774,7 @@ void VideoInitialize () {
   ZeroMemory(vidlastmem,0x10000);
 
   // LOAD THE LOGO
-  g_hLogoBitmap = (HBITMAP)LoadImage(instance, MAKEINTRESOURCE(IDB_APPLEWIN), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+  g_hLogoBitmap = (HBITMAP)LoadImage(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
 
   // CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
   framebufferinfo = (LPBITMAPINFO)VirtualAlloc(NULL,
