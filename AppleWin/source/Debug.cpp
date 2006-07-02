@@ -539,7 +539,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	HFONT     g_hFontWebDings  = (HFONT)0;
 
 	// TODO: This really needs to be phased out, and use the ConfigFont[] settings
+#if USE_APPLE_FONT
+	int       g_nFontHeight = DEBUG_FONT_HEIGHT; // 13 -> 12 Lucida Console is readable
+#else
 	int       g_nFontHeight = 15; // 13 -> 12 Lucida Console is readable
+#endif
 
 	const int MIN_DISPLAY_CONSOLE_LINES =  4; // doesn't include ConsoleInput
 
@@ -8418,13 +8422,21 @@ void DebugInitialize ()
 	for (int iFont = 0; iFont < NUM_FONTS; iFont++ )
 	{
 		g_aFontConfig[ iFont ]._hFont = NULL;
+#if USE_APPLE_FONT
+		g_aFontConfig[ iFont ]._nFontHeight   = DEBUG_FONT_HEIGHT;
+		g_aFontConfig[ iFont ]._nFontWidthAvg = DEBUG_FONT_WIDTH;
+		g_aFontConfig[ iFont ]._nFontWidthMax = DEBUG_FONT_WIDTH;
+		g_aFontConfig[ iFont ]._nLineHeight   = DEBUG_FONT_HEIGHT;
+#endif
 	}
 
+#if !USE_APPLE_FONT
 	// TODO: g_aFontPitch
 	_CmdConfigFont( FONT_INFO          , g_sFontNameInfo   , FIXED_PITCH | FF_MODERN      , g_nFontHeight ); // DEFAULT_CHARSET
 	_CmdConfigFont( FONT_CONSOLE       , g_sFontNameConsole, FIXED_PITCH | FF_MODERN      , g_nFontHeight ); // DEFAULT_CHARSET
 	_CmdConfigFont( FONT_DISASM_DEFAULT, g_sFontNameDisasm , FIXED_PITCH | FF_MODERN      , g_nFontHeight ); // OEM_CHARSET
 	_CmdConfigFont( FONT_DISASM_BRANCH , g_sFontNameBranch , DEFAULT_PITCH | FF_DECORATIVE, g_nFontHeight+3); // DEFAULT_CHARSET
+#endif
 
 /*
 	g_hFontDebugger = CreateFont( 
