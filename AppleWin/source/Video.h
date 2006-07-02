@@ -1,5 +1,6 @@
 #pragma once
 
+// Types ____________________________________________________________
 enum VIDEOTYPE
 {
 	  VT_MONO_CUSTOM
@@ -12,10 +13,6 @@ enum VIDEOTYPE
 	, VT_MONO_WHITE
 	, VT_NUM_MODES
 };
-
-extern BOOL       graphicsmode;
-extern COLORREF   monochrome;
-extern DWORD      videotype;
 
 enum AppleFont_e
 {
@@ -40,6 +37,16 @@ enum AppleFont_e
 	APPLE_FONT_Y_APPLE_40COL = 512, // ][
 };
 
+// Globals __________________________________________________________
+
+extern HBITMAP g_hLogoBitmap;
+
+extern BOOL       graphicsmode;
+extern COLORREF   monochrome;
+extern DWORD      videotype;
+
+// Prototypes _______________________________________________________
+
 void    CreateColorMixMap();
 
 BOOL    VideoApparentlyDirty ();
@@ -47,6 +54,7 @@ void    VideoBenchmark ();
 void    VideoCheckPage (BOOL);
 void    VideoChooseColor ();
 void    VideoDestroy ();
+void    VideoDrawLogoBitmap( HDC hDstDC );
 void    VideoDisplayLogo ();
 BOOL    VideoHasRefreshed ();
 void    VideoInitialize ();

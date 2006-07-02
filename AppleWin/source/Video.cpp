@@ -201,7 +201,7 @@ const int MAX_FRAME_Y = 384; // 192 scan lines * 2x zoom = 384
 static LPBYTE        frameoffsettable[384];
 static LPBYTE        g_pHiresBank1;
 static LPBYTE        g_pHiresBank0;
-static HBITMAP       g_hLogoBitmap;
+       HBITMAP       g_hLogoBitmap;
 static HPALETTE      g_hPalette;
 
 static HBITMAP       g_hSourceBitmap;
@@ -1702,61 +1702,82 @@ void VideoDestroy () {
 }
 
 //===========================================================================
+void VideoDrawLogoBitmap ( HDC hDstDC )
+{
+//	HDC memdc = CreateCompatibleDC(framedc);
+//	SelectObject(memdc,g_hLogoBitmap);
+//	BitBlt(framedc,0,0,560,384,memdc,0,0,SRCCOPY);
+//	DeleteDC(memdc);
+	HDC hSrcDC = CreateCompatibleDC( hDstDC );
+	SelectObject( hSrcDC, g_hLogoBitmap );
+	BitBlt(
+		hDstDC,   // hdcDest
+		0, 0,     // nXDest, nYDest
+		560, 384, // nWidth, nHeight // HACK: HARD-CODED
+		hSrcDC,   // hdcSrc
+		0, 0,     // nXSrc, nYSrc
+		SRCCOPY   // dwRop
+	);
+
+	DeleteObject( hSrcDC );
+	hSrcDC = NULL;
+}
+
+//===========================================================================
 void VideoDisplayLogo () {
-  HDC framedc = FrameGetDC();
+	HDC hFrameDC = FrameGetDC();
 
-  // DRAW THE LOGO
-  HBRUSH brush = CreateSolidBrush(PALETTERGB(0x70,0x30,0xE0));
-  if (g_hLogoBitmap) {
-    HDC memdc = CreateCompatibleDC(framedc);
-    SelectObject(memdc,g_hLogoBitmap);
-    BitBlt(framedc,0,0,560,384,memdc,0,0,SRCCOPY);
-    DeleteDC(memdc);
-  }
-  else {
-    SelectObject(framedc,brush);
-    SelectObject(framedc,GetStockObject(NULL_PEN));
-    Rectangle(framedc,0,0,560+1,384+1);
-  }
+	// DRAW THE LOGO
+	HBRUSH brush = CreateSolidBrush(PALETTERGB(0x70,0x30,0xE0));
+	if (g_hLogoBitmap)
+	{
+		VideoDrawLogoBitmap( hFrameDC );
+	}
+	else
+	{
+		SelectObject(hFrameDC,brush);
+		SelectObject(hFrameDC,GetStockObject(NULL_PEN));
+		Rectangle(hFrameDC,0,0,560+1,384+1);
+	}
 
-  // DRAW THE VERSION NUMBER
-  HFONT font = CreateFont(-20,0,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
-                          OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,
-                          VARIABLE_PITCH | 4 | FF_SWISS,
-                          TEXT("Arial"));
-  SelectObject(framedc,font);
-  SetTextAlign(framedc,TA_RIGHT | TA_TOP);
-  SetBkMode(framedc,TRANSPARENT);
+	// DRAW THE VERSION NUMBER
+	HFONT font = CreateFont(-20,0,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
+							OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,
+							VARIABLE_PITCH | 4 | FF_SWISS,
+							TEXT("Arial"));
+	SelectObject(hFrameDC,font);
+	SetTextAlign(hFrameDC,TA_RIGHT | TA_TOP);
+	SetBkMode(hFrameDC,TRANSPARENT);
 
-#define VERSION_TXT "Version "
+	#define VERSION_TXT "Version "
 	char* szVersion = new char[strlen(VERSION_TXT) + strlen(VERSIONSTRING) + 1];
 	strcpy(&szVersion[0], VERSION_TXT);
 	strcpy(&szVersion[strlen(VERSION_TXT)], VERSIONSTRING);
 	szVersion[strlen(szVersion)] = 0x00;
 
-#define  DRAWVERSION(x,y,c)  SetTextColor(framedc,c);                \
-                             TextOut(framedc,                        \
-                                     540+x,358+y,                    \
-                                     szVersion,                      \
-                                     strlen(szVersion));
+	#define  DRAWVERSION(x,y,c)  SetTextColor(hFrameDC,c);                \
+								TextOut(hFrameDC,                        \
+										540+x,358+y,                    \
+										szVersion,                      \
+										strlen(szVersion));
 
-  if (GetDeviceCaps(framedc,PLANES) * GetDeviceCaps(framedc,BITSPIXEL) <= 4) {
-    DRAWVERSION( 2, 2,RGB(0x00,0x00,0x00));
-    DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
-    DRAWVERSION( 0, 0,RGB(0xFF,0x00,0xFF));
-  }
-  else {
-    DRAWVERSION( 1, 1,PALETTERGB(0x30,0x30,0x70));
-    DRAWVERSION(-1,-1,PALETTERGB(0xC0,0x70,0xE0));
-    DRAWVERSION( 0, 0,PALETTERGB(0x70,0x30,0xE0));
-  }
+	if (GetDeviceCaps(hFrameDC,PLANES) * GetDeviceCaps(hFrameDC,BITSPIXEL) <= 4) {
+	DRAWVERSION( 2, 2,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 0, 0,RGB(0xFF,0x00,0xFF));
+	}
+	else {
+	DRAWVERSION( 1, 1,PALETTERGB(0x30,0x30,0x70));
+	DRAWVERSION(-1,-1,PALETTERGB(0xC0,0x70,0xE0));
+	DRAWVERSION( 0, 0,PALETTERGB(0x70,0x30,0xE0));
+	}
 
-  delete [] szVersion;
+	delete [] szVersion;
 #undef  DRAWVERSION
 
-  FrameReleaseDC();
-  DeleteObject(brush);
-  DeleteObject(font);
+	FrameReleaseDC();
+	DeleteObject(brush);
+	DeleteObject(font);
 }
 
 //===========================================================================
