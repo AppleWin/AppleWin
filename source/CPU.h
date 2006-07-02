@@ -11,7 +11,6 @@ typedef struct _regsrec {
   BYTE ps;  // processor status
   WORD pc;  // program counter
   WORD sp;  // stack pointer
-  BYTE bRESET;  // RESET asserted flag
   BYTE bJammed; // CPU has crashed (NMOS 6502 only)
 } regsrec, *regsptr;
 
