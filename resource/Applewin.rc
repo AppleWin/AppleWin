@@ -46,23 +46,6 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// String Table
-//
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_TFE_CAPTION         "Ethernet Settings"
-    IDS_TFE_ETHERNET        "Ethernet"
-    IDS_TFE_INTERFACE       "Interface"
-END
-
-STRINGTABLE
-BEGIN
-    IDS_OK                          "OK"
-    IDS_CANCEL                      "Cancel"
-END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -85,6 +68,7 @@ CAPSON_BITMAP           BITMAP                  "CAPSON.BMP"
 HELP_BUTTON             BITMAP                  "HELP.BMP"
 DRIVESWAP_BUTTON        BITMAP                  "DRIVESWAP.BMP"
 IDB_APPLEWIN            BITMAP                  "Applewin.bmp"
+IDB_DEBUG_FONT_7x8      BITMAP                  "Debug_Font.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -216,8 +200,8 @@ BEGIN
     GROUPBOX        "Harddisk Controller",IDC_STATIC,2,113,205,71
 END
 
-IDD_TFE_SETTINGS_DIALOG DIALOG DISCARDABLE  0, 0, 270, 100
-STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+IDD_TFE_SETTINGS_DIALOG DIALOG  0, 0, 270, 100
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Ethernet Settings"
 FONT 8, "MS Sans Serif"
 BEGIN
@@ -232,6 +216,7 @@ BEGIN
     DEFPUSHBUTTON   "Ok",IDOK,20,75,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,80,75,50,14
 END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -302,7 +287,6 @@ END
 
 IDR_HDDRVR              FIRMWARE                "Hddrvr.bin"
 
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // ROM
@@ -340,6 +324,25 @@ BEGIN
         MENUITEM "&Read only",                  ID_DISKMENU_WRITEPROTECTION_ON
 
     END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_TFE_CAPTION         "Ethernet Settings"
+    IDS_TFE_ETHERNET        "Ethernet"
+    IDS_TFE_INTERFACE       "Interface"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_OK                  "OK"
+    IDS_CANCEL              "Cancel"
 END
 
 #endif    // English (U.S.) resources
