@@ -855,17 +855,6 @@ static DWORD InternalCpuExecute (DWORD totalcycles)
 			nInternalCyclesLeft = (totalcycles<<8) - (cycles<<8);
 			USHORT uExtraCycles = 0;
 
-			if (regs.bRESET)
-			{
-				regs.bRESET = 0;
-				EF_TO_AF
-				regs.ps = (regs.ps | AF_INTERRUPT) & ~AF_DECIMAL;
-				regs.pc = * (WORD*) (mem+0xFFFC);
-				regs.sp = 0x0100 | ((regs.sp - 3) & 0xFF);
-				CYC(7);
-				continue;
-			}
-
 			BYTE iOpcode = *(mem+regs.pc);
 			if (CheckDebugBreak( iOpcode ))
 				break;
@@ -1171,17 +1160,6 @@ static DWORD InternalCpuExecute (DWORD totalcycles)
 		{
 			nInternalCyclesLeft = (totalcycles<<8) - (cycles<<8);
 			USHORT uExtraCycles = 0;
-
-			if (regs.bRESET)
-			{
-				regs.bRESET = 0;
-				EF_TO_AF
-				regs.ps = regs.ps | AF_INTERRUPT;
-				regs.pc = * (WORD*) (mem+0xFFFC);
-				regs.sp = 0x0100 | ((regs.sp - 3) & 0xFF);
-				CYC(7);
-				continue;
-			}
 
 			BYTE iOpcode = *(mem+regs.pc);
 			if (CheckDebugBreak( iOpcode ))
@@ -1614,9 +1592,7 @@ void CpuInitialize () {
   CpuDestroy();
   regs.a = regs.x = regs.y = regs.ps = 0xFF;
   regs.sp = 0x01FF;
-  regs.pc=*(LPWORD)(mem+0xFFFC);
-  regs.bRESET = 1;
-  regs.bJammed = 0;
+  CpuReset();	// Init's ps & pc. Updates sp
 
 	InitializeCriticalSection(&g_CriticalSection);
 	g_bCritSectionValid = true;
@@ -1776,7 +1752,12 @@ void CpuNmiDeassert(eIRQSRC Device)
 //===========================================================================
 void CpuReset()
 {
-	regs.bRESET = 1;
+	// 7 cycles
+	regs.ps = (regs.ps | AF_INTERRUPT) & ~AF_DECIMAL;
+	regs.pc = * (WORD*) (mem+0xFFFC);
+	regs.sp = 0x0100 | ((regs.sp - 3) & 0xFF);
+
+	regs.bJammed = 0;
 }
 
 //===========================================================================
