@@ -34,6 +34,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // NEW UI debugging
 //	#define DEBUG_FORCE_DISPLAY 1
+#define DEBUG_FONT_NO_BACKGROUND_CHAR 0
+#define DEBUG_FONT_NO_BACKGROUND_TEXT 1
 
 	#define DISPLAY_MEMORY_TITLE     1
 //	#define DISPLAY_BREAKPOINT_TITLE 1
@@ -43,6 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	const int DISPLAY_HEIGHT = 384; // 368; // DISPLAY_LINES * g_nFontHeight;
 
+// Font
 	FontConfig_t g_aFontConfig[ NUM_FONTS  ];
 
 // Private ________________________________________________________________________________________
@@ -511,32 +514,6 @@ void DebuggerPrintChar( const int x, const int y, const int iChar )
 		// nXSrc, nYSrc
 		// dwRop
 
-	enum AppleFontSize_e
-	{
-#if APPLE_FONT_SCALE_ONE_HALF
-	#if APPLE_FONT_BITMAP_PADDED
-		// Font Cell Width/Height
-		CW = APPLE_FONT_CELL_WIDTH  / 2,
-		CH = APPLE_FONT_CELL_HEIGHT / 2,
-	#else
-		// Font Cell Width/Height
-		CW = APPLE_FONT_WIDTH  / 2,
-		CH = APPLE_FONT_HEIGHT / 2,
-	#endif
-	
-		// Font Char Width/Height
-		FW = APPLE_FONT_WIDTH  / 2,
-		FH = APPLE_FONT_HEIGHT / 2,
-#else
-		CW = APPLE_FONT_CELL_WIDTH ,
-		CH = APPLE_FONT_CELL_HEIGHT,
-
-		// Font Char Width/Height
-		FW = APPLE_FONT_WIDTH ,
-		FH = APPLE_FONT_HEIGHT,
-#endif
-	};
-
 	int xDst = x; //(x * FW);
 	int yDst = y; //(y * FH);
 
@@ -544,6 +521,7 @@ void DebuggerPrintChar( const int x, const int y, const int iChar )
 	int xSrc = (iChar & 0x0F) * CW;
 	int ySrc = (iChar >>   4) * CH;
 
+#if !DEBUG_FONT_NO_BACKGROUND_CHAR 
 	// Background color
 	if (g_hBrushBG)
 	{
@@ -559,6 +537,7 @@ void DebuggerPrintChar( const int x, const int y, const int iChar )
 			PATCOPY
 		);
 	}
+#endif
 
 //	SelectObject( g_hDstDC, GetStockBrush( WHITE_BRUSH ) );
 
@@ -620,8 +599,6 @@ void DebuggerPrint ( int x, int y, char *pText )
 			if ((c >= 0x20) && (c <= 0x7F))
 			{
 				c += 0x80;
-//			c |= 0x80;
-//			c &= 0xFF;
 				DebuggerPrintChar( x, y, c );
 			}
 			x += (APPLE_FONT_WIDTH/2);
@@ -629,6 +606,8 @@ void DebuggerPrint ( int x, int y, char *pText )
 		}
 	}
 }
+
+
 
 // Utility ________________________________________________________________________________________
 
@@ -656,6 +635,12 @@ int DebugDrawText ( LPCTSTR pText, RECT & rRect )
 
 	int nLen = _tcslen( pText );
 #if USE_APPLE_FONT
+//	SelectObject( g_hDC, g_hBrushBG );
+
+#if !DEBUG_FONT_NO_BACKGROUND_TEXT
+	FillRect( g_hDC, &rRect, g_hBrushBG );
+#endif
+
 	DebuggerPrint( rRect.left, rRect.top, (char*)pText );
 #else
 	ExtTextOut( g_hDC,
@@ -982,18 +967,18 @@ void SetupColorsHiLoBits ( HDC hDC, bool bHighBit, bool bCtrlBit,
 	// 1  0  HiBG       normal     BG_INFO_CHAR   FG_DISASM_CHAR   (mid cyan  bright cyan)
 	// 1  1  HiBG       LoFG       BG_INFO_CHAR   FG_DISASM_OPCODE (mid cyan  yellow)
 
-	DebuggerSetColorBG(   hDC, DebuggerGetColor( iBackground ));
+	DebuggerSetColorBG( hDC, DebuggerGetColor( iBackground ));
 	DebuggerSetColorFG( hDC, DebuggerGetColor( iForeground ));
 
 	if (bHighBit)
 	{
-		DebuggerSetColorBG(   hDC, DebuggerGetColor( iColorHiBG ));
+		DebuggerSetColorBG( hDC, DebuggerGetColor( iColorHiBG ));
 		DebuggerSetColorFG( hDC, DebuggerGetColor( iColorHiFG )); // was iForeground
 	}
 
 	if (bCtrlBit)
 	{
-		DebuggerSetColorBG(   hDC, DebuggerGetColor( iColorLoBG ));
+		DebuggerSetColorBG( hDC, DebuggerGetColor( iColorLoBG ));
 		DebuggerSetColorFG( hDC, DebuggerGetColor( iColorLoFG ));
 	}
 }
@@ -1246,7 +1231,7 @@ void DrawConsoleInput( HDC dc )
 	g_hDC = dc;
 
 	DebuggerSetColorFG( g_hDC, DebuggerGetColor( FG_CONSOLE_INPUT ));
-	DebuggerSetColorBG(   g_hDC, DebuggerGetColor( BG_CONSOLE_INPUT ));
+	DebuggerSetColorBG( g_hDC, DebuggerGetColor( BG_CONSOLE_INPUT ));
 
 	DrawConsoleLine( g_aConsoleInput, 0 );
 }
@@ -2727,6 +2712,9 @@ void DrawWindow_Console( Update_t bUpdate )
 
 // TODO/FIXME: COLOR_BG_CODE -> g_iWindowThis, once all tab backgrounds are listed first in g_aColors !
     DebuggerSetColorBG(g_hDC, DebuggerGetColor( BG_DISASM_2 )); // COLOR_BG_CODE
+
+#if USE_APPLE_FONT	
+#else
 	// Can't use DebugDrawText, since we don't ned the CLIPPED flag
 	// TODO: add default param OPAQUE|CLIPPED
     ExtTextOut( g_hDC
@@ -2737,6 +2725,7 @@ void DrawWindow_Console( Update_t bUpdate )
 		,0
 		,NULL
 	);
+#endif
 }
 
 //===========================================================================
@@ -2788,8 +2777,12 @@ void DrawWindowBackground_Main( int g_iWindowThis )
 // TODO/FIXME: COLOR_BG_CODE -> g_iWindowThis, once all tab backgrounds are listed first in g_aColors !
 
 	DebuggerSetColorBG(g_hDC, DebuggerGetColor( BG_DISASM_1 )); // COLOR_BG_CODE
+	
+#if USE_APPLE_FONT	
+#else
 	// Can't use DebugDrawText, since we don't need CLIPPED
 	ExtTextOut(g_hDC,0,0,ETO_OPAQUE,&viewportrect,TEXT(""),0,NULL);
+#endif
 }
 
 //===========================================================================
@@ -2803,7 +2796,11 @@ void DrawWindowBackground_Info( int g_iWindowThis )
 
 	DebuggerSetColorBG(g_hDC, DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
 	// Can't use DebugDrawText, since we don't need CLIPPED
+
+#if USE_APPLE_FONT	
+#else
 	ExtTextOut(g_hDC,0,0,ETO_OPAQUE,&viewportrect,TEXT(""),0,NULL);
+#endif
 }
 
 
@@ -2813,11 +2810,13 @@ void UpdateDisplay (Update_t bUpdate)
 	g_hDC = FrameGetDC();
 
 #if USE_APPLE_FONT
+	VideoDrawLogoBitmap( g_hDC );
+
 	SetBkMode(g_hDC,OPAQUE);
 	SetBkColor(g_hDC,RGB(0,0,0));
-#endif
-
+#else
 	SelectObject( g_hDC, g_aFontConfig[ FONT_INFO ]._hFont ); // g_hFontDebugger
+#endif
 
 	SetTextAlign(g_hDC,TA_TOP | TA_LEFT);
 

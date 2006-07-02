@@ -15,9 +15,24 @@
 
 #if APPLE_FONT_NEW
 	#define APPLE_FONT_BITMAP_PADDED  0
+	#define DEBUG_FONT_WIDTH          7
+	#define DEBUG_FONT_HEIGHT         8
+
+	#define DEBUG_FONT_CELL_WIDTH     7
+	#define DEBUG_FONT_CELL_HEIGHT    8
 #else
 	#define APPLE_FONT_BITMAP_PADDED  1
 #endif
+
+	enum AppleFontSize_e
+	{
+		CW = DEBUG_FONT_CELL_WIDTH ,
+		CH = DEBUG_FONT_CELL_HEIGHT,
+
+		// Font Char Width/Height
+		FW = DEBUG_FONT_WIDTH ,
+		FH = DEBUG_FONT_HEIGHT,
+	};
 
 	extern HDC    g_hDstDC  ;
 	extern HBRUSH g_hBrushFG;
