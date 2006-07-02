@@ -68,7 +68,7 @@ static int     buttonover      = -1;
 static int     buttonx         = BUTTONX;
 static int     buttony         = BUTTONY;
 static HRGN    clipregion      = (HRGN)0;
-static HDC     framedc         = (HDC)0;
+static HDC     g_hFrameDC         = (HDC)0;
 static RECT    framerect       = {0,0,0,0};
 HWND    g_hFrameWindow     = (HWND)0;
 BOOL    fullscreen      = 0;
@@ -95,7 +95,7 @@ void    SetUsingCursor (BOOL);
 //===========================================================================
 void CreateGdiObjects () {
   ZeroMemory(buttonbitmap,BUTTONS*sizeof(HBITMAP));
-#define LOADBUTTONBITMAP(bitmapname)  LoadImage(instance,bitmapname,   \
+#define LOADBUTTONBITMAP(bitmapname)  LoadImage(g_hInstance,bitmapname,   \
                                                 IMAGE_BITMAP,0,0,      \
                                                 LR_CREATEDIBSECTION |  \
                                                 LR_LOADMAP3DCOLORS |   \
@@ -1005,7 +1005,7 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 
 	//  Load the menu template containing the shortcut menu from the 
 	//  application's resources. 
-	hmenu = LoadMenu(instance, MAKEINTRESOURCE(ID_MENU_DISK_POPUP)); 
+	hmenu = LoadMenu(g_hInstance, MAKEINTRESOURCE(ID_MENU_DISK_POPUP)); 
 	if (hmenu == NULL) 
 		return; 
 
@@ -1201,20 +1201,24 @@ void FrameCreateWindow ()
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 		WS_MINIMIZEBOX | WS_VISIBLE,
 		xpos,ypos,width,height,
-		HWND_DESKTOP,(HMENU)0,instance,NULL );
+		HWND_DESKTOP,
+		(HMENU)0,
+		g_hInstance,NULL );
 
 
 	InitCommonControls();
 	tooltipwindow = CreateWindow(
 		TOOLTIPS_CLASS,NULL,TTS_ALWAYSTIP, 
 		CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT, 
-		g_hFrameWindow,(HMENU)0,instance,NULL ); 
+		g_hFrameWindow,
+		(HMENU)0,
+		g_hInstance,NULL ); 
 
 	TOOLINFO toolinfo;
 	toolinfo.cbSize = sizeof(toolinfo);
 	toolinfo.uFlags = TTF_CENTERTIP;
 	toolinfo.hwnd = g_hFrameWindow;
-	toolinfo.hinst = instance;
+	toolinfo.hinst = g_hInstance;
 	toolinfo.lpszText = LPSTR_TEXTCALLBACK;
 	toolinfo.rect.left  = BUTTONX;
 	toolinfo.rect.right = toolinfo.rect.left+BUTTONCX+1;
@@ -1230,11 +1234,11 @@ void FrameCreateWindow ()
 
 //===========================================================================
 HDC FrameGetDC () {
-  if (!framedc) {
-    framedc = GetDC(g_hFrameWindow);
-    SetViewportOrgEx(framedc,viewportx,viewporty,NULL);
+  if (!g_hFrameDC) {
+    g_hFrameDC = GetDC(g_hFrameWindow);
+    SetViewportOrgEx(g_hFrameDC,viewportx,viewporty,NULL);
   }
-  return framedc;
+  return g_hFrameDC;
 }
 
 //===========================================================================
@@ -1269,25 +1273,25 @@ void FrameRegisterClass () {
   wndclass.cbSize        = sizeof(WNDCLASSEX);
   wndclass.style         = CS_OWNDC | CS_BYTEALIGNCLIENT;
   wndclass.lpfnWndProc   = FrameWndProc;
-  wndclass.hInstance     = instance;
-  wndclass.hIcon         = LoadIcon(instance,TEXT("APPLEWIN_ICON"));
+  wndclass.hInstance     = g_hInstance;
+  wndclass.hIcon         = LoadIcon(g_hInstance,TEXT("APPLEWIN_ICON"));
   wndclass.hCursor       = LoadCursor(0,IDC_ARROW);
   wndclass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
 #if ENABLE_MENU
   wndclass.lpszMenuName	 = (LPCSTR)IDR_MENU1;
 #endif
   wndclass.lpszClassName = TEXT("APPLE2FRAME");
-  wndclass.hIconSm       = (HICON)LoadImage(instance,TEXT("APPLEWIN_ICON"),
+  wndclass.hIconSm       = (HICON)LoadImage(g_hInstance,TEXT("APPLEWIN_ICON"),
                                             IMAGE_ICON,16,16,LR_DEFAULTCOLOR);
   RegisterClassEx(&wndclass);
 }
 
 //===========================================================================
 void FrameReleaseDC () {
-  if (framedc) {
-    SetViewportOrgEx(framedc,0,0,NULL);
-    ReleaseDC(g_hFrameWindow,framedc);
-    framedc = (HDC)0;
+  if (g_hFrameDC) {
+    SetViewportOrgEx(g_hFrameDC,0,0,NULL);
+    ReleaseDC(g_hFrameWindow,g_hFrameDC);
+    g_hFrameDC = (HDC)0;
   }
 }
 

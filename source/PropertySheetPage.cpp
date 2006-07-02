@@ -722,7 +722,7 @@ static int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 	
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
-	ofn.hInstance       = instance;
+	ofn.hInstance       = g_hInstance;
 	ofn.lpstrFilter     =	TEXT("Save State files (*.aws)\0*.aws\0")
 							TEXT("All Files\0*.*\0");
 	ofn.lpstrFile       = szFilename;
@@ -1185,7 +1185,7 @@ static BOOL CALLBACK TfeDlgProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpara
 
 void ui_tfe_settings_dialog(HWND hwnd)
 {
-    DialogBox(instance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hwnd,
+    DialogBox(g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hwnd,
               TfeDlgProc);
 }
 
@@ -1198,31 +1198,31 @@ void PSP_Init()
 
 	PropSheetPages[PG_CONFIG].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_CONFIG].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_CONFIG].hInstance = instance;
+	PropSheetPages[PG_CONFIG].hInstance = g_hInstance;
 	PropSheetPages[PG_CONFIG].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_CONFIG);
 	PropSheetPages[PG_CONFIG].pfnDlgProc = (DLGPROC)ConfigDlgProc;
 
 	PropSheetPages[PG_INPUT].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_INPUT].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_INPUT].hInstance = instance;
+	PropSheetPages[PG_INPUT].hInstance = g_hInstance;
 	PropSheetPages[PG_INPUT].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_INPUT);
 	PropSheetPages[PG_INPUT].pfnDlgProc = (DLGPROC)InputDlgProc;
 
 	PropSheetPages[PG_SOUND].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_SOUND].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_SOUND].hInstance = instance;
+	PropSheetPages[PG_SOUND].hInstance = g_hInstance;
 	PropSheetPages[PG_SOUND].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_SOUND);
 	PropSheetPages[PG_SOUND].pfnDlgProc = (DLGPROC)SoundDlgProc;
 
 	PropSheetPages[PG_SAVESTATE].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_SAVESTATE].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_SAVESTATE].hInstance = instance;
+	PropSheetPages[PG_SAVESTATE].hInstance = g_hInstance;
 	PropSheetPages[PG_SAVESTATE].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_SAVESTATE);
 	PropSheetPages[PG_SAVESTATE].pfnDlgProc = (DLGPROC)SaveStateDlgProc;
 
 	PropSheetPages[PG_DISK].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_DISK].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_DISK].hInstance = instance;
+	PropSheetPages[PG_DISK].hInstance = g_hInstance;
 	PropSheetPages[PG_DISK].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_DISK);
 	PropSheetPages[PG_DISK].pfnDlgProc = (DLGPROC)DiskDlgProc;
 

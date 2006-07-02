@@ -482,7 +482,7 @@ void DiskSelectImage (int drive, LPSTR pszFilename)
   ZeroMemory(&ofn,sizeof(OPENFILENAME));
   ofn.lStructSize     = sizeof(OPENFILENAME);
   ofn.hwndOwner       = g_hFrameWindow;
-  ofn.hInstance       = instance;
+  ofn.hInstance       = g_hInstance;
   ofn.lpstrFilter     = TEXT("All Images\0*.apl;*.bin;*.do;*.dsk;*.iie;*.nib;*.po\0")
                         TEXT("Disk Images (*.bin,*.do,*.dsk,*.iie,*.nib,*.po)\0*.bin;*.do;*.dsk;*.iie;*.nib;*.po\0")
                         TEXT("All Files\0*.*\0");

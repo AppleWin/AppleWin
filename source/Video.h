@@ -17,6 +17,29 @@ extern BOOL       graphicsmode;
 extern COLORREF   monochrome;
 extern DWORD      videotype;
 
+enum AppleFont_e
+{
+	// 40-Column mode is 2x Zoom (default)
+	// 80-Column mode is 1.5x Zoom (7 x 16)
+	// Tiny mode is 1x zoom (7x8) for debugger
+	APPLE_FONT_WIDTH  = 14, // in pixels
+	APPLE_FONT_HEIGHT = 16, // in pixels
+
+	// Each cell has a reserved aligned pixel area
+	APPLE_FONT_CELL_WIDTH  = 16,
+	APPLE_FONT_CELL_HEIGHT = 16,
+
+	// The bitmap contains 3 regions
+	// Each region is 256x256 pixels = 16x16 chars
+	APPLE_FONT_X_REGIONSIZE = 256, // in pixelx
+	APPLE_FONT_Y_REGIONSIZE = 256, // in pixels
+
+	// Starting Y offsets (pixels) for the regions
+	APPLE_FONT_Y_APPLE_2PLUS =   0, // ][+
+	APPLE_FONT_Y_APPLE_80COL = 256, // //e (inc. Mouse Text)
+	APPLE_FONT_Y_APPLE_40COL = 512, // ][
+};
+
 void    CreateColorMixMap();
 
 BOOL    VideoApparentlyDirty ();
