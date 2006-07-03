@@ -642,6 +642,7 @@ int DebugDrawText ( LPCTSTR pText, RECT & rRect )
 #endif
 
 	DebuggerPrint( rRect.left, rRect.top, (char*)pText );
+//	rRect.left += (DEBUG_FONT_CELL_WIDTH * nLen)
 #else
 	ExtTextOut( g_hDC,
 		rRect.left, rRect.top,
@@ -687,11 +688,13 @@ int DebugDrawTextHorz ( LPCTSTR pText, RECT & rRect )
 
 	SIZE size;
 	int nChars = DebugDrawText( pText, rRect );
-	if (GetTextExtentPoint32( g_hDC, pText, nChars,  &size ))
+#if !USE_APPLE_FONT
+	if (GetTextExtentPoint32( g_hDC, pText, nChars, &size ))
 	{
 		rRect.left += size.cx;
 	}
 	else
+#endif
 	{
 		rRect.left += (nFontWidth * nChars);
 	}
@@ -1369,10 +1372,24 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		, _NUM_TAB_STOPS
 	};
 
-	float aTabs[ _NUM_TAB_STOPS ] =
-//	{ 6, 16, 26, 41, 46, 49 }; // 17, 27, 41
-	{ 5.75, 15.5, 25, 40.5, 45.5, 48.5 };
+//	int X_OPCODE      =  6 * nDefaultFontWidth;
+//	int X_LABEL       = 17 * nDefaultFontWidth;
+//	int X_INSTRUCTION = 26 * nDefaultFontWidth; // 27
+//	int X_IMMEDIATE   = 40 * nDefaultFontWidth; // 41
+//	int X_BRANCH      = 46 * nDefaultFontWidth;
 
+	float aTabs[ _NUM_TAB_STOPS ] =
+//	{ 6, 16, 26, 41, 46, 49 }; // 6, 17, 26, 40, 46
+#if USE_APPLE_FONT
+//	{ 5, 14, 20, 40, 46, 49 };
+      // xxxx:xx xx xx LABELxxxxxx MNEMONIC    'E' =
+      // 0   45        14          26
+	{ 5, 14, 26, 41, 47, 49 };
+#else
+	{ 5.75, 15.5, 25, 40.5, 45.5, 48.5 };
+#endif
+
+#if !USE_APPLE_FONT
 	if (! g_bConfigDisasmAddressColon)
 	{
 		aTabs[ TS_OPCODE ] -= 1;
@@ -1384,7 +1401,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		aTabs[ TS_INSTRUCTION ] -= 2;
 		aTabs[ TS_IMMEDIATE   ] -= 1;
 	}
-	
+#endif	
 	const int OPCODE_TO_LABEL_SPACE = static_cast<int>( aTabs[ TS_INSTRUCTION ] - aTabs[ TS_LABEL ] );
 
 	int iTab = 0;
@@ -1401,13 +1418,11 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		aTabs[ iTab ] *= nDefaultFontWidth;
 	}	
 
-//	int X_OPCODE      =  6 * nDefaultFontWidth;
-//	int X_LABEL       = 17 * nDefaultFontWidth;
-//	int X_INSTRUCTION = 26 * nDefaultFontWidth; // 27
-//	int X_IMMEDIATE   = 40 * nDefaultFontWidth; // 41
-//	int X_BRANCH      = 46 * nDefaultFontWidth;
-
+#if USE_APPLE_FONT
+	const int DISASM_SYMBOL_LEN = 12;
+#else
 	const int DISASM_SYMBOL_LEN = 9;
+#endif
 
 	if (dc)
 	{
@@ -1518,13 +1533,14 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 
 		if (bAddressIsBookmark)
 		{
-			DebuggerSetColorBG(   dc, DebuggerGetColor( iBackground ) );
+			DebuggerSetColorBG( dc, DebuggerGetColor( iBackground ) );
 			DebuggerSetColorFG( dc, DebuggerGetColor( iForeground ) );
 		}
 		
 	// Address Seperator		
 		if (! bCursorLine)
 			DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPERATOR ) );
+
 		if (g_bConfigDisasmAddressColon)
 			DebugDrawTextHorz( TEXT(":"), linerect );
 
@@ -2352,7 +2368,7 @@ void DrawSubWindow_Console (Update_t bUpdate)
 	if ((bUpdate & UPDATE_CONSOLE_INPUT) || (bUpdate & UPDATE_CONSOLE_DISPLAY))
 	{
 		DebuggerSetColorFG( g_hDC, DebuggerGetColor( FG_CONSOLE_OUTPUT )); // COLOR_FG_CONSOLE
-		DebuggerSetColorBG(   g_hDC, DebuggerGetColor( BG_CONSOLE_OUTPUT )); // COLOR_BG_CONSOLE
+		DebuggerSetColorBG( g_hDC, DebuggerGetColor( BG_CONSOLE_OUTPUT )); // COLOR_BG_CONSOLE
 
 //		int nLines = MIN(g_nConsoleDisplayTotal - g_iConsoleDisplayStart, g_nConsoleDisplayHeight);
 		int iLine = g_iConsoleDisplayStart + CONSOLE_FIRST_LINE;
@@ -2714,6 +2730,7 @@ void DrawWindow_Console( Update_t bUpdate )
     DebuggerSetColorBG(g_hDC, DebuggerGetColor( BG_DISASM_2 )); // COLOR_BG_CODE
 
 #if USE_APPLE_FONT	
+//	RenderFilledRect( viewportrect );
 #else
 	// Can't use DebugDrawText, since we don't ned the CLIPPED flag
 	// TODO: add default param OPAQUE|CLIPPED
