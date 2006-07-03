@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <assert.h>
 
 // NEW UI debugging
-//	#define DEBUG_FORCE_DISPLAY 1
+#define DEBUG_FORCE_DISPLAY 1
 #define DEBUG_FONT_NO_BACKGROUND_CHAR 0
 #define DEBUG_FONT_NO_BACKGROUND_TEXT 1
 
@@ -53,15 +53,47 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Display - Win32
 	HDC     g_hDstDC = NULL; // App Window
 
-	HDC     g_hDebugFontDC     = NULL; // Debug Font
-	HBRUSH  g_hDebugFontBrush  = NULL;
-	HBITMAP g_hDebugFontBitmap = NULL;
+	HDC     g_hConsoleFontDC     = NULL;
+	HBRUSH  g_hConsoleFontBrush  = NULL;
+	HBITMAP g_hConsoleFontBitmap = NULL;
 
-	HBRUSH g_hBrushFG = NULL;
-	HBRUSH g_hBrushBG = NULL;
+	HBRUSH g_hConsoleBrushFG = NULL;
+	HBRUSH g_hConsoleBrushBG = NULL;
+
+	COLORREF g_anConsoleColor[ MAX_CONSOLE_COLORS ] =
+	{
+		RGB(   0,   0,   0 ), // 0 000 K
+		RGB( 255,   0,   0 ), // 1 001 R
+		RGB(   0, 255,   0 ), // 2 010 G
+		RGB( 255, 255,   0 ), // 3 011 Y
+		RGB(   0,   0, 255 ), // 4 100 B
+		RGB( 255,   0, 255 ), // 5 101 M
+		RGB(   0, 255, 255 ), // 6 110 C
+		RGB( 255, 255, 255 ), // 7 111 W
+	};
+
+	char * g_asConsoleColor[ MAX_CONSOLE_COLORS ] =
+	{
+		"`0", // ConsoleColorMake( sColorW, CONSOLE_COLOR_W );
+		"`1",
+		"`2",
+		"`3",
+		"`4",
+		"`5",
+		"`6",
+		"`7"
+	};
 
 // Disassembly
 	/*
+		// Thought about moving MouseText to another location, say high bit, 'A' + 0x80
+		// But would like to keep compatibility with existing CHARSET40
+		// Since we should be able to display all apple chars 0x00 .. 0xFF with minimal processing
+		// Use CONSOLE_COLOR_ESCAPE_CHAR to shift to mouse text
+		* Apple Font
+		    K      Mouse Text Up Arror
+		    H      Mouse Text Left Arrow
+		    J      Mouse Text Down Arrow
 		* Wingdings
 			\xE1   Up Arrow
 			\xE2   Down Arrow
@@ -76,9 +108,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			\x18 Up
 			\x19 Down
 	*/
-	TCHAR g_sConfigBranchIndicatorUp   [ NUM_DISASM_BRANCH_TYPES+1 ] = TEXT(" ^\x35");
-	TCHAR g_sConfigBranchIndicatorEqual[ NUM_DISASM_BRANCH_TYPES+1 ] = TEXT(" =\x33");
-	TCHAR g_sConfigBranchIndicatorDown [ NUM_DISASM_BRANCH_TYPES+1 ] = TEXT(" v\x36");
+	char * g_sConfigBranchIndicatorUp   [ NUM_DISASM_BRANCH_TYPES+1 ] = { " ", "^", "`K", "\x35" };
+	char * g_sConfigBranchIndicatorEqual[ NUM_DISASM_BRANCH_TYPES+1 ] = { " ", "=", "`H", "\x33" };
+	char * g_sConfigBranchIndicatorDown [ NUM_DISASM_BRANCH_TYPES+1 ] = { " ", "v", "`J", "\x36" };
 
 // Drawing
 	// Width
@@ -447,7 +479,7 @@ const DWORD aROP4[ 256 ] =
 	// 0xAA00EC
 	// 0x00EC02E8
 
-#if DEBUG_ROP
+#if DEBUG_FONT_ROP
 	static iRop4 = 0;
 #endif
 
@@ -455,14 +487,14 @@ const DWORD aROP4[ 256 ] =
 //===========================================================================
 void DebuggerSetColorFG( COLORREF nRGB )
 {
-	if (g_hBrushFG)
+	if (g_hConsoleBrushFG)
 	{
 		SelectObject( g_hDstDC, GetStockObject(NULL_BRUSH) );
-		DeleteObject( g_hBrushFG );
-		g_hBrushFG = NULL;
+		DeleteObject( g_hConsoleBrushFG );
+		g_hConsoleBrushFG = NULL;
 	}
 
-	g_hBrushFG = CreateSolidBrush( nRGB );
+	g_hConsoleBrushFG = CreateSolidBrush( nRGB );
 }
 
 void DebuggerSetColorFG( HDC hDC, COLORREF nRGB )
@@ -478,16 +510,16 @@ void DebuggerSetColorFG( HDC hDC, COLORREF nRGB )
 //===================================================
 void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent )
 {
-	if (g_hBrushBG)
+	if (g_hConsoleBrushBG)
 	{
 		SelectObject( g_hDstDC, GetStockObject(NULL_BRUSH) );
-		DeleteObject( g_hBrushBG );
-		g_hBrushBG = NULL;
+		DeleteObject( g_hConsoleBrushBG );
+		g_hConsoleBrushBG = NULL;
 	}
 
 	if (! bTransparent)
 	{
-		g_hBrushBG = CreateSolidBrush( nRGB );
+		g_hConsoleBrushBG = CreateSolidBrush( nRGB );
 	}
 }
 
@@ -501,40 +533,33 @@ void DebuggerSetColorBG( HDC hDC, COLORREF nRGB )
 #endif
 }
 
+// @param glyph Specifies a glyph from the 16x16 chars Apple Font Texture.
 //===========================================================================
-void DebuggerPrintChar( const int x, const int y, const int iChar )
+void DebuggerPrintChar( const int x, const int y, const int glyph )
 {	
 	HDC g_hDstDC = FrameGetDC();
 
-	// BitBlt(
-		// hdcDest
-		// nXDest, nYDest
-		// nWidth, nHeight
-		// hdcSrc
-		// nXSrc, nYSrc
-		// dwRop
-
-	int xDst = x; //(x * FW);
-	int yDst = y; //(y * FH);
+	int xDst = x;
+	int yDst = y;
 
 	// 16x16 chars in bitmap
-	int xSrc = (iChar & 0x0F) * CW;
-	int ySrc = (iChar >>   4) * CH;
+	int xSrc = (glyph & 0x0F) * CONSOLE_FONT_GRID_X;
+	int ySrc = (glyph >>   4) * CONSOLE_FONT_GRID_Y;
 
 #if !DEBUG_FONT_NO_BACKGROUND_CHAR 
 	// Background color
-	if (g_hBrushBG)
+	if (g_hConsoleBrushBG)
 	{
-		SelectObject( g_hDstDC, g_hBrushBG );
+		SelectObject( g_hDstDC, g_hConsoleBrushBG );
 
 		// Draw Background (solid pattern)
 		BitBlt(
-			g_hDstDC, //
-			xDst, yDst,
-			FW, FH,
-			g_hDebugFontDC,
-			0, CH * 2, // Space
-			PATCOPY
+			g_hDstDC,   // hdcDest
+			xDst, yDst, // nXDest, nYDest
+			CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT, // nWidth, nHeight
+			g_hConsoleFontDC, // hdcSrc
+			0, CONSOLE_FONT_GRID_Y * 2,  // nXSrc, nYSrc // FontTexture[2][0] = Solid (Filled) Space
+			PATCOPY     // dwRop
 		);
 	}
 #endif
@@ -549,61 +574,142 @@ void DebuggerPrintChar( const int x, const int y, const int iChar )
 	//    0 0 1 0 0 0 1 0 0x22 DSna
 	//    1 1 1 0 1 0 1 0 0xEA DPSao
 
-	// Black = Transparent
-	// White = Opaque
+	// Black = Transparent (DC Background)
+	// White = Opaque (DC Text color)
 
+#if DEBUG_FONT_ROP
+	SelectObject( g_hDstDC, g_hConsoleBrushFG );
+	BitBlt(
+		g_hDstDC,
+		xDst, yDst,
+		DEBUG_FONT_WIDTH, DEBUG_FONT_HEIGHT,
+		g_hDebugFontDC,
+		xSrc, ySrc,
+		aROP4[ iRop4 ]
+	);
+#else
 	// Use inverted source as mask (AND)
 	// D & ~S      ->  DSna
 	BitBlt(
 		g_hDstDC,
 		xDst, yDst,
-		FW, FH,
-		g_hDebugFontDC,
+		CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
+		g_hConsoleFontDC,
 		xSrc, ySrc,
 		DSna
 	);
 
-	SelectObject( g_hDstDC, g_hBrushFG );
+	SelectObject( g_hDstDC, g_hConsoleBrushFG );
 
 	// Use Source ask mask to make color Pattern mask (AND), then apply to dest (OR)
 	// D | (P & S) ->  DPSao
 	BitBlt(
 		g_hDstDC,
 		xDst, yDst,
-		FW, FH,
-		g_hDebugFontDC,
+		CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
+		g_hConsoleFontDC,
 		xSrc, ySrc,
 		DPSao
 	);
-
-#if DEBUG_ROP
-	// aROP4[ iRop4 ]
 #endif
 
-// */
 	SelectObject( g_hDstDC, GetStockObject(NULL_BRUSH) );
-
 	FrameReleaseDC();
 }
 
+
+//===========================================================================
 void DebuggerPrint ( int x, int y, char *pText )
 {
+	int nLeft = x;
+
 	if (pText)
 	{
+		HDC g_hDstDC = FrameGetDC();
+
 		unsigned char c;
 		char *p = pText;
-		while (p && *p)
-		{
-			c = *p;
 
+		while (c = *p)
+		{
+// ~0-7 // fg
+// ~?   // print
+// ?    // shift print
+			if (p[0] == '\n')
+			{
+				x = nLeft;
+				y += CONSOLE_FONT_HEIGHT;
+				p++;
+				continue; // c = 0;
+			}
+			if (ConsoleColorIsEscapeMeta( c ))
+			{
+				p++;
+				c = *p;
+				if (ConsoleColorIsEscapeData( c ))
+				{
+					DebuggerSetColorFG( ConsoleColorGetEscapeData( c ) );
+					p++;
+					continue; // c = 0;
+				}
+//				if ((p[1]) >= '8') && (p[1] <= '9')
+//					;
+			}
+			else
 			if ((c >= 0x20) && (c <= 0x7F))
 			{
 				c += 0x80;
-				DebuggerPrintChar( x, y, c );
+//				DebuggerPrintChar( x, y, c );
 			}
-			x += (APPLE_FONT_WIDTH/2);
+
+			if (c)
+			{
+				// 16x16 chars in bitmap
+				int tx = (c & 0x0F) * CONSOLE_FONT_GRID_X;
+				int ty = (c >>   4) * CONSOLE_FONT_GRID_Y;
+
+				if (g_hConsoleBrushBG)
+				{
+					SelectObject( g_hDstDC, g_hConsoleBrushBG );
+
+					// Draw Background (solid pattern)
+					BitBlt(
+						g_hDstDC, //
+						x, y,
+						CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
+						g_hConsoleFontDC,
+						0, CONSOLE_FONT_GRID_Y * 2, // Space
+						PATCOPY
+					);
+				}
+
+				BitBlt(
+					g_hDstDC,
+					x, y,
+					CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
+					g_hConsoleFontDC,
+					tx, ty,
+					DSna
+				);
+
+				SelectObject( g_hDstDC, g_hConsoleBrushFG );
+
+				BitBlt(
+					g_hDstDC,
+					x, y,
+					CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
+					g_hConsoleFontDC,
+					tx, ty,
+					DPSao
+				);
+
+				x += CONSOLE_FONT_WIDTH;
+			}
 			p++;
 		}
+
+		SelectObject( g_hDstDC, GetStockObject(NULL_BRUSH) );
+		FrameReleaseDC();
 	}
 }
 
@@ -686,9 +792,9 @@ int DebugDrawTextHorz ( LPCTSTR pText, RECT & rRect )
 {
 	int nFontWidth = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
 
-	SIZE size;
 	int nChars = DebugDrawText( pText, rRect );
 #if !USE_APPLE_FONT
+	SIZE size;
 	if (GetTextExtentPoint32( g_hDC, pText, nChars, &size ))
 	{
 		rRect.left += size.cx;
@@ -805,16 +911,16 @@ int FormatDisassemblyLine( WORD nBaseAddress, int iOpcode, int iOpmode, int nOpB
 
 			if (nTarget < nBaseAddress)
 			{
-				wsprintf( sBranch_, TEXT(" %c"), g_sConfigBranchIndicatorUp[ g_iConfigDisasmBranchType ] );
+				wsprintf( sBranch_, TEXT("%s"), g_sConfigBranchIndicatorUp[ g_iConfigDisasmBranchType ] );
 			}
 			else
 			if (nTarget > nBaseAddress)
 			{
-				wsprintf( sBranch_, TEXT(" %c"), g_sConfigBranchIndicatorDown[ g_iConfigDisasmBranchType ] );
+				wsprintf( sBranch_, TEXT("%s"), g_sConfigBranchIndicatorDown[ g_iConfigDisasmBranchType ] );
 			}
 			else
 			{
-				wsprintf( sBranch_, TEXT("%c "), g_sConfigBranchIndicatorEqual[ g_iConfigDisasmBranchType ] );
+				wsprintf( sBranch_, TEXT("%s"), g_sConfigBranchIndicatorEqual[ g_iConfigDisasmBranchType ] );
 			}
 		}
 
@@ -1216,11 +1322,12 @@ void DrawBreakpoints (HDC dc, int line)
 				DebugDrawTextFixed( sText, rect2 );
 			}
 
+#if !USE_APPLE_FONT
 			// Windows HACK: Bugfix: Rest of line is still breakpoint background color
 			DebuggerSetColorBG(dc, DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
 			DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_TITLE )); //COLOR_STATIC
 			DebugDrawTextHorz( TEXT(" "), rect2 );
-
+#endif
 			rect.top    += g_nFontHeight;
 			rect.bottom += g_nFontHeight;
 		}

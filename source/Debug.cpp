@@ -540,7 +540,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	// TODO: This really needs to be phased out, and use the ConfigFont[] settings
 #if USE_APPLE_FONT
-	int       g_nFontHeight = DEBUG_FONT_HEIGHT; // 13 -> 12 Lucida Console is readable
+	int       g_nFontHeight = CONSOLE_FONT_HEIGHT; // 13 -> 12 Lucida Console is readable
 #else
 	int       g_nFontHeight = 15; // 13 -> 12 Lucida Console is readable
 #endif
@@ -8052,19 +8052,6 @@ void DebugBegin ()
 	UpdateDisplay( UPDATE_ALL );
 
 #if DEBUG_APPLE_FONT
-
-	COLORREF aColors[ 8 ] =
-	{
-		RGB(   0,   0,   0 ), // K
-		RGB( 255,   0,   0 ), // R
-		RGB(   0, 255,   0 ), // G
-		RGB( 255, 255,   0 ), // Y
-		RGB(   0,   0, 255 ), // B
-		RGB( 255,   0, 255 ), // M
-		RGB(   0, 255, 255 ), // C
-		RGB( 255, 255, 255 ), // W
-	};
-
 	int iFG = 7;
 	int iBG = 4;
 
@@ -8081,8 +8068,8 @@ void DebugBegin ()
 
 		iFG = (x >> 1); // (iChar % 8);
 		iBG = (y >> 1) & 7; // (iChar / 8) & 7;
-		DebuggerSetColorFG( aColors[ iFG ] );
-		DebuggerSetColorBG( aColors[ iBG ] );
+		DebuggerSetColorFG( aConsoleColors[ iFG ] );
+		DebuggerSetColorBG( aConsoleColors[ iBG ] );
 
 		DebuggerPrintChar( x * (APPLE_FONT_WIDTH / 2), y * (APPLE_FONT_HEIGHT / 2), iChar );
 	}
@@ -8197,11 +8184,11 @@ void DebugDestroy ()
 
 	SelectObject( g_hDstDC, GetStockObject(NULL_BRUSH) );
 
-	DeleteObject( g_hBrushFG );
-	DeleteObject( g_hBrushBG );
+	DeleteObject( g_hConsoleBrushFG );
+	DeleteObject( g_hConsoleBrushBG );
 
-	DeleteDC( g_hDebugFontDC );
-	DeleteObject( g_hDebugFontBitmap );
+	DeleteDC( g_hConsoleFontDC );
+	DeleteObject( g_hConsoleFontBitmap );
 
 	ReleaseDC( g_hFrameWindow, g_hDstDC );
 }
@@ -8328,15 +8315,15 @@ void DebugInitialize ()
 	nError = GetLastError();
 #endif
 
-	g_hDebugFontDC = CreateCompatibleDC( g_hDstDC );
+	g_hConsoleFontDC = CreateCompatibleDC( g_hDstDC );
 #if _DEBUG
 	nError = GetLastError();
 #endif
 
 #if APPLE_FONT_NEW
 	// Pre-scaled bitmap
-	g_hDebugFontBitmap = LoadBitmap(g_hInstance,TEXT("IDB_DEBUG_FONT_7x8"));
-	SelectObject( g_hDebugFontDC, g_hDebugFontBitmap );
+	g_hConsoleFontBitmap = LoadBitmap(g_hInstance,TEXT("IDB_DEBUG_FONT_7x8"));
+	SelectObject( g_hConsoleFontDC, g_hConsoleFontBitmap );
 #else
 	// Scale at run-time
 
@@ -8352,8 +8339,8 @@ void DebugInitialize ()
 	nError = GetLastError();
 #endif
 
-	g_hDebugFontBrush = GetStockBrush( WHITE_BRUSH );
-	SelectObject(g_hDebugFontDC, g_hDebugFontBrush );
+	g_hConsoleFontBrush = GetStockBrush( WHITE_BRUSH );
+	SelectObject(g_hConsoleFontDC, g_hConsoleFontBrush );
 
 //	SelectObject(hTmpDC, g_hDebugFontBrush );
 
@@ -8361,17 +8348,17 @@ void DebugInitialize ()
 	nError = GetLastError();
 #endif
 
-	g_hDebugFontBitmap = CreateCompatibleBitmap(
+	g_hConsoleFontBitmap = CreateCompatibleBitmap(
 		hTmpDC, 
 		APPLE_FONT_X_REGIONSIZE/2, APPLE_FONT_Y_REGIONSIZE/2
 	);
 #if _DEBUG
 	nError = GetLastError();
 #endif
-	SelectObject(g_hDebugFontDC,g_hDebugFontBitmap);
+	SelectObject( g_hConsoleFontDC, g_hConsoleFontBitmap );
 
 	StretchBlt(
-		g_hDebugFontDC,                                       // HDC hdcDest,                        // handle to destination DC
+		g_hConsoleFontDC,                                     // HDC hdcDest,                        // handle to destination DC
 		0, 0,                                                 // int nXOriginDest, int nYOriginDest, // y-coord of destination upper-left corner
 		APPLE_FONT_X_REGIONSIZE/2, APPLE_FONT_Y_REGIONSIZE/2, //  int nWidthDest,   int nHeightDest,  
 		hTmpDC,                                               // HDC hdcSrc,                         // handle to source DC
@@ -8423,10 +8410,10 @@ void DebugInitialize ()
 	{
 		g_aFontConfig[ iFont ]._hFont = NULL;
 #if USE_APPLE_FONT
-		g_aFontConfig[ iFont ]._nFontHeight   = DEBUG_FONT_HEIGHT;
-		g_aFontConfig[ iFont ]._nFontWidthAvg = DEBUG_FONT_WIDTH;
-		g_aFontConfig[ iFont ]._nFontWidthMax = DEBUG_FONT_WIDTH;
-		g_aFontConfig[ iFont ]._nLineHeight   = DEBUG_FONT_HEIGHT;
+		g_aFontConfig[ iFont ]._nFontHeight   = CONSOLE_FONT_HEIGHT;
+		g_aFontConfig[ iFont ]._nFontWidthAvg = CONSOLE_FONT_WIDTH;
+		g_aFontConfig[ iFont ]._nFontWidthMax = CONSOLE_FONT_WIDTH;
+		g_aFontConfig[ iFont ]._nLineHeight   = CONSOLE_FONT_HEIGHT;
 #endif
 	}
 
@@ -8439,6 +8426,12 @@ void DebugInitialize ()
 	_CmdConfigFont( FONT_DISASM_DEFAULT, g_sFontNameDisasm , FIXED_PITCH | FF_MODERN      , g_nFontHeight ); // OEM_CHARSET
 	_CmdConfigFont( FONT_DISASM_BRANCH , g_sFontNameBranch , DEFAULT_PITCH | FF_DECORATIVE, g_nFontHeight+3); // DEFAULT_CHARSET
 //#endif
+
+	int iColor;
+	
+	iColor = FG_CONSOLE_OUTPUT;
+	COLORREF nColor = gaColorPalette[ g_aColorIndex[ iColor ] ];
+	g_anConsoleColor[ CONSOLE_COLOR_PREV ] = nColor;
 
 /*
 	g_hFontDebugger = CreateFont( 
