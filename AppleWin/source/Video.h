@@ -16,13 +16,13 @@ enum VIDEOTYPE
 
 enum AppleFont_e
 {
-	// 40-Column mode is 2x Zoom (default)
-	// 80-Column mode is 1.5x Zoom (7 x 16)
-	// Tiny mode is 1x zoom (7x8) for debugger
+	// 40-Column mode is 1x Zoom (default)
+	// 80-Column mode is ~0.75x Zoom (7 x 16)
+	// Tiny mode is 0.5 zoom (7x8) for debugger
 	APPLE_FONT_WIDTH  = 14, // in pixels
 	APPLE_FONT_HEIGHT = 16, // in pixels
 
-	// Each cell has a reserved aligned pixel area
+	// Each cell has a reserved aligned pixel area (grid spacing)
 	APPLE_FONT_CELL_WIDTH  = 16,
 	APPLE_FONT_CELL_HEIGHT = 16,
 
