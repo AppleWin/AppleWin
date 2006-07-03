@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <assert.h>
 
 // NEW UI debugging
-#define DEBUG_FORCE_DISPLAY 1
+#define DEBUG_FORCE_DISPLAY           0
 #define DEBUG_FONT_NO_BACKGROUND_CHAR 0
 #define DEBUG_FONT_NO_BACKGROUND_TEXT 1
 
