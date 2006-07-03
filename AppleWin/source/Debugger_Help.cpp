@@ -1067,9 +1067,14 @@ Update_t CmdVersion (int nArgs)
 	UnpackVersion( nVersion, nMajor, nMinor, nFixMajor, nFixMinor );
 
 //	wsprintf( sText, "Version" );	ConsoleBufferPush( sText );
-	wsprintf( sText, "  Emulator: %s    Debugger: %d.%d.%d.%d"
+	wsprintf( sText, "  Emulator:  %s%s%s    Debugger: %s%d.%d.%d.%d%s"
+		, g_asConsoleColor[ CONSOLE_COLOR_G ]
 		, VERSIONSTRING
-		, nMajor, nMinor, nFixMajor, nFixMinor );
+		, g_asConsoleColor[ CONSOLE_COLOR_PREV ]
+		, g_asConsoleColor[ CONSOLE_COLOR_G ]
+		, nMajor, nMinor, nFixMajor, nFixMinor
+		, g_asConsoleColor[ CONSOLE_COLOR_PREV ]
+	);
 	ConsoleBufferPush( sText );
 
 	if (nArgs)
