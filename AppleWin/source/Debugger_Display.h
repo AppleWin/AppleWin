@@ -4,7 +4,7 @@
 // Test Colors & Glyphs
 #define DEBUG_APPLE_FONT 0
 // Re-route all debugger text to new font
-#define USE_APPLE_FONT   1
+#define USE_APPLE_FONT   0
 
 // Win32 Debugger Font
 // 1 = Use Debugger_Font_7x8.BMP
