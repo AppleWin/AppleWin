@@ -988,12 +988,11 @@ void MemReset ()
 	mem   = memimage;
 	image = 0;
 
-	// INITIALIZE THE CPU
+	// INITIALIZE & RESET THE CPU
 	CpuInitialize();
 
 	// INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
 	ResetPaging(1);
-	regs.bRESET = 1;
 }
 
 //===========================================================================
