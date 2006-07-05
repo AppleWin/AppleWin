@@ -1,6 +1,9 @@
 /*
 TODO: 2.6.0.0 released with next version of AppleWin (1.12.9.2)
 
+.1 Console now jumps to end, when return pressed
+2.5.7.0 Debugger using new Apple Font with color console support
+
 .41 Fixed: Breakpoints now properly handle ranges (both relative and absolute)
    See HELP BPR
 .40 Changed: Cleaned up Bookmarks, Watches, ZeroPage to be more consistent.
