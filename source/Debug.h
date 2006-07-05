@@ -68,6 +68,9 @@ using namespace std;
 // Config - Info
 	extern bool  g_bConfigInfoTargetPointer  ;
 
+// Disassembly
+	extern int g_aDisasmTargets[ MAX_DISPLAY_LINES ];
+
 // Display
 	extern bool g_bDebuggerViewingAppleOutput;
 
@@ -164,3 +167,9 @@ using namespace std;
 	void	DebuggerInputConsoleChar( TCHAR ch );
 //	void	DebugProcessCommand (int);
 	void	DebuggerProcessKey( int keycode );
+
+	void	DebuggerUpdate();
+	void	DebuggerCursorNext();
+
+	void	DebuggerMouseClick( int x, int y );
+	

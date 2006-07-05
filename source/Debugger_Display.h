@@ -1,10 +1,11 @@
 #ifndef DEBUGGER_DISPLAY_H
 #define DEBUGGER_DISPLAY_H
 
+// use the new Debugger Font (Apple Font)
+#define USE_APPLE_FONT   1
+
 // Test Colors & Glyphs
 #define DEBUG_APPLE_FONT 0
-// Re-route all debugger text to new font
-#define USE_APPLE_FONT   0
 
 // Win32 Debugger Font
 // 1 = Use Debugger_Font_7x8.BMP
@@ -40,7 +41,7 @@
 #endif
 	};
 
-	extern HDC    g_hDstDC  ;
+//	extern HDC    g_hDstDC  ;
 	extern HBRUSH g_hConsoleBrushFG;
 	extern HBRUSH g_hConsoleBrushBG;
 
@@ -51,7 +52,7 @@
 	enum ConsoleColors_e
 	{
 		CONSOLE_COLOR_K,
-		CONSOLE_COLOR_PREV = 0,
+		CONSOLE_COLOR_x = 0, // default console foreground
 		CONSOLE_COLOR_R,
 		CONSOLE_COLOR_G,
 		CONSOLE_COLOR_Y,
@@ -62,11 +63,47 @@
 
 		MAX_CONSOLE_COLORS
 	};
-	extern COLORREF g_anConsoleColor[ MAX_CONSOLE_COLORS ];
-	extern char    *g_asConsoleColor[ MAX_CONSOLE_COLORS ];
+	extern COLORREF       g_anConsoleColor[ MAX_CONSOLE_COLORS ];
+//	extern const char    *g_asConsoleColor[ MAX_CONSOLE_COLORS ];
 
-	// ` ~ should always display ~
+	// Note: THe ` ~ key should always display ~ to prevent rendering errors
 	#define CONSOLE_COLOR_ESCAPE_CHAR '`'
+
+// Help Colors
+/*
+	Types
+		Plain        White 
+		Header       Yellow i.e. Usage
+		Operator     Yellow
+		Command      Green 
+		Key          Red
+        ArgMandatory Magenta  < >
+        ArgOptional  Blue     [ ]
+		ArgSeperator White     |
+
+	#define CON_COLOR_DEFAULT g_asConsoleColor[ CONSOLE_COLOR_x ]
+	#define CON_COLOR_DEFAULT "`0"
+	
+*/
+#if USE_APPLE_FONT
+	#define CON_COLOR_DEFAULT  "`0"
+	#define CON_COLOR_USAGE    "`3"
+	#define CON_COLOR_PARAM    "`2"
+	#define CON_COLOR_KEY      "`1"
+	#define CON_COLOR_ARG_MAND "`5"
+	#define CON_COLOR_ARG_OPT  "`4"
+	#define CON_COLOR_ARG_SEP  "`3"
+	#define CON_COLOR_NUM      "`2"
+#else
+	#define CON_COLOR_DEFAULT   ""
+	#define CON_COLOR_USAGE     ""
+	#define CON_COLOR_PARAM     ""
+	#define CON_COLOR_KEY       ""
+	#define CON_COLOR_ARG_MAND  ""
+	#define CON_COLOR_ARG_OPT   ""
+	#define CON_COLOR_ARG_SEP   ""
+#endif
+
 	inline bool ConsoleColorIsEscapeMeta( char c )
 	{
 		if (CONSOLE_COLOR_ESCAPE_CHAR == c)
@@ -98,7 +135,13 @@
 #endif
 	}
 	
-	extern const int DISPLAY_HEIGHT;
+	enum
+	{
+		DISPLAY_HEIGHT = 384,
+		MAX_DISPLAY_LINES  = DISPLAY_HEIGHT / CONSOLE_FONT_HEIGHT,
+	};
+	
+	int GetConsoleTopPixels( int y );
 
 	extern FontConfig_t g_aFontConfig[ NUM_FONTS  ];
 
@@ -114,16 +157,18 @@
 
 	void DrawWindow_Source      (Update_t bUpdate);
 
-	void DrawBreakpoints      (HDC dc, int line);
-	void DrawConsoleInput     (HDC dc);
+	void DrawBreakpoints      ( int line);
+	void DrawConsoleInput     ();
 	void DrawConsoleLine      (LPCSTR pText, int y);
-	WORD DrawDisassemblyLine  (HDC dc, int line, WORD offset, LPTSTR text);
-	void DrawFlags            (HDC dc, int line, WORD nRegFlags, LPTSTR pFlagNames_);
-	void DrawMemory           (HDC dc, int line, int iMem );
-	void DrawRegister         (HDC dc, int line, LPCTSTR name, int bytes, WORD value, int iSource = 0 );
-	void DrawStack            (HDC dc, int line);
-	void DrawTargets          (HDC dc, int line);
-	void DrawWatches          (HDC dc, int line);
-	void DrawZeroPagePointers (HDC dc, int line);
+	void DrawConsoleCursor    ();
+
+	WORD DrawDisassemblyLine  ( int line, WORD offset, LPTSTR text);
+	void DrawFlags            ( int line, WORD nRegFlags, LPTSTR pFlagNames_);
+	void DrawMemory           ( int line, int iMem );
+	void DrawRegister         ( int line, LPCTSTR name, int bytes, WORD value, int iSource = 0 );
+	void DrawStack            ( int line);
+	void DrawTargets          ( int line);
+	void DrawWatches          ( int line);
+	void DrawZeroPagePointers ( int line);
 
 #endif

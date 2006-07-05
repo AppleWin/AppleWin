@@ -32,8 +32,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define ENABLE_MENU 0
 
-#define  VIEWPORTX   5
-#define  VIEWPORTY   5
 #define  VIEWPORTCX  560
 #if ENABLE_MENU
 #define  VIEWPORTCY  400
@@ -68,7 +66,7 @@ static int     buttonover      = -1;
 static int     buttonx         = BUTTONX;
 static int     buttony         = BUTTONY;
 static HRGN    clipregion      = (HRGN)0;
-static HDC     g_hFrameDC         = (HDC)0;
+       HDC     g_hFrameDC         = (HDC)0;
 static RECT    framerect       = {0,0,0,0};
 HWND    g_hFrameWindow     = (HWND)0;
 BOOL    fullscreen      = 0;
@@ -142,19 +140,21 @@ void DeleteGdiObjects () {
   DeleteObject(smallfont);
 }
 
+// Draws an 3D box around the main apple screen
 //===========================================================================
-void Draw3dRect (HDC dc, int x1, int y1, int x2, int y2, BOOL out) {
-  SelectObject(dc,GetStockObject(NULL_BRUSH));
-  SelectObject(dc,out ? btnshadowpen : btnhighlightpen);
-  POINT pt[3];
-  pt[0].x = x1;    pt[0].y = y2-1;
-  pt[1].x = x2-1;  pt[1].y = y2-1;
-  pt[2].x = x2-1;  pt[2].y = y1; 
-  Polyline(dc,(LPPOINT)&pt,3);
-  SelectObject(dc,(out == 1) ? btnhighlightpen : btnshadowpen);
-  pt[1].x = x1;    pt[1].y = y1;
-  pt[2].x = x2;    pt[2].y = y1;
-  Polyline(dc,(LPPOINT)&pt,3);
+void Draw3dRect (HDC dc, int x1, int y1, int x2, int y2, BOOL out)
+{	
+	SelectObject(dc,GetStockObject(NULL_BRUSH));
+	SelectObject(dc,out ? btnshadowpen : btnhighlightpen);
+	POINT pt[3];
+	pt[0].x = x1;    pt[0].y = y2-1;
+	pt[1].x = x2-1;  pt[1].y = y2-1;
+	pt[2].x = x2-1;  pt[2].y = y1; 
+	Polyline(dc,(LPPOINT)&pt,3);
+	SelectObject(dc,(out == 1) ? btnhighlightpen : btnshadowpen);
+	pt[1].x = x1;    pt[1].y = y1;
+	pt[2].x = x2;    pt[2].y = y1;
+	Polyline(dc,(LPPOINT)&pt,3);
 }
 
 //===========================================================================
@@ -397,10 +397,10 @@ void DrawStatusArea (HDC passdc, int drawflags)
 		{
 			TCHAR title[40];
 			_tcscpy(title,g_bApple2e
-				? TITLE_APPLE_2
+				? TITLE_APPLE_2_E
 				: (g_bApple2plus
 					? TITLE_APPLE_2_PLUS
-					: TITLE_APPLE_2 ));
+					: TITLE_APPLE_2_ORG ));
 
 			switch (g_nAppMode)
 			{
@@ -681,6 +681,7 @@ LRESULT CALLBACK FrameWndProc (
         else if ((x < buttonx) && JoyUsingMouse() &&
                  ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING)))
           SetUsingCursor(1);
+		DebuggerMouseClick( x, y );
       }
       RelayEvent(WM_LBUTTONDOWN,wparam,lparam);
       break;
@@ -1187,7 +1188,7 @@ void FrameCreateWindow ()
 		if (g_bApple2plus)
 			g_pAppTitle = TITLE_APPLE_2_PLUS;
 		else
-			g_pAppTitle = TITLE_APPLE_2;
+			g_pAppTitle = TITLE_APPLE_2_ORG;
 	}
 
 	g_hFrameWindow = CreateWindow(

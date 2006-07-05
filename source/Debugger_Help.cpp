@@ -86,7 +86,7 @@ bool TryStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
 // cats string as much as possible
 // returns true if pSrc safely fits into pDst, else false (pSrc would of overflowed pDst)
 //===========================================================================
-bool StringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
+int StringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
 {
 	int nLenDst = _tcslen( pDst );
 	int nLenSrc = _tcslen( pSrc );
@@ -97,9 +97,9 @@ bool StringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
 
 	bool bOverflow = (nSpcDst < nLenSrc);
 	if (bOverflow)
-		return false;
+		return 0;
 		
-	return true;
+	return nChars;
 }
 
 
@@ -127,6 +127,70 @@ Update_t Help_Arg_1( int iCommandHelp )
 
 
 //===========================================================================
+void Help_Categories()
+{
+	const int nBuf = CONSOLE_WIDTH * 2;
+
+	char sText[ nBuf ] = "";
+	int  nLen = 0;
+
+		nLen += StringCat( sText, CON_COLOR_USAGE , nBuf );
+		nLen += StringCat( sText, "Usage", nBuf );
+
+		nLen += StringCat( sText, CON_COLOR_DEFAULT, nBuf );
+		nLen += StringCat( sText, ": " , nBuf );
+
+		nLen += StringCat( sText, CON_COLOR_ARG_OPT, nBuf );
+		nLen += StringCat( sText, "[ ", nBuf );
+
+		nLen += StringCat( sText, CON_COLOR_ARG_MAND, nBuf );
+		nLen += StringCat( sText, "< ", nBuf );
+
+
+		for (int iCategory = _PARAM_HELPCATEGORIES_BEGIN ; iCategory < _PARAM_HELPCATEGORIES_END; iCategory++)
+		{
+			TCHAR *pName = g_aParameters[ iCategory ].m_sName; 
+
+			if (nLen + _tcslen( pName ) >= (CONSOLE_WIDTH - 4))
+			{
+				ConsolePrint( sText );
+				sText[ 0 ] = 0;
+				nLen = StringCat( sText, "    ", nBuf );
+			}
+
+			        StringCat( sText, CON_COLOR_PARAM, nBuf );
+			nLen += StringCat( sText, pName, nBuf );
+
+			if (iCategory < (_PARAM_HELPCATEGORIES_END - 1))
+			{
+				        StringCat( sText, CON_COLOR_ARG_SEP, nBuf );
+				nLen += StringCat( sText, " | "                              , nBuf );
+			}
+		}
+		StringCat( sText, CON_COLOR_ARG_MAND, nBuf );
+		StringCat( sText, TEXT(" >"), nBuf);
+
+		StringCat( sText, CON_COLOR_ARG_OPT, nBuf );
+		StringCat( sText, TEXT(" ]"), nBuf);
+
+//		ConsoleBufferPush( sText );
+		ConsolePrint( sText );  // Transcode colored text to native console color text
+		
+		wsprintf( sText, "%sNotes%s: %s<>%s = mandatory, %s[]%s = optional, %s|%s argument option"
+			, CON_COLOR_USAGE
+			, CON_COLOR_DEFAULT
+			, CON_COLOR_ARG_MAND
+			, CON_COLOR_DEFAULT
+			, CON_COLOR_ARG_OPT
+			, CON_COLOR_DEFAULT
+			, CON_COLOR_ARG_SEP
+			, CON_COLOR_DEFAULT
+		);
+		ConsolePrint( sText );  // Transcode colored text to native console color text
+//		ConsoleBufferPush( sText );
+}
+
+//===========================================================================
 void Help_Range()
 {
 	ConsoleBufferPush( TEXT("  Where <range> is of the form:"                ) );
@@ -137,33 +201,41 @@ void Help_Range()
 //===========================================================================
 void Help_Operators()
 {
-	ConsoleBufferPush( TEXT("  Operators: (Math)"                         ) );
-	ConsoleBufferPush( TEXT("    +   Addition"                            ) );
-	ConsoleBufferPush( TEXT("    -   Subtraction"                         ) );
-	ConsoleBufferPush( TEXT("    *   Multiplication"                      ) );
-	ConsoleBufferPush( TEXT("    /   Division"                            ) );
-	ConsoleBufferPush( TEXT("    %   Modulas or Remainder"                ) );
-	ConsoleBufferPush( TEXT("  Operators: (Bit Wise)"                     ) );
-	ConsoleBufferPush( TEXT("    &   Bit-wise and (AND)"                  ) );
-	ConsoleBufferPush( TEXT("    |   Bit-wise or  (OR )"                  ) );
-	ConsoleBufferPush( TEXT("    ^   Bit-wise exclusive-or (EOR/XOR)"     ) );
-	ConsoleBufferPush( TEXT("    !   Bit-wise negation (NOT)"             ) );
-	ConsoleBufferPush( TEXT("  Operators: (Input)"                        ) );
-	ConsoleBufferPush( TEXT("    @   next number refers to search results"       ) );
-	ConsoleBufferPush( TEXT("    \"   Designate string in ASCII format"          ) );
-	ConsoleBufferPush( TEXT("    \'   Desginate string in High-Bit apple format" ) );
-	ConsoleBufferPush( TEXT("    $   Designate number/symbol"                    ) );
-	ConsoleBufferPush( TEXT("    #   Designate number in hex"                    ) );
-	ConsoleBufferPush( TEXT("  Operators: (Range)"                               ) );
-	ConsoleBufferPush( TEXT("    ,   range seperator (2nd address is relative)"  ) );
-	ConsoleBufferPush( TEXT("    :   range seperator (2nd address is absolute)"  ) );
-	ConsoleBufferPush( TEXT("  Operators: (Misc)"                                ) );
-	ConsoleBufferPush( TEXT("    //  comment until end of line"                  ) );
-	ConsoleBufferPush( TEXT("  Operators: (Breakpoint)"                                ) );
-
-	TCHAR sText[ CONSOLE_WIDTH ];
+	char sText[ CONSOLE_WIDTH ];
+	
+//	sprintf( sText," %sOperators%s:"                                 , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+//	sprintf( sText,"  Operators: (Math)"                             );
+	sprintf( sText,"  Operators: (%sMath%s)"                         , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s+%s   Addition"                            , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s-%s   Subtraction"                         , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s*%s   Multiplication"                      , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s/%s   Division"                            , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s%%%s   Modulas or Remainder"               , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+//ConsoleBufferPush( "  Operators: (Bit Wise)"                         );
+	sprintf( sText,"  Operators: (%sBit Wise%s)"                     , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s&%s   Bit-wise and (AND)"                  , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s|%s   Bit-wise or  (OR )"                  , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s^%s   Bit-wise exclusive-or (EOR/XOR)"     , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s!%s   Bit-wise negation (NOT)"             , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+//ConsoleBufferPush( "  Operators: (Input)"                            );
+	sprintf( sText,"  Operators: (%sInput%s)"                        , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s@%s   next number refers to search results", CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s\"%s   Designate string in ASCII format"   , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s\'%s   Desginate string in High-Bit apple format", CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s$%s   Designate number/symbol"             , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s#%s   Designate number in hex"             , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+//ConsoleBufferPush( "  Operators: (Range)"                            );
+	sprintf( sText,"  Operators: (%sRange%s)"                        , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s,%s   range seperator (2nd address is relative)", CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s:%s   range seperator (2nd address is absolute)", CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+//	sprintf( sText,"  Operators: (Misc)"                             );
+	sprintf( sText,"  Operators: (%sMisc%s)"                         , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+	sprintf( sText,"    %s//%s  comment until end of line"           , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
+//ConsoleBufferPush( "  Operators: (Breakpoint)"                       );
+	sprintf( sText,"  Operators: (%sBreakpoint%s)"                   , CON_COLOR_USAGE, CON_COLOR_DEFAULT ); ConsolePrint( sText );
 
 	_tcscpy( sText, "    " );
+	_tcscat( sText, CON_COLOR_USAGE );
 	int iBreakOp = 0;
 	for( iBreakOp = 0; iBreakOp < NUM_BREAKPOINT_OPERATORS; iBreakOp++ )
 	{
@@ -174,6 +246,7 @@ void Help_Operators()
 			_tcscat( sText, " " );
 		}
 	}	
+	_tcscat( sText, CON_COLOR_DEFAULT );
 	ConsoleBufferPush( sText );
 }
 
@@ -202,10 +275,16 @@ Update_t CmdMOTD( int nArgs )
 	ConsoleBufferPush( TEXT(" Apple ][ ][+ //e Emulator for Windows") );
 	CmdVersion(0);
 	CmdSymbols(0);
-	wsprintf( sText, "  '~' console, '%s' (specific), '%s' (all)"
+	wsprintf( sText, "  '%sCtrl ~%s' console, '%s%s%s' (specific), '%s%s%s' (all)"
+		, CON_COLOR_KEY
+		, CON_COLOR_DEFAULT
+		, CON_COLOR_PARAM
 		 , g_aCommands[ CMD_HELP_SPECIFIC ].m_sName
+		, CON_COLOR_DEFAULT
 //		 , g_aCommands[ CMD_HELP_SPECIFIC ].pHelpSummary
+		, CON_COLOR_PARAM
 		 , g_aCommands[ CMD_HELP_LIST     ].m_sName
+		, CON_COLOR_DEFAULT
 //		 , g_aCommands[ CMD_HELP_LIST     ].pHelpSummary
 	);
 	ConsoleBufferPush( sText );
@@ -221,41 +300,13 @@ Update_t CmdMOTD( int nArgs )
 Update_t CmdHelpSpecific (int nArgs)
 {
 	int iArg;
-	TCHAR sText[ CONSOLE_WIDTH ];
+	TCHAR sText[ CONSOLE_WIDTH * 2 ];
 	ZeroMemory( sText, CONSOLE_WIDTH );
 
 	if (! nArgs)
 	{
-//		ConsoleBufferPush( TEXT(" [] = optional, {} = mandatory.  Categories are: ") );
-
-		_tcscpy( sText, TEXT("Usage: [< ") );
-		for (int iCategory = _PARAM_HELPCATEGORIES_BEGIN ; iCategory < _PARAM_HELPCATEGORIES_END; iCategory++)
-		{
-#if _DEBUG
-//			if (iCategory == (PARAM_CAT_ZEROPAGE - 1))
-//			{
-//				int  nLen = _tcslen( sText );
-//				bool bStop = true;
-//			}
-#endif
-			TCHAR *pName = g_aParameters[ iCategory ].m_sName; 
-			if (! TestStringCat( sText, pName, CONSOLE_WIDTH - 4 )) // CONSOLE_WIDTH // g_nConsoleDisplayWidth - 3
-			{
-				ConsoleBufferPush( sText );
-				_tcscpy( sText, TEXT("    ") );
-			}
-
-			StringCat( sText, pName, CONSOLE_WIDTH );
-			if (iCategory < (_PARAM_HELPCATEGORIES_END - 1))
-			{
-				StringCat( sText, TEXT(" | "), CONSOLE_WIDTH - 1 );
-			}
-		}
-		StringCat( sText, TEXT(" >]"), CONSOLE_WIDTH - 3 );
-		ConsoleBufferPush( sText );
-
-		wsprintf( sText, TEXT("Note: [] = optional, <> = mandatory"), CONSOLE_WIDTH );
-		ConsoleBufferPush( sText );
+		Help_Categories();
+		return ConsoleUpdate();
 	}
 
 	CmdFuncPtr_t pFunction = NULL;
@@ -1068,12 +1119,12 @@ Update_t CmdVersion (int nArgs)
 
 //	wsprintf( sText, "Version" );	ConsoleBufferPush( sText );
 	wsprintf( sText, "  Emulator:  %s%s%s    Debugger: %s%d.%d.%d.%d%s"
-		, g_asConsoleColor[ CONSOLE_COLOR_G ]
+		, CON_COLOR_NUM
 		, VERSIONSTRING
-		, g_asConsoleColor[ CONSOLE_COLOR_PREV ]
-		, g_asConsoleColor[ CONSOLE_COLOR_G ]
+		, CON_COLOR_DEFAULT
+		, CON_COLOR_NUM
 		, nMajor, nMinor, nFixMajor, nFixMinor
-		, g_asConsoleColor[ CONSOLE_COLOR_PREV ]
+		, CON_COLOR_DEFAULT
 	);
 	ConsoleBufferPush( sText );
 

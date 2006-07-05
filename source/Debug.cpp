@@ -37,14 +37,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //	#define DEBUG_COMMAND_HELP  1
 //	#define DEBUG_ASM_HASH 1
 #define ALLOW_INPUT_LOWERCASE 1
-#define CONSOLE_FULL_WIDTH    0
 
 // TODO: COLOR RESET
 // TODO: COLOR SAVE ["filename"]
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,6,42);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,7,1);
 
 
 // Public _________________________________________________________________________________________
@@ -513,7 +512,25 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	COLORREF DebuggerGetColor ( int iColor );
 
 
-// Cursor _____________________________________________________________________
+// Cursor (Console Input) _____________________________________________________
+
+//	char g_aInputCursor[] = "\|/-";
+	enum InputCursor
+	{
+		CURSOR_INSERT,
+		CURSOR_OVERSTRIKE,
+		NUM_INPUT_CURSORS
+	};
+	
+	const char g_aInputCursor[] = "_\x7F"; // insert over-write
+	bool       g_bInputCursor = false;
+	int        g_iInputCursor = CURSOR_OVERSTRIKE; // which cursor to use
+	const int  g_nInputCursor = sizeof( g_aInputCursor );
+
+	void DebuggerCursorUpdate();
+	char DebuggerCursorGet();
+
+// Cursor (Disasm) ____________________________________________________________
 
 	WORD g_nDisasmTopAddress = 0;
 	WORD g_nDisasmBotAddress = 0;
@@ -521,7 +538,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	bool g_bDisasmCurBad    = false;
 	int  g_nDisasmCurLine   = 0; // Aligned to Top or Center
-    int  g_iDisasmCurState = CURSOR_NORMAL;
+	int  g_iDisasmCurState = CURSOR_NORMAL;
 
 	int  g_nDisasmWinHeight = 0;
 
@@ -545,12 +562,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int       g_nFontHeight = 15; // 13 -> 12 Lucida Console is readable
 #endif
 
-	const int MIN_DISPLAY_CONSOLE_LINES =  4; // doesn't include ConsoleInput
+	const int MIN_DISPLAY_CONSOLE_LINES =  5; // doesn't include ConsoleInput
 
-	int g_nTotalLines = 0; // DISPLAY_HEIGHT / g_nFontHeight;
-	int MAX_DISPLAY_DISASM_LINES   = 0; // g_nTotalLines -  MIN_DISPLAY_CONSOLE_LINES; // 19;
-
-	int MAX_DISPLAY_CONSOLE_LINES  =  0; // MAX_DISPLAY_DISASM_LINES + MIN_DISPLAY_CONSOLE_LINES; // 23
+	int g_nDisasmDisplayLines  = 0;
 
 
 // Config _____________________________________________________________________
@@ -823,7 +837,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	Update_t ExecuteCommand ( int nArgs );
 
 // Breakpoints
-	void _ListBreakWatchZero( Breakpoint_t * aBreakWatchZero, int iBWZ, bool bZeroBased = true );
+	void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ); // bool bZeroBased = true );
+	void _BWZ_ListAll( const Breakpoint_t * aBreakWatchZero, const int nMax );
 
 //	bool CheckBreakpoint (WORD address, BOOL memory);
 	bool CheckBreakpointsIO   ();
@@ -1240,15 +1255,7 @@ Update_t CmdBookmarkList (int nArgs)
 	}
 	else
 	{
-		int iBookmark = 0;
-		while (iBookmark < MAX_BOOKMARKS)
-		{
-			if (g_aBookmarks[ iBookmark ].bSet)
-			{
-				_ListBreakWatchZero( g_aBookmarks, iBookmark, false );
-			}
-			iBookmark++;
-		}
+		_BWZ_ListAll( g_aBookmarks, MAX_BOOKMARKS );
 	}
 	return ConsoleUpdate();
 }
@@ -2055,35 +2062,33 @@ Update_t CmdBreakpointAddMem  (int nArgs)
 
 
 //===========================================================================
-void _BreakWatchZero_Clear( Breakpoint_t * aBreakWatchZero, int iSlot )
+void _BWZ_Clear( Breakpoint_t * aBreakWatchZero, int iSlot )
 {
 	aBreakWatchZero[ iSlot ].bSet     = false;
 	aBreakWatchZero[ iSlot ].bEnabled = false;
 	aBreakWatchZero[ iSlot ].nLength  = 0;
 }
 
-void _BreakWatchZero_RemoveOne( Breakpoint_t *aBreakWatchZero, const int iSlot, int & nTotal )
+void _BWZ_RemoveOne( Breakpoint_t *aBreakWatchZero, const int iSlot, int & nTotal )
 {
 	if (aBreakWatchZero[iSlot].bSet)
 	{
-		_BreakWatchZero_Clear( aBreakWatchZero, iSlot );
+		_BWZ_Clear( aBreakWatchZero, iSlot );
 		nTotal--;
 	}
 }
 
-void _BreakWatchZero_RemoveAll( Breakpoint_t *aBreakWatchZero, const int nMax, int & nTotal )
+void _BWZ_RemoveAll( Breakpoint_t *aBreakWatchZero, const int nMax, int & nTotal )
 {
-	int iSlot = nMax;
-
-	while (iSlot--)
+	for( int iSlot = 0; iSlot < nMax; iSlot++ )
 	{
-		_BreakWatchZero_RemoveOne( aBreakWatchZero, iSlot, nTotal );
+		_BWZ_RemoveOne( aBreakWatchZero, iSlot, nTotal );
 	}
 }
 
 // called by BreakpointsClear, WatchesClear, ZeroPagePointersClear
 //===========================================================================
-void _ClearViaArgs( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, int & nTotal )
+void _BWZ_ClearViaArgs( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, int & nTotal )
 {
 	int iSlot = 0;
 	
@@ -2094,13 +2099,13 @@ void _ClearViaArgs( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, i
 
 		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
-			_BreakWatchZero_RemoveAll( aBreakWatchZero, nMax, nTotal );
+			_BWZ_RemoveAll( aBreakWatchZero, nMax, nTotal );
 			break;
 		}
 		else
-		if ((iSlot >= 1) && (iSlot <= nMax))
+		if ((iSlot >= 0) && (iSlot < nMax))
 		{
-			_BreakWatchZero_RemoveOne( aBreakWatchZero, iSlot - 1, nTotal );
+			_BWZ_RemoveOne( aBreakWatchZero, iSlot, nTotal );
 		}
 
 		nArgs--;
@@ -2109,7 +2114,7 @@ void _ClearViaArgs( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, i
 
 // called by BreakpointsEnable, WatchesEnable, ZeroPagePointersEnable
 // called by BreakpointsDisable, WatchesDisable, ZeroPagePointersDisable
-void _EnableDisableViaArgs( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, const bool bEnabled )
+void _BWZ_EnableDisableViaArgs( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, const bool bEnabled )
 {
 	int iSlot = 0;
 
@@ -2120,17 +2125,15 @@ void _EnableDisableViaArgs( int nArgs, Breakpoint_t * aBreakWatchZero, const int
 
 		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
-			iSlot = nMax;
-			while (iSlot--)
+			for( ; iSlot < nMax; iSlot++ )
 			{
 				aBreakWatchZero[ iSlot ].bEnabled = bEnabled;
 			}			
-			break;
 		}
 		else
-		if ((iSlot >= 1) && (iSlot <= nMax))
+		if ((iSlot >= 0) && (iSlot < nMax))
 		{
-			aBreakWatchZero[iSlot-1].bEnabled = bEnabled;
+			aBreakWatchZero[ iSlot ].bEnabled = bEnabled;
 		}
 
 		nArgs--;
@@ -2145,11 +2148,11 @@ Update_t CmdBreakpointClear (int nArgs)
 
 	if (!nArgs)
 	{
-		_BreakWatchZero_RemoveAll( g_aBreakpoints, MAX_BREAKPOINTS, g_nBreakpoints );
+		_BWZ_RemoveAll( g_aBreakpoints, MAX_BREAKPOINTS, g_nBreakpoints );
 	}
 	else
 	{
-		_ClearViaArgs( nArgs, g_aBreakpoints, MAX_BREAKPOINTS, g_nBreakpoints );
+		_BWZ_ClearViaArgs( nArgs, g_aBreakpoints, MAX_BREAKPOINTS, g_nBreakpoints );
 	}
 
     return UPDATE_DISASM | UPDATE_BREAKPOINTS | UPDATE_CONSOLE_DISPLAY;
@@ -2164,7 +2167,7 @@ Update_t CmdBreakpointDisable (int nArgs)
 	if (! nArgs)
 		return Help_Arg_1( CMD_BREAKPOINT_DISABLE );
 
-	_EnableDisableViaArgs( nArgs, g_aBreakpoints, MAX_BREAKPOINTS, false );
+	_BWZ_EnableDisableViaArgs( nArgs, g_aBreakpoints, MAX_BREAKPOINTS, false );
 
 	return UPDATE_BREAKPOINTS;
 }
@@ -2185,13 +2188,13 @@ Update_t CmdBreakpointEnable (int nArgs) {
 	if (! nArgs)
 		return Help_Arg_1( CMD_BREAKPOINT_ENABLE );
 
-	_EnableDisableViaArgs( nArgs, g_aBreakpoints, MAX_BREAKPOINTS, true );
+	_BWZ_EnableDisableViaArgs( nArgs, g_aBreakpoints, MAX_BREAKPOINTS, true );
 
 	return UPDATE_BREAKPOINTS;
 }
 
 
-void _ListBreakWatchZero( Breakpoint_t * aBreakWatchZero, int iBWZ, bool bZeroBased )
+void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool bZeroBased )
 {
 	static TCHAR sText[ CONSOLE_WIDTH ];
 	static const TCHAR sFlags[] = "-*";
@@ -2206,7 +2209,8 @@ void _ListBreakWatchZero( Breakpoint_t * aBreakWatchZero, int iBWZ, bool bZeroBa
 	}
 
 	wsprintf( sText, "  #%d %c %04X %s",
-		(bZeroBased ? iBWZ + 1 : iBWZ),
+//		(bZeroBased ? iBWZ + 1 : iBWZ),
+		iBWZ,
 		sFlags[ (int) aBreakWatchZero[ iBWZ ].bEnabled ],
 		aBreakWatchZero[ iBWZ ].nAddress,
 		pSymbol
@@ -2214,6 +2218,18 @@ void _ListBreakWatchZero( Breakpoint_t * aBreakWatchZero, int iBWZ, bool bZeroBa
 	ConsoleBufferPush( sText );
 }
 
+void _BWZ_ListAll( const Breakpoint_t * aBreakWatchZero, const int nMax )
+{
+	int iBWZ = 0;
+	while (iBWZ < MAX_BOOKMARKS)
+	{
+		if (aBreakWatchZero[ iBWZ ].bSet)
+		{
+			_BWZ_List( aBreakWatchZero, iBWZ );
+		}
+		iBWZ++;
+	}
+}
 
 //===========================================================================
 Update_t CmdBreakpointList (int nArgs)
@@ -2239,15 +2255,7 @@ Update_t CmdBreakpointList (int nArgs)
 	}
 	else
 	{	
-		int iBreakpoint = 0;
-		while (iBreakpoint < MAX_BREAKPOINTS)
-		{
-			if (g_aBreakpoints[ iBreakpoint ].bSet)
-			{
-				_ListBreakWatchZero( g_aBreakpoints, iBreakpoint );
-			}
-			iBreakpoint++;
-		}
+		_BWZ_ListAll( g_aBreakpoints, MAX_BREAKPOINTS );
 	}
 	return ConsoleUpdate();
 }
@@ -3179,7 +3187,7 @@ Update_t CmdConfigFont (int nArgs)
 		{
 			TCHAR sText[ CONSOLE_WIDTH ];
 			wsprintf( sText, "Lines: %d  Font Px: %d  Line Px: %d"
-				, g_nTotalLines
+				, g_nDisasmDisplayLines
 				, g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontHeight
 				, g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight );
 			ConsoleBufferPush( sText );
@@ -3228,46 +3236,33 @@ void _UpdateWindowFontHeights( int nFontHeight )
 {
 	if (nFontHeight)
 	{
-		// The screen layout defaults to a "virtal" font height of 16 pixels.
-		// The disassmebler has 19 lines.
-		// Total: 19 * 16 pixels
-		//
-		// Figure out how many lines we can display, given our new font height.
-		// Given: Total_Pixels = Lines * Pixels_Line
-		// Calc: Lines = Total_Pixels / Pixels_Line
-		int nConsoleTopY = 19 * 16;
+		int nConsoleTopY = GetConsoleTopPixels( g_nConsoleDisplayLines );
+
 		int nHeight = 0;
 
 		if (g_iFontSpacing == FONT_SPACING_CLASSIC)
 		{
 			nHeight = nFontHeight + 1;
-			g_nTotalLines = nConsoleTopY / nHeight;
+			g_nDisasmDisplayLines = nConsoleTopY / nHeight;
 		}
 		else
 		if (g_iFontSpacing == FONT_SPACING_CLEAN)
 		{		
 			nHeight = nFontHeight;
-			g_nTotalLines = nConsoleTopY / nHeight;
+			g_nDisasmDisplayLines = nConsoleTopY / nHeight;
 		}
 		else
 		if (g_iFontSpacing == FONT_SPACING_COMPRESSED)
 		{
 			nHeight = nFontHeight - 1;
-			g_nTotalLines = (nConsoleTopY + nHeight) / nHeight; // Ceil()
+			g_nDisasmDisplayLines = (nConsoleTopY + nHeight) / nHeight; // Ceil()
 		}
 
 		g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight = nHeight;
 		
 //		int nHeightOptimal = (nHeight0 + nHeight1) / 2;
 //		int nLinesOptimal = nConsoleTopY / nHeightOptimal;
-//		g_nTotalLines = nLinesOptimal;
-
-		MAX_DISPLAY_DISASM_LINES = g_nTotalLines;
-
-		// TODO/FIXME: Needs to take into account the console height
-		MAX_DISPLAY_CONSOLE_LINES = MAX_DISPLAY_DISASM_LINES + MIN_DISPLAY_CONSOLE_LINES; // 23
-//		if (MAX_DISPLAY_CONSOLE_LINES > 23)
-//			MAX_DISPLAY_CONSOLE_LINES = 23;
+//		g_nDisasmDisplayLines = nLinesOptimal;
 
 		WindowUpdateSizes();
 	}
@@ -3821,15 +3816,16 @@ Update_t CmdCursorLineUp (int nArgs)
 		aTopCandidates.reserve( MAX_LOOK_AHEAD );
 		aTopCandidates.erase( aTopCandidates.begin(), aTopCandidates.end() );
 
-		int nTop = g_nDisasmTopAddress;
-		int iTop = 0;
-		int nCur = 0;
+		WORD nTop = g_nDisasmTopAddress;
+		WORD iTop = 0;
+		WORD nCur = 0;
 
 		do
 		{
 			nTop--;
 			nCur = nTop;
 			iTop = (g_nDisasmTopAddress - nTop);
+
 
 			for (int iLine = 0; iLine < MAX_LOOK_AHEAD; iLine++ )
 			{
@@ -6657,7 +6653,7 @@ Update_t CmdWatchAdd (int nArgs)
 		if (iWatch == NO_6502_TARGET)
 		{
 			iWatch = 0;
-			while ((iWatch < MAX_ZEROPAGE_POINTERS) && (g_aZeroPagePointers[iWatch].bSet))
+			while ((iWatch < MAX_ZEROPAGE_POINTERS) && (g_aWatches[iWatch].bSet))
 			{
 				iWatch++;
 			}
@@ -6700,7 +6696,7 @@ Update_t CmdWatchClear (int nArgs)
 	if (!nArgs)
 		return Help_Arg_1( CMD_WATCH_CLEAR );	
 
-	_ClearViaArgs( nArgs, g_aWatches, MAX_WATCHES, g_nWatches );
+	_BWZ_ClearViaArgs( nArgs, g_aWatches, MAX_WATCHES, g_nWatches );
 
 //	if (! g_nWatches)
 //	{
@@ -6720,7 +6716,7 @@ Update_t CmdWatchDisable (int nArgs)
 	if (!nArgs)
 		return Help_Arg_1( CMD_WATCH_DISABLE );
 
-	_EnableDisableViaArgs( nArgs, g_aWatches, MAX_WATCHES, false );
+	_BWZ_EnableDisableViaArgs( nArgs, g_aWatches, MAX_WATCHES, false );
 
 	return UPDATE_WATCH;
 }
@@ -6734,7 +6730,7 @@ Update_t CmdWatchEnable (int nArgs)
 	if (!nArgs)
 		return Help_Arg_1( CMD_WATCH_ENABLE );
 
-	_EnableDisableViaArgs( nArgs, g_aWatches, MAX_WATCHES, true );
+	_BWZ_EnableDisableViaArgs( nArgs, g_aWatches, MAX_WATCHES, true );
 
 	return UPDATE_WATCH;
 }
@@ -6750,15 +6746,7 @@ Update_t CmdWatchList (int nArgs)
 	}
 	else
 	{
-		int iWatch = 0;
-		while (iWatch < MAX_WATCHES)
-		{
-			if (g_aWatches[ iWatch ].bSet)
-			{
-				_ListBreakWatchZero( g_aWatches, iWatch, true );
-			}
-			iWatch++;
-		}
+		_BWZ_List( g_aWatches, MAX_WATCHES );
 	}
 	return ConsoleUpdate();
 }
@@ -6847,19 +6835,19 @@ Update_t _CmdWindowViewFull ( int iNewWindow )
 //===========================================================================
 void WindowUpdateConsoleDisplayedSize()
 {
-	g_nConsoleDisplayHeight = MIN_DISPLAY_CONSOLE_LINES;
-#if CONSOLE_FULL_WIDTH
+	g_nConsoleDisplayLines = MIN_DISPLAY_CONSOLE_LINES;
+#if USE_APPLE_FONT
 	g_bConsoleFullWidth = true;
 	g_nConsoleDisplayWidth = CONSOLE_WIDTH - 1;
 
 	if (g_iWindowThis == WINDOW_CONSOLE)
 	{
-		g_nConsoleDisplayHeight = MAX_DISPLAY_CONSOLE_LINES;
+		g_nConsoleDisplayLines = MAX_DISPLAY_LINES;
 		g_nConsoleDisplayWidth = CONSOLE_WIDTH - 1;
 		g_bConsoleFullWidth = true;
 	}
 #else
-	g_nConsoleDisplayWidth = (CONSOLE_WIDTH / 2) + 8;
+	g_nConsoleDisplayWidth = (CONSOLE_WIDTH / 2) + 10;
 	g_bConsoleFullWidth = false;
 
 //	g_bConsoleFullWidth = false;
@@ -6867,7 +6855,7 @@ void WindowUpdateConsoleDisplayedSize()
 
 	if (g_iWindowThis == WINDOW_CONSOLE)
 	{
-		g_nConsoleDisplayHeight = MAX_DISPLAY_CONSOLE_LINES;
+		g_nConsoleDisplayLines = MAX_DISPLAY_LINES;
 		g_nConsoleDisplayWidth = CONSOLE_WIDTH - 1;
 		g_bConsoleFullWidth = true;
 	}
@@ -6886,11 +6874,11 @@ void WindowUpdateDisasmSize()
 {
 	if (g_aWindowConfig[ g_iWindowThis ].bSplit)
 	{
-		g_nDisasmWinHeight = (MAX_DISPLAY_DISASM_LINES) / 2;
+		g_nDisasmWinHeight = (MAX_DISPLAY_LINES - g_nConsoleDisplayLines) / 2;
 	}
 	else
 	{
-		g_nDisasmWinHeight = MAX_DISPLAY_DISASM_LINES;
+		g_nDisasmWinHeight = MAX_DISPLAY_LINES - g_nConsoleDisplayLines;
 	}
 	g_nDisasmCurLine = MAX(0, (g_nDisasmWinHeight - 1) / 2);
 #if _DEBUG
@@ -7232,7 +7220,7 @@ Update_t CmdZeroPageClear   (int nArgs)
 	if (!nArgs)
 		return Help_Arg_1( CMD_ZEROPAGE_POINTER_CLEAR );
 
-	_ClearViaArgs( nArgs, g_aZeroPagePointers, MAX_ZEROPAGE_POINTERS, g_nZeroPagePointers );
+	_BWZ_ClearViaArgs( nArgs, g_aZeroPagePointers, MAX_ZEROPAGE_POINTERS, g_nZeroPagePointers );
 
 	if (! g_nZeroPagePointers)
 	{
@@ -7251,7 +7239,7 @@ Update_t CmdZeroPageDisable (int nArgs)
 	if (! g_nZeroPagePointers)
 		return ConsoleDisplayError(TEXT("There are no (ZP) pointers defined."));
 
-	_EnableDisableViaArgs( nArgs, g_aZeroPagePointers, MAX_ZEROPAGE_POINTERS, false );
+	_BWZ_EnableDisableViaArgs( nArgs, g_aZeroPagePointers, MAX_ZEROPAGE_POINTERS, false );
 
 	return UPDATE_ZERO_PAGE;
 }
@@ -7265,7 +7253,7 @@ Update_t CmdZeroPageEnable  (int nArgs)
 	if (!nArgs)
 		return Help_Arg_1( CMD_ZEROPAGE_POINTER_ENABLE );
 
-	_EnableDisableViaArgs( nArgs, g_aZeroPagePointers, MAX_ZEROPAGE_POINTERS, true );
+	_BWZ_EnableDisableViaArgs( nArgs, g_aZeroPagePointers, MAX_ZEROPAGE_POINTERS, true );
 
 	return UPDATE_ZERO_PAGE;
 }
@@ -7281,15 +7269,7 @@ Update_t CmdZeroPageList    (int nArgs)
 	}
 	else
 	{	
-		int iZP = 0;
-		while (iZP < MAX_ZEROPAGE_POINTERS)
-		{
-			if (g_aZeroPagePointers[ iZP ].bEnabled)
-			{
-				_ListBreakWatchZero( g_aZeroPagePointers, iZP );
-			}
-			iZP++;
-		}
+		_BWZ_ListAll( g_aZeroPagePointers, MAX_ZEROPAGE_POINTERS );
 	}
 	return ConsoleUpdate();
 }
@@ -7686,8 +7666,8 @@ bool InternalSingleStep ()
 void OutputTraceLine ()
 {
 	// HACK: MAGIC #: 50 -> 64 chars for disassembly
-	TCHAR sDisassembly[ 64 ]       ; DrawDisassemblyLine((HDC)0,0,regs.pc, sDisassembly); // Get Disasm String
-	TCHAR sFlags[ _6502_NUM_FLAGS+1]; DrawFlags( (HDC)0, 0, regs.ps, sFlags); // Get Flags String
+	TCHAR sDisassembly[ 64 ]       ; DrawDisassemblyLine( 0,regs.pc, sDisassembly); // Get Disasm String
+	TCHAR sFlags[ _6502_NUM_FLAGS+1]; DrawFlags( 0, regs.ps, sFlags ); // Get Flags String
 
 	_ftprintf(g_hTraceFile,
 		TEXT("a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n"),
@@ -8182,7 +8162,7 @@ void DebugDestroy ()
 		_CmdSymbolsClear( (Symbols_e) iTable );
 	}
 
-	SelectObject( g_hDstDC, GetStockObject(NULL_BRUSH) );
+	SelectObject( g_hFrameDC, GetStockObject(NULL_BRUSH) );
 
 	DeleteObject( g_hConsoleBrushFG );
 	DeleteObject( g_hConsoleBrushBG );
@@ -8190,7 +8170,7 @@ void DebugDestroy ()
 	DeleteDC( g_hConsoleFontDC );
 	DeleteObject( g_hConsoleFontBitmap );
 
-	ReleaseDC( g_hFrameWindow, g_hDstDC );
+//	ReleaseDC( g_hFrameWindow, g_hFrameDC );
 }
 
 
@@ -8303,19 +8283,19 @@ void DebugInitialize ()
 	DWORD nError = 0;
 #endif
 
-	g_hDstDC = GetDC( g_hFrameWindow );
+//	g_hDstDC = g_hFrameDC; //GetDC( g_hFrameWindow );
 #if _DEBUG
 	nError = GetLastError();
 #endif
 
 	// Must select a bitmap into the temp DC !
-	HDC hTmpDC  = CreateCompatibleDC( g_hDstDC );
+	HDC hTmpDC  = CreateCompatibleDC( g_hFrameDC );
 
 #if _DEBUG
 	nError = GetLastError();
 #endif
 
-	g_hConsoleFontDC = CreateCompatibleDC( g_hDstDC );
+	g_hConsoleFontDC = CreateCompatibleDC( g_hFrameDC );
 #if _DEBUG
 	nError = GetLastError();
 #endif
@@ -8371,7 +8351,7 @@ void DebugInitialize ()
 	DeleteObject( hTmpDC );
 #endif
 
-	DeleteDC( g_hDstDC ); g_hDstDC = NULL;
+//	DeleteDC( g_hFrameDC ); g_hDstDC = NULL;
 
 	ZeroMemory( g_aConsoleDisplay, sizeof( g_aConsoleDisplay ) ); // CONSOLE_WIDTH * CONSOLE_HEIGHT );
 	ConsoleInputReset();
@@ -8426,12 +8406,13 @@ void DebugInitialize ()
 	_CmdConfigFont( FONT_DISASM_DEFAULT, g_sFontNameDisasm , FIXED_PITCH | FF_MODERN      , g_nFontHeight ); // OEM_CHARSET
 	_CmdConfigFont( FONT_DISASM_BRANCH , g_sFontNameBranch , DEFAULT_PITCH | FF_DECORATIVE, g_nFontHeight+3); // DEFAULT_CHARSET
 //#endif
+//	_UpdateWindowFontHeights( nFontHeight );
 
 	int iColor;
 	
 	iColor = FG_CONSOLE_OUTPUT;
 	COLORREF nColor = gaColorPalette[ g_aColorIndex[ iColor ] ];
-	g_anConsoleColor[ CONSOLE_COLOR_PREV ] = nColor;
+	g_anConsoleColor[ CONSOLE_COLOR_x ] = nColor;
 
 /*
 	g_hFontDebugger = CreateFont( 
@@ -8467,6 +8448,7 @@ void DebugInitialize ()
 		, g_sFontNameBranch );
 */
 //	if (g_hFontWebDings)
+#if !USE_APPLE_FONT
 	if (g_aFontConfig[ FONT_DISASM_BRANCH ]._hFont)
 	{
 		g_iConfigDisasmBranchType = DISASM_BRANCH_FANCY;
@@ -8475,7 +8457,7 @@ void DebugInitialize ()
 	{
 		g_iConfigDisasmBranchType = DISASM_BRANCH_PLAIN;
 	}	
-
+#endif
 
 	//	ConsoleInputReset(); already called in DebugInitialize()
 	TCHAR sText[ CONSOLE_WIDTH ];
@@ -8542,6 +8524,12 @@ void DebuggerInputConsoleChar( TCHAR ch )
 		return;
 	}
 
+	if (ch == CONSOLE_COLOR_ESCAPE_CHAR)
+		return;
+
+	if (g_nConsoleInputSkip == ch)
+		return;
+
 	if (ch == CHAR_SPACE)
 	{
 		// If don't have console input, don't pass space to the input line
@@ -8552,12 +8540,6 @@ void DebuggerInputConsoleChar( TCHAR ch )
 	
 	if (g_nConsoleInputChars > (g_nConsoleDisplayWidth-1))
 		return;
-
-	if (g_bConsoleInputSkip)
-	{
-		g_bConsoleInputSkip = false;
-		return;
-	}
 
 	if ((ch >= CHAR_SPACE) && (ch <= 126)) // HACK MAGIC # 32 -> ' ', # 126 
 	{
@@ -8574,8 +8556,10 @@ void DebuggerInputConsoleChar( TCHAR ch )
 		}
 		ConsoleInputChar( ch );
 
-		HDC dc = FrameGetDC();
-		DrawConsoleInput( dc );
+		DebuggerCursorNext();
+
+		FrameGetDC();
+		DrawConsoleInput();
 		FrameReleaseDC();
 	}
 	else
@@ -8675,7 +8659,7 @@ Update_t DebuggerProcessCommand( const bool bEchoConsoleInput )
 			}
 		}
 		ConsoleInputReset();
-		bUpdateDisplay |= UPDATE_CONSOLE_DISPLAY;
+		bUpdateDisplay |= UPDATE_CONSOLE_DISPLAY | UPDATE_CONSOLE_INPUT;
 		ConsoleUpdate(); // udpate console, don't pause
 	}
 	else
@@ -8728,7 +8712,7 @@ void DebuggerProcessKey( int keycode )
 	{
 		if ((VK_SPACE == keycode) || (VK_RETURN == keycode) || (VK_TAB == keycode) || (VK_ESCAPE == keycode))
 		{		
-			int nLines = MIN( g_nConsoleBuffer, g_nConsoleDisplayHeight - 1 ); // was -2
+			int nLines = MIN( g_nConsoleBuffer, g_nConsoleDisplayLines - 1 ); // was -2
 			if (VK_ESCAPE == keycode) // user doesn't want to read all this stu
 			{
 				nLines = g_nConsoleBuffer;
@@ -8739,23 +8723,24 @@ void DebuggerProcessKey( int keycode )
 			keycode = 0; // don't single-step 
 		}
 
-		bUpdateDisplay |= UPDATE_CONSOLE_DISPLAY;
+		bUpdateDisplay |= UPDATE_CONSOLE_DISPLAY | UPDATE_CONSOLE_INPUT;
 		ConsoleDisplayPause();
 	}
 	else
- 	// If have console input, don't invoke cursor movement
+ 	// If have console input, don't invoke curmovement
 	// TODO: Probably should disable all "movement" keys to map them to line editing g_nAppMode
  	if ((keycode == VK_SPACE) && g_nConsoleInputChars)
 		return;
 	else if (keycode == VK_ESCAPE)
 	{
 		g_bConsoleInputQuoted = false;
-		ConsoleInputClear();
+		ConsoleInputReset();
 		bUpdateDisplay |= UPDATE_CONSOLE_INPUT;
 	}
 	else if (keycode == VK_BACK)
 	{
 		// Note: Checks prev char if QUTOE - SINGLE or DOUBLE
+//		ConsoleUpdateCursor( CHAR_SPACE );
 		if (! ConsoleInputBackSpace())
 		{
 			// CmdBeep();
@@ -8764,22 +8749,32 @@ void DebuggerProcessKey( int keycode )
 	}
 	else if (keycode == VK_RETURN)
 	{
+//		ConsoleUpdateCursor( 0 );
+		ConsoleScrollEnd();
 		bUpdateDisplay |= DebuggerProcessCommand( true ); // copy console input to console output
-
+		bUpdateDisplay |= UPDATE_CONSOLE_DISPLAY;
 	}
 	else if (keycode == VK_OEM_3) // Tilde ~
 	{
-		// Switch to Console Window
-		if (g_iWindowThis != WINDOW_CONSOLE)
+		if (KeybGetCtrlStatus())
 		{
-			CmdWindowViewConsole( 0 );
+			// Switch to Console Window
+			if (g_iWindowThis != WINDOW_CONSOLE)
+			{
+				CmdWindowViewConsole( 0 );
+			}
+			else // switch back to last window
+			{
+				CmdWindowLast( 0 );
+			}
+			bUpdateDisplay |= UPDATE_ALL;
 		}
-		else // switch back to last window
+		else
 		{
-			CmdWindowLast( 0 );
+			g_nConsoleInputSkip = 0; // VK_OEM_3; // don't pass to DebugProcessChar()
+			DebuggerInputConsoleChar( '~' );
 		}
-		bUpdateDisplay |= UPDATE_ALL;
-		g_bConsoleInputSkip = true; // don't pass to DebugProcessChar()
+		g_nConsoleInputSkip = '~'; // VK_OEM_3; // don't pass to DebugProcessChar()
 	}
 	else
 	{	
@@ -9062,4 +9057,100 @@ void DebugDisplay( BOOL bDrawBackground )
 //		bUpdateFlags &= ~UPDATE_BACKGROUND;
 
 	UpdateDisplay( bUpdateFlags );
+}
+
+
+//===========================================================================
+void DebuggerUpdate()
+{
+	DebuggerCursorUpdate();
+}
+
+
+//===========================================================================
+void DebuggerCursorUpdate()
+{
+	if (g_nAppMode != MODE_DEBUG)
+		return;
+
+	const  nUpdatesPerSecond = 4;
+	const  DWORD nHz = 1000 / nUpdatesPerSecond;
+	static DWORD nBeg = GetTickCount(); // timeGetTime();
+	       DWORD nNow = GetTickCount(); // timeGetTime();
+
+	if (((nNow - nBeg)) >= nHz)
+	{
+		nBeg = nNow;
+		
+		DebuggerCursorNext();
+		
+		FrameGetDC();
+		DrawConsoleCursor();
+		FrameReleaseDC();
+	}
+}
+
+
+//===========================================================================
+void DebuggerCursorNext()
+{
+	g_bInputCursor ^= true;
+	if (g_bInputCursor)
+	{
+		ConsoleUpdateCursor( g_aInputCursor[ g_iInputCursor ] );
+	}
+	else
+		ConsoleUpdateCursor( 0 ); // show char under cursor
+}
+
+
+//===========================================================================
+//char DebuggerCursorGet()
+//{
+//	return g_aInputCursor[ g_iInputCursor ];
+//}
+
+
+//===========================================================================
+void	DebuggerMouseClick( int x, int y )
+{
+	int nFontWidth  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
+	int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight  ;
+
+	// do picking
+	FrameGetDC();
+
+	int cx = (x - VIEWPORTX) / nFontWidth;
+	int cy = (y - VIEWPORTY) / nFontHeight;
+	
+#if _DEBUG
+	char sText[ CONSOLE_WIDTH ];
+	sprintf( sText, "x:%d y:%d  cx:%d cy:%d", x, y, cx, cy );
+	ConsoleDisplayPush( sText );
+	DebugDisplay( UPDATE_CONSOLE_DISPLAY );
+#endif
+
+	if (g_iWindowThis == WINDOW_CODE)
+	{
+		// Display_AssemblyLine -- need Tabs
+		if (cx == 4)
+		{
+			g_bConfigDisasmAddressColon ^= true;
+			DebugDisplay( UPDATE_DISASM );
+		}
+		else
+		if ((cx > 4) & (cx <= 13))
+		{
+			g_bConfigDisasmOpcodesView ^= true;
+			DebugDisplay( UPDATE_DISASM );
+		}
+		else
+		if ((cx >= 51) && (cx <= 60) && (cy == 3))
+		{
+			CmdCursorJumpPC( CURSOR_ALIGN_CENTER );
+			DebugDisplay( UPDATE_DISASM );
+		}
+	}
+	
+	FrameReleaseDC();
 }

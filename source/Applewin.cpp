@@ -323,7 +323,12 @@ void EnterMessageLoop ()
 {
 	MSG message;
 
-	while (GetMessage(&message,0,0,0))
+	PeekMessage( &message, NULL, 0, 0, PM_NOREMOVE);
+
+	while (message.message!=WM_QUIT)
+	{
+// 	while (GetMessage(&message,0,0,0))
+	if (PeekMessage( &message, NULL, 0, 0, PM_REMOVE))
 	{
 		TranslateMessage(&message);
 		DispatchMessage(&message);
@@ -348,9 +353,17 @@ void EnterMessageLoop ()
 			}
 		}
 	}
+	else
+	{
+		if (g_nAppMode == MODE_DEBUG)
+		{
+			DebuggerUpdate();
+		}
+	}
+}
 
-	while (PeekMessage(&message,0,0,0,PM_REMOVE))
-		; // intentional null statement
+//	while (PeekMessage(&message,0,0,0,PM_REMOVE))
+//		; // intentional null statement
 }
 
 //===========================================================================
