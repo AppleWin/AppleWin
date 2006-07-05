@@ -152,7 +152,7 @@
 
 	enum
 	{
-		MAX_BREAKPOINTS = 15
+		MAX_BREAKPOINTS = 16
 	};
 
 	/*
@@ -1383,7 +1383,7 @@
 
 	enum
 	{
-		MAX_WATCHES = 8
+		MAX_WATCHES = 16
 	};
 
 

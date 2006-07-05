@@ -33,9 +33,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <assert.h>
 
 // NEW UI debugging
-#define DEBUG_FORCE_DISPLAY           0
-#define DEBUG_FONT_NO_BACKGROUND_CHAR 0
-#define DEBUG_FONT_NO_BACKGROUND_TEXT 1
+#define DEBUG_FORCE_DISPLAY 0
+
+#if _DEBUG
+	#define DEBUG_FONT_NO_BACKGROUND_CHAR      0
+	#define DEBUG_FONT_NO_BACKGROUND_TEXT      0
+	#define DEBUG_FONT_NO_BACKGROUND_FILL_CON  0
+	#define DEBUG_FONT_NO_BACKGROUND_FILL_INFO 0
+	#define DEBUG_FONT_NO_BACKGROUND_FILL_MAIN 0
+
+	// no top console line
+	#define DEBUG_BACKGROUND 0
+#endif
+
+//#define WATCH_ZERO_BG BG_DATA_1
+#define WATCH_ZERO_BG BG_INFO
 
 	#define DISPLAY_MEMORY_TITLE     1
 //	#define DISPLAY_BREAKPOINT_TITLE 1
@@ -43,15 +55,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Public _________________________________________________________________________________________
 
-	const int DISPLAY_HEIGHT = 384; // 368; // DISPLAY_LINES * g_nFontHeight;
-
 // Font
 	FontConfig_t g_aFontConfig[ NUM_FONTS  ];
 
 // Private ________________________________________________________________________________________
 
 // Display - Win32
-	HDC     g_hDstDC = NULL; // App Window
+//	HDC     g_hDstDC = NULL; // App Window
 
 	HDC     g_hConsoleFontDC     = NULL;
 	HBRUSH  g_hConsoleFontBrush  = NULL;
@@ -72,8 +82,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		RGB( 255, 255, 255 ), // 7 111 W
 	};
 
-	char * g_asConsoleColor[ MAX_CONSOLE_COLORS ] =
+	const char * g_asConsoleColor[ MAX_CONSOLE_COLORS ] =
 	{
+#if USE_APPLE_FONT
 		"`0", // ConsoleColorMake( sColorW, CONSOLE_COLOR_W );
 		"`1",
 		"`2",
@@ -82,6 +93,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"`5",
 		"`6",
 		"`7"
+#else
+		"", // K
+		"", // R
+		"", // G
+		"", // Y
+		"", // B
+		"", // M
+		"", // C
+		""  // W
+#endif
 	};
 
 // Disassembly
@@ -108,36 +129,65 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			\x18 Up
 			\x19 Down
 	*/
-	char * g_sConfigBranchIndicatorUp   [ NUM_DISASM_BRANCH_TYPES+1 ] = { " ", "^", "`K", "\x35" };
-	char * g_sConfigBranchIndicatorEqual[ NUM_DISASM_BRANCH_TYPES+1 ] = { " ", "=", "`H", "\x33" };
-	char * g_sConfigBranchIndicatorDown [ NUM_DISASM_BRANCH_TYPES+1 ] = { " ", "v", "`J", "\x36" };
+#if USE_APPLE_FONT
+	char * g_sConfigBranchIndicatorUp   [ NUM_DISASM_BRANCH_TYPES+1 ] = { " ", "^", "`K" };
+	char * g_sConfigBranchIndicatorEqual[ NUM_DISASM_BRANCH_TYPES+1 ] = { " ", "=", "`H" };
+	char * g_sConfigBranchIndicatorDown [ NUM_DISASM_BRANCH_TYPES+1 ] = { " ", "v", "`J" };
+#else
+	char * g_sConfigBranchIndicatorUp   [ NUM_DISASM_BRANCH_TYPES+1 ] = { " ", "^", "\x35" };
+	char * g_sConfigBranchIndicatorEqual[ NUM_DISASM_BRANCH_TYPES+1 ] = { " ", "=", "\x33" };
+	char * g_sConfigBranchIndicatorDown [ NUM_DISASM_BRANCH_TYPES+1 ] = { " ", "v", "\x36" };
+#endif
 
 // Drawing
 	// Width
 		const int DISPLAY_WIDTH  = 560;
-		#define  SCREENSPLIT1    356	// Horizontal Column (pixels?) of Stack & Regs
+//		#define  SCREENSPLIT1    356	// Horizontal Column (pixels?) of Stack & Regs
+		// New Font = 50.5 char * 7 px/char = 353.5
+		#define SCREENSPLIT1 354
+		
 //		#define  SCREENSPLIT2    456	// Horizontal Column (pixels?) of BPs, Watches & Mem
 //		const int SCREENSPLIT2 = 456-7; // moved left one "char" to show PC in breakpoint:
-		const int SCREENSPLIT2 = SCREENSPLIT1 + (12 * 7); // moved left 3 chars to show B. prefix in breakpoint #, W. prefix in watch #
+//		const int SCREENSPLIT2 = SCREENSPLIT1 + (12 * 7); // moved left 3 chars to show B. prefix in breakpoint #, W. prefix in watch #
 		
-		const int DISPLAY_BP_COLUMN      = SCREENSPLIT2;
-		const int DISPLAY_MINI_CONSOLE   = SCREENSPLIT1 -  6; // - 1 chars
-		const int DISPLAY_DISASM_RIGHT   = SCREENSPLIT1 -  6; // - 1 char
-		const int DISPLAY_FLAG_COLUMN    = SCREENSPLIT1 + 63;
-		const int DISPLAY_MINIMEM_COLUMN = SCREENSPLIT2 +  7;
+//		const int DISPLAY_MINI_CONSOLE_WIDTH = SCREENSPLIT1 -  6; // 50 chars
+
+//		const int DISPLAY_DISASM_RIGHT   = SCREENSPLIT1 -  6; // - 1 char
+		const int DISPLAY_DISASM_RIGHT   = SCREENSPLIT1 - 1; // new
+
+#if USE_APPLE_FONT
+		const int INFO_COL_1 = (51 * 7); // nFontWidth
+		const int DISPLAY_REGS_COLUMN    = INFO_COL_1;
+		const int DISPLAY_FLAG_COLUMN    = INFO_COL_1;
+		const int DISPLAY_STACK_COLUMN   = INFO_COL_1;
+		const int DISPLAY_TARGETS_COLUMN = INFO_COL_1;
+		const int DISPLAY_ZEROPAGE_COLUMN= INFO_COL_1;
+
+		const int INFO_COL_2 = (62 * 7); // nFontWidth
+		const int DISPLAY_BP_COLUMN      = INFO_COL_2;
+		const int DISPLAY_WATCHES_COLUMN = INFO_COL_2;
+		const int DISPLAY_MINIMEM_COLUMN = INFO_COL_2;
+#else
 		const int DISPLAY_REGS_COLUMN    = SCREENSPLIT1;
+		const int DISPLAY_FLAG_COLUMN    = SCREENSPLIT1; // + 63;
 		const int DISPLAY_STACK_COLUMN   = SCREENSPLIT1;
 		const int DISPLAY_TARGETS_COLUMN = SCREENSPLIT1;
-		const int DISPLAY_WATCHES_COLUMN = SCREENSPLIT2;
 		const int DISPLAY_ZEROPAGE_COLUMN= SCREENSPLIT1;
 
-		int MAX_DISPLAY_REGS_LINES        = 6;
+		const int SCREENSPLIT2 = SCREENSPLIT1 + (12 * 7); // moved left 3 chars to show B. prefix in breakpoint #, W. prefix in watch #
+		const int DISPLAY_BP_COLUMN      = SCREENSPLIT2;
+		const int DISPLAY_WATCHES_COLUMN = SCREENSPLIT2;
+		const int DISPLAY_MINIMEM_COLUMN = SCREENSPLIT2; // nFontWidth
+#endif
+
+		int MAX_DISPLAY_REGS_LINES        = 7;
 		int MAX_DISPLAY_STACK_LINES       = 8;
-		int MAX_DISPLAY_BREAKPOINTS_LINES = 7; // 6 // 5
-		int MAX_DISPLAY_WATCHES_LINES     = 8; // 6 // 5
+		int MAX_DISPLAY_ZEROPAGE_LINES    = 8;
+
+//		int MAX_DISPLAY_BREAKPOINTS_LINES = 7; // 7
+//		int MAX_DISPLAY_WATCHES_LINES     = 8; // 8
 		int MAX_DISPLAY_MEMORY_LINES_1    = 4; // 4
 		int MAX_DISPLAY_MEMORY_LINES_2    = 4; // 4 // 2
-		int MAX_DISPLAY_ZEROPAGE_LINES    = 8;
 		int g_nDisplayMemoryLines;
 
 	// Height
@@ -147,14 +197,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		// 384 = 16 * 24 very bottom
 		const int DEFAULT_HEIGHT = 16;
 
-	static HDC g_hDC = 0;
+//	static HDC g_hDC = 0;
 
 
-static	void SetupColorsHiLoBits ( HDC dc, bool bHiBit, bool bLoBit, 
+static	void SetupColorsHiLoBits ( bool bHiBit, bool bLoBit, 
 			const int iBackground, const int iForeground,
 			const int iColorHiBG , /*const int iColorHiFG,
 			const int iColorLoBG , */const int iColorLoFG );
-static	char ColorizeSpecialChar( HDC hDC, TCHAR * sText, BYTE nData, const MemoryView_e iView,
+static	char ColorizeSpecialChar( TCHAR * sText, BYTE nData, const MemoryView_e iView,
 			const int iTxtBackground  = BG_INFO     , const int iTxtForeground  = FG_DISASM_CHAR,
 			const int iHighBackground = BG_INFO_CHAR, const int iHighForeground = FG_INFO_CHAR_HI,
 			const int iLowBackground  = BG_INFO_CHAR, const int iLowForeground  = FG_INFO_CHAR_LO );
@@ -212,6 +262,7 @@ enum WinROP4_e
 	R2_WHITE       	1 	1 	1 	1 	15 	1 
 */
 
+#if DEBUG_FONT_ROP
 const DWORD aROP4[ 256 ] =
 {
 	0x00000042, // BLACKNESS
@@ -471,6 +522,7 @@ const DWORD aROP4[ 256 ] =
 	0x00FE02A9, // DPSoo 	
 	0x00FF0062  // _WHITE // FF WHITENESS
 };
+#endif
 
 	// PATPAINT 
 	// MERGECOPY
@@ -487,32 +539,28 @@ const DWORD aROP4[ 256 ] =
 //===========================================================================
 void DebuggerSetColorFG( COLORREF nRGB )
 {
+#if USE_APPLE_FONT
 	if (g_hConsoleBrushFG)
 	{
-		SelectObject( g_hDstDC, GetStockObject(NULL_BRUSH) );
+//		SelectObject( g_hDstDC, GetStockObject(NULL_BRUSH) );
+		SelectObject( g_hFrameDC, GetStockObject(NULL_BRUSH) );
 		DeleteObject( g_hConsoleBrushFG );
 		g_hConsoleBrushFG = NULL;
 	}
 
 	g_hConsoleBrushFG = CreateSolidBrush( nRGB );
-}
-
-void DebuggerSetColorFG( HDC hDC, COLORREF nRGB )
-{
-#if USE_APPLE_FONT
-	DebuggerSetColorFG( nRGB );
-//	SelectObject( hDC, g_hBrushFG );
 #else
-	SetTextColor( hDC, nRGB );
+	SetTextColor( g_hFrameDC, nRGB );
 #endif
 }
 
 //===================================================
 void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent )
 {
+#if USE_APPLE_FONT
 	if (g_hConsoleBrushBG)
 	{
-		SelectObject( g_hDstDC, GetStockObject(NULL_BRUSH) );
+		SelectObject( g_hFrameDC, GetStockObject(NULL_BRUSH) );
 		DeleteObject( g_hConsoleBrushBG );
 		g_hConsoleBrushBG = NULL;
 	}
@@ -521,15 +569,8 @@ void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent )
 	{
 		g_hConsoleBrushBG = CreateSolidBrush( nRGB );
 	}
-}
-
-void DebuggerSetColorBG( HDC hDC, COLORREF nRGB )
-{
-#if USE_APPLE_FONT
-	DebuggerSetColorBG( nRGB );
-//	SelectObject( hDC, g_hBrushBG );
 #else
-	SetBkColor( hDC, nRGB );
+	SetBkColor( g_hFrameDC, nRGB );
 #endif
 }
 
@@ -537,6 +578,14 @@ void DebuggerSetColorBG( HDC hDC, COLORREF nRGB )
 //===========================================================================
 void DebuggerPrintChar( const int x, const int y, const int glyph )
 {	
+#if _DEBUG
+//	if ((x >= 357) && (x <= 360))
+//	if (y >= 328) && (y < 336)
+	{
+		bool bStop = true;
+	}
+#endif
+
 	HDC g_hDstDC = FrameGetDC();
 
 	int xDst = x;
@@ -554,7 +603,7 @@ void DebuggerPrintChar( const int x, const int y, const int glyph )
 
 		// Draw Background (solid pattern)
 		BitBlt(
-			g_hDstDC,   // hdcDest
+			g_hFrameDC,   // hdcDest
 			xDst, yDst, // nXDest, nYDest
 			CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT, // nWidth, nHeight
 			g_hConsoleFontDC, // hdcSrc
@@ -580,7 +629,7 @@ void DebuggerPrintChar( const int x, const int y, const int glyph )
 #if DEBUG_FONT_ROP
 	SelectObject( g_hDstDC, g_hConsoleBrushFG );
 	BitBlt(
-		g_hDstDC,
+		g_hFrameDC,
 		xDst, yDst,
 		DEBUG_FONT_WIDTH, DEBUG_FONT_HEIGHT,
 		g_hDebugFontDC,
@@ -591,7 +640,7 @@ void DebuggerPrintChar( const int x, const int y, const int glyph )
 	// Use inverted source as mask (AND)
 	// D & ~S      ->  DSna
 	BitBlt(
-		g_hDstDC,
+		g_hFrameDC,
 		xDst, yDst,
 		CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
 		g_hConsoleFontDC,
@@ -604,7 +653,7 @@ void DebuggerPrintChar( const int x, const int y, const int glyph )
 	// Use Source ask mask to make color Pattern mask (AND), then apply to dest (OR)
 	// D | (P & S) ->  DPSao
 	BitBlt(
-		g_hDstDC,
+		g_hFrameDC,
 		xDst, yDst,
 		CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
 		g_hConsoleFontDC,
@@ -613,8 +662,8 @@ void DebuggerPrintChar( const int x, const int y, const int glyph )
 	);
 #endif
 
-	SelectObject( g_hDstDC, GetStockObject(NULL_BRUSH) );
-	FrameReleaseDC();
+	SelectObject( g_hFrameDC, GetStockObject(NULL_BRUSH) );
+//	FrameReleaseDC();
 }
 
 
@@ -625,7 +674,7 @@ void DebuggerPrint ( int x, int y, char *pText )
 
 	if (pText)
 	{
-		HDC g_hDstDC = FrameGetDC();
+//		HDC g_hDstDC = FrameGetDC();
 
 		unsigned char c;
 		char *p = pText;
@@ -644,16 +693,19 @@ void DebuggerPrint ( int x, int y, char *pText )
 			}
 			if (ConsoleColorIsEscapeMeta( c ))
 			{
-				p++;
-				c = *p;
-				if (ConsoleColorIsEscapeData( c ))
+				if (ConsoleColorIsEscapeData( p[1] ))
 				{
-					DebuggerSetColorFG( ConsoleColorGetEscapeData( c ) );
-					p++;
+					DebuggerSetColorFG( ConsoleColorGetEscapeData( p[1] ) );
+					p += 2;
 					continue; // c = 0;
 				}
-//				if ((p[1]) >= '8') && (p[1] <= '9')
-//					;
+				else
+				{
+					p++;
+					c = *p;
+					if (ConsoleColorIsEscapeMeta( c ))
+						c += 0x80;
+				}
 			}
 			else
 			if ((c >= 0x20) && (c <= 0x7F))
@@ -670,11 +722,11 @@ void DebuggerPrint ( int x, int y, char *pText )
 
 				if (g_hConsoleBrushBG)
 				{
-					SelectObject( g_hDstDC, g_hConsoleBrushBG );
+					SelectObject( g_hFrameDC, g_hConsoleBrushBG );
 
 					// Draw Background (solid pattern)
 					BitBlt(
-						g_hDstDC, //
+						g_hFrameDC, //
 						x, y,
 						CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
 						g_hConsoleFontDC,
@@ -684,7 +736,7 @@ void DebuggerPrint ( int x, int y, char *pText )
 				}
 
 				BitBlt(
-					g_hDstDC,
+					g_hFrameDC,
 					x, y,
 					CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
 					g_hConsoleFontDC,
@@ -692,10 +744,10 @@ void DebuggerPrint ( int x, int y, char *pText )
 					DSna
 				);
 
-				SelectObject( g_hDstDC, g_hConsoleBrushFG );
+				SelectObject( g_hFrameDC, g_hConsoleBrushFG );
 
 				BitBlt(
-					g_hDstDC,
+					g_hFrameDC,
 					x, y,
 					CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
 					g_hConsoleFontDC,
@@ -708,8 +760,8 @@ void DebuggerPrint ( int x, int y, char *pText )
 			p++;
 		}
 
-		SelectObject( g_hDstDC, GetStockObject(NULL_BRUSH) );
-		FrameReleaseDC();
+		SelectObject( g_hFrameDC, GetStockObject(NULL_BRUSH) );
+//		FrameReleaseDC();
 	}
 }
 
@@ -743,14 +795,18 @@ int DebugDrawText ( LPCTSTR pText, RECT & rRect )
 #if USE_APPLE_FONT
 //	SelectObject( g_hDC, g_hBrushBG );
 
+	// Fast draw of background
+	// i.e.
+	// >consonleinput
+	// ESC
+	// >
 #if !DEBUG_FONT_NO_BACKGROUND_TEXT
-	FillRect( g_hDC, &rRect, g_hBrushBG );
+	FillRect( g_hFrameDC, &rRect, g_hConsoleBrushBG );
 #endif
 
 	DebuggerPrint( rRect.left, rRect.top, (char*)pText );
-//	rRect.left += (DEBUG_FONT_CELL_WIDTH * nLen)
 #else
-	ExtTextOut( g_hDC,
+	ExtTextOut( g_hFrameDC,
 		rRect.left, rRect.top,
 		ETO_CLIPPED | ETO_OPAQUE, &rRect,
 		pText, nLen,
@@ -795,7 +851,7 @@ int DebugDrawTextHorz ( LPCTSTR pText, RECT & rRect )
 	int nChars = DebugDrawText( pText, rRect );
 #if !USE_APPLE_FONT
 	SIZE size;
-	if (GetTextExtentPoint32( g_hDC, pText, nChars, &size ))
+	if (GetTextExtentPoint32( g_hFrameDC, pText, nChars, &size ))
 	{
 		rRect.left += size.cx;
 	}
@@ -1013,7 +1069,14 @@ int FormatDisassemblyLine( WORD nBaseAddress, int iOpcode, int iOpmode, int nOpB
 
 					bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
 					nImmediate_ = (BYTE) nTargetValue;
-					wsprintf( sImmediate_, "%c", FormatCharTxtCtrl( FormatCharTxtHigh( nImmediate_, NULL ), NULL ) );
+
+					unsigned _char = FormatCharTxtCtrl( FormatCharTxtHigh( nImmediate_, NULL ), NULL );
+
+//					if (ConsoleColorIsEscapeMeta( nImmediate_ ))
+					if (ConsoleColorIsEscapeMeta( _char ))
+						sprintf( sImmediate_, "%c%c", _char, _char );
+					else
+						wsprintf( sImmediate_, "%c", _char );
 				}
 				
 //				if (iOpmode == AM_NA ) // Indirect Absolute
@@ -1033,7 +1096,13 @@ int FormatDisassemblyLine( WORD nBaseAddress, int iOpcode, int iOpmode, int nOpB
 			{
 				bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
 				nImmediate_ = (BYTE) nTarget;
-				wsprintf( sImmediate_, "%c", FormatCharTxtCtrl( FormatCharTxtHigh( nImmediate_, NULL ), NULL ) );
+				unsigned _char = FormatCharTxtCtrl( FormatCharTxtHigh( nImmediate_, NULL ), NULL );
+
+//				wsprintf( sImmediate_, "%c", _char );
+				if (ConsoleColorIsEscapeMeta( _char ))
+					sprintf( sImmediate_, "%c%c", _char, _char );
+				else
+					wsprintf( sImmediate_, "%c", _char );
 			}
 		}
 	}
@@ -1064,7 +1133,7 @@ int FormatDisassemblyLine( WORD nBaseAddress, int iOpcode, int iOpmode, int nOpB
 
 
 //===========================================================================
-void SetupColorsHiLoBits ( HDC hDC, bool bHighBit, bool bCtrlBit,
+void SetupColorsHiLoBits ( bool bHighBit, bool bCtrlBit,
 	const int iBackground, const int iForeground,
 	const int iColorHiBG , const int iColorHiFG,
 	const int iColorLoBG , const int iColorLoFG )
@@ -1076,26 +1145,26 @@ void SetupColorsHiLoBits ( HDC hDC, bool bHighBit, bool bCtrlBit,
 	// 1  0  HiBG       normal     BG_INFO_CHAR   FG_DISASM_CHAR   (mid cyan  bright cyan)
 	// 1  1  HiBG       LoFG       BG_INFO_CHAR   FG_DISASM_OPCODE (mid cyan  yellow)
 
-	DebuggerSetColorBG( hDC, DebuggerGetColor( iBackground ));
-	DebuggerSetColorFG( hDC, DebuggerGetColor( iForeground ));
+	DebuggerSetColorBG( DebuggerGetColor( iBackground ));
+	DebuggerSetColorFG( DebuggerGetColor( iForeground ));
 
 	if (bHighBit)
 	{
-		DebuggerSetColorBG( hDC, DebuggerGetColor( iColorHiBG ));
-		DebuggerSetColorFG( hDC, DebuggerGetColor( iColorHiFG )); // was iForeground
+		DebuggerSetColorBG( DebuggerGetColor( iColorHiBG ));
+		DebuggerSetColorFG( DebuggerGetColor( iColorHiFG )); // was iForeground
 	}
 
 	if (bCtrlBit)
 	{
-		DebuggerSetColorBG( hDC, DebuggerGetColor( iColorLoBG ));
-		DebuggerSetColorFG( hDC, DebuggerGetColor( iColorLoFG ));
+		DebuggerSetColorBG( DebuggerGetColor( iColorLoBG ));
+		DebuggerSetColorFG( DebuggerGetColor( iColorLoFG ));
 	}
 }
 
 
 // To flush out color bugs... swap: iAsciBackground & iHighBackground
 //===========================================================================
-char ColorizeSpecialChar( HDC hDC, TCHAR * sText, BYTE nData, const MemoryView_e iView,
+char ColorizeSpecialChar( TCHAR * sText, BYTE nData, const MemoryView_e iView,
 		const int iAsciBackground /*= 0           */, const int iTextForeground /*= FG_DISASM_CHAR */,
 		const int iHighBackground /*= BG_INFO_CHAR*/, const int iHighForeground /*= FG_INFO_CHAR_HI*/,
 		const int iCtrlBackground /*= BG_INFO_CHAR*/, const int iCtrlForeground /*= FG_INFO_CHAR_LO*/ )
@@ -1140,12 +1209,20 @@ char ColorizeSpecialChar( HDC hDC, TCHAR * sText, BYTE nData, const MemoryView_e
 		default: break;
 	}
 
-	if (sText)
-		wsprintf( sText, TEXT("%c"), nChar );
+//	if (sText)
+//		sprintf( sText, "%c", nChar );
 
-	if (hDC)
+	if (sText)
+	{	
+		if (ConsoleColorIsEscapeMeta( nChar ))
+			sprintf( sText, "%c%c", nChar, nChar );
+		else
+			sprintf( sText, "%c", nChar );
+	}
+	
+//	if (hDC)
 	{
-		SetupColorsHiLoBits( hDC, bHighBit, bCtrlBit
+		SetupColorsHiLoBits( bHighBit, bCtrlBit
 			, iTextBG, iTextFG // FG_DISASM_CHAR   
 			, iHighBG, iHighFG // BG_INFO_CHAR     
 			, iCtrlBG, iCtrlFG // FG_DISASM_OPCODE 
@@ -1159,7 +1236,7 @@ char ColorizeSpecialChar( HDC hDC, TCHAR * sText, BYTE nData, const MemoryView_e
 
 
 //===========================================================================
-void DrawBreakpoints (HDC dc, int line)
+void DrawBreakpoints ( int line )
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
@@ -1174,8 +1251,8 @@ void DrawBreakpoints (HDC dc, int line)
 	TCHAR sText[16] = TEXT("Breakpoints"); // TODO: Move to BP1
 
 #if DISPLAY_BREAKPOINT_TITLE
-	DebuggerSetColorBG(dc, DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
-	DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_TITLE )); //COLOR_STATIC
+	DebuggerSetColorBG( DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
+	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE )); //COLOR_STATIC
 	DebugDrawText( sText, rect );
 	rect.top    += g_nFontHeight;
 	rect.bottom += g_nFontHeight;
@@ -1200,45 +1277,46 @@ void DrawBreakpoints (HDC dc, int line)
 			WORD nAddress2 = nAddress1 + nLength - 1;
 
 #if DEBUG_FORCE_DISPLAY
-			if (iBreakpoint < MAX_DISPLAY_BREAKPOINTS_LINES)
+//			if (iBreakpoint < MAX_DISPLAY_BREAKPOINTS_LINES)
 				bSet = true;
 #endif
 			if (! bSet)
 				continue;
 
 			nBreakpointsDisplayed++;
-			if (nBreakpointsDisplayed > MAX_DISPLAY_BREAKPOINTS_LINES)
-				break;
+
+//			if (nBreakpointsDisplayed > MAX_DISPLAY_BREAKPOINTS_LINES)
+//				break;
 			
 			RECT rect2;
 			rect2 = rect;
 			
-			DebuggerSetColorBG( dc, DebuggerGetColor( BG_INFO ));
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_INFO_TITLE ) );
-			wsprintf( sText, TEXT("B.") );
+			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ) );
+			wsprintf( sText, "B" );
 			DebugDrawTextFixed( sText, rect2 );
 
-			DebuggerSetColorBG( dc, DebuggerGetColor( BG_INFO ));
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_INFO_BULLET ) );
-			wsprintf( sText, TEXT("%d"), iBreakpoint+1 );
+			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BULLET ) );
+			wsprintf( sText, "%X ", iBreakpoint );
 			DebugDrawTextFixed( sText, rect2 );
 
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_INFO_OPERATOR ) );
-			_tcscpy( sText, TEXT(":") );
-			DebugDrawTextFixed( sText, rect2 );
+//			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ) );
+//			_tcscpy( sText, TEXT(".") );
+//			DebugDrawTextFixed( sText, rect2 );
 
 #if DEBUG_FORCE_DISPLAY
 	pBP->eSource = (BreakpointSource_t) iBreakpoint;
 #endif
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_INFO_REG ) );
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG ) );
 			int nRegLen = DebugDrawTextFixed( g_aBreakpointSource[ pBP->eSource ], rect2 );
 
 			// Pad to 2 chars
 			if (nRegLen < 2)
 				rect2.left += g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 
-			DebuggerSetColorBG( dc, DebuggerGetColor( BG_INFO ));
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_INFO_BULLET ) );
+			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BULLET ) );
 #if DEBUG_FORCE_DISPLAY
 	if (iBreakpoint < 3)
 		pBP->eOperator = (BreakpointOperator_t)(iBreakpoint * 2);
@@ -1268,20 +1346,20 @@ void DrawBreakpoints (HDC dc, int line)
 				iForeground = FG_INFO_TITLE;
 			}
 
-			DebuggerSetColorBG( dc, DebuggerGetColor( iBackground ) );
-			DebuggerSetColorFG( dc, DebuggerGetColor( iForeground ) );
+			DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
+			DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
 
 #if DEBUG_FORCE_DISPLAY
 	extern COLORREF gaColorPalette[ NUM_PALETTE ];
 
-	int iColor = R8 + (iBreakpoint*2);
+	int iColor = R8 + iBreakpoint;
 	COLORREF nColor = gaColorPalette[ iColor ];
-	if (iBreakpoint >= 4)
+	if (iBreakpoint >= 8)
 	{
-		DebuggerSetColorBG  ( dc, DebuggerGetColor( BG_DISASM_BP_S_C ) );
+		DebuggerSetColorBG( DebuggerGetColor( BG_DISASM_BP_S_C ) );
 		nColor = DebuggerGetColor( FG_DISASM_BP_S_C );
 	}
-	DebuggerSetColorFG( dc, nColor );
+	DebuggerSetColorFG( nColor );
 #endif
 
 			wsprintf( sText, TEXT("%04X"), nAddress1 );
@@ -1289,8 +1367,8 @@ void DrawBreakpoints (HDC dc, int line)
 
 			if (nLength > 1)
 			{
-				DebuggerSetColorBG( dc, DebuggerGetColor( BG_INFO ) );
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_INFO_OPERATOR ) );
+				DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
+				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ) );
 
 //				if (g_bConfigDisasmOpcodeSpaces)
 //				{
@@ -1298,25 +1376,24 @@ void DrawBreakpoints (HDC dc, int line)
 //					rect2.left += g_nFontWidthAvg;
 //				}
 
-				DebugDrawTextFixed( TEXT(":"), rect2 );
+				DebugDrawTextFixed( ":", rect2 );
 //				rect2.left += g_nFontWidthAvg;
 //				if (g_bConfigDisasmOpcodeSpaces) // TODO: Might have to remove spaces, for BPIO... addr-addr xx
 //				{
 //					rect2.left += g_nFontWidthAvg;
 //				}
 
-				DebuggerSetColorBG( dc, DebuggerGetColor( iBackground ) );
-				DebuggerSetColorFG( dc, DebuggerGetColor( iForeground ) );
+				DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
+				DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
 #if DEBUG_FORCE_DISPLAY
-	iColor++;
 	COLORREF nColor = gaColorPalette[ iColor ];
-	if (iBreakpoint >= 4)
+	if (iBreakpoint >= 8)
 	{
 		nColor = DebuggerGetColor( BG_INFO );
-		DebuggerSetColorBG( dc, nColor );
+		DebuggerSetColorBG( nColor );
 		nColor = DebuggerGetColor( FG_DISASM_BP_S_X );
 	}
-	DebuggerSetColorFG( dc, nColor );
+	DebuggerSetColorFG( nColor );
 #endif
 				wsprintf( sText, TEXT("%04X"), nAddress2 );
 				DebugDrawTextFixed( sText, rect2 );
@@ -1324,8 +1401,8 @@ void DrawBreakpoints (HDC dc, int line)
 
 #if !USE_APPLE_FONT
 			// Windows HACK: Bugfix: Rest of line is still breakpoint background color
-			DebuggerSetColorBG(dc, DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
-			DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_TITLE )); //COLOR_STATIC
+			DebuggerSetColorBG( DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE )); //COLOR_STATIC
 			DebugDrawTextHorz( TEXT(" "), rect2 );
 #endif
 			rect.top    += g_nFontHeight;
@@ -1336,23 +1413,22 @@ void DrawBreakpoints (HDC dc, int line)
 
 
 //===========================================================================
-void DrawConsoleInput( HDC dc )
+void DrawConsoleInput() // HDC dc )
 {
-	g_hDC = dc;
+//	g_hDC = dc;
 
-	DebuggerSetColorFG( g_hDC, DebuggerGetColor( FG_CONSOLE_INPUT ));
-	DebuggerSetColorBG( g_hDC, DebuggerGetColor( BG_CONSOLE_INPUT ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_CONSOLE_INPUT ));
+	DebuggerSetColorBG( DebuggerGetColor( BG_CONSOLE_INPUT ));
 
 	DrawConsoleLine( g_aConsoleInput, 0 );
 }
-
 
 
 //===========================================================================
 int GetConsoleLineHeightPixels()
 {
 	int nHeight = nHeight = g_aFontConfig[ FONT_CONSOLE ]._nFontHeight; // _nLineHeight; // _nFontHeight;
-
+/*
 	if (g_iFontSpacing == FONT_SPACING_CLASSIC)
 	{
 		nHeight++;  // "Classic" Height/Spacing
@@ -1367,10 +1443,9 @@ int GetConsoleLineHeightPixels()
 	{
 		// default case handled
 	}
-	
+*/
 	return nHeight;
 }
-
 
 //===========================================================================
 int GetConsoleTopPixels( int y )
@@ -1384,6 +1459,11 @@ int GetConsoleTopPixels( int y )
 //===========================================================================
 void DrawConsoleLine( LPCSTR pText, int y )
 {
+#if DEBUG_BACKGROUND
+if (y >= 3)
+return;
+#endif
+
 	if (y < 0)
 		return;
 
@@ -1400,18 +1480,48 @@ void DrawConsoleLine( LPCSTR pText, int y )
 	// Default: (356-14) = 342 pixels ~= 48 chars (7 pixel width)
 	//	rect.right = SCREENSPLIT1-14;
 //	rect.right = (g_nConsoleDisplayWidth * g_nFontWidthAvg) + (g_nFontWidthAvg - 1);
+	int nFontWidth = g_aFontConfig[ FONT_CONSOLE ]._nFontWidthAvg;
 
-	int nMiniConsoleRight = DISPLAY_MINI_CONSOLE; // (g_nConsoleDisplayWidth * g_nFontWidthAvg) + (g_nFontWidthAvg * 2); // +14
+	int nMiniConsoleRight = g_nConsoleDisplayWidth * nFontWidth;
 	int nFullConsoleRight = DISPLAY_WIDTH;
 	int nRight = g_bConsoleFullWidth ? nFullConsoleRight : nMiniConsoleRight;
 	rect.right = nRight;
+
+#if USE_APPLE_FONT
+	if (y == 0)
+		FillRect( g_hFrameDC, &rect, g_hConsoleBrushBG );
+#endif
 
 	DebugDrawText( pText, rect );
 }
 
 
 //===========================================================================
-WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
+void DrawConsoleCursor() // HDC dc )
+{
+//	g_hDC = dc;
+
+	DebuggerSetColorFG( DebuggerGetColor( FG_CONSOLE_INPUT ));
+	DebuggerSetColorBG( DebuggerGetColor( BG_CONSOLE_INPUT ));
+
+	int nWidth = g_aFontConfig[ FONT_CONSOLE ]._nFontWidthAvg;
+
+	int nLineHeight = GetConsoleLineHeightPixels();
+	int y = 0;
+
+	RECT rect;
+	rect.left   = (g_nConsoleInputChars + g_nConsolePromptLen) * nWidth;
+	rect.top    = GetConsoleTopPixels( y );
+	rect.bottom = rect.top + nLineHeight; //g_nFontHeight;
+//	int nRight = g_bConsoleFullWidth ? nFullConsoleRight : nMiniConsoleRight;
+	rect.right = rect.left + nWidth;
+
+	DebugDrawText( g_sConsoleCursor, rect );
+}
+
+
+//===========================================================================
+WORD DrawDisassemblyLine ( int iLine, WORD nBaseAddress, LPTSTR text)
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return 0;
@@ -1423,6 +1533,11 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 	int iOpmode;
 	int nOpbytes;
 	iOpcode = _6502_GetOpmodeOpbytes( nBaseAddress, iOpmode, nOpbytes );
+
+#if _DEBUG
+//	if (iLine != 41)
+//		return nOpbytes;
+#endif
 
 	const int CHARS_FOR_ADDRESS = 8; // 4 digits plus null
 
@@ -1491,7 +1606,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 //	{ 5, 14, 20, 40, 46, 49 };
       // xxxx:xx xx xx LABELxxxxxx MNEMONIC    'E' =
       // 0   45        14          26
-	{ 5, 14, 26, 41, 47, 49 };
+	{ 5, 14, 26, 41, 48, 49 };
 #else
 	{ 5.75, 15.5, 25, 40.5, 45.5, 48.5 };
 #endif
@@ -1512,14 +1627,17 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 	const int OPCODE_TO_LABEL_SPACE = static_cast<int>( aTabs[ TS_INSTRUCTION ] - aTabs[ TS_LABEL ] );
 
 	int iTab = 0;
-	int nSpacer = 9;
+	int nSpacer = 11; // 9
 	for (iTab = 0; iTab < _NUM_TAB_STOPS; iTab++ )
 	{
 		if (! g_bConfigDisasmOpcodesView)
 		{
-			aTabs[ iTab ] -= nSpacer;
-			if (nSpacer > 0)
-				nSpacer -= 2;
+			if (iTab < TS_IMMEDIATE) // TS_BRANCH)
+			{
+				aTabs[ iTab ] -= nSpacer;
+				if (nSpacer > 0)
+					nSpacer -= 2;
+			}
 		}
 
 		aTabs[ iTab ] *= nDefaultFontWidth;
@@ -1531,6 +1649,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 	const int DISASM_SYMBOL_LEN = 9;
 #endif
 
+	HDC dc = g_hFrameDC;
 	if (dc)
 	{
 		int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight; // _nFontHeight; // g_nFontHeight
@@ -1619,18 +1738,18 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 
 		if (bAddressIsBookmark)
 		{
-			DebuggerSetColorBG( dc, DebuggerGetColor( BG_DISASM_BOOKMARK ) );
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_BOOKMARK ) );
+			DebuggerSetColorBG( DebuggerGetColor( BG_DISASM_BOOKMARK ) );
+			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_BOOKMARK ) );
 		}
 		else
 		{
-			DebuggerSetColorBG( dc, DebuggerGetColor( iBackground ) );
-			DebuggerSetColorFG( dc, DebuggerGetColor( iForeground ) );
+			DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
+			DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
 		}
 		
 	// Address
 		if (! bCursorLine)
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_ADDRESS ) );
+			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ) );
 //		else
 //		{
 //			DebuggerSetColorBG( dc, DebuggerGetColor( FG_DISASM_BOOKMARK ) ); // swapped
@@ -1640,22 +1759,22 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 
 		if (bAddressIsBookmark)
 		{
-			DebuggerSetColorBG( dc, DebuggerGetColor( iBackground ) );
-			DebuggerSetColorFG( dc, DebuggerGetColor( iForeground ) );
+			DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
+			DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
 		}
 		
 	// Address Seperator		
 		if (! bCursorLine)
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPERATOR ) );
+			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 
 		if (g_bConfigDisasmAddressColon)
-			DebugDrawTextHorz( TEXT(":"), linerect );
+			DebugDrawTextHorz( ":", linerect );
 
 	// Opcodes
 		linerect.left = (int) aTabs[ TS_OPCODE ];
 
 		if (! bCursorLine)
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPCODE ) );
+			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPCODE ) );
 //		DebugDrawTextHorz( TEXT(" "), linerect );
 
 		if (g_bConfigDisasmOpcodesView)
@@ -1669,7 +1788,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		if (pSymbol)
 		{
 			if (! bCursorLine)
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_SYMBOL ) );
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
 			DebugDrawTextHorz( pSymbol, linerect );
 		}	
 //		linerect.left += (g_nFontWidthAvg * DISASM_SYMBOL_LEN);
@@ -1679,7 +1798,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		linerect.left = (int) aTabs[ TS_INSTRUCTION ];
 
 		if (! bCursorLine)
-			DebuggerSetColorFG( dc, DebuggerGetColor( iForeground ) );
+			DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
 
 		LPCTSTR pMnemonic = g_aOpcodes[ iOpcode ].sMnemonic;
 		DebugDrawTextHorz( pMnemonic, linerect );
@@ -1690,14 +1809,14 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		if (iOpmode == AM_M)
 		{
 			if (! bCursorLine)
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPERATOR ));	
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));	
 			DebugDrawTextHorz( TEXT("#$"), linerect );
 		}
 
 		if (bTargetIndirect)
 		{
 			if (! bCursorLine)
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPERATOR ));	
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));	
 			DebugDrawTextHorz( TEXT("("), linerect );
 		}
 
@@ -1706,7 +1825,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		{
 			pTarget++;
 			if (! bCursorLine)
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPERATOR ));	
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));	
 			DebugDrawTextHorz( TEXT("$"), linerect );
 		}
 
@@ -1714,18 +1833,18 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		{
 			if (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL)
 			{
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_SYMBOL ) );
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
 			}
 			else
 			{
 				if (iOpmode == AM_M)
 //				if (bDisasmFormatFlags & DISASM_FORMAT_CHAR)
 				{
-					DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPCODE ) );
+					DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPCODE ) );
 				}
 				else	
 				{
-					DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_TARGET ) );
+					DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_TARGET ) );
 				}
 			}
 		}
@@ -1736,7 +1855,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
 		{
 			if (! bCursorLine)
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPERATOR ));	
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));	
 
 			if (nTargetOffset > 0)
 				DebugDrawTextHorz( TEXT("+" ), linerect );
@@ -1745,7 +1864,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 
 			if (! bCursorLine)
 			{
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPCODE )); // Technically, not a hex number, but decimal
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPCODE )); // Technically, not a hex number, but decimal
 			}		
 			DebugDrawTextHorz( sTargetOffset, linerect );
 		}
@@ -1753,7 +1872,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 		if (bTargetIndirect || bTargetX || bTargetY)
 		{
 			if (! bCursorLine)
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPERATOR ));	
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));	
 
 			if (bTargetX)
 				DebugDrawTextHorz( TEXT(",X"), linerect );
@@ -1776,20 +1895,20 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 //			DebugDrawTextHorz( TEXT("  "), linerect );
 
 			if (! bCursorLine)
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_ADDRESS ));
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 
 			DebugDrawTextHorz( sTargetPointer, linerect );
 
 			if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_VALUE)
 			{
 				if (! bCursorLine)
-					DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPERATOR ));
+					DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));
 
 				if (g_iConfigDisasmTargets & DISASM_TARGET_BOTH)
-					DebugDrawTextHorz( TEXT(":"), linerect );
+					DebugDrawTextHorz( ":", linerect );
 
 				if (! bCursorLine)
-					DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPCODE ));
+					DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPCODE ));
 
 				DebugDrawTextHorz( sTargetValue, linerect );
 				DebugDrawTextHorz( TEXT(" "), linerect );
@@ -1803,7 +1922,7 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 
 			if (! bCursorLine)
 			{
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPERATOR ) );
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 			}
 
 //			if (! (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER))
@@ -1811,15 +1930,15 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 
 			if (! bCursorLine)
 			{
-				ColorizeSpecialChar( dc, NULL, nImmediate, MEM_VIEW_ASCII, iBackground );
+				ColorizeSpecialChar( NULL, nImmediate, MEM_VIEW_ASCII, iBackground );
 //					iBackground, FG_INFO_CHAR_HI, FG_DISASM_CHAR, FG_INFO_CHAR_LO );
 			}
 			DebugDrawTextHorz( sImmediate, linerect );
 
-			DebuggerSetColorBG(   dc, DebuggerGetColor( iBackground ) ); // Hack: Colorize can "color bleed to EOL"
+			DebuggerSetColorBG( DebuggerGetColor( iBackground ) ); // Hack: Colorize can "color bleed to EOL"
 			if (! bCursorLine)
 			{
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_OPERATOR ) );
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 			}
 
 //			if (! (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER))
@@ -1833,16 +1952,20 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 
 			if (! bCursorLine)
 			{
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_BRANCH ) );
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_BRANCH ) );
 			}
 
+#if !USE_APPLE_FONT
 			if (g_iConfigDisasmBranchType == DISASM_BRANCH_FANCY)
-				SelectObject( dc, g_aFontConfig[ FONT_DISASM_BRANCH ]._hFont );  // g_hFontWebDings
+				SelectObject( g_hFrameDC, g_aFontConfig[ FONT_DISASM_BRANCH ]._hFont );  // g_hFontWebDings
+#endif
 
 			DebugDrawText( sBranch, linerect );
 
+#if !USE_APPLE_FONT
 			if (g_iConfigDisasmBranchType)
 				SelectObject( dc, g_aFontConfig[ FONT_DISASM_DEFAULT ]._hFont ); // g_hFontDisasm
+#endif
 		}
 	}
 
@@ -1852,13 +1975,13 @@ WORD DrawDisassemblyLine (HDC dc, int iLine, WORD nBaseAddress, LPTSTR text)
 
 // Optionally copy the flags to pText_
 //===========================================================================
-void DrawFlags (HDC dc, int line, WORD nRegFlags, LPTSTR pFlagNames_)
+void DrawFlags ( int line, WORD nRegFlags, LPTSTR pFlagNames_)
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
 
 	TCHAR sFlagNames[ _6502_NUM_FLAGS+1 ] = TEXT(""); // = TEXT("NVRBDIZC"); // copy from g_aFlagNames
-	TCHAR sText[2] = TEXT("?");
+	TCHAR sText[4] = TEXT("?");
 	RECT  rect;
 
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
@@ -1866,45 +1989,76 @@ void DrawFlags (HDC dc, int line, WORD nRegFlags, LPTSTR pFlagNames_)
 	// Regs are 10 chars across
 	// Flags are 8 chars across -- scale "up"
 	int nSpacerWidth = nFontWidth;
-	if (nFontWidth)
-		nSpacerWidth = (10 * nFontWidth) / 8;
-	nSpacerWidth++;
 
-	if (dc)
+#if OLD_FLAGS_SPACING
+	const int nScaledWidth = 10;
+	if (nFontWidth)
+		nSpacerWidth = (nScaledWidth * nFontWidth) / 8;
+	nSpacerWidth++;
+#endif
+
+	if (g_hFrameDC)
 	{
-		rect.left   = DISPLAY_FLAG_COLUMN;
 		rect.top    = line * g_nFontHeight;
-		rect.right  = rect.left + (10 * nFontWidth);// nSpacerWidth; // nFontWidth = 80's look; // HACK: 9
 		rect.bottom = rect.top + g_nFontHeight;
-		DebuggerSetColorBG(dc, DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
+		rect.left   = DISPLAY_FLAG_COLUMN;
+		rect.right  = rect.left + (10 * nFontWidth);
+
+		DebuggerSetColorBG( DebuggerGetColor( BG_DATA_1 )); // BG_INFO
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG ));
+		DebugDrawText( "P ", rect );
+
+		rect.top    += g_nFontHeight;
+		rect.bottom += g_nFontHeight;
+
+		sprintf( sText, "%02X", nRegFlags );
+
+		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
+		DebugDrawText( sText, rect );
+
+		rect.top    -= g_nFontHeight;
+		rect.bottom -= g_nFontHeight;
+		sText[1] = 0;
+
+		rect.left += ((2 + _6502_NUM_FLAGS) * nSpacerWidth);
+		rect.right = rect.left + nFontWidth;
 	}
 
 	int iFlag = 0;
 	int nFlag = _6502_NUM_FLAGS;
 	while (nFlag--)
 	{
-		iFlag = BP_SRC_FLAG_C + (_6502_NUM_FLAGS - nFlag - 1);
+		iFlag = (_6502_NUM_FLAGS - nFlag - 1);
 
 		bool bSet = (nRegFlags & 1);
-		if (dc)
+		if (g_hFrameDC)
 		{
-//			sText[0] = g_aFlagNames[ MAX_FLAGS - iFlag - 1]; // mnemonic[iFlag]; // mnemonic is reversed
-			sText[0] = g_aBreakpointSource[ iFlag ][0];
+			sText[0] = g_aBreakpointSource[ BP_SRC_FLAG_C + iFlag ][0];
 			if (bSet)
 			{
-				DebuggerSetColorBG( dc, DebuggerGetColor( BG_INFO_INVERSE ));
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_INFO_INVERSE ));
+				DebuggerSetColorBG( DebuggerGetColor( BG_INFO_INVERSE ));
+				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_INVERSE ));
 			}
 			else
 			{
-				DebuggerSetColorBG(dc, DebuggerGetColor( BG_INFO ));
-				DebuggerSetColorFG( dc, DebuggerGetColor( FG_INFO_TITLE ));
+				DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 			}
-
-			rect.left = DISPLAY_FLAG_COLUMN - ((_6502_NUM_FLAGS - 1 - nFlag) * nSpacerWidth);
-			rect.right = rect.left + nSpacerWidth;
-
+			rect.left  -= nSpacerWidth;
+			rect.right -= nSpacerWidth;
 			DebugDrawText( sText, rect );
+
+			// Print Binary value
+			rect.top    += g_nFontHeight;
+			rect.bottom += g_nFontHeight;
+			DebuggerSetColorBG( DebuggerGetColor( BG_INFO )); // 
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+
+			sText[0] = '0' + static_cast<int>(bSet);
+			DebugDrawText( sText, rect );
+			rect.top    -= g_nFontHeight;
+			rect.bottom -= g_nFontHeight;
 		}
 
 		if (pFlagNames_)
@@ -1915,7 +2069,7 @@ void DrawFlags (HDC dc, int line, WORD nRegFlags, LPTSTR pFlagNames_)
 			}
 			else
 			{
-				sFlagNames[nFlag] = g_aBreakpointSource[ iFlag ][0]; 
+				sFlagNames[nFlag] = g_aBreakpointSource[ BP_SRC_FLAG_C + iFlag ][0]; 
 			}
 		}
 
@@ -1924,10 +2078,31 @@ void DrawFlags (HDC dc, int line, WORD nRegFlags, LPTSTR pFlagNames_)
 
 	if (pFlagNames_)
 		_tcscpy(pFlagNames_,sFlagNames);
+/*
+	if (g_hFrameDC)
+	{
+		rect.top    += g_nFontHeight;
+		rect.bottom += g_nFontHeight;
+		rect.left   = DISPLAY_FLAG_COLUMN;
+		rect.right  = rect.left + (10 * nFontWidth);
+
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG ));
+		DebugDrawTextFixed( "P ", rect );
+
+
+		DebuggerSetColorBG( DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
+
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG ));
+		DebugDrawTextFixed( "P ", rect );
+
+		rect.left += (_6502_NUM_FLAGS * nSpacerWidth);
+		rect.right = rect.left + nFontWidth;
+	}
+*/
 }
 
 //===========================================================================
-void DrawMemory (HDC hDC, int line, int iMemDump )
+void DrawMemory ( int line, int iMemDump )
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
@@ -1946,7 +2121,7 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 
 	RECT rect;
-	rect.left   = DISPLAY_MINIMEM_COLUMN - nFontWidth;
+	rect.left   = DISPLAY_MINIMEM_COLUMN;
 	rect.top    = (line * g_nFontHeight);
 	rect.right  = DISPLAY_WIDTH;
 	rect.bottom = rect.top + g_nFontHeight;
@@ -1989,14 +2164,14 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 	}
 
 	rect2 = rect;	
-	DebuggerSetColorFG( hDC, DebuggerGetColor( FG_INFO_TITLE ));
-	DebuggerSetColorBG( hDC, DebuggerGetColor( BG_INFO ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 	DebugDrawTextFixed( sType, rect2 );
 
-	DebuggerSetColorFG( hDC, DebuggerGetColor( FG_INFO_OPERATOR ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 	DebugDrawTextFixed( TEXT(" at " ), rect2 );
 
-	DebuggerSetColorFG( hDC, DebuggerGetColor( FG_INFO_ADDRESS ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
 	DebugDrawTextLine( sAddress, rect2 );
 #endif
 
@@ -2023,7 +2198,7 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 
 	rect.right = DISPLAY_WIDTH - 1;
 
-	DebuggerSetColorFG( hDC, DebuggerGetColor( FG_INFO_OPCODE ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
 
 	for (int iLine = 0; iLine < nLines; iLine++ )
 	{
@@ -2032,11 +2207,11 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 		if (iView == MEM_VIEW_HEX)
 		{
 			wsprintf( sText, TEXT("%04X"), iAddress );
-			DebuggerSetColorFG( hDC, DebuggerGetColor( FG_INFO_ADDRESS ));
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
 			DebugDrawTextFixed( sText, rect2 );
 
-			DebuggerSetColorFG( hDC, DebuggerGetColor( FG_INFO_OPERATOR ));
-			DebugDrawTextFixed( TEXT(":"), rect2 );
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+			DebugDrawTextFixed( ":", rect2 );
 		}
 
 		for (int iCol = 0; iCol < nCols; iCol++)
@@ -2044,8 +2219,8 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 			bool bHiBit = false;
 			bool bLoBit = false;
 
-			DebuggerSetColorBG  ( hDC, DebuggerGetColor( iBackground ));
-			DebuggerSetColorFG( hDC, DebuggerGetColor( iForeground ));
+			DebuggerSetColorBG( DebuggerGetColor( iBackground ));
+			DebuggerSetColorFG( DebuggerGetColor( iForeground ));
 
 // .12 Bugfix: DrawMemory() should draw memory byte for IO address: ML1 C000
 //			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
@@ -2057,18 +2232,18 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 			{
 				wsprintf( sText, TEXT("%02X"), (unsigned) ((BYTE*)&SS_MB.Unit[nAddr & 1].RegsSY6522)[iAddress] );
 				if (iCol & 1)
-					DebuggerSetColorFG( hDC, DebuggerGetColor( iForeground ));
+					DebuggerSetColorFG( DebuggerGetColor( iForeground ));
 				else
-					DebuggerSetColorFG( hDC, DebuggerGetColor( FG_INFO_ADDRESS ));
+					DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
 			}
 			else
 			if (eDevice == DEV_AY8910)
 			{
 				wsprintf( sText, TEXT("%02X"), (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress] );
 				if (iCol & 1)
-					DebuggerSetColorFG( hDC, DebuggerGetColor( iForeground ));
+					DebuggerSetColorFG( DebuggerGetColor( iForeground ));
 				else
-					DebuggerSetColorFG( hDC, DebuggerGetColor( FG_INFO_ADDRESS ));
+					DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
 			}
 			else
 			{
@@ -2081,7 +2256,7 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 				{
 					if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
 					{
-						DebuggerSetColorFG( hDC, DebuggerGetColor( FG_INFO_IO_BYTE ));
+						DebuggerSetColorFG( DebuggerGetColor( FG_INFO_IO_BYTE ));
 					}
 					wsprintf(sText, TEXT("%02X "), nData );
 				}
@@ -2091,7 +2266,7 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 					if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
 						iBackground = BG_INFO_IO_BYTE;
 
-					ColorizeSpecialChar( hDC, sText, nData, iView, iBackground );
+					ColorizeSpecialChar( sText, nData, iView, iBackground );
 				}
 			}
 			int nChars = DebugDrawTextFixed( sText, rect2 ); // DebugDrawTextFixed()
@@ -2109,7 +2284,7 @@ void DrawMemory (HDC hDC, int line, int iMemDump )
 }
 
 //===========================================================================
-void DrawRegister (HDC dc, int line, LPCTSTR name, const int nBytes, const WORD nValue, int iSource )
+void DrawRegister ( int line, LPCTSTR name, const int nBytes, const WORD nValue, int iSource )
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
@@ -2117,10 +2292,10 @@ void DrawRegister (HDC dc, int line, LPCTSTR name, const int nBytes, const WORD 
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 
 	RECT rect;
-	rect.left   = DISPLAY_REGS_COLUMN;
 	rect.top    = line * g_nFontHeight;
-	rect.right  = rect.left + (10 * nFontWidth) + 1;
 	rect.bottom = rect.top + g_nFontHeight;
+	rect.left   = DISPLAY_REGS_COLUMN;
+	rect.right  = rect.left + (10 * nFontWidth); // + 1;
 
 	if ((PARAM_REG_A  == iSource) ||
 		(PARAM_REG_X  == iSource) ||
@@ -2128,17 +2303,18 @@ void DrawRegister (HDC dc, int line, LPCTSTR name, const int nBytes, const WORD 
 		(PARAM_REG_PC == iSource) ||
 		(PARAM_REG_SP == iSource))
 	{		
-		DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_REG ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG ));
 	}
 	else
 	{
-		DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_TITLE ));
+//		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+		rect.left += nFontWidth;
 	}
 
 	// 2.6.0.0 Alpha - Regs not "boxed"
 	int iBackground = BG_DATA_1;  // BG_INFO
 
-	DebuggerSetColorBG(dc, DebuggerGetColor( iBackground ));
+	DebuggerSetColorBG( DebuggerGetColor( iBackground ));
 	DebugDrawText( name, rect );
 
 	unsigned int nData = nValue;
@@ -2154,7 +2330,7 @@ void DrawRegister (HDC dc, int line, LPCTSTR name, const int nBytes, const WORD 
 		rect.left += (2 * nFontWidth) + (nFontWidth >> 1); // 2.5 looks a tad nicer then 2
 
 		// ## = Stack Depth (in bytes)
-		DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_OPERATOR )); // FG_INFO_OPCODE, FG_INFO_TITLE
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR )); // FG_INFO_OPCODE, FG_INFO_TITLE
 		DebugDrawText( sValue, rect );
 	}
 
@@ -2167,16 +2343,18 @@ void DrawRegister (HDC dc, int line, LPCTSTR name, const int nBytes, const WORD 
 		rect.left  = DISPLAY_REGS_COLUMN + (3 * nFontWidth);
 //		rect.right = SCREENSPLIT2;
 
-		DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_OPERATOR ));
-		DebugDrawTextFixed( TEXT("'"), rect ); // DebugDrawTextFixed
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+		DebugDrawTextFixed( "'", rect ); // DebugDrawTextFixed
 
-		ColorizeSpecialChar( dc, sValue, nData, MEM_VIEW_ASCII ); // MEM_VIEW_APPLE for inverse background little hard on the eyes
+		ColorizeSpecialChar( sValue, nData, MEM_VIEW_ASCII ); // MEM_VIEW_APPLE for inverse background little hard on the eyes
 
-		DebuggerSetColorBG(dc, DebuggerGetColor( iBackground ));
-		DebugDrawTextFixed( sValue, rect ); // DebugDrawTextFixed()
+		DebuggerSetColorBG( DebuggerGetColor( iBackground ));
+		DebugDrawText( sValue, rect ); // DebugDrawTextFixed()
 
-		DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_OPERATOR ));
-		DebugDrawTextFixed( TEXT("'"), rect ); // DebugDrawTextFixed()
+		rect.left += nFontWidth; // HACK: double byte char if char was console escape char
+
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+		DebugDrawTextFixed( "'", rect ); // DebugDrawTextFixed()
 
 		wsprintf(sValue,TEXT("  %02X"), nData );
 	}
@@ -2187,11 +2365,11 @@ void DrawRegister (HDC dc, int line, LPCTSTR name, const int nBytes, const WORD 
 
 	if ((PARAM_REG_PC == iSource) || (PARAM_REG_SP == iSource)) // Stack Pointer is target address, but doesn't look as good.
 	{
-		DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_ADDRESS ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
 	}
 	else
 	{
-		DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_OPCODE )); // FG_DISASM_OPCODE
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // FG_DISASM_OPCODE
 	}
 	DebugDrawText( sValue, rect );
 }
@@ -2228,7 +2406,7 @@ void DrawSourceLine( int iSourceLine, RECT &rect )
 
 
 //===========================================================================
-void DrawStack (HDC dc, int line)
+void DrawStack ( int line)
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
@@ -2239,6 +2417,9 @@ void DrawStack (HDC dc, int line)
 #endif
 
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
+
+	// 2.6.0.0 Alpha - Stack was dark cyan BG_DATA_1
+	DebuggerSetColorBG( DebuggerGetColor( BG_DATA_1 )); // BG_INFO // recessed 3d look
 
 	int    iStack = 0;
 	while (iStack < MAX_DISPLAY_STACK_LINES)
@@ -2251,32 +2432,28 @@ void DrawStack (HDC dc, int line)
 		rect.right = rect.left + (10 * nFontWidth) + 1;
 		rect.bottom = rect.top + g_nFontHeight;
 
-		DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_TITLE )); // [COLOR_STATIC
-		// 2.6.0.0 Alpha - Stack was dark cyan BG_DATA_1
-		DebuggerSetColorBG(dc, DebuggerGetColor( BG_INFO )); // BG_INFO
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE )); // [COLOR_STATIC
 
-		TCHAR sText[8] = TEXT("");
+		char sText[8] = "";
 		if (nAddress <= _6502_STACK_END)
 		{
-			wsprintf(sText,TEXT("%04X: "),nAddress);
+			sprintf( sText,"%04X: ", nAddress );
+			DebugDrawTextFixed( sText, rect );
 		}
-
-		DebugDrawTextFixed( sText, rect );
-
-		DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_OPCODE )); // COLOR_FG_DATA_TEXT
 
 		if (nAddress <= _6502_STACK_END)
 		{
-			wsprintf(sText,TEXT("  %02X"),(unsigned)*(LPBYTE)(mem+nAddress));
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // COLOR_FG_DATA_TEXT
+			sprintf(sText, "  %02X",(unsigned)*(LPBYTE)(mem+nAddress));
+			DebugDrawTextFixed( sText, rect );
 		}
-		DebugDrawTextFixed( sText, rect );
 		iStack++;
 	}
 }
 
 
 //===========================================================================
-void DrawTargets (HDC dc, int line)
+void DrawTargets ( int line)
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
@@ -2317,27 +2494,27 @@ void DrawTargets (HDC dc, int line)
 		rect.bottom = rect.top + g_nFontHeight;
 
 		if (iAddress == 0)
-			DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_TITLE )); // Temp Address
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE )); // Temp Address
 		else
-			DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_ADDRESS )); // Target Address
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS )); // Target Address
 
-		DebuggerSetColorBG(dc, DebuggerGetColor( BG_INFO ));
+		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 		DebugDrawText( sAddress, rect );
 
 		rect.left  = nColumn;
-		rect.right = SCREENSPLIT2;
+		rect.right = rect.left + (10 * nFontWidth); // SCREENSPLIT2
 
 		if (iAddress == 0)
-			DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_ADDRESS )); // Temp Target
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS )); // Temp Target
 		else
-			DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_OPCODE )); // Target Bytes
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // Target Bytes
 
 		DebugDrawText( sData, rect );
   }
 }
 
 //===========================================================================
-void DrawWatches (HDC dc, int line)
+void DrawWatches (int line)
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
@@ -2350,10 +2527,10 @@ void DrawWatches (HDC dc, int line)
 
 	TCHAR sText[16] = TEXT("Watches");
 
-	DebuggerSetColorBG(dc, DebuggerGetColor( BG_DATA_1 )); // BG_INFO
+	DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
 
 #if DISPLAY_WATCH_TITLE
-	DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_TITLE ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 	DebugDrawTextLine( sText, rect );
 #endif
 
@@ -2368,34 +2545,42 @@ void DrawWatches (HDC dc, int line)
 		{
 			RECT rect2 = rect;
 
-//			DebuggerSetColorBG( dc, DebuggerGetColor( BG_INFO ));
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_INFO_TITLE ) );
-			wsprintf( sText, TEXT("W.") );
-			DebugDrawTextFixed( sText, rect2 );
+//			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ) );
+			DebugDrawTextFixed( "W", rect2 );
 
-			wsprintf( sText,TEXT("%d"),iWatch+1 );
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_INFO_BULLET ));
+			wsprintf( sText, "%X ",iWatch );
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BULLET ));
 			DebugDrawTextFixed( sText, rect2 );
 			
-			wsprintf( sText,TEXT(":") );
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_INFO_OPERATOR ));
-			DebugDrawTextFixed( sText, rect2 );
+//			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+//			DebugDrawTextFixed( ".", rect2 );
 
 			wsprintf( sText,TEXT("%04X"), g_aWatches[iWatch].nAddress );
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_DISASM_ADDRESS ));
+			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 			DebugDrawTextFixed( sText, rect2 );
 
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+			DebugDrawTextFixed( ":", rect2 );
+
 			BYTE nTarget8 = (unsigned)*(LPBYTE)(mem+g_aWatches[iWatch].nAddress);
-			wsprintf(sText,TEXT(" %02X"), nTarget8 );
-			DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_OPCODE ));
+			wsprintf(sText,TEXT("%02X"), nTarget8 );
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
 			DebugDrawTextFixed( sText, rect2 );
 
 			WORD nTarget16 = (unsigned)*(LPWORD)(mem+g_aWatches[iWatch].nAddress);
 			wsprintf( sText,TEXT(" %04X"), nTarget16 );
-			DebuggerSetColorFG( dc, DebuggerGetColor( FG_INFO_ADDRESS ));
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
+			DebugDrawTextFixed( sText, rect2 );
+
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+			DebugDrawTextFixed( ":", rect2 );
+
+			BYTE nValue8 = (unsigned)*(LPBYTE)(mem + nTarget16);
+			wsprintf(sText,TEXT("%02X"), nValue8 );
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
 			DebugDrawTextFixed( sText, rect2 );
 		}
-
 		rect.top    += g_nFontHeight;
 		rect.bottom += g_nFontHeight;
 	}
@@ -2403,24 +2588,27 @@ void DrawWatches (HDC dc, int line)
 
 
 //===========================================================================
-void DrawZeroPagePointers(HDC dc, int line)
+void DrawZeroPagePointers ( int line )
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
 
+	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
+
+	RECT rect;
+	rect.top    = line * g_nFontHeight;
+	rect.bottom = rect.top + g_nFontHeight;
+	rect.left   = DISPLAY_ZEROPAGE_COLUMN;
+	rect.right  = rect.left + (10 * nFontWidth);
+
+	DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
+
+	const nMaxSymbolLen = 7;
+	char sText[nMaxSymbolLen+1] = "";
+
 	for(int iZP = 0; iZP < MAX_ZEROPAGE_POINTERS; iZP++)
 	{
-		RECT rect;
-		rect.left   = DISPLAY_ZEROPAGE_COLUMN;
-		rect.top    = (line+iZP) * g_nFontHeight;
-		rect.right  = SCREENSPLIT2; // TODO/FIXME:
-		rect.bottom = rect.top + g_nFontHeight;
-
-		TCHAR sText[8] = TEXT("       ");
-
-		DebuggerSetColorFG(dc, DebuggerGetColor( FG_INFO_TITLE )); // COLOR_STATIC
-		DebuggerSetColorBG(dc, DebuggerGetColor( BG_INFO ));
-		DebugDrawText( sText, rect );
+		RECT rect2 = rect;
 
 		Breakpoint_t *pZP = &g_aZeroPagePointers[iZP];
 		bool bEnabled = pZP->bEnabled;
@@ -2428,39 +2616,94 @@ void DrawZeroPagePointers(HDC dc, int line)
 #if DEBUG_FORCE_DISPLAY
 		bEnabled = true;
 #endif
-
 		if (bEnabled)
-//		if (g_aZeroPagePointers[iZP].bSet) // TODO: Only list enanbled ones
 		{
-			const UINT nSymbolLen = 4;
-			char szZP[nSymbolLen+1];
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ) );
+			DebugDrawTextFixed( "Z", rect2 );
+
+			wsprintf( sText, "%X ", iZP );
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BULLET ));
+			DebugDrawTextFixed( sText, rect2 );
+
+//			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+//			DebugDrawTextFixed( " ", rect2 );
 
 			BYTE nZPAddr1 = (g_aZeroPagePointers[iZP].nAddress  ) & 0xFF; // +MJP missig: "& 0xFF", or "(BYTE) ..."
 			BYTE nZPAddr2 = (g_aZeroPagePointers[iZP].nAddress+1) & 0xFF;
 
 			// Get nZPAddr1 last (for when neither symbol is not found - GetSymbol() return ptr to static buffer)
-			const char* pszSymbol2 = GetSymbol(nZPAddr2, 2);		// 2:8-bit value (if symbol not found)
-			const char* pszSymbol1 = GetSymbol(nZPAddr1, 2);		// 2:8-bit value (if symbol not found)
+			const char* pSymbol2 = GetSymbol(nZPAddr2, 2);		// 2:8-bit value (if symbol not found)
+			const char* pSymbol1 = GetSymbol(nZPAddr1, 2);		// 2:8-bit value (if symbol not found)
 
-			if( (strlen(pszSymbol1)==1) && (strlen(pszSymbol2)==1) )
+			int nLen1 = strlen( pSymbol1 );
+			int nLen2 = strlen( pSymbol2 );
+
+
+//			if ((nLen1 == 1) && (nLen2 == 1))
+//				sprintf( sText, "%s%s", pszSymbol1, pszSymbol2);
+
+			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
+
+			int x;
+			for( x = 0; x < nMaxSymbolLen; x++ )
 			{
-				sprintf(szZP, "%s%s", pszSymbol1, pszSymbol2);
+				sText[ x ] = CHAR_SPACE;
+			}
+			sText[nMaxSymbolLen] = 0;
+			
+			if ((nLen1) && (pSymbol1[0] == '$'))
+			{
+//				sprintf( sText, "%s%s", pSymbol1 );
+//				wsprintf( sText, "%04X", nZPAddr1 );
+			}
+			else
+			if ((nLen2) && (pSymbol2[0] == '$'))
+			{
+//				sprintf( sText, "%s%s", pSymbol2 );
+//				wsprintf( sText, "%04X", nZPAddr2 );
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 			}
 			else
 			{
-				memcpy(szZP, pszSymbol1, nSymbolLen);
-				szZP[nSymbolLen] = 0;
+				int nMin = min( nLen1, nMaxSymbolLen );
+				memcpy(sText, pSymbol1, nMin);
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
 			}
+//			DrawRegister( line+iZP, szZP, 2, nTarget16);
+//			DebugDrawText( szZP, rect2 );
+			DebugDrawText( sText, rect2);
 
-			WORD nZPPtr = (WORD)mem[ nZPAddr1 ] | ((WORD)mem[ nZPAddr2 ]<< 8);
-			DrawRegister(dc, line+iZP, szZP, 2, nZPPtr);
+			rect2.left    = rect.left;
+			rect2.top    += g_nFontHeight;
+			rect2.bottom += g_nFontHeight;
+
+			wsprintf( sText, "%02X", nZPAddr1 );
+			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
+			DebugDrawTextFixed( sText, rect2 );
+
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+			DebugDrawTextFixed( ":", rect2 );
+
+			WORD nTarget16 = (WORD)mem[ nZPAddr1 ] | ((WORD)mem[ nZPAddr2 ]<< 8);
+			wsprintf( sText, "%04X", nTarget16 );
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
+			DebugDrawTextFixed( sText, rect2 );
+
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+			DebugDrawTextFixed( ":", rect2 );
+
+			BYTE nValue8 = (unsigned)*(LPBYTE)(mem + nTarget16);
+			wsprintf(sText, "%02X", nValue8 );
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
+			DebugDrawTextFixed( sText, rect2 );
 		}
+		rect.top    += (g_nFontHeight * 2);
+		rect.bottom += (g_nFontHeight * 2);
 	}
 }
 
 
 // Sub Windows ____________________________________________________________________________________
-
 
 //===========================================================================
 void DrawSubWindow_Console (Update_t bUpdate)
@@ -2468,36 +2711,42 @@ void DrawSubWindow_Console (Update_t bUpdate)
 	if (! CanDrawDebugger())
 		return;
 
-	SelectObject( g_hDC, g_aFontConfig[ FONT_CONSOLE ]._hFont );
+#if !USE_APPLE_FONT
+	SelectObject( g_hFrameDC, g_aFontConfig[ FONT_CONSOLE ]._hFont );
+#endif
 
 //	static TCHAR sConsoleBlank[ CONSOLE_WIDTH ];
 	
-	if ((bUpdate & UPDATE_CONSOLE_INPUT) || (bUpdate & UPDATE_CONSOLE_DISPLAY))
+	if ((bUpdate & UPDATE_CONSOLE_DISPLAY)
+		|| (bUpdate & UPDATE_CONSOLE_INPUT))
 	{
-		DebuggerSetColorFG( g_hDC, DebuggerGetColor( FG_CONSOLE_OUTPUT )); // COLOR_FG_CONSOLE
-		DebuggerSetColorBG( g_hDC, DebuggerGetColor( BG_CONSOLE_OUTPUT )); // COLOR_BG_CONSOLE
+		DebuggerSetColorFG( DebuggerGetColor( FG_CONSOLE_OUTPUT )); // COLOR_FG_CONSOLE
+		DebuggerSetColorBG( DebuggerGetColor( BG_CONSOLE_OUTPUT )); // COLOR_BG_CONSOLE
 
 //		int nLines = MIN(g_nConsoleDisplayTotal - g_iConsoleDisplayStart, g_nConsoleDisplayHeight);
 		int iLine = g_iConsoleDisplayStart + CONSOLE_FIRST_LINE;
-		for (int y = 0; y < g_nConsoleDisplayHeight ; y++ )
+		for (int y = 1; y < g_nConsoleDisplayLines ; y++ )
 		{
 			if (iLine <= (g_nConsoleDisplayTotal + CONSOLE_FIRST_LINE))
 			{
-				DrawConsoleLine( g_aConsoleDisplay[ iLine ], y+1 );
+				DrawConsoleLine( g_aConsoleDisplay[ iLine  ], y );
 			}
 			iLine++;
-//			else
-//				DrawConsoleLine( sConsoleBlank, y );
 		}
 
-		DrawConsoleInput( g_hDC );
+		DrawConsoleInput(); // g_hFrameDC );
+	}
+
+//	if (bUpdate & UPDATE_CONSOLE_INPUT)
+	{
+//		DrawConsoleInput(); // g_hFrameDC );
 	}
 }	
 
 //===========================================================================
 void DrawSubWindow_Data (Update_t bUpdate)
 {
-	HDC hDC = g_hDC;
+//	HDC hDC = g_hDC;
 	int iBackground;	
 
 	const int nMaxOpcodes = WINDOW_DATA_BYTES_PER_LINE;
@@ -2560,29 +2809,29 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		{
 			iBackground = BG_DATA_2;
 		}
-		DebuggerSetColorBG( hDC, DebuggerGetColor( iBackground ) );
+		DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
 
-		DebuggerSetColorFG( hDC, DebuggerGetColor( FG_DISASM_ADDRESS ) );
+		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ) );
 		DebugDrawTextHorz( (LPCTSTR) sAddress, rect );
 
-		DebuggerSetColorFG( hDC, DebuggerGetColor( FG_DISASM_OPERATOR ) );
+		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 		if (g_bConfigDisasmAddressColon)
-			DebugDrawTextHorz( TEXT(":"), rect );
+			DebugDrawTextHorz( ":", rect );
 
 		rect.left = X_OPCODE;
 
-		DebuggerSetColorFG( hDC, DebuggerGetColor( FG_DATA_BYTE ) );
+		DebuggerSetColorFG( DebuggerGetColor( FG_DATA_BYTE ) );
 		DebugDrawTextHorz( (LPCTSTR) sOpcodes, rect );
 
 		rect.left = X_CHAR;
 
 	// Seperator
-		DebuggerSetColorFG( hDC, DebuggerGetColor( FG_DISASM_OPERATOR ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));
 		DebugDrawTextHorz( (LPCSTR) TEXT("  |  " ), rect );
 
 
 	// Plain Text
-		DebuggerSetColorFG( hDC, DebuggerGetColor( FG_DISASM_CHAR ) );
+		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_CHAR ) );
 
 		MemoryView_e eView = pMD->eView;
 		if ((eView != MEM_VIEW_ASCII) && (eView != MEM_VIEW_APPLE))
@@ -2598,7 +2847,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 				iTextBackground = BG_INFO_IO_BYTE;
 			}
 
-			ColorizeSpecialChar( hDC, sImmediate, (BYTE) nImmediate, eView, iBackground );
+			ColorizeSpecialChar( sImmediate, (BYTE) nImmediate, eView, iBackground );
 			DebugDrawTextHorz( (LPCSTR) sImmediate, rect );
 
 			iAddress++;
@@ -2620,12 +2869,12 @@ void DrawSubWindow_Data (Update_t bUpdate)
 			iAddress++;
 		}
 
-		DebuggerSetColorBG( hDC, DebuggerGetColor( iBackground ) ); // Hack, colorize Char background "spills over to EOL"
+		DebuggerSetColorBG( DebuggerGetColor( iBackground ) ); // Hack, colorize Char background "spills over to EOL"
 		DebugDrawTextHorz( (LPCSTR) TEXT(" " ), rect );
 */
-		DebuggerSetColorBG( hDC, DebuggerGetColor( iBackground ) ); // HACK: Colorize() can "spill over" to EOL
+		DebuggerSetColorBG( DebuggerGetColor( iBackground ) ); // HACK: Colorize() can "spill over" to EOL
 
-		DebuggerSetColorFG( hDC, DebuggerGetColor( FG_DISASM_OPERATOR ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));
 		DebugDrawTextHorz( (LPCSTR) TEXT("  |  " ), rect );
 
 		nAddress += nMaxOpcodes;
@@ -2644,54 +2893,55 @@ void DrawSubWindow_Info( int iWindow )
 
 	int yRegs     = 0; // 12
 	int yStack    = yRegs  + MAX_DISPLAY_REGS_LINES  + 0; // 0
-	int yTarget   = yStack + MAX_DISPLAY_STACK_LINES - 2; // 9
-	int yZeroPage = yStack + MAX_DISPLAY_STACK_LINES + 0; // 19
+	int yTarget   = yStack + MAX_DISPLAY_STACK_LINES - 1; // 9
+	int yZeroPage = 16; // 19
 
-	DrawRegister( g_hDC,yRegs++, sReg[ BP_SRC_REG_A ] , 1, regs.a , PARAM_REG_A  );
-	DrawRegister( g_hDC,yRegs++, sReg[ BP_SRC_REG_X ] , 1, regs.x , PARAM_REG_X  );
-	DrawRegister( g_hDC,yRegs++, sReg[ BP_SRC_REG_Y ] , 1, regs.y , PARAM_REG_Y  );
-	DrawRegister( g_hDC,yRegs++, sReg[ BP_SRC_REG_PC] , 2, regs.pc, PARAM_REG_PC );
-	DrawRegister( g_hDC,yRegs++, sReg[ BP_SRC_REG_S ] , 2, regs.sp, PARAM_REG_SP );
-	DrawFlags   ( g_hDC,yRegs++, regs.ps, NULL);
+	DrawRegister( yRegs++, sReg[ BP_SRC_REG_A ] , 1, regs.a , PARAM_REG_A  );
+	DrawRegister( yRegs++, sReg[ BP_SRC_REG_X ] , 1, regs.x , PARAM_REG_X  );
+	DrawRegister( yRegs++, sReg[ BP_SRC_REG_Y ] , 1, regs.y , PARAM_REG_Y  );
+	DrawRegister( yRegs++, sReg[ BP_SRC_REG_PC] , 2, regs.pc, PARAM_REG_PC );
+	DrawFlags   ( yRegs  , regs.ps, NULL);
+	yRegs += 2;
+	DrawRegister( yRegs++, sReg[ BP_SRC_REG_S ] , 2, regs.sp, PARAM_REG_SP );
 
-	DrawStack(g_hDC, yStack);
+	DrawStack( yStack );
 
 	if (g_bConfigInfoTargetPointer)
 	{
-		DrawTargets(g_hDC,yTarget);
+		DrawTargets( yTarget );
 	}
 	
-	DrawZeroPagePointers( g_hDC, yZeroPage );
+	DrawZeroPagePointers( yZeroPage );
 
 #if defined(SUPPORT_Z80_EMU) && defined(OUTPUT_Z80_REGS)
-	DrawRegister(g_hDC,19,TEXT("AF"),2,*(WORD*)(membank+REG_AF));
-	DrawRegister(g_hDC,20,TEXT("BC"),2,*(WORD*)(membank+REG_BC));
-	DrawRegister(g_hDC,21,TEXT("DE"),2,*(WORD*)(membank+REG_DE));
-	DrawRegister(g_hDC,22,TEXT("HL"),2,*(WORD*)(membank+REG_HL));
-	DrawRegister(g_hDC,23,TEXT("IX"),2,*(WORD*)(membank+REG_IX));
+	DrawRegister( 19,TEXT("AF"),2,*(WORD*)(membank+REG_AF));
+	DrawRegister( 20,TEXT("BC"),2,*(WORD*)(membank+REG_BC));
+	DrawRegister( 21,TEXT("DE"),2,*(WORD*)(membank+REG_DE));
+	DrawRegister( 22,TEXT("HL"),2,*(WORD*)(membank+REG_HL));
+	DrawRegister( 23,TEXT("IX"),2,*(WORD*)(membank+REG_IX));
 #endif
 
 	// Right Side
 	int yBreakpoints = 0;
-	int yWatches     = yBreakpoints + MAX_DISPLAY_BREAKPOINTS_LINES; // 7
-	int yMemory      = yWatches     + MAX_DISPLAY_WATCHES_LINES    ; // 14
+	int yWatches     = yBreakpoints + MAX_BREAKPOINTS; // MAX_DISPLAY_BREAKPOINTS_LINES; // 7
+	int yMemory      = yWatches     + MAX_WATCHES    ; // MAX_DISPLAY_WATCHES_LINES    ; // 14
 
-	if ((MAX_DISPLAY_BREAKPOINTS_LINES + MAX_DISPLAY_WATCHES_LINES) < 12)
-		yWatches++;
+//	if ((MAX_DISPLAY_BREAKPOINTS_LINES + MAX_DISPLAY_WATCHES_LINES) < 12)
+//		yWatches++;
 
 #if DEBUG_FORCE_DISPLAY
 	if (true)
 #else
 	if (g_nBreakpoints)
 #endif
-		DrawBreakpoints( g_hDC, yBreakpoints );
+		DrawBreakpoints( yBreakpoints );
 
 #if DEBUG_FORCE_DISPLAY
 	if (true)
 #else
 	if (g_nWatches)
 #endif
-		DrawWatches(g_hDC, yWatches );
+		DrawWatches( yWatches );
 
 	g_nDisplayMemoryLines = MAX_DISPLAY_MEMORY_LINES_1;
 
@@ -2700,7 +2950,7 @@ void DrawSubWindow_Info( int iWindow )
 #else
 	if (g_aMemDump[0].bActive)
 #endif
-		DrawMemory(g_hDC, yMemory, 0 ); // g_aMemDump[0].nAddress, g_aMemDump[0].eDevice);
+		DrawMemory( yMemory, 0 ); // g_aMemDump[0].nAddress, g_aMemDump[0].eDevice);
 
 	yMemory += (g_nDisplayMemoryLines + 1);
 	g_nDisplayMemoryLines = MAX_DISPLAY_MEMORY_LINES_2;
@@ -2710,7 +2960,7 @@ void DrawSubWindow_Info( int iWindow )
 #else
 	if (g_aMemDump[1].bActive)
 #endif
-		DrawMemory(g_hDC, yMemory, 1 ); // g_aMemDump[1].nAddress, g_aMemDump[1].eDevice);
+		DrawMemory( yMemory, 1 ); // g_aMemDump[1].nAddress, g_aMemDump[1].eDevice);
 
 }
 
@@ -2731,7 +2981,7 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 //	if (! g_bSourceLevelDebugging)
 //		return;
 
-	DebuggerSetColorFG( g_hDC, DebuggerGetColor( FG_SOURCE ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_SOURCE ));
 
 	int iSource = g_iSourceDisplayStart;
 	int nLines  = g_nDisasmWinHeight;
@@ -2755,8 +3005,8 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 	_tcsncpy( sText, g_aSourceFileName, g_nConsoleDisplayWidth - _tcslen( sTitle ) - 1 );
 	_tcscat( sTitle, sText );
 
-	DebuggerSetColorBG(   g_hDC, DebuggerGetColor( BG_SOURCE_TITLE ));
-	DebuggerSetColorFG( g_hDC, DebuggerGetColor( FG_SOURCE_TITLE ));
+	DebuggerSetColorBG( DebuggerGetColor( BG_SOURCE_TITLE ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_SOURCE_TITLE ));
 	DebugDrawText( sTitle, rect );
 	rect.top += g_nFontHeight;
 
@@ -2793,8 +3043,8 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 			iBackground = BG_DISASM_PC_X; // _C
 			iForeground = FG_DISASM_PC_X; // _C
 		}
-		DebuggerSetColorBG(   g_hDC, DebuggerGetColor( iBackground ));
-		DebuggerSetColorFG( g_hDC, DebuggerGetColor( iForeground ));
+		DebuggerSetColorBG( DebuggerGetColor( iBackground ));
+		DebuggerSetColorFG( DebuggerGetColor( iForeground ));
 
 		DrawSourceLine( iSourceLine, rect );
 		iSourceLine++;
@@ -2823,32 +3073,39 @@ void DrawWindow_Code( Update_t bUpdate )
 	DrawSubWindow_Info( g_iWindowThis );
 }
 
+// Full Screen console
 //===========================================================================
 void DrawWindow_Console( Update_t bUpdate )
 {
 	// Nothing to do, except draw background, since text handled by DrawSubWindow_Console()
-    RECT viewportrect;
-    viewportrect.left   = 0;
-    viewportrect.top    = 0;
-    viewportrect.right  = DISPLAY_WIDTH;
-    viewportrect.bottom = DISPLAY_HEIGHT - DEFAULT_HEIGHT; // 368 = 23 lines // TODO/FIXME
+    RECT rect;
+    rect.left   = 0;
+    rect.top    = 0;
+    rect.right  = DISPLAY_WIDTH;
+    rect.bottom = DISPLAY_HEIGHT - DEFAULT_HEIGHT; // 368 = 23 lines // TODO/FIXME
 
 // TODO/FIXME: COLOR_BG_CODE -> g_iWindowThis, once all tab backgrounds are listed first in g_aColors !
-    DebuggerSetColorBG(g_hDC, DebuggerGetColor( BG_DISASM_2 )); // COLOR_BG_CODE
+    DebuggerSetColorBG( DebuggerGetColor( BG_DISASM_2 )); // COLOR_BG_CODE
 
-#if USE_APPLE_FONT	
-//	RenderFilledRect( viewportrect );
-#else
-	// Can't use DebugDrawText, since we don't ned the CLIPPED flag
-	// TODO: add default param OPAQUE|CLIPPED
-    ExtTextOut( g_hDC
-		,0,0
-		,ETO_OPAQUE
-		,&viewportrect
-		,TEXT("")
-		,0
-		,NULL
-	);
+#if DEBUG_BACKGROUND
+	DebuggerSetColorBG( RGB(255,0,0) );
+#endif
+
+#if !DEBUG_FONT_NO_BACKGROUND_FILL_CON
+	#if USE_APPLE_FONT	
+//		FillRect( g_hFrameDC, &rect, g_hConsoleBrushBG );
+	#else
+		// Can't use DebugDrawText, since we don't ned the CLIPPED flag
+		// TODO: add default param OPAQUE|CLIPPED
+		ExtTextOut( g_hFrameDC
+			,0,0
+			,ETO_OPAQUE
+			,&rect
+			,TEXT("")
+			,0
+			,NULL
+		);
+	#endif
 #endif
 }
 
@@ -2891,39 +3148,53 @@ void DrawWindowBackground_Main( int g_iWindowThis )
 {
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 
-		RECT viewportrect;
-	viewportrect.left   = 0;
-	viewportrect.top    = 0;
-	viewportrect.right  = SCREENSPLIT1 - nFontWidth; // HACK: MAGIC #: 14 -> 6 -> (g_nFonWidthAvg-1)
-	viewportrect.bottom = DISPLAY_HEIGHT - DEFAULT_HEIGHT; // 368 = 23 lines // TODO/FIXME
+	RECT rect;
+	rect.left   = 0;
+	rect.top    = 0;
+//	rect.right  = SCREENSPLIT1 - nFontWidth; // HACK: MAGIC #: 14 -> 6 -> (g_nFonWidthAvg-1)
+	rect.right  = SCREENSPLIT1; // HACK: MAGIC #: 14 -> 6 -> (g_nFonWidthAvg-1)
+	int nTop = GetConsoleTopPixels( g_nConsoleDisplayLines );
+	rect.bottom = nTop;
+//	rect.bottom = DISPLAY_HEIGHT - DEFAULT_HEIGHT; // 368 = 23 lines // TODO/FIXME
+
 // g_nFontHeight * g_nDisasmWinHeight; // 304
 
 // TODO/FIXME: COLOR_BG_CODE -> g_iWindowThis, once all tab backgrounds are listed first in g_aColors !
 
-	DebuggerSetColorBG(g_hDC, DebuggerGetColor( BG_DISASM_1 )); // COLOR_BG_CODE
+	DebuggerSetColorBG( DebuggerGetColor( BG_DISASM_1 )); // COLOR_BG_CODE
 	
-#if USE_APPLE_FONT	
-#else
-	// Can't use DebugDrawText, since we don't need CLIPPED
-	ExtTextOut(g_hDC,0,0,ETO_OPAQUE,&viewportrect,TEXT(""),0,NULL);
+#if DEBUG_BACKGROUND
+	DebuggerSetColorBG( RGB(255,0,255) );
+#endif
+
+#if !DEBUG_FONT_NO_BACKGROUND_FILL_MAIN
+	#if USE_APPLE_FONT	
+		FillRect( g_hFrameDC, &rect, g_hConsoleBrushBG );
+	#else
+		// Can't use DebugDrawText, since we don't need CLIPPED
+		ExtTextOut( g_hFrameDC, 0, 0, ETO_OPAQUE,&rect,TEXT(""),0,NULL);
+	#endif
 #endif
 }
 
 //===========================================================================
 void DrawWindowBackground_Info( int g_iWindowThis )
 {
-    RECT viewportrect;
-    viewportrect.top    = 0;
-    viewportrect.left   = SCREENSPLIT1 - 6; // 14 // HACK: MAGIC #: 14 -> (g_nFontWidthAvg-1)
-    viewportrect.right  = DISPLAY_WIDTH;
-    viewportrect.bottom = DISPLAY_HEIGHT; //g_nFontHeight * MAX_DISPLAY_INFO_LINES; // 384
+    RECT rect;
+    rect.top    = 0;
+    rect.left   = SCREENSPLIT1 - 6; // 14 // HACK: MAGIC #: 14 -> (g_nFontWidthAvg-1)
+    rect.right  = DISPLAY_WIDTH;
+    rect.bottom = DISPLAY_HEIGHT; //g_nFontHeight * MAX_DISPLAY_INFO_LINES; // 384
 
-	DebuggerSetColorBG(g_hDC, DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
+	DebuggerSetColorBG( DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
 	// Can't use DebugDrawText, since we don't need CLIPPED
 
-#if USE_APPLE_FONT	
-#else
-	ExtTextOut(g_hDC,0,0,ETO_OPAQUE,&viewportrect,TEXT(""),0,NULL);
+#if !DEBUG_FONT_NO_BACKGROUND_FILL_INFO
+	#if USE_APPLE_FONT	
+		FillRect( g_hFrameDC, &rect, g_hConsoleBrushBG );
+	#else
+		ExtTextOut(g_hFrameDC,0,0,ETO_OPAQUE,&rect,TEXT(""),0,NULL);
+	#endif
 #endif
 }
 
@@ -2931,18 +3202,35 @@ void DrawWindowBackground_Info( int g_iWindowThis )
 //===========================================================================
 void UpdateDisplay (Update_t bUpdate)
 {
-	g_hDC = FrameGetDC();
-
-#if USE_APPLE_FONT
-	VideoDrawLogoBitmap( g_hDC );
-
-	SetBkMode(g_hDC,OPAQUE);
-	SetBkColor(g_hDC,RGB(0,0,0));
-#else
-	SelectObject( g_hDC, g_aFontConfig[ FONT_INFO ]._hFont ); // g_hFontDebugger
+	static spDrawMutex = false;
+	
+	if (spDrawMutex)
+	{
+#if DEBUG
+		MessageBox( g_hFrameWindow, "Already drawing!", "!", MB_OK );
 #endif
+	}
+	spDrawMutex = true;
 
-	SetTextAlign(g_hDC,TA_TOP | TA_LEFT);
+	FrameGetDC();
+
+	// Hack: Full screen console scrolled, "erase" left over console lines
+	if (g_iWindowThis == WINDOW_CONSOLE)
+		bUpdate |= UPDATE_BACKGROUND;
+
+	if (bUpdate & UPDATE_BACKGROUND)
+	{
+#if USE_APPLE_FONT
+		VideoDrawLogoBitmap( g_hFrameDC );
+
+		SetBkMode( g_hFrameDC, OPAQUE);
+		SetBkColor(g_hFrameDC, RGB(0,0,0));
+#else
+		SelectObject( g_hFrameDC, g_aFontConfig[ FONT_INFO ]._hFont ); // g_hFontDebugger
+#endif
+	}
+
+	SetTextAlign( g_hFrameDC, TA_TOP | TA_LEFT);
 
 	if ((bUpdate & UPDATE_BREAKPOINTS)
 		|| (bUpdate & UPDATE_DISASM)
@@ -3003,7 +3291,9 @@ void UpdateDisplay (Update_t bUpdate)
 		DrawSubWindow_Console( bUpdate );
 
 	FrameReleaseDC();
-	g_hDC = 0;
+//	g_hDC = 0;
+
+	spDrawMutex = false;
 }
 
 
@@ -3039,13 +3329,17 @@ void DrawSubWindow_Code ( int iWindow )
 	// These should be functionally equivalent.
 	//	DisasmCalcTopFromCurAddress();
 	//	DisasmCalcBotFromTopAddress();
-	SelectObject( g_hDC, g_aFontConfig[ FONT_DISASM_DEFAULT ]._hFont ); // g_hFontDisasm 
+#if !USE_APPLE_FONT
+	SelectObject( g_hFrameDC, g_aFontConfig[ FONT_DISASM_DEFAULT ]._hFont ); // g_hFontDisasm 
+#endif
 
 	WORD nAddress = g_nDisasmTopAddress; // g_nDisasmCurAddress;
 	for (int iLine = 0; iLine < nLines; iLine++ )
 	{
-		nAddress += DrawDisassemblyLine( g_hDC, iLine, nAddress, NULL);
+		nAddress += DrawDisassemblyLine( iLine, nAddress, NULL);
 	}
 
-	SelectObject( g_hDC, g_aFontConfig[ FONT_INFO ]._hFont ); // g_hFontDebugger
+#if !USE_APPLE_FONT
+	SelectObject( g_hFrameDC, g_aFontConfig[ FONT_INFO ]._hFont ); // g_hFontDebugger
+#endif
 }
