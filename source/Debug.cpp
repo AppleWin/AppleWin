@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,7,1);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,7,2);
 
 
 // Public _________________________________________________________________________________________
@@ -5305,7 +5305,7 @@ Update_t CmdOutputEcho (int nArgs)
 	}
 	else
 	{
-		const TCHAR *pText = g_pConsoleFirstArg; // ConsoleInputPeek();
+		const char *pText = g_pConsoleFirstArg; // ConsoleInputPeek();
 		if (pText)
 		{
 			ConsoleDisplayPush( pText );

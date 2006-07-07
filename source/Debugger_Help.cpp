@@ -247,7 +247,7 @@ void Help_Operators()
 		}
 	}	
 	_tcscat( sText, CON_COLOR_DEFAULT );
-	ConsoleBufferPush( sText );
+	ConsolePrint( sText );
 }
 
 void Help_KeyboardShortcuts()
@@ -270,9 +270,9 @@ void Help_KeyboardShortcuts()
 //===========================================================================
 Update_t CmdMOTD( int nArgs )
 {
-	TCHAR sText[ CONSOLE_WIDTH ];
+	char sText[ CONSOLE_WIDTH ];
 
-	ConsoleBufferPush( TEXT(" Apple ][ ][+ //e Emulator for Windows") );
+	ConsoleBufferPush( " Apple ][ ][+ //e Emulator for Windows" );
 	CmdVersion(0);
 	CmdSymbols(0);
 	wsprintf( sText, "  '%sCtrl ~%s' console, '%s%s%s' (specific), '%s%s%s' (all)"
@@ -287,7 +287,7 @@ Update_t CmdMOTD( int nArgs )
 		, CON_COLOR_DEFAULT
 //		 , g_aCommands[ CMD_HELP_LIST     ].pHelpSummary
 	);
-	ConsoleBufferPush( sText );
+	ConsolePrint( sText );
 
 	ConsoleUpdate();
 
@@ -1126,7 +1126,7 @@ Update_t CmdVersion (int nArgs)
 		, nMajor, nMinor, nFixMajor, nFixMinor
 		, CON_COLOR_DEFAULT
 	);
-	ConsoleBufferPush( sText );
+	ConsolePrint( sText );
 
 	if (nArgs)
 	{
