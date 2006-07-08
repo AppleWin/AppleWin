@@ -1,0 +1,72 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <title>Creating Disk Images</title>
+
+
+</head>
+
+
+<body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
+
+<h2><font color="#008000">Creating
+Disk Images</font></h2>
+
+<hr size="4">
+<p>To create a new disk image,
+all you have to do is tell AppleWin to use an image file which doesn't
+already exist and the emulator will automatically create a new image
+file.&nbsp; Specifying a new disk image is like inserting a blank,
+unformatted floppy disk into a real drive.&nbsp; This means that
+the image must be formatted by emulator before it can be used.
+Specifically, this is what you'd do using DOS 3.3:</p>
+
+<ol>
+
+  <li>Load a master DOS 3.3 disk
+image in drive 1 and boot the emulated Apple. </li>
+
+  <li>Click on the Drive 1
+toolbar button. </li>
+
+  <li>Instead of selecting a disk
+image from the list, type in a name for a new disk image and press
+enter. </li>
+
+  <li>Type in a program that you
+want DOS to run whenever this new disk is booted. A simple but useful
+program is:<br>
+
+    <br>
+
+    <span style="font-family: Courier New,Courier,monospace;">10
+PRINT
+CHR$(4);"CATALOG"</span><font face="Courier New"><br>
+
+    </font><br>
+
+  </li>
+
+  <li>Type <span style="font-family: Courier New,Courier,monospace;">"INIT
+HELLO"</span> to initialize (format) the disk image. </li>
+
+</ol>
+
+<p>You now have a working disk
+image, which you can use to save documents or other information. If you
+want to fill this image with data from a real floppy disk that you
+have, then you need to "transfer" the disk's data. See the <a href="ddi-transfer.html">Transferring
+Disk Images</a> topic for more information. </p>
+
+<p>Please note that not all disk image types supported by
+AppleWin can be created in this manner.&nbsp; Since there is no way
+to detect the image type from the image itself, it is determined by the
+given file extension only. Three extensions are allowed: (.DSK, .DO,
+.NIB). The first two create a "DOS Order Image" and then latter creates
+a "Nibble Image".&nbsp; If the extension is completely omitted,
+".DSK" will be chosen by default.&nbsp; For more information, see <a href="ddi-formats.html">Disk Image Formats</a>.</p>
+
+</body>
+</html>

@@ -1,0 +1,15 @@
+[OPTIONS]
+Binary Index=No
+Compatibility=1.1 or later
+Compiled file=AppleWin.chm
+Contents file=Table of Contents.hhc
+Default Font=Arial,10,0
+Default topic=toc.html
+Display compile progress=No
+Full-text search=Yes
+Language=0x409 English (United States)
+Title=Apple //e Emulator for Windows
+
+
+[INFOTYPES]
+

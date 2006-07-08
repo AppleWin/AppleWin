@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+
+  
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+
+  
+  <title>Disk Settings</title>
+</head>
+
+
+<body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
+
+
+<h2 style="color: rgb(0, 128, 0);">Disk Settings</h2>
+
+
+<hr size="4"><img style="width: 344px; height: 460px; float: right;" src="img/disk.png" alt="Disk settings" hspace="5" vspace="5">
+<h3>Floppy Controller Settings:</h3>
+<p><strong>Disk Access Speed:</strong><br>
+Here you can choose the speed at which the system can access
+an emulated floppy disk drive.
+By default, you would want "Enhanced Speed" so that data can
+be accessed as fast as possible. However, it is also possible that
+certain programs might depend on the "Authentic Speed" to function
+properly. This is the speed at which the real hardware
+would&nbsp;access data from your drives.</p>
+
+
+<p><strong>Select Disk 1/2:</strong><br>
+
+
+These buttons allow you to select floppy disk images (.dsk files) to
+'insert' into the
+emulated floppy drives 1 and 2. &nbsp;This can also be done during emulation by <a href="toolbar.html">using the toolbar</a> or using the F3/F4 keys. Diskettes can be swapped by pressing F5 during emulation.</p>
+
+
+<h3>Harddisk Controller Settings:</h3>
+<p><strong>Enable harddisk in slot 7:</strong><br>
+A harddisk interface card can be plugged in to slot-7 by checking this
+box. You can connect two harddisks to this card by selecting .hdv files
+on your PC. Each harddisk can have a maximum capacity of 32MB.
+</p>
+<p>On booting, the Apple will <span style="text-decoration: underline;">always</span> attempt to autoboot from slot-7 
+first. If the harddisk card is unplugged (not enabled)&nbsp;the Apple will then 
+attempt to boot from slot-6 (this has the Disk][ floppy interface card in it). To boot a 
+floppy disk with the harddisk card enabled, you can issue PR#6 from an AppleSoft 
+prompt.</p>
+
+<p>You can download sample .hdv images from Asimov (eg. <a href="ftp://public.asimov.net/pub/apple_II/" target="_blank">ftp://public.asimov.net/pub/apple_II/images/utility/misc/hardpc.zip</a>).</p>
+<p><strong>Select HDD1/HDD2:</strong><br>
+
+
+These buttons allow you to select harddisk images (.hdv files) to
+connect to the emulated hard drive controller.</p>
+<strong>Harddisk warnings:</strong>
+<ul>
+
+
+  <li>Unchecking <em>enable
+harddisk in slot 7</em> while the emulator is running would be
+like physically unplugging the harddisk card on an Apple that is
+powered on.
+This can lead to a corrupt .hdv image if the Apple is writing to the
+harddisk when it is unplugged! </li>
+
+
+  <li>Also, exiting AppleWin while writing to the harddisk can
+have the same effect. </li>
+
+
+  <li>The harddisk state is currently <span style="text-decoration: underline;">not</span> saved
+in the save-state
+image. </li>
+
+
+  <li>Copy][+ v7.1 locks up when trying to calculate how many
+free blocks are available when running a catalog. This is a bug in
+Copy][+ which is fixed in later versions.</li>
+
+
+</ul>
+
+
+</body>
+</html>
