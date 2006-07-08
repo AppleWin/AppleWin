@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+	<head>
+		<title>Save-State Files</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+	</head>
+	<body style="FONT-FAMILY: verdana; BACKGROUND-COLOR: rgb(255,255,255)" alink="#008000"
+		link="#008000" vlink="#008000">
+		<h2 style="COLOR: rgb(0,128,0)">Uthernet network card</h2>
+		<hr size="4">
+		<p style="FONT-WEIGHT: bold">Overview:
+		</p>
+		<P>The Uthernet network card coupled with the Contiki OS allows you to browse the 
+			internet on your Apple.</P>
+		<P style="FONT-WEIGHT: bold">Acknowledgment:
+		</P>
+		<P>Uthernet (TFE) support in Applewin was made possible by implementing the GPL 
+			source written by Spiro Trikaliotis for the Vice emulator - <A href="http://www.viceteam.org/">
+				http://www.viceteam.org/</A></P>
+		<P style="FONT-WEIGHT: bold">Details:
+		</P>
+		<P>To enable Ethernet support in AppleWin you must first download and install 
+			WinPcap.
+		</P>
+		<P>An Alternative to downloading WinPcap is to get the Ethereal package which 
+			includes WinPcap along with Ethereal network analyzer code. To use Ethereal to 
+			capture traffic (other then your own) you must be plugged into a shared hub vs 
+			a switch. If you plan on doing any network programming ethereal is a definite 
+			must have.
+		</P>
+		<P>WinPcap: <A href="http://www.WinPcap.org/install/default.htm">http://www.WinPcap.org/install/default.htm</A>
+			or Ethereal:
+		</P>
+		<P><A href="http://www.ethereal.com/download.html">http://www.ethereal.com/download.html</A>
+		</P>
+		<P>After AppleWin starts, select the settings ICON and then select the Ethernet 
+			settings button.
+		</P>
+		<P>Uthernet will be disabled. Select Uthernet from the list of available ethernet 
+			emulations (currently the only one).
+		</P>
+		<P>Select the ethernet interface you want to work with. This must be a physical 
+			ethernet interface.
+		</P>
+		<P>If you have more then one interface you may need to select them in turn in order 
+			to get the text description for each interface vs what WinPcap likes to use for 
+			a reference. Select Ok. and then close AppleWin. *Note:* Wireless does not work 
+			with WinPcap.
+		</P>
+		<P>NOTE: Due to a current limitation you must exit AppleWin and re-run AppleWin for 
+			'a' ethernet interface change to take effect.
+		</P>
+		<P>In order to test the Ethernet emulation out you should grab a copy of Contiki 
+			for the Apple II here - <A href="http://www.a2retrosystems.com/downloads.htm">http://www.a2retrosystems.com/downloads.htm</A>
+		</P>
+		<P>Grab the 80 Col. Primary Disk and Supplementary Disk images if using Apple //e 
+			emulation or the 40 Col versions if running Apple II+ emulation. You should 
+			also grab a copy of the Uthernet/Contiki getting started guide <A href="http://www.a2retrosystems.com/a2UtherManual.pdf">
+				http://www.a2retrosystems.com/a2UtherManual.pdf</A>
+		</P>
+		<P>When you run AppleWin again, select the contiki80pri.dsk image. Boot AppleWin.
+		</P>
+		<P>Once Contiki is loaded then press Enter to clear the welcome screen and press 
+			ESC for a menu.
+		</P>
+		<P>Choose Directory Application and then select configuration edit program. Tab 
+			down to the Slot param and change it to '3'. The emulation only works in slot 
+			3.
+		</P>
+		<P>If you do not have DHCP support in your local Lan then setup your static IP 
+			address information here as well. Save and exit. If you have DHCP support in 
+			your local lan then press ESC and choose Directory Application again, and then 
+			select DHCP client.
+		</P>
+		<P>Hit enter on request Address and you should see the IP information updated. 
+			Close the window and then press ESC again.
+		</P>
+		<P>Select the web browser and hit Enter a couple of times. Adam Dunkels web site 
+			should show up if things are working properly.
+		</P>
+		<P>Try a few other web sites if the first one isn't working in case it is 
+			temporarily down.
+		</P>
+		<P>You may also need to configure/disable your firewall if you are having problems.
+		</P>
+		<P style="FONT-WEIGHT: bold">Troubleshooting:
+		</P>
+		<P>If you have ZoneAlarm running then try disabling it inorder to access the web. 
+			if you are still having difficulty then you should refer to the VICE network 
+			support page for additional information - <A href="http://vicekb.trikaliotis.net/13-005.shtml">
+				http://vicekb.trikaliotis.net/13-005.shtml</A></P>
+	</body>
+</html>
