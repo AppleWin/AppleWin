@@ -1,0 +1,791 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <title>Debugger Commands</title>
+
+
+</head>
+
+
+<body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
+
+<h2><font color="#008000" face="Arial">Debugger
+Commands</font></h2>
+
+<hr size="4">
+<h3><a name="BC"></a> <u>Breakpoint
+Clear</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">BC <i>list</i></font></p>
+
+  <p><font face="Courier New">BC *</font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Permanently removes one or
+more breakpoints by number, or all breakpoints if the wildcard (*) is
+used.&nbsp;</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To remove breakpoints one
+and two, type:&nbsp;</p>
+
+  <p><font face="Courier New">BC 1 2</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="BD"></a> <u>Breakpoint
+Disable</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">BD <i>list</i></font></p>
+
+  <p><font face="Courier New">BD *</font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Temporarily disables one or
+more breakpoints by number, or all breakpoints if the wildcard (*) is
+used.&nbsp;</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To temporarily disable
+breakpoints one and two, type:&nbsp;</p>
+
+  <p><font face="Courier New">BD 1 2</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="BE"></a> <u>Breakpoint
+Enable</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">BE <i>list</i></font></p>
+
+  <p><font face="Courier New">BE *</font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Enables one or more
+breakpoints which had previously been disabled with the Breakpoint
+Disable (BD) command.&nbsp;</p>
+
+</blockquote>
+
+<p> <b>Examples:</b></p>
+
+<blockquote>
+  <p> To enable breakpoints one
+and two, type:&nbsp;</p>
+
+  <p><font face="Courier New">BE 1 2</font></p>
+
+  <p> To enable all breakpoints,
+type:&nbsp;</p>
+
+  <p><font face="Courier New">BE *</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="BP"></a> <u>Breakpoint
+Set</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">BP</font></p>
+
+  <p><font face="Courier New">BP <i>address</i></font></p>
+
+  <p><font face="Courier New">BP <i>address</i>L<i>length</i></font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Sets a breakpoint on the
+given address or range of addresses. If the breakpoint is on a memory
+location, it will be triggered if the instruction at that location is
+about to be executed, or if the memory location is read or written to.
+If the breakpoint is on an I/O port, it will be triggered if the port
+is accessed.</p>
+
+  <p> After setting a breakpoint,
+use the Go (G) command to start running the emulator in stepping mode.
+Breakpoint functionality is available only in stepping mode, not in
+normal running mode.&nbsp;</p>
+
+</blockquote>
+
+<p> <b>Examples:</b></p>
+
+<blockquote>
+  <p> To set a breakpoint at the
+current execution address (the address contained in the PC register)
+type:&nbsp;</p>
+
+  <p><font face="Courier New">BP</font></p>
+
+  <p> To set a breakpoint at
+address $BF00, the ProDOS Machine Language Interface, type:&nbsp;</p>
+
+  <p><font face="Courier New">BP BF00</font></p>
+
+  <p> To set a breakpoint on I/O
+ports $C0E0-$C0EF, trapping all disk I/O on slot 6, type:&nbsp;</p>
+
+  <p><font face="Courier New">BP C0E0L10</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="BW"></a> <u>Black
+and White</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">BW</font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Changes the debugger screen
+to black and white mode.&nbsp;</p>
+
+</blockquote>
+
+<hr>
+<h3><a name="COL"></a> <u>Color</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">COL</font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Changes the debugger screen
+to color mode.&nbsp;</p>
+
+</blockquote>
+
+<hr>
+<h3><a name="G"></a> <u>Go</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">G</font></p>
+
+  <p><font face="Courier New">G <i>address</i></font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Starts running the emulator
+in stepping mode. Stepping mode is slower than the normal running mode,
+but it allows execution to be interrupted by a triggered breakpoint,
+the escape key, or execution reaching the address given in the Go
+command.&nbsp;</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To continue execution until
+the program counter reaches $C27D, the address of WAITKEY1,
+type:&nbsp;</p>
+
+  <p><font face="Courier New">G C27D</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="I"></a> <u>Input</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">I <i>address</i></font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Simulates reading the
+specified I/O port.&nbsp;</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To simulate a read of port
+$C083, switching the banked memory at $D000 from ROM to RAM,
+type:&nbsp;</p>
+
+  <p><font face="Courier New">I C083</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="KEY"></a> <u>Feed
+Keystroke</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">KEY <i>value</i></font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Simulates pressing a key.
+The given value is passed to the next program that reads the keyboard
+data port at $C00X.&nbsp;</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To simulate pressing the
+Return key, type:&nbsp;</p>
+
+  <p><font face="Courier New">KEY 8D</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="MD"></a> <u>Memory
+Dump</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">MD <i>address</i></font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Displays the contents of
+memory starting at the specified address, in hexadecimal
+notation.&nbsp;</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To display memory at $BF00,
+type:&nbsp;</p>
+
+  <p><font face="Courier New">MD BF00</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="MDC"></a> <u>Code
+Dump</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">MDC <i>address</i></font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Displays disassembled code
+starting at the specified address.&nbsp;</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To display code starting at
+$F832, type:&nbsp;</p>
+
+  <p><font face="Courier New">MDC F832</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="ME"></a> <u>Memory
+Enter</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">ME <i>address
+value(s)</i></font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Writes the given values to
+memory locations starting at the specified address.&nbsp;</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To write $A9 to memory
+location $FBE4 and $0A to memory location $FBE5, type:&nbsp;</p>
+
+  <p><font face="Courier New">ME FBE4 A9 0A</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="MF"></a> <u>Memory
+Fill</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">MF <i>address</i>L<i>length
+value</i></font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Fills a range of memory
+locations with the given value.&nbsp;</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To fill memory locations
+$FBE4 through $FBEE with the value $EA, type:&nbsp;</p>
+
+  <p><font face="Courier New">MF FBE4L0B EA</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="O"></a> <u>Output</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">O <i>address
+value</i></font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Writes the specified value
+to the given I/O port. If value is not specified, a value of zero is
+assumed.&nbsp;</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To write $FF to I/O port
+$C070, type:&nbsp;</p>
+
+  <p><font face="Courier New">O C070 FF</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="R"></a> <u>Set
+Register</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">R <i>register=value</i></font></p>
+
+  <p> where <i>register</i>
+is:</p>
+
+  <table border="0">
+
+    <tbody>
+
+      <tr>
+
+        <td width="50"> A</td>
+
+        <td> Accumulator</td>
+
+      </tr>
+
+      <tr>
+
+        <td> X</td>
+
+        <td> X index</td>
+
+      </tr>
+
+      <tr>
+
+        <td> Y</td>
+
+        <td> Y index</td>
+
+      </tr>
+
+      <tr>
+
+        <td> PC</td>
+
+        <td> Program counter</td>
+
+      </tr>
+
+      <tr>
+
+        <td> SP</td>
+
+        <td> Stack pointer</td>
+
+      </tr>
+
+    </tbody>
+  </table>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Sets the specified register
+in the emulated CPU to the given value. The value is adjusted if
+necessary to fit the valid range of values for the specified register.</p>
+
+</blockquote>
+
+<p> <b>Examples:</b></p>
+
+<blockquote>
+  <p> To set the value in the
+accumulator to $80, type:</p>
+
+  <p><font face="Courier New">R A=80</font></p>
+
+  <p> To set the program counter
+to $FA62, type:</p>
+
+  <p><font face="Courier New">R PC=FA62</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="RF"></a> <u>Reset
+Flag</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">Rf</font></p>
+
+  <p> where f is:</p>
+
+  <table border="0">
+
+    <tbody>
+
+      <tr>
+
+        <td width="50"> N</td>
+
+        <td> Sign flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> V</td>
+
+        <td> Overflow flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> R</td>
+
+        <td> Reserved flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> B</td>
+
+        <td> Break flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> D</td>
+
+        <td> Decimal flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> I</td>
+
+        <td> Interrupt flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> Z</td>
+
+        <td> Zero flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> C</td>
+
+        <td> Carry flag</td>
+
+      </tr>
+
+    </tbody>
+  </table>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Clears the specified
+processor status flag.</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To clear the carry flag,
+type:</p>
+
+  <p><font face="Courier New">RC</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="SF"></a> <u>Set
+Flag</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">Sf</font></p>
+
+  <p> where f is:</p>
+
+  <table border="0">
+
+    <tbody>
+
+      <tr>
+
+        <td width="50"> N</td>
+
+        <td> Sign flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> V</td>
+
+        <td> Overflow flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> R</td>
+
+        <td> Reserved flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> B</td>
+
+        <td> Break flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> D</td>
+
+        <td> Decimal flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> I</td>
+
+        <td> Interrupt flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> Z</td>
+
+        <td> Zero flag</td>
+
+      </tr>
+
+      <tr>
+
+        <td> C</td>
+
+        <td> Carry flag</td>
+
+      </tr>
+
+    </tbody>
+  </table>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Sets the specified processor
+status flag.</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To set the decimal flag,
+type:</p>
+
+  <p><font face="Courier New">SD</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="T"></a> <u>Trace</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">T</font></p>
+
+  <p><font face="Courier New">T <i>count</i></font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Executes one or more
+instructions at the current program counter (PC) location.</p>
+
+</blockquote>
+
+<p> <b>Example:</b></p>
+
+<blockquote>
+  <p> To execute five assembly
+language instructions, type:</p>
+
+  <p><font face="Courier New">T 5</font></p>
+
+</blockquote>
+
+<hr>
+<h3><a name="ZAP"></a> <u>Remove
+Instruction</u></h3>
+
+<p> <b>Syntax:</b></p>
+
+<blockquote>
+  <p><font face="Courier New">ZAP</font></p>
+
+</blockquote>
+
+<p> <b>Description:</b></p>
+
+<blockquote>
+  <p> Removes the current
+instruction (the instruction to which PC points) by replacing it with
+one or more NOP instructions.</p>
+
+</blockquote>
+
+<hr>
+</body>
+</html>

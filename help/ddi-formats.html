@@ -1,0 +1,70 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <title>Disk Image Formats</title>
+
+
+</head>
+
+
+<body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
+
+<h2><font color="#008000" face="Arial">Disk
+Image Formats</font></h2>
+
+<hr size="4">
+<p>Disk images can be in a number
+of different
+formats, depending on how they were created.</p>
+
+<p style="font-weight: bold;">DOS Order Images:</p>
+
+<p>DOS order disk images contain the data from
+each sector, stored in the same order that DOS 3.3 numbers
+sectors. If you run a DOS program on the Apple which reads in
+sectors one by one and then transfers them over a serial line to
+the PC, you will get a DOS order disk image. </p>
+
+<p>Apple floppy disks contained 35 tracks with
+16 sectors per track, for a total of 560 sectors. Each of these
+sectors contained 256 bytes of information, for a total of
+143,360 bytes per disk. Therefore, DOS order disk images are
+always at least 143,360 bytes long. Sometimes on the Internet you
+will see a disk image that is 143,488 or 143,616 bytes long; this
+is probably a DOS order image with extra header information
+before or after the image. In most cases, AppleWin can
+automatically detect this and handle it. </p>
+
+<p style="font-weight: bold;">ProDOS Order
+Images: </p>
+
+<p>ProDOS order disk images are very similar
+to DOS order images, except that they contain the sectors in the
+order that ProDOS numbers them. If you compress a disk with
+Shrinkit on an Apple, then transfer it over a modem and
+uncompress it on the PC, you will get a ProDOS order disk image. </p>
+
+<p>Since ProDOS order disk images contain the
+same information as DOS order disk images, simply in a different
+order, they are also about 143,360 bytes long. When you use a
+disk image of this size, AppleWin attempts to automatically
+detect whether it is in DOS order or ProDOS order by examining
+the contents of the disk. If the disk was formatted with a
+standard operating system such as DOS or ProDOS, AppleWin will
+successfully detect the format. Otherwise, it will revert to DOS
+order, which is by far the most common format. To force ProDOS
+order, give the file an extension of ".PO". </p>
+
+<p style="font-weight: bold;">Nibble Images :</p>
+
+<p>Nibble images contain all of the data on a
+disk; not just the data in sectors but also the sector headers
+and synchronization areas, all stored in the same encoded format
+that would be recorded on a real disk's surface. At 232,960
+bytes, nibble images are bigger than other images, but they can
+be useful for making images of copy protected software. </p>
+
+</body>
+</html>
