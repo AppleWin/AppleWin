@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,7,5);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,7,6);
 
 
 // Public _________________________________________________________________________________________
@@ -9157,6 +9157,9 @@ void DebuggerCursorNext()
 //===========================================================================
 void	DebuggerMouseClick( int x, int y )
 {
+	if (g_nAppMode != MODE_DEBUG)
+		return;
+
 	int nFontWidth  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
 	int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight  ;
 
