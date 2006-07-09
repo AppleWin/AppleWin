@@ -1,6 +1,7 @@
 /*
 TODO: 2.6.0.0 released with next version of AppleWin (1.12.9.2)
 
+.6 Fixed: Debugger mouse click not checking if in Debug mode
 .5 Fixed: HELP WA wasn't displaying help for Watch Add
 .4 Added: Colorized most of built in debugger help.
 .3 Added: In disassembly, regs X & Y in mnemonic line are now color coded
