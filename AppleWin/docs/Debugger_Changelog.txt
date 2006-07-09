@@ -1,6 +1,10 @@
 /*
 TODO: 2.6.0.0 released with next version of AppleWin (1.12.9.2)
 
+.5 Fixed: HELP WA wasn't displaying help for Watch Add
+.4 Added: Colorized most of built in debugger help.
+.3 Added: In disassembly, regs X & Y in mnemonic line are now color coded
+.2 Changed internal representation of color console
 .1 Console now jumps to end, when return pressed
 2.5.7.0 Debugger using new Apple Font with color console support
 
