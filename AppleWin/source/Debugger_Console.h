@@ -17,63 +17,62 @@
 
 // Color ____________________________________________________________________
 
-	//typedef short conchar_t;
-	typedef unsigned char conchar_t;
+	// typedef unsigned char conchar_t;
+	typedef short conchar_t;
 
 	enum ConsoleColors_e
 	{
-		CONSOLE_COLOR_K,
+		CONSOLE_COLOR_K, // 0
 		CONSOLE_COLOR_x = 0, // default console foreground
-		CONSOLE_COLOR_R,
-		CONSOLE_COLOR_G,
-		CONSOLE_COLOR_Y,
-		CONSOLE_COLOR_B,
-		CONSOLE_COLOR_M,
-		CONSOLE_COLOR_C,
-		CONSOLE_COLOR_W,
-
-		MAX_CONSOLE_COLORS
+		CONSOLE_COLOR_R, // 1
+		CONSOLE_COLOR_G, // 2
+		CONSOLE_COLOR_Y, // 3
+		CONSOLE_COLOR_B, // 4
+		CONSOLE_COLOR_M, // 5 Lite Blue
+		CONSOLE_COLOR_C, // 6
+		CONSOLE_COLOR_W, // 7
+		CONSOLE_COLOR_O, // 8
+		CONSOLE_COLOR_k, // 9 Grey
+		NUM_CONSOLE_COLORS
 	};
-
-	extern COLORREF       g_anConsoleColor[ MAX_CONSOLE_COLORS ];
+	extern COLORREF g_anConsoleColor[ NUM_CONSOLE_COLORS ];
 
 	// Note: THe ` ~ key should always display ~ to prevent rendering errors
 	#define CONSOLE_COLOR_ESCAPE_CHAR '`'
 	#define _CONSOLE_COLOR_MASK 0x7F
 
-// Help Colors
-/*
-	Types
-		Plain        White 
-		Header       Yellow i.e. Usage
-		Operator     Yellow
-		Command      Green 
-		Key          Red
-        ArgMandatory Magenta  < >
-        ArgOptional  Blue     [ ]
-		ArgSeperator White     |
-
-	#define CON_COLOR_DEFAULT g_asConsoleColor[ CONSOLE_COLOR_x ]
-	#define CON_COLOR_DEFAULT "`0"
-	
+/* Help Colors
 */
 #if 1 // USE_APPLE_FONT
-	#define CON_COLOR_DEFAULT  "`0"
-	#define CON_COLOR_USAGE    "`3"
-	#define CON_COLOR_PARAM    "`2"
-	#define CON_COLOR_KEY      "`1"
-	#define CON_COLOR_ARG_MAND "`5"
-	#define CON_COLOR_ARG_OPT  "`4"
-	#define CON_COLOR_ARG_SEP  "`3"
-	#define CON_COLOR_NUM      "`2"
+	// Console Help Color
+	#define CHC_DEFAULT  "`0"
+	#define CHC_USAGE    "`3"
+	#define CHC_CATEGORY "`6"
+	#define CHC_COMMAND  "`2"
+	#define CHC_KEY      "`1"
+	#define CHC_ARG_MAND "`7" // < >
+	#define CHC_ARG_OPT  "`4" // [ ] 
+	#define CHC_ARG_SEP  "`9" //  |  grey
+	#define CHC_NUMBER   "`3"
+	#define CHC_SYMBOL   "`2"
+	#define CHC_ADDRESS  "`8"
+	#define CHC_ERROR    "`1"
+	#define CHC_STRING   "`6"
+	#define CHC_EXAMPLE  "`5"
 #else
-	#define CON_COLOR_DEFAULT   ""
-	#define CON_COLOR_USAGE     ""
-	#define CON_COLOR_PARAM     ""
-	#define CON_COLOR_KEY       ""
-	#define CON_COLOR_ARG_MAND  ""
-	#define CON_COLOR_ARG_OPT   ""
-	#define CON_COLOR_ARG_SEP   ""
+	#define CHC_DEFAULT  ""
+	#define CHC_USAGE    ""
+	#define CHC_COMMAND  ""
+	#define CHC_KEY      ""
+	#define CHC_ARG_MAND ""
+	#define CHC_ARG_OPT  ""
+	#define CHC_ARG_SEP  ""
+	#define CHC_NUMBER   ""
+	#define CHC_SYMBOL   ""
+	#define CHC_ADDRESS  ""
+	#define CHC_ERROR    ""
+	#define CHC_STRING   ""
+	#define CHC_EXAMPLE  ""
 #endif
 
 	// ascii markup
@@ -86,52 +85,87 @@
 
 	inline bool ConsoleColor_IsCharColor( unsigned char c )
 	{
-		if ((c >= '0') && (c <= '7'))
+		if ((c >= '0') && ((c - '0') < NUM_CONSOLE_COLORS))
 			return true;
 		return false;
 	}
 
-	// native char
+	// Console "Native" Chars
+	//
 	// There are a few different ways of encoding color chars & mouse text
-	// 0x80 Console Color
-	// 0xC0 Mouse Text
-	//         High  Low
-	// 1)   xx n/a   Extended ASCII (Multi-Byte to Single-Byte)
-	//               0..7 = Color
-	//               @..Z = Mouse Text
-	//                     Con: Colors chars take up extra chars
-	// 2) ccxx Color ASCII Con: need to provide char8 and char16 API
-	// 3) xxcc ASCII Color Con: ""
-	// 4)  fxx Flag  ASCII Con: Colors chars take up extra chars
-	inline bool ConsoleColor_IsMeta( conchar_t g )
+	// Simplist method is to use a user-defined ESCAPE char to shift
+	// into color mode, or mouse text mode.  The other solution
+	// is to use a wide-char, simulating unicode16.
+	//
+	//    C1C0 char16 of High Byte (c1) and Low Byte (c0)
+	// 1) --??  Con: Colors chars take up extra chars.
+	//          Con: String Length is complicated.
+	//          Pro: simple to parse
+	//
+	// <-- WE USE THIS
+	// 2) ccea  Pro: Efficient packing of plain text and mouse text
+	//          Pro: Color is optional (only record new color)
+	//          Con: need to provide char8 and char16 API 
+	//          Con: little more difficult to parse/convert plain text
+	//          i.e.
+	//       ea = 0x20 - 0x7F ASCII
+	//            0x80 - 0xFF Mouse Text  '@'-'Z' -> 0x00 - 0x1F
+	//    cc    = ASCII '0' - '9' (color)
+	// 3) ??cc  Con: Colors chars take up extra chars
+	// 4)  f??  Con: Colors chars take up extra chars
+	//
+	// Legend:
+	//       f Flag
+	//      -- Not Applicable (n/a)
+	//      ?? ASCII (0x20 - 0x7F)
+	//      ea Extended ASCII with High-Bit representing Mouse Text
+	//      cc Encoded Color / Mouse Text
+	//
+	inline bool ConsoleColor_IsColorOrMouse( conchar_t g )
 	{
 		if (g > _CONSOLE_COLOR_MASK)
 			return true;
 		return false;
 	}
 
-//	inline bool ConsoleColor_IsCharColor( unsigned char c )
 	inline bool ConsoleColor_IsColor( conchar_t g )
 	{
-		if (((g - '0') & _CONSOLE_COLOR_MASK) < MAX_CONSOLE_COLORS)
-			return true;
-		return false;
+		return ConsoleColor_IsCharColor (g >> 8);
 	}
 
 	inline COLORREF ConsoleColor_GetColor( conchar_t g )
 	{
-		const int iColor = g & (MAX_CONSOLE_COLORS - 1);
-		return g_anConsoleColor[ iColor ];
+		const int iColor = (g >> 8) - '0';
+		if (iColor < NUM_CONSOLE_COLORS)
+			return g_anConsoleColor[ iColor ];
+
+		return g_anConsoleColor[ 0 ];
 	}
 
-	inline char ConsoleColor_GetChar( conchar_t g ) 
+	inline char ConsoleColor_GetMeta( conchar_t g ) 
+	{
+		return ((g >> 8) & _CONSOLE_COLOR_MASK);
+	}
+
+	inline char ConsoleChar_GetChar( conchar_t g )
 	{
 		return (g & _CONSOLE_COLOR_MASK);
 	}
 
-	inline conchar_t ConsoleColor_Make( unsigned char c )
+	inline char ConsoleColor_MakeMouse( unsigned char c )
 	{
-		conchar_t g = c | (_CONSOLE_COLOR_MASK + 1);
+		return ((c - '@') + (_CONSOLE_COLOR_MASK + 1));
+	}
+
+	inline conchar_t ConsoleColor_MakeMeta( unsigned char c )
+	{
+		conchar_t g = (ConsoleColor_MakeMouse(c) << 8);
+		return g;
+	}
+
+	inline conchar_t ConsoleColor_MakeColor( unsigned char color, unsigned char text )
+	{
+		conchar_t g = (color << 8) | text;
 		return g;
 	}
 
@@ -165,14 +199,15 @@
 
 	// Input Line
 		// Raw input Line (has prompt)
-		extern conchar_t * const g_aConsoleInput; // = g_aConsoleDisplay[0];
+		extern char g_aConsoleInput[ CONSOLE_WIDTH ];
 
 		// Cooked input line (no prompt)
-		extern int           g_nConsoleInputChars  ;
-		extern       char *  g_pConsoleInput       ;//= 0; // points to past prompt
-		extern const char *  g_pConsoleFirstArg    ;//= 0; // points to first arg
-		extern bool          g_bConsoleInputQuoted ;
-		extern char          g_nConsoleInputSkip   ;
+		extern int          g_nConsoleInputChars  ;
+		extern       char * g_pConsoleInput       ; // points to past prompt
+		extern const char * g_pConsoleFirstArg    ; // points to first arg
+		extern bool         g_bConsoleInputQuoted ;
+
+		extern char         g_nConsoleInputSkip   ;
 
 
 // Prototypes _______________________________________________________________
@@ -186,10 +221,13 @@
 	void        ConsoleBufferPop  ();
 	bool        ConsoleBufferPush ( const char * pString );
 
+	void ConsoleConvertFromText( conchar_t * sText, const char * pText );
+
 	// Display
 	Update_t ConsoleDisplayError ( const char * pTextError );
 	void     ConsoleDisplayPause ();
 	void     ConsoleDisplayPush  ( const char * pText );
+	void     ConsoleDisplayPush  ( const conchar_t * pText );
 	Update_t ConsoleUpdate       ();
 
 	// Input

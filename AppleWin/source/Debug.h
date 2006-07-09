@@ -27,7 +27,7 @@ using namespace std;
 	extern int          g_nBreakpoints;
 	extern Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
-	extern const TCHAR *g_aBreakpointSource [ NUM_BREAKPOINT_SOURCES   ];
+	extern const char  *g_aBreakpointSource [ NUM_BREAKPOINT_SOURCES   ];
 	extern const TCHAR *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ];
 
 	// Full-Speed debugging

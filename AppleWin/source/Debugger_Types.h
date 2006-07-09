@@ -23,7 +23,7 @@
 
 	struct AddressingMode_t
 	{
-		TCHAR m_sFormat[ MAX_OPMODE_FORMAT ];
+		char  m_sFormat[ MAX_OPMODE_FORMAT ];
 		int   m_nBytes;
 		char  m_sName  [ MAX_OPMODE_NAME ];
 	};
@@ -399,7 +399,7 @@
 
 	struct Command_t
 	{
-		TCHAR        m_sName[ MAX_COMMAND_LEN ];
+		char         m_sName[ MAX_COMMAND_LEN ];
 		CmdFuncPtr_t pFunction;
 		int          iCommand;     // offset (enum) for direct command name lookup
 		char        *pHelpSummary; // 1 line help summary
@@ -904,7 +904,7 @@
 
 	struct FontConfig_t
 	{
-		TCHAR _sFontName[ MAX_FONT_NAME ];
+		char  _sFontName[ MAX_FONT_NAME ];
 		HFONT _hFont;
 //		int   _iFontType;
 		int   _nFontWidthAvg;
@@ -958,7 +958,7 @@
 	
 	struct Instruction2_t
 	{
-		TCHAR  sMnemonic[MAX_MNEMONIC_LEN+1];
+		char   sMnemonic[MAX_MNEMONIC_LEN+1];
 		int    nAddressMode;
 		int    iMemoryAccess;
 	};
@@ -1170,7 +1170,7 @@
 
 	struct Arg_t
 	{	
-		TCHAR      sArg[ MAX_ARG_LEN ]; // Array chars comes first, for alignment
+		char       sArg[ MAX_ARG_LEN ]; // Array chars comes first, for alignment
 		int        nArgLen; // Needed for TextSearch "ABC\x00"
 		WORD       nValue ; // 2
 //		WORD       nVal1  ; // 2
