@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,7,2);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,7,5);
 
 
 // Public _________________________________________________________________________________________
@@ -65,30 +65,30 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
 	// NOTE: Breakpoint_Source_t and g_aBreakpointSource must match!
-	const TCHAR *g_aBreakpointSource[ NUM_BREAKPOINT_SOURCES ] =
+	const char *g_aBreakpointSource[ NUM_BREAKPOINT_SOURCES ] =
 	{	// Used to be one char, since ArgsCook also uses // TODO/FIXME: Parser use Param[] ?
 		// Used for both Input & Output!
 		// Regs
-		TEXT("A"), // Reg A
-		TEXT("X"), // Reg X
-		TEXT("Y"), // Reg Y
+		"A", // Reg A
+		"X", // Reg X
+		"Y", // Reg Y
 		// Special
-		TEXT("PC"), // Program Counter
-		TEXT("S" ), // Stack Pointer
+		"PC", // Program Counter
+		"S" , // Stack Pointer
 		// Flags -- .8 Moved: Flag names from g_aFlagNames[] to "inlined" g_aBreakpointSource[]
-		TEXT("P"), // Processor Status
-		TEXT("C"), // ---- ---1 Carry
-		TEXT("Z"), // ---- --1- Zero
-		TEXT("I"), // ---- -1-- Interrupt
-		TEXT("D"), // ---- 1--- Decimal
-		TEXT("B"), // ---1 ---- Break
-		TEXT("R"), // --1- ---- Reserved
-		TEXT("V"), // -1-- ---- Overflow
-		TEXT("N"), // 1--- ---- Sign
+		"P", // Processor Status
+		"C", // ---- ---1 Carry
+		"Z", // ---- --1- Zero
+		"I", // ---- -1-- Interrupt
+		"D", // ---- 1--- Decimal
+		"B", // ---1 ---- Break
+		"R", // --1- ---- Reserved
+		"V", // -1-- ---- Overflow
+		"N", // 1--- ---- Sign
 		// Misc		
-		TEXT("OP"), // Opcode/Instruction/Mnemonic
+		"OP", // Opcode/Instruction/Mnemonic
 		// Memory
-		TEXT("M") // Main
+		"M" // Main
 	};
 
 	// Note: BreakpointOperator_t, _PARAM_BREAKPOINT_, and g_aBreakpointSymbols must match!
@@ -400,7 +400,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("MEMORY")      , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
 };
 
-//	static const TCHAR g_aFlagNames[_6502_NUM_FLAGS+1] = TEXT("CZIDBRVN");// Reversed since arrays are from left-to-right
+//	static const char g_aFlagNames[_6502_NUM_FLAGS+1] = TEXT("CZIDBRVN");// Reversed since arrays are from left-to-right
 
 	const int NUM_COMMANDS_WITH_ALIASES = sizeof(g_aCommands) / sizeof (Command_t); // Determined at compile-time ;-)
 
@@ -542,18 +542,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	int  g_nDisasmWinHeight = 0;
 
-//	TCHAR g_aConfigDisasmAddressColon[] = TEXT(" :");
+//	char g_aConfigDisasmAddressColon[] = TEXT(" :");
 
 	extern const int WINDOW_DATA_BYTES_PER_LINE = 8;
 
+#if OLD_FONT
 // Font
 	TCHAR     g_sFontNameDefault[ MAX_FONT_NAME ] = TEXT("Courier New");
 	TCHAR     g_sFontNameConsole[ MAX_FONT_NAME ] = TEXT("Courier New");
 	TCHAR     g_sFontNameDisasm [ MAX_FONT_NAME ] = TEXT("Courier New");
 	TCHAR     g_sFontNameInfo   [ MAX_FONT_NAME ] = TEXT("Courier New");
 	TCHAR     g_sFontNameBranch [ MAX_FONT_NAME ] = TEXT("Webdings");
-	int       g_iFontSpacing = FONT_SPACING_CLEAN;
 	HFONT     g_hFontWebDings  = (HFONT)0;
+#endif
+	int       g_iFontSpacing = FONT_SPACING_CLEAN;
 
 	// TODO: This really needs to be phased out, and use the ConfigFont[] settings
 #if USE_APPLE_FONT
@@ -2196,9 +2198,9 @@ Update_t CmdBreakpointEnable (int nArgs) {
 
 void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool bZeroBased )
 {
-	static TCHAR sText[ CONSOLE_WIDTH ];
-	static const TCHAR sFlags[] = "-*";
-	static TCHAR sName[ MAX_SYMBOLS_LEN+1 ];
+	static       char sText[ CONSOLE_WIDTH ];
+	static const char sFlags[] = "-*";
+	static       char sName[ MAX_SYMBOLS_LEN+1 ];
 
 	WORD nAddress = aBreakWatchZero[ iBWZ ].nAddress;
 	LPCTSTR pSymbol = GetSymbol( nAddress, 2 );
@@ -2208,7 +2210,7 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 		pSymbol = sName;
 	}
 
-	wsprintf( sText, "  #%d %c %04X %s",
+	sprintf( sText, "  #%d %c %04X %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
 		sFlags[ (int) aBreakWatchZero[ iBWZ ].bEnabled ],
@@ -2739,6 +2741,14 @@ bool DebuggerSetColor( const int iScheme, const int iColor, const COLORREF nColo
 		g_aColors[ iScheme ][ iColor ] = nColor;
 		bStatus = true;
 	}
+
+	// Propogate to console since it has its own copy of colors
+	if (iColor == FG_CONSOLE_OUTPUT)
+	{
+		COLORREF nConsole = DebuggerGetColor( FG_CONSOLE_OUTPUT );
+		g_anConsoleColor[ CONSOLE_COLOR_x ] = nConsole;
+	}
+	
 	return bStatus;
 }
 
@@ -3368,6 +3378,7 @@ bool _CmdConfigFont ( int iFont, LPCSTR pFontName, int iPitchFamily, int nFontHe
 //===========================================================================
 Update_t CmdConfigSetFont (int nArgs)
 {
+#if OLD_FONT
 	HFONT  hFont = (HFONT) 0;
 	TCHAR *pFontName = NULL;
 	int    nHeight = g_nFontHeight;
@@ -3425,7 +3436,7 @@ Update_t CmdConfigSetFont (int nArgs)
 	if (! _CmdConfigFont( iFontTarget, pFontName, iFontPitch, nHeight ))
 	{
 	}
-
+#endif
 	return UPDATE_ALL;
 }
 
@@ -5599,9 +5610,13 @@ Update_t CmdOutputRun (int nArgs)
 	}
 	else
 	{
-		TCHAR sText[ CONSOLE_WIDTH ];
-		wsprintf( sText, "Couldn't load filename: %s", sFileName );
-		ConsoleBufferPush( sText );
+		char sText[ CONSOLE_WIDTH ];
+		sprintf( sText, "%sCouldn't load filename: %s%s"
+			, CHC_ERROR
+			, CHC_STRING
+			, sFileName
+		);
+		ConsolePrint( sText );
 	}	
 
 	return ConsoleUpdate();
@@ -5953,7 +5968,7 @@ Update_t CmdSymbolsClear (int nArgs)
 //===========================================================================
 Update_t CmdSymbolsInfo (int nArgs)
 {
-	TCHAR sText[ CONSOLE_WIDTH ];
+	char sText[ CONSOLE_WIDTH ];
 
 	bool bDisplayMain = false;
 	bool bDisplayUser = false;
@@ -5981,24 +5996,48 @@ Update_t CmdSymbolsInfo (int nArgs)
 
 	if (bDisplayMain && bDisplayUser && bDisplaySrc)
 	{
-		wsprintf( sText, "  Symbols  Main: %d  User: %d   Source: %d",
-			nSymbolsMain, nSymbolsUser, nSymbolsSrc );
-		ConsoleBufferPush( sText );
+		sprintf( sText, "  Symbols  Main: %s%d%s  User: %s%d%s   Source: %s%d%s"
+			, CHC_NUMBER
+			, nSymbolsMain
+			, CHC_DEFAULT
+			, CHC_NUMBER
+			, nSymbolsUser
+			, CHC_DEFAULT
+			, CHC_NUMBER
+			, nSymbolsSrc
+			, CHC_DEFAULT
+		 );
+		ConsolePrint( sText );
 	}
 	else
 	if (bDisplayMain)
 	{
-		wsprintf( sText, "  Main symbols: %d", nSymbolsMain ); ConsoleBufferPush( sText );
+		sprintf( sText, "  Main symbols: %s%d%s"
+			, CHC_NUMBER
+			, nSymbolsMain
+			, CHC_DEFAULT
+		);
+		ConsolePrint( sText );
 	}
 	else
 	if (bDisplayUser)
 	{
-		wsprintf( sText, "  User symbols: %d", nSymbolsUser ); ConsoleBufferPush( sText );
+		sprintf( sText, "  User symbols: %s%d%s"
+			, CHC_NUMBER
+			, nSymbolsUser
+			, CHC_DEFAULT
+		);
+		ConsolePrint( sText );
 	}
 	else
 	if (bDisplaySrc)
 	{
-		wsprintf( sText, "  Source symbols: %d", nSymbolsSrc ); ConsoleBufferPush( sText );
+		sprintf( sText, "  Source symbols: %s%d%s"
+			, CHC_NUMBER
+			, nSymbolsSrc
+			, CHC_DEFAULT
+		);
+		ConsolePrint( sText );
 	}
 	
 	if (bDisplayMain || bDisplayUser || bDisplaySrc)
@@ -6009,9 +6048,19 @@ Update_t CmdSymbolsInfo (int nArgs)
 
 void _CmdPrintSymbol( LPCTSTR pSymbol, WORD nAddress, int iTable )
 {
-	TCHAR   sText[ CONSOLE_WIDTH ];
-	wsprintf( sText, "  $%04X (%s) %s", nAddress, g_aSymbolTableNames[ iTable ], pSymbol );
-	ConsoleBufferPush( sText );
+	char   sText[ CONSOLE_WIDTH ];
+	sprintf( sText, "  %s$%s%04X%s (%s%s%s) %s%s"
+		, CHC_ARG_SEP
+		, CHC_ADDRESS
+		, nAddress
+		, CHC_DEFAULT
+		, CHC_USAGE
+		, g_aSymbolTableNames[ iTable ]
+		, CHC_DEFAULT
+		, CHC_SYMBOL
+		, pSymbol );
+	// ConsoleBufferPush( sText );
+	ConsolePrint( sText );
 }
 
 
@@ -6097,12 +6146,12 @@ bool String2Address( LPCTSTR pText, WORD & nAddress_ )
 {
 	TCHAR sHexApple[ CONSOLE_WIDTH ];
 
-	if (pText[0] == TEXT('$'))
+	if (pText[0] == '$')
 	{
 		if (!TextIsHexString( pText+1))
 			return false;
 
-		_tcscpy( sHexApple, TEXT("0x") );
+		_tcscpy( sHexApple, "0x" );
 		_tcsncpy( sHexApple+2, pText+1, MAX_SYMBOLS_LEN - 3 );
 		pText = sHexApple;
 	}
@@ -6268,7 +6317,7 @@ int ParseSymbolTable( TCHAR *pFileName, Symbols_e eWhichTableToLoad )
 		nSymbolsLoaded++;
 	}
 
-	if(hFile)
+	if (hFile)
 		fclose(hFile);
 
 	return nSymbolsLoaded;
@@ -7453,27 +7502,36 @@ int FindCommand( LPTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 //===========================================================================
 void DisplayAmbigiousCommands( int nFound )
 {
-	TCHAR sText[ CONSOLE_WIDTH ];
-	wsprintf( sText, TEXT("Ambiguous %d Commands:"), g_vPotentialCommands.size() );
-	ConsoleBufferPush( sText );
+	char sText[ CONSOLE_WIDTH * 2 ];
+	sprintf( sText, "Ambiguous %s%d%s Commands:"
+		, CHC_NUMBER
+		, g_vPotentialCommands.size()
+		, CHC_DEFAULT
+	);
+	ConsolePrint( sText );
 
 	int iCommand = 0;
 	while (iCommand < nFound)
 	{
-		TCHAR sPotentialCommands[ CONSOLE_WIDTH ] = TEXT(" ");
-		int iWidth = _tcslen( sPotentialCommands );
+		char sPotentialCommands[ CONSOLE_WIDTH ];
+		sprintf( sPotentialCommands, "%s ", CHC_COMMAND );
+
+		int iWidth = strlen( sPotentialCommands );
 		while ((iCommand < nFound) && (iWidth < g_nConsoleDisplayWidth))
 		{
-			int nCommand = g_vPotentialCommands[ iCommand ];
-			TCHAR *pName = g_aCommands[ nCommand ].m_sName;
-			int    nLen = _tcslen( pName );
+			int   nCommand = g_vPotentialCommands[ iCommand ];
+			char *pName = g_aCommands[ nCommand ].m_sName;
+			int   nLen = strlen( pName );
 
-			wsprintf( sText, TEXT("%s "), pName );
-			_tcscat( sPotentialCommands, sText );
+			if ((iWidth + nLen) >= (CONSOLE_WIDTH - 1))
+				break;
+				
+			sprintf( sText, "%s ", pName );
+			strcat( sPotentialCommands, sText );
 			iWidth += nLen + 1;
 			iCommand++;
 		}
-		ConsoleBufferPush( sPotentialCommands );
+		ConsolePrint( sPotentialCommands );
 	}
 }
 
@@ -7481,16 +7539,16 @@ void DisplayAmbigiousCommands( int nFound )
 Update_t ExecuteCommand (int nArgs) 
 {
 	Arg_t * pArg     = & g_aArgs[ 0 ];
-	TCHAR * pCommand = & pArg->sArg[0];
+	char  * pCommand = & pArg->sArg[0];
 
 	CmdFuncPtr_t pFunction = NULL;
 	int nFound = FindCommand( pCommand, pFunction );
 
-	int nCookMask = (1 << NUM_TOKENS) - 1; // ArgToken_e used as bit mask!
+//	int nCookMask = (1 << NUM_TOKENS) - 1; // ArgToken_e used as bit mask!
 
 	if (! nFound)
 	{
-		int nLen = _tcslen( pCommand);
+		int nLen = strlen( pCommand );
 		if (nLen < 6)
 		{
 			// verify pCommand[ 0 .. (nLen-1) ] is hex digit
@@ -7577,19 +7635,6 @@ Update_t ExecuteCommand (int nArgs)
 				// MDB memory display byte (is deprecated, so can be re-used)
 			}
 		}
-
-/*
-		// C++ // TOKEN_COMMENT_EOL
-		if (pArg->eToken == TOKEN_FSLASH)
-		{
-			pArg++;
-			if (pArg->eToken == TOKEN_FSLASH)
-			{
-				nFound = 1;
-				pFunction = NULL;
-			}
-		}
-*/
 	}
 
 	if (nFound > 1)
@@ -7609,7 +7654,7 @@ Update_t ExecuteCommand (int nArgs)
 
 		int nArgsCooked = nArgs;
 		if (bCook)
-			nArgsCooked = ArgsCook( nArgs, nCookMask ); // Cook them
+			nArgsCooked = ArgsCook( nArgs ); // nCookMask
 
 		if (nArgsCooked == ARG_SYNTAX_ERROR)
 			return ConsoleDisplayError(TEXT("Syntax Error"));
@@ -7665,18 +7710,19 @@ bool InternalSingleStep ()
 //===========================================================================
 void OutputTraceLine ()
 {
-	// HACK: MAGIC #: 50 -> 64 chars for disassembly
-	TCHAR sDisassembly[ 64 ]       ; DrawDisassemblyLine( 0,regs.pc, sDisassembly); // Get Disasm String
-	TCHAR sFlags[ _6502_NUM_FLAGS+1]; DrawFlags( 0, regs.ps, sFlags ); // Get Flags String
+	char sDisassembly[ CONSOLE_WIDTH ]; DrawDisassemblyLine( 0,regs.pc, sDisassembly); // Get Disasm String
+	char sFlags[ _6502_NUM_FLAGS + 1 ]; DrawFlags( 0, regs.ps, sFlags ); // Get Flags String
 
-	_ftprintf(g_hTraceFile,
-		TEXT("a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n"),
+	// _ftprintf(g_hTraceFile,
+	fprintf( g_hTraceFile,
+		"a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n",
 		(unsigned)regs.a,
 		(unsigned)regs.x,
 		(unsigned)regs.y,
 		(unsigned)regs.sp,
-		(LPCTSTR) sFlags,
-		(LPCTSTR) sDisassembly);
+		(char*) sFlags,
+		(char*) sDisassembly
+	);
 }
 
 //===========================================================================
@@ -7695,9 +7741,6 @@ int ParseInput ( LPTSTR pConsoleInput, bool bCook )
 	{
 		g_aArgs[ iArg ] = g_aArgRaw[ iArg ];
 	}
-
-//	if (bCook)
-//		nArg = ArgsCook( nArg ); // Cook them
 
 	return nArg;
 }
@@ -7884,9 +7927,11 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 			, "\"Percent\"" DELIM "\"Count\"" DELIM DELIM DELIM "\"Addressing Mode\"\n"
 			, sSeperator7, sSeperator2, sSeperator2, sSeperator2 );
 	else
+	{
 		sprintf( pText
 			, "Percent" DELIM "Count" DELIM "Addressing Mode\n"
 			, sSeperator7, sSeperator2 );
+	}
 	pText = ProfileLinePush();
 
 	if (nOpmodeTotal < 1)
@@ -8382,9 +8427,10 @@ void DebugInitialize ()
 	g_iCommand = CMD_SYMBOLS_MAIN;
 	CmdSymbolsLoad(0);
 
+#if OLD_FONT
 	// CREATE A FONT FOR THE DEBUGGING SCREEN
 	int nArgs = _Arg_1( g_sFontNameDefault );
-//	CmdConfigSetFont( nArgs );
+#endif
 
 	for (int iFont = 0; iFont < NUM_FONTS; iFont++ )
 	{
@@ -8397,16 +8443,13 @@ void DebugInitialize ()
 #endif
 	}
 
-//#if USE_APPLE_FONT
-//	_UpdateWindowFontHeights( g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontHeight );
-//#else
-	// TODO: g_aFontPitch
+#if OLD_FONT
 	_CmdConfigFont( FONT_INFO          , g_sFontNameInfo   , FIXED_PITCH | FF_MODERN      , g_nFontHeight ); // DEFAULT_CHARSET
 	_CmdConfigFont( FONT_CONSOLE       , g_sFontNameConsole, FIXED_PITCH | FF_MODERN      , g_nFontHeight ); // DEFAULT_CHARSET
 	_CmdConfigFont( FONT_DISASM_DEFAULT, g_sFontNameDisasm , FIXED_PITCH | FF_MODERN      , g_nFontHeight ); // OEM_CHARSET
 	_CmdConfigFont( FONT_DISASM_BRANCH , g_sFontNameBranch , DEFAULT_PITCH | FF_DECORATIVE, g_nFontHeight+3); // DEFAULT_CHARSET
-//#endif
-//	_UpdateWindowFontHeights( nFontHeight );
+#endif
+	_UpdateWindowFontHeights( g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontHeight );
 
 	int iColor;
 	
@@ -8634,7 +8677,7 @@ Update_t DebuggerProcessCommand( const bool bEchoConsoleInput )
 {
 	Update_t bUpdateDisplay = UPDATE_NOTHING;
 
-	TCHAR sText[ CONSOLE_WIDTH ];
+	char sText[ CONSOLE_WIDTH ];
 
 	if (bEchoConsoleInput)
 		ConsoleDisplayPush( ConsoleInputPeek() );
@@ -8653,7 +8696,7 @@ Update_t DebuggerProcessCommand( const bool bEchoConsoleInput )
 			int nDelayedTargets = AssemblerDelayedTargetsSize();
 			if (nDelayedTargets)
 			{
-				wsprintf( sText, " Asm: %d sym declared, not defined", nDelayedTargets );
+				sprintf( sText, " Asm: %d sym declared, not defined", nDelayedTargets );
 				ConsoleDisplayPush( sText );
 				bUpdateDisplay |= UPDATE_CONSOLE_DISPLAY;
 			}
@@ -8671,7 +8714,7 @@ Update_t DebuggerProcessCommand( const bool bEchoConsoleInput )
 		int nArgs = ParseInput( g_pConsoleInput );
 		if (nArgs == ARG_SYNTAX_ERROR)
 		{
-			wsprintf( sText, "Syntax error: %s", g_aArgs[0].sArg );
+			sprintf( sText, "Syntax error: %s", g_aArgs[0].sArg );
 			bUpdateDisplay |= ConsoleDisplayError( sText );
 		}
 		else

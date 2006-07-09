@@ -8,12 +8,9 @@
 #define DEBUG_APPLE_FONT 0
 
 // Win32 Debugger Font
-// 1 = Use Debugger_Font_7x8.BMP
+// 1 = Use Debugger_Font.BMP (7x8)
 // 0 = Use CHARSET40.bmp (fg & bg colors aren't proper)
 #define APPLE_FONT_NEW            1
-// 7x8 Font
-//#define APPLE_FONT_SCALE_ONE_HALF 1
-#define APPLE_FONT_SCALE_ONE_HALF $ERROR("APPLE_FONT_SCALE_ONE_HALF")
 
 #if APPLE_FONT_NEW
 	#define APPLE_FONT_BITMAP_PADDED  0
@@ -64,9 +61,10 @@
 
 	void PrintGlyph      ( const int x, const int y, const int iChar );
 	int  PrintText       ( const char * pText, RECT & rRect );
-	void PrintTextColor  ( const char * pText, RECT & rRect );
 	int  PrintTextCursorX( const char * pText, RECT & rRect );
 	int  PrintTextCursorY( const char * pText, RECT & rRect );
+
+	void PrintTextColor  ( const conchar_t * pText, RECT & rRect );
 
 	void DrawWindow_Source      (Update_t bUpdate);
 

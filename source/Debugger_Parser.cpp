@@ -434,12 +434,12 @@ void ArgsRawParse ( void )
 
 	Note: The number of args can be changed via:
 
-	address1,length    Length
+		address1,length    Length
 		address1:address2  Range
 		address1+delta     Delta
 		address1-delta     Delta
 //=========================================================================== */
-int ArgsCook ( const int nArgs, const int bProcessMask )
+int ArgsCook ( const int nArgs ) //, const int bProcessMask )
 {
 	const int BASE = 16; // hex
 	TCHAR *pSrc  = NULL;
@@ -463,7 +463,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 		pArg  = & (g_aArgs[ iArg ]);
 		pSrc  = & (pArg->sArg[ 0 ]);
 
-		if (bProcessMask & (1 << TOKEN_DOLLAR))
+//		if (bProcessMask & (1 << TOKEN_DOLLAR))
 		if (pArg->eToken == TOKEN_DOLLAR) // address
 		{
 // TODO: Need to flag was a DOLLAR token for assembler
@@ -521,28 +521,16 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					nAddressVal = nAddressSym;
 					pArg->bSymbol = true;
 				}
-/*
-				if (bProcessMask & (1 << TOKEN_COMMA))
-				if (pArg->eToken == TOKEN_COMMA) // COMMMA , length
-				{
-					pPrev->nVal2  = nAddressVal;
-					pPrev->eToken = TOKEN_COMMA;
-					pPrev->bType |= TYPE_ADDRESS;
-					pPrev->bType |= TYPE_LENGTH;
-					nParamLen = 2;
-				}
 
-				if (bProcessMask & (1 << TOKEN_COLON))
-				if (pArg->eToken == TOKEN_COLON) // COLON  : range
-				{
-					pPrev->nVal2  = nAddressVal;
+				// Comma and Colon are range operators, but they are not parsed here,
+				// since args no longer have a 1st and 2nd value
+/*
 					pPrev->eToken = TOKEN_COLON;
 					pPrev->bType |= TYPE_ADDRESS;
 					pPrev->bType |= TYPE_RANGE;
-					nParamLen = 2;
-				}
 */
-				if (bProcessMask & (1 << TOKEN_AMPERSAND))
+
+//				if (bProcessMask & (1 << TOKEN_AMPERSAND))
 				if (pArg->eToken == TOKEN_AMPERSAND) // AND   & delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
@@ -554,7 +542,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					nParamLen = 2;
 				}								
 
-				if (bProcessMask & (1 << TOKEN_PIPE))
+//				if (bProcessMask & (1 << TOKEN_PIPE))
 				if (pArg->eToken == TOKEN_PIPE) // OR   | delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
@@ -566,31 +554,31 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					nParamLen = 2;
 				}								
 
-				if (bProcessMask & (1 << TOKEN_CARET))
+//				if (bProcessMask & (1 << TOKEN_CARET))
 				if (pArg->eToken == TOKEN_CARET) // XOR   ^ delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
 					{
-						  ArgsGetRegisterValue( pNext, & nAddressRHS );
+						ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
 					pPrev->nValue ^= nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
-				}								
+				}
 
-				if (bProcessMask & (1 << TOKEN_PLUS))
+//				if (bProcessMask & (1 << TOKEN_PLUS))
 				if (pArg->eToken == TOKEN_PLUS) // PLUS   + delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
 					{
-						  ArgsGetRegisterValue( pNext, & nAddressRHS );
+						ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
 					pPrev->nValue += nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
 				}
 
-				if (bProcessMask & (1 << TOKEN_MINUS))
+//				if (bProcessMask & (1 << TOKEN_MINUS))
 				if (pArg->eToken == TOKEN_MINUS) // MINUS  - delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
@@ -602,7 +590,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					nParamLen = 2;
 				}
 
-				if (bProcessMask & (1 << TOKEN_PERCENT))
+//				if (bProcessMask & (1 << TOKEN_PERCENT))
 				if (pArg->eToken == TOKEN_PERCENT) // PERCENT % delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
@@ -614,7 +602,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					nParamLen = 2;
 				}
 
-				if (bProcessMask & (1 << TOKEN_STAR))
+//				if (bProcessMask & (1 << TOKEN_STAR))
 				if (pArg->eToken == TOKEN_STAR) // STAR   * delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
@@ -626,7 +614,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					nParamLen = 2;
 				}
 
-				if (bProcessMask & (1 << TOKEN_FSLASH))
+//				if (bProcessMask & (1 << TOKEN_FSLASH))
 				if (pArg->eToken == TOKEN_FSLASH) // FORWARD SLASH / delta
 				{
 					if (pNext->eToken == TOKEN_FSLASH) // Comment
@@ -645,7 +633,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					nParamLen = 2;
 				}
 
-				if (bProcessMask & (1 << TOKEN_EQUAL))
+//				if (bProcessMask & (1 << TOKEN_EQUAL))
 				if (pArg->eToken == TOKEN_EQUAL) // EQUAL  = assign
 				{
 					pPrev->nValue = nAddressRHS; 
@@ -653,7 +641,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					nParamLen = 0; // need token for Smart BreakPoints
 				}					
 
-				if (bProcessMask & (1 << TOKEN_AT))
+//				if (bProcessMask & (1 << TOKEN_AT))
 				if (pArg->eToken == TOKEN_AT) // AT @ pointer de-reference
 				{
 					nParamLen = 1;
@@ -673,7 +661,7 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					nParamLen = 0;
 				}
 				
-				if (bProcessMask & (1 << TOKEN_HASH))
+//				if (bProcessMask & (1 << TOKEN_HASH))
 				if (pArg->eToken == TOKEN_HASH) // HASH    # immediate
 				{
 					pArg->nValue   = nAddressRHS;
@@ -682,19 +670,19 @@ int ArgsCook ( const int nArgs, const int bProcessMask )
 					nParamLen = 0;
 				}
 
-				if (bProcessMask & (1 << TOKEN_LESS_THAN))
+//				if (bProcessMask & (1 << TOKEN_LESS_THAN))
 				if (pArg->eToken == TOKEN_LESS_THAN) // <
 				{
 					nParamLen = 0;
 				}
 
-				if (bProcessMask & (1 << TOKEN_GREATER_THAN))
+//				if (bProcessMask & (1 << TOKEN_GREATER_THAN))
 				if (pArg->eToken == TOKEN_GREATER_THAN) // >
 				{
 					nParamLen = 0;
 				}
 
-				if (bProcessMask & (1 << TOKEN_EXCLAMATION))
+//				if (bProcessMask & (1 << TOKEN_EXCLAMATION))
 				if (pArg->eToken == TOKEN_EXCLAMATION) // NOT !
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
