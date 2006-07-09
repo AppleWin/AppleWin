@@ -404,6 +404,13 @@ bool _6502_CalcRelativeOffset( int nOpcode, int nBaseAddress, int nTargetAddress
 //===========================================================================
 int  _6502_GetOpmodeOpbytes ( const int iAddress, int & iOpmode_, int & nOpbytes_ )
 {
+#if _DEBUG
+	if (! g_aOpcodes)
+	{
+		MessageBox( g_hFrameWindow, "Debugger not properly initialized", "ERROR", MB_OK );
+	}
+#endif
+
 	int iOpcode_  = *(mem + iAddress);
 		iOpmode_  = g_aOpcodes[ iOpcode_ ].nAddressMode;
 		nOpbytes_ = g_aOpmodes[ iOpmode_ ].m_nBytes;
