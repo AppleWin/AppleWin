@@ -1,0 +1,373 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+	<head>
+		<title>AppleWin Debugger Tutorial</title>
+		<meta http-equiv="CONTENT-TYPE" content="text/html; charset=windows-1252">
+	</head>
+	<body style="DIRECTION: ltr" lang="en-US">
+		<h1><a name="Memory">Memory</a></h1>
+		<h3><a name="Memory_View">Viewing Memory</a></h3>
+		<p>There are two mini-memory areas on the info panel.&nbsp; You can view memory in 
+			Hex, (normal 7-Bit) ASCII, or Apple (8-Bit) TEXT format.</p>
+		<p>Control characters are shown in yellow.&nbsp; The Apple uses something called 
+			8-Bit (High-Bit) ASCII, in which the first 128 characters (normal ASCII) are 
+			also mapped onto the last 128 characters, but with a different 
+			background.&nbsp; (Technically, the first 64 characters are drawn inverse, the 
+			next 64 characters flashing, and the last 128 normally.)&nbsp; Some programs 
+			will store text in this extended Apple format, where a High-Bit character can 
+			be used as a flag to represent an end of word.</p>
+		<p>Here is a summary:</p>
+		<ul>
+			<li>
+				<p style="MARGIN-BOTTOM: 0in"><i>Normal ASCII (non-control characters) will show up in 
+						cyan; High-Bit text in white.</i></p>
+			<li>
+				<p style="MARGIN-BOTTOM: 0in"><i>Apple TEXT (normal ASCII) will also display with an 
+						inverse background; High-Bit with a normal background.</i></p>
+			</li>
+		</ul>
+		<br>
+		<table border="0" cellpadding="2" cellspacing="0" width="75%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>M1 ####</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>View mini-memory 1 in Hex at the Address</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>M2 ####</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>View mini-memory 2 in Hex at the Address</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>MA1 ####</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>View mini-memory 1 in ASCII at the Address</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>MA2 ####</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>View mini-memory 2 in ASCII at the Address</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>MT1 ####</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>View mini-memory 1 in “Apple Text” at the Address</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>MT2 ####</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>View mini-memory 1 in “Apple Text” at the Address</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>D ####</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Alias for M1</i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<p><font size="4"><b>Examples</b>:</font></p>
+		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="90%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#00b8ff">
+								<td bgcolor="#30c0ff" width="25%">
+									<p><font color="#000000"><b>Input </b></font>
+									</p>
+								</td>
+								<td bgcolor="#30c0ff" width="75%">
+									<p><font color="#000000"><b>Effect </b></font>
+									</p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b>MA1 D0D0</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><font color="#ffffff"><i>View Applesoft Tokens (Low ASCII cyan, High ASCII white)</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">MT2
+FF0A</span></b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>View Apple message displayed when booted, showing Apple Model.</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">DATA</span></b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Switch to the Data Window to view memory. Most scrolling keys 
+												work.</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CODE</span></b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Switch to the Code Window to view the disassembler.</i></font></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<br>
+		<h3><a name="Memory_Search">Searching Memory</a></h3>
+		<p>You can search memory for hex values.&nbsp; Wildcard support is also supported 
+			via the '<b>?</b>' wildcard operator, including nibble searching. &nbsp; A 
+			single '<b>?</b>' by itself, means match one byte of any value.&nbsp; A hex 
+			value with the high nibble or low nibble of '<b>?</b>' will mask off the 
+			corresponding nibble. &nbsp; (At the moment there is no way to refer to the 
+			list of results. &nbsp; A future version will support&nbsp;_# to reference 
+			search result's addresses.)</p>
+		<p>Searching memory for text is forthcoming in a future version of the debugger.</p>
+		<br>
+		<table border="0" cellpadding="2" cellspacing="0" width="75%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000" face="Courier"><b>SH #,len byte1 …</b></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Search memory for&nbsp;8-bit hex value(s).</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>SH #,len word1 …</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Search memory for&nbsp;16-bit value(s).</i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<br>
+		<p><font size="4"><b>Examples</b>:</font></p>
+		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="90%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#00b8ff">
+								<td bgcolor="#30c0ff" width="25%">
+									<p><font color="#000000"><b>Input </b></font>
+									</p>
+								</td>
+								<td bgcolor="#30c0ff" width="75%">
+									<p><font color="#000000"><b>Effect </b></font>
+									</p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td width="25%">
+									<p><b><font color="#00b8ff" face="Courier">SH 800,8000 C030</font></b></p>
+								</td>
+								<td width="75%">
+									<p><i><font color="#ffffff">Search memory for speaker access.</font></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><b><font color="#00b8ff" face="Courier">SH 800,8000 AD ? C0</font></b></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><i><font color="#ffffff">Search memory for “ <b>LDA $<font color="#ffff00">C0xx</font></b>”.</font></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><b><font color="#00b8ff" face="Courier">SH 800,8000 3? C0</font></b></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><i><font color="#ffffff">Search memory for speaker access <b>$<font color="#ffff00">C03x</font></b>.</font></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><b><font color="#00b8ff" face="Courier">SH 800,8000 ?1 C0</font></b></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><i><font color="#ffffff">Search memory for soft-switch $<b><font color="#ffff00">C0x1</font></b>.</font></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><b><font color="#00b8ff" face="Courier">L _1</font></b></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><i><font color="#ffffff">Disassemble from&nbsp;search result #<b><font color="#ffff00">1</font></b>
+												address.</font></i></p>
+									<p><i><font color="#ffffff">Note: Not yet implemented!</font></i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<br>
+		<h3><a name="Memory_Change">Changing Memory</a></h3>
+		<p>To change the Apple's memory, the classic "Apple Monitor" command to enter 
+			memory is recognized, as well as the "normal" debugger comamnd.<br>
+		</p>
+		<br>
+		<table border="0" cellpadding="2" cellspacing="0" width="75%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>####:byte1 …</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Classic "Apple Monitor" command to enter byte(s).&nbsp; Alias for E.</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000" face="Courier"><b>E addr byte1 …</b></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Set memory to the 8-Bit (byte) value(s)</i><i>.</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000" face="Courier"><b>EB symbol ####</b></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Alias for E.</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>E8 symbol ####</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Alias for E.</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>EW symbol ####</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Set memory (at the symbol Address) to the 16-Bit (word) Value(s).</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>E16 symbol ####</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Alias for EW.</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>NOP</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Writes an “NOP” opcode (EA) at the current Program Counter (PC)</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>ZAP</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Alias for NOP.</i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<br>
+		<p><font size="4"><b>Examples</b>:</font></p>
+		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="90%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#00b8ff">
+								<td bgcolor="#30c0ff" width="25%">
+									<p><font color="#000000"><b>Input </b></font>
+									</p>
+								</td>
+								<td bgcolor="#30c0ff" width="75%">
+									<p><font color="#000000"><b>Effect </b></font>
+									</p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b>300:60</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="COLOR: white">Same
+as Applesoft Poke 768,96</span></i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<h2>
+			<br>
+			&nbsp;</h2>
+	</body>
+</html>

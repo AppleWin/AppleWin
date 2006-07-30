@@ -1,0 +1,410 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+	<head>
+		<title>AppleWin Debugger Tutorial</title>
+		<meta http-equiv="CONTENT-TYPE" content="text/html; charset=windows-1252">
+	</head>
+	<body style="DIRECTION: ltr" lang="en-US">
+		<h2><a name="Configuration"></a>Configuration</h2>
+		<p><br>
+			<br>
+		</p>
+		<h3><a name="Colors"></a>Colors</h3>
+		<p>The commands to change color schemes, and colors are:</p>
+		<p><br>
+			<br>
+		</p>
+		<table border="0" cellpadding="2" cellspacing="0" width="80%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">COLOR</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Switch
+to color scheme.</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">MONO</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Switch
+to monochrome scheme.</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">COLOR
+#</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Displays
+the Red, Green, and Blue values for the specified color.</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">COLOR
+# # # #<br>
+
+COLOR # R G B</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Sets
+the colors to the new Red, Green, and Blue values.<br>
+
+First # is the color.</span></i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<p><br>
+			<br>
+		</p>
+		<p>Some people prefer monochrome (easier on the eyes, in full screen), so you may 
+			want to use that setting:</p>
+		<br>
+		<p><font size="4"><b>Examples</b>:</font></p>
+		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="75%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#00b8ff">
+								<td bgcolor="#30c0ff" width="25%">
+									<p><font color="#000000"><b>Input</b></font></p>
+								</td>
+								<td bgcolor="#30c0ff" width="75%">
+									<p><font color="#000000"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b>MONO</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><font color="#ffffff"><i>Switch to the monochrome scheme.</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b>COLOR</b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Switch to the color scheme.</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">COLOR
+0 10 20 40</span></b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Sets the console background color to slate gray: RGB 10,20,40</i></font></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<br>
+		<h3><a name="Fonts"></a>Fonts</h3>
+		<p>The font Type, and Spacing can be configured, to show more or less lines in the 
+			disassembly window.</p>
+		<br>
+		<table border="0" cellpadding="2" cellspacing="0" width="80%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>FONT MODE #</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Set disassembler line spacing for the current font.</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>FONT “name”</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Switch disassembler to new font.</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>FONT “name” #</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Switch disassembler to new font with specified height (in pixels)</i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<br>
+		<p><font size="4"><b>Examples</b>:</font></p>
+		<table border="0" cellpadding="2" cellspacing="0" width="799">
+			<COLGROUP>
+				<col width="276">
+					<col width="515">
+						<tbody>
+							<tr bgcolor="#00b8ff">
+								<td bgcolor="#30c0ff" width="276">
+									<p><font color="#000000"><b>Input</b></font></p>
+								</td>
+								<td bgcolor="#30c0ff" width="515">
+									<p><font color="#000000"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="276">
+									<p><font color="#30c0ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">FONT
+MODE 0</span></b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="515">
+									<p><font color="#ffffff">“<i>Classic” Line Spacing.&nbsp; Shows the fewest amount of lines.</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="276">
+									<p><font color="#30c0ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">FONT
+MODE 1</span></b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="515">
+									<p><font color="#ffffff">“<i>Improved” Line Spacing.&nbsp; (Default)</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="276">
+									<p><font color="#30c0ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">FONT
+MODE 2</span></b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="515">
+									<p><font color="#ffffff">“<i>Minimal” Line Spacing.&nbsp; Shows the most amount of lines.</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="276">
+									<p><font color="#30c0ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">FONT
+“Arial”</span></b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="515">
+									<p><font color="#ffffff"><i>Switch disassembler font to Arial.</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="276">
+									<p><font color="#30c0ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">FONT
+“Courier New”</span></b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="515">
+									<p><i>Switch disassembler font to Courier New.</i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<br>
+		<h3><a name="Scripts"></a>Scripts</h3>
+		<p>
+			You can run custom batch or script files that contain debugger commands.&nbsp; 
+			Scripts files do not echo their input; to print a string to the output console 
+			window, use the <b>ECHO</b> command.
+		</p>
+		<br>
+		<table border="0" cellpadding="2" cellspacing="0" width="80%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>RUN&nbsp;</b></font></font><b><span style="COLOR: black; FONT-FAMILY: Courier">filename</span></b></p>
+								</td>
+								<td width="75%">
+									<p><i>Runs the specified script filename; the filename&nbsp;may be quoted</i><i>.</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><b><span style="COLOR: black; FONT-FAMILY: Courier">ECHO string</span></b></p>
+								</td>
+								<td width="75%">
+									<p><i>Echo the text to the debugger console. The string may optionally be quoted.</i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<br>
+		<p><font size="4"><b>Examples</b>:</font></p>
+		<table border="0" cellpadding="2" cellspacing="0" width="799">
+			<COLGROUP>
+				<col width="276">
+					<col width="515">
+						<tbody>
+							<tr bgcolor="#00b8ff">
+								<td bgcolor="#30c0ff" width="276">
+									<p><font color="#000000"><b>Input</b></font></p>
+								</td>
+								<td bgcolor="#30c0ff" width="515">
+									<p><font color="#000000"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="276">
+									<p><b><span style="BACKGROUND: black 0% 50%; COLOR: rgb(48,192,255); FONT-FAMILY: Courier; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">RUN
+“Test.txt”</span></b></p>
+								</td>
+								<td bgcolor="#000000" width="515"><span style="COLOR: white">Runs
+the script file called: “Test.txt”</span></td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="276">
+									<p><b><span style="BACKGROUND: black 0% 50%; COLOR: rgb(48,192,255); FONT-FAMILY: Courier; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">ECHO
+“Hello World”</span></b></p>
+								</td>
+								<td bgcolor="#000000" width="515"><span style="COLOR: white">Prints
+the classic “Hello World” to the output console.</span></td>
+							</tr>
+						</tbody>
+		</table>
+		<br>
+		<h3><a name="Settings"></a>Settings</h3>
+		<p>Coming in a future revision, you can save or load your debugger settings, either 
+			piece wise, or as a whole.
+		</p>
+		<br>
+		<table border="0" cellpadding="2" cellspacing="0" width="90%">
+			<COLGROUP>
+				<col width="90">
+					<col width="166">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="35%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td bgcolor="#000000" width="65%">
+									<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="35%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CONFIG
+LOAD</span></b></font></font></p>
+								</td>
+								<td width="65%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Load
+(default) debugger configuration.</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="35%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CONFIG
+LOAD “filename”</span></b></font></font></p>
+								</td>
+								<td width="65%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Load
+(named) debugger configuration</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="35%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CONFIG
+SAVE</span></b></font></font></p>
+								</td>
+								<td width="65%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Save
+(default) debugger configuration.</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="35%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CONFIG
+SAVE “filename”</span></b></font></font></p>
+								</td>
+								<td width="65%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Save
+(named) debugger configuration</span></i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<table border="0" cellpadding="2" cellspacing="0" width="90%">
+			<COLGROUP>
+				<col width="90">
+					<col width="166">
+						<tbody>
+							<tr bgcolor="#cccccc">
+								<td width="35%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">COLOR
+LOAD “filename”</span></b></font></font></p>
+								</td>
+								<td width="65%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Load
+color configuration.</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="35%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">COLOR
+SAVE “filename”</span></b></font></font></p>
+								</td>
+								<td width="65%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Save
+color configuration</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="35%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">BP
+LOAD “filename”</span></b></font></font></p>
+								</td>
+								<td width="65%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Load
+breakpoint configuration.</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="35%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">BP
+SAVE “filename”</span></b></font></font></p>
+								</td>
+								<td width="65%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Save
+breakpoint configuration</span></i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<br>
+		<p>Hope you enjoyed the tour!</p>
+	</body>
+</html>

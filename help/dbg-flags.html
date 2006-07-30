@@ -1,0 +1,245 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+	<head>
+		<title>AppleWin Debugger Tutorial</title>
+		<meta http-equiv="CONTENT-TYPE" content="text/html; charset=windows-1252">
+	</head>
+	<body style="DIRECTION: ltr" lang="en-US">
+		<h1>Flags</h1>
+		<p>Each flag can individually be set or cleared on the Processor Status Register ('<b>P</b>').&nbsp; 
+			Cleared flags will show up with a normal background.&nbsp; Set flags will show 
+			with an inverse background.
+		</p>
+		<br>
+		<p><font size="4"><b>Notes</b>:</font></p>
+		<ul>
+			<li>
+				<p style="MARGIN-BOTTOM: 0in"><i>The legacy commands <b>R</b>? and <b>S</b>?, where? is 
+						a flag name (C,Z,I,D,B,R,V,N) has been left in.</i></p>
+			</li>
+		</ul>
+		<p><br>
+			<br>
+		</p>
+		<p><font size="4">Commands to set a flag:</font></p>
+		<table bgcolor="#cccccc" border="0" cellpadding="2" cellspacing="0" width="75%">
+			<tbody>
+				<tr bgcolor="#000000">
+					<td width="25%">
+						<p><font color="#ffffff"><b>Command</b></font></p>
+					</td>
+					<td>
+						<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Description</b></font></p>
+					</td>
+				</tr>
+				<tr bgcolor="#cccccc">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SEC
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Carry </span></i>
+						</p>
+					</td>
+				</tr>
+				<tr bgcolor="#999999">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SEZ
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Zero </span></i>
+						</p>
+					</td>
+				</tr>
+				<tr bgcolor="#cccccc">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SEI
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Interrupts Disabled </span></i>
+						</p>
+					</td>
+				</tr>
+				<tr bgcolor="#999999">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SED
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Decimal (BCD) mode </span></i>
+						</p>
+					</td>
+				</tr>
+				<tr bgcolor="#cccccc">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SEB
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Break </span></i>
+						</p>
+					</td>
+				</tr>
+				<tr bgcolor="#999999">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SER
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Reserved (not used on 6502)</span></i></p>
+					</td>
+				</tr>
+				<tr bgcolor="#cccccc">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SEV
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Overflow </span></i>
+						</p>
+					</td>
+				</tr>
+				<tr bgcolor="#999999">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SEN
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Negative </span></i>
+						</p>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<p><br>
+			<br>
+		</p>
+		<p><font size="4">Commands to clear a flag:</font></p>
+		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="75%">
+			<tbody>
+				<tr bgcolor="#000000">
+					<td width="25%">
+						<p><font color="#ffffff"><b>Command</b></font></p>
+					</td>
+					<td>
+						<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Description</b></font></p>
+					</td>
+				</tr>
+				<tr bgcolor="#cccccc">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CLC
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Clear
+Carry </span></i>
+						</p>
+					</td>
+				</tr>
+				<tr bgcolor="#999999">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CLZ
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Clear
+Zero </span></i>
+						</p>
+					</td>
+				</tr>
+				<tr bgcolor="#cccccc">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CLI
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Clear
+Interrupts Disabled </span></i>
+						</p>
+					</td>
+				</tr>
+				<tr bgcolor="#999999">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CLD
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Clear
+Decimal (BCD) mode </span></i>
+						</p>
+					</td>
+				</tr>
+				<tr bgcolor="#cccccc">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CLB
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Clear
+Break </span></i>
+						</p>
+					</td>
+				</tr>
+				<tr bgcolor="#999999">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CLR
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Clear
+Reserved (not used on 6502)</span></i></p>
+					</td>
+				</tr>
+				<tr bgcolor="#cccccc">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CLV
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Clear
+Overflow </span></i>
+						</p>
+					</td>
+				</tr>
+				<tr bgcolor="#999999">
+					<td>
+						<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CLN
+      </span></b></font></font>
+						</p>
+					</td>
+					<td>
+						<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Clear
+Negative </span></i>
+						</p>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<br>
+	</body>
+</html>

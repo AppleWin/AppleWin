@@ -1,0 +1,296 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+	<head>
+		<title>AppleWin Debugger Tutorial</title>
+		<meta http-equiv="CONTENT-TYPE" content="text/html; charset=windows-1252">
+	</head>
+	<body style="DIRECTION: ltr" lang="en-US">
+		<h2><a name="Registers1"></a>Registers</h2>
+		<p>The command line now recognizes 6502 Registers.&nbsp; Namely,
+		</p>
+		<ul>
+			<li>
+				<p><b>A</b>, the Accumulator,</p>
+			<li>
+				<p style="MARGIN-BOTTOM: 0in"><b>X</b>, the 1<sup>st</sup> Index Register,</p>
+			<li>
+				<p style="MARGIN-BOTTOM: 0in"><b>Y</b>, the 2<sup>nd</sup> Index Register,</p>
+			<li>
+				<p style="MARGIN-BOTTOM: 0in"><b>PC</b>, the Program Counter,
+				</p>
+			<li>
+				<p style="MARGIN-BOTTOM: 0in"><b>S</b>, the Stack Pointer, and
+				</p>
+			<li>
+				<p><b>P</b>, the Processor Status Register (Flags).</p>
+			</li>
+		</ul>
+		<p>You can set a Register to a hex Value, Symbol, or Expression.&nbsp; (See the 
+			section <a href="#Calculator">Calculator</a> for more examples of using 
+			expressions.)&nbsp; The syntax is:</p>
+		<br>
+		<table bgcolor="#e6e6e6" border="0" cellpadding="2" cellspacing="0" width="75%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+r [=] ####</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Register to (a byte) Value, Symbol, or Address, or Expression.</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+A ##</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Accumulator to (a byte) Value</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+X ##</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Register X to (a byte) Value</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+Y ##</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Register Y to (a byte) Value</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+PC ####</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+PC to (a full 16-bit) Address (Value)</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+S ##</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Stack Register to (an 8-Bit) Offset</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+P ##</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Set
+Processor Status Register (flags) to (a byte) Value</span></i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<p><br>
+			<br>
+		</p>
+		<p><b>Notes</b>:</p>
+		<ul>
+			<li>
+				<p style="MARGIN-BOTTOM: 0in"><i>Since <b>A</b> refers to the Accumulator, you need to 
+						prefix the hex number <b>A</b> with either:<br>
+						&nbsp;&nbsp;&nbsp;&nbsp;i) a zero '<b>0</b>', or<br>
+						&nbsp;&nbsp;&nbsp;&nbsp;ii) the hash '<b>#</b>' symbol (same as 6502 immediate 
+						symbol.)</i></p>
+			</li>
+		</ul>
+		<ul>
+			<li>
+				<p><i>You can prefix a symbol with the dollar sign '<b>$</b>' to tell the parser it is 
+						a symbol Address instead of a Value.</i></p>
+			<li>
+				<p><i>If a symbol is not defined, the expression will be the corresponding hex Value, 
+						if possible.</i></p>
+			<li>
+				<p><i>Hex Values may be ambiguous, if their corresponding symbol is defined.&nbsp; To 
+						avoid confusion, don’t define symbols such as the popular $DEAD, $BEEF, $C0DE, 
+						$CAFE, etc. An example is given with A1.</i></p>
+			</li>
+		</ul>
+		<br>
+		<p><font size="4"><b>Examples</b>:</font></p>
+		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="90%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#00b8ff">
+								<td bgcolor="#30c0ff" width="25%">
+									<p><font color="#000000"><b>Input</b></font></p>
+								</td>
+								<td bgcolor="#30c0ff" width="75%">
+									<p><font color="#000000"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b>R PC FA62 </b></font></font>
+									</p>
+								</td>
+								<td width="75%">
+									<p><font color="#ffffff"><i>Set Program Counter to Value $<b><font color="#ffff00">FA62</font></b>
+												(RESET) </i></font>
+									</p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+PC RESET + 1</span></b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Set Program Counter to Address $<b><font color="#ffff00">FA63</font></b>
+												(RESET+1)</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+X 2 </span></b></font></font>
+									</p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Set Register to Value <font style="FONT-WEIGHT: bold" color="#ffff00">
+													2</font></i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+Y 3 </span></b></font></font>
+									</p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Set Register to Value <font style="FONT-WEIGHT: bold" color="#ffff00">
+													3</font></i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+S 1FE </span></b></font></font>
+									</p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Set Stack Pointer to depth of one (Stack grows down from $01FF)</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+S FF </span></b></font></font>
+									</p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Set Stack Pointer to top of stack (Empty)</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+A 0A </span></b></font></font>
+									</p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Set Accumulator to hex Value <font style="FONT-WEIGHT: bold" color="#ffff00">
+													0A</font></i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+A #A </span></b></font></font>
+									</p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Set Accumulator to hex Value <font style="FONT-WEIGHT: bold" color="#ffff00">
+													0A</font></i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+X A </span></b></font></font>
+									</p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Set Register X to Accumulator’s Value</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+A A1 </span></b></font></font>
+									</p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>If the symbol A1 exists, sets Accumulator to the <b>Address</b> 
+												of the symbol <b>A1</b><br>
+												If the symbol A1 <b>doesn't</b> exist, sets Accumulator to the hex <b>Value</b> <font style="FONT-WEIGHT: bold" color="#ffff00">
+													A1</font></i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+A $A1 </span></b></font></font>
+									</p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>If the symbol A1 exists, sets the Accumulator to the <b>Address</b>
+												of symbol <b>A1<br>
+												</b>If the symbol A1 <b>doesn't</b> exist, sets Accumulator to the hex Value <font style="FONT-WEIGHT: bold" color="#ffff00">
+													A1</font></i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">R
+A #A1 </span></b></font></font>
+									</p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>Sets Accumulator to the hex value <b><font color="#ffff00">A1</font></b></i></font></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<p>
+			<br>
+			&nbsp;
+		</p>
+	</body>
+</html>
