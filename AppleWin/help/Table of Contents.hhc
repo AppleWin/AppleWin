@@ -83,6 +83,57 @@
 			<param name="Local" value="uthernet.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Debugger">
+			<param name="Local" value="dbg-toc-intro.html">
+			<param name="ImageNumber" value="2">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Entering the debugger">
+				<param name="Local" value="dbg-entering-debugger.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Scrolling">
+				<param name="Local" value="dbg-scrolling.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Registers">
+				<param name="Local" value="dbg-registers.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Flags">
+				<param name="Local" value="dbg-flags.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Execution">
+				<param name="Local" value="dbg-execution.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Memory">
+				<param name="Local" value="dbg-memory.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Symbols">
+				<param name="Local" value="dbg-symbols.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Calculator">
+				<param name="Local" value="dbg-calculator.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Windows">
+				<param name="Local" value="dbg-windows.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Breakpoints">
+				<param name="Local" value="dbg-breakpoints.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Configuration">
+				<param name="Local" value="dbg-configuration.html">
+				</OBJECT>
+		</UL>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="AppleWin Configuration">
 			<param name="Local" value="configuration.html">
 			<param name="ImageNumber" value="2">
@@ -109,100 +160,6 @@
 				<param name="Local" value="cfg-disk.html">
 				<param name="URL" value="cfg-disk.html">
 				</OBJECT>
-		</UL>
-		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Using the Debugger">
-			<param name="Local" value="debug.html">
-			<param name="ImageNumber" value="2">
-			</OBJECT>
-		<UL>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="The Debugger Screen">
-				<param name="Local" value="db-screen.html">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Debugger Commands">
-				<param name="Local" value="db-cmds.html">
-				<param name="ImageNumber" value="2">
-				</OBJECT>
-			<UL>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Breakpoint Clear">
-					<param name="Local" value="dbg-commands.html#BC">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Breakpoint Disable">
-					<param name="Local" value="dbg-commands.html#BD">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Breakpoint Enable">
-					<param name="Local" value="dbg-commands.html#BE">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Breakpoint Set">
-					<param name="Local" value="dbg-commands.html#BP">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Black and White">
-					<param name="Local" value="dbg-commands.html#BW">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Color">
-					<param name="Local" value="dbg-commands.html#COL">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Go">
-					<param name="Local" value="dbg-commands.html#G">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Input">
-					<param name="Local" value="dbg-commands.html#I">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Feed Keystroke">
-					<param name="Local" value="dbg-commands.html#KEY">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Memory Dump">
-					<param name="Local" value="dbg-commands.html#MD">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Code Dump">
-					<param name="Local" value="dbg-commands.html#MDC">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Memory Enter">
-					<param name="Local" value="dbg-commands.html#ME">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Memory Fill">
-					<param name="Local" value="dbg-commands.html#MF">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Output">
-					<param name="Local" value="dbg-commands.html#O">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Set Register">
-					<param name="Local" value="dbg-commands.html#R">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Reset Flag">
-					<param name="Local" value="dbg-commands.html#RF">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Set Flag">
-					<param name="Local" value="dbg-commands.html#SF">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Trace">
-					<param name="Local" value="dbg-commands.html#T">
-					</OBJECT>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Remove Instruction">
-					<param name="Local" value="dbg-commands.html#ZAP">
-					</OBJECT>
-			</UL>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Resources">
