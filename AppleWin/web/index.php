@@ -14,8 +14,11 @@
 <p><font face="Tahoma"></font><br></p>
 
 <p><font face="Tahoma">
-AppleWin is now hosted at <a href="http://developer.berlios.de/">BerliOS</a> and is distributed under the terms of the <a href="http://www.gnu.org/copyleft/gpl.html">GNU General Public License</a><br>
+AppleWin is now hosted at <a href="http://developer.berlios.de/">BerliOS</a> and is distributed under the terms of the <a href="http://www.gnu.org/copyleft/gpl.html">GNU General Public License</a><br></font><font face="Tahoma">
 The SVN repository is located here: <a href="https://developer.berlios.de/projects/applewin/">AppleWin SVN</a>
+</font>
+</p><p><font face="Tahoma">
+Latest AppleWin compiler html help: <a href="applewin.chm">AppleWin.chm</a>
 </font></p>
 <p><font face="Tahoma"></font><br></p>
 
