@@ -1,6 +1,12 @@
 /*
 TODO: 2.6.0.0 released with next version of AppleWin (1.12.9.2)
 
+.11 Added: Trace File Now displays filename tracing is saved to.
+.10 Fixed: Trace File wasn't displaying assembly mnemonics
+.9 Added: Internal change: Seperated Disassembling and Drawing a little more.
+   See: GetDisassemblyLine() and FormatDisassemblyLine()
+.8 Fixed: 100% CPU utilization polling for mouse events in debugger
+.7 Added: Colorized PROFILE LIST output
 .6 Fixed: Debugger mouse click not checking if in Debug mode
 .5 Fixed: HELP WA wasn't displaying help for Watch Add
 .4 Added: Colorized most of built in debugger help.
