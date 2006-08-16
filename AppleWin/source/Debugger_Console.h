@@ -53,7 +53,8 @@
 	#define CHC_ARG_MAND "`7" // < >
 	#define CHC_ARG_OPT  "`4" // [ ] 
 	#define CHC_ARG_SEP  "`9" //  |  grey
-	#define CHC_NUMBER   "`3"
+	#define CHC_NUM_DEC  "`6" // cyan looks better then yellow
+	#define CHC_NUM_HEX  "`3"
 	#define CHC_SYMBOL   "`2"
 	#define CHC_ADDRESS  "`8"
 	#define CHC_ERROR    "`1"

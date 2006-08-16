@@ -871,7 +871,7 @@ Update_t CmdHelpSpecific (int nArgs)
 				, g_aParameters[ PARAM_RESET ].m_sName );
 			Colorize( sText, sTemp );
 			ConsolePrint( sText );
-			sprintf( sText, " Maximum breakpoints: %s%d", CHC_NUMBER, MAX_BREAKPOINTS );
+			sprintf( sText, " Maximum breakpoints: %s%d", CHC_NUM_DEC, MAX_BREAKPOINTS );
 			ConsolePrint( sText );
 			ConsoleBufferPush( "  Set breakpoint at PC if no args."    );
 			ConsoleBufferPush( "  Loading/Saving not yet implemented." );

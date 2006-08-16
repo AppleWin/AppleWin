@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,7,6);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,7,11);
 
 
 // Public _________________________________________________________________________________________
@@ -741,8 +741,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool  g_bSourceAddSymbols     = false;
 	bool  g_bSourceAddMemory      = false;
 
-	TCHAR  g_aSourceFileName[ MAX_PATH ] = TEXT("");
-	TCHAR  g_aSourceFontName[ MAX_FONT_NAME ] = TEXT("Arial");
+	char   g_aSourceFileName[ MAX_PATH ] = "";
 
 	MemoryTextFile_t g_AssemblerSourceBuffer;
 
@@ -755,11 +754,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 // Symbols ________________________________________________________________________________________
-	TCHAR * g_aSymbolTableNames[ NUM_SYMBOL_TABLES ] =
+	char * g_aSymbolTableNames[ NUM_SYMBOL_TABLES ] =
 	{
-		TEXT("Main"),
-		TEXT("User"),
-		TEXT("Src" )
+		"Main",
+		"User",
+		"Src" 
 	};
 
 	SymbolTable_t g_aSymbols[ NUM_SYMBOL_TABLES ];
@@ -824,6 +823,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int       g_nDebugSkipLen   = 0;
 
 	FILE     *g_hTraceFile       = NULL;
+	bool      g_bTraceHeader     = false; // semaphore, flag header to be printed
 
 	DWORD     extbench      = 0;
 	bool      g_bDebuggerViewingAppleOutput = false;
@@ -872,7 +872,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool _CmdSymbolList_Symbol2Address( LPCTSTR pSymbol, int bSymbolTables );
 
 // Source Level Debugging
-	static	bool BufferAssemblyListing ( TCHAR * pFileName );
+	static	bool BufferAssemblyListing ( char * pFileName );
 	static	bool ParseAssemblyListing  ( bool bBytesToMemory, bool bAddSymbols );
 
 
@@ -1426,7 +1426,8 @@ Update_t CmdProfile (int nArgs)
 					if (pText)
 					{
 						TextConvertTabsToSpaces( sText, pText, CONSOLE_WIDTH, 4 );
-						ConsoleBufferPush( sText );
+						// ConsoleBufferPush( sText );
+						ConsolePrint( sText );
 					}
 				}
 			}
@@ -2471,18 +2472,47 @@ Update_t CmdTrace (int nArgs)
 }
 
 //===========================================================================
-Update_t CmdTraceFile (int nArgs) {
+Update_t CmdTraceFile (int nArgs)
+{
+	char sText[ CONSOLE_WIDTH ] = "";
+
 	if (g_hTraceFile)
-		fclose(g_hTraceFile);
+	{
+		fclose( g_hTraceFile );
+		g_hTraceFile = NULL;
 
-	TCHAR sFilename[MAX_PATH];
-	_tcscpy(sFilename,g_sCurrentDir); // g_sProgramDir
-
-	if (nArgs)
-		_tcscat( sFilename, g_aArgs[1].sArg );
+		sprintf( sText, "Trace stopped." );
+	}
 	else
-		_tcscat( sFilename, g_sFileNameTrace );
-	g_hTraceFile = fopen( sFilename, "wt" );
+	{
+		char sFileName[MAX_PATH];
+
+		if (nArgs)
+			strcpy( sFileName, g_aArgs[1].sArg );
+		else
+			strcpy( sFileName, g_sFileNameTrace );
+
+
+		char sFilePath[ MAX_PATH ];
+		strcpy(sFilePath, g_sCurrentDir); // g_sProgramDir
+		strcat(sFilePath, sFileName );
+
+		g_hTraceFile = fopen( sFilePath, "wt" );
+
+		if (g_hTraceFile)
+		{
+			sprintf( sText, "Trace started: %s", sFileName );
+
+			g_bTraceHeader = true;
+		}
+		else
+		{
+			sprintf( sText, "Trace ERROR: %s", sFileName );
+		}
+	}
+	
+	ConsoleBufferPush( sText );
+	ConsoleBufferToDisplay();
 
 	return UPDATE_ALL; // TODO: Verify // 0
 }
@@ -2660,7 +2690,7 @@ Update_t CmdNOP (int nArgs)
 	int iOpmode;
 	int nOpbytes;
 
- 	_6502_GetOpcodeOpmodeOpbytes( iOpcode, iOpmode, nOpbytes );
+ 	_6502_GetOpcodeOpmodeOpbyte( iOpcode, iOpmode, nOpbytes );
 
 	while (nOpbytes--)
 	{
@@ -3493,9 +3523,9 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
 		for( int iLine = 0; iLine <= nLen; iLine++ ) // min 1 opcode/instruction
 		{
 // a.
-			_6502_GetOpmodeOpbytes( iAddress, iOpmode, nOpbytes );
+			_6502_GetOpmodeOpbyte( iAddress, iOpmode, nOpbytes );
 // b.
-//			_6502_GetOpcodeOpmodeOpbytes( iOpcode, iOpmode, nOpbytes );
+//			_6502_GetOpcodeOpmodeOpbyte( iOpcode, iOpmode, nOpbytes );
 
 			if (iLine == g_nDisasmCurLine) // && (iAddress == g_nDisasmCurAddress))
 			{
@@ -3563,7 +3593,7 @@ WORD DisasmCalcAddressFromLines( WORD iAddress, int nLines )
 	{
 		int iOpmode;
 		int nOpbytes;
-		_6502_GetOpmodeOpbytes( iAddress, iOpmode, nOpbytes );
+		_6502_GetOpmodeOpbyte( iAddress, iOpmode, nOpbytes );
 		iAddress += nOpbytes;
 	}
 	return iAddress;
@@ -3621,7 +3651,7 @@ Update_t CmdCursorLineDown (int nArgs)
 {
 	int iOpmode; 
 	int nOpbytes;
-	_6502_GetOpmodeOpbytes( g_nDisasmCurAddress, iOpmode, nOpbytes ); // g_nDisasmTopAddress
+	_6502_GetOpmodeOpbyte( g_nDisasmCurAddress, iOpmode, nOpbytes ); // g_nDisasmTopAddress
 
 	if (g_iWindowThis == WINDOW_DATA)
 	{
@@ -3665,10 +3695,10 @@ Update_t CmdCursorLineDown (int nArgs)
 #endif
 		g_nDisasmCurAddress += nOpbytes;
 
-		_6502_GetOpmodeOpbytes( g_nDisasmTopAddress, iOpmode, nOpbytes );
+		_6502_GetOpmodeOpbyte( g_nDisasmTopAddress, iOpmode, nOpbytes );
 		g_nDisasmTopAddress += nOpbytes;
 
-		_6502_GetOpmodeOpbytes( g_nDisasmBotAddress, iOpmode, nOpbytes );
+		_6502_GetOpmodeOpbyte( g_nDisasmBotAddress, iOpmode, nOpbytes );
 		g_nDisasmBotAddress += nOpbytes;
 
 		if (g_bDisasmCurBad)
@@ -3768,8 +3798,8 @@ Update_t CmdCursorLineUp (int nArgs)
 		{
 			g_nDisasmTopAddress--;
 
-//			_6502_GetOpcodeOpmodeOpbytes( iOpcode, iOpmode, nOpbytes );
-			iOpcode = _6502_GetOpmodeOpbytes( g_nDisasmTopAddress, iOpmode, nOpbytes );
+//			_6502_GetOpcodeOpmodeOpbyte( iOpcode, iOpmode, nOpbytes );
+			iOpcode = _6502_GetOpmodeOpbyte( g_nDisasmTopAddress, iOpmode, nOpbytes );
 			aOpBytes[ 1 ] = nOpbytes;
 
 			// Disasm is kept in sync.  Maybe bad opcode, but if no other choices...
@@ -3785,7 +3815,7 @@ Update_t CmdCursorLineUp (int nArgs)
  				g_nDisasmTopAddress--;
 				DisasmCalcCurFromTopAddress();
 
-				iOpcode = _6502_GetOpmodeOpbytes( g_nDisasmTopAddress, iOpmode, nOpbytes );
+				iOpcode = _6502_GetOpmodeOpbyte( g_nDisasmTopAddress, iOpmode, nOpbytes );
 				aOpBytes[ 2 ] = nOpbytes;
 
 				if (   (iOpmode == AM_1)
@@ -3797,7 +3827,7 @@ Update_t CmdCursorLineUp (int nArgs)
 					g_nDisasmTopAddress--;
 					DisasmCalcCurFromTopAddress();
 
-					iOpcode = _6502_GetOpmodeOpbytes( g_nDisasmTopAddress, iOpmode, nOpbytes );
+					iOpcode = _6502_GetOpmodeOpbyte( g_nDisasmTopAddress, iOpmode, nOpbytes );
 					aOpBytes[ 3 ] = nOpbytes;
 
 				if (   (iOpmode == AM_1)
@@ -3840,14 +3870,14 @@ Update_t CmdCursorLineUp (int nArgs)
 
 			for (int iLine = 0; iLine < MAX_LOOK_AHEAD; iLine++ )
 			{
-				iOpcode = _6502_GetOpmodeOpbytes( nCur, iOpmode, nOpbytes );
+				iOpcode = _6502_GetOpmodeOpbyte( nCur, iOpmode, nOpbytes );
 
 				// If address on iLine = g_nDisasmCurLine + 1
 				if (iLine == (g_nDisasmCurLine + 1))
 				{
 					if (nCur == (g_nDisasmCurAddress))
 					{
-						iOpcode = _6502_GetOpmodeOpbytes( nTop, iOpmode, nOpbytes );
+						iOpcode = _6502_GetOpmodeOpbyte( nTop, iOpmode, nOpbytes );
 
 						tCandidate._nAddress = nTop;
 						tCandidate._iOpcode  = iOpcode;
@@ -3988,8 +4018,8 @@ WORD _ClampAddress( int nAddress )
 {
 	if (nAddress < 0)
 		nAddress = 0;
-	if (nAddress > 0xFFFF)
-		nAddress = 0xFFFF;
+	if (nAddress > _6502_MEM_END)
+		nAddress = _6502_MEM_END;
 
 	return (WORD) nAddress;
 }
@@ -5626,7 +5656,7 @@ Update_t CmdOutputRun (int nArgs)
 // Source Level Debugging _________________________________________________________________________
 
 //===========================================================================
-bool BufferAssemblyListing( TCHAR *pFileName )
+bool BufferAssemblyListing( char *pFileName )
 {
 	bool bStatus = false; // true = loaded
 
@@ -5997,13 +6027,13 @@ Update_t CmdSymbolsInfo (int nArgs)
 	if (bDisplayMain && bDisplayUser && bDisplaySrc)
 	{
 		sprintf( sText, "  Symbols  Main: %s%d%s  User: %s%d%s   Source: %s%d%s"
-			, CHC_NUMBER
+			, CHC_NUM_DEC
 			, nSymbolsMain
 			, CHC_DEFAULT
-			, CHC_NUMBER
+			, CHC_NUM_DEC
 			, nSymbolsUser
 			, CHC_DEFAULT
-			, CHC_NUMBER
+			, CHC_NUM_DEC
 			, nSymbolsSrc
 			, CHC_DEFAULT
 		 );
@@ -6013,7 +6043,7 @@ Update_t CmdSymbolsInfo (int nArgs)
 	if (bDisplayMain)
 	{
 		sprintf( sText, "  Main symbols: %s%d%s"
-			, CHC_NUMBER
+			, CHC_NUM_DEC
 			, nSymbolsMain
 			, CHC_DEFAULT
 		);
@@ -6023,7 +6053,7 @@ Update_t CmdSymbolsInfo (int nArgs)
 	if (bDisplayUser)
 	{
 		sprintf( sText, "  User symbols: %s%d%s"
-			, CHC_NUMBER
+			, CHC_NUM_DEC
 			, nSymbolsUser
 			, CHC_DEFAULT
 		);
@@ -6033,7 +6063,7 @@ Update_t CmdSymbolsInfo (int nArgs)
 	if (bDisplaySrc)
 	{
 		sprintf( sText, "  Source symbols: %s%d%s"
-			, CHC_NUMBER
+			, CHC_NUM_DEC
 			, nSymbolsSrc
 			, CHC_DEFAULT
 		);
@@ -6054,7 +6084,7 @@ void _CmdPrintSymbol( LPCTSTR pSymbol, WORD nAddress, int iTable )
 		, CHC_ADDRESS
 		, nAddress
 		, CHC_DEFAULT
-		, CHC_USAGE
+		, CHC_STRING
 		, g_aSymbolTableNames[ iTable ]
 		, CHC_DEFAULT
 		, CHC_SYMBOL
@@ -7259,11 +7289,20 @@ _Help:
 
 }
 
+Update_t _ZeroPage_Error()
+{
+//	return ConsoleDisplayError( "There are no (ZP) pointers defined." );
+	char sText[ CONSOLE_WIDTH ];
+	sprintf( sText, "  There are no current (ZP) pointers.  (Max: %d)", MAX_ZEROPAGE_POINTERS );
+//	ConsoleBufferPush( sText );
+	return ConsoleDisplayError( sText );
+}
+
 //===========================================================================
 Update_t CmdZeroPageClear   (int nArgs)
 {
 	if (!g_nBreakpoints)
-		return ConsoleDisplayError(TEXT("There are no (ZP) pointers defined."));
+		return _ZeroPage_Error();
 
 	// CHECK FOR ERRORS
 	if (!nArgs)
@@ -7286,7 +7325,7 @@ Update_t CmdZeroPageDisable (int nArgs)
 	if (!nArgs)
 		return Help_Arg_1( CMD_ZEROPAGE_POINTER_DISABLE );
 	if (! g_nZeroPagePointers)
-		return ConsoleDisplayError(TEXT("There are no (ZP) pointers defined."));
+		return _ZeroPage_Error();
 
 	_BWZ_EnableDisableViaArgs( nArgs, g_aZeroPagePointers, MAX_ZEROPAGE_POINTERS, false );
 
@@ -7297,7 +7336,7 @@ Update_t CmdZeroPageDisable (int nArgs)
 Update_t CmdZeroPageEnable  (int nArgs)
 {
 	if (! g_nZeroPagePointers)
-		return ConsoleDisplayError(TEXT("There are no (ZP) pointers defined."));
+		return _ZeroPage_Error();
 
 	if (!nArgs)
 		return Help_Arg_1( CMD_ZEROPAGE_POINTER_ENABLE );
@@ -7312,9 +7351,7 @@ Update_t CmdZeroPageList    (int nArgs)
 {
 	if (! g_nZeroPagePointers)
 	{
-		TCHAR sText[ CONSOLE_WIDTH ];
-		wsprintf( sText, TEXT("  There are no current (ZP) pointers.  (Max: %d)"), MAX_ZEROPAGE_POINTERS );
-		ConsoleBufferPush( sText );
+		_ZeroPage_Error();
 	}
 	else
 	{	
@@ -7504,7 +7541,7 @@ void DisplayAmbigiousCommands( int nFound )
 {
 	char sText[ CONSOLE_WIDTH * 2 ];
 	sprintf( sText, "Ambiguous %s%d%s Commands:"
-		, CHC_NUMBER
+		, CHC_NUM_DEC
 		, g_vPotentialCommands.size()
 		, CHC_DEFAULT
 	);
@@ -7617,7 +7654,7 @@ Update_t ExecuteCommand (int nArgs)
 					g_iCommand = CMD_MEMORY_ENTER_BYTE;
 
 					// replace: addr :
-					// with:    comamnd addr
+					// with:    command addr
 					pArg[1] = pArg[0];
 
 					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
@@ -7657,7 +7694,7 @@ Update_t ExecuteCommand (int nArgs)
 			nArgsCooked = ArgsCook( nArgs ); // nCookMask
 
 		if (nArgsCooked == ARG_SYNTAX_ERROR)
-			return ConsoleDisplayError(TEXT("Syntax Error"));
+			return ConsoleDisplayError( "Syntax Error" );
 
 		if (pFunction)
 			return pFunction( nArgsCooked ); // Eat them
@@ -7665,7 +7702,7 @@ Update_t ExecuteCommand (int nArgs)
 		return UPDATE_CONSOLE_DISPLAY;
 	}
 	else
-		return ConsoleDisplayError(TEXT("Illegal Command"));
+		return ConsoleDisplayError( "Illegal Command" );
 }
 
 
@@ -7710,19 +7747,47 @@ bool InternalSingleStep ()
 //===========================================================================
 void OutputTraceLine ()
 {
-	char sDisassembly[ CONSOLE_WIDTH ]; DrawDisassemblyLine( 0,regs.pc, sDisassembly); // Get Disasm String
+	DisasmLine_t line;
+	GetDisassemblyLine( regs.pc, line );
+
+	char sDisassembly[ CONSOLE_WIDTH ]; // DrawDisassemblyLine( 0,regs.pc, sDisassembly); // Get Disasm String
+	FormatDisassemblyLine( line, sDisassembly, CONSOLE_WIDTH );
+
 	char sFlags[ _6502_NUM_FLAGS + 1 ]; DrawFlags( 0, regs.ps, sFlags ); // Get Flags String
 
-	// _ftprintf(g_hTraceFile,
-	fprintf( g_hTraceFile,
-		"a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n",
-		(unsigned)regs.a,
-		(unsigned)regs.x,
-		(unsigned)regs.y,
-		(unsigned)regs.sp,
-		(char*) sFlags,
-		(char*) sDisassembly
-	);
+	if (g_hTraceFile)
+	{
+		if (g_bTraceHeader)
+		{
+			g_bTraceHeader = false;
+
+			fprintf( g_hTraceFile,
+//				"00 00 00 0000--------  0000:90 90 90  NOP"
+				"A: X: Y: SP: Flags     Addr:Opcode    Mnemonic\n"
+			);
+		}
+
+		char sTarget[ 16 ];
+		if (line.bTargetValue)
+		{
+			sprintf( sTarget, "%s:%s"
+				, line.sTargetPointer
+				, line.sTargetValue
+			);
+		}
+
+		fprintf( g_hTraceFile,
+//			"a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n",
+			"%02X %02X %02X %04X %s  %s\n",
+			(unsigned)regs.a,
+			(unsigned)regs.x,
+			(unsigned)regs.y,
+			(unsigned)regs.sp,
+			(char*) sFlags
+			, sDisassembly
+			, sTarget
+		);
+	}
 }
 
 //===========================================================================
@@ -7843,7 +7908,22 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		nOpcodeTotal = 1;
 		bOpcodeGood = false;
 	}
-	
+
+	char *pColorOperator = "";
+	char *pColorNumber   = "";
+	char *pColorOpcode   = "";
+	char *pColorMnemonic = "";
+	char *pColorOpmode   = "";
+	char *pColorTotal    = "";
+	if (! bExport)
+	{
+		pColorOperator = CHC_ARG_SEP; // grey
+		pColorNumber   = CHC_NUM_DEC; // cyan
+		pColorOpcode   = CHC_NUM_HEX; // yellow
+		pColorMnemonic = CHC_COMMAND; // green
+		pColorOpmode   = CHC_USAGE  ; // yellow
+		pColorTotal    = CHC_DEFAULT; // white
+	}	
 	
 // Opcode
 	if (bExport) // Export = SeperateColumns
@@ -7897,11 +7977,18 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		
 		// BUG: Yeah 100% is off by 1 char. Profiling only one opcode isn't worth fixing this visual alignment bug.
 		sprintf( pText,
-			"%7.4f%%" DELIM "%9u" DELIM "%s" DELIM "%s" DELIM "%s\n"
-			, nPercent, sSeperator2
+			"%s%7.4f%s%%" DELIM "%s%9u" DELIM "%s%s" DELIM "%s%s" DELIM "%s%s\n"
+			, pColorNumber
+			, nPercent
+			, pColorOperator
+			, sSeperator2
+			, pColorNumber
 			, static_cast<unsigned int>(nCount), sSeperator2
+			, pColorOpcode
 			, sOpcode, sSeperator2
+			, pColorMnemonic
 			, g_aOpcodes[ nOpcode ].sMnemonic, sSeperator2
+			, pColorOpmode
 			, sAddress
 		);
 		pText = ProfileLinePush();
@@ -7911,8 +7998,9 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		nOpcodeTotal = 0;
 
 	sprintf( pText
-		, "Total:  " DELIM "%9u\n"
+		, "Total:  " DELIM "%s%9u\n"
 		, sSeperator2
+		, pColorTotal
 		, static_cast<unsigned int>(nOpcodeTotal) );
 	pText = ProfileLinePush();
 
@@ -7964,9 +8052,14 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 
 		// BUG: Yeah 100% is off by 1 char. Profiling only one opcode isn't worth fixing this visual alignment bug.
 		sprintf( pText
-			, "%7.4f%%" DELIM "%9u" DELIM "%s\n"
-			, nPercent, sSeperator2
+			, "%s%7.4f%s%%" DELIM "%s%9u" DELIM "%s%s\n"
+			, pColorNumber
+			, nPercent
+			, pColorOperator
+			, sSeperator2
+			, pColorNumber
 			, static_cast<unsigned int>(nCount), sSeperator2
+			, pColorOpmode
 			, sAddress
 		);
 		pText = ProfileLinePush();
@@ -7976,8 +8069,9 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		nOpmodeTotal = 0;
 
 	sprintf( pText
-		, "Total:  " DELIM "%9u\n"
+		, "Total:  " DELIM "%s%9u\n"
 		, sSeperator2 
+		, pColorTotal
 		, static_cast<unsigned int>(nOpmodeTotal) );
 	pText = ProfileLinePush();
 
@@ -8012,11 +8106,11 @@ bool ProfileSave()
 {
 	bool bStatus = false;
 
-	TCHAR filename[MAX_PATH];
-	_tcscpy(filename,g_sProgramDir);
-	_tcscat(filename,g_FileNameProfile ); // TEXT("Profile.txt")); // =PATCH MJP
+	char sFilename[MAX_PATH];
+	strcpy( sFilename, g_sProgramDir ); // TODO: Allow user to decide?
+	strcat( sFilename, g_FileNameProfile );
 
-	FILE *hFile = fopen(filename,TEXT("wt"));
+	FILE *hFile = fopen( sFilename, "wt" );
 
 	if (hFile)
 	{

@@ -402,7 +402,7 @@ bool _6502_CalcRelativeOffset( int nOpcode, int nBaseAddress, int nTargetAddress
 
 
 //===========================================================================
-int  _6502_GetOpmodeOpbytes ( const int iAddress, int & iOpmode_, int & nOpbytes_ )
+int  _6502_GetOpmodeOpbyte ( const int iAddress, int & iOpmode_, int & nOpbyte_ )
 {
 #if _DEBUG
 	if (! g_aOpcodes)
@@ -411,9 +411,9 @@ int  _6502_GetOpmodeOpbytes ( const int iAddress, int & iOpmode_, int & nOpbytes
 	}
 #endif
 
-	int iOpcode_  = *(mem + iAddress);
-		iOpmode_  = g_aOpcodes[ iOpcode_ ].nAddressMode;
-		nOpbytes_ = g_aOpmodes[ iOpmode_ ].m_nBytes;
+	int iOpcode_ = *(mem + iAddress);
+		iOpmode_ = g_aOpcodes[ iOpcode_ ].nAddressMode;
+		nOpbyte_ = g_aOpmodes[ iOpmode_ ].m_nBytes;
 
 #if _DEBUG
 	if (iOpcode_ >= NUM_OPCODES)
@@ -427,9 +427,9 @@ int  _6502_GetOpmodeOpbytes ( const int iAddress, int & iOpmode_, int & nOpbytes
 
 
 //===========================================================================
-void _6502_GetOpcodeOpmodeOpbytes ( int & iOpcode_, int & iOpmode_, int & nOpbytes_ )
+void _6502_GetOpcodeOpmodeOpbyte ( int & iOpcode_, int & iOpmode_, int & nOpbyte_ )
 {
-	iOpcode_ = _6502_GetOpmodeOpbytes( regs.pc, iOpmode_, nOpbytes_ );
+	iOpcode_ = _6502_GetOpmodeOpbyte( regs.pc, iOpmode_, nOpbyte_ );
 }
 
 //===========================================================================
@@ -606,7 +606,7 @@ bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 	int iOpcode;
 	int iOpmode;
 	int nOpbytes;
-	iOpcode = _6502_GetOpmodeOpbytes( nAddress, iOpmode, nOpbytes );
+	iOpcode = _6502_GetOpmodeOpbyte( nAddress, iOpmode, nOpbytes );
 
 	// Composite string that has the target nAddress
 //	WORD nTarget = 0;

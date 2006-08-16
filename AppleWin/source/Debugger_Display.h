@@ -73,7 +73,14 @@
 	void DrawConsoleLine      ( const char * pText, int y);
 	void DrawConsoleCursor    ();
 
-	WORD DrawDisassemblyLine  ( int line, WORD offset, LPTSTR text);
+	int GetDisassemblyLine(  const WORD nOffset, DisasmLine_t & line_ );
+//		, int iOpcode, int iOpmode, int nOpbytes
+//		char *sAddress_, char *sOpCodes_,
+//		char *sTarget_, char *sTargetOffset_, int & nTargetOffset_, char *sTargetValue_,
+//		char * sImmediate_, char & nImmediate_, char *sBranch_ );
+	WORD DrawDisassemblyLine  ( int line, const WORD offset );
+	void FormatDisassemblyLine( const DisasmLine_t & line, char *sDisassembly_, const int nBufferSize );
+
 	void DrawFlags            ( int line, WORD nRegFlags, LPTSTR pFlagNames_);
 	void DrawMemory           ( int line, int iMem );
 	void DrawRegister         ( int line, LPCTSTR name, int bytes, WORD value, int iSource = 0 );
