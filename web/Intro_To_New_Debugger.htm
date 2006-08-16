@@ -15,7 +15,7 @@
 
 <p><font size="4"><i>By Michael Pohoreski.</i></font></p>
 
-<p><font size="3">Revision 3.&nbsp; Mar 12, 2006.</font></p>
+<p><font size="3">Revision 4.&nbsp; July 1, 2006.</font></p>
 
 <h2>Table of Contents</h2>
 
@@ -26,6 +26,14 @@
   <li><a href="#Debugger">Entering the Debugger</a></li>
 
   <li><a href="#Scrolling">Scrolling</a></li>
+
+  <ul>
+
+    <li><a href="#Scrolling_General">General</a> </li>
+
+ <li><a href="#Scrolling_Bookmarks">Bookmarks</a> </li>
+
+  </ul>
 
   <li><a href="#Registers">Registers</a> </li>
 
@@ -48,9 +56,11 @@
 
   <li><a href="#Symbols">Symbols</a> </li>
 
-  <li><a href="#Calculator">Calculator</a> </li>
-
   <li><a href="#Breakpoints">Breakpoints</a> </li>
+
+  <li><a href="#Profiling">Profiling</a> </li>
+
+  <li><a href="#Calculator">Output and Calculations</a> </li>
 
   <li><a href="#Config">Configuration</a>
     <ul>
@@ -98,6 +108,10 @@ notice is the new
 syntax coloring in the disassembly view, and info panel.&nbsp; All
 the colors can be customized to your liking.&nbsp; See the <a href="#Colors">Colors</a>
 section for details.</p>
+
+<p>On the left is the disassembly view. &nbsp;On the righ is
+the info panael, which shows registers, stack, zero-page pointers,
+breakpoints, watches, and 2 mini-memory views.</p>
 
 <p>Since the mini-console isn't the
 full width of the
@@ -341,8 +355,6 @@ disassemble command is also suported.)
 </table>
 
 <p><br>
-
-<br>
 
 </p>
 
@@ -618,7 +630,7 @@ Down </p>
       </td>
 
       <td width="65%">
-      <p><i>Locate current 6502 instruction.</i></p>
+      <p><i>Follow target of current 6502 instruction.</i></p>
 
       </td>
 
@@ -646,7 +658,264 @@ Down </p>
   </tbody>
 </table>
 
-<p></p>
+<p><br>
+
+</p>
+
+<h2><a name="Scrolling"></a>Bookmarks</h2>
+
+<p>You can set "bookmarks" in the&nbsp;disassembly view, to
+quickly jump back to a favorite location. &nbsp;There are 10
+available, ranging from 0 to 9.<br>
+
+</p>
+
+<table border="0" cellpadding="2" cellspacing="0" width="75%">
+
+  <col width="64*"> <col width="192*"> <tbody>
+
+    <tr bgcolor="#000000">
+
+      <td bgcolor="#000000" width="25%">
+      <p><font color="#ffffff"><b>Command</b></font></p>
+
+      </td>
+
+      <td bgcolor="#000000" width="75%">
+      <p style="font-style: normal;"><font color="#ffffff"><b>Effect</b></font></p>
+
+      </td>
+
+    </tr>
+
+    <tr bgcolor="#999999">
+
+      <td width="25%">
+      <p><span style="font-family: Courier;"><span style="font-weight: bold;">HELP BOOKMARKS</span></span></p>
+
+      </td>
+
+      <td width="75%">
+      <p><i>List all commands in the bookmark category.</i></p>
+
+      </td>
+
+    </tr>
+
+    <tr bgcolor="#cccccc">
+
+      <td width="25%">
+      <p><font color="#000000"><font face="Courier"><b>BML</b></font></font></p>
+
+      </td>
+
+      <td width="75%">
+      <p><i>List all bookmarks</i></p>
+
+      </td>
+
+    </tr>
+
+    <tr bgcolor="#999999">
+
+      <td width="25%">
+      <p><font color="#000000"><font face="Courier"><b>BMA</b></font></font></p>
+
+      </td>
+
+      <td width="75%">
+      <p><i>Add address to first available bookmark slot,
+or update existing bookmark.</i></p>
+
+      </td>
+
+    </tr>
+
+    <tr bgcolor="#cccccc">
+
+      <td width="25%">
+      <p><font color="#000000"><font face="Courier"><b>BMC</b></font></font></p>
+
+      </td>
+
+      <td width="75%">
+      <p><i>Clear (remove) bookmark</i></p>
+
+      </td>
+
+    </tr>
+
+    <tr bgcolor="#999999">
+
+      <td width="25%">
+      <p><font color="#000000"><font face="Courier"><b>BMG</b></font></font></p>
+
+      </td>
+
+      <td width="75%">
+      <p><i>Goto specific bookmark location.</i></p>
+
+      </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+<p><br>
+
+</p>
+
+<table border="1" cellpadding="2" cellspacing="0" width="75%">
+
+  <col width="26*"> <col width="64*"> <col width="166*"> <tbody>
+
+    <tr bgcolor="#000000">
+
+      <td width="10%">
+      <p><font color="#ffffff"><b>Key</b></font></p>
+
+      </td>
+
+      <td width="25%">
+      <p><font color="#ffffff"><b>Name</b></font></p>
+
+      </td>
+
+      <td width="65%">
+      <p><font color="#ffffff"><b>Effect</b></font></p>
+
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="10%">
+      <p style="">Ctrl-Shift-# </p>
+
+      </td>
+
+      <td width="25%">
+      <p>Ctrl Shift Number</p>
+
+      </td>
+
+      <td width="65%">
+      <p><i>Assign current cursor location to specified
+bookmark (0 throug 9)</i></p>
+
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="10%">
+      <p style="">Ctrl-# </p>
+
+      </td>
+
+      <td width="25%">
+      <p>Down Arrow</p>
+
+      </td>
+
+      <td width="65%">
+      <p><i>Move the cursor to the bookmark (if it exists.)</i></p>
+
+      </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+<p><font size="4"><b>Examples</b>:</font>
+</p>
+
+<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="90%">
+
+  <col width="64*"> <col width="192*"> <tbody>
+
+    <tr bgcolor="#00b8ff">
+
+      <td bgcolor="#30c0ff" width="25%">
+      <p><font color="#000000"><b>Input</b></font></p>
+
+      </td>
+
+      <td bgcolor="#30c0ff" width="75%">
+      <p><font color="#000000"><b>Effect</b></font></p>
+
+      </td>
+
+    </tr>
+
+    <tr bgcolor="#000000">
+
+      <td width="25%">
+      <p><font color="#00b8ff"><font face="Courier"><b>BMA RESET </b></font></font>
+      </p>
+
+      </td>
+
+      <td width="75%">
+      <p><font color="#ffffff"><i>Add bookmark
+Address $<b><font color="#ffff00">FA62</font></b>
+(RESET) </i></font> </p>
+
+      </td>
+
+    </tr>
+
+    <tr bgcolor="#000000">
+
+      <td bgcolor="#000000" width="25%">
+      <p><font color="#00b8ff"><font face="Courier"><b><span style="background: rgb(0, 0, 0) none repeat scroll 0% 50%; -moz-background-clip: initial; -moz-background-origin: initial; -moz-background-inline-policy: initial;">BMA
+0 HOME RESET MON</span></b></font></font></p>
+
+      </td>
+
+      <td bgcolor="#000000" width="75%">
+      <p><font color="#ffffff"><i>Update
+bookmark 0 to Address $<b><font color="#ffff00">FC58</font></b>
+(HOME),<br>
+
+add/set bookmark 1 to address </i></font><font color="#ffffff"><i>$<b><font color="#ffff00">FA62</font></b>
+(RESET), and<br>
+
+add/set&nbsp;</i></font><font color="#ffffff"><i>
+bookmark 2 to address </i></font><font color="#ffffff"><i>$<b><font color="#ffff00">FF65</font></b>
+(RESET)</i></font></p>
+
+      </td>
+
+    </tr>
+
+    <tr bgcolor="#000000">
+
+      <td bgcolor="#000000" width="25%">
+      <p><font color="#00b8ff"><font face="Courier"><b><span style="background: rgb(0, 0, 0) none repeat scroll 0% 50%; -moz-background-clip: initial; -moz-background-origin: initial; -moz-background-inline-policy: initial;">BMG
+1 </span></b></font></font> </p>
+
+      </td>
+
+      <td bgcolor="#000000" width="75%">
+      <p><font color="#ffffff"><i>Move
+disassembly cursor to&nbsp;</i></font><font color="#ffffff"><i>$<b><font color="#ffff00">FA62</font></b>
+(RESET)</i></font></p>
+
+      </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+<p><br>
+
+</p>
 
 <h2><a name="Registers1"></a>Registers</h2>
 
@@ -838,8 +1107,6 @@ Processor Status Register (flags) to (a byte) Value</span></i></p>
 
 <p><br>
 
-<br>
-
 </p>
 
 <p><b>Notes</b>:</p>
@@ -847,8 +1114,8 @@ Processor Status Register (flags) to (a byte) Value</span></i></p>
 <ul>
 
   <li>
-    <p style="margin-bottom: 0in;"><i>Since
-    <b>A</b> refers to the Accumulator, you need to prefix
+    <p style="margin-bottom: 0in;"><i>Since <b>A</b>
+refers to the Accumulator, you need to prefix
 the hex number <b>A</b> with either:<br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;i) a zero '<b>0</b>',
@@ -1146,8 +1413,6 @@ where? is a flag name (C,Z,I,D,B,R,V,N) has been left in.</i></p>
 
 <p><br>
 
-<br>
-
 </p>
 
 <p><font size="4">Commands to set a flag:</font></p>
@@ -1302,8 +1567,6 @@ Negative </span></i> </p>
 </table>
 
 <p><br>
-
-<br>
 
 </p>
 
@@ -1552,8 +1815,6 @@ Background</b></font></p>
 
 <p><br>
 
-<br>
-
 </p>
 
 <p>Press Right Arrow to locate the
@@ -1579,8 +1840,6 @@ Pressing Shift-Space will "<i>Step Out</i>" - that is, run
 until the Program Counter (PC) is equal to the return address on the
 stack.&nbsp; Pressing Left Arrow will jump the cursor to the next
 instruction after the original call.&nbsp; </p>
-
-<br>
 
 <p><font size="4"><b>Notes</b>:</font></p>
 
@@ -1754,8 +2013,6 @@ valid return address, so pay careful attention if the stack is modified!</i></p>
 
 <p><br>
 
-<br>
-
 </p>
 
 <table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="90%">
@@ -1826,8 +2083,6 @@ execution will be halted.</i></p>
 </table>
 
 <p><br>
-
-<br>
 
 </p>
 
@@ -2261,8 +2516,7 @@ memory for speaker access.</font></i></p>
 
       <td bgcolor="#000000" width="75%">
       <p><i><font color="#ffffff">Search
-memory for &ldquo;
-      <b>LDA $<font color="#ffff00">C0xx</font></b>&rdquo;.</font></i></p>
+memory for &ldquo; <b>LDA $<font color="#ffff00">C0xx</font></b>&rdquo;.</font></i></p>
 
       </td>
 
@@ -2523,7 +2777,8 @@ as Applesoft Poke 768,96</span></i></p>
 
 <p></p>
 
-<h2><a name="Calculator"></a>Calculator</h2>
+<h2><a name="Calculator"></a>Output /
+Calculator</h2>
 
 <p>There is a basic mini hex
 calculator built in.&nbsp;
@@ -2532,9 +2787,7 @@ bit-wise Or, bit-wise Exclusive Or, and bit-wise Negation, with
 Values, Register and Symbols.&nbsp; It will display results in Hex,
 Binary, Decimal, and as a Character (single quoted.)</p>
 
-<p><br>
-
-<br>
+<p>The<br>
 
 </p>
 
@@ -2601,6 +2854,26 @@ Binary, Decimal, and as a Character (single quoted.)</p>
 
     <tr>
 
+      <td>*</td>
+
+      <td>Asterick / Star</td>
+
+      <td><span style="font-style: italic;">Multiply</span></td>
+
+    </tr>
+
+    <tr>
+
+      <td>/</td>
+
+      <td>Forward Slash</td>
+
+      <td><i>Calculate quotient.</i></td>
+
+    </tr>
+
+    <tr>
+
       <td width="10%">
       <p style="">%</p>
 
@@ -2613,25 +2886,6 @@ Binary, Decimal, and as a Character (single quoted.)</p>
 
       <td width="65%">
       <p><i>Calculate remainder (modulus).</i></p>
-
-      </td>
-
-    </tr>
-
-    <tr>
-
-      <td width="10%">
-      <p style="">/</p>
-
-      </td>
-
-      <td width="25%">
-      <p>Forward Slash</p>
-
-      </td>
-
-      <td width="65%">
-      <p><i>Calculate quotient.</i></p>
 
       </td>
 
@@ -2718,8 +2972,6 @@ Binary, Decimal, and as a Character (single quoted.)</p>
 
 <p><br>
 
-<br>
-
 </p>
 
 <h2><font size="4">Notes:</font></h2>
@@ -2734,17 +2986,15 @@ the next immediate expression.</i></p>
   </li>
 
   <li>
-    <p style="margin-bottom: 0in;"><i>There
-is (currently) no multiplication operator, due to the asterisk
-&lsquo;*&rsquo; being used for the wild card operator.</i></p>
+    <p style="margin-bottom: 0in;"><i>The&nbsp;asterisk
+&lsquo;*&rsquo; is also&nbsp;used for the wild card
+operator.</i></p>
 
   </li>
 
 </ul>
 
 <p><br>
-
-<br>
 
 </p>
 
@@ -5001,9 +5251,7 @@ the classic &ldquo;Hello World&rdquo; to the output console.</span></td>
 debugger
 settings, either piece wise, or as a whole. </p>
 
-
 <br>
-
 
 <table border="0" cellpadding="2" cellspacing="0" width="90%">
 
