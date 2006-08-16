@@ -41,9 +41,9 @@
 
 // Prototypes _______________________________________________________________
 
-	int  _6502_GetOpmodeOpbytes( const int iAddress, int & iOpmode_, int & nOpbytes_ );
+	int  _6502_GetOpmodeOpbyte( const int iAddress, int & iOpmode_, int & nOpbytes_ );
 //	void _6502_GetOpcodeOpmode( int & iOpcode_, int & iOpmode_, int & nOpbytes_ );
-	void _6502_GetOpcodeOpmodeOpbytes( int & iOpcode_, int & iOpmode_, int & nOpbytes_ );
+	void _6502_GetOpcodeOpmodeOpbyte( int & iOpcode_, int & iOpmode_, int & nOpbytes_ );
 	bool _6502_GetStackReturnAddress( WORD & nAddress_ );
 	bool _6502_GetTargets( WORD nAddress, int *pTargetPartial_, int *pTargetPointer_, int * pBytes_
 		, const bool bIgnoreJSRJMP = true, bool bIgnoreBranch = true );

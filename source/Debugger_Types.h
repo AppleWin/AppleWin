@@ -30,7 +30,7 @@
 
 	/*
       +---------------------+--------------------------+
-      |      g_nAppMode           |     assembler format     |
+      | Opmode  e           |     assembler format     |
       +=====================+==========================+
       | Immediate           |          #aa             |
       | Absolute            |          aaaa            |
@@ -875,6 +875,75 @@
 		, DISASM_TARGET_ADDR // Note: Also treated as bit flag !!
 		, DISASM_TARGET_BOTH // Note: Also treated as bit flag !!
 		, NUM_DISASM_TARGET_TYPES
+	};
+
+	enum DisasmText_e
+	{
+		nMaxAddressLen    = 40,
+		nMaxOpcodes       =  3,
+		CHARS_FOR_ADDRESS =  8, // 4 digits plus null
+	};
+
+	struct DisasmLine_t
+	{
+		int iOpcode;
+		int iOpmode;
+		int nOpbyte;
+
+		char sAddress  [ CHARS_FOR_ADDRESS ];
+		char sOpCodes  [(nMaxOpcodes*3)+1];
+
+		int  nTarget;
+		char sTarget   [nMaxAddressLen];
+
+		char sTargetOffset[ CHARS_FOR_ADDRESS ]; // +/- 255, realistically +/-1
+		int  nTargetOffset;
+
+		char sTargetPointer[ CHARS_FOR_ADDRESS ];
+		char sTargetValue  [ CHARS_FOR_ADDRESS ];
+//		char sTargetAddress[ CHARS_FOR_ADDRESS ];
+
+		char sImmediate[ 4 ]; // 'c'
+		char nImmediate;
+		char sBranch   [ 4 ]; // ^
+
+		bool bTargetImmediate;
+		bool bTargetIndirect;
+		bool bTargetIndexed ;
+		bool bTargetRelative;
+		bool bTargetX       ;
+		bool bTargetY       ;
+		bool bTargetValue   ;
+
+		void Clear()
+		{
+			sAddress  [ 0 ] = 0;
+			sOpCodes  [ 0 ] = 0;
+
+			nTarget = 0;
+			sTarget   [ 0 ] = 0;
+
+			sTargetOffset[ 0 ] = 0;
+			nTargetOffset = 0;
+
+			sTargetPointer[ 0 ] = 0;
+			sTargetValue  [ 0 ] = 0;
+
+			sImmediate[ 0 ] = 0;
+			nImmediate = 0;
+
+			sBranch   [ 0 ] = 0;
+
+			bTargetImmediate = false;
+			bTargetIndexed   = false;
+			bTargetIndirect  = false;
+//			bTargetInside    = false;
+//			bTargetOutside   = false;
+			bTargetRelative  = false;
+			bTargetX         = false;
+			bTargetY         = false; // need to dislay ",Y"
+			bTargetValue     = false;
+		}
 	};
 	
 // Font ___________________________________________________________________________________________

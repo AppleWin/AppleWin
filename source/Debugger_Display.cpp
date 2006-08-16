@@ -182,12 +182,6 @@ static	char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iV
 			const int iLowBackground  = BG_INFO_CHAR, const int iLowForeground  = FG_INFO_CHAR_LO );
 
 	char  FormatCharTxtAsci ( const BYTE b, bool * pWasAsci_ );
-	int FormatDisassemblyLine(  WORD nOffset, int iOpcode, int iOpmode, int nOpbytes,
-		char *sAddress_, char *sOpCodes_,
-		char *sTarget_, char *sTargetOffset_, int & nTargetOffset_, char *sTargetValue_,
-		char * sImmediate_, char & nImmediate_, char *sBranch_ );
-
-
 
 	void DrawSubWindow_Code ( int iWindow );
 	void DrawSubWindow_IO       (Update_t bUpdate);
@@ -819,212 +813,6 @@ char FormatChar4Font ( const BYTE b, bool *pWasHi_, bool *pWasLo_ )
 }
 
 
-// Disassembly formatting flags returned
-//	@parama sTargetValue_ indirect/indexed final value
-//===========================================================================
-int FormatDisassemblyLine( WORD nBaseAddress, int iOpcode, int iOpmode, int nOpBytes,
-	char *sAddress_, char *sOpCodes_,
-	char *sTarget_, char *sTargetOffset_, int & nTargetOffset_,
-	char *sTargetPointer_, char *sTargetValue_,
-	char *sImmediate_, char & nImmediate_, char *sBranch_ )
-{
-	const int nMaxOpcodes = 3;
-	unsigned int nMinBytesLen = (nMaxOpcodes * (2 + g_bConfigDisasmOpcodeSpaces)); // 2 char for byte (or 3 with space)
-
-	int bDisasmFormatFlags = 0;
-
-	// Composite string that has the symbol or target nAddress
-	WORD nTarget = 0;
-	nTargetOffset_ = 0;
-
-//	if (g_aOpmodes[ iMode ]._sFormat[0])
-	if ((iOpmode != AM_IMPLIED) &&
-		(iOpmode != AM_1) &&
-		(iOpmode != AM_2) &&
-		(iOpmode != AM_3))
-	{
-		nTarget = *(LPWORD)(mem+nBaseAddress+1);
-		if (nOpBytes == 2)
-			nTarget &= 0xFF;
-
-		if (iOpmode == AM_R) // Relative ADDR_REL)
-		{
-			nTarget = nBaseAddress+2+(int)(signed char)nTarget;
-
-			// Always show branch indicators
-			//	if ((nBaseAddress == regs.pc) && CheckJump(nAddress))
-			bDisasmFormatFlags |= DISASM_FORMAT_BRANCH;
-
-			if (nTarget < nBaseAddress)
-			{
-					sprintf( sBranch_, "%s", g_sConfigBranchIndicatorUp[ g_iConfigDisasmBranchType ] );
-			}
-			else
-			if (nTarget > nBaseAddress)
-			{
-				sprintf( sBranch_, "%s", g_sConfigBranchIndicatorDown[ g_iConfigDisasmBranchType ] );
-			}
-			else
-			{
-				sprintf( sBranch_, "%s", g_sConfigBranchIndicatorEqual[ g_iConfigDisasmBranchType ] );
-			}
-		}
-
-//		if (strstr(g_aOpmodes[ iOpmode ]._sFormat,"%s"))
-//		if ((iOpmode >= ADDR_ABS) && (iOpmode <= ADDR_IABS))
-		if ((iOpmode == AM_A  ) || // Absolute
-			(iOpmode == AM_Z  ) || // Zeropage
-			(iOpmode == AM_AX ) || // Absolute, X
-			(iOpmode == AM_AY ) || // Absolute, Y
-			(iOpmode == AM_ZX ) || // Zeropage, X
-			(iOpmode == AM_ZY ) || // Zeropage, Y
-			(iOpmode == AM_R  ) || // Relative
-			(iOpmode == AM_IZX) || // Indexed (Zeropage Indirect, X)
-			(iOpmode == AM_IAX) || // Indexed (Absolute Indirect, X)
-			(iOpmode == AM_NZY) || // Indirect (Zeropage) Index, Y
-			(iOpmode == AM_NZ ) || // Indirect (Zeropage)
-			(iOpmode == AM_NA ))   // Indirect Absolute
-		{
-			LPCTSTR pTarget = NULL;
-			LPCTSTR pSymbol = FindSymbolFromAddress( nTarget );
-			if (pSymbol)
-			{
-				bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
-				pTarget = pSymbol;
-			}
-
-			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
-			{
-				pSymbol = FindSymbolFromAddress( nTarget - 1 );
-				if (pSymbol)
-				{
-					bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
-					bDisasmFormatFlags |= DISASM_FORMAT_OFFSET;
-					pTarget = pSymbol;
-					nTargetOffset_ = +1; // U FA82   LDA #3F1 BREAK+1
-				}
-			}
-			
-			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
-			{
-				pSymbol = FindSymbolFromAddress( nTarget + 1 );
-				if (pSymbol)
-				{
-					bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
-					bDisasmFormatFlags |= DISASM_FORMAT_OFFSET;
-					pTarget = pSymbol;
-					nTargetOffset_ = -1; // U FA82 LDA #3F3 BREAK-1
-				}
-			}
-
-			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
-			{
-					pTarget = FormatAddress( nTarget, nOpBytes );
-			}				
-
-//			sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, pTarget );
-			if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
-			{
-				int nAbsTargetOffset =  (nTargetOffset_ > 0) ? nTargetOffset_ : -nTargetOffset_;
-				sprintf( sTargetOffset_, "%d", nAbsTargetOffset );
-			}
-			sprintf( sTarget_, "%s", pTarget );
-
-
-		// Indirect / Indexed
-			int nTargetPartial;
-			int nTargetPointer;
-			WORD nTargetValue = 0; // de-ref
-			int nTargetBytes;
-			_6502_GetTargets( nBaseAddress, &nTargetPartial, &nTargetPointer, &nTargetBytes );
-
-			if (nTargetPointer != NO_6502_TARGET)
-			{
-				bDisasmFormatFlags |= DISASM_FORMAT_TARGET_POINTER;
-
-				nTargetValue = *(LPWORD)(mem+nTargetPointer);
-
-//				if (((iOpmode >= AM_A) && (iOpmode <= AM_NZ)) && (iOpmode != AM_R))
-				// nTargetBytes refers to size of pointer, not size of value
-//					sprintf( sTargetValue_, "%04X", nTargetValue ); // & 0xFFFF
-
-				if (g_iConfigDisasmTargets & DISASM_TARGET_ADDR)
-					sprintf( sTargetPointer_, "%04X", nTargetPointer & 0xFFFF );
-
-				if (iOpmode != AM_NA ) // Indirect Absolute
-				{
-					bDisasmFormatFlags |= DISASM_FORMAT_TARGET_VALUE;
-					if (g_iConfigDisasmTargets & DISASM_TARGET_VAL)
-						sprintf( sTargetValue_, "%02X", nTargetValue & 0xFF );
-
-					bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
-					nImmediate_ = (BYTE) nTargetValue;
-
-					unsigned _char = FormatCharTxtCtrl( FormatCharTxtHigh( nImmediate_, NULL ), NULL );
-					sprintf( sImmediate_, "%c", _char );
-
-//					if (ConsoleColorIsEscapeMeta( nImmediate_ ))
-#if OLD_CONSOLE_COLOR
-					if (ConsoleColorIsEscapeMeta( _char ))
-						sprintf( sImmediate_, "%c%c", _char, _char );
-					else
-						sprintf( sImmediate_, "%c", _char );
-#endif
-				}
-				
-//				if (iOpmode == AM_NA ) // Indirect Absolute
-//					sprintf( sTargetValue_, "%04X", nTargetPointer & 0xFFFF );
-//				else
-// //					sprintf( sTargetValue_, "%02X", nTargetValue & 0xFF );
-//					sprintf( sTargetValue_, "%04X:%02X", nTargetPointer & 0xFFFF, nTargetValue & 0xFF );
-			}
-		}
-		else
-		if (iOpmode == AM_M)
-		{
-//			sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, (unsigned)nTarget );
-			sprintf( sTarget_, "%02X", (unsigned)nTarget );
-
-			if (iOpmode == AM_M)
-			{
-				bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
-				nImmediate_ = (BYTE) nTarget;
-				unsigned _char = FormatCharTxtCtrl( FormatCharTxtHigh( nImmediate_, NULL ), NULL );
-
-				sprintf( sImmediate_, "%c", _char );
-#if OLD_CONSOLE_COLOR
-				if (ConsoleColorIsEscapeMeta( _char ))
-					sprintf( sImmediate_, "%c%c", _char, _char );
-				else
-					sprintf( sImmediate_, "%c", _char );
-#endif
-			}
-		}
-	}
-
-	sprintf( sAddress_, "%04X", nBaseAddress );
-
-	// Opcode Bytes
-	char *pDst = sOpCodes_;
-	for( int iBytes = 0; iBytes < nOpBytes; iBytes++ )
-	{
-		BYTE nMem = (unsigned)*(mem+nBaseAddress+iBytes);
-		sprintf( pDst, "%02X", nMem ); // sBytes+strlen(sBytes)
-		pDst += 2;
-
-		if (g_bConfigDisasmOpcodeSpaces)
-		{
-			strcat( pDst, " " );
-			pDst++; // 2.5.3.3 fix
-		}
-	}
-    while (strlen(sOpCodes_) < nMinBytesLen)
-	{
-		strcat( sOpCodes_, " " );
-	}
-
-	return bDisasmFormatFlags;
-}	
 
 
 //===========================================================================
@@ -1412,60 +1200,338 @@ void DrawConsoleInput ()
 // Disassembly ____________________________________________________________________________________
 
 
+// Disassembly formatting flags returned
+//	@parama sTargetValue_ indirect/indexed final value
 //===========================================================================
-WORD DrawDisassemblyLine ( int iLine, WORD nBaseAddress, LPTSTR text)
+int GetDisassemblyLine( WORD nBaseAddress, DisasmLine_t & line_ )
+//	char *sAddress_, char *sOpCodes_,
+//	char *sTarget_, char *sTargetOffset_, int & nTargetOffset_,
+//	char *sTargetPointer_, char *sTargetValue_,
+//	char *sImmediate_, char & nImmediate_, char *sBranch_ )
 {
-	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
-		return 0;
-
-	const int nMaxAddressLen = 40;
-	const int nMaxOpcodes = 3;
+	line_.Clear();
 
 	int iOpcode;
 	int iOpmode;
-	int nOpbytes;
-	iOpcode = _6502_GetOpmodeOpbytes( nBaseAddress, iOpmode, nOpbytes );
+	int nOpbyte;
+
+	iOpcode = _6502_GetOpmodeOpbyte( nBaseAddress, iOpmode, nOpbyte );
+
+	line_.iOpcode = iOpcode;
+	line_.iOpmode = iOpmode;
+	line_.nOpbyte = nOpbyte;
+	
 
 #if _DEBUG
 //	if (iLine != 41)
 //		return nOpbytes;
 #endif
 
-	const int CHARS_FOR_ADDRESS = 8; // 4 digits plus null
-
-	char sAddress  [ CHARS_FOR_ADDRESS ];
-	char sOpcodes  [(nMaxOpcodes*3)+1] = "";
-	char sTarget   [nMaxAddressLen] = "";
-
-	char sTargetOffset[ CHARS_FOR_ADDRESS ] = ""; // +/- 255, realistically +/-1
-	int  nTargetOffset;
-
-	char sTargetPointer[ CHARS_FOR_ADDRESS ] = "";
-	char sTargetValue  [ CHARS_FOR_ADDRESS ] = "";
-
-	char nImmediate = 0;
-	char sImmediate[ 4 ]; // 'c'
-	char sBranch   [ 4 ]; // ^
-
-	bool bTargetIndirect = false;
-	bool bTargetX     = false;
-	bool bTargetY     = false; // need to dislay ",Y"
-	bool bTargetValue = false;
+	if (iOpmode == AM_M)
+		line_.bTargetImmediate = true;
 
 	if ((iOpmode >= AM_IZX) && (iOpmode <= AM_NA))
-		bTargetIndirect = true;
+		line_.bTargetIndirect = true; // ()
 
-	if (((iOpmode >= AM_A) && (iOpmode <= AM_ZY)) || bTargetIndirect)
-		bTargetValue = true;
+	if ((iOpmode >= AM_IZX) && (iOpmode <= AM_NZY))
+		line_.bTargetIndexed = true; // ()
+
+	if (((iOpmode >= AM_A) && (iOpmode <= AM_ZY)) || line_.bTargetIndirect)
+		line_.bTargetValue = true; // #$
 
 	if ((iOpmode == AM_AX) || (iOpmode == AM_ZX) || (iOpmode == AM_IZX) || (iOpmode == AM_IAX))
-		bTargetX = true;
+		line_.bTargetX = true; // ,X
 
-	if ((iOpmode == AM_AY) || (iOpmode == AM_ZY)) // Note: AM_NZY is checked and triggered by bTargetIndirect
-		bTargetY = true;
+	if ((iOpmode == AM_AY) || (iOpmode == AM_ZY) || (iOpmode == AM_NZY))
+		line_.bTargetY = true; // ,Y
 
-	int bDisasmFormatFlags = FormatDisassemblyLine( nBaseAddress, iOpcode, iOpmode, nOpbytes,
-		sAddress, sOpcodes, sTarget, sTargetOffset, nTargetOffset, sTargetPointer, sTargetValue, sImmediate, nImmediate, sBranch );
+	const int nMaxOpcodes = 3;
+	unsigned int nMinBytesLen = (nMaxOpcodes * (2 + g_bConfigDisasmOpcodeSpaces)); // 2 char for byte (or 3 with space)
+
+	int bDisasmFormatFlags = 0;
+
+	// Composite string that has the symbol or target nAddress
+	WORD nTarget = 0;
+	line_.nTargetOffset = 0;
+
+//	if (g_aOpmodes[ iMode ]._sFormat[0])
+	if ((iOpmode != AM_IMPLIED) &&
+		(iOpmode != AM_1) &&
+		(iOpmode != AM_2) &&
+		(iOpmode != AM_3))
+	{
+		nTarget = *(LPWORD)(mem+nBaseAddress+1);
+		if (nOpbyte == 2)
+			nTarget &= 0xFF;
+
+		if (iOpmode == AM_R) // Relative ADDR_REL)
+		{
+			line_.bTargetRelative = true;
+
+			nTarget = nBaseAddress+2+(int)(signed char)nTarget;
+
+			line_.nTarget = nTarget;
+			sprintf( line_.sTargetValue, "%04X", nTarget & 0xFFFF );
+
+			// Always show branch indicators
+			//	if ((nBaseAddress == regs.pc) && CheckJump(nAddress))
+			bDisasmFormatFlags |= DISASM_FORMAT_BRANCH;
+
+			if (nTarget < nBaseAddress)
+			{
+				sprintf( line_.sBranch, "%s", g_sConfigBranchIndicatorUp[ g_iConfigDisasmBranchType ] );
+			}
+			else
+			if (nTarget > nBaseAddress)
+			{
+				sprintf( line_.sBranch, "%s", g_sConfigBranchIndicatorDown[ g_iConfigDisasmBranchType ] );
+			}
+			else
+			{
+				sprintf( line_.sBranch, "%s", g_sConfigBranchIndicatorEqual[ g_iConfigDisasmBranchType ] );
+			}
+		}
+
+//		if (strstr(g_aOpmodes[ iOpmode ]._sFormat,"%s"))
+//		if ((iOpmode >= ADDR_ABS) && (iOpmode <= ADDR_IABS))
+		if ((iOpmode == AM_A  ) || // Absolute
+			(iOpmode == AM_Z  ) || // Zeropage
+			(iOpmode == AM_AX ) || // Absolute, X
+			(iOpmode == AM_AY ) || // Absolute, Y
+			(iOpmode == AM_ZX ) || // Zeropage, X
+			(iOpmode == AM_ZY ) || // Zeropage, Y
+			(iOpmode == AM_R  ) || // Relative
+			(iOpmode == AM_IZX) || // Indexed (Zeropage Indirect, X)
+			(iOpmode == AM_IAX) || // Indexed (Absolute Indirect, X)
+			(iOpmode == AM_NZY) || // Indirect (Zeropage) Index, Y
+			(iOpmode == AM_NZ ) || // Indirect (Zeropage)
+			(iOpmode == AM_NA ))   // Indirect Absolute
+		{
+			line_.nTarget  = nTarget;
+
+			LPCTSTR pTarget = NULL;
+			LPCTSTR pSymbol = FindSymbolFromAddress( nTarget );
+			if (pSymbol)
+			{
+				bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
+				pTarget = pSymbol;
+			}
+
+			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
+			{
+				pSymbol = FindSymbolFromAddress( nTarget - 1 );
+				if (pSymbol)
+				{
+					bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
+					bDisasmFormatFlags |= DISASM_FORMAT_OFFSET;
+					pTarget = pSymbol;
+					line_.nTargetOffset = +1; // U FA82   LDA #3F1 BREAK+1
+				}
+			}
+			
+			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
+			{
+				pSymbol = FindSymbolFromAddress( nTarget + 1 );
+				if (pSymbol)
+				{
+					bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
+					bDisasmFormatFlags |= DISASM_FORMAT_OFFSET;
+					pTarget = pSymbol;
+					line_.nTargetOffset = -1; // U FA82 LDA #3F3 BREAK-1
+				}
+			}
+
+			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
+			{
+					pTarget = FormatAddress( nTarget, nOpbyte );
+			}				
+
+//			sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, pTarget );
+			if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
+			{
+				int nAbsTargetOffset =  (line_.nTargetOffset > 0) ? line_.nTargetOffset : - line_.nTargetOffset;
+				sprintf( line_.sTargetOffset, "%d", nAbsTargetOffset );
+			}
+			sprintf( line_.sTarget, "%s", pTarget );
+
+
+		// Indirect / Indexed
+			int nTargetPartial;
+			int nTargetPointer;
+			WORD nTargetValue = 0; // de-ref
+			int nTargetBytes;
+			_6502_GetTargets( nBaseAddress, &nTargetPartial, &nTargetPointer, &nTargetBytes );
+
+			if (nTargetPointer != NO_6502_TARGET)
+			{
+				bDisasmFormatFlags |= DISASM_FORMAT_TARGET_POINTER;
+
+				nTargetValue = *(LPWORD)(mem+nTargetPointer);
+
+//				if (((iOpmode >= AM_A) && (iOpmode <= AM_NZ)) && (iOpmode != AM_R))
+				// nTargetBytes refers to size of pointer, not size of value
+//					sprintf( sTargetValue_, "%04X", nTargetValue ); // & 0xFFFF
+
+				if (g_iConfigDisasmTargets & DISASM_TARGET_ADDR)
+					sprintf( line_.sTargetPointer, "%04X", nTargetPointer & 0xFFFF );
+
+				if (iOpmode != AM_NA ) // Indirect Absolute
+				{
+					bDisasmFormatFlags |= DISASM_FORMAT_TARGET_VALUE;
+					if (g_iConfigDisasmTargets & DISASM_TARGET_VAL)
+						sprintf( line_.sTargetValue, "%02X", nTargetValue & 0xFF );
+
+					bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
+					line_.nImmediate = (BYTE) nTargetValue;
+
+					unsigned _char = FormatCharTxtCtrl( FormatCharTxtHigh( line_.nImmediate, NULL ), NULL );
+					sprintf( line_.sImmediate, "%c", _char );
+
+//					if (ConsoleColorIsEscapeMeta( nImmediate_ ))
+#if OLD_CONSOLE_COLOR
+					if (ConsoleColorIsEscapeMeta( _char ))
+						sprintf( line_.sImmediate, "%c%c", _char, _char );
+					else
+						sprintf( line_.sImmediate, "%c", _char );
+#endif
+				}
+				
+//				if (iOpmode == AM_NA ) // Indirect Absolute
+//					sprintf( sTargetValue_, "%04X", nTargetPointer & 0xFFFF );
+//				else
+// //					sprintf( sTargetValue_, "%02X", nTargetValue & 0xFF );
+//					sprintf( sTargetValue_, "%04X:%02X", nTargetPointer & 0xFFFF, nTargetValue & 0xFF );
+			}
+		}
+		else
+		if (iOpmode == AM_M)
+		{
+//			sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, (unsigned)nTarget );
+			sprintf( line_.sTarget, "%02X", (unsigned)nTarget );
+
+			if (iOpmode == AM_M)
+			{
+				bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
+				line_.nImmediate = (BYTE) nTarget;
+				unsigned _char = FormatCharTxtCtrl( FormatCharTxtHigh( line_.nImmediate, NULL ), NULL );
+
+				sprintf( line_.sImmediate, "%c", _char );
+#if OLD_CONSOLE_COLOR
+				if (ConsoleColorIsEscapeMeta( _char ))
+					sprintf( line_.sImmediate, "%c%c", _char, _char );
+				else
+					sprintf( line_.sImmediate, "%c", _char );
+#endif
+			}
+		}
+	}
+
+	sprintf( line_.sAddress, "%04X", nBaseAddress );
+
+	// Opcode Bytes
+	char *pDst = line_.sOpCodes;
+	for( int iByte = 0; iByte < nOpbyte; iByte++ )
+	{
+		BYTE nMem = (unsigned)*(mem+nBaseAddress + iByte);
+		sprintf( pDst, "%02X", nMem ); // sBytes+strlen(sBytes)
+		pDst += 2;
+
+		if (g_bConfigDisasmOpcodeSpaces)
+		{
+			strcat( pDst, " " );
+			pDst++; // 2.5.3.3 fix
+		}
+	}
+
+	int nSpaces = strlen( line_.sOpCodes );
+    while (nSpaces < nMinBytesLen)
+	{
+		strcat( line_.sOpCodes, " " );
+		nSpaces++;
+	}
+
+	return bDisasmFormatFlags;
+}	
+
+void FormatDisassemblyLine( const DisasmLine_t & line, char * sDisassembly, const int nBufferSize )
+{
+	//> Address Seperator Opcodes   Label Mnemonic Target [Immediate] [Branch]
+	const char * pMnemonic = g_aOpcodes[ line.iOpcode ].sMnemonic;
+
+	sprintf( sDisassembly, "%s:%s %s "
+		, line.sAddress
+		, line.sOpCodes
+		, pMnemonic
+	);
+
+/*
+	if (line.bTargetIndexed || line.bTargetIndirect)
+	{
+		strcat( sDisassembly, "(" );
+	}
+
+	if (line.bTargetImmediate)
+		strcat( sDisassembly, "#$" );
+
+	if (line.bTargetValue)
+		strcat( sDisassembly, line.sTarget );
+
+	if (line.bTargetIndirect)
+	{
+		if (line.bTargetX)
+	 		strcat( sDisassembly, ", X" );
+		if (line.bTargetY)
+ 			strcat( sDisassembly, ", Y" );
+	}
+
+	if (line.bTargetIndexed || line.bTargetIndirect)
+	{
+		strcat( sDisassembly, ")" );
+	}
+
+	if (line.bTargetIndirect)
+	{
+		if (line.bTargetY)
+ 			strcat( sDisassembly, ", Y" );
+	}
+*/
+	char sTarget[ 32 ];
+
+	if (line.bTargetValue || line.bTargetRelative || line.bTargetImmediate)
+	{
+		if (line.bTargetRelative)
+			strcpy( sTarget, line.sTargetValue );
+		else
+		if (line.bTargetImmediate)
+		{
+			strcat( sDisassembly, "#" );
+			strcpy( sTarget, line.sTarget ); // sTarget
+		}
+		else
+			sprintf( sTarget, g_aOpmodes[ line.iOpmode ].m_sFormat, line.nTarget );
+
+		strcat( sDisassembly, "$" );
+		strcat( sDisassembly, sTarget );
+	}
+}
+
+//===========================================================================
+WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
+{
+	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
+		return 0;
+
+	int iOpcode;
+	int iOpmode;
+	int nOpbyte;
+	DisasmLine_t line;
+
+	int bDisasmFormatFlags = GetDisassemblyLine( nBaseAddress, line );
+	iOpcode = line.iOpcode;	
+	iOpmode = line.iOpmode;
+	nOpbyte = line.nOpbyte;
+
+//		sAddress, sOpcodes, sTarget, sTargetOffset, nTargetOffset, sTargetPointer, sTargetValue, sImmediate, nImmediate, sBranch );
 
 	//> Address Seperator Opcodes   Label Mnemonic Target [Immediate] [Branch]
 	//
@@ -1473,7 +1539,6 @@ WORD DrawDisassemblyLine ( int iLine, WORD nBaseAddress, LPTSTR text)
 	//>       ^          ^        ^           ^   ^
 	//>       6          17       27          41  46
 	const int nDefaultFontWidth = 7; // g_aFontConfig[FONT_DISASM_DEFAULT]._nFontWidth or g_nFontWidthAvg
-
 
 	enum TabStop_e
 	{
@@ -1647,7 +1712,7 @@ WORD DrawDisassemblyLine ( int iLine, WORD nBaseAddress, LPTSTR text)
 //			DebuggerSetColorBG( dc, DebuggerGetColor( FG_DISASM_BOOKMARK ) ); // swapped
 //			DebuggerSetColorFG( dc, DebuggerGetColor( BG_DISASM_BOOKMARK ) ); // swapped
 //		}		
-		PrintTextCursorX( (LPCTSTR) sAddress, linerect );
+		PrintTextCursorX( (LPCTSTR) line.sAddress, linerect );
 
 		if (bAddressIsBookmark)
 		{
@@ -1670,7 +1735,7 @@ WORD DrawDisassemblyLine ( int iLine, WORD nBaseAddress, LPTSTR text)
 //		PrintTextCursorX( " ", linerect );
 
 		if (g_bConfigDisasmOpcodesView)
-			PrintTextCursorX( (LPCTSTR) sOpcodes, linerect );
+			PrintTextCursorX( (LPCTSTR) line.sOpCodes, linerect );
 //		PrintTextCursorX( "  ", linerect );
 
 	// Label
@@ -1692,27 +1757,27 @@ WORD DrawDisassemblyLine ( int iLine, WORD nBaseAddress, LPTSTR text)
 		if (! bCursorLine)
 			DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
 
-		LPCTSTR pMnemonic = g_aOpcodes[ iOpcode ].sMnemonic;
+		const char * pMnemonic = g_aOpcodes[ iOpcode ].sMnemonic;
 		PrintTextCursorX( pMnemonic, linerect );
 
 		PrintTextCursorX( " ", linerect );
 
 	// Target
-		if (iOpmode == AM_M)
+		if (line.bTargetImmediate)
 		{
 			if (! bCursorLine)
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));	
 			PrintTextCursorX( "#$", linerect );
 		}
 
-		if (bTargetIndirect)
+		if (line.bTargetIndexed || line.bTargetIndirect)
 		{
 			if (! bCursorLine)
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));	
 			PrintTextCursorX( "(", linerect );
 		}
 
-		char *pTarget = sTarget;
+		char *pTarget = line.sTarget;
 		if (*pTarget == '$')
 		{
 			pTarget++;
@@ -1749,46 +1814,52 @@ WORD DrawDisassemblyLine ( int iLine, WORD nBaseAddress, LPTSTR text)
 			if (! bCursorLine)
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));	
 
-			if (nTargetOffset > 0)
+			if (line.nTargetOffset > 0)
 				PrintTextCursorX( "+", linerect );
-			if (nTargetOffset < 0)
+			else
+			if (line.nTargetOffset < 0)
 				PrintTextCursorX( "-", linerect );
 
 			if (! bCursorLine)
 			{
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPCODE )); // Technically, not a hex number, but decimal
 			}		
-			PrintTextCursorX( sTargetOffset, linerect );
+			PrintTextCursorX( line.sTargetOffset, linerect );
 		}
-		// Indirect Target Regs
-		if (bTargetIndirect || bTargetX || bTargetY)
+		// Inside Parenthesis = Indirect Target Regs
+		if (line.bTargetIndirect || line.bTargetX || line.bTargetY)
 		{
 			if (! bCursorLine)
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));	
 
-			if (bTargetX)
+			if (line.bTargetX)
 			{
 				PrintTextCursorX( ",", linerect );
 				if (! bCursorLine)
 					DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG ) );
 				PrintTextCursorX( "X", linerect );
 			}
-			
-			if (bTargetY)
+			else
+			if ((line.bTargetY) && (! line.bTargetIndirect))
 			{
 				PrintTextCursorX( ",", linerect );
 				if (! bCursorLine)
 					DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG ) );
 				PrintTextCursorX( "Y", linerect );
 			}
-			
+		}			
+
+		if (line.bTargetIndexed || line.bTargetIndirect)
+		{
 			if (! bCursorLine)
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));	
 
-			if (bTargetIndirect)
-				PrintTextCursorX( ")", linerect );
+			PrintTextCursorX( ")", linerect );
+		}
 
-			if (iOpmode == AM_NZY)
+		if (line.bTargetIndexed)
+		{
+			if (line.bTargetY)
 			{
 				PrintTextCursorX( ",", linerect );
 				if (! bCursorLine)
@@ -1807,7 +1878,7 @@ WORD DrawDisassemblyLine ( int iLine, WORD nBaseAddress, LPTSTR text)
 			if (! bCursorLine)
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 
-			PrintTextCursorX( sTargetPointer, linerect );
+			PrintTextCursorX( line.sTargetPointer, linerect );
 
 			if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_VALUE)
 			{
@@ -1820,7 +1891,7 @@ WORD DrawDisassemblyLine ( int iLine, WORD nBaseAddress, LPTSTR text)
 				if (! bCursorLine)
 					DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPCODE ));
 
-				PrintTextCursorX( sTargetValue, linerect );
+				PrintTextCursorX( line.sTargetValue, linerect );
 				PrintTextCursorX( " ", linerect );
 			}
 		}
@@ -1840,10 +1911,10 @@ WORD DrawDisassemblyLine ( int iLine, WORD nBaseAddress, LPTSTR text)
 
 			if (! bCursorLine)
 			{
-				ColorizeSpecialChar( NULL, nImmediate, MEM_VIEW_ASCII, iBackground );
+				ColorizeSpecialChar( NULL, line.nImmediate, MEM_VIEW_ASCII, iBackground );
 //					iBackground, FG_INFO_CHAR_HI, FG_DISASM_CHAR, FG_INFO_CHAR_LO );
 			}
-			PrintTextCursorX( sImmediate, linerect );
+			PrintTextCursorX( line.sImmediate, linerect );
 
 			DebuggerSetColorBG( DebuggerGetColor( iBackground ) ); // Hack: Colorize can "color bleed to EOL"
 			if (! bCursorLine)
@@ -1871,7 +1942,7 @@ WORD DrawDisassemblyLine ( int iLine, WORD nBaseAddress, LPTSTR text)
 #endif
 
 //			PrintTextColor( sBranch, linerect );
-			PrintText( sBranch, linerect );
+			PrintText( line.sBranch, linerect );
 
 #if !USE_APPLE_FONT
 			if (g_iConfigDisasmBranchType)
@@ -1880,7 +1951,7 @@ WORD DrawDisassemblyLine ( int iLine, WORD nBaseAddress, LPTSTR text)
 		}
 	}
 
-	return nOpbytes;
+	return nOpbyte;
 }
 
 
@@ -3194,7 +3265,7 @@ void DrawSubWindow_Code ( int iWindow )
 	WORD nAddress = g_nDisasmTopAddress; // g_nDisasmCurAddress;
 	for (int iLine = 0; iLine < nLines; iLine++ )
 	{
-		nAddress += DrawDisassemblyLine( iLine, nAddress, NULL);
+		nAddress += DrawDisassemblyLine( iLine, nAddress );
 	}
 
 #if !USE_APPLE_FONT
