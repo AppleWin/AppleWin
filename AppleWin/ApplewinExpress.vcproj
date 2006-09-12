@@ -520,6 +520,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\Apple2orig.rom"
+				>
+			</File>
+			<File
 				RelativePath=".\resource\Apple2plus.rom"
 				>
 			</File>
@@ -571,6 +575,10 @@
 			</File>
 			<File
 				RelativePath="RESOURCE\DEBUG.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\Debug_Font.bmp"
 				>
 			</File>
 			<File
