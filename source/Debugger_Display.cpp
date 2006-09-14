@@ -2580,7 +2580,7 @@ void DrawZeroPagePointers ( int line )
 
 	DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
 
-	const nMaxSymbolLen = 7;
+	const int nMaxSymbolLen = 7;
 	char sText[nMaxSymbolLen+1] = "";
 
 	for(int iZP = 0; iZP < MAX_ZEROPAGE_POINTERS; iZP++)
@@ -3132,7 +3132,7 @@ void DrawWindowBackground_Info( int g_iWindowThis )
 //===========================================================================
 void UpdateDisplay (Update_t bUpdate)
 {
-	static spDrawMutex = false;
+	static int spDrawMutex = false;
 	
 	if (spDrawMutex)
 	{
