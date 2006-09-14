@@ -9210,7 +9210,7 @@ void DebuggerCursorUpdate()
 	if (g_nAppMode != MODE_DEBUG)
 		return;
 
-	const  nUpdatesPerSecond = 4;
+	const  int nUpdatesPerSecond = 4;
 	const  DWORD nHz = 1000 / nUpdatesPerSecond;
 	static DWORD nBeg = GetTickCount(); // timeGetTime();
 	       DWORD nNow = GetTickCount(); // timeGetTime();
