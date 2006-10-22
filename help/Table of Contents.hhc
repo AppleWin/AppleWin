@@ -83,6 +83,10 @@
 			<param name="Local" value="uthernet.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Command line">
+			<param name="Local" value="CommandLine.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Debugger">
 			<param name="Local" value="dbg-toc-intro.html">
 			<param name="ImageNumber" value="2">
