@@ -581,7 +581,7 @@ static DWORD   imagemode[MAXIMAGES];
 LPBYTE         memshadow[MAXIMAGES][0x100];
 LPBYTE         memwrite[MAXIMAGES][0x100];
 
-static BOOL    fastpaging   = 0;
+static BOOL    fastpaging   = 0;	// Redundant: only ever set to 0, by MemSetFastPaging(0)
 DWORD          image        = 0;
 DWORD          lastimage    = 0;
 static BOOL    lastwriteram = 0;
@@ -593,7 +593,6 @@ static LPBYTE  memmain      = NULL;
 static DWORD   memmode      = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM;
 static LPBYTE  memrom       = NULL;
 static BOOL    modechanging = 0;
-DWORD          pages        = 0;
 
 MemoryInitPattern_e g_eMemoryInitPattern = MIP_FF_FF_00_00;
 
@@ -672,7 +671,6 @@ void UpdateFastPaging () {
     mem = memimage+(image << 16);
     UpdatePaging(1,0);
   }
-  CpuReinitialize();
 }
 
 //===========================================================================
@@ -1049,10 +1047,6 @@ void MemSetFastPaging (BOOL on) {
   imagemode[0] = memmode;
   if (!fastpaging)
     UpdatePaging(1,0);
-  cpuemtype = fastpaging ? CPU_FASTPAGING : CPU_COMPILING;
-  CpuReinitialize();
-  if (cpuemtype == CPU_COMPILING)
-    CpuResetCompilerData();
 }
 
 //===========================================================================
@@ -1108,8 +1102,6 @@ BYTE __stdcall MemSetPaging (WORD programcounter, BYTE address, BYTE write, BYTE
 				else
 				{
 					UpdatePaging(0,0);
-					if (cpuemtype == CPU_COMPILING)
-						CpuResetCompilerData();
 				}
 			}
 			break;
@@ -1136,7 +1128,6 @@ BYTE __stdcall MemSetPaging (WORD programcounter, BYTE address, BYTE write, BYTE
   // WRITE TABLES.
   if ((lastmemmode != memmode) || modechanging) {
     modechanging = 0;
-    ++pages;
 
     // IF FAST PAGING IS ACTIVE, WE KEEP MULTIPLE COMPLETE MEMORY IMAGES
     // AND WRITE TABLES, AND SWITCH BETWEEN THEM.  THE FAST PAGING VERSION
@@ -1148,8 +1139,6 @@ BYTE __stdcall MemSetPaging (WORD programcounter, BYTE address, BYTE write, BYTE
     // WRITE TABLE, AND UPDATE THEM EVERY TIME PAGING IS CHANGED.
     else {
       UpdatePaging(0,0);
-      if (cpuemtype == CPU_COMPILING)
-        CpuResetCompilerData();
     }
 
   }
@@ -1181,7 +1170,6 @@ void MemTrimImages () {
       image   = realimage;
       mem     = memimage+(image << 16);
       memmode = imagemode[image];
-      CpuReinitialize();
     }
     if (++trimnumber >= lastimage)
       trimnumber = 0;
@@ -1270,7 +1258,6 @@ DWORD MemSetSnapshot(SS_BaseMemory* pSS)
 
 	//
 
-	pages = 0;
 	modechanging = 0;
 
 	UpdatePaging(1,0);		// Initialize=1, UpdateWriteOnly=0

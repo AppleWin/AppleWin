@@ -46,9 +46,6 @@ bool      g_bFullSpeed      = false;
 // Win32
 HINSTANCE g_hInstance          = (HINSTANCE)0;
 
-static DWORD lastfastpaging = 0;
-static DWORD lasttrimimages = 0;
-
 AppMode_e	g_nAppMode = MODE_LOGO;
 
 static int lastmode         = MODE_LOGO;
@@ -67,21 +64,6 @@ DWORD       g_dwCyclesThisFrame = 0;
 
 FILE*		g_fh			= NULL;
 bool		g_bDisableDirectSound = false;
-
-//===========================================================================
-
-void CheckFastPaging ()
-{
-  if ((pages >= 10) && CpuSupportsFastPaging())
-  {
-    lastfastpaging = cumulativecycles;
-    if (cpuemtype == CPU_COMPILING)
-	{
-      lasttrimimages = cumulativecycles;
-      MemSetFastPaging(1);
-    }
-  }
-}
 
 //===========================================================================
 
@@ -145,28 +127,12 @@ void ContinueExecution()
 
 	cyclenum = dwExecutedCycles;
 
-	CheckFastPaging();
 	DiskUpdatePosition(dwExecutedCycles);
 	JoyUpdatePosition();
 	VideoUpdateVbl(g_dwCyclesThisFrame);
 
 	SpkrUpdate(cyclenum);
 	CommUpdate(cyclenum);
-
-	//
-
-	if (cpuemtype == CPU_FASTPAGING)	//?
-	{
-		if ((!pages) && (cumulativecycles-lastfastpaging > 500000))
-		{
-			MemSetFastPaging(0);
-		}
-		else if (cumulativecycles-lasttrimimages > 500000)
-		{
-			MemTrimImages();
-			lasttrimimages = cumulativecycles;
-		}
-	}
 
 	//
 
@@ -179,8 +145,6 @@ void ContinueExecution()
 		emulmsec_frac %= CLKS_PER_MS;
 	}
 
-	pages = 0;	//?
-	
 	//
 	// DETERMINE WHETHER THE SCREEN WAS UPDATED, THE DISK WAS SPINNING,
 	// OR THE KEYBOARD I/O PORTS WERE BEING EXCESSIVELY QUERIED THIS CLOCKTICK
