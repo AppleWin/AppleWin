@@ -8147,11 +8147,6 @@ void DebugBegin ()
 	// This is called every time the emulator is reset.
 	// And everytime the debugger is entered.
 
-	if (cpuemtype == CPU_FASTPAGING)
-	{
-		MemSetFastPaging(0);
-	}
-
 	g_nAppMode = MODE_DEBUG;
 	FrameRefreshStatus(DRAW_TITLE);
 

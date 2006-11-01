@@ -17,7 +17,6 @@ extern DWORD      image;
 extern DWORD      lastimage;
 extern LPBYTE     mem;
 extern LPBYTE     memdirty;
-extern DWORD      pages;
 
 #ifdef RAMWORKS
 extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)

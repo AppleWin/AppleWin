@@ -986,7 +986,7 @@ void SetLastDrawnImage () {
     memcpy(vidlastmem+0x2000,g_pHiresBank0,0x2000);
   if (SW_DHIRES && SW_HIRES)
     memcpy(vidlastmem,g_pHiresBank1,0x2000);
-  if (SW_80COL && !SW_HIRES)
+  else if (SW_80COL)	// Don't test for !SW_HIRES, as some 80-col text routines have SW_HIRES set (Bug #8300)
     memcpy(vidlastmem,g_pTextBank1,0x400);
   int loop;
   for (loop = 0; loop < 256; loop++)
@@ -2079,10 +2079,7 @@ BYTE __stdcall VideoSetMode (WORD, BYTE address, BYTE write, BYTE, ULONG) {
   }
   if (oldpage2 != SW_PAGE2) {
     static DWORD lastrefresh = 0;
-    BOOL fastvideoslowcpu = 0;
-    if ((cpuemtype == CPU_FASTPAGING) && (emulmsec-lastrefresh >= 20))
-      fastvideoslowcpu = 1;
-    if ((displaypage2 && !SW_PAGE2) || (!behind) || fastvideoslowcpu) {
+    if ((displaypage2 && !SW_PAGE2) || (!behind)) {
       displaypage2 = (SW_PAGE2 != 0);
       if (!redrawfull) {
         VideoRefreshScreen();
