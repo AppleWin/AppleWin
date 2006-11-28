@@ -386,12 +386,13 @@ void DrawStatusArea (HDC passdc, int drawflags)
 			RECT rect = {0,0,8,8};
 			DrawBitmapRect(dc,x+12,y+8,&rect,diskbitmap[iDrive1Status]);
 			DrawBitmapRect(dc,x+30,y+8,&rect,diskbitmap[iDrive2Status]);
-		if (g_bApple2e)
-		{
-			RECT rect = {0,0,30,8};
-			DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]);
+
+			if (g_bApple2e)
+			{
+				RECT rect = {0,0,30,8};
+				DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]);
+			}
 		}
-	}
 
 		if (drawflags & DRAW_TITLE)
 		{
