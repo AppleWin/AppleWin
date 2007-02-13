@@ -34,8 +34,6 @@ To support Bob Bishop's intros
 
 Plans for (1st pass) cleaning up are:
 . Ditch the x86 code to access the PC speaker + ditch PC speaker support
-. Ditch DLL support completely & re-factor any code that jumps through hoops to be compatible with DLLs:
-	namely CpuCalcCycles() & CPU_FASTPAGING, etc.
 . The arrays ioread[] & iowrite[] in Memory.cpp should be switched from units of 1 byte to 16 bytes.
   This will yield 256 entries spanning [$C000…$CFFF] – currently it’s only [$C000…$C0FF]. This will mean that:
 	a) cards with I/O mapped above $C0FF (eg Mockingboard, Mouse?) don’t have to be kludged as in the READ/WRITE macros in CPU.cpp
