@@ -33,6 +33,7 @@
 #define IDR_APPLE2E_ROM                 128
 #define IDC_MB_ENABLE                   130
 #define IDD_TFE_SETTINGS_DIALOG         131
+#define IDR_PRINTDRVR                   132
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007

@@ -133,6 +133,7 @@ void ContinueExecution()
 
 	SpkrUpdate(cyclenum);
 	CommUpdate(cyclenum);
+	PrintUpdate(cyclenum);
 
 	//
 
@@ -322,6 +323,10 @@ void EnterMessageLoop ()
 		if (g_nAppMode == MODE_DEBUG)
 		{
 			DebuggerUpdate();
+		}
+		else if (g_nAppMode == MODE_LOGO)
+		{
+			Sleep(100);		// Stop process hogging CPU
 		}
 	}
 }

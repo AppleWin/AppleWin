@@ -9206,11 +9206,11 @@ void DebuggerCursorUpdate()
 		return;
 
 	const  int nUpdatesPerSecond = 4;
-	const  DWORD nHz = 1000 / nUpdatesPerSecond;
+	const  DWORD nUpdateInternal_ms = 1000 / nUpdatesPerSecond;
 	static DWORD nBeg = GetTickCount(); // timeGetTime();
 	       DWORD nNow = GetTickCount(); // timeGetTime();
 
-	if (((nNow - nBeg)) >= nHz)
+	if (((nNow - nBeg)) >= nUpdateInternal_ms)
 	{
 		nBeg = nNow;
 		
@@ -9219,6 +9219,10 @@ void DebuggerCursorUpdate()
 		FrameGetDC();
 		DrawConsoleCursor();
 		FrameReleaseDC();
+	}
+	else
+	{
+		Sleep(10);		// Stop process hogging CPU
 	}
 }
 
