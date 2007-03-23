@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="shift_jis"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="Applewin"
 	ProjectGUID="{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}"
 	RootNamespace="Applewin"
@@ -283,6 +283,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\Log.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\source\Memory.cpp"
 				>
 			</File>
@@ -296,6 +300,14 @@
 			</File>
 			<File
 				RelativePath=".\source\Mockingboard.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\ParallelPrinter.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\ParallelPrinter.h"
 				>
 			</File>
 			<File
@@ -623,6 +635,10 @@
 			</File>
 			<File
 				RelativePath="RESOURCE\HELP.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\Parallel.rom"
 				>
 			</File>
 			<File
