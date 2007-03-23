@@ -521,6 +521,7 @@ LRESULT CALLBACK FrameWndProc (
         ImageDestroy();
         HD_Cleanup();
       }
+      PrintDestroy();
       CommDestroy();
       CpuDestroy();
       MemDestroy();
@@ -1071,6 +1072,7 @@ void ResetMachineState () {
   DiskBoot();
   VideoResetState();
   CommReset();
+  PrintReset();
   JoyReset();
   MB_Reset();
   SpkrReset();

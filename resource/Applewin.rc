@@ -286,6 +286,7 @@ END
 //
 
 IDR_HDDRVR              FIRMWARE                "Hddrvr.bin"
+IDR_PRINTDRVR           FIRMWARE                "Parallel.rom"
 
 /////////////////////////////////////////////////////////////////////////////
 //

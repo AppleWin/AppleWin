@@ -3151,7 +3151,7 @@ void UpdateDisplay (Update_t bUpdate)
 	if (bUpdate & UPDATE_BACKGROUND)
 	{
 #if USE_APPLE_FONT
-		VideoDrawLogoBitmap( g_hFrameDC );
+		//VideoDrawLogoBitmap( g_hFrameDC );	// TC: Remove purple-flash after every single-step
 
 		SetBkMode( g_hFrameDC, OPAQUE);
 		SetBkColor(g_hFrameDC, RGB(0,0,0));

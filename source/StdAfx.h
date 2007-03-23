@@ -1,4 +1,4 @@
-#define WIN32_LEAN_AND_ME
+//#define WIN32_LEAN_AND_MEAN
 
 // Mouse Wheel is not supported on Win95.
 // If we didn't care about supporting Win95 (compile/run-time errors)
@@ -41,8 +41,10 @@
 #include "Harddisk.h"
 #include "Joystick.h"
 #include "Keyboard.h"
+#include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
+#include "ParallelPrinter.h"
 #include "PropertySheetPage.h"
 #include "Registry.h"
 #include "Riff.h"

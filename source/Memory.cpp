@@ -201,22 +201,22 @@ iofunction ioread[0x100]  = {KeybReadData,       // $C000
                              MemSetPaging,       // $C08D
                              MemSetPaging,       // $C08E
                              MemSetPaging,       // $C08F
-                             NullIo,             // $C090
-                             NullIo,             // $C091
-                             NullIo,             // $C092
-                             NullIo,             // $C093
-                             NullIo,             // $C094
-                             NullIo,             // $C095
-                             NullIo,             // $C096
-                             NullIo,             // $C097
-                             NullIo,             // $C098
-                             NullIo,             // $C099
-                             NullIo,             // $C09A
-                             NullIo,             // $C09B
-                             NullIo,             // $C09C
-                             NullIo,             // $C09D
-                             NullIo,             // $C09E
-                             NullIo,             // $C09F
+                             PrintStatus,        // $C090
+                             PrintStatus,        // $C091
+                             PrintStatus,        // $C092
+                             PrintStatus,        // $C093
+                             PrintStatus,        // $C094
+                             PrintStatus,        // $C095
+                             PrintStatus,        // $C096
+                             PrintStatus,        // $C097
+                             PrintStatus,        // $C098
+                             PrintStatus,        // $C099
+                             PrintStatus,        // $C09A
+                             PrintStatus,        // $C09B
+                             PrintStatus,        // $C09C
+                             PrintStatus,        // $C09D
+                             PrintStatus,        // $C09E
+                             PrintStatus,        // $C09F
                              NullIo,             // $C0A0
                              CommDipSw,          // $C0A1
                              CommDipSw,          // $C0A2
@@ -464,22 +464,22 @@ iofunction iowrite[0x100] = {MemSetPaging,       // $C000
                              MemSetPaging,       // $C08D
                              MemSetPaging,       // $C08E
                              MemSetPaging,       // $C08F
-                             NullIo,             // $C090
-                             NullIo,             // $C091
-                             NullIo,             // $C092
-                             NullIo,             // $C093
-                             NullIo,             // $C094
-                             NullIo,             // $C095
-                             NullIo,             // $C096
-                             NullIo,             // $C097
-                             NullIo,             // $C098
-                             NullIo,             // $C099
-                             NullIo,             // $C09A
-                             NullIo,             // $C09B
-                             NullIo,             // $C09C
-                             NullIo,             // $C09D
-                             NullIo,             // $C09E
-                             NullIo,             // $C09F
+                             PrintTransmit,      // $C090
+                             PrintTransmit,      // $C091
+                             PrintTransmit,      // $C092
+                             PrintTransmit,      // $C093
+                             PrintTransmit,      // $C094
+                             PrintTransmit,      // $C095
+                             PrintTransmit,      // $C096
+                             PrintTransmit,      // $C097
+                             PrintTransmit,      // $C098
+                             PrintTransmit,      // $C099
+                             PrintTransmit,      // $C09A
+                             PrintTransmit,      // $C09B
+                             PrintTransmit,      // $C09C
+                             PrintTransmit,      // $C09D
+                             PrintTransmit,      // $C09E
+                             PrintTransmit,      // $C09F
                              NullIo,             // $C0A0
                              NullIo,             // $C0A1
                              NullIo,             // $C0A2
@@ -945,6 +945,7 @@ void MemInitialize () {
 	*(memrom+0x064E) = 0xEA;
 
 	HD_Load_Rom(memrom);	// HDD f/w gets loaded to $C700
+  PrintLoadRom(memrom);	// parallel printer firmware gets loaded to $C100
 
 	MemReset();
 }

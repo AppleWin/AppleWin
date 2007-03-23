@@ -29,6 +29,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #pragma  hdrstop
 
+#define LOG_DISK_ENABLED 1
+
+#if LOG_DISK_ENABLED
+    #define LOG_DISK(format, ...) LOG(format, __VA_ARGS__)
+#else
+    #define LOG_DISK(...)
+#endif
+
 // Public _________________________________________________________________________________________
 
 	BOOL      enhancedisk     = 1;
@@ -55,14 +63,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		int    nibbles;
 	};
 
-static int       currdrive       = 0;
+static WORD      currdrive       = 0;
 static BOOL      diskaccessed    = 0;
 static Disk_t    g_aFloppyDisk[DRIVES];
 static BYTE      floppylatch     = 0;
 static BOOL      floppymotoron   = 0;
 static BOOL      floppywritemode = 0;
+static WORD      phases; // state bits for stepper magnet phases 0 - 3
 
-static void ChecSpinning();
+static void CheckSpinning();
 static Disk_Status_e GetDriveLightStatus( const int iDrive );
 static bool IsDriveValid( const int iDrive );
 static void ReadTrack (int drive);
@@ -187,6 +196,7 @@ static void ReadTrack (int iDrive)
 
 	if (pFloppy->trackimage && pFloppy->imagehandle)
 	{
+        LOG_DISK("read track %2X%s\r", pFloppy->track, (pFloppy->phase & 1) ? ".5" : "");
 		ImageReadTrack(
 			pFloppy->imagehandle,
 			pFloppy->track,
@@ -268,26 +278,54 @@ BYTE __stdcall DiskControlMotor (WORD, BYTE address, BYTE, BYTE, ULONG) {
 }
 
 //===========================================================================
-BYTE __stdcall DiskControlStepper (WORD, BYTE address, BYTE, BYTE, ULONG) {
+BYTE __stdcall DiskControlStepper (WORD, BYTE address, BYTE, BYTE, ULONG)
+{
   Disk_t * fptr = &g_aFloppyDisk[currdrive];
-  if (address & 1) {
-    int phase     = (address >> 1) & 3;
-    int direction = 0;
-    if (phase == ((fptr->phase+1) & 3))
-      direction = 1;
-    if (phase == ((fptr->phase+3) & 3))
-      direction = -1;
-    if (direction) {
-      fptr->phase = MAX(0,MIN(79,fptr->phase+direction));
-      if (!(fptr->phase & 1)) {
-        int newtrack = MIN(TRACKS-1,fptr->phase >> 1);
-        if (newtrack != fptr->track) {
-          if (fptr->trackimage && fptr->trackimagedirty)
-            WriteTrack(currdrive);
-          fptr->track          = newtrack;
-          fptr->trackimagedata = 0;
-        }
+  int phase     = (address >> 1) & 3;
+  int phase_bit = (1 << phase);
+
+  // update the magnet states
+  if (address & 1)
+  {
+    // phase on
+    phases |= phase_bit;
+    LOG_DISK("track %02X phases %X phase %d on  address $C0E%X\r", fptr->phase, phases, phase, address & 0xF);
+  }
+  else
+  {
+    // phase off
+    phases &= ~phase_bit;
+    LOG_DISK("track %02X phases %X phase %d off address $C0E%X\r", fptr->phase, phases, phase, address & 0xF);
+  }
+
+  // check for any stepping effect from a magnet
+  // - move only when the magnet opposite the cog is off
+  // - move in the direction of an adjacent magnet if one is on
+  // - do not move if both adjacent magnets are on
+  // momentum and timing are not accounted for ... maybe one day!
+  int direction = 0;
+  if ((phases & (1 << fptr->phase)) == 0)
+  {
+    if (phases & (1 << ((fptr->phase + 1) & 3)))
+      direction += 1;
+    if (phases & (1 << ((fptr->phase + 3) & 3)))
+      direction -= 1;
+  }
+
+  // apply magnet step, if any
+  if (direction)
+  {
+    fptr->phase = MAX(0, MIN(79, fptr->phase + direction));
+    int newtrack = MIN(TRACKS-1, fptr->phase >> 1); // (round half tracks down)
+    LOG_DISK("newtrack %2X%s\r", newtrack, (fptr->phase & 1) ? ".5" : "");
+    if (newtrack != fptr->track)
+    {
+      if (fptr->trackimage && fptr->trackimagedirty)
+      {
+        WriteTrack(currdrive);
       }
+      fptr->track          = newtrack;
+      fptr->trackimagedata = 0;
     }
   }
   return (address == 0xE0) ? 0xFF : MemReturnRandomData(1);
@@ -455,6 +493,12 @@ BYTE __stdcall DiskReadWrite (WORD programcounter, BYTE, BYTE, BYTE, ULONG) {
         return 0;
     else
       result = *(fptr->trackimage+fptr->byte);
+#if LOG_DISK_ENABLED
+  if (0)
+  {
+    LOG_DISK("nib %4X = %2X\r", fptr->byte, result);
+  }
+#endif
   if (++fptr->byte >= fptr->nibbles)
     fptr->byte = 0;
   return result;
@@ -463,6 +507,7 @@ BYTE __stdcall DiskReadWrite (WORD programcounter, BYTE, BYTE, BYTE, ULONG) {
 //===========================================================================
 void DiskReset () {
   floppymotoron = 0;
+  phases = 0;
 }
 
 //===========================================================================
@@ -592,12 +637,13 @@ bool DiskDriveSwap()
 DWORD DiskGetSnapshot(SS_CARD_DISK2* pSS, DWORD dwSlot)
 {
 	pSS->Hdr.UnitHdr.dwLength = sizeof(SS_CARD_DISK2);
-	pSS->Hdr.UnitHdr.dwVersion = MAKE_VERSION(1,0,0,1);
+	pSS->Hdr.UnitHdr.dwVersion = MAKE_VERSION(1,0,0,2);
 
 	pSS->Hdr.dwSlot = dwSlot;
 	pSS->Hdr.dwType = CT_Disk2;
 
-	pSS->currdrive			= currdrive;
+	pSS->phases			    = phases; // new in 1.0.0.2 disk snapshots
+	pSS->currdrive			= currdrive; // this was an int in 1.0.0.1 disk snapshots
 	pSS->diskaccessed		= diskaccessed;
 	pSS->enhancedisk		= enhancedisk;
 	pSS->floppylatch		= floppylatch;
@@ -628,10 +674,13 @@ DWORD DiskGetSnapshot(SS_CARD_DISK2* pSS, DWORD dwSlot)
 
 DWORD DiskSetSnapshot(SS_CARD_DISK2* pSS, DWORD /*dwSlot*/)
 {
-	if(pSS->Hdr.UnitHdr.dwVersion != MAKE_VERSION(1,0,0,1))
-		return -1;
+	if(pSS->Hdr.UnitHdr.dwVersion > MAKE_VERSION(1,0,0,2))
+    {
+        return -1;
+    }
 
-	currdrive		= pSS->currdrive;
+	phases  		= pSS->phases; // new in 1.0.0.2 disk snapshots
+	currdrive		= pSS->currdrive; // this was an int in 1.0.0.1 disk snapshots
 	diskaccessed	= pSS->diskaccessed;
 	enhancedisk		= pSS->enhancedisk;
 	floppylatch		= pSS->floppylatch;
