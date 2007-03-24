@@ -287,6 +287,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\Log.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\Memory.cpp"
 				>
 			</File>

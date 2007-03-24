@@ -1444,7 +1444,7 @@ int GetDisassemblyLine( WORD nBaseAddress, DisasmLine_t & line_ )
 	}
 
 	int nSpaces = strlen( line_.sOpCodes );
-    while (nSpaces < nMinBytesLen)
+    while (nSpaces < (int)nMinBytesLen)
 	{
 		strcat( line_.sOpCodes, " " );
 		nSpaces++;
