@@ -7762,8 +7762,8 @@ void OutputTraceLine ()
 			g_bTraceHeader = false;
 
 			fprintf( g_hTraceFile,
-//				"00 00 00 0000--------  0000:90 90 90  NOP"
-				"A: X: Y: SP: Flags     Addr:Opcode    Mnemonic\n"
+//				"00 00 00 0000 --------  0000:90 90 90  NOP"
+				"A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n"
 			);
 		}
 
