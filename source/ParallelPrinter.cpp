@@ -95,7 +95,7 @@ void PrintUpdate(DWORD totalcycles)
     {
         return;
     }
-    if ((inactivity += totalcycles) > (5 * 1000 * 1000)) // around 5 seconds
+    if ((inactivity += totalcycles) > (10 * 1000 * 1000)) // around 10 seconds
     {
         // inactive, so close the file (next print will overwrite it)
         ClosePrint();
