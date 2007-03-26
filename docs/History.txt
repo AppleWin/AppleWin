@@ -17,24 +17,38 @@ tomch at users.berlios.de
 
 Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
-- Win98: 'Alt Gr' (Right-Alt) emits a Control key-press before the Right-Alt, so key combinations
-  involving Closed-Apple (Right-Alt) will probably fail. Use Keypad's 'Del' instead.
 - During Mockingboard playback, Speaker emulation isn't precise
-- Speech emu is broken under WinXP (and Win98 too?)
 
 
-Acknowledgements:
-- Floating bus support by Nick Westgate
-- Uthernet card by Glenn Jones (adapted from VICE's TFE by Spiro Trikaliotis)
-- Debugger rewrite by Michael Pohoreski
-- TV emulation mode by Thomas Stahl
-- SSI263 phoneme samples from Chris Foxwell
-- Harddisk card: source module & f/w by Robert Hoem
+1.13.2 - 26 Mar 2007
+--------------------
+* Apple ][ (non-autostart monitor)
+* 6502 NMOS illegal opcode support (for ][ & ][+)
+* 65C02 CMOS undefined opcode support (for //e)
+* Can configure entry to debugger via specific opcode or illegal(6502)/undefined(65C02) opcode – use BRKOP cmd
+  - So you can run Apple at full-speed until it hits your breakpoint (eg. BRK)
+* Fix: [Bug #7238] FLASH support in 80-column mode
+* Fix: [Bug #8300] 80-col text in Silvern Castle got corrupted
+* Fix for MB/Phasor for short phonemes - bug in DirectSound in WinXP (see KB327698)
+* Docs updated
+* Debugger:
+  + Now uses Apple font
+  + Mouse support: button & wheel
+  + BLOAD/BSAVE
+  + Search command: S/SH
+  + New DISASM command
+  + BRKOP, BRK # to enter debugger
+* Disk ][ stepping fixed (Mabel's Mansion now works)
+* Simple parallel printer support in slot-1
+  . Creates a file called “Printer.txt” in AppleWin.exe’s folder
+  . Eg. PR#1, then LIST
+  . The file will auto-close after 10 secs
 
 
 1.13.1 - 07 May 2006
 --------------------
 * Fix: [Bug #7375]  Crashes on Win98/ME
+
 
 1.13.0 - 02 May 2006
 --------------------
@@ -49,6 +63,7 @@ Acknowledgements:
 * Fix: [Bug #6778] enable harddisk not working in 1.12.9.1
 * Fix: [Bug #6790] Right click menu stops working on drives
 * Fix: [Bug #7231] AppleWin installed in path with spaces
+
 
 1.12.9.1 - 10 Mar 2006
 ----------------------
@@ -91,12 +106,14 @@ Acknowledgements:
         o Changed BP to now default to setting breakpoint at Program Counter (PC)
         o Added new color scheme: BW. (This used to be an alias for MONO before.)
 
+
 1.12.9.0 - 25 Feb 2006
 ----------------------
 - Moved source to BerliOS & released under GPL
 - Debugger v2.4.2.16:
   + Breakpoint on memory address added: BPM address[,length]
   
+
 1.12.8.0 - 22 Feb 2006
 ----------------------
 - *** Major re-write of debugger by Michael Pohoreski ***
@@ -111,6 +128,7 @@ Acknowledgements:
 - Fixed internal BRK: only pushed PC+1, not PC+2 to stack
 - Fixed CPU not getting properly reset (eg. SP) on Ctrl+Reset
 - Changed attenuation on AY8910 outputs before mixing: MB: none (was 2/3), Phasor: still 2/3
+
 
 1.12.7.2 - 25 Jan 2006
 ----------------------
