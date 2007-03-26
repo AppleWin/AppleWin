@@ -620,7 +620,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 	// Initialize COM
 	CoInitialize( NULL );
-	SysClk_InitTimer();
+	bool bSysClkOK = SysClk_InitTimer();
 //	DSInit();	// Done when g_hFrameWindow is created (WM_CREATE)
 
 	// DO ONE-TIME INITIALIZATION
@@ -659,7 +659,14 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		MemInitialize();
 		VideoInitialize();
 		FrameCreateWindow();
-	   tfe_init();
+
+		if (!bSysClkOK)
+		{
+			MessageBox(g_hFrameWindow, "DirectX failed to create SystemClock instance", TEXT("AppleWin Error"), MB_OK);
+			break;
+		}
+
+		tfe_init();
         Snapshot_Startup();		// Do this after everything has been init'ed
     
 		if(bSetFullScreen)

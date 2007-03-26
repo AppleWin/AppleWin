@@ -40,7 +40,7 @@ void DSUninit();
 LONG NewVolume(DWORD dwVolume, DWORD dwVolumeMax);
 
 void SysClk_WaitTimer();
-void SysClk_InitTimer();
+bool SysClk_InitTimer();
 void SysClk_UninitTimer();
 void SysClk_StartTimerUsec(DWORD dwUsecPeriod);
 void SysClk_StopTimer();
