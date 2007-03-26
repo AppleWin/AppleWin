@@ -16,6 +16,10 @@
 		</OBJECT>
 	<UL>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="AppleWin Team">
+			<param name="Local" value="AppleWin-team.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Acknowledgements">
 			<param name="Local" value="Acknowledgements.html">
 			</OBJECT>
