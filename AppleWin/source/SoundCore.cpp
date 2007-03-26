@@ -566,7 +566,7 @@ static bool g_bRefClockTimerActive = false;
 static DWORD g_dwLastUsecPeriod = 0;
 
 
-void SysClk_InitTimer()
+bool SysClk_InitTimer()
 {
 	g_hSemaphore = CreateSemaphore(NULL, 0, 1, NULL);		// Max count = 1
 	if (g_hSemaphore == NULL)
@@ -574,7 +574,12 @@ void SysClk_InitTimer()
 
 	if (CoCreateInstance(CLSID_SystemClock, NULL, CLSCTX_INPROC,
                          IID_IReferenceClock, (LPVOID*)&g_pRefClock) != S_OK)
+	{
 		fprintf(stderr, "Error initialising COM\n");
+		return false;	// Fails for Win95!
+	}
+
+	return true;
 }
 
 void SysClk_UninitTimer()
