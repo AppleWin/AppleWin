@@ -288,51 +288,48 @@ void EnterMessageLoop ()
 {
 	MSG message;
 
-	PeekMessage( &message, NULL, 0, 0, PM_NOREMOVE);
+	PeekMessage(&message, NULL, 0, 0, PM_NOREMOVE);
 
 	while (message.message!=WM_QUIT)
 	{
-// 	while (GetMessage(&message,0,0,0))
-	if (PeekMessage( &message, NULL, 0, 0, PM_REMOVE))
-	{
-		TranslateMessage(&message);
-		DispatchMessage(&message);
-
-		while ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING))
+		if (PeekMessage(&message, NULL, 0, 0, PM_REMOVE))
 		{
-			if (PeekMessage(&message,0,0,0,PM_REMOVE))
+			TranslateMessage(&message);
+			DispatchMessage(&message);
+
+			while ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING))
 			{
-				if (message.message == WM_QUIT)
-					return;
-				TranslateMessage(&message);
-				DispatchMessage(&message);
+				if (PeekMessage(&message,0,0,0,PM_REMOVE))
+				{
+					if (message.message == WM_QUIT)
+						return;
+
+					TranslateMessage(&message);
+					DispatchMessage(&message);
+				}
+				else if (g_nAppMode == MODE_STEPPING)
+				{
+					DebugContinueStepping();
+				}
+				else
+				{
+					ContinueExecution();
+					if (g_nAppMode != MODE_DEBUG)
+					{
+						if (g_bFullSpeed)
+							ContinueExecution();
+					}
+				}
 			}
-			else if (g_nAppMode == MODE_STEPPING)
-				DebugContinueStepping();
-			else
-			{
-				ContinueExecution();
-				if (g_nAppMode != MODE_DEBUG)
-					if (g_bFullSpeed)
-						ContinueExecution();
-			}
+		}
+		else
+		{
+			if (g_nAppMode == MODE_DEBUG)
+				DebuggerUpdate();
+			else if (g_nAppMode == MODE_LOGO)
+				Sleep(100);		// Stop process hogging CPU
 		}
 	}
-	else
-	{
-		if (g_nAppMode == MODE_DEBUG)
-		{
-			DebuggerUpdate();
-		}
-		else if (g_nAppMode == MODE_LOGO)
-		{
-			Sleep(100);		// Stop process hogging CPU
-		}
-	}
-}
-
-//	while (PeekMessage(&message,0,0,0,PM_REMOVE))
-//		; // intentional null statement
 }
 
 //===========================================================================
@@ -619,9 +616,9 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	//-----
 
 	// Initialize COM
+	// . NB. DSInit() is done when g_hFrameWindow is created (WM_CREATE)
 	CoInitialize( NULL );
 	bool bSysClkOK = SysClk_InitTimer();
-//	DSInit();	// Done when g_hFrameWindow is created (WM_CREATE)
 
 	// DO ONE-TIME INITIALIZATION
 	g_hInstance = passinstance;
@@ -663,7 +660,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		if (!bSysClkOK)
 		{
 			MessageBox(g_hFrameWindow, "DirectX failed to create SystemClock instance", TEXT("AppleWin Error"), MB_OK);
-			break;
+			PostMessage(g_hFrameWindow, WM_DESTROY, 0, 0);	// Close everything down
 		}
 
 		tfe_init();
