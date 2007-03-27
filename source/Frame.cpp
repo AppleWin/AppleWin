@@ -529,7 +529,7 @@ LRESULT CALLBACK FrameWndProc (
       VideoDestroy();
       MB_Destroy();
       DeleteGdiObjects();
-      PostQuitMessage(0);
+      PostQuitMessage(0);	// Post WM_QUIT message to the thread's message queue
       break;
 
     case WM_DISPLAYCHANGE:
