@@ -25,7 +25,7 @@ Restrictions/bugs:
 * Apple ][ (non-autostart monitor)
 * 6502 NMOS illegal opcode support (for ][ & ][+)
 * 65C02 CMOS undefined opcode support (for //e)
-* Can configure entry to debugger via specific opcode or illegal(6502)/undefined(65C02) opcode – use BRKOP cmd
+* Can configure entry to debugger via specific opcode or illegal(6502)/undefined(65C02) opcode - use BRKOP cmd
   - So you can run Apple at full-speed until it hits your breakpoint (eg. BRK)
 * Fix: [Bug #7238] FLASH support in 80-column mode
 * Fix: [Bug #8300] 80-col text in Silvern Castle got corrupted
@@ -38,11 +38,11 @@ Restrictions/bugs:
   + Search command: S/SH
   + New DISASM command
   + BRKOP, BRK # to enter debugger
-* Disk ][ stepping fixed (Mabel's Mansion now works)
+* Disk ][ track stepping fixed (Mabel's Mansion now works)
 * Simple parallel printer support in slot-1
-  . Creates a file called “Printer.txt” in AppleWin.exe’s folder
-  . Eg. PR#1, then LIST
-  . The file will auto-close after 10 secs
+  . Creates (or overwrites) a file called "Printer.txt" in AppleWin.exe's folder
+  . Eg. PR#1, then LIST, then PR#0
+  . The file will auto-close 10 seconds after the last printed output
 
 
 1.13.1 - 07 May 2006
