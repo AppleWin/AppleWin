@@ -8886,7 +8886,8 @@ void DebuggerProcessKey( int keycode )
 		bUpdateDisplay |= DebuggerProcessCommand( true ); // copy console input to console output
 		bUpdateDisplay |= UPDATE_CONSOLE_DISPLAY;
 	}
-	else if (keycode == VK_OEM_3) // Tilde ~
+	else if (( keycode == VK_OEM_3 ) ||	// US: Tilde ~ (key to the immediate left of numeral 1)
+			 ( keycode == VK_OEM_8 ))	// UK: Logical NOT ¬ (key to the immediate left of numeral 1)
 	{
 		if (KeybGetCtrlStatus())
 		{
@@ -9176,7 +9177,7 @@ void DebuggerProcessKey( int keycode )
 		} // switch
 	}
 
-	if (bUpdateDisplay) //  & UPDATE_BACKGROUND)
+	if (bUpdateDisplay && !g_bDebuggerViewingAppleOutput) //  & UPDATE_BACKGROUND)
 		UpdateDisplay( bUpdateDisplay );
 }
 
@@ -9210,7 +9211,7 @@ void DebuggerCursorUpdate()
 	static DWORD nBeg = GetTickCount(); // timeGetTime();
 	       DWORD nNow = GetTickCount(); // timeGetTime();
 
-	if (((nNow - nBeg)) >= nUpdateInternal_ms)
+	if (((nNow - nBeg) >= nUpdateInternal_ms) && !g_bDebuggerViewingAppleOutput)
 	{
 		nBeg = nNow;
 		
@@ -9232,9 +9233,7 @@ void DebuggerCursorNext()
 {
 	g_bInputCursor ^= true;
 	if (g_bInputCursor)
-	{
 		ConsoleUpdateCursor( g_aInputCursor[ g_iInputCursor ] );
-	}
 	else
 		ConsoleUpdateCursor( 0 ); // show char under cursor
 }

@@ -570,7 +570,10 @@ bool SysClk_InitTimer()
 {
 	g_hSemaphore = CreateSemaphore(NULL, 0, 1, NULL);		// Max count = 1
 	if (g_hSemaphore == NULL)
+	{
 		fprintf(stderr, "Error creating semaphore\n");
+		return false;
+	}
 
 	if (CoCreateInstance(CLSID_SystemClock, NULL, CLSCTX_INPROC,
                          IID_IReferenceClock, (LPVOID*)&g_pRefClock) != S_OK)
