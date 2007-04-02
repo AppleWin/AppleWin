@@ -32,9 +32,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define LOG_DISK_ENABLED 1
 
 #if LOG_DISK_ENABLED
-    #define LOG_DISK(format, ...) LOG(format, __VA_ARGS__)
+// __VA_ARGS__ not supported on MSVC++ .NET 7.x
+    #define LOG_DISK(format, params) LOG(format, params)
 #else
-    #define LOG_DISK(...)
+    #define LOG_DISK(format, params)
 #endif
 
 // Public _________________________________________________________________________________________
@@ -196,7 +197,7 @@ static void ReadTrack (int iDrive)
 
 	if (pFloppy->trackimage && pFloppy->imagehandle)
 	{
-        LOG_DISK("read track %2X%s\r", pFloppy->track, (pFloppy->phase & 1) ? ".5" : "");
+        LOG_DISK("read track %2X%s\r", (pFloppy->track, (pFloppy->phase & 1) ? ".5" : ""));
 		ImageReadTrack(
 			pFloppy->imagehandle,
 			pFloppy->track,
@@ -289,13 +290,13 @@ BYTE __stdcall DiskControlStepper (WORD, BYTE address, BYTE, BYTE, ULONG)
   {
     // phase on
     phases |= phase_bit;
-    LOG_DISK("track %02X phases %X phase %d on  address $C0E%X\r", fptr->phase, phases, phase, address & 0xF);
+    LOG_DISK("track %02X phases %X phase %d on  address $C0E%X\r", (fptr->phase, phases, phase, address & 0xF));
   }
   else
   {
     // phase off
     phases &= ~phase_bit;
-    LOG_DISK("track %02X phases %X phase %d off address $C0E%X\r", fptr->phase, phases, phase, address & 0xF);
+    LOG_DISK("track %02X phases %X phase %d off address $C0E%X\r", (fptr->phase, phases, phase, address & 0xF));
   }
 
   // check for any stepping effect from a magnet
@@ -317,7 +318,7 @@ BYTE __stdcall DiskControlStepper (WORD, BYTE address, BYTE, BYTE, ULONG)
   {
     fptr->phase = MAX(0, MIN(79, fptr->phase + direction));
     int newtrack = MIN(TRACKS-1, fptr->phase >> 1); // (round half tracks down)
-    LOG_DISK("newtrack %2X%s\r", newtrack, (fptr->phase & 1) ? ".5" : "");
+    LOG_DISK("newtrack %2X%s\r", (newtrack, (fptr->phase & 1) ? ".5" : ""));
     if (newtrack != fptr->track)
     {
       if (fptr->trackimage && fptr->trackimagedirty)
@@ -496,7 +497,7 @@ BYTE __stdcall DiskReadWrite (WORD programcounter, BYTE, BYTE, BYTE, ULONG) {
 #if LOG_DISK_ENABLED
   if (0)
   {
-    LOG_DISK("nib %4X = %2X\r", fptr->byte, result);
+    LOG_DISK("nib %4X = %2X\r", (fptr->byte, result));
   }
 #endif
   if (++fptr->byte >= fptr->nibbles)
