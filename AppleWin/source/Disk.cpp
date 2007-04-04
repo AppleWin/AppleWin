@@ -31,13 +31,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define LOG_DISK_ENABLED 1
 
-#ifndef _VC71
-#if LOG_DISK_ENABLED
-// __VA_ARGS__ not supported on MSVC++ .NET 7.x
-    #define LOG_DISK(format, params) LOG(format, params)
-#else
-    #define LOG_DISK(format, params)
-#endif
+#ifndef _VC71	// __VA_ARGS__ not supported on MSVC++ .NET 7.x
+	#if LOG_DISK_ENABLED
+		#define LOG_DISK(format, ...) LOG(format, __VA_ARGS__)
+	#else
+		#define LOG_DISK(...)
+	#endif
 #endif
 
 // Public _________________________________________________________________________________________
