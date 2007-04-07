@@ -20,29 +20,35 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise
 
 
-1.13.2 - 26 Mar 2007
---------------------
-* Apple ][ (non-autostart monitor)
-* 6502 NMOS illegal opcode support (for ][ & ][+)
-* 65C02 CMOS undefined opcode support (for //e)
-* Can configure entry to debugger via specific opcode or illegal(6502)/undefined(65C02) opcode - use BRKOP cmd
-  - So you can run Apple at full-speed until it hits your breakpoint (eg. BRK)
+1.13.2 - 07 April 2007
+----------------------
+* Added: Apple ][ (non-autostart monitor)
+* Added: 6502 NMOS illegal opcode support (for ][ & ][+)
+* Added: 65C02 CMOS undefined opcode support (for //e)
+* Added: Simple parallel printer support in slot-1
+  . Creates (or overwrites) a file called "Printer.txt" in AppleWin.exe's folder
+  . Eg. PR#1, then LIST, then PR#0
+  . The file will auto-close 10 seconds after the last printed output
 * Fix: [Bug #7238] FLASH support in 80-column mode
 * Fix: [Bug #8300] 80-col text in Silvern Castle got corrupted
-* Fix for MB/Phasor for short phonemes - bug in DirectSound in WinXP (see KB327698)
-* Docs updated
+* Fix: Speech with MB/Phasor for short phonemes - bug in DirectSound in WinXP (see KB327698)
+* Fix: Disk ][ track stepping (Mabel's Mansion now works)
+* Docs updated (although debugger docs still partially out of date)
 * Debugger:
   + Now uses Apple font
+  + Can configure entry to debugger via specific opcode or illegal(6502)/undefined(65C02) opcode - use BRKOP cmd
+    - So you can run Apple at full-speed until it hits your breakpoint (eg. BRK)
+  + BRKOP, BRK # to enter debugger
   + Mouse support: button & wheel
   + BLOAD/BSAVE
   + Search command: S/SH
   + New DISASM command
-  + BRKOP, BRK # to enter debugger
-* Disk ][ track stepping fixed (Mabel's Mansion now works)
-* Simple parallel printer support in slot-1
-  . Creates (or overwrites) a file called "Printer.txt" in AppleWin.exe's folder
-  . Eg. PR#1, then LIST, then PR#0
-  . The file will auto-close 10 seconds after the last printed output
+  + bookmarks, via bm, bma, bmc, bml, ctrl-#, alt-#
+  + HELP RANGE
+  + HELP OPERATORS
+  + PRINT, PRINTF
+  + ctrl-v (paste) support
+  & lots more (doc's to be updated soon)
 
 
 1.13.1 - 07 May 2006
