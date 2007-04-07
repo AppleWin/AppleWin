@@ -4,9 +4,9 @@
   <link rel="shortcut icon" href="applewin.ico">
   <title>Apple //e Emulator for Windows</title></head>
 <body alink="gold" background="background.gif" bgcolor="mediumpurple" link="orange" text="powderblue" vlink="plum">
-<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.13.1</font></u></font></p>
+<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.13.2</font></u></font></p>
 <p align="center"><font face="Tahoma"><img src="applewin.gif" title="" alt="Apple //e Emulator Logo" height="384" width="560"></font></p>
-<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.13.1.zip">Version 1.13.1</a><br>
+<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.13.2.zip">Version 1.13.2</a><br>
 <a href="#OldReleases">Download older releases</a><br>
 </font></p>
 
@@ -20,14 +20,18 @@ The SVN repository is located here: <a href="https://developer.berlios.de/projec
 </p><p><font face="Tahoma">
 Latest AppleWin compiled html help: <a href="applewin.chm">AppleWin.chm</a>
 </font></p>
-<p><font face="Tahoma"></font><br></p>
+<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.13.2 -&nbsp;7 April 2007</u></font></p>
+<font face="Tahoma">
+<ul><li>Added: Apple ][ (non-autostart monitor)</li><li>Added: 6502 NMOS illegal opcode support (for ][ &amp; ][+)</li><li>Added: 65C02 CMOS undefined opcode support (for //e)</li><li>Added: Simple parallel printer support in slot-1<br>&nbsp; . Creates (or overwrites) a file called "Printer.txt" in AppleWin.exe's folder<br>&nbsp; . Eg. PR#1, then LIST, then PR#0<br>&nbsp; . The file will auto-close 10 seconds after the last printed output</li><li>Fix: [Bug #7238] FLASH support in 80-column mode</li><li>Fix: [Bug #8300] 80-col text in Silvern Castle got corrupted</li><li>Fix: Speech with MB/Phasor for short phonemes - bug in DirectSound in WinXP (see KB327698)</li><li>Fix: Disk ][ track stepping (Mabel's Mansion now works)</li><li>Docs updated (although debugger docs still partially out of date)</li><li>Debugger:<br>&nbsp; + Now uses Apple font<br>&nbsp; + Can configure entry to debugger via specific opcode or illegal(6502)/undefined(65C02) opcode - use BRKOP cmd<br>&nbsp;&nbsp;&nbsp; - So you can run Apple at full-speed until it hits your breakpoint (eg. BRK)<br>&nbsp; + BRKOP, BRK # to enter debugger<br>&nbsp; + Mouse support: button &amp; wheel<br>&nbsp; + BLOAD/BSAVE<br>&nbsp; + Search command: S/SH<br>&nbsp; + New DISASM command<br>&nbsp; + bookmarks, via bm, bma, bmc, bml, ctrl-#, alt-#<br>&nbsp; + HELP RANGE<br>&nbsp; + HELP OPERATORS<br>&nbsp; + PRINT, PRINTF<br>&nbsp; + ctrl-v (paste) support<br>&nbsp; ... &amp; lots more (doc's to be updated soon)</li></ul></font>
 
 
-<p><font face="Tahoma"><u>1.13.1 - 07 May 2006</u></font></p>
+
+
+<p><font face="Tahoma"><u></u></font></p><p><font face="Tahoma"><u>1.13.1 -&nbsp;7 May 2006</u></font></p>
 <font face="Tahoma">
 <ul><li>Fix: [Bug #7375] &nbsp;Crashes on Win98/ME</li></ul></font>
 
-<p><font face="Tahoma"><u>1.13.0 - 02 May 2006</u></font></p>
+<p><font face="Tahoma"><u>1.13.0 -&nbsp;2 May 2006</u></font></p>
 <p><font face="Tahoma">
 <ul>
 	<li>New: Uthernet card support<br></li>
@@ -141,7 +145,7 @@ label.</target></whitespace></li>
 &nbsp; . RAMWorks card
 </font></font></p>
 
-<p><font face="Tahoma"><font face="Tahoma"><u>1.12.7.1 - 08 Jan 2006</u><br>
+<p><font face="Tahoma"><font face="Tahoma"><u>1.12.7.1 -&nbsp;8 Jan 2006</u><br>
 - Fixed cmd-line switches -d1/-d2 to work with filenames with spaces<br>
 - Reset: Init Phasor back to Mockingboard mode<br>
 - Benchmark button acts immediately<br>
@@ -224,6 +228,7 @@ find didn't appear to support it:<br>
 
 <p><font face="Tahoma"><font face="Tahoma"><u><a name="OldReleases"></a>Old releases:</u></font></font></p>
 <p><font face="Tahoma"><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.13.1.zip">Version 1.13.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.13.0.zip">Version 1.13.0</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.12.9.1.zip">Version 1.12.9.1</a><br>
   Download <a href="http://download.berlios.de/applewin/AppleWin1.12.6.0.zip">Version 1.12.6.0</a><br>
