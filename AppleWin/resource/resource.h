@@ -21,19 +21,23 @@
 #define IDD_PROPPAGE_DISK               116
 #define IDC_BENCHMARK                   117
 #define IDC_LOADSTATE                   118
-#define IDR_HDDRVR                      119
+#define IDR_HDDRVR_FW                   119
 #define IDC_0_5_MHz                     120
 #define IDB_APPLEWIN                    121
 #define IDC_1_0_MHz                     122
 #define IDC_2_0_MHz                     123
 #define IDC_MAX_MHz                     124
 #define IDR_MENU                        125
-#define IDR_APPLE2ORIG_ROM              126
-#define IDR_APPLE2PLUS_ROM              127
+#define IDR_APPLE2_ROM                  126
+#define IDR_APPLE2_PLUS_ROM             127
 #define IDR_APPLE2E_ROM                 128
+#define IDR_APPLE2E_ENHANCED_ROM        129
 #define IDC_MB_ENABLE                   130
 #define IDD_TFE_SETTINGS_DIALOG         131
-#define IDR_PRINTDRVR                   132
+#define IDR_PRINTDRVR_FW                132
+#define IDR_DISK2_FW                    133
+#define IDR_SSC_FW                      134
+#define IDR_MOCKINGBOARD_D_FW           135
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -80,7 +84,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        134
+#define _APS_NEXT_RESOURCE_VALUE        136
 #define _APS_NEXT_COMMAND_VALUE         40007
 #define _APS_NEXT_CONTROL_VALUE         1043
 #define _APS_NEXT_SYMED_VALUE           101

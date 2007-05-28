@@ -419,7 +419,7 @@ static void UpdateSpkr()
 // Called by emulation code when Speaker I/O reg is accessed
 //
 
-BYTE __stdcall SpkrToggle (WORD, BYTE address, BYTE write, BYTE, ULONG nCyclesLeft)
+BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 {
   g_bSpkrToggleFlag = true;
 

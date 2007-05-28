@@ -365,8 +365,10 @@ BOOL JoyProcessKey (int virtkey, BOOL extended, BOOL down, BOOL autorep)
 
 //===========================================================================
 
-BYTE __stdcall JoyReadButton (WORD, BYTE address, BYTE, BYTE, ULONG)
+BYTE __stdcall JoyReadButton (WORD, WORD address, BYTE, BYTE, ULONG)
 {
+  address &= 0xFF;
+
   if(joyinfo[joytype[0]].device == DEVICE_JOYSTICK)
     CheckJoystick0();
   if(joyinfo[joytype[1]].device == DEVICE_JOYSTICK)
@@ -417,7 +419,7 @@ BYTE __stdcall JoyReadButton (WORD, BYTE address, BYTE, BYTE, ULONG)
 
 static const double PDL_CNTR_INTERVAL = 2816.0 / 255.0;	// 11.04 (From KEGS)
 
-BYTE __stdcall JoyReadPosition (WORD programcounter, BYTE address, BYTE, BYTE, ULONG nCyclesLeft)
+BYTE __stdcall JoyReadPosition (WORD programcounter, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
 {
 	int nJoyNum = (address & 2) ? 1 : 0;	// $C064..$C067
 
@@ -443,7 +445,7 @@ void JoyReset ()
 }
 
 //===========================================================================
-BYTE __stdcall JoyResetPosition (WORD, BYTE, BYTE, BYTE, ULONG nCyclesLeft)
+BYTE __stdcall JoyResetPosition (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 {
 	CpuCalcCycles(nCyclesLeft);
 	g_nJoyCntrResetCycle = g_nCumulativeCycles;

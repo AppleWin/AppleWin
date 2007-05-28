@@ -34,10 +34,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tfe\Tfesupp.h"
 #include "Tfe\Uilib.h"
 
-
-TCHAR   computerchoices[] =  TEXT("Apple ][ (Original Model)\0")
-			     TEXT("Apple ][+\0")
-                             TEXT("Apple //e\0");
+TCHAR   computerchoices[] =
+				TEXT("Apple ][ (Original Model)\0")
+				TEXT("Apple ][+\0")
+				TEXT("Apple //e\0")
+				TEXT("Enhanced Apple //e\0");
 
 TCHAR* szJoyChoice0 = TEXT("Disabled\0");
 TCHAR* szJoyChoice1 = TEXT("PC Joystick #1\0");
@@ -203,11 +204,24 @@ static void InitJoystickChoices(HWND window, int nJoyNum, int nIdcValue)
 
 static void ConfigDlg_OK(HWND window, BOOL afterclose)
 {
-	BOOL  newcomptype   = (BOOL) SendDlgItemMessage(window,IDC_COMPUTER,CB_GETCURSEL,0,0);
+	eApple2Type NewApple2Type;
+
+	{
+		DWORD newcomptype   = (DWORD) SendDlgItemMessage(window,IDC_COMPUTER,CB_GETCURSEL,0,0);
+
+		switch (newcomptype)
+		{
+		case 0:	NewApple2Type = A2TYPE_APPLE2; break;
+		case 1:	NewApple2Type = A2TYPE_APPLE2PLUS; break;
+		case 2:	NewApple2Type = A2TYPE_APPLE2E; break;
+		case 3:	NewApple2Type = A2TYPE_APPLE2EEHANCED; break;
+		}
+	}
+
 	DWORD newvidtype    = (DWORD)SendDlgItemMessage(window,IDC_VIDEOTYPE,CB_GETCURSEL,0,0);
 	DWORD newserialport = (DWORD)SendDlgItemMessage(window,IDC_SERIALPORT,CB_GETCURSEL,0,0);
 
-	if (newcomptype != (g_bApple2e ? 2 : (g_bApple2plus ? 1 : 0)))
+	if (NewApple2Type != g_Apple2Type)
 	{
 		if (MessageBox(window,
 			TEXT(
@@ -228,7 +242,8 @@ static void ConfigDlg_OK(HWND window, BOOL afterclose)
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 			VideoRedrawScreen();
 	}
-	CommSetSerialPort(window,newserialport);
+
+	sg_SSC.CommSetSerialPort(window,newserialport);
 	
 	if (IsDlgButtonChecked(window,IDC_AUTHENTIC_SPEED))
 		g_dwSpeed = SPEED_NORMAL;
@@ -237,8 +252,8 @@ static void ConfigDlg_OK(HWND window, BOOL afterclose)
 
 	SetCurrentCLK6502();
 	
-	SAVE(TEXT("Computer Emulation"),newcomptype);
-	SAVE(TEXT("Serial Port")       ,serialport);
+	SAVE(TEXT(REGVALUE_APPLE2_TYPE),NewApple2Type);
+	SAVE(TEXT("Serial Port")       ,sg_SSC.GetSerialPort());
 	SAVE(TEXT("Custom Speed")      ,IsDlgButtonChecked(window,IDC_CUSTOM_SPEED));
 	SAVE(TEXT("Emulation Speed")   ,g_dwSpeed);
 	SAVE(TEXT("Video Emulation")   ,videotype);
@@ -342,9 +357,18 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
 	{
       g_nLastPage = PG_CONFIG;
 
-      FillComboBox(window,IDC_COMPUTER,computerchoices,g_bApple2e ? 2 : (g_bApple2plus ? 1 : 0));
+	  UINT iApple2String;
+	  switch (g_Apple2Type)
+	  {
+		case A2TYPE_APPLE2:			iApple2String = 0; break;
+		case A2TYPE_APPLE2PLUS:		iApple2String = 1; break;
+		case A2TYPE_APPLE2E:		iApple2String = 2; break;
+		case A2TYPE_APPLE2EEHANCED:	iApple2String = 3; break;
+	  }
+
+      FillComboBox(window,IDC_COMPUTER,computerchoices,iApple2String);
       FillComboBox(window,IDC_VIDEOTYPE,videochoices,videotype);
-      FillComboBox(window,IDC_SERIALPORT,serialchoices,serialport);
+      FillComboBox(window,IDC_SERIALPORT,serialchoices,sg_SSC.GetSerialPort());
       SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
       SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
       SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETTICFREQ,10,0);

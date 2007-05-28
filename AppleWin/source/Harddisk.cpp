@@ -127,6 +127,8 @@ static BYTE	g_nHD_Command;
 
 static HDD g_HardDrive[2] = {0};
 
+static UINT g_uSlot = 7;
+
 //===========================================================================
 
 static void GetImageTitle (LPCTSTR imagefilename, PHDD pHardDrive)
@@ -212,6 +214,8 @@ static LPCTSTR HD_DiskGetName (int nDrive)
 
 // everything below is global
 
+static BYTE __stdcall HD_IO_EMUL (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+
 static const DWORD HDDRVR_SIZE = 0x100;
 static LPBYTE lpMemC000 = NULL;
 
@@ -231,9 +235,11 @@ void HD_SetEnabled(bool bEnabled)
 		return;
 
 	if(g_bHD_Enabled)
-		HD_Load_Rom(lpMemC000);
+		HD_Load_Rom(lpMemC000, g_uSlot);
 	else
-		memset(lpMemC000+0x700, 0, HDDRVR_SIZE);
+		memset(lpMemC000 + g_uSlot*256, 0, HDDRVR_SIZE);
+
+	RegisterIoHandler(g_uSlot, HD_IO_EMUL, HD_IO_EMUL, NULL, NULL, NULL, NULL);
 }
 
 LPCTSTR HD_GetFullName (int nDrive)
@@ -241,14 +247,14 @@ LPCTSTR HD_GetFullName (int nDrive)
 	return g_HardDrive[nDrive].hd_fullname;
 }
 
-VOID HD_Load_Rom(LPBYTE lpMemRom)
+VOID HD_Load_Rom(LPBYTE pCxRomPeripheral, UINT uSlot)
 {
-	lpMemC000 = lpMemRom;	// Keep a copy for HD_SetEnabled()
+	lpMemC000 = pCxRomPeripheral;	// Keep a copy for HD_SetEnabled()
 
 	if(!g_bHD_Enabled)
 		return;
 
-	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_HDDRVR), "FIRMWARE");
+	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_HDDRVR_FW), "FIRMWARE");
 	if(hResInfo == NULL)
 		return;
 
@@ -264,7 +270,8 @@ VOID HD_Load_Rom(LPBYTE lpMemRom)
 	if(pData == NULL)
 		return;
 
-	memcpy(lpMemRom+0x700, pData, HDDRVR_SIZE);
+	g_uSlot = uSlot;
+	memcpy(pCxRomPeripheral + uSlot*256, pData, HDDRVR_SIZE);
 	g_bHD_RomLoaded = true;
 }
 
@@ -354,9 +361,10 @@ void HD_Select(int nDrive)
 #define DEVICE_UNKNOWN_ERROR	0x03
 #define DEVICE_IO_ERROR			0x08
 
-BYTE __stdcall HD_IO_EMUL (WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall HD_IO_EMUL (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
 {
 	BYTE r = DEVICE_OK;
+	addr &= 0xFF;
 
 	if (!HD_CardIsEnabled())
 		return r;
@@ -505,8 +513,7 @@ BYTE __stdcall HD_IO_EMUL (WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCycle
 			}
 			break;
 		default:
-			{
-			}
+			return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
 		}
 	}
 	else // write
@@ -547,21 +554,9 @@ BYTE __stdcall HD_IO_EMUL (WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCycle
 			}
 			break;
 		default:
-			break;
+			return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
 		}
 	}
 
 	return r;
 }
-
-
-
-
-
-
-
-
-
-
-
-

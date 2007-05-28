@@ -2649,9 +2649,9 @@ Update_t CmdIn (int nArgs)
 		return Help_Arg_1( CMD_IN );
   
 	WORD nAddress = g_aArgs[1].nValue;
-	
-//	ioread[ g_aArgs[1].nValue & 0xFF ](regs.pc,g_aArgs[1].nValue & 0xFF,0,0,0);
-	ioread[ nAddress & 0xFF ](regs.pc, nAddress  & 0xFF,0,0,0); // g_aArgs[1].nValue 
+
+	BYTE nPageOffset = nAddress & 0xFF;
+	IORead[ (nAddress>>4) & 0xF ](regs.pc, nAddress  & 0xFF, 0, 0, 0); // g_aArgs[1].nValue 
 
 	return UPDATE_CONSOLE_DISPLAY; // TODO: Verify // 1
 }
@@ -2712,8 +2712,8 @@ Update_t CmdOut (int nArgs)
 
 	WORD nAddress = g_aArgs[1].nValue;
 
-//  iowrite[ g_aArgs[1].nValue & 0xFF](regs.pc,g_aArgs[1].nValue & 0xFF,1,g_aArgs[2].nValue & 0xFF,0);
-	iowrite[ nAddress & 0xFF ] (regs.pc, nAddress & 0xFF, 1, g_aArgs[2].nValue & 0xFF,0);
+	BYTE nPageOffset = nAddress & 0xFF;
+	IOWrite[ (nAddress>>4) & 0xF ] (regs.pc, nAddress & 0xFF, 1, g_aArgs[2].nValue & 0xFF, 0);
 
 	return UPDATE_CONSOLE_DISPLAY; // TODO: Verify // 1
 }
@@ -8150,13 +8150,18 @@ void DebugBegin ()
 	g_nAppMode = MODE_DEBUG;
 	FrameRefreshStatus(DRAW_TITLE);
 
-	if (g_bApple2e)
-		g_aOpcodes = & g_aOpcodes65C02[ 0 ]; // Enhanced Apple //e
+	if (IS_APPLE2 || (g_Apple2Type == A2TYPE_APPLE2E))
+	{
+		g_aOpcodes = & g_aOpcodes6502[ 0 ];		// Apple ][, ][+, //e
+		g_aOpmodes[ AM_2 ].m_nBytes = 1;
+		g_aOpmodes[ AM_3 ].m_nBytes = 1;
+	}
 	else
-		g_aOpcodes = & g_aOpcodes6502[ 0 ]; // Original Apple ][ ][+
-
-	g_aOpmodes[ AM_2 ].m_nBytes = g_bApple2e ? 2 : 1;
-	g_aOpmodes[ AM_3 ].m_nBytes = g_bApple2e ? 3 : 1;
+	{
+		g_aOpcodes = & g_aOpcodes65C02[ 0 ];	// Enhanced Apple //e
+		g_aOpmodes[ AM_2 ].m_nBytes = 2;
+		g_aOpmodes[ AM_3 ].m_nBytes = 3;
+	}
 
 	g_nDisasmCurAddress = regs.pc;
 	DisasmCalcTopBotAddress();

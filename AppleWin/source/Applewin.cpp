@@ -31,10 +31,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 char VERSIONSTRING[] = "xx.yy.zz.ww";
 
-TCHAR *g_pAppTitle = TITLE_APPLE_2_E;
+TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 
-bool      g_bApple2e           = true;
-bool      g_bApple2plus        = true;
+eApple2Type	g_Apple2Type	= A2TYPE_APPLE2EEHANCED;
 
 BOOL      behind            = 0;			// Redundant
 DWORD     cumulativecycles  = 0;			// Wraps after ~1hr 9mins
@@ -64,6 +63,8 @@ DWORD       g_dwCyclesThisFrame = 0;
 
 FILE*		g_fh			= NULL;
 bool		g_bDisableDirectSound = false;
+
+CSuperSerialCard sg_SSC;
 
 //===========================================================================
 
@@ -132,7 +133,7 @@ void ContinueExecution()
 	VideoUpdateVbl(g_dwCyclesThisFrame);
 
 	SpkrUpdate(cyclenum);
-	CommUpdate(cyclenum);
+	sg_SSC.CommUpdate(cyclenum);
 	PrintUpdate(cyclenum);
 
 	//
@@ -346,15 +347,37 @@ void GetProgramDirectory () {
 }
 
 //===========================================================================
-void LoadConfiguration () {
-  DWORD comptype;
-  LOAD(TEXT("Computer Emulation"),&comptype);
-  g_bApple2e = (comptype == 2);
-  g_bApple2plus = (comptype == 1);
+void LoadConfiguration ()
+{
+  DWORD dwComputerType;
+
+  if (LOAD(TEXT(REGVALUE_APPLE2_TYPE),&dwComputerType))
+  {
+	  if (dwComputerType >= A2TYPE_MAX)
+		dwComputerType = A2TYPE_APPLE2EEHANCED;
+	  g_Apple2Type = (eApple2Type) dwComputerType;
+  }
+  else
+  {
+	  LOAD(TEXT("Computer Emulation"),&dwComputerType);
+	  switch (dwComputerType)
+	  {
+      // NB. No A2TYPE_APPLE2E
+	  case 0:	g_Apple2Type = A2TYPE_APPLE2;
+	  case 1:	g_Apple2Type = A2TYPE_APPLE2PLUS;
+	  case 2:	g_Apple2Type = A2TYPE_APPLE2EEHANCED;
+	  default:	g_Apple2Type = A2TYPE_APPLE2EEHANCED;
+	  }
+  }
+
   LOAD(TEXT("Joystick 0 Emulation"),&joytype[0]);
   LOAD(TEXT("Joystick 1 Emulation"),&joytype[1]);
   LOAD(TEXT("Sound Emulation")   ,&soundtype);
-  LOAD(TEXT("Serial Port")       ,&serialport);
+
+  DWORD dwSerialPort;
+  LOAD(TEXT("Serial Port")       ,&dwSerialPort);
+  sg_SSC.SetSerialPort(dwSerialPort);
+
   LOAD(TEXT("Emulation Speed")   ,&g_dwSpeed);
   LOAD(TEXT("Enhance Disk Speed"),(DWORD *)&enhancedisk);
   LOAD(TEXT("Video Emulation")   ,&videotype);
@@ -622,6 +645,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 	// DO ONE-TIME INITIALIZATION
 	g_hInstance = passinstance;
+	MemPreInitialize();		// Call before any of the slot devices are initialized
 	GdiSetBatchLimit(512);
 	GetProgramDirectory();
 	RegisterExtensions();
@@ -649,7 +673,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	{
 		// DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
 		restart = 0;
-		g_nAppMode    = MODE_LOGO;
+		g_nAppMode = MODE_LOGO;
 		LoadConfiguration();
 		DebugInitialize();
 		JoyInitialize();

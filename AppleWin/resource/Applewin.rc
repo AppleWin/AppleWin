@@ -258,17 +258,21 @@ END
 // FIRMWARE
 //
 
-IDR_HDDRVR              FIRMWARE                "Hddrvr.bin"
-IDR_PRINTDRVR           FIRMWARE                "Parallel.rom"
+IDR_DISK2_FW            FIRMWARE                "Disk2.rom"
+IDR_SSC_FW              FIRMWARE                "SSC.rom"
+IDR_HDDRVR_FW           FIRMWARE                "Hddrvr.bin"
+IDR_PRINTDRVR_FW        FIRMWARE                "Parallel.rom"
+IDR_MOCKINGBOARD_D_FW   FIRMWARE                "Mockingboard-D.rom"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // ROM
 //
 
-IDR_APPLE2ORIG_ROM      ROM                     "Apple2orig.rom"
-IDR_APPLE2PLUS_ROM      ROM                     "Apple2plus.rom"
+IDR_APPLE2_ROM          ROM                     "Apple2.rom"
+IDR_APPLE2_PLUS_ROM     ROM                     "Apple2_Plus.rom"
 IDR_APPLE2E_ROM         ROM                     "Apple2e.rom"
+IDR_APPLE2E_ENHANCED_ROM ROM                    "Apple2e_Enhanced.rom"
 
 /////////////////////////////////////////////////////////////////////////////
 //

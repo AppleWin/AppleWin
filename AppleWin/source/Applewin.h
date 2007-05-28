@@ -4,8 +4,7 @@ extern char VERSIONSTRING[];	// Contructed in WinMain()
 
 extern TCHAR     *g_pAppTitle;
 
-extern bool       g_bApple2e;
-extern bool       g_bApple2plus;
+extern eApple2Type	g_Apple2Type;
 
 extern BOOL       behind;
 extern DWORD      cumulativecycles;

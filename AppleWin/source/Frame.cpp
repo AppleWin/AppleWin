@@ -350,7 +350,7 @@ void DrawStatusArea (HDC passdc, int drawflags)
 		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
 		SetTextColor(dc,RGB((iDrive2Status==2 ? 255 : 0),(iDrive2Status==1 ? 255 : 0),0));
 		TextOut(dc,x+13,y+2,TEXT("2"),1);
-		if (g_bApple2e)
+		if (!IS_APPLE2)
 		{
 			SetTextAlign(dc,TA_RIGHT | TA_TOP);
 			SetTextColor(dc,(bCaps
@@ -387,7 +387,7 @@ void DrawStatusArea (HDC passdc, int drawflags)
 			DrawBitmapRect(dc,x+12,y+8,&rect,diskbitmap[iDrive1Status]);
 			DrawBitmapRect(dc,x+30,y+8,&rect,diskbitmap[iDrive2Status]);
 
-			if (g_bApple2e)
+			if (!IS_APPLE2)
 			{
 				RECT rect = {0,0,30,8};
 				DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]);
@@ -397,11 +397,13 @@ void DrawStatusArea (HDC passdc, int drawflags)
 		if (drawflags & DRAW_TITLE)
 		{
 			TCHAR title[40];
-			_tcscpy(title,g_bApple2e
-				? TITLE_APPLE_2_E
-				: (g_bApple2plus
-					? TITLE_APPLE_2_PLUS
-					: TITLE_APPLE_2_ORG ));
+			switch (g_Apple2Type)
+			{
+			case A2TYPE_APPLE2:			_tcscpy(title, TITLE_APPLE_2); break; 
+			case A2TYPE_APPLE2PLUS:		_tcscpy(title, TITLE_APPLE_2_PLUS); break; 
+			case A2TYPE_APPLE2E:		_tcscpy(title, TITLE_APPLE_2E); break; 
+			case A2TYPE_APPLE2EEHANCED:	_tcscpy(title, TITLE_APPLE_2E_ENHANCED); break; 
+			}
 
 			switch (g_nAppMode)
 			{
@@ -522,7 +524,7 @@ LRESULT CALLBACK FrameWndProc (
         HD_Cleanup();
       }
       PrintDestroy();
-      CommDestroy();
+      sg_SSC.CommDestroy();
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();
@@ -1071,7 +1073,7 @@ void ResetMachineState () {
   MemReset();
   DiskBoot();
   VideoResetState();
-  CommReset();
+  sg_SSC.CommReset();
   PrintReset();
   JoyReset();
   MB_Reset();
@@ -1182,25 +1184,16 @@ void FrameCreateWindow ()
 	if (!RegLoadValue(TEXT("Preferences"),TEXT("Window Y-Position"),1,(DWORD *)&ypos))
 		ypos = (GetSystemMetrics(SM_CYSCREEN)-height) >> 1;
 
-	if (g_bApple2e)
+	switch (g_Apple2Type)
 	{
-		g_pAppTitle = TITLE_APPLE_2_E;
-	}
-	else
-	{
-		if (g_bApple2plus)
-			g_pAppTitle = TITLE_APPLE_2_PLUS;
-		else
-			g_pAppTitle = TITLE_APPLE_2_ORG;
+	case A2TYPE_APPLE2:			g_pAppTitle = TITLE_APPLE_2; break; 
+	case A2TYPE_APPLE2PLUS:		g_pAppTitle = TITLE_APPLE_2_PLUS; break; 
+	case A2TYPE_APPLE2E:		g_pAppTitle = TITLE_APPLE_2E; break; 
+	case A2TYPE_APPLE2EEHANCED:	g_pAppTitle = TITLE_APPLE_2E_ENHANCED; break; 
 	}
 
 	g_hFrameWindow = CreateWindow(
 		TEXT("APPLE2FRAME"),
-//		g_bApple2e
-//		? TITLE_APPLE_2_E
-//        : (g_bApple2plus
-//			? TITLE_APPLE_2_PLUS
-//			: TITLE_APPLE_2),
 		g_pAppTitle,
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 		WS_MINIMIZEBOX | WS_VISIBLE,
