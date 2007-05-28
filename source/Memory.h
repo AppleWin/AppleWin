@@ -9,12 +9,9 @@ enum MemoryInitPattern_e
 };
 extern MemoryInitPattern_e g_eMemoryInitPattern;
 
-extern iofunction ioread[0x100];
-extern iofunction iowrite[0x100];
-extern LPBYTE     memshadow[MAXIMAGES][0x100];
-extern LPBYTE     memwrite[MAXIMAGES][0x100];
-extern DWORD      image;
-extern DWORD      lastimage;
+extern iofunction IORead[256];
+extern iofunction IOWrite[256];
+extern LPBYTE     memwrite[0x100];
 extern LPBYTE     mem;
 extern LPBYTE     memdirty;
 
@@ -22,10 +19,14 @@ extern LPBYTE     memdirty;
 extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)
 #endif
 
+void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
+
 void    MemDestroy ();
 bool    MemGet80Store();
+bool	MemCheckSLOTCXROM();
 LPBYTE  MemGetAuxPtr (WORD);
 LPBYTE  MemGetMainPtr (WORD);
+void	MemPreInitialize ();
 void    MemInitialize ();
 BYTE    MemReadFloatingBus();
 BYTE    MemReadFloatingBus(BYTE highbit);
@@ -34,11 +35,11 @@ void    MemResetPaging ();
 BYTE    MemReturnRandomData (BYTE highbit);
 void    MemSetFastPaging (BOOL);
 void    MemTrimImages ();
+LPVOID	MemGetSlotParameters (UINT uSlot);
 DWORD   MemGetSnapshot(SS_BaseMemory* pSS);
 DWORD   MemSetSnapshot(SS_BaseMemory* pSS);
 
-BYTE __stdcall CxReadFunc(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-BYTE __stdcall CxWriteFunc(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
-BYTE __stdcall MemCheckPaging (WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-BYTE __stdcall MemSetPaging (WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+BYTE __stdcall MemCheckPaging (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);

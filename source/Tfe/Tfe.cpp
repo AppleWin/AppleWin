@@ -37,6 +37,13 @@
 #include "tfearch.h"
 #include "tfesupp.h"
 
+#ifndef NULL
+#define NULL 0
+#endif
+typedef unsigned int UINT;
+#include "..\common.h"
+// Define here, so we don't drag in the whole of stdafx.h:
+void RegisterIoHandler(UINT uSlot, iofunction IORead16, iofunction IOWrite16, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
 
 /**/
 /** #define TFE_DEBUG_DUMP 1 **/
@@ -384,6 +391,8 @@ void tfe_debug_output_pp( void )
 /* ------------------------------------------------------------------------- */
 /*    initialization and deinitialization functions                          */
 
+BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
+
 void tfe_reset(void)
 {
     if (tfe_enabled && !should_activate)
@@ -442,6 +451,9 @@ void tfe_reset(void)
 
         TFE_DEBUG_OUTPUT_REG();
     }
+
+	const UINT uSlot = 3;
+	RegisterIoHandler(uSlot, TfeIo, TfeIo, NULL, NULL, NULL, NULL);
 }
 
 #ifdef DOS_TFE
@@ -1489,7 +1501,7 @@ int tfe_enumadapter_close(void)
 }
 
 
-BYTE __stdcall TfeIo (WORD programcounter, BYTE address, BYTE write, BYTE value, ULONG nCycles)
+static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
 {
 	BYTE ret = 0;
 

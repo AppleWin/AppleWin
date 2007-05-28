@@ -48,7 +48,7 @@
 				AdditionalOptions="/Zm200 "
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;HAS_M6803"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -141,7 +141,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;HAS_M6803"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\Debug/Applewin.pch"
@@ -527,15 +527,19 @@
 			Filter=".txt,.ico,.bmp,.rc"
 			>
 			<File
+				RelativePath=".\resource\Apple2.rom"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\Apple2_Plus.rom"
+				>
+			</File>
+			<File
 				RelativePath=".\resource\Apple2e.rom"
 				>
 			</File>
 			<File
-				RelativePath=".\resource\Apple2orig.rom"
-				>
-			</File>
-			<File
-				RelativePath=".\resource\Apple2plus.rom"
+				RelativePath=".\resource\Apple2e_Enhanced.rom"
 				>
 			</File>
 			<File
@@ -597,6 +601,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\Disk2.rom"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\DISKOFF.BMP"
 				>
 			</File>
@@ -641,11 +649,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\Mockingboard-D.rom"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\Parallel.rom"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\RUN.BMP"
 				>
 			</File>
 			<File
 				RelativePath="RESOURCE\SETUP.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\SSC.rom"
 				>
 			</File>
 		</Filter>

@@ -9,6 +9,8 @@ const UINT uVisibleLinesPerFrame	= 64*3;	// 192
 const UINT uLinesPerFrame			= 262;	// 64 in each third of the screen & 70 in VBL
 const DWORD dwClksPerFrame			= uCyclesPerLine * uLinesPerFrame;	// 17030
 
+#define NUM_SLOTS 8
+
 #define  MAX(a,b)          (((a) > (b)) ? (a) : (b))
 #define  MIN(a,b)          (((a) < (b)) ? (a) : (b))
 
@@ -51,12 +53,13 @@ enum AppMode_e
 #define  BTN_DEBUG         6
 #define  BTN_SETUP         7
 
-#define	MAXIMAGES          16
+//#define	MAXIMAGES          16
+
 // TODO: Move to StringTable.h
-#define	TITLE_APPLE_2_ORG  TEXT("Apple ][ Emulator")
-#define	TITLE_APPLE_2_PLUS TEXT("Apple ][+ Emulator")
-#define	TITLE_APPLE_2_E    TEXT("Apple //e Emulator")
-// #define	TITLE              TITLE_APPLE_2_E
+#define	TITLE_APPLE_2			TEXT("Apple ][ Emulator")
+#define	TITLE_APPLE_2_PLUS		TEXT("Apple ][+ Emulator")
+#define	TITLE_APPLE_2E			TEXT("Apple //e Emulator")
+#define	TITLE_APPLE_2E_ENHANCED	TEXT("Enhanced Apple //e Emulator")
 
 #define TITLE_PAUSED       TEXT(" Paused ")
 #define TITLE_STEPPING     TEXT("Stepping")
@@ -65,6 +68,7 @@ enum AppMode_e
 #define  SAVE(a,b) RegSaveValue(TEXT("Configuration"),a,1,b)
 
 // Configuration
+#define  REGVALUE_APPLE2_TYPE        "Apple2 Type"
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
 #define  REGVALUE_SOUNDCARD_TYPE     "Soundcard Type"
@@ -87,9 +91,27 @@ enum AppMode_e
 
 enum eSOUNDCARDTYPE {SC_UNINIT=0, SC_NONE, SC_MOCKINGBOARD, SC_PHASOR};	// Apple soundcard type
 
-typedef BYTE (__stdcall *iofunction)(WORD nPC, BYTE nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
-typedef BYTE (__stdcall *cxfunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
+typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
 
 typedef struct _IMAGE__ { int unused; } *HIMAGE;
 
 enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC};
+
+//
+
+#define APPLE2E_MASK	0x10
+#define APPLE2C_MASK	0x20
+
+#define IS_APPLE2		((g_Apple2Type & (APPLE2E_MASK|APPLE2C_MASK)) == 0)
+#define IS_APPLE2E		(g_Apple2Type & APPLE2E_MASK)
+#define IS_APPLE2C		(g_Apple2Type & APPLE2C_MASK)
+
+// NB. These get persisted to the Registry, so don't change the values for these enums!
+enum eApple2Type {
+					A2TYPE_APPLE2=0,
+					A2TYPE_APPLE2PLUS,
+					A2TYPE_APPLE2E=APPLE2E_MASK,
+					A2TYPE_APPLE2EEHANCED,
+//					A2TYPE_APPLE2C=APPLE2C_MASK,	// Placeholder
+					A2TYPE_MAX
+				};

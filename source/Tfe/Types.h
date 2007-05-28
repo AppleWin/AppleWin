@@ -50,6 +50,10 @@
 #ifndef ULONG 
 typedef unsigned long ULONG;
 #endif
+/* TC added for AppleWin */
+#ifndef LPVOID
+typedef void *LPVOID;
+#endif
 
 typedef signed char SIGNED_CHAR;
 typedef signed short SWORD;

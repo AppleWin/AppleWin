@@ -28,6 +28,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 #pragma  hdrstop
+#include "..\resource\resource.h"
+
+static BYTE __stdcall DiskControlMotor (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+static BYTE __stdcall DiskControlStepper (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+static BYTE __stdcall DiskEnable (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+static BYTE __stdcall DiskReadWrite (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+static BYTE __stdcall DiskSetLatchValue (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+static BYTE __stdcall DiskSetReadMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+static BYTE __stdcall DiskSetWriteMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 
 #define LOG_DISK_ENABLED 1
 
@@ -275,14 +284,14 @@ void DiskBoot () {
 }
 
 //===========================================================================
-BYTE __stdcall DiskControlMotor (WORD, BYTE address, BYTE, BYTE, ULONG) {
+static BYTE __stdcall DiskControlMotor (WORD, WORD address, BYTE, BYTE, ULONG) {
   floppymotoron = address & 1;
   CheckSpinning();
   return MemReturnRandomData(1);
 }
 
 //===========================================================================
-BYTE __stdcall DiskControlStepper (WORD, BYTE address, BYTE, BYTE, ULONG)
+static BYTE __stdcall DiskControlStepper (WORD, WORD address, BYTE, BYTE, ULONG)
 {
   Disk_t * fptr = &g_aFloppyDisk[currdrive];
   int phase     = (address >> 1) & 3;
@@ -349,7 +358,7 @@ void DiskDestroy ()
 }
 
 //===========================================================================
-BYTE __stdcall DiskEnable (WORD, BYTE address, BYTE, BYTE, ULONG) {
+static BYTE __stdcall DiskEnable (WORD, WORD address, BYTE, BYTE, ULONG) {
   currdrive = address & 1;
   g_aFloppyDisk[!currdrive].spinning   = 0;
   g_aFloppyDisk[!currdrive].writelight = 0;
@@ -392,14 +401,20 @@ LPCTSTR DiskGetName (int drive) {
 }
 
 //===========================================================================
-void DiskInitialize () {
-  int loop = DRIVES;
-  while (loop--)
-    ZeroMemory(&g_aFloppyDisk[loop],sizeof(Disk_t ));
-  TCHAR imagefilename[MAX_PATH];
-  _tcscpy(imagefilename,g_sProgramDir);
-  _tcscat(imagefilename,TEXT("MASTER.DSK")); // TODO: Should remember last disk by user
-  DiskInsert(0,imagefilename,0,0);
+
+BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+
+void DiskInitialize ()
+{
+	int loop = DRIVES;
+	while (loop--)
+		ZeroMemory(&g_aFloppyDisk[loop],sizeof(Disk_t ));
+
+	TCHAR imagefilename[MAX_PATH];
+	_tcscpy(imagefilename,g_sProgramDir);
+	_tcscat(imagefilename,TEXT("MASTER.DSK")); // TODO: Should remember last disk by user
+	DiskInsert(0,imagefilename,0,0);
 }
 
 //===========================================================================
@@ -485,7 +500,7 @@ void DiskSetProtect( const int iDrive, const bool bWriteProtect )
 
 
 //===========================================================================
-BYTE __stdcall DiskReadWrite (WORD programcounter, BYTE, BYTE, BYTE, ULONG) {
+static BYTE __stdcall DiskReadWrite (WORD programcounter, WORD, BYTE, BYTE, ULONG) {
   Disk_t * fptr = &g_aFloppyDisk[currdrive];
   diskaccessed = 1;
   if ((!fptr->trackimagedata) && fptr->imagehandle)
@@ -517,9 +532,11 @@ BYTE __stdcall DiskReadWrite (WORD programcounter, BYTE, BYTE, BYTE, ULONG) {
 }
 
 //===========================================================================
-void DiskReset () {
-  floppymotoron = 0;
-  phases = 0;
+
+void DiskReset()
+{
+	floppymotoron = 0;
+	phases = 0;
 }
 
 //===========================================================================
@@ -575,20 +592,21 @@ void DiskSelect (int drive)
 }
 
 //===========================================================================
-BYTE __stdcall DiskSetLatchValue (WORD, BYTE, BYTE write, BYTE value, ULONG) {
+
+static BYTE __stdcall DiskSetLatchValue (WORD, WORD, BYTE write, BYTE value, ULONG) {
   if (write)
     floppylatch = value;
   return floppylatch;
 }
 
 //===========================================================================
-BYTE __stdcall DiskSetReadMode (WORD, BYTE, BYTE, BYTE, ULONG) {
+static BYTE __stdcall DiskSetReadMode (WORD, WORD, BYTE, BYTE, ULONG) {
   floppywritemode = 0;
   return MemReturnRandomData(g_aFloppyDisk[currdrive].writeprotected);
 }
 
 //===========================================================================
-BYTE __stdcall DiskSetWriteMode (WORD, BYTE, BYTE, BYTE, ULONG) {
+static BYTE __stdcall DiskSetWriteMode (WORD, WORD, BYTE, BYTE, ULONG) {
   floppywritemode = 1;
   BOOL modechange = !g_aFloppyDisk[currdrive].writelight;
   g_aFloppyDisk[currdrive].writelight = 20000;
@@ -642,6 +660,99 @@ bool DiskDriveSwap()
 	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
 	return true;
+}
+
+//===========================================================================
+
+static BYTE __stdcall Disk_IORead(WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+static BYTE __stdcall Disk_IOWrite(WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+
+void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
+{
+	const UINT DISK2_FW_SIZE = 256;
+
+	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_DISK2_FW), "FIRMWARE");
+	if(hResInfo == NULL)
+		return;
+
+	DWORD dwResSize = SizeofResource(NULL, hResInfo);
+	if(dwResSize != DISK2_FW_SIZE)
+		return;
+
+	HGLOBAL hResData = LoadResource(NULL, hResInfo);
+	if(hResData == NULL)
+		return;
+
+	BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
+	if(pData == NULL)
+		return;
+
+	memcpy(pCxRomPeripheral + uSlot*256, pData, DISK2_FW_SIZE);
+
+	// TODO/FIXME: HACK! REMOVE A WAIT ROUTINE FROM THE DISK CONTROLLER'S FIRMWARE
+	*(pCxRomPeripheral+0x064C) = 0xA9;
+	*(pCxRomPeripheral+0x064D) = 0x00;
+	*(pCxRomPeripheral+0x064E) = 0xEA;
+
+	//
+
+	RegisterIoHandler(uSlot, Disk_IORead, Disk_IOWrite, NULL, NULL, NULL, NULL);
+}
+
+//===========================================================================
+
+static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+	addr &= 0xFF;
+
+	switch (addr & 0xf)
+	{
+	case 0x0:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x1:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x2:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x3:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x4:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x5:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x6:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x7:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x8:	return DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x9:	return DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xA:	return DiskEnable(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xB:	return DiskEnable(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xC:	return DiskReadWrite(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xD:	return DiskSetLatchValue(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xE:	return DiskSetReadMode(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xF:	return DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft);
+	}
+
+	return 0;
+}
+
+static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+	addr &= 0xFF;
+
+	switch (addr & 0xf)
+	{
+	case 0x0:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x1:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x2:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x3:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x4:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x5:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x6:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x7:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x8:	return DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x9:	return DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xA:	return DiskEnable(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xB:	return DiskEnable(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xC:	return DiskReadWrite(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xD:	return DiskSetLatchValue(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xE:	return DiskSetReadMode(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xF:	return DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft);
+	}
+
+	return 0;
 }
 
 //===========================================================================

@@ -20,4 +20,4 @@ void    Spkr_DSUninit();
 DWORD   SpkrGetSnapshot(SS_IO_Speaker* pSS);
 DWORD   SpkrSetSnapshot(SS_IO_Speaker* pSS);
 
-BYTE __stdcall SpkrToggle (WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);

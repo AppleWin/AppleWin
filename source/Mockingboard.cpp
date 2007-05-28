@@ -1269,6 +1269,10 @@ static void MB_DSUninit()
 
 //=============================================================================
 
+static BYTE __stdcall PhasorIO (WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft);
+static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft);
+static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft);
+
 void MB_Initialize()
 {
 	if(g_bDisableDirectSound)
@@ -1300,6 +1304,14 @@ void MB_Initialize()
 	//
 
 	g_bMB_Active = (g_SoundcardType != SC_NONE);
+
+	//
+
+	const UINT uSlot4 = 4;
+	RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
+
+	const UINT uSlot5 = 5;
+	RegisterIoHandler(uSlot5, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
 }
 
 //-----------------------------------------------------------------------------
@@ -1340,8 +1352,13 @@ void MB_Reset()
 
 //-----------------------------------------------------------------------------
 
-BYTE MB_Read(WORD nAddr)
+static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft)
 {
+	CpuCalcCycles(nCyclesLeft);
+
+	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
+		return mem[nAddr];
+
 	if(g_SoundcardType == SC_NONE)
 		return 0;
 
@@ -1385,10 +1402,15 @@ BYTE MB_Read(WORD nAddr)
 
 //-----------------------------------------------------------------------------
 
-void MB_Write(WORD nAddr, BYTE nValue)
+static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft)
 {
+	CpuCalcCycles(nCyclesLeft);
+
+	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
+		return 0;
+
 	if(g_SoundcardType == SC_NONE)
-		return;
+		return 0;
 
 	BYTE nMB = (nAddr>>8)&0xf - SLOT4;
 	BYTE nOffset = nAddr&0xff;
@@ -1396,7 +1418,7 @@ void MB_Write(WORD nAddr, BYTE nValue)
 	if(g_bPhasorEnable)
 	{
 		if(nMB != 0)	// Slot4 only
-			return;
+			return 0;
 
 		int CS;
 
@@ -1414,7 +1436,7 @@ void MB_Write(WORD nAddr, BYTE nValue)
 		if((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x05)))
 			SSI263_Write(nMB*2+1, nAddr&0xf, nValue);		// Second 6522 is used for speech chip
 
-		return;
+		return 0;
 	}
 
 	if(nOffset <= (SY6522A_Offset+0x0F))
@@ -1423,19 +1445,21 @@ void MB_Write(WORD nAddr, BYTE nValue)
 		SY6522_Write(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf, nValue);
 	else if((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x05)))
 		SSI263_Write(nMB*2+1, nAddr&0xf, nValue);		// Second 6522 is used for speech chip
+
+	return 0;
 }
 
 //-----------------------------------------------------------------------------
 
-BYTE __stdcall PhasorIO (WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall PhasorIO (WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft)
 {
 	if(!g_bPhasorEnable)
 		return 0;
 
 	if(g_nPhasorMode < 2)
-		g_nPhasorMode = addr & 1;
+		g_nPhasorMode = nAddr & 1;
 
-	double fCLK = (addr & 4) ? CLK_6502*2 : CLK_6502;
+	double fCLK = (nAddr & 4) ? CLK_6502*2 : CLK_6502;
 
 	AY8910_InitClock((int)fCLK);
 

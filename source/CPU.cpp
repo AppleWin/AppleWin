@@ -149,13 +149,9 @@ static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
 		 if (regs.sp < 0x100)					    \
 		   regs.sp = 0x1FF;
 #define READ	 (							    \
-		    ((addr & 0xFF00) == 0xC000)				    \
-		    ? ioread[addr & 0xFF](regs.pc,(BYTE)addr,0,0,uExecutedCycles) \
-		    : (							    \
-			(((addr & 0xFF00) == 0xC400) || ((addr & 0xFF00) == 0xC500)) \
-			? CxReadFunc(regs.pc, addr, 0, 0, uExecutedCycles) \
+		    ((addr & 0xF000) == 0xC000)				    \
+		    ? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles) \
 			: *(mem+addr)					    \
-		      )							    \
 		 )
 #define SETNZ(a) {							    \
 		   flagn = ((a) & 0x80);				    \
@@ -164,13 +160,11 @@ static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
 #define SETZ(a)	 flagz = !((a) & 0xFF);
 #define WRITE(a) {							    \
 		   memdirty[addr >> 8] = 0xFF;				    \
-		   LPBYTE page = memwrite[0][addr >> 8];		    \
+		   LPBYTE page = memwrite[addr >> 8];		    \
 		   if (page)						    \
 		     *(page+(addr & 0xFF)) = (BYTE)(a);			    \
-		   else if ((addr & 0xFF00) == 0xC000)			    \
-		     iowrite[addr & 0xFF](regs.pc,(BYTE)addr,1,(BYTE)(a),uExecutedCycles); \
-		   else if(((addr & 0xFF00) == 0xC400) || ((addr & 0xFF00) == 0xC500)) \
-		     CxWriteFunc(regs.pc, addr, 1, (BYTE)(a), uExecutedCycles); \
+		   else if ((addr & 0xF000) == 0xC000)			    \
+		     IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles); \
 		 }
 
 //
@@ -841,7 +835,11 @@ static DWORD Cpu65C02 (DWORD uTotalCycles)
 		g_uInternalExecutedCycles = uExecutedCycles;
 		USHORT uExtraCycles = 0;
 
-		BYTE iOpcode = *(mem+regs.pc);
+//		BYTE iOpcode = *(mem+regs.pc);
+		BYTE iOpcode = ((regs.pc & 0xF000) == 0xC000)
+		    ? IORead[(regs.pc>>4) & 0xFF](regs.pc,regs.pc,0,0,uExecutedCycles)	// Fetch opcode from I/O memory, but params are still from mem[]
+			: *(mem+regs.pc);
+
 		if (CheckDebugBreak( iOpcode ))
 			break;
 
@@ -1166,7 +1164,11 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		g_uInternalExecutedCycles = uExecutedCycles;
 		USHORT uExtraCycles = 0;
 
-		BYTE iOpcode = *(mem+regs.pc);
+//		BYTE iOpcode = *(mem+regs.pc);
+		BYTE iOpcode = ((regs.pc & 0xF000) == 0xC000)
+		    ? IORead[(regs.pc>>4) & 0xFF](regs.pc,regs.pc,0,0,uExecutedCycles)
+			: *(mem+regs.pc);
+
 		if (CheckDebugBreak( iOpcode ))
 			break;
 
@@ -1472,10 +1474,10 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 
 static DWORD InternalCpuExecute (DWORD uTotalCycles)
 {
-	if (g_bApple2e)
-		return Cpu65C02(uTotalCycles);
-	else // Apple ][
-		return Cpu6502(uTotalCycles);
+	if (IS_APPLE2 || (g_Apple2Type == A2TYPE_APPLE2E))
+		return Cpu6502(uTotalCycles);	// Apple ][, ][+, //e
+	else
+		return Cpu65C02(uTotalCycles);	// Enhanced Apple //e
 }
 
 //

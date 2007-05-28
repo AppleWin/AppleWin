@@ -17,6 +17,6 @@ short   JoyGetTrim(bool bAxisX);
 DWORD   JoyGetSnapshot(SS_IO_Joystick* pSS);
 DWORD   JoySetSnapshot(SS_IO_Joystick* pSS);
 
-BYTE __stdcall JoyReadButton (WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-BYTE __stdcall JoyReadPosition (WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-BYTE __stdcall JoyResetPosition (WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+BYTE __stdcall JoyReadButton (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+BYTE __stdcall JoyReadPosition (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+BYTE __stdcall JoyResetPosition (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
