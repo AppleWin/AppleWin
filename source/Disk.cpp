@@ -40,12 +40,11 @@ static BYTE __stdcall DiskSetWriteMode (WORD pc, WORD addr, BYTE bWrite, BYTE d,
 
 #define LOG_DISK_ENABLED 1
 
-#ifndef _VC71	// __VA_ARGS__ not supported on MSVC++ .NET 7.x
-	#if LOG_DISK_ENABLED
-		#define LOG_DISK(format, ...) LOG(format, __VA_ARGS__)
-	#else
-		#define LOG_DISK(...)
-	#endif
+// __VA_ARGS__ not supported on MSVC++ .NET 7.x
+#if (LOG_DISK_ENABLED) && !defined(_VC71)
+	#define LOG_DISK(format, ...) LOG(format, __VA_ARGS__)
+#else
+	#define LOG_DISK(...)
 #endif
 
 // Public _________________________________________________________________________________________
@@ -207,9 +206,8 @@ static void ReadTrack (int iDrive)
 
 	if (pFloppy->trackimage && pFloppy->imagehandle)
 	{
-#ifndef _VC71
         LOG_DISK("read track %2X%s\r", pFloppy->track, (pFloppy->phase & 1) ? ".5" : "");
-#endif
+
 		ImageReadTrack(
 			pFloppy->imagehandle,
 			pFloppy->track,
@@ -302,17 +300,13 @@ static BYTE __stdcall DiskControlStepper (WORD, WORD address, BYTE, BYTE, ULONG)
   {
     // phase on
     phases |= phase_bit;
-#ifndef _VC71
     LOG_DISK("track %02X phases %X phase %d on  address $C0E%X\r", fptr->phase, phases, phase, address & 0xF);
-#endif
   }
   else
   {
     // phase off
     phases &= ~phase_bit;
-#ifndef _VC71
     LOG_DISK("track %02X phases %X phase %d off address $C0E%X\r", fptr->phase, phases, phase, address & 0xF);
-#endif
   }
 
   // check for any stepping effect from a magnet
@@ -321,22 +315,17 @@ static BYTE __stdcall DiskControlStepper (WORD, WORD address, BYTE, BYTE, ULONG)
   // - do not move if both adjacent magnets are on
   // momentum and timing are not accounted for ... maybe one day!
   int direction = 0;
-  if ((phases & (1 << fptr->phase)) == 0)
-  {
-    if (phases & (1 << ((fptr->phase + 1) & 3)))
-      direction += 1;
-    if (phases & (1 << ((fptr->phase + 3) & 3)))
-      direction -= 1;
-  }
+  if (phases & (1 << ((fptr->phase + 1) & 3)))
+    direction += 1;
+  if (phases & (1 << ((fptr->phase + 3) & 3)))
+    direction -= 1;
 
   // apply magnet step, if any
   if (direction)
   {
     fptr->phase = MAX(0, MIN(79, fptr->phase + direction));
     int newtrack = MIN(TRACKS-1, fptr->phase >> 1); // (round half tracks down)
-#ifndef _VC71
     LOG_DISK("newtrack %2X%s\r", newtrack, (fptr->phase & 1) ? ".5" : "");
-#endif
     if (newtrack != fptr->track)
     {
       if (fptr->trackimage && fptr->trackimagedirty)
@@ -518,14 +507,10 @@ static BYTE __stdcall DiskReadWrite (WORD programcounter, WORD, BYTE, BYTE, ULON
         return 0;
     else
       result = *(fptr->trackimage+fptr->byte);
-#if LOG_DISK_ENABLED
   if (0)
   {
-#ifndef _VC71
     LOG_DISK("nib %4X = %2X\r", fptr->byte, result);
-#endif
   }
-#endif
   if (++fptr->byte >= fptr->nibbles)
     fptr->byte = 0;
   return result;
