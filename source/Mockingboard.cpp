@@ -145,6 +145,7 @@ static SY6522_AY8910 g_MB[NUM_AY8910];
 // Timer vars
 static ULONG g_n6522TimerPeriod = 0;
 static USHORT g_nMBTimerDevice = 0;	// SY6522 device# which is generating timer IRQ
+static UINT64 g_uLastCumulativeCycles = 0;
 
 // SSI263 vars:
 static USHORT g_nSSI263Device = 0;	// SSI263 device# which is generating phoneme-complete IRQ
@@ -1307,8 +1308,11 @@ void MB_Initialize()
 
 	//
 
-	const UINT uSlot4 = 4;
-	RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
+	if (g_Slot4 == CT_Mockingboard)
+	{
+		const UINT uSlot4 = 4;
+		RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
+	}
 
 	const UINT uSlot5 = 5;
 	RegisterIoHandler(uSlot5, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
@@ -1354,7 +1358,7 @@ void MB_Reset()
 
 static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft)
 {
-	CpuCalcCycles(nCyclesLeft);
+	MB_UpdateCycles(nCyclesLeft);
 
 	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
 		return mem[nAddr];
@@ -1404,7 +1408,7 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 
 static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft)
 {
-	CpuCalcCycles(nCyclesLeft);
+	MB_UpdateCycles(nCyclesLeft);
 
 	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
 		return 0;
@@ -1502,8 +1506,14 @@ void MB_Demute()
 
 //-----------------------------------------------------------------------------
 
+// Called by CpuExecute() before doing CPU emulation
+void MB_StartOfCpuExecute()
+{
+	g_uLastCumulativeCycles = g_nCumulativeCycles;
+}
+
 // Called by ContinueExecution() at the end of every video frame
-void MB_EndOfFrame()
+void MB_EndOfVideoFrame()
 {
 	if(g_SoundcardType == SC_NONE)
 		return;
@@ -1514,12 +1524,19 @@ void MB_EndOfFrame()
 
 //-----------------------------------------------------------------------------
 
-// Called by InternalCpuExecute() after every opcode
-// OLD: Called by CpuExecute() & CpuCalcCycles()
-void MB_UpdateCycles(USHORT nClocks)
+// Called by InternalCpuExecute() after every N opcodes
+// OLD: Called by InternalCpuExecute() after every opcode
+// OLD: void MB_UpdateCycles(USHORT nClocks)
+void MB_UpdateCycles(ULONG uExecutedCycles)
 {
 	if(g_SoundcardType == SC_NONE)
 		return;
+
+	CpuCalcCycles(uExecutedCycles);
+	UINT64 uCycles = g_nCumulativeCycles - g_uLastCumulativeCycles;
+	g_uLastCumulativeCycles = g_nCumulativeCycles;
+	_ASSERT(uCycles < 0x10000);
+	USHORT nClocks = (USHORT) uCycles;
 
 	for(int i=0; i<NUM_SY6522; i++)
 	{

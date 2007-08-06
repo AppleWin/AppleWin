@@ -1570,11 +1570,11 @@ void VideoBenchmark () {
 }
             
 //===========================================================================
-BYTE __stdcall VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG)
+BYTE __stdcall VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
 {
   address &= 0xFF;
   if (address == 0x7F)
-    return MemReadFloatingBus(SW_DHIRES != 0);
+    return MemReadFloatingBus(SW_DHIRES != 0, nCyclesLeft);
   else {
     BOOL result = 0;
     switch (address) {
@@ -1601,7 +1601,7 @@ void VideoCheckPage (BOOL force) {
 }
 
 //===========================================================================
-BYTE __stdcall VideoCheckVbl (WORD, WORD, BYTE, BYTE, ULONG)
+BYTE __stdcall VideoCheckVbl (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 {
 	/*
 		// Drol expects = 80
@@ -1644,7 +1644,7 @@ BYTE __stdcall VideoCheckVbl (WORD, WORD, BYTE, BYTE, ULONG)
 	*/
 
 	bool bVblBar;
-	VideoGetScannerAddress(&bVblBar);
+	VideoGetScannerAddress(&bVblBar, nCyclesLeft);
     BYTE r = KeybGetKeycode();
     return (r & ~0x80) | ((bVblBar) ? 0x80 : 0);
  }
@@ -2042,7 +2042,7 @@ void VideoResetState () {
 }
 
 //===========================================================================
-BYTE __stdcall VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG)
+BYTE __stdcall VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG nCyclesLeft)
 {
   address &= 0xFF;
   DWORD oldpage2 = SW_PAGE2;
@@ -2097,7 +2097,7 @@ BYTE __stdcall VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG)
     }
     lastpageflip = emulmsec;
   }
-  return MemReadFloatingBus();
+  return MemReadFloatingBus(nCyclesLeft);
 }
 
 //===========================================================================
@@ -2160,11 +2160,11 @@ DWORD VideoSetSnapshot(SS_IO_Video* pSS)
 
 //===========================================================================
 
-WORD VideoGetScannerAddress(bool* pbVblBar_OUT)
+WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
 {
     // get video scanner position
     //
-    int nCycles = CpuGetCyclesThisFrame();
+    int nCycles = CpuGetCyclesThisFrame(uExecutedCycles);
 
     // machine state switches
     //
@@ -2267,6 +2267,42 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT)
 		}
 	}
     return static_cast<WORD>(nAddress);
+}
+
+//===========================================================================
+
+// Derived from VideoGetScannerAddress()
+bool VideoGetVbl(const DWORD uExecutedCycles)
+{
+    // get video scanner position
+    //
+    int nCycles = CpuGetCyclesThisFrame(uExecutedCycles);
+
+    // calculate video parameters according to display standard
+    //
+    int nScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+
+    // calculate vertical scanning state
+    //
+    int nVLine  = nCycles / kHClocks; // which vertical scanning line
+    int nVState = kVLine0State + nVLine; // V state bits
+    if ((nVLine >= kVPresetLine)) // check for previous vertical state preset
+    {
+        nVState -= nScanLines; // compensate for preset
+    }
+    int v_3 = (nVState >> 6) & 1;
+    int v_4 = (nVState >> 7) & 1;
+
+    // update VBL' state
+    //
+	if (v_4 & v_3) // VBL?
+	{
+		return false; // Y: VBL' is false
+	}
+	else
+	{
+		return true; // N: VBL' is true
+	}
 }
 
 //===========================================================================

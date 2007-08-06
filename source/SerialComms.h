@@ -23,7 +23,7 @@ class CSuperSerialCard
 {
 public:
 	CSuperSerialCard();
-	~CSuperSerialCard();
+	virtual ~CSuperSerialCard() {}
 
 	void	CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void    CommReset();

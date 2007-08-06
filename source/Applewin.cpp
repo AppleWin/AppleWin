@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 #pragma  hdrstop
+#include "MouseInterface.h"
 
 char VERSIONSTRING[] = "xx.yy.zz.ww";
 
@@ -64,7 +65,10 @@ DWORD       g_dwCyclesThisFrame = 0;
 FILE*		g_fh			= NULL;
 bool		g_bDisableDirectSound = false;
 
-CSuperSerialCard sg_SSC;
+CSuperSerialCard	sg_SSC;
+CMouseInterface		sg_Mouse;
+
+UINT		g_Slot4 = CT_Mockingboard;	// CT_Mockingboard or CT_MouseInterface
 
 //===========================================================================
 
@@ -95,8 +99,12 @@ void ContinueExecution()
 
 	//
 
+	bool bScrollLock_FullSpeed = g_uScrollLockToggle
+									? g_bScrollLock_FullSpeed
+									: (GetKeyState(VK_SCROLL) < 0);
+
 	g_bFullSpeed = ( (g_dwSpeed == SPEED_MAX) || 
-					 (GetKeyState(VK_SCROLL) < 0) ||
+					 bScrollLock_FullSpeed ||
 					 (DiskIsSpinning() && enhancedisk && !Spkr_IsActive() && !MB_IsActive()) );
 
 	if(g_bFullSpeed)
@@ -198,7 +206,7 @@ void ContinueExecution()
 				pageflipping--;
 		}
 
-		MB_EndOfFrame();
+		MB_EndOfVideoFrame();
 	}
 
 	//
@@ -390,6 +398,10 @@ void LoadConfiguration ()
 
   DWORD dwTmp;
 
+  if(LOAD(TEXT(REGVALUE_MOUSE_IN_SLOT4), &dwTmp))
+	  g_uMouseInSlot4 = dwTmp;
+  g_Slot4 = g_uMouseInSlot4 ? CT_MouseInterface : CT_Mockingboard;
+
   if(LOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp))
       SpkrSetVolume(dwTmp, PSP_GetVolumeMax());
 
@@ -415,6 +427,9 @@ void LoadConfiguration ()
       JoySetTrim((short)dwTmp, true);
   if(LOAD(TEXT(REGVALUE_PDL_YTRIM), &dwTmp))
       JoySetTrim((short)dwTmp, false);
+
+  if(LOAD(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), &dwTmp))
+	  g_uScrollLockToggle = dwTmp;
 
   //
 
@@ -706,7 +721,9 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		// ENTER THE MAIN MESSAGE LOOP
 		EnterMessageLoop();
+
 		MB_Reset();
+		sg_Mouse.Uninitialize();	// Maybe restarting due to switching slot-4 card from mouse to MB
 	}
 	while (restart);
 	

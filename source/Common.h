@@ -80,6 +80,8 @@ enum AppMode_e
 #define  REGVALUE_HDD_IMAGE2         "Harddisk Image 2"
 #define  REGVALUE_PDL_XTRIM          "PDL X-Trim"
 #define  REGVALUE_PDL_YTRIM          "PDL Y-Trim"
+#define  REGVALUE_SCROLLLOCK_TOGGLE  "ScrollLock Toggle"
+#define  REGVALUE_MOUSE_IN_SLOT4     "Mouse in slot 4"
 
 // Preferences 
 #define REGVALUE_PREF_START_DIR TEXT("Starting Directory")
@@ -95,7 +97,7 @@ typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE
 
 typedef struct _IMAGE__ { int unused; } *HIMAGE;
 
-enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC};
+enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 
 //
 
@@ -115,3 +117,6 @@ enum eApple2Type {
 //					A2TYPE_APPLE2C=APPLE2C_MASK,	// Placeholder
 					A2TYPE_MAX
 				};
+
+enum eBUTTON {BUTTON0=0, BUTTON1};
+enum eBUTTONSTATE {BUTTON_UP=0, BUTTON_DOWN};

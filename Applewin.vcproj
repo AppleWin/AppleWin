@@ -210,6 +210,14 @@
 			Filter=".cpp"
 			>
 			<File
+				RelativePath=".\source\6821.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\6821.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\Applewin.cpp"
 				>
 			</File>
@@ -303,6 +311,14 @@
 			</File>
 			<File
 				RelativePath=".\source\Mockingboard.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\MouseInterface.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\MouseInterface.h"
 				>
 			</File>
 			<File
@@ -671,6 +687,10 @@
 		</Filter>
 		<File
 			RelativePath=".\source\Common.h"
+			>
+		</File>
+		<File
+			RelativePath=".\resource\MouseInterface.rom"
 			>
 		</File>
 		<File

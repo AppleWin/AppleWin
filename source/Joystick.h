@@ -7,7 +7,7 @@ extern DWORD      joytype[2];
 void    JoyInitialize ();
 BOOL    JoyProcessKey (int,BOOL,BOOL,BOOL);
 void    JoyReset ();
-void    JoySetButton (int,BOOL);
+void    JoySetButton (eBUTTON,eBUTTONSTATE);
 BOOL    JoySetEmulationType (HWND,DWORD,int);
 void    JoySetPosition (int,int,int,int);
 void    JoyUpdatePosition ();

@@ -25,3 +25,5 @@ LRESULT CALLBACK FrameWndProc (
 	UINT   message,
 	WPARAM wparam,
 	LPARAM lparam );
+
+extern bool g_bScrollLock_FullSpeed;

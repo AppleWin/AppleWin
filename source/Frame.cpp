@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 #pragma  hdrstop
+#include "MouseInterface.h"
 #include "..\resource\resource.h"
 
 #define ENABLE_MENU 0
@@ -89,6 +90,8 @@ void    ResetMachineState ();
 void    SetFullScreenMode ();
 void    SetNormalMode ();
 void    SetUsingCursor (BOOL);
+
+bool	g_bScrollLock_FullSpeed = false;
 
 //===========================================================================
 void CreateGdiObjects () {
@@ -609,7 +612,9 @@ LRESULT CALLBACK FrameWndProc (
 			SoundCore_SetFade(FADE_IN);
 		}
 		else if (wparam == VK_CAPITAL)
+		{
 			KeybToggleCapsLock();
+		}
 		else if (wparam == VK_PAUSE)
 		{
 			SetUsingCursor(0);
@@ -631,6 +636,10 @@ LRESULT CALLBACK FrameWndProc (
 			if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 				VideoRedrawScreen();
 			g_bResetTiming = true;
+		}
+		else if ((wparam == VK_SCROLL) && g_uScrollLockToggle)
+		{
+			g_bScrollLock_FullSpeed = !g_bScrollLock_FullSpeed;
 		}
 		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) || (g_nAppMode == MODE_STEPPING))
 		{
@@ -654,37 +663,53 @@ LRESULT CALLBACK FrameWndProc (
 		break;
 
     case WM_KEYUP:
-      if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == (int)wparam-VK_F1)) {
-        buttondown = -1;
-        if (fullscreen)
-          EraseButton(wparam-VK_F1);
-        else
-          DrawButton((HDC)0,wparam-VK_F1);
-        ProcessButtonClick(wparam-VK_F1);
-      }
-      else
-        JoyProcessKey((int)wparam,((lparam & 0x01000000) != 0),0,0);
-      break;
+		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == (int)wparam-VK_F1))
+		{
+			buttondown = -1;
+			if (fullscreen)
+				EraseButton(wparam-VK_F1);
+			else
+				DrawButton((HDC)0,wparam-VK_F1);
+			ProcessButtonClick(wparam-VK_F1);
+		}
+		else
+		{
+			JoyProcessKey((int)wparam,((lparam & 0x01000000) != 0),0,0);
+		}
+		break;
 
     case WM_LBUTTONDOWN:
-      if (buttondown == -1) {
+      if (buttondown == -1)
+	  {
         int x = LOWORD(lparam);
         int y = HIWORD(lparam);
         if ((x >= buttonx) &&
             (y >= buttony) &&
-            (y <= buttony+BUTTONS*BUTTONCY)) {
+            (y <= buttony+BUTTONS*BUTTONCY))
+		{
           buttonactive = buttondown = (y-buttony-1)/BUTTONCY;
           DrawButton((HDC)0,buttonactive);
           SetCapture(window);
         }
         else if (usingcursor)
+		{
           if (wparam & (MK_CONTROL | MK_SHIFT))
+		  {
             SetUsingCursor(0);
+		  }
           else
-            JoySetButton(0,1);
-        else if ((x < buttonx) && JoyUsingMouse() &&
-                 ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING)))
+		  {
+			if (sg_Mouse.Active())
+				sg_Mouse.SetButton(BUTTON0, BUTTON_DOWN);
+			else
+		        JoySetButton(BUTTON0, BUTTON_DOWN);
+		  }
+		}
+        else if ( ((x < buttonx) && JoyUsingMouse() && ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING))) ||
+				  (sg_Mouse.Active()) )
+		{
           SetUsingCursor(1);
+		}
 		DebuggerMouseClick( x, y );
       }
       RelayEvent(WM_LBUTTONDOWN,wparam,lparam);
@@ -704,7 +729,12 @@ LRESULT CALLBACK FrameWndProc (
         buttonactive = -1;
       }
       else if (usingcursor)
-        JoySetButton(0,0);
+	  {
+		if (sg_Mouse.Active())
+			sg_Mouse.SetButton(BUTTON0, BUTTON_UP);
+		else
+		    JoySetButton(BUTTON0, BUTTON_UP);
+	  }
       RelayEvent(WM_LBUTTONUP,wparam,lparam);
       break;
 
@@ -730,10 +760,13 @@ LRESULT CALLBACK FrameWndProc (
         if (buttonover != -1)
           DrawButton((HDC)0,buttonover);
       }
-      else if (usingcursor) {
+      else if (usingcursor)
+	  {
         DrawCrosshairs(x,y);
-        JoySetPosition(x-viewportx-2,VIEWPORTCX-4,
-                       y-viewporty-2,VIEWPORTCY-4);
+		if (sg_Mouse.Active())
+	        sg_Mouse.SetPosition(x-viewportx-2, VIEWPORTCX-4, y-viewporty-2, VIEWPORTCY-4);
+		else
+		    JoySetPosition(x-viewportx-2, VIEWPORTCX-4, y-viewporty-2, VIEWPORTCY-4);
       }
       RelayEvent(WM_MOUSEMOVE,wparam,lparam);
       break;
@@ -832,7 +865,10 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		if (usingcursor)
 		{
-			JoySetButton(1,(message == WM_RBUTTONDOWN));
+			if (sg_Mouse.Active())
+				sg_Mouse.SetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
+			else
+				JoySetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
 		}
 		RelayEvent(message,wparam,lparam);
 		break;
