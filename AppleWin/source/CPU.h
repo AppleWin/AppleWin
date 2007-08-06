@@ -14,9 +14,9 @@ extern regsrec    regs;
 extern unsigned __int64 g_nCumulativeCycles;
 
 void    CpuDestroy ();
-void    CpuCalcCycles(ULONG nCyclesLeft);
+void    CpuCalcCycles(ULONG nExecutedCycles);
 DWORD   CpuExecute (DWORD);
-ULONG   CpuGetCyclesThisFrame();
+ULONG   CpuGetCyclesThisFrame(ULONG nExecutedCycles);
 void    CpuInitialize ();
 void    CpuSetupBenchmark ();
 void	CpuIrqReset();

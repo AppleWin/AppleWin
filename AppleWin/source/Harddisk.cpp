@@ -217,7 +217,6 @@ static LPCTSTR HD_DiskGetName (int nDrive)
 static BYTE __stdcall HD_IO_EMUL (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 
 static const DWORD HDDRVR_SIZE = 0x100;
-static LPBYTE lpMemC000 = NULL;
 
 bool HD_CardIsEnabled()
 {
@@ -231,13 +230,14 @@ void HD_SetEnabled(bool bEnabled)
 
 	g_bHD_Enabled = bEnabled;
 
-	if(lpMemC000 == NULL)	// This will be NULL when called after loading value from Registry
+	LPBYTE pCxRomPeripheral = MemGetCxRomPeripheral();
+	if(pCxRomPeripheral == NULL)	// This will be NULL when called after loading value from Registry
 		return;
 
 	if(g_bHD_Enabled)
-		HD_Load_Rom(lpMemC000, g_uSlot);
+		HD_Load_Rom(pCxRomPeripheral, g_uSlot);
 	else
-		memset(lpMemC000 + g_uSlot*256, 0, HDDRVR_SIZE);
+		memset(pCxRomPeripheral + g_uSlot*256, 0, HDDRVR_SIZE);
 
 	RegisterIoHandler(g_uSlot, HD_IO_EMUL, HD_IO_EMUL, NULL, NULL, NULL, NULL);
 }
@@ -249,8 +249,6 @@ LPCTSTR HD_GetFullName (int nDrive)
 
 VOID HD_Load_Rom(LPBYTE pCxRomPeripheral, UINT uSlot)
 {
-	lpMemC000 = pCxRomPeripheral;	// Keep a copy for HD_SetEnabled()
-
 	if(!g_bHD_Enabled)
 		return;
 

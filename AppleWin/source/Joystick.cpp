@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 #pragma  hdrstop
+#include "MouseInterface.h"
 
 #define  BUTTONTIME       5000
 
@@ -365,7 +366,7 @@ BOOL JoyProcessKey (int virtkey, BOOL extended, BOOL down, BOOL autorep)
 
 //===========================================================================
 
-BYTE __stdcall JoyReadButton (WORD, WORD address, BYTE, BYTE, ULONG)
+BYTE __stdcall JoyReadButton (WORD, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
 {
   address &= 0xFF;
 
@@ -397,7 +398,7 @@ BYTE __stdcall JoyReadButton (WORD, WORD address, BYTE, BYTE, ULONG)
       break;
 
   }
-  return MemReadFloatingBus(pressed);
+  return MemReadFloatingBus(pressed, nCyclesLeft);
 }
 
 //===========================================================================
@@ -433,7 +434,7 @@ BYTE __stdcall JoyReadPosition (WORD programcounter, WORD address, BYTE, BYTE, U
 
 	BOOL nPdlCntrActive = g_nCumulativeCycles <= (g_nJoyCntrResetCycle + (unsigned __int64) ((double)nPdlPos * PDL_CNTR_INTERVAL));
 
-	return MemReadFloatingBus(nPdlCntrActive);
+	return MemReadFloatingBus(nPdlCntrActive, nCyclesLeft);
 }
 
 //===========================================================================
@@ -455,13 +456,13 @@ BYTE __stdcall JoyResetPosition (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 	if(joyinfo[joytype[1]].device == DEVICE_JOYSTICK)
 		CheckJoystick1();
 
-	return MemReadFloatingBus();
+	return MemReadFloatingBus(nCyclesLeft);
 }
 
 //===========================================================================
 
 // Called when mouse is being used as a joystick && mouse button changes
-void JoySetButton (int number, BOOL down)
+void JoySetButton (eBUTTON number, eBUTTONSTATE down)
 {
   if (number > 1)	// Sanity check on mouse button #
     return;
@@ -473,7 +474,7 @@ void JoySetButton (int number, BOOL down)
   // If it is 2nd joystick that is being emulated with mouse, then re-map button #
   if(joyinfo[joytype[1]].device == DEVICE_MOUSE)
   {
-	number = 1;	// 2nd joystick controls Apple button #1
+	number = BUTTON1;	// 2nd joystick controls Apple button #1
   }
 
   setbutton[number] = down;
@@ -507,6 +508,15 @@ BOOL JoySetEmulationType (HWND window, DWORD newtype, int nJoystickNumber)
   else if ((joyinfo[newtype].device == DEVICE_MOUSE) &&
            (joyinfo[joytype[nJoystickNumber]].device != DEVICE_MOUSE))
   {
+	if (sg_Mouse.Active())
+	{
+	  MessageBox(window,
+				 TEXT("Mouse interface card is enabled - unable to use mouse for joystick emulation."),
+				 TEXT("Configuration"),
+				 MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+	  return 0;
+	}
+
     MessageBox(window,
                TEXT("To begin emulating a joystick with your mouse, move ")
                TEXT("the mouse cursor over the emulated screen of a running ")

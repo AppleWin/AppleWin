@@ -101,6 +101,9 @@ enum {PG_CONFIG=0, PG_INPUT, PG_SOUND, PG_SAVESTATE, PG_DISK, PG_NUM_SHEETS};
 
 UINT g_nLastPage = PG_CONFIG;
 
+UINT g_uScrollLockToggle = 0;
+UINT g_uMouseInSlot4 = 0;
+
 //===========================================================================
 
 static void FillComboBox (HWND window, int controlid, LPCTSTR choices, int currentchoice)
@@ -224,15 +227,17 @@ static void ConfigDlg_OK(HWND window, BOOL afterclose)
 	if (NewApple2Type != g_Apple2Type)
 	{
 		if (MessageBox(window,
-			TEXT(
-			"You have changed the emulated computer "
-			"type.  This change will not take effect "
-			"until the next time you restart the "
-			"emulator.\n\n"
-			"Would you like to restart the emulator now?"),
-			TEXT("Configuration"),
-			MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+						TEXT(
+						"You have changed the emulated computer "
+						"type.  This change will not take effect "
+						"until the next time you restart the "
+						"emulator.\n\n"
+						"Would you like to restart the emulator now?"),
+						TEXT("Configuration"),
+						MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+		{
 			afterclose = WM_USER_RESTART;
+		}
 	}
 
 	if (videotype != newvidtype)
@@ -257,6 +262,7 @@ static void ConfigDlg_OK(HWND window, BOOL afterclose)
 	SAVE(TEXT("Custom Speed")      ,IsDlgButtonChecked(window,IDC_CUSTOM_SPEED));
 	SAVE(TEXT("Emulation Speed")   ,g_dwSpeed);
 	SAVE(TEXT("Video Emulation")   ,videotype);
+	SAVE(TEXT(REGVALUE_MOUSE_IN_SLOT4),g_uMouseInSlot4);
 
 	//
 
@@ -332,6 +338,31 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
           VideoChooseColor();
           break;
 
+		case IDC_MOUSE_IN_SLOT4:
+			UINT uNewState = IsDlgButtonChecked(window, IDC_MOUSE_IN_SLOT4) ? 1 : 0;
+			LPCSTR pMsg = uNewState ?
+							TEXT("The emulator needs to restart as the slot configuration has changed.\n")
+							TEXT("Also Mockingboard/Phasor cards won't be available in slot 4.\n\n")
+							TEXT("Would you like to restart the emulator now?")
+							:
+							TEXT("The emulator needs to restart as the slot configuration has changed.\n")
+							TEXT("(Mockingboard/Phasor cards will now be available in slot 4.)\n\n")
+							TEXT("Would you like to restart the emulator now?");
+			if (MessageBox(window,
+							pMsg,
+							TEXT("Configuration"),
+							MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+			{
+				g_uMouseInSlot4 = uNewState;
+				afterclose = WM_USER_RESTART;
+				PropSheet_PressButton(GetParent(window), PSBTN_OK);
+			}
+			else
+			{
+			  CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
+			}
+			break;
+
 #if 0
         case IDC_RECALIBRATE:
           RegSaveValue(TEXT(""),TEXT("RunningOnOS"),0,0);
@@ -383,6 +414,8 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
         SetFocus(GetDlgItem(window, custom ? IDC_SLIDER_CPU_SPEED : IDC_AUTHENTIC_SPEED));
         EnableTrackbar(window, custom);
       }
+
+      CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
 
       afterclose = 0;
       break;
@@ -444,6 +477,7 @@ static void InputDlg_OK(HWND window, BOOL afterclose)
 	SAVE(TEXT("Joystick 1 Emulation"),joytype[1]);
 	SAVE(TEXT(REGVALUE_PDL_XTRIM),JoyGetTrim(true));
 	SAVE(TEXT(REGVALUE_PDL_YTRIM),JoyGetTrim(false));
+	SAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE),g_uScrollLockToggle);
 //	SAVE(TEXT(REGVALUE_KEYB_BUFFER_ENABLE),KeybGetBufferMode() ? 1 : 0);
 
 	//
@@ -527,11 +561,14 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 				InitJoystickChoices(window, JN_JOYSTICK0, IDC_JOYSTICK0);	// Re-init joy0 list
 			}
 			break;
-//		case IDC_KEYB_BUFFER_ENABLE:
-//			break;
+		case IDC_SCROLLLOCK_TOGGLE:
+			g_uScrollLockToggle = IsDlgButtonChecked(window, IDC_SCROLLLOCK_TOGGLE) ? 1 : 0;
+			break;
 		case IDC_PASTE_FROM_CLIPBOARD:
 			ClipboardInitiatePaste();
 			break;
+//		case IDC_KEYB_BUFFER_ENABLE:
+//			break;
       }
       break;
 
@@ -548,6 +585,7 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 	  SendDlgItemMessage(window, IDC_SPIN_XTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(true),0));
 	  SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(false),0));
 
+      CheckDlgButton(window, IDC_SCROLLLOCK_TOGGLE, g_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
 //	  CheckDlgButton(window, IDC_KEYB_BUFFER_ENABLE, KeybGetBufferMode() ? BST_CHECKED : BST_UNCHECKED);
 	}
   }
@@ -675,6 +713,11 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 
 	  CheckRadioButton(window, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, nID);
 
+	  if (g_uMouseInSlot4)
+	  {
+		EnableWindow(GetDlgItem(window, IDC_PHASOR_ENABLE), FALSE);
+	  }
+
       afterclose = 0;
 	}
   }
@@ -734,7 +777,18 @@ static int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 	TCHAR szDirectory[MAX_PATH] = TEXT("");
 	TCHAR szFilename[MAX_PATH];
 	
-	strcpy(szFilename, Snapshot_GetFilename());
+	// Attempt to use drive1's image name as the name for the .aws file
+	LPCTSTR pDiskName0 = DiskGetName(0);
+	if (pDiskName0 && pDiskName0[0])
+	{
+		strcpy(szFilename, pDiskName0);
+		strcpy(&szFilename[strlen(pDiskName0)], ".aws");
+		// NB. OK'ing this property sheet will call Snapshot_SetFilename() with this new filename
+	}
+	else
+	{
+		strcpy(szFilename, Snapshot_GetFilename());
+	}
 	
 	RegLoadString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,szDirectory,MAX_PATH);
 	

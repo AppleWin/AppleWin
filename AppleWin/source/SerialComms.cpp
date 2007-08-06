@@ -87,10 +87,6 @@ CSuperSerialCard::CSuperSerialCard()
 	memset(&m_o, 0, sizeof(m_o));
 }
 
-CSuperSerialCard::~CSuperSerialCard()
-{
-}
-
 //===========================================================================
 
 // TODO: Serial Comms - UI Property Sheet Page:
