@@ -2,8 +2,6 @@ AppleWin history
 ================
 
 This version of AppleWin is based directly on Oliver Schmidt's 1.10.4 source.
-The release numbering used to be restricted to 1.12.x, but we have now decided
-to lift this restriction.
 
 Bug reports should be submitted here:
 https://developer.berlios.de/bugs/?func=addbug&group_id=6117
@@ -20,8 +18,26 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise
 
 
-1.13.2 - 07 April 2007
-----------------------
+1.14.0 - 08 Aug 2007 (beta)
+---------------------------
+Fixes:
+. Super Serial Card: PR#2 & IN#2 now working
+. Full support for Peripheral Expansion ROM (at $C800) & $CFFF access
+. F2 (Power-cycle) when ROM is switched *out* caused Apple to freeze
+
+Changes:
+. Attempt to use drive1's image name as the name for the .aws file
+. Added Apple//e (original 6502 version with "Venetian Blinds" self-test)
+. Turbo mode via Scroll Lock (temporary or toggle mode) - selectable via UI
+
+Beta:
+. Mouse Interface card support in slot 4 (selectable via UI)
+  - Full 6821 emulation & 2K ROM. Based on code by Kyle Kim (Apple in PC)
+  - Tested with: Dazzle Draw, Blazing Paddles, Archon II: Adept, Orge[Fix], Dragon Wars
+
+
+1.13.2 - 07 Apr 2007
+--------------------
 * Added: Apple ][ (non-autostart monitor)
 * Added: 6502 NMOS illegal opcode support (for ][ & ][+)
 * Added: 65C02 CMOS undefined opcode support (for //e)
