@@ -669,6 +669,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\MouseInterface.rom"
+				>
+			</File>
+			<File
 				RelativePath=".\resource\Parallel.rom"
 				>
 			</File>
@@ -687,10 +691,6 @@
 		</Filter>
 		<File
 			RelativePath=".\source\Common.h"
-			>
-		</File>
-		<File
-			RelativePath=".\resource\MouseInterface.rom"
 			>
 		</File>
 		<File
