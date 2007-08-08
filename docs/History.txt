@@ -18,6 +18,11 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise
 
 
+1.14.1 - 09 Aug 2007 (beta)
+---------------------------
+. Fix: Mouse support in Contiki v1.3
+
+
 1.14.0 - 08 Aug 2007 (beta)
 ---------------------------
 Fixes:

@@ -225,7 +225,6 @@ void CMouseInterface::On6821_B(BYTE byData)
 
 void CMouseInterface::OnCommand()
 {
-	//char szDbg[256];
 	switch( m_byBuff[0] & 0xF0 )
 	{
 	case MOUSE_SET:
@@ -249,13 +248,11 @@ void CMouseInterface::OnCommand()
 		m_byBuff[4] = ( m_nY >> 8 ) & 0xFF;
 		m_byBuff[5] = m_byState;			// button 0/1 interrupt status
 		m_byState &= ~0x20;
-		//sprintf(szDbg, "[MOUSE-READ] IRQ=0x%02X X=(0x%02X-0x%02X) Y=(0x%02X-0x%02X) \n", m_byBuff[5], m_byBuff[1], m_byBuff[2], m_byBuff[3], m_byBuff[4]); OutputDebugString(szDbg);
 		break;
 	case MOUSE_SERV:
 		m_nDataLen = 2;
 		m_byBuff[1] = m_byState & ~0x20;			// reason of interrupt
 		CpuIrqDeassert(IS_MOUSE);
-		//sprintf(szDbg, "[MOUSE-SERV] IRQ=0x%02X\n", m_byBuff[1]); OutputDebugString(szDbg);
 		break;
 	case MOUSE_CLEAR:
 		Reset();
@@ -343,12 +340,11 @@ void CMouseInterface::OnMouseEvent()
 		byState |= 0x04;				// Button 0/1 interrupt
 	if ( m_bVBL )
 		byState |= 0x08;
-	byState &= m_byMode & 0x2E;
+	//byState &= m_byMode & 0x2E;
+	byState &= ((m_byMode & 0x0E) | 0x20);	// Keep "X/Y moved since last READMOUSE" for next MOUSE_READ (Contiki v1.3 uses this)
 
 	if ( byState & 0x0E )
 	{
-		//char szDbg[256];
-		//sprintf(szDbg, "[MOUSE] 0x%02X, %04d(%04d), %04d(%04d), %d\n", byState, m_iX, m_nX, m_iY, m_nY, bBtn0); OutputDebugString(szDbg);
 		m_byState |= byState;
 		CpuIrqAssert(IS_MOUSE);
 	}
@@ -406,8 +402,8 @@ void CMouseInterface::SetPosition(int xvalue, int yvalue)
 {
 	if ((m_iRangeX == 0) || (m_iRangeY == 0))
 	{
-		m_iX = m_iMinX;
-		m_iY = m_iMinY;
+		m_nX = m_iX = m_iMinX;
+		m_nY = m_iY = m_iMinY;
 		return;
 	}
 
