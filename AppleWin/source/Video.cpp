@@ -2168,7 +2168,7 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
 
     // machine state switches
     //
-	int nHires    = (SW_HIRES) ? 1 : 0;
+	int nHires    = (SW_HIRES & !SW_TEXT) ? 1 : 0;
     int nPage2    = (SW_PAGE2) ? 1 : 0;
     int n80Store = (MemGet80Store()) ? 1 : 0;
 
@@ -2213,7 +2213,7 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
 
     // calculate scanning memory address
     //
-    if (SW_HIRES && SW_MIXED && (v_4 & v_2))
+    if (SW_HIRES && SW_MIXED && (v_4 & v_2))	// NICK: Should this be (SW_HIRES && !SW_TEXT) instead of just 'SW_HIRES' ?
     {
         nHires = 0; // (address is in text memory)
     }

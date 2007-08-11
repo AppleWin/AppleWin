@@ -1458,7 +1458,7 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 static BYTE __stdcall PhasorIO (WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft)
 {
 	if(!g_bPhasorEnable)
-		return 0;
+		return MemReadFloatingBus(nCyclesLeft);
 
 	if(g_nPhasorMode < 2)
 		g_nPhasorMode = nAddr & 1;
@@ -1467,7 +1467,7 @@ static BYTE __stdcall PhasorIO (WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, U
 
 	AY8910_InitClock((int)fCLK);
 
-	return 0;
+	return MemReadFloatingBus(nCyclesLeft);
 }
 
 //-----------------------------------------------------------------------------
