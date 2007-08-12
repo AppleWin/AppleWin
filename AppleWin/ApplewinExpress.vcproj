@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="shift_jis"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="Applewin"
 	ProjectGUID="{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}"
 	RootNamespace="Applewin"
@@ -49,10 +49,16 @@
 				AdditionalOptions="/Zm200 "
 				Optimization="2"
 				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				WholeProgramOptimization="true"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
+				EnableEnhancedInstructionSet="2"
+				FloatingPointModel="2"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\Release/Applewin.pch"
 				AssemblerListingLocation=".\Release/"
@@ -81,6 +87,7 @@
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile=".\Release/Applewin.pdb"
 				SubSystem="2"
+				LinkTimeCodeGeneration="1"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -211,6 +218,14 @@
 			Filter=".cpp"
 			>
 			<File
+				RelativePath=".\source\6821.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\6821.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\Applewin.cpp"
 				>
 			</File>
@@ -304,6 +319,14 @@
 			</File>
 			<File
 				RelativePath=".\source\Mockingboard.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\MouseInterface.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\MouseInterface.h"
 				>
 			</File>
 			<File
