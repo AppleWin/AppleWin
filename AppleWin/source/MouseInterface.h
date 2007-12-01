@@ -13,7 +13,8 @@ public:
 	virtual ~CMouseInterface();
 
 	void Initialize(LPBYTE pCxRomPeripheral, UINT uSlot);
-	void Uninitialize(){ m_bActive = false; }
+	void Uninitialize();
+	void Reset();
 	void SetSlotRom();
 	static BYTE __stdcall IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
 	static BYTE __stdcall IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
@@ -29,7 +30,7 @@ protected:
 	void OnCommand();
 	void OnWrite();
 	void OnMouseEvent();
-	void Reset();
+	void Clear();
 
 	friend WRITE_HANDLER( M6821_Listener_A );
 	friend WRITE_HANDLER( M6821_Listener_B );
