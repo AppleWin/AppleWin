@@ -59,30 +59,9 @@ CMouseInterface::CMouseInterface() :
 	m_6821.SetListenerB( this, M6821_Listener_B );
 	m_6821.SetListenerA( this, M6821_Listener_A );
 //	g_cDIMouse.SetMouseListener( this, MouseHandler );
-	m_by6821A = 0;
-	m_by6821B = 0x40;		// Set PB6
-	m_6821.SetPB(m_by6821B);
-	m_bVBL = FALSE;
 
-	//
-
-	m_iX = 0;
-	m_iMinX = 0;
-	m_iMaxX = 1023;
-	m_iRangeX = 0;
-
-	m_iY = 0;
-	m_iMinY = 0;
-	m_iMaxY = 1023;
-	m_iRangeY = 0;
-
-	m_bButtons[0] = m_bButtons[1] = FALSE;
-
-	//
-
+	Uninitialize();
 	Reset();
-	memset( m_byBuff, 0, sizeof( m_byBuff ) );
-	m_bActive = false;
 }
 
 CMouseInterface::~CMouseInterface()
@@ -129,8 +108,44 @@ void CMouseInterface::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	m_bActive = true;
 }
 
+void CMouseInterface::Uninitialize()
+{
+	m_bActive = false;
+}
+
+void CMouseInterface::Reset()
+{
+	m_by6821A = 0;
+	m_by6821B = 0x40;		// Set PB6
+	m_6821.SetPB(m_by6821B);
+	m_bVBL = FALSE;
+
+	//
+
+	m_iX = 0;
+	m_iMinX = 0;
+	m_iMaxX = 1023;
+	m_iRangeX = 0;
+
+	m_iY = 0;
+	m_iMinY = 0;
+	m_iMaxY = 1023;
+	m_iRangeY = 0;
+
+	m_bButtons[0] = m_bButtons[1] = FALSE;
+
+	//
+
+	Clear();
+	memset( m_byBuff, 0, sizeof( m_byBuff ) );
+	SetSlotRom();
+}
+
 void CMouseInterface::SetSlotRom()
 {
+	if (!m_bActive)
+		return;
+
 	LPBYTE pCxRomPeripheral = MemGetCxRomPeripheral();
 	if (pCxRomPeripheral == NULL)
 		return;
@@ -255,7 +270,7 @@ void CMouseInterface::OnCommand()
 		CpuIrqDeassert(IS_MOUSE);
 		break;
 	case MOUSE_CLEAR:
-		Reset();
+		Clear();					// [TC] NB. Don't reset clamp values (eg. Fantavision)
 		m_nDataLen = 1;
 		break;
 	case MOUSE_POS:
@@ -341,7 +356,7 @@ void CMouseInterface::OnMouseEvent()
 	if ( m_bVBL )
 		byState |= 0x08;
 	//byState &= m_byMode & 0x2E;
-	byState &= ((m_byMode & 0x0E) | 0x20);	// Keep "X/Y moved since last READMOUSE" for next MOUSE_READ (Contiki v1.3 uses this)
+	byState &= ((m_byMode & 0x0E) | 0x20);	// [TC] Keep "X/Y moved since last READMOUSE" for next MOUSE_READ (Contiki v1.3 uses this)
 
 	if ( byState & 0x0E )
 	{
@@ -360,7 +375,7 @@ void CMouseInterface::SetVBlank(bool bVBL)
 	}
 }
 
-void CMouseInterface::Reset()
+void CMouseInterface::Clear()
 {
 	m_nBuffPos = 0;
 	m_nDataLen = 1;
@@ -371,8 +386,6 @@ void CMouseInterface::Reset()
 	m_nY = 0;
 	m_bBtn0 = 0;
 	m_bBtn1 = 0;
-	ClampX( 0, 1023 );
-	ClampY( 0, 1023 );
 	SetPosition( 0, 0 );
 
 //	CpuIrqDeassert(IS_MOUSE);
@@ -407,14 +420,38 @@ void CMouseInterface::SetPosition(int xvalue, int yvalue)
 		return;
 	}
 
+#if NDEBUG
 	m_iX = (UINT) ((xvalue*m_iMaxX) / m_iRangeX);
 	m_iY = (UINT) ((yvalue*m_iMaxY) / m_iRangeY);
+#else
+	if (m_iMaxX <= m_iRangeX)
+	{
+		m_iX = (UINT) ((xvalue*m_iMaxX) / m_iRangeX);
+		m_iY = (UINT) ((yvalue*m_iMaxY) / m_iRangeY);
+	}
+	else
+	{
+//		m_iX = (UINT) ((xvalue*m_iRangeX) / m_iMaxX);
+//		m_iY = (UINT) ((yvalue*m_iRangeY) / m_iMaxY);
+		m_iX = xvalue;
+		m_iY = yvalue;
+	}
+#endif
 }
 
 void CMouseInterface::SetPosition(int xvalue, int xrange, int yvalue, int yrange)
 {
 	m_iRangeX = (UINT) xrange;
 	m_iRangeY = (UINT) yrange;
+
+#if NDEBUG
+#else
+	if (m_iMaxX > m_iRangeX)
+	{
+		xvalue = (int) ( ((float)xvalue / (float)m_iRangeX) * (float)m_iMaxX );
+		yvalue = (int) ( ((float)yvalue / (float)m_iRangeY) * (float)m_iMaxY );
+	}
+#endif
 
 	SetPosition(xvalue, yvalue);
 	OnMouseEvent();

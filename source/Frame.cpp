@@ -1114,6 +1114,7 @@ void ResetMachineState () {
   JoyReset();
   MB_Reset();
   SpkrReset();
+  sg_Mouse.Reset();
 
   SoundCore_SetFade(FADE_NONE);
 }

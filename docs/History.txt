@@ -18,8 +18,14 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise
 
 
-1.14.1 - 09 Aug 2007 (beta)
----------------------------
+1.14.1.1 - 13 Aug 2007 (beta)
+-----------------------------
+. Fix: Infiltrator (floating bus was not being returned for all unmapped I/O)
+. Fix: Mouse card is now reset on a system reset (reboot from Fantavision to Dazzle Draw : 'no mouse installed' problem)
+. Fix: CLEARMOUSE cmd was resetting the clamp value (Fantavision problem)
+
+1.14.1.0 - 09 Aug 2007 (beta)
+-----------------------------
 . Fix: Mouse support in Contiki v1.3
 
 
