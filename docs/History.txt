@@ -17,6 +17,11 @@ Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise
 
+1.14.1.2 - 2 Dec 2007 (beta)
+----------------------------
+. Change: Removed crosshairs in mouse-mode
+. Change: Hide Windows' mouse cursor when over Apple's screen (in mouse-mode)
+. Fix: Use mouse position delta (fixes GEOS)
 
 1.14.1.1 - 13 Aug 2007 (beta)
 -----------------------------

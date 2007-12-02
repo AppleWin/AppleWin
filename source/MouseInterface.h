@@ -19,7 +19,7 @@ public:
 	static BYTE __stdcall IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
 	static BYTE __stdcall IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
 
-	void SetPosition(int xvalue, int xrange, int yvalue, int yrange);
+	void SetPositionRel(int dx, int dy);
 	void SetButton(eBUTTON Button, eBUTTONSTATE State);
 	bool Active() { return m_bActive; }
 	void SetVBlank(bool bVBL);
@@ -36,9 +36,11 @@ protected:
 	friend WRITE_HANDLER( M6821_Listener_B );
 	//friend CALLBACK_HANDLER( MouseHandler );
 
-	void SetPosition(int xvalue, int yvalue);
-	void ClampX(int iMinX, int iMaxX);
-	void ClampY(int iMinY, int iMaxY);
+	void SetPositionAbs(int x, int y);
+	void ClampX();
+	void ClampY();
+	void SetClampX(int iMinX, int iMaxX);
+	void SetClampY(int iMinY, int iMaxY);
 
 
 	C6821	m_6821;
@@ -61,14 +63,12 @@ protected:
 
 	//
 
-	UINT	m_iX;
-	UINT	m_iRangeX;
-	UINT	m_iMinX;
-	UINT	m_iMaxX;
-	UINT	m_iY;
-	UINT	m_iRangeY;
-	UINT	m_iMinY;
-	UINT	m_iMaxY;
+	int		m_iX;
+	int		m_iMinX;
+	int		m_iMaxX;
+	int		m_iY;
+	int		m_iMinY;
+	int		m_iMaxY;
 
 	BOOL	m_bButtons[2];
 
