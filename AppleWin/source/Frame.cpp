@@ -55,7 +55,6 @@ static HBITMAP diskbitmap[ NUM_DISK_STATUS ];
 
 static HBITMAP buttonbitmap[BUTTONS];
 
-//static BOOL    active          = 0;
 static bool    g_bAppActive = false;
 static HBRUSH  btnfacebrush    = (HBRUSH)0;
 static HPEN    btnfacepen      = (HPEN)0;
@@ -81,6 +80,11 @@ static int     viewporty       = VIEWPORTY;
 
 static LPDIRECTDRAW        directdraw = (LPDIRECTDRAW)0;
 static LPDIRECTDRAWSURFACE surface    = (LPDIRECTDRAWSURFACE)0;
+
+static UINT g_uPrevMouseX = 0;
+static UINT g_uPrevMouseY = 0;
+static bool g_bShowingCursor = true;
+static bool g_bOldShowingCursor = true;	// Used during MODE_PAUSE
 
 void    DrawStatusArea (HDC passdc, BOOL drawflags);
 void    ProcessButtonClick (int button);
@@ -623,10 +627,23 @@ LRESULT CALLBACK FrameWndProc (
 				case MODE_RUNNING:
 					g_nAppMode = MODE_PAUSED;
 					SoundCore_SetFade(FADE_OUT);
+					g_bOldShowingCursor = g_bShowingCursor;
+					if (sg_Mouse.Active() && !g_bShowingCursor)
+					{
+						int nCount = ShowCursor(1);
+						_ASSERT(nCount >= 0);
+						g_bShowingCursor = true;
+					}
 					break;
 				case MODE_PAUSED:
 					g_nAppMode = MODE_RUNNING;
 					SoundCore_SetFade(FADE_IN);
+					if (sg_Mouse.Active() && !g_bOldShowingCursor)
+					{
+						int nCount = ShowCursor(0);
+						_ASSERT(nCount < 0);
+						g_bShowingCursor = false;
+					}
 					break;
 				case MODE_STEPPING:
 					DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
@@ -699,16 +716,16 @@ LRESULT CALLBACK FrameWndProc (
 		  }
           else
 		  {
-			if (sg_Mouse.Active())
-				sg_Mouse.SetButton(BUTTON0, BUTTON_DOWN);
-			else
-		        JoySetButton(BUTTON0, BUTTON_DOWN);
+	        JoySetButton(BUTTON0, BUTTON_DOWN);
 		  }
 		}
-        else if ( ((x < buttonx) && JoyUsingMouse() && ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING))) ||
-				  (sg_Mouse.Active()) )
+        else if ( ((x < buttonx) && JoyUsingMouse() && ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING))) )
 		{
           SetUsingCursor(1);
+		}
+		else if (sg_Mouse.Active())
+		{
+			sg_Mouse.SetButton(BUTTON0, BUTTON_DOWN);
 		}
 		DebuggerMouseClick( x, y );
       }
@@ -730,10 +747,11 @@ LRESULT CALLBACK FrameWndProc (
       }
       else if (usingcursor)
 	  {
-		if (sg_Mouse.Active())
-			sg_Mouse.SetButton(BUTTON0, BUTTON_UP);
-		else
-		    JoySetButton(BUTTON0, BUTTON_UP);
+	    JoySetButton(BUTTON0, BUTTON_UP);
+	  }
+	  else if (sg_Mouse.Active())
+	  {
+		sg_Mouse.SetButton(BUTTON0, BUTTON_UP);
 	  }
       RelayEvent(WM_LBUTTONUP,wparam,lparam);
       break;
@@ -763,12 +781,36 @@ LRESULT CALLBACK FrameWndProc (
       else if (usingcursor)
 	  {
         DrawCrosshairs(x,y);
-		if (sg_Mouse.Active())
-	        sg_Mouse.SetPosition(x-viewportx-2, VIEWPORTCX-4, y-viewporty-2, VIEWPORTCY-4);
-		else
-		    JoySetPosition(x-viewportx-2, VIEWPORTCX-4, y-viewporty-2, VIEWPORTCY-4);
+	    JoySetPosition(x-viewportx-2, VIEWPORTCX-4, y-viewporty-2, VIEWPORTCY-4);
       }
+	  else if (sg_Mouse.Active() && (g_nAppMode == MODE_RUNNING))
+	  {
+		  if ((x >= viewportx+2) && 
+			  (x <  buttonx) &&
+			  (y >= viewporty+2) && 
+			  (y <= viewporty+VIEWPORTCY-1))
+		  {
+			if (g_bShowingCursor)
+			{
+				int nCount = ShowCursor(0);
+				_ASSERT(nCount < 0);
+				g_bShowingCursor = false;
+			}
+			sg_Mouse.SetPositionRel(x-g_uPrevMouseX, y-g_uPrevMouseY);
+		  }
+		  else
+		  {
+			if (!g_bShowingCursor)
+			{
+				int nCount = ShowCursor(1);
+				_ASSERT(nCount >= 0);
+				g_bShowingCursor = true;
+			}
+		  }
+	  }
       RelayEvent(WM_MOUSEMOVE,wparam,lparam);
+	  g_uPrevMouseX = x;
+	  g_uPrevMouseY = y;
       break;
     }
 

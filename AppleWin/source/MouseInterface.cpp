@@ -103,9 +103,9 @@ void CMouseInterface::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 
 	//
 
-	SetSlotRom();
-	RegisterIoHandler(uSlot, &CMouseInterface::IORead, &CMouseInterface::IOWrite, NULL, NULL, this, NULL);
 	m_bActive = true;
+	SetSlotRom();	// Pre: m_bActive == true
+	RegisterIoHandler(uSlot, &CMouseInterface::IORead, &CMouseInterface::IOWrite, NULL, NULL, this, NULL);
 }
 
 void CMouseInterface::Uninitialize()
@@ -122,15 +122,16 @@ void CMouseInterface::Reset()
 
 	//
 
+	m_nX = 0;
+	m_nY = 0;
+
 	m_iX = 0;
 	m_iMinX = 0;
 	m_iMaxX = 1023;
-	m_iRangeX = 0;
 
 	m_iY = 0;
 	m_iMinY = 0;
 	m_iMaxY = 1023;
-	m_iRangeY = 0;
 
 	m_bButtons[0] = m_bButtons[1] = FALSE;
 
@@ -285,7 +286,7 @@ void CMouseInterface::OnCommand()
 		break;
 	case MOUSE_HOME:
 		m_nDataLen = 1;
-		SetPosition( 0, 0 );
+		SetPositionAbs( 0, 0 );
 		break;
 	case MOUSE_TIME:		// 0x90
 		switch( m_byBuff[0] & 0x0C )
@@ -321,21 +322,21 @@ void CMouseInterface::OnWrite()
 		nMin = ( m_byBuff[3] << 8 ) | m_byBuff[1];
 		nMax = ( m_byBuff[4] << 8 ) | m_byBuff[2];
 		if ( m_byBuff[0] & 1 )	// Clamp Y
-			ClampY( nMin, nMax );
+			SetClampY( nMin, nMax );
 		else					// Clamp X
-			ClampX( nMin, nMax );
+			SetClampX( nMin, nMax );
 		break;
 	case MOUSE_POS:
 		m_nX = ( m_byBuff[2] << 8 ) | m_byBuff[1];
 		m_nY = ( m_byBuff[4] << 8 ) | m_byBuff[3];
-		SetPosition( m_nX, m_nY );
+		SetPositionAbs( m_nX, m_nY );
 		break;
 	case MOUSE_INIT:
 		m_nX = 0;
 		m_nY = 0;
-		ClampX( 0, 1023 );
-		ClampY( 0, 1023 );
-		SetPosition( 0, 0 );
+		SetClampX( 0, 1023 );
+		SetClampY( 0, 1023 );
+		SetPositionAbs( 0, 0 );
 		break;
 	}
 }
@@ -386,74 +387,61 @@ void CMouseInterface::Clear()
 	m_nY = 0;
 	m_bBtn0 = 0;
 	m_bBtn1 = 0;
-	SetPosition( 0, 0 );
+	SetPositionAbs( 0, 0 );
 
 //	CpuIrqDeassert(IS_MOUSE);
 }
 
 //===========================================================================
 
-void CMouseInterface::ClampX(int iMinX, int iMaxX)
+void CMouseInterface::ClampX()
+{
+	if ( m_iX > m_iMaxX )
+		m_iX = m_iMaxX;
+	else if ( m_iX < m_iMinX )
+		m_iX = m_iMinX;
+}
+
+void CMouseInterface::ClampY()
+{
+	if ( m_iY > m_iMaxY )
+		m_iY = m_iMaxY;
+	else if ( m_iY < m_iMinY )
+		m_iY = m_iMinY;
+}
+
+void CMouseInterface::SetClampX(int iMinX, int iMaxX)
 {
 	if ( iMinX < 0 || iMinX > iMaxX )
 		return;
 	m_iMaxX = iMaxX;
 	m_iMinX = iMinX;
-	if ( m_iX > m_iMaxX ) m_iX = m_iMaxX; else if ( m_iX < m_iMinX ) m_iX = m_iMinX;
+	ClampX();
 }
 
-void CMouseInterface::ClampY(int iMinY, int iMaxY)
+void CMouseInterface::SetClampY(int iMinY, int iMaxY)
 {
 	if ( iMinY < 0 || iMinY > iMaxY )
 		return;
 	m_iMaxY = iMaxY;
 	m_iMinY = iMinY;
-	if ( m_iY > m_iMaxY ) m_iY = m_iMaxY; else if ( m_iY < m_iMinX ) m_iY = m_iMinY;
+	ClampY();
 }
 
-void CMouseInterface::SetPosition(int xvalue, int yvalue)
+void CMouseInterface::SetPositionAbs(int x, int y)
 {
-	if ((m_iRangeX == 0) || (m_iRangeY == 0))
-	{
-		m_nX = m_iX = m_iMinX;
-		m_nY = m_iY = m_iMinY;
-		return;
-	}
-
-#if NDEBUG
-	m_iX = (UINT) ((xvalue*m_iMaxX) / m_iRangeX);
-	m_iY = (UINT) ((yvalue*m_iMaxY) / m_iRangeY);
-#else
-	if (m_iMaxX <= m_iRangeX)
-	{
-		m_iX = (UINT) ((xvalue*m_iMaxX) / m_iRangeX);
-		m_iY = (UINT) ((yvalue*m_iMaxY) / m_iRangeY);
-	}
-	else
-	{
-//		m_iX = (UINT) ((xvalue*m_iRangeX) / m_iMaxX);
-//		m_iY = (UINT) ((yvalue*m_iRangeY) / m_iMaxY);
-		m_iX = xvalue;
-		m_iY = yvalue;
-	}
-#endif
+	m_iX = x;
+	m_iY = y;
 }
 
-void CMouseInterface::SetPosition(int xvalue, int xrange, int yvalue, int yrange)
+void CMouseInterface::SetPositionRel(int dx, int dy)
 {
-	m_iRangeX = (UINT) xrange;
-	m_iRangeY = (UINT) yrange;
+	m_iX += dx;
+	ClampX();
 
-#if NDEBUG
-#else
-	if (m_iMaxX > m_iRangeX)
-	{
-		xvalue = (int) ( ((float)xvalue / (float)m_iRangeX) * (float)m_iMaxX );
-		yvalue = (int) ( ((float)yvalue / (float)m_iRangeY) * (float)m_iMaxY );
-	}
-#endif
+	m_iY += dy;
+	ClampY();
 
-	SetPosition(xvalue, yvalue);
 	OnMouseEvent();
 }
 
