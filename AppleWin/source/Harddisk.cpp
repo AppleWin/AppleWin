@@ -223,6 +223,9 @@ bool HD_CardIsEnabled()
 	return g_bHD_RomLoaded && g_bHD_Enabled;
 }
 
+// Called by:
+// . LoadConfiguration() - Done at each restart
+// . DiskDlg_OK() - When HD is enabled/disabled on UI
 void HD_SetEnabled(bool bEnabled)
 {
 	if(g_bHD_Enabled == bEnabled)
@@ -230,16 +233,18 @@ void HD_SetEnabled(bool bEnabled)
 
 	g_bHD_Enabled = bEnabled;
 
+	RegisterIoHandler(g_uSlot, HD_IO_EMUL, HD_IO_EMUL, NULL, NULL, NULL, NULL);
+
 	LPBYTE pCxRomPeripheral = MemGetCxRomPeripheral();
 	if(pCxRomPeripheral == NULL)	// This will be NULL when called after loading value from Registry
 		return;
+
+	//
 
 	if(g_bHD_Enabled)
 		HD_Load_Rom(pCxRomPeripheral, g_uSlot);
 	else
 		memset(pCxRomPeripheral + g_uSlot*256, 0, HDDRVR_SIZE);
-
-	RegisterIoHandler(g_uSlot, HD_IO_EMUL, HD_IO_EMUL, NULL, NULL, NULL, NULL);
 }
 
 LPCTSTR HD_GetFullName (int nDrive)
