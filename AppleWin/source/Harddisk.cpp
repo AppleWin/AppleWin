@@ -233,6 +233,8 @@ void HD_SetEnabled(bool bEnabled)
 
 	g_bHD_Enabled = bEnabled;
 
+	// FIXME: For LoadConfiguration(), g_uSlot=7 (see definition at start of file)
+	// . g_uSlot is only really setup by HD_Load_Rom(), later on
 	RegisterIoHandler(g_uSlot, HD_IO_EMUL, HD_IO_EMUL, NULL, NULL, NULL, NULL);
 
 	LPBYTE pCxRomPeripheral = MemGetCxRomPeripheral();
@@ -332,7 +334,8 @@ void HD_Select(int nDrive)
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = g_hFrameWindow;
 	ofn.hInstance       = g_hInstance;
-	ofn.lpstrFilter     = TEXT("Hard Disk Images (*.hdv)\0*.hdv\0");
+	ofn.lpstrFilter     = TEXT("Hard Disk Images (*.hdv,*.po)\0*.hdv;*.po\0")
+						  TEXT("All Files\0*.*\0");
 	ofn.lpstrFile       = filename;
 	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrInitialDir = directory;
