@@ -3,7 +3,7 @@
 ;Copyright (C) 1994-1996, Michael O'Brien
 ;Copyright (C) 1999-2001, Oliver Schmidt
 ;Copyright (C) 2002-2005, Tom Charlesworth
-;Copyright (C) 2006, Tom Charlesworth, Michael Pohoreski
+;Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
 ;
 ;AppleWin is free software; you can redistribute it and/or modify
 ;it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 
 ; Modified by Tom Charlesworth:
 ; . Fixed so it can be assembled by a65 v1.06
+; . Fixed so that ProDOS entrypoint is $c70a
 ; . TO DO: Make code relocatable
 ;
 
@@ -55,12 +56,27 @@ OS      = $0801
 
 start
 
-; Autoboot and ProDos look at the following few opcodes to detect block devices
+; Autoboot and ProDOS look at the following few opcodes to detect block devices
  lda #$20
  lda #$00
  lda #$03
  lda #$3C
+ bne Bootstrap
 
+Entrypoint_ProDOS		; $c70a - ProDOS entrypoint
+ sec
+ bcs Entrypoint
+
+Entrypoint_SmartPort	; $c70d - SmartPort entrypoint (not supported)
+ clc
+ 
+Entrypoint				; $c70e - entrypoint?
+ bcs cmdproc
+ brk
+
+;;
+
+Bootstrap
 ; Lets check to see if there's an image ready
  lda #$00
  sta hd_command
@@ -86,6 +102,19 @@ noerr0
 ; no image ready, boot diskette image instead
  jmp slot6
 
+ ; 24 unused bytes
+
+*= $c746	; org $c746
+
+Entrypont_C746	; Old f/w 'cmdproc' entrypoint
+				; Keep this for any DOSMaster HDD images created with old AppleWin HDD f/w.
+				; DOSMaster hardcodes the entrypoint addr into its bootstrapping code:
+				; - So DOSMaster images are tied to the HDD's controller's f/w
+ sec
+ bcs Entrypoint
+ 
+ ;
+ 
 ; image ready.  Lets boot from it.
 ; we want to load block 1 from s7,d1 to $800 then jump there
 hdboot
@@ -108,7 +137,7 @@ goload
  ldx #$70	; Slot# << 4
  jmp OS
 
-; entry point for Prodos' block driver
+; entry point for ProDOS' block driver
 ; simple really. Copy the command from $42..$47
 ; to our I/O ports then execute command
 cmdproc
@@ -187,6 +216,7 @@ loop2
 
 ; $C7 = Removable, Interruptable, #Volumes=1, Supports write/read/status
 ; $D7 = Removable, Interruptable, #Volumes=2, Supports write/read/status
+; $BF = Removable, Interruptable, #Volumes=4, Supports format/write/read/status (KEGS / IIGS)
 
 
 ; datablock.  This starts near the end of the firmware (at offset $FC)
@@ -194,6 +224,6 @@ loop2
 *= $c7fc	; org $c7fc
  .word $7fff ; how many blocks are on the device.
  .byte $D7 ; specifics about the device (number of drives, read/write/format capability, etc)
- .byte <cmdproc ; entry point offset for Prodos
+ .byte <Entrypoint_ProDOS ; entry point offset for ProDOS (must be $0a)
 
  .end
