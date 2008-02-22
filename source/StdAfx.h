@@ -1,4 +1,5 @@
 //#define WIN32_LEAN_AND_MEAN
+#define _WIN32_WINNT 0x0400	// For CoInitializeEx() to get defined in objbase.h
 
 // Mouse Wheel is not supported on Win95.
 // If we didn't care about supporting Win95 (compile/run-time errors)
