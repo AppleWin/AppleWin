@@ -101,6 +101,7 @@ enum {PG_CONFIG=0, PG_INPUT, PG_SOUND, PG_SAVESTATE, PG_DISK, PG_NUM_SHEETS};
 
 UINT g_nLastPage = PG_CONFIG;
 
+UINT g_uTheFreezesF8Rom = 0;
 UINT g_uScrollLockToggle = 0;
 UINT g_uMouseInSlot4 = 0;
 
@@ -205,28 +206,30 @@ static void InitJoystickChoices(HWND window, int nJoyNum, int nIdcValue)
 
 //===========================================================================
 
-static void ConfigDlg_OK(HWND window, BOOL afterclose)
+static eApple2Type GetApple2Type(DWORD NewCompType)
 {
-	eApple2Type NewApple2Type;
-
+	switch (NewCompType)
 	{
-		DWORD newcomptype   = (DWORD) SendDlgItemMessage(window,IDC_COMPUTER,CB_GETCURSEL,0,0);
-
-		switch (newcomptype)
-		{
-		case 0:	NewApple2Type = A2TYPE_APPLE2; break;
-		case 1:	NewApple2Type = A2TYPE_APPLE2PLUS; break;
-		case 2:	NewApple2Type = A2TYPE_APPLE2E; break;
-		case 3:	NewApple2Type = A2TYPE_APPLE2EEHANCED; break;
-		}
+		case 0:		return A2TYPE_APPLE2;
+		case 1:		return A2TYPE_APPLE2PLUS;
+		case 2:		return A2TYPE_APPLE2E;
+		case 3:		return A2TYPE_APPLE2EEHANCED;
+		default:	return A2TYPE_APPLE2EEHANCED;
 	}
+}
+
+static void ConfigDlg_OK(HWND window, UINT afterclose)
+{
+	DWORD NewCompType = (DWORD) SendDlgItemMessage(window,IDC_COMPUTER,CB_GETCURSEL,0,0);
+	eApple2Type NewApple2Type = GetApple2Type(NewCompType);
 
 	DWORD newvidtype    = (DWORD)SendDlgItemMessage(window,IDC_VIDEOTYPE,CB_GETCURSEL,0,0);
 	DWORD newserialport = (DWORD)SendDlgItemMessage(window,IDC_SERIALPORT,CB_GETCURSEL,0,0);
 
 	if (NewApple2Type != g_Apple2Type)
 	{
-		if (MessageBox(window,
+		if ((afterclose == WM_USER_RESTART) ||	// Eg. Changing 'Freeze ROM' & user has already OK'd the restart for this
+			MessageBox(window,
 						TEXT(
 						"You have changed the emulated computer "
 						"type.  This change will not take effect "
@@ -237,6 +240,9 @@ static void ConfigDlg_OK(HWND window, BOOL afterclose)
 						MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
 		{
 			afterclose = WM_USER_RESTART;
+
+			if (NewApple2Type > A2TYPE_APPLE2PLUS)
+				g_uTheFreezesF8Rom = false;
 		}
 	}
 
@@ -262,7 +268,7 @@ static void ConfigDlg_OK(HWND window, BOOL afterclose)
 	SAVE(TEXT("Custom Speed")      ,IsDlgButtonChecked(window,IDC_CUSTOM_SPEED));
 	SAVE(TEXT("Emulation Speed")   ,g_dwSpeed);
 	SAVE(TEXT("Video Emulation")   ,videotype);
-	SAVE(TEXT(REGVALUE_MOUSE_IN_SLOT4),g_uMouseInSlot4);
+	SAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM),g_uTheFreezesF8Rom);
 
 	//
 
@@ -280,7 +286,7 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
                              UINT   message,
                              WPARAM wparam,
                              LPARAM lparam) {
-  static BOOL afterclose = 0;
+  static UINT afterclose = 0;
 
   switch (message)
   {
@@ -327,39 +333,42 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
 
         case IDC_BENCHMARK:
           afterclose = WM_USER_BENCHMARK;
-		  		PropSheet_PressButton(GetParent(window), PSBTN_OK);
+		  PropSheet_PressButton(GetParent(window), PSBTN_OK);
           break;
 
-			case IDC_ETHERNET:
-			  ui_tfe_settings_dialog(window);
-			  break;
+		case IDC_ETHERNET:
+		  ui_tfe_settings_dialog(window);
+		  break;
 			  
         case IDC_MONOCOLOR:
           VideoChooseColor();
           break;
 
-		case IDC_MOUSE_IN_SLOT4:
-			UINT uNewState = IsDlgButtonChecked(window, IDC_MOUSE_IN_SLOT4) ? 1 : 0;
-			LPCSTR pMsg = uNewState ?
-							TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-							TEXT("Also Mockingboard/Phasor cards won't be available in slot 4.\n\n")
-							TEXT("Would you like to restart the emulator now?")
-							:
-							TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-							TEXT("(Mockingboard/Phasor cards will now be available in slot 4.)\n\n")
-							TEXT("Would you like to restart the emulator now?");
-			if (MessageBox(window,
-							pMsg,
-							TEXT("Configuration"),
-							MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+		case IDC_COMPUTER:
+		{
+          DWORD NewCompType = (DWORD) SendDlgItemMessage(window,IDC_COMPUTER,CB_GETCURSEL,0,0);
+          EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), GetApple2Type(NewCompType)<=A2TYPE_APPLE2PLUS ? TRUE : FALSE);
+		}
+        break;
+
+		case IDC_THE_FREEZES_F8_ROM_FW:
 			{
-				g_uMouseInSlot4 = uNewState;
-				afterclose = WM_USER_RESTART;
-				PropSheet_PressButton(GetParent(window), PSBTN_OK);
-			}
-			else
-			{
-			  CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
+				UINT uNewState = IsDlgButtonChecked(window, IDC_THE_FREEZES_F8_ROM_FW) ? 1 : 0;
+				LPCSTR pMsg = 	TEXT("The emulator needs to restart as the ROM configuration has changed.\n")
+								TEXT("Would you like to restart the emulator now?");
+				if (MessageBox(window,
+								pMsg,
+								TEXT("Configuration"),
+								MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+				{
+					g_uTheFreezesF8Rom = uNewState;
+					afterclose = WM_USER_RESTART;
+					PropSheet_PressButton(GetParent(window), PSBTN_OK);
+				}
+				else
+				{
+				  CheckDlgButton(window, IDC_THE_FREEZES_F8_ROM_FW, g_uTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED);
+				}
 			}
 			break;
 
@@ -415,7 +424,9 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
         EnableTrackbar(window, custom);
       }
 
-      CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
+	  g_uTheFreezesF8Rom = IS_APPLE2 ? g_uTheFreezesF8Rom : false;
+	  EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), IS_APPLE2 ? TRUE : FALSE);
+      CheckDlgButton(window, IDC_THE_FREEZES_F8_ROM_FW, g_uTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED);
 
       afterclose = 0;
       break;
@@ -449,7 +460,7 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
 
 //===========================================================================
 
-static void InputDlg_OK(HWND window, BOOL afterclose)
+static void InputDlg_OK(HWND window, UINT afterclose)
 {
 	DWORD newjoytype0   = (DWORD)SendDlgItemMessage(window,IDC_JOYSTICK0,CB_GETCURSEL,0,0);
 	DWORD newjoytype1   = (DWORD)SendDlgItemMessage(window,IDC_JOYSTICK1,CB_GETCURSEL,0,0);
@@ -478,6 +489,7 @@ static void InputDlg_OK(HWND window, BOOL afterclose)
 	SAVE(TEXT(REGVALUE_PDL_XTRIM),JoyGetTrim(true));
 	SAVE(TEXT(REGVALUE_PDL_YTRIM),JoyGetTrim(false));
 	SAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE),g_uScrollLockToggle);
+	SAVE(TEXT(REGVALUE_MOUSE_IN_SLOT4),g_uMouseInSlot4);
 //	SAVE(TEXT(REGVALUE_KEYB_BUFFER_ENABLE),KeybGetBufferMode() ? 1 : 0);
 
 	//
@@ -497,7 +509,7 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
                              WPARAM wparam,
                              LPARAM lparam)
 {
-  static BOOL afterclose = 0;
+  static UINT afterclose = 0;
 
   switch (message)
   {
@@ -553,7 +565,8 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 				InitJoystickChoices(window, JN_JOYSTICK1, IDC_JOYSTICK1);	// Re-init joy1 list
 			}
 			break;
-        case IDC_JOYSTICK1: // joystick1
+
+		case IDC_JOYSTICK1: // joystick1
 		    if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
 				DWORD newjoytype = (DWORD)SendDlgItemMessage(window,IDC_JOYSTICK1,CB_GETCURSEL,0,0);
@@ -561,12 +574,42 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 				InitJoystickChoices(window, JN_JOYSTICK0, IDC_JOYSTICK0);	// Re-init joy0 list
 			}
 			break;
+
 		case IDC_SCROLLLOCK_TOGGLE:
 			g_uScrollLockToggle = IsDlgButtonChecked(window, IDC_SCROLLLOCK_TOGGLE) ? 1 : 0;
 			break;
+
+		case IDC_MOUSE_IN_SLOT4:
+			{
+				UINT uNewState = IsDlgButtonChecked(window, IDC_MOUSE_IN_SLOT4) ? 1 : 0;
+				LPCSTR pMsg = uNewState ?
+								TEXT("The emulator needs to restart as the slot configuration has changed.\n")
+								TEXT("Also Mockingboard/Phasor cards won't be available in slot 4.\n\n")
+								TEXT("Would you like to restart the emulator now?")
+								:
+								TEXT("The emulator needs to restart as the slot configuration has changed.\n")
+								TEXT("(Mockingboard/Phasor cards will now be available in slot 4.)\n\n")
+								TEXT("Would you like to restart the emulator now?");
+				if (MessageBox(window,
+								pMsg,
+								TEXT("Configuration"),
+								MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+				{
+					g_uMouseInSlot4 = uNewState;
+					afterclose = WM_USER_RESTART;
+					PropSheet_PressButton(GetParent(window), PSBTN_OK);
+				}
+				else
+				{
+				  CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
+				}
+			}
+			break;
+
 		case IDC_PASTE_FROM_CLIPBOARD:
 			ClipboardInitiatePaste();
 			break;
+
 //		case IDC_KEYB_BUFFER_ENABLE:
 //			break;
       }
@@ -586,6 +629,7 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 	  SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(false),0));
 
       CheckDlgButton(window, IDC_SCROLLLOCK_TOGGLE, g_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
+      CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
 //	  CheckDlgButton(window, IDC_KEYB_BUFFER_ENABLE, KeybGetBufferMode() ? BST_CHECKED : BST_UNCHECKED);
 	}
   }
@@ -595,7 +639,7 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 
 //===========================================================================
 
-static void SoundDlg_OK(HWND window, BOOL afterclose, UINT uNewSoundcardType)
+static void SoundDlg_OK(HWND window, UINT afterclose, UINT uNewSoundcardType)
 {
 	DWORD newsoundtype  = (DWORD)SendDlgItemMessage(window,IDC_SOUNDTYPE,CB_GETCURSEL,0,0);
 
@@ -636,7 +680,7 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
                              WPARAM wparam,
                              LPARAM lparam)
 {
-  static BOOL afterclose = 0;
+  static UINT afterclose = 0;
   static UINT uNewSoundcardType = SC_UNINIT;
 
   switch (message)
@@ -740,7 +784,7 @@ static void SaveStateUpdate()
 		RegSaveString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,g_szNewDirectory);
 }
 
-static void SaveStateDlg_OK(HWND window, BOOL afterclose)
+static void SaveStateDlg_OK(HWND window, UINT afterclose)
 {
 	char szFilename[MAX_PATH];
 
@@ -830,7 +874,7 @@ static BOOL CALLBACK SaveStateDlgProc (HWND   window,
                              WPARAM wparam,
                              LPARAM lparam)
 {
-  static BOOL afterclose = 0;
+  static UINT afterclose = 0;
 
   switch (message)
   {
@@ -907,7 +951,7 @@ static void EnableHDD(HWND window, BOOL bEnable)
 
 //---------------------------------------------------------------------------
 
-static void DiskDlg_OK(HWND window, BOOL afterclose)
+static void DiskDlg_OK(HWND window, UINT afterclose)
 {
 	BOOL  newdisktype   = (BOOL) SendDlgItemMessage(window,IDC_DISKTYPE,CB_GETCURSEL,0,0);
 
@@ -949,7 +993,7 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
                              WPARAM wparam,
                              LPARAM lparam)
 {
-  static BOOL afterclose = 0;
+  static UINT afterclose = 0;
 
   switch (message)
   {

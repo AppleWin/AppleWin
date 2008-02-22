@@ -990,7 +990,38 @@ void MemInitialize()
 	}
 
 	_ASSERT(ROM_SIZE == Apple2RomSize);
-	memcpy(memrom, pData, Apple2RomSize);		// ROM at $D000...$FFFF 
+	memcpy(memrom, pData, Apple2RomSize);			// ROM at $D000...$FFFF 
+
+	const UINT F8RomSize = 0x800;
+	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
+	{
+		SetFilePointer(g_hCustomRomF8, 0, NULL, FILE_BEGIN);
+		DWORD uNumBytesRead;
+		BOOL bRes = ReadFile(g_hCustomRomF8, memrom+Apple2RomSize-F8RomSize, F8RomSize, &uNumBytesRead, NULL);
+		if (uNumBytesRead != F8RomSize)
+		{
+			memcpy(memrom, pData, Apple2RomSize);	// ROM at $D000...$FFFF 
+			bRes = FALSE;
+		}
+
+		if (!bRes)
+		{
+			MessageBox( g_hFrameWindow, "Failed to read custom F8 rom", TEXT("AppleWin Error"), MB_OK );
+			CloseHandle(g_hCustomRomF8);
+			g_hCustomRomF8 = INVALID_HANDLE_VALUE;
+			// Failed, so use default rom...
+		}
+	}
+
+	if (g_uTheFreezesF8Rom)
+	{
+		hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_FREEZES_F8_ROM), "ROM");
+
+		if (hResInfo && (SizeofResource(NULL, hResInfo) == 0x800) && (hResData = LoadResource(NULL, hResInfo)) && (pData = (BYTE*) LockResource(hResData)))
+		{
+			memcpy(memrom+Apple2RomSize-F8RomSize, pData, F8RomSize);
+		}
+	}
 
 	//
 

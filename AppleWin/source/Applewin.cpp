@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 #pragma  hdrstop
+#include <objbase.h>
 #include "MouseInterface.h"
 
 char VERSIONSTRING[] = "xx.yy.zz.ww";
@@ -68,7 +69,10 @@ bool		g_bDisableDirectSound = false;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 
-UINT		g_Slot4 = CT_Mockingboard;	// CT_Mockingboard or CT_MouseInterface
+UINT		g_Slot4 = CT_Mockingboard;		// CT_Mockingboard or CT_MouseInterface
+
+HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
+static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
 
 //===========================================================================
 
@@ -398,9 +402,8 @@ void LoadConfiguration ()
 
   DWORD dwTmp;
 
-  if(LOAD(TEXT(REGVALUE_MOUSE_IN_SLOT4), &dwTmp))
-	  g_uMouseInSlot4 = dwTmp;
-  g_Slot4 = g_uMouseInSlot4 ? CT_MouseInterface : CT_Mockingboard;
+  if(LOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
+	  g_uTheFreezesF8Rom = dwTmp;
 
   if(LOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp))
       SpkrSetVolume(dwTmp, PSP_GetVolumeMax());
@@ -430,6 +433,10 @@ void LoadConfiguration ()
 
   if(LOAD(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), &dwTmp))
 	  g_uScrollLockToggle = dwTmp;
+
+  if(LOAD(TEXT(REGVALUE_MOUSE_IN_SLOT4), &dwTmp))
+	  g_uMouseInSlot4 = dwTmp;
+  g_Slot4 = g_uMouseInSlot4 ? CT_MouseInterface : CT_Mockingboard;
 
   //
 
@@ -497,6 +504,14 @@ void RegisterExtensions ()
 
 //===========================================================================
 
+LPSTR GetCurrArg(LPSTR lpCmdLine)
+{
+	if(*lpCmdLine == '\"')
+		lpCmdLine++;
+
+	return lpCmdLine;
+}
+
 LPSTR GetNextArg(LPSTR lpCmdLine)
 {
 	int bInQuotes = 0;
@@ -555,19 +570,15 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if(strcmp(lpCmdLine, "-d1") == 0)
 		{
-			lpCmdLine = lpNextArg;
-			lpNextArg = GetNextArg(lpCmdLine);
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
 			szImageName_drive1 = lpCmdLine;
-			if(*szImageName_drive1 == '\"')
-				szImageName_drive1++;
 		}
 		else if(strcmp(lpCmdLine, "-d2") == 0)
 		{
-			lpCmdLine = lpNextArg;
-			lpNextArg = GetNextArg(lpCmdLine);
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
 			szImageName_drive2 = lpCmdLine;
-			if(*szImageName_drive2 == '\"')
-				szImageName_drive2++;
 		}
 		else if(strcmp(lpCmdLine, "-f") == 0)
 		{
@@ -588,8 +599,8 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 #ifdef RAMWORKS
 		else if(strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..127]
 		{
-			lpCmdLine = lpNextArg;
-			lpNextArg = GetNextArg(lpCmdLine);
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
 			g_uMaxExPages = atoi(lpCmdLine);
 			if (g_uMaxExPages > 127)
 				g_uMaxExPages = 128;
@@ -597,6 +608,14 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				g_uMaxExPages = 1;
 		}
 #endif
+		else if(strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_hCustomRomF8 = CreateFile(lpCmdLine, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+			if ((g_hCustomRomF8 == INVALID_HANDLE_VALUE) || (GetFileSize(g_hCustomRomF8, NULL) != 0x800))
+				g_bCustomRomF8Failed = true;
+		}
 
 		lpCmdLine = lpNextArg;
 	}
@@ -653,9 +672,9 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 	//-----
 
-	// Initialize COM
-	// . NB. DSInit() is done when g_hFrameWindow is created (WM_CREATE)
-	CoInitialize( NULL );
+	// Initialize COM - so we can use CoCreateInstance
+	// . NB. DSInit() & DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	bool bSysClkOK = SysClk_InitTimer();
 
 	// DO ONE-TIME INITIALIZATION
@@ -695,10 +714,18 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		MemInitialize();
 		VideoInitialize();
 		FrameCreateWindow();
+		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
+		DiskReset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 
 		if (!bSysClkOK)
 		{
 			MessageBox(g_hFrameWindow, "DirectX failed to create SystemClock instance", TEXT("AppleWin Error"), MB_OK);
+			PostMessage(g_hFrameWindow, WM_DESTROY, 0, 0);	// Close everything down
+		}
+
+		if (g_bCustomRomF8Failed)
+		{
+			MessageBox(g_hFrameWindow, "Failed to load custom F8 rom (not found or not exactly 2KB)", TEXT("AppleWin Error"), MB_OK);
 			PostMessage(g_hFrameWindow, WM_DESTROY, 0, 0);	// Close everything down
 		}
 
@@ -734,13 +761,16 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	
 	tfe_shutdown();
 	
-	if(g_fh)
+	if	(g_fh)
 	{
 		fprintf(g_fh,"*** Logging ended\n\n");
 		fclose(g_fh);
 	}
 
 	RiffFinishWriteFile();
+
+	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
+		CloseHandle(g_hCustomRomF8);
 
 	return 0;
 }

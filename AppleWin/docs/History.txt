@@ -21,6 +21,11 @@ Restrictions/bugs:
 ----------------------------
 . Change: Removed crosshairs in mouse-mode
 . Change: Hide Windows' mouse cursor when over Apple's screen (in mouse-mode)
+. Change: Moved 'Mouse interface in slot 4' from Configuration to Input config page
+. Added -f8rom <custom.rom> cmd line switch to allow loading a custom 2K Rom at $F800
+. Added support for "The Freeze's" F8 ROM (Apple][ & Apple][+ only)
+  - It's a non-autostart ROM (was used for cracking). Use 'C600G' command to boot floppy
+  - It added extended output in the Monitor's 'L' command.
 . Fix: Use mouse position delta (fixes GEOS)
 
 1.14.1.1 - 13 Aug 2007 (beta)

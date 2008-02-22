@@ -98,7 +98,8 @@ BEGIN
     COMBOBOX        IDC_SERIALPORT,45,48,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Monochrome Color...",IDC_MONOCOLOR,15,90,80,14
     PUSHBUTTON      "Ethernet Settings...",IDC_ETHERNET,15,70,78,14
-    CONTROL         "Mouse interface in slot 4",IDC_MOUSE_IN_SLOT4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,206,106,10
+    CONTROL         "The Freeze's non-autostart F8 rom (Apple ][ or ][+ only)",IDC_THE_FREEZES_F8_ROM_FW,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,206,182,10
 END
 
 IDD_PROPPAGE_INPUT DIALOGEX 0, 0, 210, 221
@@ -121,6 +122,7 @@ BEGIN
     CONTROL         "Scroll Lock acts as toggle for full-speed CPU",IDC_SCROLLLOCK_TOGGLE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,114,166,10
     LTEXT           "(Shift+Insert during emulation)",IDC_STATIC,89,166,94,8
+    CONTROL         "Mouse interface in slot 4",IDC_MOUSE_IN_SLOT4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,128,106,10
 END
 
 IDD_PROPPAGE_SOUND DIALOGEX 0, 0, 210, 221
@@ -231,7 +233,7 @@ BEGIN
             VALUE "FileDescription", "Apple //e Emulator for Windows"
             VALUE "FileVersion", "1, 14, 1, 2"
             VALUE "InternalName", "APPLEWIN"
-            VALUE "LegalCopyright", "© 1994-2007 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
+            VALUE "LegalCopyright", "© 1994-2008 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
             VALUE "ProductVersion", "1, 14, 1, 2"
@@ -277,6 +279,7 @@ IDR_APPLE2_ROM          ROM                     "Apple2.rom"
 IDR_APPLE2_PLUS_ROM     ROM                     "Apple2_Plus.rom"
 IDR_APPLE2E_ROM         ROM                     "Apple2e.rom"
 IDR_APPLE2E_ENHANCED_ROM ROM                     "Apple2e_Enhanced.rom"
+IDR_FREEZES_F8_ROM      ROM                     "FREEZES_NON-AUTOSTART_F8_ROM.rom"
 
 /////////////////////////////////////////////////////////////////////////////
 //
