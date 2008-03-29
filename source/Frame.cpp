@@ -1318,23 +1318,30 @@ HDC FrameGetDC () {
 }
 
 //===========================================================================
-HDC FrameGetVideoDC (LPBYTE *addr, LONG *pitch) {
-  if (fullscreen && g_bAppActive && !painting) {
-    RECT rect = {FSVIEWPORTX,
-                 FSVIEWPORTY,
-                 FSVIEWPORTX+VIEWPORTCX,
-                 FSVIEWPORTY+VIEWPORTCY};
-    DDSURFACEDESC surfacedesc;
-    surfacedesc.dwSize = sizeof(surfacedesc);
-    if (surface->Lock(&rect,&surfacedesc,0,NULL) == DDERR_SURFACELOST) {
-      surface->Restore();
-      surface->Lock(&rect,&surfacedesc,0,NULL);
-    }
-    *addr  = (LPBYTE)surfacedesc.lpSurface+(VIEWPORTCY-1)*surfacedesc.lPitch;
-    *pitch = -surfacedesc.lPitch;
-    return (HDC)0;
-  }
-  else return FrameGetDC();
+HDC FrameGetVideoDC (LPBYTE *addr, LONG *pitch)
+{
+	if (fullscreen && g_bAppActive && !painting)
+	{
+		RECT rect = {	FSVIEWPORTX,
+						FSVIEWPORTY,
+						FSVIEWPORTX+VIEWPORTCX,
+						FSVIEWPORTY+VIEWPORTCY};
+		DDSURFACEDESC surfacedesc;
+		surfacedesc.dwSize = sizeof(surfacedesc);
+		// TC: Use DDLOCK_WAIT - see Bug #13425
+		if (surface->Lock(&rect,&surfacedesc,DDLOCK_WAIT,NULL) == DDERR_SURFACELOST)
+		{
+			surface->Restore();
+			surface->Lock(&rect,&surfacedesc,DDLOCK_WAIT,NULL);
+		}
+		*addr  = (LPBYTE)surfacedesc.lpSurface+(VIEWPORTCY-1)*surfacedesc.lPitch;
+		*pitch = -surfacedesc.lPitch;
+		return (HDC)0;
+	}
+	else
+	{
+		return FrameGetDC();
+	}
 }
 
 //===========================================================================
