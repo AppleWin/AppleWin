@@ -4,8 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
-
+Copyright (C) 2006-2008, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -24,8 +23,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Property Sheet Pages
  *
- * Author: Copyright (c) 2002-2006, Tom Charlesworth
- *                                  Spiro Trikaliotis <Spiro.Trikaliotis@gmx.de>
+ * Author: Tom Charlesworth
+ *         Spiro Trikaliotis <Spiro.Trikaliotis@gmx.de>
  */
 
 #include "StdAfx.h"
@@ -97,13 +96,29 @@ TCHAR   discchoices[]     =  TEXT("Authentic Speed\0")
 const UINT VOLUME_MIN = 0;
 const UINT VOLUME_MAX = 59;
 
-enum {PG_CONFIG=0, PG_INPUT, PG_SOUND, PG_SAVESTATE, PG_DISK, PG_NUM_SHEETS};
+enum {PG_CONFIG=0, PG_INPUT, PG_SOUND, PG_SAVESTATE, PG_DISK, PG_ADVANCED, PG_NUM_SHEETS};
 
 UINT g_nLastPage = PG_CONFIG;
 
-UINT g_uTheFreezesF8Rom = 0;
 UINT g_uScrollLockToggle = 0;
 UINT g_uMouseInSlot4 = 0;
+
+//
+
+UINT g_uTheFreezesF8Rom = 0;
+
+#define UNDEFINED ((UINT)-1)
+static UINT g_bEnableFreezeDlgButton = UNDEFINED;
+
+//
+
+enum {CLONETYPE_DISABLED=0, CLONETYPE_PRAVETS82, CLONETYPE_PRAVETS8A, CLONETYPE_NUM};
+DWORD g_uCloneType = CLONETYPE_DISABLED;
+
+static TCHAR g_CloneChoices[]	=	TEXT("Disabled\0")
+									TEXT("Pravets82\0")		// Bulgarian
+									TEXT("Pravets8A\0");	// Bulgarian
+
 
 //===========================================================================
 
@@ -297,7 +312,12 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
       switch (((LPPSHNOTIFY)lparam)->hdr.code)
 	  {
         case PSN_KILLACTIVE:
-			SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
+			// About to stop being active page
+			{
+				DWORD NewCompType = (DWORD) SendDlgItemMessage(window, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
+				g_bEnableFreezeDlgButton = GetApple2Type(NewCompType)<=A2TYPE_APPLE2PLUS ? TRUE : FALSE;
+				SetWindowLong(window, DWL_MSGRESULT, FALSE);		// Changes are valid
+			}
 			break;
         case PSN_APPLY:
 			SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
@@ -343,34 +363,6 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
         case IDC_MONOCOLOR:
           VideoChooseColor();
           break;
-
-		case IDC_COMPUTER:
-		{
-          DWORD NewCompType = (DWORD) SendDlgItemMessage(window,IDC_COMPUTER,CB_GETCURSEL,0,0);
-          EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), GetApple2Type(NewCompType)<=A2TYPE_APPLE2PLUS ? TRUE : FALSE);
-		}
-        break;
-
-		case IDC_THE_FREEZES_F8_ROM_FW:
-			{
-				UINT uNewState = IsDlgButtonChecked(window, IDC_THE_FREEZES_F8_ROM_FW) ? 1 : 0;
-				LPCSTR pMsg = 	TEXT("The emulator needs to restart as the ROM configuration has changed.\n")
-								TEXT("Would you like to restart the emulator now?");
-				if (MessageBox(window,
-								pMsg,
-								TEXT("Configuration"),
-								MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
-				{
-					g_uTheFreezesF8Rom = uNewState;
-					afterclose = WM_USER_RESTART;
-					PropSheet_PressButton(GetParent(window), PSBTN_OK);
-				}
-				else
-				{
-				  CheckDlgButton(window, IDC_THE_FREEZES_F8_ROM_FW, g_uTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED);
-				}
-			}
-			break;
 
 #if 0
         case IDC_RECALIBRATE:
@@ -423,10 +415,6 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
         SetFocus(GetDlgItem(window, custom ? IDC_SLIDER_CPU_SPEED : IDC_AUTHENTIC_SPEED));
         EnableTrackbar(window, custom);
       }
-
-	  g_uTheFreezesF8Rom = IS_APPLE2 ? g_uTheFreezesF8Rom : false;
-	  EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), IS_APPLE2 ? TRUE : FALSE);
-      CheckDlgButton(window, IDC_THE_FREEZES_F8_ROM_FW, g_uTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED);
 
       afterclose = 0;
       break;
@@ -1074,6 +1062,115 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
   return 0;
 }
 
+//===========================================================================
+
+static void AdvancedDlg_OK(HWND window, UINT afterclose)
+{
+	g_uCloneType = (DWORD)SendDlgItemMessage(window, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
+
+	SAVE(TEXT(REGVALUE_CLONETYPE), g_uCloneType);
+	SAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM),g_uTheFreezesF8Rom);	// NB. Can also be disabled on Config page (when Apple2Type changes) 
+
+	//
+
+	if (afterclose)
+		PostMessage(g_hFrameWindow,afterclose,0,0);
+}
+
+static void AdvancedDlg_CANCEL(HWND window)
+{
+}
+
+//---------------------------------------------------------------------------
+
+static void InitFreezeDlgButton(HWND window)
+{
+	if (g_bEnableFreezeDlgButton == UNDEFINED)
+		EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), IS_APPLE2 ? TRUE : FALSE);
+	else
+		EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), g_bEnableFreezeDlgButton ? TRUE : FALSE);
+
+	CheckDlgButton(window, IDC_THE_FREEZES_F8_ROM_FW, g_uTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED);
+}
+
+static BOOL CALLBACK AdvancedDlgProc (HWND   window,
+                             UINT   message,
+                             WPARAM wparam,
+                             LPARAM lparam)
+{
+  static UINT afterclose = 0;
+
+  switch (message)
+  {
+	case WM_NOTIFY:
+	{
+	  // Property Sheet notifications
+
+      switch (((LPPSHNOTIFY)lparam)->hdr.code)
+	  {
+        case PSN_SETACTIVE:
+			// About to become the active page
+			InitFreezeDlgButton(window);
+			break;
+        case PSN_KILLACTIVE:
+			SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
+			break;
+        case PSN_APPLY:
+			SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
+			AdvancedDlg_OK(window, afterclose);
+			break;
+		case PSN_QUERYCANCEL:
+			// Can use this to ask user to confirm cancel
+			break;
+		case PSN_RESET:
+			SoundDlg_CANCEL(window);
+			break;
+	  }
+	}
+	break;
+
+    case WM_COMMAND:
+      switch (LOWORD(wparam))
+	  {
+		case IDC_THE_FREEZES_F8_ROM_FW:
+			{
+				UINT uNewState = IsDlgButtonChecked(window, IDC_THE_FREEZES_F8_ROM_FW) ? 1 : 0;
+				LPCSTR pMsg = 	TEXT("The emulator needs to restart as the ROM configuration has changed.\n")
+								TEXT("Would you like to restart the emulator now?");
+				if (MessageBox(window,
+								pMsg,
+								TEXT("Configuration"),
+								MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+				{
+					g_uTheFreezesF8Rom = uNewState;
+					afterclose = WM_USER_RESTART;
+					PropSheet_PressButton(GetParent(window), PSBTN_OK);
+				}
+				else
+				{
+				  CheckDlgButton(window, IDC_THE_FREEZES_F8_ROM_FW, g_uTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED);
+				}
+			}
+			break;
+      }
+      break;
+
+    case WM_INITDIALOG:
+	{
+      g_nLastPage = PG_ADVANCED;
+
+      FillComboBox(window, IDC_CLONETYPE, g_CloneChoices, g_uCloneType);
+	  InitFreezeDlgButton(window);
+
+      afterclose = 0;
+	}
+  }
+
+  return 0;
+}
+
+//===========================================================================
+
 static BOOL get_tfename(int number, char **ppname, char **ppdescription)
 {
     if (tfe_enumadapter_open()) {
@@ -1348,6 +1445,12 @@ void PSP_Init()
 	PropSheetPages[PG_DISK].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_DISK);
 	PropSheetPages[PG_DISK].pfnDlgProc = (DLGPROC)DiskDlgProc;
 
+	PropSheetPages[PG_ADVANCED].dwSize = sizeof(PROPSHEETPAGE);
+	PropSheetPages[PG_ADVANCED].dwFlags = PSP_DEFAULT;
+	PropSheetPages[PG_ADVANCED].hInstance = g_hInstance;
+	PropSheetPages[PG_ADVANCED].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_ADVANCED);
+	PropSheetPages[PG_ADVANCED].pfnDlgProc = (DLGPROC)AdvancedDlgProc;
+
 	PROPSHEETHEADER PropSheetHeader;
 
 	PropSheetHeader.dwSize = sizeof(PROPSHEETHEADER);
@@ -1358,6 +1461,7 @@ void PSP_Init()
 	PropSheetHeader.nStartPage = g_nLastPage;
 	PropSheetHeader.ppsp = PropSheetPages;
 
+	g_bEnableFreezeDlgButton = UNDEFINED;
 	int i = PropertySheet(&PropSheetHeader);	// Result: 0=Cancel, 1=OK
 }
 

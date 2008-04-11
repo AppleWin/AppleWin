@@ -35,6 +35,7 @@
 #define IDC_MB_ENABLE                   130
 #define IDD_TFE_SETTINGS_DIALOG         131
 #define IDR_PRINTDRVR_FW                132
+#define IDD_PROPPAGE_ADVANCED           132
 #define IDR_DISK2_FW                    133
 #define IDR_SSC_FW                      134
 #define IDR_MOCKINGBOARD_D_FW           135
@@ -77,6 +78,7 @@
 #define IDC_SCROLLLOCK_TOGGLE           1043
 #define IDC_MOUSE_IN_SLOT4              1044
 #define IDC_THE_FREEZES_F8_ROM_FW       1045
+#define IDC_CLONETYPE                   1046
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
@@ -91,7 +93,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        137
 #define _APS_NEXT_COMMAND_VALUE         40007
-#define _APS_NEXT_CONTROL_VALUE         1046
+#define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
