@@ -96,12 +96,13 @@ TCHAR   discchoices[]     =  TEXT("Authentic Speed\0")
 const UINT VOLUME_MIN = 0;
 const UINT VOLUME_MAX = 59;
 
-enum {PG_CONFIG=0, PG_INPUT, PG_SOUND, PG_SAVESTATE, PG_DISK, PG_ADVANCED, PG_NUM_SHEETS};
+enum {PG_CONFIG=0, PG_INPUT, PG_SOUND, PG_DISK, PG_ADVANCED, PG_NUM_SHEETS};
 
 UINT g_nLastPage = PG_CONFIG;
 
 UINT g_uScrollLockToggle = 0;
 UINT g_uMouseInSlot4 = 0;
+UINT g_uMouseShowCrosshair = 0;
 
 //
 
@@ -255,9 +256,6 @@ static void ConfigDlg_OK(HWND window, UINT afterclose)
 						MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
 		{
 			afterclose = WM_USER_RESTART;
-
-			if (NewApple2Type > A2TYPE_APPLE2PLUS)
-				g_uTheFreezesF8Rom = false;
 		}
 	}
 
@@ -283,7 +281,6 @@ static void ConfigDlg_OK(HWND window, UINT afterclose)
 	SAVE(TEXT("Custom Speed")      ,IsDlgButtonChecked(window,IDC_CUSTOM_SPEED));
 	SAVE(TEXT("Emulation Speed")   ,g_dwSpeed);
 	SAVE(TEXT("Video Emulation")   ,videotype);
-	SAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM),g_uTheFreezesF8Rom);
 
 	//
 
@@ -470,6 +467,8 @@ static void InputDlg_OK(HWND window, UINT afterclose)
 	JoySetTrim((short)SendDlgItemMessage(window, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0), true);
 	JoySetTrim((short)SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0), false);
 
+	g_uMouseShowCrosshair = IsDlgButtonChecked(window, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
+
 //	KeybSetBufferMode(bNewKeybBufferEnable);
 
 	SAVE(TEXT("Joystick 0 Emulation"),joytype[0]);
@@ -478,6 +477,7 @@ static void InputDlg_OK(HWND window, UINT afterclose)
 	SAVE(TEXT(REGVALUE_PDL_YTRIM),JoyGetTrim(false));
 	SAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE),g_uScrollLockToggle);
 	SAVE(TEXT(REGVALUE_MOUSE_IN_SLOT4),g_uMouseInSlot4);
+	SAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR),g_uMouseShowCrosshair);
 //	SAVE(TEXT(REGVALUE_KEYB_BUFFER_ENABLE),KeybGetBufferMode() ? 1 : 0);
 
 	//
@@ -571,12 +571,14 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 			{
 				UINT uNewState = IsDlgButtonChecked(window, IDC_MOUSE_IN_SLOT4) ? 1 : 0;
 				LPCSTR pMsg = uNewState ?
-								TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-								TEXT("Also Mockingboard/Phasor cards won't be available in slot 4.\n\n")
+								TEXT("The emulator needs to restart as the slot configuration has changed.\n\n")
+								TEXT("Also Mockingboard/Phasor cards won't be available in slot 4\n")
+								TEXT("and the mouse can't be used for joystick emulation.\n\n")
 								TEXT("Would you like to restart the emulator now?")
 								:
-								TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-								TEXT("(Mockingboard/Phasor cards will now be available in slot 4.)\n\n")
+								TEXT("The emulator needs to restart as the slot configuration has changed.\n\n")
+								TEXT("(Mockingboard/Phasor cards will now be available in slot 4\n")
+								TEXT("and the mouse can be used for joystick emulation)\n\n")
 								TEXT("Would you like to restart the emulator now?");
 				if (MessageBox(window,
 								pMsg,
@@ -584,6 +586,14 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 								MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
 				{
 					g_uMouseInSlot4 = uNewState;
+
+					if (uNewState)
+					{
+						JoyDisableUsingMouse();
+						InitJoystickChoices(window, JN_JOYSTICK0, IDC_JOYSTICK0);
+						InitJoystickChoices(window, JN_JOYSTICK1, IDC_JOYSTICK1);
+					}
+
 					afterclose = WM_USER_RESTART;
 					PropSheet_PressButton(GetParent(window), PSBTN_OK);
 				}
@@ -618,6 +628,8 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 
       CheckDlgButton(window, IDC_SCROLLLOCK_TOGGLE, g_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
       CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
+      CheckDlgButton(window, IDC_MOUSE_CROSSHAIR, g_uMouseShowCrosshair ? BST_CHECKED : BST_UNCHECKED);
+	  EnableWindow(GetDlgItem(window, IDC_MOUSE_CROSSHAIR), g_uMouseInSlot4 ? TRUE : FALSE);
 //	  CheckDlgButton(window, IDC_KEYB_BUFFER_ENABLE, KeybGetBufferMode() ? BST_CHECKED : BST_UNCHECKED);
 	}
   }
@@ -749,175 +761,6 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 	  {
 		EnableWindow(GetDlgItem(window, IDC_PHASOR_ENABLE), FALSE);
 	  }
-
-      afterclose = 0;
-	}
-  }
-
-  return 0;
-}
-
-//===========================================================================
-
-static char g_szNewDirectory[MAX_PATH];
-static char g_szNewFilename[MAX_PATH];
-
-static void SaveStateUpdate()
-{
-	Snapshot_SetFilename(g_szNewFilename);
-
-	RegSaveString(TEXT("Configuration"),REGVALUE_SAVESTATE_FILENAME,1,Snapshot_GetFilename());
-
-	if(g_szNewDirectory[0])
-		RegSaveString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,g_szNewDirectory);
-}
-
-static void SaveStateDlg_OK(HWND window, UINT afterclose)
-{
-	char szFilename[MAX_PATH];
-
-	memset(szFilename, 0, sizeof(szFilename));
-	* ((USHORT*) szFilename) = sizeof(szFilename);
-
-	UINT nLineLength = SendDlgItemMessage(window,IDC_SAVESTATE_FILENAME,EM_LINELENGTH,0,0);
-
-	SendDlgItemMessage(window,IDC_SAVESTATE_FILENAME,EM_GETLINE,0,(LPARAM)szFilename);
-
-	nLineLength = nLineLength > sizeof(szFilename)-1 ? sizeof(szFilename)-1 : nLineLength;
-	szFilename[nLineLength] = 0x00;
-
-	SaveStateUpdate();
-
-	g_bSaveStateOnExit = IsDlgButtonChecked(window, IDC_SAVESTATE_ON_EXIT) ? true : false;
-
-	SAVE(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), g_bSaveStateOnExit ? 1 : 0);
-
-	//
-
-	if (afterclose)
-		PostMessage(g_hFrameWindow,afterclose,0,0);
-}
-
-static void SaveStateDlg_CANCEL(HWND window)
-{
-}
-
-//---------------------------------------------------------------------------
-
-static int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
-{
-	TCHAR szDirectory[MAX_PATH] = TEXT("");
-	TCHAR szFilename[MAX_PATH];
-	
-	// Attempt to use drive1's image name as the name for the .aws file
-	LPCTSTR pDiskName0 = DiskGetName(0);
-	if (pDiskName0 && pDiskName0[0])
-	{
-		strcpy(szFilename, pDiskName0);
-		strcpy(&szFilename[strlen(pDiskName0)], ".aws");
-		// NB. OK'ing this property sheet will call Snapshot_SetFilename() with this new filename
-	}
-	else
-	{
-		strcpy(szFilename, Snapshot_GetFilename());
-	}
-	
-	RegLoadString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,szDirectory,MAX_PATH);
-	
-	
-	//
-	
-	OPENFILENAME ofn;
-	ZeroMemory(&ofn,sizeof(OPENFILENAME));
-	
-	ofn.lStructSize     = sizeof(OPENFILENAME);
-	ofn.hwndOwner       = hWindow;
-	ofn.hInstance       = g_hInstance;
-	ofn.lpstrFilter     =	TEXT("Save State files (*.aws)\0*.aws\0")
-							TEXT("All Files\0*.*\0");
-	ofn.lpstrFile       = szFilename;
-	ofn.nMaxFile        = MAX_PATH;
-	ofn.lpstrInitialDir = szDirectory;
-	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
-	ofn.lpstrTitle      = pszTitle;
-	
-	int nRes = bSave ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
-
-	if(nRes)
-	{
-		strcpy(g_szNewFilename, &szFilename[ofn.nFileOffset]);
-
-		szFilename[ofn.nFileOffset] = 0;
-		if (_tcsicmp(szDirectory, szFilename))
-			strcpy(g_szNewDirectory, szFilename);
-	}
-
-	return nRes;
-}
-
-//---------------------------------------------------------------------------
-
-static BOOL CALLBACK SaveStateDlgProc (HWND   window,
-                             UINT   message,
-                             WPARAM wparam,
-                             LPARAM lparam)
-{
-  static UINT afterclose = 0;
-
-  switch (message)
-  {
-	case WM_NOTIFY:
-	{
-	  // Property Sheet notifications
-
-      switch (((LPPSHNOTIFY)lparam)->hdr.code)
-	  {
-        case PSN_KILLACTIVE:
-			SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
-			break;
-        case PSN_APPLY:
-			SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
-			SaveStateDlg_OK(window, afterclose);
-			break;
-		case PSN_QUERYCANCEL:
-			// Can use this to ask user to confirm cancel
-			break;
-		case PSN_RESET:
-			SaveStateDlg_CANCEL(window);
-			break;
-	  }
-	}
-	break;
-
-    case WM_COMMAND:
-      switch (LOWORD(wparam))
-	  {
-		case IDC_SAVESTATE_FILENAME:
-			break;
-		case IDC_SAVESTATE_BROWSE:
-			if(SaveStateSelectImage(window, TEXT("Select Save State file"), true))
-				SendDlgItemMessage(window, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM) g_szNewFilename);
-			break;
-		case IDC_SAVESTATE_ON_EXIT:
-			break;
-		case IDC_SAVESTATE:
-			afterclose = WM_USER_SAVESTATE;
-			break;
-		case IDC_LOADSTATE:
-			afterclose = WM_USER_LOADSTATE;
-			break;
-      }
-      break;
-
-    case WM_INITDIALOG:
-	{
-      g_nLastPage = PG_SAVESTATE;
-
-	  SendDlgItemMessage(window,IDC_SAVESTATE_FILENAME,WM_SETTEXT,0,(LPARAM)Snapshot_GetFilename());
-
-	  CheckDlgButton(window, IDC_SAVESTATE_ON_EXIT, g_bSaveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
-
-	  g_szNewDirectory[0] = 0x00;
 
       afterclose = 0;
 	}
@@ -1064,8 +907,104 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
 
 //===========================================================================
 
+static char g_szNewDirectory[MAX_PATH];
+static char g_szNewFilename[MAX_PATH];
+
+static void SaveStateUpdate()
+{
+	Snapshot_SetFilename(g_szNewFilename);
+
+	RegSaveString(TEXT("Configuration"),REGVALUE_SAVESTATE_FILENAME,1,Snapshot_GetFilename());
+
+	if(g_szNewDirectory[0])
+		RegSaveString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,g_szNewDirectory);
+}
+
+static int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
+{
+	TCHAR szDirectory[MAX_PATH] = TEXT("");
+	TCHAR szFilename[MAX_PATH];
+	
+	// Attempt to use drive1's image name as the name for the .aws file
+	LPCTSTR pDiskName0 = DiskGetName(0);
+	if (pDiskName0 && pDiskName0[0])
+	{
+		strcpy(szFilename, pDiskName0);
+		strcpy(&szFilename[strlen(pDiskName0)], ".aws");
+		// NB. OK'ing this property sheet will call Snapshot_SetFilename() with this new filename
+	}
+	else
+	{
+		strcpy(szFilename, Snapshot_GetFilename());
+	}
+	
+	RegLoadString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,szDirectory,MAX_PATH);
+	
+	
+	//
+	
+	OPENFILENAME ofn;
+	ZeroMemory(&ofn,sizeof(OPENFILENAME));
+	
+	ofn.lStructSize     = sizeof(OPENFILENAME);
+	ofn.hwndOwner       = hWindow;
+	ofn.hInstance       = g_hInstance;
+	ofn.lpstrFilter     =	TEXT("Save State files (*.aws)\0*.aws\0")
+							TEXT("All Files\0*.*\0");
+	ofn.lpstrFile       = szFilename;
+	ofn.nMaxFile        = MAX_PATH;
+	ofn.lpstrInitialDir = szDirectory;
+	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.lpstrTitle      = pszTitle;
+	
+	int nRes = bSave ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
+
+	if(nRes)
+	{
+		strcpy(g_szNewFilename, &szFilename[ofn.nFileOffset]);
+
+		szFilename[ofn.nFileOffset] = 0;
+		if (_tcsicmp(szDirectory, szFilename))
+			strcpy(g_szNewDirectory, szFilename);
+	}
+
+	return nRes;
+}
+
+static void InitFreezeDlgButton(HWND window)
+{
+	if (g_bEnableFreezeDlgButton == UNDEFINED)
+		EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), IS_APPLE2 ? TRUE : FALSE);
+	else
+		EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), g_bEnableFreezeDlgButton ? TRUE : FALSE);
+
+	CheckDlgButton(window, IDC_THE_FREEZES_F8_ROM_FW, g_uTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED);
+}
+
+//---------------------------------------------------------------------------
+
 static void AdvancedDlg_OK(HWND window, UINT afterclose)
 {
+	char szFilename[MAX_PATH];
+
+	memset(szFilename, 0, sizeof(szFilename));
+	* ((USHORT*) szFilename) = sizeof(szFilename);
+
+	UINT nLineLength = SendDlgItemMessage(window,IDC_SAVESTATE_FILENAME,EM_LINELENGTH,0,0);
+
+	SendDlgItemMessage(window,IDC_SAVESTATE_FILENAME,EM_GETLINE,0,(LPARAM)szFilename);
+
+	nLineLength = nLineLength > sizeof(szFilename)-1 ? sizeof(szFilename)-1 : nLineLength;
+	szFilename[nLineLength] = 0x00;
+
+	SaveStateUpdate();
+
+	g_bSaveStateOnExit = IsDlgButtonChecked(window, IDC_SAVESTATE_ON_EXIT) ? true : false;
+
+	SAVE(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), g_bSaveStateOnExit ? 1 : 0);
+
+	//
+
 	g_uCloneType = (DWORD)SendDlgItemMessage(window, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
 
 	SAVE(TEXT(REGVALUE_CLONETYPE), g_uCloneType);
@@ -1082,16 +1021,6 @@ static void AdvancedDlg_CANCEL(HWND window)
 }
 
 //---------------------------------------------------------------------------
-
-static void InitFreezeDlgButton(HWND window)
-{
-	if (g_bEnableFreezeDlgButton == UNDEFINED)
-		EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), IS_APPLE2 ? TRUE : FALSE);
-	else
-		EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), g_bEnableFreezeDlgButton ? TRUE : FALSE);
-
-	CheckDlgButton(window, IDC_THE_FREEZES_F8_ROM_FW, g_uTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED);
-}
 
 static BOOL CALLBACK AdvancedDlgProc (HWND   window,
                              UINT   message,
@@ -1132,6 +1061,23 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
     case WM_COMMAND:
       switch (LOWORD(wparam))
 	  {
+		case IDC_SAVESTATE_FILENAME:
+			break;
+		case IDC_SAVESTATE_BROWSE:
+			if(SaveStateSelectImage(window, TEXT("Select Save State file"), true))
+				SendDlgItemMessage(window, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM) g_szNewFilename);
+			break;
+		case IDC_SAVESTATE_ON_EXIT:
+			break;
+		case IDC_SAVESTATE:
+			afterclose = WM_USER_SAVESTATE;
+			break;
+		case IDC_LOADSTATE:
+			afterclose = WM_USER_LOADSTATE;
+			break;
+
+		//
+
 		case IDC_THE_FREEZES_F8_ROM_FW:
 			{
 				UINT uNewState = IsDlgButtonChecked(window, IDC_THE_FREEZES_F8_ROM_FW) ? 1 : 0;
@@ -1158,6 +1104,14 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
     case WM_INITDIALOG:
 	{
       g_nLastPage = PG_ADVANCED;
+
+	  SendDlgItemMessage(window,IDC_SAVESTATE_FILENAME,WM_SETTEXT,0,(LPARAM)Snapshot_GetFilename());
+
+	  CheckDlgButton(window, IDC_SAVESTATE_ON_EXIT, g_bSaveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
+
+	  g_szNewDirectory[0] = 0x00;
+
+	  //
 
       FillComboBox(window, IDC_CLONETYPE, g_CloneChoices, g_uCloneType);
 	  InitFreezeDlgButton(window);
@@ -1432,12 +1386,6 @@ void PSP_Init()
 	PropSheetPages[PG_SOUND].hInstance = g_hInstance;
 	PropSheetPages[PG_SOUND].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_SOUND);
 	PropSheetPages[PG_SOUND].pfnDlgProc = (DLGPROC)SoundDlgProc;
-
-	PropSheetPages[PG_SAVESTATE].dwSize = sizeof(PROPSHEETPAGE);
-	PropSheetPages[PG_SAVESTATE].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_SAVESTATE].hInstance = g_hInstance;
-	PropSheetPages[PG_SAVESTATE].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_SAVESTATE);
-	PropSheetPages[PG_SAVESTATE].pfnDlgProc = (DLGPROC)SaveStateDlgProc;
 
 	PropSheetPages[PG_DISK].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_DISK].dwFlags = PSP_DEFAULT;

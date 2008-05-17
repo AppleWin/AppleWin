@@ -82,6 +82,7 @@ enum AppMode_e
 #define  REGVALUE_PDL_YTRIM          "PDL Y-Trim"
 #define  REGVALUE_SCROLLLOCK_TOGGLE  "ScrollLock Toggle"
 #define  REGVALUE_MOUSE_IN_SLOT4     "Mouse in slot 4"
+#define  REGVALUE_MOUSE_CROSSHAIR    "Mouse crosshair"
 #define  REGVALUE_THE_FREEZES_F8_ROM "The Freeze's F8 Rom"
 #define  REGVALUE_CLONETYPE          "Clone Type"
 

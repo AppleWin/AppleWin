@@ -9,5 +9,6 @@ void get_tfe_enabled(int *tfe_enabled);
 
 extern UINT g_uScrollLockToggle;
 extern UINT g_uMouseInSlot4;
+extern UINT g_uMouseShowCrosshair;
 extern UINT g_uTheFreezesF8Rom;
 extern DWORD g_uCloneType;
