@@ -19,10 +19,27 @@ public:
 	static BYTE __stdcall IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
 	static BYTE __stdcall IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
 
-	void SetPositionRel(int dx, int dy);
+	void SetPositionRel(long dx, long dy, int* pOutOfBoundsX, int* pOutOfBoundsY);
 	void SetButton(eBUTTON Button, eBUTTONSTATE State);
-	bool Active() { return m_bActive; }
+	bool IsActive() { return m_bActive; }
+	bool IsEnabled() { return m_bEnabled; }
+	bool IsActiveAndEnabled() { return IsActive() && IsEnabled(); }
+	void SetEnabled(bool bEnabled) { m_bEnabled = bEnabled; }
 	void SetVBlank(bool bVBL);
+	void GetXY(int& iX, int& iMinX, int& iMaxX, int& iY, int& iMinY, int& iMaxY)
+	{
+		iX    = m_iX;
+		iMinX = m_iMinX;
+		iMaxX = m_iMaxX;
+		iY    = m_iY;
+		iMinY = m_iMinY;
+		iMaxY = m_iMaxY;
+	}
+	void SetCursorPos(int iX, int iY)
+	{
+		m_iX = iX;
+		m_iY = iY;
+	}
 
 protected:
 	void On6821_A(BYTE byData);
@@ -37,8 +54,8 @@ protected:
 	//friend CALLBACK_HANDLER( MouseHandler );
 
 	void SetPositionAbs(int x, int y);
-	void ClampX();
-	void ClampY();
+	int ClampX();
+	int ClampY();
 	void SetClampX(int iMinX, int iMaxX);
 	void SetClampY(int iMinY, int iMaxY);
 
@@ -74,7 +91,17 @@ protected:
 
 	//
 
-	bool	m_bActive;
+	bool	m_bActive;		// Mouse h/w is active within the Apple][ VM
+	bool	m_bEnabled;		// Windows' mouse events get passed to Apple]['s mouse h/w
 	LPBYTE	m_pSlotRom;
 	UINT	m_uSlot;
+};
+
+#define IDEVENT_TIMER_MOUSE 1
+
+namespace DIMouse
+{
+	HRESULT DirectInputInit( HWND hDlg );
+	void DirectInputUninit( HWND hDlg );
+	HRESULT ReadImmediateData( long* pX=NULL, long* pY=NULL );
 };

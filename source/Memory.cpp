@@ -1013,7 +1013,7 @@ void MemInitialize()
 		}
 	}
 
-	if (g_uTheFreezesF8Rom)
+	if (g_uTheFreezesF8Rom && IS_APPLE2)
 	{
 		hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_FREEZES_F8_ROM), "ROM");
 

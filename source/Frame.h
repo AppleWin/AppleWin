@@ -19,6 +19,7 @@ void    FrameRefreshStatus (int);
 void    FrameRegisterClass ();
 void    FrameReleaseDC ();
 void    FrameReleaseVideoDC ();
+void	FrameSetCursorPosByMousePos();
 
 LRESULT CALLBACK FrameWndProc (
 	HWND   window,

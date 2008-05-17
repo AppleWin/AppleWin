@@ -438,6 +438,8 @@ void LoadConfiguration ()
 
   if(LOAD(TEXT(REGVALUE_MOUSE_IN_SLOT4), &dwTmp))
 	  g_uMouseInSlot4 = dwTmp;
+  if(LOAD(TEXT(REGVALUE_MOUSE_CROSSHAIR), &dwTmp))
+	  g_uMouseShowCrosshair = dwTmp;
   g_Slot4 = g_uMouseInSlot4 ? CT_MouseInterface : CT_Mockingboard;
 
   //
@@ -675,7 +677,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	//-----
 
 	// Initialize COM - so we can use CoCreateInstance
-	// . NB. DSInit() & DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
+	// . NB. DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	bool bSysClkOK = SysClk_InitTimer();
 
