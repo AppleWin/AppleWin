@@ -627,6 +627,9 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
       CheckDlgButton(window, IDC_MOUSE_RESTRICT_TO_WINDOW, g_uMouseRestrictToWindow ? BST_CHECKED : BST_UNCHECKED);
 	  EnableWindow(GetDlgItem(window, IDC_MOUSE_CROSSHAIR), g_uMouseInSlot4 ? TRUE : FALSE);
 	  EnableWindow(GetDlgItem(window, IDC_MOUSE_RESTRICT_TO_WINDOW), g_uMouseInSlot4 ? TRUE : FALSE);
+
+	  afterclose = 0;
+	  break;
 	}
   }
 
@@ -759,6 +762,7 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 	  }
 
       afterclose = 0;
+	  break;
 	}
   }
 
@@ -895,6 +899,7 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
 		EnableHDD(window, IsDlgButtonChecked(window, IDC_HDD_ENABLE));
 
 		afterclose = 0;
+		break;
 	}
   }
 
@@ -1113,6 +1118,7 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
 	  InitFreezeDlgButton(window);
 
       afterclose = 0;
+	  break;
 	}
   }
 
