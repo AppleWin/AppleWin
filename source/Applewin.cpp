@@ -440,6 +440,8 @@ void LoadConfiguration ()
 	  g_uMouseInSlot4 = dwTmp;
   if(LOAD(TEXT(REGVALUE_MOUSE_CROSSHAIR), &dwTmp))
 	  g_uMouseShowCrosshair = dwTmp;
+  if(LOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
+	  g_uMouseRestrictToWindow = dwTmp;
   g_Slot4 = g_uMouseInSlot4 ? CT_MouseInterface : CT_Mockingboard;
 
   //

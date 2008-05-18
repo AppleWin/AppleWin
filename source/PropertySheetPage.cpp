@@ -103,6 +103,7 @@ UINT g_nLastPage = PG_CONFIG;
 UINT g_uScrollLockToggle = 0;
 UINT g_uMouseInSlot4 = 0;
 UINT g_uMouseShowCrosshair = 0;
+UINT g_uMouseRestrictToWindow = 0;
 
 //
 
@@ -447,18 +448,16 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
 
 static void InputDlg_OK(HWND window, UINT afterclose)
 {
-	DWORD newjoytype0   = (DWORD)SendDlgItemMessage(window,IDC_JOYSTICK0,CB_GETCURSEL,0,0);
-	DWORD newjoytype1   = (DWORD)SendDlgItemMessage(window,IDC_JOYSTICK1,CB_GETCURSEL,0,0);
+	UINT uNewJoyType0 = SendDlgItemMessage(window,IDC_JOYSTICK0,CB_GETCURSEL,0,0);
+	UINT uNewJoyType1 = SendDlgItemMessage(window,IDC_JOYSTICK1,CB_GETCURSEL,0,0);
 
-//	bool bNewKeybBufferEnable = IsDlgButtonChecked(window, IDC_KEYB_BUFFER_ENABLE) ? true : false;
-
-	if (!JoySetEmulationType(window,g_nJoy0ChoiceTranlationTbl[newjoytype0],JN_JOYSTICK0))
+	if (!JoySetEmulationType(window, g_nJoy0ChoiceTranlationTbl[uNewJoyType0], JN_JOYSTICK0))
 	{
 		afterclose = 0;
 		return;
 	}
 	
-	if (!JoySetEmulationType(window,g_nJoy1ChoiceTranlationTbl[newjoytype1],JN_JOYSTICK1))
+	if (!JoySetEmulationType(window, g_nJoy1ChoiceTranlationTbl[uNewJoyType1], JN_JOYSTICK1))
 	{
 		afterclose = 0;
 		return;
@@ -468,8 +467,7 @@ static void InputDlg_OK(HWND window, UINT afterclose)
 	JoySetTrim((short)SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0), false);
 
 	g_uMouseShowCrosshair = IsDlgButtonChecked(window, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
-
-//	KeybSetBufferMode(bNewKeybBufferEnable);
+	g_uMouseRestrictToWindow = IsDlgButtonChecked(window, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
 
 	SAVE(TEXT("Joystick 0 Emulation"),joytype[0]);
 	SAVE(TEXT("Joystick 1 Emulation"),joytype[1]);
@@ -478,7 +476,7 @@ static void InputDlg_OK(HWND window, UINT afterclose)
 	SAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE),g_uScrollLockToggle);
 	SAVE(TEXT(REGVALUE_MOUSE_IN_SLOT4),g_uMouseInSlot4);
 	SAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR),g_uMouseShowCrosshair);
-//	SAVE(TEXT(REGVALUE_KEYB_BUFFER_ENABLE),KeybGetBufferMode() ? 1 : 0);
+	SAVE(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW),g_uMouseRestrictToWindow);
 
 	//
 
@@ -607,9 +605,6 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 		case IDC_PASTE_FROM_CLIPBOARD:
 			ClipboardInitiatePaste();
 			break;
-
-//		case IDC_KEYB_BUFFER_ENABLE:
-//			break;
       }
       break;
 
@@ -629,8 +624,9 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
       CheckDlgButton(window, IDC_SCROLLLOCK_TOGGLE, g_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
       CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
       CheckDlgButton(window, IDC_MOUSE_CROSSHAIR, g_uMouseShowCrosshair ? BST_CHECKED : BST_UNCHECKED);
+      CheckDlgButton(window, IDC_MOUSE_RESTRICT_TO_WINDOW, g_uMouseRestrictToWindow ? BST_CHECKED : BST_UNCHECKED);
 	  EnableWindow(GetDlgItem(window, IDC_MOUSE_CROSSHAIR), g_uMouseInSlot4 ? TRUE : FALSE);
-//	  CheckDlgButton(window, IDC_KEYB_BUFFER_ENABLE, KeybGetBufferMode() ? BST_CHECKED : BST_UNCHECKED);
+	  EnableWindow(GetDlgItem(window, IDC_MOUSE_RESTRICT_TO_WINDOW), g_uMouseInSlot4 ? TRUE : FALSE);
 	}
   }
 

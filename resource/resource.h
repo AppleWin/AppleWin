@@ -79,6 +79,7 @@
 #define IDC_THE_FREEZES_F8_ROM_FW       1045
 #define IDC_MOUSE_CROSSHAIR             1045
 #define IDC_CLONETYPE                   1046
+#define IDC_MOUSE_RESTRICT_TO_WINDOW    1046
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
