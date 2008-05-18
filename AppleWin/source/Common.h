@@ -72,7 +72,6 @@ enum AppMode_e
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
 #define  REGVALUE_SOUNDCARD_TYPE     "Soundcard Type"
-//#define  REGVALUE_KEYB_BUFFER_ENABLE "Keyboard Buffer Enable"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
 #define  REGVALUE_HDD_ENABLED        "Harddisk Enable"
@@ -83,6 +82,7 @@ enum AppMode_e
 #define  REGVALUE_SCROLLLOCK_TOGGLE  "ScrollLock Toggle"
 #define  REGVALUE_MOUSE_IN_SLOT4     "Mouse in slot 4"
 #define  REGVALUE_MOUSE_CROSSHAIR    "Mouse crosshair"
+#define  REGVALUE_MOUSE_RESTRICT_TO_WINDOW "Mouse restrict to window"
 #define  REGVALUE_THE_FREEZES_F8_ROM "The Freeze's F8 Rom"
 #define  REGVALUE_CLONETYPE          "Clone Type"
 

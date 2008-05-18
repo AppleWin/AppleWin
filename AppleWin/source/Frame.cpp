@@ -78,7 +78,7 @@ static BOOL    helpquit        = 0;
 static BOOL    painting        = 0;
 static HFONT   smallfont       = (HFONT)0;
 static HWND    tooltipwindow   = (HWND)0;
-static BOOL    usingcursor     = 0;
+static BOOL    usingcursor     = 0;			// 1=AppleWin is using (hiding) the mouse-cursor
 static int     viewportx       = VIEWPORTX;	// Default to Normal (non-FullScreen) mode
 static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
 
@@ -86,7 +86,6 @@ static LPDIRECTDRAW        directdraw = (LPDIRECTDRAW)0;
 static LPDIRECTDRAWSURFACE surface    = (LPDIRECTDRAWSURFACE)0;
 
 static bool g_bShowingCursor = true;
-static bool g_bOldShowingCursor = true;	// Used during MODE_PAUSE
 static bool g_bLastCursorInAppleViewport = false;
 
 void    DrawStatusArea (HDC passdc, BOOL drawflags);
@@ -106,6 +105,33 @@ static void DrawCrosshairsMouse();
 static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
 
 //===========================================================================
+
+void FrameShowCursor(BOOL bShow)
+{
+	int nCount;
+
+	if (bShow)
+	{
+		do
+		{
+			nCount = ShowCursor(bShow);
+		}
+		while(nCount < 0);
+		g_bShowingCursor = true;
+	}
+	else
+	{
+		do
+		{
+			nCount = ShowCursor(bShow);
+		}
+		while(nCount >= 0);
+		g_bShowingCursor = false;
+	}
+}
+
+//===========================================================================
+
 void CreateGdiObjects () {
   ZeroMemory(buttonbitmap,BUTTONS*sizeof(HBITMAP));
 #define LOADBUTTONBITMAP(bitmapname)  LoadImage(g_hInstance,bitmapname,   \
@@ -653,26 +679,21 @@ LRESULT CALLBACK FrameWndProc (
 				case MODE_RUNNING:
 					g_nAppMode = MODE_PAUSED;
 					SoundCore_SetFade(FADE_OUT);
-					g_bOldShowingCursor = g_bShowingCursor;
 					if (sg_Mouse.IsActiveAndEnabled() && !g_bShowingCursor)
 					{
-						int nCount = ShowCursor(1);
-						_ASSERT(nCount >= 0);
-						g_bShowingCursor = true;
+						FrameShowCursor(TRUE);
 
 						if (g_uMouseShowCrosshair)	// Erase crosshairs if they are being drawn
 							DrawCrosshairs(0,0);
+
+						if (g_uMouseRestrictToWindow)
+							SetUsingCursor(true);
 					}
 					break;
 				case MODE_PAUSED:
 					g_nAppMode = MODE_RUNNING;
 					SoundCore_SetFade(FADE_IN);
-					if (sg_Mouse.IsActiveAndEnabled() && !g_bOldShowingCursor)
-					{
-						int nCount = ShowCursor(0);
-						_ASSERT(nCount < 0);
-						g_bShowingCursor = false;
-					}
+					// Don't call FrameShowCursor(FALSE) else ClipCursor() won't be called
 					break;
 				case MODE_STEPPING:
 					DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
@@ -737,7 +758,7 @@ LRESULT CALLBACK FrameWndProc (
           DrawButton((HDC)0,buttonactive);
           SetCapture(window);
         }
-        else if (usingcursor)
+        else if (usingcursor && !sg_Mouse.IsActive())
 		{
           if (wparam & (MK_CONTROL | MK_SHIFT))
 		  {
@@ -756,14 +777,18 @@ LRESULT CALLBACK FrameWndProc (
 		{
 			if (wparam & (MK_CONTROL | MK_SHIFT))
 			{
-				sg_Mouse.SetEnabled(false);
+				if (sg_Mouse.IsEnabled())
+				{
+					sg_Mouse.SetEnabled(false);
 
-				int nCount = ShowCursor(1);
-				_ASSERT(nCount >= 0);
-				g_bShowingCursor = true;
+					FrameShowCursor(TRUE);
 
-				if (g_uMouseShowCrosshair)	// Erase crosshairs if they are being drawn
-					DrawCrosshairs(0,0);
+					if (g_uMouseShowCrosshair)	// Erase crosshairs if they are being drawn
+						DrawCrosshairs(0,0);
+
+					if (g_uMouseRestrictToWindow)
+						SetUsingCursor(false);
+				}
 			}
 			else
 			{
@@ -771,10 +796,8 @@ LRESULT CALLBACK FrameWndProc (
 				{
 					sg_Mouse.SetEnabled(true);
 
-					int nCount = ShowCursor(0);
-					_ASSERT(nCount < 0);
-					g_bShowingCursor = false;
-					// Don't call SetButton() when enabling
+					// Don't call FrameShowCursor(FALSE) else ClipCursor() won't be called
+					// Don't call SetButton() when 1st enabled (else get the confusing action of both enabling & an Apple mouse click)
 				}
 				else
 				{
@@ -800,7 +823,7 @@ LRESULT CALLBACK FrameWndProc (
         }
         buttonactive = -1;
       }
-      else if (usingcursor)
+      else if (usingcursor && !sg_Mouse.IsActive())
 	  {
 	    JoySetButton(BUTTON0, BUTTON_UP);
 	  }
@@ -843,6 +866,8 @@ LRESULT CALLBACK FrameWndProc (
 			if (g_bLastCursorInAppleViewport)
 				break;
 
+			// Outside Apple viewport
+
 			const int iAppleScreenMaxX = VIEWPORTCX-1;
 			const int iAppleScreenMaxY = VIEWPORTCY-1;
 			const int iBoundMinX = viewportx;
@@ -870,6 +895,8 @@ LRESULT CALLBACK FrameWndProc (
 			{
 				if (g_bLastCursorInAppleViewport == false)
 					break;
+
+				// Inside Apple viewport
 
 				int iOutOfBoundsX=0, iOutOfBoundsY=0;
 
@@ -1293,7 +1320,7 @@ void SetUsingCursor (BOOL newvalue) {
     ClientToScreen(g_hFrameWindow,(LPPOINT)&rect.left);
     ClientToScreen(g_hFrameWindow,(LPPOINT)&rect.right);
     ClipCursor(&rect);
-    ShowCursor(0);
+    FrameShowCursor(FALSE);
     POINT pt;
     GetCursorPos(&pt);
     ScreenToClient(g_hFrameWindow,&pt);
@@ -1301,7 +1328,7 @@ void SetUsingCursor (BOOL newvalue) {
   }
   else {
     DrawCrosshairs(0,0);
-    ShowCursor(1);
+    FrameShowCursor(TRUE);
     ClipCursor(NULL);
     ReleaseCapture();
   }
@@ -1580,6 +1607,9 @@ static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int
 
 	if (bOutsideAppleViewport)
 	{
+		if (g_uMouseRestrictToWindow)
+			return;
+
 		g_bLastCursorInAppleViewport = false;
 
 		if (!g_bShowingCursor)
@@ -1587,11 +1617,10 @@ static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int
 			// Mouse leaving Apple screen area
 			FrameSetCursorPosByMousePos(0, 0, iOutOfBoundsX, iOutOfBoundsY, true);
 #ifdef _DEBUG_SHOW_CURSOR
-#else
-			int nCount = ShowCursor(1);
-			_ASSERT(nCount >= 0);
-#endif
 			g_bShowingCursor = true;
+#else
+			FrameShowCursor(TRUE);
+#endif
 		}
 	}
 	else
@@ -1603,11 +1632,15 @@ static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int
 			// Mouse entering Apple screen area
 			FrameSetCursorPosByMousePos(x, y, 0, 0, false);
 #ifdef _DEBUG_SHOW_CURSOR
-#else
-			int nCount = ShowCursor(0);
-			_ASSERT(nCount < 0);
-#endif
 			g_bShowingCursor = false;
+#else
+			FrameShowCursor(FALSE);
+#endif
+
+			//
+
+			if (g_uMouseRestrictToWindow)
+				SetUsingCursor(true);
 		}
 		else
 		{
