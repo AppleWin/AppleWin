@@ -931,8 +931,13 @@ void DrawMonoLoResSource () {
 //===========================================================================
 void DrawMonoTextSource (HDC hDstDC)
 {
+	static HBITMAP hCharBitmap[3];
 	HDC     hSrcDC  = CreateCompatibleDC(hDstDC);
-	HBITMAP hBitmap = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
+
+	hCharBitmap[0] = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
+	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));
+	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
+
 	HBRUSH hBrush;
 	switch (videotype)
 	{
@@ -941,7 +946,8 @@ void DrawMonoTextSource (HDC hDstDC)
 		case VT_MONO_WHITE: hBrush = CreateSolidBrush(RGB(0xFF,0xFF,0xFF)); break;
 		default           : hBrush = CreateSolidBrush(monochrome); break;
 	}
-	SelectObject(hSrcDC,hBitmap);
+
+	SelectObject(hSrcDC,hCharBitmap[g_nCharsetType]);
 	SelectObject(hDstDC,hBrush);
 
 	// TODO: Update with APPLE_FONT_Y_ values
@@ -951,15 +957,19 @@ void DrawMonoTextSource (HDC hDstDC)
 	SelectObject(hDstDC,GetStockObject(NULL_BRUSH));
 	DeleteObject(hBrush);
 	DeleteDC(hSrcDC);
-	DeleteObject(hBitmap);
+	DeleteObject(hCharBitmap);
 }
 
 //===========================================================================
 void DrawTextSource (HDC dc)
 {
 	HDC     memdc  = CreateCompatibleDC(dc);
-	HBITMAP bitmap = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
-	SelectObject(memdc,bitmap);
+	static HBITMAP hCharBitmap[3];
+	//The charset is set below
+	hCharBitmap[0] = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
+	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));
+	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
+	SelectObject(memdc,hCharBitmap[g_nCharsetType]);
 
 	BitBlt(
 		dc                // hdcDest
@@ -974,9 +984,9 @@ void DrawTextSource (HDC dc)
 
 	// Chars for 80 col mode
 	StretchBlt(dc,SRCOFFS_80COL,0,128,512,memdc,0,0,256,512,SRCCOPY);
-
 	DeleteDC(memdc);
-	DeleteObject(bitmap);
+	DeleteObject(hCharBitmap); 
+	
 }
 
 //===========================================================================

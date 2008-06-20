@@ -7,7 +7,7 @@
 #define  TRACKS   35
 
 extern BOOL       enhancedisk;
-
+extern string DiskPathFilename[2];
 void    DiskInitialize (); // DiskManagerStartup()
 void    DiskDestroy (); // no, doesn't "destroy" the disk image.  DiskManagerShutdown()
 

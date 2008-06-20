@@ -17,6 +17,15 @@ Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise
 
+1.14.1.2 PR - 20 Apr 2008
+----------------------------
+. Support for Pravets 82. Caps Lock serves as Lat/Cyr lock. The charset still needs a little fix (all characters have to be one row down).
+. Some partial support for Pravets 8A. Caps Lock serves as Lat/Cyr lock, and F10 serves as Caps Lock.
+In Pravets 8A mode the former behaviour of the F10 key is preserved as Ctrl+F10 (see Help/Keyboard for details).
+Extended Basic and Miniassembler work, but there are still problems with the 8 bit charset (Парис [Parris] does not switch to latin characters).
+Some keys have to be remapped, because currently they are not available (i.e. Э). There is still the problem that there is not enough space for this key on the keyboard.
+. Added Send to CiderPress function via the popup menu of the drive buttons.
+
 1.14.1.2 - 2 Dec 2007 (beta)
 ----------------------------
 . Change: Removed crosshairs in mouse-mode

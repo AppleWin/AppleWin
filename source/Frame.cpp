@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma  hdrstop
 #include "MouseInterface.h"
 #include "..\resource\resource.h"
+#include <sys/stat.h>
 
 #define ENABLE_MENU 0
 
@@ -55,6 +56,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  BUTTONS     8
 
 static HBITMAP capsbitmap[2];
+//Pravets8 only
+static HBITMAP capsbitmapP8[2];
+static HBITMAP latbitmap[2];
+static HBITMAP charsetbitmap [3];
+//===========================
 static HBITMAP diskbitmap[ NUM_DISK_STATUS ];
 
 static HBITMAP buttonbitmap[BUTTONS];
@@ -81,6 +87,7 @@ static HWND    tooltipwindow   = (HWND)0;
 static BOOL    g_bUsingCursor	= 0;		// 1=AppleWin is using (hiding) the mouse-cursor
 static int     viewportx       = VIEWPORTX;	// Default to Normal (non-FullScreen) mode
 static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
+int g_nCharsetType = 0;
 
 static LPDIRECTDRAW        directdraw = (LPDIRECTDRAW)0;
 static LPDIRECTDRAWSURFACE surface    = (LPDIRECTDRAWSURFACE)0;
@@ -96,6 +103,7 @@ void    ResetMachineState ();
 void    SetFullScreenMode ();
 void    SetNormalMode ();
 void    SetUsingCursor (BOOL);
+static bool FileExists(string strFilename);
 
 bool	g_bScrollLock_FullSpeed = false;
 
@@ -164,15 +172,34 @@ static void CreateGdiObjects () {
                                                 LR_LOADTRANSPARENT);
   buttonbitmap[BTN_HELP   ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("HELP_BUTTON"));
   buttonbitmap[BTN_RUN    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON"));
+switch (g_Apple2Type)
+			{
+			case A2TYPE_APPLE2:			buttonbitmap[BTN_RUN    ] =(HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON")); break; 
+			case A2TYPE_APPLE2PLUS:		buttonbitmap[BTN_RUN    ] =(HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON")); break; 
+			case A2TYPE_APPLE2E:		buttonbitmap[BTN_RUN    ] =(HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON")); break; 
+			case A2TYPE_APPLE2EEHANCED:	buttonbitmap[BTN_RUN    ] =(HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON")); break; 
+			case A2TYPE_PRAVETS82:		buttonbitmap[BTN_RUN    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON")); break; 
+			case A2TYPE_PRAVETS8A:		buttonbitmap[BTN_RUN    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON")); break; 
+			}
+
   buttonbitmap[BTN_DRIVE1 ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVE1_BUTTON"));
   buttonbitmap[BTN_DRIVE2 ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVE2_BUTTON"));
   buttonbitmap[BTN_DRIVESWAP] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVESWAP_BUTTON"));
   buttonbitmap[BTN_FULLSCR] = (HBITMAP)LOADBUTTONBITMAP(TEXT("FULLSCR_BUTTON"));
   buttonbitmap[BTN_DEBUG  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DEBUG_BUTTON"));
   buttonbitmap[BTN_SETUP  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("SETUP_BUTTON"));
+  buttonbitmap[BTN_P8CAPS ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSON_BITMAP"));
   capsbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSOFF_BITMAP"));
   capsbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSON_BITMAP"));
-
+  //Pravets8 only
+  capsbitmapP8[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSOFF_P8_BITMAP"));
+  capsbitmapP8[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSON_P8_BITMAP"));
+  latbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LATOFF_BITMAP"));
+  latbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LATON_BITMAP"));
+  charsetbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_APPLE_BITMAP"));
+  charsetbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_82_BITMAP"));
+  charsetbitmap[2] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_8A_BITMAP"));
+  //===========================
   diskbitmap[ DISK_STATUS_OFF  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKOFF_BITMAP"));
   diskbitmap[ DISK_STATUS_READ ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKREAD_BITMAP"));
   diskbitmap[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKWRITE_BITMAP"));
@@ -402,6 +429,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 	int  iDrive1Status = DISK_STATUS_OFF;
 	int  iDrive2Status = DISK_STATUS_OFF;
 	bool bCaps   = KeybGetCapsStatus();
+	bool bP8Caps  = KeybGetP8CapsStatus();
 	DiskGetLightStatus(&iDrive1Status,&iDrive2Status);
 
 	if (fullscreen)
@@ -453,8 +481,28 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 			if (!IS_APPLE2)
 			{
-				RECT rect = {0,0,30,8};
-				DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]);
+				RECT rect = {0,0,31,8};
+			switch (g_Apple2Type)
+			{
+			case A2TYPE_APPLE2:			DrawBitmapRect(dc,x+7,y+9,&rect,capsbitmap[bCaps != 0]); break; 
+			case A2TYPE_APPLE2PLUS:		DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]); break; 
+			case A2TYPE_APPLE2E:		DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]); break; 
+			case A2TYPE_APPLE2EEHANCED:	DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]); break; 
+			case A2TYPE_PRAVETS82:		DrawBitmapRect(dc,x+15,y+19,&rect,latbitmap[bCaps != 0]); break; 
+			case A2TYPE_PRAVETS8A:		DrawBitmapRect(dc,x+2,y+19,&rect,latbitmap[bCaps != 0]); break; 
+			}
+			if (g_Apple2Type == A2TYPE_PRAVETS8A) //Toggles Pravets 8A/C Caps lock LED
+			{
+				RECT rect = {0,0,22,8};
+				DrawBitmapRect(dc,x+23,y+19,&rect,capsbitmapP8[P8CAPS_ON != 0]);
+			}
+
+
+/*				if (g_Apple2Type == A2TYPE_PRAVETS8A)
+					DrawBitmapRect(dc,x+7,y+19,&rect,cyrbitmap[bCaps != 0]);
+				else
+					DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]);
+					*/
 			}
 		}
 
@@ -467,6 +515,8 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 			case A2TYPE_APPLE2PLUS:		_tcscpy(title, TITLE_APPLE_2_PLUS); break; 
 			case A2TYPE_APPLE2E:		_tcscpy(title, TITLE_APPLE_2E); break; 
 			case A2TYPE_APPLE2EEHANCED:	_tcscpy(title, TITLE_APPLE_2E_ENHANCED); break; 
+			case A2TYPE_PRAVETS82:		_tcscpy(title, TITLE_PRAVETS_82); break; 
+			case A2TYPE_PRAVETS8A:		_tcscpy(title, TITLE_PRAVETS_8A); break; 
 			}
 
 			if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
@@ -653,19 +703,27 @@ LRESULT CALLBACK FrameWndProc (
 			DrawButton((HDC)0,buttondown);
 		}
 		else if (wparam == VK_F9)
-		{
-			// Cycle through available video modes
-			if (GetKeyState(VK_SHIFT) >= 0)	// Backwards
+		{			
+			if (GetKeyState(VK_CONTROL) < 0)
 			{
-				if (videotype == 0)
-					videotype = VT_NUM_MODES;
-				videotype--;
+				g_nCharsetType++; // Cycle through available charsets (Ctrl + F9)
+				if (g_nCharsetType >= 3)
+					g_nCharsetType = 0;
 			}
-			else							// Forwards
+			else	// Cycle through available video modes
 			{
-				videotype++;
-				if (videotype >= VT_NUM_MODES)
-					videotype = 0;
+				if (GetKeyState(VK_SHIFT) >= 0)	// Backwards
+				{
+					if (videotype == 0)
+						videotype = VT_NUM_MODES;
+					videotype--;
+				}
+				else							// Forwards
+				{
+					videotype++;
+					if (videotype >= VT_NUM_MODES)
+						videotype = 0;
+				}
 			}
 
 			VideoReinitialize();
@@ -676,6 +734,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			RegSaveValue(TEXT("Configuration"),TEXT("Video Emulation"),1,videotype);
 		}
+
 		else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)
 		{
 			SoundCore_SetFade(FADE_OUT);
@@ -739,11 +798,17 @@ LRESULT CALLBACK FrameWndProc (
 		else if (g_nAppMode == MODE_DEBUG)
 			DebuggerProcessKey(wparam);
 
-
 		if (wparam == VK_F10)
 		{
-			SetUsingCursor(0);
-			return 0;
+			if ((g_Apple2Type == A2TYPE_PRAVETS8A) && (GetKeyState(VK_CONTROL) >= 0))
+			{
+				KeybToggleP8ACapsLock ();//Toggles P8 Capslock
+			}
+			else 
+			{
+				SetUsingCursor(0);
+				return 0;	// TC: Why return early?
+			}
 		}
 		break;
 
@@ -797,7 +862,7 @@ LRESULT CALLBACK FrameWndProc (
 			{
 				RevealCursor();
 			}
-			else
+			else if (g_nAppMode == MODE_RUNNING)
 			{
 				if (!sg_Mouse.IsEnabled())
 				{
@@ -1186,14 +1251,25 @@ void ProcessButtonClick (int button) {
 
 
 //===========================================================================
-void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive) 
-{
-	// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/resources/menus/usingmenus.asp
-	// http://www.codeproject.com/menu/MenusForBeginners.asp?df=100&forumid=67645&exp=0&select=903061
 
+// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/resources/menus/usingmenus.asp
+// http://www.codeproject.com/menu/MenusForBeginners.asp?df=100&forumid=67645&exp=0&select=903061
+
+void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive) 
+{		
 	HMENU hmenu;            // menu template
 	HMENU hmenuTrackPopup;  // shortcut menu
+	//This is the default installation path of CiderPress. It shall not be left blank, otherwise  an explorer window will be open.
+	TCHAR PathToCiderPress[MAX_PATH] = "C:\\Program Files\\faddenSoft\\CiderPress\\CiderPress.exe";
+	RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress,MAX_PATH);
+	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
 
+	string filename1= "\"";
+	filename1.append (DiskPathFilename[iDrive]);
+	filename1.append ("\"");
+	string sFileNameEmpty = "\"";
+	sFileNameEmpty.append ("\"");
+		
 	//  Load the menu template containing the shortcut menu from the 
 	//  application's resources. 
 	hmenu = LoadMenu(g_hInstance, MAKEINTRESOURCE(ID_MENU_DISK_POPUP)); 
@@ -1233,10 +1309,51 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	else
 	if (iCommand == ID_DISKMENU_WRITEPROTECTION_OFF)
 		DiskSetProtect( iDrive, false );
+	else
+	if (iCommand == ID_DISKMENU_SENDTO_CIDERPRESS)
+	{
+		//if(!filename1.compare("\"\"") == false) //Do not use this, for some reason it does not work!!!
+		if(!filename1.compare(sFileNameEmpty) )		
+		{
+			int MB_Result = 0;
+			MB_Result = MessageBox( NULL, "No disk image loaded. Do you want to run CiderPress anyway?" ,"No disk image.", MB_ICONINFORMATION|MB_YESNO );
+			if (MB_Result == 6) //6= Yes
+			{
+				if (FileExists (PathToCiderPress ))
+				{
+					HINSTANCE nResult  = ShellExecute(NULL, "open", PathToCiderPress, "" , NULL, SW_SHOWNORMAL);
+				}
+				else					
+					{
+					MessageBox( NULL,
+				"CiderPress not found!\n"
+				"Please install CiderPress in case it is not \n"
+				"or set the path to it from Configuration/Disk otherwise."
+					, "CiderPress not found" ,MB_ICONINFORMATION|MB_OK);
+					}
+				}
+			}
+		else
+		{
+			if (FileExists (PathToCiderPress ))
+			{
+			HINSTANCE nResult  = ShellExecute(NULL, "open", PathToCiderPress, filename1.c_str() , NULL, SW_SHOWNORMAL);
+			}
+			else
+			{
+			MessageBox( NULL,
+				"CiderPress not found!\n"
+				"Please install CiderPress in case it is not \n"
+				"or set the path to it from Configuration/Disk otherwise."
+				, "CiderPress not found" ,MB_ICONINFORMATION|MB_OK);
+			}
+		}
+
 
 	// Destroy the menu. 
 	DestroyMenu(hmenu); 
-} 
+	}
+}
 
 
 //===========================================================================
@@ -1381,7 +1498,10 @@ void FrameCreateWindow ()
 	case A2TYPE_APPLE2PLUS:		g_pAppTitle = TITLE_APPLE_2_PLUS; break; 
 	case A2TYPE_APPLE2E:		g_pAppTitle = TITLE_APPLE_2E; break; 
 	case A2TYPE_APPLE2EEHANCED:	g_pAppTitle = TITLE_APPLE_2E_ENHANCED; break; 
+	case A2TYPE_PRAVETS82:	    g_pAppTitle = TITLE_PRAVETS_82; break; 
+	case A2TYPE_PRAVETS8A:	    g_pAppTitle = TITLE_PRAVETS_8A; break; 
 	}
+
 
 	g_hFrameWindow = CreateWindow(
 		TEXT("APPLE2FRAME"),
@@ -1504,6 +1624,15 @@ void FrameReleaseVideoDC () {
     // BUT THIS SEEMS TO BE WORKING
     surface->Unlock(NULL);
   }
+}
+
+//===========================================================================
+
+static bool FileExists(string strFilename) 
+{ 
+	struct stat stFileInfo; 
+	int intStat = stat(strFilename.c_str(),&stFileInfo); 
+	return (intStat == 0) ? true : false;
 }
 
 //===========================================================================

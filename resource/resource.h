@@ -31,6 +31,8 @@
 #define IDR_APPLE2_PLUS_ROM             127
 #define IDR_APPLE2E_ROM                 128
 #define IDR_APPLE2E_ENHANCED_ROM        129
+#define IDR_PRAVETS_82_ROM              149
+#define IDR_PRAVETS_8C_ROM              150
 #define IDC_MB_ENABLE                   130
 #define IDD_TFE_SETTINGS_DIALOG         131
 #define IDR_PRINTDRVR_FW                132
@@ -77,15 +79,19 @@
 #define IDC_SCROLLLOCK_TOGGLE           1043
 #define IDC_MOUSE_IN_SLOT4              1044
 #define IDC_THE_FREEZES_F8_ROM_FW       1045
-#define IDC_MOUSE_CROSSHAIR             1045
-#define IDC_CLONETYPE                   1046
-#define IDC_MOUSE_RESTRICT_TO_WINDOW    1046
+#define IDC_MOUSE_CROSSHAIR             1046
+#define IDC_CLONETYPE                   1047
+#define IDC_MOUSE_RESTRICT_TO_WINDOW    1048
+#define IDC_CIDERPRESS_BROWSE           1049
+#define IDC_CIDERPRESS_FILENAME         1050
+
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
 #define ID_DISKMENU_EJECT               40004
 #define ID_DISKMENU_WRITEPROTECTION_ON  40005
 #define ID_DISKMENU_WRITEPROTECTION_OFF 40006
+#define ID_DISKMENU_SENDTO_CIDERPRESS	40007
 
 // Next default values for new objects
 // 
