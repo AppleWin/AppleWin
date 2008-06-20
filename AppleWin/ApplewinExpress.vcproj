@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
@@ -394,6 +394,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\Tape.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\Tape.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\Util_MemoryTextFile.cpp"
 				>
 			</File>
@@ -605,11 +613,39 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\CHARIDNICATOR_82.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\CHARIDNICATOR_8C.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\CHARIDNICATOR_APPLE.BMP"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\CHARSET4.BMP"
 				>
 			</File>
 			<File
+				RelativePath=".\resource\CHARSET82.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\CHARSET8C.bmp"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\COLOR.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\CYROFF.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\CYRON.BMP"
 				>
 			</File>
 			<File
@@ -670,6 +706,10 @@
 			</File>
 			<File
 				RelativePath="RESOURCE\RUN.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\RUNP.BMP"
 				>
 			</File>
 			<File

@@ -44,6 +44,11 @@ DWORD     emulmsec          = 0;
 static DWORD emulmsec_frac  = 0;
 bool      g_bFullSpeed      = false;
 
+//Pravets 8A/C variables
+bool P8CAPS_ON = false;
+bool P8Shift = false;
+//=================================================
+
 // Win32
 HINSTANCE g_hInstance          = (HINSTANCE)0;
 
@@ -359,22 +364,37 @@ void GetProgramDirectory () {
 }
 
 //===========================================================================
+//Reads configuration from the registry entries
 void LoadConfiguration ()
 {
   DWORD dwComputerType;
 
   if (LOAD(TEXT(REGVALUE_APPLE2_TYPE),&dwComputerType))
   {
-	  if (dwComputerType >= A2TYPE_MAX)
+	LOAD(TEXT(REGVALUE_CLONETYPE),&g_uCloneType);
+	if ((dwComputerType >= A2TYPE_MAX) || (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE))
 		dwComputerType = A2TYPE_APPLE2EEHANCED;
-	  g_Apple2Type = (eApple2Type) dwComputerType;
+
+	if (dwComputerType == A2TYPE_CLONE)
+	  {
+		switch (g_uCloneType)
+		{
+		case 0:	g_Apple2Type = A2TYPE_PRAVETS82; break;
+		case 1:	g_Apple2Type = A2TYPE_PRAVETS8A; break;
+		default:	g_Apple2Type = A2TYPE_APPLE2EEHANCED; break;
+		}
+	  }	
+	else
+	{
+		g_Apple2Type = (eApple2Type) dwComputerType;
+	}
   }
-  else
+  else	// Support older AppleWin registry entries
   {
 	  LOAD(TEXT("Computer Emulation"),&dwComputerType);
 	  switch (dwComputerType)
 	  {
-      // NB. No A2TYPE_APPLE2E
+      // NB. No A2TYPE_APPLE2E (this is correct)
 	  case 0:	g_Apple2Type = A2TYPE_APPLE2;
 	  case 1:	g_Apple2Type = A2TYPE_APPLE2PLUS;
 	  case 2:	g_Apple2Type = A2TYPE_APPLE2EEHANCED;
@@ -382,7 +402,16 @@ void LoadConfiguration ()
 	  }
   }
 
-  LOAD(TEXT(REGVALUE_CLONETYPE), &g_uCloneType);
+	switch (g_Apple2Type) //Sets the character set for the Apple model/clone
+	{
+	case A2TYPE_APPLE2:			g_nCharsetType  = 0; break; 
+	case A2TYPE_APPLE2PLUS:		g_nCharsetType  = 0; break; 
+	case A2TYPE_APPLE2E:		g_nCharsetType  = 0; break; 
+	case A2TYPE_APPLE2EEHANCED:	g_nCharsetType  = 0; break; 
+	case A2TYPE_PRAVETS82:	    g_nCharsetType  = 1; break; 
+	case A2TYPE_PRAVETS8A:	    g_nCharsetType  = 2; break; 
+	}
+
 
   LOAD(TEXT("Joystick 0 Emulation"),&joytype[0]);
   LOAD(TEXT("Joystick 1 Emulation"),&joytype[1]);

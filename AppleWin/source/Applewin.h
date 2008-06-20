@@ -12,6 +12,11 @@ extern DWORD      cyclenum;
 extern DWORD      emulmsec;
 extern bool       g_bFullSpeed;
 
+//Pravets 8A/C only variables
+extern bool     P8CAPS_ON;
+extern bool		P8Shift; 
+//===========================================
+
 // Win32
 extern HINSTANCE  g_hInstance;
 

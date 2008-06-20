@@ -50,6 +50,7 @@ static BYTE __stdcall DiskSetWriteMode (WORD pc, WORD addr, BYTE bWrite, BYTE d,
 // Public _________________________________________________________________________________________
 
 	BOOL      enhancedisk     = 1;
+	string DiskPathFilename[];
 
 // Private ________________________________________________________________________________________
 
@@ -243,6 +244,7 @@ static void RemoveDisk (int iDrive)
 
 	memset( pFloppy->imagename, 0, MAX_DISK_IMAGE_NAME+1 );
 	memset( pFloppy->fullname , 0, MAX_DISK_FULL_NAME +1 );
+	DiskPathFilename[iDrive] = "";
 }
 
 //===========================================================================
@@ -372,6 +374,7 @@ LPCTSTR DiskGetFullName (int drive) {
 }
 
 
+
 //===========================================================================
 void DiskGetLightStatus (int *pDisk1Status_, int *pDisk2Status_)
 {
@@ -388,6 +391,7 @@ void DiskGetLightStatus (int *pDisk1Status_, int *pDisk2Status_)
 LPCTSTR DiskGetName (int drive) {
   return g_aFloppyDisk[drive].imagename;
 }
+
 
 //===========================================================================
 
@@ -407,19 +411,28 @@ void DiskInitialize ()
 }
 
 //===========================================================================
-int DiskInsert (int drive, LPCTSTR imagefilename, BOOL writeprotected, BOOL createifnecessary) {
-  Disk_t * fptr = &g_aFloppyDisk[drive];
-  if (fptr->imagehandle)
-    RemoveDisk(drive);
-  ZeroMemory(fptr,sizeof(Disk_t ));
-  fptr->writeprotected = writeprotected;
-  int error = ImageOpen(imagefilename,
-                        &fptr->imagehandle,
-                        &fptr->writeprotected,
-                        createifnecessary);
-  if (error == IMAGE_ERROR_NONE)
-    GetImageTitle(imagefilename,fptr);
-  return error;
+
+int DiskInsert (int drive, LPCTSTR imagefilename, BOOL writeprotected, BOOL createifnecessary)
+{
+	Disk_t * fptr = &g_aFloppyDisk[drive];
+	if (fptr->imagehandle)
+		RemoveDisk(drive);
+
+	ZeroMemory(fptr,sizeof(Disk_t ));
+	fptr->writeprotected = writeprotected;
+
+	int error = ImageOpen(imagefilename,
+		&fptr->imagehandle,
+		&fptr->writeprotected,
+		createifnecessary);
+
+	if (error == IMAGE_ERROR_NONE)
+	{
+		GetImageTitle(imagefilename,fptr);
+		DiskPathFilename[drive]= imagefilename;
+	}
+
+	return error;
 }
 
 //===========================================================================
@@ -559,6 +572,7 @@ void DiskSelectImage (int drive, LPSTR pszFilename)
     int error = DiskInsert(drive,filename,ofn.Flags & OFN_READONLY,1);
     if (!error)
 	{
+      DiskPathFilename[drive] = filename; 
       filename[ofn.nFileOffset] = 0;
       if (_tcsicmp(directory,filename))
         RegSaveString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,filename);

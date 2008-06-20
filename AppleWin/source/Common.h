@@ -52,14 +52,15 @@ enum AppMode_e
 #define  BTN_FULLSCR       5
 #define  BTN_DEBUG         6
 #define  BTN_SETUP         7
-
-//#define	MAXIMAGES          16
+#define  BTN_P8CAPS        9
 
 // TODO: Move to StringTable.h
 #define	TITLE_APPLE_2			TEXT("Apple ][ Emulator")
 #define	TITLE_APPLE_2_PLUS		TEXT("Apple ][+ Emulator")
 #define	TITLE_APPLE_2E			TEXT("Apple //e Emulator")
 #define	TITLE_APPLE_2E_ENHANCED	TEXT("Enhanced Apple //e Emulator")
+#define	TITLE_PRAVETS_82        TEXT("Pravets 82 Emulator")
+#define	TITLE_PRAVETS_8A        TEXT("Pravets 8A Emulator")
 
 #define TITLE_PAUSED       TEXT(" Paused ")
 #define TITLE_STEPPING     TEXT("Stepping")
@@ -85,14 +86,16 @@ enum AppMode_e
 #define  REGVALUE_MOUSE_RESTRICT_TO_WINDOW "Mouse restrict to window"
 #define  REGVALUE_THE_FREEZES_F8_ROM "The Freeze's F8 Rom"
 #define  REGVALUE_CLONETYPE          "Clone Type"
+#define  REGVALUE_CIDERPRESSLOC      "CiderPress Location"
 
 // Preferences 
-#define REGVALUE_PREF_START_DIR TEXT("Starting Directory")
+#define REGVALUE_PREF_START_DIR      "Starting Directory"
 
 #define WM_USER_BENCHMARK	WM_USER+1
 #define WM_USER_RESTART		WM_USER+2
 #define WM_USER_SAVESTATE	WM_USER+3
 #define WM_USER_LOADSTATE	WM_USER+4
+
 
 enum eSOUNDCARDTYPE {SC_UNINIT=0, SC_NONE, SC_MOCKINGBOARD, SC_PHASOR};	// Apple soundcard type
 
@@ -106,6 +109,7 @@ enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 
 #define APPLE2E_MASK	0x10
 #define APPLE2C_MASK	0x20
+#define APPLECLONE_MASK	0x100
 
 #define IS_APPLE2		((g_Apple2Type & (APPLE2E_MASK|APPLE2C_MASK)) == 0)
 #define IS_APPLE2E		(g_Apple2Type & APPLE2E_MASK)
@@ -117,9 +121,16 @@ enum eApple2Type {
 					A2TYPE_APPLE2PLUS,
 					A2TYPE_APPLE2E=APPLE2E_MASK,
 					A2TYPE_APPLE2EEHANCED,
+					A2TYPE_UNDEFINED,
 //					A2TYPE_APPLE2C=APPLE2C_MASK,	// Placeholder
+					//
+					// Clones start here:
+					A2TYPE_CLONE=APPLECLONE_MASK,
+					A2TYPE_PRAVETS82=APPLECLONE_MASK|APPLE2E_MASK,
+					A2TYPE_PRAVETS8A,
 					A2TYPE_MAX
 				};
 
 enum eBUTTON {BUTTON0=0, BUTTON1};
+
 enum eBUTTONSTATE {BUTTON_UP=0, BUTTON_DOWN};
