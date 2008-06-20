@@ -46,7 +46,7 @@ protected:
 	void On6821_B(BYTE byData);
 	void OnCommand();
 	void OnWrite();
-	void OnMouseEvent();
+	void OnMouseEvent(bool bEventVBL=false);
 	void Clear();
 
 	friend WRITE_HANDLER( M6821_Listener_A );
