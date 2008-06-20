@@ -1,6 +1,49 @@
 // Based on Apple in PC's mousecard.cpp
 // - Permission given by Kyle Kim to reuse in AppleWin
 
+#ifdef _DEBUG
+#define _DEBUG_SPURIOUS_IRQ
+
+/*
+Contiki v1.3:
+. I still see 2 cases of abnormal operation. These occur during boot up, during some period of disk access.
+. See Contiki's IRQ() in apple2-stdmou.s
+
+** Normal operation **
+ 
+<VBL EVENT>   : h/w asserts IRQ
+<6502 jumps to IRQ vector>
+. MOUSE_SERVE : h/w deasserts IRQ
+. MOUSE_READ
+. RTS with C=1
+ 
+<VBL EVENT>   : h/w asserts IRQ
+<6502 jumps to IRQ vector>
+. MOUSE_SERVE : h/w deasserts IRQ
+. MOUSE_READ
+. RTS with C=1
+ 
+Etc.
+ 
+** Abnormal operation **
+ 
+<VBL EVENT>                        : h/w asserts IRQ
+<6502 jumps to IRQ vector>
+. MOUSE_SERVE (for VBL EVENT)      : h/w deasserts IRQ
+<VBL EVENT>				           : h/w asserts IRQ
+. MOUSE_READ
+  - this clears the mouse IRQ status byte in the mouse-card's "h/w"
+. RTS with C=1
+ 
+<6502 jumps to IRQ vector>
+. MOUSE_SERVE (for MOVEMENT EVENT) : h/w deasserts IRQ
+  - but IRQ status byte is 0
+. RTS with C=0
+
+*/
+
+#endif
+
 #include "stdafx.h"
 #pragma  hdrstop
 #include "..\resource\resource.h"
@@ -36,6 +79,35 @@
 #define BIT5		0x20
 #define BIT6		0x40
 #define BIT7		0x80
+
+// Interrupt status byte
+                                                //Bit 7 6 5 4 3 2 1 0 
+                                                //    | | | | | | | | 
+#define STAT_PREV_BUTTON1   (1<<0)              //    | | | | | | | \--- Previously, button 1 was up (0) or down (1)
+#define STAT_INT_MOVEMENT   (1<<1)              //    | | | | | | \----- Movement interrupt 
+#define STAT_INT_BUTTON     (1<<2)              //    | | | | | \------- Button 0/1 interrupt 
+#define STAT_INT_VBL        (1<<3)              //    | | | | \--------- VBL interrupt 
+#define STAT_CURR_BUTTON1   (1<<4)              //    | | | \----------- Currently, button 1 is up (0) or down (1) 
+#define STAT_MOVEMENT_SINCE_READMOUSE   (1<<5)  //    | | \------------- X/Y moved since last READMOUSE 
+#define STAT_PREV_BUTTON0   (1<<6)              //    | \--------------- Previously, button 0 was up (0) or down (1)
+#define STAT_CURR_BUTTON0   (1<<7)              //    \----------------- Currently, button 0 is up (0) or down (1) 
+
+#define STAT_INT_ALL		(STAT_INT_VBL | STAT_INT_BUTTON | STAT_INT_MOVEMENT)
+
+// Mode byte
+                                                //Bit 7 6 5 4 3 2 1 0 
+                                                //    | | | | | | | | 
+#define MODE_MOUSE_ON       (1<<0)              //    | | | | | | | \--- Mouse off (0) or on (1) 
+#define MODE_INT_MOVEMENT   (1<<1)              //    | | | | | | \----- Interrupt if mouse is moved 
+#define MODE_INT_BUTTON	    (1<<2)              //    | | | | | \------- Interrupt if button is pressed
+#define MODE_INT_VBL        (1<<3)              //    | | | | \--------- Interrupt on VBL 
+#define MODE_RESERVED4      (1<<4)              //    | | | \----------- Reserved 
+#define MODE_RESERVED5      (1<<5)              //    | | \------------- Reserved 
+#define MODE_RESERVED6      (1<<6)              //    | \--------------- Reserved 
+#define MODE_RESERVED7      (1<<7)              //    \----------------- Reserved 
+
+#define MODE_INT_ALL		STAT_INT_ALL
+
 
 WRITE_HANDLER( M6821_Listener_B )
 {
@@ -120,7 +192,7 @@ void CMouseInterface::Reset()
 	m_by6821A = 0;
 	m_by6821B = 0x40;		// Set PB6
 	m_6821.SetPB(m_by6821B);
-	m_bVBL = FALSE;
+	m_bVBL = false;
 
 	//
 
@@ -240,9 +312,14 @@ void CMouseInterface::On6821_B(BYTE byData)
 	}
 }
 
-
 void CMouseInterface::OnCommand()
 {
+#ifdef _DEBUG_SPURIOUS_IRQ
+	static UINT uSpuriousIrqCount = 0;
+	char szDbg[200];
+	BYTE byOldState = m_byState;
+#endif
+
 	switch( m_byBuff[0] & 0xF0 )
 	{
 	case MOUSE_SET:
@@ -251,25 +328,39 @@ void CMouseInterface::OnCommand()
 		break;
 	case MOUSE_READ:				// Read
 		m_nDataLen = 6;
-		m_byState &= 0x20;
+		m_byState &= STAT_MOVEMENT_SINCE_READMOUSE;
 		m_nX = m_iX;
 		m_nY = m_iY;
-		if ( m_bBtn0 )	m_byState |= 0x40;			// Previous Button 0
-		if ( m_bBtn1 )	m_byState |= 0x01;			// Previous Button 1
+		if ( m_bBtn0 )	m_byState |= STAT_PREV_BUTTON0;	// Previous Button 0
+		if ( m_bBtn1 )	m_byState |= STAT_PREV_BUTTON1;	// Previous Button 1
 		m_bBtn0 = m_bButtons[0];
 		m_bBtn1 = m_bButtons[1];
-		if ( m_bBtn0 )	m_byState |= 0x80;			// Current Button 0
-		if ( m_bBtn1 )	m_byState |= 0x10;			// Current Button 1
+		if ( m_bBtn0 )	m_byState |= STAT_CURR_BUTTON0;	// Current Button 0
+		if ( m_bBtn1 )	m_byState |= STAT_CURR_BUTTON1;	// Current Button 1
 		m_byBuff[1] = m_nX & 0xFF;
 		m_byBuff[2] = ( m_nX >> 8 ) & 0xFF;
 		m_byBuff[3] = m_nY & 0xFF;
 		m_byBuff[4] = ( m_nY >> 8 ) & 0xFF;
-		m_byBuff[5] = m_byState;			// button 0/1 interrupt status
-		m_byState &= ~0x20;
+		m_byBuff[5] = m_byState;					// button 0/1 interrupt status
+		m_byState &= ~STAT_MOVEMENT_SINCE_READMOUSE;
+#ifdef _DEBUG_SPURIOUS_IRQ
+		sprintf(szDbg, "[MOUSE_READ] Old=%02X New=%02X\n", byOldState, m_byState); OutputDebugString(szDbg);
+#endif
 		break;
 	case MOUSE_SERV:
 		m_nDataLen = 2;
-		m_byBuff[1] = m_byState & ~0x20;			// reason of interrupt
+		m_byBuff[1] = m_byState & ~STAT_MOVEMENT_SINCE_READMOUSE;			// reason of interrupt
+#ifdef _DEBUG_SPURIOUS_IRQ
+		if ((m_byMode & MODE_INT_ALL) && (m_byBuff[1] & MODE_INT_ALL) == 0)
+		{
+			uSpuriousIrqCount++;
+			sprintf(szDbg, "[MOUSE_SERV] 0x%04X Buff[1]=0x%02X, ***\n", uSpuriousIrqCount, m_byBuff[1]); OutputDebugString(szDbg);
+		}
+		else
+		{
+			sprintf(szDbg, "[MOUSE_SERV] ------ Buff[1]=0x%02X\n", m_byBuff[1]); OutputDebugString(szDbg);
+		}
+#endif
 		CpuIrqDeassert(IS_MOUSE);
 		break;
 	case MOUSE_CLEAR:
@@ -346,28 +437,32 @@ void CMouseInterface::OnWrite()
 	}
 }
 
-void CMouseInterface::OnMouseEvent()
+void CMouseInterface::OnMouseEvent(bool bEventVBL)
 {
 	int byState = 0;
 
-	if ( !( m_byMode & 1 ) )		// Mouse Off
+	if ( !( m_byMode & MODE_MOUSE_ON ) )		// Mouse Off
 		return;
 
 	BOOL bBtn0 = m_bButtons[0];
 	BOOL bBtn1 = m_bButtons[1];
 	if ( m_nX != m_iX || m_nY != m_iY )
-		byState |= 0x22;				// X/Y moved since last READMOUSE | Movement interrupt
+		byState |= STAT_INT_MOVEMENT|STAT_MOVEMENT_SINCE_READMOUSE;	// X/Y moved since last READMOUSE | Movement interrupt
 	if ( m_bBtn0 != bBtn0 || m_bBtn1 != bBtn1 )
-		byState |= 0x04;				// Button 0/1 interrupt
-	if ( m_bVBL )
-		byState |= 0x08;
-	//byState &= m_byMode & 0x2E;
-	byState &= ((m_byMode & 0x0E) | 0x20);	// [TC] Keep "X/Y moved since last READMOUSE" for next MOUSE_READ (Contiki v1.3 uses this)
+		byState |= STAT_INT_BUTTON;		// Button 0/1 interrupt
+	if ( bEventVBL )
+		byState |= STAT_INT_VBL;
 
-	if ( byState & 0x0E )
+	//byState &= m_byMode & 0x2E;
+	byState &= ((m_byMode & MODE_INT_ALL) | STAT_MOVEMENT_SINCE_READMOUSE);	// [TC] Keep "X/Y moved since last READMOUSE" for next MOUSE_READ (Contiki v1.3 uses this)
+
+	if ( byState & STAT_INT_ALL )
 	{
 		m_byState |= byState;
 		CpuIrqAssert(IS_MOUSE);
+#ifdef _DEBUG_SPURIOUS_IRQ
+		char szDbg[200]; sprintf(szDbg, "[MOUSE EVNT] 0x%02X Mode=0x%02X\n", m_byState, m_byMode); OutputDebugString(szDbg);
+#endif
 	}
 }
 
@@ -377,7 +472,7 @@ void CMouseInterface::SetVBlank(bool bVBL)
 	{
 		m_bVBL = bVBL;
 		if ( m_bVBL )	// Rising edge
-			OnMouseEvent();
+			OnMouseEvent(true);
 	}
 }
 
@@ -471,9 +566,6 @@ void CMouseInterface::SetClampY(int iMinY, int iMaxY)
 
 void CMouseInterface::SetPositionAbs(int x, int y)
 {
-#if defined(_DEBUG) && 0
-	char szDbg[200]; sprintf(szDbg, "[SetPositionAbs] x=%d, y=%d (m_iX=%d, m_iY=%d)\n", x,y, m_iX,m_iY); OutputDebugString(szDbg);
-#endif
 	m_iX = x;
 	m_iY = y;
 	FrameSetCursorPosByMousePos();
