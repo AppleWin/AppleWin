@@ -482,12 +482,19 @@ void LoadConfiguration ()
 
   // Current/Starting Dir is the "root" of where the user keeps his disk images
   RegLoadString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,g_sCurrentDir,MAX_PATH);
-  SetCurrentDirectory(g_sCurrentDir);
+  SetCurrentImageDir();
   
   char szUthernetInt[MAX_PATH] = {0};
   RegLoadString(TEXT("Configuration"),TEXT("Uthernet Interface"),1,szUthernetInt,MAX_PATH);  
   update_tfe_interface(szUthernetInt,NULL);
 
+}
+
+//===========================================================================
+
+void SetCurrentImageDir()
+{
+	SetCurrentDirectory(g_sCurrentDir);
 }
 
 //===========================================================================

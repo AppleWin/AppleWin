@@ -964,17 +964,21 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
 
 //===========================================================================
 
-static char g_szNewDirectory[MAX_PATH];
-static char g_szNewFilename[MAX_PATH];
+static bool g_bSSNewFilename = false;
+static char g_szSSNewDirectory[MAX_PATH];
+static char g_szSSNewFilename[MAX_PATH];
 
 static void SaveStateUpdate()
 {
-	Snapshot_SetFilename(g_szNewFilename);
+	if (g_bSSNewFilename)
+	{
+		Snapshot_SetFilename(g_szSSNewFilename);
 
-	RegSaveString(TEXT("Configuration"),REGVALUE_SAVESTATE_FILENAME,1,Snapshot_GetFilename());
+		RegSaveString(TEXT("Configuration"),REGVALUE_SAVESTATE_FILENAME,1,Snapshot_GetFilename());
 
-	if(g_szNewDirectory[0])
-		RegSaveString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,g_szNewDirectory);
+		if(g_szSSNewDirectory[0])
+			RegSaveString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,g_szSSNewDirectory);
+	}
 }
 
 static int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
@@ -1018,13 +1022,14 @@ static int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 
 	if(nRes)
 	{
-		strcpy(g_szNewFilename, &szFilename[ofn.nFileOffset]);
+		strcpy(g_szSSNewFilename, &szFilename[ofn.nFileOffset]);
 
 		szFilename[ofn.nFileOffset] = 0;
 		if (_tcsicmp(szDirectory, szFilename))
-			strcpy(g_szNewDirectory, szFilename);
+			strcpy(g_szSSNewDirectory, szFilename);
 	}
 
+	g_bSSNewFilename = nRes ? true : false;
 	return nRes;
 }
 
@@ -1090,6 +1095,7 @@ static void AdvancedDlg_OK(HWND window, UINT afterclose)
 	else
 	{
 		if (NewApple2Clone != (g_uCloneType + APPLECLONE_MASK|APPLE2E_MASK))
+		{
 			MessageBox(window,
 						TEXT(
 						"You have changed the emulated clone type "
@@ -1097,7 +1103,9 @@ static void AdvancedDlg_OK(HWND window, UINT afterclose)
 						"you shall set the emulated computer type "
 						"to Clone from the Configuration tab.\n\n"),
 						TEXT("Clone type changed"),
-						MB_ICONQUESTION | MB_OK  | MB_SETFOREGROUND) ;  
+						MB_ICONQUESTION | MB_OK  | MB_SETFOREGROUND) ;
+			g_uCloneType = NewApple2Clone - (APPLECLONE_MASK|APPLE2E_MASK);
+		}
 	}
 
 	if (NewApple2Type > A2TYPE_APPLE2PLUS)
@@ -1158,7 +1166,7 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
 			break;
 		case IDC_SAVESTATE_BROWSE:
 			if(SaveStateSelectImage(window, TEXT("Select Save State file"), true))
-				SendDlgItemMessage(window, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM) g_szNewFilename);
+				SendDlgItemMessage(window, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM) g_szSSNewFilename);
 			break;
 		case IDC_SAVESTATE_ON_EXIT:
 			break;
@@ -1205,7 +1213,7 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
 		FillComboBox(window, IDC_CLONETYPE, g_CloneChoices, g_uCloneType);
 		InitFreezeDlgButton(window);
 
-		g_szNewDirectory[0] = 0x00;
+		g_szSSNewDirectory[0] = 0x00;
 
 		afterclose = 0;
 		break;
@@ -1515,7 +1523,7 @@ DWORD PSP_GetVolumeMax()
 
 bool PSP_SaveStateSelectImage(HWND hWindow, bool bSave)
 {
-	g_szNewDirectory[0] = 0x00;
+	g_szSSNewDirectory[0] = 0x00;
 
 	if(SaveStateSelectImage(hWindow, bSave ? TEXT("Select Save State file")
 										   : TEXT("Select Load State file"), bSave))
@@ -1529,18 +1537,18 @@ bool PSP_SaveStateSelectImage(HWND hWindow, bool bSave)
 	}
 }
 
+//===========================================================================
 
-string BrowseToCiderPress (HWND hWindow, TCHAR* pszTitle)
+static string BrowseToCiderPress (HWND hWindow, TCHAR* pszTitle)
 {
 	TCHAR szDirectory[MAX_PATH] = TEXT("");
-	TCHAR szCPFilename[MAX_PATH];
-	strcpy(szCPFilename, "");
+	TCHAR szCPFilename[MAX_PATH] = TEXT("");
 	RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, szCPFilename ,MAX_PATH);
 	string PathName = szCPFilename;
 
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn,sizeof(OPENFILENAME));
-	
+
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
 	ofn.hInstance       = g_hInstance;
@@ -1551,24 +1559,19 @@ string BrowseToCiderPress (HWND hWindow, TCHAR* pszTitle)
 	ofn.lpstrInitialDir = szDirectory;
 	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.lpstrTitle      = pszTitle;
-		
+
 	int nRes = GetOpenFileName(&ofn);
 	if(nRes) //Okay is pressed
 	{
-		strcpy(g_szNewFilename, &szCPFilename[ofn.nFileOffset]);
-
-		szCPFilename[ofn.nFileOffset] = 0;
-		if (_tcsicmp(szDirectory, szCPFilename))
-			strcpy(g_szNewDirectory, szCPFilename);
-
+		SetCurrentImageDir();	// Reset, since GetOpenFileName() will've changed curr dir
 		PathName = szCPFilename;
-		PathName.append (g_szNewFilename);	
 	}
 	else //Cancel is pressed.
 	{
-		RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, szCPFilename,MAX_PATH);
+		RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, szCPFilename, MAX_PATH);
 		PathName = szCPFilename;
 	}
+
 	return PathName;
 }
 

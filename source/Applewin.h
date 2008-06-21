@@ -1,5 +1,9 @@
 #pragma once
 
+void SetCurrentCLK6502();
+void SetCurrentImageDir();
+
+
 extern char VERSIONSTRING[];	// Contructed in WinMain()
 
 extern TCHAR     *g_pAppTitle;
@@ -41,5 +45,3 @@ extern bool       g_bDisableDirectSound;	// Cmd line switch: don't init DS (so n
 extern UINT		g_Slot4;	// Mockingboard or Mouse in slot4
 
 extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom
-
-void    SetCurrentCLK6502();
