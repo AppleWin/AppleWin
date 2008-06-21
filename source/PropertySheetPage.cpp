@@ -1024,6 +1024,16 @@ static int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 	{
 		strcpy(g_szSSNewFilename, &szFilename[ofn.nFileOffset]);
 
+		if (bSave)	// Only for saving (allow loading of any file for backwards compatibility)
+		{
+			// Append .aws if it's not there
+			const char szAWS_EXT[] = ".aws";
+			const UINT uStrLenFile = strlen(g_szSSNewFilename);
+			const UINT uStrLenExt  = strlen(szAWS_EXT);
+			if ((uStrLenFile <= uStrLenExt) || (strcmp(&g_szSSNewFilename[uStrLenFile-uStrLenExt], szAWS_EXT) != 0))
+				strcpy(&g_szSSNewFilename[uStrLenFile], szAWS_EXT);
+		}
+
 		szFilename[ofn.nFileOffset] = 0;
 		if (_tcsicmp(szDirectory, szFilename))
 			strcpy(g_szSSNewDirectory, szFilename);
@@ -1521,6 +1531,7 @@ DWORD PSP_GetVolumeMax()
 	return VOLUME_MAX;
 }
 
+// Called when F11/F12 is pressed
 bool PSP_SaveStateSelectImage(HWND hWindow, bool bSave)
 {
 	g_szSSNewDirectory[0] = 0x00;
