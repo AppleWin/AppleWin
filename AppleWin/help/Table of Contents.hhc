@@ -160,14 +160,20 @@
 				<param name="Local" value="cfg-sound.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Save State Settings">
-				<param name="Local" value="cfg-savestate.html">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Disk / Drive Settings">
 				<param name="Local" value="cfg-disk.html">
-				<param name="URL" value="cfg-disk.html">
 				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Advanced Settings">
+				<param name="Local" value="cfg-Advanced.html">
+				<param name="ImageNumber" value="2">
+				</OBJECT>
+			<UL>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="The Freeze's F8 rom">
+					<param name="Local" value="cfg-Advanced-freeze-rom.html">
+					</OBJECT>
+			</UL>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Resources">
@@ -184,7 +190,7 @@
 				<param name="Local" value="ftp.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Contacting the Author">
+				<param name="Name" value="Contacting the Developers">
 				<param name="Local" value="contact.html">
 				</OBJECT>
 		</UL>
