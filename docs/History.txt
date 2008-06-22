@@ -17,6 +17,29 @@ Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise
 
+
+1.14.2.0 - 23 Jun 2008
+----------------------
+Changes:
+. Support for Bulgarian clones: Pravets 82 & 8A
+. Mouse can be configured to show/hide crosshairs; and can be restricted (or not) to AppleWin's window
+. Added 'Send to CiderPress' function via the context menu of the drive buttons
+. Added support for "The Freeze's" F8 ROM (Apple][ & Apple][+ only)
+. Added -f8rom <rom-file> cmd line switch to allow loading a custom 2K Rom at $F800
+. Support Shift-F9 to cycle backwards through video modes. 
+
+Fixes:
+. Mouse support for Contiki v1.3, Blazing Paddles & GEOS
+. Mouse support now integrates much better with Windows (when in unrestricted mode)
+. Extended HDD image file filter to include *.po
+. [Bug #13425] Full Screen mode: drawing/erasing of the buttons on the RHS of the screen
+. [Bug #12723] DOSMaster .hdv/.po images work
+. [Bug #11592] Infiltrator now boots
+
+1.14.1.3
+--------
+Beta builds for specific testers
+
 1.14.1.2 PR - 20 Apr 2008
 ----------------------------
 . Support for Pravets 82. Caps Lock serves as Lat/Cyr lock. The charset still needs a little fix (all characters have to be one row down).

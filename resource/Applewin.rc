@@ -54,7 +54,7 @@ END
 
 FULLSCR_BUTTON          BITMAP                  "FULLSCR.BMP"
 RUN_BUTTON              BITMAP                  "RUN.BMP"
-RUNP_BUTTON             BITMAP					"RUNP.BMP"
+RUNP_BUTTON             BITMAP                  "RUNP.BMP"
 DEBUG_BUTTON            BITMAP                  "DEBUG.BMP"
 DRIVE1_BUTTON           BITMAP                  "DRIVE1.BMP"
 DRIVE2_BUTTON           BITMAP                  "DRIVE2.BMP"
@@ -68,12 +68,10 @@ DISKWRITE_BITMAP        BITMAP                  "DISKWRIT.BMP"
 DISKPROT_BITMAP         BITMAP                  "DISKPROT.BMP"
 CAPSOFF_BITMAP          BITMAP                  "CAPSOFF.BMP"
 CAPSON_BITMAP           BITMAP                  "CAPSON.BMP"
-//Pravets8 appendices
 LATOFF_BITMAP           BITMAP                  "LATOFF.BMP"
 LATON_BITMAP            BITMAP                  "LATON.BMP"
-CAPSOFF_P8_BITMAP          BITMAP                  "CAPSOFF_P8.BMP"
-CAPSON_P8_BITMAP           BITMAP                  "CAPSON_P8.BMP"
-///////////////////////////////////////////////////////////////////////////
+CAPSOFF_P8_BITMAP       BITMAP                  "CAPSOFF_P8.BMP"
+CAPSON_P8_BITMAP        BITMAP                  "CAPSON_P8.BMP"
 HELP_BUTTON             BITMAP                  "HELP.BMP"
 DRIVESWAP_BUTTON        BITMAP                  "DRIVESWAP.BMP"
 IDB_APPLEWIN            BITMAP                  "Applewin.bmp"
@@ -173,7 +171,7 @@ BEGIN
     CONTROL         "Enable harddisk in slot 7",IDC_HDD_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,126,120,10
     GROUPBOX        "Floppy Controller",IDC_STATIC,2,21,206,73
     GROUPBOX        "Harddisk Controller",IDC_STATIC,2,113,205,71
-	LTEXT           "Path to CiderPress:",IDC_STATIC,5,190,74,8
+    LTEXT           "Path to CiderPress:",IDC_STATIC,5,190,74,8
     EDITTEXT        IDC_CIDERPRESS_FILENAME,5,200,143,12,ES_AUTOHSCROLL | ES_READONLY
     PUSHBUTTON      "Browse...",IDC_CIDERPRESS_BROWSE,154,200,50,14
 END
@@ -230,8 +228,8 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,14,1,3
- PRODUCTVERSION 1,14,1,3
+ FILEVERSION 1,14,2,0
+ PRODUCTVERSION 1,14,2,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -249,12 +247,12 @@ BEGIN
             VALUE "Comments", "http://applewin.berlios.de"
             VALUE "CompanyName", "Michael O'Brien, Oliver Schmidt, Tom Charlesworth"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1, 14, 1, 3"
+            VALUE "FileVersion", "1, 14, 2, 0"
             VALUE "InternalName", "APPLEWIN"
             VALUE "LegalCopyright", "© 1994-2008 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1, 14, 1, 3"
+            VALUE "ProductVersion", "1, 14, 2, 0"
         END
     END
     BLOCK "VarFileInfo"
@@ -293,12 +291,12 @@ IDR_MOUSEINTERFACE_FW   FIRMWARE                "MouseInterface.rom"
 // ROM
 //
 
-IDR_APPLE2_ROM				ROM		"Apple2.rom"
-IDR_APPLE2_PLUS_ROM			ROM		"Apple2_Plus.rom"
-IDR_APPLE2E_ROM				ROM		"Apple2e.rom"
-IDR_APPLE2E_ENHANCED_ROM	ROM		"Apple2e_Enhanced.rom"
-IDR_PRAVETS_82_ROM			ROM		"Pravets82.rom" 
-IDR_PRAVETS_8C_ROM			ROM		"Pravets8C.rom"
+IDR_APPLE2_ROM          ROM                     "Apple2.rom"
+IDR_APPLE2_PLUS_ROM     ROM                     "Apple2_Plus.rom"
+IDR_APPLE2E_ROM         ROM                     "Apple2e.rom"
+IDR_APPLE2E_ENHANCED_ROM ROM                     "Apple2e_Enhanced.rom"
+IDR_PRAVETS_82_ROM      ROM                     "Pravets82.rom"
+IDR_PRAVETS_8C_ROM      ROM                     "Pravets8C.rom"
 IDR_FREEZES_F8_ROM      ROM                     "FREEZES_NON-AUTOSTART_F8_ROM.rom"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -326,7 +324,7 @@ BEGIN
         MENUITEM "&Eject",                      ID_DISKMENU_EJECT
         MENUITEM "Read / &Write",               ID_DISKMENU_WRITEPROTECTION_OFF
         MENUITEM "&Read only",                  ID_DISKMENU_WRITEPROTECTION_ON
-		MENUITEM "Send to &CiderPress",         ID_DISKMENU_SENDTO_CIDERPRESS
+        MENUITEM "Send to &CiderPress",         ID_DISKMENU_SENDTO_CIDERPRESS
     END
 END
 
@@ -363,5 +361,4 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-
 
