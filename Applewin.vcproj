@@ -601,11 +601,27 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\CAPSOFF_P8.BMP"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\CAPSON.BMP"
 				>
 			</File>
 			<File
+				RelativePath=".\resource\CAPSON_P8.BMP"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\CHARSET4.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\CHARSET82.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\CHARSET8C.bmp"
 				>
 			</File>
 			<File
@@ -677,6 +693,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\LATOFF.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\LATON.BMP"
+				>
+			</File>
+			<File
 				RelativePath=".\resource\Mockingboard-D.rom"
 				>
 			</File>
@@ -689,11 +713,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\PRAVETS82.ROM"
+				>
+			</File>
+			<File
 				RelativePath=".\resource\Pravets8C.rom"
 				>
 			</File>
 			<File
 				RelativePath="RESOURCE\RUN.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\RUNP.BMP"
 				>
 			</File>
 			<File
@@ -706,43 +738,11 @@
 			</File>
 		</Filter>
 		<File
-			RelativePath=".\resource\CAPSOFF_P8.BMP"
-			>
-		</File>
-		<File
-			RelativePath=".\resource\CAPSON_P8.BMP"
-			>
-		</File>
-		<File
-			RelativePath=".\resource\CHARSET82.bmp"
-			>
-		</File>
-		<File
-			RelativePath=".\resource\CHARSET8C.bmp"
-			>
-		</File>
-		<File
 			RelativePath=".\source\Common.h"
 			>
 		</File>
 		<File
-			RelativePath=".\resource\LATOFF.BMP"
-			>
-		</File>
-		<File
-			RelativePath=".\resource\LATON.BMP"
-			>
-		</File>
-		<File
-			RelativePath=".\resource\PRAVETS82.ROM"
-			>
-		</File>
-		<File
 			RelativePath=".\resource\resource.h"
-			>
-		</File>
-		<File
-			RelativePath=".\resource\RUNP.BMP"
 			>
 		</File>
 		<File
