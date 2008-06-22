@@ -4,9 +4,9 @@
   <link rel="shortcut icon" href="applewin.ico">
   <title>Apple //e Emulator for Windows</title></head>
 <body alink="gold" background="background.gif" bgcolor="mediumpurple" link="orange" text="powderblue" vlink="plum">
-<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.13.2</font></u></font></p>
+<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.14.2</font></u></font></p>
 <p align="center"><font face="Tahoma"><img src="applewin.gif" title="" alt="Apple //e Emulator Logo" height="384" width="560"></font></p>
-<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.13.2.zip">Version 1.13.2</a><br>
+<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.14.2.zip">Version 1.14.2</a><br>
 <a href="#OldReleases">Download older releases</a><br>
 </font></p>
 
@@ -20,35 +20,109 @@ The SVN repository is located here: <a href="https://developer.berlios.de/projec
 </p><p><font face="Tahoma">
 Latest AppleWin compiled html help: <a href="applewin.chm">AppleWin.chm</a>
 </font></p>
-<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.13.2 -&nbsp;7 April 2007</u></font></p>
+
+
+<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.14.2 - 23 Jun 2008</u></font></p>
 <font face="Tahoma">
-<ul><li>Added: Apple ][ (non-autostart monitor)</li><li>Added: 6502 NMOS illegal opcode support (for ][ &amp; ][+)</li><li>Added: 65C02 CMOS undefined opcode support (for //e)</li><li>Added: Simple parallel printer support in slot-1<br>&nbsp; . Creates (or overwrites) a file called "Printer.txt" in AppleWin.exe's folder<br>&nbsp; . Eg. PR#1, then LIST, then PR#0<br>&nbsp; . The file will auto-close 10 seconds after the last printed output</li><li>Fix: [Bug #7238] FLASH support in 80-column mode</li><li>Fix: [Bug #8300] 80-col text in Silvern Castle got corrupted</li><li>Fix: Speech with MB/Phasor for short phonemes - bug in DirectSound in WinXP (see KB327698)</li><li>Fix: Disk ][ track stepping (Mabel's Mansion now works)</li><li>Docs updated (although debugger docs still partially out of date)</li><li>Debugger:<br>&nbsp; + Now uses Apple font<br>&nbsp; + Can configure entry to debugger via specific opcode or illegal(6502)/undefined(65C02) opcode - use BRKOP cmd<br>&nbsp;&nbsp;&nbsp; - So you can run Apple at full-speed until it hits your breakpoint (eg. BRK)<br>&nbsp; + BRKOP, BRK # to enter debugger<br>&nbsp; + Mouse support: button &amp; wheel<br>&nbsp; + BLOAD/BSAVE<br>&nbsp; + Search command: S/SH<br>&nbsp; + New DISASM command<br>&nbsp; + bookmarks, via bm, bma, bmc, bml, ctrl-#, alt-#<br>&nbsp; + HELP RANGE<br>&nbsp; + HELP OPERATORS<br>&nbsp; + PRINT, PRINTF<br>&nbsp; + ctrl-v (paste) support<br>&nbsp; ... &amp; lots more (doc's to be updated soon)</li></ul></font>
+<li>Changes:</li>
+<ul>
+    <li>Support for Bulgarian clones: Pravets 82 &amp; 8A</li>
+    <li>Mouse can be configured to show/hide crosshairs; and can be restricted (or not) to AppleWin's window</li>
+    <li>Added 'Send to CiderPress' function via the context menu of the drive buttons</li>
+    <li>Added support for "The Freeze's" F8 ROM (Apple][ & Apple][+ only)</li>
+    <li>Added -f8rom &lt;rom-file&gt; cmd line switch to allow loading a custom 2K Rom at $F800</li>
+    <li>Support Shift-F9 to cycle backwards through video modes</li>
+</ul>
+<li>Fixes:</li>
+<ul>
+    <li>Mouse support for Contiki v1.3, Blazing Paddles & GEOS</li>
+    <li>Mouse support now integrates much better with Windows (when in unrestricted mode)</li>
+    <li>Extended HDD image file filter to include *.po</li>
+    <li>[Bug #13425] Full Screen mode: drawing/erasing of the buttons on the RHS of the screen</li>
+    <li>[Bug #12723] DOSMaster .hdv/.po images work</li>
+    <li>[Bug #11592] Infiltrator now boots</li>
+</ul>
 
 
+<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.14.0 - 8 Aug 2007 (beta)</u></font></p>
+<p><font face="Tahoma">Fixes:<u></u></font></p>
+<font face="Tahoma">
+<ul>
+    <li>Super Serial Card: PR#2 &amp; IN#2 now working</li>
+    <li>Full support for Peripheral Expansion ROM (at $C800) &amp; $CFFF access</li>
+    <li>F2 (Power-cycle) when ROM is switched *out* caused Apple to freeze</li>
+</ul>
+</font><p><font face="Tahoma">Changes:</font></p>
+<font face="Tahoma">
+<ul>
+    <li>Attempt to use drive1's image name as the name for the .aws file</li>
+    <li>Added Apple//e (original 6502 version with "Venetian Blinds" self-test)</li>
+    <li>Turbo mode via Scroll Lock (temporary or toggle mode) - selectable via UI</li>
+</ul></font><p><font face="Tahoma">Beta:</font></p>
+<font face="Tahoma">
+<ul>
+    <li>Mouse Interface card support in slot 4 (selectable via UI)</li>
+    <ul>
+        <li>Full 6821 emulation &amp; 2K ROM. Based on code by Kyle Kim (Apple in PC)</li>
+        <li>Tested with: Dazzle Draw, Blazing Paddles, Archon II: Adept, Orge[Fix], Dragon Wars</li>
+    </ul>
+</ul>
+</font>
 
 
-<p><font face="Tahoma"><u></u></font></p><p><font face="Tahoma"><u>1.13.1 -&nbsp;7 May 2006</u></font></p>
+<p><font face="Tahoma"><u></u></font></p><p><font face="Tahoma"><u>1.13.2 -&nbsp;7 April 2007</u></font></p>
+<font face="Tahoma">
+<ul>
+    <li>Added: Apple ][ (non-autostart monitor)</li>
+    <li>Added: 6502 NMOS illegal opcode support (for ][ &amp; ][+)</li>
+    <li>Added: 65C02 CMOS undefined opcode support (for //e)</li>
+    <li>Added: Simple parallel printer support in slot-1<br>
+        &nbsp; . Creates (or overwrites) a file called "Printer.txt" in AppleWin.exe's folder<br>
+        &nbsp; . Eg. PR#1, then LIST, then PR#0<br>
+        &nbsp; . The file will auto-close 10 seconds after the last printed output</li>
+    <li>Fix: [Bug #7238] FLASH support in 80-column mode</li>
+    <li>Fix: [Bug #8300] 80-col text in Silvern Castle got corrupted</li>
+    <li>Fix: Speech with MB/Phasor for short phonemes - bug in DirectSound in WinXP (see KB327698)</li>
+    <li>Fix: Disk ][ track stepping (Mabel's Mansion now works)</li>
+    <li>Docs updated (although debugger docs still partially out of date)</li>
+    <li>Debugger:<br>&nbsp; + Now uses Apple font<br>
+        &nbsp; + Can configure entry to debugger via specific opcode or illegal(6502)/undefined(65C02) opcode - use BRKOP cmd<br>
+        &nbsp;&nbsp;&nbsp; - So you can run Apple at full-speed until it hits your breakpoint (eg. BRK)<br>
+        &nbsp; + BRKOP, BRK # to enter debugger<br>
+        &nbsp; + Mouse support: button &amp; wheel<br>
+        &nbsp; + BLOAD/BSAVE<br>
+        &nbsp; + Search command: S/SH<br>
+        &nbsp; + New DISASM command<br>
+        &nbsp; + bookmarks, via bm, bma, bmc, bml, ctrl-#, alt-#<br>
+        &nbsp; + HELP RANGE<br>&nbsp; + HELP OPERATORS<br>
+        &nbsp; + PRINT, PRINTF<br>&nbsp; + ctrl-v (paste) support<br>
+        &nbsp; ... &amp; lots more (doc's to be updated soon)</li>
+</ul>
+</font>
+
+
+<p><font face="Tahoma"><u>1.13.1 -&nbsp;7 May 2006</u></font></p>
 <font face="Tahoma">
 <ul><li>Fix: [Bug #7375] &nbsp;Crashes on Win98/ME</li></ul></font>
 
 <p><font face="Tahoma"><u>1.13.0 -&nbsp;2 May 2006</u></font></p>
 <p><font face="Tahoma">
 <ul>
-	<li>New: Uthernet card support<br></li>
+	<li>New: Uthernet card support</li>
 	<ul>
-		<li>Allows internet access when used with the Contiki OS<br></li>
-		<li>See: <a href="Uthernet.txt">Uthernet.txt</a><br></li>
+		<li>Allows internet access when used with the Contiki OS</li>
+		<li>See: <a href="Uthernet.txt">Uthernet.txt</a></li>
 	</ul>
-	<li>New: Floating bus support<br></li>
+	<li>New: Floating bus support</li>
 	<ul>
-		<li>Fixes the hang at Drol's cut-scene<br></li>
-		<li>Bob Bishop's Money Munchers is a little bit closer to working<br></li>
+		<li>Fixes the hang at Drol's cut-scene</li>
+		<li>Bob Bishop's Money Munchers is a little bit closer to working</li>
 	</ul>
-	<li>Change: Added support for SSC receive IRQ (eg. Z-Link)<br></li>
-	<li>Fix: Checkerboard cursor is back for //e mode<br></li>
-	<li>Fix: [Bug #6778] enable harddisk not working in 1.12.9.1<br></li>
-	<li>Fix: [Bug #6790] Right click menu stops working on drives<br></li>
-	<li>Fix: [Bug #7231] AppleWin installed in path with spaces<br></li>
+	<li>Change: Added support for SSC receive IRQ (eg. Z-Link)</li>
+	<li>Fix: Checkerboard cursor is back for //e mode</li>
+	<li>Fix: [Bug #6778] enable harddisk not working in 1.12.9.1</li>
+	<li>Fix: [Bug #6790] Right click menu stops working on drives</li>
+	<li>Fix: [Bug #7231] AppleWin installed in path with spaces</li>
 </ul>
 </font></p>
 
@@ -228,6 +302,8 @@ find didn't appear to support it:<br>
 
 <p><font face="Tahoma"><font face="Tahoma"><u><a name="OldReleases"></a>Old releases:</u></font></font></p>
 <p><font face="Tahoma"><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.14.0-beta.zip">Version 1.14.0 (beta)</a><br></font></font><font face="Tahoma"><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.13.2.zip">Version 1.13.2</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.13.1.zip">Version 1.13.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.13.0.zip">Version 1.13.0</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.12.9.1.zip">Version 1.12.9.1</a><br>
