@@ -32,6 +32,7 @@ Latest AppleWin compiled html help: <a href="applewin.chm">AppleWin.chm</a>
     <li>Added support for "The Freeze's" F8 ROM (Apple][ & Apple][+ only)</li>
     <li>Added -f8rom &lt;rom-file&gt; cmd line switch to allow loading a custom 2K Rom at $F800</li>
     <li>Support Shift-F9 to cycle backwards through video modes</li>
+    <li>Support Ctrl-F9 to cycle through the character sets</li>
 </ul>
 <li>Fixes:</li>
 <ul>
