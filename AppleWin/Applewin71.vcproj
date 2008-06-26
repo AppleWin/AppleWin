@@ -39,7 +39,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib"
+				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib"
 				OutputFile=".\Release/AppleWin.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -101,7 +101,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib"
+				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib"
 				OutputFile=".\Debug/AppleWin.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -145,6 +145,9 @@
 		<Filter
 			Name="Source"
 			Filter=".cpp">
+			<File
+				RelativePath=".\source\6821.cpp">
+			</File>
 			<File
 				RelativePath=".\source\Applewin.cpp">
 				<FileConfiguration
@@ -194,6 +197,9 @@
 				RelativePath=".\source\Mockingboard.cpp">
 			</File>
 			<File
+				RelativePath=".\source\MouseInterface.cpp">
+			</File>
+			<File
 				RelativePath=".\source\ParallelPrinter.cpp">
 			</File>
 			<File
@@ -222,6 +228,9 @@
 			</File>
 			<File
 				RelativePath=".\source\Speaker.cpp">
+			</File>
+			<File
+				RelativePath=".\source\Tape.cpp">
 			</File>
 			<File
 				RelativePath=".\source\Util_MemoryTextFile.cpp">
@@ -323,6 +332,9 @@
 			Name="Include"
 			Filter=".h">
 			<File
+				RelativePath=".\source\6821.h">
+			</File>
+			<File
 				RelativePath=".\source\Applewin.h">
 			</File>
 			<File
@@ -362,6 +374,9 @@
 				RelativePath=".\source\Mockingboard.h">
 			</File>
 			<File
+				RelativePath=".\source\MouseInterface.h">
+			</File>
+			<File
 				RelativePath=".\source\ParallelPrinter.h">
 			</File>
 			<File
@@ -393,6 +408,9 @@
 			</File>
 			<File
 				RelativePath=".\source\Structs.h">
+			</File>
+			<File
+				RelativePath=".\source\Tape.h">
 			</File>
 			<File
 				RelativePath=".\source\Util_MemoryTextFile.h">
