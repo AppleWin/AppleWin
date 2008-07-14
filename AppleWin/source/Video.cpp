@@ -245,7 +245,7 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 const UINT nVBlStop_NTSC	= 21;
 const UINT nVBlStop_PAL		= 29;
 
-//-------------------------------------
+// Prototypes (Private) _____________________________________________
 
 void DrawDHiResSource ();
 void DrawHiResSource ();
@@ -257,6 +257,12 @@ void DrawMonoHiResSource ();
 void DrawMonoLoResSource ();
 void DrawMonoTextSource (HDC dc);
 void DrawTextSource (HDC dc);
+
+void Util_MakeScreenShotFileName( char *pFinalFileName_ );
+bool Util_TestScreenShotFileName( const char *pFileName );
+void Video_TakeScreenShot();
+void Video_SaveScreenShot( const char *pScreenShotFileName );
+void Video_MakeScreenShot();
 
 //===========================================================================
 void __stdcall CopySource (int destx, int desty,
@@ -2315,4 +2321,125 @@ bool VideoGetVbl(const DWORD uExecutedCycles)
 	}
 }
 
+	
+// alias for nSuffixScreenShotFileName
+static int nLastScreenShot = 0;
+const  int nMaxScreenShot = 999999999;
+//const  int nMaxScreenShot = 2;
+
 //===========================================================================
+void Util_MakeScreenShotFileName( char *pFinalFileName_ )
+{
+	const char sPrefixScreenShotFileName[] = "AppleWin_ScreenShot_";
+	sprintf( pFinalFileName_, "%s%09d.bmp", sPrefixScreenShotFileName, nLastScreenShot );
+}
+
+
+//===========================================================================
+bool Util_TestScreenShotFileName( const char *pFileName )
+{
+	bool bFileExists = false;
+	FILE *pFile = fopen( pFileName, "rt" );
+	if (pFile)
+	{
+		fclose( pFile );
+		bFileExists = true;
+	}
+	return bFileExists;
+}
+
+//===========================================================================
+void Video_TakeScreenShot()
+{
+	char sScreenShotFileName[ MAX_PATH ];
+
+	// find last screenshot filename so we don't overwrite the existing user ones
+	bool bExists = true;
+	while( bExists )
+	{
+		if (nLastScreenShot > nMaxScreenShot) // Holy Crap! User has maxed the number of screenshots!?
+		{
+			sprintf( sScreenShotFileName, "You have more then %d screenshot filenames!  They will no longer be saved.\n\nEither move some of your screenshots or increase the maximum in video.cpp\n", nMaxScreenShot );
+			MessageBox( NULL, sScreenShotFileName, "Warning", MB_OK );
+			nLastScreenShot = 0;
+			return;
+		}
+
+		Util_MakeScreenShotFileName( sScreenShotFileName );
+		bExists = Util_TestScreenShotFileName( sScreenShotFileName );
+		if( !bExists )
+		{
+			break;
+		}
+		nLastScreenShot++;
+	}
+
+	Video_SaveScreenShot( sScreenShotFileName );
+	nLastScreenShot++;
+}
+
+
+typedef short	int16;
+typedef int		int32;
+
+struct WinBmpHeader_t
+{
+	char  nCookie[2]      ; // BM
+	int32 nSizeFile       ; // 0 = ignre
+	int16 nReserved1      ;
+	int16 nReserved2      ;
+	int32 nOffsetData     ;
+	int32 nStructSize     ;
+	int32 nWidthPixels    ;
+	int32 nHeightPixels   ;
+	int16 nPlanes         ;
+	int16 nBitsPerPixel   ;
+	int32 nCompression    ; // 0 = BI_RGB
+	int32 nSizeImage      ; // 0 = ignore
+	int32 nXPelsPerMeter  ;
+	int32 nYPelsPerMeter  ;
+	int32 nPaletteColors  ;
+	int32 nImportantColors;
+};
+
+WinBmpHeader_t g_tBmpHeader;
+
+//===========================================================================
+void Video_MakeScreenShot()
+{
+	// get BMP
+	g_tBmpHeader.nCookie[ 0 ] = 'B';
+	g_tBmpHeader.nCookie[ 0 ] = 'M';
+	g_tBmpHeader.nReserved1 = 0;
+	g_tBmpHeader.nReserved2 = 0;
+	g_tBmpHeader.nOffsetData = sizeof( WinBmpHeader_t );
+	g_tBmpHeader.nStructSize = sizeof( WinBmpHeader_t );
+	g_tBmpHeader.nWidthPixels = 560;
+	g_tBmpHeader.nHeightPixels = 192;
+	g_tBmpHeader.nPlanes = 1;
+	g_tBmpHeader.nBitsPerPixel = 24;
+	g_tBmpHeader.nCompression = BI_RGB;
+	g_tBmpHeader.nSizeImage = 0;
+	g_tBmpHeader.nXPelsPerMeter = 0;
+	g_tBmpHeader.nYPelsPerMeter = 0;
+	g_tBmpHeader.nPaletteColors = 0;
+	g_tBmpHeader.nImportantColors = 0;
+}
+
+//===========================================================================
+void Video_SaveScreenShot( const char *pScreenShotFileName )
+{
+	Video_MakeScreenShot();
+	
+	FILE *pFile = fopen( pScreenShotFileName, "wb" );
+	if( pFile )
+	{
+		// Write Header
+		// Write Data
+		fwrite( &g_tBmpHeader, sizeof( g_tBmpHeader ), 1, pFile );
+
+		fclose( pFile );
+	}
+
+	MessageBox( NULL, pScreenShotFileName, "Screen Captured", MB_OK );
+}
