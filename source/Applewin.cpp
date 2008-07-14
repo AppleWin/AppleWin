@@ -545,6 +545,22 @@ void RegisterExtensions ()
 }
 
 //===========================================================================
+void ApppleWin_RegisterHotKeys()
+{
+	bool bStatus = RegisterHotKey(      
+		g_hFrameWindow	, // HWND hWnd
+		VK_SNAPSHOT		, // int id (user/custom id)
+		0					, // UINT fsModifiers
+		VK_SNAPSHOT		  // UINT vk
+	);
+
+	if (! bStatus)
+	{
+		MessageBox( g_hFrameWindow, "Unable to capture PrintScreen key", "Warning", MB_OK );
+	}
+}
+
+//===========================================================================
 
 LPSTR GetCurrArg(LPSTR lpCmdLine)
 {
@@ -756,6 +772,8 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		MemInitialize();
 		VideoInitialize();
 		FrameCreateWindow();
+		ApppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
+
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
 		DiskReset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 

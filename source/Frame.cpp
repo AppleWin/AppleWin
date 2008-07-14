@@ -81,7 +81,7 @@ static RECT    framerect       = {0,0,0,0};
 HWND    g_hFrameWindow     = (HWND)0;
 BOOL    fullscreen      = 0;
 static BOOL    helpquit        = 0;
-static BOOL    painting        = 0;
+static BOOL    g_bPaintingWindow        = 0;
 static HFONT   smallfont       = (HFONT)0;
 static HWND    tooltipwindow   = (HWND)0;
 static BOOL    g_bUsingCursor	= 0;		// 1=AppleWin is using (hiding) the mouse-cursor
@@ -374,7 +374,7 @@ static void DrawCrosshairs (int x, int y) {
 static void DrawFrameWindow () {
   FrameReleaseDC();
   PAINTSTRUCT ps;
-  HDC         dc = (painting ? BeginPaint(g_hFrameWindow,&ps)
+  HDC         dc = (g_bPaintingWindow ? BeginPaint(g_hFrameWindow,&ps)
                              : GetDC(g_hFrameWindow));
   VideoRealizePalette(dc);
 
@@ -405,7 +405,7 @@ static void DrawFrameWindow () {
 
   // DRAW THE STATUS AREA
   DrawStatusArea(dc,DRAW_BACKGROUND | DRAW_LEDS);
-  if (painting)
+  if (g_bPaintingWindow)
     EndPaint(g_hFrameWindow,&ps);
   else
     ReleaseDC(g_hFrameWindow,dc);
@@ -688,6 +688,22 @@ LRESULT CALLBACK FrameWndProc (
       DragFinish((HDROP)wparam);
       break;
     }
+
+	// @see: http://answers.google.com/answers/threadview?id=133059
+	// Win32 doesn't pass the PrintScreen key via WM_CHAR
+	//		else if (wparam == VK_SNAPSHOT)
+	// Solution: 2 choices:
+	//		1) register hotkey, or
+	//		2) Use low level Keyboard hooks
+	// We use the 1st one since it is compatible with Win95
+	case WM_HOTKEY:
+		// wparam = user id
+		// lparam = modifiers: shift, ctrl, alt, win
+		if (wparam == VK_SNAPSHOT)
+		{
+			Video_TakeScreenShot();
+		}
+		break;
 
 	case WM_KEYDOWN:
 		KeybUpdateCtrlShiftStatus();
@@ -1015,9 +1031,9 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_PAINT:
       if (GetUpdateRect(window,NULL,0)) {
-        painting = 1;
+        g_bPaintingWindow = 1;
         DrawFrameWindow();
-        painting = 0;
+        g_bPaintingWindow = 0;
       }
       break;
 
@@ -1552,7 +1568,7 @@ HDC FrameGetDC () {
 //===========================================================================
 HDC FrameGetVideoDC (LPBYTE *addr, LONG *pitch)
 {
-	if (fullscreen && g_bAppActive && !painting)
+	if (fullscreen && g_bAppActive && !g_bPaintingWindow)
 	{
 		RECT rect = {	FSVIEWPORTX,
 						FSVIEWPORTY,
@@ -1612,7 +1628,7 @@ void FrameReleaseDC () {
 
 //===========================================================================
 void FrameReleaseVideoDC () {
-  if (fullscreen && g_bAppActive && !painting) {
+  if (fullscreen && g_bAppActive && !g_bPaintingWindow) {
 
     // THIS IS CORRECT ACCORDING TO THE DIRECTDRAW DOCS
     RECT rect = {FSVIEWPORTX,
