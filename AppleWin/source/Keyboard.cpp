@@ -202,14 +202,25 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			
 			//Remap some keys for Pravets82/M
 			if (g_Apple2Type == A2TYPE_PRAVETS82)
-				if (key == 64) keycode = 96;
-				if (key == '^') keycode = '~';			
+			{
+				if (key == 64) 
+					keycode = 96;
+				if (key == '^') 
+					keycode = '~';	
+						
 				if (g_bCapsLock == false) //i.e. cyrillic letters
 				{
 					if (key == '`') keycode = '^';
-					if (key == 92) keycode = '@'; // \ to @								
+					if (key == 92) keycode = '@'; // \ to @	
+					if (key == 124) keycode = 92;
 				}
-
+				else //(g_bCapsLock == true) //i.e. latin letters
+				{
+				if (key == 91) keycode = 123;
+				if (key == 93) keycode = 125;
+				if (key == 124) keycode = 92;					
+				}
+			}
 			//Remap some keys for Pravets8A/C, which has a different charset for Pravtes82/M, whose keys MUST NOT be remapped.
 			if (g_Apple2Type == A2TYPE_PRAVETS8A) //&& (g_bCapsLock == false))
 				if (g_bCapsLock == false) //i.e. cyrillic letters
@@ -217,12 +228,14 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 				if (key == '[') keycode = '{';
 				if (key == ']') keycode = '}';
 				if (key == '`') keycode = '~';
-
+				if (key == 92) keycode = 96;
 				if (GetCapsLockAllowed ()== true)
 				{
 					if ((key == 92) || (key == 124)) keycode = 96; //Ý to Þ
-					if ((key == '{') || (key == '}') || (key == '~') || (key == 124) || (key == '^'))
-						P8Shift = true;
+					//This shall be rewriten, so that enabling CAPS_LOCK (i.e. F10) will not invert these keys values)
+					//The same for latin letters.
+					if ((key == '{') || (key == '}') || (key == '~') || (key == 124) || (key == '^') ||  (key == 95))
+						P8Shift = true;					
 				}
 				}
 				else //i.e. latin letters					
@@ -231,18 +244,24 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 					{
 					if (key == '{') keycode = '[';
 					if (key == '}') keycode = ']';
-					if (key == 124) keycode = 92;
+					if (key == 124) 
+						keycode = 92;
+					/*if (key == 92) 
+						keycode = 124;*/
+					//Characters ` and ~ cannot be generated in 7bit character mode, so they are replaced with
 					}
 					else
 					{
 					if (key == '{') keycode = 91;
 					if (key == '}')	keycode = 93;
 					if (key == 124)	keycode = 92;					
-					if ((key == '[') || (key == ']') || (key == 92) || (key == '^'))
+					if ((key == '[') || (key == ']') || (key == 92) || (key == '^') || (key == 95))
 						P8Shift= true; 
-					if (key == 96)	keycode = 64; //This line shall generate sth. else i.e. ` In fact. this character is not generateable by the pravets keyboard.
-					if (key == 126)	keycode = 94;					
-					}
+					if (key == 96)	 //This line shall generate sth. else i.e. ` In fact. this character is not generateable by the pravets keyboard.
+						{keycode = '^';
+						P8Shift= true;}
+					if (key == 126)	keycode = '^';					
+					}					
 				}						
 		}
 		else
@@ -259,8 +278,8 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			}
 		}
 		lastvirtkey = LOBYTE(VkKeyScan(key));
-	}
-	else
+	} 
+	else //(bASCII != ASCII)
 	{
 		if ((key == VK_CANCEL) && (GetKeyState(VK_CONTROL) < 0))
 		{
