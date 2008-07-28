@@ -500,10 +500,10 @@ void KeybToggleCapsLock ()
 //===========================================================================
 void KeybToggleP8ACapsLock ()
 {
-	if (g_Apple2Type == A2TYPE_PRAVETS8A)
-		P8CAPS_ON = !P8CAPS_ON;
-		FrameRefreshStatus(DRAW_LEDS);
-		// g_bP8CapsLock= g_bP8CapsLock?false:true; //The same as the upper, but slower
+	_ASSERT(g_Apple2Type == A2TYPE_PRAVETS8A);
+	P8CAPS_ON = !P8CAPS_ON;
+	FrameRefreshStatus(DRAW_LEDS);
+	// g_bP8CapsLock= g_bP8CapsLock?false:true; //The same as the upper, but slower
 }
 
 //===========================================================================
