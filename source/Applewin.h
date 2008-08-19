@@ -45,3 +45,7 @@ extern bool       g_bDisableDirectSound;	// Cmd line switch: don't init DS (so n
 extern UINT		g_Slot4;	// Mockingboard or Mouse in slot4
 
 extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom
+
+enum eCPU {CPU_6502=1, CPU_Z80};
+extern eCPU		g_ActiveCPU;
+

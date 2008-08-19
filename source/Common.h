@@ -1,8 +1,14 @@
 #pragma once
 
+#define SUPPORT_CPM
+
 const double _M14 = (157500000.0 / 11.0); // 14.3181818... * 10^6
 const double CLK_6502 = ((_M14 * 65.0) / 912.0); // 65 cycles per 912 14M clocks
 //const double CLK_6502 = 23 * 44100;			// 1014300
+
+// The effective Z-80 clock rate is 2.041MHz
+// See: http://www.apple2info.net/hardware/softcard/SC-SWHW_a2in.pdf
+const double CLK_Z80 = 2.041e6;
 
 const UINT uCyclesPerLine			= 65;	// 25 cycles of HBL & 40 cycles of HBL'
 const UINT uVisibleLinesPerFrame	= 64*3;	// 192
@@ -87,6 +93,7 @@ enum AppMode_e
 #define  REGVALUE_THE_FREEZES_F8_ROM "The Freeze's F8 Rom"
 #define  REGVALUE_CLONETYPE          "Clone Type"
 #define  REGVALUE_CIDERPRESSLOC      "CiderPress Location"
+#define  REGVALUE_Z80_IN_SLOT5       "Z80 in slot 5"
 
 // Preferences 
 #define REGVALUE_PREF_START_DIR      "Starting Directory"

@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma  hdrstop
 #include <objbase.h>
 #include "MouseInterface.h"
+#include "z80\z80cpu.h"
 
 char VERSIONSTRING[] = "xx.yy.zz.ww";
 
@@ -74,7 +75,13 @@ bool		g_bDisableDirectSound = false;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 
+#ifdef SUPPORT_CPM
+UINT		g_Slot4 = CT_Empty;
+#else
 UINT		g_Slot4 = CT_Mockingboard;		// CT_Mockingboard or CT_MouseInterface
+#endif
+
+eCPU		g_ActiveCPU = CPU_6502;
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
@@ -471,7 +478,20 @@ void LoadConfiguration ()
 	  g_uMouseShowCrosshair = dwTmp;
   if(LOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
 	  g_uMouseRestrictToWindow = dwTmp;
+
+#ifdef SUPPORT_CPM
+  if(LOAD(TEXT(REGVALUE_Z80_IN_SLOT5), &dwTmp))
+	  g_uZ80InSlot5 = dwTmp;
+
+  if (g_uZ80InSlot5)
+	  MB_SetSoundcardType(SC_NONE);
+
+  g_Slot4 = g_uMouseInSlot4	? CT_MouseInterface
+							: g_uZ80InSlot5	? CT_Empty
+											: CT_Mockingboard;
+#else
   g_Slot4 = g_uMouseInSlot4 ? CT_MouseInterface : CT_Mockingboard;
+#endif
 
   //
 
@@ -547,7 +567,7 @@ void RegisterExtensions ()
 //===========================================================================
 void ApppleWin_RegisterHotKeys()
 {
-	bool bStatus = RegisterHotKey(      
+	BOOL bStatus = RegisterHotKey(      
 		g_hFrameWindow	, // HWND hWnd
 		VK_SNAPSHOT		, // int id (user/custom id)
 		0					, // UINT fsModifiers

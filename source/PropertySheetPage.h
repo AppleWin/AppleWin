@@ -16,3 +16,5 @@ extern UINT g_uTheFreezesF8Rom;
 extern DWORD g_uCloneType;
 extern HWND hwConfigTab;
 extern HWND hwAdvancedTab;
+
+extern UINT g_uZ80InSlot5;
