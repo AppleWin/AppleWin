@@ -111,6 +111,8 @@ UINT g_uMouseInSlot4 = 0;
 UINT g_uMouseShowCrosshair = 0;
 UINT g_uMouseRestrictToWindow = 0;
 
+UINT g_uZ80InSlot5 = 0;
+
 //
 
 UINT g_uTheFreezesF8Rom = 0;
@@ -513,6 +515,7 @@ static void InputDlg_OK(HWND window, UINT afterclose)
 	SAVE(TEXT(REGVALUE_MOUSE_IN_SLOT4),g_uMouseInSlot4);
 	SAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR),g_uMouseShowCrosshair);
 	SAVE(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW),g_uMouseRestrictToWindow);
+	SAVE(TEXT(REGVALUE_Z80_IN_SLOT5),g_uZ80InSlot5);
 
 	//
 
@@ -638,6 +641,33 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 			}
 			break;
 
+		case IDC_Z80_IN_SLOT5:
+			{
+				UINT uNewState = IsDlgButtonChecked(window, IDC_Z80_IN_SLOT5) ? 1 : 0;
+				LPCSTR pMsg = uNewState ?
+								TEXT("The emulator needs to restart as the slot configuration has changed.\n")
+								TEXT("Microsoft CP/M SoftCard will be placed in slot 5.\n\n")
+								TEXT("Would you like to restart the emulator now?")
+								:
+								TEXT("The emulator needs to restart as the slot configuration has changed.\n")
+								TEXT("Microsoft CP/M SoftCard will be removed from slot 5\n\n")
+								TEXT("Would you like to restart the emulator now?");
+				if (MessageBox(window,
+								pMsg,
+								TEXT("Configuration"),
+								MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+				{
+					g_uZ80InSlot5 = uNewState;
+					afterclose = WM_USER_RESTART;
+					PropSheet_PressButton(GetParent(window), PSBTN_OK);
+				}
+				else
+				{
+				  CheckDlgButton(window, IDC_Z80_IN_SLOT5, g_uZ80InSlot5 ? BST_CHECKED : BST_UNCHECKED);
+				}
+			}
+			break;
+
 		case IDC_PASTE_FROM_CLIPBOARD:
 			ClipboardInitiatePaste();
 			break;
@@ -663,6 +693,7 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
       CheckDlgButton(window, IDC_MOUSE_RESTRICT_TO_WINDOW, g_uMouseRestrictToWindow ? BST_CHECKED : BST_UNCHECKED);
 	  EnableWindow(GetDlgItem(window, IDC_MOUSE_CROSSHAIR), g_uMouseInSlot4 ? TRUE : FALSE);
 	  EnableWindow(GetDlgItem(window, IDC_MOUSE_RESTRICT_TO_WINDOW), g_uMouseInSlot4 ? TRUE : FALSE);
+      CheckDlgButton(window, IDC_Z80_IN_SLOT5, g_uZ80InSlot5 ? BST_CHECKED : BST_UNCHECKED);
 
 	  afterclose = 0;
 	  break;
@@ -795,6 +826,11 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 	  if (g_uMouseInSlot4)
 	  {
 		EnableWindow(GetDlgItem(window, IDC_PHASOR_ENABLE), FALSE);
+	  }
+	  
+	  if (g_uZ80InSlot5)
+	  {
+		EnableWindow(GetDlgItem(window, IDC_MB_ENABLE), FALSE);
 	  }
 
       afterclose = 0;

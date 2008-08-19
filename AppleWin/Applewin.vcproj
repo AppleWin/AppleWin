@@ -525,6 +525,42 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="Z80"
+				>
+				<File
+					RelativePath=".\source\Z80\z80codes.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80cpu.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80cpu.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80daa.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80emu.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80emu.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80io.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80io.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Docs"

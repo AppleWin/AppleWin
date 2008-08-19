@@ -112,7 +112,7 @@ STYLE DS_SETFONT | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_CAPTION | WS_SYSMENU
 CAPTION "Input"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
-    PUSHBUTTON      "Paste from clipboard",IDC_PASTE_FROM_CLIPBOARD,5,179,75,14
+    PUSHBUTTON      "Paste from clipboard",IDC_PASTE_FROM_CLIPBOARD,5,193,75,14
     GROUPBOX        "Joystick Control",IDC_STATIC,5,20,200,80
     LTEXT           "&Joystick1:",IDC_STATIC,12,33,40,8
     COMBOBOX        IDC_JOYSTICK0,52,31,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
@@ -126,12 +126,14 @@ BEGIN
     CONTROL         "Spin1",IDC_SPIN_YTRIM,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNLEFT | UDS_AUTOBUDDY,161,69,10,14
     CONTROL         "Scroll Lock acts as toggle for full-speed CPU",IDC_SCROLLLOCK_TOGGLE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,114,166,10
-    LTEXT           "(Shift+Insert during emulation)",IDC_STATIC,89,182,94,8
+    LTEXT           "(Shift+Insert during emulation)",IDC_STATIC,89,196,94,8
     CONTROL         "Mouse interface in slot 4",IDC_MOUSE_IN_SLOT4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,128,106,10
     CONTROL         "Show crosshairs in window's frame",IDC_MOUSE_CROSSHAIR,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,21,142,159,10
     CONTROL         "Restrict mouse to Apple window",IDC_MOUSE_RESTRICT_TO_WINDOW,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,21,156,159,10
+    CONTROL         "Microsoft CP/M SoftCard in slot 5",IDC_Z80_IN_SLOT5,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,171,122,10
 END
 
 IDD_PROPPAGE_SOUND DIALOGEX 0, 0, 210, 221
