@@ -17,6 +17,15 @@ Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise
 
+1.15.0 - 24 Aug 2008
+--------------------
+Changes:
+. Beta: CP/M support (Microsoft CP/M SoftCard in slot-5)
+  - No save-state support
+  - No Z80 debugging support
+
+Fixes:
+. '~' displayed instead of '^' 
 
 1.14.2.0 - 23 Jun 2008
 ----------------------
