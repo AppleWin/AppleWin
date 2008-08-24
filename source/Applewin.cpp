@@ -565,7 +565,7 @@ void RegisterExtensions ()
 }
 
 //===========================================================================
-void ApppleWin_RegisterHotKeys()
+void AppleWin_RegisterHotKeys()
 {
 	BOOL bStatus = RegisterHotKey(      
 		g_hFrameWindow	, // HWND hWnd
@@ -792,7 +792,9 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		MemInitialize();
 		VideoInitialize();
 		FrameCreateWindow();
-		ApppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
+#ifdef _DEBUG
+		AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
+#endif
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
 		DiskReset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
