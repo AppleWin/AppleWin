@@ -17,7 +17,7 @@ Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise
 
-1.15.1 - 24 Aug 2008
+1.15.0.1 - 24 Aug 2008
 --------------------
 * PrintScreen key now saves screen shots!
   - Saved in .bmp format in the last directory you opened a disk from.
