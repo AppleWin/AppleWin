@@ -14,7 +14,7 @@
    Example:
    F7 // enter debugger
    HELP VIEW // view help summary
-   HGR // view current Hi-Res Screen -- press space to return t view
+   HGR // view current Hi-Res Screen. press a key to return to the normal debugger view
 
 TODO: 2.6.0.0 released with next version of AppleWin (1.12.9.2)
 
