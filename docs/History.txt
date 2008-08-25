@@ -17,6 +17,16 @@ Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise
 
+1.15.1 - 24 Aug 2008
+--------------------
+* PrintScreen key now saves screen shots!
+  - Saved in .bmp format in the last directory you opened a disk from.
+ - Resolution is 580x384.  In case you are wondering about the non-standard resolution,
+      o Width is 580 to save double hi-res graphics, and
+	  o Height is 384 because we double the vertical scan lines to perserve the orginal aspect ratio using a 580 width.
+  - To enable the dialog box display of the last file saved to,
+    use the command line option: -printscreen
+
 1.15.0 - 24 Aug 2008
 --------------------
 Changes:
