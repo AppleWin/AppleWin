@@ -165,9 +165,9 @@ enum VideoFlag_e
 
 #define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
 
-#define  SETFRAMECOLOR(i,r,g,b)  framebufferinfo->bmiColors[i].rgbRed   = r; \
-                                 framebufferinfo->bmiColors[i].rgbGreen = g; \
-                                 framebufferinfo->bmiColors[i].rgbBlue  = b;
+#define  SETFRAMECOLOR(i,r,g,b)  g_pFramebufferinfo->bmiColors[i].rgbRed   = r; \
+                                 g_pFramebufferinfo->bmiColors[i].rgbGreen = g; \
+                                 g_pFramebufferinfo->bmiColors[i].rgbBlue  = b;
 
 #define  HGR_MATRIX_YOFFSET 2	// For tv emulation g_nAppMode
 
@@ -194,8 +194,8 @@ static BYTE          celldirty[40][32];
 static COLORREF      customcolors[NUM_COLOR_PALETTE];	// MONOCHROME is last custom color
 static HBITMAP       g_hDeviceBitmap;
 static HDC           g_hDeviceDC;
-static LPBYTE        framebufferbits;
-static LPBITMAPINFO  framebufferinfo;
+static LPBYTE        g_pFramebufferbits;
+static LPBITMAPINFO  g_pFramebufferinfo;
 
 const int MAX_FRAME_Y = 384; // 192 scan lines * 2x zoom = 384
 static LPBYTE        frameoffsettable[384];
@@ -262,7 +262,7 @@ void Util_MakeScreenShotFileName( char *pFinalFileName_ );
 bool Util_TestScreenShotFileName( const char *pFileName );
 void Video_TakeScreenShot();
 void Video_SaveScreenShot( const char *pScreenShotFileName );
-void Video_MakeScreenShot();
+void Video_MakeScreenShot( FILE *pFile );
 
 //===========================================================================
 void __stdcall CopySource (int destx, int desty,
@@ -378,9 +378,9 @@ void CreateIdentityPalette () {
 
 		// FILL IN THE MIDDLE PORTION OF THE PALETTE WITH OUR OWN COLORS
 		for (int ourindex = DEEP_RED; ourindex <= NUM_COLOR_PALETTE; ourindex++) {
-			paldata->palPalEntry[paletteindex].peRed   = framebufferinfo->bmiColors[ourindex].rgbRed;
-			paldata->palPalEntry[paletteindex].peGreen = framebufferinfo->bmiColors[ourindex].rgbGreen;
-			paldata->palPalEntry[paletteindex].peBlue  = framebufferinfo->bmiColors[ourindex].rgbBlue;
+			paldata->palPalEntry[paletteindex].peRed   = g_pFramebufferinfo->bmiColors[ourindex].rgbRed;
+			paldata->palPalEntry[paletteindex].peGreen = g_pFramebufferinfo->bmiColors[ourindex].rgbGreen;
+			paldata->palPalEntry[paletteindex].peBlue  = g_pFramebufferinfo->bmiColors[ourindex].rgbBlue;
 			paldata->palPalEntry[paletteindex].peFlags = PC_NOCOLLAPSE;
 			paletteindex++;
 		}
@@ -414,9 +414,9 @@ void CreateIdentityPalette () {
 
 		// FILL THE FRAME BUFFER TABLE WITH COLORS FROM OUR PALETTE
 		for (int loop = 0; loop < colors; loop++) {
-			framebufferinfo->bmiColors[loop].rgbRed   = paldata->palPalEntry[loop].peRed;
-			framebufferinfo->bmiColors[loop].rgbGreen = paldata->palPalEntry[loop].peGreen;
-			framebufferinfo->bmiColors[loop].rgbBlue  = paldata->palPalEntry[loop].peBlue;
+			g_pFramebufferinfo->bmiColors[loop].rgbRed   = paldata->palPalEntry[loop].peRed;
+			g_pFramebufferinfo->bmiColors[loop].rgbGreen = paldata->palPalEntry[loop].peGreen;
+			g_pFramebufferinfo->bmiColors[loop].rgbBlue  = paldata->palPalEntry[loop].peBlue;
 		}
 
 		// CREATE THE PALETTE
@@ -456,7 +456,7 @@ void CreateIdentityPalette () {
 //===========================================================================
 void CreateDIBSections () {
 
-  CopyMemory(g_pSourceHeader->bmiColors,framebufferinfo->bmiColors,256*sizeof(RGBQUAD));
+  CopyMemory(g_pSourceHeader->bmiColors,g_pFramebufferinfo->bmiColors,256*sizeof(RGBQUAD));
   
   // CREATE THE DEVICE CONTEXT
   HWND window  = GetDesktopWindow();
@@ -468,8 +468,8 @@ void CreateDIBSections () {
   // CREATE THE FRAME BUFFER DIB SECTION
   if (g_hDeviceBitmap)
     DeleteObject(g_hDeviceBitmap);
-  g_hDeviceBitmap = CreateDIBSection(dc,framebufferinfo,DIB_RGB_COLORS,
-                                  (LPVOID *)&framebufferbits,0,0);
+  g_hDeviceBitmap = CreateDIBSection(dc,g_pFramebufferinfo,DIB_RGB_COLORS,
+                                  (LPVOID *)&g_pFramebufferbits,0,0);
   SelectObject(g_hDeviceDC,g_hDeviceBitmap);
 
   // CREATE THE SOURCE IMAGE DIB SECTION
@@ -1687,10 +1687,10 @@ void VideoChooseColor () {
 void VideoDestroy () {
 
   // DESTROY BUFFERS
-  VirtualFree(framebufferinfo,0,MEM_RELEASE);
+  VirtualFree(g_pFramebufferinfo,0,MEM_RELEASE);
   VirtualFree(g_pSourceHeader     ,0,MEM_RELEASE);
   VirtualFree(vidlastmem     ,0,MEM_RELEASE);
-  framebufferinfo = NULL;
+  g_pFramebufferinfo = NULL;
   g_pSourceHeader      = NULL;
   vidlastmem      = NULL;
 
@@ -1814,18 +1814,18 @@ void VideoInitialize () {
   g_hLogoBitmap = (HBITMAP)LoadImage(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
 
   // CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
-  framebufferinfo = (LPBITMAPINFO)VirtualAlloc(NULL,
+  g_pFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(NULL,
                                                sizeof(BITMAPINFOHEADER)
                                                  +256*sizeof(RGBQUAD),
                                                MEM_COMMIT,
                                                PAGE_READWRITE);
-  ZeroMemory(framebufferinfo,sizeof(BITMAPINFOHEADER)+256*sizeof(RGBQUAD));
-  framebufferinfo->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
-  framebufferinfo->bmiHeader.biWidth    = 560;
-  framebufferinfo->bmiHeader.biHeight   = 384;
-  framebufferinfo->bmiHeader.biPlanes   = 1;
-  framebufferinfo->bmiHeader.biBitCount = 8;
-  framebufferinfo->bmiHeader.biClrUsed  = 256;
+  ZeroMemory(g_pFramebufferinfo,sizeof(BITMAPINFOHEADER)+256*sizeof(RGBQUAD));
+  g_pFramebufferinfo->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
+  g_pFramebufferinfo->bmiHeader.biWidth    = 560;
+  g_pFramebufferinfo->bmiHeader.biHeight   = 384;
+  g_pFramebufferinfo->bmiHeader.biPlanes   = 1;
+  g_pFramebufferinfo->bmiHeader.biBitCount = 8;
+  g_pFramebufferinfo->bmiHeader.biClrUsed  = 256;
 
   // CREATE A BITMAPINFO STRUCTURE FOR THE SOURCE IMAGE
   g_pSourceHeader = (LPBITMAPINFO)VirtualAlloc(NULL,
@@ -1847,9 +1847,9 @@ void VideoInitialize () {
 
   // PREFILL THE 16 CUSTOM COLORS AND MAKE SURE TO INCLUDE THE CURRENT MONOCHROME COLOR
   for (int index = DARK_RED; index <= NUM_COLOR_PALETTE; index++)
-    customcolors[index-DARK_RED] = RGB(framebufferinfo->bmiColors[index].rgbRed,
-                                       framebufferinfo->bmiColors[index].rgbGreen,
-                                       framebufferinfo->bmiColors[index].rgbBlue);
+    customcolors[index-DARK_RED] = RGB(g_pFramebufferinfo->bmiColors[index].rgbRed,
+                                       g_pFramebufferinfo->bmiColors[index].rgbGreen,
+                                       g_pFramebufferinfo->bmiColors[index].rgbBlue);
 
   // CREATE THE FRAME BUFFER DIB SECTION AND DEVICE CONTEXT,
   // CREATE THE SOURCE IMAGE DIB SECTION AND DRAW INTO THE SOURCE BIT BUFFER
@@ -1875,7 +1875,7 @@ void VideoRedrawScreen () {
 
 //===========================================================================
 void VideoRefreshScreen () {
-  LPBYTE addr    = framebufferbits;
+  LPBYTE addr    = g_pFramebufferbits;
   LONG   pitch   = 560;
   HDC    framedc = FrameGetVideoDC(&addr,&pitch);
   CreateFrameOffsetTable(addr,pitch);
@@ -2321,6 +2321,8 @@ bool VideoGetVbl(const DWORD uExecutedCycles)
 	}
 }
 
+#define SCREENSHOT_BMP 1
+#define SCREENSHOT_TGA 0
 	
 // alias for nSuffixScreenShotFileName
 static int nLastScreenShot = 0;
@@ -2331,7 +2333,12 @@ const  int nMaxScreenShot = 999999999;
 void Util_MakeScreenShotFileName( char *pFinalFileName_ )
 {
 	const char sPrefixScreenShotFileName[] = "AppleWin_ScreenShot_";
+#if SCREENSHOT_BMP
 	sprintf( pFinalFileName_, "%s%09d.bmp", sPrefixScreenShotFileName, nLastScreenShot );
+#endif
+#if SCREENSHOT_TGA
+	sprintf( pFinalFileName_, "%s%09d.tga", sPrefixScreenShotFileName, nLastScreenShot );
+#endif
 }
 
 
@@ -2379,65 +2386,152 @@ void Video_TakeScreenShot()
 }
 
 
+typedef char	int8;
 typedef short	int16;
 typedef int		int32;
+typedef unsigned	char	u8;
+typedef signed		short	s16;
+
+/// turn of MSVC struct member padding
+#pragma pack(push,1)
+
+struct bgra_t
+{
+	u8 b;
+	u8 g;
+	u8 r;
+	u8 a; // reserved on Win32
+};
 
 struct WinBmpHeader_t
 {
-	char  nCookie[2]      ; // BM
-	int32 nSizeFile       ; // 0 = ignre
-	int16 nReserved1      ;
-	int16 nReserved2      ;
-	int32 nOffsetData     ;
-	int32 nStructSize     ;
-	int32 nWidthPixels    ;
-	int32 nHeightPixels   ;
-	int16 nPlanes         ;
-	int16 nBitsPerPixel   ;
-	int32 nCompression    ; // 0 = BI_RGB
-	int32 nSizeImage      ; // 0 = ignore
-	int32 nXPelsPerMeter  ;
-	int32 nYPelsPerMeter  ;
-	int32 nPaletteColors  ;
-	int32 nImportantColors;
+	// BITMAPFILEHEADER     // Addr Size
+	char  nCookie[2]      ; // 0x00 0x02 BM
+	int32 nSizeFile       ; // 0x02 0x04 0 = ignore
+	int16 nReserved1      ; // 0x06 0x02
+	int16 nReserved2      ; // 0x08 0x02
+	int32 nOffsetData     ; // 0x0A 0x04
+	//                      ==      0x0D (14)
+
+	// BITMAPINFOHEADER
+	int32 nStructSize     ; // 0x0E 0x04 biSize
+	int32 nWidthPixels    ; // 0x12 0x04 biWidth
+	int32 nHeightPixels   ; // 0x16 0x04 biHeight
+	int16 nPlanes         ; // 0x1A 0x02 biPlanes
+	int16 nBitsPerPixel   ; // 0x1C 0x02 biBitCount
+	int32 nCompression    ; // 0x1E 0x04 biCompression 0 = BI_RGB
+	int32 nSizeImage      ; // 0x22 0x04 0 = ignore
+	int32 nXPelsPerMeter  ; // 0x26 0x04
+	int32 nYPelsPerMeter  ; // 0x2A 0x04
+	int32 nPaletteColors  ; // 0x2E 0x04
+	int32 nImportantColors; // 0x32 0x04
+	//                      ==      0x28 (40)
+
+	// RGBQUAD
+	// pixelmap
 };
+#pragma pack(pop)
 
 WinBmpHeader_t g_tBmpHeader;
 
+#if SCREENSHOT_TGA
+	enum TargaImageType_e
+	{
+		TARGA_RGB	= 2
+	};
+
+	struct TargaHeader_t
+	{										// Addr Bytes
+		u8		nIdBytes					; // 00 01 size of ID field that follows 18 byte header (0 usually)
+		u8		bHasPalette				; // 01 01
+		u8		iImageType				; // 02 01 type of image 0=none,1=indexed,2=rgb,3=grey,+8=rle packed
+
+		s16	iPaletteFirstColor	; // 03 02
+		s16	nPaletteColors			; // 05 02
+		u8		nPaletteBitsPerEntry	; // 07 01 number of bits per palette entry 15,16,24,32
+
+		s16	nOriginX					; // 08 02 image x origin
+		s16	nOriginY					; // 0A 02 image y origin
+		s16	nWidthPixels			; // 0C 02
+		s16	nHeightPixels			; // 0E 02
+		u8		nBitsPerPixel			; // 10 01 image bits per pixel 8,16,24,32
+		u8		iDescriptor				; // 11 01 image descriptor bits (vh flip bits)
+	    
+		// pixel data...
+		u8		aPixelData[1]		; // rgb
+	};
+
+	TargaHeader_t g_tTargaHeader;
+#endif // SCREENSHOT_TGA
+
 //===========================================================================
-void Video_MakeScreenShot()
+void Video_MakeScreenShot(FILE *pFile)
 {
-	// get BMP
-	g_tBmpHeader.nCookie[ 0 ] = 'B';
-	g_tBmpHeader.nCookie[ 0 ] = 'M';
+#if SCREENSHOT_BMP
+	g_tBmpHeader.nCookie[ 0 ] = 'B'; // 0x42
+	g_tBmpHeader.nCookie[ 1 ] = 'M'; // 0x4d
+	g_tBmpHeader.nSizeFile  = 0;
 	g_tBmpHeader.nReserved1 = 0;
 	g_tBmpHeader.nReserved2 = 0;
-	g_tBmpHeader.nOffsetData = sizeof( WinBmpHeader_t );
-	g_tBmpHeader.nStructSize = sizeof( WinBmpHeader_t );
+	g_tBmpHeader.nOffsetData = sizeof(WinBmpHeader_t) + (256 * sizeof(bgra_t));
+	g_tBmpHeader.nStructSize = 0x28; // sizeof( WinBmpHeader_t );
 	g_tBmpHeader.nWidthPixels = 560;
-	g_tBmpHeader.nHeightPixels = 192;
+	g_tBmpHeader.nHeightPixels = MAX_FRAME_Y;
 	g_tBmpHeader.nPlanes = 1;
-	g_tBmpHeader.nBitsPerPixel = 24;
+	g_tBmpHeader.nBitsPerPixel = 8;
 	g_tBmpHeader.nCompression = BI_RGB;
 	g_tBmpHeader.nSizeImage = 0;
 	g_tBmpHeader.nXPelsPerMeter = 0;
 	g_tBmpHeader.nYPelsPerMeter = 0;
-	g_tBmpHeader.nPaletteColors = 0;
+	g_tBmpHeader.nPaletteColors = 256;
 	g_tBmpHeader.nImportantColors = 0;
+
+//	char sText[256];
+//	sprintf( sText, "sizeof: BITMAPFILEHEADER = %d\n", sizeof(BITMAPFILEHEADER) ); // = 14
+//	MessageBox( NULL, sText, "Info 1", MB_OK );
+//	sprintf( sText, "sizeof: BITMAPINFOHEADER = %d\n", sizeof(BITMAPINFOHEADER) ); // = 40
+//	MessageBox( NULL, sText, "Info 2", MB_OK );
+
+	char sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize[ sizeof( WinBmpHeader_t ) == (14 + 40) ];
+	sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize;
+
+	// Write Header
+	int nLen;
+	fwrite( &g_tBmpHeader, sizeof( g_tBmpHeader ), 1, pFile );
+	
+	// Write Palette Data
+	u8 *pSrc = ((u8*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
+	nLen = g_tBmpHeader.nPaletteColors * sizeof(bgra_t); // RGBQUAD
+	fwrite( pSrc, nLen, 1, pFile );
+	pSrc += nLen;
+
+	// Write Pixel Data
+	// No need to use GetDibBits() since we already have http://msdn.microsoft.com/en-us/library/ms532334.aspx
+	// @reference: "Storing an Image" http://msdn.microsoft.com/en-us/library/ms532340(VS.85).aspx
+	pSrc = ((u8*)g_pFramebufferbits);
+	nLen = g_tBmpHeader.nWidthPixels * g_tBmpHeader.nHeightPixels * g_tBmpHeader.nBitsPerPixel / 8;
+	fwrite( pSrc, nLen, 1, pFile );
+#endif // SCREENSHOT_BMP
+
+#if SCREENSHOT_TGA
+	TargaHeader_t *pHeader = &g_tTargaHeader;
+	memset( (void*)pHeader, 0, sizeof( TargaHeader_t ) );
+
+	pHeader->iImageType = TARGA_RGB;
+	pHeader->nWidthPixels  = 580;
+	pHeader->nHeightPixels = MAX_FRAME_Y;
+	pHeader->nBitsPerPixel =  24;
+#endif // SCREENSHOT_TGA
+
 }
 
 //===========================================================================
 void Video_SaveScreenShot( const char *pScreenShotFileName )
 {
-	Video_MakeScreenShot();
-	
 	FILE *pFile = fopen( pScreenShotFileName, "wb" );
 	if( pFile )
 	{
-		// Write Header
-		// Write Data
-		fwrite( &g_tBmpHeader, sizeof( g_tBmpHeader ), 1, pFile );
-
+		Video_MakeScreenShot( pFile );
 		fclose( pFile );
 	}
 
