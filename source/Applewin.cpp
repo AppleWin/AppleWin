@@ -571,7 +571,7 @@ void AppleWin_RegisterHotKeys()
 		g_hFrameWindow	, // HWND hWnd
 		VK_SNAPSHOT		, // int id (user/custom id)
 		0					, // UINT fsModifiers
-		VK_SNAPSHOT		  // UINT vk
+		VK_SNAPSHOT		  // UINT vk = PrintScreen
 	);
 
 	if (! bStatus)
@@ -693,6 +693,10 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			g_hCustomRomF8 = CreateFile(lpCmdLine, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 			if ((g_hCustomRomF8 == INVALID_HANDLE_VALUE) || (GetFileSize(g_hCustomRomF8, NULL) != 0x800))
 				g_bCustomRomF8Failed = true;
+		}
+		else if(strcmp(lpCmdLine, "-printscreen") == 0)		// turn on dispay of the last filename print screen was saved to
+		{
+			g_bDisplayPrintScreenFileName = true;
 		}
 
 		lpCmdLine = lpNextArg;
