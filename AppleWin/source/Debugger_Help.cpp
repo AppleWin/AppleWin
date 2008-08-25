@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2008, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006, Michael Pohoreski
+ * Author: Copyright (C) 2006-2008 Michael Pohoreski
  */
 
 #include "StdAfx.h"
@@ -513,7 +513,7 @@ Update_t CmdHelpSpecific (int nArgs)
 					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
 					if (nFound && (iCommand != CMD_OUT))
 					{
-						iCmdBegin = CMD_OUTPUT_CALC     ; iCmdEnd = CMD_OUTPUT_RUN           ; break;
+						iCmdBegin = CMD_OUTPUT_CALC     ; iCmdEnd = CMD_OUTPUT_RUN           ;
 						bCategory = true;
 					}
 					else
@@ -525,18 +525,31 @@ Update_t CmdHelpSpecific (int nArgs)
 					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
 					if (nFound && (iCommand != CMD_SYMBOLS_LOOKUP) && (iCommand != CMD_MEMORY_SEARCH))
 					{
-						iCmdBegin = CMD_SYMBOLS_LOOKUP  ; iCmdEnd = CMD_SYMBOLS_LIST         ; break;
+						iCmdBegin = CMD_SYMBOLS_LOOKUP  ; iCmdEnd = CMD_SYMBOLS_LIST         ;
 						bCategory = true;
 					}
 					else
 						bCategory = false;
 					break;
+
+				case PARAM_CAT_VIEW       :
+					// HACK: check if we have an exact command match first
+//					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
+//					if (nFound && (iCommand != CMD_VIEW_TEXT4X))
+					{
+						iCmdBegin = CMD_VIEW_TEXT4X     ; iCmdEnd = CMD_VIEW_DHGR2          ;
+						bCategory = true;
+					}
+//					else
+//						bCategory = false;
+					break;
+					
 				case PARAM_CAT_WATCHES    :
 					// HACK: check if we have an exact command match first
 					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
 					if (nFound && (iCommand != CMD_WATCH_ADD))
 					{
-						iCmdBegin = CMD_WATCH_ADD       ; iCmdEnd = CMD_WATCH_LIST           ; break;
+						iCmdBegin = CMD_WATCH_ADD       ; iCmdEnd = CMD_WATCH_LIST           ;
 						bCategory = true;
 					}
 					else
@@ -665,6 +678,9 @@ Update_t CmdHelpSpecific (int nArgs)
 			else
 			if (iCmd <= CMD_SYMBOLS_LIST)
 				wsprintf( sCategory, g_aParameters[ PARAM_CAT_SYMBOLS ].m_sName );
+			else
+			if (iCmd <= CMD_VIEW_DHGR2)
+				wsprintf( sCategory, g_aParameters[ PARAM_CAT_VIEW ].m_sName );
 			else
 			if (iCmd <= CMD_WATCH_SAVE)
 				wsprintf( sCategory, g_aParameters[ PARAM_CAT_WATCHES ].m_sName );
@@ -1242,6 +1258,26 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsolePrint( sText );
 			ConsoleBufferPush( "  Looks up symbol in all 3 symbol tables: main, user, source" );
 			break;
+	// View
+		case CMD_VIEW_TEXT4X:
+		case CMD_VIEW_TEXT41:
+		case CMD_VIEW_TEXT42:
+		case CMD_VIEW_TEXT8X:
+		case CMD_VIEW_TEXT81:
+		case CMD_VIEW_TEXT82:
+		case CMD_VIEW_GRX   :
+		case CMD_VIEW_GR1   :
+		case CMD_VIEW_GR2   :
+		case CMD_VIEW_DGRX  :
+		case CMD_VIEW_DGR1  :
+		case CMD_VIEW_DGR2  :
+		case CMD_VIEW_HGRX  :
+		case CMD_VIEW_HGR1  :
+		case CMD_VIEW_HGR2  :
+		case CMD_VIEW_DHGRX :
+		case CMD_VIEW_DHGR1 :
+		case CMD_VIEW_DHGR2 :
+			break;
 	// Watches
 		case CMD_WATCH_ADD:
 			Colorize( sText, " Usage: <address | symbol>" );
@@ -1293,6 +1329,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsolePrint( sText );
 			ConsoleBufferPush( "  * Display extra internal stats" );
 			break;
+
 		default:
 			if (bAllCommands)
 				break;
@@ -1306,7 +1343,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			{
 //#if DEBUG_COMMAND_HELP
 #if _DEBUG
-			wsprintf( sText, "Command help not done yet: %s", g_aCommands[ iCommand ].m_sName );
+			wsprintf( sText, "Command help not done yet!: %s", g_aCommands[ iCommand ].m_sName );
 			ConsoleBufferPush( sText );
 #endif
 			}

@@ -188,8 +188,6 @@ int const kVLine0State      = 0x100; // V[543210CBA] = 100000000
 int const kVPresetLine      =   256; // line when V state presets
 int const kVSyncLines       =     4; // lines per VSync duration
 
-typedef bool (*UpdateFunc_t)(int,int,int,int,int);
-
 static BYTE          celldirty[40][32];
 static COLORREF      customcolors[NUM_COLOR_PALETTE];	// MONOCHROME is last custom color
 static HBITMAP       g_hDeviceBitmap;
@@ -219,8 +217,11 @@ static BYTE          colormixbuffer[6];
 static WORD          colormixmap[6][6][6];
 //
 
-static int       g_nAltCharSetOffset         = 0; // alternate character set
-static BOOL      displaypage2     = 0;
+static int       g_nAltCharSetOffset  = 0; // alternate character set
+
+		 bool      g_bVideoDisplayPage2 = 0;
+		 bool      g_VideoForceFullRedraw = 1;
+
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      framebufferpitch = 0;
 BOOL      graphicsmode     = 0;
@@ -228,7 +229,6 @@ static BOOL      hasrefreshed     = 0;
 static DWORD     lastpageflip     = 0;
 COLORREF  monochrome       = RGB(0xC0,0xC0,0xC0);
 static BOOL      rebuiltsource    = 0;
-static BOOL      redrawfull       = 1;
 static DWORD     dwVBlCounter     = 0;
 static LPBYTE    vidlastmem       = NULL;
 static DWORD     vidmode          = VF_TEXT;
@@ -1015,7 +1015,7 @@ void SetLastDrawnImage () {
 bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 {
 	BYTE ch = *(g_pTextBank0+offset);
-	bool bCharChanged = (ch != *(vidlastmem+offset+0x400) || redrawfull);
+	bool bCharChanged = (ch != *(vidlastmem+offset+0x400) || g_VideoForceFullRedraw);
 
 	// FLASHing chars:
 	// - FLASHing if:Alt Char Set is OFF && 0x40<=char<=0x7F
@@ -1059,8 +1059,8 @@ bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset)
 	BYTE c1 = *(g_pTextBank1 + offset); // aux
 	BYTE c0 = *(g_pTextBank0 + offset); // main
 
-	bool bC1Changed = (c1 != *(vidlastmem + offset +     0) || redrawfull);
-	bool bC0Changed = (c0 != *(vidlastmem + offset + 0x400) || redrawfull);
+	bool bC1Changed = (c1 != *(vidlastmem + offset +     0) || g_VideoForceFullRedraw);
+	bool bC0Changed = (c0 != *(vidlastmem + offset + 0x400) || g_VideoForceFullRedraw);
 
 	bool bC1Flashing = (g_nAltCharSetOffset == 0) && (c1 >= 0x40) && (c1 <= 0x7F);
 	bool bC0Flashing = (g_nAltCharSetOffset == 0) && (c0 >= 0x40) && (c0 <= 0x7F);
@@ -1077,7 +1077,7 @@ bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset)
 
 	if ((auxval  != *(vidlastmem+offset)) ||
 		(mainval != *(vidlastmem+offset+0x400)) ||
-		redrawfull)
+		g_VideoForceFullRedraw)
 	{
 		CopySource(xpixel,ypixel,
 			(APPLE_FONT_WIDTH / 2), APPLE_FONT_HEIGHT,
@@ -1110,7 +1110,7 @@ bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset)
         (byteval3 != *(vidlastmem+offset+yoffset+0x2000)) ||
         ((x >  0) && ((byteval1 & 0x70) != (*(vidlastmem+offset+yoffset+0x1FFF) & 0x70))) ||
         ((x < 39) && ((byteval4 & 0x07) != (*(vidlastmem+offset+yoffset+     1) & 0x07))) ||
-        redrawfull) {
+        g_VideoForceFullRedraw) {
       DWORD dwordval = (byteval1 & 0x70)        | ((byteval2 & 0x7F) << 7) |
                       ((byteval3 & 0x7F) << 14) | ((byteval4 & 0x07) << 21);
 #define PIXEL  0
@@ -1290,7 +1290,7 @@ bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
     if ((byteval2 != *(vidlastmem+offset+yoffset+0x2000)) ||
         ((x >  0) && ((byteval1 & 0x60) != (*(vidlastmem+offset+yoffset+0x1FFF) & 0x60))) ||
         ((x < 39) && ((byteval3 & 0x03) != (*(vidlastmem+offset+yoffset+0x2001) & 0x03))) ||
-        redrawfull) {
+        g_VideoForceFullRedraw) {
 #define COLOFFS  (((byteval1 & 0x60) << 2) | \
                   ((byteval3 & 0x03) << 5))
 		if (videotype == VT_COLOR_TVEMU)
@@ -1317,7 +1317,7 @@ bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
 bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
 {
 	BYTE val = *(g_pTextBank0+offset);
-	if ((val != *(vidlastmem+offset+0x400)) || redrawfull)
+	if ((val != *(vidlastmem+offset+0x400)) || g_VideoForceFullRedraw)
 	{
 		CopySource(xpixel,ypixel,
 			14,8,
@@ -1332,7 +1332,6 @@ bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
 }
 
 //===========================================================================
-
 bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
 {
 	BYTE auxval  = *(g_pTextBank1 +offset);
@@ -1340,7 +1339,7 @@ bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
 
 	if	(	(auxval != *(vidlastmem+offset)) ||
 			(mainval != *(vidlastmem+offset+0x400)) ||
-			redrawfull
+			g_VideoForceFullRedraw
 		)
 	{
 		CopySource(	xpixel,ypixel,
@@ -1375,10 +1374,10 @@ bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
 //===========================================================================
 BOOL VideoApparentlyDirty ()
 {
-	if (SW_MIXED || redrawfull)
+	if (SW_MIXED || g_VideoForceFullRedraw)
 		return 1;
 
-	DWORD address = (SW_HIRES && !SW_TEXT) ? (0x20 << displaypage2) : (0x4 << displaypage2);
+	DWORD address = (SW_HIRES && !SW_TEXT) ? (0x20 << g_bVideoDisplayPage2) : (0x4 << g_bVideoDisplayPage2);
 	DWORD length  = (SW_HIRES && !SW_TEXT) ? 0x20 : 0x4;
 	while (length--)
 		if (*(memdirty+(address++)) & 2)
@@ -1391,7 +1390,7 @@ BOOL VideoApparentlyDirty ()
 	// Scan visible text page for any flashing chars
 	if((SW_TEXT || SW_MIXED) && (g_nAltCharSetOffset == 0))
 	{
-		BYTE* pnMemText = MemGetMainPtr(0x400 << displaypage2);
+		BYTE* pnMemText = MemGetMainPtr(0x400 << g_bVideoDisplayPage2);
 
 		// Scan 8 long-lines of 120 chars (at 128 char offsets):
 		// . Skip 8-char holes in TEXT
@@ -1608,9 +1607,9 @@ BYTE __stdcall VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG nCyclesLeft
 
 //===========================================================================
 void VideoCheckPage (BOOL force) {
-  if ((displaypage2 != (SW_PAGE2 != 0)) &&
+  if ((g_bVideoDisplayPage2 != (SW_PAGE2 != 0)) &&
       (force || (emulmsec-lastpageflip > 500))) {
-    displaypage2 = (SW_PAGE2 != 0);
+    g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
     VideoRefreshScreen();
     hasrefreshed = 1;
     lastpageflip = emulmsec;
@@ -1870,36 +1869,58 @@ void VideoRealizePalette (HDC dc) {
 
 //===========================================================================
 void VideoRedrawScreen () {
-  redrawfull = 1;
+  g_VideoForceFullRedraw = 1;
   VideoRefreshScreen();
 }
 
 //===========================================================================
-void VideoRefreshScreen () {
-  LPBYTE addr    = g_pFramebufferbits;
-  LONG   pitch   = 560;
-  HDC    framedc = FrameGetVideoDC(&addr,&pitch);
-  CreateFrameOffsetTable(addr,pitch);
+void _Video_Dirty()
+{
+	ZeroMemory(celldirty,40*32);
+}
 
+//===========================================================================
+void _Video_SetupBanks( bool bBank2 )
+{
+	g_pHiresBank1 = MemGetAuxPtr (0x2000 << bBank2);
+	g_pHiresBank0 = MemGetMainPtr(0x2000 << bBank2);
+	g_pTextBank1  = MemGetAuxPtr (0x400  << bBank2);
+	g_pTextBank0  = MemGetMainPtr(0x400  << bBank2);
+}
+
+//===========================================================================
+void VideoRefreshScreen () {
   // CHECK EACH CELL FOR CHANGED BYTES.  REDRAW PIXELS FOR THE CHANGED BYTES
   // IN THE FRAME BUFFER.  MARK CELLS IN WHICH REDRAWING HAS TAKEN PLACE AS
   // DIRTY.
-  g_pHiresBank1  = MemGetAuxPtr (0x2000 << displaypage2);
-  g_pHiresBank0 = MemGetMainPtr(0x2000 << displaypage2);
-  g_pTextBank1   = MemGetAuxPtr (0x400  << displaypage2);
-  g_pTextBank0  = MemGetMainPtr(0x400  << displaypage2);
-  ZeroMemory(celldirty,40*32);
-  UpdateFunc_t update = SW_TEXT
-	? SW_80COL
-		? Update80ColCell
-		: Update40ColCell
-	: SW_HIRES
-		? (SW_DHIRES && SW_80COL)
-			? UpdateDHiResCell
-			: UpdateHiResCell
-		: (SW_DHIRES && SW_80COL)
-			? UpdateDLoResCell
-			: UpdateLoResCell;
+	_Video_Dirty();
+	_Video_SetupBanks( g_bVideoDisplayPage2 );
+
+	VideoUpdateFuncPtr_t pfUpdate = SW_TEXT
+		? SW_80COL
+			? Update80ColCell
+			: Update40ColCell
+		: SW_HIRES
+			? (SW_DHIRES && SW_80COL)
+				? UpdateDHiResCell
+				: UpdateHiResCell
+			: (SW_DHIRES && SW_80COL)
+				? UpdateDLoResCell
+				: UpdateLoResCell;
+
+	bool bMixed = (SW_MIXED) ? true : false;
+	_Video_RedrawScreen( pfUpdate, bMixed );
+
+  g_VideoForceFullRedraw = 0;
+}
+
+//===========================================================================
+void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
+{
+  LPBYTE addr = g_pFramebufferbits;
+  LONG   pitch   = 560;
+  HDC    framedc = FrameGetVideoDC(&addr,&pitch);
+  CreateFrameOffsetTable(addr,pitch);
 
   BOOL anydirty = 0;
   int  y        = 0;
@@ -1909,7 +1930,7 @@ void VideoRefreshScreen () {
     int x      = 0;
     int xpixel = 0;
     while (x < 40) {
-      anydirty |= celldirty[x][y] = update(x,y,xpixel,ypixel,offset+x);
+      anydirty |= celldirty[x][y] = pfUpdate(x,y,xpixel,ypixel,offset+x);
       ++x;
       xpixel += 14;
     }
@@ -1917,16 +1938,18 @@ void VideoRefreshScreen () {
     ypixel += 16;
   }
 
-  if (SW_MIXED)
-    update = SW_80COL ? Update80ColCell
-                      : Update40ColCell;
+	if( bMixed ) {
+		pfUpdate = SW_80COL
+			? Update80ColCell
+			: Update40ColCell;
+	}
 
   while (y < 24) {
     int offset = ((y & 7) << 7) + ((y >> 3) * 40);
     int x      = 0;
     int xpixel = 0;
     while (x < 40) {
-      anydirty |= celldirty[x][y] = update(x,y,xpixel,ypixel,offset+x);
+      anydirty |= celldirty[x][y] = pfUpdate(x,y,xpixel,ypixel,offset+x);
       ++x;
       xpixel += 14;
     }
@@ -1951,7 +1974,7 @@ void VideoRefreshScreen () {
   {
 	FrameReleaseVideoDC();
 	SetLastDrawnImage();
-	redrawfull = 0;
+	g_VideoForceFullRedraw = 0;
 	return;
   }
 
@@ -2041,7 +2064,6 @@ void VideoRefreshScreen () {
 
   FrameReleaseVideoDC();
   SetLastDrawnImage();
-  redrawfull = 0;
 }
 
 //===========================================================================
@@ -2053,9 +2075,9 @@ void VideoReinitialize () {
 //===========================================================================
 void VideoResetState () {
   g_nAltCharSetOffset     = 0;
-  displaypage2 = 0;
+  g_bVideoDisplayPage2 = 0;
   vidmode      = VF_TEXT;
-  redrawfull   = 1;
+  g_VideoForceFullRedraw   = 1;
 }
 
 //===========================================================================
@@ -2086,7 +2108,7 @@ BYTE __stdcall VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG nCycles
     vidmode &= ~VF_PAGE2;
   if (oldvalue != g_nAltCharSetOffset+(int)(vidmode & ~(VF_MASK2 | VF_PAGE2))) {
     graphicsmode = !SW_TEXT;
-    redrawfull   = 1;
+    g_VideoForceFullRedraw   = 1;
   }
   if (g_bFullSpeed && oldpage2 && !SW_PAGE2) {
     static DWORD lasttime = 0;
@@ -2098,16 +2120,16 @@ BYTE __stdcall VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG nCycles
   }
   if (oldpage2 != SW_PAGE2) {
     static DWORD lastrefresh = 0;
-    if ((displaypage2 && !SW_PAGE2) || (!behind)) {
-      displaypage2 = (SW_PAGE2 != 0);
-      if (!redrawfull) {
+    if ((g_bVideoDisplayPage2 && !SW_PAGE2) || (!behind)) {
+      g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
+      if (!g_VideoForceFullRedraw) {
         VideoRefreshScreen();
         hasrefreshed = 1;
         lastrefresh  = emulmsec;
       }
     }
-    else if ((!SW_PAGE2) && (!redrawfull) && (emulmsec-lastrefresh >= 20)) {
-      displaypage2 = 0;
+    else if ((!SW_PAGE2) && (!g_VideoForceFullRedraw) && (emulmsec-lastrefresh >= 20)) {
+      g_bVideoDisplayPage2 = 0;
       VideoRefreshScreen();
       hasrefreshed = 1;
       lastrefresh  = emulmsec;
@@ -2170,7 +2192,7 @@ DWORD VideoSetSnapshot(SS_IO_Video* pSS)
 	//
 
 	graphicsmode = !SW_TEXT;
-    displaypage2 = (SW_PAGE2 != 0);
+    g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
 
 	return 0;
 }

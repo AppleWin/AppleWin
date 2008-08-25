@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2008, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006, Michael Pohoreski
+ * Author: Copyright (C) 2006-2008 Michael Pohoreski
  */
 
 // disable warning C4786: symbol greater than 255 character:
@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,5,7,11);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,0,0);
 
 
 // Public _________________________________________________________________________________________
@@ -292,6 +292,25 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		{TEXT("VARSLOAD")    , CmdVarsLoad          , CMD_VARIABLES_LOAD       },
 //		{TEXT("VARSSAVE")    , CmdVarsSave          , CMD_VARIABLES_SAVE       },
 //		{TEXT("SET")         , CmdVarsSet           , CMD_VARIABLES_SET        },
+	// View
+		{TEXT("TEXT")        , CmdViewOutput_Text4X , CMD_VIEW_TEXT4X, "View Text screen (current page)"        },
+		{TEXT("TEXT1")       , CmdViewOutput_Text41 , CMD_VIEW_TEXT41, "View Text screen Page 1"                },
+		{TEXT("TEXT2")       , CmdViewOutput_Text42 , CMD_VIEW_TEXT42, "View Text screen Page 2"                },
+		{TEXT("TEXT80")      , CmdViewOutput_Text8X , CMD_VIEW_TEXT8X, "View 80-col Text screen (current page)" },
+		{TEXT("TEXT81")      , CmdViewOutput_Text81 , CMD_VIEW_TEXT8X, "View 80-col Text screen Page 1"         },
+		{TEXT("TEXT82")      , CmdViewOutput_Text82 , CMD_VIEW_TEXT8X, "View 80-col Text screen Page 2"         },
+		{TEXT("GR")          , CmdViewOutput_GRX    , CMD_VIEW_GRX   , "View Lo-Res screen (current page)"      },
+		{TEXT("GR1")         , CmdViewOutput_GR1    , CMD_VIEW_GR1   , "View Lo-Res screen Page 1"              },
+		{TEXT("GR2")         , CmdViewOutput_GR2    , CMD_VIEW_GR2   , "View Lo-Res screen Page 2"              },
+		{TEXT("DGR")			, CmdViewOutput_DGRX   , CMD_VIEW_DGRX  , "View Double lo-res (current page)"      },
+		{TEXT("DGR1")			, CmdViewOutput_DGR1   , CMD_VIEW_DGR1  , "View Double lo-res Page 1"              },
+		{TEXT("DGR2")			, CmdViewOutput_DGR2   , CMD_VIEW_DGR2  , "View Double lo-res Page 2"              },
+		{TEXT("HGR")			, CmdViewOutput_HGRX   , CMD_VIEW_HGRX  , "View Hi-res (current page)"             },
+		{TEXT("HGR1")			, CmdViewOutput_HGR1   , CMD_VIEW_HGR1  , "View Hi-res Page 1"                     },
+		{TEXT("HGR2")			, CmdViewOutput_HGR2   , CMD_VIEW_HGR2  , "View Hi-res Page 2"                     },
+		{TEXT("DHGR")			, CmdViewOutput_DHGRX  , CMD_VIEW_DHGRX , "View Double Hi-res (current page)"      },
+		{TEXT("DHGR1")			, CmdViewOutput_DHGR1  , CMD_VIEW_DHGR1 , "View Double Hi-res Page 1"              },
+		{TEXT("DHGR2")			, CmdViewOutput_DHGR2  , CMD_VIEW_DHGR2 , "View Double Hi-res Page 2"              },
 	// Watch
 		{TEXT("W")           , CmdWatch             , CMD_WATCH_ADD     , "Alias for WA (Watch Add)"                      },
 		{TEXT("WA")          , CmdWatchAdd          , CMD_WATCH_ADD     , "Add/Update address or symbol to watch"         },
@@ -386,6 +405,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SYM1" )       , CmdSymbolsInfo       , CMD_SYMBOLS_MAIN         },
 		{TEXT("SYM2" )       , CmdSymbolsInfo       , CMD_SYMBOLS_USER         },
 		{TEXT("SYM3" )       , CmdSymbolsInfo       , CMD_SYMBOLS_SRC          },
+		{TEXT("TEXT40")      , CmdViewOutput_Text4X , CMD_VIEW_TEXT4X          },
+		{TEXT("TEXT41")      , CmdViewOutput_Text41 , CMD_VIEW_TEXT41          },
+		{TEXT("TEXT42")      , CmdViewOutput_Text42 , CMD_VIEW_TEXT42          },
+
 		{TEXT("WATCH")       , CmdWatchAdd          , CMD_WATCH_ADD            },
 		{TEXT("WINDOW")      , CmdWindow            , CMD_WINDOW               },
 //		{TEXT("W?")          , CmdWatchAdd          , CMD_WATCH_ADD            },
@@ -682,9 +705,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{"RANGE"       , NULL, PARAM_CAT_RANGE       },
 //		{TEXT("REGISTERS")  , NULL, PARAM_CAT_REGISTERS   },
 		{"SYMBOLS"     , NULL, PARAM_CAT_SYMBOLS     },
+		{"VIEW"			, NULL, PARAM_CAT_VIEW        },
 		{"WATCHES"     , NULL, PARAM_CAT_WATCHES     },
 		{"WINDOW"      , NULL, PARAM_CAT_WINDOW      },
-		{"ZEROPAGE"    , NULL, PARAM_CAT_ZEROPAGE    },	
+		{"ZEROPAGE"    , NULL, PARAM_CAT_ZEROPAGE    },
 // Memory
 		{TEXT("?")          , NULL, PARAM_MEM_SEARCH_WILD },
 //		{TEXT("*")          , NULL, PARAM_MEM_SEARCH_BYTE },
@@ -695,6 +719,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SYMBOLS")    , NULL, PARAM_SRC_SYMBOLS     },	
 		{TEXT("MERLIN")     , NULL, PARAM_SRC_MERLIN      },	
 		{TEXT("ORCA")       , NULL, PARAM_SRC_ORCA        },	
+// View
+//		{TEXT("VIEW")       , NULL, PARAM_SRC_??? },
 // Window                                                       Win   Cmd   WinEffects      CmdEffects
 		{TEXT("CODE")       , NULL, PARAM_CODE           }, //   x     x    code win only   switch to code window
 //		{TEXT("CODE1")      , NULL, PARAM_CODE_1         }, //   -     x    code/data win   
@@ -6691,6 +6717,114 @@ Update_t CmdSymbolsSave (int nArgs)
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
+
+// View ___________________________________________________________________________________________
+
+// See: CmdWindowViewOutput (int nArgs)
+enum ViewVideoPage_t
+{
+	VIEW_PAGE_X, // current page
+	VIEW_PAGE_1,
+	VIEW_PAGE_2
+};
+
+Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate );
+
+Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate )
+{
+	g_VideoForceFullRedraw = true;
+	_Video_Dirty();
+	switch( iPage ) 
+	{
+		case VIEW_PAGE_X: _Video_SetupBanks( g_bVideoDisplayPage2 ); break; // Page Current
+		case VIEW_PAGE_1: _Video_SetupBanks( false ); break; // Page 1
+		case VIEW_PAGE_2: _Video_SetupBanks( true ); break; // Page 2 !
+		default:
+			break;
+	}
+	_Video_RedrawScreen( pfUpdate );
+	g_bDebuggerViewingAppleOutput = true;
+	return UPDATE_NOTHING; // intentional
+}
+
+// Text 40
+	Update_t CmdViewOutput_Text4X (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_X, Update40ColCell );
+	}
+	Update_t CmdViewOutput_Text41 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_1, Update40ColCell );
+	}
+	Update_t CmdViewOutput_Text42 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_2, Update40ColCell );
+	}
+// Text 80
+	Update_t CmdViewOutput_Text8X (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_X, Update80ColCell );
+	}
+	Update_t CmdViewOutput_Text81 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_1, Update80ColCell );
+	}
+	Update_t CmdViewOutput_Text82 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_2, Update80ColCell );
+	}
+// Lo-Res
+	Update_t CmdViewOutput_GRX (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_X, UpdateLoResCell );
+	}
+	Update_t CmdViewOutput_GR1 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_1, UpdateLoResCell );
+	}
+	Update_t CmdViewOutput_GR2 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_2, UpdateLoResCell );
+	}
+// Double Lo-Res
+	Update_t CmdViewOutput_DGRX (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_X, UpdateDLoResCell );
+	}
+	Update_t CmdViewOutput_DGR1 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_1, UpdateDLoResCell );
+	}
+	Update_t CmdViewOutput_DGR2 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_2, UpdateDLoResCell );
+	}
+// Hi-Res
+	Update_t CmdViewOutput_HGRX (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_X, UpdateHiResCell );
+	}
+	Update_t CmdViewOutput_HGR1 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_1, UpdateHiResCell );
+	}
+	Update_t CmdViewOutput_HGR2 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_2, UpdateHiResCell );
+	}
+// Double Hi-Res
+	Update_t CmdViewOutput_DHGRX (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_X, UpdateDHiResCell );
+	}
+	Update_t CmdViewOutput_DHGR1 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_1, UpdateDHiResCell );
+	}
+	Update_t CmdViewOutput_DHGR2 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_2, UpdateDHiResCell );
+	}
 
 // Watches ________________________________________________________________________________________
 

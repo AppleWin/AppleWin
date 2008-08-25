@@ -71,6 +71,23 @@ bool    VideoGetSW80COL();
 DWORD   VideoGetSnapshot(SS_IO_Video* pSS);
 DWORD   VideoSetSnapshot(SS_IO_Video* pSS);
 
+typedef bool (*VideoUpdateFuncPtr_t)(int,int,int,int,int);
+
+extern bool g_bVideoDisplayPage2;
+extern bool g_VideoForceFullRedraw;
+
+void _Video_Dirty();
+void _Video_RedrawScreen( VideoUpdateFuncPtr_t update, bool bMixed = false );
+void _Video_SetupBanks( bool bBank2 );
+bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset);
+bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset);
+bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset);
+bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset);
+bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset);
+bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset);
+
+
+
 extern bool g_bDisplayPrintScreenFileName;
 void Video_TakeScreenShot();
 

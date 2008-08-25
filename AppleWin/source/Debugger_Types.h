@@ -581,6 +581,25 @@
 //		, CMD_SYMBOLS_LOAD_1
 //		, CMD_SYMBOLS_LOAD_2
 //		, CMD_SYMBOLS_SAVE
+// View
+		, CMD_VIEW_TEXT4X
+		, CMD_VIEW_TEXT41
+		, CMD_VIEW_TEXT42
+		, CMD_VIEW_TEXT8X
+		, CMD_VIEW_TEXT81
+		, CMD_VIEW_TEXT82
+		, CMD_VIEW_GRX
+		, CMD_VIEW_GR1
+		, CMD_VIEW_GR2
+		, CMD_VIEW_DGRX
+		, CMD_VIEW_DGR1
+		, CMD_VIEW_DGR2
+		, CMD_VIEW_HGRX
+		, CMD_VIEW_HGR1
+		, CMD_VIEW_HGR2
+		, CMD_VIEW_DHGRX
+		, CMD_VIEW_DHGR1
+		, CMD_VIEW_DHGR2
 // Watch
 		, CMD_WATCH
 		, CMD_WATCH_ADD
@@ -772,6 +791,27 @@
 	Update_t CmdSymbolsUser     (int nArgs);
 	Update_t CmdSymbolsSave     (int nArgs);
 	Update_t CmdSymbolsSource   (int nArgs);
+// View
+	Update_t CmdViewOutput_Text4X (int nArgs);
+	Update_t CmdViewOutput_Text41 (int nArgs);
+	Update_t CmdViewOutput_Text42 (int nArgs);
+	Update_t CmdViewOutput_Text8X (int nArgs);
+	Update_t CmdViewOutput_Text81 (int nArgs);
+	Update_t CmdViewOutput_Text82 (int nArgs);
+
+	Update_t CmdViewOutput_GRX (int nArgs);
+	Update_t CmdViewOutput_GR1 (int nArgs);
+	Update_t CmdViewOutput_GR2 (int nArgs);
+	Update_t CmdViewOutput_DGRX (int nArgs);
+	Update_t CmdViewOutput_DGR1 (int nArgs);
+	Update_t CmdViewOutput_DGR2 (int nArgs);
+
+	Update_t CmdViewOutput_HGRX (int nArgs);
+	Update_t CmdViewOutput_HGR1 (int nArgs);
+	Update_t CmdViewOutput_HGR2 (int nArgs);
+	Update_t CmdViewOutput_DHGRX (int nArgs);
+	Update_t CmdViewOutput_DHGR1 (int nArgs);
+	Update_t CmdViewOutput_DHGR2 (int nArgs);
 // Watch
 	Update_t CmdWatch        (int nArgs);
 	Update_t CmdWatchAdd     (int nArgs);
@@ -1255,7 +1295,7 @@
 	enum Parameters_e
 	{
 		// Note: Order must match Breakpoint_Operator_t
-		// Note: Order must much _PARAM_BREAKPOINT_*
+		// Note: Order must match _PARAM_BREAKPOINT_*
 		// Note: Order must match g_aBreakpointSymbols
 	  _PARAM_BREAKPOINT_BEGIN
 		, PARAM_BP_LESS_EQUAL = _PARAM_BREAKPOINT_BEGIN   // <=
@@ -1352,6 +1392,7 @@
 		, PARAM_CAT_RANGE       
 //		, PARAM_CAT_REGISTERS   
 		, PARAM_CAT_SYMBOLS     
+		, PARAM_CAT_VIEW
 		, PARAM_CAT_WATCHES     
 		, PARAM_CAT_WINDOW      
 		, PARAM_CAT_ZEROPAGE    
