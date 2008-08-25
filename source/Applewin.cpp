@@ -743,7 +743,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
             unsigned long fix       = pFixedFileInfo->dwFileVersionLS >> 16;
 			unsigned long fix_minor = pFixedFileInfo->dwFileVersionLS & 0xffff;
 
-            sprintf(VERSIONSTRING, "%02d.%02d.%02d.%02d", major, minor, fix, fix_minor); // potential buffer overflow
+            sprintf(VERSIONSTRING, "%d.%d.%d.%d", major, minor, fix, fix_minor); // potential buffer overflow
         }
     }
 
