@@ -71,6 +71,7 @@ bool    VideoGetSW80COL();
 DWORD   VideoGetSnapshot(SS_IO_Video* pSS);
 DWORD   VideoSetSnapshot(SS_IO_Video* pSS);
 
+extern bool g_bDisplayPrintScreenFileName;
 void Video_TakeScreenShot();
 
 BYTE __stdcall VideoCheckMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);

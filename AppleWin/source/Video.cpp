@@ -258,6 +258,7 @@ void DrawMonoLoResSource ();
 void DrawMonoTextSource (HDC dc);
 void DrawTextSource (HDC dc);
 
+bool g_bDisplayPrintScreenFileName = false;
 void Util_MakeScreenShotFileName( char *pFinalFileName_ );
 bool Util_TestScreenShotFileName( const char *pFileName );
 void Video_TakeScreenShot();
@@ -2535,5 +2536,8 @@ void Video_SaveScreenShot( const char *pScreenShotFileName )
 		fclose( pFile );
 	}
 
-	MessageBox( NULL, pScreenShotFileName, "Screen Captured", MB_OK );
+	if( g_bDisplayPrintScreenFileName )
+	{
+		MessageBox( NULL, pScreenShotFileName, "Screen Captured", MB_OK );
+	}
 }
