@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MouseInterface.h"
 #include "z80\z80cpu.h"
 
-char VERSIONSTRING[] = "xx.yy.zz.ww";
+char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
 TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 
@@ -739,7 +739,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
             unsigned long fix       = pFixedFileInfo->dwFileVersionLS >> 16;
 			unsigned long fix_minor = pFixedFileInfo->dwFileVersionLS & 0xffff;
 
-            sprintf(VERSIONSTRING, "%d.%d.%d.%d", major, minor, fix, fix_minor);
+            sprintf(VERSIONSTRING, "%02d.%02d.%02d.%02d", major, minor, fix, fix_minor); // potential buffer overflow
         }
     }
 
@@ -792,9 +792,8 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		MemInitialize();
 		VideoInitialize();
 		FrameCreateWindow();
-#ifdef _DEBUG
+		// PrintScrn support
 		AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
-#endif
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
 		DiskReset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
