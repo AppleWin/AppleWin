@@ -1,4 +1,13 @@
 /*
+
+2.6.0.0 Released with AppleWin 1.15
+.0 Added 18 new view output commands from inside the debugger!
+   - TEXT, TEXT41, TEXT42, TEXT80, TEXT81, TEXT82, GR, GR1, GR2, DGR, DGR1, DGR2, HGR, HGR1, HGR2, DHGR, DHGR1, DHGR2
+   Example:
+   F7 // enter debugger
+   HELP VIEW // view help summary
+   HGR // view current Hi-Res Screen -- press space to return t view
+
 TODO: 2.6.0.0 released with next version of AppleWin (1.12.9.2)
 
 .11 Added: Trace File Now displays filename tracing is saved to.
