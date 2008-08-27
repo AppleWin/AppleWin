@@ -93,6 +93,7 @@ TCHAR   videochoices[]    =
 	TEXT("Monochrome - Amber\0")
 	TEXT("Monochrome - Green\0")
 	TEXT("Monochrome - White\0")
+	TEXT("Monochrome - Authentic\0");
 	;
 
 TCHAR   discchoices[]     =  TEXT("Authentic Speed\0")
