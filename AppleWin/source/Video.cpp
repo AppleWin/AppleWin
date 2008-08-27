@@ -265,6 +265,8 @@ void Video_TakeScreenShot();
 void Video_SaveScreenShot( const char *pScreenShotFileName );
 void Video_MakeScreenShot( FILE *pFile );
 
+int GetMonochromeIndex();
+
 //===========================================================================
 void __stdcall CopySource (int destx, int desty,
                            int xsize, int ysize,
@@ -490,10 +492,11 @@ void CreateDIBSections () {
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
 	ZeroMemory(g_pSourcePixels,SRCOFFS_TOTAL*512);
 
-	if ((videotype != VT_MONO_CUSTOM) &&
+	if((videotype != VT_MONO_CUSTOM) &&
 		(videotype != VT_MONO_AMBER ) &&
 		(videotype != VT_MONO_GREEN ) &&
-		(videotype != VT_MONO_WHITE ))
+		(videotype != VT_MONO_WHITE ) &&
+		(videotype != VT_MONO_AUTHENTIC))
 	{
 		DrawTextSource(sourcedc);
 		DrawLoResSource();
@@ -779,6 +782,8 @@ void DrawHiResSourceHalfShiftDim ()
 //===========================================================================
 void DrawHiResSource ()
 {
+	int iMonochrome = GetMonochromeIndex();
+
 	//  BYTE colorval[6] = {MAGENTA,BLUE,GREEN,ORANGE,BLACK,WHITE};
 	// BYTE colorval[6] = {HGR_MAGENTA,HGR_BLUE,HGR_GREEN,HGR_RED,HGR_BLACK,HGR_WHITE};
 	for (int iColumn = 0; iColumn < 16; iColumn++)
@@ -827,18 +832,28 @@ void DrawHiResSource ()
 						drawback: loss of color mix patterns in hgr g_nAppMode.
 						select videotype by index exclusion
 						***/
-
 						if ((videotype == VT_COLOR_STANDARD) || (videotype == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]))
 							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// // No white HGR text optimization
 					}
 
-					// Colors - Top/Bottom Left/Right
-					// cTL cTR
-					// cBL cBR
-					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,aColorIndex[color]); // TL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,aColorIndex[color]); // TR
-					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,aColorIndex[color]); // BL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,aColorIndex[color]); // BR
+					//if (videotype == VT_MONO_AUTHENTIC)
+					//{
+					//	int nMonoColor = (color != CM_Black) ? iMonochrome : BLACK;
+					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , nMonoColor); // buggy
+					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , nMonoColor); // buggy
+					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,BLACK); // BL
+					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,BLACK); // BR
+					//}
+					//else
+					{
+						// Colors - Top/Bottom Left/Right
+						// cTL cTR
+						// cBL cBR
+						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,aColorIndex[color]); // TL
+						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,aColorIndex[color]); // TR
+						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,aColorIndex[color]); // BL
+						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,aColorIndex[color]); // BR
+					}
 					x += 2;
 				}
 			}
@@ -893,8 +908,16 @@ void DrawMonoDHiResSource ()
 			{
 				BYTE colorval = pattern & (1 << (x+3)) ? iMonochrome : BLACK;
 
-				SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,colorval);
-				SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,colorval);
+				if (videotype == VT_MONO_AUTHENTIC)
+				{
+					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,colorval);
+					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,BLACK);
+				}
+				else
+				{
+					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,colorval);
+					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,colorval);
+				}
 			}
 		}
 	}
@@ -916,8 +939,17 @@ void DrawMonoHiResSource ()
 				val >>= 1;
 				SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y  ,colorval);
 				SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y  ,colorval);
-				SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y+1,colorval);
-				SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y+1,colorval);
+
+				if (videotype == VT_MONO_AUTHENTIC)
+				{
+					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y+1,BLACK);
+					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y+1,BLACK);
+				}
+				else
+				{
+					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y+1,colorval);
+					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y+1,colorval);
+				}
 			}
 		}
 	}
@@ -927,13 +959,90 @@ void DrawMonoHiResSource ()
 void DrawMonoLoResSource () {
 	int iMonochrome = GetMonochromeIndex();
 
-  for (int color = 0; color < 16; color++)
-    for (int x = 0; x < 16; x++)
-      for (int y = 0; y < 16; y++) {
-        BYTE colorval = (color >> (x & 3) & 1) ? iMonochrome : BLACK;
-        SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,colorval);
-      }
+	for (int color = 0; color < 16; color++)
+	{
+		for (int x = 0; x < 16; x++)
+		{
+			for (int y = 0; y < 16; y++)
+			{
+				BYTE colorval = (color >> (x & 3) & 1) ? iMonochrome : BLACK;
+
+				if (videotype == VT_MONO_AUTHENTIC)
+				{
+					if (y & 1)
+						SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,BLACK);
+					else
+						SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,colorval);
+				}
+				else 						
+				{
+					SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,colorval);
+				}
+			}
+		}
+	}
 }
+
+
+// google: CreateDIBPatternBrushPt
+// http://209.85.141.104/search?q=cache:mB3htrQGW8kJ:bookfire.net/wince/wince-programming-ms-press2/source/prowice/ch02e.htm
+
+struct BRUSHBMP
+{
+    BITMAPINFOHEADER bmi;
+    COLORREF dwPal[2];
+    BYTE bBits[64];
+};
+
+HBRUSH CreateCustomBrush(COLORREF nColor)
+{
+	BRUSHBMP brbmp;
+	BYTE *pBytes;
+	int i;
+	//DWORD dwBits[6][2] =
+	//{
+	//    {0x000000ff,0x00000000}, // HS_HORIZONTAL       0       /* ----- */
+	//    {0x10101010,0x10101010}, // HS_VERTICAL         1       /* ||||| */
+	//    {0x01020408,0x10204080}, // HS_FDIAGONAL        2       /* \\\\\ */
+	//    {0x80402010,0x08040201}, // HS_BDIAGONAL        3       /* ///// */
+	//    {0x101010ff,0x10101010}, // HS_CROSS            4       /* +++++ */
+	//    {0x81422418,0x18244281}, // HS_DIAGCROSS        5       /* xxxxx */
+	//};
+	//    if ((HatchStyle < 0) || (HatchStyle > 6))
+	//        return 0;
+
+	int HatchStyle = 0;
+	DWORD dwBits[1][2] = 
+	{
+		{0xff00ff00,0xff00ff00}
+	};
+
+	memset (&brbmp, 0, sizeof (brbmp));
+
+    brbmp.bmi.biSize = sizeof (BITMAPINFOHEADER);
+    brbmp.bmi.biWidth = 8;
+    brbmp.bmi.biHeight = 8;
+    brbmp.bmi.biPlanes = 1;
+    brbmp.bmi.biBitCount = 1;
+    brbmp.bmi.biClrUsed = 2;
+    brbmp.bmi.biClrImportant = 2;
+
+    // Initialize the palette of the bitmap.
+    brbmp.dwPal[0] = PALETTERGB(0x00,0x00,0x00);
+    brbmp.dwPal[1] = PALETTERGB(
+		(BYTE)((nColor >> 16) & 0xff),
+		(BYTE)((nColor >>  8) & 0xff),
+		(BYTE)((nColor >>  0) & 0xff));
+
+    // Write the hatch data to the bitmap.  
+    pBytes = (BYTE *)&dwBits[HatchStyle];
+    for (i = 0; i < 8; i++)
+        brbmp.bBits[i*4] = *pBytes++;
+
+    // Return the handle of the brush created.
+    return CreateDIBPatternBrushPt (&brbmp, DIB_RGB_COLORS);
+}
+
 
 //===========================================================================
 void DrawMonoTextSource (HDC hDstDC)
@@ -951,6 +1060,7 @@ void DrawMonoTextSource (HDC hDstDC)
 		case VT_MONO_AMBER: hBrush = CreateSolidBrush(RGB(0xFF,0x80,0x00)); break;
 		case VT_MONO_GREEN: hBrush = CreateSolidBrush(RGB(0x00,0xC0,0x00)); break;
 		case VT_MONO_WHITE: hBrush = CreateSolidBrush(RGB(0xFF,0xFF,0xFF)); break;
+		case VT_MONO_AUTHENTIC: hBrush = CreateCustomBrush(RGB(0x00,0xC0,0x00)); break; 
 		default           : hBrush = CreateSolidBrush(monochrome); break;
 	}
 
@@ -1342,24 +1452,11 @@ bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
 			g_VideoForceFullRedraw
 		)
 	{
-		CopySource(	xpixel,ypixel,
-			7,8,
-			SRCOFFS_LORES+((x & 1) << 1),((auxval & 0xF) << 4));
-
-		CopySource(	xpixel,ypixel+8,
-			7,8,
-			SRCOFFS_LORES+((x & 1) << 1),(auxval & 0xF0));
-
+		CopySource(	xpixel,ypixel  ,	7,8,SRCOFFS_LORES+((x & 1) << 1),((auxval & 0xF) << 4));
+		CopySource(	xpixel,ypixel+8,	7,8,SRCOFFS_LORES+((x & 1) << 1),(auxval & 0xF0));
 		//
-
-		CopySource(	xpixel+7,ypixel,
-			7,8,
-			SRCOFFS_LORES+((x & 1) << 1),((mainval & 0xF) << 4));
-
-		CopySource(	xpixel+7,ypixel+8,
-			7,8,
-			SRCOFFS_LORES+((x & 1) << 1),(mainval & 0xF0));
-
+		CopySource(	xpixel+7,ypixel  , 7,8, SRCOFFS_LORES+((x & 1) << 1),((mainval & 0xF) << 4));
+		CopySource(	xpixel+7,ypixel+8, 7,8,	SRCOFFS_LORES+((x & 1) << 1),(mainval & 0xF0));
 		return true;
 	}
 
