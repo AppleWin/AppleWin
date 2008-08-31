@@ -17,31 +17,50 @@ Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise
 
-1.15.0.2 - 27 Aug 2008
+1.15.0.3 - 30 Aug 2008
 ----------------------
-* Added new video mode: "Monochrome - Authentic"
-  - Every odd scanline is black to replicate that authentic look of the Apple Green monitors
-  - Similar to ApplePC's "Green monochrome" mode
-
-1.15.0.1 - 24 Aug 2008
-----------------------
-* PrintScreen key now saves screen shots!
+Changes:
+. Remembers the last disk images used for Drive 1 & 2
+  - Is updated when you insert or remove a disk
+. PrintScreen key now saves screen shots!
   - Saved in .bmp format in the last directory you opened a disk from.
-  - Resolution is 580x384.  In case you are wondering about the non-standard resolution,
+  - The filename generated depends if a floppy disk is mounted:
+      o no disk mounted: "AppleWin_ScreenShot_#.bmp"
+      o use the last disk mounted: "{DiskFilename}_#.bmp"
+  - default saves to 580x384 resolution.
+  - Shift+PrintScreen will save a 280x192 .bmp
+    Note: In case you are wondering about the non-standard resolution 580x384
       o Width is 580 in order to save double hi-res graphics, and
-      o Height is 384 because we double the vertical scan lines to preserve the original aspect ratio using a 580 width.
+      o Height is 384 because we double the vertical scan lines to
+        preserve the original aspect ratio using a 580 width.
   - To enable the dialog box display of the last file saved to,
     use the command line option: -printscreen
-
-1.15.0 - 24 Aug 2008
---------------------
-Changes:
-. Beta: CP/M support (Microsoft CP/M SoftCard in slot-5)
-  - No save-state support
-  - No Z80 debugging support
+. Added new video mode: "Monochrome - Authentic"
+  - Every odd scanline is black to replicate that authentic look of the Apple Green monitors
+  - Similar to ApplePC's "Green monochrome" mode
+. Debugger 2.6.0.2
+  - Renamed GO to G to not conflict with new commands GR, GR1, GR2
+  - Added 18 new view output commands from inside the debugger!
+      TEXT, TEXT1, TEXT2
+	  TEXT80, TEXT81, TEXT82
+	  GR, GR1, GR2
+	  DGR, DGR1, DGR2
+	  HGR, HGR1, HGR2
+	  DHGR, DHGR1, DHGR2
+    Example:
+      F7 // enter debugger
+      HELP VIEW // view help summary
+      HGR // view current Hi-Res Screen. press a key to return to the normal debugger view
+  - Added aliases:
+      TEXT40, TEXT41, TEXT42
+  - Fixed 'G' to not send the Return of the command into the Apple Keyboard
 
 Fixes:
 . '~' displayed instead of '^' 
+
+Beta: CP/M support (Microsoft CP/M SoftCard in slot-5)
+  - No save-state support
+  - No Z80 debugging support
 
 1.14.2.0 - 23 Jun 2008
 ----------------------
