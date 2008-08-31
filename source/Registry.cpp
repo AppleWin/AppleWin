@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //===========================================================================
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser,
                     LPTSTR buffer, DWORD chars) {
-  BOOL  success = 0;
+  int  success = 0;
   TCHAR fullkeyname[256];
   wsprintf(fullkeyname,
            TEXT("Software\\AppleWin\\CurrentVersion\\%s"),

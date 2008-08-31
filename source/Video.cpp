@@ -195,8 +195,7 @@ static HDC           g_hDeviceDC;
 static LPBYTE        g_pFramebufferbits;
 static LPBITMAPINFO  g_pFramebufferinfo;
 
-const int MAX_FRAME_Y = 384; // 192 scan lines * 2x zoom = 384
-static LPBYTE        frameoffsettable[384];
+static LPBYTE        frameoffsettable[FRAMEBUFFER_H];
 static LPBYTE        g_pHiresBank1;
 static LPBYTE        g_pHiresBank0;
        HBITMAP       g_hLogoBitmap;
@@ -212,7 +211,7 @@ static LPBYTE        g_pTextBank0; // Main
 
 // For tv emulation g_nAppMode
 // 2 extra scan lines on bottom?
-static BYTE          hgrpixelmatrix[280][192 + 2 * HGR_MATRIX_YOFFSET];
+static BYTE          hgrpixelmatrix[FRAMEBUFFER_W/2][FRAMEBUFFER_H/2 + 2 * HGR_MATRIX_YOFFSET];
 static BYTE          colormixbuffer[6];
 static WORD          colormixmap[6][6][6];
 //
@@ -261,7 +260,8 @@ void DrawTextSource (HDC dc);
 bool g_bDisplayPrintScreenFileName = false;
 void Util_MakeScreenShotFileName( char *pFinalFileName_ );
 bool Util_TestScreenShotFileName( const char *pFileName );
-void Video_TakeScreenShot();
+// true  = 280x192
+// false = 560x384
 void Video_SaveScreenShot( const char *pScreenShotFileName );
 void Video_MakeScreenShot( FILE *pFile );
 
@@ -1474,7 +1474,9 @@ BOOL VideoApparentlyDirty ()
 	if (SW_MIXED || g_VideoForceFullRedraw)
 		return 1;
 
-	DWORD address = (SW_HIRES && !SW_TEXT) ? (0x20 << g_bVideoDisplayPage2) : (0x4 << g_bVideoDisplayPage2);
+	DWORD address = (SW_HIRES && !SW_TEXT)
+		? (0x20 << (int)g_bVideoDisplayPage2)
+		: (0x04 << (int)g_bVideoDisplayPage2);
 	DWORD length  = (SW_HIRES && !SW_TEXT) ? 0x20 : 0x4;
 	while (length--)
 		if (*(memdirty+(address++)) & 2)
@@ -1487,7 +1489,7 @@ BOOL VideoApparentlyDirty ()
 	// Scan visible text page for any flashing chars
 	if((SW_TEXT || SW_MIXED) && (g_nAltCharSetOffset == 0))
 	{
-		BYTE* pnMemText = MemGetMainPtr(0x400 << g_bVideoDisplayPage2);
+		BYTE* pnMemText = MemGetMainPtr(0x400 << (int)g_bVideoDisplayPage2);
 
 		// Scan 8 long-lines of 120 chars (at 128 char offsets):
 		// . Skip 8-char holes in TEXT
@@ -1817,16 +1819,12 @@ void VideoDestroy () {
 //===========================================================================
 void VideoDrawLogoBitmap ( HDC hDstDC )
 {
-//	HDC memdc = CreateCompatibleDC(framedc);
-//	SelectObject(memdc,g_hLogoBitmap);
-//	BitBlt(framedc,0,0,560,384,memdc,0,0,SRCCOPY);
-//	DeleteDC(memdc);
 	HDC hSrcDC = CreateCompatibleDC( hDstDC );
 	SelectObject( hSrcDC, g_hLogoBitmap );
 	BitBlt(
 		hDstDC,   // hdcDest
 		0, 0,     // nXDest, nYDest
-		560, 384, // nWidth, nHeight // HACK: HARD-CODED
+		FRAMEBUFFER_W, FRAMEBUFFER_H, // nWidth, nHeight
 		hSrcDC,   // hdcSrc
 		0, 0,     // nXSrc, nYSrc
 		SRCCOPY   // dwRop
@@ -1850,7 +1848,7 @@ void VideoDisplayLogo () {
 	{
 		SelectObject(hFrameDC,brush);
 		SelectObject(hFrameDC,GetStockObject(NULL_PEN));
-		Rectangle(hFrameDC,0,0,560+1,384+1);
+		Rectangle(hFrameDC,0,0,FRAMEBUFFER_W+1,FRAMEBUFFER_H+1);
 	}
 
 	// DRAW THE VERSION NUMBER
@@ -1918,8 +1916,8 @@ void VideoInitialize () {
                                                PAGE_READWRITE);
   ZeroMemory(g_pFramebufferinfo,sizeof(BITMAPINFOHEADER)+256*sizeof(RGBQUAD));
   g_pFramebufferinfo->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
-  g_pFramebufferinfo->bmiHeader.biWidth    = 560;
-  g_pFramebufferinfo->bmiHeader.biHeight   = 384;
+  g_pFramebufferinfo->bmiHeader.biWidth    = FRAMEBUFFER_W;
+  g_pFramebufferinfo->bmiHeader.biHeight   = FRAMEBUFFER_H;
   g_pFramebufferinfo->bmiHeader.biPlanes   = 1;
   g_pFramebufferinfo->bmiHeader.biBitCount = 8;
   g_pFramebufferinfo->bmiHeader.biClrUsed  = 256;
@@ -1979,10 +1977,10 @@ void _Video_Dirty()
 //===========================================================================
 void _Video_SetupBanks( bool bBank2 )
 {
-	g_pHiresBank1 = MemGetAuxPtr (0x2000 << bBank2);
-	g_pHiresBank0 = MemGetMainPtr(0x2000 << bBank2);
-	g_pTextBank1  = MemGetAuxPtr (0x400  << bBank2);
-	g_pTextBank0  = MemGetMainPtr(0x400  << bBank2);
+	g_pHiresBank1 = MemGetAuxPtr (0x2000 << (int)bBank2);
+	g_pHiresBank0 = MemGetMainPtr(0x2000 << (int)bBank2);
+	g_pTextBank1  = MemGetAuxPtr (0x400  << (int)bBank2);
+	g_pTextBank0  = MemGetMainPtr(0x400  << (int)bBank2);
 }
 
 //===========================================================================
@@ -2015,7 +2013,7 @@ void VideoRefreshScreen () {
 void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 {
   LPBYTE addr = g_pFramebufferbits;
-  LONG   pitch   = 560;
+  LONG   pitch   = FRAMEBUFFER_W;
   HDC    framedc = FrameGetVideoDC(&addr,&pitch);
   CreateFrameOffsetTable(addr,pitch);
 
@@ -2062,7 +2060,7 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
   // . Oliver Schmidt gets a flickering mouse cursor with this code
   if (framedc && anydirty)
   {
-	BitBlt(framedc,0,0,560,384,g_hDeviceDC,0,0,SRCCOPY); 
+	BitBlt(framedc,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,g_hDeviceDC,0,0,SRCCOPY); 
 	GdiFlush();
   }
 #else
@@ -2094,7 +2092,7 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 		else
 		  remainingdirty = 1;
 	  if ((start >= 0) && !celldirty[x][y]) {
-		if ((x - startx > 1) || ((x == 39) && (xpixel == 560))) {
+		if ((x - startx > 1) || ((x == 39) && (xpixel == FRAMEBUFFER_W))) {
 		  int height = 1;
 		  while ((y+height < 24)
 				   && celldirty[startx][y+height]
@@ -2105,7 +2103,7 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 				 g_hDeviceDC,start,ypixel,SRCCOPY);
 		  while (height--) {
 			int loop = startx;
-			while (loop < x+(xpixel == 560))
+			while (loop < x+(xpixel == FRAMEBUFFER_W))
 			  celldirty[loop++][y+height] = 0;
 		  }
 		  start = -1;
@@ -2445,19 +2443,31 @@ bool VideoGetVbl(const DWORD uExecutedCycles)
 #define SCREENSHOT_TGA 0
 	
 // alias for nSuffixScreenShotFileName
-static int nLastScreenShot = 0;
+static int  g_nLastScreenShot = 0;
 const  int nMaxScreenShot = 999999999;
+
+static int g_iScreenshotType;
+static char *g_pLastDiskImageName = NULL;
+
 //const  int nMaxScreenShot = 2;
+
+//===========================================================================
+void Video_ResetScreenshotCounter( char *pImageName )
+{
+	g_nLastScreenShot = 0;
+	g_pLastDiskImageName = pImageName;
+}
 
 //===========================================================================
 void Util_MakeScreenShotFileName( char *pFinalFileName_ )
 {
-	const char sPrefixScreenShotFileName[] = "AppleWin_ScreenShot_";
+	char sPrefixScreenShotFileName[ 256 ] = "AppleWin_ScreenShot";
+	char *pPrefixFileName = g_pLastDiskImageName ? g_pLastDiskImageName : sPrefixScreenShotFileName;
 #if SCREENSHOT_BMP
-	sprintf( pFinalFileName_, "%s%09d.bmp", sPrefixScreenShotFileName, nLastScreenShot );
+	sprintf( pFinalFileName_, "%s_%09d.bmp", pPrefixFileName, g_nLastScreenShot );
 #endif
 #if SCREENSHOT_TGA
-	sprintf( pFinalFileName_, "%s%09d.tga", sPrefixScreenShotFileName, nLastScreenShot );
+	sprintf( pFinalFileName_, "%s%09d.tga", pPrefixFileName, g_nLastScreenShot );
 #endif
 }
 
@@ -2476,19 +2486,21 @@ bool Util_TestScreenShotFileName( const char *pFileName )
 }
 
 //===========================================================================
-void Video_TakeScreenShot()
+void Video_TakeScreenShot( int iScreenShotType )
 {
 	char sScreenShotFileName[ MAX_PATH ];
+
+	g_iScreenshotType = iScreenShotType;
 
 	// find last screenshot filename so we don't overwrite the existing user ones
 	bool bExists = true;
 	while( bExists )
 	{
-		if (nLastScreenShot > nMaxScreenShot) // Holy Crap! User has maxed the number of screenshots!?
+		if (g_nLastScreenShot > nMaxScreenShot) // Holy Crap! User has maxed the number of screenshots!?
 		{
 			sprintf( sScreenShotFileName, "You have more then %d screenshot filenames!  They will no longer be saved.\n\nEither move some of your screenshots or increase the maximum in video.cpp\n", nMaxScreenShot );
 			MessageBox( NULL, sScreenShotFileName, "Warning", MB_OK );
-			nLastScreenShot = 0;
+			g_nLastScreenShot = 0;
 			return;
 		}
 
@@ -2498,11 +2510,11 @@ void Video_TakeScreenShot()
 		{
 			break;
 		}
-		nLastScreenShot++;
+		g_nLastScreenShot++;
 	}
 
 	Video_SaveScreenShot( sScreenShotFileName );
-	nLastScreenShot++;
+	g_nLastScreenShot++;
 }
 
 
@@ -2595,8 +2607,8 @@ void Video_MakeScreenShot(FILE *pFile)
 	g_tBmpHeader.nReserved2 = 0;
 	g_tBmpHeader.nOffsetData = sizeof(WinBmpHeader_t) + (256 * sizeof(bgra_t));
 	g_tBmpHeader.nStructSize = 0x28; // sizeof( WinBmpHeader_t );
-	g_tBmpHeader.nWidthPixels = 560;
-	g_tBmpHeader.nHeightPixels = MAX_FRAME_Y;
+	g_tBmpHeader.nWidthPixels = g_iScreenshotType ? FRAMEBUFFER_W/2 :FRAMEBUFFER_W;
+	g_tBmpHeader.nHeightPixels = g_iScreenshotType ?  FRAMEBUFFER_H/2 : FRAMEBUFFER_H;
 	g_tBmpHeader.nPlanes = 1;
 	g_tBmpHeader.nBitsPerPixel = 8;
 	g_tBmpHeader.nCompression = BI_RGB;
@@ -2630,7 +2642,31 @@ void Video_MakeScreenShot(FILE *pFile)
 	// @reference: "Storing an Image" http://msdn.microsoft.com/en-us/library/ms532340(VS.85).aspx
 	pSrc = ((u8*)g_pFramebufferbits);
 	nLen = g_tBmpHeader.nWidthPixels * g_tBmpHeader.nHeightPixels * g_tBmpHeader.nBitsPerPixel / 8;
-	fwrite( pSrc, nLen, 1, pFile );
+
+	if( g_iScreenshotType == SCREENSHOT_280x192 )
+	{
+		u8 aScanLine[ 280 ];
+		u8 *pDst;
+
+		// HACK HACK HACK -- authentic mode zero's out odd rows, force to a scanline that has data
+		pSrc += FRAMEBUFFER_W;
+
+		for( int y = 0; y < FRAMEBUFFER_H/2; y++ )
+		{
+			pDst = aScanLine;
+			for( int x = 0; x < FRAMEBUFFER_W/2; x++ )
+			{
+				*pDst++ = *pSrc;
+				pSrc += 2; // skip odd pixels
+			}
+			fwrite( aScanLine, FRAMEBUFFER_W/2, 1, pFile );
+			pSrc += FRAMEBUFFER_W; // scan lines doubled - skip odd ones
+		}
+	}
+	else
+	{
+		fwrite( pSrc, nLen, 1, pFile );
+	}
 #endif // SCREENSHOT_BMP
 
 #if SCREENSHOT_TGA
@@ -2638,8 +2674,8 @@ void Video_MakeScreenShot(FILE *pFile)
 	memset( (void*)pHeader, 0, sizeof( TargaHeader_t ) );
 
 	pHeader->iImageType = TARGA_RGB;
-	pHeader->nWidthPixels  = 580;
-	pHeader->nHeightPixels = MAX_FRAME_Y;
+	pHeader->nWidthPixels  = FRAMEBUFFER_W;
+	pHeader->nHeightPixels = FRAMEBUFFER_H;
 	pHeader->nBitsPerPixel =  24;
 #endif // SCREENSHOT_TGA
 

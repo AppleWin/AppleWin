@@ -39,3 +39,6 @@ bool    DiskDriveSwap();
 void    DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot);
 DWORD   DiskGetSnapshot(SS_CARD_DISK2* pSS, DWORD dwSlot);
 DWORD   DiskSetSnapshot(SS_CARD_DISK2* pSS, DWORD dwSlot);
+
+void Disk_LoadLastDiskImage( int iDrive );
+void Disk_SaveLastDiskImage( int iDrive );

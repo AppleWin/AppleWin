@@ -6,6 +6,11 @@ enum {NOT_ASCII=0, ASCII};
 #define  VIEWPORTX   5
 #define  VIEWPORTY   5
 
+// 560 = Double Hi-Res
+// 384 = Doule Scan Line
+#define  FRAMEBUFFER_W  560
+#define  FRAMEBUFFER_H  384
+
 // Win32
 extern HWND       g_hFrameWindow;
 extern HDC        g_hFrameDC;

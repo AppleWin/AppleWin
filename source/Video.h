@@ -87,10 +87,14 @@ bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset);
 bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset);
 bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset);
 
-
-
 extern bool g_bDisplayPrintScreenFileName;
-void Video_TakeScreenShot();
+void Video_ResetScreenshotCounter( char *pDiskImageFileName );
+enum VideoScreenShot_e
+{
+	SCREENSHOT_560x384 = 0,
+	SCREENSHOT_280x192
+};
+void Video_TakeScreenShot( int iScreenShotType );
 
 BYTE __stdcall VideoCheckMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 BYTE __stdcall VideoCheckVbl (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);

@@ -38,20 +38,30 @@ static BYTE __stdcall DiskSetLatchValue (WORD pc, WORD addr, BYTE bWrite, BYTE d
 static BYTE __stdcall DiskSetReadMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 static BYTE __stdcall DiskSetWriteMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 
-#define LOG_DISK_ENABLED 1
+#define LOG_DISK_ENABLED 0
 
 // __VA_ARGS__ not supported on MSVC++ .NET 7.x
-#if (LOG_DISK_ENABLED) && !defined(_VC71)
-	#define LOG_DISK(format, ...) LOG(format, __VA_ARGS__)
+#if (LOG_DISK_ENABLED)
+	#if !defined(_VC71)
+		#define LOG_DISK(format, ...) LOG(format, __VA_ARGS__)
+	#else
+		#define LOG_DISK	 LogOutput
+	#endif
 #else
-	#define LOG_DISK(...)
+	#if !defined(_VC71)
+		#define LOG_DISK(...)
+	#else
+		#define LOG_DISK(x)
+	#endif
 #endif
 
 // Public _________________________________________________________________________________________
 
 	BOOL      enhancedisk     = 1;
+	// dynamic array of strings
 	string DiskPathFilename[];
-
+	bool bSaveDiskImage = true;
+	
 // Private ________________________________________________________________________________________
 
 	const int MAX_DISK_IMAGE_NAME = 15;
@@ -88,6 +98,49 @@ static bool IsDriveValid( const int iDrive );
 static void ReadTrack (int drive);
 static void RemoveDisk (int drive);
 static void WriteTrack (int drive);
+
+// ________________________________________________________________________________________________
+
+//===========================================================================
+void Disk_LoadLastDiskImage( int iDrive )
+{
+	char sFilePath[ MAX_PATH + 1];
+	sFilePath[0] = 0;
+
+	char *pRegKey = (!iDrive)
+		? REGVALUE_PREF_LAST_DISK_1
+		: REGVALUE_PREF_LAST_DISK_2;
+	if( RegLoadString(TEXT(REG_PREFS),pRegKey,1,sFilePath,MAX_PATH) )
+	{
+		sFilePath[ MAX_PATH ] = 0;
+		DiskPathFilename[ iDrive ] = sFilePath;
+		const char *pFileName = DiskPathFilename[iDrive].c_str();
+
+#if _DEBUG
+//		MessageBox(NULL,pFileName,pRegKey,MB_OK);
+#endif
+
+		//	_tcscat(imagefilename,TEXT("MASTER.DSK")); // TODO: Should remember last disk by user
+		bSaveDiskImage = false;
+		DiskInsert(iDrive,pFileName,0,0);
+		bSaveDiskImage = true;
+	}
+	//else MessageBox(NULL,"Reg Key/Value not found",pRegKey,MB_OK);
+}
+
+//===========================================================================
+void Disk_SaveLastDiskImage( int iDrive )
+{
+	const char *pFileName = DiskPathFilename[iDrive].c_str();
+
+	if( bSaveDiskImage )
+	{
+		if( !iDrive )
+			RegSaveString(TEXT(REG_PREFS),REGVALUE_PREF_LAST_DISK_1,1,pFileName );
+		else
+			RegSaveString(TEXT(REG_PREFS),REGVALUE_PREF_LAST_DISK_2,1,pFileName );
+	}
+}
 
 //===========================================================================
 void CheckSpinning () {
@@ -207,7 +260,7 @@ static void ReadTrack (int iDrive)
 
 	if (pFloppy->trackimage && pFloppy->imagehandle)
 	{
-        LOG_DISK("read track %2X%s\r", pFloppy->track, (pFloppy->phase & 1) ? ".5" : "");
+		LOG_DISK("read track %2X%s\r", pFloppy->track, (pFloppy->phase & 1) ? ".5" : "");
 
 		ImageReadTrack(
 			pFloppy->imagehandle,
@@ -245,6 +298,9 @@ static void RemoveDisk (int iDrive)
 	memset( pFloppy->imagename, 0, MAX_DISK_IMAGE_NAME+1 );
 	memset( pFloppy->fullname , 0, MAX_DISK_FULL_NAME +1 );
 	DiskPathFilename[iDrive] = "";
+
+	Disk_SaveLastDiskImage( iDrive );
+	Video_ResetScreenshotCounter( NULL );
 }
 
 //===========================================================================
@@ -344,8 +400,13 @@ static BYTE __stdcall DiskControlStepper (WORD, WORD address, BYTE, BYTE, ULONG)
 //===========================================================================
 void DiskDestroy ()
 {
+	bSaveDiskImage = false;
 	RemoveDisk(0);
+
+	bSaveDiskImage = false;
 	RemoveDisk(1);
+
+	bSaveDiskImage = true;
 }
 
 //===========================================================================
@@ -406,17 +467,15 @@ void DiskInitialize ()
 
 	TCHAR imagefilename[MAX_PATH];
 	_tcscpy(imagefilename,g_sProgramDir);
-	_tcscat(imagefilename,TEXT("MASTER.DSK")); // TODO: Should remember last disk by user
-	DiskInsert(0,imagefilename,0,0);
 }
 
 //===========================================================================
 
-int DiskInsert (int drive, LPCTSTR imagefilename, BOOL writeprotected, BOOL createifnecessary)
+int DiskInsert (int iDrive, LPCTSTR imagefilename, BOOL writeprotected, BOOL createifnecessary)
 {
-	Disk_t * fptr = &g_aFloppyDisk[drive];
+	Disk_t * fptr = &g_aFloppyDisk[iDrive];
 	if (fptr->imagehandle)
-		RemoveDisk(drive);
+		RemoveDisk(iDrive);
 
 	ZeroMemory(fptr,sizeof(Disk_t ));
 	fptr->writeprotected = writeprotected;
@@ -429,9 +488,18 @@ int DiskInsert (int drive, LPCTSTR imagefilename, BOOL writeprotected, BOOL crea
 	if (error == IMAGE_ERROR_NONE)
 	{
 		GetImageTitle(imagefilename,fptr);
-		DiskPathFilename[drive]= imagefilename;
+		DiskPathFilename[iDrive]= imagefilename;
+
+		//MessageBox( NULL, imagefilename, fptr->imagename, MB_OK );
+		Video_ResetScreenshotCounter( fptr->imagename );
+	}
+	else
+	{
+		Video_ResetScreenshotCounter( NULL );
 	}
 
+	Disk_SaveLastDiskImage( iDrive );
+	
 	return error;
 }
 
@@ -564,24 +632,26 @@ void DiskSelectImage (int drive, LPSTR pszFilename)
   ofn.Flags           = OFN_PATHMUSTEXIST;
   ofn.lpstrTitle      = title;
 
-  if (GetOpenFileName(&ofn))
-  {
-    if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
-      _tcscat(filename,TEXT(".DSK"));
+	if (GetOpenFileName(&ofn))
+	{
+		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
+			_tcscat(filename,TEXT(".DSK"));
 
-    int error = DiskInsert(drive,filename,ofn.Flags & OFN_READONLY,1);
-    if (!error)
-	{
-      DiskPathFilename[drive] = filename; 
-      filename[ofn.nFileOffset] = 0;
-      if (_tcsicmp(directory,filename))
-        RegSaveString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,filename);
-    }
-    else
-	{
-      DiskNotifyInvalidImage(filename,error);
+		int error = DiskInsert(drive,filename,ofn.Flags & OFN_READONLY,1);
+		if (!error)
+		{
+			DiskPathFilename[drive] = filename; 
+			filename[ofn.nFileOffset] = 0;
+			if (_tcsicmp(directory,filename))
+			{
+				RegSaveString(TEXT(REG_PREFS),TEXT(REGVALUE_PREF_START_DIR),1,filename);
+			}
+		}
+		else
+		{
+			DiskNotifyInvalidImage(filename,error);
+		}
 	}
-  }
 }
 
 //===========================================================================
