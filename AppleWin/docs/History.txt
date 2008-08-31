@@ -17,7 +17,7 @@ Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise
 
-1.15.0.3 - 30 Aug 2008
+1.15.0.3 - 31 Aug 2008
 ----------------------
 Changes:
 . Remembers the last disk images used for Drive 1 & 2
@@ -38,7 +38,11 @@ Changes:
 . Added new video mode: "Monochrome - Authentic"
   - Every odd scanline is black to replicate that authentic look of the Apple Green monitors
   - Similar to ApplePC's "Green monochrome" mode
-. Debugger 2.6.0.2
+. Debugger 2.6.0.6
+  - Added new command '@' to re-display results of search
+    Example:
+	  S F000:FFFF C050
+	  @ // re-display search results
   - Renamed GO to G to not conflict with new commands GR, GR1, GR2
   - Added 18 new view output commands from inside the debugger!
       TEXT, TEXT1, TEXT2
@@ -53,8 +57,9 @@ Changes:
       HGR // view current Hi-Res Screen. press a key to return to the normal debugger view
   - Added aliases:
       TEXT40, TEXT41, TEXT42
-  - Fixed 'G' to not send the Return of the command into the Apple Keyboard
-
+  - Fixed command 'G' to not send the Return of the command into the Apple Keyboard
+  - Fixed command '?' to list commands sorted and colorized
+  
 Fixes:
 . '~' displayed instead of '^' 
 
