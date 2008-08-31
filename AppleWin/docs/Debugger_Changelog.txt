@@ -1,6 +1,10 @@
 /*
 
-2.6.0.2 Released with AppleWin 1.15
+2.6.0.6 Released with AppleWin 1.15
+.6 Added new command '@' to display the search results
+.5 Fixed display results of Searching to be colorized
+.4 Fixed ? to sort and colorize commands
+.3 Fixed HELP * to not include blank line
 .2 Fixed 'G' to not send the Return of the command into the Apple Keyboard
 .1 Renamed GO to G to not conflict with GR, GR1, GR2
 .0 Added 18 new view output commands from inside the debugger!
