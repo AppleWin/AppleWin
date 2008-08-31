@@ -469,7 +469,7 @@
 				Name="Uthernet"
 				>
 				<File
-					RelativePath=".\source\Tfe\bittypes.h"
+					RelativePath=".\source\Tfe\Bittypes.h"
 					>
 				</File>
 				<File
@@ -529,15 +529,19 @@
 				Name="Z80"
 				>
 				<File
+					RelativePath=".\source\Z80\README.txt"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Z80\z80codes.h"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Z80\z80cpu.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Z80\z80cpu.h"
 					>
 				</File>
 				<File
@@ -550,10 +554,6 @@
 				</File>
 				<File
 					RelativePath=".\source\Z80\z80emu.h"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Z80\z80io.cpp"
 					>
 				</File>
 				<File

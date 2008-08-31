@@ -89,7 +89,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MouseInterface.h"
 
 #ifdef SUPPORT_CPM
-#include "z80\z80cpu.h"
+#include "z80\z80.h"
 #include "z80\z80emu.h"
 #include "z80\z80io.h"
 #endif

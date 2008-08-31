@@ -533,14 +533,46 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="Z80"
+				>
+				<File
+					RelativePath=".\source\Z80\README.txt"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80codes.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80daa.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80emu.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80emu.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80\z80io.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Docs"
 			>
-			<File
-				RelativePath=".\docs\Bugs.txt"
-				>
-			</File>
 			<File
 				RelativePath=".\docs\CodingConventions.txt"
 				>
@@ -563,15 +595,19 @@
 			Filter=".txt,.ico,.bmp,.rc"
 			>
 			<File
+				RelativePath=".\resource\Apple2.rom"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\Apple2_Plus.rom"
+				>
+			</File>
+			<File
 				RelativePath=".\resource\Apple2e.rom"
 				>
 			</File>
 			<File
-				RelativePath=".\resource\Apple2orig.rom"
-				>
-			</File>
-			<File
-				RelativePath=".\resource\Apple2plus.rom"
+				RelativePath=".\resource\Apple2e_Enhanced.rom"
 				>
 			</File>
 			<File
