@@ -4998,7 +4998,7 @@ int _SearchMemoryFind(
 //===========================================================================
 Update_t _SearchMemoryDisplay (int nArgs)
 {
-	const nBuf = CONSOLE_WIDTH * 2;
+	const UINT nBuf = CONSOLE_WIDTH * 2;
 
 	int nFound = g_vMemorySearchResults.size() - 1;
 
