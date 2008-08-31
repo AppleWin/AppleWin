@@ -137,6 +137,7 @@ void Help_Categories()
 	int  nLen = 0;
 
 		// TODO/FIXME: Colorize( sText, ... )
+		// Colorize("Usage:")
 		nLen += StringCat( sText, CHC_USAGE , nBuf );
 		nLen += StringCat( sText, "Usage", nBuf );
 
@@ -158,7 +159,7 @@ void Help_Categories()
 			{
 				ConsolePrint( sText );
 				sText[ 0 ] = 0;
-				nLen = StringCat( sText, "    ", nBuf );
+				nLen = StringCat( sText, "    ", nBuf ); // indent
 			}
 
 			        StringCat( sText, CHC_COMMAND, nBuf );
@@ -166,8 +167,16 @@ void Help_Categories()
 
 			if (iCategory < (_PARAM_HELPCATEGORIES_END - 1))
 			{
+				char sSep[] = " | ";
+
+				if (nLen + strlen( sSep ) >= (CONSOLE_WIDTH - 1))
+				{
+					ConsolePrint( sText );
+					sText[ 0 ] = 0;
+					nLen = StringCat( sText, "    ", nBuf ); // indent
+				}
 				        StringCat( sText, CHC_ARG_SEP, nBuf );
-				nLen += StringCat( sText, " | "            , nBuf );
+				nLen += StringCat( sText, sSep, nBuf );
 			}
 		}
 		StringCat( sText, CHC_ARG_MAND, nBuf );
@@ -347,6 +356,9 @@ bool Colorize( char * pDst, const char * pSrc )
 	const char sUsage[] = "Usage:";
 	const int  nUsage   = sizeof( sUsage ) - 1;
 
+	const char sTotal[] = "Total:";
+	const int  nTotal = sizeof( sTotal ) - 1;
+
 	int nLen = 0;
 	while (*pSrc)
 	{
@@ -363,6 +375,11 @@ bool Colorize( char * pDst, const char * pSrc )
 		if (strncmp( sNote, pSrc, nNote) == 0)
 		{
 			_ColorizeHeader( pDst, pSrc, sNote, nNote );
+		}
+		else
+		if (strncmp( sTotal, pSrc, nNote) == 0)
+		{
+			_ColorizeHeader( pDst, pSrc, sTotal, nTotal );
 		}
 		else
 		if (*pSrc == '[')
@@ -1359,7 +1376,10 @@ Update_t CmdHelpSpecific (int nArgs)
 //===========================================================================
 Update_t CmdHelpList (int nArgs)
 {
-	char sText[ CONSOLE_WIDTH ] = "Commands: ";
+	const int nBuf = CONSOLE_WIDTH * 2;
+
+	char sText[ nBuf ] = "";
+	
 	int nLenLine = strlen( sText );
 	int y = 0;
 	int nLinesScrolled = 0;
@@ -1367,46 +1387,56 @@ Update_t CmdHelpList (int nArgs)
 	int nMaxWidth = g_nConsoleDisplayWidth - 1;
 	int iCommand;
 
-/*
+	extern vector<Command_t> g_vSortedCommands;
+
 	if (! g_vSortedCommands.size())
 	{
 		for (iCommand = 0; iCommand < NUM_COMMANDS_WITH_ALIASES; iCommand++ )
 		{
-//			TCHAR *pName = g_aCommands[ iCommand ].aName );
 			g_vSortedCommands.push_back( g_aCommands[ iCommand ] );
 		}
-
 		std::sort( g_vSortedCommands.begin(), g_vSortedCommands.end(), commands_functor_compare() );
 	}
 	int nCommands = g_vSortedCommands.size();
-*/
+
+	int nLen = 0;
+//		Colorize( sText, "Commands: " );
+ 		        StringCat( sText, CHC_USAGE , nBuf );
+		nLen += StringCat( sText, "Commands", nBuf );
+
+		        StringCat( sText, CHC_DEFAULT, nBuf );
+		nLen += StringCat( sText, ": " , nBuf );
+
 	for( iCommand = 0; iCommand < NUM_COMMANDS_WITH_ALIASES; iCommand++ ) // aliases are not printed
 	{
-//		Command_t *pCommand = & g_vSortedCommands.at( iCommand );
-		Command_t *pCommand = & g_aCommands[ iCommand ];
+		Command_t *pCommand = & g_vSortedCommands.at( iCommand );
+//		Command_t *pCommand = & g_aCommands[ iCommand ];
 		char      *pName = pCommand->m_sName;
 
 		if (! pCommand->pFunction)
 			continue; // not implemented function
 
 		int nLenCmd = strlen( pName );
-		if ((nLenLine + nLenCmd) < (nMaxWidth))
+		if ((nLen + nLenCmd) < (nMaxWidth))
 		{
-			strcat( sText, pName );
+			        StringCat( sText, CHC_COMMAND, nBuf );
+			nLen += StringCat( sText, pName      , nBuf );
 		}
 		else
 		{
-			ConsoleBufferPush( sText );
-			nLenLine = 1;
+			ConsolePrint( sText );
+			nLen = 1;
 			strcpy( sText, " " );
-			strcat( sText, pName );
+			        StringCat( sText, CHC_COMMAND, nBuf );
+			nLen += StringCat( sText, pName, nBuf );
 		}
 		
 		strcat( sText, " " );
-		nLenLine += (nLenCmd + 1);
+		nLen++;
 	}
 
-	ConsoleBufferPush( sText );
+	//ConsoleBufferPush( sText );
+	ConsolePrint( sText );
 	ConsoleUpdate();
 
 	return UPDATE_CONSOLE_DISPLAY;

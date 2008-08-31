@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,0,2);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,0,6);
 
 
 // Public _________________________________________________________________________________________
@@ -114,15 +114,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#define __COMMANDS_VERIFY_TXT__ "\xDE\xAD\xC0\xDE"
 	#define __PARAMS_VERIFY_TXT__   "\xDE\xAD\xDA\x1A"
 
-	class commands_functor_compare
-	{
-		public:
-			int operator() ( const Command_t & rLHS, const Command_t & rRHS ) const
-			{
-				return _tcscmp( rLHS.m_sName, rRHS.m_sName );
-			}
-	};
-
 	int g_iCommand; // last command (enum) // used for consecuitive commands
 
 	vector<int>       g_vPotentialCommands; // global, since TAB-completion also needs
@@ -164,7 +155,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("BMA")         , CmdBookmarkAdd       , CMD_BOOKMARK_ADD         , "Add/Update addess to bookmark"  },
 		{TEXT("BMC")         , CmdBookmarkClear     , CMD_BOOKMARK_CLEAR       , "Clear (remove) bookmark"        },
 		{TEXT("BML")         , CmdBookmarkList      , CMD_BOOKMARK_LIST        , "List all bookmarks"             },
-		{"BMG"               , CmdBookmarkGoto      , CMD_BOOKMARK_GOTO        , "Move cursor to bookmark"        },
+		{TEXT("BMG")         , CmdBookmarkGoto      , CMD_BOOKMARK_GOTO        , "Move cursor to bookmark"        },
 //		{TEXT("BMLOAD")      , CmdBookmarkLoad      , CMD_BOOKMARK_LOAD        , "Load bookmarks"                 },
 		{TEXT("BMSAVE")      , CmdBookmarkSave      , CMD_BOOKMARK_SAVE        , "Save bookmarks"                 },
 	// Breakpoints
@@ -263,6 +254,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("M")           , CmdMemoryMove        , CMD_MEMORY_MOVE          , "Memory move"                  },
 		{TEXT("BSAVE")       , CmdMemorySave        , CMD_MEMORY_SAVE          , "Save a region of memory"      },
 		{TEXT("S")           , CmdMemorySearch      , CMD_MEMORY_SEARCH        , "Search memory for text / hex values" },
+		{TEXT("@")				,_SearchMemoryDisplay  , CMD_MEMORY_FIND_RESULTS  , "Display search memory resuts" },
 //		{TEXT("SA")          , CmdMemorySearchAscii,  CMD_MEMORY_SEARCH_ASCII  , "Search ASCII text"            },
 //		{TEXT("ST")          , CmdMemorySearchApple , CMD_MEMORY_SEARCH_APPLE  , "Search Apple text (hi-bit)"   },
 		{TEXT("SH")          , CmdMemorySearchHex   , CMD_MEMORY_SEARCH_HEX    , "Search memory for hex values" },
@@ -921,10 +913,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool        Range_CalcEndLen( const RangeType_t eRange
 		, const WORD & nAddress1, const WORD & nAddress2
 		, WORD & nAddressEnd_, int & nAddressLen_ );
-
-	bool  StringCat( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
-	bool  TestStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
-	bool  TryStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize );
 
 	char FormatCharTxtCtrl ( const BYTE b, bool *pWasCtrl_ );
 	char FormatCharTxtAsci ( const BYTE b, bool *pWasAsci_ );
@@ -5008,49 +4996,95 @@ int _SearchMemoryFind(
 
 
 //===========================================================================
-Update_t _SearchMemoryDisplay()
+Update_t _SearchMemoryDisplay (int nArgs)
 {
+	const nBuf = CONSOLE_WIDTH * 2;
+
 	int nFound = g_vMemorySearchResults.size() - 1;
 
-	TCHAR sMatches[ CONSOLE_WIDTH ] = TEXT("");
-	int   nThisLineLen = 0; // string length of matches for this line, for word-wrap
+	int nLen = 0; // temp
+	int nLineLen = 0; // string length of matches for this line, for word-wrap
+
+	TCHAR sMatches[ nBuf ] = TEXT("");
+	TCHAR sResult[ nBuf ];
+	TCHAR sText[ nBuf ] = TEXT("");
 
 	if (nFound > 0)
 	{
-		TCHAR sText[ CONSOLE_WIDTH ];
-
 		int iFound = 1;
 		while (iFound <= nFound)
 		{
 			WORD nAddress = g_vMemorySearchResults.at( iFound );
 
-			wsprintf( sText, "%2d:$%04X ", iFound, nAddress );
-			int nLen = _tcslen( sText );
+//			sprintf( sText, "%2d:$%04X ", iFound, nAddress );
+//			int nLen = _tcslen( sText );
+
+			sResult[0] = 0;
+			nLen = 0;
+
+			        StringCat( sResult, CHC_COMMAND, nBuf );
+			sprintf( sText, "%2d", iFound );
+			nLen += StringCat( sResult, sText , nBuf );
+
+			        StringCat( sResult, CHC_DEFAULT, nBuf );
+			nLen += StringCat( sResult, ":" , nBuf );
+
+			        StringCat( sResult, CHC_ADDRESS, nBuf );
+			sprintf( sText, "$%04X", nAddress );
+			nLen += StringCat( sResult, sText, nBuf );
 
 			// Fit on same line?
-			if ((nThisLineLen + nLen) > (g_nConsoleDisplayWidth)) // CONSOLE_WIDTH
+			if ((nLineLen + nLen) > (g_nConsoleDisplayWidth - 1)) // CONSOLE_WIDTH
 			{
-				ConsoleDisplayPush( sMatches );
-				_tcscpy( sMatches, sText );
-				nThisLineLen = nLen;
+				//ConsoleDisplayPush( sMatches );
+				ConsolePrint( sMatches );
+				_tcscpy( sMatches, sResult );
+				nLineLen = nLen;
 			}
 			else
 			{
-				_tcscat( sMatches, sText );
-				nThisLineLen += nLen;
+				StringCat( sMatches, sResult, nBuf );
+				nLineLen += nLen;
 			}
 
 			iFound++;
 		}
-		ConsoleDisplayPush( sMatches );
+		ConsolePrint( sMatches );
 	}
 
-	wsprintf( sMatches, "Total: %d  (#$%04X)", nFound, nFound );
-	ConsoleDisplayPush( sMatches );
+//	wsprintf( sMatches, "Total: %d  (#$%04X)", nFound, nFound );
+//	ConsoleDisplayPush( sMatches );
+		sResult[0] = 0;
+
+		        StringCat( sResult, CHC_USAGE , nBuf );
+		nLen += StringCat( sResult, "Total", nBuf );
+
+		        StringCat( sResult, CHC_DEFAULT, nBuf );
+		nLen += StringCat( sResult, ": " , nBuf );
+
+		        StringCat( sResult, CHC_NUM_DEC, nBuf );
+		sprintf( sText, "%d  ", nFound );
+		nLen += StringCat( sResult, sText, nBuf );
+
+		        StringCat( sResult, CHC_ARG_OPT, nBuf );
+		nLen += StringCat( sResult, "(" , nBuf );
+
+		        StringCat( sResult, CHC_DEFAULT, nBuf );
+		nLen += StringCat( sResult, "#$", nBuf );
+
+		        StringCat( sResult, CHC_NUM_HEX, nBuf );
+		sprintf( sText, "%04X", nFound );
+		nLen += StringCat( sResult, sText, nBuf );
+
+		        StringCat( sResult, CHC_ARG_OPT, nBuf );
+		nLen += StringCat( sResult, ")" , nBuf );
+		
+		ConsolePrint( sResult );
 
 	// g_vMemorySearchResults is cleared in DebugEnd()
 
-	return UPDATE_CONSOLE_DISPLAY;
+//	return UPDATE_CONSOLE_DISPLAY;
+	return ConsoleUpdate();
 }
 
 
