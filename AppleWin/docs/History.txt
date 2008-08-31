@@ -39,7 +39,7 @@ Changes:
   - Every odd scanline is black to replicate that authentic look of the Apple Green monitors
   - Similar to ApplePC's "Green monochrome" mode
 . Debugger 2.6.0.6
-  - Added new command '@' to re-display results of search
+  - Added new command '@' to re-display results of search, colorized.
     Example:
 	  S F000:FFFF C050
 	  @ // re-display search results
@@ -59,6 +59,7 @@ Changes:
       TEXT40, TEXT41, TEXT42
   - Fixed command 'G' to not send the Return of the command into the Apple Keyboard
   - Fixed command '?' to list commands sorted and colorized
+  - Fixed command 'HELP' to not display extra blank-line
   
 Fixes:
 . '~' displayed instead of '^' 
