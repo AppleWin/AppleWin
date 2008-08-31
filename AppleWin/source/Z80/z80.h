@@ -1,10 +1,29 @@
+/*** Z80Em: Portable Z80 emulator *******************************************/
+/***                                                                      ***/
+/***                                 Z80.h                                ***/
+/***                                                                      ***/
+/*** This file contains the function prototypes and variable declarations ***/
+/***                                                                      ***/
+/*** Copyright (C) Marcel de Kogel 1996,1997                              ***/
+/***     You are not allowed to distribute this software commercially     ***/
+/***     Please, notify me, if you make any changes to this file          ***/
+/****************************************************************************/
+
 #pragma once
 
+/****************************************************************************/
+/*** Machine dependent definitions                                        ***/
+/****************************************************************************/
 /* #define DEBUG      */              /* Compile debugging version          */
 /* #define X86_ASM    */              /* Compile optimised GCC/x86 version  */
    #define LSB_FIRST                  /* Compile for low-endian CPU         */
 /* #define __64BIT__  */              /* Compile for 64 bit machines        */
 /* #define __128BIT__ */              /* Compile for 128 bit machines       */
+
+/****************************************************************************/
+/* If your compiler doesn't know about inlined functions, uncomment this    */
+/****************************************************************************/
+/* #define INLINE static */
 
 #ifndef EMU_TYPES
 #define EMU_TYPES

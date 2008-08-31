@@ -1,5 +1,16 @@
+/*** Z80Em: Portable Z80 emulator *******************************************/
+/***                                                                      ***/
+/***                                 Z80.c                                ***/
+/***                                                                      ***/
+/*** This file contains the emulation code                                ***/
+/***                                                                      ***/
+/*** Copyright (C) Marcel de Kogel 1996,1997                              ***/
+/***     You are not allowed to distribute this software commercially     ***/
+/***     Please, notify me, if you make any changes to this file          ***/
+/****************************************************************************/
+
 #include "..\stdafx.h"
-#include "z80cpu.h"
+#include "z80.h"
 
 int    Z80_ICount = 0;
 
@@ -402,7 +413,7 @@ static void halt(void)
 {
  --R.PC.W.l;
  R.HALT=1;
- //if (Z80_ICount>0) Z80_ICount=0;
+ //if (Z80_ICount>0) Z80_ICount=0; // [AppleWin] Commented out
 }
 
 static void im_0(void) { R.IM=0; }
@@ -2243,9 +2254,9 @@ static void ei(void)
 void Z80_Reset (void)
 {
  memset (&R,0,sizeof(Z80_Regs));
- R.SP.D=0x0000;  // Modificado de 0xF000 para 0x0000
+ R.SP.D=0x0000;  // [AppleWin] Modified from 0xF000 to 0x0000
  R.R=rand();
- Z80_ICount = 0;
+ Z80_ICount = 0; // [AppleWin] Modified from Z80_IPeriod to 0
 }
 
 /****************************************************************************/
@@ -2369,6 +2380,48 @@ unsigned Z80_GetPC (void)
  return R.PC.D;
 }
 
+#if 0 // [AppleWin] Not used
+/****************************************************************************/
+/* Execute IPeriod T-States. Return 0 if emulation should be stopped        */
+/****************************************************************************/
+int Z80_Execute (void)
+{
+ unsigned opcode;
+ Z80_Running=1;
+ InitTables ();
+ do
+ {
+#ifdef TRACE
+  pc_trace[pc_count]=R.PC.D;
+  pc_count=(pc_count+1)&255;
+#endif
+#ifdef DEBUG
+  if (R.PC.D==Z80_Trap) Z80_Trace=1;
+  if (Z80_Trace) Z80_Debug(&R);
+  if (!Z80_Running) break;
+#endif
+  ++R.R;
+  opcode=M_RDOP(R.PC.D);
+  R.PC.W.l++;
+  Z80_ICount-=cycles_main[opcode];
+  (*(opcode_main[opcode]))();
+ }
+ while (Z80_ICount>0);
+ Z80_ICount+=Z80_IPeriod;
+ Interrupt (Z80_Interrupt());
+ return Z80_Running;
+}
+
+/****************************************************************************/
+/* Interpret Z80 code                                                       */
+/****************************************************************************/
+word Z80 (void)
+{
+ while (Z80_Execute());
+ return(R.PC.W.l);
+}
+#endif
+
 /****************************************************************************/
 /* Dump register contents and (optionally) a PC trace to stdout             */
 /****************************************************************************/
@@ -2405,13 +2458,7 @@ void Z80_SetWaitStates (int n)
  }
 }
 
-// ------------------------------------------------------
-
-/****************************************************************************
-*
-*  OPCODE TABLE
-*
-***/
+// AppleWin additions:
 
 //===========================================================================
 
