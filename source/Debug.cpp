@@ -43,11 +43,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: COLOR LOAD ["filename"]
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,0,0);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,0,2);
 
 
 // Public _________________________________________________________________________________________
 
+// All (Global)
+	bool g_bDebuggerEatKey = false;
 
 // Bookmarks __________________________________________________________________
 //	vector<int> g_aBookmarks;
@@ -138,7 +140,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("A")           , CmdAssemble          , CMD_ASSEMBLE             , "Assemble instructions"      },
 		{TEXT("BRK")         , CmdBreakInvalid      , CMD_BREAK_INVALID        , "Enter debugger on BRK or INVALID" },
 		{TEXT("BRKOP")       , CmdBreakOpcode       , CMD_BREAK_OPCODE         , "Enter debugger on opcode"   },
-		{TEXT("GO")          , CmdGo                , CMD_GO                   , "Run [until PC = address]"   },
+		{TEXT("G")           , CmdGo                , CMD_GO                   , "Run [until PC = address]"   },
 		{TEXT("IN")          , CmdIn                , CMD_IN                   , "Input byte from IO $C0xx"   },
 		{TEXT("KEY")         , CmdKey               , CMD_INPUT_KEY            , "Feed key into emulator"     },
 		{TEXT("JSR")         , CmdJSR               , CMD_JSR                  , "Call sub-routine"           },
@@ -2433,6 +2435,7 @@ Update_t CmdGo (int nArgs)
 //  if (!g_nDebugStepUntil)
 //    g_nDebugStepUntil = GetAddress(g_aArgs[1].sArg);
 
+	g_bDebuggerEatKey = true;
 	g_nAppMode = MODE_STEPPING;
 	FrameRefreshStatus(DRAW_TITLE);
 

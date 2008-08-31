@@ -15,6 +15,9 @@ using namespace std;
 
 // Globals __________________________________________________________________
 
+// All (Global)
+	extern bool g_bDebuggerEatKey;
+
 // Benchmarking
 	extern DWORD      extbench;
 
@@ -52,7 +55,7 @@ using namespace std;
 
 	extern bool g_bDisasmCurBad   ;
 	extern int  g_nDisasmCurLine  ; // Aligned to Top or Center
-    extern int  g_iDisasmCurState ;
+	extern int  g_iDisasmCurState ;
 
 	extern int  g_nDisasmWinHeight;
 

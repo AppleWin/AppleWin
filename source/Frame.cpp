@@ -594,7 +594,12 @@ LRESULT CALLBACK FrameWndProc (
 			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) ||
 				((g_nAppMode == MODE_STEPPING) && (wparam != TEXT('\x1B'))))
 			{
-				KeybQueueKeypress((int)wparam,ASCII);
+				if( !g_bDebuggerEatKey )
+				{
+					KeybQueueKeypress((int)wparam,ASCII);
+				} else {
+					g_bDebuggerEatKey = false;
+				}
 			}
 			else
 			if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
