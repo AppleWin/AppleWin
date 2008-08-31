@@ -14,8 +14,7 @@
 <h1>AppleWin Debugger Tutorial</h1>
 
 <p><font size="4"><i>By Michael Pohoreski.</i></font></p>
-
-<p><font size="3">Revision 4.&nbsp; July 1, 2006.</font></p>
+<p><font size="3">Revision 6.&nbsp; August 30, 2008 (Debugger version 2.6.0.6).</font></p>
 
 <h2>Table of Contents</h2>
 
@@ -109,7 +108,7 @@ syntax coloring in the disassembly view, and info panel.&nbsp; All
 the colors can be customized to your liking.&nbsp; See the <a href="#Colors">Colors</a>
 section for details.</p>
 
-<p>On the left is the disassembly view. &nbsp;On the righ is
+<p>On the left is the disassembly view. &nbsp;On the right is
 the info panael, which shows registers, stack, zero-page pointers,
 breakpoints, watches, and 2 mini-memory views.</p>
 
@@ -242,6 +241,20 @@ for specific command.</i></font></p>
 
     </tr>
 
+    <tr bgcolor="#000000">
+
+      <td bgcolor="#000000" width="25%">
+      <p><font color="#30c0ff"><font face="Courier"><b>HELP *</b></font></font></p>
+
+      </td>
+
+      <td bgcolor="#000000" width="75%">
+      <p><font color="#ffffff"><i>Display Help
+for all commands.</i></font></p>
+
+      </td>
+
+    </tr>
     <tr bgcolor="#000000">
 
       <td bgcolor="#000000" width="25%">
@@ -1148,7 +1161,7 @@ possible.</i></p>
     <p><i>Hex Values may be
 ambiguous, if their corresponding symbol is defined.&nbsp; To avoid
 confusion, don&rsquo;t define symbols such as the popular $DEAD,
-$BEEF, $C0DE, $CAFE, etc. An example is given with A1.</i></p>
+$BEEF, $C0DE, $CAFE, etc.&nbsp; An example is given with <b>A1</b> in the following example.</i></p>
 
   </li>
 
@@ -2371,7 +2384,7 @@ message displayed when booted, showing Apple Model.</i></font></p>
 
       <td bgcolor="#000000" width="75%">
       <p><font color="#ffffff"><i>Switch to
-the Data Window to view memory. Most scrolling keys work.</i></font></p>
+the Data Window to view memory. (<b>Note: Not implimented yet!</b>)</i></font></p>
 
       </td>
 
@@ -2399,20 +2412,21 @@ the Code Window to view the disassembler.</i></font></p>
 
 <h3><a name="Memory_Search">Searching Memory</a></h3>
 
-<p>You can search memory for hex values.&nbsp; Wildcard
-support is also supported via the '<b>?</b>' wildcard
-operator, including nibble searching. &nbsp;
-A single '<b>?</b>' by itself, means match one byte of any
-value.&nbsp; A hex value
-with the high nibble or low nibble of '<b>?</b>' will mask
-off the corresponding
-nibble. &nbsp; (At the moment there is no way to refer to the list
-of results. &nbsp;
-A future version will support&nbsp;_# to reference search
-result's addresses.)</p>
+<p>You can search memory for specific text, hex, or even wildcard values,
+ using the '<b>S</b>' command.
+ 
+<p>To search for ASCII text, use double-quotes;
+ for Apple text (the high-bit set), use single-quotes;
+ and to search for wildcard bytes and nibbles, use the '<b>?</b>' wildcard
+ operator.&nbsp; A single '<b>?</b>' by itself, means match an byte of any
+ value.&nbsp; A hex value with the high nibble or low nibble with a '<b>?</b>' will match any nibble.
+</p>
 
-<p>Searching memory for text is forthcoming in a future version
-of the debugger.</p>
+<p>Since there may be a few results returned, the at (<b>@</b>) has been over-loaded
+ to function both as a <b>command</b> and as an <b>operator</b>.  You can use the '<b>@</b>' command
+ by itself with no arguments to list the matches found.  The '<b>@</b>' operator can be
+ used with other commands to reference the <i>n<sup>th</sup></i> search result's addresses.
+</p>
 
 <br>
 
@@ -2435,18 +2449,32 @@ of the debugger.</p>
     </tr>
 
     <tr bgcolor="#cccccc">
+      <td width="25%">
+      <p><font color="#000000" face="Courier"><b>S
+#,len &hellip;</b></font></p>
+      </td>
+      <td width="75%">
+      <p><i>Search memory for&nbsp;8-bit hex value(s).</i></p>
+      </td>
+    </tr>
 
+    <tr bgcolor="#999999">
+      <td width="25%">
+      <p><font color="#000000"><font face="Courier"><b>@</b></font></font></p>
+      </td>
+      <td width="75%">
+      <p><i>Display list of address found that match the search arguments.</i></p>
+      </td>
+    </tr>
+
+    <tr bgcolor="#cccccc">
       <td width="25%">
       <p><font color="#000000" face="Courier"><b>SH
 #,len byte1 &hellip;</b></font></p>
-
       </td>
-
       <td width="75%">
       <p><i>Search memory for&nbsp;8-bit hex value(s).</i></p>
-
       </td>
-
     </tr>
 
     <tr bgcolor="#999999">
@@ -2491,10 +2519,21 @@ of the debugger.</p>
     </tr>
 
     <tr bgcolor="#000000">
+      <td width="25%">
+      <p><b><font color="#00b8ff" face="Courier">S
+F000,1000 'Apple'</font></b></p>
+      </td>
+      <td width="75%">
+      <p><i><font color="#ffffff">Search
+memory for Apple High Bit text</font></i></p>
+      </td>
+    </tr>
+
+    <tr bgcolor="#000000">
 
       <td width="25%">
-      <p><b><font color="#00b8ff" face="Courier">SH
-800,8000 C030</font></b></p>
+      <p><b><font color="#00b8ff" face="Courier">S
+F000,1000 C030</font></b></p>
 
       </td>
 
@@ -2510,7 +2549,7 @@ memory for speaker access.</font></i></p>
 
       <td bgcolor="#000000" width="25%">
       <p><b><font color="#00b8ff" face="Courier">SH
-800,8000 AD ? C0</font></b></p>
+F000:FFFF AD ? C0</font></b></p>
 
       </td>
 
@@ -2526,7 +2565,7 @@ memory for &ldquo; <b>LDA $<font color="#ffff00">C0xx</font></b>&rdquo;.</font><
 
       <td bgcolor="#000000" width="25%">
       <p><b><font color="#00b8ff" face="Courier">SH
-800,8000 3? C0</font></b></p>
+F000,800 3? C0</font></b></p>
 
       </td>
 
@@ -2542,7 +2581,7 @@ memory for speaker access <b>$<font color="#ffff00">C03x</font></b>.</font></i><
 
       <td bgcolor="#000000" width="25%">
       <p><b><font color="#00b8ff" face="Courier">SH
-800,8000 ?1 C0</font></b></p>
+F000,FFF ?1 C0</font></b></p>
 
       </td>
 
@@ -2557,21 +2596,17 @@ memory for soft-switch $<b><font color="#ffff00">C0x1</font></b>.</font></i></p>
     <tr bgcolor="#000000">
 
       <td bgcolor="#000000" width="25%">
-      <p><b><font color="#00b8ff" face="Courier">L
-_1</font></b></p>
+      <p><b><font color="#00b8ff" face="Courier">
+	  S F000:FFFF C050
+	  <br>U
+@3-1</font></b></p>
 
       </td>
-
       <td bgcolor="#000000" width="75%">
-      <p><i><font color="#ffffff">Disassemble
-from&nbsp;search result #<b><font color="#ffff00">1</font></b>
-address.</font></i></p>
-
-      <p><i><font color="#ffffff">Note: Not
-yet implemented!</font></i></p>
-
+      <p><i><font color="#ffffff">Search for TXTCLR, and disassemble
+from&nbsp;search result #<b><font color="#ffff00">3</font></b>
+address minus 1 byte.</font></i></p>
       </td>
-
     </tr>
 
   </tbody>
@@ -3413,7 +3448,7 @@ DATA</span></b></font></font></p>
 
       <td width="75%">
       <p><i><span style="background: transparent none repeat scroll 0% 50%; -moz-background-clip: initial; -moz-background-origin: initial; -moz-background-inline-policy: initial;">Switch
-to the Data window to view memory. Most scrolling keys work.</span></i></p>
+to the Data window to view memory.&nbsp; (<b>Note: Not implimented yet!</b>)</span></i></p>
 
       </td>
 
@@ -5145,50 +5180,44 @@ command.
 
   <col width="64*"> <col width="192*"> <tbody>
 
-    <tr bgcolor="#000000">
-
+  <tr bgcolor="#000000">
       <td bgcolor="#000000" width="25%">
       <p><font color="#ffffff"><b>Command</b></font></p>
-
       </td>
-
       <td bgcolor="#000000" width="75%">
       <p style="font-style: normal;"><font color="#ffffff"><b>Effect</b></font></p>
-
       </td>
-
     </tr>
 
     <tr bgcolor="#cccccc">
-
       <td width="25%">
       <p><font color="#000000"><font face="Courier"><b>RUN&nbsp;</b></font></font><b><span style="font-family: Courier; color: black;">filename</span></b></p>
-
       </td>
-
       <td width="75%">
       <p><i>Runs the specified script filename; the
 filename&nbsp;may be quoted</i><i>.</i></p>
-
       </td>
-
     </tr>
 
     <tr bgcolor="#999999">
-
       <td width="25%">
       <p><b><span style="font-family: Courier; color: black;">ECHO string</span></b></p>
-
       </td>
-
       <td width="75%">
       <p><i>Echo the text to the debugger console. The
 string may optionally be quoted.</i></p>
-
       </td>
-
     </tr>
 
+    <tr bgcolor="#cccccc">
+      <td width="25%">
+      <p><font color="#000000"><font face="Courier"><b>//&nbsp; comment</b></font></font></p>
+      </td>
+      <td width="75%">
+      <p><i>A C++ style comment.&nbsp; Ignores the rest of the command line.</i><i>.</i></p>
+      </td>
+    </tr>
+	
   </tbody>
 </table>
 
