@@ -27,12 +27,12 @@ Changes:
   - The filename generated depends if a floppy disk is mounted:
       o no disk mounted: "AppleWin_ScreenShot_#.bmp"
       o use the last disk mounted: "{DiskFilename}_#.bmp"
-  - default saves to 580x384 resolution.
+  - default saves to 560x384 resolution.
   - Shift+PrintScreen will save a 280x192 .bmp
-    Note: In case you are wondering about the non-standard resolution 580x384
-      o Width is 580 in order to save double hi-res graphics, and
+    Note: In case you are wondering about the non-standard resolution 560x384
+      o Width is 560 in order to save double hi-res graphics, and
       o Height is 384 because we double the vertical scan lines to
-        preserve the original aspect ratio using a 580 width.
+        preserve the original aspect ratio using a 560 width.
   - To enable the dialog box display of the last file saved to,
     use the command line option: -printscreen
 . Added new video mode: "Monochrome - Authentic"
