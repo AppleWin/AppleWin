@@ -10,9 +10,61 @@
 /****************************************************************************/
 
 #include "..\stdafx.h"
-#include "z80.h"
+#include "Z80.h"
 
-int    Z80_ICount = 0;
+#define M_RDMEM(A)      Z80_RDMEM(A)
+#define M_WRMEM(A,V)    Z80_WRMEM(A,V)
+#define M_RDOP(A)       Z80_RDOP(A)
+#define M_RDOP_ARG(A)   Z80_RDOP_ARG(A)
+#define M_RDSTACK(A)    Z80_RDSTACK(A)
+#define M_WRSTACK(A,V)  Z80_WRSTACK(A,V)
+
+#define DoIn(lo,hi)     Z80_In((lo)+(((unsigned)(hi))<<8))
+#define DoOut(lo,hi,v)  Z80_Out((lo)+(((unsigned)(hi))<<8),v)
+
+static void Interrupt(int j);
+static void ei(void);
+
+#define S_FLAG          0x80
+#define Z_FLAG          0x40
+#define H_FLAG          0x10
+#define V_FLAG          0x04
+#define N_FLAG          0x02
+#define C_FLAG          0x01
+
+#define M_SKIP_CALL     R.PC.W.l+=2
+#define M_SKIP_JP       R.PC.W.l+=2
+#define M_SKIP_JR       R.PC.W.l+=1
+#define M_SKIP_RET
+
+static Z80_Regs R;
+//int Z80_Running=1;		// [AppleWin] Not used
+//int Z80_IPeriod=50000;	// [AppleWin] Not used
+int Z80_ICount=0;			// [AppleWin] Modified from 50000 to 0
+#ifdef DEBUG
+int Z80_Trace=0;
+int Z80_Trap=-1;
+#endif
+#ifdef TRACE
+static unsigned pc_trace[256];
+static unsigned pc_count=0;
+#endif
+
+static byte PTable[512];
+static byte ZSTable[512];
+static byte ZSPTable[512];
+#include "Z80DAA.h"
+
+typedef void (*opcode_fn) (void);
+
+#define M_C     (R.AF.B.l&C_FLAG)
+#define M_NC    (!M_C)
+#define M_Z     (R.AF.B.l&Z_FLAG)
+#define M_NZ    (!M_Z)
+#define M_M     (R.AF.B.l&S_FLAG)
+#define M_P     (!M_M)
+#define M_PE    (R.AF.B.l&V_FLAG)
+#define M_PO    (!M_PE)
 
 /* Get next opcode argument and increment program counter */
 INLINE unsigned M_RDMEM_OPCODE (void)
