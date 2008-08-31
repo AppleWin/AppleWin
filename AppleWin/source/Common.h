@@ -75,6 +75,7 @@ enum AppMode_e
 #define  SAVE(a,b) RegSaveValue(TEXT("Configuration"),a,1,b)
 
 // Configuration
+#define REG_CONFIG						"Configuration"
 #define  REGVALUE_APPLE2_TYPE        "Apple2 Type"
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
@@ -96,12 +97,17 @@ enum AppMode_e
 #define  REGVALUE_Z80_IN_SLOT5       "Z80 in slot 5"
 
 // Preferences 
+#define REG_PREFS							"Preferences"
 #define REGVALUE_PREF_START_DIR      "Starting Directory"
+#define REGVALUE_PREF_LAST_DISK_1	 "Last Disk Image 1"
+#define REGVALUE_PREF_LAST_DISK_2	 "Last Disk Image 2"
 
 #define WM_USER_BENCHMARK	WM_USER+1
 #define WM_USER_RESTART		WM_USER+2
 #define WM_USER_SAVESTATE	WM_USER+3
 #define WM_USER_LOADSTATE	WM_USER+4
+#define VK_SNAPSHOT_560		WM_USER+5
+#define VK_SNAPSHOT_280		WM_USER+6
 
 
 enum eSOUNDCARDTYPE {SC_UNINIT=0, SC_NONE, SC_MOCKINGBOARD, SC_PHASOR};	// Apple soundcard type

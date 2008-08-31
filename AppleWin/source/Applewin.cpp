@@ -459,9 +459,9 @@ void LoadConfiguration ()
 	  HD_SetEnabled(dwTmp ? true : false);
 
   char szHDFilename[MAX_PATH] = {0};
-  if(RegLoadString(TEXT("Configuration"), TEXT(REGVALUE_HDD_IMAGE1), 1, szHDFilename, sizeof(szHDFilename)))
+  if(RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_HDD_IMAGE1), 1, szHDFilename, sizeof(szHDFilename)))
 	  HD_InsertDisk2(0, szHDFilename);
-  if(RegLoadString(TEXT("Configuration"), TEXT(REGVALUE_HDD_IMAGE2), 1, szHDFilename, sizeof(szHDFilename)))
+  if(RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_HDD_IMAGE2), 1, szHDFilename, sizeof(szHDFilename)))
 	  HD_InsertDisk2(1, szHDFilename);
 
   if(LOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
@@ -495,19 +495,21 @@ void LoadConfiguration ()
 
   //
 
-  char szFilename[MAX_PATH] = {0};
+	char szFilename[MAX_PATH] = {0};
 
-  RegLoadString(TEXT("Configuration"),TEXT(REGVALUE_SAVESTATE_FILENAME),1,szFilename,sizeof(szFilename));
-  Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used
+	RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_SAVESTATE_FILENAME),1,szFilename,sizeof(szFilename));
+	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used
 
-  // Current/Starting Dir is the "root" of where the user keeps his disk images
-  RegLoadString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,g_sCurrentDir,MAX_PATH);
-  SetCurrentImageDir();
-  
-  char szUthernetInt[MAX_PATH] = {0};
-  RegLoadString(TEXT("Configuration"),TEXT("Uthernet Interface"),1,szUthernetInt,MAX_PATH);  
-  update_tfe_interface(szUthernetInt,NULL);
+	// Current/Starting Dir is the "root" of where the user keeps his disk images
+	RegLoadString(TEXT(REG_PREFS),TEXT(REGVALUE_PREF_START_DIR),1,g_sCurrentDir,MAX_PATH);
+	SetCurrentImageDir();
 
+	Disk_LoadLastDiskImage(0);
+	Disk_LoadLastDiskImage(1);
+
+	char szUthernetInt[MAX_PATH] = {0};
+	RegLoadString(TEXT(REG_CONFIG),TEXT("Uthernet Interface"),1,szUthernetInt,MAX_PATH);  
+	update_tfe_interface(szUthernetInt,NULL);
 }
 
 //===========================================================================
@@ -567,10 +569,19 @@ void RegisterExtensions ()
 //===========================================================================
 void AppleWin_RegisterHotKeys()
 {
-	BOOL bStatus = RegisterHotKey(      
+	BOOL bStatus = true;
+	
+	bStatus &= RegisterHotKey(      
 		g_hFrameWindow	, // HWND hWnd
-		VK_SNAPSHOT		, // int id (user/custom id)
+		VK_SNAPSHOT_560	, // int id (user/custom id)
 		0					, // UINT fsModifiers
+		VK_SNAPSHOT		  // UINT vk = PrintScreen
+	);
+
+	bStatus &= RegisterHotKey(      
+		g_hFrameWindow	, // HWND hWnd
+		VK_SNAPSHOT_280, // int id (user/custom id)
+		MOD_SHIFT		, // UINT fsModifiers
 		VK_SNAPSHOT		  // UINT vk = PrintScreen
 	);
 

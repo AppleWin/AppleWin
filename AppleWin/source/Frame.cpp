@@ -32,18 +32,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 #include <sys/stat.h>
 
-#define ENABLE_MENU 0
+//#define ENABLE_MENU 0
 
 // Magic numbers (used by FrameCreateWindow to calc width/height):
 #define MAGICX 5	// 3D border between Apple window & Emulator's RHS buttons
 #define MAGICY 5	// 3D border between Apple window & Title bar
 
-#define  VIEWPORTCX  560
-#if ENABLE_MENU
-#define  VIEWPORTCY  400
-#else
-#define  VIEWPORTCY  384
-#endif
+#define VIEWPORTCX FRAMEBUFFER_W
+#define VIEWPORTCY FRAMEBUFFER_H
+
 #define  BUTTONX     (VIEWPORTCX + VIEWPORTX*2)
 #define  BUTTONY     0
 #define  BUTTONCX    45
@@ -704,9 +701,23 @@ LRESULT CALLBACK FrameWndProc (
 	case WM_HOTKEY:
 		// wparam = user id
 		// lparam = modifiers: shift, ctrl, alt, win
-		if (wparam == VK_SNAPSHOT)
+		if (wparam == VK_SNAPSHOT_560)
 		{
-			Video_TakeScreenShot();
+#if _DEBUG
+//			MessageBox( NULL, "Double 580x384 size!", "PrintScreen", MB_OK );
+#endif
+			Video_TakeScreenShot( SCREENSHOT_560x384 );
+		}
+		else
+		if (wparam == VK_SNAPSHOT_280)
+		{
+			if( lparam & MOD_SHIFT)
+			{
+#if _DEBUG
+//				MessageBox( NULL, "Normal 280x192 size!", "PrintScreen", MB_OK );
+#endif
+			}
+			Video_TakeScreenShot( SCREENSHOT_280x192 );
 		}
 		break;
 

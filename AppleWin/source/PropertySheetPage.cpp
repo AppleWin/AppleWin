@@ -1011,10 +1011,10 @@ static void SaveStateUpdate()
 	{
 		Snapshot_SetFilename(g_szSSNewFilename);
 
-		RegSaveString(TEXT("Configuration"),REGVALUE_SAVESTATE_FILENAME,1,Snapshot_GetFilename());
+		RegSaveString(TEXT(REG_CONFIG),REGVALUE_SAVESTATE_FILENAME,1,Snapshot_GetFilename());
 
 		if(g_szSSNewDirectory[0])
-			RegSaveString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,g_szSSNewDirectory);
+			RegSaveString(TEXT(REG_PREFS),REGVALUE_PREF_START_DIR,1,g_szSSNewDirectory);
 	}
 }
 
