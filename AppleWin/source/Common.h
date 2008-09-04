@@ -35,12 +35,6 @@ enum AppMode_e
 	, MODE_STEPPING
 };
 
-//#define  MODE_LOGO         0
-//#define  MODE_PAUSED       1
-//#define  MODE_RUNNING      2
-//#define  MODE_DEBUG        3
-//#define  MODE_STEPPING     4
-
 #define  SPEED_MIN         0
 #define  SPEED_NORMAL      10
 #define  SPEED_MAX         40
