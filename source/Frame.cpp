@@ -627,6 +627,7 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_DDE_EXECUTE: {
       LPTSTR filename = (LPTSTR)GlobalLock((HGLOBAL)lparam);
+//MessageBox( NULL, filename, "DDE Exec", MB_OK );
       int error = DiskInsert(0,filename,0,0);
       if (!error) {
         if (!fullscreen)
@@ -635,7 +636,9 @@ LRESULT CALLBACK FrameWndProc (
         ProcessButtonClick(BTN_RUN);
       }
       else
+      {
         DiskNotifyInvalidImage(filename,error);
+      }
       GlobalUnlock((HGLOBAL)lparam);
       break;
     }
