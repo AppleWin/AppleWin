@@ -287,6 +287,7 @@ IDR_HDDRVR_FW           FIRMWARE                "Hddrvr.bin"
 IDR_PRINTDRVR_FW        FIRMWARE                "Parallel.rom"
 IDR_MOCKINGBOARD_D_FW   FIRMWARE                "Mockingboard-D.rom"
 IDR_MOUSEINTERFACE_FW   FIRMWARE                "MouseInterface.rom"
+IDR_THUNDERCLOCKPLUS_FW FIRMWARE                "ThunderClockPlus.rom"
 
 /////////////////////////////////////////////////////////////////////////////
 //
