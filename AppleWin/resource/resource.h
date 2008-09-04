@@ -39,9 +39,10 @@
 #define IDR_SSC_FW                      134
 #define IDR_MOCKINGBOARD_D_FW           135
 #define IDR_MOUSEINTERFACE_FW           136
-#define IDR_FREEZES_F8_ROM              137
-#define IDR_PRAVETS_82_ROM              138
-#define IDR_PRAVETS_8C_ROM              139
+#define IDR_THUNDERCLOCKPLUS_FW         137
+#define IDR_FREEZES_F8_ROM              138
+#define IDR_PRAVETS_82_ROM              139
+#define IDR_PRAVETS_8C_ROM              140
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -98,7 +99,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        140
+#define _APS_NEXT_RESOURCE_VALUE        141
 #define _APS_NEXT_COMMAND_VALUE         40008
 #define _APS_NEXT_CONTROL_VALUE         1052
 #define _APS_NEXT_SYMED_VALUE           101
