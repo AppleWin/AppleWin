@@ -736,9 +736,10 @@ bool DiskDriveSwap()
 static BYTE __stdcall Disk_IORead(WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 static BYTE __stdcall Disk_IOWrite(WORD pc, BYTE addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 
+// TODO: LoadRom_Disk_Floppy()
 void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
 {
-	const UINT DISK2_FW_SIZE = 256;
+	const UINT DISK2_FW_SIZE = APPLE_SLOT_SIZE;
 
 	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_DISK2_FW), "FIRMWARE");
 	if(hResInfo == NULL)
@@ -759,9 +760,9 @@ void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
 	memcpy(pCxRomPeripheral + uSlot*256, pData, DISK2_FW_SIZE);
 
 	// TODO/FIXME: HACK! REMOVE A WAIT ROUTINE FROM THE DISK CONTROLLER'S FIRMWARE
-	*(pCxRomPeripheral+0x064C) = 0xA9;
-	*(pCxRomPeripheral+0x064D) = 0x00;
-	*(pCxRomPeripheral+0x064E) = 0xEA;
+	*(pCxRomPeripheral + (uSlot*256) + 0x4C) = 0xA9;
+	*(pCxRomPeripheral + (uSlot*256) + 0x4D) = 0x00;
+	*(pCxRomPeripheral + (uSlot*256) + 0x4E) = 0xEA;
 
 	//
 
