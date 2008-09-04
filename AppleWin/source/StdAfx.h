@@ -46,6 +46,7 @@
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "ParallelPrinter.h"
+#include "Peripheral_Clock_Generic.h"
 #include "PropertySheetPage.h"
 #include "Registry.h"
 #include "Riff.h"
