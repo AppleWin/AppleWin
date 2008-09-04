@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 static DWORD inactivity = 0;
 static FILE* file = NULL;
-DWORD const PRINTDRVR_SIZE = 0x100;
+DWORD const PRINTDRVR_SIZE = APPLE_SLOT_SIZE;
 
 //===========================================================================
 
