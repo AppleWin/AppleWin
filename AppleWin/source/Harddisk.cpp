@@ -216,7 +216,7 @@ static LPCTSTR HD_DiskGetName (int nDrive)
 
 static BYTE __stdcall HD_IO_EMUL (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 
-static const DWORD HDDRVR_SIZE = 0x100;
+static const DWORD HDDRVR_SIZE = APPLE_SLOT_SIZE;
 
 bool HD_CardIsEnabled()
 {
