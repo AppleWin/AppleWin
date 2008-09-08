@@ -18,8 +18,14 @@
 		<p>The entire Apple //e state is saved to a file (.aws). This includes Disk][ (even 
 			during r/w operation) and Mockingboards.</p>
 		<p><span style="FONT-WEIGHT: bold">1</span>
-			Currently the harddisk state is not persisted to the .aws file. Phasor,
-			Uthernet and Mouse cards are not persisted either.</p>
+		    The following are not persisted to the .aws file:
+		    <ul>
+		        <li>Harddisk</li>
+		        <li>Phasor</li>
+		        <li>Uthernet card</li>
+		        <li>Mouse card</li>
+		        <li>CP/M SoftCard</li>
+		    </ul>
 		<p>Note: Only the file names of the disk images are stored in the .aws (not the 
 			full path). This allows you to move your disk image around or distribute them. 
 			If AppleWin can't locate the disk image(s), then it will prompt for the new 
