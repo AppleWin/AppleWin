@@ -170,6 +170,12 @@
 				</OBJECT>
 			<UL>
 				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Pravets Clones">
+					<param name="Local" value="cfg-Advanced-Pravets.html">
+					</OBJECT>
+			</UL>
+			<UL>
+				<LI> <OBJECT type="text/sitemap">
 					<param name="Name" value="The Freeze's F8 rom">
 					<param name="Local" value="cfg-Advanced-freeze-rom.html">
 					</OBJECT>
