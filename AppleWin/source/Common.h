@@ -8,7 +8,7 @@ const double CLK_6502 = ((_M14 * 65.0) / 912.0); // 65 cycles per 912 14M clocks
 
 // The effective Z-80 clock rate is 2.041MHz
 // See: http://www.apple2info.net/hardware/softcard/SC-SWHW_a2in.pdf
-const double CLK_Z80 = 2.041e6;
+const double CLK_Z80 = (CLK_6502 * 2);
 
 const UINT uCyclesPerLine			= 65;	// 25 cycles of HBL & 40 cycles of HBL'
 const UINT uVisibleLinesPerFrame	= 64*3;	// 192
