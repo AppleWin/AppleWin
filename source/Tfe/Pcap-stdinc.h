@@ -39,6 +39,8 @@
 
 #define caddr_t char*
 
-#define snprintf _snprintf
-#define vsnprintf _vsnprintf
+// TC: TfeArch.cpp includes pcap.h (before stdio.h), which includes Pcap_stdinc.h which redefines: snprintf & vsnprintf
+// - This causes VC++2008 Express to give a compile error for stdio.h!
+//#define snprintf _snprintf
+//#define vsnprintf _vsnprintf
 
