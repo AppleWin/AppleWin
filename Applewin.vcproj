@@ -772,6 +772,10 @@
 				RelativePath=".\resource\SSC.rom"
 				>
 			</File>
+			<File
+				RelativePath=".\resource\ThunderClockPlus.rom"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath=".\source\Common.h"
