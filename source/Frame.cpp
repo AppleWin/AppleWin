@@ -767,7 +767,7 @@ LRESULT CALLBACK FrameWndProc (
 				VideoRedrawScreen();
 				g_bDebuggerViewingAppleOutput = true;  // +PATCH
 			}
-			RegSaveValue(TEXT("Configuration"),TEXT("Video Emulation"),1,videotype);
+			SAVE(TEXT("Video Emulation"),videotype);
 		}
 
 		else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)

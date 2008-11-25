@@ -422,17 +422,17 @@ void LoadConfiguration ()
 
   LOAD(TEXT("Joystick 0 Emulation"),&joytype[0]);
   LOAD(TEXT("Joystick 1 Emulation"),&joytype[1]);
-  LOAD(TEXT("Sound Emulation")   ,&soundtype);
+  LOAD(TEXT("Sound Emulation")     ,&soundtype);
 
   DWORD dwSerialPort;
-  LOAD(TEXT("Serial Port")       ,&dwSerialPort);
-  sg_SSC.SetSerialPort(dwSerialPort);
+  if (LOAD(TEXT("Serial Port"),&dwSerialPort))
+	sg_SSC.SetSerialPort(dwSerialPort);
 
   LOAD(TEXT("Emulation Speed")   ,&g_dwSpeed);
   LOAD(TEXT("Enhance Disk Speed"),(DWORD *)&enhancedisk);
   LOAD(TEXT("Video Emulation")   ,&videotype);
   LOAD(TEXT("Monochrome Color")  ,&monochrome);
-  LOAD(TEXT("Uthernet Active")  ,(DWORD *)&tfe_enabled);
+  LOAD(TEXT("Uthernet Active")   ,(DWORD *)&tfe_enabled);
 
   SetCurrentCLK6502();
 
