@@ -256,7 +256,7 @@ static eApple2Type GetApple2Type(DWORD NewCompType, DWORD NewCloneType)
 static void ConfigDlg_OK(HWND window, UINT afterclose)
 {
 	DWORD NewCompType = (DWORD) SendDlgItemMessage(window,IDC_COMPUTER,CB_GETCURSEL,0,0);
-	DWORD OldApple2Type = g_Apple2Type;//LOAD(TEXT(REGVALUE_APPLE2_TYPE),&OldApple2Type);
+	DWORD OldApple2Type = g_Apple2Type;
 	eApple2Type NewApple2Type = GetApple2Type(NewCompType, 0 );
 
 	DWORD newvidtype    = (DWORD)SendDlgItemMessage(window,IDC_VIDEOTYPE,CB_GETCURSEL,0,0);
@@ -446,7 +446,7 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
         if (g_dwSpeed == SPEED_NORMAL)
 		{
           custom = 0;
-          RegLoadValue(TEXT("Configuration"),TEXT("Custom Speed"),1,(DWORD *)&custom);
+		  LOAD(TEXT("Custom Speed"),(DWORD *)&custom);
         }
         CheckRadioButton(window, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, custom ? IDC_CUSTOM_SPEED : IDC_AUTHENTIC_SPEED);
         SetFocus(GetDlgItem(window, custom ? IDC_SLIDER_CPU_SPEED : IDC_AUTHENTIC_SPEED));
