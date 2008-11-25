@@ -2250,7 +2250,8 @@ void VideoUpdateFlash()
 
 	nTextFlashCnt++;
 
-	if(nTextFlashCnt == 60/6)	// Flash rate = 6Hz (every 166ms)
+	// BUG: In unthrottled CPU mode, flash rate should not be affected
+	if(nTextFlashCnt == 60/3)	// Flash rate = 3Hz (every 333ms)
 	{
 		nTextFlashCnt = 0;
 		g_bTextFlashState = !g_bTextFlashState;
