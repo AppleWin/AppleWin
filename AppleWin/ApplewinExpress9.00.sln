@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual C++ Express 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Applewin", "ApplewinExpress.vcproj", "{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Applewin", "ApplewinExpress9.00.vcproj", "{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
