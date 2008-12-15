@@ -395,7 +395,10 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 	// . PC=C2B5: LDA $C05D (CLRAN2)
 
 	// NB. AN3: For //e & //c these locations are now used to enabled/disabled DHIRES
-	return 0;
+	if (!write)
+		return MemReadFloatingBus(nCyclesLeft);
+	else
+		return 0;
 }
 
 // Enabling expansion ROM ($C800..$CFFF]:
