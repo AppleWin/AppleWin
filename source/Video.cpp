@@ -680,7 +680,7 @@ void DrawHiResSourceHalfShiftDim ()
 						2400:83 1---0011 ->  1 1 0 0 half-pixel shift right
 						2800:06 1---0110 -> 0 1 1 0  column 2 & 3
 
-						@reference: see Beagle Bro's Disk: "Silicon Salid", File: DOUBLE HI-RES
+						@reference: see Beagle Bro's Disk: "Silicon Salad", File: DOUBLE HI-RES
 						Fortunately double-hires is supported via pixel doubling, so we can do half-pixel shifts ;-)
 					*/
 					switch (color)
@@ -2294,7 +2294,10 @@ DWORD VideoSetSnapshot(SS_IO_Video* pSS)
 }
 
 //===========================================================================
-
+//
+// References to Jim Sather's books are given as eg:
+// UTAIIe:5-7,P3 (Understanding the Apple IIe, chapter 5, page 7, Paragraph 3)
+//
 WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
 {
     // get video scanner position
@@ -2303,8 +2306,8 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
 
     // machine state switches
     //
-	int nHires    = (SW_HIRES & !SW_TEXT) ? 1 : 0;
-    int nPage2    = (SW_PAGE2) ? 1 : 0;
+    int nHires   = (SW_HIRES && !SW_TEXT) ? 1 : 0;
+    int nPage2   = (SW_PAGE2) ? 1 : 0;
     int n80Store = (MemGet80Store()) ? 1 : 0;
 
     // calculate video parameters according to display standard
@@ -2348,43 +2351,51 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
 
     // calculate scanning memory address
     //
-    if (SW_HIRES && SW_MIXED && (v_4 & v_2))	// NICK: Should this be (SW_HIRES && !SW_TEXT) instead of just 'SW_HIRES' ?
+    if (nHires && SW_MIXED && v_4 && v_2) // HIRES TIME signal (UTAIIe:5-7,P3)
     {
-        nHires = 0; // (address is in text memory)
+        nHires = 0; // address is in text memory for mixed hires
     }
 
-    int nAddend0 = 0x68; // 1            1            0            1
-    int nAddend1 =              (h_5 << 5) | (h_4 << 4) | (h_3 << 3);
-    int nAddend2 = (v_4 << 6) | (v_3 << 5) | (v_4 << 4) | (v_3 << 3);
-    int nSum     = (nAddend0 + nAddend1 + nAddend2) & (0x0F << 3);
+    int nAddend0 = 0x0D; // 1            1            0            1
+    int nAddend1 =              (h_5 << 2) | (h_4 << 1) | (h_3 << 0);
+    int nAddend2 = (v_4 << 3) | (v_3 << 2) | (v_4 << 1) | (v_3 << 0);
+    int nSum     = (nAddend0 + nAddend1 + nAddend2) & 0x0F; // SUM (UTAIIe:5-9)
 
-    int nAddress = 0;
-    nAddress |= h_0 << 0; // a0
-    nAddress |= h_1 << 1; // a1
-    nAddress |= h_2 << 2; // a2
-    nAddress |= nSum;     // a3 - aa6
-    nAddress |= v_0 << 7; // a7
-    nAddress |= v_1 << 8; // a8
-    nAddress |= v_2 << 9; // a9
-    nAddress |= ((nHires) ? v_A : (1 ^ (nPage2 & (1 ^ n80Store)))) << 10; // a10
-    nAddress |= ((nHires) ? v_B : (nPage2 & (1 ^ n80Store))) << 11; // a11
+    int nAddress = 0; // build address from video scanner equations (UTAIIe:5-8,T5.1)
+    nAddress |= h_0  << 0; // a0
+    nAddress |= h_1  << 1; // a1
+    nAddress |= h_2  << 2; // a2
+    nAddress |= nSum << 3; // a3 - a6
+    nAddress |= v_0  << 7; // a7
+    nAddress |= v_1  << 8; // a8
+    nAddress |= v_2  << 9; // a9
+
+    int p2a = 1 ^ (nPage2 & (1 ^ n80Store));
+    int p2b = nPage2 & (1 ^ n80Store);
+
     if (nHires) // hires?
     {
-        // Y: insert hires only address bits
+        // Y: insert hires-only address bits
         //
+        nAddress |= v_A << 10; // a10
+        nAddress |= v_B << 11; // a11
         nAddress |= v_C << 12; // a12
-        nAddress |= (1 ^ (nPage2 & (1 ^ n80Store))) << 13; // a13
-        nAddress |= (nPage2 & (1 ^ n80Store)) << 14; // a14
+        nAddress |= p2a << 13; // a13
+        nAddress |= p2b << 14; // a14
     }
     else
     {
-        // N: text, so no higher address bits unless Apple ][, not Apple //e
+        // N: insert text-only address bits
         //
-        if ((IS_APPLE2) && // Apple ][?
-            (kHPEClock <= nHClock) && // Y: HBL?
-            (nHClock <= (kHClocks - 1)))
+        nAddress |= p2a << 10; // a10
+        nAddress |= p2b << 11; // a11
+
+        // Apple ][ (not //e) and HBL?
+		//
+		if (IS_APPLE2 && // Apple II only (UTAIIe:I-4,#5)
+			((1 ^ h_5) & ((1 ^ h_3) | (1 ^ h_4)))) // HBL (UTAIIe:8-10,F8.5)
         {
-            nAddress |= 1 << 12; // Y: a12 (add $1000 to address!)
+            nAddress |= 1 << 12; // Y: a12 (add $1000; )
         }
     }
 
@@ -2392,14 +2403,7 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
     //
 	if (pbVblBar_OUT != NULL)
 	{
-		if (v_4 & v_3) // VBL?
-		{
-			*pbVblBar_OUT = false; // Y: VBL' is false
-		}
-		else
-		{
-			*pbVblBar_OUT = true; // N: VBL' is true
-		}
+		*pbVblBar_OUT = ((v_4 & v_3) == 0); // VBL' = (v_4 & v_3)' (UTAIIe:5-10,#3)
 	}
     return static_cast<WORD>(nAddress);
 }
