@@ -2370,8 +2370,8 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
     nAddress |= v_1  << 8; // a8
     nAddress |= v_2  << 9; // a9
 
-    int p2a = 1 ^ (nPage2 & (1 ^ n80Store));
-    int p2b = nPage2 & (1 ^ n80Store);
+    int p2a = !(nPage2 && !n80Store);
+    int p2b = nPage2 && !n80Store;
 
     if (nHires) // hires?
     {
@@ -2393,9 +2393,9 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
         // Apple ][ (not //e) and HBL?
 		//
 		if (IS_APPLE2 && // Apple II only (UTAIIe:I-4,#5)
-			((1 ^ h_5) & ((1 ^ h_3) | (1 ^ h_4)))) // HBL (UTAIIe:8-10,F8.5)
+			!h_5 && (!h_4 || !h_3)) // HBL (UTAIIe:8-10,F8.5)
         {
-            nAddress |= 1 << 12; // Y: a12 (add $1000; )
+            nAddress |= 1 << 12; // Y: a12 (add $1000 to address!)
         }
     }
 
@@ -2403,7 +2403,7 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
     //
 	if (pbVblBar_OUT != NULL)
 	{
-		*pbVblBar_OUT = ((v_4 & v_3) == 0); // VBL' = (v_4 & v_3)' (UTAIIe:5-10,#3)
+		*pbVblBar_OUT = !v_4 || !v_3; // VBL' = (v_4 & v_3)' (UTAIIe:5-10,#3)
 	}
     return static_cast<WORD>(nAddress);
 }
