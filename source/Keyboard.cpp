@@ -175,7 +175,6 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			bFreshReset = false;
 			return; // Swallow spurious CTRL-C caused by CTRL-BREAK
 		}
-
 		bFreshReset = false;
 		if (key > 0x7F)
 			return;
@@ -186,40 +185,53 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			if (g_bCapsLock && (key >= 'a') && (key <='z'))
 			{
 				P8Shift = true;
-				keycode = key - 32;
+				keycode = key - 32;									
 			}
 			else
 			{
-				keycode = key;
+				keycode = key;			
 			}			
 
 			//The latter line should be applied for Pravtes 8A/C only, but not for Pravets 82/M !!!			
 			if ((g_bCapsLock == false) && (key >= 'A') && (key <='Z'))
 			{
-				P8Shift = true;
-				if (g_Apple2Type == A2TYPE_PRAVETS8A) 
-					keycode = key + 32;
+			P8Shift = true;
+			if (g_Apple2Type == A2TYPE_PRAVETS8A) 
+				keycode = key + 32;
 			}
-
+			
 			//Remap some keys for Pravets82/M
 			if (g_Apple2Type == A2TYPE_PRAVETS82)
 			{
-				if (key == 64) 
-					keycode = 96;
-				if (key == '^') 
-					keycode = '~';
-
-				if (g_bCapsLock == false) //i.e. cyrillic letters
+				if (key == 64) keycode = 96;
+				if (key == '^')	keycode = '~';	
+						
+				if (g_bCapsLock == false) //cyrillic letters
 				{
 					if (key == '`') keycode = '^';
 					if (key == 92) keycode = '@'; // \ to @	
 					if (key == 124) keycode = 92;
 				}
-				else //(g_bCapsLock == true) //i.e. latin letters
+				else //(g_bCapsLock == true) //latin letters
 				{
-					if (key == 91) keycode = 123;
-					if (key == 93) keycode = 125;
-					if (key == 124) keycode = 92;
+				if (key == 91) keycode = 123;
+				if (key == 93) keycode = 125;
+				if (key == 124) keycode = 92;					
+				}
+			}
+			if (g_Apple2Type == A2TYPE_PRAVETS8M)  //Pravets 8M charset is still uncertain
+			{
+				if (g_bCapsLock == false) //cyrillic letters
+				{
+					if (key == '[') keycode = '{';
+					if (key == ']') keycode = '}';
+					if (key == '`') keycode = '~'; //96= key `~
+					if (key == 92) keycode = 96;
+				}
+				else //latin letters
+				{
+					if (key == '`') 
+						keycode = '^'; //96= key `~
 				}
 			}
 			//Remap some keys for Pravets8A/C, which has a different charset for Pravtes82/M, whose keys MUST NOT be remapped.
@@ -227,48 +239,48 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			{
 				if (g_bCapsLock == false) //i.e. cyrillic letters
 			    {
-					if (key == '[') keycode = '{';
-					if (key == ']') keycode = '}';
-					if (key == '`') keycode = '~';
-					if (key == 92) keycode = 96;
-					if (GetCapsLockAllowed ()== true)
-					{
-						if ((key == 92) || (key == 124)) keycode = 96; //Ý to Þ
-						//This shall be rewriten, so that enabling CAPS_LOCK (i.e. F10) will not invert these keys values)
-						//The same for latin letters.
-						if ((key == '{') || (key == '}') || (key == '~') || (key == 124) || (key == '^') ||  (key == 95))
-							P8Shift = true;					
-					}
+				if (key == '[') keycode = '{';
+				if (key == ']') keycode = '}';
+				if (key == '`') keycode = '~';
+				if (key == 92) keycode = 96;
+				if (GetCapsLockAllowed ()== true)
+				{
+					if ((key == 92) || (key == 124)) keycode = 96; //Ý to Þ
+					//This shall be rewriten, so that enabling CAPS_LOCK (i.e. F10) will not invert these keys values)
+					//The same for latin letters.
+					if ((key == '{') || (key == '}') || (key == '~') || (key == 124) || (key == '^') ||  (key == 95))
+						P8Shift = true;					
 				}
-				else //i.e. latin letters
+				}
+				else //i.e. latin letters					
 				{
 					if (GetCapsLockAllowed()  == false)
 					{
-						if (key == '{') keycode = '[';
-						if (key == '}') keycode = ']';
-						if (key == 124) 
-							keycode = 92;
-						/*if (key == 92) 
-							keycode = 124;*/
+					if (key == '{') keycode = '[';
+					if (key == '}') keycode = ']';
+					if (key == 124) 
+						keycode = 92;
+					/*if (key == 92) 
+						keycode = 124;*/
 					//Characters ` and ~ cannot be generated in 7bit character mode, so they are replaced with
 					}
 					else
 					{
-						if (key == '{') keycode = 91;
-						if (key == '}')	keycode = 93;
-						if (key == 124)	keycode = 92;					
-						if ((key == '[') || (key == ']') || (key == 92) || (key == '^') || (key == 95))
-							P8Shift= true; 
-						if (key == 96)	 //This line shall generate sth. else i.e. ` In fact. this character is not generateable by the pravets keyboard.
+					if (key == '{') keycode = 91;
+					if (key == '}')	keycode = 93;
+					if (key == 124)	keycode = 92;					
+					if ((key == '[') || (key == ']') || (key == 92) || (key == '^') || (key == 95))
+						P8Shift= true; 
+					if (key == 96)	 //This line shall generate sth. else i.e. ` In fact. this character is not generateable by the pravets keyboard.
 						{
 							keycode = '^';
 							P8Shift= true;
 						}
-						if (key == 126)	keycode = '^';
-					}
-				}
-			}
+					if (key == 126)	keycode = '^';					
+					}					
+				}						
 		}
+}
 		else
 		{
 			if (g_Apple2Type == A2TYPE_PRAVETS8A)
@@ -276,10 +288,10 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			}
 			else
 			{
-				if (key >= '`')
-					keycode = key - 32;
-				else
-					keycode = key;
+			if (key >= '`')
+				keycode = key - 32;
+			else
+				keycode = key;
 			}
 		}
 		lastvirtkey = LOBYTE(VkKeyScan(key));
@@ -501,9 +513,9 @@ void KeybToggleCapsLock ()
 void KeybToggleP8ACapsLock ()
 {
 	_ASSERT(g_Apple2Type == A2TYPE_PRAVETS8A);
-	P8CAPS_ON = !P8CAPS_ON;
-	FrameRefreshStatus(DRAW_LEDS);
-	// g_bP8CapsLock= g_bP8CapsLock?false:true; //The same as the upper, but slower
+		P8CAPS_ON = !P8CAPS_ON;
+		FrameRefreshStatus(DRAW_LEDS);
+		// g_bP8CapsLock= g_bP8CapsLock?false:true; //The same as the upper, but slower
 }
 
 //===========================================================================
