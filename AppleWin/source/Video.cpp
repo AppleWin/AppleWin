@@ -1047,12 +1047,13 @@ HBRUSH CreateCustomBrush(COLORREF nColor)
 //===========================================================================
 void DrawMonoTextSource (HDC hDstDC)
 {
-	static HBITMAP hCharBitmap[3];
+	static HBITMAP hCharBitmap[4];
 	HDC     hSrcDC  = CreateCompatibleDC(hDstDC);
 
 	hCharBitmap[0] = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
 	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));
-	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
+	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));  //Pravets 8M probably has the same charset as Pravets 8C
+	hCharBitmap[3] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
 
 	HBRUSH hBrush;
 	switch (videotype)
@@ -1081,11 +1082,12 @@ void DrawMonoTextSource (HDC hDstDC)
 void DrawTextSource (HDC dc)
 {
 	HDC     memdc  = CreateCompatibleDC(dc);
-	static HBITMAP hCharBitmap[3];
+	static HBITMAP hCharBitmap[4];
 	//The charset is set below
 	hCharBitmap[0] = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
 	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));
-	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
+	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C")); //Pravets 8M probably has the same charset as Pravets 8C
+	hCharBitmap[3] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
 	SelectObject(memdc,hCharBitmap[g_nCharsetType]);
 
 	BitBlt(

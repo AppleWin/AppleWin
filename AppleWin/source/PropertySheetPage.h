@@ -7,6 +7,7 @@ void ui_tfe_settings_dialog(HWND hwnd);
 void * get_tfe_interface(void);
 void get_tfe_enabled(int *tfe_enabled);
 string BrowseToCiderPress (HWND hWindow, TCHAR* pszTitle);
+string BrowseToFile (HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE, TCHAR* FILEMASKS);
 
 extern UINT g_uScrollLockToggle;
 extern UINT g_uMouseInSlot4;
