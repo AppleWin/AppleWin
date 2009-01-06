@@ -35,7 +35,6 @@ enum AppMode_e
 	, MODE_STEPPING
 };
 
-
 #define  SPEED_MIN         0
 #define  SPEED_NORMAL      10
 #define  SPEED_MAX         40
@@ -61,7 +60,6 @@ enum AppMode_e
 #define	TITLE_APPLE_2E			TEXT("Apple //e Emulator")
 #define	TITLE_APPLE_2E_ENHANCED	TEXT("Enhanced Apple //e Emulator")
 #define	TITLE_PRAVETS_82        TEXT("Pravets 82 Emulator")
-#define	TITLE_PRAVETS_8M        TEXT("Pravets 8M Emulator")
 #define	TITLE_PRAVETS_8A        TEXT("Pravets 8A Emulator")
 
 #define TITLE_PAUSED       TEXT(" Paused ")
@@ -71,7 +69,7 @@ enum AppMode_e
 #define  SAVE(a,b) RegSaveValue(TEXT("Configuration"),a,1,b)
 
 // Configuration
-#define REG_CONFIG                   "Configuration"
+#define REG_CONFIG						"Configuration"
 #define  REGVALUE_APPLE2_TYPE        "Apple2 Type"
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
@@ -91,25 +89,20 @@ enum AppMode_e
 #define  REGVALUE_CLONETYPE          "Clone Type"
 #define  REGVALUE_CIDERPRESSLOC      "CiderPress Location"
 #define  REGVALUE_Z80_IN_SLOT5       "Z80 in slot 5"
-#define  REGVALUE_DUMP_TO_PRINTER    "Dump to printer"
-#define  REGVALUE_CONVERT_ENCODING   "Convert printer encoding for clones"
-#define  REGVALUE_FILTER_UNPRINTABLE "Filter unprintable characters"
-#define  REGVALUE_PRINTER_FILENAME   "Printer Filename"
-#define  REGVALUE_PRINTER_APPEND     "Append to printer file"
-#define  REGVALUE_PRINTER_IDLE_LIMIT "Printer idle limit"
 
 // Preferences 
-#define REG_PREFS                    "Preferences"
+#define REG_PREFS							"Preferences"
 #define REGVALUE_PREF_START_DIR      "Starting Directory"
-#define REGVALUE_PREF_LAST_DISK_1        "Last Disk Image 1"
-#define REGVALUE_PREF_LAST_DISK_2        "Last Disk Image 2"
+#define REGVALUE_PREF_LAST_DISK_1	 "Last Disk Image 1"
+#define REGVALUE_PREF_LAST_DISK_2	 "Last Disk Image 2"
 
 #define WM_USER_BENCHMARK	WM_USER+1
 #define WM_USER_RESTART		WM_USER+2
 #define WM_USER_SAVESTATE	WM_USER+3
 #define WM_USER_LOADSTATE	WM_USER+4
-#define VK_SNAPSHOT_560         WM_USER+5
-#define VK_SNAPSHOT_280         WM_USER+6
+#define VK_SNAPSHOT_560		WM_USER+5
+#define VK_SNAPSHOT_280		WM_USER+6
+
 
 enum eSOUNDCARDTYPE {SC_UNINIT=0, SC_NONE, SC_MOCKINGBOARD, SC_PHASOR};	// Apple soundcard type
 
@@ -141,7 +134,6 @@ enum eApple2Type {
 					// Clones start here:
 					A2TYPE_CLONE=APPLECLONE_MASK,
 					A2TYPE_PRAVETS82=APPLECLONE_MASK|APPLE2E_MASK,
-					A2TYPE_PRAVETS8M,
 					A2TYPE_PRAVETS8A,
 					A2TYPE_MAX
 				};
