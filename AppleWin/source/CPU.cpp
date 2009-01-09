@@ -89,9 +89,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MouseInterface.h"
 
 #ifdef SUPPORT_CPM
-#include "z80\z80.h"
-#include "z80\z80emu.h"
-#include "z80\z80io.h"
+#include "z80emu.h"
+#include "Z80VICE\z80.h"
+#include "Z80VICE\z80mem.h"
 #endif
 
 #define	 AF_SIGN       0x80
@@ -932,7 +932,7 @@ static DWORD Cpu65C02 (DWORD uTotalCycles)
 #ifdef SUPPORT_CPM
 		if (g_ActiveCPU == CPU_Z80)
 		{
-			const UINT uZ80Cycles = InternalZ80Execute(uTotalCycles, uExecutedCycles); CYC(uZ80Cycles)
+			const UINT uZ80Cycles = z80_mainloop(uTotalCycles, uExecutedCycles); CYC(uZ80Cycles)
 		}
 		else
 #endif
@@ -1240,7 +1240,7 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 #ifdef SUPPORT_CPM
 		if (g_ActiveCPU == CPU_Z80)
 		{
-			const UINT uZ80Cycles = InternalZ80Execute(uTotalCycles, uExecutedCycles); CYC(uZ80Cycles)
+			const UINT uZ80Cycles = z80_mainloop(uTotalCycles, uExecutedCycles); CYC(uZ80Cycles)
 		}
 		else
 #endif
@@ -1630,9 +1630,8 @@ void CpuInitialize ()
 	CpuNmiReset();
 
 #ifdef SUPPORT_CPM
-	// Z80
-	InitTables();
-	Z80_Reset();
+	z80mem_initialize();
+	z80_reset();
 #endif
 }
 
@@ -1738,7 +1737,7 @@ void CpuReset()
 
 #ifdef SUPPORT_CPM
 	g_ActiveCPU = CPU_6502;
-	Z80_Reset();
+	z80_reset();
 #endif
 }
 

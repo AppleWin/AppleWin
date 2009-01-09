@@ -28,7 +28,7 @@
 #ifndef _TFEARCH_H
 #define _TFEARCH_H
 
-#include "types.h"
+#include "..\CommonVICE\types.h"
 
 extern int  tfe_arch_init(void);
 extern void tfe_arch_pre_reset(void);

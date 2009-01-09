@@ -13,12 +13,12 @@
 
 // Emula a CPU Z80
 
-#include "..\StdAfx.h"
+#include "StdAfx.h"
 #include "z80emu.h"
 
 // Variaveis
-int CPMZ80Slot	= 0;
-int Z80_IRQ		= 0;
+static int CPMZ80Slot	= 0;
+int Z80_IRQ				= 0;	// Used by Z80Em
 
 BYTE __stdcall CPMZ80_IONull(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft)
 {
@@ -37,16 +37,7 @@ BYTE __stdcall CPMZ80_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 //===========================================================================
 void ConfigureSoftcard(LPBYTE pCxRomPeripheral, int Slot, UINT addOrRemove)
 {	
-	//LPBYTE pCxRomPeripheral = MemGetCxRomPeripheral();
-	//if (pCxRomPeripheral == NULL)
-	//	return;
-
-	//UINT uOffset = (m_by6821B << 7) & 0x0700;
-	//memcpy(pCxRomPeripheral+m_uSlot*256, m_pSlotRom+uOffset, 256);
-	//if (mem)
-	//	memcpy(mem+0xC000+m_uSlot*256, m_pSlotRom+uOffset, 256);
-
-	memset(pCxRomPeripheral + (Slot << 8), 0xFF, 256);
+	memset(pCxRomPeripheral + (Slot << 8), 0xFF, APPLE_SLOT_SIZE);
 	
 	CPMZ80Slot = Slot;
 

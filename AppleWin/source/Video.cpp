@@ -1780,7 +1780,7 @@ void VideoChooseColor () {
     VideoReinitialize();
     if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
       VideoRedrawScreen();
-	SAVE(TEXT("Monochrome Color"),monochrome);
+	REGSAVE(TEXT("Monochrome Color"),monochrome);
   }
 }
 

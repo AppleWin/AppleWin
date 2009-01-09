@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #pragma  hdrstop
 #include <objbase.h>
 #include "MouseInterface.h"
-#include "z80\z80.h"
 
 char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
@@ -376,9 +375,9 @@ void LoadConfiguration ()
 {
   DWORD dwComputerType;
 
-  if (LOAD(TEXT(REGVALUE_APPLE2_TYPE),&dwComputerType))
+  if (REGLOAD(TEXT(REGVALUE_APPLE2_TYPE),&dwComputerType))
   {
-	LOAD(TEXT(REGVALUE_CLONETYPE),&g_uCloneType);
+	REGLOAD(TEXT(REGVALUE_CLONETYPE),&g_uCloneType);
 	if ((dwComputerType >= A2TYPE_MAX) || (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE))
 		dwComputerType = A2TYPE_APPLE2EEHANCED;
 
@@ -399,7 +398,7 @@ void LoadConfiguration ()
   }
   else	// Support older AppleWin registry entries
   {
-	  LOAD(TEXT("Computer Emulation"),&dwComputerType);
+	  REGLOAD(TEXT("Computer Emulation"),&dwComputerType);
 	  switch (dwComputerType)
 	  {
       // NB. No A2TYPE_APPLE2E (this is correct)
@@ -422,19 +421,19 @@ void LoadConfiguration ()
 	}
 
 
-  LOAD(TEXT("Joystick 0 Emulation"),&joytype[0]);
-  LOAD(TEXT("Joystick 1 Emulation"),&joytype[1]);
-  LOAD(TEXT("Sound Emulation")     ,&soundtype);
+  REGLOAD(TEXT("Joystick 0 Emulation"),&joytype[0]);
+  REGLOAD(TEXT("Joystick 1 Emulation"),&joytype[1]);
+  REGLOAD(TEXT("Sound Emulation")     ,&soundtype);
 
   DWORD dwSerialPort;
-  if (LOAD(TEXT("Serial Port"),&dwSerialPort))
+  if (REGLOAD(TEXT("Serial Port"),&dwSerialPort))
 	sg_SSC.SetSerialPort(dwSerialPort);
 
-  LOAD(TEXT("Emulation Speed")   ,&g_dwSpeed);
-  LOAD(TEXT("Enhance Disk Speed"),(DWORD *)&enhancedisk);
-  LOAD(TEXT("Video Emulation")   ,&videotype);
-  LOAD(TEXT("Monochrome Color")  ,&monochrome);
-  LOAD(TEXT("Uthernet Active")   ,(DWORD *)&tfe_enabled);
+  REGLOAD(TEXT("Emulation Speed")   ,&g_dwSpeed);
+  REGLOAD(TEXT("Enhance Disk Speed"),(DWORD *)&enhancedisk);
+  REGLOAD(TEXT("Video Emulation")   ,&videotype);
+  REGLOAD(TEXT("Monochrome Color")  ,&monochrome);
+  REGLOAD(TEXT("Uthernet Active")   ,(DWORD *)&tfe_enabled);
 
   SetCurrentCLK6502();
 
@@ -442,36 +441,36 @@ void LoadConfiguration ()
 
   DWORD dwTmp;
 
-  if(LOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
 	  g_uTheFreezesF8Rom = dwTmp;
 
-  if(LOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp))
       SpkrSetVolume(dwTmp, PSP_GetVolumeMax());
 
-  if(LOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp))
       MB_SetVolume(dwTmp, PSP_GetVolumeMax());
 
-  if(LOAD(TEXT(REGVALUE_SOUNDCARD_TYPE), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_SOUNDCARD_TYPE), &dwTmp))
 	  MB_SetSoundcardType((eSOUNDCARDTYPE)dwTmp);
 
-  if(LOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
 	  g_bSaveStateOnExit = dwTmp ? true : false;
 
 
-  if(LOAD(TEXT(REGVALUE_DUMP_TO_PRINTER), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_DUMP_TO_PRINTER), &dwTmp))
 	g_bDumpToPrinter = dwTmp ? true : false;
 
-  if(LOAD(TEXT(REGVALUE_CONVERT_ENCODING), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_CONVERT_ENCODING), &dwTmp))
     g_bConvertEncoding = dwTmp ? true : false;
 
-  if(LOAD(TEXT(REGVALUE_FILTER_UNPRINTABLE), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_FILTER_UNPRINTABLE), &dwTmp))
     g_bFilterUnprintable = dwTmp ? true : false;
 
-  if(LOAD(TEXT(REGVALUE_PRINTER_APPEND), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_PRINTER_APPEND), &dwTmp))
     g_bPrinterAppend = dwTmp ? true : false;
 
 
-  if(LOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
 	  HD_SetEnabled(dwTmp ? true : false);
 
   char szHDFilename[MAX_PATH] = {0};
@@ -480,23 +479,23 @@ void LoadConfiguration ()
   if(RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_HDD_IMAGE2), 1, szHDFilename, sizeof(szHDFilename)))
 	  HD_InsertDisk2(1, szHDFilename);
 
-  if(LOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
       JoySetTrim((short)dwTmp, true);
-  if(LOAD(TEXT(REGVALUE_PDL_YTRIM), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_PDL_YTRIM), &dwTmp))
       JoySetTrim((short)dwTmp, false);
 
-  if(LOAD(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), &dwTmp))
 	  g_uScrollLockToggle = dwTmp;
 
-  if(LOAD(TEXT(REGVALUE_MOUSE_IN_SLOT4), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_MOUSE_IN_SLOT4), &dwTmp))
 	  g_uMouseInSlot4 = dwTmp;
-  if(LOAD(TEXT(REGVALUE_MOUSE_CROSSHAIR), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_MOUSE_CROSSHAIR), &dwTmp))
 	  g_uMouseShowCrosshair = dwTmp;
-  if(LOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
 	  g_uMouseRestrictToWindow = dwTmp;
 
 #ifdef SUPPORT_CPM
-  if(LOAD(TEXT(REGVALUE_Z80_IN_SLOT5), &dwTmp))
+  if(REGLOAD(TEXT(REGVALUE_Z80_IN_SLOT5), &dwTmp))
 	  g_uZ80InSlot5 = dwTmp;
 
   if (g_uZ80InSlot5)
@@ -527,7 +526,7 @@ void LoadConfiguration ()
 	Disk_LoadLastDiskImage(1);
 
 	dwTmp = 10;
-	LOAD(TEXT(REGVALUE_PRINTER_IDLE_LIMIT), &dwTmp);
+	REGLOAD(TEXT(REGVALUE_PRINTER_IDLE_LIMIT), &dwTmp);
 	Printer_SetIdleLimit(dwTmp);
 
 	char szUthernetInt[MAX_PATH] = {0};
