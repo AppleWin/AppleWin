@@ -29,15 +29,27 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #pragma  hdrstop
 #include "..\resource\resource.h"
+#include <stdlib.h>
 
 static DWORD inactivity = 0;
 static FILE* file = NULL;
 DWORD const PRINTDRVR_SIZE = APPLE_SLOT_SIZE;
+TCHAR filepath[MAX_PATH * 2];
+#define DEFAULT_PRINT_FILENAME "Printer.txt"
+static char g_szPrintFilename[MAX_PATH] = {0};
+bool g_bDumpToPrinter = false;
+bool g_bConvertEncoding = true;
+bool g_bFilterUnprintable = true;
+bool g_bPrinterAppend = false;
+int  g_iPrinterIdleLimit = 10;
 
 //===========================================================================
 
 static BYTE __stdcall PrintStatus(WORD, WORD, BYTE, BYTE, ULONG);
 static BYTE __stdcall PrintTransmit(WORD, WORD, BYTE, BYTE value, ULONG);
+
+
+
 
 VOID PrintLoadRom(LPBYTE pCxRomPeripheral, const UINT uSlot)
 {
@@ -70,10 +82,14 @@ static BOOL CheckPrint()
     inactivity = 0;
     if (file == NULL)
     {
-        TCHAR filepath[MAX_PATH * 2];
-        _tcsncpy(filepath, g_sProgramDir, MAX_PATH);
-        _tcsncat(filepath, _T("Printer.txt"), MAX_PATH);
-        file = fopen(filepath, "wb");
+		//TCHAR filepath[MAX_PATH * 2];
+		//_tcsncpy(filepath, g_sProgramDir, MAX_PATH);
+        //_tcsncat(filepath, _T("Printer.txt"), MAX_PATH);
+		//file = fopen(filepath, "wb");
+		if (g_bPrinterAppend )
+			file = fopen(Printer_GetFilename(), "ab");
+		else
+			file = fopen(Printer_GetFilename(), "wb");
     }
     return (file != NULL);
 }
@@ -85,6 +101,13 @@ static void ClosePrint()
     {
         fclose(file);
         file = NULL;
+		string ExtendedFileName = "copy \"";
+		ExtendedFileName.append (Printer_GetFilename());
+		ExtendedFileName.append ("\" prn");
+		//if (g_bDumpToPrinter) ShellExecute(NULL, "print", Printer_GetFilename(), NULL, NULL, 0); //Print through Notepad
+		if (g_bDumpToPrinter) 
+			system (ExtendedFileName.c_str ()); //Print through console. This is supposed to be the better way, because it shall print images (with older printers only).
+			
     }
     inactivity = 0;
 }
@@ -102,9 +125,10 @@ void PrintUpdate(DWORD totalcycles)
     {
         return;
     }
-    if ((inactivity += totalcycles) > (10 * 1000 * 1000)) // around 10 seconds
+//    if ((inactivity += totalcycles) > (Printer_GetIdleLimit () * 1000 * 1000))  //This line seems to give a very big deviation
+	if ((inactivity += totalcycles) > (Printer_GetIdleLimit () * 710000)) 
     {
-        // inactive, so close the file (next print will overwrite it)
+        // inactive, so close the file (next print will overwrite or append to it, according to the settings made)
         ClosePrint();
     }
 }
@@ -125,13 +149,99 @@ static BYTE __stdcall PrintStatus(WORD, WORD, BYTE, BYTE, ULONG)
 //===========================================================================
 static BYTE __stdcall PrintTransmit(WORD, WORD, BYTE, BYTE value, ULONG)
 {
+	         char Lat8A[]= "abwgdevzijklmnoprstufhc~{}yx`q|]";
+             char Lat82[]= "abwgdevzijklmnoprstufhc^[]yx@q{}~`"; 
+			 char Kir82[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞß[]^@";
+	  char Kir8ACapital[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞßÝ";
+	char Kir8ALowerCase[]= "àáâãäåæçèéêëìíîïðñòóôõö÷øùúüþÿý";
+	bool Pres = false;
     if (!CheckPrint())
     {
         return 0;
     }
-    char c = value & 0x7F;
+	
+	char c = NULL;
+	if ((g_Apple2Type == A2TYPE_PRAVETS8A) &&  g_bConvertEncoding)  //This is print conversion for Pravets 8A/C. Print conversion for Pravets82/M is still to be done.
+		{
+			if ((value > 90) && (value < 128)) //This range shall be set more precisely
+			{
+			c = value;
+			int loop = 0;
+			while (loop < 31)
+				{
+				if (c== Lat8A[loop]) 
+				c= 0 + Kir8ALowerCase  [loop] ;
+				loop++;
+				} //End loop
+			}//End if (value < 128)
+				else if ((value >64) && (value <91))
+				{
+					c = value + 32;
+			    }
+				else
+				{
+					c = value & 0x7F;
+					int loop = 0;
+					while (loop < 31)
+					{
+					if (c== Lat8A[loop]) c= 0 + Kir8ACapital  [loop];
+					loop++;
+					}
+				}
+	} //End if (g_Apple2Type == A2TYPE_PRAVETS8A)
+		else if (((g_Apple2Type == A2TYPE_PRAVETS82) || (g_Apple2Type == A2TYPE_PRAVETS8M)) && g_bConvertEncoding)
+		{
+			c =  value & 0x7F;
+			int loop = 0;
+			while (loop < 34)
+			{
+				if (c == Lat82[loop])
+					c= Kir82 [loop];
+				loop++;
+			} //end while
+		}
+		else //Apple II
+		{			
+			c =  value & 0x7F;
+		}
+	if ((g_bFilterUnprintable == false) || (c>31) || (c==13) || (c==10) || (c<0)) //c<0 is needed for cyrillic characters
+		fwrite(&c, 1, 1, file); //break;
+				
+
+	/*else
+	{
+	char c = value & 0x7F;
 	fwrite(&c, 1, 1, file);
-    return 0;
+	}*/
+	return 0;
 }
 
 //===========================================================================
+
+char* Printer_GetFilename()
+{
+	return g_szPrintFilename;
+}
+
+void Printer_SetFilename(char* prtFilename)
+{
+	if(*prtFilename)
+		strcpy(g_szPrintFilename, (const char *) prtFilename);
+	else  //No registry entry is available
+	{
+		_tcsncpy(g_szPrintFilename, g_sProgramDir, MAX_PATH);
+        _tcsncat(g_szPrintFilename, _T(DEFAULT_PRINT_FILENAME), MAX_PATH);		
+		RegSaveString(TEXT("Configuration"),REGVALUE_PRINTER_FILENAME,1,g_szPrintFilename);
+	}
+}
+
+unsigned int Printer_GetIdleLimit()
+{
+	return g_iPrinterIdleLimit;
+}
+
+//unsigned int
+void Printer_SetIdleLimit(unsigned int Duration)
+{	
+	g_iPrinterIdleLimit = Duration;
+}

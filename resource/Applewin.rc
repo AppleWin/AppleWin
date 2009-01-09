@@ -60,18 +60,22 @@ DRIVE1_BUTTON           BITMAP                  "DRIVE1.BMP"
 DRIVE2_BUTTON           BITMAP                  "DRIVE2.BMP"
 SETUP_BUTTON            BITMAP                  "SETUP.BMP"
 CHARSET40               BITMAP                  "CHARSET4.BMP"
-CHARSET8C               BITMAP                  "CHARSET8C.BMP"
-CHARSET82               BITMAP                  "CHARSET82.BMP"
 DISKOFF_BITMAP          BITMAP                  "DISKOFF.BMP"
 DISKREAD_BITMAP         BITMAP                  "DISKREAD.BMP"
 DISKWRITE_BITMAP        BITMAP                  "DISKWRIT.BMP"
 DISKPROT_BITMAP         BITMAP                  "DISKPROT.BMP"
 CAPSOFF_BITMAP          BITMAP                  "CAPSOFF.BMP"
 CAPSON_BITMAP           BITMAP                  "CAPSON.BMP"
+//Pravets8 appendices
 LATOFF_BITMAP           BITMAP                  "LATOFF.BMP"
 LATON_BITMAP            BITMAP                  "LATON.BMP"
 CAPSOFF_P8_BITMAP       BITMAP                  "CAPSOFF_P8.BMP"
 CAPSON_P8_BITMAP        BITMAP                  "CAPSON_P8.BMP"
+CHARSET82               BITMAP                  "CHARSET82.BMP"
+//CHARSET8M               BITMAP                  "CHARSET8M.BMP" //Still the exact charset of Pravets 8M is unknown
+CHARSET8M               BITMAP                  "CHARSET8C.BMP"
+CHARSET8C               BITMAP                  "CHARSET8C.BMP"
+///////////////////////////////////////////////////////////////////////////
 HELP_BUTTON             BITMAP                  "HELP.BMP"
 DRIVESWAP_BUTTON        BITMAP                  "DRIVESWAP.BMP"
 IDB_APPLEWIN            BITMAP                  "Applewin.bmp"
@@ -198,19 +202,32 @@ STYLE DS_SETFONT | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_CAPTION | WS_SYSMENU
 CAPTION "Advanced"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
-    LTEXT           "&Clone:",IDC_STATIC,5,165,40,8
-    COMBOBOX        IDC_CLONETYPE,45,163,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    
+    LTEXT           "Save State file name:",IDC_STATIC,5,2,74,8
+    GROUPBOX        "Save State Control",IDC_STATIC,5,27,200,63
+    CONTROL         "Save State on exit",IDC_SAVESTATE_ON_EXIT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,38,74,10
+    PUSHBUTTON      "Save State",IDC_SAVESTATE,16,50,85,15
+    PUSHBUTTON      "Load State",IDC_LOADSTATE,16,67,85,15
+    EDITTEXT        IDC_SAVESTATE_FILENAME,5,23,143,12,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "(F11 during emulation)",IDC_STATIC,110,53,90,8
+    LTEXT           "(F12 during emulation)",IDC_STATIC,110,70,90,8
+    PUSHBUTTON      "Browse...",IDC_SAVESTATE_BROWSE,154,12,50,14
+	LTEXT           "Printer dump filename:",IDC_STATIC,5,98,74,8
+    PUSHBUTTON      "Browse...",IDC_DUMP_FILENAME_BROWSE,154,107,50,14
+    EDITTEXT        IDC_DUMP_FILENAME,5,108,143,12,ES_AUTOHSCROLL
+	CONTROL         "Dump to printer (use with caution)",IDC_DUMPTOPRINTER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,123,180,10
+	CONTROL         "Encoding conversion for clones",IDC_PRINTER_CONVERT_ENCODING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,133,180,10
+	CONTROL         "Filter unprintable characters",IDC_PRINTER_FILTER_UNPRINTABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,143,180,10
+	CONTROL         "Append to print file",IDC_PRINTER_APPEND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,153,180,10
+
+	LTEXT           "Teminate printing after idle (in seconds):",IDC_STATIC,3,167,160,8
+    CTEXT           "10",IDC_STATIC,155,160,24,20,SS_CENTERIMAGE
+    CONTROL         "Spin1",IDC_SPIN_PRINTER_IDLE,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNLEFT | UDS_AUTOBUDDY,161,164,10,14
+
+	LTEXT           "&Clone:",IDC_STATIC,5,185,40,8
+    COMBOBOX        IDC_CLONETYPE,45,185,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     CONTROL         "The Freeze's non-autostart F8 rom (Apple ][ or ][+ only)",IDC_THE_FREEZES_F8_ROM_FW,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,206,182,10
-    LTEXT           "Save State file name:",IDC_STATIC,5,12,74,8
-    GROUPBOX        "Save State Control",IDC_STATIC,5,57,200,73
-    CONTROL         "Save State on exit",IDC_SAVESTATE_ON_EXIT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,68,74,10
-    PUSHBUTTON      "Save State",IDC_SAVESTATE,16,85,85,15
-    PUSHBUTTON      "Load State",IDC_LOADSTATE,16,107,85,15
-    EDITTEXT        IDC_SAVESTATE_FILENAME,5,23,143,12,ES_AUTOHSCROLL | ES_READONLY
-    LTEXT           "(F11 during emulation)",IDC_STATIC,110,88,74,8
-    LTEXT           "(F12 during emulation)",IDC_STATIC,110,110,90,8
-    PUSHBUTTON      "Browse...",IDC_SAVESTATE_BROWSE,154,22,50,14
 END
 
 
@@ -251,7 +268,7 @@ BEGIN
             VALUE "FileDescription", "Apple //e Emulator for Windows"
             VALUE "FileVersion", "1, 15, 0, 4"
             VALUE "InternalName", "APPLEWIN"
-            VALUE "LegalCopyright", "© 1994-2008 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
+            VALUE "LegalCopyright", " 1994-2008 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
             VALUE "ProductVersion", "1, 15, 0, 4"
@@ -294,13 +311,14 @@ IDR_THUNDERCLOCKPLUS_FW FIRMWARE                "ThunderClockPlus.rom"
 // ROM
 //
 
-IDR_APPLE2_ROM          ROM                     "Apple2.rom"
-IDR_APPLE2_PLUS_ROM     ROM                     "Apple2_Plus.rom"
-IDR_APPLE2E_ROM         ROM                     "Apple2e.rom"
-IDR_APPLE2E_ENHANCED_ROM ROM                     "Apple2e_Enhanced.rom"
-IDR_PRAVETS_82_ROM      ROM                     "Pravets82.rom"
-IDR_PRAVETS_8C_ROM      ROM                     "Pravets8C.rom"
-IDR_FREEZES_F8_ROM      ROM                     "FREEZES_NON-AUTOSTART_F8_ROM.rom"
+IDR_APPLE2_ROM				ROM		"Apple2.rom"
+IDR_APPLE2_PLUS_ROM			ROM		"Apple2_Plus.rom"
+IDR_APPLE2E_ROM				ROM		"Apple2e.rom"
+IDR_APPLE2E_ENHANCED_ROM	ROM		"Apple2e_Enhanced.rom"
+IDR_PRAVETS_82_ROM			ROM		"Pravets82.rom"
+IDR_PRAVETS_8M_ROM			ROM		"Pravets8M.rom"
+IDR_PRAVETS_8C_ROM			ROM		"Pravets8C.rom"
+IDR_FREEZES_F8_ROM          ROM     "FREEZES_NON-AUTOSTART_F8_ROM.rom"
 
 /////////////////////////////////////////////////////////////////////////////
 //

@@ -1,50 +1,68 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-<head>
-
-  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-  <title>Advanced Settings</title>
-
-
-</head>
-
-
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><title>Advanced Settings</title></head>
 <body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
-
 <h2 style="color: rgb(0, 128, 0);">Advanced Settings</h2>
-
 <hr size="4"><img style="width: 344px; height: 460px; float: right;" src="img/advanced.png" alt="Advanced settings" hspace="5" vspace="5">
 <p><strong>Save State File Name:</strong><br>
-
 This is the file name to use for save-state files. The default
 directory is the same as where your AppleWin.exe program is stored.</p>
-
 <p><strong>Save State on Exit:</strong><br>
-
 Checking this box will automatically save the current state of the
 emulator upon exit. &nbsp;The state will be saved to the file
 specified above (SaveState.aws by default).</p>
-
 <p><strong>Save State:</strong><br>
-
 Press this button to save the current state of the emulator to the file
 specified. &nbsp;You can also save the system state during
 emulation by pressing the F11 key.</p>
-
 <p><strong>Load State:</strong><br>
-
 Press this button to load the specified state file into
 the emulator. &nbsp;You can also load the system state during
 emulation by pressing the F12 key.</p>
-
 <p><strong>Clone:</strong><br>
-
-If you have specified Computer as 'Clone' on the main Configuration page, then this drop-down menu can be used to specify the clone type.<br>
+If you have specified Computer as 'Clone' on the main Configuration
+page, then this drop-down menu can be used to specify the clone type.<br>
 NB. Pravets 82 and 8A are Bulgarian Apple II clones.<br>
-
+</p>
+<p><strong>Printer settings </strong>(Printer is
+emulated at slot 1)</p>
+<p style="margin-left: 40px;"><strong>Printer dump filename:<br>
+</strong>Data sent to the printer is stored in a text file. Use
+this setting to select its location.<br>
+</p>
+<p style="margin-left: 40px;"><strong>Dump to printer:<br>
+</strong><span style="font-weight: bold; font-style: italic;">Use
+with caution!</span> Enables dumping to a real printer. If
+disabled, the
+printout is stored only in printer.txt file in the AppleWin folder.
+This probably works properly (not tested) when using a printer
+compatible with the printer selected in the Apple II applications. In
+modern printers trying to print images will result in printing tens of
+pages with nonsense.<br>
+</p>
+<p style="margin-left: 40px;"><strong>Encoding conversion for clones:<br>
+</strong>Characters are encoded from the character set used in
+the real hardware to ASCII. For Pravets 8 this converts MIK to ASCII.
+Enabling this could cause problems when&nbsp;printing images.</p>
+<p style="margin-left: 40px;"><strong>Filter unprintable characters:<br>
+</strong>Some characters represent commands for the printer and
+shall not be printed. When saving them to the printer dump file they
+may appear as some strange symbols. I may want to disable filtering
+when dumping to printer.</p><p style="margin-left: 40px;"><strong>Append to printfile:<br>
+</strong>When disabled previous print file is replaced (unless it has a
+different&nbsp;name) by the newly created print file. Otherwise newly
+printed data is added to the existing print file.&nbsp;I should better
+disable appending
+when dumping to printer.</p><p style="margin-left: 40px;"><strong>Terminate printing after idle:<br>
+</strong>Whan printing is started a printer file is created and it is
+closed either after the selected by this widget time expires, or when
+the emulator is reset. This setting is emulation speed dependend.
+ </p>
 <p><strong>The Freeze's non-autostart F8 rom:</strong><br>
-If you have specified Computer as 'Apple ][' or 'Apple ][+' on the main Configuration page, then you will be able to enable this setting.
-The Freeze F8 rom is a hacker's rom that replaces the normal 2K rom at $F800. <a href="cfg-advanced-freeze-rom.html">Here's the original release note</a>
-
-</body>
-</html>
+If you have specified Computer as 'Apple ][' or 'Apple ][+' on the main
+Configuration page, then you will be able to enable this setting.
+The Freeze F8 rom is a hacker's rom that replaces the normal 2K rom at
+$F800. <a href="cfg-advanced-freeze-rom.html">Here's the
+original release note</a>
+</p>
+</body></html>
