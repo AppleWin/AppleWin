@@ -307,14 +307,14 @@ static void ConfigDlg_OK(HWND window, UINT afterclose)
 		NewCloneType = NewApple2Type - A2TYPE_CLONE;		
 
 	if ((NewApple2Type == A2TYPE_PRAVETS82) || (NewApple2Type == A2TYPE_PRAVETS8A) || (NewApple2Type == A2TYPE_PRAVETS8M))
-		SAVE(TEXT(REGVALUE_APPLE2_TYPE),A2TYPE_CLONE );
+		REGSAVE(TEXT(REGVALUE_APPLE2_TYPE),A2TYPE_CLONE );
 	else
-		SAVE(TEXT(REGVALUE_APPLE2_TYPE),NewApple2Type );
+		REGSAVE(TEXT(REGVALUE_APPLE2_TYPE),NewApple2Type );
 
-	SAVE(TEXT("Serial Port")       ,sg_SSC.GetSerialPort());
-	SAVE(TEXT("Custom Speed")      ,IsDlgButtonChecked(window,IDC_CUSTOM_SPEED));
-	SAVE(TEXT("Emulation Speed")   ,g_dwSpeed);
-	SAVE(TEXT("Video Emulation")   ,videotype);
+	REGSAVE(TEXT("Serial Port")       ,sg_SSC.GetSerialPort());
+	REGSAVE(TEXT("Custom Speed")      ,IsDlgButtonChecked(window,IDC_CUSTOM_SPEED));
+	REGSAVE(TEXT("Emulation Speed")   ,g_dwSpeed);
+	REGSAVE(TEXT("Video Emulation")   ,videotype);
 
 	//
 
@@ -450,7 +450,7 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
         if (g_dwSpeed == SPEED_NORMAL)
 		{
           custom = 0;
-		  LOAD(TEXT("Custom Speed"),(DWORD *)&custom);
+		  REGLOAD(TEXT("Custom Speed"),(DWORD *)&custom);
         }
         CheckRadioButton(window, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, custom ? IDC_CUSTOM_SPEED : IDC_AUTHENTIC_SPEED);
         SetFocus(GetDlgItem(window, custom ? IDC_SLIDER_CPU_SPEED : IDC_AUTHENTIC_SPEED));
@@ -512,15 +512,15 @@ static void InputDlg_OK(HWND window, UINT afterclose)
 	g_uMouseShowCrosshair = IsDlgButtonChecked(window, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
 	g_uMouseRestrictToWindow = IsDlgButtonChecked(window, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
 
-	SAVE(TEXT("Joystick 0 Emulation"),joytype[0]);
-	SAVE(TEXT("Joystick 1 Emulation"),joytype[1]);
-	SAVE(TEXT(REGVALUE_PDL_XTRIM),JoyGetTrim(true));
-	SAVE(TEXT(REGVALUE_PDL_YTRIM),JoyGetTrim(false));
-	SAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE),g_uScrollLockToggle);
-	SAVE(TEXT(REGVALUE_MOUSE_IN_SLOT4),g_uMouseInSlot4);
-	SAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR),g_uMouseShowCrosshair);
-	SAVE(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW),g_uMouseRestrictToWindow);
-	SAVE(TEXT(REGVALUE_Z80_IN_SLOT5),g_uZ80InSlot5);
+	REGSAVE(TEXT("Joystick 0 Emulation"),joytype[0]);
+	REGSAVE(TEXT("Joystick 1 Emulation"),joytype[1]);
+	REGSAVE(TEXT(REGVALUE_PDL_XTRIM),JoyGetTrim(true));
+	REGSAVE(TEXT(REGVALUE_PDL_YTRIM),JoyGetTrim(false));
+	REGSAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE),g_uScrollLockToggle);
+	REGSAVE(TEXT(REGVALUE_MOUSE_IN_SLOT4),g_uMouseInSlot4);
+	REGSAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR),g_uMouseShowCrosshair);
+	REGSAVE(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW),g_uMouseRestrictToWindow);
+	REGSAVE(TEXT(REGVALUE_Z80_IN_SLOT5),g_uZ80InSlot5);
 
 	//
 
@@ -729,10 +729,10 @@ static void SoundDlg_OK(HWND window, UINT afterclose, UINT uNewSoundcardType)
 
 	MB_SetSoundcardType((eSOUNDCARDTYPE)uNewSoundcardType);
 
-	SAVE(TEXT("Sound Emulation")   ,soundtype);
-	SAVE(TEXT(REGVALUE_SPKR_VOLUME),SpkrGetVolume());
-	SAVE(TEXT(REGVALUE_MB_VOLUME),MB_GetVolume());
-	SAVE(TEXT(REGVALUE_SOUNDCARD_TYPE),(DWORD)MB_GetSoundcardType());
+	REGSAVE(TEXT("Sound Emulation")   ,soundtype);
+	REGSAVE(TEXT(REGVALUE_SPKR_VOLUME),SpkrGetVolume());
+	REGSAVE(TEXT(REGVALUE_MB_VOLUME),MB_GetVolume());
+	REGSAVE(TEXT(REGVALUE_SOUNDCARD_TYPE),(DWORD)MB_GetSoundcardType());
 
 	//
 
@@ -879,8 +879,8 @@ static void DiskDlg_OK(HWND window, UINT afterclose)
 	bool bHDDIsEnabled = IsDlgButtonChecked(window, IDC_HDD_ENABLE) ? true : false;
 	HD_SetEnabled(bHDDIsEnabled);
 
-	SAVE(TEXT("Enhance Disk Speed"),newdisktype);
-	SAVE(TEXT(REGVALUE_HDD_ENABLED), bHDDIsEnabled ? 1 : 0);
+	REGSAVE(TEXT("Enhance Disk Speed"),newdisktype);
+	REGSAVE(TEXT(REGVALUE_HDD_ENABLED), bHDDIsEnabled ? 1 : 0);
 	RegSaveString(TEXT("Configuration"), TEXT(REGVALUE_HDD_IMAGE1), 1, HD_GetFullName(0));
 	RegSaveString(TEXT("Configuration"), TEXT(REGVALUE_HDD_IMAGE2), 1, HD_GetFullName(1));
 
@@ -1115,27 +1115,29 @@ static void AdvancedDlg_OK(HWND window, UINT afterclose)
 //	PrinterStateUpdate();
 
 	g_bSaveStateOnExit = IsDlgButtonChecked(window, IDC_SAVESTATE_ON_EXIT) ? true : false;
+	REGSAVE(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), g_bSaveStateOnExit ? 1 : 0);
 
-	SAVE(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), g_bSaveStateOnExit ? 1 : 0);
 	g_bDumpToPrinter = IsDlgButtonChecked(window, IDC_DUMPTOPRINTER ) ? true : false;
-	SAVE(TEXT(REGVALUE_DUMP_TO_PRINTER), g_bDumpToPrinter ? 1 : 0);
+	REGSAVE(TEXT(REGVALUE_DUMP_TO_PRINTER), g_bDumpToPrinter ? 1 : 0);
+
 	g_bConvertEncoding = IsDlgButtonChecked(window, IDC_PRINTER_CONVERT_ENCODING ) ? true : false;
-	SAVE(TEXT(REGVALUE_CONVERT_ENCODING), g_bConvertEncoding ? 1 : 0);
+	REGSAVE(TEXT(REGVALUE_CONVERT_ENCODING), g_bConvertEncoding ? 1 : 0);
 
 	g_bFilterUnprintable = IsDlgButtonChecked(window, IDC_PRINTER_FILTER_UNPRINTABLE ) ? true : false;
-	SAVE(TEXT(REGVALUE_FILTER_UNPRINTABLE), g_bFilterUnprintable ? 1 : 0);
+	REGSAVE(TEXT(REGVALUE_FILTER_UNPRINTABLE), g_bFilterUnprintable ? 1 : 0);
 
 	g_bPrinterAppend = IsDlgButtonChecked(window, IDC_PRINTER_APPEND) ? true : false;
-	SAVE(TEXT(REGVALUE_PRINTER_APPEND), g_bPrinterAppend ? 1 : 0);
+	REGSAVE(TEXT(REGVALUE_PRINTER_APPEND), g_bPrinterAppend ? 1 : 0);
+
 	//
 
 	DWORD NewCloneType = (DWORD)SendDlgItemMessage(window, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
 
-	SAVE(TEXT(REGVALUE_CLONETYPE), NewCloneType);
-	SAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM),g_uTheFreezesF8Rom);	// NB. Can also be disabled on Config page (when Apple2Type changes) 
+	REGSAVE(TEXT(REGVALUE_CLONETYPE), NewCloneType);
+	REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM),g_uTheFreezesF8Rom);	// NB. Can also be disabled on Config page (when Apple2Type changes) 
 	
     Printer_SetIdleLimit((short)SendDlgItemMessage(window, IDC_SPIN_PRINTER_IDLE , UDM_GETPOS, 0, 0));
-	SAVE(TEXT(REGVALUE_PRINTER_IDLE_LIMIT),Printer_GetIdleLimit());
+	REGSAVE(TEXT(REGVALUE_PRINTER_IDLE_LIMIT),Printer_GetIdleLimit());
 
 	eApple2Type NewApple2Clone = GetApple2Type(4, NewCloneType);
 
@@ -1341,7 +1343,7 @@ static int gray_ungray_items(HWND hwnd)
     int disabled = 0;
 
     //resources_get_value("ETHERNET_DISABLED", (void *)&disabled);
-	  LOAD(TEXT("Uthernet Disabled")  ,(DWORD *)&disabled);
+	  REGLOAD(TEXT("Uthernet Disabled")  ,(DWORD *)&disabled);
 	  get_disabled_state(&disabled);
 
     if (disabled) {
@@ -1496,9 +1498,9 @@ static void save_tfe_dialog(HWND hwnd)
 			                       CB_GETCURSEL, 0, 0);
 
 		tfe_enabled = active_value >= 1 ? 1 : 0;
-		SAVE(TEXT("Uthernet Active")  ,tfe_enabled);
+		REGSAVE(TEXT("Uthernet Active")  ,tfe_enabled);
 	} else {
-		SAVE(TEXT("Uthernet Active")  ,0);
+		REGSAVE(TEXT("Uthernet Active")  ,0);
 	}
 
 	

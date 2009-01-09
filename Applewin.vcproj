@@ -409,6 +409,14 @@
 				RelativePath=".\source\Video.h"
 				>
 			</File>
+			<File
+				RelativePath=".\source\z80emu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\z80emu.h"
+				>
+			</File>
 			<Filter
 				Name="Debugger"
 				>
@@ -513,10 +521,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\Tfe\Types.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\Tfe\Uilib.cpp"
 					>
 				</File>
@@ -526,38 +530,58 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Z80"
+				Name="Z80VICE"
 				>
 				<File
-					RelativePath=".\source\Z80\README.txt"
+					RelativePath=".\source\Z80VICE\daa.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80.cpp"
+					RelativePath=".\source\Z80VICE\daa.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80.h"
+					RelativePath=".\source\Z80VICE\z80.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80codes.h"
+					RelativePath=".\source\Z80VICE\z80.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80daa.h"
+					RelativePath=".\source\Z80VICE\z80mem.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80emu.cpp"
+					RelativePath=".\source\Z80VICE\z80mem.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80emu.h"
+					RelativePath=".\source\Z80VICE\z80regs.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="CommonVICE"
+				>
+				<File
+					RelativePath=".\source\CommonVICE\6510core.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80io.h"
+					RelativePath=".\source\CommonVICE\alarm.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CommonVICE\interrupt.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CommonVICE\mem.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CommonVICE\types.h"
 					>
 				</File>
 			</Filter>

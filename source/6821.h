@@ -1,68 +1,125 @@
-// Motorola MC6821 PIA
+/*
+ * mc6821.h - MC6821 emulation for the 1571 disk drives with DD3.
+ *
+ * Written by
+ *  Andreas Boose <viceteam@t-online.de>
+ *
+ * This file is part of VICE, the Versatile Commodore Emulator.
+ * See README for copyright notice.
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307  USA.
+ *
+ */
 
-typedef void (*mem_write_handler) (void* objFrom, void* objTo, int nAddr, BYTE byData);
+typedef void (*mem_write_handler) (void* objTo, BYTE byData);
 
-typedef struct _STWriteHandler
+typedef struct
 {
 	void* objTo;
 	mem_write_handler func;
 } STWriteHandler;
 
-//
-
-#define	PIA_DDRA	0
-#define	PIA_CTLA	1
-#define	PIA_DDRB	2
-#define	PIA_CTLB	3
-
 class C6821
 {
 public:
-	C6821();
-	virtual ~C6821();
+	C6821()
+	{
+		mc6821_reset();
+		m_stOutA.objTo = NULL;
+		m_stOutA.func = NULL;
+		m_stOutB.objTo = NULL;
+		m_stOutB.func = NULL;
+	};
 
-	BYTE GetPB();
-	BYTE GetPA();
-	void SetPB(BYTE byData);
-	void SetPA(BYTE byData);
-	void SetCA1( BYTE byData );
-	void SetCA2( BYTE byData );
-	void SetCB1( BYTE byData );
-	void SetCB2( BYTE byData );
-	void Reset();
-	BYTE Read( BYTE byRS );
-	void Write( BYTE byRS, BYTE byData );
+	~C6821() {};
 
-	void UpdateInterrupts();
+	// AppleWin:TC
+	void SetPA(BYTE byData) { m_byIA = byData; }
+	void SetPB(BYTE byData) { m_byIB = byData; }
+	void Reset() { mc6821_reset(); }
+	BYTE Read( BYTE byRS ) { return mc6821_read_internal(byRS); }
+	void Write( BYTE byRS, BYTE byData ) { mc6821_store_internal(byRS, byData); }
 
-	void SetListenerA( void *objTo, mem_write_handler func );
-	void SetListenerB( void *objTo, mem_write_handler func );
-	void SetListenerCA2( void *objTo, mem_write_handler func );
-	void SetListenerCB2( void *objTo, mem_write_handler func );
+	void SetListenerA(void *objTo, mem_write_handler func)
+	{
+		m_stOutA.objTo = objTo;
+		m_stOutA.func = func;
+	}
 
-protected:
-	BYTE	m_byIA;
-	BYTE	m_byCA1;
-	BYTE	m_byICA2;
-	BYTE	m_byOA;
-	BYTE	m_byOCA2;
-	BYTE	m_byDDRA;
-	BYTE	m_byCTLA;
-	BYTE	m_byIRQAState;
+	void SetListenerB(void *objTo, mem_write_handler func)
+	{
+		m_stOutB.objTo = objTo;
+		m_stOutB.func = func;
+	}
+	// AppleWin:TC END
 
-	BYTE	m_byIB;
-	BYTE	m_byCB1;
-	BYTE	m_byICB2;
-	BYTE	m_byOB;
-	BYTE	m_byOCB2;
-	BYTE	m_byDDRB;
-	BYTE	m_byCTLB;
-	BYTE	m_byIRQBState;
+private:
+	/* Signal values (for signaling edges on the control lines)  */
+	#define MC6821_SIG_CA1 0
+	#define MC6821_SIG_CA2 1
+	#define MC6821_SIG_CB1 2
+	#define MC6821_SIG_CB2 3
 
+	//struct drive_s;
+
+	struct mc6821_s {
+		/* MC6821 register.  */
+		BYTE pra;
+		BYTE ddra;
+		BYTE cra;
+		BYTE prb;
+		BYTE ddrb;
+		BYTE crb;
+
+		/* Drive structure */
+	//    struct drive_s *drive;
+	};
+	typedef struct mc6821_s mc6821_t;
+
+	//struct drive_context_s;
+	void mc6821_init(/*struct drive_context_s *drv*/);
+	void mc6821_reset(/*struct drive_context_s *drv*/);
+	//extern void mc6821_mem_init(struct drive_context_s *drv, unsigned int type);
+
+	void mc6821_set_signal(/*struct drive_context_s *drive_context,*/ int line);
+
+private:
+	// AppleWin:TC
+	void mc6821_write_pra(BYTE byte, unsigned int dnr=0);
+	void mc6821_write_ddra(BYTE byte, unsigned int dnr=0);
+	BYTE mc6821_read_pra(unsigned int dnr=0);
+	void mc6821_write_prb(BYTE byte, unsigned int dnr=0);
+	void mc6821_write_ddrb(BYTE byte, unsigned int dnr=0);
+	BYTE mc6821_read_prb(unsigned int dnr=0);
+	void mc6821_write_cra(BYTE byte, unsigned int dnr=0);
+	void mc6821_write_crb(BYTE byte, unsigned int dnr=0);
+	void mc6821_store_internal(WORD addr, BYTE byte, unsigned int dnr=0);
+	BYTE mc6821_read_internal(WORD addr, unsigned int dnr=0);
+	void mc6821_reset_internal(unsigned int dnr=0);
+	// AppleWin:TC END
+
+private:
+	// AppleWin:TC
 	STWriteHandler m_stOutA;
 	STWriteHandler m_stOutB;
-	STWriteHandler m_stOutCA2;
-	STWriteHandler m_stOutCB2;
-	STWriteHandler m_stOutIRQA;
-	STWriteHandler m_stOutIRQB;
+	BYTE	m_byIA;	// InputA from 285
+	BYTE	m_byIB;	// InputB from 285
+	// AppleWin:TC END
+
+	/* mc6821 structure.  */
+	#define DRIVE_NUM 1		// AppleWin:TC
+	mc6821_t mc6821[DRIVE_NUM];
 };

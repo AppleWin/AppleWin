@@ -108,21 +108,17 @@ Etc.
 
 #define MODE_INT_ALL		STAT_INT_ALL
 
+//===========================================================================
 
-WRITE_HANDLER( M6821_Listener_B )
+void M6821_Listener_B( void* objTo, BYTE byData )
 {
 	((CMouseInterface*)objTo)->On6821_B( byData );
 }
 
-WRITE_HANDLER( M6821_Listener_A )
+void M6821_Listener_A( void* objTo, BYTE byData )
 {
 	((CMouseInterface*)objTo)->On6821_A( byData );
 }
-
-//CALLBACK_HANDLER( MouseHandler )
-//{
-//	((CMouseInterface*)objTo)->OnMouseEvent();
-//}
 
 //===========================================================================
 
@@ -131,7 +127,6 @@ CMouseInterface::CMouseInterface() :
 {
 	m_6821.SetListenerB( this, M6821_Listener_B );
 	m_6821.SetListenerA( this, M6821_Listener_A );
-//	g_cDIMouse.SetMouseListener( this, MouseHandler );
 
 	Uninitialize();
 	Reset();
