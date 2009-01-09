@@ -56,7 +56,7 @@ static HBITMAP capsbitmap[2];
 //Pravets8 only
 static HBITMAP capsbitmapP8[2];
 static HBITMAP latbitmap[2];
-static HBITMAP charsetbitmap [3];
+//static HBITMAP charsetbitmap [4]; //The idea was to add a charset indicator on the front panel, but it was given up. All charsetbitmap occurences must be REMOVED!
 //===========================
 static HBITMAP diskbitmap[ NUM_DISK_STATUS ];
 
@@ -176,6 +176,7 @@ switch (g_Apple2Type)
 			case A2TYPE_APPLE2E:		buttonbitmap[BTN_RUN    ] =(HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON")); break; 
 			case A2TYPE_APPLE2EEHANCED:	buttonbitmap[BTN_RUN    ] =(HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON")); break; 
 			case A2TYPE_PRAVETS82:		buttonbitmap[BTN_RUN    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON")); break; 
+			case A2TYPE_PRAVETS8M:		buttonbitmap[BTN_RUN    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON")); break; 
 			case A2TYPE_PRAVETS8A:		buttonbitmap[BTN_RUN    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON")); break; 
 			}
 
@@ -193,9 +194,11 @@ switch (g_Apple2Type)
   capsbitmapP8[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSON_P8_BITMAP"));
   latbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LATOFF_BITMAP"));
   latbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LATON_BITMAP"));
-  charsetbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_APPLE_BITMAP"));
+  /*charsetbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_APPLE_BITMAP"));
   charsetbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_82_BITMAP"));
   charsetbitmap[2] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_8A_BITMAP"));
+  charsetbitmap[3] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_8M_BITMAP"));
+  */
   //===========================
   diskbitmap[ DISK_STATUS_OFF  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKOFF_BITMAP"));
   diskbitmap[ DISK_STATUS_READ ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKREAD_BITMAP"));
@@ -486,6 +489,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 			case A2TYPE_APPLE2E:		DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]); break; 
 			case A2TYPE_APPLE2EEHANCED:	DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]); break; 
 			case A2TYPE_PRAVETS82:		DrawBitmapRect(dc,x+15,y+19,&rect,latbitmap[bCaps != 0]); break; 
+			case A2TYPE_PRAVETS8M:		DrawBitmapRect(dc,x+15,y+19,&rect,latbitmap[bCaps != 0]); break; 
 			case A2TYPE_PRAVETS8A:		DrawBitmapRect(dc,x+2,y+19,&rect,latbitmap[bCaps != 0]); break; 
 			}
 			if (g_Apple2Type == A2TYPE_PRAVETS8A) //Toggles Pravets 8A/C Caps lock LED
@@ -513,6 +517,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 			case A2TYPE_APPLE2E:		_tcscpy(title, TITLE_APPLE_2E); break; 
 			case A2TYPE_APPLE2EEHANCED:	_tcscpy(title, TITLE_APPLE_2E_ENHANCED); break; 
 			case A2TYPE_PRAVETS82:		_tcscpy(title, TITLE_PRAVETS_82); break; 
+			case A2TYPE_PRAVETS8M:		_tcscpy(title, TITLE_PRAVETS_8M); break; 
 			case A2TYPE_PRAVETS8A:		_tcscpy(title, TITLE_PRAVETS_8A); break; 
 			}
 
@@ -739,7 +744,7 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if (wparam == VK_F9)
 		{			
-			if (GetKeyState(VK_CONTROL) < 0)
+			if (GetKeyState(VK_CONTROL) < 0) //CTRL+F9
 			{
 				g_nCharsetType++; // Cycle through available charsets (Ctrl + F9)
 				if (g_nCharsetType >= 3)
@@ -1537,6 +1542,7 @@ void FrameCreateWindow ()
 	case A2TYPE_APPLE2E:		g_pAppTitle = TITLE_APPLE_2E; break; 
 	case A2TYPE_APPLE2EEHANCED:	g_pAppTitle = TITLE_APPLE_2E_ENHANCED; break; 
 	case A2TYPE_PRAVETS82:	    g_pAppTitle = TITLE_PRAVETS_82; break; 
+	case A2TYPE_PRAVETS8M:	    g_pAppTitle = TITLE_PRAVETS_8M; break; 
 	case A2TYPE_PRAVETS8A:	    g_pAppTitle = TITLE_PRAVETS_8A; break; 
 	}
 

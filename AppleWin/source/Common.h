@@ -60,6 +60,7 @@ enum AppMode_e
 #define	TITLE_APPLE_2E			TEXT("Apple //e Emulator")
 #define	TITLE_APPLE_2E_ENHANCED	TEXT("Enhanced Apple //e Emulator")
 #define	TITLE_PRAVETS_82        TEXT("Pravets 82 Emulator")
+#define	TITLE_PRAVETS_8M        TEXT("Pravets 8M Emulator")
 #define	TITLE_PRAVETS_8A        TEXT("Pravets 8A Emulator")
 
 #define TITLE_PAUSED       TEXT(" Paused ")
@@ -89,6 +90,12 @@ enum AppMode_e
 #define  REGVALUE_CLONETYPE          "Clone Type"
 #define  REGVALUE_CIDERPRESSLOC      "CiderPress Location"
 #define  REGVALUE_Z80_IN_SLOT5       "Z80 in slot 5"
+#define  REGVALUE_DUMP_TO_PRINTER    "Dump to printer"
+#define  REGVALUE_CONVERT_ENCODING   "Convert printer encoding for clones"
+#define  REGVALUE_FILTER_UNPRINTABLE "Filter unprintable characters"
+#define  REGVALUE_PRINTER_FILENAME   "Printer Filename"
+#define  REGVALUE_PRINTER_APPEND     "Append to printer file"
+#define  REGVALUE_PRINTER_IDLE_LIMIT "Printer idle limit"
 
 // Preferences 
 #define REG_PREFS							"Preferences"
@@ -134,6 +141,7 @@ enum eApple2Type {
 					// Clones start here:
 					A2TYPE_CLONE=APPLECLONE_MASK,
 					A2TYPE_PRAVETS82=APPLECLONE_MASK|APPLE2E_MASK,
+					A2TYPE_PRAVETS8M,
 					A2TYPE_PRAVETS8A,
 					A2TYPE_MAX
 				};

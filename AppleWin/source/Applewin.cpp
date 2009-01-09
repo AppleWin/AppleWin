@@ -387,7 +387,8 @@ void LoadConfiguration ()
 		switch (g_uCloneType)
 		{
 		case 0:	g_Apple2Type = A2TYPE_PRAVETS82; break;
-		case 1:	g_Apple2Type = A2TYPE_PRAVETS8A; break;
+		case 1:	g_Apple2Type = A2TYPE_PRAVETS8M; break;
+		case 2:	g_Apple2Type = A2TYPE_PRAVETS8A; break;
 		default:	g_Apple2Type = A2TYPE_APPLE2EEHANCED; break;
 		}
 	  }	
@@ -417,6 +418,7 @@ void LoadConfiguration ()
 	case A2TYPE_APPLE2EEHANCED:	g_nCharsetType  = 0; break; 
 	case A2TYPE_PRAVETS82:	    g_nCharsetType  = 1; break; 
 	case A2TYPE_PRAVETS8A:	    g_nCharsetType  = 2; break; 
+	case A2TYPE_PRAVETS8M:	    g_nCharsetType  = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because settiong charset to 3 results in some problems.
 	}
 
 
@@ -454,6 +456,20 @@ void LoadConfiguration ()
 
   if(LOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
 	  g_bSaveStateOnExit = dwTmp ? true : false;
+
+
+  if(LOAD(TEXT(REGVALUE_DUMP_TO_PRINTER), &dwTmp))
+	g_bDumpToPrinter = dwTmp ? true : false;
+
+  if(LOAD(TEXT(REGVALUE_CONVERT_ENCODING), &dwTmp))
+    g_bConvertEncoding = dwTmp ? true : false;
+
+  if(LOAD(TEXT(REGVALUE_FILTER_UNPRINTABLE), &dwTmp))
+    g_bFilterUnprintable = dwTmp ? true : false;
+
+  if(LOAD(TEXT(REGVALUE_PRINTER_APPEND), &dwTmp))
+    g_bPrinterAppend = dwTmp ? true : false;
+
 
   if(LOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
 	  HD_SetEnabled(dwTmp ? true : false);
@@ -496,9 +512,12 @@ void LoadConfiguration ()
   //
 
 	char szFilename[MAX_PATH] = {0};
-
 	RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_SAVESTATE_FILENAME),1,szFilename,sizeof(szFilename));
 	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used
+
+	szFilename[0] = 0;
+	RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_PRINTER_FILENAME),1,szFilename,sizeof(szFilename));
+	Printer_SetFilename(szFilename);	// If not in Registry than default will be used
 
 	// Current/Starting Dir is the "root" of where the user keeps his disk images
 	RegLoadString(TEXT(REG_PREFS),TEXT(REGVALUE_PREF_START_DIR),1,g_sCurrentDir,MAX_PATH);
@@ -506,6 +525,10 @@ void LoadConfiguration ()
 
 	Disk_LoadLastDiskImage(0);
 	Disk_LoadLastDiskImage(1);
+
+	dwTmp = 10;
+	LOAD(TEXT(REGVALUE_PRINTER_IDLE_LIMIT), &dwTmp);
+	Printer_SetIdleLimit(dwTmp);
 
 	char szUthernetInt[MAX_PATH] = {0};
 	RegLoadString(TEXT(REG_CONFIG),TEXT("Uthernet Interface"),1,szUthernetInt,MAX_PATH);  

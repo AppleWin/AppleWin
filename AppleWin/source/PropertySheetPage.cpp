@@ -125,12 +125,14 @@ static UINT g_bEnableFreezeDlgButton = UNDEFINED;
 
 enum {
 	CLONETYPE_PRAVETS82=0,
+	CLONETYPE_PRAVETS8M,
 	CLONETYPE_PRAVETS8A,
 	CLONETYPE_NUM
 };
 DWORD g_uCloneType = CLONETYPE_PRAVETS82 ;
 
 static TCHAR g_CloneChoices[]	=	TEXT("Pravets 82\0")	// Bulgarian
+									TEXT("Pravets 8M\0")    // Bulgarian
 									TEXT("Pravets 8A\0");	// Bulgarian
 
 
@@ -247,7 +249,8 @@ static eApple2Type GetApple2Type(DWORD NewCompType, DWORD NewCloneType)
 			switch (NewCloneType)
 			{
 			case 0: return A2TYPE_PRAVETS82; break;
-			case 1: return A2TYPE_PRAVETS8A; break;
+			case 1: return A2TYPE_PRAVETS8M; break;
+			case 2: return A2TYPE_PRAVETS8A; break;
 			}			
 		default:	return A2TYPE_APPLE2EEHANCED;
 	}
@@ -303,7 +306,7 @@ static void ConfigDlg_OK(HWND window, UINT afterclose)
 	if (NewApple2Type > A2TYPE_CLONE) 
 		NewCloneType = NewApple2Type - A2TYPE_CLONE;		
 
-	if ((NewApple2Type == A2TYPE_PRAVETS82) || (NewApple2Type == A2TYPE_PRAVETS8A))
+	if ((NewApple2Type == A2TYPE_PRAVETS82) || (NewApple2Type == A2TYPE_PRAVETS8A) || (NewApple2Type == A2TYPE_PRAVETS8M))
 		SAVE(TEXT(REGVALUE_APPLE2_TYPE),A2TYPE_CLONE );
 	else
 		SAVE(TEXT(REGVALUE_APPLE2_TYPE),NewApple2Type );
@@ -414,7 +417,7 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
       CheckRadioButton(window, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, IDC_CUSTOM_SPEED);	// FirstButton, LastButton, CheckButton
       break;
 
-    case WM_INITDIALOG:
+    case WM_INITDIALOG: //Init general settings dialog
 	{
       g_nLastPage = PG_CONFIG;
 
@@ -426,10 +429,11 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
 		case A2TYPE_APPLE2E:		iApple2String = 2; break;
 		case A2TYPE_APPLE2EEHANCED:	iApple2String = 3; break;
 		case A2TYPE_PRAVETS82:	    iApple2String = 4; break;
-		case A2TYPE_PRAVETS8A:	    iApple2String = 5; break;
+		case A2TYPE_PRAVETS8M:	    iApple2String = 5; break;
+		case A2TYPE_PRAVETS8A:	    iApple2String = 6; break;
 	  }
 
-	  if ((iApple2String == 4) || (iApple2String == 5))
+	  if (iApple2String > 3) 
 		FillComboBox(window,IDC_COMPUTER,computerchoices,4);
 	  else
 		FillComboBox(window,IDC_COMPUTER,computerchoices,iApple2String);
@@ -675,7 +679,7 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
       }
       break;
 
-    case WM_INITDIALOG:
+    case WM_INITDIALOG: //Init input settings dialog
 	{
       g_nLastPage = PG_INPUT;
 
@@ -959,7 +963,7 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
 
 		case IDC_CIDERPRESS_BROWSE:
 			{
-				string CiderPressLoc = BrowseToCiderPress(window, TEXT("Select path to CiderPress"));
+				string CiderPressLoc = BrowseToFile(window, TEXT("Select path to CiderPress"), REGVALUE_CIDERPRESSLOC, TEXT("Applications (*.exe)\0*.exe\0") TEXT("All Files\0*.*\0") );
 				RegSaveString(TEXT("Configuration"),REGVALUE_CIDERPRESSLOC,1,CiderPressLoc.c_str());
 				SendDlgItemMessage(window, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM) CiderPressLoc.c_str());
 			}
@@ -967,7 +971,7 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
       }
       break;
 
-    case WM_INITDIALOG:
+    case WM_INITDIALOG: //Init disk settings dialog
 	{
 		g_nLastPage = PG_DISK;
 
@@ -1002,6 +1006,7 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
 //===========================================================================
 
 static bool g_bSSNewFilename = false;
+static char g_szNewFilename[MAX_PATH];
 static char g_szSSNewDirectory[MAX_PATH];
 static char g_szSSNewFilename[MAX_PATH];
 
@@ -1014,7 +1019,7 @@ static void SaveStateUpdate()
 		RegSaveString(TEXT(REG_CONFIG),REGVALUE_SAVESTATE_FILENAME,1,Snapshot_GetFilename());
 
 		if(g_szSSNewDirectory[0])
-			RegSaveString(TEXT(REG_PREFS),REGVALUE_PREF_START_DIR,1,g_szSSNewDirectory);
+			RegSaveString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,g_szSSNewDirectory);	                         RegSaveString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,g_szSSNewDirectory);
 	}
 }
 
@@ -1106,17 +1111,31 @@ static void AdvancedDlg_OK(HWND window, UINT afterclose)
 	szFilename[nLineLength] = 0x00;
 
 	SaveStateUpdate();
+	RegSaveString(TEXT("Configuration"),REGVALUE_PRINTER_FILENAME,1,Printer_GetFilename());
+//	PrinterStateUpdate();
 
 	g_bSaveStateOnExit = IsDlgButtonChecked(window, IDC_SAVESTATE_ON_EXIT) ? true : false;
 
 	SAVE(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), g_bSaveStateOnExit ? 1 : 0);
+	g_bDumpToPrinter = IsDlgButtonChecked(window, IDC_DUMPTOPRINTER ) ? true : false;
+	SAVE(TEXT(REGVALUE_DUMP_TO_PRINTER), g_bDumpToPrinter ? 1 : 0);
+	g_bConvertEncoding = IsDlgButtonChecked(window, IDC_PRINTER_CONVERT_ENCODING ) ? true : false;
+	SAVE(TEXT(REGVALUE_CONVERT_ENCODING), g_bConvertEncoding ? 1 : 0);
 
+	g_bFilterUnprintable = IsDlgButtonChecked(window, IDC_PRINTER_FILTER_UNPRINTABLE ) ? true : false;
+	SAVE(TEXT(REGVALUE_FILTER_UNPRINTABLE), g_bFilterUnprintable ? 1 : 0);
+
+	g_bPrinterAppend = IsDlgButtonChecked(window, IDC_PRINTER_APPEND) ? true : false;
+	SAVE(TEXT(REGVALUE_PRINTER_APPEND), g_bPrinterAppend ? 1 : 0);
 	//
 
 	DWORD NewCloneType = (DWORD)SendDlgItemMessage(window, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
 
 	SAVE(TEXT(REGVALUE_CLONETYPE), NewCloneType);
 	SAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM),g_uTheFreezesF8Rom);	// NB. Can also be disabled on Config page (when Apple2Type changes) 
+	
+    Printer_SetIdleLimit((short)SendDlgItemMessage(window, IDC_SPIN_PRINTER_IDLE , UDM_GETPOS, 0, 0));
+	SAVE(TEXT(REGVALUE_PRINTER_IDLE_LIMIT),Printer_GetIdleLimit());
 
 	eApple2Type NewApple2Clone = GetApple2Type(4, NewCloneType);
 
@@ -1215,6 +1234,15 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
 			if(SaveStateSelectImage(window, TEXT("Select Save State file"), true))
 				SendDlgItemMessage(window, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM) g_szSSNewFilename);
 			break;
+		case IDC_DUMP_FILENAME_BROWSE:
+			{				
+				char PrinterDumpLoc[MAX_PATH] = {0};
+				strcpy(PrinterDumpLoc, BrowseToFile (window, TEXT("Select printer dump file"), REGVALUE_PRINTER_FILENAME, TEXT("Text files (*.txt)\0*.txt\0") TEXT("All Files\0*.*\0")).c_str());
+				RegSaveString(TEXT("Configuration"),REGVALUE_PRINTER_FILENAME,1,PrinterDumpLoc);
+				SendDlgItemMessage(window, IDC_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM) PrinterDumpLoc);
+				Printer_SetFilename (PrinterDumpLoc);
+			}
+			break;
 		case IDC_SAVESTATE_ON_EXIT:
 			break;
 		case IDC_SAVESTATE:
@@ -1249,13 +1277,20 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
       }
       break;
 
-    case WM_INITDIALOG:
+    case WM_INITDIALOG:  //Init advanced settings dialog
 	{
 		g_nLastPage = PG_ADVANCED;
 
 		SendDlgItemMessage(window,IDC_SAVESTATE_FILENAME,WM_SETTEXT,0,(LPARAM)Snapshot_GetFilename());
 
 		CheckDlgButton(window, IDC_SAVESTATE_ON_EXIT, g_bSaveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(window, IDC_DUMPTOPRINTER, g_bDumpToPrinter ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(window, IDC_PRINTER_CONVERT_ENCODING, g_bConvertEncoding ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(window, IDC_PRINTER_FILTER_UNPRINTABLE, g_bFilterUnprintable ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(window, IDC_PRINTER_APPEND, g_bPrinterAppend ? BST_CHECKED : BST_UNCHECKED);
+		SendDlgItemMessage(window, IDC_SPIN_PRINTER_IDLE, UDM_SETRANGE, 0, MAKELONG(999,0));
+        SendDlgItemMessage(window, IDC_SPIN_PRINTER_IDLE, UDM_SETPOS, 0, MAKELONG(Printer_GetIdleLimit (),0));
+    	SendDlgItemMessage(window,IDC_DUMP_FILENAME,WM_SETTEXT,0,(LPARAM)Printer_GetFilename());
 
 		FillComboBox(window, IDC_CLONETYPE, g_CloneChoices, g_uCloneType);
 		InitFreezeDlgButton(window);
@@ -1587,39 +1622,50 @@ bool PSP_SaveStateSelectImage(HWND hWindow, bool bSave)
 
 //===========================================================================
 
-static string BrowseToCiderPress (HWND hWindow, TCHAR* pszTitle)
+string BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE,TCHAR* FILEMASKS)
 {
+	static char PathToFile[MAX_PATH] = {0}; //This is a really awkward way to prevent mixing CiderPress and SaveStated values (RAPCS), but it seem the quickest. Here is its Line 1.
+	strcpy(PathToFile, Snapshot_GetFilename()); //RAPCS, line 2.
 	TCHAR szDirectory[MAX_PATH] = TEXT("");
-	TCHAR szCPFilename[MAX_PATH] = TEXT("");
-	RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, szCPFilename ,MAX_PATH);
-	string PathName = szCPFilename;
+	TCHAR szFilename[MAX_PATH];
+	strcpy(szFilename, "");
+	RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename ,MAX_PATH);
+	string PathName = szFilename;
 
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn,sizeof(OPENFILENAME));
-
+	
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
 	ofn.hInstance       = g_hInstance;
-	ofn.lpstrFilter     =	TEXT("Applications (*.exe)\0*.exe\0")
-							TEXT("All Files\0*.*\0");
-	ofn.lpstrFile       = szCPFilename;
+	ofn.lpstrFilter     = FILEMASKS;
+	/*ofn.lpstrFilter     =	TEXT("Applications (*.exe)\0*.exe\0")
+							TEXT("Text files (*.txt)\0*.txt\0")
+							TEXT("All Files\0*.*\0");*/
+	ofn.lpstrFile       = szFilename;
 	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrInitialDir = szDirectory;
 	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.lpstrTitle      = pszTitle;
-
+		
 	int nRes = GetOpenFileName(&ofn);
 	if(nRes) //Okay is pressed
 	{
-		SetCurrentImageDir();	// Reset, since GetOpenFileName() will've changed curr dir
-		PathName = szCPFilename;
+		strcpy(g_szNewFilename, &szFilename[ofn.nFileOffset]);
+
+		szFilename[ofn.nFileOffset] = 0;
+		if (_tcsicmp(szDirectory, szFilename))
+			strcpy(g_szSSNewDirectory, szFilename);
+
+		PathName = szFilename;
+		PathName.append (g_szNewFilename);	
 	}
 	else //Cancel is pressed.
 	{
-		RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, szCPFilename, MAX_PATH);
-		PathName = szCPFilename;
+		RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename,MAX_PATH);
+		PathName = szFilename;
 	}
-
+	strcpy(g_szNewFilename, PathToFile); //RAPCS, line 3 (last).
 	return PathName;
 }
 

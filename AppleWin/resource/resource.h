@@ -42,7 +42,8 @@
 #define IDR_THUNDERCLOCKPLUS_FW         137
 #define IDR_FREEZES_F8_ROM              138
 #define IDR_PRAVETS_82_ROM              139
-#define IDR_PRAVETS_8C_ROM              140
+#define IDR_PRAVETS_8M_ROM              140
+#define IDR_PRAVETS_8C_ROM              142
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -86,13 +87,21 @@
 #define IDC_CIDERPRESS_BROWSE           1049
 #define IDC_CIDERPRESS_FILENAME         1050
 #define IDC_Z80_IN_SLOT5                1051
+#define IDC_DUMPTOPRINTER               1052
+#define IDC_DUMP_FILENAME               1053
+#define IDC_DUMP_FILENAME_BROWSE        1054
+#define IDC_PRINTER_CONVERT_ENCODING    1055
+#define IDC_PRINTER_FILTER_UNPRINTABLE  1056
+#define IDC_PRINTER_APPEND				1057
+#define IDC_SPIN_PRINTER_IDLE           1058
+
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
 #define ID_DISKMENU_EJECT               40004
 #define ID_DISKMENU_WRITEPROTECTION_ON  40005
 #define ID_DISKMENU_WRITEPROTECTION_OFF 40006
-#define ID_DISKMENU_SENDTO_CIDERPRESS   40007
+#define ID_DISKMENU_SENDTO_CIDERPRESS	40007
 
 // Next default values for new objects
 // 
