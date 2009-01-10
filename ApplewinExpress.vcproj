@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="windows-1251"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="Applewin"
 	ProjectGUID="{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}"
 	RootNamespace="Applewin"
@@ -537,35 +537,39 @@
 				Name="Z80"
 				>
 				<File
-					RelativePath=".\source\Z80\README.txt"
+					RelativePath=".\source\Z80VICE\daa.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80.cpp"
+					RelativePath=".\source\Z80VICE\daa.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80.h"
+					RelativePath=".\source\Z80VICE\z80.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80codes.h"
+					RelativePath=".\source\Z80VICE\z80.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80daa.h"
+					RelativePath=".\source\z80emu.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80emu.cpp"
+					RelativePath=".\source\z80emu.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80emu.h"
+					RelativePath=".\source\Z80VICE\z80mem.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80io.h"
+					RelativePath=".\source\Z80VICE\z80mem.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Z80VICE\z80regs.h"
 					>
 				</File>
 			</Filter>
