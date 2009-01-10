@@ -416,6 +416,14 @@
 				RelativePath=".\source\Video.h"
 				>
 			</File>
+			<File
+				RelativePath=".\source\z80emu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\z80emu.h"
+				>
+			</File>
 			<Filter
 				Name="Debugger"
 				>
@@ -520,10 +528,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\Tfe\Types.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\Tfe\Uilib.cpp"
 					>
 				</File>
@@ -533,38 +537,58 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Z80"
+				Name="Z80VICE"
 				>
 				<File
-					RelativePath=".\source\Z80\README.txt"
+					RelativePath=".\source\Z80VICE\daa.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80.cpp"
+					RelativePath=".\source\Z80VICE\daa.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80.h"
+					RelativePath=".\source\Z80VICE\z80.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80codes.h"
+					RelativePath=".\source\Z80VICE\z80.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80daa.h"
+					RelativePath=".\source\Z80VICE\z80mem.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80emu.cpp"
+					RelativePath=".\source\Z80VICE\z80mem.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80emu.h"
+					RelativePath=".\source\Z80VICE\z80regs.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="CommonVICE"
+				>
+				<File
+					RelativePath=".\source\CommonVICE\6510core.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Z80\z80io.h"
+					RelativePath=".\source\CommonVICE\alarm.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CommonVICE\interrupt.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CommonVICE\mem.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CommonVICE\types.h"
 					>
 				</File>
 			</Filter>
@@ -644,19 +668,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\CAPSOFF_P8.BMP"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\CAPSON.BMP"
 				>
 			</File>
 			<File
-				RelativePath=".\resource\CHARIDNICATOR_82.BMP"
-				>
-			</File>
-			<File
-				RelativePath=".\resource\CHARIDNICATOR_8C.BMP"
-				>
-			</File>
-			<File
-				RelativePath=".\resource\CHARIDNICATOR_APPLE.BMP"
+				RelativePath=".\resource\CAPSON_P8.BMP"
 				>
 			</File>
 			<File
@@ -676,14 +696,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\resource\CYROFF.BMP"
-				>
-			</File>
-			<File
-				RelativePath=".\resource\CYRON.BMP"
-				>
-			</File>
-			<File
 				RelativePath="RESOURCE\DEBUG.BMP"
 				>
 			</File>
@@ -696,7 +708,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\Disk2.rom"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\DISKOFF.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\Diskprot.bmp"
 				>
 			</File>
 			<File
@@ -724,6 +744,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\Freezes_Non-autostart_F8_Rom.rom"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\FULLSCR.BMP"
 				>
 			</File>
@@ -736,7 +760,31 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\LATOFF.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\LATON.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\Mockingboard-D.rom"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\MouseInterface.rom"
+				>
+			</File>
+			<File
 				RelativePath=".\resource\Parallel.rom"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\PRAVETS82.ROM"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\Pravets8C.rom"
 				>
 			</File>
 			<File
@@ -749,6 +797,14 @@
 			</File>
 			<File
 				RelativePath="RESOURCE\SETUP.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\SSC.rom"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\ThunderClockPlus.rom"
 				>
 			</File>
 		</Filter>
