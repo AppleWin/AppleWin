@@ -806,6 +806,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\resource\PRAVETS8M.ROM"
+			>
+		</File>
+		<File
 			RelativePath=".\resource\resource.h"
 			>
 		</File>

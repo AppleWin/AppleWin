@@ -1299,6 +1299,9 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
 
 		g_szSSNewDirectory[0] = 0x00;
 
+		// Need to specific cmd-line switch: -printer-real to enable this control
+		EnableWindow(GetDlgItem(window, IDC_DUMPTOPRINTER), g_bEnableDumpToRealPrinter ? TRUE : FALSE);
+
 		afterclose = 0;
 		break;
 	}
