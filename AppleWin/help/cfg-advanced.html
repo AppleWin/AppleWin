@@ -22,41 +22,45 @@ emulation by pressing the F12 key.</p>
 <p><strong>Clone:</strong><br>
 If you have specified Computer as 'Clone' on the main Configuration
 page, then this drop-down menu can be used to specify the clone type.<br>
-NB. Pravets 82 and 8A are Bulgarian Apple II clones.<br>
+NB. Pravets 82, 8M and 8A are Bulgarian Apple II clones.<br>
 </p>
-<p><strong>Printer settings </strong>(Printer is
-emulated at slot 1)</p>
+<p><strong>Printer settings </strong>(Printer is emulated in slot 1)
+</p>
 <p style="margin-left: 40px;"><strong>Printer dump filename:<br>
-</strong>Data sent to the printer is stored in a text file. Use
+</strong>
+Data sent to the printer is stored in a text file. Use
 this setting to select its location.<br>
 </p>
 <p style="margin-left: 40px;"><strong>Dump to printer:<br>
 </strong><span style="font-weight: bold; font-style: italic;">Use
 with caution!</span> Enables dumping to a real printer. If
-disabled, the
-printout is stored only in printer.txt file in the AppleWin folder.
+disabled, the printout is stored only in printer.txt file in the AppleWin folder.
 This probably works properly (not tested) when using a printer
 compatible with the printer selected in the Apple II applications. In
 modern printers trying to print images will result in printing tens of
-pages with nonsense.<br>
+pages with nonsense. Requires command line switch -printer-real.<br>
 </p>
 <p style="margin-left: 40px;"><strong>Encoding conversion for clones:<br>
 </strong>Characters are encoded from the character set used in
 the real hardware to ASCII. For Pravets 8 this converts MIK to ASCII.
-Enabling this could cause problems when&nbsp;printing images.</p>
+Enabling this could cause problems when printing images.
+</p>
 <p style="margin-left: 40px;"><strong>Filter unprintable characters:<br>
 </strong>Some characters represent commands for the printer and
 shall not be printed. When saving them to the printer dump file they
 may appear as some strange symbols. I may want to disable filtering
-when dumping to printer.</p><p style="margin-left: 40px;"><strong>Append to printfile:<br>
-</strong>When disabled previous print file is replaced (unless it has a
-different&nbsp;name) by the newly created print file. Otherwise newly
-printed data is added to the existing print file.&nbsp;I should better
-disable appending
-when dumping to printer.</p><p style="margin-left: 40px;"><strong>Terminate printing after idle:<br>
+when dumping to printer.
+</p>
+<p style="margin-left: 40px;"><strong>Append to print-file:<br>
+</strong>When disabled previous the print file is replaced (unless it has a
+different name) by the newly created print file. Otherwise the newly
+printed data is added to the existing print file. I should better
+disable appending when dumping to printer.
+</p>
+<p style="margin-left: 40px;"><strong>Terminate printing after idle:<br>
 </strong>Whan printing is started a printer file is created and it is
-closed either after the selected by this widget time expires, or when
-the emulator is reset. This setting is emulation speed dependend.
+closed either after the specified time expires, or when
+the emulator is reset. This setting is emulation speed dependent.
  </p>
 <p><strong>The Freeze's non-autostart F8 rom:</strong><br>
 If you have specified Computer as 'Apple ][' or 'Apple ][+' on the main

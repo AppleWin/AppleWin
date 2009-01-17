@@ -91,6 +91,46 @@
 			<param name="Local" value="CommandLine.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="AppleWin Configuration">
+			<param name="Local" value="configuration.html">
+			<param name="ImageNumber" value="2">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Configuration Settings">
+				<param name="Local" value="cfg-config.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Input Settings">
+				<param name="Local" value="cfg-input.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Sound Settings">
+				<param name="Local" value="cfg-sound.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disk / Drive Settings">
+				<param name="Local" value="cfg-disk.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Advanced Settings">
+				<param name="Local" value="cfg-Advanced.html">
+				<param name="ImageNumber" value="2">
+				</OBJECT>
+			<UL>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Pravets Clones">
+					<param name="Local" value="cfg-Advanced-Pravets.html">
+					</OBJECT>
+			</UL>
+			<UL>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="The Freeze's F8 rom">
+					<param name="Local" value="cfg-Advanced-freeze-rom.html">
+					</OBJECT>
+			</UL>
+		</UL>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Debugger">
 			<param name="Local" value="dbg-toc-intro.html">
 			<param name="ImageNumber" value="2">
@@ -140,46 +180,6 @@
 				<param name="Name" value="Configuration">
 				<param name="Local" value="dbg-configuration.html">
 				</OBJECT>
-		</UL>
-		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="AppleWin Configuration">
-			<param name="Local" value="configuration.html">
-			<param name="ImageNumber" value="2">
-			</OBJECT>
-		<UL>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Configuration Settings">
-				<param name="Local" value="cfg-config.html">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Input Settings">
-				<param name="Local" value="cfg-input.html">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Sound Settings">
-				<param name="Local" value="cfg-sound.html">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Disk / Drive Settings">
-				<param name="Local" value="cfg-disk.html">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Advanced Settings">
-				<param name="Local" value="cfg-Advanced.html">
-				<param name="ImageNumber" value="2">
-				</OBJECT>
-			<UL>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="Pravets Clones">
-					<param name="Local" value="cfg-Advanced-Pravets.html">
-					</OBJECT>
-			</UL>
-			<UL>
-				<LI> <OBJECT type="text/sitemap">
-					<param name="Name" value="The Freeze's F8 rom">
-					<param name="Local" value="cfg-Advanced-freeze-rom.html">
-					</OBJECT>
-			</UL>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Resources">

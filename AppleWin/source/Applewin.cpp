@@ -731,6 +731,10 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			g_bDisplayPrintScreenFileName = true;
 		}
+		else if(strcmp(lpCmdLine, "-printer-real") == 0)	// Enable control in Advanced config to allow dumping to a real printer
+		{
+			g_bEnableDumpToRealPrinter = true;
+		}
 
 		lpCmdLine = lpNextArg;
 	}

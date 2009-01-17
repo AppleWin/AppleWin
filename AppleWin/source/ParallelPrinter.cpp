@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Parallel Printer Interface Card emulation
  *
- * Author: Nick Westgate
+ * Author: Nick Westgate, Stannev
  */
 
 #include "StdAfx.h"
@@ -42,6 +42,7 @@ bool g_bConvertEncoding = true;
 bool g_bFilterUnprintable = true;
 bool g_bPrinterAppend = false;
 int  g_iPrinterIdleLimit = 10;
+bool g_bEnableDumpToRealPrinter = false;
 
 //===========================================================================
 

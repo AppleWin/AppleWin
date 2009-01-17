@@ -757,12 +757,12 @@ void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
 	if(pData == NULL)
 		return;
 
-	memcpy(pCxRomPeripheral + uSlot*256, pData, DISK2_FW_SIZE);
+	memcpy(pCxRomPeripheral + uSlot*APPLE_SLOT_SIZE, pData, DISK2_FW_SIZE);
 
 	// TODO/FIXME: HACK! REMOVE A WAIT ROUTINE FROM THE DISK CONTROLLER'S FIRMWARE
-	*(pCxRomPeripheral + (uSlot*256) + 0x4C) = 0xA9;
-	*(pCxRomPeripheral + (uSlot*256) + 0x4D) = 0x00;
-	*(pCxRomPeripheral + (uSlot*256) + 0x4E) = 0xEA;
+	*(pCxRomPeripheral + (uSlot*APPLE_SLOT_SIZE) + 0x4C) = 0xA9;
+	*(pCxRomPeripheral + (uSlot*APPLE_SLOT_SIZE) + 0x4D) = 0x00;
+	*(pCxRomPeripheral + (uSlot*APPLE_SLOT_SIZE) + 0x4E) = 0xEA;
 
 	//
 
