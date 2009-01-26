@@ -76,7 +76,8 @@ TCHAR   serialchoices[]   =  TEXT("None\0")
                              TEXT("COM1\0")
                              TEXT("COM2\0")
                              TEXT("COM3\0")
-                             TEXT("COM4\0");
+                             TEXT("COM4\0")
+                             TEXT("TCP\0");
 
 TCHAR   soundchoices[]    =  TEXT("Disabled\0")
                              TEXT("PC Speaker (direct)\0")
