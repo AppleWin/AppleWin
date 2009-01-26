@@ -43,6 +43,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 
 //#define SUPPORT_MODEM
+#define TCP_SERIAL_OPTION 5
+#define TCP_SERIAL_PORT 1977
 
 // Default: 19200-8-N-1
 // Maybe a better default is: 9600-7-N-1 (for HyperTrm)
@@ -71,6 +73,8 @@ CSuperSerialCard::CSuperSerialCard()
 	m_vRecvBytes = 0;
 
 	m_hCommHandle = INVALID_HANDLE_VALUE;
+	m_hCommListenSocket = INVALID_SOCKET;
+	m_hCommAcceptSocket = INVALID_SOCKET;
 	m_dwCommInactivity	= 0;
 
 	m_bTxIrqEnabled = false;
@@ -92,6 +96,7 @@ CSuperSerialCard::CSuperSerialCard()
 // TODO: Serial Comms - UI Property Sheet Page:
 // . Ability to config the 2x DIPSWs - only takes affect after next Apple2 reset
 // . 'Default' button that resets DIPSWs to DIPSWDefaults
+// . Need to respect IRQ disable dipswitch (cannot be overridden by software)
 
 void CSuperSerialCard::GetDIPSW()
 {
@@ -189,41 +194,100 @@ BOOL CSuperSerialCard::CheckComm()
 {
 	m_dwCommInactivity = 0;
 
-	if ((m_hCommHandle == INVALID_HANDLE_VALUE) && m_dwSerialPort)
+	// check for COM or TCP socket handle, and setup if invalid
+	if ((m_hCommHandle == INVALID_HANDLE_VALUE) && (m_hCommListenSocket == INVALID_SOCKET))
 	{
-		TCHAR portname[8];
-		wsprintf(portname, TEXT("COM%u"), m_dwSerialPort);
-
-		m_hCommHandle = CreateFile(portname,
-								GENERIC_READ | GENERIC_WRITE,
-								0,								// exclusive access
-								(LPSECURITY_ATTRIBUTES)NULL,	// default security attributes
-								OPEN_EXISTING,
-								FILE_FLAG_OVERLAPPED,			// required for WaitCommEvent()
-								NULL);
-
-		if (m_hCommHandle != INVALID_HANDLE_VALUE)
+		if (m_dwSerialPort == TCP_SERIAL_OPTION)
 		{
-			UpdateCommState();
-			COMMTIMEOUTS ct;
-			ZeroMemory(&ct,sizeof(COMMTIMEOUTS));
-			ct.ReadIntervalTimeout = MAXDWORD;
-			SetCommTimeouts(m_hCommHandle,&ct);
-			CommThInit();
+			// init Winsock 1.1 (for Win95, otherwise could use 2.2)
+			WSADATA wsaData;
+			if (WSAStartup(MAKEWORD(1, 1), &wsaData) == 0) // or (2, 2) for Winsock 2.2
+			{
+				if (wsaData.wVersion != 0x0101) // or 0x0202 for Winsock 2.2
+				{
+					WSACleanup();
+					return FALSE;
+				}
+
+				// initialized, so try to create a socket
+				m_hCommListenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+				if (m_hCommListenSocket == INVALID_SOCKET)
+				{
+					WSACleanup();
+					return FALSE;
+				}
+
+				// have socket so attempt to bind it
+				SOCKADDR_IN saAddress;
+				saAddress.sin_family = AF_INET;
+				saAddress.sin_port = htons(TCP_SERIAL_PORT); // TODO: get from registry / GUI
+				saAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+				if (bind(m_hCommListenSocket, (LPSOCKADDR)&saAddress, sizeof(saAddress)) == SOCKET_ERROR)
+				{
+					m_hCommListenSocket = INVALID_SOCKET;
+					WSACleanup();
+					return FALSE;
+				}
+
+				// bound, so listen
+				if (listen(m_hCommListenSocket, 1) == SOCKET_ERROR)
+				{
+					m_hCommListenSocket = INVALID_SOCKET;
+					WSACleanup();
+					return FALSE;
+				}
+
+				// now send async events to our app's message handler
+				if (WSAAsyncSelect(
+						/* SOCKET s */ m_hCommListenSocket,
+						/* HWND hWnd */ g_hFrameWindow,
+						/* unsigned int wMsg */ WM_USER_TCP_SERIAL,
+						/* long lEvent */ (FD_ACCEPT | FD_CONNECT | FD_READ | FD_CLOSE)) != 0)
+				{
+					m_hCommListenSocket = INVALID_SOCKET;
+					WSACleanup();
+					return FALSE;
+				}
+			}
 		}
 		else
 		{
-			DWORD uError = GetLastError();
+			TCHAR portname[8];
+			wsprintf(portname, TEXT("COM%u"), m_dwSerialPort);
+
+			m_hCommHandle = CreateFile(portname,
+									GENERIC_READ | GENERIC_WRITE,
+									0,								// exclusive access
+									(LPSECURITY_ATTRIBUTES)NULL,	// default security attributes
+									OPEN_EXISTING,
+									FILE_FLAG_OVERLAPPED,			// required for WaitCommEvent()
+									NULL);
+
+			if (m_hCommHandle != INVALID_HANDLE_VALUE)
+			{
+				UpdateCommState();
+				COMMTIMEOUTS ct;
+				ZeroMemory(&ct,sizeof(COMMTIMEOUTS));
+				ct.ReadIntervalTimeout = MAXDWORD;
+				SetCommTimeouts(m_hCommHandle,&ct);
+				CommThInit();
+			}
+			else
+			{
+				DWORD uError = GetLastError();
+			}
 		}
 	}
 
-	return (m_hCommHandle != INVALID_HANDLE_VALUE);
+	return ((m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET));
 }
 
 //===========================================================================
 
 void CSuperSerialCard::CloseComm()
 {
+	CommTcpSerialCleanup();	// Shut down Winsock
+
 	CommThUninit();		// Kill CommThread before closing COM handle
 
 	if (m_hCommHandle != INVALID_HANDLE_VALUE)
@@ -231,6 +295,74 @@ void CSuperSerialCard::CloseComm()
 
 	m_hCommHandle = INVALID_HANDLE_VALUE;
 	m_dwCommInactivity = 0;
+}
+
+//===========================================================================
+
+void CSuperSerialCard::CommTcpSerialCleanup()
+{
+	if (m_hCommListenSocket != INVALID_SOCKET)
+	{
+		WSAAsyncSelect(m_hCommListenSocket, g_hFrameWindow, 0, 0); // Stop event messages
+		closesocket(m_hCommListenSocket);
+		m_hCommListenSocket = INVALID_SOCKET;
+
+		CommTcpSerialClose();
+
+		WSACleanup();
+	}
+}
+
+//===========================================================================
+
+void CSuperSerialCard::CommTcpSerialClose()
+{
+	if (m_hCommAcceptSocket != INVALID_SOCKET)
+	{
+		shutdown(m_hCommAcceptSocket, 2 /* SD_BOTH */); // In case the client is waiting for data
+		closesocket(m_hCommAcceptSocket);
+		m_hCommAcceptSocket = INVALID_SOCKET;
+	}
+	while (!m_TcpSerialBuffer.empty())
+	{
+		m_TcpSerialBuffer.pop();
+	}
+}
+
+//===========================================================================
+
+void CSuperSerialCard::CommTcpSerialAccept()
+{
+	// Valid listener socket and invalid accept socket?
+	if ((m_hCommListenSocket != INVALID_SOCKET) && (m_hCommAcceptSocket == INVALID_SOCKET))
+	{
+		// Y: accept the connection
+		m_hCommAcceptSocket = accept(m_hCommListenSocket, NULL, NULL );
+	}
+}
+
+//===========================================================================
+
+void CSuperSerialCard::CommTcpSerialReceive()
+{
+	if (m_hCommAcceptSocket != INVALID_SOCKET)
+	{
+		char data[0x80];
+		int received = 0;
+		while ((received = recv(m_hCommAcceptSocket, data, sizeof(data), 0)) > 0)
+		{
+			for (int i = 0; i < received; i++)
+			{
+				m_TcpSerialBuffer.push(data[i]);
+			}
+		}
+
+		if (m_bRxIrqEnabled && !m_TcpSerialBuffer.empty())
+		{
+			m_vbCommIRQ = true;
+			CpuIrqAssert(IS_SSC);
+		}
+	}
 }
 
 //===========================================================================
@@ -342,7 +474,7 @@ BYTE __stdcall CSuperSerialCard::CommCommand(WORD, WORD, BYTE write, BYTE value,
 				break;
 		}
 
-		// interrupt request disable [0=enable receiver interrupts]
+		// interrupt request disable [0=enable receiver interrupts] - NOTE: SSC docs get this wrong!
 		m_bRxIrqEnabled = ((m_uCommandByte & 0x02) == 0);
 
 		if (m_uCommandByte	& 0x01)	// Data Terminal Ready (DTR) setting [0=set DTR high (indicates 'not ready')]
@@ -438,7 +570,13 @@ BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 		return 0;
 
 	BYTE result = 0;
-	if (m_vRecvBytes)
+
+	if (!m_TcpSerialBuffer.empty())
+	{
+		result = m_TcpSerialBuffer.front();
+		m_TcpSerialBuffer.pop();
+	}
+	else if (m_vRecvBytes)
 	{
 		// Don't need critical section in here as CommThread is waiting for ACK
 
@@ -463,10 +601,22 @@ BYTE __stdcall CSuperSerialCard::CommTransmit(WORD, WORD, BYTE, BYTE value, ULON
 	if (!CheckComm())
 		return 0;
 
-	DWORD uBytesWritten;
-	WriteFile(m_hCommHandle, &value, 1, &uBytesWritten, &m_o);
-
-	m_bWrittenTx = true;	// Transmit done
+	if (m_hCommAcceptSocket != INVALID_SOCKET)
+	{
+		BYTE data = value;
+		if (m_uByteSize < 8)
+		{
+			data &= ~(1 << m_uByteSize);
+		}
+		send(m_hCommAcceptSocket, (const char*)&data, 1, 0);
+		m_bWrittenTx = true;	// Transmit done
+	}
+	else if (m_hCommHandle != INVALID_HANDLE_VALUE)
+	{
+		DWORD uBytesWritten;
+		WriteFile(m_hCommHandle, &value, 1, &uBytesWritten, &m_o);
+		m_bWrittenTx = true;	// Transmit done
+	}
 
 	// TO DO:
 	// 1) Use CommThread determine when transmit is complete
@@ -520,14 +670,17 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 
 	// So that /m_vRecvBytes/ doesn't change midway (from 0 to 1):
 	// . bIRQ=false, but uStatus.ST_RX_FULL=1
-	EnterCriticalSection(&m_CriticalSection);
+	if (m_hCommHandle != INVALID_HANDLE_VALUE)
+	{
+		EnterCriticalSection(&m_CriticalSection);
+	}
 
 	bool bIRQ = false;
 	if (m_bTxIrqEnabled && m_bWrittenTx)
 	{
 		bIRQ = true;
 	}
-	if (m_bRxIrqEnabled && m_vRecvBytes)
+	if (m_bRxIrqEnabled && (m_vRecvBytes || !m_TcpSerialBuffer.empty()))
 	{
 		bIRQ = true;
 	}
@@ -537,14 +690,17 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	//
 
 	BYTE uStatus = ST_TX_EMPTY 
-				| (m_vRecvBytes					? ST_RX_FULL : 0x00)
+				| ((m_vRecvBytes || !m_TcpSerialBuffer.empty()) ? ST_RX_FULL : 0x00)
 #ifdef SUPPORT_MODEM
 				| ((modemstatus & MS_RLSD_ON)	? 0x00 : ST_DCD)	// Need 0x00 to allow ZLink to start up
 				| ((modemstatus & MS_DSR_ON)	? 0x00 : ST_DSR)
 #endif
 				| (bIRQ							? ST_IRQ : 0x00);
 
-	LeaveCriticalSection(&m_CriticalSection);
+	if (m_hCommHandle != INVALID_HANDLE_VALUE)
+	{
+		LeaveCriticalSection(&m_CriticalSection);
+	}
 
 	CpuIrqDeassert(IS_SSC);
 
@@ -670,7 +826,7 @@ void CSuperSerialCard::CommDestroy()
 
 void CSuperSerialCard::CommSetSerialPort(HWND window, DWORD newserialport)
 {
-	if (m_hCommHandle == INVALID_HANDLE_VALUE)
+	if ((m_hCommHandle == INVALID_HANDLE_VALUE) && (m_hCommListenSocket == INVALID_SOCKET))
 	{
 		m_dwSerialPort = newserialport;
 	}
@@ -688,7 +844,7 @@ void CSuperSerialCard::CommSetSerialPort(HWND window, DWORD newserialport)
 
 void CSuperSerialCard::CommUpdate(DWORD totalcycles)
 {
-	if (m_hCommHandle == INVALID_HANDLE_VALUE)
+	if ((m_hCommHandle == INVALID_HANDLE_VALUE) && (m_hCommListenSocket == INVALID_SOCKET))
 		return;
 
 	if ((m_dwCommInactivity += totalcycles) > 1000000)

@@ -1,4 +1,5 @@
 #pragma once
+#include <queue>
 
 extern class CSuperSerialCard sg_SSC;
 
@@ -35,6 +36,11 @@ public:
 
 	DWORD	GetSerialPort() { return m_dwSerialPort; }
 	void	SetSerialPort(DWORD dwSerialPort) { m_dwSerialPort = dwSerialPort; }
+
+	void	CommTcpSerialAccept();
+	void	CommTcpSerialReceive();
+	void	CommTcpSerialClose();
+	void	CommTcpSerialCleanup();
 
 	static BYTE __stdcall SSC_IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
 	static BYTE __stdcall SSC_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
@@ -82,12 +88,15 @@ private:
 	//
 
 	HANDLE m_hCommHandle;
+	SOCKET m_hCommListenSocket;
+	SOCKET m_hCommAcceptSocket;
 	DWORD  m_dwCommInactivity;
 
 	//
 
 	CRITICAL_SECTION	m_CriticalSection;	// To guard /g_vRecvBytes/
 	BYTE				m_RecvBuffer[uRecvBufferSize];	// NB: More work required if >1 is used
+	queue<BYTE>			m_TcpSerialBuffer;
 	volatile DWORD		m_vRecvBytes;
 
 	//

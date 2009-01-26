@@ -1199,6 +1199,49 @@ LRESULT CALLBACK FrameWndProc (
     case WM_USER_LOADSTATE:		// Load state
 		Snapshot_LoadState();
 		break;
+
+	case WM_USER_TCP_SERIAL:	// TCP serial events
+		WORD error = WSAGETSELECTERROR(lparam);
+		if (error != 0)
+		{
+			LogOutput("TCP Serial Winsock error 0x%X (%d)\r", error, error);
+			switch (error)
+			{
+			case WSAENETRESET:
+			case WSAECONNABORTED:
+			case WSAECONNRESET:
+			case WSAENOTCONN:
+			case WSAETIMEDOUT:
+				sg_SSC.CommTcpSerialClose();
+				break;
+
+			default:
+				sg_SSC.CommTcpSerialCleanup();
+				break;
+			}
+		}
+		else
+		{
+			WORD wSelectEvent = WSAGETSELECTEVENT(lparam);
+			switch(wSelectEvent)
+			{
+				case FD_ACCEPT:
+					sg_SSC.CommTcpSerialAccept();
+					break;
+
+				case FD_CLOSE:
+					sg_SSC.CommTcpSerialClose();
+					break;
+
+				case FD_READ:
+					sg_SSC.CommTcpSerialReceive();
+					break;
+
+				case FD_WRITE:
+					break;
+			}
+		}
+		break;
   }
   return DefWindowProc(window,message,wparam,lparam);
 }
