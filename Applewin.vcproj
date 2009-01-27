@@ -74,7 +74,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib"
+				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib Ws2_32.lib"
 				OutputFile=".\Release/Applewin.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -167,7 +167,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib"
+				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib Ws2_32.lib"
 				OutputFile=".\Debug/Applewin.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
