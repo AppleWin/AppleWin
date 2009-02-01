@@ -288,6 +288,10 @@ static void AY8910_Write(BYTE nDevice, BYTE nReg, BYTE nValue, BYTE nAYDevice)
 				break;
 
 			case AY_LATCH:		// 7: LATCH ADDRESS
+				// http://www.worldofspectrum.org/forums/showthread.php?t=23327
+				// Selecting an unused register number above 0x0f puts the AY into a state where
+				// any values written to the data/address bus are ignored, but can be read back
+				// within a few tens of thousands of cycles before they decay to zero.
 				if(pMB->sy6522.ORA <= 0x0F)
 					pMB->nAYCurrentRegister = pMB->sy6522.ORA & 0x0F;
 				// else Pro-Mockingboard (clone from HK)

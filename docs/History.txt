@@ -18,26 +18,27 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise
 
 
-1.16.0 - 17 Jan 2009 (beta)
+1.16.0 - 1 Feb 2009 (beta)
 ---------------------------
 Changes:
+. Support for Apple // Game Server via TCP (port 1977) : beta
 . For GPL reasons, switched the following modules:
-  - AY8910 (from MAME  to FUSE) : beta
-  - MC6821 (from MAME  to VICE) : beta
-  - Z80    (from Z80Em to VICE) : beta
+  - AY8910 (from MAME  to FUSE) : beta Mockingboard/Phasor
+  - MC6821 (from MAME  to VICE) : beta Mouse card
+  - Z80    (from Z80Em to VICE) : beta CP/M Softcard
 . Printer support:
   - Printer dump filename
   - Filter unprintable characters
   - Append to print-file
   - Terminate printing after n seconds of idle
   - Encoding conversion for Pravets
-  - Dump to printer (CAUTION! Enabled via command line switch: -printer-real)
+  - Dump to printer (CAUTION! Enabled via command line switch: -use-real-printer)
 . Added Pravets 8M
 
 Fixes:
+. BugID-014557: Fix for loading serial port from Registry (caused AppleWin to crash when booting Apple Pascal)
 . Some floating bus bugs (fixes the Bulgarian game: "Walking in the town" & Annunciator read)
 . FLASH rate (now 3Hz, was 6Hz)
-. BugID-014557: Fix for loading serial port from Registry (caused AppleWin to crash when booting Apple Pascal)
 . Fix for Willy Byte & MB support (strange 6522 behaviour!)
 
 
