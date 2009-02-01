@@ -55,14 +55,20 @@
 		<P>
 			<strong>Serial Port:<br>
 			</strong>This option will remap the emulated Apple's serial port to your PC's 
-			serial port. The Apple Super Serial Card is emulated in slot-2.<br>
+			serial port (or TCP port 1977). The Apple Super Serial Card (SSC) is emulated in slot-2.<br>
+            The TCP interface to the Apple SSC can be used by the <a href="http://sourceforge.net/projects/a2gameserver">Apple // Game Server</a>.
+            For details see the notes that comes with AGS:<br>
+            <li>Boot the Apple II to AppleSoft (ie. power on and hit Ctrl-Reset) and type IN#2.
+            </li>
+            <li>From a Windows DOS box, start AGS with "localhost 1977 apple2e". This will boot the emulated Apple II from AGS.</li>
+            <li>Nb. Only Enhanced Apple //e is working at the moment.
+            <br>
 			<STRONG>
 				<BR>
 				Ethernet Settings...:</STRONG>
 			<br>
 			This allows to choose which network interface card (NIC) you want to 
-			use&nbsp;with the Uthernet card.</P>
-		<P><STRONG>Monochrome Color:</STRONG><br>
+			use&nbsp;with the Uthernet card.<P><STRONG>Monochrome Color:</STRONG><br>
 			This is the color to use when you choose a monochrome video mode.<br>
 			<br>
 			<strong>Emulation Speed Control:</strong><br>
@@ -85,5 +91,6 @@
 			<li>
 				Expected average video game performance (in FPS)</li>
 		</ul>
+	</li>
 	</body>
 </html>

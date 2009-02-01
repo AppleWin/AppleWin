@@ -727,11 +727,11 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			if ((g_hCustomRomF8 == INVALID_HANDLE_VALUE) || (GetFileSize(g_hCustomRomF8, NULL) != 0x800))
 				g_bCustomRomF8Failed = true;
 		}
-		else if(strcmp(lpCmdLine, "-printscreen") == 0)		// turn on dispay of the last filename print screen was saved to
+		else if(strcmp(lpCmdLine, "-printscreen") == 0)		// Turn on display of the last filename print screen was saved to
 		{
 			g_bDisplayPrintScreenFileName = true;
 		}
-		else if(strcmp(lpCmdLine, "-printer-real") == 0)	// Enable control in Advanced config to allow dumping to a real printer
+		else if(strcmp(lpCmdLine, "-use-real-printer") == 0)	// Enable control in Advanced config to allow dumping to a real printer
 		{
 			g_bEnableDumpToRealPrinter = true;
 		}

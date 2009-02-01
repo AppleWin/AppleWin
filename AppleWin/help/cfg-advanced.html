@@ -35,10 +35,9 @@ this setting to select its location.<br>
 </strong><span style="font-weight: bold; font-style: italic;">Use
 with caution!</span> Enables dumping to a real printer. If
 disabled, the printout is stored only in printer.txt file in the AppleWin folder.
-This probably works properly (not tested) when using a printer
-compatible with the printer selected in the Apple II applications. In
-modern printers trying to print images will result in printing tens of
-pages with nonsense. Requires command line switch -printer-real.<br>
+It's recommended to use a printer compatible with the printer selected in the Apple II applications.
+With modern printers trying to print images will result in printing tens of
+pages of nonsense. Requires command line switch -use-real-printer.<br>
 </p>
 <p style="margin-left: 40px;"><strong>Encoding conversion for clones:<br>
 </strong>Characters are encoded from the character set used in
@@ -48,14 +47,14 @@ Enabling this could cause problems when printing images.
 <p style="margin-left: 40px;"><strong>Filter unprintable characters:<br>
 </strong>Some characters represent commands for the printer and
 shall not be printed. When saving them to the printer dump file they
-may appear as some strange symbols. I may want to disable filtering
-when dumping to printer.
+may appear as some strange symbols. (You will want to disable filtering
+when dumping to a real printer.)
 </p>
 <p style="margin-left: 40px;"><strong>Append to print-file:<br>
 </strong>When disabled previous the print file is replaced (unless it has a
 different name) by the newly created print file. Otherwise the newly
-printed data is added to the existing print file. I should better
-disable appending when dumping to printer.
+printed data is added to the existing print file. (You will want to
+disable appending when dumping to a real printer.)
 </p>
 <p style="margin-left: 40px;"><strong>Terminate printing after idle:<br>
 </strong>Whan printing is started a printer file is created and it is
