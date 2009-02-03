@@ -763,7 +763,8 @@ void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
 	// patching $C64C with $A9,$00,$EA. Now not doing this since:
 	// . Authentic Speed should be authentic
 	// . Enhanced Speed runs emulation unthrottled, so removing the delay has negligible effect
-	// . Patching the f/w breaks the ADC & EOR checksums used by "The CIA Files" (Tricy Dick)
+	// . Patching the firmware breaks the ADC checksum used by "The CIA Files" (Tricky Dick)
+	// . In this case we can patch to compensate for an ADC or EOR checksum but not both
 
 	RegisterIoHandler(uSlot, Disk_IORead, Disk_IOWrite, NULL, NULL, NULL, NULL);
 }
