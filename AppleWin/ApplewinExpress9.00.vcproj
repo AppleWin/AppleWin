@@ -601,6 +601,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\docs\Debugger_Changelog.txt"
+				>
+			</File>
+			<File
 				RelativePath=".\docs\History.txt"
 				>
 			</File>
