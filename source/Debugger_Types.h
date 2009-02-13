@@ -1462,7 +1462,8 @@
 
 	enum
 	{
-		MAX_SYMBOLS_LEN = 13
+		// raised from 13 to 31 for Contiki
+		MAX_SYMBOLS_LEN = 31
 	};
 
 	// ****************************************
