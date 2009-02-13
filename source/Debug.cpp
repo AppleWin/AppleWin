@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2008, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2009, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006-2008 Michael Pohoreski
+ * Author: Copyright (C) 2006-2009 Michael Pohoreski
  */
 
 // disable warning C4786: symbol greater than 255 character:
@@ -38,12 +38,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //	#define DEBUG_ASM_HASH 1
 #define ALLOW_INPUT_LOWERCASE 1
 
-// TODO: COLOR RESET
-// TODO: COLOR SAVE ["filename"]
-// TODO: COLOR LOAD ["filename"]
-
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,0,7);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,0,8);
 
 
 // Public _________________________________________________________________________________________
@@ -890,6 +886,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	bool _CmdSymbolList_Address2Symbol( int nAddress   , int bSymbolTables );
 	bool _CmdSymbolList_Symbol2Address( LPCTSTR pSymbol, int bSymbolTables );
+
+	// SymbolOffset
+	int ParseSymbolTable( TCHAR *pFileName, Symbols_e eWhichTableToLoad, int nSymbolOffset = 0 );
 
 // Source Level Debugging
 	static	bool BufferAssemblyListing ( char * pFileName );
@@ -4854,6 +4853,7 @@ Update_t CmdMemorySave (int nArgs)
 				BYTE *pDst = pMemory;
 				BYTE *pSrc = mem + nAddressStart;
 				
+				// memcpy -- copy out of active memory bank
 				int iByte;
 				for( iByte = 0; iByte < nAddressLen; iByte++ )
 				{
@@ -6345,8 +6345,14 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables)
 	return ConsoleUpdate();
 }
 
+
+void Print_Current_Path()
+{
+	ConsoleDisplayError( g_sProgramDir );
+}
+
 //===========================================================================
-int ParseSymbolTable( TCHAR *pFileName, Symbols_e eWhichTableToLoad )
+int ParseSymbolTable( TCHAR *pFileName, Symbols_e eWhichTableToLoad, int nSymbolOffset )
 {
 	int nSymbolsLoaded = 0;
 
@@ -6365,6 +6371,14 @@ int ParseSymbolTable( TCHAR *pFileName, Symbols_e eWhichTableToLoad )
 	sprintf( sFormat2, "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
 
 	FILE *hFile = fopen(pFileName,"rt");
+
+	if( !hFile )
+	{
+		ConsoleDisplayError( "Symbol File not found:" );
+		Print_Current_Path();
+		nSymbolsLoaded = -1; // HACK: ERROR: FILE NOT EXIST
+	}
+
 	while(hFile && !feof(hFile))
 	{
 		// Support 2 types of symbols files:
@@ -6375,8 +6389,7 @@ int ParseSymbolTable( TCHAR *pFileName, Symbols_e eWhichTableToLoad )
 		//    . SYMBOL  =$0000; Comment
 		//    . SYMBOL  =$FFFF; Comment
 		//
-		DWORD INVALID_ADDRESS = 0xFFFF + 1;
-		DWORD nAddress = INVALID_ADDRESS;
+		DWORD nAddress = _6502_MEM_END + 1; // default to invalid address
 		char  sName[ MAX_SYMBOLS_LEN+1 ]  = "";
 
 		const int MAX_LINE = 256;
@@ -6398,12 +6411,16 @@ int ParseSymbolTable( TCHAR *pFileName, Symbols_e eWhichTableToLoad )
 			p = strstr(szLine, " ");		// 1st space between name & value
 			int nLen = p - szLine;
 			if (nLen > MAX_SYMBOLS_LEN)
+			{
 				memset(&szLine[MAX_SYMBOLS_LEN], ' ', nLen-MAX_SYMBOLS_LEN);	// sscanf fails for nAddress if string too long
-
+			}
 			sscanf(szLine, sFormat2, sName, &nAddress);
 		}
 
-		if( (nAddress >= INVALID_ADDRESS) || (sName[0] == 0) )
+		// SymbolOffset
+		nAddress += nSymbolOffset;
+
+		if( (nAddress > _6502_MEM_END) || (sName[0] == 0) )
 			continue;
 
 		g_aSymbols[ eWhichTableToLoad ] [ (WORD) nAddress ] = sName;
@@ -6411,7 +6428,9 @@ int ParseSymbolTable( TCHAR *pFileName, Symbols_e eWhichTableToLoad )
 	}
 
 	if (hFile)
+	{
 		fclose(hFile);
+	}
 
 	return nSymbolsLoaded;
 }
@@ -6430,6 +6449,8 @@ Update_t CmdSymbolsLoad (int nArgs)
 		return ConsoleDisplayError( sFileName );
 	}
 
+	int nSymbols = 0;
+
 	if (! nArgs)
 	{
 		// Default to main table
@@ -6444,26 +6465,62 @@ Update_t CmdSymbolsLoad (int nArgs)
 			// load user symbols
 			_tcscat( sFileName, g_sFileNameSymbolsUser );
 		}
-		g_nSymbolsLoaded = ParseSymbolTable( sFileName, (Symbols_e) iWhichTable );
 
-		return (UPDATE_DISASM || UPDATE_SYMBOLS);
+		nSymbols = ParseSymbolTable( sFileName, (Symbols_e) iWhichTable );
 	}
 
-	int iArg = 0;
-	while (iArg++ <= nArgs)
+	int iArg = 1;
+	if (iArg <= nArgs)
 	{
-		TCHAR *pFileName = g_aArgs[ iArg ].sArg;
+		TCHAR *pFileName = NULL;
+		
+		if( g_aArgs[ iArg ].bType & TYPE_QUOTED_2 )
+		{
+			pFileName = g_aArgs[ iArg ].sArg;
 
-		_tcscpy(sFileName,g_sProgramDir);
-		_tcscat(sFileName, pFileName);
+			_tcscpy(sFileName,g_sProgramDir);
+			_tcscat(sFileName, pFileName);
 
-		// Remember File ame of symbols loaded
-		_tcscpy( g_sFileNameSymbolsUser, pFileName );
+			// Remember File Name of last symbols loaded
+			_tcscpy( g_sFileNameSymbolsUser, pFileName );
+		}
 
-		g_nSymbolsLoaded = ParseSymbolTable( sFileName, (Symbols_e) iWhichTable );
+		// SymbolOffset
+		// sym load "filename" [,symbol_offset]
+		int nOffsetAddr = 0;
+
+		iArg++;
+		if( iArg <= nArgs)
+		{
+			if (g_aArgs[ iArg ].eToken == TOKEN_COMMA)
+			{
+				iArg++;
+				if( iArg <= nArgs )
+				{
+					nOffsetAddr = g_aArgs[ iArg ].nValue;
+					if( (nOffsetAddr < _6502_MEM_BEGIN) || (nOffsetAddr > _6502_MEM_END) )
+					{
+						nOffsetAddr = 0;
+					}
+				}
+			}
+		}
+
+		if( pFileName )
+		{
+			nSymbols = ParseSymbolTable( sFileName, (Symbols_e) iWhichTable, nOffsetAddr );
+		}
 	}
 
-	return (UPDATE_DISASM || UPDATE_SYMBOLS);
+	if( nSymbols > 0 )
+	{
+		g_nSymbolsLoaded = nSymbols;
+	}
+
+	Update_t bUpdateDisplay = UPDATE_DISASM;
+	bUpdateDisplay |= (nSymbols > 0) ? UPDATE_SYMBOLS : 0;
+
+	return bUpdateDisplay;
 }
 
 //===========================================================================
@@ -6672,14 +6729,17 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 			if (iParam == PARAM_LOAD)
 			{
 				nArgs = _Arg_Shift( iArg, nArgs);
-				CmdSymbolsLoad( nArgs );
+				Update_t bUpdate = CmdSymbolsLoad( nArgs );
 
 				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
 				if (iTable != NUM_SYMBOL_TABLES)
 				{
-					wsprintf( sText, "  Symbol Table: %s, loaded symbols: %d",
+					if( bUpdate & UPDATE_SYMBOLS )
+					{
+						wsprintf( sText, "  Symbol Table: %s, loaded symbols: %d",
 						g_aSymbolTableNames[ iTable ], g_nSymbolsLoaded );
-					ConsoleBufferPush( sText );
+						ConsoleBufferPush( sText );
+					}
 				}
 				else
 				{
