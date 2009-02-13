@@ -1,5 +1,8 @@
 /*
 
+2.6.0.7
+ Increased symbol length from 13 to 31 for Contriki
+
 2.6.0.6 Released with AppleWin 1.15
 .6 Added new command '@' to display the search results
 .5 Fixed display results of Searching to be colorized
