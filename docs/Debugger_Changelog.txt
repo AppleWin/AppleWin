@@ -1,9 +1,11 @@
 /*
 
-2.6.0.7
- Increased symbol length from 13 to 31 for Contriki
+2.6.0.8 Released with AppleWin (1.16.0.0)
+ .8 Loading symbols can now use an offset
+    symsrc load "filename" [,symbol_offset]
+ .7 Increased symbol length from 13 to 31 for Contriki
 
-2.6.0.6 Released with AppleWin 1.15
+2.6.0.6 Released with AppleWin 1.15 (beta)
 .6 Added new command '@' to display the search results
 .5 Fixed display results of Searching to be colorized
 .4 Fixed ? to sort and colorize commands
@@ -25,7 +27,7 @@
    HELP VIEW // view help summary
    HGR // view current Hi-Res Screen. press a key to return to the normal debugger view
 
-TODO: 2.6.0.0 released with next version of AppleWin (1.12.9.2)
+2.5.7.11 released with AppleWin Version 1.14.2.0
 
 .11 Added: Trace File Now displays filename tracing is saved to.
 .10 Fixed: Trace File wasn't displaying assembly mnemonics
@@ -460,7 +462,7 @@ Patch 10
 .1 since source level debugging is a minor feature
 8 added command "VERSION *" to show internal debug info
 7 fixed mem enter not refreshing screen
-6 added source level debuggig back-end
+6 added source level debugging back-end
 5 fixed "SYM 0" bug
 
 */
