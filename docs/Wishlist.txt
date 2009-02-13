@@ -7,18 +7,29 @@ Requests (Wishlist):
 . Periphals: Proper mouse support
 . Periphals: Ability to swap ROM cards
 . Support for blind users -- read characters from Apple Text Screen -- relay to Windows Text2Speech API
-. Debugger: TEXT 1 Show 40 Column Text Page 1
-. Debugger: TEXT 2 Show 40 Column Text Page 2
-. Debugger: TEXT80 1 Show 40 Column Text Page 1
-. Debugger: TEXT80 2 Show 40 Column Text Page 1
-. Debugger: HGR 1 show Hi-Res Page 1
-. Debugger: HGR 2 show Hi-Res Page 2 
-. Debugger: DHGR 1 show Double Hi-Res Page 1
-. Debugger: DHGR 2 show Double Hi-Res Page 2 
 . Disk: .zip support (read-only should be fine)
 . Disk: .gz support (read-only should be fine)
 . Disk: .2MG support
 
+- Disk map!!!
+ http://www.lazilong.com/apple_II/adfs/screenshots/beagle_block.html
+
+. Debugger: BLOAD with no arguments should print current save path
+. Debugger: FIX BLOAD with bad path!! (should use path of last disk load!)
+. Debugger: FIX BSAVE with bad path!! (should use path of last disk load!)
+. Debugger: merlin "filename",S6,D1
+. Debugger: COLOR RESET
+. Debugger: COLOR SAVE ["filename"]
+. Debugger: COLOR LOAD ["filename"]
+
+. DONE: Debugger: TEXT 1 Show 40 Column Text Page 1
+. DONE: Debugger: TEXT 2 Show 40 Column Text Page 2
+. DONE: Debugger: TEXT80 1 Show 40 Column Text Page 1
+. DONE: Debugger: TEXT80 2 Show 40 Column Text Page 1
+. DONE: Debugger: HGR 1 show Hi-Res Page 1
+. DONE: Debugger: HGR 2 show Hi-Res Page 2 
+. DONE: Debugger: DHGR 1 show Double Hi-Res Page 1
+. DONE: Debugger: DHGR 2 show Double Hi-Res Page 2 
 . DONE: Debugger: shift+ins to paste from clipboard (use Ctrl-V to paste.)
 
 Priority:
