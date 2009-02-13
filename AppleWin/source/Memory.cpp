@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #endif
 #include "..\resource\resource.h"
 
+// Memory Flag
 #define  MF_80STORE    0x00000001
 #define  MF_ALTZP      0x00000002
 #define  MF_AUXREAD    0x00000004
@@ -60,6 +61,56 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  SW_SLOTC3ROM  (memmode & MF_SLOTC3ROM)
 #define  SW_SLOTCXROM  (memmode & MF_SLOTCXROM)
 #define  SW_WRITERAM   (memmode & MF_WRITERAM)
+
+/*
+MEMORY MANAGEMENT SOFT SWITCHES
+ $C000   W       80STOREOFF      Allow page2 to switch video page1 page2
+ $C001   W       80STOREON       Allow page2 to switch main & aux video memory
+ $C002   W       RAMRDOFF        Read enable main memory from $0200-$BFFF
+ $C003   W       RAMDRON         Read enable aux memory from $0200-$BFFF
+ $C004   W       RAMWRTOFF       Write enable main memory from $0200-$BFFF
+ $C005   W       RAMWRTON        Write enable aux memory from $0200-$BFFF
+ $C006   W       INTCXROMOFF     Enable slot ROM from $C100-$CFFF
+ $C007   W       INTCXROMON      Enable main ROM from $C100-$CFFF
+ $C008   W       ALZTPOFF        Enable main memory from $0000-$01FF & avl BSR
+ $C009   W       ALTZPON         Enable aux memory from $0000-$01FF & avl BSR
+ $C00A   W       SLOTC3ROMOFF    Enable main ROM from $C300-$C3FF
+ $C00B   W       SLOTC3ROMON     Enable slot ROM from $C300-$C3FF
+
+VIDEO SOFT SWITCHES
+ $C00C   W       80COLOFF        Turn off 80 column display
+ $C00D   W       80COLON         Turn on 80 column display
+ $C00E   W       ALTCHARSETOFF   Turn off alternate characters
+ $C00F   W       ALTCHARSETON    Turn on alternate characters
+ $C050   R/W     TEXTOFF         Select graphics mode
+ $C051   R/W     TEXTON          Select text mode
+ $C052   R/W     MIXEDOFF        Use full screen for graphics
+ $C053   R/W     MIXEDON         Use graphics with 4 lines of text
+ $C054   R/W     PAGE2OFF        Select panel display (or main video memory)
+ $C055   R/W     PAGE2ON         Select page2 display (or aux video memory)
+ $C056   R/W     HIRESOFF        Select low resolution graphics
+ $C057   R/W     HIRESON         Select high resolution graphics
+
+SOFT SWITCH STATUS FLAGS
+ $C010   R7      AKD             1=key pressed   0=keys free    (clears strobe)
+ $C011   R7      BSRBANK2        1=bank2 available    0=bank1 available
+ $C012   R7      BSRREADRAM      1=BSR active for read   0=$D000-$FFFF active
+ $C013   R7      RAMRD           0=main $0200-$BFFF active reads  1=aux active
+ $C014   R7      RAMWRT          0=main $0200-$BFFF active writes 1=aux writes
+ $C015   R7      INTCXROM        1=main $C100-$CFFF ROM active   0=slot active
+ $C016   R7      ALTZP           1=aux $0000-$1FF+auxBSR    0=main available
+ $C017   R7      SLOTC3ROM       1=slot $C3 ROM active   0=main $C3 ROM active
+ $C018   R7      80STORE         1=page2 switches main/aux   0=page2 video
+ $C019   R7      VERTBLANK       1=vertical retrace on   0=vertical retrace off
+ $C01A   R7      TEXT            1=text mode is active   0=graphics mode active
+ $C01B   R7      MIXED           1=mixed graphics & text    0=full screen
+ $C01C   R7      PAGE2           1=video page2 selected or aux
+ $C01D   R7      HIRES           1=high resolution graphics   0=low resolution
+ $C01E   R7      ALTCHARSET      1=alt character set on    0=alt char set off
+ $C01F   R7      80COL           1=80 col display on     0=80 col display off
+*/
+
+
 
 //-----------------------------------------------------------------------------
 
@@ -335,9 +386,22 @@ static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	case 0xA:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
 	case 0xB:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
 	case 0xC:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xD:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xE:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xF:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+//	case 0xD:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xD:	// No Slot Clock Hack for ProDOS
+#if CLOCK_HACK_PRODOS
+		Clock_Generic_UpdateProDos();	
+#endif
+		return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+
+	//http://www.1000bit.net/support/manuali/apple/technotes/aiie/tn.aiie.10.html
+	//IOUDIS (W): $C07E
+	//    There is no IOU to disable
+	//IOUDIS (W): $C07F
+	//    There is no IOU to enable
+	//RDIOUDIS (R7): $C07E
+	//    There is no IOUDIS switch to read
+	case 0xE:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft); // TODO: IOUDIS
+	case 0xF:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft); // TODO: IOUDIS
 	}
 
 	return 0;
@@ -421,8 +485,8 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 		if (SW_SLOTCXROM)
 		{
 			// NB. SW_SLOTCXROM==0 ensures that internal rom stays switched in
-			memset(pCxRomPeripheral+0x800, 0, 0x800);
-			memset(mem+0xC800, 0, 0x800);
+			memset(pCxRomPeripheral+0x800, 0, FIRMWARE_EXPANSION_SIZE);
+			memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
 			g_eExpansionRomType = eExpRomNull;
 		}
 
@@ -435,7 +499,7 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 
 	if (IS_APPLE2 || SW_SLOTCXROM)
 	{
-		if ((address >= 0xC100) && (address <= 0xC7FF))
+		if ((address >= APPLE_SLOT_BEGIN) && (address <= APPLE_SLOT_END))
 		{
 			const UINT uSlot = (address >> 8) & 0xF;
 			if ((uSlot != 3) && ExpansionRom[uSlot])
@@ -445,7 +509,7 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 			else if (!SW_SLOTC3ROM)
 				IO_SELECT_InternalROM = 1;	// Slot3 & Internal ROM
 		}
-		else if ((address >= 0xC800) && (address <= 0xCFFF))
+		else if ((address >= FIRMWARE_EXPANSION_BEGIN) && (address <= FIRMWARE_EXPANSION_END))
 		{
 			IO_STROBE = 1;
 		}
@@ -468,8 +532,8 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 
 			if (ExpansionRom[uSlot] && (g_uPeripheralRomSlot != uSlot))
 			{
-				memcpy(pCxRomPeripheral+0x800, ExpansionRom[uSlot], 0x800);
-				memcpy(mem+0xC800, ExpansionRom[uSlot], 0x800);
+				memcpy(pCxRomPeripheral+0x800, ExpansionRom[uSlot], FIRMWARE_EXPANSION_SIZE);
+				memcpy(mem+FIRMWARE_EXPANSION_BEGIN, ExpansionRom[uSlot], FIRMWARE_EXPANSION_SIZE);
 				g_eExpansionRomType = eExpRomPeripheral;
 				g_uPeripheralRomSlot = uSlot;
 			}
@@ -478,7 +542,7 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 		{
 			// Enable Internal ROM
 			// . Get this for PR#3
-			memcpy(mem+0xC800, pCxRomInternal+0x800, 0x800);
+			memcpy(mem+FIRMWARE_EXPANSION_BEGIN, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
 			g_eExpansionRomType = eExpRomInternal;
 			g_uPeripheralRomSlot = 0;
 		}
@@ -489,21 +553,21 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 		// !SW_SLOTC3ROM = Internal ROM: $C300-C3FF
 		// !SW_SLOTCXROM = Internal ROM: $C100-CFFF
 
-		if ((address >= 0xC100) && (address <= 0xC7FF))	// Don't care about state of SW_SLOTC3ROM
+		if ((address >= APPLE_SLOT_BEGIN) && (address <= APPLE_SLOT_END))	// Don't care about state of SW_SLOTC3ROM
 			IO_SELECT_InternalROM = 1;
-		else if ((address >= 0xC800) && (address <= 0xCFFF))
+		else if ((address >= FIRMWARE_EXPANSION_BEGIN) && (address <= FIRMWARE_EXPANSION_END))
 			IO_STROBE = 1;
 
 		if (!SW_SLOTCXROM && IO_SELECT_InternalROM && IO_STROBE && (g_eExpansionRomType != eExpRomInternal))
 		{
 			// Enable Internal ROM
-			memcpy(mem+0xC800, pCxRomInternal+0x800, 0x800);
+			memcpy(mem+FIRMWARE_EXPANSION_BEGIN, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
 			g_eExpansionRomType = eExpRomInternal;
 			g_uPeripheralRomSlot = 0;
 		}
 	}
 
-	if ((g_eExpansionRomType == eExpRomNull) && (address >= 0xC800))
+	if ((g_eExpansionRomType == eExpRomNull) && (address >= FIRMWARE_EXPANSION_BEGIN))
 		return IO_Null(programcounter, address, write, value, nCyclesLeft);
 	else
 		return mem[address];
@@ -1056,13 +1120,29 @@ void MemInitialize()
 	const UINT uSlot = 0;
 	RegisterIoHandler(uSlot, MemSetPaging, MemSetPaging, NULL, NULL, NULL, NULL);
 
+	// TODO: Cleanup peripheral setup!!!
 	PrintLoadRom(pCxRomPeripheral, 1);				// $C100 : Parallel printer f/w
+
 	sg_SSC.CommInitialize(pCxRomPeripheral, 2);		// $C200 : SSC
+
+	// Slot 3 is reserved for AuxMem/80Col Card!
+
 	if (g_Slot4 == CT_MouseInterface)
+	{
 		sg_Mouse.Initialize(pCxRomPeripheral, 4);	// $C400 : Mouse f/w
+	}
+	else
+	if (g_Slot4 == CT_GenericClock)
+	{
+//		LoadRom_Clock_Generic(pCxRomPeripheral, 4);
+	}
+	else
+
+	// Why isn't mockingboard here?
 #ifdef SUPPORT_CPM
 	ConfigureSoftcard(pCxRomPeripheral, 5, g_uZ80InSlot5);	// $C500 : Z80 card
 #endif
+
 	DiskLoadRom(pCxRomPeripheral, 6);				// $C600 : Disk][ f/w
 	HD_Load_Rom(pCxRomPeripheral, 7);				// $C700 : HDD f/w
 
@@ -1271,7 +1351,7 @@ BYTE __stdcall MemSetPaging (WORD programcounter, WORD address, BYTE write, BYTE
 			// Disable Internal ROM
 			// . Similar to $CFFF access
 			// . None of the peripheral cards can be driving the bus - so use the null ROM
-			memset(pCxRomPeripheral+0x800, 0, 0x800);
+			memset(pCxRomPeripheral+0x800, 0, FIRMWARE_EXPANSION_SIZE);
 			memset(mem+0xC800, 0, 0x800);
 			g_eExpansionRomType = eExpRomNull;
 			g_uPeripheralRomSlot = 0;
@@ -1279,7 +1359,7 @@ BYTE __stdcall MemSetPaging (WORD programcounter, WORD address, BYTE write, BYTE
 		else
 		{
 			// Enable Internal ROM
-			memcpy(mem+0xC800, pCxRomInternal+0x800, 0x800);
+			memcpy(mem+0xC800, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
 			g_eExpansionRomType = eExpRomInternal;
 			g_uPeripheralRomSlot = 0;
 		}
