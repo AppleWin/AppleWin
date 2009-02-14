@@ -92,8 +92,9 @@
 #define IDC_DUMP_FILENAME_BROWSE        1054
 #define IDC_PRINTER_CONVERT_ENCODING    1055
 #define IDC_PRINTER_FILTER_UNPRINTABLE  1056
-#define IDC_PRINTER_APPEND				1057
+#define IDC_PRINTER_APPEND              1057
 #define IDC_SPIN_PRINTER_IDLE           1058
+#define IDC_CHECK_HALF_SCAN_LINES       1059
 
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
@@ -110,7 +111,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        141
 #define _APS_NEXT_COMMAND_VALUE         40008
-#define _APS_NEXT_CONTROL_VALUE         1052
+#define _APS_NEXT_CONTROL_VALUE         1060
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
