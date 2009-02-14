@@ -218,8 +218,8 @@ static WORD          colormixmap[6][6][6];
 
 static int       g_nAltCharSetOffset  = 0; // alternate character set
 
-		 bool      g_bVideoDisplayPage2 = 0;
-		 bool      g_VideoForceFullRedraw = 1;
+		bool      g_bVideoDisplayPage2 = 0;
+		bool      g_VideoForceFullRedraw = 1;
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      framebufferpitch = 0;
@@ -231,7 +231,10 @@ static BOOL      rebuiltsource    = 0;
 static DWORD     dwVBlCounter     = 0;
 static LPBYTE    vidlastmem       = NULL;
 static DWORD     vidmode          = VF_TEXT;
+
 DWORD     videotype        = VT_COLOR_TVEMU;
+DWORD     g_uHalfScanLines = false; // drop 50% scan lines for a more authentic look
+
 
 static bool g_bTextFlashState = false;
 static bool g_bTextFlashFlag = false;
@@ -457,16 +460,19 @@ void CreateIdentityPalette () {
 }
 
 //===========================================================================
-void CreateDIBSections () {
+void CreateDIBSections () 
+{
 
-  CopyMemory(g_pSourceHeader->bmiColors,g_pFramebufferinfo->bmiColors,256*sizeof(RGBQUAD));
+	CopyMemory(g_pSourceHeader->bmiColors,g_pFramebufferinfo->bmiColors,256*sizeof(RGBQUAD));
   
-  // CREATE THE DEVICE CONTEXT
-  HWND window  = GetDesktopWindow();
-  HDC dc       = GetDC(window);
-  if (g_hDeviceDC)
-    DeleteDC(g_hDeviceDC);
-  g_hDeviceDC = CreateCompatibleDC(dc);
+	// CREATE THE DEVICE CONTEXT
+	HWND window  = GetDesktopWindow();
+	HDC dc       = GetDC(window);
+	if (g_hDeviceDC)
+	{
+		DeleteDC(g_hDeviceDC);
+	}
+	g_hDeviceDC = CreateCompatibleDC(dc);
 
   // CREATE THE FRAME BUFFER DIB SECTION
   if (g_hDeviceBitmap)
@@ -495,8 +501,8 @@ void CreateDIBSections () {
 	if((videotype != VT_MONO_CUSTOM) &&
 		(videotype != VT_MONO_AMBER ) &&
 		(videotype != VT_MONO_GREEN ) &&
-		(videotype != VT_MONO_WHITE ) &&
-		(videotype != VT_MONO_AUTHENTIC))
+		(videotype != VT_MONO_WHITE ))
+//		(videotype != VT_MONO_AUTHENTIC))
 	{
 		DrawTextSource(sourcedc);
 		DrawLoResSource();
@@ -908,12 +914,14 @@ void DrawMonoDHiResSource ()
 			{
 				BYTE colorval = pattern & (1 << (x+3)) ? iMonochrome : BLACK;
 
+#if 0
 				if (videotype == VT_MONO_AUTHENTIC)
 				{
 					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,colorval);
 					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,BLACK);
 				}
 				else
+#endif
 				{
 					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,colorval);
 					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,colorval);
@@ -939,13 +947,14 @@ void DrawMonoHiResSource ()
 				val >>= 1;
 				SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y  ,colorval);
 				SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y  ,colorval);
-
+#if 0
 				if (videotype == VT_MONO_AUTHENTIC)
 				{
 					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y+1,BLACK);
 					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y+1,BLACK);
 				}
 				else
+#endif
 				{
 					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y+1,colorval);
 					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y+1,colorval);
@@ -966,7 +975,7 @@ void DrawMonoLoResSource () {
 			for (int y = 0; y < 16; y++)
 			{
 				BYTE colorval = (color >> (x & 3) & 1) ? iMonochrome : BLACK;
-
+#if 0
 				if (videotype == VT_MONO_AUTHENTIC)
 				{
 					if (y & 1)
@@ -975,6 +984,7 @@ void DrawMonoLoResSource () {
 						SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,colorval);
 				}
 				else 						
+#endif
 				{
 					SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,colorval);
 				}
@@ -1052,7 +1062,7 @@ void DrawMonoTextSource (HDC hDstDC)
 
 	hCharBitmap[0] = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
 	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));
-	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));  //Pravets 8M probably has the same charset as Pravets 8C
+	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));  // FIXME: Pravets 8M probably has the same charset as Pravets 8C
 	hCharBitmap[3] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
 
 	HBRUSH hBrush;
@@ -1061,7 +1071,7 @@ void DrawMonoTextSource (HDC hDstDC)
 		case VT_MONO_AMBER: hBrush = CreateSolidBrush(RGB(0xFF,0x80,0x00)); break;
 		case VT_MONO_GREEN: hBrush = CreateSolidBrush(RGB(0x00,0xC0,0x00)); break;
 		case VT_MONO_WHITE: hBrush = CreateSolidBrush(RGB(0xFF,0xFF,0xFF)); break;
-		case VT_MONO_AUTHENTIC: hBrush = CreateCustomBrush(RGB(0x00,0xC0,0x00)); break; 
+//		case VT_MONO_AUTHENTIC: hBrush = CreateCustomBrush(RGB(0x00,0xC0,0x00)); break; 
 		default           : hBrush = CreateSolidBrush(monochrome); break;
 	}
 
@@ -1086,7 +1096,7 @@ void DrawTextSource (HDC dc)
 	//The charset is set below
 	hCharBitmap[0] = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
 	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));
-	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C")); //Pravets 8M probably has the same charset as Pravets 8C
+	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C")); // FIXME: Pravets 8M probably has the same charset as Pravets 8C
 	hCharBitmap[3] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
 	SelectObject(memdc,hCharBitmap[g_nCharsetType]);
 
@@ -1780,7 +1790,8 @@ void VideoChooseColor () {
     VideoReinitialize();
     if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
       VideoRedrawScreen();
-	REGSAVE(TEXT("Monochrome Color"),monochrome);
+
+	Config_Save_Video();
   }
 }
 
@@ -2022,6 +2033,7 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
   BOOL anydirty = 0;
   int  y        = 0;
   int  ypixel   = 0;
+
   while (y < 20) {
     int offset = ((y & 7) << 7) + ((y >> 3) * 40);
     int x      = 0;
@@ -2066,14 +2078,29 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 	GdiFlush();
   }
 #else
-  // Original code:
-  if (!framedc || !anydirty)
-  {
-	FrameReleaseVideoDC();
-	SetLastDrawnImage();
-	g_VideoForceFullRedraw = 0;
-	return;
-  }
+	// Original code:
+	if (!framedc || !anydirty)
+	{
+		FrameReleaseVideoDC();
+		SetLastDrawnImage();
+		g_VideoForceFullRedraw = 0;
+		return;
+	}
+
+	// 50% Half Scan Line
+	if( g_uHalfScanLines )
+	{
+		// We zero out the 1st row (row zero) because the bitmap is upside down
+		unsigned char *pSrc = ((unsigned char*)g_pFramebufferbits);
+		for( int y = 0; y < FRAMEBUFFER_H/2; y++ )
+		{	
+			for( int x = 0; x < FRAMEBUFFER_W; x++ )
+			{
+				*pSrc++ = 0;
+			}
+			pSrc += FRAMEBUFFER_W;
+		}
+	}
 
   // COPY DIRTY CELLS FROM THE DEVICE DEPENDENT BITMAP ONTO THE SCREEN
   // IN LONG HORIZONTAL RECTANGLES
