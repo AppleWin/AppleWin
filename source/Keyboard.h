@@ -21,3 +21,7 @@ DWORD   KeybSetSnapshot(SS_IO_Keyboard* pSS);
 BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 BYTE __stdcall KbdAllow8Bit (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft); //For Pravets A/C only
+
+extern bool g_bShiftKey;
+extern bool g_bCtrlKey;
+extern bool g_bAltKey;
