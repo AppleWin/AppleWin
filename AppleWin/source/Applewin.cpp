@@ -74,6 +74,7 @@ bool		g_bDisableDirectSound = false;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 
+// TODO: CLEANUP! Move to peripherals.cpp!!!
 #ifdef SUPPORT_CPM
 UINT		g_Slot4 = CT_Empty;
 #else
@@ -429,11 +430,12 @@ void LoadConfiguration ()
   if (REGLOAD(TEXT("Serial Port"),&dwSerialPort))
 	sg_SSC.SetSerialPort(dwSerialPort);
 
-  REGLOAD(TEXT("Emulation Speed")   ,&g_dwSpeed);
-  REGLOAD(TEXT("Enhance Disk Speed"),(DWORD *)&enhancedisk);
-  REGLOAD(TEXT("Video Emulation")   ,&videotype);
-  REGLOAD(TEXT("Monochrome Color")  ,&monochrome);
-  REGLOAD(TEXT("Uthernet Active")   ,(DWORD *)&tfe_enabled);
+	REGLOAD(TEXT("Emulation Speed")   ,&g_dwSpeed);
+	REGLOAD(TEXT("Enhance Disk Speed"),(DWORD *)&enhancedisk);
+
+	Config_Load_Video();
+
+	REGLOAD(TEXT("Uthernet Active")   ,(DWORD *)&tfe_enabled);
 
   SetCurrentCLK6502();
 
@@ -501,11 +503,16 @@ void LoadConfiguration ()
   if (g_uZ80InSlot5)
 	  MB_SetSoundcardType(SC_NONE);
 
-  g_Slot4 = g_uMouseInSlot4	? CT_MouseInterface
-							: g_uZ80InSlot5	? CT_Empty
-											: CT_Mockingboard;
+	g_Slot4 = 
+	g_uMouseInSlot4	? CT_MouseInterface
+					: g_uZ80InSlot5	? CT_Empty
+									: CT_Mockingboard;
+//									: g_uClockInSlot4	? CT_GenericClock
+//														: CT_Mockingboard;
 #else
-  g_Slot4 = g_uMouseInSlot4 ? CT_MouseInterface : CT_Mockingboard;
+	g_Slot4 = g_uMouseInSlot4
+				? CT_MouseInterface
+				: CT_Mockingboard;
 #endif
 
   //
@@ -541,12 +548,28 @@ void SetCurrentImageDir()
 	SetCurrentDirectory(g_sCurrentDir);
 }
 
+// TODO: Added dialog option of which file extensions to registry
+bool g_bRegisterFileTypes = true;
+bool g_bRegistryFileBin = false;
+bool g_bRegistryFileDo  = true;
+bool g_bRegistryFileDsk = true;
+bool g_bRegistryFileNib = true;
+bool g_bRegistryFilePo  = true;
+
+
 //===========================================================================
 void RegisterExtensions ()
 {
 	TCHAR szCommandTmp[MAX_PATH];
 	GetModuleFileName((HMODULE)0,szCommandTmp,MAX_PATH);
 
+#if TEST_REG_BUG
+	TCHAR command[MAX_PATH];
+	wsprintf(command, "%s",	szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
+
+	TCHAR icon[MAX_PATH];
+	wsprintf(icon,TEXT("\"%s,1\""),(LPCTSTR)command);
+#endif
 	TCHAR command[MAX_PATH];
 	wsprintf(command, "\"%s\"",	szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
 
@@ -554,6 +577,8 @@ void RegisterExtensions ()
 	wsprintf(icon,TEXT("%s,1"),(LPCTSTR)command);
 
 	_tcscat(command,TEXT(" \"%1\""));			// Append "%1"
+//	_tcscat(command,TEXT("-d1 %1\""));			// Append "%1"
+//	sprintf(command, "\"%s\" \"-d1 %%1\"", szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
 
 	RegSetValue(HKEY_CLASSES_ROOT,".bin",REG_SZ,"DiskImage",10);
 	RegSetValue(HKEY_CLASSES_ROOT,".do"	,REG_SZ,"DiskImage",10);
@@ -571,6 +596,9 @@ void RegisterExtensions ()
 				"DiskImage\\DefaultIcon",
 				REG_SZ,icon,_tcslen(icon)+1);
 
+// This key can interfere....
+// HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExt\.dsk
+
 	RegSetValue(HKEY_CLASSES_ROOT,
 				"DiskImage\\shell\\open\\command",
 				REG_SZ,command,_tcslen(command)+1);
@@ -581,11 +609,12 @@ void RegisterExtensions ()
 
 	RegSetValue(HKEY_CLASSES_ROOT,
 				"DiskImage\\shell\\open\\ddeexec\\application",
-				REG_SZ,"applewin",9);
+				REG_SZ,"applewin",_tcslen("applewin")+1);
+//				REG_SZ,szCommandTmp,_tcslen(szCommandTmp)+1);
 
 	RegSetValue(HKEY_CLASSES_ROOT,
 				"DiskImage\\shell\\open\\ddeexec\\topic",
-				REG_SZ,"system",7);
+				REG_SZ,"system",_tcslen("system")+1);
 }
 
 //===========================================================================
@@ -625,6 +654,8 @@ LPSTR GetCurrArg(LPSTR lpCmdLine)
 
 LPSTR GetNextArg(LPSTR lpCmdLine)
 {
+	LPSTR pSrc = lpCmdLine;
+
 	int bInQuotes = 0;
 
 	while(*lpCmdLine)
@@ -632,8 +663,12 @@ LPSTR GetNextArg(LPSTR lpCmdLine)
 		if(*lpCmdLine == '\"')
 		{
 			bInQuotes ^= 1;
+			if( bInQuotes )
+			{
+			}
 			if(!bInQuotes)
 			{
+//MessageBox( NULL, lpCmdLine, pSrc, MB_OK );
 				*lpCmdLine++ = 0x00;	// Assume end-quote is end of this arg
 				continue;
 			}
@@ -679,6 +714,15 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	{
 		LPSTR lpNextArg = GetNextArg(lpCmdLine);
 
+// BUG: Double-click .DSK
+// Think the 1st double quote is active, while the last double quote is getting stripped
+//MessageBox(NULL, lpCmdLine, "Command Line", MB_OK );
+
+		if(strcmp(lpCmdLine, "-noreg") == 0)
+		{
+			g_bRegisterFileTypes = false;
+		}
+		else
 		if(strcmp(lpCmdLine, "-d1") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
@@ -801,18 +845,24 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	MemPreInitialize();		// Call before any of the slot devices are initialized
 	GdiSetBatchLimit(512);
 	GetProgramDirectory();
-	RegisterExtensions();
+	if( g_bRegisterFileTypes )
+	{
+		RegisterExtensions();
+	}
 	FrameRegisterClass();
 	ImageInitialize();
 	DiskInitialize();
 	CreateColorMixMap();	// For tv emulation g_nAppMode
 
-	//
+// BUG: Double-click .DSK
+//MessageBox( NULL, szImageName_drive1, "Disk 1", MB_OK );
+//MessageBox( NULL, szImageName_drive2, "Disk 2", MB_OK );
 
 	int nError = 0;
 	if(szImageName_drive1)
 	{
 		nError = DoDiskInsert(0, szImageName_drive1);
+		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 		bBoot = true;
 	}
 	if(szImageName_drive2)
@@ -852,8 +902,8 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 
 		tfe_init();
-        Snapshot_Startup();		// Do this after everything has been init'ed
-    
+		Snapshot_Startup();		// Do this after everything has been init'ed
+
 		if(bSetFullScreen)
 		{
 			PostMessage(g_hFrameWindow, WM_KEYDOWN, VK_F1+BTN_FULLSCR, 0);
