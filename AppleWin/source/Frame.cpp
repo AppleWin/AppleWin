@@ -731,6 +731,7 @@ LRESULT CALLBACK FrameWndProc (
 
 	case WM_KEYDOWN:
 		KeybUpdateCtrlShiftStatus();
+
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
 		{
 			SetUsingCursor(0);
@@ -744,26 +745,34 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if (wparam == VK_F9)
 		{			
-			if (GetKeyState(VK_CONTROL) < 0) //CTRL+F9
+			//bool bCtrlDown  = (GetKeyState(VK_CONTROL) < 0) ? true : false;
+			//bool bShiftDown = (GetKeyState(VK_SHIFT  ) < 0) ? true : false;
+
+			if ( g_bCtrlKey && !g_bShiftKey ) //CTRL+F9
 			{
 				g_nCharsetType++; // Cycle through available charsets (Ctrl + F9)
 				if (g_nCharsetType >= 3)
+				{				
 					g_nCharsetType = 0;
+				}
 			}
 			else	// Cycle through available video modes
+			if ( g_bAltKey ) // g_bCtrlKey && g_bShiftKey ) // ALT+F9
 			{
-				if (GetKeyState(VK_SHIFT) >= 0)	// Backwards
-				{
-					if (videotype == 0)
-						videotype = VT_NUM_MODES;
-					videotype--;
-				}
-				else							// Forwards
-				{
-					videotype++;
-					if (videotype >= VT_NUM_MODES)
-						videotype = 0;
-				}
+				g_uHalfScanLines = !g_uHalfScanLines;
+			}
+			else
+			if ( !g_bShiftKey )	// Backwards???   Drop Down Combo Box is in correct order
+			{
+				videotype++;
+				if (videotype >= VT_NUM_MODES)
+					videotype = 0;
+			}
+			else	// Forwards
+			{
+				if (videotype <= 0)
+					videotype = VT_NUM_MODES;
+				videotype--;
 			}
 
 			VideoReinitialize();
@@ -772,7 +781,8 @@ LRESULT CALLBACK FrameWndProc (
 				VideoRedrawScreen();
 				g_bDebuggerViewingAppleOutput = true;  // +PATCH
 			}
-			REGSAVE(TEXT("Video Emulation"),videotype);
+
+			Config_Save_Video();
 		}
 
 		else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)
