@@ -11,7 +11,7 @@ enum VIDEOTYPE
 	, VT_MONO_AMBER
 	, VT_MONO_GREEN
 	, VT_MONO_WHITE
-	, VT_MONO_AUTHENTIC
+//	, VT_MONO_AUTHENTIC
 	, VT_NUM_MODES
 };
 
@@ -43,8 +43,9 @@ enum AppleFont_e
 extern HBITMAP g_hLogoBitmap;
 
 extern BOOL       graphicsmode;
-extern COLORREF   monochrome;
-extern DWORD      videotype;
+extern COLORREF   monochrome; // saved
+extern DWORD      videotype; // saved
+extern DWORD      g_uHalfScanLines; // saved
 
 // Prototypes _______________________________________________________
 
