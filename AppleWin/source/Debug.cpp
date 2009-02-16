@@ -456,7 +456,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	};
 
 	// Index into Palette
-	int g_aColorIndex[ NUM_COLORS ] =
+	int g_aColorIndex[ NUM_DEBUG_COLORS ] =
 	{
 		K0, W8,              // BG_CONSOLE_OUTPUT   FG_CONSOLE_OUTPUT (W8)
 
@@ -520,7 +520,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		W8    // FG_SOURCE
 	};
 
-	COLORREF g_aColors[ NUM_COLOR_SCHEMES ][ NUM_COLORS ];
+	COLORREF g_aColors[ NUM_COLOR_SCHEMES ][ NUM_DEBUG_COLORS ];
 
 	COLORREF DebuggerGetColor ( int iColor );
 
@@ -851,57 +851,57 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Prototypes _______________________________________________________________
 
-	static	int ParseInput   ( LPTSTR pConsoleInput, bool bCook = true );
+	static	int ParseInput ( LPTSTR pConsoleInput, bool bCook = true );
 	static	Update_t ExecuteCommand ( int nArgs );
 
 // Breakpoints
-	void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ); // bool bZeroBased = true );
-	void _BWZ_ListAll( const Breakpoint_t * aBreakWatchZero, const int nMax );
+	void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ); // bool bZeroBased = true );
+	void _BWZ_ListAll ( const Breakpoint_t * aBreakWatchZero, const int nMax );
 
 //	bool CheckBreakpoint (WORD address, BOOL memory);
-	bool CheckBreakpointsIO   ();
-	bool CheckBreakpointsReg  ();
+	bool CheckBreakpointsIO ();
+	bool CheckBreakpointsReg ();
 	bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, WORD nAddress, int nLen );
 	int  _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp );
 
 // Config - Colors
-	static	void _ConfigColorsReset();
+	static	void _ConfigColorsReset ( BYTE *pPalDst = 0 );
 
 // Config - Save
-	bool ConfigSave_BufferToDisk( char *pFileName, ConfigSave_t eConfigSave );
-	void ConfigSave_PrepareHeader( const Parameters_e eCategory, const Commands_e eCommandClear );
+	bool ConfigSave_BufferToDisk ( char *pFileName, ConfigSave_t eConfigSave );
+	void ConfigSave_PrepareHeader ( const Parameters_e eCategory, const Commands_e eCommandClear );
 
 // Drawing
 	static	bool DebuggerSetColor ( const int iScheme, const int iColor, const COLORREF nColor );
 	static	void _CmdColorGet ( const int iScheme, const int iColor );
 
 // Font
-	static	void _UpdateWindowFontHeights(int nFontHeight);
+	static	void _UpdateWindowFontHeights (int nFontHeight);
 
 // Symbols
-	Update_t _CmdSymbolsClear      ( Symbols_e eSymbolTable );
-	Update_t _CmdSymbolsCommon     ( int nArgs, int bSymbolTables );
+	Update_t _CmdSymbolsClear ( Symbols_e eSymbolTable );
+	Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables );
 	Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables );
-	Update_t _CmdSymbolsUpdate     ( int nArgs );
+	Update_t _CmdSymbolsUpdate ( int nArgs );
 
-	bool _CmdSymbolList_Address2Symbol( int nAddress   , int bSymbolTables );
-	bool _CmdSymbolList_Symbol2Address( LPCTSTR pSymbol, int bSymbolTables );
+	bool _CmdSymbolList_Address2Symbol ( int nAddress   , int bSymbolTables );
+	bool _CmdSymbolList_Symbol2Address ( LPCTSTR pSymbol, int bSymbolTables );
 
 	// SymbolOffset
-	int ParseSymbolTable( TCHAR *pFileName, Symbols_e eWhichTableToLoad, int nSymbolOffset = 0 );
+	int ParseSymbolTable ( TCHAR *pFileName, Symbols_e eWhichTableToLoad, int nSymbolOffset = 0 );
 
 // Source Level Debugging
 	static	bool BufferAssemblyListing ( char * pFileName );
-	static	bool ParseAssemblyListing  ( bool bBytesToMemory, bool bAddSymbols );
+	static	bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols );
 
 
 // Window
-	void _WindowJoin    ();
-	void _WindowSplit   (Window_e eNewBottomWindow );
-	void _WindowLast    ();
-	void _WindowSwitch  ( int eNewWindow );
+	void _WindowJoin ();
+	void _WindowSplit (Window_e eNewBottomWindow );
+	void _WindowLast ();
+	void _WindowSwitch ( int eNewWindow );
 	int  WindowGetHeight ( int iWindow );
-	void WindowUpdateDisasmSize           ();
+	void WindowUpdateDisasmSize ();
 	void WindowUpdateConsoleDisplayedSize ();
 	void WindowUpdateSizes                ();
 	Update_t _CmdWindowViewFull   (int iNewWindow);
@@ -2750,7 +2750,7 @@ void _ColorPrint( int iColor, COLORREF nColor )
 
 void _CmdColorGet( const int iScheme, const int iColor )
 {
-	if (iColor < NUM_COLORS)
+	if (iColor < NUM_DEBUG_COLORS)
 	{
 //	COLORREF nColor = g_aColors[ iScheme ][ iColor ];
 		DebugColors_e eColor = static_cast<DebugColors_e>( iColor );
@@ -2770,7 +2770,7 @@ inline COLORREF DebuggerGetColor( int iColor )
 {
 	COLORREF nColor = RGB(0,255,255); // 0xFFFF00; // Hot Pink! -- so we notice errors. Not that there is anything wrong with pink...
 
-	if ((g_iColorScheme < NUM_COLOR_SCHEMES) && (iColor < NUM_COLORS))
+	if ((g_iColorScheme < NUM_COLOR_SCHEMES) && (iColor < NUM_DEBUG_COLORS))
 	{
 		nColor = g_aColors[ g_iColorScheme ][ iColor ];
 	}
@@ -2782,7 +2782,7 @@ inline COLORREF DebuggerGetColor( int iColor )
 bool DebuggerSetColor( const int iScheme, const int iColor, const COLORREF nColor )
 {
 	bool bStatus = false;
-	if ((g_iColorScheme < NUM_COLOR_SCHEMES) && (iColor < NUM_COLORS))
+	if ((g_iColorScheme < NUM_COLOR_SCHEMES) && (iColor < NUM_DEBUG_COLORS))
 	{
 		g_aColors[ iScheme ][ iColor ] = nColor;
 		bStatus = true;
@@ -2825,7 +2825,7 @@ Update_t CmdConfigColorMono (int nArgs)
 		return HelpLastCommand();
 
 	int iColor = g_aArgs[ 1 ].nValue;
-	if ((iColor < 0) || iColor >= NUM_COLORS)
+	if ((iColor < 0) || iColor >= NUM_DEBUG_COLORS)
 		return HelpLastCommand();
 
 	int iParam;
@@ -2879,7 +2879,7 @@ Update_t CmdConfigHColor (int nArgs)
 		return Help_Arg_1( g_iCommand );
 
 	int iColor = g_aArgs[ 1 ].nValue;
-	if ((iColor < 0) || iColor >= NUM_COLORS)
+	if ((iColor < 0) || iColor >= NUM_DEBUG_COLORS)
 		return Help_Arg_1( g_iCommand );
 
 	if (nArgs == 1)
@@ -8603,8 +8603,19 @@ void _SetupColorRamp( const int iPrimary, int & iColor_ )
 }
 #endif // _DEBUG
 
+// Full Screen uses the palette from g_pFramebufferinfo
+// BUT DebutInitialize() is called before VideoInitialize()
+// THUS this is called post-initialize to set up the global palette
+//
+// pPalDst is the first color in the palette that we can stick our custom debug colors in
 //===========================================================================
-void _ConfigColorsReset()
+void Debug_UpdatePalette( BYTE *pPalDst )
+{
+	_ConfigColorsReset( pPalDst );
+}
+
+//===========================================================================
+void _ConfigColorsReset( BYTE *pPalDst )
 {
 //	int iColor = 1; // black only has one level, skip it, since black levels same as white levels
 //	for (int iPrimary = 1; iPrimary < 8; iPrimary++ )
@@ -8612,15 +8623,26 @@ void _ConfigColorsReset()
 //		_SetupColorRamp( iPrimary, iColor );
 //	}
 
+	BYTE *pDst = pPalDst;
+
 	// Setup default colors
 	int iColor;
-	for (iColor = 0; iColor < NUM_COLORS; iColor++ )
+	for (iColor = 0; iColor < NUM_DEBUG_COLORS; iColor++ )
 	{
 		COLORREF nColor = gaColorPalette[ g_aColorIndex[ iColor ] ];
 
 		int R = (nColor >>  0) & 0xFF;
 		int G = (nColor >>  8) & 0xFF;
 		int B = (nColor >> 16) & 0xFF;
+
+		if( pDst )
+		{
+			*(pDst + 0) = B;
+			*(pDst + 1) = G;
+			*(pDst + 2) = R;
+			*(pDst + 3) = 0;
+			pDst += 4;
+		}
 
 		// There are many, many ways of shifting the color domain to the monochrome domain
 		// NTSC uses 3x3 matrix, could map RGB -> wavelength, etc.
@@ -9320,7 +9342,7 @@ void DebuggerProcessKey( int keycode )
 					}
 					else
 					{
-						// Scroll through console input history
+						// TODO: FIXME: Scroll through console input history
 					}
 				}
 				else
@@ -9349,7 +9371,7 @@ void DebuggerProcessKey( int keycode )
 					}
 					else
 					{
-						// Scroll through console input history
+						// TODO: FIXME: Scroll through console input history
 					}
 				}
 				else
