@@ -1,3 +1,5 @@
+#pragma once
+
 typedef struct
 {
 	unsigned int nOffset;
