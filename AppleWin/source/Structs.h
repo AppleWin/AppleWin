@@ -1,3 +1,5 @@
+#pragma once
+
 // Structs used by save-state file
 
 // *** DON'T CHANGE ANY STRUCT WITHOUT CONSIDERING BACKWARDS COMPATIBILITY WITH .AWS FORMAT ***
