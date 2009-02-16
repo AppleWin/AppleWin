@@ -24,6 +24,8 @@
  *
  */
 
+#include "..\StdAfx.h"
+#pragma  hdrstop
 
 #include <assert.h>
 #include <stdio.h>
