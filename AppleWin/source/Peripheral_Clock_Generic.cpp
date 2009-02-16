@@ -40,7 +40,9 @@ CALL-151
 File offset $0F76-$0F7C:
 
 
-ProDOS has a built-in clock driver that queries a clock/calendar card for the date and time. After the routine stores that information in the ProDOS Global Page ($BF90-$BF93), either ProDOS or your own application programs can use it. See Figure 6-1.
+ProDOS has a built-in clock driver that queries a clock/calendar card for the date and time. 
+After the routine stores that information in the ProDOS Global Page ($BF90-$BF93),
+either ProDOS or your own application programs can use it. See Figure 6-1.
 
 Figure 6-1. ProDOS Date and Time Locations
 
