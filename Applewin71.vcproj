@@ -3,10 +3,10 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="APPLEWIN"
-	SccProjectName="APPLEWIN"
+	SccProjectName=""
 	SccAuxPath=""
-	SccLocalPath="."
-	SccProvider="MSSCCI:Microsoft Visual SourceSafe">
+	SccLocalPath=""
+	SccProvider="">
 	<Platforms>
 		<Platform
 			Name="Win32"/>
@@ -201,6 +201,12 @@
 			</File>
 			<File
 				RelativePath=".\source\ParallelPrinter.cpp">
+			</File>
+			<File
+				RelativePath=".\source\Peripheral_Clock_Generic.cpp">
+			</File>
+			<File
+				RelativePath=".\source\Peripheral_Clock_ThunderClockPlus.cpp">
 			</File>
 			<File
 				RelativePath=".\source\PropertySheetPage.cpp">
@@ -408,6 +414,9 @@
 				RelativePath=".\source\ParallelPrinter.h">
 			</File>
 			<File
+				RelativePath=".\source\Peripheral_Clock_Generic.h">
+			</File>
+			<File
 				RelativePath=".\source\PropertySheetPage.h">
 			</File>
 			<File
@@ -528,6 +537,49 @@
 			<File
 				RelativePath="RESOURCE\SETUP.BMP">
 			</File>
+			<Filter
+				Name="ROMs"
+				Filter="">
+				<File
+					RelativePath=".\resource\Apple2.rom">
+				</File>
+				<File
+					RelativePath=".\resource\Apple2_Plus.rom">
+				</File>
+				<File
+					RelativePath=".\resource\Apple2e.rom">
+				</File>
+				<File
+					RelativePath=".\resource\Apple2e_Enhanced.rom">
+				</File>
+				<File
+					RelativePath=".\resource\DISK2.rom">
+				</File>
+				<File
+					RelativePath=".\resource\Freezes_Non-autostart_F8_Rom.rom">
+				</File>
+				<File
+					RelativePath=".\resource\Mockingboard-D.rom">
+				</File>
+				<File
+					RelativePath=".\resource\MouseInterface.rom">
+				</File>
+				<File
+					RelativePath=".\resource\Parallel.rom">
+				</File>
+				<File
+					RelativePath=".\resource\Pravets82.rom">
+				</File>
+				<File
+					RelativePath=".\resource\Pravets8c.rom">
+				</File>
+				<File
+					RelativePath=".\resource\SSC.rom">
+				</File>
+				<File
+					RelativePath=".\resource\ThunderClockPlus.rom">
+				</File>
+			</Filter>
 		</Filter>
 		<File
 			RelativePath="Disclaimer.txt">
