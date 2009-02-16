@@ -116,6 +116,13 @@ enum Color_Palette_Index_e
 	, MONOCHROME_GREEN
 	, MONOCHROME_WHITE
 
+	, DEBUG_COLORS_START
+	, DEBUG_COLORS_END = DEBUG_COLORS_START + NUM_DEBUG_COLORS
+
+// DD Full Screen Palette ?!?!
+//	, LOGO_COLORS_START
+//	, LOGO_COLORS_END = LOGO_COLORS_START + 128
+
 	, NUM_COLOR_PALETTE
 };
 
@@ -192,10 +199,10 @@ static BYTE          celldirty[40][32];
 static COLORREF      customcolors[NUM_COLOR_PALETTE];	// MONOCHROME is last custom color
 static HBITMAP       g_hDeviceBitmap;
 static HDC           g_hDeviceDC;
-static LPBYTE        g_pFramebufferbits;
-static LPBITMAPINFO  g_pFramebufferinfo;
+       LPBYTE        g_pFramebufferbits = NULL; // last drawn frame
+static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
-static LPBYTE        frameoffsettable[FRAMEBUFFER_H];
+static LPBYTE        frameoffsettable[FRAMEBUFFER_H]; // array of pointers to start of each scanline
 static LPBYTE        g_pHiresBank1;
 static LPBYTE        g_pHiresBank0;
        HBITMAP       g_hLogoBitmap;
@@ -232,7 +239,7 @@ static DWORD     dwVBlCounter     = 0;
 static LPBYTE    vidlastmem       = NULL;
 static DWORD     vidmode          = VF_TEXT;
 
-DWORD     videotype        = VT_COLOR_TVEMU;
+DWORD     g_eVideoType        = VT_COLOR_TVEMU;
 DWORD     g_uHalfScanLines = false; // drop 50% scan lines for a more authentic look
 
 
@@ -305,14 +312,17 @@ void CreateFrameOffsetTable (LPBYTE addr, LONG pitch) {
   framebufferpitch = pitch;
 
   // CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
-  for (int loop = 0; loop < 384; loop++)
-    frameoffsettable[loop] = framebufferaddr+framebufferpitch*(383-loop);
+  for (int y = 0; y < FRAMEBUFFER_H; y++)
+    frameoffsettable[y] = framebufferaddr + framebufferpitch*((FRAMEBUFFER_H-1)-y);
 }
 
 //===========================================================================
-void CreateIdentityPalette () {
-  if (g_hPalette)
-    DeleteObject(g_hPalette);
+void CreateIdentityPalette ()
+{
+	if (g_hPalette)
+	{
+		DeleteObject(g_hPalette);
+	}
 
 	// SET FRAME BUFFER TABLE ENTRIES TO CUSTOM COLORS
 	SETFRAMECOLOR(DEEP_RED,  0xD0,0x00,0x30);
@@ -347,19 +357,56 @@ void CreateIdentityPalette () {
 	// IF WE ARE IN A PALETTIZED VIDEO MODE, CREATE AN IDENTITY PALETTE
 	HWND window = GetDesktopWindow();
 	HDC  dc     = GetDC(window);
-	int  colors = GetDeviceCaps(dc,SIZEPALETTE);
-	int  system = GetDeviceCaps(dc,NUMCOLORS);
+	int  colors = GetDeviceCaps(dc,SIZEPALETTE); // 16/24/32bpp = 0
+	int  system = GetDeviceCaps(dc,NUMCOLORS);   // 16/24/32bpp = -1
+
+#if 0
+	// DD Full Screen Palette
+	// Full Screen Debug Colors
+	BYTE *pTmp;
+		
+	pTmp = ((BYTE*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
+	pTmp += (DEBUG_COLORS_START * 4);
+	Debug_UpdatePalette( pTmp );
+
+	// GET THE PALETTE ENTRIES OF THE LOGO
+	RGBQUAD aLogoPalette[256];
+	ZeroMemory(aLogoPalette,sizeof(aLogoPalette));
+	if (g_hLogoBitmap)
+	{
+		BYTE *pSrc = NULL;
+		BITMAP bmp; 
+		PBITMAPINFO pbmi; 
+//			WORD    cClrBits; 
+		// Retrieve the bitmap color format, width, and height.  
+		if (GetObject(g_hLogoBitmap, sizeof(BITMAP), (LPSTR)&bmp))
+		{
+			pSrc = (BYTE*) pbmi->bmiColors;
+
+			// Logo uses 128 colors
+			pTmp = ((BYTE*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
+			pTmp += (LOGO_COLORS_START * 4);
+			int iPal = 0;
+			for( iPal = 0; iPal < 128; iPal++ )
+			{
+				*pTmp++ = *pSrc++;
+				*pTmp++ = *pSrc++;
+				*pTmp++ = *pSrc++;
+				*pTmp++ = *pSrc++;
+			}
+		}
+	}
+#endif
 
 	if ((GetDeviceCaps(dc,RASTERCAPS) & RC_PALETTE) && (colors <= 256))
 	{
-
 		// GET THE PALETTE ENTRIES OF THE LOGO
-		RGBQUAD logotable[256];
-		ZeroMemory(logotable,sizeof(logotable));
+		RGBQUAD aLogoPalette[256];
+		ZeroMemory(aLogoPalette,sizeof(aLogoPalette));
 		if (g_hLogoBitmap) {
 			HDC memdc = CreateCompatibleDC(dc);
 			SelectObject(memdc,g_hLogoBitmap);
-			GetDIBColorTable(memdc,0,colors,logotable);
+			GetDIBColorTable(memdc,0,colors,aLogoPalette);
 			DeleteDC(memdc);
 		}
 
@@ -390,26 +437,30 @@ void CreateIdentityPalette () {
 			paldata->palPalEntry[paletteindex].peFlags = PC_NOCOLLAPSE;
 			paletteindex++;
 		}
+
 		for (; paletteindex < colors-system/2; paletteindex++) {
 
 			// IF THIS PALETTE ENTRY IS NEEDED FOR THE LOGO, COPY IN THE LOGO COLOR
-			if (logotable[logoindex].rgbRed &&
-				logotable[logoindex].rgbGreen &&
-				logotable[logoindex].rgbBlue) {
-			paldata->palPalEntry[paletteindex].peRed   = logotable[logoindex].rgbRed;
-			paldata->palPalEntry[paletteindex].peGreen = logotable[logoindex].rgbGreen;
-			paldata->palPalEntry[paletteindex].peBlue  = logotable[logoindex].rgbBlue;
+			if (aLogoPalette[logoindex].rgbRed &&
+				aLogoPalette[logoindex].rgbGreen &&
+				aLogoPalette[logoindex].rgbBlue)
+			{
+				paldata->palPalEntry[paletteindex].peRed   = aLogoPalette[logoindex].rgbRed;
+				paldata->palPalEntry[paletteindex].peGreen = aLogoPalette[logoindex].rgbGreen;
+				paldata->palPalEntry[paletteindex].peBlue  = aLogoPalette[logoindex].rgbBlue;
 			}
 
 			// OTHERWISE, ADD A HALFTONING COLOR, SO THAT OTHER APPLICATIONS
 			// RUNNING IN THE BACKGROUND WILL HAVE SOME REASONABLE COLORS TO USE
-			else {
-			static BYTE halftonetable[6] = {32,64,96,160,192,224};
-			paldata->palPalEntry[paletteindex].peRed   = halftonetable[halftoneindex    % 6];
-			paldata->palPalEntry[paletteindex].peGreen = halftonetable[halftoneindex/6  % 6];
-			paldata->palPalEntry[paletteindex].peBlue  = halftonetable[halftoneindex/36 % 6];
-			++halftoneindex;
+			else
+			{
+				static BYTE halftonetable[6] = {32,64,96,160,192,224};
+				paldata->palPalEntry[paletteindex].peRed   = halftonetable[halftoneindex    % 6];
+				paldata->palPalEntry[paletteindex].peGreen = halftonetable[halftoneindex/6  % 6];
+				paldata->palPalEntry[paletteindex].peBlue  = halftonetable[halftoneindex/36 % 6];
+				++halftoneindex;
 			}
+
 			++logoindex;
 			paldata->palPalEntry[paletteindex].peFlags = PC_NOCOLLAPSE;
 		}
@@ -419,10 +470,10 @@ void CreateIdentityPalette () {
 			paldata->palPalEntry[paletteindex].peFlags = 0;
 
 		// FILL THE FRAME BUFFER TABLE WITH COLORS FROM OUR PALETTE
-		for (int loop = 0; loop < colors; loop++) {
-			g_pFramebufferinfo->bmiColors[loop].rgbRed   = paldata->palPalEntry[loop].peRed;
-			g_pFramebufferinfo->bmiColors[loop].rgbGreen = paldata->palPalEntry[loop].peGreen;
-			g_pFramebufferinfo->bmiColors[loop].rgbBlue  = paldata->palPalEntry[loop].peBlue;
+		for (int iPal = 0; iPal < colors; iPal++) {
+			g_pFramebufferinfo->bmiColors[ iPal ].rgbRed   = paldata->palPalEntry[ iPal ].peRed;
+			g_pFramebufferinfo->bmiColors[ iPal ].rgbGreen = paldata->palPalEntry[ iPal ].peGreen;
+			g_pFramebufferinfo->bmiColors[ iPal ].rgbBlue  = paldata->palPalEntry[ iPal ].peBlue;
 		}
 
 		// CREATE THE PALETTE
@@ -440,6 +491,7 @@ void CreateIdentityPalette () {
 		SETFRAMECOLOR(DARK_CYAN,   0x00,0x80,0x80);
 		SETFRAMECOLOR(LIGHT_GRAY,  0xC0,0xC0,0xC0);
 		SETFRAMECOLOR(MONEY_GREEN, 0xC0,0xDC,0xC0);
+		
 		SETFRAMECOLOR(SKY_BLUE,    0xA6,0xCA,0xF0);
 		SETFRAMECOLOR(CREAM,       0xFF,0xFB,0xF0);
 		SETFRAMECOLOR(MEDIUM_GRAY, 0xA0,0xA0,0xA4);
@@ -451,7 +503,6 @@ void CreateIdentityPalette () {
 		SETFRAMECOLOR(MAGENTA,     0xFF,0x00,0xFF);
 		SETFRAMECOLOR(CYAN,        0x00,0xFF,0xFF);
 		SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF);
-
 
 		g_hPalette = (HPALETTE)0;
 	}
@@ -498,15 +549,15 @@ void CreateDIBSections ()
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
 	ZeroMemory(g_pSourcePixels,SRCOFFS_TOTAL*512);
 
-	if((videotype != VT_MONO_CUSTOM) &&
-		(videotype != VT_MONO_AMBER ) &&
-		(videotype != VT_MONO_GREEN ) &&
-		(videotype != VT_MONO_WHITE ))
-//		(videotype != VT_MONO_AUTHENTIC))
+	if((g_eVideoType != VT_MONO_CUSTOM) &&
+		(g_eVideoType != VT_MONO_AMBER ) &&
+		(g_eVideoType != VT_MONO_GREEN ) &&
+		(g_eVideoType != VT_MONO_WHITE ))
+//		(g_eVideoType != VT_MONO_AUTHENTIC))
 	{
 		DrawTextSource(sourcedc);
 		DrawLoResSource();
-		if (videotype == VT_COLOR_HALF_SHIFT_DIM)
+		if (g_eVideoType == VT_COLOR_HALF_SHIFT_DIM)
 			DrawHiResSourceHalfShiftDim();
 		else
 			DrawHiResSource();
@@ -553,12 +604,12 @@ void DrawDHiResSource () {
         }
       }
 
-	  if (videotype == VT_COLOR_TEXT_OPTIMIZED)
+	  if (g_eVideoType == VT_COLOR_TEXT_OPTIMIZED)
 	  {
 	    /***          
 	    activate for fringe reduction on white hgr text
 	    drawback: loss of color mix patterns in hgr g_nAppMode.
-	    select videotype by index
+	    select g_eVideoType by index
 	    ***/
 
 		for (pixel = 0; pixel < 13; pixel++)
@@ -665,7 +716,7 @@ void DrawHiResSourceHalfShiftDim ()
 						/***          
 						activate for fringe reduction on white hgr text - 
 						drawback: loss of color mix patterns in hgr g_nAppMode.
-						select videotype by index exclusion
+						select g_eVideoType by index exclusion
 						***/
 
 						if (!(aPixels[iPixel-2] && aPixels[iPixel+2]))
@@ -836,13 +887,13 @@ void DrawHiResSource ()
 						/***          
 						activate for fringe reduction on white hgr text - 
 						drawback: loss of color mix patterns in hgr g_nAppMode.
-						select videotype by index exclusion
+						select g_eVideoType by index exclusion
 						***/
-						if ((videotype == VT_COLOR_STANDARD) || (videotype == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]))
+						if ((g_eVideoType == VT_COLOR_STANDARD) || (g_eVideoType == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]))
 							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// // No white HGR text optimization
 					}
 
-					//if (videotype == VT_MONO_AUTHENTIC)
+					//if (g_eVideoType == VT_MONO_AUTHENTIC)
 					//{
 					//	int nMonoColor = (color != CM_Black) ? iMonochrome : BLACK;
 					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , nMonoColor); // buggy
@@ -886,7 +937,7 @@ int GetMonochromeIndex()
 {
 	int iMonochrome;
 	
-	switch (videotype)
+	switch (g_eVideoType)
 	{
 		case VT_MONO_AMBER: iMonochrome = MONOCHROME_AMBER ; break;
 		case VT_MONO_GREEN: iMonochrome = MONOCHROME_GREEN ; break;
@@ -915,7 +966,7 @@ void DrawMonoDHiResSource ()
 				BYTE colorval = pattern & (1 << (x+3)) ? iMonochrome : BLACK;
 
 #if 0
-				if (videotype == VT_MONO_AUTHENTIC)
+				if (g_eVideoType == VT_MONO_AUTHENTIC)
 				{
 					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,colorval);
 					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,BLACK);
@@ -948,7 +999,7 @@ void DrawMonoHiResSource ()
 				SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y  ,colorval);
 				SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y  ,colorval);
 #if 0
-				if (videotype == VT_MONO_AUTHENTIC)
+				if (g_eVideoType == VT_MONO_AUTHENTIC)
 				{
 					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y+1,BLACK);
 					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y+1,BLACK);
@@ -976,7 +1027,7 @@ void DrawMonoLoResSource () {
 			{
 				BYTE colorval = (color >> (x & 3) & 1) ? iMonochrome : BLACK;
 #if 0
-				if (videotype == VT_MONO_AUTHENTIC)
+				if (g_eVideoType == VT_MONO_AUTHENTIC)
 				{
 					if (y & 1)
 						SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,BLACK);
@@ -1066,7 +1117,7 @@ void DrawMonoTextSource (HDC hDstDC)
 	hCharBitmap[3] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
 
 	HBRUSH hBrush;
-	switch (videotype)
+	switch (g_eVideoType)
 	{
 		case VT_MONO_AMBER: hBrush = CreateSolidBrush(RGB(0xFF,0x80,0x00)); break;
 		case VT_MONO_GREEN: hBrush = CreateSolidBrush(RGB(0x00,0xC0,0x00)); break;
@@ -1415,7 +1466,7 @@ bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
         g_VideoForceFullRedraw) {
 #define COLOFFS  (((byteval1 & 0x60) << 2) | \
                   ((byteval3 & 0x03) << 5))
-		if (videotype == VT_COLOR_TVEMU)
+		if (g_eVideoType == VT_COLOR_TVEMU)
 		{
   			CopyMixedSource(xpixel >> 1, (ypixel+(yoffset >> 9)) >> 1,
 							SRCOFFS_HIRES+COLOFFS+((x & 1) << 4),(((int)byteval2) << 1));
@@ -1968,11 +2019,54 @@ void VideoInitialize () {
 }
 
 //===========================================================================
-void VideoRealizePalette (HDC dc) {
-  if (g_hPalette) {
-    SelectPalette(dc,g_hPalette,0);
-    RealizePalette(dc);
-  }
+void VideoRealizePalette(HDC dc)
+{
+#if 0
+	if( g_bIsFullScreen )	
+	{
+		if( !g_pDDPal )
+		{
+			PALETTEENTRY aPal[256];
+
+			BYTE *pSrc = ((BYTE*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
+			BYTE *pDst = ((BYTE*)aPal);
+
+			int iPal;
+			for(iPal = 0; iPal < 256; iPal++ )
+			{
+				*(pDst + 0) = *(pSrc + 2); // BGR -> RGB
+				*(pDst + 1) = *(pSrc + 1);
+				*(pDst + 2) = *(pSrc + 0);
+				*(pDst + 3) = 0;
+				pDst += 4;
+				pSrc += 4;
+			}
+			if (g_pDD->CreatePalette(DDPCAPS_8BIT, aPal, &g_pDDPal, NULL) != DD_OK)
+			{
+				g_pDDPal = NULL;
+			}
+		}
+
+		if (g_pDDPal)
+		{
+			g_pDDPrimarySurface->SetPalette(g_pDDPal); // this sets the palette for the primary surface
+		}
+	}
+	else
+	{
+		if (g_hPalette)
+		{
+			SelectPalette(dc,g_hPalette,0);
+			RealizePalette(dc);
+		}
+	}
+#endif
+
+	if (g_hPalette)
+	{
+		SelectPalette(dc,g_hPalette,0);
+		RealizePalette(dc);
+	}
 }
 
 //===========================================================================
@@ -2025,10 +2119,10 @@ void VideoRefreshScreen () {
 //===========================================================================
 void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 {
-  LPBYTE addr = g_pFramebufferbits;
-  LONG   pitch   = FRAMEBUFFER_W;
-  HDC    framedc = FrameGetVideoDC(&addr,&pitch);
-  CreateFrameOffsetTable(addr,pitch);
+  LPBYTE pDstFrameBufferBits = 0;
+  LONG   pitch = 0;
+  HDC    hFrameDC = FrameGetVideoDC(&pDstFrameBufferBits,&pitch);
+  CreateFrameOffsetTable(pDstFrameBufferBits,pitch); // ptr to start of each scanline
 
   BOOL anydirty = 0;
   int  y        = 0;
@@ -2069,37 +2163,36 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
   // Clear this flag after TEXT screen has been updated
   g_bTextFlashFlag = false;
 
+	// 50% Half Scan Line
+	if( g_uHalfScanLines )
+	{
+		// We zero out the 1st row (row zero) because the bitmap is upside down
+		for( int y = 0; y < FRAMEBUFFER_H; y += 2 )
+		{	
+			unsigned char *pSrc = pSrc = frameoffsettable[y];
+			for( int x = 0; x < FRAMEBUFFER_W; x++ )
+			{
+				*pSrc++ = 0;
+			}
+		}
+	}
+
 #if 0
-  // New simpified code:
-  // . Oliver Schmidt gets a flickering mouse cursor with this code
-  if (framedc && anydirty)
-  {
-	BitBlt(framedc,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,g_hDeviceDC,0,0,SRCCOPY); 
-	GdiFlush();
-  }
+	// New simpified code:
+	// . Oliver Schmidt gets a flickering mouse cursor with this code
+	if (hFrameDC && anydirty)
+	{
+		BitBlt(hFrameDC,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,g_hDeviceDC,0,0,SRCCOPY); 
+		GdiFlush();
+	}
 #else
 	// Original code:
-	if (!framedc || !anydirty)
+	if (!hFrameDC || !anydirty)
 	{
 		FrameReleaseVideoDC();
 		SetLastDrawnImage();
 		g_VideoForceFullRedraw = 0;
 		return;
-	}
-
-	// 50% Half Scan Line
-	if( g_uHalfScanLines )
-	{
-		// We zero out the 1st row (row zero) because the bitmap is upside down
-		unsigned char *pSrc = ((unsigned char*)g_pFramebufferbits);
-		for( int y = 0; y < FRAMEBUFFER_H/2; y++ )
-		{	
-			for( int x = 0; x < FRAMEBUFFER_W; x++ )
-			{
-				*pSrc++ = 0;
-			}
-			pSrc += FRAMEBUFFER_W;
-		}
 	}
 
   // COPY DIRTY CELLS FROM THE DEVICE DEPENDENT BITMAP ONTO THE SCREEN
@@ -2128,7 +2221,7 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 				   && celldirty[x-1][y+height]
 				   && celldirty[(startx+x-1) >> 1][y+height])
 			height++;
-		  BitBlt(framedc,start,ypixel,xpixel-start,height << 4,
+		  BitBlt(hFrameDC,start,ypixel,xpixel-start,height << 4,
 				 g_hDeviceDC,start,ypixel,SRCCOPY);
 		  while (height--) {
 			int loop = startx;
@@ -2169,7 +2262,7 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 		  celldirty[x][y] = 0;
 		}
 		if ((start >= 0) && !celldirty[x][y]) {
-		  BitBlt(framedc,xpixel,start,14,ypixel-start,
+		  BitBlt(hFrameDC,xpixel,start,14,ypixel-start,
 				 g_hDeviceDC,xpixel,start,SRCCOPY);
 		  start = -1;
 		}
@@ -2505,7 +2598,7 @@ void Util_MakeScreenShotFileName( char *pFinalFileName_ )
 #endif
 }
 
-
+// Returns TRUE if file exists, else FALSE
 //===========================================================================
 bool Util_TestScreenShotFileName( const char *pFileName )
 {
@@ -2664,7 +2757,7 @@ void Video_MakeScreenShot(FILE *pFile)
 	// Write Header
 	int nLen;
 	fwrite( &g_tBmpHeader, sizeof( g_tBmpHeader ), 1, pFile );
-	
+
 	// Write Palette Data
 	u8 *pSrc = ((u8*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
 	nLen = g_tBmpHeader.nPaletteColors * sizeof(bgra_t); // RGBQUAD
