@@ -14,6 +14,8 @@
 // Emula a CPU Z80
 
 #include "StdAfx.h"
+#pragma  hdrstop
+
 #include "z80emu.h"
 
 // Variaveis
