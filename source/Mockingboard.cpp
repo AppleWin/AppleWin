@@ -75,10 +75,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //   . ORB  = 0x3F (STOP)
 //
 
-#define LOG_SSI263 0
-
 #include "StdAfx.h"
 #pragma  hdrstop
+
+#define LOG_SSI263 0
+
 #include <wchar.h>
 
 #include "AY8910.h"
