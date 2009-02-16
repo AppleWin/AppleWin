@@ -1,4 +1,4 @@
-F/*
+/*
 AppleWin : An Apple //e emulator for Windows
 
 Copyright (C) 1994-1996, Michael O'Brien
