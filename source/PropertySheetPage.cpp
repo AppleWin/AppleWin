@@ -1,4 +1,4 @@
-/*
+F/*
 AppleWin : An Apple //e emulator for Windows
 
 Copyright (C) 1994-1996, Michael O'Brien
@@ -262,7 +262,7 @@ static eApple2Type GetApple2Type(DWORD NewCompType, DWORD NewCloneType)
 // ====================================================================
 void Config_Save_Video()
 {
-	REGSAVE(TEXT(REGVALUE_VIDEO_MODE           ),videotype);
+	REGSAVE(TEXT(REGVALUE_VIDEO_MODE           ),g_eVideoType);
 	REGSAVE(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),g_uHalfScanLines);
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),monochrome);
 }
@@ -270,7 +270,7 @@ void Config_Save_Video()
 // ====================================================================
 void Config_Load_Video()
 {
-	REGLOAD(TEXT(REGVALUE_VIDEO_MODE           ),&videotype);
+	REGLOAD(TEXT(REGVALUE_VIDEO_MODE           ),&g_eVideoType);
 	REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&g_uHalfScanLines);
 	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&monochrome);
 }
@@ -306,9 +306,9 @@ static void ConfigDlg_OK(HWND window, UINT afterclose)
 		}
 	}
 
-	if (videotype != newvidtype)
+	if (g_eVideoType != newvidtype)
 	{
-		videotype = newvidtype;
+		g_eVideoType = newvidtype;
 		VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
@@ -464,7 +464,7 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
 	  else
 		FillComboBox(window,IDC_COMPUTER,computerchoices,iApple2String);
 
-      FillComboBox(window,IDC_VIDEOTYPE,videochoices,videotype);
+      FillComboBox(window,IDC_VIDEOTYPE,videochoices,g_eVideoType);
       CheckDlgButton(window, IDC_CHECK_HALF_SCAN_LINES, g_uHalfScanLines ? BST_CHECKED : BST_UNCHECKED);
 	  
 	  FillComboBox(window,IDC_SERIALPORT,serialchoices,sg_SSC.GetSerialPort());
