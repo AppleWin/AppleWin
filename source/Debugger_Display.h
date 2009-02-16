@@ -89,4 +89,6 @@
 	void DrawWatches          ( int line);
 	void DrawZeroPagePointers ( int line);
 
+	void Debug_UpdatePalette( BYTE *pPalDst );
+
 #endif
