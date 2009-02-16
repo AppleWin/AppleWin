@@ -304,7 +304,7 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 	{
 		if ((key == VK_CANCEL) && (GetKeyState(VK_CONTROL) < 0))
 		{
-			// Ctrl+Reset
+			// Ctrl+Reset - TODO: This is a terrible place for this code!
 			if (!IS_APPLE2)
 				MemResetPaging();
 
@@ -312,6 +312,7 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			KeybReset();
 			if (!IS_APPLE2)
 				VideoResetState();	// Switch Alternate char set off
+			sg_SSC.CommReset();
 			MB_Reset();
 
 #ifndef KEY_OLD
