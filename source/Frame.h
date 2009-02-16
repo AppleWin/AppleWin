@@ -11,11 +11,16 @@ enum {NOT_ASCII=0, ASCII};
 #define  FRAMEBUFFER_W  560
 #define  FRAMEBUFFER_H  384
 
+// Direct Draw -- For Full Screen
+extern	LPDIRECTDRAW        g_pDD;
+extern	LPDIRECTDRAWSURFACE g_pDDPrimarySurface;
+extern	IDirectDrawPalette* g_pDDPal;
+
 // Win32
 extern HWND       g_hFrameWindow;
 extern HDC        g_hFrameDC;
+extern BOOL       g_bIsFullScreen;
 
-extern BOOL       fullscreen;
 void    FrameCreateWindow ();
 HDC     FrameGetDC ();
 HDC     FrameGetVideoDC (LPBYTE *,LONG *);
