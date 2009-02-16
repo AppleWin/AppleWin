@@ -1,7 +1,7 @@
 #pragma once
 
 // Types ____________________________________________________________
-enum VIDEOTYPE
+enum VideoType_e
 {
 	  VT_MONO_CUSTOM
 	, VT_COLOR_STANDARD
@@ -44,8 +44,9 @@ extern HBITMAP g_hLogoBitmap;
 
 extern BOOL       graphicsmode;
 extern COLORREF   monochrome; // saved
-extern DWORD      videotype; // saved
+extern DWORD      g_eVideoType; // saved
 extern DWORD      g_uHalfScanLines; // saved
+extern LPBYTE     g_pFramebufferbits;
 
 // Prototypes _______________________________________________________
 
