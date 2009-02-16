@@ -25,6 +25,8 @@
  */
 
 #include "..\stdafx.h"
+#pragma  hdrstop
+
 #undef IN							// Defined in windef.h
 #undef OUT							// Defined in windef.h
 
