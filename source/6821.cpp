@@ -26,7 +26,9 @@
 
 /*#define MC_DEBUG*/
 
-#include "stdafx.h"
+#include "StdAfx.h"
+#pragma  hdrstop
+
 #include "6821.h"
 
 #define PIA_W_CALLBACK(st, val)	\
