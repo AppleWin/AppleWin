@@ -26,6 +26,9 @@
 
 // [AppleWin-TC] From FUSE's sound.c module
 
+#include "StdAfx.h"
+#pragma  hdrstop
+
 #include <windows.h>
 #include <stdio.h>
 #include <crtdbg.h>
