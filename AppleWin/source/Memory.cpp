@@ -1178,6 +1178,7 @@ void MemReset ()
 			memmain[ iByte++ ] = 0xFF;
 			memmain[ iByte++ ] = 0xFF;
 
+			// Note: ODD 16-bit words are zero'd above...
 			iByte++;
 			iByte++;
 		}
