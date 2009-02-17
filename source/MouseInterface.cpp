@@ -1,9 +1,6 @@
 // Based on Apple in PC's mousecard.cpp
 // - Permission given by Kyle Kim to reuse in AppleWin
 
-#ifdef _DEBUG
-#define _DEBUG_SPURIOUS_IRQ
-
 /*
 Contiki v1.3:
 . I still see 2 cases of abnormal operation. These occur during boot up, during some period of disk access.
@@ -42,10 +39,14 @@ Etc.
 
 */
 
-#endif
 
 #include "stdafx.h"
 #pragma  hdrstop
+
+#ifdef _DEBUG
+	#define _DEBUG_SPURIOUS_IRQ
+#endif
+
 #include "..\resource\resource.h"
 #include "MouseInterface.h"
 #include "Frame.h"	// FrameSetCursorPosByMousePos()
