@@ -108,6 +108,7 @@ void    SetUsingCursor (BOOL);
 static bool FileExists(string strFilename);
 
 bool	g_bScrollLock_FullSpeed = false;
+bool	g_bFreshReset = false;
 
 // Prototypes:
 static void DrawCrosshairs (int x, int y);
@@ -1287,6 +1288,12 @@ void ProcessButtonClick (int button) {
       break;
 
     case BTN_RUN:
+		if( g_bCtrlKey )
+		{
+			CtrlReset();
+			return;
+		}
+
 		if (g_nAppMode == MODE_LOGO)
 		{
 			DiskBoot();
@@ -1494,7 +1501,8 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 }
 
 //===========================================================================
-void ResetMachineState () {
+void ResetMachineState ()
+{
   DiskReset();		// Set floppymotoron=0
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
@@ -1513,6 +1521,25 @@ void ResetMachineState () {
 
   SoundCore_SetFade(FADE_NONE);
 }
+
+
+//===========================================================================
+void CtrlReset()
+{
+	// Ctrl+Reset
+	if (!IS_APPLE2)
+		MemResetPaging();
+
+	DiskReset();
+	KeybReset();
+	if (!IS_APPLE2)
+		VideoResetState();	// Switch Alternate char set off
+	MB_Reset();
+
+	CpuReset();
+	g_bFreshReset = true;
+}
+
 
 //===========================================================================
 void SetFullScreenMode ()
