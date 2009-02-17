@@ -1,8 +1,8 @@
 #pragma once
 
-#define  TRACKS      35
 #define  IMAGETYPES  7
 #define  NIBBLES     6656
+#define  TRACK_DENIBBLIZED_SIZE  4096
 
 BOOL    ImageBoot (HIMAGE);
 void    ImageClose (HIMAGE);
