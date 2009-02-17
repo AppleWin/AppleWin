@@ -1526,7 +1526,7 @@ void ResetMachineState ()
 //===========================================================================
 void CtrlReset()
 {
-	// Ctrl+Reset
+	// Ctrl+Reset - TODO: This is a terrible place for this code!
 	if (!IS_APPLE2)
 		MemResetPaging();
 
@@ -1534,6 +1534,7 @@ void CtrlReset()
 	KeybReset();
 	if (!IS_APPLE2)
 		VideoResetState();	// Switch Alternate char set off
+	sg_SSC.CommReset();
 	MB_Reset();
 
 	CpuReset();
