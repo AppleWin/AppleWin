@@ -753,6 +753,12 @@ LRESULT CALLBACK FrameWndProc (
 			//bool bCtrlDown  = (GetKeyState(VK_CONTROL) < 0) ? true : false;
 			//bool bShiftDown = (GetKeyState(VK_SHIFT  ) < 0) ? true : false;
 
+// F9 Next Video Mode
+// ^F9 Next Char Set
+// #F9 Prev Video Mode
+// ^#F9 Toggle 50% Scan Lines
+// @F9 -Can't use Alt-F9 as Alt is Open-Apple = Joystick Button #1
+
 			if ( g_bCtrlKey && !g_bShiftKey ) //CTRL+F9
 			{
 				g_nCharsetType++; // Cycle through available charsets (Ctrl + F9)
@@ -762,12 +768,12 @@ LRESULT CALLBACK FrameWndProc (
 				}
 			}
 			else	// Cycle through available video modes
-			if ( g_bAltKey ) // g_bCtrlKey && g_bShiftKey ) // ALT+F9
+			if ( g_bCtrlKey && g_bShiftKey ) // ALT+F9
 			{
 				g_uHalfScanLines = !g_uHalfScanLines;
 			}
 			else
-			if ( !g_bShiftKey )	// Backwards???   Drop Down Combo Box is in correct order
+			if ( !g_bShiftKey )	// Drop Down Combo Box is in correct order
 			{
 				g_eVideoType++;
 				if (g_eVideoType >= VT_NUM_MODES)
@@ -1281,13 +1287,31 @@ void ProcessButtonClick (int button) {
       break;
 
     case BTN_RUN:
-      if (g_nAppMode == MODE_LOGO)
-        DiskBoot();
-      else if (g_nAppMode == MODE_RUNNING)
-        ResetMachineState();
-      if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
-        DebugEnd();
-      g_nAppMode = MODE_RUNNING;
+		if (g_nAppMode == MODE_LOGO)
+		{
+			DiskBoot();
+			g_nAppMode = MODE_RUNNING;
+		}
+		else
+		if (g_nAppMode == MODE_RUNNING)
+		{
+			ResetMachineState();
+			g_nAppMode = MODE_RUNNING;
+		}
+		if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
+		{
+			// If any breakpoints active, 
+			if (g_nBreakpoints)
+			{
+				// switch to MODE_STEPPING
+				CmdGo( 0 );
+			}
+			else
+			{
+				DebugEnd();
+				g_nAppMode = MODE_RUNNING;
+			}
+		}
       DrawStatusArea((HDC)0,DRAW_TITLE);
       VideoRedrawScreen();
       g_bResetTiming = true;
@@ -1316,7 +1340,10 @@ void ProcessButtonClick (int button) {
 		{
 			ResetMachineState();
 		}
-		else // bugfix: can't enter debugger into machine is actually running
+
+		// bug/feature: allow F7 to enter debugger even though emulator isn't "running"
+		//else
+
 		if (g_nAppMode == MODE_STEPPING)
 		{
 			DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
@@ -1675,6 +1702,12 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 		{
 			g_pDDPrimarySurface->Restore();
 			g_pDDPrimarySurface->Lock(&rect,&surfacedesc,DDLOCK_WAIT,NULL);
+
+			// DD Full Screen Palette
+//			if (g_pDDPal)
+//			{
+//				g_pDDPrimarySurface->SetPalette(g_pDDPal); // this sets the palette for the primary surface
+//			}
 		}
 		*pAddr_  = (LPBYTE)surfacedesc.lpSurface+(VIEWPORTCY-1)*surfacedesc.lPitch;
 		*pPitch_ = -surfacedesc.lPitch;
