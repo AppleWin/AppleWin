@@ -167,17 +167,15 @@ DWORD KeybGetNumQueries ()	// Used in determining 'idleness' of Apple system
 //===========================================================================
 void KeybQueueKeypress (int key, BOOL bASCII)
 {
-	static bool bFreshReset = false;
-
 	if (bASCII == ASCII)
 	{
-		if (bFreshReset && key == 0x03)
+		if (g_bFreshReset && key == VK_CANCEL) // OLD HACK: 0x03
 		{
-			bFreshReset = false;
+			g_bFreshReset = false;
 			return; // Swallow spurious CTRL-C caused by CTRL-BREAK
 		}
 
-		bFreshReset = false;
+		g_bFreshReset = false;
 		if (key > 0x7F)
 			return;
 
@@ -302,25 +300,14 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 	} 
 	else //(bASCII != ASCII)
 	{
+		// Note: VK_CANCEL is Control-Break
 		if ((key == VK_CANCEL) && (GetKeyState(VK_CONTROL) < 0))
 		{
-			// Ctrl+Reset - TODO: This is a terrible place for this code!
-			if (!IS_APPLE2)
-				MemResetPaging();
-
-			DiskReset();
-			KeybReset();
-			if (!IS_APPLE2)
-				VideoResetState();	// Switch Alternate char set off
-			sg_SSC.CommReset();
-			MB_Reset();
-
 #ifndef KEY_OLD
 			g_nNextInIdx = g_nNextOutIdx = g_nKeyBufferCnt = 0;
 #endif
-
-			CpuReset();
-			bFreshReset = true;
+			g_bFreshReset = true;
+			CtrlReset();
 			return;
 		}
 
