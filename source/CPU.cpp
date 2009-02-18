@@ -920,7 +920,7 @@ static DWORD Cpu65C02 (DWORD uTotalCycles)
 	WORD val;
 	AF_TO_EF
 	ULONG uExecutedCycles = 0;
-	BOOL bSlowerOnPagecross;		// Set if opcode writes to memory (eg. ASL, STA)
+	BOOL bSlowerOnPagecross = 0; // Set if opcode writes to memory (eg. ASL, STA)
 	WORD base;
 	bool bBreakOnInvalid = false;
 
@@ -1228,7 +1228,7 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 	WORD val;
 	AF_TO_EF
 	ULONG uExecutedCycles = 0;
-	BOOL bSlowerOnPagecross;		// Set if opcode writes to memory (eg. ASL, STA)
+	BOOL bSlowerOnPagecross = 0; // Set if opcode writes to memory (eg. ASL, STA)
 	WORD base;
 	bool bBreakOnInvalid = false;  
 
