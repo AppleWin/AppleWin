@@ -715,7 +715,7 @@ void DrawHiResSourceHalfShiftDim ()
 					{
 						/***          
 						activate for fringe reduction on white hgr text - 
-						drawback: loss of color mix patterns in hgr g_nAppMode.
+						drawback: loss of color mix patterns in HGR mode.
 						select g_eVideoType by index exclusion
 						***/
 
@@ -1170,17 +1170,22 @@ void DrawTextSource (HDC dc)
 }
 
 //===========================================================================
-void SetLastDrawnImage () {
-  memcpy(vidlastmem+0x400,g_pTextBank0,0x400);
-  if (SW_HIRES)
-    memcpy(vidlastmem+0x2000,g_pHiresBank0,0x2000);
-  if (SW_DHIRES && SW_HIRES)
-    memcpy(vidlastmem,g_pHiresBank1,0x2000);
-  else if (SW_80COL)	// Don't test for !SW_HIRES, as some 80-col text routines have SW_HIRES set (Bug #8300)
-    memcpy(vidlastmem,g_pTextBank1,0x400);
-  int loop;
-  for (loop = 0; loop < 256; loop++)
-    *(memdirty+loop) &= ~2;
+void SetLastDrawnImage ()
+{
+	memcpy(vidlastmem+0x400,g_pTextBank0,0x400);
+
+	if (SW_HIRES)
+		memcpy(vidlastmem+0x2000,g_pHiresBank0,0x2000);
+	if (SW_DHIRES && SW_HIRES)
+		memcpy(vidlastmem,g_pHiresBank1,0x2000);
+	else if (SW_80COL)	// Don't test for !SW_HIRES, as some 80-col text routines have SW_HIRES set (Bug #8300)
+		memcpy(vidlastmem,g_pTextBank1,0x400);
+
+	int loop;
+	for (loop = 0; loop < 256; loop++)
+	{
+		*(memdirty+loop) &= ~2;
+	}
 }
 
 //===========================================================================
@@ -1925,7 +1930,7 @@ void VideoDisplayLogo ()
 	SetTextAlign(hFrameDC,TA_RIGHT | TA_TOP);
 	SetBkMode(hFrameDC,TRANSPARENT);
 
-	#define VERSION_TXT "Version "
+	//#define VERSION_TXT "Version "
 
 	// Daily WTF candidate -- malloc every _frame_ ?!?!
 	//	char* szVersion = new char[strlen(VERSION_TXT) + strlen(VERSIONSTRING) + 1];
@@ -2173,7 +2178,10 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 	// 50% Half Scan Line
 	if( g_uHalfScanLines )
 	{
-		// We clear every odd scanline because Shift-Print Screen saves only the even rows
+		// 50% Half Scan Line clears every odd scanline.
+		// Shift-Print Screen saves only the even rows.
+		// NOTE: Keep in sync with _Video_RedrawScreen() & Video_MakeScreenShot()
+
 		for( int y = 1; y < FRAMEBUFFER_H; y += 2 )
 		{	
 			unsigned char *pSrc = pSrc = frameoffsettable[y];
@@ -2782,9 +2790,9 @@ void Video_MakeScreenShot(FILE *pFile)
 		u8 aScanLine[ 280 ];
 		u8 *pDst;
 
-		// HACK HACK HACK -- authentic mode zero's out odd rows, force to a scanline that has data
-		pSrc += FRAMEBUFFER_W;
-
+		// 50% Half Scan Line clears every odd scanline.
+		// Shift-Print Screen saves only the even rows.
+		// NOTE: Keep in sync with _Video_RedrawScreen() & Video_MakeScreenShot()
 		for( int y = 0; y < FRAMEBUFFER_H/2; y++ )
 		{
 			pDst = aScanLine;
