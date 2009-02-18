@@ -63,7 +63,7 @@ enum AppMode_e
 #define	TITLE_PRAVETS_8M        TEXT("Pravets 8M Emulator")
 #define	TITLE_PRAVETS_8A        TEXT("Pravets 8A Emulator")
 
-#define TITLE_PAUSED       TEXT(" Paused ")
+#define TITLE_PAUSED       TEXT("* PAUSED *")
 #define TITLE_STEPPING     TEXT("Stepping")
 
 #define  REGLOAD(a,b) RegLoadValue(TEXT("Configuration"),a,1,b)
