@@ -84,7 +84,7 @@ TCHAR   soundchoices[]    =  TEXT("Disabled\0")
                              TEXT("PC Speaker (translated)\0")
                              TEXT("Sound Card\0");
 
-// Must match VT_NUM_MODES!
+// Must match NUM_VIDEO_MODES!
 TCHAR   videochoices[]    =
 	TEXT("Monochrome (Custom)\0")
 	TEXT("Color (standard)\0")
@@ -95,6 +95,18 @@ TCHAR   videochoices[]    =
 	TEXT("Monochrome - Green\0")
 	TEXT("Monochrome - White\0")
 	;
+
+char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
+{
+	"Custom",
+	"Std.",
+	"Text",
+	"TV",
+	"1/2",
+	"Amber",
+	"Green",
+	"White"
+};
 
 TCHAR   discchoices[]     =  TEXT("Authentic Speed\0")
                              TEXT("Enhanced Speed\0");
@@ -445,19 +457,20 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
 
     case WM_INITDIALOG: //Init general settings dialog
 	{
-      g_nLastPage = PG_CONFIG;
+		g_nLastPage = PG_CONFIG;
 
-	  UINT iApple2String;
-	  switch (g_Apple2Type)
-	  {
-		case A2TYPE_APPLE2:			iApple2String = 0; break;
-		case A2TYPE_APPLE2PLUS:		iApple2String = 1; break;
-		case A2TYPE_APPLE2E:		iApple2String = 2; break;
-		case A2TYPE_APPLE2EEHANCED:	iApple2String = 3; break;
-		case A2TYPE_PRAVETS82:	    iApple2String = 4; break;
-		case A2TYPE_PRAVETS8M:	    iApple2String = 5; break;
-		case A2TYPE_PRAVETS8A:	    iApple2String = 6; break;
-	  }
+		UINT iApple2String = 0;
+		switch (g_Apple2Type)
+		{
+			default:
+			case A2TYPE_APPLE2:			iApple2String = 0; break;
+			case A2TYPE_APPLE2PLUS:		iApple2String = 1; break;
+			case A2TYPE_APPLE2E:		iApple2String = 2; break;
+			case A2TYPE_APPLE2EEHANCED:	iApple2String = 3; break;
+			case A2TYPE_PRAVETS82:		iApple2String = 4; break;
+			case A2TYPE_PRAVETS8M:		iApple2String = 5; break;
+			case A2TYPE_PRAVETS8A:		iApple2String = 6; break;
+		}
 
 	  if (iApple2String > 3) 
 		FillComboBox(window,IDC_COMPUTER,computerchoices,4);
