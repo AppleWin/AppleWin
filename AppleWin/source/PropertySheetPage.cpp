@@ -102,7 +102,7 @@ char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	"Std.",
 	"Text",
 	"TV",
-	"1/2",
+	"HalfPixel",
 	"Amber",
 	"Green",
 	"White"
