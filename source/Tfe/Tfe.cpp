@@ -742,7 +742,7 @@ WORD tfe_receive(void)
     int  rx_ok;
     int  correct_mac;
     int  broadcast;
-    int  multicast;
+    int  multicast = 0;
     int  crc_error;
 
     int  newframe;
