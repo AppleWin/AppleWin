@@ -518,6 +518,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 			TCHAR title[80];
 			switch (g_Apple2Type)
 			{
+			default:
 			case A2TYPE_APPLE2:			_tcscpy(title, TITLE_APPLE_2); break; 
 			case A2TYPE_APPLE2PLUS:		_tcscpy(title, TITLE_APPLE_2_PLUS); break; 
 			case A2TYPE_APPLE2E:		_tcscpy(title, TITLE_APPLE_2E); break; 
@@ -525,6 +526,18 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 			case A2TYPE_PRAVETS82:		_tcscpy(title, TITLE_PRAVETS_82); break; 
 			case A2TYPE_PRAVETS8M:		_tcscpy(title, TITLE_PRAVETS_8M); break; 
 			case A2TYPE_PRAVETS8A:		_tcscpy(title, TITLE_PRAVETS_8A); break; 
+			}
+
+			// TODO: g_bDisplayVideoModeInTitle
+			if( 1 )
+			{
+				extern char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
+				_tcscat( title, " - " );
+				_tcscat( title, g_apVideoModeDesc[ g_eVideoType ] );
+				if( g_uHalfScanLines )
+				{
+					_tcscat( title," (50%)" );
+				}
 			}
 
 			if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
@@ -777,21 +790,24 @@ LRESULT CALLBACK FrameWndProc (
 			if ( !g_bShiftKey )	// Drop Down Combo Box is in correct order
 			{
 				g_eVideoType++;
-				if (g_eVideoType >= VT_NUM_MODES)
+				if (g_eVideoType >= NUM_VIDEO_MODES)
 					g_eVideoType = 0;
 			}
 			else	// Forwards
 			{
 				if (g_eVideoType <= 0)
-					g_eVideoType = VT_NUM_MODES;
+					g_eVideoType = NUM_VIDEO_MODES;
 				g_eVideoType--;
 			}
 
+			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)
+			DrawStatusArea( (HDC)0, DRAW_TITLE );
+
 			VideoReinitialize();
-			if ((g_nAppMode != MODE_LOGO) || ((g_nAppMode == MODE_DEBUG) && (g_bDebuggerViewingAppleOutput))) // +PATCH
+			if ((g_nAppMode != MODE_LOGO) || ((g_nAppMode == MODE_DEBUG) && (g_bDebuggerViewingAppleOutput)))
 			{
 				VideoRedrawScreen();
-				g_bDebuggerViewingAppleOutput = true;  // +PATCH
+				g_bDebuggerViewingAppleOutput = true;
 			}
 
 			Config_Save_Video();
