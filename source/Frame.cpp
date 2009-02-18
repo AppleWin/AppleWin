@@ -531,13 +531,15 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 			// TODO: g_bDisplayVideoModeInTitle
 			if( 1 )
 			{
-				extern char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
 				_tcscat( title, " - " );
-				_tcscat( title, g_apVideoModeDesc[ g_eVideoType ] );
+
 				if( g_uHalfScanLines )
 				{
-					_tcscat( title," (50%)" );
+					_tcscat( title," 50% " );
 				}
+
+				extern char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
+				_tcscat( title, g_apVideoModeDesc[ g_eVideoType ] );
 			}
 
 			if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
