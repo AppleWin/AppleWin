@@ -1480,7 +1480,7 @@ Update_t CmdBreakInvalid (int nArgs) // Breakpoint IFF Full-speed!
 		goto _Help;
 
 	int iType = 0; // default to BRK
-	int nActive;
+	int nActive = 0;
 
 //	if (nArgs == 2)
 	iType = g_aArgs[ 1 ].nValue;
@@ -2801,7 +2801,7 @@ bool DebuggerSetColor( const int iScheme, const int iColor, const COLORREF nColo
 //===========================================================================
 Update_t CmdConfigColorMono (int nArgs)
 {
-	int iScheme;
+	int iScheme = 0;
 	
 	if (g_iCommand == CMD_CONFIG_COLOR)
 		iScheme = SCHEME_COLOR;
