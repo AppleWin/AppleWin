@@ -221,7 +221,7 @@ int	ArgsGet ( TCHAR * pInput )
 {
 	LPCTSTR pSrc = pInput;
 	LPCTSTR pEnd = NULL;
-	int     nBuf;
+	int     nBuf = 0;
 
 	ArgToken_e iTokenSrc = NO_TOKEN;
 	ArgToken_e iTokenEnd = NO_TOKEN;
