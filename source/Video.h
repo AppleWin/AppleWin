@@ -12,7 +12,7 @@ enum VideoType_e
 	, VT_MONO_GREEN
 	, VT_MONO_WHITE
 //	, VT_MONO_AUTHENTIC
-	, VT_NUM_MODES
+	, NUM_VIDEO_MODES
 };
 
 enum AppleFont_e
