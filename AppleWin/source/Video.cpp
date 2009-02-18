@@ -1899,7 +1899,8 @@ void VideoDrawLogoBitmap ( HDC hDstDC )
 }
 
 //===========================================================================
-void VideoDisplayLogo () {
+void VideoDisplayLogo () 
+{
 	HDC hFrameDC = FrameGetDC();
 
 	// DRAW THE LOGO
@@ -1925,16 +1926,21 @@ void VideoDisplayLogo () {
 	SetBkMode(hFrameDC,TRANSPARENT);
 
 	#define VERSION_TXT "Version "
-	char* szVersion = new char[strlen(VERSION_TXT) + strlen(VERSIONSTRING) + 1];
-	strcpy(&szVersion[0], VERSION_TXT);
-	strcpy(&szVersion[strlen(VERSION_TXT)], VERSIONSTRING);
-	szVersion[strlen(szVersion)] = 0x00;
 
-	#define  DRAWVERSION(x,y,c)  SetTextColor(hFrameDC,c);                \
-								TextOut(hFrameDC,                        \
-										540+x,358+y,                    \
-										szVersion,                      \
-										strlen(szVersion));
+	// Daily WTF candidate -- malloc every _frame_ ?!?!
+	//	char* szVersion = new char[strlen(VERSION_TXT) + strlen(VERSIONSTRING) + 1];
+	//	strcpy(&szVersion[0], VERSION_TXT);
+	//	strcpy(&szVersion[strlen(VERSION_TXT)], VERSIONSTRING);
+	//	szVersion[strlen(szVersion)] = 0x00;
+	char szVersion[ 32 ];
+	sprintf( szVersion, "Version %s", VERSIONSTRING );
+
+#define  DRAWVERSION(x,y,c)     \
+	SetTextColor(hFrameDC,c);   \
+	TextOut(hFrameDC,           \
+		540+x,358+y,            \
+		szVersion,              \
+		strlen(szVersion));
 
 	if (GetDeviceCaps(hFrameDC,PLANES) * GetDeviceCaps(hFrameDC,BITSPIXEL) <= 4) {
 	DRAWVERSION( 2, 2,RGB(0x00,0x00,0x00));
@@ -1947,7 +1953,8 @@ void VideoDisplayLogo () {
 	DRAWVERSION( 0, 0,PALETTERGB(0x70,0x30,0xE0));
 	}
 
-	delete [] szVersion;
+	// Daily WTF candidate -- malloc every _frame_ ?!?!
+	//	delete [] szVersion;
 #undef  DRAWVERSION
 
 	FrameReleaseDC();
@@ -2166,8 +2173,8 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 	// 50% Half Scan Line
 	if( g_uHalfScanLines )
 	{
-		// We zero out the 1st row (row zero) because the bitmap is upside down
-		for( int y = 0; y < FRAMEBUFFER_H; y += 2 )
+		// We clear every odd scanline because Shift-Print Screen saves only the even rows
+		for( int y = 1; y < FRAMEBUFFER_H; y += 2 )
 		{	
 			unsigned char *pSrc = pSrc = frameoffsettable[y];
 			for( int x = 0; x < FRAMEBUFFER_W; x++ )
