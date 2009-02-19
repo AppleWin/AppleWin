@@ -473,6 +473,8 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		TextOut(dc,x+13,y+2,TEXT("2"),1);
 
 		// Feature Request #3581 ] drive lights in full screen mode
+		// This has been in for a while, at least since 1.12.7.1
+
 		// Full Screen Drive LED
 		// Note: Made redundant with above code
 		//		RECT rect = {0,0,8,8};
