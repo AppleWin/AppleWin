@@ -9087,6 +9087,11 @@ void DebuggerProcessKey( int keycode )
 
 	if (g_bDebuggerViewingAppleOutput)
 	{
+		if ((VK_SHIFT == keycode) || (VK_CONTROL == keycode) || (VK_MENU == keycode))
+		{
+			return;
+		}
+
 		// Normally any key press takes us out of "Viewing Apple Output" g_nAppMode
 		// VK_F# are already processed, so we can't use them to cycle next video g_nAppMode
 //		    if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
