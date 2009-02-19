@@ -248,8 +248,13 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,16,0,1
- PRODUCTVERSION 1,16,0,1
+ // YOU MUST UPDATE THIS in _4_ places!!!
+ // 1. FILEVERSION
+ // 2. PRODUCTVERION
+ // 3. String: FileVersion
+ // 4. String: ProductVersion
+ FILEVERSION 1,16,0,2
+ PRODUCTVERSION 1,16,0,2
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -267,12 +272,12 @@ BEGIN
             VALUE "Comments", "http://applewin.berlios.de"
             VALUE "CompanyName", "AppleWin"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1, 16, 0, 0"
+            VALUE "FileVersion", "1, 16, 0, 2"
             VALUE "InternalName", "APPLEWIN"
             VALUE "LegalCopyright", " 1994-2009 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1, 16, 0, 0"
+            VALUE "ProductVersion", "1, 16, 0, 2"
         END
     END
     BLOCK "VarFileInfo"
