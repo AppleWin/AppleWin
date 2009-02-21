@@ -398,52 +398,60 @@ static void DrawCrosshairs (int x, int y) {
 }
 
 //===========================================================================
-static void DrawFrameWindow () {
-  FrameReleaseDC();
-  PAINTSTRUCT ps;
-  HDC         dc = (g_bPaintingWindow ? BeginPaint(g_hFrameWindow,&ps)
-                             : GetDC(g_hFrameWindow));
-  VideoRealizePalette(dc);
+static void DrawFrameWindow ()
+{
+	FrameReleaseDC();
+	PAINTSTRUCT ps;
+	HDC         dc = (g_bPaintingWindow
+		? BeginPaint(g_hFrameWindow,&ps)
+		: GetDC(g_hFrameWindow));
 
-  if (!g_bIsFullScreen) {
+	VideoRealizePalette(dc);
 
-    // DRAW THE 3D BORDER AROUND THE EMULATED SCREEN
-    Draw3dRect(dc,
-               VIEWPORTX-2,VIEWPORTY-2,
-               VIEWPORTX+VIEWPORTCX+2,VIEWPORTY+VIEWPORTCY+2,
-               0);
-    Draw3dRect(dc,
-               VIEWPORTX-3,VIEWPORTY-3,
-               VIEWPORTX+VIEWPORTCX+3,VIEWPORTY+VIEWPORTCY+3,
-               0);
-    SelectObject(dc,btnfacepen);
-    Rectangle(dc,
-              VIEWPORTX-4,VIEWPORTY-4,
-              VIEWPORTX+VIEWPORTCX+4,VIEWPORTY+VIEWPORTCY+4);
-    Rectangle(dc,
-              VIEWPORTX-5,VIEWPORTY-5,
-              VIEWPORTX+VIEWPORTCX+5,VIEWPORTY+VIEWPORTCY+5);
+	if (!g_bIsFullScreen)
+	{
+		// DRAW THE 3D BORDER AROUND THE EMULATED SCREEN
+		Draw3dRect(dc,
+			VIEWPORTX-2,VIEWPORTY-2,
+			VIEWPORTX+VIEWPORTCX+2,VIEWPORTY+VIEWPORTCY+2,
+			0);
+		Draw3dRect(dc,
+			VIEWPORTX-3,VIEWPORTY-3,
+			VIEWPORTX+VIEWPORTCX+3,VIEWPORTY+VIEWPORTCY+3,
+			0);
+		SelectObject(dc,btnfacepen);
+		Rectangle(dc,
+			VIEWPORTX-4,VIEWPORTY-4,
+			VIEWPORTX+VIEWPORTCX+4,VIEWPORTY+VIEWPORTCY+4);
+		Rectangle(dc,
+			VIEWPORTX-5,VIEWPORTY-5,
+			VIEWPORTX+VIEWPORTCX+5,VIEWPORTY+VIEWPORTCY+5);
 
-    // DRAW THE TOOLBAR BUTTONS
-    int loop = BUTTONS;
-    while (loop--)
-      DrawButton(dc,loop);
-  }
+		// DRAW THE TOOLBAR BUTTONS
+		int iButton = BUTTONS;
+		while (iButton--)
+		{
+			DrawButton(dc,iButton);
+		}
+	}
 
-  // DRAW THE STATUS AREA
-  DrawStatusArea(dc,DRAW_BACKGROUND | DRAW_LEDS);
-  if (g_bPaintingWindow)
-    EndPaint(g_hFrameWindow,&ps);
-  else
-    ReleaseDC(g_hFrameWindow,dc);
+	// DRAW THE STATUS AREA
+	DrawStatusArea(dc,DRAW_BACKGROUND | DRAW_LEDS);
 
-  // DRAW THE CONTENTS OF THE EMULATED SCREEN
-  if (g_nAppMode == MODE_LOGO)
-    VideoDisplayLogo();
-  else if (g_nAppMode == MODE_DEBUG)
-    DebugDisplay(1);
-  else
-    VideoRedrawScreen();
+	// DRAW THE CONTENTS OF THE EMULATED SCREEN
+	if (g_nAppMode == MODE_LOGO)
+		VideoDisplayLogo();
+	else if (g_nAppMode == MODE_DEBUG)
+		DebugDisplay(1);
+	else
+		VideoRedrawScreen();
+
+	// DD Full-Screen Palette: BUGFIX: needs to come _after_ all drawing...
+	if (g_bPaintingWindow)
+		EndPaint(g_hFrameWindow,&ps);
+	else
+		ReleaseDC(g_hFrameWindow,dc);
+
 }
 
 //===========================================================================
@@ -613,7 +621,11 @@ static void EraseButton (int number) {
   rect.right  = rect.left+BUTTONCX;
   rect.top    = buttony+number*BUTTONCY;
   rect.bottom = rect.top+BUTTONCY;
-  InvalidateRect(g_hFrameWindow,&rect,1);
+
+	// TODO: DD Full-Screen Palette
+	//	if( !g_bIsFullScreen )
+
+	InvalidateRect(g_hFrameWindow,&rect,1);
 }
 
 //===========================================================================
@@ -916,7 +928,9 @@ LRESULT CALLBACK FrameWndProc (
 				KeybQueueKeypress((int)wparam,NOT_ASCII);
 		}
 		else if (g_nAppMode == MODE_DEBUG)
+		{		
 			DebuggerProcessKey(wparam);
+		}
 
 		if (wparam == VK_F10)
 		{
@@ -1142,11 +1156,30 @@ LRESULT CALLBACK FrameWndProc (
       break;
 
     case WM_PALETTECHANGED:
-      if ((HWND)wparam == window)
-        break;
-      // fall through
+		// To avoid creating an infinite loop, a window that receives this
+		// message must not realize its palette, unless it determines that
+		// wParam does not contain its own window handle.
+		if ((HWND)wparam == window)
+	  {
+#if DEBUG_DD_PALETTE
+		if( g_bIsFullScreen )
+			OutputDebugString( "WM_PALETTECHANGED: Full Screen\n" );
+		else
+			OutputDebugString( "WM_PALETTECHANGED: Windowed\n" );
+#endif
+		break;
+	  } 
+	  // else fall through
 
     case WM_QUERYNEWPALETTE:
+#if DEBUG_DD_PALETTE
+		if( g_bIsFullScreen )
+			OutputDebugString( "WM_QUERYNEWPALETTE: Full Screen\n" );
+		else
+			OutputDebugString( "WM_QUERYNEWPALETTE: Windowed\n" );
+#endif
+
+		// TODO: DD Full-Screen Palette
       DrawFrameWindow();
       break;
 
@@ -1208,9 +1241,17 @@ LRESULT CALLBACK FrameWndProc (
 		break;
 
     case WM_SYSCOLORCHANGE:
-      DeleteGdiObjects();
-      CreateGdiObjects();
-      break;
+#if DEBUG_DD_PALETTE
+		if( g_bIsFullScreen )
+			OutputDebugString( "WM_SYSCOLORCHANGE: Full Screen\n" );
+		else
+			OutputDebugString( "WM_SYSCOLORCHANGE: Windowed\n" );
+#endif
+
+		// TODO: DD Full-Screen Palette
+		DeleteGdiObjects();
+		CreateGdiObjects();
+		break;
 
     case WM_SYSCOMMAND:
       switch (wparam & 0xFFF0) {
@@ -1329,9 +1370,15 @@ LRESULT CALLBACK FrameWndProc (
 
 
 //===========================================================================
-void ProcessButtonClick (int button) {
+void ProcessButtonClick (int button)
+{
+	SoundCore_SetFade(FADE_OUT);
 
-  SoundCore_SetFade(FADE_OUT);
+#if DEBUG_DD_PALETTE
+	char _text[ 80 ];
+	sprintf( _text, "Button: F%d  Full Screen: %d\n", button+1, g_bIsFullScreen );
+	OutputDebugString( _text );
+#endif
 
   switch (button) {
 
@@ -1418,6 +1465,10 @@ void ProcessButtonClick (int button) {
 		{
 			g_bDebugDelayBreakCheck = true;
 			ProcessButtonClick(BTN_RUN);
+
+			// TODO: DD Full-Screen Palette
+			// exiting debugger using wrong palette, but this makes problem worse...
+			//InvalidateRect(g_hFrameWindow,NULL,1);
 		}
 		else
 		{
@@ -1625,6 +1676,10 @@ void SetFullScreenMode ()
 		SetNormalMode();
 		return;
 	}
+
+	// TODO: DD Full-Screen Palette
+	//	if( !g_bIsFullScreen )
+
 	InvalidateRect(g_hFrameWindow,NULL,1);
 }
 
@@ -1647,11 +1702,21 @@ void SetNormalMode ()
                              framerect.right - framerect.left,
                              framerect.bottom - framerect.top,
                              SWP_NOZORDER | SWP_FRAMECHANGED);
+
+	// DD Full-Screen Palette: BUGFIX: Re-attach new palette on next new surface
+	// Delete Palette
+	if (g_pDDPal)
+	{
+		g_pDDPal->Release();
+		g_pDDPal = (LPDIRECTDRAWPALETTE)0;
+	}
+
 	if (g_pDDPrimarySurface)
 	{
 		g_pDDPrimarySurface->Release();
 		g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
 	}
+
 	g_pDD->Release();
 	g_pDD = (LPDIRECTDRAW)0;
 }
@@ -1843,19 +1908,22 @@ void FrameReleaseDC () {
 }
 
 //===========================================================================
-void FrameReleaseVideoDC () {
-  if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow) {
+void FrameReleaseVideoDC ()
+{
+	if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
+	{
+		// THIS IS CORRECT ACCORDING TO THE DIRECTDRAW DOCS
+		RECT rect = {
+			FSVIEWPORTX,
+			FSVIEWPORTY,
+			FSVIEWPORTX+VIEWPORTCX,
+			FSVIEWPORTY+VIEWPORTCY
+		};
+		g_pDDPrimarySurface->Unlock(&rect);
 
-    // THIS IS CORRECT ACCORDING TO THE DIRECTDRAW DOCS
-    RECT rect = {FSVIEWPORTX,
-                 FSVIEWPORTY,
-                 FSVIEWPORTX+VIEWPORTCX,
-                 FSVIEWPORTY+VIEWPORTCY};
-    g_pDDPrimarySurface->Unlock(&rect);
-
-    // BUT THIS SEEMS TO BE WORKING
-    g_pDDPrimarySurface->Unlock(NULL);
-  }
+		// BUT THIS SEEMS TO BE WORKING
+		g_pDDPrimarySurface->Unlock(NULL);
+	}
 }
 
 //===========================================================================
