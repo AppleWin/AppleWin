@@ -2385,12 +2385,14 @@ void VideoUpdateFlash()
 {
 	static UINT nTextFlashCnt = 0;
 
-	nTextFlashCnt++;
+	// Flash rate:
+	// . NTSC : 60/16 ~= 4Hz
+	// . PAL  : 50/16 ~= 3Hz
+	nTextFlashCnt = (nTextFlashCnt+1) & 0xf;
 
 	// BUG: In unthrottled CPU mode, flash rate should not be affected
-	if(nTextFlashCnt == 60/3)	// Flash rate = 3Hz (every 333ms)
+	if(nTextFlashCnt == 0)
 	{
-		nTextFlashCnt = 0;
 		g_bTextFlashState = !g_bTextFlashState;
 		
 		// Redraw any FLASHing chars if any text showing. NB. No FLASH g_nAppMode for 80 cols
