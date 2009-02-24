@@ -6,10 +6,12 @@
 #define	DRIVES			2
 #define	TRACKS_STANDARD	35
 #define	TRACKS_EXTRA	5		// Allow up to a 40-track .dsk image (160KB)
-#define	TRACKS			(TRACKS_STANDARD+TRACKS_EXTRA)
+#define	TRACKS_MAX		(TRACKS_STANDARD+TRACKS_EXTRA)
 
-extern BOOL       enhancedisk;
+extern BOOL enhancedisk;
 extern string DiskPathFilename[2];
+extern UINT g_uNumTracksInImage;
+
 void    DiskInitialize (); // DiskManagerStartup()
 void    DiskDestroy (); // no, doesn't "destroy" the disk image.  DiskManagerShutdown()
 
