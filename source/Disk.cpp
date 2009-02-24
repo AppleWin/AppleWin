@@ -57,10 +57,9 @@ static BYTE __stdcall DiskSetWriteMode (WORD pc, WORD addr, BYTE bWrite, BYTE d,
 
 // Public _________________________________________________________________________________________
 
-	BOOL      enhancedisk     = 1;
-	// dynamic array of strings
-	string DiskPathFilename[];
-	bool bSaveDiskImage = true;
+	BOOL enhancedisk = 1;
+	string DiskPathFilename[];		// dynamic array of strings
+	UINT g_uNumTracksInImage = 0;
 	
 // Private ________________________________________________________________________________________
 
@@ -84,13 +83,14 @@ static BYTE __stdcall DiskSetWriteMode (WORD pc, WORD addr, BYTE bWrite, BYTE d,
 		int    nibbles;
 	};
 
-static WORD      currdrive       = 0;
-static BOOL      diskaccessed    = 0;
-static Disk_t    g_aFloppyDisk[DRIVES];
-static BYTE      floppylatch     = 0;
-static BOOL      floppymotoron   = 0;
-static BOOL      floppywritemode = 0;
-static WORD      phases; // state bits for stepper magnet phases 0 - 3
+static WORD		currdrive       = 0;
+static BOOL		diskaccessed    = 0;
+static Disk_t	g_aFloppyDisk[DRIVES];
+static BYTE		floppylatch     = 0;
+static BOOL		floppymotoron   = 0;
+static BOOL		floppywritemode = 0;
+static WORD		phases; // state bits for stepper magnet phases 0 - 3
+static bool		bSaveDiskImage = true;
 
 static void CheckSpinning();
 static Disk_Status_e GetDriveLightStatus( const int iDrive );
@@ -249,7 +249,7 @@ static void ReadTrack (int iDrive)
 
 	Disk_t *pFloppy = &g_aFloppyDisk[ iDrive ];
 
-	if (pFloppy->track >= TRACKS)
+	if (pFloppy->track >= (int)g_uNumTracksInImage)
 	{
 		pFloppy->trackimagedata = 0;
 		return;
@@ -308,7 +308,7 @@ static void WriteTrack (int iDrive)
 {
 	Disk_t *pFloppy = &g_aFloppyDisk[ iDrive ];
 
-	if (pFloppy->track >= TRACKS)
+	if (pFloppy->track >= (int)g_uNumTracksInImage)
 		return;
 
 	if (pFloppy->writeprotected)
@@ -382,7 +382,7 @@ static BYTE __stdcall DiskControlStepper (WORD, WORD address, BYTE, BYTE, ULONG)
   if (direction)
   {
     fptr->phase = MAX(0, MIN(79, fptr->phase + direction));
-    int newtrack = MIN(TRACKS-1, fptr->phase >> 1); // (round half tracks down)
+    int newtrack = MIN((int)g_uNumTracksInImage-1, fptr->phase >> 1); // (round half tracks down)
     LOG_DISK("newtrack %2X%s\r", newtrack, (fptr->phase & 1) ? ".5" : "");
     if (newtrack != fptr->track)
     {

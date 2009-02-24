@@ -44,7 +44,7 @@ typedef struct _imageinforec {
     BOOL       writeprotected;
     DWORD      headersize;
     LPBYTE     header;
-    BOOL       validtrack[TRACKS];
+    BOOL       validtrack[TRACKS_MAX];
 } imageinforec, *imageinfoptr;
 
 typedef BOOL  (*boottype  )(imageinfoptr);
@@ -426,22 +426,31 @@ DWORD AplDetect (LPBYTE imageptr, DWORD imagesize) {
 
 static bool IsValidImageSize(DWORD uImageSize)
 {
-	if ((TRACKS>TRACKS_STANDARD) && (uImageSize > TRACKS*TRACK_DENIBBLIZED_SIZE))
+	g_uNumTracksInImage = 0;
+
+	if ((TRACKS_MAX>TRACKS_STANDARD) && (uImageSize > TRACKS_MAX*TRACK_DENIBBLIZED_SIZE))
 		return false;	// >160KB
+
+	//
+
+	bool bValidSize = false;
 
 	if (uImageSize >= TRACKS_STANDARD*TRACK_DENIBBLIZED_SIZE)
 	{
 		// Is uImageSize == 140KB + n*4K?
-		const bool bStandardSize = (((uImageSize - TRACKS_STANDARD*TRACK_DENIBBLIZED_SIZE) % TRACK_DENIBBLIZED_SIZE) == 0);
-		if (bStandardSize)
-			return true;
+		bValidSize = (((uImageSize - TRACKS_STANDARD*TRACK_DENIBBLIZED_SIZE) % TRACK_DENIBBLIZED_SIZE) == 0);
+	}
+	else
+	{
+		bValidSize = (  ((uImageSize >= 143105) && (uImageSize <= 143364)) ||
+						 (uImageSize == 143403) ||
+						 (uImageSize == 143488) );
 	}
 
-	const bool bInvalidSize = ( ((uImageSize < 143105) || (uImageSize > 143364)) &&
-								 (uImageSize != 143403) &&
-								 (uImageSize != 143488) );
+	if (bValidSize)
+		g_uNumTracksInImage = uImageSize / TRACK_DENIBBLIZED_SIZE;
 
-	return !bInvalidSize;
+	return bValidSize;
 }
 
 /****************************************************************************
@@ -732,11 +741,11 @@ BOOL ImageBoot (HIMAGE imagehandle) {
 }
 
 //===========================================================================
-void ImageClose (HIMAGE imagehandle) {
+void ImageClose (HIMAGE imagehandle){
   imageinfoptr ptr = (imageinfoptr)imagehandle;
   if (ptr->file != INVALID_HANDLE_VALUE)
     CloseHandle(ptr->file);
-  for (int track = 0; track < TRACKS; track++)
+  for (UINT track = 0; track < g_uNumTracksInImage; track++)
     if (!ptr->validtrack[track]) {
       DeleteFile(ptr->filename);
       break;
@@ -906,7 +915,7 @@ int ImageOpen (LPCTSTR  imagefilename,
 			((imageinfoptr)*hDiskImage_)->offset         = pImage-view;
 			((imageinfoptr)*hDiskImage_)->writeprotected = *pWriteProtected_;
 
-			for (int track = 0; track < TRACKS; track++)
+			for (UINT track = 0; track < g_uNumTracksInImage; track++)
 		        ((imageinfoptr)*hDiskImage_)->validtrack[track] = (size > 0);
 
 			return IMAGE_ERROR_NONE; // HACK: MAGIC # 0
