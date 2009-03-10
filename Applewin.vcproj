@@ -782,6 +782,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\PRAVETS8M.ROM"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\RUN.BMP"
 				>
 			</File>
@@ -804,10 +808,6 @@
 		</Filter>
 		<File
 			RelativePath=".\source\Common.h"
-			>
-		</File>
-		<File
-			RelativePath=".\resource\PRAVETS8M.ROM"
 			>
 		</File>
 		<File
