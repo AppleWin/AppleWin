@@ -1393,6 +1393,7 @@ void ProcessButtonClick (int button)
       break;
 
     case BTN_RUN:
+		KeybUpdateCtrlShiftStatus();
 		if( g_bCtrlKey )
 		{
 			CtrlReset();
