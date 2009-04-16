@@ -297,7 +297,6 @@ find didn't appear to support it:<br>
   Lancaster<br>
   Music Star (Can't find)<br>
   Thunder Bombs<br>
-  Under Fire<br>
 </blockquote>
 </font></font></p>
 
