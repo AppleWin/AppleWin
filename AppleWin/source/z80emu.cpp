@@ -19,8 +19,7 @@
 #include "z80emu.h"
 
 // Variaveis
-static int CPMZ80Slot	= 0;
-int Z80_IRQ				= 0;	// Used by Z80Em
+static int g_uCPMZ80Slot = 0;
 
 BYTE __stdcall CPMZ80_IONull(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft)
 {
@@ -29,21 +28,19 @@ BYTE __stdcall CPMZ80_IONull(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULON
 
 BYTE __stdcall CPMZ80_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft)
 {
-	if ((uAddr & 0xFF00) == (0xC000 + (CPMZ80Slot << 8)))
-	{
+	if ((uAddr & 0xFF00) == (0xC000 + (g_uCPMZ80Slot << 8)))
 		g_ActiveCPU = (g_ActiveCPU == CPU_6502) ? CPU_Z80 : CPU_6502;
-	}
+
 	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
 }
 
 //===========================================================================
-void ConfigureSoftcard(LPBYTE pCxRomPeripheral, int Slot, UINT addOrRemove)
+
+void ConfigureSoftcard(LPBYTE pCxRomPeripheral, UINT uSlot, UINT bEnable)
 {	
-	memset(pCxRomPeripheral + (Slot << 8), 0xFF, APPLE_SLOT_SIZE);
+	memset(pCxRomPeripheral + (uSlot << 8), 0xFF, APPLE_SLOT_SIZE);
 	
-	CPMZ80Slot = Slot;
+	g_uCPMZ80Slot = uSlot;
 
-	RegisterIoHandler(Slot, CPMZ80_IONull, CPMZ80_IONull, CPMZ80_IONull, addOrRemove ? CPMZ80_IOWrite : NULL, NULL, NULL);
+	RegisterIoHandler(uSlot, CPMZ80_IONull, CPMZ80_IONull, CPMZ80_IONull, bEnable ? CPMZ80_IOWrite : NULL, NULL, NULL);
 }
-
-// EOF

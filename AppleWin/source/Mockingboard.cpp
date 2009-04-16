@@ -1290,10 +1290,6 @@ static void MB_DSUninit()
 
 //=============================================================================
 
-static BYTE __stdcall PhasorIO (WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft);
-static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft);
-static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft);
-
 void MB_Initialize()
 {
 	if(g_bDisableDirectSound)
@@ -1322,31 +1318,7 @@ void MB_Initialize()
 		MB_Reset();
 	}
 
-	//
-
 	g_bMB_Active = (g_SoundcardType != SC_NONE);
-
-	//
-
-#ifdef SUPPORT_CPM
-	if (g_Slot4 == CT_Mockingboard)
-	{
-		const UINT uSlot4 = 4;
-		RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
-
-		const UINT uSlot5 = 5;
-		RegisterIoHandler(uSlot5, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
-	}
-#else
-	if (g_Slot4 == CT_Mockingboard)
-	{
-		const UINT uSlot4 = 4;
-		RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
-	}
-
-	const UINT uSlot5 = 5;
-	RegisterIoHandler(uSlot5, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1500,6 +1472,24 @@ static BYTE __stdcall PhasorIO (WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, U
 	AY8910_InitClock((int)fCLK);
 
 	return MemReadFloatingBus(nCyclesLeft);
+}
+
+//-----------------------------------------------------------------------------
+
+void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
+{
+#ifdef SUPPORT_CPM
+		if (g_Slot4 == CT_Mockingboard)
+		{
+			RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
+			RegisterIoHandler(uSlot5, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
+		}
+#else
+		if (g_Slot4 == CT_Mockingboard)
+			RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
+
+		RegisterIoHandler(uSlot5, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
+#endif
 }
 
 //-----------------------------------------------------------------------------

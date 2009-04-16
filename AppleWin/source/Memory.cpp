@@ -1125,20 +1125,26 @@ void MemInitialize()
 
 	sg_SSC.CommInitialize(pCxRomPeripheral, 2);		// $C200 : SSC
 
-	// Slot 3 is reserved for AuxMem/80Col Card!
+	// Slot 3 contains the Uthernet card (which can coexist with an 80-col+Ram card in AUX slot)
+	// . Uthernet card has no ROM and only IO mapped at $C0Bx
+
+	// Apple//e: Auxilary slot contains Extended 80 Column card or RamWorksIII card
 
 	if (g_Slot4 == CT_MouseInterface)
 	{
 		sg_Mouse.Initialize(pCxRomPeripheral, 4);	// $C400 : Mouse f/w
 	}
-	else
-	if (g_Slot4 == CT_GenericClock)
+	else if (g_Slot4 == CT_GenericClock)
 	{
 //		LoadRom_Clock_Generic(pCxRomPeripheral, 4);
 	}
-	else
+	else if (g_Slot4 == CT_Mockingboard)
+	{
+		const UINT uSlot4 = 4;
+		const UINT uSlot5 = 5;
+		MB_InitializeIO(pCxRomPeripheral, uSlot4, uSlot5);
+	}
 
-	// Why isn't mockingboard here?
 #ifdef SUPPORT_CPM
 	ConfigureSoftcard(pCxRomPeripheral, 5, g_uZ80InSlot5);	// $C500 : Z80 card
 #endif
