@@ -33,6 +33,7 @@ bool DSZeroVoiceWritableBuffer(PVOICE Voice, char* pszDevName, DWORD dwBufferSiz
 enum eFADE {FADE_NONE, FADE_IN, FADE_OUT};
 void SoundCore_SetFade(eFADE FadeType);
 bool SoundCore_GetTimerState();
+void SoundCore_TweakVolumes();
 
 bool DSInit();
 void DSUninit();

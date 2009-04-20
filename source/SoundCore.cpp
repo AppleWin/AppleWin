@@ -421,6 +421,7 @@ void SoundCore_SetFade(eFADE FadeType)
 		{
 			// Note: Kludge for fading speaker if curr/last g_nAppMode is/was MODE_LOGO:
 			// . Bug in DirectSound? SpeakerVoice.lpDSBvoice->SetVolume() doesn't work without this!
+			// . See SoundCore_TweakVolumes() - could be this?
 			if((g_pVoices[i]->bIsSpeaker) && (g_nAppMode != MODE_LOGO) && (nLastMode != MODE_LOGO))
 			{
 				g_pVoices[i]->lpDSBvoice->GetVolume(&g_pVoices[i]->nFadeVolume);
@@ -450,6 +451,20 @@ void SoundCore_SetFade(eFADE FadeType)
 	}
 
 	nLastMode = g_nAppMode;
+}
+
+//-----------------------------------------------------------------------------
+
+// If AppleWin started by double-clicking a .dsk, the our window won't have focus when volumes are set (so gets ignored).
+// Subsequent setting (to the same volume) will get ignores, as DirectSound thinks that volume is already set.
+
+void SoundCore_TweakVolumes()
+{
+	for (UINT i=0; i<g_uNumVoices; i++)
+	{
+		g_pVoices[i]->lpDSBvoice->SetVolume(g_pVoices[i]->nVolume-1);
+		g_pVoices[i]->lpDSBvoice->SetVolume(g_pVoices[i]->nVolume);
+	}
 }
 
 //-----------------------------------------------------------------------------
