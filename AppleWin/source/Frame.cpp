@@ -711,6 +711,8 @@ LRESULT CALLBACK FrameWndProc (
         if (!g_bIsFullScreen)
           DrawButton((HDC)0,BTN_DRIVE1);
         SetForegroundWindow(window);
+		Sleep(500);	// Wait for SetForegroundWindow() to take affect (400ms seems OK, so use 500ms to be sure)
+		SoundCore_TweakVolumes();
         ProcessButtonClick(BTN_RUN);
       }
       else

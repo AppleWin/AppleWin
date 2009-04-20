@@ -435,9 +435,9 @@ static bool IsValidImageSize(DWORD uImageSize)
 
 	bool bValidSize = false;
 
-	if (uImageSize >= TRACKS_STANDARD*TRACK_DENIBBLIZED_SIZE)
+	if (uImageSize >= (TRACKS_STANDARD+1)*TRACK_DENIBBLIZED_SIZE)
 	{
-		// Is uImageSize == 140KB + n*4K?
+		// Is uImageSize == 140KB + n*4K?	(where n>=1)
 		bValidSize = (((uImageSize - TRACKS_STANDARD*TRACK_DENIBBLIZED_SIZE) % TRACK_DENIBBLIZED_SIZE) == 0);
 	}
 	else
