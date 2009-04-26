@@ -4,9 +4,9 @@
   <link rel="shortcut icon" href="applewin.ico">
   <title>Apple //e Emulator for Windows</title></head>
 <body alink="gold" background="background.gif" bgcolor="mediumpurple" link="orange" text="powderblue" vlink="plum">
-<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.14.2</font></u></font></p>
+<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.16.1</font></u></font></p>
 <p align="center"><font face="Tahoma"><img src="applewin.gif" title="" alt="Apple //e Emulator Logo" height="384" width="560"></font></p>
-<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.14.2.zip">Version 1.14.2</a><br>
+<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.16.1.zip">Version 1.16.1</a><br>
 <a href="#OldReleases">Download older releases</a><br>
 </font></p>
 
@@ -19,7 +19,94 @@ The SVN repository is located here: <a href="https://developer.berlios.de/projec
 </font>
 </p><p><font face="Tahoma">
 Latest AppleWin compiled html help: <a href="applewin.chm">AppleWin.chm</a>
-</font></p>
+<br>
+<font size="2">
+NB. If you have trouble reading the CHM:<br>
+- On Windows XP you can simply right-click on the CHM file, select "Properties", and click on the "Unblock" button.<br>
+- Click "Apply" and the content should be visible.
+</font></font></p>
+
+
+<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.16.1 - 21 Apr 2009</u></font></p>
+<font face="Tahoma">
+<li>Changes:</li>
+<ul>
+    <li>Ctrl-F2 now functions as CONTROL-RESET (same as Ctrl-Break)</li>
+    <li>Video Mode now shown in Window Title</li>
+    <li>50% Scan Lines (can use Shift+Ctrl+F9 to toggle)</li>
+    <ul>
+        <li>Added: Checkbox for "50% Scan lines" in the configuration tab, next to video mode</li>
+        <li>Supported by PrintScreen and Shift-PrintScreen</li>
+    </ul>
+    <li>Added command line "-noreg" to not register file extensions</li>
+    <li>Added support for up to 40 track (160KB) disk images</li>
+    <li>Debugger:</li>
+    <ul>
+        <li>Symbols Length raised from 13 to 31</li>
+        <li>Pressing the Reboot button (F2) with breakpoints active, keeps the debugger running</li>
+        <li>symsrc is now relocatable, i.e. symsrc load "filename" [,offset]
+        <ul>
+            <li>Changes the address where debugger symbols are bound to by the offset (if specified)</li>
+        </ul>
+        </li>
+        <li>Pressing Shift, Ctrl, or Alt, when viewing the current Apple output no longer kicks you back into the debugger.<br>
+        (Allows for Ctrl-Shift-F9, and Shift-F9 previewing.)</li>
+    </ul>
+</ul>
+<li>Fixes:</li>
+<ul>
+    <li>Fixed: Full screen drive LED status not showing up when floppy disks being accessed were set to read-only mode</li>
+    <li>Fixed FLASHing 'S' in AppleII+ mode!</li>
+    <li>Fixed flash rate for NTSC</li>
+    <li>Fixed maximum volume bug when doubling-clicking a .dsk image to execute with AppleWin</li>
+    <li>[Bug #14557] Loading serial port# from Registry (caused AppleWin to crash when booting Apple Pascal &amp; other weird crashes)</li>
+</ul>
+
+
+<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.16.0 (beta) - 1 Feb 2009</u></font></p>
+<font face="Tahoma">
+<li>Changes:</li>
+<ul>
+    <li>Support for Apple // Game Server via TCP (port 1977) : beta</li>
+    <li>For GPL reasons, switched the following modules:</li>
+    <ul>
+        <li>AY8910 (from MAME  to FUSE) : beta Mockingboard/Phasor</li>
+        <li>MC6821 (from MAME  to VICE) : beta Mouse card</li>
+        <li>Z80    (from Z80Em to VICE) : beta CP/M Softcard</li>
+    </ul>
+    <li>Printer support:</li>
+    <ul>
+        <li>Printer dump filename</li>
+        <li>Filter unprintable characters</li>
+        <li>Append to print-file</li>
+        <li>Terminate printing after n seconds of idle</li>
+        <li>Encoding conversion for Pravets</li>
+        <li>Dump to printer (CAUTION! Enabled via command line switch: -use-real-printer)</li>
+    </ul>
+    <li>Added Pravets 8M</li>
+</ul>
+<li>Fixes:</li>
+<ul>
+    <li>BugID-014557: Fix for loading serial port from Registry (caused AppleWin to crash when booting Apple Pascal)</li>
+    <li>Some floating bus bugs (fixes the Bulgarian game: "Walking in the town" & Annunciator read)</li>
+    <li>FLASH rate (now 3Hz, was 6Hz)</li>
+    <li>Fix for Willy Byte & MB support (strange 6522 behaviour!)</li>
+</ul>
+
+
+<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.15.0 (beta) - 24 Aug 2008</u></font></p>
+<font face="Tahoma">
+<li>Changes:</li>
+<ul>
+    <li>CP/M support (Microsoft CP/M SoftCard in slot-5)</li>
+    <ul>
+        <li>No save-state support</li>
+        <li>No Z80 debugging support</li>
+    </ul>
+    <li>PrintScrn key now saves screen shots</li>
+    <li>Added new video mode: "Monochrome - Authentic"</li>
+    <li>Debugger 2.6.0.6</li>
+</ul>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.14.2 - 23 Jun 2008</u></font></p>
@@ -302,6 +389,7 @@ find didn't appear to support it:<br>
 
 <p><font face="Tahoma"><font face="Tahoma"><u><a name="OldReleases"></a>Old releases:</u></font></font></p>
 <p><font face="Tahoma"><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.14.2-beta.zip">Version 1.14.2 (beta)</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.14.0-beta.zip">Version 1.14.0 (beta)</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.13.2.zip">Version 1.13.2</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.13.1.zip">Version 1.13.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">
@@ -315,11 +403,5 @@ find didn't appear to support it:<br>
 <hr>
 <font face="Tahoma"><a href="http://developer.berlios.de">
 <img src="http://developer.berlios.de/bslogo.php?group_id=6117&amp;type=1" alt="BerliOS Logo" border="0" height="32" width="124"></a>
-
-<a href="http://www.nvu.com" hreflang="en">
-<img src="http://www.nvu.com/made-with-Nvu-t.png" alt="Document made with Nvu" border="0"></a>
-<br>
-
-
 
 </font></body></html>
