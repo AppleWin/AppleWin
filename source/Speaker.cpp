@@ -642,7 +642,7 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 
 	DWORD dwDSLockedBufferSize0, dwDSLockedBufferSize1;
 	SHORT *pDSLockedBuffer0, *pDSLockedBuffer1;
-	bool bBufferError = false;
+	//bool bBufferError = false;
 
 	DWORD dwCurrentPlayCursor, dwCurrentWriteCursor;
 	HRESULT hr = SpeakerVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
