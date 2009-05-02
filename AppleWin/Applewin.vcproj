@@ -805,6 +805,10 @@
 				RelativePath=".\resource\ThunderClockPlus.rom"
 				>
 			</File>
+			<File
+				RelativePath=".\resource\winres.h"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath=".\source\Common.h"
