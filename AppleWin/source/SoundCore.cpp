@@ -517,17 +517,15 @@ bool DSInit()
 		return false;
 	}
 
-#if 0
 	DSCAPS DSCaps;
-    ZeroMemory(&DSCaps, sizeof(DSBCAPS));
-    DSCaps.dwSize = sizeof(DSBCAPS);
+    ZeroMemory(&DSCaps, sizeof(DSCAPS));
+    DSCaps.dwSize = sizeof(DSCAPS);
 	hr = g_lpDS->GetCaps(&DSCaps);
 	if(FAILED(hr))
 	{
-		DirectSound_ErrorText(hr);
-		return false;
+		if(g_fh) fprintf(g_fh, "GetCaps failed (%08X)\n",hr);
+		// Not fatal: so continue...
 	}
-#endif
 
 	g_bDSAvailable = true;
 
