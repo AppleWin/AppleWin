@@ -872,7 +872,16 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	}
 
 	//
-	
+
+	// Make APPLEWIN process higher priority
+	if ( SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) )
+	{
+		// Make main thread (for audio) higher priority
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+	}
+
+	//
+
 	do
 	{
 		// DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
