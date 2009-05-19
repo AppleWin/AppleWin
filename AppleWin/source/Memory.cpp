@@ -1146,7 +1146,8 @@ void MemInitialize()
 	}
 
 #ifdef SUPPORT_CPM
-	ConfigureSoftcard(pCxRomPeripheral, 5, g_uZ80InSlot5);	// $C500 : Z80 card
+	if (g_uZ80InSlot5)
+		ConfigureSoftcard(pCxRomPeripheral, 5, g_uZ80InSlot5);	// $C500 : Z80 card
 #endif
 
 	DiskLoadRom(pCxRomPeripheral, 6);				// $C600 : Disk][ f/w
