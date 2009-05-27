@@ -18,6 +18,32 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise
 
 
+1.16.1 - 28 May 2009
+--------------------
+Changes:
+. Ctrl-F2 now functions as CONTROL-RESET (same as Ctrl-Break)
+. Video Mode now shown in Window Title
+. 50% Scan Lines (can use Shift+Ctrl+F9 to toggle)
+  - Added: Checkbox for "50% Scan lines" in the configuration tab, next to video mode
+  - Supported by PrintScreen and Shift-PrintScreen
+. Added command line "-noreg" to not register file extensions
+. Added support for up to 40 track (160KB) disk images
+. Debugger:
+  - Symbols Length raised from 13 to 31
+  - Pressing the Reboot button (F2) with breakpoints active, keeps the debugger running
+  - symsrc is now relocatable, i.e. symsrc load "filename" [,offset]
+    + Changes the address where debugger symbols are bound to by the offset (if specified)
+  - Pressing Shift, Ctrl, or Alt, when viewing the current Apple output no longer kicks you back into the debugger.
+    (Allows for Ctrl-Shift-F9, and Shift-F9 previewing.)
+
+Fixes:
+. Full screen drive LED status not showing up when floppy disks being accessed were set to read-only mode
+. FLASHing 'S' in AppleII+ mode!
+. Flash rate for NTSC
+. Maximum volume bug when doubling-clicking a .dsk image to execute with AppleWin
+. [Bug #14557] Loading serial port# from Registry (caused AppleWin to crash when booting Apple Pascal & other weird crashes)
+
+
 1.16.0 - 1 Feb 2009 (beta)
 ---------------------------
 Changes:
@@ -42,8 +68,8 @@ Fixes:
 . Fix for Willy Byte & MB support (strange 6522 behaviour!)
 
 
-1.15.0.3 - 31 Aug 2008
-----------------------
+1.15.0.3 - 31 Aug 2008 (beta)
+-----------------------------
 Changes:
 . Remembers the last disk images used for Drive 1 & 2
   - Is updated when you insert or remove a disk
