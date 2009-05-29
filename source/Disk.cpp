@@ -59,7 +59,6 @@ static BYTE __stdcall DiskSetWriteMode (WORD pc, WORD addr, BYTE bWrite, BYTE d,
 
 	BOOL enhancedisk = 1;
 	string DiskPathFilename[];		// dynamic array of strings
-	UINT g_uNumTracksInImage = 0;
 	
 // Private ________________________________________________________________________________________
 
@@ -110,11 +109,11 @@ void Disk_LoadLastDiskImage( int iDrive )
 	char *pRegKey = (!iDrive)
 		? REGVALUE_PREF_LAST_DISK_1
 		: REGVALUE_PREF_LAST_DISK_2;
+
 	if( RegLoadString(TEXT(REG_PREFS),pRegKey,1,sFilePath,MAX_PATH) )
 	{
 		sFilePath[ MAX_PATH ] = 0;
 		DiskPathFilename[ iDrive ] = sFilePath;
-		const char *pFileName = DiskPathFilename[iDrive].c_str();
 
 #if _DEBUG
 //		MessageBox(NULL,pFileName,pRegKey,MB_OK);
@@ -122,7 +121,8 @@ void Disk_LoadLastDiskImage( int iDrive )
 
 		//	_tcscat(imagefilename,TEXT("MASTER.DSK")); // TODO: Should remember last disk by user
 		bSaveDiskImage = false;
-		DiskInsert(iDrive,pFileName,0,0);
+		// Pass in ptr to local copy of filepath, since RemoveDisk() sets DiskPathFilename = ""
+		DiskInsert(iDrive,sFilePath,0,0);
 		bSaveDiskImage = true;
 	}
 	//else MessageBox(NULL,"Reg Key/Value not found",pRegKey,MB_OK);
@@ -249,7 +249,7 @@ static void ReadTrack (int iDrive)
 
 	Disk_t *pFloppy = &g_aFloppyDisk[ iDrive ];
 
-	if (pFloppy->track >= (int)g_uNumTracksInImage)
+	if (pFloppy->track >= ImageGetNumTracks(pFloppy->imagehandle))
 	{
 		pFloppy->trackimagedata = 0;
 		return;
@@ -308,7 +308,7 @@ static void WriteTrack (int iDrive)
 {
 	Disk_t *pFloppy = &g_aFloppyDisk[ iDrive ];
 
-	if (pFloppy->track >= (int)g_uNumTracksInImage)
+	if (pFloppy->track >= ImageGetNumTracks(pFloppy->imagehandle))
 		return;
 
 	if (pFloppy->writeprotected)
@@ -382,7 +382,8 @@ static BYTE __stdcall DiskControlStepper (WORD, WORD address, BYTE, BYTE, ULONG)
   if (direction)
   {
     fptr->phase = MAX(0, MIN(79, fptr->phase + direction));
-    int newtrack = MIN((int)g_uNumTracksInImage-1, fptr->phase >> 1); // (round half tracks down)
+	const int nNumTracksInImage = ImageGetNumTracks(fptr->imagehandle);
+    int newtrack = MIN(nNumTracksInImage-1, fptr->phase >> 1); // (round half tracks down)
     LOG_DISK("newtrack %2X%s\r", newtrack, (fptr->phase & 1) ? ".5" : "");
     if (newtrack != fptr->track)
     {

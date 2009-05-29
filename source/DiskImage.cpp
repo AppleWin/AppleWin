@@ -45,7 +45,10 @@ typedef struct _imageinforec {
     DWORD      headersize;
     LPBYTE     header;
     BOOL       validtrack[TRACKS_MAX];
+    UINT       uNumTracks;
 } imageinforec, *imageinfoptr;
+
+static 	UINT	g_uNumTracksInImage = 0;	// Init'd by ImageOpen() & possibly updated by IsValidImageSize()
 
 typedef BOOL  (*boottype  )(imageinfoptr);
 typedef DWORD (*detecttype)(LPBYTE,DWORD);
@@ -745,7 +748,7 @@ void ImageClose (HIMAGE imagehandle){
   imageinfoptr ptr = (imageinfoptr)imagehandle;
   if (ptr->file != INVALID_HANDLE_VALUE)
     CloseHandle(ptr->file);
-  for (UINT track = 0; track < g_uNumTracksInImage; track++)
+  for (UINT track = 0; track < ptr->uNumTracks; track++)
     if (!ptr->validtrack[track]) {
       DeleteFile(ptr->filename);
       break;
@@ -833,7 +836,8 @@ int ImageOpen (LPCTSTR  imagefilename,
 
 	const DWORD UNKNOWN_FORMAT = 0xFFFFFFFF;
 	DWORD  format   = UNKNOWN_FORMAT;
-  
+	g_uNumTracksInImage = (size > 0) ? TRACKS_STANDARD : 0;	// Assume default # tracks
+
 	if (size > 0)
 	{
 		// MAP THE FILE INTO MEMORY FOR USE BY THE DETECTION FUNCTIONS
@@ -914,6 +918,7 @@ int ImageOpen (LPCTSTR  imagefilename,
 			((imageinfoptr)*hDiskImage_)->file           = file;
 			((imageinfoptr)*hDiskImage_)->offset         = pImage-view;
 			((imageinfoptr)*hDiskImage_)->writeprotected = *pWriteProtected_;
+			((imageinfoptr)*hDiskImage_)->uNumTracks     = g_uNumTracksInImage;
 
 			for (UINT track = 0; track < g_uNumTracksInImage; track++)
 		        ((imageinfoptr)*hDiskImage_)->validtrack[track] = (size > 0);
@@ -955,4 +960,11 @@ void ImageWriteTrack (HIMAGE imagehandle,
     ptr->validtrack[track] = 1;
   }
 }
- 
+
+//===========================================================================
+
+int ImageGetNumTracks(HIMAGE imagehandle)
+{
+	imageinfoptr ptr = (imageinfoptr)imagehandle;
+	return ptr ? ptr->uNumTracks : 0;
+}
