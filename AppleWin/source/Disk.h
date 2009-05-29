@@ -9,8 +9,7 @@
 #define	TRACKS_MAX		(TRACKS_STANDARD+TRACKS_EXTRA)
 
 extern BOOL enhancedisk;
-extern string DiskPathFilename[2];
-extern UINT g_uNumTracksInImage;
+extern string DiskPathFilename[DRIVES];
 
 void    DiskInitialize (); // DiskManagerStartup()
 void    DiskDestroy (); // no, doesn't "destroy" the disk image.  DiskManagerShutdown()

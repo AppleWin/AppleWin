@@ -874,6 +874,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	//
 
 	// Make APPLEWIN process higher priority
+	// . BUG: No disk in Drive-1, and boot Apple: Windows will start to crawl!
 	if ( SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) )
 	{
 		// Make main thread (for audio) higher priority
