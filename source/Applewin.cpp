@@ -100,6 +100,36 @@ ULONGLONG g_nPerfFreq = 0;
 
 //---------------------------------------------------------------------------
 
+static bool g_bPriorityNormal = true;
+
+// Make APPLEWIN process higher priority
+void SetPriorityAboveNormal()
+{
+	if (!g_bPriorityNormal)
+		return;
+
+	if ( SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) )
+	{
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+		g_bPriorityNormal = false;
+	}
+}
+
+// Make APPLEWIN process normal priority
+void SetPriorityNormal()
+{
+	if (g_bPriorityNormal)
+		return;
+
+	if ( SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS) )
+	{
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+		g_bPriorityNormal = true;
+	}
+}
+
+//---------------------------------------------------------------------------
+
 void ContinueExecution()
 {
 	static BOOL pageflipping    = 0; //?
@@ -131,12 +161,19 @@ void ContinueExecution()
 		SysClk_StopTimer();
 
 		g_nCpuCyclesFeedback = 0;	// For the case when this is a big -ve number
+
+		// Switch to normal priority so that APPLEWIN process doesn't hog machine!
+		//. EG: No disk in Drive-1, and boot Apple: Windows will start to crawl!
+		SetPriorityNormal();
 	}
 	else
 	{
 		// Don't call Spkr_Demute()
 		MB_Demute();
 		SysClk_StartTimerUsec(nExecutionPeriodUsec);
+
+		// Switch to higher priority, eg. for audio (BUG #015394)
+		SetPriorityAboveNormal();
 	}
 
 	//
@@ -869,16 +906,6 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	if(szImageName_drive2)
 	{
 		nError |= DoDiskInsert(1, szImageName_drive2);
-	}
-
-	//
-
-	// Make APPLEWIN process higher priority
-	// . BUG: No disk in Drive-1, and boot Apple: Windows will start to crawl!
-	if ( SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) )
-	{
-		// Make main thread (for audio) higher priority
-		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
 	}
 
 	//

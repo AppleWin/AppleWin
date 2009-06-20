@@ -42,7 +42,7 @@ bool  g_bShiftKey = false;
 bool  g_bCtrlKey  = false;
 bool  g_bAltKey   = false;
 
-bool  g_bCapsLock = true; //Caps lock key for Apple2 and Lat/Cyr lock for Pravets8
+static bool  g_bCapsLock = true; //Caps lock key for Apple2 and Lat/Cyr lock for Pravets8
 static bool  g_bP8CapsLock = true; //Caps lock key of Pravets 8A/C
 static int   lastvirtkey     = 0;	// Current PC keycode
 static BYTE  keycode         = 0;	// Current Apple keycode
