@@ -27,7 +27,7 @@ NB. If you have trouble reading the CHM:<br>
 </font></font></p>
 
 
-<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.16.1 - 21 Apr 2009</u></font></p>
+<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.16.1 - 20 Jun 2009</u></font></p>
 <font face="Tahoma">
 <li>Changes:</li>
 <ul>
@@ -60,6 +60,7 @@ NB. If you have trouble reading the CHM:<br>
     <li>Fixed flash rate for NTSC</li>
     <li>Fixed maximum volume bug when doubling-clicking a .dsk image to execute with AppleWin</li>
     <li>[Bug #14557] Loading serial port# from Registry (caused AppleWin to crash when booting Apple Pascal &amp; other weird crashes)</li>
+    <li>[Bug #15394] Audio under-run (set process priority to Above Normal when in non-Full Speed mode)</li>
 </ul>
 
 
