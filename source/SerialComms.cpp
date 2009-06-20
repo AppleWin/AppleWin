@@ -1054,6 +1054,8 @@ bool CSuperSerialCard::CommThInit()
 									0,				// dwCreationFlags : 0 = Run immediately
 									&dwThreadId);	// lpThreadId
 
+		SetThreadPriority(m_hCommThread, THREAD_PRIORITY_TIME_CRITICAL);
+
 		InitializeCriticalSection(&m_CriticalSection);
 	}
 

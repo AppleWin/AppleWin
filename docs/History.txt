@@ -18,7 +18,7 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise
 
 
-1.16.1 - 28 May 2009
+1.16.1 - 20 Jun 2009
 --------------------
 Changes:
 . Ctrl-F2 now functions as CONTROL-RESET (same as Ctrl-Break)
@@ -42,6 +42,7 @@ Fixes:
 . Flash rate for NTSC
 . Maximum volume bug when doubling-clicking a .dsk image to execute with AppleWin
 . [Bug #14557] Loading serial port# from Registry (caused AppleWin to crash when booting Apple Pascal & other weird crashes)
+. [Bug #15394] Audio under-run (set process priority to Above Normal when in non-Full Speed mode)
 
 
 1.16.0 - 1 Feb 2009 (beta)
