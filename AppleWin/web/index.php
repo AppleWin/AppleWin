@@ -6,7 +6,7 @@
 <body alink="gold" background="background.gif" bgcolor="mediumpurple" link="orange" text="powderblue" vlink="plum">
 <p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.16.1</font></u></font></p>
 <p align="center"><font face="Tahoma"><img src="applewin.gif" title="" alt="Apple //e Emulator Logo" height="384" width="560"></font></p>
-<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.16.1.zip">Version 1.16.1</a><br>
+<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.16.1.0.zip">Version 1.16.1</a><br>
 <a href="#OldReleases">Download older releases</a><br>
 </font></p>
 
@@ -21,13 +21,13 @@ The SVN repository is located here: <a href="https://developer.berlios.de/projec
 Latest AppleWin compiled html help: <a href="applewin.chm">AppleWin.chm</a>
 <br>
 <font size="2">
-NB. If you have trouble reading the CHM:<br>
+<strong>NB. If you have trouble reading the CHM:</strong><br>
 - On Windows XP you can simply right-click on the CHM file, select "Properties", and click on the "Unblock" button.<br>
 - Click "Apply" and the content should be visible.
 </font></font></p>
 
 
-<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.16.1 - 20 Jun 2009</u></font></p>
+<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.16.1 - 21 Jun 2009</u></font></p>
 <font face="Tahoma">
 <li>Changes:</li>
 <ul>
