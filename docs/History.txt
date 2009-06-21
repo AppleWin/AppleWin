@@ -18,7 +18,7 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise
 
 
-1.16.1 - 20 Jun 2009
+1.16.1 - 21 Jun 2009
 --------------------
 Changes:
 . Ctrl-F2 now functions as CONTROL-RESET (same as Ctrl-Break)
