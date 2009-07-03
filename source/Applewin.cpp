@@ -389,7 +389,7 @@ void EnterMessageLoop ()
 		{
 			if (g_nAppMode == MODE_DEBUG)
 				DebuggerUpdate();
-			else if (g_nAppMode == MODE_LOGO)
+			else if ((g_nAppMode == MODE_LOGO) || (g_nAppMode == MODE_PAUSED))
 				Sleep(100);		// Stop process hogging CPU
 		}
 	}
