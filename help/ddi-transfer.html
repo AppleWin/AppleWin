@@ -15,11 +15,9 @@
 Disk Images</h2>
 
 <hr size="4">
-<p style="font-weight: bold;">Serial Line
-Transfers:</p>
+<p style="font-weight: bold;">Serial Line Transfers:</p>
 
-<p>The most common method of
-transferring disk
+<p>The most common method of transferring disk
 images is through a serial line. To do this, you must connect
 your Apple to your PC with a serial line and null modem, then run
 one program on the Apple which reads data off the disk and sends
@@ -27,14 +25,36 @@ it out over the serial line, and another program on the PC which
 collects data from the serial line and saves it to a disk image
 file. This system can be difficult to set up initially, but once
 it is working it is very fast and convenient.</p>
+<p>
+Common programs for doing this work are ADT and ADTPro:</p>
+<ul>
+<li>Apple Disk Transfer (ADT) - <a target="_blank" href="http://adt.berlios.de">http://adt.berlios.de</a>
+ - runs natively on Windows, but is limited to transferring 5-1/4" disks.</li>
+<li>Apple Disk Transfer ProDOS (ADTPro) - <a target="_blank" href="http://adtpro.sourceforge.net/connectionsserial.html">http://adtpro.sourceforge.net/connectionsserial.html</a>
+ - requires Java, but is capable of transferring all disk types and sizes.</li>
+</ul>
 
-<p>There are a number of files on
-<a target="_blank" href="ftp://public.asimov.net/pub/apple_II/">ftp://public.asimov.net/pub/apple_II/</a>
-which contain programs and tips to help you transfer disks in
-this manner. One noteworthy program is Apple Disk Transfer
-(adt120.zip), which can simplify the setup process by
-automatically installing itself on your Apple through a serial
-line.</p>
+<p style="font-weight: bold;">Audio Transfers:</p>
+Apples with audio (cassette) jacks can transfer disk images
+via those ports through audio jacks on a PC.
+This method is considerably slower than using a serial line,
+but may be used if 
+the Apple in question lacks a serial port, for example.
+Common programs for doing this work are ADTPro and Arme Leute Apple Disk Transfer:</p>
+<ul>
+<li>Apple Disk Transfer ProDOS (ADTPro) - <a target="_blank" href="http://adtpro.sourceforge.net/connectionsaudio.html">http://adtpro.sourceforge.net/connectionsaudio.html</a>
+<li>Arme Leute Apple Disk Transfer (Poor Man's ADT) - <a target="_blank" href="http://seb.riot.org/appleII/aladt.sml">http://seb.riot.org/appleII/aladt.sml</a>
+</ul>
+
+
+<p style="font-weight: bold;">Ethernet Transfers:</p>
+Apples with an <a href="http://a2retrosystems.com/">A2RetroSystems</a> Uthernet
+card can transfer disk images via ADTPro:
+<ul>
+<li>Apple Disk Transfer ProDOS (ADTPro) - <a target="_blank" href="http://adtpro.sourceforge.net/configethernet.html">http://adtpro.sourceforge.net/configethernet.html</a>
+</ul>
+
+
 
 <p style="font-weight: bold;">Modem Transfers:</p>
 
@@ -54,7 +74,7 @@ modem to your PC.</li>
 
   <li>Run Nulib on the PC to
 uncompress the archive file. Nulib is available from
-    <a target="_blank" href="ftp://public.asimov.net/pub/apple_II/">ftp://public.asimov.net/pub/apple_II/</a>.</li>
+    <a target="_blank" href="ftp://public.asimov.net/pub/apple_II/utility/nulib">ftp://public.asimov.net/pub/apple_II/utility/nulib</a>.</li>
 
 </ol>
 
