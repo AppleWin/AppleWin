@@ -531,10 +531,9 @@
 // Memory		
 		, CMD_MEMORY_COMPARE
 
-		, _CMD_MEM_MINI_DUMP_HEX_1_1 // alias MD
-		, _CMD_MEM_MINI_DUMP_HEX_1_2 // alias MD = D
-		, CMD_MEM_MINI_DUMP_HEX_1
-		, CMD_MEM_MINI_DUMP_HEX_2  
+		, _CMD_MEM_MINI_DUMP_HEX_1_1 // Memory Dump
+		, CMD_MEM_MINI_DUMP_HEX_1 // Mini Memory Dump 1
+		, CMD_MEM_MINI_DUMP_HEX_2 // Mini Memory Dump 2
 		, _CMD_MEM_MINI_DUMP_HEX_1_3 // alias M1
 		, _CMD_MEM_MINI_DUMP_HEX_2_1 // alias M2
 
@@ -572,9 +571,13 @@
 // Symbols
 		, CMD_SYMBOLS_LOOKUP
 //		, CMD_SYMBOLS
-		, CMD_SYMBOLS_MAIN
-		, CMD_SYMBOLS_USER
-		, CMD_SYMBOLS_SRC
+		, CMD_SYMBOLS_ROM
+		, CMD_SYMBOLS_APPLESOFT
+		, CMD_SYMBOLS_ASSEMBLY
+		, CMD_SYMBOLS_USER_1
+		, CMD_SYMBOLS_USER_2
+		, CMD_SYMBOLS_SRC_1
+		, CMD_SYMBOLS_SRC_2
 //		, CMD_SYMBOLS_FIND
 //		, CMD_SYMBOLS_CLEAR
 		, CMD_SYMBOLS_INFO
@@ -789,11 +792,16 @@
 	Update_t CmdSymbolsList     (int nArgs);
 	Update_t CmdSymbolsLoad     (int nArgs);
 	Update_t CmdSymbolsInfo     (int nArgs);
-	Update_t CmdSymbolsMain     (int nArgs);
-	Update_t CmdSymbolsUser     (int nArgs);
 	Update_t CmdSymbolsSave     (int nArgs);
-	Update_t CmdSymbolsSource   (int nArgs);
-// View
+
+	Update_t CmdSymbolsCommand  (int nArgs);
+//	Update_t CmdSymbolsMain     (int nArgs);
+//	Update_t CmdSymbolsBasic    (int nArgs);
+//	Update_t CmdSymbolsUser     (int nArgs);
+//	Update_t CmdSymbolsAssembly (int nArgs);
+//	Update_t CmdSymbolsSource   (int nArgs);
+
+	// View
 	Update_t CmdViewOutput_Text4X (int nArgs);
 	Update_t CmdViewOutput_Text41 (int nArgs);
 	Update_t CmdViewOutput_Text42 (int nArgs);
@@ -1467,26 +1475,34 @@
 	};
 
 	// ****************************************
-	// WARNING: This is the simple enumeration.
+	// WARNING: This is the index (enumeration) to select which table
 	// See: g_aSymbols[]
 	// ****************************************
-	enum Symbols_e
+	enum SymbolTable_Index_e // Symbols_e -> SymbolTable_Index_e
 	{
 		SYMBOLS_MAIN,
-		SYMBOLS_USER,
-		SYMBOLS_SRC ,
-		NUM_SYMBOL_TABLES = 3
+		SYMBOLS_APPLESOFT,
+		SYMBOLS_ASSEMBLY,
+		SYMBOLS_USER_1,
+		SYMBOLS_USER_2,
+		SYMBOLS_SRC_1,
+		SYMBOLS_SRC_2,
+		NUM_SYMBOL_TABLES
 	};
 
 	// ****************************************
 	// WARNING: This is the bit-flags to select which table.
 	// See: CmdSymbolsListTable()
 	// ****************************************
-	enum SymbolTable_e
+	enum SymbolTable_Masks_e // SymbolTable_e -> 
 	{
-		SYMBOL_TABLE_MAIN = (1 << 0),
-		SYMBOL_TABLE_USER = (1 << 1),
-		SYMBOL_TABLE_SRC  = (1 << 2),
+		SYMBOL_TABLE_MAIN      = (1 << 0),
+		SYMBOL_TABLE_APPLESOFT = (1 << 1),
+		SYMBOL_TABLE_ASSEMBLY  = (1 << 2),
+		SYMBOL_TABLE_USER_1    = (1 << 3),
+		SYMBOL_TABLE_USER_2    = (1 << 4),
+		SYMBOL_TABLE_SRC_1     = (1 << 5),
+		SYMBOL_TABLE_SRC_2     = (1 << 6),
 	};
 
 	typedef map<WORD, string> SymbolTable_t;

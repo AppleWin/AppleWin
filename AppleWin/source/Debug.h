@@ -11,6 +11,7 @@ using namespace std;
 #include "Debugger_Assembler.h"
 #include "Debugger_Help.h"
 #include "Debugger_Display.h"
+#include "Debugger_Symbols.h"
 #include "Util_MemoryTextFile.h"
 
 // Globals __________________________________________________________________
@@ -155,7 +156,7 @@ using namespace std;
 // Symbol Table / Memory
 	bool FindAddressFromSymbol( LPCSTR pSymbol, WORD * pAddress_ = NULL, int * iTable_ = NULL );
 	WORD GetAddressFromSymbol (LPCTSTR symbol); // HACK: returns 0 if symbol not found
-	void SymbolUpdate( Symbols_e eSymbolTable, char *pSymbolName, WORD nAddrss, bool bRemoveSymbol, bool bUpdateSymbol );
+	void SymbolUpdate( SymbolTable_Index_e eSymbolTable, char *pSymbolName, WORD nAddrss, bool bRemoveSymbol, bool bUpdateSymbol );
 
 	LPCTSTR FindSymbolFromAddress (WORD nAdress, int * iTable_ = NULL );
 	LPCTSTR GetSymbol   (WORD nAddress, int nBytes);
