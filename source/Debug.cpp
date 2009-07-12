@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,0,8);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,1,19);
 
 
 // Public _________________________________________________________________________________________
@@ -124,7 +124,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// CPU (Main)
 		{TEXT(".")           , CmdCursorJumpPC      , CMD_CURSOR_JUMP_PC       , "Locate the cursor in the disasm window" }, // centered
 		{TEXT("=")           , CmdCursorSetPC       , CMD_CURSOR_SET_PC        , "Sets the PC to the current instruction" },
-		{TEXT("A")           , CmdAssemble          , CMD_ASSEMBLE             , "Assemble instructions"      },
+		{TEXT("AS")          , CmdAssemble          , CMD_ASSEMBLE             , "Assemble instructions"      },
 		{TEXT("BRK")         , CmdBreakInvalid      , CMD_BREAK_INVALID        , "Enter debugger on BRK or INVALID" },
 		{TEXT("BRKOP")       , CmdBreakOpcode       , CMD_BREAK_OPCODE         , "Enter debugger on opcode"   },
 		{TEXT("G")           , CmdGo                , CMD_GO                   , "Run [until PC = address]"   },
@@ -227,8 +227,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Memory
 		{TEXT("MC")          , CmdMemoryCompare     , CMD_MEMORY_COMPARE       },
 
-		{TEXT("D")           , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  , "Hex dump in the mini memory area 1" }, // FIXME: Must also work in DATA screen
-		{TEXT("MD")          , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // alias
+		{TEXT("MD")          , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  , "Hex dump in the mini memory area 1" }, // FIXME: Must also work in DATA screen
 		{TEXT("MD1")         , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  , "Hex dump in the mini memory area 1" },
 		{TEXT("MD2")         , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_2  , "Hex dump in the mini memory area 2" },
 		{TEXT("M1")          , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // alias
@@ -244,8 +243,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		{TEXT("MH2")         , CmdMemoryMiniDumpHigh, CMD_MEM_MINI_DUMP_TXT_HI_2, "Text (High) in mini memory dump area 2" },
 
 		{TEXT("ME")          , CmdMemoryEdit        , CMD_MEMORY_EDIT          }, // TODO: like Copy ][+ Sector Edit
-		{TEXT("E")           , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    , "Enter byte"                   },
-		{TEXT("EW")          , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    , "Enter word"                   },
+		{TEXT("MEB")         , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    , "Enter byte"                   },
+		{TEXT("MEW")         , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    , "Enter word"                   },
 		{TEXT("BLOAD")       , CmdMemoryLoad        , CMD_MEMORY_LOAD          , "Load a region of memory"      },
 		{TEXT("M")           , CmdMemoryMove        , CMD_MEMORY_MOVE          , "Memory move"                  },
 		{TEXT("BSAVE")       , CmdMemorySave        , CMD_MEMORY_SAVE          , "Save a region of memory"      },
@@ -254,7 +253,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		{TEXT("SA")          , CmdMemorySearchAscii,  CMD_MEMORY_SEARCH_ASCII  , "Search ASCII text"            },
 //		{TEXT("ST")          , CmdMemorySearchApple , CMD_MEMORY_SEARCH_APPLE  , "Search Apple text (hi-bit)"   },
 		{TEXT("SH")          , CmdMemorySearchHex   , CMD_MEMORY_SEARCH_HEX    , "Search memory for hex values" },
-		{TEXT("F")           , CmdMemoryFill        , CMD_MEMORY_FILL          , "Memory fill"                  },
+		{TEXT("MF")          , CmdMemoryFill        , CMD_MEMORY_FILL          , "Memory fill"                  },
 	// Output / Scripts
 		{TEXT("CALC")        , CmdOutputCalc        , CMD_OUTPUT_CALC          , "Display mini calc result"               },
 		{TEXT("ECHO")        , CmdOutputEcho        , CMD_OUTPUT_ECHO          , "Echo string to console"                 }, // or toggle command echoing"
@@ -267,9 +266,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Symbols
 		{TEXT("SYM")         , CmdSymbols           , CMD_SYMBOLS_LOOKUP       , "Lookup symbol or address, or define symbol" },
 
-		{TEXT("SYMMAIN")     , CmdSymbolsMain       , CMD_SYMBOLS_MAIN         , "Main symbol table lookup/menu" }, // CLEAR,LOAD,SAVE
-		{TEXT("SYMUSER")     , CmdSymbolsUser       , CMD_SYMBOLS_USER         , "User symbol table lookup/menu" }, // CLEAR,LOAD,SAVE
-		{TEXT("SYMSRC" )     , CmdSymbolsSource     , CMD_SYMBOLS_SRC          , "Source symbol table lookup/menu" }, // CLEAR,LOAD,SAVE
+		{TEXT("SYMMAIN")     , CmdSymbolsCommand    , CMD_SYMBOLS_ROM          , "Main/ROM symbol table lookup/menu" }, // CLEAR,LOAD,SAVE
+		{TEXT("SYMBASIC")    , CmdSymbolsCommand    , CMD_SYMBOLS_APPLESOFT    , "Applesoft symbol table lookup/menu" }, // CLEAR,LOAD,SAVE
+		{TEXT("SYMASM")      , CmdSymbolsCommand    , CMD_SYMBOLS_ASSEMBLY     , "Assembly symbol table lookup/menu" }, // CLEAR,LOAD,SAVE
+		{TEXT("SYMUSER")     , CmdSymbolsCommand    , CMD_SYMBOLS_USER_1       , "First user symbol table lookup/menu" }, // CLEAR,LOAD,SAVE
+		{TEXT("SYMUSER2")    , CmdSymbolsCommand    , CMD_SYMBOLS_USER_2       , "Second User symbol table lookup/menu" }, // CLEAR,LOAD,SAVE
+		{TEXT("SYMSRC")      , CmdSymbolsCommand    , CMD_SYMBOLS_SRC_1        , "First Source symbol table lookup/menu" }, // CLEAR,LOAD,SAVE
+		{TEXT("SYMSRC2")     , CmdSymbolsCommand    , CMD_SYMBOLS_SRC_2        , "Second Source symbol table lookup/menu" }, // CLEAR,LOAD,SAVE
 //		{TEXT("SYMCLEAR")    , CmdSymbolsClear      , CMD_SYMBOLS_CLEAR        }, // can't use SC = SetCarry
 		{TEXT("SYMINFO")     , CmdSymbolsInfo       , CMD_SYMBOLS_INFO         , "Display summary of symbols" },
 		{TEXT("SYMLIST")     , CmdSymbolsList       , CMD_SYMBOLS_LIST         , "Lookup symbol in main/user/src tables" }, // 'symbolname', can't use param '*' 
@@ -375,10 +378,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SV")          , CmdFlagSet           , CMD_FLAG_SET_V , "Clear Flag Overflow"            }, // 6
 		{TEXT("SN")          , CmdFlagSet           , CMD_FLAG_SET_N , "Clear Flag Negative"            }, // 7
 
-		{TEXT("EB" )         , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    },
-		{TEXT("E8" )         , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    },
-		{TEXT("E16")         , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    },
-		{TEXT("MF")          , CmdMemoryFill        , CMD_MEMORY_FILL          },
+		{TEXT("MEB")         , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    }, // changed from EB -- bugfix: EB:## ##
+		{TEXT("MEW")         , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    },
 		{TEXT("MM")          , CmdMemoryMove        , CMD_MEMORY_MOVE          },
 		{TEXT("MS")          , CmdMemorySearch      , CMD_MEMORY_SEARCH        }, // CmdMemorySearch
 		{TEXT("P0")          , CmdZeroPagePointer   , CMD_ZEROPAGE_POINTER_0   },
@@ -392,9 +393,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SYMBOLS")     , CmdSymbols           , CMD_SYMBOLS_LOOKUP       , "Return " },
 //		{TEXT("SYMBOLS1")    , CmdSymbolsInfo       , CMD_SYMBOLS_1            },
 //		{TEXT("SYMBOLS2")    , CmdSymbolsInfo       , CMD_SYMBOLS_2            },
-		{TEXT("SYM1" )       , CmdSymbolsInfo       , CMD_SYMBOLS_MAIN         },
-		{TEXT("SYM2" )       , CmdSymbolsInfo       , CMD_SYMBOLS_USER         },
-		{TEXT("SYM3" )       , CmdSymbolsInfo       , CMD_SYMBOLS_SRC          },
+
+		{TEXT("SYM0" )       , CmdSymbolsInfo       , CMD_SYMBOLS_ROM          },
+		{TEXT("SYM1" )       , CmdSymbolsInfo       , CMD_SYMBOLS_APPLESOFT    },
+		{TEXT("SYM2" )       , CmdSymbolsInfo       , CMD_SYMBOLS_ASSEMBLY     },
+		{TEXT("SYM3" )       , CmdSymbolsInfo       , CMD_SYMBOLS_USER_1       },
+		{TEXT("SYM4" )       , CmdSymbolsInfo       , CMD_SYMBOLS_USER_2       },
+		{TEXT("SYM5" )       , CmdSymbolsInfo       , CMD_SYMBOLS_SRC_1        },
+		{TEXT("SYM6" )       , CmdSymbolsInfo       , CMD_SYMBOLS_SRC_2        },
+
 		{TEXT("TEXT40")      , CmdViewOutput_Text4X , CMD_VIEW_TEXT4X          },
 		{TEXT("TEXT41")      , CmdViewOutput_Text41 , CMD_VIEW_TEXT41          },
 		{TEXT("TEXT42")      , CmdViewOutput_Text42 , CMD_VIEW_TEXT42          },
@@ -409,7 +416,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("EXITBENCH")   , CmdBenchmarkStop     , CMD_BENCHMARK            },
 		{TEXT("MDB")         , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
 		{TEXT("MDC")         , CmdUnassemble        , CMD_UNASSEMBLE           }, // MemoryDumpCode  // Did anyone actually use this??
-		{TEXT("MEB")         , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    }, // MemoryEnterByte // Did anyone actually use this??
+		{TEXT("ME8" )        , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    },
+		{TEXT("ME16")        , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    },
 		{TEXT("MEMORY")      , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
 };
 
@@ -769,23 +777,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	SourceAssembly_t g_aSourceDebug;
 
 
-// Symbols ________________________________________________________________________________________
-	char * g_aSymbolTableNames[ NUM_SYMBOL_TABLES ] =
-	{
-		"Main",
-		"User",
-		"Src" 
-	};
-
-	SymbolTable_t g_aSymbols[ NUM_SYMBOL_TABLES ];
-	int           g_nSymbolsLoaded = 0;  // on Last Load
-	bool          g_aConfigSymbolsDisplayed[ NUM_SYMBOL_TABLES ] =
-	{
-		true,
-		true,
-		true
-	};
-
 
 // Watches ________________________________________________________________________________________
 	int       g_nWatches = 0;
@@ -820,8 +811,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"AppleWinDebugger.cfg";
 #endif
 
-	char      g_sFileNameSymbolsMain[] = "APPLE2E.SYM";
-	char      g_sFileNameSymbolsUser[ MAX_PATH ] = "";
 	char      g_sFileNameTrace      [] = "Trace.txt";
 
 	bool      g_bBenchmarking = false;
@@ -877,18 +866,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Font
 	static	void _UpdateWindowFontHeights (int nFontHeight);
-
-// Symbols
-	Update_t _CmdSymbolsClear ( Symbols_e eSymbolTable );
-	Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables );
-	Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables );
-	Update_t _CmdSymbolsUpdate ( int nArgs );
-
-	bool _CmdSymbolList_Address2Symbol ( int nAddress   , int bSymbolTables );
-	bool _CmdSymbolList_Symbol2Address ( LPCTSTR pSymbol, int bSymbolTables );
-
-	// SymbolOffset
-	int ParseSymbolTable ( TCHAR *pFileName, Symbols_e eWhichTableToLoad, int nSymbolOffset = 0 );
 
 // Source Level Debugging
 	static	bool BufferAssemblyListing ( char * pFileName );
@@ -2566,7 +2543,7 @@ Update_t _CmdAssemble( WORD nAddress, int iArg, int nArgs )
 
 		// Symbol
 		char *pSymbolName = g_aArgs[ iArg ].sArg; // pArg->sArg;
-		SymbolUpdate( SYMBOLS_SRC, pSymbolName, nAddress, false, true ); // bool bRemoveSymbol, bool bUpdateSymbol )
+		SymbolUpdate( SYMBOLS_ASSEMBLY, pSymbolName, nAddress, false, true ); // bool bRemoveSymbol, bool bUpdateSymbol )
 
 		iArg++;
 	}	
@@ -4541,7 +4518,7 @@ Update_t CmdMemoryEdit (int nArgs)
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
-
+// MEB addr 8_bit_value
 //===========================================================================
 Update_t CmdMemoryEnterByte (int nArgs)
 {
@@ -4562,7 +4539,7 @@ Update_t CmdMemoryEnterByte (int nArgs)
 	return UPDATE_ALL;
 }
 
-
+// MEW addr 16-bit_vaue
 //===========================================================================
 Update_t CmdMemoryEnterWord (int nArgs)
 {
@@ -5913,7 +5890,7 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 					{
 						char *pAddressEnd;
 						nAddress = (DWORD) strtol( pAddress, &pAddressEnd, 16 );
-						g_aSymbols[SYMBOLS_SRC][ (WORD) nAddress] = sName;
+						g_aSymbols[ SYMBOLS_SRC_2 ][ (WORD) nAddress] = sName;
 						g_nSourceAssemblySymbols++;
 					}
 				}
@@ -6028,788 +6005,6 @@ Update_t CmdStackPop (int nArgs)
 
 //===========================================================================
 Update_t CmdStackPopPseudo (int nArgs)
-{
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-// Symbols ________________________________________________________________________________________
-
-
-//===========================================================================
-Update_t CmdSymbols (int nArgs)
-{
-	if (! nArgs)
-		return CmdSymbolsInfo( 0 );
-
-	Update_t iUpdate = _CmdSymbolsUpdate( nArgs);
-	if (iUpdate != UPDATE_NOTHING)
-		return iUpdate;
-
-//	return CmdSymbolsList( nArgs );
-	int bSymbolTables = SYMBOL_TABLE_MAIN | SYMBOL_TABLE_USER | SYMBOL_TABLE_SRC;
-	return _CmdSymbolsListTables( nArgs, bSymbolTables );
-}
-
-//===========================================================================
-Update_t CmdSymbolsClear (int nArgs)
-{
-	Symbols_e eSymbolsTable = SYMBOLS_USER;	
-	_CmdSymbolsClear( eSymbolsTable );
-	return (UPDATE_DISASM | UPDATE_SYMBOLS);
-}
-
-//===========================================================================
-Update_t CmdSymbolsInfo (int nArgs)
-{
-	char sText[ CONSOLE_WIDTH ];
-
-	bool bDisplayMain = false;
-	bool bDisplayUser = false;
-	bool bDisplaySrc  = false;
-
-	if (! nArgs)
-	{
-		bDisplayMain = true;
-		bDisplayUser = true;
-		bDisplaySrc  = true;
-	}
-	else
-	if (CMD_SYMBOLS_MAIN == g_iCommand)
-		bDisplayMain = true;
-	else
-	if (CMD_SYMBOLS_USER == g_iCommand)
-		bDisplayUser = true;
-	else
-	if (CMD_SYMBOLS_SRC == g_iCommand)
-		bDisplaySrc = true;
-
-	int nSymbolsMain = g_aSymbols[SYMBOLS_MAIN].size();
-	int nSymbolsUser = g_aSymbols[SYMBOLS_USER].size();
-	int nSymbolsSrc  = g_aSymbols[SYMBOLS_SRC ].size();
-
-	if (bDisplayMain && bDisplayUser && bDisplaySrc)
-	{
-		sprintf( sText, "  Symbols  Main: %s%d%s  User: %s%d%s   Source: %s%d%s"
-			, CHC_NUM_DEC
-			, nSymbolsMain
-			, CHC_DEFAULT
-			, CHC_NUM_DEC
-			, nSymbolsUser
-			, CHC_DEFAULT
-			, CHC_NUM_DEC
-			, nSymbolsSrc
-			, CHC_DEFAULT
-		 );
-		ConsolePrint( sText );
-	}
-	else
-	if (bDisplayMain)
-	{
-		sprintf( sText, "  Main symbols: %s%d%s"
-			, CHC_NUM_DEC
-			, nSymbolsMain
-			, CHC_DEFAULT
-		);
-		ConsolePrint( sText );
-	}
-	else
-	if (bDisplayUser)
-	{
-		sprintf( sText, "  User symbols: %s%d%s"
-			, CHC_NUM_DEC
-			, nSymbolsUser
-			, CHC_DEFAULT
-		);
-		ConsolePrint( sText );
-	}
-	else
-	if (bDisplaySrc)
-	{
-		sprintf( sText, "  Source symbols: %s%d%s"
-			, CHC_NUM_DEC
-			, nSymbolsSrc
-			, CHC_DEFAULT
-		);
-		ConsolePrint( sText );
-	}
-	
-	if (bDisplayMain || bDisplayUser || bDisplaySrc)
-		return ConsoleUpdate();
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-void _CmdPrintSymbol( LPCTSTR pSymbol, WORD nAddress, int iTable )
-{
-	char   sText[ CONSOLE_WIDTH ];
-	sprintf( sText, "  %s$%s%04X%s (%s%s%s) %s%s"
-		, CHC_ARG_SEP
-		, CHC_ADDRESS
-		, nAddress
-		, CHC_DEFAULT
-		, CHC_STRING
-		, g_aSymbolTableNames[ iTable ]
-		, CHC_DEFAULT
-		, CHC_SYMBOL
-		, pSymbol );
-	// ConsoleBufferPush( sText );
-	ConsolePrint( sText );
-}
-
-
-
-//=========================================================================== */
-bool _FindSymbolTable( int bSymbolTables, int iTable )
-{
-	// iTable is enumeration
-	// bSymbolTables is bit-flags of enabled tables to search
-
-	if (bSymbolTables & SYMBOL_TABLE_MAIN)
-		if (iTable == SYMBOLS_MAIN)
-			return true;
-
-	if (bSymbolTables & SYMBOL_TABLE_USER)
-		if (iTable == SYMBOLS_USER)
-			return true;
-
-	if (bSymbolTables & SYMBOL_TABLE_SRC )
-		if (iTable == SYMBOLS_SRC)
-			return true;
-
-	return false;
-}
-
-
-//=========================================================================== */
-int _GetSymbolTableFromFlag( int bSymbolTables )
-{
-	int iTable = NUM_SYMBOL_TABLES;
-	
-	if (bSymbolTables & SYMBOL_TABLE_MAIN)
-		iTable = SYMBOLS_MAIN;
-	else
-	if (bSymbolTables & SYMBOL_TABLE_USER)
-		iTable = SYMBOLS_USER;
-	else
-	if (bSymbolTables & SYMBOL_TABLE_SRC )
-		iTable = SYMBOLS_SRC;
-
-	return iTable;
-}
-
-
-/**
-	@param bSymbolTables Bit Flags of which symbol tables to search
-//=========================================================================== */
-bool _CmdSymbolList_Address2Symbol( int nAddress, int bSymbolTables )
-{
-	int  iTable;
-	LPCTSTR pSymbol = FindSymbolFromAddress( nAddress, &iTable );
-
-	if (pSymbol)
-	{				
-		if (_FindSymbolTable( bSymbolTables, iTable ))
-		{
-			_CmdPrintSymbol( pSymbol, nAddress, iTable );
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool _CmdSymbolList_Symbol2Address( LPCTSTR pSymbol, int bSymbolTables )
-{
-	int  iTable;
-	WORD nAddress;
-	bool bFoundSymbol = FindAddressFromSymbol( pSymbol, &nAddress, &iTable );
-	if (bFoundSymbol)
-	{
-		if (_FindSymbolTable( bSymbolTables, iTable ))
-		{
-			_CmdPrintSymbol( pSymbol, nAddress, iTable );
-		}
-	}
-	return bFoundSymbol;
-}
-
-
-//===========================================================================
-bool String2Address( LPCTSTR pText, WORD & nAddress_ )
-{
-	TCHAR sHexApple[ CONSOLE_WIDTH ];
-
-	if (pText[0] == '$')
-	{
-		if (!TextIsHexString( pText+1))
-			return false;
-
-		_tcscpy( sHexApple, "0x" );
-		_tcsncpy( sHexApple+2, pText+1, MAX_SYMBOLS_LEN - 3 );
-		pText = sHexApple;
-	}
-
-	if (pText[0] == TEXT('0'))
-	{
-		if ((pText[1] == TEXT('X')) || pText[1] == TEXT('x'))
-		{
-			if (!TextIsHexString( pText+2))
-				return false;
-
-			TCHAR *pEnd;
-			nAddress_ = (WORD) _tcstol( pText, &pEnd, 16 );
-			return true;
-		}
-		if (TextIsHexString( pText ))
-		{
-			TCHAR *pEnd;
-			nAddress_ = (WORD) _tcstol( pText, &pEnd, 16 );
-			return true;
-		}
-	}
-
-	return false;
-}		
-
-
-// LIST is normally an implicit "LIST *", but due to the numbers of symbols
-// only look up symbols the user specifies
-//===========================================================================
-Update_t CmdSymbolsList (int nArgs )
-{
-	int bSymbolTables = SYMBOL_TABLE_MAIN | SYMBOL_TABLE_USER | SYMBOL_TABLE_SRC;
-	return _CmdSymbolsListTables( nArgs, bSymbolTables );
-}
-
-
-//===========================================================================
-Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables)
-{
-	if (! nArgs)
-	{
-		return Help_Arg_1( CMD_SYMBOLS_LIST );
-	}
-
-	/*
-		Test Cases
-
-		SYM 0 RESET FA6F $FA59
-			$0000 LOC0
-			$FA6F RESET
-			$FA6F INITAN
-			$FA59 OLDBRK
-		SYM B
-		
-		SYMBOL B = $2000
-		SYM B
-	*/
-		
-	TCHAR sText[ CONSOLE_WIDTH ];
-
-	for( int iArgs = 1; iArgs <= nArgs; iArgs++ )
-	{
-		WORD nAddress = g_aArgs[iArgs].nValue;
-		LPCTSTR pSymbol = g_aArgs[iArgs].sArg;
-		if (nAddress)
-		{	// Have address, do symbol lookup first
-			if (! _CmdSymbolList_Symbol2Address( pSymbol, bSymbolTables ))
-			{
-				// nope, ok, try as address
-				if (! _CmdSymbolList_Address2Symbol( nAddress, bSymbolTables))
-				{
-					wsprintf( sText, TEXT(" Address not found: %04X" ), nAddress );
-					ConsoleBufferPush( sText );
-				}
-			}
-		}
-		else
-		{	// Have symbol, do address lookup
-			if (! _CmdSymbolList_Symbol2Address( pSymbol, bSymbolTables ))
-			{	// nope, ok, try as address
-				if (String2Address( pSymbol, nAddress ))
-				{
-					if (! _CmdSymbolList_Address2Symbol( nAddress, bSymbolTables ))
-					{
-						wsprintf( sText, TEXT(" Symbol not found: %s"), pSymbol );
-						ConsoleBufferPush( sText );
-					}
-				}
-				else
-				{
-					wsprintf( sText, TEXT(" Symbol not found: %s"), pSymbol );
-					ConsoleBufferPush( sText );
-				}
-			}
-		}
-	}
-	return ConsoleUpdate();
-}
-
-
-void Print_Current_Path()
-{
-	ConsoleDisplayError( g_sProgramDir );
-}
-
-//===========================================================================
-int ParseSymbolTable( TCHAR *pFileName, Symbols_e eWhichTableToLoad, int nSymbolOffset )
-{
-	int nSymbolsLoaded = 0;
-
-	if (! pFileName)
-		return nSymbolsLoaded;
-
-//#if _UNICODE
-//	TCHAR sFormat1[ MAX_SYMBOLS_LEN ];
-//	TCHAR sFormat2[ MAX_SYMBOLS_LEN ];
-//	wsprintf( sFormat1, "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %13s"
-//	wsprintf( sFormat2, "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
-// ascii
-	char sFormat1[ MAX_SYMBOLS_LEN ];
-	char sFormat2[ MAX_SYMBOLS_LEN ];
-	sprintf( sFormat1, "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %13s"
-	sprintf( sFormat2, "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
-
-	FILE *hFile = fopen(pFileName,"rt");
-
-	if( !hFile )
-	{
-		ConsoleDisplayError( "Symbol File not found:" );
-		Print_Current_Path();
-		nSymbolsLoaded = -1; // HACK: ERROR: FILE NOT EXIST
-	}
-
-	while(hFile && !feof(hFile))
-	{
-		// Support 2 types of symbols files:
-		// 1) AppleWin:
-		//    . 0000 SYMBOL
-		//    . FFFF SYMBOL
-		// 2) ACME:
-		//    . SYMBOL  =$0000; Comment
-		//    . SYMBOL  =$FFFF; Comment
-		//
-		DWORD nAddress = _6502_MEM_END + 1; // default to invalid address
-		char  sName[ MAX_SYMBOLS_LEN+1 ]  = "";
-
-		const int MAX_LINE = 256;
-		char  szLine[ MAX_LINE ];
-		fgets(szLine, MAX_LINE-1, hFile);	// Get next line
-
-		if(strstr(szLine, "$") == NULL)
-		{
-			sscanf(szLine, sFormat1, &nAddress, sName);
-		}
-		else
-		{
-			char* p = strstr(szLine, "=");	// Optional
-			if(p) *p = ' ';
-			p = strstr(szLine, "$");
-			if(p) *p = ' ';
-			p = strstr(szLine, ";");		// Optional
-			if(p) *p = 0;
-			p = strstr(szLine, " ");		// 1st space between name & value
-			int nLen = p - szLine;
-			if (nLen > MAX_SYMBOLS_LEN)
-			{
-				memset(&szLine[MAX_SYMBOLS_LEN], ' ', nLen-MAX_SYMBOLS_LEN);	// sscanf fails for nAddress if string too long
-			}
-			sscanf(szLine, sFormat2, sName, &nAddress);
-		}
-
-		// SymbolOffset
-		nAddress += nSymbolOffset;
-
-		if( (nAddress > _6502_MEM_END) || (sName[0] == 0) )
-			continue;
-
-		g_aSymbols[ eWhichTableToLoad ] [ (WORD) nAddress ] = sName;
-		nSymbolsLoaded++;
-	}
-
-	if (hFile)
-	{
-		fclose(hFile);
-	}
-
-	return nSymbolsLoaded;
-}
-
-
-//===========================================================================
-Update_t CmdSymbolsLoad (int nArgs)
-{
-	TCHAR sFileName[MAX_PATH];
-	_tcscpy(sFileName,g_sProgramDir);
-
-	int iWhichTable = (g_iCommand - CMD_SYMBOLS_MAIN);
-	if ((iWhichTable < 0) || (iWhichTable >= NUM_SYMBOL_TABLES))
-	{
-		wsprintf( sFileName, "Only %d symbol tables supported!", NUM_SYMBOL_TABLES );
-		return ConsoleDisplayError( sFileName );
-	}
-
-	int nSymbols = 0;
-
-	if (! nArgs)
-	{
-		// Default to main table
-		if (g_iCommand == CMD_SYMBOLS_MAIN)
-			_tcscat(sFileName, g_sFileNameSymbolsMain );
-		else
-		{
-			if (! _tcslen( g_sFileNameSymbolsUser ))
-			{
-				return ConsoleDisplayError(TEXT("No user symbol file to reload."));
-			}
-			// load user symbols
-			_tcscat( sFileName, g_sFileNameSymbolsUser );
-		}
-
-		nSymbols = ParseSymbolTable( sFileName, (Symbols_e) iWhichTable );
-	}
-
-	int iArg = 1;
-	if (iArg <= nArgs)
-	{
-		TCHAR *pFileName = NULL;
-		
-		if( g_aArgs[ iArg ].bType & TYPE_QUOTED_2 )
-		{
-			pFileName = g_aArgs[ iArg ].sArg;
-
-			_tcscpy(sFileName,g_sProgramDir);
-			_tcscat(sFileName, pFileName);
-
-			// Remember File Name of last symbols loaded
-			_tcscpy( g_sFileNameSymbolsUser, pFileName );
-		}
-
-		// SymbolOffset
-		// sym load "filename" [,symbol_offset]
-		int nOffsetAddr = 0;
-
-		iArg++;
-		if( iArg <= nArgs)
-		{
-			if (g_aArgs[ iArg ].eToken == TOKEN_COMMA)
-			{
-				iArg++;
-				if( iArg <= nArgs )
-				{
-					nOffsetAddr = g_aArgs[ iArg ].nValue;
-					if( (nOffsetAddr < _6502_MEM_BEGIN) || (nOffsetAddr > _6502_MEM_END) )
-					{
-						nOffsetAddr = 0;
-					}
-				}
-			}
-		}
-
-		if( pFileName )
-		{
-			nSymbols = ParseSymbolTable( sFileName, (Symbols_e) iWhichTable, nOffsetAddr );
-		}
-	}
-
-	if( nSymbols > 0 )
-	{
-		g_nSymbolsLoaded = nSymbols;
-	}
-
-	Update_t bUpdateDisplay = UPDATE_DISASM;
-	bUpdateDisplay |= (nSymbols > 0) ? UPDATE_SYMBOLS : 0;
-
-	return bUpdateDisplay;
-}
-
-//===========================================================================
-bool FindAddressFromSymbol ( LPCTSTR pSymbol, WORD * pAddress_, int * iTable_ )
-{
-	// Bugfix/User feature: User symbols should be searched first
-	for (int iTable = NUM_SYMBOL_TABLES; iTable-- > 0; )
-	{
-		if (! g_aSymbols[iTable].size())
-			continue;
-
-//		map<WORD, string>::iterator iSymbol = g_aSymbols[iTable].begin();
-		SymbolTable_t :: iterator  iSymbol = g_aSymbols[iTable].begin();
-		while (iSymbol != g_aSymbols[iTable].end())
-		{
-			if (!_tcsicmp( iSymbol->second.c_str(), pSymbol))
-			{
-				if (pAddress_)
-				{
-					*pAddress_ = iSymbol->first;
-				}
-				if (iTable_)
-				{
-					*iTable_ = iTable;
-				}
-				return true;
-			}
-			iSymbol++;
-		}
-	}
-	return false;
-}
-
-//===========================================================================
-LPCTSTR FindSymbolFromAddress (WORD nAddress, int * iTable_ )
-{
-	// Bugfix/User feature: User symbols should be searched first
-	int iTable = NUM_SYMBOL_TABLES;
-	while (iTable-- > 0)
-	{
-		if (g_aSymbols[iTable].size())
-		{
-			map<WORD, string>::iterator iSymbols = g_aSymbols[iTable].find(nAddress);
-			if(g_aSymbols[iTable].find(nAddress) != g_aSymbols[iTable].end())
-			{
-				if (iTable_)
-				{
-					*iTable_ = iTable;
-				}
-				return iSymbols->second.c_str();
-			}
-		}
-	}	
-	return NULL;	
-}
-
-
-//===========================================================================
-WORD GetAddressFromSymbol (LPCTSTR pSymbol)
-{
-	WORD nAddress;
-	bool bFoundSymbol = FindAddressFromSymbol( pSymbol, & nAddress );
-	if (! bFoundSymbol)
-	{
-		nAddress = 0;
-	}
-	return nAddress;
-}
-
-
-//===========================================================================
-Update_t _CmdSymbolsClear( Symbols_e eSymbolTable )
-{
-	g_aSymbols[ eSymbolTable ].clear();
-	
-	return UPDATE_SYMBOLS;
-}
-
-
-//===========================================================================
-void SymbolUpdate( Symbols_e eSymbolTable, char *pSymbolName, WORD nAddress, bool bRemoveSymbol, bool bUpdateSymbol )
-{
-	if (bRemoveSymbol)
-		pSymbolName = g_aArgs[2].sArg;
-
-	if (_tcslen( pSymbolName ) < MAX_SYMBOLS_LEN)
-	{
-		WORD nAddressPrev;
-		int  iTable;
-		bool bExists = FindAddressFromSymbol( pSymbolName, &nAddressPrev, &iTable );
-
-		if (bExists)
-		{
-			if (iTable == eSymbolTable)
-			{
-				if (bRemoveSymbol)
-				{
-					ConsoleBufferPush( TEXT(" Removing symbol." ) );
-				}
-
-				g_aSymbols[ eSymbolTable ].erase( nAddressPrev );
-
-				if (bUpdateSymbol)
-				{
-					ConsoleBufferPush( TEXT(" Updating symbol to new address." ) );
-				}
-			}
-		}					
-		else
-		{
-			if (bRemoveSymbol)
-			{
-				ConsoleBufferPush( TEXT(" Symbol not in table." ) );
-			}
-		}
-
-		if (bUpdateSymbol)
-		{
-#if _DEBUG
-			LPCTSTR pSymbol = FindSymbolFromAddress( nAddress, &iTable );
-			{
-				// Found another symbol for this address.  Harmless.
-				// TODO: Probably should check if same name?
-			}
-#endif
-			g_aSymbols[ eSymbolTable ][ nAddress ] = pSymbolName;
-		}
-	}
-}
-
-
-//===========================================================================
-Update_t _CmdSymbolsUpdate( int nArgs )
-{
-	bool bRemoveSymbol = false;
-	bool bUpdateSymbol = false;
-
-	if ((nArgs == 2) && (g_aArgs[ 1 ].eToken == TOKEN_EXCLAMATION))
-		bRemoveSymbol = true;
-
-	if ((nArgs == 3) && (g_aArgs[ 2 ].eToken == TOKEN_EQUAL      ))
-		bUpdateSymbol = true;
-
-	if (bRemoveSymbol || bUpdateSymbol)
-	{
-		TCHAR *pSymbolName = g_aArgs[1].sArg;
-		WORD   nAddress    = g_aArgs[3].nValue;
-
-		SymbolUpdate( SYMBOLS_USER, pSymbolName, nAddress, bRemoveSymbol, bUpdateSymbol );
-		return ConsoleUpdate();
-	}
-
-	return UPDATE_NOTHING;
-}
-
-
-//===========================================================================
-Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
-{
-	if (! nArgs)
-	{
-		return Help_Arg_1( g_iCommand );
-	}
-
-	Update_t iUpdate = _CmdSymbolsUpdate( nArgs );
-	if (iUpdate != UPDATE_NOTHING)
-		return iUpdate;
-
-	TCHAR sText[ CONSOLE_WIDTH ];
-
-	int iArg = 0;
-	while (iArg++ <= nArgs)
-	{
-		int iParam;
-		int nParams = FindParam( g_aArgs[iArg].sArg, MATCH_EXACT, iParam ); // MATCH_FUZZY
-		if (nParams)
-		{
-			if (iParam == PARAM_CLEAR)
-			{
-				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
-				if (iTable != NUM_SYMBOL_TABLES)
-				{
-					Update_t iUpdate = _CmdSymbolsClear( (Symbols_e) iTable );
-					wsprintf( sText, TEXT(" Cleared symbol table: %s"),
-						g_aSymbolTableNames[ iTable ]
-					 );
-					ConsoleBufferPush( sText );
-					iUpdate |= ConsoleUpdate();
-					return iUpdate;
-				}
-				else
-				{
-					ConsoleBufferPush( TEXT(" Error: Unknown Symbol Table Type") );
-					return ConsoleUpdate();
-				}
-//				if (bSymbolTable & SYMBOL_TABLE_MAIN)
-//					return _CmdSymbolsClear( SYMBOLS_MAIN );
-//				else
-//				if (bSymbolsTable & SYMBOL_TABLE_USER)
-//					return _CmdSymbolsClear( SYMBOLS_USER );
-//				else
-					// Shouldn't have multiple symbol tables selected
-//					nArgs = _Arg_1( eSymbolsTable );
-			}
-			else
-			if (iParam == PARAM_LOAD)
-			{
-				nArgs = _Arg_Shift( iArg, nArgs);
-				Update_t bUpdate = CmdSymbolsLoad( nArgs );
-
-				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
-				if (iTable != NUM_SYMBOL_TABLES)
-				{
-					if( bUpdate & UPDATE_SYMBOLS )
-					{
-						wsprintf( sText, "  Symbol Table: %s, loaded symbols: %d",
-						g_aSymbolTableNames[ iTable ], g_nSymbolsLoaded );
-						ConsoleBufferPush( sText );
-					}
-				}
-				else
-				{
-					ConsoleBufferPush( TEXT(" Error: Unknown Symbol Table Type") );
-				}
-				return ConsoleUpdate();
-			}
-			else
-			if (iParam == PARAM_SAVE)
-			{
-				nArgs = _Arg_Shift( iArg, nArgs);
-				return CmdSymbolsSave( nArgs );
-			}
-		}
-		else
-		{
-			return _CmdSymbolsListTables( nArgs, bSymbolTables );
-		}
-
-	}
-
-	return ConsoleUpdate();
-}
-
-//===========================================================================
-Update_t CmdSymbolsMain (int nArgs)
-{
-	if (! nArgs)
-	{
-		return CmdSymbolsInfo( nArgs );
-	}
-
-	return _CmdSymbolsCommon( nArgs, SYMBOL_TABLE_MAIN ); // SYMBOLS_MAIN );
-}
-
-
-//===========================================================================
-Update_t CmdSymbolsUser (int nArgs)
-{
-	if (! nArgs)
-	{
-		return CmdSymbolsInfo( nArgs );
-	}
-
-	return _CmdSymbolsCommon( nArgs, SYMBOL_TABLE_USER ); // SYMBOLS_USER );
-}
-
-//===========================================================================
-Update_t CmdSymbolsSource (int nArgs)
-{
-	if (! nArgs)
-	{
-		return CmdSymbolsInfo( nArgs );
-	}
-
-	return _CmdSymbolsCommon( nArgs, SYMBOL_TABLE_SRC ); // SYMBOLS_SRC );
-}
-
-//===========================================================================
-LPCTSTR GetSymbol (WORD nAddress, int nBytes)
-{
-	LPCSTR pSymbol = FindSymbolFromAddress( nAddress );
-	if (pSymbol)
-		return pSymbol;
-
-	return FormatAddress( nAddress, nBytes );
-}
-
-//===========================================================================
-Update_t CmdSymbolsSave (int nArgs)
 {
 	return UPDATE_CONSOLE_DISPLAY;
 }
@@ -7898,6 +7093,8 @@ Update_t ExecuteCommand (int nArgs)
 					nFound = 1;
 				}
 
+				// #<#.#M
+
 				// TODO: display memory at address
 				// addr1 [addr2] -> display byte at address
 				// MDB memory display byte (is deprecated, so can be re-used)
@@ -8529,7 +7726,7 @@ void DebugDestroy ()
 
 	for( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
 	{
-		_CmdSymbolsClear( (Symbols_e) iTable );
+		_CmdSymbolsClear( (SymbolTable_Index_e) iTable );
 	}
 
 	SelectObject( g_hFrameDC, GetStockObject(NULL_BRUSH) );
@@ -8771,8 +7968,20 @@ void DebugInitialize ()
 	ZeroMemory( g_aWatches         , MAX_WATCHES           * sizeof(Watches_t) );
 	ZeroMemory( g_aZeroPagePointers, MAX_ZEROPAGE_POINTERS * sizeof(ZeroPagePointers_t));
 
-	g_iCommand = CMD_SYMBOLS_MAIN;
+	// Load Main, Applesoft, and User Symbols
+	extern bool g_bSymbolsDisplayMissingFile;
+	g_bSymbolsDisplayMissingFile = false;
+
+	g_iCommand = CMD_SYMBOLS_ROM;
 	CmdSymbolsLoad(0);
+
+	g_iCommand = CMD_SYMBOLS_APPLESOFT;
+	CmdSymbolsLoad(0);
+
+	g_iCommand = CMD_SYMBOLS_USER_1;
+	CmdSymbolsLoad(0);
+
+	g_bSymbolsDisplayMissingFile = true;
 
 #if OLD_FONT
 	// CREATE A FONT FOR THE DEBUGGING SCREEN
@@ -8856,12 +8065,14 @@ void DebugInitialize ()
 	{
 		wsprintf( sText, "*** ERROR *** Commands mis-matched!" );
 		MessageBox( g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
+		PostQuitMessage( 1 );
 	}
 
 	if (_tcscmp( g_aParameters[ NUM_PARAMS ].m_sName, TEXT(__PARAMS_VERIFY_TXT__)))
 	{
 		wsprintf( sText, "*** ERROR *** Parameters mis-matched!" );
 		MessageBox( g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
+		PostQuitMessage( 2 );
 	}
 
 	// Check all summary help to see if it fits within the console

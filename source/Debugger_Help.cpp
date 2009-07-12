@@ -1251,9 +1251,13 @@ Update_t CmdHelpSpecific (int nArgs)
 			wsprintf( sText, "%s   %s LIFE = 2000", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
 			wsprintf( sText, "%s   %s LIFE"       , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
 			break;
-		case CMD_SYMBOLS_MAIN:
-		case CMD_SYMBOLS_USER:
-		case CMD_SYMBOLS_SRC :
+		case CMD_SYMBOLS_ROM:
+		case CMD_SYMBOLS_APPLESOFT:
+		case CMD_SYMBOLS_ASSEMBLY:
+		case CMD_SYMBOLS_USER_1:
+		case CMD_SYMBOLS_USER_2:
+		case CMD_SYMBOLS_SRC_1:
+		case CMD_SYMBOLS_SRC_2:
 //			ConsoleBufferPush( TEXT(" Usage: [ ON | OFF | symbol | address ]" ) );
 //			ConsoleBufferPush( TEXT(" Usage: [ LOAD [\"filename\"] | SAVE \"filename\"]" ) ); 
 //			ConsoleBufferPush( TEXT("  ON  : Turns symbols on in the disasm window" ) );
@@ -1264,11 +1268,12 @@ Update_t CmdHelpSpecific (int nArgs)
 			Colorize( sText, " Usage: [ <cmd> | symbol | address ]" );
 			ConsolePrint( sText );
 			ConsoleBufferPush( "  Where <cmd> is one of:" );
-			sprintf( sText, "  %s  " ": Turns symbols on in the disasm window"       , g_aParameters[ PARAM_ON    ].m_sName ); ConsoleBufferPush( sText );
-			sprintf( sText, "  %s "  ": Turns symbols off in the disasm window"      , g_aParameters[ PARAM_OFF   ].m_sName ); ConsoleBufferPush( sText );
-			sprintf( sText, "  %s"   ": Loads symbols from last/default \"filename\"", g_aParameters[ PARAM_SAVE  ].m_sName ); ConsoleBufferPush( sText );
-			sprintf( sText, "  %s"   ": Saves symbol table to \"filename\""          , g_aParameters[ PARAM_LOAD  ].m_sName ); ConsoleBufferPush( sText );
-			sprintf( sText, " %s"    ": Clears the symbol table"                     , g_aParameters[ PARAM_CLEAR ].m_sName ); ConsoleBufferPush( sText );
+			sprintf( sText, "%s%-5s%s: Turns symbols on in the disasm window"       , CHC_STRING, g_aParameters[ PARAM_ON    ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
+			sprintf( sText, "%s%-5s%s: Turns symbols off in the disasm window"      , CHC_STRING, g_aParameters[ PARAM_OFF   ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
+			sprintf( sText, "%s%-5s%s: Loads symbols from last/default \"filename\"", CHC_STRING, g_aParameters[ PARAM_SAVE  ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
+			sprintf( sText, "%s%-5s%s: Saves symbol table to \"filename\""          , CHC_STRING, g_aParameters[ PARAM_LOAD  ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
+			sprintf( sText, "%s%-5s%s: Clears the symbol table"                     , CHC_STRING, g_aParameters[ PARAM_CLEAR ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
+			sprintf( sText, "%s%-5s%s: Remove symbol"                               , CHC_STRING, g_aTokens[ TOKEN_EXCLAMATION ]      , CHC_DEFAULT ); ConsolePrint( sText );
 			break;
 		case CMD_SYMBOLS_LIST :
 			Colorize( sText, " Usage: symbol" );
