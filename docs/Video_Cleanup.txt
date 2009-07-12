@@ -1,0 +1,6 @@
+TODO 
+
+* AppleWin NEEDS to be double buffered!
+
+* Use SDL ?
+* Look at Linapple?
