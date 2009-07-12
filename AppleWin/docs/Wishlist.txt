@@ -1,10 +1,17 @@
 Requests (Wishlist):
 ====================
 
+. Debugger: FIX: help mf
+. Debugger: FIX: help mn
+. Debugger: FIX: BC:##
+. Debugger: FIX: BD:##
+. Debugger: FIX: BE:##
 . Debugger: FIX: help f
 . Debugger: FIX: help m
-. Debugger: FIX: E8:## ##
-. Debugger: ADD: AppleSoft symbols to Symbol Table 2
+. Debugger: FIX: EA:##
+. Debugger: FIX: E8:##
+. Debugger: wildcard search support for symbols
+   SYMBASIC MICRO*
 
 . Video: Full Screen Debugger Colors
   Amber, F7, F7 - wrong palette?
@@ -21,13 +28,15 @@ Requests (Wishlist):
 - Disk map!!!
  http://www.lazilong.com/apple_II/adfs/screenshots/beagle_block.html
 
-. Debugger: BLOAD with no arguments should print current save path
+ . Debugger: BLOAD with no arguments should print current save path
 . Debugger: FIX BLOAD with bad path!! (should use path of last disk load!)
 . Debugger: FIX BSAVE with bad path!! (should use path of last disk load!)
 . Debugger: merlin "filename",S6,D1
 . Debugger: COLOR RESET
 . Debugger: COLOR SAVE ["filename"]
 . Debugger: COLOR LOAD ["filename"]
+
+. DONE: Debugger 2.6.1.19: ADD: AppleSoft symbols to Symbol Table
 
 . DONE: v16.0.0.0: Video: PrintScreen (save to disk with auto file numbering.)
 . DONE: v16.0.0.0: Debugger: TEXT show current 40-col text page
