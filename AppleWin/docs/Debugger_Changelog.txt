@@ -1,11 +1,46 @@
 /*
 
-2.6.0.8 Released with AppleWin (1.16.0.0)
- .8 Loading symbols can now use an offset
-    symsrc load "filename" [,symbol_offset]
- .7 Increased symbol length from 13 to 31 for Contriki
+2.6.1.x
+.19 Fixed: Added deleting symbol to symbol help
+.18 Added: Loading duplicate symbols at start-up now listed
+.17 Added: When the debugger stats, attempts loading of additional symbol tables
+	A2_BASIC.SYM
+	A2_USER1.SYM
+	A2_USER2.SYM
+	A2_SRC1.SYM
+	A2_SRC2.SYM
+    Repsectively for basic, user1, user2, source1, and source2
+.16 Added: In addition to !, can now use ~ to remove a symbol
+     symbasic aCold.reset = F128
+     symbasic aWarm.reset = D43C
+     symbasic ! aCold.reset
+     symbasic ~ aWarm.reset
+.15 Fixed: Color coded when symbol address is updated.
+.14 Fixed updating of symbols to use correct symbol table 
+.13 Added: Wildcard suport to dump symbol table(s)
+     symbasic Acold.reset = F128
+     symbasic Awarm.reset = D43C
+     symbasic *
+.12 Added: Moved assembly symbols into own symbol table.
+    Added: New command to reference assembly symbol table.
+     symasm MyFirstAssemblyProgram = 300
+.11 Added: Applesoft/Basic symbol table.
+     symbasic Acold.reset = F128
+     symbasic Awarm.reset = D43C
+.10 Added: Split 'user' symbols into user1, and user2
+.9 Added: Split 'source' symbols into source1, and source2
+.8 Added: Applesoft symbols
+.7 Fixed: renamed assembler command A to AS (to fix:  A:##)
+.6 Fixed: renamed mem fill command F to MF  (to fix:  F:##)
+.5 Fixed: renamed mem dump command D to MD  (to fix:  D:##)
+.4 Fixed: renamed mem enter word command EW to MEW
+.3 Fixed: renamed mem enter byte commmand E to MEB
+.2 Fixed: renamed mem enter byte command EB to MEB
+.1  Fixed: renamed mem enter byte E8 to ME8
 
-2.6.0.6 Released with AppleWin 1.15 (beta)
+2.6.0.8 Released with AppleWin 1.16.1
+
+2.6.0.6 Released with AppleWin 1.15
 .6 Added new command '@' to display the search results
 .5 Fixed display results of Searching to be colorized
 .4 Fixed ? to sort and colorize commands
@@ -27,7 +62,7 @@
    HELP VIEW // view help summary
    HGR // view current Hi-Res Screen. press a key to return to the normal debugger view
 
-2.5.7.11 released with AppleWin Version 1.14.2.0
+TODO: 2.6.0.0 released with next version of AppleWin (1.12.9.2)
 
 .11 Added: Trace File Now displays filename tracing is saved to.
 .10 Fixed: Trace File wasn't displaying assembly mnemonics
@@ -462,7 +497,7 @@ Patch 10
 .1 since source level debugging is a minor feature
 8 added command "VERSION *" to show internal debug info
 7 fixed mem enter not refreshing screen
-6 added source level debugging back-end
+6 added source level debuggig back-end
 5 fixed "SYM 0" bug
 
 */
