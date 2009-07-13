@@ -1121,11 +1121,13 @@ Update_t CmdHelpSpecific (int nArgs)
 			Colorize( sText, sTemp );
 			ConsolePrint( sText );
 			ConsoleBufferPush( TEXT("  Fills the memory range with the specified byte" ) );
-			sprintf( sTemp, " Note: Can't fill IO addresses %s$%sC0xx", CHC_ARG_OPT, CHC_ADDRESS );
+			sprintf( sTemp, " Note: Can't fill IO addresses %s$%sC0xx", CHC_ARG_SEP, CHC_ADDRESS );
 			Colorize( sText, sTemp );
 			ConsolePrint( sText );
 			Help_Examples();
-			sprintf( sText, "%s  %s 2000:3FFF 00", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			sprintf( sText, "%s  %s 2000:3FFF 00   // Clear HGR page 1", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			sprintf( sText, "%s  %s 4000,2000 00   // Clear HGR page 2", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			sprintf( sText, "%s  %s 2000 3FFF 00   // Clear HGR page 1", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
 			break;
 		case CMD_MEMORY_MOVE:
 			sprintf( sTemp, " Usage: destination range" );
