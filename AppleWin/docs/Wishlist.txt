@@ -1,15 +1,5 @@
 Requests (Wishlist):
 ====================
-
-. Debugger: FIX: help mf
-. Debugger: FIX: help mn
-. Debugger: FIX: BC:##
-. Debugger: FIX: BD:##
-. Debugger: FIX: BE:##
-. Debugger: FIX: help f
-. Debugger: FIX: help m
-. Debugger: FIX: EA:##
-. Debugger: FIX: E8:##
 . Debugger: wildcard search support for symbols
    SYMBASIC MICRO*
 
@@ -22,7 +12,7 @@ Requests (Wishlist):
 . Periphals: Ability to swap ROM cards
 . Support for blind users -- read characters from Apple Text Screen -- relay to Windows Text2Speech API
 . Disk: .zip support (read-only should be fine)
-. Disk: .gz support (read-only should be fine)
+. Disk: .gz support (read-only should be fine) See Linapple !
 . Disk: .2MG support
 
 - Disk map!!!
@@ -36,6 +26,17 @@ Requests (Wishlist):
 . Debugger: COLOR SAVE ["filename"]
 . Debugger: COLOR LOAD ["filename"]
 
+. DONE: help f
+. DONE: help m
+. DONE: BC:##
+. DONE: BD:##
+. DONE: BE:##
+. DONE: help f
+. DONE: help m
+. DONE: EA:##
+. DONE: E8:##
+. DONE: a:##
+. DONE: d:##
 . DONE: Debugger 2.6.1.19: ADD: AppleSoft symbols to Symbol Table
 
 . DONE: v16.0.0.0: Video: PrintScreen (save to disk with auto file numbering.)
