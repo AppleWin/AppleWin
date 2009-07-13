@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,1,19);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,1,30);
 
 
 // Public _________________________________________________________________________________________
@@ -87,6 +87,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"OP", // Opcode/Instruction/Mnemonic
 		// Memory
 		"M" // Main
+		// TODO: M0 ram bank 0, M1 aux ram ?
 	};
 
 	// Note: BreakpointOperator_t, _PARAM_BREAKPOINT_, and g_aBreakpointSymbols must match!
@@ -124,7 +125,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// CPU (Main)
 		{TEXT(".")           , CmdCursorJumpPC      , CMD_CURSOR_JUMP_PC       , "Locate the cursor in the disasm window" }, // centered
 		{TEXT("=")           , CmdCursorSetPC       , CMD_CURSOR_SET_PC        , "Sets the PC to the current instruction" },
-		{TEXT("AS")          , CmdAssemble          , CMD_ASSEMBLE             , "Assemble instructions"      },
+		{TEXT("A")           , CmdAssemble          , CMD_ASSEMBLE             , "Assemble instructions"      },
 		{TEXT("BRK")         , CmdBreakInvalid      , CMD_BREAK_INVALID        , "Enter debugger on BRK or INVALID" },
 		{TEXT("BRKOP")       , CmdBreakOpcode       , CMD_BREAK_OPCODE         , "Enter debugger on opcode"   },
 		{TEXT("G")           , CmdGo                , CMD_GO                   , "Run [until PC = address]"   },
@@ -163,11 +164,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("BPIO")        , CmdBreakpointAddIO   , CMD_BREAKPOINT_ADD_IO    , "Add breakpoint for IO address $C0xx"   },
 		{TEXT("BPM")         , CmdBreakpointAddMem  , CMD_BREAKPOINT_ADD_MEM   , "Add breakpoint on memory access"       },  // SoftICE
 
-		{TEXT("BC")          , CmdBreakpointClear   , CMD_BREAKPOINT_CLEAR     , "Clear (remove) breakpoint"             }, // SoftICE
-		{TEXT("BD")          , CmdBreakpointDisable , CMD_BREAKPOINT_DISABLE   , "Disable breakpoint- it is still in the list, just not active" }, // SoftICE
-		{TEXT("BPE")         , CmdBreakpointEdit    , CMD_BREAKPOINT_EDIT      , "Edit breakpoint"                       }, // SoftICE
-		{TEXT("BE")          , CmdBreakpointEnable  , CMD_BREAKPOINT_ENABLE    , "(Re)Enable disabled breakpoint"        }, // SoftICE
-		{TEXT("BL")          , CmdBreakpointList    , CMD_BREAKPOINT_LIST      , "List all breakpoints"                      }, // SoftICE
+		{TEXT("BPC")         , CmdBreakpointClear   , CMD_BREAKPOINT_CLEAR     , "Clear (remove) breakpoint"             }, // SoftICE
+		{TEXT("BPD")         , CmdBreakpointDisable , CMD_BREAKPOINT_DISABLE   , "Disable breakpoint- it is still in the list, just not active" }, // SoftICE
+		{TEXT("BPEDIT")      , CmdBreakpointEdit    , CMD_BREAKPOINT_EDIT      , "Edit breakpoint"                       }, // SoftICE
+		{TEXT("BPE")         , CmdBreakpointEnable  , CMD_BREAKPOINT_ENABLE    , "(Re)Enable disabled breakpoint"        }, // SoftICE
+		{TEXT("BPL")         , CmdBreakpointList    , CMD_BREAKPOINT_LIST      , "List all breakpoints"                  }, // SoftICE
 //		{TEXT("BPLOAD")      , CmdBreakpointLoad    , CMD_BREAKPOINT_LOAD      , "Loads breakpoints" },
 		{TEXT("BPSAVE")      , CmdBreakpointSave    , CMD_BREAKPOINT_SAVE      , "Saves breakpoints" },
 	// Config
@@ -227,7 +228,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Memory
 		{TEXT("MC")          , CmdMemoryCompare     , CMD_MEMORY_COMPARE       },
 
-		{TEXT("MD")          , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  , "Hex dump in the mini memory area 1" }, // FIXME: Must also work in DATA screen
+		{TEXT("D")           , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  , "Hex dump in the mini memory area 1" }, // FIXME: Must also work in DATA screen
 		{TEXT("MD1")         , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  , "Hex dump in the mini memory area 1" },
 		{TEXT("MD2")         , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_2  , "Hex dump in the mini memory area 2" },
 		{TEXT("M1")          , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // alias
@@ -253,7 +254,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		{TEXT("SA")          , CmdMemorySearchAscii,  CMD_MEMORY_SEARCH_ASCII  , "Search ASCII text"            },
 //		{TEXT("ST")          , CmdMemorySearchApple , CMD_MEMORY_SEARCH_APPLE  , "Search Apple text (hi-bit)"   },
 		{TEXT("SH")          , CmdMemorySearchHex   , CMD_MEMORY_SEARCH_HEX    , "Search memory for hex values" },
-		{TEXT("MF")          , CmdMemoryFill        , CMD_MEMORY_FILL          , "Memory fill"                  },
+		{TEXT("F")           , CmdMemoryFill        , CMD_MEMORY_FILL          , "Memory fill"                  },
 	// Output / Scripts
 		{TEXT("CALC")        , CmdOutputCalc        , CMD_OUTPUT_CALC          , "Display mini calc result"               },
 		{TEXT("ECHO")        , CmdOutputEcho        , CMD_OUTPUT_ECHO          , "Echo string to console"                 }, // or toggle command echoing"
@@ -378,8 +379,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SV")          , CmdFlagSet           , CMD_FLAG_SET_V , "Clear Flag Overflow"            }, // 6
 		{TEXT("SN")          , CmdFlagSet           , CMD_FLAG_SET_N , "Clear Flag Negative"            }, // 7
 
-		{TEXT("MEB")         , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    }, // changed from EB -- bugfix: EB:## ##
-		{TEXT("MEW")         , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    },
+		{TEXT("ME8")         , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    }, // changed from EB -- bugfix: EB:## ##
+		{TEXT("ME16")        , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    },
 		{TEXT("MM")          , CmdMemoryMove        , CMD_MEMORY_MOVE          },
 		{TEXT("MS")          , CmdMemorySearch      , CMD_MEMORY_SEARCH        }, // CmdMemorySearch
 		{TEXT("P0")          , CmdZeroPagePointer   , CMD_ZEROPAGE_POINTER_0   },
@@ -415,9 +416,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("BENCH")       , CmdBenchmarkStart    , CMD_BENCHMARK            },
 		{TEXT("EXITBENCH")   , CmdBenchmarkStop     , CMD_BENCHMARK            },
 		{TEXT("MDB")         , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
-		{TEXT("MDC")         , CmdUnassemble        , CMD_UNASSEMBLE           }, // MemoryDumpCode  // Did anyone actually use this??
-		{TEXT("ME8" )        , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    },
-		{TEXT("ME16")        , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    },
 		{TEXT("MEMORY")      , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
 };
 
@@ -593,6 +591,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Config _____________________________________________________________________
 
 // Config - Disassembly
+	bool  g_bConfigDisasmAddressView   = true;
 	bool  g_bConfigDisasmAddressColon  = true;
 	bool  g_bConfigDisasmOpcodesView   = true;
 	bool  g_bConfigDisasmOpcodeSpaces  = true;
@@ -4531,7 +4530,16 @@ Update_t CmdMemoryEnterByte (int nArgs)
 	WORD nAddress = g_aArgs[1].nValue;
 	while (nArgs >= 2)
 	{
-		*(mem + nAddress+nArgs-2)  = (BYTE)g_aArgs[nArgs].nValue;
+		WORD nData = g_aArgs[nArgs].nValue;
+		if( nData > 0xFF)
+		{
+			*(mem + nAddress + nArgs - 2)  = (BYTE)(nData >> 0);
+			*(mem + nAddress + nArgs - 1)  = (BYTE)(nData >> 8);
+		}
+		else
+		{
+			*(mem + nAddress+nArgs-2)  = (BYTE)nData;
+		}
 		*(memdirty+(nAddress >> 8)) = 1;
 		nArgs--;
 	}
@@ -4566,40 +4574,64 @@ Update_t CmdMemoryEnterWord (int nArgs)
 }
 
 //===========================================================================
+void MemMarkDirty( WORD nAddressStart, WORD nAddressEnd )
+{
+	for( int iPage = (nAddressStart >> 8); iPage <= (nAddressEnd >> 8); iPage++ )
+	{
+		*(memdirty+iPage) = 1;
+	}
+}
+
+//===========================================================================
 Update_t CmdMemoryFill (int nArgs)
 {
-	// F address [,len] value
 	// F address end value
-	if ((!nArgs) || (nArgs > 5))
+	// F address,len value
+	// F address:end value
+	if ((!nArgs) || (nArgs < 3) || (nArgs > 4))
 		return Help_Arg_1( CMD_MEMORY_FILL );
-  
-	WORD nAddress = g_aArgs[1].nValue;
-	WORD nBytes = 1;
 
-	int iValue = 2;
-	if (g_aArgs[2].eToken == TOKEN_COMMA)
+	WORD nAddress2 = 0;
+	WORD nAddressStart = 0;
+	WORD nAddressEnd = 0;
+	int  nAddressLen = 0;
+	BYTE nValue = 0;
+
+	if( nArgs == 3)
 	{
-		nBytes = MAX(1 , g_aArgs[ iValue + 1 ].nValue);
-		iValue = 4;
+		nAddressStart = g_aArgs[1].nValue;
+		nAddressEnd   = g_aArgs[2].nValue;
+		nAddressLen = MIN(_6502_MEM_END , nAddressEnd - nAddressStart + 1 );
 	}
 	else
-	if (nArgs > 3)
-		return Help_Arg_1( CMD_MEMORY_FILL );
+	{
+		RangeType_t eRange;
+		eRange = Range_Get( nAddressStart, nAddress2, 1 );
 
+		if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen ))
+			return Help_Arg_1( CMD_MEMORY_MOVE );
+	}
 #if DEBUG_VAL_2
 		nBytes   = MAX(1,g_aArgs[1].nVal2); // TODO: This actually work??
 #endif
 
-	while (nBytes--)
+	if ((nAddressLen > 0) && (nAddressEnd <= _6502_MEM_END))
 	{
-		if ((nAddress < _6502_IO_BEGIN) || (nAddress > _6502_IO_END))
+		MemMarkDirty( nAddressStart, nAddressEnd );
+
+		nValue = g_aArgs[nArgs].nValue & 0xFF;
+		while( nAddressStart <= nAddressEnd )
 		{
-			*(mem + nAddress) = (BYTE)(g_aArgs[ iValue ].nValue & 0xFF); // HACK: Undocumented fill with ZERO
+			// TODO: Optimize - split into pre_io, and post_io
+			if ((nAddress2 < _6502_IO_BEGIN) || (nAddress2 > _6502_IO_END))
+			{
+				*(mem + nAddressStart) = nValue;
+			}
+			nAddressStart++;
 		}
-		nAddress++;
 	}
 
-	return UPDATE_CONSOLE_DISPLAY;
+	return UPDATE_ALL; // UPDATE_CONSOLE_DISPLAY;
 }
 
 
@@ -4729,17 +4761,50 @@ Update_t CmdMemoryLoad (int nArgs)
 	return ConsoleUpdate();
 }
 
-
+// dst src : len
 //===========================================================================
 Update_t CmdMemoryMove (int nArgs)
 {
 	if (nArgs < 3)
 		return Help_Arg_1( CMD_MEMORY_MOVE );
 
-	WORD nSrc = g_aArgs[1].nValue;
-	WORD nLen = g_aArgs[2].nValue - nSrc;
-	WORD nDst = g_aArgs[3].nValue;
-	
+	WORD nDst = g_aArgs[1].nValue;
+//	WORD nSrc = g_aArgs[2].nValue;
+//	WORD nLen = g_aArgs[3].nValue - nSrc;
+	WORD nAddress2 = 0;
+	WORD nAddressStart = 0;
+	WORD nAddressEnd = 0;
+	int  nAddressLen = 0;
+
+	RangeType_t eRange;
+	eRange = Range_Get( nAddressStart, nAddress2, 2 );
+
+//		if (eRange == RANGE_MISSING_ARG_2)
+	if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen ))
+		return Help_Arg_1( CMD_MEMORY_MOVE );
+
+	if ((nAddressLen > 0) && (nAddressEnd <= _6502_MEM_END))
+	{
+		MemMarkDirty( nAddressStart, nAddressEnd );
+
+//			BYTE *pSrc = mem + nAddressStart;
+//			BYTE *pDst = mem + nDst;
+//			BYTE *pEnd = pSrc + nAddressLen;
+
+		while( nAddressStart <= nAddressEnd )
+		{
+			// TODO: Optimize - split into pre_io, and post_io
+			if ((nDst < _6502_IO_BEGIN) || (nDst > _6502_IO_END))
+			{
+				*(mem + nDst) = *(mem + nAddressStart);
+			}
+			nDst++;
+			nAddressStart++;
+		}
+
+		return UPDATE_ALL;
+	}
+
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
@@ -6998,6 +7063,20 @@ void DisplayAmbigiousCommands( int nFound )
 	}
 }
 
+bool IsHexDigit( char c )
+{
+	if ((c >= '0') && (c <= '9'))
+		return true;
+	else
+	if ((c >= 'A') && (c <= 'F'))
+		return true;
+	else
+	if ((c >= 'a') && (c <= 'f'))
+		return true;
+	return false;
+}
+
+
 //===========================================================================
 Update_t ExecuteCommand (int nArgs) 
 {
@@ -7009,26 +7088,23 @@ Update_t ExecuteCommand (int nArgs)
 
 //	int nCookMask = (1 << NUM_TOKENS) - 1; // ArgToken_e used as bit mask!
 
-	if (! nFound)
+	
+	// BUGFIX: commands that are also valid hex addresses
+	// ####:# [#]
+	// #<#.#M
+	int nLen = pArg->nArgLen;
+
+	if ((! nFound) || (nLen < 6))
 	{
-		int nLen = strlen( pCommand );
-		if (nLen < 6)
 		{
-			// verify pCommand[ 0 .. (nLen-1) ] is hex digit
+			// verify pCommand[ 0 .. (nLen-1) ] are hex digits
 			bool bIsHex = true;
-			for (int iChar = 0; iChar < (nLen - 1); iChar++ )
+			char *pChar = pCommand;
+			for (int iChar = 0; iChar < (nLen - 1); iChar++, pChar++ )
 			{
-				if (isdigit(pCommand[iChar]))
-					continue;
-				else
-				if (pCommand[iChar] >= 'A' && pCommand[iChar] <= 'F')
-					continue;
-				else
-				if (pCommand[iChar] >= 'a' && pCommand[iChar] <= 'f')
-					continue;
-				else
+				bIsHex = IsHexDigit( *pChar );
+				if( !bIsHex )
 				{
-					bIsHex = false;
 					break;
 				}
 			}
@@ -7051,7 +7127,7 @@ Update_t ExecuteCommand (int nArgs)
 					nFound = 1;
 					g_iCommand = CMD_OUTPUT_ECHO; // hack: don't cook args
 				}
-
+				else
 				// ####L -> Unassemble $address
 				if ((pCommand[nLen-1] == 'L') ||
 					(pCommand[nLen-1] == 'l'))
@@ -7073,7 +7149,7 @@ Update_t ExecuteCommand (int nArgs)
 					pFunction = g_aCommands[ g_iCommand ].pFunction;
 					nFound = 1;
 				}					
-
+				else
 				// address: byte ...
 				if ((pArg+1)->eToken == TOKEN_COLON)
 				{
@@ -7092,8 +7168,80 @@ Update_t ExecuteCommand (int nArgs)
 					pFunction = g_aCommands[ g_iCommand ].pFunction;
 					nFound = 1;
 				}
-
+				else
 				// #<#.#M
+				if	(pArg[1].eToken == TOKEN_LESS_THAN)
+				{
+					// Look for period
+					nLen = pArg[2].nArgLen;
+
+					char *pDst = pArg[0].sArg;
+					char *pSrc = pArg[2].sArg;
+					char *pEnd = 0;
+
+					bool bFoundSrc = false;
+					bool bFoundLen = false;
+
+					pChar = pSrc;
+					while( *pChar )
+					{
+						if( *pChar == '.' )
+						{
+							if( pEnd ) // only allowed one period
+							{
+								pEnd = 0;
+								break;
+							}
+
+							*pChar = 0; // ':';
+							pEnd = pChar + 1;
+							bFoundSrc = true;
+						} else
+						if( !IsHexDigit( *pChar ) )
+						{
+							break;
+						}	
+						pChar++;
+					}
+					if( pEnd ) {
+						if(	(*pChar == 'M')
+						||	(*pChar == 'm'))
+						{
+							*pChar++ = 0;
+							if( ! *pChar )
+								bFoundLen = true;
+						}
+
+						if( bFoundSrc && bFoundLen )
+						{
+//ArgsGetValue( pArg, & nAddress );
+//char sText[ CONSOLE_WIDTH ];
+//sprintf( sText, "Dst:%s  Src: %s  End: %s", pDst, pSrc, pEnd );
+//ConsolePrint( sText );
+							g_iCommand = CMD_MEMORY_MOVE;
+							pFunction = g_aCommands[ g_iCommand ].pFunction;
+
+							strcpy( pArg[4].sArg, pEnd );
+							strcpy( pArg[3].sArg, g_aTokens[ TOKEN_COLON ].sToken );
+							strcpy( pArg[2].sArg, pSrc );
+							strcpy( pArg[1].sArg, pDst );
+							strcpy( pArg[0].sArg, g_aCommands[ g_iCommand ].m_sName );
+							// pDst moved from arg0 to arg1 !
+							pArg[1].bType = TYPE_VALUE;
+							pArg[2].bType = TYPE_VALUE;
+							pArg[3].bType = TYPE_OPERATOR;
+							pArg[4].bType = TYPE_VALUE;
+
+							ArgsGetValue( &pArg[1], &pArg[1].nValue );
+							ArgsGetValue( &pArg[2], &pArg[2].nValue );
+							pArg[3].eToken = TOKEN_COLON;
+							ArgsGetValue( &pArg[4], &pArg[4].nValue );
+
+							nFound = 1;
+							nArgs = 4;
+						}
+					}
+				}
 
 				// TODO: display memory at address
 				// addr1 [addr2] -> display byte at address
@@ -8745,22 +8893,62 @@ void	DebuggerMouseClick( int x, int y )
 	if (g_iWindowThis == WINDOW_CODE)
 	{
 		// Display_AssemblyLine -- need Tabs
-		if (cx == 4)
+
+		if( g_bConfigDisasmAddressView )
 		{
-			g_bConfigDisasmAddressColon ^= true;
-			DebugDisplay( UPDATE_DISASM );
+			// HACK: hard-coded from DrawDisassemblyLine::aTabs[] !!!
+			if( cx < 4) // #### 
+			{
+				g_bConfigDisasmAddressView ^= true;
+				DebugDisplay( UPDATE_DISASM );
+			}
+			else
+			if (cx == 4) //    :
+			{
+				g_bConfigDisasmAddressColon ^= true;
+				DebugDisplay( UPDATE_DISASM );
+			}
+			else         //      AD 00 00
+			if ((cx > 4) & (cx <= 13))
+			{
+				g_bConfigDisasmOpcodesView ^= true;
+				DebugDisplay( UPDATE_DISASM );
+			}
+			
+		} else
+		{
+			if( cx == 0 ) //   :
+			{
+				// Three-way state
+				//   "addr:"
+				//   ":"
+				//   " "
+				g_bConfigDisasmAddressColon ^= true;
+				if( g_bConfigDisasmAddressColon )
+				{
+					g_bConfigDisasmAddressView ^= true;
+				}
+				DebugDisplay( UPDATE_DISASM );
+			}
+			else
+			if ((cx > 0) & (cx <= 13))
+			{
+				g_bConfigDisasmOpcodesView ^= true;
+				DebugDisplay( UPDATE_DISASM );
+			}
 		}
-		else
-		if ((cx > 4) & (cx <= 13))
+		// Click on PC inside reg window?
+		if ((cx >= 51) && (cx <= 60))
 		{
-			g_bConfigDisasmOpcodesView ^= true;
-			DebugDisplay( UPDATE_DISASM );
-		}
-		else
-		if ((cx >= 51) && (cx <= 60) && (cy == 3))
-		{
-			CmdCursorJumpPC( CURSOR_ALIGN_CENTER );
-			DebugDisplay( UPDATE_DISASM );
+			if (cy == 3)
+			{
+				CmdCursorJumpPC( CURSOR_ALIGN_CENTER );
+				DebugDisplay( UPDATE_DISASM );
+			}
+			else // Click on stack
+			if( cy > 3)
+			{
+			}
 		}
 	}
 	
