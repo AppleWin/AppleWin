@@ -73,6 +73,7 @@ using namespace std;
 	extern const int WINDOW_DATA_BYTES_PER_LINE;
 
 // Config - Disassembly
+	extern bool  g_bConfigDisasmAddressView  ;
 	extern bool  g_bConfigDisasmAddressColon ;
 	extern bool  g_bConfigDisasmOpcodesView  ;
 	extern bool  g_bConfigDisasmOpcodeSpaces ;

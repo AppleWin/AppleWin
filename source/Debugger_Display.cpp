@@ -1587,6 +1587,13 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	int nSpacer = 11; // 9
 	for (iTab = 0; iTab < _NUM_TAB_STOPS; iTab++ )
 	{
+		if (! g_bConfigDisasmAddressView )
+		{
+			if (iTab < TS_IMMEDIATE) // TS_BRANCH)
+			{
+				aTabs[ iTab ] -= 4;
+			}
+		}
 		if (! g_bConfigDisasmOpcodesView)
 		{
 			if (iTab < TS_IMMEDIATE) // TS_BRANCH)
@@ -1712,7 +1719,11 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 //			DebuggerSetColorBG( dc, DebuggerGetColor( FG_DISASM_BOOKMARK ) ); // swapped
 //			DebuggerSetColorFG( dc, DebuggerGetColor( BG_DISASM_BOOKMARK ) ); // swapped
 //		}		
-		PrintTextCursorX( (LPCTSTR) line.sAddress, linerect );
+
+		if( g_bConfigDisasmAddressView )
+		{
+			PrintTextCursorX( (LPCTSTR) line.sAddress, linerect );
+		}
 
 		if (bAddressIsBookmark)
 		{
@@ -1726,6 +1737,8 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 
 		if (g_bConfigDisasmAddressColon)
 			PrintTextCursorX( ":", linerect );
+		else
+			PrintTextCursorX( " ", linerect ); // bugfix, not showing "addr:" doesn't alternate color lines
 
 	// Opcodes
 		linerect.left = (int) aTabs[ TS_OPCODE ];
