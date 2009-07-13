@@ -1,9 +1,45 @@
 /*
 
 2.6.1.x
-.19 Fixed: Added deleting symbol to symbol help
+.31 Added: Help examples for Memory Fill
+.30 Fixed: Memory Fill
+	F start end value
+	F start,len value
+	F start:end value
+.29 Removd: Old unassembly alias MDC
+.28 Added: Can now toggle display of disassembly address on/off for a clean "source assembly" style
+    Three way state
+    1) "addr: ..."
+    2) ": ..."
+    3) " ..."
+.27 Fixed: help for memory fill no longer displays help for flags
+.26 Added: Was missing help for memory move
+.25 Changed: Cleaned up help calc text
+.24 Changed: Undid .5, .7 hack
+.23 Extended entering memory bytes to allow 16-bit values
+    0:4C FF69 
+.22 Renamed breakpoint commands
+	BC  -> BPC
+	BD  -> BPD
+	BPE -> BPEDIT
+	BE  -> BPE
+	BL  -> BPL
+.21 Fixed: Trying to set zero page and other memory locations that
+    were also commands, didn't update memory.
+    A:##
+	D:## // no longer shows mini dump starting at address 0
+	F:##
+    BC:##
+    BD:##
+    BE:##
+    E8:##
+    E16:##
+.20 Added: Implemented Memory Move commands: MM and classic Apple Monitor style
+    2001<2000.3FFFM
+    M 2001 2000:3FFF
+.19 Fixed: Added how to delete symbols to symbol help
 .18 Added: Loading duplicate symbols at start-up now listed
-.17 Added: When the debugger stats, attempts loading of additional symbol tables
+.17 Added: When the debugger starts, attempts loading of additional symbol tables
 	A2_BASIC.SYM
 	A2_USER1.SYM
 	A2_USER2.SYM
@@ -29,14 +65,14 @@
      symbasic Awarm.reset = D43C
 .10 Added: Split 'user' symbols into user1, and user2
 .9 Added: Split 'source' symbols into source1, and source2
-.8 Added: Applesoft symbols
-.7 Fixed: renamed assembler command A to AS (to fix:  A:##)
-.6 Fixed: renamed mem fill command F to MF  (to fix:  F:##)
-.5 Fixed: renamed mem dump command D to MD  (to fix:  D:##)
-.4 Fixed: renamed mem enter word command EW to MEW
-.3 Fixed: renamed mem enter byte commmand E to MEB
-.2 Fixed: renamed mem enter byte command EB to MEB
-.1  Fixed: renamed mem enter byte E8 to ME8
+.8 Added: Applesoft symbols.  Thank-you Bob Sander-Cederlof !
+.7 Fixed: renamed assembler command A to AS (as a work-around for:  A:##)
+.6 Fixed: renamed mem fill command F to MF  (as a work-around for:  F:##)
+.5 Fixed: renamed mem dump command D to MD  (as a work-around for:  D:##)
+.4 Fixed: renamed mem enter word command EW to MEW, E16 to ME16
+.3 Fixed: renamed mem enter byte command E  to MEB
+.2 Fixed: renamed mem enter byte command EB to ME8
+.1 Fixed: removed mem enter byte command E8
 
 2.6.0.8 Released with AppleWin 1.16.1
 
