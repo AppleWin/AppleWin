@@ -471,6 +471,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Debugger_Symbols.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Symbols.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Debugger_Types.h"
 					>
 				</File>
@@ -605,6 +613,10 @@
 			</File>
 			<File
 				RelativePath=".\docs\ToDo.txt"
+				>
+			</File>
+			<File
+				RelativePath=".\docs\Video_Cleanup.txt"
 				>
 			</File>
 			<File
