@@ -647,13 +647,16 @@ void DebuggerPrint ( int x, int y, const char *pText )
 	}
 }
 
-
+//===========================================================================
 void DebuggerPrintColor( int x, int y, const conchar_t * pText )
 {
 	int nLeft = x;
 
 	conchar_t g;
 	const conchar_t *pSrc = pText;
+
+	if( !pText)
+		return;
 
 	while (g = (*pSrc))
 	{
@@ -1152,7 +1155,7 @@ void DrawConsoleCursor ()
 }
 
 //===========================================================================
-void GetConsoleRect( const int y, RECT & rect )
+void GetConsoleRect ( const int y, RECT & rect )
 {
 	int nLineHeight = GetConsoleLineHeightPixels();
 
@@ -1170,7 +1173,7 @@ void GetConsoleRect( const int y, RECT & rect )
 }
 
 //===========================================================================
-void DrawConsoleLine( const conchar_t * pText, int y )
+void DrawConsoleLine ( const conchar_t * pText, int y )
 {
 	if (y < 0)
 		return;
@@ -2718,6 +2721,12 @@ void DrawSubWindow_Console (Update_t bUpdate)
 			{
 				DebuggerSetColorFG( DebuggerGetColor( FG_CONSOLE_OUTPUT ));
 				DrawConsoleLine( g_aConsoleDisplay[ iLine  ], y );
+			}
+			else
+			{
+				// bugfix: 2.6.1.34
+				// scrolled past top of console... Draw blank line
+				DrawConsoleLine( NULL, y );
 			}
 			iLine++;
 		}
