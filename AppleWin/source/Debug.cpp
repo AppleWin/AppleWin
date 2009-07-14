@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,1,32);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,1,35);
 
 
 // Public _________________________________________________________________________________________
@@ -8379,7 +8379,7 @@ void DebuggerInputConsoleChar( TCHAR ch )
 
 // Triggered when ENTER is pressed, or via script
 //===========================================================================
-Update_t DebuggerProcessCommand( const bool bEchoConsoleInput )
+Update_t DebuggerProcessCommand ( const bool bEchoConsoleInput )
 {
 	Update_t bUpdateDisplay = UPDATE_NOTHING;
 
@@ -8520,14 +8520,26 @@ void DebuggerProcessKey( int keycode )
 
 		if (! g_nConsoleInputChars)
 		{
-			ToggleFullScreenConsole();
+			// bugfix: 2.6.1.35 Fixed: Pressing enter on blank line while in assembler wouldn't exit it.
+			if( g_bAssemblerInput )
+			{
+				bUpdateDisplay |= DebuggerProcessCommand( false );
+			}
+			else
+			{
+				ToggleFullScreenConsole();
+				bUpdateDisplay |= UPDATE_ALL;
+			}
 		}
 		else
 		{
 			ConsoleScrollEnd();
 			bUpdateDisplay |= DebuggerProcessCommand( true ); // copy console input to console output
+
+			// BUGFIX: main disassembly listing doesn't get updated in full screen console
+			//bUpdateDisplay |= UPDATE_CONSOLE_DISPLAY;
+			bUpdateDisplay |= UPDATE_ALL;
 		}		
-		bUpdateDisplay |= UPDATE_CONSOLE_DISPLAY;
 	}
 	else if (( keycode == VK_OEM_3 ) ||	// US: Tilde ~ (key to the immediate left of numeral 1)
 			 ( keycode == VK_OEM_8 ))	// UK: Logical NOT ¬ (key to the immediate left of numeral 1)
@@ -8662,6 +8674,7 @@ void DebuggerProcessKey( int keycode )
 					else
 					{
 						// Scroll through console input history
+						bUpdateDisplay |= ConsoleScrollUp( 3 );
 					}
 				}
 				else
@@ -8691,6 +8704,7 @@ void DebuggerProcessKey( int keycode )
 					else
 					{
 						// Scroll through console input history
+						bUpdateDisplay |= ConsoleScrollDn( 3 );
 					}
 				}
 				else
