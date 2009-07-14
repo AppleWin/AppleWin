@@ -70,7 +70,7 @@
 
 	void DrawBreakpoints      ( int line);
 	void DrawConsoleInput     ();
-	void DrawConsoleLine      ( const char * pText, int y);
+	void DrawConsoleLine      ( const conchar_t * pText, int y);
 	void DrawConsoleCursor    ();
 
 	int GetDisassemblyLine(  const WORD nOffset, DisasmLine_t & line_ );
