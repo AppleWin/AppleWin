@@ -1,6 +1,9 @@
 /*
 
 2.6.1.x
+.32 Added: Pressing Enter on a blank line now toggles the full screen console.
+    "Blame" Nick for this great idea. :-)
+    You can still use Ctrl-` if need be.
 .31 Added: Help examples for Memory Fill
 .30 Fixed: Memory Fill
 	F start end value
@@ -45,7 +48,7 @@
 	A2_USER2.SYM
 	A2_SRC1.SYM
 	A2_SRC2.SYM
-    Repsectively for basic, user1, user2, source1, and source2
+    Respectively for basic, user1, user2, source1, and source2
 .16 Added: In addition to !, can now use ~ to remove a symbol
      symbasic aCold.reset = F128
      symbasic aWarm.reset = D43C
