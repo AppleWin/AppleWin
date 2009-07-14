@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,1,31);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,1,32);
 
 
 // Public _________________________________________________________________________________________
@@ -8437,6 +8437,19 @@ Update_t DebuggerProcessCommand( const bool bEchoConsoleInput )
 	return bUpdateDisplay;
 }
 
+void ToggleFullScreenConsole()
+{
+	// Switch to Console Window
+	if (g_iWindowThis != WINDOW_CONSOLE)
+	{
+		CmdWindowViewConsole( 0 );
+	}
+	else // switch back to last window
+	{
+		CmdWindowLast( 0 );
+	}
+}
+
 //===========================================================================
 void DebuggerProcessKey( int keycode )
 //void DebugProcessCommand (int keycode)
@@ -8504,8 +8517,16 @@ void DebuggerProcessKey( int keycode )
 	else if (keycode == VK_RETURN)
 	{
 //		ConsoleUpdateCursor( 0 );
-		ConsoleScrollEnd();
-		bUpdateDisplay |= DebuggerProcessCommand( true ); // copy console input to console output
+
+		if (! g_nConsoleInputChars)
+		{
+			ToggleFullScreenConsole();
+		}
+		else
+		{
+			ConsoleScrollEnd();
+			bUpdateDisplay |= DebuggerProcessCommand( true ); // copy console input to console output
+		}		
 		bUpdateDisplay |= UPDATE_CONSOLE_DISPLAY;
 	}
 	else if (( keycode == VK_OEM_3 ) ||	// US: Tilde ~ (key to the immediate left of numeral 1)
@@ -8513,15 +8534,7 @@ void DebuggerProcessKey( int keycode )
 	{
 		if (KeybGetCtrlStatus())
 		{
-			// Switch to Console Window
-			if (g_iWindowThis != WINDOW_CONSOLE)
-			{
-				CmdWindowViewConsole( 0 );
-			}
-			else // switch back to last window
-			{
-				CmdWindowLast( 0 );
-			}
+			ToggleFullScreenConsole();
 			bUpdateDisplay |= UPDATE_ALL;
 		}
 		else
