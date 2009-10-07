@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2009, Tom Charlesworth, Michael Pohoreski, Nick Westgate
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,7 +43,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 
 //#define SUPPORT_MODEM
-#define TCP_SERIAL_OPTION 5
 #define TCP_SERIAL_PORT 1977
 
 // Default: 19200-8-N-1
@@ -64,31 +63,50 @@ SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 
 //===========================================================================
 
-CSuperSerialCard::CSuperSerialCard()
+CSuperSerialCard::CSuperSerialCard() :
+	m_aySerialPortChoices(NULL),
+	m_uTCPChoiceItemIdx(0)
 {
-	m_dwSerialPort = 0;
-
-	GetDIPSW();
-
-	m_vRecvBytes = 0;
+	memset(m_ayCurrentSerialPortName, 0, sizeof(m_ayCurrentSerialPortName));
+	m_dwSerialPortItem = 0;
 
 	m_hCommHandle = INVALID_HANDLE_VALUE;
 	m_hCommListenSocket = INVALID_SOCKET;
 	m_hCommAcceptSocket = INVALID_SOCKET;
 	m_dwCommInactivity	= 0;
 
-	m_bTxIrqEnabled = false;
-	m_bRxIrqEnabled = false;
-
-	m_bWrittenTx = false;
-
-	m_vbCommIRQ = false;
 	m_hCommThread = NULL;
 
 	for (UINT i=0; i<COMMEVT_MAX; i++)
 		m_hCommEvent[i] = NULL;
 
 	memset(&m_o, 0, sizeof(m_o));
+
+	InternalReset();
+}
+
+void CSuperSerialCard::InternalReset()
+{
+	GetDIPSW();
+
+	m_bTxIrqEnabled = false;
+	m_bRxIrqEnabled = false;
+
+	m_bWrittenTx = false;
+
+	m_vuRxCurrBuffer = 0;
+
+	m_vbTxIrqPending = false;
+	m_vbRxIrqPending = false;
+
+	m_qComSerialBuffer[0].c.clear();
+	m_qComSerialBuffer[1].c.clear();
+	m_qTcpSerialBuffer.c.clear();
+}
+
+CSuperSerialCard::~CSuperSerialCard()
+{
+	delete [] m_aySerialPortChoices;
 }
 
 //===========================================================================
@@ -195,91 +213,101 @@ BOOL CSuperSerialCard::CheckComm()
 	m_dwCommInactivity = 0;
 
 	// check for COM or TCP socket handle, and setup if invalid
-	if ((m_hCommHandle == INVALID_HANDLE_VALUE) && (m_hCommListenSocket == INVALID_SOCKET))
+	if (IsActive())
+		return true;
+
+	if (m_dwSerialPortItem == m_uTCPChoiceItemIdx)
 	{
-		if (m_dwSerialPort == TCP_SERIAL_OPTION)
+		// init Winsock 1.1 (for Win95, otherwise could use 2.2)
+		WSADATA wsaData;
+		if (WSAStartup(MAKEWORD(1, 1), &wsaData) == 0) // or (2, 2) for Winsock 2.2
 		{
-			// init Winsock 1.1 (for Win95, otherwise could use 2.2)
-			WSADATA wsaData;
-			if (WSAStartup(MAKEWORD(1, 1), &wsaData) == 0) // or (2, 2) for Winsock 2.2
+			if (wsaData.wVersion != 0x0101) // or 0x0202 for Winsock 2.2
 			{
-				if (wsaData.wVersion != 0x0101) // or 0x0202 for Winsock 2.2
-				{
-					WSACleanup();
-					return FALSE;
-				}
-
-				// initialized, so try to create a socket
-				m_hCommListenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-				if (m_hCommListenSocket == INVALID_SOCKET)
-				{
-					WSACleanup();
-					return FALSE;
-				}
-
-				// have socket so attempt to bind it
-				SOCKADDR_IN saAddress;
-				saAddress.sin_family = AF_INET;
-				saAddress.sin_port = htons(TCP_SERIAL_PORT); // TODO: get from registry / GUI
-				saAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-				if (bind(m_hCommListenSocket, (LPSOCKADDR)&saAddress, sizeof(saAddress)) == SOCKET_ERROR)
-				{
-					m_hCommListenSocket = INVALID_SOCKET;
-					WSACleanup();
-					return FALSE;
-				}
-
-				// bound, so listen
-				if (listen(m_hCommListenSocket, 1) == SOCKET_ERROR)
-				{
-					m_hCommListenSocket = INVALID_SOCKET;
-					WSACleanup();
-					return FALSE;
-				}
-
-				// now send async events to our app's message handler
-				if (WSAAsyncSelect(
-						/* SOCKET s */ m_hCommListenSocket,
-						/* HWND hWnd */ g_hFrameWindow,
-						/* unsigned int wMsg */ WM_USER_TCP_SERIAL,
-						/* long lEvent */ (FD_ACCEPT | FD_CONNECT | FD_READ | FD_CLOSE)) != 0)
-				{
-					m_hCommListenSocket = INVALID_SOCKET;
-					WSACleanup();
-					return FALSE;
-				}
+				WSACleanup();
+				return FALSE;
 			}
-		}
-		else
-		{
-			TCHAR portname[8];
-			wsprintf(portname, TEXT("COM%u"), m_dwSerialPort);
 
-			m_hCommHandle = CreateFile(portname,
-									GENERIC_READ | GENERIC_WRITE,
-									0,								// exclusive access
-									(LPSECURITY_ATTRIBUTES)NULL,	// default security attributes
-									OPEN_EXISTING,
-									FILE_FLAG_OVERLAPPED,			// required for WaitCommEvent()
-									NULL);
-
-			if (m_hCommHandle != INVALID_HANDLE_VALUE)
+			// initialized, so try to create a socket
+			m_hCommListenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+			if (m_hCommListenSocket == INVALID_SOCKET)
 			{
-				UpdateCommState();
-				COMMTIMEOUTS ct;
-				ZeroMemory(&ct,sizeof(COMMTIMEOUTS));
-				ct.ReadIntervalTimeout = MAXDWORD;
-				SetCommTimeouts(m_hCommHandle,&ct);
-				CommThInit();
+				WSACleanup();
+				return FALSE;
 			}
-			else
+
+			// have socket so attempt to bind it
+			SOCKADDR_IN saAddress;
+			saAddress.sin_family = AF_INET;
+			saAddress.sin_port = htons(TCP_SERIAL_PORT); // TODO: get from registry / GUI
+			saAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+			if (bind(m_hCommListenSocket, (LPSOCKADDR)&saAddress, sizeof(saAddress)) == SOCKET_ERROR)
 			{
-				DWORD uError = GetLastError();
+				m_hCommListenSocket = INVALID_SOCKET;
+				WSACleanup();
+				return FALSE;
+			}
+
+			// bound, so listen
+			if (listen(m_hCommListenSocket, 1) == SOCKET_ERROR)
+			{
+				m_hCommListenSocket = INVALID_SOCKET;
+				WSACleanup();
+				return FALSE;
+			}
+
+			// now send async events to our app's message handler
+			if (WSAAsyncSelect(
+					/* SOCKET s */ m_hCommListenSocket,
+					/* HWND hWnd */ g_hFrameWindow,
+					/* unsigned int wMsg */ WM_USER_TCP_SERIAL,
+					/* long lEvent */ (FD_ACCEPT | FD_CONNECT | FD_READ | FD_CLOSE)) != 0)
+			{
+				m_hCommListenSocket = INVALID_SOCKET;
+				WSACleanup();
+				return FALSE;
 			}
 		}
 	}
+	else
+	{
+		_ASSERT(m_dwSerialPortItem);
+		_ASSERT(m_dwSerialPortItem < m_vecSerialPortsItems.size()-1);	// size()-1 is TCP item
+		TCHAR portname[SIZEOF_SERIALCHOICE_ITEM];
+		wsprintf(portname, TEXT("COM%u"), m_vecSerialPortsItems[m_dwSerialPortItem]);
 
-	return ((m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET));
+		m_hCommHandle = CreateFile(portname,
+								GENERIC_READ | GENERIC_WRITE,
+								0,								// exclusive access
+								(LPSECURITY_ATTRIBUTES)NULL,	// default security attributes
+								OPEN_EXISTING,
+								FILE_FLAG_OVERLAPPED,			// required for WaitCommEvent()
+								NULL);
+
+		if (m_hCommHandle != INVALID_HANDLE_VALUE)
+		{
+			//BOOL bRes = SetupComm(m_hCommHandle, 8192, 8192);
+			//_ASSERT(bRes);
+
+			UpdateCommState();
+
+			// ReadIntervalTimeout=MAXDWORD; ReadTotalTimeoutConstant=ReadTotalTimeoutMultiplier=0:
+			// Read operation is to return immediately with the bytes that have already been received,
+			// even if no bytes have been received.
+			COMMTIMEOUTS ct;
+			ZeroMemory(&ct,sizeof(COMMTIMEOUTS));
+			ct.ReadIntervalTimeout = MAXDWORD;
+			SetCommTimeouts(m_hCommHandle,&ct);
+
+			CommThInit();
+		}
+		else
+		{
+			DWORD uError = GetLastError();
+		}
+	}
+
+	return IsActive();
 }
 
 //===========================================================================
@@ -323,9 +351,9 @@ void CSuperSerialCard::CommTcpSerialClose()
 		closesocket(m_hCommAcceptSocket);
 		m_hCommAcceptSocket = INVALID_SOCKET;
 	}
-	while (!m_TcpSerialBuffer.empty())
+	while (!m_qTcpSerialBuffer.empty())
 	{
-		m_TcpSerialBuffer.pop();
+		m_qTcpSerialBuffer.pop();
 	}
 }
 
@@ -347,19 +375,18 @@ void CSuperSerialCard::CommTcpSerialReceive()
 {
 	if (m_hCommAcceptSocket != INVALID_SOCKET)
 	{
-		char data[0x80];
-		int received = 0;
-		while ((received = recv(m_hCommAcceptSocket, data, sizeof(data), 0)) > 0)
+		char Data[0x80];
+		int nReceived = 0;
+		while ((nReceived = recv(m_hCommAcceptSocket, Data, sizeof(Data), 0)) > 0)
 		{
-			for (int i = 0; i < received; i++)
+			for (int i = 0; i < nReceived; i++)
 			{
-				m_TcpSerialBuffer.push(data[i]);
+				m_qTcpSerialBuffer.push(Data[i]);
 			}
 		}
 
-		if (m_bRxIrqEnabled && !m_TcpSerialBuffer.empty())
+		if (m_bRxIrqEnabled && !m_qTcpSerialBuffer.empty())
 		{
-			m_vbCommIRQ = true;
 			CpuIrqAssert(IS_SSC);
 		}
 	}
@@ -509,22 +536,22 @@ BYTE __stdcall CSuperSerialCard::CommControl(WORD, WORD, BYTE write, BYTE value,
 			// a decent buffer in the device being accessed.  The faster Apples
 			// have no difficulty with this speed, however.
 
-			case 0x00: // fall through [16x external clock]
+			case 0x00: m_uBaudRate = CBR_115200;	break;	// Internal clk: undoc'd 115.2K (or 16x external clock)
 			case 0x01: // fall through [50 bps]
 			case 0x02: // fall through [75 bps]
 			case 0x03: // fall through [109.92 bps]
 			case 0x04: // fall through [134.58 bps]
-			case 0x05: m_uBaudRate = CBR_110;     break;	// [150 bps]
-			case 0x06: m_uBaudRate = CBR_300;     break;
-			case 0x07: m_uBaudRate = CBR_600;     break;
-			case 0x08: m_uBaudRate = CBR_1200;    break;
+			case 0x05: m_uBaudRate = CBR_110;		break;	// [150 bps]
+			case 0x06: m_uBaudRate = CBR_300;		break;
+			case 0x07: m_uBaudRate = CBR_600;		break;
+			case 0x08: m_uBaudRate = CBR_1200;		break;
 			case 0x09: // fall through [1800 bps]
-			case 0x0A: m_uBaudRate = CBR_2400;    break;
+			case 0x0A: m_uBaudRate = CBR_2400;		break;
 			case 0x0B: // fall through [3600 bps]
-			case 0x0C: m_uBaudRate = CBR_4800;    break;
+			case 0x0C: m_uBaudRate = CBR_4800;		break;
 			case 0x0D: // fall through [7200 bps]
-			case 0x0E: m_uBaudRate = CBR_9600;    break;
-			case 0x0F: m_uBaudRate = CBR_19200;   break;
+			case 0x0E: m_uBaudRate = CBR_9600;		break;
+			case 0x0F: m_uBaudRate = CBR_19200;		break;
 		}
 
 		if (m_uControlByte & 0x10)
@@ -535,10 +562,10 @@ BYTE __stdcall CSuperSerialCard::CommControl(WORD, WORD, BYTE write, BYTE value,
 		// UPDATE THE BYTE SIZE
 		switch (m_uControlByte & 0x60)
 		{
-			case 0x00: m_uByteSize = 8;  break;
-			case 0x20: m_uByteSize = 7;  break;
-			case 0x40: m_uByteSize = 6;  break;
-			case 0x60: m_uByteSize = 5;  break;
+			case 0x00: m_uByteSize = 8; break;
+			case 0x20: m_uByteSize = 7; break;
+			case 0x40: m_uByteSize = 6; break;
+			case 0x60: m_uByteSize = 5; break;
 		}
 
 		// UPDATE THE NUMBER OF STOP BITS
@@ -564,6 +591,8 @@ BYTE __stdcall CSuperSerialCard::CommControl(WORD, WORD, BYTE write, BYTE value,
 
 //===========================================================================
 
+static UINT g_uDbgTotalSSCRx = 0;
+
 BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 {
 	if (!CheckComm())
@@ -571,24 +600,40 @@ BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 
 	BYTE result = 0;
 
-	if (!m_TcpSerialBuffer.empty())
+	if (!m_qTcpSerialBuffer.empty())
 	{
-		result = m_TcpSerialBuffer.front();
-		m_TcpSerialBuffer.pop();
+		result = m_qTcpSerialBuffer.front();
+		m_qTcpSerialBuffer.pop();
 	}
-	else if (m_vRecvBytes)
+	else if (m_hCommHandle != INVALID_HANDLE_VALUE)	// COM
 	{
-		// Don't need critical section in here as CommThread is waiting for ACK
-
-		result = m_RecvBuffer[0];
-		--m_vRecvBytes;
-
-		if (m_vbCommIRQ && !m_vRecvBytes)
+		EnterCriticalSection(&m_CriticalSection);
 		{
-			// Read last byte, so get CommThread to call WaitCommEvent() again
-			OutputDebugString("CommRecv: SetEvent - ACK\n");
-			SetEvent(m_hCommEvent[COMMEVT_ACK]);
+			const UINT uCOMIdx = m_vuRxCurrBuffer;
+			const UINT uSSCIdx = uCOMIdx ^ 1;
+			if (!m_qComSerialBuffer[uSSCIdx].empty())
+			{
+				result = m_qComSerialBuffer[uSSCIdx].front();
+				m_qComSerialBuffer[uSSCIdx].pop();
+
+				UINT uNewSSCIdx = uSSCIdx;
+				if ( m_qComSerialBuffer[uSSCIdx].empty() &&		// Current SSC buffer is empty
+					!m_qComSerialBuffer[uCOMIdx].empty() )		// Current COM buffer has data
+				{
+					m_vuRxCurrBuffer = uSSCIdx;				// Flip buffers
+					uNewSSCIdx = uCOMIdx;
+				}
+
+				if (m_bRxIrqEnabled && !m_qComSerialBuffer[uNewSSCIdx].empty())
+				{
+					CpuIrqAssert(IS_SSC);
+					m_vbRxIrqPending = true;
+				}
+			}
 		}
+		LeaveCriticalSection(&m_CriticalSection);
+
+		g_uDbgTotalSSCRx++;
 	}
 
 	return result;
@@ -668,11 +713,13 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	// . IRQs disabled : always set it [Currently done]
 	//
 
-	// So that /m_vRecvBytes/ doesn't change midway (from 0 to 1):
-	// . bIRQ=false, but uStatus.ST_RX_FULL=1
+	bool bComSerialBufferEmpty = true;	// Assume true, so if using TCP then logic below works
+
 	if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
 		EnterCriticalSection(&m_CriticalSection);
+		const UINT uSSCIdx = m_vuRxCurrBuffer ^ 1;
+		bComSerialBufferEmpty = m_qComSerialBuffer[uSSCIdx].empty();
 	}
 
 	bool bIRQ = false;
@@ -680,17 +727,18 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	{
 		bIRQ = true;
 	}
-	if (m_bRxIrqEnabled && (m_vRecvBytes || !m_TcpSerialBuffer.empty()))
+	if (m_bRxIrqEnabled)
 	{
-		bIRQ = true;
+		bIRQ = m_vbRxIrqPending;
+		m_vbRxIrqPending = false;	// Ensure 2 reads of STATUS reg only return ST_IRQ for first read
 	}
 
-	m_bWrittenTx = false;	// Read status reg always clears IRQ
+	m_bWrittenTx = false;		// Read status reg always clears IRQ
 
 	//
 
 	BYTE uStatus = ST_TX_EMPTY 
-				| ((m_vRecvBytes || !m_TcpSerialBuffer.empty()) ? ST_RX_FULL : 0x00)
+				| ((!bComSerialBufferEmpty || !m_qTcpSerialBuffer.empty()) ? ST_RX_FULL : 0x00)
 #ifdef SUPPORT_MODEM
 				| ((modemstatus & MS_RLSD_ON)	? 0x00 : ST_DCD)	// Need 0x00 to allow ZLink to start up
 				| ((modemstatus & MS_DSR_ON)	? 0x00 : ST_DSR)
@@ -798,18 +846,7 @@ void CSuperSerialCard::CommReset()
 {
 	CloseComm();
 
-	GetDIPSW();
-
-	m_vRecvBytes = 0;
-
-	//
-
-	m_bTxIrqEnabled = false;
-	m_bRxIrqEnabled = false;
-
-	m_bWrittenTx = false;
-
-	m_vbCommIRQ = false;
+	InternalReset();
 }
 
 //===========================================================================
@@ -824,27 +861,31 @@ void CSuperSerialCard::CommDestroy()
 
 //===========================================================================
 
-void CSuperSerialCard::CommSetSerialPort(HWND window, DWORD newserialport)
+// dwNewSerialPortItem is the drop-down list item
+void CSuperSerialCard::CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem)
 {
-	if ((m_hCommHandle == INVALID_HANDLE_VALUE) && (m_hCommListenSocket == INVALID_SOCKET))
-	{
-		m_dwSerialPort = newserialport;
-	}
+	if (m_dwSerialPortItem == dwNewSerialPortItem)
+		return;
+
+	_ASSERT(!IsActive());
+	if (IsActive())
+		return;
+
+	m_dwSerialPortItem = dwNewSerialPortItem;
+
+	if (m_dwSerialPortItem == m_uTCPChoiceItemIdx)
+		strcpy(m_ayCurrentSerialPortName, TEXT_SERIAL_TCP);
+	else if (m_dwSerialPortItem != 0)
+		sprintf(m_ayCurrentSerialPortName, TEXT_SERIAL_COM"%d", m_vecSerialPortsItems[m_dwSerialPortItem]);
 	else
-	{
-		MessageBox(window,
-			TEXT("You cannot change the serial port while it is ")
-			TEXT("in use."),
-			TEXT("Configuration"),
-			MB_ICONEXCLAMATION | MB_SETFOREGROUND);
-	}
+		m_ayCurrentSerialPortName[0] = 0;	// "None"
 }
 
 //===========================================================================
 
 void CSuperSerialCard::CommUpdate(DWORD totalcycles)
 {
-	if ((m_hCommHandle == INVALID_HANDLE_VALUE) && (m_hCommListenSocket == INVALID_SOCKET))
+	if (!IsActive())
 		return;
 
 	if ((m_dwCommInactivity += totalcycles) > 1000000)
@@ -871,25 +912,87 @@ void CSuperSerialCard::CommUpdate(DWORD totalcycles)
 
 //===========================================================================
 
+// Had this error when sizeof(m_RecvBuffer)==1 was used
+// UPDATE: Fixed by using double-buffered queue
+//
+// ERROR_OPERATION_ABORTED: CE_RXOVER
+//
+// Config:
+// . DOS Box (laptop) -> ZLink (PC)
+// . Baud = 300/4800/9600/19200
+// . InQueue size = 0x1000
+// . AppleII speed = 1MHz/2MHz/Unthrottled
+// . TYPE AW-PascalCrash.txt >COM7
+// . NB. AW-PascalCrash.txt is 10020 bytes
+//
+// Error:
+// . Always get ERROR_OPERATION_ABORTED after reading 0x555 total bytes
+// . dwErrors = 1 (CE_RXOVER)
+// . COMSTAT::InQueue = 0x1000
+//
+
+static UINT g_uDbgTotalCOMRx = 0;
+
 void CSuperSerialCard::CheckCommEvent(DWORD dwEvtMask)
 {
 	if (dwEvtMask & EV_RXCHAR)
 	{
-		EnterCriticalSection(&m_CriticalSection);
-		ReadFile(m_hCommHandle, m_RecvBuffer, 1, (DWORD*)&m_vRecvBytes, &m_o);
-		LeaveCriticalSection(&m_CriticalSection);
+		char Data[0x80];
+		DWORD dwReceived = 0;
+		bool bGotData = false;
 
-		if (m_bRxIrqEnabled && m_vRecvBytes)
+		// Read COM buffer until empty
+		// NB. Potentially dangerous, as Apple read rate might be too slow, so could run out of memory on PC!
+		do
 		{
-			m_vbCommIRQ = true;
-			CpuIrqAssert(IS_SSC);
+			if (!ReadFile(m_hCommHandle, Data, sizeof(Data), &dwReceived, &m_o) || !dwReceived)
+				break;
+
+			g_uDbgTotalCOMRx += dwReceived;
+
+			bGotData = true;
+
+			EnterCriticalSection(&m_CriticalSection);
+			{
+				const UINT uCOMIdx = m_vuRxCurrBuffer;
+				for (DWORD i = 0; i < dwReceived; i++)
+					m_qComSerialBuffer[uCOMIdx].push(Data[i]);
+			}
+			LeaveCriticalSection(&m_CriticalSection);
+		}
+		while(sizeof(Data) == dwReceived);
+
+		//
+
+		if (bGotData)
+		{
+			EnterCriticalSection(&m_CriticalSection);
+			{
+				// NB. m_vuRxCurrBuffer may've changed since ReadFile() above -- can change in CommReceive()
+				// - Maybe buffers have already been flipped
+
+				const UINT uCOMIdx = m_vuRxCurrBuffer;
+				const UINT uSSCIdx = uCOMIdx ^ 1;
+				if ( m_qComSerialBuffer[uSSCIdx].empty() &&		// Current SSC buffer is empty
+					!m_qComSerialBuffer[uCOMIdx].empty() )		// Current COM buffer has data
+				{
+					m_vuRxCurrBuffer = uSSCIdx;				// Flip buffers
+
+					if (m_bRxIrqEnabled)
+					{
+						CpuIrqAssert(IS_SSC);
+						m_vbRxIrqPending = true;
+					}
+				}
+			}
+			LeaveCriticalSection(&m_CriticalSection);
 		}
 	}
 	//else if (dwEvtMask & EV_TXEMPTY)
 	//{
 	//	if (m_bTxIrqEnabled)
 	//	{
-	//		m_vbCommIRQ = true;
+	//		m_vbTxIrqPending = true;
 	//		CpuIrqAssert(IS_SSC);
 	//	}
 	//}
@@ -908,19 +1011,9 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 	//
 
 	const UINT nNumEvents = 2;
-#if 1
+
 	HANDLE hCommEvent_Wait[nNumEvents] = {pSSC->m_hCommEvent[COMMEVT_WAIT], pSSC->m_hCommEvent[COMMEVT_TERM]};
 	HANDLE hCommEvent_Ack[nNumEvents]  = {pSSC->m_hCommEvent[COMMEVT_ACK],  pSSC->m_hCommEvent[COMMEVT_TERM]};
-#else
-	HANDLE hCommEvent_Wait[nNumEvents];
-	HANDLE hCommEvent_Ack[nNumEvents];
-
-	hCommEvent_Wait[0] = m_hCommEvent[COMMEVT_WAIT];
-	hCommEvent_Wait[1] = m_hCommEvent[COMMEVT_TERM];
-
-	hCommEvent_Ack[0] = m_hCommEvent[COMMEVT_ACK];
-	hCommEvent_Ack[1] = m_hCommEvent[COMMEVT_TERM];
-#endif
 
 	while(1)
 	{
@@ -932,10 +1025,25 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 		if (!bRes)
 		{
 			DWORD dwRet = GetLastError();
-			// Got this error once: ERROR_OPERATION_ABORTED
 			_ASSERT(dwRet == ERROR_IO_PENDING);
 			if (dwRet != ERROR_IO_PENDING)
+			{
+				// Probably: ERROR_OPERATION_ABORTED
+				DWORD dwErrors;
+				COMSTAT Stat;
+				ClearCommError(pSSC->m_hCommHandle, &dwErrors, &Stat);
+				if (dwErrors)
+				{
+					if (dwErrors & CE_RXOVER)
+						sprintf(szDbg, "CommThread: Err=CE_RXOVER (0x%08X): InQueue=0x%08X\n", dwErrors, Stat.cbInQue);
+					else
+						sprintf(szDbg, "CommThread: Err=Other (0x%08X): InQueue=0x%08X, OutQueue=0x%08X\n", dwErrors, Stat.cbInQue, Stat.cbOutQue);
+					OutputDebugString(szDbg);
+					if (g_fh)
+						fprintf(g_fh, szDbg);
+				}
 				return -1;
+			}
 
 			//
 			// Wait for comm event
@@ -943,7 +1051,7 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 
 			while(1)
 			{
-				OutputDebugString("CommThread: Wait1\n");
+				//OutputDebugString("CommThread: Wait1\n");
 				dwWaitResult = WaitForMultipleObjects( 
 										nNumEvents,			// number of handles in array
 										hCommEvent_Wait,	// array of event handles
@@ -959,7 +1067,7 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 			}
 
 			dwWaitResult -= WAIT_OBJECT_0;			// Determine event # that signaled
-			sprintf(szDbg, "CommThread: GotEvent1: %d\n", dwWaitResult); OutputDebugString(szDbg);
+			//sprintf(szDbg, "CommThread: GotEvent1: %d\n", dwWaitResult); OutputDebugString(szDbg);
 
 			if (dwWaitResult == (nNumEvents-1))
 				break;	// Termination event
@@ -967,34 +1075,6 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 
 		// Comm event
 		pSSC->CheckCommEvent(dwEvtMask);
-
-		if (pSSC->m_vbCommIRQ)
-		{
-			//
-			// Wait for ack
-			//
-
-			while(1)
-			{
-				OutputDebugString("CommThread: Wait2\n");
-				dwWaitResult = WaitForMultipleObjects( 
-										nNumEvents,			// number of handles in array
-										hCommEvent_Ack,		// array of event handles
-										FALSE,				// wait until any one is signaled
-										INFINITE);
-
-				if ((dwWaitResult >= WAIT_OBJECT_0) && (dwWaitResult <= WAIT_OBJECT_0+nNumEvents-1))
-					break;
-			}
-
-			dwWaitResult -= WAIT_OBJECT_0;			// Determine event # that signaled
-			sprintf(szDbg, "CommThread: GotEvent2: %d\n", dwWaitResult); OutputDebugString(szDbg);
-
-			if (dwWaitResult == (nNumEvents-1))
-				break;	// Termination event
-
-			pSSC->m_vbCommIRQ = false;
-		}
 	}
 
 	return 0;
@@ -1101,6 +1181,112 @@ void CSuperSerialCard::CommThUninit()
 
 //===========================================================================
 
+void CSuperSerialCard::ScanCOMPorts()
+{
+	m_vecSerialPortsItems.clear();
+	m_vecSerialPortsItems.push_back(SERIALPORTITEM_INVALID_COM_PORT);	// "None"
+
+	for (UINT i=1; i<32; i++)	// Arbitrary upper limit
+	{
+		TCHAR portname[SIZEOF_SERIALCHOICE_ITEM];
+		wsprintf(portname, TEXT("COM%u"), i);
+
+		HANDLE hCommHandle = CreateFile(portname,
+								GENERIC_READ | GENERIC_WRITE,
+								0,								// exclusive access
+								(LPSECURITY_ATTRIBUTES)NULL,	// default security attributes
+								OPEN_EXISTING,
+								FILE_FLAG_OVERLAPPED,			// required for WaitCommEvent()
+								NULL);
+
+		if (hCommHandle != INVALID_HANDLE_VALUE)
+		{
+			CloseHandle(hCommHandle);
+			m_vecSerialPortsItems.push_back(i);
+		}
+	}
+
+	//
+
+	m_vecSerialPortsItems.push_back(SERIALPORTITEM_INVALID_COM_PORT);	// "TCP"
+	m_uTCPChoiceItemIdx = m_vecSerialPortsItems.size()-1;
+}
+
+char* CSuperSerialCard::GetSerialPortChoices()
+{
+	if (IsActive())
+		return m_aySerialPortChoices;
+
+	//
+
+	ScanCOMPorts();				// Do this every time in case news ones available (eg. for USB COM ports)
+	delete [] m_aySerialPortChoices;
+	m_aySerialPortChoices = new TCHAR [ GetNumSerialPortChoices() * SIZEOF_SERIALCHOICE_ITEM + 1 ];	// +1 for final NULL item
+
+	TCHAR* pNextSerialChoice = m_aySerialPortChoices;
+
+	//
+
+	pNextSerialChoice += wsprintf(pNextSerialChoice, TEXT("None"));
+	pNextSerialChoice++;		// Skip NULL char
+
+	for (UINT i=1; i<m_uTCPChoiceItemIdx; i++)
+	{
+		pNextSerialChoice += wsprintf(pNextSerialChoice, TEXT("COM%u"), m_vecSerialPortsItems[i]);
+		pNextSerialChoice++;	// Skip NULL char
+	}
+
+	pNextSerialChoice += wsprintf(pNextSerialChoice, TEXT("TCP"));
+	pNextSerialChoice++;		// Skip NULL char
+
+	*pNextSerialChoice = 0;
+
+	//
+
+	return m_aySerialPortChoices;
+}
+
+void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
+{
+	strncpy(m_ayCurrentSerialPortName, pSerialPortName, SIZEOF_SERIALCHOICE_ITEM);
+
+	if (m_vecSerialPortsItems.empty())
+		ScanCOMPorts();
+
+	if (strncmp(TEXT_SERIAL_COM, pSerialPortName, sizeof(TEXT_SERIAL_COM)-1) == 0)
+	{
+		const char* p = &pSerialPortName[ sizeof(TEXT_SERIAL_COM)-1 ];
+		const int nCOMPort = atoi(p);
+		m_dwSerialPortItem = 0;
+		for (UINT i=0; i<m_vecSerialPortsItems.size(); i++)
+		{
+			if (m_vecSerialPortsItems[i] == nCOMPort)
+			{
+				m_dwSerialPortItem = i;
+				break;
+			}
+		}
+		//_ASSERT(m_dwSerialPortItem);	// EG. Switched a USB COM port from COM7 to COM8 between AppleWin sessions
+
+		if (m_dwSerialPortItem >= GetNumSerialPortChoices())
+		{
+			_ASSERT(0);
+			m_dwSerialPortItem = 0;
+		}
+	}
+	else if (strncmp(TEXT_SERIAL_TCP, pSerialPortName, sizeof(TEXT_SERIAL_TCP)-1) == 0)
+	{
+		m_dwSerialPortItem = m_uTCPChoiceItemIdx;
+	}
+	else
+	{
+		m_ayCurrentSerialPortName[0] = 0;	// "None"
+		m_dwSerialPortItem = 0;
+	}
+}
+
+//===========================================================================
+
 DWORD CSuperSerialCard::CommGetSnapshot(SS_IO_Comms* pSS)
 {
 	pSS->baudrate		= m_uBaudRate;
@@ -1109,8 +1295,8 @@ DWORD CSuperSerialCard::CommGetSnapshot(SS_IO_Comms* pSS)
 	pSS->comminactivity	= m_dwCommInactivity;
 	pSS->controlbyte	= m_uControlByte;
 	pSS->parity			= m_uParity;
-	memcpy(pSS->recvbuffer, m_RecvBuffer, uRecvBufferSize);
-	pSS->recvbytes		= m_vRecvBytes;
+//	memcpy(pSS->recvbuffer, m_RecvBuffer, uRecvBufferSize);
+	pSS->recvbytes		= 0;
 	pSS->stopbits		= m_uStopBits;
 	return 0;
 }
@@ -1123,8 +1309,8 @@ DWORD CSuperSerialCard::CommSetSnapshot(SS_IO_Comms* pSS)
 	m_dwCommInactivity	= pSS->comminactivity;
 	m_uControlByte		= pSS->controlbyte;
 	m_uParity			= pSS->parity;
-	memcpy(m_RecvBuffer, pSS->recvbuffer, uRecvBufferSize);
-	m_vRecvBytes	= pSS->recvbytes;
+//	memcpy(m_RecvBuffer, pSS->recvbuffer, uRecvBufferSize);
+//	m_vRecvBytes	= pSS->recvbytes;
 	m_uStopBits		= pSS->stopbits;
 	return 0;
 }

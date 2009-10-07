@@ -99,6 +99,7 @@ enum AppMode_e
 #define  REGVALUE_VIDEO_MODE         "Video Emulation"
 #define  REGVALUE_VIDEO_HALF_SCAN_LINES "Half Scan Lines"
 #define  REGVALUE_VIDEO_MONO_COLOR      "Monochrome Color"
+#define  REGVALUE_SERIAL_PORT_NAME   "Serial Port Name"
 
 // Preferences 
 #define REG_PREFS							"Preferences"

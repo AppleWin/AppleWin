@@ -1,5 +1,7 @@
 #pragma once
 
+#define MAX_SAMPLES (16*1024)
+
 #define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
 
 // Define max 1 of these:
@@ -34,6 +36,11 @@ enum eFADE {FADE_NONE, FADE_IN, FADE_OUT};
 void SoundCore_SetFade(eFADE FadeType);
 bool SoundCore_GetTimerState();
 void SoundCore_TweakVolumes();
+
+int SoundCore_GetErrorInc();
+void SoundCore_SetErrorInc(const int nErrorInc);
+int SoundCore_GetErrorMax();
+void SoundCore_SetErrorMax(const int nErrorMax);
 
 bool DSInit();
 void DSUninit();

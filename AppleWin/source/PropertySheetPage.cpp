@@ -72,13 +72,6 @@ TCHAR* pszJoy1Choices[J1C_MAX] = {	szJoyChoice0,
 int g_nJoy1ChoiceTranlationTbl[J1C_MAX];
 TCHAR joystick1choices[J1C_MAX*g_nMaxJoyChoiceLen];
 
-TCHAR   serialchoices[]   =  TEXT("None\0")
-                             TEXT("COM1\0")
-                             TEXT("COM2\0")
-                             TEXT("COM3\0")
-                             TEXT("COM4\0")
-                             TEXT("TCP\0");
-
 TCHAR   soundchoices[]    =  TEXT("Disabled\0")
                              TEXT("PC Speaker (direct)\0")
                              TEXT("PC Speaker (translated)\0")
@@ -345,7 +338,11 @@ static void ConfigDlg_OK(HWND window, UINT afterclose)
 	else
 		REGSAVE(TEXT(REGVALUE_APPLE2_TYPE),NewApple2Type );
 
-	REGSAVE(TEXT("Serial Port")       ,sg_SSC.GetSerialPort());
+	RegSaveString(	TEXT("Configuration"),
+					TEXT(REGVALUE_SERIAL_PORT_NAME),
+					TRUE,
+					sg_SSC.GetSerialPortName() );
+
 	REGSAVE(TEXT("Custom Speed")      ,IsDlgButtonChecked(window,IDC_CUSTOM_SPEED));
 	REGSAVE(TEXT("Emulation Speed")   ,g_dwSpeed);
 
@@ -479,8 +476,10 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
 
       FillComboBox(window,IDC_VIDEOTYPE,videochoices,g_eVideoType);
       CheckDlgButton(window, IDC_CHECK_HALF_SCAN_LINES, g_uHalfScanLines ? BST_CHECKED : BST_UNCHECKED);
-	  
-	  FillComboBox(window,IDC_SERIALPORT,serialchoices,sg_SSC.GetSerialPort());
+
+	  FillComboBox(window,IDC_SERIALPORT, sg_SSC.GetSerialPortChoices(), sg_SSC.GetSerialPort());
+	  EnableWindow(GetDlgItem(window, IDC_SERIALPORT), !sg_SSC.IsActive() ? TRUE : FALSE);
+
       SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
       SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
       SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETTICFREQ,10,0);

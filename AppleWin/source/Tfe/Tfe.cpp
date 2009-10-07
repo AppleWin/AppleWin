@@ -483,7 +483,7 @@ int tfe_activate_i(void)
     if (tfe==NULL)
     {
 #ifdef TFE_DEBUG_INIT
-        if(g_fh) fprintf(g_fh, "tfe_activate_i: Allocating tfe failed.");
+        if(g_fh) fprintf(g_fh, "tfe_activate_i: Allocating tfe failed.\n");
 #endif
         tfe_enabled = 0;
         return 0;
@@ -495,7 +495,7 @@ int tfe_activate_i(void)
     if (tfe_packetpage==NULL)
     {
 #ifdef TFE_DEBUG_INIT
-        if(g_fh) fprintf(g_fh, "tfe_activate: Allocating tfe_packetpage failed.");
+        if(g_fh) fprintf(g_fh, "tfe_activate: Allocating tfe_packetpage failed.\n");
 #endif
         lib_free(tfe);
         tfe=NULL;
@@ -504,8 +504,8 @@ int tfe_activate_i(void)
     }
 
 #ifdef TFE_DEBUG_INIT
-    if(g_fh) fprintf(g_fh, "tfe_activate: Allocated memory successfully.");
-    if(g_fh) fprintf(g_fh, "\ttfe at $%08X, tfe_packetpage at $%08X", tfe, tfe_packetpage );
+    if(g_fh) fprintf(g_fh, "tfe_activate: Allocated memory successfully.\n");
+    if(g_fh) fprintf(g_fh, "\ttfe at $%08X, tfe_packetpage at $%08X\n", tfe, tfe_packetpage );
 #endif
 
 #ifdef DOS_TFE
@@ -862,7 +862,7 @@ void tfe_sideeffects_write_pp_on_txframe(WORD ppaddress)
             ||  (txlen<MIN_TXLENGTH)
            ) {
 #ifdef TFE_DEBUG_WARN
-            if(g_fh) fprintf(g_fh, "WARNING! Should send %u octets: Not allowed, thus ignoring!", txlen);
+            if(g_fh) fprintf(g_fh, "WARNING! Should send %u octets: Not allowed, thus ignoring!\n", txlen);
 #endif
         }
         else {
@@ -949,13 +949,13 @@ void tfe_sideeffects_write_pp(WORD ppaddress, int oddaddress)
 
     case TFE_PP_ADDR_SE_RXEVENT:
 #ifdef TFE_DEBUG_WARN
-        if(g_fh) fprintf(g_fh, "WARNING! Written read-only register TFE_PP_ADDR_SE_RXEVENT: IGNORED");
+        if(g_fh) fprintf(g_fh, "WARNING! Written read-only register TFE_PP_ADDR_SE_RXEVENT: IGNORED\n");
 #endif
         break;
 
     case TFE_PP_ADDR_SE_BUSST:
 #ifdef TFE_DEBUG_WARN
-        if(g_fh) fprintf(g_fh, "WARNING! Written read-only register TFE_PP_ADDR_SE_BUSST: IGNORED");
+        if(g_fh) fprintf(g_fh, "WARNING! Written read-only register TFE_PP_ADDR_SE_BUSST: IGNORED\n");
 #endif
         break;
 
@@ -966,7 +966,7 @@ void tfe_sideeffects_write_pp(WORD ppaddress, int oddaddress)
 #ifdef TFE_DEBUG_WARN
         /* check if we had a TXCMD, but not all octets were written */
         if (tfe_started_tx && !oddaddress) {
-            if(g_fh) fprintf(g_fh, "WARNING! Early abort of transmitted frame");
+            if(g_fh) fprintf(g_fh, "WARNING! Early abort of transmitted frame\n");
         }
         tfe_started_tx = 1;
 #endif
@@ -1051,13 +1051,13 @@ void tfe_sideeffects_read_pp(WORD ppaddress)
 
     case TFE_PP_ADDR_TXCMD:
 #ifdef TFE_DEBUG_WARN
-        if(g_fh) fprintf(g_fh, "WARNING! Read write-only register TFE_PP_ADDR_TXCMD: IGNORED");
+        if(g_fh) fprintf(g_fh, "WARNING! Read write-only register TFE_PP_ADDR_TXCMD: IGNORED\n");
 #endif
         break;
 
     case TFE_PP_ADDR_TXLENGTH:
 #ifdef TFE_DEBUG_WARN
-        if(g_fh) fprintf(g_fh, "WARNING! Read write-only register TFE_PP_ADDR_TXLENGTH: IGNORED");
+        if(g_fh) fprintf(g_fh, "WARNING! Read write-only register TFE_PP_ADDR_TXLENGTH: IGNORED\n");
 #endif
         break;
     }
@@ -1146,7 +1146,7 @@ BYTE REGPARM1 tfe_read(WORD ioaddress)
     case TFE_ADDR_TXLENGTH:
     case TFE_ADDR_TXLENGTH+1:
 #ifdef TFE_DEBUG_WARN
-        if(g_fh) fprintf(g_fh, "WARNING! Reading write-only TFE register $%02X!", ioaddress);
+        if(g_fh) fprintf(g_fh, "WARNING! Reading write-only TFE register $%02X!\n", ioaddress);
 #endif
         /* @SRT TODO: Verify with reality */
         retval = GET_TFE_8(ioaddress); 
@@ -1157,7 +1157,7 @@ BYTE REGPARM1 tfe_read(WORD ioaddress)
     case TFE_ADDR_PP_DATA2:
     case TFE_ADDR_PP_DATA2+1:
 #ifdef TFE_DEBUG_WARN
-        if(g_fh) fprintf(g_fh, "WARNING! Reading not supported TFE register $%02X!", ioaddress);
+        if(g_fh) fprintf(g_fh, "WARNING! Reading not supported TFE register $%02X!\n", ioaddress);
 #endif
         /* @SRT TODO */
         retval = GET_TFE_8(ioaddress);
@@ -1229,7 +1229,7 @@ void REGPARM2 tfe_store(WORD ioaddress, BYTE byte)
     case TFE_ADDR_INTSTQUEUE:
     case TFE_ADDR_INTSTQUEUE+1:
 #ifdef TFE_DEBUG_WARN
-        if(g_fh) fprintf(g_fh, "WARNING! Writing read-only TFE register $%02X!", ioaddress);
+        if(g_fh) fprintf(g_fh, "WARNING! Writing read-only TFE register $%02X!\n", ioaddress);
 #endif
         /* @SRT TODO: Verify with reality */
         /* do nothing */
@@ -1240,7 +1240,7 @@ void REGPARM2 tfe_store(WORD ioaddress, BYTE byte)
     case TFE_ADDR_PP_DATA2:
     case TFE_ADDR_PP_DATA2+1:
 #ifdef TFE_DEBUG_WARN
-        if(g_fh) fprintf(g_fh, "WARNING! Writing not supported TFE register $%02X!", ioaddress);
+        if(g_fh) fprintf(g_fh, "WARNING! Writing not supported TFE register $%02X!\n", ioaddress);
 #endif
         /* do nothing */
         return;
@@ -1296,7 +1296,7 @@ void REGPARM2 tfe_store(WORD ioaddress, BYTE byte)
 
 #ifdef TFE_DEBUG_WARN
             if(g_fh) fprintf(g_fh,
-                "WARNING! PacketPage register set to odd address $%04X (not allowed!)",
+                "WARNING! PacketPage register set to odd address $%04X (not allowed!)\n",
                 tfe_packetpage_ptr );
 #endif /* #ifdef TFE_DEBUG_WARN */
 
