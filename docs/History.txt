@@ -15,7 +15,8 @@ tomch at users.berlios.de
 
 Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
-- During Mockingboard playback, Speaker emulation isn't precise
+- During Mockingboard playback, Speaker emulation isn't precise.
+- For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
 
 1.16.1 - 21 Jun 2009
