@@ -71,6 +71,7 @@ DWORD       g_dwCyclesThisFrame = 0;
 
 FILE*		g_fh			= NULL;
 bool		g_bDisableDirectSound = false;
+bool		g_bDisableDirectSoundMockingboard = false;
 
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
@@ -464,16 +465,22 @@ void LoadConfiguration ()
   REGLOAD(TEXT("Joystick 1 Emulation"),&joytype[1]);
   REGLOAD(TEXT("Sound Emulation")     ,&soundtype);
 
-  DWORD dwSerialPort;
-  if (REGLOAD(TEXT("Serial Port"),&dwSerialPort))
-	sg_SSC.SetSerialPort(dwSerialPort);
+  char aySerialPortName[ CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM ];
+  if (RegLoadString(	TEXT("Configuration"),
+						TEXT(REGVALUE_SERIAL_PORT_NAME),
+						TRUE,
+						aySerialPortName,
+						sizeof(aySerialPortName) ) )
+  {
+	sg_SSC.SetSerialPortName(aySerialPortName);
+  }
 
-	REGLOAD(TEXT("Emulation Speed")   ,&g_dwSpeed);
-	REGLOAD(TEXT("Enhance Disk Speed"),(DWORD *)&enhancedisk);
+  REGLOAD(TEXT("Emulation Speed")   ,&g_dwSpeed);
+  REGLOAD(TEXT("Enhance Disk Speed"),(DWORD *)&enhancedisk);
 
-	Config_Load_Video();
+  Config_Load_Video();
 
-	REGLOAD(TEXT("Uthernet Active")   ,(DWORD *)&tfe_enabled);
+  REGLOAD(TEXT("Uthernet Active")   ,(DWORD *)&tfe_enabled);
 
   SetCurrentCLK6502();
 
@@ -760,8 +767,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			g_bRegisterFileTypes = false;
 		}
-		else
-		if(strcmp(lpCmdLine, "-d1") == 0)
+		else if(strcmp(lpCmdLine, "-d1") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
@@ -777,7 +783,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			bSetFullScreen = true;
 		}
-		else if((strcmp(lpCmdLine, "-l") == 0) && (g_fh == NULL))
+		else if(((strcmp(lpCmdLine, "-l") == 0) || (strcmp(lpCmdLine, "-log") == 0)) && (g_fh == NULL))
 		{
 			g_fh = fopen("AppleWin.log", "a+t");	// Open log file (append & text g_nAppMode)
 			CHAR aDateStr[80], aTimeStr[80];
@@ -788,6 +794,10 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if(strcmp(lpCmdLine, "-m") == 0)
 		{
 			g_bDisableDirectSound = true;
+		}
+		else if(strcmp(lpCmdLine, "-no-mb") == 0)
+		{
+			g_bDisableDirectSoundMockingboard = true;
 		}
 #ifdef RAMWORKS
 		else if(strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..127]
@@ -812,6 +822,20 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if(strcmp(lpCmdLine, "-printscreen") == 0)		// Turn on display of the last filename print screen was saved to
 		{
 			g_bDisplayPrintScreenFileName = true;
+		}
+		else if(strcmp(lpCmdLine, "-spkr-inc") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			const int nErrorInc = atoi(lpCmdLine);
+			SoundCore_SetErrorInc( nErrorInc );
+		}
+		else if(strcmp(lpCmdLine, "-spkr-max") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			const int nErrorMax = atoi(lpCmdLine);
+			SoundCore_SetErrorMax( nErrorMax );
 		}
 		else if(strcmp(lpCmdLine, "-use-real-printer") == 0)	// Enable control in Advanced config to allow dumping to a real printer
 		{

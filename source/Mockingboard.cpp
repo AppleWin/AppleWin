@@ -177,7 +177,7 @@ static BYTE g_nPhasorMode = 0;	// 0=Mockingboard emulation, 1=Phasor native
 
 static const unsigned short g_nMB_NumChannels = 2;
 
-static const DWORD g_dwDSBufferSize = 16 * 1024 * sizeof(short) * g_nMB_NumChannels;
+static const DWORD g_dwDSBufferSize = MAX_SAMPLES * sizeof(short) * g_nMB_NumChannels;
 
 static const SHORT nWaveDataMin = (SHORT)0x8000;
 static const SHORT nWaveDataMax = (SHORT)0x7FFF;
@@ -733,6 +733,8 @@ static void Votrax_Write(BYTE nDevice, BYTE nValue)
 
 static void MB_Update()
 {
+	char szDbg[200];
+
 	if (!MockingboardVoice.bActive)
 		return;
 
@@ -816,13 +818,27 @@ static void MB_Update()
 		{
 			// |-----PxxxxxW-----|
 			if((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
+			{
+				double fTicksSecs = (double)GetTickCount() / 1000.0;
+				sprintf(szDbg, "%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
+				OutputDebugString(szDbg);
+				if (g_fh) fprintf(g_fh, szDbg);
+
 				dwByteOffset = dwCurrentWriteCursor;
+			}
 		}
 		else
 		{
 			// |xxW----------Pxxx|
 			if((dwByteOffset > dwCurrentPlayCursor) || (dwByteOffset < dwCurrentWriteCursor))
+			{
+				double fTicksSecs = (double)GetTickCount() / 1000.0;
+				sprintf(szDbg, "%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
+				OutputDebugString(szDbg);
+				if (g_fh) fprintf(g_fh, szDbg);
+
 				dwByteOffset = dwCurrentWriteCursor;
+			}
 		}
 	}
 
@@ -831,10 +847,11 @@ static void MB_Update()
 		nBytesRemaining += g_dwDSBufferSize;
 
 	// Calc correction factor so that play-buffer doesn't under/overflow
+	const int nErrorInc = SoundCore_GetErrorInc();
 	if(nBytesRemaining < g_dwDSBufferSize / 4)
-		nNumSamplesError++;							// < 0.25 of buffer remaining
+		nNumSamplesError += nErrorInc;				// < 0.25 of buffer remaining
 	else if(nBytesRemaining > g_dwDSBufferSize / 2)
-		nNumSamplesError--;							// > 0.50 of buffer remaining
+		nNumSamplesError -= nErrorInc;				// > 0.50 of buffer remaining
 	else
 		nNumSamplesError = 0;						// Acceptable amount of data in buffer
 
@@ -1292,7 +1309,7 @@ static void MB_DSUninit()
 
 void MB_Initialize()
 {
-	if(g_bDisableDirectSound)
+	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 	{
 		MockingboardVoice.bMute = true;
 		g_SoundcardType = SC_NONE;
@@ -1312,7 +1329,6 @@ void MB_Initialize()
 
 		//
 
-		//DSInit();
 		g_bMBAvailable = MB_DSInit();
 
 		MB_Reset();
@@ -1334,7 +1350,6 @@ void MB_Reinitialize()
 void MB_Destroy()
 {
 	MB_DSUninit();
-	//DSUninit();
 
 	for(int i=0; i<NUM_VOICES; i++)
 		delete [] ppAYVoiceBuffer[i];

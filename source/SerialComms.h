@@ -20,22 +20,28 @@ typedef struct
 	bool	bInterrupts;
 } SSC_DIPSW;
 
+#define TEXT_SERIAL_COM TEXT("COM")
+#define TEXT_SERIAL_TCP TEXT("TCP")
+
 class CSuperSerialCard
 {
 public:
 	CSuperSerialCard();
-	virtual ~CSuperSerialCard() {}
+	virtual ~CSuperSerialCard();
 
 	void	CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void    CommReset();
 	void    CommDestroy();
-	void    CommSetSerialPort(HWND,DWORD);
+	void    CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem);
 	void    CommUpdate(DWORD);
 	DWORD   CommGetSnapshot(SS_IO_Comms* pSS);
 	DWORD   CommSetSnapshot(SS_IO_Comms* pSS);
 
-	DWORD	GetSerialPort() { return m_dwSerialPort; }
-	void	SetSerialPort(DWORD dwSerialPort) { m_dwSerialPort = dwSerialPort; }
+	char*	GetSerialPortChoices();
+	DWORD	GetSerialPort() { return m_dwSerialPortItem; }	// Drop-down list item
+	char*	GetSerialPortName() { return m_ayCurrentSerialPortName; }
+	void	SetSerialPortName(const char* pSerialPortName);
+	bool	IsActive() { return (m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET); }
 
 	void	CommTcpSerialAccept();
 	void	CommTcpSerialReceive();
@@ -53,6 +59,7 @@ private:
 	BYTE __stdcall CommStatus(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 	BYTE __stdcall CommTransmit(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 
+	void	InternalReset();
 	void	GetDIPSW();
 	void	SetDIPSWDefaults();
 	BYTE	GenerateControl();
@@ -64,11 +71,22 @@ private:
 	static DWORD WINAPI	CommThread(LPVOID lpParameter);
 	bool	CommThInit();
 	void	CommThUninit();
+	UINT	GetNumSerialPortChoices() { return m_vecSerialPortsItems.size(); }
+	void	ScanCOMPorts();
 
 	//
 
+public:
+	static const UINT SIZEOF_SERIALCHOICE_ITEM = 8*sizeof(char);
+
 private:
-	DWORD	m_dwSerialPort;
+	char	m_ayCurrentSerialPortName[SIZEOF_SERIALCHOICE_ITEM];
+	DWORD	m_dwSerialPortItem;
+
+	static const UINT SERIALPORTITEM_INVALID_COM_PORT = 0;
+	std::vector<UINT> m_vecSerialPortsItems;	// Includes "None" & "TCP" items
+	char*	m_aySerialPortChoices;
+	UINT	m_uTCPChoiceItemIdx;
 
 	static SSC_DIPSW	m_DIPSWDefault;
 	SSC_DIPSW			m_DIPSWCurrent;
@@ -95,20 +113,22 @@ private:
 	//
 
 	CRITICAL_SECTION	m_CriticalSection;	// To guard /g_vRecvBytes/
-	BYTE				m_RecvBuffer[uRecvBufferSize];	// NB: More work required if >1 is used
-	queue<BYTE>			m_TcpSerialBuffer;
-	volatile DWORD		m_vRecvBytes;
+	queue<BYTE>			m_qComSerialBuffer[2];
+	volatile UINT		m_vuRxCurrBuffer;	// Written to on COM recv. SSC reads from other one
+	queue<BYTE>			m_qTcpSerialBuffer;
 
 	//
 
 	bool m_bTxIrqEnabled;
 	bool m_bRxIrqEnabled;
 
+	volatile bool		m_vbTxIrqPending;
+	volatile bool		m_vbRxIrqPending;
+
 	bool m_bWrittenTx;
 
 	//
 
-	volatile bool m_vbCommIRQ;
 	HANDLE m_hCommThread;
 
 	HANDLE m_hCommEvent[COMMEVT_MAX];

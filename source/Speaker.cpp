@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  SOUND_WAVE    3
 
 static const unsigned short g_nSPKR_NumChannels = 1;
-static const DWORD g_dwDSSpkrBufferSize = 16 * 1024 * sizeof(short) * g_nSPKR_NumChannels;
+static const DWORD g_dwDSSpkrBufferSize = MAX_SAMPLES * sizeof(short) * g_nSPKR_NumChannels;
 
 //-------------------------------------
 
@@ -207,7 +207,6 @@ static void InitRemainderBuffer()
 void SpkrDestroy ()
 {
 	Spkr_DSUninit();
-	//DSUninit();
 
 	//
 
@@ -248,7 +247,6 @@ void SpkrInitialize ()
 	}
 	else
 	{
-		//DSInit();
 		g_bSpkrAvailable = Spkr_DSInit();
 	}
 
@@ -802,7 +800,7 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 
 static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 {
-	//char szDbg[200];
+	char szDbg[200];
 	nDbgSpkrCnt++;
 
 	if(!SpeakerVoice.bActive)
@@ -849,7 +847,11 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 			// |-----PxxxxxW-----|
 			if((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
 			{
-				//sprintf(szDbg, "[Submit]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples); OutputDebugString(szDbg);
+				double fTicksSecs = (double)GetTickCount() / 1000.0;
+				sprintf(szDbg, "%010.3f: [Submit]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
+				OutputDebugString(szDbg);
+				if (g_fh) fprintf(g_fh, szDbg);
+
 				dwByteOffset = dwCurrentWriteCursor;
 				nNumSamplesError = 0;
 				bBufferError = true;
@@ -860,7 +862,11 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 			// |xxW----------Pxxx|
 			if((dwByteOffset > dwCurrentPlayCursor) || (dwByteOffset < dwCurrentWriteCursor))
 			{
-				//sprintf(szDbg, "[Submit]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples); OutputDebugString(szDbg);
+				double fTicksSecs = (double)GetTickCount() / 1000.0;
+				sprintf(szDbg, "%010.3f: [Submit]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
+				OutputDebugString(szDbg);
+				if (g_fh) fprintf(g_fh, szDbg);
+
 				dwByteOffset = dwCurrentWriteCursor;
 				nNumSamplesError = 0;
 				bBufferError = true;
@@ -876,16 +882,17 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 		nBytesRemaining = g_dwDSSpkrBufferSize;		// Case when complete buffer is to be played
 
 	// Calc correction factor so that play-buffer doesn't under/overflow
+	const int nErrorInc = SoundCore_GetErrorInc();
 	if(nBytesRemaining < g_dwDSSpkrBufferSize / 4)
-		nNumSamplesError++;							// < 1/4 of play-buffer remaining (need *more* data)
+		nNumSamplesError += nErrorInc;				// < 1/4 of play-buffer remaining (need *more* data)
 	else if(nBytesRemaining > g_dwDSSpkrBufferSize / 2)
-		nNumSamplesError--;							// > 1/2 of play-buffer remaining (need *less* data)
+		nNumSamplesError -= nErrorInc;				// > 1/2 of play-buffer remaining (need *less* data)
 	else
 		nNumSamplesError = 0;						// Acceptable amount of data in buffer
 
-	const int nMaxError = 50;	// Cap feedback to +/-nMaxError units
-	if(nNumSamplesError < -nMaxError) nNumSamplesError = -nMaxError;
-	if(nNumSamplesError >  nMaxError) nNumSamplesError =  nMaxError;
+	const int nErrorMax = SoundCore_GetErrorMax();				// Cap feedback to +/-nMaxError units
+	if(nNumSamplesError < -nErrorMax) nNumSamplesError = -nErrorMax;
+	if(nNumSamplesError >  nErrorMax) nNumSamplesError =  nErrorMax;
 	g_nCpuCyclesFeedback = (int) ((double)nNumSamplesError * g_fClksPerSpkrSample);
 
 	//

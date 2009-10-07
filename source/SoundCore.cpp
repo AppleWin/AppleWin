@@ -572,6 +572,33 @@ LONG NewVolume(DWORD dwVolume, DWORD dwVolumeMax)
 
 //=============================================================================
 
+static int g_nErrorInc = 20;	// Old: 1
+static int g_nErrorMax = 200;	// Old: 50
+
+int SoundCore_GetErrorInc()
+{
+	return g_nErrorInc;
+}
+
+void SoundCore_SetErrorInc(const int nErrorInc)
+{
+	g_nErrorInc = nErrorInc < g_nErrorMax ? nErrorInc : g_nErrorMax;
+	if(g_fh) fprintf(g_fh, "Speaker/MB Error Inc = %d\n", g_nErrorInc);
+}
+
+int SoundCore_GetErrorMax()
+{
+	return g_nErrorMax;
+}
+
+void SoundCore_SetErrorMax(const int nErrorMax)
+{
+	g_nErrorMax = nErrorMax < MAX_SAMPLES ? nErrorMax : MAX_SAMPLES;
+	if(g_fh) fprintf(g_fh, "Speaker/MB Error Max = %d\n", g_nErrorMax);
+}
+
+//=============================================================================
+
 static DWORD g_dwAdviseToken;
 static IReferenceClock *g_pRefClock = NULL;
 static HANDLE g_hSemaphore = NULL;
