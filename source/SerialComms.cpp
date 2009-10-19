@@ -99,9 +99,9 @@ void CSuperSerialCard::InternalReset()
 	m_vbTxIrqPending = false;
 	m_vbRxIrqPending = false;
 
-	m_qComSerialBuffer[0].c.clear();
-	m_qComSerialBuffer[1].c.clear();
-	m_qTcpSerialBuffer.c.clear();
+	m_qComSerialBuffer[0].clear();
+	m_qComSerialBuffer[1].clear();
+	m_qTcpSerialBuffer.clear();
 }
 
 CSuperSerialCard::~CSuperSerialCard()
@@ -351,10 +351,8 @@ void CSuperSerialCard::CommTcpSerialClose()
 		closesocket(m_hCommAcceptSocket);
 		m_hCommAcceptSocket = INVALID_SOCKET;
 	}
-	while (!m_qTcpSerialBuffer.empty())
-	{
-		m_qTcpSerialBuffer.pop();
-	}
+
+	m_qTcpSerialBuffer.clear();
 }
 
 //===========================================================================
@@ -381,7 +379,7 @@ void CSuperSerialCard::CommTcpSerialReceive()
 		{
 			for (int i = 0; i < nReceived; i++)
 			{
-				m_qTcpSerialBuffer.push(Data[i]);
+				m_qTcpSerialBuffer.push_back(Data[i]);
 			}
 		}
 
@@ -603,7 +601,7 @@ BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 	if (!m_qTcpSerialBuffer.empty())
 	{
 		result = m_qTcpSerialBuffer.front();
-		m_qTcpSerialBuffer.pop();
+		m_qTcpSerialBuffer.pop_front();
 	}
 	else if (m_hCommHandle != INVALID_HANDLE_VALUE)	// COM
 	{
@@ -614,7 +612,7 @@ BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 			if (!m_qComSerialBuffer[uSSCIdx].empty())
 			{
 				result = m_qComSerialBuffer[uSSCIdx].front();
-				m_qComSerialBuffer[uSSCIdx].pop();
+				m_qComSerialBuffer[uSSCIdx].pop_front();
 
 				UINT uNewSSCIdx = uSSCIdx;
 				if ( m_qComSerialBuffer[uSSCIdx].empty() &&		// Current SSC buffer is empty
@@ -956,7 +954,7 @@ void CSuperSerialCard::CheckCommEvent(DWORD dwEvtMask)
 			{
 				const UINT uCOMIdx = m_vuRxCurrBuffer;
 				for (DWORD i = 0; i < dwReceived; i++)
-					m_qComSerialBuffer[uCOMIdx].push(Data[i]);
+					m_qComSerialBuffer[uCOMIdx].push_back(Data[i]);
 			}
 			LeaveCriticalSection(&m_CriticalSection);
 		}
