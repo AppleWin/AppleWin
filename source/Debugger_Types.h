@@ -108,26 +108,6 @@
 		, NUM_ADDRESSING_MODES
 		, NUM_OPMODES = NUM_ADDRESSING_MODES
 		, AM_I = NUM_ADDRESSING_MODES, // for assemler
-
-	// Deprecated
-	/*
-		ADDR_INVALID1  =  1,
-		ADDR_INVALID2  =  2,
-		ADDR_INVALID3  =  3,
-		ADDR_IMM       =  4, // Immediate
-		ADDR_ABS       =  5, // Absolute
-		ADDR_ZP        =  6, // Zeropage
-		ADDR_ABSX      =  7, // Absolute + X
-		ADDR_ABSY      =  8, // Absolute + Y
-		ADDR_ZP_X      =  9, // Zeropage + X
-		ADDR_ZP_Y      = 10, // Zeropage + Y
-		ADDR_REL       = 11, // Relative
-		ADDR_INDX      = 12, // Indexed (Zeropage) Indirect
-		ADDR_ABSIINDX  = 13, // Indexed (Absolute) Indirect
-		ADDR_INDY      = 14, // Indirect (Zeropage) Indexed
-		ADDR_IZPG      = 15, // Indirect (Zeropage)
-		ADDR_IABS      = 16, // Indirect Absolute (i.e. JMP)
-	*/
 	};
 
 
@@ -140,6 +120,11 @@
 		NUM_PROMPTS
 	};
 
+	enum
+	{
+		// raised from 13 to 31 for Contiki
+		MAX_SYMBOLS_LEN = 31
+	};
 
 // Bookmarks ______________________________________________________________________________________
 
@@ -410,10 +395,11 @@
 	// NOTE: Commands_e and g_aCommands[] order _MUST_ match !!! Aliases are listed at the end
 	enum Commands_e
 	{
+// Assembler
+		  CMD_ASSEMBLE
 // CPU
-		  CMD_CURSOR_JUMP_PC // Shift
+		, CMD_CURSOR_JUMP_PC // Shift
 		, CMD_CURSOR_SET_PC  // Ctrl
-		, CMD_ASSEMBLE
 		, CMD_BREAK_INVALID
 		, CMD_BREAK_OPCODE
 		, CMD_GO
@@ -501,6 +487,24 @@
 		, CMD_CURSOR_PAGE_DOWN
 		, CMD_CURSOR_PAGE_DOWN_256 // Down to nearest page boundary
 		, CMD_CURSOR_PAGE_DOWN_4K // Down to nearest 4K boundary
+// Disassembler Data
+		, CMD_DISASM_DATA
+		, CMD_DISASM_CODE
+		, CMD_DISASM_LIST
+		, CMD_DEFINE_DATA_BYTE1    // DB $00,$04,$08,$0C,$10,$14,$18,$1C
+		, CMD_DEFINE_DATA_BYTE2
+		, CMD_DEFINE_DATA_BYTE4
+		, CMD_DEFINE_DATA_BYTE8
+
+		, CMD_DEFINE_DATA_WORD1    // DW $300
+		, CMD_DEFINE_DATA_WORD2
+		, CMD_DEFINE_DATA_WORD4
+		, CMD_DEFINE_DATA_STR
+//		, CMD_DEFINE_DATA_FACP
+//		, CMD_DEFINE_DATA_FACU
+//		, CMD_DATA_DEFINE_ADDR_BYTE_L  // DB< address symbol
+//		, CMD_DATA_DEFINE_ADDR_BYTE_H  // DB> address symbol
+		, CMD_DEFINE_ADDR_WORD    // .DA address symbol
 // Disk
 		, CMD_DISK
 // Flags - CPU
@@ -664,11 +668,31 @@
 		, NUM_COMMANDS
 	};
 
+// Assembler
+	Update_t CmdAssemble       (int nArgs);
+
+// Disassembler Data
+	Update_t CmdDisasmDataDefCode     (int nArgs);
+	Update_t CmdDisasmDataList        (int nArgs);
+
+	Update_t CmdDisasmDataDefByte1    (int nArgs);
+	Update_t CmdDisasmDataDefByte2    (int nArgs);
+	Update_t CmdDisasmDataDefByte4    (int nArgs);
+	Update_t CmdDisasmDataDefByte8    (int nArgs);
+
+	Update_t CmdDisasmDataDefWord1    (int nArgs);
+	Update_t CmdDisasmDataDefWord2    (int nArgs);
+	Update_t CmdDisasmDataDefWord4    (int nArgs);
+
+	Update_t CmdDisasmDataDefString   (int nArgs);
+
+	Update_t CmdDisasmDataDefAddress8H(int nArgs);
+	Update_t CmdDisasmDataDefAddress8L(int nArgs);
+	Update_t CmdDisasmDataDefAddress16(int nArgs);
 
 // CPU
 	Update_t CmdCursorJumpPC(int nArgs);
 	Update_t CmdCursorSetPC (int nArgs);
-	Update_t CmdAssemble    (int nArgs);
 	Update_t CmdBreakInvalid(int nArgs); // Breakpoint IFF Full-speed!
 	Update_t CmdBreakOpcode (int nArgs); // Breakpoint IFF Full-speed!
 	Update_t CmdGo          (int nArgs);
@@ -931,17 +955,23 @@
 	{
 		nMaxAddressLen    = 40,
 		nMaxOpcodes       =  3,
-		CHARS_FOR_ADDRESS =  8, // 4 digits plus null
+		CHARS_FOR_ADDRESS =  8, // 4 digits + end-of-string + padding
 	};
 
 	struct DisasmLine_t
 	{
-		int iOpcode;
-		int iOpmode;
+		short iOpcode;
+		short iOpmode;
 		int nOpbyte;
 
 		char sAddress  [ CHARS_FOR_ADDRESS ];
 		char sOpCodes  [(nMaxOpcodes*3)+1];
+
+		// Added for Data Disassembler
+		char sLabel    [ MAX_SYMBOLS_LEN+1 ]; // label is a symbol
+		int  iNopcode; // directive / pseudo opcode
+		int  iNoptype; // element type
+		char sMnemonic [ MAX_SYMBOLS_LEN+1 ];
 
 		int  nTarget;
 		char sTarget   [nMaxAddressLen];
@@ -983,16 +1013,17 @@
 			nImmediate = 0;
 
 			sBranch   [ 0 ] = 0;
-
-			bTargetImmediate = false;
-			bTargetIndexed   = false;
-			bTargetIndirect  = false;
-//			bTargetInside    = false;
-//			bTargetOutside   = false;
-			bTargetRelative  = false;
-			bTargetX         = false;
-			bTargetY         = false; // need to dislay ",Y"
-			bTargetValue     = false;
+			ClearFlags();
+		}
+		void ClearFlags()
+		{
+			bTargetImmediate = false; // display "#"
+			bTargetIndexed   = false; // display ()
+			bTargetIndirect  = false; // display ()
+			bTargetRelative  = false; // display ()
+			bTargetX         = false; // display ",X"
+			bTargetY         = false; // display ",Y"
+			bTargetValue     = false; // display $####
 		}
 	};
 	
@@ -1063,7 +1094,10 @@
 
 	enum
 	{
+		// First 256 are 6502
+		// TODO: Second 256 are Directives/Pseudo Mnemonics
 		NUM_OPCODES      = 256,
+
 		MAX_MNEMONIC_LEN =   3,
 	};
 
@@ -1467,12 +1501,6 @@
 
 
 // Symbols ________________________________________________________________________________________
-
-	enum
-	{
-		// raised from 13 to 31 for Contiki
-		MAX_SYMBOLS_LEN = 31
-	};
 
 	// ****************************************
 	// WARNING: This is the index (enumeration) to select which table
