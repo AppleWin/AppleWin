@@ -60,7 +60,7 @@
 				EnableFunctionLevelLinking="true"
 				EnableEnhancedInstructionSet="1"
 				FloatingPointModel="2"
-				UsePrecompiledHeader="0"
+				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\Release/Applewin.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
@@ -221,6 +221,14 @@
 				RelativePath=".\source\Applewin.cpp"
 				>
 				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Debug|Win32"
 					>
 					<Tool
@@ -261,6 +269,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Debugger_DisassemblerData.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger_DisassemblerData.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Debugger_Display.cpp"
 					>
 				</File>
@@ -282,6 +298,14 @@
 				</File>
 				<File
 					RelativePath=".\source\Debugger_Parser.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Range.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Range.h"
 					>
 				</File>
 				<File
@@ -324,6 +348,14 @@
 					RelativePath=".\source\Tfe\Tfe.cpp"
 					>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Win32"
 						>
 						<Tool
@@ -339,6 +371,14 @@
 				<File
 					RelativePath=".\source\Tfe\Tfearch.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Win32"
 						>
@@ -356,6 +396,14 @@
 					RelativePath=".\source\Tfe\Tfesupp.cpp"
 					>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Win32"
 						>
 						<Tool
@@ -371,6 +419,14 @@
 				<File
 					RelativePath=".\source\Tfe\Uilib.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Win32"
 						>
@@ -392,6 +448,14 @@
 					RelativePath=".\source\Z80VICE\daa.cpp"
 					>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Win32"
 						>
 						<Tool
@@ -408,6 +472,14 @@
 					RelativePath=".\source\Z80VICE\z80.cpp"
 					>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Win32"
 						>
 						<Tool
@@ -423,6 +495,14 @@
 				<File
 					RelativePath=".\source\Z80VICE\z80mem.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Win32"
 						>
