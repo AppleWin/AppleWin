@@ -1,11 +1,13 @@
 #pragma once
 
 #include <vector>
-#include <algorithm> // sort
+#include <algorithm> // sort, find
 #include <map>
 using namespace std;
 
 #include "Debugger_Types.h"
+#include "Debugger_DisassemblerData.h"
+#include "Debugger_Range.h"
 #include "Debugger_Parser.h"
 #include "Debugger_Console.h"
 #include "Debugger_Assembler.h"
