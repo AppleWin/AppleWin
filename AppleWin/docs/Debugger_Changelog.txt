@@ -9,7 +9,6 @@
     DB symbol start:end
 2.6.2.x
 
-<<<<<<< .mine
 2.6.1.x
 .35 Fixed: Pressing enter on blank line while in assembler wouldn't exit it.
 .34 Fixed: Scrolling past top of the console output wouldn't draw blank lines
