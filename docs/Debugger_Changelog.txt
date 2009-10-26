@@ -1,5 +1,98 @@
 /*
+.2 Fixed help for command '@'
+.1 Added: Define Code
+    Remove address being treated as data
+.0 Added: Define Byte Pseudo Mnemonic
+    DB
+    DB symbol
+    DB symbol address
+    DB symbol start:end
+2.6.2.x
 
+<<<<<<< .mine
+2.6.1.x
+.35 Fixed: Pressing enter on blank line while in assembler wouldn't exit it.
+.34 Fixed: Scrolling past top of the console output wouldn't draw blank lines
+.33 Added: While there is console input, can use Page Up, Page Down to scroll the console output buffer.
+.32 Added: Pressing Enter on a blank line now toggles the full screen console.
+    "Blame" Nick for this great idea. :-)
+    You can still use Ctrl-` if need be.
+.31 Added: Help examples for Memory Fill
+.30 Fixed: Memory Fill
+	F start end value
+	F start,len value
+	F start:end value
+.29 Removd: Old unassembly alias MDC
+.28 Added: Can now toggle display of disassembly address on/off for a clean "source assembly" style
+    Three way state
+    1) "addr: ..."
+    2) ": ..."
+    3) " ..."
+.27 Fixed: help for memory fill no longer displays help for flags
+.26 Added: Was missing help for memory move
+.25 Changed: Cleaned up help calc text
+.24 Changed: Undid .5, .7 hack
+.23 Extended entering memory bytes to allow 16-bit values
+    0:4C FF69 
+.22 Renamed breakpoint commands
+	BC  -> BPC
+	BD  -> BPD
+	BPE -> BPEDIT
+	BE  -> BPE
+	BL  -> BPL
+.21 Fixed: Trying to set zero page and other memory locations that
+    were also commands, didn't update memory.
+    A:##
+	D:## // no longer shows mini dump starting at address 0
+	F:##
+    BC:##
+    BD:##
+    BE:##
+    E8:##
+    E16:##
+.20 Added: Implemented Memory Move commands: MM and classic Apple Monitor style
+    2001<2000.3FFFM
+    M 2001 2000:3FFF
+.19 Fixed: Added how to delete symbols to symbol help
+.18 Added: Loading duplicate symbols at start-up now listed
+.17 Added: When the debugger starts, attempts loading of additional symbol tables
+	A2_BASIC.SYM
+	A2_USER1.SYM
+	A2_USER2.SYM
+	A2_SRC1.SYM
+	A2_SRC2.SYM
+    Repsectively for basic, user1, user2, source1, and source2
+.16 Added: In addition to !, can now use ~ to remove a symbol
+     symbasic aCold.reset = F128
+     symbasic aWarm.reset = D43C
+     symbasic ! aCold.reset
+     symbasic ~ aWarm.reset
+.15 Fixed: Color coded when symbol address is updated.
+.14 Fixed updating of symbols to use correct symbol table 
+.13 Added: Wildcard suport to dump symbol table(s)
+     symbasic Acold.reset = F128
+     symbasic Awarm.reset = D43C
+     symbasic *
+.12 Added: Moved assembly symbols into own symbol table.
+    Added: New command to reference assembly symbol table.
+     symasm MyFirstAssemblyProgram = 300
+.11 Added: Applesoft/Basic symbol table.
+     symbasic Acold.reset = F128
+     symbasic Awarm.reset = D43C
+.10 Added: Split 'user' symbols into user1, and user2
+.9 Added: Split 'source' symbols into source1, and source2
+.8 Added: Applesoft symbols.  Thank-you Bob Sander-Cederlof !
+.7 Fixed: renamed assembler command A to AS (as a work-around for:  A:##)
+.6 Fixed: renamed mem fill command F to MF  (as a work-around for:  F:##)
+.5 Fixed: renamed mem dump command D to MD  (as a work-around for:  D:##)
+.4 Fixed: renamed mem enter word command EW to MEW, E16 to ME16
+.3 Fixed: renamed mem enter byte command E  to MEB
+.2 Fixed: renamed mem enter byte command EB to ME8
+.1 Fixed: removed mem enter byte command E8
+
+2.6.0.8 Released with AppleWin 1.16.1
+
+=======
 2.6.1.x
 .32 Added: Pressing Enter on a blank line now toggles the full screen console.
     "Blame" Nick for this great idea. :-)
@@ -79,6 +172,7 @@
 
 2.6.0.8 Released with AppleWin 1.16.1
 
+>>>>>>> .r619
 2.6.0.6 Released with AppleWin 1.15
 .6 Added new command '@' to display the search results
 .5 Fixed display results of Searching to be colorized
