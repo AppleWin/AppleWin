@@ -230,6 +230,7 @@
 	void     ConsoleDisplayPush  ( const char * pText );
 	void     ConsoleDisplayPush  ( const conchar_t * pText );
 	Update_t ConsoleUpdate       ();
+	void     ConsoleFlush        ();
 
 	// Input
 	void     ConsoleInputToDisplay ();
