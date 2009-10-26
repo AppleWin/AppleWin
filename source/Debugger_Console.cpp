@@ -605,6 +605,7 @@ Update_t ConsoleBufferTryUnpause (int nLines)
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
+// Flush the console
 //===========================================================================
 Update_t ConsoleUpdate ()
 {
@@ -615,4 +616,11 @@ Update_t ConsoleUpdate ()
 	}
 
 	return UPDATE_CONSOLE_DISPLAY;
+}
+
+//===========================================================================
+void ConsoleFlush ()
+{
+	int nLines = g_nConsoleBuffer;
+	ConsoleBufferTryUnpause( nLines );
 }
