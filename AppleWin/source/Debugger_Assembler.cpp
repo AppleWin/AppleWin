@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2009, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006, Michael Pohoreski
+ * Author: Copyright (C) 2006-2009, Michael Pohoreski
  */
 
 #include "StdAfx.h"
@@ -48,11 +48,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
         {TEXT("%02X,X")  , 2 , "Zero Page,X"   }, // AM_ZX     // %s,X
         {TEXT("%02X,Y")  , 2 , "Zero Page,Y"   }, // AM_ZY     // %s,Y
         {TEXT("%s")      , 2 , "Relative"      }, // AM_R
-        {TEXT("(%02X,X)"), 2 , "(Zero Page),X" }, // AM_IZX ADDR_INDX     // ($%02X,X) -> %s,X 
-        {TEXT("(%04X,X)"), 3 , "(Absolute),X"  }, // AM_IAX ADDR_ABSIINDX // ($%04X,X) -> %s,X
-        {TEXT("(%02X),Y"), 2 , "(Zero Page),Y" }, // AM_NZY ADDR_INDY     // ($%02X),Y
-        {TEXT("(%02X)")  , 2 , "(Zero Page)"   }, // AM_NZ ADDR_IZPG     // ($%02X) -> $%02X
-        {TEXT("(%04X)")  , 3 , "(Absolute)"    }  // AM_NA ADDR_IABS     // (%04X) -> %s
+        {TEXT("(%02X,X)"), 2 , "(Zero Page),X" }, // AM_IZX // ($%02X,X) -> %s,X 
+        {TEXT("(%04X,X)"), 3 , "(Absolute),X"  }, // AM_IAX // ($%04X,X) -> %s,X
+        {TEXT("(%02X),Y"), 2 , "(Zero Page),Y" }, // AM_NZY // ($%02X),Y
+        {TEXT("(%02X)")  , 2 , "(Zero Page)"   }, // AM_NZ  // ($%02X) -> $%02X
+        {TEXT("(%04X)")  , 3 , "(Absolute)"    }  // AM_NA  // (%04X) -> %s
 	};
 
 
@@ -64,6 +64,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int    g_nAssemblerAddress = 0;
 
 	const Opcodes_t *g_aOpcodes = NULL; // & g_aOpcodes65C02[ 0 ];
+
+
+// Disassembler Data  _____________________________________________________________________________
+
+	vector<DisasmData_t> g_aDisassemblerData;
 
 
 // Instructions / Opcodes _________________________________________________________________________
@@ -287,32 +292,50 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 
 // Private __________________________________________________________________
 
-	enum MerlinDirective_e
-	{
-		  MERLIN_ASCII
-		, MERLIN_DEFINE_WORD
-		, MERLIN_DEFINE_BYTE
-		, MERLIN_DEFINE_STORAGE
-		, MERLIN_HEX
-		, MERLIN_ORIGIN
 
-		, NUM_MERLIN_DIRECTIVES
-	};
+//	enum Nopcode_t
+//	{
+//		NOPCODE_NONE, // line.iOpcode is valid: [0,0xFF]
 
-	AssemblerDirective_t g_aAssemblerDirectivesMerlin[ NUM_MERLIN_DIRECTIVES ] =
+	// Acme
+	AssemblerDirective_t g_aAssemblerDirectives[ NUM_ASM_DIRECTIVES ] = 
 	{
+		// NULL n/a
+		{""},
+		// Acme
+		{"???"},
+		// Big Mac
+		{"???"},
+		// DOS Tool Kit
+		{"???"},
+		// Lisa
+		{"???"},
+		// Merlin
 		{"ASC"}, // ASC "postive" 'negative'
 		{"DDB"}, // Define Double Byte (Define WORD)
 		{"DFB"}, // DeFine Byte
 		{"DS" }, // Defin Storage
 		{"HEX"}, // HEX ###### or HEX ##,##,...
-		{"ORG"}  // Origin
+		{"ORG"}, // Origin
+		// MicroSparc
+		{"???"},
+		// ORCA/M
+		{"???"},
+		// SC ...
+		{".OR"}, //    ORigin
+		{".TA"}, //    Target Address
+		{".EN"}, //    ENd of program
+		{".EQ"}, //    EQuate
+		{".DA"}, //    DAta
+		{".AS"}, //    Ascii String
+		{".HS"}, //    Hex String
+		// Ted II
+		{"???"},
+		// Weller
+		{"???"},
 	};
 
-	const AssemblerDirective_t g_aAssemblerDirectivesAcme[] =
-	{
-		{"DFB"}
-	};
+// Assemblers
 
 	enum AssemblerFlags_e
 	{
@@ -410,6 +433,10 @@ int  _6502_GetOpmodeOpbyte ( const int iAddress, int & iOpmode_, int & nOpbyte_ 
 		MessageBox( g_hFrameWindow, "Debugger not properly initialized", "ERROR", MB_OK );
 	}
 #endif
+
+// Data Disassembler
+// Smart Disassembly - Data Section
+// Assemblyer Directives - Psuedo Mnemonics
 
 	int iOpcode_ = *(mem + iAddress);
 		iOpmode_ = g_aOpcodes[ iOpcode_ ].nAddressMode;
@@ -722,19 +749,20 @@ void AssemblerHashOpcodes ()
 
 }
 
-
+// TODO: Change .. AssemblerHashDirectives()
 //===========================================================================
 void AssemblerHashMerlinDirectives ()
 {
 	Hash_t nMnemonicHash;
 	int    iOpcode;
 
-//	int nMerlinDirectives = sizeof( g_aAssemblerDirectivesMerlin ) / sizeof( AssemblerDirective_t );
-	for( iOpcode = 0; iOpcode < NUM_MERLIN_DIRECTIVES; iOpcode++ )
+	for( iOpcode = 0; iOpcode < NUM_ASM_M_DIRECTIVES; iOpcode++ )
 	{
-		const TCHAR *pMnemonic = g_aAssemblerDirectivesMerlin[ iOpcode ].m_sMnemonic;
+		int iNopcode = FIRST_M_DIRECTIVE + iOpcode;
+//.		const TCHAR *pMnemonic = g_aAssemblerDirectivesMerlin[ iOpcode ].m_pMnemonic;
+		const TCHAR *pMnemonic = g_aAssemblerDirectives[ iNopcode ].m_pMnemonic;
 		nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
-		g_aAssemblerDirectivesMerlin[ iOpcode ].m_nHash = nMnemonicHash;
+		g_aAssemblerDirectives[ iNopcode ].m_nHash = nMnemonicHash;
 	}
 }
 
