@@ -447,6 +447,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Debugger_DisassemblerData.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger_DisassemblerData.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Debugger_Display.cpp"
 					>
 				</File>
@@ -468,6 +476,14 @@
 				</File>
 				<File
 					RelativePath=".\source\Debugger_Parser.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Range.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger_Range.h"
 					>
 				</File>
 				<File
