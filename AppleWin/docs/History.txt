@@ -27,6 +27,7 @@ Changes:
 . Updated Help chm's "Transferring Disk Images" - thanks to David Schmidt
 . New switches: -log, -no-mb, -spkr-max, -spkr-inc
 . Debugger (v2.6.2.0):
+  - Added Applesoft BASIC symbols - thanks to Bob Sander-Cederlof
   - Return on blank line to toggle full screen console
   - Page Up/Down of console history while editing
 
