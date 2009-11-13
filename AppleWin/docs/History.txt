@@ -18,6 +18,25 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise.
 - For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
+1.17.1 - 13 Nov 2009
+--------------------
+Changes:
+. SSC: Support 112.5K Baud
+. Dynamically generated 'Serial Port' drop-down menu
+  - Save "Serial Port Name" to Registry (instead of drop-down menu index as "Serial Port")
+. Updated Help chm's "Transferring Disk Images" - thanks to David Schmidt
+. New switches: -log, -no-mb, -spkr-max, -spkr-inc
+. Debugger (v2.6.2.0):
+  - Return on blank line to toggle full screen console
+  - Page Up/Down of console history while editing
+
+Fixes:
+. Fix for Speaker underflow problem (-spkr-max=200, -spkr-inc=20)
+. Fix for SSC (big transfers): use queue instead of single byte buffer
+. Don't hog CPU in PAUSED mode
+. Implemented the shift key mod for II/II+. This fixes a problem with Homeword.
+. [Bug #14879] Double-Lo-Res Graphics colors not correct
+
 
 1.16.1 - 21 Jun 2009
 --------------------
