@@ -4,9 +4,9 @@
   <link rel="shortcut icon" href="applewin.ico">
   <title>Apple //e Emulator for Windows</title></head>
 <body alink="gold" background="background.gif" bgcolor="mediumpurple" link="orange" text="powderblue" vlink="plum">
-<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.16.1</font></u></font></p>
+<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.17.1</font></u></font></p>
 <p align="center"><font face="Tahoma"><img src="applewin.gif" title="" alt="Apple //e Emulator Logo" height="384" width="560"></font></p>
-<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.16.1.0.zip">Version 1.16.1</a><br>
+<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.17.1.0.zip">Version 1.17.1</a><br>
 <a href="#OldReleases">Download older releases</a><br>
 </font></p>
 
@@ -25,6 +25,34 @@ Latest AppleWin compiled html help: <a href="applewin.chm">AppleWin.chm</a>
 - On Windows XP you can simply right-click on the CHM file, select "Properties", and click on the "Unblock" button.<br>
 - Click "Apply" and the content should be visible.
 </font></font></p>
+
+
+<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.17.1 - 27 Nov 2009</u></font></p>
+<font face="Tahoma">
+<li>Changes:</li>
+<ul>
+    <li>SSC: Support 112.5K Baud</li>
+    <li>Dynamically generated 'Serial Port' drop-down menu</li>
+    <ul>
+       <li>Save "Serial Port Name" to Registry (instead of drop-down menu index as "Serial Port")</li>
+    </ul>
+    <li>Updated Help chm's "Transferring Disk Images" - thanks to David Schmidt</li>
+    <li>New switches: -log, -no-mb, -spkr-max, -spkr-inc</li>
+    <li>Debugger (v2.6.2.0):</li>
+    <ul>
+       <li>Added Applesoft BASIC symbols - thanks to Bob Sander-Cederlof</li>
+       <li>Return on blank line to toggle full screen console</li>
+       <li>Page Up/Down of console history while editing</li>
+    </ul>
+</ul>
+<li>Fixes:</li>
+<ul>
+    <li>Fix for Speaker underflow problem (-spkr-max=200, -spkr-inc=20)</li>
+    <li>Fix for SSC (big transfers): use queue instead of single byte buffer</li>
+    <li>Don't hog CPU in PAUSED mode</li>
+    <li>Implemented the shift key mod for II/II+. This fixes a problem with Homeword</li>
+    <li>[Bug #14879] Double-Lo-Res Graphics colors not correct</li>
+</ul>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.16.1 - 21 Jun 2009</u></font></p>
@@ -390,6 +418,9 @@ find didn't appear to support it:<br>
 
 <p><font face="Tahoma"><font face="Tahoma"><u><a name="OldReleases"></a>Old releases:</u></font></font></p>
 <p><font face="Tahoma"><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.16.1.0.zip">Version 1.16.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.16.0.0-beta.zip">Version 1.16.0 (beta)</a><br></font></font><font face="Tahoma"><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.15.0-beta.zip">Version 1.15.0 (beta)</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.14.2.zip">Version 1.14.2</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.14.0-beta.zip">Version 1.14.0 (beta)</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.13.2.zip">Version 1.13.2</a><br></font></font><font face="Tahoma"><font face="Tahoma">

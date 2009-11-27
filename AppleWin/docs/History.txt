@@ -18,7 +18,7 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise.
 - For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
-1.17.1 - 13 Nov 2009
+1.17.1 - 27 Nov 2009
 --------------------
 Changes:
 . SSC: Support 112.5K Baud
