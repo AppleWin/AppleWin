@@ -750,6 +750,7 @@ int DoDiskInsert(int nDrive, LPSTR szFileName)
 
 int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 {
+	InitCommonControls();
 	bool bSetFullScreen = false;
 	bool bBoot = false;
 	LPSTR szImageName_drive1 = NULL;

@@ -6910,7 +6910,7 @@ int FindCommand( LPTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 
 	char sCommand[ CONSOLE_WIDTH ];
 	strcpy( sCommand, pName );
-	strupr( sCommand );
+	_strupr( sCommand );
 
 	while ((iCommand < NUM_COMMANDS_WITH_ALIASES)) // && (name[0] >= g_aCommands[iCommand].aName[0])) Command no longer in Alphabetical order
 	{

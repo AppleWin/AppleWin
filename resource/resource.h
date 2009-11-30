@@ -95,21 +95,20 @@
 #define IDC_PRINTER_APPEND              1057
 #define IDC_SPIN_PRINTER_IDLE           1058
 #define IDC_CHECK_HALF_SCAN_LINES       1059
-
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
 #define ID_DISKMENU_EJECT               40004
 #define ID_DISKMENU_WRITEPROTECTION_ON  40005
 #define ID_DISKMENU_WRITEPROTECTION_OFF 40006
-#define ID_DISKMENU_SENDTO_CIDERPRESS	40007
+#define ID_DISKMENU_SENDTO_CIDERPRESS   40007
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        141
+#define _APS_NEXT_RESOURCE_VALUE        143
 #define _APS_NEXT_COMMAND_VALUE         40008
 #define _APS_NEXT_CONTROL_VALUE         1060
 #define _APS_NEXT_SYMED_VALUE           101

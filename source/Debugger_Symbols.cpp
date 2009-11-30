@@ -624,7 +624,7 @@ Update_t CmdSymbolsLoad (int nArgs)
 
 		// SymbolOffset
 		// sym load "filename" [,symbol_offset]
-		int nOffsetAddr = 0;
+		unsigned int nOffsetAddr = 0;
 
 		iArg++;
 		if( iArg <= nArgs)
