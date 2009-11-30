@@ -181,6 +181,7 @@ UINT CSuperSerialCard::BaudRateToIndex(UINT uBaudRate)
 	case CBR_4800: return 0x0C;
 	case CBR_9600: return 0x0E;
 	case CBR_19200: return 0x0F;
+	case CBR_115200: return 0x00;
 	}
 
 	_ASSERT(0);
@@ -584,7 +585,7 @@ BYTE __stdcall CSuperSerialCard::CommControl(WORD, WORD, BYTE write, BYTE value,
 		UpdateCommState();
 	}
 
-  return m_uControlByte;
+	return m_uControlByte;
 }
 
 //===========================================================================

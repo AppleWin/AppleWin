@@ -31,7 +31,7 @@ Latest AppleWin compiled html help: <a href="applewin.chm">AppleWin.chm</a>
 <font face="Tahoma">
 <li>Changes:</li>
 <ul>
-    <li>SSC: Support 112.5K Baud</li>
+    <li>SSC: Support 115.2K Baud</li>
     <li>Dynamically generated 'Serial Port' drop-down menu</li>
     <ul>
        <li>Save "Serial Port Name" to Registry (instead of drop-down menu index as "Serial Port")</li>

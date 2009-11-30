@@ -21,7 +21,7 @@ Restrictions/bugs:
 1.17.1 - 27 Nov 2009
 --------------------
 Changes:
-. SSC: Support 112.5K Baud
+. SSC: Support 115.2K Baud
 . Dynamically generated 'Serial Port' drop-down menu
   - Save "Serial Port Name" to Registry (instead of drop-down menu index as "Serial Port")
 . Updated Help chm's "Transferring Disk Images" - thanks to David Schmidt
