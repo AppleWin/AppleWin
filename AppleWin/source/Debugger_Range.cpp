@@ -47,7 +47,7 @@ bool Range_CalcEndLen( const RangeType_t eRange
 		// End =  FFFE = Len-1
 		// Len =  FFFF
 		nAddressLen_ = nAddress2;
-		int nTemp = nAddress1 + nAddressLen_ - 1;
+		unsigned int nTemp = nAddress1 + nAddressLen_ - 1;
 		if (nTemp > _6502_MEM_END)
 			nTemp = _6502_MEM_END;
 		nAddressEnd_ = nTemp;

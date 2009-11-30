@@ -62,7 +62,7 @@ static BOOL CALLBACK DSEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrv
 		return TRUE;
 	if(lpGUID != NULL)
 		memcpy(&sound_device_guid[i], lpGUID, sizeof (GUID));
-	sound_devices[i] = strdup(lpszDesc);
+	sound_devices[i] = _strdup(lpszDesc);
 
 	if(g_fh) fprintf(g_fh, "%d: %s - %s\n",i,lpszDesc,lpszDrvName);
 
