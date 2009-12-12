@@ -1245,12 +1245,13 @@ char* CSuperSerialCard::GetSerialPortChoices()
 	return m_aySerialPortChoices;
 }
 
+// Called by LoadConfiguration()
 void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 {
 	strncpy(m_ayCurrentSerialPortName, pSerialPortName, SIZEOF_SERIALCHOICE_ITEM);
 
-	if (m_vecSerialPortsItems.empty())
-		ScanCOMPorts();
+	// Init m_aySerialPortChoices, so that we have choices to show if serial is active when we 1st open Config dialog
+	GetSerialPortChoices();
 
 	if (strncmp(TEXT_SERIAL_COM, pSerialPortName, sizeof(TEXT_SERIAL_COM)-1) == 0)
 	{
