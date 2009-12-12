@@ -270,9 +270,8 @@ BOOL CSuperSerialCard::CheckComm()
 			}
 		}
 	}
-	else
+	else if (m_dwSerialPortItem)
 	{
-		_ASSERT(m_dwSerialPortItem);
 		_ASSERT(m_dwSerialPortItem < m_vecSerialPortsItems.size()-1);	// size()-1 is TCP item
 		TCHAR portname[SIZEOF_SERIALCHOICE_ITEM];
 		wsprintf(portname, TEXT("COM%u"), m_vecSerialPortsItems[m_dwSerialPortItem]);
