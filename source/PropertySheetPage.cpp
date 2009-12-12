@@ -47,12 +47,10 @@ TCHAR* szJoyChoice3 = TEXT("Keyboard (standard)\0");
 TCHAR* szJoyChoice4 = TEXT("Keyboard (centering)\0");
 TCHAR* szJoyChoice5 = TEXT("Mouse\0");
 
-const int g_nMaxJoyChoiceLen = 40;
-bool ConfigRun = false;
+static const int g_nMaxJoyChoiceLen = 40;
 //eApple2Type NewApple2Type = 0;
-DWORD NewApple2Type = 0;
-DWORD NewCloneType = 0;
-DWORD NewApple2Combo = 0;
+static DWORD NewApple2Type = 0;		// TC-FIXME: Also a local NewApple2Type!
+static DWORD NewCloneType = 0;		// TC-FIXME: Also a local NewCloneType!
 
 enum JOY0CHOICE {J0C_DISABLED=0, J0C_JOYSTICK1, J0C_KEYBD_STANDARD, J0C_KEYBD_CENTERING, J0C_MOUSE, J0C_MAX};
 TCHAR* pszJoy0Choices[J0C_MAX] = {	szJoyChoice0,
@@ -104,7 +102,6 @@ char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 TCHAR   discchoices[]     =  TEXT("Authentic Speed\0")
                              TEXT("Enhanced Speed\0");
 
-
 const UINT VOLUME_MIN = 0;
 const UINT VOLUME_MAX = 59;
 
@@ -130,116 +127,120 @@ static UINT g_bEnableFreezeDlgButton = UNDEFINED;
 
 //
 
-enum {
+enum
+{
 	CLONETYPE_PRAVETS82=0,
 	CLONETYPE_PRAVETS8M,
 	CLONETYPE_PRAVETS8A,
 	CLONETYPE_NUM
 };
-DWORD g_uCloneType = CLONETYPE_PRAVETS82 ;
+
+DWORD g_uCloneType = CLONETYPE_PRAVETS82;
 
 static TCHAR g_CloneChoices[]	=	TEXT("Pravets 82\0")	// Bulgarian
 									TEXT("Pravets 8M\0")    // Bulgarian
 									TEXT("Pravets 8A\0");	// Bulgarian
 
-
 //===========================================================================
 
-static void FillComboBox (HWND window, int controlid, LPCTSTR choices, int currentchoice)
+static void FillComboBox(HWND window, int controlid, LPCTSTR choices, int currentchoice)
 {
-  HWND combowindow = GetDlgItem(window,controlid);
-  SendMessage(combowindow,CB_RESETCONTENT,0,0);
-  while (*choices) {
-    SendMessage(combowindow,CB_ADDSTRING,0,(LPARAM)(LPCTSTR)choices);
-    choices += _tcslen(choices)+1;
-  }
-  SendMessage(combowindow,CB_SETCURSEL,currentchoice,0);
+	_ASSERT(choices);
+	HWND combowindow = GetDlgItem(window, controlid);
+	SendMessage(combowindow, CB_RESETCONTENT, 0, 0);
+	while (choices && *choices)
+	{
+		SendMessage(combowindow, CB_ADDSTRING, 0, (LPARAM)(LPCTSTR)choices);
+		choices += _tcslen(choices)+1;
+	}
+	SendMessage(combowindow, CB_SETCURSEL, currentchoice, 0);
 }
 
 //===========================================================================
 
-static void EnableTrackbar (HWND window, BOOL enable)
+static void EnableTrackbar(HWND window, BOOL enable)
 {
-  EnableWindow(GetDlgItem(window,IDC_SLIDER_CPU_SPEED),enable);
-  EnableWindow(GetDlgItem(window,IDC_0_5_MHz),enable);
-  EnableWindow(GetDlgItem(window,IDC_1_0_MHz),enable);
-  EnableWindow(GetDlgItem(window,IDC_2_0_MHz),enable);
-  EnableWindow(GetDlgItem(window,IDC_MAX_MHz),enable);
+	EnableWindow(GetDlgItem(window,IDC_SLIDER_CPU_SPEED),enable);
+	EnableWindow(GetDlgItem(window,IDC_0_5_MHz),enable);
+	EnableWindow(GetDlgItem(window,IDC_1_0_MHz),enable);
+	EnableWindow(GetDlgItem(window,IDC_2_0_MHz),enable);
+	EnableWindow(GetDlgItem(window,IDC_MAX_MHz),enable);
 }
 
 //===========================================================================
 
 static void InitJoystickChoices(HWND window, int nJoyNum, int nIdcValue)
 {
-      TCHAR *pszMem;
-	  int nIdx;
-	  unsigned long i;
+	TCHAR *pszMem;
+	int nIdx;
+	unsigned long i;
 
-	  TCHAR* pnzJoystickChoices;
-	  int *pnJoyTranslationTbl;
-	  int nJoyTranslationTblSize;
-	  unsigned short nJC_DISABLED,nJC_JOYSTICK,nJC_KEYBD_STANDARD,nJC_KEYBD_CENTERING,nJC_MAX;
-	  TCHAR** ppszJoyChoices;
-	  int nOtherJoyNum = nJoyNum == JN_JOYSTICK0 ? JN_JOYSTICK1 : JN_JOYSTICK0;
+	TCHAR* pnzJoystickChoices;
+	int *pnJoyTranslationTbl;
+	int nJoyTranslationTblSize;
+	unsigned short nJC_DISABLED,nJC_JOYSTICK,nJC_KEYBD_STANDARD,nJC_KEYBD_CENTERING,nJC_MAX;
+	TCHAR** ppszJoyChoices;
+	int nOtherJoyNum = nJoyNum == JN_JOYSTICK0 ? JN_JOYSTICK1 : JN_JOYSTICK0;
 
+	if(nJoyNum == JN_JOYSTICK0)
+	{
+		pnzJoystickChoices = joystick0choices;
+		pnJoyTranslationTbl = g_nJoy0ChoiceTranlationTbl;
+		nJoyTranslationTblSize = sizeof(g_nJoy0ChoiceTranlationTbl);
+		nJC_DISABLED = J0C_DISABLED;
+		nJC_JOYSTICK = J0C_JOYSTICK1;
+		nJC_KEYBD_STANDARD = J0C_KEYBD_STANDARD;
+		nJC_KEYBD_CENTERING = J0C_KEYBD_CENTERING;
+		nJC_MAX = J0C_MAX;
+		ppszJoyChoices = pszJoy0Choices;
+	}
+	else
+	{
+		pnzJoystickChoices = joystick1choices;
+		pnJoyTranslationTbl = g_nJoy1ChoiceTranlationTbl;
+		nJoyTranslationTblSize = sizeof(g_nJoy1ChoiceTranlationTbl);
+		nJC_DISABLED = J1C_DISABLED;
+		nJC_JOYSTICK = J1C_JOYSTICK2;
+		nJC_KEYBD_STANDARD = J1C_KEYBD_STANDARD;
+		nJC_KEYBD_CENTERING = J1C_KEYBD_CENTERING;
+		nJC_MAX = J1C_MAX;
+		ppszJoyChoices = pszJoy1Choices;
+	}
 
-	  if(nJoyNum == JN_JOYSTICK0)
-	  {
-		  pnzJoystickChoices = joystick0choices;
-		  pnJoyTranslationTbl = g_nJoy0ChoiceTranlationTbl;
-		  nJoyTranslationTblSize = sizeof(g_nJoy0ChoiceTranlationTbl);
-		  nJC_DISABLED = J0C_DISABLED;
-		  nJC_JOYSTICK = J0C_JOYSTICK1;
-		  nJC_KEYBD_STANDARD = J0C_KEYBD_STANDARD;
-		  nJC_KEYBD_CENTERING = J0C_KEYBD_CENTERING;
-		  nJC_MAX = J0C_MAX;
-		  ppszJoyChoices = pszJoy0Choices;
-	  }
-	  else
-	  {
-		  pnzJoystickChoices = joystick1choices;
-		  pnJoyTranslationTbl = g_nJoy1ChoiceTranlationTbl;
-		  nJoyTranslationTblSize = sizeof(g_nJoy1ChoiceTranlationTbl);
-		  nJC_DISABLED = J1C_DISABLED;
-		  nJC_JOYSTICK = J1C_JOYSTICK2;
-		  nJC_KEYBD_STANDARD = J1C_KEYBD_STANDARD;
-		  nJC_KEYBD_CENTERING = J1C_KEYBD_CENTERING;
-		  nJC_MAX = J1C_MAX;
-		  ppszJoyChoices = pszJoy1Choices;
-	  }
+	pszMem = pnzJoystickChoices;
+	nIdx = 0;
+	memset(pnJoyTranslationTbl, -1, nJoyTranslationTblSize);
 
-	  pszMem = pnzJoystickChoices;
-	  nIdx = 0;
-	  memset(pnJoyTranslationTbl, -1, nJoyTranslationTblSize);
+	// Build the Joystick choices string list. These first 2 are always selectable.
+	memcpy(pszMem, ppszJoyChoices[nJC_DISABLED], strlen(ppszJoyChoices[nJC_DISABLED])+1);
+	pszMem += strlen(ppszJoyChoices[nJC_DISABLED])+1;
+	pnJoyTranslationTbl[nIdx++] = nJC_DISABLED;
 
-	  // Build the Joystick choices string list. These first 2 are always selectable.
-      memcpy(pszMem, ppszJoyChoices[nJC_DISABLED], strlen(ppszJoyChoices[nJC_DISABLED])+1);
-	  pszMem += strlen(ppszJoyChoices[nJC_DISABLED])+1;
-	  pnJoyTranslationTbl[nIdx++] = nJC_DISABLED;
+	memcpy(pszMem, ppszJoyChoices[nJC_JOYSTICK], strlen(ppszJoyChoices[nJC_JOYSTICK])+1);
+	pszMem += strlen(ppszJoyChoices[nJC_JOYSTICK])+1;
+	pnJoyTranslationTbl[nIdx++] = nJC_JOYSTICK;
 
-      memcpy(pszMem, ppszJoyChoices[nJC_JOYSTICK], strlen(ppszJoyChoices[nJC_JOYSTICK])+1);
-	  pszMem += strlen(ppszJoyChoices[nJC_JOYSTICK])+1;
-	  pnJoyTranslationTbl[nIdx++] = nJC_JOYSTICK;
-
-      // Now exclude the other Joystick type (if it exists) from this new list
-	  for(i=nJC_KEYBD_STANDARD; i<nJC_MAX; i++)
-	  {
+	// Now exclude the other Joystick type (if it exists) from this new list
+	for(i=nJC_KEYBD_STANDARD; i<nJC_MAX; i++)
+	{
 		if( ( (i == nJC_KEYBD_STANDARD) || (i == nJC_KEYBD_CENTERING) ) &&
-	        ( (joytype[nOtherJoyNum] == nJC_KEYBD_STANDARD) || (joytype[nOtherJoyNum] == nJC_KEYBD_CENTERING) )
+			( (joytype[nOtherJoyNum] == nJC_KEYBD_STANDARD) || (joytype[nOtherJoyNum] == nJC_KEYBD_CENTERING) )
 		  )
-		  continue;
-
-	    if(joytype[nOtherJoyNum] != i)
 		{
-          memcpy(pszMem, ppszJoyChoices[i], strlen(ppszJoyChoices[i])+1);
-	      pszMem += strlen(ppszJoyChoices[i])+1;
-	      pnJoyTranslationTbl[nIdx++] = i;
+			continue;
 		}
-	  }
 
-	  *pszMem = 0x00;	// Doubly null terminated
+		if(joytype[nOtherJoyNum] != i)
+		{
+			memcpy(pszMem, ppszJoyChoices[i], strlen(ppszJoyChoices[i])+1);
+			pszMem += strlen(ppszJoyChoices[i])+1;
+			pnJoyTranslationTbl[nIdx++] = i;
+		}
+	}
 
-      FillComboBox(window, nIdcValue, pnzJoystickChoices, joytype[nJoyNum]);
+	*pszMem = 0x00;	// Doubly null terminated
+
+	FillComboBox(window, nIdcValue, pnzJoystickChoices, joytype[nJoyNum]);
 }
 
 //===========================================================================
@@ -263,8 +264,8 @@ static eApple2Type GetApple2Type(DWORD NewCompType, DWORD NewCloneType)
 	}
 }
 
-
 // ====================================================================
+
 void Config_Save_Video()
 {
 	REGSAVE(TEXT(REGVALUE_VIDEO_MODE           ),g_eVideoType);
@@ -273,6 +274,7 @@ void Config_Save_Video()
 }
 
 // ====================================================================
+
 void Config_Load_Video()
 {
 	REGLOAD(TEXT(REGVALUE_VIDEO_MODE           ),&g_eVideoType);
@@ -331,7 +333,7 @@ static void ConfigDlg_OK(HWND window, UINT afterclose)
 	SetCurrentCLK6502();
 	
 	if (NewApple2Type > A2TYPE_CLONE) 
-		NewCloneType = NewApple2Type - A2TYPE_CLONE;		
+		NewCloneType = NewApple2Type - A2TYPE_CLONE;	// TC-FIXME: Must be global scope (ie. g_NewCloneType)
 
 	if ((NewApple2Type == A2TYPE_PRAVETS82) || (NewApple2Type == A2TYPE_PRAVETS8A) || (NewApple2Type == A2TYPE_PRAVETS8M))
 		REGSAVE(TEXT(REGVALUE_APPLE2_TYPE),A2TYPE_CLONE );
@@ -360,105 +362,106 @@ static void ConfigDlg_CANCEL(HWND window)
 
 //---------------------------------------------------------------------------
 
-static BOOL CALLBACK ConfigDlgProc (HWND   window,
-                             UINT   message,
-                             WPARAM wparam,
-                             LPARAM lparam) {
-  static UINT afterclose = 0;
+static BOOL CALLBACK ConfigDlgProc( HWND   window,
+									UINT   message,
+									WPARAM wparam,
+									LPARAM lparam)
+{
+	static UINT afterclose = 0;
 
-  switch (message)
-  {
-	case WM_NOTIFY:
+	switch (message)
 	{
-	  // Property Sheet notifications
+	case WM_NOTIFY:
+		{
+			// Property Sheet notifications
 
-      switch (((LPPSHNOTIFY)lparam)->hdr.code)
-	  {
-        case PSN_KILLACTIVE:
-			// About to stop being active page
+			switch (((LPPSHNOTIFY)lparam)->hdr.code)
 			{
-				DWORD NewCompType = (DWORD) SendDlgItemMessage(window, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
-				g_bEnableFreezeDlgButton = GetApple2Type(NewCompType,0)<=A2TYPE_APPLE2PLUS ? TRUE : FALSE;
-				SetWindowLong(window, DWL_MSGRESULT, FALSE);		// Changes are valid
+			case PSN_KILLACTIVE:
+				// About to stop being active page
+				{
+					DWORD NewCompType = (DWORD) SendDlgItemMessage(window, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
+					g_bEnableFreezeDlgButton = GetApple2Type(NewCompType,0)<=A2TYPE_APPLE2PLUS ? TRUE : FALSE;
+					SetWindowLong(window, DWL_MSGRESULT, FALSE);		// Changes are valid
+				}
+				break;
+			case PSN_APPLY:
+				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
+				ConfigDlg_OK(window, afterclose);
+				break;
+			case PSN_QUERYCANCEL:
+				// Can use this to ask user to confirm cancel
+				break;
+			case PSN_RESET:
+				ConfigDlg_CANCEL(window);
+				break;
 			}
-			break;
-        case PSN_APPLY:
-			SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
-			ConfigDlg_OK(window, afterclose);
-			ConfigRun = true;
-			break;
-		case PSN_QUERYCANCEL:
-			// Can use this to ask user to confirm cancel
-			break;
-		case PSN_RESET:
-			ConfigDlg_CANCEL(window);
-			break;
-	  }
-	}
-	break;
+		}
+		break;
 
-    case WM_COMMAND:
-      switch (LOWORD(wparam))
-	  {
-        case IDC_AUTHENTIC_SPEED:	// Authentic Machine Speed
-          SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETPOS,1,SPEED_NORMAL);
-          EnableTrackbar(window,0);
-          break;
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
+		case IDC_AUTHENTIC_SPEED:	// Authentic Machine Speed
+			SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETPOS,1,SPEED_NORMAL);
+			EnableTrackbar(window,0);
+			break;
 
-        case IDC_CUSTOM_SPEED:		// Select Custom Speed
-          SetFocus(GetDlgItem(window,IDC_SLIDER_CPU_SPEED));
-          EnableTrackbar(window,1);
-          break;
+		case IDC_CUSTOM_SPEED:		// Select Custom Speed
+			SetFocus(GetDlgItem(window,IDC_SLIDER_CPU_SPEED));
+			EnableTrackbar(window,1);
+			break;
 
-        case IDC_SLIDER_CPU_SPEED:	// CPU speed slider
-          CheckRadioButton(window,IDC_AUTHENTIC_SPEED,IDC_CUSTOM_SPEED,IDC_CUSTOM_SPEED);
-          EnableTrackbar(window,1);
-          break;
+		case IDC_SLIDER_CPU_SPEED:	// CPU speed slider
+			CheckRadioButton(window,IDC_AUTHENTIC_SPEED,IDC_CUSTOM_SPEED,IDC_CUSTOM_SPEED);
+			EnableTrackbar(window,1);
+			break;
 
-        case IDC_BENCHMARK:
-          afterclose = WM_USER_BENCHMARK;
-		  PropSheet_PressButton(GetParent(window), PSBTN_OK);
-          break;
+		case IDC_BENCHMARK:
+			afterclose = WM_USER_BENCHMARK;
+			PropSheet_PressButton(GetParent(window), PSBTN_OK);
+			break;
 
 		case IDC_ETHERNET:
-		  ui_tfe_settings_dialog(window);
-		  break;
-			  
-        case IDC_MONOCOLOR:
-          VideoChooseColor();
-          break;
+			ui_tfe_settings_dialog(window);
+			break;
+
+		case IDC_MONOCOLOR:
+			VideoChooseColor();
+			break;
 
 		case IDC_CHECK_HALF_SCAN_LINES:
-		  g_uHalfScanLines = IsDlgButtonChecked(window, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
+			g_uHalfScanLines = IsDlgButtonChecked(window, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
 
 #if 0
-        case IDC_RECALIBRATE:
-          RegSaveValue(TEXT(""),TEXT("RunningOnOS"),0,0);
-          if (MessageBox(window,
-                         TEXT("The emulator has been set to recalibrate ")
-                         TEXT("itself the next time it is started.\n\n")
-                         TEXT("Would you like to restart the emulator now?"),
-                         TEXT("Configuration"),
-                         MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES) {
-            afterclose = WM_USER_RESTART;
-		    PropSheet_PressButton(GetParent(window), PSBTN_OK);
-          }
-          break;
+		case IDC_RECALIBRATE:
+			RegSaveValue(TEXT(""),TEXT("RunningOnOS"),0,0);
+			if (MessageBox(window,
+				TEXT("The emulator has been set to recalibrate ")
+				TEXT("itself the next time it is started.\n\n")
+				TEXT("Would you like to restart the emulator now?"),
+				TEXT("Configuration"),
+				MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+			{
+					afterclose = WM_USER_RESTART;
+					PropSheet_PressButton(GetParent(window), PSBTN_OK);
+			}
+			break;
 #endif
-      } // switch( (LOWORD(wparam))
-      break; // WM_COMMAND
+		} // switch( (LOWORD(wparam))
+		break; // WM_COMMAND
 
-    case WM_HSCROLL:
-      CheckRadioButton(window, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, IDC_CUSTOM_SPEED);	// FirstButton, LastButton, CheckButton
-      break;
+	case WM_HSCROLL:
+		CheckRadioButton(window, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, IDC_CUSTOM_SPEED);	// FirstButton, LastButton, CheckButton
+		break;
 
-    case WM_INITDIALOG: //Init general settings dialog
-	{
-		g_nLastPage = PG_CONFIG;
-
-		UINT iApple2String = 0;
-		switch (g_Apple2Type)
+	case WM_INITDIALOG: //Init general settings dialog
 		{
+			g_nLastPage = PG_CONFIG;
+
+			UINT iApple2String = 0;
+			switch (g_Apple2Type)
+			{
 			default:
 			case A2TYPE_APPLE2:			iApple2String = 0; break;
 			case A2TYPE_APPLE2PLUS:		iApple2String = 1; break;
@@ -467,64 +470,64 @@ static BOOL CALLBACK ConfigDlgProc (HWND   window,
 			case A2TYPE_PRAVETS82:		iApple2String = 4; break;
 			case A2TYPE_PRAVETS8M:		iApple2String = 5; break;
 			case A2TYPE_PRAVETS8A:		iApple2String = 6; break;
+			}
+
+			if (iApple2String > 3) 
+				FillComboBox(window,IDC_COMPUTER,computerchoices,4);
+			else
+				FillComboBox(window,IDC_COMPUTER,computerchoices,iApple2String);
+
+			FillComboBox(window,IDC_VIDEOTYPE,videochoices,g_eVideoType);
+			CheckDlgButton(window, IDC_CHECK_HALF_SCAN_LINES, g_uHalfScanLines ? BST_CHECKED : BST_UNCHECKED);
+
+			FillComboBox(window,IDC_SERIALPORT, sg_SSC.GetSerialPortChoices(), sg_SSC.GetSerialPort());
+			EnableWindow(GetDlgItem(window, IDC_SERIALPORT), !sg_SSC.IsActive() ? TRUE : FALSE);
+
+			SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
+			SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
+			SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETTICFREQ,10,0);
+			SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETPOS,1,g_dwSpeed);
+
+			{
+				BOOL custom = 1;
+				if (g_dwSpeed == SPEED_NORMAL)
+				{
+					custom = 0;
+					REGLOAD(TEXT("Custom Speed"),(DWORD *)&custom);
+				}
+				CheckRadioButton(window, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, custom ? IDC_CUSTOM_SPEED : IDC_AUTHENTIC_SPEED);
+				SetFocus(GetDlgItem(window, custom ? IDC_SLIDER_CPU_SPEED : IDC_AUTHENTIC_SPEED));
+				EnableTrackbar(window, custom);
+			}
+
+			afterclose = 0;
+			break;
 		}
 
-	  if (iApple2String > 3) 
-		FillComboBox(window,IDC_COMPUTER,computerchoices,4);
-	  else
-		FillComboBox(window,IDC_COMPUTER,computerchoices,iApple2String);
-
-      FillComboBox(window,IDC_VIDEOTYPE,videochoices,g_eVideoType);
-      CheckDlgButton(window, IDC_CHECK_HALF_SCAN_LINES, g_uHalfScanLines ? BST_CHECKED : BST_UNCHECKED);
-
-	  FillComboBox(window,IDC_SERIALPORT, sg_SSC.GetSerialPortChoices(), sg_SSC.GetSerialPort());
-	  EnableWindow(GetDlgItem(window, IDC_SERIALPORT), !sg_SSC.IsActive() ? TRUE : FALSE);
-
-      SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
-      SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
-      SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETTICFREQ,10,0);
-      SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETPOS,1,g_dwSpeed);
-
-      {
-        BOOL custom = 1;
-        if (g_dwSpeed == SPEED_NORMAL)
+	case WM_LBUTTONDOWN:
 		{
-          custom = 0;
-		  REGLOAD(TEXT("Custom Speed"),(DWORD *)&custom);
-        }
-        CheckRadioButton(window, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, custom ? IDC_CUSTOM_SPEED : IDC_AUTHENTIC_SPEED);
-        SetFocus(GetDlgItem(window, custom ? IDC_SLIDER_CPU_SPEED : IDC_AUTHENTIC_SPEED));
-        EnableTrackbar(window, custom);
-      }
+			POINT pt = { LOWORD(lparam), HIWORD(lparam) };
+			ClientToScreen(window,&pt);
+			RECT rect;
+			GetWindowRect(GetDlgItem(window,IDC_SLIDER_CPU_SPEED),&rect);
+			if ((pt.x >= rect.left) && (pt.x <= rect.right) &&
+				(pt.y >= rect.top) && (pt.y <= rect.bottom))
+			{
+				CheckRadioButton(window, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, IDC_CUSTOM_SPEED);
+				EnableTrackbar(window,1);
+				SetFocus(GetDlgItem(window,IDC_SLIDER_CPU_SPEED));
+				ScreenToClient(GetDlgItem(window,IDC_SLIDER_CPU_SPEED),&pt);
+				PostMessage(GetDlgItem(window,IDC_SLIDER_CPU_SPEED),WM_LBUTTONDOWN,wparam,MAKELONG(pt.x,pt.y));
+			}
+			break;
+		}
 
-      afterclose = 0;
-      break;
+	case WM_SYSCOLORCHANGE:
+		SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,WM_SYSCOLORCHANGE,0,0);
+		break;
 	}
 
-    case WM_LBUTTONDOWN:
-	{
-      POINT pt = {LOWORD(lparam),
-                  HIWORD(lparam)};
-      ClientToScreen(window,&pt);
-      RECT rect;
-      GetWindowRect(GetDlgItem(window,IDC_SLIDER_CPU_SPEED),&rect);
-      if ((pt.x >= rect.left) && (pt.x <= rect.right) &&
-          (pt.y >= rect.top) && (pt.y <= rect.bottom)) {
-        CheckRadioButton(window, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, IDC_CUSTOM_SPEED);
-        EnableTrackbar(window,1);
-        SetFocus(GetDlgItem(window,IDC_SLIDER_CPU_SPEED));
-        ScreenToClient(GetDlgItem(window,IDC_SLIDER_CPU_SPEED),&pt);
-        PostMessage(GetDlgItem(window,IDC_SLIDER_CPU_SPEED),WM_LBUTTONDOWN,
-                    wparam,MAKELONG(pt.x,pt.y));
-      }
-      break;
-    }
-
-    case WM_SYSCOLORCHANGE:
-      SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,WM_SYSCOLORCHANGE,0,0);
-      break;
-  }
-  return 0;
+	return 0;
 }
 
 //===========================================================================
@@ -574,61 +577,61 @@ static void InputDlg_CANCEL(HWND window)
 
 //---------------------------------------------------------------------------
 
-static BOOL CALLBACK InputDlgProc (HWND   window,
-                             UINT   message,
-                             WPARAM wparam,
-                             LPARAM lparam)
+static BOOL CALLBACK InputDlgProc(HWND   window,
+								  UINT   message,
+								  WPARAM wparam,
+								  LPARAM lparam)
 {
-  static UINT afterclose = 0;
+	static UINT afterclose = 0;
 
-  switch (message)
-  {
-	case WM_NOTIFY:
+	switch (message)
 	{
-	  // Property Sheet notifications
+	case WM_NOTIFY:
+		{
+			// Property Sheet notifications
 
-      switch (((LPPSHNOTIFY)lparam)->hdr.code)
-	  {
-        case PSN_KILLACTIVE:
-			SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
-			break;
-        case PSN_APPLY:
-			SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
-			InputDlg_OK(window, afterclose);
-			break;
-		case PSN_QUERYCANCEL:
-			// Can use this to ask user to confirm cancel
-			break;
-		case PSN_RESET:
-			InputDlg_CANCEL(window);
-			break;
-
-/*		// Could use this to display PDL() value
-		case UDN_DELTAPOS:
-			LPNMUPDOWN lpnmud = (LPNMUPDOWN) lparam;
-			if (lpnmud->hdr.idFrom == IDC_SPIN_XTRIM)
+			switch (((LPPSHNOTIFY)lparam)->hdr.code)
 			{
-				static int x = 0;
-				x = lpnmud->iPos + lpnmud->iDelta;
-				x = SendDlgItemMessage(window, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0);
-			}
-			else if (lpnmud->hdr.idFrom == IDC_SPIN_YTRIM)
-			{
-				static int y = 0;
-				y = lpnmud->iPos + lpnmud->iDelta;
-				y = SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0);
-			}
-			break;
-*/
-	  }
-	}
-	break;
+			case PSN_KILLACTIVE:
+				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
+				break;
+			case PSN_APPLY:
+				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
+				InputDlg_OK(window, afterclose);
+				break;
+			case PSN_QUERYCANCEL:
+				// Can use this to ask user to confirm cancel
+				break;
+			case PSN_RESET:
+				InputDlg_CANCEL(window);
+				break;
 
-    case WM_COMMAND:
-      switch (LOWORD(wparam))
-	  {
-        case IDC_JOYSTICK0: // joystick0
-		    if(HIWORD(wparam) == CBN_SELCHANGE)
+			/*		// Could use this to display PDL() value
+			case UDN_DELTAPOS:
+				LPNMUPDOWN lpnmud = (LPNMUPDOWN) lparam;
+				if (lpnmud->hdr.idFrom == IDC_SPIN_XTRIM)
+				{
+					static int x = 0;
+					x = lpnmud->iPos + lpnmud->iDelta;
+					x = SendDlgItemMessage(window, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0);
+				}
+				else if (lpnmud->hdr.idFrom == IDC_SPIN_YTRIM)
+				{
+					static int y = 0;
+					y = lpnmud->iPos + lpnmud->iDelta;
+					y = SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0);
+				}
+				break;
+			*/
+			}
+		}
+		break;
+
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
+		case IDC_JOYSTICK0: // joystick0
+			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
 				DWORD newjoytype = (DWORD)SendDlgItemMessage(window,IDC_JOYSTICK0,CB_GETCURSEL,0,0);
 				JoySetEmulationType(window,g_nJoy0ChoiceTranlationTbl[newjoytype],JN_JOYSTICK0);
@@ -637,7 +640,7 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 			break;
 
 		case IDC_JOYSTICK1: // joystick1
-		    if(HIWORD(wparam) == CBN_SELCHANGE)
+			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
 				DWORD newjoytype = (DWORD)SendDlgItemMessage(window,IDC_JOYSTICK1,CB_GETCURSEL,0,0);
 				JoySetEmulationType(window,g_nJoy1ChoiceTranlationTbl[newjoytype],JN_JOYSTICK1);
@@ -653,19 +656,19 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 			{
 				UINT uNewState = IsDlgButtonChecked(window, IDC_MOUSE_IN_SLOT4) ? 1 : 0;
 				LPCSTR pMsg = uNewState ?
-								TEXT("The emulator needs to restart as the slot configuration has changed.\n\n")
-								TEXT("Also Mockingboard/Phasor cards won't be available in slot 4\n")
-								TEXT("and the mouse can't be used for joystick emulation.\n\n")
-								TEXT("Would you like to restart the emulator now?")
-								:
-								TEXT("The emulator needs to restart as the slot configuration has changed.\n\n")
-								TEXT("(Mockingboard/Phasor cards will now be available in slot 4\n")
-								TEXT("and the mouse can be used for joystick emulation)\n\n")
-								TEXT("Would you like to restart the emulator now?");
+					TEXT("The emulator needs to restart as the slot configuration has changed.\n\n")
+					TEXT("Also Mockingboard/Phasor cards won't be available in slot 4\n")
+					TEXT("and the mouse can't be used for joystick emulation.\n\n")
+					TEXT("Would you like to restart the emulator now?")
+					:
+				TEXT("The emulator needs to restart as the slot configuration has changed.\n\n")
+					TEXT("(Mockingboard/Phasor cards will now be available in slot 4\n")
+					TEXT("and the mouse can be used for joystick emulation)\n\n")
+					TEXT("Would you like to restart the emulator now?");
 				if (MessageBox(window,
-								pMsg,
-								TEXT("Configuration"),
-								MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+					pMsg,
+					TEXT("Configuration"),
+					MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
 				{
 					g_uMouseInSlot4 = uNewState;
 
@@ -681,7 +684,7 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 				}
 				else
 				{
-				  CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
 				}
 			}
 			break;
@@ -690,17 +693,17 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 			{
 				UINT uNewState = IsDlgButtonChecked(window, IDC_Z80_IN_SLOT5) ? 1 : 0;
 				LPCSTR pMsg = uNewState ?
-								TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-								TEXT("Microsoft CP/M SoftCard will be placed in slot 5.\n\n")
-								TEXT("Would you like to restart the emulator now?")
-								:
-								TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-								TEXT("Microsoft CP/M SoftCard will be removed from slot 5\n\n")
-								TEXT("Would you like to restart the emulator now?");
+					TEXT("The emulator needs to restart as the slot configuration has changed.\n")
+					TEXT("Microsoft CP/M SoftCard will be placed in slot 5.\n\n")
+					TEXT("Would you like to restart the emulator now?")
+					:
+				TEXT("The emulator needs to restart as the slot configuration has changed.\n")
+					TEXT("Microsoft CP/M SoftCard will be removed from slot 5\n\n")
+					TEXT("Would you like to restart the emulator now?");
 				if (MessageBox(window,
-								pMsg,
-								TEXT("Configuration"),
-								MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+					pMsg,
+					TEXT("Configuration"),
+					MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
 				{
 					g_uZ80InSlot5 = uNewState;
 					afterclose = WM_USER_RESTART;
@@ -708,7 +711,7 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 				}
 				else
 				{
-				  CheckDlgButton(window, IDC_Z80_IN_SLOT5, g_uZ80InSlot5 ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton(window, IDC_Z80_IN_SLOT5, g_uZ80InSlot5 ? BST_CHECKED : BST_UNCHECKED);
 				}
 			}
 			break;
@@ -716,36 +719,36 @@ static BOOL CALLBACK InputDlgProc (HWND   window,
 		case IDC_PASTE_FROM_CLIPBOARD:
 			ClipboardInitiatePaste();
 			break;
-      }
-      break;
+		}
+		break;
 
-    case WM_INITDIALOG: //Init input settings dialog
-	{
-      g_nLastPage = PG_INPUT;
+	case WM_INITDIALOG: //Init input settings dialog
+		{
+			g_nLastPage = PG_INPUT;
 
-      InitJoystickChoices(window, JN_JOYSTICK0, IDC_JOYSTICK0);
-      InitJoystickChoices(window, JN_JOYSTICK1, IDC_JOYSTICK1);
+			InitJoystickChoices(window, JN_JOYSTICK0, IDC_JOYSTICK0);
+			InitJoystickChoices(window, JN_JOYSTICK1, IDC_JOYSTICK1);
 
-	  SendDlgItemMessage(window, IDC_SPIN_XTRIM, UDM_SETRANGE, 0, MAKELONG(128,-127));
-	  SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_SETRANGE, 0, MAKELONG(128,-127));
+			SendDlgItemMessage(window, IDC_SPIN_XTRIM, UDM_SETRANGE, 0, MAKELONG(128,-127));
+			SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_SETRANGE, 0, MAKELONG(128,-127));
 
-	  SendDlgItemMessage(window, IDC_SPIN_XTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(true),0));
-	  SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(false),0));
+			SendDlgItemMessage(window, IDC_SPIN_XTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(true),0));
+			SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(false),0));
 
-      CheckDlgButton(window, IDC_SCROLLLOCK_TOGGLE, g_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
-      CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
-      CheckDlgButton(window, IDC_MOUSE_CROSSHAIR, g_uMouseShowCrosshair ? BST_CHECKED : BST_UNCHECKED);
-      CheckDlgButton(window, IDC_MOUSE_RESTRICT_TO_WINDOW, g_uMouseRestrictToWindow ? BST_CHECKED : BST_UNCHECKED);
-	  EnableWindow(GetDlgItem(window, IDC_MOUSE_CROSSHAIR), g_uMouseInSlot4 ? TRUE : FALSE);
-	  EnableWindow(GetDlgItem(window, IDC_MOUSE_RESTRICT_TO_WINDOW), g_uMouseInSlot4 ? TRUE : FALSE);
-      CheckDlgButton(window, IDC_Z80_IN_SLOT5, g_uZ80InSlot5 ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(window, IDC_SCROLLLOCK_TOGGLE, g_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(window, IDC_MOUSE_CROSSHAIR, g_uMouseShowCrosshair ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(window, IDC_MOUSE_RESTRICT_TO_WINDOW, g_uMouseRestrictToWindow ? BST_CHECKED : BST_UNCHECKED);
+			EnableWindow(GetDlgItem(window, IDC_MOUSE_CROSSHAIR), g_uMouseInSlot4 ? TRUE : FALSE);
+			EnableWindow(GetDlgItem(window, IDC_MOUSE_RESTRICT_TO_WINDOW), g_uMouseInSlot4 ? TRUE : FALSE);
+			CheckDlgButton(window, IDC_Z80_IN_SLOT5, g_uZ80InSlot5 ? BST_CHECKED : BST_UNCHECKED);
 
-	  afterclose = 0;
-	  break;
+			afterclose = 0;
+			break;
+		}
 	}
-  }
 
-  return 0;
+	return 0;
 }
 
 //===========================================================================
@@ -787,41 +790,41 @@ static void SoundDlg_CANCEL(HWND window)
 //---------------------------------------------------------------------------
 
 static BOOL CALLBACK SoundDlgProc (HWND   window,
-                             UINT   message,
-                             WPARAM wparam,
-                             LPARAM lparam)
+								   UINT   message,
+								   WPARAM wparam,
+								   LPARAM lparam)
 {
-  static UINT afterclose = 0;
-  static UINT uNewSoundcardType = SC_UNINIT;
+	static UINT afterclose = 0;
+	static UINT uNewSoundcardType = SC_UNINIT;
 
-  switch (message)
-  {
-	case WM_NOTIFY:
+	switch (message)
 	{
-	  // Property Sheet notifications
+	case WM_NOTIFY:
+		{
+			// Property Sheet notifications
 
-      switch (((LPPSHNOTIFY)lparam)->hdr.code)
-	  {
-        case PSN_KILLACTIVE:
-			SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
-			break;
-        case PSN_APPLY:
-			SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
-			SoundDlg_OK(window, afterclose, uNewSoundcardType);
-			break;
-		case PSN_QUERYCANCEL:
-			// Can use this to ask user to confirm cancel
-			break;
-		case PSN_RESET:
-			SoundDlg_CANCEL(window);
-			break;
-	  }
-	}
-	break;
+			switch (((LPPSHNOTIFY)lparam)->hdr.code)
+			{
+			case PSN_KILLACTIVE:
+				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
+				break;
+			case PSN_APPLY:
+				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
+				SoundDlg_OK(window, afterclose, uNewSoundcardType);
+				break;
+			case PSN_QUERYCANCEL:
+				// Can use this to ask user to confirm cancel
+				break;
+			case PSN_RESET:
+				SoundDlg_CANCEL(window);
+				break;
+			}
+		}
+		break;
 
-    case WM_COMMAND:
-      switch (LOWORD(wparam))
-	  {
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
 		case IDC_SPKR_VOLUME:
 			break;
 		case IDC_MB_VOLUME:
@@ -838,52 +841,52 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 			uNewSoundcardType = SC_NONE;
 			EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), FALSE);
 			break;
-      }
-      break;
+		}
+		break;
 
-    case WM_INITDIALOG:
-	{
-      g_nLastPage = PG_SOUND;
+	case WM_INITDIALOG:
+		{
+			g_nLastPage = PG_SOUND;
 
-      FillComboBox(window,IDC_SOUNDTYPE,soundchoices,soundtype);
+			FillComboBox(window,IDC_SOUNDTYPE,soundchoices,soundtype);
 
-      SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETRANGE,1,MAKELONG(VOLUME_MIN,VOLUME_MAX));
-      SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETPAGESIZE,0,10);
-      SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETTICFREQ,10,0);
-      SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETPOS,1,SpkrGetVolume());
+			SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETRANGE,1,MAKELONG(VOLUME_MIN,VOLUME_MAX));
+			SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETPAGESIZE,0,10);
+			SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETTICFREQ,10,0);
+			SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETPOS,1,SpkrGetVolume());
 
-      SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETRANGE,1,MAKELONG(VOLUME_MIN,VOLUME_MAX));
-      SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETPAGESIZE,0,10);
-      SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETTICFREQ,10,0);
-      SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETPOS,1,MB_GetVolume());
+			SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETRANGE,1,MAKELONG(VOLUME_MIN,VOLUME_MAX));
+			SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETPAGESIZE,0,10);
+			SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETTICFREQ,10,0);
+			SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETPOS,1,MB_GetVolume());
 
-	  int nID;
-	  eSOUNDCARDTYPE SoundcardType = MB_GetSoundcardType();
-	  if(SoundcardType == SC_MOCKINGBOARD)
-		  nID = IDC_MB_ENABLE;
-	  else if(SoundcardType == SC_PHASOR)
-		  nID = IDC_PHASOR_ENABLE;
-	  else
-		  nID = IDC_SOUNDCARD_DISABLE;
+			int nID;
+			eSOUNDCARDTYPE SoundcardType = MB_GetSoundcardType();
+			if(SoundcardType == SC_MOCKINGBOARD)
+				nID = IDC_MB_ENABLE;
+			else if(SoundcardType == SC_PHASOR)
+				nID = IDC_PHASOR_ENABLE;
+			else
+				nID = IDC_SOUNDCARD_DISABLE;
 
-	  CheckRadioButton(window, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, nID);
+			CheckRadioButton(window, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, nID);
 
-	  if (g_uMouseInSlot4)
-	  {
-		EnableWindow(GetDlgItem(window, IDC_PHASOR_ENABLE), FALSE);
-	  }
-	  
-	  if (g_uZ80InSlot5)
-	  {
-		EnableWindow(GetDlgItem(window, IDC_MB_ENABLE), FALSE);
-	  }
+			if (g_uMouseInSlot4)
+			{
+				EnableWindow(GetDlgItem(window, IDC_PHASOR_ENABLE), FALSE);
+			}
 
-      afterclose = 0;
-	  break;
+			if (g_uZ80InSlot5)
+			{
+				EnableWindow(GetDlgItem(window, IDC_MB_ENABLE), FALSE);
+			}
+
+			afterclose = 0;
+			break;
+		}
 	}
-  }
 
-  return 0;
+	return 0;
 }
 
 //===========================================================================
@@ -901,7 +904,7 @@ static void EnableHDD(HWND window, BOOL bEnable)
 
 static void DiskDlg_OK(HWND window, UINT afterclose)
 {
-	BOOL  newdisktype   = (BOOL) SendDlgItemMessage(window,IDC_DISKTYPE,CB_GETCURSEL,0,0);
+	BOOL newdisktype = (BOOL) SendDlgItemMessage(window,IDC_DISKTYPE,CB_GETCURSEL,0,0);
 
 	if (newdisktype != enhancedisk)
 	{
@@ -937,40 +940,40 @@ static void DiskDlg_CANCEL(HWND window)
 //---------------------------------------------------------------------------
 
 static BOOL CALLBACK DiskDlgProc (HWND   window,
-                             UINT   message,
-                             WPARAM wparam,
-                             LPARAM lparam)
+								  UINT   message,
+								  WPARAM wparam,
+								  LPARAM lparam)
 {
-  static UINT afterclose = 0;
+	static UINT afterclose = 0;
 
-  switch (message)
-  {
-	case WM_NOTIFY:
+	switch (message)
 	{
-	  // Property Sheet notifications
+	case WM_NOTIFY:
+		{
+			// Property Sheet notifications
 
-      switch (((LPPSHNOTIFY)lparam)->hdr.code)
-	  {
-        case PSN_KILLACTIVE:
-			SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
-			break;
-        case PSN_APPLY:
-			SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
-			DiskDlg_OK(window, afterclose);
-			break;
-		case PSN_QUERYCANCEL:
-			// Can use this to ask user to confirm cancel
-			break;
-		case PSN_RESET:
-			DiskDlg_CANCEL(window);
-			break;
-	  }
-	}
-	break;
+			switch (((LPPSHNOTIFY)lparam)->hdr.code)
+			{
+			case PSN_KILLACTIVE:
+				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
+				break;
+			case PSN_APPLY:
+				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
+				DiskDlg_OK(window, afterclose);
+				break;
+			case PSN_QUERYCANCEL:
+				// Can use this to ask user to confirm cancel
+				break;
+			case PSN_RESET:
+				DiskDlg_CANCEL(window);
+				break;
+			}
+		}
+		break;
 
-    case WM_COMMAND:
-      switch (LOWORD(wparam))
-	  {
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
 		case IDC_DISK1:
 			DiskSelect(0);
 			SendDlgItemMessage(window,IDC_EDIT_DISK1,WM_SETTEXT,0,(LPARAM)DiskGetFullName(0));
@@ -1008,39 +1011,39 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
 				SendDlgItemMessage(window, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM) CiderPressLoc.c_str());
 			}
 			break;
-      }
-      break;
-
-    case WM_INITDIALOG: //Init disk settings dialog
-	{
-		g_nLastPage = PG_DISK;
-
-		FillComboBox(window,IDC_DISKTYPE,discchoices,enhancedisk);
-
-		SendDlgItemMessage(window,IDC_EDIT_DISK1,WM_SETTEXT,0,(LPARAM)DiskGetFullName(0));
-		SendDlgItemMessage(window,IDC_EDIT_DISK2,WM_SETTEXT,0,(LPARAM)DiskGetFullName(1));
-
-		SendDlgItemMessage(window,IDC_EDIT_HDD1,WM_SETTEXT,0,(LPARAM)HD_GetFullName(0));
-		SendDlgItemMessage(window,IDC_EDIT_HDD2,WM_SETTEXT,0,(LPARAM)HD_GetFullName(1));
-
-		//
-
-		TCHAR PathToCiderPress[MAX_PATH] = "";
-		RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress,MAX_PATH);
-		SendDlgItemMessage(window,IDC_CIDERPRESS_FILENAME ,WM_SETTEXT,0,(LPARAM)PathToCiderPress);
-
-		//
-		
-		CheckDlgButton(window, IDC_HDD_ENABLE, HD_CardIsEnabled() ? BST_CHECKED : BST_UNCHECKED);
-
-		EnableHDD(window, IsDlgButtonChecked(window, IDC_HDD_ENABLE));
-
-		afterclose = 0;
+		}
 		break;
-	}
-  }
 
-  return 0;
+	case WM_INITDIALOG: //Init disk settings dialog
+		{
+			g_nLastPage = PG_DISK;
+
+			FillComboBox(window,IDC_DISKTYPE,discchoices,enhancedisk);
+
+			SendDlgItemMessage(window,IDC_EDIT_DISK1,WM_SETTEXT,0,(LPARAM)DiskGetFullName(0));
+			SendDlgItemMessage(window,IDC_EDIT_DISK2,WM_SETTEXT,0,(LPARAM)DiskGetFullName(1));
+
+			SendDlgItemMessage(window,IDC_EDIT_HDD1,WM_SETTEXT,0,(LPARAM)HD_GetFullName(0));
+			SendDlgItemMessage(window,IDC_EDIT_HDD2,WM_SETTEXT,0,(LPARAM)HD_GetFullName(1));
+
+			//
+
+			TCHAR PathToCiderPress[MAX_PATH] = "";
+			RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress,MAX_PATH);
+			SendDlgItemMessage(window,IDC_CIDERPRESS_FILENAME ,WM_SETTEXT,0,(LPARAM)PathToCiderPress);
+
+			//
+
+			CheckDlgButton(window, IDC_HDD_ENABLE, HD_CardIsEnabled() ? BST_CHECKED : BST_UNCHECKED);
+
+			EnableHDD(window, IsDlgButtonChecked(window, IDC_HDD_ENABLE));
+
+			afterclose = 0;
+			break;
+		}
+	}
+
+	return 0;
 }
 
 //===========================================================================
@@ -1211,12 +1214,12 @@ static void AdvancedDlg_OK(HWND window, UINT afterclose)
 						"you shall set the emulated computer type "
 						"to Clone from the Configuration tab.\n\n"),
 						TEXT("Clone type changed"),
-						MB_ICONQUESTION | MB_OK  | MB_SETFOREGROUND) ;
+						MB_ICONQUESTION | MB_OK  | MB_SETFOREGROUND);
 			g_uCloneType = NewApple2Clone - (APPLECLONE_MASK|APPLE2E_MASK);
 		}
 	}
 
-	if (NewApple2Type > A2TYPE_APPLE2PLUS)
+	if (NewApple2Type > A2TYPE_APPLE2PLUS)		// TC-FIXME: Must be global scope (ie. g_NewApple2Type)
 		g_uTheFreezesF8Rom = false;
 
 	//
@@ -1232,44 +1235,44 @@ static void AdvancedDlg_CANCEL(HWND window)
 //---------------------------------------------------------------------------
 
 static BOOL CALLBACK AdvancedDlgProc (HWND   window,
-                             UINT   message,
-                             WPARAM wparam,
-                             LPARAM lparam)
+									  UINT   message,
+									  WPARAM wparam,
+									  LPARAM lparam)
 {
-  static UINT afterclose = 0;
+	static UINT afterclose = 0;
 
-  switch (message)
-  {
-	case WM_NOTIFY:
+	switch (message)
 	{
-	  // Property Sheet notifications
+	case WM_NOTIFY:
+		{
+			// Property Sheet notifications
 
-      switch (((LPPSHNOTIFY)lparam)->hdr.code)
-	  {
-        case PSN_SETACTIVE:
-			// About to become the active page
-			InitFreezeDlgButton(window);
-			break;
-        case PSN_KILLACTIVE:
-			SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
-			break;
-        case PSN_APPLY:
-			SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
-			AdvancedDlg_OK(window, afterclose);
-			break;
-		case PSN_QUERYCANCEL:
-			// Can use this to ask user to confirm cancel
-			break;
-		case PSN_RESET:
-			SoundDlg_CANCEL(window);
-			break;
-	  }
-	}
-	break;
+			switch (((LPPSHNOTIFY)lparam)->hdr.code)
+			{
+			case PSN_SETACTIVE:
+				// About to become the active page
+				InitFreezeDlgButton(window);
+				break;
+			case PSN_KILLACTIVE:
+				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
+				break;
+			case PSN_APPLY:
+				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
+				AdvancedDlg_OK(window, afterclose);
+				break;
+			case PSN_QUERYCANCEL:
+				// Can use this to ask user to confirm cancel
+				break;
+			case PSN_RESET:
+				SoundDlg_CANCEL(window);
+				break;
+			}
+		}
+		break;
 
-    case WM_COMMAND:
-      switch (LOWORD(wparam))
-	  {
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
 		case IDC_SAVESTATE_FILENAME:
 			break;
 		case IDC_SAVESTATE_BROWSE:
@@ -1294,17 +1297,17 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
 			afterclose = WM_USER_LOADSTATE;
 			break;
 
-		//
+			//
 
 		case IDC_THE_FREEZES_F8_ROM_FW:
 			{
 				UINT uNewState = IsDlgButtonChecked(window, IDC_THE_FREEZES_F8_ROM_FW) ? 1 : 0;
 				LPCSTR pMsg = 	TEXT("The emulator needs to restart as the ROM configuration has changed.\n")
-								TEXT("Would you like to restart the emulator now?");
+					TEXT("Would you like to restart the emulator now?");
 				if (MessageBox(window,
-								pMsg,
-								TEXT("Configuration"),
-								MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+					pMsg,
+					TEXT("Configuration"),
+					MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
 				{
 					g_uTheFreezesF8Rom = uNewState;
 					afterclose = WM_USER_RESTART;
@@ -1312,283 +1315,295 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
 				}
 				else
 				{
-				  CheckDlgButton(window, IDC_THE_FREEZES_F8_ROM_FW, g_uTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton(window, IDC_THE_FREEZES_F8_ROM_FW, g_uTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED);
 				}
 			}
 			break;
-      }
-      break;
-
-    case WM_INITDIALOG:  //Init advanced settings dialog
-	{
-		g_nLastPage = PG_ADVANCED;
-
-		SendDlgItemMessage(window,IDC_SAVESTATE_FILENAME,WM_SETTEXT,0,(LPARAM)Snapshot_GetFilename());
-
-		CheckDlgButton(window, IDC_SAVESTATE_ON_EXIT, g_bSaveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(window, IDC_DUMPTOPRINTER, g_bDumpToPrinter ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(window, IDC_PRINTER_CONVERT_ENCODING, g_bConvertEncoding ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(window, IDC_PRINTER_FILTER_UNPRINTABLE, g_bFilterUnprintable ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(window, IDC_PRINTER_APPEND, g_bPrinterAppend ? BST_CHECKED : BST_UNCHECKED);
-		SendDlgItemMessage(window, IDC_SPIN_PRINTER_IDLE, UDM_SETRANGE, 0, MAKELONG(999,0));
-        SendDlgItemMessage(window, IDC_SPIN_PRINTER_IDLE, UDM_SETPOS, 0, MAKELONG(Printer_GetIdleLimit (),0));
-    	SendDlgItemMessage(window,IDC_DUMP_FILENAME,WM_SETTEXT,0,(LPARAM)Printer_GetFilename());
-
-		FillComboBox(window, IDC_CLONETYPE, g_CloneChoices, g_uCloneType);
-		InitFreezeDlgButton(window);
-
-		g_szSSNewDirectory[0] = 0x00;
-
-		// Need to specific cmd-line switch: -printer-real to enable this control
-		EnableWindow(GetDlgItem(window, IDC_DUMPTOPRINTER), g_bEnableDumpToRealPrinter ? TRUE : FALSE);
-
-		afterclose = 0;
+		}
 		break;
-	}
-  }
 
-  return 0;
+	case WM_INITDIALOG:  //Init advanced settings dialog
+		{
+			g_nLastPage = PG_ADVANCED;
+
+			SendDlgItemMessage(window,IDC_SAVESTATE_FILENAME,WM_SETTEXT,0,(LPARAM)Snapshot_GetFilename());
+
+			CheckDlgButton(window, IDC_SAVESTATE_ON_EXIT, g_bSaveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(window, IDC_DUMPTOPRINTER, g_bDumpToPrinter ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(window, IDC_PRINTER_CONVERT_ENCODING, g_bConvertEncoding ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(window, IDC_PRINTER_FILTER_UNPRINTABLE, g_bFilterUnprintable ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(window, IDC_PRINTER_APPEND, g_bPrinterAppend ? BST_CHECKED : BST_UNCHECKED);
+			SendDlgItemMessage(window, IDC_SPIN_PRINTER_IDLE, UDM_SETRANGE, 0, MAKELONG(999,0));
+			SendDlgItemMessage(window, IDC_SPIN_PRINTER_IDLE, UDM_SETPOS, 0, MAKELONG(Printer_GetIdleLimit (),0));
+			SendDlgItemMessage(window,IDC_DUMP_FILENAME,WM_SETTEXT,0,(LPARAM)Printer_GetFilename());
+
+			FillComboBox(window, IDC_CLONETYPE, g_CloneChoices, g_uCloneType);
+			InitFreezeDlgButton(window);
+
+			g_szSSNewDirectory[0] = 0x00;
+
+			// Need to specific cmd-line switch: -printer-real to enable this control
+			EnableWindow(GetDlgItem(window, IDC_DUMPTOPRINTER), g_bEnableDumpToRealPrinter ? TRUE : FALSE);
+
+			afterclose = 0;
+			break;
+		}
+	}
+
+	return 0;
 }
 
 //===========================================================================
 
 static BOOL get_tfename(int number, char **ppname, char **ppdescription)
 {
-    if (tfe_enumadapter_open()) {
-        char *pname = NULL;
-        char *pdescription = NULL;
+	if (tfe_enumadapter_open())
+	{
+		char *pname = NULL;
+		char *pdescription = NULL;
 
-        while (number--) {
-            if (!tfe_enumadapter(&pname, &pdescription))
-                break;
+		while (number--)
+		{
+			if (!tfe_enumadapter(&pname, &pdescription))
+				break;
 
-            lib_free(pname);
-            lib_free(pdescription);
-        }
+			lib_free(pname);
+			lib_free(pdescription);
+		}
 
-        if (tfe_enumadapter(&pname, &pdescription)) {
-            *ppname = pname;
-            *ppdescription = pdescription;
-            tfe_enumadapter_close();
-            return TRUE;
-        }
+		if (tfe_enumadapter(&pname, &pdescription))
+		{
+			*ppname = pname;
+			*ppdescription = pdescription;
+			tfe_enumadapter_close();
+			return TRUE;
+		}
 
-        tfe_enumadapter_close();
-    }
-    return FALSE;
+		tfe_enumadapter_close();
+	}
+
+	return FALSE;
 }
 
 static int gray_ungray_items(HWND hwnd)
 {
-    int enable;
-    int number;
+	int enable;
+	int number;
 
-    int disabled = 0;
+	int disabled = 0;
 
-    //resources_get_value("ETHERNET_DISABLED", (void *)&disabled);
-	  REGLOAD(TEXT("Uthernet Disabled")  ,(DWORD *)&disabled);
-	  get_disabled_state(&disabled);
+	//resources_get_value("ETHERNET_DISABLED", (void *)&disabled);
+	REGLOAD(TEXT("Uthernet Disabled")  ,(DWORD *)&disabled);
+	get_disabled_state(&disabled);
 
-    if (disabled) {
-        EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE_T), 0);
-        EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), 0);
-        EnableWindow(GetDlgItem(hwnd, IDOK), 0);
-        SetWindowText(GetDlgItem(hwnd,IDC_TFE_SETTINGS_INTERFACE_NAME), "");
-        SetWindowText(GetDlgItem(hwnd,IDC_TFE_SETTINGS_INTERFACE_DESC), "");
-        enable = 0;
-    } else {
-        enable = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE),
-                             CB_GETCURSEL, 0, 0) ? 1 : 0;
-    }
+	if (disabled)
+	{
+		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE_T), 0);
+		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), 0);
+		EnableWindow(GetDlgItem(hwnd, IDOK), 0);
+		SetWindowText(GetDlgItem(hwnd,IDC_TFE_SETTINGS_INTERFACE_NAME), "");
+		SetWindowText(GetDlgItem(hwnd,IDC_TFE_SETTINGS_INTERFACE_DESC), "");
+		enable = 0;
+	}
+	else
+	{
+		enable = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0) ? 1 : 0;
+	}
 
-    EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_T), enable);
-    EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), enable);
+	EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_T), enable);
+	EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), enable);
 
-    if (enable) {
-        char *pname = NULL;
-        char *pdescription = NULL;
+	if (enable)
+	{
+		char *pname = NULL;
+		char *pdescription = NULL;
 
-        number = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE),
-                             CB_GETCURSEL, 0, 0);
+		number = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), CB_GETCURSEL, 0, 0);
 
-        if (get_tfename(number, &pname, &pdescription)) {
-            SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME),
-                          pname);
-            SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC),
-                          pdescription);
-            lib_free(pname);
-            lib_free(pdescription);
-        }
-    } else {
-        SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), "");
-        SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), "");
-    }
+		if (get_tfename(number, &pname, &pdescription))
+		{
+			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), pname);
+			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), pdescription);
+			lib_free(pname);
+			lib_free(pdescription);
+		}
+	}
+	else
+	{
+		SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), "");
+		SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), "");
+	}
 
-    return disabled ? 1 : 0;
+	return disabled ? 1 : 0;
 }
 
-static uilib_localize_dialog_param tfe_dialog[] = {
-    {0, IDS_TFE_CAPTION, -1},
-    {IDC_TFE_SETTINGS_ENABLE_T, IDS_TFE_ETHERNET, 0},
-    {IDC_TFE_SETTINGS_INTERFACE_T, IDS_TFE_INTERFACE, 0},
-    {IDOK, IDS_OK, 0},
-    {IDCANCEL, IDS_CANCEL, 0},
-    {0, 0, 0}
+static uilib_localize_dialog_param tfe_dialog[] =
+{
+	{0, IDS_TFE_CAPTION, -1},
+	{IDC_TFE_SETTINGS_ENABLE_T, IDS_TFE_ETHERNET, 0},
+	{IDC_TFE_SETTINGS_INTERFACE_T, IDS_TFE_INTERFACE, 0},
+	{IDOK, IDS_OK, 0},
+	{IDCANCEL, IDS_CANCEL, 0},
+	{0, 0, 0}
 };
 
-static uilib_dialog_group tfe_leftgroup[] = {
-    {IDC_TFE_SETTINGS_ENABLE_T, 0},
-    {IDC_TFE_SETTINGS_INTERFACE_T, 0},
-    {0, 0}
+static uilib_dialog_group tfe_leftgroup[] =
+{
+	{IDC_TFE_SETTINGS_ENABLE_T, 0},
+	{IDC_TFE_SETTINGS_INTERFACE_T, 0},
+	{0, 0}
 };
 
-static uilib_dialog_group tfe_rightgroup[] = {
-    {IDC_TFE_SETTINGS_ENABLE, 0},
-    {IDC_TFE_SETTINGS_INTERFACE, 0},
-    {0, 0}
+static uilib_dialog_group tfe_rightgroup[] =
+{
+	{IDC_TFE_SETTINGS_ENABLE, 0},
+	{IDC_TFE_SETTINGS_INTERFACE, 0},
+	{0, 0}
 };
 
 static void init_tfe_dialog(HWND hwnd)
 {
-    HWND temp_hwnd;
-    int active_value;
+	HWND temp_hwnd;
+	int active_value;
 
-    int tfe_enable;
-    int xsize, ysize;
+	int tfe_enable;
+	int xsize, ysize;
 
-    char *interface_name = NULL;
+	char *interface_name = NULL;
 
-    uilib_get_group_extent(hwnd, tfe_leftgroup, &xsize, &ysize);
-    uilib_adjust_group_width(hwnd, tfe_leftgroup);
-    uilib_move_group(hwnd, tfe_rightgroup, xsize + 30);
+	uilib_get_group_extent(hwnd, tfe_leftgroup, &xsize, &ysize);
+	uilib_adjust_group_width(hwnd, tfe_leftgroup);
+	uilib_move_group(hwnd, tfe_rightgroup, xsize + 30);
 
-//    resources_get_value("ETHERNET_ACTIVE", (void *)&tfe_enabled);
+	//resources_get_value("ETHERNET_ACTIVE", (void *)&tfe_enabled);
 	get_tfe_enabled(&tfe_enable);
 
-    //resources_get_value("ETHERNET_AS_RR", (void *)&tfe_as_rr_net);
-    active_value = (tfe_enable ? 1 : 0);
+	//resources_get_value("ETHERNET_AS_RR", (void *)&tfe_as_rr_net);
+	active_value = (tfe_enable ? 1 : 0);
 
-    temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_ENABLE);
-    SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Disabled");
-    SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Uthernet");
-    SendMessage(temp_hwnd, CB_SETCURSEL, (WPARAM)active_value, 0);
+	temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_ENABLE);
+	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Disabled");
+	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Uthernet");
+	SendMessage(temp_hwnd, CB_SETCURSEL, (WPARAM)active_value, 0);
 
-//    resources_get_value("ETHERNET_INTERFACE", (void *)&interface_name);
+	//resources_get_value("ETHERNET_INTERFACE", (void *)&interface_name);
 	interface_name = (char *) get_tfe_interface();
 
-    if (tfe_enumadapter_open()) {
-        int cnt = 0;
+	if (tfe_enumadapter_open())
+	{
+		int cnt = 0;
 
-        char *pname;
-        char *pdescription;
+		char *pname;
+		char *pdescription;
 
-        temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_INTERFACE);
+		temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_INTERFACE);
 
-        for (cnt = 0; tfe_enumadapter(&pname, &pdescription); cnt++) {
-            BOOL this_entry = FALSE;
+		for (cnt = 0; tfe_enumadapter(&pname, &pdescription); cnt++)
+		{
+			BOOL this_entry = FALSE;
 
-            if (strcmp(pname, interface_name) == 0) {
-                this_entry = TRUE;
-            }
+			if (strcmp(pname, interface_name) == 0)
+			{
+				this_entry = TRUE;
+			}
 
-            SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME),
-                          pname);
-            SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC),
-                          pdescription);
-            SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)pname);
-            lib_free(pname);
-            lib_free(pdescription);
+			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), pname);
+			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), pdescription);
+			SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)pname);
+			lib_free(pname);
+			lib_free(pdescription);
 
-            if (this_entry) {
-                SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE),
-                            CB_SETCURSEL, (WPARAM)cnt, 0);
-            }
-        }
+			if (this_entry)
+			{
+				SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE),
+					CB_SETCURSEL, (WPARAM)cnt, 0);
+			}
+		}
 
-        tfe_enumadapter_close();
-    }
+		tfe_enumadapter_close();
+	}
 
-    if (gray_ungray_items(hwnd)) {
-        /* we have a problem: TFE is disabled. Give a message to the user */
-        MessageBox( hwnd,
-            "TFE support is not available on your system,\n"
-            "there is some important part missing. Please have a\n"
-            "look at the VICE knowledge base support page\n"
-            "\n      http://www.vicekb.de.vu/13-005.htm\n\n"
-            "for possible reasons and to activate networking with VICE.",
-            "TFE support", MB_ICONINFORMATION|MB_OK);
+	if (gray_ungray_items(hwnd))
+	{
+		/* we have a problem: TFE is disabled. Give a message to the user */
+		MessageBox( hwnd,
+			"TFE support is not available on your system,\n"
+			"there is some important part missing. Please have a\n"
+			"look at the VICE knowledge base support page\n"
+			"\n      http://www.vicekb.de.vu/13-005.htm\n\n"
+			"for possible reasons and to activate networking with VICE.",
+			"TFE support", MB_ICONINFORMATION|MB_OK);
 
-        /* just quit the dialog before it is open */
-        SendMessage( hwnd, WM_COMMAND, IDCANCEL, 0);
-    }
+		/* just quit the dialog before it is open */
+		SendMessage( hwnd, WM_COMMAND, IDCANCEL, 0);
+	}
 }
-
 
 static void save_tfe_dialog(HWND hwnd)
 {
-    int active_value;
-    int tfe_enabled;
-    char buffer[256];
+	int active_value;
+	int tfe_enabled;
+	char buffer[256];
 
-    buffer[255] = 0;
-    GetDlgItemText(hwnd, IDC_TFE_SETTINGS_INTERFACE, buffer, 255);
-	
+	buffer[255] = 0;
+	GetDlgItemText(hwnd, IDC_TFE_SETTINGS_INTERFACE, buffer, sizeof(buffer)-1);
+
 	// RGJ - Added check for NULL interface so we don't set it active without a valid interface selected
-	if (strlen(buffer) > 0) {
+	if (strlen(buffer) > 0)
+	{
 		RegSaveString(TEXT("Configuration"), TEXT("Uthernet Interface"), 1, buffer);
-	
-		active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE),
-			                       CB_GETCURSEL, 0, 0);
+
+		active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
 
 		tfe_enabled = active_value >= 1 ? 1 : 0;
 		REGSAVE(TEXT("Uthernet Active")  ,tfe_enabled);
-	} else {
+	}
+	else
+	{
 		REGSAVE(TEXT("Uthernet Active")  ,0);
 	}
-
-	
 }
 
 static BOOL CALLBACK TfeDlgProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-    switch (msg) {
-      case WM_COMMAND:
-        switch (LOWORD(wparam)) {
-          case IDOK:
-            save_tfe_dialog(hwnd);
-            /* FALL THROUGH */
+	switch (msg)
+	{
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
+		case IDOK:
+			save_tfe_dialog(hwnd);
+			/* FALL THROUGH */
 
-          case IDCANCEL:
-            EndDialog(hwnd,0);
-            return TRUE;
+		case IDCANCEL:
+			EndDialog(hwnd,0);
+			return TRUE;
 
-          case IDC_TFE_SETTINGS_INTERFACE:
-            /* FALL THROUGH */
+		case IDC_TFE_SETTINGS_INTERFACE:
+			/* FALL THROUGH */
 
-          case IDC_TFE_SETTINGS_ENABLE:
-            gray_ungray_items(hwnd);
-            break;
-        }
-        return FALSE;
+		case IDC_TFE_SETTINGS_ENABLE:
+			gray_ungray_items(hwnd);
+			break;
+		}
+		return FALSE;
 
-      case WM_CLOSE:
-        EndDialog(hwnd,0);
-        return TRUE;
+	case WM_CLOSE:
+		EndDialog(hwnd,0);
+		return TRUE;
 
-      case WM_INITDIALOG:
-        init_tfe_dialog(hwnd);
-        return TRUE;
-    }
-    return FALSE;
+	case WM_INITDIALOG:
+		init_tfe_dialog(hwnd);
+		return TRUE;
+	}
+
+	return FALSE;
 }
-
 
 void ui_tfe_settings_dialog(HWND hwnd)
 {
-    DialogBox(g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hwnd,
-              TfeDlgProc);
+	DialogBox(g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hwnd, TfeDlgProc);
 }
-
 
 //===========================================================================
 
@@ -1639,7 +1654,6 @@ void PSP_Init()
 
 	g_bEnableFreezeDlgButton = UNDEFINED;
 	int i = PropertySheet(&PropSheetHeader);	// Result: 0=Cancel, 1=OK
-
 }
 
 DWORD PSP_GetVolumeMax()
@@ -1693,7 +1707,7 @@ string BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE,TCHAR* FILEMA
 	ofn.lpstrTitle      = pszTitle;
 		
 	int nRes = GetOpenFileName(&ofn);
-	if(nRes) //Okay is pressed
+	if(nRes)	// Okay is pressed
 	{
 		strcpy(g_szNewFilename, &szFilename[ofn.nFileOffset]);
 
@@ -1704,12 +1718,12 @@ string BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE,TCHAR* FILEMA
 		PathName = szFilename;
 		PathName.append (g_szNewFilename);	
 	}
-	else //Cancel is pressed.
+	else		// Cancel is pressed
 	{
 		RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename,MAX_PATH);
 		PathName = szFilename;
 	}
+
 	strcpy(g_szNewFilename, PathToFile); //RAPCS, line 3 (last).
 	return PathName;
 }
-

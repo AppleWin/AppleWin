@@ -455,8 +455,8 @@ void SoundCore_SetFade(eFADE FadeType)
 
 //-----------------------------------------------------------------------------
 
-// If AppleWin started by double-clicking a .dsk, the our window won't have focus when volumes are set (so gets ignored).
-// Subsequent setting (to the same volume) will get ignores, as DirectSound thinks that volume is already set.
+// If AppleWin started by double-clicking a .dsk, then our window won't have focus when volumes are set (so gets ignored).
+// Subsequent setting (to the same volume) will get ignored, as DirectSound thinks that volume is already set.
 
 void SoundCore_TweakVolumes()
 {
