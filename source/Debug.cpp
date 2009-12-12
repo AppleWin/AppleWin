@@ -7041,15 +7041,31 @@ Update_t ExecuteCommand (int nArgs)
 			{
 				WORD nAddress = 0;
 
-				// Support Apple Monitor commands
-				// ####G -> JMP $adress
+				// Support old AppleWin GO commands:
+				// . G      -> GO
+				// . G #### -> GO until $address
+				// Support Apple Monitor commands:
+				// . ####G  -> JMP $address (exit debugger)
 				if ((pCommand[nLen-1] == 'G') ||
 					(pCommand[nLen-1] == 'g'))
 				{
-					pCommand[nLen-1] = 0;
-					ArgsGetValue( pArg, & nAddress );
+					if (nLen == 1)
+					{
+						if (nArgs)
+						{
+							const int iArg = 1;
+							ArgsGetValue( &g_aArgs[iArg], &g_aArgs[iArg].nValue );
+							_CmdBreakpointAddCommonArg(iArg, nArgs, BP_SRC_REG_PC, BP_OP_EQUAL);	// TC-TODO: Clear this temp BP when it's hit or stepping is cancelled
+						}
+					}
+					else if (nLen > 1)
+					{
+						pCommand[nLen-1] = 0;
+						ArgsGetValue( pArg, & nAddress );
 
-					regs.pc = nAddress;
+						regs.pc = nAddress;
+					}
+
 					g_nAppMode = MODE_RUNNING; // exit the debugger
 
 					nFound = 1;
