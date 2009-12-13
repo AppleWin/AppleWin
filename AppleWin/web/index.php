@@ -32,7 +32,7 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
 <li>Changes:</li>
 <ul>
     <li>Enable XP visual themes &amp; corrected tab order in the Configuration dialog - thanks to Joshua Bell</li>
-    <li>Updated Help chm's Debugger breakpoint commands (BC,BD,BE,BL now replaced by BPC,BPD,BPE.BPL</li>
+    <li>Updated Help chm's Debugger breakpoint commands (BC,BD,BE,BL now replaced by BPC,BPD,BPE.BPL)</li>
 </ul>
 <li>Fixes:</li>
 <ul>
