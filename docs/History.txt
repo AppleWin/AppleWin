@@ -18,6 +18,20 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise.
 - For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
+1.17.2 - 13 Dec 2009
+--------------------
+Changes:
+. Enable XP visual themes &amp; corrected tab order in the Configuration dialog - thanks for Joshua Bell
+. Updated Help chm's Debugger breakpoint commands (BC,BD,BE,BL now replaced by BPC,BPD,BPE.BPL
+
+Fixes:
+. Fix: Crash when COM or TCP port opened before Configuration dialog is opened for the first time
+. Fix: Reading SSC DIP SW1 for "external" CLK (115.2K mode)
+. Fix: Reinstated debugger's GO command:
+  - G        : Go (Stepping Mode)
+  - G <addr> : Go (Stepping Mode) until PC=addr
+
+
 1.17.1 - 27 Nov 2009
 --------------------
 Changes:
