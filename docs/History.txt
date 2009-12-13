@@ -21,7 +21,7 @@ Restrictions/bugs:
 1.17.2 - 13 Dec 2009
 --------------------
 Changes:
-. Enable XP visual themes &amp; corrected tab order in the Configuration dialog - thanks for Joshua Bell
+. Enable XP visual themes & corrected tab order in the Configuration dialog - thanks to Joshua Bell
 . Updated Help chm's Debugger breakpoint commands (BC,BD,BE,BL now replaced by BPC,BPD,BPE.BPL
 
 Fixes:

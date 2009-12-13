@@ -4,9 +4,9 @@
   <link rel="shortcut icon" href="applewin.ico">
   <title>Apple //e Emulator for Windows</title></head>
 <body alink="gold" background="background.gif" bgcolor="mediumpurple" link="orange" text="powderblue" vlink="plum">
-<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.17.1</font></u></font></p>
+<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.17.2</font></u></font></p>
 <p align="center"><font face="Tahoma"><img src="applewin.gif" title="" alt="Apple //e Emulator Logo" height="384" width="560"></font></p>
-<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.17.1.0.zip">Version 1.17.1</a><br>
+<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.17.2.0.zip">Version 1.17.2</a><br>
 <a href="#OldReleases">Download older releases</a><br>
 </font></p>
 
@@ -18,7 +18,7 @@ AppleWin is now hosted at <a href="http://developer.berlios.de/">BerliOS</a> and
 The SVN repository is located here: <a href="https://developer.berlios.de/projects/applewin/">AppleWin SVN</a>
 </font>
 </p><p><font face="Tahoma">
-Latest AppleWin compiled html help: <a href="applewin.chm">AppleWin.chm</a>
+Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
 <br>
 <font size="2">
 <strong>NB. If you have trouble reading the CHM:</strong><br>
@@ -27,11 +27,30 @@ Latest AppleWin compiled html help: <a href="applewin.chm">AppleWin.chm</a>
 </font></font></p>
 
 
+<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.17.2 - 13 Dec 2009</u></font></p>
+<font face="Tahoma">
+<li>Changes:</li>
+<ul>
+    <li>Enable XP visual themes &amp; corrected tab order in the Configuration dialog - thanks to Joshua Bell</li>
+    <li>Updated Help chm's Debugger breakpoint commands (BC,BD,BE,BL now replaced by BPC,BPD,BPE.BPL</li>
+</ul>
+<li>Fixes:</li>
+<ul>
+    <li>Fix: Crash when COM or TCP port opened before Configuration dialog is opened for the first time</li>
+	<li>Fix: Reading SSC DIP SW1 for "external" CLK (115.2K mode)</li>
+	<li>Fix: Reinstated debugger's GO command:</li>
+    <ul>
+       <li>G        : Go (Stepping Mode)</li>
+       <li>G &lt;addr&gt; : Go (Stepping Mode) until PC=addr</li>
+    </ul>
+</ul>
+
+
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.17.1 - 27 Nov 2009</u></font></p>
 <font face="Tahoma">
 <li>Changes:</li>
 <ul>
-    <li>SSC: Support 115.2K Baud</li>
+    <li>SSC: Support 112.5K Baud</li>
     <li>Dynamically generated 'Serial Port' drop-down menu</li>
     <ul>
        <li>Save "Serial Port Name" to Registry (instead of drop-down menu index as "Serial Port")</li>
@@ -382,7 +401,7 @@ Tested with the following Mockingboard/Phasor titles:<br>
 <blockquote>
   Adventure Construction Set<br>
   Berzap!<br>
-  Broadsides (SSI) - Card must be in slot-4. Appears to be noise only<br>
+  Broadsides (SSI) - Card must be in slot-4. Appears to be noise-channel only<br>
   Crimewave (Votrax speech only)<br>
   Crypt of Medea (Votrax speech only)<br>
   <a href="http://www.tomcharlesworth.pwp.blueyonder.co.uk/Cybernoid.dsk">Cybernoid Music Disk</a><br>
@@ -418,6 +437,7 @@ find didn't appear to support it:<br>
 
 <p><font face="Tahoma"><font face="Tahoma"><u><a name="OldReleases"></a>Old releases:</u></font></font></p>
 <p><font face="Tahoma"><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.17.1.0.zip">Version 1.17.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.16.1.0.zip">Version 1.16.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.16.0.0-beta.zip">Version 1.16.0 (beta)</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.15.0-beta.zip">Version 1.15.0 (beta)</a><br></font></font><font face="Tahoma"><font face="Tahoma">
