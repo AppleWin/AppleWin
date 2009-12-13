@@ -12,7 +12,7 @@ open shell.berlios.de
 cd /home/groups/applewin/htdocs
 lcd <folder on PC>
 put index.php
-put applewin.chm
+put AppleWin.chm
 put History.txt
 
 *** NB. Files on BerliOS server are case-sensitive
