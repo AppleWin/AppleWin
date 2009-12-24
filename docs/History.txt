@@ -22,7 +22,7 @@ Restrictions/bugs:
 --------------------
 Changes:
 . Enable XP visual themes & corrected tab order in the Configuration dialog - thanks to Joshua Bell
-. Updated Help chm's Debugger breakpoint commands (BC,BD,BE,BL now replaced by BPC,BPD,BPE.BPL
+. Updated Help chm's Debugger breakpoint commands (BC,BD,BE,BL now replaced by BPC,BPD,BPE.BPL)
 
 Fixes:
 . Fix: Crash when COM or TCP port opened before Configuration dialog is opened for the first time
