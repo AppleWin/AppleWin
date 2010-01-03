@@ -54,6 +54,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
+				AdditionalIncludeDirectories="zlib;zip_lib"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -150,6 +151,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				Optimization="0"
+				AdditionalIncludeDirectories="zlib;zip_lib"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
@@ -588,6 +590,14 @@
 				</File>
 				<File
 					RelativePath=".\source\DiskImage.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\DiskImageHelper.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\DiskImageHelper.h"
 					>
 				</File>
 				<File

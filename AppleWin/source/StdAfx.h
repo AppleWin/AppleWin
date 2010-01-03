@@ -28,6 +28,14 @@
 #include <ddraw.h>
 #include <htmlhelp.h>
 
+#include <queue>
+#include <vector>
+
+#include "zlib.h"
+#include "unzip.h"
+#include "zip.h"
+#include "iowin32.h"
+
 #include "Common.h"
 #include "Structs.h"
 
@@ -36,9 +44,7 @@
 #include "CPU.h"
 #include "Debug.h"
 #include "Disk.h"
-#include "DiskImage.h"
 #include "Frame.h"
-#include "Harddisk.h"
 #include "Joystick.h"
 #include "Keyboard.h"
 #include "Log.h"

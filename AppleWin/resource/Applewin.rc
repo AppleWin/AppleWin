@@ -171,7 +171,7 @@ BEGIN
     EDITTEXT        IDC_EDIT_DISK2,84,60,115,12,ES_AUTOHSCROLL | ES_READONLY
     GROUPBOX        "Hard Disk Drives",IDC_STATIC,5,85,200,71
     CONTROL         "&Enable hard disk controller in slot 7",IDC_HDD_ENABLE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,98,190,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,98,122,10
     PUSHBUTTON      "Select &HDD 1",IDC_HDD1,10,114,70,14
     EDITTEXT        IDC_EDIT_HDD1,85,115,115,12,ES_AUTOHSCROLL | ES_READONLY
     PUSHBUTTON      "Selec&t HDD 2",IDC_HDD2,10,134,70,14
@@ -337,7 +337,7 @@ BEGIN
     END
 END
 
-ID_MENU_DISK_POPUP MENU 
+IDR_MENU_DISK_POPUP MENU 
 BEGIN
     POPUP "Disk Menu"
     BEGIN
@@ -345,6 +345,17 @@ BEGIN
         MENUITEM "Read / &Write",               ID_DISKMENU_WRITEPROTECTION_OFF
         MENUITEM "&Read only",                  ID_DISKMENU_WRITEPROTECTION_ON
         MENUITEM "Send to &CiderPress",         ID_DISKMENU_SENDTO_CIDERPRESS
+    END
+END
+
+IDR_MENU_DISK_CFG_POPUP MENU 
+BEGIN
+    POPUP "Disk Menu"
+    BEGIN
+        MENUITEM "Eject disk in Drive 1",       ID_DISKMENU_EJECT_DISK1
+        MENUITEM "Eject disk in Drive 2",       ID_DISKMENU_EJECT_DISK2
+        MENUITEM "Unplug harddisk-1",           ID_DISKMENU_UNPLUG_HARDDISK1
+        MENUITEM "Unplug harddisk-2",           ID_DISKMENU_UNPLUG_HARDDISK2
     END
 END
 

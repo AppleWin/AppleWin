@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+#include "DiskImage.h"
+#include "Harddisk.h"
 #pragma  hdrstop
 
 #include <objbase.h>
@@ -574,8 +576,8 @@ void LoadConfiguration ()
 	RegLoadString(TEXT(REG_PREFS),TEXT(REGVALUE_PREF_START_DIR),1,g_sCurrentDir,MAX_PATH);
 	SetCurrentImageDir();
 
-	Disk_LoadLastDiskImage(0);
-	Disk_LoadLastDiskImage(1);
+	Disk_LoadLastDiskImage(DRIVE_1);
+	Disk_LoadLastDiskImage(DRIVE_2);
 
 	dwTmp = 10;
 	REGLOAD(TEXT(REGVALUE_PRINTER_IDLE_LIMIT), &dwTmp);
@@ -593,28 +595,30 @@ void SetCurrentImageDir()
 	SetCurrentDirectory(g_sCurrentDir);
 }
 
+//===========================================================================
+
 // TODO: Added dialog option of which file extensions to registry
 bool g_bRegisterFileTypes = true;
-bool g_bRegistryFileBin = false;
+//bool g_bRegistryFileBin = false;
 bool g_bRegistryFileDo  = true;
 bool g_bRegistryFileDsk = true;
 bool g_bRegistryFileNib = true;
 bool g_bRegistryFilePo  = true;
 
 
-//===========================================================================
-void RegisterExtensions ()
+void RegisterExtensions()
 {
 	TCHAR szCommandTmp[MAX_PATH];
 	GetModuleFileName((HMODULE)0,szCommandTmp,MAX_PATH);
 
-#if TEST_REG_BUG
+#ifdef TEST_REG_BUG
 	TCHAR command[MAX_PATH];
 	wsprintf(command, "%s",	szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
 
 	TCHAR icon[MAX_PATH];
 	wsprintf(icon,TEXT("\"%s,1\""),(LPCTSTR)command);
 #endif
+
 	TCHAR command[MAX_PATH];
 	wsprintf(command, "\"%s\"",	szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
 
@@ -625,11 +629,16 @@ void RegisterExtensions ()
 //	_tcscat(command,TEXT("-d1 %1\""));			// Append "%1"
 //	sprintf(command, "\"%s\" \"-d1 %%1\"", szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
 
-	RegSetValue(HKEY_CLASSES_ROOT,".bin",REG_SZ,"DiskImage",10);
+	// NB. Reflect extensions in DELREG.INF
+//	RegSetValue(HKEY_CLASSES_ROOT,".bin",REG_SZ,"DiskImage",10);	// Removed as .bin is too generic
+	long Res = RegDeleteValue(HKEY_CLASSES_ROOT, ".bin");			// TODO: This isn't working :-/
+
 	RegSetValue(HKEY_CLASSES_ROOT,".do"	,REG_SZ,"DiskImage",10);
 	RegSetValue(HKEY_CLASSES_ROOT,".dsk",REG_SZ,"DiskImage",10);
 	RegSetValue(HKEY_CLASSES_ROOT,".nib",REG_SZ,"DiskImage",10);
 	RegSetValue(HKEY_CLASSES_ROOT,".po"	,REG_SZ,"DiskImage",10);
+//	RegSetValue(HKEY_CLASSES_ROOT,".2mg",REG_SZ,"DiskImage",10);	// Don't grab this, as not all .2mg images are supported (so defer to CiderPress)
+//	RegSetValue(HKEY_CLASSES_ROOT,".2img",REG_SZ,"DiskImage",10);	// Don't grab this, as not all .2mg images are supported (so defer to CiderPress)
 //	RegSetValue(HKEY_CLASSES_ROOT,".aws",REG_SZ,"DiskImage",10);	// TO DO
 //	RegSetValue(HKEY_CLASSES_ROOT,".hdv",REG_SZ,"DiskImage",10);	// TO DO
 
@@ -733,17 +742,10 @@ LPSTR GetNextArg(LPSTR lpCmdLine)
 
 //---------------------------------------------------------------------------
 
-int DoDiskInsert(int nDrive, LPSTR szFileName)
+static int DoDiskInsert(int nDrive, LPSTR szFileName)
 {
-	DWORD dwAttributes = GetFileAttributes(szFileName);
-	if(dwAttributes == INVALID_FILE_ATTRIBUTES)
-	{
-		return -1;
-	}
-
-	BOOL bWriteProtected = (dwAttributes & FILE_ATTRIBUTE_READONLY) ? TRUE : FALSE;
-
-	return DiskInsert(nDrive, szFileName, bWriteProtected, 0);
+	ImageError_e Error = DiskInsert(nDrive, szFileName, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+	return (Error == eIMAGE_ERROR_NONE) ? 0 : 1;
 }
 
 //---------------------------------------------------------------------------
@@ -920,16 +922,16 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 //MessageBox( NULL, szImageName_drive1, "Disk 1", MB_OK );
 //MessageBox( NULL, szImageName_drive2, "Disk 2", MB_OK );
 
-	int nError = 0;
+	int nError = 0;	// TODO: Show error MsgBox if we get a DiskInsert error
 	if(szImageName_drive1)
 	{
-		nError = DoDiskInsert(0, szImageName_drive1);
+		nError = DoDiskInsert(DRIVE_1, szImageName_drive1);
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 		bBoot = true;
 	}
 	if(szImageName_drive2)
 	{
-		nError |= DoDiskInsert(1, szImageName_drive2);
+		nError |= DoDiskInsert(DRIVE_2, szImageName_drive2);
 	}
 
 	//
