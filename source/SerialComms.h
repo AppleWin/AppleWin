@@ -1,5 +1,4 @@
 #pragma once
-#include <queue>
 
 extern class CSuperSerialCard sg_SSC;
 

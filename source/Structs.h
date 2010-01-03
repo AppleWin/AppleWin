@@ -1,5 +1,7 @@
 #pragma once
 
+#include "DiskImage.h"
+
 // Structs used by save-state file
 
 // *** DON'T CHANGE ANY STRUCT WITHOUT CONSIDERING BACKWARDS COMPATIBILITY WITH .AWS FORMAT ***
@@ -161,8 +163,6 @@ typedef struct
 } SS_CARD_EMPTY;
 
 /////////////////////////////////////////////////////////////////////////////////
-
-const UINT NIBBLES_PER_TRACK = 0x1A00;
 
 typedef struct
 {

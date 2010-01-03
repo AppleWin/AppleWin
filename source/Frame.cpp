@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+#include "DiskImage.h"
+#include "Harddisk.h"
 #pragma  hdrstop
 #include "MouseInterface.h"
 #include "..\resource\resource.h"
@@ -318,9 +320,10 @@ static void DrawButton (HDC passdc, int number) {
     SetTextColor(dc,RGB(0,0,0));
     SetTextAlign(dc,TA_CENTER | TA_TOP);
     SetBkMode(dc,TRANSPARENT);
+	LPCTSTR pszBaseName = DiskGetBaseName(number-BTN_DRIVE1);
     ExtTextOut(dc,x+offset+22,rect.top,ETO_CLIPPED,&rect,
-               DiskGetName(number-BTN_DRIVE1),
-               MIN(8,_tcslen(DiskGetName(number-BTN_DRIVE1))),
+               pszBaseName,
+               MIN(8,_tcslen(pszBaseName)),
                NULL);
   }
   if (!passdc)
@@ -706,8 +709,9 @@ LRESULT CALLBACK FrameWndProc (
     case WM_DDE_EXECUTE: {
       LPTSTR filename = (LPTSTR)GlobalLock((HGLOBAL)lparam);
 //MessageBox( NULL, filename, "DDE Exec", MB_OK );
-      int error = DiskInsert(0,filename,0,0);
-      if (!error) {
+      ImageError_e Error = DiskInsert(DRIVE_1, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+      if (Error == eIMAGE_ERROR_NONE)
+	  {
         if (!g_bIsFullScreen)
           DrawButton((HDC)0,BTN_DRIVE1);
         SetForegroundWindow(window);
@@ -717,7 +721,7 @@ LRESULT CALLBACK FrameWndProc (
       }
       else
       {
-        DiskNotifyInvalidImage(filename,error);
+        DiskNotifyInvalidImage(DRIVE_1, filename, Error);
       }
       GlobalUnlock((HGLOBAL)lparam);
       break;
@@ -758,18 +762,23 @@ LRESULT CALLBACK FrameWndProc (
       rect.right  = rect.left+BUTTONCX+1;
       rect.top    = buttony+BTN_DRIVE2*BUTTONCY+1;
       rect.bottom = rect.top+BUTTONCY;
-      int error = DiskInsert(PtInRect(&rect,point) ? 1 : 0,filename,0,0);
-      if (!error) {
+	  const int iDrive = PtInRect(&rect,point) ? DRIVE_2 : DRIVE_1;
+      ImageError_e Error = DiskInsert(iDrive, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+      if (Error == eIMAGE_ERROR_NONE)
+	  {
         if (!g_bIsFullScreen)
           DrawButton((HDC)0,PtInRect(&rect,point) ? BTN_DRIVE2 : BTN_DRIVE1);
         rect.top = buttony+BTN_DRIVE1*BUTTONCY+1;
-        if (!PtInRect(&rect,point)) {
+        if (!PtInRect(&rect,point))
+		{
           SetForegroundWindow(window);
           ProcessButtonClick(BTN_RUN);
         }
       }
       else
-        DiskNotifyInvalidImage(filename,error);
+	  {
+        DiskNotifyInvalidImage(iDrive, filename, Error);
+	  }
       DragFinish((HDROP)wparam);
       break;
     }
@@ -1142,11 +1151,11 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		break;
 
-    case WM_NOTIFY:
+    case WM_NOTIFY:	// Tooltips for Drive buttons
       if(((LPNMTTDISPINFO)lparam)->hdr.hwndFrom == tooltipwindow &&
          ((LPNMTTDISPINFO)lparam)->hdr.code == TTN_GETDISPINFO)
         ((LPNMTTDISPINFO)lparam)->lpszText =
-          (LPTSTR)DiskGetFullName(((LPNMTTDISPINFO)lparam)->hdr.idFrom);
+          (LPTSTR)DiskGetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom);
       break;
 
     case WM_PAINT:
@@ -1210,21 +1219,21 @@ LRESULT CALLBACK FrameWndProc (
 					else
 */
 					{
-						RECT  rect;    // client area             
-						POINT pt;   // location of mouse click  
+						RECT  rect;		// client area
+						POINT pt;		// location of mouse click
 
-   						// Get the bounding rectangle of the client area. 
-						GetClientRect(window, (LPRECT) &rect); 
-			 
-						// Get the client coordinates for the mouse click.  
-						pt.x = GET_X_LPARAM(lparam); 
-						pt.y = GET_Y_LPARAM(lparam); 
-			 
-						// If the mouse click took place inside the client 
-						// area, execute the application-defined function 
-						// that displays the shortcut menu. 
-						if (PtInRect((LPRECT) &rect, pt)) 
-							ProcessDiskPopupMenu( window, pt, iDrive ); 
+   						// Get the bounding rectangle of the client area.
+						GetClientRect(window, (LPRECT) &rect);
+
+						// Get the client coordinates for the mouse click.
+						pt.x = GET_X_LPARAM(lparam);
+						pt.y = GET_Y_LPARAM(lparam);
+
+						// If the mouse click took place inside the client
+						// area, execute the application-defined function
+						// that displays the shortcut menu.
+						if (PtInRect((LPRECT) &rect, pt))
+							ProcessDiskPopupMenu( window, pt, iDrive );
                 	}
 
 					FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
@@ -1499,10 +1508,8 @@ void ProcessButtonClick (int button)
 // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/resources/menus/usingmenus.asp
 // http://www.codeproject.com/menu/MenusForBeginners.asp?df=100&forumid=67645&exp=0&select=903061
 
-void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive) 
+void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 {		
-	HMENU hmenu;            // menu template
-	HMENU hmenuTrackPopup;  // shortcut menu
 	//This is the default installation path of CiderPress. It shall not be left blank, otherwise  an explorer window will be open.
 	TCHAR PathToCiderPress[MAX_PATH] = "C:\\Program Files\\faddenSoft\\CiderPress\\CiderPress.exe";
 	RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress,MAX_PATH);
@@ -1513,37 +1520,47 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	filename1.append ("\"");
 	string sFileNameEmpty = "\"";
 	sFileNameEmpty.append ("\"");
-		
-	//  Load the menu template containing the shortcut menu from the 
-	//  application's resources. 
-	hmenu = LoadMenu(g_hInstance, MAKEINTRESOURCE(ID_MENU_DISK_POPUP)); 
-	if (hmenu == NULL) 
-		return; 
 
-	// Get the first shortcut menu in the menu template. This is the 
-	// menu that TrackPopupMenu displays. 
-	hmenuTrackPopup = GetSubMenu(hmenu, 0); 
+	//  Load the menu template containing the shortcut menu from the
+	//  application's resources.
+	HMENU hmenu = LoadMenu(g_hInstance, MAKEINTRESOURCE(IDR_MENU_DISK_POPUP));	// menu template
+	if (hmenu == NULL)
+		return;
 
-	// TrackPopup uses screen coordinates, so convert the 
-	// coordinates of the mouse click to screen coordinates. 
-	ClientToScreen(hwnd, (LPPOINT) &pt); 
+	// Get the first shortcut menu in the menu template.
+	// This is the menu that TrackPopupMenu displays.
+	HMENU hmenuTrackPopup = GetSubMenu(hmenu, 0);	// shortcut menu
 
-	int iMenuItem = ID_DISKMENU_WRITEPROTECTION_OFF;
-	if (DiskGetProtect( iDrive ))
-		iMenuItem = ID_DISKMENU_WRITEPROTECTION_ON;
+	// TrackPopup uses screen coordinates, so convert the
+	// coordinates of the mouse click to screen coordinates.
+	ClientToScreen(hwnd, (LPPOINT) &pt);
 
-	CheckMenuItem( hmenu,
-		iMenuItem,
-		MF_CHECKED // MF_BYPOSITION     
-	);
+	// Check menu depending on current floppy protection
+	{
+		int iMenuItem = ID_DISKMENU_WRITEPROTECTION_OFF;
+		if (DiskGetProtect( iDrive ))
+			iMenuItem = ID_DISKMENU_WRITEPROTECTION_ON;
 
-	// Draw and track the shortcut menu.  
+		CheckMenuItem(hmenu, iMenuItem, MF_CHECKED);
+	}
+
+	if (Disk_IsDriveEmpty(iDrive))
+		EnableMenuItem(hmenu, ID_DISKMENU_EJECT, MF_GRAYED);
+
+	if (Disk_ImageIsWriteProtected(iDrive))
+	{
+		// If image-file is read-only (or a gzip) then disable these menu items
+		EnableMenuItem(hmenu, ID_DISKMENU_WRITEPROTECTION_ON, MF_GRAYED);
+		EnableMenuItem(hmenu, ID_DISKMENU_WRITEPROTECTION_OFF, MF_GRAYED);
+	}
+
+	// Draw and track the shortcut menu.
 	int iCommand = TrackPopupMenu(
 		hmenuTrackPopup
 		, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RETURNCMD
 		, pt.x, pt.y
 		, 0
-		, hwnd, NULL ); 
+		, hwnd, NULL );
 
 	if (iCommand == ID_DISKMENU_EJECT)
 		DiskEject( iDrive );
@@ -1557,46 +1574,45 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	if (iCommand == ID_DISKMENU_SENDTO_CIDERPRESS)
 	{
 		//if(!filename1.compare("\"\"") == false) //Do not use this, for some reason it does not work!!!
-		if(!filename1.compare(sFileNameEmpty) )		
+		if(!filename1.compare(sFileNameEmpty) )
 		{
-			int MB_Result = 0;
-			MB_Result = MessageBox( NULL, "No disk image loaded. Do you want to run CiderPress anyway?" ,"No disk image.", MB_ICONINFORMATION|MB_YESNO );
-			if (MB_Result == 6) //6= Yes
+			int MB_Result = MessageBox( NULL, "No disk image loaded. Do you want to run CiderPress anyway?" ,"No disk image.", MB_ICONINFORMATION|MB_YESNO );
+			if (MB_Result == IDYES)
 			{
 				if (FileExists (PathToCiderPress ))
 				{
 					HINSTANCE nResult  = ShellExecute(NULL, "open", PathToCiderPress, "" , NULL, SW_SHOWNORMAL);
 				}
-				else					
-					{
+				else
+				{
 					MessageBox( NULL,
-				"CiderPress not found!\n"
-				"Please install CiderPress in case it is not \n"
-				"or set the path to it from Configuration/Disk otherwise."
-					, "CiderPress not found" ,MB_ICONINFORMATION|MB_OK);
-					}
+						"CiderPress not found!\n"
+						"Please install CiderPress in case it is not \n"
+						"or set the path to it from Configuration/Disk otherwise."
+							, "CiderPress not found" ,MB_ICONINFORMATION|MB_OK);
 				}
 			}
+		}
 		else
 		{
 			if (FileExists (PathToCiderPress ))
 			{
-			HINSTANCE nResult  = ShellExecute(NULL, "open", PathToCiderPress, filename1.c_str() , NULL, SW_SHOWNORMAL);
+				HINSTANCE nResult  = ShellExecute(NULL, "open", PathToCiderPress, filename1.c_str() , NULL, SW_SHOWNORMAL);
 			}
 			else
 			{
-			MessageBox( NULL,
-				"CiderPress not found!\n"
-				"Please install CiderPress in case it is not \n"
-				"or set the path to it from Configuration/Disk otherwise."
-				, "CiderPress not found" ,MB_ICONINFORMATION|MB_OK);
+				MessageBox( NULL,
+					"CiderPress not found!\n"
+					"Please install CiderPress in case it is not \n"
+					"or set the path to it from Configuration/Disk otherwise."
+					, "CiderPress not found" ,MB_ICONINFORMATION|MB_OK);
 			}
 		}
-
-
-	// Destroy the menu. 
-	DestroyMenu(hmenu); 
 	}
+
+	// Destroy the menu.
+	BOOL bRes = DestroyMenu(hmenu);
+	_ASSERT(bRes);
 }
 
 

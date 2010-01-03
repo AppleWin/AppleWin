@@ -1,23 +1,31 @@
 #pragma once
 
-#define	DRIVE_1			0
-#define	DRIVE_2			1
+#include "DiskImage.h"
 
-#define	DRIVES			2
-#define	TRACKS_STANDARD	35
-#define	TRACKS_EXTRA	5		// Allow up to a 40-track .dsk image (160KB)
-#define	TRACKS_MAX		(TRACKS_STANDARD+TRACKS_EXTRA)
+enum Drive_e
+{
+	DRIVE_1 = 0,
+	DRIVE_2,
+	NUM_DRIVES
+};
+
+const bool IMAGE_USE_FILES_WRITE_PROTECT_STATUS = false;
+const bool IMAGE_FORCE_WRITE_PROTECTED = true;
+const bool IMAGE_DONT_CREATE = false;
+const bool IMAGE_CREATE = true;
 
 extern BOOL enhancedisk;
-extern string DiskPathFilename[DRIVES];
+extern string DiskPathFilename[NUM_DRIVES];
 
-void    DiskInitialize (); // DiskManagerStartup()
-void    DiskDestroy (); // no, doesn't "destroy" the disk image.  DiskManagerShutdown()
+void    DiskInitialize(void); // DiskIIManagerStartup()
+void    DiskDestroy(void); // no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
 
-void    DiskBoot ();
-void    DiskEject( const int iDrive );
-LPCTSTR DiskGetFullName (int);
+void    DiskBoot(void);
+void    DiskEject(const int iDrive);
 
+LPCTSTR DiskGetFullName(const int iDrive);
+LPCTSTR DiskGetFullDiskFilename(const int iDrive);
+LPCTSTR DiskGetBaseName(const int iDrive);
 
 enum Disk_Status_e
 {
@@ -29,19 +37,21 @@ enum Disk_Status_e
 };
 void    DiskGetLightStatus (int *pDisk1Status_,int *pDisk2Status_);
 
-LPCTSTR DiskGetName (int);
-int     DiskInsert (int,LPCTSTR,BOOL,BOOL);
-BOOL    DiskIsSpinning ();
-void    DiskNotifyInvalidImage (LPCTSTR,int);
-void    DiskReset ();
-bool    DiskGetProtect( const int iDrive );
-void    DiskSetProtect( const int iDrive, const bool bWriteProtect );
-void    DiskSelect (int);
-void    DiskUpdatePosition (DWORD);
-bool    DiskDriveSwap();
+ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
+BOOL    DiskIsSpinning(void);
+void    DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const ImageError_e Error);
+void    DiskReset(void);
+bool    DiskGetProtect(const int iDrive);
+void    DiskSetProtect(const int iDrive, const bool bWriteProtect);
+void    DiskSelect(const int iDrive);
+void    DiskUpdatePosition(DWORD);
+bool    DiskDriveSwap(void);
 void    DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot);
 DWORD   DiskGetSnapshot(SS_CARD_DISK2* pSS, DWORD dwSlot);
 DWORD   DiskSetSnapshot(SS_CARD_DISK2* pSS, DWORD dwSlot);
 
-void Disk_LoadLastDiskImage( int iDrive );
-void Disk_SaveLastDiskImage( int iDrive );
+void Disk_LoadLastDiskImage(const int iDrive);
+void Disk_SaveLastDiskImage(const int iDrive);
+
+bool Disk_ImageIsWriteProtected(const int iDrive);
+bool Disk_IsDriveEmpty(const int iDrive);

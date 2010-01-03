@@ -125,7 +125,7 @@ void Snapshot_LoadState()
 		MB_Reset();
 
 		//
-		// Apple2 uint
+		// Apple2 unit
 		//
 
 		CpuSetSnapshot(&pSS->Apple2Unit.CPU6502);
@@ -179,7 +179,7 @@ void Snapshot_SaveState()
 	pSS->Hdr.dwChecksum = 0;	// TO DO
 
 	//
-	// Apple2 uint
+	// Apple2 unit
 	//
 
 	pSS->Apple2Unit.UnitHdr.dwLength = sizeof(SS_APPLE2_Unit);

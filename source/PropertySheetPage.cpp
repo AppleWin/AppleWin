@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+#include "Harddisk.h"
 #pragma  hdrstop
 #include "..\resource\resource.h"
 #include "Tfe\Tfesupp.h"
@@ -975,28 +976,30 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
 		switch (LOWORD(wparam))
 		{
 		case IDC_DISK1:
-			DiskSelect(0);
-			SendDlgItemMessage(window,IDC_EDIT_DISK1,WM_SETTEXT,0,(LPARAM)DiskGetFullName(0));
+			DiskSelect(DRIVE_1);
+			SendDlgItemMessage(window, IDC_EDIT_DISK1, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_1));
+			FrameRefreshStatus(DRAW_BUTTON_DRIVES);
 			break;
 
 		case IDC_DISK2:
-			DiskSelect(1);
-			SendDlgItemMessage(window,IDC_EDIT_DISK2,WM_SETTEXT,0,(LPARAM)DiskGetFullName(1));
+			DiskSelect(DRIVE_2);
+			SendDlgItemMessage(window, IDC_EDIT_DISK2, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_2));
+			FrameRefreshStatus(DRAW_BUTTON_DRIVES);
 			break;
 
 		case IDC_HDD1:
 			if(IsDlgButtonChecked(window, IDC_HDD_ENABLE))
 			{
-				HD_Select(0);
-				SendDlgItemMessage(window,IDC_EDIT_HDD1,WM_SETTEXT,0,(LPARAM)HD_GetFullName(0));
+				HD_Select(HARDDISK_1);
+				SendDlgItemMessage(window, IDC_EDIT_HDD1, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_1));
 			}
 			break;
 
 		case IDC_HDD2:
 			if(IsDlgButtonChecked(window, IDC_HDD_ENABLE))
 			{
-				HD_Select(1);
-				SendDlgItemMessage(window,IDC_EDIT_HDD2,WM_SETTEXT,0,(LPARAM)HD_GetFullName(1));
+				HD_Select(HARDDISK_2);
+				SendDlgItemMessage(window, IDC_EDIT_HDD2, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_2));
 			}
 			break;
 
@@ -1020,11 +1023,11 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
 
 			FillComboBox(window,IDC_DISKTYPE,discchoices,enhancedisk);
 
-			SendDlgItemMessage(window,IDC_EDIT_DISK1,WM_SETTEXT,0,(LPARAM)DiskGetFullName(0));
-			SendDlgItemMessage(window,IDC_EDIT_DISK2,WM_SETTEXT,0,(LPARAM)DiskGetFullName(1));
+			SendDlgItemMessage(window,IDC_EDIT_DISK1,WM_SETTEXT,0,(LPARAM)DiskGetFullName(DRIVE_1));
+			SendDlgItemMessage(window,IDC_EDIT_DISK2,WM_SETTEXT,0,(LPARAM)DiskGetFullName(DRIVE_2));
 
-			SendDlgItemMessage(window,IDC_EDIT_HDD1,WM_SETTEXT,0,(LPARAM)HD_GetFullName(0));
-			SendDlgItemMessage(window,IDC_EDIT_HDD2,WM_SETTEXT,0,(LPARAM)HD_GetFullName(1));
+			SendDlgItemMessage(window,IDC_EDIT_HDD1,WM_SETTEXT,0,(LPARAM)HD_GetFullName(HARDDISK_1));
+			SendDlgItemMessage(window,IDC_EDIT_HDD2,WM_SETTEXT,0,(LPARAM)HD_GetFullName(HARDDISK_2));
 
 			//
 
@@ -1041,6 +1044,99 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
 			afterclose = 0;
 			break;
 		}
+
+	case WM_RBUTTONUP:
+		{
+			RECT  rect;		// client area
+			POINT pt;		// location of mouse click
+
+			// Get the bounding rectangle of the client area.
+			GetClientRect(window, (LPRECT) &rect);
+
+			// Get the client coordinates for the mouse click.
+			pt.x = GET_X_LPARAM(lparam);
+			pt.y = GET_Y_LPARAM(lparam);
+
+			// If the mouse click took place inside the client
+			// area, execute the application-defined function
+			// that displays the shortcut menu.
+			if (PtInRect((LPRECT) &rect, pt))
+			{
+				//  Load the menu template containing the shortcut menu from the application's resources.
+				HMENU hMenu = LoadMenu(g_hInstance, MAKEINTRESOURCE(IDR_MENU_DISK_CFG_POPUP));	// menu template
+				_ASSERT(hMenu);
+				if (!hMenu)
+					break;
+
+				// Get the first shortcut menu in the menu template.
+				// This is the menu that TrackPopupMenu displays.
+				HMENU hMenuTrackPopup = GetSubMenu(hMenu, 0);	// shortcut menu
+
+				// TrackPopup uses screen coordinates, so convert the coordinates of the mouse click to screen coordinates.
+				ClientToScreen(window, (LPPOINT) &pt);
+
+				if (Disk_IsDriveEmpty(DRIVE_1))
+					EnableMenuItem(hMenu, ID_DISKMENU_EJECT_DISK1, MF_GRAYED);
+				if (Disk_IsDriveEmpty(DRIVE_2))
+					EnableMenuItem(hMenu, ID_DISKMENU_EJECT_DISK2, MF_GRAYED);
+				if (HD_IsDriveUnplugged(HARDDISK_1))
+					EnableMenuItem(hMenu, ID_DISKMENU_UNPLUG_HARDDISK1, MF_GRAYED);
+				if (HD_IsDriveUnplugged(HARDDISK_2))
+					EnableMenuItem(hMenu, ID_DISKMENU_UNPLUG_HARDDISK2, MF_GRAYED);
+
+				// Draw and track the shortcut menu.
+				int iCommand = TrackPopupMenu(
+					hMenuTrackPopup
+					, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RETURNCMD
+					, pt.x, pt.y
+					, 0
+					, window, NULL );
+
+				if (iCommand)
+				{
+					TCHAR szText[100];
+					bool bMsgBox = true;
+					if (iCommand == ID_DISKMENU_EJECT_DISK1 || iCommand == ID_DISKMENU_EJECT_DISK2)
+						wsprintf(szText, "Do you really want to eject the disk in drive-%c ?", '1'+iCommand-ID_DISKMENU_EJECT_DISK1);
+					else if (iCommand == ID_DISKMENU_UNPLUG_HARDDISK1 || iCommand == ID_DISKMENU_UNPLUG_HARDDISK2)
+						wsprintf(szText, "Do you really want to unplug harddisk-%c ?", '1'+iCommand-ID_DISKMENU_UNPLUG_HARDDISK1);
+					else
+						bMsgBox = false;
+
+					if (bMsgBox)
+					{
+						int nRes = MessageBox(g_hFrameWindow, szText, TEXT("Eject/Unplug Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
+						if (nRes == IDNO)
+							iCommand = 0;
+					}
+				}
+
+				switch (iCommand)
+				{
+				case ID_DISKMENU_EJECT_DISK1:
+					DiskEject(DRIVE_1);
+					SendDlgItemMessage(window, IDC_EDIT_DISK1, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_1));
+					break;
+				case ID_DISKMENU_EJECT_DISK2:
+					DiskEject(DRIVE_2);
+					SendDlgItemMessage(window, IDC_EDIT_DISK2, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_2));
+					break;
+				case ID_DISKMENU_UNPLUG_HARDDISK1:
+					HD_Unplug(HARDDISK_1);
+					SendDlgItemMessage(window, IDC_EDIT_HDD1, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_1));
+					break;
+				case ID_DISKMENU_UNPLUG_HARDDISK2:
+					HD_Unplug(HARDDISK_2);
+					SendDlgItemMessage(window, IDC_EDIT_HDD2, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_2));
+					break;
+				}
+
+				if (iCommand != 0)
+					FrameRefreshStatus(DRAW_BUTTON_DRIVES);
+			}
+			break;
+		}
+
 	}
 
 	return 0;
@@ -1072,7 +1168,7 @@ static int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 	TCHAR szFilename[MAX_PATH];
 	
 	// Attempt to use drive1's image name as the name for the .aws file
-	LPCTSTR pDiskName0 = DiskGetName(0);
+	LPCTSTR pDiskName0 = DiskGetBaseName(DRIVE_1);
 	if (pDiskName0 && pDiskName0[0])
 	{
 		strcpy(szFilename, pDiskName0);
