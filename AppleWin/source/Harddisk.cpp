@@ -223,7 +223,7 @@ static void NotifyInvalidImage(TCHAR* pszImageFilename)
 
 static BOOL HD_Load_Image(const int iDrive, LPCSTR pszImageFilename)
 {
-	const bool bCreateIfNecessary = false;	// NB. File Select dialog uses OFN_CREATEPROMPT
+	const bool bCreateIfNecessary = false;	// NB. Don't allow creation of HDV files
 	string strFilenameInZip;				// TODO: Use this
 	ImageError_e Error = ImageOpen(pszImageFilename, iDrive, bCreateIfNecessary, strFilenameInZip);
 
@@ -370,9 +370,8 @@ void HD_Select(const int iDrive)
 	ofn.lpstrFile       = filename;
 	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrInitialDir = directory;
-	ofn.Flags           = OFN_CREATEPROMPT;
+	ofn.Flags           = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;	// Don't allow creation & hide the read-only checkbox
 	ofn.lpstrTitle      = title;
-	ofn.lpTemplateName  = TEXT("INSERT_DIALOG");
 
 	if (GetOpenFileName(&ofn))
 	{

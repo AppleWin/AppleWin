@@ -788,9 +788,6 @@ public:
 		return WriteBlock(pImageInfo, nBlock, pBlockBuffer);
 	}
 
-	virtual bool AllowCreate(void) { return true; }
-	virtual UINT GetImageSizeForCreate(void) { return 0; }	// Start with a zero size buffer
-
 	virtual eImageType GetType(void) { return eImageHDV; }
 	virtual char* GetCreateExtensions(void) { return ".hdv"; }
 	virtual char* GetRejectExtensions(void) { return ".do;.iie;.prg"; }
@@ -1503,7 +1500,7 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 CImageBase* CDiskImageHelper::GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize)
 {
 	// WE CREATE ONLY DOS ORDER (DO) OR 6656-NIBBLE (NIB) FORMAT FILES
-	for (UINT uLoop = 0; uLoop <= GetNumImages(); uLoop++)
+	for (UINT uLoop = 0; uLoop < GetNumImages(); uLoop++)
 	{
 		if (!GetImage(uLoop)->AllowCreate())
 			continue;
@@ -1579,8 +1576,10 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHA
 
 CImageBase* CHardDiskImageHelper::GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize)
 {
-	// Only HDV file supported
-	for (UINT uLoop = 0; uLoop <= GetNumImages(); uLoop++)
+	// NB. Not supported for HardDisks
+	// - Would need to create a default 16-block file like CiderPress
+
+	for (UINT uLoop = 0; uLoop < GetNumImages(); uLoop++)
 	{
 		if (!GetImage(uLoop)->AllowCreate())
 			continue;
