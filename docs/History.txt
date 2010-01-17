@@ -19,6 +19,24 @@ Restrictions/bugs:
 - For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
 
+1.18.0 - 17 Jan 2010 (beta)
+---------------------------
+Changes:
+. Added disk/harddisk image r/w support for .gz/.zip (and .2mg) files.
+  - Multi-zip archives are read-only.
+. Added disk/harddisk eject sub-menu to Disk Config tab.
+. Removed .bin registration.
+
+Fixes:
+. [Bug #16632] Fix cmd-line -d1/d2 switches with relative path
+. Fix speaker volume when booting with -d1 switch
+. Fix debugger bugs:
+  - Crash when doing: help *
+  - [Bug #16651] Crash when doing: run <script-file>
+. [Bug #16652] Fix "Harddisk images aren't persisted when in different folders"
+. [Bug #12724,14747] Fix "Registry pesisted Window x,y position sometimes off screen"
+
+
 1.17.2 - 13 Dec 2009
 --------------------
 Changes:
