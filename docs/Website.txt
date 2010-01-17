@@ -27,4 +27,6 @@ put History.txt
 . Status: Active
 . Upload a new file...
 
+Alternatively:
 
+Login to ftp.berlios.de as 'anonymous' and upload the zip to the 'incoming' folder.
