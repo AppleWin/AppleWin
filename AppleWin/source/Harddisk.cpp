@@ -278,6 +278,11 @@ LPCTSTR HD_GetFullName(const int iDrive)
 	return g_HardDisk[iDrive].fullname;
 }
 
+LPCTSTR HD_GetFullPathName(const int iDrive)
+{
+	return g_HardDisk[iDrive].Info.szFilename;
+}
+
 static LPCTSTR HD_DiskGetBaseName (const int iDrive)	// Not used
 {
 	return g_HardDisk[iDrive].imagename;
@@ -319,21 +324,7 @@ VOID HD_Cleanup(void)
 	}
 }
 
-// pszFilename is not qualified with path
-BOOL HD_InsertDisk2(const int iDrive, LPCTSTR pszFilename)
-{
-	if (*pszFilename == 0x00)
-		return false;
-
-	char szFullFilename[MAX_PATH];
-
-	RegLoadString(TEXT("Preferences"), TEXT("HDV Starting Directory"), 1, szFullFilename, MAX_PATH);
-	strcat(szFullFilename, pszFilename);
-
-	return HD_InsertDisk(iDrive, szFullFilename);
-}
-
-// imagefilename is qualified with path
+// pszImageFilename is qualified with path
 BOOL HD_InsertDisk(const int iDrive, LPCTSTR pszImageFilename)
 {
 	if (*pszImageFilename == 0x00)
@@ -342,12 +333,12 @@ BOOL HD_InsertDisk(const int iDrive, LPCTSTR pszImageFilename)
 	if (g_HardDisk[iDrive].hd_imageloaded)
 		HD_CleanupDrive(iDrive);
 
-	BOOL result = HD_Load_Image(iDrive, pszImageFilename);
+	BOOL bResult = HD_Load_Image(iDrive, pszImageFilename);
 
-	if (result)
+	if (bResult)
 		GetImageTitle(pszImageFilename, &g_HardDisk[iDrive]);
 
-	return result;
+	return bResult;
 }
 
 void HD_Select(const int iDrive)
@@ -356,10 +347,10 @@ void HD_Select(const int iDrive)
 	TCHAR filename[MAX_PATH]  = TEXT("");
 	TCHAR title[40];
 
-	RegLoadString(TEXT("Preferences"), TEXT("HDV Starting Directory"), 1, directory, MAX_PATH);
-	_tcscpy(title,TEXT("Select HDV Image For HDD "));
-	_tcscat(title,iDrive ? TEXT("2") : TEXT("1"));
-	
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, directory, MAX_PATH);
+	_tcscpy(title, TEXT("Select HDV Image For HDD "));
+	_tcscat(title, iDrive ? TEXT("2") : TEXT("1"));
+
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn,sizeof(OPENFILENAME));
 	ofn.lStructSize     = sizeof(OPENFILENAME);
@@ -381,8 +372,8 @@ void HD_Select(const int iDrive)
 		if (HD_InsertDisk(iDrive, filename))
 		{
 			filename[ofn.nFileOffset] = 0;
-			if (_tcsicmp(directory,filename))
-				RegSaveString(TEXT("Preferences"),TEXT("HDV Starting Directory"),1,filename);
+			if (_tcsicmp(directory, filename))
+				RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, filename);
 		}
 		else
 		{

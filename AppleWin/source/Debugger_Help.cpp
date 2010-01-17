@@ -1314,7 +1314,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			sprintf( sText, "%s%-5s%s: Loads symbols from last/default \"filename\"", CHC_STRING, g_aParameters[ PARAM_SAVE  ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
 			sprintf( sText, "%s%-5s%s: Saves symbol table to \"filename\""          , CHC_STRING, g_aParameters[ PARAM_LOAD  ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
 			sprintf( sText, "%s%-5s%s: Clears the symbol table"                     , CHC_STRING, g_aParameters[ PARAM_CLEAR ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
-			sprintf( sText, "%s%-5s%s: Remove symbol"                               , CHC_STRING, g_aTokens[ TOKEN_EXCLAMATION ]      , CHC_DEFAULT ); ConsolePrint( sText );
+			sprintf( sText, "%s%-5s%s: Remove symbol"                               , CHC_STRING, g_aTokens[ TOKEN_EXCLAMATION ].sToken, CHC_DEFAULT ); ConsolePrint( sText );
 			break;
 		case CMD_SYMBOLS_LIST :
 			Colorize( sText, " Usage: symbol" );

@@ -923,10 +923,11 @@ static void DiskDlg_OK(HWND window, UINT afterclose)
 	bool bHDDIsEnabled = IsDlgButtonChecked(window, IDC_HDD_ENABLE) ? true : false;
 	HD_SetEnabled(bHDDIsEnabled);
 
-	REGSAVE(TEXT("Enhance Disk Speed"),newdisktype);
+	REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED),newdisktype);
 	REGSAVE(TEXT(REGVALUE_HDD_ENABLED), bHDDIsEnabled ? 1 : 0);
-	RegSaveString(TEXT("Configuration"), TEXT(REGVALUE_HDD_IMAGE1), 1, HD_GetFullName(0));
-	RegSaveString(TEXT("Configuration"), TEXT(REGVALUE_HDD_IMAGE2), 1, HD_GetFullName(1));
+
+	RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_1), 1, HD_GetFullPathName(HARDDISK_1));
+	RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_2), 1, HD_GetFullPathName(HARDDISK_2));
 
 	//
 

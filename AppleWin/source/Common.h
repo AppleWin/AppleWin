@@ -78,8 +78,6 @@ enum AppMode_e
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
 #define  REGVALUE_HDD_ENABLED        "Harddisk Enable"
-#define  REGVALUE_HDD_IMAGE1         "Harddisk Image 1"
-#define  REGVALUE_HDD_IMAGE2         "Harddisk Image 2"
 #define  REGVALUE_PDL_XTRIM          "PDL X-Trim"
 #define  REGVALUE_PDL_YTRIM          "PDL Y-Trim"
 #define  REGVALUE_SCROLLLOCK_TOGGLE  "ScrollLock Toggle"
@@ -100,12 +98,18 @@ enum AppMode_e
 #define  REGVALUE_VIDEO_HALF_SCAN_LINES "Half Scan Lines"
 #define  REGVALUE_VIDEO_MONO_COLOR      "Monochrome Color"
 #define  REGVALUE_SERIAL_PORT_NAME   "Serial Port Name"
+#define  REGVALUE_ENHANCE_DISK_SPEED "Enhance Disk Speed"
 
 // Preferences 
-#define REG_PREFS							"Preferences"
+#define REG_PREFS						"Preferences"
 #define REGVALUE_PREF_START_DIR      "Starting Directory"
 #define REGVALUE_PREF_LAST_DISK_1	 "Last Disk Image 1"
 #define REGVALUE_PREF_LAST_DISK_2	 "Last Disk Image 2"
+#define REGVALUE_PREF_WINDOW_X_POS   "Window X-Position"
+#define REGVALUE_PREF_WINDOW_Y_POS   "Window Y-Position"
+#define REGVALUE_PREF_HDV_START_DIR  "HDV Starting Directory"
+#define REGVALUE_PREF_LAST_HARDDISK_1 "Last Harddisk Image 1"
+#define REGVALUE_PREF_LAST_HARDDISK_2 "Last Harddisk Image 2"
 
 #define WM_USER_BENCHMARK	WM_USER+1
 #define WM_USER_RESTART		WM_USER+2
@@ -114,6 +118,7 @@ enum AppMode_e
 #define VK_SNAPSHOT_560		WM_USER+5
 #define VK_SNAPSHOT_280		WM_USER+6
 #define WM_USER_TCP_SERIAL	WM_USER+7
+#define WM_USER_BOOT		WM_USER+8
 
 enum eSOUNDCARDTYPE {SC_UNINIT=0, SC_NONE, SC_MOCKINGBOARD, SC_PHASOR};	// Apple soundcard type
 

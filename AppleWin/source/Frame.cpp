@@ -658,8 +658,8 @@ LRESULT CALLBACK FrameWndProc (
         SetNormalMode();
       if (!IsIconic(window))
         GetWindowRect(window,&framerect);
-      RegSaveValue(TEXT("Preferences"),TEXT("Window X-Position"),1,framerect.left);
-      RegSaveValue(TEXT("Preferences"),TEXT("Window Y-Position"),1,framerect.top);
+      RegSaveValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_X_POS), 1, framerect.left);
+      RegSaveValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_Y_POS), 1, framerect.top);
       FrameReleaseDC();
       SetUsingCursor(0);
       if (helpquit) {
@@ -714,10 +714,8 @@ LRESULT CALLBACK FrameWndProc (
 	  {
         if (!g_bIsFullScreen)
           DrawButton((HDC)0,BTN_DRIVE1);
-        SetForegroundWindow(window);
-		Sleep(500);	// Wait for SetForegroundWindow() to take affect (400ms seems OK, so use 500ms to be sure)
-		SoundCore_TweakVolumes();
-        ProcessButtonClick(BTN_RUN);
+
+		PostMessage(window, WM_USER_BOOT, 0, 0);
       }
       else
       {
@@ -1333,6 +1331,7 @@ LRESULT CALLBACK FrameWndProc (
 		break;
 
 	case WM_USER_TCP_SERIAL:	// TCP serial events
+	{
 		WORD error = WSAGETSELECTERROR(lparam);
 		if (error != 0)
 		{
@@ -1374,7 +1373,20 @@ LRESULT CALLBACK FrameWndProc (
 			}
 		}
 		break;
-  }
+	}
+
+	// Message posted by: WM_DDE_EXECUTE & Cmd-line boot
+	case WM_USER_BOOT:
+	{
+		SetForegroundWindow(window);
+		Sleep(500);	// Wait for SetForegroundWindow() to take affect (400ms seems OK, so use 500ms to be sure)
+		SoundCore_TweakVolumes();
+        ProcessButtonClick(BTN_RUN);
+		break;
+	}
+
+  }	// switch(message)
+ 
   return DefWindowProc(window,message,wparam,lparam);
 }
 
@@ -1779,22 +1791,48 @@ void SetUsingCursor (BOOL bNewValue)
 //===========================================================================
 void FrameCreateWindow ()
 {
-	int width  = VIEWPORTCX + VIEWPORTX*2
-							+ BUTTONCX
-							+ GetSystemMetrics(SM_CXBORDER)*2
-							+ MAGICX;
-	int height = VIEWPORTCY + VIEWPORTY*2
-							+ GetSystemMetrics(SM_CYBORDER)
-							+ GetSystemMetrics(SM_CYCAPTION)
-							+ MAGICY;
-	int xpos;
+	const int nWidth  = VIEWPORTCX + VIEWPORTX*2
+								   + BUTTONCX
+								   + GetSystemMetrics(SM_CXBORDER)*2
+								   + MAGICX;
+	const int nHeight = VIEWPORTCY + VIEWPORTY*2
+								   + GetSystemMetrics(SM_CYBORDER)
+								   + GetSystemMetrics(SM_CYCAPTION)
+								   + MAGICY;
 
-	if (!RegLoadValue(TEXT("Preferences"),TEXT("Window X-Position"),1,(DWORD *)&xpos))
-		xpos = (GetSystemMetrics(SM_CXSCREEN)-width) >> 1;
+	//
 
-	int ypos;
-	if (!RegLoadValue(TEXT("Preferences"),TEXT("Window Y-Position"),1,(DWORD *)&ypos))
-		ypos = (GetSystemMetrics(SM_CYSCREEN)-height) >> 1;
+	int nXPos = -1;
+	{
+		int nXScreen = GetSystemMetrics(SM_CXSCREEN) - nWidth;
+
+		if (RegLoadValue(TEXT("Preferences"), TEXT("Window X-Position"), 1, (DWORD*)&nXPos))
+		{
+			if (nXPos > nXScreen)
+				nXPos = -1;	// Not fully visible, so default to centre position
+		}
+
+		if (nXPos == -1)
+			nXPos = nXScreen / 2;
+	}
+
+	//
+
+	int nYPos = -1;
+	{
+		int nYScreen = GetSystemMetrics(SM_CYSCREEN) - nHeight;
+
+		if (RegLoadValue(TEXT("Preferences"), TEXT("Window Y-Position"), 1, (DWORD*)&nYPos))
+		{
+			if (nYPos > nYScreen)
+				nYPos = -1;	// Not fully visible, so default to centre position
+		}
+
+		if (nYPos == -1)
+			nYPos = nYScreen / 2;
+	}
+
+	//
 
 	switch (g_Apple2Type)
 	{
@@ -1813,10 +1851,10 @@ void FrameCreateWindow ()
 		g_pAppTitle,
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 		WS_MINIMIZEBOX | WS_VISIBLE,
-		xpos,ypos,width,height,
+		nXPos, nYPos, nWidth, nHeight,
 		HWND_DESKTOP,
 		(HMENU)0,
-		g_hInstance,NULL );
+		g_hInstance, NULL );
 
 
 	InitCommonControls();
