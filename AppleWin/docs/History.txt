@@ -34,7 +34,7 @@ Fixes:
   - Crash when doing: help *
   - [Bug #16651] Crash when doing: run <script-file>
 . [Bug #16652] Fix "Harddisk images aren't persisted when in different folders"
-. [Bug #12724,14747] Fix "Registry pesisted Window x,y position sometimes off screen"
+. [Bug #12724,14747] Fix "Registry persisted Window x,y position sometimes off screen"
 
 
 1.17.2 - 13 Dec 2009
