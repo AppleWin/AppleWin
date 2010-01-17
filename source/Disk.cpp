@@ -99,11 +99,11 @@ void Disk_LoadLastDiskImage(const int iDrive)
 	char sFilePath[ MAX_PATH + 1];
 	sFilePath[0] = 0;
 
-	char *pRegKey = (!iDrive)
+	char *pRegKey = (iDrive == DRIVE_1)
 		? REGVALUE_PREF_LAST_DISK_1
 		: REGVALUE_PREF_LAST_DISK_2;
 
-	if( RegLoadString(TEXT(REG_PREFS),pRegKey,1,sFilePath,MAX_PATH) )
+	if (RegLoadString(TEXT(REG_PREFS),pRegKey,1,sFilePath,MAX_PATH))
 	{
 		sFilePath[ MAX_PATH ] = 0;
 		DiskPathFilename[ iDrive ] = sFilePath;
@@ -127,12 +127,12 @@ void Disk_SaveLastDiskImage(const int iDrive)
 {
 	const char *pFileName = DiskPathFilename[iDrive].c_str();
 
-	if(g_bSaveDiskImage)
+	if (g_bSaveDiskImage)
 	{
-		if( iDrive == DRIVE_1 )
-			RegSaveString(TEXT(REG_PREFS),REGVALUE_PREF_LAST_DISK_1,1,pFileName );
+		if (iDrive == DRIVE_1)
+			RegSaveString(TEXT(REG_PREFS),REGVALUE_PREF_LAST_DISK_1,1,pFileName);
 		else
-			RegSaveString(TEXT(REG_PREFS),REGVALUE_PREF_LAST_DISK_2,1,pFileName );
+			RegSaveString(TEXT(REG_PREFS),REGVALUE_PREF_LAST_DISK_2,1,pFileName);
 	}
 }
 
@@ -732,12 +732,12 @@ void DiskReset(void)
 void DiskSelectImage(const int iDrive, LPSTR pszFilename)
 {
 	TCHAR directory[MAX_PATH] = TEXT("");
-	TCHAR filename[MAX_PATH];
+	TCHAR filename[MAX_PATH]  = TEXT("");
 	TCHAR title[40];
 
 	strcpy(filename, pszFilename);
 
-	RegLoadString(TEXT("Preferences"), REGVALUE_PREF_START_DIR, 1, directory, MAX_PATH);
+	RegLoadString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1, directory, MAX_PATH);
 	_tcscpy(title, TEXT("Select Disk Image For Drive "));
 	_tcscat(title, iDrive ? TEXT("2") : TEXT("1"));
 
@@ -746,9 +746,9 @@ void DiskSelectImage(const int iDrive, LPSTR pszFilename)
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = g_hFrameWindow;
 	ofn.hInstance       = g_hInstance;
-	ofn.lpstrFilter     =	TEXT("All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.zip;*.2mg;*.2img;*.iie;*.apl\0")
-							TEXT("Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.zip;*.2mg;*.2img;*.iie\0")
-							TEXT("All Files\0*.*\0");
+	ofn.lpstrFilter     = TEXT("All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.zip;*.2mg;*.2img;*.iie;*.apl\0")
+						  TEXT("Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.zip;*.2mg;*.2img;*.iie\0")
+						  TEXT("All Files\0*.*\0");
 	ofn.lpstrFile       = filename;
 	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrInitialDir = directory;
@@ -758,7 +758,7 @@ void DiskSelectImage(const int iDrive, LPSTR pszFilename)
 	if (GetOpenFileName(&ofn))
 	{
 		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
-			_tcscat(filename,TEXT(".DSK"));
+			_tcscat(filename,TEXT(".dsk"));
 
 		ImageError_e Error = DiskInsert(iDrive, filename, ofn.Flags & OFN_READONLY, IMAGE_CREATE);
 		if (Error == eIMAGE_ERROR_NONE)
@@ -766,9 +766,7 @@ void DiskSelectImage(const int iDrive, LPSTR pszFilename)
 			DiskPathFilename[iDrive] = filename; 
 			filename[ofn.nFileOffset] = 0;
 			if (_tcsicmp(directory, filename))
-			{
 				RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, filename);
-			}
 		}
 		else
 		{

@@ -58,15 +58,16 @@ void MemoryTextFile_t::GetLinePointers()
 		return;
 
 	m_vLines.erase( m_vLines.begin(), m_vLines.end() );
-	char *pBegin = & m_vBuffer.at( 0 );
-	char *pLast  = & m_vBuffer[ m_vBuffer.size() ];
+	char *pBegin = & m_vBuffer[ 0 ];
+	char *pLast  = & m_vBuffer[ m_vBuffer.size()-1 ];
 
 	char *pEnd = NULL;
 	char *pStartNextLine;
 
-	while (pBegin < pLast)
+	while (pBegin <= pLast)
 	{
-		m_vLines.push_back( pBegin );
+		if ( *pBegin )	// Only keep non-empty lines
+			m_vLines.push_back( pBegin );
 
 		pEnd = const_cast<char*>( SkipUntilEOL( pBegin ));
 

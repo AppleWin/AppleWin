@@ -478,7 +478,7 @@ void LoadConfiguration ()
   }
 
   REGLOAD(TEXT("Emulation Speed")   ,&g_dwSpeed);
-  REGLOAD(TEXT("Enhance Disk Speed"),(DWORD *)&enhancedisk);
+  REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED),(DWORD *)&enhancedisk);
 
   Config_Load_Video();
 
@@ -522,11 +522,11 @@ void LoadConfiguration ()
   if(REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
 	  HD_SetEnabled(dwTmp ? true : false);
 
-  char szHDFilename[MAX_PATH] = {0};
-  if(RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_HDD_IMAGE1), 1, szHDFilename, sizeof(szHDFilename)))
-	  HD_InsertDisk2(0, szHDFilename);
-  if(RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_HDD_IMAGE2), 1, szHDFilename, sizeof(szHDFilename)))
-	  HD_InsertDisk2(1, szHDFilename);
+  char szHDVPathname[MAX_PATH] = {0};
+  if(RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_1), 1, szHDVPathname, sizeof(szHDVPathname)))
+	  HD_InsertDisk(HARDDISK_1, szHDVPathname);
+  if(RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_2), 1, szHDVPathname, sizeof(szHDVPathname)))
+	  HD_InsertDisk(HARDDISK_2, szHDVPathname);
 
   if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
       JoySetTrim((short)dwTmp, true);
@@ -742,10 +742,29 @@ LPSTR GetNextArg(LPSTR lpCmdLine)
 
 //---------------------------------------------------------------------------
 
-static int DoDiskInsert(int nDrive, LPSTR szFileName)
+static int DoDiskInsert(const int nDrive, LPCSTR szFileName)
 {
-	ImageError_e Error = DiskInsert(nDrive, szFileName, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
-	return (Error == eIMAGE_ERROR_NONE) ? 0 : 1;
+	string strPathName;
+
+	if (szFileName[0] == '\\' || szFileName[1] == ':')
+	{
+		// Abs pathname
+		strPathName = szFileName;
+	}
+	else
+	{
+		// Rel pathname
+		char szCWD[_MAX_PATH] = {0};
+		if (!GetCurrentDirectory(sizeof(szCWD), szCWD))
+			return false;
+
+		strPathName = szCWD;
+		strPathName.append("\\");
+		strPathName.append(szFileName);
+	}
+
+	ImageError_e Error = DiskInsert(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+	return Error == eIMAGE_ERROR_NONE;
 }
 
 //---------------------------------------------------------------------------
@@ -977,8 +996,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if(bBoot)
 		{
-			PostMessage(g_hFrameWindow, WM_KEYDOWN, VK_F1+BTN_RUN, 0);
-			PostMessage(g_hFrameWindow, WM_KEYUP,   VK_F1+BTN_RUN, 0);
+			PostMessage(g_hFrameWindow, WM_USER_BOOT, 0, 0);
 			bBoot = false;
 		}
 
