@@ -874,8 +874,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //	bool CheckBreakpoint (WORD address, BOOL memory);
 	bool CheckBreakpointsIO ();
 	bool CheckBreakpointsReg ();
-	bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, WORD nAddress, int nLen );
-	int  _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp );
+	bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, WORD nAddress, int nLen, bool bIsTempBreakpoint );
+	int  _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint=false );
+	void _BWZ_Clear( Breakpoint_t * aBreakWatchZero, int iSlot );
 
 // Config - Colors
 	static	void _ConfigColorsReset ( BYTE *pPalDst = 0 );
@@ -1663,37 +1664,52 @@ bool CheckBreakpointsReg ()
 		switch (pBP->eSource)
 		{
 			case BP_SRC_REG_PC:
-				if (_CheckBreakpointValue( pBP, regs.pc ))
-					return true;
+				bStatus = _CheckBreakpointValue( pBP, regs.pc );
 				break;
 			case BP_SRC_REG_A:
-				if (_CheckBreakpointValue( pBP, regs.a ))
-					return true;
+				bStatus = _CheckBreakpointValue( pBP, regs.a );
 				break;
 			case BP_SRC_REG_X:
-				if (_CheckBreakpointValue( pBP, regs.x ))
-					return true;
+				bStatus = _CheckBreakpointValue( pBP, regs.x );
 				break;
 			case BP_SRC_REG_Y:
-				if (_CheckBreakpointValue( pBP, regs.y ))
-					return true;
+				bStatus = _CheckBreakpointValue( pBP, regs.y );
 				break;
 			case BP_SRC_REG_P:
-				if (_CheckBreakpointValue( pBP, regs.ps ))
-					return true;
+				bStatus = _CheckBreakpointValue( pBP, regs.ps );
 				break;
 			case BP_SRC_REG_S:
-				if (_CheckBreakpointValue( pBP, regs.sp ))
-					return true;
+				bStatus = _CheckBreakpointValue( pBP, regs.sp );
 				break;
 			default:
 				break;
+		}
+
+		if (bStatus)
+		{
+			if (pBP->bTemp)
+				_BWZ_Clear(pBP, iBreakpoint);
+
+			break;
 		}
 	}
 
 	return bStatus;
 }
 
+void ClearTempBreakpoints ()
+{
+	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
+	{
+		Breakpoint_t *pBP = &g_aBreakpoints[iBreakpoint];
+
+		if (! _BreakpointValid( pBP ))
+			continue;
+
+		if (pBP->bTemp)
+			_BWZ_Clear(pBP, iBreakpoint);
+	}
+}
 
 //===========================================================================
 Update_t CmdBreakpoint (int nArgs)
@@ -1807,7 +1823,7 @@ Update_t CmdBreakpointAddReg (int nArgs)
 
 
 //===========================================================================
-bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, WORD nAddress, int nLen )
+bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, WORD nAddress, int nLen, bool bIsTempBreakpoint )
 {
 	bool bStatus = false;
 
@@ -1819,6 +1835,7 @@ bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoin
 		pBP->nLength   = nLen;
 		pBP->bSet      = true;
 		pBP->bEnabled  = true;
+		pBP->bTemp     = bIsTempBreakpoint;
 		bStatus = true;
 	}
 
@@ -1828,7 +1845,7 @@ bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoin
 
 // @return Number of args processed
 //===========================================================================
-int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp )
+int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint )
 {
 	int dArg = 0;
 
@@ -1871,7 +1888,7 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 			nLen = 1;
 		}
 
-		if (! _CmdBreakpointAddReg( pBP, iSrc, iCmp, nAddress, nLen ))
+		if (! _CmdBreakpointAddReg( pBP, iSrc, iCmp, nAddress, nLen, bIsTempBreakpoint ))
 		{
 			dArg = 0;
 		}
@@ -7055,7 +7072,7 @@ Update_t ExecuteCommand (int nArgs)
 						{
 							const int iArg = 1;
 							ArgsGetValue( &g_aArgs[iArg], &g_aArgs[iArg].nValue );
-							_CmdBreakpointAddCommonArg(iArg, nArgs, BP_SRC_REG_PC, BP_OP_EQUAL);	// TC-TODO: Clear this temp BP when it's hit or stepping is cancelled
+							_CmdBreakpointAddCommonArg(iArg, nArgs, BP_SRC_REG_PC, BP_OP_EQUAL, true);
 						}
 					}
 					else if (nLen > 1)
@@ -8215,6 +8232,7 @@ void DebuggerInputConsoleChar( TCHAR ch )
 	if ((g_nAppMode == MODE_STEPPING) && (ch == DEBUG_EXIT_KEY))
 	{
 		g_nDebugSteps = 0; // Exit Debugger
+		ClearTempBreakpoints();
 	}
 
 	if (g_nAppMode != MODE_DEBUG)

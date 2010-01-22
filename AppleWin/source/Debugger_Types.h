@@ -206,6 +206,7 @@
 		BreakpointOperator_t eOperator;
 		bool                 bSet    ; // used to be called enabled pre 2.0
 		bool                 bEnabled;
+		bool                 bTemp;    // If true then remove BP when hit or stepping cancelled (eg. G xxxx)
 	};
 
 	typedef Breakpoint_t Bookmark_t;
