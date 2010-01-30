@@ -5668,11 +5668,20 @@ Update_t CmdOutputRun (int nArgs)
 
 //	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 
-	strcpy( sMiniFileName, pFileName );
-//	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
+	_tcscpy( sMiniFileName, pFileName );
+//	_tcscat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
-	_tcscpy(sFileName, g_sCurrentDir); // 
-	_tcscat(sFileName, sMiniFileName);
+	if (pFileName[0] == '\\' || pFileName[1] == ':')	// NB. Any prefix quote has already been stripped
+	{
+		// Abs pathname
+		_tcscpy(sFileName, sMiniFileName);
+	}
+	else
+	{
+		// Rel pathname
+		_tcscpy(sFileName, g_sCurrentDir);
+		_tcscat(sFileName, sMiniFileName);
+	}
 
 	if (script.Read( sFileName ))
 	{
@@ -5684,7 +5693,7 @@ Update_t CmdOutputRun (int nArgs)
 		for( int iLine = 0; iLine < nLine; iLine++ )
 		{
 			script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
-			g_nConsoleInputChars = strlen( g_pConsoleInput );
+			g_nConsoleInputChars = _tcslen( g_pConsoleInput );
 			bUpdateDisplay |= DebuggerProcessCommand( false );
 		}
 	}
