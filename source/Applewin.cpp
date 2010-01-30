@@ -708,8 +708,6 @@ LPSTR GetCurrArg(LPSTR lpCmdLine)
 
 LPSTR GetNextArg(LPSTR lpCmdLine)
 {
-	LPSTR pSrc = lpCmdLine;
-
 	int bInQuotes = 0;
 
 	while(*lpCmdLine)
@@ -717,12 +715,8 @@ LPSTR GetNextArg(LPSTR lpCmdLine)
 		if(*lpCmdLine == '\"')
 		{
 			bInQuotes ^= 1;
-			if( bInQuotes )
-			{
-			}
 			if(!bInQuotes)
 			{
-//MessageBox( NULL, lpCmdLine, pSrc, MB_OK );
 				*lpCmdLine++ = 0x00;	// Assume end-quote is end of this arg
 				continue;
 			}
@@ -779,10 +773,6 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	while(*lpCmdLine)
 	{
 		LPSTR lpNextArg = GetNextArg(lpCmdLine);
-
-// BUG: Double-click .DSK
-// Think the 1st double quote is active, while the last double quote is getting stripped
-//MessageBox(NULL, lpCmdLine, "Command Line", MB_OK );
 
 		if(strcmp(lpCmdLine, "-noreg") == 0)
 		{
@@ -936,10 +926,6 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	ImageInitialize();
 	DiskInitialize();
 	CreateColorMixMap();	// For tv emulation g_nAppMode
-
-// BUG: Double-click .DSK
-//MessageBox( NULL, szImageName_drive1, "Disk 1", MB_OK );
-//MessageBox( NULL, szImageName_drive2, "Disk 2", MB_OK );
 
 	int nError = 0;	// TODO: Show error MsgBox if we get a DiskInsert error
 	if(szImageName_drive1)
