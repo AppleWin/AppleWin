@@ -41,7 +41,7 @@ Etc.
 
 
 #include "stdafx.h"
-#pragma  hdrstop
+
 
 #ifdef _DEBUG
 	#define _DEBUG_SPURIOUS_IRQ

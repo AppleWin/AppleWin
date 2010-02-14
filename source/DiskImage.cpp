@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #include "DiskImage.h"
 #include "DiskImageHelper.h"
-#pragma  hdrstop
+
 
 
 static CDiskImageHelper sg_DiskImageHelper;
@@ -93,7 +93,8 @@ void ImageClose(const HIMAGE hDiskImage, const bool bOpenError /*=false*/)
 		{
 			if (!ptr->ValidTrack[uTrack])
 			{
-				// What's the reason for this?
+				// TODO: Comment using info from this URL:
+				// http://groups.google.de/group/comp.emulators.apple2/msg/7a1b9317e7905152
 				bDeleteFile = true;
 				break;
 			}

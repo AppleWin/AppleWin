@@ -7,7 +7,7 @@ AppleWin : An Apple //e emulator for Windows
  */
 
 #include "StdAfx.h"
-#pragma  hdrstop
+
 
 // Disassembler Data ______________________________________________________________________________
 

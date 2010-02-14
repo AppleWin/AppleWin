@@ -730,6 +730,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Speech.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Speech.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Tape.cpp"
 					>
 				</File>

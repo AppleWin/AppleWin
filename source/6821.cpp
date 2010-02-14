@@ -27,7 +27,7 @@
 /*#define MC_DEBUG*/
 
 #include "StdAfx.h"
-#pragma  hdrstop
+
 
 #include "6821.h"
 

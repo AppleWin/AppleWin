@@ -85,13 +85,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 #include "StdAfx.h"
-#pragma	 hdrstop
 #include "MouseInterface.h"
 
 #ifdef SUPPORT_CPM
 #include "z80emu.h"
 #include "Z80VICE\z80.h"
 #include "Z80VICE\z80mem.h"
+#endif
+
+#ifdef USE_SPEECH_API
+#include "Speech.h"
 #endif
 
 #define	 AF_SIGN       0x80
@@ -841,20 +844,85 @@ void CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles)
 
 //===========================================================================
 
+#ifdef USE_SPEECH_API
+
+const USHORT COUT = 0xFDED;
+
+const UINT OUTPUT_BUFFER_SIZE = 256;
+char g_OutputBuffer[OUTPUT_BUFFER_SIZE+1+1];	// +1 for EOL, +1 for NULL
+UINT OutputBufferIdx = 0;
+bool bEscMode = false;
+
+void CaptureCOUT(void)
+{
+	const char ch = regs.a & 0x7f;
+
+	if (ch == 0x07)			// Bell
+	{
+		// Ignore
+	}
+	else if (ch == 0x08)	// Backspace
+	{
+		if (OutputBufferIdx)
+			OutputBufferIdx--;
+	}
+	else if (ch == 0x0A)	// LF
+	{
+		// Ignore
+	}
+	else if (ch == 0x0D)	// CR
+	{
+		if (bEscMode)
+		{
+			bEscMode = false;
+		}
+		else if (OutputBufferIdx)
+		{
+			g_OutputBuffer[OutputBufferIdx] = 0;
+			g_Speech.Speak(g_OutputBuffer);
+
+#ifdef _DEBUG
+			g_OutputBuffer[OutputBufferIdx] = '\n';
+			g_OutputBuffer[OutputBufferIdx+1] = 0;
+			OutputDebugString(g_OutputBuffer);
+#endif
+
+			OutputBufferIdx = 0;
+		}
+	}
+	else if (ch == 0x1B)	// Escape
+	{
+		bEscMode = bEscMode ? false : true;		// Toggle mode
+	}
+	else if (ch >= ' ' && ch <= '~')
+	{
+		if (OutputBufferIdx < OUTPUT_BUFFER_SIZE && !bEscMode)
+			g_OutputBuffer[OutputBufferIdx++] = ch;
+	}
+}
+
+#endif
+
+//===========================================================================
+
 static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 {
-		//g_uInternalExecutedCycles = uExecutedCycles;
+	const USHORT PC = regs.pc;
 
-//		iOpcode = *(mem+regs.pc);
-		iOpcode = ((regs.pc & 0xF000) == 0xC000)
-		    ? IORead[(regs.pc>>4) & 0xFF](regs.pc,regs.pc,0,0,uExecutedCycles)	// Fetch opcode from I/O memory, but params are still from mem[]
-			: *(mem+regs.pc);
+	iOpcode = ((PC & 0xF000) == 0xC000)
+	    ? IORead[(PC>>4) & 0xFF](PC,PC,0,0,uExecutedCycles)	// Fetch opcode from I/O memory, but params are still from mem[]
+		: *(mem+PC);
 
-		if (CheckDebugBreak( iOpcode ))
-			return 0;
+	if (CheckDebugBreak( iOpcode ))
+		return 0;
 
-		regs.pc++;
-		return 1;
+#ifdef USE_SPEECH_API
+	if (PC == COUT && g_Speech.IsEnabled() && !g_bFullSpeed)
+		CaptureCOUT();
+#endif
+
+	regs.pc++;
+	return 1;
 }
 
 //#define ENABLE_NMI_SUPPORT	// Not used - so don't enable

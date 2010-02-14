@@ -56,3 +56,7 @@ extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom
 enum eCPU {CPU_6502=1, CPU_Z80};
 extern eCPU		g_ActiveCPU;
 
+#ifdef USE_SPEECH_API
+class CSpeech;
+extern CSpeech g_Speech;
+#endif

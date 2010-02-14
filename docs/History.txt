@@ -19,6 +19,19 @@ Restrictions/bugs:
 - For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
 
+1.18.1 - 14 Feb 2010 (beta)
+---------------------------
+Changes:
+. Added "-speech" cmd-line switch
+  - Captures text from COUT and outputs to Speech API
+  - Ctrl+RESET and FullSpeed mode (ie. disk access) will purge the speech buffers
+
+Fixed:
+. [Bug #16699] Debugger: G xxxx not clearing BP
+. [Bug #16688] Debugger RUN <script-file> still not 100%
+  - Honour absolute path (ie. don't prefix with CWD)
+
+
 1.18.0 - 17 Jan 2010 (beta)
 ---------------------------
 Changes:
