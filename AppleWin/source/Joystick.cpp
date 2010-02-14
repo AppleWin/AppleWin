@@ -38,7 +38,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // - This is because the 2-joystick version of Mario Bros expects the 2nd joystick to control Apple switch #2.
 
 #include "StdAfx.h"
-#pragma  hdrstop
 #include "MouseInterface.h"
 
 #define  BUTTONTIME       5000

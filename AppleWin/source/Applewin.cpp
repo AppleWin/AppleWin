@@ -27,12 +27,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+#pragma hdrstop			// Normally would have stdafx.cpp (being the file with /Yc) and wouldn't bother with #pragma hdrstop
+
 #include "DiskImage.h"
 #include "Harddisk.h"
-#pragma  hdrstop
 
-#include <objbase.h>
+//#include <objbase.h>	// Updated[TC]: Removed, as not needed
 #include "MouseInterface.h"
+#ifdef USE_SPEECH_API
+#include "Speech.h"
+#endif
 
 char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
@@ -89,6 +93,9 @@ eCPU		g_ActiveCPU = CPU_6502;
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
+
+static bool	g_bEnableSpeech = false;
+CSpeech		g_Speech;
 
 //===========================================================================
 
@@ -162,6 +169,7 @@ void ContinueExecution()
 		// Don't call Spkr_Mute() - will get speaker clicks
 		MB_Mute();
 		SysClk_StopTimer();
+		g_Speech.Reset();			// TODO: Put this on a timer (in emulated cycles)... otherwise CATALOG cuts out
 
 		g_nCpuCyclesFeedback = 0;	// For the case when this is a big -ve number
 
@@ -852,6 +860,10 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			g_bEnableDumpToRealPrinter = true;
 		}
+		else if(strcmp(lpCmdLine, "-speech") == 0)
+		{
+			g_bEnableSpeech = true;
+		}
 
 		lpCmdLine = lpNextArg;
 	}
@@ -912,6 +924,12 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	// . NB. DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	bool bSysClkOK = SysClk_InitTimer();
+#ifdef USE_SPEECH_API
+	if (g_bEnableSpeech)
+	{
+		bool bSpeechOK = g_Speech.Init();
+	}
+#endif
 
 	// DO ONE-TIME INITIALIZATION
 	g_hInstance = passinstance;
