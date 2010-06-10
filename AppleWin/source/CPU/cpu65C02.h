@@ -307,7 +307,7 @@ static DWORD Cpu65C02 (DWORD uTotalCycles)
 		case 0xF4:   INV ZPGX NOP	     CYC(4)  break;
 		case 0xF5:       ZPGX SBC_CMOS CYC(4)  break;
 		case 0xF6:       ZPGX INC_CMOS CYC(6)  break;
-		case 0xF7:   INV NOP	     CYC(2)  break;				
+		case 0xF7:   INV NOP	     CYC(2)  break;
 		case 0xF8:       SED	     CYC(2)  break;
 		case 0xF9:       ABSY SBC_CMOS CYC(4)  break;
 		case 0xFA:       PLX	     CYC(4)  break;
