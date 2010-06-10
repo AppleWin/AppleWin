@@ -570,14 +570,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\CPU.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\CPU.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\Disk.cpp"
 					>
 				</File>
@@ -791,6 +783,38 @@
 				</File>
 				<File
 					RelativePath=".\source\Structs.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="CPU"
+				>
+				<File
+					RelativePath=".\source\CPU.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CPU.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CPU\cpu6502.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CPU\cpu65C02.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CPU\cpu65d02.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CPU\cpu_general.inl"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CPU\cpu_instructions.inl"
 					>
 				</File>
 			</Filter>
