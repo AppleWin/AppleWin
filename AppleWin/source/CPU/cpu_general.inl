@@ -104,6 +104,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define IABSX    addr = *(LPWORD)(mem+(*(LPWORD)(mem+regs.pc))+(WORD)regs.x); regs.pc += 2;
 #define ABSX	 base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2; CHECK_PAGE_CHANGE;
 #define ABSY	 base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2; CHECK_PAGE_CHANGE;
+// TODO Optimization Note: uExtraCycles = ((base & 0xFF) + 1) >> 8;
 #define IABSCMOS base = *(LPWORD)(mem+regs.pc);	                          \
 		 addr = *(LPWORD)(mem+base);		                  \
 		 if ((base & 0xFF) == 0xFF) uExtraCycles=1;		  \
@@ -134,7 +135,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		     addr = *(LPWORD)(mem+base);
 #define REL	 addr = (signed char)*(mem+regs.pc++);
 
-// Optimiation note:
+// TODO Optimization Note:
 // . Opcodes that generate zero-page addresses can't be accessing $C000..$CFFF
 //   so they could be paired with special READZP/WRITEZP macros (instead of READ/WRITE)
 #define ZPG 	 addr = *(mem+regs.pc++);
