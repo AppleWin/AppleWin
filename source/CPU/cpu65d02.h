@@ -113,30 +113,6 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 //#define $    Store()
 #define $ INV
 
-// Tidy 3 char mnemonics to keep the table visually aligned, clean, and readable
-#define abx ABSX
-#define aby ABSY
-#define idx INDX
-#define idy INDY
-#define izp IZPG
-#define rol ROLA // Rotate Left
-#define ror RORA // Rotate Rigth
-#define asl ASLA // Arithmetic Shift Left
-#define lsr LSRA // Logical Shift Right
-#define zpx ZPGX
-#define zpy ZPGY
-// 0x6C // 65c02 IABSCMOS JMP // 6502  IABSNMOS JMP
-// 0x7C IABSX
-
-#define ADCc ADC_CMOS
-#define ASLc ASL_CMOS
-#define DECc DEC_CMOS
-#define INCc INC_CMOS
-#define LSRc LSR_CMOS
-#define ROLc ROL_CMOS
-#define RORc ROR_CMOS
-#define SBCc SBC_CMOS
-
 		switch (iOpcode)
 		{
 // TODO Optimization Note: ?? Move CYC(#) to array ??
@@ -402,7 +378,7 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 			case 0xFE:       abx INC_CMOS  CYC(6)  break;
 			case 0xFF:   INV NOP           CYC(2)  break;
 */
-// Version 2   opcode: @ AM  Instruction // @=DebugBreak AM=AddressingMode
+// Version 2   opcode: $ AM  Instruction // $=DebugBreak AM=AddressingMode
 //!         !          ! !   !      ! // Tab-Stops
 			case 0x00:       BRK	CYC(7)  break;
 			case 0x01:   idx ORA	CYC(6)  break;

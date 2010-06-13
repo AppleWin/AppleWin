@@ -142,3 +142,35 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ZPGX	 addr = ((*(mem+regs.pc++))+regs.x) & 0xFF;
 #define ZPGY	 addr = ((*(mem+regs.pc++))+regs.y) & 0xFF;
 
+// Tidy 3 char addressing modes to keep the opcode table visually aligned, clean, and readable.
+#undef abx
+#undef abx
+#undef aby
+#undef asl
+#undef idx
+#undef idy
+#undef imm
+#undef izp
+#undef lsr
+#undef rel
+#undef rol
+#undef ror
+#undef zpx
+#undef zpy
+
+#define abx ABSX
+#define aby ABSY
+#define asl ASLA // Arithmetic Shift Left
+#define idx INDX
+#define idy INDY
+#define imm IMM
+#define izp IZPG
+#define lsr LSRA // Logical Shift Right
+#define rel REL
+#define rol ROLA // Rotate Left
+#define ror RORA // Rotate Right
+#define zpx ZPGX
+#define zpy ZPGY
+// 0x6C // 65c02 IABSCMOS JMP // 6502  IABSNMOS JMP
+// 0x7C IABSX
+
