@@ -137,6 +137,46 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // ==========
 
+#undef ADCn
+#undef ASLn
+#undef DECn
+#undef INCn
+#undef LSRn
+#undef ROLn
+#undef RORn
+#undef SBCn
+
+#define ADCn ADC_NMOS
+#define ASLn ASL_NMOS
+#define DECn DEC_NMOS
+#define INCn INC_NMOS
+#define LSRn LSR_NMOS
+#define ROLn ROL_NMOS
+#define RORn ROR_NMOS
+#define SBCn SBC_NMOS
+
+// ==========
+
+#undef ADCc
+#undef ASLc
+#undef DECc
+#undef INCc
+#undef LSRc
+#undef ROLc
+#undef RORc
+#undef SBCc
+
+#define ADCc ADC_CMOS
+#define ASLc ASL_CMOS
+#define DECc DEC_CMOS
+#define INCc INC_CMOS
+#define LSRc LSR_CMOS
+#define ROLc ROL_CMOS
+#define RORc ROR_CMOS
+#define SBCc SBC_CMOS
+
+// ==========
+
 #define ADC_NMOS bSlowerOnPagecross = 1;						    \
 		 temp = READ;						    \
 		 if (regs.ps & AF_DECIMAL) {				    \
