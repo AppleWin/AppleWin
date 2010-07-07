@@ -804,7 +804,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 		else if(((strcmp(lpCmdLine, "-l") == 0) || (strcmp(lpCmdLine, "-log") == 0)) && (g_fh == NULL))
 		{
-			g_fh = fopen("AppleWin.log", "a+t");	// Open log file (append & text g_nAppMode)
+			g_fh = fopen("AppleWin.log", "a+t");	// Open log file (append & text mode)
 			CHAR aDateStr[80], aTimeStr[80];
 			GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aDateStr, sizeof(aDateStr));
 			GetTimeFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aTimeStr, sizeof(aTimeStr));
