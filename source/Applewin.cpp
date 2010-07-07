@@ -943,7 +943,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	FrameRegisterClass();
 	ImageInitialize();
 	DiskInitialize();
-	CreateColorMixMap();	// For tv emulation g_nAppMode
+	CreateColorMixMap();	// For tv emulation mode
 
 	int nError = 0;	// TODO: Show error MsgBox if we get a DiskInsert error
 	if(szImageName_drive1)
