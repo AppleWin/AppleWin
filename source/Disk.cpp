@@ -1020,6 +1020,8 @@ DWORD DiskSetSnapshot(SS_CARD_DISK2* pSS, DWORD /*dwSlot*/)
 	{
 		bool bImageError = false;
 
+		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
+
 		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t ));
 		if(pSS->Unit[i].szFileName[0] == 0x00)
 			continue;
