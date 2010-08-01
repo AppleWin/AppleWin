@@ -1162,27 +1162,45 @@ static void SaveStateUpdate()
 	}
 }
 
+static void GetDiskBaseNameWithAWS(TCHAR* pszFilename)
+{
+	LPCTSTR pDiskName = DiskGetBaseName(DRIVE_1);
+	if (pDiskName && pDiskName[0])
+	{
+		strcpy(pszFilename, pDiskName);
+		strcpy(&pszFilename[strlen(pDiskName)], ".aws");
+	}
+}
+
+// NB. OK'ing this property sheet will call Snapshot_SetFilename() with this new filename
 static int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 {
 	TCHAR szDirectory[MAX_PATH] = TEXT("");
-	TCHAR szFilename[MAX_PATH];
-	
-	// Attempt to use drive1's image name as the name for the .aws file
-	LPCTSTR pDiskName0 = DiskGetBaseName(DRIVE_1);
-	if (pDiskName0 && pDiskName0[0])
+	TCHAR szFilename[MAX_PATH] = {0};
+
+	if (bSave)
 	{
-		strcpy(szFilename, pDiskName0);
-		strcpy(&szFilename[strlen(pDiskName0)], ".aws");
-		// NB. OK'ing this property sheet will call Snapshot_SetFilename() with this new filename
+		// Attempt to use drive1's image name as the name for the .aws file
+		// Else Attempt to use the Prop Sheet's filename
+		GetDiskBaseNameWithAWS(szFilename);
+		if (szFilename[0] == 0)
+		{
+			strcpy(szFilename, Snapshot_GetFilename());
+		}
 	}
-	else
+	else	// Load
 	{
+		// Attempt to use the Prop Sheet's filename first
+		// Else attempt to use drive1's image name as the name for the .aws file
 		strcpy(szFilename, Snapshot_GetFilename());
+		if (szFilename[0] == 0)
+		{
+			GetDiskBaseNameWithAWS(szFilename);
+		}
 	}
 	
 	RegLoadString(TEXT("Preferences"),REGVALUE_PREF_START_DIR,1,szDirectory,MAX_PATH);
-	
-	
+
 	//
 	
 	OPENFILENAME ofn;
