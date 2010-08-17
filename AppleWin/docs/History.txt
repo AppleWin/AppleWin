@@ -19,6 +19,15 @@ Restrictions/bugs:
 - For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
 
+1.18.2 - 17 Aug 2010
+--------------------
+Fixed:
+. [Bug #017055] DDial timer running very fast.
+  - TAPEIN.bit7 was being read from floating-bus. Now fixed high.
+. [Bug# 007237] VBl IO reg not updated in 'Stepping' mode
+. Loading save-state file (.aws) wasn't Win32-closing .dsk images in drives.
+
+
 1.18.1 - 14 Feb 2010 (beta)
 ---------------------------
 Changes:
