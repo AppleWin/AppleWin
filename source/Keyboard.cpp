@@ -245,7 +245,7 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 					if (key == ']') keycode = '}';
 					if (key == '`') keycode = '~';
 					if (key == 92) keycode = 96;
-					if (GetCapsLockAllowed ()== true)
+					if (GetCapsLockAllowed() == true)
 					{
 						if ((key == 92) || (key == 124)) keycode = 96; //Ý to Þ
 						//This shall be rewriten, so that enabling CAPS_LOCK (i.e. F10) will not invert these keys values)

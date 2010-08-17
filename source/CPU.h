@@ -16,7 +16,7 @@ extern unsigned __int64 g_nCumulativeCycles;
 void    CpuDestroy ();
 void    CpuCalcCycles(ULONG nExecutedCycles);
 DWORD   CpuExecute (DWORD);
-ULONG   CpuGetCyclesThisFrame(ULONG nExecutedCycles);
+ULONG   CpuGetCyclesThisVideoFrame(ULONG nExecutedCycles);
 void    CpuInitialize ();
 void    CpuSetupBenchmark ();
 void	CpuIrqReset();

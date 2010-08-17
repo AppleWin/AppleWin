@@ -234,7 +234,6 @@ static BOOL      hasrefreshed     = 0;
 static DWORD     lastpageflip     = 0;
 COLORREF  monochrome       = RGB(0xC0,0xC0,0xC0);
 static BOOL      rebuiltsource    = 0;
-static DWORD     dwVBlCounter     = 0;
 static LPBYTE    vidlastmem       = NULL;
 static DWORD     vidmode          = VF_TEXT;
 
@@ -1725,7 +1724,6 @@ void VideoBenchmark () {
         cycles -= executedcycles;
         DiskUpdatePosition(executedcycles);
         JoyUpdatePosition();
-        VideoUpdateVbl(0);
 	  }
     }
     if (cycle & 1)
@@ -1759,11 +1757,11 @@ void VideoBenchmark () {
 }
             
 //===========================================================================
-BYTE __stdcall VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
+BYTE __stdcall VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
   address &= 0xFF;
   if (address == 0x7F)
-    return MemReadFloatingBus(SW_DHIRES != 0, nCyclesLeft);
+    return MemReadFloatingBus(SW_DHIRES != 0, uExecutedCycles);
   else {
     BOOL result = 0;
     switch (address) {
@@ -1790,52 +1788,61 @@ void VideoCheckPage (BOOL force) {
 }
 
 //===========================================================================
-BYTE __stdcall VideoCheckVbl (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
+
+/*
+	// Drol expects = 80
+	68DE A5 02    LDX #02
+	68E0 AD 50 C0 LDA TXTCLR
+	68E3 C9 80    CMP #80
+	68E5 D0 F7    BNE $68DE
+
+	6957 A5 02    LDX #02
+	6959 AD 50 C0 LDA TXTCLR
+	695C C9 80    CMP #80
+	695E D0 F7    BNE $68DE
+
+	69D3 A5 02    LDX #02
+	69D5 AD 50 C0 LDA TXTCLR
+	69D8 C9 80    CMP #80
+	69DA D0 F7    BNE $68DE
+
+	// Karateka expects < 80
+	07DE AD 19 C0 LDA RDVBLBAR
+	07E1 30 FB    BMI $7DE
+
+	77A1 AD 19 C0 LDA RDVBLBAR
+	77A4 30 FB    BMI $7DE
+
+	// Gumball expects non-zero low-nibble on VBL
+	BBB5 A5 60    LDA $60
+	BBB7 4D 50 C0 EOR TXTCLR
+	BBBA 85 60    STA $60
+	BBBC 29 0F    AND #$0F
+	BBBE F0 F5    BEQ $BBB5
+	BBC0 C9 0F    CMP #$0F
+	BBC2 F0 F1    BEQ $BBB5
+
+	// Diversi-Dial (DD4.DSK or DIAL.DSK)
+	F822          LDA RDVBLBAR
+	F825          EOR #$3C
+	              BMI $F82A
+	              RTS
+	F82A          LDA $F825+1
+	              EOR #$80
+	              STA $F825+1
+	              BMI $F86A
+				  ...
+	F86A          RTS
+
+*/
+
+BYTE __stdcall VideoCheckVbl (WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 {
-	/*
-		// Drol expects = 80
-		68DE A5 02    LDX #02
-		68E0 AD 50 C0 LDA TXTCLR
-		68E3 C9 80    CMP #80
-		68E5 D0 F7    BNE $68DE
+	bool bVblBar = false;
+	VideoGetScannerAddress(&bVblBar, uExecutedCycles);
 
-		6957 A5 02    LDX #02
-		6959 AD 50 C0 LDA TXTCLR
-		695C C9 80    CMP #80
-		695E D0 F7    BNE $68DE
-
-		69D3 A5 02    LDX #02
-		69D5 AD 50 C0 LDA TXTCLR
-		69D8 C9 80    CMP #80
-		69DA D0 F7    BNE $68DE
-
-		// Karateka expects < 80
-		07DE AD 19 C0 LDA RDVBLBAR
-		07E1 30 FB    BMI $7DE
-
-		77A1 AD 19 C0 LDA RDVBLBAR
-		77A4 30 FB    BMI $7DE
-
-		// Gumball expects non-zero low-nibble on VBL
-		BBB5 A5 60    LDA $60
-		BBB7 4D 50 C0 EOR TXTCLR
-		BBBA 85 60    STA $60
-		BBBC 29 0F    AND #$0F
-		BBBE F0 F5    BEQ $BBB5
-		BBC0 C9 0F    CMP #$0F
-		BBC2 F0 F1    BEQ $BBB5
-
-//		return MemReturnRandomData(dwVBlCounter <= nVBlStop_NTSC);
-	if (dwVBlCounter <= nVBlStop_NTSC)
-		return (BYTE)(dwVBlCounter & 0x7F); // 0x00;
-	else
-		return 0x80 | ((BYTE)(dwVBlCounter & 1));
-	*/
-
-	bool bVblBar;
-	VideoGetScannerAddress(&bVblBar, nCyclesLeft);
-    BYTE r = KeybGetKeycode();
-    return (r & ~0x80) | ((bVblBar) ? 0x80 : 0);
+	BYTE r = KeybGetKeycode();
+	return (r & ~0x80) | ((bVblBar) ? 0x80 : 0);
  }
 
 //===========================================================================
@@ -2319,7 +2326,7 @@ void VideoResetState () {
 }
 
 //===========================================================================
-BYTE __stdcall VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG nCyclesLeft)
+BYTE __stdcall VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
   address &= 0xFF;
   DWORD oldpage2 = SW_PAGE2;
@@ -2374,14 +2381,7 @@ BYTE __stdcall VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG nCycles
     }
     lastpageflip = emulmsec;
   }
-  return MemReadFloatingBus(nCyclesLeft);
-}
-
-//===========================================================================
-
-void VideoUpdateVbl (DWORD dwCyclesThisFrame)
-{
-	dwVBlCounter = (DWORD) ((double)dwCyclesThisFrame / (double)uCyclesPerLine);
+  return MemReadFloatingBus(uExecutedCycles);
 }
 
 //===========================================================================
@@ -2447,7 +2447,7 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
 {
     // get video scanner position
     //
-    int nCycles = CpuGetCyclesThisFrame(uExecutedCycles);
+    int nCycles = CpuGetCyclesThisVideoFrame(uExecutedCycles);
 
     // machine state switches
     //
@@ -2560,7 +2560,7 @@ bool VideoGetVbl(const DWORD uExecutedCycles)
 {
     // get video scanner position
     //
-    int nCycles = CpuGetCyclesThisFrame(uExecutedCycles);
+    int nCycles = CpuGetCyclesThisVideoFrame(uExecutedCycles);
 
     // calculate video parameters according to display standard
     //
@@ -2588,6 +2588,8 @@ bool VideoGetVbl(const DWORD uExecutedCycles)
 		return true; // N: VBL' is true
 	}
 }
+
+//===========================================================================
 
 #define SCREENSHOT_BMP 1
 #define SCREENSHOT_TGA 0

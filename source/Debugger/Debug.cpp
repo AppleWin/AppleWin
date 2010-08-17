@@ -7256,10 +7256,9 @@ Update_t ExecuteCommand (int nArgs)
 
 
 //===========================================================================
+
 bool InternalSingleStep ()
 {
-	static DWORD dwCyclesThisFrame = 0;
-
 	bool bResult = false;
 	_try
 	{
@@ -7269,14 +7268,16 @@ bool InternalSingleStep ()
 		g_aProfileOpcodes[ nOpcode ].m_nCount++;
 		g_aProfileOpmodes[ nOpmode ].m_nCount++;
 
-		DWORD dwExecutedCycles = CpuExecute(g_nDebugStepCycles);
-		dwCyclesThisFrame += dwExecutedCycles;
-
-		if (dwCyclesThisFrame >= dwClksPerFrame)
+		// Like ContinueExecution()
 		{
-			dwCyclesThisFrame -= dwClksPerFrame;
+			DWORD dwExecutedCycles = CpuExecute(g_nDebugStepCycles);
+			g_dwCyclesThisFrame += dwExecutedCycles;
+
+			if (g_dwCyclesThisFrame >= dwClksPerFrame)
+			{
+				g_dwCyclesThisFrame -= dwClksPerFrame;
+			}
 		}
-		VideoUpdateVbl( dwCyclesThisFrame );
 
 		bResult = true;
 	}

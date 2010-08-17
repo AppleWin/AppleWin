@@ -280,6 +280,9 @@ void Config_Load_Video()
 	REGLOAD(TEXT(REGVALUE_VIDEO_MODE           ),&g_eVideoType);
 	REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&g_uHalfScanLines);
 	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&monochrome);
+
+	if (g_eVideoType >= NUM_VIDEO_MODES)
+		g_eVideoType = VT_COLOR_TVEMU;
 }
 
 

@@ -68,7 +68,6 @@ void    VideoReinitialize ();
 void    VideoResetState ();
 WORD    VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles);
 bool    VideoGetVbl(DWORD uExecutedCycles);
-void    VideoUpdateVbl (DWORD dwCyclesThisFrame);
 void    VideoUpdateFlash();
 bool    VideoGetSW80COL();
 DWORD   VideoGetSnapshot(SS_IO_Video* pSS);
@@ -98,6 +97,6 @@ enum VideoScreenShot_e
 };
 void Video_TakeScreenShot( int iScreenShotType );
 
-BYTE __stdcall VideoCheckMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-BYTE __stdcall VideoCheckVbl (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-BYTE __stdcall VideoSetMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+BYTE __stdcall VideoCheckMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+BYTE __stdcall VideoCheckVbl (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+BYTE __stdcall VideoSetMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);

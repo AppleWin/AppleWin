@@ -119,8 +119,7 @@ static BYTE benchopcode[BENCHOPCODES] = {0x06,0x16,0x24,0x45,0x48,0x65,0x68,0x76
 regsrec regs;
 unsigned __int64 g_nCumulativeCycles = 0;
 
-static ULONG g_nCyclesSubmitted;	// Number of cycles submitted to CpuExecute()
-static ULONG g_nCyclesExecuted;
+static ULONG g_nCyclesExecuted;	// # of cycles executed up to last IO access
 
 //static signed long g_uInternalExecutedCycles;
 // TODO: Use IRQ_CHECK_TIMEOUT=128 when running at full-speed else with IRQ_CHECK_TIMEOUT=1
@@ -405,20 +404,23 @@ void CpuDestroy ()
 }
 
 //===========================================================================
-// Pre:
+
+// Description:
 //	Call this when an IO-reg is access & accurate cycle info is needed
+// Pre:
+//  nExecutedCycles = # of cycles executed by Cpu6502() or Cpu65C02() for this iteration of ContinueExecution()
 // Post:
 //	g_nCyclesExecuted
 //	g_nCumulativeCycles
 //
-void CpuCalcCycles(ULONG nExecutedCycles)
+void CpuCalcCycles(const ULONG nExecutedCycles)
 {
 	// Calc # of cycles executed since this func was last called
-	ULONG nCycles = nExecutedCycles - g_nCyclesExecuted;
+	const ULONG nCycles = nExecutedCycles - g_nCyclesExecuted;
 	_ASSERT( (LONG)nCycles >= 0 );
-
-	g_nCyclesExecuted += nCycles;
 	g_nCumulativeCycles += nCycles;
+
+	g_nCyclesExecuted = nExecutedCycles;
 }
 
 //===========================================================================
@@ -431,13 +433,13 @@ void CpuCalcCycles(ULONG nExecutedCycles)
 // -                 137.9,135.6MHz  (with check for VBL IRQ & MB_Update every 128 cycles)
 
 #if 0	// TODO: Measure perf increase by using this new method
-ULONG CpuGetCyclesThisFrame(ULONG)	// Old func using g_uInternalExecutedCycles
+ULONG CpuGetCyclesThisVideoFrame(ULONG)	// Old func using g_uInternalExecutedCycles
 {
 	CpuCalcCycles(g_uInternalExecutedCycles);
 	return g_dwCyclesThisFrame + g_nCyclesExecuted;
 }
 #else
-ULONG CpuGetCyclesThisFrame(ULONG nExecutedCycles)
+ULONG CpuGetCyclesThisVideoFrame(const ULONG nExecutedCycles)
 {
 	CpuCalcCycles(nExecutedCycles);
 	return g_dwCyclesThisFrame + g_nCyclesExecuted;
@@ -446,27 +448,22 @@ ULONG CpuGetCyclesThisFrame(ULONG nExecutedCycles)
 
 //===========================================================================
 
-DWORD CpuExecute (DWORD uCycles)
+DWORD CpuExecute(const DWORD uCycles)
 {
-	DWORD uExecutedCycles =	0;
-
-	g_nCyclesSubmitted = uCycles;
 	g_nCyclesExecuted =	0;
-
-	//
 
 	MB_StartOfCpuExecute();
 
-	if (uCycles	== 0)	// Do single step
-		uExecutedCycles	= InternalCpuExecute(0);
-	else				// Do multi-opcode emulation
-		uExecutedCycles	= InternalCpuExecute(uCycles);
+	// uCycles:
+	//  =0  : Do single step
+	//  >0  : Do multi-opcode emulation
+	const DWORD uExecutedCycles = InternalCpuExecute(uCycles);
 
 	MB_UpdateCycles(uExecutedCycles);	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
 
 	//
 
-	UINT nRemainingCycles =	uExecutedCycles	- g_nCyclesExecuted;
+	const UINT nRemainingCycles = uExecutedCycles - g_nCyclesExecuted;
 	g_nCumulativeCycles	+= nRemainingCycles;
 
 	return uExecutedCycles;
