@@ -194,7 +194,6 @@ void ContinueExecution()
 		nCyclesToExecute = 0;
 
 	DWORD dwExecutedCycles = CpuExecute(nCyclesToExecute);
-
 	g_dwCyclesThisFrame += dwExecutedCycles;
 
 	//
@@ -203,7 +202,6 @@ void ContinueExecution()
 
 	DiskUpdatePosition(dwExecutedCycles);
 	JoyUpdatePosition();
-	VideoUpdateVbl(g_dwCyclesThisFrame);
 
 	SpkrUpdate(cyclenum);
 	sg_SSC.CommUpdate(cyclenum);
