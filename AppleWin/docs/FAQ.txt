@@ -1,0 +1,7 @@
+Q. Is there a port of AppleWin for Linux?
+A. In Dec 2007, Beom Beotiger ported AppleWin 1.14.1.2(?). It is available here:
+http://linapple.sourceforge.net/index.html
+
+
+Q. Can I run AppleWin on Linux using Wine?
+A. Reportedly runs fine, but with some sound lag.
