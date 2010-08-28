@@ -19,6 +19,12 @@ Restrictions/bugs:
 - For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
 
+1.19.0 - 28 Aug 2010
+--------------------
+Changes:
+. Added No-Slot-Clock (located in $C300 ROM space).
+
+
 1.18.2 - 17 Aug 2010
 --------------------
 Fixed:

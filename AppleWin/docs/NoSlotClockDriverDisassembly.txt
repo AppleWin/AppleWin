@@ -1,0 +1,674 @@
+No-Slot-Clock (Dallas SmartWatch DS1216) ProDOS Driver.
+Probably written by Craig Peterson in 1990.
+Partial disassembly and comments by Nick Westgate (and CiderPress).
+
+2000-   38          SEC            ;actually loads at $2000
+2001-   B0 03       BCS   $2006
+2003-   09 23
+2005-   90
+2006-   A2 05       LDX   #$05     ;pages to relocate
+2008-   A0 00       LDY   #$00
+200A-   B9 00 20    LDA   $2000,Y  ;relocate to $1000
+200D-   99 00 10    STA   $1000,Y
+2010-   C8          INY
+2011-   D0 F7       BNE   $200A
+2013-   EE 0C 10    INC   $100C
+2016-   EE 0F 10    INC   $100F
+2019-   CA          DEX
+201A-   F0 03       BEQ   $201F
+201C-   4C 0A 10    JMP   $100A
+101F-   A9 00       LDA   #$00
+1021-   85 A8       STA   $A8
+1023-   AE 80 02    LDX   $0280    ;check input buffer for something? (ProDOS path?)
+1026-   F0 1E       BEQ   $1046
+1028-   E6 A8       INC   $A8
+102A-   CA          DEX
+102B-   F0 08       BEQ   $1035
+102D-   BD 80 02    LDA   $0280,X
+1030-   49 2F       EOR   #$2F
+1032-   0A          ASL
+1033-   D0 F3       BNE   $1028
+1035-   A0 00       LDY   #$00
+1037-   C8          INY
+1038-   E8          INX
+1039-   BD 80 02    LDA   $0280,X
+103C-   99 E5 13    STA   $13E5,Y
+103F-   C4 A8       CPY   $A8
+1041-   90 F4       BCC   $1037
+1043-   8C E5 13    STY   $13E5
+1046-   D8          CLD
+1047-   2C 82 C0    BIT   $C082    ;read LC ROM
+104A-   A9 46       LDA   #$46
+104C-   8D F2 03    STA   $03F2    ;reset vector
+104F-   A9 10       LDA   #$10
+1051-   8D F3 03    STA   $03F3
+1054-   49 A5       EOR   #$A5
+1056-   8D F4 03    STA   $03F4
+1059-   A9 95       LDA   #$95
+105B-   20 ED FD    JSR   $FDED    F8ROM:COUT
+105E-   A2 FF       LDX   #$FF
+1060-   9A          TXS
+1061-   8D 0C C0    STA   $C00C    w:CLR80VID
+1064-   8D 0E C0    STA   $C00E    w:CLRALTCHAR
+1067-   20 93 FE    JSR   $FE93    F8ROM:SETVID
+106A-   20 89 FE    JSR   $FE89    F8ROM:SETKBD
+106D-   20 84 FE    JSR   $FE84    F8ROM:SETNORM
+1070-   20 2F FB    JSR   $FB2F    F8ROM:INIT
+1073-   A2 17       LDX   #$17
+1075-   A9 01       LDA   #$01
+1077-   9D 58 BF    STA   $BF58,X
+107A-   A9 00       LDA   #$00
+107C-   CA          DEX
+107D-   D0 F8       BNE   $1077
+107F-   A9 CF       LDA   #$CF
+1081-   8D 58 BF    STA   $BF58    ;ProDOS system memory bitmap
+1084-   AD 98 BF    LDA   $BF98    ;ProDOS machine ID
+1087-   29 88       AND   #$88
+1089-   D0 05       BNE   $1090
+108B-   A9 DF       LDA   #$DF     ;II or II+
+108D-   8D 5B 13    STA   $135B
+1090-   AD 98 BF    LDA   $BF98    ;ProDOS machine ID
+1093-   29 01       AND   #$01     ;check for clock
+1095-   F0 26       BEQ   $10BD
+1097-   20 58 FC    JSR   $FC58    F8ROM:HOME
+109A-   20 19 13    JSR   $1319    ;print
+109D-   8D D0 F2                   ;Previous Clock Installed!
+10A0-   E5 F6 E9 EF F5 F3 A0 C3
+10A8-   EC EF E3 EB A0 C9 EE F3
+10B0-   F4 E1 EC EC E5 E4 A1 87
+10B8-   8D 00
+10BA-   4C 1F 12    JMP   $121F    ;exit
+
+10BD-   A0 03       LDY   #$03
+10BF-   B9 90 BF    LDA   $BF90,Y  ;backup ProDOS date/time
+10C2-   99 97 11    STA   $1197,Y
+10C5-   88          DEY
+10C6-   10 F7       BPL   $10BF
+10C8-   A9 CF       LDA   #$CF     ;prepare to check slot ROM
+10CA-   A0 FF       LDY   #$FF
+10CC-   8D F9 13    STA   $13F9    ;(LDA $CFFF)
+10CF-   8C F8 13    STY   $13F8
+10D2-   8D 66 14    STA   $1466    ;(STA $CFFF)
+10D5-   8C 65 14    STY   $1465
+10D8-   A9 00       LDA   #$00     ;slot (3, 1..7)
+10DA-   8D 9C 11    STA   $119C    ;count?
+10DD-   A9 03       LDA   #$03
+10DF-   09 C0       ORA   #$C0
+10E1-   8D FD 13    STA   $13FD    ;(STA $CX00)
+10E4-   8D 00 14    STA   $1400    ;(LDA $CX04)
+10E7-   8D 0F 14    STA   $140F    ;(LDA $CX00,Y)
+10EA-   8D 1D 14    STA   $141D    ;(LDA $CX04)
+10ED-   A9 03       LDA   #$03     ;try to init 3 times
+10EF-   8D 9B 11    STA   $119B
+10F2-   20 F5 13    JSR   $13F5    ;init clock and get date/time
+10F5-   AD 91 BF    LDA   $BF91    ;ProDOS date/time updated?
+10F8-   6A          ROR
+10F9-   AD 90 BF    LDA   $BF90
+10FC-   2A          ROL
+10FD-   2A          ROL
+10FE-   2A          ROL
+10FF-   2A          ROL
+1100-   29 0F       AND   #$0F
+1102-   F0 24       BEQ   $1128
+1104-   C9 0D       CMP   #$0D
+1106-   B0 20       BCS   $1128
+1108-   AD 90 BF    LDA   $BF90
+110B-   29 1F       AND   #$1F
+110D-   F0 19       BEQ   $1128
+110F-   C9 20       CMP   #$20
+1111-   B0 15       BCS   $1128
+1113-   AD 93 BF    LDA   $BF93
+1116-   C9 18       CMP   #$18
+1118-   B0 0E       BCS   $1128
+111A-   AD 92 BF    LDA   $BF92
+111D-   C9 3C       CMP   #$3C
+111F-   B0 07       BCS   $1128
+1121-   CE 9B 11    DEC   $119B
+1124-   D0 CC       BNE   $10F2    ;not updated: try to init again (3 times)
+1126-   F0 75       BEQ   $119D
+1128-   EE 9C 11    INC   $119C    ;next slot
+112B-   AD 9C 11    LDA   $119C
+112E-   C9 08       CMP   #$08
+1130-   90 AD       BCC   $10DF
+1132-   D0 1D       BNE   $1151    ;stop after slots 3, 1..7
+
+1134-   A9 C0       LDA   #$C0     ;prepare to check internal C8 ROM (where is this called from?)
+1136-   A0 15       LDY   #$15
+1138-   8D F9 13    STA   $13F9
+113B-   8C F8 13    STY   $13F8    ;(LDA $C015)
+113E-   A0 07       LDY   #$07
+1140-   8D FD 13    STA   $13FD    ;(STA $C007)
+1143-   8C FC 13    STY   $13FC
+1146-   88          DEY
+1147-   8D 66 14    STA   $1466    ;(STA $C006)
+114A-   8C 65 14    STY   $1465
+114D-   A9 C8       LDA   #$C8
+114F-   D0 93       BNE   $10E4    ;set up addresses for internal C8 ROM
+
+1151-   A0 03       LDY   #$03     ;SmartWatch not found
+1153-   B9 97 11    LDA   $1197,Y  ;restore ProDOS date/time
+1156-   99 90 BF    STA   $BF90,Y
+1159-   88          DEY
+115A-   10 F7       BPL   $1153
+115C-   20 58 FC    JSR   $FC58    F8ROM:HOME
+115F-   20 19 13    JSR   $1319    ;print
+1162-   8D CE EF AD D3 CC          ;No-SLot Clock Not Found...Clock Not Installed
+1168-   EF F4 A0 C3 EC EF E3 EB
+1170-   A0 CE EF F4 A0 C6 EF F5
+1178-   EE E4 AE 8D 8D C3 EC EF
+1180-   E3 EB A0 CE EF F4 A0 C9
+1188-   EE F3 F4 E1 EC EC E5 E4
+1190-   A1 87 8D 00
+1194-   4C 1F 12    JMP   $121F    ;exit
+
+1197-   00                         ;ProDOS date/time
+1198-   00
+1199-   00
+119A-   00
+119B-   03          ???
+119C-   00          BRK
+119D-   AD 07 BF    LDA   $BF07    ;success: install driver
+11A0-   85 A5       STA   $A5
+11A2-   18          CLC
+11A3-   69 73       ADC   #$73
+11A5-   8D 04 14    STA   $1404
+11A8-   AD 08 BF    LDA   $BF08
+11AB-   85 A6       STA   $A6
+11AD-   69 00       ADC   #$00
+11AF-   8D 05 14    STA   $1405
+11B2-   AD 8B C0    LDA   $C08B    rw:LCBANK1
+11B5-   AD 8B C0    LDA   $C08B    rw:LCBANK1
+11B8-   A0 7C       LDY   #$7C
+11BA-   B9 F5 13    LDA   $13F5,Y
+11BD-   91 A5       STA   ($A5),Y
+11BF-   88          DEY
+11C0-   10 F8       BPL   $11BA
+11C2-   AD 98 BF    LDA   $BF98
+11C5-   09 01       ORA   #$01
+11C7-   8D 98 BF    STA   $BF98
+11CA-   A9 4C       LDA   #$4C
+11CC-   8D 06 BF    STA   $BF06
+11CF-   20 06 BF    JSR   $BF06
+11D2-   2C 82 C0    BIT   $C082
+11D5-   20 58 FC    JSR   $FC58    F8ROM:HOME
+11D8-   20 19 13    JSR   $1319    ;print
+11DB-   8D CE EF AD D3             ;No-Slot Clock Installed
+11E0-   EC EF F4 A0 C3 EC EF E3
+11E8-   EB A0 C9 EE F3 F4 E1 EC
+11F0-   EC E5 E4 A0 A0 00
+11F6-   AD 91 BF    LDA   $BF91
+11F9-   6A          ROR
+11FA-   48          PHA
+11FB-   AD 90 BF    LDA   $BF90
+11FE-   48          PHA
+11FF-   2A          ROL
+1200-   2A          ROL
+1201-   2A          ROL
+1202-   2A          ROL
+1203-   29 0F       AND   #$0F
+1205-   20 3E 13    JSR   $133E
+1208-   A9 AF       LDA   #$AF
+120A-   20 ED FD    JSR   $FDED    F8ROM:COUT
+120D-   68          PLA
+120E-   29 1F       AND   #$1F
+1210-   20 3E 13    JSR   $133E
+1213-   A9 AF       LDA   #$AF
+1215-   20 ED FD    JSR   $FDED    F8ROM:COUT
+1218-   68          PLA
+1219-   20 3E 13    JSR   $133E
+121C-   20 8E FD    JSR   $FD8E    F8ROM:CROUT
+121F-   A9 5C       LDA   #$5C     ;*** exit routine
+1221-   8D F2 03    STA   $03F2
+1224-   A9 13       LDA   #$13
+1226-   8D F3 03    STA   $03F3
+1229-   49 A5       EOR   #$A5
+122B-   8D F4 03    STA   $03F4
+122E-   AD 30 BF    LDA   $BF30
+1231-   8D 75 13    STA   $1375
+1234-   20 6B 13    JSR   $136B
+1237-   AD 23 18    LDA   $1823
+123A-   8D 88 12    STA   $1288
+123D-   AD 24 18    LDA   $1824
+1240-   8D 94 12    STA   $1294
+1243-   A9 01       LDA   #$01
+1245-   85 A7       STA   $A7
+1247-   A9 2B       LDA   #$2B
+1249-   85 A5       STA   $A5
+124B-   A9 18       LDA   #$18
+124D-   85 A6       STA   $A6
+124F-   A0 10       LDY   #$10
+1251-   B1 A5       LDA   ($A5),Y
+1253-   C9 FF       CMP   #$FF
+1255-   D0 2D       BNE   $1284
+1257-   A0 00       LDY   #$00
+1259-   B1 A5       LDA   ($A5),Y
+125B-   29 30       AND   #$30
+125D-   F0 25       BEQ   $1284
+125F-   B1 A5       LDA   ($A5),Y
+1261-   29 0F       AND   #$0F
+1263-   85 A8       STA   $A8
+1265-   A8          TAY
+1266-   A2 06       LDX   #$06
+1268-   B1 A5       LDA   ($A5),Y
+126A-   DD DE 13    CMP   $13DE,X
+126D-   D0 15       BNE   $1284
+126F-   88          DEY
+1270-   CA          DEX
+1271-   10 F5       BPL   $1268
+1273-   AC E5 13    LDY   $13E5
+1276-   C4 A8       CPY   $A8
+1278-   D0 40       BNE   $12BA
+127A-   B1 A5       LDA   ($A5),Y
+127C-   D9 E5 13    CMP   $13E5,Y
+127F-   D0 39       BNE   $12BA
+1281-   88          DEY
+1282-   D0 F6       BNE   $127A
+1284-   A5 A5       LDA   $A5
+1286-   18          CLC
+1287-   69 27       ADC   #$27
+1289-   85 A5       STA   $A5
+128B-   90 02       BCC   $128F
+128D-   E6 A6       INC   $A6
+128F-   E6 A7       INC   $A7
+1291-   A5 A7       LDA   $A7
+1293-   C9 0D       CMP   #$0D
+1295-   90 B8       BCC   $124F
+1297-   AD 02 18    LDA   $1802
+129A-   8D 78 13    STA   $1378
+129D-   AD 03 18    LDA   $1803
+12A0-   8D 79 13    STA   $1379
+12A3-   0D 78 13    ORA   $1378
+12A6-   F0 35       BEQ   $12DD
+12A8-   20 6B 13    JSR   $136B
+12AB-   A9 00       LDA   #$00
+12AD-   85 A7       STA   $A7
+12AF-   A9 04       LDA   #$04
+12B1-   85 A5       STA   $A5
+12B3-   A9 18       LDA   #$18
+12B5-   85 A6       STA   $A6
+12B7-   4C 4F 12    JMP   $124F
+12BA-   AE 80 02    LDX   $0280
+12BD-   F0 0B       BEQ   $12CA
+12BF-   CA          DEX
+12C0-   F0 08       BEQ   $12CA
+12C2-   BD 80 02    LDA   $0280,X
+12C5-   49 2F       EOR   #$2F
+12C7-   0A          ASL
+12C8-   D0 F5       BNE   $12BF
+12CA-   A0 00       LDY   #$00
+12CC-   C8          INY
+12CD-   E8          INX
+12CE-   B1 A5       LDA   ($A5),Y
+12D0-   9D 80 02    STA   $0280,X
+12D3-   C4 A8       CPY   $A8
+12D5-   90 F5       BCC   $12CC
+12D7-   8E 80 02    STX   $0280
+12DA-   4C 7A 13    JMP   $137A
+12DD-   20 19 13    JSR   $1319    ;print
+12E0-   8D 8D 8D AA A0 D5 EE E1    ;...* Unable to find next '.SYSTEM' file
+12E8-   E2 EC E5 A0 F4 EF A0 E6
+12F0-   E9 EE E4 A0 EE E5 F8 F4
+12F8-   A0 A7 AE D3 D9 D3 D4 C5
+1300-   CD A7 A0 E6 E9 EC E5 A0
+1308-   AA 8D 00
+130B-   2C 10 C0    BIT   $C010
+130E-   AD 00 C0    LDA   $C000    r:KBD  w:CLR80COL
+1311-   10 FB       BPL   $130E
+1313-   2C 10 C0    BIT   $C010    r:KBDSTRB
+1316-   4C 5C 13    JMP   $135C    ;exit
+
+1319-   68          PLA            ;*** print routine (text follows JSR)
+131A-   85 A5       STA   $A5
+131C-   68          PLA
+131D-   85 A6       STA   $A6
+131F-   D0 0A       BNE   $132B
+1321-   C9 E1       CMP   #$E1
+1323-   90 03       BCC   $1328
+1325-   2D 5B 13    AND   $135B
+1328-   20 ED FD    JSR   $FDED    F8ROM:COUT
+132B-   E6 A5       INC   $A5
+132D-   D0 02       BNE   $1331
+132F-   E6 A6       INC   $A6
+1331-   A0 00       LDY   #$00
+1333-   B1 A5       LDA   ($A5),Y
+1335-   D0 EA       BNE   $1321
+1337-   A5 A6       LDA   $A6
+1339-   48          PHA
+133A-   A5 A5       LDA   $A5
+133C-   48          PHA
+133D-   60          RTS
+133E-   A2 B0       LDX   #$B0
+1340-   C9 0A       CMP   #$0A
+1342-   90 07       BCC   $134B
+1344-   E9 0A       SBC   #$0A
+1346-   E8          INX
+1347-   C9 0A       CMP   #$0A
+1349-   B0 F9       BCS   $1344
+134B-   48          PHA
+134C-   E0 B0       CPX   #$B0
+134E-   F0 04       BEQ   $1354
+1350-   8A          TXA
+1351-   20 ED FD    JSR   $FDED    F8ROM:COUT
+1354-   68          PLA
+1355-   09 B0       ORA   #$B0
+1357-   20 ED FD    JSR   $FDED    F8ROM:COUT
+135A-   60          RTS
+135B-   FF          ???   ;or DF
+135C-   20 00 BF    JSR   $BF00    P8:QUIT(4:Type/1,Path,zz/1,zz)
+135F-   65                $65
+1360-   64 13             $1364
+1362-   00          BRK
+1363-   60          RTS
+1364-   04 00       TSB   $00
+1366-   00          BRK
+1367-   00          BRK
+1368-   00          BRK
+1369-   00          BRK
+136A-   00          BRK
+136B-   20 00 BF    JSR   $BF00    P8:READ_BLOCK(3:Unit/1,Buff,BlkNum)
+136E-   80                $80
+136F-   74 13             $1374
+1371-   B0 28       BCS   $139B    ;disk error
+1373-   60          RTS
+1374-   03          ???
+1375-   60          RTS
+1376-   00          BRK
+1377-   18          CLC
+1378-   02          ???
+1379-   00          BRK
+137A-   20 00 BF    JSR   $BF00    P8:OPEN(3:pn,ioBuff,Ref/1)
+137D-   C8                $C8
+137E-   CE 13             $13CE
+1380-   B0 19       BCS   $139B
+1382-   AD D3 13    LDA   $13D3
+1385-   8D D5 13    STA   $13D5
+1388-   20 00 BF    JSR   $BF00    P8:READ(4:Ref/1,Where,reqCount,xfrCount)
+138B-   CA                $CA
+138C-   D4 13             $13D4
+138E-   B0 0B       BCS   $139B
+1390-   20 00 BF    JSR   $BF00    P8:CLOSE(1:Ref/1)
+1393-   CC                $CC
+1394-   DC 13             $13DC
+1396-   B0 03       BCS   $139B
+1398-   4C 00 20    JMP   $1000
+139B-   48          PHA
+139C-   20 19 13    JSR   $1319    ;print
+139F-   8D                         ;...**  Disk Error $
+13A0-   8D 8D AA AA A0 A0 C4 E9
+13A8-   F3 EB A0 C5 F2 F2 EF F2
+13B0-   A0 A4 00
+13B3-   68          PLA
+13B4-   20 DA FD    JSR   $FDDA    F8ROM:PRBYTE
+13B7-   20 19 13    JSR   $1319    ;print
+13BA-   A0 A0 AA AA 8D 00          ;  **.
+13C0-   2C 10 C0    BIT   $C010
+13C3-   AD 00 C0    LDA   $C000    r:KBD  w:CLR80COL
+13C6-   10 FB       BPL   $13C3
+13C8-   2C 10 C0    BIT   $C010    r:KBDSTRB
+13CB-   4C 5C 13    JMP   $135C
+13CE-   03          ???
+13CF-   80 02       BRA   $13D3
+13D1-   00          BRK
+13D2-   18          CLC
+13D3-   01 04       ORA   ($04,X)
+13D5-   01 00       ORA   ($00,X)
+13D7-   20 FF FF    JSR   $FFFF
+13DA-   00          BRK
+13DB-   00          BRK
+13DC-   01 00       ORA   ($00,X)
+13DE-   2E 53 59    ROL   $5953
+13E1-   53          ???
+13E2-   54          ???
+13E3-   45 4D       EOR   $4D
+13E5-   0F                        ;length
+13E6-   4E 53 2E                  ;copied from input buffer (path?)
+13E9-   43              
+13EA-   4C 4F 43                
+13ED-   4B          ...
+13EE-   2E 53 59    ROL   $5953
+13F1-   53          ???
+13F2-   54          ???
+13F3-   45 4D       EOR   $4D
+
+13F5-   08          PHP            ;*** clock init and get time
+13F6-   78          SEI
+13F7-   AD FF CF    LDA   $CFFF    rw:CLRROM
+13FA-   48          PHA
+13FB-   8D 00 C3    STA   $C300    ;switch in CX00 slot/C8 ROM? (calling code sets CX from here on)
+13FE-   AD 04 C3    LDA   $C304    ;reset the comparison register pointer (A2 high = SmartWatch read)
+1401-   A2 08       LDX   #$08
+1403-   BD 68 14    LDA   $1468,X  ;get SmartWatch comparison register pattern bytes
+1406-   38          SEC            ;mark end of byte
+1407-   6A          ROR            ;low bits first
+1408-   48          PHA
+1409-   A9 00       LDA   #$00
+140B-   2A          ROL
+140C-   A8          TAY
+140D-   B9 00 C3    LDA   $C300,Y  ;write data bit on A0 (A2 low = SmartWatch write)
+1410-   68          PLA
+1411-   4A          LSR
+1412-   D0 F4       BNE   $1408
+1414-   CA          DEX
+1415-   D0 EC       BNE   $1403
+1417-   A2 08       LDX   #$08     ;read registers (date/time)
+1419-   A0 08       LDY   #$08
+141B-   AD 04 C3    LDA   $C304    ;read data bit on D0 (A2 high = SmartWatch read)
+141E-   6A          ROR
+141F-   7E FF 01    ROR   $01FF,X  ;copy data to input buffer
+1422-   88          DEY
+1423-   D0 F6       BNE   $141B
+1425-   BD FF 01    LDA   $01FF,X
+1428-   4A          LSR
+1429-   4A          LSR
+142A-   4A          LSR
+142B-   4A          LSR
+142C-   A8          TAY
+142D-   F0 0E       BEQ   $143D
+142F-   BD FF 01    LDA   $01FF,X
+1432-   29 0F       AND   #$0F
+1434-   18          CLC
+1435-   69 0A       ADC   #$0A
+1437-   88          DEY
+1438-   D0 FB       BNE   $1435
+143A-   9D FF 01    STA   $01FF,X
+143D-   CA          DEX
+143E-   D0 D9       BNE   $1419
+1440-   AD 04 02    LDA   $0204    ;copy data to ProDOS date/time
+1443-   8D 93 BF    STA   $BF93
+1446-   AD 05 02    LDA   $0205
+1449-   8D 92 BF    STA   $BF92
+144C-   AD 01 02    LDA   $0201
+144F-   0A          ASL
+1450-   0A          ASL
+1451-   0A          ASL
+1452-   0A          ASL
+1453-   0A          ASL
+1454-   0D 02 02    ORA   $0202
+1457-   8D 90 BF    STA   $BF90
+145A-   AD 00 02    LDA   $0200
+145D-   2A          ROL
+145E-   8D 91 BF    STA   $BF91
+1461-   68          PLA
+1462-   30 03       BMI   $1467
+1464-   8D FF CF    STA   $CFFF    rw:CLRROM ;restore ROM status (hmm)
+1467-   28          PLP
+1468-   60          RTS
+
+1469-   5C A3 3A C5 5C A3 3A C5    ;*** clock pattern
+
+1471-   00
+1472-   B3          ???
+1473-   74 F5       STZ   $F5,X
+1475-   D3          ???
+1476-   6D E0 68    ADC   $68E0
+1479-   7D DD BB    ADC   $BBDD,X
+147C-   20 2F 52    JSR   $522F
+147F-   41 4D       EOR   ($4D,X)
+1481-   20 8D 00    JSR   $008D
+1484-   F3          ???
+1485-   20 E1 AA    JSR   $AAE1
+1488-   68          PLA
+1489-   B0 13       BCS   $149E
+148B-   6D DD BB    ADC   $BBDD
+148E-   8D DD 20    STA   $10DD
+1491-   2F          ???
+1492-   43          ???
+1493-   54          ???
+1494-   2E 31 20    ROL   $1031
+1497-   8D 00 EE    STA   $EE00
+149A-   DF          ???
+149B-   BB          ???
+149C-   D0 03       BNE   $14A1
+149E-   A9 FF       LDA   #$FF
+14A0-   38          SEC
+14A1-   60          RTS
+14A2-   C9 30       CMP   #$30
+14A4-   20 2F 48    JSR   $482F
+14A7-   41 52       EOR   ($52,X)
+14A9-   44          ???
+14AA-   31 20       AND   ($10),Y
+14AC-   8D 00 C9    STA   $C900
+14AF-   47          ???
+14B0-   90 04       BCC   $14B6
+14B2-   38          SEC
+14B3-   09 00       ORA   #$00
+14B5-   60          RTS
+14B6-   E9 06       SBC   #$06
+14B8-   20 2F 52    JSR   $522F
+14BB-   41 4D       EOR   ($4D,X)
+14BD-   20 8D 00    JSR   $008D
+14C0-   DD CA 10    CMP   $10CA,X
+14C3-   F8          SED
+14C4-   0D DD BB    ORA   $BBDD
+14C7-   8D DD BB    STA   $BBDD
+14CA-   60          RTS
+14CB-   0E 0E 2F    ASL   $1F0E
+14CE-   4E 4F 2E    LSR   $1E4F
+14D1-   53          ???
+14D2-   4C 4F 54    JMP   $544F
+14D5-   2E 43 4C    ROL   $4C43
+14D8-   4F          ???
+14D9-   43          ???
+14DA-   4B          ???
+14DB-   20 8D 00    JSR   $008D
+14DE-   2D D0 08    AND   $08D0
+14E1-   EE 53 BE    INC   $BE53
+14E4-   8D 52 BE    STA   $BE52
+14E7-   D0 1D       BNE   $1506
+14E9-   A0 08       LDY   #$08
+14EB-   8C 52 BE    STY   $BE52
+14EE-   BD 97 B8    LDA   $B897,X
+14F1-   10 06       BPL   $14F9
+14F3-   29 7F       AND   #$7F
+14F5-   88          DEY
+14F6-   CE 52 BE    DEC   $BE52
+14F9-   AA          TAX
+14FA-   B9 EB BB    LDA   $BBEB,Y
+14FD-   DD B7 B8    CMP   $B8B7,X
+1500-   D0 17       BNE   $1519
+1502-   CA          DEX
+1503-   88          DEY
+1504-   10 F4       BPL   $14FA
+1506-   AD 53 BE    LDA   $BE53
+1509-   0A          ASL
+150A-   AA          TAX
+150B-   BD 69 B9    LDA   $B969,X
+150E-   8D 55 BE    STA   $BE55
+1511-   BD 68 B9    LDA   $B968,X
+1514-   8D 54 BE    STA   $BE54
+1517-   18          CLC
+1518-   60          RTS
+1519-   AC 52 BE    LDY   $BE52
+151C-   CE 53 BE    DEC   $BE53
+151F-   AE 53 BE    LDX   $BE53
+1522-   D0 CA       BNE   $14EE
+1524-   CE 53 BE    DEC   $BE53
+1527-   38          SEC
+1528-   4C 06 BE    JMP   $BE06
+152B-   A0 00       LDY   #$00
+152D-   8C DD BB    STY   $BBDD
+1530-   8C DE BB    STY   $BBDE
+1533-   8C DF BB    STY   $BBDF
+1536-   60          RTS
+1537-   AD B8 BE    LDA   $BEB8
+153A-   C9 FC       CMP   #$FC
+153C-   F0 68       BEQ   $15A6
+153E-   C9 06       CMP   #$06
+1540-   F0 3F       BEQ   $1581
+1542-   C9 04       CMP   #$04
+1544-   D0 03       BNE   $1549
+1546-   4C 60 B2    JMP   $B260
+1549-   C9 FF       CMP   #$FF
+154B-   F0 04       BEQ   $1551
+154D-   A9 0D       LDA   #$0D
+154F-   38          SEC
+1550-   60          RTS
+1551-   20 31 B5    JSR   $B531
+1554-   20 3A B3    JSR   $B33A
+1557-   A9 00       LDA   #$00
+1559-   8D 58 BE    STA   $BE58
+155C-   8D 6B BF    STA   $BF6B
+155F-   8D 6C BF    STA   $BF6C
+1562-   8D 6D BF    STA   $BF6D
+1565-   8D 6E BF    STA   $BF6E
+1568-   A9 01       LDA   #$01
+156A-   8D 6F BF    STA   $BF6F
+156D-   A9 20       LDA   #$20
+156F-   8D 59 BE    STA   $BE59
+1572-   A9 FF       LDA   #$FF
+1574-   8D 6A BE    STA   $BE6A
+1577-   A9 80       LDA   #$80
+1579-   8D 57 BE    STA   $BE57
+157C-   A9 05       LDA   #$05
+157E-   8D 56 BE    STA   $BE56
+1581-   4C 20 AE    JMP   $AE20
+1584-   20 0D A4    JSR   $A40D
+1587-   A5 74       LDA   $74
+1589-   8D A9 BB    STA   $BBA9
+158C-   AE BD BB    LDX   $BBBD
+158F-   CA          DEX
+1590-   86 74       STX   $74
+1592-   20 0D AC    JSR   $AC0D
+1595-   AE A9 BB    LDX   $BBA9
+1598-   86 74       STX   $74
+159A-   B0 6C       BCS   $1608
+159C-   20 65 D6    JSR   $D665
+159F-   20 7C A4    JSR   $A47C
+15A2-   A9 00       LDA   #$00
+15A4-   F0 15       BEQ   $15BB
+15A6-   A9 00       LDA   #$00
+15A8-   8D 44 BE    STA   $BE44
+15AB-   85 DE       STA   $DE
+15AD-   AD 56 BE    LDA   $BE56
+15B0-   4A          LSR
+15B1-   90 16       BCC   $15C9
+15B3-   20 08 AC    JSR   $AC08
+15B6-   B0 50       BCS   $1608
+15B8-   20 65 D6    JSR   $D665
+15BB-   85 D8       STA   $D8
+15BD-   20 A1 AC    JSR   $ACA1
+15C0-   20 8D 9A    JSR   $9A8D
+15C3-   20 DF AB    JSR   $ABDF
+15C6-   4C D2 D7    JMP   $D7D2
+15C9-   20 73 F2    JSR   $F273
+15CC-   A9 A3       LDA   #$A3
+15CE-   8D 61 9F    STA   $9F61
+15D1-   A9 FF       LDA   #$FF
+15D3-   8D 53 BE    STA   $BE53
+15D6-   85 33       STA   $33
+15D8-   A2 04       LDX   #$04
+15DA-   20 76 9F    JSR   $9F76
+15DD-   4C 43 A8    JMP   $A843
+15E0-   20 08 AC    JSR   $AC08
+15E3-   B0 23       BCS   $1608
+15E5-   20 65 D6    JSR   $D665
+15E8-   20 17 9A    JSR   $9A17
+15EB-   A9 00       LDA   #$00
+15ED-   85 24       STA   $24
+15EF-   4C 3F D4    JMP   $D43F
+15F2-   20 31 B5    JSR   $B531
+15F5-   B0 11       BCS   $1608
+15F7-   20 1F AC    JSR   $AC1F
+15FA-   B0 0C       BCS   $1608
+15FC-   84 6B       STY   $6B
+15FE-   84 69       STY   $69
