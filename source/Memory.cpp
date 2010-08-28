@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #include "Harddisk.h"
 #include "MouseInterface.h"
+#include "NoSlotClock.h"
 #ifdef SUPPORT_CPM
 #include "z80emu.h"
 #include "Z80VICE\z80.h"
@@ -146,6 +147,8 @@ static DWORD   memmode      = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM;
 static BOOL    modechanging = 0;
 static BOOL    Pravets8charmode = 0;
 MemoryInitPattern_e g_eMemoryInitPattern = MIP_FF_FF_00_00;
+
+static CNoSlotClock g_NoSlotClock;
 
 #ifdef RAMWORKS
 UINT			g_uMaxExPages	= 1;			// user requested ram pages
@@ -548,6 +551,13 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 		}
 	}
 
+	if ((address >= 0xC300) && (address <= 0xC3FF))
+	{
+		int data;
+		if (g_NoSlotClock.ReadAccess(address, data))
+			return (BYTE) data;
+	}
+
 	if (!IS_APPLE2 && !SW_SLOTCXROM)
 	{
 		// !SW_SLOTC3ROM = Internal ROM: $C300-C3FF
@@ -575,6 +585,11 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 
 BYTE __stdcall IOWrite_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
 {
+	if ((address >= 0xC300) && (address <= 0xC3FF))
+	{
+		g_NoSlotClock.WriteAccess(address);
+	}
+
 	return 0;
 }
 

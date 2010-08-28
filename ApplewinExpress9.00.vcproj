@@ -626,6 +626,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\NoSlotClock.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\NoSlotClock.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\ParallelPrinter.cpp"
 					>
 				</File>
@@ -832,6 +840,10 @@
 			</File>
 			<File
 				RelativePath=".\docs\Debugger_Changelog.txt"
+				>
+			</File>
+			<File
+				RelativePath=".\docs\FAQ.txt"
 				>
 			</File>
 			<File
