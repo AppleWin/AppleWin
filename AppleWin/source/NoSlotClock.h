@@ -21,7 +21,7 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/* Description: No Slot Clock (Dallas SmartWatch) emulation
+/* Description: No Slot Clock/Phantom Clock (Dallas SmartWatch DS1216) emulation
  *
  * Author: Nick Westgate
  */
@@ -30,44 +30,40 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 class CNoSlotClock
 {
-	class RingRegister
+	class RingRegister64
 	{
 	public:
-		RingRegister(int bitCount);
-		RingRegister(BYTE* bytes, int byteCount);
-		~RingRegister();
+		RingRegister64();
+		RingRegister64(UINT64 data);
 
 		void Reset();
-		void WriteByte(int data);
 		void WriteNibble(int data);
 		void WriteBits(int data, int count);
-		bool WriteBit(int data);
-		bool ReadBit(int& data);
-		bool CompareBitNoIncrement(int data);
-		bool IncrementPointer();
+		void WriteBit(int data);
+		void ReadBit(int& data);
+		bool CompareBit(int data);
+		bool NextBit();
 
-	private:
-		RingRegister() {};
-
-		int m_Pointer;
-		int m_PointerWrap;
-		int* m_pRegister;
+		UINT64 m_Mask;
+		UINT64 m_Register;
 	};
 
 public:
 	CNoSlotClock();
 
 	void Reset();
-	bool ReadAccess(int address, int& data);
-	void WriteAccess(int address);
-	bool ClockRead(int& d0);
+	bool Read(int address, int& data);
+	void Write(int address);
+	bool ClockRead(int& data);
 	void ClockWrite(int address);
+
+	bool m_bClockRegisterEnabled;
+	bool m_bWriteEnabled;
+	RingRegister64 m_ClockRegister;
+	RingRegister64 m_ComparisonRegister;
 
 private:
 	void PopulateClockRegister();
 
-	bool m_bClockRegisterEnabled;
-	bool m_bWriteEnabled;
-	RingRegister m_ClockRegister;
-	RingRegister m_ComparisonRegister;
+	static const UINT64 kClockInitSequence = 0x5CA33AC55CA33AC5;
 };
