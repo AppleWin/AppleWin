@@ -21,7 +21,7 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/* Description: No Slot Clock (Dallas SmartWatch DS1216) emulation
+/* Description: No Slot Clock/Phantom Clock (Dallas SmartWatch DS1216) emulation
  *
  * Author: Nick Westgate
  */
@@ -29,12 +29,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #include "NoSlotClock.h"
 
-static byte ClockInitSequence[] = { 0xC5, 0x3A, 0xA3, 0x5C, 0xC5, 0x3A, 0xA3, 0x5C };
-
 CNoSlotClock::CNoSlotClock()
 :
-	m_ClockRegister(64),
-	m_ComparisonRegister(ClockInitSequence, sizeof(ClockInitSequence))
+	m_ClockRegister(),
+	m_ComparisonRegister(kClockInitSequence)
 {
 	Reset();
 }
@@ -47,7 +45,7 @@ void CNoSlotClock::Reset()
 	m_bWriteEnabled = true;
 }
 
-bool CNoSlotClock::ReadAccess(int address, int& data)
+bool CNoSlotClock::Read(int address, int& data)
 {
 	// this may read or write the clock (returns true if data is changed)
 	if (address & 0x04)
@@ -59,7 +57,7 @@ bool CNoSlotClock::ReadAccess(int address, int& data)
 	}
 }
 
-void CNoSlotClock::WriteAccess(int address)
+void CNoSlotClock::Write(int address)
 {
 	// this may read or write the clock
 	int dummy = 0;
@@ -69,7 +67,7 @@ void CNoSlotClock::WriteAccess(int address)
 		ClockWrite(address);
 }
 
-bool CNoSlotClock::ClockRead(int& d0)
+bool CNoSlotClock::ClockRead(int& data)
 {
 	// for a ROM, A2 high = read, and data out (if any) is on D0
 	if (!m_bClockRegisterEnabled)
@@ -78,11 +76,13 @@ bool CNoSlotClock::ClockRead(int& d0)
 		m_bWriteEnabled = true;
 		return false;
 	}
-	else if (m_ClockRegister.ReadBit(d0))
+	else
 	{
-		m_bClockRegisterEnabled = false;
+		m_ClockRegister.ReadBit(data);
+		if (m_ClockRegister.NextBit())
+			m_bClockRegisterEnabled = false;
+		return true;
 	}
-	return true;
 }
 
 void CNoSlotClock::ClockWrite(int address)
@@ -93,9 +93,9 @@ void CNoSlotClock::ClockWrite(int address)
 
 	if (!m_bClockRegisterEnabled)
 	{
-		if ((m_ComparisonRegister.CompareBitNoIncrement(address & 0x1)))
+		if ((m_ComparisonRegister.CompareBit(address & 0x1)))
 		{
-			if (m_ComparisonRegister.IncrementPointer())
+			if (m_ComparisonRegister.NextBit())
 			{
 				m_bClockRegisterEnabled = true;
 				PopulateClockRegister();
@@ -107,7 +107,7 @@ void CNoSlotClock::ClockWrite(int address)
 			m_bWriteEnabled = false;
 		}
 	}
-	else if (m_ClockRegister.IncrementPointer())
+	else if (m_ClockRegister.NextBit())
 	{
 		// simulate writes, but our clock register is read-only
 		m_bClockRegisterEnabled = false;
@@ -119,8 +119,6 @@ void CNoSlotClock::PopulateClockRegister()
 	// all values are in packed BCD format (4 bits per decimal digit)
 	SYSTEMTIME now;
 	GetLocalTime(&now);
-
-	m_ClockRegister.Reset();
 
 	int centisecond = now.wMilliseconds / 10; // 00-99
 	m_ClockRegister.WriteNibble(centisecond % 10);
@@ -155,76 +153,58 @@ void CNoSlotClock::PopulateClockRegister()
 	m_ClockRegister.WriteNibble(year / 10);
 }
 
-CNoSlotClock::RingRegister::~RingRegister()
-{
-	delete[] m_pRegister;
-}
-
-CNoSlotClock::RingRegister::RingRegister(int bitCount)
+CNoSlotClock::RingRegister64::RingRegister64()
 {
 	Reset();
-
-	m_pRegister = new int[bitCount];
-	m_PointerWrap = bitCount;
+	m_Register = 0;
 }
 
-CNoSlotClock::RingRegister::RingRegister(byte* bytes, int byteCount)
+CNoSlotClock::RingRegister64::RingRegister64(UINT64 data)
 {
 	Reset();
-
-	m_PointerWrap = byteCount * 8;
-	m_pRegister = new int[m_PointerWrap];
-
-	for (int i = 0; i < byteCount; i++)
-		WriteByte(bytes[i]);
+	m_Register = data;
 }
 
-void CNoSlotClock::RingRegister::Reset()
+void CNoSlotClock::RingRegister64::Reset()
 {
-	m_Pointer = 0;
+	m_Mask = 1;
 }
 
-void CNoSlotClock::RingRegister::WriteByte(int data)
-{
-	WriteBits(data, 8);
-}
-
-void CNoSlotClock::RingRegister::WriteNibble(int data)
+void CNoSlotClock::RingRegister64::WriteNibble(int data)
 {
 	WriteBits(data, 4);
 }
 
-void CNoSlotClock::RingRegister::WriteBits(int data, int count)
+void CNoSlotClock::RingRegister64::WriteBits(int data, int count)
 {
 	for (int i = 1; i <= count; i++)
 	{
 		WriteBit(data);
+		NextBit();
 		data >>= 1;
 	}
 }
 
-bool CNoSlotClock::RingRegister::WriteBit(int data)
+void CNoSlotClock::RingRegister64::WriteBit(int data)
 {
-	m_pRegister[m_Pointer] = data & 1;
-	return IncrementPointer();
+	m_Register = (data & 0x1) ? (m_Register | m_Mask) : (m_Register & ~m_Mask);
 }
 
-bool CNoSlotClock::RingRegister::ReadBit(int& data)
+void CNoSlotClock::RingRegister64::ReadBit(int& data)
 {
-	data = m_pRegister[m_Pointer];
-	return IncrementPointer();
+	data = (m_Register & m_Mask) ? data | 1 : data & ~1;
 }
 
-bool CNoSlotClock::RingRegister::CompareBitNoIncrement(int data)
+bool CNoSlotClock::RingRegister64::CompareBit(int data)
 {
-	return m_pRegister[m_Pointer] == data;
+	return ((m_Register & m_Mask) != 0) == ((data & 1) != 0);
 }
 
-bool CNoSlotClock::RingRegister::IncrementPointer()
+bool CNoSlotClock::RingRegister64::NextBit()
 {
-	if (++m_Pointer == m_PointerWrap)
+	if ((m_Mask <<= 1) == 0)
 	{
-		m_Pointer = 0;
+		m_Mask = 1;
 		return true; // wrap
 	}
 	return false;

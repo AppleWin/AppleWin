@@ -553,8 +553,8 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 
 	if ((address >= 0xC300) && (address <= 0xC3FF))
 	{
-		int data;
-		if (g_NoSlotClock.ReadAccess(address, data))
+		int data = 0;
+		if (g_NoSlotClock.Read(address, data))
 			return (BYTE) data;
 	}
 
@@ -587,7 +587,7 @@ BYTE __stdcall IOWrite_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE 
 {
 	if ((address >= 0xC300) && (address <= 0xC3FF))
 	{
-		g_NoSlotClock.WriteAccess(address);
+		g_NoSlotClock.Write(address);
 	}
 
 	return 0;
