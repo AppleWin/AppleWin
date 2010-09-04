@@ -179,8 +179,19 @@ bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlo
 	{
 		if ((UINT)Offset+HD_BLOCK_SIZE > pImageInfo->uImageSize)
 		{
-			_ASSERT(0);
-			return false;
+			// Horribly inefficient! (Unzip to a normal file if you want better performance!)
+			const UINT uNewImageSize = Offset+HD_BLOCK_SIZE;
+			BYTE* pNewImageBuffer = new BYTE [uNewImageSize];
+			_ASSERT(pNewImageBuffer);
+			if (!pNewImageBuffer)
+				return false;
+
+			memcpy(pNewImageBuffer, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
+			memset(&pNewImageBuffer[pImageInfo->uImageSize], 0, uNewImageSize-pImageInfo->uImageSize);	// Should always be HD_BLOCK_SIZE (so this is redundant)
+
+			delete [] pImageInfo->pImageBuffer;
+			pImageInfo->pImageBuffer = pNewImageBuffer;
+			pImageInfo->uImageSize = uNewImageSize;
 		}
 
 		memcpy(&pImageInfo->pImageBuffer[Offset], pBlockBuffer, HD_BLOCK_SIZE);
