@@ -145,6 +145,7 @@ static void HD_CleanupDrive(const int iDrive)
 	g_HardDisk[iDrive].hd_imageloaded = false;
 	g_HardDisk[iDrive].imagename[0] = 0;
 	g_HardDisk[iDrive].fullname[0] = 0;
+	g_HardDisk[iDrive].Info.szFilename[0] = 0;
 }
 
 static ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
@@ -458,9 +459,9 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 							const bool bAppendBlocks = (pHDD->hd_diskblock * HD_BLOCK_SIZE) >= pHDD->Info.uImageSize;
 							if (bAppendBlocks)
 							{
-								// TODO: Test this!
 								ZeroMemory(pHDD->hd_buf, HD_BLOCK_SIZE);
 
+								// Inefficient (especially for gzip/zip files!)
 								UINT uBlock = pHDD->Info.uImageSize / HD_BLOCK_SIZE;
 								while (uBlock < pHDD->hd_diskblock)
 								{
@@ -468,7 +469,6 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 									_ASSERT(bRes);
 									if (!bRes)
 										break;
-									pHDD->Info.uImageSize += HD_BLOCK_SIZE;
 								}
 							}
 
@@ -487,9 +487,6 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 								pHDD->hd_error = 1;
 								r = DEVICE_IO_ERROR;
 							}
-
-							if (bAppendBlocks && bRes)
-								pHDD->Info.uImageSize += HD_BLOCK_SIZE;
 						}
 						break;
 					case 0x03: //format
