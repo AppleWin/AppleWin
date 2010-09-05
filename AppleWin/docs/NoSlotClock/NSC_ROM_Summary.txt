@@ -1,0 +1,12 @@
+Here's a summary of NSC/ROM chip locations - and which drivers work:
+
+"CD" ROM socket: C000-DFFF (internal) ROM space - all drivers work
+"EF" ROM socket: E000-FFFF ROM space            - none I've seen yet
+"CF" ROM socket: C000-FFFF (internal) ROM space - all drivers work
+Slot ROM socket: Cs00-CsFF (slot) ROM space     - NS.CLOCK.SYSTEM works
+
+And here are the drivers - and ROM pages they check
+
+ProDOS "SWU.SYSTEM"      - internal C3
+ProDOS "NS.CLOCK.SYSTEM" - internal C3 C8 / external C1-C7
+GEOS   "NoSlot Clock"    - internal    C8
