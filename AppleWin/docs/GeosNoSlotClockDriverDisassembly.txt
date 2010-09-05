@@ -1,0 +1,257 @@
+Dallas SmartWatch DS1216 (No-Slot-Clock) GEOS driver.
+Partial disassembly and comments by Nick Westgate (and CiderPress).
+
+Note: This code requires the clock to be in the internal C8 ROM space.
+
+0800-   4C 15 08    JMP   $0815    ;read time
+0803-   4C B8 08    JMP   $08B8
+0806-   4C BC 08    JMP   $08BC    ;write time
+0809-   4C E4 08    JMP   $08E4
+080C-   4C F1 08    JMP   $08F1
+080F-   4C 12 08    JMP   $0812
+0812-   A2 30       LDX   #$30
+0814-   60          RTS
+0815-   A9 00       LDA   #$00
+0817-   10 37       BPL   $0850
+0819-   A9 3B       LDA   #$3B
+081B-   8D 16 08    STA   $0816
+081E-   20 6E 08    JSR   $086E    ;init clock
+0821-   20 93 08    JSR   $0893    ;get clock data byte (0, discard centiseconds)
+0824-   A2 03       LDX   #$03     ;(4 bytes)
+0826-   20 93 08    JSR   $0893    ;get clock data byte (1-4 -> F202-F205: day h m s)
+0829-   9D 02 F2    STA   $F202,X
+082C-   CA          DEX
+082D-   10 F7       BPL   $0826
+082F-   A2 02       LDX   #$02     ;(3 bytes, this overwrites day at F202)
+0831-   20 93 08    JSR   $0893    ;get clock data byte (5-7 -> F200-F202: Y M D)
+0834-   9D 00 F2    STA   $F200,X
+0837-   CA          DEX
+0838-   10 F7       BPL   $0831
+083A-   2C 06 F2    BIT   $F206
+083D-   10 11       BPL   $0850
+083F-   AD 03 F2    LDA   $F203
+0842-   C9 FF       CMP   #$FF
+0844-   D0 0A       BNE   $0850
+0846-   AD 04 F2    LDA   $F204
+0849-   C9 FF       CMP   #$FF
+084B-   D0 03       BNE   $0850
+084D-   4E 06 F2    LSR   $F206
+0850-   4C DB 08    JMP   $08DB    ;exit safely
+
+0853-   A9 00       LDA   #$00     ;*** write 0 byte to clock
+0855-   84 09       STY   $09      ;*** write byte to clock
+0857-   38          SEC
+0858-   A0 FF       LDY   #$FF
+085A-   C8          INY
+085B-   E9 0A       SBC   #$0A
+085D-   10 FB       BPL   $085A
+085F-   69 0A       ADC   #$0A
+0861-   85 07       STA   $07
+0863-   98          TYA
+0864-   0A          ASL
+0865-   0A          ASL
+0866-   0A          ASL
+0867-   0A          ASL
+0868-   05 07       ORA   $07
+086A-   A0 00       LDY   #$00
+086C-   F0 11       BEQ   $087F
+
+086E-   78          SEI            ;*** init clock
+086F-   AD 15 C0    LDA   $C015    r:RDCXROM
+0872-   85 0F       STA   $0F
+0874-   8D 07 C0    STA   $C007    w:SETINTCXROM
+0877-   AD 04 C8    LDA   $C804
+087A-   A0 07       LDY   #$07
+087C-   B9 F7 08    LDA   $08F7,Y
+087F-   38          SEC
+0880-   6A          ROR
+0881-   A2 00       LDX   #$00
+0883-   90 02       BCC   $0887
+0885-   A2 01       LDX   #$01
+0887-   DD 00 C8    CMP   $C800,X
+088A-   4A          LSR
+088B-   D0 F4       BNE   $0881
+088D-   88          DEY
+088E-   10 EC       BPL   $087C
+0890-   A4 09       LDY   $09
+0892-   60          RTS
+
+0893-   A0 07       LDY   #$07     ;*** get clock data byte (convert BCD to hex)
+0895-   AD 04 C8    LDA   $C804
+0898-   6A          ROR
+0899-   66 07       ROR   $07
+089B-   88          DEY
+089C-   10 F7       BPL   $0895
+089E-   A5 07       LDA   $07
+08A0-   A8          TAY
+08A1-   29 0F       AND   #$0F
+08A3-   85 07       STA   $07
+08A5-   98          TYA
+08A6-   4A          LSR
+08A7-   4A          LSR
+08A8-   4A          LSR
+08A9-   4A          LSR
+08AA-   18          CLC
+08AB-   A8          TAY
+08AC-   F0 07       BEQ   $08B5
+08AE-   A9 00       LDA   #$00
+08B0-   69 0A       ADC   #$0A
+08B2-   88          DEY
+08B3-   D0 FB       BNE   $08B0
+08B5-   65 07       ADC   $07
+08B7-   60          RTS
+08B8-   CE 16 08    DEC   $0816
+08BB-   60          RTS
+
+08BC-   20 6E 08    JSR   $086E    ;init clock
+08BF-   20 53 08    JSR   $0853    ;write 0 byte to clock
+08C2-   A0 02       LDY   #$02
+08C4-   B9 03 00    LDA   $0003,Y
+08C7-   20 55 08    JSR   $0855    ;write byte to clock
+08CA-   88          DEY
+08CB-   10 F7       BPL   $08C4
+08CD-   20 53 08    JSR   $0853    ;write 0 byte to clock
+08D0-   A0 02       LDY   #$02
+08D2-   B9 00 00    LDA   $0000,Y
+08D5-   20 55 08    JSR   $0855    ;write byte to clock
+08D8-   88          DEY
+08D9-   10 F7       BPL   $08D2
+
+08DB-   26 0F       ROL   $0F      ;prepare for exit
+08DD-   B0 03       BCS   $08E2
+08DF-   8D 06 C0    STA   $C006    w:SETSLOTCXROM
+08E2-   58          CLI
+08E3-   60          RTS
+
+08E4-   A5 00       LDA   $00
+08E6-   8D 43 08    STA   $0843
+08E9-   A5 01       LDA   $01
+08EB-   8D 4A 08    STA   $084A
+08EE-   A2 80       LDX   #$80
+08F0-   2C A2 00    BIT   $00A2
+08F3-   8E 06 F2    STX   $F206
+08F6-   60          RTS
+
+08F7-   5C A3 3A C5 5C A3 3A C5    ;*** clock pattern
+
+08FF-   59
+0900-   FA          PLX
+0901-   88          DEY
+0902-   10 F8       BPL   $08FC
+0904-   20 B7 5C    JSR   $5CB7
+0907-   68          PLA
+0908-   C9 0F       CMP   #$0F
+090A-   D0 03       BNE   $090F
+090C-   4C 4C 71    JMP   $714C
+090F-   C9 80       CMP   #$80
+0911-   90 20       BCC   $0933
+0913-   C9 8E       CMP   #$8E
+0915-   B0 1C       BCS   $0933
+0917-   20 D7 65    JSR   $65D7
+091A-   C9 81       CMP   #$81
+091C-   D0 03       BNE   $0921
+091E-   4C D9 93    JMP   $93D9
+0921-   C9 82       CMP   #$82
+0923-   F0 04       BEQ   $0929
+0925-   C9 8A       CMP   #$8A
+0927-   D0 03       BNE   $092C
+0929-   4C 6E 71    JMP   $716E
+092C-   C9 83       CMP   #$83
+092E-   D0 0A       BNE   $093A
+0930-   4C 7B 71    JMP   $717B
+0933-   C9 FF       CMP   #$FF
+0935-   D0 03       BNE   $093A
+0937-   4C EA AB    JMP   $ABEA
+093A-   20 40 71    JSR   $7140
+093D-   A2 00       LDX   #$00
+093F-   60          RTS
+0940-   A9 00       LDA   #$00
+0942-   8D F8 70    STA   $70F8
+0945-   A2 72       LDX   #$72
+0947-   A9 DB       LDA   #$DB
+0949-   4C 08 4D    JMP   $4D08
+094C-   20 13 74    JSR   $7413
+094F-   A9 00       LDA   #$00
+0951-   85 AA       STA   $AA
+0953-   20 91 5D    JSR   $5D91
+0956-   20 81 03    JSR   $0381
+0959-   8A          TXA
+095A-   F0 03       BEQ   $095F
+095C-   4C 64 5E    JMP   $5E64
+095F-   A9 00       LDA   #$00
+0961-   85 70       STA   $70
+0963-   68          PLA
+0964-   68          PLA
+0965-   20 32 5F    JSR   $5F32
+0968-   8A          TXA
+0969-   D0 F1       BNE   $095C
+096B-   4C 45 5F    JMP   $5F45
+096E-   A9 FF       LDA   #$FF
+0970-   48          PHA
+0971-   A9 58       LDA   #$58
+0973-   48          PHA
+0974-   A9 00       LDA   #$00
+0976-   85 00       STA   $00
+0978-   4C 8D 03    JMP   $038D
+097B-   A9 80       LDA   #$80
+097D-   8D B1 61    STA   $61B1
+0980-   20 D7 4D    JSR   $4DD7
+0983-   A5 12       LDA   $12
+0985-   18          CLC
+0986-   69 01       ADC   #$01
+0988-   85 08       STA   $08
+098A-   A5 13       LDA   $13
+098C-   69 00       ADC   #$00
+098E-   85 09       STA   $09
+0990-   A9 12       LDA   #$12
+0992-   85 07       STA   $07
+0994-   A9 85       LDA   #$85
+0996-   85 06       STA   $06
+0998-   A2 08       LDX   #$08
+099A-   A0 06       LDY   #$06
+099C-   20 61 4D    JSR   $4D61
+099F-   A9 12       LDA   #$12
+09A1-   85 05       STA   $05
+09A3-   A9 71       LDA   #$71
+09A5-   85 04       STA   $04
+09A7-   A2 08       LDX   #$08
+09A9-   20 98 64    JSR   $6498
+09AC-   A2 08       LDX   #$08
+09AE-   A0 04       LDY   #$04
+09B0-   A9 0F       LDA   #$0F
+09B2-   20 EA FE    JSR   $FEEA
+09B5-   A9 00       LDA   #$00
+09B7-   8D 80 12    STA   $1280
+09BA-   A0 1F       LDY   #$1F
+09BC-   B1 12       LDA   ($12),Y
+09BE-   85 02       STA   $02
+09C0-   C8          INY
+09C1-   B1 12       LDA   ($12),Y
+09C3-   85 03       STA   $03
+09C5-   20 24 66    JSR   $6624
+09C8-   F0 0B       BEQ   $09D5
+09CA-   20 3C 4E    JSR   $4E3C
+09CD-   A5 80       LDA   $80
+09CF-   8D 0D F6    STA   $F60D
+09D2-   4C C2 5E    JMP   $5EC2
+09D5-   AD CE F6    LDA   $F6CE
+09D8-   D0 03       BNE   $09DD
+09DA-   4C 40 71    JMP   $7140
+09DD-   A9 F6       LDA   #$F6
+09DF-   85 03       STA   $03
+09E1-   A9 CE       LDA   #$CE
+09E3-   85 02       STA   $02
+09E5-   A9 12       LDA   #$12
+09E7-   85 15       STA   $15
+09E9-   A9 99       LDA   #$99
+09EB-   85 14       STA   $14
+09ED-   A2 02       LDX   #$02
+09EF-   A0 14       LDY   #$14
+09F1-   A9 0C       LDA   #$0C
+09F3-   20 63 4D    JSR   $4D63
+09F6-   20 3F 72    JSR   $723F
+09F9-   8A          TXA
+09FA-   D0 CE       BNE   $09CA
+09FC-   AD 21 12    LDA   $1221
+09FF-   D0 00       BNE   $0A01
+0A01-   00          BRK
