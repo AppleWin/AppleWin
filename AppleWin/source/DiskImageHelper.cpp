@@ -174,10 +174,11 @@ bool CImageBase::ReadBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBloc
 bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlockBuffer)
 {
 	long Offset = pImageInfo->uOffset + nBlock * HD_BLOCK_SIZE;
+	const bool bGrowImageBuffer = (UINT)Offset+HD_BLOCK_SIZE > pImageInfo->uImageSize;
 
 	if (pImageInfo->FileType == eFileGZip || pImageInfo->FileType == eFileZip)
 	{
-		if ((UINT)Offset+HD_BLOCK_SIZE > pImageInfo->uImageSize)
+		if (bGrowImageBuffer)
 		{
 			// Horribly inefficient! (Unzip to a normal file if you want better performance!)
 			const UINT uNewImageSize = Offset+HD_BLOCK_SIZE;
@@ -208,6 +209,9 @@ bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlo
 		BOOL bRes = WriteFile(pImageInfo->hFile, pBlockBuffer, HD_BLOCK_SIZE, &dwBytesWritten, NULL);
 		if (!bRes || dwBytesWritten != HD_BLOCK_SIZE)
 			return false;
+
+		if (bGrowImageBuffer)
+			pImageInfo->uImageSize += HD_BLOCK_SIZE;
 	}
 	else if (pImageInfo->FileType == eFileGZip)
 	{
