@@ -1,7 +1,7 @@
-Dallas SmartWatch DS1216 (No-Slot-Clock) GEOS driver.
+No-Slot-Clock (Dallas SmartWatch DS1216) GEOS driver "NoSlot Clock".
 Partial disassembly and comments by Nick Westgate (and CiderPress).
 
-Note: This code requires the clock to be in the internal C8 ROM space.
+Note: This code requires the clock to be in the internal C8 ROM space. (CD or CF ROM sockets.)
 
 0800-   4C 15 08    JMP   $0815    ;read time
 0803-   4C B8 08    JMP   $08B8

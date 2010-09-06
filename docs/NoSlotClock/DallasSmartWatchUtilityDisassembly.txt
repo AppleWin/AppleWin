@@ -1,6 +1,8 @@
-Dallas SmartWatch DS1216 (No-Slot-Clock) SmartWatch Utility (Version 1.1).
+Dallas SmartWatch DS1216 (No-Slot-Clock) SmartWatch Utility (Version 1.1) "SWU.SYSTEM".
 Copyright 1987 Matthew Lee Stier.
 Partial disassembly and comments by Nick Westgate (and CiderPress).
+
+Note: This code requires the clock to be in the internal C3 ROM space. (CD or CF ROM sockets.)
 
 2000-   A2 FF       LDX   #$FF     ;reset stack
 2002-   9A          TXS

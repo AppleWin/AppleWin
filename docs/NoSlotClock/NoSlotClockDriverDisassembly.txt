@@ -1,6 +1,8 @@
-No-Slot-Clock (Dallas SmartWatch DS1216) ProDOS Driver.
+No-Slot-Clock (Dallas SmartWatch DS1216) ProDOS Driver "NS.CLOCK.SYSTEM".
 Probably written by Craig Peterson in 1990.
 Partial disassembly and comments by Nick Westgate (and CiderPress).
+
+Note: This code checks for the clock in internal C3, C8 and external slot ROM spaces. (CD, CF or slot ROM sockets.)
 
 2000-   38          SEC            ;actually loads at $2000
 2001-   B0 03       BCS   $2006
@@ -90,7 +92,7 @@ Partial disassembly and comments by Nick Westgate (and CiderPress).
 10CF-   8C F8 13    STY   $13F8
 10D2-   8D 66 14    STA   $1466    ;(STA $CFFF)
 10D5-   8C 65 14    STY   $1465
-10D8-   A9 00       LDA   #$00     ;slot (3, 1..7)
+10D8-   A9 00       LDA   #$00     ;slot (3, 1..7, C8 internal)
 10DA-   8D 9C 11    STA   $119C    ;count?
 10DD-   A9 03       LDA   #$03
 10DF-   09 C0       ORA   #$C0
@@ -130,8 +132,7 @@ Partial disassembly and comments by Nick Westgate (and CiderPress).
 112B-   AD 9C 11    LDA   $119C
 112E-   C9 08       CMP   #$08
 1130-   90 AD       BCC   $10DF
-1132-   D0 1D       BNE   $1151    ;stop after slots 3, 1..7
-
+1132-   D0 1D       BNE   $1151    ;loop for slots 3, 1..7
 1134-   A9 C0       LDA   #$C0     ;prepare to check internal C8 ROM (where is this called from?)
 1136-   A0 15       LDY   #$15
 1138-   8D F9 13    STA   $13F9
@@ -143,7 +144,7 @@ Partial disassembly and comments by Nick Westgate (and CiderPress).
 1147-   8D 66 14    STA   $1466    ;(STA $C006)
 114A-   8C 65 14    STY   $1465
 114D-   A9 C8       LDA   #$C8
-114F-   D0 93       BNE   $10E4    ;set up addresses for internal C8 ROM
+114F-   D0 93       BNE   $10E4    ;set up addresses for internal C8 ROM and test
 
 1151-   A0 03       LDY   #$03     ;SmartWatch not found
 1153-   B9 97 11    LDA   $1197,Y  ;restore ProDOS date/time
