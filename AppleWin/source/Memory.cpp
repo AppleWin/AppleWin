@@ -390,7 +390,7 @@ static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	case 0xB:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
 	case 0xC:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
 //	case 0xD:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xD:	// No Slot Clock Hack for ProDOS
+	case 0xD:	// Clock Hack for ProDOS (NB. Not for NoSlotClock)
 #if CLOCK_HACK_PRODOS
 		Clock_Generic_UpdateProDos();	
 #endif
@@ -467,6 +467,14 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 		return MemReadFloatingBus(nCyclesLeft);
 	else
 		return 0;
+}
+
+inline bool IsPotentialNoSlotClockAccess(const WORD address)
+{
+	// Ref: Sather UAIIe 5-28
+	const BYTE AddrHi = address >>  8;
+	return ( ((!SW_SLOTCXROM || !SW_SLOTC3ROM) && (AddrHi == 0xC3)) ||	// Internal ROM at [$C100-CFFF or $C300-C3FF] && AddrHi == $C3
+			  (!SW_SLOTCXROM && (AddrHi == 0xC8)) );					// Internal ROM at [$C100-CFFF]               && AddrHi == $C8
 }
 
 // Enabling expansion ROM ($C800..$CFFF]:
@@ -551,7 +559,7 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 		}
 	}
 
-	if ((address >= 0xC300) && (address <= 0xC3FF))
+	if (IsPotentialNoSlotClockAccess(address))
 	{
 		int data = 0;
 		if (g_NoSlotClock.Read(address, data))
@@ -585,7 +593,7 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 
 BYTE __stdcall IOWrite_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
 {
-	if ((address >= 0xC300) && (address <= 0xC3FF))
+	if (IsPotentialNoSlotClockAccess(address))
 	{
 		g_NoSlotClock.Write(address);
 	}
