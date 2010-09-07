@@ -389,20 +389,14 @@ static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	case 0xA:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
 	case 0xB:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
 	case 0xC:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-//	case 0xD:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xD:	// Clock Hack for ProDOS (NB. Not for NoSlotClock)
-#if CLOCK_HACK_PRODOS
-		Clock_Generic_UpdateProDos();	
-#endif
-		return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+	case 0xD:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
 
-	//http://www.1000bit.net/support/manuali/apple/technotes/aiie/tn.aiie.10.html
-	//IOUDIS (W): $C07E
-	//    There is no IOU to disable
-	//IOUDIS (W): $C07F
-	//    There is no IOU to enable
-	//RDIOUDIS (R7): $C07E
-	//    There is no IOUDIS switch to read
+	//http://www.kreativekorp.com/miscpages/a2info/iomemory.shtml
+	//- Apparently Apple//e & //c (but maybe enhanced//e not //e?)
+	//IOUDISON  (W): $C07E  Disable IOU
+	//IOUDISOFF (W): $C07F  Enable IOU
+	//RDIOUDIS (R7): $C07E  Status of IOU Disabling
+	//RDDHIRES (R7): $C07F  Status of Double HiRes
 	case 0xE:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft); // TODO: IOUDIS
 	case 0xF:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft); // TODO: IOUDIS
 	}
@@ -1157,10 +1151,10 @@ void MemInitialize()
 	{
 		sg_Mouse.Initialize(pCxRomPeripheral, 4);	// $C400 : Mouse f/w
 	}
-	else if (g_Slot4 == CT_GenericClock)
-	{
+//	else if (g_Slot4 == CT_GenericClock)
+//	{
 //		LoadRom_Clock_Generic(pCxRomPeripheral, 4);
-	}
+//	}
 	else if (g_Slot4 == CT_Mockingboard)
 	{
 		const UINT uSlot4 = 4;
