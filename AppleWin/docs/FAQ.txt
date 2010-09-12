@@ -5,3 +5,5 @@ http://linapple.sourceforge.net/index.html
 
 Q. Can I run AppleWin on Linux using Wine?
 A. Reportedly runs fine, but with some sound lag.
+
+?
