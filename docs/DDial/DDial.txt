@@ -1,0 +1,164 @@
+AppleWin behaviour: (ddial.dsk)
+- 1.10.4   : Counts up immediately at correct rate (but no "login" msg)
+- 1.12.6   : Counts up immediately at correct rate (but no "login" msg)
+- 1.12.9.1 : Sticks at 2s, then starts counting slowly after ~30s (but no "login" msg)
+- 1.14.2   : Very fast counting immediately
+
+NB:
+. "Login" msg output ~33s/34s
+. After option-1 is loaded, then it writes to some regs in slot-1 ($C0An), but no reads.
+
+=======================================
+
+$38EB:
+ LDA $28				; [$28] = #$00
+ BMI .SKIP_UPDATE_TIME	; $38FF
+ 
+ LDA $F4				; [$F8] = #$FF
+ BNE $38F8
+ 
+  LDA #$80+' '
+  STA SEC_HI-1
+
+$38F8:
+ LDA #$84
+ STA $28
+
+ JSR UPDATE_TIME
+
+.SKIP_UPDATE_TIME:
+ JSR $7FD3
+ JSR $4753
+ JSR CHECK_VBL
+
+ ;...
+ 
+=======================================
+
+$395F:
+ LDA $F4
+ CMP #$01
+ BCC $3979
+
+ LDA TAPEIN
+ TAY
+$3969:
+ EOR #$00		; Default?
+ BPL $3979
+
+  ; State change on TAPEIN
+  STY $3969+1
+  LDA #$0A
+  STA $F4
+  STA $28
+  LDA TAPEOUT
+
+$3979:
+ JMP $28B4
+ 
+=======================================
+
+; Func entrypoint
+UPDATE_TIME:		; $5205
+ LDX $FF			; [$FF] = #$FF
+ BEQ $5220
+ BPL $520D
+  LDX #$09
+$520D:
+ DEX
+ STX $FF
+ BNE $5220
+
+  ;...
+
+$523D:
+ LDX #$07
+
+$523F:
+  LDA $A0,X
+
+  ;...
+
+  DEC $38,X
+  BNE $5289
+   LDA #$00
+   STA $90,X
+  
+$5289:
+  DEX
+  BPL $523F
+
+$528C:
+ INC $4A7			; SEC_LO
+ LDA $4A7
+ CMP #$80+'9'+1		; #$BA 
+ BNE $530A
+ 
+ ; $4A6 = SEC_HI
+
+ ;...
+ 
+$530A:
+ RTS
+
+=======================================
+
+CHECK_VBL:	; $F822
+
+ LDA RDVBLBAR
+$F825:		; FRMCNT = $F826
+ EOR #$3C	; (*SMC)
+ BMI $F82A
+ RTS
+ 
+ ; VBl changed
+$F82A:
+ LDA FRMCNT
+ EOR #$80
+ STA FRMCNT
+ BMI $F86A
+ 
+ ; 1 frame elasped
+ INC $30	; [$30]   = #$FF
+ AND $7F9F	; [$7F9F] = #$01
+ BNE $F83D
+   STA $F2	; [$F2]   = #$01
+$F83D:
+ DEC FRMCNT
+ BNE $F86A
+
+ ; 1 sec elasped
+$F842:		; FRMCNT2 = $F843 
+ LDA #$3C	; (*SMC)
+ STA FRMCNT
+ DEC FRAMECNT3
+ BNE $F861
+ PHP
+  CMP #60		; #$3C
+  BCS $F858		; Branch if A >= 60
+   INC FRMCNT2
+   LDA #$79		; 121 = 60*2+1
+   BNE $F85D	; == BRA $F85D
+$F858:
+   DEC FRMCNT2
+   LDA #$0A
+$F85D:
+   STA FRAMECNT3
+ PLP
+
+$F861:
+ LDA $F4	; [$F4]  = #$FF
+ BNE $F86B
+ STA $28	; [$28]  = #$00
+ LDA TAPEOUT
+ RTS
+ 
+$F86A:
+ RTS
+ 
+$F86B:
+ DEC $F4
+ RTS
+
+FRAMECNT3:	; $F86E
+ DCB $01
