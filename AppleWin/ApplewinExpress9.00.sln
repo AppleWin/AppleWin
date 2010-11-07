@@ -14,13 +14,19 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
+		Debug-Win98|Win32 = Debug-Win98|Win32
 		Release|Win32 = Release|Win32
+		Release-Win98|Win32 = Release-Win98|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}.Debug|Win32.ActiveCfg = Debug|Win32
 		{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}.Debug|Win32.Build.0 = Debug|Win32
+		{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}.Debug-Win98|Win32.ActiveCfg = Debug-Win98|Win32
+		{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}.Debug-Win98|Win32.Build.0 = Debug-Win98|Win32
 		{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}.Release|Win32.ActiveCfg = Release|Win32
 		{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}.Release|Win32.Build.0 = Release|Win32
+		{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}.Release-Win98|Win32.ActiveCfg = Release-Win98|Win32
+		{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}.Release-Win98|Win32.Build.0 = Release-Win98|Win32
 		{7935B998-C713-42AE-8F6D-9FF9080A1B1B}.Debug|Win32.ActiveCfg = Debug|Win32
 		{7935B998-C713-42AE-8F6D-9FF9080A1B1B}.Debug|Win32.Build.0 = Debug|Win32
 		{7935B998-C713-42AE-8F6D-9FF9080A1B1B}.Release|Win32.ActiveCfg = Release|Win32
