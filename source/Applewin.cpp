@@ -95,7 +95,9 @@ HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM 
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
 
 static bool	g_bEnableSpeech = false;
+#ifdef USE_SPEECH_API
 CSpeech		g_Speech;
+#endif
 
 //===========================================================================
 
@@ -169,7 +171,9 @@ void ContinueExecution()
 		// Don't call Spkr_Mute() - will get speaker clicks
 		MB_Mute();
 		SysClk_StopTimer();
+#ifdef USE_SPEECH_API
 		g_Speech.Reset();			// TODO: Put this on a timer (in emulated cycles)... otherwise CATALOG cuts out
+#endif
 
 		g_nCpuCyclesFeedback = 0;	// For the case when this is a big -ve number
 
@@ -921,6 +925,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	// Initialize COM - so we can use CoCreateInstance
 	// . NB. DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+//	CoInitialize(NULL);
 	bool bSysClkOK = SysClk_InitTimer();
 #ifdef USE_SPEECH_API
 	if (g_bEnableSpeech)

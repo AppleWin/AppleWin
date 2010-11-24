@@ -1,4 +1,6 @@
 #include "StdAfx.h"
+
+#ifdef USE_SPEECH_API
 #include <sapi.h>
 #include "Speech.h"
 
@@ -53,3 +55,5 @@ void CSpeech::Speak(const char* const pBuffer)
 
 	delete [] pszWTextString;
 }
+
+#endif // USE_SPEECH_API
