@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual C++ Express 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Applewin", "ApplewinExpress.vcproj", "{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Applewin", "ApplewinExpress2005.vcproj", "{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7935B998-C713-42AE-8F6D-9FF9080A1B1B} = {7935B998-C713-42AE-8F6D-9FF9080A1B1B}
 		{709278B8-C583-4BD8-90DE-4E4F35A3BD8B} = {709278B8-C583-4BD8-90DE-4E4F35A3BD8B}
