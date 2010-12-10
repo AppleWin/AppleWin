@@ -53,6 +53,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
+				AdditionalIncludeDirectories="source;source/debugger;zlib;zip_lib"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -81,10 +82,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib user32.lib gdi32.lib Advapi32.lib shell32.lib Comdlg32.lib ole32.lib"
+				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib user32.lib gdi32.lib Advapi32.lib shell32.lib Comdlg32.lib ole32.lib wsock32.lib zip_lib.lib zlib.lib"
 				OutputFile=".\Release/Applewin.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="$(OutDir)"
 				ProgramDatabaseFile=".\Release/Applewin.pdb"
 				SubSystem="2"
 				LinkTimeCodeGeneration="1"
@@ -149,6 +151,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				Optimization="0"
+				AdditionalIncludeDirectories="source;source/debugger;zlib;zip_lib"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
@@ -175,10 +178,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib user32.lib gdi32.lib Advapi32.lib shell32.lib Comdlg32.lib ole32.lib"
+				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib user32.lib gdi32.lib Advapi32.lib shell32.lib Comdlg32.lib ole32.lib wsock32.lib zip_lib.lib zlib.lib"
 				OutputFile=".\Debug/Applewin.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="$(OutDir)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/Applewin.pdb"
 				SubSystem="2"
@@ -250,35 +254,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\source\Disk.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\source\Disk.h"
-				>
-			</File>
-			<File
-				RelativePath=".\source\DiskImage.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\source\DiskImage.h"
-				>
-			</File>
-			<File
 				RelativePath=".\source\Frame.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\source\Frame.h"
-				>
-			</File>
-			<File
-				RelativePath=".\source\Harddisk.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\source\Harddisk.h"
 				>
 			</File>
 			<File
@@ -327,6 +307,14 @@
 			</File>
 			<File
 				RelativePath=".\source\MouseInterface.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\NoSlotClock.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\NoSlotClock.h"
 				>
 			</File>
 			<File
@@ -394,6 +382,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\Speech.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\Speech.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\Tape.cpp"
 				>
 			</File>
@@ -417,59 +413,91 @@
 				RelativePath=".\source\Video.h"
 				>
 			</File>
+			<File
+				RelativePath=".\source\z80emu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\z80emu.h"
+				>
+			</File>
 			<Filter
 				Name="Debugger"
 				>
 				<File
-					RelativePath=".\source\Debug.cpp"
+					RelativePath=".\source\Debugger\Debug.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Debug.h"
+					RelativePath=".\source\Debugger\Debug.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Assembler.cpp"
+					RelativePath=".\source\Debugger\Debugger_Assembler.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Assembler.h"
+					RelativePath=".\source\Debugger\Debugger_Assembler.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Console.cpp"
+					RelativePath=".\source\Debugger\Debugger_Console.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Console.h"
+					RelativePath=".\source\Debugger\Debugger_Console.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Display.cpp"
+					RelativePath=".\source\Debugger\Debugger_DisassemblerData.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Display.h"
+					RelativePath=".\source\Debugger\Debugger_DisassemblerData.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Help.cpp"
+					RelativePath=".\source\Debugger\Debugger_Display.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Help.h"
+					RelativePath=".\source\Debugger\Debugger_Display.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Parser.cpp"
+					RelativePath=".\source\Debugger\Debugger_Help.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Parser.h"
+					RelativePath=".\source\Debugger\Debugger_Help.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Types.h"
+					RelativePath=".\source\Debugger\Debugger_Parser.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Parser.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Range.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Range.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Symbols.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Symbols.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Types.h"
 					>
 				</File>
 			</Filter>
@@ -534,7 +562,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Z80"
+				Name="Z80VICE"
 				>
 				<File
 					RelativePath=".\source\Z80VICE\daa.cpp"
@@ -553,14 +581,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\z80emu.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\z80emu.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\Z80VICE\z80mem.cpp"
 					>
 				</File>
@@ -570,6 +590,66 @@
 				</File>
 				<File
 					RelativePath=".\source\Z80VICE\z80regs.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="CommonVICE"
+				>
+				<File
+					RelativePath=".\source\CommonVICE\6510core.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CommonVICE\alarm.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CommonVICE\interrupt.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CommonVICE\mem.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CommonVICE\types.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Disk"
+				>
+				<File
+					RelativePath=".\source\Disk.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Disk.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\DiskImage.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\DiskImage.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\DiskImageHelper.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\DiskImageHelper.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Harddisk.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Harddisk.h"
 					>
 				</File>
 			</Filter>
