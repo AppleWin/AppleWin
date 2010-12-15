@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2009, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+
+#define DEBUG_ASSEMBLER 0
 
 // Globals __________________________________________________________________
 
@@ -718,9 +720,24 @@ int AssemblerHashMnemonic ( const TCHAR * pMnemonic )
 	const int    NUM_MSK_BITS =  5; //  4 ->  5 prime
 	const Hash_t BIT_MSK_HIGH = ((1 << NUM_MSK_BITS) - 1) << NUM_LOW_BITS;
 
-	for( int iChar = 0; iChar < 4; iChar++ )
+	int nLen = strlen( pMnemonic );
+
+#if DEBUG_ASSEMBLER
+	static char sText[ CONSOLE_WIDTH * 3 ];
+	static int nMaxLen = 0;
+	if (nMaxLen < nLen) {
+		nMaxLen = nLen;
+		sprintf( sText, "New Max Len: %d  %s", nMaxLen, pMnemonic );
+		ConsolePrint( sText );
+	}
+#endif
+
+	while( *pText )
+//	for( int iChar = 0; iChar < 4; iChar++ )
 	{	
-		nMnemonicHash = (nMnemonicHash << NUM_MSK_BITS) + *pText;
+		char c = tolower( *pText ); // TODO: based on ALLOW_INPUT_LOWERCASE ??
+
+		nMnemonicHash = (nMnemonicHash << NUM_MSK_BITS) + c;
 		iHighBits = (nMnemonicHash & BIT_MSK_HIGH);
 		if (iHighBits)
 		{
@@ -736,6 +753,8 @@ int AssemblerHashMnemonic ( const TCHAR * pMnemonic )
 //===========================================================================
 void AssemblerHashOpcodes ()
 {
+static char sText[ 128 ];
+
 	Hash_t nMnemonicHash;
 	int    iOpcode;
 
@@ -744,8 +763,14 @@ void AssemblerHashOpcodes ()
 		const TCHAR *pMnemonic = g_aOpcodes65C02[ iOpcode ].sMnemonic;
 		nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 		g_aOpcodesHash[ iOpcode ] = nMnemonicHash;
+#if DEBUG_ASSEMBLER
+	//OutputDebugString( "" );
+	sprintf( sText, "%s : %08X  ", pMnemonic, nMnemonicHash );
+	ConsolePrint( sText );
+	// CLC: 002B864
+#endif
 	}
-
+	ConsoleUpdate();
 }
 
 // TODO: Change .. AssemblerHashDirectives()
@@ -1307,6 +1332,17 @@ bool Assemble( int iArg, int nArgs, WORD nAddress )
 	TCHAR *pMnemonic = g_aArgs[ iArg ].sArg;
 	int nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 
+#if DEBUG_ASSEMBLER
+	static char sText[ CONSOLE_WIDTH * 2 ];
+	sprintf( sText, "%s%04X%s: %s%s%s -> %s%08X", 
+		CHC_ADDRESS, nAddress,
+		CHC_DEFAULT,
+		CHC_STRING, pMnemonic,
+		CHC_DEFAULT,
+		CHC_NUM_HEX, nMnemonicHash ); 
+	ConsolePrint( sText );
+#endif
+
 	m_vAsmOpcodes.clear(); // Candiate opcodes
 	int iOpcode;
 	
@@ -1323,7 +1359,6 @@ bool Assemble( int iArg, int nArgs, WORD nAddress )
 	if (! nOpcodes)
 	{
 		// Check for assembler directive
-
 
 		ConsoleBufferPush( TEXT(" Syntax Error: Invalid mnemonic") );
 		return false;
