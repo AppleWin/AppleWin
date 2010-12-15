@@ -1,4 +1,5 @@
 /*
+.3 Fixed: Assembler now accepts lower-case mnemonics
 .2 Fixed help for command '@'
 .1 Added: Define Code
     Remove address being treated as data
