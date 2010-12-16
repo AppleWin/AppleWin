@@ -151,7 +151,7 @@ Update_t CmdDisasmDataList (int nArgs)
 				, pData->nStartAddress
 				, CHC_ARG_SEP
 				, CHC_ADDRESS
-				, pData->nEndAddress
+				, pData->nEndAddress - 1
 			);
 			ConsolePrint( sText );
 		}
