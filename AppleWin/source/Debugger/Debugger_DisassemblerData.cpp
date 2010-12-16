@@ -138,15 +138,14 @@ Update_t CmdDisasmDataList (int nArgs)
 		if (pData->iDirective != _NOP_REMOVED)
 		{
 			int nLen = strlen( pData->sSymbol );
-			// TODO:
-			// <smbol> <type> <start>:<end>
-			
 
+			// <smbol> <type> <start>:<end>
 			// `TEST `300`:`320
-			sprintf( sText, "%s%s %s%s %s%04X%s:%s%04X"
+			sprintf( sText, "%s%s %s%*s %s%04X%s:%s%04X"
 				, CHC_CATEGORY
 				, g_aNopcodeTypes[ pData->eElementType ] 
 				, (nLen > 0) ? CHC_SYMBOL     : CHC_DEFAULT
+				, MAX_SYMBOLS_LEN
 				, (nLen > 0) ? pData->sSymbol : "???"
 				, CHC_ADDRESS
 				, pData->nStartAddress
