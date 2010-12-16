@@ -467,6 +467,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Debugger\Debugger_Color.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Color.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Debugger\Debugger_Console.cpp"
 					>
 				</File>
