@@ -293,16 +293,12 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 
 // Private __________________________________________________________________
 
-
-//	enum Nopcode_t
-//	{
-//		NOPCODE_NONE, // line.iOpcode is valid: [0,0xFF]
-
-	// Acme
+	// NOTE: Keep in sync AsmDirectives_e g_aAssemblerDirectives !
 	AssemblerDirective_t g_aAssemblerDirectives[ NUM_ASM_DIRECTIVES ] = 
 	{
 		// NULL n/a
 		{""},
+		// Origin, Target Address, EndProg, Equate, Data, AsciiString,HexString
 		// Acme
 		{"???"},
 		// Big Mac
@@ -315,7 +311,7 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 		{"ASC"}, // ASC "postive" 'negative'
 		{"DDB"}, // Define Double Byte (Define WORD)
 		{"DFB"}, // DeFine Byte
-		{"DS" }, // Defin Storage
+		{"DS" }, // Define Storage
 		{"HEX"}, // HEX ###### or HEX ##,##,...
 		{"ORG"}, // Origin
 		// MicroSparc
@@ -334,6 +330,38 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 		{"???"},
 		// Weller
 		{"???"},
+	// User-Defined
+	// NOTE: Keep in sync AsmCustomDirective_e g_aAssemblerDirectives !
+		{"db" }, // ASM_DEFINE_BYTE
+		{"dw" }, // ASM_DEFINE_WORD
+		{"da" }, // ASM_DEFINE_ADDRESS_16
+// d    memory Dump
+// da   Memory Ascii, Define Address
+// ds   S = Ascii (Low),
+// dt   T = Apple (High)
+// dm   M = Mixed (Low,High=EndofString)
+		{"ds" }, // ASM_DEFINE_ASCII_TEXT
+		{"dt" }, // ASM_DEFINE_APPLE_TEXT
+		{"dm" }, // ASM_DEFINE_TEXT_HI_LO
+
+		{"df" }, // ASM_DEFINE_FLOAT
+		{"dfx"}, // ASM_DEFINE_FLOAT_X
+	};
+
+	int g_iAssemblerSyntax = ASM_CUSTOM; // Which assembler syntax to use
+	int g_aAssemblerFirstDirective[ NUM_ASSEMBLERS ] =
+	{
+		FIRST_A_DIRECTIVE,
+		FIRST_B_DIRECTIVE,
+		FIRST_D_DIRECTIVE,
+		FIRST_L_DIRECTIVE,
+		FIRST_M_DIRECTIVE,
+		FIRST_u_DIRECTIVE,
+		FIRST_O_DIRECTIVE,
+		FIRST_S_DIRECTIVE,
+		FIRST_T_DIRECTIVE,
+		FIRST_W_DIRECTIVE,
+		FIRST_Z_DIRECTIVE
 	};
 
 // Assemblers
@@ -385,6 +413,10 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 	WORD m_nAsmBaseAddress   = 0;
 	WORD m_nAsmTargetAddress = 0;
 	WORD m_nAsmTargetValue   = 0;
+
+// Private
+	void AssemblerHashOpcodes ();
+	void AssemblerHashDirectives ();
 
 // Implementation ___________________________________________________________
 
@@ -773,9 +805,8 @@ static char sText[ 128 ];
 	ConsoleUpdate();
 }
 
-// TODO: Change .. AssemblerHashDirectives()
 //===========================================================================
-void AssemblerHashMerlinDirectives ()
+void AssemblerHashDirectives ()
 {
 	Hash_t nMnemonicHash;
 	int    iOpcode;
@@ -794,7 +825,7 @@ void AssemblerHashMerlinDirectives ()
 void AssemblerStartup()
 {
 	AssemblerHashOpcodes();
-	AssemblerHashMerlinDirectives();
+	AssemblerHashDirectives();
 }
  
 //===========================================================================

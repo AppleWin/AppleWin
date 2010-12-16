@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,3,0);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,0);
 
 
 // Public _________________________________________________________________________________________
@@ -116,34 +116,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Setting function to NULL, allows g_aCommands arguments to be safely listed here
 	// Commands should be listed alphabetically per category.
 	// For the list sorted by category, check Commands_e
-	// NOTE: Commands_e and g_aCommands[] must be kept in sync! Aliases are listed at the end.
+	// NOTE: Keep in sync Commands_e and g_aCommands[] ! Aliases are listed at the end.
 	Command_t g_aCommands[] =
 	{
 	// Assembler
 		{TEXT("A")           , CmdAssemble          , CMD_ASSEMBLE             , "Assemble instructions"      },
-	// Disassembler Data 
-		{TEXT("B")           , CmdDisasmDataDefByte1       , CMD_DISASM_DATA      , "Treat byte [range] as data"                },
-		{TEXT("X")           , CmdDisasmDataDefCode        , CMD_DISASM_CODE      , "Treat byte [range] as code"                },
-		{TEXT("DL")          , CmdDisasmDataList           , CMD_DISASM_LIST      , "List all byte ranges treated as data"      },
-		// without symbol lookup
-		{TEXT("DB")          , CmdDisasmDataDefByte1       , CMD_DEFINE_DATA_BYTE1, "Define byte (array)"                          },
-		{TEXT("DB2")         , CmdDisasmDataDefByte2       , CMD_DEFINE_DATA_BYTE2, "Define byte array, display 2 bytes/line"    },
-		{TEXT("DB4")         , CmdDisasmDataDefByte4       , CMD_DEFINE_DATA_BYTE4, "Define byte array, display 4 bytes/line"    },
-		{TEXT("DB8")         , CmdDisasmDataDefByte8       , CMD_DEFINE_DATA_BYTE8, "Define byte array, display 8 bytes/line"    },
-		{TEXT("DW")          , CmdDisasmDataDefWord1       , CMD_DEFINE_DATA_WORD1, "Define address array"                       },
-		{TEXT("DW2")         , CmdDisasmDataDefWord2       , CMD_DEFINE_DATA_WORD2, "Define address array, display 2 words/line" },
-		{TEXT("DW4")         , CmdDisasmDataDefWord4       , CMD_DEFINE_DATA_WORD4, "Define address array, display 4 words/line" },
-		{TEXT("DS")          , CmdDisasmDataDefString      , CMD_DEFINE_DATA_STR  , "Define string"                              },
-//		{TEXT("DF")          , CmdDisasmDataDefFloat       , CMD_DEFINE_DATA_FLOAT, "Define AppleSoft (packed) Float"            },
-//		{TEXT("DFX")         , CmdDisasmDataDefFloatUnpack , CMD_DEFINE_DATA_FLOAT2,"Define AppleSoft (unpacked) Float"          },
-		// with symbol lookup
-//		{TEXT("DA<>")        , CmdDisasmDataDefAddress8HL  , CMD_DEFINE_ADDR_8_HL , "Define split array of addresses, high byte section followed by low byte section" },
-//		{TEXT("DA><")        , CmdDisasmDataDefAddress8LH  , CMD_DEFINE_ADDR_8_LH , "Define split array of addresses, low byte section followed by high byte section" },
-//		{TEXT("DA<")         , CmdDisasmDataDefAddress8H   , CMD_DEFINE_ADDR_BYTE_H   , "Define array of high byte addresses"   },
-//		{TEXT("DB>")         , CmdDisasmDataDefAddress8L   , CMD_DEFINE_ADDR_BYTE_L   , "Define array of low byte addresses"    } 
-		{TEXT(".DA")         , CmdDisasmDataDefAddress16   , CMD_DEFINE_ADDR_WORD , "Define array of word addresses"            },
-// TODO: Rename config cmd: DISASM
-//		{TEXT("UA")          , CmdDisasmDataSmart          , CMD_SMART_DISASSEMBLE, "Analyze opcodes to determine if code or data" },		
 	// CPU (Main)
 		{TEXT(".")           , CmdCursorJumpPC      , CMD_CURSOR_JUMP_PC       , "Locate the cursor in the disasm window" }, // centered
 		{TEXT("=")           , CmdCursorSetPC       , CMD_CURSOR_SET_PC        , "Sets the PC to the current instruction" },
@@ -155,14 +132,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("JSR")         , CmdJSR               , CMD_JSR                  , "Call sub-routine"           },
 		{TEXT("NOP")         , CmdNOP               , CMD_NOP                  , "Zap the current instruction with a NOP" },
 		{TEXT("OUT")         , CmdOut               , CMD_OUT                  , "Output byte to IO $C0xx"    },
+	// CPU - Meta Info
 		{TEXT("PROFILE")     , CmdProfile           , CMD_PROFILE              , "List/Save 6502 profiling" },
 		{TEXT("R")           , CmdRegisterSet       , CMD_REGISTER_SET         , "Set register" },
+	// CPU - Stack
 		{TEXT("POP")         , CmdStackPop          , CMD_STACK_POP            },
 		{TEXT("PPOP")        , CmdStackPopPseudo    , CMD_STACK_POP_PSEUDO     },
 		{TEXT("PUSH")        , CmdStackPop          , CMD_STACK_PUSH           },
 //		{TEXT("RTS")         , CmdStackReturn       , CMD_STACK_RETURN         },
 		{TEXT("P")           , CmdStepOver          , CMD_STEP_OVER            , "Step current instruction"   },
 		{TEXT("RTS")         , CmdStepOut           , CMD_STEP_OUT             , "Step out of subroutine"     }, 
+	// CPU - Meta Info
 		{TEXT("T")           , CmdTrace             , CMD_TRACE                , "Trace current instruction"  },
 		{TEXT("TF")          , CmdTraceFile         , CMD_TRACE_FILE           , "Save trace to filename" },
 		{TEXT("TL")          , CmdTraceLine         , CMD_TRACE_LINE           , "Trace (with cycle counting)" },
@@ -215,10 +195,35 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("PAGEDN"     ) , CmdCursorPageDown    , CMD_CURSOR_PAGE_DOWN     , "Scroll down one scren"  }, 
 		{TEXT("PAGEDOWN256") , CmdCursorPageDown256 , CMD_CURSOR_PAGE_DOWN_256 , "Scroll down 256 bytes"  }, // Shift
 		{TEXT("PAGEDOWN4K" ) , CmdCursorPageDown4K  , CMD_CURSOR_PAGE_DOWN_4K  , "Scroll down 4096 bytes" }, // Ctrl
+	// Disassembler Data 
+		{TEXT("Z")           , CmdDisasmDataDefByte1       , CMD_DISASM_DATA      , "Treat byte [range] as data"                },
+		{TEXT("X")           , CmdDisasmDataDefCode        , CMD_DISASM_CODE      , "Treat byte [range] as code"                },
+// TODO: Conflicts with monitor command #L -> 000DL
+		{TEXT("B")           , CmdDisasmDataList           , CMD_DISASM_LIST      , "List all byte ranges treated as data"      },
+		// without symbol lookup
+		{TEXT("DB")          , CmdDisasmDataDefByte1       , CMD_DEFINE_DATA_BYTE1, "Define byte(s)"                             },
+		{TEXT("DB2")         , CmdDisasmDataDefByte2       , CMD_DEFINE_DATA_BYTE2, "Define byte array, display 2 bytes/line"    },
+		{TEXT("DB4")         , CmdDisasmDataDefByte4       , CMD_DEFINE_DATA_BYTE4, "Define byte array, display 4 bytes/line"    },
+		{TEXT("DB8")         , CmdDisasmDataDefByte8       , CMD_DEFINE_DATA_BYTE8, "Define byte array, display 8 bytes/line"    },
+		{TEXT("DW")          , CmdDisasmDataDefWord1       , CMD_DEFINE_DATA_WORD1, "Define address array"                       },
+		{TEXT("DW2")         , CmdDisasmDataDefWord2       , CMD_DEFINE_DATA_WORD2, "Define address array, display 2 words/line" },
+		{TEXT("DW4")         , CmdDisasmDataDefWord4       , CMD_DEFINE_DATA_WORD4, "Define address array, display 4 words/line" },
+		{TEXT("DS")          , CmdDisasmDataDefString      , CMD_DEFINE_DATA_STR  , "Define string"                              },
+//		{TEXT("DF")          , CmdDisasmDataDefFloat       , CMD_DEFINE_DATA_FLOAT, "Define AppleSoft (packed) Float"            },
+//		{TEXT("DFX")         , CmdDisasmDataDefFloatUnpack , CMD_DEFINE_DATA_FLOAT2,"Define AppleSoft (unpacked) Float"          },
+		// with symbol lookup
+//		{TEXT("DA<>")        , CmdDisasmDataDefAddress8HL  , CMD_DEFINE_ADDR_8_HL , "Define split array of addresses, high byte section followed by low byte section" },
+//		{TEXT("DA><")        , CmdDisasmDataDefAddress8LH  , CMD_DEFINE_ADDR_8_LH , "Define split array of addresses, low byte section followed by high byte section" },
+//		{TEXT("DA<")         , CmdDisasmDataDefAddress8H   , CMD_DEFINE_ADDR_BYTE_H   , "Define array of high byte addresses"   },
+//		{TEXT("DB>")         , CmdDisasmDataDefAddress8L   , CMD_DEFINE_ADDR_BYTE_L   , "Define array of low byte addresses"    } 
+		{TEXT(".DA")         , CmdDisasmDataDefAddress16   , CMD_DEFINE_ADDR_WORD , "Define array of word addresses"            },
+// TODO: Rename config cmd: DISASM
+//		{TEXT("UA")          , CmdDisasmDataSmart          , CMD_SMART_DISASSEMBLE, "Analyze opcodes to determine if code or data" },		
 	// Disk
 		{TEXT("DISK")        , CmdDisk              , CMD_DISK                 , "Access Disk Drive Functions" },
 	// Flags
 //		{TEXT("FC")          , CmdFlag              , CMD_FLAG_CLEAR , "Clear specified Flag"           }, // NVRBDIZC see AW_CPU.cpp AF_*
+// TODO: Conflicts with monitor command #L -> 000CL
 		{TEXT("CL")          , CmdFlag              , CMD_FLAG_CLEAR , "Clear specified Flag"           }, // NVRBDIZC see AW_CPU.cpp AF_*
 
 		{TEXT("CLC")         , CmdFlagClear         , CMD_FLAG_CLR_C , "Clear Flag Carry"               }, // 0 // Legacy
@@ -249,11 +254,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Memory
 		{TEXT("MC")          , CmdMemoryCompare     , CMD_MEMORY_COMPARE       },
 
-		{TEXT("D")           , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  , "Hex dump in the mini memory area 1" }, // FIXME: Must also work in DATA screen
 		{TEXT("MD1")         , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  , "Hex dump in the mini memory area 1" },
 		{TEXT("MD2")         , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_2  , "Hex dump in the mini memory area 2" },
-		{TEXT("M1")          , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // alias
-		{TEXT("M2")          , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_2  }, // alias
 
 		{TEXT("MA1")         , CmdMemoryMiniDumpAscii,CMD_MEM_MINI_DUMP_ASCII_1, "ASCII text in mini memory area 1" },
 		{TEXT("MA2")         , CmdMemoryMiniDumpAscii,CMD_MEM_MINI_DUMP_ASCII_2, "ASCII text in mini memory area 2" },
@@ -312,8 +314,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("TEXT1")       , CmdViewOutput_Text41 , CMD_VIEW_TEXT41, "View Text screen Page 1"                },
 		{TEXT("TEXT2")       , CmdViewOutput_Text42 , CMD_VIEW_TEXT42, "View Text screen Page 2"                },
 		{TEXT("TEXT80")      , CmdViewOutput_Text8X , CMD_VIEW_TEXT8X, "View 80-col Text screen (current page)" },
-		{TEXT("TEXT81")      , CmdViewOutput_Text81 , CMD_VIEW_TEXT8X, "View 80-col Text screen Page 1"         },
-		{TEXT("TEXT82")      , CmdViewOutput_Text82 , CMD_VIEW_TEXT8X, "View 80-col Text screen Page 2"         },
+		{TEXT("TEXT81")      , CmdViewOutput_Text81 , CMD_VIEW_TEXT81, "View 80-col Text screen Page 1"         },
+		{TEXT("TEXT82")      , CmdViewOutput_Text82 , CMD_VIEW_TEXT82, "View 80-col Text screen Page 2"         },
 		{TEXT("GR")          , CmdViewOutput_GRX    , CMD_VIEW_GRX   , "View Lo-Res screen (current page)"      },
 		{TEXT("GR1")         , CmdViewOutput_GR1    , CMD_VIEW_GR1   , "View Lo-Res screen Page 1"              },
 		{TEXT("GR2")         , CmdViewOutput_GR2    , CMD_VIEW_GR2   , "View Lo-Res screen Page 2"              },
@@ -327,7 +329,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("DHGR1")       , CmdViewOutput_DHGR1  , CMD_VIEW_DHGR1 , "View Double Hi-res Page 1"              },
 		{TEXT("DHGR2")       , CmdViewOutput_DHGR2  , CMD_VIEW_DHGR2 , "View Double Hi-res Page 2"              },
 	// Watch
-		{TEXT("W")           , CmdWatch             , CMD_WATCH_ADD     , "Alias for WA (Watch Add)"                      },
+		{TEXT("W")           , CmdWatch             , CMD_WATCH         , "Alias for WA (Watch Add)"                      },
 		{TEXT("WA")          , CmdWatchAdd          , CMD_WATCH_ADD     , "Add/Update address or symbol to watch"         },
 		{TEXT("WC")          , CmdWatchClear        , CMD_WATCH_CLEAR   , "Clear (remove) watch"                          },
 		{TEXT("WD")          , CmdWatchDisable      , CMD_WATCH_DISABLE , "Disable specific watch - it is still in the list, just not active" },
@@ -337,14 +339,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("WSAVE")       , CmdWatchSave         , CMD_WATCH_SAVE    , "Save Watches"                                  }, // due to symbol look-up
 	// Window
 		{TEXT("WIN")         , CmdWindow            , CMD_WINDOW         , "Show specified debugger window"              },
-// TODO: need to rename with data disassembly
+// CODE 0, CODE 1, CODE 2 ... ???
 		{TEXT("CODE")        , CmdWindowViewCode    , CMD_WINDOW_CODE    , "Switch to full code window"                  },  // Can't use WC = WatchClear
 		{TEXT("CODE1")       , CmdWindowShowCode1   , CMD_WINDOW_CODE_1  , "Show code on top split window"               },
 		{TEXT("CODE2")       , CmdWindowShowCode2   , CMD_WINDOW_CODE_2  , "Show code on bottom split window"            },
 		{TEXT("CONSOLE")     , CmdWindowViewConsole , CMD_WINDOW_CONSOLE , "Switch to full console window"               },
-// TODO: need to rename with data disassembly
 		{TEXT("DATA")        , CmdWindowViewData    , CMD_WINDOW_DATA    , "Switch to full data window"                  },
-		{TEXT("DATA1")       , CmdWindowShowCode1   , CMD_WINDOW_CODE_1  , "Show data on top split window"               },
+		{TEXT("DATA1")       , CmdWindowShowData1   , CMD_WINDOW_DATA_1  , "Show data on top split window"               },
 		{TEXT("DATA2")       , CmdWindowShowData2   , CMD_WINDOW_DATA_2  , "Show data on bottom split window"            },
 		{TEXT("SOURCE1")     , CmdWindowShowSource1 , CMD_WINDOW_SOURCE_1, "Show source on top split screen"             },
 		{TEXT("SOURCE2")     , CmdWindowShowSource2 , CMD_WINDOW_SOURCE_2, "Show source on bottom split screen"          },
@@ -402,6 +403,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SR")          , CmdFlagSet           , CMD_FLAG_SET_R , "Clear Flag Reserved"            }, // 5
 		{TEXT("SV")          , CmdFlagSet           , CMD_FLAG_SET_V , "Clear Flag Overflow"            }, // 6
 		{TEXT("SN")          , CmdFlagSet           , CMD_FLAG_SET_N , "Clear Flag Negative"            }, // 7
+	// Memory
+		{TEXT("D")           , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  , "Hex dump in the mini memory area 1" }, // FIXME: Must also work in DATA screen
+		{TEXT("M1")          , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // alias
+		{TEXT("M2")          , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_2  }, // alias
 
 		{TEXT("ME8")         , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    }, // changed from EB -- bugfix: EB:## ##
 		{TEXT("ME16")        , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    },
@@ -447,112 +452,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	const int NUM_COMMANDS_WITH_ALIASES = sizeof(g_aCommands) / sizeof (Command_t); // Determined at compile-time ;-)
 
-
-// Color ______________________________________________________________________
-
-	int g_iColorScheme = SCHEME_COLOR;
-
-	// Used when the colors are reset
-	COLORREF gaColorPalette[ NUM_PALETTE ] =
-	{
-		RGB(0,0,0),
-		// NOTE: See _SetupColorRamp() if you want to programmitically set/change
-		RGB(255,  0,  0), RGB(223,  0,  0), RGB(191,  0,  0), RGB(159,  0,  0), RGB(127,  0,  0), RGB( 95,  0,  0), RGB( 63,  0,  0), RGB( 31,  0,  0),  // 001 // Red
-		RGB(  0,255,  0), RGB(  0,223,  0), RGB(  0,191,  0), RGB(  0,159,  0), RGB(  0,127,  0), RGB(  0, 95,  0), RGB(  0, 63,  0), RGB(  0, 31,  0),  // 010 // Green
-		RGB(255,255,  0), RGB(223,223,  0), RGB(191,191,  0), RGB(159,159,  0), RGB(127,127,  0), RGB( 95, 95,  0), RGB( 63, 63,  0), RGB( 31, 31,  0),  // 011 // Yellow
-		RGB(  0,  0,255), RGB(  0,  0,223), RGB(  0,  0,191), RGB(  0,  0,159), RGB(  0,  0,127), RGB(  0,  0, 95), RGB(  0,  0, 63), RGB(  0,  0, 31),  // 100 // Blue
-		RGB(255,  0,255), RGB(223,  0,223), RGB(191,  0,191), RGB(159,  0,159), RGB(127,  0,127), RGB( 95,  0, 95), RGB( 63,  0, 63), RGB( 31,  0, 31),  // 101 // Magenta
-		RGB(  0,255,255), RGB(  0,223,223), RGB(  0,191,191), RGB(  0,159,159), RGB(  0,127,127), RGB(  0, 95, 95), RGB(  0, 63, 63), RGB(  0, 31, 31),  // 110	// Cyan
-		RGB(255,255,255), RGB(223,223,223), RGB(191,191,191), RGB(159,159,159), RGB(127,127,127), RGB( 95, 95, 95), RGB( 63, 63, 63), RGB( 31, 31, 31),  // 111 // White/Gray
-
-		// Custom Colors
-		RGB( 80,192,255), // Light  Sky Blue // Used for console FG
-		RGB(  0,128,192), // Darker Sky Blue
-		RGB(  0, 64,128), // Deep   Sky Blue
-		RGB(255,128,  0), // Orange (Full)
-		RGB(128, 64,  0), // Orange (Half)
-		RGB(  0,  0,  0),
-		RGB(  0,  0,  0),
-		RGB(  0,  0,  0),
-
-		RGB(  0,  0,  0),
-		RGB(  0,  0,  0),
-		RGB(  0,  0,  0),
-		RGB(  0,  0,  0),
-		RGB(  0,  0,  0),
-		RGB(  0,  0,  0),
-		RGB(  0,  0,  0),
-		RGB(  0,  0,  0),
-	};
-
-	// Index into Palette
-	int g_aColorIndex[ NUM_DEBUG_COLORS ] =
-	{
-		K0, W8,              // BG_CONSOLE_OUTPUT   FG_CONSOLE_OUTPUT (W8)
-
-		B1, COLOR_CUSTOM_01, // BG_CONSOLE_INPUT    FG_CONSOLE_INPUT (W8)
-
-		B2, B3, // BG_DISASM_1        BG_DISASM_2
-
-		R8, W8, // BG_DISASM_BP_S_C   FG_DISASM_BP_S_C
-		R6, W5, // BG_DISASM_BP_0_C   FG_DISASM_BP_0_C
-
-		R7,    // FG_DISASM_BP_S_X    // Y8 lookes better on Info Cyan // R6
-		W5,    // FG_DISASM_BP_0_X 
-
-		W8, K0, // BG_DISASM_C        FG_DISASM_C     // B8 -> K0
-		Y8, K0, // BG_DISASM_PC_C     FG_DISASM_PC_C  // K8 -> K0
-		Y4, W8, // BG_DISASM_PC_X     FG_DISASM_PC_X
-
-		C4, // BG_DISASM_BOOKMARK
-		W8, // FG_DISASM_BOOKMARK
-
-		W8,     // FG_DISASM_ADDRESS
-		G192,   // FG_DISASM_OPERATOR
-		Y8,     // FG_DISASM_OPCODE
-		W8,     // FG_DISASM_MNEMONIC
-		COLOR_CUSTOM_04, // FG_DISASM_TARGET (or W8)
-		G8,     // FG_DISASM_SYMBOL
-		C8,     // FG_DISASM_CHAR
-		G8,		// FG_DISASM_BRANCH
-
-		C3,   // BG_INFO (C4, C2 too dark)
-		W8,   // FG_INFO_TITLE (or W8)
-		Y7,   // FG_INFO_BULLET (W8)
-		G192, // FG_INFO_OPERATOR
-		COLOR_CUSTOM_04,   // FG_INFO_ADDRESS (was Y8)
-		Y8,   // FG_INFO_OPCODE
-		COLOR_CUSTOM_01, // FG_INFO_REG (was orange)
-
-		W8,   // BG_INFO_INVERSE
-		C3,   // FG_INFO_INVERSE
-		C5,   // BG_INFO_CHAR
-		W8,   // FG_INFO_CHAR_HI
-		Y8,   // FG_INFO_CHAR_LO
-
-		COLOR_CUSTOM_04, // BG_INFO_IO_BYTE
-		COLOR_CUSTOM_04, // FG_INFO_IO_BYTE
-				
-		C2,   // BG_DATA_1
-		C3,   // BG_DATA_2
-		Y8,   // FG_DATA_BYTE
-		W8,   // FG_DATA_TEXT
-
-		G4,   // BG_SYMBOLS_1
-		G3,   // BG_SYMBOLS_2
-		W8,   // FG_SYMBOLS_ADDRESS
-		M8,   // FG_SYMBOLS_NAME
-
-		K0,   // BG_SOURCE_TITLE
-		W8,   // FG_SOURCE_TITLE
-		W2,   // BG_SOURCE_1 // C2 W2 for "Paper Look"
-		W3,   // BG_SOURCE_2
-		W8    // FG_SOURCE
-	};
-
-	COLORREF g_aColors[ NUM_COLOR_SCHEMES ][ NUM_DEBUG_COLORS ];
-
-	COLORREF DebuggerGetColor ( int iColor );
 
 
 // Cursor (Console Input) _____________________________________________________
@@ -885,7 +784,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void ConfigSave_PrepareHeader ( const Parameters_e eCategory, const Commands_e eCommandClear );
 
 // Drawing
-	static	bool DebuggerSetColor ( const int iScheme, const int iColor, const COLORREF nColor );
 	static	void _CmdColorGet ( const int iScheme, const int iColor );
 
 // Font
@@ -2686,39 +2584,6 @@ void _CmdColorGet( const int iScheme, const int iColor )
 }
 
 //===========================================================================
-inline COLORREF DebuggerGetColor( int iColor )
-{
-	COLORREF nColor = RGB(0,255,255); // 0xFFFF00; // Hot Pink! -- so we notice errors. Not that there is anything wrong with pink...
-
-	if ((g_iColorScheme < NUM_COLOR_SCHEMES) && (iColor < NUM_DEBUG_COLORS))
-	{
-		nColor = g_aColors[ g_iColorScheme ][ iColor ];
-	}
-
-	return nColor;
-}
-
-
-bool DebuggerSetColor( const int iScheme, const int iColor, const COLORREF nColor )
-{
-	bool bStatus = false;
-	if ((g_iColorScheme < NUM_COLOR_SCHEMES) && (iColor < NUM_DEBUG_COLORS))
-	{
-		g_aColors[ iScheme ][ iColor ] = nColor;
-		bStatus = true;
-	}
-
-	// Propogate to console since it has its own copy of colors
-	if (iColor == FG_CONSOLE_OUTPUT)
-	{
-		COLORREF nConsole = DebuggerGetColor( FG_CONSOLE_OUTPUT );
-		g_anConsoleColor[ CONSOLE_COLOR_x ] = nConsole;
-	}
-	
-	return bStatus;
-}
-
-//===========================================================================
 Update_t CmdConfigColorMono (int nArgs)
 {
 	int iScheme = 0;
@@ -2934,8 +2799,8 @@ Update_t CmdConfigSave (int nArgs)
 		nLen = sizeof( nVersion );
 		WriteFile( hFile, pSrc, nLen, &nPut, NULL );
 
-		pSrc = (void *) & gaColorPalette;
-		nLen = sizeof( gaColorPalette );
+		pSrc = (void *) & g_aColorPalette;
+		nLen = sizeof( g_aColorPalette );
 		WriteFile( hFile, pSrc, nLen, &nPut, NULL );
 
 		pSrc = (void *) & g_aColorIndex;
@@ -7904,7 +7769,7 @@ void _SetupColorRamp( const int iPrimary, int & iColor_ )
 		int nG = bG ? nC : 0;
 		int nB = bB ? nC : 0;
 		DWORD nColor = RGB(nR,nG,nB);
-		gaColorPalette[ iColor_ ] = nColor;
+		g_aColorPalette[ iColor_ ] = nColor;
 #if DEBUG_COLOR_RAMP
 	wsprintf( sText, TEXT("RGB(%3d,%3d,%3d), "), nR, nG, nB );
 	_tcscat( sRamp, sText );
@@ -7946,7 +7811,7 @@ void _ConfigColorsReset( BYTE *pPalDst )
 	int iColor;
 	for (iColor = 0; iColor < NUM_DEBUG_COLORS; iColor++ )
 	{
-		COLORREF nColor = gaColorPalette[ g_aColorIndex[ iColor ] ];
+		COLORREF nColor = g_aColorPalette[ g_aColorIndex[ iColor ] ];
 
 		int R = (nColor >>  0) & 0xFF;
 		int G = (nColor >>  8) & 0xFF;
@@ -8140,7 +8005,7 @@ void DebugInitialize ()
 	int iColor;
 	
 	iColor = FG_CONSOLE_OUTPUT;
-	COLORREF nColor = gaColorPalette[ g_aColorIndex[ iColor ] ];
+	COLORREF nColor = g_aColorPalette[ g_aColorIndex[ iColor ] ];
 	g_anConsoleColor[ CONSOLE_COLOR_x ] = nColor;
 
 /*
@@ -8190,6 +8055,16 @@ void DebugInitialize ()
 
 	//	ConsoleInputReset(); already called in DebugInitialize()
 	TCHAR sText[ CONSOLE_WIDTH ];
+
+	for (int iCmd = 0; iCmd < NUM_COMMANDS; iCmd++ )
+	{
+		if ( g_aCommands[ iCmd ].iCommand != iCmd)
+		{
+			wsprintf( sText, "*** ERROR *** Enumarted Commands mis-matched!" );
+			MessageBox( g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
+			PostQuitMessage( 1 );
+		}
+	}
 
 	if (_tcscmp( g_aCommands[ NUM_COMMANDS ].m_sName, TEXT(__COMMANDS_VERIFY_TXT__)))
 	{

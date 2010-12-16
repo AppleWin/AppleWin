@@ -6,11 +6,27 @@
 	// Assemblers
 	//     A = Acme
 	//     B = Big Mac            S= S-C Macro Assembler
-	//     K = DOS Tool Kit       T = TED II
+	//     D = DOS Tool Kit       T = TED II
 	//     L = Lisa               W = Weller's Assembler
 	//     M = Merlin
 	//     u = MicroSparc
 	//     O = ORCA/M
+	enum Assemblers_e
+	{
+		  ASM_ACME
+		, ASM_BIG_MAC
+		, ASM_DOS_TOOL_KIT
+		, ASM_LISA
+		, ASM_MERLIN
+		, ASM_MICROSPARC
+		, ASM_ORCA
+		, ASM_SC
+		, ASM_TED
+		, ASM_WELLERS
+		, ASM_CUSTOM
+	,NUM_ASSEMBLERS
+	};
+
 	enum AsmAcmeDirective_e
 	{
 		 ASM_A_DEFINE_BYTE
@@ -25,8 +41,8 @@
 
 	enum AsmDosToolKitDirective_e
 	{
-		 ASM_K_DEFINE_BYTE
-	,NUM_ASM_K_DIRECTIVES
+		 ASM_D_DEFINE_BYTE
+	,NUM_ASM_D_DIRECTIVES
 	};
 
 	enum AsmLisaDirective_e
@@ -84,25 +100,42 @@
 	,NUM_ASM_W_DIRECTIVES
 	};
 
-	// NOTE: Must keep in sync: AsmDirectives_e g_aAssemblerDirectives
+	enum AsmCustomDirective_e
+	{
+		 ASM_DEFINE_BYTE	
+		,ASM_DEFINE_WORD
+//		,ASM_DEFINE_ADDRESS_8
+		,ASM_DEFINE_ADDRESS_16
+		// String/Text/Ascii
+		,ASM_DEFINE_ASCII_TEXT
+		,ASM_DEFINE_APPLE_TEXT
+		,ASM_DEFINE_TEXT_HI_LO // i.e. Applesoft Basic Tokens
+		// FAC
+		,ASM_DEFINE_FLOAT      // Applesoft float
+		,ASM_DEFINE_FLOAT_X    // Applesoft float unpacked/expanded
+	,NUM_ASM_Z_DIRECTIVES
+	};
+
+	// NOTE: Keep in sync AsmDirectives_e g_aAssemblerDirectives !
 	enum AsmDirectives_e
 	{
 		FIRST_A_DIRECTIVE = 1,
 		FIRST_B_DIRECTIVE = FIRST_A_DIRECTIVE + NUM_ASM_A_DIRECTIVES, // Acme
-		FIRST_K_DIRECTIVE = FIRST_B_DIRECTIVE + NUM_ASM_B_DIRECTIVES, // Big Mac
-		FIRST_L_DIRECTIVE = FIRST_K_DIRECTIVE + NUM_ASM_K_DIRECTIVES, // DOS Tool Kit
+		FIRST_D_DIRECTIVE = FIRST_B_DIRECTIVE + NUM_ASM_B_DIRECTIVES, // Big Mac
+		FIRST_L_DIRECTIVE = FIRST_D_DIRECTIVE + NUM_ASM_D_DIRECTIVES, // DOS Tool Kit
 		FIRST_M_DIRECTIVE = FIRST_L_DIRECTIVE + NUM_ASM_L_DIRECTIVES, // Lisa
 		FIRST_u_DIRECTIVE = FIRST_M_DIRECTIVE + NUM_ASM_M_DIRECTIVES, // Merlin
 		FIRST_O_DIRECTIVE = FIRST_u_DIRECTIVE + NUM_ASM_u_DIRECTIVES, // MicroSparc
 		FIRST_S_DIRECTIVE = FIRST_O_DIRECTIVE + NUM_ASM_O_DIRECTIVES, // Orca
 		FIRST_T_DIRECTIVE = FIRST_S_DIRECTIVE + NUM_ASM_S_DIRECTIVES, // SC
 		FIRST_W_DIRECTIVE = FIRST_T_DIRECTIVE + NUM_ASM_T_DIRECTIVES, // Ted
-		NUM_ASM_DIRECTIVES= FIRST_W_DIRECTIVE + NUM_ASM_W_DIRECTIVES, // Ted
+		FIRST_Z_DIRECTIVE = FIRST_W_DIRECTIVE + NUM_ASM_W_DIRECTIVES, // Weller
+	NUM_ASM_DIRECTIVES    = FIRST_Z_DIRECTIVE + NUM_ASM_Z_DIRECTIVES  // Custom
 
 //		NUM_ASM_DIRECTIVES =  1 +  // Opcode ... rest are psuedo opcodes
 //			NUM_ASM_A_DIRECTIVES + // Acme
 //			NUM_ASM_B_DIRECTIVES + // Big Mac
-//			NUM_ASM_K_DIRECTIVES + // DOS Tool Kit
+//			NUM_ASM_D_DIRECTIVES + // DOS Tool Kit
 //			NUM_ASM_L_DIRECTIVES + // Lisa
 //			NUM_ASM_M_DIRECTIVES + // Merlin
 //			NUM_ASM_u_DIRECTIVES + // MicroSparc
@@ -111,6 +144,9 @@
 //			NUM_ASM_T_DIRECTIVES + // Ted
 //			NUM_ASM_W_DIRECTIVES   // Weller
 	};
+
+extern	int g_iAssemblerSyntax;
+extern	int g_aAssemblerFirstDirective[ NUM_ASSEMBLERS ];
 
 // Addressing _____________________________________________________________________________________
 
@@ -165,8 +201,6 @@
 	bool _6502_IsOpcodeValid( int nOpcode );
 
 	int  AssemblerHashMnemonic ( const TCHAR * pMnemonic );
-	void AssemblerHashOpcodes ();
-	void AssemblerHashMerlinDirectives ();
 //	bool AssemblerGetAddressingMode ( int iArg, int nArgs, WORD nAddress, vector<int> & vOpcodes );
 	void _CmdAssembleHashDump ();
 	

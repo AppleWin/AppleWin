@@ -3,7 +3,8 @@
 
 	enum NopcodeType_e
 	{
-		 NOP_BYTE_1 // 1 bytes/line
+		_NOP_REMOVED
+		,NOP_BYTE_1 // 1 bytes/line
 		,NOP_BYTE_2 // 2 bytes/line
 		,NOP_BYTE_4 // 4 bytes/line
 		,NOP_BYTE_8 // 8 bytes/line
@@ -13,10 +14,11 @@
 		,NOP_ADDRESS// 1 word/line
 		,NOP_HEX
 		,NOP_CHAR
-		,NOP_STRING_ASCII
-		,NOP_STRING_APPLE
-		,NOP_STRING_APPLESOFT
+		,NOP_STRING_ASCII // Low Ascii
+		,NOP_STRING_APPLE // High Ascii
+		,NOP_STRING_APPLESOFT // Mixed Low/High
 		,NOP_FAC
+		,NOP_SPRITE
 		,NUM_NOPCODE_TYPES
 	};
 
@@ -25,16 +27,19 @@
 	struct DisasmData_t
 	{
 		char sSymbol[ MAX_SYMBOLS_LEN+1 ];
+		char eElementType ; // NopcodeType_e
 		WORD iDirective   ; // Assembler directive -> nopcode
 		WORD nStartAddress; // link to block [start,end)
 		WORD nEndAddress  ; 
 		WORD nArraySize   ; // Total bytes
 //		WORD nBytePerRow  ; // 1, 8
-		char eElementType; // 
 
 		// with symbol lookup
 		char bSymbolLookup ;
 		WORD nTargetAddress;
+
+		WORD nSpriteW;
+		WORD nSpriteH;
 	};
 
 	Update_t _CmdDisasmDataDefByteX    (int nArgs);
