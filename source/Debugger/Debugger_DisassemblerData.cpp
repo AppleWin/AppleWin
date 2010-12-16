@@ -21,6 +21,8 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 	WORD nEnd      = 0;
 	int  nLen      = 0;
 
+	memset( (void*) &tData_, 0, sizeof(tData_) );
+
 	if( nArgs < 2 )
 	{
 		nAddress = g_nDisasmCurAddress;
@@ -47,7 +49,7 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 
 	tData_.nStartAddress = nAddress;
 	tData_.nEndAddress = nAddress + nLen;
-
+//	tData_.nArraySize = 0;
 	char *pSymbolName = "";
 	if( nArgs )
 	{
@@ -91,9 +93,9 @@ Update_t CmdDisasmDataDefCode (int nArgs)
 	DisasmData_t *pData = Disassembly_IsDataAddress( nAddress );
 	if( pData )
 	{
-		// Need to split the data
-//		*pData = tData;
-		Disassembly_AddData( tData );
+		// TODO: Do we need to split the data !?
+		//Disassembly_DelData( tData );
+		pData->iDirective = _NOP_REMOVED;
 	}
 	else
 	{
@@ -134,9 +136,10 @@ Update_t _CmdDisasmDataDefByteX (int nArgs)
 	// DB
 	// DB symbol
 	// DB symbol address
-	// symbol range:range
+	// DB symbol range:range
 	int iCmd = NOP_BYTE_1 - g_aArgs[0].nValue;
 
+//	if ((!nArgs) || (nArgs > 2))
 	if (! ((nArgs <= 2) || (nArgs == 4)))
 	{
 		return Help_Arg_1( CMD_DEFINE_DATA_BYTE1 + iCmd );
@@ -146,7 +149,10 @@ Update_t _CmdDisasmDataDefByteX (int nArgs)
 	int iArg = 2;
 	WORD nAddress = _CmdDefineByteRange( nArgs, iArg, tData );
 
-	tData.iDirective = FIRST_M_DIRECTIVE + ASM_M_DEFINE_BYTE;
+	// TODO: Allow user to select which assembler to use for displaying directives!
+//	tData.iDirective = FIRST_M_DIRECTIVE + ASM_M_DEFINE_BYTE;
+	tData.iDirective = g_aAssemblerFirstDirective[ g_iAssemblerSyntax ] + ASM_DEFINE_BYTE;
+
 	tData.eElementType = NOP_BYTE_1 + iCmd;
 	tData.bSymbolLookup = false;
 	tData.nTargetAddress = 0;
@@ -169,7 +175,7 @@ Update_t _CmdDisasmDataDefWordX (int nArgs)
 	// DW
 	// DW symbol
 	// DW symbol address
-	// symbol range:range
+	// DW symbol range:range
 	int iCmd = NOP_WORD_1 - g_aArgs[0].nValue;
 
 	if (! ((nArgs <= 2) || (nArgs == 4)))
@@ -181,7 +187,9 @@ Update_t _CmdDisasmDataDefWordX (int nArgs)
 	int iArg = 2;
 	WORD nAddress = _CmdDefineByteRange( nArgs, iArg, tData );
 
-	tData.iDirective = FIRST_M_DIRECTIVE + ASM_M_DEFINE_WORD;
+//	tData.iDirective = FIRST_M_DIRECTIVE + ASM_M_DEFINE_WORD;
+	tData.iDirective = g_aAssemblerFirstDirective[ g_iAssemblerSyntax ] + ASM_DEFINE_WORD;
+
 	tData.eElementType = NOP_WORD_1 + iCmd;
 	tData.bSymbolLookup = false;
 	tData.nTargetAddress = 0;
@@ -304,9 +312,12 @@ DisasmData_t* Disassembly_IsDataAddress ( WORD nAddress )
 		pData = & g_aDisassemblerData[ 0 ];
 		for( int iTarget = 0; iTarget < nDataTargets; iTarget++ )
 		{
-			if( (nAddress >= pData->nStartAddress) && (nAddress < pData->nEndAddress) )
+			if( pData->iDirective != _NOP_REMOVED )
 			{
-				return pData;
+				if( (nAddress >= pData->nStartAddress) && (nAddress < pData->nEndAddress) )
+				{
+					return pData;
+				}
 			}
 			pData++;
 		}
@@ -315,6 +326,7 @@ DisasmData_t* Disassembly_IsDataAddress ( WORD nAddress )
 	return pData;
 }
 
+// Notes: tData.iDirective should not be _NOP_REMOVED !
 //===========================================================================
 void Disassembly_AddData( DisasmData_t tData)
 {
@@ -363,5 +375,27 @@ void Disassembly_GetData ( WORD nBaseAddress, const DisasmData_t *pData, DisasmL
 void Disassembly_DelData( DisasmData_t tData)
 {
 	// g_aDisassemblerData.erase( );
+	WORD nAddress = tData.nStartAddress;
+
+	DisasmData_t *pData = NULL; // bIsNopcode = false
+	int nDataTargets = g_aDisassemblerData.size();
+
+	if( nDataTargets )
+	{
+		// TODO: Replace with binary search -- should store data in sorted order, via start address
+		pData = & g_aDisassemblerData[ 0 ];
+		for( int iTarget = 0; iTarget < nDataTargets; iTarget++ )
+		{
+			if (pData->iDirective != _NOP_REMOVED)
+			{
+				if ((nAddress >= pData->nStartAddress) && (nAddress < pData->nEndAddress))
+				{
+					pData->iDirective = _NOP_REMOVED;
+				}
+			}
+			pData++;
+		}
+		pData = NULL; // bIsNopCode = false
+	}
 }
 

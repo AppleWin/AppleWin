@@ -149,9 +149,6 @@ using namespace std;
 		}
 	}
 	
-// Color
-	inline COLORREF DebuggerGetColor( int iColor );
-
 // Source Level Debugging
 	int FindSourceLine( WORD nAddress );
 	LPCTSTR FormatAddress( WORD nAddress, int nBytes );

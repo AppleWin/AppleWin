@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -1035,10 +1035,10 @@ void DrawBreakpoints ( int line )
 			DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
 
 #if DEBUG_FORCE_DISPLAY
-	extern COLORREF gaColorPalette[ NUM_PALETTE ];
+	
 
 	int iColor = R8 + iBreakpoint;
-	COLORREF nColor = gaColorPalette[ iColor ];
+	COLORREF nColor = g_aColorPalette[ iColor ];
 	if (iBreakpoint >= 8)
 	{
 		DebuggerSetColorBG( DebuggerGetColor( BG_DISASM_BP_S_C ) );
@@ -1071,7 +1071,7 @@ void DrawBreakpoints ( int line )
 				DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
 				DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
 #if DEBUG_FORCE_DISPLAY
-	COLORREF nColor = gaColorPalette[ iColor ];
+	COLORREF nColor = g_aColorPalette[ iColor ];
 	if (iBreakpoint >= 8)
 	{
 		nColor = DebuggerGetColor( BG_INFO );
@@ -1511,7 +1511,7 @@ void FormatNopcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 	}
 }
 
-
+//===========================================================================
 void FormatDisassemblyLine( const DisasmLine_t & line, char * sDisassembly, const int nBufferSize )
 {
 	//> Address Seperator Opcodes   Label Mnemonic Target [Immediate] [Branch]
@@ -1850,6 +1850,8 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		if( pData )
 		{
 //			pMnemonic = g_aAssemblerDirectives[ line.iNopcode ].sMnemonic;
+			if (! bCursorLine) // Assembler Data Directive
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_DIRECTIVE ) ); // ZZZ TODO: FIXME:
 			pMnemonic = line.sMnemonic;
 		}
 		else
