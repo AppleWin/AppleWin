@@ -1,14 +1,36 @@
 /*
+2.7.0.0 Released with Applewin 1.19.1.x
+
+.9 Fixed: Renamed ambiguous command 'DL' to 'B' to list all bytes being treated as data
+          Renamed command: 'B' to 'Z' as an alias to treat byte(s) as data
+.8 Fixed: Define Code 'X' wasn't removing entries
+.7 Fixed: DATA1 was using call win setup for code, not data.
+.6 Cleanup of command table to have the proper internal command enum.
+		D      // CMD_MEM_MINI_DUMP_HEX_1 moved to alias section
+		M1     // CMD_MEM_MINI_DUMP_HEX_1 moved to alias section
+		M2     // CMD_MEM_MINI_DUMP_HEX_2 moved to alias section
+		TEXT81 // CMD_VIEW_TEXT81         <- CMD_VIEW_TEXT8X
+		TEXT82 // CMD_VIEW_TEXT82         <- CMD_VIEW_TEXT8X
+		W      // CMD_WATCH               <- CMD_WATCH_ADD
+.5 Added: Internal consistency checking for commands and their internal command enum.
+.4 Fixed: Added customer assembler type and debugger disassembly display uses variable
+          instead of always being hard-coded to Merlin directives.
+.5 Fixed: Data disassembler help -- was using wrong command help offset due to wrong order of commands.
 .3 Fixed: Assembler now accepts lower-case mnemonics
-.2 Fixed help for command '@'
-.1 Added: Define Code
+.2 Fixed: help for command '@'
+.1 Added: new command: 'X' to Define Code 
     Remove address being treated as data
-.0 Added: Define Byte Pseudo Mnemonic
-    DB
-    DB symbol
+    X                    // uses address cursor is on
+	X symbol             // uses address cursor is on
+	X symbol address
+.0 Added: new command 'DB" to Define Byte / Pseudo Mnemonic / Assembler Directive
+    DB                  // uses address cursor is on
+    DB symbol           // uses address cursor is on
     DB symbol address
     DB symbol start:end
-2.6.2.x
+    Example:
+       DB zp 0:ff
+2.6.2.0 Released with AppleWin 1.17.2.0
 
 2.6.1.x
 .35 Fixed: Pressing enter on blank line while in assembler wouldn't exit it.
