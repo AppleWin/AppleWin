@@ -105,25 +105,57 @@ Update_t CmdDisasmDataDefCode (int nArgs)
 	return UPDATE_DISASM | ConsoleUpdate();
 }
 
+char* g_aNopcodeTypes[ NUM_NOPCODE_TYPES ] =
+{
+	 "-n/a-"
+	,"byte1"
+	,"byte2"
+	,"byte4"
+	,"byte8"
+	,"word1"
+	,"word2"
+	,"word4"
+	,"addr "
+	,"hex  "
+	,"char "
+	,"ascii"
+	,"apple"
+	,"mixed"
+	,"FAC  "
+	,"bmp  "
+};
+
 // List the data blocks
 //===========================================================================
 Update_t CmdDisasmDataList (int nArgs)
 {
 	// Need to iterate through all blocks
 	DisasmData_t* pData = NULL;
-	char sText[ CONSOLE_WIDTH ];
+	char sText[ CONSOLE_WIDTH * 2 ];
+
 	while( pData = Disassembly_Enumerate( pData ) )
 	{
-		// `TEST `300`:`320
-		sprintf( sText, "%s%s %s%04X%s:%s%04X\n"
-			, CHC_SYMBOL
-			, pData->sSymbol
-			, CHC_ADDRESS
-			, pData->nStartAddress
-			, CHC_ARG_SEP
-			, pData->nEndAddress
-		);
-		ConsolePrint( sText );
+		if (pData->iDirective != _NOP_REMOVED)
+		{
+			int nLen = strlen( pData->sSymbol );
+			// TODO:
+			// <smbol> <type> <start>:<end>
+			
+
+			// `TEST `300`:`320
+			sprintf( sText, "%s%s %s%s %s%04X%s:%s%04X"
+				, CHC_CATEGORY
+				, g_aNopcodeTypes[ pData->eElementType ] 
+				, (nLen > 0) ? CHC_SYMBOL     : CHC_DEFAULT
+				, (nLen > 0) ? pData->sSymbol : "???"
+				, CHC_ADDRESS
+				, pData->nStartAddress
+				, CHC_ARG_SEP
+				, CHC_ADDRESS
+				, pData->nEndAddress
+			);
+			ConsolePrint( sText );
+		}
 	}
 
 	return UPDATE_DISASM | ConsoleUpdate();
@@ -280,23 +312,21 @@ DisasmData_t* Disassembly_Enumerate( DisasmData_t *pCurrent )
 	DisasmData_t *pData = NULL; // bIsNopcode = false
 	int nDataTargets = g_aDisassemblerData.size();
 
-	if( pCurrent )
+	if( nDataTargets )
 	{
-		pCurrent++;
-		pData = & g_aDisassemblerData[ nDataTargets ];
-		if( pCurrent < pData )
-			return pCurrent;
-		else
-			return NULL;
+		DisasmData_t *pBegin = & g_aDisassemblerData[ 0 ];
+		DisasmData_t *pEnd   = & g_aDisassemblerData[ nDataTargets - 1 ];
+
+		if( pCurrent )
+		{
+			pCurrent++;
+			if (pCurrent <= pEnd)
+				pData = pCurrent;			
+		} else {
+			pData = pBegin;
+		}
 	}
-	else
-	{
-		pData = & g_aDisassemblerData[ 0 ];
-		if( nDataTargets )
-			return pData;
-		else
-			return NULL;
-	}
+	return pData;
 }
 
 // returns NULL if address has no data associated with it
