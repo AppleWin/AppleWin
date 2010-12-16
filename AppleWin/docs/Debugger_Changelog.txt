@@ -13,7 +13,7 @@
 		TEXT82 // CMD_VIEW_TEXT82         <- CMD_VIEW_TEXT8X
 		W      // CMD_WATCH               <- CMD_WATCH_ADD
 .5 Added: Internal consistency checking for commands and their internal command enum.
-.4 Fixed: Added customer assembler type and debugger disassembly display uses variable
+.4 Fixed: Added custom assembler type and debugger disassembly display uses variable
           instead of always being hard-coded to Merlin directives.
 .5 Fixed: Data disassembler help -- was using wrong command help offset due to wrong order of commands.
 .3 Fixed: Assembler now accepts lower-case mnemonics
