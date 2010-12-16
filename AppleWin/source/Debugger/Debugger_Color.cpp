@@ -1,0 +1,149 @@
+/*
+AppleWin : An Apple //e emulator for Windows
+Copyright (C) 2009-2010, Michael Pohoreski
+*/
+
+#include "StdAfx.h"
+
+// Color ______________________________________________________________________
+
+	int g_iColorScheme = SCHEME_COLOR;
+
+	// Used when the colors are reset
+	COLORREF g_aColorPalette[ NUM_PALETTE ] =
+	{
+		RGB(0,0,0),
+		// NOTE: See _SetupColorRamp() if you want to programmitically set/change
+		RGB(255,  0,  0), RGB(223,  0,  0), RGB(191,  0,  0), RGB(159,  0,  0), RGB(127,  0,  0), RGB( 95,  0,  0), RGB( 63,  0,  0), RGB( 31,  0,  0),  // 001 // Red
+		RGB(  0,255,  0), RGB(  0,223,  0), RGB(  0,191,  0), RGB(  0,159,  0), RGB(  0,127,  0), RGB(  0, 95,  0), RGB(  0, 63,  0), RGB(  0, 31,  0),  // 010 // Green
+		RGB(255,255,  0), RGB(223,223,  0), RGB(191,191,  0), RGB(159,159,  0), RGB(127,127,  0), RGB( 95, 95,  0), RGB( 63, 63,  0), RGB( 31, 31,  0),  // 011 // Yellow
+		RGB(  0,  0,255), RGB(  0,  0,223), RGB(  0,  0,191), RGB(  0,  0,159), RGB(  0,  0,127), RGB(  0,  0, 95), RGB(  0,  0, 63), RGB(  0,  0, 31),  // 100 // Blue
+		RGB(255,  0,255), RGB(223,  0,223), RGB(191,  0,191), RGB(159,  0,159), RGB(127,  0,127), RGB( 95,  0, 95), RGB( 63,  0, 63), RGB( 31,  0, 31),  // 101 // Magenta
+		RGB(  0,255,255), RGB(  0,223,223), RGB(  0,191,191), RGB(  0,159,159), RGB(  0,127,127), RGB(  0, 95, 95), RGB(  0, 63, 63), RGB(  0, 31, 31),  // 110	// Cyan
+		RGB(255,255,255), RGB(223,223,223), RGB(191,191,191), RGB(159,159,159), RGB(127,127,127), RGB( 95, 95, 95), RGB( 63, 63, 63), RGB( 31, 31, 31),  // 111 // White/Gray
+
+		// Custom Colors
+		RGB( 80,192,255), // Light  Sky Blue // Used for console FG
+		RGB(  0,128,192), // Darker Sky Blue
+		RGB(  0, 64,128), // Deep   Sky Blue
+		RGB(255,128,  0), // Orange (Full)
+		RGB(128, 64,  0), // Orange (Half)
+		RGB(  0,  0,  0),
+		RGB(  0,  0,  0),
+		RGB(  0,  0,  0),
+
+		RGB(  0,  0,  0),
+		RGB(  0,  0,  0),
+		RGB(  0,  0,  0),
+		RGB(  0,  0,  0),
+		RGB(  0,  0,  0),
+		RGB(  0,  0,  0),
+		RGB(  0,  0,  0),
+		RGB(  0,  0,  0),
+	};
+
+// ZZZ: TODO: FIXME!!!
+	// Index into "Palette" of colors
+	// Move to Debugger_Colors.cpp !!!
+// ZZZ: TODO: FIXME!!!
+	int g_aColorIndex[ NUM_DEBUG_COLORS ] =
+	{
+		K0, W8,              // BG_CONSOLE_OUTPUT   FG_CONSOLE_OUTPUT (W8)
+		B1, COLOR_CUSTOM_01, // BG_CONSOLE_INPUT    FG_CONSOLE_INPUT (W8)
+
+		B2,                  // BG_DISASM_1
+		B3,                  //  BG_DISASM_2
+
+		R8, W8,              // BG_DISASM_BP_S_C    FG_DISASM_BP_S_C
+		R6, W5,              // BG_DISASM_BP_0_C    FG_DISASM_BP_0_C
+
+		R7,                  // FG_DISASM_BP_S_X    // Y8 lookes better on Info Cyan // R6
+		W5,                  // FG_DISASM_BP_0_X 
+
+		W8, K0,              // BG_DISASM_C         FG_DISASM_C     // B8 -> K0
+		Y8, K0,              // BG_DISASM_PC_C      FG_DISASM_PC_C  // K8 -> K0
+		Y4, W8,              // BG_DISASM_PC_X      FG_DISASM_PC_X
+
+		C4, W8,              // BG_DISASM_BOOKMARK  FG_DISASM_BOOKMARK
+
+		W8,                  //                     FG_DISASM_ADDRESS
+		G192,                //                     FG_DISASM_OPERATOR
+		Y8,                  //                     FG_DISASM_OPCODE
+		W8,                  //                     FG_DISASM_MNEMONIC
+		M8,                  //                     FG_DISASM_DIRECTIVE
+		COLOR_CUSTOM_04,     //                     FG_DISASM_TARGET (or W8)
+		G8,                  //                     FG_DISASM_SYMBOL
+		C8,                  //                     FG_DISASM_CHAR
+		G8,                  //                     FG_DISASM_BRANCH
+
+		C3,                  //                     BG_INFO (C4, C2 too dark)
+		W8,                  //                     FG_INFO_TITLE (or W8)
+		Y7,                  //                     FG_INFO_BULLET (W8)
+		G192,                //                     FG_INFO_OPERATOR
+		COLOR_CUSTOM_04,     //                     FG_INFO_ADDRESS (was Y8)
+		Y8,                  //                     FG_INFO_OPCODE
+		COLOR_CUSTOM_01,     //                     FG_INFO_REG (was orange)
+
+		W8, C3,              // BG_INFO_INVERSE     FG_INFO_INVERSE
+		C5,                  // BG_INFO_CHAR
+		W8,                  //                     FG_INFO_CHAR_HI
+		Y8,                  //                     FG_INFO_CHAR_LO
+
+		COLOR_CUSTOM_04,    // BG_INFO_IO_BYTE 
+		COLOR_CUSTOM_04,    //                     FG_INFO_IO_BYTE
+				
+		C2,   // BG_DATA_1
+		C3,   // BG_DATA_2
+		Y8,   // FG_DATA_BYTE
+		W8,   // FG_DATA_TEXT
+
+		G4,   // BG_SYMBOLS_1
+		G3,   // BG_SYMBOLS_2
+		W8,   // FG_SYMBOLS_ADDRESS
+		M8,   // FG_SYMBOLS_NAME
+
+		K0,   // BG_SOURCE_TITLE
+		W8,   // FG_SOURCE_TITLE
+		W2,   // BG_SOURCE_1 // C2 W2 for "Paper Look"
+		W3,   // BG_SOURCE_2
+		W8    // FG_SOURCE
+	};
+
+	COLORREF g_aColors[ NUM_COLOR_SCHEMES ][ NUM_DEBUG_COLORS ];
+
+	COLORREF DebuggerGetColor ( int iColor );
+
+
+//===========================================================================
+inline COLORREF DebuggerGetColor( int iColor )
+{
+	COLORREF nColor = RGB(0,255,255); // 0xFFFF00; // Hot Pink! -- so we notice errors. Not that there is anything wrong with pink...
+
+	if ((g_iColorScheme < NUM_COLOR_SCHEMES) && (iColor < NUM_DEBUG_COLORS))
+	{
+		nColor = g_aColors[ g_iColorScheme ][ iColor ];
+	}
+
+	return nColor;
+}
+
+
+bool DebuggerSetColor( const int iScheme, const int iColor, const COLORREF nColor )
+{
+	bool bStatus = false;
+	if ((g_iColorScheme < NUM_COLOR_SCHEMES) && (iColor < NUM_DEBUG_COLORS))
+	{
+		g_aColors[ iScheme ][ iColor ] = nColor;
+		bStatus = true;
+	}
+
+	// Propogate to console since it has its own copy of colors
+	if (iColor == FG_CONSOLE_OUTPUT)
+	{
+		COLORREF nConsole = DebuggerGetColor( FG_CONSOLE_OUTPUT );
+		g_anConsoleColor[ CONSOLE_COLOR_x ] = nConsole;
+	}
+	
+	return bStatus;
+}
+
