@@ -246,45 +246,138 @@
 			</File>
 			<Filter
 				Name="Debugger"
-				Filter="">
+				>
 				<File
-					RelativePath=".\source\Debug.cpp">
+					RelativePath=".\source\Debugger\Debug.cpp"
+					>
 				</File>
 				<File
-					RelativePath=".\source\Debug.h">
+					RelativePath=".\source\Debugger\Debug.h"
+					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Assembler.cpp">
+					RelativePath=".\source\Debugger\Debugger_Assembler.cpp"
+					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Assembler.h">
+					RelativePath=".\source\Debugger\Debugger_Assembler.h"
+					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Console.cpp">
+					RelativePath=".\source\Debugger\Debugger_Console.cpp"
+					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Console.h">
+					RelativePath=".\source\Debugger\Debugger_Console.h"
+					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Display.cpp">
+					RelativePath=".\source\Debugger\Debugger_DisassemblerData.cpp"
+					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Display.h">
+					RelativePath=".\source\Debugger\Debugger_DisassemblerData.h"
+					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Help.cpp">
+					RelativePath=".\source\Debugger\Debugger_Display.cpp"
+					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Help.h">
+					RelativePath=".\source\Debugger\Debugger_Display.h"
+					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Parser.cpp">
+					RelativePath=".\source\Debugger\Debugger_Help.cpp"
+					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Parser.h">
+					RelativePath=".\source\Debugger\Debugger_Help.h"
+					>
 				</File>
 				<File
-					RelativePath=".\source\Debugger_Types.h">
+					RelativePath=".\source\Debugger\Debugger_Parser.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Parser.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Range.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Range.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Symbols.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Symbols.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Types.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Uthernet"
+				>
+				<File
+					RelativePath=".\source\Tfe\Bittypes.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Bpf.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Ip6_misc.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Pcap-stdinc.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Pcap.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Tfe.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Tfe.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Tfearch.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Tfearch.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Tfesupp.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Tfesupp.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Uilib.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Uilib.h"
+					>
 				</File>
 			</Filter>
 			<Filter
