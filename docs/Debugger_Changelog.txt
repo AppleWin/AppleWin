@@ -1,6 +1,7 @@
 /*
 2.7.0.0 Released with Applewin 1.19.1.x
-
+.11 Added: Command line now accepts Indirect mode via ( )
+    Example:  U (BRKV)
 .10 Added: Pretty printing 'B' of all bytes treated as data.
 .9 Fixed: Renamed ambiguous command 'DL' to 'B' to list all bytes being treated as data
           Renamed command: 'B' to 'Z' as an alias to treat byte(s) as data
