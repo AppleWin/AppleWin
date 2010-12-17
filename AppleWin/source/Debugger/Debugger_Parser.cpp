@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -458,6 +458,9 @@ int ArgsCook ( const int nArgs ) //, const int bProcessMask )
 	int    nParamLen = 0;
 	int    nArgsLeft = 0;
 
+	int nParenL = 0;
+	int nParenR = 0;
+
 	while (iArg <= nArg)
 	{
 		pArg  = & (g_aArgs[ iArg ]);
@@ -697,6 +700,51 @@ int ArgsCook ( const int nArgs ) //, const int bProcessMask )
 					// Don't remove, since "SYM ! symbol" needs token to remove symbol
 				}
 				
+				if (pArg->eToken == TOKEN_PAREN_L)
+				{
+					nParenL++;
+
+					if (nArgsLeft >= 2)
+					{
+						nParamLen = 1; // eat '('
+						_Arg_Shift( iArg + nParamLen, nArgs, iArg );
+
+						pNext = & (g_aArgs[ iArg + 1 ]);
+						if (pNext->eToken == TOKEN_PAREN_R)
+						{
+							nParenR++;
+							pArg->bSymbol = false;
+
+							// This is static binding, instead of dynamic binding
+							// i.e. memdump (BRKV) -> memdump (3F0), but if 3F0 changes later
+							// the debugger won't know that it has
+							//	TODO: TYPE_INDIRECT
+							// pArg->bType |= TYPE_INDIRECT;
+							// pArg->nValue  =  nAddressVal;
+							//nAddressVal = pNext->nValue;
+							pArg->nValue  =  * (WORD*) (mem + nAddressVal);
+							pArg->bType   = TYPE_VALUE | TYPE_ADDRESS | TYPE_NO_REG;
+
+							iArg++; // eat ')'
+							nArg -= 2;
+							nParamLen = 0;
+						}
+						else
+							return ARG_SYNTAX_ERROR; // ERROR: unbalanced/unmatched ( )
+					}
+				}							
+
+				if (pArg->eToken == TOKEN_PAREN_R)
+				{
+					nParenR++;
+					if (nParenL == nParenR)
+					{
+						nParamLen = 1;
+					}
+					else
+						return ARG_SYNTAX_ERROR;
+				}
+
 				if (nParamLen)
 				{
 					_Arg_Shift( iArg + nParamLen, nArgs, iArg );
