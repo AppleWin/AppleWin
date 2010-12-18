@@ -1429,25 +1429,64 @@
 
 	enum Window_e
 	{
-		WINDOW_CODE    ,
-		WINDOW_DATA    ,
+		WINDOW_NULL    , // no window data!
 		WINDOW_CONSOLE ,
+		WINDOW_CODE    ,
+		WINDOW_DATA    , // memory view
+
+		WINDOW_INFO    , // WINDOW_REGS, WINDOW_STACK, WINDOW_BREAKPOINTS, WINDOW_WATCHES, WINDOW,
+
 		NUM_WINDOWS    ,
 // Not implemented yet
-		WINDOW_IO      , // soft switches   $addr  name   state
+		WINDOW_REGS    ,
+		WINDOW_STACK   ,
 		WINDOW_SYMBOLS ,
+		WINDOW_TARGETS ,
+
+		WINDOW_IO      , // soft switches   $addr  name   state
 		WINDOW_ZEROPAGE,
 		WINDOW_SOURCE  ,
+		WINDOW_OUTPUT  ,
+
+
+	};
+
+	enum WindowSplit_e
+	{
+		WIN_SPLIT_HORZ = (1 << 0),
+		WIN_SPLIT_VERT = (1 << 1),
+		WIN_SPLIT_PARENT_TOP = (1 << 2),
 	};
 	
 	struct WindowSplit_t
 	{
-		bool     bSplit;
+		RECT tBoundingBox; // 
+
+		int  nWidth ; // Width & Height are always valid 
+		int  nHeight; // If window is split/join, then auto-updated (right,bottom)
+
+		int  nCursorY; // Address
+		int  nCursorX; // or line,col of text file ...
+
+		int  bSplit ; 
+
+		int  iParent;// index into g_aWindowConfig
+		int  iChild ; // index into g_aWindowConfig
+
 		Window_e eTop;
 		Window_e eBot;	
-		// TODO: nTopHeight
-		// TODO: nBotHeight
 	};
+
+// Debuger_PanelInit();
+// WindowsRemoveAll()
+// int iNext = 0;
+// iNext = Panel_Add( iNext, WINDOW_CONSOLE );
+// iNext = Panel_AutoSplit( iNext, WINDOW_CODE );
+// iNext = Panel_AutoSplit( iNext, WINDOW_REGS );
+
+
+	// g_bWindowDisplayShowChild = false;
+	// g_bWindowDisplayShowRoot  = WINDOW_CODE;
 
 
 // Zero Page ______________________________________________________________________________________
