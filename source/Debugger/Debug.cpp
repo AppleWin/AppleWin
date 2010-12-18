@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006-2009 Michael Pohoreski
+ * Author: Copyright (C) 2006-2010 Michael Pohoreski
  */
 
 // disable warning C4786: symbol greater than 255 character:
@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,0);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,2,23);
 
 
 // Public _________________________________________________________________________________________
@@ -706,8 +706,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 // Window _________________________________________________________________________________________
-	int           g_iWindowLast = WINDOW_CODE;
-	int           g_iWindowThis = WINDOW_CODE;
+	int           g_iWindowLast = WINDOW_CODE; // TODO: FIXME! should be offset into WindowConfig!!!
+	// Who has active focus
+	int           g_iWindowThis = WINDOW_CODE; // TODO: FIXME! should be offset into WindowConfig!!!
 	WindowSplit_t g_aWindowConfig[ NUM_WINDOWS ];
 
 
@@ -2792,7 +2793,7 @@ Update_t CmdConfigSave (int nArgs)
 		int   nLen;
 		DWORD nPut;
 
-	// FIXME: Shouldn be saving in Text format, not binary!
+	// FIXME: Should be saving in Text format, not binary!
 
 		int nVersion = CURRENT_VERSION;
 		pSrc = (void *) &nVersion;
@@ -4873,15 +4874,18 @@ Update_t _SearchMemoryDisplay (int nArgs)
 			sResult[0] = 0;
 			nLen = 0;
 
-			        StringCat( sResult, CHC_COMMAND, nBuf );
+			        StringCat( sResult, CHC_NUM_DEC, nBuf ); // 2.6.2.17 Search Results: The n'th result now using correct color (was command, now number decimal)
 			sprintf( sText, "%2d", iFound );
 			nLen += StringCat( sResult, sText , nBuf );
 
-			        StringCat( sResult, CHC_DEFAULT, nBuf );
+			        StringCat( sResult, CHC_DEFAULT, nBuf ); // intentional default instead of CHC_ARG_SEP for better readability
 			nLen += StringCat( sResult, ":" , nBuf );
 
+			        StringCat( sResult, CHC_ARG_SEP, nBuf );
+			nLen += StringCat( sResult, "$" , nBuf ); // 2.6.2.16 Fixed: Search Results: The hex specify for target address results now colorized properly
+
 			        StringCat( sResult, CHC_ADDRESS, nBuf );
-			sprintf( sText, "$%04X", nAddress );
+			sprintf( sText, "%04X ", nAddress ); // 2.6.2.15 Fixed: Search Results: Added space between results for better readability
 			nLen += StringCat( sResult, sText, nBuf );
 
 			// Fit on same line?
@@ -4913,21 +4917,21 @@ Update_t _SearchMemoryDisplay (int nArgs)
 		        StringCat( sResult, CHC_DEFAULT, nBuf );
 		nLen += StringCat( sResult, ": " , nBuf );
 
-		        StringCat( sResult, CHC_NUM_DEC, nBuf );
+		        StringCat( sResult, CHC_NUM_DEC, nBuf ); // intentional CHC_DEFAULT instead of 
 		sprintf( sText, "%d  ", nFound );
 		nLen += StringCat( sResult, sText, nBuf );
 
-		        StringCat( sResult, CHC_ARG_OPT, nBuf );
+		        StringCat( sResult, CHC_ARG_SEP, nBuf ); // CHC_ARC_OPT -> CHC_ARG_SEP
 		nLen += StringCat( sResult, "(" , nBuf );
 
-		        StringCat( sResult, CHC_DEFAULT, nBuf );
+		        StringCat( sResult, CHC_ARG_SEP, nBuf ); // CHC_DEFAULT
 		nLen += StringCat( sResult, "#$", nBuf );
 
 		        StringCat( sResult, CHC_NUM_HEX, nBuf );
 		sprintf( sText, "%04X", nFound );
 		nLen += StringCat( sResult, sText, nBuf );
 
-		        StringCat( sResult, CHC_ARG_OPT, nBuf );
+		        StringCat( sResult, CHC_ARG_SEP, nBuf );
 		nLen += StringCat( sResult, ")" , nBuf );
 		
 		ConsolePrint( sResult );
@@ -6308,6 +6312,9 @@ Update_t CmdWindowCyclePrev( int nArgs )
 //===========================================================================
 Update_t CmdWindowShowCode (int nArgs)
 {
+	// g_bWindowDisplayShowChild = false;
+	// g_bWindowDisplayShowRoot  = WINDOW_CODE;
+
 	if (g_iWindowThis == WINDOW_CODE)
 	{
 		g_aWindowConfig[ g_iWindowThis ].bSplit = false;
@@ -6329,7 +6336,7 @@ Update_t CmdWindowShowCode (int nArgs)
 Update_t CmdWindowShowCode1 (int nArgs)
 {
 /*
-	if ((g_iWindowThis == WINDOW_CODE) || (g_iWindowThis != WINDOW_CODE))
+	if ((g_iWindowThis == WINDOW_CODE) || (g_iWindowThis != WINDOW_DATA))
 	{
 		g_aWindowConfig[ g_iWindowThis ].bSplit = true;
 		g_aWindowConfig[ g_iWindowThis ].eTop = WINDOW_CODE;
@@ -6348,7 +6355,7 @@ Update_t CmdWindowShowCode1 (int nArgs)
 //===========================================================================
 Update_t CmdWindowShowCode2 (int nArgs)
 {
-	if ((g_iWindowThis == WINDOW_CODE) || (g_iWindowThis == WINDOW_CODE))
+	if ((g_iWindowThis == WINDOW_CODE) || (g_iWindowThis == WINDOW_DATA))
 	{
 		if (g_iWindowThis == WINDOW_CODE)
 		{
@@ -6406,16 +6413,16 @@ Update_t CmdWindowShowData1 (int nArgs)
 //===========================================================================
 Update_t CmdWindowShowData2 (int nArgs)
 {
-	if ((g_iWindowThis == WINDOW_CODE) || (g_iWindowThis == WINDOW_CODE))
+	if ((g_iWindowThis == WINDOW_CODE) || (g_iWindowThis == WINDOW_DATA))
 	{
 		if (g_iWindowThis == WINDOW_CODE)
 		{
-			_WindowJoin();
+			_WindowSplit( WINDOW_DATA );
 		}
 		else		
 		if (g_iWindowThis == WINDOW_DATA)
 		{
-			_WindowSplit( WINDOW_DATA );
+			_WindowJoin();
 		}		
 		return UPDATE_DISASM;
 
