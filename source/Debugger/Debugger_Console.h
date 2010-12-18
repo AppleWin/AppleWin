@@ -20,19 +20,21 @@
 	// typedef unsigned char conchar_t;
 	typedef short conchar_t;
 
+	// NOTE: Keep in sync ConsoleColors_e g_anConsoleColor !
 	enum ConsoleColors_e
 	{
 		CONSOLE_COLOR_K, // 0
 		CONSOLE_COLOR_x = 0, // default console foreground
-		CONSOLE_COLOR_R, // 1
-		CONSOLE_COLOR_G, // 2
-		CONSOLE_COLOR_Y, // 3
-		CONSOLE_COLOR_B, // 4
-		CONSOLE_COLOR_M, // 5 Lite Blue
-		CONSOLE_COLOR_C, // 6
-		CONSOLE_COLOR_W, // 7
-		CONSOLE_COLOR_O, // 8
+		CONSOLE_COLOR_R, // 1 Red
+		CONSOLE_COLOR_G, // 2 Green
+		CONSOLE_COLOR_Y, // 3 Yellow
+		CONSOLE_COLOR_B, // 4 Blue
+		CONSOLE_COLOR_M, // 5 Magenta/Purple
+		CONSOLE_COLOR_C, // 6 Cyan
+		CONSOLE_COLOR_W, // 7 White
+		CONSOLE_COLOR_O, // 8 Orange
 		CONSOLE_COLOR_k, // 9 Grey
+		CONSOLE_COLOR_b, // : Lite Blue
 		NUM_CONSOLE_COLORS
 	};
 	extern COLORREF g_anConsoleColor[ NUM_CONSOLE_COLORS ];
@@ -44,22 +46,30 @@
 /* Help Colors
 */
 #if 1 // USE_APPLE_FONT
+	// TODO: char *g_aColorTextStrings[] = ""
+	// TODO: replace with CT_STRINGS[0]
+	// TODO: CT_COMMA
+	// TODO: CT_COLON
+	// TODO: CT_PAREN_L
+	// TODO: CT_PAREN_R
+
 	// Console Help Color
 	#define CHC_DEFAULT  "`0"
 	#define CHC_USAGE    "`3"
 	#define CHC_CATEGORY "`6"
-	#define CHC_COMMAND  "`2"
+	#define CHC_COMMAND  "`2" // Green
 	#define CHC_KEY      "`1"
 	#define CHC_ARG_MAND "`7" // < >
 	#define CHC_ARG_OPT  "`4" // [ ] 
 	#define CHC_ARG_SEP  "`9" //  |  grey
-	#define CHC_NUM_DEC  "`6" // cyan looks better then yellow
+	#define CHC_NUM_DEC  "`6" // cyan looks better then yellow (_SearchMemoryDisplay), S D000:FFFF A9 00, PROFILE, HELP BP
 	#define CHC_NUM_HEX  "`3"
-	#define CHC_SYMBOL   "`2"
-	#define CHC_ADDRESS  "`8"
+	#define CHC_SYMBOL   "`2" // Symbols
+	#define CHC_ADDRESS  "`8" // Hex Address
 	#define CHC_ERROR    "`1"
+	#define CHC_WARNING  "`5"
 	#define CHC_STRING   "`6"
-	#define CHC_EXAMPLE  "`5"
+	#define CHC_EXAMPLE  "`:"
 #else
 	#define CHC_DEFAULT  ""
 	#define CHC_USAGE    ""
