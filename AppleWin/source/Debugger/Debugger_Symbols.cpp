@@ -1,4 +1,36 @@
+/*
+AppleWin : An Apple //e emulator for Windows
+
+Copyright (C) 1994-1996, Michael O'Brien
+Copyright (C) 1999-2001, Oliver Schmidt
+Copyright (C) 2002-2005, Tom Charlesworth
+Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski
+
+AppleWin is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+AppleWin is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with AppleWin; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+/* Description: Debugger Symbol Tables
+ *
+ * Author: Copyright (C) 2006-2010 Michael Pohoreski
+ */
+
 #include "StdAfx.h"
+
+
+// Allow the user to disable/enable symbol tables
+#define ALLOW_SYMBOL_TABLE_DISABLED 1
 
 
 // Symbols ________________________________________________________________________________________
@@ -36,8 +68,14 @@
 		true
 	};
 
+	// %1 symbol table is active (are displayed in disassembly window, etc.)
+	// %0 symbol table is disabled (not displayed in disassembly window, etc.)
+	int g_bDisplaySymbolTables = (1 << NUM_SYMBOL_TABLES) - 1;; // default to all symbol tables
 
 // Utils _ ________________________________________________________________________________________
+
+	void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize = 0 );
+
 
 //===========================================================================
 LPCTSTR GetSymbol (WORD nAddress, int nBytes)
@@ -62,17 +100,22 @@ LPCTSTR FindSymbolFromAddress (WORD nAddress, int * iTable_ )
 	int iTable = NUM_SYMBOL_TABLES;
 	while (iTable-- > 0)
 	{
-		if (g_aSymbols[iTable].size())
+		if (! g_aSymbols[iTable].size())
+			continue;
+
+#if ALLOW_SYMBOL_TABLE_DISABLED
+		if (! (g_bDisplaySymbolTables & (1 << iTable)))
+			continue;
+#endif
+
+		map<WORD, string>::iterator iSymbols = g_aSymbols[iTable].find(nAddress);
+		if(g_aSymbols[iTable].find(nAddress) != g_aSymbols[iTable].end())
 		{
-			map<WORD, string>::iterator iSymbols = g_aSymbols[iTable].find(nAddress);
-			if(g_aSymbols[iTable].find(nAddress) != g_aSymbols[iTable].end())
+			if (iTable_)
 			{
-				if (iTable_)
-				{
-					*iTable_ = iTable;
-				}
-				return iSymbols->second.c_str();
+				*iTable_ = iTable;
 			}
+			return iSymbols->second.c_str();
 		}
 	}	
 	return NULL;	
@@ -86,6 +129,11 @@ bool FindAddressFromSymbol ( LPCTSTR pSymbol, WORD * pAddress_, int * iTable_ )
 	{
 		if (! g_aSymbols[iTable].size())
 			continue;
+
+#if ALLOW_SYMBOL_TABLE_DISABLED
+		if (! (g_bDisplaySymbolTables & (1 << iTable)))
+			continue;
+#endif
 
 //		map<WORD, string>::iterator iSymbol = g_aSymbols[iTable].begin();
 		SymbolTable_t :: iterator  iSymbol = g_aSymbols[iTable].begin();
@@ -187,13 +235,38 @@ Update_t CmdSymbolsClear (int nArgs)
 	return (UPDATE_DISASM | UPDATE_SYMBOLS);
 }
 
-void _CmdSymbolsInfoHeader( int iTable, char * pText )
+// Format the summary of the specified symbol table
+//===========================================================================
+void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize /* = 0 */ )
 {
-	int nSymbols  = g_aSymbols[ iTable ].size();
-	sprintf( pText, "  %s: %s%d%s"
-		, g_aSymbolTableNames[ iTable ]
-		, CHC_NUM_DEC
-		, nSymbols
+	// Common case is to use/calc the table size
+	bool bActive = (g_bDisplaySymbolTables & (1 << iTable)) ? true : false;
+	int nSymbols  = nDisplaySize ? nDisplaySize : g_aSymbols[ iTable ].size();
+
+	// Long Desc: `MAIN`: `1000 `symbols`, `on`
+	// full
+#if 0
+	sprintf( pText, "  %s%s%s: %s# %s%d %ssymbols%s, (%s%s%s)%s"
+		// , CHC_SYMBOL, g_aSymbolTableNames[ iTable ]
+		, CHC_STRING, g_aSymbolTableNames[ iTable ]
+		, CHC_ARG_SEP
+		CHC_DEFAULT
+		, CHC_NUM_DEC, nSymbols
+		, CHC_DEFAULT, CHC_ARG_SEP,
+
+		, CHC_STRING, 
+		, CHC_ARG_SEP, CHC_DEFAULT
+	);
+#endif
+	// sprintf( pText, "  %s: %s%d%s"
+	// Short Desc: `MAIN`: `1000`
+
+	// // 2.6.2.19 Color for name of symbol table: _CmdPrintSymbol() "SYM HOME" _CmdSymbolsInfoHeader "SYM"
+	// CHC_STRING and CHC_NUM_DEC are both cyan, using CHC_USAGE instead of CHC_STRING
+	sprintf( pText, "  %s%s%s: %s%d%s"
+		, CHC_USAGE, g_aSymbolTableNames[ iTable ]
+		, CHC_ARG_SEP
+		, bActive ? CHC_NUM_DEC : CHC_WARNING, nSymbols
 		, CHC_DEFAULT
 	);
 }
@@ -201,8 +274,8 @@ void _CmdSymbolsInfoHeader( int iTable, char * pText )
 //===========================================================================
 Update_t CmdSymbolsInfo (int nArgs)
 {
-	char sText[ CONSOLE_WIDTH * 2 ] = "";
-	char sTemp[ CONSOLE_WIDTH ] = "";
+	char sText[ CONSOLE_WIDTH * 4 ] = "";
+	char sTemp[ CONSOLE_WIDTH * 2 ] = "";
 
 	int bDisplaySymbolTables = 0;
 
@@ -217,9 +290,9 @@ Update_t CmdSymbolsInfo (int nArgs)
 		if ((iWhichTable < 0) || (iWhichTable >= NUM_SYMBOL_TABLES))
 		{
 			sprintf( sText, "Only %s%d%s symbol tables supported!"
-				, CHC_NUM_DEC
-				, NUM_SYMBOL_TABLES
-				, CHC_DEFAULT );
+				, CHC_NUM_DEC, NUM_SYMBOL_TABLES
+				, CHC_DEFAULT
+			);
 			return ConsoleDisplayError( sText );
 		}
 
@@ -244,17 +317,18 @@ Update_t CmdSymbolsInfo (int nArgs)
 //===========================================================================
 void _CmdPrintSymbol( LPCTSTR pSymbol, WORD nAddress, int iTable )
 {
-	char   sText[ CONSOLE_WIDTH ];
-	sprintf( sText, "  %s$%s%04X%s (%s%s%s) %s%s"
+	char   sText[ CONSOLE_WIDTH * 2 ];
+
+	// 2.6.2.19 Color for name of symbol table: _CmdPrintSymbol() "SYM HOME" _CmdSymbolsInfoHeader "SYM"
+	// CHC_STRING and CHC_NUM_DEC are both cyan, using CHC_USAGE instead of CHC_STRING
+
+	// 2.6.2.20 Changed: Output of found symbol more table friendly.  Symbol table name displayed first.
+	sprintf( sText, "  %s%s%s: $%s%04X %s%s"
+		, CHC_USAGE, g_aSymbolTableNames[ iTable ]
 		, CHC_ARG_SEP
-		, CHC_ADDRESS
-		, nAddress
-		, CHC_DEFAULT
-		, CHC_STRING
-		, g_aSymbolTableNames[ iTable ]
-		, CHC_DEFAULT
-		, CHC_SYMBOL
-		, pSymbol );
+		, CHC_ADDRESS, nAddress
+		, CHC_SYMBOL, pSymbol );
+
 	// ConsoleBufferPush( sText );
 	ConsolePrint( sText );
 }
@@ -423,18 +497,18 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 				{
 					if (! _CmdSymbolList_Address2Symbol( nAddress, bSymbolTables ))
 					{
-						wsprintf( sText
-							, TEXT(" Symbol not found: %s%s%s")
-							, CHC_SYMBOL, pSymbol, CHC_DEFAULT
+						sprintf( sText
+							, TEXT(" %sSymbol not found: %s%s%s")
+							, CHC_ERROR, CHC_SYMBOL, pSymbol, CHC_DEFAULT
 						);
 						ConsolePrint( sText );
 					}
 				}
 				else
 				{
-					wsprintf( sText
-						, TEXT(" Symbol not found: %s%s%s")
-						, CHC_SYMBOL, pSymbol, CHC_DEFAULT
+					sprintf( sText
+						, TEXT(" %sSymbol not found: %s%s%s")
+						, CHC_ERROR, CHC_SYMBOL, pSymbol, CHC_DEFAULT
 					);
 					ConsolePrint( sText );
 				}
@@ -783,26 +857,20 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				if (iTable != NUM_SYMBOL_TABLES)
 				{
 					Update_t iUpdate = _CmdSymbolsClear( (SymbolTable_Index_e) iTable );
-					wsprintf( sText, TEXT(" Cleared symbol table: %s"),
-						g_aSymbolTableNames[ iTable ]
+					sprintf( sText, TEXT(" Cleared symbol table: %s%s")
+						, CHC_STRING, g_aSymbolTableNames[ iTable ]
 					 );
-					ConsoleBufferPush( sText );
+					ConsolePrint( sText );
 					iUpdate |= ConsoleUpdate();
 					return iUpdate;
 				}
 				else
 				{
+					// Shouldn't have multiple symbol tables selected
+//					nArgs = _Arg_1( eSymbolsTable );
 					ConsoleBufferPush( TEXT(" Error: Unknown Symbol Table Type") );
 					return ConsoleUpdate();
 				}
-//				if (bSymbolTable & SYMBOL_TABLE_MAIN)
-//					return _CmdSymbolsClear( SYMBOLS_MAIN );
-//				else
-//				if (bSymbolsTable & SYMBOL_TABLE_USER)
-//					return _CmdSymbolsClear( SYMBOLS_USER );
-//				else
-					// Shouldn't have multiple symbol tables selected
-//					nArgs = _Arg_1( eSymbolsTable );
 			}
 			else
 			if (iParam == PARAM_LOAD)
@@ -815,9 +883,13 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				{
 					if( bUpdate & UPDATE_SYMBOLS )
 					{
-						wsprintf( sText, "  Symbol Table: %s, loaded symbols: %d",
-						g_aSymbolTableNames[ iTable ], g_nSymbolsLoaded );
-						ConsoleBufferPush( sText );
+						//sprintf( sText, "  Symbol Table: %s%s%s, %sloaded symbols: %s%d"
+						//	, CHC_STRING, g_aSymbolTableNames[ iTable ]
+						//	, CHC_DEFAULT, CHC_DEFAULT
+						//	, CHC_NUM_DEC, g_nSymbolsLoaded
+						//);
+						_CmdSymbolsInfoHeader( iTable, sText, g_nSymbolsLoaded );
+						ConsolePrint( sText );
 					}
 				}
 				else
@@ -832,10 +904,34 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				nArgs = _Arg_Shift( iArg, nArgs);
 				return CmdSymbolsSave( nArgs );
 			}
+			else
+			if (iParam == PARAM_ON)
+			{
+				g_bDisplaySymbolTables |= bSymbolTables;
+				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
+				if (iTable != NUM_SYMBOL_TABLES)
+				{
+					_CmdSymbolsInfoHeader( iTable, sText );
+					ConsolePrint( sText );
+				}
+				return ConsoleUpdate() | UPDATE_DISASM;
+			}
+			else
+			if (iParam == PARAM_OFF)
+			{
+				g_bDisplaySymbolTables &= ~bSymbolTables;
+				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
+				if (iTable != NUM_SYMBOL_TABLES)
+				{
+					_CmdSymbolsInfoHeader( iTable, sText );
+					ConsolePrint( sText );
+				}
+				return ConsoleUpdate() | UPDATE_DISASM;
+			}
 		}
 		else
 		{
-			return _CmdSymbolsListTables( nArgs, bSymbolTables ); // bSymbolTables
+			return _CmdSymbolsListTables( nArgs, bSymbolTables );
 		}
 
 	}
