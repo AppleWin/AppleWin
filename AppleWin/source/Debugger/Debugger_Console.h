@@ -3,7 +3,7 @@
 
 	enum
 	{
-		CONSOLE_HEIGHT = 384, // Lines, was 128, but need ~ 256+16 for PROFILE LIST
+		CONSOLE_HEIGHT = 512, // Lines, was 128, but need ~ 256+16 for PROFILE LIST
 		CONSOLE_WIDTH  =  80,
 
 		// need min 256+ lines for "profile list"
