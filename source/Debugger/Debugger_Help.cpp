@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2008, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006-2008 Michael Pohoreski
+ * Author: Copyright (C) 2006-2010 Michael Pohoreski
  */
 
 #include "StdAfx.h"
@@ -1311,8 +1311,8 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( "  Where <cmd> is one of:" );
 			sprintf( sText, "%s%-5s%s: Turns symbols on in the disasm window"       , CHC_STRING, g_aParameters[ PARAM_ON    ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
 			sprintf( sText, "%s%-5s%s: Turns symbols off in the disasm window"      , CHC_STRING, g_aParameters[ PARAM_OFF   ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
-			sprintf( sText, "%s%-5s%s: Loads symbols from last/default \"filename\"", CHC_STRING, g_aParameters[ PARAM_SAVE  ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
-			sprintf( sText, "%s%-5s%s: Saves symbol table to \"filename\""          , CHC_STRING, g_aParameters[ PARAM_LOAD  ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
+			sprintf( sText, "%s%-5s%s: Loads symbols from last/default \"filename\"", CHC_STRING, g_aParameters[ PARAM_LOAD  ].m_sName, CHC_DEFAULT ); ConsolePrint( sText ); // 2.6.2.14 Fixed: Save/Load Param help was swapped.
+			sprintf( sText, "%s%-5s%s: Saves symbol table to \"filename\""          , CHC_STRING, g_aParameters[ PARAM_SAVE  ].m_sName, CHC_DEFAULT ); ConsolePrint( sText ); // 2.6.2.14 Fixed: Save/Load Param help was swapped.
 			sprintf( sText, "%s%-5s%s: Clears the symbol table"                     , CHC_STRING, g_aParameters[ PARAM_CLEAR ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
 			sprintf( sText, "%s%-5s%s: Remove symbol"                               , CHC_STRING, g_aTokens[ TOKEN_EXCLAMATION ].sToken, CHC_DEFAULT ); ConsolePrint( sText );
 			break;
@@ -1340,6 +1340,7 @@ Update_t CmdHelpSpecific (int nArgs)
 		case CMD_VIEW_DHGRX :
 		case CMD_VIEW_DHGR1 :
 		case CMD_VIEW_DHGR2 :
+			ConsolePrint("Show the video output in the specified format.");
 			break;
 	// Watches
 		case CMD_WATCH_ADD:
