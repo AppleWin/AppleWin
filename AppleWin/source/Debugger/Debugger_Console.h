@@ -7,7 +7,7 @@
 		CONSOLE_WIDTH  =  80,
 
 		// need min 256+ lines for "profile list"
-		CONSOLE_BUFFER_HEIGHT = 384,
+		CONSOLE_BUFFER_HEIGHT = CONSOLE_HEIGHT,
 
 		HISTORY_HEIGHT = 128,
 		HISTORY_WIDTH  = 128,
