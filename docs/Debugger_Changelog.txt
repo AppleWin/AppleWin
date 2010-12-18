@@ -1,5 +1,13 @@
 /*
 2.7.0.0 Released with Applewin 1.19.1.x
+
+.12 Fixed: Following symbol tables were all hard-coded to SYMMAIN
+		SYMBASIC
+		SYMASM
+		SYMUSER
+		SYMUSER2
+		SYMSRC
+		SYMSRC2
 .11 Added: Command line now accepts Indirect mode via ( )
     Example:  U (BRKV)
 .10 Added: Pretty printing 'B' of all bytes treated as data.
