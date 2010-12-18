@@ -1,13 +1,34 @@
 /*
-2.7.0.0 Released with Applewin 1.19.1.x
+2.7.0.0 Released with Applewin 1.19.1.0
 
-.12 Fixed: Following symbol tables were all hard-coded to SYMMAIN
+.23 Changed: Increased number of lines for console output buffer (from 384 to 512)
+.22 Changed: Re-enabled magenta/purple for warnings (i.e. symbol table disabled)
+.21 Fixed: Missing GPL / copyright on some debugger files, updated year.
+.20 Changed: Output of found symbol more table friendly.  Symbol table name displayed first.
+    Example: SYM HOME     // <SymbolTable>:  $<Address> <Symbol>
+.19 Changed: Unified format & colors for summary of symbol tables and symbol table names.
+    A symbol table that has been disabled will display in purple / magenta.
+    Example: SYM HOME     // 'Main' shown in yellow
+    Example: SYMBASIC OFF
+    Example: SYM
+.18 Fixed: Search Results: Total summary line unified colors.
+.17 Fixed: Search Results: The n'th result now using correct color (was command, now number decimal)
+.16 Fixed: Search Results: The hex literal prefix '$' for target address results now colorized properly.
+.15 Fixed: Search Results: Added space between results for better readability.
+.14 Fixed: Help description for Save/Load parameter help was swapped.
+    Example: HELP SYMMAIN
+.13 Added: Can now enable/disable selected symbol table(s) !
+    Example: SYMMAIN OFF
+    Example: SYMBASIC OFF
+    Note: If you need to search for symbols ON, OFF, CLEAR, use SYM. i.e. SYM ON.
+.12 Fixed: Following symbol tables were all hard-coded to act on SYMMAIN
 		SYMBASIC
 		SYMASM
 		SYMUSER
 		SYMUSER2
 		SYMSRC
 		SYMSRC2
+	Example: SYMBASIC CLEAR
 .11 Added: Command line now accepts Indirect mode via ( )
     Example:  U (BRKV)
 .10 Added: Pretty printing 'B' of all bytes treated as data.
