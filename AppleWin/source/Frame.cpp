@@ -473,7 +473,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 	int  iDrive1Status = DISK_STATUS_OFF;
 	int  iDrive2Status = DISK_STATUS_OFF;
 	bool bCaps   = KeybGetCapsStatus();
-	bool bP8Caps  = KeybGetP8CapsStatus();
+	bool bP8Caps  = KeybGetP8CapsStatus(); // TODO: FIXME: Not used ?!  Should show the LED status ...
 
 	DiskGetLightStatus(&iDrive1Status,&iDrive2Status);
 
@@ -496,6 +496,11 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ iDrive2Status ] );
 		TextOut(dc,x+13,y+2,TEXT("2"),1);
 
+#if HD_LED
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ iHardDriveStatus ] );
+		TextOut(dc,x+23,y+2,TEXT("H"),1);
+#endif
+
 		// Feature Request #3581 ] drive lights in full screen mode
 		// This has been in for a while, at least since 1.12.7.1
 
@@ -516,7 +521,12 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 			SetTextColor(dc,(bCaps
 				? RGB(128,128,128)
 				: RGB(  0,  0,  0) ));
-			TextOut(dc,x+BUTTONCX,y+2,TEXT("Caps"),4);
+
+//			const TCHAR sCapsStatus[] = TEXT("Caps"); // Caps or A
+//			const int   nCapsLen = sizeof(sCapsStatus) / sizeof(TCHAR);
+//			TextOut(dc,x+BUTTONCX,y+2,"Caps",4); // sCapsStatus,nCapsLen - 1);
+
+			TextOut(dc,x+BUTTONCX,y+2,TEXT("A"),1);
 		}
 		SetTextAlign(dc,TA_CENTER | TA_TOP);
 		SetTextColor(dc,(g_nAppMode == MODE_PAUSED || g_nAppMode == MODE_STEPPING
