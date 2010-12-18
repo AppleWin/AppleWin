@@ -1,5 +1,12 @@
 Requests (Wishlist):
 ====================
+. DONE
+  Hard Disk light/indicator
+  Right now the  "- Caps" in the bottom right wastes too much space.
+  It should be replace with [A] and [a]
+  This would free up room to add a hard drive light indicator to the right.
+ https://groups.google.com/d/msg/comp.emulators.apple2/grpSWHii8Ak/IorwTvbLxtgJ
+
 . Debugger: wildcard search support for symbols
    SYMBASIC MICRO*
 
