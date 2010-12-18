@@ -1,6 +1,7 @@
 /*
 2.7.0.0 Released with Applewin 1.19.1.0
 
+.24 Changed: 2.6.2.24 Changed: Tone-downed the alt. background cyan for the DATA window. C2, C3 -> C1,C2
 .23 Changed: Increased number of lines for console output buffer (from 384 to 512)
 .22 Changed: Re-enabled magenta/purple for warnings (i.e. symbol table disabled)
 .21 Fixed: Missing GPL / copyright on some debugger files, updated year.
