@@ -56,13 +56,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  FSBUTTONY   (((480-VIEWPORTCY)/2)-1)
 #define  BUTTONS     8
 
-static HBITMAP capsbitmap[2];
-//Pravets8 only
-static HBITMAP capsbitmapP8[2];
-static HBITMAP latbitmap[2];
-//static HBITMAP charsetbitmap [4]; //The idea was to add a charset indicator on the front panel, but it was given up. All charsetbitmap occurences must be REMOVED!
-//===========================
-static HBITMAP g_hDiskWindowedLED[ NUM_DISK_STATUS ];
+	static HBITMAP g_hCapsLockBitmap[2];
+	static HBITMAP g_hHardDiskBitmap[2];
+
+	//Pravets8 only
+	static HBITMAP g_hCapsBitmapP8[2];
+	static HBITMAP g_hCapsBitmapLat[2];
+	//static HBITMAP charsetbitmap [4]; //The idea was to add a charset indicator on the front panel, but it was given up. All charsetbitmap occurences must be REMOVED!
+	//===========================
+	static HBITMAP g_hDiskWindowedLED[ NUM_DISK_STATUS ];
 
 //static HBITMAP g_hDiskFullScreenLED[ NUM_DISK_STATUS ];
 
@@ -209,13 +211,15 @@ switch (g_Apple2Type)
   buttonbitmap[BTN_DEBUG  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DEBUG_BUTTON"));
   buttonbitmap[BTN_SETUP  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("SETUP_BUTTON"));
   buttonbitmap[BTN_P8CAPS ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSON_BITMAP"));
-  capsbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSOFF_BITMAP"));
-  capsbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSON_BITMAP"));
+
+  g_hCapsLockBitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSOFF_BITMAP"));
+  g_hCapsLockBitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSON_BITMAP"));
   //Pravets8 only
-  capsbitmapP8[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSOFF_P8_BITMAP"));
-  capsbitmapP8[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSON_P8_BITMAP"));
-  latbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LATOFF_BITMAP"));
-  latbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LATON_BITMAP"));
+  g_hCapsBitmapP8[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSOFF_P8_BITMAP"));
+  g_hCapsBitmapP8[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSON_P8_BITMAP"));
+  g_hCapsBitmapLat[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_LATOFF_BITMAP"));
+  g_hCapsBitmapLat[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_LATON_BITMAP"));
+
   /*charsetbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_APPLE_BITMAP"));
   charsetbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_82_BITMAP"));
   charsetbitmap[2] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_8A_BITMAP"));
@@ -249,7 +253,7 @@ static void DeleteGdiObjects () {
   for (loop = 0; loop < BUTTONS; loop++)
     DeleteObject(buttonbitmap[loop]);
   for (loop = 0; loop < 2; loop++)
-    DeleteObject(capsbitmap[loop]);
+    DeleteObject(g_hCapsLockBitmap[loop]);
   for (loop = 0; loop < NUM_DISK_STATUS; loop++)
   {
 	  DeleteObject(g_hDiskWindowedLED[loop]);
@@ -470,7 +474,14 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 	int  iDrive2Status = DISK_STATUS_OFF;
 	bool bCaps   = KeybGetCapsStatus();
 	bool bP8Caps  = KeybGetP8CapsStatus();
+
 	DiskGetLightStatus(&iDrive1Status,&iDrive2Status);
+
+#if HD_LED
+	// 1.19.0.0 Hard Disk Status/Indicator Light
+	int  iHardDriveStatus = DISK_STATUS_OFF;
+	HD_GetLightStatus(&iHardDriveStatus);
+#endif
 
 	if (g_bIsFullScreen)
 	{
@@ -528,41 +539,61 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 			SetTextAlign(dc,TA_CENTER | TA_TOP);
 			SetTextColor(dc,RGB(0,0,0));
 			SetBkMode(dc,TRANSPARENT);
-			TextOut(dc,x+ 7,y+7,TEXT("1"),1);
-			TextOut(dc,x+25,y+7,TEXT("2"),1);
+			TextOut(dc,x+ 7,y+5,TEXT("1"),1);
+			TextOut(dc,x+27,y+5,TEXT("2"),1);
+
+			// 1.19.0.0 Hard Disk Status/Indicator Light
+			TextOut(dc,x+ 7,y+17,TEXT("H"),1);
 		}
 		if (drawflags & DRAW_LEDS)
 		{
-			RECT rect = {0,0,8,8};
-			DrawBitmapRect(dc,x+12,y+8,&rect,g_hDiskWindowedLED[iDrive1Status]);
-			DrawBitmapRect(dc,x+30,y+8,&rect,g_hDiskWindowedLED[iDrive2Status]);
+			RECT rDiskLed = {0,0,8,8};
+
+			DrawBitmapRect(dc,x+12,y+6,&rDiskLed,g_hDiskWindowedLED[iDrive1Status]);
+			DrawBitmapRect(dc,x+31,y+6,&rDiskLed,g_hDiskWindowedLED[iDrive2Status]);
 
 			if (!IS_APPLE2)
 			{
-				RECT rect = {0,0,31,8};
-			switch (g_Apple2Type)
-			{
-			case A2TYPE_APPLE2:			DrawBitmapRect(dc,x+7,y+9,&rect,capsbitmap[bCaps != 0]); break; 
-			case A2TYPE_APPLE2PLUS:		DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]); break; 
-			case A2TYPE_APPLE2E:		DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]); break; 
-			case A2TYPE_APPLE2EEHANCED:	DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]); break; 
-			case A2TYPE_PRAVETS82:		DrawBitmapRect(dc,x+15,y+19,&rect,latbitmap[bCaps != 0]); break; 
-			case A2TYPE_PRAVETS8M:		DrawBitmapRect(dc,x+15,y+19,&rect,latbitmap[bCaps != 0]); break; 
-			case A2TYPE_PRAVETS8A:		DrawBitmapRect(dc,x+2,y+19,&rect,latbitmap[bCaps != 0]); break; 
-			}
-			if (g_Apple2Type == A2TYPE_PRAVETS8A) //Toggles Pravets 8A/C Caps lock LED
-			{
-				RECT rect = {0,0,22,8};
-				DrawBitmapRect(dc,x+23,y+19,&rect,capsbitmapP8[P8CAPS_ON != 0]);
-			}
+//				RECT rCapsLed = {0,0,31,11};
+				RECT rCapsLed = {0,0,10,12}; // HACK: HARD-CODED bitmaps size
+				switch (g_Apple2Type)
+				{
+//					case A2TYPE_APPLE2:			DrawBitmapRect(dc,x+ 5,y+ 9,&rCapsLed,g_hCapsLockBitmap[bCaps != 0]); break; 
+//					case A2TYPE_APPLE2PLUS:		DrawBitmapRect(dc,x+ 5,y+19,&rCapsLed,g_hCapsLockBitmap[bCaps != 0]); break; 
+//					case A2TYPE_APPLE2E:		DrawBitmapRect(dc,x+ 5,y+19,&rCapsLed,g_hCapsLockBitmap[bCaps != 0]); break; 
+//					case A2TYPE_APPLE2EEHANCED:	DrawBitmapRect(dc,x+ 5,y+19,&rCapsLed,g_hCapsLockBitmap[bCaps != 0]); break; 
+//					case A2TYPE_PRAVETS82:		DrawBitmapRect(dc,x+15,y+19,&rCapsLed,g_hCapsBitmapLat[bCaps != 0]); break; 
+//					case A2TYPE_PRAVETS8M:		DrawBitmapRect(dc,x+15,y+19,&rCapsLed,g_hCapsBitmapLat[bCaps != 0]); break; 
+//					case A2TYPE_PRAVETS8A:		DrawBitmapRect(dc,x+ 2,y+19,&rCapsLed,g_hCapsBitmapLat[bCaps != 0]); break; 
 
+					case A2TYPE_APPLE2        :			
+					case A2TYPE_APPLE2PLUS    :		
+					case A2TYPE_APPLE2E       :		
+					case A2TYPE_APPLE2EEHANCED:	
+					default                   : DrawBitmapRect(dc,x+31,y+17,&rCapsLed,g_hCapsLockBitmap[bCaps != 0]); break;
+
+					case A2TYPE_PRAVETS82:		
+					case A2TYPE_PRAVETS8M: DrawBitmapRect(dc,x+31,y+17,&rCapsLed,g_hCapsBitmapP8[bCaps != 0]); break;
+
+					case A2TYPE_PRAVETS8A: DrawBitmapRect(dc,x+31,y+17,&rCapsLed,g_hCapsBitmapP8[bCaps != 0]); break;
+				}
+	//			if (g_Apple2Type == A2TYPE_PRAVETS8A) //Toggles Pravets 8A/C Caps lock LED
+	//			{
+	//				RECT rCapsCloneLed = {0,0,22,8}; // HACK: HARD-CODED bitmaps size
+	//				DrawBitmapRect(dc,x+23,y+19,&rCapsCloneLed,g_hCapsBitmapP8[P8CAPS_ON != 0]);
+	//			}
+
+#if HD_LED
+				// 1.19.0.0 Hard Disk Status/Indicator Light
+				DrawBitmapRect(dc,x+12,y+18,&rDiskLed,g_hDiskWindowedLED[iHardDriveStatus]);
+#endif
 		
 			/*
-			if (g_Apple2Type == A2TYPE_PRAVETS8A)
-					DrawBitmapRect(dc,x+7,y+19,&rect,cyrbitmap[bCaps != 0]);
-				else
-					DrawBitmapRect(dc,x+7,y+19,&rect,capsbitmap[bCaps != 0]);
-*/
+				if (g_Apple2Type == A2TYPE_PRAVETS8A)
+						DrawBitmapRect(dc,x+7,y+19,&rect,cyrbitmap[bCaps != 0]);
+					else
+						DrawBitmapRect(dc,x+7,y+19,&rect,g_hCapsLockBitmap[bCaps != 0]);
+			*/
 			}
 		}
 
