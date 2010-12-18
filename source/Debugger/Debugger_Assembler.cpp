@@ -21,9 +21,9 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/* Description: Debugger
+/* Description: Debugger Assembler
  *
- * Author: Copyright (C) 2006-2009, Michael Pohoreski
+ * Author: Copyright (C) 2006-2010 Michael Pohoreski
  */
 
 #include "StdAfx.h"
