@@ -852,7 +852,7 @@ Update_t CmdSymbolsCommand (int nArgs)
 	}
 
 	int bSymbolTable = SYMBOL_TABLE_MAIN << GetSymbolTableFromCommand();
-	return _CmdSymbolsCommon( nArgs, SYMBOL_TABLE_MAIN );
+	return _CmdSymbolsCommon( nArgs, bSymbolTable ); // BUGFIX 2.6.2.12 Hard-coded to SYMMAIN
 }
 
 //===========================================================================
