@@ -29,9 +29,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 
-// Allow the user to disable/enable symbol tables
-#define ALLOW_SYMBOL_TABLE_DISABLED 1
-
+	// 2.6.2.13 Added: Can now enable/disable selected symbol table(s) !
+	// Allow the user to disable/enable symbol tables
+	// xxx1xxx symbol table is active (are displayed in disassembly window, etc.)
+	// xxx1xxx symbol table is disabled (not displayed in disassembly window, etc.)
+	int g_bDisplaySymbolTables = (1 << NUM_SYMBOL_TABLES) - 1;; // default to all symbol tables
 
 // Symbols ________________________________________________________________________________________
 
@@ -68,9 +70,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		true
 	};
 
-	// %1 symbol table is active (are displayed in disassembly window, etc.)
-	// %0 symbol table is disabled (not displayed in disassembly window, etc.)
-	int g_bDisplaySymbolTables = (1 << NUM_SYMBOL_TABLES) - 1;; // default to all symbol tables
 
 // Utils _ ________________________________________________________________________________________
 
@@ -103,10 +102,8 @@ LPCTSTR FindSymbolFromAddress (WORD nAddress, int * iTable_ )
 		if (! g_aSymbols[iTable].size())
 			continue;
 
-#if ALLOW_SYMBOL_TABLE_DISABLED
 		if (! (g_bDisplaySymbolTables & (1 << iTable)))
 			continue;
-#endif
 
 		map<WORD, string>::iterator iSymbols = g_aSymbols[iTable].find(nAddress);
 		if(g_aSymbols[iTable].find(nAddress) != g_aSymbols[iTable].end())
@@ -130,10 +127,8 @@ bool FindAddressFromSymbol ( LPCTSTR pSymbol, WORD * pAddress_, int * iTable_ )
 		if (! g_aSymbols[iTable].size())
 			continue;
 
-#if ALLOW_SYMBOL_TABLE_DISABLED
 		if (! (g_bDisplaySymbolTables & (1 << iTable)))
 			continue;
-#endif
 
 //		map<WORD, string>::iterator iSymbol = g_aSymbols[iTable].begin();
 		SymbolTable_t :: iterator  iSymbol = g_aSymbols[iTable].begin();
