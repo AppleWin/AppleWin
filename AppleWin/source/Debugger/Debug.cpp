@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,2,23);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,2,24);
 
 
 // Public _________________________________________________________________________________________
@@ -97,8 +97,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		"! ", // NOT_EQUAL_1
 		"> ", // GREATER_THAN
 		">=", // GREATER_EQUAL
-		"? ", // READ   // Q. IO Read  use 'I'?  A. No, since I=Interrupt
-		"@ ", // WRITE  // Q. IO Write use 'O'?  A. No, since O=Opcode
+		"? ", // READ   // Q. IO Read  use 'I'?  A. No, since I=Interrupt // Also can't use: 'r' reserver
+		"@ ", // WRITE  // Q. IO Write use 'O'?  A. No, since O=Opcode    // This is free: 'w'
 		"* ", // Read/Write
 	};
 
