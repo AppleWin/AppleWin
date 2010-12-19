@@ -796,6 +796,51 @@
 
 // Disassembly ____________________________________________________________________________________
 
+	// Data Disassembler
+	enum Nopcode_e
+	{
+		_NOP_REMOVED
+		,NOP_BYTE_1 // 1 bytes/line
+		,NOP_BYTE_2 // 2 bytes/line
+		,NOP_BYTE_4 // 4 bytes/line
+		,NOP_BYTE_8 // 8 bytes/line
+		,NOP_WORD_1 // 1 words/line = 2 bytes (no symbol lookup)
+		,NOP_WORD_2 // 2 words/line = 4 bytes
+		,NOP_WORD_4 // 4 words/line = 8 bytes
+		,NOP_ADDRESS// 1 word/line  = 2 bytes (with symbol lookup)
+		,NOP_HEX    // hex string   =16 bytes
+		,NOP_CHAR   // char string // TODO: FIXME: needed??
+		,NOP_STRING_ASCII // Low Ascii
+		,NOP_STRING_APPLE // High Ascii
+		,NOP_STRING_APPLESOFT // Mixed Low/High
+		,NOP_FAC
+		,NOP_SPRITE
+		,NUM_NOPCODE_TYPES
+	};
+
+	// Disassembler Data
+	// type symbol[start:end]
+	struct DisasmData_t
+	{
+		char sSymbol[ MAX_SYMBOLS_LEN+1 ];
+
+		Nopcode_e eElementType ; // eElementType -> iNoptype
+		int       iDirective   ; // iDirective   -> iNopcode
+
+		WORD nStartAddress; // link to block [start,end)
+		WORD nEndAddress  ; 
+		WORD nArraySize   ; // Total bytes
+//		WORD nBytePerRow  ; // 1, 8
+
+		// with symbol lookup
+		char bSymbolLookup ;
+		WORD nTargetAddress;
+
+		WORD nSpriteW;
+		WORD nSpriteH;
+	};
+
+	// Disassembler ...
 	enum DisasmBranch_e
 	{
 		  DISASM_BRANCH_OFF = 0
@@ -843,18 +888,23 @@
 	{
 		short iOpcode;
 		short iOpmode;
-		int nOpbyte;
+		int   nOpbyte;
 
 		char sAddress  [ CHARS_FOR_ADDRESS ];
 		char sOpCodes  [(nMaxOpcodes*3)+1];
 
 		// Added for Data Disassembler
 		char sLabel    [ MAX_SYMBOLS_LEN+1 ]; // label is a symbol
-		int  iNopcode; // directive / pseudo opcode
-		int  iNoptype; // element type
-		char sMnemonic [ MAX_SYMBOLS_LEN+1 ];
 
-		int  nTarget;
+		Nopcode_e iNoptype; // basic element type
+		int       iNopcode; // assembler directive / pseudo opcode
+		int       nSlack  ;
+
+		char sMnemonic [ MAX_SYMBOLS_LEN+1 ]; // either the real Mnemonic or the Assembler Directive
+const	DisasmData_t* pDisasmData;
+		//
+
+		int  nTarget; // address -> string
 		char sTarget   [nMaxAddressLen];
 
 		char sTargetOffset[ CHARS_FOR_ADDRESS ]; // +/- 255, realistically +/-1
@@ -878,23 +928,7 @@
 
 		void Clear()
 		{
-			sAddress  [ 0 ] = 0;
-			sOpCodes  [ 0 ] = 0;
-
-			nTarget = 0;
-			sTarget   [ 0 ] = 0;
-
-			sTargetOffset[ 0 ] = 0;
-			nTargetOffset = 0;
-
-			sTargetPointer[ 0 ] = 0;
-			sTargetValue  [ 0 ] = 0;
-
-			sImmediate[ 0 ] = 0;
-			nImmediate = 0;
-
-			sBranch   [ 0 ] = 0;
-			ClearFlags();
+			memset( this, 0, sizeof( *this ) );
 		}
 		void ClearFlags()
 		{
@@ -1429,25 +1463,64 @@
 
 	enum Window_e
 	{
-		WINDOW_CODE    ,
-		WINDOW_DATA    ,
+		WINDOW_NULL    , // no window data!
 		WINDOW_CONSOLE ,
+		WINDOW_CODE    ,
+		WINDOW_DATA    , // memory view
+
+		WINDOW_INFO    , // WINDOW_REGS, WINDOW_STACK, WINDOW_BREAKPOINTS, WINDOW_WATCHES, WINDOW,
+
 		NUM_WINDOWS    ,
 // Not implemented yet
-		WINDOW_IO      , // soft switches   $addr  name   state
+		WINDOW_REGS    ,
+		WINDOW_STACK   ,
 		WINDOW_SYMBOLS ,
+		WINDOW_TARGETS ,
+
+		WINDOW_IO      , // soft switches   $addr  name   state
 		WINDOW_ZEROPAGE,
 		WINDOW_SOURCE  ,
+		WINDOW_OUTPUT  ,
+
+
+	};
+
+	enum WindowSplit_e
+	{
+		WIN_SPLIT_HORZ = (1 << 0),
+		WIN_SPLIT_VERT = (1 << 1),
+		WIN_SPLIT_PARENT_TOP = (1 << 2),
 	};
 	
 	struct WindowSplit_t
 	{
-		bool     bSplit;
+		RECT tBoundingBox; // 
+
+		int  nWidth ; // Width & Height are always valid 
+		int  nHeight; // If window is split/join, then auto-updated (right,bottom)
+
+		int  nCursorY; // Address
+		int  nCursorX; // or line,col of text file ...
+
+		int  bSplit ; 
+
+		int  iParent;// index into g_aWindowConfig
+		int  iChild ; // index into g_aWindowConfig
+
 		Window_e eTop;
 		Window_e eBot;	
-		// TODO: nTopHeight
-		// TODO: nBotHeight
 	};
+
+// Debuger_PanelInit();
+// WindowsRemoveAll()
+// int iNext = 0;
+// iNext = Panel_Add( iNext, WINDOW_CONSOLE );
+// iNext = Panel_AutoSplit( iNext, WINDOW_CODE );
+// iNext = Panel_AutoSplit( iNext, WINDOW_REGS );
+
+
+	// g_bWindowDisplayShowChild = false;
+	// g_bWindowDisplayShowRoot  = WINDOW_CODE;
 
 
 // Zero Page ______________________________________________________________________________________

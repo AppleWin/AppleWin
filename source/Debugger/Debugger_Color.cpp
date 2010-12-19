@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	COLORREF g_aColorPalette[ NUM_PALETTE ] =
 	{
 		RGB(0,0,0),
-		// NOTE: See _SetupColorRamp() if you want to programmitically set/change
+		// NOTE: See _SetupColorRamp() if you want to programmatically set/change
 		RGB(255,  0,  0), RGB(223,  0,  0), RGB(191,  0,  0), RGB(159,  0,  0), RGB(127,  0,  0), RGB( 95,  0,  0), RGB( 63,  0,  0), RGB( 31,  0,  0),  // 001 // Red
 		RGB(  0,255,  0), RGB(  0,223,  0), RGB(  0,191,  0), RGB(  0,159,  0), RGB(  0,127,  0), RGB(  0, 95,  0), RGB(  0, 63,  0), RGB(  0, 31,  0),  // 010 // Green
 		RGB(255,255,  0), RGB(223,223,  0), RGB(191,191,  0), RGB(159,159,  0), RGB(127,127,  0), RGB( 95, 95,  0), RGB( 63, 63,  0), RGB( 31, 31,  0),  // 011 // Yellow
@@ -62,17 +62,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		RGB(  0,  0,  0),
 	};
 
-// ZZZ: TODO: FIXME!!!
 	// Index into "Palette" of colors
-	// Move to Debugger_Colors.cpp !!!
-// ZZZ: TODO: FIXME!!!
 	int g_aColorIndex[ NUM_DEBUG_COLORS ] =
 	{
 		K0, W8,              // BG_CONSOLE_OUTPUT   FG_CONSOLE_OUTPUT (W8)
-		B1, COLOR_CUSTOM_01, // BG_CONSOLE_INPUT    FG_CONSOLE_INPUT (W8)
+		B2, COLOR_CUSTOM_01, // BG_CONSOLE_INPUT    FG_CONSOLE_INPUT (W8)
 
 		B2,                  // BG_DISASM_1
-		B3,                  //  BG_DISASM_2
+		B3,                  // BG_DISASM_2
 
 		R8, W8,              // BG_DISASM_BP_S_C    FG_DISASM_BP_S_C
 		R6, W5,              // BG_DISASM_BP_0_C    FG_DISASM_BP_0_C
@@ -109,11 +106,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		W8,                  //                     FG_INFO_CHAR_HI
 		Y8,                  //                     FG_INFO_CHAR_LO
 
-		COLOR_CUSTOM_04,    // BG_INFO_IO_BYTE 
-		COLOR_CUSTOM_04,    //                     FG_INFO_IO_BYTE
+		COLOR_CUSTOM_04,     // BG_INFO_IO_BYTE 
+		COLOR_CUSTOM_04,     //                     FG_INFO_IO_BYTE
 				
-		C2,   // BG_DATA_1
-		C3,   // BG_DATA_2
+		C1,   // BG_DATA_1 // 2.6.2.24 Changed: Tone-downed the alt. background cyan for the DATA window. C2, C3 -> C1,C2
+		C2,   // BG_DATA_2
 		Y8,   // FG_DATA_BYTE
 		W8,   // FG_DATA_TEXT
 

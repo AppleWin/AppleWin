@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 #include "HardDisk.h"
-#include "DiskImage.h"	// ImageError_e
+#include "DiskImage.h"	// ImageError_e, Disk_Status_e
 #include "DiskImageHelper.h"
 #include "..\resource\resource.h"
 
@@ -117,6 +117,11 @@ struct HDD
 	WORD	hd_buf_ptr;
 	BOOL	hd_imageloaded;
 	BYTE	hd_buf[HD_BLOCK_SIZE+1];	// Why +1?
+
+#if HD_LED
+	Disk_Status_e hd_status_next;
+	Disk_Status_e hd_status_prev;
+#endif
 
 	ImageInfo Info;
 };
@@ -228,6 +233,11 @@ static BOOL HD_Load_Image(const int iDrive, LPCSTR pszImageFilename)
 	ImageError_e Error = ImageOpen(pszImageFilename, iDrive, bCreateIfNecessary, strFilenameInZip);
 
 	g_HardDisk[iDrive].hd_imageloaded = (Error == eIMAGE_ERROR_NONE);
+
+#if HD_LED
+	g_HardDisk[iDrive].hd_status_next = DISK_STATUS_OFF;
+	g_HardDisk[iDrive].hd_status_prev = DISK_STATUS_OFF;
+#endif
 
 	return g_HardDisk[iDrive].hd_imageloaded;
 }
@@ -408,184 +418,202 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 		return r;
 
 	HDD* pHDD = &g_HardDisk[g_nHD_UnitNum >> 7];	// bit7 = drive select
+	
+	bool bRes = 0;
+	bool bAppendBlocks = 0;
 
 	if (bWrite == 0) // read
 	{
+#if HD_LED
+		pHDD->hd_status_next = DISK_STATUS_READ;
+#endif
 		switch (addr)
 		{
-		case 0xF0:
-			{
+			case 0xF0:
 				if (pHDD->hd_imageloaded)
 				{
 					// based on loaded data block request, load block into memory
 					// returns status
 					switch (g_nHD_Command)
 					{
-					default:
-					case 0x00: //status
-						if (pHDD->Info.uImageSize == 0)
-						{
-							pHDD->hd_error = 1;
-							r = DEVICE_IO_ERROR;
-						}
-						break;
-					case 0x01: //read
-						{
-							if ((pHDD->hd_diskblock * HD_BLOCK_SIZE) < pHDD->Info.uImageSize)
+						default:
+						case 0x00: //status
+							if (pHDD->Info.uImageSize == 0)
 							{
-								bool bRes = pHDD->Info.pImageType->Read(&pHDD->Info, pHDD->hd_diskblock, pHDD->hd_buf);
-								if (bRes)
+								pHDD->hd_error = 1;
+								r = DEVICE_IO_ERROR;
+							}
+							break;
+						case 0x01: //read
+								if ((pHDD->hd_diskblock * HD_BLOCK_SIZE) < pHDD->Info.uImageSize)
 								{
-									pHDD->hd_error = 0;
-									r = 0;
-									pHDD->hd_buf_ptr = 0;
+									bool bRes = pHDD->Info.pImageType->Read(&pHDD->Info, pHDD->hd_diskblock, pHDD->hd_buf);
+									if (bRes)
+									{
+										pHDD->hd_error = 0;
+										r = 0;
+										pHDD->hd_buf_ptr = 0;
+									}
+									else
+									{
+										pHDD->hd_error = 1;
+										r = DEVICE_IO_ERROR;
+									}
 								}
 								else
 								{
 									pHDD->hd_error = 1;
 									r = DEVICE_IO_ERROR;
 								}
-							}
-							else
-							{
-								pHDD->hd_error = 1;
-								r = DEVICE_IO_ERROR;
-							}
-						}
-						break;
-					case 0x02: //write
-						{
-							bool bRes = true;
-							const bool bAppendBlocks = (pHDD->hd_diskblock * HD_BLOCK_SIZE) >= pHDD->Info.uImageSize;
-							if (bAppendBlocks)
-							{
-								ZeroMemory(pHDD->hd_buf, HD_BLOCK_SIZE);
+							break;
+						case 0x02: //write
+#if HD_LED
+								pHDD->hd_status_next = DISK_STATUS_WRITE;
+#endif
+								bRes = true;
+								bAppendBlocks = (pHDD->hd_diskblock * HD_BLOCK_SIZE) >= pHDD->Info.uImageSize;
 
-								// Inefficient (especially for gzip/zip files!)
-								UINT uBlock = pHDD->Info.uImageSize / HD_BLOCK_SIZE;
-								while (uBlock < pHDD->hd_diskblock)
+								if (bAppendBlocks)
 								{
-									bRes = pHDD->Info.pImageType->Write(&pHDD->Info, uBlock++, pHDD->hd_buf);
-									_ASSERT(bRes);
-									if (!bRes)
-										break;
+									ZeroMemory(pHDD->hd_buf, HD_BLOCK_SIZE);
+
+									// Inefficient (especially for gzip/zip files!)
+									UINT uBlock = pHDD->Info.uImageSize / HD_BLOCK_SIZE;
+									while (uBlock < pHDD->hd_diskblock)
+									{
+										bRes = pHDD->Info.pImageType->Write(&pHDD->Info, uBlock++, pHDD->hd_buf);
+										_ASSERT(bRes);
+										if (!bRes)
+											break;
+									}
 								}
-							}
 
-							MoveMemory(pHDD->hd_buf, mem+pHDD->hd_memblock, HD_BLOCK_SIZE);
+								MoveMemory(pHDD->hd_buf, mem+pHDD->hd_memblock, HD_BLOCK_SIZE);
 
-							if (bRes)
-								bRes = pHDD->Info.pImageType->Write(&pHDD->Info, pHDD->hd_diskblock, pHDD->hd_buf);
+								if (bRes)
+									bRes = pHDD->Info.pImageType->Write(&pHDD->Info, pHDD->hd_diskblock, pHDD->hd_buf);
 
-							if (bRes)
-							{
-								pHDD->hd_error = 0;
-								r = 0;
-							}
-							else
-							{
-								pHDD->hd_error = 1;
-								r = DEVICE_IO_ERROR;
-							}
-						}
-						break;
-					case 0x03: //format
-						break;
+								if (bRes)
+								{
+									pHDD->hd_error = 0;
+									r = 0;
+								}
+								else
+								{
+									pHDD->hd_error = 1;
+									r = DEVICE_IO_ERROR;
+								}
+							break;
+						case 0x03: //format
+#if HD_LED
+							pHDD->hd_status_next = DISK_STATUS_WRITE;
+#endif
+							break;
 					}
 				}
 				else
 				{
+#if HD_LED
+					pHDD->hd_status_next = DISK_STATUS_OFF;
+#endif
 					pHDD->hd_error = 1;
 					r = DEVICE_UNKNOWN_ERROR;
 				}
-			}
 			break;
 		case 0xF1: // hd_error
-			{
-				r = pHDD->hd_error;
-			}
+#if HD_LED
+			pHDD->hd_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
+#endif
+			r = pHDD->hd_error;
 			break;
 		case 0xF2:
-			{
-				r = g_nHD_Command;
-			}
+			r = g_nHD_Command;
 			break;
 		case 0xF3:
-			{
-				r = g_nHD_UnitNum;
-			}
+			r = g_nHD_UnitNum;
 			break;
 		case 0xF4:
-			{
-				r = (BYTE)(pHDD->hd_memblock & 0x00FF);
-			}
+			r = (BYTE)(pHDD->hd_memblock & 0x00FF);
 			break;
 		case 0xF5:
-			{
-				r = (BYTE)(pHDD->hd_memblock & 0xFF00 >> 8);
-			}
+			r = (BYTE)(pHDD->hd_memblock & 0xFF00 >> 8);
 			break;
 		case 0xF6:
-			{
-				r = (BYTE)(pHDD->hd_diskblock & 0x00FF);
-			}
+			r = (BYTE)(pHDD->hd_diskblock & 0x00FF);
 			break;
 		case 0xF7:
-			{
-				r = (BYTE)(pHDD->hd_diskblock & 0xFF00 >> 8);
-			}
+			r = (BYTE)(pHDD->hd_diskblock & 0xFF00 >> 8);
 			break;
 		case 0xF8:
-			{
-				r = pHDD->hd_buf[pHDD->hd_buf_ptr];
-				pHDD->hd_buf_ptr++;
-			}
+			r = pHDD->hd_buf[pHDD->hd_buf_ptr];
+			pHDD->hd_buf_ptr++;
 			break;
 		default:
+#if HD_LED
+			pHDD->hd_status_next = DISK_STATUS_OFF;
+#endif
 			return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
 		}
 	}
-	else // write
+	else // write to registers
 	{
+#if HD_LED
+		pHDD->hd_status_next = DISK_STATUS_PROT; // TODO: FIXME: If we ever enable write-protect on HD then need to change to something else ...
+#endif
 		switch (addr)
 		{
 		case 0xF2:
-			{
-				g_nHD_Command = d;
-			}
+			g_nHD_Command = d;
 			break;
 		case 0xF3:
-			{
-				// b7    = drive#
-				// b6..4 = slot#
-				// b3..0 = ?
-				g_nHD_UnitNum = d;
-			}
+			// b7    = drive#
+			// b6..4 = slot#
+			// b3..0 = ?
+			g_nHD_UnitNum = d;
 			break;
 		case 0xF4:
-			{
-				pHDD->hd_memblock = pHDD->hd_memblock & 0xFF00 | d;
-			}
+			pHDD->hd_memblock = pHDD->hd_memblock & 0xFF00 | d;
 			break;
 		case 0xF5:
-			{
-				pHDD->hd_memblock = pHDD->hd_memblock & 0x00FF | (d << 8);
-			}
+			pHDD->hd_memblock = pHDD->hd_memblock & 0x00FF | (d << 8);
 			break;
 		case 0xF6:
-			{
-				pHDD->hd_diskblock = pHDD->hd_diskblock & 0xFF00 | d;
-			}
+			pHDD->hd_diskblock = pHDD->hd_diskblock & 0xFF00 | d;
 			break;
 		case 0xF7:
-			{
-				pHDD->hd_diskblock = pHDD->hd_diskblock & 0x00FF | (d << 8);
-			}
+			pHDD->hd_diskblock = pHDD->hd_diskblock & 0x00FF | (d << 8);
 			break;
 		default:
+#if HD_LED
+			pHDD->hd_status_next = DISK_STATUS_OFF;
+#endif
 			return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
 		}
 	}
 
+#if HD_LED
+	// 1.19.0.0 Hard Disk Status/Indicator Light
+	if( pHDD->hd_status_prev != pHDD->hd_status_next ) // Update LEDs if state changes
+	{
+		pHDD->hd_status_prev = pHDD->hd_status_next;
+		FrameRefreshStatus(DRAW_LEDS);
+	}
+#endif
+
 	return r;
+}
+
+// 1.19.0.0 Hard Disk Status/Indicator Light
+void HD_GetLightStatus (int *pDisk1Status_)
+{
+#if HD_LED
+	if ( HD_CardIsEnabled() )
+	{
+		HDD* pHDD = &g_HardDisk[g_nHD_UnitNum >> 7];	// bit7 = drive select
+		*pDisk1Status_ = pHDD->hd_status_prev;
+	} else
+#endif
+	{
+		*pDisk1Status_ = DISK_STATUS_OFF;
+	}
 }

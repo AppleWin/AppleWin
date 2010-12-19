@@ -23,13 +23,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006, Michael Pohoreski
+ * Author: Copyright (C) 2006-2010 Michael Pohoreski
  */
 
 #include "StdAfx.h"
 
 
-// NEW UI debugging
+// NEW UI debugging - force display ALL meta-info (regs, stack, bp, watches, zp) for debugging purposes
 #define DEBUG_FORCE_DISPLAY 0
 
 #if _DEBUG
@@ -57,6 +57,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Private ________________________________________________________________________________________
 
+
+// HACK HACK HACK
+	//g_nDisasmWinHeight
+	WindowSplit_t *g_pDisplayWindow = 0; // HACK
+// HACK
+
 // Display - Win32
 //	HDC     g_hDstDC = NULL; // App Window
 
@@ -67,19 +73,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	HBRUSH g_hConsoleBrushFG = NULL;
 	HBRUSH g_hConsoleBrushBG = NULL;
 
+	// NOTE: Keep in sync ConsoleColors_e g_anConsoleColor !
 	COLORREF g_anConsoleColor[ NUM_CONSOLE_COLORS ] =
-	{
-		RGB(   0,   0,   0 ), // 0 000 K
-		RGB( 255,  32,  32 ), // 1 001 R
-		RGB(   0, 255,   0 ), // 2 010 G
-		RGB( 255, 255,   0 ), // 3 011 Y
-		RGB(  64,  64, 255 ), // 4 100 B
-//		RGB( 255,   0, 255 ), // 5 101 M Purple/Magenta is useless
-		RGB(  80, 192, 255 ),
-		RGB(   0, 255, 255 ), // 6 110 C
-		RGB( 255, 255, 255 ), // 7 111 W
-		RGB( 255, 128,   0 ), // 8     Orange
-		RGB( 128, 128, 128 )  // 9     Grey
+	{                         // # <Bright Blue Green Red>
+		RGB(   0,   0,   0 ), // 0 0000 K
+		RGB( 255,  32,  32 ), // 1 1001 R
+		RGB(   0, 255,   0 ), // 2 1010 G
+		RGB( 255, 255,   0 ), // 3 1011 Y
+		RGB(  64,  64, 255 ), // 4 1100 B
+		RGB( 255,   0, 255 ), // 5 1101 M Purple/Magenta now used for warnings.
+		RGB(   0, 255, 255 ), // 6 1110 C
+		RGB( 255, 255, 255 ), // 7 1111 W
+		RGB( 255, 128,   0 ), // 8 0011 Orange
+		RGB( 128, 128, 128 ), // 9 0111 Grey
+
+		RGB(  80, 192, 255 )  // Lite Blue
 	};
 
 // Disassembly
@@ -604,7 +612,7 @@ void PrintGlyph( const int x, const int y, const char glyph )
 
 	SelectObject( g_hDstDC, g_hConsoleBrushFG );
 
-	// Use Source ask mask to make color Pattern mask (AND), then apply to dest (OR)
+	// Use Source as mask to make color Pattern mask (AND), then apply to dest (OR)
 	// D | (P & S) ->  DPSao
 	BitBlt(
 		g_hFrameDC,
@@ -2854,8 +2862,14 @@ void DrawSubWindow_Data (Update_t bUpdate)
 	DEVICE_e     eDevice  = pMD->eDevice;
 	MemoryView_e iView    = pMD->eView;
 
-	if (!pMD->bActive)
-		return;
+//	if (!pMD->bActive)
+//		return;
+
+//	int iWindows = g_iThisWindow;
+//	WindowSplit_t * pWindow = &g_aWindowConfig[ iWindow ];
+
+	RECT rect;
+	rect.top = 0 + 0;
 
 	int  iByte;
 	WORD iAddress = nAddress;
@@ -2881,9 +2895,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight;
 
 	// Draw
-		RECT rect;
 		rect.left   = 0;
-		rect.top    = iLine * nFontHeight;
 		rect.right  = DISPLAY_DISASM_RIGHT;
 		rect.bottom = rect.top + nFontHeight;
 
@@ -2964,6 +2976,8 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		PrintTextCursorX( "  |  ", rect );
 
 		nAddress += nMaxOpcodes;
+
+		rect.top    += nFontHeight;
 	}
 }
 
@@ -3015,39 +3029,26 @@ void DrawSubWindow_Info( int iWindow )
 //	if ((MAX_DISPLAY_BREAKPOINTS_LINES + MAX_DISPLAY_WATCHES_LINES) < 12)
 //		yWatches++;
 
-#if DEBUG_FORCE_DISPLAY
-	if (true)
-#else
-	if (g_nBreakpoints)
-#endif
+	bool bForceDisplayBreakpoints = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_nBreakpoints & 1;
+	if ( bForceDisplayBreakpoints )
 		DrawBreakpoints( yBreakpoints );
 
-#if DEBUG_FORCE_DISPLAY
-	if (true)
-#else
-	if (g_nWatches)
-#endif
+	bool bForceDisplayWatches = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_nWatches & 1;
+	if ( bForceDisplayWatches )
 		DrawWatches( yWatches );
 
 	g_nDisplayMemoryLines = MAX_DISPLAY_MEMORY_LINES_1;
 
-#if DEBUG_FORCE_DISPLAY
-	if (true)
-#else
-	if (g_aMemDump[0].bActive)
-#endif
+	bool bForceDisplayMemory1 = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_aMemDump[0].bActive;
+	if ( bForceDisplayMemory1 )
 		DrawMemory( yMemory, 0 ); // g_aMemDump[0].nAddress, g_aMemDump[0].eDevice);
 
 	yMemory += (g_nDisplayMemoryLines + 1);
 	g_nDisplayMemoryLines = MAX_DISPLAY_MEMORY_LINES_2;
 
-#if DEBUG_FORCE_DISPLAY
-	if (true)
-#else
-	if (g_aMemDump[1].bActive)
-#endif
+	bool bForceDisplayMemory2 = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_aMemDump[1].bActive;
+	if ( bForceDisplayMemory2 )
 		DrawMemory( yMemory, 1 ); // g_aMemDump[1].nAddress, g_aMemDump[1].eDevice);
-
 }
 
 //===========================================================================
@@ -3346,12 +3347,11 @@ void DrawWindowBottom ( Update_t bUpdate, int iWindow )
 		return;
 
 	WindowSplit_t * pWindow = &g_aWindowConfig[ iWindow ];
+	g_pDisplayWindow = pWindow;
 
-//	if (pWindow->eBot == WINDOW_DATA)
-//	{
-//		DrawWindow_Data( bUpdate, false );
-//	}
-	
+	if (pWindow->eBot == WINDOW_DATA)
+		DrawWindow_Data( bUpdate ); // false
+	else	
 	if (pWindow->eBot == WINDOW_SOURCE)
 		DrawSubWindow_Source2( bUpdate );
 }
@@ -3360,6 +3360,8 @@ void DrawWindowBottom ( Update_t bUpdate, int iWindow )
 void DrawSubWindow_Code ( int iWindow )
 {
 	int nLines = g_nDisasmWinHeight;
+
+//	WindowSplit_t * pWindow = &g_aWindowConfig[ iWindow ];
 
 	// Check if we have a bad disasm
 	// BUG: This still doesn't catch all cases
