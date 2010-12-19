@@ -21,7 +21,7 @@
         X
         DB8 RA8 D000:D080
         X
-.27 Fixed: Don't do symbol look for data bytes that don't request it. (Groundwork for Define Address)
+.27 Fixed: Don't do symbol look up for data bytes that don't request it. (Groundwork for Define Address)
 .26 Changed: Code portability. Slowly remove the LPCTSTR taint of Windowisms.
 .25 Fixed: DB DW custom data byte sizes weren't scrolling properly in the disasm view.
     Changed _6502_GetOpmodeOpbyte() to be aware of data bytes.
@@ -79,7 +79,7 @@
     X                    // uses address cursor is on
 	X symbol             // uses address cursor is on
 	X symbol address
-.0 Added: new command 'DB" to Define Byte / Pseudo Mnemonic / Assembler Directive
+.0 Added: new command "DB" to Define Byte / Pseudo Mnemonic / Assembler Directive
     DB                  // uses address cursor is on
     DB symbol           // uses address cursor is on
     DB symbol address
