@@ -458,7 +458,7 @@ bool _6502_CalcRelativeOffset( int nOpcode, int nBaseAddress, int nTargetAddress
 
 
 //===========================================================================
-int  _6502_GetOpmodeOpbyte ( const int iAddress, int & iOpmode_, int & nOpbyte_ )
+int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpbyte_ )
 {
 #if _DEBUG
 	if (! g_aOpcodes)
@@ -467,13 +467,56 @@ int  _6502_GetOpmodeOpbyte ( const int iAddress, int & iOpmode_, int & nOpbyte_ 
 	}
 #endif
 
-// Data Disassembler
-// Smart Disassembly - Data Section
-// Assemblyer Directives - Psuedo Mnemonics
-
-	int iOpcode_ = *(mem + iAddress);
+	int iOpcode_ = *(mem + nBaseAddress);
 		iOpmode_ = g_aOpcodes[ iOpcode_ ].nAddressMode;
 		nOpbyte_ = g_aOpmodes[ iOpmode_ ].m_nBytes;
+
+	// 2.6.2.25 Fixed: DB DW custom data byte sizes weren't scrolling properly in the disasm view.
+    //          Changed _6502_GetOpmodeOpbyte() to be aware of data bytes.
+	//
+	// NOTE: _6502_GetOpmodeOpbyte() needs to (effectively) call Disassembly_GetData()
+	//    a) the CmdCursorLineUp() calls us to calc for -X bytes back up how to reach the cursor (address) line below
+	//    b) The disassembler view needs to know how many bytes each line is.
+	int nSlack;
+
+	DisasmData_t* pData = Disassembly_IsDataAddress( nBaseAddress );
+	if( pData )
+	{
+	// Data Disassembler
+	// Smart Disassembly - Data Section
+	// Assemblyer Directives - Psuedo Mnemonics
+
+		switch( pData->eElementType )
+		{
+			case NOP_STRING_APPLESOFT:
+				// TODO: FIXME: scan memory for high byte
+				nOpbyte_ = 8;
+				iOpmode_ = AM_M;
+				break;
+			case NOP_BYTE_1: nOpbyte_ = 1; iOpmode_ = AM_M; break;
+			case NOP_BYTE_2: nOpbyte_ = 2; iOpmode_ = AM_M; break;
+			case NOP_BYTE_4: nOpbyte_ = 4; iOpmode_ = AM_M; break;
+			case NOP_BYTE_8: nOpbyte_ = 8; iOpmode_ = AM_M; break;
+			case NOP_WORD_1: nOpbyte_ = 2; iOpmode_ = AM_M; break;
+			case NOP_WORD_2: nOpbyte_ = 4; iOpmode_ = AM_M; break;
+			case NOP_WORD_4: nOpbyte_ = 8; iOpmode_ = AM_M; break;
+			case NOP_ADDRESS:nOpbyte_ = 2; iOpmode_ = AM_NA; break;
+//			case NOP_ADDRESS:nOpbytes = 2; iOpmode_ = AM_NA; line_.nTarget = *(LPWORD)(mem+nBaseAddress); break;
+			default         :nOpbyte_ = 1; iOpmode_ = AM_M; break;
+		}
+
+		// Check if we are not element aligned ...
+		nSlack = (nOpbyte_ > 1) ? (nBaseAddress & nOpbyte_-1 ) : 0;
+		if (nSlack)
+		{
+			nOpbyte_ = nSlack;
+			iOpmode_ = AM_M;
+		}
+
+		//iOpcode_ = NUM_OPCODES; // Don't have valid opcodes ... we have data !
+		// iOpcode_ = (int)( pData ); // HACK: pass pData back to caller ...
+		iOpcode_ = 0xEA; // OP_NOP
+	}
 
 #if _DEBUG
 	if (iOpcode_ >= NUM_OPCODES)
@@ -539,6 +582,9 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPointer
 	WORD nTarget16 = *(LPWORD)(mem + nAddress + 1);
 
 	int eMode = g_aOpcodes[ nOpcode ].nAddressMode;
+
+// We really need to use the values that are code and data assembler
+// TODO: FIXME: _6502_GetOpmodeOpbyte( iAddress, iOpmode, nOpbytes );
 
 	switch (eMode)
 	{
