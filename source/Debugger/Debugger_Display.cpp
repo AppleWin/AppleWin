@@ -1528,24 +1528,29 @@ void FormatNopcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 			case NOP_BYTE_1:
 			case NOP_BYTE_2:
 			case NOP_BYTE_4:
+			case NOP_BYTE_8:
 				sprintf( pDst, "%02X", nTarget8 ); // sBytes+strlen(sBytes)
-				pDst += 3;
+				pDst += 2;
 				iByte++;
-				if( iByte < line_.nOpbyte )
-				{
-					*pDst++ = ',';
-				}
+				if( line_.iNoptype == NOP_BYTE_1)
+					if( iByte < line_.nOpbyte )
+					{
+						*pDst++ = ',';
+					}
 				break;
 			case NOP_WORD_1:
 			case NOP_WORD_2:
 			case NOP_WORD_4:
 				sprintf( pDst, "%04X", nTarget16 ); // sBytes+strlen(sBytes)
-				pDst += 5;
+				pDst += 4;
 				iByte+= 2;
 				if( iByte < line_.nOpbyte )
 				{
 					*pDst++ = ',';
 				}
+				break;
+			case NOP_ADDRESS:
+				iByte += 2;
 				break;
 			case NOP_STRING_APPLESOFT:
 				iByte = line_.nOpbyte;

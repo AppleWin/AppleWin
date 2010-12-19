@@ -185,7 +185,7 @@ Update_t _CmdDisasmDataDefByteX (int nArgs)
 	// DB symbol
 	// DB symbol address
 	// DB symbol range:range
-	int iCmd = NOP_BYTE_1 - g_aArgs[0].nValue;
+	int iCmd = g_aArgs[0].nValue - NOP_BYTE_1;
 
 //	if ((!nArgs) || (nArgs > 2))
 	if (! ((nArgs <= 2) || (nArgs == 4)))
@@ -224,7 +224,7 @@ Update_t _CmdDisasmDataDefWordX (int nArgs)
 	// DW symbol
 	// DW symbol address
 	// DW symbol range:range
-	int iCmd = NOP_WORD_1 - g_aArgs[0].nValue;
+	int iCmd = g_aArgs[0].nValue - NOP_WORD_1;
 
 	if (! ((nArgs <= 2) || (nArgs == 4)))
 	{
