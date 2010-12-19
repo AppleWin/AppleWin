@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,2,24);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,2,26);
 
 
 // Public _________________________________________________________________________________________
@@ -823,24 +823,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void DisasmCalcBotFromTopAddress();
 	void DisasmCalcTopBotAddress ();
 	WORD DisasmCalcAddressFromLines( WORD iAddress, int nLines );
-
-	
-
-//===========================================================================
-LPCTSTR FormatAddress( WORD nAddress, int nBytes )
-{
-	// No symbol for this addres -- string with nAddress
-	static TCHAR sSymbol[8] = TEXT("");
-	switch (nBytes)
-	{
-		case  2:	wsprintf(sSymbol,TEXT("$%02X"),(unsigned)nAddress);  break;
-		case  3:	wsprintf(sSymbol,TEXT("$%04X"),(unsigned)nAddress);  break;
-		default:	sSymbol[0] = 0; break; // clear since is static
-	}
-	return sSymbol;
-}
-
-
 
 
 // Bookmarks __________________________________________________________________
@@ -2037,7 +2019,7 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 	static       char sName[ MAX_SYMBOLS_LEN+1 ];
 
 	WORD nAddress = aBreakWatchZero[ iBWZ ].nAddress;
-	LPCTSTR pSymbol = GetSymbol( nAddress, 2 );
+	const char*  pSymbol = GetSymbol( nAddress, 2 );
 	if (! pSymbol)
 	{
 		sName[0] = 0;
