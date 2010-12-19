@@ -488,11 +488,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 
 		switch( pData->eElementType )
 		{
-			case NOP_STRING_APPLESOFT:
-				// TODO: FIXME: scan memory for high byte
-				nOpbyte_ = 8;
-				iOpmode_ = AM_M;
-				break;
+			default        : nOpbyte_ = 1; iOpmode_ = AM_M; break;
 			case NOP_BYTE_1: nOpbyte_ = 1; iOpmode_ = AM_M; break;
 			case NOP_BYTE_2: nOpbyte_ = 2; iOpmode_ = AM_M; break;
 			case NOP_BYTE_4: nOpbyte_ = 4; iOpmode_ = AM_M; break;
@@ -500,9 +496,14 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 			case NOP_WORD_1: nOpbyte_ = 2; iOpmode_ = AM_M; break;
 			case NOP_WORD_2: nOpbyte_ = 4; iOpmode_ = AM_M; break;
 			case NOP_WORD_4: nOpbyte_ = 8; iOpmode_ = AM_M; break;
-			case NOP_ADDRESS:nOpbyte_ = 2; iOpmode_ = AM_NA; break;
-//			case NOP_ADDRESS:nOpbytes = 2; iOpmode_ = AM_NA; line_.nTarget = *(LPWORD)(mem+nBaseAddress); break;
-			default         :nOpbyte_ = 1; iOpmode_ = AM_M; break;
+			case NOP_ADDRESS:nOpbyte_ = 2; iOpmode_ = AM_NA;
+				pData->nTargetAddress = *(LPWORD)(mem+nBaseAddress);
+				break;
+			case NOP_STRING_APPLESOFT:
+				// TODO: FIXME: scan memory for high byte
+				nOpbyte_ = 8;
+				iOpmode_ = AM_M;
+				break;
 		}
 
 		// Check if we are not element aligned ...

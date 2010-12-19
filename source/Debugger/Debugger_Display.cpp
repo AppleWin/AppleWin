@@ -1208,7 +1208,7 @@ void DrawConsoleInput ()
 // Disassembly ____________________________________________________________________________________
 
 
-// Get the data needed to disassemble one line of opcodes
+// Get the data needed to disassemble one line of opcodes. Fills in the DisasmLine info.
 // Disassembly formatting flags returned
 //	@parama sTargetValue_ indirect/indexed final value
 //===========================================================================
@@ -1225,11 +1225,12 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 	int nOpbyte;
 
 	iOpcode = _6502_GetOpmodeOpbyte( nBaseAddress, iOpmode, nOpbyte );
+	DisasmData_t* pData = Disassembly_IsDataAddress( nBaseAddress );
+	line_.pDisasmData = pData;
 
 	line_.iOpcode = iOpcode;
 	line_.iOpmode = iOpmode;
 	line_.nOpbyte = nOpbyte;
-	
 
 #if _DEBUG
 //	if (iLine != 41)
@@ -1261,17 +1262,23 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 
 	// Composite string that has the symbol or target nAddress
 	WORD nTarget = 0;
-	line_.nTargetOffset = 0;
 
-//	if (g_aOpmodes[ iMode ]._sFormat[0])
 	if ((iOpmode != AM_IMPLIED) &&
 		(iOpmode != AM_1) &&
 		(iOpmode != AM_2) &&
 		(iOpmode != AM_3))
 	{
-		nTarget = *(LPWORD)(mem+nBaseAddress+1);
-		if (nOpbyte == 2)
-			nTarget &= 0xFF;
+		// Assume target address starts after the opcode ...
+		// BUT in the Assembler Directve / Data Disassembler case for define addr/word
+		// the opcode literally IS the target address!
+		if( pData )
+		{
+			nTarget = pData->nTargetAddress;
+		} else {
+			nTarget = *(LPWORD)(mem+nBaseAddress+1);
+			if (nOpbyte == 2)
+				nTarget &= 0xFF;
+		}
 
 		if (iOpmode == AM_R) // Relative
 		{
@@ -1314,12 +1321,19 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 			(iOpmode == AM_IAX) || // Indexed (Absolute Indirect, X)
 			(iOpmode == AM_NZY) || // Indirect (Zeropage) Index, Y
 			(iOpmode == AM_NZ ) || // Indirect (Zeropage)
-			(iOpmode == AM_NA ))   // Indirect Absolute
+			(iOpmode == AM_NA ))   //(Indirect Absolute)
 		{
 			line_.nTarget  = nTarget;
 
-			LPCTSTR pTarget = NULL;
-			LPCTSTR pSymbol = FindSymbolFromAddress( nTarget );
+			const char* pTarget = NULL;
+			const char* pSymbol = 0;
+
+			pSymbol = FindSymbolFromAddress( nTarget );
+
+			// Data Assembler
+			if (pData && (!pData->bSymbolLookup))
+				pSymbol = 0;
+
 			if (pSymbol)
 			{
 				bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
@@ -1440,6 +1454,18 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 	// Opcode Bytes
 	FormatOpcodeBytes( nBaseAddress, line_ );
 
+// Data Disassembler
+	if( pData )
+	{
+		line_.iNoptype = pData->eElementType;
+		line_.iNopcode = pData->iDirective;
+		strcpy( line_.sMnemonic, g_aAssemblerDirectives[ line_.iNopcode ].m_pMnemonic );
+
+		FormatNopcodeBytes( nBaseAddress, line_ );
+	} else { // Regular 6502/65C02 opcode -> mnemonic
+		strcpy( line_.sMnemonic, g_aOpcodes[ line_.iOpcode ].sMnemonic );
+	}
+
 	int nSpaces = strlen( line_.sOpCodes );
     while (nSpaces < (int)nMinBytesLen)
 	{
@@ -1449,6 +1475,23 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 
 	return bDisasmFormatFlags;
 }	
+
+
+//===========================================================================
+const char* FormatAddress( WORD nAddress, int nBytes )
+{
+	// There is no symbol for this nAddress
+	static TCHAR sSymbol[8] = TEXT("");
+	switch (nBytes)
+	{
+		case  2:	wsprintf(sSymbol,TEXT("$%02X"),(unsigned)nAddress);  break;
+		case  3:	wsprintf(sSymbol,TEXT("$%04X"),(unsigned)nAddress);  break;
+		// TODO: FIXME: Can we get called with nBytes == 16 ??
+		default:	sSymbol[0] = 0; break; // clear since is static
+	}
+	return sSymbol;
+}
+
 
 //===========================================================================
 void FormatOpcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
@@ -1483,7 +1526,9 @@ void FormatNopcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 		switch( line_.iNoptype )
 		{
 			case NOP_BYTE_1:
-				sprintf( pDst, "$%02X", nTarget8 ); // sBytes+strlen(sBytes)
+			case NOP_BYTE_2:
+			case NOP_BYTE_4:
+				sprintf( pDst, "%02X", nTarget8 ); // sBytes+strlen(sBytes)
 				pDst += 3;
 				iByte++;
 				if( iByte < line_.nOpbyte )
@@ -1492,7 +1537,9 @@ void FormatNopcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 				}
 				break;
 			case NOP_WORD_1:
-				sprintf( pDst, "$%04X", nTarget16 ); // sBytes+strlen(sBytes)
+			case NOP_WORD_2:
+			case NOP_WORD_4:
+				sprintf( pDst, "%04X", nTarget16 ); // sBytes+strlen(sBytes)
 				pDst += 5;
 				iByte+= 2;
 				if( iByte < line_.nOpbyte )
@@ -1506,16 +1553,13 @@ void FormatNopcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 				pDst += iByte;
 				*pDst = 0;
 			default:
+#if _DEBUG
+	int *FATAL = 0;
+	*FATAL = 0xDEADC0DE;
+#endif				
+				iByte++;
 				break;
 		}
-//		else // 4 bytes
-//		if( line_.nOpbyte == 4)
-//		{
-//		}		
-//		else // 8 bytes
-//		if( line_.nOpbyte == 8)
-//		{
-//		}		
 	}
 }
 
@@ -1595,28 +1639,17 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	int iOpmode;
 	int nOpbyte;
 	DisasmLine_t line;
-	LPCSTR pSymbol = NULL;
-	const char * pMnemonic = NULL;
+	const char* pSymbol = FindSymbolFromAddress( nBaseAddress );
+	const char* pMnemonic = NULL;
 
+	// Data Disassembler
 	int bDisasmFormatFlags = GetDisassemblyLine( nBaseAddress, line );
-	DisasmData_t *pData = Disassembly_IsDataAddress( nBaseAddress );
-	if( pData )
-	{
-		Disassembly_GetData( nBaseAddress, pData, line );
-//		pSymbol = line.sLabel;
-	}
-
-	{
-		pSymbol = FindSymbolFromAddress( nBaseAddress );
-//		strcpy( line.sLabel, pSymbol );
-	}
+	const DisasmData_t *pData = line.pDisasmData;
 
 	iOpcode = line.iOpcode;	
 	iOpmode = line.iOpmode;
 	nOpbyte = line.nOpbyte;
 
-	// Data Disassembler
-	//
 	// sAddress, sOpcodes, sTarget, sTargetOffset, nTargetOffset, sTargetPointer, sTargetValue, sImmediate, nImmediate, sBranch );
 	//> Address Seperator Opcodes   Label Mnemonic Target [Immediate] [Branch]
 	//
@@ -1839,7 +1872,6 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	// Label
 		linerect.left = (int) aTabs[ TS_LABEL ];
 
-		LPCSTR pSymbol = FindSymbolFromAddress( nBaseAddress );
 		if (pSymbol)
 		{
 			if (! bCursorLine)
@@ -1853,20 +1885,14 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		linerect.left = (int) aTabs[ TS_INSTRUCTION ];
 
 		if (! bCursorLine)
-			DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
-
-		if( pData )
 		{
-//			pMnemonic = g_aAssemblerDirectives[ line.iNopcode ].sMnemonic;
-			if (! bCursorLine) // Assembler Data Directive
-				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_DIRECTIVE ) ); // ZZZ TODO: FIXME:
-			pMnemonic = line.sMnemonic;
-		}
-		else
-		{
-			pMnemonic = g_aOpcodes[ iOpcode ].sMnemonic;
+			if( pData ) // Assembler Data Directive / Data Disassembler
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_DIRECTIVE ) ); // TODO: FIXME: HACK? Is the color fine?
+			else
+				DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
 		}
 
+		pMnemonic = line.sMnemonic;
 		PrintTextCursorX( pMnemonic, linerect );
 		PrintTextCursorX( " ", linerect );
 
