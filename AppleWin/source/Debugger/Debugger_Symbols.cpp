@@ -77,9 +77,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 //===========================================================================
-LPCTSTR GetSymbol (WORD nAddress, int nBytes)
+const char* GetSymbol (WORD nAddress, int nBytes)
 {
-	LPCSTR pSymbol = FindSymbolFromAddress( nAddress );
+	const char* pSymbol = FindSymbolFromAddress( nAddress );
 	if (pSymbol)
 		return pSymbol;
 
@@ -93,7 +93,7 @@ int GetSymbolTableFromCommand()
 }
 
 //===========================================================================
-LPCTSTR FindSymbolFromAddress (WORD nAddress, int * iTable_ )
+const char* FindSymbolFromAddress (WORD nAddress, int * iTable_ )
 {
 	// Bugfix/User feature: User symbols should be searched first
 	int iTable = NUM_SYMBOL_TABLES;
@@ -119,7 +119,7 @@ LPCTSTR FindSymbolFromAddress (WORD nAddress, int * iTable_ )
 }
 
 //===========================================================================
-bool FindAddressFromSymbol ( LPCTSTR pSymbol, WORD * pAddress_, int * iTable_ )
+bool FindAddressFromSymbol ( const char* pSymbol, WORD * pAddress_, int * iTable_ )
 {
 	// Bugfix/User feature: User symbols should be searched first
 	for (int iTable = NUM_SYMBOL_TABLES; iTable-- > 0; )
@@ -157,7 +157,7 @@ bool FindAddressFromSymbol ( LPCTSTR pSymbol, WORD * pAddress_, int * iTable_ )
 // Symbols ________________________________________________________________________________________
 
 //===========================================================================
-WORD GetAddressFromSymbol (LPCTSTR pSymbol)
+WORD GetAddressFromSymbol (const char* pSymbol)
 {
 	WORD nAddress;
 	bool bFoundSymbol = FindAddressFromSymbol( pSymbol, & nAddress );
@@ -367,7 +367,7 @@ int _GetSymbolTableFromFlag( int bSymbolTables )
 bool _CmdSymbolList_Address2Symbol( int nAddress, int bSymbolTables )
 {
 	int  iTable;
-	LPCTSTR pSymbol = FindSymbolFromAddress( nAddress, &iTable );
+	const char* pSymbol = FindSymbolFromAddress( nAddress, &iTable );
 
 	if (pSymbol)
 	{				
@@ -786,7 +786,7 @@ void SymbolUpdate( SymbolTable_Index_e eSymbolTable, char *pSymbolName, WORD nAd
 		if (bUpdateSymbol)
 		{
 #if _DEBUG
-			LPCTSTR pSymbol = FindSymbolFromAddress( nAddress, &iTable );
+			const char* pSymbol = FindSymbolFromAddress( nAddress, &iTable );
 			{
 				// Found another symbol for this address.  Harmless.
 				// TODO: Probably should check if same name?
