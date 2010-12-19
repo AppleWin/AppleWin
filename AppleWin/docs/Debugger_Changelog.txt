@@ -1,6 +1,11 @@
 /*
 2.7.0.0 Released with Applewin 1.19.1.0
 
+.30 Added: DA now works!  It is similar to DW except it does symbol lookups!
+    (DW = Define Word.  DA = Define Address)
+    Example:
+       U D000
+       DA BASIC.FPTR D000:D080
 .29 Fixed: Pretty print DB2 DB4 DB8 without commas
 .28 Fixed: DB2 DB4 DB8 DW DW2 DW4 now work/display properly.
     DB (Define Byte) shows bytes in big endian order.
