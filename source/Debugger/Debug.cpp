@@ -35,8 +35,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //	#define DEBUG_ASM_HASH 1
 #define ALLOW_INPUT_LOWERCASE 1
 
-	// See Debugger_Changelong.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,6,2,30);
+	// See /docs/Debugger_Changelog.txt for full details
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,0);
 
 
 // Public _________________________________________________________________________________________
