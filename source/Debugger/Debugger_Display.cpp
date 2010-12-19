@@ -1550,6 +1550,7 @@ void FormatNopcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 				}
 				break;
 			case NOP_ADDRESS:
+				// Nothing to do, already handled :-)
 				iByte += 2;
 				break;
 			case NOP_STRING_APPLESOFT:
@@ -1947,11 +1948,6 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		PrintTextCursorX( pTarget, linerect );
 //		PrintTextCursorX( " ", linerect );
 
-		if( pData )
-		{
-			return nOpbyte;
-		}
-
 		// Target Offset +/-		
 		if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
 		{
@@ -2010,6 +2006,12 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 					DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG ) );
 				PrintTextCursorX( "Y", linerect );
 			}
+		}
+
+		// BUGFIX: 2.6.2.30:  DA $target --> show right paren
+		if( pData )
+		{
+			return nOpbyte;
 		}
 
 	// Memory Pointer and Value
