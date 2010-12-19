@@ -201,7 +201,7 @@ Update_t _CmdDisasmDataDefByteX (int nArgs)
 //	tData.iDirective = FIRST_M_DIRECTIVE + ASM_M_DEFINE_BYTE;
 	tData.iDirective = g_aAssemblerFirstDirective[ g_iAssemblerSyntax ] + ASM_DEFINE_BYTE;
 
-	tData.eElementType = NOP_BYTE_1 + iCmd;
+	tData.eElementType = (Nopcode_e)( NOP_BYTE_1 + iCmd );
 	tData.bSymbolLookup = false;
 	tData.nTargetAddress = 0;
 
@@ -238,7 +238,7 @@ Update_t _CmdDisasmDataDefWordX (int nArgs)
 //	tData.iDirective = FIRST_M_DIRECTIVE + ASM_M_DEFINE_WORD;
 	tData.iDirective = g_aAssemblerFirstDirective[ g_iAssemblerSyntax ] + ASM_DEFINE_WORD;
 
-	tData.eElementType = NOP_WORD_1 + iCmd;
+	tData.eElementType = (Nopcode_e)( NOP_WORD_1 + iCmd );
 	tData.bSymbolLookup = false;
 	tData.nTargetAddress = 0;
 
@@ -269,7 +269,34 @@ Update_t CmdDisasmDataDefAddress8L (int nArgs)
 //===========================================================================
 Update_t CmdDisasmDataDefAddress16 (int nArgs)
 {
-	return UPDATE_DISASM;
+	int iCmd = NOP_WORD_1 - g_aArgs[0].nValue;
+
+	if (! ((nArgs <= 2) || (nArgs == 4)))
+	{
+		return Help_Arg_1( CMD_DEFINE_DATA_WORD1 + iCmd );
+	}
+
+	DisasmData_t tData;
+	int iArg = 2;
+	WORD nAddress = _CmdDefineByteRange( nArgs, iArg, tData );
+
+//	tData.iDirective = FIRST_M_DIRECTIVE + ASM_M_DEFINE_WORD;
+	tData.iDirective = g_aAssemblerFirstDirective[ g_iAssemblerSyntax ] + ASM_DEFINE_ADDRESS_16;
+
+	tData.eElementType = NOP_ADDRESS;
+	tData.bSymbolLookup = true;
+	tData.nTargetAddress = 0; // dynamic -- will be filled in ...
+
+	// Already exists, so update
+	DisasmData_t *pData = Disassembly_IsDataAddress( nAddress );
+	if( pData )
+	{
+		*pData = tData;
+	}
+	else
+		Disassembly_AddData( tData );
+
+	return UPDATE_DISASM | ConsoleUpdate();
 }
 
 Update_t CmdDisasmDataDefByte1 ( int nArgs )
@@ -379,42 +406,17 @@ void Disassembly_AddData( DisasmData_t tData)
 	g_aDisassemblerData.push_back( tData );
 }
 
+// DEPRECATED ! Inlined in _6502_GetOpmodeOpbyte() !
 //===========================================================================
 void Disassembly_GetData ( WORD nBaseAddress, const DisasmData_t *pData, DisasmLine_t & line_ )
 {
-	line_.ClearFlags();
-
-	line_.iNoptype = pData->eElementType;
-	switch( pData->eElementType )
+	if( !pData )
 	{
-		case NOP_BYTE_1:
-			line_.nOpbyte = 1;
-			break;
-		case NOP_BYTE_2:
-			line_.nOpbyte = 2;
-			break;
-		case NOP_WORD_1:
-			line_.nOpbyte= 2;
-			break;
-		case NOP_WORD_2:
-			line_.nOpbyte= 4;
-			break;
-		case NOP_STRING_APPLESOFT:
-			// scan memory for high byte
-			line_.nOpbyte = 8;
-			break;
-		default:
-			line_.nOpbyte = 1;
-			break;
+#if _DEBUG
+		ConsoleDisplayError( "Disassembly_GetData() but we don't have a valid DisasmData_t *" );
+#endif
+		return;
 	}
-
-	FormatOpcodeBytes( nBaseAddress, line_ );
-
-	//pMnemonic = g_aOpcodes[ iOpcode ].sMnemonic;
-	line_.iNopcode = pData->iDirective;
-	strcpy( line_.sMnemonic, g_aAssemblerDirectives[ line_.iNopcode ].m_pMnemonic );
-
-	FormatNopcodeBytes( nBaseAddress, line_ );
 }
 
 //===========================================================================
