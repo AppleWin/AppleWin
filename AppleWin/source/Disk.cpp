@@ -460,7 +460,7 @@ LPCTSTR DiskGetBaseName(const int iDrive)
 }
 //===========================================================================
 
-void DiskGetLightStatus(int *pDisk1Status_, int *pDisk2Status_)
+void DiskGetLightStatus(Disk_Status_e *pDisk1Status_, Disk_Status_e *pDisk2Status_)
 {
 //	*drive1 = g_aFloppyDisk[0].spinning ? g_aFloppyDisk[0].writelight ? 2 : 1 : 0;
 //	*drive2 = g_aFloppyDisk[1].spinning ? g_aFloppyDisk[1].writelight ? 2 : 1 : 0;
