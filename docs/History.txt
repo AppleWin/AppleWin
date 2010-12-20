@@ -18,6 +18,18 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise.
 - For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
+1.19.2 - 20 Dec 2010
+--------------------
+Changes:
+. Added HD activity LED.
+. Caps LED now takes up less space in full-screen mode.
+. Debugger 2.7.0.0 (see Debugger_Changelog.txt)
+
+Fixes:
+. Fix for "APPLEWIN executed an invalid instruction" on Pentium II/266 CPU.
+  - Rebuilt with Enhanced Instruction Set = Not Set (ie. no SSE/SSE2).
+
+
 1.19.1 - 10 Dec 2010
 --------------------
 Changes:
@@ -32,7 +44,7 @@ Changes:
 
 1.18.2 - 17 Aug 2010
 --------------------
-Fixed:
+Fixes:
 . [Bug #017055] DDial timer running very fast.
   - TAPEIN.bit7 was being read from floating-bus. Now fixed high.
 . [Bug# 007237] VBl IO reg not updated in 'Stepping' mode
@@ -46,7 +58,7 @@ Changes:
   - Captures text from COUT and outputs to Speech API
   - Ctrl+RESET and FullSpeed mode (ie. disk access) will purge the speech buffers
 
-Fixed:
+Fixes:
 . [Bug #16699] Debugger: G xxxx not clearing BP
 . [Bug #16688] Debugger RUN <script-file> still not 100%
   - Honour absolute path (ie. don't prefix with CWD)

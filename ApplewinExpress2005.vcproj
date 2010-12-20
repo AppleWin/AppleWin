@@ -58,8 +58,8 @@
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
-				EnableEnhancedInstructionSet="2"
-				FloatingPointModel="2"
+				EnableEnhancedInstructionSet="0"
+				FloatingPointModel="0"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\Release/Applewin.pch"
 				AssemblerListingLocation=".\Release/"
@@ -86,8 +86,8 @@
 				OutputFile=".\Release\Applewin.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalManifestDependencies="&quot;type=&apos;Win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; processorArchitecture=&apos;X86&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos;&quot;"
 				AdditionalLibraryDirectories="$(OutDir)"
+				AdditionalManifestDependencies="&quot;type=&apos;Win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; processorArchitecture=&apos;X86&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos;&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Release\Applewin.pdb"
 				SubSystem="2"
@@ -184,8 +184,8 @@
 				OutputFile=".\Debug\Applewin.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalManifestDependencies="&quot;type=&apos;Win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; processorArchitecture=&apos;X86&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos;&quot;"
 				AdditionalLibraryDirectories="$(OutDir)"
+				AdditionalManifestDependencies="&quot;type=&apos;Win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; processorArchitecture=&apos;X86&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos;&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug\Applewin.pdb"
 				SubSystem="2"
@@ -670,6 +670,14 @@
 			>
 			<File
 				RelativePath=".\docs\CodingConventions.txt"
+				>
+			</File>
+			<File
+				RelativePath=".\docs\Debugger_Changelog.txt"
+				>
+			</File>
+			<File
+				RelativePath=".\docs\FAQ.txt"
 				>
 			</File>
 			<File
