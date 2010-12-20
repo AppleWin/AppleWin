@@ -52,8 +52,7 @@ LPCTSTR DiskGetFullName(const int iDrive);
 LPCTSTR DiskGetFullDiskFilename(const int iDrive);
 LPCTSTR DiskGetBaseName(const int iDrive);
 
-// returns Disk_Status_e
-void    DiskGetLightStatus (int *pDisk1Status_,int *pDisk2Status_);
+void    DiskGetLightStatus (Disk_Status_e *pDisk1Status_, Disk_Status_e *pDisk2Status_);
 
 ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
 BOOL    DiskIsSpinning(void);

@@ -419,9 +419,6 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 
 	HDD* pHDD = &g_HardDisk[g_nHD_UnitNum >> 7];	// bit7 = drive select
 	
-	bool bRes = 0;
-	bool bAppendBlocks = 0;
-
 	if (bWrite == 0) // read
 	{
 #if HD_LED
@@ -467,11 +464,12 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 								}
 							break;
 						case 0x02: //write
+							{
 #if HD_LED
 								pHDD->hd_status_next = DISK_STATUS_WRITE;
 #endif
-								bRes = true;
-								bAppendBlocks = (pHDD->hd_diskblock * HD_BLOCK_SIZE) >= pHDD->Info.uImageSize;
+								bool bRes = true;
+								const bool bAppendBlocks = (pHDD->hd_diskblock * HD_BLOCK_SIZE) >= pHDD->Info.uImageSize;
 
 								if (bAppendBlocks)
 								{
@@ -503,6 +501,7 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 									pHDD->hd_error = 1;
 									r = DEVICE_IO_ERROR;
 								}
+							}
 							break;
 						case 0x03: //format
 #if HD_LED
@@ -604,7 +603,7 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 }
 
 // 1.19.0.0 Hard Disk Status/Indicator Light
-void HD_GetLightStatus (int *pDisk1Status_)
+void HD_GetLightStatus (Disk_Status_e *pDisk1Status_)
 {
 #if HD_LED
 	if ( HD_CardIsEnabled() )

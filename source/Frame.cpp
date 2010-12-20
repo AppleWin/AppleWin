@@ -470,17 +470,17 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
 	int  x      = buttonx;
 	int  y      = buttony+BUTTONS*BUTTONCY+1;
-	int  iDrive1Status = DISK_STATUS_OFF;
-	int  iDrive2Status = DISK_STATUS_OFF;
-	bool bCaps   = KeybGetCapsStatus();
-	bool bP8Caps  = KeybGetP8CapsStatus(); // TODO: FIXME: Not used ?!  Should show the LED status ...
+	const bool bCaps = KeybGetCapsStatus();
+	//const bool bP8Caps = KeybGetP8CapsStatus(); // TODO: FIXME: Not used ?!  Should show the LED status ...
 
-	DiskGetLightStatus(&iDrive1Status,&iDrive2Status);
+	Disk_Status_e eDrive1Status = DISK_STATUS_OFF;
+	Disk_Status_e eDrive2Status = DISK_STATUS_OFF;
+	DiskGetLightStatus(&eDrive1Status, &eDrive2Status);
 
 #if HD_LED
 	// 1.19.0.0 Hard Disk Status/Indicator Light
-	int  iHardDriveStatus = DISK_STATUS_OFF;
-	HD_GetLightStatus(&iHardDriveStatus);
+	Disk_Status_e eHardDriveStatus = DISK_STATUS_OFF;
+	HD_GetLightStatus(&eHardDriveStatus);
 #endif
 
 	if (g_bIsFullScreen)
@@ -490,14 +490,14 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		SetBkColor(dc,RGB(0,0,0));
 		SetTextAlign(dc,TA_LEFT | TA_TOP);
 
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ iDrive1Status ] );
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive1Status ] );
 		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
 
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ iDrive2Status ] );
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive2Status ] );
 		TextOut(dc,x+13,y+2,TEXT("2"),1);
 
 #if HD_LED
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ iHardDriveStatus ] );
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
 		TextOut(dc,x+23,y+2,TEXT("H"),1);
 #endif
 
@@ -508,11 +508,11 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		// Note: Made redundant with above code
 		//		RECT rect = {0,0,8,8};
 		//		CONST int DriveLedY = 12; // 8 in windowed mode
-		//		DrawBitmapRect(dc,x+12,y+DriveLedY,&rect,g_hDiskFullScreenLED[ iDrive1Status ]);
-		//		DrawBitmapRect(dc,x+30,y+DriveLedY,&rect,g_hDiskFullScreenLED[ iDrive2Status ]);
-		//		SetTextColor(dc, g_aDiskFullScreenColors[ iDrive1Status ] );
+		//		DrawBitmapRect(dc,x+12,y+DriveLedY,&rect,g_hDiskFullScreenLED[ eDrive1Status ]);
+		//		DrawBitmapRect(dc,x+30,y+DriveLedY,&rect,g_hDiskFullScreenLED[ eDrive2Status ]);
+		//		SetTextColor(dc, g_aDiskFullScreenColors[ eDrive1Status ] );
 		//		TextOut(dc,x+ 10,y+2,TEXT("*"),1);
-		//		SetTextColor(dc, g_aDiskFullScreenColors[ iDrive2Status ] );
+		//		SetTextColor(dc, g_aDiskFullScreenColors[ eDrive2Status ] );
 		//		TextOut(dc,x+ 20,y+2,TEXT("*"),1);
 
 		if (!IS_APPLE2)
@@ -559,8 +559,8 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		{
 			RECT rDiskLed = {0,0,8,8};
 
-			DrawBitmapRect(dc,x+12,y+6,&rDiskLed,g_hDiskWindowedLED[iDrive1Status]);
-			DrawBitmapRect(dc,x+31,y+6,&rDiskLed,g_hDiskWindowedLED[iDrive2Status]);
+			DrawBitmapRect(dc,x+12,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive1Status]);
+			DrawBitmapRect(dc,x+31,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive2Status]);
 
 			if (!IS_APPLE2)
 			{
@@ -595,14 +595,14 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 #if HD_LED
 				// 1.19.0.0 Hard Disk Status/Indicator Light
-				DrawBitmapRect(dc,x+12,y+18,&rDiskLed,g_hDiskWindowedLED[iHardDriveStatus]);
+				DrawBitmapRect(dc,x+12,y+18,&rDiskLed,g_hDiskWindowedLED[eHardDriveStatus]);
 #endif
 		
 			/*
 				if (g_Apple2Type == A2TYPE_PRAVETS8A)
-						DrawBitmapRect(dc,x+7,y+19,&rect,cyrbitmap[bCaps != 0]);
-					else
-						DrawBitmapRect(dc,x+7,y+19,&rect,g_hCapsLockBitmap[bCaps != 0]);
+					DrawBitmapRect(dc,x+7,y+19,&rect,cyrbitmap[bCaps != 0]);
+				else
+					DrawBitmapRect(dc,x+7,y+19,&rect,g_hCapsLockBitmap[bCaps != 0]);
 			*/
 			}
 		}

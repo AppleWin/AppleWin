@@ -42,4 +42,4 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool HD_IsDriveUnplugged(const int iDrive);
 
 	// 1.19.0.0 Hard Disk Status/Indicator Light
-	void HD_GetLightStatus (int *pDisk1Status_);
+	void HD_GetLightStatus (Disk_Status_e *pDisk1Status_);
