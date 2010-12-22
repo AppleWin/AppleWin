@@ -1352,7 +1352,17 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 				}
 			}
 			
-			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
+			// Old Offset search: (Search +1 First) nTarget-1, (Search -1 Second) nTarget+1
+			//    Problem: U D038 shows as A.TRACE+1
+			// New Offset search: (Search -1 First) nTarget+1, (Search +1 Second) nTarget+1
+			//    Problem: U D834, D87E shows as P.MUL-1, instead of P.ADD+1
+			// 2.6.2.31 Fixed: address table was bailing on first possible match. U D000 -> da STOP+1, instead of END-1
+			// 2.7.0.0: Try to match nTarget-1, nTarget+1, AND if we have both matches
+			// Then we need to decide which one to show. If we have pData then pick this one.
+			// TODO: Do we need to let the user decide which one they want searched first?
+			//    nFirstTarget = g_bDebugConfig_DisasmMatchSymbolOffsetMinus1First ? nTarget-1 : nTarget+1;
+			//    nSecondTarget = g_bDebugConfig_DisasmMatchSymbolOffsetMinus1First ? nTarget+1 : nTarget-1;
+			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL) || pData)
 			{
 				pSymbol = FindSymbolFromAddress( nTarget + 1 );
 				if (pSymbol)

@@ -496,7 +496,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 			case NOP_WORD_1: nOpbyte_ = 2; iOpmode_ = AM_M; break;
 			case NOP_WORD_2: nOpbyte_ = 4; iOpmode_ = AM_M; break;
 			case NOP_WORD_4: nOpbyte_ = 8; iOpmode_ = AM_M; break;
-			case NOP_ADDRESS:nOpbyte_ = 2; iOpmode_ = AM_NA;
+			case NOP_ADDRESS:nOpbyte_ = 2; iOpmode_ = AM_A; // BUGFIX: 2.6.2.33 Define Address should be show as Absolute
 				pData->nTargetAddress = *(LPWORD)(mem+nBaseAddress);
 				break;
 			case NOP_STRING_APPLESOFT:
