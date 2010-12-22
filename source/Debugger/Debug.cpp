@@ -4857,7 +4857,7 @@ Update_t _SearchMemoryDisplay (int nArgs)
 			nLen = 0;
 
 			        StringCat( sResult, CHC_NUM_DEC, nBuf ); // 2.6.2.17 Search Results: The n'th result now using correct color (was command, now number decimal)
-			sprintf( sText, "%2d", iFound );
+			sprintf( sText, "%02X", iFound ); // BUGFIX: 2.6.2.32 n'th Search results were being displayed in dec, yet parser takes hex numbers. i.e. SH D000:FFFF
 			nLen += StringCat( sResult, sText , nBuf );
 
 			        StringCat( sResult, CHC_DEFAULT, nBuf ); // intentional default instead of CHC_ARG_SEP for better readability
