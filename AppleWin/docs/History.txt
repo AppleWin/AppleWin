@@ -45,6 +45,7 @@ Fixes:
 --------------------
 Changes:
 . Rebuilt for Win98 with: VS2005 Express, Windows SDK 6.0, SAPI 5.1
+. Improved detection of No-Slot-Clock accesses (GEOS now working).
 
 
 1.19.0 - 28 Aug 2010
