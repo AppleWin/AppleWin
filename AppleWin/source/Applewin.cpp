@@ -925,7 +925,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	// Initialize COM - so we can use CoCreateInstance
 	// . NB. DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-//	CoInitialize(NULL);
+
 	bool bSysClkOK = SysClk_InitTimer();
 #ifdef USE_SPEECH_API
 	if (g_bEnableSpeech)

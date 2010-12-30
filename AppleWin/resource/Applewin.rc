@@ -218,8 +218,8 @@ BEGIN
     PUSHBUTTON      "&Load State",IDC_LOADSTATE,13,76,85,15
     LTEXT           "(F12 during emulation)",IDC_STATIC,107,79,90,8
     LTEXT           "&Printer dump filename:",IDC_STATIC,5,97,74,8
-    EDITTEXT        IDC_DUMP_FILENAME,5,107,143,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "B&rowse...",IDC_DUMP_FILENAME_BROWSE,154,106,50,14
+    EDITTEXT        IDC_PRINTER_DUMP_FILENAME,5,107,143,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "B&rowse...",IDC_PRINTER_DUMP_FILENAME_BROWSE,154,106,50,14
     CONTROL         "&Dump to printer (use with caution)",IDC_DUMPTOPRINTER,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,124,180,10
     CONTROL         "&Encoding conversion for clones",IDC_PRINTER_CONVERT_ENCODING,
@@ -253,8 +253,8 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,19,2,0
- PRODUCTVERSION 1,19,2,0
+ FILEVERSION 1,19,3,0
+ PRODUCTVERSION 1,19,3,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -272,12 +272,12 @@ BEGIN
             VALUE "Comments", "http://applewin.berlios.de"
             VALUE "CompanyName", "AppleWin"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1, 19, 2, 0"
+            VALUE "FileVersion", "1, 19, 3, 0"
             VALUE "InternalName", "APPLEWIN"
             VALUE "LegalCopyright", " 1994-2010 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1, 19, 2, 0"
+            VALUE "ProductVersion", "1, 19, 3, 0"
         END
     END
     BLOCK "VarFileInfo"
