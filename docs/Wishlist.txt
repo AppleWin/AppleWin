@@ -14,18 +14,12 @@ Requests (Wishlist):
   Amber, F7, F7 - wrong palette?
 
 . Video: Proper mixed-mode displays
-. Periphals: Printer support
-. Periphals: Proper mouse support
 . Periphals: Ability to swap ROM cards
-. Support for blind users -- read characters from Apple Text Screen -- relay to Windows Text2Speech API
-. Disk: .zip support (read-only should be fine)
-. Disk: .gz support (read-only should be fine) See Linapple !
-. Disk: .2MG support
 
 - Disk map!!!
  http://www.lazilong.com/apple_II/adfs/screenshots/beagle_block.html
 
- . Debugger: BLOAD with no arguments should print current save path
+. Debugger: BLOAD with no arguments should print current save path
 . Debugger: FIX BLOAD with bad path!! (should use path of last disk load!)
 . Debugger: FIX BSAVE with bad path!! (should use path of last disk load!)
 . Debugger: merlin "filename",S6,D1
@@ -75,11 +69,7 @@ Priority:
 
 
 Post 1.12.9.1:
-- Could you add the possibility to create save state with the name of the disk image loaded
-  For example, I am playing to Lode Runner (Lode Runner.dsk)
-  Pressing F11 or another key would create an file named Lode Runner.aws
-  Now, if I change the image disk (MoonPatrol.dsk), pressing Ctrl+F12 would load MoonPatrol.aws
-  Like that, there is not risk to erase accidently or "unqiue" save state named SaveState.aws
+- [ Feature Request #2054 ] More accurate save state
 
 Post 1.12.8.0:
 - I have multiple controllers and was wondering if a future version of the emulator
@@ -101,8 +91,6 @@ Post 1.12.5.0:
   > 2 MDS same as ME but shows strings (ie "ABC" instead of "c1 c2 c3"
   > 3 TS    text search (and may be a hex search function too ?"
 - Default monochrome mode to green
-- Move 'Colour' button to PSP & replace with 'Disk-swap' button.
-- Change 'Save State' dialog to say 'Save' instead of 'Open'.
 - Associate .aws with AppleWin.
 
 - DONE: v16.0.0.0: UI: Screen snapshot
@@ -123,36 +111,24 @@ Post 1.12.4.1:
 - Resizeable , scalable window
 - Incorporate Laine Houghton's modifications to debugger (?)
 - Make a documented interface so others can program Apple II peripheral card Emu plugins.
-- Ethernet compatibility for contiki and glenn jones' ethernet card.  maybe lanceGS.
 - Source level debugging using WordPad & Merlin asm output (tell WordPad to FIND / GOTO line).
 - Emulate a video capture card: get an image from a webcam, de-rez it to HGR, and display it on the HGR screen.
 - AppleCrate emulation between several open AppleWin emulators.
-- Access PC files from PRODOS or DOS instead of DSK images?
-- Support .2mg images
+- Access PC files from PRODOS or DOS instead of DSK images? : Not doing (user CiderPress instead)
 . DONE: v16.0.0.0: DEBUGGER: Hex search in debugger
 
 Post 1.12.4.0:
-- Ability to send files to the PC from a disk image in AppleWin
-- Ability to load files from the PC to a disk image in AppleWin
-- Z80 support - so we can run CPM stuff
+- Ability to send files to the PC from a disk image in AppleWin : Not doing (user CiderPress instead)
+- Ability to load files from the PC to a disk image in AppleWin : Not doing (user CiderPress instead)
 - When you are using the mouse as a cursor / joystick, as well as the markers on the screen border, enable the user to also add a dot (or cross hair) to the screen wherever the mouse pointer is.
 . DONE: v16.0.0.0 DEBUGGER: (use F7): RESET button to break into the Monitor (preserving memory).
 - Ability to send Apple's stdout to clipboard or file (and vice versa).
 
 Initial:
-- ZIP'ed image support
-- RAMworks for 256KB support. Needed by AppleWorks 5.1
-- Save/Load complete emulator state
-- HD support
-- MB volume control
 - Cassette-in
-- Mouse support
 - Merged source base w/ PocketPC port (e.g. http://www.geocities.com/bonelyfish/applece.html)
 - Cut'n'paste support
-- Super Serial Card (SSC) support
-- Replace 'Color Palette' button with something more useful, since it's hardly ever used.
 - Option to switch joystick buttons. (Lolo S: 01/06/04)
 - Option to trim joystick axes. Drift problem with "Rescue Raiders". (Lolo S: 01/06/04)
 - Backspace (Apple's DELETE key) shouldn't back to left-arrow. Make this configurable. (TheRink: 06/06/04)
-- Hotkey to swap the disks in the drives. (TheRink: 06/06/04)
 
