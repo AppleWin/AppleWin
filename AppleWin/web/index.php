@@ -4,9 +4,9 @@
   <link rel="shortcut icon" href="applewin.ico">
   <title>Apple //e Emulator for Windows</title></head>
 <body alink="gold" background="background.gif" bgcolor="mediumpurple" link="orange" text="powderblue" vlink="plum">
-<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.17.2</font></u></font></p>
+<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.19.3</font></u></font></p>
 <p align="center"><font face="Tahoma"><img src="applewin.gif" title="" alt="Apple //e Emulator Logo" height="384" width="560"></font></p>
-<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.17.2.0.zip">Version 1.17.2</a><br>
+<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.19.3.0.zip">Version 1.19.3</a><br>
 <a href="#OldReleases">Download older releases</a><br>
 </font></p>
 
@@ -25,6 +25,62 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
 - On Windows XP you can simply right-click on the CHM file, select "Properties", and click on the "Unblock" button.<br>
 - Click "Apply" and the content should be visible.
 </font></font></p>
+
+
+<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.19.3 - 20 Dec 2010</u></font></p>
+<font face="Tahoma">
+<li><strong>Significant changes since 1.17.2:</strong></li>
+<ul>
+	<li>Added No-Slot-Clock (located in $C300 ROM space).</li>
+	<li>Added disk/harddisk image r/w support for .gz/.zip (and .2mg) files.</li>
+	<ul>
+		<li>Multi-zip archives are read-only.</li>
+	</ul>
+</ul>
+<li>Other changes since 1.17.2:</li>
+<ul>
+	<li>Set 50% scan lines as the default.</li>
+	<li>Added HD activity LED.</li>
+	<li>Caps LED now takes up less space in full-screen mode.</li>
+	<li>Debugger 2.7.0.0 (see Debugger_Changelog.txt)</li>
+	<li>Rebuilt for Win98 with: VS2005 Express, Windows SDK 6.0, SAPI 5.1</li>
+	<li>Added "-speech" cmd-line switch</li>
+	<ul>
+		<li>Captures text from COUT and outputs to Speech API</li>
+		<li>Ctrl+RESET and FullSpeed mode (ie. disk access) will purge the speech buffers</li>
+	</ul>
+	<li>Added disk/harddisk eject sub-menu to Disk Config tab.</li>
+	<li>Removed .bin registration.</li>
+</ul>
+<li>Fixes since 1.17.2:</li>
+<ul>
+	<li>Fix for Win98 support (broken at 1.18.0.0)</li>
+	<ul>
+		<li>Fix OpenFileName dialogs for Win98 (use older WinVer4 struct).</li>
+		<li>Fix for "APPLEWIN executed an invalid instruction" on Pentium II/266 CPU.</li>
+	</ul>
+	<li>Edits to the 'Printer dump filename' edit control are now recognised.</li>
+	<li>[Bug #017055] DDial timer running very fast.</li>
+	<ul>
+		<li>TAPEIN.bit7 was being read from floating-bus. Now fixed high.</li>
+	</ul>
+	<li>[Bug# 007237] VBl IO reg not updated in 'Stepping' mode</li>
+	<li>Loading save-state file (.aws) wasn't Win32-closing .dsk images in drives.</li>
+	<li>[Bug #16699] Debugger: G xxxx not clearing BP</li>
+	<li>[Bug #16688] Debugger RUN <script-file> still not 100%</li>
+	<ul>
+		<li>Honour absolute path (ie. don't prefix with CWD)</li>
+	</ul>
+	<li>[Bug #16632] Fix cmd-line -d1/d2 switches with relative path</li>
+	<li>Fix speaker volume when booting with -d1 switch</li>
+	<li>Fix debugger bugs:</li>
+	<ul>
+		<li>Crash when doing: help *</li>
+		<li>[Bug #16651] Crash when doing: run <script-file></li>
+	</ul>
+	<li>[Bug #16652] Fix "Harddisk images aren't persisted when in different folders"</li>
+	<li>[Bug #12724,14747] Fix "Registry persisted Window x,y position sometimes off screen"</li>
+</ul>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.17.2 - 13 Dec 2009</u></font></p>
@@ -437,6 +493,7 @@ find didn't appear to support it:<br>
 
 <p><font face="Tahoma"><font face="Tahoma"><u><a name="OldReleases"></a>Old releases:</u></font></font></p>
 <p><font face="Tahoma"><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.17.2.0.zip">Version 1.17.2</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.17.1.0.zip">Version 1.17.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.16.1.0.zip">Version 1.16.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.16.0.0-beta.zip">Version 1.16.0 (beta)</a><br></font></font><font face="Tahoma"><font face="Tahoma">
