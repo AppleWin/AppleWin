@@ -740,6 +740,8 @@ void DiskSelectImage(const int iDrive, LPSTR pszFilename)
 	_tcscpy(title, TEXT("Select Disk Image For Drive "));
 	_tcscat(title, iDrive ? TEXT("2") : TEXT("1"));
 
+	_ASSERT(sizeof(OPENFILENAME) == sizeof(OPENFILENAME_NT4));	// Required for Win98/ME support (selected by _WIN32_WINNT=0x0400 in stdafx.h)
+
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn,sizeof(OPENFILENAME));
 	ofn.lStructSize     = sizeof(OPENFILENAME);

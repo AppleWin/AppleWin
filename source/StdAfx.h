@@ -1,5 +1,9 @@
 //#define WIN32_LEAN_AND_MEAN
-//#define _WIN32_WINNT 0x0400	// For CoInitializeEx() to get defined in objbase.h (Updated[TC]: Removed as not needed)
+
+// Required for Win98/ME support:
+// . See: http://support.embarcadero.com/article/35754
+// . "GetOpenFileName() fails under Windows 95/98/NT/ME due to incorrect OPENFILENAME structure size"
+#define _WIN32_WINNT 0x0400
 
 // Mouse Wheel is not supported on Win95.
 // If we didn't care about supporting Win95 (compile/run-time errors)

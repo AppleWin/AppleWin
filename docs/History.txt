@@ -18,6 +18,17 @@ Restrictions/bugs:
 - During Mockingboard playback, Speaker emulation isn't precise.
 - For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
+
+1.19.3 - 30 Dec 2010
+--------------------
+Changes:
+. Set 50% scan lines as the default.
+
+Fixes:
+. Fix OpenFileName dialogs for Win98 (use older WinVer4 struct).
+. Edits to the 'Printer dump filename' edit control are now recognised.
+
+
 1.19.2 - 20 Dec 2010
 --------------------
 Changes:

@@ -1855,7 +1855,7 @@ void FrameCreateWindow ()
 	{
 		int nXScreen = GetSystemMetrics(SM_CXSCREEN) - nWidth;
 
-		if (RegLoadValue(TEXT("Preferences"), TEXT("Window X-Position"), 1, (DWORD*)&nXPos))
+		if (RegLoadValue(TEXT(REG_PREFS), TEXT("Window X-Position"), 1, (DWORD*)&nXPos))
 		{
 			if (nXPos > nXScreen)
 				nXPos = -1;	// Not fully visible, so default to centre position
@@ -1871,7 +1871,7 @@ void FrameCreateWindow ()
 	{
 		int nYScreen = GetSystemMetrics(SM_CYSCREEN) - nHeight;
 
-		if (RegLoadValue(TEXT("Preferences"), TEXT("Window Y-Position"), 1, (DWORD*)&nYPos))
+		if (RegLoadValue(TEXT(REG_PREFS), TEXT("Window Y-Position"), 1, (DWORD*)&nYPos))
 		{
 			if (nYPos > nYScreen)
 				nYPos = -1;	// Not fully visible, so default to centre position
