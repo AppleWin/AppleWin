@@ -479,6 +479,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 	//    b) The disassembler view needs to know how many bytes each line is.
 	int nSlack;
 
+	// 2.7.0.0 TODO: FIXME: Opcode length that over-lap data, should be shortened ... if (nOpbyte_ > 1) if Disassembly_IsDataAddress( nBaseAddress + 1 ) nOpbyte_ = 1;
 	DisasmData_t* pData = Disassembly_IsDataAddress( nBaseAddress );
 	if( pData )
 	{
@@ -496,7 +497,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 			case NOP_WORD_1: nOpbyte_ = 2; iOpmode_ = AM_M; break;
 			case NOP_WORD_2: nOpbyte_ = 4; iOpmode_ = AM_M; break;
 			case NOP_WORD_4: nOpbyte_ = 8; iOpmode_ = AM_M; break;
-			case NOP_ADDRESS:nOpbyte_ = 2; iOpmode_ = AM_A; // BUGFIX: 2.6.2.33 Define Address should be show as Absolute
+			case NOP_ADDRESS:nOpbyte_ = 2; iOpmode_ = AM_A; // BUGFIX: 2.6.2.33 Define Address should be shown as Absolute mode, not Indirect Absolute mode. DA BASIC.FPTR D000:D080 // was showing as "da (END-1)" now shows as "da END-1"
 				pData->nTargetAddress = *(LPWORD)(mem+nBaseAddress);
 				break;
 			case NOP_STRING_APPLESOFT:
