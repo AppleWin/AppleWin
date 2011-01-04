@@ -142,32 +142,13 @@ const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16);
 const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512);
 const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560);
 
-//#define  VF_80COL         0x00000001
-//#define  VF_DHIRES        0x00000002
-//#define  VF_HIRES         0x00000004
-//#define  VF_MASK2         0x00000008
-//#define  VF_MIXED         0x00000010
-//#define  VF_PAGE2         0x00000020
-//#define  VF_TEXT          0x00000040
-
-enum VideoFlag_e
-{
-	VF_80COL  = 0x00000001,
-	VF_DHIRES = 0x00000002,
-	VF_HIRES  = 0x00000004,
-	VF_MASK2  = 0x00000008,
-	VF_MIXED  = 0x00000010,
-	VF_PAGE2  = 0x00000020,
-	VF_TEXT   = 0x00000040
-};
-
-#define  SW_80COL         (vidmode & VF_80COL)
-#define  SW_DHIRES        (vidmode & VF_DHIRES)
-#define  SW_HIRES         (vidmode & VF_HIRES)
-#define  SW_MASK2         (vidmode & VF_MASK2)
-#define  SW_MIXED         (vidmode & VF_MIXED)
-#define  SW_PAGE2         (vidmode & VF_PAGE2)
-#define  SW_TEXT          (vidmode & VF_TEXT)
+#define  SW_80COL         (g_bVideoMode & VF_80COL)
+#define  SW_DHIRES        (g_bVideoMode & VF_DHIRES)
+#define  SW_HIRES         (g_bVideoMode & VF_HIRES)
+#define  SW_MASK2         (g_bVideoMode & VF_MASK2)
+#define  SW_MIXED         (g_bVideoMode & VF_MIXED)
+#define  SW_PAGE2         (g_bVideoMode & VF_PAGE2)
+#define  SW_TEXT          (g_bVideoMode & VF_TEXT)
 
 #define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
 
@@ -222,10 +203,10 @@ static BYTE          colormixbuffer[6];
 static WORD          colormixmap[6][6][6];
 //
 
-static int       g_nAltCharSetOffset  = 0; // alternate character set
+	int       g_nAltCharSetOffset  = 0; // alternate character set
 
-		bool      g_bVideoDisplayPage2 = 0;
-		bool      g_VideoForceFullRedraw = 1;
+	bool      g_bVideoDisplayPage2 = 0;
+	bool      g_VideoForceFullRedraw = 1;
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      framebufferpitch = 0;
@@ -235,7 +216,8 @@ static DWORD     lastpageflip     = 0;
 COLORREF  monochrome       = RGB(0xC0,0xC0,0xC0);
 static BOOL      rebuiltsource    = 0;
 static LPBYTE    vidlastmem       = NULL;
-static DWORD     vidmode          = VF_TEXT;
+
+	int     g_bVideoMode          = VF_TEXT;
 
 DWORD     g_eVideoType        = VT_COLOR_TVEMU;
 DWORD     g_uHalfScanLines = true; // drop 50% scan lines for a more authentic look
@@ -1605,7 +1587,7 @@ void VideoBenchmark () {
   // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totaltextfps = 0;
-  vidmode            = VF_TEXT;
+  g_bVideoMode            = VF_TEXT;
   FillMemory(mem+0x400,0x400,0x14);
   VideoRedrawScreen();
   DWORD milliseconds = GetTickCount();
@@ -1627,7 +1609,7 @@ void VideoBenchmark () {
   // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totalhiresfps = 0;
-  vidmode             = VF_HIRES;
+  g_bVideoMode             = VF_HIRES;
   FillMemory(mem+0x2000,0x2000,0x14);
   VideoRedrawScreen();
   milliseconds = GetTickCount();
@@ -2321,7 +2303,7 @@ void VideoReinitialize () {
 void VideoResetState () {
   g_nAltCharSetOffset     = 0;
   g_bVideoDisplayPage2 = 0;
-  vidmode      = VF_TEXT;
+  g_bVideoMode      = VF_TEXT;
   g_VideoForceFullRedraw   = 1;
 }
 
@@ -2330,28 +2312,28 @@ BYTE __stdcall VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecut
 {
   address &= 0xFF;
   DWORD oldpage2 = SW_PAGE2;
-  int   oldvalue = g_nAltCharSetOffset+(int)(vidmode & ~(VF_MASK2 | VF_PAGE2));
+  int   oldvalue = g_nAltCharSetOffset+(int)(g_bVideoMode & ~(VF_MASK2 | VF_PAGE2));
   switch (address) {
-    case 0x00: vidmode &= ~VF_MASK2;   break;
-    case 0x01: vidmode |=  VF_MASK2;   break;
-    case 0x0C: if (!IS_APPLE2) vidmode &= ~VF_80COL;   break;
-    case 0x0D: if (!IS_APPLE2) vidmode |=  VF_80COL;   break;
+    case 0x00: g_bVideoMode &= ~VF_MASK2;   break;
+    case 0x01: g_bVideoMode |=  VF_MASK2;   break;
+    case 0x0C: if (!IS_APPLE2) g_bVideoMode &= ~VF_80COL;   break;
+    case 0x0D: if (!IS_APPLE2) g_bVideoMode |=  VF_80COL;   break;
     case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
     case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
-    case 0x50: vidmode &= ~VF_TEXT;    break;
-    case 0x51: vidmode |=  VF_TEXT;    break;
-    case 0x52: vidmode &= ~VF_MIXED;   break;
-    case 0x53: vidmode |=  VF_MIXED;   break;
-    case 0x54: vidmode &= ~VF_PAGE2;   break;
-    case 0x55: vidmode |=  VF_PAGE2;   break;
-    case 0x56: vidmode &= ~VF_HIRES;   break;
-    case 0x57: vidmode |=  VF_HIRES;   break;
-    case 0x5E: if (!IS_APPLE2) vidmode |=  VF_DHIRES;  break;
-    case 0x5F: if (!IS_APPLE2) vidmode &= ~VF_DHIRES;  break;
+    case 0x50: g_bVideoMode &= ~VF_TEXT;    break;
+    case 0x51: g_bVideoMode |=  VF_TEXT;    break;
+    case 0x52: g_bVideoMode &= ~VF_MIXED;   break;
+    case 0x53: g_bVideoMode |=  VF_MIXED;   break;
+    case 0x54: g_bVideoMode &= ~VF_PAGE2;   break;
+    case 0x55: g_bVideoMode |=  VF_PAGE2;   break;
+    case 0x56: g_bVideoMode &= ~VF_HIRES;   break;
+    case 0x57: g_bVideoMode |=  VF_HIRES;   break;
+    case 0x5E: if (!IS_APPLE2) g_bVideoMode |=  VF_DHIRES;  break;
+    case 0x5F: if (!IS_APPLE2) g_bVideoMode &= ~VF_DHIRES;  break;
   }
   if (SW_MASK2)
-    vidmode &= ~VF_PAGE2;
-  if (oldvalue != g_nAltCharSetOffset+(int)(vidmode & ~(VF_MASK2 | VF_PAGE2))) {
+    g_bVideoMode &= ~VF_PAGE2;
+  if (oldvalue != g_nAltCharSetOffset+(int)(g_bVideoMode & ~(VF_MASK2 | VF_PAGE2))) {
     graphicsmode = !SW_TEXT;
     g_VideoForceFullRedraw   = 1;
   }
@@ -2419,7 +2401,7 @@ bool VideoGetSW80COL()
 DWORD VideoGetSnapshot(SS_IO_Video* pSS)
 {
 	pSS->bAltCharSet = !(g_nAltCharSetOffset == 0);
-	pSS->dwVidMode = vidmode;
+	pSS->dwVidMode = g_bVideoMode;
 	return 0;
 }
 
@@ -2428,7 +2410,7 @@ DWORD VideoGetSnapshot(SS_IO_Video* pSS)
 DWORD VideoSetSnapshot(SS_IO_Video* pSS)
 {
 	g_nAltCharSetOffset = !pSS->bAltCharSet ? 0 : 256;
-	vidmode = pSS->dwVidMode;
+	g_bVideoMode = pSS->dwVidMode;
 
 	//
 
