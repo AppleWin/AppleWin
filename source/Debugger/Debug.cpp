@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,0);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,2);
 
 
 // Public _________________________________________________________________________________________
@@ -4857,7 +4857,7 @@ Update_t _SearchMemoryDisplay (int nArgs)
 			nLen = 0;
 
 			        StringCat( sResult, CHC_NUM_DEC, nBuf ); // 2.6.2.17 Search Results: The n'th result now using correct color (was command, now number decimal)
-			sprintf( sText, "%02X", iFound ); // BUGFIX: 2.6.2.32 n'th Search results were being displayed in dec, yet parser takes hex numbers. i.e. SH D000:FFFF
+			sprintf( sText, "%02X", iFound ); // BUGFIX: 2.6.2.32 n'th Search results were being displayed in dec, yet parser takes hex numbers. i.e. SH D000:FFFF A9 00
 			nLen += StringCat( sResult, sText , nBuf );
 
 			        StringCat( sResult, CHC_DEFAULT, nBuf ); // intentional default instead of CHC_ARG_SEP for better readability
