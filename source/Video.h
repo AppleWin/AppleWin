@@ -15,6 +15,17 @@ enum VideoType_e
 	, NUM_VIDEO_MODES
 };
 
+	enum VideoFlag_e
+	{
+		VF_80COL  = 0x00000001,
+		VF_DHIRES = 0x00000002,
+		VF_HIRES  = 0x00000004,
+		VF_MASK2  = 0x00000008,
+		VF_MIXED  = 0x00000010,
+		VF_PAGE2  = 0x00000020,
+		VF_TEXT   = 0x00000040
+	};
+
 enum AppleFont_e
 {
 	// 40-Column mode is 1x Zoom (default)
@@ -47,6 +58,9 @@ extern COLORREF   monochrome; // saved
 extern DWORD      g_eVideoType; // saved
 extern DWORD      g_uHalfScanLines; // saved
 extern LPBYTE     g_pFramebufferbits;
+
+extern int g_nAltCharSetOffset;
+extern int g_bVideoMode; // g_bVideoMode
 
 // Prototypes _______________________________________________________
 
