@@ -1,6 +1,24 @@
 /*
+
+ .2 Fixed: Fixed: Debug build of debugger force display all CPU info window wasn't calling DrawTargets()
+ .1 Added: Soft Switches displayed in CPU info window
+
+
 2.7.0.0 Released with Applewin 1.19.1.0
 
+
+.33 Fixed: Define Address should be shown as Absolute mode, not Indirect Absolute mode.
+    Example:
+       U D000
+       DA BASIC.FPTR D000:D081 // was showing as "da (END-1)" now shows as "da END-1"
+.32 Fixed: n'th Search results were being displayed in dec, yet parser takes hex numbers.
+    Example:
+       SH D000:FFFF A9 00
+       U @A // used to show 10th search result as 10:DE60, now 0A:DE60
+.31 Fixed: Disasm list containing data address table was bailing on first possible match.
+    Example:
+       DA BASIC.FPTR D000:D080
+       U D000 // was showing da STOP+1, instead of END-1
 .30 Added: DA now works!  It is similar to DW except it does symbol lookups!
     (DW = Define Word.  DA = Define Address)
     Example:
