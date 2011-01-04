@@ -159,6 +159,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 		int MAX_DISPLAY_REGS_LINES        = 7;
 		int MAX_DISPLAY_STACK_LINES       = 8;
+		int MAX_DISPLAY_TARGET_PTR_LINES  = 2;
 		int MAX_DISPLAY_ZEROPAGE_LINES    = 8;
 
 //		int MAX_DISPLAY_BREAKPOINTS_LINES = 7; // 7
@@ -1334,6 +1335,7 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 			if (pData && (!pData->bSymbolLookup))
 				pSymbol = 0;
 
+			// Try exact match first
 			if (pSymbol)
 			{
 				bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
@@ -2510,6 +2512,64 @@ void DrawRegister ( int line, LPCTSTR name, const int nBytes, const WORD nValue,
 }
 
 
+// 2.7.0.1 Display state of soft switches
+//===========================================================================
+void DrawSoftSwitches( int iSoftSwitch )
+{
+	RECT rect;
+	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
+
+		rect.left   = DISPLAY_STACK_COLUMN;
+		rect.top    = iSoftSwitch * g_nFontHeight;
+		rect.right = rect.left + (10 * nFontWidth) + 1;
+		rect.bottom = rect.top + g_nFontHeight;
+
+
+		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+
+		char sText[11] = "";
+		
+		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
+		// GR  / TEXT
+		// GRAPH/TEXT
+		// TEXT ON/OFF
+		sprintf( sText, !(g_bVideoMode & VF_TEXT) ? "GR  / ----" : "--  / TEXT" );
+		PrintTextCursorY( sText, rect );
+
+		// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
+		// FULL/MIXED
+		// MIX OFF/ON
+		sprintf( sText, !(g_bVideoMode & VF_MIXED) ? "FULL/-----" : "----/MIXED" );
+		PrintTextCursorY( sText, rect );
+
+		// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
+		// PAGE 1 / 2
+		sprintf( sText, !(g_bVideoMode & VF_PAGE2) ? "PAGE 1 / -" : "PAGE - / 2" );
+		PrintTextCursorY( sText, rect );
+		
+		// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
+		// LO / HIRES
+		// LO / -----
+		// -- / HIRES
+		sprintf( sText, !(g_bVideoMode & VF_HIRES) ? "LO /-- RES" : "---/HI RES" );
+		PrintTextCursorY( sText, rect );
+
+		PrintTextCursorY( "", rect );
+
+		// Extended soft switches
+		sprintf( sText, !(g_bVideoMode & VF_80COL) ? "40 / -- COL" : "-- / 80 COL" );
+		PrintTextCursorY( sText, rect );
+
+		sprintf(sText, (g_nAltCharSetOffset == 0) ? "ASCII/-----" : "-----/MOUSE" );
+		PrintTextCursorY( sText, rect );
+
+		// 280/560 HGR
+		sprintf(sText, !(g_bVideoMode & VF_DHIRES) ? "HGR / ----" : "--- / DHGR" );
+		PrintTextCursorY( sText, rect );
+}
+
+
 //===========================================================================
 void DrawSourceLine( int iSourceLine, RECT &rect )
 {
@@ -2597,7 +2657,7 @@ void DrawTargets ( int line)
 	RECT rect;
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 	
-	int iAddress = 2;
+	int iAddress = MAX_DISPLAY_TARGET_PTR_LINES;
 	while (iAddress--)
 	{
 		// .6 Bugfix: DrawTargets() should draw target byte for IO address: R PC FB33
@@ -3037,7 +3097,8 @@ void DrawSubWindow_Info( int iWindow )
 	int yRegs     = 0; // 12
 	int yStack    = yRegs  + MAX_DISPLAY_REGS_LINES  + 0; // 0
 	int yTarget   = yStack + MAX_DISPLAY_STACK_LINES - 1; // 9
-	int yZeroPage = 16; // 19
+	int yZeroPage = 16; // yTarget 
+	int ySoft = yZeroPage + (2 * MAX_DISPLAY_ZEROPAGE_LINES) + 1;
 
 	DrawRegister( yRegs++, sReg[ BP_SRC_REG_A ] , 1, regs.a , PARAM_REG_A  );
 	DrawRegister( yRegs++, sReg[ BP_SRC_REG_X ] , 1, regs.x , PARAM_REG_X  );
@@ -3049,12 +3110,15 @@ void DrawSubWindow_Info( int iWindow )
 
 	DrawStack( yStack );
 
-	if (g_bConfigInfoTargetPointer)
-	{
+	// 2.7.0.2 Fixed: Debug build of debugger force display all CPU info window wasn't calling DrawTargets()
+	bool bForceDisplayTargetPtr = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_bConfigInfoTargetPointer;
+	if (bForceDisplayTargetPtr)
 		DrawTargets( yTarget );
-	}
 	
 	DrawZeroPagePointers( yZeroPage );
+
+//	bool bForceDisplaySoftSwitches = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : true;
+	DrawSoftSwitches( ySoft );
 
 #if defined(SUPPORT_Z80_EMU) && defined(OUTPUT_Z80_REGS)
 	DrawRegister( 19,"AF",2,*(WORD*)(membank+REG_AF));
