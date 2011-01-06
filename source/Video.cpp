@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2008, Tom Charlesworth, Michael Pohoreski, Nick Westgate
+Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski, Nick Westgate
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -124,15 +124,6 @@ enum Color_Palette_Index_e
 
 	, NUM_COLOR_PALETTE
 };
-
-
-//#define  SRCOFFS_40COL    0
-//#define  SRCOFFS_IIPLUS   (SRCOFFS_40COL  + 256) 
-//#define  SRCOFFS_80COL    (SRCOFFS_IIPLUS + 256)
-//#define  SRCOFFS_LORES    (SRCOFFS_80COL  +  128)
-//#define  SRCOFFS_HIRES    (SRCOFFS_LORES  +   16)
-//#define  SRCOFFS_DHIRES   (SRCOFFS_HIRES  +  512)
-//#define  SRCOFFS_TOTAL    (SRCOFFS_DHIRES + 2560)
 
 const int SRCOFFS_40COL   = 0;                       //    0
 const int SRCOFFS_IIPLUS  = (SRCOFFS_40COL  +  256); //  256
@@ -293,6 +284,7 @@ void CopySource (int dx, int dy, int w, int h, int sx, int sy )
 		pSrc -= SRCOFFS_TOTAL;
 	}
 }
+
 
 //===========================================================================
 void CreateFrameOffsetTable (LPBYTE addr, LONG pitch) {
@@ -1461,8 +1453,9 @@ bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
 		);
 		OutputDebugString("sText");
 #endif
+
 		BYTE byteval1 = (x >  0) ? *(g_pHiresBank0+offset+yoffset-1) : 0;
-		BYTE byteval2 =            *(g_pHiresBank0+offset+yoffset);
+		BYTE byteval2 =            *(g_pHiresBank0+offset+yoffset  );
 		BYTE byteval3 = (x < 39) ? *(g_pHiresBank0+offset+yoffset+1) : 0;
 		if ((byteval2 != *(vidlastmem+offset+yoffset+0x2000)) ||
 			((x >  0) && ((byteval1 & 0x60) != (*(vidlastmem+offset+yoffset+0x1FFF) & 0x60))) ||
@@ -1470,7 +1463,7 @@ bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
 			g_VideoForceFullRedraw)
 		{
 #define COLOFFS  (((byteval1 & 0x60) << 2) | \
-                  ((byteval3 & 0x03) << 5))
+                   ((byteval3 & 0x03) << 5))
 			if (g_eVideoType == VT_COLOR_TVEMU)
 			{
 				CopyMixedSource(
@@ -1481,8 +1474,8 @@ bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
 			else
 			{
 				CopySource(
-					xpixel, ypixel+(yoffset >> 9),
-					14, 2, // 2x upscale: 280x192 -> 560x384
+					xpixel,ypixel+(yoffset >> 9),
+					14,2, // 2x upscale: 280x192 -> 560x384
 					SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1)
 				);
 			}
@@ -2203,7 +2196,7 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 
 		for( int y = 1; y < FRAMEBUFFER_H; y += 2 )
 		{	
-			unsigned char *pSrc = pSrc = g_aFrameBufferOffset[y];
+			unsigned char *pSrc = g_aFrameBufferOffset[y];
 			for( int x = 0; x < FRAMEBUFFER_W; x++ )
 			{
 				*pSrc++ = 0;
