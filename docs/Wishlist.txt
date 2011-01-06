@@ -1,7 +1,7 @@
 Requests (Wishlist):
 ====================
 
-- Debugger:
+- Debugger: Symbol tables for DOS 3.3 and ProDOS
    SYMUSER2 -> SYMDOS33
    SYMSOURCE2 -> SYMPRODOS
 
