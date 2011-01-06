@@ -134,13 +134,13 @@ enum Color_Palette_Index_e
 //#define  SRCOFFS_DHIRES   (SRCOFFS_HIRES  +  512)
 //#define  SRCOFFS_TOTAL    (SRCOFFS_DHIRES + 2560)
 
-const int SRCOFFS_40COL   = 0;
-const int SRCOFFS_IIPLUS  = (SRCOFFS_40COL  +  256);
-const int SRCOFFS_80COL   = (SRCOFFS_IIPLUS +  256);
-const int SRCOFFS_LORES   = (SRCOFFS_80COL  +  128);
-const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16);
-const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512);
-const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560);
+const int SRCOFFS_40COL   = 0;                       //    0
+const int SRCOFFS_IIPLUS  = (SRCOFFS_40COL  +  256); //  256
+const int SRCOFFS_80COL   = (SRCOFFS_IIPLUS +  256); //  512
+const int SRCOFFS_LORES   = (SRCOFFS_80COL  +  128); //  640
+const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //  656
+const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512); // 1168
+const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3278
 
 #define  SW_80COL         (g_bVideoMode & VF_80COL)
 #define  SW_DHIRES        (g_bVideoMode & VF_DHIRES)
@@ -182,7 +182,7 @@ static HDC           g_hDeviceDC;
        LPBYTE        g_pFramebufferbits = NULL; // last drawn frame
 static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
-static LPBYTE        frameoffsettable[FRAMEBUFFER_H]; // array of pointers to start of each scanline
+static LPBYTE        g_aFrameBufferOffset[FRAMEBUFFER_H]; // array of pointers to start of each scanline
 static LPBYTE        g_pHiresBank1;
 static LPBYTE        g_pHiresBank0;
        HBITMAP       g_hLogoBitmap;
@@ -209,7 +209,7 @@ static WORD          colormixmap[6][6][6];
 	bool      g_VideoForceFullRedraw = 1;
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
-static LONG      framebufferpitch = 0;
+static LONG      g_nFrameBufferPitch = 0;
 BOOL      graphicsmode     = 0;
 static BOOL      hasrefreshed     = 0;
 static DWORD     lastpageflip     = 0;
@@ -257,43 +257,54 @@ void Video_MakeScreenShot( FILE *pFile );
 
 int GetMonochromeIndex();
 
-//===========================================================================
-void __stdcall CopySource (int destx, int desty,
-                           int xsize, int ysize,
-                           int sourcex, int sourcey)
+/** Our BitClit() / VRAM_Copy()
+	@param dx Dst X
+	@param dy Dst Y
+	@param w  Width (same for src & dst)
+	@param h  Height (same for src & dst)
+	@param sx Src X
+	@param sy Src Y
+// =========================================================================== */
+void CopySource (int dx, int dy, int w, int h, int sx, int sy )
 {
-  LPBYTE currdestptr   = frameoffsettable [desty]  +destx;
-  LPBYTE currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
-  int bytesleft;
-  while (ysize--)
-  {
-    bytesleft = xsize;
-    while (bytesleft & 3)
+	LPBYTE pDst = g_aFrameBufferOffset[ dy ] + dx;
+	LPBYTE pSrc = g_aSourceStartofLine[ sy ] + sx;
+	int nBytes;
+
+	while (h--)
 	{
-      --bytesleft;
-      *(currdestptr+bytesleft) = *(currsourceptr+bytesleft);
-    }
-    while (bytesleft)
-	{
-      bytesleft -= 4;
-      *(LPDWORD)(currdestptr+bytesleft) = *(LPDWORD)(currsourceptr+bytesleft);
-    }
-    currdestptr   -= framebufferpitch;
-    currsourceptr -= SRCOFFS_TOTAL;
-  }
+		nBytes = w;
+
+		// If not multiple of 3 bytes, copy first 3 bytes, so the next copy is 4-byte aligned.
+		while (nBytes & 3)
+		{
+		  --nBytes;
+		  *(pDst+nBytes) = *(pSrc+nBytes);
+		}
+
+		// Copy 4 bytes at a time
+		while (nBytes)
+		{
+		  nBytes -= 4;
+		  *(LPDWORD)(pDst+nBytes) = *(LPDWORD)(pSrc+nBytes);
+		}
+
+		pDst -= g_nFrameBufferPitch;
+		pSrc -= SRCOFFS_TOTAL;
+	}
 }
 
 //===========================================================================
 void CreateFrameOffsetTable (LPBYTE addr, LONG pitch) {
   if (framebufferaddr  == addr &&
-      framebufferpitch == pitch)
+      g_nFrameBufferPitch == pitch)
       return;
   framebufferaddr  = addr;
-  framebufferpitch = pitch;
+  g_nFrameBufferPitch = pitch;
 
   // CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
   for (int y = 0; y < FRAMEBUFFER_H; y++)
-    frameoffsettable[y] = framebufferaddr + framebufferpitch*((FRAMEBUFFER_H-1)-y);
+    g_aFrameBufferOffset[y] = framebufferaddr + g_nFrameBufferPitch*((FRAMEBUFFER_H-1)-y);
 }
 
 //===========================================================================
@@ -1400,7 +1411,7 @@ void __stdcall MixColorsVertical(int matx, int maty) {	// For tv emulation g_nAp
 void __stdcall CopyMixedSource (int x, int y, int sourcex, int sourcey) {	// For tv emulation g_nAppMode
 
   LPBYTE currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
-  LPBYTE currdestptr   = frameoffsettable[y<<1] + (x<<1);
+  LPBYTE currdestptr   = g_aFrameBufferOffset[y<<1] + (x<<1);
   LPBYTE currptr;
 
   int matx = x;
@@ -1425,11 +1436,11 @@ void __stdcall CopyMixedSource (int x, int y, int sourcex, int sourcey) {	// For
 	// transfer up to 6 mixed (half-)pixels of current column to framebuffer
     currptr = currdestptr+bufxoffset;
 	if (hgrlinesabove)
-		currptr += framebufferpitch << 1;
+		currptr += g_nFrameBufferPitch << 1;
 
     for (i = istart;
 	     i <= iend; 
-	     currptr -= framebufferpitch, i++) {
+	     currptr -= g_nFrameBufferPitch, i++) {
          *currptr = *(currptr+1) = colormixbuffer[i];
 	}
   }
@@ -1441,32 +1452,45 @@ bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
 {
 	bool bDirty  = false;
 	int  yoffset = 0;
-  while (yoffset < 0x2000) {
-    BYTE byteval1 = (x >  0) ? *(g_pHiresBank0+offset+yoffset-1) : 0;
-    BYTE byteval2 = *(g_pHiresBank0+offset+yoffset);
-    BYTE byteval3 = (x < 39) ? *(g_pHiresBank0+offset+yoffset+1) : 0;
-    if ((byteval2 != *(vidlastmem+offset+yoffset+0x2000)) ||
-        ((x >  0) && ((byteval1 & 0x60) != (*(vidlastmem+offset+yoffset+0x1FFF) & 0x60))) ||
-        ((x < 39) && ((byteval3 & 0x03) != (*(vidlastmem+offset+yoffset+0x2001) & 0x03))) ||
-        g_VideoForceFullRedraw) {
+	while (yoffset < 0x2000)
+	{
+#if 0 // TRACE_VIDEO
+		static char sText[ 256 ];
+		sprintf(sText, "x: %3d   y: %3d  xpix: %3d  ypix: %3d   offset: %04X   \n"
+			, x, y, xpixel, ypixel, offset, yoffset
+		);
+		OutputDebugString("sText");
+#endif
+		BYTE byteval1 = (x >  0) ? *(g_pHiresBank0+offset+yoffset-1) : 0;
+		BYTE byteval2 =            *(g_pHiresBank0+offset+yoffset);
+		BYTE byteval3 = (x < 39) ? *(g_pHiresBank0+offset+yoffset+1) : 0;
+		if ((byteval2 != *(vidlastmem+offset+yoffset+0x2000)) ||
+			((x >  0) && ((byteval1 & 0x60) != (*(vidlastmem+offset+yoffset+0x1FFF) & 0x60))) ||
+			((x < 39) && ((byteval3 & 0x03) != (*(vidlastmem+offset+yoffset+0x2001) & 0x03))) ||
+			g_VideoForceFullRedraw)
+		{
 #define COLOFFS  (((byteval1 & 0x60) << 2) | \
                   ((byteval3 & 0x03) << 5))
-		if (g_eVideoType == VT_COLOR_TVEMU)
-		{
-  			CopyMixedSource(xpixel >> 1, (ypixel+(yoffset >> 9)) >> 1,
-							SRCOFFS_HIRES+COLOFFS+((x & 1) << 4),(((int)byteval2) << 1));
-		}
-		else
-		{
-			CopySource(xpixel,ypixel+(yoffset >> 9),
-					   14,2,
-					   SRCOFFS_HIRES+COLOFFS+((x & 1) << 4),(((int)byteval2) << 1));
-		}
+			if (g_eVideoType == VT_COLOR_TVEMU)
+			{
+				CopyMixedSource(
+					xpixel >> 1, (ypixel+(yoffset >> 9)) >> 1,
+					SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1)
+				);
+			}
+			else
+			{
+				CopySource(
+					xpixel, ypixel+(yoffset >> 9),
+					14, 2, // 2x upscale: 280x192 -> 560x384
+					SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1)
+				);
+			}
 #undef COLOFFS
-      bDirty = true;
-    }
-    yoffset += 0x400;
-  }
+		  bDirty = true;
+		}
+		yoffset += 0x400;
+	}
 
 	return bDirty;
 }
@@ -2179,7 +2203,7 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 
 		for( int y = 1; y < FRAMEBUFFER_H; y += 2 )
 		{	
-			unsigned char *pSrc = pSrc = frameoffsettable[y];
+			unsigned char *pSrc = pSrc = g_aFrameBufferOffset[y];
 			for( int x = 0; x < FRAMEBUFFER_W; x++ )
 			{
 				*pSrc++ = 0;
