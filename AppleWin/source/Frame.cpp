@@ -564,46 +564,23 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 			if (!IS_APPLE2)
 			{
-//				RECT rCapsLed = {0,0,31,11};
 				RECT rCapsLed = {0,0,10,12}; // HACK: HARD-CODED bitmaps size
 				switch (g_Apple2Type)
 				{
-//					case A2TYPE_APPLE2:			DrawBitmapRect(dc,x+ 5,y+ 9,&rCapsLed,g_hCapsLockBitmap[bCaps != 0]); break; 
-//					case A2TYPE_APPLE2PLUS:		DrawBitmapRect(dc,x+ 5,y+19,&rCapsLed,g_hCapsLockBitmap[bCaps != 0]); break; 
-//					case A2TYPE_APPLE2E:		DrawBitmapRect(dc,x+ 5,y+19,&rCapsLed,g_hCapsLockBitmap[bCaps != 0]); break; 
-//					case A2TYPE_APPLE2EEHANCED:	DrawBitmapRect(dc,x+ 5,y+19,&rCapsLed,g_hCapsLockBitmap[bCaps != 0]); break; 
-//					case A2TYPE_PRAVETS82:		DrawBitmapRect(dc,x+15,y+19,&rCapsLed,g_hCapsBitmapLat[bCaps != 0]); break; 
-//					case A2TYPE_PRAVETS8M:		DrawBitmapRect(dc,x+15,y+19,&rCapsLed,g_hCapsBitmapLat[bCaps != 0]); break; 
-//					case A2TYPE_PRAVETS8A:		DrawBitmapRect(dc,x+ 2,y+19,&rCapsLed,g_hCapsBitmapLat[bCaps != 0]); break; 
-
 					case A2TYPE_APPLE2        :			
 					case A2TYPE_APPLE2PLUS    :		
 					case A2TYPE_APPLE2E       :		
 					case A2TYPE_APPLE2EEHANCED:	
 					default                   : DrawBitmapRect(dc,x+31,y+17,&rCapsLed,g_hCapsLockBitmap[bCaps != 0]); break;
-
-					case A2TYPE_PRAVETS82:		
-					case A2TYPE_PRAVETS8M: DrawBitmapRect(dc,x+31,y+17,&rCapsLed,g_hCapsBitmapP8[bCaps != 0]); break;
-
-					case A2TYPE_PRAVETS8A: DrawBitmapRect(dc,x+31,y+17,&rCapsLed,g_hCapsBitmapP8[bCaps != 0]); break;
+					case A2TYPE_PRAVETS82     :		
+					case A2TYPE_PRAVETS8M     : DrawBitmapRect(dc,x+31,y+17,&rCapsLed,g_hCapsBitmapP8  [bCaps != 0]); break; // TODO: FIXME: Shouldn't one of these use g_hCapsBitmapLat ??
+					case A2TYPE_PRAVETS8A     : DrawBitmapRect(dc,x+31,y+17,&rCapsLed,g_hCapsBitmapP8  [bCaps != 0]); break;
 				}
-	//			if (g_Apple2Type == A2TYPE_PRAVETS8A) //Toggles Pravets 8A/C Caps lock LED
-	//			{
-	//				RECT rCapsCloneLed = {0,0,22,8}; // HACK: HARD-CODED bitmaps size
-	//				DrawBitmapRect(dc,x+23,y+19,&rCapsCloneLed,g_hCapsBitmapP8[P8CAPS_ON != 0]);
-	//			}
 
 #if HD_LED
 				// 1.19.0.0 Hard Disk Status/Indicator Light
 				DrawBitmapRect(dc,x+12,y+18,&rDiskLed,g_hDiskWindowedLED[eHardDriveStatus]);
 #endif
-		
-			/*
-				if (g_Apple2Type == A2TYPE_PRAVETS8A)
-					DrawBitmapRect(dc,x+7,y+19,&rect,cyrbitmap[bCaps != 0]);
-				else
-					DrawBitmapRect(dc,x+7,y+19,&rect,g_hCapsLockBitmap[bCaps != 0]);
-			*/
 			}
 		}
 
