@@ -1,5 +1,27 @@
 Requests (Wishlist):
 ====================
+
+- Debugger:
+   SYMUSER2 -> SYMDOS33
+   SYMSOURCE2 -> SYMPRODOS
+
+- Debugger: Autoexec !
+   .AWD = Microsoft Fax
+   .A2D = Apple 2 Debug
+   .AW2 = AppleWin Disk = icon of app, disk image(s)
+
+   RUN AppleWin.a2d // Official AppleWin Supplied Debug Config
+   RUN Debugger.a2d // User supplied AppleWin Debug Config
+
+- Debugger: Custom Soft switches
+
+   SOFT CLEAR
+   SOFT ADD C050
+   SOFT ADD 50
+   SOFT LIST
+   SOFT LOAD
+   SOFT SAVE
+
 . DONE
   Hard Disk light/indicator
   Right now the  "- Caps" in the bottom right wastes too much space.
