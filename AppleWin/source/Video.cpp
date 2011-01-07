@@ -1038,6 +1038,8 @@ void DrawMonoHiResSource ()
 					int color1 = BLACK;
 					int color2 = BLACK;
 
+#if 0 // Initial version
+					// Gumball Logo looks better with this, as we have solid whites, but the test pattern: 22 92 14 8C 08 08 08 is off
 					if (aPixels[iPixel])
 					{
 						if (aPixels[iPixel-1] || aPixels[iPixel+1])
@@ -1050,15 +1052,51 @@ void DrawMonoHiResSource ()
 					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
 						if (!(aPixels[iPixel-2] && aPixels[iPixel+2]))
 							color = ((odd ^ !(iPixel&1)) << 1) | hibit;
-
+#endif
+#if 1 // 50% luminance: Gumball Logo looks "blocky", but silicon salad menu looks very good, and test pattern passes.
+					if (aPixels[iPixel])
+					{
+							color = ((odd ^ (iPixel&1)) << 1) | hibit;
+					}
+#endif
+#if 0
+					if (aPixels[iPixel])
+					{
+						color = ((odd ^ (iPixel&1)) << 1) | hibit;
+						if (aPixels[iPixel-1])
+						{
+							if (adj)
+								color = CM_White;
+							else
+//								if (iPixel > 2)
+								if (!hibit)
+									color = CM_White; // NUM_COLOR_MAPPING
+						}
+					}
+#endif
+#if 0 // 95% luminance - the left leading edge has a "pseudo" drop shadow.  Gumball logo looks bright, with the 80's retro leading edge.
+					if (aPixels[iPixel])
+					{
+						color = ((odd ^ (iPixel&1)) << 1) | hibit;
+						if (aPixels[iPixel-1])
+						{
+							// color = NUM_COLOR_MAPPING; // "emboss" look
+							if(aPixels[iPixel+1])
+								color = CM_White;
+							else
+								color = CM_Magenta;
+						}
+					}
+#endif
 					switch(color)
 					{
-						case CM_Magenta: color1 = iMonochrome  ; color2 = iMonochrome+1; break; // if( hibit ) color1 = ;color2 =; break;
+						case CM_Magenta: color1 = iMonochrome  ; color2 = iMonochrome+1; break; 
 						case CM_Blue   : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
 						case CM_Green  : color1 = iMonochrome  ; color2 = iMonochrome+1; break;
 						case CM_Orange : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
 						case CM_Black  : color1 = BLACK        ; color2 = BLACK        ; break;
 						case CM_White  : color1 = iMonochrome  ; color2 = iMonochrome  ; break;
+						case NUM_COLOR_MAPPING: color1 = color2 = iMonochrome+1; break;
 						default: break;
 					}
 
