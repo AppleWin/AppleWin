@@ -107,13 +107,18 @@ enum Color_Palette_Index_e
 	, HGR_PURPLE       
 	, HGR_PINK         
 
-// USER CUSTOMIZABLE COLOR
-	, MONOCHROME_CUSTOM
-
-// Pre-set "Monochromes"
+// MONOCHROME
+// NOTE: 50% is assumed to come after 100% luminance !!!  See: DrawMonoHires()
+	// User customizable
+	, MONOCHROME_CUSTOM     // 100% luminance
+	, MONOCHROME_CUSTOM_50  //  50% luminance
+	// Pre-set "Monochromes"
 	, MONOCHROME_AMBER
+	, MONOCHROME_AMBER_50
 	, MONOCHROME_GREEN
+	, MONOCHROME_GREEN_50
 	, MONOCHROME_WHITE
+	, MONOCHROME_WHITE_50
 
 	, DEBUG_COLORS_START
 	, DEBUG_COLORS_END = DEBUG_COLORS_START + NUM_DEBUG_COLORS
@@ -333,9 +338,17 @@ void CreateIdentityPalette ()
 		, GetGValue(monochrome)
 		, GetBValue(monochrome) );
 
-	SETFRAMECOLOR( MONOCHROME_AMBER, 0xFF,0x80,0x00);
-	SETFRAMECOLOR( MONOCHROME_GREEN, 0x00,0xC0,0x00);
-	SETFRAMECOLOR( MONOCHROME_WHITE, 0xFF,0xFF,0xFF);
+	SETFRAMECOLOR( MONOCHROME_CUSTOM_50
+		, GetRValue(monochrome)/2
+		, GetGValue(monochrome)/2
+		, GetBValue(monochrome)/2 );
+
+	SETFRAMECOLOR( MONOCHROME_AMBER   , 0xFF,0x80,0x00);
+	SETFRAMECOLOR( MONOCHROME_AMBER_50, 0x80,0x40,0x00);
+	SETFRAMECOLOR( MONOCHROME_GREEN   , 0x00,0xC0,0x00);
+	SETFRAMECOLOR( MONOCHROME_GREEN_50, 0x00,0x60,0x00);
+	SETFRAMECOLOR( MONOCHROME_WHITE   , 0xFF,0xFF,0xFF);
+	SETFRAMECOLOR( MONOCHROME_WHITE_50, 0x80,0x80,0x80);
 
 	// IF WE ARE IN A PALETTIZED VIDEO MODE, CREATE AN IDENTITY PALETTE
 	HWND window = GetDesktopWindow();
@@ -931,7 +944,6 @@ int GetMonochromeIndex()
 	return iMonochrome;
 }
 
-
 //===========================================================================
 void DrawMonoDHiResSource ()
 {
@@ -970,6 +982,7 @@ void DrawMonoHiResSource ()
 {
 	int iMonochrome = GetMonochromeIndex();
 	
+#if 0
 	for (int column = 0; column < 512; column += 16)
 	{
 		for (int y = 0; y < 512; y += 2)
@@ -981,14 +994,6 @@ void DrawMonoHiResSource ()
 				val >>= 1;
 				SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y  ,colorval);
 				SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y  ,colorval);
-#if 0
-				if (g_eVideoType == VT_MONO_AUTHENTIC)
-				{
-					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y+1,BLACK);
-					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y+1,BLACK);
-				}
-				else
-#endif
 				{
 					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y+1,colorval);
 					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y+1,colorval);
@@ -996,6 +1001,79 @@ void DrawMonoHiResSource ()
 			}
 		}
 	}
+#else
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		int coloffs = iColumn << 5;
+
+		for (unsigned iByte = 0; iByte < 256; iByte++)
+		{
+			int aPixels[11];
+
+			aPixels[ 0] = iColumn & 4;
+			aPixels[ 1] = iColumn & 8;
+			aPixels[ 9] = iColumn & 1;
+			aPixels[10] = iColumn & 2;
+
+			int nBitMask = 1;
+			int iPixel;
+			for (iPixel  = 2; iPixel < 9; iPixel++)
+			{
+				aPixels[iPixel] = ((iByte & nBitMask) != 0);
+				nBitMask <<= 1;
+			}
+
+			int hibit = ((iByte & 0x80) != 0);
+			int x     = 0;
+			int y     = iByte << 1;
+
+			while (x < 28)
+			{
+				int adj = (x >= 14) << 1;
+				int odd = (x >= 14);
+
+				for (iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color  = CM_Black;
+					int color1 = BLACK;
+					int color2 = BLACK;
+
+					if (aPixels[iPixel])
+					{
+						if (aPixels[iPixel-1] || aPixels[iPixel+1])
+						{
+							color = CM_White;
+						}
+						else
+							color = ((odd ^ (iPixel&1)) << 1) | hibit;
+					}
+					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
+						if (!(aPixels[iPixel-2] && aPixels[iPixel+2]))
+							color = ((odd ^ !(iPixel&1)) << 1) | hibit;
+
+					switch(color)
+					{
+						case CM_Magenta: color1 = iMonochrome  ; color2 = iMonochrome+1; break; // if( hibit ) color1 = ;color2 =; break;
+						case CM_Blue   : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
+						case CM_Green  : color1 = iMonochrome  ; color2 = iMonochrome+1; break;
+						case CM_Orange : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
+						case CM_Black  : color1 = BLACK        ; color2 = BLACK        ; break;
+						case CM_White  : color1 = iMonochrome  ; color2 = iMonochrome  ; break;
+						default: break;
+					}
+
+					// Colors - Top/Bottom Left/Right
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,color1); // TL buggy
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,color2); // TR buggy
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,color1); // BL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,color2); // BR
+
+					x += 2;
+				}
+			}
+		}
+	}
+#endif
 }
 
 //===========================================================================
@@ -2094,9 +2172,10 @@ void VideoRealizePalette(HDC dc)
 }
 
 //===========================================================================
-void VideoRedrawScreen () {
-  g_VideoForceFullRedraw = 1;
-  VideoRefreshScreen();
+VideoUpdateFuncPtr_t VideoRedrawScreen ()
+{
+	g_VideoForceFullRedraw = 1;
+	return VideoRefreshScreen();
 }
 
 //===========================================================================
@@ -2115,10 +2194,11 @@ void _Video_SetupBanks( bool bBank2 )
 }
 
 //===========================================================================
-void VideoRefreshScreen () {
-  // CHECK EACH CELL FOR CHANGED BYTES.  REDRAW PIXELS FOR THE CHANGED BYTES
-  // IN THE FRAME BUFFER.  MARK CELLS IN WHICH REDRAWING HAS TAKEN PLACE AS
-  // DIRTY.
+VideoUpdateFuncPtr_t VideoRefreshScreen ()
+{
+	// CHECK EACH CELL FOR CHANGED BYTES.  REDRAW PIXELS FOR THE CHANGED BYTES
+	// IN THE FRAME BUFFER.  MARK CELLS IN WHICH REDRAWING HAS TAKEN PLACE AS
+	// DIRTY.
 	_Video_Dirty();
 	_Video_SetupBanks( g_bVideoDisplayPage2 );
 
@@ -2137,7 +2217,8 @@ void VideoRefreshScreen () {
 	bool bMixed = (SW_MIXED) ? true : false;
 	_Video_RedrawScreen( pfUpdate, bMixed );
 
-  g_VideoForceFullRedraw = 0;
+	g_VideoForceFullRedraw = 0;
+	return pfUpdate;
 }
 
 //===========================================================================
