@@ -62,6 +62,8 @@ extern LPBYTE     g_pFramebufferbits;
 extern int g_nAltCharSetOffset;
 extern int g_bVideoMode; // g_bVideoMode
 
+typedef bool (*VideoUpdateFuncPtr_t)(int,int,int,int,int);
+
 // Prototypes _______________________________________________________
 
 void    CreateColorMixMap();
@@ -76,8 +78,8 @@ void    VideoDisplayLogo ();
 BOOL    VideoHasRefreshed ();
 void    VideoInitialize ();
 void    VideoRealizePalette (HDC);
-void    VideoRedrawScreen ();
-void    VideoRefreshScreen ();
+VideoUpdateFuncPtr_t VideoRedrawScreen ();
+VideoUpdateFuncPtr_t VideoRefreshScreen ();
 void    VideoReinitialize ();
 void    VideoResetState ();
 WORD    VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles);
@@ -87,7 +89,6 @@ bool    VideoGetSW80COL();
 DWORD   VideoGetSnapshot(SS_IO_Video* pSS);
 DWORD   VideoSetSnapshot(SS_IO_Video* pSS);
 
-typedef bool (*VideoUpdateFuncPtr_t)(int,int,int,int,int);
 
 extern bool g_bVideoDisplayPage2;
 extern bool g_VideoForceFullRedraw;
