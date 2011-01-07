@@ -47,6 +47,7 @@
 #include "AppleWin.h"
 #include "AY8910.h"
 #include "CPU.h"
+#include "Video.h" // Debugger needs: VideoUpdateFuncPtr_t
 #include "Debug.h"
 #include "Disk.h"
 #include "Frame.h"
@@ -65,4 +66,4 @@
 #include "Speaker.h"
 #include "Tape.h"
 #include "Tfe/Tfe.h"
-#include "Video.h"
+
