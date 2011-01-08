@@ -14,6 +14,8 @@
 		, VT_MONO_AMBER
 		, VT_MONO_GREEN
 		, VT_MONO_WHITE
+		, VT_MONO_HALFPIXEL_REAL
+		, VT_MONO_HALFPIXEL_COLORIZE
 		, VT_MONO_HALFPIXEL_75
 		, VT_MONO_HALFPIXEL_95
 		, VT_MONO_HALFPIXEL_EMBOSS
@@ -62,7 +64,7 @@ enum AppleFont_e
 
 extern HBITMAP g_hLogoBitmap;
 
-extern BOOL       graphicsmode;
+extern BOOL       g_bGraphicsMode;
 extern COLORREF   monochrome; // saved
 extern DWORD      g_eVideoType; // saved
 extern DWORD      g_uHalfScanLines; // saved

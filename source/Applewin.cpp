@@ -257,7 +257,7 @@ void ContinueExecution()
 				static DWORD lasttime = 0;
 				DWORD currtime = GetTickCount();
 				if ((!g_bFullSpeed) ||
-					(currtime-lasttime >= (DWORD)((graphicsmode || !systemidle) ? 100 : 25)))
+					(currtime-lasttime >= (DWORD)((g_bGraphicsMode || !systemidle) ? 100 : 25)))
 				{
 					VideoRefreshScreen();
 					lasttime = currtime;
