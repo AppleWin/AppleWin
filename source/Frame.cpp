@@ -608,8 +608,6 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 				{
 					_tcscat( title," 50% " );
 				}
-
-				extern char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
 				_tcscat( title, g_apVideoModeDesc[ g_eVideoType ] );
 			}
 
