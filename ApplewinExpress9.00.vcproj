@@ -548,6 +548,14 @@
 					RelativePath=".\source\Debugger\Debugger_Types.h"
 					>
 				</File>
+				<File
+					RelativePath=".\source\Util_MemoryTextFile.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Util_MemoryTextFile.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Uthernet"
@@ -905,14 +913,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\Frame.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Frame.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\Joystick.cpp"
 					>
 				</File>
@@ -1049,22 +1049,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\Util_MemoryTextFile.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Util_MemoryTextFile.h"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Video.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Video.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\z80emu.cpp"
 					>
 				</File>
@@ -1162,6 +1146,26 @@
 				</File>
 				<File
 					RelativePath=".\source\Harddisk.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Video"
+				>
+				<File
+					RelativePath=".\source\Frame.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Frame.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Video.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Video.h"
 					>
 				</File>
 			</Filter>
