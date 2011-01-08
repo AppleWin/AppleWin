@@ -563,22 +563,25 @@ void CreateDIBSections ()
 	}
 	g_hDeviceDC = CreateCompatibleDC(dc);
 
-  // CREATE THE FRAME BUFFER DIB SECTION
-  if (g_hDeviceBitmap)
-    DeleteObject(g_hDeviceBitmap);
-  g_hDeviceBitmap = CreateDIBSection(dc,g_pFramebufferinfo,DIB_RGB_COLORS,
-                                  (LPVOID *)&g_pFramebufferbits,0,0);
-  SelectObject(g_hDeviceDC,g_hDeviceBitmap);
+	// CREATE THE FRAME BUFFER DIB SECTION
+	if (g_hDeviceBitmap)
+		DeleteObject(g_hDeviceBitmap);
+		g_hDeviceBitmap = CreateDIBSection(
+			dc,g_pFramebufferinfo,DIB_RGB_COLORS,
+			(LPVOID *)&g_pFramebufferbits,0,0
+		);
+	SelectObject(g_hDeviceDC,g_hDeviceBitmap);
 
-  // CREATE THE SOURCE IMAGE DIB SECTION
-  HDC sourcedc = CreateCompatibleDC(dc);
-  ReleaseDC(window,dc);
-  if (g_hSourceBitmap)
-    DeleteObject(g_hSourceBitmap);
-  g_hSourceBitmap = CreateDIBSection(
-	sourcedc,g_pSourceHeader,DIB_RGB_COLORS,
-    (LPVOID *)&g_pSourcePixels,0,0);
-  SelectObject(sourcedc,g_hSourceBitmap);
+	// CREATE THE SOURCE IMAGE DIB SECTION
+	HDC sourcedc = CreateCompatibleDC(dc);
+	ReleaseDC(window,dc);
+	if (g_hSourceBitmap)
+		DeleteObject(g_hSourceBitmap);
+	g_hSourceBitmap = CreateDIBSection(
+		sourcedc,g_pSourceHeader,DIB_RGB_COLORS,
+		(LPVOID *)&g_pSourcePixels,0,0
+	);
+	SelectObject(sourcedc,g_hSourceBitmap);
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE SOURCE IMAGE
 	for (int y = 0; y < MAX_SOURCE_Y; y++)
