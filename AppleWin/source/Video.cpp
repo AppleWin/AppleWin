@@ -279,8 +279,8 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	void DrawMonoLoResSource ();
 	void DrawMonoTextSource (HDC dc);
 // Monochrome Half-Pixel Support
-	void CreateColorLookup_MonoHiResHalfPixel_50();
 	void CreateColorLookup_MonoHiResHalfPixel_75();
+	void CreateColorLookup_MonoHiResHalfPixel_95();
 	void CreateColorLookup_MonoHiResHalfPixel_Emboss();
 	void CreateColorLookup_MonoHiResHalfPixel_Fake();
 
@@ -609,9 +609,10 @@ void CreateDIBSections ()
 			case VT_MONO_AMBER           :
 			case VT_MONO_GREEN           :
 			case VT_MONO_WHITE           : DrawMonoHiResSource(); break;
-			case VT_MONO_HALFPIXEL_50    : CreateColorLookup_MonoHiResHalfPixel_50(); break;
-			case VT_MONO_HALFPIXEL_95    : CreateColorLookup_MonoHiResHalfPixel_75(); break;
+			case VT_MONO_HALFPIXEL_75    : CreateColorLookup_MonoHiResHalfPixel_75(); break;
+			case VT_MONO_HALFPIXEL_95    : CreateColorLookup_MonoHiResHalfPixel_95(); break;
 			case VT_MONO_HALFPIXEL_EMBOSS: CreateColorLookup_MonoHiResHalfPixel_Emboss(); break;
+			case VT_MONO_HALFPIXEL_FAKE  : CreateColorLookup_MonoHiResHalfPixel_Fake(); break;
 			default: DrawMonoHiResSource();
 		}
 		DrawMonoDHiResSource();
@@ -1164,8 +1165,9 @@ void DrawMonoHiResSource ()
 #endif
 }
 
+// This matches half-pixel exactly
 //===========================================================================
-void CreateColorLookup_MonoHiResHalfPixel_50 ()
+void CreateColorLookup_MonoHiResHalfPixel_75 ()
 {
 	int iMonochrome = GetMonochromeIndex();
 	
@@ -1237,7 +1239,7 @@ void CreateColorLookup_MonoHiResHalfPixel_50 ()
 
 
 //===========================================================================
-void CreateColorLookup_MonoHiResHalfPixel_75 ()
+void CreateColorLookup_MonoHiResHalfPixel_95 ()
 {
 	int iMonochrome = GetMonochromeIndex();
 	
@@ -1431,10 +1433,12 @@ void CreateColorLookup_MonoHiResHalfPixel_Fake ()
 					int color1 = BLACK;
 					int color2 = BLACK;
 
+#if 0
 					// Gumball Logo looks better with this, as we have solid whites, but the test pattern: 22 92 14 8C 08 08 08 is off
 					if (aPixels[iPixel])
 					{
 						if (aPixels[iPixel-1] || aPixels[iPixel+1])
+						if (aPixels[iPixel-1])
 						{
 							color = CM_White;
 						}
@@ -1444,7 +1448,30 @@ void CreateColorLookup_MonoHiResHalfPixel_Fake ()
 					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
 						if (!(aPixels[iPixel-2] && aPixels[iPixel+2]))
 							color = ((odd ^ !(iPixel&1)) << 1) | hibit;
-
+#endif
+#if 0 // 100% luminance emboss
+					if (aPixels[iPixel])
+					{
+						color = ((odd ^ (iPixel&1)) << 1) | hibit;
+						if (aPixels[iPixel-1])
+							color = CM_White;
+					}
+#endif
+#if 1
+					if (aPixels[iPixel])
+					{
+						if (aPixels[iPixel-1])
+							color = CM_White;
+						else
+							if( hibit )
+								color = CM_Blue;
+							else
+								if (aPixels[iPixel+1])
+									color = CM_Blue;
+								else	
+									color = CM_Magenta;
+					}
+#endif
 					switch(color)
 					{
 						case CM_Magenta: color1 = iMonochrome  ; color2 = iMonochrome+1; break; 
@@ -1453,7 +1480,7 @@ void CreateColorLookup_MonoHiResHalfPixel_Fake ()
 						case CM_Orange : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
 						case CM_Black  : color1 = BLACK        ; color2 = BLACK        ; break;
 						case CM_White  : color1 = iMonochrome  ; color2 = iMonochrome  ; break;
-						case NUM_COLOR_MAPPING: color1 = color2 = iMonochrome+1; break;
+						case NUM_COLOR_MAPPING: color1 = color2 = iMonochrome; break; // 100% luminance emboss
 						default: break;
 					}
 
