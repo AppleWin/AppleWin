@@ -221,8 +221,8 @@ static void StartTimer(SY6522_AY8910* pMB)
 
 	USHORT nPeriod = pMB->sy6522.TIMER1_LATCH.w;
 
-	if(nPeriod <= 0xff)		// Timer1L value has been written (but TIMER1H hasn't)
-		return;
+//	if(nPeriod <= 0xff)		// Timer1L value has been written (but TIMER1H hasn't)
+//		return;
 
 	pMB->nTimerStatus = 1;
 
