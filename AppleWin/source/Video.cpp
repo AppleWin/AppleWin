@@ -240,10 +240,10 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 		TEXT("Monochrome - Amber\0")
 		TEXT("Monochrome - Green\0")
 		TEXT("Monochrome - White\0")
-		TEXT("Monochrome Half Pixel 50%\0")
-		TEXT("Monochrome Half Pixel 75%\0")
-		TEXT("Monochrome Half Pixel Emboss\0")
-		TEXT("Monochrome Half Pixel Fake\0")
+		TEXT("Mono Half Pixel 75%\0")
+		TEXT("Mono Half Pixel 95%\0")
+		TEXT("Mono Half Pixel Emboss\0")
+		TEXT("Mono Half Pixel Fake\0")
 		;
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
@@ -254,14 +254,14 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 		,"Std."
 		,"Text"
 		,"TV"
-		,"HalfPixel"
+		,"Half-Pixel"
 		,"Amber"
 		,"Green"
 		,"White"
-		,"Monochrome HalfPixel 50"
-		,"Monochrome HalfPixel 75"
-		,"Monochrome HalfPixel Emboss"
-		,"Monochrome HalfPixel Fake"
+		,"Monochrome Half-Pixel 75"
+		,"Monochrome Half-Pixel 95"
+		,"Monochrome Half-Pixel Emboss"
+		,"Monochrome Half-Pixel Fake"
 	};
 
 // Prototypes (Private) _____________________________________________
