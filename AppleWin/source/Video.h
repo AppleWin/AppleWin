@@ -1,19 +1,28 @@
 #pragma once
 
 // Types ____________________________________________________________
-enum VideoType_e
-{
-	  VT_MONO_CUSTOM
-	, VT_COLOR_STANDARD
-	, VT_COLOR_TEXT_OPTIMIZED
-	, VT_COLOR_TVEMU
-	, VT_COLOR_HALF_SHIFT_DIM
-	, VT_MONO_AMBER
-	, VT_MONO_GREEN
-	, VT_MONO_WHITE
-//	, VT_MONO_AUTHENTIC
-	, NUM_VIDEO_MODES
-};
+
+	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
+	enum VideoType_e
+	{
+		  VT_MONO_CUSTOM
+		, VT_COLOR_STANDARD
+		, VT_COLOR_TEXT_OPTIMIZED
+		, VT_COLOR_TVEMU
+		, VT_COLOR_HALF_SHIFT_DIM
+	//	, VT_MONO_AUTHENTIC -- been replaced with 3 mono modes
+		, VT_MONO_AMBER
+		, VT_MONO_GREEN
+		, VT_MONO_WHITE
+		, VT_MONO_HALFPIXEL_50
+		, VT_MONO_HALFPIXEL_95
+		, VT_MONO_HALFPIXEL_EMBOSS
+		, VT_MONO_HALFPIXEL_FAKE
+		, NUM_VIDEO_MODES
+	};
+
+	extern TCHAR g_aVideoChoices[];
+	extern char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
 
 	enum VideoFlag_e
 	{

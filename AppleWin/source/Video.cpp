@@ -130,21 +130,21 @@ enum Color_Palette_Index_e
 	, NUM_COLOR_PALETTE
 };
 
-const int SRCOFFS_40COL   = 0;                       //    0
-const int SRCOFFS_IIPLUS  = (SRCOFFS_40COL  +  256); //  256
-const int SRCOFFS_80COL   = (SRCOFFS_IIPLUS +  256); //  512
-const int SRCOFFS_LORES   = (SRCOFFS_80COL  +  128); //  640
-const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //  656
-const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512); // 1168
-const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3278
+	const int SRCOFFS_40COL   = 0;                       //    0
+	const int SRCOFFS_IIPLUS  = (SRCOFFS_40COL  +  256); //  256
+	const int SRCOFFS_80COL   = (SRCOFFS_IIPLUS +  256); //  512
+	const int SRCOFFS_LORES   = (SRCOFFS_80COL  +  128); //  640
+	const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //  656
+	const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512); // 1168
+	const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3278
 
-#define  SW_80COL         (g_bVideoMode & VF_80COL)
-#define  SW_DHIRES        (g_bVideoMode & VF_DHIRES)
-#define  SW_HIRES         (g_bVideoMode & VF_HIRES)
-#define  SW_MASK2         (g_bVideoMode & VF_MASK2)
-#define  SW_MIXED         (g_bVideoMode & VF_MIXED)
-#define  SW_PAGE2         (g_bVideoMode & VF_PAGE2)
-#define  SW_TEXT          (g_bVideoMode & VF_TEXT)
+	#define  SW_80COL         (g_bVideoMode & VF_80COL)
+	#define  SW_DHIRES        (g_bVideoMode & VF_DHIRES)
+	#define  SW_HIRES         (g_bVideoMode & VF_HIRES)
+	#define  SW_MASK2         (g_bVideoMode & VF_MASK2)
+	#define  SW_MIXED         (g_bVideoMode & VF_MIXED)
+	#define  SW_PAGE2         (g_bVideoMode & VF_PAGE2)
+	#define  SW_TEXT          (g_bVideoMode & VF_TEXT)
 
 #define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
 
@@ -227,33 +227,74 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 //-------------------------------------
 
 // Video consts:
-const UINT nVBlStop_NTSC	= 21;
-const UINT nVBlStop_PAL		= 29;
+	const UINT nVBlStop_NTSC	= 21;
+	const UINT nVBlStop_PAL		= 29;
+
+	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
+	TCHAR g_aVideoChoices[] =
+		TEXT("Monochrome (Custom)\0")
+		TEXT("Color (standard)\0")
+		TEXT("Color (text optimized)\0")
+		TEXT("Color (TV emulation)\0")
+		TEXT("Color (Half-Shift)\0")
+		TEXT("Monochrome - Amber\0")
+		TEXT("Monochrome - Green\0")
+		TEXT("Monochrome - White\0")
+		TEXT("Monochrome Half Pixel 50%\0")
+		TEXT("Monochrome Half Pixel 75%\0")
+		TEXT("Monochrome Half Pixel Emboss\0")
+		TEXT("Monochrome Half Pixel Fake\0")
+		;
+
+	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
+	// The window title will be set to this.
+	char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
+	{
+		"Custom"
+		,"Std."
+		,"Text"
+		,"TV"
+		,"HalfPixel"
+		,"Amber"
+		,"Green"
+		,"White"
+		,"Monochrome HalfPixel 50"
+		,"Monochrome HalfPixel 75"
+		,"Monochrome HalfPixel Emboss"
+		,"Monochrome HalfPixel Fake"
+	};
 
 // Prototypes (Private) _____________________________________________
 
-void DrawDHiResSource ();
-void DrawHiResSource ();
-void DrawHiResSourceHalfShiftFull ();
-void DrawHiResSourceHalfShiftDim ();
-void DrawLoResSource ();
-void DrawMonoDHiResSource ();
-void DrawMonoHiResSource ();
-void DrawMonoLoResSource ();
-void DrawMonoTextSource (HDC dc);
-void DrawTextSource (HDC dc);
+	void DrawDHiResSource ();
+	void DrawHiResSource ();
+	void DrawHiResSourceHalfShiftFull ();
+	void DrawHiResSourceHalfShiftDim ();
+	void DrawLoResSource ();
 
-bool g_bDisplayPrintScreenFileName = false;
-void Util_MakeScreenShotFileName( char *pFinalFileName_ );
-bool Util_TestScreenShotFileName( const char *pFileName );
-// true  = 280x192
-// false = 560x384
-void Video_SaveScreenShot( const char *pScreenShotFileName );
-void Video_MakeScreenShot( FILE *pFile );
+	void DrawTextSource (HDC dc);
+// Monochrome
+	void DrawMonoDHiResSource ();
+	void DrawMonoHiResSource ();
+	void DrawMonoLoResSource ();
+	void DrawMonoTextSource (HDC dc);
+// Monochrome Half-Pixel Support
+	void CreateColorLookup_MonoHiResHalfPixel_50();
+	void CreateColorLookup_MonoHiResHalfPixel_75();
+	void CreateColorLookup_MonoHiResHalfPixel_Emboss();
+	void CreateColorLookup_MonoHiResHalfPixel_Fake();
 
-int GetMonochromeIndex();
+	bool g_bDisplayPrintScreenFileName = false;
+	void Util_MakeScreenShotFileName( char *pFinalFileName_ );
+	bool Util_TestScreenShotFileName( const char *pFileName );
+	// true  = 280x192
+	// false = 560x384
+	void Video_SaveScreenShot( const char *pScreenShotFileName );
+	void Video_MakeScreenShot( FILE *pFile );
 
-/** Our BitClit() / VRAM_Copy()
+	int GetMonochromeIndex();
+
+/** Our BitBlit() / VRAM_Copy()
 	@param dx Dst X
 	@param dy Dst Y
 	@param w  Width (same for src & dst)
@@ -292,16 +333,17 @@ void CopySource (int dx, int dy, int w, int h, int sx, int sy )
 
 
 //===========================================================================
-void CreateFrameOffsetTable (LPBYTE addr, LONG pitch) {
-  if (framebufferaddr  == addr &&
-      g_nFrameBufferPitch == pitch)
-      return;
-  framebufferaddr  = addr;
-  g_nFrameBufferPitch = pitch;
+void CreateFrameOffsetTable (LPBYTE addr, LONG pitch)
+{
+	if ((framebufferaddr  == addr) && (g_nFrameBufferPitch == pitch))
+		return;
 
-  // CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
-  for (int y = 0; y < FRAMEBUFFER_H; y++)
-    g_aFrameBufferOffset[y] = framebufferaddr + g_nFrameBufferPitch*((FRAMEBUFFER_H-1)-y);
+	framebufferaddr  = addr;
+	g_nFrameBufferPitch = pitch;
+
+	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
+	for (int y = 0; y < FRAMEBUFFER_H; y++)
+		g_aFrameBufferOffset[y] = framebufferaddr + g_nFrameBufferPitch*((FRAMEBUFFER_H-1)-y);
 }
 
 //===========================================================================
@@ -545,25 +587,33 @@ void CreateDIBSections ()
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
 	ZeroMemory(g_pSourcePixels,SRCOFFS_TOTAL*512);
 
-	if((g_eVideoType != VT_MONO_CUSTOM) &&
-		(g_eVideoType != VT_MONO_AMBER ) &&
-		(g_eVideoType != VT_MONO_GREEN ) &&
-		(g_eVideoType != VT_MONO_WHITE ))
-//		(g_eVideoType != VT_MONO_AUTHENTIC))
+	if (g_eVideoType <VT_MONO_AMBER)
 	{
 		DrawTextSource(sourcedc);
 		DrawLoResSource();
+
 		if (g_eVideoType == VT_COLOR_HALF_SHIFT_DIM)
 			DrawHiResSourceHalfShiftDim();
 		else
 			DrawHiResSource();
+
 		DrawDHiResSource();
 	}
 	else
 	{
 		DrawMonoTextSource(sourcedc);
 		DrawMonoLoResSource();
-		DrawMonoHiResSource();
+
+		switch(g_eVideoType)
+		{
+			case VT_MONO_AMBER           :
+			case VT_MONO_GREEN           :
+			case VT_MONO_WHITE           : DrawMonoHiResSource(); break;
+			case VT_MONO_HALFPIXEL_50    : CreateColorLookup_MonoHiResHalfPixel_50(); break;
+			case VT_MONO_HALFPIXEL_95    : CreateColorLookup_MonoHiResHalfPixel_75(); break;
+			case VT_MONO_HALFPIXEL_EMBOSS: CreateColorLookup_MonoHiResHalfPixel_Emboss(); break;
+			default: DrawMonoHiResSource();
+		}
 		DrawMonoDHiResSource();
 	}
 	DeleteDC(sourcedc);
@@ -982,7 +1032,7 @@ void DrawMonoHiResSource ()
 {
 	int iMonochrome = GetMonochromeIndex();
 	
-#if 0
+#if 1
 	for (int column = 0; column < 512; column += 16)
 	{
 		for (int y = 0; y < 512; y += 2)
@@ -1113,6 +1163,313 @@ void DrawMonoHiResSource ()
 	}
 #endif
 }
+
+//===========================================================================
+void CreateColorLookup_MonoHiResHalfPixel_50 ()
+{
+	int iMonochrome = GetMonochromeIndex();
+	
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		int coloffs = iColumn << 5;
+
+		for (unsigned iByte = 0; iByte < 256; iByte++)
+		{
+			int aPixels[11];
+
+			aPixels[ 0] = iColumn & 4;
+			aPixels[ 1] = iColumn & 8;
+			aPixels[ 9] = iColumn & 1;
+			aPixels[10] = iColumn & 2;
+
+			int nBitMask = 1;
+			int iPixel;
+			for (iPixel  = 2; iPixel < 9; iPixel++)
+			{
+				aPixels[iPixel] = ((iByte & nBitMask) != 0);
+				nBitMask <<= 1;
+			}
+
+			int hibit = ((iByte & 0x80) != 0);
+			int x     = 0;
+			int y     = iByte << 1;
+
+			while (x < 28)
+			{
+				int adj = (x >= 14) << 1;
+				int odd = (x >= 14);
+
+				for (iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color  = CM_Black;
+					int color1 = BLACK;
+					int color2 = BLACK;
+
+// 50% luminance: Gumball Logo looks "blocky", but silicon salad menu looks very good, and test pattern passes.
+					if (aPixels[iPixel])
+					{
+						color = ((odd ^ (iPixel&1)) << 1) | hibit;
+					}
+					switch(color)
+					{
+						case CM_Magenta: color1 = iMonochrome  ; color2 = iMonochrome+1; break; 
+						case CM_Blue   : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
+						case CM_Green  : color1 = iMonochrome  ; color2 = iMonochrome+1; break;
+						case CM_Orange : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
+						case CM_Black  : color1 = BLACK        ; color2 = BLACK        ; break;
+						case CM_White  : color1 = iMonochrome  ; color2 = iMonochrome  ; break;
+						case NUM_COLOR_MAPPING: color1 = color2 = iMonochrome+1; break;
+						default: break;
+					}
+
+					// Colors - Top/Bottom Left/Right
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,color1); // TL buggy
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,color2); // TR buggy
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,color1); // BL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,color2); // BR
+
+					x += 2;
+				}
+			}
+		}
+	}
+}
+
+
+//===========================================================================
+void CreateColorLookup_MonoHiResHalfPixel_75 ()
+{
+	int iMonochrome = GetMonochromeIndex();
+	
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		int coloffs = iColumn << 5;
+
+		for (unsigned iByte = 0; iByte < 256; iByte++)
+		{
+			int aPixels[11];
+
+			aPixels[ 0] = iColumn & 4;
+			aPixels[ 1] = iColumn & 8;
+			aPixels[ 9] = iColumn & 1;
+			aPixels[10] = iColumn & 2;
+
+			int nBitMask = 1;
+			int iPixel;
+			for (iPixel  = 2; iPixel < 9; iPixel++)
+			{
+				aPixels[iPixel] = ((iByte & nBitMask) != 0);
+				nBitMask <<= 1;
+			}
+
+			int hibit = ((iByte & 0x80) != 0);
+			int x     = 0;
+			int y     = iByte << 1;
+
+			while (x < 28)
+			{
+				int adj = (x >= 14) << 1;
+				int odd = (x >= 14);
+
+				for (iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color  = CM_Black;
+					int color1 = BLACK;
+					int color2 = BLACK;
+
+// 95% luminance - the left leading edge has a "pseudo" drop shadow.  Gumball logo looks bright, with the 80's retro leading edge.
+					if (aPixels[iPixel])
+					{
+						color = ((odd ^ (iPixel&1)) << 1) | hibit;
+						if (aPixels[iPixel-1])
+						{
+							if(aPixels[iPixel+1])
+								color = CM_White;
+							else
+								color = CM_Magenta;
+						}
+					}
+
+					switch(color)
+					{
+						case CM_Magenta: color1 = iMonochrome  ; color2 = iMonochrome+1; break; 
+						case CM_Blue   : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
+						case CM_Green  : color1 = iMonochrome  ; color2 = iMonochrome+1; break;
+						case CM_Orange : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
+						case CM_Black  : color1 = BLACK        ; color2 = BLACK        ; break;
+						case CM_White  : color1 = iMonochrome  ; color2 = iMonochrome  ; break;
+						default: break;
+					}
+
+					// Colors - Top/Bottom Left/Right
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,color1); // TL buggy
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,color2); // TR buggy
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,color1); // BL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,color2); // BR
+
+					x += 2;
+				}
+			}
+		}
+	}
+}
+
+
+//===========================================================================
+void CreateColorLookup_MonoHiResHalfPixel_Emboss ()
+{
+	int iMonochrome = GetMonochromeIndex();
+	
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		int coloffs = iColumn << 5;
+
+		for (unsigned iByte = 0; iByte < 256; iByte++)
+		{
+			int aPixels[11];
+
+			aPixels[ 0] = iColumn & 4;
+			aPixels[ 1] = iColumn & 8;
+			aPixels[ 9] = iColumn & 1;
+			aPixels[10] = iColumn & 2;
+
+			int nBitMask = 1;
+			int iPixel;
+			for (iPixel  = 2; iPixel < 9; iPixel++)
+			{
+				aPixels[iPixel] = ((iByte & nBitMask) != 0);
+				nBitMask <<= 1;
+			}
+
+			int hibit = ((iByte & 0x80) != 0);
+			int x     = 0;
+			int y     = iByte << 1;
+
+			while (x < 28)
+			{
+				int adj = (x >= 14) << 1;
+				int odd = (x >= 14);
+
+				for (iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color  = CM_Black;
+					int color1 = BLACK;
+					int color2 = BLACK;
+
+// Emboss
+					if (aPixels[iPixel])
+					{
+						color = ((odd ^ (iPixel&1)) << 1) | hibit;
+						if (aPixels[iPixel-1])
+							color = NUM_COLOR_MAPPING;
+					}
+
+					switch(color)
+					{
+						case CM_Magenta: color1 = iMonochrome  ; color2 = iMonochrome+1; break; 
+						case CM_Blue   : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
+						case CM_Green  : color1 = iMonochrome  ; color2 = iMonochrome+1; break;
+						case CM_Orange : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
+						case CM_Black  : color1 = BLACK        ; color2 = BLACK        ; break;
+						case CM_White  : color1 = iMonochrome  ; color2 = iMonochrome  ; break;
+						case NUM_COLOR_MAPPING: color1 = color2 = iMonochrome+1; break;
+						default: break;
+					}
+
+					// Colors - Top/Bottom Left/Right
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,color1); // TL buggy
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,color2); // TR buggy
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,color1); // BL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,color2); // BR
+
+					x += 2;
+				}
+			}
+		}
+	}
+}
+
+
+//===========================================================================
+void CreateColorLookup_MonoHiResHalfPixel_Fake ()
+{
+	int iMonochrome = GetMonochromeIndex();
+	
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		int coloffs = iColumn << 5;
+
+		for (unsigned iByte = 0; iByte < 256; iByte++)
+		{
+			int aPixels[11];
+
+			aPixels[ 0] = iColumn & 4;
+			aPixels[ 1] = iColumn & 8;
+			aPixels[ 9] = iColumn & 1;
+			aPixels[10] = iColumn & 2;
+
+			int nBitMask = 1;
+			int iPixel;
+			for (iPixel  = 2; iPixel < 9; iPixel++)
+			{
+				aPixels[iPixel] = ((iByte & nBitMask) != 0);
+				nBitMask <<= 1;
+			}
+
+			int hibit = ((iByte & 0x80) != 0);
+			int x     = 0;
+			int y     = iByte << 1;
+
+			while (x < 28)
+			{
+				int adj = (x >= 14) << 1;
+				int odd = (x >= 14);
+
+				for (iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color  = CM_Black;
+					int color1 = BLACK;
+					int color2 = BLACK;
+
+					// Gumball Logo looks better with this, as we have solid whites, but the test pattern: 22 92 14 8C 08 08 08 is off
+					if (aPixels[iPixel])
+					{
+						if (aPixels[iPixel-1] || aPixels[iPixel+1])
+						{
+							color = CM_White;
+						}
+						else
+							color = ((odd ^ (iPixel&1)) << 1) | hibit;
+					}
+					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
+						if (!(aPixels[iPixel-2] && aPixels[iPixel+2]))
+							color = ((odd ^ !(iPixel&1)) << 1) | hibit;
+
+					switch(color)
+					{
+						case CM_Magenta: color1 = iMonochrome  ; color2 = iMonochrome+1; break; 
+						case CM_Blue   : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
+						case CM_Green  : color1 = iMonochrome  ; color2 = iMonochrome+1; break;
+						case CM_Orange : color1 = iMonochrome+1; color2 = iMonochrome  ; break;
+						case CM_Black  : color1 = BLACK        ; color2 = BLACK        ; break;
+						case CM_White  : color1 = iMonochrome  ; color2 = iMonochrome  ; break;
+						case NUM_COLOR_MAPPING: color1 = color2 = iMonochrome+1; break;
+						default: break;
+					}
+
+					// Colors - Top/Bottom Left/Right
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,color1); // TL buggy
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,color2); // TR buggy
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,color1); // BL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,color2); // BR
+
+					x += 2;
+				}
+			}
+		}
+	}
+}
+
 
 //===========================================================================
 void DrawMonoLoResSource () {
@@ -2103,59 +2460,63 @@ BOOL VideoHasRefreshed () {
 }
 
 //===========================================================================
-void VideoInitialize () {
+void VideoInitialize ()
+{
+	// CREATE A BUFFER FOR AN IMAGE OF THE LAST DRAWN MEMORY
+	vidlastmem = (LPBYTE)VirtualAlloc(NULL,0x10000,MEM_COMMIT,PAGE_READWRITE);
+	ZeroMemory(vidlastmem,0x10000);
 
-  // CREATE A BUFFER FOR AN IMAGE OF THE LAST DRAWN MEMORY
-  vidlastmem = (LPBYTE)VirtualAlloc(NULL,0x10000,MEM_COMMIT,PAGE_READWRITE);
-  ZeroMemory(vidlastmem,0x10000);
+	// LOAD THE LOGO
+	g_hLogoBitmap = (HBITMAP)LoadImage(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
 
-  // LOAD THE LOGO
-  g_hLogoBitmap = (HBITMAP)LoadImage(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
-
-  // CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
-  g_pFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(NULL,
+	// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
+	g_pFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(NULL,
                                                sizeof(BITMAPINFOHEADER)
                                                  +256*sizeof(RGBQUAD),
                                                MEM_COMMIT,
                                                PAGE_READWRITE);
-  ZeroMemory(g_pFramebufferinfo,sizeof(BITMAPINFOHEADER)+256*sizeof(RGBQUAD));
-  g_pFramebufferinfo->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
-  g_pFramebufferinfo->bmiHeader.biWidth    = FRAMEBUFFER_W;
-  g_pFramebufferinfo->bmiHeader.biHeight   = FRAMEBUFFER_H;
-  g_pFramebufferinfo->bmiHeader.biPlanes   = 1;
-  g_pFramebufferinfo->bmiHeader.biBitCount = 8;
-  g_pFramebufferinfo->bmiHeader.biClrUsed  = 256;
 
-  // CREATE A BITMAPINFO STRUCTURE FOR THE SOURCE IMAGE
-  g_pSourceHeader = (LPBITMAPINFO)VirtualAlloc(NULL,
+	ZeroMemory(g_pFramebufferinfo,sizeof(BITMAPINFOHEADER)+256*sizeof(RGBQUAD));
+	g_pFramebufferinfo->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
+	g_pFramebufferinfo->bmiHeader.biWidth    = FRAMEBUFFER_W;
+	g_pFramebufferinfo->bmiHeader.biHeight   = FRAMEBUFFER_H;
+	g_pFramebufferinfo->bmiHeader.biPlanes   = 1;
+	g_pFramebufferinfo->bmiHeader.biBitCount = 8;
+	g_pFramebufferinfo->bmiHeader.biClrUsed  = 256;
+
+	// CREATE A BITMAPINFO STRUCTURE FOR THE SOURCE IMAGE
+	g_pSourceHeader = (LPBITMAPINFO)VirtualAlloc(NULL,
                                           sizeof(BITMAPINFOHEADER)
                                             +256*sizeof(RGBQUAD),
                                           MEM_COMMIT,
                                           PAGE_READWRITE);
-  ZeroMemory(g_pSourceHeader,sizeof(BITMAPINFOHEADER));
-  g_pSourceHeader->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
-  g_pSourceHeader->bmiHeader.biWidth    = SRCOFFS_TOTAL;
-  g_pSourceHeader->bmiHeader.biHeight   = 512;
-  g_pSourceHeader->bmiHeader.biPlanes   = 1;
-  g_pSourceHeader->bmiHeader.biBitCount = 8;
-  g_pSourceHeader->bmiHeader.biClrUsed  = 256;
 
-  // CREATE AN IDENTITY PALETTE AND FILL IN THE CORRESPONDING COLORS IN
-  // THE BITMAPINFO STRUCTURE
-  CreateIdentityPalette();
+	ZeroMemory(g_pSourceHeader,sizeof(BITMAPINFOHEADER));
+	g_pSourceHeader->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
+	g_pSourceHeader->bmiHeader.biWidth    = SRCOFFS_TOTAL;
+	g_pSourceHeader->bmiHeader.biHeight   = 512;
+	g_pSourceHeader->bmiHeader.biPlanes   = 1;
+	g_pSourceHeader->bmiHeader.biBitCount = 8;
+	g_pSourceHeader->bmiHeader.biClrUsed  = 256;
 
-  // PREFILL THE 16 CUSTOM COLORS AND MAKE SURE TO INCLUDE THE CURRENT MONOCHROME COLOR
-  for (int index = DARK_RED; index <= NUM_COLOR_PALETTE; index++)
-    customcolors[index-DARK_RED] = RGB(g_pFramebufferinfo->bmiColors[index].rgbRed,
-                                       g_pFramebufferinfo->bmiColors[index].rgbGreen,
-                                       g_pFramebufferinfo->bmiColors[index].rgbBlue);
+	// CREATE AN IDENTITY PALETTE AND FILL IN THE CORRESPONDING COLORS IN
+	// THE BITMAPINFO STRUCTURE
+	CreateIdentityPalette();
 
-  // CREATE THE FRAME BUFFER DIB SECTION AND DEVICE CONTEXT,
-  // CREATE THE SOURCE IMAGE DIB SECTION AND DRAW INTO THE SOURCE BIT BUFFER
-  CreateDIBSections();
+	// PREFILL THE 16 CUSTOM COLORS AND MAKE SURE TO INCLUDE THE CURRENT MONOCHROME COLOR
+	for (int index = DARK_RED; index <= NUM_COLOR_PALETTE; index++)
+	    customcolors[index-DARK_RED] = RGB(
+			g_pFramebufferinfo->bmiColors[index].rgbRed,
+			g_pFramebufferinfo->bmiColors[index].rgbGreen,
+			g_pFramebufferinfo->bmiColors[index].rgbBlue
+		);
 
-  // RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
-  VideoResetState();
+	// CREATE THE FRAME BUFFER DIB SECTION AND DEVICE CONTEXT,
+	// CREATE THE SOURCE IMAGE DIB SECTION AND DRAW INTO THE SOURCE BIT BUFFER
+	CreateDIBSections();
+
+	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
+	VideoResetState();
 }
 
 //===========================================================================

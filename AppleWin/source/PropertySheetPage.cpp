@@ -75,30 +75,6 @@ TCHAR   soundchoices[]    =  TEXT("Disabled\0")
                              TEXT("PC Speaker (translated)\0")
                              TEXT("Sound Card\0");
 
-// Must match NUM_VIDEO_MODES!
-TCHAR   videochoices[]    =
-	TEXT("Monochrome (Custom)\0")
-	TEXT("Color (standard)\0")
-	TEXT("Color (text optimized)\0")
-	TEXT("Color (TV emulation)\0")
-	TEXT("Color (Half-Shift)\0")
-	TEXT("Monochrome - Amber\0")
-	TEXT("Monochrome - Green\0")
-	TEXT("Monochrome - White\0")
-	;
-
-char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
-{
-	"Custom",
-	"Std.",
-	"Text",
-	"TV",
-	"HalfPixel",
-	"Amber",
-	"Green",
-	"White"
-};
-
 TCHAR   discchoices[]     =  TEXT("Authentic Speed\0")
                              TEXT("Enhanced Speed\0");
 
@@ -479,7 +455,7 @@ static BOOL CALLBACK ConfigDlgProc( HWND   window,
 			else
 				FillComboBox(window,IDC_COMPUTER,computerchoices,iApple2String);
 
-			FillComboBox(window,IDC_VIDEOTYPE,videochoices,g_eVideoType);
+			FillComboBox(window,IDC_VIDEOTYPE,g_aVideoChoices,g_eVideoType);
 			CheckDlgButton(window, IDC_CHECK_HALF_SCAN_LINES, g_uHalfScanLines ? BST_CHECKED : BST_UNCHECKED);
 
 			FillComboBox(window,IDC_SERIALPORT, sg_SSC.GetSerialPortChoices(), sg_SSC.GetSerialPort());
