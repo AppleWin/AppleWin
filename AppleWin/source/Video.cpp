@@ -206,17 +206,17 @@ static WORD          colormixmap[6][6][6];
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      g_nFrameBufferPitch = 0;
-BOOL      graphicsmode     = 0;
+BOOL             g_bGraphicsMode     = 0;
 static BOOL      hasrefreshed     = 0;
 static DWORD     lastpageflip     = 0;
-COLORREF  monochrome       = RGB(0xC0,0xC0,0xC0);
+COLORREF         monochrome       = RGB(0xC0,0xC0,0xC0);
 static BOOL      rebuiltsource    = 0;
 static LPBYTE    vidlastmem       = NULL;
 
-	int     g_bVideoMode          = VF_TEXT;
+	int           g_bVideoMode          = VF_TEXT;
 
-DWORD     g_eVideoType        = VT_COLOR_TVEMU;
-DWORD     g_uHalfScanLines = true; // drop 50% scan lines for a more authentic look
+	DWORD     g_eVideoType        = VT_COLOR_TVEMU;
+	DWORD     g_uHalfScanLines = true; // drop 50% scan lines for a more authentic look
 
 
 static bool g_bTextFlashState = false;
@@ -240,6 +240,8 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 		TEXT("Monochrome - Amber\0")
 		TEXT("Monochrome - Green\0")
 		TEXT("Monochrome - White\0")
+		TEXT("Mono Half Pixel Real\0")
+		TEXT("Mono Half Pixel Colorize\0")
 		TEXT("Mono Half Pixel 75%\0")
 		TEXT("Mono Half Pixel 95%\0")
 		TEXT("Mono Half Pixel Emboss\0")
@@ -258,6 +260,8 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 		,"Amber"
 		,"Green"
 		,"White"
+		,"Monochrome Half-Pixel Real"
+		,"Monochrome Half-Pixel Colorize"
 		,"Monochrome Half-Pixel 75"
 		,"Monochrome Half-Pixel 95"
 		,"Monochrome Half-Pixel Emboss"
@@ -279,10 +283,12 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	void DrawMonoLoResSource ();
 	void DrawMonoTextSource (HDC dc);
 // Monochrome Half-Pixel Support
-	void CreateColorLookup_MonoHiResHalfPixel_75();
-	void CreateColorLookup_MonoHiResHalfPixel_95();
-	void CreateColorLookup_MonoHiResHalfPixel_Emboss();
-	void CreateColorLookup_MonoHiResHalfPixel_Fake();
+	void CreateColorLookup_MonoHiResHalfPixel_75 ();
+	void CreateColorLookup_MonoHiResHalfPixel_95 ();
+	void CreateColorLookup_MonoHiResHalfPixel_Emboss ();
+	void CreateColorLookup_MonoHiResHalfPixel_Fake ();
+	void CreateColorLookup_MonoHiResHalfPixel_Real ();
+	void CreateColorLookup_MonoHiResHalfPixel_Colorize ();
 
 	bool g_bDisplayPrintScreenFileName = false;
 	void Util_MakeScreenShotFileName( char *pFinalFileName_ );
@@ -590,7 +596,7 @@ void CreateDIBSections ()
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
 	ZeroMemory(g_pSourcePixels,SRCOFFS_TOTAL*512);
 
-	if (g_eVideoType <VT_MONO_AMBER)
+	if (g_eVideoType < VT_MONO_AMBER) // First monochrome mode
 	{
 		DrawTextSource(sourcedc);
 		DrawLoResSource();
@@ -609,13 +615,15 @@ void CreateDIBSections ()
 
 		switch(g_eVideoType)
 		{
-			case VT_MONO_AMBER           :
-			case VT_MONO_GREEN           :
-			case VT_MONO_WHITE           : DrawMonoHiResSource(); break;
-			case VT_MONO_HALFPIXEL_75    : CreateColorLookup_MonoHiResHalfPixel_75(); break;
-			case VT_MONO_HALFPIXEL_95    : CreateColorLookup_MonoHiResHalfPixel_95(); break;
-			case VT_MONO_HALFPIXEL_EMBOSS: CreateColorLookup_MonoHiResHalfPixel_Emboss(); break;
-			case VT_MONO_HALFPIXEL_FAKE  : CreateColorLookup_MonoHiResHalfPixel_Fake(); break;
+			case VT_MONO_AMBER             : // intentional fall-thru
+			case VT_MONO_GREEN             : // intentional fall-thru
+			case VT_MONO_WHITE             : DrawMonoHiResSource()                          ; break;
+			case VT_MONO_HALFPIXEL_REAL    : CreateColorLookup_MonoHiResHalfPixel_Real()    ; break;
+			case VT_MONO_HALFPIXEL_COLORIZE: CreateColorLookup_MonoHiResHalfPixel_Colorize(); break;
+			case VT_MONO_HALFPIXEL_75      : CreateColorLookup_MonoHiResHalfPixel_75()      ; break;
+			case VT_MONO_HALFPIXEL_95      : CreateColorLookup_MonoHiResHalfPixel_95()      ; break;
+			case VT_MONO_HALFPIXEL_EMBOSS  : CreateColorLookup_MonoHiResHalfPixel_Emboss()  ; break;
+			case VT_MONO_HALFPIXEL_FAKE    : CreateColorLookup_MonoHiResHalfPixel_Fake()    ; break;
 			default: DrawMonoHiResSource();
 		}
 		DrawMonoDHiResSource();
@@ -1463,8 +1471,12 @@ void CreateColorLookup_MonoHiResHalfPixel_Fake ()
 #if 1
 					if (aPixels[iPixel])
 					{
-						if (aPixels[iPixel-1])
+						if (aPixels[iPixel-1]) // prev pixel on
+						{
 							color = CM_White;
+							if (!aPixels[iPixel+1]) // nextpixel off
+								color = CM_Magenta;
+						}
 						else
 							if( hibit )
 								color = CM_Blue;
@@ -1488,8 +1500,147 @@ void CreateColorLookup_MonoHiResHalfPixel_Fake ()
 					}
 
 					// Colors - Top/Bottom Left/Right
-					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,color1); // TL buggy
-					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,color2); // TR buggy
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,color1); // TL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,color2); // TR
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,color1); // BL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,color2); // BR
+
+					x += 2;
+				}
+			}
+		}
+	}
+}
+
+
+//===========================================================================
+void CreateColorLookup_MonoHiResHalfPixel_Real ()
+{
+	int iMono = GetMonochromeIndex();
+	
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		int offset = iColumn << 5; // every column is 32 bytes wide
+
+		for (unsigned iByte = 0; iByte < 256; iByte++)
+		{
+			int aPixels[11]; // c2 c1 b7 b6 b5 b4 b3 b2 b1 b0 c8 c4
+
+			aPixels[ 0] = iColumn & 4;
+			aPixels[ 1] = iColumn & 8;
+			aPixels[ 9] = iColumn & 1;
+			aPixels[10] = iColumn & 2;
+
+			int nBitMask = 1;
+			int iPixel;
+			for (iPixel  = 2; iPixel < 9; iPixel++)
+			{
+				aPixels[iPixel] = ((iByte & nBitMask) != 0);
+				nBitMask <<= 1;
+			}
+
+			int hibit = (iByte >> 7) & 1; // ((iByte & 0x80) != 0);
+			int x     = 0;
+			int y     = iByte << 1;
+
+			// Fixup missing pixels that have been scan-line shifted over by Apple "half-pixel"
+			if( hibit )
+			{
+				if ( aPixels[2] )
+				{
+					if ( aPixels[1] ) // prev pixel on for first 7 pixels ?
+					{
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x   ,y  ,iMono); // first 7 HGR_BLUE
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x   ,y+1,iMono); // first 7
+					}
+					if ( aPixels[1] ) // prev pixel on for second 7 pixels ?
+					{
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y  ,iMono); // last 7 HGR_RED
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y+1,iMono); // last 7
+					}
+				}
+			}
+
+			while (x < 28)
+			{
+				int adj = (x >= 14) << 1; // Adjust start of 7 last pixels to be 16-byte aligned!
+				int odd = (x >= 14);
+
+				for (iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color = aPixels[iPixel] ? iMono : HGR_BLACK;
+
+					// Colors - Top/Bottom Left/Right
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj  +hibit,y  ,color); // TL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj+1+hibit,y  ,color); // BL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj  +hibit,y+1,color); // BM
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj+1+hibit,y+1,color); // BR
+					x += 2;
+				}
+			}
+		}
+	}
+}
+
+
+//===========================================================================
+void CreateColorLookup_MonoHiResHalfPixel_Colorize ()
+{
+	int iMono = GetMonochromeIndex();
+	
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		int coloffs = iColumn << 5;
+
+		for (unsigned iByte = 0; iByte < 256; iByte++)
+		{
+			int aPixels[11];
+
+			aPixels[ 0] = iColumn & 4;
+			aPixels[ 1] = iColumn & 8;
+			aPixels[ 9] = iColumn & 1;
+			aPixels[10] = iColumn & 2;
+
+			int nBitMask = 1;
+			int iPixel;
+			for (iPixel  = 2; iPixel < 9; iPixel++)
+			{
+				aPixels[iPixel] = ((iByte & nBitMask) != 0);
+				nBitMask <<= 1;
+			}
+
+			int hibit = ((iByte & 0x80) != 0);
+			int x     = 0;
+			int y     = iByte << 1;
+
+			while (x < 28)
+			{
+				int adj = (x >= 14) << 1;
+				int odd = (x >= 14);
+
+				for (iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color  = CM_Black;
+					int color1 = BLACK;
+					int color2 = BLACK;
+
+					if (aPixels[iPixel])
+						color = ((odd ^ (iPixel&1)) << 1) | hibit;
+
+					switch (color)
+					{
+						case CM_Magenta: color1 = HGR_MAGENTA; color2 = BLACK   ; break; 
+						case CM_Blue   : color1 = BLACK      ; color2 = HGR_BLUE; break; // hibit=1
+						case CM_Green  : color1 = HGR_GREEN  ; color2 = BLACK   ; break;
+						case CM_Orange : color1 = BLACK      ; color2 = HGR_RED ; break; // hibit=1
+						case CM_Black  : color1 = BLACK      ; color2 = BLACK   ; break;
+						case CM_White  : color1 = iMono      ; color2 = iMono   ; break;
+						default: break;
+					}
+
+					// Colors - Top/Bottom Left/Right
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,color1); // TL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,color2); // TR
 					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,color1); // BL
 					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,color2); // BR
 
@@ -2816,81 +2967,91 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
   GdiFlush();
 #endif
 
-  FrameReleaseVideoDC();
-  SetLastDrawnImage();
+	FrameReleaseVideoDC();
+	SetLastDrawnImage();
 }
 
 //===========================================================================
-void VideoReinitialize () {
-  CreateIdentityPalette();
-  CreateDIBSections();
+void VideoReinitialize ()
+{
+	CreateIdentityPalette();
+	CreateDIBSections();
 }
 
+
 //===========================================================================
-void VideoResetState () {
-  g_nAltCharSetOffset     = 0;
-  g_bVideoDisplayPage2 = 0;
-  g_bVideoMode      = VF_TEXT;
-  g_VideoForceFullRedraw   = 1;
+void VideoResetState ()
+{
+	g_nAltCharSetOffset    = 0;
+	g_bVideoDisplayPage2   = 0;
+	g_bVideoMode           = VF_TEXT;
+	g_VideoForceFullRedraw = 1;
+
+#if 0 // Debug HGR2 without having to exec 6502 code
+	g_bVideoDisplayPage2   = 1;
+	g_bVideoMode           = VF_TEXT | VF_HIRES;
+#endif
+
 }
+
 
 //===========================================================================
 BYTE __stdcall VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
-  address &= 0xFF;
-  DWORD oldpage2 = SW_PAGE2;
-  int   oldvalue = g_nAltCharSetOffset+(int)(g_bVideoMode & ~(VF_MASK2 | VF_PAGE2));
-  switch (address) {
-    case 0x00: g_bVideoMode &= ~VF_MASK2;   break;
-    case 0x01: g_bVideoMode |=  VF_MASK2;   break;
-    case 0x0C: if (!IS_APPLE2) g_bVideoMode &= ~VF_80COL;   break;
-    case 0x0D: if (!IS_APPLE2) g_bVideoMode |=  VF_80COL;   break;
-    case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
-    case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
-    case 0x50: g_bVideoMode &= ~VF_TEXT;    break;
-    case 0x51: g_bVideoMode |=  VF_TEXT;    break;
-    case 0x52: g_bVideoMode &= ~VF_MIXED;   break;
-    case 0x53: g_bVideoMode |=  VF_MIXED;   break;
-    case 0x54: g_bVideoMode &= ~VF_PAGE2;   break;
-    case 0x55: g_bVideoMode |=  VF_PAGE2;   break;
-    case 0x56: g_bVideoMode &= ~VF_HIRES;   break;
-    case 0x57: g_bVideoMode |=  VF_HIRES;   break;
-    case 0x5E: if (!IS_APPLE2) g_bVideoMode |=  VF_DHIRES;  break;
-    case 0x5F: if (!IS_APPLE2) g_bVideoMode &= ~VF_DHIRES;  break;
-  }
-  if (SW_MASK2)
-    g_bVideoMode &= ~VF_PAGE2;
-  if (oldvalue != g_nAltCharSetOffset+(int)(g_bVideoMode & ~(VF_MASK2 | VF_PAGE2))) {
-    graphicsmode = !SW_TEXT;
-    g_VideoForceFullRedraw   = 1;
-  }
-  if (g_bFullSpeed && oldpage2 && !SW_PAGE2) {
-    static DWORD lasttime = 0;
-    DWORD currtime = GetTickCount();
-    if (currtime-lasttime >= 20)
-      lasttime = currtime;
-    else
-      oldpage2 = SW_PAGE2;
-  }
-  if (oldpage2 != SW_PAGE2) {
-    static DWORD lastrefresh = 0;
-    if ((g_bVideoDisplayPage2 && !SW_PAGE2) || (!behind)) {
-      g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
-      if (!g_VideoForceFullRedraw) {
-        VideoRefreshScreen();
-        hasrefreshed = 1;
-        lastrefresh  = emulmsec;
-      }
-    }
-    else if ((!SW_PAGE2) && (!g_VideoForceFullRedraw) && (emulmsec-lastrefresh >= 20)) {
-      g_bVideoDisplayPage2 = 0;
-      VideoRefreshScreen();
-      hasrefreshed = 1;
-      lastrefresh  = emulmsec;
-    }
-    lastpageflip = emulmsec;
-  }
-  return MemReadFloatingBus(uExecutedCycles);
+	address &= 0xFF;
+	DWORD oldpage2 = SW_PAGE2;
+	int   oldvalue = g_nAltCharSetOffset+(int)(g_bVideoMode & ~(VF_MASK2 | VF_PAGE2));
+	switch (address) {
+		case 0x00: g_bVideoMode &= ~VF_MASK2;   break;
+		case 0x01: g_bVideoMode |=  VF_MASK2;   break;
+		case 0x0C: if (!IS_APPLE2) g_bVideoMode &= ~VF_80COL;   break;
+		case 0x0D: if (!IS_APPLE2) g_bVideoMode |=  VF_80COL;   break;
+		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
+		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
+		case 0x50: g_bVideoMode &= ~VF_TEXT;    break;
+		case 0x51: g_bVideoMode |=  VF_TEXT;    break;
+		case 0x52: g_bVideoMode &= ~VF_MIXED;   break;
+		case 0x53: g_bVideoMode |=  VF_MIXED;   break;
+		case 0x54: g_bVideoMode &= ~VF_PAGE2;   break;
+		case 0x55: g_bVideoMode |=  VF_PAGE2;   break;
+		case 0x56: g_bVideoMode &= ~VF_HIRES;   break;
+		case 0x57: g_bVideoMode |=  VF_HIRES;   break;
+		case 0x5E: if (!IS_APPLE2) g_bVideoMode |=  VF_DHIRES;  break;
+		case 0x5F: if (!IS_APPLE2) g_bVideoMode &= ~VF_DHIRES;  break;
+	}
+	if (SW_MASK2)
+		g_bVideoMode &= ~VF_PAGE2;
+	if (oldvalue != g_nAltCharSetOffset+(int)(g_bVideoMode & ~(VF_MASK2 | VF_PAGE2))) {
+		g_bGraphicsMode = !SW_TEXT;
+		g_VideoForceFullRedraw   = 1;
+	}
+	if (g_bFullSpeed && oldpage2 && !SW_PAGE2) {
+		static DWORD lasttime = 0;
+		DWORD currtime = GetTickCount();
+		if (currtime-lasttime >= 20)
+			lasttime = currtime;
+		else
+			oldpage2 = SW_PAGE2;
+	}
+	if (oldpage2 != SW_PAGE2) {
+		static DWORD lastrefresh = 0;
+		if ((g_bVideoDisplayPage2 && !SW_PAGE2) || (!behind)) {
+			g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
+			if (!g_VideoForceFullRedraw) {
+				VideoRefreshScreen();
+				hasrefreshed = 1;
+				lastrefresh  = emulmsec;
+			}
+		}
+		else if ((!SW_PAGE2) && (!g_VideoForceFullRedraw) && (emulmsec-lastrefresh >= 20)) {
+		  g_bVideoDisplayPage2 = 0;
+		  VideoRefreshScreen();
+		  hasrefreshed = 1;
+		  lastrefresh  = emulmsec;
+		}
+		lastpageflip = emulmsec;
+	}
+	return MemReadFloatingBus(uExecutedCycles);
 }
 
 //===========================================================================
@@ -2941,7 +3102,7 @@ DWORD VideoSetSnapshot(SS_IO_Video* pSS)
 
 	//
 
-	graphicsmode = !SW_TEXT;
+	g_bGraphicsMode = !SW_TEXT;
     g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
 
 	return 0;
