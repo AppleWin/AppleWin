@@ -1543,7 +1543,7 @@ void CreateColorLookup_MonoHiResHalfPixel_Real ()
 			int x     = 0;
 			int y     = iByte << 1;
 
-			// Fixup missing pixels that have been scan-line shifted over by Apple "half-pixel"
+			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but cross 14-pixel boundaries.
 			if( hibit )
 			{
 				/* Test Cases
@@ -1552,10 +1552,12 @@ void CreateColorLookup_MonoHiResHalfPixel_Real ()
 						Gumball (at Machine)
 					// Applesoft
 						HGR:HCOLOR=5:HPLOT 0,0 TO 279,0
-						C050 C052 C057
+
 					// Blue
-						2000:D0 80 00
 					// Orange
+						CALL-151
+						C050 C052 C057
+						2000:D0 80 00
 						2800:80 D0 00
 				*/
 				if ( aPixels[1] ) // preceeding pixel on?
@@ -1580,7 +1582,7 @@ void CreateColorLookup_MonoHiResHalfPixel_Real ()
 					// Colors - Top/Bottom Left/Right
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj  +hibit,y  ,color); // TL
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj+1+hibit,y  ,color); // BL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj  +hibit,y+1,color); // BM
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj  +hibit,y+1,color); // BL
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj+1+hibit,y+1,color); // BR
 					x += 2;
 				}
