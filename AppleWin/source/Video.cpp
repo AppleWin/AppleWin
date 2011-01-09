@@ -1546,18 +1546,25 @@ void CreateColorLookup_MonoHiResHalfPixel_Real ()
 			// Fixup missing pixels that have been scan-line shifted over by Apple "half-pixel"
 			if( hibit )
 			{
-				if ( aPixels[2] )
+				/* Test Cases
+					// Games
+						Archon Logo
+						Gumball (at Machine)
+					// Applesoft
+						HGR:HCOLOR=5:HPLOT 0,0 TO 279,0
+						C050 C052 C057
+					// Blue
+						2000:D0 80 00
+					// Orange
+						2800:80 D0 00
+				*/
+				if ( aPixels[1] ) // preceeding pixel on?
 				{
-					if ( aPixels[1] ) // prev pixel on for first 7 pixels ?
-					{
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x   ,y  ,iMono); // first 7 HGR_BLUE
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x   ,y+1,iMono); // first 7
-					}
-					if ( aPixels[1] ) // prev pixel on for second 7 pixels ?
-					{
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y  ,iMono); // last 7 HGR_RED
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y+1,iMono); // last 7
-					}
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x   ,y  ,iMono); // first 7 HGR_BLUE
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x   ,y+1,iMono); // first 7
+
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y  ,iMono); // second 7 HGR_RED
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y+1,iMono); // second 7
 				}
 			}
 
