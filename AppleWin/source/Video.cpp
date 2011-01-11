@@ -1710,7 +1710,7 @@ Legend:
 						if (aPixels[iPixel]) // pixel on
 #endif
 						{
-							if (aPixels[2]) // White if pixel from previous byte and first pixel of this byte is on
+							if (aPixels[2] || aPixels[0]) // White if pixel from previous byte and first pixel of this byte is on
 							{
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_WHITE );
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_WHITE );
