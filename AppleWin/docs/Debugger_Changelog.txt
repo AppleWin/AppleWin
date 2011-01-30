@@ -1,5 +1,6 @@
 /*
 
+ .7 Fixed: Cleaned up display of soft-switches to show address.
  .6 Removed: Removed unused aliases.
     Reason: When a symbol table is specified with no args, the total # of symbols will be shown.
     SYMBOLS1, SYMBOLS2, SYM0, SYM1, SYM2, SYM3, SYM4, SYM5, SYM6 
