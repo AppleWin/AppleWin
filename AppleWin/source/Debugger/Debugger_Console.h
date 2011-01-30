@@ -3,12 +3,16 @@
 
 	enum
 	{
-		CONSOLE_HEIGHT = 512, // Lines, was 128, but need ~ 256+16 for PROFILE LIST
+		// Basic Symbol table has > 600 symbols
+		// Lines, was 128, but need ~ 256+16 for PROFILE LIST
+		// Output
+		CONSOLE_HEIGHT = 768, 
 		CONSOLE_WIDTH  =  80,
 
 		// need min 256+ lines for "profile list"
 		CONSOLE_BUFFER_HEIGHT = CONSOLE_HEIGHT,
 
+		// Input
 		HISTORY_HEIGHT = 128,
 		HISTORY_WIDTH  = 128,
 

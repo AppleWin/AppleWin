@@ -33,43 +33,41 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Allow the user to disable/enable symbol tables
 	// xxx1xxx symbol table is active (are displayed in disassembly window, etc.)
 	// xxx1xxx symbol table is disabled (not displayed in disassembly window, etc.)
-	int g_bDisplaySymbolTables = (1 << NUM_SYMBOL_TABLES) - 1;; // default to all symbol tables
+	// See: CmdSymbolsListTable(), g_bDisplaySymbolTables
+	int g_bDisplaySymbolTables = ((1 << NUM_SYMBOL_TABLES) - 1) & (~(int)SYMBOL_TABLE_PRODOS);// default to all symbol tables displayed/active
 
 // Symbols ________________________________________________________________________________________
 
 	char*     g_sFileNameSymbols[ NUM_SYMBOL_TABLES ] = {
-		"APPLE2E.SYM",
-		"A2_BASIC.SYM",
-		"A2_ASM.SYM",
-		"A2_USER1.SYM",
-		"A2_USER2.SYM",
-		"A2_SRC1.SYM",
-		"A2_SRC2.SYM"
+		 "APPLE2E.SYM"
+		,"A2_BASIC.SYM"
+		,"A2_ASM.SYM"
+		,"A2_USER1.SYM" // "A2_USER.SYM",
+		,"A2_USER2.SYM"
+		,"A2_SRC1.SYM" // "A2_SRC.SYM",
+		,"A2_SRC2.SYM"
+		,"A2_DOS33.SYM"
+		,"A2_PRODOS.SYM"
 	};
 	char      g_sFileNameSymbolsUser [ MAX_PATH ] = "";
 
 	char * g_aSymbolTableNames[ NUM_SYMBOL_TABLES ] =
 	{
-		"Main",
-		"Basic",
-		"Assembly",
-		"User1",
-		"User2",
-		"Src1",
-		"Src2"
+		 "Main"
+		,"Basic"
+		,"Asm" // "Assembly",
+		,"User1" // User
+		,"User2"
+		,"Src1"
+		,"Src2"
+		,"DOS33"
+		,"ProDOS"
 	};
 
 	bool g_bSymbolsDisplayMissingFile = true;
 
 	SymbolTable_t g_aSymbols[ NUM_SYMBOL_TABLES ];
 	int           g_nSymbolsLoaded = 0;  // on Last Load
-	bool          g_aConfigSymbolsDisplayed[ NUM_SYMBOL_TABLES ] =
-	{
-		true,
-		true,
-		true
-	};
-
 
 // Utils _ ________________________________________________________________________________________
 
@@ -258,18 +256,18 @@ void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize /* = 0 */
 
 	// // 2.6.2.19 Color for name of symbol table: _CmdPrintSymbol() "SYM HOME" _CmdSymbolsInfoHeader "SYM"
 	// CHC_STRING and CHC_NUM_DEC are both cyan, using CHC_USAGE instead of CHC_STRING
-	sprintf( pText, "  %s%s%s: %s%d%s"
+	sprintf( pText, "%s%s%s:%s%d " // %s"
 		, CHC_USAGE, g_aSymbolTableNames[ iTable ]
 		, CHC_ARG_SEP
 		, bActive ? CHC_NUM_DEC : CHC_WARNING, nSymbols
-		, CHC_DEFAULT
+//		, CHC_DEFAULT
 	);
 }
 
 //===========================================================================
 Update_t CmdSymbolsInfo (int nArgs)
 {
-	char sText[ CONSOLE_WIDTH * 4 ] = "";
+	char sText[ CONSOLE_WIDTH * 4 ] = "  ";
 	char sTemp[ CONSOLE_WIDTH * 2 ] = "";
 
 	int bDisplaySymbolTables = 0;
@@ -295,12 +293,13 @@ Update_t CmdSymbolsInfo (int nArgs)
 	}
 
 	//sprintf( sText, "  Symbols  Main: %s%d%s  User: %s%d%s   Source: %s%d%s"
+	// "Main:# Basic:# Asm:# User1:# User2:# Src1:# Src2:# Dos:# Prodos:#
 
 	int bTable = 1;
 	int iTable = 0;
 	for( ; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 ) {
 		if( bDisplaySymbolTables & bTable ) {
-			_CmdSymbolsInfoHeader( iTable, sTemp );
+			_CmdSymbolsInfoHeader( iTable, sTemp ); // 15 chars per table
 			strcat( sText, sTemp );
 		}
 	}
