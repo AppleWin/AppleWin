@@ -459,6 +459,8 @@
 		, CMD_SYMBOLS_USER_2
 		, CMD_SYMBOLS_SRC_1
 		, CMD_SYMBOLS_SRC_2
+		, CMD_SYMBOLS_DOS33
+		, CMD_SYMBOLS_PRODOS
 //		, CMD_SYMBOLS_FIND
 //		, CMD_SYMBOLS_CLEAR
 		, CMD_SYMBOLS_INFO
@@ -1418,7 +1420,7 @@ const	DisasmData_t* pDisasmData;
 // Symbols ________________________________________________________________________________________
 
 	// ****************************************
-	// WARNING: This is the index (enumeration) to select which table
+	// Note: This is the index (enumeration) to select which table
 	// See: g_aSymbols[]
 	// ****************************************
 	enum SymbolTable_Index_e // Symbols_e -> SymbolTable_Index_e
@@ -1430,12 +1432,14 @@ const	DisasmData_t* pDisasmData;
 		SYMBOLS_USER_2,
 		SYMBOLS_SRC_1,
 		SYMBOLS_SRC_2,
+		SYMBOLS_DOS33,
+		SYMBOLS_PRODOS,
 		NUM_SYMBOL_TABLES
 	};
 
 	// ****************************************
-	// WARNING: This is the bit-flags to select which table.
-	// See: CmdSymbolsListTable()
+	// Note: This is the bit-flags to select which table.
+	// See: CmdSymbolsListTable(), g_bDisplaySymbolTables
 	// ****************************************
 	enum SymbolTable_Masks_e // SymbolTable_e -> 
 	{
@@ -1446,6 +1450,8 @@ const	DisasmData_t* pDisasmData;
 		SYMBOL_TABLE_USER_2    = (1 << 4),
 		SYMBOL_TABLE_SRC_1     = (1 << 5),
 		SYMBOL_TABLE_SRC_2     = (1 << 6),
+		SYMBOL_TABLE_DOS33     = (1 << 7),
+		SYMBOL_TABLE_PRODOS    = (1 << 8),
 	};
 
 	typedef map<WORD, string> SymbolTable_t;

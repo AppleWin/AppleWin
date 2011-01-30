@@ -42,6 +42,8 @@ using namespace std;
 	extern bool g_bDebugDelayBreakCheck;
 
 // Commands
+	void VerifyDebuggerCommandTable();
+
 	extern const int NUM_COMMANDS_WITH_ALIASES; // = sizeof(g_aCommands) / sizeof (Command_t); // Determined at compile-time ;-)
 	extern       int g_iCommand; // last command
 

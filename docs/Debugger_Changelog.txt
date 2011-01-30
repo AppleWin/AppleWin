@@ -1,5 +1,15 @@
 /*
 
+ .6 Removed: Removed unused aliases.
+    Reason: When a symbol table is specified with no args, the total # of symbols will be shown.
+    SYMBOLS1, SYMBOLS2, SYM0, SYM1, SYM2, SYM3, SYM4, SYM5, SYM6 
+ .5 Fixed: Increased console output height so that you can view all the SYMBASIC * output.
+ .4 Added: Two alises for Dos 3.3 and Prodos symbol tables
+    SYMDOS
+    SYMPRO
+ .3 Added: Two new symbol tables added Dos 3.3 and Prodos.
+    SYMDOS33 
+    SYMPRODOS
  .2 Fixed: Fixed: Debug build of debugger force display all CPU info window wasn't calling DrawTargets()
  .1 Added: Soft Switches displayed in CPU info window
 
