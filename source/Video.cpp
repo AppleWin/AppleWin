@@ -517,8 +517,10 @@ void V_CreateIdentityPalette ()
 	// IF WE ARE IN A PALETTIZED VIDEO MODE, CREATE AN IDENTITY PALETTE
 	HWND window = GetDesktopWindow();
 	HDC  dc     = GetDC(window);
-unsigned	int  colors = GetDeviceCaps(dc,SIZEPALETTE); // 16/24/32bpp = 0
-unsigned	int  system = GetDeviceCaps(dc,NUMCOLORS);   // 16/24/32bpp = -1
+
+	// int GetDeviceCaps( HDC, nIndex );
+	int  colors = GetDeviceCaps(dc,SIZEPALETTE); // 16/24/32bpp = 0
+	int  system = GetDeviceCaps(dc,NUMCOLORS);   // 16/24/32bpp = -1
 
 #if 0
 	// DD Full Screen Palette
