@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // NEW UI debugging - force display ALL meta-info (regs, stack, bp, watches, zp) for debugging purposes
 #define DEBUG_FORCE_DISPLAY 0
 
+#define SOFTSWITCH_OLD 0
+
 #if _DEBUG
 	#define DEBUG_FONT_NO_BACKGROUND_CHAR      0
 	#define DEBUG_FONT_NO_BACKGROUND_TEXT      0
@@ -132,12 +134,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #if USE_APPLE_FONT
 		// Horizontal Column (pixels) of Stack & Regs
-		const int INFO_COL_1 = (51 * 7); // nFontWidth
-		const int DISPLAY_REGS_COLUMN    = INFO_COL_1;
-		const int DISPLAY_FLAG_COLUMN    = INFO_COL_1;
-		const int DISPLAY_STACK_COLUMN   = INFO_COL_1;
-		const int DISPLAY_TARGETS_COLUMN = INFO_COL_1;
-		const int DISPLAY_ZEROPAGE_COLUMN= INFO_COL_1;
+		const int INFO_COL_1 = (51 * CONSOLE_FONT_WIDTH);
+		const int DISPLAY_REGS_COLUMN       = INFO_COL_1;
+		const int DISPLAY_FLAG_COLUMN       = INFO_COL_1;
+		const int DISPLAY_STACK_COLUMN      = INFO_COL_1;
+		const int DISPLAY_TARGETS_COLUMN    = INFO_COL_1;
+		const int DISPLAY_ZEROPAGE_COLUMN   = INFO_COL_1;
+		const int DISPLAY_SOFTSWITCH_COLUMN = INFO_COL_1 - (CONSOLE_FONT_WIDTH/2) + 1;;
 
 		// Horizontal Column (pixels) of BPs, Watches & Mem
 		const int INFO_COL_2 = (62 * 7); // nFontWidth
@@ -145,11 +148,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_WATCHES_COLUMN = INFO_COL_2;
 		const int DISPLAY_MINIMEM_COLUMN = INFO_COL_2;
 #else
-		const int DISPLAY_REGS_COLUMN    = SCREENSPLIT1;
-		const int DISPLAY_FLAG_COLUMN    = SCREENSPLIT1; // + 63;
-		const int DISPLAY_STACK_COLUMN   = SCREENSPLIT1;
-		const int DISPLAY_TARGETS_COLUMN = SCREENSPLIT1;
-		const int DISPLAY_ZEROPAGE_COLUMN= SCREENSPLIT1;
+		const int DISPLAY_CPU_INFO_LEFT_COLUMN = SCREENSPLIT1
+
+		const int DISPLAY_REGS_COLUMN       = DISPLAY_CPU_INFO_LEFT_COLUMN;
+		const int DISPLAY_FLAG_COLUMN       = DISPLAY_CPU_INFO_LEFT_COLUMN;
+		const int DISPLAY_STACK_COLUMN      = DISPLAY_CPU_INFO_LEFT_COLUMN;
+		const int DISPLAY_TARGETS_COLUMN    = DISPLAY_CPU_INFO_LEFT_COLUMN;
+		const int DISPLAY_ZEROPAGE_COLUMN   = DISPLAY_CPU_INFO_LEFT_COLUMN;
+		const int DISPLAY_SOFTSWITCH_COLUMN = DISPLAY_CPU_INFO_LEFT_COLUMN - (CONSOLE_FONT_WIDTH/2);
 
 		const int SCREENSPLIT2 = SCREENSPLIT1 + (12 * 7); // moved left 3 chars to show B. prefix in breakpoint #, W. prefix in watch #
 		const int DISPLAY_BP_COLUMN      = SCREENSPLIT2;
@@ -923,6 +929,20 @@ char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
 		);
 	}
 	return nChar;
+}
+
+void ColorizeFlags( bool bSet )
+{
+	if (bSet)
+	{
+		DebuggerSetColorBG( DebuggerGetColor( BG_INFO_INVERSE ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_INVERSE ));
+	}
+	else
+	{
+		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+	}
 }
 
 
@@ -2511,25 +2531,65 @@ void DrawRegister ( int line, LPCTSTR name, const int nBytes, const WORD nValue,
 	PrintText( sValue, rect );
 }
 
+// 2.7.0.7 Cleaned up display of soft-switches to show address.
+//===========================================================================
+void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char *sOn, char *sOff, const char *sSuffix = NULL )
+{
+	RECT temp = rect;
+	char sText[ 4 ] = "";
+
+	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+//	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_TARGET ));
+	sprintf( sText, "%02X", (nAddress & 0xFF) );
+	PrintTextCursorX( sText, temp );
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
+	PrintTextCursorX( ":", temp );
+
+	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+	if( sPrefix )
+		PrintTextCursorX( sPrefix, temp );
+
+	ColorizeFlags( bSet );
+	PrintTextCursorX( sOn, temp );
+
+	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
+	PrintTextCursorX( "/", temp );
+
+	ColorizeFlags( !bSet );
+	PrintTextCursorX( sOff, temp );
+
+	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+	if ( sSuffix )
+		PrintTextCursorX( sSuffix, temp );
+
+	rect.top    += g_nFontHeight;
+	rect.bottom += g_nFontHeight;
+}
+
 
 // 2.7.0.1 Display state of soft switches
 //===========================================================================
 void DrawSoftSwitches( int iSoftSwitch )
 {
 	RECT rect;
+	RECT temp;
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 
-		rect.left   = DISPLAY_STACK_COLUMN;
+		rect.left   = DISPLAY_SOFTSWITCH_COLUMN;
 		rect.top    = iSoftSwitch * g_nFontHeight;
 		rect.right = rect.left + (10 * nFontWidth) + 1;
 		rect.bottom = rect.top + g_nFontHeight;
-
+		temp = rect;
 
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 
-		char sText[11] = "";
+		char sText[16] = "";
 		
+#if SOFTSWITCH_OLD
 		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
 		// GR  / TEXT
 		// GRAPH/TEXT
@@ -2567,6 +2627,59 @@ void DrawSoftSwitches( int iSoftSwitch )
 		// 280/560 HGR
 		sprintf(sText, !(g_bVideoMode & VF_DHIRES) ? "HGR / ----" : "--- / DHGR" );
 		PrintTextCursorY( sText, rect );
+#else //SOFTSWITCH_OLD
+		// See: VideoSetMode()
+
+		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
+		// GR  / TEXT
+		// GRAPH/TEXT
+		// TEXT ON/OFF
+		bool bSet;
+
+		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
+		bSet = !(g_bVideoMode & VF_TEXT);
+		_DrawSoftSwitch( rect, 0xC050, bSet, NULL, "GR.", "TEXT" );
+
+		// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
+		// FULL/MIXED
+		// MIX OFF/ON
+		bSet = !(g_bVideoMode & VF_MIXED);
+		_DrawSoftSwitch( rect, 0xC052, bSet, NULL, "FULL", "MIX" );
+
+		// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
+		// PAGE 1 / 2
+		bSet = !(g_bVideoMode & VF_PAGE2);
+		_DrawSoftSwitch( rect, 0xC054, bSet, "PAGE ", "1", "2" );
+		
+		// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
+		// LO / HIRES
+		// LO / -----
+		// -- / HIRES
+		bSet = !(g_bVideoMode & VF_HIRES);
+		_DrawSoftSwitch( rect, 0xC056, bSet, NULL, "LO", "HI", "RES" );
+
+		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+		PrintTextCursorY( "", rect ); // force print blank line
+
+		// 280/560 HGR
+		// C05E = ON, C05F = OFF
+		bSet = (g_bVideoMode & VF_DHIRES) ? true : false;
+		_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
+
+		// Extended soft switches
+		// C00C = off, C00D = on
+		bSet = !(g_bVideoMode & VF_80COL);
+		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80" );
+
+		// C00E = off, C00F = on
+		bSet = (g_nAltCharSetOffset == 0);
+		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS" ); // ASCII/MouseText
+
+		// C000 = 80STOREOFF, C001 = 80STOREON
+		bSet = !(g_bVideoMode & VF_MASK2);
+		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1" );
+#endif // SOFTSWITCH_OLD
 }
 
 
