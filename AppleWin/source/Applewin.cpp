@@ -63,8 +63,10 @@ AppMode_e	g_nAppMode = MODE_LOGO;
 
 static int lastmode         = MODE_LOGO;
 DWORD     needsprecision    = 0;			// Redundant
-TCHAR     g_sProgramDir[MAX_PATH] = TEXT("");
-TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir
+TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin executable resides
+TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
+TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
+TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
 bool      g_bResetTiming    = false;			// Redundant
 BOOL      restart           = 0;
 
