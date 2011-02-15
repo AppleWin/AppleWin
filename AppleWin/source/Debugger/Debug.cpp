@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,7);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,8);
 
 
 // Public _________________________________________________________________________________________
@@ -1940,7 +1940,7 @@ Update_t CmdTraceFile (int nArgs)
 
 
 		char sFilePath[ MAX_PATH ];
-		strcpy(sFilePath, g_sCurrentDir); // g_sProgramDir
+		strcpy(sFilePath, g_sCurrentDir); // TODO: g_sDebugDir
 		strcat(sFilePath, sFileName );
 
 		g_hTraceFile = fopen( sFilePath, "wt" );
@@ -2304,7 +2304,7 @@ void ConfigSave_PrepareHeader ( const Parameters_e eCategory, const Commands_e e
 Update_t CmdConfigSave (int nArgs)
 {
 	TCHAR sFilename[ MAX_PATH ];
-	_tcscpy( sFilename, g_sProgramDir ); // g_sCurrentDir
+	_tcscpy( sFilename, g_sProgramDir ); // TODO: g_sDebugDir
 	_tcscat( sFilename, g_sFileNameConfig );
 
 /*
@@ -3978,6 +3978,22 @@ static TCHAR g_sMemoryLoadSaveFileName[ MAX_PATH ] = TEXT("");
 
 
 //===========================================================================
+Update_t CmdConfigGetDebugDir (int nArgs)
+{
+	TCHAR sPath[ MAX_PATH + 8 ] = "Path: ";
+	_tcscat( sPath, g_sCurrentDir ); // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
+	ConsoleBufferPush( sPath );
+
+	return ConsoleUpdate();
+}
+
+//===========================================================================
+Update_t CmdConfigSetDebugDir (int nArgs)
+{
+	return ConsoleUpdate();
+}
+
+//===========================================================================
 Update_t CmdMemoryLoad (int nArgs)
 {
 	// BLOAD ["Filename"] , addr[, len] 
@@ -4020,7 +4036,7 @@ Update_t CmdMemoryLoad (int nArgs)
 			return Help_Arg_1( CMD_MEMORY_SAVE );
 
 		TCHAR sLoadSaveFilePath[ MAX_PATH ];
-		_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
+		_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // TODO: g_sDebugDir
 
 		WORD nAddressStart;
 		WORD nAddress2   = 0;
@@ -4084,9 +4100,9 @@ Update_t CmdMemoryLoad (int nArgs)
 		else
 		{
 			ConsoleBufferPush( TEXT( "ERROR: Bad filename" ) );
-			TCHAR sPath[ MAX_PATH + 8 ] = "Path: ";
-			_tcscat( sPath, g_sCurrentDir );
-			ConsoleBufferPush( sPath );
+
+			CmdConfigGetDebugDir( 0 );
+
 			TCHAR sFile[ MAX_PATH + 8 ] = "File: ";
 			_tcscat( sFile, g_sMemoryLoadSaveFileName );
 			ConsoleBufferPush( sFile );
