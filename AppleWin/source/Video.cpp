@@ -73,7 +73,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 enum Color_Palette_Index_e
 {
-	// Really need to have Quater Green and Quarter Blue for Hi-Res
+	// Really need to have Quarter Green and Quarter Blue for Hi-Res
 	  BLACK            
 	, DARK_RED         
 	, DARK_GREEN       // Half Green
@@ -218,8 +218,8 @@ static LPBYTE    vidlastmem       = NULL;
 
 	int           g_bVideoMode          = VF_TEXT;
 
-	DWORD     g_eVideoType        = VT_COLOR_TVEMU;
-	DWORD     g_uHalfScanLines = true; // drop 50% scan lines for a more authentic look
+	DWORD     g_eVideoType     = VT_COLOR_HALFPIXEL; // VT_COLOR_TVEMU;
+	DWORD     g_uHalfScanLines = false; // drop 50% scan lines for a more authentic look
 
 
 static bool g_bTextFlashState = false;
@@ -235,44 +235,52 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	TCHAR g_aVideoChoices[] =
-		TEXT("Monochrome (Custom)\0")
+		TEXT("Monoochrome (Custom Luminance)\0")
 		TEXT("Color (standard)\0")
 		TEXT("Color (text optimized)\0")
 		TEXT("Color (TV emulation)\0")
+#if _DEBUG
 		TEXT("Color (Fake Half-Shift)\0")
-		TEXT("Color True Half-Shift")
-		TEXT("Monochrome - Amber\0")
-		TEXT("Monochrome - Green\0")
-		TEXT("Monochrome - White\0")
-		TEXT("Mono Half Pixel Real\0")
+#endif
+		TEXT("Color (Half-Shift)")
+		TEXT("Monochrome (Amber)\0")
+		TEXT("Monochrome (Green)\0")
+		TEXT("Monochrome (White)\0")
+#if _DEBUG
+		TEXT("Monochrome (Custom)\0")
 		TEXT("Mono Colorize\0")
 		TEXT("Mono Half Pixel Colorize\0")
 		TEXT("Mono Half Pixel 75%\0")
 		TEXT("Mono Half Pixel 95%\0")
 		TEXT("Mono Half Pixel Emboss\0")
 		TEXT("Mono Half Pixel Fake\0")
+#endif
 		;
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	// The window title will be set to this.
 	char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
-		 "Custom"
+		 "Monochrome Half-Pixel Real"
 		,"Std."
 		,"Text"
 		,"TV"
+#if _DEBUG
 		,"Fake Half-Pixel"
+#endif
 		,"Color Half-Pixel Authentic "
-		,"Monochrome Half-Pixel Real"
 		,"Amber"
 		,"Green"
 		,"White"
+#if _DEBUG
+		, "Custom"
 		,"Monochrome Colorize"
 		,"Monochrome Half-Pixel Colorize"
 		,"Monochrome Half-Pixel 75"
 		,"Monochrome Half-Pixel 95"
 		,"Monochrome Half-Pixel Emboss"
 		,"Monochrome Half-Pixel Fake"
+#endif
 	};
 
 // Prototypes (Private) _____________________________________________
@@ -434,7 +442,9 @@ int GetMonochromeIndex()
 	
 	switch (g_eVideoType)
 	{
+#if _DEBUG
 		case VT_MONO_CUSTOM: iMonochrome = MONOCHROME_CUSTOM; break;
+#endif
 		case VT_MONO_AMBER : iMonochrome = MONOCHROME_AMBER ; break;
 		case VT_MONO_GREEN : iMonochrome = MONOCHROME_GREEN ; break;
 		case VT_MONO_WHITE : iMonochrome = WHITE            ; break;
@@ -497,8 +507,9 @@ void V_CreateIdentityPalette ()
 		, ((GetBValue(monochrome)/2) & 0xFF)
 	);
 
-	SETFRAMECOLOR( MONOCHROME_AMBER   , 0xFF,0x80,0x00); // Used for Monochrome Hi-Res graphics not text!
-	SETFRAMECOLOR( MONOCHROME_GREEN   , 0x00,0xC0,0x00); // Used for Monochrome Hi-Res graphics not text!
+	// SEE: DrawMonoTextSource
+	SETFRAMECOLOR( MONOCHROME_AMBER   , 0xFF,0x80,0x01); // Used for Monochrome Hi-Res graphics not text!
+	SETFRAMECOLOR( MONOCHROME_GREEN   , 0x00,0xC0,0x01); // Used for Monochrome Hi-Res graphics not text!
 	// BUG PALETTE COLLAPSE: WTF?? Soon as we set 0xFF,0xFF,0xFF we lose text colors?!?!
 	// Windows is collapsing the palette!!!
 	SETFRAMECOLOR( MONOCHROME_WHITE   , 0xFE,0xFE,0xFE); // Used for Monochrome Hi-Res graphics not text!
@@ -739,15 +750,17 @@ void V_CreateDIBSections ()
 
 	// First monochrome mode is seperate from others
 	if ((g_eVideoType >= VT_COLOR_STANDARD)
-	&&  (g_eVideoType <= VT_COLOR_AUTHENTIC))
+	&&  (g_eVideoType <= VT_COLOR_HALFPIXEL))
 	{
 		DrawTextSource(sourcedc);
 		DrawLoResSource();
 
+#if _DEBUG
 		if (g_eVideoType == VT_COLOR_HALF_SHIFT_DIM)
 			DrawHiResSourceHalfShiftDim();
 		else
-		if (g_eVideoType == VT_COLOR_AUTHENTIC)
+#endif
+		if (g_eVideoType == VT_COLOR_HALFPIXEL)
 			CreateColorLookup_HiResHalfPixel_Authentic();
 		else
 			DrawHiResSource();
@@ -761,17 +774,19 @@ void V_CreateDIBSections ()
 
 		switch (g_eVideoType)
 		{
-			case VT_MONO_AMBER             : // intentional fall-thru
-			case VT_MONO_GREEN             : // intentional fall-thru
-			case VT_MONO_WHITE             : DrawMonoHiResSource()                          ; break;
-			case VT_MONO_CUSTOM            : DrawMonoHiResSource();                         ; break;
+			case VT_MONO_AMBER             : /* intentional fall-thru */
+			case VT_MONO_GREEN             : /* intentional fall-thru */
+			case VT_MONO_WHITE             : /* intentional fall-thru */                    
 			case VT_MONO_HALFPIXEL_REAL    : CreateColorLookup_MonoHiResHalfPixel_Real()    ; break;
+#if _DEBUG
+			case VT_MONO_CUSTOM            : DrawMonoHiResSource()                          ; break;
 			case VT_MONO_HALFPIXEL_COLORIZE: CreateColorLookup_MonoHiResHalfPixel_Colorize(); break;
 			case VT_MONO_HALFPIXEL_75      : CreateColorLookup_MonoHiResHalfPixel_75()      ; break;
 			case VT_MONO_HALFPIXEL_95      : CreateColorLookup_MonoHiResHalfPixel_95()      ; break;
 			case VT_MONO_HALFPIXEL_EMBOSS  : CreateColorLookup_MonoHiResHalfPixel_Emboss()  ; break;
 			case VT_MONO_HALFPIXEL_FAKE    : CreateColorLookup_MonoHiResHalfPixel_Fake()    ; break;
 			case VT_MONO_COLORIZE          : CreateColorLookup_MonoHiRes_Colorize()         ; break;
+#endif
 			default: DrawMonoHiResSource(); break;
 		}
 		DrawMonoDHiResSource();
@@ -3497,7 +3512,7 @@ bool VideoGetVbl(const DWORD uExecutedCycles)
 static int  g_nLastScreenShot = 0;
 const  int nMaxScreenShot = 999999999;
 
-static int g_iScreenshotType;
+static int   g_iScreenshotType;
 static char *g_pLastDiskImageName = NULL;
 
 //const  int nMaxScreenShot = 2;
@@ -3513,6 +3528,7 @@ void Video_ResetScreenshotCounter( char *pImageName )
 void Util_MakeScreenShotFileName( char *pFinalFileName_ )
 {
 	char sPrefixScreenShotFileName[ 256 ] = "AppleWin_ScreenShot";
+	// TODO: g_sScreenshotDir
 	char *pPrefixFileName = g_pLastDiskImageName ? g_pLastDiskImageName : sPrefixScreenShotFileName;
 #if SCREENSHOT_BMP
 	sprintf( pFinalFileName_, "%s_%09d.bmp", pPrefixFileName, g_nLastScreenShot );

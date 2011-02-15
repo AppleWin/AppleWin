@@ -3,25 +3,30 @@
 // Types ____________________________________________________________
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
+	// NOTE: Used/Serialized by: g_eVideoType
 	enum VideoType_e
 	{
-		  VT_MONO_CUSTOM
+		  VT_MONO_HALFPIXEL_REAL // uses custom monochrome
 		, VT_COLOR_STANDARD
-		, VT_COLOR_TEXT_OPTIMIZED
-		, VT_COLOR_TVEMU
-		, VT_COLOR_HALF_SHIFT_DIM
-		, VT_COLOR_AUTHENTIC
-	//	, VT_MONO_AUTHENTIC -- been replaced with 3 mono modes
-		, VT_MONO_HALFPIXEL_REAL
-		, VT_MONO_AMBER
-		, VT_MONO_GREEN
-		, VT_MONO_WHITE
+		, VT_COLOR_TVEMU          // 1.19.3 swapped
+		, VT_COLOR_TEXT_OPTIMIZED // 1.19.3 swapped
+#if _DEBUG
+		, VT_COLOR_HALF_SHIFT_DIM // Michael's 80's retro look --- must >= VT_COLOR_STANDARD && <= VT_COLOR_AUTHENTIC. See: V_CreateDIBSections()
+#endif
+		, VT_COLOR_HALFPIXEL // Half Pixel Support VT_COLOR_AUTHENTIC -> VT_COLOR_HALFPIXEL
+		, VT_MONO_AMBER // now half pixel
+		, VT_MONO_GREEN // now half pixel
+		, VT_MONO_WHITE // now half pixel
+	//	, VT_MONO_AUTHENTIC -- been replaced with the 3 mono modes: amber, green white
+#if _DEBUG
+		, VT_MONO_CUSTOM
 		, VT_MONO_COLORIZE
 		, VT_MONO_HALFPIXEL_COLORIZE
 		, VT_MONO_HALFPIXEL_75
 		, VT_MONO_HALFPIXEL_95
 		, VT_MONO_HALFPIXEL_EMBOSS
 		, VT_MONO_HALFPIXEL_FAKE
+#endif
 		, NUM_VIDEO_MODES
 	};
 
