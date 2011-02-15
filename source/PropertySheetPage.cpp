@@ -258,7 +258,7 @@ void Config_Load_Video()
 	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&monochrome);
 
 	if (g_eVideoType >= NUM_VIDEO_MODES)
-		g_eVideoType = VT_COLOR_TVEMU;
+		g_eVideoType = VT_COLOR_HALFPIXEL; // VT_COLOR_TVEMU;
 }
 
 
