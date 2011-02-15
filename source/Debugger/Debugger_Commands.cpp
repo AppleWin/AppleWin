@@ -99,6 +99,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("LOAD")        , CmdConfigLoad        , CMD_CONFIG_LOAD          , "Load debugger configuration" },
 		{TEXT("MONO")        , CmdConfigColorMono   , CMD_CONFIG_MONOCHROME    , "Sets/Shows RGB for monochrome scheme" },
 		{TEXT("SAVE")        , CmdConfigSave        , CMD_CONFIG_SAVE          , "Save debugger configuration" },
+		{TEXT("PWD")         , CmdConfigGetDebugDir , CMD_CONFIG_GET_DEBUG_DIR , "Displays the current debugger directory. Used for scripts & mem load/save." },
+		{TEXT("CD")          , CmdConfigSetDebugDir , CMD_CONFIG_SET_DEBUG_DIR , "Updates the current debugger directory." },
 	// Cursor
 		{TEXT("RET")         , CmdCursorJumpRetAddr , CMD_CURSOR_JUMP_RET_ADDR , "Sets the cursor to the sub-routine caller" }, 
 		{TEXT(      "^")     , NULL                 , CMD_CURSOR_LINE_UP       }, // \x2191 = Up Arrow (Unicode)

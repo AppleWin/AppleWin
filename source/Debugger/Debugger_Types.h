@@ -352,6 +352,8 @@
 		, CMD_CONFIG_LOAD
 		, CMD_CONFIG_MONOCHROME // MONO  # rr gg bb
 		, CMD_CONFIG_SAVE
+		, CMD_CONFIG_GET_DEBUG_DIR
+		, CMD_CONFIG_SET_DEBUG_DIR
 // Cursor
 		, CMD_CURSOR_JUMP_RET_ADDR
 		, CMD_CURSOR_LINE_UP   // Smart Line Up
@@ -632,6 +634,8 @@
 	Update_t CmdConfigSave        (int nArgs);
 	Update_t CmdConfigSetFont     (int nArgs);
 	Update_t CmdConfigGetFont     (int nArgs);
+	Update_t CmdConfigGetDebugDir (int nArgs);
+	Update_t CmdConfigSetDebugDir (int nArgs);
 // Cursor
 	Update_t CmdCursorFollowTarget(int nArgs);
 	Update_t CmdCursorLineDown    (int nArgs);
