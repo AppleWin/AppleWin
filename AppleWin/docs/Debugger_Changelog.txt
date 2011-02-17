@@ -1,4 +1,5 @@
 /*
+ .9 Fixed: Bookmarks weren't initialized to zero.
  .8 Added: New command PWD to display the current debugger directory.
     This is the directory used for scripts, loading/saving memory, and trace files.
     Currently the debugger uses the same directory that the last disk image was loaded from.

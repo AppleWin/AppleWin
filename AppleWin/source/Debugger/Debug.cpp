@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,8);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,9);
 
 
 // Public _________________________________________________________________________________________
@@ -46,7 +46,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Bookmarks __________________________________________________________________
 //	vector<int> g_aBookmarks;
-	int        g_nBookmarks;
+	int        g_nBookmarks = 0;
 	Bookmark_t g_aBookmarks[ MAX_BOOKMARKS ];
 
 // Breakpoints ________________________________________________________________
@@ -461,7 +461,7 @@ void _Bookmark_Reset()
 //===========================================================================
 int _Bookmark_Size()
 {
-	int g_nBookmarks = 0;
+	g_nBookmarks = 0;
 
 	int iBookmark;
 	for (iBookmark = 0; iBookmark < MAX_BOOKMARKS; iBookmark++ )
