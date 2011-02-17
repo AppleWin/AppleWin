@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #include "..\resource\resource.h"
 
+#define HALF_PIXEL_SOLID 1
+
 /* reference: technote tn-iigs-063 "Master Color Values"
 
           Color  Color Register LR HR  DHR Master Color R,G,B
@@ -1106,11 +1108,11 @@ void DrawHiResSource ()
 					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
 					{
 						/***          
-						activate for fringe reduction on white hgr text - 
-						drawback: loss of color mix patterns in hgr g_nAppMode.
-						select g_eVideoType by index exclusion
+						activate for fringe reduction on white HGR text - 
+						drawback: loss of color mix patterns in HGR Apple Mode.
+						select Video Type by index exclusion
 						***/
-						if ((g_eVideoType == VT_COLOR_STANDARD) || (g_eVideoType == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]))
+						if ((g_eVideoType == VT_COLOR_STANDARD) || (g_eVideoType == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
 							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// // No white HGR text optimization
 					}
 
@@ -1661,7 +1663,150 @@ void CreateColorLookup_MonoHiResHalfPixel_Fake ()
 
 
 //===========================================================================
-void CreateColorLookup_HiResHalfPixel_Authentic ()
+void CreateColorLookup_HiResHalfPixel_Authentic () // Colors are solid (100% coverage)
+{
+	// 2-bits from previous byte, 2-bits from next byte = 2^4 = 16 total permutations
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		int offsetx = iColumn << 5; // every column is 32 bytes wide -- 7 apple pixels = 14 pixels + 2 pad + 14 pixels + 2 pad
+
+		for (unsigned iByte = 0; iByte < 256; iByte++)
+		{
+			int aPixels[11]; // c2 c1 b7 b6 b5 b4 b3 b2 b1 b0 c8 c4
+
+/*
+aPixel[i]
+ A 9|8 7 6 5 4 3 2|1 0
+ Z W|b b b b b b b|X Y
+----+-------------+----
+prev|  existing   |next
+bits| hi-res byte |bits
+
+Legend:
+ XYZW = iColumn in binary
+ b = Bytes in binary
+*/
+			// aPixel[] = 48bbbbbbbb12, where b = iByte in binary, # is bit-n of column
+			aPixels[ 0] = iColumn & 4; // previous byte, 2nd last pixel
+			aPixels[ 1] = iColumn & 8; // previous byte, last pixel
+			aPixels[ 9] = iColumn & 1; // next byte, first pixel
+			aPixels[10] = iColumn & 2; // next byte, second pixel
+
+			// Convert raw pixel Byte value to binary and stuff into bit array of pixels on off
+			int nBitMask = 1;
+			int iPixel;
+			for (iPixel  = 2; iPixel < 9; iPixel++)
+			{
+				aPixels[iPixel] = ((iByte & nBitMask) != 0);
+				nBitMask <<= 1;
+			}
+
+			int hibit = (iByte >> 7) & 1; // ((iByte & 0x80) != 0);
+			int x     = 0;
+			int y     = iByte << 1;
+
+/* Test cases
+ 81 blue
+   2000:D5 AA D5 AA
+ 82 orange
+   2800:AA D5 AA D5
+ FF white bleed "thru"
+   3000:7F 80 7F 80
+   3800:FF 80 FF 80
+   2028:80 7F 80 7F
+   2828:80 FF 80 FF
+ Edge Case for Half Luminance !
+   2000:C4 00  // Green  HalfLumBlue
+   2400:c4 80  // Green  Green
+*/
+
+			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but cross 14-pixel boundaries.
+			if( hibit )
+			{
+				if ( aPixels[1] ) // preceeding pixel on?
+#if 0 // Optimization: Doesn't seem to matter if we ignore the 2 pixels of the next byte
+					for (iPixel = 0; iPixel < 9; iPixel++) // NOTE: You MUST start with the preceding 2 pixels !!!
+						if (aPixels[iPixel]) // pixel on
+#endif
+						{
+							if (aPixels[2] || aPixels[0]) // White if pixel from previous byte and first pixel of this byte is on
+							{
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_WHITE );
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_WHITE );
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_WHITE );
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_WHITE );
+							} else {   // Optimization:   odd = (iPixel & 1); if (!odd) case is same as if(odd) !!! // Reference: Gumball - Gumball Machine
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_RED ); // left half of orange pixels 
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_RED );
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_BLUE ); // right half of blue pixels 4, 11, 18, ...
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_BLUE );
+							}
+						}
+#if HALF_PIXEL_SOLID
+// 81 blue
+//   2000:D5 AA D5 AA
+// 82 orange
+//   2800:AA D5 AA D5
+				else if( aPixels[2] && aPixels[0] )
+				{
+					// Test Pattern: Ultima 4 Logo - far right - grass and blue border
+					if( aPixels[3] ) {
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_WHITE );
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_WHITE );
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_WHITE );
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_WHITE );
+					} else {
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE );
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16 ,y  , HGR_RED );
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16 ,y+1, HGR_RED );
+					}
+				}
+#endif
+
+			}
+			x += hibit;
+
+			while (x < 28)
+			{
+				int adj = (x >= 14) << 1; // Adjust start of 7 last pixels to be 16-byte aligned!
+				int odd = (x >= 14);
+				for (iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color = CM_Black;
+					if (aPixels[iPixel]) // pixel on
+					{
+						color = CM_White; 
+						if (aPixels[iPixel-1] || aPixels[iPixel+1]) // adjacent pixels are always white
+							color = CM_White; 
+						else
+							color = ((odd ^ (iPixel&1)) << 1) | hibit; // map raw color to our hi-res colors
+					}
+#if HALF_PIXEL_SOLID
+					else if (aPixels[iPixel-1] && aPixels[iPixel+1]) // prev this next = ON off ON
+					{
+							// Test Pattern: Ultima 4 Logo - Castle
+							// 3AC8: 36 5B 6D 36
+							// remove "if ...", but keep "color = " if you want "color bleed" in HGR .. technically it is more accurate
+							if ( !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
+								color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
+					}
+#endif
+
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y  ,aColorIndex[color]); // TL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y  ,aColorIndex[color]); // TR
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y+1,aColorIndex[color]); // BL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y+1,aColorIndex[color]); // BR
+					x += 2;
+				}
+			}
+		}
+	}
+}
+
+
+//===========================================================================
+void CreateColorLookup_HiResHalfPixel_Authentic_50Coverage () // Colors are Non Solid (50% coverage) -- looks better for "color" text
 {
 	// 2-bits from previous byte, 2-bits from next byte = 2^4 = 16 total permutations
 	for (int iColumn = 0; iColumn < 16; iColumn++)
@@ -1758,6 +1903,7 @@ Legend:
 						else
 							color = ((odd ^ (iPixel&1)) << 1) | hibit; // map raw color to our hi-res colors
 					}
+
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y  ,aColorIndex[color]); // TL
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y  ,aColorIndex[color]); // TR
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y+1,aColorIndex[color]); // BL
