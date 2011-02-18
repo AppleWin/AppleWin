@@ -87,7 +87,7 @@ enum Color_Palette_Index_e
 	, MONEY_GREEN      
 	, SKY_BLUE         
 
-// OUR CUSTOM COLORS
+// OUR CUSTOM COLORS -- the extra colors HGR mode can display
 	, DEEP_RED         
 	, LIGHT_BLUE       
 	, BROWN            
@@ -98,10 +98,10 @@ enum Color_Palette_Index_e
 // CUSTOM HGR COLORS (don't change order) - For tv emulation g_nAppMode
 	, HGR_BLACK        
 	, HGR_WHITE        
-	, HGR_BLUE         
-	, HGR_RED          
-	, HGR_GREEN        
-	, HGR_MAGENTA      
+	, HGR_BLUE         // HCOLOR=6 BLUE  , $81
+	, HGR_RED          // HCOLOR=5 ORANGE, $82
+	, HGR_GREEN        // HCOLOR=1 GREEN , $01 
+	, HGR_MAGENTA      // HCOLOR=2 MAGENTA,$02
 	, HGR_GREY1        
 	, HGR_GREY2        
 	, HGR_YELLOW       
@@ -1765,13 +1765,23 @@ Legend:
 //     if (hibit_prev_byte && !aPixels[iPixel-3] && aPixels[iPixel-2] && !aPixels[iPixel] && hibit_this_byte) then set first half-pixel of this byte to either blue or orange
 //   2000:A9 87 halfblack blue black black orange black orange black
 //   2400:BB F7 halfblack white white black white white white halfblack
-					if ( aPixels[2] && !aPixels[3] ) // "text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
-					{
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE );
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_RED );
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_RED );
-					}
+//  or
+//   2000:A0 83 orange should "bleed" thru
+//   2400:B0 83 should have black gap
+					//if ( aPixels[2] && !aPixels[3] ) // "text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
+
+					if ( aPixels[2] )
+						if ( aPixels[3] ) {
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , DARK_BLUE ); // Gumball: 229A: AB A9 87
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, DARK_BLUE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , BROWN ); // half luminance red Elite: 2444: BB F7
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, BROWN ); // half luminance red Gumball: 218E: AA 97
+						} else {
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_RED ); // 2000: AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_RED );
+						}
 				}
 #endif
 			}
