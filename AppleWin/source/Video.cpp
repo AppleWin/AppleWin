@@ -238,13 +238,13 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	TCHAR g_aVideoChoices[] =
 		TEXT("Monoochrome (Custom Luminance)\0")
-		TEXT("Color (standard)\0")
-		TEXT("Color (text optimized)\0")
+		TEXT("Color (Standard)\0")
 		TEXT("Color (TV emulation)\0")
+		TEXT("Color (Text optimized)\0")
 #if _DEBUG
 		TEXT("Color (Fake Half-Shift)\0")
 #endif
-		TEXT("Color (Half-Shift)")
+		TEXT("Color (Half-Shift)\0")
 		TEXT("Monochrome (Amber)\0")
 		TEXT("Monochrome (Green)\0")
 		TEXT("Monochrome (White)\0")
@@ -265,12 +265,12 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	{
 		 "Monochrome Half-Pixel Real"
 		,"Std."
-		,"Text"
 		,"TV"
+		,"Text"
 #if _DEBUG
 		,"Fake Half-Pixel"
 #endif
-		,"Color Half-Pixel Authentic "
+		,"Color Half-Pixel Authentic"
 		,"Amber"
 		,"Green"
 		,"White"
