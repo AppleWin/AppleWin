@@ -1717,7 +1717,7 @@ Legend:
    2828:80 FF 80 FF
  Edge Case for Half Luminance !
    2000:C4 00  // Green  HalfLumBlue
-   2400:c4 80  // Green  Green
+   2400:C4 80  // Green  Green
 */
 
 			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but cross 14-pixel boundaries.
@@ -1753,7 +1753,7 @@ Legend:
 //              -> 2400:00 BB F7 // Should not have blue in-between gap )
 //   21D0:C0 00    -> HalfLumBlue
 //   25D0:C0 D0 88 -> Blue black orange black orange
-//   29D0:C0 90 08 -> Blue black orange
+//   29D0:C0 90 88 -> Blue black orange
 // Game: Ultima 4 -- Ultima 4 Logo - bottom half of screen has a "mini-game" / demo -- far right has tree and blue border
 //   2176:2A AB green black_gap white blue_border // Should have black gap between green and white
 				else if ( aPixels[0] ) // prev prev pixel on
@@ -1761,15 +1761,16 @@ Legend:
 // Game: Gumball
 //   218E:AA 97    => 2000: A9 87          orange_white            // Should have no gap between orange and white
 //   229A:AB A9 87 -> 2000: 00 A9 87 white orange black blue_white // Should have no gap between blue and white
-// Torture HGR Test:
+// Torture Half-Pixel HGR Tests:  This is a real bitch to solve -- we really need to check:
+//     if (hibit_prev_byte && !aPixels[iPixel-3] && aPixels[iPixel-2] && !aPixels[iPixel] && hibit_this_byte) then set first half-pixel of this byte to either blue or orange
 //   2000:A9 87 halfblack blue black black orange black orange black
 //   2400:BB F7 halfblack white white black white white white halfblack
 					if ( aPixels[2] && !aPixels[3] ) // "text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
 					{
 						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE );
 						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16 ,y  , HGR_RED );
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16 ,y+1, HGR_RED );
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_RED );
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_RED );
 					}
 				}
 #endif
