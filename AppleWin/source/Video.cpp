@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 
 #define HALF_PIXEL_SOLID 1
+#define HALF_PIXEL_BLEED 1
 
 /* reference: technote tn-iigs-063 "Master Color Values"
 
@@ -1768,8 +1769,7 @@ Legend:
 //  or
 //   2000:A0 83 orange should "bleed" thru
 //   2400:B0 83 should have black gap
-					//if ( aPixels[2] && !aPixels[3] ) // "text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
-
+#if HALF_PIXEL_BLEED // No Half-Pixel Bleed
 					if ( aPixels[2] )
 						if ( aPixels[3] ) {
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , DARK_BLUE ); // Gumball: 229A: AB A9 87
@@ -1782,8 +1782,16 @@ Legend:
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_RED ); // 2000: AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_RED );
 						}
+#else
+					if ( aPixels[2] && !aPixels[3] ) { // "Text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_RED ); // 2000: AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_RED );
+					}
+#endif // HALF_PIXEL_BLEED
 				}
-#endif
+#endif // HALF_PIXEL_SOLID
 			}
 			x += hibit;
 
