@@ -1743,19 +1743,22 @@ Legend:
 							}
 						}
 #if HALF_PIXEL_SOLID
+// Test Patterns 
 // 81 blue
-//   2000:D5 AA D5 AA
+//   2000:D5 AA D5 AA -> 2001:AA D5  should not have black gap, should be blue
 // 82 orange
 //   2800:AA D5 AA D5
-				else if( aPixels[2] && aPixels[0] )
+// Game: Elite -- Loading Logo
+//   2444:BB F7 -> 2000:BB F7   // Should not have orange in-between gap  // Elite "Firebird" Logo
+//            -> 2400:0 BB F7 // Should not have blue in-between gap
+//   21D0:C0 00    -> HalfLumBlue
+//   25D0:C0 D0 88 -> Blue black orange black orange
+//   29D0:C0 90 08 -> Blue black orange
+// Game: Ultimra 4 -- Ultima 4 Logo - bottom half of screen has a "mini-game" / demo -- far right has tree and blue border
+//   2176:2A AB green black_gap white blue_border
+				else if ( aPixels[0] ) // prev prev pixel on
 				{
-					// Test Pattern: Ultima 4 Logo - far right - grass and blue border
-					if( aPixels[3] ) {
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_WHITE );
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_WHITE );
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_WHITE );
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_WHITE );
-					} else {
+					if( aPixels[2] && !aPixels[3]) { // this pixel on , and adjacent right pixel off
 						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE );
 						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
 						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16 ,y  , HGR_RED );
@@ -1763,7 +1766,6 @@ Legend:
 					}
 				}
 #endif
-
 			}
 			x += hibit;
 
