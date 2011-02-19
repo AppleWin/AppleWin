@@ -267,7 +267,7 @@ static LPBYTE    vidlastmem       = NULL;
 	int           g_bVideoMode          = VF_TEXT;
 
 	DWORD     g_eVideoType     = VT_COLOR_TVEMU;
-	DWORD     g_uHalfScanLines = false; // drop 50% scan lines for a more authentic look
+	DWORD     g_uHalfScanLines = true; // drop 50% scan lines for a more authentic look
 
 
 static bool g_bTextFlashState = false;
