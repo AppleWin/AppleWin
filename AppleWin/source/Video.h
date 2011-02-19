@@ -8,16 +8,17 @@
 	{
 		  VT_MONO_HALFPIXEL_REAL // uses custom monochrome
 		, VT_COLOR_STANDARD
-		, VT_COLOR_TVEMU          // 1.19.3 swapped
-		, VT_COLOR_TEXT_OPTIMIZED // 1.19.3 swapped
+		, VT_COLOR_TEXT_OPTIMIZED 
+		, VT_COLOR_TVEMU          
 #if _DEBUG
 		, VT_COLOR_HALF_SHIFT_DIM // Michael's 80's retro look --- must >= VT_COLOR_STANDARD && <= VT_COLOR_AUTHENTIC. See: V_CreateDIBSections()
+		, VT_ORG_COLOR_STANDARD
+		, VT_ORG_COLOR_TEXT_OPTIMIZED
+		, VT_COLOR_COLUMN_VISUALIZER
 #endif
-		, VT_COLOR_HALFPIXEL // Half Pixel Support VT_COLOR_AUTHENTIC -> VT_COLOR_HALFPIXEL
 		, VT_MONO_AMBER // now half pixel
 		, VT_MONO_GREEN // now half pixel
 		, VT_MONO_WHITE // now half pixel
-	//	, VT_MONO_AUTHENTIC -- been replaced with the 3 mono modes: amber, green white
 #if _DEBUG
 		, VT_MONO_CUSTOM
 		, VT_MONO_COLORIZE

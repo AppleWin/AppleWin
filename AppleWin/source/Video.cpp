@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define HALF_PIXEL_SOLID 1
 #define HALF_PIXEL_BLEED 1
 
+#define COLORS_TWEAKED 1 
+
 /* reference: technote tn-iigs-063 "Master Color Values"
 
           Color  Color Register LR HR  DHR Master Color R,G,B
@@ -60,35 +62,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define HALF_SHIFT_DITHER 0
 
-
-// STANDARD WINDOWS COLORS
-#define  CREAM            0xF6
-#define  MEDIUM_GRAY      0xF7
-#define  DARK_GRAY        0xF8
-#define  RED              0xF9
-#define  GREEN            0xFA
-#define  YELLOW           0xFB
-#define  BLUE             0xFC
-#define  MAGENTA          0xFD
-#define  CYAN             0xFE
-#define  WHITE            0xFF
-
-
 enum Color_Palette_Index_e
 {
-	// Really need to have Quarter Green and Quarter Blue for Hi-Res
-	  BLACK            
-	, DARK_RED         
-	, DARK_GREEN       // Half Green
-	, DARK_YELLOW      
-	, DARK_BLUE        // Half Blue
-	, DARK_MAGENTA     
-	, DARK_CYAN        
-	, LIGHT_GRAY       
-	, MONEY_GREEN      
-	, SKY_BLUE         
+	// The first 10 are the DEFAULT Windows colors (as it reserves 20 colors)
+	  BLACK        = 0x00 // 0x00,0x00,0x00 
+	, DARK_RED     = 0x01 // 0x80,0x00,0x00 
+	, DARK_GREEN   = 0x02 // 0x00,0x80,0x00 (Half Green)
+	, DARK_YELLOW  = 0x03 // 0x80,0x80,0x00
+	, DARK_BLUE    = 0x04 // 0x00,0x00,0x80 (Half Blue)
+	, DARK_MAGENTA = 0x05 // 0x80,0x00,0x80
+	, DARK_CYAN    = 0x06 // 0x00,0x80,0x80
+	, LIGHT_GRAY   = 0x07 // 0xC0,0xC0,0xC0
+	, MONEY_GREEN  = 0x08 // 0xC0,0xDC,0xC0 // not used
+	, SKY_BLUE     = 0x09 // 0xA6,0xCA,0xF0 // not used
 
+// Really need to have Quarter Green and Quarter Blue for Hi-Res
 // OUR CUSTOM COLORS -- the extra colors HGR mode can display
+//	, DEEP_BLUE // Breaks TV Emulation Reference Test !?!?   // Breaks the dam palette -- black monochrome TEXT output bug *sigh*
 	, DEEP_RED         
 	, LIGHT_BLUE       
 	, BROWN            
@@ -96,13 +86,13 @@ enum Color_Palette_Index_e
 	, PINK             
 	, AQUA             
 
-// CUSTOM HGR COLORS (don't change order) - For tv emulation g_nAppMode
+// CUSTOM HGR COLORS (don't change order) - For tv emulation HGR Video Mode
 	, HGR_BLACK        
 	, HGR_WHITE        
-	, HGR_BLUE         // HCOLOR=6 BLUE  , $81
-	, HGR_RED          // HCOLOR=5 ORANGE, $82
-	, HGR_GREEN        // HCOLOR=1 GREEN , $01 
-	, HGR_MAGENTA      // HCOLOR=2 MAGENTA,$02
+	, HGR_BLUE         // HCOLOR=6 BLUE   , $81
+	, HGR_RED          // HCOLOR=5 ORANGE , $82
+	, HGR_GREEN        // HCOLOR=1 GREEN  , $01 
+	, HGR_MAGENTA      // HCOLOR=2 MAGENTA, $02
 	, HGR_GREY1        
 	, HGR_GREY2        
 	, HGR_YELLOW       
@@ -111,7 +101,7 @@ enum Color_Palette_Index_e
 	, HGR_PINK         
 
 // MONOCHROME
-// NOTE: 50% is assumed to come after 100% luminance !!!  See: DrawMonoHiResSource()
+	// NOTE: 50% is assumed to come after 100% luminance !!!  See: V_CreateLookup_MonoHiRes()
 	// User customizable
 	, MONOCHROME_CUSTOM     // 100% luminance
 	, MONOCHROME_CUSTOM_50  //  50% luminance
@@ -120,8 +110,6 @@ enum Color_Palette_Index_e
 //	, MONOCHROME_AMBER_50 // BUG - something trashing our palette entry !!!
 	, MONOCHROME_GREEN
 //	, MONOCHROME_GREEN_50 // BUG - something trashing our palette entry !!!
-	, MONOCHROME_WHITE
-	, MONOCHROME_WHITE_50
 
 	, DEBUG_COLORS_START
 	, DEBUG_COLORS_END = DEBUG_COLORS_START + NUM_DEBUG_COLORS
@@ -131,7 +119,64 @@ enum Color_Palette_Index_e
 //	, LOGO_COLORS_END = LOGO_COLORS_START + 128
 
 	, NUM_COLOR_PALETTE
+
+	// The last 10 are the DEFAULT Windows colors (as it reserves 20 colors)
+	, CREAM       = 0xF6
+	, MEDIUM_GRAY = 0xF7
+	, DARK_GRAY   = 0xF8
+	, RED         = 0xF9
+	, GREEN       = 0xFA
+	, YELLOW      = 0xFB
+	, BLUE        = 0xFC
+	, MAGENTA     = 0xFD
+	, CYAN        = 0xFE
+	, WHITE       = 0xFF
 };
+
+// __ Map HGR color index to Palette index
+	enum ColorMapping
+	{
+		  CM_Magenta
+		, CM_Blue
+		, CM_Green
+		, CM_Orange
+		, CM_Black
+		, CM_White
+		, NUM_COLOR_MAPPING
+	};
+
+const BYTE HiresToPalIndex[ NUM_COLOR_MAPPING ] =
+	{
+		  HGR_MAGENTA
+		, HGR_BLUE
+		, HGR_GREEN
+		, HGR_RED
+		, HGR_BLACK
+		, HGR_WHITE
+	};
+
+const BYTE LoresResColors[16] = {
+//		BLACK,     DEEP_RED, DARK_BLUE, MAGENTA,
+//		DARK_GREEN,DARK_GRAY,BLUE,      LIGHT_BLUE,
+//		BROWN,     ORANGE,   LIGHT_GRAY,PINK,
+//		GREEN,     YELLOW,   AQUA,      WHITE
+		BLACK,     DEEP_RED, DARK_BLUE, MAGENTA,
+		DARK_GREEN,DARK_GRAY,BLUE,      LIGHT_BLUE,
+		BROWN,     ORANGE,   LIGHT_GRAY,PINK,
+		GREEN,     YELLOW,   AQUA,      HGR_WHITE
+	};
+
+
+const BYTE DoubleHiresPalIndex[16] = {
+//		BLACK,   DARK_BLUE, DARK_GREEN,BLUE,
+//		BROWN,   LIGHT_GRAY,GREEN,     AQUA,
+//		DEEP_RED,MAGENTA,   DARK_GRAY, LIGHT_BLUE,
+//		ORANGE,  PINK,      YELLOW,    WHITE
+		BLACK,   DARK_BLUE, DARK_GREEN,BLUE,
+		BROWN,   LIGHT_GRAY, GREEN,     AQUA,
+		DEEP_RED,MAGENTA,   DARK_GRAY, LIGHT_BLUE,
+		ORANGE,  PINK,      YELLOW,    HGR_WHITE
+	};
 
 	const int SRCOFFS_40COL   = 0;                       //    0
 	const int SRCOFFS_IIPLUS  = (SRCOFFS_40COL  +  256); //  256
@@ -156,7 +201,7 @@ enum Color_Palette_Index_e
                                  g_pFramebufferinfo->bmiColors[i].rgbBlue     = b; \
 								 g_pFramebufferinfo->bmiColors[i].rgbReserved = PC_NOCOLLAPSE;
 
-#define  HGR_MATRIX_YOFFSET 2	// For tv emulation g_nAppMode
+#define  HGR_MATRIX_YOFFSET 2	// For tv emulation HGR Video Mode
 
 // video scanner constants
 int const kHBurstClock      =    53; // clock when Color Burst starts
@@ -198,7 +243,7 @@ static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 static LPBYTE        g_pTextBank1; // Aux
 static LPBYTE        g_pTextBank0; // Main
 
-// For tv emulation g_nAppMode
+// For tv emulation HGR Video Mode
 // 2 extra scan lines on bottom?
 static BYTE          hgrpixelmatrix[FRAMEBUFFER_W/2][FRAMEBUFFER_H/2 + 2 * HGR_MATRIX_YOFFSET];
 static BYTE          colormixbuffer[6];
@@ -221,7 +266,7 @@ static LPBYTE    vidlastmem       = NULL;
 
 	int           g_bVideoMode          = VF_TEXT;
 
-	DWORD     g_eVideoType     = VT_COLOR_HALFPIXEL; // VT_COLOR_TVEMU;
+	DWORD     g_eVideoType     = VT_COLOR_TVEMU;
 	DWORD     g_uHalfScanLines = false; // drop 50% scan lines for a more authentic look
 
 
@@ -238,14 +283,16 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	TCHAR g_aVideoChoices[] =
-		TEXT("Monoochrome (Custom Luminance)\0")
+		TEXT("Monochrome (Custom Luminance)\0")
 		TEXT("Color (Standard)\0")
+		TEXT("Color (Text Optimized)\0")
 		TEXT("Color (TV emulation)\0")
-		TEXT("Color (Text optimized)\0")
 #if _DEBUG
 		TEXT("Color (Fake Half-Shift)\0")
+		TEXT("ORIGINAL Color (Standard)\0")
+		TEXT("ORIGINAL Color (Text optimized)\0")
+		TEXT("Column Visualizer (Psychedelic)\0")
 #endif
-		TEXT("Color (Half-Shift)\0")
 		TEXT("Monochrome (Amber)\0")
 		TEXT("Monochrome (Green)\0")
 		TEXT("Monochrome (White)\0")
@@ -260,55 +307,58 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 #endif
 		;
 
+	// AppleWin 1.19.4 VT_COLOR_AUTHENTIC -> VT_COLOR_HALFPIXEL -> VT_COLOR_STANDARD "Color Half-Pixel Authentic
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	// The window title will be set to this.
 	char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
-		 "Monochrome Half-Pixel Real"
-		,"Std."
-		,"TV"
-		,"Text"
+		  "Monochrome (Custom)"
+		, "Standard"        
+		, "Text Optimized"
+		, "TV"
 #if _DEBUG
-		,"Fake Half-Pixel"
+		, "Fake Half-Pixel (Retro)"
+		, "ORIGINAL Standard"
+		, "ORIGINAL Text"
+		, "Column Visualizer (Psychedelic)"
 #endif
-		,"Color Half-Pixel Authentic"
-		,"Amber"
-		,"Green"
-		,"White"
+		, "Amber"
+		, "Green"
+		, "White"
 #if _DEBUG
 		, "Custom"
-		,"Monochrome Colorize"
-		,"Monochrome Half-Pixel Colorize"
-		,"Monochrome Half-Pixel 75"
-		,"Monochrome Half-Pixel 95"
-		,"Monochrome Half-Pixel Emboss"
-		,"Monochrome Half-Pixel Fake"
+		, "Monochrome Colorize"
+		, "Monochrome Half-Pixel Colorize"
+		, "Monochrome Half-Pixel 75"
+		, "Monochrome Half-Pixel 95"
+		, "Monochrome Half-Pixel Emboss"
+		, "Monochrome Half-Pixel Fake"
 #endif
 	};
 
 // Prototypes (Private) _____________________________________________
 
-	void DrawDHiResSource ();
-	void DrawHiResSource ();
-	void DrawHiResSourceHalfShiftFull ();
-	void DrawHiResSourceHalfShiftDim ();
-	void DrawLoResSource ();
-
-	void DrawTextSource (HDC dc);
-// Monochrome
-	void DrawMonoDHiResSource ();
-	void DrawMonoHiResSource ();
-	void DrawMonoLoResSource ();
-	void DrawMonoTextSource (HDC dc);
+	void V_CreateLookup_DoubleHires ();
+	void V_CreateLookup_Hires (); // Old "Full-Pixel" support only: STANDARD, TEXT_OPTIMIZED, TVEMU
+	void V_CreateLookup_HiResHalfPixel_Authentic (); // New "Half_Pixel" support: STANDARD, TEXT_OPTIMIZED
+	void V_CreateLookup_HiresHalfShiftFull ();
+	void V_CreateLookup_HiresHalfShiftDim ();
+	void V_CreateLookup_Lores ();
+	void V_CreateLookup_Text (HDC dc);
+	void V_CreateLookup_ColumnVisualizer ();
+// Monochrome Full-Pixel Support
+	void V_CreateLookup_MonoDoubleHiRes ();
+	void V_CreateLookup_MonoHiRes ();
+	void V_CreateLookup_MonoLoRes ();
+	void V_CreateLookup_MonoText (HDC dc);
 // Monochrome Half-Pixel Support
-	void CreateColorLookup_MonoHiResHalfPixel_75 ();
-	void CreateColorLookup_MonoHiResHalfPixel_95 ();
-	void CreateColorLookup_MonoHiResHalfPixel_Emboss ();
-	void CreateColorLookup_MonoHiResHalfPixel_Fake ();
-	void CreateColorLookup_MonoHiResHalfPixel_Real ();
-	void CreateColorLookup_MonoHiResHalfPixel_Colorize ();
-	void CreateColorLookup_MonoHiRes_Colorize ();
-	void CreateColorLookup_HiResHalfPixel_Authentic ();
+	void V_CreateLookup_MonoHiResHalfPixel_75 ();
+	void V_CreateLookup_MonoHiResHalfPixel_95 ();
+	void V_CreateLookup_MonoHiResHalfPixel_Emboss ();
+	void V_CreateLookup_MonoHiResHalfPixel_Fake ();
+	void V_CreateLookup_MonoHiResHalfPixel_Real ();
+	void V_CreateLookup_MonoHiResHalfPixel_Colorize ();
+	void V_CreateLookup_MonoHiRes_Colorize ();
 
 	bool g_bDisplayPrintScreenFileName = false;
 	void Util_MakeScreenShotFileName( char *pFinalFileName_ );
@@ -450,7 +500,7 @@ int GetMonochromeIndex()
 #endif
 		case VT_MONO_AMBER : iMonochrome = MONOCHROME_AMBER ; break;
 		case VT_MONO_GREEN : iMonochrome = MONOCHROME_GREEN ; break;
-		case VT_MONO_WHITE : iMonochrome = WHITE            ; break;
+		case VT_MONO_WHITE : iMonochrome = HGR_WHITE        ; break;
 		default            : iMonochrome = MONOCHROME_CUSTOM; break; // caller will use MONOCHROME_CUSTOM MONOCHROME_CUSTOM_50 !
 	}
 
@@ -466,37 +516,63 @@ void V_CreateIdentityPalette ()
 	}
 	g_hPalette = (HPALETTE)0;
 
-	SETFRAMECOLOR(BLACK,       0x00,0x00,0x00);
-	SETFRAMECOLOR(DARK_RED,    0x80,0x00,0x00);
-	SETFRAMECOLOR(DARK_GREEN,  0x00,0x80,0x00);
-	SETFRAMECOLOR(DARK_YELLOW, 0x80,0x80,0x00);
-	SETFRAMECOLOR(DARK_BLUE,   0x00,0x00,0x80);
-	SETFRAMECOLOR(DARK_MAGENTA,0x80,0x00,0x80);
-	SETFRAMECOLOR(DARK_CYAN,   0x00,0x80,0x80);
-	SETFRAMECOLOR(LIGHT_GRAY,  0xC0,0xC0,0xC0);
-	SETFRAMECOLOR(MONEY_GREEN, 0xC0,0xDC,0xC0);
-	SETFRAMECOLOR(SKY_BLUE,    0xA6,0xCA,0xF0);
+	SETFRAMECOLOR(BLACK,       0x00,0x00,0x00); // 0
+	SETFRAMECOLOR(DARK_RED,    0x80,0x00,0x00); // 1 // used by TV 
+	SETFRAMECOLOR(DARK_GREEN,  0x00,0x80,0x00); // 2
+	SETFRAMECOLOR(DARK_YELLOW, 0x80,0x80,0x00); // 3
+	SETFRAMECOLOR(DARK_BLUE,   0x00,0x00,0x80); // 4 // Used by VT_COLOR_HALF_SHIFT_DIM (Michael's Retro look)
+	SETFRAMECOLOR(DARK_MAGENTA,0x80,0x00,0x80); // 5
+	SETFRAMECOLOR(DARK_CYAN,   0x00,0x80,0x80); // 6
+	SETFRAMECOLOR(LIGHT_GRAY,  0xC0,0xC0,0xC0); // 7 // GR: COLOR=10 Used by VT_COLOR_HALF_SHIFT_DIM (Michael's Retro look)
+	SETFRAMECOLOR(MONEY_GREEN, 0xC0,0xDC,0xC0); // 8 // not used
+	SETFRAMECOLOR(SKY_BLUE,    0xA6,0xCA,0xF0); // 9 // not used
 
 	// SET FRAME BUFFER TABLE ENTRIES TO CUSTOM COLORS
-	SETFRAMECOLOR(DEEP_RED,  0xD0,0x00,0x30);
-	SETFRAMECOLOR(LIGHT_BLUE,0x60,0xA0,0xFF);
-	SETFRAMECOLOR(BROWN,     0x80,0x50,0x00);
-	SETFRAMECOLOR(ORANGE,    0xFF,0x80,0x00);
-	SETFRAMECOLOR(PINK,      0xFF,0x90,0x80);
-	SETFRAMECOLOR(AQUA,      0x40,0xFF,0x90);
+#if COLORS_TWEAKED
+	SETFRAMECOLOR(DARK_RED,    0x9D,0x09,0x66); // 1 // Linards Tweaked
+	SETFRAMECOLOR(DARK_GREEN,  0x00,0x76,0x1A); // 2 // Linards Tweaked
+	SETFRAMECOLOR(DARK_BLUE,   0x2A,0x2A,0xE5); // 4 // Linards Tweaked - Used by VT_COLOR_HALF_SHIFT_DIM (Michael's Retro look)
 
-	SETFRAMECOLOR(HGR_BLACK,  0x00,0x00,0x00);	// For tv emulation g_nAppMode
-	SETFRAMECOLOR(HGR_WHITE,  0xFF,0xFF,0xFE); // BUG: PALETTE COLLAPS!  NOT white!? Win32 collapses the palette if you have duplicate colors!
-	SETFRAMECOLOR(HGR_BLUE,   0x00,0x80,0xFF);
-	SETFRAMECOLOR(HGR_RED,    0xF0,0x50,0x00);
-	SETFRAMECOLOR(HGR_GREEN,  0x20,0xC0,0x00);
-	SETFRAMECOLOR(HGR_MAGENTA,0xA0,0x00,0xFF);
+	SETFRAMECOLOR(DEEP_RED,  0x9D,0x09,0x66); // 0xD0,0x00,0x30 -> Linards Tweaked 0x9D,0x09,0x66
+	SETFRAMECOLOR(LIGHT_BLUE,0xAA,0xAA,0xFF); // 0x60,0xA0,0xFF -> Linards Tweaked 0xAA,0xAA,0xFF
+	SETFRAMECOLOR(BROWN,     0x55,0x55,0x00); // 0x80,0x50,0x00 -> Linards Tweaked 0x55,0x55,0x00
+	SETFRAMECOLOR(ORANGE,    0xF2,0x5E,0x00); // 0xFF,0x80,0x00 -> Linards Tweaked 0xF2,0x5E,0x00
+	SETFRAMECOLOR(PINK,      0xFF,0x89,0xE5); // 0xFF,0x90,0x80 -> Linards Tweaked 0xFF,0x89,0xE5
+	SETFRAMECOLOR(AQUA,      0x62,0xF6,0x99); // 0x40,0xFF,0x90 -> Linards Tweaked 0x62,0xF6,0x99
+
+	SETFRAMECOLOR(HGR_BLACK,  0x00,0x00,0x00); // For TV emulation HGR Video Mode
+	SETFRAMECOLOR(HGR_WHITE,  0xFF,0xFF,0xFE); // BUG: PALETTE COLLAPSE!  NOT white!? Win32 collapses the palette if you have duplicate colors!
+	SETFRAMECOLOR(HGR_BLUE,   0x0D,0xA1,0xFF); // 0x00,0x80,0xFF -> Linards Tweaked 0x0D,0xA1,0xFF
+	SETFRAMECOLOR(HGR_RED,    0xF2,0x5E,0x00); // 0xF0,0x50,0x00 -> Linards Tweaked 0xF2,0x5E,0x00 
+	SETFRAMECOLOR(HGR_GREEN,  0x38,0xCB,0x00); // 0x20,0xC0,0x00 -> Linards Tweaked 0x38,0xCB,0x00
+	SETFRAMECOLOR(HGR_MAGENTA,0xC7,0x34,0xFF); // 0xA0,0x00,0xFF -> Linards Tweaked 0xC7,0x34,0xFF
 	SETFRAMECOLOR(HGR_GREY1,  0x80,0x80,0x80);
 	SETFRAMECOLOR(HGR_GREY2,  0x80,0x80,0x80);
-	SETFRAMECOLOR(HGR_YELLOW, 0xD0,0xB0,0x10);
-	SETFRAMECOLOR(HGR_AQUA,   0x20,0xB0,0xB0);
-	SETFRAMECOLOR(HGR_PURPLE, 0x60,0x50,0xE0);
-	SETFRAMECOLOR(HGR_PINK,   0xD0,0x40,0xA0);
+	SETFRAMECOLOR(HGR_YELLOW, 0x9E,0x9E,0x00); // 0xD0,0xB0,0x10 -> 0x9E,0x9E,0x00
+	SETFRAMECOLOR(HGR_AQUA,   0x00,0xCD,0x4A); // 0x20,0xB0,0xB0 -> 0x00,0xCD,0x4A
+	SETFRAMECOLOR(HGR_PURPLE, 0x61,0x61,0xFF); // 0x60,0x50,0xE0 -> 0x61,0x61,0xFF
+	SETFRAMECOLOR(HGR_PINK,   0xFF,0x32,0xB5); // 0xD0,0x40,0xA0 -> 0xFF,0x32,0xB5
+#else
+	SETFRAMECOLOR(DEEP_RED,  0xD0,0x00,0x30); // 0xD0,0x00,0x30
+	SETFRAMECOLOR(LIGHT_BLUE,0x60,0xA0,0xFF); // 0x60,0xA0,0xFF
+	SETFRAMECOLOR(BROWN,     0x80,0x50,0x00); // 0x80,0x50,0x00
+	SETFRAMECOLOR(ORANGE,    0xFF,0x80,0x00); // 0xFF,0x80,0x00
+	SETFRAMECOLOR(PINK,      0xFF,0x90,0x80); // 0xFF,0x90,0x80
+	SETFRAMECOLOR(AQUA,      0x40,0xFF,0x90); // 0x40,0xFF,0x90
+
+	SETFRAMECOLOR(HGR_BLACK,  0x00,0x00,0x00); // For TV emulation HGR Video Mode
+	SETFRAMECOLOR(HGR_WHITE,  0xFF,0xFF,0xFE); // BUG: PALETTE COLLAPSE!  NOT white!? Win32 collapses the palette if you have duplicate colors!
+	SETFRAMECOLOR(HGR_BLUE,   0x00,0x80,0xFF); // 0x00,0x80,0xFF
+	SETFRAMECOLOR(HGR_RED,    0xF0,0x50,0x00); // 0xF0,0x50,0x00
+	SETFRAMECOLOR(HGR_GREEN,  0x20,0xC0,0x00); // 0x20,0xC0,0x00
+	SETFRAMECOLOR(HGR_MAGENTA,0xA0,0x00,0xFF); // 0xA0,0x00,0xFF
+	SETFRAMECOLOR(HGR_GREY1,  0x80,0x80,0x80);
+	SETFRAMECOLOR(HGR_GREY2,  0x80,0x80,0x80);
+	SETFRAMECOLOR(HGR_YELLOW, 0xD0,0xB0,0x10); // 0xD0,0xB0,0x10
+	SETFRAMECOLOR(HGR_AQUA,   0x20,0xB0,0xB0); // 0x20,0xB0,0xB0
+	SETFRAMECOLOR(HGR_PURPLE, 0x60,0x50,0xE0); // 0x60,0x50,0xE0
+	SETFRAMECOLOR(HGR_PINK,   0xD0,0x40,0xA0); // 0xD0,0x40,0xA0
+#endif
 
 	SETFRAMECOLOR( MONOCHROME_CUSTOM
 		, GetRValue(monochrome)
@@ -510,13 +586,25 @@ void V_CreateIdentityPalette ()
 		, ((GetBValue(monochrome)/2) & 0xFF)
 	);
 
-	// SEE: DrawMonoTextSource
+	// SEE: V_CreateLookup_MonoText
 	SETFRAMECOLOR( MONOCHROME_AMBER   , 0xFF,0x80,0x01); // Used for Monochrome Hi-Res graphics not text!
 	SETFRAMECOLOR( MONOCHROME_GREEN   , 0x00,0xC0,0x01); // Used for Monochrome Hi-Res graphics not text!
 	// BUG PALETTE COLLAPSE: WTF?? Soon as we set 0xFF,0xFF,0xFF we lose text colors?!?!
 	// Windows is collapsing the palette!!!
-	SETFRAMECOLOR( MONOCHROME_WHITE   , 0xFE,0xFE,0xFE); // Used for Monochrome Hi-Res graphics not text!
+	//SETFRAMECOLOR( MONOCHROME_WHITE   , 0xFE,0xFE,0xFE); // Used for Monochrome Hi-Res graphics not text!
 
+#if COLORS_TWEAKED
+	SETFRAMECOLOR(CREAM,       0xFF,0xFB,0xF0); // F6
+	SETFRAMECOLOR(MEDIUM_GRAY, 0xA0,0xA0,0xA4); // F7
+	SETFRAMECOLOR(DARK_GRAY,   0x80,0x80,0x80); // F8
+	SETFRAMECOLOR(RED,         0xFF,0x00,0x00); // F9
+	SETFRAMECOLOR(GREEN,       0x38,0xCB,0x00); // FA Linards Tweaked
+	SETFRAMECOLOR(YELLOW,      0xD5,0xD5,0x1A); // FB Linards Tweaked
+	SETFRAMECOLOR(BLUE,        0x0D,0xA1,0xFF); // FC Linards Tweaked
+	SETFRAMECOLOR(MAGENTA,     0xC7,0x34,0xFF); // FD Linards Tweaked
+	SETFRAMECOLOR(CYAN,        0x00,0xFF,0xFF); // FE
+	SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF); // FF
+#else
 	SETFRAMECOLOR(CREAM,       0xFF,0xFB,0xF0); // F6
 	SETFRAMECOLOR(MEDIUM_GRAY, 0xA0,0xA0,0xA4); // F7
 	SETFRAMECOLOR(DARK_GRAY,   0x80,0x80,0x80); // F8
@@ -527,6 +615,7 @@ void V_CreateIdentityPalette ()
 	SETFRAMECOLOR(MAGENTA,     0xFF,0x00,0xFF); // FD
 	SETFRAMECOLOR(CYAN,        0x00,0xFF,0xFF); // FE
 	SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF); // FF
+#endif
 
 	// IF WE ARE IN A PALETTIZED VIDEO MODE, CREATE AN IDENTITY PALETTE
 	HWND window = GetDesktopWindow();
@@ -664,7 +753,7 @@ void V_CreateIdentityPalette ()
 }
 
 //===========================================================================
-void DrawMonoTextSource (HDC hDstDC)
+void V_CreateLookup_MonoText (HDC hDstDC)
 {
 	static HBITMAP hCharBitmap[4];
 	HDC     hSrcDC  = CreateCompatibleDC(hDstDC);
@@ -749,62 +838,65 @@ void V_CreateDIBSections ()
 		g_aSourceStartofLine[ y ] = g_pSourcePixels + SRCOFFS_TOTAL*((MAX_SOURCE_Y-1) - y);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory(g_pSourcePixels,SRCOFFS_TOTAL*512);
+	ZeroMemory(g_pSourcePixels,SRCOFFS_TOTAL*512); // 32 bytes/pixel * 16 colors = 512 bytes/row
 
 	// First monochrome mode is seperate from others
 	if ((g_eVideoType >= VT_COLOR_STANDARD)
-	&&  (g_eVideoType <= VT_COLOR_HALFPIXEL))
+	&&  (g_eVideoType <  VT_MONO_AMBER))
 	{
-		DrawTextSource(sourcedc);
-		DrawLoResSource();
+		V_CreateLookup_Text(sourcedc);
+		V_CreateLookup_Lores();
 
+		if ( g_eVideoType == VT_COLOR_TVEMU )
+			V_CreateLookup_Hires();
+		else
 #if _DEBUG
+		if ((g_eVideoType == VT_ORG_COLOR_STANDARD) || (g_eVideoType == VT_ORG_COLOR_TEXT_OPTIMIZED))
+			V_CreateLookup_Hires();
+		else
 		if (g_eVideoType == VT_COLOR_HALF_SHIFT_DIM)
-			DrawHiResSourceHalfShiftDim();
+			V_CreateLookup_HiresHalfShiftDim();
+		else
+		if (g_eVideoType == VT_COLOR_COLUMN_VISUALIZER)
+			V_CreateLookup_ColumnVisualizer();
 		else
 #endif
-		if (g_eVideoType == VT_COLOR_HALFPIXEL)
-			CreateColorLookup_HiResHalfPixel_Authentic();
-		else
-			DrawHiResSource();
-
-		DrawDHiResSource();
+			V_CreateLookup_HiResHalfPixel_Authentic();
+		V_CreateLookup_DoubleHires();
 	}
 	else
 	{
-		DrawMonoTextSource(sourcedc);
-		DrawMonoLoResSource();
+		V_CreateLookup_MonoText(sourcedc);
+		V_CreateLookup_MonoLoRes();
 
 		switch (g_eVideoType)
 		{
 			case VT_MONO_AMBER             : /* intentional fall-thru */
 			case VT_MONO_GREEN             : /* intentional fall-thru */
 			case VT_MONO_WHITE             : /* intentional fall-thru */                    
-			case VT_MONO_HALFPIXEL_REAL    : CreateColorLookup_MonoHiResHalfPixel_Real()    ; break;
+			case VT_MONO_HALFPIXEL_REAL    : V_CreateLookup_MonoHiResHalfPixel_Real()    ; break;
 #if _DEBUG
-			case VT_MONO_CUSTOM            : DrawMonoHiResSource()                          ; break;
-			case VT_MONO_HALFPIXEL_COLORIZE: CreateColorLookup_MonoHiResHalfPixel_Colorize(); break;
-			case VT_MONO_HALFPIXEL_75      : CreateColorLookup_MonoHiResHalfPixel_75()      ; break;
-			case VT_MONO_HALFPIXEL_95      : CreateColorLookup_MonoHiResHalfPixel_95()      ; break;
-			case VT_MONO_HALFPIXEL_EMBOSS  : CreateColorLookup_MonoHiResHalfPixel_Emboss()  ; break;
-			case VT_MONO_HALFPIXEL_FAKE    : CreateColorLookup_MonoHiResHalfPixel_Fake()    ; break;
-			case VT_MONO_COLORIZE          : CreateColorLookup_MonoHiRes_Colorize()         ; break;
+			case VT_MONO_CUSTOM            : V_CreateLookup_MonoHiRes()                          ; break;
+			case VT_MONO_HALFPIXEL_COLORIZE: V_CreateLookup_MonoHiResHalfPixel_Colorize(); break;
+			case VT_MONO_HALFPIXEL_75      : V_CreateLookup_MonoHiResHalfPixel_75()      ; break;
+			case VT_MONO_HALFPIXEL_95      : V_CreateLookup_MonoHiResHalfPixel_95()      ; break;
+			case VT_MONO_HALFPIXEL_EMBOSS  : V_CreateLookup_MonoHiResHalfPixel_Emboss()  ; break;
+			case VT_MONO_HALFPIXEL_FAKE    : V_CreateLookup_MonoHiResHalfPixel_Fake()    ; break;
+			case VT_MONO_COLORIZE          : V_CreateLookup_MonoHiRes_Colorize()         ; break;
 #endif
-			default: DrawMonoHiResSource(); break;
+			default: V_CreateLookup_MonoHiRes(); break;
 		}
-		DrawMonoDHiResSource();
+		V_CreateLookup_MonoDoubleHiRes();
 	}
 	DeleteDC(sourcedc);
 }
 
 //===========================================================================
-void DrawDHiResSource () {
-  BYTE colorval[16] = {BLACK,   DARK_BLUE, DARK_GREEN,BLUE,
-                       BROWN,   LIGHT_GRAY,GREEN,     AQUA,
-                       DEEP_RED,MAGENTA,   DARK_GRAY, LIGHT_BLUE,
-                       ORANGE,  PINK,      YELLOW,    WHITE};
+void V_CreateLookup_DoubleHires ()
+{
 #define OFFSET  3
 #define SIZE    10
+
   for (int column = 0; column < 256; column++) {
     int coloffs = SIZE * column;
     for (unsigned byteval = 0; byteval < 256; byteval++) {
@@ -830,12 +922,7 @@ void DrawDHiResSource () {
 
 	  if (g_eVideoType == VT_COLOR_TEXT_OPTIMIZED)
 	  {
-	    /***          
-	    activate for fringe reduction on white hgr text
-	    drawback: loss of color mix patterns in hgr g_nAppMode.
-	    select g_eVideoType by index
-	    ***/
-
+	    // Activate for fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR Video Mode.
 		for (pixel = 0; pixel < 13; pixel++)
 		{
 		  if ((pattern & (0xF << pixel)) == (unsigned)(0xF << pixel))
@@ -847,8 +934,8 @@ void DrawDHiResSource () {
 
       int y = byteval << 1;
       for (int x = 0; x < SIZE; x++) {
-        SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,colorval[color[x]]);
-        SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,colorval[color[x]]);
+        SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,DoubleHiresPalIndex[ color[x] ]);
+        SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,DoubleHiresPalIndex[ color[x] ]);
       }
     }
   }
@@ -856,41 +943,8 @@ void DrawDHiResSource () {
 #undef OFFSET
 }
 
-
-	enum ColorMapping
-	{
-		  CM_Magenta
-		, CM_Blue
-		, CM_Green
-		, CM_Orange
-		, CM_Black
-		, CM_White
-		, NUM_COLOR_MAPPING
-	};
-
-	const BYTE aColorIndex[ NUM_COLOR_MAPPING ] =
-	{
-		  HGR_MAGENTA
-		, HGR_BLUE
-		, HGR_GREEN
-		, HGR_RED
-		, HGR_BLACK
-		, HGR_WHITE
-	};
-
-	const BYTE aColorDimmedIndex[ NUM_COLOR_MAPPING ] =
-	{
-		DARK_MAGENTA, // <- HGR_MAGENTA
-		DARK_BLUE   , // <- HGR_BLUE
-		DARK_GREEN  , // <- HGR_GREEN
-		DEEP_RED    , // <- HGR_RED
-		HGR_BLACK   , // no change
-		LIGHT_GRAY    // HGR_WHITE
-	};
-
-
 //===========================================================================
-void DrawHiResSourceHalfShiftDim ()
+void V_CreateLookup_HiresHalfShiftDim ()
 {
 	//  BYTE colorval[6] = {MAGENTA,BLUE,GREEN,ORANGE,BLACK,WHITE};
 	// BYTE colorval[6] = {HGR_MAGENTA,HGR_BLUE,HGR_GREEN,HGR_RED,HGR_BLACK,HGR_WHITE};
@@ -967,10 +1021,10 @@ void DrawHiResSourceHalfShiftDim ()
 					switch (color)
 					{
 						case CM_Magenta:
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_MAGENTA  ); // aColorIndex
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , DARK_MAGENTA ); // aColorDimmedIndex
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_MAGENTA  ); // aColorIndex
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, DARK_MAGENTA ); // aColorDimmedIndex
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_MAGENTA  ); // HiresToPalIndex
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , DARK_MAGENTA ); // HiresDimmedIndex
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_MAGENTA  ); // HiresToPalIndex
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, DARK_MAGENTA ); // HiresDimmedIndex
 							break;
 						case CM_Blue   :
 							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_BLUE  );
@@ -1061,11 +1115,11 @@ void DrawHiResSourceHalfShiftDim ()
 
 
 //===========================================================================
-void DrawHiResSource ()
+void V_CreateLookup_Hires ()
 {
 	int iMonochrome = GetMonochromeIndex();
 
-	//  BYTE colorval[6] = {MAGENTA,BLUE,GREEN,ORANGE,BLACK,WHITE};
+	// BYTE colorval[6] = {MAGENTA,BLUE,GREEN,ORANGE,BLACK,WHITE};
 	// BYTE colorval[6] = {HGR_MAGENTA,HGR_BLUE,HGR_GREEN,HGR_RED,HGR_BLACK,HGR_WHITE};
 	for (int iColumn = 0; iColumn < 16; iColumn++)
 	{
@@ -1108,32 +1162,33 @@ void DrawHiResSource ()
 					}
 					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
 					{
-						/***          
-						activate for fringe reduction on white HGR text - 
-						drawback: loss of color mix patterns in HGR Apple Mode.
-						select Video Type by index exclusion
-						***/
-						if ((g_eVideoType == VT_COLOR_STANDARD) || (g_eVideoType == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
-							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// // No white HGR text optimization
+						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
+						// VT_COLOR_STANDARD = Fill in colors in between white pixels
+						// VT_COLOR_TVEMU    = Fill in colors in between white pixels  (Post Processing will mix/merge colors)
+						// VT_COLOR_TEXT_OPTIMIZED --> !(aPixels[iPixel-2] && aPixels[iPixel+2]) = Don't fill in colors in between white
+#if _DEBUG
+						if ((g_eVideoType == VT_ORG_COLOR_STANDARD) || (g_eVideoType == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
+#else
+						if ((g_eVideoType == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
+#endif
+							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
 					}
 
-					//if (g_eVideoType == VT_MONO_AUTHENTIC)
-					//{
+					//if (g_eVideoType == VT_MONO_AUTHENTIC) {
 					//	int nMonoColor = (color != CM_Black) ? iMonochrome : BLACK;
 					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , nMonoColor); // buggy
 					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , nMonoColor); // buggy
 					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,BLACK); // BL
 					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,BLACK); // BR
-					//}
-					//else
+					//} else
 					{
 						// Colors - Top/Bottom Left/Right
 						// cTL cTR
 						// cBL cBR
-						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,aColorIndex[color]); // TL
-						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,aColorIndex[color]); // TR
-						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,aColorIndex[color]); // BL
-						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,aColorIndex[color]); // BR
+						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,HiresToPalIndex[color]); // cTL
+						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
+						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
+						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
 					}
 					x += 2;
 				}
@@ -1144,20 +1199,17 @@ void DrawHiResSource ()
 
 
 //===========================================================================
-void DrawLoResSource () {
-  BYTE colorval[16] = {BLACK,     DEEP_RED, DARK_BLUE, MAGENTA,
-                       DARK_GREEN,DARK_GRAY,BLUE,      LIGHT_BLUE,
-                       BROWN,     ORANGE,   LIGHT_GRAY,PINK,
-                       GREEN,     YELLOW,   AQUA,      WHITE};
-  for (int color = 0; color < 16; color++)
-    for (int x = 0; x < 16; x++)
-      for (int y = 0; y < 16; y++)
-        SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,colorval[color]);
+void V_CreateLookup_Lores ()
+{
+	for (int color = 0; color < 16; color++)
+		for (int x = 0; x < 16; x++)
+			for (int y = 0; y < 16; y++)
+				SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,LoresResColors[color]);
 }
 
 
 //===========================================================================
-void DrawMonoDHiResSource ()
+void V_CreateLookup_MonoDoubleHiRes ()
 {
 	int iMonochrome = GetMonochromeIndex();
 	
@@ -1190,7 +1242,7 @@ void DrawMonoDHiResSource ()
 }
 
 //===========================================================================
-void DrawMonoHiResSource ()
+void V_CreateLookup_MonoHiRes ()
 {
 	int iMonochrome = GetMonochromeIndex();
 	
@@ -1328,7 +1380,7 @@ void DrawMonoHiResSource ()
 
 // This matches half-pixel exactly
 //===========================================================================
-void CreateColorLookup_MonoHiResHalfPixel_75 ()
+void V_CreateLookup_MonoHiResHalfPixel_75 ()
 {
 	int iMonochrome = GetMonochromeIndex();
 	
@@ -1400,7 +1452,7 @@ void CreateColorLookup_MonoHiResHalfPixel_75 ()
 
 
 //===========================================================================
-void CreateColorLookup_MonoHiResHalfPixel_95 ()
+void V_CreateLookup_MonoHiResHalfPixel_95 ()
 {
 	int iMonochrome = GetMonochromeIndex();
 	
@@ -1479,7 +1531,7 @@ void CreateColorLookup_MonoHiResHalfPixel_95 ()
 
 
 //===========================================================================
-void CreateColorLookup_MonoHiResHalfPixel_Emboss ()
+void V_CreateLookup_MonoHiResHalfPixel_Emboss ()
 {
 	int iMonochrome = GetMonochromeIndex();
 	
@@ -1554,7 +1606,7 @@ void CreateColorLookup_MonoHiResHalfPixel_Emboss ()
 
 
 //===========================================================================
-void CreateColorLookup_MonoHiResHalfPixel_Fake ()
+void V_CreateLookup_MonoHiResHalfPixel_Fake ()
 {
 	int iMonochrome = GetMonochromeIndex();
 	
@@ -1664,7 +1716,7 @@ void CreateColorLookup_MonoHiResHalfPixel_Fake ()
 
 
 //===========================================================================
-void CreateColorLookup_HiResHalfPixel_Authentic () // Colors are solid (100% coverage)
+void V_CreateLookup_HiResHalfPixel_Authentic () // Colors are solid (100% coverage)
 {
 	// 2-bits from previous byte, 2-bits from next byte = 2^4 = 16 total permutations
 	for (int iColumn = 0; iColumn < 16; iColumn++)
@@ -1811,20 +1863,27 @@ Legend:
 							color = ((odd ^ (iPixel&1)) << 1) | hibit; // map raw color to our hi-res colors
 					}
 #if HALF_PIXEL_SOLID
-					else if (aPixels[iPixel-1] && aPixels[iPixel+1]) // prev this next = ON off ON
+					else if (aPixels[iPixel-1] && aPixels[iPixel+1]) // IF prev_pixel && next_pixel THEN
 					{
+						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
+						if (
+							(g_eVideoType == VT_COLOR_STANDARD) // Fill in colors in between white pixels
+						||	(g_eVideoType == VT_COLOR_TVEMU)    // Fill in colors in between white pixels (Post Processing will mix/merge colors)
+						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
+						{
 							// Test Pattern: Ultima 4 Logo - Castle
 							// 3AC8: 36 5B 6D 36
-							// remove "if ...", but keep "color = " if you want "color bleed" in HGR .. technically it is more accurate
-							if ( !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
-								color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
+							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
+						}
 					}
 #endif
-
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y  ,aColorIndex[color]); // TL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y  ,aColorIndex[color]); // TR
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y+1,aColorIndex[color]); // BL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y+1,aColorIndex[color]); // BR
+					// Colors - Top/Bottom Left/Right
+					// cTL cTR
+					// cBL cBR
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y  ,HiresToPalIndex[color]); // cTL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
 					x += 2;
 				}
 			}
@@ -1834,7 +1893,7 @@ Legend:
 
 
 //===========================================================================
-void CreateColorLookup_HiResHalfPixel_Authentic_50Coverage () // Colors are Non Solid (50% coverage) -- looks better for "color" text
+void V_CreateLookup_HiResHalfPixel_Authentic_50Coverage () // Colors are Non Solid (50% coverage) -- looks better for "color" text
 {
 	// 2-bits from previous byte, 2-bits from next byte = 2^4 = 16 total permutations
 	for (int iColumn = 0; iColumn < 16; iColumn++)
@@ -1932,10 +1991,66 @@ Legend:
 							color = ((odd ^ (iPixel&1)) << 1) | hibit; // map raw color to our hi-res colors
 					}
 
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y  ,aColorIndex[color]); // TL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y  ,aColorIndex[color]); // TR
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y+1,aColorIndex[color]); // BL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y+1,aColorIndex[color]); // BR
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y  ,HiresToPalIndex[color]); // TL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y  ,HiresToPalIndex[color]); // TR
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y+1,HiresToPalIndex[color]); // BL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y+1,HiresToPalIndex[color]); // BR
+					x += 2;
+				}
+			}
+		}
+	}
+}
+
+
+void V_CreateLookup_ColumnVisualizer () // Psychedelic mode!
+{
+	int iMonochrome = GetMonochromeIndex();
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		int coloffs = iColumn << 5; // nByteOffset = iColumn * 32, not *16, since we are storing 2 pixels per column
+		for (unsigned iByte = 0; iByte < 256; iByte++)
+		{
+			int aPixels[11];
+			aPixels[ 0] = iColumn & 4;
+			aPixels[ 1] = iColumn & 8;
+			aPixels[ 9] = iColumn & 1;
+			aPixels[10] = iColumn & 2;
+			int nBitMask = 1;
+			int iPixel;
+			for (iPixel  = 2; iPixel < 9; iPixel++) {
+				aPixels[iPixel] = ((iByte & nBitMask) != 0); // ((iByte & nBitMask) != 0) ---> (iByte >> (iPixel-2)) & 1
+				nBitMask <<= 1;
+			}
+			int hibit = ((iByte & 0x80) != 0); // ((iByte & 0x80) != 0) ---> (iByte >> 7) & 1;
+			int x     = 0;
+			int y     = iByte << 1; // 2 scan lines per byte -- allows for "mixing" adjacent scan lines to new color
+			while (x < 28)
+			{
+				int adj = (x >= 14) << 1;
+				int odd = (x >= 14);
+				for (iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color = CM_Black;
+					if( aPixels[iPixel] )
+						if (iColumn & 1)
+							color = CM_Magenta;
+						else
+						if (iColumn & 2)
+							color = CM_Green;
+						else
+						if (iColumn & 4)
+							color = CM_Blue;
+						else
+						if (iColumn & 8)
+							color = CM_Orange;
+						else
+							color = CM_White;
+
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,HiresToPalIndex[color]); // TL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,HiresToPalIndex[color]); // TR
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,HiresToPalIndex[color]); // BL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,HiresToPalIndex[color]); // BR
 					x += 2;
 				}
 			}
@@ -1945,7 +2060,7 @@ Legend:
 
 
 //===========================================================================
-void CreateColorLookup_MonoHiResHalfPixel_Real ()
+void V_CreateLookup_MonoHiResHalfPixel_Real ()
 {
 	int iMono = GetMonochromeIndex();
 	
@@ -2024,7 +2139,7 @@ void CreateColorLookup_MonoHiResHalfPixel_Real ()
 
 
 //===========================================================================
-void CreateColorLookup_MonoHiResHalfPixel_Colorize ()
+void V_CreateLookup_MonoHiResHalfPixel_Colorize ()
 {
 	int iMono = GetMonochromeIndex();
 	
@@ -2093,7 +2208,7 @@ void CreateColorLookup_MonoHiResHalfPixel_Colorize ()
 
 
 //===========================================================================
-void CreateColorLookup_MonoHiRes_Colorize ()
+void V_CreateLookup_MonoHiRes_Colorize ()
 {
 	int iMono = GetMonochromeIndex();
 	
@@ -2161,7 +2276,7 @@ void CreateColorLookup_MonoHiRes_Colorize ()
 
 
 //===========================================================================
-void DrawMonoLoResSource () {
+void V_CreateLookup_MonoLoRes () {
 	int iMonochrome = GetMonochromeIndex();
 
 	for (int color = 0; color < 16; color++)
@@ -2252,7 +2367,7 @@ HBRUSH V_CreateCustomBrush(COLORREF nColor)
 
 
 //===========================================================================
-void DrawTextSource (HDC dc)
+void V_CreateLookup_Text (HDC dc)
 {
 	HDC     memdc  = CreateCompatibleDC(dc);
 	static HBITMAP hCharBitmap[4];
@@ -2423,39 +2538,58 @@ bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset)
 	return bDirty;
 }
 
+/*
+
+Color Reference Tests:
+
+2000:D5 AA D5 AA D5 AA //  blue blue  blue
+2400:AA D5 2A 55 55 2A //+ red  green magenta
+//                     //= grey aqua  purple
+
+2C00:AA D5 AA D5 2A 55 //  red    red     green
+3000:2A 55 55 2A 55 2A //+ green  magenta magenta
+//                     //= yellow pink    grey
+
+*/
 
 //===========================================================================
-BYTE MixColors(BYTE c1, BYTE c2) {	// For tv emulation g_nAppMode
-#define COMBINATION(c1,c2,ref1,ref2) (((c1)==(ref1)&&(c2)==(ref2)) || ((c1)==(ref2)&&(c2)==(ref1)))
+BYTE MixColors(BYTE c1, BYTE c2)
+{	
+	// For tv emulation HGR Video Mode
+	#define COMBINATION(c1,c2,ref1,ref2) (((c1)==(ref1)&&(c2)==(ref2)) || ((c1)==(ref2)&&(c2)==(ref1)))
 
-  if (c1 == c2)
-	  return c1;
-  if (COMBINATION(c1,c2,HGR_BLUE,HGR_RED))
-	  return HGR_GREY1;
-  else if (COMBINATION(c1,c2,HGR_GREEN,HGR_MAGENTA))
-	  return HGR_GREY2;
-  else if (COMBINATION(c1,c2,HGR_RED,HGR_GREEN))
-	  return HGR_YELLOW;
-  else if (COMBINATION(c1,c2,HGR_BLUE,HGR_GREEN))
-	  return HGR_AQUA;
-  else if (COMBINATION(c1,c2,HGR_BLUE,HGR_MAGENTA))
-	  return HGR_PURPLE;
-  else if (COMBINATION(c1,c2,HGR_RED,HGR_MAGENTA))
-	  return HGR_PINK;
-  else
-	  return MONOCHROME_CUSTOM; // visible failure indicator
+	if (c1 == c2)
+		return c1;
+	if (COMBINATION(c1,c2,HGR_BLUE,HGR_RED))
+		return HGR_GREY1;
+	else if (COMBINATION(c1,c2,HGR_GREEN,HGR_MAGENTA))
+		return HGR_GREY2;
+	else if (COMBINATION(c1,c2,HGR_RED,HGR_GREEN))
+		return HGR_YELLOW;
+	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_GREEN))
+		return HGR_AQUA;
+	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_MAGENTA))
+		return HGR_PURPLE;
+	else if (COMBINATION(c1,c2,HGR_RED,HGR_MAGENTA))
+		return HGR_PINK;
+	else
+		return MONOCHROME_CUSTOM; // visible failure indicator
 
 #undef COMBINATION
 }
 
 
 //===========================================================================
-void CreateColorMixMap() {	// For tv emulation g_nAppMode
-#define FROM_NEIGHBOUR 0x00
+void CreateColorMixMap()
+{	
+	// For tv emulation HGR Video Mode
+	#define FROM_NEIGHBOUR 0x00
 
   int t,m,b;
   BYTE cTop, cMid, cBot;
   WORD mixTop, mixBot;
+
+#define MIX_THRESHOLD 0x12 // bottom 2 HGR colors
 
   for (t=0; t<6; t++)
     for (m=0; m<6; m++)
@@ -2463,15 +2597,15 @@ void CreateColorMixMap() {	// For tv emulation g_nAppMode
         cTop = t | 0x10;
 		cMid = m | 0x10;
 		cBot = b | 0x10;
-        if (cMid < HGR_BLUE) {
+        if (cMid < MIX_THRESHOLD) {
 		  mixTop = mixBot = cMid;
 		} else {
-			if (cTop < HGR_BLUE) {
+			if (cTop < MIX_THRESHOLD) {
 		      mixTop = FROM_NEIGHBOUR;
 			} else { 
 			  mixTop = MixColors(cMid,cTop);
 			}
-			if (cBot < HGR_BLUE)  {
+			if (cBot < MIX_THRESHOLD)  {
 			  mixBot = FROM_NEIGHBOUR;
 			} else { 
 			  mixBot = MixColors(cMid,cBot);
@@ -2490,7 +2624,9 @@ void CreateColorMixMap() {	// For tv emulation g_nAppMode
 }
 
 //===========================================================================
-void __stdcall MixColorsVertical(int matx, int maty) {	// For tv emulation g_nAppMode
+void __stdcall MixColorsVertical(int matx, int maty)
+{
+	// For tv emulation HGR Video Mode
 
   WORD twoHalfPixel;
   int bot1idx, bot2idx;
@@ -2529,7 +2665,9 @@ void __stdcall MixColorsVertical(int matx, int maty) {	// For tv emulation g_nAp
 
 
 //===========================================================================
-void __stdcall CopyMixedSource (int x, int y, int sourcex, int sourcey) {	// For tv emulation g_nAppMode
+void __stdcall CopyMixedSource (int x, int y, int sourcex, int sourcey)
+{
+	// For tv emulation HGR Video Mode
 
   LPBYTE currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
   LPBYTE currdestptr   = g_aFrameBufferOffset[y<<1] + (x<<1);
