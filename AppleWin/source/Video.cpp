@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 
 #define HALF_PIXEL_SOLID 1
-#define HALF_PIXEL_BLEED 1
+#define HALF_PIXEL_BLEED 0
 
 #define COLORS_TWEAKED 1 
 
@@ -1814,6 +1814,7 @@ Legend:
 // Game: Gumball
 //   218E:AA 97    => 2000: A9 87          orange_white            // Should have no gap between orange and white
 //   229A:AB A9 87 -> 2000: 00 A9 87 white orange black blue_white // Should have no gap between blue and white
+//   2001:BB F7                            white blue white  (Gumball Intermission)
 // Torture Half-Pixel HGR Tests:  This is a real bitch to solve -- we really need to check:
 //     if (hibit_prev_byte && !aPixels[iPixel-3] && aPixels[iPixel-2] && !aPixels[iPixel] && hibit_this_byte) then set first half-pixel of this byte to either blue or orange
 //   2000:A9 87 halfblack blue black black orange black orange black
@@ -1821,8 +1822,9 @@ Legend:
 //  or
 //   2000:A0 83 orange should "bleed" thru
 //   2400:B0 83 should have black gap
-#if HALF_PIXEL_BLEED // No Half-Pixel Bleed
+
 					if ( aPixels[2] )
+#if HALF_PIXEL_BLEED // No Half-Pixel Bleed
 						if ( aPixels[3] ) {
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , DARK_BLUE ); // Gumball: 229A: AB A9 87
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, DARK_BLUE );
@@ -1835,12 +1837,13 @@ Legend:
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_RED );
 						}
 #else
-					if ( aPixels[2] && !aPixels[3] ) { // "Text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
+						if ((g_eVideoType == VT_COLOR_STANDARD) || ( !aPixels[3] ))
+						{ // "Text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_RED ); // 2000: AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_RED );
-					}
+						}
 #endif // HALF_PIXEL_BLEED
 				}
 #endif // HALF_PIXEL_SOLID
