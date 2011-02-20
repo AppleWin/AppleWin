@@ -3216,13 +3216,14 @@ void VideoDisplayLogo ()
 	SetBkMode(hFrameDC,TRANSPARENT);
 
 	//#define VERSION_TXT "Version "
-
 	// Daily WTF candidate -- malloc every _frame_ ?!?!
 	//	char* szVersion = new char[strlen(VERSION_TXT) + strlen(VERSIONSTRING) + 1];
 	//	strcpy(&szVersion[0], VERSION_TXT);
 	//	strcpy(&szVersion[strlen(VERSION_TXT)], VERSIONSTRING);
 	//	szVersion[strlen(szVersion)] = 0x00;
-	char szVersion[ 32 ];
+	
+	char szVersion[ 64 ] = "";
+
 	sprintf( szVersion, "Version %s", VERSIONSTRING );
 
 #define  DRAWVERSION(x,y,c)     \
@@ -3233,15 +3234,21 @@ void VideoDisplayLogo ()
 		strlen(szVersion));
 
 	if (GetDeviceCaps(hFrameDC,PLANES) * GetDeviceCaps(hFrameDC,BITSPIXEL) <= 4) {
-	DRAWVERSION( 2, 2,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 0, 0,RGB(0xFF,0x00,0xFF));
+		DRAWVERSION( 2, 2,RGB(0x00,0x00,0x00));
+		DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
+		DRAWVERSION( 0, 0,RGB(0xFF,0x00,0xFF));
+	} else {
+		DRAWVERSION( 1, 1,PALETTERGB(0x30,0x30,0x70));
+		DRAWVERSION(-1,-1,PALETTERGB(0xC0,0x70,0xE0));
+		DRAWVERSION( 0, 0,PALETTERGB(0x70,0x30,0xE0));
 	}
-	else {
-	DRAWVERSION( 1, 1,PALETTERGB(0x30,0x30,0x70));
-	DRAWVERSION(-1,-1,PALETTERGB(0xC0,0x70,0xE0));
-	DRAWVERSION( 0, 0,PALETTERGB(0x70,0x30,0xE0));
-	}
+
+#if _DEBUG
+	sprintf( szVersion, "DEBUG" );
+	DRAWVERSION( 2, -358,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 1, -357,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 0, -356,RGB(0xFF,0x00,0xFF));
+#endif
 
 	// Daily WTF candidate -- malloc every _frame_ ?!?!
 	//	delete [] szVersion;

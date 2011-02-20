@@ -128,11 +128,61 @@ static bool FileExists(string strFilename);
 bool	g_bScrollLock_FullSpeed = false;
 bool	g_bFreshReset = false;
 
-// Prototypes:
-static void DrawCrosshairs (int x, int y);
-static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen);
-static void DrawCrosshairsMouse();
-static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
+// __ Prototypes __________________________________________________________________________________
+	static void DrawCrosshairs (int x, int y);
+	static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen);
+	static void DrawCrosshairsMouse();
+	static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
+
+	TCHAR g_pAppleWindowTitle[ 128 ] = "";
+
+// Updates g_pAppTitle
+// ====================================================================
+void GetAppleWindowTitle()
+{
+	g_pAppTitle = g_pAppleWindowTitle;
+
+	switch (g_Apple2Type)
+	{
+		default:
+		case A2TYPE_APPLE2:			_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2          ); break; 
+		case A2TYPE_APPLE2PLUS:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2_PLUS     ); break; 
+		case A2TYPE_APPLE2E:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E         ); break; 
+		case A2TYPE_APPLE2EEHANCED:	_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E_ENHANCED); break; 
+		case A2TYPE_PRAVETS82:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_82       ); break; 
+		case A2TYPE_PRAVETS8M:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8M       ); break; 
+		case A2TYPE_PRAVETS8A:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8A       ); break; 
+	}
+
+#if _DEBUG
+	_tcscat( g_pAppleWindowTitle, " *DEBUG* " );
+#endif
+
+	if (g_nAppMode == MODE_LOGO)
+		return;
+
+	// TODO: g_bDisplayVideoModeInTitle
+	_tcscat( g_pAppleWindowTitle, " - " );
+
+	if( g_uHalfScanLines )
+	{
+		_tcscat( g_pAppleWindowTitle," 50% " );
+	}
+	_tcscat( g_pAppleWindowTitle, g_apVideoModeDesc[ g_eVideoType ] );
+
+	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
+		_tcscat(g_pAppleWindowTitle,TEXT(" (custom rom)"));
+	else if (g_uTheFreezesF8Rom && IS_APPLE2)
+		_tcscat(g_pAppleWindowTitle,TEXT(" (The Freeze's non-autostart F8 rom)"));
+
+	switch (g_nAppMode)
+	{
+		case MODE_PAUSED  : _tcscat(g_pAppleWindowTitle,TEXT(" [")); _tcscat(g_pAppleWindowTitle,TITLE_PAUSED  ); _tcscat(g_pAppleWindowTitle,TEXT("]")); break;
+		case MODE_STEPPING: _tcscat(g_pAppleWindowTitle,TEXT(" [")); _tcscat(g_pAppleWindowTitle,TITLE_STEPPING); _tcscat(g_pAppleWindowTitle,TEXT("]")); break;
+	}
+
+	g_pAppTitle = g_pAppleWindowTitle;
+}
 
 //===========================================================================
 
@@ -586,43 +636,8 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 		if (drawflags & DRAW_TITLE)
 		{
-			TCHAR title[80];
-			switch (g_Apple2Type)
-			{
-			default:
-			case A2TYPE_APPLE2:			_tcscpy(title, TITLE_APPLE_2); break; 
-			case A2TYPE_APPLE2PLUS:		_tcscpy(title, TITLE_APPLE_2_PLUS); break; 
-			case A2TYPE_APPLE2E:		_tcscpy(title, TITLE_APPLE_2E); break; 
-			case A2TYPE_APPLE2EEHANCED:	_tcscpy(title, TITLE_APPLE_2E_ENHANCED); break; 
-			case A2TYPE_PRAVETS82:		_tcscpy(title, TITLE_PRAVETS_82); break; 
-			case A2TYPE_PRAVETS8M:		_tcscpy(title, TITLE_PRAVETS_8M); break; 
-			case A2TYPE_PRAVETS8A:		_tcscpy(title, TITLE_PRAVETS_8A); break; 
-			}
-
-			// TODO: g_bDisplayVideoModeInTitle
-			if( 1 )
-			{
-				_tcscat( title, " - " );
-
-				if( g_uHalfScanLines )
-				{
-					_tcscat( title," 50% " );
-				}
-				_tcscat( title, g_apVideoModeDesc[ g_eVideoType ] );
-			}
-
-			if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
-				_tcscat(title,TEXT(" (custom rom)"));
-			else if (g_uTheFreezesF8Rom && IS_APPLE2)
-				_tcscat(title,TEXT(" (The Freeze's non-autostart F8 rom)"));
-
-			switch (g_nAppMode)
-			{
-				case MODE_PAUSED  : _tcscat(title,TEXT(" [")); _tcscat(title,TITLE_PAUSED  ); _tcscat(title,TEXT("]")); break;
-				case MODE_STEPPING: _tcscat(title,TEXT(" [")); _tcscat(title,TITLE_STEPPING); _tcscat(title,TEXT("]")); break;
-			}
-
-			SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)title);
+			GetAppleWindowTitle(); // SetWindowText() // WindowTitle
+			SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)g_pAppTitle);
 		}
 		if (drawflags & DRAW_BUTTON_DRIVES)
 		{
@@ -1857,29 +1872,17 @@ void FrameCreateWindow ()
 	}
 
 	//
-
-	switch (g_Apple2Type)
-	{
-	case A2TYPE_APPLE2:			g_pAppTitle = TITLE_APPLE_2; break; 
-	case A2TYPE_APPLE2PLUS:		g_pAppTitle = TITLE_APPLE_2_PLUS; break; 
-	case A2TYPE_APPLE2E:		g_pAppTitle = TITLE_APPLE_2E; break; 
-	case A2TYPE_APPLE2EEHANCED:	g_pAppTitle = TITLE_APPLE_2E_ENHANCED; break; 
-	case A2TYPE_PRAVETS82:	    g_pAppTitle = TITLE_PRAVETS_82; break; 
-	case A2TYPE_PRAVETS8M:	    g_pAppTitle = TITLE_PRAVETS_8M; break; 
-	case A2TYPE_PRAVETS8A:	    g_pAppTitle = TITLE_PRAVETS_8A; break; 
-	}
-
+	GetAppleWindowTitle();
 
 	g_hFrameWindow = CreateWindow(
 		TEXT("APPLE2FRAME"),
-		g_pAppTitle,
+		g_pAppTitle, // SetWindowText() // WindowTitle
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 		WS_MINIMIZEBOX | WS_VISIBLE,
 		nXPos, nYPos, nWidth, nHeight,
 		HWND_DESKTOP,
 		(HMENU)0,
 		g_hInstance, NULL );
-
 
 	InitCommonControls();
 	tooltipwindow = CreateWindow(
