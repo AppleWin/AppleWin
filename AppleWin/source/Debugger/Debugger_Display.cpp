@@ -2869,23 +2869,59 @@ void DrawWatches (int line)
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 			PrintTextCursorX( ":", rect2 );
 
-			BYTE nTarget8 = (unsigned)*(LPBYTE)(mem+g_aWatches[iWatch].nAddress);
+			BYTE nTarget8 = 0;
+			BYTE nValue8 = 0;
+
+			nTarget8 = (unsigned)*(LPBYTE)(mem+g_aWatches[iWatch].nAddress);
 			sprintf(sText,"%02X", nTarget8 );
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
 			PrintTextCursorX( sText, rect2 );
 
+			nTarget8 = (unsigned)*(LPBYTE)(mem+g_aWatches[iWatch].nAddress + 1);
+			sprintf(sText,"%02X", nTarget8 );
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
+			PrintTextCursorX( sText, rect2 );
+
+			sprintf( sText,"(" );
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+			PrintTextCursorX( sText, rect2 );
+
 			WORD nTarget16 = (unsigned)*(LPWORD)(mem+g_aWatches[iWatch].nAddress);
-			sprintf( sText," %04X", nTarget16 );
+			sprintf( sText,"%04X", nTarget16 );
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
 			PrintTextCursorX( sText, rect2 );
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
-			PrintTextCursorX( ":", rect2 );
+//			PrintTextCursorX( ":", rect2 );
+			PrintTextCursorX( ")", rect2 );
 
-			BYTE nValue8 = (unsigned)*(LPBYTE)(mem + nTarget16);
-			sprintf(sText,"%02X", nValue8 );
+//			BYTE nValue8 = (unsigned)*(LPBYTE)(mem + nTarget16);
+//			sprintf(sText,"%02X", nValue8 );
+//			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
+//			PrintTextCursorX( sText, rect2 );
+
+			rect.top    += g_nFontHeight;
+			rect.bottom += g_nFontHeight;
+
+// 1.19.4 Added: Watch show (dynamic) raw hex bytes
+			rect2 = rect;
+
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
-			PrintTextCursorX( sText, rect2 );
+			for( int iByte = 0; iByte < 8; iByte++ )
+			{
+				BYTE nValue8 = (unsigned)*(LPBYTE)(mem + nTarget16 + iByte );
+				sprintf(sText,"%02X", nValue8 );
+				if ((iByte & 1) == 1)
+					DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 ));
+				else
+					DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_DATA_2
+				PrintTextCursorX( sText, rect2 );
+
+				if  ((iByte & 3) == 3) {
+					DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
+					PrintTextCursorX( " ", rect2 );
+				}
+			}
 		}
 		rect.top    += g_nFontHeight;
 		rect.bottom += g_nFontHeight;

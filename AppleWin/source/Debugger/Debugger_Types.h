@@ -1465,7 +1465,7 @@ const	DisasmData_t* pDisasmData;
 
 	enum
 	{
-		MAX_WATCHES = 16
+		MAX_WATCHES = 8
 	};
 
 
