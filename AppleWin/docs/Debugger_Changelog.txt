@@ -1,6 +1,7 @@
 /*
-2.7.0.10
-    Added: Watches now show (dynamic) raw hex bytes
+2.7.0.11
+.11 Fixed: Breakpoints and Watches no longer disappear.
+.10 Added: Watches now show (dynamic) raw hex bytes
     Changed: Lowered watches down from 16 to 8.
 
  .9 Fixed: Bookmarks weren't initialized to zero.
