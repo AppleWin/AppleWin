@@ -244,7 +244,7 @@
 		UPDATE_TARGETS         = (1 << 10),
 		UPDATE_WATCH           = (1 << 11),
 		UPDATE_ZERO_PAGE       = (1 << 12),
-
+		UPDATE_SOFTSWITCHES    = (1 << 13),
 		UPDATE_ALL = -1
 	};
 

@@ -2268,6 +2268,12 @@ void DrawMemory ( int line, int iMemDump )
 		return;
 
 	MemoryDump_t* pMD = &g_aMemDump[ iMemDump ];
+	bool bActive = pMD->bActive;
+#if DEBUG_FORCE_DISPLAY
+	bActive = true;
+#endif
+	if( !bActive )
+		return;
 
 	USHORT       nAddr   = pMD->nAddress;
 	DEVICE_e     eDevice = pMD->eDevice;
@@ -2418,7 +2424,17 @@ void DrawMemory ( int line, int iMemDump )
 					{
 						DebuggerSetColorFG( DebuggerGetColor( FG_INFO_IO_BYTE ));
 					}
-					sprintf(sText, "%02X ", nData );
+
+
+					if (nCols == 6)
+					{
+						if ((iCol & 1) == 1)
+							DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_DATA_2
+						else
+							DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 ));
+						sprintf(sText, "%02X", nData );
+					} else
+						sprintf(sText, "%02X ", nData );
 				}
 				else
 				{
@@ -2529,6 +2545,20 @@ void DrawRegister ( int line, LPCTSTR name, const int nBytes, const WORD nValue,
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // FG_DISASM_OPCODE
 	}
 	PrintText( sValue, rect );
+}
+
+//===========================================================================
+void DrawRegisters ( int line )
+{
+	const char **sReg = g_aBreakpointSource;
+
+	DrawRegister( line++, sReg[ BP_SRC_REG_A ] , 1, regs.a , PARAM_REG_A  );
+	DrawRegister( line++, sReg[ BP_SRC_REG_X ] , 1, regs.x , PARAM_REG_X  );
+	DrawRegister( line++, sReg[ BP_SRC_REG_Y ] , 1, regs.y , PARAM_REG_Y  );
+	DrawRegister( line++, sReg[ BP_SRC_REG_PC] , 2, regs.pc, PARAM_REG_PC );
+	DrawFlags   ( line  , regs.ps, NULL);
+	line += 2;
+	DrawRegister( line++, sReg[ BP_SRC_REG_S ] , 2, regs.sp, PARAM_REG_SP );
 }
 
 // 2.7.0.7 Cleaned up display of soft-switches to show address.
@@ -2718,7 +2748,7 @@ void DrawStack ( int line)
 		return;
 
 	unsigned nAddress = regs.sp;
-#if DEBUG_FORCE_DISPLAY
+#if DEBUG_FORCE_DISPLAY // Stack
 	nAddress = 0x100;
 #endif
 
@@ -2780,7 +2810,7 @@ void DrawTargets ( int line)
 		char sAddress[8] = "-none-";
 		char sData[8]    = "";
 
-#if DEBUG_FORCE_DISPLAY
+#if DEBUG_FORCE_DISPLAY // Targets
 		if (aTarget[iAddress] == NO_6502_TARGET)
 			aTarget[iAddress] = 0;
 #endif
@@ -2816,7 +2846,7 @@ void DrawTargets ( int line)
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // Target Bytes
 
 		PrintText( sData, rect );
-  }
+	}
 }
 
 //===========================================================================
@@ -2843,7 +2873,7 @@ void DrawWatches (int line)
 	int iWatch;
 	for (iWatch = 0; iWatch < MAX_WATCHES; iWatch++ )
 	{
-#if DEBUG_FORCE_DISPLAY
+#if DEBUG_FORCE_DISPLAY // Watch
 		if (true)
 #else
 		if (g_aWatches[iWatch].bEnabled)
@@ -2851,7 +2881,7 @@ void DrawWatches (int line)
 		{
 			RECT rect2 = rect;
 
-//			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+			DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ) );
 			PrintTextCursorX( "W", rect2 );
 
@@ -2909,18 +2939,19 @@ void DrawWatches (int line)
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
 			for( int iByte = 0; iByte < 8; iByte++ )
 			{
-				BYTE nValue8 = (unsigned)*(LPBYTE)(mem + nTarget16 + iByte );
-				sprintf(sText,"%02X", nValue8 );
-				if ((iByte & 1) == 1)
-					DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 ));
-				else
-					DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_DATA_2
-				PrintTextCursorX( sText, rect2 );
-
-				if  ((iByte & 3) == 3) {
+				if  ((iByte & 3) == 0) {
 					DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
 					PrintTextCursorX( " ", rect2 );
 				}
+
+				if ((iByte & 1) == 1)
+					DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_DATA_2
+				else
+					DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 ));
+
+				BYTE nValue8 = (unsigned)*(LPBYTE)(mem + nTarget16 + iByte );
+				sprintf(sText,"%02X", nValue8 );
+				PrintTextCursorX( sText, rect2 );
 			}
 		}
 		rect.top    += g_nFontHeight;
@@ -2955,7 +2986,7 @@ void DrawZeroPagePointers ( int line )
 		Breakpoint_t *pZP = &g_aZeroPagePointers[iZP];
 		bool bEnabled = pZP->bEnabled;
 
-#if DEBUG_FORCE_DISPLAY
+#if DEBUG_FORCE_DISPLAY // Zero-Page
 		bEnabled = true;
 #endif
 		if (bEnabled)
@@ -3233,78 +3264,72 @@ void DrawSubWindow_Data (Update_t bUpdate)
 	}
 }
 
-
-// DrawRegisters();
 //===========================================================================
-void DrawSubWindow_Info( int iWindow )
+void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 {
 	if (g_iWindowThis == WINDOW_CONSOLE)
 		return;
 
-	const char **sReg = g_aBreakpointSource;
+	// Left Side
+		int yRegs     = 0; // 12
+		int yStack    = yRegs  + MAX_DISPLAY_REGS_LINES  + 0; // 0
+		int yTarget   = yStack + MAX_DISPLAY_STACK_LINES - 1; // 9
+		int yZeroPage = 16; // yTarget 
+		int ySoft = yZeroPage + (2 * MAX_DISPLAY_ZEROPAGE_LINES) + 1;
 
-	int yRegs     = 0; // 12
-	int yStack    = yRegs  + MAX_DISPLAY_REGS_LINES  + 0; // 0
-	int yTarget   = yStack + MAX_DISPLAY_STACK_LINES - 1; // 9
-	int yZeroPage = 16; // yTarget 
-	int ySoft = yZeroPage + (2 * MAX_DISPLAY_ZEROPAGE_LINES) + 1;
+		if ((bUpdate & UPDATE_REGS) || (bUpdate & UPDATE_FLAGS))
+			DrawRegisters( yRegs );
 
-	DrawRegister( yRegs++, sReg[ BP_SRC_REG_A ] , 1, regs.a , PARAM_REG_A  );
-	DrawRegister( yRegs++, sReg[ BP_SRC_REG_X ] , 1, regs.x , PARAM_REG_X  );
-	DrawRegister( yRegs++, sReg[ BP_SRC_REG_Y ] , 1, regs.y , PARAM_REG_Y  );
-	DrawRegister( yRegs++, sReg[ BP_SRC_REG_PC] , 2, regs.pc, PARAM_REG_PC );
-	DrawFlags   ( yRegs  , regs.ps, NULL);
-	yRegs += 2;
-	DrawRegister( yRegs++, sReg[ BP_SRC_REG_S ] , 2, regs.sp, PARAM_REG_SP );
+		if (bUpdate & UPDATE_STACK)
+			DrawStack( yStack );
 
-	DrawStack( yStack );
+		// 2.7.0.2 Fixed: Debug build of debugger force display all CPU info window wasn't calling DrawTargets()
+		bool bForceDisplayTargetPtr = DEBUG_FORCE_DISPLAY || (g_bConfigInfoTargetPointer);
+		if (bForceDisplayTargetPtr || (bUpdate & UPDATE_TARGETS))
+			DrawTargets( yTarget );
+		
+		if (bUpdate & UPDATE_ZERO_PAGE)
+			DrawZeroPagePointers( yZeroPage );
 
-	// 2.7.0.2 Fixed: Debug build of debugger force display all CPU info window wasn't calling DrawTargets()
-	bool bForceDisplayTargetPtr = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_bConfigInfoTargetPointer;
-	if (bForceDisplayTargetPtr)
-		DrawTargets( yTarget );
-	
-	DrawZeroPagePointers( yZeroPage );
+		bool bForceDisplaySoftSwitches = DEBUG_FORCE_DISPLAY || (bUpdate & UPDATE_SOFTSWITCHES);
+			DrawSoftSwitches( ySoft );
 
-//	bool bForceDisplaySoftSwitches = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : true;
-	DrawSoftSwitches( ySoft );
-
-#if defined(SUPPORT_Z80_EMU) && defined(OUTPUT_Z80_REGS)
-	DrawRegister( 19,"AF",2,*(WORD*)(membank+REG_AF));
-	DrawRegister( 20,"BC",2,*(WORD*)(membank+REG_BC));
-	DrawRegister( 21,"DE",2,*(WORD*)(membank+REG_DE));
-	DrawRegister( 22,"HL",2,*(WORD*)(membank+REG_HL));
-	DrawRegister( 23,"IX",2,*(WORD*)(membank+REG_IX));
-#endif
+	#if defined(SUPPORT_Z80_EMU) && defined(OUTPUT_Z80_REGS)
+		DrawRegister( 19,"AF",2,*(WORD*)(membank+REG_AF));
+		DrawRegister( 20,"BC",2,*(WORD*)(membank+REG_BC));
+		DrawRegister( 21,"DE",2,*(WORD*)(membank+REG_DE));
+		DrawRegister( 22,"HL",2,*(WORD*)(membank+REG_HL));
+		DrawRegister( 23,"IX",2,*(WORD*)(membank+REG_IX));
+	#endif
 
 	// Right Side
-	int yBreakpoints = 0;
-	int yWatches     = yBreakpoints + MAX_BREAKPOINTS; // MAX_DISPLAY_BREAKPOINTS_LINES; // 7
-	int yMemory      = yWatches     + MAX_WATCHES    ; // MAX_DISPLAY_WATCHES_LINES    ; // 14
+		int yBreakpoints = 0;
+		int yWatches     = yBreakpoints + MAX_BREAKPOINTS; // MAX_DISPLAY_BREAKPOINTS_LINES; // 7
+		int yMemory      = yWatches     + (MAX_WATCHES*2); // MAX_DISPLAY_WATCHES_LINES    ; // 14 // 2.7.0.15 Fixed: Memory Dump was over-writing watches
 
-//	if ((MAX_DISPLAY_BREAKPOINTS_LINES + MAX_DISPLAY_WATCHES_LINES) < 12)
-//		yWatches++;
+	//	if ((MAX_DISPLAY_BREAKPOINTS_LINES + MAX_DISPLAY_WATCHES_LINES) < 12)
+	//		yWatches++;
 
-	bool bForceDisplayBreakpoints = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_nBreakpoints > 0; // 2.7.0.11 Fixed: Breakpoints and Watches no longer disappear.
-	if ( bForceDisplayBreakpoints )
-		DrawBreakpoints( yBreakpoints );
+		bool bForceDisplayBreakpoints = DEBUG_FORCE_DISPLAY || (g_nBreakpoints > 0); // 2.7.0.11 Fixed: Breakpoints and Watches no longer disappear.
+		if ( bForceDisplayBreakpoints || (bUpdate & UPDATE_BREAKPOINTS))
+			DrawBreakpoints( yBreakpoints );
 
-	bool bForceDisplayWatches = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_nWatches > 0; // 2.7.0.11 Fixed: Breakpoints and Watches no longer disappear.
-	if ( bForceDisplayWatches )
-		DrawWatches( yWatches );
+		bool bForceDisplayWatches = DEBUG_FORCE_DISPLAY || (g_nWatches > 0); // 2.7.0.11 Fixed: Breakpoints and Watches no longer disappear.
+		if ( bForceDisplayWatches || (bUpdate & UPDATE_WATCH))
+			DrawWatches( yWatches );
 
-	g_nDisplayMemoryLines = MAX_DISPLAY_MEMORY_LINES_1;
+		g_nDisplayMemoryLines = MAX_DISPLAY_MEMORY_LINES_1;
 
-	bool bForceDisplayMemory1 = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_aMemDump[0].bActive;
-	if ( bForceDisplayMemory1 )
-		DrawMemory( yMemory, 0 ); // g_aMemDump[0].nAddress, g_aMemDump[0].eDevice);
+		bool bForceDisplayMemory1 = DEBUG_FORCE_DISPLAY || (g_aMemDump[0].bActive);
+		if (bForceDisplayMemory1 || (bUpdate & UPDATE_MEM_DUMP))
+			DrawMemory( yMemory, 0 ); // g_aMemDump[0].nAddress, g_aMemDump[0].eDevice);
 
-	yMemory += (g_nDisplayMemoryLines + 1);
-	g_nDisplayMemoryLines = MAX_DISPLAY_MEMORY_LINES_2;
+		yMemory += (g_nDisplayMemoryLines + 1);
+		g_nDisplayMemoryLines = MAX_DISPLAY_MEMORY_LINES_2;
 
-	bool bForceDisplayMemory2 = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_aMemDump[1].bActive;
-	if ( bForceDisplayMemory2 )
-		DrawMemory( yMemory, 1 ); // g_aMemDump[1].nAddress, g_aMemDump[1].eDevice);
+		bool bForceDisplayMemory2 = DEBUG_FORCE_DISPLAY || (g_aMemDump[1].bActive);
+		if (bForceDisplayMemory2 || (bUpdate & UPDATE_MEM_DUMP))
+			DrawMemory( yMemory, 1 ); // g_aMemDump[1].nAddress, g_aMemDump[1].eDevice);
 }
 
 //===========================================================================
@@ -3413,7 +3438,7 @@ void DrawWindow_Code( Update_t bUpdate )
 //	DrawWindowTop( g_iWindowThis );
 	DrawWindowBottom( bUpdate, g_iWindowThis );
 
-	DrawSubWindow_Info( g_iWindowThis );
+	DrawSubWindow_Info( bUpdate, g_iWindowThis );
 }
 
 // Full Screen console
@@ -3431,34 +3456,34 @@ void DrawWindow_Console( Update_t bUpdate )
 void DrawWindow_Data( Update_t bUpdate )
 {
 	DrawSubWindow_Data( g_iWindowThis );
-	DrawSubWindow_Info( g_iWindowThis );
+	DrawSubWindow_Info( bUpdate, g_iWindowThis );
 }
 
 //===========================================================================
 void DrawWindow_IO( Update_t bUpdate )
 {
 	DrawSubWindow_IO( g_iWindowThis );
-	DrawSubWindow_Info( g_iWindowThis );
+	DrawSubWindow_Info( bUpdate, g_iWindowThis );
 }
 
 //===========================================================================
 void DrawWindow_Source( Update_t bUpdate )
 {
 	DrawSubWindow_Source( g_iWindowThis );
-	DrawSubWindow_Info( g_iWindowThis );
+	DrawSubWindow_Info( bUpdate, g_iWindowThis );
 }
 
 //===========================================================================
 void DrawWindow_Symbols( Update_t bUpdate )
 {
 	DrawSubWindow_Symbols( g_iWindowThis );
-	DrawSubWindow_Info( g_iWindowThis );
+	DrawSubWindow_Info( bUpdate, g_iWindowThis );
 }
 
 void DrawWindow_ZeroPage( Update_t bUpdate )
 {
 	DrawSubWindow_ZeroPage( g_iWindowThis );
-	DrawSubWindow_Info( g_iWindowThis );
+	DrawSubWindow_Info( bUpdate, g_iWindowThis );
 }
 
 //===========================================================================
@@ -3531,7 +3556,7 @@ void UpdateDisplay (Update_t bUpdate)
 	SetTextAlign( g_hFrameDC, TA_TOP | TA_LEFT);
 
 	if ((bUpdate & UPDATE_BREAKPOINTS)
-		|| (bUpdate & UPDATE_DISASM)
+//		|| (bUpdate & UPDATE_DISASM)
 		|| (bUpdate & UPDATE_FLAGS)
 		|| (bUpdate & UPDATE_MEM_DUMP)
 		|| (bUpdate & UPDATE_REGS)
