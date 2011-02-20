@@ -570,7 +570,7 @@ Update_t CmdHelpSpecific (int nArgs)
 					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );  // check if we have an exact command match first
 					if (nFound) {
 						bCategory = false; 
-					} else  // 2.7.0.17: HELP <category> wasn't dipslaying when category was one of: FLAGS, OUTPUT, WATCHES
+					} else  // 2.7.0.17: HELP <category> wasn't displaying when category was one of: FLAGS, OUTPUT, WATCHES
 						if( nFoundCategory )
 						{
 							iCmdBegin = CMD_WATCH_ADD       ; iCmdEnd = CMD_WATCH_LIST           ;
