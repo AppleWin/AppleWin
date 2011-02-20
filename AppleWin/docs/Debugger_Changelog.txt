@@ -1,4 +1,8 @@
 /*
+2.7.0.10
+    Added: Watches now show (dynamic) raw hex bytes
+    Changed: Lowered watches down from 16 to 8.
+
  .9 Fixed: Bookmarks weren't initialized to zero.
  .8 Added: New command PWD to display the current debugger directory.
     This is the directory used for scripts, loading/saving memory, and trace files.
