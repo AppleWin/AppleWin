@@ -1,5 +1,11 @@
 /*
-2.7.0.11
+2.7.0.#
+.17 Fixed: HELP <category> wasn't displaying when category was one of: FLAGS, OUTPUT, WATCHES
+.16 Fixed: WL was displaying number of watches
+.15 Fixed: Memory Dump was over-writing watches.
+.14 Added: Debugger display flag to update soft switches. (Related to .12)
+.13 Fixed: Targets of PC instruction weren't displaying.
+.12 Fixed: Fixed scrolling to only update the diasm window.
 .11 Fixed: Breakpoints and Watches no longer disappear.
 .10 Added: Watches now show (dynamic) raw hex bytes
     Changed: Lowered watches down from 16 to 8.
