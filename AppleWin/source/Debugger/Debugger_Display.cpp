@@ -3285,11 +3285,11 @@ void DrawSubWindow_Info( int iWindow )
 //	if ((MAX_DISPLAY_BREAKPOINTS_LINES + MAX_DISPLAY_WATCHES_LINES) < 12)
 //		yWatches++;
 
-	bool bForceDisplayBreakpoints = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_nBreakpoints & 1;
+	bool bForceDisplayBreakpoints = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_nBreakpoints > 0; // 2.7.0.11 Fixed: Breakpoints and Watches no longer disappear.
 	if ( bForceDisplayBreakpoints )
 		DrawBreakpoints( yBreakpoints );
 
-	bool bForceDisplayWatches = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_nWatches & 1;
+	bool bForceDisplayWatches = DEBUG_FORCE_DISPLAY ? DEBUG_FORCE_DISPLAY : g_nWatches > 0; // 2.7.0.11 Fixed: Breakpoints and Watches no longer disappear.
 	if ( bForceDisplayWatches )
 		DrawWatches( yWatches );
 
