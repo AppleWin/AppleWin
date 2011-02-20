@@ -96,6 +96,7 @@ static RECT    framerect       = {0,0,0,0};
 
 		HWND   g_hFrameWindow  = (HWND)0;
 		BOOL   g_bIsFullScreen = 0;
+		BOOL   g_bMultiMon     = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
 
 static BOOL    helpquit        = 0;
 static BOOL    g_bPaintingWindow        = 0;
@@ -1839,7 +1840,7 @@ void FrameCreateWindow ()
 								   + GetSystemMetrics(SM_CYCAPTION)
 								   + MAGICY;
 
-	//
+	// Restore Window X Position
 
 	int nXPos = -1;
 	{
@@ -1847,15 +1848,15 @@ void FrameCreateWindow ()
 
 		if (RegLoadValue(TEXT(REG_PREFS), TEXT("Window X-Position"), 1, (DWORD*)&nXPos))
 		{
-			if (nXPos > nXScreen)
+			if ((nXPos > nXScreen) && !g_bMultiMon)
 				nXPos = -1;	// Not fully visible, so default to centre position
 		}
 
-		if (nXPos == -1)
+		if ((nXPos == -1) && !g_bMultiMon)
 			nXPos = nXScreen / 2;
 	}
 
-	//
+	// Restore Window Y Position
 
 	int nYPos = -1;
 	{
@@ -1863,11 +1864,11 @@ void FrameCreateWindow ()
 
 		if (RegLoadValue(TEXT(REG_PREFS), TEXT("Window Y-Position"), 1, (DWORD*)&nYPos))
 		{
-			if (nYPos > nYScreen)
+			if ((nYPos > nYScreen) && !g_bMultiMon)
 				nYPos = -1;	// Not fully visible, so default to centre position
 		}
 
-		if (nYPos == -1)
+		if ((nYPos == -1) && g_bMultiMon)
 			nYPos = nYScreen / 2;
 	}
 
