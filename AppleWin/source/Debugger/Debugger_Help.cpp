@@ -505,7 +505,10 @@ Update_t CmdHelpSpecific (int nArgs)
 		{
 	//		int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_EXACT, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
 			int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_FUZZY, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
-			bCategory = true;
+			if( nFoundCategory )
+				bCategory = true;
+			else
+				bCategory = false;
 			switch( iParam )
 			{
 				case PARAM_CAT_BOOKMARKS  : iCmdBegin = CMD_BOOKMARK        ; iCmdEnd = CMD_BOOKMARK_SAVE        ; break;
@@ -513,21 +516,17 @@ Update_t CmdHelpSpecific (int nArgs)
 				case PARAM_CAT_CONFIG     : iCmdBegin = CMD_BENCHMARK       ; iCmdEnd = CMD_CONFIG_SAVE          ; break;
 				case PARAM_CAT_CPU        : iCmdBegin = CMD_ASSEMBLE        ; iCmdEnd = CMD_UNASSEMBLE           ; break;
 				case PARAM_CAT_FLAGS      :
-					// iCmdBegin = CMD_FLAG_CLEAR      ; iCmdEnd = CMD_FLAG_SET_N           ; break;
-					// HACK: check if we have an exact command match first
-					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
-					if (nFound && (iCommand != CMD_MEMORY_FILL))
+					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand ); // check if we have an exact command match first
+					if ( nFound ) // && (iCommand != CMD_MEMORY_FILL))
+						bCategory = false; 
+					else if ( nFoundCategory )
 					{
 						iCmdBegin = CMD_FLAG_CLEAR     ; iCmdEnd = CMD_FLAG_SET_N;
-						bCategory = true;
 					}
-					else
-						bCategory = false;
 					break;
 				case PARAM_CAT_HELP       : iCmdBegin = CMD_HELP_LIST       ; iCmdEnd = CMD_MOTD                 ; break;
 				case PARAM_CAT_KEYBOARD   :
-					// HACK: check if we have an exact command match first
-					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
+					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand ); // check if we have an exact command match first
 					if ((!nFound) || (iCommand != CMD_INPUT_KEY))
 					{
 						nArgs = 0;
@@ -536,71 +535,51 @@ Update_t CmdHelpSpecific (int nArgs)
 					bCategory = false;
 					break;
 				case PARAM_CAT_MEMORY     :
-					// iCmdBegin = CMD_MEMORY_COMPARE  ; iCmdEnd = CMD_MEMORY_FILL          ; break;
-					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
-					if (nFound && (iCommand != CMD_MEMORY_MOVE))
-					{
-						iCmdBegin = CMD_MEMORY_COMPARE     ; iCmdEnd = CMD_MEMORY_FILL           ;
-						bCategory = true;
-					}
-					else
+					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );  // check if we have an exact command match first
+					if ( nFound )// && (iCommand != CMD_MEMORY_MOVE))
 						bCategory = false;
+					else if ( nFoundCategory )
+					{
+						iCmdBegin = CMD_MEMORY_COMPARE                      ; iCmdEnd = CMD_MEMORY_FILL           ;
+					}
 					break;
-
 				case PARAM_CAT_OUTPUT     :
-					// HACK: check if we have an exact command match first
-					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
-					if (nFound && (iCommand != CMD_OUT))
+					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );  // check if we have an exact command match first
+					if ( nFound ) // && (iCommand != CMD_OUT))
+						bCategory = false; 
+					else if ( nFoundCategory )
 					{
-						iCmdBegin = CMD_OUTPUT_CALC     ; iCmdEnd = CMD_OUTPUT_RUN           ;
-						bCategory = true;
+						iCmdBegin = CMD_OUTPUT_CALC                         ; iCmdEnd = CMD_OUTPUT_RUN           ;
 					}
-					else
-						bCategory = false;
 					break;
-
 				case PARAM_CAT_SYMBOLS    :
-					// HACK: check if we have an exact command match first
-					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
-					if (nFound && (iCommand != CMD_SYMBOLS_LOOKUP) && (iCommand != CMD_MEMORY_SEARCH))
+					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );  // check if we have an exact command match first
+					if ( nFound ) // && (iCommand != CMD_SYMBOLS_LOOKUP) && (iCommand != CMD_MEMORY_SEARCH))
+						bCategory = false; 
+					else if ( nFoundCategory )
 					{
-						iCmdBegin = CMD_SYMBOLS_LOOKUP  ; iCmdEnd = CMD_SYMBOLS_LIST         ;
-						bCategory = true;
+						iCmdBegin = CMD_SYMBOLS_LOOKUP                      ; iCmdEnd = CMD_SYMBOLS_LIST         ;
 					}
-					else
-						bCategory = false;
 					break;
-
 				case PARAM_CAT_VIEW       :
-					// HACK: check if we have an exact command match first
-//					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
-//					if (nFound && (iCommand != CMD_VIEW_TEXT4X))
 					{
-						iCmdBegin = CMD_VIEW_TEXT4X     ; iCmdEnd = CMD_VIEW_DHGR2          ;
-						bCategory = true;
+						iCmdBegin = CMD_VIEW_TEXT4X                         ; iCmdEnd = CMD_VIEW_DHGR2          ;
 					}
-//					else
-//						bCategory = false;
 					break;
-					
 				case PARAM_CAT_WATCHES    :
-					// HACK: check if we have an exact command match first
-					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );
-					if (nFound && (iCommand != CMD_WATCH_ADD))
-					{
-						iCmdBegin = CMD_WATCH_ADD       ; iCmdEnd = CMD_WATCH_LIST           ;
-						bCategory = true;
-					}
-					else
-						bCategory = false;
+					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );  // check if we have an exact command match first
+					if (nFound) {
+						bCategory = false; 
+					} else  // 2.7.0.17: HELP <category> wasn't dipslaying when category was one of: FLAGS, OUTPUT, WATCHES
+						if( nFoundCategory )
+						{
+							iCmdBegin = CMD_WATCH_ADD       ; iCmdEnd = CMD_WATCH_LIST           ;
+						}
 					break;
-
 				case PARAM_CAT_WINDOW     : iCmdBegin = CMD_WINDOW          ; iCmdEnd = CMD_WINDOW_OUTPUT        ; break;
-				case PARAM_CAT_ZEROPAGE   : iCmdBegin = CMD_ZEROPAGE_POINTER; iCmdEnd = CMD_ZEROPAGE_POINTER_SAVE;break;
-
+				case PARAM_CAT_ZEROPAGE   : iCmdBegin = CMD_ZEROPAGE_POINTER; iCmdEnd = CMD_ZEROPAGE_POINTER_SAVE; break;
 //				case PARAM_CAT_EXPRESSION : // fall-through
 				case PARAM_CAT_OPERATORS  : nArgs = 0; Help_Operators(); break;
-
 				case PARAM_CAT_RANGE      :
 					// HACK: check if we have an exact command match first
 					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand );

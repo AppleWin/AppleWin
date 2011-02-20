@@ -184,7 +184,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		{TEXT("MH1")         , CmdMemoryMiniDumpHigh, CMD_MEM_MINI_DUMP_TXT_HI_1, "Text (High) in mini memory dump area 1" },
 //		{TEXT("MH2")         , CmdMemoryMiniDumpHigh, CMD_MEM_MINI_DUMP_TXT_HI_2, "Text (High) in mini memory dump area 2" },
 
-		{TEXT("ME")          , CmdMemoryEdit        , CMD_MEMORY_EDIT          }, // TODO: like Copy ][+ Sector Edit
+		{TEXT("ME")          , CmdMemoryEdit        , CMD_MEMORY_EDIT          , "Memory Editor - Not Implemented!" }, // TODO: like Copy ][+ Sector Edit
 		{TEXT("MEB")         , CmdMemoryEnterByte   , CMD_MEMORY_ENTER_BYTE    , "Enter byte"                   },
 		{TEXT("MEW")         , CmdMemoryEnterWord   , CMD_MEMORY_ENTER_WORD    , "Enter word"                   },
 		{TEXT("BLOAD")       , CmdMemoryLoad        , CMD_MEMORY_LOAD          , "Load a region of memory"      },
@@ -342,7 +342,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		{TEXT("RET")         , CmdStackReturn       , CMD_STACK_RETURN         },
 		{TEXT("TRACE")       , CmdTrace             , CMD_TRACE                },
 
-		{TEXT("SYMBOLS")     , CmdSymbols           , CMD_SYMBOLS_LOOKUP       , "Return " },
+//		{TEXT("SYMBOLS")     , CmdSymbols           , CMD_SYMBOLS_LOOKUP       , "Return " },
 //		{TEXT("SYMBOLS1")    , CmdSymbolsInfo       , CMD_SYMBOLS_1            },
 //		{TEXT("SYMBOLS2")    , CmdSymbolsInfo       , CMD_SYMBOLS_2            },
 //		{"SYM0"              , CmdSymbolsInfo       , CMD_SYMBOLS_ROM          },
@@ -359,7 +359,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("TEXT41")      , CmdViewOutput_Text41 , CMD_VIEW_TEXT41          },
 		{TEXT("TEXT42")      , CmdViewOutput_Text42 , CMD_VIEW_TEXT42          },
 
-		{TEXT("WATCH")       , CmdWatchAdd          , CMD_WATCH_ADD            },
+//		{TEXT("WATCH")       , CmdWatchAdd          , CMD_WATCH_ADD            },
 		{TEXT("WINDOW")      , CmdWindow            , CMD_WINDOW               },
 //		{TEXT("W?")          , CmdWatchAdd          , CMD_WATCH_ADD            },
 		{TEXT("ZAP")         , CmdNOP               , CMD_NOP                  },
@@ -368,7 +368,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("BENCH")       , CmdBenchmarkStart    , CMD_BENCHMARK            },
 		{TEXT("EXITBENCH")   , CmdBenchmarkStop     , CMD_BENCHMARK            },
 		{TEXT("MDB")         , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
-		{TEXT("MEMORY")      , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
+//		{TEXT("MEMORY")      , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
 };
 
 	const int NUM_COMMANDS_WITH_ALIASES = sizeof(g_aCommands) / sizeof (Command_t); // Determined at compile-time ;-)

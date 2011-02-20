@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,11);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,17);
 
 
 // Public _________________________________________________________________________________________
@@ -1586,7 +1586,7 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 void _BWZ_ListAll( const Breakpoint_t * aBreakWatchZero, const int nMax )
 {
 	int iBWZ = 0;
-	while (iBWZ < MAX_BOOKMARKS)
+	while (iBWZ < nMax) // 
 	{
 		if (aBreakWatchZero[ iBWZ ].bSet)
 		{
@@ -3783,7 +3783,7 @@ static Update_t _CmdMemoryDump (int nArgs, int iWhich, int iView )
 	g_aMemDump[iWhich].bActive = true;
 	g_aMemDump[iWhich].eView = (MemoryView_e) iView;
 
-	return UPDATE_ALL; // TODO: This really needed? Don't think we do any actual ouput
+	return UPDATE_MEM_DUMP; // TODO: This really needed? Don't think we do any actual ouput
 }
 
 //===========================================================================
@@ -5683,7 +5683,8 @@ Update_t CmdWatchList (int nArgs)
 	}
 	else
 	{
-		_BWZ_List( g_aWatches, MAX_WATCHES );
+//		_BWZ_List( g_aWatches, MAX_WATCHES );
+		_BWZ_ListAll( g_aWatches, MAX_WATCHES );
 	}
 	return ConsoleUpdate();
 }
