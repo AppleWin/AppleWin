@@ -30,16 +30,33 @@ using namespace std;
 //	extern vector<int> g_aBookmarks;
 
 // Breakpoints
+	enum BreakpointHit_t
+	{
+		BP_HIT_NONE     = 0
+		,BP_HIT_INVALID = (1 << 0)
+		,BP_HIT_OPCODE  = (1 << 1)
+		,BP_HIT_REG     = (1 << 2)
+		,BP_HIT_MEM     = (1 << 3)
+	};
+
 	extern int          g_nBreakpoints;
 	extern Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
 	extern const char  *g_aBreakpointSource [ NUM_BREAKPOINT_SOURCES   ];
 	extern const TCHAR *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ];
 
-	// Full-Speed debugging
-	extern int  g_nDebugOnBreakInvalid;
-	extern int  g_iDebugOnOpcode      ;
-	extern bool g_bDebugDelayBreakCheck;
+	// MODE_RUNNING // Normal Speed Breakpoints
+	extern bool g_bDebugNormalSpeedBreakpoints;
+
+	// MODE_STEPPING // Full Speed Breakpoints
+
+	// Any Speed Breakpoints
+	extern int  g_nDebugBreakOnInvalid ;
+	extern int  g_iDebugBreakOnOpcode  ;
+
+	// Breakpoint Status
+	extern bool g_bDebugBreakDelayCheck;
+	extern int  g_bDebugBreakpointHit  ;
 
 // Commands
 	void VerifyDebuggerCommandTable();
@@ -133,22 +150,68 @@ using namespace std;
 	bool Bookmark_Find( const WORD nAddress );
 
 // Breakpoints
+	int CheckBreakpointsIO ();
+	int CheckBreakpointsReg ();
+
 	bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakpointEnable_ );
 
-	// 0 = Brk, 1 = Invalid1, .. 3 = Invalid 3
-	inline bool IsDebugBreakOnInvalid( int iOpcodeType )
+	inline int _IsDebugBreakpointHit()
 	{
-		bool bActive = (g_nDebugOnBreakInvalid >> iOpcodeType) & 1;
-		return bActive;
+		g_bDebugBreakpointHit |= CheckBreakpointsIO() || CheckBreakpointsReg();
+		return g_bDebugBreakpointHit;
 	}
 
+	inline int _IsDebugBreakOnOpcode( int iOpcode )
+	{
+		if (g_iDebugBreakOnOpcode == iOpcode)
+			g_bDebugBreakpointHit |= BP_HIT_OPCODE;
+		return g_bDebugBreakpointHit;
+	}
+
+	// iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
+	inline int IsDebugBreakOnInvalid( int iOpcodeType )
+	{
+		g_bDebugBreakpointHit |= ((g_nDebugBreakOnInvalid >> iOpcodeType) & 1) ? BP_HIT_INVALID : 0;
+		return g_bDebugBreakpointHit;
+	}
+
+	// iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
 	inline void SetDebugBreakOnInvalid( int iOpcodeType, int nValue )
 	{
 		if (iOpcodeType <= AM_3)
 		{
-			g_nDebugOnBreakInvalid &= ~ (          1  << iOpcodeType);
-			g_nDebugOnBreakInvalid |=   ((nValue & 1) << iOpcodeType);
+			g_nDebugBreakOnInvalid &= ~ (          1  << iOpcodeType);
+			g_nDebugBreakOnInvalid |=   ((nValue & 1) << iOpcodeType);
 		}
+	}
+
+	//
+	// CPU checks the Debugger breakpoints
+	//   a) at opcode fetch
+	//   b) after opcode execution
+	//
+	inline int IsDebugBreakOpcode( int iOpcode )
+	{
+		if (g_bDebugBreakDelayCheck)
+		{
+			g_bDebugBreakDelayCheck = false;
+			return false;
+		}
+
+		if (! iOpcode )
+			IsDebugBreakOnInvalid( AM_IMPLIED );
+
+		if (g_iDebugBreakOnOpcode ) // User wants to enter debugger on specific opcode?
+			_IsDebugBreakOnOpcode(iOpcode);
+
+		return g_bDebugBreakpointHit;
+	}
+	//
+	inline int IsDebugBreakpointHit()
+	{
+		if ( !g_bDebugNormalSpeedBreakpoints )
+			return false;
+		return _IsDebugBreakpointHit();
 	}
 	
 // Source Level Debugging

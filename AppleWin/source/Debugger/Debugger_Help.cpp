@@ -512,7 +512,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			switch( iParam )
 			{
 				case PARAM_CAT_BOOKMARKS  : iCmdBegin = CMD_BOOKMARK        ; iCmdEnd = CMD_BOOKMARK_SAVE        ; break;
-				case PARAM_CAT_BREAKPOINTS: iCmdBegin = CMD_BREAKPOINT      ; iCmdEnd = CMD_BREAKPOINT_SAVE      ; break;
+				case PARAM_CAT_BREAKPOINTS: iCmdBegin = CMD_BREAK_INVALID   ; iCmdEnd = CMD_BREAKPOINT_SAVE      ; break;
 				case PARAM_CAT_CONFIG     : iCmdBegin = CMD_BENCHMARK       ; iCmdEnd = CMD_CONFIG_SAVE          ; break;
 				case PARAM_CAT_CPU        : iCmdBegin = CMD_ASSEMBLE        ; iCmdEnd = CMD_UNASSEMBLE           ; break;
 				case PARAM_CAT_FLAGS      :
@@ -895,6 +895,24 @@ Update_t CmdHelpSpecific (int nArgs)
 		case CMD_BOOKMARK_SAVE:
 			break;
 	// Breakpoints
+		case CMD_BREAK_INVALID:
+			sprintf( sTemp, TEXT(" Usage: [%s%s | %s%s] | [ # | # %s%s | # %s%s ]")
+				, CHC_COMMAND
+				, g_aParameters[ PARAM_ON  ].m_sName
+				, CHC_COMMAND
+				, g_aParameters[ PARAM_OFF  ].m_sName
+				, CHC_COMMAND
+				, g_aParameters[ PARAM_ON  ].m_sName
+				, CHC_COMMAND
+				, g_aParameters[ PARAM_OFF  ].m_sName
+			);
+			Colorize( sText, sTemp );
+			ConsolePrint( sText );
+			sprintf( sTemp, TEXT("Where: # is 0=BRK, 1=Invalid Opcode_1, 2=Invalid Opcode_2, 3=Invalid Opcode_3"));
+			Colorize( sText, sTemp );
+			ConsolePrint( sText );
+			break;
+//		case CMD_BREAK_OPCODE:
 		case CMD_BREAKPOINT:
 			sprintf( sTemp, TEXT(" Usage: [%s%s | %s%s | %s%s]")
 				, CHC_COMMAND

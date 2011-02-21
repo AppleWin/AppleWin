@@ -1,7 +1,7 @@
 /*
 AppleWin : An Apple //e emulator for Windows
 
-Copyright (C) 2010, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2010-2011, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -84,6 +84,9 @@ inline u8 ReadByte( u16 addr, int uExecutedCycles )
 // Based on Modified 65C02
 static DWORD Cpu65D02 (DWORD uTotalCycles)
 {
+	// Optimisation:
+	// . Copy the global /regs/ vars to stack-based local vars
+	//   (Oliver Schmidt says this gives a performance gain, see email - The real deal: "1.10.5")
 	WORD addr;
 	BOOL flagc; // must always be 0 or 1, no other values allowed
 	BOOL flagn; // must always be 0 or 0x80.
@@ -96,12 +99,20 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 	ULONG uExecutedCycles = 0;
 	BOOL bSlowerOnPagecross = 0; // Set if opcode writes to memory (eg. ASL, STA)
 	WORD base;
-	bool bBreakOnInvalid = false;
+	g_bDebugBreakpointHit = 0;
 
 	do
 	{
 		UINT uExtraCycles = 0;
 		BYTE iOpcode;
+
+#ifdef SUPPORT_CPM
+		if (g_ActiveCPU == CPU_Z80)
+		{
+			const UINT uZ80Cycles = z80_mainloop(uTotalCycles, uExecutedCycles); CYC(uZ80Cycles)
+		}
+		else
+#endif
 
 		if (!Fetch(iOpcode, uExecutedCycles))
 			break;
@@ -643,10 +654,16 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 		NMI(uExecutedCycles, uExtraCycles, flagc, flagn, flagv, flagz);
 		IRQ(uExecutedCycles, uExtraCycles, flagc, flagn, flagv, flagz);
 
-		if (bBreakOnInvalid)
+		if( IsDebugBreakpointHit() )
 			break;
+
 	} while (uExecutedCycles < uTotalCycles);
 
-	EF_TO_AF
+	EF_TO_AF // Emulator Flags to Apple Flags
+
+	if( g_bDebugBreakpointHit )
+		if ((g_nAppMode != MODE_DEBUG) && (g_nAppMode != MODE_STEPPING)) // // Running at full speed? (debugger not running)
+			RequestDebugger();
+
 	return uExecutedCycles;
 }

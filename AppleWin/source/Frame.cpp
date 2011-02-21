@@ -972,7 +972,7 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if (g_nAppMode == MODE_DEBUG)
 		{		
-			DebuggerProcessKey(wparam);
+			DebuggerProcessKey(wparam); // Debugger already active, re-direct key to debugger
 		}
 
 		if (wparam == VK_F10)
@@ -1468,19 +1468,13 @@ void ProcessButtonClick (int button)
 			ResetMachineState();
 			g_nAppMode = MODE_RUNNING;
 		}
-		if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
+		if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING)) // exit debugger
 		{
-			// If any breakpoints active, 
-			if (g_nBreakpoints)
-			{
-				// switch to MODE_STEPPING
-				CmdGo( 0 );
-			}
+			// If any breakpoints active and ! we are not running at normal speed
+			if (g_nBreakpoints && !g_bDebugNormalSpeedBreakpoints)
+				CmdGo( 0 ); // 6502 runs at full speed, switch to MODE_STEPPNIG
 			else
-			{
-				DebugEnd();
-				g_nAppMode = MODE_RUNNING;
-			}
+				DebugEnd(); // 6502 runs at normal speed, switch to MODE_RUNNING
 		}
       DrawStatusArea((HDC)0,DRAW_TITLE);
       VideoRedrawScreen();
@@ -1510,10 +1504,7 @@ void ProcessButtonClick (int button)
 		{
 			ResetMachineState();
 		}
-
-		// bug/feature: allow F7 to enter debugger even though emulator isn't "running"
-		//else
-
+		// Allow F7 to enter debugger even though emulator isn't "running"
 		if (g_nAppMode == MODE_STEPPING)
 		{
 			DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
@@ -1521,8 +1512,13 @@ void ProcessButtonClick (int button)
 		else
 		if (g_nAppMode == MODE_DEBUG)
 		{
-			g_bDebugDelayBreakCheck = true;
-			ProcessButtonClick(BTN_RUN);
+			if (KeybGetShiftStatus())
+				g_bDebugNormalSpeedBreakpoints = true; // MODE_RUNNING // Normal Speed Breakpoints: Shift-F7 exit debugger, keep breakpoints active, enter run state at NORMAL speed
+			else
+				g_bDebugNormalSpeedBreakpoints = false; // MODE_STEPPING // Full Speed Breakpoints
+
+			g_bDebugBreakDelayCheck = true;
+			ProcessButtonClick(BTN_RUN); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
 
 			// TODO: DD Full-Screen Palette
 			// exiting debugger using wrong palette, but this makes problem worse...

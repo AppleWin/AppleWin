@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2011, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 	ULONG uExecutedCycles = 0;
 	BOOL bSlowerOnPagecross = 0; // Set if opcode writes to memory (eg. ASL, STA)
 	WORD base;
-	bool bBreakOnInvalid = false;  
+	g_bDebugBreakpointHit = 0;
 
 	do
 	{
@@ -321,12 +321,16 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		NMI(uExecutedCycles, uExtraCycles, flagc, flagn, flagv, flagz);
 		IRQ(uExecutedCycles, uExtraCycles, flagc, flagn, flagv, flagz);
 
-		if (bBreakOnInvalid)
+		if ( IsDebugBreakpointHit() )
 			break;
-
 	} while (uExecutedCycles < uTotalCycles);
 
 	EF_TO_AF
+
+	if( g_bDebugBreakpointHit )
+		if ((g_nAppMode != MODE_DEBUG) && (g_nAppMode != MODE_STEPPING)) // Running at full speed? (debugger not running)
+			RequestDebugger();
+
 	return uExecutedCycles;
 }
 

@@ -280,8 +280,6 @@
 // CPU
 		, CMD_CURSOR_JUMP_PC // Shift
 		, CMD_CURSOR_SET_PC  // Ctrl
-		, CMD_BREAK_INVALID
-		, CMD_BREAK_OPCODE
 		, CMD_GO
 		, CMD_IN
 		, CMD_INPUT_KEY
@@ -313,6 +311,8 @@
 		, CMD_BOOKMARK_GOTO
 		, CMD_BOOKMARK_SAVE
 // Breakpoints
+		, CMD_BREAK_INVALID
+		, CMD_BREAK_OPCODE
 		, CMD_BREAKPOINT
 		, CMD_BREAKPOINT_ADD_SMART // smart breakpoint
 		, CMD_BREAKPOINT_ADD_REG   // break on: PC == Address (fetch/execute)

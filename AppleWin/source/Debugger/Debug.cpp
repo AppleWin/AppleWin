@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,17);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,21);
 
 
 // Public _________________________________________________________________________________________
@@ -51,10 +51,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Breakpoints ________________________________________________________________
 
-	// Full-Speed debugging
-	int  g_nDebugOnBreakInvalid  = 0;
-	int  g_iDebugOnOpcode        = 0;
-	bool g_bDebugDelayBreakCheck = false;
+
+	// MODE_RUNNING // Normal Speed Breakpoints: Shift-F7 exit debugger, keep breakpoints active, enter run state at NORMAL speed
+	bool g_bDebugNormalSpeedBreakpoints = 0;
+
+	// MODE_STEPPING // Full Speed Breakpoints
+
+	// Any Speed Breakpoints
+	int  g_nDebugBreakOnInvalid  = 0; // Bit Flags of Invalid Opcode to break on: // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
+	int  g_iDebugBreakOnOpcode   = 0;
+
+	bool g_bDebugBreakDelayCheck = false; // If exiting the debugger, allow at least one instruction to execute so we don't trigger on the same invalid opcode
+	int  g_bDebugBreakpointHit   = 0; // See: BreakpointHit_t
 
 	int          g_nBreakpoints = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
@@ -318,8 +326,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void _BWZ_ListAll ( const Breakpoint_t * aBreakWatchZero, const int nMax );
 
 //	bool CheckBreakpoint (WORD address, BOOL memory);
-	bool CheckBreakpointsIO ();
-	bool CheckBreakpointsReg ();
 	bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, WORD nAddress, int nLen, bool bIsTempBreakpoint );
 	int  _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint=false );
 	void _BWZ_Clear( Breakpoint_t * aBreakWatchZero, int iSlot );
@@ -707,7 +713,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 {
 	g_bBenchmarking = false;
 	DebugEnd();
-	g_nAppMode = MODE_RUNNING;
+	
 	FrameRefreshStatus(DRAW_TITLE);
 	VideoRedrawScreen();
 	DWORD currtime = GetTickCount();
@@ -807,13 +813,19 @@ _Help:
 //===========================================================================
 Update_t CmdBreakInvalid (int nArgs) // Breakpoint IFF Full-speed!
 {
-	if ((nArgs > 2) || (nArgs == 0))
+	if (nArgs > 2) // || (nArgs == 0))
 		goto _Help;
 
-	int iType = 0; // default to BRK
+	int iType = AM_IMPLIED; // default to BRK
 	int nActive = 0;
 
-//	if (nArgs == 2)
+	if (nArgs == 0)
+	{
+		nArgs = 1;
+		g_aArgs[ 1 ].nValue = AM_IMPLIED;
+		g_aArgs[ 1 ].sArg[0] = 0;
+	}
+
 	iType = g_aArgs[ 1 ].nValue;
 
 	// Cases:
@@ -847,10 +859,10 @@ Update_t CmdBreakInvalid (int nArgs) // Breakpoint IFF Full-speed!
 	{
 		if (! nFound) // bValidParam) // case 1a or 1c
 		{
-			if ((iType < 0) || (iType > AM_3))
+			if ((iType < AM_IMPLIED) || (iType > AM_3))
 				goto _Help;
 
-			if (IsDebugBreakOnInvalid( iType ))
+			if ( IsDebugBreakOnInvalid( iType ) ) 
 				iParam = PARAM_ON;
 			else
 				iParam = PARAM_OFF;
@@ -910,31 +922,31 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 	if (nArgs == 1)
 	{
 		int iOpcode = g_aArgs[ 1] .nValue;
-		g_iDebugOnOpcode = iOpcode & 0xFF;
+		g_iDebugBreakOnOpcode = iOpcode & 0xFF;
 
 		_tcscpy( sAction, TEXT("Setting") );
 
 		if (iOpcode >= NUM_OPCODES)
 		{
-			wsprintf( sText, TEXT("Warning: clamping opcode: %02X"), g_iDebugOnOpcode );
+			wsprintf( sText, TEXT("Warning: clamping opcode: %02X"), g_iDebugBreakOnOpcode );
 			ConsoleBufferPush( sText );
 			return ConsoleUpdate();
 		}
 	}
 
-	if (g_iDebugOnOpcode == 0)
+	if (g_iDebugBreakOnOpcode == 0)
 		// Show what the current break opcode is
 		wsprintf( sText, TEXT("%s full speed Break on Opcode: None")
 			, sAction
-			, g_iDebugOnOpcode
-			, g_aOpcodes65C02[ g_iDebugOnOpcode ].sMnemonic
+			, g_iDebugBreakOnOpcode
+			, g_aOpcodes65C02[ g_iDebugBreakOnOpcode ].sMnemonic
 		);
 	else
 		// Show what the current break opcode is
 		wsprintf( sText, TEXT("%s full speed Break on Opcode: %02X %s")
 			, sAction
-			, g_iDebugOnOpcode
-			, g_aOpcodes65C02[ g_iDebugOnOpcode ].sMnemonic
+			, g_iDebugBreakOnOpcode
+			, g_aOpcodes65C02[ g_iDebugBreakOnOpcode ].sMnemonic
 		);
 
 	ConsoleBufferPush( sText );
@@ -1031,7 +1043,7 @@ bool _CheckBreakpointValue( Breakpoint_t *pBP, int nVal )
 
 
 //===========================================================================
-bool CheckBreakpointsIO ()
+int CheckBreakpointsIO ()
 {
 	const int NUM_TARGETS = 2;
 
@@ -1041,7 +1053,7 @@ bool CheckBreakpointsIO ()
 		NO_6502_TARGET
 	};
 	int  nBytes;
-	bool bStatus = false;
+	bool bBreakpointHit = 0;
 
 	int  iTarget;
 	int  nAddress;
@@ -1064,7 +1076,7 @@ bool CheckBreakpointsIO ()
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
-								return true;
+								return BP_HIT_MEM;
 							}
 						}
 					}
@@ -1072,14 +1084,14 @@ bool CheckBreakpointsIO ()
 			}
 		}
 	}
-	return bStatus;
+	return bBreakpointHit;
 }
 
 // Returns true if a register breakpoint is triggered
 //===========================================================================
-bool CheckBreakpointsReg ()
+int CheckBreakpointsReg ()
 {
-	bool bStatus = false;
+	int bBreakpointHit = 0;
 
 	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
 	{
@@ -1090,30 +1102,31 @@ bool CheckBreakpointsReg ()
 
 		switch (pBP->eSource)
 		{
-			case BP_SRC_REG_PC:
-				bStatus = _CheckBreakpointValue( pBP, regs.pc );
+			case BP_SRC_REG_PC: 
+				bBreakpointHit = _CheckBreakpointValue( pBP, regs.pc );
 				break;
 			case BP_SRC_REG_A:
-				bStatus = _CheckBreakpointValue( pBP, regs.a );
+				bBreakpointHit = _CheckBreakpointValue( pBP, regs.a );
 				break;
 			case BP_SRC_REG_X:
-				bStatus = _CheckBreakpointValue( pBP, regs.x );
+				bBreakpointHit = _CheckBreakpointValue( pBP, regs.x );
 				break;
 			case BP_SRC_REG_Y:
-				bStatus = _CheckBreakpointValue( pBP, regs.y );
+				bBreakpointHit = _CheckBreakpointValue( pBP, regs.y );
 				break;
 			case BP_SRC_REG_P:
-				bStatus = _CheckBreakpointValue( pBP, regs.ps );
+				bBreakpointHit = _CheckBreakpointValue( pBP, regs.ps );
 				break;
 			case BP_SRC_REG_S:
-				bStatus = _CheckBreakpointValue( pBP, regs.sp );
+				bBreakpointHit = _CheckBreakpointValue( pBP, regs.sp );
 				break;
 			default:
 				break;
 		}
 
-		if (bStatus)
+		if (bBreakpointHit)
 		{
+			bBreakpointHit = BP_HIT_REG;
 			if (pBP->bTemp)
 				_BWZ_Clear(pBP, iBreakpoint);
 
@@ -1121,7 +1134,7 @@ bool CheckBreakpointsReg ()
 		}
 	}
 
-	return bStatus;
+	return bBreakpointHit;
 }
 
 void ClearTempBreakpoints ()
@@ -1234,7 +1247,7 @@ Update_t CmdBreakpointAddReg (int nArgs)
 			}
 		}
 
-		if ((! bHaveSrc) && (! bHaveCmp))
+		if ((! bHaveSrc) && (! bHaveCmp)) // Inverted/Convoluted logic: didn't find BOTH this pass, so we must have already found them.
 		{
 			int dArgs = _CmdBreakpointAddCommonArg( iArg, nArgs, iSrc, iCmp );
 			if (!dArgs)
@@ -1389,7 +1402,8 @@ Update_t CmdBreakpointAddPC (int nArgs)
 //===========================================================================
 Update_t CmdBreakpointAddIO   (int nArgs)
 {
-	return UPDATE_CONSOLE_DISPLAY;
+	return CmdBreakpointAddMem( nArgs );
+//	return UPDATE_BREAKPOINTS | UPDATE_CONSOLE_DISPLAY;
 }
 
 
@@ -7168,13 +7182,13 @@ void DebugContinueStepping ()
 	{
 		if ((regs.pc >= g_nDebugSkipStart) && (regs.pc < (g_nDebugSkipStart + g_nDebugSkipLen)))
 		{
-			// Enter turbo debugger g_nAppMode -- UI not updated, etc.
+			// Enter turbo debugger mode -- UI not updated, etc.
 			g_nDebugSteps = -1;
 			g_nAppMode = MODE_STEPPING;
 		}
 		else
 		{
-			// Enter normal debugger g_nAppMode -- UI updated every instruction, etc.
+			// Enter normal debugger mode -- UI updated every instruction, etc.
 			g_nDebugSteps = 1;
 			g_nAppMode = MODE_STEPPING;
 		}
@@ -7188,12 +7202,9 @@ void DebugContinueStepping ()
 
 		InternalSingleStep();
 
-		bool bBreak = CheckBreakpointsIO();
+		_IsDebugBreakpointHit(); // Updates g_bDebugBreakpointHit
 
-		if (CheckBreakpointsReg())
-			bBreak = true;
-
-		if ((regs.pc == g_nDebugStepUntil) || bBreak)
+		if ((regs.pc == g_nDebugStepUntil) || g_bDebugBreakpointHit)
 			g_nDebugSteps = 0;
 		else if (g_nDebugSteps > 0)
 			g_nDebugSteps--;
@@ -7203,7 +7214,7 @@ void DebugContinueStepping ()
 	{
 		if (!((++nStepsTaken) & 0xFFFF))
 		{
-			if (nStepsTaken == 0x10000)
+			if (nStepsTaken == 0x10000) // HACK_MAGIC_NUM
 				VideoRedrawScreen();
 			else
 				VideoRefreshScreen();
@@ -7215,32 +7226,11 @@ void DebugContinueStepping ()
 		FrameRefreshStatus(DRAW_TITLE);
 // BUG: PageUp, Trace - doesn't center cursor
 
-//		if ((g_nDebugStepStart < regs.pc) && (g_nDebugStepStart+3 >= regs.pc))
-		// Still within current disasm "window"?
-/*
-		if ((regs.pc >= g_nDisasmTopAddress) && (regs.pc <= g_nDisasmBotAddress))
-		{
-			int eMode = g_aOpcodes[*(mem+g_nDisasmCurAddress)].addrmode;
-			int nBytes = g_aOpmodes[ eMode ]._nBytes;
-			g_nDisasmCurAddress += nBytes;
-//			g_nDisasmTopAddress += nBytes;
-//			g_nDisasmBotAddress += nBytes;
-		}
-		else
-*/
-		{
-			g_nDisasmCurAddress = regs.pc;
-		}
+		g_nDisasmCurAddress = regs.pc;
 
 		DisasmCalcTopBotAddress();
 
-//		g_nDisasmCurAddress += g_aOpmodes[g_aOpcodes[*(mem+g_nDisasmCurAddress)].addrmode]._nBytes;
-//		DisasmCalcTopBotAddress();
-
 		Update_t bUpdate = UPDATE_ALL;
-//		if (nStepsTaken >= 0x10000) // HACK_MAGIC_NUM
-//			bUpdate = UPDATE_ALL;
-
 		UpdateDisplay( bUpdate ); // nStepsTaken >= 0x10000);
 		nStepsTaken = 0;
 	}
@@ -7297,6 +7287,8 @@ void DebugEnd ()
 	}
 
 	g_vMemorySearchResults.erase( g_vMemorySearchResults.begin(), g_vMemorySearchResults.end() );
+
+	g_nAppMode = MODE_RUNNING;
 }
 
 
