@@ -1771,6 +1771,9 @@ Legend:
  Edge Case for Half Luminance !
    2000:C4 00  // Green  HalfLumBlue
    2400:C4 80  // Green  Green
+ Edge Case for Color Bleed !
+   2000:40 00
+   2400:40 80
 */
 
 			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but cross 14-pixel boundaries.
