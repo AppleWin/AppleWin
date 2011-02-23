@@ -4,9 +4,9 @@
   <link rel="shortcut icon" href="applewin.ico">
   <title>Apple //e Emulator for Windows</title></head>
 <body alink="gold" background="background.gif" bgcolor="mediumpurple" link="orange" text="powderblue" vlink="plum">
-<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.19.3</font></u></font></p>
+<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.20.0</font></u></font></p>
 <p align="center"><font face="Tahoma"><img src="applewin.gif" title="" alt="Apple //e Emulator Logo" height="384" width="560"></font></p>
-<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.19.3.0.zip">Version 1.19.3</a><br>
+<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.20.0.0.zip">Version 1.20.0</a><br>
 <a href="#OldReleases">Download older releases</a><br>
 </font></p>
 
@@ -25,6 +25,23 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
 - On Windows XP you can simply right-click on the CHM file, select "Properties", and click on the "Unblock" button.<br>
 - Click "Apply" and the content should be visible.
 </font></font></p>
+
+
+<p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.20.0 - 23 Feb 2011</u></font></p>
+<font face="Tahoma">
+<li>Changes:</li>
+<ul>
+    <li>Standard, Text Optimized and Monochrome video modes now support half-pixel rendering accuracy!</li>
+    <li>Colors tweaked to better match the real hardware.</li>
+</ul>
+<li>Debugger:</li>
+<ul>
+    <li>See the Debugger_Changelog.txt for the various fixes and changes.</li>
+</ul>
+<li>Misc:</li>
+<ul>
+    <li>Updated acknowledgements. Cheers to Mike Harvey! (Nibble Magazine)</li>
+</ul>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.19.3 - 20 Dec 2010</u></font></p>
@@ -493,6 +510,7 @@ find didn't appear to support it:<br>
 
 <p><font face="Tahoma"><font face="Tahoma"><u><a name="OldReleases"></a>Old releases:</u></font></font></p>
 <p><font face="Tahoma"><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.19.3.0.zip">Version 1.19.3</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.17.2.0.zip">Version 1.17.2</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.17.1.0.zip">Version 1.17.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">
   Download <a href="http://download.berlios.de/applewin/AppleWin1.16.1.0.zip">Version 1.16.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">

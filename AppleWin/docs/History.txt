@@ -19,6 +19,17 @@ Restrictions/bugs:
 - For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
 
+1.20.0 - 23 Feb 2011
+--------------------
+Changes:
+. Standard, Text Optimized and Monochrome video modes now support half-pixel rendering accuracy!
+. Colors tweaked to better match the real hardware.
+Debugger
+. See the Debugger_Changelog.txt for the various fixes and changes.
+Misc:
+. Updated acknowledgements. Cheers to Mike Harvey! (Nibble Magazine)
+
+
 1.19.3 - 30 Dec 2010
 --------------------
 Changes:
