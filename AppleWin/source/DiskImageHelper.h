@@ -62,6 +62,8 @@ public:
 	virtual char* GetCreateExtensions(void) = 0;
 	virtual char* GetRejectExtensions(void) = 0;
 
+	void SetVolumeNumber(const BYTE uVolumeNumber) { m_uVolumeNumber = uVolumeNumber; }
+
 	enum SectorOrder_e {eProDOSOrder, eDOSOrder, eSIMSYSTEMOrder, NUM_SECTOR_ORDERS};
 
 protected:
@@ -80,11 +82,11 @@ protected:
 public:
 	static LPBYTE ms_pWorkBuffer;
 	UINT m_uNumTracksInImage;	// Init'd by CDiskImageHelper.Detect()/GetImageForCreation() & possibly updated by IsValidImageSize()
-	BYTE m_uVolumeNumber;
 
 protected:
 	static BYTE ms_DiskByte[0x40];
 	static BYTE ms_SectorNumber[NUM_SECTOR_ORDERS][0x10];
+	BYTE m_uVolumeNumber;
 };
 
 //-------------------------------------

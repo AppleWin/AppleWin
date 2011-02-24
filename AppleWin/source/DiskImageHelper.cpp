@@ -1087,7 +1087,7 @@ eDetectResult C2IMGHelper::DetectHdr(LPBYTE& pImage, DWORD& dwImageSize, DWORD& 
 BYTE C2IMGHelper::GetVolumeNumber(void)
 {
 	if (m_Hdr.ImageFormat != e2IMGFormatDOS33 || !m_Hdr.Flags.bDOS33VolumeNumberValid)
-		return 254;
+		return DEFAULT_VOLUME_NUMBER;
 
 	return m_Hdr.Flags.VolumeNumber;
 }
@@ -1502,7 +1502,7 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 
 		if (m_Result2IMG == eMatch)
 		{
-			pImageType->m_uVolumeNumber = m_2IMGHelper.GetVolumeNumber();
+			pImageType->SetVolumeNumber( m_2IMGHelper.GetVolumeNumber() );
 
 			if (m_2IMGHelper.IsLocked() && !*pWriteProtected_)
 				*pWriteProtected_ = 1;
