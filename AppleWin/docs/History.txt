@@ -24,8 +24,13 @@ Restrictions/bugs:
 Changes:
 . Standard, Text Optimized and Monochrome video modes now support half-pixel rendering accuracy!
 . Colors tweaked to better match the real hardware.
-Debugger
+
+Fixes:
+. Fixed Mockingboard detection for Ultima III (ProDOS-8/harddisk version).
+
+Debugger:
 . See the Debugger_Changelog.txt for the various fixes and changes.
+
 Misc:
 . Updated acknowledgements. Cheers to Mike Harvey! (Nibble Magazine)
 

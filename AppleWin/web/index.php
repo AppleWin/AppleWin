@@ -22,7 +22,7 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
 <br>
 <font size="2">
 <strong>NB. If you have trouble reading the CHM:</strong><br>
-- On Windows XP you can simply right-click on the CHM file, select "Properties", and click on the "Unblock" button.<br>
+- On Windows XP, Windows 7, etc you can simply right-click on the CHM file, select "Properties", and click on the "Unblock" button.<br>
 - Click "Apply" and the content should be visible.
 </font></font></p>
 
@@ -33,6 +33,10 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
 <ul>
     <li>Standard, Text Optimized and Monochrome video modes now support half-pixel rendering accuracy!</li>
     <li>Colors tweaked to better match the real hardware.</li>
+</ul>
+<li>Fixes:</li>
+<ul>
+    <li>Fixed Mockingboard detection for Ultima III (ProDOS-8/harddisk version).</li>
 </ul>
 <li>Debugger:</li>
 <ul>
