@@ -1507,6 +1507,10 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 			if (m_2IMGHelper.IsLocked() && !*pWriteProtected_)
 				*pWriteProtected_ = 1;
 		}
+		else
+		{
+			pImageType->SetVolumeNumber(DEFAULT_VOLUME_NUMBER);
+		}
 	}
 
 	return pImageType;
