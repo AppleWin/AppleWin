@@ -230,6 +230,9 @@
     <ClCompile Include="source\CPU.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="source\Debugger\Debugger_Commands.cpp">
+      <Filter>Source\Debugger</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\6821.h">

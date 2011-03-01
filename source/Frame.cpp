@@ -1530,7 +1530,7 @@ void ProcessButtonClick (int button)
 		else
 		if (g_nAppMode == MODE_DEBUG)
 		{
-			g_bDebugDelayBreakCheck = true;
+			//g_bDebugDelayBreakCheck = true;
 			ProcessButtonClick(BTN_RUN);
 
 			// TODO: DD Full-Screen Palette

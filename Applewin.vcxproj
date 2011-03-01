@@ -42,6 +42,8 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkIncremental>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Users\Miyeong\Projects\AppleWin-Sheldon\source;C:\Users\Miyeong\Projects\AppleWin-Sheldon\source\CPU;C:\Users\Miyeong\Projects\AppleWin-Sheldon\source\Debugger;C:\Users\Miyeong\Projects\AppleWin-Sheldon\zip_lib;C:\Users\Miyeong\Projects\AppleWin-Sheldon\zlib;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">C:\Users\Miyeong\Projects\AppleWin-Sheldon\source;C:\Users\Miyeong\Projects\AppleWin-Sheldon\source\CPU;C:\Users\Miyeong\Projects\AppleWin-Sheldon\source\Debugger;C:\Users\Miyeong\Projects\AppleWin-Sheldon\zip_lib;C:\Users\Miyeong\Projects\AppleWin-Sheldon\zlib;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -137,6 +139,7 @@
     <ClCompile Include="source\AY8910.cpp" />
     <ClCompile Include="source\CPU.cpp" />
     <ClCompile Include="source\cs.cpp" />
+    <ClCompile Include="source\Debugger\Debugger_Commands.cpp" />
     <ClCompile Include="source\Disk.cpp" />
     <ClCompile Include="source\DiskImage.cpp" />
     <ClCompile Include="source\DiskImageHelper.cpp" />
