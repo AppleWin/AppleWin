@@ -44,6 +44,11 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		UINT uExtraCycles = 0;
 		BYTE iOpcode;
 
+#ifdef WS_VIDEO
+		ULONG uElapsedCycles;
+		ULONG uPreviousCycles = uExecutedCycles;
+#endif
+
 #ifdef SUPPORT_CPM
 		if (g_ActiveCPU == CPU_Z80)
 		{
@@ -316,6 +321,11 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		case 0xFF: $ abx INS	CYC(7)  break;
 		}
 		}
+
+#ifdef WS_VIDEO
+		uElapsedCycles = uExecutedCycles - uPreviousCycles;
+		wsVideoUpdate(uElapsedCycles);
+#endif
 
 		CheckInterruptSources(uExecutedCycles);
 		NMI(uExecutedCycles, uExtraCycles, flagc, flagn, flagv, flagz);
