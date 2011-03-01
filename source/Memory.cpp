@@ -1259,14 +1259,22 @@ BYTE MemReturnRandomData (BYTE highbit)
 
 BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
+#ifdef WS_VIDEO
+  return wsVideoByte(uExecutedCycles);
+#else
   return*(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
+#endif
 }
 
 //===========================================================================
 
 BYTE MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles)
 {
+#ifdef WS_VIDEO
+  BYTE r = wsVideoByte(uExecutedCycles);
+#else
   BYTE r = *(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
+#endif
   return (r & ~0x80) | ((highbit) ? 0x80 : 0);
 }
 

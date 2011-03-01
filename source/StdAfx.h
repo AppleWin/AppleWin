@@ -43,6 +43,7 @@
 
 #include "Common.h"
 #include "Structs.h"
+#include "wsvideo.h"
 
 #include "AppleWin.h"
 #include "AY8910.h"
@@ -66,4 +67,3 @@
 #include "Speaker.h"
 #include "Tape.h"
 #include "Tfe/Tfe.h"
-

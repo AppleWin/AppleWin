@@ -257,8 +257,15 @@ void Config_Load_Video()
 	REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&g_uHalfScanLines);
 	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&monochrome);
 
+#ifdef WS_VIDEO
+		if (g_eVideoType >= NUM_VIDEO_MODES)
+			g_eVideoType = VT_COLOR_MONITOR;
+		
+		wsVideoStyle(g_eVideoType, g_uHalfScanLines);
+#else
 	if (g_eVideoType >= NUM_VIDEO_MODES)
-		g_eVideoType = VT_COLOR_STANDARD; // Old default: VT_COLOR_TVEMU
+		g_eVideoType = VT_COLOR_TVEMU;
+#endif
 }
 
 
@@ -289,17 +296,28 @@ static void ConfigDlg_OK(HWND window, UINT afterclose)
 		{
 			afterclose = WM_USER_RESTART;
 		}
+
+#ifdef WS_VIDEO
+		wsVideoInitModel(NewApple2Type);
+#endif
 	}
 
 	if (g_eVideoType != newvidtype)
 	{
 		g_eVideoType = newvidtype;
+
+#ifndef WS_VIDEO
 		VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
 			VideoRedrawScreen();
 		}
+#endif
 	}
+
+#ifdef WS_VIDEO
+	wsVideoStyle(g_eVideoType, g_uHalfScanLines);
+#endif
 
 	sg_SSC.CommSetSerialPort(window,newserialport);
 	

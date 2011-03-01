@@ -42,9 +42,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAGICX 5	// 3D border between Apple window & Emulator's RHS buttons
 #define MAGICY 5	// 3D border between Apple window & Title bar
 
-#define VIEWPORTCX FRAMEBUFFER_W
-#define VIEWPORTCY FRAMEBUFFER_H
-
 #define  BUTTONX     (VIEWPORTCX + VIEWPORTX*2)
 #define  BUTTONY     0
 #define  BUTTONCX    45
@@ -96,7 +93,6 @@ static RECT    framerect       = {0,0,0,0};
 
 		HWND   g_hFrameWindow  = (HWND)0;
 		BOOL   g_bIsFullScreen = 0;
-		BOOL   g_bMultiMon     = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
 
 static BOOL    helpquit        = 0;
 static BOOL    g_bPaintingWindow        = 0;
@@ -107,11 +103,12 @@ static int     viewportx       = VIEWPORTX;	// Default to Normal (non-FullScreen
 static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
 int g_nCharsetType = 0;
 
+#ifndef WS_VIDEO
 // Direct Draw -- For Full Screen
-		LPDIRECTDRAW        g_pDD = (LPDIRECTDRAW)0;
-		LPDIRECTDRAWSURFACE g_pDDPrimarySurface    = (LPDIRECTDRAWSURFACE)0;
-		IDirectDrawPalette* g_pDDPal = (IDirectDrawPalette*)0;
-
+//		LPDIRECTDRAW        g_pDD = (LPDIRECTDRAW)0(*&(*]]]
+//		LPDIRECTDRAWSURFACE g_pDDPrimarySurface    = (LPDIRECTDRAWSURFACE)0;
+//		IDirectDrawPalette* g_pDDPal = (IDirectDrawPalette*)0;
+#endif
 
 static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
@@ -129,61 +126,11 @@ static bool FileExists(string strFilename);
 bool	g_bScrollLock_FullSpeed = false;
 bool	g_bFreshReset = false;
 
-// __ Prototypes __________________________________________________________________________________
-	static void DrawCrosshairs (int x, int y);
-	static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen);
-	static void DrawCrosshairsMouse();
-	static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
-
-	TCHAR g_pAppleWindowTitle[ 128 ] = "";
-
-// Updates g_pAppTitle
-// ====================================================================
-void GetAppleWindowTitle()
-{
-	g_pAppTitle = g_pAppleWindowTitle;
-
-	switch (g_Apple2Type)
-	{
-		default:
-		case A2TYPE_APPLE2:			_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2          ); break; 
-		case A2TYPE_APPLE2PLUS:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2_PLUS     ); break; 
-		case A2TYPE_APPLE2E:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E         ); break; 
-		case A2TYPE_APPLE2EEHANCED:	_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E_ENHANCED); break; 
-		case A2TYPE_PRAVETS82:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_82       ); break; 
-		case A2TYPE_PRAVETS8M:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8M       ); break; 
-		case A2TYPE_PRAVETS8A:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8A       ); break; 
-	}
-
-#if _DEBUG
-	_tcscat( g_pAppleWindowTitle, " *DEBUG* " );
-#endif
-
-	if (g_nAppMode == MODE_LOGO)
-		return;
-
-	// TODO: g_bDisplayVideoModeInTitle
-	_tcscat( g_pAppleWindowTitle, " - " );
-
-	if( g_uHalfScanLines )
-	{
-		_tcscat( g_pAppleWindowTitle," 50% " );
-	}
-	_tcscat( g_pAppleWindowTitle, g_apVideoModeDesc[ g_eVideoType ] );
-
-	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
-		_tcscat(g_pAppleWindowTitle,TEXT(" (custom rom)"));
-	else if (g_uTheFreezesF8Rom && IS_APPLE2)
-		_tcscat(g_pAppleWindowTitle,TEXT(" (The Freeze's non-autostart F8 rom)"));
-
-	switch (g_nAppMode)
-	{
-		case MODE_PAUSED  : _tcscat(g_pAppleWindowTitle,TEXT(" [")); _tcscat(g_pAppleWindowTitle,TITLE_PAUSED  ); _tcscat(g_pAppleWindowTitle,TEXT("]")); break;
-		case MODE_STEPPING: _tcscat(g_pAppleWindowTitle,TEXT(" [")); _tcscat(g_pAppleWindowTitle,TITLE_STEPPING); _tcscat(g_pAppleWindowTitle,TEXT("]")); break;
-	}
-
-	g_pAppTitle = g_pAppleWindowTitle;
-}
+// Prototypes:
+static void DrawCrosshairs (int x, int y);
+static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen);
+static void DrawCrosshairsMouse();
+static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
 
 //===========================================================================
 
@@ -503,8 +450,13 @@ static void DrawFrameWindow ()
 		VideoDisplayLogo();
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay(1);
+#ifdef WS_VIDEO
+	else
+		wsVideoRefresh();
+#else
 	else
 		VideoRedrawScreen();
+#endif
 
 	// DD Full-Screen Palette: BUGFIX: needs to come _after_ all drawing...
 	if (g_bPaintingWindow)
@@ -637,8 +589,43 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 		if (drawflags & DRAW_TITLE)
 		{
-			GetAppleWindowTitle(); // SetWindowText() // WindowTitle
-			SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)g_pAppTitle);
+			TCHAR title[80];
+			switch (g_Apple2Type)
+			{
+			default:
+			case A2TYPE_APPLE2:			_tcscpy(title, TITLE_APPLE_2); break; 
+			case A2TYPE_APPLE2PLUS:		_tcscpy(title, TITLE_APPLE_2_PLUS); break; 
+			case A2TYPE_APPLE2E:		_tcscpy(title, TITLE_APPLE_2E); break; 
+			case A2TYPE_APPLE2EEHANCED:	_tcscpy(title, TITLE_APPLE_2E_ENHANCED); break; 
+			case A2TYPE_PRAVETS82:		_tcscpy(title, TITLE_PRAVETS_82); break; 
+			case A2TYPE_PRAVETS8M:		_tcscpy(title, TITLE_PRAVETS_8M); break; 
+			case A2TYPE_PRAVETS8A:		_tcscpy(title, TITLE_PRAVETS_8A); break; 
+			}
+
+			// TODO: g_bDisplayVideoModeInTitle
+			if( 1 )
+			{
+				_tcscat( title, " - " );
+
+				if( g_uHalfScanLines )
+				{
+					_tcscat( title," 50% " );
+				}
+				_tcscat( title, g_apVideoModeDesc[ g_eVideoType ] );
+			}
+
+			if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
+				_tcscat(title,TEXT(" (custom rom)"));
+			else if (g_uTheFreezesF8Rom && IS_APPLE2)
+				_tcscat(title,TEXT(" (The Freeze's non-autostart F8 rom)"));
+
+			switch (g_nAppMode)
+			{
+				case MODE_PAUSED  : _tcscat(title,TEXT(" [")); _tcscat(title,TITLE_PAUSED  ); _tcscat(title,TEXT("]")); break;
+				case MODE_STEPPING: _tcscat(title,TEXT(" [")); _tcscat(title,TITLE_STEPPING); _tcscat(title,TEXT("]")); break;
+			}
+
+			SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)title);
 		}
 		if (drawflags & DRAW_BUTTON_DRIVES)
 		{
@@ -860,7 +847,7 @@ LRESULT CALLBACK FrameWndProc (
 			DrawButton((HDC)0,buttondown);
 		}
 		else if (wparam == VK_F9)
-		{			
+		{
 			//bool bCtrlDown  = (GetKeyState(VK_CONTROL) < 0) ? true : false;
 			//bool bShiftDown = (GetKeyState(VK_SHIFT  ) < 0) ? true : false;
 
@@ -869,7 +856,8 @@ LRESULT CALLBACK FrameWndProc (
 // #F9 Prev Video Mode
 // ^#F9 Toggle 50% Scan Lines
 // @F9 -Can't use Alt-F9 as Alt is Open-Apple = Joystick Button #1
-
+			
+#ifndef WS_VIDEO
 			if ( g_bCtrlKey && !g_bShiftKey ) //CTRL+F9
 			{
 				g_nCharsetType++; // Cycle through available charsets (Ctrl + F9)
@@ -879,9 +867,13 @@ LRESULT CALLBACK FrameWndProc (
 				}
 			}
 			else	// Cycle through available video modes
+#endif
 			if ( g_bCtrlKey && g_bShiftKey ) // ALT+F9
 			{
 				g_uHalfScanLines = !g_uHalfScanLines;
+#ifdef WS_VIDEO
+				wsVideoStyle(g_eVideoType, g_uHalfScanLines);
+#endif
 			}
 			else
 			if ( !g_bShiftKey )	// Drop Down Combo Box is in correct order
@@ -900,16 +892,20 @@ LRESULT CALLBACK FrameWndProc (
 			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)
 			DrawStatusArea( (HDC)0, DRAW_TITLE );
 
+#ifdef WS_VIDEO
+			wsVideoStyle(g_eVideoType, g_uHalfScanLines);
+#else
 			VideoReinitialize();
 			if ((g_nAppMode != MODE_LOGO) || ((g_nAppMode == MODE_DEBUG) && (g_bDebuggerViewingAppleOutput)))
 			{
 				VideoRedrawScreen();
 				g_bDebuggerViewingAppleOutput = true;
 			}
+#endif
 
 			Config_Save_Video();
 		}
-
+#ifndef WS_VIDEO
 		else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)
 		{
 			SoundCore_SetFade(FADE_OUT);
@@ -928,6 +924,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			SoundCore_SetFade(FADE_IN);
 		}
+#endif
 		else if (wparam == VK_CAPITAL)
 		{
 			KeybToggleCapsLock();
@@ -952,8 +949,10 @@ LRESULT CALLBACK FrameWndProc (
 					break;
 			}
 			DrawStatusArea((HDC)0,DRAW_TITLE);
+#ifndef WS_VIDEO
 			if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 				VideoRedrawScreen();
+#endif
 			g_bResetTiming = true;
 		}
 		else if ((wparam == VK_SCROLL) && g_uScrollLockToggle)
@@ -972,9 +971,9 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if (g_nAppMode == MODE_DEBUG)
 		{		
-			DebuggerProcessKey(wparam); // Debugger already active, re-direct key to debugger
+			DebuggerProcessKey(wparam);
 		}
-
+#ifndef WS_VIDEO
 		if (wparam == VK_F10)
 		{
 			if ((g_Apple2Type == A2TYPE_PRAVETS8A) && (GetKeyState(VK_CONTROL) >= 0))
@@ -987,6 +986,7 @@ LRESULT CALLBACK FrameWndProc (
 				return 0;	// TC: Why return early?
 			}
 		}
+#endif
 		break;
 
     case WM_KEYUP:
@@ -1468,16 +1468,24 @@ void ProcessButtonClick (int button)
 			ResetMachineState();
 			g_nAppMode = MODE_RUNNING;
 		}
-		if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING)) // exit debugger
+		if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
 		{
-			// If any breakpoints active and ! we are not running at normal speed
-			if (g_nBreakpoints && !g_bDebugNormalSpeedBreakpoints)
-				CmdGo( 0 ); // 6502 runs at full speed, switch to MODE_STEPPNIG
+			// If any breakpoints active, 
+			if (g_nBreakpoints)
+			{
+				// switch to MODE_STEPPING
+				CmdGo( 0 );
+			}
 			else
-				DebugEnd(); // 6502 runs at normal speed, switch to MODE_RUNNING
+			{
+				DebugEnd();
+				g_nAppMode = MODE_RUNNING;
+			}
 		}
       DrawStatusArea((HDC)0,DRAW_TITLE);
+#ifndef WS_VIDEO
       VideoRedrawScreen();
+#endif
       g_bResetTiming = true;
       break;
 
@@ -1493,10 +1501,17 @@ void ProcessButtonClick (int button)
       break;
 
     case BTN_FULLSCR:
+#ifdef WS_VIDEO
+		viewscale = 1 + (viewscale == 1);
+		VIEWPORTCX = viewscale * FRAMEBUFFER_W;
+		VIEWPORTCY = viewscale * FRAMEBUFFER_H;
+		FrameCreateWindow(VIEWPORTCX, VIEWPORTCY, true);
+#else
       if (g_bIsFullScreen)
         SetNormalMode();
       else
         SetFullScreenMode();
+#endif
       break;
 
     case BTN_DEBUG:
@@ -1504,7 +1519,10 @@ void ProcessButtonClick (int button)
 		{
 			ResetMachineState();
 		}
-		// Allow F7 to enter debugger even though emulator isn't "running"
+
+		// bug/feature: allow F7 to enter debugger even though emulator isn't "running"
+		//else
+
 		if (g_nAppMode == MODE_STEPPING)
 		{
 			DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
@@ -1512,13 +1530,8 @@ void ProcessButtonClick (int button)
 		else
 		if (g_nAppMode == MODE_DEBUG)
 		{
-			if (KeybGetShiftStatus())
-				g_bDebugNormalSpeedBreakpoints = true; // MODE_RUNNING // Normal Speed Breakpoints: Shift-F7 exit debugger, keep breakpoints active, enter run state at NORMAL speed
-			else
-				g_bDebugNormalSpeedBreakpoints = false; // MODE_STEPPING // Full Speed Breakpoints
-
-			g_bDebugBreakDelayCheck = true;
-			ProcessButtonClick(BTN_RUN); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
+			g_bDebugDelayBreakCheck = true;
+			ProcessButtonClick(BTN_RUN);
 
 			// TODO: DD Full-Screen Palette
 			// exiting debugger using wrong palette, but this makes problem worse...
@@ -1721,6 +1734,7 @@ void CtrlReset()
 //===========================================================================
 void SetFullScreenMode ()
 {
+#ifndef WS_VIDEO
 	g_bIsFullScreen = true;
 	buttonover = -1;
 	buttonx    = FSBUTTONX;
@@ -1748,12 +1762,14 @@ void SetFullScreenMode ()
 	//	if( !g_bIsFullScreen )
 
 	InvalidateRect(g_hFrameWindow,NULL,1);
+#endif
 }
 
 //===========================================================================
 void SetNormalMode ()
 {
 	g_bIsFullScreen = false;
+#ifndef WS_VIDEO
 	buttonover = -1;
 	buttonx    = BUTTONX;
 	buttony    = BUTTONY;
@@ -1786,6 +1802,7 @@ void SetNormalMode ()
 
 	g_pDD->Release();
 	g_pDD = (LPDIRECTDRAW)0;
+#endif
 }
 
 //===========================================================================
@@ -1825,7 +1842,7 @@ void SetUsingCursor (BOOL bNewValue)
 //
 
 //===========================================================================
-void FrameCreateWindow ()
+void FrameCreateWindow (int VIEWPORTCX, int VIEWPORTCY, BOOL justresize)
 {
 	const int nWidth  = VIEWPORTCX + VIEWPORTX*2
 								   + BUTTONCX
@@ -1836,7 +1853,7 @@ void FrameCreateWindow ()
 								   + GetSystemMetrics(SM_CYCAPTION)
 								   + MAGICY;
 
-	// Restore Window X Position
+	//
 
 	int nXPos = -1;
 	{
@@ -1844,15 +1861,15 @@ void FrameCreateWindow ()
 
 		if (RegLoadValue(TEXT(REG_PREFS), TEXT("Window X-Position"), 1, (DWORD*)&nXPos))
 		{
-			if ((nXPos > nXScreen) && !g_bMultiMon)
+			if (nXPos > nXScreen)
 				nXPos = -1;	// Not fully visible, so default to centre position
 		}
 
-		if ((nXPos == -1) && !g_bMultiMon)
+		if (nXPos == -1)
 			nXPos = nXScreen / 2;
 	}
 
-	// Restore Window Y Position
+	//
 
 	int nYPos = -1;
 	{
@@ -1860,26 +1877,52 @@ void FrameCreateWindow ()
 
 		if (RegLoadValue(TEXT(REG_PREFS), TEXT("Window Y-Position"), 1, (DWORD*)&nYPos))
 		{
-			if ((nYPos > nYScreen) && !g_bMultiMon)
+			if (nYPos > nYScreen)
 				nYPos = -1;	// Not fully visible, so default to centre position
 		}
 
-		if ((nYPos == -1) && g_bMultiMon)
+		if (nYPos == -1)
 			nYPos = nYScreen / 2;
 	}
 
 	//
-	GetAppleWindowTitle();
+
+	switch (g_Apple2Type)
+	{
+	case A2TYPE_APPLE2:			g_pAppTitle = TITLE_APPLE_2; break; 
+	case A2TYPE_APPLE2PLUS:		g_pAppTitle = TITLE_APPLE_2_PLUS; break; 
+	case A2TYPE_APPLE2E:		g_pAppTitle = TITLE_APPLE_2E; break; 
+	case A2TYPE_APPLE2EEHANCED:	g_pAppTitle = TITLE_APPLE_2E_ENHANCED; break; 
+	case A2TYPE_PRAVETS82:	    g_pAppTitle = TITLE_PRAVETS_82; break; 
+	case A2TYPE_PRAVETS8M:	    g_pAppTitle = TITLE_PRAVETS_8M; break; 
+	case A2TYPE_PRAVETS8A:	    g_pAppTitle = TITLE_PRAVETS_8A; break; 
+	}
+
+	buttonx = (VIEWPORTCX + VIEWPORTX*2);
+	buttony = 0;
+
+	if (justresize)
+	{
+		RECT irect;
+		irect.left = irect.top = 0;
+		irect.right = nWidth;
+		irect.bottom = nHeight;
+		InvalidateRect(g_hFrameWindow, &irect, true);
+		MoveWindow(g_hFrameWindow, nXPos, nYPos, nWidth, nHeight, false);
+		UpdateWindow(g_hFrameWindow);
+		return;
+	}
 
 	g_hFrameWindow = CreateWindow(
 		TEXT("APPLE2FRAME"),
-		g_pAppTitle, // SetWindowText() // WindowTitle
+		g_pAppTitle,
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 		WS_MINIMIZEBOX | WS_VISIBLE,
 		nXPos, nYPos, nWidth, nHeight,
 		HWND_DESKTOP,
 		(HMENU)0,
 		g_hInstance, NULL );
+
 
 	InitCommonControls();
 	tooltipwindow = CreateWindow(
@@ -1923,6 +1966,7 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 	// ASSERT( pPitch_ );
 	if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
 	{
+#ifndef WS_VIDEO
 		RECT rect = {	FSVIEWPORTX,
 						FSVIEWPORTY,
 						FSVIEWPORTX+VIEWPORTCX,
@@ -1943,7 +1987,7 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 		}
 		*pAddr_  = (LPBYTE)surfacedesc.lpSurface+(VIEWPORTCY-1)*surfacedesc.lPitch;
 		*pPitch_ = -surfacedesc.lPitch;
-
+#endif
 		return (HDC)0;
 	}
 	else
@@ -1991,6 +2035,7 @@ void FrameReleaseDC () {
 //===========================================================================
 void FrameReleaseVideoDC ()
 {
+#ifndef WS_VIDEO
 	if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
 	{
 		// THIS IS CORRECT ACCORDING TO THE DIRECTDRAW DOCS
@@ -2005,6 +2050,7 @@ void FrameReleaseVideoDC ()
 		// BUT THIS SEEMS TO BE WORKING
 		g_pDDPrimarySurface->Unlock(NULL);
 	}
+#endif
 }
 
 //===========================================================================

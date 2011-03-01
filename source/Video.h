@@ -3,33 +3,38 @@
 // Types ____________________________________________________________
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
-	// NOTE: Used/Serialized by: g_eVideoType
+#ifdef WS_VIDEO
 	enum VideoType_e
 	{
-		  VT_MONO_HALFPIXEL_REAL // uses custom monochrome
+		  VT_COLOR_TV
+		, VT_COLOR_MONITOR
+		, VT_MONO_TV
+		, VT_MONO_MONITOR
+		, NUM_VIDEO_MODES
+	};
+#else
+	enum VideoType_e
+	{
+		  VT_MONO_CUSTOM
 		, VT_COLOR_STANDARD
-		, VT_COLOR_TEXT_OPTIMIZED 
-		, VT_COLOR_TVEMU          
-#if _DEBUG
-		, VT_COLOR_HALF_SHIFT_DIM // Michael's 80's retro look --- must >= VT_COLOR_STANDARD && <= VT_COLOR_AUTHENTIC. See: V_CreateDIBSections()
-		, VT_ORG_COLOR_STANDARD
-		, VT_ORG_COLOR_TEXT_OPTIMIZED
-		, VT_COLOR_COLUMN_VISUALIZER
-#endif
-		, VT_MONO_AMBER // now half pixel
-		, VT_MONO_GREEN // now half pixel
-		, VT_MONO_WHITE // now half pixel
-#if _DEBUG
-		, VT_MONO_CUSTOM
+		, VT_COLOR_TEXT_OPTIMIZED
+		, VT_COLOR_TVEMU
+		, VT_COLOR_HALF_SHIFT_DIM
+		, VT_COLOR_AUTHENTIC
+	//	, VT_MONO_AUTHENTIC -- been replaced with 3 mono modes
+		, VT_MONO_HALFPIXEL_REAL
+		, VT_MONO_AMBER
+		, VT_MONO_GREEN
+		, VT_MONO_WHITE
 		, VT_MONO_COLORIZE
 		, VT_MONO_HALFPIXEL_COLORIZE
 		, VT_MONO_HALFPIXEL_75
 		, VT_MONO_HALFPIXEL_95
 		, VT_MONO_HALFPIXEL_EMBOSS
 		, VT_MONO_HALFPIXEL_FAKE
-#endif
 		, NUM_VIDEO_MODES
 	};
+#endif
 
 	extern TCHAR g_aVideoChoices[];
 	extern char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];

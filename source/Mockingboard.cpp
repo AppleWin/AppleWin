@@ -1095,7 +1095,7 @@ static bool MB_DSInit()
 
 	if(!g_bDSAvailable)
 		return false;
-
+#ifndef WS_VIDEO
 	HRESULT hr = DSGetSoundBuffer(&MockingboardVoice, DSBCAPS_CTRLVOLUME, g_dwDSBufferSize, SAMPLE_RATE, 2);
 	if(FAILED(hr))
 	{
@@ -1236,6 +1236,9 @@ static bool MB_DSInit()
 	SetThreadPriority(g_hThread, THREAD_PRIORITY_TIME_CRITICAL);
 
 	return true;
+#else
+	return false;
+#endif
 }
 
 static void MB_DSUninit()

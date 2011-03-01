@@ -51,6 +51,10 @@ DWORD     emulmsec          = 0;
 static DWORD emulmsec_frac  = 0;
 bool      g_bFullSpeed      = false;
 
+int VIEWPORTCX = FRAMEBUFFER_W;
+int VIEWPORTCY = FRAMEBUFFER_H;
+int viewscale = 1;
+
 //Pravets 8A/C variables
 bool P8CAPS_ON = false;
 bool P8Shift = false;
@@ -63,10 +67,8 @@ AppMode_e	g_nAppMode = MODE_LOGO;
 
 static int lastmode         = MODE_LOGO;
 DWORD     needsprecision    = 0;			// Redundant
-TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin executable resides
-TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
-TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
-TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
+TCHAR     g_sProgramDir[MAX_PATH] = TEXT("");
+TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir
 bool      g_bResetTiming    = false;			// Redundant
 BOOL      restart           = 0;
 
@@ -193,6 +195,13 @@ void ContinueExecution()
 		SetPriorityAboveNormal();
 	}
 
+#ifdef WS_VIDEO
+	wsVideoNewDirtyRect.ulx = FRAMEBUFFER_W;
+	wsVideoNewDirtyRect.uly = FRAMEBUFFER_H;
+	wsVideoNewDirtyRect.lrx = 0;
+	wsVideoNewDirtyRect.lry = 0;
+#endif
+
 	//
 
 	int nCyclesToExecute = (int) fExecutionPeriodClks + g_nCpuCyclesFeedback;
@@ -224,6 +233,21 @@ void ContinueExecution()
 		emulmsec_frac %= CLKS_PER_MS;
 	}
 
+#ifdef WS_VIDEO
+	if (wsVideoNewDirtyRect.lrx > wsVideoNewDirtyRect.ulx)
+	  {
+	    if (wsVideoNewDirtyRect.ulx < wsVideoAllDirtyRect.ulx) wsVideoAllDirtyRect.ulx = wsVideoNewDirtyRect.ulx;
+	    if (wsVideoNewDirtyRect.uly < wsVideoAllDirtyRect.uly) wsVideoAllDirtyRect.uly = wsVideoNewDirtyRect.uly;
+	    if (wsVideoNewDirtyRect.lrx > wsVideoAllDirtyRect.lrx) wsVideoAllDirtyRect.lrx = wsVideoNewDirtyRect.lrx;
+	    if (wsVideoNewDirtyRect.lry > wsVideoAllDirtyRect.lry) wsVideoAllDirtyRect.lry = wsVideoNewDirtyRect.lry;
+	  }
+
+	if(g_dwCyclesThisFrame >= dwClksPerFrame)
+	{
+		g_dwCyclesThisFrame -= dwClksPerFrame;
+		wsVideoRefresh();
+	}	
+#else
 	//
 	// DETERMINE WHETHER THE SCREEN WAS UPDATED, THE DISK WAS SPINNING,
 	// OR THE KEYBOARD I/O PORTS WERE BEING EXCESSIVELY QUERIED THIS CLOCKTICK
@@ -279,6 +303,7 @@ void ContinueExecution()
 	}
 
 	//
+#endif // ifndef WS_VIDEO
 
 	if(!g_bFullSpeed)
 	{
@@ -474,6 +499,9 @@ void LoadConfiguration ()
 	case A2TYPE_PRAVETS8M:	    g_nCharsetType  = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because settiong charset to 3 results in some problems.
 	}
 
+#ifdef WS_VIDEO
+  wsVideoInitModel(g_Apple2Type);
+#endif
 
   REGLOAD(TEXT("Joystick 0 Emulation"),&joytype[0]);
   REGLOAD(TEXT("Joystick 1 Emulation"),&joytype[1]);
@@ -868,10 +896,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			g_bEnableSpeech = true;
 		}
-		else if(strcmp(lpCmdLine,"-multimon") == 0)
-		{
-			g_bMultiMon = true;
-		}
+
 		lpCmdLine = lpNextArg;
 	}
 
@@ -971,13 +996,15 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	{
 		// DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
 		restart = 0;
+		VIEWPORTCX = viewscale * FRAMEBUFFER_W;
+		VIEWPORTCY = viewscale * FRAMEBUFFER_H;
 		g_nAppMode = MODE_LOGO;
 		LoadConfiguration();
 		DebugInitialize();
 		JoyInitialize();
 		MemInitialize();
 		VideoInitialize(); // g_pFramebufferinfo been created now
-		FrameCreateWindow();
+		FrameCreateWindow(VIEWPORTCX, VIEWPORTCY, FALSE);
 		// PrintScrn support
 		AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
 

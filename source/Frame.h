@@ -10,6 +10,10 @@
 	#define  VIEWPORTX   5
 	#define  VIEWPORTY   5
 
+#ifdef WS_VIDEO
+	#define  FRAMEBUFFER_W  600
+	#define  FRAMEBUFFER_H  420
+#else
 	// 560 = Double Hi-Res
 	// 384 = Doule Scan Line
 	#define  FRAMEBUFFER_W  560
@@ -19,12 +23,12 @@
 	extern	LPDIRECTDRAW        g_pDD;
 	extern	LPDIRECTDRAWSURFACE g_pDDPrimarySurface;
 	extern	IDirectDrawPalette* g_pDDPal;
+#endif
 
 // Win32
 	extern HWND       g_hFrameWindow;
 	extern HDC        g_hFrameDC;
 	extern BOOL       g_bIsFullScreen;
-	extern BOOL       g_bMultiMon;
 
 // Emulator
 	extern bool   g_bFreshReset;
@@ -35,7 +39,7 @@
 // Prototypes
 	void CtrlReset();
 
-	void    FrameCreateWindow ();
+	void    FrameCreateWindow (int, int, BOOL);
 	HDC     FrameGetDC ();
 	HDC     FrameGetVideoDC (LPBYTE *,LONG *);
 	void    FrameRefreshStatus (int);

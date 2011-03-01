@@ -608,6 +608,7 @@ namespace DIMouse
 	//-----------------------------------------------------------------------------
 	HRESULT DirectInputInit( HWND hDlg )
 	{
+#ifndef WS_VIDEO
 		HRESULT hr;
 		BOOL    bExclusive;
 		BOOL    bForeground;
@@ -698,6 +699,9 @@ namespace DIMouse
 			return -1;
 
 		return S_OK;
+#else
+		return 1;
+#endif
 	}
 
 	//-----------------------------------------------------------------------------

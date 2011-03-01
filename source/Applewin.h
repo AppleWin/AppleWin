@@ -15,6 +15,10 @@ extern DWORD      cumulativecycles;
 extern DWORD      cyclenum;
 extern DWORD      emulmsec;
 extern bool       g_bFullSpeed;
+	
+extern int VIEWPORTCX;
+extern int VIEWPORTCY;
+extern int viewscale;
 
 //Pravets 8A/C only variables
 extern bool     P8CAPS_ON;
