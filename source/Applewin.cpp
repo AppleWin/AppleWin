@@ -868,7 +868,10 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			g_bEnableSpeech = true;
 		}
-
+		else if(strcmp(lpCmdLine,"-multimon") == 0)
+		{
+			g_bMultiMon = true;
+		}
 		lpCmdLine = lpNextArg;
 	}
 

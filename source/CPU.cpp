@@ -160,30 +160,8 @@ void RequestDebugger()
 	FrameWndProc( g_hFrameWindow, WM_KEYUP  , DEBUG_TOGGLE_KEY, 0 );
 }
 
-bool CheckDebugBreak( int iOpcode )
-{
-	if (g_bDebugDelayBreakCheck)
-	{
-		g_bDebugDelayBreakCheck = false;
-		return false;
-	}
-
-	// Running at full speed? (debugger not running)
-	if ((g_nAppMode != MODE_DEBUG) && (g_nAppMode != MODE_STEPPING))
-	{
-		if (((iOpcode == 0) && IsDebugBreakOnInvalid(0)) ||
-			((g_iDebugOnOpcode) && (g_iDebugOnOpcode == iOpcode))) // User wants to enter debugger on opcode?
-		{
-			RequestDebugger();
-			return true;
-		}
-	}
-
-	return false;
-}
-
 // Break into debugger on invalid opcodes
-#define INV if (IsDebugBreakOnInvalid(1)) { RequestDebugger(); bBreakOnInvalid = true; }
+#define INV IsDebugBreakOnInvalid(AM_1);
 
 /****************************************************************************
 *
@@ -314,7 +292,7 @@ static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 	    ? IORead[(PC>>4) & 0xFF](PC,PC,0,0,uExecutedCycles)	// Fetch opcode from I/O memory, but params are still from mem[]
 		: *(mem+PC);
 
-	if (CheckDebugBreak( iOpcode ))
+	if (IsDebugBreakOpcode( iOpcode ))
 		return 0;
 
 #ifdef USE_SPEECH_API
@@ -376,7 +354,7 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles)
 
 #include "cpu/cpu6502.h"  // MOS 6502
 #include "cpu/cpu65C02.h" // WDC 65C02
-#include "cpu/cpu65d02.h" // Debug Cpu
+#include "cpu/cpu65d02.h" // Debug CPU Memory Visualizer
 
 //===========================================================================
 

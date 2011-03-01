@@ -24,6 +24,7 @@
 	extern HWND       g_hFrameWindow;
 	extern HDC        g_hFrameDC;
 	extern BOOL       g_bIsFullScreen;
+	extern BOOL       g_bMultiMon;
 
 // Emulator
 	extern bool   g_bFreshReset;
