@@ -1,10 +1,22 @@
-//
-//  wsvideo.cpp
-//  ntsc video
-//
-//  Created by Sheldon Simms on 11/19/10.
-//  Copyright 2010 __MyCompanyName__. All rights reserved.
-//
+/*
+AppleWin : An Apple //e emulator for Windows
+
+Copyright (C) 2010-2011, William S Simms
+
+AppleWin is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+AppleWin is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with AppleWin; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
 
 #include "cs.h"
 #include "wsvideo.h"
@@ -436,15 +448,16 @@ static int sbits = 0;
 
 #define SINGLETVPIXEL(signal,table) \
 	do { \
-		unsigned int mm; \
-		unsigned int *cp, *np, *mp; \
+		unsigned int ntscp, prevp, betwp; \
+		unsigned int *prevlin, *between; \
 		sbits = ((sbits << 1) | signal) & 0xFFF; \
-		cp = (unsigned int *)(&(table[sbits][0])); \
-		*((unsigned int *)vbp0) = *cp; \
-		mp = (unsigned int *)(vbp0 - 4 * FRAMEBUFFER_W); \
-		np = (unsigned int *)(vbp0 - 8 * FRAMEBUFFER_W); \
-		mm = ((*cp & 0x00fcfcfc) >> 2) + ((*np & 0x00fcfcfc) >> 2); \
-		*mp = mm + ((mm & 0x00fefefe) >> 1) + 0xff000000; \
+		prevlin = (unsigned int *)(vbp0 + 8 * FRAMEBUFFER_W); \
+		between = (unsigned int *)(vbp0 + 4 * FRAMEBUFFER_W); \
+		ntscp = *(unsigned int *)(&(table[sbits][0])); /* raw current NTSC color */ \
+		prevp = *prevlin; \
+		betwp = ntscp - ((ntscp & 0x00fcfcfc) >> 2); \
+		*between = betwp | 0xff000000; \
+		*((unsigned int *)vbp0) = ntscp; \
 		vbp0 += 4; \
 	} while(0)
 
@@ -460,15 +473,16 @@ static int sbits = 0;
 
 #define DOUBLETVPIXEL(signal,table) \
 	do { \
-		unsigned int mm; \
-		unsigned int *cp, *np, *mp; \
+		unsigned int ntscp, prevp, betwp; \
+		unsigned int *prevlin, *between; \
 		sbits = ((sbits << 1) | signal) & 0xFFF; \
-		cp = (unsigned int *)(&(table[sbits][0])); \
-		*((unsigned int *)vbp0) = *cp; \
-		mp = (unsigned int *)(vbp0 - 4 * FRAMEBUFFER_W); \
-		np = (unsigned int *)(vbp0 - 8 * FRAMEBUFFER_W); \
-		mm = ((*cp & 0x00fefefe) >> 1); \
-		*mp = mm + ((mm & 0x00fefefe) >> 1) + ((*np & 0x00fcfcfc) >> 2) + 0xff000000; \
+		prevlin = (unsigned int *)(vbp0 + 8 * FRAMEBUFFER_W); \
+		between = (unsigned int *)(vbp0 + 4 * FRAMEBUFFER_W); \
+		ntscp = *(unsigned int *)(&(table[sbits][0])); /* raw current NTSC color */ \
+		prevp = *prevlin; \
+		betwp = ((ntscp & 0x00fefefe) >> 1) + ((prevp & 0x00fefefe) >> 1); \
+		*between = betwp | 0xff000000; \
+		*((unsigned int *)vbp0) = ntscp; \
 		vbp0 += 4; \
 	} while(0)
 

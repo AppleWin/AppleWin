@@ -5,6 +5,7 @@ Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
 Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski, Nick Westgate
+Copyright (C) 2011, William S Simms
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
