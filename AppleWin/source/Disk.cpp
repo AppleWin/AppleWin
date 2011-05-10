@@ -349,6 +349,7 @@ static BYTE __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG)
 static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG)
 {
 	Disk_t * fptr = &g_aFloppyDisk[currdrive];
+#if 1
 	int phase     = (address >> 1) & 3;
 	int phase_bit = (1 << phase);
 
@@ -395,7 +396,29 @@ static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG)
 			fptr->trackimagedata = 0;
 		}
 	}
-
+#else	// Old 1.13.1 code for Chessmaster 2000 to work! (see bug#18109)
+	const int nNumTracksInImage = ImageGetNumTracks(fptr->imagehandle);
+	if (address & 1) {
+		int phase = (address >> 1) & 3;
+		int direction = 0;
+		if (phase == ((fptr->phase+1) & 3))
+			direction = 1;
+		if (phase == ((fptr->phase+3) & 3))
+			direction = -1;
+		if (direction) {
+			fptr->phase = MAX(0,MIN(79,fptr->phase+direction));
+			if (!(fptr->phase & 1)) {
+				int newtrack = MIN(nNumTracksInImage-1,fptr->phase >> 1);
+				if (newtrack != fptr->track) {
+					if (fptr->trackimage && fptr->trackimagedirty)
+						WriteTrack(currdrive);
+					fptr->track = newtrack;
+					fptr->trackimagedata = 0;
+				}
+			}
+		}
+	}
+#endif
 	return (address == 0xE0) ? 0xFF : MemReturnRandomData(1);
 }
 
