@@ -354,7 +354,7 @@ BOOL SpkrSetEmulationType (HWND window, DWORD newtype)
 
 //=============================================================================
 
-static void InitRemainderBuffer(UINT nCyclesRemaining)
+static void ReinitRemainderBuffer(UINT nCyclesRemaining)
 {
 	if(nCyclesRemaining == 0)
 		return;
@@ -380,7 +380,7 @@ static void UpdateRemainderBuffer(ULONG* pnCycleDiff)
 		{
 			g_nRemainderBufferIdx = 0;
 			signed long nSampleMean = 0;
-			for(UINT i=0,nCnt=0; i<g_nRemainderBufferSize; i++)
+			for(UINT i=0; i<g_nRemainderBufferSize; i++)
 				nSampleMean += (signed long) g_pRemainderBuffer[i];
 			nSampleMean /= (signed long) g_nRemainderBufferSize;
 
@@ -405,7 +405,7 @@ static void UpdateSpkr()
 	  while((nNumSamples--) && (g_nBufferIdx < SPKR_SAMPLE_RATE-1))
 		  g_pSpeakerBuffer[g_nBufferIdx++] = g_nSpeakerData;
 
-	  InitRemainderBuffer(nCyclesRemaining);	// Partially fill 1Mhz sample buffer
+	  ReinitRemainderBuffer(nCyclesRemaining);	// Partially fill 1Mhz sample buffer
   }
 
   g_nSpkrLastCycle = g_nCumulativeCycles;
