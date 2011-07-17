@@ -514,7 +514,15 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 	if (fptr->imagehandle)
 		RemoveDisk(iDrive);
 
-	ZeroMemory(fptr,sizeof(Disk_t ));
+	// Reset the drive's struct, but preserve the physical attributes (bug#18242: Platoon)
+	// . Changing the disk (in the drive) doesn't affect the drive's head etc.
+	{
+		int track = fptr->track;
+		int phase = fptr->phase;
+		ZeroMemory(fptr, sizeof(Disk_t));
+		fptr->track = track;
+		fptr->phase = phase;
+	}
 
 	const DWORD dwAttributes = GetFileAttributes(pszImageFilename);
 	if(dwAttributes == INVALID_FILE_ATTRIBUTES)
