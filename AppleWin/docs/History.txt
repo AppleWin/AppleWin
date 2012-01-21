@@ -19,6 +19,12 @@ Restrictions/bugs:
 - For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
 
+1.xx.0 - ?? ??? 2012
+--------------------
+Fixes:
+. Floating bus not returned for empty slot $Cnxx addresses (Fix for A2VGA.DSK: Apple][VGA card detection).
+
+
 1.20.1 - 17 Jul 2011
 --------------------
 Fixes:

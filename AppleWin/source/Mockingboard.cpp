@@ -1382,8 +1382,8 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
 		return mem[nAddr];
 
-	if(g_SoundcardType == SC_NONE)
-		return 0;
+	if(g_SoundcardType == SC_NONE)	// TODO: Should really unplug the card from the slot and let IORead_Cxxx() return the floating bus
+		return MemReadFloatingBus(nCyclesLeft);
 
 	BYTE nMB = (nAddr>>8)&0xf - SLOT4;
 	BYTE nOffset = nAddr&0xff;
@@ -1391,15 +1391,15 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 	if(g_bPhasorEnable)
 	{
 		if(nMB != 0)	// Slot4 only
-			return 0;
+			return MemReadFloatingBus(nCyclesLeft);
 
-		BYTE nRes = 0;
 		int CS;
-
 		if(g_nPhasorMode & 1)
 			CS = ( ( nAddr & 0x80 ) >> 6 ) | ( ( nAddr & 0x10 ) >> 4 );	// 0, 1, 2 or 3
 		else															// Mockingboard Mode
 			CS = ( ( nAddr & 0x80 ) >> 7 ) + 1;							// 1 or 2
+
+		BYTE nRes = 0;
 
 		if(CS & 1)
 			nRes |= SY6522_Read(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_A, nAddr&0xf);
@@ -1407,10 +1407,15 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 		if(CS & 2)
 			nRes |= SY6522_Read(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf);
 
-		if((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x05)))
-			nRes |= SSI263_Read(nMB, nAddr&0xf);
+		bool bAccessedDevice = (CS & 3) ? true : false;
 
-		return nRes;
+		if((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x05)))
+		{
+			nRes |= SSI263_Read(nMB, nAddr&0xf);
+			bAccessedDevice = true;
+		}
+
+		return bAccessedDevice ? nRes : MemReadFloatingBus(nCyclesLeft);
 	}
 
 	if(nOffset <= (SY6522A_Offset+0x0F))
@@ -1420,7 +1425,7 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 	else if((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x05)))
 		return SSI263_Read(nMB, nAddr&0xf);
 	else
-		return 0;
+		return MemReadFloatingBus(nCyclesLeft);
 }
 
 //-----------------------------------------------------------------------------

@@ -471,6 +471,8 @@ inline bool IsPotentialNoSlotClockAccess(const WORD address)
 			  (!SW_SLOTCXROM && (AddrHi == 0xC8)) );					// Internal ROM at [$C100-CFFF]               && AddrHi == $C8
 }
 
+static bool IsCardInSlot(const UINT uSlot);
+
 // Enabling expansion ROM ($C800..$CFFF]:
 // . Enable if: Enable1 && Enable2
 // . Enable1 = I/O SELECT' (6502 accesses $Csxx)
@@ -579,6 +581,14 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 		}
 	}
 
+	if (address >= APPLE_SLOT_BEGIN && address <= APPLE_SLOT_END)
+	{
+		// NB. Currently Mockingboard/Phasor is never unplugged, just disabled. See MB_Read().
+		const UINT uSlot = (address>>8)&0x7;
+		if (uSlot != 3 && !IsCardInSlot(uSlot))
+			return IO_Null(programcounter, address, write, value, nCyclesLeft);
+	}
+
 	if ((g_eExpansionRomType == eExpRomNull) && (address >= FIRMWARE_EXPANSION_BEGIN))
 		return IO_Null(programcounter, address, write, value, nCyclesLeft);
 	else
@@ -659,6 +669,17 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 
 	// What about [$C80x..$CFEx]? - Do any cards use this as I/O memory?
 	ExpansionRom[uSlot] = pExpansionRom;
+}
+
+static bool IsCardInSlot(const UINT uSlot)
+{
+	if (IORead[uSlot+8] == IO_Null &&
+		IOWrite[uSlot+8] == IO_Null &&
+		IORead[uSlot*16] == IORead_Cxxx &&
+		IOWrite[uSlot*16] == IOWrite_Cxxx)
+		return false;
+
+	return true;
 }
 
 //===========================================================================
