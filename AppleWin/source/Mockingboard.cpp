@@ -1498,18 +1498,11 @@ static BYTE __stdcall PhasorIO (WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, U
 
 void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 {
-#ifdef SUPPORT_CPM
-		if (g_Slot4 == CT_Mockingboard)
-		{
-			RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
-			RegisterIoHandler(uSlot5, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
-		}
-#else
-		if (g_Slot4 == CT_Mockingboard)
-			RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
-
+	if (g_Slot4 == CT_Mockingboard)
+	{
+		RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
 		RegisterIoHandler(uSlot5, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
-#endif
+	}
 }
 
 //-----------------------------------------------------------------------------

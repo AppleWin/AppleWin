@@ -1,6 +1,5 @@
 #pragma once
 
-#define SUPPORT_CPM
 #define USE_SPEECH_API
 
 const double _M14 = (157500000.0 / 11.0); // 14.3181818... * 10^6
@@ -90,7 +89,8 @@ enum AppMode_e
 #define  REGVALUE_THE_FREEZES_F8_ROM "The Freeze's F8 Rom"
 #define  REGVALUE_CLONETYPE          "Clone Type"
 #define  REGVALUE_CIDERPRESSLOC      "CiderPress Location"
-#define  REGVALUE_Z80_IN_SLOT5       "Z80 in slot 5"
+//#define  REGVALUE_Z80_IN_SLOT5       "Z80 in slot 5"
+#define  REGVALUE_CPM_CONFIG         "CPM Config"
 #define  REGVALUE_DUMP_TO_PRINTER    "Dump to printer"
 #define  REGVALUE_CONVERT_ENCODING   "Convert printer encoding for clones"
 #define  REGVALUE_FILTER_UNPRINTABLE "Filter unprintable characters"

@@ -85,11 +85,8 @@ CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 
 // TODO: CLEANUP! Move to peripherals.cpp!!!
-#ifdef SUPPORT_CPM
-UINT		g_Slot4 = CT_Empty;
-#else
-UINT		g_Slot4 = CT_Mockingboard;		// CT_Mockingboard or CT_MouseInterface
-#endif
+SS_CARDTYPE	g_Slot4 = CT_Empty;
+SS_CARDTYPE	g_Slot5 = CT_Empty;
 
 eCPU		g_ActiveCPU = CPU_6502;
 
@@ -555,24 +552,19 @@ void LoadConfiguration ()
   if(REGLOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
 	  g_uMouseRestrictToWindow = dwTmp;
 
-#ifdef SUPPORT_CPM
-  if(REGLOAD(TEXT(REGVALUE_Z80_IN_SLOT5), &dwTmp))
-	  g_uZ80InSlot5 = dwTmp;
+  if(REGLOAD(TEXT(REGVALUE_CPM_CONFIG), &dwTmp))
+	  g_CPMChoice = (CPMCHOICE) dwTmp;
 
-  if (g_uZ80InSlot5)
+  if (g_CPMChoice == CPM_SLOT4 || g_CPMChoice == CPM_SLOT5)
 	  MB_SetSoundcardType(SC_NONE);
 
-	g_Slot4 = 
-	g_uMouseInSlot4	? CT_MouseInterface
-					: g_uZ80InSlot5	? CT_Empty
-									: CT_Mockingboard;
-//									: g_uClockInSlot4	? CT_GenericClock
-//														: CT_Mockingboard;
-#else
-	g_Slot4 = g_uMouseInSlot4
-				? CT_MouseInterface
-				: CT_Mockingboard;
-#endif
+	g_Slot4 =
+		g_uMouseInSlot4	? CT_MouseInterface
+						: (g_CPMChoice == CPM_SLOT4)	? CT_Z80
+														: CT_Mockingboard;
+
+	g_Slot5 =			  (g_CPMChoice == CPM_SLOT5)	? CT_Z80
+														: CT_Mockingboard;
 
   //
 

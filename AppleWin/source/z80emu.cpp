@@ -34,11 +34,11 @@ BYTE __stdcall CPMZ80_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 
 //===========================================================================
 
-void ConfigureSoftcard(LPBYTE pCxRomPeripheral, UINT uSlot, UINT bEnable)
+void ConfigureSoftcard(LPBYTE pCxRomPeripheral, UINT uSlot)
 {	
 	memset(pCxRomPeripheral + (uSlot << 8), 0xFF, APPLE_SLOT_SIZE);
 	
 	g_uCPMZ80Slot = uSlot;
 
-	RegisterIoHandler(uSlot, CPMZ80_IONull, CPMZ80_IONull, CPMZ80_IONull, bEnable ? CPMZ80_IOWrite : NULL, NULL, NULL);
+	RegisterIoHandler(uSlot, CPMZ80_IONull, CPMZ80_IONull, CPMZ80_IONull, CPMZ80_IOWrite, NULL, NULL);
 }

@@ -9,6 +9,8 @@
 	extern HWND hwConfigTab;
 	extern HWND hwAdvancedTab;
 
+	enum CPMCHOICE {CPM_SLOT4=0, CPM_SLOT5, CPM_UNPLUGGED, CPM_UNAVAILABLE, _CPM_MAX_CHOICES};
+	extern CPMCHOICE g_CPMChoice;
 
 
 // Prototypes

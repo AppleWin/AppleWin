@@ -87,7 +87,7 @@
 #define IDC_MOUSE_RESTRICT_TO_WINDOW    1048
 #define IDC_CIDERPRESS_BROWSE           1049
 #define IDC_CIDERPRESS_FILENAME         1050
-#define IDC_Z80_IN_SLOT5                1051
+#define IDC_CPM_CONFIG                  1051
 #define IDC_DUMPTOPRINTER               1052
 #define IDC_PRINTER_DUMP_FILENAME       1053
 #define IDC_PRINTER_DUMP_FILENAME_BROWSE 1054

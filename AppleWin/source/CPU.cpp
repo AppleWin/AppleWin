@@ -87,11 +87,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #include "MouseInterface.h"
 
-#ifdef SUPPORT_CPM
 #include "z80emu.h"
 #include "Z80VICE\z80.h"
 #include "Z80VICE\z80mem.h"
-#endif
 
 #ifdef USE_SPEECH_API
 #include "Speech.h"
@@ -461,10 +459,8 @@ void CpuInitialize ()
 	CpuIrqReset();
 	CpuNmiReset();
 
-#ifdef SUPPORT_CPM
 	z80mem_initialize();
 	z80_reset();
-#endif
 }
 
 //===========================================================================
@@ -567,10 +563,8 @@ void CpuReset()
 
 	regs.bJammed = 0;
 
-#ifdef SUPPORT_CPM
 	g_ActiveCPU = CPU_6502;
 	z80_reset();
-#endif
 }
 
 //===========================================================================

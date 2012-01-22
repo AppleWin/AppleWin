@@ -30,11 +30,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Harddisk.h"
 #include "MouseInterface.h"
 #include "NoSlotClock.h"
-#ifdef SUPPORT_CPM
 #include "z80emu.h"
 #include "Z80VICE\z80.h"
 #include "Z80VICE\z80mem.h"
-#endif
 #include "..\resource\resource.h"
 
 // Memory Flag
@@ -1172,21 +1170,25 @@ void MemInitialize()
 	{
 		sg_Mouse.Initialize(pCxRomPeripheral, 4);	// $C400 : Mouse f/w
 	}
-//	else if (g_Slot4 == CT_GenericClock)
-//	{
-//		LoadRom_Clock_Generic(pCxRomPeripheral, 4);
-//	}
 	else if (g_Slot4 == CT_Mockingboard)
 	{
 		const UINT uSlot4 = 4;
 		const UINT uSlot5 = 5;
 		MB_InitializeIO(pCxRomPeripheral, uSlot4, uSlot5);
 	}
+	else if (g_Slot4 == CT_Z80)
+	{
+		ConfigureSoftcard(pCxRomPeripheral, 4);		// $C400 : Z80 card
+	}
+//	else if (g_Slot4 == CT_GenericClock)
+//	{
+//		LoadRom_Clock_Generic(pCxRomPeripheral, 4);
+//	}
 
-#ifdef SUPPORT_CPM
-	if (g_uZ80InSlot5)
-		ConfigureSoftcard(pCxRomPeripheral, 5, g_uZ80InSlot5);	// $C500 : Z80 card
-#endif
+	if (g_Slot5 == CT_Z80)
+	{
+		ConfigureSoftcard(pCxRomPeripheral, 5);		// $C500 : Z80 card
+	}
 
 	DiskLoadRom(pCxRomPeripheral, 6);				// $C600 : Disk][ f/w
 	HD_Load_Rom(pCxRomPeripheral, 7);				// $C700 : HDD f/w
@@ -1241,9 +1243,7 @@ void MemReset ()
 	CpuInitialize();
 	//Sets Caps Lock = false (Pravets 8A/C only)
 
-#ifdef SUPPORT_CPM
 	z80_reset();
-#endif
 }
 
 //===========================================================================

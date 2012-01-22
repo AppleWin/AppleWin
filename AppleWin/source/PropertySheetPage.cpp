@@ -78,6 +78,15 @@ TCHAR   soundchoices[]    =  TEXT("Disabled\0")
 TCHAR   discchoices[]     =  TEXT("Authentic Speed\0")
                              TEXT("Enhanced Speed\0");
 
+TCHAR g_szCPMSlotChoice_Slot4[] = TEXT("Slot 4\0");
+TCHAR g_szCPMSlotChoice_Slot5[] = TEXT("Slot 5\0");
+TCHAR g_szCPMSlotChoice_Unplugged[] = TEXT("Unplugged\0");
+TCHAR g_szCPMSlotChoice_Unavailable[] = TEXT("Unavailable\0");
+
+static TCHAR g_szCPMSlotChoices[100];
+CPMCHOICE g_CPMChoice = CPM_UNPLUGGED; 
+CPMCHOICE g_CPMComboItemToChoice[_CPM_MAX_CHOICES];
+
 const UINT VOLUME_MIN = 0;
 const UINT VOLUME_MAX = 59;
 
@@ -91,8 +100,6 @@ UINT g_uScrollLockToggle = 0;
 UINT g_uMouseInSlot4 = 0;
 UINT g_uMouseShowCrosshair = 0;
 UINT g_uMouseRestrictToWindow = 0;
-
-UINT g_uZ80InSlot5 = 0;
 
 //
 
@@ -217,6 +224,72 @@ static void InitJoystickChoices(HWND window, int nJoyNum, int nIdcValue)
 	*pszMem = 0x00;	// Doubly null terminated
 
 	FillComboBox(window, nIdcValue, pnzJoystickChoices, joytype[nJoyNum]);
+}
+
+static void InitCPMChoices(HWND window)
+{
+	for (UINT i=0; i<_CPM_MAX_CHOICES; i++)
+		g_CPMComboItemToChoice[i] = CPM_UNAVAILABLE;
+
+	UINT uStringOffset = 0;
+	UINT uComboItemIdx = 0;
+	const eSOUNDCARDTYPE SoundcardType = MB_GetSoundcardType();
+
+	const bool bIsSlot4Empty = g_uMouseInSlot4 == 0 &&
+							   SoundcardType == SC_NONE;	// Mockingboard is in slots 4+5; Phasor is in slot 4
+	const bool bIsSlot5Empty = SoundcardType != SC_MOCKINGBOARD;
+
+	if (bIsSlot4Empty)	// Slot-4 is empty
+	{
+		const UINT uStrLen = strlen(g_szCPMSlotChoice_Slot4)+1;
+		memcpy(&g_szCPMSlotChoices[uStringOffset], g_szCPMSlotChoice_Slot4, uStrLen);
+		uStringOffset += uStrLen;
+
+		g_CPMComboItemToChoice[uComboItemIdx++] = CPM_SLOT4;
+	}
+
+	if (bIsSlot5Empty)	// Slot-5 is empty
+	{
+		const UINT uStrLen = strlen(g_szCPMSlotChoice_Slot5)+1;
+		memcpy(&g_szCPMSlotChoices[uStringOffset], g_szCPMSlotChoice_Slot5, uStrLen);
+		uStringOffset += uStrLen;
+
+		g_CPMComboItemToChoice[uComboItemIdx++] = CPM_SLOT5;
+	}
+
+	if (uStringOffset)
+	{
+		const UINT uStrLen = strlen(g_szCPMSlotChoice_Unplugged)+1;
+		memcpy(&g_szCPMSlotChoices[uStringOffset], g_szCPMSlotChoice_Unplugged, uStrLen);
+		uStringOffset += uStrLen;
+
+		g_CPMComboItemToChoice[uComboItemIdx] = CPM_UNPLUGGED;
+	}
+	else
+	{
+		const UINT uStrLen = strlen(g_szCPMSlotChoice_Unavailable)+1;
+		memcpy(&g_szCPMSlotChoices[uStringOffset], g_szCPMSlotChoice_Unavailable, uStrLen);
+		uStringOffset += uStrLen;
+
+		g_CPMChoice = CPM_UNAVAILABLE;	// Force this
+		g_CPMComboItemToChoice[uComboItemIdx] = CPM_UNAVAILABLE;
+	}
+
+	g_szCPMSlotChoices[uStringOffset] = 0;	// Doubly null terminated
+
+	// 
+
+	UINT uCurrentChoice = uComboItemIdx;	// Default to last item (either UNPLUGGED or UNAVAILABLE)
+	for (UINT i=0; i<=uComboItemIdx; i++)
+	{
+		if (g_CPMComboItemToChoice[i] == g_CPMChoice)
+		{
+			uCurrentChoice = i;
+			break;
+		}
+	}
+
+	FillComboBox(window, IDC_CPM_CONFIG, g_szCPMSlotChoices, uCurrentChoice);
 }
 
 //===========================================================================
@@ -541,7 +614,7 @@ static void InputDlg_OK(HWND window, UINT afterclose)
 	REGSAVE(TEXT(REGVALUE_MOUSE_IN_SLOT4),g_uMouseInSlot4);
 	REGSAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR),g_uMouseShowCrosshair);
 	REGSAVE(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW),g_uMouseRestrictToWindow);
-	REGSAVE(TEXT(REGVALUE_Z80_IN_SLOT5),g_uZ80InSlot5);
+	REGSAVE(TEXT(REGVALUE_CPM_CONFIG), g_CPMChoice);
 
 	//
 
@@ -667,30 +740,36 @@ static BOOL CALLBACK InputDlgProc(HWND   window,
 			}
 			break;
 
-		case IDC_Z80_IN_SLOT5:
+		case IDC_CPM_CONFIG:
+			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				UINT uNewState = IsDlgButtonChecked(window, IDC_Z80_IN_SLOT5) ? 1 : 0;
-				LPCSTR pMsg = uNewState ?
+				DWORD NewCPMChoiceItem = (DWORD) SendDlgItemMessage(window, IDC_CPM_CONFIG, CB_GETCURSEL, 0, 0);
+				CPMCHOICE NewCPMChoice = g_CPMComboItemToChoice[NewCPMChoiceItem];
+				if (NewCPMChoice == g_CPMChoice)
+					break;
+
+				LPCSTR pMsg = NewCPMChoice != CPM_UNPLUGGED ?
 					TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-					TEXT("Microsoft CP/M SoftCard will be placed in slot 5.\n\n")
+					TEXT("Microsoft CP/M SoftCard will be inserted.\n\n")
 					TEXT("Would you like to restart the emulator now?")
 					:
-				TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-					TEXT("Microsoft CP/M SoftCard will be removed from slot 5\n\n")
+					TEXT("The emulator needs to restart as the slot configuration has changed.\n")
+					TEXT("Microsoft CP/M SoftCard will be removed.\n\n")
 					TEXT("Would you like to restart the emulator now?");
 				if (MessageBox(window,
 					pMsg,
 					TEXT("Configuration"),
 					MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
 				{
-					g_uZ80InSlot5 = uNewState;
+					g_CPMChoice = NewCPMChoice;
 					afterclose = WM_USER_RESTART;
 					PropSheet_PressButton(GetParent(window), PSBTN_OK);
 				}
 				else
 				{
-					CheckDlgButton(window, IDC_Z80_IN_SLOT5, g_uZ80InSlot5 ? BST_CHECKED : BST_UNCHECKED);
+					InitCPMChoices(window);	// Restore original state
 				}
+
 			}
 			break;
 
@@ -714,12 +793,17 @@ static BOOL CALLBACK InputDlgProc(HWND   window,
 			SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(false),0));
 
 			CheckDlgButton(window, IDC_SCROLLLOCK_TOGGLE, g_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
+
 			CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(window, IDC_MOUSE_CROSSHAIR, g_uMouseShowCrosshair ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(window, IDC_MOUSE_RESTRICT_TO_WINDOW, g_uMouseRestrictToWindow ? BST_CHECKED : BST_UNCHECKED);
+
+			const eSOUNDCARDTYPE SoundcardType = MB_GetSoundcardType();
+			EnableWindow(GetDlgItem(window, IDC_MOUSE_IN_SLOT4), (g_uMouseInSlot4 || (g_CPMChoice != CPM_SLOT4 && SoundcardType == SC_NONE)) ? TRUE : FALSE);
 			EnableWindow(GetDlgItem(window, IDC_MOUSE_CROSSHAIR), g_uMouseInSlot4 ? TRUE : FALSE);
 			EnableWindow(GetDlgItem(window, IDC_MOUSE_RESTRICT_TO_WINDOW), g_uMouseInSlot4 ? TRUE : FALSE);
-			CheckDlgButton(window, IDC_Z80_IN_SLOT5, g_uZ80InSlot5 ? BST_CHECKED : BST_UNCHECKED);
+
+			InitCPMChoices(window);
 
 			afterclose = 0;
 			break;
@@ -849,14 +933,14 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 
 			CheckRadioButton(window, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, nID);
 
-			if (g_uMouseInSlot4)
+			if (g_uMouseInSlot4 || g_CPMChoice == CPM_SLOT4)
 			{
-				EnableWindow(GetDlgItem(window, IDC_PHASOR_ENABLE), FALSE);
+				EnableWindow(GetDlgItem(window, IDC_PHASOR_ENABLE), FALSE);	// Disable Phasor (slot 4)
 			}
 
-			if (g_uZ80InSlot5)
+			if (g_uMouseInSlot4 || g_CPMChoice == CPM_SLOT4 || g_CPMChoice == CPM_SLOT5)
 			{
-				EnableWindow(GetDlgItem(window, IDC_MB_ENABLE), FALSE);
+				EnableWindow(GetDlgItem(window, IDC_MB_ENABLE), FALSE);	// Disable Mockingboard (slot 4 & 5)
 			}
 
 			afterclose = 0;

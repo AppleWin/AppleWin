@@ -13,4 +13,4 @@
 // Emula a CPU Z80
 
 // Protótipos
-void ConfigureSoftcard(LPBYTE pCxRomPeripheral, UINT uSlot, UINT bEnable);
+void ConfigureSoftcard(LPBYTE pCxRomPeripheral, UINT uSlot);

@@ -44,13 +44,11 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		UINT uExtraCycles = 0;
 		BYTE iOpcode;
 
-#ifdef SUPPORT_CPM
 		if (g_ActiveCPU == CPU_Z80)
 		{
 			const UINT uZ80Cycles = z80_mainloop(uTotalCycles, uExecutedCycles); CYC(uZ80Cycles)
 		}
 		else
-#endif
 		{
 		if (!Fetch(iOpcode, uExecutedCycles))
 			break;

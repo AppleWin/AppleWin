@@ -122,8 +122,6 @@ STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_CAPTIO
 CAPTION "Input"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    CONTROL         "&Restrict mouse to Apple window",IDC_MOUSE_RESTRICT_TO_WINDOW,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,123,121,10
     GROUPBOX        "Joystick Control",IDC_STATIC,5,7,200,66
     LTEXT           "Joystick &1:",IDC_STATIC,12,20,40,8
     COMBOBOX        IDC_JOYSTICK0,52,18,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
@@ -140,9 +138,11 @@ BEGIN
     CONTROL         "&Mouse interface in slot 4",IDC_MOUSE_IN_SLOT4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,95,106,10
     CONTROL         "Show &crosshairs in window's frame",IDC_MOUSE_CROSSHAIR,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,109,159,10
-    CONTROL         "Microsoft C&P/M SoftCard in slot 5",IDC_Z80_IN_SLOT5,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,138,122,10
-    PUSHBUTTON      "Paste &From Clipboard",IDC_PASTE_FROM_CLIPBOARD,5,160,81,14
+    CONTROL         "&Restrict mouse to Apple window",IDC_MOUSE_RESTRICT_TO_WINDOW,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,123,121,10
+    LTEXT           "Microsoft CP/M SoftCard:",IDC_STATIC,5,138,122,10
+    COMBOBOX        IDC_CPM_CONFIG,90,136,55,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+	PUSHBUTTON      "Paste &From Clipboard",IDC_PASTE_FROM_CLIPBOARD,5,160,81,14
     LTEXT           "(Shift+Insert during emulation)",IDC_STATIC,90,163,111,8
 END
 
@@ -253,8 +253,8 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,20,1,0
- PRODUCTVERSION 1,20,1,0
+ FILEVERSION 1,21,0,0
+ PRODUCTVERSION 1,21,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -272,12 +272,12 @@ BEGIN
             VALUE "Comments", "http://applewin.berlios.de"
             VALUE "CompanyName", "AppleWin"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1, 20, 1, 0"
+            VALUE "FileVersion", "1, 21, 0, 0"
             VALUE "InternalName", "APPLEWIN"
-            VALUE "LegalCopyright", " 1994-2011 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
+            VALUE "LegalCopyright", " 1994-2012 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1, 20, 1, 0"
+            VALUE "ProductVersion", "1, 21, 0, 0"
         END
     END
     BLOCK "VarFileInfo"

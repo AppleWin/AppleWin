@@ -44,12 +44,12 @@ extern bool       g_bDisableDirectSound;				// Cmd line switch: don't init DS (s
 extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't init MB support
 
 // TODO: Make g_CurrentPeripherals[MAX_SLOTS] = { CT_Empty }
-extern UINT g_Slot4;	// Mockingboard or Mouse in slot4
+extern SS_CARDTYPE g_Slot4;	// Mockingboard, Z80, Mouse in slot4
+extern SS_CARDTYPE g_Slot5;	// Mockingboard, Z80,       in slot5
 
 // TODO: Move into: g_CurrentPeripherals[]
 extern UINT g_uMouseInSlot4;
 //extern UINT g_uClockInSlot4;
-extern UINT g_uZ80InSlot5;
 
 extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom
 
