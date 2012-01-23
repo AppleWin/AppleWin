@@ -358,7 +358,7 @@ static void ConfigDlg_OK(HWND window, UINT afterclose)
 						"emulator.\n\n"
 						"Would you like to restart the emulator now?"),
 						TEXT("Configuration"),
-						MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+						MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
 		{
 			afterclose = WM_USER_RESTART;
 		}
@@ -492,7 +492,7 @@ static BOOL CALLBACK ConfigDlgProc( HWND   window,
 				TEXT("itself the next time it is started.\n\n")
 				TEXT("Would you like to restart the emulator now?"),
 				TEXT("Configuration"),
-				MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+				MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
 			{
 					afterclose = WM_USER_RESTART;
 					PropSheet_PressButton(GetParent(window), PSBTN_OK);
@@ -719,7 +719,7 @@ static BOOL CALLBACK InputDlgProc(HWND   window,
 				if (MessageBox(window,
 					pMsg,
 					TEXT("Configuration"),
-					MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+					MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
 				{
 					g_uMouseInSlot4 = uNewState;
 
@@ -759,7 +759,7 @@ static BOOL CALLBACK InputDlgProc(HWND   window,
 				if (MessageBox(window,
 					pMsg,
 					TEXT("Configuration"),
-					MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+					MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
 				{
 					g_CPMChoice = NewCPMChoice;
 					afterclose = WM_USER_RESTART;
@@ -815,7 +815,7 @@ static BOOL CALLBACK InputDlgProc(HWND   window,
 
 //===========================================================================
 
-static void SoundDlg_OK(HWND window, UINT afterclose, UINT uNewSoundcardType)
+static void SoundDlg_OK(HWND window, UINT afterclose, eSOUNDCARDTYPE NewSoundcardType)
 {
 	DWORD newsoundtype  = (DWORD)SendDlgItemMessage(window,IDC_SOUNDTYPE,CB_GETCURSEL,0,0);
 
@@ -824,7 +824,7 @@ static void SoundDlg_OK(HWND window, UINT afterclose, UINT uNewSoundcardType)
 
 	if (!SpkrSetEmulationType(window,newsoundtype))
 	{
-		afterclose = 0;
+		//afterclose = 0;	// TC: does nothing
 		return;
 	}
 
@@ -832,7 +832,7 @@ static void SoundDlg_OK(HWND window, UINT afterclose, UINT uNewSoundcardType)
 	SpkrSetVolume(dwSpkrVolume, VOLUME_MAX);
 	MB_SetVolume(dwMBVolume, VOLUME_MAX);
 
-	MB_SetSoundcardType((eSOUNDCARDTYPE)uNewSoundcardType);
+	MB_SetSoundcardType(NewSoundcardType);
 
 	REGSAVE(TEXT("Sound Emulation")   ,soundtype);
 	REGSAVE(TEXT(REGVALUE_SPKR_VOLUME),SpkrGetVolume());
@@ -851,13 +851,37 @@ static void SoundDlg_CANCEL(HWND window)
 
 //---------------------------------------------------------------------------
 
+static bool NewSoundcardConfigured(HWND window, WPARAM wparam, LPCSTR pMsg, UINT& afterclose, int& nCurrentIDCheckButton)
+{
+	if (HIWORD(wparam) != BN_CLICKED)
+		return false;
+
+	if (LOWORD(wparam) == nCurrentIDCheckButton)
+		return false;
+
+	if (MessageBox(window,
+		pMsg,
+		TEXT("Configuration"),
+		MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
+	{
+		nCurrentIDCheckButton = LOWORD(wparam);
+		afterclose = WM_USER_RESTART;
+		PropSheet_PressButton(GetParent(window), PSBTN_OK);
+		return true;
+	}
+
+	CheckRadioButton(window, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, nCurrentIDCheckButton);	// Restore original state
+	return false;
+}
+
 static BOOL CALLBACK SoundDlgProc (HWND   window,
 								   UINT   message,
 								   WPARAM wparam,
 								   LPARAM lparam)
 {
 	static UINT afterclose = 0;
-	static UINT uNewSoundcardType = SC_UNINIT;
+	static eSOUNDCARDTYPE NewSoundcardType = SC_UNINIT;
+	static int nCurrentIDCheckButton = 0;
 
 	switch (message)
 	{
@@ -872,7 +896,7 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 				break;
 			case PSN_APPLY:
 				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
-				SoundDlg_OK(window, afterclose, uNewSoundcardType);
+				SoundDlg_OK(window, afterclose, NewSoundcardType);
 				break;
 			case PSN_QUERYCANCEL:
 				// Can use this to ask user to confirm cancel
@@ -892,16 +916,40 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 		case IDC_MB_VOLUME:
 			break;
 		case IDC_MB_ENABLE:
-			uNewSoundcardType = SC_MOCKINGBOARD;
-			EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), TRUE);
+			{
+				LPCSTR pMsg =	TEXT("The emulator needs to restart as the slot configuration has changed.\n")
+								TEXT("Mockingboard cards will be inserted into slots 4 & 5.\n\n")
+								TEXT("Would you like to restart the emulator now?");
+				if (NewSoundcardConfigured(window, wparam, pMsg, afterclose, nCurrentIDCheckButton))
+				{
+					NewSoundcardType = SC_MOCKINGBOARD;
+					EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), TRUE);
+				}
+			}
 			break;
 		case IDC_PHASOR_ENABLE:
-			uNewSoundcardType = SC_PHASOR;
-			EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), TRUE);
+			{
+				LPCSTR pMsg =	TEXT("The emulator needs to restart as the slot configuration has changed.\n")
+								TEXT("Phasor card will be inserted into slot 4.\n\n")
+								TEXT("Would you like to restart the emulator now?");
+				if (NewSoundcardConfigured(window, wparam, pMsg, afterclose, nCurrentIDCheckButton))
+				{
+					NewSoundcardType = SC_PHASOR;
+					EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), TRUE);
+				}
+			}
 			break;
 		case IDC_SOUNDCARD_DISABLE:
-			uNewSoundcardType = SC_NONE;
-			EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), FALSE);
+			{
+				LPCSTR pMsg =	TEXT("The emulator needs to restart as the slot configuration has changed.\n")
+								TEXT("Sound card(s) will be removed.\n\n")
+								TEXT("Would you like to restart the emulator now?");
+				if (NewSoundcardConfigured(window, wparam, pMsg, afterclose, nCurrentIDCheckButton))
+				{
+					NewSoundcardType = SC_NONE;
+					EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), FALSE);
+				}
+			}
 			break;
 		}
 		break;
@@ -922,16 +970,15 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 			SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETTICFREQ,10,0);
 			SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETPOS,1,MB_GetVolume());
 
-			int nID;
 			eSOUNDCARDTYPE SoundcardType = MB_GetSoundcardType();
 			if(SoundcardType == SC_MOCKINGBOARD)
-				nID = IDC_MB_ENABLE;
+				nCurrentIDCheckButton = IDC_MB_ENABLE;
 			else if(SoundcardType == SC_PHASOR)
-				nID = IDC_PHASOR_ENABLE;
+				nCurrentIDCheckButton = IDC_PHASOR_ENABLE;
 			else
-				nID = IDC_SOUNDCARD_DISABLE;
+				nCurrentIDCheckButton = IDC_SOUNDCARD_DISABLE;
 
-			CheckRadioButton(window, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, nID);
+			CheckRadioButton(window, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, nCurrentIDCheckButton);
 
 			if (g_uMouseInSlot4 || g_CPMChoice == CPM_SLOT4)
 			{
@@ -940,8 +987,10 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 
 			if (g_uMouseInSlot4 || g_CPMChoice == CPM_SLOT4 || g_CPMChoice == CPM_SLOT5)
 			{
-				EnableWindow(GetDlgItem(window, IDC_MB_ENABLE), FALSE);	// Disable Mockingboard (slot 4 & 5)
+				EnableWindow(GetDlgItem(window, IDC_MB_ENABLE), FALSE);		// Disable Mockingboard (slot 4 & 5)
 			}
+
+			EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), (nCurrentIDCheckButton != IDC_SOUNDCARD_DISABLE) ? TRUE : FALSE);
 
 			afterclose = 0;
 			break;
@@ -977,7 +1026,7 @@ static void DiskDlg_OK(HWND window, UINT afterclose)
 			TEXT("emulator.\n\n")
 			TEXT("Would you like to restart the emulator now?"),
 			TEXT("Configuration"),
-			MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
 			afterclose = WM_USER_RESTART;
 	}
 
@@ -1167,7 +1216,7 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
 
 					if (bMsgBox)
 					{
-						int nRes = MessageBox(g_hFrameWindow, szText, TEXT("Eject/Unplug Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
+						int nRes = MessageBox(g_hFrameWindow, szText, TEXT("Eject/Unplug Warning"), MB_ICONWARNING | MB_OKCANCEL | MB_SETFOREGROUND);
 						if (nRes == IDNO)
 							iCommand = 0;
 					}
@@ -1391,7 +1440,7 @@ static void AdvancedDlg_OK(HWND window, UINT afterclose)
 							"emulator.\n\n"
 							"Would you like to restart the emulator now?"),
 							TEXT("Configuration"),
-							MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+							MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
 			{
 				afterclose = WM_USER_RESTART;	
 			}
@@ -1498,7 +1547,7 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
 				if (MessageBox(window,
 					pMsg,
 					TEXT("Configuration"),
-					MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+					MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
 				{
 					g_uTheFreezesF8Rom = uNewState;
 					afterclose = WM_USER_RESTART;

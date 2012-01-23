@@ -555,8 +555,14 @@ void LoadConfiguration ()
   if(REGLOAD(TEXT(REGVALUE_CPM_CONFIG), &dwTmp))
 	  g_CPMChoice = (CPMCHOICE) dwTmp;
 
-  if (g_CPMChoice == CPM_SLOT4 || g_CPMChoice == CPM_SLOT5)
-	  MB_SetSoundcardType(SC_NONE);
+	// Protect against old AppleWin config causing multiple cards to be in same slot!
+	{
+		if (g_uMouseInSlot4 || g_CPMChoice == CPM_SLOT4)
+			MB_SetSoundcardType(SC_NONE);
+
+		if (g_CPMChoice == CPM_SLOT5 && MB_GetSoundcardType() == SC_MOCKINGBOARD)
+			MB_SetSoundcardType(SC_NONE);
+	}
 
 	g_Slot4 =
 		g_uMouseInSlot4	? CT_MouseInterface
@@ -566,7 +572,7 @@ void LoadConfiguration ()
 	g_Slot5 =			  (g_CPMChoice == CPM_SLOT5)	? CT_Z80
 														: CT_Mockingboard;
 
-  //
+	//
 
 	char szFilename[MAX_PATH] = {0};
 	RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_SAVESTATE_FILENAME),1,szFilename,sizeof(szFilename));

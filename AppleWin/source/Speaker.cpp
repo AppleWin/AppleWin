@@ -529,7 +529,7 @@ void SpkrUpdate (DWORD totalcycles)
 		  nSamplesUsed = Spkr_SubmitWaveBuffer(g_pSpeakerBuffer, g_nBufferIdx);
 
 	  _ASSERT(nSamplesUsed <= g_nBufferIdx);
-	  memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], g_nBufferIdx-nSamplesUsed);
+	  memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], g_nBufferIdx-nSamplesUsed);	// FIXME-TC: _Size * 2
 	  g_nBufferIdx -= nSamplesUsed;
   }
   else
@@ -602,7 +602,7 @@ void SpkrUpdate_Timer()
 		nSamplesUsed = Spkr_SubmitWaveBuffer_FullSpeed(g_pSpeakerBuffer, g_nBufferIdx);
 
 		_ASSERT(nSamplesUsed <=	g_nBufferIdx);
-		memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], g_nBufferIdx-nSamplesUsed);
+		memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], g_nBufferIdx-nSamplesUsed);	// FIXME-TC: _Size * 2
 		g_nBufferIdx -=	nSamplesUsed;
 	}
 }

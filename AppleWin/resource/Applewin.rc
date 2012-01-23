@@ -159,9 +159,9 @@ BEGIN
     LTEXT           "&Mockingboard:",IDC_STATIC,49,39,51,8
     CONTROL         "Slider1",IDC_MB_VOLUME,"msctls_trackbar32",TBS_AUTOTICKS | TBS_VERT | TBS_BOTH | WS_TABSTOP,59,47,25,60
     GROUPBOX        "Sound Cards",IDC_STATIC,6,122,197,61
-    CONTROL         "Mocking&boards (in slots 4 && 5)",IDC_MB_ENABLE,"Button",BS_AUTORADIOBUTTON | BS_NOTIFY,10,136,142,8
-    CONTROL         "&Phasor (in slot 4)",IDC_PHASOR_ENABLE,"Button",BS_AUTORADIOBUTTON | BS_NOTIFY,10,149,92,10
-    CONTROL         "&No sound cards",IDC_SOUNDCARD_DISABLE,"Button",BS_AUTORADIOBUTTON | BS_NOTIFY,10,163,78,10
+    CONTROL         "Mockingboards (in slots 4 && 5)",IDC_MB_ENABLE,"Button",BS_AUTORADIOBUTTON,10,136,142,8
+    CONTROL         "Phasor (in slot 4)",IDC_PHASOR_ENABLE,"Button",BS_AUTORADIOBUTTON,10,149,92,10
+    CONTROL         "No sound cards",IDC_SOUNDCARD_DISABLE,"Button",BS_AUTORADIOBUTTON,10,163,78,10
 END
 
 IDD_PROPPAGE_DISK DIALOGEX 0, 0, 210, 190

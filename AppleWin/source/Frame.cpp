@@ -1350,7 +1350,7 @@ LRESULT CALLBACK FrameWndProc (
                        TEXT("unsaved work.\n\n")
                        TEXT("Are you sure you want to do this?"),
                        TEXT("Configuration"),
-                       MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDNO)
+                       MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
           break;
       restart = 1;
       PostMessage(window,WM_CLOSE,0,0);
