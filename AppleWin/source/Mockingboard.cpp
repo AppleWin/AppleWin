@@ -169,7 +169,7 @@ static bool g_bMBAvailable = false;
 
 //
 
-static eSOUNDCARDTYPE g_SoundcardType = SC_MOCKINGBOARD;	// Mockingboard enable (dialog var)
+static SS_CARDTYPE g_SoundcardType = CT_Empty;	// Use CT_Empty to mean: no soundcard
 static bool g_bPhasorEnable = false;
 static BYTE g_nPhasorMode = 0;	// 0=Mockingboard emulation, 1=Phasor native
 
@@ -1312,7 +1312,7 @@ void MB_Initialize()
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 	{
 		MockingboardVoice.bMute = true;
-		g_SoundcardType = SC_NONE;
+		g_SoundcardType = CT_Empty;
 	}
 	else
 	{
@@ -1334,7 +1334,7 @@ void MB_Initialize()
 		MB_Reset();
 	}
 
-	g_bMB_Active = (g_SoundcardType != SC_NONE);
+	g_bMB_Active = (g_SoundcardType != CT_Empty);
 }
 
 //-----------------------------------------------------------------------------
@@ -1368,7 +1368,7 @@ void MB_Reset()
 		AY8910_reset(i);
 	}
 
-	g_bMB_Active = (g_SoundcardType != SC_NONE);
+	g_bMB_Active = (g_SoundcardType != CT_Empty);
 	g_nPhasorMode = 0;
 	MB_Reinitialize();	// Reset CLK for AY8910s
 }
@@ -1382,8 +1382,11 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
 		return mem[nAddr];
 
-	if(g_SoundcardType == SC_NONE)	// TODO: Should really unplug the card from the slot and let IORead_Cxxx() return the floating bus
+	if(g_SoundcardType == CT_Empty)	// TODO: Should really unplug the card from the slot and let IORead_Cxxx() return the floating bus
+	{
+		_ASSERT(0);	// Should not occur now
 		return MemReadFloatingBus(nCyclesLeft);
+	}
 
 	BYTE nMB = (nAddr>>8)&0xf - SLOT4;
 	BYTE nOffset = nAddr&0xff;
@@ -1437,8 +1440,11 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
 		return 0;
 
-	if(g_SoundcardType == SC_NONE)
+	if(g_SoundcardType == CT_Empty)
+	{
+		_ASSERT(0);	// Should not occur now
 		return 0;
+	}
 
 	BYTE nMB = (nAddr>>8)&0xf - SLOT4;
 	BYTE nOffset = nAddr&0xff;
@@ -1498,18 +1504,32 @@ static BYTE __stdcall PhasorIO (WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, U
 
 void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 {
-	if (g_Slot4 == CT_Mockingboard)
+	// Mockingboard: Slot 4 & 5
+	// Phasor      : Slot 4
+	// <other>     : Slot 4 & 5
+
+	if (g_Slot4 != CT_MockingboardC && g_Slot4 != CT_Phasor)
 	{
-		RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
-		RegisterIoHandler(uSlot5, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
+		MB_SetSoundcardType(CT_Empty);
+		return;
 	}
+
+	if (g_Slot4 == CT_MockingboardC)
+		RegisterIoHandler(uSlot4, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
+	else	// Phasor
+		RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
+
+	if (g_Slot5 == CT_MockingboardC)
+		RegisterIoHandler(uSlot5, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
+
+	MB_SetSoundcardType(g_Slot4);
 }
 
 //-----------------------------------------------------------------------------
 
 void MB_Mute()
 {
-	if(g_SoundcardType == SC_NONE)
+	if(g_SoundcardType == CT_Empty)
 		return;
 
 	if(MockingboardVoice.bActive && !MockingboardVoice.bMute)
@@ -1526,7 +1546,7 @@ void MB_Mute()
 
 void MB_Demute()
 {
-	if(g_SoundcardType == SC_NONE)
+	if(g_SoundcardType == CT_Empty)
 		return;
 
 	if(MockingboardVoice.bActive && MockingboardVoice.bMute)
@@ -1550,7 +1570,7 @@ void MB_StartOfCpuExecute()
 // Called by ContinueExecution() at the end of every video frame
 void MB_EndOfVideoFrame()
 {
-	if(g_SoundcardType == SC_NONE)
+	if(g_SoundcardType == CT_Empty)
 		return;
 
 	if(!g_bMBTimerIrqActive)
@@ -1562,7 +1582,7 @@ void MB_EndOfVideoFrame()
 // Called by CpuExecute() after every N opcodes (N = ~1000 @ 1MHz)
 void MB_UpdateCycles(ULONG uExecutedCycles)
 {
-	if(g_SoundcardType == SC_NONE)
+	if(g_SoundcardType == CT_Empty)
 		return;
 
 	CpuCalcCycles(uExecutedCycles);
@@ -1626,22 +1646,23 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 
 //-----------------------------------------------------------------------------
 
-eSOUNDCARDTYPE MB_GetSoundcardType()
+SS_CARDTYPE MB_GetSoundcardType()
 {
 	return g_SoundcardType;
 }
 
-void MB_SetSoundcardType(eSOUNDCARDTYPE NewSoundcardType)
+void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType)
 {
-	if ((NewSoundcardType == SC_UNINIT) || (g_SoundcardType == NewSoundcardType))
+//	if ((NewSoundcardType == SC_UNINIT) || (g_SoundcardType == NewSoundcardType))
+	if (g_SoundcardType == NewSoundcardType)
 		return;
 
 	g_SoundcardType = NewSoundcardType;
 
-	if(g_SoundcardType == SC_NONE)
+	if(g_SoundcardType == CT_Empty)
 		MB_Mute();
 
-	g_bPhasorEnable = (g_SoundcardType == SC_PHASOR);
+	g_bPhasorEnable = (g_SoundcardType == CT_Phasor);
 }
 
 //-----------------------------------------------------------------------------
@@ -1686,7 +1707,7 @@ DWORD MB_GetSnapshot(SS_CARD_MOCKINGBOARD* pSS, DWORD dwSlot)
 	pSS->Hdr.UnitHdr.dwVersion = MAKE_VERSION(1,0,0,0);
 
 	pSS->Hdr.dwSlot = dwSlot;
-	pSS->Hdr.dwType = CT_Mockingboard;
+	pSS->Hdr.dwType = CT_MockingboardC;
 
 	UINT nMbCardNum = dwSlot - SLOT4;
 	UINT nDeviceNum = nMbCardNum*2;

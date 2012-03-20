@@ -1341,17 +1341,9 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_USER_RESTART:
 	  // . Changed Apple computer type (][+ or //e)
+	  // . Changed slot configuration
 	  // . Changed disk speed (normal or enhanced)
 	  // . Changed Freeze F8 rom setting
-      if (g_nAppMode != MODE_LOGO)
-        if (MessageBox(g_hFrameWindow,
-                       TEXT("Restarting the emulator will reset the state ")
-                       TEXT("of the emulated machine, causing you to lose any ")
-                       TEXT("unsaved work.\n\n")
-                       TEXT("Are you sure you want to do this?"),
-                       TEXT("Configuration"),
-                       MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
-          break;
       restart = 1;
       PostMessage(window,WM_CLOSE,0,0);
       break;

@@ -581,7 +581,7 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 
 	if (address >= APPLE_SLOT_BEGIN && address <= APPLE_SLOT_END)
 	{
-		// NB. Currently Mockingboard/Phasor is never unplugged, just disabled. See MB_Read().
+		// TODO:CHECK: NB. Currently Mockingboard/Phasor is never unplugged, just disabled. See MB_Read().
 		const UINT uSlot = (address>>8)&0x7;
 		if (uSlot != 3 && !IsCardInSlot(uSlot))
 			return IO_Null(programcounter, address, write, value, nCyclesLeft);
@@ -993,16 +993,11 @@ LPBYTE MemGetCxRomPeripheral()
 
 //===========================================================================
 
-void MemPreInitialize ()
+void MemInitialize()
 {
 	// Init the I/O handlers
 	InitIoHandlers();
-}
 
-//===========================================================================
-
-void MemInitialize()
-{
 	const UINT CxRomSize = 4*1024;
 	const UINT Apple2RomSize = 12*1024;
 	const UINT Apple2eRomSize = Apple2RomSize+CxRomSize;
@@ -1080,6 +1075,11 @@ void MemInitialize()
 		case A2TYPE_PRAVETS82:	    _tcscpy(sRomFileName, TEXT("PRAVETS82.ROM")); break;
 		case A2TYPE_PRAVETS8M:	    _tcscpy(sRomFileName, TEXT("PRAVETS8M.ROM")); break;
 		case A2TYPE_PRAVETS8A:	    _tcscpy(sRomFileName, TEXT("PRAVETS8C.ROM")); break;
+		default:					
+			{
+				_tcscpy(sRomFileName, TEXT("Unknown type!"));
+				REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), A2TYPE_APPLE2EEHANCED);
+			}
 		}
 
 		TCHAR sText[ MAX_PATH ];
@@ -1170,7 +1170,7 @@ void MemInitialize()
 	{
 		sg_Mouse.Initialize(pCxRomPeripheral, 4);	// $C400 : Mouse f/w
 	}
-	else if (g_Slot4 == CT_Mockingboard)
+	else if (g_Slot4 == CT_MockingboardC || g_Slot4 == CT_Phasor)
 	{
 		const UINT uSlot4 = 4;
 		const UINT uSlot5 = 5;

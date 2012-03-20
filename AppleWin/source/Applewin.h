@@ -8,7 +8,7 @@ extern char VERSIONSTRING[];	// Contructed in WinMain()
 
 extern TCHAR     *g_pAppTitle;
 
-extern eApple2Type	g_Apple2Type;
+extern eApple2Type g_Apple2Type;
 
 extern BOOL       behind;
 extern DWORD      cumulativecycles;
@@ -46,10 +46,6 @@ extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't i
 // TODO: Make g_CurrentPeripherals[MAX_SLOTS] = { CT_Empty }
 extern SS_CARDTYPE g_Slot4;	// Mockingboard, Z80, Mouse in slot4
 extern SS_CARDTYPE g_Slot5;	// Mockingboard, Z80,       in slot5
-
-// TODO: Move into: g_CurrentPeripherals[]
-extern UINT g_uMouseInSlot4;
-//extern UINT g_uClockInSlot4;
 
 extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom
 

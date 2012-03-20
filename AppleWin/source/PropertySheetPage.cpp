@@ -33,7 +33,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tfe\Tfesupp.h"
 #include "Tfe\Uilib.h"
 
-TCHAR   computerchoices[] =
+enum APPLEIICHOICE {MENUITEM_IIORIGINAL, MENUITEM_IIPLUS, MENUITEM_IIE, MENUITEM_ENHANCEDIIE, MENUITEM_CLONE};
+static TCHAR g_ComputerChoices[] =
 				TEXT("Apple ][ (Original)\0")
 				TEXT("Apple ][+\0")
 				TEXT("Apple //e\0")
@@ -48,9 +49,6 @@ TCHAR* szJoyChoice4 = TEXT("Keyboard (centering)\0");
 TCHAR* szJoyChoice5 = TEXT("Mouse\0");
 
 static const int g_nMaxJoyChoiceLen = 40;
-//eApple2Type NewApple2Type = 0;
-static DWORD NewApple2Type = 0;		// TC-FIXME: Also a local NewApple2Type!
-static DWORD NewCloneType = 0;		// TC-FIXME: Also a local NewCloneType!
 
 enum JOY0CHOICE {J0C_DISABLED=0, J0C_JOYSTICK1, J0C_KEYBD_STANDARD, J0C_KEYBD_CENTERING, J0C_MOUSE, J0C_MAX};
 TCHAR* pszJoy0Choices[J0C_MAX] = {	szJoyChoice0,
@@ -78,26 +76,23 @@ TCHAR   soundchoices[]    =  TEXT("Disabled\0")
 TCHAR   discchoices[]     =  TEXT("Authentic Speed\0")
                              TEXT("Enhanced Speed\0");
 
-TCHAR g_szCPMSlotChoice_Slot4[] = TEXT("Slot 4\0");
-TCHAR g_szCPMSlotChoice_Slot5[] = TEXT("Slot 5\0");
-TCHAR g_szCPMSlotChoice_Unplugged[] = TEXT("Unplugged\0");
-TCHAR g_szCPMSlotChoice_Unavailable[] = TEXT("Unavailable\0");
+enum CPMCHOICE {CPM_SLOT4=0, CPM_SLOT5, CPM_UNPLUGGED, CPM_UNAVAILABLE, _CPM_MAX_CHOICES};
+static TCHAR g_szCPMSlotChoice_Slot4[] = TEXT("Slot 4\0");
+static TCHAR g_szCPMSlotChoice_Slot5[] = TEXT("Slot 5\0");
+static TCHAR g_szCPMSlotChoice_Unplugged[] = TEXT("Unplugged\0");
+static TCHAR g_szCPMSlotChoice_Unavailable[] = TEXT("Unavailable\0");
 
 static TCHAR g_szCPMSlotChoices[100];
-CPMCHOICE g_CPMChoice = CPM_UNPLUGGED; 
-CPMCHOICE g_CPMComboItemToChoice[_CPM_MAX_CHOICES];
+static CPMCHOICE g_CPMChoice = CPM_UNPLUGGED; 
+static CPMCHOICE g_CPMComboItemToChoice[_CPM_MAX_CHOICES];
 
 const UINT VOLUME_MIN = 0;
 const UINT VOLUME_MAX = 59;
 
 enum {PG_CONFIG=0, PG_INPUT, PG_SOUND, PG_DISK, PG_ADVANCED, PG_NUM_SHEETS};
+static UINT g_nLastPage = PG_CONFIG;
 
-UINT g_nLastPage = PG_CONFIG;
-
-// TODO: CLEANUP! Move to peripherals.cpp !!!
-// g_nConfig_
 UINT g_uScrollLockToggle = 0;
-UINT g_uMouseInSlot4 = 0;
 UINT g_uMouseShowCrosshair = 0;
 UINT g_uMouseRestrictToWindow = 0;
 
@@ -105,24 +100,41 @@ UINT g_uMouseRestrictToWindow = 0;
 
 UINT g_uTheFreezesF8Rom = 0;
 
-#define UNDEFINED ((UINT)-1)
-static UINT g_bEnableFreezeDlgButton = UNDEFINED;
+static bool g_bConfirmedRestartEmulator = false;
+
+enum UICONTROLSTATE {UI_UNDEFINED, UI_DISABLE, UI_ENABLE};
+static UICONTROLSTATE g_UIControlFreezeDlgButton = UI_UNDEFINED;
+static UICONTROLSTATE g_UIControlCloneDropdownMenu = UI_UNDEFINED;
+
+enum CARDSTATE {CARD_UNCHANGED, CARD_UNPLUGGED, CARD_INSERTED};
 
 //
 
-enum
-{
-	CLONETYPE_PRAVETS82=0,
-	CLONETYPE_PRAVETS8M,
-	CLONETYPE_PRAVETS8A,
-	CLONETYPE_NUM
-};
-
-DWORD g_uCloneType = CLONETYPE_PRAVETS82;
-
+enum CLONECHOICE {MENUITEM_CLONEMIN, MENUITEM_PRAVETS82=MENUITEM_CLONEMIN, MENUITEM_PRAVETS8M, MENUITEM_PRAVETS8A, MENUITEM_CLONEMAX};
 static TCHAR g_CloneChoices[]	=	TEXT("Pravets 82\0")	// Bulgarian
 									TEXT("Pravets 8M\0")    // Bulgarian
 									TEXT("Pravets 8A\0");	// Bulgarian
+
+//===========================================================================
+
+// NB. This used to be in FrameWndProc() for case WM_USER_RESTART:
+// - but this is too late to cancel, since new configurations have already been changed.
+bool IsOkToRestart(HWND window)
+{
+	if (g_nAppMode == MODE_LOGO)
+		return true;
+
+	if (MessageBox(window,
+		TEXT("Restarting the emulator will reset the state ")
+		TEXT("of the emulated machine, causing you to lose any ")
+		TEXT("unsaved work.\n\n")
+		TEXT("Are you sure you want to do this?"),
+		TEXT("Configuration"),
+		MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
+		return false;
+
+	return true;
+}
 
 //===========================================================================
 
@@ -228,18 +240,22 @@ static void InitJoystickChoices(HWND window, int nJoyNum, int nIdcValue)
 
 static void InitCPMChoices(HWND window)
 {
+	if (g_Slot4 == CT_Z80)		g_CPMChoice = CPM_SLOT4;
+	else if (g_Slot5 == CT_Z80)	g_CPMChoice = CPM_SLOT5;
+	else						g_CPMChoice = CPM_UNPLUGGED;
+
 	for (UINT i=0; i<_CPM_MAX_CHOICES; i++)
 		g_CPMComboItemToChoice[i] = CPM_UNAVAILABLE;
 
 	UINT uStringOffset = 0;
 	UINT uComboItemIdx = 0;
-	const eSOUNDCARDTYPE SoundcardType = MB_GetSoundcardType();
 
-	const bool bIsSlot4Empty = g_uMouseInSlot4 == 0 &&
-							   SoundcardType == SC_NONE;	// Mockingboard is in slots 4+5; Phasor is in slot 4
-	const bool bIsSlot5Empty = SoundcardType != SC_MOCKINGBOARD;
+	const bool bIsSlot4Empty = g_Slot4 == CT_Empty;
+	const bool bIsSlot4CPM   = g_Slot4 == CT_Z80;
+	const bool bIsSlot5Empty = g_Slot5 == CT_Empty;
+	const bool bIsSlot5CPM   = g_Slot5 == CT_Z80;
 
-	if (bIsSlot4Empty)	// Slot-4 is empty
+	if (bIsSlot4Empty || bIsSlot4CPM)
 	{
 		const UINT uStrLen = strlen(g_szCPMSlotChoice_Slot4)+1;
 		memcpy(&g_szCPMSlotChoices[uStringOffset], g_szCPMSlotChoice_Slot4, uStrLen);
@@ -248,7 +264,7 @@ static void InitCPMChoices(HWND window)
 		g_CPMComboItemToChoice[uComboItemIdx++] = CPM_SLOT4;
 	}
 
-	if (bIsSlot5Empty)	// Slot-5 is empty
+	if (bIsSlot5Empty || bIsSlot5CPM)
 	{
 		const UINT uStrLen = strlen(g_szCPMSlotChoice_Slot5)+1;
 		memcpy(&g_szCPMSlotChoices[uStringOffset], g_szCPMSlotChoice_Slot5, uStrLen);
@@ -294,23 +310,64 @@ static void InitCPMChoices(HWND window)
 
 //===========================================================================
 
-static eApple2Type GetApple2Type(DWORD NewCompType, DWORD NewCloneType)
+// Config->Computer: Menu item to eApple2Type
+static eApple2Type GetApple2Type(DWORD NewMenuItem)
 {
-	switch (NewCompType)
+	switch (NewMenuItem)
 	{
-		case 0:		return A2TYPE_APPLE2;
-		case 1:		return A2TYPE_APPLE2PLUS;
-		case 2:		return A2TYPE_APPLE2E;
-		case 3:		return A2TYPE_APPLE2EEHANCED;
-		case 4:		// Clone
-			switch (NewCloneType)
-			{
-			case 0: return A2TYPE_PRAVETS82; break;
-			case 1: return A2TYPE_PRAVETS8M; break;
-			case 2: return A2TYPE_PRAVETS8A; break;
-			}			
-		default:	return A2TYPE_APPLE2EEHANCED;
+		case MENUITEM_IIORIGINAL:	return A2TYPE_APPLE2;
+		case MENUITEM_IIPLUS:		return A2TYPE_APPLE2PLUS;
+		case MENUITEM_IIE:			return A2TYPE_APPLE2E;
+		case MENUITEM_ENHANCEDIIE:	return A2TYPE_APPLE2EEHANCED;
+		case MENUITEM_CLONE:		return A2TYPE_CLONE;
+		default:					return A2TYPE_APPLE2EEHANCED;
 	}
+}
+
+// Advanced->Clone: Menu item to eApple2Type
+static eApple2Type GetCloneType(DWORD NewMenuItem)
+{
+	switch (NewMenuItem)
+	{
+		case MENUITEM_PRAVETS82:	return A2TYPE_PRAVETS82;
+		case MENUITEM_PRAVETS8M:	return A2TYPE_PRAVETS8M;
+		case MENUITEM_PRAVETS8A:	return A2TYPE_PRAVETS8A;
+		default:					return A2TYPE_PRAVETS82;
+	}
+}
+
+static int GetCloneMenuItem(void)
+{
+	if (!IS_CLONE())
+		return MENUITEM_CLONEMIN;
+
+	int nMenuItem = g_Apple2Type - A2TYPE_PRAVETS;
+	if (nMenuItem < 0 || nMenuItem >= MENUITEM_CLONEMAX)
+		return MENUITEM_CLONEMIN;
+
+	return nMenuItem;
+}
+
+static void SaveComputerType(eApple2Type NewApple2Type)
+{
+	if (NewApple2Type == A2TYPE_CLONE)	// Clone picked from Config tab, but no specific one picked from Advanced tab
+		NewApple2Type = A2TYPE_PRAVETS82;
+
+	REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), NewApple2Type);
+}
+
+// ====================================================================
+
+static void SetSlot4(SS_CARDTYPE NewCardType)
+{
+	g_Slot4 = NewCardType;
+	REGSAVE(TEXT(REGVALUE_SLOT4),(DWORD)g_Slot4);
+}
+
+static void SetSlot5(SS_CARDTYPE NewCardType)
+{
+	g_Slot5 = NewCardType;
+	REGSAVE(TEXT(REGVALUE_SLOT5),(DWORD)g_Slot5);
 }
 
 // ====================================================================
@@ -334,23 +391,19 @@ void Config_Load_Video()
 		g_eVideoType = VT_COLOR_STANDARD; // Old default: VT_COLOR_TVEMU
 }
 
-
 static void ConfigDlg_OK(HWND window, UINT afterclose)
 {
-	DWORD NewCompType = (DWORD) SendDlgItemMessage(window,IDC_COMPUTER,CB_GETCURSEL,0,0);
-	DWORD OldApple2Type = g_Apple2Type;
-	eApple2Type NewApple2Type = GetApple2Type(NewCompType, 0);
+	const DWORD NewComputerMenuItem = (DWORD) SendDlgItemMessage(window,IDC_COMPUTER,CB_GETCURSEL,0,0);
+	const DWORD newvidtype    = (DWORD)SendDlgItemMessage(window,IDC_VIDEOTYPE,CB_GETCURSEL,0,0);
+	const DWORD newserialport = (DWORD)SendDlgItemMessage(window,IDC_SERIALPORT,CB_GETCURSEL,0,0);
 
-	DWORD newvidtype    = (DWORD)SendDlgItemMessage(window,IDC_VIDEOTYPE,CB_GETCURSEL,0,0);
-	DWORD newserialport = (DWORD)SendDlgItemMessage(window,IDC_SERIALPORT,CB_GETCURSEL,0,0);
-
-	if (OldApple2Type > (APPLECLONE_MASK|APPLE2E_MASK))
-		OldApple2Type = (APPLECLONE_MASK|APPLE2E_MASK);
+	const eApple2Type NewApple2Type = GetApple2Type(NewComputerMenuItem);
+	const eApple2Type OldApple2Type = IS_CLONE() ? (eApple2Type)A2TYPE_CLONE : g_Apple2Type;	// For clones, normalise to generic clone type
 
 	if (NewApple2Type != OldApple2Type)
 	{
 		if ((afterclose == WM_USER_RESTART) ||	// Eg. Changing 'Freeze ROM' & user has already OK'd the restart for this
-			MessageBox(window,
+			((MessageBox(window,
 						TEXT(
 						"You have changed the emulated computer "
 						"type.  This change will not take effect "
@@ -359,8 +412,11 @@ static void ConfigDlg_OK(HWND window, UINT afterclose)
 						"Would you like to restart the emulator now?"),
 						TEXT("Configuration"),
 						MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
+			&& IsOkToRestart(window)) )
 		{
+			g_bConfirmedRestartEmulator = true;
 			afterclose = WM_USER_RESTART;
+			SaveComputerType(NewApple2Type);
 		}
 	}
 
@@ -382,22 +438,14 @@ static void ConfigDlg_OK(HWND window, UINT afterclose)
 		g_dwSpeed = SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_GETPOS,0,0);
 
 	SetCurrentCLK6502();
-	
-	if (NewApple2Type > A2TYPE_CLONE) 
-		NewCloneType = NewApple2Type - A2TYPE_CLONE;	// TC-FIXME: Must be global scope (ie. g_NewCloneType)
-
-	if ((NewApple2Type == A2TYPE_PRAVETS82) || (NewApple2Type == A2TYPE_PRAVETS8A) || (NewApple2Type == A2TYPE_PRAVETS8M))
-		REGSAVE(TEXT(REGVALUE_APPLE2_TYPE),A2TYPE_CLONE );
-	else
-		REGSAVE(TEXT(REGVALUE_APPLE2_TYPE),NewApple2Type );
 
 	RegSaveString(	TEXT("Configuration"),
 					TEXT(REGVALUE_SERIAL_PORT_NAME),
 					TRUE,
 					sg_SSC.GetSerialPortName() );
 
-	REGSAVE(TEXT("Custom Speed")      ,IsDlgButtonChecked(window,IDC_CUSTOM_SPEED));
-	REGSAVE(TEXT("Emulation Speed")   ,g_dwSpeed);
+	REGSAVE(TEXT(REGVALUE_CUSTOM_SPEED)      ,IsDlgButtonChecked(window,IDC_CUSTOM_SPEED));
+	REGSAVE(TEXT(REGVALUE_EMULATION_SPEED)   ,g_dwSpeed);
 
 	Config_Save_Video();
 
@@ -431,14 +479,15 @@ static BOOL CALLBACK ConfigDlgProc( HWND   window,
 			case PSN_KILLACTIVE:
 				// About to stop being active page
 				{
-					DWORD NewCompType = (DWORD) SendDlgItemMessage(window, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
-					g_bEnableFreezeDlgButton = GetApple2Type(NewCompType,0)<=A2TYPE_APPLE2PLUS ? TRUE : FALSE;
+					DWORD NewComputerMenuItem = (DWORD) SendDlgItemMessage(window, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
+					g_UIControlFreezeDlgButton = GetApple2Type(NewComputerMenuItem) <= A2TYPE_APPLE2PLUS ? UI_ENABLE : UI_DISABLE;
+					g_UIControlCloneDropdownMenu = GetApple2Type(NewComputerMenuItem) == A2TYPE_CLONE ? UI_ENABLE : UI_DISABLE;
 					SetWindowLong(window, DWL_MSGRESULT, FALSE);		// Changes are valid
 				}
 				break;
 			case PSN_APPLY:
-				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				ConfigDlg_OK(window, afterclose);
+				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
 				// Can use this to ask user to confirm cancel
@@ -510,23 +559,22 @@ static BOOL CALLBACK ConfigDlgProc( HWND   window,
 		{
 			g_nLastPage = PG_CONFIG;
 
-			UINT iApple2String = 0;
-			switch (g_Apple2Type)
+			// Convert Apple2 type to menu item
 			{
-			default:
-			case A2TYPE_APPLE2:			iApple2String = 0; break;
-			case A2TYPE_APPLE2PLUS:		iApple2String = 1; break;
-			case A2TYPE_APPLE2E:		iApple2String = 2; break;
-			case A2TYPE_APPLE2EEHANCED:	iApple2String = 3; break;
-			case A2TYPE_PRAVETS82:		iApple2String = 4; break;
-			case A2TYPE_PRAVETS8M:		iApple2String = 5; break;
-			case A2TYPE_PRAVETS8A:		iApple2String = 6; break;
-			}
+				int nCurrentChoice = 0;
+				switch (g_Apple2Type)
+				{
+				case A2TYPE_APPLE2:			nCurrentChoice = MENUITEM_IIORIGINAL; break;
+				case A2TYPE_APPLE2PLUS:		nCurrentChoice = MENUITEM_IIPLUS; break;
+				case A2TYPE_APPLE2E:		nCurrentChoice = MENUITEM_IIE; break;
+				case A2TYPE_APPLE2EEHANCED:	nCurrentChoice = MENUITEM_ENHANCEDIIE; break;
+				case A2TYPE_PRAVETS82:		nCurrentChoice = MENUITEM_CLONE; break;
+				case A2TYPE_PRAVETS8M:		nCurrentChoice = MENUITEM_CLONE; break;
+				case A2TYPE_PRAVETS8A:		nCurrentChoice = MENUITEM_CLONE; break;
+				}
 
-			if (iApple2String > 3) 
-				FillComboBox(window,IDC_COMPUTER,computerchoices,4);
-			else
-				FillComboBox(window,IDC_COMPUTER,computerchoices,iApple2String);
+				FillComboBox(window, IDC_COMPUTER, g_ComputerChoices, nCurrentChoice);
+			}
 
 			FillComboBox(window,IDC_VIDEOTYPE,g_aVideoChoices,g_eVideoType);
 			CheckDlgButton(window, IDC_CHECK_HALF_SCAN_LINES, g_uHalfScanLines ? BST_CHECKED : BST_UNCHECKED);
@@ -540,15 +588,15 @@ static BOOL CALLBACK ConfigDlgProc( HWND   window,
 			SendDlgItemMessage(window,IDC_SLIDER_CPU_SPEED,TBM_SETPOS,1,g_dwSpeed);
 
 			{
-				BOOL custom = 1;
+				BOOL bCustom = TRUE;
 				if (g_dwSpeed == SPEED_NORMAL)
 				{
-					custom = 0;
-					REGLOAD(TEXT("Custom Speed"),(DWORD *)&custom);
+					bCustom = FALSE;
+					REGLOAD(TEXT(REGVALUE_CUSTOM_SPEED),(DWORD *)&bCustom);
 				}
-				CheckRadioButton(window, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, custom ? IDC_CUSTOM_SPEED : IDC_AUTHENTIC_SPEED);
-				SetFocus(GetDlgItem(window, custom ? IDC_SLIDER_CPU_SPEED : IDC_AUTHENTIC_SPEED));
-				EnableTrackbar(window, custom);
+				CheckRadioButton(window, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, bCustom ? IDC_CUSTOM_SPEED : IDC_AUTHENTIC_SPEED);
+				SetFocus(GetDlgItem(window, bCustom ? IDC_SLIDER_CPU_SPEED : IDC_AUTHENTIC_SPEED));
+				EnableTrackbar(window, bCustom);
 			}
 
 			afterclose = 0;
@@ -583,20 +631,20 @@ static BOOL CALLBACK ConfigDlgProc( HWND   window,
 
 //===========================================================================
 
-static void InputDlg_OK(HWND window, UINT afterclose)
+static void InputDlg_OK(HWND window, UINT afterclose, CARDSTATE MousecardSlotChange, CARDSTATE CPMcardSlotChange)
 {
 	UINT uNewJoyType0 = SendDlgItemMessage(window,IDC_JOYSTICK0,CB_GETCURSEL,0,0);
 	UINT uNewJoyType1 = SendDlgItemMessage(window,IDC_JOYSTICK1,CB_GETCURSEL,0,0);
 
 	if (!JoySetEmulationType(window, g_nJoy0ChoiceTranlationTbl[uNewJoyType0], JN_JOYSTICK0))
 	{
-		afterclose = 0;
+		//afterclose = 0;	// TC: does nothing
 		return;
 	}
 	
 	if (!JoySetEmulationType(window, g_nJoy1ChoiceTranlationTbl[uNewJoyType1], JN_JOYSTICK1))
 	{
-		afterclose = 0;
+		//afterclose = 0;	// TC: does nothing
 		return;
 	}
 
@@ -611,10 +659,30 @@ static void InputDlg_OK(HWND window, UINT afterclose)
 	REGSAVE(TEXT(REGVALUE_PDL_XTRIM),JoyGetTrim(true));
 	REGSAVE(TEXT(REGVALUE_PDL_YTRIM),JoyGetTrim(false));
 	REGSAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE),g_uScrollLockToggle);
-	REGSAVE(TEXT(REGVALUE_MOUSE_IN_SLOT4),g_uMouseInSlot4);
 	REGSAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR),g_uMouseShowCrosshair);
 	REGSAVE(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW),g_uMouseRestrictToWindow);
-	REGSAVE(TEXT(REGVALUE_CPM_CONFIG), g_CPMChoice);
+
+	if (MousecardSlotChange == CARD_INSERTED)
+		SetSlot4(CT_MouseInterface);
+	else if (MousecardSlotChange == CARD_UNPLUGGED)
+		SetSlot4(CT_Empty);
+
+	//
+
+	if (CPMcardSlotChange != CARD_UNCHANGED)
+	{
+		// Whatever has changed, the old slot will now be empty
+		if (g_Slot4 == CT_Z80)
+			SetSlot4(CT_Empty);
+		else if (g_Slot5 == CT_Z80)
+			SetSlot5(CT_Empty);
+
+		// Insert CP/M card into new slot (or leave slot empty)
+		if (g_CPMChoice == CPM_SLOT4)
+			SetSlot4(CT_Z80);
+		else if (g_CPMChoice == CPM_SLOT5)
+			SetSlot5(CT_Z80);
+	}
 
 	//
 
@@ -634,6 +702,8 @@ static BOOL CALLBACK InputDlgProc(HWND   window,
 								  LPARAM lparam)
 {
 	static UINT afterclose = 0;
+	static CARDSTATE MousecardSlotChange = CARD_UNCHANGED;
+	static CARDSTATE CPMcardSlotChange = CARD_UNCHANGED;
 
 	switch (message)
 	{
@@ -647,8 +717,8 @@ static BOOL CALLBACK InputDlgProc(HWND   window,
 				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
 				break;
 			case PSN_APPLY:
+				InputDlg_OK(window, afterclose, MousecardSlotChange, CPMcardSlotChange);
 				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
-				InputDlg_OK(window, afterclose);
 				break;
 			case PSN_QUERYCANCEL:
 				// Can use this to ask user to confirm cancel
@@ -712,18 +782,19 @@ static BOOL CALLBACK InputDlgProc(HWND   window,
 					TEXT("and the mouse can't be used for joystick emulation.\n\n")
 					TEXT("Would you like to restart the emulator now?")
 					:
-				TEXT("The emulator needs to restart as the slot configuration has changed.\n\n")
+					TEXT("The emulator needs to restart as the slot configuration has changed.\n\n")
 					TEXT("(Mockingboard/Phasor cards will now be available in slot 4\n")
 					TEXT("and the mouse can be used for joystick emulation)\n\n")
 					TEXT("Would you like to restart the emulator now?");
-				if (MessageBox(window,
-					pMsg,
-					TEXT("Configuration"),
-					MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
+				if ( (MessageBox(window,
+						pMsg,
+						TEXT("Configuration"),
+						MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
+					&& IsOkToRestart(window) )
 				{
-					g_uMouseInSlot4 = uNewState;
+					MousecardSlotChange = !uNewState ? CARD_UNPLUGGED : CARD_INSERTED;
 
-					if (uNewState)
+					if (uNewState)	// Redundant, since restarting
 					{
 						JoyDisableUsingMouse();
 						InitJoystickChoices(window, JN_JOYSTICK0, IDC_JOYSTICK0);
@@ -735,7 +806,8 @@ static BOOL CALLBACK InputDlgProc(HWND   window,
 				}
 				else
 				{
-					CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
+					const bool bIsSlot4Mouse = g_Slot4 == CT_MouseInterface;
+					CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, bIsSlot4Mouse ? BST_CHECKED : BST_UNCHECKED);
 				}
 			}
 			break;
@@ -756,12 +828,15 @@ static BOOL CALLBACK InputDlgProc(HWND   window,
 					TEXT("The emulator needs to restart as the slot configuration has changed.\n")
 					TEXT("Microsoft CP/M SoftCard will be removed.\n\n")
 					TEXT("Would you like to restart the emulator now?");
-				if (MessageBox(window,
-					pMsg,
-					TEXT("Configuration"),
-					MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
+				if ( (MessageBox(window,
+						pMsg,
+						TEXT("Configuration"),
+						MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
+					&& IsOkToRestart(window) )
 				{
+					CPMcardSlotChange = (NewCPMChoice == CPM_UNPLUGGED) ? CARD_UNPLUGGED : CARD_INSERTED;
 					g_CPMChoice = NewCPMChoice;
+
 					afterclose = WM_USER_RESTART;
 					PropSheet_PressButton(GetParent(window), PSBTN_OK);
 				}
@@ -794,14 +869,15 @@ static BOOL CALLBACK InputDlgProc(HWND   window,
 
 			CheckDlgButton(window, IDC_SCROLLLOCK_TOGGLE, g_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
 
-			CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, g_uMouseInSlot4 ? BST_CHECKED : BST_UNCHECKED);
+			const bool bIsSlot4Mouse = g_Slot4 == CT_MouseInterface;
+			CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, bIsSlot4Mouse ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(window, IDC_MOUSE_CROSSHAIR, g_uMouseShowCrosshair ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(window, IDC_MOUSE_RESTRICT_TO_WINDOW, g_uMouseRestrictToWindow ? BST_CHECKED : BST_UNCHECKED);
 
-			const eSOUNDCARDTYPE SoundcardType = MB_GetSoundcardType();
-			EnableWindow(GetDlgItem(window, IDC_MOUSE_IN_SLOT4), (g_uMouseInSlot4 || (g_CPMChoice != CPM_SLOT4 && SoundcardType == SC_NONE)) ? TRUE : FALSE);
-			EnableWindow(GetDlgItem(window, IDC_MOUSE_CROSSHAIR), g_uMouseInSlot4 ? TRUE : FALSE);
-			EnableWindow(GetDlgItem(window, IDC_MOUSE_RESTRICT_TO_WINDOW), g_uMouseInSlot4 ? TRUE : FALSE);
+			const bool bIsSlot4Empty = g_Slot4 == CT_Empty;
+			EnableWindow(GetDlgItem(window, IDC_MOUSE_IN_SLOT4), (bIsSlot4Mouse || bIsSlot4Empty) ? TRUE : FALSE);
+			EnableWindow(GetDlgItem(window, IDC_MOUSE_CROSSHAIR), bIsSlot4Mouse ? TRUE : FALSE);
+			EnableWindow(GetDlgItem(window, IDC_MOUSE_RESTRICT_TO_WINDOW), bIsSlot4Mouse ? TRUE : FALSE);
 
 			InitCPMChoices(window);
 
@@ -815,7 +891,7 @@ static BOOL CALLBACK InputDlgProc(HWND   window,
 
 //===========================================================================
 
-static void SoundDlg_OK(HWND window, UINT afterclose, eSOUNDCARDTYPE NewSoundcardType)
+static void SoundDlg_OK(HWND window, UINT afterclose, SS_CARDTYPE NewCardType, CARDSTATE SoundcardSlotChange)
 {
 	DWORD newsoundtype  = (DWORD)SendDlgItemMessage(window,IDC_SOUNDTYPE,CB_GETCURSEL,0,0);
 
@@ -832,12 +908,32 @@ static void SoundDlg_OK(HWND window, UINT afterclose, eSOUNDCARDTYPE NewSoundcar
 	SpkrSetVolume(dwSpkrVolume, VOLUME_MAX);
 	MB_SetVolume(dwMBVolume, VOLUME_MAX);
 
-	MB_SetSoundcardType(NewSoundcardType);
-
-	REGSAVE(TEXT("Sound Emulation")   ,soundtype);
+	REGSAVE(TEXT("Sound Emulation"),soundtype);
 	REGSAVE(TEXT(REGVALUE_SPKR_VOLUME),SpkrGetVolume());
 	REGSAVE(TEXT(REGVALUE_MB_VOLUME),MB_GetVolume());
-	REGSAVE(TEXT(REGVALUE_SOUNDCARD_TYPE),(DWORD)MB_GetSoundcardType());
+
+	if (SoundcardSlotChange != CARD_UNCHANGED)
+	{
+		MB_SetSoundcardType(NewCardType);
+
+		if (NewCardType == CT_MockingboardC)
+		{
+			SetSlot4(CT_MockingboardC);
+			SetSlot5(CT_MockingboardC);
+		}
+		else if (NewCardType == CT_Phasor)
+		{
+			SetSlot4(CT_Phasor);
+			if (g_Slot5 == CT_MockingboardC)
+				SetSlot5(CT_Empty);
+		}
+		else
+		{
+			SetSlot4(CT_Empty);
+			if (g_Slot5 == CT_MockingboardC)
+				SetSlot5(CT_Empty);
+		}
+	}
 
 	//
 
@@ -859,10 +955,11 @@ static bool NewSoundcardConfigured(HWND window, WPARAM wparam, LPCSTR pMsg, UINT
 	if (LOWORD(wparam) == nCurrentIDCheckButton)
 		return false;
 
-	if (MessageBox(window,
-		pMsg,
-		TEXT("Configuration"),
-		MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
+	if ( (MessageBox(window,
+			pMsg,
+			TEXT("Configuration"),
+			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
+		&& IsOkToRestart(window) )
 	{
 		nCurrentIDCheckButton = LOWORD(wparam);
 		afterclose = WM_USER_RESTART;
@@ -870,7 +967,8 @@ static bool NewSoundcardConfigured(HWND window, WPARAM wparam, LPCSTR pMsg, UINT
 		return true;
 	}
 
-	CheckRadioButton(window, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, nCurrentIDCheckButton);	// Restore original state
+	// Restore original state
+	CheckRadioButton(window, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, nCurrentIDCheckButton);
 	return false;
 }
 
@@ -880,7 +978,8 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 								   LPARAM lparam)
 {
 	static UINT afterclose = 0;
-	static eSOUNDCARDTYPE NewSoundcardType = SC_UNINIT;
+	static SS_CARDTYPE NewCardType = CT_Empty;
+	static CARDSTATE SoundcardSlotChange = CARD_UNCHANGED;
 	static int nCurrentIDCheckButton = 0;
 
 	switch (message)
@@ -895,8 +994,8 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
 				break;
 			case PSN_APPLY:
+				SoundDlg_OK(window, afterclose, NewCardType, SoundcardSlotChange);
 				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
-				SoundDlg_OK(window, afterclose, NewSoundcardType);
 				break;
 			case PSN_QUERYCANCEL:
 				// Can use this to ask user to confirm cancel
@@ -922,7 +1021,8 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 								TEXT("Would you like to restart the emulator now?");
 				if (NewSoundcardConfigured(window, wparam, pMsg, afterclose, nCurrentIDCheckButton))
 				{
-					NewSoundcardType = SC_MOCKINGBOARD;
+					NewCardType = CT_MockingboardC;
+					SoundcardSlotChange = CARD_INSERTED;
 					EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), TRUE);
 				}
 			}
@@ -934,7 +1034,8 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 								TEXT("Would you like to restart the emulator now?");
 				if (NewSoundcardConfigured(window, wparam, pMsg, afterclose, nCurrentIDCheckButton))
 				{
-					NewSoundcardType = SC_PHASOR;
+					NewCardType = CT_Phasor;
+					SoundcardSlotChange = CARD_INSERTED;
 					EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), TRUE);
 				}
 			}
@@ -946,7 +1047,8 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 								TEXT("Would you like to restart the emulator now?");
 				if (NewSoundcardConfigured(window, wparam, pMsg, afterclose, nCurrentIDCheckButton))
 				{
-					NewSoundcardType = SC_NONE;
+					NewCardType = CT_Empty;
+					SoundcardSlotChange = CARD_UNPLUGGED;
 					EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), FALSE);
 				}
 			}
@@ -970,25 +1072,23 @@ static BOOL CALLBACK SoundDlgProc (HWND   window,
 			SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETTICFREQ,10,0);
 			SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETPOS,1,MB_GetVolume());
 
-			eSOUNDCARDTYPE SoundcardType = MB_GetSoundcardType();
-			if(SoundcardType == SC_MOCKINGBOARD)
+			SS_CARDTYPE SoundcardType = MB_GetSoundcardType();
+			if(SoundcardType == CT_MockingboardC)
 				nCurrentIDCheckButton = IDC_MB_ENABLE;
-			else if(SoundcardType == SC_PHASOR)
+			else if(SoundcardType == CT_Phasor)
 				nCurrentIDCheckButton = IDC_PHASOR_ENABLE;
 			else
 				nCurrentIDCheckButton = IDC_SOUNDCARD_DISABLE;
 
 			CheckRadioButton(window, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, nCurrentIDCheckButton);
 
-			if (g_uMouseInSlot4 || g_CPMChoice == CPM_SLOT4)
-			{
+			const bool bIsSlot4Empty = g_Slot4 == CT_Empty;
+			const bool bIsSlot5Empty = g_Slot5 == CT_Empty;
+			if (!bIsSlot4Empty && g_Slot4 != CT_MockingboardC)
 				EnableWindow(GetDlgItem(window, IDC_PHASOR_ENABLE), FALSE);	// Disable Phasor (slot 4)
-			}
 
-			if (g_uMouseInSlot4 || g_CPMChoice == CPM_SLOT4 || g_CPMChoice == CPM_SLOT5)
-			{
+			if ((!bIsSlot4Empty || !bIsSlot5Empty) && g_Slot4 != CT_Phasor)
 				EnableWindow(GetDlgItem(window, IDC_MB_ENABLE), FALSE);		// Disable Mockingboard (slot 4 & 5)
-			}
 
 			EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), (nCurrentIDCheckButton != IDC_SOUNDCARD_DISABLE) ? TRUE : FALSE);
 
@@ -1070,8 +1170,8 @@ static BOOL CALLBACK DiskDlgProc (HWND   window,
 				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
 				break;
 			case PSN_APPLY:
-				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				DiskDlg_OK(window, afterclose);
+				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
 				// Can use this to ask user to confirm cancel
@@ -1355,12 +1455,24 @@ static int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 
 static void InitFreezeDlgButton(HWND window)
 {
-	if (g_bEnableFreezeDlgButton == UNDEFINED)
+	if (g_UIControlFreezeDlgButton == UI_UNDEFINED)
 		EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), IS_APPLE2 ? TRUE : FALSE);
 	else
-		EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), g_bEnableFreezeDlgButton ? TRUE : FALSE);
+		EnableWindow(GetDlgItem(window, IDC_THE_FREEZES_F8_ROM_FW), (g_UIControlFreezeDlgButton == UI_ENABLE) ? TRUE : FALSE);
 
 	CheckDlgButton(window, IDC_THE_FREEZES_F8_ROM_FW, g_uTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED);
+}
+
+static void InitCloneDropdownMenu(HWND window)
+{
+	// Set clone menu choice (ok even if it's not a clone)
+	int nCurrentChoice = GetCloneMenuItem();
+	FillComboBox(window, IDC_CLONETYPE, g_CloneChoices, nCurrentChoice);
+
+	if (g_UIControlCloneDropdownMenu == UI_UNDEFINED)
+		EnableWindow(GetDlgItem(window, IDC_CLONETYPE), IS_CLONE() ? TRUE : FALSE);
+	else
+		EnableWindow(GetDlgItem(window, IDC_CLONETYPE), (IS_CLONE() || (g_UIControlCloneDropdownMenu == UI_ENABLE)) ? TRUE : FALSE);
 }
 
 //---------------------------------------------------------------------------
@@ -1417,55 +1529,51 @@ static void AdvancedDlg_OK(HWND window, UINT afterclose)
 
 	//
 
-	DWORD NewCloneType = (DWORD)SendDlgItemMessage(window, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
-
-	REGSAVE(TEXT(REGVALUE_CLONETYPE), NewCloneType);
 	REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM),g_uTheFreezesF8Rom);	// NB. Can also be disabled on Config page (when Apple2Type changes) 
 	
     Printer_SetIdleLimit((short)SendDlgItemMessage(window, IDC_SPIN_PRINTER_IDLE , UDM_GETPOS, 0, 0));
 	REGSAVE(TEXT(REGVALUE_PRINTER_IDLE_LIMIT),Printer_GetIdleLimit());
 
-	eApple2Type NewApple2Clone = GetApple2Type(4, NewCloneType);
+	const DWORD NewCloneMenuItem = (DWORD) SendDlgItemMessage(window, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
+	const eApple2Type NewCloneType = GetCloneType(NewCloneMenuItem);
 
-	if (g_Apple2Type >= A2TYPE_CLONE) 	
+	// Second msgbox fails:
+	// . Config tab: Change to 'Clone'
+	// . Advanced tab: Change clone type, then OK
+	// . ConfigDlg_OK() msgbox asks "restart now?", click OK
+	// . AdvancedDlg_OK() msgbox fails: GetLastError(): ERROR_INVALID_WINDOW_HANDLE; 1400 (0x578)
+	//   - Probably because ConfigDlg_OK() has already posted WM_USER_RESTART
+	// - So I added g_bConfirmedRestartEmulator
+	if (IS_CLONE() || (g_UIControlCloneDropdownMenu == UI_ENABLE))
 	{
-		if (NewApple2Clone != g_Apple2Type)
+		if (NewCloneType != g_Apple2Type)
 		{		
 			if ((afterclose == WM_USER_RESTART) ||	// Eg. Changing 'Freeze ROM' & user has already OK'd the restart for this
-				MessageBox(window,
+				g_bConfirmedRestartEmulator ||		// See above
+				((MessageBox(window,
 							TEXT(
 							"You have changed the emulated computer "
-							"type. This change will not take effect\n"
+							"type. This change will not take effect "
 							"until the next time you restart the "
 							"emulator.\n\n"
 							"Would you like to restart the emulator now?"),
 							TEXT("Configuration"),
 							MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
+				&& IsOkToRestart(window)) )
 			{
-				afterclose = WM_USER_RESTART;	
+				afterclose = WM_USER_RESTART;
+				SaveComputerType(NewCloneType);
 			}
 		}
 	}
-	else
-	{
-		if (NewApple2Clone != (g_uCloneType + APPLECLONE_MASK|APPLE2E_MASK))
-		{
-			MessageBox(window,
-						TEXT(
-						"You have changed the emulated clone type "
-						"but in order for the changes to take effect\n"
-						"you shall set the emulated computer type "
-						"to Clone from the Configuration tab.\n\n"),
-						TEXT("Clone type changed"),
-						MB_ICONQUESTION | MB_OK  | MB_SETFOREGROUND);
-			g_uCloneType = NewApple2Clone - (APPLECLONE_MASK|APPLE2E_MASK);
-		}
-	}
 
-	if (NewApple2Type > A2TYPE_APPLE2PLUS)		// TC-FIXME: Must be global scope (ie. g_NewApple2Type)
+	if (g_Apple2Type > A2TYPE_APPLE2PLUS)
 		g_uTheFreezesF8Rom = false;
 
 	//
+
+	if (g_bConfirmedRestartEmulator)
+		return;	// ConfigDlg_OK() has already posted WM_USER_RESTART
 
 	if (afterclose)
 		PostMessage(g_hFrameWindow,afterclose,0,0);
@@ -1495,13 +1603,14 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
 			case PSN_SETACTIVE:
 				// About to become the active page
 				InitFreezeDlgButton(window);
+				InitCloneDropdownMenu(window);
 				break;
 			case PSN_KILLACTIVE:
 				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
 				break;
 			case PSN_APPLY:
-				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				AdvancedDlg_OK(window, afterclose);
+				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
 				// Can use this to ask user to confirm cancel
@@ -1542,12 +1651,13 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
 		case IDC_THE_FREEZES_F8_ROM_FW:
 			{
 				UINT uNewState = IsDlgButtonChecked(window, IDC_THE_FREEZES_F8_ROM_FW) ? 1 : 0;
-				LPCSTR pMsg = 	TEXT("The emulator needs to restart as the ROM configuration has changed.\n")
-					TEXT("Would you like to restart the emulator now?");
-				if (MessageBox(window,
-					pMsg,
-					TEXT("Configuration"),
-					MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
+				LPCSTR pMsg =	TEXT("The emulator needs to restart as the ROM configuration has changed.\n")
+								TEXT("Would you like to restart the emulator now?");
+				if ( (MessageBox(window,
+						pMsg,
+						TEXT("Configuration"),
+						MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
+					&& IsOkToRestart(window) )
 				{
 					g_uTheFreezesF8Rom = uNewState;
 					afterclose = WM_USER_RESTART;
@@ -1577,8 +1687,8 @@ static BOOL CALLBACK AdvancedDlgProc (HWND   window,
 			SendDlgItemMessage(window, IDC_SPIN_PRINTER_IDLE, UDM_SETPOS, 0, MAKELONG(Printer_GetIdleLimit (),0));
 			SendDlgItemMessage(window, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)Printer_GetFilename());
 
-			FillComboBox(window, IDC_CLONETYPE, g_CloneChoices, g_uCloneType);
 			InitFreezeDlgButton(window);
+			InitCloneDropdownMenu(window);
 
 			g_szSSNewDirectory[0] = 0x00;
 
@@ -1892,7 +2002,9 @@ void PSP_Init()
 	PropSheetHeader.nStartPage = g_nLastPage;
 	PropSheetHeader.ppsp = PropSheetPages;
 
-	g_bEnableFreezeDlgButton = UNDEFINED;
+	g_bConfirmedRestartEmulator = false;
+	g_UIControlFreezeDlgButton = UI_UNDEFINED;
+	g_UIControlCloneDropdownMenu = UI_UNDEFINED;
 	int i = PropertySheet(&PropSheetHeader);	// Result: 0=Cancel, 1=OK
 }
 

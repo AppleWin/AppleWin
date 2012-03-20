@@ -68,28 +68,24 @@ enum AppMode_e
 #define TITLE_PAUSED       TEXT("* PAUSED *")
 #define TITLE_STEPPING     TEXT("Stepping")
 
-#define  REGLOAD(a,b) RegLoadValue(TEXT("Configuration"),a,1,b)
-#define  REGSAVE(a,b) RegSaveValue(TEXT("Configuration"),a,1,b)
+#define  REGLOAD(a,b) RegLoadValue(TEXT(REG_CONFIG),a,1,b)
+#define  REGSAVE(a,b) RegSaveValue(TEXT(REG_CONFIG),a,1,b)
 
 // Configuration
 #define REG_CONFIG						"Configuration"
 #define  REGVALUE_APPLE2_TYPE        "Apple2 Type"
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
-#define  REGVALUE_SOUNDCARD_TYPE     "Soundcard Type"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
 #define  REGVALUE_HDD_ENABLED        "Harddisk Enable"
 #define  REGVALUE_PDL_XTRIM          "PDL X-Trim"
 #define  REGVALUE_PDL_YTRIM          "PDL Y-Trim"
 #define  REGVALUE_SCROLLLOCK_TOGGLE  "ScrollLock Toggle"
-#define  REGVALUE_MOUSE_IN_SLOT4     "Mouse in slot 4"
 #define  REGVALUE_MOUSE_CROSSHAIR    "Mouse crosshair"
 #define  REGVALUE_MOUSE_RESTRICT_TO_WINDOW "Mouse restrict to window"
 #define  REGVALUE_THE_FREEZES_F8_ROM "The Freeze's F8 Rom"
-#define  REGVALUE_CLONETYPE          "Clone Type"
 #define  REGVALUE_CIDERPRESSLOC      "CiderPress Location"
-//#define  REGVALUE_Z80_IN_SLOT5       "Z80 in slot 5"
 #define  REGVALUE_CPM_CONFIG         "CPM Config"
 #define  REGVALUE_DUMP_TO_PRINTER    "Dump to printer"
 #define  REGVALUE_CONVERT_ENCODING   "Convert printer encoding for clones"
@@ -102,6 +98,16 @@ enum AppMode_e
 #define  REGVALUE_VIDEO_MONO_COLOR      "Monochrome Color"
 #define  REGVALUE_SERIAL_PORT_NAME   "Serial Port Name"
 #define  REGVALUE_ENHANCE_DISK_SPEED "Enhance Disk Speed"
+#define  REGVALUE_CUSTOM_SPEED       "Custom Speed"
+#define  REGVALUE_EMULATION_SPEED    "Emulation Speed"
+#define  REGVALUE_SLOT1					"Slot 1"
+#define  REGVALUE_SLOT2					"Slot 2"
+#define  REGVALUE_SLOT3					"Slot 3"
+#define  REGVALUE_SLOT4					"Slot 4"
+#define  REGVALUE_SLOT5					"Slot 5"
+#define  REGVALUE_SLOT6					"Slot 6"
+#define  REGVALUE_SLOT7					"Slot 7"
+#define  REGVALUE_SLOTAUX				"Slot Auxilary"
 
 // Preferences 
 #define REG_PREFS						"Preferences"
@@ -122,8 +128,6 @@ enum AppMode_e
 #define VK_SNAPSHOT_280		WM_USER+6
 #define WM_USER_TCP_SERIAL	WM_USER+7
 #define WM_USER_BOOT		WM_USER+8
-
-enum eSOUNDCARDTYPE {SC_UNINIT=0, SC_NONE, SC_MOCKINGBOARD, SC_PHASOR};	// Apple soundcard type
 
 typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
 
@@ -149,6 +153,7 @@ enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 #define IS_APPLE2		((g_Apple2Type & (APPLE2E_MASK|APPLE2C_MASK)) == 0)
 #define IS_APPLE2E		(g_Apple2Type & APPLE2E_MASK)
 #define IS_APPLE2C		(g_Apple2Type & APPLE2C_MASK)
+#define IS_CLONE()		(g_Apple2Type & APPLECLONE_MASK)
 
 // NB. These get persisted to the Registry, so don't change the values for these enums!
 enum eApple2Type {
@@ -162,7 +167,8 @@ enum eApple2Type {
 					//
 					// Clones start here:
 					A2TYPE_CLONE=APPLECLONE_MASK,
-					A2TYPE_PRAVETS82=APPLECLONE_MASK|APPLE2E_MASK,
+					A2TYPE_PRAVETS=APPLECLONE_MASK|APPLE2E_MASK,
+					A2TYPE_PRAVETS82=A2TYPE_PRAVETS,
 					A2TYPE_PRAVETS8M,
 					A2TYPE_PRAVETS8A,
 					A2TYPE_MAX

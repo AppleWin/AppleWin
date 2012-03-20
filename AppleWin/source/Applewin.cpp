@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskImage.h"
 #include "Harddisk.h"
 
-//#include <objbase.h>	// Updated[TC]: Removed, as not needed
 #include "MouseInterface.h"
 #ifdef USE_SPEECH_API
 #include "Speech.h"
@@ -42,7 +41,7 @@ char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
 TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 
-eApple2Type	g_Apple2Type	= A2TYPE_APPLE2EEHANCED;
+eApple2Type	g_Apple2Type = A2TYPE_APPLE2EEHANCED;
 
 BOOL      behind            = 0;			// Redundant
 DWORD     cumulativecycles  = 0;			// Wraps after ~1hr 9mins
@@ -84,7 +83,6 @@ bool		g_bDisableDirectSoundMockingboard = false;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 
-// TODO: CLEANUP! Move to peripherals.cpp!!!
 SS_CARDTYPE	g_Slot4 = CT_Empty;
 SS_CARDTYPE	g_Slot5 = CT_Empty;
 
@@ -422,43 +420,29 @@ void GetProgramDirectory () {
 
 //===========================================================================
 //Reads configuration from the registry entries
-void LoadConfiguration ()
+void LoadConfiguration()
 {
-  DWORD dwComputerType;
+	DWORD dwComputerType;
 
-  if (REGLOAD(TEXT(REGVALUE_APPLE2_TYPE),&dwComputerType))
-  {
-	REGLOAD(TEXT(REGVALUE_CLONETYPE),&g_uCloneType);
-	if ((dwComputerType >= A2TYPE_MAX) || (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE))
-		dwComputerType = A2TYPE_APPLE2EEHANCED;
-
-	if (dwComputerType == A2TYPE_CLONE)
-	  {
-		switch (g_uCloneType)
-		{
-		case 0:	g_Apple2Type = A2TYPE_PRAVETS82; break;
-		case 1:	g_Apple2Type = A2TYPE_PRAVETS8M; break;
-		case 2:	g_Apple2Type = A2TYPE_PRAVETS8A; break;
-		default:	g_Apple2Type = A2TYPE_APPLE2EEHANCED; break;
-		}
-	  }	
-	else
+	if (REGLOAD(TEXT(REGVALUE_APPLE2_TYPE), &dwComputerType))
 	{
+		if ((dwComputerType >= A2TYPE_MAX) || (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE))
+			dwComputerType = A2TYPE_APPLE2EEHANCED;
+
 		g_Apple2Type = (eApple2Type) dwComputerType;
 	}
-  }
-  else	// Support older AppleWin registry entries
-  {
-	  REGLOAD(TEXT("Computer Emulation"),&dwComputerType);
-	  switch (dwComputerType)
-	  {
-      // NB. No A2TYPE_APPLE2E (this is correct)
-	  case 0:	g_Apple2Type = A2TYPE_APPLE2;
-	  case 1:	g_Apple2Type = A2TYPE_APPLE2PLUS;
-	  case 2:	g_Apple2Type = A2TYPE_APPLE2EEHANCED;
-	  default:	g_Apple2Type = A2TYPE_APPLE2EEHANCED;
-	  }
-  }
+	else	// Support older AppleWin registry entries
+	{
+		REGLOAD(TEXT("Computer Emulation"), &dwComputerType);
+		switch (dwComputerType)
+		{
+			// NB. No A2TYPE_APPLE2E (this is correct)
+		case 0:	g_Apple2Type = A2TYPE_APPLE2;
+		case 1:	g_Apple2Type = A2TYPE_APPLE2PLUS;
+		case 2:	g_Apple2Type = A2TYPE_APPLE2EEHANCED;
+		default:	g_Apple2Type = A2TYPE_APPLE2EEHANCED;
+		}
+	}
 
 	switch (g_Apple2Type) //Sets the character set for the Apple model/clone
 	{
@@ -486,7 +470,7 @@ void LoadConfiguration ()
 	sg_SSC.SetSerialPortName(aySerialPortName);
   }
 
-  REGLOAD(TEXT("Emulation Speed")   ,&g_dwSpeed);
+  REGLOAD(TEXT(REGVALUE_EMULATION_SPEED)   ,&g_dwSpeed);
   REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED),(DWORD *)&enhancedisk);
 
   Config_Load_Video();
@@ -507,9 +491,6 @@ void LoadConfiguration ()
 
   if(REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp))
       MB_SetVolume(dwTmp, PSP_GetVolumeMax());
-
-  if(REGLOAD(TEXT(REGVALUE_SOUNDCARD_TYPE), &dwTmp))
-	  MB_SetSoundcardType((eSOUNDCARDTYPE)dwTmp);
 
   if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
 	  g_bSaveStateOnExit = dwTmp ? true : false;
@@ -545,32 +526,18 @@ void LoadConfiguration ()
   if(REGLOAD(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), &dwTmp))
 	  g_uScrollLockToggle = dwTmp;
 
-  if(REGLOAD(TEXT(REGVALUE_MOUSE_IN_SLOT4), &dwTmp))
-	  g_uMouseInSlot4 = dwTmp;
   if(REGLOAD(TEXT(REGVALUE_MOUSE_CROSSHAIR), &dwTmp))
 	  g_uMouseShowCrosshair = dwTmp;
   if(REGLOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
 	  g_uMouseRestrictToWindow = dwTmp;
 
-  if(REGLOAD(TEXT(REGVALUE_CPM_CONFIG), &dwTmp))
-	  g_CPMChoice = (CPMCHOICE) dwTmp;
+	if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
+		g_Slot4 = (SS_CARDTYPE) dwTmp;
+	if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
+		g_Slot5 = (SS_CARDTYPE) dwTmp;
 
-	// Protect against old AppleWin config causing multiple cards to be in same slot!
-	{
-		if (g_uMouseInSlot4 || g_CPMChoice == CPM_SLOT4)
-			MB_SetSoundcardType(SC_NONE);
-
-		if (g_CPMChoice == CPM_SLOT5 && MB_GetSoundcardType() == SC_MOCKINGBOARD)
-			MB_SetSoundcardType(SC_NONE);
-	}
-
-	g_Slot4 =
-		g_uMouseInSlot4	? CT_MouseInterface
-						: (g_CPMChoice == CPM_SLOT4)	? CT_Z80
-														: CT_Mockingboard;
-
-	g_Slot5 =			  (g_CPMChoice == CPM_SLOT5)	? CT_Z80
-														: CT_Mockingboard;
+	if (g_Slot4 == CT_MockingboardC || g_Slot4 == CT_Phasor)
+		MB_SetSoundcardType(g_Slot4);
 
 	//
 
@@ -939,7 +906,6 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 	// DO ONE-TIME INITIALIZATION
 	g_hInstance = passinstance;
-	MemPreInitialize();		// Call before any of the slot devices are initialized
 	GdiSetBatchLimit(512);
 	GetProgramDirectory();
 	if( g_bRegisterFileTypes )

@@ -147,12 +147,15 @@ enum SS_CARDTYPE
 	CT_Empty = 0,
 	CT_Disk2,			// Apple Disk][
 	CT_SSC,				// Apple Super Serial Card
-	CT_Mockingboard,
+	CT_MockingboardC,	// Soundcard
 	CT_GenericPrinter,
 	CT_GenericHDD,		// Hard disk
 	CT_GenericClock,
 	CT_MouseInterface,
 	CT_Z80,
+	CT_Phasor,			// Soundcard
+	CT_Echo,			// Soundcard
+	CT_SAM,				// Soundcard: Software Automated Mouth
 };
 
 /////////////////////////////////////////////////////////////////////////////////

@@ -39,7 +39,6 @@ bool	MemCheckSLOTCXROM();
 LPBYTE  MemGetAuxPtr (WORD);
 LPBYTE  MemGetMainPtr (WORD);
 LPBYTE  MemGetCxRomPeripheral();
-void	MemPreInitialize ();
 void    MemInitialize ();
 BYTE    MemReadFloatingBus(const ULONG uExecutedCycles);
 BYTE    MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles);
