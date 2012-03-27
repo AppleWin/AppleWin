@@ -57,7 +57,6 @@
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "ParallelPrinter.h"
-#include "PropertySheetPage.h"
 #include "Registry.h"
 #include "Riff.h"
 #include "SaveState.h"
@@ -65,5 +64,3 @@
 #include "SoundCore.h"
 #include "Speaker.h"
 #include "Tape.h"
-#include "Tfe/Tfe.h"
-

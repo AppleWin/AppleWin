@@ -36,6 +36,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
+#include "Configuration\PropertySheet.h"
+#include "Tfe\Tfe.h"
 
 char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
@@ -80,6 +82,7 @@ FILE*		g_fh			= NULL;
 bool		g_bDisableDirectSound = false;
 bool		g_bDisableDirectSoundMockingboard = false;
 
+CPropertySheet		sg_PropertySheet;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 
@@ -155,7 +158,7 @@ void ContinueExecution()
 
 	//
 
-	bool bScrollLock_FullSpeed = g_uScrollLockToggle
+	bool bScrollLock_FullSpeed = sg_PropertySheet.GetScrollLockToggle()
 									? g_bScrollLock_FullSpeed
 									: (GetKeyState(VK_SCROLL) < 0);
 
@@ -484,13 +487,13 @@ void LoadConfiguration()
   DWORD dwTmp;
 
   if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
-	  g_uTheFreezesF8Rom = dwTmp;
+	  sg_PropertySheet.SetTheFreezesF8Rom(dwTmp);
 
   if(REGLOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp))
-      SpkrSetVolume(dwTmp, PSP_GetVolumeMax());
+      SpkrSetVolume(dwTmp, sg_PropertySheet.GetVolumeMax());
 
   if(REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp))
-      MB_SetVolume(dwTmp, PSP_GetVolumeMax());
+      MB_SetVolume(dwTmp, sg_PropertySheet.GetVolumeMax());
 
   if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
 	  g_bSaveStateOnExit = dwTmp ? true : false;
@@ -524,12 +527,12 @@ void LoadConfiguration()
       JoySetTrim((short)dwTmp, false);
 
   if(REGLOAD(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), &dwTmp))
-	  g_uScrollLockToggle = dwTmp;
+	  sg_PropertySheet.SetScrollLockToggle(dwTmp);
 
   if(REGLOAD(TEXT(REGVALUE_MOUSE_CROSSHAIR), &dwTmp))
-	  g_uMouseShowCrosshair = dwTmp;
+	  sg_PropertySheet.SetMouseShowCrosshair(dwTmp);
   if(REGLOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
-	  g_uMouseRestrictToWindow = dwTmp;
+	  sg_PropertySheet.SetMouseRestrictToWindow(dwTmp);
 
 	if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
 		g_Slot4 = (SS_CARDTYPE) dwTmp;

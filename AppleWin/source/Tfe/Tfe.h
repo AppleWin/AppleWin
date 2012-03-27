@@ -77,6 +77,8 @@ extern int tfe_enumadapter_open(void);
 extern int tfe_enumadapter(char **ppname, char **ppdescription);
 extern int tfe_enumadapter_close(void);
 
+extern void* get_tfe_interface(void);
+extern void get_tfe_enabled(int *tfe_enabled);
 
 extern FILE*      g_fh;				// Filehandle for log file
 

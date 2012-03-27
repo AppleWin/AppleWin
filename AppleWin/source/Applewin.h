@@ -43,7 +43,6 @@ extern FILE*      g_fh;				// Filehandle for log file
 extern bool       g_bDisableDirectSound;				// Cmd line switch: don't init DS (so no MB/Speaker support)
 extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't init MB support
 
-// TODO: Make g_CurrentPeripherals[MAX_SLOTS] = { CT_Empty }
 extern SS_CARDTYPE g_Slot4;	// Mockingboard, Z80, Mouse in slot4
 extern SS_CARDTYPE g_Slot5;	// Mockingboard, Z80,       in slot5
 

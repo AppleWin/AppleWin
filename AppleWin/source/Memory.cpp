@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Z80VICE\z80.h"
 #include "Z80VICE\z80mem.h"
 #include "..\resource\resource.h"
+#include "Configuration\PropertySheet.h"
 
 // Memory Flag
 #define  MF_80STORE    0x00000001
@@ -1141,7 +1142,7 @@ void MemInitialize()
 		}
 	}
 
-	if (g_uTheFreezesF8Rom && IS_APPLE2)
+	if (sg_PropertySheet.GetTheFreezesF8Rom() && IS_APPLE2)
 	{
 		hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_FREEZES_F8_ROM), "ROM");
 

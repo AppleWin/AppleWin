@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
+#include "Configuration\PropertySheet.h"
 
 //#define ENABLE_MENU 0
 
@@ -173,7 +174,7 @@ void GetAppleWindowTitle()
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 		_tcscat(g_pAppleWindowTitle,TEXT(" (custom rom)"));
-	else if (g_uTheFreezesF8Rom && IS_APPLE2)
+	else if (sg_PropertySheet.GetTheFreezesF8Rom() && IS_APPLE2)
 		_tcscat(g_pAppleWindowTitle,TEXT(" (The Freeze's non-autostart F8 rom)"));
 
 	switch (g_nAppMode)
@@ -224,10 +225,10 @@ static void RevealCursor()
 
 	FrameShowCursor(TRUE);
 
-	if (g_uMouseShowCrosshair)	// Erase crosshairs if they are being drawn
+	if (sg_PropertySheet.GetMouseShowCrosshair())	// Erase crosshairs if they are being drawn
 		DrawCrosshairs(0,0);
 
-	if (g_uMouseRestrictToWindow)
+	if (sg_PropertySheet.GetMouseRestrictToWindow())
 		SetUsingCursor(FALSE);
 
 	g_bLastCursorInAppleViewport = false;
@@ -913,7 +914,7 @@ LRESULT CALLBACK FrameWndProc (
 		else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)
 		{
 			SoundCore_SetFade(FADE_OUT);
-			if(PSP_SaveStateSelectImage(window, true))
+			if(sg_PropertySheet.SaveStateSelectImage(window, true))
 			{
 				Snapshot_SaveState();
 			}
@@ -922,7 +923,7 @@ LRESULT CALLBACK FrameWndProc (
 		else if (wparam == VK_F12)										// Load state (F12 or Ctrl+F12)
 		{
 			SoundCore_SetFade(FADE_OUT);
-			if(PSP_SaveStateSelectImage(window, false))
+			if(sg_PropertySheet.SaveStateSelectImage(window, false))
 			{
 				Snapshot_LoadState();
 			}
@@ -956,7 +957,7 @@ LRESULT CALLBACK FrameWndProc (
 				VideoRedrawScreen();
 			g_bResetTiming = true;
 		}
-		else if ((wparam == VK_SCROLL) && g_uScrollLockToggle)
+		else if ((wparam == VK_SCROLL) && sg_PropertySheet.GetScrollLockToggle())
 		{
 			g_bScrollLock_FullSpeed = !g_bScrollLock_FullSpeed;
 		}
@@ -1524,7 +1525,7 @@ void ProcessButtonClick (int button)
 
     case BTN_SETUP:
       {
-		  PSP_Init();
+		  sg_PropertySheet.Init();
       }
       break;
 
@@ -2100,7 +2101,7 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 
 static void DrawCrosshairsMouse()
 {
-	if (!g_uMouseShowCrosshair)
+	if (!sg_PropertySheet.GetMouseShowCrosshair())
 		return;
 
 	int iX, iMinX, iMaxX;
@@ -2127,7 +2128,7 @@ static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int
 
 	if (bOutsideAppleViewport)
 	{
-		if (g_uMouseRestrictToWindow)
+		if (sg_PropertySheet.GetMouseRestrictToWindow())
 			return;
 
 		g_bLastCursorInAppleViewport = false;
@@ -2159,7 +2160,7 @@ static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int
 
 			//
 
-			if (g_uMouseRestrictToWindow)
+			if (sg_PropertySheet.GetMouseRestrictToWindow())
 				SetUsingCursor(TRUE);
 		}
 		else

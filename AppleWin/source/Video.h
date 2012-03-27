@@ -135,3 +135,6 @@ void Video_TakeScreenShot( int iScreenShotType );
 BYTE VideoCheckMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 BYTE VideoCheckVbl (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 BYTE VideoSetMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+
+void Config_Load_Video(void);
+void Config_Save_Video(void);

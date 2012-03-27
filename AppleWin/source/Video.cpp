@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 #include "..\resource\resource.h"
+#include "Configuration\PropertySheet.h"
 
 #define HALF_PIXEL_SOLID 1
 #define HALF_PIXEL_BLEED 0
@@ -4087,4 +4088,23 @@ void Video_SaveScreenShot( const char *pScreenShotFileName )
 	{
 		MessageBox( NULL, pScreenShotFileName, "Screen Captured", MB_OK );
 	}
+}
+
+//===========================================================================
+
+void Config_Load_Video()
+{
+	REGLOAD(TEXT(REGVALUE_VIDEO_MODE           ),&g_eVideoType);
+	REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&g_uHalfScanLines);
+	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&monochrome);
+
+	if (g_eVideoType >= NUM_VIDEO_MODES)
+		g_eVideoType = VT_COLOR_STANDARD; // Old default: VT_COLOR_TVEMU
+}
+
+void Config_Save_Video()
+{
+	REGSAVE(TEXT(REGVALUE_VIDEO_MODE           ),g_eVideoType);
+	REGSAVE(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),g_uHalfScanLines);
+	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),monochrome);
 }
