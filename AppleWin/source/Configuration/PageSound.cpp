@@ -19,8 +19,6 @@ BOOL CALLBACK CPageSound::DlgProc(HWND window, UINT message, WPARAM wparam, LPAR
 
 BOOL CPageSound::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
 {
-	static UINT afterclose = 0;
-
 	switch (message)
 	{
 	case WM_NOTIFY:
@@ -29,11 +27,15 @@ BOOL CPageSound::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 
 			switch (((LPPSHNOTIFY)lparam)->hdr.code)
 			{
+			case PSN_SETACTIVE:
+				// About to become the active page
+				m_PropertySheetHelper.SetLastPage(m_Page);
+				break;
 			case PSN_KILLACTIVE:
 				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
 				break;
 			case PSN_APPLY:
-				DlgOK(window, afterclose);
+				DlgOK(window);
 				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
@@ -58,7 +60,7 @@ BOOL CPageSound::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 				LPCSTR pMsg =	TEXT("The emulator needs to restart as the slot configuration has changed.\n")
 								TEXT("Mockingboard cards will be inserted into slots 4 & 5.\n\n")
 								TEXT("Would you like to restart the emulator now?");
-				if (NewSoundcardConfigured(window, wparam, pMsg, afterclose))
+				if (NewSoundcardConfigured(window, wparam, pMsg))
 				{
 					m_NewCardType = CT_MockingboardC;
 					m_SoundcardSlotChange = CARD_INSERTED;
@@ -71,7 +73,7 @@ BOOL CPageSound::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 				LPCSTR pMsg =	TEXT("The emulator needs to restart as the slot configuration has changed.\n")
 								TEXT("Phasor card will be inserted into slot 4.\n\n")
 								TEXT("Would you like to restart the emulator now?");
-				if (NewSoundcardConfigured(window, wparam, pMsg, afterclose))
+				if (NewSoundcardConfigured(window, wparam, pMsg))
 				{
 					m_NewCardType = CT_Phasor;
 					m_SoundcardSlotChange = CARD_INSERTED;
@@ -84,7 +86,7 @@ BOOL CPageSound::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 				LPCSTR pMsg =	TEXT("The emulator needs to restart as the slot configuration has changed.\n")
 								TEXT("Sound card(s) will be removed.\n\n")
 								TEXT("Would you like to restart the emulator now?");
-				if (NewSoundcardConfigured(window, wparam, pMsg, afterclose))
+				if (NewSoundcardConfigured(window, wparam, pMsg))
 				{
 					m_NewCardType = CT_Empty;
 					m_SoundcardSlotChange = CARD_UNPLUGGED;
@@ -97,8 +99,6 @@ BOOL CPageSound::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 
 	case WM_INITDIALOG:
 		{
-			m_PropertySheetHelper.SetLastPage(m_Page);
-
 			m_PropertySheetHelper.FillComboBox(window,IDC_SOUNDTYPE,m_soundchoices,soundtype);
 
 			SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETRANGE,1,MAKELONG(VOLUME_MIN,VOLUME_MAX));
@@ -131,7 +131,7 @@ BOOL CPageSound::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 
 			EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), (m_nCurrentIDCheckButton != IDC_SOUNDCARD_DISABLE) ? TRUE : FALSE);
 
-			afterclose = 0;
+			m_uAfterClose = 0;
 			break;
 		}
 	}
@@ -139,7 +139,7 @@ BOOL CPageSound::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 	return FALSE;
 }
 
-void CPageSound::DlgOK(HWND window, UINT afterclose)
+void CPageSound::DlgOK(HWND window)
 {
 	DWORD newsoundtype  = (DWORD)SendDlgItemMessage(window,IDC_SOUNDTYPE,CB_GETCURSEL,0,0);
 
@@ -148,7 +148,7 @@ void CPageSound::DlgOK(HWND window, UINT afterclose)
 
 	if (!SpkrSetEmulationType(window,newsoundtype))
 	{
-		//afterclose = 0;	// TC: does nothing
+		m_uAfterClose = 0;
 		return;
 	}
 
@@ -183,13 +183,10 @@ void CPageSound::DlgOK(HWND window, UINT afterclose)
 		}
 	}
 
-	//
-
-	if (afterclose)
-		PostMessage(g_hFrameWindow,afterclose,0,0);
+	m_PropertySheetHelper.PostMsgAfterClose(m_Page, m_uAfterClose);
 }
 
-bool CPageSound::NewSoundcardConfigured(HWND window, WPARAM wparam, LPCSTR pMsg, UINT& afterclose)
+bool CPageSound::NewSoundcardConfigured(HWND window, WPARAM wparam, LPCSTR pMsg)
 {
 	if (HIWORD(wparam) != BN_CLICKED)
 		return false;
@@ -204,7 +201,7 @@ bool CPageSound::NewSoundcardConfigured(HWND window, WPARAM wparam, LPCSTR pMsg,
 		&& m_PropertySheetHelper.IsOkToRestart(window) )
 	{
 		m_nCurrentIDCheckButton = LOWORD(wparam);
-		afterclose = WM_USER_RESTART;
+		m_uAfterClose = WM_USER_RESTART;
 		PropSheet_PressButton(GetParent(window), PSBTN_OK);
 		return true;
 	}

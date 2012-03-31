@@ -44,7 +44,7 @@ BOOL CPageConfigTfe::DlgProcInternal(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
 		switch (LOWORD(wparam))
 		{
 		case IDOK:
-			DlgOK(hwnd, 0);
+			DlgOK(hwnd);
 			/* FALL THROUGH */
 
 		case IDCANCEL:
@@ -72,7 +72,7 @@ BOOL CPageConfigTfe::DlgProcInternal(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
 	return FALSE;
 }
 
-void CPageConfigTfe::DlgOK(HWND window, UINT afterclose)
+void CPageConfigTfe::DlgOK(HWND window)
 {
 	save_tfe_dialog(window);
 }

@@ -40,7 +40,6 @@ BOOL CALLBACK CPageInput::DlgProc(HWND window, UINT message, WPARAM wparam, LPAR
 
 BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
 {
-	static UINT afterclose = 0;
 	m_MousecardSlotChange = CARD_UNCHANGED;
 	m_CPMcardSlotChange = CARD_UNCHANGED;
 
@@ -52,11 +51,15 @@ BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 
 			switch (((LPPSHNOTIFY)lparam)->hdr.code)
 			{
+			case PSN_SETACTIVE:
+				// About to become the active page
+				m_PropertySheetHelper.SetLastPage(m_Page);
+				break;
 			case PSN_KILLACTIVE:
 				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
 				break;
 			case PSN_APPLY:
-				DlgOK(window, afterclose);
+				DlgOK(window);
 				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
@@ -140,7 +143,7 @@ BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 						InitJoystickChoices(window, JN_JOYSTICK1, IDC_JOYSTICK1);
 					}
 
-					afterclose = WM_USER_RESTART;
+					m_uAfterClose = WM_USER_RESTART;
 					PropSheet_PressButton(GetParent(window), PSBTN_OK);
 				}
 				else
@@ -176,7 +179,7 @@ BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 					m_CPMcardSlotChange = (NewCPMChoice == CPM_UNPLUGGED) ? CARD_UNPLUGGED : CARD_INSERTED;
 					m_CPMChoice = NewCPMChoice;
 
-					afterclose = WM_USER_RESTART;
+					m_uAfterClose = WM_USER_RESTART;
 					PropSheet_PressButton(GetParent(window), PSBTN_OK);
 				}
 				else
@@ -195,8 +198,6 @@ BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 
 	case WM_INITDIALOG: //Init input settings dialog
 		{
-			m_PropertySheetHelper.SetLastPage(m_Page);
-
 			InitJoystickChoices(window, JN_JOYSTICK0, IDC_JOYSTICK0);
 			InitJoystickChoices(window, JN_JOYSTICK1, IDC_JOYSTICK1);
 
@@ -220,7 +221,7 @@ BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 
 			InitCPMChoices(window);
 
-			afterclose = 0;
+			m_uAfterClose = 0;
 			break;
 		}
 	}
@@ -228,20 +229,20 @@ BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 	return FALSE;
 }
 
-void CPageInput::DlgOK(HWND window, UINT afterclose)
+void CPageInput::DlgOK(HWND window)
 {
 	UINT uNewJoyType0 = SendDlgItemMessage(window,IDC_JOYSTICK0,CB_GETCURSEL,0,0);
 	UINT uNewJoyType1 = SendDlgItemMessage(window,IDC_JOYSTICK1,CB_GETCURSEL,0,0);
 
 	if (!JoySetEmulationType(window, m_nJoy0ChoiceTranlationTbl[uNewJoyType0], JN_JOYSTICK0))
 	{
-		//afterclose = 0;	// TC: does nothing
+		m_uAfterClose = 0;
 		return;
 	}
 	
 	if (!JoySetEmulationType(window, m_nJoy1ChoiceTranlationTbl[uNewJoyType1], JN_JOYSTICK1))
 	{
-		//afterclose = 0;	// TC: does nothing
+		m_uAfterClose = 0;
 		return;
 	}
 
@@ -281,10 +282,7 @@ void CPageInput::DlgOK(HWND window, UINT afterclose)
 			m_PropertySheetHelper.SetSlot5(CT_Z80);
 	}
 
-	//
-
-	if (afterclose)
-		PostMessage(g_hFrameWindow,afterclose,0,0);
+	m_PropertySheetHelper.PostMsgAfterClose(m_Page, m_uAfterClose);
 }
 
 void CPageInput::InitJoystickChoices(HWND window, int nJoyNum, int nIdcValue)

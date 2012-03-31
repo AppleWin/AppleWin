@@ -6,6 +6,7 @@ class CPropertySheetHelper
 public:
 	CPropertySheetHelper() :
 		m_LastPage(PG_CONFIG),
+		m_bmPages(0),
 		m_UIControlFreezeDlgButton(UI_UNDEFINED),
 		m_UIControlCloneDropdownMenu(UI_UNDEFINED),
 		m_bSSNewFilename(false)
@@ -21,9 +22,15 @@ public:
 	void SaveStateUpdate();
 	void GetDiskBaseNameWithAWS(TCHAR* pszFilename);
 	int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave);
+	void PostMsgAfterClose(PAGETYPE page, UINT uAfterClose);
 
 	PAGETYPE GetLastPage(void) { return m_LastPage; }
-	void SetLastPage(PAGETYPE page) { m_LastPage = page; }
+	void SetLastPage(PAGETYPE page)
+	{
+		m_LastPage = page;
+		m_bmPages |= 1<<(UINT32)page;
+	}
+
 	UICONTROLSTATE GetUIControlFreezeDlgButton(void) { return m_UIControlFreezeDlgButton; }
 	void SetUIControlFreezeDlgButton(UICONTROLSTATE state) { m_UIControlFreezeDlgButton = state; }
 	UICONTROLSTATE GetUIControlCloneDropdownMenu(void) { return m_UIControlCloneDropdownMenu; }
@@ -33,6 +40,7 @@ public:
 
 private:
 	PAGETYPE m_LastPage;
+	UINT32 m_bmPages;
 	UICONTROLSTATE m_UIControlFreezeDlgButton;
 	UICONTROLSTATE m_UIControlCloneDropdownMenu;
 	char m_szNewFilename[MAX_PATH];

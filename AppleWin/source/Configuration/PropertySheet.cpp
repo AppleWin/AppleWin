@@ -75,7 +75,6 @@ void CPropertySheet::Init(void)
 	PropSheetHeader.nStartPage = g_PropertySheetHelper.GetLastPage();
 	PropSheetHeader.ppsp = PropSheetPages;
 
-//	g_bConfirmedRestartEmulator = false;
 	g_PropertySheetHelper.SetUIControlFreezeDlgButton(UI_UNDEFINED);
 	g_PropertySheetHelper.SetUIControlCloneDropdownMenu(UI_UNDEFINED);
 	int i = PropertySheet(&PropSheetHeader);	// Result: 0=Cancel, 1=OK

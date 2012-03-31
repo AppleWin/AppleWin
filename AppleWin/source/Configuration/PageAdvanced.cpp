@@ -5,8 +5,6 @@
 
 CPageAdvanced* CPageAdvanced::ms_this = 0;	// reinit'd in ctor
 
-//static bool g_bConfirmedRestartEmulator = false;
-
 enum CLONECHOICE {MENUITEM_CLONEMIN, MENUITEM_PRAVETS82=MENUITEM_CLONEMIN, MENUITEM_PRAVETS8M, MENUITEM_PRAVETS8A, MENUITEM_CLONEMAX};
 const TCHAR CPageAdvanced::m_CloneChoices[] =
 				TEXT("Pravets 82\0")	// Bulgarian
@@ -22,8 +20,6 @@ BOOL CALLBACK CPageAdvanced::DlgProc(HWND window, UINT message, WPARAM wparam, L
 
 BOOL CPageAdvanced::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
 {
-	static UINT afterclose = 0;
-
 	switch (message)
 	{
 	case WM_NOTIFY:
@@ -34,6 +30,7 @@ BOOL CPageAdvanced::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LP
 			{
 			case PSN_SETACTIVE:
 				// About to become the active page
+				m_PropertySheetHelper.SetLastPage(m_Page);
 				InitFreezeDlgButton(window);
 				InitCloneDropdownMenu(window);
 				break;
@@ -41,7 +38,7 @@ BOOL CPageAdvanced::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LP
 				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
 				break;
 			case PSN_APPLY:
-				DlgOK(window, afterclose);
+				DlgOK(window);
 				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
@@ -72,10 +69,10 @@ BOOL CPageAdvanced::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LP
 		case IDC_SAVESTATE_ON_EXIT:
 			break;
 		case IDC_SAVESTATE:
-			afterclose = WM_USER_SAVESTATE;
+			m_uAfterClose = WM_USER_SAVESTATE;
 			break;
 		case IDC_LOADSTATE:
-			afterclose = WM_USER_LOADSTATE;
+			m_uAfterClose = WM_USER_LOADSTATE;
 			break;
 
 			//
@@ -92,7 +89,7 @@ BOOL CPageAdvanced::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LP
 					&& m_PropertySheetHelper.IsOkToRestart(window) )
 				{
 					m_uTheFreezesF8Rom = uNewState;
-					afterclose = WM_USER_RESTART;
+					m_uAfterClose = WM_USER_RESTART;
 					PropSheet_PressButton(GetParent(window), PSBTN_OK);
 				}
 				else
@@ -106,8 +103,6 @@ BOOL CPageAdvanced::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LP
 
 	case WM_INITDIALOG:  //Init advanced settings dialog
 		{
-			m_PropertySheetHelper.SetLastPage(m_Page);
-
 			SendDlgItemMessage(window,IDC_SAVESTATE_FILENAME,WM_SETTEXT,0,(LPARAM)Snapshot_GetFilename());
 
 			CheckDlgButton(window, IDC_SAVESTATE_ON_EXIT, g_bSaveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
@@ -127,7 +122,7 @@ BOOL CPageAdvanced::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LP
 			// Need to specific cmd-line switch: -printer-real to enable this control
 			EnableWindow(GetDlgItem(window, IDC_DUMPTOPRINTER), g_bEnableDumpToRealPrinter ? TRUE : FALSE);
 
-			afterclose = 0;
+			m_uAfterClose = 0;
 			break;
 		}
 	}
@@ -135,7 +130,7 @@ BOOL CPageAdvanced::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LP
 	return FALSE;
 }
 
-void CPageAdvanced::DlgOK(HWND window, UINT afterclose)
+void CPageAdvanced::DlgOK(HWND window)
 {
 	// Update save-state filename
 	{
@@ -195,19 +190,16 @@ void CPageAdvanced::DlgOK(HWND window, UINT afterclose)
 	const DWORD NewCloneMenuItem = (DWORD) SendDlgItemMessage(window, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
 	const eApple2Type NewCloneType = GetCloneType(NewCloneMenuItem);
 
-	// Second msgbox fails:
+	// Get 2 identical msg-boxs:
 	// . Config tab: Change to 'Clone'
 	// . Advanced tab: Change clone type, then OK
 	// . ConfigDlg_OK() msgbox asks "restart now?", click OK
-	// . AdvancedDlg_OK() msgbox fails: GetLastError(): ERROR_INVALID_WINDOW_HANDLE; 1400 (0x578)
-	//   - Probably because ConfigDlg_OK() has already posted WM_USER_RESTART
-	// - So I added g_bConfirmedRestartEmulator
+	// . AdvancedDlg_OK() msgbox asks "restart now?
 	if (IS_CLONE() || (m_PropertySheetHelper.GetUIControlCloneDropdownMenu() == UI_ENABLE))
 	{
 		if (NewCloneType != g_Apple2Type)
 		{		
-			if ((afterclose == WM_USER_RESTART) ||	// Eg. Changing 'Freeze ROM' & user has already OK'd the restart for this
-//				g_bConfirmedRestartEmulator ||		// See above
+			if ((m_uAfterClose == WM_USER_RESTART) ||	// Eg. Changing 'Freeze ROM' & user has already OK'd the restart for this
 				((MessageBox(window,
 							TEXT(
 							"You have changed the emulated computer "
@@ -219,7 +211,7 @@ void CPageAdvanced::DlgOK(HWND window, UINT afterclose)
 							MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
 				&& m_PropertySheetHelper.IsOkToRestart(window)) )
 			{
-				afterclose = WM_USER_RESTART;
+				m_uAfterClose = WM_USER_RESTART;
 				m_PropertySheetHelper.SaveComputerType(NewCloneType);
 			}
 		}
@@ -228,13 +220,7 @@ void CPageAdvanced::DlgOK(HWND window, UINT afterclose)
 	if (g_Apple2Type > A2TYPE_APPLE2PLUS)
 		m_uTheFreezesF8Rom = 0;
 
-	//
-
-//	if (g_bConfirmedRestartEmulator)
-//		return;	// ConfigDlg_OK() has already posted WM_USER_RESTART
-
-	if (afterclose)
-		PostMessage(g_hFrameWindow,afterclose,0,0);
+	m_PropertySheetHelper.PostMsgAfterClose(m_Page, m_uAfterClose);
 }
 
 // Advanced->Clone: Menu item to eApple2Type

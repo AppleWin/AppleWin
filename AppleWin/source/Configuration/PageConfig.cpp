@@ -21,8 +21,6 @@ BOOL CALLBACK CPageConfig::DlgProc(HWND window, UINT message, WPARAM wparam, LPA
 
 BOOL CPageConfig::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
 {
-	static UINT afterclose = 0;
-
 	switch (message)
 	{
 	case WM_NOTIFY:
@@ -31,6 +29,10 @@ BOOL CPageConfig::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPAR
 
 			switch (((LPPSHNOTIFY)lparam)->hdr.code)
 			{
+			case PSN_SETACTIVE:
+				// About to become the active page
+				m_PropertySheetHelper.SetLastPage(m_Page);
+				break;
 			case PSN_KILLACTIVE:
 				// About to stop being active page
 				{
@@ -41,7 +43,7 @@ BOOL CPageConfig::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPAR
 				}
 				break;
 			case PSN_APPLY:
-				DlgOK(window, afterclose);
+				DlgOK(window);
 				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
@@ -73,7 +75,7 @@ BOOL CPageConfig::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPAR
 			break;
 
 		case IDC_BENCHMARK:
-			afterclose = WM_USER_BENCHMARK;
+			m_uAfterClose = WM_USER_BENCHMARK;
 			PropSheet_PressButton(GetParent(window), PSBTN_OK);
 			break;
 
@@ -98,7 +100,7 @@ BOOL CPageConfig::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPAR
 				TEXT("Configuration"),
 				MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
 			{
-					afterclose = WM_USER_RESTART;
+					m_uAfterClose = WM_USER_RESTART;
 					PropSheet_PressButton(GetParent(window), PSBTN_OK);
 			}
 			break;
@@ -112,8 +114,6 @@ BOOL CPageConfig::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPAR
 
 	case WM_INITDIALOG: //Init general settings dialog
 		{
-			m_PropertySheetHelper.SetLastPage(m_Page);
-
 			// Convert Apple2 type to menu item
 			{
 				int nCurrentChoice = 0;
@@ -154,7 +154,7 @@ BOOL CPageConfig::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPAR
 				EnableTrackbar(window, bCustom);
 			}
 
-			afterclose = 0;
+			m_uAfterClose = 0;
 			break;
 		}
 
@@ -184,7 +184,7 @@ BOOL CPageConfig::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPAR
 	return FALSE;
 }
 
-void CPageConfig::DlgOK(HWND window, UINT afterclose)
+void CPageConfig::DlgOK(HWND window)
 {
 	const DWORD NewComputerMenuItem = (DWORD) SendDlgItemMessage(window,IDC_COMPUTER,CB_GETCURSEL,0,0);
 	const DWORD newvidtype    = (DWORD)SendDlgItemMessage(window,IDC_VIDEOTYPE,CB_GETCURSEL,0,0);
@@ -195,8 +195,7 @@ void CPageConfig::DlgOK(HWND window, UINT afterclose)
 
 	if (NewApple2Type != OldApple2Type)
 	{
-		if ((afterclose == WM_USER_RESTART) ||	// Eg. Changing 'Freeze ROM' & user has already OK'd the restart for this
-			((MessageBox(window,
+		if ((MessageBox(window,
 						TEXT(
 						"You have changed the emulated computer "
 						"type.  This change will not take effect "
@@ -205,10 +204,9 @@ void CPageConfig::DlgOK(HWND window, UINT afterclose)
 						"Would you like to restart the emulator now?"),
 						TEXT("Configuration"),
 						MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
-			&& m_PropertySheetHelper.IsOkToRestart(window)) )
+			&& m_PropertySheetHelper.IsOkToRestart(window))
 		{
-			//g_bConfirmedRestartEmulator = true;
-			afterclose = WM_USER_RESTART;
+			m_uAfterClose = WM_USER_RESTART;
 			m_PropertySheetHelper.SaveComputerType(NewApple2Type);
 		}
 	}
@@ -242,10 +240,7 @@ void CPageConfig::DlgOK(HWND window, UINT afterclose)
 
 	Config_Save_Video();
 
-	//
-
-	if (afterclose)
-		PostMessage(g_hFrameWindow,afterclose,0,0);
+	m_PropertySheetHelper.PostMsgAfterClose(m_Page, m_uAfterClose);
 }
 
 // Config->Computer: Menu item to eApple2Type

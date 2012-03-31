@@ -199,3 +199,11 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	m_bSSNewFilename = nRes ? true : false;
 	return nRes;
 }
+
+// On OK: Optionally post a single "uAfterClose" msg after last page closes
+void CPropertySheetHelper::PostMsgAfterClose(PAGETYPE page, UINT uAfterClose)
+{
+	m_bmPages &= ~(1<<(UINT32)page);
+	if (m_bmPages == 0 && uAfterClose)
+		PostMessage(g_hFrameWindow, uAfterClose, 0, 0);
+}

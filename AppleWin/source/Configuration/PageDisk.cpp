@@ -19,8 +19,6 @@ BOOL CALLBACK CPageDisk::DlgProc(HWND window, UINT message, WPARAM wparam, LPARA
 
 BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
 {
-	static UINT afterclose = 0;
-
 	switch (message)
 	{
 	case WM_NOTIFY:
@@ -29,11 +27,15 @@ BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM
 
 			switch (((LPPSHNOTIFY)lparam)->hdr.code)
 			{
+			case PSN_SETACTIVE:
+				// About to become the active page
+				m_PropertySheetHelper.SetLastPage(m_Page);
+				break;
 			case PSN_KILLACTIVE:
 				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
 				break;
 			case PSN_APPLY:
-				DlgOK(window, afterclose);
+				DlgOK(window);
 				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
@@ -93,8 +95,6 @@ BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM
 
 	case WM_INITDIALOG: //Init disk settings dialog
 		{
-			m_PropertySheetHelper.SetLastPage(m_Page);
-
 			m_PropertySheetHelper.FillComboBox(window,IDC_DISKTYPE,m_discchoices,enhancedisk);
 
 			SendDlgItemMessage(window,IDC_EDIT_DISK1,WM_SETTEXT,0,(LPARAM)DiskGetFullName(DRIVE_1));
@@ -115,7 +115,7 @@ BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM
 
 			EnableHDD(window, IsDlgButtonChecked(window, IDC_HDD_ENABLE));
 
-			afterclose = 0;
+			m_uAfterClose = 0;
 			break;
 		}
 
@@ -216,7 +216,7 @@ BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM
 	return FALSE;
 }
 
-void CPageDisk::DlgOK(HWND window, UINT afterclose)
+void CPageDisk::DlgOK(HWND window)
 {
 	BOOL newdisktype = (BOOL) SendDlgItemMessage(window,IDC_DISKTYPE,CB_GETCURSEL,0,0);
 
@@ -230,7 +230,7 @@ void CPageDisk::DlgOK(HWND window, UINT afterclose)
 			TEXT("Would you like to restart the emulator now?"),
 			TEXT("Configuration"),
 			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
-			afterclose = WM_USER_RESTART;
+			m_uAfterClose = WM_USER_RESTART;
 	}
 
 	bool bHDDIsEnabled = IsDlgButtonChecked(window, IDC_HDD_ENABLE) ? true : false;
@@ -242,10 +242,7 @@ void CPageDisk::DlgOK(HWND window, UINT afterclose)
 	RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_1), 1, HD_GetFullPathName(HARDDISK_1));
 	RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_2), 1, HD_GetFullPathName(HARDDISK_2));
 
-	//
-
-	if (afterclose)
-		PostMessage(g_hFrameWindow,afterclose,0,0);
+	m_PropertySheetHelper.PostMsgAfterClose(m_Page, m_uAfterClose);
 }
 
 void CPageDisk::EnableHDD(HWND window, BOOL bEnable)

@@ -10,7 +10,8 @@ class CPageConfig : public IPropertySheetPage
 public:
 	CPageConfig(CPropertySheetHelper& PropertySheetHelper) :
 		m_Page(PG_CONFIG),
-		m_PropertySheetHelper(PropertySheetHelper)
+		m_PropertySheetHelper(PropertySheetHelper),
+		m_uAfterClose(0)
 	{
 		CPageConfig::ms_this = this;
 	}
@@ -21,7 +22,7 @@ public:
 protected:
 	// IPropertySheetPage
 	virtual BOOL DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
-	virtual void DlgOK(HWND window, UINT afterclose);
+	virtual void DlgOK(HWND window);
 	virtual void DlgCANCEL(HWND window){}
 
 private:
@@ -34,5 +35,6 @@ private:
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;
+	UINT m_uAfterClose;
 	CPageConfigTfe m_PageConfigTfe;
 };
