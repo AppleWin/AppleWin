@@ -265,6 +265,7 @@ void HD_SetEnabled(const bool bEnabled)
 
 	g_bHD_Enabled = bEnabled;
 
+#if 0
 	// FIXME: For LoadConfiguration(), g_uSlot=7 (see definition at start of file)
 	// . g_uSlot is only really setup by HD_Load_Rom(), later on
 	RegisterIoHandler(g_uSlot, HD_IO_EMUL, HD_IO_EMUL, NULL, NULL, NULL, NULL);
@@ -279,6 +280,7 @@ void HD_SetEnabled(const bool bEnabled)
 		HD_Load_Rom(pCxRomPeripheral, g_uSlot);
 	else
 		memset(pCxRomPeripheral + g_uSlot*256, 0, HDDRVR_SIZE);
+#endif
 }
 
 //-------------------------------------
@@ -324,6 +326,8 @@ VOID HD_Load_Rom(const LPBYTE pCxRomPeripheral, const UINT uSlot)
 	g_uSlot = uSlot;
 	memcpy(pCxRomPeripheral + uSlot*256, pData, HDDRVR_SIZE);
 	g_bHD_RomLoaded = true;
+
+	RegisterIoHandler(g_uSlot, HD_IO_EMUL, HD_IO_EMUL, NULL, NULL, NULL, NULL);
 }
 
 VOID HD_Cleanup(void)

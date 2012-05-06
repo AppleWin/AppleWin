@@ -1,5 +1,6 @@
 #pragma once
 
+#include "IPropertySheet.h"
 #include "PropertySheetHelper.h"
 #include "PageConfig.h"
 #include "PageInput.h"
@@ -7,38 +8,37 @@
 #include "PageDisk.h"
 #include "PageAdvanced.h"
 
-extern class CPropertySheet sg_PropertySheet;
-
-class CPropertySheet
+class CPropertySheet : public IPropertySheet
 {
 public:
 	CPropertySheet() :
-		g_PageConfig(g_PropertySheetHelper),
-		g_PageInput(g_PropertySheetHelper),
-		g_PageSound(g_PropertySheetHelper),
-		g_PageDisk(g_PropertySheetHelper),
-		g_PageAdvanced(g_PropertySheetHelper)
-	{}
+		m_PageConfig(m_PropertySheetHelper),
+		m_PageInput(m_PropertySheetHelper),
+		m_PageSound(m_PropertySheetHelper),
+		m_PageDisk(m_PropertySheetHelper),
+		m_PageAdvanced(m_PropertySheetHelper)
+	{
+	}
 	virtual ~CPropertySheet(){}
 
-	void Init(void);
-	DWORD GetVolumeMax(void);								// TODO:TC: Move out of here
-	bool SaveStateSelectImage(HWND hWindow, bool bSave);	// TODO:TC: Move out of here
+	virtual void Init(void);
+	virtual DWORD GetVolumeMax(void);								// TODO:TC: Move out of here
+	virtual bool SaveStateSelectImage(HWND hWindow, bool bSave);	// TODO:TC: Move out of here
 
-	UINT GetScrollLockToggle(void){ return g_PageInput.GetScrollLockToggle(); }
-	void SetScrollLockToggle(UINT uValue){ g_PageInput.SetScrollLockToggle(uValue); }
-	UINT GetMouseShowCrosshair(void){ return g_PageInput.GetMouseShowCrosshair(); }
-	void SetMouseShowCrosshair(UINT uValue){ g_PageInput.SetMouseShowCrosshair(uValue); }
-	UINT GetMouseRestrictToWindow(void){ return g_PageInput.GetMouseRestrictToWindow(); }
-	void SetMouseRestrictToWindow(UINT uValue){ g_PageInput.SetMouseRestrictToWindow(uValue); }
-	UINT GetTheFreezesF8Rom(void){ return g_PageAdvanced.GetTheFreezesF8Rom(); }
-	void SetTheFreezesF8Rom(UINT uValue){ g_PageAdvanced.SetTheFreezesF8Rom(uValue); }
+	virtual UINT GetScrollLockToggle(void){ return m_PageInput.GetScrollLockToggle(); }
+	virtual void SetScrollLockToggle(UINT uValue){ m_PageInput.SetScrollLockToggle(uValue); }
+	virtual UINT GetMouseShowCrosshair(void){ return m_PageInput.GetMouseShowCrosshair(); }
+	virtual void SetMouseShowCrosshair(UINT uValue){ m_PageInput.SetMouseShowCrosshair(uValue); }
+	virtual UINT GetMouseRestrictToWindow(void){ return m_PageInput.GetMouseRestrictToWindow(); }
+	virtual void SetMouseRestrictToWindow(UINT uValue){ m_PageInput.SetMouseRestrictToWindow(uValue); }
+	virtual UINT GetTheFreezesF8Rom(void){ return m_PageAdvanced.GetTheFreezesF8Rom(); }
+	virtual void SetTheFreezesF8Rom(UINT uValue){ m_PageAdvanced.SetTheFreezesF8Rom(uValue); }
 
 private:
-	CPropertySheetHelper g_PropertySheetHelper;
-	CPageConfig g_PageConfig;
-	CPageInput g_PageInput;
-	CPageSound g_PageSound;
-	CPageDisk g_PageDisk;
-	CPageAdvanced g_PageAdvanced;
+	CPropertySheetHelper m_PropertySheetHelper;
+	CPageConfig m_PageConfig;
+	CPageInput m_PageInput;
+	CPageSound m_PageSound;
+	CPageDisk m_PageDisk;
+	CPageAdvanced m_PageAdvanced;
 };

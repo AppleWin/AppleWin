@@ -82,7 +82,7 @@ FILE*		g_fh			= NULL;
 bool		g_bDisableDirectSound = false;
 bool		g_bDisableDirectSoundMockingboard = false;
 
-CPropertySheet		sg_PropertySheet;
+IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 

@@ -55,3 +55,5 @@ extern eCPU		g_ActiveCPU;
 class CSpeech;
 extern CSpeech g_Speech;
 #endif
+
+extern __interface IPropertySheet& sg_PropertySheet;

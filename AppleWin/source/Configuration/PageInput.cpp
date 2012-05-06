@@ -32,17 +32,14 @@ const TCHAR CPageInput::m_szCPMSlotChoice_Unplugged[] = TEXT("Unplugged\0");
 const TCHAR CPageInput::m_szCPMSlotChoice_Unavailable[] = TEXT("Unavailable\0");
 
 
-BOOL CALLBACK CPageInput::DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
+BOOL CALLBACK CPageInput::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
-	return CPageInput::ms_this->DlgProcInternal(window, message, wparam, lparam);
+	return CPageInput::ms_this->DlgProcInternal(hWnd, message, wparam, lparam);
 }
 
-BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
+BOOL CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
-	m_MousecardSlotChange = CARD_UNCHANGED;
-	m_CPMcardSlotChange = CARD_UNCHANGED;
-
 	switch (message)
 	{
 	case WM_NOTIFY:
@@ -54,19 +51,20 @@ BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 			case PSN_SETACTIVE:
 				// About to become the active page
 				m_PropertySheetHelper.SetLastPage(m_Page);
+				InitOptions(hWnd);
 				break;
 			case PSN_KILLACTIVE:
-				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
+				SetWindowLong(hWnd, DWL_MSGRESULT, FALSE);			// Changes are valid
 				break;
 			case PSN_APPLY:
-				DlgOK(window);
-				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
+				DlgOK(hWnd);
+				SetWindowLong(hWnd, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
 				// Can use this to ask user to confirm cancel
 				break;
 			case PSN_RESET:
-				DlgCANCEL(window);
+				DlgCANCEL(hWnd);
 				break;
 
 			/*		// Could use this to display PDL() value
@@ -76,13 +74,13 @@ BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 				{
 					static int x = 0;
 					x = lpnmud->iPos + lpnmud->iDelta;
-					x = SendDlgItemMessage(window, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0);
+					x = SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0);
 				}
 				else if (lpnmud->hdr.idFrom == IDC_SPIN_YTRIM)
 				{
 					static int y = 0;
 					y = lpnmud->iPos + lpnmud->iDelta;
-					y = SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0);
+					y = SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0);
 				}
 				break;
 			*/
@@ -96,97 +94,57 @@ BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 		case IDC_JOYSTICK0:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				DWORD newjoytype = (DWORD)SendDlgItemMessage(window,IDC_JOYSTICK0,CB_GETCURSEL,0,0);
-				JoySetEmulationType(window,m_nJoy0ChoiceTranlationTbl[newjoytype],JN_JOYSTICK0);
-				InitJoystickChoices(window, JN_JOYSTICK1, IDC_JOYSTICK1);	// Re-init joy1 list
+				DWORD newjoytype = (DWORD)SendDlgItemMessage(hWnd,IDC_JOYSTICK0,CB_GETCURSEL,0,0);
+				JoySetEmulationType(hWnd,m_nJoy0ChoiceTranlationTbl[newjoytype],JN_JOYSTICK0);
+				InitJoystickChoices(hWnd, JN_JOYSTICK1, IDC_JOYSTICK1);	// Re-init joy1 list
 			}
 			break;
 
 		case IDC_JOYSTICK1:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				DWORD newjoytype = (DWORD)SendDlgItemMessage(window,IDC_JOYSTICK1,CB_GETCURSEL,0,0);
-				JoySetEmulationType(window,m_nJoy1ChoiceTranlationTbl[newjoytype],JN_JOYSTICK1);
-				InitJoystickChoices(window, JN_JOYSTICK0, IDC_JOYSTICK0);	// Re-init joy0 list
+				DWORD newjoytype = (DWORD)SendDlgItemMessage(hWnd,IDC_JOYSTICK1,CB_GETCURSEL,0,0);
+				JoySetEmulationType(hWnd,m_nJoy1ChoiceTranlationTbl[newjoytype],JN_JOYSTICK1);
+				InitJoystickChoices(hWnd, JN_JOYSTICK0, IDC_JOYSTICK0);	// Re-init joy0 list
 			}
 			break;
 
 		case IDC_SCROLLLOCK_TOGGLE:
-			m_uScrollLockToggle = IsDlgButtonChecked(window, IDC_SCROLLLOCK_TOGGLE) ? 1 : 0;
+			m_uScrollLockToggle = IsDlgButtonChecked(hWnd, IDC_SCROLLLOCK_TOGGLE) ? 1 : 0;
 			break;
 
 		case IDC_MOUSE_IN_SLOT4:
 			{
-				UINT uNewState = IsDlgButtonChecked(window, IDC_MOUSE_IN_SLOT4) ? 1 : 0;
-				LPCSTR pMsg = uNewState ?
-					TEXT("The emulator needs to restart as the slot configuration has changed.\n\n")
-					TEXT("Also Mockingboard/Phasor cards won't be available in slot 4\n")
-					TEXT("and the mouse can't be used for joystick emulation.\n\n")
-					TEXT("Would you like to restart the emulator now?")
-					:
-					TEXT("The emulator needs to restart as the slot configuration has changed.\n\n")
-					TEXT("(Mockingboard/Phasor cards will now be available in slot 4\n")
-					TEXT("and the mouse can be used for joystick emulation)\n\n")
-					TEXT("Would you like to restart the emulator now?");
-				if ( (MessageBox(window,
-						pMsg,
-						TEXT("Configuration"),
-						MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
-					&& m_PropertySheetHelper.IsOkToRestart(window) )
-				{
-					m_MousecardSlotChange = !uNewState ? CARD_UNPLUGGED : CARD_INSERTED;
+				const UINT uNewState = IsDlgButtonChecked(hWnd, IDC_MOUSE_IN_SLOT4) ? 1 : 0;
+				m_PropertySheetHelper.GetConfigNew().m_Slot[4] = uNewState ? CT_MouseInterface : CT_Empty;
 
-					if (uNewState)	// Redundant, since restarting
-					{
-						JoyDisableUsingMouse();
-						InitJoystickChoices(window, JN_JOYSTICK0, IDC_JOYSTICK0);
-						InitJoystickChoices(window, JN_JOYSTICK1, IDC_JOYSTICK1);
-					}
-
-					m_uAfterClose = WM_USER_RESTART;
-					PropSheet_PressButton(GetParent(window), PSBTN_OK);
-				}
-				else
-				{
-					const bool bIsSlot4Mouse = g_Slot4 == CT_MouseInterface;
-					CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, bIsSlot4Mouse ? BST_CHECKED : BST_UNCHECKED);
-				}
+				InitOptions(hWnd);	// re-init
 			}
 			break;
 
 		case IDC_CPM_CONFIG:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				DWORD NewCPMChoiceItem = (DWORD) SendDlgItemMessage(window, IDC_CPM_CONFIG, CB_GETCURSEL, 0, 0);
-				CPMCHOICE NewCPMChoice = m_CPMComboItemToChoice[NewCPMChoiceItem];
+				const DWORD NewCPMChoiceItem = (DWORD) SendDlgItemMessage(hWnd, IDC_CPM_CONFIG, CB_GETCURSEL, 0, 0);
+				const CPMCHOICE NewCPMChoice = m_CPMComboItemToChoice[NewCPMChoiceItem];
 				if (NewCPMChoice == m_CPMChoice)
 					break;
 
-				LPCSTR pMsg = NewCPMChoice != CPM_UNPLUGGED ?
-					TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-					TEXT("Microsoft CP/M SoftCard will be inserted.\n\n")
-					TEXT("Would you like to restart the emulator now?")
-					:
-					TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-					TEXT("Microsoft CP/M SoftCard will be removed.\n\n")
-					TEXT("Would you like to restart the emulator now?");
-				if ( (MessageBox(window,
-						pMsg,
-						TEXT("Configuration"),
-						MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
-					&& m_PropertySheetHelper.IsOkToRestart(window) )
-				{
-					m_CPMcardSlotChange = (NewCPMChoice == CPM_UNPLUGGED) ? CARD_UNPLUGGED : CARD_INSERTED;
-					m_CPMChoice = NewCPMChoice;
+				// Whatever has changed, the old slot will now be empty
+				const SS_CARDTYPE Slot4 = m_PropertySheetHelper.GetConfigNew().m_Slot[4];
+				const SS_CARDTYPE Slot5 = m_PropertySheetHelper.GetConfigNew().m_Slot[5];
+				if (Slot4 == CT_Z80)
+					m_PropertySheetHelper.GetConfigNew().m_Slot[4] = CT_Empty;
+				else if (Slot5 == CT_Z80)
+					m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_Empty;
 
-					m_uAfterClose = WM_USER_RESTART;
-					PropSheet_PressButton(GetParent(window), PSBTN_OK);
-				}
-				else
-				{
-					InitCPMChoices(window);	// Restore original state
-				}
+				// Insert CP/M card into new slot (or leave slot empty)
+				if (NewCPMChoice == CPM_SLOT4)
+					m_PropertySheetHelper.GetConfigNew().m_Slot[4] = CT_Z80;
+				else if (NewCPMChoice == CPM_SLOT5)
+					m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_Z80;
 
+				InitOptions(hWnd);	// re-init
 			}
 			break;
 
@@ -196,32 +154,21 @@ BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 		}
 		break;
 
-	case WM_INITDIALOG: //Init input settings dialog
+	case WM_INITDIALOG:
 		{
-			InitJoystickChoices(window, JN_JOYSTICK0, IDC_JOYSTICK0);
-			InitJoystickChoices(window, JN_JOYSTICK1, IDC_JOYSTICK1);
+			InitJoystickChoices(hWnd, JN_JOYSTICK0, IDC_JOYSTICK0);
+			InitJoystickChoices(hWnd, JN_JOYSTICK1, IDC_JOYSTICK1);
 
-			SendDlgItemMessage(window, IDC_SPIN_XTRIM, UDM_SETRANGE, 0, MAKELONG(128,-127));
-			SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_SETRANGE, 0, MAKELONG(128,-127));
+			SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_SETRANGE, 0, MAKELONG(128,-127));
+			SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_SETRANGE, 0, MAKELONG(128,-127));
 
-			SendDlgItemMessage(window, IDC_SPIN_XTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(true),0));
-			SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(false),0));
+			SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(true),0));
+			SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(false),0));
 
-			CheckDlgButton(window, IDC_SCROLLLOCK_TOGGLE, m_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_SCROLLLOCK_TOGGLE, m_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
 
-			const bool bIsSlot4Mouse = g_Slot4 == CT_MouseInterface;
-			CheckDlgButton(window, IDC_MOUSE_IN_SLOT4, bIsSlot4Mouse ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(window, IDC_MOUSE_CROSSHAIR, m_uMouseShowCrosshair ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(window, IDC_MOUSE_RESTRICT_TO_WINDOW, m_uMouseRestrictToWindow ? BST_CHECKED : BST_UNCHECKED);
+			InitOptions(hWnd);
 
-			const bool bIsSlot4Empty = g_Slot4 == CT_Empty;
-			EnableWindow(GetDlgItem(window, IDC_MOUSE_IN_SLOT4), (bIsSlot4Mouse || bIsSlot4Empty) ? TRUE : FALSE);
-			EnableWindow(GetDlgItem(window, IDC_MOUSE_CROSSHAIR), bIsSlot4Mouse ? TRUE : FALSE);
-			EnableWindow(GetDlgItem(window, IDC_MOUSE_RESTRICT_TO_WINDOW), bIsSlot4Mouse ? TRUE : FALSE);
-
-			InitCPMChoices(window);
-
-			m_uAfterClose = 0;
 			break;
 		}
 	}
@@ -229,72 +176,47 @@ BOOL CPageInput::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 	return FALSE;
 }
 
-void CPageInput::DlgOK(HWND window)
+void CPageInput::DlgOK(HWND hWnd)
 {
-	UINT uNewJoyType0 = SendDlgItemMessage(window,IDC_JOYSTICK0,CB_GETCURSEL,0,0);
-	UINT uNewJoyType1 = SendDlgItemMessage(window,IDC_JOYSTICK1,CB_GETCURSEL,0,0);
+	const UINT uNewJoyType0 = SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
+	const UINT uNewJoyType1 = SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
 
-	if (!JoySetEmulationType(window, m_nJoy0ChoiceTranlationTbl[uNewJoyType0], JN_JOYSTICK0))
+	if (JoySetEmulationType(hWnd, m_nJoy0ChoiceTranlationTbl[uNewJoyType0], JN_JOYSTICK0))
 	{
-		m_uAfterClose = 0;
-		return;
+		REGSAVE(TEXT("Joystick 0 Emulation"), joytype[0]);
 	}
 	
-	if (!JoySetEmulationType(window, m_nJoy1ChoiceTranlationTbl[uNewJoyType1], JN_JOYSTICK1))
+	if (JoySetEmulationType(hWnd, m_nJoy1ChoiceTranlationTbl[uNewJoyType1], JN_JOYSTICK1))
 	{
-		m_uAfterClose = 0;
-		return;
+		REGSAVE(TEXT("Joystick 1 Emulation"), joytype[1]);
 	}
 
-	JoySetTrim((short)SendDlgItemMessage(window, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0), true);
-	JoySetTrim((short)SendDlgItemMessage(window, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0), false);
+	JoySetTrim((short)SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0), true);
+	JoySetTrim((short)SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0), false);
 
-	m_uMouseShowCrosshair = IsDlgButtonChecked(window, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
-	m_uMouseRestrictToWindow = IsDlgButtonChecked(window, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
+	m_uMouseShowCrosshair = IsDlgButtonChecked(hWnd, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
+	m_uMouseRestrictToWindow = IsDlgButtonChecked(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
 
-	REGSAVE(TEXT("Joystick 0 Emulation"),joytype[0]);
-	REGSAVE(TEXT("Joystick 1 Emulation"),joytype[1]);
-	REGSAVE(TEXT(REGVALUE_PDL_XTRIM),JoyGetTrim(true));
-	REGSAVE(TEXT(REGVALUE_PDL_YTRIM),JoyGetTrim(false));
-	REGSAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE),m_uScrollLockToggle);
-	REGSAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR),m_uMouseShowCrosshair);
-	REGSAVE(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW),m_uMouseRestrictToWindow);
+	REGSAVE(TEXT(REGVALUE_PDL_XTRIM), JoyGetTrim(true));
+	REGSAVE(TEXT(REGVALUE_PDL_YTRIM), JoyGetTrim(false));
+	REGSAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), m_uScrollLockToggle);
+	REGSAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR), m_uMouseShowCrosshair);
+	REGSAVE(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), m_uMouseRestrictToWindow);
 
-	if (m_MousecardSlotChange == CARD_INSERTED)
-		m_PropertySheetHelper.SetSlot4(CT_MouseInterface);
-	else if (m_MousecardSlotChange == CARD_UNPLUGGED)
-		m_PropertySheetHelper.SetSlot4(CT_Empty);
-
-	//
-
-	if (m_CPMcardSlotChange != CARD_UNCHANGED)
-	{
-		// Whatever has changed, the old slot will now be empty
-		if (g_Slot4 == CT_Z80)
-			m_PropertySheetHelper.SetSlot4(CT_Empty);
-		else if (g_Slot5 == CT_Z80)
-			m_PropertySheetHelper.SetSlot5(CT_Empty);
-
-		// Insert CP/M card into new slot (or leave slot empty)
-		if (m_CPMChoice == CPM_SLOT4)
-			m_PropertySheetHelper.SetSlot4(CT_Z80);
-		else if (m_CPMChoice == CPM_SLOT5)
-			m_PropertySheetHelper.SetSlot5(CT_Z80);
-	}
-
-	m_PropertySheetHelper.PostMsgAfterClose(m_Page, m_uAfterClose);
+	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 
-void CPageInput::InitJoystickChoices(HWND window, int nJoyNum, int nIdcValue)
+void CPageInput::InitOptions(HWND hWnd)
 {
-	TCHAR *pszMem;
-	int nIdx;
-	unsigned long i;
+	InitSlotOptions(hWnd);
+}
 
+void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
+{
 	TCHAR* pnzJoystickChoices;
 	int *pnJoyTranslationTbl;
 	int nJoyTranslationTblSize;
-	unsigned short nJC_DISABLED,nJC_JOYSTICK,nJC_KEYBD_STANDARD,nJC_KEYBD_CENTERING,nJC_MAX;
+	unsigned short nJC_DISABLED, nJC_JOYSTICK, nJC_KEYBD_STANDARD, nJC_KEYBD_CENTERING, nJC_MAX;
 	TCHAR** ppszJoyChoices;
 	int nOtherJoyNum = nJoyNum == JN_JOYSTICK0 ? JN_JOYSTICK1 : JN_JOYSTICK0;
 
@@ -323,8 +245,8 @@ void CPageInput::InitJoystickChoices(HWND window, int nJoyNum, int nIdcValue)
 		ppszJoyChoices = (TCHAR**) m_pszJoy1Choices;
 	}
 
-	pszMem = pnzJoystickChoices;
-	nIdx = 0;
+	TCHAR* pszMem = pnzJoystickChoices;
+	int nIdx = 0;
 	memset(pnJoyTranslationTbl, -1, nJoyTranslationTblSize);
 
 	// Build the Joystick choices string list. These first 2 are always selectable.
@@ -337,7 +259,7 @@ void CPageInput::InitJoystickChoices(HWND window, int nJoyNum, int nIdcValue)
 	pnJoyTranslationTbl[nIdx++] = nJC_JOYSTICK;
 
 	// Now exclude the other Joystick type (if it exists) from this new list
-	for(i=nJC_KEYBD_STANDARD; i<nJC_MAX; i++)
+	for(UINT i=nJC_KEYBD_STANDARD; i<nJC_MAX; i++)
 	{
 		if( ( (i == nJC_KEYBD_STANDARD) || (i == nJC_KEYBD_CENTERING) ) &&
 			( (joytype[nOtherJoyNum] == nJC_KEYBD_STANDARD) || (joytype[nOtherJoyNum] == nJC_KEYBD_CENTERING) )
@@ -356,13 +278,33 @@ void CPageInput::InitJoystickChoices(HWND window, int nJoyNum, int nIdcValue)
 
 	*pszMem = 0x00;	// Doubly null terminated
 
-	m_PropertySheetHelper.FillComboBox(window, nIdcValue, pnzJoystickChoices, joytype[nJoyNum]);
+	m_PropertySheetHelper.FillComboBox(hWnd, nIdcValue, pnzJoystickChoices, joytype[nJoyNum]);
 }
 
-void CPageInput::InitCPMChoices(HWND window)
+void CPageInput::InitSlotOptions(HWND hWnd)
 {
-	if (g_Slot4 == CT_Z80)		m_CPMChoice = CPM_SLOT4;
-	else if (g_Slot5 == CT_Z80)	m_CPMChoice = CPM_SLOT5;
+	const SS_CARDTYPE Slot4 = m_PropertySheetHelper.GetConfigNew().m_Slot[4];
+
+	const bool bIsSlot4Mouse = Slot4 == CT_MouseInterface;
+	CheckDlgButton(hWnd, IDC_MOUSE_IN_SLOT4, bIsSlot4Mouse ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hWnd, IDC_MOUSE_CROSSHAIR, m_uMouseShowCrosshair ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW, m_uMouseRestrictToWindow ? BST_CHECKED : BST_UNCHECKED);
+
+	const bool bIsSlot4Empty = Slot4 == CT_Empty;
+	EnableWindow(GetDlgItem(hWnd, IDC_MOUSE_IN_SLOT4), (bIsSlot4Mouse || bIsSlot4Empty) ? TRUE : FALSE);
+	EnableWindow(GetDlgItem(hWnd, IDC_MOUSE_CROSSHAIR), bIsSlot4Mouse ? TRUE : FALSE);
+	EnableWindow(GetDlgItem(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW), bIsSlot4Mouse ? TRUE : FALSE);
+
+	InitCPMChoices(hWnd);
+}
+
+void CPageInput::InitCPMChoices(HWND hWnd)
+{
+	const SS_CARDTYPE Slot4 = m_PropertySheetHelper.GetConfigNew().m_Slot[4];
+	const SS_CARDTYPE Slot5 = m_PropertySheetHelper.GetConfigNew().m_Slot[5];
+
+	if (Slot4 == CT_Z80)		m_CPMChoice = CPM_SLOT4;
+	else if (Slot5 == CT_Z80)	m_CPMChoice = CPM_SLOT5;
 	else						m_CPMChoice = CPM_UNPLUGGED;
 
 	for (UINT i=0; i<_CPM_MAX_CHOICES; i++)
@@ -371,10 +313,10 @@ void CPageInput::InitCPMChoices(HWND window)
 	UINT uStringOffset = 0;
 	UINT uComboItemIdx = 0;
 
-	const bool bIsSlot4Empty = g_Slot4 == CT_Empty;
-	const bool bIsSlot4CPM   = g_Slot4 == CT_Z80;
-	const bool bIsSlot5Empty = g_Slot5 == CT_Empty;
-	const bool bIsSlot5CPM   = g_Slot5 == CT_Z80;
+	const bool bIsSlot4Empty = Slot4 == CT_Empty;
+	const bool bIsSlot4CPM   = Slot4 == CT_Z80;
+	const bool bIsSlot5Empty = Slot5 == CT_Empty;
+	const bool bIsSlot5CPM   = Slot5 == CT_Z80;
 
 	if (bIsSlot4Empty || bIsSlot4CPM)
 	{
@@ -426,5 +368,5 @@ void CPageInput::InitCPMChoices(HWND window)
 		}
 	}
 
-	m_PropertySheetHelper.FillComboBox(window, IDC_CPM_CONFIG, m_szCPMSlotChoices, uCurrentChoice);
+	m_PropertySheetHelper.FillComboBox(hWnd, IDC_CPM_CONFIG, m_szCPMSlotChoices, uCurrentChoice);
 }

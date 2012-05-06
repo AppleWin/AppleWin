@@ -11,13 +11,13 @@ const TCHAR CPageSound::m_soundchoices[] =	TEXT("Disabled\0")
 											TEXT("Sound Card\0");
 
 
-BOOL CALLBACK CPageSound::DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
+BOOL CALLBACK CPageSound::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
-	return CPageSound::ms_this->DlgProcInternal(window, message, wparam, lparam);
+	return CPageSound::ms_this->DlgProcInternal(hWnd, message, wparam, lparam);
 }
 
-BOOL CPageSound::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
+BOOL CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{
@@ -30,19 +30,20 @@ BOOL CPageSound::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 			case PSN_SETACTIVE:
 				// About to become the active page
 				m_PropertySheetHelper.SetLastPage(m_Page);
+				InitOptions(hWnd);
 				break;
 			case PSN_KILLACTIVE:
-				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
+				SetWindowLong(hWnd, DWL_MSGRESULT, FALSE);			// Changes are valid
 				break;
 			case PSN_APPLY:
-				DlgOK(window);
-				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
+				DlgOK(hWnd);
+				SetWindowLong(hWnd, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
 				// Can use this to ask user to confirm cancel
 				break;
 			case PSN_RESET:
-				DlgCANCEL(window);
+				DlgCANCEL(hWnd);
 				break;
 			}
 		}
@@ -56,82 +57,37 @@ BOOL CPageSound::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 		case IDC_MB_VOLUME:
 			break;
 		case IDC_MB_ENABLE:
-			{
-				LPCSTR pMsg =	TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-								TEXT("Mockingboard cards will be inserted into slots 4 & 5.\n\n")
-								TEXT("Would you like to restart the emulator now?");
-				if (NewSoundcardConfigured(window, wparam, pMsg))
-				{
-					m_NewCardType = CT_MockingboardC;
-					m_SoundcardSlotChange = CARD_INSERTED;
-					EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), TRUE);
-				}
-			}
+			if (NewSoundcardConfigured(hWnd, wparam, CT_MockingboardC))
+				InitOptions(hWnd);	// re-init
 			break;
 		case IDC_PHASOR_ENABLE:
-			{
-				LPCSTR pMsg =	TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-								TEXT("Phasor card will be inserted into slot 4.\n\n")
-								TEXT("Would you like to restart the emulator now?");
-				if (NewSoundcardConfigured(window, wparam, pMsg))
-				{
-					m_NewCardType = CT_Phasor;
-					m_SoundcardSlotChange = CARD_INSERTED;
-					EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), TRUE);
-				}
-			}
+			if (NewSoundcardConfigured(hWnd, wparam, CT_Phasor))
+				InitOptions(hWnd);	// re-init
 			break;
 		case IDC_SOUNDCARD_DISABLE:
-			{
-				LPCSTR pMsg =	TEXT("The emulator needs to restart as the slot configuration has changed.\n")
-								TEXT("Sound card(s) will be removed.\n\n")
-								TEXT("Would you like to restart the emulator now?");
-				if (NewSoundcardConfigured(window, wparam, pMsg))
-				{
-					m_NewCardType = CT_Empty;
-					m_SoundcardSlotChange = CARD_UNPLUGGED;
-					EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), FALSE);
-				}
-			}
+			if (NewSoundcardConfigured(hWnd, wparam, CT_Empty))
+				InitOptions(hWnd);	// re-init
 			break;
 		}
 		break;
 
 	case WM_INITDIALOG:
 		{
-			m_PropertySheetHelper.FillComboBox(window,IDC_SOUNDTYPE,m_soundchoices,soundtype);
+			m_PropertySheetHelper.FillComboBox(hWnd,IDC_SOUNDTYPE,m_soundchoices,soundtype);
 
-			SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETRANGE,1,MAKELONG(VOLUME_MIN,VOLUME_MAX));
-			SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETPAGESIZE,0,10);
-			SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETTICFREQ,10,0);
-			SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_SETPOS,1,SpkrGetVolume());
+			SendDlgItemMessage(hWnd,IDC_SPKR_VOLUME,TBM_SETRANGE,1,MAKELONG(VOLUME_MIN,VOLUME_MAX));
+			SendDlgItemMessage(hWnd,IDC_SPKR_VOLUME,TBM_SETPAGESIZE,0,10);
+			SendDlgItemMessage(hWnd,IDC_SPKR_VOLUME,TBM_SETTICFREQ,10,0);
+			SendDlgItemMessage(hWnd,IDC_SPKR_VOLUME,TBM_SETPOS,1,SpkrGetVolume());
 
-			SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETRANGE,1,MAKELONG(VOLUME_MIN,VOLUME_MAX));
-			SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETPAGESIZE,0,10);
-			SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETTICFREQ,10,0);
-			SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_SETPOS,1,MB_GetVolume());
+			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETRANGE,1,MAKELONG(VOLUME_MIN,VOLUME_MAX));
+			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPAGESIZE,0,10);
+			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETTICFREQ,10,0);
+			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPOS,1,MB_GetVolume());
 
-			SS_CARDTYPE SoundcardType = MB_GetSoundcardType();
-			if(SoundcardType == CT_MockingboardC)
-				m_nCurrentIDCheckButton = IDC_MB_ENABLE;
-			else if(SoundcardType == CT_Phasor)
-				m_nCurrentIDCheckButton = IDC_PHASOR_ENABLE;
-			else
-				m_nCurrentIDCheckButton = IDC_SOUNDCARD_DISABLE;
+			m_NewCardType = MB_GetSoundcardType();	// Reinit 1st time page is activated (fires before PSN_SETACTIVE)
+			InitOptions(hWnd);
 
-			CheckRadioButton(window, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, m_nCurrentIDCheckButton);
-
-			const bool bIsSlot4Empty = g_Slot4 == CT_Empty;
-			const bool bIsSlot5Empty = g_Slot5 == CT_Empty;
-			if (!bIsSlot4Empty && g_Slot4 != CT_MockingboardC)
-				EnableWindow(GetDlgItem(window, IDC_PHASOR_ENABLE), FALSE);	// Disable Phasor (slot 4)
-
-			if ((!bIsSlot4Empty || !bIsSlot5Empty) && g_Slot4 != CT_Phasor)
-				EnableWindow(GetDlgItem(window, IDC_MB_ENABLE), FALSE);		// Disable Mockingboard (slot 4 & 5)
-
-			EnableWindow(GetDlgItem(window, IDC_MB_VOLUME), (m_nCurrentIDCheckButton != IDC_SOUNDCARD_DISABLE) ? TRUE : FALSE);
-
-			m_uAfterClose = 0;
 			break;
 		}
 	}
@@ -139,54 +95,64 @@ BOOL CPageSound::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARA
 	return FALSE;
 }
 
-void CPageSound::DlgOK(HWND window)
+void CPageSound::DlgOK(HWND hWnd)
 {
-	DWORD newsoundtype  = (DWORD)SendDlgItemMessage(window,IDC_SOUNDTYPE,CB_GETCURSEL,0,0);
+	const DWORD dwNewSoundType = (DWORD) SendDlgItemMessage(hWnd, IDC_SOUNDTYPE, CB_GETCURSEL, 0, 0);
 
-	DWORD dwSpkrVolume = SendDlgItemMessage(window,IDC_SPKR_VOLUME,TBM_GETPOS,0,0);
-	DWORD dwMBVolume   = SendDlgItemMessage(window,IDC_MB_VOLUME,TBM_GETPOS,0,0);
+	const DWORD dwSpkrVolume = SendDlgItemMessage(hWnd, IDC_SPKR_VOLUME, TBM_GETPOS, 0, 0);
+	const DWORD dwMBVolume = SendDlgItemMessage(hWnd, IDC_MB_VOLUME, TBM_GETPOS, 0, 0);
 
-	if (!SpkrSetEmulationType(window,newsoundtype))
+	if (SpkrSetEmulationType(hWnd, dwNewSoundType))
 	{
-		m_uAfterClose = 0;
-		return;
+		REGSAVE(TEXT("Sound Emulation"), soundtype);
 	}
 
 	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence
 	SpkrSetVolume(dwSpkrVolume, VOLUME_MAX);
 	MB_SetVolume(dwMBVolume, VOLUME_MAX);
 
-	REGSAVE(TEXT("Sound Emulation"),soundtype);
-	REGSAVE(TEXT(REGVALUE_SPKR_VOLUME),SpkrGetVolume());
-	REGSAVE(TEXT(REGVALUE_MB_VOLUME),MB_GetVolume());
+	REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
+	REGSAVE(TEXT(REGVALUE_MB_VOLUME), MB_GetVolume());
 
-	if (m_SoundcardSlotChange != CARD_UNCHANGED)
-	{
-		MB_SetSoundcardType(m_NewCardType);
-
-		if (m_NewCardType == CT_MockingboardC)
-		{
-			m_PropertySheetHelper.SetSlot4(CT_MockingboardC);
-			m_PropertySheetHelper.SetSlot5(CT_MockingboardC);
-		}
-		else if (m_NewCardType == CT_Phasor)
-		{
-			m_PropertySheetHelper.SetSlot4(CT_Phasor);
-			if (g_Slot5 == CT_MockingboardC)
-				m_PropertySheetHelper.SetSlot5(CT_Empty);
-		}
-		else
-		{
-			m_PropertySheetHelper.SetSlot4(CT_Empty);
-			if (g_Slot5 == CT_MockingboardC)
-				m_PropertySheetHelper.SetSlot5(CT_Empty);
-		}
-	}
-
-	m_PropertySheetHelper.PostMsgAfterClose(m_Page, m_uAfterClose);
+	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 
-bool CPageSound::NewSoundcardConfigured(HWND window, WPARAM wparam, LPCSTR pMsg)
+void CPageSound::InitOptions(HWND hWnd)
+{
+	// CheckRadioButton
+	if(m_NewCardType == CT_MockingboardC)
+		m_nCurrentIDCheckButton = IDC_MB_ENABLE;
+	else if(m_NewCardType == CT_Phasor)
+		m_nCurrentIDCheckButton = IDC_PHASOR_ENABLE;
+	else
+		m_nCurrentIDCheckButton = IDC_SOUNDCARD_DISABLE;
+
+	CheckRadioButton(hWnd, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, m_nCurrentIDCheckButton);
+
+	//
+
+	const SS_CARDTYPE Slot4 = m_PropertySheetHelper.GetConfigNew().m_Slot[4];
+	const SS_CARDTYPE Slot5 = m_PropertySheetHelper.GetConfigNew().m_Slot[5];
+
+	const bool bIsSlot4Empty = Slot4 == CT_Empty;
+	const bool bIsSlot5Empty = Slot5 == CT_Empty;
+
+	// Phasor button
+	{
+		const BOOL bEnable = bIsSlot4Empty || Slot4 == CT_MockingboardC;
+		EnableWindow(GetDlgItem(hWnd, IDC_PHASOR_ENABLE), bEnable);	// Disable Phasor (slot 4)
+	}
+
+	// Mockingboard button
+	{
+		const BOOL bEnable = (bIsSlot4Empty || Slot4 == CT_Phasor) && bIsSlot5Empty;
+		EnableWindow(GetDlgItem(hWnd, IDC_MB_ENABLE), bEnable);		// Disable Mockingboard (slot 4 & 5)
+	}
+
+	EnableWindow(GetDlgItem(hWnd, IDC_MB_VOLUME), (m_nCurrentIDCheckButton != IDC_SOUNDCARD_DISABLE) ? TRUE : FALSE);
+}
+
+bool CPageSound::NewSoundcardConfigured(HWND hWnd, WPARAM wparam, SS_CARDTYPE NewCardType)
 {
 	if (HIWORD(wparam) != BN_CLICKED)
 		return false;
@@ -194,19 +160,27 @@ bool CPageSound::NewSoundcardConfigured(HWND window, WPARAM wparam, LPCSTR pMsg)
 	if (LOWORD(wparam) == m_nCurrentIDCheckButton)
 		return false;
 
-	if ( (MessageBox(window,
-			pMsg,
-			TEXT("Configuration"),
-			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
-		&& m_PropertySheetHelper.IsOkToRestart(window) )
+	m_NewCardType = NewCardType;
+
+	const SS_CARDTYPE Slot5 = m_PropertySheetHelper.GetConfigNew().m_Slot[5];
+
+	if (NewCardType == CT_MockingboardC)
 	{
-		m_nCurrentIDCheckButton = LOWORD(wparam);
-		m_uAfterClose = WM_USER_RESTART;
-		PropSheet_PressButton(GetParent(window), PSBTN_OK);
-		return true;
+		m_PropertySheetHelper.GetConfigNew().m_Slot[4] = CT_MockingboardC;
+		m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_MockingboardC;
+	}
+	else if (NewCardType == CT_Phasor)
+	{
+		m_PropertySheetHelper.GetConfigNew().m_Slot[4] = CT_Phasor;
+		if (Slot5 == CT_MockingboardC)
+			m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_Empty;
+	}
+	else
+	{
+		m_PropertySheetHelper.GetConfigNew().m_Slot[4] = CT_Empty;
+		if (Slot5 == CT_MockingboardC)
+			m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_Empty;
 	}
 
-	// Restore original state
-	CheckRadioButton(window, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, m_nCurrentIDCheckButton);
-	return false;
+	return true;
 }

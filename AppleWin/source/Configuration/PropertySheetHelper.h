@@ -1,5 +1,6 @@
 #pragma once
 #include "PropertySheetDefs.h"
+#include "Config.h"
 
 class CPropertySheetHelper
 {
@@ -7,23 +8,20 @@ public:
 	CPropertySheetHelper() :
 		m_LastPage(PG_CONFIG),
 		m_bmPages(0),
-		m_UIControlFreezeDlgButton(UI_UNDEFINED),
-		m_UIControlCloneDropdownMenu(UI_UNDEFINED),
 		m_bSSNewFilename(false)
 	{}
 	virtual ~CPropertySheetHelper(){}
 
-	bool IsOkToRestart(HWND window);
 	void FillComboBox(HWND window, int controlid, LPCTSTR choices, int currentchoice);
-	void SaveComputerType(eApple2Type NewApple2Type);
 	void SetSlot4(SS_CARDTYPE NewCardType);
 	void SetSlot5(SS_CARDTYPE NewCardType);
 	string BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE,TCHAR* FILEMASKS);
 	void SaveStateUpdate();
 	void GetDiskBaseNameWithAWS(TCHAR* pszFilename);
 	int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave);
-	void PostMsgAfterClose(PAGETYPE page, UINT uAfterClose);
+	void PostMsgAfterClose(HWND hWnd, PAGETYPE page);
 
+	void ResetPageMask(void) { m_bmPages = 0; }	// Req'd because cancelling doesn't clear the page-mask
 	PAGETYPE GetLastPage(void) { return m_LastPage; }
 	void SetLastPage(PAGETYPE page)
 	{
@@ -31,20 +29,28 @@ public:
 		m_bmPages |= 1<<(UINT32)page;
 	}
 
-	UICONTROLSTATE GetUIControlFreezeDlgButton(void) { return m_UIControlFreezeDlgButton; }
-	void SetUIControlFreezeDlgButton(UICONTROLSTATE state) { m_UIControlFreezeDlgButton = state; }
-	UICONTROLSTATE GetUIControlCloneDropdownMenu(void) { return m_UIControlCloneDropdownMenu; }
-	void SetUIControlCloneDropdownMenu(UICONTROLSTATE state) { m_UIControlCloneDropdownMenu = state; }
+	void SaveCurrentConfig(void);
 	char* GetSSNewFilename(void) { return &m_szSSNewFilename[0]; }
 	void ClearSSNewDirectory(void) { m_szSSNewDirectory[0] = 0; }
+//	const CConfigNeedingRestart& GetConfigOld(void) { return m_ConfigOld; }
+	CConfigNeedingRestart& GetConfigNew(void) { return m_ConfigNew; }
 
 private:
+	bool IsOkToRestart(HWND hWnd);
+	void SaveComputerType(eApple2Type NewApple2Type);
+	bool HardwareConfigChanged(HWND hWnd);
+	bool CheckChangesForRestart(HWND hWnd);
+	void ApplyNewConfig(void);
+	void RestoreCurrentConfig(void);
+	std::string GetSlot(const UINT uSlot);
+	std::string GetCardName(const SS_CARDTYPE CardType);
+
 	PAGETYPE m_LastPage;
 	UINT32 m_bmPages;
-	UICONTROLSTATE m_UIControlFreezeDlgButton;
-	UICONTROLSTATE m_UIControlCloneDropdownMenu;
 	char m_szNewFilename[MAX_PATH];
 	bool m_bSSNewFilename;
 	char m_szSSNewDirectory[MAX_PATH];
 	char m_szSSNewFilename[MAX_PATH];
+	CConfigNeedingRestart m_ConfigOld;
+	CConfigNeedingRestart m_ConfigNew;
 };

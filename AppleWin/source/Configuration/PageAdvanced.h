@@ -4,41 +4,40 @@
 #include "PropertySheetDefs.h"
 class CPropertySheetHelper;
 
-class CPageAdvanced : public IPropertySheetPage
+class CPageAdvanced : private IPropertySheetPage
 {
 public:
 	CPageAdvanced(CPropertySheetHelper& PropertySheetHelper) :
 		m_Page(PG_ADVANCED),
 		m_PropertySheetHelper(PropertySheetHelper),
-		m_uAfterClose(0),
 		m_uTheFreezesF8Rom(0)
 	{
 		CPageAdvanced::ms_this = this;
 	}
 	virtual ~CPageAdvanced(){}
 
-	static BOOL CALLBACK DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
+	static BOOL CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
 	UINT GetTheFreezesF8Rom(void){ return m_uTheFreezesF8Rom; }
 	void SetTheFreezesF8Rom(UINT uValue){ m_uTheFreezesF8Rom = uValue; }
 
 protected:
 	// IPropertySheetPage
-	virtual BOOL DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
-	virtual void DlgOK(HWND window);
-	virtual void DlgCANCEL(HWND window){}
+	virtual BOOL DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	virtual void DlgOK(HWND hWnd);
+	virtual void DlgCANCEL(HWND hWnd){}
 
 private:
+	void InitOptions(HWND hWnd);
 	eApple2Type GetCloneType(DWORD NewMenuItem);
 	int GetCloneMenuItem(void);
-	void InitFreezeDlgButton(HWND window);
-	void InitCloneDropdownMenu(HWND window);
+	void InitFreezeDlgButton(HWND hWnd);
+	void InitCloneDropdownMenu(HWND hWnd);
 
 	static CPageAdvanced* ms_this;
 	static const TCHAR m_CloneChoices[];
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;
-	UINT m_uAfterClose;
 	UINT m_uTheFreezesF8Rom;
 };

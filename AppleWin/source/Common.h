@@ -174,6 +174,16 @@ enum eApple2Type {
 					A2TYPE_MAX
 				};
 
+inline bool IsApple2(eApple2Type type)
+{
+	return (type & (APPLE2E_MASK|APPLE2C_MASK)) == 0;
+}
+
+inline bool IsClone(eApple2Type type)
+{
+	return (type & APPLECLONE_MASK) != 0;
+}
+
 enum eBUTTON {BUTTON0=0, BUTTON1};
 
 enum eBUTTONSTATE {BUTTON_UP=0, BUTTON_DOWN};

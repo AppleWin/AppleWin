@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2009, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2012, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -72,28 +72,29 @@ void CPropertySheet::Init(void)
 	PropSheetHeader.hwndParent = g_hFrameWindow;
 	PropSheetHeader.pszCaption = "AppleWin Configuration";
 	PropSheetHeader.nPages = PG_NUM_SHEETS;
-	PropSheetHeader.nStartPage = g_PropertySheetHelper.GetLastPage();
+	PropSheetHeader.nStartPage = m_PropertySheetHelper.GetLastPage();
 	PropSheetHeader.ppsp = PropSheetPages;
 
-	g_PropertySheetHelper.SetUIControlFreezeDlgButton(UI_UNDEFINED);
-	g_PropertySheetHelper.SetUIControlCloneDropdownMenu(UI_UNDEFINED);
-	int i = PropertySheet(&PropSheetHeader);	// Result: 0=Cancel, 1=OK
+	m_PropertySheetHelper.ResetPageMask();
+	m_PropertySheetHelper.SaveCurrentConfig();
+
+	INT_PTR nRes = PropertySheet(&PropSheetHeader);	// Result: 0=Cancel, 1=OK
 }
 
 DWORD CPropertySheet::GetVolumeMax()
 {
-	return g_PageSound.GetVolumeMax();
+	return m_PageSound.GetVolumeMax();
 }
 
 // Called when F11/F12 is pressed
 bool CPropertySheet::SaveStateSelectImage(HWND hWindow, bool bSave)
 {
-	g_PropertySheetHelper.ClearSSNewDirectory();
+	m_PropertySheetHelper.ClearSSNewDirectory();
 
-	if(g_PropertySheetHelper.SaveStateSelectImage(hWindow, bSave ? TEXT("Select Save State file")
+	if(m_PropertySheetHelper.SaveStateSelectImage(hWindow, bSave ? TEXT("Select Save State file")
 																 : TEXT("Select Load State file"), bSave))
 	{
-		g_PropertySheetHelper.SaveStateUpdate();
+		m_PropertySheetHelper.SaveStateUpdate();
 		return true;
 	}
 	else

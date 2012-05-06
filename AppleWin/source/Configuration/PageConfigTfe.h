@@ -3,7 +3,7 @@
 #include "IPropertySheetPage.h"
 #include "..\Tfe\Uilib.h"
 
-class CPageConfigTfe : public IPropertySheetPage
+class CPageConfigTfe : private IPropertySheetPage
 {
 public:
 	CPageConfigTfe()

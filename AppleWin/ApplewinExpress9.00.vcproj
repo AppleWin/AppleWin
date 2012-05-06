@@ -842,6 +842,14 @@
 				Name="Configuration"
 				>
 				<File
+					RelativePath=".\source\Configuration\Config.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\IPropertySheet.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Configuration\IPropertySheetPage.h"
 					>
 				</File>

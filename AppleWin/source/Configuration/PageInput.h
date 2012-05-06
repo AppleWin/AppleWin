@@ -3,16 +3,14 @@
 #include "IPropertySheetPage.h"
 #include "PropertySheetDefs.h"
 class CPropertySheetHelper;
+class CConfigNeedingRestart;
 
-class CPageInput : public IPropertySheetPage
+class CPageInput : private IPropertySheetPage
 {
 public:
 	CPageInput(CPropertySheetHelper& PropertySheetHelper) :
 		m_Page(PG_INPUT),
 		m_PropertySheetHelper(PropertySheetHelper),
-		m_uAfterClose(0),
-		m_MousecardSlotChange(CARD_UNCHANGED),
-		m_CPMcardSlotChange(CARD_UNCHANGED),
 		m_uScrollLockToggle(0),
 		m_uMouseShowCrosshair(0),
 		m_uMouseRestrictToWindow(0),
@@ -33,13 +31,15 @@ public:
 
 protected:
 	// IPropertySheetPage
-	virtual BOOL DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
-	virtual void DlgOK(HWND window);
-	virtual void DlgCANCEL(HWND window){}
+	virtual BOOL DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	virtual void DlgOK(HWND hWnd);
+	virtual void DlgCANCEL(HWND hWnd){}
 
 private:
-	void InitJoystickChoices(HWND window, int nJoyNum, int nIdcValue);
-	void InitCPMChoices(HWND window);
+	void InitOptions(HWND hWnd);
+	void InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue);
+	void InitSlotOptions(HWND hWnd);
+	void InitCPMChoices(HWND hWnd);
 
 	static CPageInput* ms_this;
 	static const UINT MaxMenuChoiceLen = 40;
@@ -67,10 +67,7 @@ private:
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;
-	UINT m_uAfterClose;
 
-	CARDSTATE m_MousecardSlotChange;
-	CARDSTATE m_CPMcardSlotChange;
 	UINT m_uScrollLockToggle;
 	UINT m_uMouseShowCrosshair;
 	UINT m_uMouseRestrictToWindow;

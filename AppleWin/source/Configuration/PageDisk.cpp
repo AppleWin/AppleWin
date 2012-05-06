@@ -11,13 +11,13 @@ const TCHAR CPageDisk::m_discchoices[] =
 				TEXT("Enhanced Speed\0");
 
 
-BOOL CALLBACK CPageDisk::DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
+BOOL CALLBACK CPageDisk::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
-	return CPageDisk::ms_this->DlgProcInternal(window, message, wparam, lparam);
+	return CPageDisk::ms_this->DlgProcInternal(hWnd, message, wparam, lparam);
 }
 
-BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
+BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{
@@ -30,19 +30,20 @@ BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM
 			case PSN_SETACTIVE:
 				// About to become the active page
 				m_PropertySheetHelper.SetLastPage(m_Page);
+				InitOptions(hWnd);
 				break;
 			case PSN_KILLACTIVE:
-				SetWindowLong(window, DWL_MSGRESULT, FALSE);			// Changes are valid
+				SetWindowLong(hWnd, DWL_MSGRESULT, FALSE);			// Changes are valid
 				break;
 			case PSN_APPLY:
-				DlgOK(window);
-				SetWindowLong(window, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
+				DlgOK(hWnd);
+				SetWindowLong(hWnd, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
 				// Can use this to ask user to confirm cancel
 				break;
 			case PSN_RESET:
-				DlgCANCEL(window);
+				DlgCANCEL(hWnd);
 				break;
 			}
 		}
@@ -53,69 +54,70 @@ BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM
 		{
 		case IDC_DISK1:
 			DiskSelect(DRIVE_1);
-			SendDlgItemMessage(window, IDC_EDIT_DISK1, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_1));
+			SendDlgItemMessage(hWnd, IDC_EDIT_DISK1, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_1));
 			FrameRefreshStatus(DRAW_BUTTON_DRIVES);
 			break;
 
 		case IDC_DISK2:
 			DiskSelect(DRIVE_2);
-			SendDlgItemMessage(window, IDC_EDIT_DISK2, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_2));
+			SendDlgItemMessage(hWnd, IDC_EDIT_DISK2, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_2));
 			FrameRefreshStatus(DRAW_BUTTON_DRIVES);
 			break;
 
 		case IDC_HDD1:
-			if(IsDlgButtonChecked(window, IDC_HDD_ENABLE))
+			if(IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE))
 			{
 				HD_Select(HARDDISK_1);
-				SendDlgItemMessage(window, IDC_EDIT_HDD1, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_1));
+				SendDlgItemMessage(hWnd, IDC_EDIT_HDD1, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_1));
 			}
 			break;
 
 		case IDC_HDD2:
-			if(IsDlgButtonChecked(window, IDC_HDD_ENABLE))
+			if(IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE))
 			{
 				HD_Select(HARDDISK_2);
-				SendDlgItemMessage(window, IDC_EDIT_HDD2, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_2));
+				SendDlgItemMessage(hWnd, IDC_EDIT_HDD2, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_2));
 			}
 			break;
 
 		case IDC_HDD_ENABLE:
-			EnableHDD(window, IsDlgButtonChecked(window, IDC_HDD_ENABLE));
+			EnableHDD(hWnd, IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE));
 			break;
 
 		case IDC_CIDERPRESS_BROWSE:
 			{
-				string CiderPressLoc = m_PropertySheetHelper.BrowseToFile(window, TEXT("Select path to CiderPress"), REGVALUE_CIDERPRESSLOC, TEXT("Applications (*.exe)\0*.exe\0") TEXT("All Files\0*.*\0") );
-				RegSaveString(TEXT("Configuration"),REGVALUE_CIDERPRESSLOC,1,CiderPressLoc.c_str());
-				SendDlgItemMessage(window, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM) CiderPressLoc.c_str());
+				string CiderPressLoc = m_PropertySheetHelper.BrowseToFile(hWnd, TEXT("Select path to CiderPress"), REGVALUE_CIDERPRESSLOC, TEXT("Applications (*.exe)\0*.exe\0") TEXT("All Files\0*.*\0") );
+				RegSaveString(TEXT(REG_CONFIG), REGVALUE_CIDERPRESSLOC, 1, CiderPressLoc.c_str());
+				SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM) CiderPressLoc.c_str());
 			}
 			break;
 		}
 		break;
 
-	case WM_INITDIALOG: //Init disk settings dialog
+	case WM_INITDIALOG:
 		{
-			m_PropertySheetHelper.FillComboBox(window,IDC_DISKTYPE,m_discchoices,enhancedisk);
+			m_PropertySheetHelper.FillComboBox(hWnd,IDC_DISKTYPE,m_discchoices,enhancedisk);
 
-			SendDlgItemMessage(window,IDC_EDIT_DISK1,WM_SETTEXT,0,(LPARAM)DiskGetFullName(DRIVE_1));
-			SendDlgItemMessage(window,IDC_EDIT_DISK2,WM_SETTEXT,0,(LPARAM)DiskGetFullName(DRIVE_2));
+			SendDlgItemMessage(hWnd, IDC_EDIT_DISK1, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_1));
+			SendDlgItemMessage(hWnd, IDC_EDIT_DISK2, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_2));
 
-			SendDlgItemMessage(window,IDC_EDIT_HDD1,WM_SETTEXT,0,(LPARAM)HD_GetFullName(HARDDISK_1));
-			SendDlgItemMessage(window,IDC_EDIT_HDD2,WM_SETTEXT,0,(LPARAM)HD_GetFullName(HARDDISK_2));
+			SendDlgItemMessage(hWnd, IDC_EDIT_HDD1, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_1));
+			SendDlgItemMessage(hWnd, IDC_EDIT_HDD2, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_2));
 
 			//
 
 			TCHAR PathToCiderPress[MAX_PATH] = "";
 			RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress,MAX_PATH);
-			SendDlgItemMessage(window,IDC_CIDERPRESS_FILENAME ,WM_SETTEXT,0,(LPARAM)PathToCiderPress);
+			SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME ,WM_SETTEXT, 0, (LPARAM)PathToCiderPress);
 
 			//
 
-			CheckDlgButton(window, IDC_HDD_ENABLE, HD_CardIsEnabled() ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_HDD_ENABLE, HD_CardIsEnabled() ? BST_CHECKED : BST_UNCHECKED);
 
-			EnableHDD(window, IsDlgButtonChecked(window, IDC_HDD_ENABLE));
+			EnableHDD(hWnd, IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE));
 
-			m_uAfterClose = 0;
+			InitOptions(hWnd);
+
 			break;
 		}
 
@@ -125,7 +127,7 @@ BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM
 			POINT pt;		// location of mouse click
 
 			// Get the bounding rectangle of the client area.
-			GetClientRect(window, (LPRECT) &rect);
+			GetClientRect(hWnd, (LPRECT) &rect);
 
 			// Get the client coordinates for the mouse click.
 			pt.x = GET_X_LPARAM(lparam);
@@ -147,7 +149,7 @@ BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM
 				HMENU hMenuTrackPopup = GetSubMenu(hMenu, 0);	// shortcut menu
 
 				// TrackPopup uses screen coordinates, so convert the coordinates of the mouse click to screen coordinates.
-				ClientToScreen(window, (LPPOINT) &pt);
+				ClientToScreen(hWnd, (LPPOINT) &pt);
 
 				if (Disk_IsDriveEmpty(DRIVE_1))
 					EnableMenuItem(hMenu, ID_DISKMENU_EJECT_DISK1, MF_GRAYED);
@@ -164,7 +166,7 @@ BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM
 					, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RETURNCMD
 					, pt.x, pt.y
 					, 0
-					, window, NULL );
+					, hWnd, NULL );
 
 				if (iCommand)
 				{
@@ -189,19 +191,19 @@ BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM
 				{
 				case ID_DISKMENU_EJECT_DISK1:
 					DiskEject(DRIVE_1);
-					SendDlgItemMessage(window, IDC_EDIT_DISK1, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_1));
+					SendDlgItemMessage(hWnd, IDC_EDIT_DISK1, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_1));
 					break;
 				case ID_DISKMENU_EJECT_DISK2:
 					DiskEject(DRIVE_2);
-					SendDlgItemMessage(window, IDC_EDIT_DISK2, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_2));
+					SendDlgItemMessage(hWnd, IDC_EDIT_DISK2, WM_SETTEXT, 0, (LPARAM)DiskGetFullName(DRIVE_2));
 					break;
 				case ID_DISKMENU_UNPLUG_HARDDISK1:
 					HD_Unplug(HARDDISK_1);
-					SendDlgItemMessage(window, IDC_EDIT_HDD1, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_1));
+					SendDlgItemMessage(hWnd, IDC_EDIT_HDD1, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_1));
 					break;
 				case ID_DISKMENU_UNPLUG_HARDDISK2:
 					HD_Unplug(HARDDISK_2);
-					SendDlgItemMessage(window, IDC_EDIT_HDD2, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_2));
+					SendDlgItemMessage(hWnd, IDC_EDIT_HDD2, WM_SETTEXT, 0, (LPARAM)HD_GetFullName(HARDDISK_2));
 					break;
 				}
 
@@ -216,40 +218,37 @@ BOOL CPageDisk::DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM
 	return FALSE;
 }
 
-void CPageDisk::DlgOK(HWND window)
+void CPageDisk::DlgOK(HWND hWnd)
 {
-	BOOL newdisktype = (BOOL) SendDlgItemMessage(window,IDC_DISKTYPE,CB_GETCURSEL,0,0);
-
-	if (newdisktype != enhancedisk)
+	const BOOL bNewEnhanceDisk = (BOOL) SendDlgItemMessage(hWnd, IDC_DISKTYPE,CB_GETCURSEL, 0, 0);
+	if (bNewEnhanceDisk != enhancedisk)
 	{
-		if (MessageBox(window,
-			TEXT("You have changed the disk speed setting.  ")
-			TEXT("This change will not take effect ")
-			TEXT("until the next time you restart the ")
-			TEXT("emulator.\n\n")
-			TEXT("Would you like to restart the emulator now?"),
-			TEXT("Configuration"),
-			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
-			m_uAfterClose = WM_USER_RESTART;
+		m_PropertySheetHelper.GetConfigNew().m_bEnhanceDisk = bNewEnhanceDisk;
 	}
 
-	bool bHDDIsEnabled = IsDlgButtonChecked(window, IDC_HDD_ENABLE) ? true : false;
-	HD_SetEnabled(bHDDIsEnabled);
-
-	REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED),newdisktype);
-	REGSAVE(TEXT(REGVALUE_HDD_ENABLED), bHDDIsEnabled ? 1 : 0);
+	const bool bNewHDDIsEnabled = IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE) ? true : false;
+	if (bNewHDDIsEnabled != HD_CardIsEnabled())
+	{
+		m_PropertySheetHelper.GetConfigNew().m_bEnableHDD = bNewHDDIsEnabled;
+	}
 
 	RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_1), 1, HD_GetFullPathName(HARDDISK_1));
 	RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_2), 1, HD_GetFullPathName(HARDDISK_2));
 
-	m_PropertySheetHelper.PostMsgAfterClose(m_Page, m_uAfterClose);
+	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 
-void CPageDisk::EnableHDD(HWND window, BOOL bEnable)
+void CPageDisk::InitOptions(HWND hWnd)
 {
-	EnableWindow(GetDlgItem(window, IDC_HDD1), bEnable);
-	EnableWindow(GetDlgItem(window, IDC_EDIT_HDD1), bEnable);
+	// Nothing to do:
+	// - no changes made on any other pages affect this page
+}
 
-	EnableWindow(GetDlgItem(window, IDC_HDD2), bEnable);
-	EnableWindow(GetDlgItem(window, IDC_EDIT_HDD2), bEnable);
+void CPageDisk::EnableHDD(HWND hWnd, BOOL bEnable)
+{
+	EnableWindow(GetDlgItem(hWnd, IDC_HDD1), bEnable);
+	EnableWindow(GetDlgItem(hWnd, IDC_EDIT_HDD1), bEnable);
+
+	EnableWindow(GetDlgItem(hWnd, IDC_HDD2), bEnable);
+	EnableWindow(GetDlgItem(hWnd, IDC_EDIT_HDD2), bEnable);
 }
