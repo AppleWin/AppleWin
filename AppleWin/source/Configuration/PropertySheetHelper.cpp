@@ -44,8 +44,8 @@ Disk
 . Enhanced disk speed	WM_USER_RESTART					Why?
 . HDD enable			WM_USER_RESTART
 Advanced
-. Save State			WM_USER_SAVESTATE
-. Load State			WM_USER_LOADSTATE
+. Save State			WM_USER_SAVESTATE				TODO: Forces PSBTN_OK (since any config changes are discarded)
+. Load State			WM_USER_LOADSTATE				TODO: Forces PSBTN_OK (since any config changes are discarded)
 . Clone					WM_USER_RESTART
 . MrFreeze Rom			WM_USER_RESTART
 
@@ -308,8 +308,7 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 
 	if (m_ConfigNew.m_bDoBenchmark)
 	{
-		uAfterClose = WM_USER_BENCHMARK;	// which implies WM_USER_RESTART
-		m_ConfigNew = m_ConfigOld.m_bDoBenchmark;
+		uAfterClose = WM_USER_BENCHMARK;	// which implies WM_USER_RESTART (actually it doesn't)
 	}
 
 	if (uAfterClose)
@@ -427,7 +426,15 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 	if (strMsgMain.empty())
 	{
-		_ASSERT(0);
+		if (CONFIG_CHANGED(m_bDoBenchmark))
+			strMsg = "The emulator needs to restart to perform the benchmark.\n";
+		else
+			_ASSERT(0);
+	}
+	else
+	{
+		if (CONFIG_CHANGED(m_bDoBenchmark))
+			strMsgMain += ". Benchmark\n";
 	}
 
 	std::string strMsgPost("\n");
