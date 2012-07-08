@@ -8,7 +8,8 @@ public:
 	CPropertySheetHelper() :
 		m_LastPage(PG_CONFIG),
 		m_bmPages(0),
-		m_bSSNewFilename(false)
+		m_bSSNewFilename(false),
+		m_bDoBenchmark(false)
 	{}
 	virtual ~CPropertySheetHelper(){}
 
@@ -34,8 +35,11 @@ public:
 	void ClearSSNewDirectory(void) { m_szSSNewDirectory[0] = 0; }
 //	const CConfigNeedingRestart& GetConfigOld(void) { return m_ConfigOld; }
 	CConfigNeedingRestart& GetConfigNew(void) { return m_ConfigNew; }
+	bool IsConfigChanged(void) { return m_ConfigNew != m_ConfigOld; }
+	void SetDoBenchmark(void) { m_bDoBenchmark = true; }
 
 private:
+	bool IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged);
 	bool IsOkToRestart(HWND hWnd);
 	void SaveComputerType(eApple2Type NewApple2Type);
 	bool HardwareConfigChanged(HWND hWnd);
@@ -53,4 +57,5 @@ private:
 	char m_szSSNewFilename[MAX_PATH];
 	CConfigNeedingRestart m_ConfigOld;
 	CConfigNeedingRestart m_ConfigNew;
+	bool m_bDoBenchmark;
 };

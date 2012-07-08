@@ -74,7 +74,9 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 			break;
 
 		case IDC_BENCHMARK:
-			m_PropertySheetHelper.GetConfigNew().m_bDoBenchmark = true;
+			if (!IsOkToBenchmark(hWnd, m_PropertySheetHelper.IsConfigChanged()))
+				break;
+			m_PropertySheetHelper.SetDoBenchmark();
 			PropSheet_PressButton(GetParent(hWnd), PSBTN_OK);
 			break;
 
@@ -260,4 +262,31 @@ void CPageConfig::EnableTrackbar(HWND hWnd, BOOL enable)
 void CPageConfig::ui_tfe_settings_dialog(HWND hwnd)
 {
 	DialogBox(g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hwnd, CPageConfigTfe::DlgProc);
+}
+
+bool CPageConfig::IsOkToBenchmark(HWND hWnd, const bool bConfigChanged)
+{
+	if (bConfigChanged)
+	{
+		if (MessageBox(hWnd,
+				TEXT("The hardware configuration has changed. Benchmarking will lose these changes.\n\n")
+				TEXT("Are you sure you want to do this?"),
+				TEXT("Benchmarks"),
+				MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
+			return false;
+	}
+
+	if (g_nAppMode == MODE_LOGO)
+		return true;
+
+	if (MessageBox(hWnd,
+			TEXT("Running the benchmarks will reset the state of ")
+			TEXT("the emulated machine, causing you to lose any ")
+			TEXT("unsaved work.\n\n")
+			TEXT("Are you sure you want to do this?"),
+			TEXT("Benchmarks"),
+			MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDNO)
+		return false;
+
+	return true;
 }

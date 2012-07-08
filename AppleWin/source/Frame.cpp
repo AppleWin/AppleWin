@@ -1320,15 +1320,6 @@ LRESULT CALLBACK FrameWndProc (
       break;
 
     case WM_USER_BENCHMARK: {
-      if (g_nAppMode != MODE_LOGO)
-        if (MessageBox(g_hFrameWindow,
-                       TEXT("Running the benchmarks will reset the state of ")
-                       TEXT("the emulated machine, causing you to lose any ")
-                       TEXT("unsaved work.\n\n")
-                       TEXT("Are you sure you want to do this?"),
-                       TEXT("Benchmarks"),
-                       MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDNO)
-          break;
       UpdateWindow(window);
       ResetMachineState();
       g_nAppMode = MODE_LOGO;

@@ -8,7 +8,6 @@ public:
 	CConfigNeedingRestart(UINT bEnableTheFreezesF8Rom = false) :
 		m_Apple2Type(g_Apple2Type),
 		m_bEnhanceDisk(enhancedisk),
-		m_bDoBenchmark(false),
 		m_uSaveLoadStateMsg(0)
 	{
 		m_bEnableHDD = HD_CardIsEnabled();
@@ -25,7 +24,6 @@ public:
 		m_bEnhanceDisk = other.m_bEnhanceDisk;
 		m_bEnableHDD = other.m_bEnableHDD;
 		m_bEnableTheFreezesF8Rom = other.m_bEnableTheFreezesF8Rom;
-		m_bDoBenchmark = other.m_bDoBenchmark;
 		m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
 		return *this;
 	}
@@ -37,7 +35,6 @@ public:
 				m_bEnhanceDisk == other.m_bEnhanceDisk &&
 				m_bEnableHDD == other.m_bEnableHDD &&
 				m_bEnableTheFreezesF8Rom == other.m_bEnableTheFreezesF8Rom &&
-				m_bDoBenchmark == other.m_bDoBenchmark &&
 				m_uSaveLoadStateMsg == other.m_uSaveLoadStateMsg;
 	}
 
@@ -51,6 +48,5 @@ public:
 	BOOL m_bEnhanceDisk;
 	bool m_bEnableHDD;
 	UINT m_bEnableTheFreezesF8Rom;
-	bool m_bDoBenchmark;
 	UINT m_uSaveLoadStateMsg;
 };

@@ -71,29 +71,10 @@ Design:
   - so this can just discard any config changes
   - if any config change, then show msg box to say they won't be applied
 . Benchmark button
-  - Action it immediately (yes).
-  - But apply or discard config changes?
-  - Could discard & show msg box like Load/Save State (for consistency)  
+  - Action it immediately.
+  - If config has changed:
+    - Prompt to either do benchmark (and lose new config) or cancel benchmark (and drop back to Configuration dialog).
 */
-
-// NB. This used to be in FrameWndProc() for case WM_USER_RESTART:
-// - but this is too late to cancel, since new configurations have already been changed.
-bool CPropertySheetHelper::IsOkToRestart(HWND hWnd)
-{
-	if (g_nAppMode == MODE_LOGO)
-		return true;
-
-	if (MessageBox(hWnd,
-			TEXT("Restarting the emulator will reset the state ")
-				"of the emulated machine, causing you to lose any "
-				"unsaved work.\n\n"
-				"Are you sure you want to do this?",
-			TEXT(REG_CONFIG),
-			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
-		return false;
-
-	return true;
-}
 
 void CPropertySheetHelper::FillComboBox(HWND window, int controlid, LPCTSTR choices, int currentchoice)
 {
@@ -283,16 +264,23 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 
 	//
 
-	UINT uAfterClose = 0;
-
-	if (m_ConfigNew.m_uSaveLoadStateMsg)
+	if (m_ConfigNew.m_uSaveLoadStateMsg && IsOkToSaveLoadState(hWnd, IsConfigChanged()))
 	{
-		// Drop any state change, and do load/save state
+		// Drop any config change, and do load/save state
 		PostMessage(g_hFrameWindow, m_ConfigNew.m_uSaveLoadStateMsg, 0, 0);
 		return;
 	}
+	
+	if (m_bDoBenchmark)
+	{
+		// Drop any config change, and do benchmark
+		PostMessage(g_hFrameWindow, WM_USER_BENCHMARK, 0, 0);	// NB. doesn't do WM_USER_RESTART
+		return;
+	}
 
-	if (m_ConfigNew != m_ConfigOld)
+	UINT uAfterClose = 0;
+
+	if (IsConfigChanged())
 	{
 		if (!CheckChangesForRestart(hWnd))
 		{
@@ -304,11 +292,6 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 		ApplyNewConfig();
 
 		uAfterClose = WM_USER_RESTART;
-	}
-
-	if (m_ConfigNew.m_bDoBenchmark)
-	{
-		uAfterClose = WM_USER_BENCHMARK;	// which implies WM_USER_RESTART (actually it doesn't)
 	}
 
 	if (uAfterClose)
@@ -335,7 +318,7 @@ void CPropertySheetHelper::ApplyNewConfig(void)
 	if (CONFIG_CHANGED(m_Apple2Type))
 	{
 		SaveComputerType(m_ConfigNew.m_Apple2Type);
-		g_Apple2Type = m_ConfigNew.m_Apple2Type;									// Is this necessary?
+		//g_Apple2Type = m_ConfigNew.m_Apple2Type;									// Is this necessary?
 	}
 
 	if (CONFIG_CHANGED(m_Slot[4]))
@@ -344,14 +327,14 @@ void CPropertySheetHelper::ApplyNewConfig(void)
 	if (CONFIG_CHANGED(m_Slot[5]))
 		SetSlot5(m_ConfigNew.m_Slot[5]);
 
-	if (m_ConfigNew.m_Slot[4] == CT_MockingboardC || m_ConfigNew.m_Slot[4] == CT_Phasor)
-	{
-		MB_SetSoundcardType(m_ConfigNew.m_Slot[4]);									// Is this necessary?
-	}
-	else
-	{
-		MB_SetSoundcardType(CT_Empty);												// Is this necessary?
-	}
+	//if (m_ConfigNew.m_Slot[4] == CT_MockingboardC || m_ConfigNew.m_Slot[4] == CT_Phasor)
+	//{
+	//	MB_SetSoundcardType(m_ConfigNew.m_Slot[4]);									// Is this necessary?
+	//}
+	//else
+	//{
+	//	MB_SetSoundcardType(CT_Empty);												// Is this necessary?
+	//}
 
 	if (CONFIG_CHANGED(m_bEnhanceDisk))
 		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), m_ConfigNew.m_bEnhanceDisk);
@@ -359,13 +342,13 @@ void CPropertySheetHelper::ApplyNewConfig(void)
 	if (CONFIG_CHANGED(m_bEnableHDD))
 	{
 		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), m_ConfigNew.m_bEnableHDD ? 1 : 0);
-		HD_SetEnabled(m_ConfigNew.m_bEnableHDD);									// Is this necessary?
+		//HD_SetEnabled(m_ConfigNew.m_bEnableHDD);									// Is this necessary?
 	}
 
 	if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
 	{
 		REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), m_ConfigNew.m_bEnableTheFreezesF8Rom);
-		sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigNew.m_bEnableTheFreezesF8Rom);	// Is this necessary?
+		//sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigNew.m_bEnableTheFreezesF8Rom);	// Is this necessary?
 	}
 }
 
@@ -380,8 +363,8 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = sg_PropertySheet.GetTheFreezesF8Rom();
 
 	// Reset flags each time:
-	m_ConfigOld.m_bDoBenchmark = false;
 	m_ConfigOld.m_uSaveLoadStateMsg = 0;
+	m_bDoBenchmark = false;
 
 	// Setup ConfigNew
 	m_ConfigNew = m_ConfigOld;
@@ -396,6 +379,38 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	enhancedisk = m_ConfigOld.m_bEnhanceDisk;
 	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
 	sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
+}
+
+bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged)
+{
+	if (bConfigChanged)
+	{
+		if (MessageBox(hWnd,
+				TEXT("The hardware configuration has changed. Save/Load state will lose these changes.\n\n")
+				TEXT("Are you sure you want to do this?"),
+				TEXT(REG_CONFIG),
+				MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
+			return false;
+	}
+
+	return true;
+}
+
+bool CPropertySheetHelper::IsOkToRestart(HWND hWnd)
+{
+	if (g_nAppMode == MODE_LOGO)
+		return true;
+
+	if (MessageBox(hWnd,
+			TEXT("Restarting the emulator will reset the state ")
+			TEXT("of the emulated machine, causing you to lose any ")
+			TEXT("unsaved work.\n\n")
+			TEXT("Are you sure you want to do this?"),
+			TEXT(REG_CONFIG),
+			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
+		return false;
+
+	return true;
 }
 
 bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
@@ -422,19 +437,6 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
 			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
-	}
-
-	if (strMsgMain.empty())
-	{
-		if (CONFIG_CHANGED(m_bDoBenchmark))
-			strMsg = "The emulator needs to restart to perform the benchmark.\n";
-		else
-			_ASSERT(0);
-	}
-	else
-	{
-		if (CONFIG_CHANGED(m_bDoBenchmark))
-			strMsgMain += ". Benchmark\n";
 	}
 
 	std::string strMsgPost("\n");
