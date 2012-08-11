@@ -44,8 +44,8 @@ Disk
 . Enhanced disk speed	WM_USER_RESTART					Why?
 . HDD enable			WM_USER_RESTART
 Advanced
-. Save State			WM_USER_SAVESTATE				TODO: Forces PSBTN_OK (since any config changes are discarded)
-. Load State			WM_USER_LOADSTATE				TODO: Forces PSBTN_OK (since any config changes are discarded)
+. Save State			WM_USER_SAVESTATE
+. Load State			WM_USER_LOADSTATE
 . Clone					WM_USER_RESTART
 . MrFreeze Rom			WM_USER_RESTART
 
@@ -61,12 +61,12 @@ Design:
   - Show 1 restart + confirm msg (if necessary)
     - Cancel will rollback to original config (for above items), but other items will be applied
 . Load State button
-  - Action it immediately?
+  - Don't action it immediately.
   - .aws should contain config (but doesn't), so should override any config changes.
   - so this can just discard any config changes
   - if any config change, then show msg box to say they won't be applied
 . Save State button
-  - Action it immediately?
+  - Don't action it immediately.
   - save state applies to current config (prior to restart).
   - so this can just discard any config changes
   - if any config change, then show msg box to say they won't be applied
@@ -318,7 +318,6 @@ void CPropertySheetHelper::ApplyNewConfig(void)
 	if (CONFIG_CHANGED(m_Apple2Type))
 	{
 		SaveComputerType(m_ConfigNew.m_Apple2Type);
-		//g_Apple2Type = m_ConfigNew.m_Apple2Type;									// Is this necessary?
 	}
 
 	if (CONFIG_CHANGED(m_Slot[4]))
@@ -327,28 +326,17 @@ void CPropertySheetHelper::ApplyNewConfig(void)
 	if (CONFIG_CHANGED(m_Slot[5]))
 		SetSlot5(m_ConfigNew.m_Slot[5]);
 
-	//if (m_ConfigNew.m_Slot[4] == CT_MockingboardC || m_ConfigNew.m_Slot[4] == CT_Phasor)
-	//{
-	//	MB_SetSoundcardType(m_ConfigNew.m_Slot[4]);									// Is this necessary?
-	//}
-	//else
-	//{
-	//	MB_SetSoundcardType(CT_Empty);												// Is this necessary?
-	//}
-
 	if (CONFIG_CHANGED(m_bEnhanceDisk))
 		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), m_ConfigNew.m_bEnhanceDisk);
 
 	if (CONFIG_CHANGED(m_bEnableHDD))
 	{
 		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), m_ConfigNew.m_bEnableHDD ? 1 : 0);
-		//HD_SetEnabled(m_ConfigNew.m_bEnableHDD);									// Is this necessary?
 	}
 
 	if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
 	{
 		REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), m_ConfigNew.m_bEnableTheFreezesF8Rom);
-		//sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigNew.m_bEnableTheFreezesF8Rom);	// Is this necessary?
 	}
 }
 

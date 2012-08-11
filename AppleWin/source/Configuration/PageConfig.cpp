@@ -285,7 +285,7 @@ bool CPageConfig::IsOkToBenchmark(HWND hWnd, const bool bConfigChanged)
 			TEXT("unsaved work.\n\n")
 			TEXT("Are you sure you want to do this?"),
 			TEXT("Benchmarks"),
-			MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDNO)
+			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
 		return false;
 
 	return true;
