@@ -329,14 +329,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\source\PropertySheetPage.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\source\PropertySheetPage.h"
-				>
-			</File>
-			<File
 				RelativePath=".\source\Registry.cpp"
 				>
 			</File>
@@ -665,6 +657,90 @@
 				</File>
 				<File
 					RelativePath=".\source\Harddisk.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Configuration"
+				>
+				<File
+					RelativePath=".\source\Configuration\Config.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\IPropertySheet.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\IPropertySheetPage.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PageAdvanced.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PageAdvanced.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PageConfig.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PageConfig.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PageConfigTfe.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PageConfigTfe.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PageDisk.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PageDisk.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PageInput.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PageInput.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PageSound.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PageSound.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PropertySheet.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PropertySheet.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PropertySheetDefs.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PropertySheetHelper.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\PropertySheetHelper.h"
 					>
 				</File>
 			</Filter>
