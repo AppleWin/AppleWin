@@ -493,7 +493,7 @@ void JoySetButton(eBUTTON number, eBUTTONSTATE down)
 }
 
 //===========================================================================
-BOOL JoySetEmulationType(HWND window, DWORD newtype, int nJoystickNumber)
+BOOL JoySetEmulationType(HWND window, DWORD newtype, int nJoystickNumber, const bool bMousecardActive)
 {
   if(joytype[nJoystickNumber] == newtype)
 	  return 1;	// Already set to this type. Return OK.
@@ -517,8 +517,9 @@ BOOL JoySetEmulationType(HWND window, DWORD newtype, int nJoystickNumber)
   else if ((joyinfo[newtype].device == DEVICE_MOUSE) &&
            (joyinfo[joytype[nJoystickNumber]].device != DEVICE_MOUSE))
   {
-	if (sg_Mouse.IsActive())
+	if (bMousecardActive)
 	{
+		// Shouldn't be necessary, since Property Sheet's logic should prevent this option being given to the user.
 	  MessageBox(window,
 				 TEXT("Mouse interface card is enabled - unable to use mouse for joystick emulation."),
 				 TEXT("Configuration"),

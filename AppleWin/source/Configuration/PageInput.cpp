@@ -94,18 +94,20 @@ BOOL CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM 
 		case IDC_JOYSTICK0:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				DWORD newjoytype = (DWORD)SendDlgItemMessage(hWnd,IDC_JOYSTICK0,CB_GETCURSEL,0,0);
-				JoySetEmulationType(hWnd,m_nJoy0ChoiceTranlationTbl[newjoytype],JN_JOYSTICK0);
-				InitJoystickChoices(hWnd, JN_JOYSTICK1, IDC_JOYSTICK1);	// Re-init joy1 list
+				DWORD dwNewJoyType = (DWORD)SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
+				const bool bIsSlot4Mouse = m_PropertySheetHelper.GetConfigNew().m_Slot[4] == CT_MouseInterface;
+				JoySetEmulationType(hWnd, m_nJoy0ChoiceTranlationTbl[dwNewJoyType], JN_JOYSTICK0, bIsSlot4Mouse);
+				InitOptions(hWnd);
 			}
 			break;
 
 		case IDC_JOYSTICK1:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				DWORD newjoytype = (DWORD)SendDlgItemMessage(hWnd,IDC_JOYSTICK1,CB_GETCURSEL,0,0);
-				JoySetEmulationType(hWnd,m_nJoy1ChoiceTranlationTbl[newjoytype],JN_JOYSTICK1);
-				InitJoystickChoices(hWnd, JN_JOYSTICK0, IDC_JOYSTICK0);	// Re-init joy0 list
+				DWORD dwNewJoyType = (DWORD)SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
+				const bool bIsSlot4Mouse = m_PropertySheetHelper.GetConfigNew().m_Slot[4] == CT_MouseInterface;
+				JoySetEmulationType(hWnd, m_nJoy1ChoiceTranlationTbl[dwNewJoyType], JN_JOYSTICK1, bIsSlot4Mouse);
+				InitOptions(hWnd);
 			}
 			break;
 
@@ -156,9 +158,6 @@ BOOL CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM 
 
 	case WM_INITDIALOG:
 		{
-			InitJoystickChoices(hWnd, JN_JOYSTICK0, IDC_JOYSTICK0);
-			InitJoystickChoices(hWnd, JN_JOYSTICK1, IDC_JOYSTICK1);
-
 			SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_SETRANGE, 0, MAKELONG(128,-127));
 			SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_SETRANGE, 0, MAKELONG(128,-127));
 
@@ -180,13 +179,14 @@ void CPageInput::DlgOK(HWND hWnd)
 {
 	const UINT uNewJoyType0 = SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
 	const UINT uNewJoyType1 = SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
+	const bool bIsSlot4Mouse = m_PropertySheetHelper.GetConfigNew().m_Slot[4] == CT_MouseInterface;
 
-	if (JoySetEmulationType(hWnd, m_nJoy0ChoiceTranlationTbl[uNewJoyType0], JN_JOYSTICK0))
+	if (JoySetEmulationType(hWnd, m_nJoy0ChoiceTranlationTbl[uNewJoyType0], JN_JOYSTICK0, bIsSlot4Mouse))
 	{
 		REGSAVE(TEXT("Joystick 0 Emulation"), joytype[0]);
 	}
-	
-	if (JoySetEmulationType(hWnd, m_nJoy1ChoiceTranlationTbl[uNewJoyType1], JN_JOYSTICK1))
+
+	if (JoySetEmulationType(hWnd, m_nJoy1ChoiceTranlationTbl[uNewJoyType1], JN_JOYSTICK1, bIsSlot4Mouse))
 	{
 		REGSAVE(TEXT("Joystick 1 Emulation"), joytype[1]);
 	}
@@ -216,7 +216,7 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 	TCHAR* pnzJoystickChoices;
 	int *pnJoyTranslationTbl;
 	int nJoyTranslationTblSize;
-	unsigned short nJC_DISABLED, nJC_JOYSTICK, nJC_KEYBD_STANDARD, nJC_KEYBD_CENTERING, nJC_MAX;
+	unsigned short nJC_DISABLED, nJC_JOYSTICK, nJC_KEYBD_STANDARD, nJC_KEYBD_CENTERING, nJC_MOUSE, nJC_MAX;
 	TCHAR** ppszJoyChoices;
 	int nOtherJoyNum = nJoyNum == JN_JOYSTICK0 ? JN_JOYSTICK1 : JN_JOYSTICK0;
 
@@ -229,6 +229,7 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 		nJC_JOYSTICK = J0C_JOYSTICK1;
 		nJC_KEYBD_STANDARD = J0C_KEYBD_STANDARD;
 		nJC_KEYBD_CENTERING = J0C_KEYBD_CENTERING;
+		nJC_MOUSE = J0C_MOUSE;
 		nJC_MAX = J0C_MAX;
 		ppszJoyChoices = (TCHAR**) m_pszJoy0Choices;
 	}
@@ -241,6 +242,7 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 		nJC_JOYSTICK = J1C_JOYSTICK2;
 		nJC_KEYBD_STANDARD = J1C_KEYBD_STANDARD;
 		nJC_KEYBD_CENTERING = J1C_KEYBD_CENTERING;
+		nJC_MOUSE = J1C_MOUSE;
 		nJC_MAX = J1C_MAX;
 		ppszJoyChoices = (TCHAR**) m_pszJoy1Choices;
 	}
@@ -258,7 +260,11 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 	pszMem += strlen(ppszJoyChoices[nJC_JOYSTICK])+1;
 	pnJoyTranslationTbl[nIdx++] = nJC_JOYSTICK;
 
-	// Now exclude the other Joystick type (if it exists) from this new list
+	const bool bIsSlot4Mouse = m_PropertySheetHelper.GetConfigNew().m_Slot[4] == CT_MouseInterface;
+
+	// Now exclude:
+	// . the other Joystick type (if it exists) from this new list
+	// . the mouse if the mousecard is plugged in
 	for(UINT i=nJC_KEYBD_STANDARD; i<nJC_MAX; i++)
 	{
 		if( ( (i == nJC_KEYBD_STANDARD) || (i == nJC_KEYBD_CENTERING) ) &&
@@ -267,6 +273,9 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 		{
 			continue;
 		}
+
+		if (i == nJC_MOUSE && bIsSlot4Mouse)
+			continue;
 
 		if(joytype[nOtherJoyNum] != i)
 		{
@@ -291,11 +300,14 @@ void CPageInput::InitSlotOptions(HWND hWnd)
 	CheckDlgButton(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW, m_uMouseRestrictToWindow ? BST_CHECKED : BST_UNCHECKED);
 
 	const bool bIsSlot4Empty = Slot4 == CT_Empty;
-	EnableWindow(GetDlgItem(hWnd, IDC_MOUSE_IN_SLOT4), (bIsSlot4Mouse || bIsSlot4Empty) ? TRUE : FALSE);
+	EnableWindow(GetDlgItem(hWnd, IDC_MOUSE_IN_SLOT4), ((bIsSlot4Mouse || bIsSlot4Empty) && !JoyUsingMouse()) ? TRUE : FALSE);
 	EnableWindow(GetDlgItem(hWnd, IDC_MOUSE_CROSSHAIR), bIsSlot4Mouse ? TRUE : FALSE);
 	EnableWindow(GetDlgItem(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW), bIsSlot4Mouse ? TRUE : FALSE);
 
 	InitCPMChoices(hWnd);
+
+	InitJoystickChoices(hWnd, JN_JOYSTICK0, IDC_JOYSTICK0);
+	InitJoystickChoices(hWnd, JN_JOYSTICK1, IDC_JOYSTICK1);
 }
 
 void CPageInput::InitCPMChoices(HWND hWnd)
