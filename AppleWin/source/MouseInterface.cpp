@@ -477,7 +477,7 @@ void CMouseInterface::Clear()
 	m_nBuffPos = 0;
 	m_nDataLen = 1;
 
-	m_byMode = 0;
+//	m_byMode = 0;	// Not for BeagleWrite / MultiScribe
 	m_byState = 0;
 	m_nX = 0;
 	m_nY = 0;

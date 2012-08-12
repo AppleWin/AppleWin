@@ -19,7 +19,7 @@ Restrictions/bugs:
 - For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
 
 
-1.21.0 - 11 Aug 2012
+1.21.1 - 12 Aug 2012
 --------------------
 Changes:
 . [Feature #4399] Allow Z80 SoftCard to be inserted into slot 4 or 5. (Allows CP/M v3 to work)
@@ -30,6 +30,7 @@ Fixes:
 . Floating bus not returned for empty slot $Cnxx addresses. Fixes:
   - A2VGA.DSK: Apple][VGA card detection.
   - [Bug #018643] Mabel's Mansion.
+. [Feature #005552] Mouse wasn't working for BeagleWrite / MultiScribe.
 
 
 1.20.1 - 17 Jul 2011
