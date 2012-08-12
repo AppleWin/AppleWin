@@ -83,6 +83,10 @@
 			<param name="Local" value="sound.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Clock">
+			<param name="Local" value="Clock.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Uthernet network card">
 			<param name="Local" value="uthernet.html">
 			</OBJECT>

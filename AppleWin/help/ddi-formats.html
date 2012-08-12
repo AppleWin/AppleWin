@@ -66,5 +66,24 @@ that would be recorded on a real disk's surface. At 232,960
 bytes, nibble images are bigger than other images, but they can
 be useful for making images of copy protected software. </p>
 
+<p style="font-weight: bold;">2mg Images :</p>
+
+<p>2mg (or 2img) images are a wrapper around DOS, ProDOS or Nibble images.
+They contain extra meta-data describing for example, DOS volume number and
+write-protection.
+</p>
+
+<p style="font-weight: bold;">Compressed Images :</p>
+
+<p>All of the above can optionally be either gzip'ed or zipped. If a zip archive
+contains multiple files, then AppleWin only supports using the first file. For best results
+with harddisk images, uncompress first, as writing back to the image requires a full
+image re-compression after every block write. Examples of typical extensions are:
+<ul>
+<li>.gz, .dsk.gz, .nib.gz, .2mg.gz</li>
+<li>.zip, .dsk.zip, .nib.zip, .2mg.zip</li>
+</ul>
+</p>
+
 </body>
 </html>
