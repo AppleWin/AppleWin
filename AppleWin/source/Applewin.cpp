@@ -541,6 +541,8 @@ void LoadConfiguration()
 
 	if (g_Slot4 == CT_MockingboardC || g_Slot4 == CT_Phasor)
 		MB_SetSoundcardType(g_Slot4);
+	else
+		MB_SetSoundcardType(CT_Empty);
 
 	//
 

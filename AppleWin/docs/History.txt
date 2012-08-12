@@ -24,6 +24,7 @@ Restrictions/bugs:
 Changes:
 . [Feature #4399] Allow Z80 SoftCard to be inserted into slot 4 or 5. (Allows CP/M v3 to work)
 . Reworked Configuration (property sheets) to allow multiple hardware changes.
+. Updated Help .chm with info on No-Slot clock.
 
 Fixes:
 . Floating bus not returned for empty slot $Cnxx addresses. Fixes:

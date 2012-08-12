@@ -1333,8 +1333,6 @@ void MB_Initialize()
 
 		MB_Reset();
 	}
-
-	g_bMB_Active = (g_SoundcardType != CT_Empty);
 }
 
 //-----------------------------------------------------------------------------
@@ -1357,6 +1355,28 @@ void MB_Destroy()
 
 //-----------------------------------------------------------------------------
 
+static void ResetState()
+{
+	g_n6522TimerPeriod = 0;
+	g_nMBTimerDevice = TIMERDEVICE_INVALID;
+	g_uLastCumulativeCycles = 0;
+
+	g_nSSI263Device = 0;
+	g_nCurrentActivePhoneme = -1;
+	g_bStopPhoneme = false;
+	g_bVotraxPhoneme = false;
+
+	g_nMB_InActiveCycleCount = 0;
+	g_bMB_RegAccessedFlag = false;
+	g_bMB_Active = false;
+
+	//g_bMBAvailable = false;
+
+	//g_SoundcardType = CT_Empty;
+	//g_bPhasorEnable = false;
+	g_nPhasorMode = 0;
+}
+
 void MB_Reset()
 {
 	if(!g_bDSAvailable)
@@ -1368,8 +1388,7 @@ void MB_Reset()
 		AY8910_reset(i);
 	}
 
-	g_bMB_Active = (g_SoundcardType != CT_Empty);
-	g_nPhasorMode = 0;
+	ResetState();
 	MB_Reinitialize();	// Reset CLK for AY8910s
 }
 
