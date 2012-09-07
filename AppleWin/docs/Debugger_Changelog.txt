@@ -4,6 +4,9 @@
 .20 Moved: BRK and BRKOP now under HELP BREAKPOINTS
 .19 Added: Shift-F7 will run the emulator at normal speed but with debugger breakpoints active!
 .18 Added: Implemented BPIO -- currently is the same as BPM
+
+2.7.0.17 Released with Applewin 1.20.0.0
+
 .17 Fixed: HELP <category> wasn't displaying when category was one of: FLAGS, OUTPUT, WATCHES
 .16 Fixed: WL was displaying number of watches
 .15 Fixed: Memory Dump was over-writing watches.
