@@ -282,9 +282,42 @@ void CaptureCOUT(void)
 
 //===========================================================================
 
+//#define DBG_HDD_ENTRYPOINT
+#if defined(_DEBUG) && defined(DBG_HDD_ENTRYPOINT)
+// Output a debug msg whenever the HDD f/w is called or jump to.
+static void DebugHddEntrypoint(const USHORT PC)
+{
+	static bool bOldPCAtC7xx = false;
+	static WORD OldPC = 0;
+	static UINT Count = 0;
+
+	if ((PC >> 8) == 0xC7)
+	{
+		if (!bOldPCAtC7xx /*&& PC != 0xc70a*/)
+		{
+			Count++;
+			char szDebug[100];
+			sprintf(szDebug, "HDD Entrypoint: $%04X\n", PC);
+			OutputDebugString(szDebug);
+		}
+
+		bOldPCAtC7xx = true;
+	}
+	else
+	{
+		bOldPCAtC7xx = false;
+	}
+	OldPC = PC;
+}
+#endif
+
 static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 {
 	const USHORT PC = regs.pc;
+
+#if defined(_DEBUG) && defined(DBG_HDD_ENTRYPOINT)
+	DebugHddEntrypoint(PC);
+#endif
 
 	iOpcode = ((PC & 0xF000) == 0xC000)
 	    ? IORead[(PC>>4) & 0xFF](PC,PC,0,0,uExecutedCycles)	// Fetch opcode from I/O memory, but params are still from mem[]
