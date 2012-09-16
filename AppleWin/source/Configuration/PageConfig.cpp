@@ -131,7 +131,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				case A2TYPE_APPLE2:			nCurrentChoice = MENUITEM_IIORIGINAL; break;
 				case A2TYPE_APPLE2PLUS:		nCurrentChoice = MENUITEM_IIPLUS; break;
 				case A2TYPE_APPLE2E:		nCurrentChoice = MENUITEM_IIE; break;
-				case A2TYPE_APPLE2EEHANCED:	nCurrentChoice = MENUITEM_ENHANCEDIIE; break;
+				case A2TYPE_APPLE2EENHANCED:nCurrentChoice = MENUITEM_ENHANCEDIIE; break;
 				case A2TYPE_PRAVETS82:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_PRAVETS8M:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_PRAVETS8A:		nCurrentChoice = MENUITEM_CLONE; break;
@@ -243,9 +243,9 @@ eApple2Type CPageConfig::GetApple2Type(DWORD NewMenuItem)
 		case MENUITEM_IIORIGINAL:	return A2TYPE_APPLE2;
 		case MENUITEM_IIPLUS:		return A2TYPE_APPLE2PLUS;
 		case MENUITEM_IIE:			return A2TYPE_APPLE2E;
-		case MENUITEM_ENHANCEDIIE:	return A2TYPE_APPLE2EEHANCED;
+		case MENUITEM_ENHANCEDIIE:	return A2TYPE_APPLE2EENHANCED;
 		case MENUITEM_CLONE:		return A2TYPE_CLONE;
-		default:					return A2TYPE_APPLE2EEHANCED;
+		default:					return A2TYPE_APPLE2EENHANCED;
 	}
 }
 

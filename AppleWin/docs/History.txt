@@ -16,7 +16,13 @@ tomch at users.berlios.de
 Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise.
-- For an original Apple //e, 80-column (PR#3) and INVERSE, it still appears to be mousetext character, but it should be inverted upper-case from $40 to $5F.
+
+Next release:
+-------------
+Fixes:
+. [Feature #004346] Don't show mousetext for original Apple //e.
+Changes:
+. [Feature #005557] Support DOSMaster image created by Apple Oasis.
 
 
 1.21.1 - 12 Aug 2012

@@ -43,7 +43,7 @@ char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
 TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 
-eApple2Type	g_Apple2Type = A2TYPE_APPLE2EEHANCED;
+eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
 BOOL      behind            = 0;			// Redundant
 DWORD     cumulativecycles  = 0;			// Wraps after ~1hr 9mins
@@ -430,7 +430,7 @@ void LoadConfiguration()
 	if (REGLOAD(TEXT(REGVALUE_APPLE2_TYPE), &dwComputerType))
 	{
 		if ((dwComputerType >= A2TYPE_MAX) || (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE))
-			dwComputerType = A2TYPE_APPLE2EEHANCED;
+			dwComputerType = A2TYPE_APPLE2EENHANCED;
 
 		g_Apple2Type = (eApple2Type) dwComputerType;
 	}
@@ -442,8 +442,8 @@ void LoadConfiguration()
 			// NB. No A2TYPE_APPLE2E (this is correct)
 		case 0:	g_Apple2Type = A2TYPE_APPLE2;
 		case 1:	g_Apple2Type = A2TYPE_APPLE2PLUS;
-		case 2:	g_Apple2Type = A2TYPE_APPLE2EEHANCED;
-		default:	g_Apple2Type = A2TYPE_APPLE2EEHANCED;
+		case 2:	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
+		default:	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 		}
 	}
 
@@ -452,7 +452,7 @@ void LoadConfiguration()
 	case A2TYPE_APPLE2:			g_nCharsetType  = 0; break; 
 	case A2TYPE_APPLE2PLUS:		g_nCharsetType  = 0; break; 
 	case A2TYPE_APPLE2E:		g_nCharsetType  = 0; break; 
-	case A2TYPE_APPLE2EEHANCED:	g_nCharsetType  = 0; break; 
+	case A2TYPE_APPLE2EENHANCED:g_nCharsetType  = 0; break; 
 	case A2TYPE_PRAVETS82:	    g_nCharsetType  = 1; break; 
 	case A2TYPE_PRAVETS8A:	    g_nCharsetType  = 2; break; 
 	case A2TYPE_PRAVETS8M:	    g_nCharsetType  = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because settiong charset to 3 results in some problems.

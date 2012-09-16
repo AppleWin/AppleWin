@@ -160,7 +160,7 @@ enum eApple2Type {
 					A2TYPE_APPLE2=0,
 					A2TYPE_APPLE2PLUS,
 					A2TYPE_APPLE2E=APPLE2E_MASK,
-					A2TYPE_APPLE2EEHANCED,
+					A2TYPE_APPLE2EENHANCED,
 					A2TYPE_UNDEFINED,
 					A2TYPE_APPLE2C=APPLE2C_MASK,
 					A2TYPE_APPLE2D=APPLE2D_MASK,
@@ -182,6 +182,12 @@ inline bool IsApple2(eApple2Type type)
 inline bool IsClone(eApple2Type type)
 {
 	return (type & APPLECLONE_MASK) != 0;
+}
+
+extern eApple2Type g_Apple2Type;
+inline bool IsOriginal2E(void)
+{
+	return (g_Apple2Type == A2TYPE_APPLE2E);
 }
 
 enum eBUTTON {BUTTON0=0, BUTTON1};

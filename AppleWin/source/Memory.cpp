@@ -1058,7 +1058,7 @@ void MemInitialize()
 	case A2TYPE_APPLE2:			hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_ROM), "ROM"); ROM_SIZE = Apple2RomSize; break;
 	case A2TYPE_APPLE2PLUS:		hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_PLUS_ROM), "ROM"); ROM_SIZE = Apple2RomSize; break;
 	case A2TYPE_APPLE2E:		hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2E_ROM), "ROM"); ROM_SIZE = Apple2eRomSize; break;
-	case A2TYPE_APPLE2EEHANCED:	hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2E_ENHANCED_ROM), "ROM"); ROM_SIZE = Apple2eRomSize; break;
+	case A2TYPE_APPLE2EENHANCED:hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2E_ENHANCED_ROM), "ROM"); ROM_SIZE = Apple2eRomSize; break;
 	case A2TYPE_PRAVETS82:	    hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_82_ROM), "ROM"); ROM_SIZE = Apple2RomSize; break; 
 	case A2TYPE_PRAVETS8M:	    hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_8M_ROM), "ROM"); ROM_SIZE = Apple2RomSize; break; 
 	case A2TYPE_PRAVETS8A:	    hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_8C_ROM), "ROM"); ROM_SIZE = Apple2eRomSize; break; 
@@ -1072,14 +1072,14 @@ void MemInitialize()
 		case A2TYPE_APPLE2:			_tcscpy(sRomFileName, TEXT("APPLE2.ROM")); break;
 		case A2TYPE_APPLE2PLUS:		_tcscpy(sRomFileName, TEXT("APPLE2_PLUS.ROM")); break;
 		case A2TYPE_APPLE2E:		_tcscpy(sRomFileName, TEXT("APPLE2E.ROM")); break;
-		case A2TYPE_APPLE2EEHANCED:	_tcscpy(sRomFileName, TEXT("APPLE2E_ENHANCED.ROM")); break;
+		case A2TYPE_APPLE2EENHANCED:_tcscpy(sRomFileName, TEXT("APPLE2E_ENHANCED.ROM")); break;
 		case A2TYPE_PRAVETS82:	    _tcscpy(sRomFileName, TEXT("PRAVETS82.ROM")); break;
 		case A2TYPE_PRAVETS8M:	    _tcscpy(sRomFileName, TEXT("PRAVETS8M.ROM")); break;
 		case A2TYPE_PRAVETS8A:	    _tcscpy(sRomFileName, TEXT("PRAVETS8C.ROM")); break;
 		default:					
 			{
 				_tcscpy(sRomFileName, TEXT("Unknown type!"));
-				REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), A2TYPE_APPLE2EEHANCED);
+				REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), A2TYPE_APPLE2EENHANCED);
 			}
 		}
 

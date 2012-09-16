@@ -59,7 +59,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
    LR: Lo-Res   HR: Hi-Res   DHR: Double Hi-Res */
 
-#define FLASH_80_COL 1
+#define FLASH_80_COL 1	// Bug #7238
 
 #define HALF_SHIFT_DITHER 0
 
@@ -2437,11 +2437,12 @@ bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 	if(bCharChanged || (bCharFlashing && g_bTextFlashFlag))
 	{
 		bool bInvert = bCharFlashing ? g_bTextFlashState : false;
+		int nOriginal2EOffset = !IsOriginal2E() || !g_nAltCharSetOffset || (ch<0x40) || (ch>0x5F) ? 0 : -g_nAltCharSetOffset;	// No mousetext for original IIe
 
 		CopySource(xpixel,ypixel,
 			APPLE_FONT_WIDTH, APPLE_FONT_HEIGHT,
 			(IS_APPLE2 ? SRCOFFS_IIPLUS : SRCOFFS_40COL) + ((ch & 0x0F) << 4),
-			(ch & 0xF0) + g_nAltCharSetOffset + (bInvert ? 0x40 : 0x00));
+			(ch & 0xF0) + g_nAltCharSetOffset + nOriginal2EOffset + (bInvert ? 0x40 : 0x00));
 
 		return true;
 	}
@@ -2452,12 +2453,13 @@ bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 inline bool _Update80ColumnCell( BYTE c, const int xPixel, const int yPixel, bool bCharFlashing )
 {
 	bool bInvert = bCharFlashing ? g_bTextFlashState : false;
+	int nOriginal2EOffset = !IsOriginal2E() || !g_nAltCharSetOffset || (c<0x40) || (c>0x5F) ? 0 : -g_nAltCharSetOffset;	// No mousetext for original IIe
 
 	CopySource(
 		xPixel, yPixel,
 		(APPLE_FONT_WIDTH / 2), APPLE_FONT_HEIGHT,
 		SRCOFFS_80COL + ((c & 15)<<3),
-		((c >>4) <<4) + g_nAltCharSetOffset + (bInvert ? 0x40 : 0x00));
+		((c >>4) <<4) + g_nAltCharSetOffset + nOriginal2EOffset + (bInvert ? 0x40 : 0x00));
 
 	return true;
 }
