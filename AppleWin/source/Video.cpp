@@ -2424,6 +2424,12 @@ void SetLastDrawnImage ()
 
 //===========================================================================
 
+static inline int GetOriginal2EOffset(BYTE ch)
+{
+	// No mousetext for original IIe
+	return !IsOriginal2E() || !g_nAltCharSetOffset || (ch<0x40) || (ch>0x5F) ? 0 : -g_nAltCharSetOffset;
+}
+
 bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 {
 	BYTE ch = *(g_pTextBank0+offset);
@@ -2437,12 +2443,11 @@ bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 	if(bCharChanged || (bCharFlashing && g_bTextFlashFlag))
 	{
 		bool bInvert = bCharFlashing ? g_bTextFlashState : false;
-		int nOriginal2EOffset = !IsOriginal2E() || !g_nAltCharSetOffset || (ch<0x40) || (ch>0x5F) ? 0 : -g_nAltCharSetOffset;	// No mousetext for original IIe
 
 		CopySource(xpixel,ypixel,
 			APPLE_FONT_WIDTH, APPLE_FONT_HEIGHT,
 			(IS_APPLE2 ? SRCOFFS_IIPLUS : SRCOFFS_40COL) + ((ch & 0x0F) << 4),
-			(ch & 0xF0) + g_nAltCharSetOffset + nOriginal2EOffset + (bInvert ? 0x40 : 0x00));
+			(ch & 0xF0) + g_nAltCharSetOffset + GetOriginal2EOffset(ch) + (bInvert ? 0x40 : 0x00));
 
 		return true;
 	}
@@ -2453,13 +2458,12 @@ bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 inline bool _Update80ColumnCell( BYTE c, const int xPixel, const int yPixel, bool bCharFlashing )
 {
 	bool bInvert = bCharFlashing ? g_bTextFlashState : false;
-	int nOriginal2EOffset = !IsOriginal2E() || !g_nAltCharSetOffset || (c<0x40) || (c>0x5F) ? 0 : -g_nAltCharSetOffset;	// No mousetext for original IIe
 
 	CopySource(
 		xPixel, yPixel,
 		(APPLE_FONT_WIDTH / 2), APPLE_FONT_HEIGHT,
-		SRCOFFS_80COL + ((c & 15)<<3),
-		((c >>4) <<4) + g_nAltCharSetOffset + nOriginal2EOffset + (bInvert ? 0x40 : 0x00));
+		SRCOFFS_80COL + ((c & 0x0F) << 3),
+		(c & 0xF0) + g_nAltCharSetOffset + GetOriginal2EOffset(c) + (bInvert ? 0x40 : 0x00));
 
 	return true;
 }
