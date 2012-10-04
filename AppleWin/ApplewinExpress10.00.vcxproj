@@ -385,7 +385,7 @@
       <Project>{709278b8-c583-4bd8-90de-4e4f35a3bd8b}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="zlib\zlib-Express9.00.vcxproj">
+    <ProjectReference Include="zlib\zlib-Express10.00.vcxproj">
       <Project>{7935b998-c713-42ae-8f6d-9ff9080a1b1b}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
