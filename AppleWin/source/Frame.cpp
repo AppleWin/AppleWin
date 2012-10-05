@@ -1703,6 +1703,12 @@ void CtrlReset()
 //===========================================================================
 void SetFullScreenMode ()
 {
+#ifdef NO_DIRECT_X
+
+	return;
+
+#else // NO_DIRECT_X
+
 	g_bIsFullScreen = true;
 	buttonover = -1;
 	buttonx    = FSBUTTONX;
@@ -1730,6 +1736,8 @@ void SetFullScreenMode ()
 	//	if( !g_bIsFullScreen )
 
 	InvalidateRect(g_hFrameWindow,NULL,1);
+
+#endif // NO_DIRECT_X
 }
 
 //===========================================================================

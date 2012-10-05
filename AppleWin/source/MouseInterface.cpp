@@ -608,6 +608,12 @@ namespace DIMouse
 	//-----------------------------------------------------------------------------
 	HRESULT DirectInputInit( HWND hDlg )
 	{
+#ifdef NO_DIRECT_X
+
+		return E_FAIL;
+
+#else // NO_DIRECT_X
+
 		HRESULT hr;
 		BOOL    bExclusive;
 		BOOL    bForeground;
@@ -698,6 +704,8 @@ namespace DIMouse
 			return -1;
 
 		return S_OK;
+
+#endif // NO_DIRECT_X
 	}
 
 	//-----------------------------------------------------------------------------

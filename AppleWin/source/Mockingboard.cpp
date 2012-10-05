@@ -1086,6 +1086,12 @@ static void SSI263_Play(unsigned int nPhoneme)
 
 static bool MB_DSInit()
 {
+#ifdef NO_DIRECT_X
+
+	return false;
+
+#else // NO_DIRECT_X
+
 	//
 	// Create single Mockingboard voice
 	//
@@ -1236,6 +1242,8 @@ static bool MB_DSInit()
 	SetThreadPriority(g_hThread, THREAD_PRIORITY_TIME_CRITICAL);
 
 	return true;
+
+#endif // NO_DIRECT_X
 }
 
 static void MB_DSUninit()
