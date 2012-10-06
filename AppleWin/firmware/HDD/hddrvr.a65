@@ -192,7 +192,7 @@ noerr2
 ; because Applewin is picky about memory management, here's what I did:
 ; on read, hd_nextbyte = buffer[0], therefore we'll read that byte 256 times (in which
 ; the emulated code increments the buffer by 1 on each read) to (memblock),y
-; increment memblock+1 and read the secod 256 bytes via hd_nextbyte.
+; increment memblock+1 and read the second 256 bytes via hd_nextbyte.
 ;
 ; if I could figure out how to consistantly get applewin to update it's memory regions all
 ; this code can be moved into the emulation code (although, this is how I'd build the hardware
@@ -214,12 +214,13 @@ loop2
  sta (memblock),y
  iny
  bne loop2
+ dec memblock+1		; restore memblock ($44) to original value (for Epyx's California Games)
  pla
  tay
  rts
 
 ;======================================
-; 37 unused bytes
+; 35 unused bytes
 
 ; $CsFE = status bits (BAP p7-14)
 ;  7 = medium is removable

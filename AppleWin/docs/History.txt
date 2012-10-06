@@ -21,6 +21,7 @@ Next release:
 -------------
 Fixes:
 . [Feature #004346] Don't show mousetext for original Apple //e.
+. Fixed HDD firmware to allow epyx_californiagames_iicplus.2mg to boot.
 Changes:
 . [Feature #005557] Support DOSMaster image created by Apple Oasis.
 
