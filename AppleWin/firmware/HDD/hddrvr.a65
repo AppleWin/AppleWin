@@ -29,7 +29,13 @@
 ; . Fixed so it can be assembled by a65 v1.06
 ; . Fixed so that ProDOS entrypoint is $c70a (26 Dev 2007) (Bug #12723)
 ; . Modified to support Apple Oasis' entrypoint: $c761 (8 Sept 2012) (Feature #5557)
-; . TO DO: Make code relocatable
+; . Added support for SmartPort entrypoint (20 Oct 2012)
+;   - EG. "Prince of Persia (Original 3.5 floppy for IIc+).2mg"
+; TODO:
+; . Make code relocatable (so HDD controller card can go into any slot)
+; . Remove support for Entrypoint_C746 (old AppleWin) & Entrypoint_C761 (Apple Oasis)
+;   - provide a utility to convert these to use Entrypoint_ProDOS
+; . Check SmartPort: Is it OK to trash Y and $42,..,$47 ?
 ;
 
 ; constants
@@ -68,12 +74,12 @@ Entrypoint_ProDOS		; $c70a - ProDOS entrypoint
  sec
  bcs Entrypoint
 
-Entrypoint_SmartPort	; $c70d - SmartPort entrypoint (not supported)
+Entrypoint_SmartPort	; $c70d - SmartPort entrypoint
  clc
  
 Entrypoint				; $c70e - entrypoint?
  bcs cmdproc
- brk
+ bcc SmartPort
 
 ;;
 
@@ -104,7 +110,27 @@ noerr0
  jmp slot6
 
 ;======================================
-; 24 unused bytes
+
+; TODO: Is it OK to trash Y and $42,..,$47 ?
+; Pre: C=0
+SmartPort
+ pla
+ sta $46
+ pla
+ sta $47		; ($47) = &cmd_hdr
+ pha
+ lda $46
+ adc #3			; Pre: C=0, Post: assume C=0
+ pha			; (sp).w += 3
+
+ ldy #1
+ lda ($46),y	; cmd
+ sta $42
+ iny
+ bne SmartPort2
+
+;======================================
+; 2 unused bytes
 
 *= $c746	; org $c746
 
@@ -115,9 +141,27 @@ Entrypoint_C746	; Old f/w 'cmdproc' entrypoint
  sec
  bcs Entrypoint
 
+;======================================
+
+; Pre: Y=2
+SmartPort2
+ lda ($46),y	; param_l
+ sta $45
+ iny
+ lda ($46),y	; param_h
+ sta $46
+
+ ldy #1			; skip paramLength (assume it's #$03)
+ lda ($45),y	; unit
+ sta $43
+ iny
+ lda ($45),y	; memblock_l
+ sta $44
+ iny
+ bne SmartPort3
 
 ;======================================
-; 23 unused bytes
+; 1 unused byte
  
 *= $c761	; org $c761
 
@@ -220,7 +264,27 @@ loop2
  rts
 
 ;======================================
-; 35 unused bytes
+
+SmartPort3
+ lda ($45),y	; memblock_h
+ pha
+ iny
+ lda ($45),y	; diskblock_l
+ pha
+ iny
+ lda ($45),y	; diskblock_h
+ sta $47
+ 
+ pla
+ sta $46
+ pla
+ sta $45
+ 
+ iny
+ bne cmdproc
+
+;======================================
+; 15 unused bytes
 
 ; $CsFE = status bits (BAP p7-14)
 ;  7 = medium is removable
