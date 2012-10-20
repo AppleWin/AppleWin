@@ -64,6 +64,8 @@ OS      = $0801
 start
 
 ; Autoboot and ProDOS look at the following few opcodes to detect block devices
+; NB. $Cn07 should be $00 for a SmartPort Interface, but changing this means that it won't autoboot on ][, ][+ and unenhanced IIe.
+; . ref: http://www.1000bit.it/support/manuali/apple/technotes/udsk/tn.udsk.2.html
  lda #$20
  lda #$00
  lda #$03
