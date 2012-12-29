@@ -92,7 +92,7 @@ void    VideoBenchmark ();
 void    VideoCheckPage (BOOL);
 void    VideoChooseColor ();
 void    VideoDestroy ();
-void    VideoDrawLogoBitmap( HDC hDstDC );
+void    VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
 void    VideoDisplayLogo ();
 BOOL    VideoHasRefreshed ();
 void    VideoInitialize ();

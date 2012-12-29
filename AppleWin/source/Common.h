@@ -100,6 +100,7 @@ enum AppMode_e
 #define  REGVALUE_ENHANCE_DISK_SPEED "Enhance Disk Speed"
 #define  REGVALUE_CUSTOM_SPEED       "Custom Speed"
 #define  REGVALUE_EMULATION_SPEED    "Emulation Speed"
+#define  REGVALUE_WINDOW_SCALE       "Window Scale"
 #define  REGVALUE_SLOT1					"Slot 1"
 #define  REGVALUE_SLOT2					"Slot 2"
 #define  REGVALUE_SLOT3					"Slot 3"
@@ -128,6 +129,7 @@ enum AppMode_e
 #define VK_SNAPSHOT_280		WM_USER+6
 #define WM_USER_TCP_SERIAL	WM_USER+7
 #define WM_USER_BOOT		WM_USER+8
+#define WM_USER_FULLSCREEN	WM_USER+9
 
 typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
 

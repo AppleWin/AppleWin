@@ -22,7 +22,6 @@
 
 // Win32
 	extern HWND       g_hFrameWindow;
-	extern HDC        g_hFrameDC;
 	extern BOOL       g_bIsFullScreen;
 	extern BOOL       g_bMultiMon;
 
@@ -35,7 +34,7 @@
 // Prototypes
 	void CtrlReset();
 
-	void    FrameCreateWindow ();
+	void    FrameCreateWindow(void);
 	HDC     FrameGetDC ();
 	HDC     FrameGetVideoDC (LPBYTE *,LONG *);
 	void    FrameRefreshStatus (int);
@@ -43,6 +42,9 @@
 	void    FrameReleaseDC ();
 	void    FrameReleaseVideoDC ();
 	void	FrameSetCursorPosByMousePos();
+	int		GetViewportScale(void);
+	void    SetViewportScale(int nNewScale);
+	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);
 
 	LRESULT CALLBACK FrameWndProc (
 		HWND   window,

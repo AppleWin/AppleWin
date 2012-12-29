@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //#pragma warning(disable: 4786)
 
 #include "StdAfx.h"
+#include "debugger_display.h"	// dup from stdafx.h, but CPP analysis isn't picking up APPLE_FONT_NEW
 
 //	#define DEBUG_COMMAND_HELP  1
 //	#define DEBUG_ASM_HASH 1
@@ -7120,8 +7121,9 @@ bool ProfileSave()
 //===========================================================================
 void DebugBegin ()
 {
-	// This is called every time the emulator is reset.
-	// And everytime the debugger is entered.
+	// This is called every time the debugger is entered.
+
+	GetDebuggerMemDC();
 
 	g_nAppMode = MODE_DEBUG;
 	FrameRefreshStatus(DRAW_TITLE);
@@ -7255,15 +7257,11 @@ void DebugDestroy ()
 	}
 	// TODO: DataDisassembly_Clear()
 
-	SelectObject( g_hFrameDC, GetStockObject(NULL_BRUSH) );
-
 	DeleteObject( g_hConsoleBrushFG );
 	DeleteObject( g_hConsoleBrushBG );
 
 	DeleteDC( g_hConsoleFontDC );
 	DeleteObject( g_hConsoleFontBitmap );
-
-//	ReleaseDC( g_hFrameWindow, g_hFrameDC );
 }
 
 
@@ -7287,6 +7285,8 @@ void DebugEnd ()
 	g_vMemorySearchResults.erase( g_vMemorySearchResults.begin(), g_vMemorySearchResults.end() );
 
 	g_nAppMode = MODE_RUNNING;
+
+	ReleaseDebuggerMemDC();
 }
 
 
@@ -7400,19 +7400,18 @@ void DebugInitialize ()
 	DWORD nError = 0;
 #endif
 
-//	g_hDstDC = g_hFrameDC; //GetDC( g_hFrameWindow );
 #if _DEBUG
 	nError = GetLastError();
 #endif
 
 	// Must select a bitmap into the temp DC !
-	HDC hTmpDC  = CreateCompatibleDC( g_hFrameDC );
+	HDC hTmpDC  = CreateCompatibleDC( FrameGetDC() );
 
 #if _DEBUG
 	nError = GetLastError();
 #endif
 
-	g_hConsoleFontDC = CreateCompatibleDC( g_hFrameDC );
+	g_hConsoleFontDC = CreateCompatibleDC( FrameGetDC() );
 #if _DEBUG
 	nError = GetLastError();
 #endif
@@ -7467,8 +7466,6 @@ void DebugInitialize ()
 	DeleteObject( hTmpBitamp );
 	DeleteObject( hTmpDC );
 #endif
-
-//	DeleteDC( g_hFrameDC ); g_hDstDC = NULL;
 
 	ZeroMemory( g_aConsoleDisplay, sizeof( g_aConsoleDisplay ) ); // CONSOLE_WIDTH * CONSOLE_HEIGHT );
 	ConsoleInputReset();
@@ -7686,9 +7683,8 @@ void DebuggerInputConsoleChar( TCHAR ch )
 
 		DebuggerCursorNext();
 
-		FrameGetDC();
 		DrawConsoleInput();
-		FrameReleaseDC();
+		StretchBltMemToFrameDC();
 	}
 	else
 	if (ch == 0x16) // HACK: Ctrl-V.  WTF!?
@@ -8244,10 +8240,9 @@ void DebuggerCursorUpdate()
 		nBeg = nNow;
 		
 		DebuggerCursorNext();
-		
-		FrameGetDC();
+
 		DrawConsoleCursor();
-		FrameReleaseDC();
+		StretchBltMemToFrameDC();
 	}
 	else
 	{
@@ -8275,16 +8270,15 @@ void DebuggerCursorNext()
 
 
 //===========================================================================
-void	DebuggerMouseClick( int x, int y )
+void DebuggerMouseClick( int x, int y )
 {
 	if (g_nAppMode != MODE_DEBUG)
 		return;
 
-	int nFontWidth  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
-	int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight  ;
+	int nFontWidth  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg * GetViewportScale();
+	int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight * GetViewportScale();
 
 	// do picking
-	FrameGetDC();
 
 	int cx = (x - VIEWPORTX) / nFontWidth;
 	int cy = (y - VIEWPORTY) / nFontHeight;
@@ -8357,6 +8351,4 @@ void	DebuggerMouseClick( int x, int y )
 			}
 		}
 	}
-	
-	FrameReleaseDC();
 }

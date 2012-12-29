@@ -168,7 +168,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("?")           , CmdHelpList          , CMD_HELP_LIST            , "List all available commands"           },
 		{TEXT("HELP")        , CmdHelpSpecific      , CMD_HELP_SPECIFIC        , "Help on specific command"              },
 		{TEXT("VERSION")     , CmdVersion           , CMD_VERSION              , "Displays version of emulator/debugger" },
-		{TEXT("MOTD")        , CmdMOTD              , CMD_MOTD                 },
+		{TEXT("MOTD")        , CmdMOTD              , CMD_MOTD                 },							// MOTD: Message Of The Day
 	// Memory
 		{TEXT("MC")          , CmdMemoryCompare     , CMD_MEMORY_COMPARE       },
 

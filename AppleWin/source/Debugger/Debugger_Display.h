@@ -1,5 +1,4 @@
-#ifndef DEBUGGER_DISPLAY_H
-#define DEBUGGER_DISPLAY_H
+#pragma once
 
 // use the new Debugger Font (Apple Font)
 #define USE_APPLE_FONT   1
@@ -38,7 +37,6 @@
 #endif
 	};
 
-//	extern HDC    g_hDstDC  ;
 	extern HBRUSH g_hConsoleBrushFG;
 	extern HBRUSH g_hConsoleBrushBG;
 
@@ -93,4 +91,8 @@
 
 	void Debug_UpdatePalette( BYTE *pPalDst );
 
-#endif
+	//
+
+	extern HDC GetDebuggerMemDC(void);
+	extern void ReleaseDebuggerMemDC(void);
+	extern void StretchBltMemToFrameDC(void);

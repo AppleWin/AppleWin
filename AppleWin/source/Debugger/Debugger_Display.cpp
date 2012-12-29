@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
-
+#include "debugger_display.h"	// dup from stdafx.h, but CPP analysis isn't picking up USE_APPLE_FONT
 
 // NEW UI debugging - force display ALL meta-info (regs, stack, bp, watches, zp) for debugging purposes
 #define DEBUG_FORCE_DISPLAY 0
@@ -66,7 +66,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // HACK
 
 // Display - Win32
-//	HDC     g_hDstDC = NULL; // App Window
+	static HDC g_hDebuggerMemDC = NULL;
+	static HBITMAP g_hDebuggerMemBM = NULL;
 
 	HDC     g_hConsoleFontDC     = NULL;
 	HBRUSH  g_hConsoleFontBrush  = NULL;
@@ -148,7 +149,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_WATCHES_COLUMN = INFO_COL_2;
 		const int DISPLAY_MINIMEM_COLUMN = INFO_COL_2;
 #else
-		const int DISPLAY_CPU_INFO_LEFT_COLUMN = SCREENSPLIT1
+		const int DISPLAY_CPU_INFO_LEFT_COLUMN = SCREENSPLIT1	// TC: SCREENSPLIT1 is not defined anywhere in the .sln!
 
 		const int DISPLAY_REGS_COLUMN       = DISPLAY_CPU_INFO_LEFT_COLUMN;
 		const int DISPLAY_FLAG_COLUMN       = DISPLAY_CPU_INFO_LEFT_COLUMN;
@@ -513,6 +514,49 @@ const DWORD aROP4[ 256 ] =
 	static iRop4 = 0;
 #endif
 
+//===========================================================================
+
+HDC GetDebuggerMemDC(void)
+{
+	if (!g_hDebuggerMemDC)
+	{
+		HDC hFrameDC = FrameGetDC();
+		g_hDebuggerMemDC = CreateCompatibleDC(hFrameDC);
+		g_hDebuggerMemBM = CreateCompatibleBitmap(hFrameDC, FRAMEBUFFER_W, FRAMEBUFFER_H);
+		SelectObject(g_hDebuggerMemDC, g_hDebuggerMemBM);
+	}
+
+	return g_hDebuggerMemDC;
+}
+
+void ReleaseDebuggerMemDC(void)
+{
+	if (g_hDebuggerMemDC)
+	{
+		DeleteObject(g_hDebuggerMemBM);
+		g_hDebuggerMemBM = NULL;
+		DeleteDC(g_hDebuggerMemDC);
+		g_hDebuggerMemDC = NULL;
+		FrameReleaseDC();
+	}
+}
+
+void StretchBltMemToFrameDC(void)
+{
+	int nViewportCX, nViewportCY;
+	GetViewportCXCY(nViewportCX, nViewportCY);
+
+	BOOL bRes = StretchBlt(
+		FrameGetDC(),			                            // HDC hdcDest,
+		0, 0,                                               // int nXOriginDest, int nYOriginDest,
+		nViewportCX, nViewportCY,							// int nWidthDest,   int nHeightDest,
+		GetDebuggerMemDC(),									// HDC hdcSrc,
+		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
+		FRAMEBUFFER_W, FRAMEBUFFER_H,						// int nWidthSrc,    int nHeightSrc,
+		SRCCOPY                                             // DWORD dwRop
+	);
+}
+
 // Font: Apple Text
 //===========================================================================
 void DebuggerSetColorFG( COLORREF nRGB )
@@ -520,14 +564,14 @@ void DebuggerSetColorFG( COLORREF nRGB )
 #if USE_APPLE_FONT
 	if (g_hConsoleBrushFG)
 	{
-		SelectObject( g_hFrameDC, GetStockObject(NULL_BRUSH) );
+		SelectObject( GetDebuggerMemDC(), GetStockObject(NULL_BRUSH) );
 		DeleteObject( g_hConsoleBrushFG );
 		g_hConsoleBrushFG = NULL;
 	}
 
 	g_hConsoleBrushFG = CreateSolidBrush( nRGB );
 #else
-	SetTextColor( g_hFrameDC, nRGB );
+	SetTextColor( GetDebuggerMemDC(), nRGB );
 #endif
 }
 
@@ -537,7 +581,7 @@ void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent )
 #if USE_APPLE_FONT
 	if (g_hConsoleBrushBG)
 	{
-		SelectObject( g_hFrameDC, GetStockObject(NULL_BRUSH) );
+		SelectObject( GetDebuggerMemDC(), GetStockObject(NULL_BRUSH) );
 		DeleteObject( g_hConsoleBrushBG );
 		g_hConsoleBrushBG = NULL;
 	}
@@ -547,7 +591,7 @@ void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent )
 		g_hConsoleBrushBG = CreateSolidBrush( nRGB );
 	}
 #else
-	SetBkColor( g_hFrameDC, nRGB );
+	SetBkColor( GetDebuggerMemDC(), nRGB );
 #endif
 }
 
@@ -555,7 +599,7 @@ void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent )
 //===========================================================================
 void PrintGlyph( const int x, const int y, const char glyph )
 {	
-	HDC g_hDstDC = FrameGetDC();
+	HDC hDstDC = GetDebuggerMemDC();
 
 	int xDst = x;
 	int yDst = y;
@@ -568,11 +612,11 @@ void PrintGlyph( const int x, const int y, const char glyph )
 	// Background color
 	if (g_hConsoleBrushBG)
 	{
-		SelectObject( g_hDstDC, g_hConsoleBrushBG );
+		SelectObject( hDstDC, g_hConsoleBrushBG );
 
 		// Draw Background (solid pattern)
 		BitBlt(
-			g_hFrameDC,   // hdcDest
+			hDstDC,   // hdcDest
 			xDst, yDst, // nXDest, nYDest
 			CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT, // nWidth, nHeight
 			g_hConsoleFontDC, // hdcSrc
@@ -582,7 +626,7 @@ void PrintGlyph( const int x, const int y, const char glyph )
 	}
 #endif
 
-//	SelectObject( g_hDstDC, GetStockBrush( WHITE_BRUSH ) );
+//	SelectObject( hDstDC, GetStockBrush( WHITE_BRUSH ) );
 
 	// http://kkow.net/etep/docs/rop.html
 	//  P 1 1 1 1 0 0 0 0 (Pen/Pattern)
@@ -596,9 +640,9 @@ void PrintGlyph( const int x, const int y, const char glyph )
 	// White = Opaque (DC Text color)
 
 #if DEBUG_FONT_ROP
-	SelectObject( g_hDstDC, g_hConsoleBrushFG );
+	SelectObject( hDstDC, g_hConsoleBrushFG );
 	BitBlt(
-		g_hFrameDC,
+		hDstDC,
 		xDst, yDst,
 		DEBUG_FONT_WIDTH, DEBUG_FONT_HEIGHT,
 		g_hDebugFontDC,
@@ -609,7 +653,7 @@ void PrintGlyph( const int x, const int y, const char glyph )
 	// Use inverted source as mask (AND)
 	// D & ~S      ->  DSna
 	BitBlt(
-		g_hFrameDC,
+		hDstDC,
 		xDst, yDst,
 		CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
 		g_hConsoleFontDC,
@@ -617,12 +661,12 @@ void PrintGlyph( const int x, const int y, const char glyph )
 		DSna
 	);
 
-	SelectObject( g_hDstDC, g_hConsoleBrushFG );
+	SelectObject( hDstDC, g_hConsoleBrushFG );
 
 	// Use Source as mask to make color Pattern mask (AND), then apply to dest (OR)
 	// D | (P & S) ->  DPSao
 	BitBlt(
-		g_hFrameDC,
+		hDstDC,
 		xDst, yDst,
 		CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
 		g_hConsoleFontDC,
@@ -631,7 +675,7 @@ void PrintGlyph( const int x, const int y, const char glyph )
 	);
 #endif
 
-	SelectObject( g_hFrameDC, GetStockObject(NULL_BRUSH) );
+	SelectObject( hDstDC, GetStockObject(NULL_BRUSH) );
 }
 
 
@@ -724,7 +768,7 @@ int PrintText ( const char * pText, RECT & rRect )
 	int nLen = strlen( pText );
 
 #if !DEBUG_FONT_NO_BACKGROUND_TEXT
-	FillRect( g_hFrameDC, &rRect, g_hConsoleBrushBG );
+	FillRect( GetDebuggerMemDC(), &rRect, g_hConsoleBrushBG );
 #endif
 
 	DebuggerPrint( rRect.left, rRect.top, pText );
@@ -735,7 +779,7 @@ int PrintText ( const char * pText, RECT & rRect )
 void PrintTextColor ( const conchar_t *pText, RECT & rRect )
 {
 #if !DEBUG_FONT_NO_BACKGROUND_TEXT
-	FillRect( g_hFrameDC, &rRect, g_hConsoleBrushBG );
+	FillRect( GetDebuggerMemDC(), &rRect, g_hConsoleBrushBG );
 #endif
 
 	DebuggerPrintColor( rRect.left, rRect.top, pText );
@@ -1769,8 +1813,8 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	const int DISASM_SYMBOL_LEN = 9;
 #endif
 
-	HDC dc = g_hFrameDC;
-	if (dc)
+	HDC dc = GetDebuggerMemDC();
+	if (dc)		// TC: Why would this be NULL?
 	{
 		int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight; // _nFontHeight; // g_nFontHeight
 
@@ -2116,7 +2160,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 
 #if !USE_APPLE_FONT
 			if (g_iConfigDisasmBranchType == DISASM_BRANCH_FANCY)
-				SelectObject( g_hFrameDC, g_aFontConfig[ FONT_DISASM_BRANCH ]._hFont );  // g_hFontWebDings
+				SelectObject( GetDebuggerMemDC(), g_aFontConfig[ FONT_DISASM_BRANCH ]._hFont );  // g_hFontWebDings
 #endif
 
 //			PrintTextColor( sBranch, linerect );
@@ -2157,7 +2201,7 @@ void DrawFlags ( int line, WORD nRegFlags, LPTSTR pFlagNames_)
 	nSpacerWidth++;
 #endif
 
-	if (g_hFrameDC)
+	if (GetDebuggerMemDC())		// TC: Why would this be NULL?
 	{
 		rect.top    = line * g_nFontHeight;
 		rect.bottom = rect.top + g_nFontHeight;
@@ -2192,7 +2236,7 @@ void DrawFlags ( int line, WORD nRegFlags, LPTSTR pFlagNames_)
 		iFlag = (_6502_NUM_FLAGS - nFlag - 1);
 
 		bool bSet = (nRegFlags & 1);
-		if (g_hFrameDC)
+		if (GetDebuggerMemDC())		// TC: Why would this be NULL?
 		{
 			sText[0] = g_aBreakpointSource[ BP_SRC_FLAG_C + iFlag ][0];
 			if (bSet)
@@ -2239,7 +2283,7 @@ void DrawFlags ( int line, WORD nRegFlags, LPTSTR pFlagNames_)
 	if (pFlagNames_)
 		strcpy(pFlagNames_,sFlagNames);
 /*
-	if (g_hFrameDC)
+	if (GetDebuggerMemDC())		// TC: Why would this be NULL?
 	{
 		rect.top    += g_nFontHeight;
 		rect.bottom += g_nFontHeight;
@@ -3085,7 +3129,7 @@ void DrawSubWindow_Console (Update_t bUpdate)
 		return;
 
 #if !USE_APPLE_FONT
-	SelectObject( g_hFrameDC, g_aFontConfig[ FONT_CONSOLE ]._hFont );
+	SelectObject( GetDebuggerMemDC(), g_aFontConfig[ FONT_CONSOLE ]._hFont );
 #endif
 
 	if ((bUpdate & UPDATE_CONSOLE_DISPLAY)
@@ -3116,7 +3160,7 @@ void DrawSubWindow_Console (Update_t bUpdate)
 
 //	if (bUpdate & UPDATE_CONSOLE_INPUT)
 	{
-//		DrawConsoleInput(); // g_hFrameDC );
+//		DrawConsoleInput();
 	}
 }	
 
@@ -3449,7 +3493,7 @@ void DrawWindow_Console( Update_t bUpdate )
 	// If the full screen console is only showing partial lines
 	// don't erase the background
 	
-	//		FillRect( g_hFrameDC, &rect, g_hConsoleBrushBG );
+	//		FillRect( GetDebuggerMemDC(), &rect, g_hConsoleBrushBG );
 }
 
 //===========================================================================
@@ -3494,13 +3538,13 @@ void DrawWindowBackground_Main( int g_iWindowThis )
 	rect.top    = 0;
 	rect.right  = DISPLAY_DISASM_RIGHT;
 	int nTop = GetConsoleTopPixels( g_nConsoleDisplayLines - 1 );
-	rect.bottom = nTop; // DISPLAY_HEIGHT
+	rect.bottom = nTop;
 
 	// TODO/FIXME: COLOR_BG_CODE -> g_iWindowThis, once all tab backgrounds are listed first in g_aColors !
 	DebuggerSetColorBG( DebuggerGetColor( BG_DISASM_1 )); // COLOR_BG_CODE
 	
 #if !DEBUG_FONT_NO_BACKGROUND_FILL_MAIN
-	FillRect( g_hFrameDC, &rect, g_hConsoleBrushBG );
+	FillRect( GetDebuggerMemDC(), &rect, g_hConsoleBrushBG );
 #endif
 }
 
@@ -3512,15 +3556,14 @@ void DrawWindowBackground_Info( int g_iWindowThis )
 	rect.left   = DISPLAY_DISASM_RIGHT;
     rect.right  = DISPLAY_WIDTH;
 	int nTop = GetConsoleTopPixels( g_nConsoleDisplayLines - 1 );
-	rect.bottom = nTop; // DISPLAY_HEIGHT
+	rect.bottom = nTop;
 
 	DebuggerSetColorBG( DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
 
 #if !DEBUG_FONT_NO_BACKGROUND_FILL_INFO
-	FillRect( g_hFrameDC, &rect, g_hConsoleBrushBG );
+	FillRect( GetDebuggerMemDC(), &rect, g_hConsoleBrushBG );
 #endif
 }
-
 
 //===========================================================================
 void UpdateDisplay (Update_t bUpdate)
@@ -3535,8 +3578,6 @@ void UpdateDisplay (Update_t bUpdate)
 	}
 	spDrawMutex = true;
 
-	FrameGetDC();
-
 	// Hack: Full screen console scrolled, "erase" left over console lines
 	if (g_iWindowThis == WINDOW_CONSOLE)
 		bUpdate |= UPDATE_BACKGROUND;
@@ -3544,16 +3585,14 @@ void UpdateDisplay (Update_t bUpdate)
 	if (bUpdate & UPDATE_BACKGROUND)
 	{
 #if USE_APPLE_FONT
-		//VideoDrawLogoBitmap( g_hFrameDC );	// TC: Remove purple-flash after every single-step
-
-		SetBkMode( g_hFrameDC, OPAQUE);
-		SetBkColor(g_hFrameDC, RGB(0,0,0));
+		SetBkMode( GetDebuggerMemDC(), OPAQUE);
+		SetBkColor(GetDebuggerMemDC(), RGB(0,0,0));
 #else
-		SelectObject( g_hFrameDC, g_aFontConfig[ FONT_INFO ]._hFont ); // g_hFontDebugger
+		SelectObject( GetDebuggerMemDC(), g_aFontConfig[ FONT_INFO ]._hFont ); // g_hFontDebugger
 #endif
 	}
 
-	SetTextAlign( g_hFrameDC, TA_TOP | TA_LEFT);
+	SetTextAlign( GetDebuggerMemDC(), TA_TOP | TA_LEFT);
 
 	if ((bUpdate & UPDATE_BREAKPOINTS)
 //		|| (bUpdate & UPDATE_DISASM)
@@ -3613,13 +3652,10 @@ void UpdateDisplay (Update_t bUpdate)
 	if ((bUpdate & UPDATE_CONSOLE_DISPLAY) || (bUpdate & UPDATE_CONSOLE_INPUT))
 		DrawSubWindow_Console( bUpdate );
 
-	FrameReleaseDC();
+	StretchBltMemToFrameDC();
 
 	spDrawMutex = false;
 }
-
-
-
 
 //===========================================================================
 void DrawWindowBottom ( Update_t bUpdate, int iWindow )
@@ -3653,7 +3689,7 @@ void DrawSubWindow_Code ( int iWindow )
 	//	DisasmCalcTopFromCurAddress();
 	//	DisasmCalcBotFromTopAddress();
 #if !USE_APPLE_FONT
-	SelectObject( g_hFrameDC, g_aFontConfig[ FONT_DISASM_DEFAULT ]._hFont );
+	SelectObject( GetDebuggerMemDC(), g_aFontConfig[ FONT_DISASM_DEFAULT ]._hFont );
 #endif
 
 	WORD nAddress = g_nDisasmTopAddress; // g_nDisasmCurAddress;
@@ -3663,6 +3699,6 @@ void DrawSubWindow_Code ( int iWindow )
 	}
 
 #if !USE_APPLE_FONT
-	SelectObject( g_hFrameDC, g_aFontConfig[ FONT_INFO ]._hFont );
+	SelectObject( GetDebuggerMemDC(), g_aFontConfig[ FONT_INFO ]._hFont );
 #endif
 }

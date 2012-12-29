@@ -568,6 +568,9 @@ void LoadConfiguration()
 	char szUthernetInt[MAX_PATH] = {0};
 	RegLoadString(TEXT(REG_CONFIG),TEXT("Uthernet Interface"),1,szUthernetInt,MAX_PATH);  
 	update_tfe_interface(szUthernetInt,NULL);
+
+	if (REGLOAD(TEXT(REGVALUE_WINDOW_SCALE), &dwTmp))
+		SetViewportScale(dwTmp);
 }
 
 //===========================================================================
@@ -970,8 +973,7 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if(bSetFullScreen)
 		{
-			PostMessage(g_hFrameWindow, WM_KEYDOWN, VK_F1+BTN_FULLSCR, 0);
-			PostMessage(g_hFrameWindow, WM_KEYUP,   VK_F1+BTN_FULLSCR, 0);
+			PostMessage(g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
 			bSetFullScreen = false;
 		}
 

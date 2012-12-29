@@ -3181,39 +3181,59 @@ void VideoDestroy () {
 }
 
 //===========================================================================
-void VideoDrawLogoBitmap ( HDC hDstDC )
+
+void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale)
 {
 	HDC hSrcDC = CreateCompatibleDC( hDstDC );
 	SelectObject( hSrcDC, g_hLogoBitmap );
-	BitBlt(
+	StretchBlt(
 		hDstDC,   // hdcDest
-		0, 0,     // nXDest, nYDest
-		FRAMEBUFFER_W, FRAMEBUFFER_H, // nWidth, nHeight
+		xoff, yoff,  // nXDest, nYDest
+		scale * srcw, scale * srch, // nWidth, nHeight
 		hSrcDC,   // hdcSrc
 		0, 0,     // nXSrc, nYSrc
+		srcw, srch,
 		SRCCOPY   // dwRop
 	);
 
 	DeleteObject( hSrcDC );
-	hSrcDC = NULL;
 }
 
 //===========================================================================
 void VideoDisplayLogo () 
 {
+	int xoff = 0, yoff = 0, scale = 0;
 	HDC hFrameDC = FrameGetDC();
 
 	// DRAW THE LOGO
 	HBRUSH brush = CreateSolidBrush(PALETTERGB(0x70,0x30,0xE0));
+	
+	SelectObject(hFrameDC, brush);
+	SelectObject(hFrameDC, GetStockObject(NULL_PEN));
+
+	int nViewportCX, nViewportCY;
+	GetViewportCXCY(nViewportCX, nViewportCY);
+	Rectangle(hFrameDC, 0, 0, nViewportCX+1, nViewportCY+1);
+
 	if (g_hLogoBitmap)
 	{
-		VideoDrawLogoBitmap( hFrameDC );
-	}
-	else
-	{
-		SelectObject(hFrameDC,brush);
-		SelectObject(hFrameDC,GetStockObject(NULL_PEN));
-		Rectangle(hFrameDC,0,0,FRAMEBUFFER_W+1,FRAMEBUFFER_H+1);
+		BITMAP bm;
+		if (GetObject(g_hLogoBitmap, sizeof(bm), &bm))
+		{
+			scale = nViewportCX / bm.bmWidth;
+			if (nViewportCY / bm.bmHeight < scale)
+				scale = nViewportCY / bm.bmHeight;
+
+			if (scale > 0)
+			{
+				if (nViewportCX > bm.bmWidth)
+					xoff = (nViewportCX - (scale * bm.bmWidth)) / 2;
+				if (nViewportCY > bm.bmHeight)
+					yoff = (nViewportCY - (scale * bm.bmHeight)) / 2;
+
+				VideoDrawLogoBitmap( hFrameDC, xoff, yoff, bm.bmWidth, bm.bmHeight, scale );
+			}
+		}
 	}
 
 	// DRAW THE VERSION NUMBER
@@ -3225,22 +3245,14 @@ void VideoDisplayLogo ()
 	SetTextAlign(hFrameDC,TA_RIGHT | TA_TOP);
 	SetBkMode(hFrameDC,TRANSPARENT);
 
-	//#define VERSION_TXT "Version "
-	// Daily WTF candidate -- malloc every _frame_ ?!?!
-	//	char* szVersion = new char[strlen(VERSION_TXT) + strlen(VERSIONSTRING) + 1];
-	//	strcpy(&szVersion[0], VERSION_TXT);
-	//	strcpy(&szVersion[strlen(VERSION_TXT)], VERSIONSTRING);
-	//	szVersion[strlen(szVersion)] = 0x00;
-	
 	char szVersion[ 64 ] = "";
-
 	sprintf( szVersion, "Version %s", VERSIONSTRING );
 
-#define  DRAWVERSION(x,y,c)     \
-	SetTextColor(hFrameDC,c);   \
-	TextOut(hFrameDC,           \
-		540+x,358+y,            \
-		szVersion,              \
+#define  DRAWVERSION(x,y,c)                 \
+	SetTextColor(hFrameDC,c);               \
+	TextOut(hFrameDC,                       \
+		scale*540+x+xoff,scale*358+y+yoff,  \
+		szVersion,                          \
 		strlen(szVersion));
 
 	if (GetDeviceCaps(hFrameDC,PLANES) * GetDeviceCaps(hFrameDC,BITSPIXEL) <= 4) {
@@ -3255,13 +3267,11 @@ void VideoDisplayLogo ()
 
 #if _DEBUG
 	sprintf( szVersion, "DEBUG" );
-	DRAWVERSION( 2, -358,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 1, -357,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 0, -356,RGB(0xFF,0x00,0xFF));
+	DRAWVERSION( 2, -358*scale,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 1, -357*scale,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 0, -356*scale,RGB(0xFF,0x00,0xFF));
 #endif
 
-	// Daily WTF candidate -- malloc every _frame_ ?!?!
-	//	delete [] szVersion;
 #undef  DRAWVERSION
 
 	FrameReleaseDC();
@@ -3446,7 +3456,9 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 	// . Oliver Schmidt gets a flickering mouse cursor with this code
 	if (hFrameDC && anydirty)
 	{
-		BitBlt(hFrameDC,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,g_hDeviceDC,0,0,SRCCOPY); 
+		int nViewportCX, nViewportCY;
+		GetViewportCXCY(nViewportCX, nViewportCY);
+	    StretchBlt(hFrameDC, 0 ,0, nViewportCX, nViewportCY, g_hDeviceDC, 0, 0, FRAMEBUFFER_W, FRAMEBUFFER_H, SRCCOPY);
 		GdiFlush();
 	}
 #else

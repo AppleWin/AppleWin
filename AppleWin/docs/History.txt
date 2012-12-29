@@ -19,11 +19,22 @@ Restrictions/bugs:
 
 Next release:
 -------------
+TBC
+
+1.22.0 - 1 Jan 2013
+--------------------
+Changes:
+. [Feature #005557] Support DOSMaster image created by Apple Oasis.
+. [Feature #003272 and #005335] Support 2x windowed mode:
+  - Toggle between 1x and 2x by using Resize button (or F6).
+  - Full screen now enabled by CTRL+Resize button (or CTRL+F6).
+
 Fixes:
 . [Feature #004346] Don't show mousetext for original Apple //e.
 . Fixed HDD firmware to allow epyx_californiagames_iicplus.2mg to boot.
-Changes:
-. [Feature #005557] Support DOSMaster image created by Apple Oasis.
+. HDD firmware: Added support for SmartPort entrypoint.
+  - "Prince of Persia (Original 3.5 floppy for IIc+).2mg" now boots
+. [Bug #018455] Improved rendering speed of debugger view.
 
 
 1.21.1 - 12 Aug 2012

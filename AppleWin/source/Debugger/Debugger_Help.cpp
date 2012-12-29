@@ -423,7 +423,7 @@ bool Colorize( char * pDst, const char * pSrc )
 }
 
 //===========================================================================
-Update_t CmdMOTD( int nArgs )
+Update_t CmdMOTD( int nArgs )	// Message Of The Day
 {
 	char sText[ CONSOLE_WIDTH*2 ];
 	char sTemp[ CONSOLE_WIDTH*2 ];

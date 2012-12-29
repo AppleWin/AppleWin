@@ -43,18 +43,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAGICX 5	// 3D border between Apple window & Emulator's RHS buttons
 #define MAGICY 5	// 3D border between Apple window & Title bar
 
-#define VIEWPORTCX FRAMEBUFFER_W
-#define VIEWPORTCY FRAMEBUFFER_H
+static int g_nViewportCX = FRAMEBUFFER_W;
+static int g_nViewportCY = FRAMEBUFFER_H;
+static int g_nViewportScale = 1;
+static int g_nOldViewportScale = 1;
 
-#define  BUTTONX     (VIEWPORTCX + VIEWPORTX*2)
+#define  BUTTONX     (g_nViewportCX + VIEWPORTX*2)
 #define  BUTTONY     0
 #define  BUTTONCX    45
 #define  BUTTONCY    45
 // NB. FSxxx = FullScreen xxx
-#define  FSVIEWPORTX (640-BUTTONCX-MAGICX-VIEWPORTCX)
-#define  FSVIEWPORTY ((480-VIEWPORTCY)/2)
+#define  FSVIEWPORTX (640-BUTTONCX-MAGICX-g_nViewportCX)
+#define  FSVIEWPORTY ((480-g_nViewportCY)/2)
 #define  FSBUTTONX   (640-BUTTONCX)
-#define  FSBUTTONY   (((480-VIEWPORTCY)/2)-1)
+#define  FSBUTTONY   (((480-g_nViewportCY)/2)-1)
 #define  BUTTONS     8
 
 	static HBITMAP g_hCapsLockBitmap[2];
@@ -92,7 +94,7 @@ static int     buttonover      = -1;
 static int     buttonx         = BUTTONX;
 static int     buttony         = BUTTONY;
 static HRGN    clipregion      = (HRGN)0;
-       HDC     g_hFrameDC         = (HDC)0;
+static HDC     g_hFrameDC      = (HDC)0;
 static RECT    framerect       = {0,0,0,0};
 
 		HWND   g_hFrameWindow  = (HWND)0;
@@ -135,6 +137,10 @@ bool	g_bFreshReset = false;
 	static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen);
 	static void DrawCrosshairsMouse();
 	static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
+	static void ScreenWindowResize(const bool bCtrlKey);
+	static void DoFrameResizeWindow(int nNewScale);
+	static void FrameResizeWindow(void);
+
 
 	TCHAR g_pAppleWindowTitle[ 128 ] = "";
 
@@ -288,7 +294,7 @@ switch (g_Apple2Type)
 //	g_hDiskFullScreenLED[ DISK_STATUS_READ ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_R")); // Full Screen Read Only
 //	g_hDiskFullScreenLED[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_W")); // Full Screen Write
 //	g_hDiskFullScreenLED[ DISK_STATUS_PROT ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_P")); // Full Screen Write Protected
- 
+
   btnfacebrush    = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
   btnfacepen      = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNFACE));
   btnhighlightpen = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNHIGHLIGHT));
@@ -403,10 +409,10 @@ static void DrawCrosshairs (int x, int y) {
       while (loop--) {
         RECT rect = {0,0,5,5};
         switch (loop) {
-          case 0: OffsetRect(&rect,lastx-2,FSVIEWPORTY-5);           break;
-          case 1: OffsetRect(&rect,lastx-2,FSVIEWPORTY+VIEWPORTCY);  break;
-          case 2: OffsetRect(&rect,FSVIEWPORTX-5,         lasty-2);  break;
-          case 3: OffsetRect(&rect,FSVIEWPORTX+VIEWPORTCX,lasty-2);  break;
+          case 0: OffsetRect(&rect,lastx-2,FSVIEWPORTY-5);              break;
+          case 1: OffsetRect(&rect,lastx-2,FSVIEWPORTY+g_nViewportCY);  break;
+          case 2: OffsetRect(&rect,FSVIEWPORTX-5,lasty-2);              break;
+          case 3: OffsetRect(&rect,FSVIEWPORTX+g_nViewportCX,lasty-2);  break;
         }
         FillRect(dc,&rect,(HBRUSH)GetStockObject(BLACK_BRUSH));
       }
@@ -427,10 +433,10 @@ static void DrawCrosshairs (int x, int y) {
              VIEWPORTX-loop-1,lasty+3);
         if ((loop == 1) || (loop == 2))
           SelectObject(dc,btnhighlightpen);
-        LINE(lastx-2,VIEWPORTY+VIEWPORTCY+loop,
-             lastx+3,VIEWPORTY+VIEWPORTCY+loop);
-        LINE(VIEWPORTX+VIEWPORTCX+loop,lasty-2,
-             VIEWPORTX+VIEWPORTCX+loop,lasty+3);
+        LINE(lastx-2,VIEWPORTY+g_nViewportCY+loop,
+             lastx+3,VIEWPORTY+g_nViewportCY+loop);
+        LINE(VIEWPORTX+g_nViewportCX+loop,lasty-2,
+             VIEWPORTX+g_nViewportCX+loop,lasty+3);
       }
     }
 
@@ -444,12 +450,12 @@ static void DrawCrosshairs (int x, int y) {
         SelectObject(dc,GetStockObject(BLACK_PEN));
       LINE(x+loop-2,viewporty-5,
            x+loop-2,viewporty);
-      LINE(x+loop-2,viewporty+VIEWPORTCY+4,
-           x+loop-2,viewporty+VIEWPORTCY-1);
+      LINE(x+loop-2,viewporty+g_nViewportCY+4,
+           x+loop-2,viewporty+g_nViewportCY-1);
       LINE(viewportx-5,           y+loop-2,
            viewportx,             y+loop-2);
-      LINE(viewportx+VIEWPORTCX+4,y+loop-2,
-           viewportx+VIEWPORTCX-1,y+loop-2);
+      LINE(viewportx+g_nViewportCX+4,y+loop-2,
+           viewportx+g_nViewportCX-1,y+loop-2);
     }
   }
 #undef LINE
@@ -474,25 +480,34 @@ static void DrawFrameWindow ()
 		// DRAW THE 3D BORDER AROUND THE EMULATED SCREEN
 		Draw3dRect(dc,
 			VIEWPORTX-2,VIEWPORTY-2,
-			VIEWPORTX+VIEWPORTCX+2,VIEWPORTY+VIEWPORTCY+2,
+			VIEWPORTX+g_nViewportCX+2,VIEWPORTY+g_nViewportCY+2,
 			0);
 		Draw3dRect(dc,
 			VIEWPORTX-3,VIEWPORTY-3,
-			VIEWPORTX+VIEWPORTCX+3,VIEWPORTY+VIEWPORTCY+3,
+			VIEWPORTX+g_nViewportCX+3,VIEWPORTY+g_nViewportCY+3,
 			0);
 		SelectObject(dc,btnfacepen);
 		Rectangle(dc,
 			VIEWPORTX-4,VIEWPORTY-4,
-			VIEWPORTX+VIEWPORTCX+4,VIEWPORTY+VIEWPORTCY+4);
+			VIEWPORTX+g_nViewportCX+4,VIEWPORTY+g_nViewportCY+4);
 		Rectangle(dc,
 			VIEWPORTX-5,VIEWPORTY-5,
-			VIEWPORTX+VIEWPORTCX+5,VIEWPORTY+VIEWPORTCY+5);
+			VIEWPORTX+g_nViewportCX+5,VIEWPORTY+g_nViewportCY+5);
 
 		// DRAW THE TOOLBAR BUTTONS
 		int iButton = BUTTONS;
 		while (iButton--)
 		{
 			DrawButton(dc,iButton);
+		}
+
+		if (g_nViewportScale == 2)
+		{
+			int x  = buttonx + 1;
+			int y  = buttony + BUTTONS*BUTTONCY + 36;	// 36 = height of StatusArea
+			RECT rect = {x, y, x+45, y+BUTTONS*BUTTONCY+22};
+			HBRUSH hbr = (HBRUSH) GetStockObject(WHITE_BRUSH);
+			int res = FillRect(dc, &rect, hbr);
 		}
 	}
 
@@ -1114,7 +1129,7 @@ LRESULT CALLBACK FrameWndProc (
       else if (g_bUsingCursor && !sg_Mouse.IsActive())
 	  {
         DrawCrosshairs(x,y);
-	    JoySetPosition(x-viewportx-2, VIEWPORTCX-4, y-viewporty-2, VIEWPORTCY-4);
+	    JoySetPosition(x-viewportx-2, g_nViewportCX-4, y-viewporty-2, g_nViewportCY-4);
       }
 	  else if (sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING))
 	  {
@@ -1123,8 +1138,8 @@ LRESULT CALLBACK FrameWndProc (
 
 			// Outside Apple viewport
 
-			const int iAppleScreenMaxX = VIEWPORTCX-1;
-			const int iAppleScreenMaxY = VIEWPORTCY-1;
+			const int iAppleScreenMaxX = g_nViewportCX-1;
+			const int iAppleScreenMaxY = g_nViewportCY-1;
 			const int iBoundMinX = viewportx;
 			const int iBoundMaxX = iAppleScreenMaxX;
 			const int iBoundMinY = viewporty;
@@ -1403,6 +1418,13 @@ LRESULT CALLBACK FrameWndProc (
 		break;
 	}
 
+	// Message posted by: Cmd-line boot
+	case WM_USER_FULLSCREEN:
+	{
+		ScreenWindowResize(true);
+		break;
+	}
+
   }	// switch(message)
  
   return DefWindowProc(window,message,wparam,lparam);
@@ -1411,6 +1433,27 @@ LRESULT CALLBACK FrameWndProc (
 
 
 //===========================================================================
+
+static void ScreenWindowResize(const bool bCtrlKey)
+{
+	if (g_bIsFullScreen)	// if full screen: then switch back to normal (regardless of CTRL)
+	{
+		SetNormalMode();
+		DoFrameResizeWindow(g_nOldViewportScale);
+	}
+	else if (bCtrlKey)		// if normal screen && CTRL: then switch to full screen
+	{
+		g_nOldViewportScale = g_nViewportScale;
+		DoFrameResizeWindow(1);	// reset to 1x
+		SetFullScreenMode();
+	}
+	else
+	{
+		DoFrameResizeWindow( (g_nViewportScale == 1) ? 2 : 1 );	// Toggle between 1x and 2x
+		REGSAVE(TEXT(REGVALUE_WINDOW_SCALE), g_nViewportScale);
+	}
+}
+
 void ProcessButtonClick (int button)
 {
 	SoundCore_SetFade(FADE_OUT);
@@ -1477,10 +1520,8 @@ void ProcessButtonClick (int button)
       break;
 
     case BTN_FULLSCR:
-      if (g_bIsFullScreen)
-        SetNormalMode();
-      else
-        SetFullScreenMode();
+		KeybUpdateCtrlShiftStatus();
+		ScreenWindowResize(g_bCtrlKey);
       break;
 
     case BTN_DEBUG:
@@ -1790,8 +1831,8 @@ void SetUsingCursor (BOOL bNewValue)
 		SetCapture(g_hFrameWindow);
 		RECT rect =	{	viewportx+2,				// left
 						viewporty+2,				// top
-						viewportx+VIEWPORTCX-1,		// right
-						viewporty+VIEWPORTCY-1};	// bottom
+						viewportx+g_nViewportCX-1,	// right
+						viewporty+g_nViewportCY-1};	// bottom
 		ClientToScreen(g_hFrameWindow,(LPPOINT)&rect.left);
 		ClientToScreen(g_hFrameWindow,(LPPOINT)&rect.right);
 		ClipCursor(&rect);
@@ -1810,29 +1851,106 @@ void SetUsingCursor (BOOL bNewValue)
 	}
 }
 
+int GetViewportScale(void)
+{
+	return g_nViewportScale;
+}
+
+void SetViewportScale(int nNewScale)
+{
+	g_nViewportScale = nNewScale;
+	g_nViewportCX = g_nViewportScale * FRAMEBUFFER_W;
+	g_nViewportCY = g_nViewportScale * FRAMEBUFFER_H;
+}
+
+static void DoFrameResizeWindow(int nNewScale)
+{
+	SetViewportScale(nNewScale);
+	FrameResizeWindow();
+}
+
+static void SetupTooltipControls(void)
+{
+	TOOLINFO toolinfo;
+	toolinfo.cbSize = sizeof(toolinfo);
+	toolinfo.uFlags = TTF_CENTERTIP;
+	toolinfo.hwnd = g_hFrameWindow;
+	toolinfo.hinst = g_hInstance;
+	toolinfo.lpszText = LPSTR_TEXTCALLBACK;
+	toolinfo.rect.left  = BUTTONX;
+	toolinfo.rect.right = toolinfo.rect.left+BUTTONCX+1;
+	toolinfo.uId = 0;
+	toolinfo.rect.top    = BUTTONY+BTN_DRIVE1*BUTTONCY+1;
+	toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
+	SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
+	toolinfo.uId = 1;
+	toolinfo.rect.top    = BUTTONY+BTN_DRIVE2*BUTTONCY+1;
+	toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
+	SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
+}
+
 //
 // ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
 //
 
 //===========================================================================
-void FrameCreateWindow ()
+
+void GetWidthHeight(int& nWidth, int& nHeight)
 {
-	const int nWidth  = VIEWPORTCX + VIEWPORTX*2
-								   + BUTTONCX
-								   + GetSystemMetrics(SM_CXBORDER)*2
-								   + MAGICX;
-	const int nHeight = VIEWPORTCY + VIEWPORTY*2
-								   + GetSystemMetrics(SM_CYBORDER)
-								   + GetSystemMetrics(SM_CYCAPTION)
-								   + MAGICY;
+	nWidth  = g_nViewportCX + VIEWPORTX*2
+						   + BUTTONCX
+						   + GetSystemMetrics(SM_CXBORDER)*2
+						   + MAGICX;
+	nHeight = g_nViewportCY + VIEWPORTY*2
+						   + GetSystemMetrics(SM_CYBORDER)
+						   + GetSystemMetrics(SM_CYCAPTION)
+						   + MAGICY;
+}
+
+void FrameResizeWindow(void)
+{
+	int nWidth, nHeight;
+	GetWidthHeight(nWidth, nHeight);
+
+	GetWindowRect(g_hFrameWindow, &framerect);
+	int nXPos = framerect.left;
+	int nYPos = framerect.top;
+
+	//
+
+	buttonx = (g_nViewportCX + VIEWPORTX*2);
+	buttony = 0;
+
+	RECT irect;
+	irect.left = irect.top = 0;
+	irect.right = nWidth;
+	irect.bottom = nHeight;
+	InvalidateRect(g_hFrameWindow, &irect, true);
+	MoveWindow(g_hFrameWindow, nXPos, nYPos, nWidth, nHeight, false);
+	UpdateWindow(g_hFrameWindow);
+
+	TOOLINFO toolinfo = {0};
+	toolinfo.cbSize = sizeof(toolinfo);
+	toolinfo.hwnd = g_hFrameWindow;
+	toolinfo.uId = 0;
+	SendMessage(tooltipwindow, TTM_DELTOOL, 0, (LPARAM)&toolinfo);
+	toolinfo.uId = 1;
+	SendMessage(tooltipwindow, TTM_DELTOOL, 0, (LPARAM)&toolinfo);
+
+	SetupTooltipControls();
+}
+
+void FrameCreateWindow(void)
+{
+	int nWidth, nHeight;
+	GetWidthHeight(nWidth, nHeight);
 
 	// Restore Window X Position
-
 	int nXPos = -1;
 	{
 		int nXScreen = GetSystemMetrics(SM_CXSCREEN) - nWidth;
 
-		if (RegLoadValue(TEXT(REG_PREFS), TEXT("Window X-Position"), 1, (DWORD*)&nXPos))
+		if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_X_POS), 1, (DWORD*)&nXPos))
 		{
 			if ((nXPos > nXScreen) && !g_bMultiMon)
 				nXPos = -1;	// Not fully visible, so default to centre position
@@ -1843,12 +1961,11 @@ void FrameCreateWindow ()
 	}
 
 	// Restore Window Y Position
-
 	int nYPos = -1;
 	{
 		int nYScreen = GetSystemMetrics(SM_CYSCREEN) - nHeight;
 
-		if (RegLoadValue(TEXT(REG_PREFS), TEXT("Window Y-Position"), 1, (DWORD*)&nYPos))
+		if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_Y_POS), 1, (DWORD*)&nYPos))
 		{
 			if ((nYPos > nYScreen) && !g_bMultiMon)
 				nYPos = -1;	// Not fully visible, so default to centre position
@@ -1859,6 +1976,10 @@ void FrameCreateWindow ()
 	}
 
 	//
+
+	buttonx = (g_nViewportCX + VIEWPORTX*2);
+	buttony = 0;
+
 	GetAppleWindowTitle();
 
 	g_hFrameWindow = CreateWindow(
@@ -1879,22 +2000,7 @@ void FrameCreateWindow ()
 		(HMENU)0,
 		g_hInstance,NULL ); 
 
-	TOOLINFO toolinfo;
-	toolinfo.cbSize = sizeof(toolinfo);
-	toolinfo.uFlags = TTF_CENTERTIP;
-	toolinfo.hwnd = g_hFrameWindow;
-	toolinfo.hinst = g_hInstance;
-	toolinfo.lpszText = LPSTR_TEXTCALLBACK;
-	toolinfo.rect.left  = BUTTONX;
-	toolinfo.rect.right = toolinfo.rect.left+BUTTONCX+1;
-	toolinfo.uId = 0;
-	toolinfo.rect.top    = BUTTONY+BTN_DRIVE1*BUTTONCY+1;
-	toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
-	SendMessage(tooltipwindow,TTM_ADDTOOL,0,(LPARAM)&toolinfo);
-	toolinfo.uId = 1;
-	toolinfo.rect.top    = BUTTONY+BTN_DRIVE2*BUTTONCY+1;
-	toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
-	SendMessage(tooltipwindow,TTM_ADDTOOL,0,(LPARAM)&toolinfo);
+	SetupTooltipControls();
 }
 
 //===========================================================================
@@ -1915,8 +2021,8 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 	{
 		RECT rect = {	FSVIEWPORTX,
 						FSVIEWPORTY,
-						FSVIEWPORTX+VIEWPORTCX,
-						FSVIEWPORTY+VIEWPORTCY};
+						FSVIEWPORTX+g_nViewportCX,
+						FSVIEWPORTY+g_nViewportCY};
 		DDSURFACEDESC surfacedesc;
 		surfacedesc.dwSize = sizeof(surfacedesc);
 		// TC: Use DDLOCK_WAIT - see Bug #13425
@@ -1931,7 +2037,7 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 //				g_pDDPrimarySurface->SetPalette(g_pDDPal); // this sets the palette for the primary surface
 //			}
 		}
-		*pAddr_  = (LPBYTE)surfacedesc.lpSurface+(VIEWPORTCY-1)*surfacedesc.lPitch;
+		*pAddr_  = (LPBYTE)surfacedesc.lpSurface+(g_nViewportCY-1)*surfacedesc.lPitch;
 		*pPitch_ = -surfacedesc.lPitch;
 
 		return (HDC)0;
@@ -1987,8 +2093,8 @@ void FrameReleaseVideoDC ()
 		RECT rect = {
 			FSVIEWPORTX,
 			FSVIEWPORTY,
-			FSVIEWPORTX+VIEWPORTCX,
-			FSVIEWPORTY+VIEWPORTCY
+			FSVIEWPORTX+g_nViewportCX,
+			FSVIEWPORTY+g_nViewportCY
 		};
 		g_pDDPrimarySurface->Unlock(&rect);
 
@@ -2024,8 +2130,8 @@ void FrameSetCursorPosByMousePos()
 	float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));
 	float fScaleY = (float)(iY-iMinY) / ((float)(iMaxY-iMinY));
 
-	int iWindowX = (int)(fScaleX * (float)VIEWPORTCX);
-	int iWindowY = (int)(fScaleY * (float)VIEWPORTCY);
+	int iWindowX = (int)(fScaleX * (float)g_nViewportCX);
+	int iWindowY = (int)(fScaleY * (float)g_nViewportCY);
 
 	POINT Point = {viewportx+2, viewporty+2};	// top-left
 	ClientToScreen(g_hFrameWindow, &Point);
@@ -2069,8 +2175,8 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 		float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));
 		float fScaleY = (float)(iY-iMinY) / ((float)(iMaxY-iMinY));
 
-		int iWindowX = (int)(fScaleX * (float)VIEWPORTCX) + dx;
-		int iWindowY = (int)(fScaleY * (float)VIEWPORTCY) + dy;
+		int iWindowX = (int)(fScaleX * (float)g_nViewportCX) + dx;
+		int iWindowY = (int)(fScaleY * (float)g_nViewportCY) + dy;
 
 		POINT Point = {viewportx+2, viewporty+2};	// top-left
 		ClientToScreen(g_hFrameWindow, &Point);
@@ -2083,10 +2189,10 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 		x -= (viewportx+2-MAGICX); if (x < 0) x = 0;
 		y -= (viewporty+2-MAGICY); if (y < 0) y = 0;
 
-		_ASSERT(x <= VIEWPORTCX);
-		_ASSERT(y <= VIEWPORTCY);
-		float fScaleX = (float)x / (float)VIEWPORTCX;
-		float fScaleY = (float)y / (float)VIEWPORTCY;
+		_ASSERT(x <= g_nViewportCX);
+		_ASSERT(y <= g_nViewportCY);
+		float fScaleX = (float)x / (float)g_nViewportCX;
+		float fScaleY = (float)y / (float)g_nViewportCY;
 
 		int iAppleX = iMinX + (int)(fScaleX * (float)(iMaxX-iMinX));
 		int iAppleY = iMinY + (int)(fScaleY * (float)(iMaxY-iMinY));
@@ -2111,8 +2217,8 @@ static void DrawCrosshairsMouse()
 	float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));
 	float fScaleY = (float)(iY-iMinY) / ((float)(iMaxY-iMinY));
 
-	int iWindowX = (int)(fScaleX * (float)VIEWPORTCX);
-	int iWindowY = (int)(fScaleY * (float)VIEWPORTCY);
+	int iWindowX = (int)(fScaleX * (float)g_nViewportCX);
+	int iWindowY = (int)(fScaleY * (float)g_nViewportCY);
 
 	DrawCrosshairs(iWindowX,iWindowY);
 }
@@ -2169,4 +2275,10 @@ static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int
 
 		DrawCrosshairsMouse();
 	}
+}
+
+void GetViewportCXCY(int& nViewportCX, int& nViewportCY)
+{
+	nViewportCX = g_nViewportCX;
+	nViewportCY = g_nViewportCY;
 }
