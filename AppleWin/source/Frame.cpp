@@ -139,7 +139,8 @@ bool	g_bFreshReset = false;
 	static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
 	static void ScreenWindowResize(const bool bCtrlKey);
 	static void DoFrameResizeWindow(int nNewScale);
-	static void FrameResizeWindow(void);
+	static void GetWidthHeight(int& nWidth, int& nHeight);
+	static void FrameResizeWindow(int nOldWidth, int nOldHeight);
 
 
 	TCHAR g_pAppleWindowTitle[ 128 ] = "";
@@ -1865,8 +1866,11 @@ void SetViewportScale(int nNewScale)
 
 static void DoFrameResizeWindow(int nNewScale)
 {
+	int nOldWidth, nOldHeight;
+	GetWidthHeight(nOldWidth, nOldHeight);
+
 	SetViewportScale(nNewScale);
-	FrameResizeWindow();
+	FrameResizeWindow(nOldWidth, nOldHeight);
 }
 
 static void SetupTooltipControls(void)
@@ -1889,13 +1893,7 @@ static void SetupTooltipControls(void)
 	SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
 }
 
-//
-// ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
-//
-
-//===========================================================================
-
-void GetWidthHeight(int& nWidth, int& nHeight)
+static void GetWidthHeight(int& nWidth, int& nHeight)
 {
 	nWidth  = g_nViewportCX + VIEWPORTX*2
 						   + BUTTONCX
@@ -1907,7 +1905,7 @@ void GetWidthHeight(int& nWidth, int& nHeight)
 						   + MAGICY;
 }
 
-void FrameResizeWindow(void)
+static void FrameResizeWindow(int nOldWidth, int nOldHeight)
 {
 	int nWidth, nHeight;
 	GetWidthHeight(nWidth, nHeight);
@@ -1918,17 +1916,23 @@ void FrameResizeWindow(void)
 
 	//
 
-	buttonx = (g_nViewportCX + VIEWPORTX*2);
+	buttonx = g_nViewportCX + VIEWPORTX*2;
 	buttony = 0;
 
-	RECT irect;
-	irect.left = irect.top = 0;
-	irect.right = nWidth;
-	irect.bottom = nHeight;
-	InvalidateRect(g_hFrameWindow, &irect, true);
-	MoveWindow(g_hFrameWindow, nXPos, nYPos, nWidth, nHeight, false);
+	// Invalidate old rect region
+	{
+		RECT irect;
+		irect.left = irect.top = 0;
+		irect.right = nOldWidth;
+		irect.bottom = nOldHeight;
+		InvalidateRect(g_hFrameWindow, &irect, TRUE);
+	}
+
+	// Resize the window
+	MoveWindow(g_hFrameWindow, nXPos, nYPos, nWidth, nHeight, FALSE);
 	UpdateWindow(g_hFrameWindow);
 
+	// Remove the tooltips for the old window size
 	TOOLINFO toolinfo = {0};
 	toolinfo.cbSize = sizeof(toolinfo);
 	toolinfo.hwnd = g_hFrameWindow;
@@ -1937,8 +1941,15 @@ void FrameResizeWindow(void)
 	toolinfo.uId = 1;
 	SendMessage(tooltipwindow, TTM_DELTOOL, 0, (LPARAM)&toolinfo);
 
+	// Setup the tooltips for the new window size
 	SetupTooltipControls();
 }
+
+//
+// ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
+//
+
+//===========================================================================
 
 void FrameCreateWindow(void)
 {
