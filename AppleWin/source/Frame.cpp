@@ -138,9 +138,8 @@ bool	g_bFreshReset = false;
 	static void DrawCrosshairsMouse();
 	static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
 	static void ScreenWindowResize(const bool bCtrlKey);
-	static void DoFrameResizeWindow(int nNewScale);
+	static void FrameResizeWindow(int nNewScale);
 	static void GetWidthHeight(int& nWidth, int& nHeight);
-	static void FrameResizeWindow(int nOldWidth, int nOldHeight);
 
 
 	TCHAR g_pAppleWindowTitle[ 128 ] = "";
@@ -1440,17 +1439,17 @@ static void ScreenWindowResize(const bool bCtrlKey)
 	if (g_bIsFullScreen)	// if full screen: then switch back to normal (regardless of CTRL)
 	{
 		SetNormalMode();
-		DoFrameResizeWindow(g_nOldViewportScale);
+		FrameResizeWindow(g_nOldViewportScale);
 	}
 	else if (bCtrlKey)		// if normal screen && CTRL: then switch to full screen
 	{
 		g_nOldViewportScale = g_nViewportScale;
-		DoFrameResizeWindow(1);	// reset to 1x
+		FrameResizeWindow(1);	// reset to 1x
 		SetFullScreenMode();
 	}
 	else
 	{
-		DoFrameResizeWindow( (g_nViewportScale == 1) ? 2 : 1 );	// Toggle between 1x and 2x
+		FrameResizeWindow( (g_nViewportScale == 1) ? 2 : 1 );	// Toggle between 1x and 2x
 		REGSAVE(TEXT(REGVALUE_WINDOW_SCALE), g_nViewportScale);
 	}
 }
@@ -1864,15 +1863,6 @@ void SetViewportScale(int nNewScale)
 	g_nViewportCY = g_nViewportScale * FRAMEBUFFER_H;
 }
 
-static void DoFrameResizeWindow(int nNewScale)
-{
-	int nOldWidth, nOldHeight;
-	GetWidthHeight(nOldWidth, nOldHeight);
-
-	SetViewportScale(nNewScale);
-	FrameResizeWindow(nOldWidth, nOldHeight);
-}
-
 static void SetupTooltipControls(void)
 {
 	TOOLINFO toolinfo;
@@ -1905,10 +1895,12 @@ static void GetWidthHeight(int& nWidth, int& nHeight)
 						   + MAGICY;
 }
 
-static void FrameResizeWindow(int nOldWidth, int nOldHeight)
+static void FrameResizeWindow(int nNewScale)
 {
-	int nWidth, nHeight;
-	GetWidthHeight(nWidth, nHeight);
+	int nOldWidth, nOldHeight;
+	GetWidthHeight(nOldWidth, nOldHeight);
+
+	SetViewportScale(nNewScale);
 
 	GetWindowRect(g_hFrameWindow, &framerect);
 	int nXPos = framerect.left;
@@ -1929,7 +1921,10 @@ static void FrameResizeWindow(int nOldWidth, int nOldHeight)
 	}
 
 	// Resize the window
-	MoveWindow(g_hFrameWindow, nXPos, nYPos, nWidth, nHeight, FALSE);
+	int nNewWidth, nNewHeight;
+	GetWidthHeight(nNewWidth, nNewHeight);
+
+	MoveWindow(g_hFrameWindow, nXPos, nYPos, nNewWidth, nNewHeight, FALSE);
 	UpdateWindow(g_hFrameWindow);
 
 	// Remove the tooltips for the old window size
