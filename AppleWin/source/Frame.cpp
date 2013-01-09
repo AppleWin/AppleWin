@@ -1924,7 +1924,7 @@ static void FrameResizeWindow(int nNewScale)
 	int nNewWidth, nNewHeight;
 	GetWidthHeight(nNewWidth, nNewHeight);
 
-	MoveWindow(g_hFrameWindow, nXPos, nYPos, nNewWidth, nNewHeight, FALSE);
+	MoveWindow(g_hFrameWindow, nXPos, nYPos, nNewWidth, nNewHeight, TRUE);
 	UpdateWindow(g_hFrameWindow);
 
 	// Remove the tooltips for the old window size

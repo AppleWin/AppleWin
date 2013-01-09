@@ -334,32 +334,6 @@ void SetCurrentCLK6502()
 }
 
 //===========================================================================
-LRESULT CALLBACK DlgProc (HWND   window,
-                          UINT   message,
-                          WPARAM wparam,
-                          LPARAM lparam) {
-  if (message == WM_CREATE) {
-    RECT rect;
-    GetWindowRect(window,&rect);
-    SIZE size;
-    size.cx = rect.right-rect.left;
-    size.cy = rect.bottom-rect.top;
-    rect.left   = (GetSystemMetrics(SM_CXSCREEN)-size.cx) >> 1;
-    rect.top    = (GetSystemMetrics(SM_CYSCREEN)-size.cy) >> 1;
-    rect.right  = rect.left+size.cx;
-    rect.bottom = rect.top +size.cy;
-    MoveWindow(window,
-	       rect.left,
-	       rect.top,
-	       rect.right-rect.left,
-	       rect.bottom-rect.top,
-	       0);
-    ShowWindow(window,SW_SHOW);
-  }
-  return DefWindowProc(window,message,wparam,lparam);
-}
-
-//===========================================================================
 void EnterMessageLoop ()
 {
 	MSG message;
