@@ -21,6 +21,13 @@ Next release:
 -------------
 TBC
 
+1.22.1 - 7 Mar 2013
+--------------------
+Changes:
+. Make 2x the default
+  - But refuse double-sizing the window unless the screen is large enough.
+
+
 1.22.0 - 1 Jan 2013
 --------------------
 Changes:

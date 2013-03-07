@@ -43,7 +43,7 @@
 	void    FrameReleaseVideoDC ();
 	void	FrameSetCursorPosByMousePos();
 	int		GetViewportScale(void);
-	void    SetViewportScale(int nNewScale);
+	int     SetViewportScale(int nNewScale);
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);
 
 	LRESULT CALLBACK FrameWndProc (

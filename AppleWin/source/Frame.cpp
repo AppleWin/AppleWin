@@ -43,10 +43,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAGICX 5	// 3D border between Apple window & Emulator's RHS buttons
 #define MAGICY 5	// 3D border between Apple window & Title bar
 
-static int g_nViewportCX = FRAMEBUFFER_W;
-static int g_nViewportCY = FRAMEBUFFER_H;
-static int g_nViewportScale = 1;
-static int g_nOldViewportScale = 1;
+static const int kDEFAULT_VIEWPORT_SCALE = 2;
+static int g_nViewportCX = FRAMEBUFFER_W * kDEFAULT_VIEWPORT_SCALE;
+static int g_nViewportCY = FRAMEBUFFER_H * kDEFAULT_VIEWPORT_SCALE;
+static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE;
+static int g_nOldViewportScale = kDEFAULT_VIEWPORT_SCALE;
+static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
 
 #define  BUTTONX     (g_nViewportCX + VIEWPORTX*2)
 #define  BUTTONY     0
@@ -1856,11 +1858,16 @@ int GetViewportScale(void)
 	return g_nViewportScale;
 }
 
-void SetViewportScale(int nNewScale)
+int SetViewportScale(int nNewScale)
 {
+	if (nNewScale > g_nMaxViewportScale)
+		nNewScale = g_nMaxViewportScale;
+
 	g_nViewportScale = nNewScale;
 	g_nViewportCX = g_nViewportScale * FRAMEBUFFER_W;
 	g_nViewportCY = g_nViewportScale * FRAMEBUFFER_H;
+
+	return nNewScale;
 }
 
 static void SetupTooltipControls(void)
@@ -1900,7 +1907,7 @@ static void FrameResizeWindow(int nNewScale)
 	int nOldWidth, nOldHeight;
 	GetWidthHeight(nOldWidth, nOldHeight);
 
-	SetViewportScale(nNewScale);
+	nNewScale = SetViewportScale(nNewScale);
 
 	GetWindowRect(g_hFrameWindow, &framerect);
 	int nXPos = framerect.left;
@@ -1951,10 +1958,18 @@ void FrameCreateWindow(void)
 	int nWidth, nHeight;
 	GetWidthHeight(nWidth, nHeight);
 
+	// If screen is too small for 2x, then revert to 1x
+	if (g_nViewportScale == 2 && (nWidth > GetSystemMetrics(SM_CXSCREEN) || nHeight > GetSystemMetrics(SM_CYSCREEN)))
+	{
+		g_nMaxViewportScale = 1;
+		SetViewportScale(1);
+		GetWidthHeight(nWidth, nHeight);
+	}
+
 	// Restore Window X Position
 	int nXPos = -1;
 	{
-		int nXScreen = GetSystemMetrics(SM_CXSCREEN) - nWidth;
+		const int nXScreen = GetSystemMetrics(SM_CXSCREEN) - nWidth;
 
 		if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_X_POS), 1, (DWORD*)&nXPos))
 		{
@@ -1969,7 +1984,7 @@ void FrameCreateWindow(void)
 	// Restore Window Y Position
 	int nYPos = -1;
 	{
-		int nYScreen = GetSystemMetrics(SM_CYSCREEN) - nHeight;
+		const int nYScreen = GetSystemMetrics(SM_CYSCREEN) - nHeight;
 
 		if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_Y_POS), 1, (DWORD*)&nYPos))
 		{
@@ -1977,7 +1992,7 @@ void FrameCreateWindow(void)
 				nYPos = -1;	// Not fully visible, so default to centre position
 		}
 
-		if ((nYPos == -1) && g_bMultiMon)
+		if ((nYPos == -1) && !g_bMultiMon)
 			nYPos = nYScreen / 2;
 	}
 
