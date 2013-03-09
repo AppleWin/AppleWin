@@ -1956,6 +1956,23 @@ static void FrameResizeWindow(int nNewScale)
 void FrameCreateWindow(void)
 {
 	int nWidth, nHeight;
+
+	// Set g_nMaxViewportScale
+	{
+		int nOldViewportCX = g_nViewportCX;
+		int nOldViewportCY = g_nViewportCY;
+
+		g_nViewportCX = FRAMEBUFFER_W * 2;
+		g_nViewportCY = FRAMEBUFFER_H * 2;
+		GetWidthHeight(nWidth, nHeight);	// Probe with 2x dimensions
+
+		g_nViewportCX = nOldViewportCX;
+		g_nViewportCY = nOldViewportCY;
+
+		if (nWidth > GetSystemMetrics(SM_CXSCREEN) || nHeight > GetSystemMetrics(SM_CYSCREEN))
+			g_nMaxViewportScale = 1;
+	}
+
 	GetWidthHeight(nWidth, nHeight);
 
 	// If screen is too small for 2x, then revert to 1x
