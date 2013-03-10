@@ -17,15 +17,15 @@ Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise.
 
-Next release:
--------------
-TBC
 
 1.22.1 - 7 Mar 2013
 --------------------
 Changes:
 . Make 2x the default
   - But refuse double-sizing the window unless the screen is large enough.
+
+Fixes:
+. [Bug #018886] MMU no good when no cards in slot-4 & 5
 
 
 1.22.0 - 1 Jan 2013

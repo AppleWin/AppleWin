@@ -1962,13 +1962,13 @@ Update_t CmdTraceFile (int nArgs)
 
 		if (g_hTraceFile)
 		{
-			sprintf( sText, "Trace started: %s", sFileName );
+			sprintf( sText, "Trace started: %s", sFilePath );
 
 			g_bTraceHeader = true;
 		}
 		else
 		{
-			sprintf( sText, "Trace ERROR: %s", sFileName );
+			sprintf( sText, "Trace ERROR: %s", sFilePath );
 		}
 	}
 	

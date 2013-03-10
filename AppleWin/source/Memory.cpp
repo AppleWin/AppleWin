@@ -583,15 +583,20 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 	if (address >= APPLE_SLOT_BEGIN && address <= APPLE_SLOT_END)
 	{
 		// TODO:CHECK: NB. Currently Mockingboard/Phasor is never unplugged, just disabled. See MB_Read().
+		// Fix for bug 18643 and bug 18886
 		const UINT uSlot = (address>>8)&0x7;
-		if (uSlot != 3 && !IsCardInSlot(uSlot))
+		if ( (SW_SLOTCXROM) &&						// Peripheral (card) ROMs enabled in $C100..$C7FF
+		     !(!SW_SLOTC3ROM && uSlot == 3) &&		// Internal C3 ROM disabled in $C300 when slot == 3
+			 !IsCardInSlot(uSlot) )					// Slot is empty
+		{
 			return IO_Null(programcounter, address, write, value, nCyclesLeft);
+		}
 	}
 
 	if ((g_eExpansionRomType == eExpRomNull) && (address >= FIRMWARE_EXPANSION_BEGIN))
 		return IO_Null(programcounter, address, write, value, nCyclesLeft);
-	else
-		return mem[address];
+
+	return mem[address];
 }
 
 BYTE __stdcall IOWrite_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
@@ -606,11 +611,15 @@ BYTE __stdcall IOWrite_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE 
 
 //===========================================================================
 
-static BYTE g_bmSlotInit = 0;
+static struct SlotInfo
+{
+	bool bHasCard;
+	iofunction IOReadCx;
+	iofunction IOWriteCx;
+} g_SlotInfo[NUM_SLOTS] = {0};
 
 static void InitIoHandlers()
 {
-	g_bmSlotInit = 0;
 	UINT i=0;
 
 	for (; i<8; i++)	// C00x..C07x
@@ -641,14 +650,18 @@ static void InitIoHandlers()
 	g_uPeripheralRomSlot = 0;
 
 	for (i=0; i<NUM_SLOTS; i++)
+	{
+		g_SlotInfo[i].bHasCard = false;
+		g_SlotInfo[i].IOReadCx = IORead_Cxxx;
+		g_SlotInfo[i].IOWriteCx = IOWrite_Cxxx;
 		ExpansionRom[i] = NULL;
+	}
 }
 
 // All slots [0..7] must register their handlers
 void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom)
 {
 	_ASSERT(uSlot < NUM_SLOTS);
-	g_bmSlotInit |= 1<<uSlot;
 	SlotParameters[uSlot] = lpSlotParameter;
 
 	IORead[uSlot+8]		= IOReadC0;
@@ -666,19 +679,43 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 		IOWrite[uSlot*16+i]	= IOWriteCx;
 	}
 
+	g_SlotInfo[uSlot].bHasCard = true;
+	g_SlotInfo[uSlot].IOReadCx = IOReadCx;
+	g_SlotInfo[uSlot].IOWriteCx = IOWriteCx;
+
 	// What about [$C80x..$CFEx]? - Do any cards use this as I/O memory?
 	ExpansionRom[uSlot] = pExpansionRom;
 }
 
+// TODO: Support SW_SLOTC3ROM?
+static void IoHandlerCardsOut(void)
+{
+	for (UINT uSlot=1; uSlot<NUM_SLOTS; uSlot++)
+	{
+		for (UINT i=0; i<16; i++)
+		{
+			IORead[uSlot*16+i]	= IORead_Cxxx;
+			IOWrite[uSlot*16+i]	= IOWrite_Cxxx;
+		}
+	}
+}
+
+// TODO: Support SW_SLOTC3ROM?
+static void IoHandlerCardsIn(void)
+{
+	for (UINT uSlot=1; uSlot<NUM_SLOTS; uSlot++)
+	{
+		for (UINT i=0; i<16; i++)
+		{
+			IORead[uSlot*16+i]	= g_SlotInfo[uSlot].IOReadCx;
+			IOWrite[uSlot*16+i]	= g_SlotInfo[uSlot].IOWriteCx;
+		}
+	}
+}
+
 static bool IsCardInSlot(const UINT uSlot)
 {
-	if (IORead[uSlot+8] == IO_Null &&
-		IOWrite[uSlot+8] == IO_Null &&
-		IORead[uSlot*16] == IORead_Cxxx &&
-		IOWrite[uSlot*16] == IOWrite_Cxxx)
-		return false;
-
-	return true;
+	return g_SlotInfo[uSlot].bHasCard;
 }
 
 //===========================================================================
@@ -747,11 +784,11 @@ void ResetPaging (BOOL initialize)
 
 //===========================================================================
 
-static void UpdatePaging (BOOL initialize, BOOL updatewriteonly)
+static void UpdatePaging (BOOL initialize, BOOL updatewriteonly /*Always zero*/)
 {
 	// SAVE THE CURRENT PAGING SHADOW TABLE
 	LPBYTE oldshadow[256];
-	if (!(initialize || updatewriteonly /*|| fastpaging*/ ))
+	if (!(initialize /*|| updatewriteonly*/ /*|| fastpaging*/ ))
 		CopyMemory(oldshadow,memshadow,256*sizeof(LPBYTE));
 
 	// UPDATE THE PAGING TABLES BASED ON THE NEW PAGING SWITCH VALUES
@@ -765,7 +802,7 @@ static void UpdatePaging (BOOL initialize, BOOL updatewriteonly)
 			memwrite[loop] = NULL;
 	}
 
-	if (!updatewriteonly)
+	//if (!updatewriteonly)
 	{
 		for (loop = 0x00; loop < 0x02; loop++)
 			memshadow[loop] = SW_ALTZP ? memaux+(loop << 8) : memmain+(loop << 8);
@@ -782,7 +819,7 @@ static void UpdatePaging (BOOL initialize, BOOL updatewriteonly)
 							: memmain+(loop << 8);
 	}
 
-	if (!updatewriteonly)
+	//if (!updatewriteonly)
 	{
 		for (loop = 0xC0; loop < 0xC8; loop++)
 		{
@@ -850,7 +887,7 @@ static void UpdatePaging (BOOL initialize, BOOL updatewriteonly)
 	// MOVE MEMORY BACK AND FORTH AS NECESSARY BETWEEN THE SHADOW AREAS AND
 	// THE MAIN RAM IMAGE TO KEEP BOTH SETS OF MEMORY CONSISTENT WITH THE NEW
 	// PAGING SHADOW TABLE
-	if (!updatewriteonly)
+	//if (!updatewriteonly)
 	{
 		for (loop = 0x00; loop < 0x100; loop++)
 		{
@@ -1399,9 +1436,10 @@ BYTE __stdcall MemSetPaging (WORD programcounter, WORD address, BYTE write, BYTE
 			// . Similar to $CFFF access
 			// . None of the peripheral cards can be driving the bus - so use the null ROM
 			memset(pCxRomPeripheral+0x800, 0, FIRMWARE_EXPANSION_SIZE);
-			memset(mem+0xC800, 0, 0x800);
+			memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
 			g_eExpansionRomType = eExpRomNull;
 			g_uPeripheralRomSlot = 0;
+			IoHandlerCardsIn();
 		}
 		else
 		{
@@ -1409,6 +1447,7 @@ BYTE __stdcall MemSetPaging (WORD programcounter, WORD address, BYTE write, BYTE
 			memcpy(mem+0xC800, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
 			g_eExpansionRomType = eExpRomInternal;
 			g_uPeripheralRomSlot = 0;
+			IoHandlerCardsOut();
 		}
 	}
 
