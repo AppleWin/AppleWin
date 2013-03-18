@@ -756,10 +756,11 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if(((strcmp(lpCmdLine, "-l") == 0) || (strcmp(lpCmdLine, "-log") == 0)) && (g_fh == NULL))
 		{
 			g_fh = fopen("AppleWin.log", "a+t");	// Open log file (append & text mode)
+			setvbuf(g_fh, NULL, _IONBF, 0);			// No buffering (so implicit fflush after every fprintf)
 			CHAR aDateStr[80], aTimeStr[80];
 			GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aDateStr, sizeof(aDateStr));
 			GetTimeFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aTimeStr, sizeof(aTimeStr));
-			fprintf(g_fh,"*** Logging started: %s %s\n",aDateStr,aTimeStr);
+			fprintf(g_fh, "*** Logging started: %s %s\n", aDateStr, aTimeStr);
 		}
 		else if(strcmp(lpCmdLine, "-m") == 0)
 		{
@@ -867,6 +868,8 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
         }
     }
 
+	LogFileOutput("AppleWin version: %s\n",  VERSIONSTRING);
+
 #if DBG_CALC_FREQ
 	QueryPerformanceFrequency((LARGE_INTEGER*)&g_nPerfFreq);
 	if(g_fh) fprintf(g_fh, "Performance frequency = %d\n",g_nPerfFreq);
@@ -876,39 +879,57 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 	// Initialize COM - so we can use CoCreateInstance
 	// . NB. DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
-	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+	LogFileOutput("Init: CoInitializeEx(), hr=0x%08X\n", hr);
 
-	bool bSysClkOK = SysClk_InitTimer();
+	const bool bSysClkOK = SysClk_InitTimer();
+	LogFileOutput("Init: SysClk_InitTimer(), res=%d\n", bSysClkOK ? 1:0);
 #ifdef USE_SPEECH_API
 	if (g_bEnableSpeech)
 	{
-		bool bSpeechOK = g_Speech.Init();
+		const bool bSpeechOK = g_Speech.Init();
+		LogFileOutput("Init: SysClk_InitTimer(), res=%d\n", bSpeechOK ? 1:0);
 	}
 #endif
 
 	// DO ONE-TIME INITIALIZATION
 	g_hInstance = passinstance;
 	GdiSetBatchLimit(512);
+	LogFileOutput("Init: GdiSetBatchLimit()\n");
+
 	GetProgramDirectory();
+	LogFileOutput("Init: GetProgramDirectory()\n");
+
 	if( g_bRegisterFileTypes )
 	{
 		RegisterExtensions();
+		LogFileOutput("Init: RegisterExtensions()\n");
 	}
+
 	FrameRegisterClass();
+	LogFileOutput("Init: FrameRegisterClass()\n");
+
 	ImageInitialize();
+	LogFileOutput("Init: ImageInitialize()\n");
+
 	DiskInitialize();
+	LogFileOutput("Init: DiskInitialize()\n");
+
 	CreateColorMixMap();	// For tv emulation mode
+	LogFileOutput("Init: CreateColorMixMap()\n");
 
 	int nError = 0;	// TODO: Show error MsgBox if we get a DiskInsert error
 	if(szImageName_drive1)
 	{
 		nError = DoDiskInsert(DRIVE_1, szImageName_drive1);
+		LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", nError);
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 		bBoot = true;
 	}
 	if(szImageName_drive2)
 	{
 		nError |= DoDiskInsert(DRIVE_2, szImageName_drive2);
+		LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", nError);
 	}
 
 	//
@@ -918,17 +939,32 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		// DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
 		restart = 0;
 		g_nAppMode = MODE_LOGO;
+
 		LoadConfiguration();
+		LogFileOutput("Init: LoadConfiguration()\n");
+
 		DebugInitialize();
+		LogFileOutput("Init: DebugInitialize()\n");
+
 		JoyInitialize();
+		LogFileOutput("Init: JoyInitialize()\n");
+
 		MemInitialize();
+		LogFileOutput("Init: MemInitialize()\n");
+
 		VideoInitialize(); // g_pFramebufferinfo been created now
+		LogFileOutput("Init: VideoInitialize()\n");
+
 		FrameCreateWindow();
+		LogFileOutput("Init: FrameCreateWindow()\n");
+
 		// PrintScrn support
 		AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
+		LogFileOutput("Init: AppleWin_RegisterHotKeys()\n");
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
 		DiskReset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
+		LogFileOutput("Init: DiskReset()\n");
 
 		if (!bSysClkOK)
 		{
@@ -943,7 +979,10 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 
 		tfe_init();
+		LogFileOutput("Init: tfe_init()\n");
+
 		Snapshot_Startup();		// Do this after everything has been init'ed
+		LogFileOutput("Init: Snapshot_Startup()\n");
 
 		if(bSetFullScreen)
 		{
@@ -958,24 +997,36 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 
 		// ENTER THE MAIN MESSAGE LOOP
+		LogFileOutput("Init: EnterMessageLoop()\n");
 		EnterMessageLoop();
+		LogFileOutput("Init: LeaveMessageLoop()\n");
 
 		MB_Reset();
+		LogFileOutput("Init: MB_Reset()\n");
+
 		sg_Mouse.Uninitialize();	// Maybe restarting due to switching slot-4 card from mouse to MB
+		LogFileOutput("Init: sg_Mouse.Uninitialize()\n");
 	}
 	while (restart);
 	
 	// Release COM
 	DSUninit();
+	LogFileOutput("Exit: DSUninit()\n");
+
 	SysClk_UninitTimer();
+	LogFileOutput("Exit: SysClk_UninitTimer()\n");
+
 	CoUninitialize();
+	LogFileOutput("Exit: CoUninitialize()\n");
 	
 	tfe_shutdown();
+	LogFileOutput("Exit: tfe_shutdown()\n");
 	
-	if	(g_fh)
+	if (g_fh)
 	{
 		fprintf(g_fh,"*** Logging ended\n\n");
 		fclose(g_fh);
+		g_fh = NULL;
 	}
 
 	RiffFinishWriteFile();

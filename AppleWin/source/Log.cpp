@@ -43,3 +43,19 @@ void LogOutput(LPCTSTR format, ...)
 }
 
 //---------------------------------------------------------------------------
+
+extern FILE* g_fh;	// Filehandle for log file
+
+void LogFileOutput(LPCTSTR format, ...)
+{
+	if (!g_fh)
+		return;
+
+    TCHAR output[256];
+
+    va_list args;
+    va_start(args, format);
+
+    _vsntprintf(output, sizeof(output) - 1, format, args);
+    fprintf(g_fh, output);
+}

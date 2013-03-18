@@ -9,3 +9,4 @@
 #endif
 
 extern void LogOutput(LPCTSTR format, ...);
+extern void LogFileOutput(LPCTSTR format, ...);

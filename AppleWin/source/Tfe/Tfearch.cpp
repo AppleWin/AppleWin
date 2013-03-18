@@ -109,7 +109,7 @@ void TfePcapFreeLibrary(void)
 {
     if (pcap_library) {
         if (!FreeLibrary(pcap_library)) {
-            if(g_fh) fprintf(g_fh, "FreeLibrary WPCAP.DLL failed!");
+            if(g_fh) fprintf(g_fh, "FreeLibrary WPCAP.DLL failed!\n");
         }
         pcap_library = NULL;
 
@@ -127,7 +127,7 @@ void TfePcapFreeLibrary(void)
 #define GET_PROC_ADDRESS_AND_TEST( _name_ ) \
     p_##_name_ = (_name_##_t) GetProcAddress(pcap_library, #_name_ ); \
     if (!p_##_name_ ) { \
-        if(g_fh) fprintf(g_fh, "GetProcAddress " #_name_ " failed!"); \
+        if(g_fh) fprintf(g_fh, "GetProcAddress " #_name_ " failed!\n"); \
         TfePcapFreeLibrary(); \
         return FALSE; \
     } 
@@ -139,7 +139,7 @@ BOOL TfePcapLoadLibrary(void)
         pcap_library = LoadLibrary("wpcap.dll");
 
         if (!pcap_library) {
-            if(g_fh) fprintf(g_fh, "LoadLibrary WPCAP.DLL failed!" );
+            if(g_fh) fprintf(g_fh, "LoadLibrary WPCAP.DLL failed!\n" );
             return FALSE;
         }
 
