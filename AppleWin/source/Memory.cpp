@@ -582,7 +582,6 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 
 	if (address >= APPLE_SLOT_BEGIN && address <= APPLE_SLOT_END)
 	{
-		// TODO:CHECK: NB. Currently Mockingboard/Phasor is never unplugged, just disabled. See MB_Read().
 		// Fix for bug 18643 and bug 18886
 		const UINT uSlot = (address>>8)&0x7;
 		if ( (SW_SLOTCXROM) &&						// Peripheral (card) ROMs enabled in $C100..$C7FF

@@ -1406,14 +1406,19 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 {
 	MB_UpdateCycles(nCyclesLeft);
 
+#ifdef _DEBUG
 	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
-		return mem[nAddr];
-
-	if(g_SoundcardType == CT_Empty)	// TODO: Should really unplug the card from the slot and let IORead_Cxxx() return the floating bus
 	{
-		_ASSERT(0);	// Should not occur now
+		_ASSERT(0);	// Card ROM disabled, so IORead_Cxxx() returns the internal ROM
+		return mem[nAddr];
+	}
+
+	if(g_SoundcardType == CT_Empty)
+	{
+		_ASSERT(0);	// Card unplugged, so IORead_Cxxx() returns the floating bus
 		return MemReadFloatingBus(nCyclesLeft);
 	}
+#endif
 
 	BYTE nMB = (nAddr>>8)&0xf - SLOT4;
 	BYTE nOffset = nAddr&0xff;
@@ -1464,14 +1469,19 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 {
 	MB_UpdateCycles(nCyclesLeft);
 
+#ifdef _DEBUG
 	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
+	{
+		_ASSERT(0);	// Card ROM disabled, so IORead_Cxxx() returns the internal ROM
 		return 0;
+	}
 
 	if(g_SoundcardType == CT_Empty)
 	{
-		_ASSERT(0);	// Should not occur now
+		_ASSERT(0);	// Card unplugged, so IORead_Cxxx() returns the floating bus
 		return 0;
 	}
+#endif
 
 	BYTE nMB = (nAddr>>8)&0xf - SLOT4;
 	BYTE nOffset = nAddr&0xff;
@@ -1512,7 +1522,7 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 
 //-----------------------------------------------------------------------------
 
-static BYTE __stdcall PhasorIO (WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft)
+static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft)
 {
 	if(!g_bPhasorEnable)
 		return MemReadFloatingBus(nCyclesLeft);
