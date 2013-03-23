@@ -608,6 +608,7 @@ namespace DIMouse
 	//-----------------------------------------------------------------------------
 	HRESULT DirectInputInit( HWND hDlg )
 	{
+		LogFileOutput("DirectInputInit\n");
 #ifdef NO_DIRECT_X
 
 		return E_FAIL;
@@ -621,6 +622,7 @@ namespace DIMouse
 		DWORD   dwCoopFlags;
 
 		DirectInputUninit(hDlg);
+		LogFileOutput("DirectInputInit: DirectInputUninit()\n");
 
 		// Determine where the buffer would like to be allocated 
 		bExclusive         = FALSE;
@@ -638,12 +640,15 @@ namespace DIMouse
 			dwCoopFlags |= DISCL_BACKGROUND;
 
 		// Create a DInput object
-		if( FAILED( hr = DirectInput8Create( GetModuleHandle(NULL), DIRECTINPUT_VERSION, 
-												IID_IDirectInput8, (VOID**)&g_pDI, NULL ) ) )
+		hr = DirectInput8Create( GetModuleHandle(NULL), DIRECTINPUT_VERSION, IID_IDirectInput8, (VOID**)&g_pDI, NULL );
+		LogFileOutput("DirectInputInit: DirectInputUninit(), hr=0x%08X\n", hr);
+		if (FAILED(hr))
 			return hr;
 
 		// Obtain an interface to the system mouse device.
-		if( FAILED( hr = g_pDI->CreateDevice( GUID_SysMouse, &g_pMouse, NULL ) ) )
+		hr = g_pDI->CreateDevice( GUID_SysMouse, &g_pMouse, NULL );
+		LogFileOutput("DirectInputInit: CreateDevice(), hr=0x%08X\n", hr);
+		if (FAILED(hr))
 			return hr;
 
 		// Set the data format to "mouse format" - a predefined data format 
@@ -653,16 +658,20 @@ namespace DIMouse
 		//
 		// This tells DirectInput that we will be passing a
 		// DIMOUSESTATE2 structure to IDirectInputDevice::GetDeviceState.
-		if( FAILED( hr = g_pMouse->SetDataFormat( &c_dfDIMouse2 ) ) )
+		hr = g_pMouse->SetDataFormat( &c_dfDIMouse2 );
+		LogFileOutput("DirectInputInit: SetDataFormat(), hr=0x%08X\n", hr);
+		if (FAILED(hr))
 			return hr;
 
 		// Set the cooperativity level to let DirectInput know how
 		// this device should interact with the system and with other
 		// DirectInput applications.
 		hr = g_pMouse->SetCooperativeLevel( hDlg, dwCoopFlags );
+		LogFileOutput("DirectInputInit: SetCooperativeLevel(), hr=0x%08X\n", hr);
 		if( hr == DIERR_UNSUPPORTED && !bForeground && bExclusive )
 		{
 			DirectInputUninit(hDlg);
+			LogFileOutput("DirectInputInit: DirectInputUninit()n");
 			//MessageBox( hDlg, _T("SetCooperativeLevel() returned DIERR_UNSUPPORTED.\n")
 			//                  _T("For security reasons, background exclusive mouse\n")
 			//                  _T("access is not allowed."), 
@@ -691,17 +700,23 @@ namespace DIMouse
 			dipdw.diph.dwHow        = DIPH_DEVICE;
 			dipdw.dwData            = SAMPLE_BUFFER_SIZE; // Arbitary buffer size
 
-			if( FAILED( hr = g_pMouse->SetProperty( DIPROP_BUFFERSIZE, &dipdw.diph ) ) )
+			hr = g_pMouse->SetProperty( DIPROP_BUFFERSIZE, &dipdw.diph );
+			LogFileOutput("DirectInputInit: SetProperty(), hr=0x%08X\n", hr);
+			if (FAILED(hr))
 				return hr;
 		}
 
 		// Acquire the newly created device
-		if (FAILED(hr = g_pMouse->Acquire()))
+		hr = g_pMouse->Acquire();
+		LogFileOutput("DirectInputInit: Acquire(), hr=0x%08X\n", hr);
+		if (FAILED(hr))
 			return hr;
 
 		// Setup timer to read mouse position
-		if (g_TimerIDEvent = SetTimer(hDlg, IDEVENT_TIMER_MOUSE, 8, NULL) == 0)	// 120Hz timer
-			return -1;
+		g_TimerIDEvent = SetTimer(hDlg, IDEVENT_TIMER_MOUSE, 8, NULL);	// 120Hz timer
+		LogFileOutput("DirectInputInit: SetTimer(), id=0x%08X\n", g_TimerIDEvent);
+		if (g_TimerIDEvent == 0)
+			return E_FAIL;
 
 		return S_OK;
 
@@ -714,17 +729,26 @@ namespace DIMouse
 	//-----------------------------------------------------------------------------
 	void DirectInputUninit( HWND hDlg )
 	{
+		LogFileOutput("DirectInputUninit\n");
+
 		// Unacquire the device one last time just in case 
 		// the app tried to exit while the device is still acquired.
 		if( g_pMouse ) 
-			g_pMouse->Unacquire();
+		{
+			HRESULT hr = g_pMouse->Unacquire();
+			LogFileOutput("DirectInputUninit: Unacquire(), hr=0x%08X\n", hr);
+		}
 
 		// Release any DirectInput objects.
 		SAFE_RELEASE( g_pMouse );
 		SAFE_RELEASE( g_pDI );
 
 		if (g_TimerIDEvent)
-			KillTimer(hDlg, g_TimerIDEvent);
+		{
+			BOOL bRes = KillTimer(hDlg, g_TimerIDEvent);
+			LogFileOutput("DirectInputUninit: KillTimer(), res=%d\n", bRes ? 1 : 0);
+			g_TimerIDEvent = 0;
+		}
 	}
 
 	//-----------------------------------------------------------------------------

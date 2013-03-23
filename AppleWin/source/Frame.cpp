@@ -706,6 +706,7 @@ LRESULT CALLBACK FrameWndProc (
       break;
 
     case WM_CLOSE:
+      LogFileOutput("WM_CLOSE\n");
       if (g_bIsFullScreen)
         SetNormalMode();
       if (!IsIconic(window))
@@ -718,6 +719,7 @@ LRESULT CALLBACK FrameWndProc (
         helpquit = 0;
         HtmlHelp(NULL,NULL,HH_CLOSE_ALL,0);
       }
+      LogFileOutput("WM_CLOSE (done)\n");
       break;
 
 		case WM_CHAR:
@@ -739,26 +741,44 @@ LRESULT CALLBACK FrameWndProc (
 			break;
 
     case WM_CREATE:
+      LogFileOutput("WM_CREATE\n");
       g_hFrameWindow = window;
+
       CreateGdiObjects();
+      LogFileOutput("WM_CREATE: CreateGdiObjects()\n");
+
 	  DSInit();
+      LogFileOutput("WM_CREATE: DSInit()\n");
+
 	  DIMouse::DirectInputInit(window);
-      MB_Initialize();
-      SpkrInitialize();
-      DragAcceptFiles(window,1);
-      break;
+      LogFileOutput("WM_CREATE: DIMouse::DirectInputInit()\n");
+
+	  MB_Initialize();
+      LogFileOutput("WM_CREATE: MB_Initialize()\n");
+
+	  SpkrInitialize();
+      LogFileOutput("WM_CREATE: SpkrInitialize()\n");
+
+	  DragAcceptFiles(window,1);
+	  LogFileOutput("WM_CREATE: DragAcceptFiles()\n");
+
+      LogFileOutput("WM_CREATE (done)\n");
+	  break;
 
     case WM_DDE_INITIATE: {
+      LogFileOutput("WM_DDE_INITIATE\n");
       ATOM application = GlobalAddAtom(TEXT("applewin"));
       ATOM topic       = GlobalAddAtom(TEXT("system"));
       if(LOWORD(lparam) == application && HIWORD(lparam) == topic)
         SendMessage((HWND)wparam,WM_DDE_ACK,(WPARAM)window,MAKELPARAM(application,topic));
       GlobalDeleteAtom(application);
       GlobalDeleteAtom(topic);
+      LogFileOutput("WM_DDE_INITIATE (done)\n");
       break;
     }
 
     case WM_DDE_EXECUTE: {
+      LogFileOutput("WM_DDE_EXECUTE\n");
       LPTSTR filename = (LPTSTR)GlobalLock((HGLOBAL)lparam);
 //MessageBox( NULL, filename, "DDE Exec", MB_OK );
       ImageError_e Error = DiskInsert(DRIVE_1, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
@@ -774,10 +794,12 @@ LRESULT CALLBACK FrameWndProc (
         DiskNotifyInvalidImage(DRIVE_1, filename, Error);
       }
       GlobalUnlock((HGLOBAL)lparam);
+      LogFileOutput("WM_DDE_EXECUTE (done)\n");
       break;
     }
 
     case WM_DESTROY:
+      LogFileOutput("WM_DESTROY\n");
       DragAcceptFiles(window,0);
 	  Snapshot_Shutdown();
       DebugDestroy();
@@ -796,6 +818,7 @@ LRESULT CALLBACK FrameWndProc (
       DeleteGdiObjects();
       DIMouse::DirectInputUninit(window);
       PostQuitMessage(0);	// Post WM_QUIT message to the thread's message queue
+      LogFileOutput("WM_DESTROY (done)\n");
       break;
 
     case WM_DISPLAYCHANGE:

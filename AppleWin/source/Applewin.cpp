@@ -955,8 +955,9 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		VideoInitialize(); // g_pFramebufferinfo been created now
 		LogFileOutput("Init: VideoInitialize()\n");
 
+		LogFileOutput("Init: FrameCreateWindow() - pre\n");
 		FrameCreateWindow();
-		LogFileOutput("Init: FrameCreateWindow()\n");
+		LogFileOutput("Init: FrameCreateWindow() - post\n");
 
 		// PrintScrn support
 		AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
