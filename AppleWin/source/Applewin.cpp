@@ -79,6 +79,7 @@ int			g_nCpuCyclesFeedback = 0;
 DWORD       g_dwCyclesThisFrame = 0;
 
 FILE*		g_fh			= NULL;
+bool		g_bDisableDirectInput = false;
 bool		g_bDisableDirectSound = false;
 bool		g_bDisableDirectSoundMockingboard = false;
 
@@ -761,6 +762,10 @@ int APIENTRY WinMain (HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aDateStr, sizeof(aDateStr));
 			GetTimeFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aTimeStr, sizeof(aTimeStr));
 			fprintf(g_fh, "*** Logging started: %s %s\n", aDateStr, aTimeStr);
+		}
+		else if(strcmp(lpCmdLine, "-no-di") == 0)
+		{
+			g_bDisableDirectInput = true;
 		}
 		else if(strcmp(lpCmdLine, "-m") == 0)
 		{

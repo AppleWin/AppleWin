@@ -593,6 +593,8 @@ void CMouseInterface::SetButton(eBUTTON Button, eBUTTONSTATE State)
 
 #include <dinput.h>
 
+extern bool g_bDisableDirectInput;	// currently in AppleWin.h
+
 namespace DIMouse
 {
 
@@ -608,7 +610,10 @@ namespace DIMouse
 	//-----------------------------------------------------------------------------
 	HRESULT DirectInputInit( HWND hDlg )
 	{
-		LogFileOutput("DirectInputInit\n");
+		LogFileOutput("DirectInputInit: g_bDisableDirectInput=%d\n", g_bDisableDirectInput);
+		if (g_bDisableDirectInput)
+			return S_OK;
+
 #ifdef NO_DIRECT_X
 
 		return E_FAIL;
@@ -641,7 +646,7 @@ namespace DIMouse
 
 		// Create a DInput object
 		hr = DirectInput8Create( GetModuleHandle(NULL), DIRECTINPUT_VERSION, IID_IDirectInput8, (VOID**)&g_pDI, NULL );
-		LogFileOutput("DirectInputInit: DirectInputUninit(), hr=0x%08X\n", hr);
+		LogFileOutput("DirectInputInit: DirectInput8Create(), hr=0x%08X\n", hr);
 		if (FAILED(hr))
 			return hr;
 
