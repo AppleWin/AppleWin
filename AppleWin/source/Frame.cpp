@@ -742,7 +742,7 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_CREATE:
       LogFileOutput("WM_CREATE\n");
-      g_hFrameWindow = window;
+      g_hFrameWindow = window;	// NB. g_hFrameWindow by CreateWindow()
 
       CreateGdiObjects();
       LogFileOutput("WM_CREATE: CreateGdiObjects()\n");
@@ -750,8 +750,8 @@ LRESULT CALLBACK FrameWndProc (
 	  DSInit();
       LogFileOutput("WM_CREATE: DSInit()\n");
 
-	  DIMouse::DirectInputInit(window);
-      LogFileOutput("WM_CREATE: DIMouse::DirectInputInit()\n");
+//	  DIMouse::DirectInputInit(window);
+//    LogFileOutput("WM_CREATE: DIMouse::DirectInputInit()\n");
 
 	  MB_Initialize();
       LogFileOutput("WM_CREATE: MB_Initialize()\n");
@@ -816,7 +816,7 @@ LRESULT CALLBACK FrameWndProc (
       VideoDestroy();
       MB_Destroy();
       DeleteGdiObjects();
-      DIMouse::DirectInputUninit(window);
+      DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
       PostQuitMessage(0);	// Post WM_QUIT message to the thread's message queue
       LogFileOutput("WM_DESTROY (done)\n");
       break;
@@ -2043,6 +2043,7 @@ void FrameCreateWindow(void)
 
 	GetAppleWindowTitle();
 
+	// NB. g_hFrameWindow also set by WM_CREATE - NB. CreateWindow() must synchronously send WM_CREATE
 	g_hFrameWindow = CreateWindow(
 		TEXT("APPLE2FRAME"),
 		g_pAppTitle, // SetWindowText() // WindowTitle

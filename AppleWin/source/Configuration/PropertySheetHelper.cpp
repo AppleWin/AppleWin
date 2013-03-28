@@ -41,7 +41,7 @@ Input
 Sound
 . MB/Phasor/None		WM_USER_RESTART
 Disk
-. Enhanced disk speed	WM_USER_RESTART					Why?
+. Enhanced disk speed	WM_USER_RESTART					Why? (used to patch Disk][ f/w - but not anymore)
 . HDD enable			WM_USER_RESTART
 Advanced
 . Save State			WM_USER_SAVESTATE

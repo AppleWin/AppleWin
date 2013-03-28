@@ -4056,6 +4056,8 @@ void Video_MakeScreenShot(FILE *pFile)
 
 	if( g_iScreenshotType == SCREENSHOT_280x192 )
 	{
+		pSrc += FRAMEBUFFER_W;	// Start on odd scanline (otherwise for 50% scanline mode get an all black image!)
+
 		u8 aScanLine[ 280 ];
 		u8 *pDst;
 
@@ -4067,7 +4069,7 @@ void Video_MakeScreenShot(FILE *pFile)
 			pDst = aScanLine;
 			for( int x = 0; x < FRAMEBUFFER_W/2; x++ )
 			{
-				*pDst++ = *pSrc;
+				*pDst++ = pSrc[1]; // correction for left edge loss of scaled scanline [Bill Buckel, B#18928]
 				pSrc += 2; // skip odd pixels
 			}
 			fwrite( aScanLine, FRAMEBUFFER_W/2, 1, pFile );
