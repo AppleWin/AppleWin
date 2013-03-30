@@ -17,15 +17,25 @@ Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise.
 
+1.22.1.4 - 28 Mar 2013
+----------------------
+Changes:
+. Extended logging support.
+
+Fixes:
+. Screenshot 280x192:
+  - [Bug #018928] Correction for left edge loss of scaled scanline.
+  - In 50% scanline mode got an all black image.
 
 1.22.1 - 7 Mar 2013
 --------------------
 Changes:
 . Make 2x the default
-  - But refuse double-sizing the window unless the screen is large enough.
+  - [Bug #018851] Refuse double-sizing the window unless the screen is large enough.
 
 Fixes:
 . [Bug #018886] MMU no good when no cards in slot-4 & 5
+. [Bug #018852] WinXP: Switching 2x -> 1x video mode leaves old 2x data behind
 
 
 1.22.0 - 1 Jan 2013
