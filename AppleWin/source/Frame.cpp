@@ -750,8 +750,8 @@ LRESULT CALLBACK FrameWndProc (
 	  DSInit();
       LogFileOutput("WM_CREATE: DSInit()\n");
 
-//	  DIMouse::DirectInputInit(window);
-//    LogFileOutput("WM_CREATE: DIMouse::DirectInputInit()\n");
+	  DIMouse::DirectInputInit(window);
+      LogFileOutput("WM_CREATE: DIMouse::DirectInputInit()\n");
 
 	  MB_Initialize();
       LogFileOutput("WM_CREATE: MB_Initialize()\n");
@@ -1130,8 +1130,9 @@ LRESULT CALLBACK FrameWndProc (
       break;
 
     case WM_MOUSEMOVE: {
-      int x = LOWORD(lparam);
-      int y = HIWORD(lparam);
+      // MSDN: "WM_MOUSEMOVE message" : Do not use the LOWORD or HIWORD macros to extract the x- and y- coordinates...
+      int x = GET_X_LPARAM(lparam);
+      int y = GET_Y_LPARAM(lparam);
       int newover = (((x >= buttonx) &&
                       (x <= buttonx+BUTTONCX) &&
                       (y >= buttony) &&

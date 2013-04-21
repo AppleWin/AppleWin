@@ -999,12 +999,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		tfe_init();
 		LogFileOutput("Main: tfe_init()\n");
 
-		if (g_Slot4 == CT_MouseInterface)	// TODO: Check all slots for MouseInterface card
-		{
-			DIMouse::DirectInputInit(g_hFrameWindow);
-			LogFileOutput("Main: DIMouse::DirectInputInit()\n");
-		}
-
 		Snapshot_Startup();		// Do this after everything has been init'ed
 		LogFileOutput("Main: Snapshot_Startup()\n");
 
