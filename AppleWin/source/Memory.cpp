@@ -1023,6 +1023,19 @@ LPBYTE MemGetMainPtr (WORD offset)
 
 //===========================================================================
 
+LPBYTE MemGetBankPtr(const UINT nBank)
+{
+	if (nBank == 0)
+		return mem;
+
+	if (nBank > g_uMaxExPages)
+		return NULL;
+
+	return RWpages[nBank-1];
+}
+
+//===========================================================================
+
 LPBYTE MemGetCxRomPeripheral()
 {
 	return pCxRomPeripheral;

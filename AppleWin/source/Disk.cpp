@@ -1049,17 +1049,17 @@ DWORD DiskSetSnapshot(SS_CARD_DISK2* pSS, DWORD /*dwSlot*/)
 	floppymotoron	= pSS->floppymotoron;
 	floppywritemode	= pSS->floppywritemode;
 
+	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
 	for(UINT i=0; i<NUM_DRIVES; i++)
 	{
-		bool bImageError = false;
-
 		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
-
 		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t ));
+	}
+
+	for(UINT i=0; i<NUM_DRIVES; i++)
+	{
 		if(pSS->Unit[i].szFileName[0] == 0x00)
 			continue;
-
-		//
 
 		DWORD dwAttributes = GetFileAttributes(pSS->Unit[i].szFileName);
 		if(dwAttributes == INVALID_FILE_ATTRIBUTES)
@@ -1070,6 +1070,7 @@ DWORD DiskSetSnapshot(SS_CARD_DISK2* pSS, DWORD /*dwSlot*/)
 			dwAttributes = GetFileAttributes(pSS->Unit[i].szFileName);
 		}
 
+		bool bImageError = false;
 		if(dwAttributes != INVALID_FILE_ATTRIBUTES)
 		{
 			if(DiskInsert(i, pSS->Unit[i].szFileName, dwAttributes & FILE_ATTRIBUTE_READONLY, IMAGE_DONT_CREATE) != eIMAGE_ERROR_NONE)

@@ -13,19 +13,17 @@ Tom Charlesworth
 tomch at users.berlios.de
 
 
-Restrictions/bugs:
-- SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
-- During Mockingboard playback, Speaker emulation isn't precise.
-
-1.22.1.4 - 28 Mar 2013
+1.22.1.5 - 26 Apr 2013
 ----------------------
 Changes:
-. Extended logging support.
+. Extended logging support during startup and shutdown.
+. Allow debugging of save-state image from start-up "logo" screen.
 
 Fixes:
 . Screenshot 280x192:
   - [Bug #018928] Correction for left edge loss of scaled scanline.
-  - In 50% scanline mode got an all black image.
+  - A screenshot in 50% scanline mode would produce an all black image.
+. Fixed inserting of disk images from save-state when drive-2 contained the disk required for drive-1.
 
 1.22.1 - 7 Mar 2013
 --------------------

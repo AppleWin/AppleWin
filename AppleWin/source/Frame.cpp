@@ -1551,10 +1551,11 @@ void ProcessButtonClick (int button)
       break;
 
     case BTN_DEBUG:
-		if (g_nAppMode == MODE_LOGO)
+		if (g_nAppMode == MODE_LOGO && !GetLoadedSaveStateFlag())
 		{
 			ResetMachineState();
 		}
+
 		// Allow F7 to enter debugger even though emulator isn't "running"
 		if (g_nAppMode == MODE_STEPPING)
 		{

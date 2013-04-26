@@ -25,6 +25,8 @@ extern bool		P8Shift;
 extern HINSTANCE  g_hInstance;
 
 extern AppMode_e g_nAppMode;
+bool GetLoadedSaveStateFlag(void);
+void SetLoadedSaveStateFlag(const bool bFlag);
 
 extern DWORD      needsprecision;
 extern TCHAR      g_sProgramDir[MAX_PATH];

@@ -149,6 +149,8 @@ void Snapshot_LoadState()
 		//
 		// Slot6: Disk][
 		DiskSetSnapshot(&pSS->Disk2, 6);
+
+		SetLoadedSaveStateFlag(true);
 	}
 	catch(int)
 	{

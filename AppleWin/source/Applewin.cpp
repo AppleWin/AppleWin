@@ -61,6 +61,7 @@ bool P8Shift = false;
 HINSTANCE g_hInstance          = (HINSTANCE)0;
 
 AppMode_e	g_nAppMode = MODE_LOGO;
+static bool g_bLoadedSaveState = false;
 
 static int lastmode         = MODE_LOGO;
 DWORD     needsprecision    = 0;			// Redundant
@@ -110,6 +111,24 @@ UINT g_nIdx = 0;
 double g_fMeanPeriod,g_fMeanFreq;
 ULONGLONG g_nPerfFreq = 0;
 #endif
+
+//---------------------------------------------------------------------------
+
+bool GetLoadedSaveStateFlag(void)
+{
+	return g_bLoadedSaveState;
+}
+
+void SetLoadedSaveStateFlag(const bool bFlag)
+{
+	g_bLoadedSaveState = bFlag;
+}
+
+static void ResetToLogoMode(void)
+{
+	g_nAppMode = MODE_LOGO;
+	SetLoadedSaveStateFlag(false);
+}
 
 //---------------------------------------------------------------------------
 
@@ -955,7 +974,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	{
 		// DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
 		restart = 0;
-		g_nAppMode = MODE_LOGO;
+		ResetToLogoMode();
 
 		LoadConfiguration();
 		LogFileOutput("Main: LoadConfiguration()\n");

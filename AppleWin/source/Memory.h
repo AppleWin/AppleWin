@@ -38,6 +38,7 @@ bool    MemGet80Store();
 bool	MemCheckSLOTCXROM();
 LPBYTE  MemGetAuxPtr (WORD);
 LPBYTE  MemGetMainPtr (WORD);
+LPBYTE  MemGetBankPtr(const UINT nBank);
 LPBYTE  MemGetCxRomPeripheral();
 void    MemInitialize ();
 BYTE    MemReadFloatingBus(const ULONG uExecutedCycles);
