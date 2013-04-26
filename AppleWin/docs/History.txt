@@ -18,6 +18,7 @@ tomch at users.berlios.de
 Changes:
 . Extended logging support during startup and shutdown.
 . Allow debugging of save-state image from start-up "logo" screen.
+. Added Troubleshooting section to help file.
 
 Fixes:
 . Screenshot 280x192:

@@ -186,6 +186,10 @@
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Troubleshooting">
+			<param name="Local" value="Troubleshooting.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Resources">
 			<param name="Local" value="resources.html">
 			<param name="ImageNumber" value="2">
