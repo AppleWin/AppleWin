@@ -4178,6 +4178,7 @@ Update_t CmdMemoryMove (int nArgs)
 
 
 //===========================================================================
+#if 1	// Original
 Update_t CmdMemorySave (int nArgs)
 {
 	// BSAVE ["Filename"] , addr , len 
@@ -4299,6 +4300,168 @@ Update_t CmdMemorySave (int nArgs)
 	
 	return ConsoleUpdate();
 }
+#else	// Extended cmd for saving physical memory
+Update_t CmdMemorySave (int nArgs)
+{
+	// Active memory:
+	// BSAVE ["Filename"] , addr , len 
+	// BSAVE ["Filename"] , addr : end
+	//       1            2 3    4 5
+	// Physical 64K memory bank:
+	// BSAVE ["Filename"] , bank : addr , len 
+	// BSAVE ["Filename"] , bank : addr : end
+	//       1            2 3    4 5    6 7
+	static WORD nAddressStart = 0;
+	       WORD nAddress2     = 0;
+	static WORD nAddressEnd   = 0;
+	static int  nAddressLen   = 0;
+	static int  nBank         = 0;
+	static bool bBankSpecified = false;
+
+	if (nArgs > 7)
+		return Help_Arg_1( CMD_MEMORY_SAVE );
+
+	if (! nArgs)
+	{
+		TCHAR sLast[ CONSOLE_WIDTH ] = TEXT("");
+		if (nAddressLen)
+		{
+			if (!bBankSpecified)
+				wsprintf( sLast, TEXT("Last saved: $%04X:$%04X, %04X"),
+					nAddressStart, nAddressEnd, nAddressLen );
+			else
+				wsprintf( sLast, TEXT("Last saved: Bank=%02X $%04X:$%04X, %04X"),
+					nBank, nAddressStart, nAddressEnd, nAddressLen );
+		}
+		else
+		{
+			wsprintf( sLast, TEXT( "Last saved: none" ) );
+		}				
+		ConsoleBufferPush( sLast );
+	}
+	else
+	{
+		bool bHaveFileName = false;
+
+		if (g_aArgs[1].bType & TYPE_QUOTED_2)
+			bHaveFileName = true;
+
+//		if (g_aArgs[1].bType & TOKEN_QUOTE_DOUBLE)
+//			bHaveFileName = true;
+
+		int iArgComma1  = 2;
+		int iArgAddress = 3;
+		int iArgComma2  = 4;
+		int iArgLength  = 5;
+		int iArgBank    = 3;
+		int iArgColon   = 4;
+
+		if (! bHaveFileName)
+		{
+			iArgComma1  = 1;
+			iArgAddress = 2;
+			iArgComma2  = 3;
+			iArgLength  = 4;
+			iArgBank    = 2;
+			iArgColon   = 3;
+
+			if (nArgs > 6)
+				return Help_Arg_1( CMD_MEMORY_SAVE );
+		}
+
+		if (nArgs > 5)
+		{
+			if (!(g_aArgs[iArgBank].bType & TYPE_ADDRESS && g_aArgs[iArgColon].eToken == TOKEN_COLON))
+				return Help_Arg_1( CMD_MEMORY_SAVE );
+
+			nBank = g_aArgs[iArgBank].nValue;
+			bBankSpecified = true;
+
+			iArgAddress += 2;
+			iArgComma2  += 2;
+			iArgLength  += 2;
+		}
+		else
+		{
+			bBankSpecified = false;
+		}
+
+//		if ((g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA) || 
+//			(g_aArgs[ iArgComma2 ].eToken != TOKEN_COLON))
+//			return Help_Arg_1( CMD_MEMORY_SAVE );
+
+		TCHAR sLoadSaveFilePath[ MAX_PATH ];
+		_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
+
+		RangeType_t eRange;
+		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
+
+//		if (eRange == RANGE_MISSING_ARG_2)
+		if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen ))
+			return Help_Arg_1( CMD_MEMORY_SAVE );
+
+		if ((nAddressLen) && (nAddressEnd <= _6502_MEM_END))
+		{
+			if (! bHaveFileName)
+			{
+				sprintf( g_sMemoryLoadSaveFileName, "%04X.%04X.bin", nAddressStart, nAddressLen ); // nAddressEnd );
+			}
+			else
+			{
+				_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
+			}
+			_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
+
+//				if (nArgs == 2)
+			{
+				const BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
+				if (!pMemBankBase)
+				{
+					ConsoleBufferPush( TEXT( "Error: Bank out of range." ) );
+					return ConsoleUpdate();;
+				}
+
+				BYTE * const pMemory = new BYTE [ nAddressLen ];
+				BYTE *pDst = pMemory;
+				const BYTE *pSrc = pMemBankBase + nAddressStart;
+				
+				// memcpy -- copy out of active memory bank
+				int iByte;
+				for( iByte = 0; iByte < nAddressLen; iByte++ )
+				{
+					*pDst++ = *pSrc++;
+				}
+
+				FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
+				if (hFile)
+				{
+					ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
+					fclose( hFile );
+				}
+
+				hFile = fopen( sLoadSaveFilePath, "wb" );
+				if (hFile)
+				{
+					size_t nWrote = fwrite( pMemory, nAddressLen, 1, hFile );
+					if (nWrote == 1) // (size_t)nAddressLen)
+					{
+						ConsoleBufferPush( TEXT( "Saved." ) );
+					}
+					else
+					{
+						ConsoleBufferPush( TEXT( "Error saving." ) );
+					}
+					fclose( hFile );
+				}
+				
+				delete [] pMemory;
+			}
+		}
+	}
+	
+	return ConsoleUpdate();
+}
+#endif
 
 
 //===========================================================================
