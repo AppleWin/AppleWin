@@ -13,8 +13,10 @@ Tom Charlesworth
 tomch at users.berlios.de
 
 
-1.22.2 - 26 Apr 2013
+1.23.0 - 26 Apr 2013
 --------------------
+RC for public release.
+
 Changes:
 . Extended logging support during startup and shutdown.
 . Allow debugging of save-state image from start-up "logo" screen.
