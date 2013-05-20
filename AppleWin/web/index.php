@@ -4,9 +4,9 @@
   <link rel="shortcut icon" href="applewin.ico">
   <title>Apple //e Emulator for Windows</title></head>
 <body alink="gold" background="background.gif" bgcolor="mediumpurple" link="orange" text="powderblue" vlink="plum">
-<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.20.0</font></u></font></p>
+<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.23.0</font></u></font></p>
 <p align="center"><font face="Tahoma"><img src="applewin.gif" title="" alt="Apple //e Emulator Logo" height="384" width="560"></font></p>
-<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.20.0.0.zip">Version 1.20.0</a><br>
+<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.23.0.0.zip">Version 1.23.0</a><br>
 <a href="#OldReleases">Download older releases</a><br>
 </font></p>
 
@@ -25,6 +25,33 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
 - On Windows XP, Windows 7, etc you can simply right-click on the CHM file, select "Properties", and click on the "Unblock" button.<br>
 - Click "Apply" and the content should be visible.
 </font></font></p>
+
+
+<p><font face="Tahoma"><br></p><p><u>1.23.0 - 26 Apr 2013</u></p>
+<li><strong>Significant changes since 1.20.0:</strong></li>
+<ul>
+	<li>[Feature #003272 and #005335] Support 2x windowed mode:</li>
+	<ul>
+		<li>Toggle between 1x and 2x by using Resize button (or F6).</li>
+		<li>Full screen now enabled by CTRL+Resize button (or CTRL+F6).</li>
+	</ul>
+    <li>[Feature #4399] Allow Z80 SoftCard to be inserted into slot 4 or 5. (Allows CP/M v3 to work)</li>
+    <li>Reworked Configuration (property sheets) to allow multiple hardware changes.</li>
+	<li>Added Troubleshooting section to help file.</li>
+</ul>
+<li>Fixes:</li>
+<ul>
+    <li>HDD firmware: Added support for SmartPort entrypoint.</li>
+	<ul>
+		<li>"Prince of Persia (Original 3.5 floppy for IIc+).2mg" now boots</li>
+	</ul>
+    <li>Fixed HDD firmware to allow epyx_californiagames_iicplus.2mg to boot.</li>
+</ul>
+<li>Debugger:</li>
+<ul>
+    <li>[Bug #018455] Improved rendering speed of debugger view.</li>
+</ul>
+</font>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.20.0 - 23 Feb 2011</u></font></p>
@@ -46,6 +73,7 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
 <ul>
     <li>Updated acknowledgements. Cheers to Mike Harvey! (Nibble Magazine)</li>
 </ul>
+</font>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.19.3 - 20 Dec 2010</u></font></p>
@@ -102,6 +130,7 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
 	<li>[Bug #16652] Fix "Harddisk images aren't persisted when in different folders"</li>
 	<li>[Bug #12724,14747] Fix "Registry persisted Window x,y position sometimes off screen"</li>
 </ul>
+</font>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.17.2 - 13 Dec 2009</u></font></p>
@@ -121,6 +150,7 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
        <li>G &lt;addr&gt; : Go (Stepping Mode) until PC=addr</li>
     </ul>
 </ul>
+</font>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.17.1 - 27 Nov 2009</u></font></p>
@@ -149,6 +179,7 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
     <li>Implemented the shift key mod for II/II+. This fixes a problem with Homeword</li>
     <li>[Bug #14879] Double-Lo-Res Graphics colors not correct</li>
 </ul>
+</font>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.16.1 - 21 Jun 2009</u></font></p>
@@ -186,6 +217,7 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
     <li>[Bug #14557] Loading serial port# from Registry (caused AppleWin to crash when booting Apple Pascal &amp; other weird crashes)</li>
     <li>[Bug #15394] Audio under-run (set process priority to Above Normal when in non-Full Speed mode)</li>
 </ul>
+</font>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.16.0 (beta) - 1 Feb 2009</u></font></p>
@@ -217,6 +249,7 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
     <li>FLASH rate (now 3Hz, was 6Hz)</li>
     <li>Fix for Willy Byte & MB support (strange 6522 behaviour!)</li>
 </ul>
+</font>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.15.0 (beta) - 24 Aug 2008</u></font></p>
@@ -232,6 +265,7 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
     <li>Added new video mode: "Monochrome - Authentic"</li>
     <li>Debugger 2.6.0.6</li>
 </ul>
+</font>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.14.2 - 23 Jun 2008</u></font></p>
@@ -255,6 +289,7 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
     <li>[Bug #12723] DOSMaster .hdv/.po images work</li>
     <li>[Bug #11592] Infiltrator now boots</li>
 </ul>
+</font>
 
 
 <p><font face="Tahoma"></font><br></p><p><font face="Tahoma"><u>1.14.0 - 8 Aug 2007 (beta)</u></font></p>
@@ -424,24 +459,22 @@ label.</target></whitespace></li>
 &nbsp; . -r &lt;#pages&gt;&nbsp; : where #pages = [1..127], each page is 64KB.<br>
 </font></font></p>
 
-<p><font face="Tahoma"><font face="Tahoma"><b>Restrictions:</b><br>
-
-</font>
+<p><font face="Tahoma"><b>Restrictions:</b><br></font>
 <font face="Tahoma">-&nbsp;NB. The following aren't saved out to the save-state file yet:<br>
 &nbsp; . Phasor card&nbsp; (only the Mockingboards are)<br>
 &nbsp; . RAMWorks card
-</font></font></p>
+</font></p>
 
-<p><font face="Tahoma"><font face="Tahoma"><u>1.12.7.1 -&nbsp;8 Jan 2006</u><br>
+<p><font face="Tahoma"><u>1.12.7.1 -&nbsp;8 Jan 2006</u><br>
 - Fixed cmd-line switches -d1/-d2 to work with filenames with spaces<br>
 - Reset: Init Phasor back to Mockingboard mode<br>
 - Benchmark button acts immediately<br>
 - Fixes to speaker emulation introduced in 1.12.7.0<br>
 - Adjusted speaker freq to work better with MJ Mahon's RT.SYNTH.dsk<br>
 - Fixed Bxx; ABS,X; ABS,Y; (IND),Y opcodes: take variable cycles depending on branch taken &amp; page crossed<br>
-<span style="text-decoration: underline;"></span></font></font></p>
+<span style="text-decoration: underline;"></span></font></p>
 
-<p><font face="Tahoma"><font face="Tahoma"><span style="text-decoration: underline;"></span><u>1.12.7.0 (30 Dec 2005)</u><br>
+<p><font face="Tahoma"><span style="text-decoration: underline;"></span><u>1.12.7.0 (30 Dec 2005)</u><br>
 - Public release<br>
 - Fixed Apple][+ ROM (IRQ vector was vectoring to $FF59/OLDRST)<br>
 - Added cmd-line switches (-f, -d1, -d2)<br>
@@ -458,22 +491,22 @@ label.</target></whitespace></li>
 - Display updated at ~60Hz (instead of 20Hz)<br>
 - Emulation broken into 1ms units (instead of video-frame units)<br>
 - Uses internal CPU emulator instead of DLLs (DLLs to be phased out)<br>
-</font></font></p>
+</font></p>
 
-<p><font face="Tahoma"><font face="Tahoma"><u>1.12.6.1 (23 Apr 2005)</u><br>
+<p><font face="Tahoma"><u>1.12.6.1 (23 Apr 2005)</u><br>
 - Added support for Votrax speech: emulated using SSI263 phonemes<br>
 - Added joystick x/y trim control to Input property sheet<br>
 - Added support for double-lores graphics<br>
 - Updated Applewin.chm<br>
 - Load state: F12 nows works like Ctrl-F12<br>
-</font></font></p>
+</font></p>
 
-<p><font face="Tahoma"><font face="Tahoma">
+<p><font face="Tahoma">
 <a href="History.txt">History</a>
 <a href="Wishlist.txt">Wishlist</a>
-</font></font></p>
+</font></p>
 
-<p align="left"><font face="Tahoma"><font face="Tahoma">
+<p align="left"><font face="Tahoma">
 Tested with the following Mockingboard/Phasor titles:<br>
 <blockquote>
   Adventure Construction Set<br>
@@ -498,9 +531,9 @@ Tested with the following Mockingboard/Phasor titles:<br>
   Willy Byte<br>
   Zaxxon (Mockingboard version)<br>
 </blockquote>
-</font></font></p>
+</font></p>
 
-<p align="left"><font face="Tahoma"><font face="Tahoma">There are docs on the web that
+<p align="left"><font face="Tahoma">There are docs on the web that
 claimed these titles support Mockingboard. The titles that I managed to
 find didn't appear to support it:<br>
 <blockquote>
@@ -510,26 +543,27 @@ find didn't appear to support it:<br>
   Music Star (Can't find)<br>
   Thunder Bombs<br>
 </blockquote>
-</font></font></p>
+</font></p>
 
-<p><font face="Tahoma"><font face="Tahoma"><u><a name="OldReleases"></a>Old releases:</u></font></font></p>
-<p><font face="Tahoma"><font face="Tahoma">
-  Download <a href="http://download.berlios.de/applewin/AppleWin1.19.3.0.zip">Version 1.19.3</a><br></font></font><font face="Tahoma"><font face="Tahoma">
-  Download <a href="http://download.berlios.de/applewin/AppleWin1.17.2.0.zip">Version 1.17.2</a><br></font></font><font face="Tahoma"><font face="Tahoma">
-  Download <a href="http://download.berlios.de/applewin/AppleWin1.17.1.0.zip">Version 1.17.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">
-  Download <a href="http://download.berlios.de/applewin/AppleWin1.16.1.0.zip">Version 1.16.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">
-  Download <a href="http://download.berlios.de/applewin/AppleWin1.16.0.0-beta.zip">Version 1.16.0 (beta)</a><br></font></font><font face="Tahoma"><font face="Tahoma">
-  Download <a href="http://download.berlios.de/applewin/AppleWin1.15.0-beta.zip">Version 1.15.0 (beta)</a><br></font></font><font face="Tahoma"><font face="Tahoma">
-  Download <a href="http://download.berlios.de/applewin/AppleWin1.14.2.zip">Version 1.14.2</a><br></font></font><font face="Tahoma"><font face="Tahoma">
-  Download <a href="http://download.berlios.de/applewin/AppleWin1.14.0-beta.zip">Version 1.14.0 (beta)</a><br></font></font><font face="Tahoma"><font face="Tahoma">
-  Download <a href="http://download.berlios.de/applewin/AppleWin1.13.2.zip">Version 1.13.2</a><br></font></font><font face="Tahoma"><font face="Tahoma">
-  Download <a href="http://download.berlios.de/applewin/AppleWin1.13.1.zip">Version 1.13.1</a><br></font></font><font face="Tahoma"><font face="Tahoma">
-  Download <a href="http://download.berlios.de/applewin/AppleWin1.13.0.zip">Version 1.13.0</a><br></font></font><font face="Tahoma"><font face="Tahoma">
+<p><font face="Tahoma"><u><a name="OldReleases"></a>Old releases:</u></font></p>
+<p><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.20.0.0.zip">Version 1.20.0</a><br>
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.19.3.0.zip">Version 1.19.3</a><br>
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.17.2.0.zip">Version 1.17.2</a><br>
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.17.1.0.zip">Version 1.17.1</a><br>
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.16.1.0.zip">Version 1.16.1</a><br>
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.16.0.0-beta.zip">Version 1.16.0 (beta)</a><br>
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.15.0-beta.zip">Version 1.15.0 (beta)</a><br>
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.14.2.zip">Version 1.14.2</a><br>
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.14.0-beta.zip">Version 1.14.0 (beta)</a><br>
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.13.2.zip">Version 1.13.2</a><br>
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.13.1.zip">Version 1.13.1</a><br>
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.13.0.zip">Version 1.13.0</a><br>
   Download <a href="http://download.berlios.de/applewin/AppleWin1.12.9.1.zip">Version 1.12.9.1</a><br>
   Download <a href="http://download.berlios.de/applewin/AppleWin1.12.6.0.zip">Version 1.12.6.0</a><br>
   Download <a href="http://download.berlios.de/applewin/AppleWin1.10.4.zip">Version 1.10.4</a> (Oliver Schmidt's last version)<br>
 <br>
-</font></font></p>
+</font></p>
 
 <hr>
 <font face="Tahoma"><a href="http://developer.berlios.de">
