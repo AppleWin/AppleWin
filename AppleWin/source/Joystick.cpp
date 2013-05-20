@@ -249,119 +249,165 @@ void JoyInitialize()
 
 //===========================================================================
 
+// TODO: Need some UI config support for cursor keys & selecting whether the key press is also made available to the Apple II (like Jace)
+//#define SUPPORT_CURSOR_KEYS
+
 BOOL JoyProcessKey(int virtkey, BOOL extended, BOOL down, BOOL autorep)
 {
-  if( (joyinfo[joytype[0]].device != DEVICE_KEYBOARD) &&
-	  (joyinfo[joytype[1]].device != DEVICE_KEYBOARD) &&
-	  (virtkey != VK_MENU)								// VK_MENU == ALT Key
-	)
-    return 0;
-
-  // Joystick # which is being emulated by keyboard
-  int nJoyNum = (joyinfo[joytype[0]].device == DEVICE_KEYBOARD) ? 0 : 1;
-  int nCenteringType = joyinfo[joytype[nJoyNum]].mode;	// MODE_STANDARD or MODE_CENTERING
-
-  //
-
-  BOOL keychange = !extended;
-
-  if (virtkey == VK_MENU)	// VK_MENU == ALT Key (Button #0 or #1)
-  {
-    keychange = 1;
-    keydown[JK_OPENAPPLE+(extended != 0)] = down;
-  }
-  else if (!extended)
-  {
-    if ((virtkey >= VK_NUMPAD1) && (virtkey <= VK_NUMPAD9))
+	static struct
 	{
-      keydown[virtkey-VK_NUMPAD1] = down;
+		UINT32 Left:1;
+		UINT32 Up:1;
+		UINT32 Right:1;
+		UINT32 Down:1;
+	} CursorKeys = {0};
+
+	if ( (joyinfo[joytype[0]].device != DEVICE_KEYBOARD) &&
+		 (joyinfo[joytype[1]].device != DEVICE_KEYBOARD) &&
+		 (virtkey != VK_MENU)								// VK_MENU == ALT Key
+	   )
+	{
+		return 0;
 	}
-    else
+
+	// Joystick # which is being emulated by keyboard
+	int nJoyNum = (joyinfo[joytype[0]].device == DEVICE_KEYBOARD) ? 0 : 1;
+	int nCenteringType = joyinfo[joytype[nJoyNum]].mode;	// MODE_STANDARD or MODE_CENTERING
+
+	//
+
+	BOOL keychange = 0;
+
+	if (virtkey == VK_MENU)	// VK_MENU == ALT Key (Button #0 or #1)
 	{
-      switch (virtkey)
-	  {
-        case VK_END:     keydown[ 0] = down;  break;
-        case VK_DOWN:    keydown[ 1] = down;  break;
-        case VK_NEXT:    keydown[ 2] = down;  break;
-        case VK_LEFT:    keydown[ 3] = down;  break;
-        case VK_CLEAR:   keydown[ 4] = down;  break;
-        case VK_RIGHT:   keydown[ 5] = down;  break;
-        case VK_HOME:    keydown[ 6] = down;  break;
-        case VK_UP:      keydown[ 7] = down;  break;
-        case VK_PRIOR:   keydown[ 8] = down;  break;
-        case VK_NUMPAD0: keydown[ 9] = down;  break;	// Button #0
-        case VK_INSERT:  keydown[ 9] = down;  break;	// Button #0
-        case VK_DECIMAL: keydown[10] = down;  break;	// Button #1
-        case VK_DELETE:  keydown[10] = down;  break;	// Button #1
-        default:         keychange = 0;       break;
-      }
+		keychange = 1;
+		keydown[JK_OPENAPPLE+(extended != 0)] = down;
 	}
-  }
-
-  //
-
-  if (keychange)
-  {
-    if ((virtkey == VK_NUMPAD0) || (virtkey == VK_INSERT))
+	else if (!extended)
 	{
-	  if(down)
-	  {
-	    if(joyinfo[joytype[1]].device != DEVICE_KEYBOARD)
+		keychange = 1;
+
+		if ((virtkey >= VK_NUMPAD1) && (virtkey <= VK_NUMPAD9))		// NumLock on
 		{
-          buttonlatch[0] = BUTTONTIME;
+			keydown[virtkey-VK_NUMPAD1] = down;
 		}
-		else if(joyinfo[joytype[1]].device != DEVICE_NONE)
+		else														// NumLock off
 		{
-          buttonlatch[2] = BUTTONTIME;
-          buttonlatch[1] = BUTTONTIME;	// Re-map this button when emulating a 2nd Apple joystick
+			switch (virtkey)
+			{
+			case VK_END:     keydown[JK_DOWNLEFT] = down;	break;
+			case VK_DOWN:    keydown[JK_DOWN] = down;		break;
+			case VK_NEXT:    keydown[JK_DOWNRIGHT] = down;	break;
+			case VK_LEFT:    keydown[JK_LEFT] = down;		break;
+			case VK_CLEAR:   keydown[JK_CENTRE] = down;		break;
+			case VK_RIGHT:   keydown[JK_RIGHT] = down;		break;
+			case VK_HOME:    keydown[JK_UPLEFT] = down;		break;
+			case VK_UP:      keydown[JK_UP] = down;			break;
+			case VK_PRIOR:   keydown[JK_UPRIGHT] = down;	break;
+			case VK_NUMPAD0: keydown[JK_BUTTON0] = down;	break;
+			case VK_DECIMAL: keydown[JK_BUTTON1] = down;	break;
+			default:         keychange = 0;					break;
+			}
 		}
-	  }
-    }
-    else if ((virtkey == VK_DECIMAL) || (virtkey == VK_DELETE))
+	}
+#ifdef SUPPORT_CURSOR_KEYS
+	else if (extended)
 	{
-      if(down)
-	  {
-		if(joyinfo[joytype[1]].device != DEVICE_KEYBOARD)
-          buttonlatch[1] = BUTTONTIME;
-	  }
-    }
-    else if ((down && !autorep) || (nCenteringType == MODE_CENTERING))
-	{
-      int xkeys  = 0;
-      int ykeys  = 0;
-      int xtotal = 0;
-      int ytotal = 0;
-      int keynum = 0;
-      while (keynum < 9)
-	  {
-        if (keydown[keynum])
+		if (virtkey == VK_LEFT || virtkey == VK_UP || virtkey == VK_RIGHT || virtkey == VK_DOWN)
 		{
-          if ((keynum % 3) != 1)
-		  {
-            xkeys++;
-            xtotal += keyvalue[keynum].x;
-          }
-          if ((keynum / 3) != 1)
-		  {
-            ykeys++;
-            ytotal += keyvalue[keynum].y;
-          }
-        }
-        keynum++;
-      }
+			keychange = 1;	// This prevents cursors keys being available to the Apple II (eg. Lode Runner uses cursor left/right for game speed)
+			switch (virtkey)
+			{
+			case VK_LEFT:	CursorKeys.Left = down;		break;
+			case VK_UP:		CursorKeys.Up = down;		break;
+			case VK_RIGHT:	CursorKeys.Right = down;	break;
+			case VK_DOWN:	CursorKeys.Down = down;		break;
+			}
+		}
+	}
+#endif
 
-      if (xkeys)
-        xpos[nJoyNum] = xtotal / xkeys;
-      else
-        xpos[nJoyNum] = PDL_CENTRAL+g_nPdlTrimX;
-      if (ykeys)
-        ypos[nJoyNum] = ytotal / ykeys;
-      else
-        ypos[nJoyNum] = PDL_CENTRAL+g_nPdlTrimY;
-    }
-  }
+	if (!keychange)
+		return 0;
 
-  return keychange;
+	//
+
+	if (virtkey == VK_NUMPAD0)
+	{
+		if(down)
+		{
+			if(joyinfo[joytype[1]].device != DEVICE_KEYBOARD)
+			{
+				buttonlatch[0] = BUTTONTIME;
+			}
+			else if(joyinfo[joytype[1]].device != DEVICE_NONE)
+			{
+				buttonlatch[2] = BUTTONTIME;
+				buttonlatch[1] = BUTTONTIME;	// Re-map this button when emulating a 2nd Apple joystick
+			}
+		}
+	}
+	else if (virtkey == VK_DECIMAL)
+	{
+		if(down)
+		{
+			if(joyinfo[joytype[1]].device != DEVICE_KEYBOARD)
+				buttonlatch[1] = BUTTONTIME;
+		}
+	}
+	else if ((down && !autorep) || (nCenteringType == MODE_CENTERING))
+	{
+		int xkeys  = 0;
+		int ykeys  = 0;
+		int xtotal = 0;
+		int ytotal = 0;
+
+		for (int keynum = JK_DOWNLEFT; keynum <= JK_UPRIGHT; keynum++)
+		{
+			if (keydown[keynum])
+			{
+				if ((keynum % 3) != 1)	// Not middle col (ie. not VK_DOWN, VK_CLEAR, VK_UP)
+				{
+					xkeys++;
+					xtotal += keyvalue[keynum].x;
+				}
+				if ((keynum / 3) != 1)	// Not middle row (ie. not VK_LEFT, VK_CLEAR, VK_RIGHT)
+				{
+					ykeys++;
+					ytotal += keyvalue[keynum].y;
+				}
+			}
+		}
+
+		if (CursorKeys.Left)
+		{
+			xkeys++; xtotal += keyvalue[JK_LEFT].x;
+		}
+		if (CursorKeys.Right)
+		{
+			xkeys++; xtotal += keyvalue[JK_RIGHT].x;
+		}
+		if (CursorKeys.Up)
+		{
+			ykeys++; ytotal += keyvalue[JK_UP].y;
+		}
+		if (CursorKeys.Down)
+		{
+			ykeys++; ytotal += keyvalue[JK_DOWN].y;
+		}
+
+		if (xkeys)
+			xpos[nJoyNum] = xtotal / xkeys;
+		else
+			xpos[nJoyNum] = PDL_CENTRAL + g_nPdlTrimX;
+
+		if (ykeys)
+			ypos[nJoyNum] = ytotal / ykeys;
+		else
+			ypos[nJoyNum] = PDL_CENTRAL + g_nPdlTrimY;
+	}
+
+	return 1;
 }
 
 //===========================================================================
@@ -421,7 +467,7 @@ BYTE __stdcall JoyReadButton(WORD, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
 //  BD 64 C0 : (4) LDA $C064,X
 //  10 04    : (2) BPL Lbl2		; NB. 3 cycles if branch taken (not likely)
 //  C8       : (2) INY
-//  D0 F8    : (3) BNE Lbl1		; NB. 2 cycles if branck not taken (not likely)
+//  D0 F8    : (3) BNE Lbl1		; NB. 2 cycles if branch not taken (not likely)
 //  88       : (2) DEY
 // Lbl2:
 //  60       : (6) RTS
