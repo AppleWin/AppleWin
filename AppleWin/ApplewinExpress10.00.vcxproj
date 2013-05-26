@@ -245,10 +245,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\Applewin.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="source\Debugger\Debug.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Assembler.cpp" />
@@ -261,6 +261,12 @@
     <ClCompile Include="source\Debugger\Debugger_Parser.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Range.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Symbols.cpp" />
+    <ClCompile Include="source\StdAfx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="source\Util_MemoryTextFile.cpp" />
     <ClCompile Include="source\Tfe\Tfe.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

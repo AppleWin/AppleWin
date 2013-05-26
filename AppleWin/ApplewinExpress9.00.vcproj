@@ -226,6 +226,14 @@
 			<File
 				RelativePath=".\source\Applewin.cpp"
 				>
+			</File>
+			<File
+				RelativePath=".\source\Applewin.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\StdAfx.cpp"
+				>
 				<FileConfiguration
 					Name="Release|Win32"
 					>
@@ -244,7 +252,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\source\Applewin.h"
+				RelativePath=".\source\StdAfx.h"
 				>
 			</File>
 			<Filter
@@ -743,10 +751,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\StdAfx.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\Structs.h"
 					>
 				</File>
@@ -1083,10 +1087,6 @@
 				>
 			</File>
 			<File
-				RelativePath="Resource\DRSWAP.bmp"
-				>
-			</File>
-			<File
 				RelativePath=".\resource\Freezes_Non-autostart_F8_Rom.rom"
 				>
 			</File>
@@ -1128,6 +1128,10 @@
 			</File>
 			<File
 				RelativePath=".\resource\Pravets8C.rom"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\PRAVETS8M.ROM"
 				>
 			</File>
 			<File

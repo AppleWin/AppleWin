@@ -206,6 +206,9 @@
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp">
       <Filter>Source\Configuration</Filter>
     </ClCompile>
+    <ClCompile Include="source\StdAfx.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -367,9 +370,6 @@
     <ClInclude Include="source\SSI263Phonemes.h">
       <Filter>Source\_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="source\StdAfx.h">
-      <Filter>Source\_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="source\Structs.h">
       <Filter>Source\_Headers</Filter>
     </ClInclude>
@@ -441,6 +441,9 @@
     </ClInclude>
     <ClInclude Include="resource\winres.h">
       <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="source\StdAfx.h">
+      <Filter>Source</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

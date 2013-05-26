@@ -27,8 +27,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
-#pragma hdrstop			// Normally would have stdafx.cpp (being the file with /Yc) and wouldn't bother with #pragma hdrstop
-
 #include "DiskImage.h"
 #include "Harddisk.h"
 

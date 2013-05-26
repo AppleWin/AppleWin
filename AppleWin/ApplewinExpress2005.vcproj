@@ -385,6 +385,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\StdAfx.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\StdAfx.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\Tape.cpp"
 				>
 			</File>
@@ -904,10 +912,6 @@
 				>
 			</File>
 			<File
-				RelativePath="Resource\DRSWAP.bmp"
-				>
-			</File>
-			<File
 				RelativePath="RESOURCE\FULLSCR.BMP"
 				>
 			</File>
@@ -946,10 +950,6 @@
 		</File>
 		<File
 			RelativePath=".\source\SSI263Phonemes.h"
-			>
-		</File>
-		<File
-			RelativePath=".\source\StdAfx.h"
 			>
 		</File>
 		<File
