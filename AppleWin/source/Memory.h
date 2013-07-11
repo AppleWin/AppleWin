@@ -36,8 +36,8 @@ void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 void    MemDestroy ();
 bool    MemGet80Store();
 bool	MemCheckSLOTCXROM();
-LPBYTE  MemGetAuxPtr (WORD);
-LPBYTE  MemGetMainPtr (WORD);
+LPBYTE  MemGetAuxPtr(const WORD);
+LPBYTE  MemGetMainPtr(const WORD);
 LPBYTE  MemGetBankPtr(const UINT nBank);
 LPBYTE  MemGetCxRomPeripheral();
 void    MemInitialize ();

@@ -39,8 +39,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Memory Flag
 #define  MF_80STORE    0x00000001
 #define  MF_ALTZP      0x00000002
-#define  MF_AUXREAD    0x00000004
-#define  MF_AUXWRITE   0x00000008
+#define  MF_AUXREAD    0x00000004	// RAMRD
+#define  MF_AUXWRITE   0x00000008	// RAMWRT
 #define  MF_BANK2      0x00000010
 #define  MF_HIGHRAM    0x00000020
 #define  MF_HIRES      0x00000040
@@ -114,6 +114,38 @@ SOFT SWITCH STATUS FLAGS
 
 //-----------------------------------------------------------------------------
 
+// Notes
+// -----
+//
+// mem
+// - a copy of the memimage ptr
+//
+// memimage
+// - 64KB
+// - reflects the current readable memory in the 6502's 64K address space
+//		. excludes $Cxxx I/O memory
+//		. could be a mix of RAM/ROM, main/aux, etc
+//
+// memmain, memaux
+// - physical contiguous 64KB RAM for main & aux respectively
+//
+// memwrite
+// - 1 ptr entry per 256-byte page
+// - used to write to a page
+//
+// memdirty
+// - 1 byte entry per 256-byte page
+// - set when a write occurs to a 256-byte page
+//
+// memshadow
+// - 1 ptr entry per 256-byte page
+// - reflects how 'mem' is setup
+//		. EG: if ALTZP=1, then:
+//			. mem will have copies of memaux's ZP & stack
+//			. memshadow[0] = &memaux[0x0000]
+//			. memshadow[1] = &memaux[0x0100]
+//
+
 //static DWORD   imagemode;
 static LPBYTE  memshadow[0x100];
 LPBYTE         memwrite[0x100];
@@ -143,7 +175,7 @@ static LPBYTE	pCxRomInternal		= NULL;
 static LPBYTE	pCxRomPeripheral	= NULL;
 
 static DWORD   memmode      = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM;
-static BOOL    modechanging = 0;
+static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 static BOOL    Pravets8charmode = 0;
 MemoryInitPattern_e g_eMemoryInitPattern = MIP_FF_FF_00_00;
 
@@ -720,7 +752,7 @@ static bool IsCardInSlot(const UINT uSlot)
 //===========================================================================
 
 //// Only called by MemSetFastPaging()
-//void BackMainImage ()
+//static void BackMainImage ()
 //{
 //	for (UINT loop = 0; loop < 256; loop++)
 //	{
@@ -733,13 +765,45 @@ static bool IsCardInSlot(const UINT uSlot)
 
 //===========================================================================
 
+static void SetMemMode(const DWORD uNewMemMode)
+{
+#if defined(_DEBUG) && 0
+	static DWORD dwOldDiff = 0;
+	DWORD dwDiff = memmode ^ uNewMemMode;
+	dwDiff &= ~(MF_SLOTC3ROM | MF_SLOTCXROM);
+	if (dwOldDiff != dwDiff)
+	{
+		dwOldDiff = dwDiff;
+		char szStr[100];
+		char* psz = szStr;
+		psz += sprintf(psz, "diff = %08X ", dwDiff);
+		psz += sprintf(psz, "80=%d "   , SW_80STORE   ? 1 : 0);
+		psz += sprintf(psz, "ALTZP=%d ", SW_ALTZP     ? 1 : 0);
+		psz += sprintf(psz, "AUXR=%d " , SW_AUXREAD   ? 1 : 0);
+		psz += sprintf(psz, "AUXW=%d " , SW_AUXWRITE  ? 1 : 0);
+		psz += sprintf(psz, "BANK2=%d ", SW_BANK2     ? 1 : 0);
+		psz += sprintf(psz, "HIRAM=%d ", SW_HIGHRAM   ? 1 : 0);
+		psz += sprintf(psz, "HIRES=%d ", SW_HIRES     ? 1 : 0);
+		psz += sprintf(psz, "PAGE2=%d ", SW_PAGE2     ? 1 : 0);
+		psz += sprintf(psz, "C3=%d "   , SW_SLOTC3ROM ? 1 : 0);
+		psz += sprintf(psz, "CX=%d "   , SW_SLOTCXROM ? 1 : 0);
+		psz += sprintf(psz, "WRAM=%d " , SW_WRITERAM  ? 1 : 0);
+		psz += sprintf(psz, "\n");
+		OutputDebugString(szStr);
+	}
+#endif
+	memmode = uNewMemMode;
+}
+
+//===========================================================================
+
 void ResetPaging (BOOL initialize)
 {
 	//if (!initialize)
 	//  MemSetFastPaging(0);
 
 	lastwriteram = 0;
-	memmode      = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM;
+	SetMemMode(MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM);
 	UpdatePaging(initialize, 0);
 }
 
@@ -886,6 +950,11 @@ static void UpdatePaging (BOOL initialize, BOOL updatewriteonly /*Always zero*/)
 	// MOVE MEMORY BACK AND FORTH AS NECESSARY BETWEEN THE SHADOW AREAS AND
 	// THE MAIN RAM IMAGE TO KEEP BOTH SETS OF MEMORY CONSISTENT WITH THE NEW
 	// PAGING SHADOW TABLE
+	//
+	// NB. the condition 'loop <= 1' is there because:
+	// . Page0 (ZP)    : memdirty[0] is set when the 6502 CPU does a ZP-write, but perhaps older versions didn't set this flag (eg. the asm version?).
+	// . Page1 (stack) : memdirty[1] is NOT set when the 6502 CPU writes to this page with JSR, etc.
+
 	//if (!updatewriteonly)
 	{
 		for (loop = 0x00; loop < 0x100; loop++)
@@ -992,10 +1061,18 @@ bool MemCheckSLOTCXROM()
 }
 
 //===========================================================================
-LPBYTE MemGetAuxPtr (WORD offset)
+
+LPBYTE MemGetAuxPtr(const WORD offset)
 {
+	if ((offset & 0xF000) == 0xC000)	// Requesting RAM at physical addr $C000 (ie. 4K RAM BANK1)
+	{
+		const BYTE bank1page = (offset >> 8) & 0xF;
+		if (memshadow[0xD0+bank1page] == memaux+(0xC0+bank1page)*256)	// 'mem' has (a potentially dirty) aux 4K RAM BANK1 mapped in at $D000
+			return mem+offset+0x1000;	// Return ptr to $Dxxx address
+	}
+
 	LPBYTE lpMem = (memshadow[(offset >> 8)] == (memaux+(offset & 0xFF00)))
-			? mem+offset
+			? mem+offset				// Return 'mem' copy if possible, as page could be dirty
 			: memaux+offset;
 
 #ifdef RAMWORKS
@@ -1014,11 +1091,19 @@ LPBYTE MemGetAuxPtr (WORD offset)
 }
 
 //===========================================================================
-LPBYTE MemGetMainPtr (WORD offset)
+
+LPBYTE MemGetMainPtr(const WORD offset)
 {
-  return (memshadow[(offset >> 8)] == (memmain+(offset & 0xFF00)))
-           ? mem+offset
-           : memmain+offset;
+	if ((offset & 0xF000) == 0xC000)	// Requesting RAM at physical addr $C000 (ie. 4K RAM BANK1)
+	{
+		const BYTE bank1page = (offset >> 8) & 0xF;
+		if (memshadow[0xD0+bank1page] == memmain+(0xC0+bank1page)*256)	// 'mem' has (a potentially dirty) main 4K RAM BANK1 mapped in at $D000
+			return mem+offset+0x1000;	// Return ptr to $Dxxx address
+	}
+
+	return (memshadow[(offset >> 8)] == (memmain+(offset & 0xFF00)))
+			? mem+offset				// Return 'mem' copy if possible, as page could be dirty
+			: memmain+offset;
 }
 
 //===========================================================================
@@ -1371,36 +1456,36 @@ BYTE __stdcall MemSetPaging (WORD programcounter, WORD address, BYTE write, BYTE
   if ((address >= 0x80) && (address <= 0x8F))
   {
     BOOL writeram = (address & 1);
-    memmode &= ~(MF_BANK2 | MF_HIGHRAM | MF_WRITERAM);
+	SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM | MF_WRITERAM));
     lastwriteram = 1; // note: because diags.do doesn't set switches twice!
     if (lastwriteram && writeram)
-      memmode |= MF_WRITERAM;
+      SetMemMode(memmode | MF_WRITERAM);
     if (!(address & 8))
-      memmode |= MF_BANK2;
+      SetMemMode(memmode | MF_BANK2);
     if (((address & 2) >> 1) == (address & 1))
-      memmode |= MF_HIGHRAM;
+      SetMemMode(memmode | MF_HIGHRAM);
     lastwriteram = writeram;
   }
   else if (!IS_APPLE2)
   {
     switch (address)
 	{
-		case 0x00: memmode &= ~MF_80STORE;    break;
-		case 0x01: memmode |=  MF_80STORE;    break;
-		case 0x02: memmode &= ~MF_AUXREAD;    break;
-		case 0x03: memmode |=  MF_AUXREAD;    break;
-		case 0x04: memmode &= ~MF_AUXWRITE;   break;
-		case 0x05: memmode |=  MF_AUXWRITE;   break;
-		case 0x06: memmode |=  MF_SLOTCXROM;  break;
-		case 0x07: memmode &= ~MF_SLOTCXROM;  break;
-		case 0x08: memmode &= ~MF_ALTZP;      break;
-		case 0x09: memmode |=  MF_ALTZP;      break;
-		case 0x0A: memmode &= ~MF_SLOTC3ROM;  break;
-		case 0x0B: memmode |=  MF_SLOTC3ROM;  break;
-		case 0x54: memmode &= ~MF_PAGE2;      break;
-		case 0x55: memmode |=  MF_PAGE2;      break;
-		case 0x56: memmode &= ~MF_HIRES;      break;
-		case 0x57: memmode |=  MF_HIRES;      break;
+		case 0x00: SetMemMode(memmode & ~MF_80STORE);    break;
+		case 0x01: SetMemMode(memmode |  MF_80STORE);    break;
+		case 0x02: SetMemMode(memmode & ~MF_AUXREAD);    break;
+		case 0x03: SetMemMode(memmode |  MF_AUXREAD);    break;
+		case 0x04: SetMemMode(memmode & ~MF_AUXWRITE);   break;
+		case 0x05: SetMemMode(memmode |  MF_AUXWRITE);   break;
+		case 0x06: SetMemMode(memmode |  MF_SLOTCXROM);  break;
+		case 0x07: SetMemMode(memmode & ~MF_SLOTCXROM);  break;
+		case 0x08: SetMemMode(memmode & ~MF_ALTZP);      break;
+		case 0x09: SetMemMode(memmode |  MF_ALTZP);      break;
+		case 0x0A: SetMemMode(memmode & ~MF_SLOTC3ROM);  break;
+		case 0x0B: SetMemMode(memmode |  MF_SLOTC3ROM);  break;
+		case 0x54: SetMemMode(memmode & ~MF_PAGE2);      break;
+		case 0x55: SetMemMode(memmode |  MF_PAGE2);      break;
+		case 0x56: SetMemMode(memmode & ~MF_HIRES);      break;
+		case 0x57: SetMemMode(memmode |  MF_HIRES);      break;
 #ifdef RAMWORKS
 		case 0x71: // extended memory aux page number
 		case 0x73: // Ramworks III set aux page number
@@ -1422,6 +1507,9 @@ BYTE __stdcall MemSetPaging (WORD programcounter, WORD address, BYTE write, BYTE
   // IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
   // ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
   // IT DOES SO.
+  //
+  // NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
+  // - although any date-race is probably a bug in the 6502 code too.
   if ((address >= 4) && (address <= 5) &&
       ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
     modechanging = 1;
@@ -1520,6 +1608,10 @@ LPVOID MemGetSlotParameters (UINT uSlot)
 
 //===========================================================================
 
+// NB. Don't need to save 'modechanging', as this is just an optimisation to save calling UpdatePaging() twice.
+// . If we were to save the state when 'modechanging' is set, then on restoring the state, the 6502 code will immediately update the read memory mode.
+// . This will work correctly.
+
 DWORD MemGetSnapshot(SS_BaseMemory* pSS)
 {
 	pSS->dwMemMode = memmode;
@@ -1536,11 +1628,12 @@ DWORD MemGetSnapshot(SS_BaseMemory* pSS)
 
 DWORD MemSetSnapshot(SS_BaseMemory* pSS)
 {
-	memmode = pSS->dwMemMode;
+	SetMemMode(pSS->dwMemMode);
 	lastwriteram = pSS->bLastWriteRam;
 
 	memcpy(memmain, pSS->nMemMain, nMemMainSize);
 	memcpy(memaux, pSS->nMemAux, nMemAuxSize);
+	memset(memdirty, 0, 0x100);
 
 	//
 
