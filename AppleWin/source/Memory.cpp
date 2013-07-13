@@ -1062,16 +1062,26 @@ bool MemCheckSLOTCXROM()
 
 //===========================================================================
 
+static LPBYTE MemGetPtrBANK1(const WORD offset, const LPBYTE pMemBase)
+{
+	if ((offset & 0xF000) != 0xC000)	// Requesting RAM at physical addr $Cxxx (ie. 4K RAM BANK1)
+		return NULL;
+
+	const BYTE bank1page = (offset >> 8) & 0xF;
+	return (memshadow[0xD0+bank1page] == pMemBase+(0xC0+bank1page)*256)
+		? mem+offset+0x1000				// Return ptr to $Dxxx address - 'mem' has (a potentially dirty) 4K RAM BANK1 mapped in at $D000
+		: pMemBase+offset;				// Else return ptr to $Cxxx address
+}
+
+//-------------------------------------
+
 LPBYTE MemGetAuxPtr(const WORD offset)
 {
-	if ((offset & 0xF000) == 0xC000)	// Requesting RAM at physical addr $C000 (ie. 4K RAM BANK1)
-	{
-		const BYTE bank1page = (offset >> 8) & 0xF;
-		if (memshadow[0xD0+bank1page] == memaux+(0xC0+bank1page)*256)	// 'mem' has (a potentially dirty) aux 4K RAM BANK1 mapped in at $D000
-			return mem+offset+0x1000;	// Return ptr to $Dxxx address
-	}
+	LPBYTE lpMem = MemGetPtrBANK1(offset, memaux);
+	if (lpMem)
+		return lpMem;
 
-	LPBYTE lpMem = (memshadow[(offset >> 8)] == (memaux+(offset & 0xFF00)))
+	lpMem = (memshadow[(offset >> 8)] == (memaux+(offset & 0xFF00)))
 			? mem+offset				// Return 'mem' copy if possible, as page could be dirty
 			: memaux+offset;
 
@@ -1090,16 +1100,13 @@ LPBYTE MemGetAuxPtr(const WORD offset)
 	return lpMem;
 }
 
-//===========================================================================
+//-------------------------------------
 
 LPBYTE MemGetMainPtr(const WORD offset)
 {
-	if ((offset & 0xF000) == 0xC000)	// Requesting RAM at physical addr $C000 (ie. 4K RAM BANK1)
-	{
-		const BYTE bank1page = (offset >> 8) & 0xF;
-		if (memshadow[0xD0+bank1page] == memmain+(0xC0+bank1page)*256)	// 'mem' has (a potentially dirty) main 4K RAM BANK1 mapped in at $D000
-			return mem+offset+0x1000;	// Return ptr to $Dxxx address
-	}
+	LPBYTE lpMem = MemGetPtrBANK1(offset, memmain);
+	if (lpMem)
+		return lpMem;
 
 	return (memshadow[(offset >> 8)] == (memmain+(offset & 0xFF00)))
 			? mem+offset				// Return 'mem' copy if possible, as page could be dirty
