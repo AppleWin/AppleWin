@@ -847,6 +847,14 @@
 				Name="Configuration"
 				>
 				<File
+					RelativePath=".\source\Configuration\About.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\About.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Configuration\Config.h"
 					>
 				</File>
@@ -1108,6 +1116,30 @@
 			</File>
 			<File
 				RelativePath=".\resource\LATON.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\LED_CAPS_OFF.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\LED_CAPS_OFF_LAT.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\LED_CAPS_OFF_P8.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\LED_CAPS_ON.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\LED_CAPS_ON_LAT.BMP"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\LED_CAPS_ON_P8.BMP"
 				>
 			</File>
 			<File

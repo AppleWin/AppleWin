@@ -244,86 +244,98 @@ static void RevealCursor()
 
 //===========================================================================
 
-static void CreateGdiObjects () {
-  ZeroMemory(buttonbitmap,BUTTONS*sizeof(HBITMAP));
 #define LOADBUTTONBITMAP(bitmapname)  LoadImage(g_hInstance,bitmapname,   \
                                                 IMAGE_BITMAP,0,0,      \
                                                 LR_CREATEDIBSECTION |  \
                                                 LR_LOADMAP3DCOLORS |   \
                                                 LR_LOADTRANSPARENT);
-  buttonbitmap[BTN_HELP   ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("HELP_BUTTON"));
-  buttonbitmap[BTN_RUN    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON"));
-switch (g_Apple2Type)
-			{
-			case A2TYPE_APPLE2:			buttonbitmap[BTN_RUN    ] =(HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON")); break; 
-			case A2TYPE_APPLE2PLUS:		buttonbitmap[BTN_RUN    ] =(HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON")); break; 
-			case A2TYPE_APPLE2E:		buttonbitmap[BTN_RUN    ] =(HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON")); break; 
-			case A2TYPE_APPLE2EENHANCED:buttonbitmap[BTN_RUN    ] =(HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON")); break; 
-			case A2TYPE_PRAVETS82:		buttonbitmap[BTN_RUN    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON")); break; 
-			case A2TYPE_PRAVETS8M:		buttonbitmap[BTN_RUN    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON")); break; 
-			case A2TYPE_PRAVETS8A:		buttonbitmap[BTN_RUN    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON")); break; 
-			}
 
-  buttonbitmap[BTN_DRIVE1 ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVE1_BUTTON"));
-  buttonbitmap[BTN_DRIVE2 ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVE2_BUTTON"));
-  buttonbitmap[BTN_DRIVESWAP] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVESWAP_BUTTON"));
-  buttonbitmap[BTN_FULLSCR] = (HBITMAP)LOADBUTTONBITMAP(TEXT("FULLSCR_BUTTON"));
-  buttonbitmap[BTN_DEBUG  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DEBUG_BUTTON"));
-  buttonbitmap[BTN_SETUP  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("SETUP_BUTTON"));
-  buttonbitmap[BTN_P8CAPS ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CAPSON_BITMAP"));
+static void CreateGdiObjects(void)
+{
+	ZeroMemory(buttonbitmap, BUTTONS*sizeof(HBITMAP));
 
-  g_hCapsLockBitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSOFF_BITMAP"));
-  g_hCapsLockBitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSON_BITMAP"));
-  //Pravets8 only
-  g_hCapsBitmapP8[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSOFF_P8_BITMAP"));
-  g_hCapsBitmapP8[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSON_P8_BITMAP"));
-  g_hCapsBitmapLat[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_LATOFF_BITMAP"));
-  g_hCapsBitmapLat[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_LATON_BITMAP"));
+	buttonbitmap[BTN_HELP] = (HBITMAP)LOADBUTTONBITMAP(TEXT("HELP_BUTTON"));
 
-  /*charsetbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_APPLE_BITMAP"));
-  charsetbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_82_BITMAP"));
-  charsetbitmap[2] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_8A_BITMAP"));
-  charsetbitmap[3] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_8M_BITMAP"));
-  */
-  //===========================
-  g_hDiskWindowedLED[ DISK_STATUS_OFF  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKOFF_BITMAP"));
-  g_hDiskWindowedLED[ DISK_STATUS_READ ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKREAD_BITMAP"));
-  g_hDiskWindowedLED[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKWRITE_BITMAP"));
-  g_hDiskWindowedLED[ DISK_STATUS_PROT ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKPROT_BITMAP"));
-  
-  // Full Screen Drive LED
-//	g_hDiskFullScreenLED[ DISK_STATUS_OFF  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_O")); // Full Screen Off
-//	g_hDiskFullScreenLED[ DISK_STATUS_READ ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_R")); // Full Screen Read Only
-//	g_hDiskFullScreenLED[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_W")); // Full Screen Write
-//	g_hDiskFullScreenLED[ DISK_STATUS_PROT ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_P")); // Full Screen Write Protected
+	switch (g_Apple2Type)
+	{
+	case A2TYPE_PRAVETS82:
+	case A2TYPE_PRAVETS8M:
+	case A2TYPE_PRAVETS8A:
+		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON"));
+		break;
+	default:
+		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON"));
+		break;
+	}
 
-  btnfacebrush    = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-  btnfacepen      = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNFACE));
-  btnhighlightpen = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNHIGHLIGHT));
-  btnshadowpen    = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNSHADOW));
-  smallfont = CreateFont(11,6,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
-                         OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
-                         DEFAULT_QUALITY,VARIABLE_PITCH | FF_SWISS,
-                         TEXT("Small Fonts"));
+	buttonbitmap[BTN_DRIVE1   ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVE1_BUTTON"));
+	buttonbitmap[BTN_DRIVE2   ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVE2_BUTTON"));
+	buttonbitmap[BTN_DRIVESWAP] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVESWAP_BUTTON"));
+	buttonbitmap[BTN_FULLSCR  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("FULLSCR_BUTTON"));
+	buttonbitmap[BTN_DEBUG    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DEBUG_BUTTON"));
+	buttonbitmap[BTN_SETUP    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("SETUP_BUTTON"));
+
+	//
+
+	g_hCapsLockBitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSOFF_BITMAP"));
+	g_hCapsLockBitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSON_BITMAP"));
+	//Pravets8 only
+	g_hCapsBitmapP8[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSOFF_P8_BITMAP"));
+	g_hCapsBitmapP8[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSON_P8_BITMAP"));
+	g_hCapsBitmapLat[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_LATOFF_BITMAP"));
+	g_hCapsBitmapLat[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_LATON_BITMAP"));
+
+	/*charsetbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_APPLE_BITMAP"));
+	charsetbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_82_BITMAP"));
+	charsetbitmap[2] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_8A_BITMAP"));
+	charsetbitmap[3] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_8M_BITMAP"));
+	*/
+	//===========================
+	g_hDiskWindowedLED[ DISK_STATUS_OFF  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKOFF_BITMAP"));
+	g_hDiskWindowedLED[ DISK_STATUS_READ ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKREAD_BITMAP"));
+	g_hDiskWindowedLED[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKWRITE_BITMAP"));
+	g_hDiskWindowedLED[ DISK_STATUS_PROT ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKPROT_BITMAP"));
+
+	// Full Screen Drive LED
+	//	g_hDiskFullScreenLED[ DISK_STATUS_OFF  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_O")); // Full Screen Off
+	//	g_hDiskFullScreenLED[ DISK_STATUS_READ ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_R")); // Full Screen Read Only
+	//	g_hDiskFullScreenLED[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_W")); // Full Screen Write
+	//	g_hDiskFullScreenLED[ DISK_STATUS_PROT ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_P")); // Full Screen Write Protected
+
+	btnfacebrush    = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
+	btnfacepen      = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNFACE));
+	btnhighlightpen = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNHIGHLIGHT));
+	btnshadowpen    = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNSHADOW));
+	smallfont = CreateFont(11,6,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
+							OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
+							DEFAULT_QUALITY,VARIABLE_PITCH | FF_SWISS,
+							TEXT("Small Fonts"));
 }
 
 //===========================================================================
-static void DeleteGdiObjects () {
-  int loop;
-  for (loop = 0; loop < BUTTONS; loop++)
-    DeleteObject(buttonbitmap[loop]);
-  for (loop = 0; loop < 2; loop++)
-    DeleteObject(g_hCapsLockBitmap[loop]);
-  for (loop = 0; loop < NUM_DISK_STATUS; loop++)
-  {
-	  DeleteObject(g_hDiskWindowedLED[loop]);
-	  //DeleteObject(g_hDiskFullScreenLED[loop]);
-  }
-  DeleteObject(btnfacebrush);
-  DeleteObject(btnfacepen);
-  DeleteObject(btnhighlightpen);
-  DeleteObject(btnshadowpen);
-  DeleteObject(smallfont);
+static void DeleteGdiObjects(void)
+{
+	for (int loop = 0; loop < BUTTONS; loop++)
+		_ASSERT(DeleteObject(buttonbitmap[loop]));
+
+	for (int loop = 0; loop < 2; loop++)
+	{
+		_ASSERT(DeleteObject(g_hCapsLockBitmap[loop]));
+		_ASSERT(DeleteObject(g_hCapsBitmapP8[loop]));
+		_ASSERT(DeleteObject(g_hCapsBitmapLat[loop]));
+	}
+
+	for (int loop = 0; loop < NUM_DISK_STATUS; loop++)
+	{
+		_ASSERT(DeleteObject(g_hDiskWindowedLED[loop]));
+		//_ASSERT(DeleteObject(g_hDiskFullScreenLED[loop]));
+	}
+
+	_ASSERT(DeleteObject(btnfacebrush));
+	_ASSERT(DeleteObject(btnfacepen));
+	_ASSERT(DeleteObject(btnhighlightpen));
+	_ASSERT(DeleteObject(btnshadowpen));
+	_ASSERT(DeleteObject(smallfont));
 }
 
 // Draws an 3D box around the main apple screen
@@ -1671,6 +1683,11 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	else
 	if (iCommand == ID_DISKMENU_SENDTO_CIDERPRESS)
 	{
+		static char szCiderpressNotFoundCaption[] = "CiderPress not found";
+		static char szCiderpressNotFoundText[] =	"CiderPress not found!\n"
+													"Please install CiderPress.\n"
+													"Otherwise set the path to CiderPress from Configuration->Disk.";
+
 		//if(!filename1.compare("\"\"") == false) //Do not use this, for some reason it does not work!!!
 		if(!filename1.compare(sFileNameEmpty) )
 		{
@@ -1683,11 +1700,7 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 				}
 				else
 				{
-					MessageBox( NULL,
-						"CiderPress not found!\n"
-						"Please install CiderPress in case it is not \n"
-						"or set the path to it from Configuration/Disk otherwise."
-							, "CiderPress not found" ,MB_ICONINFORMATION|MB_OK);
+					MessageBox(NULL, szCiderpressNotFoundText, szCiderpressNotFoundCaption, MB_ICONINFORMATION|MB_OK);
 				}
 			}
 		}
@@ -1699,11 +1712,7 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			}
 			else
 			{
-				MessageBox( NULL,
-					"CiderPress not found!\n"
-					"Please install CiderPress in case it is not \n"
-					"or set the path to it from Configuration/Disk otherwise."
-					, "CiderPress not found" ,MB_ICONINFORMATION|MB_OK);
+				MessageBox(NULL, szCiderpressNotFoundText, szCiderpressNotFoundCaption, MB_ICONINFORMATION|MB_OK);
 			}
 		}
 	}

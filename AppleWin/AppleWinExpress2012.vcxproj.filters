@@ -78,6 +78,9 @@
     <ClInclude Include="source\CommonVICE\types.h">
       <Filter>Source Files\CommonVICE</Filter>
     </ClInclude>
+    <ClInclude Include="source\Configuration\About.h">
+      <Filter>Source Files\Configuration</Filter>
+    </ClInclude>
     <ClInclude Include="source\Configuration\Config.h">
       <Filter>Source Files\Configuration</Filter>
     </ClInclude>
@@ -309,6 +312,9 @@
     </ClCompile>
     <ClCompile Include="source\StdAfx.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Configuration\About.cpp">
+      <Filter>Source Files\Configuration</Filter>
     </ClCompile>
     <ClCompile Include="source\Configuration\PageAdvanced.cpp">
       <Filter>Source Files\Configuration</Filter>

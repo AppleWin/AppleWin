@@ -182,6 +182,9 @@
     <ClCompile Include="source\Video.cpp">
       <Filter>Source\Video</Filter>
     </ClCompile>
+    <ClCompile Include="source\Configuration\About.cpp">
+      <Filter>Source\Configuration</Filter>
+    </ClCompile>
     <ClCompile Include="source\Configuration\PageAdvanced.cpp">
       <Filter>Source\Configuration</Filter>
     </ClCompile>
@@ -402,6 +405,9 @@
     </ClInclude>
     <ClInclude Include="source\Video.h">
       <Filter>Source\Video</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Configuration\About.h">
+      <Filter>Source\Configuration</Filter>
     </ClInclude>
     <ClInclude Include="source\Configuration\Config.h">
       <Filter>Source\Configuration</Filter>

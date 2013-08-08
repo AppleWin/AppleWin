@@ -364,6 +364,7 @@
     <ClCompile Include="source\Harddisk.cpp" />
     <ClCompile Include="source\Frame.cpp" />
     <ClCompile Include="source\Video.cpp" />
+    <ClCompile Include="source\Configuration\About.cpp" />
     <ClCompile Include="source\Configuration\PageAdvanced.cpp" />
     <ClCompile Include="source\Configuration\PageConfig.cpp" />
     <ClCompile Include="source\Configuration\PageConfigTfe.cpp" />
@@ -439,6 +440,7 @@
     <ClInclude Include="source\Harddisk.h" />
     <ClInclude Include="source\Frame.h" />
     <ClInclude Include="source\Video.h" />
+    <ClInclude Include="source\Configuration\About.h" />
     <ClInclude Include="source\Configuration\Config.h" />
     <ClInclude Include="source\Configuration\IPropertySheet.h" />
     <ClInclude Include="source\Configuration\IPropertySheetPage.h" />

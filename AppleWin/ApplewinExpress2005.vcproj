@@ -672,6 +672,14 @@
 				Name="Configuration"
 				>
 				<File
+					RelativePath=".\source\Configuration\About.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Configuration\About.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Configuration\Config.h"
 					>
 				</File>

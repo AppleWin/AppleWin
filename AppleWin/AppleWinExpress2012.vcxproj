@@ -30,6 +30,7 @@
     <ClInclude Include="source\CommonVICE\interrupt.h" />
     <ClInclude Include="source\CommonVICE\mem.h" />
     <ClInclude Include="source\CommonVICE\types.h" />
+    <ClInclude Include="source\Configuration\About.h" />
     <ClInclude Include="source\Configuration\Config.h" />
     <ClInclude Include="source\Configuration\IPropertySheet.h" />
     <ClInclude Include="source\Configuration\IPropertySheetPage.h" />
@@ -111,6 +112,7 @@
     <ClCompile Include="source\6821.cpp" />
     <ClCompile Include="source\Applewin.cpp" />
     <ClCompile Include="source\AY8910.cpp" />
+    <ClCompile Include="source\Configuration\About.cpp" />
     <ClCompile Include="source\Configuration\PageAdvanced.cpp" />
     <ClCompile Include="source\Configuration\PageConfig.cpp" />
     <ClCompile Include="source\Configuration\PageConfigTfe.cpp" />

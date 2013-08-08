@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
+#include "Configuration\About.h"
 #include "Configuration\PropertySheet.h"
 #include "Tfe\Tfe.h"
 
@@ -897,9 +898,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
             unsigned long minor     = pFixedFileInfo->dwFileVersionMS & 0xffff;
             unsigned long fix       = pFixedFileInfo->dwFileVersionLS >> 16;
 			unsigned long fix_minor = pFixedFileInfo->dwFileVersionLS & 0xffff;
-
             sprintf(VERSIONSTRING, "%d.%d.%d.%d", major, minor, fix, fix_minor); // potential buffer overflow
-        }
+		}
     }
 
 	LogFileOutput("AppleWin version: %s\n",  VERSIONSTRING);
@@ -990,8 +990,20 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
-		FrameCreateWindow();
+		FrameCreateWindow();	// g_hFrameWindow is now valid
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
+
+		char szOldAppleWinVersion[sizeof(VERSIONSTRING)] = {0};
+		RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, szOldAppleWinVersion, sizeof(szOldAppleWinVersion));
+
+		const bool bShowAboutDlg = strcmp(szOldAppleWinVersion, VERSIONSTRING) != 0;
+		if (bShowAboutDlg)
+		{
+			if (!AboutDlg())
+				PostMessage(g_hFrameWindow, WM_DESTROY, 0, 0);								// Close everything down
+			else
+				RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, VERSIONSTRING);	// Only save version after user accepts license
+		}
 
 		// PrintScrn support
 		AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow

@@ -52,7 +52,6 @@ enum AppMode_e
 #define  BTN_FULLSCR       5
 #define  BTN_DEBUG         6
 #define  BTN_SETUP         7
-#define  BTN_P8CAPS        9
 
 // TODO: Move to StringTable.h
 #define	TITLE_APPLE_2			TEXT("Apple ][ Emulator")
@@ -109,6 +108,7 @@ enum AppMode_e
 #define  REGVALUE_SLOT6					"Slot 6"
 #define  REGVALUE_SLOT7					"Slot 7"
 #define  REGVALUE_SLOTAUX				"Slot Auxilary"
+#define  REGVALUE_VERSION				"Version"
 
 // Preferences 
 #define REG_PREFS						"Preferences"
