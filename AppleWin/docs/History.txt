@@ -12,6 +12,14 @@ https://developer.berlios.de/feature/?func=addfeature&group_id=6117
 Tom Charlesworth
 tomch at users.berlios.de
 
+1.23.1 - 8 Aug 2013
+--------------------
+Changes:
+. Added About dialog showing GPL (at startup, but only when AppleWin version changes).
+
+Fixes:
+. Fixed save-state bug for when 4K BANK1 is dirty (previously it would save the stale data instead).
+
 
 1.23.0 - 26 Apr 2013
 --------------------
