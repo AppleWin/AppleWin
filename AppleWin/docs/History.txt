@@ -19,6 +19,7 @@ Changes:
 
 Fixes:
 . Fixed save-state bug for when 4K BANK1 is dirty (previously it would save the stale data instead).
+. [Bug #18723,#19070] Mouse movement for CopyII+9.1 and ProTERM3.1.
 
 
 1.23.0 - 26 Apr 2013

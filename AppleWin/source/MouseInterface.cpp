@@ -443,7 +443,11 @@ void CMouseInterface::OnMouseEvent(bool bEventVBL)
 	BOOL bBtn0 = m_bButtons[0];
 	BOOL bBtn1 = m_bButtons[1];
 	if ( m_nX != m_iX || m_nY != m_iY )
+	{
 		byState |= STAT_INT_MOVEMENT|STAT_MOVEMENT_SINCE_READMOUSE;	// X/Y moved since last READMOUSE | Movement interrupt
+		m_byState |= STAT_MOVEMENT_SINCE_READMOUSE;							// [TC] Used by CopyII+9.1 and ProTERM3.1
+	}
+
 	if ( m_bBtn0 != bBtn0 || m_bBtn1 != bBtn1 )
 		byState |= STAT_INT_BUTTON;		// Button 0/1 interrupt
 	if ( bEventVBL )
