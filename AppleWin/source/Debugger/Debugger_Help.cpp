@@ -1169,21 +1169,22 @@ Update_t CmdHelpSpecific (int nArgs)
 		case CMD_MEMORY_SAVE:
 			if (iCommand == CMD_MEMORY_LOAD)
 			{
-				sprintf( sTemp, " Usage: [\"Filename\"],address[,length]" );
+				sprintf( sTemp, " Usage: [\"Filename\",]address[,length]" );
 				Colorize( sText, sTemp );
 				ConsolePrint( sText );
-				sprintf( sTemp, " Usage: [\"Filename\"],range"            );
+				sprintf( sTemp, " Usage: [\"Filename\",]range"            );
 				Colorize( sText, sTemp );
 				ConsolePrint( sText );
 				Help_Range();
 				ConsoleBufferPush( "  Notes: If no filename specified, defaults to the last filename (if possible)" );
+				ConsoleBufferPush( "         Optional bank not supported for BLOAD" );
 			}
 			if (iCommand == CMD_MEMORY_SAVE)
 			{			
-				sprintf( sTemp, " Usage: [\"Filename\"],address,length" );
+				sprintf( sTemp, " Usage: [\"Filename\",][bank:]address,length" );
 				Colorize( sText, sTemp );
 				ConsolePrint( sText );
-				sprintf( sTemp, " Usage: [\"Filename\"],range"          );
+				sprintf( sTemp, " Usage: [\"Filename\",][bank:]range"          );
 				Colorize( sText, sTemp );
 				ConsolePrint( sText );
 				Help_Range();
@@ -1197,6 +1198,8 @@ Update_t CmdHelpSpecific (int nArgs)
 			sprintf( sText, "%s   BLOAD \"test\",2000:2010" , CHC_EXAMPLE ); ConsolePrint( sText );
 			sprintf( sText, "%s   BSAVE \"test\",F000:FFFF" , CHC_EXAMPLE ); ConsolePrint( sText );
 			sprintf( sText, "%s   BLOAD \"test\",4000"      , CHC_EXAMPLE ); ConsolePrint( sText );
+			sprintf( sText, "%s   BSAVE \"test\",0:2000,2000" , CHC_EXAMPLE ); ConsolePrint( sText );
+			sprintf( sText, "%s   BSAVE \"test\",1:2000:3FFF" , CHC_EXAMPLE ); ConsolePrint( sText );
 			break;
 		case CMD_MEMORY_SEARCH:
 			Colorize( sText, " Usage: range <\"ASCII text\" | 'apple text' | hex>" );

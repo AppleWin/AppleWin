@@ -751,17 +751,16 @@ static bool IsCardInSlot(const UINT uSlot)
 
 //===========================================================================
 
-//// Only called by MemSetFastPaging()
-//static void BackMainImage ()
-//{
-//	for (UINT loop = 0; loop < 256; loop++)
-//	{
-//		if (memshadow[loop] && ((*(memdirty+loop) & 1) || (loop <= 1)))
-//			CopyMemory(memshadow[loop],memimage+(loop << 8),256);
-//
-//		*(memdirty+loop) &= ~1;
-//	}
-//}
+static void BackMainImage(void)
+{
+	for (UINT loop = 0; loop < 256; loop++)
+	{
+		if (memshadow[loop] && ((*(memdirty+loop) & 1) || (loop <= 1)))
+			CopyMemory(memshadow[loop], memimage+(loop << 8), 256);
+
+		*(memdirty+loop) &= ~1;
+	}
+}
 
 //===========================================================================
 
@@ -1117,13 +1116,21 @@ LPBYTE MemGetMainPtr(const WORD offset)
 
 LPBYTE MemGetBankPtr(const UINT nBank)
 {
-	if (nBank == 0)
-		return mem;
+	BackMainImage();	// Flush any dirty pages to back-buffer
 
+#ifdef RAMWORKS
 	if (nBank > g_uMaxExPages)
 		return NULL;
 
+	if (nBank == 0)
+		return memmain;
+
 	return RWpages[nBank-1];
+#else
+	return	(nBank == 0) ? memmain :
+			(nBank == 1) ? memaux :
+			NULL;
+#endif
 }
 
 //===========================================================================

@@ -4178,7 +4178,7 @@ Update_t CmdMemoryMove (int nArgs)
 
 
 //===========================================================================
-#if 1	// Original
+#if 0	// Original
 Update_t CmdMemorySave (int nArgs)
 {
 	// BSAVE ["Filename"] , addr , len 
