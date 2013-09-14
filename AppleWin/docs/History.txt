@@ -12,10 +12,20 @@ https://developer.berlios.de/feature/?func=addfeature&group_id=6117
 Tom Charlesworth
 tomch at users.berlios.de
 
-1.23.1 - 8 Aug 2013
+1.23.2 - 14 Sep 2013
 --------------------
 Changes:
 . Added About dialog showing GPL (at startup, but only when AppleWin version changes).
+. [Bug #18940] Extend BSAVE and BLOAD Command To Memory Banks 0 and 1
+	Extended debugger BLOAD with bank support:
+	. BLOAD [file],[bank:]address[,length]
+	. BLOAD [file],[bank:]address[:end]
+	. If no filename specified, will use last BLOAD or BSAVE filename.
+	Extended debugger BSAVE with bank support:
+	. BSAVE [file],[bank:]address,length
+	. BSAVE [file],[bank:]address:end
+	. If no filename specified, defaults to: '####.####.[bank##].bin'
+		(where the form is <address>.<length>.bin)
 
 Fixes:
 . Fixed save-state bug for when 4K BANK1 is dirty (previously it would save the stale data instead).

@@ -1169,26 +1169,25 @@ Update_t CmdHelpSpecific (int nArgs)
 		case CMD_MEMORY_SAVE:
 			if (iCommand == CMD_MEMORY_LOAD)
 			{
-				sprintf( sTemp, " Usage: [\"Filename\",]address[,length]" );
+				sprintf( sTemp, " Usage: [\"Filename\"],[bank:]address[,length]" );
 				Colorize( sText, sTemp );
 				ConsolePrint( sText );
-				sprintf( sTemp, " Usage: [\"Filename\",]range"            );
+				sprintf( sTemp, " Usage: [\"Filename\"],[bank:]range"            );
 				Colorize( sText, sTemp );
 				ConsolePrint( sText );
 				Help_Range();
 				ConsoleBufferPush( "  Notes: If no filename specified, defaults to the last filename (if possible)" );
-				ConsoleBufferPush( "         Optional bank not supported for BLOAD" );
 			}
 			if (iCommand == CMD_MEMORY_SAVE)
 			{			
-				sprintf( sTemp, " Usage: [\"Filename\",][bank:]address,length" );
+				sprintf( sTemp, " Usage: [\"Filename\"],[bank:]address,length" );
 				Colorize( sText, sTemp );
 				ConsolePrint( sText );
-				sprintf( sTemp, " Usage: [\"Filename\",][bank:]range"          );
+				sprintf( sTemp, " Usage: [\"Filename\"],[bank:]range"          );
 				Colorize( sText, sTemp );
 				ConsolePrint( sText );
 				Help_Range();
-				ConsoleBufferPush( "  Notes: If no filename specified, defaults to: '####.####.bin'" );
+				ConsoleBufferPush( "  Notes: If no filename specified, defaults to: '####.####.[bank##].bin'" );
 				ConsoleBufferPush( "    Where the form is <address>.<length>.bin"                    );
 			}
 			
@@ -1198,8 +1197,10 @@ Update_t CmdHelpSpecific (int nArgs)
 			sprintf( sText, "%s   BLOAD \"test\",2000:2010" , CHC_EXAMPLE ); ConsolePrint( sText );
 			sprintf( sText, "%s   BSAVE \"test\",F000:FFFF" , CHC_EXAMPLE ); ConsolePrint( sText );
 			sprintf( sText, "%s   BLOAD \"test\",4000"      , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s   BSAVE \"test\",0:2000,2000" , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s   BSAVE \"test\",1:2000:3FFF" , CHC_EXAMPLE ); ConsolePrint( sText );
+			sprintf( sText, "%s   BLOAD \"main.bin\",0:2000" , CHC_EXAMPLE ); ConsolePrint( sText );
+			sprintf( sText, "%s   BSAVE \"aux2.bin\",1:2000" , CHC_EXAMPLE ); ConsolePrint( sText );
+			sprintf( sText, "%s   BSAVE \"main.bin\",0:2000,2000" , CHC_EXAMPLE ); ConsolePrint( sText );
+			sprintf( sText, "%s   BSAVE \"aux2.bin\",1:2000:3FFF" , CHC_EXAMPLE ); ConsolePrint( sText );
 			break;
 		case CMD_MEMORY_SEARCH:
 			Colorize( sText, " Usage: range <\"ASCII text\" | 'apple text' | hex>" );

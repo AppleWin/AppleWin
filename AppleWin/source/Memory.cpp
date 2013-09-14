@@ -846,6 +846,11 @@ void ResetPaging (BOOL initialize)
 
 //===========================================================================
 
+void MemUpdatePaging(BOOL initialize)
+{
+	UpdatePaging(initialize, 0);
+}
+
 static void UpdatePaging (BOOL initialize, BOOL updatewriteonly /*Always zero*/)
 {
 	// SAVE THE CURRENT PAGING SHADOW TABLE
