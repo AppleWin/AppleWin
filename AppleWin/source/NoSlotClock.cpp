@@ -26,6 +26,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * Author: Nick Westgate
  */
 
+/* Posted to csa2, "No Slot Clock and Day Of Week apps?" by Nick on 21/06/2011:
+
+DOW interpretation is only a convention, but unfortunately it seems Dallas chose a different
+convention from the original NSC vendors. And perhaps the NSC vendors then adopted the new convention.
+
+This conclusion is drawn from the 3 available data points:
+- Original (1986/1987) NSC manual:     1=MON
+- SmartWatch Utility (1987) v1.1:      1=SUN
+- No Slot Clock Utilities (1991) v.14: 1=SUN
+
+All the other drivers and utilities available to me don't define the DOW mapping.
+*/
+
 #include "StdAfx.h"
 #include "NoSlotClock.h"
 
