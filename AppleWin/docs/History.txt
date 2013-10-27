@@ -12,6 +12,14 @@ https://developer.berlios.de/feature/?func=addfeature&group_id=6117
 Tom Charlesworth
 tomch at users.berlios.de
 
+
+Latest:
+-------
+
+Fixes:
+. [ Bug #19154 ] ProDOS Order 2IMG crashing
+
+
 1.23.2 - 14 Sep 2013
 --------------------
 Changes:

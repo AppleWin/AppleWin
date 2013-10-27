@@ -596,7 +596,7 @@ public:
 			{
 				if ((*(LPWORD)(pImage+(loop << 9)+0x100) != ((loop == 5) ? 0 : 6-loop)) ||
 					(*(LPWORD)(pImage+(loop << 9)+0x102) != ((loop == 2) ? 0 : 8-loop)))
-					bMismatch = 1;
+					bMismatch = true;
 			}
 			if (!bMismatch)
 				return eMatch;
@@ -647,8 +647,10 @@ public:
 			int  loop      = 4;
 			bool bMismatch = false;
 			while ((loop++ < 13) && !bMismatch)
+			{
 				if (*(pImage+0x11002+(loop << 8)) != 14-loop)
 					bMismatch = true;
+			}
 			if (!bMismatch)
 				return eMatch;
 		}
@@ -1473,16 +1475,34 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 	eImageType ImageType = eImageUNKNOWN;
 	eImageType PossibleType = eImageUNKNOWN;
 
-	for (UINT uLoop=0; uLoop < GetNumImages() && ImageType == eImageUNKNOWN; uLoop++)
+	if (m_Result2IMG == eMatch)
 	{
-		if (*pszExt && _tcsstr(GetImage(uLoop)->GetRejectExtensions(), pszExt))
-			continue;
+		if (m_2IMGHelper.IsImageFormatDOS33())
+			ImageType = eImageDO;
+		else if (m_2IMGHelper.IsImageFormatProDOS())
+			ImageType = eImagePO;
 
-		eDetectResult Result = GetImage(uLoop)->Detect(pImage, dwSize, pszExt);
-		if (Result == eMatch)
-			ImageType = GetImage(uLoop)->GetType();
-		else if ((Result == ePossibleMatch) && (PossibleType == eImageUNKNOWN))
-			PossibleType = GetImage(uLoop)->GetType();
+		if (ImageType != eImageUNKNOWN)
+		{
+			CImageBase* pImageType = GetImage(ImageType);
+			if (!pImageType || !pImageType->IsValidImageSize(dwSize))
+				ImageType = eImageUNKNOWN;
+		}
+	}
+
+	if (ImageType == eImageUNKNOWN)
+	{
+		for (UINT uLoop=0; uLoop < GetNumImages() && ImageType == eImageUNKNOWN; uLoop++)
+		{
+			if (*pszExt && _tcsstr(GetImage(uLoop)->GetRejectExtensions(), pszExt))
+				continue;
+
+			eDetectResult Result = GetImage(uLoop)->Detect(pImage, dwSize, pszExt);
+			if (Result == eMatch)
+				ImageType = GetImage(uLoop)->GetType();
+			else if ((Result == ePossibleMatch) && (PossibleType == eImageUNKNOWN))
+				PossibleType = GetImage(uLoop)->GetType();
+		}
 	}
 
 	if (ImageType == eImageUNKNOWN)

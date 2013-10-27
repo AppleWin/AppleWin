@@ -63,6 +63,7 @@ public:
 	virtual char* GetRejectExtensions(void) = 0;
 
 	void SetVolumeNumber(const BYTE uVolumeNumber) { m_uVolumeNumber = uVolumeNumber; }
+	bool IsValidImageSize(const DWORD uImageSize);
 
 	enum SectorOrder_e {eProDOSOrder, eDOSOrder, eSIMSYSTEMOrder, NUM_SECTOR_ORDERS};
 
@@ -77,7 +78,6 @@ protected:
 	void DenibblizeTrack (LPBYTE trackimage, SectorOrder_e SectorOrder, int nibbles);
 	DWORD NibblizeTrack (LPBYTE trackimagebuffer, SectorOrder_e SectorOrder, int track);
 	void SkewTrack (const int nTrack, const int nNumNibbles, const LPBYTE pTrackImageBuffer);
-	bool IsValidImageSize(const DWORD uImageSize);
 
 public:
 	static LPBYTE ms_pWorkBuffer;
@@ -127,6 +127,8 @@ public:
 	virtual UINT GetMaxHdrSize(void) { return sizeof(Header2IMG); }
 	BYTE GetVolumeNumber(void);
 	bool IsLocked(void);
+	bool IsImageFormatDOS33(void) { return m_Hdr.ImageFormat == e2IMGFormatDOS33; }
+	bool IsImageFormatProDOS(void) { return m_Hdr.ImageFormat == e2IMGFormatProDOS; }
 
 private:
 	static const UINT32 FormatID_2IMG = 'GMI2';			// '2IMG'
