@@ -93,7 +93,39 @@ static void WriteTrack (int drive);
 
 //===========================================================================
 
-void Disk_LoadLastDiskImage(const int iDrive)
+int DiskGetCurrentDrive(void)  { return currdrive; }
+int DiskGetCurrentTrack(void)  { return g_aFloppyDisk[currdrive].track; }
+int DiskGetCurrentPhase(void)  { return g_aFloppyDisk[currdrive].phase; }
+int DiskGetCurrentOffset(void) { return g_aFloppyDisk[currdrive].byte; }
+
+char* DiskGetCurrentState(void)
+{
+	if (g_aFloppyDisk[currdrive].imagehandle == NULL)
+		return "Empty";
+
+	if (!floppymotoron)
+	{
+		if (g_aFloppyDisk[currdrive].spinning > 0)
+			return "Off (spinning)";
+		else
+			return "Off";
+	}
+	else if (floppywritemode)
+	{
+		if (g_aFloppyDisk[currdrive].bWriteProtected)
+			return "Writing";
+		else
+			return "Writing (write protected)";
+	}
+	else
+	{
+		return "Reading";
+	}
+}
+
+//===========================================================================
+
+ void Disk_LoadLastDiskImage(const int iDrive)
 {
 	char sFilePath[ MAX_PATH + 1];
 	sFilePath[0] = 0;

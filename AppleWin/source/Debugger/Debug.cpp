@@ -3620,9 +3620,32 @@ Update_t CmdDisk ( int nArgs)
 	if (! nArgs)
 		goto _Help;
 
+	// check for info command
+	int iParam = 0;
+	int nInfoFound = FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
+	if (iParam == PARAM_DISK_INFO)
+	{
+		if (nArgs > 2)
+			goto _Help;
+
+		int drive = DiskGetCurrentDrive() + 1;
+		char buffer[200] = "";
+		sprintf(buffer, "D%d at T$%X (%d), phase $%X, offset $%X, %s",
+			drive,
+			DiskGetCurrentTrack(),
+			DiskGetCurrentTrack(),
+			DiskGetCurrentPhase(),
+			DiskGetCurrentOffset(),
+			DiskGetCurrentState());
+
+		ConsoleBufferPush(buffer);
+		return ConsoleUpdate();
+	}
+
 	if (nArgs < 2)
 		goto _Help;
 
+	// first param should be drive
 	int iDrive = g_aArgs[ 1 ].nValue;
 
 	if ((iDrive < 1) || (iDrive > 2))
@@ -3630,7 +3653,7 @@ Update_t CmdDisk ( int nArgs)
 	
 	iDrive--;
 
-	int iParam = 0;
+	// second param is command
 	int nFound = FindParam( g_aArgs[ 2 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
 
 	if (! nFound)

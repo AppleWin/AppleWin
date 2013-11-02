@@ -60,6 +60,11 @@ void    DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const
 void    DiskReset(void);
 bool    DiskGetProtect(const int iDrive);
 void    DiskSetProtect(const int iDrive, const bool bWriteProtect);
+int     DiskGetCurrentDrive();
+int     DiskGetCurrentTrack();
+int     DiskGetCurrentPhase();
+int     DiskGetCurrentOffset();
+char*   DiskGetCurrentState();
 void    DiskSelect(const int iDrive);
 void    DiskUpdatePosition(DWORD);
 bool    DiskDriveSwap(void);

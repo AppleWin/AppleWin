@@ -15,7 +15,8 @@ tomch at users.berlios.de
 
 Latest:
 -------
-
+Changes:
+. Debugger: Added "disk info" command
 Fixes:
 . [ Bug #19154 ] ProDOS Order 2IMG crashing
 
