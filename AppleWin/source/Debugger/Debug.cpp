@@ -3630,7 +3630,7 @@ Update_t CmdDisk ( int nArgs)
 
 		int drive = DiskGetCurrentDrive() + 1;
 		char buffer[200] = "";
-		sprintf(buffer, "D%d at T$%X (%d), phase $%X, offset $%X, %s",
+		sprintf_s(buffer, sizeof(buffer), "D%d at T$%X (%d), phase $%X, offset $%X, %s",
 			drive,
 			DiskGetCurrentTrack(),
 			DiskGetCurrentTrack(),
