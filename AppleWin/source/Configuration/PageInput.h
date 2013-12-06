@@ -12,6 +12,8 @@ public:
 		m_Page(PG_INPUT),
 		m_PropertySheetHelper(PropertySheetHelper),
 		m_uScrollLockToggle(0),
+		m_uCursorControl(1),
+		m_bmAutofire(0),
 		m_uMouseShowCrosshair(0),
 		m_uMouseRestrictToWindow(0),
 		m_CPMChoice(CPM_UNPLUGGED)
@@ -24,6 +26,10 @@ public:
 
 	UINT GetScrollLockToggle(void){ return m_uScrollLockToggle; }
 	void SetScrollLockToggle(UINT uValue){ m_uScrollLockToggle = uValue; }
+	UINT GetCursorControl(void){ return m_uCursorControl; }
+	void SetCursorControl(UINT uValue){ m_uCursorControl = uValue; }
+	UINT GetAutofire(UINT uButton) { return (m_bmAutofire >> uButton) & 1; }	// Get a specific button
+	void SetAutofire(UINT uValue) { m_bmAutofire = uValue; }					// Set all buttons
 	UINT GetMouseShowCrosshair(void){ return m_uMouseShowCrosshair; }
 	void SetMouseShowCrosshair(UINT uValue){ m_uMouseShowCrosshair = uValue; }
 	UINT GetMouseRestrictToWindow(void){ return m_uMouseRestrictToWindow; }
@@ -69,6 +75,8 @@ private:
 	CPropertySheetHelper& m_PropertySheetHelper;
 
 	UINT m_uScrollLockToggle;
+	UINT m_uCursorControl;		// 1 = Allow AppleII to read cursor keys from $C000 (when using keyboard as a joystick)
+	UINT m_bmAutofire;			// bitmask b2:0
 	UINT m_uMouseShowCrosshair;
 	UINT m_uMouseRestrictToWindow;
 

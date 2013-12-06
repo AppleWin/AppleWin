@@ -762,7 +762,7 @@ int PrintText ( const char * pText, RECT & rRect )
 {
 #if _DEBUG
 	if (! pText)
-		MessageBox( NULL, "pText = NULL!", "DrawText()", MB_OK );
+		MessageBox( g_hFrameWindow, "pText = NULL!", "DrawText()", MB_OK );
 #endif
 
 	int nLen = strlen( pText );

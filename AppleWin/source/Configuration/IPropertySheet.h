@@ -8,6 +8,10 @@ __interface IPropertySheet
 
 	UINT GetScrollLockToggle(void);
 	void SetScrollLockToggle(UINT uValue);
+	UINT GetCursorControl(void);
+	void SetCursorControl(UINT uValue);
+	UINT GetAutofire(UINT uButton);
+	void SetAutofire(UINT uValue);
 	UINT GetMouseShowCrosshair(void);
 	void SetMouseShowCrosshair(UINT uValue);
 	UINT GetMouseRestrictToWindow(void);

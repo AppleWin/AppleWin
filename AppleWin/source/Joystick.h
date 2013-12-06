@@ -12,6 +12,7 @@ BOOL    JoySetEmulationType(HWND,DWORD,int, const bool bMousecardActive);
 void    JoySetPosition(int,int,int,int);
 void    JoyUpdatePosition();
 BOOL    JoyUsingMouse();
+BOOL    JoyUsingKeyboard();
 void    JoyDisableUsingMouse();
 void    JoySetTrim(short nValue, bool bAxisX);
 short   JoyGetTrim(bool bAxisX);

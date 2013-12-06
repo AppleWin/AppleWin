@@ -110,12 +110,12 @@ BEGIN
     PUSHBUTTON      "&Benchmark Emulator",IDC_BENCHMARK,15,179,85,15
 END
 
-IDD_PROPPAGE_INPUT DIALOGEX 0, 0, 210, 182
+IDD_PROPPAGE_INPUT DIALOGEX 0, 0, 210, 215
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_CAPTION | WS_SYSMENU
 CAPTION "Input"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    GROUPBOX        "Joystick Control",IDC_STATIC,5,7,200,66
+    GROUPBOX        "Joystick Control",IDC_STATIC,5,7,200,101
     LTEXT           "Joystick &1:",IDC_STATIC,12,20,40,8
     COMBOBOX        IDC_JOYSTICK0,52,18,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Joystick &2:",IDC_STATIC,12,35,40,8
@@ -126,17 +126,20 @@ BEGIN
     LTEXT           "&Y-trim:",IDC_STATIC,115,56,28,8
     CTEXT           "0",IDC_STATIC,137,49,24,20,SS_CENTERIMAGE
     CONTROL         "Spin1",IDC_SPIN_YTRIM,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY,161,53,10,14
+    CONTROL         "Allow cursor keys to be read from keyboard ",IDC_CURSORCONTROL,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,75,155,10
+    CONTROL         "Auto-fire (all 3 buttons)",IDC_AUTOFIRE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,90,155,10
     CONTROL         "&Scroll Lock acts as toggle for full-speed CPU",IDC_SCROLLLOCK_TOGGLE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,81,166,10
-    CONTROL         "&Mouse interface in slot 4",IDC_MOUSE_IN_SLOT4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,95,106,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,113,166,10
+    CONTROL         "&Mouse interface in slot 4",IDC_MOUSE_IN_SLOT4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,127,106,10
     CONTROL         "Show &crosshairs in window's frame",IDC_MOUSE_CROSSHAIR,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,109,159,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,141,159,10
     CONTROL         "&Restrict mouse to Apple window",IDC_MOUSE_RESTRICT_TO_WINDOW,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,123,121,10
-    LTEXT           "Microsoft CP/M SoftCard:",IDC_STATIC,5,138,122,10
-    COMBOBOX        IDC_CPM_CONFIG,90,136,55,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "Paste &From Clipboard",IDC_PASTE_FROM_CLIPBOARD,5,160,81,14
-    LTEXT           "(Shift+Insert during emulation)",IDC_STATIC,90,163,111,8
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,155,121,10
+    LTEXT           "Microsoft CP/M SoftCard:",IDC_STATIC,8,170,122,10
+    COMBOBOX        IDC_CPM_CONFIG,93,168,55,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Paste &From Clipboard",IDC_PASTE_FROM_CLIPBOARD,8,192,81,14
+    LTEXT           "(Shift+Insert during emulation)",IDC_STATIC,93,195,111,8
 END
 
 IDD_PROPPAGE_SOUND DIALOGEX 0, 0, 210, 191
@@ -246,8 +249,8 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,23,2,0
- PRODUCTVERSION 1,23,2,0
+ FILEVERSION 1,23,3,0
+ PRODUCTVERSION 1,23,3,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -265,12 +268,12 @@ BEGIN
             VALUE "Comments", "http://applewin.berlios.de"
             VALUE "CompanyName", "AppleWin"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1, 23, 2, 0"
+            VALUE "FileVersion", "1, 23, 3, 0"
             VALUE "InternalName", "APPLEWIN"
             VALUE "LegalCopyright", " 1994-2013 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1, 23, 2, 0"
+            VALUE "ProductVersion", "1, 23, 3, 0"
         END
     END
     BLOCK "VarFileInfo"
@@ -358,6 +361,22 @@ BEGIN
         MENUITEM "Unplug harddisk-2",           ID_DISKMENU_UNPLUG_HARDDISK2
     END
 END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_PROPPAGE_INPUT, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 182
+    END
+END
+#endif    // APSTUDIO_INVOKED
 
 
 /////////////////////////////////////////////////////////////////////////////

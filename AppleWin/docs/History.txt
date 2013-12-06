@@ -15,10 +15,18 @@ tomch at users.berlios.de
 
 Latest:
 -------
+
+
+1.23.3 - 6 Dec 2013
+-------------------
 Changes:
+. Support cursor keys (in addition to numpad) when using keyboard as joystick emulation
+. Support auto-fire for all 3 joystick buttons (via Config->Input)
 . Debugger: Added "disk info" command
+. Added confirmation message box for reboot (F2)
 Fixes:
-. [ Bug #19154 ] ProDOS Order 2IMG crashing
+. [Bug #19154] ProDOS Order 2IMG crashing
+. [Support #103098] Sometimes swapping disk could cause INIT to fail with ERROR #8
 
 
 1.23.2 - 14 Sep 2013

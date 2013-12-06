@@ -164,6 +164,8 @@ BOOL CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM 
 			SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(true),0));
 			SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(false),0));
 
+			CheckDlgButton(hWnd, IDC_CURSORCONTROL, m_uCursorControl ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_AUTOFIRE, m_bmAutofire ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_SCROLLLOCK_TOGGLE, m_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
 
 			InitOptions(hWnd);
@@ -194,12 +196,16 @@ void CPageInput::DlgOK(HWND hWnd)
 	JoySetTrim((short)SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0), true);
 	JoySetTrim((short)SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0), false);
 
+	m_uCursorControl = IsDlgButtonChecked(hWnd, IDC_CURSORCONTROL) ? 1 : 0;
+	m_bmAutofire = IsDlgButtonChecked(hWnd, IDC_AUTOFIRE) ? 7 : 0;	// bitmap of 3 bits
 	m_uMouseShowCrosshair = IsDlgButtonChecked(hWnd, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
 	m_uMouseRestrictToWindow = IsDlgButtonChecked(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
 
 	REGSAVE(TEXT(REGVALUE_PDL_XTRIM), JoyGetTrim(true));
 	REGSAVE(TEXT(REGVALUE_PDL_YTRIM), JoyGetTrim(false));
 	REGSAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), m_uScrollLockToggle);
+	REGSAVE(TEXT(REGVALUE_CURSOR_CONTROL), m_uCursorControl);
+	REGSAVE(TEXT(REGVALUE_AUTOFIRE), m_bmAutofire);
 	REGSAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR), m_uMouseShowCrosshair);
 	REGSAVE(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), m_uMouseRestrictToWindow);
 
@@ -308,6 +314,8 @@ void CPageInput::InitSlotOptions(HWND hWnd)
 
 	InitJoystickChoices(hWnd, JN_JOYSTICK0, IDC_JOYSTICK0);
 	InitJoystickChoices(hWnd, JN_JOYSTICK1, IDC_JOYSTICK1);
+
+	EnableWindow(GetDlgItem(hWnd, IDC_CURSORCONTROL), JoyUsingKeyboard() ? TRUE : FALSE);
 }
 
 void CPageInput::InitCPMChoices(HWND hWnd)

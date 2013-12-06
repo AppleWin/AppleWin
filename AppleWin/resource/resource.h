@@ -101,6 +101,8 @@
 #define IDC_GPL_BORDER                  1063
 #define IDC_APPLEWIN_VERSION            1064
 #define IDC_APPLEWIN_ICON               1065
+#define IDC_CURSORCONTROL               1066
+#define IDC_AUTOFIRE                    1067
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
@@ -120,7 +122,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        146
 #define _APS_NEXT_COMMAND_VALUE         40012
-#define _APS_NEXT_CONTROL_VALUE         1066
+#define _APS_NEXT_CONTROL_VALUE         1068
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

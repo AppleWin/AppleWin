@@ -122,7 +122,7 @@ static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
 
 void    DrawStatusArea (HDC passdc, BOOL drawflags);
-void    ProcessButtonClick (int button);
+static void ProcessButtonClick (int button, bool bFromButtonUI=false);
 void	ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive);
 void    RelayEvent (UINT message, WPARAM wparam, LPARAM lparam);
 void    ResetMachineState ();
@@ -792,7 +792,7 @@ LRESULT CALLBACK FrameWndProc (
     case WM_DDE_EXECUTE: {
       LogFileOutput("WM_DDE_EXECUTE\n");
       LPTSTR filename = (LPTSTR)GlobalLock((HGLOBAL)lparam);
-//MessageBox( NULL, filename, "DDE Exec", MB_OK );
+//MessageBox( g_hFrameWindow, filename, "DDE Exec", MB_OK );
       ImageError_e Error = DiskInsert(DRIVE_1, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
       if (Error == eIMAGE_ERROR_NONE)
 	  {
@@ -881,7 +881,7 @@ LRESULT CALLBACK FrameWndProc (
 		if (wparam == VK_SNAPSHOT_560)
 		{
 #if _DEBUG
-//			MessageBox( NULL, "Double 580x384 size!", "PrintScreen", MB_OK );
+//			MessageBox( g_hFrameWindow, "Double 580x384 size!", "PrintScreen", MB_OK );
 #endif
 			Video_TakeScreenShot( SCREENSHOT_560x384 );
 		}
@@ -891,7 +891,7 @@ LRESULT CALLBACK FrameWndProc (
 			if( lparam & MOD_SHIFT)
 			{
 #if _DEBUG
-//				MessageBox( NULL, "Normal 280x192 size!", "PrintScreen", MB_OK );
+//				MessageBox( g_hFrameWindow, "Normal 280x192 size!", "PrintScreen", MB_OK );
 #endif
 			}
 			Video_TakeScreenShot( SCREENSHOT_280x192 );
@@ -1051,7 +1051,7 @@ LRESULT CALLBACK FrameWndProc (
 				EraseButton(wparam-VK_F1);
 			else
 				DrawButton((HDC)0,wparam-VK_F1);
-			ProcessButtonClick(wparam-VK_F1);
+			ProcessButtonClick(wparam-VK_F1, true);
 		}
 		else
 		{
@@ -1130,7 +1130,7 @@ LRESULT CALLBACK FrameWndProc (
             EraseButton(buttonactive);
           else
             DrawButton((HDC)0,buttonactive);
-          ProcessButtonClick(buttonactive);
+          ProcessButtonClick(buttonactive, true);
         }
         buttonactive = -1;
       }
@@ -1496,7 +1496,16 @@ static void ScreenWindowResize(const bool bCtrlKey)
 	}
 }
 
-void ProcessButtonClick (int button)
+static bool ConfirmReboot(bool bFromButtonUI)
+{
+	if (!bFromButtonUI)
+		return true;
+
+	int res = MessageBox(g_hFrameWindow, "Are you sure you want to reboot?\n(All data will be lost!)", "Reboot", MB_ICONWARNING|MB_YESNO);
+	return res == IDYES;
+}
+
+static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 {
 	SoundCore_SetFade(FADE_OUT);
 
@@ -1531,19 +1540,24 @@ void ProcessButtonClick (int button)
 			DiskBoot();
 			g_nAppMode = MODE_RUNNING;
 		}
-		else
-		if (g_nAppMode == MODE_RUNNING)
+		else if (g_nAppMode == MODE_RUNNING)
 		{
-			ResetMachineState();
-			g_nAppMode = MODE_RUNNING;
+			if (ConfirmReboot(bFromButtonUI))
+			{
+				ResetMachineState();
+				g_nAppMode = MODE_RUNNING;
+			}
 		}
-		if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING)) // exit debugger
+		else if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING)) // exit debugger
 		{
-			// If any breakpoints active and ! we are not running at normal speed
-			if (g_nBreakpoints && !g_bDebugNormalSpeedBreakpoints)
-				CmdGo( 0 ); // 6502 runs at full speed, switch to MODE_STEPPNIG
-			else
-				DebugEnd(); // 6502 runs at normal speed, switch to MODE_RUNNING
+			if (ConfirmReboot(bFromButtonUI))
+			{
+				// If any breakpoints active and we are not running at normal speed
+				if (g_nBreakpoints && !g_bDebugNormalSpeedBreakpoints)
+					CmdGo(0);	// 6502 runs at full speed, switch to MODE_STEPPING
+				else
+					DebugEnd();	// 6502 runs at normal speed, switch to MODE_RUNNING
+			}
 		}
       DrawStatusArea((HDC)0,DRAW_TITLE);
       VideoRedrawScreen();
@@ -1626,10 +1640,10 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
 
 	string filename1= "\"";
-	filename1.append (DiskPathFilename[iDrive]);
-	filename1.append ("\"");
+	filename1.append( DiskGetDiskPathFilename(iDrive) );
+	filename1.append("\"");
 	string sFileNameEmpty = "\"";
-	sFileNameEmpty.append ("\"");
+	sFileNameEmpty.append("\"");
 
 	//  Load the menu template containing the shortcut menu from the
 	//  application's resources.
@@ -1691,7 +1705,7 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		//if(!filename1.compare("\"\"") == false) //Do not use this, for some reason it does not work!!!
 		if(!filename1.compare(sFileNameEmpty) )
 		{
-			int MB_Result = MessageBox( NULL, "No disk image loaded. Do you want to run CiderPress anyway?" ,"No disk image.", MB_ICONINFORMATION|MB_YESNO );
+			int MB_Result = MessageBox(g_hFrameWindow, "No disk image loaded. Do you want to run CiderPress anyway?" ,"No disk image.", MB_ICONINFORMATION|MB_YESNO);
 			if (MB_Result == IDYES)
 			{
 				if (FileExists (PathToCiderPress ))
@@ -1700,7 +1714,7 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 				}
 				else
 				{
-					MessageBox(NULL, szCiderpressNotFoundText, szCiderpressNotFoundCaption, MB_ICONINFORMATION|MB_OK);
+					MessageBox(g_hFrameWindow, szCiderpressNotFoundText, szCiderpressNotFoundCaption, MB_ICONINFORMATION|MB_OK);
 				}
 			}
 		}
@@ -1712,7 +1726,7 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			}
 			else
 			{
-				MessageBox(NULL, szCiderpressNotFoundText, szCiderpressNotFoundCaption, MB_ICONINFORMATION|MB_OK);
+				MessageBox(g_hFrameWindow, szCiderpressNotFoundText, szCiderpressNotFoundCaption, MB_ICONINFORMATION|MB_OK);
 			}
 		}
 	}

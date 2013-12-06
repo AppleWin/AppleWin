@@ -50,7 +50,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Public _________________________________________________________________________________________
 
 	BOOL enhancedisk = 1;					// TODO: Make static & add accessor funcs
-	string DiskPathFilename[NUM_DRIVES];	// TODO: Move this into Disk_t & add accessor funcs
 
 // Private ________________________________________________________________________________________
 
@@ -61,6 +60,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	{
 		TCHAR  imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
 		TCHAR  fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
+		string strDiskPathFilename;
 		string strFilenameInZip;						// 0x00           or <FILENAME.EXT>
 		HIMAGE imagehandle;					// Init'd by DiskInsert() -> ImageOpen()
 		int    track;
@@ -73,6 +73,26 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		DWORD  spinning;
 		DWORD  writelight;
 		int    nibbles;						// Init'd by ReadTrack() -> ImageReadTrack()
+
+		const Disk_t& operator= (const Disk_t& other)
+		{
+			memcpy(imagename, other.imagename, sizeof(imagename));
+			memcpy(fullname , other.fullname,  sizeof(fullname));
+			strDiskPathFilename = other.strDiskPathFilename;
+			strFilenameInZip    = other.strFilenameInZip;
+			imagehandle         = other.imagehandle;
+			track               = other.track;
+			trackimage          = other.trackimage;
+			phase               = other.phase;
+			byte                = other.byte;
+			bWriteProtected     = other.bWriteProtected;
+			trackimagedata      = other.trackimagedata;
+			trackimagedirty     = other.trackimagedirty;
+			spinning            = other.spinning;
+			writelight          = other.writelight;
+			nibbles             = other.nibbles;
+			return *this;
+		}
 	};
 
 static WORD		currdrive       = 0;
@@ -97,6 +117,16 @@ int DiskGetCurrentDrive(void)  { return currdrive; }
 int DiskGetCurrentTrack(void)  { return g_aFloppyDisk[currdrive].track; }
 int DiskGetCurrentPhase(void)  { return g_aFloppyDisk[currdrive].phase; }
 int DiskGetCurrentOffset(void) { return g_aFloppyDisk[currdrive].byte; }
+
+const string& DiskGetDiskPathFilename(const int iDrive)
+{
+	return g_aFloppyDisk[iDrive].strDiskPathFilename;
+}
+
+static void DiskSetDiskPathFilename(const int iDrive, const string strPathName)
+{
+	g_aFloppyDisk[iDrive].strDiskPathFilename = strPathName;
+}
 
 char* DiskGetCurrentState(void)
 {
@@ -127,6 +157,8 @@ char* DiskGetCurrentState(void)
 
  void Disk_LoadLastDiskImage(const int iDrive)
 {
+	_ASSERT(iDrive == DRIVE_1 || iDrive == DRIVE_2);
+
 	char sFilePath[ MAX_PATH + 1];
 	sFilePath[0] = 0;
 
@@ -137,10 +169,10 @@ char* DiskGetCurrentState(void)
 	if (RegLoadString(TEXT(REG_PREFS),pRegKey,1,sFilePath,MAX_PATH))
 	{
 		sFilePath[ MAX_PATH ] = 0;
-		DiskPathFilename[ iDrive ] = sFilePath;
+		DiskSetDiskPathFilename(iDrive, sFilePath);
 
 #if _DEBUG
-//		MessageBox(NULL,pFileName,pRegKey,MB_OK);
+//		MessageBox(g_hFrameWindow,pFileName,pRegKey,MB_OK);
 #endif
 
 		//	_tcscat(imagefilename,TEXT("MASTER.DSK")); // TODO: Should remember last disk by user
@@ -149,22 +181,24 @@ char* DiskGetCurrentState(void)
 		DiskInsert(iDrive, sFilePath, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 		g_bSaveDiskImage = true;
 	}
-	//else MessageBox(NULL,"Reg Key/Value not found",pRegKey,MB_OK);
+	//else MessageBox(g_hFrameWindow,"Reg Key/Value not found",pRegKey,MB_OK);
 }
 
 //===========================================================================
 
 void Disk_SaveLastDiskImage(const int iDrive)
 {
-	const char *pFileName = DiskPathFilename[iDrive].c_str();
+	_ASSERT(iDrive == DRIVE_1 || iDrive == DRIVE_2);
 
-	if (g_bSaveDiskImage)
-	{
-		if (iDrive == DRIVE_1)
-			RegSaveString(TEXT(REG_PREFS),REGVALUE_PREF_LAST_DISK_1,1,pFileName);
-		else
-			RegSaveString(TEXT(REG_PREFS),REGVALUE_PREF_LAST_DISK_2,1,pFileName);
-	}
+	if (!g_bSaveDiskImage)
+		return;
+
+	const char *pFileName = DiskGetDiskPathFilename(iDrive).c_str();
+
+	if (iDrive == DRIVE_1)
+		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_1, TRUE, pFileName);
+	else
+		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_2, TRUE, pFileName);
 }
 
 //===========================================================================
@@ -324,7 +358,7 @@ static void RemoveDisk(const int iDrive)
 	memset( pFloppy->imagename, 0, MAX_DISK_IMAGE_NAME+1 );
 	memset( pFloppy->fullname , 0, MAX_DISK_FULL_NAME +1 );
 	pFloppy->strFilenameInZip = "";
-	DiskPathFilename[iDrive] = "";
+	DiskSetDiskPathFilename(iDrive, "");
 
 	Disk_SaveLastDiskImage( iDrive );
 	Video_ResetScreenshotCounter( NULL );
@@ -584,9 +618,9 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 	{
 		GetImageTitle(pszImageFilename, fptr);
 
-		DiskPathFilename[iDrive] = pszImageFilename;
+		DiskSetDiskPathFilename(iDrive, pszImageFilename);
 
-		//MessageBox( NULL, imagefilename, fptr->imagename, MB_OK );
+		//MessageBox( g_hFrameWindow, imagefilename, fptr->imagename, MB_OK );
 		Video_ResetScreenshotCounter( fptr->imagename );
 	}
 	else
@@ -827,7 +861,7 @@ void DiskSelectImage(const int iDrive, LPSTR pszFilename)
 		ImageError_e Error = DiskInsert(iDrive, filename, ofn.Flags & OFN_READONLY, IMAGE_CREATE);
 		if (Error == eIMAGE_ERROR_NONE)
 		{
-			DiskPathFilename[iDrive] = filename; 
+			DiskSetDiskPathFilename(iDrive, filename); 
 			filename[ofn.nFileOffset] = 0;
 			if (_tcsicmp(directory, filename))
 				RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, filename);
@@ -919,13 +953,12 @@ bool DiskDriveSwap(void)
 		return false;
 
 	// Swap disks between drives
-	Disk_t  temp;
+	// . NB. We swap trackimage ptrs (so don't need to swap the buffers' data)
+	// . TODO: Consider array of Pointers: Disk_t* g_aDrive[]
+	swap(g_aFloppyDisk[0], g_aFloppyDisk[1]);
 
-	// Swap trackimage ptrs (so don't need to swap the buffers' data)
-	// TODO: Array of Pointers: Disk_t* g_aDrive[]
-	memcpy(&temp            , &g_aFloppyDisk[0], sizeof(Disk_t ));
-	memcpy(&g_aFloppyDisk[0], &g_aFloppyDisk[1], sizeof(Disk_t ));
-	memcpy(&g_aFloppyDisk[1], &temp            , sizeof(Disk_t ));
+	Disk_SaveLastDiskImage(DRIVE_1);
+	Disk_SaveLastDiskImage(DRIVE_2);
 
 	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
@@ -1109,8 +1142,9 @@ DWORD DiskSetSnapshot(SS_CARD_DISK2* pSS, DWORD /*dwSlot*/)
 				bImageError = true;
 
 			// DiskInsert() sets up:
-			// . fullname
 			// . imagename
+			// . fullname
+			// . strDiskPathFilename
 			// . writeprotected
 		}
 

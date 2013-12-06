@@ -526,6 +526,11 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), &dwTmp))
 		sg_PropertySheet.SetScrollLockToggle(dwTmp);
 
+	if(REGLOAD(TEXT(REGVALUE_CURSOR_CONTROL), &dwTmp))
+		sg_PropertySheet.SetCursorControl(dwTmp);
+	if(REGLOAD(TEXT(REGVALUE_AUTOFIRE), &dwTmp))
+		sg_PropertySheet.SetAutofire(dwTmp);
+
 	if(REGLOAD(TEXT(REGVALUE_MOUSE_CROSSHAIR), &dwTmp))
 		sg_PropertySheet.SetMouseShowCrosshair(dwTmp);
 	if(REGLOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))

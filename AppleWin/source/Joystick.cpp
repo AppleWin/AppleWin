@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 #include "MouseInterface.h"
+#include "Configuration\PropertySheet.h"
 
 #define  BUTTONTIME       5000
 
@@ -249,8 +250,7 @@ void JoyInitialize()
 
 //===========================================================================
 
-// TODO: Need some UI config support for cursor keys & selecting whether the key press is also made available to the Apple II (like Jace)
-//#define SUPPORT_CURSOR_KEYS
+#define SUPPORT_CURSOR_KEYS
 
 BOOL JoyProcessKey(int virtkey, BOOL extended, BOOL down, BOOL autorep)
 {
@@ -277,6 +277,7 @@ BOOL JoyProcessKey(int virtkey, BOOL extended, BOOL down, BOOL autorep)
 	//
 
 	BOOL keychange = 0;
+	bool bIsCursorKey = false;
 
 	if (virtkey == VK_MENU)	// VK_MENU == ALT Key (Button #0 or #1)
 	{
@@ -316,6 +317,8 @@ BOOL JoyProcessKey(int virtkey, BOOL extended, BOOL down, BOOL autorep)
 		if (virtkey == VK_LEFT || virtkey == VK_UP || virtkey == VK_RIGHT || virtkey == VK_DOWN)
 		{
 			keychange = 1;	// This prevents cursors keys being available to the Apple II (eg. Lode Runner uses cursor left/right for game speed)
+			bIsCursorKey = true;
+
 			switch (virtkey)
 			{
 			case VK_LEFT:	CursorKeys.Left = down;		break;
@@ -407,53 +410,76 @@ BOOL JoyProcessKey(int virtkey, BOOL extended, BOOL down, BOOL autorep)
 			ypos[nJoyNum] = PDL_CENTRAL + g_nPdlTrimY;
 	}
 
+	if (bIsCursorKey && sg_PropertySheet.GetCursorControl())
+	{
+		// Allow AppleII keyboard to see this cursor keypress too
+		return 0;
+	}
+
 	return 1;
 }
 
 //===========================================================================
 
+static void DoAutofire(UINT uButton, BOOL& pressed)
+{
+	static BOOL toggle[3] = {0};
+	static BOOL lastPressed[3] = {0};
+
+	BOOL nowPressed = pressed;
+	if (sg_PropertySheet.GetAutofire(uButton) && pressed)
+	{
+		toggle[uButton] = (!lastPressed[uButton]) ? TRUE : toggle[uButton] = !toggle[uButton];
+		pressed = pressed && toggle[uButton];
+	}
+	lastPressed[uButton] = nowPressed;
+}
+
 BYTE __stdcall JoyReadButton(WORD, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
 {
-  address &= 0xFF;
+	address &= 0xFF;
 
-  if(joyinfo[joytype[0]].device == DEVICE_JOYSTICK)
-    CheckJoystick0();
-  if(joyinfo[joytype[1]].device == DEVICE_JOYSTICK)
-    CheckJoystick1();
+	if(joyinfo[joytype[0]].device == DEVICE_JOYSTICK)
+		CheckJoystick0();
+	if(joyinfo[joytype[1]].device == DEVICE_JOYSTICK)
+		CheckJoystick1();
 
-  BOOL pressed = 0;
-  switch (address) {
+	BOOL pressed = 0;
+	switch (address)
+	{
+		case 0x61:
+			pressed = (buttonlatch[0] || joybutton[0] || setbutton[0] || keydown[JK_OPENAPPLE]);
+			if(joyinfo[joytype[1]].device != DEVICE_KEYBOARD)
+				pressed = (pressed || keydown[JK_BUTTON0]);
+			buttonlatch[0] = 0;
+			DoAutofire(0, pressed);
+			break;
 
-    case 0x61:
-      pressed = (buttonlatch[0] || joybutton[0] || setbutton[0] || keydown[JK_OPENAPPLE]);
-	  if(joyinfo[joytype[1]].device != DEVICE_KEYBOARD)
-	      pressed = (pressed || keydown[JK_BUTTON0]);
-      buttonlatch[0] = 0;
-      break;
+		case 0x62:
+			pressed = (buttonlatch[1] || joybutton[1] || setbutton[1] || keydown[JK_CLOSEDAPPLE]);
+			if(joyinfo[joytype[1]].device != DEVICE_KEYBOARD)
+				pressed = (pressed || keydown[JK_BUTTON1]);
+			buttonlatch[1] = 0;
+			DoAutofire(1, pressed);
+			break;
 
-    case 0x62:
-      pressed = (buttonlatch[1] || joybutton[1] || setbutton[1] || keydown[JK_CLOSEDAPPLE]);
-	  if(joyinfo[joytype[1]].device != DEVICE_KEYBOARD)
-	      pressed = (pressed || keydown[JK_BUTTON1]);
-      buttonlatch[1] = 0;
-      break;
+		case 0x63:
+			if (IS_APPLE2 && (joyinfo[joytype[1]].device == DEVICE_NONE))
+			{
+				// Apple II/II+ with no joystick has the "SHIFT key mod"
+				// See Sather's Understanding The Apple II p7-36
+				pressed = !(GetKeyState(VK_SHIFT) < 0);
+			}
+			else
+			{
+				pressed = (buttonlatch[2] || joybutton[2] || setbutton[2]);
+				DoAutofire(2, pressed);
+			}
+			buttonlatch[2] = 0;
+			break;
+	}
 
-    case 0x63:
-	  if (IS_APPLE2 && (joyinfo[joytype[1]].device == DEVICE_NONE))
-	  {
-	    // Apple II/II+ with no joystick has the "SHIFT key mod"
-	    // See Sather's Understanding The Apple II p7-36
-		pressed = !(GetKeyState(VK_SHIFT) < 0);
-	  }
-	  else
-	  {
-	    pressed = (buttonlatch[2] || joybutton[2] || setbutton[2]);
-	  }
-      buttonlatch[2] = 0;
-      break;
-
-  }
-  return MemReadFloatingBus(pressed, nCyclesLeft);
+	return MemReadFloatingBus(pressed, nCyclesLeft);
 }
 
 //===========================================================================
@@ -611,11 +637,16 @@ void JoyUpdatePosition()
 }
 
 //===========================================================================
+
 BOOL JoyUsingMouse()
 {
-  return (joyinfo[joytype[0]].device == DEVICE_MOUSE) || (joyinfo[joytype[1]].device == DEVICE_MOUSE);
+	return (joyinfo[joytype[0]].device == DEVICE_MOUSE) || (joyinfo[joytype[1]].device == DEVICE_MOUSE);
 }
 
+BOOL JoyUsingKeyboard()
+{
+	return (joyinfo[joytype[0]].device == DEVICE_KEYBOARD) || (joyinfo[joytype[1]].device == DEVICE_KEYBOARD);
+}
 //===========================================================================
 
 void JoyDisableUsingMouse()
