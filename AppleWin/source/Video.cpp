@@ -362,6 +362,7 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	void V_CreateLookup_MonoHiRes_Colorize ();
 
 	bool g_bDisplayPrintScreenFileName = false;
+	bool g_bShowPrintScreenWarningDialog = true;
 	void Util_MakeScreenShotFileName( char *pFinalFileName_ );
 	bool Util_TestScreenShotFileName( const char *pFileName );
 	// true  = 280x192

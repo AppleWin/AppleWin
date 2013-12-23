@@ -123,6 +123,8 @@ bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset);
 bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset);
 
 extern bool g_bDisplayPrintScreenFileName;
+extern bool g_bShowPrintScreenWarningDialog;
+
 void Video_ResetScreenshotCounter( char *pDiskImageFileName );
 enum VideoScreenShot_e
 {

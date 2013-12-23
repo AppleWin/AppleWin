@@ -677,7 +677,7 @@ void AppleWin_RegisterHotKeys(void)
 		VK_SNAPSHOT		  // UINT vk = PrintScreen
 	);
 
-	if (! bStatus)
+	if (!bStatus && g_bShowPrintScreenWarningDialog)
 	{
 		MessageBox( g_hFrameWindow, "Unable to capture PrintScreen key", "Warning", MB_OK );
 	}
@@ -826,6 +826,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if (strcmp(lpCmdLine, "-printscreen") == 0)		// Turn on display of the last filename print screen was saved to
 		{
 			g_bDisplayPrintScreenFileName = true;
+		}
+		else if (strcmp(lpCmdLine, "-no-printscreen-dlg") == 0)		// Turn off the PrintScreen warning message dialog (if PrintScreen key can't be grabbed)
+		{
+			g_bShowPrintScreenWarningDialog = false;
 		}
 		else if (strcmp(lpCmdLine, "-spkr-inc") == 0)
 		{
