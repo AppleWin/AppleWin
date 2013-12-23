@@ -24,6 +24,7 @@ Changes:
 . Support auto-fire for all 3 joystick buttons (via Config->Input)
 . Debugger: Added "disk info" command
 . Added confirmation message box for reboot (F2)
+. Added -no-printscreen-dlg to surpress the warning if AppleWin failed to capture the PrintScreen key 
 Fixes:
 . [Bug #19154] ProDOS Order 2IMG crashing
 . [Support #103098] Sometimes swapping disk could cause INIT to fail with ERROR #8
