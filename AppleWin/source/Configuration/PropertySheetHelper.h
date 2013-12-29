@@ -55,6 +55,7 @@ private:
 	bool m_bSSNewFilename;
 	char m_szSSNewDirectory[MAX_PATH];
 	char m_szSSNewFilename[MAX_PATH];
+	char m_szSSNewPathname[MAX_PATH];
 	CConfigNeedingRestart m_ConfigOld;
 	CConfigNeedingRestart m_ConfigNew;
 	bool m_bDoBenchmark;

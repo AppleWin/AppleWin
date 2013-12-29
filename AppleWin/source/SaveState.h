@@ -2,8 +2,9 @@
 
 extern bool       g_bSaveStateOnExit;
 
-char*   Snapshot_GetFilename();
-void    Snapshot_SetFilename(char* pszFilename);
+void    Snapshot_SetFilename(std::string strPathname);
+const char* Snapshot_GetFilename();
+const char* Snapshot_GetPath();
 void    Snapshot_LoadState();
 void    Snapshot_SaveState();
 void    Snapshot_Startup();

@@ -549,19 +549,25 @@ void LoadConfiguration(void)
 	//
 
 	char szFilename[MAX_PATH] = {0};
+
+	// Current/Starting Dir is the "root" of where the user keeps his disk images
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH);
+	if (szFilename[0] == 0)
+		GetCurrentDirectory(sizeof(szFilename), szFilename);
+	SetCurrentImageDir(szFilename);
+
+	Disk_LoadLastDiskImage(DRIVE_1);
+	Disk_LoadLastDiskImage(DRIVE_2);
+
+	//
+
+	szFilename[0] = 0;
 	RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_SAVESTATE_FILENAME),1,szFilename,sizeof(szFilename));
-	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used
+	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
 
 	szFilename[0] = 0;
 	RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_PRINTER_FILENAME),1,szFilename,sizeof(szFilename));
 	Printer_SetFilename(szFilename);	// If not in Registry than default will be used
-
-	// Current/Starting Dir is the "root" of where the user keeps his disk images
-	RegLoadString(TEXT(REG_PREFS),TEXT(REGVALUE_PREF_START_DIR),1,g_sCurrentDir,MAX_PATH);
-	SetCurrentImageDir();
-
-	Disk_LoadLastDiskImage(DRIVE_1);
-	Disk_LoadLastDiskImage(DRIVE_2);
 
 	dwTmp = 10;
 	REGLOAD(TEXT(REGVALUE_PRINTER_IDLE_LIMIT), &dwTmp);
@@ -577,8 +583,9 @@ void LoadConfiguration(void)
 
 //===========================================================================
 
-void SetCurrentImageDir(void)
+void SetCurrentImageDir(const char* pszImageDir)
 {
+	strcpy(g_sCurrentDir, pszImageDir);
 	SetCurrentDirectory(g_sCurrentDir);
 }
 

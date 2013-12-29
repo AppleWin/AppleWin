@@ -33,21 +33,50 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 bool g_bSaveStateOnExit = false;
 
-static char g_szSaveStateFilename[MAX_PATH] = {0};
+static std::string g_strSaveStateFilename;
+static std::string g_strSaveStatePathname;
+static std::string g_strSaveStatePath;
 
 //-----------------------------------------------------------------------------
 
-char* Snapshot_GetFilename()
+void Snapshot_SetFilename(std::string strPathname)
 {
-	return g_szSaveStateFilename;
+	if (strPathname.empty())
+	{
+		g_strSaveStateFilename = DEFAULT_SNAPSHOT_NAME;
+
+		g_strSaveStatePathname = g_sCurrentDir;
+		if (g_strSaveStatePathname.length() && g_strSaveStatePathname[g_strSaveStatePathname.length()-1] != '\\')
+			g_strSaveStatePathname += "\\";
+		g_strSaveStatePathname.append(DEFAULT_SNAPSHOT_NAME);
+
+		g_strSaveStatePath = g_sCurrentDir;
+
+		return;
+	}
+
+	std::string strFilename = strPathname;	// Set default, as maybe there's no path
+	g_strSaveStatePath.clear();
+
+	int nIdx = strPathname.find_last_of('\\');
+	if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())
+	{
+		strFilename = &strPathname[nIdx+1];
+		g_strSaveStatePath = strPathname.substr(0, nIdx);
+	}
+
+	g_strSaveStateFilename = strFilename;
+	g_strSaveStatePathname = strPathname;
 }
 
-void Snapshot_SetFilename(char* pszFilename)
+const char* Snapshot_GetFilename()
 {
-	if(*pszFilename)
-		strcpy(g_szSaveStateFilename, (const char *) pszFilename);
-	else
-		strcpy(g_szSaveStateFilename, DEFAULT_SNAPSHOT_NAME);
+	return g_strSaveStateFilename.c_str();
+}
+
+const char* Snapshot_GetPath()
+{
+	return g_strSaveStatePath.c_str();
 }
 
 //-----------------------------------------------------------------------------
@@ -55,11 +84,15 @@ void Snapshot_SetFilename(char* pszFilename)
 void Snapshot_LoadState()
 {
 	char szMessage[32 + MAX_PATH];
+	std::string strOldImageDir;
 
 	APPLEWIN_SNAPSHOT* pSS = (APPLEWIN_SNAPSHOT*) new char[sizeof(APPLEWIN_SNAPSHOT)];
 
 	try
 	{
+		strOldImageDir = g_sCurrentDir;
+		SetCurrentImageDir(g_strSaveStatePath.c_str());	// Allow .dsk's load without prompting
+
 		if(pSS == NULL)
 			throw(0);
 
@@ -67,7 +100,7 @@ void Snapshot_LoadState()
 
 		//
 
-		HANDLE hFile = CreateFile(	g_szSaveStateFilename,
+		HANDLE hFile = CreateFile(	g_strSaveStatePathname.c_str(),
 									GENERIC_READ,
 									0,
 									NULL,
@@ -78,7 +111,7 @@ void Snapshot_LoadState()
 		if(hFile == INVALID_HANDLE_VALUE)
 		{
 			strcpy(szMessage, "File not found: ");
-			strcpy(szMessage + strlen(szMessage), g_szSaveStateFilename);
+			strcpy(szMessage + strlen(szMessage), g_strSaveStatePathname.c_str());
 			throw(0);
 		}
 
@@ -158,6 +191,8 @@ void Snapshot_LoadState()
 					szMessage,
 					TEXT("Load State"),
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+
+		SetCurrentImageDir(strOldImageDir.c_str());
 	}
 
 	delete [] pSS;
@@ -230,7 +265,7 @@ void Snapshot_SaveState()
 
 	//
 
-	HANDLE hFile = CreateFile(	g_szSaveStateFilename,
+	HANDLE hFile = CreateFile(	g_strSaveStatePathname.c_str(),
 								GENERIC_WRITE,
 								0,
 								NULL,

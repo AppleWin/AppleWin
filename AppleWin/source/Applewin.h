@@ -1,7 +1,7 @@
 #pragma once
 
 void SetCurrentCLK6502();
-void SetCurrentImageDir();
+void SetCurrentImageDir(const char* pszImageDir);
 
 
 extern char VERSIONSTRING[];	// Contructed in WinMain()

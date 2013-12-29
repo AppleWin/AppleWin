@@ -166,12 +166,12 @@ void CPropertySheetHelper::SaveStateUpdate()
 {
 	if (m_bSSNewFilename)
 	{
-		Snapshot_SetFilename(m_szSSNewFilename);
+		Snapshot_SetFilename(m_szSSNewPathname);
 
-		RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, Snapshot_GetFilename());
+		RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, m_szSSNewPathname);
 
 		if(m_szSSNewDirectory[0])
-			RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1 ,m_szSSNewDirectory);
+			RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1, m_szSSNewDirectory);
 	}
 }
 
@@ -201,7 +201,7 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 			strcpy(szFilename, Snapshot_GetFilename());
 		}
 	}
-	else	// Load
+	else	// Load (or Browse)
 	{
 		// Attempt to use the Prop Sheet's filename first
 		// Else attempt to use drive1's image name as the name for the .aws file
@@ -210,9 +210,12 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 		{
 			GetDiskBaseNameWithAWS(szFilename);
 		}
+
+		strcpy(szDirectory, Snapshot_GetPath());
 	}
 	
-	RegLoadString(TEXT(REG_PREFS),REGVALUE_PREF_START_DIR,1,szDirectory,MAX_PATH);
+	if (szDirectory[0] == 0)
+		strcpy(szDirectory, g_sCurrentDir);
 
 	//
 	
@@ -229,7 +232,7 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	ofn.lpstrInitialDir = szDirectory;
 	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.lpstrTitle      = pszTitle;
-	
+
 	int nRes = bSave ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
 
 	if(nRes)
@@ -245,6 +248,8 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 			if ((uStrLenFile <= uStrLenExt) || (strcmp(&m_szSSNewFilename[uStrLenFile-uStrLenExt], szAWS_EXT) != 0))
 				strcpy(&m_szSSNewFilename[uStrLenFile], szAWS_EXT);
 		}
+
+		strcpy(m_szSSNewPathname, szFilename);
 
 		szFilename[ofn.nFileOffset] = 0;
 		if (_tcsicmp(szDirectory, szFilename))
