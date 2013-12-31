@@ -26,6 +26,15 @@ joystick X/Y offsets when the joystick is centered. Normally central
 position is X=127, Y=127 so this adds the trim value for PC joysticks
 &amp; keyboard (centering). If you are using an analog PC joystick,
 then you should leave these values at 0.</li>
+  <li>Allow cursor keys to be read from keyboard: Applicable only in 'Keyboard (cursors)' mode.</li>
+  <li>NB.</li>
+  <ul>
+    <li>Be aware that 'cursor up' = CTRL+K, and 'cursor-down' = CTRL+J.</li>
+    <li>When cursor keys are used for joystick emulation <strong>and</strong> are allowed to be read from the keyboard, then some games won't work correctly (eg. Lode Runner).</li>
+	<li>When cursor keys are blocked from being read from the keyboard, then simple command-line cursor editing in AppleSoft won't work.</li>
+  </ul>
+  <li>Auto-fire (all 3 buttons): For each button pressed, the button's state will be toggled when read.</li>
+  <li>Keyboard auto-centering: When keys used for joystick emulation are released then the joystick will return to the central position.</li>
 </ul>
 
 
