@@ -27,8 +27,10 @@ public:
 
 	virtual UINT GetScrollLockToggle(void){ return m_PageInput.GetScrollLockToggle(); }
 	virtual void SetScrollLockToggle(UINT uValue){ m_PageInput.SetScrollLockToggle(uValue); }
-	virtual UINT GetCursorControl(void){ return m_PageInput.GetCursorControl(); }
-	virtual void SetCursorControl(UINT uValue){ m_PageInput.SetCursorControl(uValue); }
+	virtual UINT GetJoystickCursorControl(void){ return m_PageInput.GetJoystickCursorControl(); }
+	virtual void SetJoystickCursorControl(UINT uValue){ m_PageInput.SetJoystickCursorControl(uValue); }
+	virtual UINT GetJoystickCenteringControl(void){ return m_PageInput.GetJoystickCenteringControl(); }
+	virtual void SetJoystickCenteringControl(UINT uValue){ m_PageInput.SetJoystickCenteringControl(uValue); }
 	virtual UINT GetAutofire(UINT uButton) { return m_PageInput.GetAutofire(uButton); }
 	virtual void SetAutofire(UINT uValue) { m_PageInput.SetAutofire(uValue); }
 	virtual UINT GetMouseShowCrosshair(void){ return m_PageInput.GetMouseShowCrosshair(); }

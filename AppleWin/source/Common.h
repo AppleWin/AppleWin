@@ -73,15 +73,21 @@ enum AppMode_e
 // Configuration
 #define REG_CONFIG						"Configuration"
 #define  REGVALUE_APPLE2_TYPE        "Apple2 Type"
+#define  REGVALUE_OLD_APPLE2_TYPE	"Computer Emulation"	// Deprecated
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
 #define  REGVALUE_HDD_ENABLED        "Harddisk Enable"
+#define  REGVALUE_JOYSTICK0_EMU_TYPE	"Joystick0 Emu Type"	// Added at 1.24.0 (previously was "Joystick 0 Emulation")
+#define  REGVALUE_JOYSTICK1_EMU_TYPE	"Joystick1 Emu Type"	// Added at 1.24.0 (previously was "Joystick 1 Emulation")
+#define  REGVALUE_OLD_JOYSTICK0_EMU_TYPE	"Joystick 0 Emulation"	// Deprecated from 1.24.0
+#define  REGVALUE_OLD_JOYSTICK1_EMU_TYPE	"Joystick 1 Emulation"	// Deprecated from 1.24.0
 #define  REGVALUE_PDL_XTRIM          "PDL X-Trim"
 #define  REGVALUE_PDL_YTRIM          "PDL Y-Trim"
 #define  REGVALUE_SCROLLLOCK_TOGGLE  "ScrollLock Toggle"
-#define  REGVALUE_CURSOR_CONTROL     "Cursor Control"
+#define  REGVALUE_CURSOR_CONTROL		"Joystick Cursor Control"
+#define  REGVALUE_CENTERING_CONTROL		"Joystick Centering Control"
 #define  REGVALUE_AUTOFIRE           "Autofire"
 #define  REGVALUE_MOUSE_CROSSHAIR    "Mouse crosshair"
 #define  REGVALUE_MOUSE_RESTRICT_TO_WINDOW "Mouse restrict to window"

@@ -8,8 +8,8 @@ CPageInput* CPageInput::ms_this = 0;	// reinit'd in ctor
 const TCHAR CPageInput::m_szJoyChoice0[] = TEXT("Disabled\0");
 const TCHAR CPageInput::m_szJoyChoice1[] = TEXT("PC Joystick #1\0");
 const TCHAR CPageInput::m_szJoyChoice2[] = TEXT("PC Joystick #2\0");
-const TCHAR CPageInput::m_szJoyChoice3[] = TEXT("Keyboard (standard)\0");
-const TCHAR CPageInput::m_szJoyChoice4[] = TEXT("Keyboard (centering)\0");
+const TCHAR CPageInput::m_szJoyChoice3[] = TEXT("Keyboard (cursors)\0");
+const TCHAR CPageInput::m_szJoyChoice4[] = TEXT("Keyboard (numpad)\0");
 const TCHAR CPageInput::m_szJoyChoice5[] = TEXT("Mouse\0");
 
 const TCHAR* const CPageInput::m_pszJoy0Choices[J0C_MAX] = {
@@ -166,6 +166,7 @@ BOOL CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM 
 
 			CheckDlgButton(hWnd, IDC_CURSORCONTROL, m_uCursorControl ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_AUTOFIRE, m_bmAutofire ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_CENTERINGCONTROL, m_uCenteringControl == JOYSTICK_MODE_CENTERING ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_SCROLLLOCK_TOGGLE, m_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
 
 			InitOptions(hWnd);
@@ -185,12 +186,12 @@ void CPageInput::DlgOK(HWND hWnd)
 
 	if (JoySetEmulationType(hWnd, m_nJoy0ChoiceTranlationTbl[uNewJoyType0], JN_JOYSTICK0, bIsSlot4Mouse))
 	{
-		REGSAVE(TEXT("Joystick 0 Emulation"), joytype[0]);
+		REGSAVE(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), joytype[0]);
 	}
 
 	if (JoySetEmulationType(hWnd, m_nJoy1ChoiceTranlationTbl[uNewJoyType1], JN_JOYSTICK1, bIsSlot4Mouse))
 	{
-		REGSAVE(TEXT("Joystick 1 Emulation"), joytype[1]);
+		REGSAVE(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), joytype[1]);
 	}
 
 	JoySetTrim((short)SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0), true);
@@ -198,6 +199,7 @@ void CPageInput::DlgOK(HWND hWnd)
 
 	m_uCursorControl = IsDlgButtonChecked(hWnd, IDC_CURSORCONTROL) ? 1 : 0;
 	m_bmAutofire = IsDlgButtonChecked(hWnd, IDC_AUTOFIRE) ? 7 : 0;	// bitmap of 3 bits
+	m_uCenteringControl = IsDlgButtonChecked(hWnd, IDC_CENTERINGCONTROL) ? 1 : 0;
 	m_uMouseShowCrosshair = IsDlgButtonChecked(hWnd, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
 	m_uMouseRestrictToWindow = IsDlgButtonChecked(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
 
@@ -206,6 +208,7 @@ void CPageInput::DlgOK(HWND hWnd)
 	REGSAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), m_uScrollLockToggle);
 	REGSAVE(TEXT(REGVALUE_CURSOR_CONTROL), m_uCursorControl);
 	REGSAVE(TEXT(REGVALUE_AUTOFIRE), m_bmAutofire);
+	REGSAVE(TEXT(REGVALUE_CENTERING_CONTROL), m_uCenteringControl);
 	REGSAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR), m_uMouseShowCrosshair);
 	REGSAVE(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), m_uMouseRestrictToWindow);
 
@@ -222,7 +225,7 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 	TCHAR* pnzJoystickChoices;
 	int *pnJoyTranslationTbl;
 	int nJoyTranslationTblSize;
-	unsigned short nJC_DISABLED, nJC_JOYSTICK, nJC_KEYBD_STANDARD, nJC_KEYBD_CENTERING, nJC_MOUSE, nJC_MAX;
+	unsigned short nJC_DISABLED, nJC_JOYSTICK, nJC_KEYBD_CURSORS, nJC_KEYBD_NUMPAD, nJC_MOUSE, nJC_MAX;
 	TCHAR** ppszJoyChoices;
 	int nOtherJoyNum = nJoyNum == JN_JOYSTICK0 ? JN_JOYSTICK1 : JN_JOYSTICK0;
 
@@ -233,8 +236,8 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 		nJoyTranslationTblSize = sizeof(m_nJoy0ChoiceTranlationTbl);
 		nJC_DISABLED = J0C_DISABLED;
 		nJC_JOYSTICK = J0C_JOYSTICK1;
-		nJC_KEYBD_STANDARD = J0C_KEYBD_STANDARD;
-		nJC_KEYBD_CENTERING = J0C_KEYBD_CENTERING;
+		nJC_KEYBD_CURSORS = J0C_KEYBD_CURSORS;
+		nJC_KEYBD_NUMPAD = J0C_KEYBD_NUMPAD;
 		nJC_MOUSE = J0C_MOUSE;
 		nJC_MAX = J0C_MAX;
 		ppszJoyChoices = (TCHAR**) m_pszJoy0Choices;
@@ -246,8 +249,8 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 		nJoyTranslationTblSize = sizeof(m_nJoy1ChoiceTranlationTbl);
 		nJC_DISABLED = J1C_DISABLED;
 		nJC_JOYSTICK = J1C_JOYSTICK2;
-		nJC_KEYBD_STANDARD = J1C_KEYBD_STANDARD;
-		nJC_KEYBD_CENTERING = J1C_KEYBD_CENTERING;
+		nJC_KEYBD_CURSORS = J1C_KEYBD_CURSORS;
+		nJC_KEYBD_NUMPAD = J1C_KEYBD_NUMPAD;
 		nJC_MOUSE = J1C_MOUSE;
 		nJC_MAX = J1C_MAX;
 		ppszJoyChoices = (TCHAR**) m_pszJoy1Choices;
@@ -271,10 +274,10 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 	// Now exclude:
 	// . the other Joystick type (if it exists) from this new list
 	// . the mouse if the mousecard is plugged in
-	for(UINT i=nJC_KEYBD_STANDARD; i<nJC_MAX; i++)
+	for(UINT i=nJC_KEYBD_CURSORS; i<nJC_MAX; i++)
 	{
-		if( ( (i == nJC_KEYBD_STANDARD) || (i == nJC_KEYBD_CENTERING) ) &&
-			( (joytype[nOtherJoyNum] == nJC_KEYBD_STANDARD) || (joytype[nOtherJoyNum] == nJC_KEYBD_CENTERING) )
+		if( ( (i == nJC_KEYBD_CURSORS) || (i == nJC_KEYBD_NUMPAD) ) &&
+			( (joytype[nOtherJoyNum] == nJC_KEYBD_CURSORS) || (joytype[nOtherJoyNum] == nJC_KEYBD_NUMPAD) )
 		  )
 		{
 			continue;
@@ -315,7 +318,8 @@ void CPageInput::InitSlotOptions(HWND hWnd)
 	InitJoystickChoices(hWnd, JN_JOYSTICK0, IDC_JOYSTICK0);
 	InitJoystickChoices(hWnd, JN_JOYSTICK1, IDC_JOYSTICK1);
 
-	EnableWindow(GetDlgItem(hWnd, IDC_CURSORCONTROL), JoyUsingKeyboard() ? TRUE : FALSE);
+	EnableWindow(GetDlgItem(hWnd, IDC_CURSORCONTROL), JoyUsingKeyboardCursors() ? TRUE : FALSE);
+	EnableWindow(GetDlgItem(hWnd, IDC_CENTERINGCONTROL), JoyUsingKeyboard() ? TRUE : FALSE);
 }
 
 void CPageInput::InitCPMChoices(HWND hWnd)

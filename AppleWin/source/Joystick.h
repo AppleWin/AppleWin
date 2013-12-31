@@ -2,7 +2,12 @@
 
 enum JOYNUM {JN_JOYSTICK0=0, JN_JOYSTICK1};
 
+enum JOY0CHOICE {J0C_DISABLED=0, J0C_JOYSTICK1, J0C_KEYBD_CURSORS, J0C_KEYBD_NUMPAD, J0C_MOUSE, J0C_MAX};
+enum JOY1CHOICE {J1C_DISABLED=0, J1C_JOYSTICK2, J1C_KEYBD_CURSORS, J1C_KEYBD_NUMPAD, J1C_MOUSE, J1C_MAX};
+
 extern DWORD      joytype[2];
+
+enum {JOYSTICK_MODE_FLOATING=0, JOYSTICK_MODE_CENTERING};	// Joystick centering control
 
 void    JoyInitialize();
 BOOL    JoyProcessKey(int,BOOL,BOOL,BOOL);
@@ -13,6 +18,8 @@ void    JoySetPosition(int,int,int,int);
 void    JoyUpdatePosition();
 BOOL    JoyUsingMouse();
 BOOL    JoyUsingKeyboard();
+BOOL    JoyUsingKeyboardCursors();
+BOOL    JoyUsingKeyboardNumpad();
 void    JoyDisableUsingMouse();
 void    JoySetTrim(short nValue, bool bAxisX);
 short   JoyGetTrim(bool bAxisX);

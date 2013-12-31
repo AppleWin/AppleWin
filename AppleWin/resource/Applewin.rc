@@ -128,7 +128,8 @@ BEGIN
     CONTROL         "Spin1",IDC_SPIN_YTRIM,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY,161,53,10,14
     CONTROL         "Allow cursor keys to be read from keyboard ",IDC_CURSORCONTROL,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,75,155,10
-    CONTROL         "Auto-fire (all 3 buttons)",IDC_AUTOFIRE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,90,155,10
+    CONTROL         "Auto-fire (all 3 buttons)",IDC_AUTOFIRE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,90,89,10
+    CONTROL         "Keyboard auto-centering",IDC_CENTERINGCONTROL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,102,90,96,10
     CONTROL         "&Scroll Lock acts as toggle for full-speed CPU",IDC_SCROLLLOCK_TOGGLE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,113,166,10
     CONTROL         "&Mouse interface in slot 4",IDC_MOUSE_IN_SLOT4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,127,106,10
@@ -249,8 +250,8 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,23,3,0
- PRODUCTVERSION 1,23,3,0
+ FILEVERSION 1,24,0,0
+ PRODUCTVERSION 1,24,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -268,12 +269,12 @@ BEGIN
             VALUE "Comments", "http://applewin.berlios.de"
             VALUE "CompanyName", "AppleWin"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1, 23, 3, 0"
+            VALUE "FileVersion", "1, 24, 0, 0"
             VALUE "InternalName", "APPLEWIN"
-            VALUE "LegalCopyright", " 1994-2013 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
+            VALUE "LegalCopyright", " 1994-2014 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1, 23, 3, 0"
+            VALUE "ProductVersion", "1, 24, 0, 0"
         END
     END
     BLOCK "VarFileInfo"

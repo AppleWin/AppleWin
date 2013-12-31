@@ -51,7 +51,6 @@
 #include "Debug.h"
 #include "Disk.h"
 #include "Frame.h"
-#include "Joystick.h"
 #include "Keyboard.h"
 #include "Log.h"
 #include "Memory.h"

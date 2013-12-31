@@ -419,6 +419,40 @@ void GetProgramDirectory(void)
 }
 
 //===========================================================================
+
+// Backwards compatibility with AppleWin <1.24.0
+static void LoadConfigOldJoystick(const UINT uJoyNum)
+{
+	DWORD dwOldJoyType;
+	if (!REGLOAD(TEXT(uJoyNum==0 ? REGVALUE_OLD_JOYSTICK0_EMU_TYPE : REGVALUE_OLD_JOYSTICK1_EMU_TYPE), &dwOldJoyType))
+		return;	// EG. Old AppleWin never installed
+
+	UINT uNewJoyType;
+	switch (dwOldJoyType)
+	{
+	case 0:		// Disabled
+	default:
+		uNewJoyType = J0C_DISABLED;
+		break;
+	case 1:		// PC Joystick
+		uNewJoyType = J0C_JOYSTICK1;
+		break;
+	case 2:		// Keyboard (standard)
+		uNewJoyType = J0C_KEYBD_NUMPAD;
+		sg_PropertySheet.SetJoystickCenteringControl(JOYSTICK_MODE_FLOATING);
+		break;
+	case 3:		// Keyboard (centering)
+		uNewJoyType = J0C_KEYBD_NUMPAD;
+		sg_PropertySheet.SetJoystickCenteringControl(JOYSTICK_MODE_CENTERING);
+		break;
+	case 4:		// Mouse
+		uNewJoyType = J0C_MOUSE;
+		break;
+	}
+
+	joytype[uJoyNum] = uNewJoyType;
+}
+
 //Reads configuration from the registry entries
 void LoadConfiguration(void)
 {
@@ -433,7 +467,7 @@ void LoadConfiguration(void)
 	}
 	else	// Support older AppleWin registry entries
 	{
-		REGLOAD(TEXT("Computer Emulation"), &dwComputerType);
+		REGLOAD(TEXT(REGVALUE_OLD_APPLE2_TYPE), &dwComputerType);
 		switch (dwComputerType)
 		{
 			// NB. No A2TYPE_APPLE2E (this is correct)
@@ -452,12 +486,16 @@ void LoadConfiguration(void)
 	case A2TYPE_APPLE2EENHANCED:g_nCharsetType  = 0; break; 
 	case A2TYPE_PRAVETS82:	    g_nCharsetType  = 1; break; 
 	case A2TYPE_PRAVETS8A:	    g_nCharsetType  = 2; break; 
-	case A2TYPE_PRAVETS8M:	    g_nCharsetType  = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because settiong charset to 3 results in some problems.
+	case A2TYPE_PRAVETS8M:	    g_nCharsetType  = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because setting charset to 3 results in some problems.
 	}
 
+	//
 
-	REGLOAD(TEXT("Joystick 0 Emulation"),&joytype[0]);
-	REGLOAD(TEXT("Joystick 1 Emulation"),&joytype[1]);
+	if (!REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &joytype[JN_JOYSTICK0]))
+		LoadConfigOldJoystick(JN_JOYSTICK0);
+	if (!REGLOAD(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), &joytype[JN_JOYSTICK1]))
+		LoadConfigOldJoystick(JN_JOYSTICK1);
+
 	REGLOAD(TEXT("Sound Emulation")     ,&soundtype);
 
 	char aySerialPortName[ CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM ];
@@ -527,9 +565,11 @@ void LoadConfiguration(void)
 		sg_PropertySheet.SetScrollLockToggle(dwTmp);
 
 	if(REGLOAD(TEXT(REGVALUE_CURSOR_CONTROL), &dwTmp))
-		sg_PropertySheet.SetCursorControl(dwTmp);
+		sg_PropertySheet.SetJoystickCursorControl(dwTmp);
 	if(REGLOAD(TEXT(REGVALUE_AUTOFIRE), &dwTmp))
 		sg_PropertySheet.SetAutofire(dwTmp);
+	if(REGLOAD(TEXT(REGVALUE_CENTERING_CONTROL), &dwTmp))
+		sg_PropertySheet.SetJoystickCenteringControl(dwTmp);
 
 	if(REGLOAD(TEXT(REGVALUE_MOUSE_CROSSHAIR), &dwTmp))
 		sg_PropertySheet.SetMouseShowCrosshair(dwTmp);

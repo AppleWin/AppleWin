@@ -2,6 +2,7 @@
 
 #include "IPropertySheetPage.h"
 #include "PropertySheetDefs.h"
+#include "..\Joystick.h"
 class CPropertySheetHelper;
 class CConfigNeedingRestart;
 
@@ -13,6 +14,7 @@ public:
 		m_PropertySheetHelper(PropertySheetHelper),
 		m_uScrollLockToggle(0),
 		m_uCursorControl(1),
+		m_uCenteringControl(JOYSTICK_MODE_CENTERING),
 		m_bmAutofire(0),
 		m_uMouseShowCrosshair(0),
 		m_uMouseRestrictToWindow(0),
@@ -26,8 +28,10 @@ public:
 
 	UINT GetScrollLockToggle(void){ return m_uScrollLockToggle; }
 	void SetScrollLockToggle(UINT uValue){ m_uScrollLockToggle = uValue; }
-	UINT GetCursorControl(void){ return m_uCursorControl; }
-	void SetCursorControl(UINT uValue){ m_uCursorControl = uValue; }
+	UINT GetJoystickCursorControl(void){ return m_uCursorControl; }
+	void SetJoystickCursorControl(UINT uValue){ m_uCursorControl = uValue; }
+	UINT GetJoystickCenteringControl(void){ return m_uCenteringControl; }
+	void SetJoystickCenteringControl(UINT uValue){ m_uCenteringControl = uValue; }
 	UINT GetAutofire(UINT uButton) { return (m_bmAutofire >> uButton) & 1; }	// Get a specific button
 	void SetAutofire(UINT uValue) { m_bmAutofire = uValue; }					// Set all buttons
 	UINT GetMouseShowCrosshair(void){ return m_uMouseShowCrosshair; }
@@ -50,8 +54,6 @@ private:
 	static CPageInput* ms_this;
 	static const UINT MaxMenuChoiceLen = 40;
 
-	enum JOY0CHOICE {J0C_DISABLED=0, J0C_JOYSTICK1, J0C_KEYBD_STANDARD, J0C_KEYBD_CENTERING, J0C_MOUSE, J0C_MAX};
-	enum JOY1CHOICE {J1C_DISABLED=0, J1C_JOYSTICK2, J1C_KEYBD_STANDARD, J1C_KEYBD_CENTERING, J1C_MOUSE, J1C_MAX};
 	static const TCHAR m_szJoyChoice0[];
 	static const TCHAR m_szJoyChoice1[];
 	static const TCHAR m_szJoyChoice2[];
@@ -75,7 +77,8 @@ private:
 	CPropertySheetHelper& m_PropertySheetHelper;
 
 	UINT m_uScrollLockToggle;
-	UINT m_uCursorControl;		// 1 = Allow AppleII to read cursor keys from $C000 (when using keyboard as a joystick)
+	UINT m_uCursorControl;		// 1 = Allow AppleII to read cursor keys from $C000 (when using keyboard for joystick emu)
+	UINT m_uCenteringControl;	// 1 = Centering, 0=Floating (when using keyboard for joystick emu)
 	UINT m_bmAutofire;			// bitmask b2:0
 	UINT m_uMouseShowCrosshair;
 	UINT m_uMouseRestrictToWindow;
