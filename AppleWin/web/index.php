@@ -4,9 +4,9 @@
   <link rel="shortcut icon" href="applewin.ico">
   <title>Apple //e Emulator for Windows</title></head>
 <body alink="gold" background="background.gif" bgcolor="mediumpurple" link="orange" text="powderblue" vlink="plum">
-<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.23.0</font></u></font></p>
+<p align="center"><font face="Tahoma"><u><font size="5">AppleWin 1.24.0</font></u></font></p>
 <p align="center"><font face="Tahoma"><img src="applewin.gif" title="" alt="Apple //e Emulator Logo" height="384" width="560"></font></p>
-<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.23.0.0.zip">Version 1.23.0</a><br>
+<p align="center"><font face="Tahoma">Download <a href="http://download.berlios.de/applewin/AppleWin1.24.0.0.zip">Version 1.24.0</a><br>
 <a href="#OldReleases">Download older releases</a><br>
 </font></p>
 
@@ -25,6 +25,31 @@ Latest AppleWin compiled html help: <a href="AppleWin.chm">AppleWin.chm</a>
 - On Windows XP, Windows 7, etc you can simply right-click on the CHM file, select "Properties", and click on the "Unblock" button.<br>
 - Click "Apply" and the content should be visible.
 </font></font></p>
+
+
+<p><font face="Tahoma"><br></p><p><u>1.24.0 - 1 Jan 2014</u></p>
+<li>Changes:</li>
+<ul>
+	<li>Support cursor keys (in addition to numpad) when using keyboard for joystick emulation.</li>
+	<li>Support auto-fire for all 3 joystick buttons (via Config->Input).</li>
+	<li>[Feature #5668] Added confirmation message box for reboot (F2).</li>
+	<li>[Feature #5715] Added -no-printscreen-dlg to suppress the warning if AppleWin fails to capture the PrintScreen key.</li>
+	<li>Changed save-state file persisted to Registry from filename to pathame.</li>
+	<li>[Feature #5105] Added About dialog showing GPL (at startup, but only when AppleWin version changes).</li>
+</ul>
+<li>Fixes:</li>
+<ul>
+	<li>[Bug #19154] ProDOS Order 2IMG crashing.</li>
+	<li>[Support #103098] Sometimes swapping disk could cause INIT to fail with ERROR #8.</li>
+	<li>Fixed save-state bug for when 4K BANK1 is dirty (previously it would save the stale data instead).</li>
+	<li>[Bug #18723,#19070] Mouse movement for CopyII+9.1 and ProTERM3.1.</li>
+</ul>
+<li>Debugger:</li>
+<ul>
+	<li>Added "disk info" command.</li>
+	<li>[Bug #18940] Extend BSAVE and BLOAD Command To Memory Banks 0 and 1.</li>
+</ul>
+</font>
 
 
 <p><font face="Tahoma"><br></p><p><u>1.23.0 - 26 Apr 2013</u></p>
@@ -547,6 +572,7 @@ find didn't appear to support it:<br>
 
 <p><font face="Tahoma"><u><a name="OldReleases"></a>Old releases:</u></font></p>
 <p><font face="Tahoma">
+  Download <a href="http://download.berlios.de/applewin/AppleWin1.23.0.0.zip">Version 1.23.0</a><br>
   Download <a href="http://download.berlios.de/applewin/AppleWin1.20.0.0.zip">Version 1.20.0</a><br>
   Download <a href="http://download.berlios.de/applewin/AppleWin1.19.3.0.zip">Version 1.19.3</a><br>
   Download <a href="http://download.berlios.de/applewin/AppleWin1.17.2.0.zip">Version 1.17.2</a><br>
