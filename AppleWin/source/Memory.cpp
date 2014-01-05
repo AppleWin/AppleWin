@@ -630,6 +630,7 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 	return mem[address];
 }
 
+// TODO: Check if a write to [C800..CFFF] can set IO_STROBE=1 (like the IORead_Cxxx case does)
 BYTE __stdcall IOWrite_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
 {
 	if (IsPotentialNoSlotClockAccess(address))
