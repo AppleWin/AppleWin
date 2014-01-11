@@ -17,8 +17,8 @@ Latest:
 -------
 
 
-1.23.3 - 6 Dec 2013
--------------------
+1.24.0 - 11 Jan 2014
+--------------------
 Changes:
 . Support cursor keys (in addition to numpad) when using keyboard for joystick emulation
 . Support auto-fire for all 3 joystick buttons (via Config->Input)
