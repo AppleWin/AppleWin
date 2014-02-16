@@ -23,6 +23,7 @@ BOOL    JoyUsingKeyboardNumpad();
 void    JoyDisableUsingMouse();
 void    JoySetTrim(short nValue, bool bAxisX);
 short   JoyGetTrim(bool bAxisX);
+void	JoyportControl(const UINT uControl);
 DWORD   JoyGetSnapshot(SS_IO_Joystick* pSS);
 DWORD   JoySetSnapshot(SS_IO_Joystick* pSS);
 

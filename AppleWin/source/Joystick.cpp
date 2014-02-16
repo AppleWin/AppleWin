@@ -99,6 +99,12 @@ static unsigned __int64 g_nJoyCntrResetCycle = 0;	// Abs cycle that joystick cou
 static short g_nPdlTrimX = 0;
 static short g_nPdlTrimY = 0;
 
+enum {JOYPORT_LEFTRIGHT=0, JOYPORT_UPDOWN=1};
+
+static UINT g_bJoyportEnabled = 0;	// Set to use Joyport to drive the 3 button inputs
+static UINT g_uJoyportActiveStick = 0;
+static UINT g_uJoyportReadMode = JOYPORT_LEFTRIGHT;
+
 //===========================================================================
 void CheckJoystick0()
 {
@@ -425,7 +431,58 @@ static void DoAutofire(UINT uButton, BOOL& pressed)
 	lastPressed[uButton] = nowPressed;
 }
 
-BYTE __stdcall JoyReadButton(WORD, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
+BYTE __stdcall JoyportReadButton(WORD address, ULONG nCyclesLeft)
+{
+	BOOL pressed = 0;
+
+	if (g_uJoyportActiveStick == 0)
+	{
+		switch (address)
+		{
+			case 0x61:
+				pressed = (buttonlatch[0] || joybutton[0] || setbutton[0] /*|| keydown[JK_OPENAPPLE]*/);
+				if(joyinfo[joytype[1]] != DEVICE_KEYBOARD)	// BUG? joytype[1] should be [0] ?
+					pressed = (pressed || keydown[JK_BUTTON0]);
+				buttonlatch[0] = 0;
+				break;
+
+			case 0x62:	// Left or Up
+				if (g_uJoyportReadMode == JOYPORT_LEFTRIGHT)	// LEFT
+				{
+					if (xpos[0] == 0)	// TODO: More range for mouse control?
+						pressed = 1;
+				}
+				else	// UP
+				{
+					if (ypos[0] == 0)	// TODO: More range for mouse control?
+						pressed = 1;
+				}
+				break;
+
+			case 0x63:	// Right or Down
+				if (g_uJoyportReadMode == JOYPORT_LEFTRIGHT)	// RIGHT
+				{
+					if (xpos[0] >= 255)	// TODO: More range for mouse control?
+						pressed = 1;
+				}
+				else	// DOWN
+				{
+					if (ypos[0] >= 255)	// TODO: More range for mouse control?
+						pressed = 1;
+				}
+				break;
+		}
+	}
+	else	// TODO: stick #1
+	{
+	}
+
+	pressed = pressed ? 0 : 1;	// Invert as Joyport signals are active low
+
+	return MemReadFloatingBus(pressed, nCyclesLeft);
+}
+
+BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
 {
 	address &= 0xFF;
 
@@ -434,12 +491,19 @@ BYTE __stdcall JoyReadButton(WORD, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
 	if(joyinfo[joytype[1]] == DEVICE_JOYSTICK)
 		CheckJoystick1();
 
+	if (g_bJoyportEnabled)
+	{
+		// Some extra logic to stop the Joyport forcing a self-test at CTRL+RESET
+		if ((address != 0x62) || (address == 0x62 && pc != 0xC242 && pc != 0xC2BE))	// Original //e ($C242), Enhanced //e ($C2BE) 
+			return JoyportReadButton(address, nCyclesLeft);
+	}
+
 	BOOL pressed = 0;
 	switch (address)
 	{
 		case 0x61:
 			pressed = (buttonlatch[0] || joybutton[0] || setbutton[0] || keydown[JK_OPENAPPLE]);
-			if(joyinfo[joytype[1]] != DEVICE_KEYBOARD)
+			if(joyinfo[joytype[1]] != DEVICE_KEYBOARD)	// BUG? joytype[1] should be [0] ?
 				pressed = (pressed || keydown[JK_BUTTON0]);
 			buttonlatch[0] = 0;
 			DoAutofire(0, pressed);
@@ -701,6 +765,49 @@ void JoySetTrim(short nValue, bool bAxisX)
 short JoyGetTrim(bool bAxisX)
 {
 	return bAxisX ? g_nPdlTrimX : g_nPdlTrimY;
+}
+
+//===========================================================================
+
+// Joyport truth-table:
+//
+// AN0  AN1  /PB0       /PB1    /PB2
+// ------------------------------------
+//  0    0   Trigger-1  Left-1  Right-1
+//  0    1   Trigger-1  Up-1    Down-1
+//  1    0   Trigger-2  Left-2  Right-2
+//  1    1   Trigger-2  Up-2    Down-2
+
+#if 0
+void JoyportEnable(const bool bEnable)
+{
+	if (IS_APPLE2C)
+		g_bJoyportEnabled = false;
+	else
+		g_bJoyportEnabled = bEnable ? 1 : 0;
+}
+#endif
+
+void JoyportControl(const UINT uControl)
+{
+	if (!g_bJoyportEnabled)
+		return;
+
+	switch (uControl)
+	{
+	case 0:	// AN0 clr
+		g_uJoyportActiveStick = 0;
+		break;
+	case 1:	// AN0 set
+		g_uJoyportActiveStick = 1;
+		break;
+	case 2:	// AN1 clr
+		g_uJoyportReadMode = JOYPORT_LEFTRIGHT;
+		break;
+	case 3:	// AN1 set
+		g_uJoyportReadMode = JOYPORT_UPDOWN;
+		break;
+	}
 }
 
 //===========================================================================

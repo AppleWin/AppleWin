@@ -415,7 +415,8 @@ void CpuDestroy ()
 //===========================================================================
 
 // Description:
-//	Call this when an IO-reg is access & accurate cycle info is needed
+//	Call this when an IO-reg is accessed & accurate cycle info is needed
+//  NB. Safe to call multiple times from the same IO function handler (as 'nExecutedCycles - g_nCyclesExecuted' will be zero the 2nd time)
 // Pre:
 //  nExecutedCycles = # of cycles executed by Cpu6502() or Cpu65C02() for this iteration of ContinueExecution()
 // Post:

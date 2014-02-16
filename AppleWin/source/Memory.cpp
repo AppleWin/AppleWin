@@ -488,6 +488,12 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 	// . PC=C2B5: LDA $C05D (CLRAN2)
 
 	// NB. AN3: For //e & //c these locations are now used to enabled/disabled DHIRES
+
+	if (address >= 0xC058 && address <= 0xC05B)
+	{
+		JoyportControl(address & 0x3);	// AN0 and AN1 control
+	}
+
 	if (!write)
 		return MemReadFloatingBus(nCyclesLeft);
 	else
@@ -1467,10 +1473,46 @@ BYTE MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles)
 //}
 
 //===========================================================================
+
+//#define DEBUG_FLIP_TIMINGS
+
+#if defined(_DEBUG) && defined(DEBUG_FLIP_TIMINGS)
+static void DebugFlip(WORD address, ULONG nCyclesLeft)
+{
+	static unsigned __int64 uLastFlipCycle = 0;
+	static unsigned int uLastPage = -1;
+
+	if (address != 0x54 && address != 0x55)
+		return;
+
+	const unsigned int uNewPage = address & 1;
+	if (uLastPage == uNewPage)
+		return;
+	uLastPage = uNewPage;
+
+	CpuCalcCycles(nCyclesLeft);	// Update g_nCumulativeCycles
+
+	const unsigned int uCyclesBetweenFlips = (unsigned int) (uLastFlipCycle ? g_nCumulativeCycles - uLastFlipCycle : 0);
+	uLastFlipCycle = g_nCumulativeCycles;
+
+	if (!uCyclesBetweenFlips)
+		return;					// 1st time in func
+
+	const double fFreq = CLK_6502 / (double)uCyclesBetweenFlips;
+
+	char szStr[100];
+	sprintf(szStr, "Cycles between flips = %d (%f Hz)\n", uCyclesBetweenFlips, fFreq);
+	OutputDebugString(szStr);
+}
+#endif
+
 BYTE __stdcall MemSetPaging (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
 {
   address &= 0xFF;
   DWORD lastmemmode = memmode;
+#if defined(_DEBUG) && defined(DEBUG_FLIP_TIMINGS)
+  DebugFlip(address, nCyclesLeft);
+#endif
 
   // DETERMINE THE NEW MEMORY PAGING MODE.
   if ((address >= 0x80) && (address <= 0x8F))

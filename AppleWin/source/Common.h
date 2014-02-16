@@ -139,6 +139,7 @@ enum AppMode_e
 #define WM_USER_BOOT		WM_USER+8
 #define WM_USER_FULLSCREEN	WM_USER+9
 
+// TODO-TC: Refactor codebase by renaming /nCyclesLeft/ to /uExecutedCycles/
 typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
 
 typedef struct _IMAGE__ { int unused; } *HIMAGE;	// DiskImage's /ImageInfo/ is hidden behind HIMAGE
