@@ -23,7 +23,7 @@ Changes:
 . Support cursor keys (in addition to numpad) when using keyboard for joystick emulation
 . Support auto-fire for all 3 joystick buttons (via Config->Input)
 . Debugger: Added "disk info" command
-. Added confirmation message box for reboot (F2)
+. [Feature #5668] Added confirmation message box for reboot (F2)
 . [Feature #5715] Added -no-printscreen-dlg to suppress the warning if AppleWin fails to capture the PrintScreen key
 . Changed save-state file persisted to Registry from filename to pathame
 Fixes:
@@ -34,7 +34,7 @@ Fixes:
 1.23.2 - 14 Sep 2013
 --------------------
 Changes:
-. Added About dialog showing GPL (at startup, but only when AppleWin version changes).
+. [Feature #5105] Added About dialog showing GPL (at startup, but only when AppleWin version changes).
 . [Bug #18940] Extend BSAVE and BLOAD Command To Memory Banks 0 and 1
 	Extended debugger BLOAD with bank support:
 	. BLOAD [file],[bank:]address[,length]

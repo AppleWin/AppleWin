@@ -671,9 +671,9 @@ BOOL JoySetEmulationType(HWND window, DWORD newtype, int nJoystickNumber, const 
 	  {
 			MessageBox(window,
 						TEXT("Using cursor keys to emulate a joystick can cause conflicts.\n\n")
-						TEXT("Be aware that 'cursor up' = CTRL+K, and 'cursor-down' = CTRL+J.\n")
+						TEXT("Be aware that 'cursor-up' = CTRL+K, and 'cursor-down' = CTRL+J.\n")
 						TEXT("EG. Lode Runner uses CTRL+K/J to switch between keyboard/joystick modes ")
-						TEXT("(and cursor left/right to control speed).\n\n")
+						TEXT("(and cursor-left/right to control speed).\n\n")
 						TEXT("Also if cursor keys are blocked from being read from the Apple keyboard ")
 						TEXT("then even simple AppleSoft command-line editing (cursor left/right) will not work."),
 						TEXT("Configuration"),
