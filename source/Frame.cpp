@@ -133,6 +133,7 @@ static bool FileExists(string strFilename);
 
 bool	g_bScrollLock_FullSpeed = false;
 bool	g_bFreshReset = false;
+static bool g_bFullScreen32Bit = true;
 
 // __ Prototypes __________________________________________________________________________________
 	static void DrawCrosshairs (int x, int y);
@@ -534,7 +535,7 @@ static void DrawFrameWindow ()
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay(1);
 	else
-		VideoRedrawScreen();
+		VideoRedrawScreen(g_bIsFullScreen ? 2 : 1);	// TC: 22/06/2014: Why 2 redraws in full-screen mode (32-bit only. 8-bit doesn't need this)
 
 	// DD Full-Screen Palette: BUGFIX: needs to come _after_ all drawing...
 	if (g_bPaintingWindow)
@@ -1488,6 +1489,7 @@ static void ScreenWindowResize(const bool bCtrlKey)
 		g_nOldViewportScale = g_nViewportScale;
 		FrameResizeWindow(1);	// reset to 1x
 		SetFullScreenMode();
+		VideoRedrawScreen(1);	// [TC-10/06/2014] Why isn't this working?
 	}
 	else
 	{
@@ -1602,6 +1604,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 			g_bDebugBreakDelayCheck = true;
 			ProcessButtonClick(BTN_RUN); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
 
+			// TC: 22/6/2014: Remove this comment now we are using 32-bits per pixel for Fullscreen?
 			// TODO: DD Full-Screen Palette
 			// exiting debugger using wrong palette, but this makes problem worse...
 			//InvalidateRect(g_hFrameWindow,NULL,1);
@@ -1796,6 +1799,17 @@ void CtrlReset()
 
 
 //===========================================================================
+
+bool GetFullScreen32Bit(void)
+{
+	return g_bFullScreen32Bit;
+}
+
+void SetFullScreen32Bit(bool b32Bit)
+{
+	g_bFullScreen32Bit = b32Bit;
+}
+
 void SetFullScreenMode ()
 {
 #ifdef NO_DIRECT_X
@@ -1819,7 +1833,7 @@ void SetFullScreenMode ()
 	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
 	if (DirectDrawCreate(NULL,&g_pDD,NULL) != DD_OK ||
 		g_pDD->SetCooperativeLevel(g_hFrameWindow,DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN) != DD_OK ||
-		g_pDD->SetDisplayMode(640,480,8) != DD_OK ||
+		g_pDD->SetDisplayMode(640,480,g_bFullScreen32Bit ? 32 : 8) != DD_OK ||
 		g_pDD->CreateSurface(&ddsd,&g_pDDPrimarySurface,NULL) != DD_OK)
 	{
 		g_pDDPrimarySurface = NULL;
@@ -2128,9 +2142,8 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 //				g_pDDPrimarySurface->SetPalette(g_pDDPal); // this sets the palette for the primary surface
 //			}
 		}
-		*pAddr_  = (LPBYTE)surfacedesc.lpSurface+(g_nViewportCY-1)*surfacedesc.lPitch;
+		*pAddr_  = (LPBYTE)surfacedesc.lpSurface + (g_nViewportCY-1) * surfacedesc.lPitch;
 		*pPitch_ = -surfacedesc.lPitch;
-
 		return (HDC)0;
 	}
 	else

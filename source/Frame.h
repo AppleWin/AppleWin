@@ -45,6 +45,8 @@
 	int		GetViewportScale(void);
 	int     SetViewportScale(int nNewScale);
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);
+	bool	GetFullScreen32Bit(void);
+	void	SetFullScreen32Bit(bool b32Bit);
 
 	LRESULT CALLBACK FrameWndProc (
 		HWND   window,

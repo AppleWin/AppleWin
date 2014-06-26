@@ -221,7 +221,7 @@ int const kVLine0State      = 0x100; // V[543210CBA] = 100000000
 int const kVPresetLine      =   256; // line when V state presets
 int const kVSyncLines       =     4; // lines per VSync duration
 
-static BYTE          celldirty[40][32];
+static BYTE          celldirty[40][32];	// NB. No longer used!
 // NUM_COLOR_PALETTE
 static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
@@ -254,7 +254,7 @@ static WORD          colormixmap[6][6][6];
 	int       g_nAltCharSetOffset  = 0; // alternate character set
 
 	bool      g_bVideoDisplayPage2 = 0;
-	bool      g_VideoForceFullRedraw = 1;
+	/*bool*/ UINT     g_VideoForceFullRedraw = 1;
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      g_nFrameBufferPitch = 0;
@@ -376,7 +376,6 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	void V_CreateDIBSections ();
 	HBRUSH V_CreateCustomBrush (COLORREF nColor);
 
-
 /** Our BitBlit() / VRAM_Copy()
 	@param dx Dst X
 	@param dy Dst Y
@@ -385,7 +384,8 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	@param sx Src X
 	@param sy Src Y
 // =========================================================================== */
-void CopySource (int dx, int dy, int w, int h, int sx, int sy )
+
+static inline void CopySource8(int dx, int dy, int w, int h, int sx, int sy)
 {
 	LPBYTE pDst = g_aFrameBufferOffset[ dy ] + dx;
 	LPBYTE pSrc = g_aSourceStartofLine[ sy ] + sx;
@@ -398,15 +398,15 @@ void CopySource (int dx, int dy, int w, int h, int sx, int sy )
 		// If not multiple of 3 bytes, copy first 3 bytes, so the next copy is 4-byte aligned.
 		while (nBytes & 3)
 		{
-		  --nBytes;
-		  *(pDst+nBytes) = *(pSrc+nBytes);
+			--nBytes;
+			*(pDst+nBytes) = *(pSrc+nBytes);
 		}
 
 		// Copy 4 bytes at a time
 		while (nBytes)
 		{
-		  nBytes -= 4;
-		  *(LPDWORD)(pDst+nBytes) = *(LPDWORD)(pSrc+nBytes);
+			nBytes -= 4;
+			*(LPDWORD)(pDst+nBytes) = *(LPDWORD)(pSrc+nBytes);
 		}
 
 		pDst -= g_nFrameBufferPitch;
@@ -414,6 +414,33 @@ void CopySource (int dx, int dy, int w, int h, int sx, int sy )
 	}
 }
 
+static void CopySource(int dx, int dy, int w, int h, int sx, int sy)
+{
+	if (!g_bIsFullScreen || !GetFullScreen32Bit())
+	{
+		CopySource8(dx,dy,w,h,sx,sy);
+		return;
+	}
+
+	UINT32* pDst = (UINT32*) (g_aFrameBufferOffset[ dy ] + dx*sizeof(UINT32));
+	LPBYTE pSrc = g_aSourceStartofLine[ sy ] + sx;
+	int nBytes;
+
+	while (h--)
+	{
+		nBytes = w;
+		while (nBytes)
+		{
+			--nBytes;
+			const RGBQUAD& rRGB = g_pFramebufferinfo->bmiColors[ *(pSrc+nBytes) ];
+			const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
+			*(pDst+nBytes) = rgb;
+		}
+
+		pDst -= g_nFrameBufferPitch / sizeof(UINT32);
+		pSrc -= SRCOFFS_TOTAL;
+	}
+}
 
 //===========================================================================
 void CreateFrameOffsetTable (LPBYTE addr, LONG pitch)
@@ -2674,51 +2701,84 @@ void __stdcall MixColorsVertical(int matx, int maty)
                             [bot2idx];
   colormixbuffer[4] = (twoHalfPixel & 0xFF00) >> 8;
   colormixbuffer[5] = twoHalfPixel & 0x00FF;
-
 }
 
-
 //===========================================================================
-void __stdcall CopyMixedSource (int x, int y, int sourcex, int sourcey)
+
+static inline void __stdcall CopyMixedSource8(int x, int y, int sourcex, int sourcey)
 {
 	// For tv emulation HGR Video Mode
 
-  LPBYTE currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
-  LPBYTE currdestptr   = g_aFrameBufferOffset[y<<1] + (x<<1);
-  LPBYTE currptr;
+	const BYTE* const currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
+	      BYTE* const currdestptr   = g_aFrameBufferOffset[y*2] + (x*2);
 
-  int matx = x;
-  int maty = HGR_MATRIX_YOFFSET + y;
-  int count;
-  int bufxoffset;
-  int hgrlinesabove = (y > 0)?   1 : 0;
-  int hgrlinesbelow = SW_MIXED ? ((y < 159)? 1:0) : ((y < 191)? 1:0);
-  int i;
-  int istart        = 2 - (hgrlinesabove << 1);
-  int iend          = 3 + (hgrlinesbelow << 1);
+	const int matx = x;
+	const int maty = HGR_MATRIX_YOFFSET + y;
+	const int hgrlinesabove = (y > 0) ? 1 : 0;
+	const int hgrlinesbelow = SW_MIXED ? ((y < 159)? 1:0) : ((y < 191)? 1:0);
+	const int istart        = 2 - (hgrlinesabove*2);
+	const int iend          = 3 + (hgrlinesbelow*2);
 
-  // transfer 7 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
-  for (count = 0, bufxoffset = 0; 
-       count < 7; 
-	   count++, bufxoffset += 2) {
-    hgrpixelmatrix[matx+count][maty] = *(currsourceptr+bufxoffset);
-	
-	// color mixing between adjacent scanlines at current x position
-    MixColorsVertical(matx+count, maty);
+	// transfer 7 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
+	for (int count = 0, bufxoffset = 0; count < 7; count++, bufxoffset += 2)
+	{
+		hgrpixelmatrix[matx+count][maty] = *(currsourceptr+bufxoffset);
 
-	// transfer up to 6 mixed (half-)pixels of current column to framebuffer
-    currptr = currdestptr+bufxoffset;
-	if (hgrlinesabove)
-		currptr += g_nFrameBufferPitch << 1;
+		// color mixing between adjacent scanlines at current x position
+		MixColorsVertical(matx+count, maty);
 
-    for (i = istart;
-	     i <= iend; 
-	     currptr -= g_nFrameBufferPitch, i++) {
-         *currptr = *(currptr+1) = colormixbuffer[i];
+		// transfer up to 6 mixed (half-)pixels of current column to framebuffer
+		BYTE* currptr = currdestptr+bufxoffset;
+		if (hgrlinesabove)
+			currptr += g_nFrameBufferPitch * 2;
+
+		for (int i = istart; i <= iend; currptr -= g_nFrameBufferPitch, i++)
+		{
+			*currptr = *(currptr+1) = colormixbuffer[i];
+		}
 	}
-  }
 }
 
+// For tv emulation HGR Video Mode
+static void __stdcall CopyMixedSource(int x, int y, int sourcex, int sourcey)
+{
+	if (!g_bIsFullScreen || !GetFullScreen32Bit())
+	{
+		CopyMixedSource8(x,y,sourcex,sourcey);
+		return;
+	}
+
+	const BYTE* const currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
+	    UINT32* const currdestptr   = (UINT32*) (g_aFrameBufferOffset[ y*2 ] + (x*2)*sizeof(UINT32));
+
+	const int matx = x;
+	const int maty = HGR_MATRIX_YOFFSET + y;
+	const int hgrlinesabove = (y > 0) ? 1 : 0;
+	const int hgrlinesbelow = SW_MIXED ? ((y < 159)? 1:0) : ((y < 191)? 1:0);
+	const int istart        = 2 - (hgrlinesabove*2);
+	const int iend          = 3 + (hgrlinesbelow*2);
+
+	// transfer 7 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
+	for (int count = 0, bufxoffset = 0; count < 7; count++, bufxoffset += 2)
+	{
+		hgrpixelmatrix[matx+count][maty] = *(currsourceptr+bufxoffset);
+
+		// color mixing between adjacent scanlines at current x position
+		MixColorsVertical(matx+count, maty);
+
+		// transfer up to 6 mixed (half-)pixels of current column to framebuffer
+		UINT32* currptr = currdestptr+bufxoffset;
+		if (hgrlinesabove)
+			currptr += (g_nFrameBufferPitch / sizeof(UINT32)) * 2;
+
+		for (int i = istart; i <= iend; currptr -= g_nFrameBufferPitch/sizeof(UINT32), i++)
+		{
+			RGBQUAD& rRGB = g_pFramebufferinfo->bmiColors[ colormixbuffer[i] ];
+			const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
+			*currptr = *(currptr+1) = rgb;
+		}
+	}
+}
 
 //===========================================================================
 bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
@@ -3339,6 +3399,12 @@ void VideoRealizePalette(HDC dc)
 }
 
 //===========================================================================
+VideoUpdateFuncPtr_t VideoRedrawScreen (UINT n)
+{
+	g_VideoForceFullRedraw = n;
+	return VideoRefreshScreen();
+}
+
 VideoUpdateFuncPtr_t VideoRedrawScreen ()
 {
 	g_VideoForceFullRedraw = 1;
@@ -3384,7 +3450,8 @@ VideoUpdateFuncPtr_t VideoRefreshScreen ()
 	bool bMixed = (SW_MIXED) ? true : false;
 	_Video_RedrawScreen( pfUpdate, bMixed );
 
-	g_VideoForceFullRedraw = 0;
+	//g_VideoForceFullRedraw = 0;
+	if (g_VideoForceFullRedraw) --g_VideoForceFullRedraw;
 	return pfUpdate;
 }
 
@@ -3442,12 +3509,22 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 		// Shift-Print Screen saves only the even rows.
 		// NOTE: Keep in sync with _Video_RedrawScreen() & Video_MakeScreenShot()
 
+		// [TC-10/06-2014] In full-screen mode, there's noticable flicker when blanking out these alt lines.
+		// - Consider doing this 50% operation in CopySource() instead
+
 		for( int y = 1; y < FRAMEBUFFER_H; y += 2 )
-		{	
-			unsigned char *pSrc = g_aFrameBufferOffset[y];
-			for( int x = 0; x < FRAMEBUFFER_W; x++ )
+		{
+			if (!g_bIsFullScreen || !GetFullScreen32Bit())
 			{
-				*pSrc++ = 0;
+				unsigned char *pSrc = g_aFrameBufferOffset[y];	// 8-bit
+				for( int x = 0; x < FRAMEBUFFER_W; x++ )
+					*pSrc++ = 0;
+			}
+			else
+			{
+				unsigned int *pSrc = (unsigned int *) g_aFrameBufferOffset[y];	// 32-bit
+				for( int x = 0; x < FRAMEBUFFER_W; x++ )
+					*pSrc++ = 0;
 			}
 		}
 	}

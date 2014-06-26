@@ -97,6 +97,7 @@ void    VideoDisplayLogo ();
 BOOL    VideoHasRefreshed ();
 void    VideoInitialize ();
 void    VideoRealizePalette (HDC);
+VideoUpdateFuncPtr_t VideoRedrawScreen (UINT);
 VideoUpdateFuncPtr_t VideoRedrawScreen ();
 VideoUpdateFuncPtr_t VideoRefreshScreen ();
 void    VideoReinitialize ();
@@ -110,7 +111,7 @@ DWORD   VideoSetSnapshot(SS_IO_Video* pSS);
 
 
 extern bool g_bVideoDisplayPage2;
-extern bool g_VideoForceFullRedraw;
+extern /*bool*/ UINT g_VideoForceFullRedraw;
 
 void _Video_Dirty();
 void _Video_RedrawScreen( VideoUpdateFuncPtr_t update, bool bMixed = false );
