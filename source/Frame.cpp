@@ -535,7 +535,8 @@ static void DrawFrameWindow ()
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay(1);
 	else
-		VideoRedrawScreen(g_bIsFullScreen ? 2 : 1);	// TC: 22/06/2014: Why 2 redraws in full-screen mode (32-bit only. 8-bit doesn't need this)
+		// Win7: In fullscreen mode with 1 redraw, the the screen doesn't get redraw.
+		VideoRedrawScreen(g_bIsFullScreen ? 2 : 1);	// TC: 22/06/2014: Why 2 redraws in full-screen mode (32-bit only)? (8-bit doesn't need this nor does Win8, just Win7 or older OS's)
 
 	// DD Full-Screen Palette: BUGFIX: needs to come _after_ all drawing...
 	if (g_bPaintingWindow)
@@ -1489,7 +1490,7 @@ static void ScreenWindowResize(const bool bCtrlKey)
 		g_nOldViewportScale = g_nViewportScale;
 		FrameResizeWindow(1);	// reset to 1x
 		SetFullScreenMode();
-		VideoRedrawScreen(1);	// [TC-10/06/2014] Why isn't this working?
+		//VideoRedrawScreen(1);	// [TC-10/06/2014] Remove this once checked it's not needed by Win8
 	}
 	else
 	{
@@ -1603,11 +1604,6 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
 			g_bDebugBreakDelayCheck = true;
 			ProcessButtonClick(BTN_RUN); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
-
-			// TC: 22/6/2014: Remove this comment now we are using 32-bits per pixel for Fullscreen?
-			// TODO: DD Full-Screen Palette
-			// exiting debugger using wrong palette, but this makes problem worse...
-			//InvalidateRect(g_hFrameWindow,NULL,1);
 		}
 		else
 		{

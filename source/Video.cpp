@@ -221,7 +221,7 @@ int const kVLine0State      = 0x100; // V[543210CBA] = 100000000
 int const kVPresetLine      =   256; // line when V state presets
 int const kVSyncLines       =     4; // lines per VSync duration
 
-static BYTE          celldirty[40][32];	// NB. No longer used!
+static BYTE          celldirty[40][32];	// [TC: 27/06/2014] NB. No longer used!
 // NUM_COLOR_PALETTE
 static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
@@ -3399,6 +3399,8 @@ void VideoRealizePalette(HDC dc)
 }
 
 //===========================================================================
+
+// Called by DrawFrameWindow() when in fullscreen mode (eg. after WM_PAINT msg)
 VideoUpdateFuncPtr_t VideoRedrawScreen (UINT n)
 {
 	g_VideoForceFullRedraw = n;
