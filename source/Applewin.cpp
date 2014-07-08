@@ -44,7 +44,6 @@ TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
-BOOL      behind            = 0;			// Redundant
 DWORD     cumulativecycles  = 0;			// Wraps after ~1hr 9mins
 DWORD     cyclenum          = 0;			// Used by SpkrToggle() for non-wave sound
 DWORD     emulmsec          = 0;
@@ -163,8 +162,6 @@ void SetPriorityNormal(void)
 
 void ContinueExecution(void)
 {
-	static BOOL pageflipping    = 0; //?
-
 	const double fUsecPerSec        = 1.e6;
 #if 1
 	const UINT nExecutionPeriodUsec = 1000;		// 1.0ms
@@ -242,20 +239,14 @@ void ContinueExecution(void)
 	}
 
 	//
-	// DETERMINE WHETHER THE SCREEN WAS UPDATED, THE DISK WAS SPINNING,
-	// OR THE KEYBOARD I/O PORTS WERE BEING EXCESSIVELY QUERIED THIS CLOCKTICK
-	VideoCheckPage(0);
-	BOOL screenupdated = VideoHasRefreshed();
-	BOOL systemidle    = 0;	//(KeybGetNumQueries() > (clockgran << 2));	//  && (!ranfinegrain);	// TO DO
-
-	if (screenupdated)
-		pageflipping = 3;
-
-	//
 
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
+
+		// DETERMINE WHETHER THE SCREEN WAS UPDATED THIS CLOCKTICK
+		VideoCheckPage(0);								// force=0
+		const BOOL screenupdated = VideoHasRefreshed();	// Only called from here. Clears & returns 'hasrefreshed' flag.
 
 		if (g_nAppMode != MODE_LOGO)
 		{
@@ -276,20 +267,16 @@ void ContinueExecution(void)
 				static DWORD lasttime = 0;
 				DWORD currtime = GetTickCount();
 				if ((!g_bFullSpeed) ||
-					(currtime-lasttime >= (DWORD)((g_bGraphicsMode || !systemidle) ? 100 : 25)))
+					(currtime-lasttime >= (DWORD)(g_bGraphicsMode ? 100 : 25)))
 				{
 					VideoRefreshScreen();
 					lasttime = currtime;
 				}
-				screenupdated = 1;
 			}
 
 			lastupdates[1] = lastupdates[0];
 			lastupdates[0] = anyupdates;
 			anyupdates     = 0;
-
-			if (pageflipping)
-				pageflipping--;
 		}
 
 		MB_EndOfVideoFrame();

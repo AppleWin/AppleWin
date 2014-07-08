@@ -3117,14 +3117,22 @@ BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 }
 
 //===========================================================================
-void VideoCheckPage (BOOL force) {
-  if ((g_bVideoDisplayPage2 != (SW_PAGE2 != 0)) &&
-      (force || (emulmsec-lastpageflip > 500))) {
-    g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
-    VideoRefreshScreen();
-    hasrefreshed = 1;
-    lastpageflip = emulmsec;
-  }
+
+// Check if we should call VideoRefreshScreen() based on unexpected page
+// - Only called from a single place in main ContinueExecution() loop
+void VideoCheckPage(BOOL force)
+{
+	const bool bUnexpectedPage = (g_bVideoDisplayPage2 != (SW_PAGE2 != 0));
+	//_ASSERT(!bUnexpectedPage);					// [TC] Q: When does this happen? A: EG. When page-flipping && Scroll-Lock is pressed
+
+	if (bUnexpectedPage &&							// Unexpected page &&
+		(force || (emulmsec-lastpageflip > 500)))	// force || >500ms since last flip
+	{
+		g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
+		VideoRefreshScreen();
+		hasrefreshed = 1;
+		lastpageflip = emulmsec;
+	}
 }
 
 //===========================================================================
@@ -3701,24 +3709,22 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		else
 			oldpage2 = SW_PAGE2;
 	}
-	if (oldpage2 != SW_PAGE2) {
-		static DWORD lastrefresh = 0;
-		if ((g_bVideoDisplayPage2 && !SW_PAGE2) || (!behind)) {
-			g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
-			if (!g_VideoForceFullRedraw) {
-				VideoRefreshScreen();
-				hasrefreshed = 1;
-				lastrefresh  = emulmsec;
-			}
-		}
-		else if ((!SW_PAGE2) && (!g_VideoForceFullRedraw) && (emulmsec-lastrefresh >= 20)) {
-		  g_bVideoDisplayPage2 = 0;
-		  VideoRefreshScreen();
-		  hasrefreshed = 1;
-		  lastrefresh  = emulmsec;
+
+	if (oldpage2 != SW_PAGE2)
+	{
+		g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
+		if (!g_VideoForceFullRedraw)
+		{
+#if 1
+			VideoRefreshScreen();
+			hasrefreshed = 1;
+#else
+			g_VideoForceFullRedraw = 1;		// GH#129,GH204: Defer the redraw until the main ContinueExecution() loop (TODO: What effect does this have on other games?)
+#endif
 		}
 		lastpageflip = emulmsec;
 	}
+
 	return MemReadFloatingBus(uExecutedCycles);
 }
 

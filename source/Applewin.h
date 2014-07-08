@@ -10,7 +10,6 @@ extern TCHAR     *g_pAppTitle;
 
 extern eApple2Type g_Apple2Type;
 
-extern BOOL       behind;
 extern DWORD      cumulativecycles;
 extern DWORD      cyclenum;
 extern DWORD      emulmsec;
