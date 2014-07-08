@@ -1,0 +1,21 @@
+How To Compile/Build AppleWin
+=============================
+
+0. Install git
+
+1. Clone the repository
+
+   git clone https://github.com/AppleWin/AppleWin.git
+
+2. Download the Feb 2010 DirectX SDK
+   (It is the last version to have DirectDraw)
+ 
+   http://www.microsoft.com/en-us/download/details.aspx?id=10084
+
+3. Add ddraw.lib to the linker include path:
+
+   AppleWin projec,, Rigth-Click Properties, Linker, General, Additional Libary Directories
+
+   The default path is:
+    C:\Program Files (x86)\Microsoft DirectX SDK (February 2010)\Lib\x86
+
