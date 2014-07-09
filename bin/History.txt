@@ -3,19 +3,241 @@ AppleWin history
 
 This version of AppleWin is based directly on Oliver Schmidt's 1.10.4 source.
 
-Bug reports should be submitted here:
-https://developer.berlios.de/bugs/?func=addbug&group_id=6117
-
-Feature requests should be submitted here:
-https://developer.berlios.de/feature/?func=addfeature&group_id=6117
+Bug reports and feature requests should be submitted here:
+https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 tomch at users.berlios.de
 
-
 Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise
+
+Latest:
+-------
+
+
+1.24.0 - 11 Jan 2014
+--------------------
+Changes:
+. Support cursor keys (in addition to numpad) when using keyboard for joystick emulation
+. Support auto-fire for all 3 joystick buttons (via Config->Input)
+. Debugger: Added "disk info" command
+. [Feature #5668] Added confirmation message box for reboot (F2)
+. [Feature #5715] Added -no-printscreen-dlg to suppress the warning if AppleWin fails to capture the PrintScreen key
+. Changed save-state file persisted to Registry from filename to pathame
+Fixes:
+. [Bug #19154] ProDOS Order 2IMG crashing
+. [Support #103098] Sometimes swapping disk could cause INIT to fail with ERROR #8
+
+
+1.23.2 - 14 Sep 2013
+--------------------
+Changes:
+. [Feature #5105] Added About dialog showing GPL (at startup, but only when AppleWin version changes).
+. [Bug #18940] Extend BSAVE and BLOAD Command To Memory Banks 0 and 1
+	Extended debugger BLOAD with bank support:
+	. BLOAD [file],[bank:]address[,length]
+	. BLOAD [file],[bank:]address[:end]
+	. If no filename specified, will use last BLOAD or BSAVE filename.
+	Extended debugger BSAVE with bank support:
+	. BSAVE [file],[bank:]address,length
+	. BSAVE [file],[bank:]address:end
+	. If no filename specified, defaults to: '####.####.[bank##].bin'
+		(where the form is <address>.<length>.bin)
+
+Fixes:
+. Fixed save-state bug for when 4K BANK1 is dirty (previously it would save the stale data instead).
+. [Bug #18723,#19070] Mouse movement for CopyII+9.1 and ProTERM3.1.
+
+
+1.23.0 - 26 Apr 2013
+--------------------
+RC for public release.
+
+Changes:
+. Extended logging support during startup and shutdown.
+. Allow debugging of save-state image from start-up "logo" screen.
+. Added Troubleshooting section to help file.
+
+Fixes:
+. Screenshot 280x192:
+  - [Bug #018928] Correction for left edge loss of scaled scanline.
+  - A screenshot in 50% scanline mode would produce an all black image.
+. Fixed inserting of disk images from save-state when drive-2 contained the disk required for drive-1.
+
+
+1.22.1 - 7 Mar 2013
+--------------------
+Changes:
+. Make 2x the default
+  - [Bug #018851] Refuse double-sizing the window unless the screen is large enough.
+
+Fixes:
+. [Bug #018886] MMU no good when no cards in slot-4 & 5
+. [Bug #018852] WinXP: Switching 2x -> 1x video mode leaves old 2x data behind
+
+
+1.22.0 - 1 Jan 2013
+--------------------
+Changes:
+. [Feature #005557] Support DOSMaster image created by Apple Oasis.
+. [Feature #003272 and #005335] Support 2x windowed mode:
+  - Toggle between 1x and 2x by using Resize button (or F6).
+  - Full screen now enabled by CTRL+Resize button (or CTRL+F6).
+
+Fixes:
+. [Feature #004346] Don't show mousetext for original Apple //e.
+. Fixed HDD firmware to allow epyx_californiagames_iicplus.2mg to boot.
+. HDD firmware: Added support for SmartPort entrypoint.
+  - "Prince of Persia (Original 3.5 floppy for IIc+).2mg" now boots
+. [Bug #018455] Improved rendering speed of debugger view.
+
+
+1.21.1 - 12 Aug 2012
+--------------------
+Changes:
+. [Feature #4399] Allow Z80 SoftCard to be inserted into slot 4 or 5. (Allows CP/M v3 to work)
+. Reworked Configuration (property sheets) to allow multiple hardware changes.
+. Updated Help .chm with info on No-Slot clock.
+
+Fixes:
+. Floating bus not returned for empty slot $Cnxx addresses. Fixes:
+  - A2VGA.DSK: Apple][VGA card detection.
+  - [Bug #018643] Mabel's Mansion.
+. [Feature #005552] Mouse wasn't working for BeagleWrite / MultiScribe.
+
+
+1.20.1 - 17 Jul 2011
+--------------------
+Fixes:
+. [Bug #018242] Preserve drive's physical attributes (track, phase) when changing disk. (Fix for Platoon)
+
+
+1.20.0 - 23 Feb 2011
+--------------------
+Changes:
+. Standard, Text Optimized and Monochrome video modes now support half-pixel rendering accuracy!
+. Colors tweaked to better match the real hardware.
+
+Fixes:
+. Fixed Mockingboard detection for Ultima III (ProDOS-8/harddisk version).
+
+Debugger:
+. See the Debugger_Changelog.txt for the various fixes and changes.
+
+Misc:
+. Updated acknowledgements. Cheers to Mike Harvey! (Nibble Magazine)
+
+
+1.19.3 - 30 Dec 2010
+--------------------
+Changes:
+. Set 50% scan lines as the default.
+
+Fixes:
+. Fix OpenFileName dialogs for Win98 (use older WinVer4 struct).
+. Edits to the 'Printer dump filename' edit control are now recognised.
+
+
+1.19.2 - 20 Dec 2010
+--------------------
+Changes:
+. Added HD activity LED.
+. Caps LED now takes up less space in full-screen mode.
+. Debugger 2.7.0.0 (see Debugger_Changelog.txt)
+
+Fixes:
+. Fix for "APPLEWIN executed an invalid instruction" on Pentium II/266 CPU.
+  - Rebuilt with Enhanced Instruction Set = Not Set (ie. no SSE/SSE2).
+
+
+1.19.1 - 10 Dec 2010
+--------------------
+Changes:
+. Rebuilt for Win98 with: VS2005 Express, Windows SDK 6.0, SAPI 5.1
+. Improved detection of No-Slot-Clock accesses (GEOS now working).
+
+
+1.19.0 - 28 Aug 2010
+--------------------
+Changes:
+. Added No-Slot-Clock (located in $C300 ROM space).
+
+
+1.18.2 - 17 Aug 2010
+--------------------
+Fixes:
+. [Bug #017055] DDial timer running very fast.
+  - TAPEIN.bit7 was being read from floating-bus. Now fixed high.
+. [Bug# 007237] VBl IO reg not updated in 'Stepping' mode
+. Loading save-state file (.aws) wasn't Win32-closing .dsk images in drives.
+
+
+1.18.1 - 14 Feb 2010 (beta)
+---------------------------
+Changes:
+. Added "-speech" cmd-line switch
+  - Captures text from COUT and outputs to Speech API
+  - Ctrl+RESET and FullSpeed mode (ie. disk access) will purge the speech buffers
+
+Fixes:
+. [Bug #16699] Debugger: G xxxx not clearing BP
+. [Bug #16688] Debugger RUN <script-file> still not 100%
+  - Honour absolute path (ie. don't prefix with CWD)
+
+
+1.18.0 - 17 Jan 2010 (beta)
+---------------------------
+Changes:
+. Added disk/harddisk image r/w support for .gz/.zip (and .2mg) files.
+  - Multi-zip archives are read-only.
+. Added disk/harddisk eject sub-menu to Disk Config tab.
+. Removed .bin registration.
+
+Fixes:
+. [Bug #16632] Fix cmd-line -d1/d2 switches with relative path
+. Fix speaker volume when booting with -d1 switch
+. Fix debugger bugs:
+  - Crash when doing: help *
+  - [Bug #16651] Crash when doing: run <script-file>
+. [Bug #16652] Fix "Harddisk images aren't persisted when in different folders"
+. [Bug #12724,14747] Fix "Registry persisted Window x,y position sometimes off screen"
+
+
+1.17.2 - 13 Dec 2009
+--------------------
+Changes:
+. Enable XP visual themes & corrected tab order in the Configuration dialog - thanks to Joshua Bell
+. Updated Help chm's Debugger breakpoint commands (BC,BD,BE,BL now replaced by BPC,BPD,BPE.BPL)
+
+Fixes:
+. Fix: Crash when COM or TCP port opened before Configuration dialog is opened for the first time
+. Fix: Reading SSC DIP SW1 for "external" CLK (115.2K mode)
+. Fix: Reinstated debugger's GO command:
+  - G        : Go (Stepping Mode)
+  - G <addr> : Go (Stepping Mode) until PC=addr
+
+
+1.17.1 - 27 Nov 2009
+--------------------
+Changes:
+. SSC: Support 115.2K Baud
+. Dynamically generated 'Serial Port' drop-down menu
+  - Save "Serial Port Name" to Registry (instead of drop-down menu index as "Serial Port")
+. Updated Help chm's "Transferring Disk Images" - thanks to David Schmidt
+. New switches: -log, -no-mb, -spkr-max, -spkr-inc
+. Debugger (v2.6.2.0):
+  - Added Applesoft BASIC symbols - thanks to Bob Sander-Cederlof
+  - Return on blank line to toggle full screen console
+  - Page Up/Down of console history while editing
+
+Fixes:
+. Fix for Speaker underflow problem (-spkr-max=200, -spkr-inc=20)
+. Fix for SSC (big transfers): use queue instead of single byte buffer
+. Don't hog CPU in PAUSED mode
+. Implemented the shift key mod for II/II+. This fixes a problem with Homeword.
+. [Bug #14879] Double-Lo-Res Graphics colors not correct
 
 
 1.16.1 - 20 Jun 2009
