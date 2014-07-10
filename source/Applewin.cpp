@@ -263,7 +263,7 @@ void ContinueExecution(void)
 			lastcycles = cumulativecycles;
 			if ((!anyupdates) && (!lastupdates[0]) && (!lastupdates[1]) && VideoApparentlyDirty())
 			{
-				VideoCheckPage(1);
+				VideoCheckPage(1);						// force=1
 				static DWORD lasttime = 0;
 				DWORD currtime = GetTickCount();
 				if ((!g_bFullSpeed) ||
