@@ -1392,6 +1392,12 @@ void MemReset ()
 		}
 	}
 
+    // https://github.com/AppleWin/AppleWin/issues/206
+    // On a real Apple the RNDL and RNDH are initialized to random values from a cold boot.
+    DWORD clock = timeGetTime(); // We can't use g_nCumulativeCycles as it will be zero on a fresh execution.
+    memmain[ 0x4E ] = (clock >> 0) & 0xFF;
+    memmain[ 0x4F ] = (clock >> 8) & 0xFF;
+
 	// SET UP THE MEMORY IMAGE
 	mem   = memimage;
 	//image = 0;
