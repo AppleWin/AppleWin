@@ -1379,21 +1379,66 @@ void MemReset ()
 
 	int iByte;
 
-	if (g_eMemoryInitPattern == MIP_FF_FF_00_00)
-	{
-		for( iByte = 0x0000; iByte < 0xC000; )
-		{
-			memmain[ iByte++ ] = 0xFF;
-			memmain[ iByte++ ] = 0xFF;
+	// Memory is pseudo-initialized across various models of Apple ][ //e //c
+	// We chose a random one for nostalgia's sake
+	// To inspect:
+	//   F2. Ctrl-F2. CALL-151, C050 C053 C057
+	// OR
+	//   F2, Ctrl-F2, F7, HGR
+	srand (time(NULL));
+	g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>( rand() % NUM_MIP );
+	if( g_eMemoryInitPattern == MIP_ZERO )
+		g_eMemoryInitPattern = MIP_FF_FF_00_00;
 
-			// Note: ODD 16-bit words are zero'd above...
-			iByte++;
-			iByte++;
-		}
+	switch( g_eMemoryInitPattern )
+	{
+		case MIP_FF_FF_00_00:
+			for( iByte = 0x0000; iByte < 0xC000; )
+			{
+				memmain[ iByte++ ] = 0xFF;
+				memmain[ iByte++ ] = 0xFF;
+
+				// Note: ODD 16-bit words are zero'd above...
+				iByte++;
+				iByte++;
+			}
+			break;
+		
+		case MIP_FF_00_FULL_PAGE:
+			for( iByte = 0x0000; iByte < 0xC000; iByte += 512 )
+			{
+				memset( &memmain[ iByte ], 0xFF, 256 );
+
+				// exceptions: xx28: 00 Apple //e Platinum NTSC
+				memmain[ iByte + 0x28 ] = 0x00;
+				memmain[ iByte + 0x68 ] = 0x00;
+			}
+			break;
+
+		case MIP_00_FF_HALF_PAGE: 
+			for( iByte = 0x0080; iByte < 0xC000; iByte += 256 )
+			{
+				memset( &memmain[ iByte ], 0xFF, 128 );
+
+				// exceptions: 2014: 1 1   2416:1 1  2818:1 1
+				// Note: the //c cold start 'blast' is partially emulated
+				if( iByte >= 0x2000 )
+				{
+					int iBlastAddr = (iByte / 0x200) + (iByte / 0x400); // TODO: Fix calculation
+					memmain[ iByte - 0x81 + iBlastAddr + 0 ] |= 0xC0;
+					memmain[ iByte - 0x81 + iBlastAddr + 1 ] |= 0xC0;
+				}
+			}
+			break;
+
+		case MIP_FF_00_HALF_PAGE:
+			for( iByte = 0x0000; iByte < 0xC000; iByte += 256 )
+				memset( &memmain[ iByte ], 0xFF, 128 );
+			break;
 	}
 
 	// https://github.com/AppleWin/AppleWin/issues/206
-	// On a real Apple the RNDL and RNDH are initialized to random values from a cold boot.
+	// Work-around for a cold-booting bug in "Pooyan" which expects RNDL and RNDH to be non-zero.
 	// TODO: Use MemReturnRandomData() ???
 	DWORD clock = timeGetTime(); // We can't use g_nCumulativeCycles as it will be zero on a fresh execution.
 	memmain[ 0x4E ] = (clock >> 0) & 0xFF;
