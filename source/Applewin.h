@@ -4,7 +4,7 @@ void SetCurrentCLK6502();
 void SetCurrentImageDir(const char* pszImageDir);
 
 
-extern char VERSIONSTRING[];	// Contructed in WinMain()
+extern char VERSIONSTRING[];	// Constructed in WinMain()
 
 extern TCHAR     *g_pAppTitle;
 
