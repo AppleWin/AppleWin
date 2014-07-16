@@ -1357,6 +1357,11 @@ void MemInitialize()
 	MemReset();
 }
 
+inline DWORD getRandomTime()
+{
+	return rand() ^ timeGetTime(); // We can't use g_nCumulativeCycles as it will be zero on a fresh execution.
+}
+
 //===========================================================================
 
 // Called by:
@@ -1385,8 +1390,8 @@ void MemReset ()
 	//   F2. Ctrl-F2. CALL-151, C050 C053 C057
 	// OR
 	//   F2, Ctrl-F2, F7, HGR
-	srand (time(NULL));
-	g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>( rand() % NUM_MIP );
+	DWORD clock = getRandomTime();
+	g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>( clock % NUM_MIP );
 	if( g_eMemoryInitPattern == MIP_ZERO )
 		g_eMemoryInitPattern = MIP_FF_FF_00_00;
 
@@ -1402,10 +1407,12 @@ void MemReset ()
 			// Exceptions: xx28 xx29 xx68 xx69 Apple //e
 			for( iByte = 0x0000; iByte < 0xC000; iByte += 512 )
 			{
-				memmain[ iByte + 0x28 ] = MemReturnRandomData( 1 );
-				memmain[ iByte + 0x29 ] = MemReturnRandomData( 0 );
-				memmain[ iByte + 0x68 ] = MemReturnRandomData( 1 );
-				memmain[ iByte + 0x69 ] = MemReturnRandomData( 0 );
+				clock = getRandomTime();
+				memmain[ iByte + 0x28 ] = (clock >>  0) & 0xFF;
+				memmain[ iByte + 0x29 ] = (clock >>  8) & 0xFF;
+				clock = getRandomTime();
+				memmain[ iByte + 0x68 ] = (clock >>  0) & 0xFF;
+				memmain[ iByte + 0x69 ] = (clock >>  8) & 0xFF;
 			}
 			break;
 		
@@ -1425,16 +1432,16 @@ void MemReset ()
 			{
 				memset( &memmain[ iByte ], 0xFF, 128 );
 
-				// Exceptions: Emulate the Apple //c cold start memory 'blaster' pattern
-				//   2010: C0 C0    2111:C0 C0
-				//   2414: C0 C0    2515:C0 C0
-				//   2818: C0 C0    2919:C0 C0
+				// Exceptions: Emulate the Apple //c cold start memory 'blaster' pattern at $FCCA
+				//   2010: A0 A0    2111:A0 A0
+				//   2414: A0 A0    2515:A0 A0
+				//   2818: A0 A0    2919:A0 A0
 				//   etc.
 				int iBase = iByte - 0x80;
 				int iPage = iBase & 0x1FFF;
 				int iAddr = 0x10 + (iPage / 0x100);
-				memmain[ iBase + iAddr + 0 ] |= 0xC0;
-				memmain[ iBase + iAddr + 1 ] |= 0xC0;
+				memmain[ iBase + iAddr + 0 ] |= 0xA0;
+				memmain[ iBase + iAddr + 1 ] |= 0xA0;
 			}
 			break;
 
@@ -1446,9 +1453,9 @@ void MemReset ()
 
 	// https://github.com/AppleWin/AppleWin/issues/206
 	// Work-around for a cold-booting bug in "Pooyan" which expects RNDL and RNDH to be non-zero.
-	DWORD clock = timeGetTime(); // We can't use g_nCumulativeCycles as it will be zero on a fresh execution.
-	memmain[ 0x4E ] = MemReturnRandomData(1) | (clock >> 0) & 0xFF;
-	memmain[ 0x4F ] = MemReturnRandomData(1) | (clock >> 8) & 0xFF;
+	clock = getRandomTime();
+	memmain[ 0x4E ] = 0x20 | (clock >> 0) & 0xFF;
+	memmain[ 0x4F ] = 0x20 | (clock >> 8) & 0xFF;
 
 	// SET UP THE MEMORY IMAGE
 	mem   = memimage;
