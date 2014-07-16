@@ -1409,25 +1409,27 @@ void MemReset ()
 			{
 				memset( &memmain[ iByte ], 0xFF, 256 );
 
-				// exceptions: xx28: 00 Apple //e Platinum NTSC
+				// Exceptions: xx28: 00  xx68:00  Apple //e Platinum NTSC
 				memmain[ iByte + 0x28 ] = 0x00;
 				memmain[ iByte + 0x68 ] = 0x00;
 			}
 			break;
 
 		case MIP_00_FF_HALF_PAGE: 
-			for( iByte = 0x0080; iByte < 0xC000; iByte += 256 )
+			for( iByte = 0x0080; iByte < 0xC000; iByte += 256 ) // NB. start = 0x80, delta = 0x100 !
 			{
 				memset( &memmain[ iByte ], 0xFF, 128 );
 
-				// exceptions: 2014: 1 1   2416:1 1  2818:1 1
-				// Note: the //c cold start 'blast' is partially emulated
-				if( iByte >= 0x2000 )
-				{
-					int iBlastAddr = (iByte / 0x200) + (iByte / 0x400); // TODO: Fix calculation
-					memmain[ iByte - 0x81 + iBlastAddr + 0 ] |= 0xC0;
-					memmain[ iByte - 0x81 + iBlastAddr + 1 ] |= 0xC0;
-				}
+				// Exceptions: Emulate the //c cold start memory 'blaster' pattern
+				//   2010: C0 C0    2111:C0 C0
+				//   2414: C0 C0    2515:C0 C0
+				//   2818: C0 C0    2919:C0 C0
+				//   etc.
+				int iBase = iByte - 0x80;
+				int iPage = iBase & 0x1FFF;
+				int iAddr = 0x10 + (iPage / 0x100);
+				memmain[ iBase + iAddr + 0 ] |= 0xC0;
+				memmain[ iBase + iAddr + 1 ] |= 0xC0;
 			}
 			break;
 
