@@ -1393,14 +1393,18 @@ void MemReset ()
 	switch( g_eMemoryInitPattern )
 	{
 		case MIP_FF_FF_00_00:
-			for( iByte = 0x0000; iByte < 0xC000; )
+			for( iByte = 0x0000; iByte < 0xC000; iByte += 4 ) // NB. ODD 16-bit words are zero'd above...
 			{
-				memmain[ iByte++ ] = 0xFF;
-				memmain[ iByte++ ] = 0xFF;
+				memmain[ iByte+0 ] = 0xFF;
+				memmain[ iByte+1 ] = 0xFF;
+			}
 
-				// Note: ODD 16-bit words are zero'd above...
-				iByte++;
-				iByte++;
+			for( iByte = 0x0000; iByte < 0xC000; iByte += 512 )
+			{
+				memmain[ iByte + 0x28 ] = MemReturnRandomData( 1 );
+				memmain[ iByte + 0x29 ] = MemReturnRandomData( 0 );
+				memmain[ iByte + 0x68 ] = MemReturnRandomData( 1 );
+				memmain[ iByte + 0x69 ] = MemReturnRandomData( 0 );
 			}
 			break;
 		
@@ -1441,10 +1445,9 @@ void MemReset ()
 
 	// https://github.com/AppleWin/AppleWin/issues/206
 	// Work-around for a cold-booting bug in "Pooyan" which expects RNDL and RNDH to be non-zero.
-	// TODO: Use MemReturnRandomData() ???
 	DWORD clock = timeGetTime(); // We can't use g_nCumulativeCycles as it will be zero on a fresh execution.
-	memmain[ 0x4E ] = (clock >> 0) & 0xFF;
-	memmain[ 0x4F ] = (clock >> 8) & 0xFF;
+	memmain[ 0x4E ] = MemReturnRandomData(1) | (clock >> 0) & 0xFF;
+	memmain[ 0x4F ] = MemReturnRandomData(1) | (clock >> 8) & 0xFF;
 
 	// SET UP THE MEMORY IMAGE
 	mem   = memimage;
