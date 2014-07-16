@@ -1399,6 +1399,7 @@ void MemReset ()
 				memmain[ iByte+1 ] = 0xFF;
 			}
 
+			// Exceptions: xx28 xx29 xx68 xx69 Apple //e
 			for( iByte = 0x0000; iByte < 0xC000; iByte += 512 )
 			{
 				memmain[ iByte + 0x28 ] = MemReturnRandomData( 1 );
@@ -1424,7 +1425,7 @@ void MemReset ()
 			{
 				memset( &memmain[ iByte ], 0xFF, 128 );
 
-				// Exceptions: Emulate the //c cold start memory 'blaster' pattern
+				// Exceptions: Emulate the Apple //c cold start memory 'blaster' pattern
 				//   2010: C0 C0    2111:C0 C0
 				//   2414: C0 C0    2515:C0 C0
 				//   2818: C0 C0    2919:C0 C0
