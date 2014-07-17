@@ -1429,20 +1429,7 @@ void MemReset ()
 
 		case MIP_00_FF_HALF_PAGE: 
 			for( iByte = 0x0080; iByte < 0xC000; iByte += 256 ) // NB. start = 0x80, delta = 0x100 !
-			{
 				memset( &memmain[ iByte ], 0xFF, 128 );
-
-				// Exceptions: Emulate the Apple //c cold start memory 'blaster' pattern at $FCCA
-				//   2010: A0 A0    2111:A0 A0
-				//   2414: A0 A0    2515:A0 A0
-				//   2818: A0 A0    2919:A0 A0
-				//   etc.
-				int iBase = iByte - 0x80;
-				int iPage = iBase & 0x1FFF;
-				int iAddr = 0x10 + (iPage / 0x100);
-				memmain[ iBase + iAddr + 0 ] |= 0xA0;
-				memmain[ iBase + iAddr + 1 ] |= 0xA0;
-			}
 			break;
 
 		case MIP_FF_00_HALF_PAGE:
