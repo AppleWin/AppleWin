@@ -66,7 +66,6 @@ TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin exe
 TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
-bool      g_bResetTiming    = false;			// Redundant
 BOOL      restart           = 0;
 
 DWORD		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar
