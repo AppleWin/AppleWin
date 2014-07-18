@@ -13,6 +13,28 @@ Restrictions/bugs:
 - SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
 - During Mockingboard playback, Speaker emulation isn't precise
 
+
+In Development:
+---------------
+Changes:
+. Added command line switch to specify the type of memory initialization pattern.
+    -memclear #
+  Where # ranges from 0 to 7.
+  i.e.
+     -memclear 0   Initialize memory to zero
+     -memclear 1   Initialize memory to random values
+     -memclear 2   Initialize memory to 4 byte pattern: FF FF 00 00
+     -memclear 3   Initialize memory to even pages FF, odd pages 00
+     -memclear 4   Initialize memory to first half page 00, last half page FF
+     -memclear 5   Initialize memory to first half page FF, last half page 00
+     -memclear 6   Initialize memory to byte offset of page
+                   (current memory address low byte)
+     -memclear 7   Initialize memory to page address
+                   (current memory address high byte)
+Fixed:
+. [Bug #206] Pooyan freezes due to RNDL/RNDH not initialized to non-zero values
+
+
 Latest:
 -------
 

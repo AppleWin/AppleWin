@@ -1392,14 +1392,10 @@ void MemReset ()
 	//   F2, Ctrl-F2, F7, HGR
 	DWORD clock = getRandomTime();
 
-	if ((g_nMemoryClearType >= 0) && (g_nMemoryClearType != MIP_RANDOM))
+	if (g_nMemoryClearType >= 0)
 		g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>(g_nMemoryClearType);
 	else // random
-	{
 		g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>( clock % NUM_MIP );
-		if (g_eMemoryInitPattern == MIP_RANDOM) // Twice Lucky! Force a choice.
-			g_eMemoryInitPattern = MIP_FF_FF_00_00;
-	}
 
 	switch( g_eMemoryInitPattern )
 	{
@@ -1441,6 +1437,34 @@ void MemReset ()
 		case MIP_FF_00_HALF_PAGE:
 			for( iByte = 0x0000; iByte < 0xC000; iByte += 256 )
 				memset( &memmain[ iByte ], 0xFF, 128 );
+			break;
+
+		case MIP_RANDOM:
+			unsigned char random[ 256 + 4 ];
+			for( iByte = 0x0000; iByte < 0xC000; iByte += 256 )
+			{
+				for( int i = 0; i < 256; i++ )
+				{
+					clock = getRandomTime();
+					random[ i+0 ] ^= (clock >>  0) & 0xFF;
+					random[ i+1 ] ^= (clock >> 11) & 0xFF;
+				}
+
+				memcpy( &memmain[ iByte ], random, 256 );
+			}
+			break;
+
+		case MIP_PAGE_ADDRESS_LOW:
+			for( iByte = 0x0000; iByte < 0xC000; iByte++ )
+				memmain[ iByte ] = iByte & 0xFF;
+			break;
+
+		case MIP_PAGE_ADDRESS_HIGH:
+			for( iByte = 0x0000; iByte < 0xC000; iByte += 256 )
+				memset( &memmain[ iByte ], (iByte >> 8), 256 );
+			break;
+
+		default: // MIP_ZERO -- nothing to do
 			break;
 	}
 
