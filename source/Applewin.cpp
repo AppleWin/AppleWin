@@ -79,6 +79,7 @@ FILE*		g_fh			= NULL;
 bool		g_bDisableDirectInput = false;
 bool		g_bDisableDirectSound = false;
 bool		g_bDisableDirectSoundMockingboard = false;
+int			g_nMemoryClearType = -1;
 
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 CSuperSerialCard	sg_SSC;
@@ -838,6 +839,17 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if (strcmp(lpCmdLine, "-no-mb") == 0)
 		{
 			g_bDisableDirectSoundMockingboard = true;
+		}
+		else if (strcmp(lpCmdLine, "-memclear") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_nMemoryClearType = atoi(lpCmdLine);
+			if (g_nMemoryClearType < 0)
+				g_nMemoryClearType = 0;
+			else
+			if (g_nMemoryClearType >= NUM_MIP)
+				g_nMemoryClearType = NUM_MIP - 1;
 		}
 #ifdef RAMWORKS
 		else if (strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..127]

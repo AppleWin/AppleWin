@@ -1391,9 +1391,15 @@ void MemReset ()
 	// OR
 	//   F2, Ctrl-F2, F7, HGR
 	DWORD clock = getRandomTime();
-	g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>( clock % NUM_MIP );
-	if( g_eMemoryInitPattern == MIP_ZERO )
-		g_eMemoryInitPattern = MIP_FF_FF_00_00;
+
+	if ((g_nMemoryClearType >= 0) && (g_nMemoryClearType != MIP_RANDOM))
+		g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>(g_nMemoryClearType);
+	else // random
+	{
+		g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>( clock % NUM_MIP );
+		if (g_eMemoryInitPattern == MIP_RANDOM) // Twice Lucky! Force a choice.
+			g_eMemoryInitPattern = MIP_FF_FF_00_00;
+	}
 
 	switch( g_eMemoryInitPattern )
 	{

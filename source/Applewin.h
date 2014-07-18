@@ -42,6 +42,7 @@ extern FILE*      g_fh;				// Filehandle for log file
 extern bool       g_bDisableDirectInput;				// Cmd line switch: don't init DI (so no DIMouse support)
 extern bool       g_bDisableDirectSound;				// Cmd line switch: don't init DS (so no MB/Speaker support)
 extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't init MB support
+extern int        g_nMemoryClearType;					// Cmd line switch: use specific MIP (Memory Initialization Pattern)
 
 extern SS_CARDTYPE g_Slot4;	// Mockingboard, Z80, Mouse in slot4
 extern SS_CARDTYPE g_Slot5;	// Mockingboard, Z80,       in slot5
