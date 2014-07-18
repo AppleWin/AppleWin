@@ -425,7 +425,6 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 
   //
 
-  needsprecision = cumulativecycles;	// ?
 
   if (extbench)
   {
