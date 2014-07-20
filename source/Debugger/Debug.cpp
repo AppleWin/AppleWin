@@ -721,7 +721,6 @@ Update_t CmdBenchmarkStop (int nArgs)
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
 	KeybQueueKeypress(TEXT(' '),1);
-	g_bResetTiming = true;
 
 	return UPDATE_ALL; // 0;
 }

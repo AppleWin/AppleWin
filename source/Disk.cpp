@@ -934,7 +934,6 @@ void DiskUpdatePosition(DWORD cycles)
 
 		if ((!enhancedisk) && (!diskaccessed) && fptr->spinning)
 		{
-			needsprecision = cumulativecycles;
 			fptr->byte += (cycles >> 5);
 			if (fptr->byte >= fptr->nibbles)
 				fptr->byte -= fptr->nibbles;

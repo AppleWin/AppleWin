@@ -1017,9 +1017,9 @@ BYTE __stdcall MemCheckPaging (WORD, WORD address, BYTE, BYTE, ULONG)
 
 void MemDestroy ()
 {
-  //if (fastpaging)
-  //  MemSetFastPaging(0);
-//  VirtualFree(memimage,MAX(0x30000,0x10000*1),MEM_DECOMMIT);
+	//if (fastpaging)
+	//  MemSetFastPaging(0);
+	//  VirtualFree(memimage,MAX(0x30000,0x10000*1),MEM_DECOMMIT);
 
 	VirtualFree(memaux  ,0,MEM_RELEASE);
 	VirtualFree(memmain ,0,MEM_RELEASE);
@@ -1215,13 +1215,13 @@ void MemInitialize()
 	HRSRC hResInfo = NULL;
 	switch (g_Apple2Type)
 	{
-	case A2TYPE_APPLE2:			hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_ROM), "ROM"); ROM_SIZE = Apple2RomSize; break;
-	case A2TYPE_APPLE2PLUS:		hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_PLUS_ROM), "ROM"); ROM_SIZE = Apple2RomSize; break;
-	case A2TYPE_APPLE2E:		hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2E_ROM), "ROM"); ROM_SIZE = Apple2eRomSize; break;
+	case A2TYPE_APPLE2:         hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_ROM          ), "ROM"); ROM_SIZE = Apple2RomSize ; break;
+	case A2TYPE_APPLE2PLUS:     hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_PLUS_ROM     ), "ROM"); ROM_SIZE = Apple2RomSize ; break;
+	case A2TYPE_APPLE2E:        hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2E_ROM         ), "ROM"); ROM_SIZE = Apple2eRomSize; break;
 	case A2TYPE_APPLE2EENHANCED:hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2E_ENHANCED_ROM), "ROM"); ROM_SIZE = Apple2eRomSize; break;
-	case A2TYPE_PRAVETS82:	    hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_82_ROM), "ROM"); ROM_SIZE = Apple2RomSize; break; 
-	case A2TYPE_PRAVETS8M:	    hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_8M_ROM), "ROM"); ROM_SIZE = Apple2RomSize; break; 
-	case A2TYPE_PRAVETS8A:	    hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_8C_ROM), "ROM"); ROM_SIZE = Apple2eRomSize; break; 
+	case A2TYPE_PRAVETS82:      hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_82_ROM      ), "ROM"); ROM_SIZE = Apple2RomSize ; break;
+	case A2TYPE_PRAVETS8M:      hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_8M_ROM      ), "ROM"); ROM_SIZE = Apple2RomSize ; break;
+	case A2TYPE_PRAVETS8A:      hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_8C_ROM      ), "ROM"); ROM_SIZE = Apple2eRomSize; break;
 	}
 
 	if(hResInfo == NULL)
@@ -1229,14 +1229,14 @@ void MemInitialize()
 		TCHAR sRomFileName[ MAX_PATH ];
 		switch (g_Apple2Type)
 		{
-		case A2TYPE_APPLE2:			_tcscpy(sRomFileName, TEXT("APPLE2.ROM")); break;
-		case A2TYPE_APPLE2PLUS:		_tcscpy(sRomFileName, TEXT("APPLE2_PLUS.ROM")); break;
-		case A2TYPE_APPLE2E:		_tcscpy(sRomFileName, TEXT("APPLE2E.ROM")); break;
+		case A2TYPE_APPLE2:         _tcscpy(sRomFileName, TEXT("APPLE2.ROM"          )); break;
+		case A2TYPE_APPLE2PLUS:     _tcscpy(sRomFileName, TEXT("APPLE2_PLUS.ROM"     )); break;
+		case A2TYPE_APPLE2E:        _tcscpy(sRomFileName, TEXT("APPLE2E.ROM"         )); break;
 		case A2TYPE_APPLE2EENHANCED:_tcscpy(sRomFileName, TEXT("APPLE2E_ENHANCED.ROM")); break;
-		case A2TYPE_PRAVETS82:	    _tcscpy(sRomFileName, TEXT("PRAVETS82.ROM")); break;
-		case A2TYPE_PRAVETS8M:	    _tcscpy(sRomFileName, TEXT("PRAVETS8M.ROM")); break;
-		case A2TYPE_PRAVETS8A:	    _tcscpy(sRomFileName, TEXT("PRAVETS8C.ROM")); break;
-		default:					
+		case A2TYPE_PRAVETS82:      _tcscpy(sRomFileName, TEXT("PRAVETS82.ROM"       )); break;
+		case A2TYPE_PRAVETS8M:      _tcscpy(sRomFileName, TEXT("PRAVETS8M.ROM"       )); break;
+		case A2TYPE_PRAVETS8A:      _tcscpy(sRomFileName, TEXT("PRAVETS8C.ROM"       )); break;
+		default:
 			{
 				_tcscpy(sRomFileName, TEXT("Unknown type!"));
 				REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), A2TYPE_APPLE2EENHANCED);
@@ -1357,6 +1357,11 @@ void MemInitialize()
 	MemReset();
 }
 
+inline DWORD getRandomTime()
+{
+	return rand() ^ timeGetTime(); // We can't use g_nCumulativeCycles as it will be zero on a fresh execution.
+}
+
 //===========================================================================
 
 // Called by:
@@ -1379,18 +1384,95 @@ void MemReset ()
 
 	int iByte;
 
-	if (g_eMemoryInitPattern == MIP_FF_FF_00_00)
-	{
-		for( iByte = 0x0000; iByte < 0xC000; )
-		{
-			memmain[ iByte++ ] = 0xFF;
-			memmain[ iByte++ ] = 0xFF;
+	// Memory is pseudo-initialized across various models of Apple ][ //e //c
+	// We chose a random one for nostalgia's sake
+	// To inspect:
+	//   F2. Ctrl-F2. CALL-151, C050 C053 C057
+	// OR
+	//   F2, Ctrl-F2, F7, HGR
+	DWORD clock = getRandomTime();
 
-			// Note: ODD 16-bit words are zero'd above...
-			iByte++;
-			iByte++;
-		}
+	if (g_nMemoryClearType >= 0)
+		g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>(g_nMemoryClearType);
+	else // random
+		g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>( clock % NUM_MIP );
+
+	switch( g_eMemoryInitPattern )
+	{
+		case MIP_FF_FF_00_00:
+			for( iByte = 0x0000; iByte < 0xC000; iByte += 4 ) // NB. ODD 16-bit words are zero'd above...
+			{
+				memmain[ iByte+0 ] = 0xFF;
+				memmain[ iByte+1 ] = 0xFF;
+			}
+
+			// Exceptions: xx28 xx29 xx68 xx69 Apple //e
+			for( iByte = 0x0000; iByte < 0xC000; iByte += 512 )
+			{
+				clock = getRandomTime();
+				memmain[ iByte + 0x28 ] = (clock >>  0) & 0xFF;
+				memmain[ iByte + 0x29 ] = (clock >>  8) & 0xFF;
+				clock = getRandomTime();
+				memmain[ iByte + 0x68 ] = (clock >>  0) & 0xFF;
+				memmain[ iByte + 0x69 ] = (clock >>  8) & 0xFF;
+			}
+			break;
+		
+		case MIP_FF_00_FULL_PAGE:
+			for( iByte = 0x0000; iByte < 0xC000; iByte += 512 )
+			{
+				memset( &memmain[ iByte ], 0xFF, 256 );
+
+				// Exceptions: xx28: 00  xx68:00  Apple //e Platinum NTSC
+				memmain[ iByte + 0x28 ] = 0x00;
+				memmain[ iByte + 0x68 ] = 0x00;
+			}
+			break;
+
+		case MIP_00_FF_HALF_PAGE: 
+			for( iByte = 0x0080; iByte < 0xC000; iByte += 256 ) // NB. start = 0x80, delta = 0x100 !
+				memset( &memmain[ iByte ], 0xFF, 128 );
+			break;
+
+		case MIP_FF_00_HALF_PAGE:
+			for( iByte = 0x0000; iByte < 0xC000; iByte += 256 )
+				memset( &memmain[ iByte ], 0xFF, 128 );
+			break;
+
+		case MIP_RANDOM:
+			unsigned char random[ 256 + 4 ];
+			for( iByte = 0x0000; iByte < 0xC000; iByte += 256 )
+			{
+				for( int i = 0; i < 256; i++ )
+				{
+					clock = getRandomTime();
+					random[ i+0 ] ^= (clock >>  0) & 0xFF;
+					random[ i+1 ] ^= (clock >> 11) & 0xFF;
+				}
+
+				memcpy( &memmain[ iByte ], random, 256 );
+			}
+			break;
+
+		case MIP_PAGE_ADDRESS_LOW:
+			for( iByte = 0x0000; iByte < 0xC000; iByte++ )
+				memmain[ iByte ] = iByte & 0xFF;
+			break;
+
+		case MIP_PAGE_ADDRESS_HIGH:
+			for( iByte = 0x0000; iByte < 0xC000; iByte += 256 )
+				memset( &memmain[ iByte ], (iByte >> 8), 256 );
+			break;
+
+		default: // MIP_ZERO -- nothing to do
+			break;
 	}
+
+	// https://github.com/AppleWin/AppleWin/issues/206
+	// Work-around for a cold-booting bug in "Pooyan" which expects RNDL and RNDH to be non-zero.
+	clock = getRandomTime();
+	memmain[ 0x4E ] = 0x20 | (clock >> 0) & 0xFF;
+	memmain[ 0x4F ] = 0x20 | (clock >> 8) & 0xFF;
 
 	// SET UP THE MEMORY IMAGE
 	mem   = memimage;
@@ -1414,8 +1496,8 @@ void MemReset ()
 // . Snapshot_LoadState()
 void MemResetPaging ()
 {
-  ResetPaging(0);
-  	if (g_Apple2Type == A2TYPE_PRAVETS8A)
+	ResetPaging(0);
+	if (g_Apple2Type == A2TYPE_PRAVETS8A)
 	{
 		P8CAPS_ON = false; 
 		TapeWrite (0, 0, 0, 0 ,0);
@@ -1426,30 +1508,31 @@ void MemResetPaging ()
 //===========================================================================
 
 // Called by Disk][ I/O only
-BYTE MemReturnRandomData (BYTE highbit)
+BYTE MemReturnRandomData(BYTE highbit)
 {
-  static const BYTE retval[16] = {0x00,0x2D,0x2D,0x30,0x30,0x32,0x32,0x34,
-                                  0x35,0x39,0x43,0x43,0x43,0x60,0x7F,0x7F};
-  BYTE r = (BYTE)(rand() & 0xFF);
-  if (r <= 170)
-    return 0x20 | (highbit ? 0x80 : 0);
-  else
-    return retval[r & 15] | (highbit ? 0x80 : 0);
+	static const BYTE retval[16] = {
+		0x00,0x2D,0x2D,0x30,0x30,0x32,0x32,0x34,
+		0x35,0x39,0x43,0x43,0x43,0x60,0x7F,0x7F };
+	BYTE r = (BYTE)(rand() & 0xFF);
+	if (r <= 170)
+		return 0x20 | (highbit ? 0x80 : 0);
+	else
+		return retval[r & 15] | (highbit ? 0x80 : 0);
 }
 
 //===========================================================================
 
 BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
-  return*(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
+	return*(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
 }
 
 //===========================================================================
 
 BYTE MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles)
 {
-  BYTE r = *(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
-  return (r & ~0x80) | ((highbit) ? 0x80 : 0);
+	BYTE r = *(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
+	return (r & ~0x80) | ((highbit) ? 0x80 : 0);
 }
 
 //===========================================================================
@@ -1508,128 +1591,128 @@ static void DebugFlip(WORD address, ULONG nCyclesLeft)
 
 BYTE __stdcall MemSetPaging (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
 {
-  address &= 0xFF;
-  DWORD lastmemmode = memmode;
+	address &= 0xFF;
+	DWORD lastmemmode = memmode;
 #if defined(_DEBUG) && defined(DEBUG_FLIP_TIMINGS)
-  DebugFlip(address, nCyclesLeft);
+	DebugFlip(address, nCyclesLeft);
 #endif
 
-  // DETERMINE THE NEW MEMORY PAGING MODE.
-  if ((address >= 0x80) && (address <= 0x8F))
-  {
-    BOOL writeram = (address & 1);
-	SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM | MF_WRITERAM));
-    lastwriteram = 1; // note: because diags.do doesn't set switches twice!
-    if (lastwriteram && writeram)
-      SetMemMode(memmode | MF_WRITERAM);
-    if (!(address & 8))
-      SetMemMode(memmode | MF_BANK2);
-    if (((address & 2) >> 1) == (address & 1))
-      SetMemMode(memmode | MF_HIGHRAM);
-    lastwriteram = writeram;
-  }
-  else if (!IS_APPLE2)
-  {
-    switch (address)
+	// DETERMINE THE NEW MEMORY PAGING MODE.
+	if ((address >= 0x80) && (address <= 0x8F))
 	{
-		case 0x00: SetMemMode(memmode & ~MF_80STORE);    break;
-		case 0x01: SetMemMode(memmode |  MF_80STORE);    break;
-		case 0x02: SetMemMode(memmode & ~MF_AUXREAD);    break;
-		case 0x03: SetMemMode(memmode |  MF_AUXREAD);    break;
-		case 0x04: SetMemMode(memmode & ~MF_AUXWRITE);   break;
-		case 0x05: SetMemMode(memmode |  MF_AUXWRITE);   break;
-		case 0x06: SetMemMode(memmode |  MF_SLOTCXROM);  break;
-		case 0x07: SetMemMode(memmode & ~MF_SLOTCXROM);  break;
-		case 0x08: SetMemMode(memmode & ~MF_ALTZP);      break;
-		case 0x09: SetMemMode(memmode |  MF_ALTZP);      break;
-		case 0x0A: SetMemMode(memmode & ~MF_SLOTC3ROM);  break;
-		case 0x0B: SetMemMode(memmode |  MF_SLOTC3ROM);  break;
-		case 0x54: SetMemMode(memmode & ~MF_PAGE2);      break;
-		case 0x55: SetMemMode(memmode |  MF_PAGE2);      break;
-		case 0x56: SetMemMode(memmode & ~MF_HIRES);      break;
-		case 0x57: SetMemMode(memmode |  MF_HIRES);      break;
+		BOOL writeram = (address & 1);
+		SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM | MF_WRITERAM));
+		lastwriteram = 1; // note: because diags.do doesn't set switches twice!
+		if (lastwriteram && writeram)
+			SetMemMode(memmode | MF_WRITERAM);
+		if (!(address & 8))
+			SetMemMode(memmode | MF_BANK2);
+		if (((address & 2) >> 1) == (address & 1))
+			SetMemMode(memmode | MF_HIGHRAM);
+		lastwriteram = writeram;
+	}
+	else if (!IS_APPLE2)
+	{
+		switch (address)
+		{
+			case 0x00: SetMemMode(memmode & ~MF_80STORE);    break;
+			case 0x01: SetMemMode(memmode |  MF_80STORE);    break;
+			case 0x02: SetMemMode(memmode & ~MF_AUXREAD);    break;
+			case 0x03: SetMemMode(memmode |  MF_AUXREAD);    break;
+			case 0x04: SetMemMode(memmode & ~MF_AUXWRITE);   break;
+			case 0x05: SetMemMode(memmode |  MF_AUXWRITE);   break;
+			case 0x06: SetMemMode(memmode |  MF_SLOTCXROM);  break;
+			case 0x07: SetMemMode(memmode & ~MF_SLOTCXROM);  break;
+			case 0x08: SetMemMode(memmode & ~MF_ALTZP);      break;
+			case 0x09: SetMemMode(memmode |  MF_ALTZP);      break;
+			case 0x0A: SetMemMode(memmode & ~MF_SLOTC3ROM);  break;
+			case 0x0B: SetMemMode(memmode |  MF_SLOTC3ROM);  break;
+			case 0x54: SetMemMode(memmode & ~MF_PAGE2);      break;
+			case 0x55: SetMemMode(memmode |  MF_PAGE2);      break;
+			case 0x56: SetMemMode(memmode & ~MF_HIRES);      break;
+			case 0x57: SetMemMode(memmode |  MF_HIRES);      break;
 #ifdef RAMWORKS
-		case 0x71: // extended memory aux page number
-		case 0x73: // Ramworks III set aux page number
-			if ((value < g_uMaxExPages) && RWpages[value])
-			{
-				memaux = RWpages[value];
-				//memmode &= ~MF_RWPMASK;
-				//memmode |= value;
-				//if (fastpaging)
-				//	UpdateFastPaging();
-				//else
-					UpdatePaging(0,0);
-			}
-			break;
+			case 0x71: // extended memory aux page number
+			case 0x73: // Ramworks III set aux page number
+				if ((value < g_uMaxExPages) && RWpages[value])
+				{
+					memaux = RWpages[value];
+					//memmode &= ~MF_RWPMASK;
+					//memmode |= value;
+					//if (fastpaging)
+					//	UpdateFastPaging();
+					//else
+						UpdatePaging(0,0);
+				}
+				break;
 #endif
+		}
 	}
-  }
 
-  // IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
-  // ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
-  // IT DOES SO.
-  //
-  // NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
-  // - although any date-race is probably a bug in the 6502 code too.
-  if ((address >= 4) && (address <= 5) &&
-      ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
-    modechanging = 1;
-    return write ? 0 : MemReadFloatingBus(1, nCyclesLeft);
-  }
-  if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&
-      (((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||
-       ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))) {
-    modechanging = 1;
-    return write ? 0 : MemReadFloatingBus(1, nCyclesLeft);
-  }
+	// IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
+	// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
+	// IT DOES SO.
+	//
+	// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
+	// - although any date-race is probably a bug in the 6502 code too.
+	if ((address >= 4) && (address <= 5) &&
+		((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
+			modechanging = 1;
+			return write ? 0 : MemReadFloatingBus(1, nCyclesLeft);
+	}
+	if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&
+		(((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||
+		 ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))) {
+			modechanging = 1;
+			return write ? 0 : MemReadFloatingBus(1, nCyclesLeft);
+	}
 
-  // IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
-  // WRITE TABLES.
-  if ((lastmemmode != memmode) || modechanging)
-  {
-    modechanging = 0;
-
-	if ((lastmemmode & MF_SLOTCXROM) != (memmode & MF_SLOTCXROM))
+	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
+	// WRITE TABLES.
+	if ((lastmemmode != memmode) || modechanging)
 	{
-		if (SW_SLOTCXROM)
+		modechanging = 0;
+
+		if ((lastmemmode & MF_SLOTCXROM) != (memmode & MF_SLOTCXROM))
 		{
-			// Disable Internal ROM
-			// . Similar to $CFFF access
-			// . None of the peripheral cards can be driving the bus - so use the null ROM
-			memset(pCxRomPeripheral+0x800, 0, FIRMWARE_EXPANSION_SIZE);
-			memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
-			g_eExpansionRomType = eExpRomNull;
-			g_uPeripheralRomSlot = 0;
-			IoHandlerCardsIn();
+			if (SW_SLOTCXROM)
+			{
+				// Disable Internal ROM
+				// . Similar to $CFFF access
+				// . None of the peripheral cards can be driving the bus - so use the null ROM
+				memset(pCxRomPeripheral+0x800, 0, FIRMWARE_EXPANSION_SIZE);
+				memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
+				g_eExpansionRomType = eExpRomNull;
+				g_uPeripheralRomSlot = 0;
+				IoHandlerCardsIn();
+			}
+			else
+			{
+				// Enable Internal ROM
+				memcpy(mem+0xC800, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
+				g_eExpansionRomType = eExpRomInternal;
+				g_uPeripheralRomSlot = 0;
+				IoHandlerCardsOut();
+			}
 		}
-		else
-		{
-			// Enable Internal ROM
-			memcpy(mem+0xC800, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
-			g_eExpansionRomType = eExpRomInternal;
-			g_uPeripheralRomSlot = 0;
-			IoHandlerCardsOut();
-		}
+
+		//// IF FAST PAGING IS ACTIVE, WE KEEP MULTIPLE COMPLETE MEMORY IMAGES
+		//// AND WRITE TABLES, AND SWITCH BETWEEN THEM.  THE FAST PAGING VERSION
+		//// OF THE CPU EMULATOR KEEPS ALL OF THE IMAGES COHERENT.
+		//if (fastpaging)
+		//  UpdateFastPaging();
+
+		// IF FAST PAGING IS NOT ACTIVE THEN WE KEEP ONLY ONE MEMORY IMAGE AND
+		// WRITE TABLE, AND UPDATE THEM EVERY TIME PAGING IS CHANGED.
+		//else
+			UpdatePaging(0,0);
+
 	}
 
-    //// IF FAST PAGING IS ACTIVE, WE KEEP MULTIPLE COMPLETE MEMORY IMAGES
-    //// AND WRITE TABLES, AND SWITCH BETWEEN THEM.  THE FAST PAGING VERSION
-    //// OF THE CPU EMULATOR KEEPS ALL OF THE IMAGES COHERENT.
-    //if (fastpaging)
-    //  UpdateFastPaging();
+	if ((address <= 1) || ((address >= 0x54) && (address <= 0x57)))
+		return VideoSetMode(programcounter,address,write,value,nCyclesLeft);
 
-    // IF FAST PAGING IS NOT ACTIVE THEN WE KEEP ONLY ONE MEMORY IMAGE AND
-    // WRITE TABLE, AND UPDATE THEM EVERY TIME PAGING IS CHANGED.
-    //else
-      UpdatePaging(0,0);
-
-  }
-
-  if ((address <= 1) || ((address >= 0x54) && (address <= 0x57)))
-    return VideoSetMode(programcounter,address,write,value,nCyclesLeft);
-
-  return write ? 0 : MemReadFloatingBus(nCyclesLeft);
+	return write ? 0 : MemReadFloatingBus(nCyclesLeft);
 }
 
 //===========================================================================

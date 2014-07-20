@@ -15,8 +15,13 @@ enum
 enum MemoryInitPattern_e
 {
 	  MIP_ZERO
+	, MIP_RANDOM
 	, MIP_FF_FF_00_00
-
+	, MIP_FF_00_FULL_PAGE
+	, MIP_00_FF_HALF_PAGE
+	, MIP_FF_00_HALF_PAGE
+	, MIP_PAGE_ADDRESS_LOW
+	, MIP_PAGE_ADDRESS_HIGH
 	, NUM_MIP
 };
 extern MemoryInitPattern_e g_eMemoryInitPattern;

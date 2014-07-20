@@ -1009,7 +1009,6 @@ LRESULT CALLBACK FrameWndProc (
 			DrawStatusArea((HDC)0,DRAW_TITLE);
 			if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 				VideoRedrawScreen();
-			g_bResetTiming = true;
 		}
 		else if ((wparam == VK_SCROLL) && sg_PropertySheet.GetScrollLockToggle())
 		{
@@ -1564,7 +1563,6 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		}
       DrawStatusArea((HDC)0,DRAW_TITLE);
       VideoRedrawScreen();
-      g_bResetTiming = true;
       break;
 
     case BTN_DRIVE1:
