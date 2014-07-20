@@ -2438,8 +2438,34 @@ void _Video_SetupBanks( bool bBank2 )
 }
 
 //===========================================================================
+
+// NB. Can get "big" 1000+ms times: these occur during disk loading when the emulator is at full-speed.
+
+//#define DEBUG_REFRESH_TIMINGS
+
+#if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
+static void DebugRefresh(char uDebugFlag)
+{
+	static DWORD uLastRefreshTime = 0;
+
+	const DWORD uTimeBetweenRefreshes = uLastRefreshTime ? emulmsec - uLastRefreshTime : 0;
+	uLastRefreshTime = emulmsec;
+
+	if (!uTimeBetweenRefreshes)
+		return;					// 1st time in func
+
+	char szStr[100];
+	sprintf(szStr, "Time between refreshes = %d ms %c\n", uTimeBetweenRefreshes, (uDebugFlag==0)?' ':uDebugFlag);
+	OutputDebugString(szStr);
+}
+#endif
+
 VideoUpdateFuncPtr_t VideoRefreshScreen ()
 {
+#if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
+	DebugRefresh(0);
+#endif
+
 	// CHECK EACH CELL FOR CHANGED BYTES.  REDRAW PIXELS FOR THE CHANGED BYTES
 	// IN THE FRAME BUFFER.  MARK CELLS IN WHICH REDRAWING HAS TAKEN PLACE AS
 	// DIRTY.
