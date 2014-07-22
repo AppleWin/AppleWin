@@ -62,6 +62,7 @@ bool    DiskGetProtect(const int iDrive);
 void    DiskSetProtect(const int iDrive, const bool bWriteProtect);
 int     DiskGetCurrentDrive();
 int     DiskGetCurrentTrack();
+int     DiskGetTrack( int drive );
 int     DiskGetCurrentPhase();
 int     DiskGetCurrentOffset();
 char*   DiskGetCurrentState();

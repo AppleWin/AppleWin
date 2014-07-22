@@ -64,6 +64,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		string strFilenameInZip;						// 0x00           or <FILENAME.EXT>
 		HIMAGE imagehandle;					// Init'd by DiskInsert() -> ImageOpen()
 		int    track;
+		int    nLastTrack;
 		LPBYTE trackimage;
 		int    phase;
 		int    byte;
@@ -82,6 +83,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			strFilenameInZip    = other.strFilenameInZip;
 			imagehandle         = other.imagehandle;
 			track               = other.track;
+			nLastTrack          = other.nLastTrack;
 			trackimage          = other.trackimage;
 			phase               = other.phase;
 			byte                = other.byte;
@@ -117,6 +119,7 @@ int DiskGetCurrentDrive(void)  { return currdrive; }
 int DiskGetCurrentTrack(void)  { return g_aFloppyDisk[currdrive].track; }
 int DiskGetCurrentPhase(void)  { return g_aFloppyDisk[currdrive].phase; }
 int DiskGetCurrentOffset(void) { return g_aFloppyDisk[currdrive].byte; }
+int DiskGetTrack( int drive )  { return g_aFloppyDisk[ drive   ].track; }
 
 const string& DiskGetDiskPathFilename(const int iDrive)
 {
@@ -783,6 +786,15 @@ static BYTE __stdcall DiskReadWrite (WORD programcounter, WORD, BYTE, BYTE, ULON
 
 	if (!fptr->trackimagedata)
 		return 0xFF;
+
+	// Bug # .. Show Track status
+	if( fptr->nLastTrack != fptr->track )
+	{
+		fptr->nLastTrack = fptr->track;
+
+		//FrameRefreshStatus(DRAW_LEDS);
+		DrawStatusAreaDisk( (HDC)0 ); 
+	}
 
 	BYTE result = 0;
 

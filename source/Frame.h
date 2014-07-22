@@ -48,6 +48,8 @@
 	bool	GetFullScreen32Bit(void);
 	void	SetFullScreen32Bit(bool b32Bit);
 
+	void	DrawStatusAreaDisk( HDC hdc );
+
 	LRESULT CALLBACK FrameWndProc (
 		HWND   window,
 		UINT   message,
