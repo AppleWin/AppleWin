@@ -599,7 +599,7 @@ void DrawStatusAreaDisk( HDC passdc )
 #else
 			SelectObject(dc,btnfacebrush);
 #endif
-			Rectangle(dc,x+4,y+32,x+BUTTONCX+1,y+44); // y+35
+			Rectangle(dc,x+4,y+32,x+BUTTONCX+1,y+56); // y+35 -> 44 -> 56
 
 			SetTextColor(dc,RGB(0,0,0));
 			SetBkMode(dc,TRANSPARENT);
@@ -611,6 +611,30 @@ void DrawStatusAreaDisk( HDC passdc )
 
 			sprintf_s( buffer, sizeof(buffer), "T%2d", Disk2Track );
 			TextOut(dc,x+26,y+32,buffer, strlen(buffer) );
+
+			// Try DOS3.3 Sector
+			static char sectord1[ 8 ] = "";
+			static char sectord2[ 8 ] = "";
+
+			int DOS33drive  = mem[ 0xB7EA ];
+			int DOS33track  = mem[ 0xB7EC ];
+			int DOS33sector = mem[ 0xB7ED ];
+			if (DOS33sector >= 0 && DOS33sector < 16 )
+			{
+				if (DOS33track == Disk1Track && DOS33drive == 1)
+					sprintf_s( sectord1, sizeof(sectord1), "S%2d", DOS33sector );
+
+				if (DOS33track == Disk2Track && DOS33drive == 2)
+					sprintf_s( sectord2, sizeof(sectord2), "S%2d", DOS33sector );
+			}
+			else
+			{
+					sprintf_s( sectord1, sizeof(sectord1), "S??" );
+					sprintf_s( sectord2, sizeof(sectord2), "S??" );
+			}
+
+			TextOut(dc,x+ 6,y+42, sectord1, strlen(sectord1) );
+			TextOut(dc,x+26,y+42, sectord2, strlen(sectord2) );
 	}
 }
 
@@ -680,8 +704,8 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		{
 			SelectObject(dc,GetStockObject(NULL_PEN));
 			SelectObject(dc,btnfacebrush);
-			Rectangle(dc,x,y,x+BUTTONCX+2,y+48); // y+35
-			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+44,0); // y+31
+			Rectangle(dc,x,y,x+BUTTONCX+2,y+60); // y+35 --> 48  --> 60
+			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+56,0); // y+31 --> 44 --> 56
 
 			SelectObject(dc,smallfont);
 			SetTextAlign(dc,TA_CENTER | TA_TOP);
