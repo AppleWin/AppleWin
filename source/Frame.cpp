@@ -550,7 +550,6 @@ void DrawStatusAreaDisk( HDC passdc )
 {
 	FrameReleaseDC();
 	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
-//	HDC dc = g_hFrameDC;
 
 	int  x      = buttonx;
 	int  y      = buttony+BUTTONS*BUTTONCY+1;
@@ -562,19 +561,29 @@ void DrawStatusAreaDisk( HDC passdc )
 	int Disk1Track = DiskGetTrack(0);
 	int Disk2Track = DiskGetTrack(1);
 
+	SelectObject(dc,smallfont);
+	SetBkMode(dc,OPAQUE);
+	SetBkColor(dc,RGB(0,0,0));
+	SetTextAlign(dc,TA_LEFT | TA_TOP);
+
+	char buffer[16] = "";
+
 	if (g_bIsFullScreen)
 	{
-/*
-		SelectObject(dc,smallfont);
-		SetBkMode(dc,OPAQUE);
-		SetBkColor(dc,RGB(0,0,0));
-		SetTextAlign(dc,TA_LEFT | TA_TOP);
-*/
+#if _DEBUG && 0
+		SetBkColor(dc,RGB(255,0,255));
+#endif
+		// NB.The 2 extra spaces are needed since we don't erase the background to black
+
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive1Status ] );
-		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
+//		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
+		sprintf_s( buffer, sizeof(buffer), "T%2d  ", Disk1Track );
+		TextOut(dc,x+3,y-12,buffer, strlen(buffer) ); // original: y+2; y-12 puts status in the Joystick Button Icon
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive2Status ] );
-		TextOut(dc,x+13,y+2,TEXT("2"),1);
+//		TextOut(dc,x+13,y+2,TEXT("2"),1);
+		sprintf_s( buffer, sizeof(buffer), "T%2d  ", Disk2Track );
+		TextOut(dc,x+23,y-12,buffer, strlen(buffer) ); // original: y+2; y-12 puts status in the Joystick Button Icon
 	}
 	else
 	{
@@ -583,23 +592,26 @@ void DrawStatusAreaDisk( HDC passdc )
 			DrawBitmapRect(dc,x+12,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive1Status]);
 			DrawBitmapRect(dc,x+31,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive2Status]);
 
-			// Track/Sector
-			SelectObject(dc,smallfont);
-			SetTextAlign(dc,TA_CENTER | TA_TOP);
+			// Erase background
+			SelectObject(dc,GetStockObject(NULL_PEN));
+#if _DEBUG && 0
+			SelectObject( dc, CreateSolidBrush( RGB(255,0,255) ) );
+#else
+			SelectObject(dc,btnfacebrush);
+#endif
+			Rectangle(dc,x+4,y+32,x+BUTTONCX+1,y+44); // y+35
+
 			SetTextColor(dc,RGB(0,0,0));
-				SetBkMode(dc,TRANSPARENT);
-//			SetBkMode(dc,OPAQUE);
+			SetBkMode(dc,TRANSPARENT);
 
-			char buffer[16] = "";
-			sprintf_s( buffer, sizeof(buffer), "%2d ", Disk1Track );
-			TextOut(dc,x+16,y+5,buffer, strlen(buffer) ); // 1
+			// Feature Request #201 Show track status
+			// https://github.com/AppleWin/AppleWin/issues/201
+			sprintf_s( buffer, sizeof(buffer), "T%2d", Disk1Track );
+			TextOut(dc,x+6,y+32,buffer, strlen(buffer) );
 
-			sprintf_s( buffer, sizeof(buffer), "%2d ", Disk2Track );
-			TextOut(dc,x+35,y+5,buffer, strlen(buffer) );
+			sprintf_s( buffer, sizeof(buffer), "T%2d", Disk2Track );
+			TextOut(dc,x+26,y+32,buffer, strlen(buffer) );
 	}
-
-//	if (!passdc)
-//		ReleaseDC(g_hFrameWindow,dc);
 }
 
 //===========================================================================
@@ -620,12 +632,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 	if (g_bIsFullScreen)
 	{
-		SelectObject(dc,smallfont);
-		SetBkMode(dc,OPAQUE);
-		SetBkColor(dc,RGB(0,0,0));
-		SetTextAlign(dc,TA_LEFT | TA_TOP);
-
-//		DrawStatusAreaDisk( passdc );
+		DrawStatusAreaDisk( passdc );
 
 #if HD_LED
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
@@ -657,7 +664,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 //			const int   nCapsLen = sizeof(sCapsStatus) / sizeof(TCHAR);
 //			TextOut(dc,x+BUTTONCX,y+2,"Caps",4); // sCapsStatus,nCapsLen - 1);
 
-			TextOut(dc,x+BUTTONCX,y+2,TEXT("A"),1);
+			TextOut(dc,x+BUTTONCX,y+2,TEXT("A"),1); // NB. Caps Lock indicator is already flush right!
 		}
 		SetTextAlign(dc,TA_CENTER | TA_TOP);
 		SetTextColor(dc,(g_nAppMode == MODE_PAUSED || g_nAppMode == MODE_STEPPING
@@ -673,8 +680,9 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		{
 			SelectObject(dc,GetStockObject(NULL_PEN));
 			SelectObject(dc,btnfacebrush);
-			Rectangle(dc,x,y,x+BUTTONCX+2,y+35);
-			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+31,0);
+			Rectangle(dc,x,y,x+BUTTONCX+2,y+48); // y+35
+			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+44,0); // y+31
+
 			SelectObject(dc,smallfont);
 			SetTextAlign(dc,TA_CENTER | TA_TOP);
 			SetTextColor(dc,RGB(0,0,0));

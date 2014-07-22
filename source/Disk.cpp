@@ -787,7 +787,8 @@ static BYTE __stdcall DiskReadWrite (WORD programcounter, WORD, BYTE, BYTE, ULON
 	if (!fptr->trackimagedata)
 		return 0xFF;
 
-	// Bug # .. Show Track status
+	// Feature Request #201 Show track status
+	// https://github.com/AppleWin/AppleWin/issues/201
 	if( fptr->nLastTrack != fptr->track )
 	{
 		fptr->nLastTrack = fptr->track;
