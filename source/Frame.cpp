@@ -1954,10 +1954,10 @@ static void GetWidthHeight(int& nWidth, int& nHeight)
 {
 	nWidth  = g_nViewportCX + VIEWPORTX*2
 						   + BUTTONCX
-						   + GetSystemMetrics(SM_CXBORDER)*2
+						   + (GetSystemMetrics(SM_CXBORDER) + GetSystemMetrics(92)) * 2 // 92 = SM_CXPADDEDBORDER
 						   + MAGICX;
 	nHeight = g_nViewportCY + VIEWPORTY*2
-						   + GetSystemMetrics(SM_CYBORDER)
+						   + (GetSystemMetrics(SM_CYBORDER) + GetSystemMetrics(92)) * 2 // 92 = SM_CXPADDEDBORDER
 						   + GetSystemMetrics(SM_CYCAPTION)
 						   + MAGICY;
 }
