@@ -617,7 +617,7 @@ void FrameDrawDiskStatus( HDC passdc )
 	// Try DOS3.3 Sector
 	if( !isProDOS )
 	{
-		int DOS33sector  = mem[ 0xB7ED ];
+		int DOS33sector = mem[ 0xB7ED ];
 		int DOS33drive  = mem[ 0xB7EA ];
 		int DOS33track  = mem[ 0xB7EC ];
 
@@ -657,8 +657,8 @@ void FrameDrawDiskStatus( HDC passdc )
 		int ProDOSsector = mem[ 0xD357 ];
 		if( ProDOSsector >= 0 && ProDOSsector <= 16)
 		{
-			if (ProDOSdrive == 1) sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%d", ProDOSsector );
-			if (ProDOSdrive == 2) sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%d", ProDOSsector );
+			if (ProDOSdrive == 1) { g_nTrackDrive1 = ProDOStrack; sprintf_s( g_sTrackDrive1 , sizeof(g_sTrackDrive1),  "%2d", g_nTrackDrive1 ); sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%d", ProDOSsector ); }
+			if (ProDOSdrive == 2) { g_nTrackDrive2 = ProDOStrack; sprintf_s( g_sTrackDrive2 , sizeof(g_sTrackDrive1),  "%2d", g_nTrackDrive1 ); sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%d", ProDOSsector ); }
 		}
 		else
 		{
@@ -668,8 +668,8 @@ void FrameDrawDiskStatus( HDC passdc )
 	}
 	else
 	{
-			if( nActiveFloppy == 0 ) {	g_nTrackDrive1 = 0; nDisk1Sector = -1; sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" ); }
-			else                     { 	g_nTrackDrive2 = 0; nDisk2Sector = -1; sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" ); }
+			if( nActiveFloppy == 0 ) {	g_nTrackDrive1 = nDisk1Track; nDisk1Sector = -1; sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" ); }
+			else                     { 	g_nTrackDrive2 = nDisk2Track; nDisk2Sector = -1; sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" ); }
 	}
 
 	g_nTrackDrive1  = nDisk1Track  ;
