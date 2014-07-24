@@ -612,38 +612,41 @@ void FrameDrawDiskStatus( HDC passdc )
 	static int nDisk2Sector = 0;
 
 	// Probe known OS's for Track/Sector
-	int DOS33sector  = mem[ 0xB7ED ];
 	int isProDOS     = mem[ 0xBF00 ] == 0x4C;
 
 	// Try DOS3.3 Sector
-	if (DOS33sector >= 0 && DOS33sector < 16 )
+	if( !isProDOS )
 	{
+		int DOS33sector  = mem[ 0xB7ED ];
 		int DOS33drive  = mem[ 0xB7EA ];
 		int DOS33track  = mem[ 0xB7EC ];
-		if( DOS33drive == 1 )
-		{
-			#if _DEBUG && 0
-				if(DOS33track != nDisk1Track) // POHO
-				{
-					char text[128];
-					sprintf( text, "\n\n\nWARNING: DOS33Track: %d (%02X) != nDisk1Track: %d (%02X)\n\n\n", DOS33track, DOS33track, nDisk1Track, nDisk1Track );
-					OutputDebugString( text );
-				}
-			#endif // _DEBUG
 
-			sprintf_s( g_sTrackDrive1 , sizeof(g_sTrackDrive1),  "%2d", g_nTrackDrive1 );
-			sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%2d", DOS33sector );
-			nDisk1Track = g_nTrackDrive1 = DOS33track;
-			g_nSectorDrive1 = DOS33sector;
-		}
-		else
-//		if (DOS33track == nDisk2Track && DOS33drive == 2)
-		if( DOS33drive == 2 )
+		if (DOS33sector >= 0 && DOS33sector < 16 )
 		{
-			sprintf_s( g_sTrackDrive2 , sizeof(g_sTrackDrive2 ), "%2d", g_nTrackDrive2 );
-			sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%2d", DOS33sector ); 
-			nDisk2Track = g_nTrackDrive2 = DOS33track;
-			g_nSectorDrive2 = DOS33sector;
+			if( DOS33drive == 1 )
+			{
+				#if _DEBUG && 0
+					if(DOS33track != nDisk1Track)
+					{
+						char text[128];
+						sprintf( text, "\n\n\nWARNING: DOS33Track: %d (%02X) != nDisk1Track: %d (%02X)\n\n\n", DOS33track, DOS33track, nDisk1Track, nDisk1Track );
+						OutputDebugString( text );
+					}
+				#endif // _DEBUG
+
+				sprintf_s( g_sTrackDrive1 , sizeof(g_sTrackDrive1),  "%2d", g_nTrackDrive1 );
+				sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%2d", DOS33sector );
+				nDisk1Track = g_nTrackDrive1 = DOS33track;
+				g_nSectorDrive1 = DOS33sector;
+			}
+			else
+			if( DOS33drive == 2 )
+			{
+				sprintf_s( g_sTrackDrive2 , sizeof(g_sTrackDrive2 ), "%2d", g_nTrackDrive2 );
+				sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%2d", DOS33sector ); 
+				nDisk2Track = g_nTrackDrive2 = DOS33track;
+				g_nSectorDrive2 = DOS33sector;
+			}
 		}
 	}
 	else
@@ -652,20 +655,22 @@ void FrameDrawDiskStatus( HDC passdc )
 		int ProDOSdrive  = mem[ 0xBE3D ];
 		int ProDOStrack  = mem[ 0xD356 ];
 		int ProDOSsector = mem[ 0xD357 ];
-		if (ProDOSdrive == 1) sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "B??" );
-		if (ProDOSdrive == 2) sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "B??" );
+		if( ProDOSsector >= 0 && ProDOSsector <= 16)
+		{
+			if (ProDOSdrive == 1) sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%d", ProDOSsector );
+			if (ProDOSdrive == 2) sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%d", ProDOSsector );
+		}
+		else
+		{
+			if (ProDOSdrive == 1) sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" );
+			if (ProDOSdrive == 2) sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" );
+		}
 	}
 	else
 	{
-//			nDisk1Sector = -1;
-//			nDisk2Sector = -1;
 			if( nActiveFloppy == 0 ) {	g_nTrackDrive1 = 0; nDisk1Sector = -1; sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" ); }
 			else                     { 	g_nTrackDrive2 = 0; nDisk2Sector = -1; sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" ); }
 	}
-
-	// NB.The 2 extra spaces are needed since we don't erase the background to black
-//	sprintf_s( g_sTrackDrive1, sizeof(g_sTrackDrive1), "%2d", g_nTrackDrive1 );
-//	sprintf_s( g_sTrackDrive2, sizeof(g_sTrackDrive2), "%2d", g_nTrackDrive2 );
 
 	g_nTrackDrive1  = nDisk1Track  ;
 	g_nTrackDrive2  = nDisk2Track  ;
@@ -699,15 +704,9 @@ void FrameDrawDiskStatus( HDC passdc )
 
 		int dx = 0;
 		if( nActiveFloppy == 0 )
-		{
-			//dx = 3;
 			sprintf( text, "%s/%s    ", g_sTrackDrive1, g_sSectorDrive1 );
-		}
 		else
-		{
-			//dx = 23;
 			sprintf( text, "%s/%s    ", g_sTrackDrive2, g_sSectorDrive2 );
-		}
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ DISK_STATUS_READ ] );
 		TextOut(dc,x+dx,y-12,text, strlen(text) ); // original: y+2; y-12 puts status in the Configuration Button Icon
