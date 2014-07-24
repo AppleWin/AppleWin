@@ -72,6 +72,16 @@ static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
 	static HBITMAP g_hDiskWindowedLED[ NUM_DISK_STATUS ];
 
 //static HBITMAP g_hDiskFullScreenLED[ NUM_DISK_STATUS ];
+static int g_nTrackDrive1  = -1;
+static int g_nTrackDrive2  = -1;
+static int g_nSectorDrive1 = -1;
+static int g_nSectorDrive2 = -1;
+static TCHAR g_sTrackDrive1 [8] = TEXT("??");
+static TCHAR g_sTrackDrive2 [8] = TEXT("??");
+static TCHAR g_sSectorDrive1[8] = TEXT("??");
+static TCHAR g_sSectorDrive2[8] = TEXT("??");
+Disk_Status_e g_eStatusDrive1 = DISK_STATUS_OFF;
+Disk_Status_e g_eStatusDrive2 = DISK_STATUS_OFF;
 
 // Must keep in sync with Disk_Status_e g_aDiskFullScreenColors
 static DWORD g_aDiskFullScreenColorsLED[ NUM_DISK_STATUS ] =
@@ -546,51 +556,167 @@ static void DrawFrameWindow ()
 
 }
 
-void DrawStatusAreaDisk( HDC passdc )
+//===========================================================================
+void FrameDrawDiskLEDS( HDC passdc )
 {
+	static Disk_Status_e eDrive1Status = DISK_STATUS_OFF;
+	static Disk_Status_e eDrive2Status = DISK_STATUS_OFF;
+	DiskGetLightStatus(&eDrive1Status, &eDrive2Status);
+
+	g_eStatusDrive1 = eDrive1Status;
+	g_eStatusDrive2 = eDrive2Status;
+
+	// Draw Track/Sector
 	FrameReleaseDC();
 	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
 
 	int  x      = buttonx;
 	int  y      = buttony+BUTTONS*BUTTONCY+1;
 
-	Disk_Status_e eDrive1Status = DISK_STATUS_OFF;
-	Disk_Status_e eDrive2Status = DISK_STATUS_OFF;
+	if (g_bIsFullScreen)
+	{
+		SelectObject(dc,smallfont);
+		SetBkMode(dc,OPAQUE);
+		SetBkColor(dc,RGB(0,0,0));
+		SetTextAlign(dc,TA_LEFT | TA_TOP);
+
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive1Status ] );
+		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
+
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive2Status ] );
+		TextOut(dc,x+13,y+2,TEXT("2"),1);
+	}
+	else
+	{
+		RECT rDiskLed = {0,0,8,8};
+		DrawBitmapRect(dc,x+12,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive1Status]);
+		DrawBitmapRect(dc,x+31,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive2Status]);
+	}
+}
+
+// Feature Request #201 Show track status
+// https://github.com/AppleWin/AppleWin/issues/201
+//===========================================================================
+void FrameDrawDiskStatus( HDC passdc )
+{
+	int nActiveFloppy = DiskGetCurrentDrive();
+
+	static Disk_Status_e eDrive1Status = DISK_STATUS_OFF;
+	static Disk_Status_e eDrive2Status = DISK_STATUS_OFF;
 	DiskGetLightStatus(&eDrive1Status, &eDrive2Status);
 
-	int Disk1Track = DiskGetTrack(0);
-	int Disk2Track = DiskGetTrack(1);
+	static int nDisk1Track  = DiskGetTrack(0);
+	static int nDisk2Track  = DiskGetTrack(1);
+	
+	static int nDisk1Sector = 0;
+	static int nDisk2Sector = 0;
+
+	// Probe known OS's for Track/Sector
+	int DOS33sector  = mem[ 0xB7ED ];
+	int isProDOS     = mem[ 0xBF00 ] == 0x4C;
+
+	// Try DOS3.3 Sector
+	if (DOS33sector >= 0 && DOS33sector < 16 )
+	{
+		int DOS33drive  = mem[ 0xB7EA ];
+		int DOS33track  = mem[ 0xB7EC ];
+		if( DOS33drive == 1 )
+		{
+			#if _DEBUG && 0
+				if(DOS33track != nDisk1Track) // POHO
+				{
+					char text[128];
+					sprintf( text, "\n\n\nWARNING: DOS33Track: %d (%02X) != nDisk1Track: %d (%02X)\n\n\n", DOS33track, DOS33track, nDisk1Track, nDisk1Track );
+					OutputDebugString( text );
+				}
+			#endif // _DEBUG
+
+			sprintf_s( g_sTrackDrive1 , sizeof(g_sTrackDrive1),  "%2d", g_nTrackDrive1 );
+			sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%2d", DOS33sector );
+			nDisk1Track = g_nTrackDrive1 = DOS33track;
+			g_nSectorDrive1 = DOS33sector;
+		}
+		else
+//		if (DOS33track == nDisk2Track && DOS33drive == 2)
+		if( DOS33drive == 2 )
+		{
+			sprintf_s( g_sTrackDrive2 , sizeof(g_sTrackDrive2 ), "%2d", g_nTrackDrive2 );
+			sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%2d", DOS33sector ); 
+			nDisk2Track = g_nTrackDrive2 = DOS33track;
+			g_nSectorDrive2 = DOS33sector;
+		}
+	}
+	else
+	if( isProDOS )
+	{
+		int ProDOSdrive  = mem[ 0xBE3D ];
+		int ProDOStrack  = mem[ 0xD356 ];
+		int ProDOSsector = mem[ 0xD357 ];
+		if (ProDOSdrive == 1) sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "B??" );
+		if (ProDOSdrive == 2) sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "B??" );
+	}
+	else
+	{
+//			nDisk1Sector = -1;
+//			nDisk2Sector = -1;
+			if( nActiveFloppy == 0 ) {	g_nTrackDrive1 = 0; nDisk1Sector = -1; sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" ); }
+			else                     { 	g_nTrackDrive2 = 0; nDisk2Sector = -1; sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" ); }
+	}
+
+	// NB.The 2 extra spaces are needed since we don't erase the background to black
+//	sprintf_s( g_sTrackDrive1, sizeof(g_sTrackDrive1), "%2d", g_nTrackDrive1 );
+//	sprintf_s( g_sTrackDrive2, sizeof(g_sTrackDrive2), "%2d", g_nTrackDrive2 );
+
+	g_nTrackDrive1  = nDisk1Track  ;
+	g_nTrackDrive2  = nDisk2Track  ;
+	g_nSectorDrive1 = nDisk1Sector ;
+	g_nSectorDrive2 = nDisk2Sector ;
+
+	// Draw Track/Sector
+	FrameReleaseDC();
+	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
+
+	int  x      = buttonx;
+	int  y      = buttony+BUTTONS*BUTTONCY+1;
 
 	SelectObject(dc,smallfont);
 	SetBkMode(dc,OPAQUE);
 	SetBkColor(dc,RGB(0,0,0));
 	SetTextAlign(dc,TA_LEFT | TA_TOP);
 
-	char buffer[16] = "";
+	char text[ 16 ];
 
 	if (g_bIsFullScreen)
 	{
 #if _DEBUG && 0
 		SetBkColor(dc,RGB(255,0,255));
 #endif
-		// NB.The 2 extra spaces are needed since we don't erase the background to black
-
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive1Status ] );
-//		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
-		sprintf_s( buffer, sizeof(buffer), "T%2d  ", Disk1Track );
-		TextOut(dc,x+3,y-12,buffer, strlen(buffer) ); // original: y+2; y-12 puts status in the Joystick Button Icon
+		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive2Status ] );
-//		TextOut(dc,x+13,y+2,TEXT("2"),1);
-		sprintf_s( buffer, sizeof(buffer), "T%2d  ", Disk2Track );
-		TextOut(dc,x+23,y-12,buffer, strlen(buffer) ); // original: y+2; y-12 puts status in the Joystick Button Icon
+		TextOut(dc,x+13,y+2,TEXT("2"),1);
+
+		int dx = 0;
+		if( nActiveFloppy == 0 )
+		{
+			//dx = 3;
+			sprintf( text, "%s/%s    ", g_sTrackDrive1, g_sSectorDrive1 );
+		}
+		else
+		{
+			//dx = 23;
+			sprintf( text, "%s/%s    ", g_sTrackDrive2, g_sSectorDrive2 );
+		}
+
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ DISK_STATUS_READ ] );
+		TextOut(dc,x+dx,y-12,text, strlen(text) ); // original: y+2; y-12 puts status in the Configuration Button Icon
 	}
 	else
 	{
-			RECT rDiskLed = {0,0,8,8};
-
-			DrawBitmapRect(dc,x+12,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive1Status]);
-			DrawBitmapRect(dc,x+31,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive2Status]);
+			// NB. Only draw Track/Sector if 2x windowed
+			if (g_nOldViewportScale == 1)
+				return;
 
 			// Erase background
 			SelectObject(dc,GetStockObject(NULL_PEN));
@@ -604,37 +730,18 @@ void DrawStatusAreaDisk( HDC passdc )
 			SetTextColor(dc,RGB(0,0,0));
 			SetBkMode(dc,TRANSPARENT);
 
-			// Feature Request #201 Show track status
-			// https://github.com/AppleWin/AppleWin/issues/201
-			sprintf_s( buffer, sizeof(buffer), "T%2d", Disk1Track );
-			TextOut(dc,x+6,y+32,buffer, strlen(buffer) );
-
-			sprintf_s( buffer, sizeof(buffer), "T%2d", Disk2Track );
-			TextOut(dc,x+26,y+32,buffer, strlen(buffer) );
-
-			// Try DOS3.3 Sector
-			static char sectord1[ 8 ] = "";
-			static char sectord2[ 8 ] = "";
-
-			int DOS33drive  = mem[ 0xB7EA ];
-			int DOS33track  = mem[ 0xB7EC ];
-			int DOS33sector = mem[ 0xB7ED ];
-			if (DOS33sector >= 0 && DOS33sector < 16 )
-			{
-				if (DOS33track == Disk1Track && DOS33drive == 1)
-					sprintf_s( sectord1, sizeof(sectord1), "S%2d", DOS33sector );
-
-				if (DOS33track == Disk2Track && DOS33drive == 2)
-					sprintf_s( sectord2, sizeof(sectord2), "S%2d", DOS33sector );
-			}
-			else
-			{
-					sprintf_s( sectord1, sizeof(sectord1), "S??" );
-					sprintf_s( sectord2, sizeof(sectord2), "S??" );
-			}
-
-			TextOut(dc,x+ 6,y+42, sectord1, strlen(sectord1) );
-			TextOut(dc,x+26,y+42, sectord2, strlen(sectord2) );
+//		if( nActiveFloppy == 0 )
+		{
+			sprintf( text, "T%s", g_sTrackDrive1 );
+			TextOut(dc,x+6 ,y+32,text, strlen(text) );
+			sprintf( text, "S%s", g_sSectorDrive1 );
+			TextOut(dc,x+ 6,y+42, text, strlen(text) );
+//		} else {
+			sprintf( text, "T%s", g_sTrackDrive2 );
+			TextOut(dc,x+26,y+32,text, strlen(text) );
+			sprintf( text, "S%s", g_sSectorDrive2 );
+			TextOut(dc,x+26,y+42, text, strlen(text) );
+		}
 	}
 }
 
@@ -656,7 +763,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 	if (g_bIsFullScreen)
 	{
-		DrawStatusAreaDisk( passdc );
+		SelectObject(dc,smallfont);
 
 #if HD_LED
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
@@ -720,7 +827,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 		if (drawflags & DRAW_LEDS)
 		{
-			DrawStatusAreaDisk( dc );
+			FrameDrawDiskLEDS( dc );
 
 			if (!IS_APPLE2)
 			{
