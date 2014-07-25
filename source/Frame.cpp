@@ -72,14 +72,14 @@ static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
 	static HBITMAP g_hDiskWindowedLED[ NUM_DISK_STATUS ];
 
 //static HBITMAP g_hDiskFullScreenLED[ NUM_DISK_STATUS ];
-static int g_nTrackDrive1  = -1;
-static int g_nTrackDrive2  = -1;
-static int g_nSectorDrive1 = -1;
-static int g_nSectorDrive2 = -1;
-static TCHAR g_sTrackDrive1 [8] = TEXT("??");
-static TCHAR g_sTrackDrive2 [8] = TEXT("??");
-static TCHAR g_sSectorDrive1[8] = TEXT("??");
-static TCHAR g_sSectorDrive2[8] = TEXT("??");
+static int    g_nTrackDrive1  = -1;
+static int    g_nTrackDrive2  = -1;
+static int    g_nSectorDrive1 = -1;
+static int    g_nSectorDrive2 = -1;
+static TCHAR  g_sTrackDrive1 [8] = TEXT("??");
+static TCHAR  g_sTrackDrive2 [8] = TEXT("??");
+static TCHAR  g_sSectorDrive1[8] = TEXT("??");
+static TCHAR  g_sSectorDrive2[8] = TEXT("??");
 Disk_Status_e g_eStatusDrive1 = DISK_STATUS_OFF;
 Disk_Status_e g_eStatusDrive2 = DISK_STATUS_OFF;
 
@@ -601,53 +601,38 @@ void FrameDrawDiskStatus( HDC passdc )
 {
 	int nActiveFloppy = DiskGetCurrentDrive();
 
-	static Disk_Status_e eDrive1Status = DISK_STATUS_OFF;
-	static Disk_Status_e eDrive2Status = DISK_STATUS_OFF;
-	DiskGetLightStatus(&eDrive1Status, &eDrive2Status);
-
-	static int nDisk1Track  = DiskGetTrack(0);
-	static int nDisk2Track  = DiskGetTrack(1);
+	int nDisk1Track  = DiskGetTrack(0);
+	int nDisk2Track  = DiskGetTrack(1);
 	
-	static int nDisk1Sector = 0;
-	static int nDisk2Sector = 0;
-
 	// Probe known OS's for Track/Sector
-	int isProDOS     = mem[ 0xBF00 ] == 0x4C;
+	int  isProDOS = mem[ 0xBF00 ] == 0x4C;
+	bool isValid  = true;
 
 	// Try DOS3.3 Sector
 	if( !isProDOS )
 	{
-		int DOS33sector = mem[ 0xB7ED ];
 		int DOS33drive  = mem[ 0xB7EA ];
+		int DOS33sector = mem[ 0xB7ED ];
 		int DOS33track  = mem[ 0xB7EC ];
 
-		if (DOS33sector >= 0 && DOS33sector < 16 )
+		if ((DOS33drive  >= 0 && DOS33drive  <  2)
+		&&  (DOS33track  >= 0 && DOS33track  < 40)
+		&&  (DOS33sector >= 0 && DOS33sector < 16))
 		{
-			if( DOS33drive == 1 )
-			{
-				#if _DEBUG && 0
-					if(DOS33track != nDisk1Track)
-					{
-						char text[128];
-						sprintf( text, "\n\n\nWARNING: DOS33Track: %d (%02X) != nDisk1Track: %d (%02X)\n\n\n", DOS33track, DOS33track, nDisk1Track, nDisk1Track );
-						OutputDebugString( text );
-					}
-				#endif // _DEBUG
+			#if _DEBUG && 0
+				if(DOS33track != nDisk1Track)
+				{
+					char text[128];
+					sprintf( text, "\n\n\nWARNING: DOS33Track: %d (%02X) != nDisk1Track: %d (%02X)\n\n\n", DOS33track, DOS33track, nDisk1Track, nDisk1Track );
+					OutputDebugString( text );
+				}
+			#endif // _DEBUG
 
-				sprintf_s( g_sTrackDrive1 , sizeof(g_sTrackDrive1),  "%2d", g_nTrackDrive1 );
-				sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%2d", DOS33sector );
-				nDisk1Track = g_nTrackDrive1 = DOS33track;
-				g_nSectorDrive1 = DOS33sector;
-			}
-			else
-			if( DOS33drive == 2 )
-			{
-				sprintf_s( g_sTrackDrive2 , sizeof(g_sTrackDrive2 ), "%2d", g_nTrackDrive2 );
-				sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%2d", DOS33sector ); 
-				nDisk2Track = g_nTrackDrive2 = DOS33track;
-				g_nSectorDrive2 = DOS33sector;
-			}
+			/**/ if( DOS33drive == 1 ) g_nSectorDrive1 = DOS33sector;
+			else if( DOS33drive == 2 ) g_nSectorDrive2 = DOS33sector;
 		}
+		else
+			isValid = false;
 	}
 	else
 	if( isProDOS )
@@ -655,27 +640,34 @@ void FrameDrawDiskStatus( HDC passdc )
 		int ProDOSdrive  = mem[ 0xBE3D ];
 		int ProDOStrack  = mem[ 0xD356 ];
 		int ProDOSsector = mem[ 0xD357 ];
-		if( ProDOSsector >= 0 && ProDOSsector <= 16)
+
+		if ((ProDOSdrive  >= 0 && ProDOSdrive  <  2)
+		&&  (ProDOStrack  >= 0 && ProDOStrack  < 40)
+		&&  (ProDOSsector >= 0 && ProDOSsector < 16))
 		{
-			if (ProDOSdrive == 1) { g_nTrackDrive1 = ProDOStrack; sprintf_s( g_sTrackDrive1 , sizeof(g_sTrackDrive1),  "%2d", g_nTrackDrive1 ); sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%d", ProDOSsector ); }
-			if (ProDOSdrive == 2) { g_nTrackDrive2 = ProDOStrack; sprintf_s( g_sTrackDrive2 , sizeof(g_sTrackDrive1),  "%2d", g_nTrackDrive1 ); sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%d", ProDOSsector ); }
+			/**/ if (ProDOSdrive == 1) g_nSectorDrive1 = ProDOSsector;
+			else if (ProDOSdrive == 2) g_nSectorDrive2 = ProDOSsector;
 		}
 		else
-		{
-			if (ProDOSdrive == 1) sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" );
-			if (ProDOSdrive == 2) sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" );
-		}
-	}
-	else
-	{
-			if( nActiveFloppy == 0 ) {	g_nTrackDrive1 = nDisk1Track; nDisk1Sector = -1; sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" ); }
-			else                     { 	g_nTrackDrive2 = nDisk2Track; nDisk2Sector = -1; sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" ); }
+			isValid = false;
 	}
 
-	g_nTrackDrive1  = nDisk1Track  ;
-	g_nTrackDrive2  = nDisk2Track  ;
-	g_nSectorDrive1 = nDisk1Sector ;
-	g_nSectorDrive2 = nDisk2Sector ;
+	g_nTrackDrive1  = nDisk1Track;
+	g_nTrackDrive2  = nDisk2Track;
+
+	if( !isValid )
+	{
+		if (nActiveFloppy == 0) g_nSectorDrive1 = -1;
+		else                    g_nSectorDrive2 = -1;
+	}
+
+	sprintf_s( g_sTrackDrive1 , sizeof(g_sTrackDrive1 ), "%2d", g_nTrackDrive1 );
+	if (g_nSectorDrive1 < 0) sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" , g_nSectorDrive1 );
+	else                     sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%2d", g_nSectorDrive1 ); 
+
+	sprintf_s( g_sTrackDrive2 , sizeof(g_sTrackDrive2),  "%2d", g_nTrackDrive2 );
+	if (g_nSectorDrive2 < 0) sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" , g_nSectorDrive2 );
+	else                     sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%2d", g_nSectorDrive2 );
 
 	// Draw Track/Sector
 	FrameReleaseDC();
@@ -696,10 +688,10 @@ void FrameDrawDiskStatus( HDC passdc )
 #if _DEBUG && 0
 		SetBkColor(dc,RGB(255,0,255));
 #endif
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive1Status ] );
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive1 ] );
 		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
 
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive2Status ] );
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive2 ] );
 		TextOut(dc,x+13,y+2,TEXT("2"),1);
 
 		int dx = 0;
