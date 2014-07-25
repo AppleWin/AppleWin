@@ -31,12 +31,15 @@ Changes:
                    (current memory address low byte)
      -memclear 7   Initialize memory to page address
                    (current memory address high byte)
-. [Feature #201] Added display of current track for the floppy drives.
-  Note: There are NO plans to display the sector number due to sectors being
-  a high level structure defined by the underlying OS -- it would take some
-  memory probing to display the accurate sector number.
-Fixed:
-. [Bug #206] Pooyan freezes due to RNDL/RNDH not initialized to non-zero values
+. [Feature #201] Added display of current Track/Sector for the floppy drives.
+  - In 2x window mode the status is displayed below the drive LEDs.
+  - In full screen mode the status is displayed above the drive LEDS. The track/sector
+    is shown only for the last drive accessed.
+  Note: DOS3.3 Track/Sector status should be accurate.
+        ProDOS support is preliminary -- the track/sector may show zero after an operation.
+Fixes:
+. [Bug #206] Pooyan would freeze due to RNDL/RNDH not initialized to non-zero values on
+  a cold boot.
 
 
 Latest:
