@@ -31,6 +31,7 @@ Changes:
                    (current memory address low byte)
      -memclear 7   Initialize memory to page address
                    (current memory address high byte)
+. [Feature #198] Alt-Return toggles full screen.
 . [Feature #201] Added display of current Track/Sector for the floppy drives.
   - In 2x window mode the status is displayed below the drive LEDs.
   - In full screen mode the status is displayed above the drive LEDS. The track/sector
