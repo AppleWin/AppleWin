@@ -117,6 +117,7 @@ int DiskGetCurrentDrive(void)  { return currdrive; }
 int DiskGetCurrentTrack(void)  { return g_aFloppyDisk[currdrive].track; }
 int DiskGetCurrentPhase(void)  { return g_aFloppyDisk[currdrive].phase; }
 int DiskGetCurrentOffset(void) { return g_aFloppyDisk[currdrive].byte; }
+int DiskGetTrack( int drive )  { return g_aFloppyDisk[ drive   ].track; }
 
 const string& DiskGetDiskPathFilename(const int iDrive)
 {
@@ -209,7 +210,8 @@ static void CheckSpinning(void)
 	if (floppymotoron)
 		g_aFloppyDisk[currdrive].spinning = 20000;
 	if (modechange)
-		FrameRefreshStatus(DRAW_LEDS);
+		//FrameRefreshStatus(DRAW_LEDS);
+		FrameDrawDiskLEDS( (HDC)0 );
 }
 
 //===========================================================================
@@ -461,6 +463,10 @@ static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG)
 			fptr->track          = newtrack;
 			fptr->trackimagedata = 0;
 		}
+
+		// Feature Request #201 Show track status
+		// https://github.com/AppleWin/AppleWin/issues/201
+		FrameDrawDiskStatus( (HDC)0 );
 	}
 #else	// Old 1.13.1 code for Chessmaster 2000 to work! (see bug#18109)
 	const int nNumTracksInImage = ImageGetNumTracks(fptr->imagehandle);
@@ -812,6 +818,12 @@ static BYTE __stdcall DiskReadWrite (WORD programcounter, WORD, BYTE, BYTE, ULON
 	if (++fptr->byte >= fptr->nibbles)
 		fptr->byte = 0;
 
+	// Feature Request #201 Show track status
+	// https://github.com/AppleWin/AppleWin/issues/201
+	// NB. Prevent flooding of forcing UI to redraw!!!
+	if( ((fptr->byte) & 0xFF) == 0 )
+		FrameDrawDiskStatus( (HDC)0 ); 
+
 	return result;
 }
 
@@ -904,7 +916,10 @@ static BYTE __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG)
 	BOOL modechange = !g_aFloppyDisk[currdrive].writelight;
 	g_aFloppyDisk[currdrive].writelight = 20000;
 	if (modechange)
-		FrameRefreshStatus(DRAW_LEDS);
+	{
+		//FrameRefreshStatus(DRAW_LEDS);
+		FrameDrawDiskLEDS( (HDC)0 );
+	}
 	return MemReturnRandomData(1);
 }
 
@@ -919,7 +934,11 @@ void DiskUpdatePosition(DWORD cycles)
 
 		if (fptr->spinning && !floppymotoron) {
 			if (!(fptr->spinning -= MIN(fptr->spinning, (cycles >> 6))))
-				FrameRefreshStatus(DRAW_LEDS);
+			{
+				// FrameRefreshStatus(DRAW_LEDS);
+				FrameDrawDiskLEDS( (HDC)0 );
+				FrameDrawDiskStatus( (HDC)0 );
+			}
 		}
 
 		if (floppywritemode && (currdrive == loop) && fptr->spinning)
@@ -929,7 +948,11 @@ void DiskUpdatePosition(DWORD cycles)
 		else if (fptr->writelight)
 		{
 			if (!(fptr->writelight -= MIN(fptr->writelight, (cycles >> 6))))
-				FrameRefreshStatus(DRAW_LEDS);
+			{
+				//FrameRefreshStatus(DRAW_LEDS);
+				FrameDrawDiskLEDS( (HDC)0 );
+				FrameDrawDiskStatus( (HDC)0 );
+			}
 		}
 
 		if ((!enhancedisk) && (!diskaccessed) && fptr->spinning)
@@ -960,6 +983,7 @@ bool DiskDriveSwap(void)
 	Disk_SaveLastDiskImage(DRIVE_2);
 
 	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+	FrameDrawDiskLEDS( (HDC)0 );
 
 	return true;
 }
