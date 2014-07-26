@@ -1549,6 +1549,10 @@ LRESULT CALLBACK FrameWndProc (
       break;
 
     case WM_SYSKEYDOWN:
+		KeybUpdateCtrlShiftStatus();
+		if (g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN
+			ScreenWindowResize(true);
+		else
       PostMessage(window,WM_KEYDOWN,wparam,lparam);
       if ((wparam == VK_F10) || (wparam == VK_MENU))	// VK_MENU == ALT Key
         return 0;
