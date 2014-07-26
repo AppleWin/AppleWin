@@ -23,6 +23,7 @@
 // Win32
 	extern HWND       g_hFrameWindow;
 	extern BOOL       g_bIsFullScreen;
+	extern BOOL       g_bConfirmReset; // saved PageConfig REGSAVE
 	extern BOOL       g_bMultiMon;
 
 // Emulator

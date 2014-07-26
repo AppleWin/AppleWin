@@ -46,7 +46,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static const int kDEFAULT_VIEWPORT_SCALE = 2;
 static int g_nViewportCX = FRAMEBUFFER_W * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportCY = FRAMEBUFFER_H * kDEFAULT_VIEWPORT_SCALE;
-static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE;
+static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
 static int g_nOldViewportScale = kDEFAULT_VIEWPORT_SCALE;
 static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
 
@@ -111,6 +111,7 @@ static RECT    framerect       = {0,0,0,0};
 
 		HWND   g_hFrameWindow  = (HWND)0;
 		BOOL   g_bIsFullScreen = 0;
+		BOOL   g_bConfirmReset = 1; // saved PageConfig REGSAVE
 		BOOL   g_bMultiMon     = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
 
 static BOOL    helpquit        = 0;
@@ -1681,7 +1682,7 @@ static void ScreenWindowResize(const bool bCtrlKey)
 
 static bool ConfirmReboot(bool bFromButtonUI)
 {
-	if (!bFromButtonUI)
+	if (!bFromButtonUI || !g_bConfirmReset)
 		return true;
 
 	int res = MessageBox(g_hFrameWindow, "Are you sure you want to reboot?\n(All data will be lost!)", "Reboot", MB_ICONWARNING|MB_YESNO);

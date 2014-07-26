@@ -594,6 +594,9 @@ void LoadConfiguration(void)
 
 	if (REGLOAD(TEXT(REGVALUE_WINDOW_SCALE), &dwTmp))
 		SetViewportScale(dwTmp);
+
+	if (REGLOAD(TEXT(REGVALUE_CONFIRM_RESET), &dwTmp))
+		g_bConfirmReset = dwTmp;
 }
 
 //===========================================================================
