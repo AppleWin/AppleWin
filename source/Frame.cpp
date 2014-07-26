@@ -1685,7 +1685,14 @@ static bool ConfirmReboot(bool bFromButtonUI)
 	if (!bFromButtonUI || !g_bConfirmReset)
 		return true;
 
-	int res = MessageBox(g_hFrameWindow, "Are you sure you want to reboot?\n(All data will be lost!)", "Reboot", MB_ICONWARNING|MB_YESNO);
+	int res = MessageBox(g_hFrameWindow, 
+		"Are you sure you want to reboot?\n"
+		"(All data will be lost!)\n"
+		"\n"
+		"You can skip this dialog from displaying by unchecking:\n"
+		"    [ ] Confirm reset\n"
+		"in the Configuration dialog.\n"
+		, "Reboot", MB_ICONWARNING|MB_YESNO);
 	return res == IDYES;
 }
 
