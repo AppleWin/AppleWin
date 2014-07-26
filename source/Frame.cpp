@@ -635,11 +635,15 @@ void FrameDrawDiskStatus( HDC passdc )
 			isValid = false;
 	}
 	else
-	if( isProDOS )
+	if( isProDOS ) // & regs.pc > 0xD000 ) // RWTS @ $D300
 	{
-		int ProDOSdrive  = mem[ 0xBE3D ];
-		int ProDOStrack  = mem[ 0xD356 ];
-		int ProDOSsector = mem[ 0xD357 ];
+		// we can't just read from mem[ 0xD357 ] since it might be bank-switched from ROM
+		// and we need the Language Card RAM
+		// memrom[ 0xD350 ] = " ERROR\x07\x00"
+        //                             T   S
+		int ProDOSdrive  = nActiveFloppy + 1; // mem[ 0xBE3D ];
+		int ProDOStrack  = *MemGetMainPtr( 0xC356 ); // LC1 $D356
+		int ProDOSsector = *MemGetMainPtr( 0xC357 ); // LC1 $D357
 
 		if ((ProDOSdrive  >= 0 && ProDOSdrive  <  2)
 		&&  (ProDOStrack  >= 0 && ProDOStrack  < 40)
