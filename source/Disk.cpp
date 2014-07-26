@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -207,8 +207,10 @@ void Disk_SaveLastDiskImage(const int iDrive)
 static void CheckSpinning(void)
 {
 	DWORD modechange = (floppymotoron && !g_aFloppyDisk[currdrive].spinning);
+
 	if (floppymotoron)
 		g_aFloppyDisk[currdrive].spinning = 20000;
+
 	if (modechange)
 		//FrameRefreshStatus(DRAW_LEDS);
 		FrameDrawDiskLEDS( (HDC)0 );
@@ -297,8 +299,8 @@ static bool IsDriveValid(const int iDrive)
 
 static void AllocTrack(const int iDrive)
 {
-  Disk_t * fptr = &g_aFloppyDisk[iDrive];
-  fptr->trackimage = (LPBYTE)VirtualAlloc(NULL, NIBBLES_PER_TRACK, MEM_COMMIT, PAGE_READWRITE);
+	Disk_t * fptr = &g_aFloppyDisk[iDrive];
+	fptr->trackimage = (LPBYTE)VirtualAlloc(NULL, NIBBLES_PER_TRACK, MEM_COMMIT, PAGE_READWRITE);
 }
 
 //===========================================================================
@@ -557,11 +559,9 @@ LPCTSTR DiskGetBaseName(const int iDrive)
 
 void DiskGetLightStatus(Disk_Status_e *pDisk1Status_, Disk_Status_e *pDisk2Status_)
 {
-//	*drive1 = g_aFloppyDisk[0].spinning ? g_aFloppyDisk[0].writelight ? 2 : 1 : 0;
-//	*drive2 = g_aFloppyDisk[1].spinning ? g_aFloppyDisk[1].writelight ? 2 : 1 : 0;
-
 	if (pDisk1Status_)
 		*pDisk1Status_ = GetDriveLightStatus( 0 );
+
 	if (pDisk2Status_)
 		*pDisk2Status_ = GetDriveLightStatus( 1 );
 }
