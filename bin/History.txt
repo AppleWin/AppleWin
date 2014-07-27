@@ -41,6 +41,7 @@ Changes:
 Fixes:
 . [Bug #206] Pooyan would freeze due to RNDL/RNDH not initialized to non-zero values on
   a cold boot.
+. [Bug #177] Full-screen under Windows8/8.1 would show a corrupt, pastelle color palette.
 
 
 Latest:
