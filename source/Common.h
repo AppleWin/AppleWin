@@ -73,7 +73,8 @@ enum AppMode_e
 // Configuration
 #define REG_CONFIG						"Configuration"
 #define  REGVALUE_APPLE2_TYPE        "Apple2 Type"
-#define  REGVALUE_OLD_APPLE2_TYPE	"Computer Emulation"	// Deprecated
+#define  REGVALUE_OLD_APPLE2_TYPE    "Computer Emulation"	// Deprecated
+#define  REGVALUE_CONFIRM_REBOOT     "Confirm Reboot" // Added at 1.24.1 PageConfig
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
