@@ -88,8 +88,8 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 			VideoChooseColor();
 			break;
 
-		case IDC_CHECK_CONFIRM_RESET:
-			g_bConfirmReset = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_RESET) ? 1 : 0;
+		case IDC_CHECK_CONFIRM_REBOOT:
+			g_bConfirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? 1 : 0;
 
 		case IDC_CHECK_HALF_SCAN_LINES:
 			g_uHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
@@ -143,7 +143,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMPUTER, m_ComputerChoices, nCurrentChoice);
 			}
 
-			CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_RESET, g_bConfirmReset ? BST_CHECKED : BST_UNCHECKED );
+			CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, g_bConfirmReboot ? BST_CHECKED : BST_UNCHECKED );
 
 			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE,g_aVideoChoices,g_eVideoType);
 			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, g_uHalfScanLines ? BST_CHECKED : BST_UNCHECKED);
@@ -212,7 +212,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 		}
 	}
 
-	REGSAVE(TEXT(REGVALUE_CONFIRM_RESET), g_bConfirmReset);
+	REGSAVE(TEXT(REGVALUE_CONFIRM_REBOOT), g_bConfirmReboot);
 
 	const DWORD newserialport = (DWORD) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
 	sg_SSC.CommSetSerialPort(hWnd, newserialport);
