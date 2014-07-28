@@ -605,6 +605,7 @@ void FrameDrawDiskStatus( HDC passdc )
 	// Drive  $B7EA    $BE3D
 	// Track  $B7EC    LC1 $D356
 	// Sector $B7ED    LC1 $D357
+	// RWTS            LC1 $D300
 	int nActiveFloppy = DiskGetCurrentDrive();
 
 	int nDisk1Track  = DiskGetTrack(0);
@@ -615,7 +616,7 @@ void FrameDrawDiskStatus( HDC passdc )
 	bool isValid  = true;
 
 	// Try DOS3.3 Sector
-	if( !isProDOS )
+	if ( !isProDOS )
 	{
 		int nDOS33track  = mem[ 0xB7EC ];
 		int nDOS33sector = mem[ 0xB7ED ];
@@ -638,13 +639,12 @@ void FrameDrawDiskStatus( HDC passdc )
 		else
 			isValid = false;
 	}
-	else
-	if( isProDOS ) // & regs.pc > 0xD000 ) // RWTS @ $D300
+	else // isProDOS
 	{
 		// we can't just read from mem[ 0xD357 ] since it might be bank-switched from ROM
 		// and we need the Language Card RAM
-		// memrom[ 0xD350 ] = " ERROR\x07\x00"
-        //                             T   S
+		// memrom[ 0xD350 ] = " ERROR\x07\x00"  Applesoft error message
+		//                             T   S
 		int nProDOStrack  = *MemGetMainPtr( 0xC356 ); // LC1 $D356
 		int nProDOSsector = *MemGetMainPtr( 0xC357 ); // LC1 $D357
 
@@ -711,34 +711,31 @@ void FrameDrawDiskStatus( HDC passdc )
 	}
 	else
 	{
-			// NB. Only draw Track/Sector if 2x windowed
-			if (g_nOldViewportScale == 1)
-				return;
+		// NB. Only draw Track/Sector if 2x windowed
+		if (g_nOldViewportScale == 1)
+			return;
 
-			// Erase background
-			SelectObject(dc,GetStockObject(NULL_PEN));
+		// Erase background
+		SelectObject(dc,GetStockObject(NULL_PEN));
 #if _DEBUG && 0
-			SelectObject( dc, CreateSolidBrush( RGB(255,0,255) ) );
+		SelectObject( dc, CreateSolidBrush( RGB(255,0,255) ) );
 #else
-			SelectObject(dc,btnfacebrush);
+		SelectObject(dc,btnfacebrush);
 #endif
-			Rectangle(dc,x+4,y+32,x+BUTTONCX+1,y+56); // y+35 -> 44 -> 56
+		Rectangle(dc,x+4,y+32,x+BUTTONCX+1,y+56); // y+35 -> 44 -> 56
 
-			SetTextColor(dc,RGB(0,0,0));
-			SetBkMode(dc,TRANSPARENT);
+		SetTextColor(dc,RGB(0,0,0));
+		SetBkMode(dc,TRANSPARENT);
 
-//		if( nActiveFloppy == 0 )
-		{
-			sprintf( text, "T%s", g_sTrackDrive1 );
-			TextOut(dc,x+6 ,y+32,text, strlen(text) );
-			sprintf( text, "S%s", g_sSectorDrive1 );
-			TextOut(dc,x+ 6,y+42, text, strlen(text) );
-//		} else {
-			sprintf( text, "T%s", g_sTrackDrive2 );
-			TextOut(dc,x+26,y+32,text, strlen(text) );
-			sprintf( text, "S%s", g_sSectorDrive2 );
-			TextOut(dc,x+26,y+42, text, strlen(text) );
-		}
+		sprintf( text, "T%s", g_sTrackDrive1 );
+		TextOut(dc,x+6 ,y+32,text, strlen(text) );
+		sprintf( text, "S%s", g_sSectorDrive1 );
+		TextOut(dc,x+ 6,y+42, text, strlen(text) );
+
+		sprintf( text, "T%s", g_sTrackDrive2 );
+		TextOut(dc,x+26,y+32,text, strlen(text) );
+		sprintf( text, "S%s", g_sSectorDrive2 );
+		TextOut(dc,x+26,y+42, text, strlen(text) );
 	}
 }
 
