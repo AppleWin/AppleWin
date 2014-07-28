@@ -612,11 +612,11 @@ void FrameDrawDiskStatus( HDC passdc )
 	// Try DOS3.3 Sector
 	if( !isProDOS )
 	{
-		int DOS33drive  = mem[ 0xB7EA ];
+		int DOS33drive  = mem[ 0xB7EA ]; // 1 or 2
 		int DOS33sector = mem[ 0xB7ED ];
 		int DOS33track  = mem[ 0xB7EC ];
 
-		if ((DOS33drive  >= 0 && DOS33drive  <  2)
+		if ((DOS33drive  >= 1 && DOS33drive  <= 2)
 		&&  (DOS33track  >= 0 && DOS33track  < 40)
 		&&  (DOS33sector >= 0 && DOS33sector < 16))
 		{
