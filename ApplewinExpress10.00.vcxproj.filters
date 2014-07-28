@@ -468,7 +468,7 @@
     <None Include="docs\FAQ.txt">
       <Filter>Docs</Filter>
     </None>
-    <None Include="docs\History.txt">
+    <None Include="bin\History.txt">
       <Filter>Docs</Filter>
     </None>
     <None Include="docs\ToDo.txt">

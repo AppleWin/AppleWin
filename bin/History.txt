@@ -7,16 +7,12 @@ Bug reports and feature requests should be submitted here:
 https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
-tomch at users.berlios.de
-
-Restrictions/bugs:
-- SSI263 emulation is very basic: there is no attempt to emulate rate, inflection or filters.
-- During Mockingboard playback, Speaker emulation isn't precise
 
 
 In Development:
 ---------------
 Changes:
+. Changed the AppleWin project host from BerliOS to GitHub.
 . Added command line switch to specify the type of memory initialization pattern.
     -memclear #
   Where # ranges from 0 to 7.
@@ -55,7 +51,7 @@ Changes:
 . Support cursor keys (in addition to numpad) when using keyboard for joystick emulation
 . Support auto-fire for all 3 joystick buttons (via Config->Input)
 . Debugger: Added "disk info" command
-. [Feature #5668] Added confirmation message box for reboot (F2)
+. Added confirmation message box for reboot (F2)
 . [Feature #5715] Added -no-printscreen-dlg to suppress the warning if AppleWin fails to capture the PrintScreen key
 . Changed save-state file persisted to Registry from filename to pathame
 Fixes:
@@ -66,7 +62,7 @@ Fixes:
 1.23.2 - 14 Sep 2013
 --------------------
 Changes:
-. [Feature #5105] Added About dialog showing GPL (at startup, but only when AppleWin version changes).
+. Added About dialog showing GPL (at startup, but only when AppleWin version changes).
 . [Bug #18940] Extend BSAVE and BLOAD Command To Memory Banks 0 and 1
 	Extended debugger BLOAD with bank support:
 	. BLOAD [file],[bank:]address[,length]
@@ -272,7 +268,7 @@ Fixes:
 . [Bug #14879] Double-Lo-Res Graphics colors not correct
 
 
-1.16.1 - 20 Jun 2009
+1.16.1 - 21 Jun 2009
 --------------------
 Changes:
 . Ctrl-F2 now functions as CONTROL-RESET (same as Ctrl-Break)

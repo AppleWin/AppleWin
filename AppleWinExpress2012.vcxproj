@@ -103,7 +103,7 @@
     <Text Include="docs\CodingConventions.txt" />
     <Text Include="docs\Debugger_Changelog.txt" />
     <Text Include="docs\FAQ.txt" />
-    <Text Include="docs\History.txt" />
+    <Text Include="bin\History.txt" />
     <Text Include="docs\ToDo.txt" />
     <Text Include="docs\Video_Cleanup.txt" />
     <Text Include="docs\Wishlist.txt" />
