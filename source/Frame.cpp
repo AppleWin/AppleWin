@@ -761,6 +761,8 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 	{
 		SelectObject(dc,smallfont);
 
+		FrameDrawDiskStatus( dc );
+
 #if HD_LED
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
 		TextOut(dc,x+23,y+2,TEXT("H"),1);
@@ -824,6 +826,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		if (drawflags & DRAW_LEDS)
 		{
 			FrameDrawDiskLEDS( dc );
+			FrameDrawDiskStatus( dc );
 
 			if (!IS_APPLE2)
 			{
