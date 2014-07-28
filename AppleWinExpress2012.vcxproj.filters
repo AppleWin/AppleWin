@@ -293,7 +293,7 @@
     <Text Include="docs\FAQ.txt">
       <Filter>Docs</Filter>
     </Text>
-    <Text Include="docs\History.txt">
+    <Text Include="bin\History.txt">
       <Filter>Docs</Filter>
     </Text>
     <Text Include="docs\ToDo.txt">

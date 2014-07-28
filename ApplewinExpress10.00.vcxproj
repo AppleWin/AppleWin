@@ -465,7 +465,7 @@
     <None Include="docs\CodingConventions.txt" />
     <None Include="docs\Debugger_Changelog.txt" />
     <None Include="docs\FAQ.txt" />
-    <None Include="docs\History.txt" />
+    <None Include="bin\History.txt" />
     <None Include="docs\ToDo.txt" />
     <None Include="docs\Video_Cleanup.txt" />
     <None Include="docs\Wishlist.txt" />
