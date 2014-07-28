@@ -646,7 +646,7 @@ void FrameDrawDiskStatus( HDC passdc )
 		int ProDOStrack  = *MemGetMainPtr( 0xC356 ); // LC1 $D356
 		int ProDOSsector = *MemGetMainPtr( 0xC357 ); // LC1 $D357
 
-		if ((ProDOSdrive  >= 0 && ProDOSdrive  <  2)
+		if ((ProDOSdrive  >= 1 && ProDOSdrive  <= 2)
 		&&  (ProDOStrack  >= 0 && ProDOStrack  < 40)
 		&&  (ProDOSsector >= 0 && ProDOSsector < 16))
 		{
