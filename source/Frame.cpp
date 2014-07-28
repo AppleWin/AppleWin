@@ -600,6 +600,11 @@ void FrameDrawDiskLEDS( HDC passdc )
 //===========================================================================
 void FrameDrawDiskStatus( HDC passdc )
 {
+	// We use the actual drive since probing from memory doesn't tell us anything we don't already know.
+	//        DOS3.3   ProDOS
+	// Drive  $B7EA    $BE3D
+	// Track  $B7EC    LC1 $D356
+	// Sector $B7ED    LC1 $D357
 	int nActiveFloppy = DiskGetCurrentDrive();
 
 	int nDisk1Track  = DiskGetTrack(0);
@@ -612,25 +617,23 @@ void FrameDrawDiskStatus( HDC passdc )
 	// Try DOS3.3 Sector
 	if( !isProDOS )
 	{
-		int DOS33drive  = mem[ 0xB7EA ]; // 1 or 2
-		int DOS33sector = mem[ 0xB7ED ];
-		int DOS33track  = mem[ 0xB7EC ];
+		int nDOS33track  = mem[ 0xB7EC ];
+		int nDOS33sector = mem[ 0xB7ED ];
 
-		if ((DOS33drive  >= 1 && DOS33drive  <= 2)
-		&&  (DOS33track  >= 0 && DOS33track  < 40)
-		&&  (DOS33sector >= 0 && DOS33sector < 16))
+		if ((nDOS33track  >= 0 && nDOS33track  < 40)
+		&&  (nDOS33sector >= 0 && nDOS33sector < 16))
 		{
-			#if _DEBUG && 0
-				if(DOS33track != nDisk1Track)
-				{
-					char text[128];
-					sprintf( text, "\n\n\nWARNING: DOS33Track: %d (%02X) != nDisk1Track: %d (%02X)\n\n\n", DOS33track, DOS33track, nDisk1Track, nDisk1Track );
-					OutputDebugString( text );
-				}
-			#endif // _DEBUG
+#if _DEBUG && 0
+			if (nDOS33track != nDisk1Track)
+			{
+				char text[128];
+				sprintf( text, "\n\n\nWARNING: DOS33Track: %d (%02X) != nDisk1Track: %d (%02X)\n\n\n", nDOS33track, nDOS33track, nDisk1Track, nDisk1Track );
+				OutputDebugString( text );
+			}
+#endif // _DEBUG
 
-			/**/ if( DOS33drive == 1 ) g_nSectorDrive1 = DOS33sector;
-			else if( DOS33drive == 2 ) g_nSectorDrive2 = DOS33sector;
+			/**/ if (nActiveFloppy == 0) g_nSectorDrive1 = nDOS33sector;
+			else if (nActiveFloppy == 1) g_nSectorDrive2 = nDOS33sector;
 		}
 		else
 			isValid = false;
@@ -642,16 +645,14 @@ void FrameDrawDiskStatus( HDC passdc )
 		// and we need the Language Card RAM
 		// memrom[ 0xD350 ] = " ERROR\x07\x00"
         //                             T   S
-		int ProDOSdrive  = nActiveFloppy + 1; // mem[ 0xBE3D ];
-		int ProDOStrack  = *MemGetMainPtr( 0xC356 ); // LC1 $D356
-		int ProDOSsector = *MemGetMainPtr( 0xC357 ); // LC1 $D357
+		int nProDOStrack  = *MemGetMainPtr( 0xC356 ); // LC1 $D356
+		int nProDOSsector = *MemGetMainPtr( 0xC357 ); // LC1 $D357
 
-		if ((ProDOSdrive  >= 1 && ProDOSdrive  <= 2)
-		&&  (ProDOStrack  >= 0 && ProDOStrack  < 40)
-		&&  (ProDOSsector >= 0 && ProDOSsector < 16))
+		if ((nProDOStrack  >= 0 && nProDOStrack  < 40)
+		&&  (nProDOSsector >= 0 && nProDOSsector < 16))
 		{
-			/**/ if (ProDOSdrive == 1) g_nSectorDrive1 = ProDOSsector;
-			else if (ProDOSdrive == 2) g_nSectorDrive2 = ProDOSsector;
+			/**/ if (nActiveFloppy == 0) g_nSectorDrive1 = nProDOSsector;
+			else if (nActiveFloppy == 1) g_nSectorDrive2 = nProDOSsector;
 		}
 		else
 			isValid = false;
