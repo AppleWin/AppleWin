@@ -38,7 +38,7 @@
 	void    FrameCreateWindow(void);
 	HDC     FrameGetDC ();
 	HDC     FrameGetVideoDC (LPBYTE *,LONG *);
-	void    FrameRefreshStatus (int);
+	void    FrameRefreshStatus (int, bool bUpdateDiskStatus = true );
 	void    FrameRegisterClass ();
 	void    FrameReleaseDC ();
 	void    FrameReleaseVideoDC ();

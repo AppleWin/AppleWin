@@ -982,8 +982,7 @@ bool DiskDriveSwap(void)
 	Disk_SaveLastDiskImage(DRIVE_1);
 	Disk_SaveLastDiskImage(DRIVE_2);
 
-	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
-	FrameDrawDiskLEDS( (HDC)0 );
+	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, false );
 
 	return true;
 }

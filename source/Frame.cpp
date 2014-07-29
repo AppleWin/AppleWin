@@ -538,7 +538,7 @@ static void DrawFrameWindow ()
 	}
 
 	// DRAW THE STATUS AREA
-	DrawStatusArea(dc,DRAW_BACKGROUND | DRAW_LEDS);
+	DrawStatusArea(dc,DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
 
 	// DRAW THE CONTENTS OF THE EMULATED SCREEN
 	if (g_nAppMode == MODE_LOGO)
@@ -759,7 +759,8 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 	{
 		SelectObject(dc,smallfont);
 
-		FrameDrawDiskStatus( dc );
+		if (drawflags & DRAW_DISK_STATUS)
+			FrameDrawDiskStatus( dc );
 
 #if HD_LED
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
@@ -824,7 +825,9 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		if (drawflags & DRAW_LEDS)
 		{
 			FrameDrawDiskLEDS( dc );
-			FrameDrawDiskStatus( dc );
+
+			if (drawflags & DRAW_DISK_STATUS)
+				FrameDrawDiskStatus( dc );
 
 			if (!IS_APPLE2)
 			{
@@ -2346,8 +2349,10 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 }
 
 //===========================================================================
-void FrameRefreshStatus (int drawflags) {
-  DrawStatusArea((HDC)0,drawflags);
+void FrameRefreshStatus (int drawflags, bool bUpdateDiskStatus) {
+	// NB. 99% of the time we draw the disk status.  On DiskDriveSwap() we don't.
+ 	drawflags |= bUpdateDiskStatus ? DRAW_DISK_STATUS : 0;
+	DrawStatusArea((HDC)0,drawflags);
 }
 
 //===========================================================================

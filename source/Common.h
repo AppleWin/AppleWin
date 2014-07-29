@@ -39,10 +39,11 @@ enum AppMode_e
 #define  SPEED_NORMAL      10
 #define  SPEED_MAX         40
 
-#define  DRAW_BACKGROUND   1
-#define  DRAW_LEDS         2
-#define  DRAW_TITLE        4
-#define  DRAW_BUTTON_DRIVES 8
+#define  DRAW_BACKGROUND    (1 << 0)
+#define  DRAW_LEDS          (1 << 1)
+#define  DRAW_TITLE         (1 << 2)
+#define  DRAW_BUTTON_DRIVES (1 << 3)
+#define  DRAW_DISK_STATUS   (1 << 4)
 
 #define  BTN_HELP          0
 #define  BTN_RUN           1
