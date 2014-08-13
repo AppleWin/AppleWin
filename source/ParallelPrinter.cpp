@@ -27,6 +27,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+
+#include "AppleWin.h"
+#include "Memory.h"
+#include "ParallelPrinter.h"
+#include "Registry.h"
+
 #include "..\resource\resource.h"
 
 static DWORD inactivity = 0;
@@ -100,7 +106,7 @@ static void ClosePrint()
     {
         fclose(file);
         file = NULL;
-		string ExtendedFileName = "copy \"";
+		std::string ExtendedFileName = "copy \"";
 		ExtendedFileName.append (Printer_GetFilename());
 		ExtendedFileName.append ("\" prn");
 		//if (g_bDumpToPrinter) ShellExecute(NULL, "print", Printer_GetFilename(), NULL, NULL, 0); //Print through Notepad

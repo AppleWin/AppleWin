@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Common.h"
 #include "DiskImage.h"
 
 // Structs used by save-state file

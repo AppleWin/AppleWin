@@ -38,7 +38,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // - This is because the 2-joystick version of Mario Bros expects the 2nd joystick to control Apple switch #2.
 
 #include "StdAfx.h"
+
+#include "AppleWin.h"
+#include "CPU.h"
+#include "Disk.h"
+#include "Memory.h"
 #include "MouseInterface.h"
+
 #include "Configuration\PropertySheet.h"
 
 #define BUTTONTIME	5000	// TODO: Describe this magic number

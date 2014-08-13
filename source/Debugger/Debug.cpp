@@ -30,7 +30,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //#pragma warning(disable: 4786)
 
 #include "StdAfx.h"
-#include "debugger_display.h"	// dup from stdafx.h, but CPP analysis isn't picking up APPLE_FONT_NEW
+
+#include "Debug.h"
+
+#include "..\AppleWin.h"
+#include "..\CPU.h"
+#include "..\Disk.h"
+#include "..\Frame.h"
+#include "..\Keyboard.h"
+#include "..\Memory.h"
+#include "..\Video.h"
 
 //	#define DEBUG_COMMAND_HELP  1
 //	#define DEBUG_ASM_HASH 1

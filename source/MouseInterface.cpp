@@ -41,15 +41,20 @@ Etc.
 
 
 #include "stdafx.h"
+#include "Structs.h"
 
+#include "CPU.h"
+#include "Frame.h"	// FrameSetCursorPosByMousePos()
+#include "Log.h"
+#include "Memory.h"
+#include "MouseInterface.h"
+#include "SoundCore.h"	// SAFE_RELEASE()
+
+#include "..\resource\resource.h"
 
 #ifdef _DEBUG
 	#define _DEBUG_SPURIOUS_IRQ
 #endif
-
-#include "..\resource\resource.h"
-#include "MouseInterface.h"
-#include "Frame.h"	// FrameSetCursorPosByMousePos()
 
 // Sets mouse mode
 #define MOUSE_SET		0x00

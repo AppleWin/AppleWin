@@ -29,6 +29,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #include <wchar.h>
 
+#include "AppleWin.h"
+#include "CPU.h"
+#include "Frame.h"
+#include "Memory.h"
+#include "SoundCore.h"
+#include "Speaker.h"
+#include "Video.h"
+
+#include "Debugger\Debug.h"	// For DWORD extbench
+
 // Notes:
 //
 // [OLD: 23.191 Apple CLKs == 44100Hz (CLK_6502/44100)]

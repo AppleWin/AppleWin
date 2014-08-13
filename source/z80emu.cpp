@@ -14,6 +14,9 @@
 // Emula a CPU Z80
 
 #include "StdAfx.h"
+
+#include "AppleWin.h"
+#include "Memory.h"
 #include "z80emu.h"
 
 // Variaveis

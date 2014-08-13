@@ -1,5 +1,7 @@
 #pragma once
 
+#include "zip.h"
+
 #define GZ_SUFFIX ".gz"
 #define GZ_SUFFIX_LEN (sizeof(GZ_SUFFIX)-1)
 

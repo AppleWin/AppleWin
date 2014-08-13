@@ -36,30 +36,4 @@
 #include <queue>
 #include <vector>
 
-#include "zlib.h"
-#include "unzip.h"
-#include "zip.h"
-#include "iowin32.h"
-
-#include "Common.h"
-#include "Structs.h"
-
-#include "AppleWin.h"
-#include "AY8910.h"
-#include "CPU.h"
-#include "Video.h" // Debugger needs: VideoUpdateFuncPtr_t
-#include "Debug.h"
-#include "Disk.h"
-#include "Frame.h"
-#include "Keyboard.h"
-#include "Log.h"
-#include "Memory.h"
-#include "Mockingboard.h"
-#include "ParallelPrinter.h"
-#include "Registry.h"
-#include "Riff.h"
-#include "SaveState.h"
-#include "SerialComms.h"
-#include "SoundCore.h"
-#include "Speaker.h"
-#include "Tape.h"
+#define USE_SPEECH_API

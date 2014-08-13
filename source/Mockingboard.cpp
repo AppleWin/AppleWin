@@ -76,14 +76,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
 #include "StdAfx.h"
-
-
-#define LOG_SSI263 0
-
 #include <wchar.h>
+
+#include "AppleWin.h"
+#include "CPU.h"
+#include "Log.h"
+#include "Memory.h"
+#include "Mockingboard.h"
+#include "SoundCore.h"
 
 #include "AY8910.h"
 #include "SSI263Phonemes.h"
+
+#define LOG_SSI263 0
 
 
 #define SY6522_DEVICE_A 0

@@ -16,7 +16,7 @@ public:
 	void FillComboBox(HWND window, int controlid, LPCTSTR choices, int currentchoice);
 	void SetSlot4(SS_CARDTYPE NewCardType);
 	void SetSlot5(SS_CARDTYPE NewCardType);
-	string BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE,TCHAR* FILEMASKS);
+	std::string BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE,TCHAR* FILEMASKS);
 	void SaveStateUpdate();
 	void GetDiskBaseNameWithAWS(TCHAR* pszFilename);
 	int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave);

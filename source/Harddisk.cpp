@@ -27,9 +27,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
-#include "HardDisk.h"
+
+#include "AppleWin.h"
 #include "DiskImage.h"	// ImageError_e, Disk_Status_e
 #include "DiskImageHelper.h"
+#include "Frame.h"
+#include "HardDisk.h"
+#include "Memory.h"
+#include "Registry.h"
+
 #include "..\resource\resource.h"
 
 /*
@@ -229,7 +235,7 @@ static void NotifyInvalidImage(TCHAR* pszImageFilename)
 static BOOL HD_Load_Image(const int iDrive, LPCSTR pszImageFilename)
 {
 	const bool bCreateIfNecessary = false;	// NB. Don't allow creation of HDV files
-	string strFilenameInZip;				// TODO: Use this
+	std::string strFilenameInZip;				// TODO: Use this
 	ImageError_e Error = ImageOpen(pszImageFilename, iDrive, bCreateIfNecessary, strFilenameInZip);
 
 	g_HardDisk[iDrive].hd_imageloaded = (Error == eIMAGE_ERROR_NONE);

@@ -26,11 +26,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * Author: Various
  */
 
-
 #include "StdAfx.h"
+#include "Structs.h"
 #include "DiskImage.h"
 #include "DiskImageHelper.h"
-
 
 
 static CDiskImageHelper sg_DiskImageHelper;

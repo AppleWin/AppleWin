@@ -27,14 +27,33 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+
+#include "AppleWin.h"
+#include "CPU.h"
+#include "Disk.h"
+#include "Frame.h"
 #include "Harddisk.h"
+#include "Keyboard.h"
+#include "Memory.h"
+#include "Mockingboard.h"
 #include "MouseInterface.h"
 #include "NoSlotClock.h"
+#include "ParallelPrinter.h"
+#include "Registry.h"
+#include "SerialComms.h"
+#include "Speaker.h"
+#include "Tape.h"
+#include "Video.h"
+
 #include "z80emu.h"
 #include "Z80VICE\z80.h"
 #include "Z80VICE\z80mem.h"
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
+
+#include <map>
+using namespace std;
+#include "Debugger\Debugger_Types.h"	// Needs <map> and namespace std
 
 // Memory Flag
 #define  MF_80STORE    0x00000001

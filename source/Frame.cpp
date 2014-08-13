@@ -27,15 +27,33 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+#include <sys/stat.h>
+
+#include "AppleWin.h"
+#include "CPU.h"
+#include "Disk.h"
 #include "DiskImage.h"
 #include "Harddisk.h"
+#include "Frame.h"
+#include "Keyboard.h"
+#include "Log.h"
+#include "Memory.h"
+#include "Mockingboard.h"
 #include "MouseInterface.h"
-#include "..\resource\resource.h"
-#include <sys/stat.h>
+#include "ParallelPrinter.h"
+#include "Registry.h"
+#include "SaveState.h"
+#include "SerialComms.h"
+#include "SoundCore.h"
+#include "Speaker.h"
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
+#include "Video.h"
+
+#include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
+#include "Debugger\Debug.h"
 
 //#define ENABLE_MENU 0
 

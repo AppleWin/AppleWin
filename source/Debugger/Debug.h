@@ -5,6 +5,8 @@
 #include <map>
 using namespace std;
 
+#include "..\Structs.h"
+
 #include "Debugger_Types.h"
 #include "Debugger_DisassemblerData.h"
 #include "Debugger_Range.h"
@@ -14,7 +16,7 @@ using namespace std;
 #include "Debugger_Help.h"
 #include "Debugger_Display.h"
 #include "Debugger_Symbols.h"
-#include "Util_MemoryTextFile.h"
+#include "..\Util_MemoryTextFile.h"
 
 // Globals __________________________________________________________________
 
