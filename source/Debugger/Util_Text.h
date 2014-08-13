@@ -1,3 +1,4 @@
+#pragma once
 
 #define CHAR_LF           '\x0D'
 #define CHAR_CR           '\x0A'
@@ -8,17 +9,6 @@
 #define CHAR_ESCAPE       '\x1B'
 
 // Text Util
-/*
-inline	const char* SkipEOL                    ( const char *pSrc )
-	{
-		while (pSrc && ((*pSrc == CHAR_LF) || (*pSrc == CHAR_CR)))
-		if (pSrc)
-		{
-				pSrc++;
-		}
-		return pSrc;
-	}
-*/
 
 inline	const char* EatEOL                    ( const char *pSrc )
 		{
@@ -26,7 +16,7 @@ inline	const char* EatEOL                    ( const char *pSrc )
 			{
 				if (*pSrc == CHAR_LF)
 					pSrc++;
-					
+
 				if (*pSrc == CHAR_CR)
 					pSrc++;
 			}
@@ -108,7 +98,7 @@ inline	const char* SkipUntilWhiteSpaceReverse ( const char *pSrc, const char *pS
 			{
 				if ((*pSrc == CHAR_SPACE) || (*pSrc == CHAR_TAB))
 				{
-					break;		
+					break;
 				}
 				pSrc--;
 			}
@@ -131,13 +121,13 @@ inline	bool TextIsHexChar( char nChar )
 		{
 			if ((nChar >= '0') && (nChar <= '9'))
 				return true;
-				
+
 			if ((nChar >= 'A') && (nChar <= 'F'))
 				return true;
-				
+
 			if ((nChar >= 'a') && (nChar <= 'f'))
 				return true;
-				
+
 			return false;
 		}
 

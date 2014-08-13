@@ -347,15 +347,15 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\Util_MemoryTextFile.cpp"
+					RelativePath=".\source\Debugger\Util_MemoryTextFile.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Util_MemoryTextFile.h"
+					RelativePath=".\source\Debugger\Util_MemoryTextFile.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Util_Text.h"
+					RelativePath=".\source\Debugger\Util_Text.h"
 					>
 				</File>
 			</Filter>

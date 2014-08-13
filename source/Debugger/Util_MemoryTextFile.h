@@ -1,6 +1,5 @@
 #pragma once
 
-
 // Memory Text File _________________________________________________________
 
 	class MemoryTextFile_t

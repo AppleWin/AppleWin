@@ -162,7 +162,7 @@
     <ClInclude Include="source\Debugger\Debugger_Types.h">
       <Filter>Source Files\Debugger</Filter>
     </ClInclude>
-    <ClInclude Include="source\Util_MemoryTextFile.h">
+    <ClInclude Include="source\Debugger\Util_MemoryTextFile.h">
       <Filter>Source Files\Debugger</Filter>
     </ClInclude>
     <ClInclude Include="source\Disk.h">
@@ -376,7 +376,7 @@
     <ClCompile Include="source\Debugger\Debugger_Symbols.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
-    <ClCompile Include="source\Util_MemoryTextFile.cpp">
+    <ClCompile Include="source\Debugger\Util_MemoryTextFile.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
     <ClCompile Include="source\Disk.cpp">

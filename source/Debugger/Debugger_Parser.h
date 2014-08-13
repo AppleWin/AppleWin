@@ -1,14 +1,14 @@
 #ifndef DEBUGGER_PARSER_H
 #define DEBUGGER_PARSER_H
 
-#include "..\Util_Text.h"
+#include "Util_Text.h"
 
 const char * ParserFindToken( const char *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e * pToken_ );
 const TCHAR * FindTokenOrAlphaNumeric ( const TCHAR *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e * pToken_ );
 int RemoveWhiteSpaceReverse( char *pSrc );
 void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDstSize, int nTabStop = 0 );
 
-inline	const char* SkipUntilToken( const char *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e *pToken_ )
+inline const char* SkipUntilToken( const char *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e *pToken_ )
 	{
 		if ( pToken_)
 			*pToken_ = NO_TOKEN;
