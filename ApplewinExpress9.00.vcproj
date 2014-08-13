@@ -354,6 +354,10 @@
 					RelativePath=".\source\Util_MemoryTextFile.h"
 					>
 				</File>
+				<File
+					RelativePath=".\source\Util_Text.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Uthernet"

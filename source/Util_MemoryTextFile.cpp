@@ -22,8 +22,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include "StdAfx.h"
+#include <vector>
+using namespace std;
 
-#include "Debugger\Debug.h"	// Debugger_Parser.h: SkipUntilEOL(), EatEOL(), CHAR_CR, CHAR_LF
+#include "Util_Text.h"
+#include "Util_MemoryTextFile.h"
 
 // MemoryTextFile _________________________________________________________________________________
 
