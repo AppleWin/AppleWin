@@ -50,10 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Z80VICE\z80.h"
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
-
-#include <map>
-using namespace std;
-#include "Debugger\Debugger_Types.h"	// Needs <map> and namespace std
+#include "Debugger\DebugDefs.h"
 
 // Memory Flag
 #define  MF_80STORE    0x00000001

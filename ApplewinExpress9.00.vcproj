@@ -267,6 +267,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Debugger\DebugDefs.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Debugger\Debugger_Assembler.cpp"
 					>
 				</File>
