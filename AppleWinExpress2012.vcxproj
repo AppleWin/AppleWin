@@ -48,6 +48,7 @@
     <ClInclude Include="source\CPU\cpu65C02.h" />
     <ClInclude Include="source\CPU\cpu65d02.h" />
     <ClInclude Include="source\Debugger\Debug.h" />
+    <ClInclude Include="source\Debugger\DebugDefs.h" />
     <ClInclude Include="source\Debugger\Debugger_Assembler.h" />
     <ClInclude Include="source\Debugger\Debugger_Color.h" />
     <ClInclude Include="source\Debugger\Debugger_Console.h" />
@@ -58,7 +59,9 @@
     <ClInclude Include="source\Debugger\Debugger_Range.h" />
     <ClInclude Include="source\Debugger\Debugger_Symbols.h" />
     <ClInclude Include="source\Debugger\Debugger_Types.h" />
+    <ClInclude Include="source\Debugger\Util_Text.h" />
     <ClInclude Include="source\Disk.h" />
+    <ClInclude Include="source\DiskDefs.h" />
     <ClInclude Include="source\DiskImage.h" />
     <ClInclude Include="source\DiskImageHelper.h" />
     <ClInclude Include="source\Frame.h" />

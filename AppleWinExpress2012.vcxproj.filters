@@ -282,6 +282,15 @@
     <ClInclude Include="resource\winres.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
+    <ClInclude Include="source\DiskDefs.h">
+      <Filter>Source Files\Disk</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Debugger\DebugDefs.h">
+      <Filter>Source Files\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Debugger\Util_Text.h">
+      <Filter>Source Files\Debugger</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="docs\CodingConventions.txt">
