@@ -75,7 +75,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Disassembler Data  _____________________________________________________________________________
 
-	vector<DisasmData_t> g_aDisassemblerData;
+	std::vector<DisasmData_t> g_aDisassemblerData;
 
 
 // Instructions / Opcodes _________________________________________________________________________
@@ -401,7 +401,7 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 	};
 
 	int         m_bAsmFlags;
-	vector<int> m_vAsmOpcodes;
+	std::vector<int> m_vAsmOpcodes;
 	int         m_iAsmAddressMode = AM_IMPLIED;
 
 	struct DelayedTarget_t
@@ -412,7 +412,7 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 		int  m_iOpmode ; // AddressingMode_e
 	};
 	
-	vector <DelayedTarget_t> m_vDelayedTargets;
+	std::vector <DelayedTarget_t> m_vDelayedTargets;
 	bool                     m_bDelayedTargetsDirty = false;
 
 	int  m_nAsmBytes         = 0;
@@ -886,7 +886,7 @@ void AssemblerStartup()
 void _CmdAssembleHashDump ()
 {
 // #if DEBUG_ASM_HASH
-	vector<HashOpcode_t> vHashes;
+	std::vector<HashOpcode_t> vHashes;
 	HashOpcode_t         tHash;
 	TCHAR                sText[ CONSOLE_WIDTH ];
 
@@ -898,7 +898,7 @@ void _CmdAssembleHashDump ()
 		vHashes.push_back( tHash );
 	}	
 	
-	sort( vHashes.begin(), vHashes.end(), HashOpcode_t() );
+	std::sort( vHashes.begin(), vHashes.end(), HashOpcode_t() );
 
 	Hash_t nPrevHash = vHashes.at( 0 ).m_nValue;
 	Hash_t nThisHash = 0;
@@ -1349,7 +1349,7 @@ void AssemblerProcessDelayedSymols()
 	{
 		bModified = false;
 		
-		vector<DelayedTarget_t>::iterator iSymbol;
+		std::vector<DelayedTarget_t>::iterator iSymbol;
 		for( iSymbol = m_vDelayedTargets.begin(); iSymbol != m_vDelayedTargets.end(); ++iSymbol )
 		{
 			DelayedTarget_t *pTarget = & (*iSymbol); // m_vDelayedTargets.at( iSymbol );

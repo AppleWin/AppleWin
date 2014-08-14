@@ -33,6 +33,8 @@
 #include <htmlhelp.h>
 #include <assert.h>
 
+#include <algorithm>
+#include <map>
 #include <queue>
 #include <vector>
 

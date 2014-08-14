@@ -767,7 +767,7 @@ LPSTR GetNextArg(LPSTR lpCmdLine)
 
 static int DoDiskInsert(const int nDrive, LPCSTR szFileName)
 {
-	string strPathName;
+	std::string strPathName;
 
 	if (szFileName[0] == '\\' || szFileName[1] == ':')
 	{

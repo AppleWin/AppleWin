@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Buffer
 		bool      g_bConsoleBufferPaused = false; // buffered output is waiting for user to continue
 		int       g_nConsoleBuffer = 0;
-		conchar_t g_aConsoleBuffer[ CONSOLE_BUFFER_HEIGHT ][ CONSOLE_WIDTH ]; // TODO: stl::vector< line_t >
+		conchar_t g_aConsoleBuffer[ CONSOLE_BUFFER_HEIGHT ][ CONSOLE_WIDTH ]; // TODO: std::vector< line_t >
 
 	// Cursor
 		char      g_sConsoleCursor[] = "_";

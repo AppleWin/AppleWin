@@ -1439,7 +1439,7 @@ Update_t CmdHelpList (int nArgs)
 	int nMaxWidth = g_nConsoleDisplayWidth - 1;
 	int iCommand;
 
-	extern vector<Command_t> g_vSortedCommands;
+	extern std::vector<Command_t> g_vSortedCommands;
 
 	if (! g_vSortedCommands.size())
 	{
