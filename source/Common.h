@@ -66,9 +66,6 @@ enum AppMode_e
 #define TITLE_PAUSED       TEXT("* PAUSED *")
 #define TITLE_STEPPING     TEXT("Stepping")
 
-#define  REGLOAD(a,b) RegLoadValue(TEXT(REG_CONFIG),a,1,b)
-#define  REGSAVE(a,b) RegSaveValue(TEXT(REG_CONFIG),a,1,b)
-
 // Configuration
 #define REG_CONFIG						"Configuration"
 #define  REGVALUE_APPLE2_TYPE        "Apple2 Type"

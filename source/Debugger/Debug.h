@@ -6,6 +6,7 @@
 using namespace std;
 
 #include "..\Structs.h"
+#include "..\Common.h"
 
 #include "Debugger_Types.h"
 #include "Debugger_DisassemblerData.h"

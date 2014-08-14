@@ -23,7 +23,7 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "DiskConsts.h"
+#include "DiskDefs.h"
 
 	#define TRACK_DENIBBLIZED_SIZE (16 * 256)	// #Sectors x Sector-size
 

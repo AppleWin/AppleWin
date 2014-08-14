@@ -803,7 +803,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\DiskConsts.h"
+					RelativePath=".\source\DiskDefs.h"
 					>
 				</File>
 				<File

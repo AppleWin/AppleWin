@@ -42,6 +42,7 @@ Etc.
 
 #include "stdafx.h"
 #include "Structs.h"
+#include "Common.h"
 
 #include "CPU.h"
 #include "Frame.h"	// FrameSetCursorPosByMousePos()
