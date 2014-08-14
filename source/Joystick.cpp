@@ -41,9 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "AppleWin.h"
 #include "CPU.h"
-#include "Disk.h"
 #include "Memory.h"
-#include "MouseInterface.h"
 
 #include "Configuration\PropertySheet.h"
 
