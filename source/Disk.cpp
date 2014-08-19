@@ -27,7 +27,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+
+#include "AppleWin.h"
+#include "Disk.h"
 #include "DiskImage.h"
+#include "Frame.h"
+#include "Memory.h"
+#include "Registry.h"
+#include "Video.h"
+
 #include "..\resource\resource.h"
 
 #define LOG_DISK_ENABLED 0
@@ -60,8 +68,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	{
 		TCHAR  imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
 		TCHAR  fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
-		string strDiskPathFilename;
-		string strFilenameInZip;						// 0x00           or <FILENAME.EXT>
+		std::string strDiskPathFilename;
+		std::string strFilenameInZip;					// 0x00           or <FILENAME.EXT>
 		HIMAGE imagehandle;					// Init'd by DiskInsert() -> ImageOpen()
 		int    track;
 		LPBYTE trackimage;
@@ -119,12 +127,12 @@ int DiskGetCurrentPhase(void)  { return g_aFloppyDisk[currdrive].phase; }
 int DiskGetCurrentOffset(void) { return g_aFloppyDisk[currdrive].byte; }
 int DiskGetTrack( int drive )  { return g_aFloppyDisk[ drive   ].track; }
 
-const string& DiskGetDiskPathFilename(const int iDrive)
+const std::string& DiskGetDiskPathFilename(const int iDrive)
 {
 	return g_aFloppyDisk[iDrive].strDiskPathFilename;
 }
 
-static void DiskSetDiskPathFilename(const int iDrive, const string strPathName)
+static void DiskSetDiskPathFilename(const int iDrive, const std::string strPathName)
 {
 	g_aFloppyDisk[iDrive].strDiskPathFilename = strPathName;
 }
@@ -977,7 +985,7 @@ bool DiskDriveSwap(void)
 	// Swap disks between drives
 	// . NB. We swap trackimage ptrs (so don't need to swap the buffers' data)
 	// . TODO: Consider array of Pointers: Disk_t* g_aDrive[]
-	swap(g_aFloppyDisk[0], g_aFloppyDisk[1]);
+	std::swap(g_aFloppyDisk[0], g_aFloppyDisk[1]);
 
 	Disk_SaveLastDiskImage(DRIVE_1);
 	Disk_SaveLastDiskImage(DRIVE_2);

@@ -24,7 +24,11 @@
  *
  */
 
-#include "..\stdafx.h"
+#include "..\StdAfx.h"
+
+#include "..\AppleWin.h"
+#include "..\CPU.h"
+#include "..\Memory.h"
 
 
 #undef IN							// Defined in windef.h

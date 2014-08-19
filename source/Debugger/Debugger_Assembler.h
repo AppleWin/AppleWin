@@ -201,7 +201,7 @@ extern	int g_aAssemblerFirstDirective[ NUM_ASSEMBLERS ];
 	bool _6502_IsOpcodeValid( int nOpcode );
 
 	int  AssemblerHashMnemonic ( const TCHAR * pMnemonic );
-//	bool AssemblerGetAddressingMode ( int iArg, int nArgs, WORD nAddress, vector<int> & vOpcodes );
+//	bool AssemblerGetAddressingMode ( int iArg, int nArgs, WORD nAddress, std::vector<int> & vOpcodes );
 	void _CmdAssembleHashDump ();
 	
 	int AssemblerDelayedTargetsSize();

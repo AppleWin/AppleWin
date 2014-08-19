@@ -27,7 +27,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+
+#include "AppleWin.h"
+#include "CPU.h"
+#include "Disk.h"
+#include "Frame.h"
 #include "Joystick.h"
+#include "Keyboard.h"
+#include "Memory.h"
+#include "Mockingboard.h"
+#include "SerialComms.h"
+#include "Speaker.h"
+#include "Video.h"
 
 
 #define DEFAULT_SNAPSHOT_NAME "SaveState.aws"

@@ -14,6 +14,6 @@
 	void Disassembly_DelData( DisasmData_t tData);
 	DisasmData_t* Disassembly_Enumerate( DisasmData_t *pCurrent = NULL );
 
-	extern vector<DisasmData_t> g_aDisassemblerData;
+	extern std::vector<DisasmData_t> g_aDisassemblerData;
 
 #endif

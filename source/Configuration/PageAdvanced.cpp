@@ -1,7 +1,36 @@
+/*
+AppleWin : An Apple //e emulator for Windows
+
+Copyright (C) 1994-1996, Michael O'Brien
+Copyright (C) 1999-2001, Oliver Schmidt
+Copyright (C) 2002-2005, Tom Charlesworth
+Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski, Nick Westgate
+
+AppleWin is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+AppleWin is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with AppleWin; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
 #include "StdAfx.h"
+#include "..\Structs.h"
+#include "..\Common.h"
+
+#include "..\ParallelPrinter.h"
+#include "..\Registry.h"
+#include "..\SaveState.h"
+#include "..\resource\resource.h"
 #include "PageAdvanced.h"
 #include "PropertySheetHelper.h"
-#include "..\resource\resource.h"
 
 CPageAdvanced* CPageAdvanced::ms_this = 0;	// reinit'd in ctor
 
@@ -61,7 +90,7 @@ BOOL CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			break;
 		case IDC_PRINTER_DUMP_FILENAME_BROWSE:
 			{				
-				string strPrinterDumpLoc = m_PropertySheetHelper.BrowseToFile(hWnd, TEXT("Select printer dump file"), REGVALUE_PRINTER_FILENAME, TEXT("Text files (*.txt)\0*.txt\0") TEXT("All Files\0*.*\0"));
+				std::string strPrinterDumpLoc = m_PropertySheetHelper.BrowseToFile(hWnd, TEXT("Select printer dump file"), REGVALUE_PRINTER_FILENAME, TEXT("Text files (*.txt)\0*.txt\0") TEXT("All Files\0*.*\0"));
 				SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)strPrinterDumpLoc.c_str());
 			}
 			break;

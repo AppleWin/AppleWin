@@ -27,7 +27,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
-#include "debugger_display.h"	// dup from stdafx.h, but CPP analysis isn't picking up USE_APPLE_FONT
+
+#include "Debug.h"
+#include "Debugger_Display.h"
+
+#include "..\AppleWin.h"
+#include "..\CPU.h"
+#include "..\Frame.h"
+#include "..\Memory.h"
+#include "..\Mockingboard.h"
+#include "..\Video.h"
 
 // NEW UI debugging - force display ALL meta-info (regs, stack, bp, watches, zp) for debugging purposes
 #define DEBUG_FORCE_DISPLAY 0

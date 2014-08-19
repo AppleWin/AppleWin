@@ -26,14 +26,11 @@
 
 #include "StdAfx.h"
 
-
 #include <windows.h>
 #include <stdio.h>
 #include <crtdbg.h>
 #include "AY8910.h"
 
-#include "Common.h"
-#include "Structs.h"
 #include "Applewin.h"		// For g_fh
 #include "Mockingboard.h"	// For g_uTimer1IrqCount
 

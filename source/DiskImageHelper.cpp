@@ -28,8 +28,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 #include "stdafx.h"
-#include "DiskImageHelper.h"
+#include "Structs.h"
+#include "Common.h"
+
+#include "zlib.h"
+#include "unzip.h"
+#include "iowin32.h"
+
+#include "CPU.h"
+#include "Disk.h"
 #include "DiskImage.h"
+#include "DiskImageHelper.h"
+#include "Memory.h"
 
 
 /* DO logical order  0 1 2 3 4 5 6 7 8 9 A B C D E F */

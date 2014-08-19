@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Structs.h"
+#include "Common.h"
+
 void SetCurrentCLK6502();
 void SetCurrentImageDir(const char* pszImageDir);
 

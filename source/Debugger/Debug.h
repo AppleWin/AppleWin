@@ -1,9 +1,7 @@
 #pragma once
 
-#include <vector>
-#include <algorithm> // sort, find
-#include <map>
-using namespace std;
+#include "..\Structs.h"
+#include "..\Common.h"
 
 #include "Debugger_Types.h"
 #include "Debugger_DisassemblerData.h"
@@ -27,7 +25,6 @@ using namespace std;
 // Bookmarks
 	extern int          g_nBookmarks;
 	extern Bookmark_t   g_aBookmarks[ MAX_BOOKMARKS ];
-//	extern vector<int> g_aBookmarks;
 
 // Breakpoints
 	enum BreakpointHit_t
@@ -118,7 +115,7 @@ using namespace std;
 	extern MemoryDump_t g_aMemDump[ NUM_MEM_DUMPS ];
 
 //	extern MemorySearchArray_t g_vMemSearchMatches;
-	extern vector<int> g_vMemorySearchResults;
+	extern std::vector<int> g_vMemorySearchResults;
 
 // Source Level Debugging
 	extern TCHAR  g_aSourceFileName[ MAX_PATH ];

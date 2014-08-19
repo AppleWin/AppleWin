@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "Stdafx.h"
-#include "riff.h"
+#include "Riff.h"
 
 static HANDLE g_hRiffFile = INVALID_HANDLE_VALUE;
 static DWORD dwTotalOffset;

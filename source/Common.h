@@ -1,7 +1,5 @@
 #pragma once
 
-#define USE_SPEECH_API
-
 const double _M14 = (157500000.0 / 11.0); // 14.3181818... * 10^6
 const double CLK_6502 = ((_M14 * 65.0) / 912.0); // 65 cycles per 912 14M clocks
 //const double CLK_6502 = 23 * 44100;			// 1014300
@@ -67,9 +65,6 @@ enum AppMode_e
 
 #define TITLE_PAUSED       TEXT("* PAUSED *")
 #define TITLE_STEPPING     TEXT("Stepping")
-
-#define  REGLOAD(a,b) RegLoadValue(TEXT(REG_CONFIG),a,1,b)
-#define  REGSAVE(a,b) RegSaveValue(TEXT(REG_CONFIG),a,1,b)
 
 // Configuration
 #define REG_CONFIG						"Configuration"

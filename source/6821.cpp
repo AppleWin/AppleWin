@@ -28,7 +28,6 @@
 
 #include "StdAfx.h"
 
-
 #include "6821.h"
 
 #define PIA_W_CALLBACK(st, val)	\

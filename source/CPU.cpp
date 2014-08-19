@@ -85,15 +85,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 #include "StdAfx.h"
+
+#include "AppleWin.h"
+#include "CPU.h"
+#include "Frame.h"
+#include "Memory.h"
+#include "Mockingboard.h"
 #include "MouseInterface.h"
+#ifdef USE_SPEECH_API
+#include "Speech.h"
+#endif
+#include "Video.h"
 
 #include "z80emu.h"
 #include "Z80VICE\z80.h"
 #include "Z80VICE\z80mem.h"
 
-#ifdef USE_SPEECH_API
-#include "Speech.h"
-#endif
+#include "Debugger\Debug.h"
+
 
 #define	 AF_SIGN       0x80
 #define	 AF_OVERFLOW   0x40

@@ -27,15 +27,33 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+#include <sys/stat.h>
+
+#include "AppleWin.h"
+#include "CPU.h"
+#include "Disk.h"
 #include "DiskImage.h"
 #include "Harddisk.h"
+#include "Frame.h"
+#include "Keyboard.h"
+#include "Log.h"
+#include "Memory.h"
+#include "Mockingboard.h"
 #include "MouseInterface.h"
-#include "..\resource\resource.h"
-#include <sys/stat.h>
+#include "ParallelPrinter.h"
+#include "Registry.h"
+#include "SaveState.h"
+#include "SerialComms.h"
+#include "SoundCore.h"
+#include "Speaker.h"
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
+#include "Video.h"
+
+#include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
+#include "Debugger\Debug.h"
 
 //#define ENABLE_MENU 0
 
@@ -140,7 +158,7 @@ void    ResetMachineState ();
 void    SetFullScreenMode ();
 void    SetNormalMode ();
 void    SetUsingCursor (BOOL);
-static bool FileExists(string strFilename);
+static bool FileExists(std::string strFilename);
 
 bool	g_bScrollLock_FullSpeed = false;
 bool	g_bFreshReset = false;
@@ -1836,10 +1854,10 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress,MAX_PATH);
 	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
 
-	string filename1= "\"";
+	std::string filename1= "\"";
 	filename1.append( DiskGetDiskPathFilename(iDrive) );
 	filename1.append("\"");
-	string sFileNameEmpty = "\"";
+	std::string sFileNameEmpty = "\"";
 	sFileNameEmpty.append("\"");
 
 	//  Load the menu template containing the shortcut menu from the
@@ -2405,7 +2423,7 @@ void FrameReleaseVideoDC ()
 
 //===========================================================================
 // TODO: FIXME: Util_TestFileExists()
-static bool FileExists(string strFilename) 
+static bool FileExists(std::string strFilename) 
 { 
 	struct stat stFileInfo; 
 	int intStat = stat(strFilename.c_str(),&stFileInfo); 

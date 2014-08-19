@@ -28,6 +28,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "Debug.h"
+
+#include "..\AppleWin.h"
+
 
 #define DEBUG_COLOR_CONSOLE 0
 
@@ -1435,7 +1439,7 @@ Update_t CmdHelpList (int nArgs)
 	int nMaxWidth = g_nConsoleDisplayWidth - 1;
 	int iCommand;
 
-	extern vector<Command_t> g_vSortedCommands;
+	extern std::vector<Command_t> g_vSortedCommands;
 
 	if (! g_vSortedCommands.size())
 	{
