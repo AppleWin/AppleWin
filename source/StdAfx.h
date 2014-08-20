@@ -38,4 +38,10 @@
 #include <queue>
 #include <vector>
 
+// SM_CXPADDEDBORDER is not supported on 2000 & XP:
+// http://msdn.microsoft.com/en-nz/library/windows/desktop/ms724385(v=vs.85).aspx
+#ifndef SM_CXPADDEDBORDER
+#define SM_CXPADDEDBORDER 92
+#endif
+
 #define USE_SPEECH_API
