@@ -2168,14 +2168,16 @@ static void SetupTooltipControls(void)
 	SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
 }
 
+// SM_CXPADDEDBORDER is not supported on 2000 & XP, but GetSystemMetrics() returns 0 for unknown values, so this use of SM_CXPADDEDBORDER works on 2000 & XP too:
+// http://msdn.microsoft.com/en-nz/library/windows/desktop/ms724385(v=vs.85).aspx
 static void GetWidthHeight(int& nWidth, int& nHeight)
 {
 	nWidth  = g_nViewportCX + VIEWPORTX*2
 						   + BUTTONCX
-						   + (GetSystemMetrics(SM_CXBORDER) + GetSystemMetrics(92)) * 2 // 92 = SM_CXPADDEDBORDER
+						   + (GetSystemMetrics(SM_CXBORDER) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2
 						   + MAGICX;
 	nHeight = g_nViewportCY + VIEWPORTY*2
-						   + (GetSystemMetrics(SM_CYBORDER) + GetSystemMetrics(92)) * 2 // 92 = SM_CXPADDEDBORDER
+						   + (GetSystemMetrics(SM_CYBORDER) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2
 						   + GetSystemMetrics(SM_CYCAPTION)
 						   + MAGICY;
 }
