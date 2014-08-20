@@ -1,7 +1,5 @@
 #pragma once
 
-#define USE_SPEECH_API
-
 const double _M14 = (157500000.0 / 11.0); // 14.3181818... * 10^6
 const double CLK_6502 = ((_M14 * 65.0) / 912.0); // 65 cycles per 912 14M clocks
 //const double CLK_6502 = 23 * 44100;			// 1014300
@@ -39,10 +37,11 @@ enum AppMode_e
 #define  SPEED_NORMAL      10
 #define  SPEED_MAX         40
 
-#define  DRAW_BACKGROUND   1
-#define  DRAW_LEDS         2
-#define  DRAW_TITLE        4
-#define  DRAW_BUTTON_DRIVES 8
+#define  DRAW_BACKGROUND    (1 << 0)
+#define  DRAW_LEDS          (1 << 1)
+#define  DRAW_TITLE         (1 << 2)
+#define  DRAW_BUTTON_DRIVES (1 << 3)
+#define  DRAW_DISK_STATUS   (1 << 4)
 
 #define  BTN_HELP          0
 #define  BTN_RUN           1
@@ -67,13 +66,11 @@ enum AppMode_e
 #define TITLE_PAUSED       TEXT("* PAUSED *")
 #define TITLE_STEPPING     TEXT("Stepping")
 
-#define  REGLOAD(a,b) RegLoadValue(TEXT(REG_CONFIG),a,1,b)
-#define  REGSAVE(a,b) RegSaveValue(TEXT(REG_CONFIG),a,1,b)
-
 // Configuration
 #define REG_CONFIG						"Configuration"
 #define  REGVALUE_APPLE2_TYPE        "Apple2 Type"
-#define  REGVALUE_OLD_APPLE2_TYPE	"Computer Emulation"	// Deprecated
+#define  REGVALUE_OLD_APPLE2_TYPE    "Computer Emulation"	// Deprecated
+#define  REGVALUE_CONFIRM_REBOOT     "Confirm Reboot" // Added at 1.24.1 PageConfig
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"

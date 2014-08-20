@@ -189,7 +189,7 @@
 	// Buffer
 		extern bool      g_bConsoleBufferPaused;
 		extern int       g_nConsoleBuffer; 
-		extern conchar_t g_aConsoleBuffer[ CONSOLE_BUFFER_HEIGHT ][ CONSOLE_WIDTH ]; // TODO: stl::vector< line_t >
+		extern conchar_t g_aConsoleBuffer[ CONSOLE_BUFFER_HEIGHT ][ CONSOLE_WIDTH ]; // TODO: std::vector< line_t >
 
 	// Cursor
 		extern char  g_sConsoleCursor[];

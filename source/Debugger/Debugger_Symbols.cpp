@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "Debug.h"
+
+#include "..\AppleWin.h"
 
 	// 2.6.2.13 Added: Can now enable/disable selected symbol table(s) !
 	// Allow the user to disable/enable symbol tables
@@ -103,7 +106,7 @@ const char* FindSymbolFromAddress (WORD nAddress, int * iTable_ )
 		if (! (g_bDisplaySymbolTables & (1 << iTable)))
 			continue;
 
-		map<WORD, string>::iterator iSymbols = g_aSymbols[iTable].find(nAddress);
+		std::map<WORD, std::string>::iterator iSymbols = g_aSymbols[iTable].find(nAddress);
 		if(g_aSymbols[iTable].find(nAddress) != g_aSymbols[iTable].end())
 		{
 			if (iTable_)
@@ -128,7 +131,6 @@ bool FindAddressFromSymbol ( const char* pSymbol, WORD * pAddress_, int * iTable
 		if (! (g_bDisplaySymbolTables & (1 << iTable)))
 			continue;
 
-//		map<WORD, string>::iterator iSymbol = g_aSymbols[iTable].begin();
 		SymbolTable_t :: iterator  iSymbol = g_aSymbols[iTable].begin();
 		while (iSymbol != g_aSymbols[iTable].end())
 		{
@@ -452,7 +454,6 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 					int nSymbols = g_aSymbols[iTable].size();
 					if (nSymbols)
 					{
-				//		map<WORD, string>::iterator iSymbol = g_aSymbols[iTable].begin();
 						SymbolTable_t :: iterator  iSymbol = g_aSymbols[iTable].begin();
 						while (iSymbol != g_aSymbols[iTable].end())
 						{

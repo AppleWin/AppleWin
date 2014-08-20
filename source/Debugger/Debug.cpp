@@ -30,7 +30,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //#pragma warning(disable: 4786)
 
 #include "StdAfx.h"
-#include "debugger_display.h"	// dup from stdafx.h, but CPP analysis isn't picking up APPLE_FONT_NEW
+
+#include "Debug.h"
+#include "DebugDefs.h"
+
+#include "..\AppleWin.h"
+#include "..\CPU.h"
+#include "..\Disk.h"
+#include "..\Frame.h"
+#include "..\Keyboard.h"
+#include "..\Memory.h"
+#include "..\Video.h"
 
 //	#define DEBUG_COMMAND_HELP  1
 //	#define DEBUG_ASM_HASH 1
@@ -46,7 +56,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool g_bDebuggerEatKey = false;
 
 // Bookmarks __________________________________________________________________
-//	vector<int> g_aBookmarks;
 	int        g_nBookmarks = 0;
 	Bookmark_t g_aBookmarks[ MAX_BOOKMARKS ];
 
@@ -116,8 +125,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	int g_iCommand; // last command (enum) // used for consecutive commands
 
-	vector<int>       g_vPotentialCommands; // global, since TAB-completion also needs
-	vector<Command_t> g_vSortedCommands;
+	std::vector<int>       g_vPotentialCommands; // global, since TAB-completion also needs
+	std::vector<Command_t> g_vSortedCommands;
 
 //	static const char g_aFlagNames[_6502_NUM_FLAGS+1] = TEXT("CZIDBRVN");// Reversed since arrays are from left-to-right
 
@@ -201,15 +210,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 // Memory _____________________________________________________________________
-
-	const          int _6502_BRANCH_POS      = +127;
-	const          int _6502_BRANCH_NEG      = -128;
-	const unsigned int _6502_ZEROPAGE_END    = 0x00FF;
-	const unsigned int _6502_STACK_END       = 0x01FF;
-	const unsigned int _6502_IO_BEGIN        = 0xC000;
-	const unsigned int _6502_IO_END          = 0xC0FF;
-	const unsigned int _6502_MEM_BEGIN = 0x0000;
-	const unsigned int _6502_MEM_END   = 0xFFFF;
 
 	MemoryDump_t g_aMemDump[ NUM_MEM_DUMPS ];
 
@@ -1614,7 +1614,7 @@ void _BWZ_ListAll( const Breakpoint_t * aBreakWatchZero, const int nMax )
 Update_t CmdBreakpointList (int nArgs)
 {
 //	ConsoleBufferPush( );
-//	vector<int> vBreakpoints;
+//	std::vector<int> vBreakpoints;
 //	int iBreakpoint = MAX_BREAKPOINTS;
 //	while (iBreakpoint--)
 //	{
@@ -1623,7 +1623,7 @@ Update_t CmdBreakpointList (int nArgs)
 //			vBreakpoints.push_back( g_aBreakpoints[iBreakpoint].address );
 //		}
 //	}
-//	sort( vBreakpoints.begin(), vBreakpoints.end() );
+//	std::sort( vBreakpoints.begin(), vBreakpoints.end() );
 //	iBreakpoint = vBreakPoints.size();
 
 	if (! g_nBreakpoints)
@@ -3193,7 +3193,7 @@ Update_t CmdCursorLineUp (int nArgs)
 
 		const int MAX_LOOK_AHEAD = g_nDisasmWinHeight;
 
-		static vector<LookAhead_t> aTopCandidates;
+		static std::vector<LookAhead_t> aTopCandidates;
 		LookAhead_t tCandidate;
 
 //		if (! aBestTop.capacity() )
@@ -5255,9 +5255,7 @@ Update_t CmdOutputPrintf (int nArgs)
 
 	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("");
 
-//	vector<PrintFormat_t> aValues;
-//	PrintFormat_t entry;
-	vector<Arg_t> aValues;
+	std::vector<Arg_t> aValues;
 	Arg_t         entry;
 	int iValue = 0;
 	int nValue = 0;
@@ -6714,7 +6712,7 @@ int FindCommand( LPTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 				g_iCommand = g_aCommands[iCommand].iCommand;
 
 				// Don't push the same comamnd/alias if already on the list
-				if (find( g_vPotentialCommands.begin(), g_vPotentialCommands.end(), g_iCommand) == g_vPotentialCommands.end())
+				if (std::find( g_vPotentialCommands.begin(), g_vPotentialCommands.end(), g_iCommand) == g_vPotentialCommands.end())
 				{
 					nFound++;
 					g_vPotentialCommands.push_back( g_iCommand );
@@ -7194,12 +7192,12 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 	bool bOpcodeGood = true;
 	bool bOpmodeGood = true;
 
-	vector< ProfileOpcode_t > vProfileOpcode( &g_aProfileOpcodes[0], &g_aProfileOpcodes[ NUM_OPCODES ] );
-	vector< ProfileOpmode_t > vProfileOpmode( &g_aProfileOpmodes[0], &g_aProfileOpmodes[ NUM_OPMODES ] ); 
+	std::vector< ProfileOpcode_t > vProfileOpcode( &g_aProfileOpcodes[0], &g_aProfileOpcodes[ NUM_OPCODES ] );
+	std::vector< ProfileOpmode_t > vProfileOpmode( &g_aProfileOpmodes[0], &g_aProfileOpmodes[ NUM_OPMODES ] ); 
 
 	// sort >
-	sort( vProfileOpcode.begin(), vProfileOpcode.end(), ProfileOpcode_t() );
-	sort( vProfileOpmode.begin(), vProfileOpmode.end(), ProfileOpmode_t() );
+	std::sort( vProfileOpcode.begin(), vProfileOpcode.end(), ProfileOpcode_t() );
+	std::sort( vProfileOpmode.begin(), vProfileOpmode.end(), ProfileOpmode_t() );
 
 	Profile_t nOpcodeTotal = 0;
 	Profile_t nOpmodeTotal = 0;

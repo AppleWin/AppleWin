@@ -1,7 +1,36 @@
+/*
+AppleWin : An Apple //e emulator for Windows
+
+Copyright (C) 1994-1996, Michael O'Brien
+Copyright (C) 1999-2001, Oliver Schmidt
+Copyright (C) 2002-2005, Tom Charlesworth
+Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski, Nick Westgate
+
+AppleWin is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+AppleWin is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with AppleWin; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
 #include "StdAfx.h"
+
+#include "..\AppleWin.h"
+#include "..\Frame.h"
+#include "..\Registry.h"
+#include "..\SerialComms.h"
+#include "..\Video.h"
+#include "..\resource\resource.h"
 #include "PageConfig.h"
 #include "PropertySheetHelper.h"
-#include "..\resource\resource.h"
 
 CPageConfig* CPageConfig::ms_this = 0;	// reinit'd in ctor
 
@@ -88,6 +117,9 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 			VideoChooseColor();
 			break;
 
+		case IDC_CHECK_CONFIRM_REBOOT:
+			g_bConfirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? 1 : 0;
+
 		case IDC_CHECK_HALF_SCAN_LINES:
 			g_uHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
 
@@ -139,6 +171,8 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 				m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMPUTER, m_ComputerChoices, nCurrentChoice);
 			}
+
+			CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, g_bConfirmReboot ? BST_CHECKED : BST_UNCHECKED );
 
 			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE,g_aVideoChoices,g_eVideoType);
 			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, g_uHalfScanLines ? BST_CHECKED : BST_UNCHECKED);
@@ -206,6 +240,8 @@ void CPageConfig::DlgOK(HWND hWnd)
 			VideoRedrawScreen();
 		}
 	}
+
+	REGSAVE(TEXT(REGVALUE_CONFIRM_REBOOT), g_bConfirmReboot);
 
 	const DWORD newserialport = (DWORD) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
 	sg_SSC.CommSetSerialPort(hWnd, newserialport);

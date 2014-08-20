@@ -23,11 +23,12 @@
 // Win32
 	extern HWND       g_hFrameWindow;
 	extern BOOL       g_bIsFullScreen;
+	extern BOOL       g_bConfirmReboot; // saved PageConfig REGSAVE
 	extern BOOL       g_bMultiMon;
 
 // Emulator
 	extern bool   g_bFreshReset;
-	extern string PathFilename[2];
+	extern std::string PathFilename[2];
 	extern bool   g_bScrollLock_FullSpeed;
 	extern int    g_nCharsetType;
 
@@ -37,7 +38,7 @@
 	void    FrameCreateWindow(void);
 	HDC     FrameGetDC ();
 	HDC     FrameGetVideoDC (LPBYTE *,LONG *);
-	void    FrameRefreshStatus (int);
+	void    FrameRefreshStatus (int, bool bUpdateDiskStatus = true );
 	void    FrameRegisterClass ();
 	void    FrameReleaseDC ();
 	void    FrameReleaseVideoDC ();
@@ -47,6 +48,9 @@
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);
 	bool	GetFullScreen32Bit(void);
 	void	SetFullScreen32Bit(bool b32Bit);
+
+	void	FrameDrawDiskLEDS( HDC hdc );
+	void	FrameDrawDiskStatus( HDC hdc );
 
 	LRESULT CALLBACK FrameWndProc (
 		HWND   window,

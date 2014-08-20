@@ -40,7 +40,7 @@ const bool IMAGE_DONT_CREATE = false;
 const bool IMAGE_CREATE = true;
 
 extern BOOL enhancedisk;
-const string& DiskGetDiskPathFilename(const int iDrive);
+const std::string& DiskGetDiskPathFilename(const int iDrive);
 
 void    DiskInitialize(void); // DiskIIManagerStartup()
 void    DiskDestroy(void); // no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
@@ -62,6 +62,7 @@ bool    DiskGetProtect(const int iDrive);
 void    DiskSetProtect(const int iDrive, const bool bWriteProtect);
 int     DiskGetCurrentDrive();
 int     DiskGetCurrentTrack();
+int     DiskGetTrack( int drive );
 int     DiskGetCurrentPhase();
 int     DiskGetCurrentOffset();
 char*   DiskGetCurrentState();

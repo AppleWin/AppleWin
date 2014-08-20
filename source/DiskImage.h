@@ -23,7 +23,8 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-	#define NIBBLES_PER_TRACK 0x1A00
+#include "DiskDefs.h"
+
 	#define TRACK_DENIBBLIZED_SIZE (16 * 256)	// #Sectors x Sector-size
 
 	#define	TRACKS_STANDARD	35

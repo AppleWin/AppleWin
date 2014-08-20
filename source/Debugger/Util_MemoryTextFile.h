@@ -1,12 +1,11 @@
 #pragma once
 
-
 // Memory Text File _________________________________________________________
 
 	class MemoryTextFile_t
 	{
-		vector<char  > m_vBuffer;
-		vector<char *> m_vLines ; // array of pointers to start of lines
+		std::vector<char  > m_vBuffer;
+		std::vector<char *> m_vLines ; // array of pointers to start of lines
 		bool           m_bDirty ; // line pointers not up-to-date
 
 		void GetLinePointers();

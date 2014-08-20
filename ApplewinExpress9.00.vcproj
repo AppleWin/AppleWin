@@ -267,6 +267,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Debugger\DebugDefs.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Debugger\Debugger_Assembler.cpp"
 					>
 				</File>
@@ -347,11 +351,15 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\Util_MemoryTextFile.cpp"
+					RelativePath=".\source\Debugger\Util_MemoryTextFile.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Util_MemoryTextFile.h"
+					RelativePath=".\source\Debugger\Util_MemoryTextFile.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Util_Text.h"
 					>
 				</File>
 			</Filter>
@@ -799,6 +807,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\DiskDefs.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\DiskImage.cpp"
 					>
 				</File>
@@ -952,7 +964,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\docs\History.txt"
+				RelativePath=".\bin\History.txt"
 				>
 			</File>
 			<File

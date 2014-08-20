@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,7 +27,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+
+#include "AppleWin.h"
+#include "Disk.h"
 #include "DiskImage.h"
+#include "Frame.h"
+#include "Memory.h"
+#include "Registry.h"
+#include "Video.h"
+
 #include "..\resource\resource.h"
 
 #define LOG_DISK_ENABLED 0
@@ -60,8 +68,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	{
 		TCHAR  imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
 		TCHAR  fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
-		string strDiskPathFilename;
-		string strFilenameInZip;						// 0x00           or <FILENAME.EXT>
+		std::string strDiskPathFilename;
+		std::string strFilenameInZip;					// 0x00           or <FILENAME.EXT>
 		HIMAGE imagehandle;					// Init'd by DiskInsert() -> ImageOpen()
 		int    track;
 		LPBYTE trackimage;
@@ -117,13 +125,14 @@ int DiskGetCurrentDrive(void)  { return currdrive; }
 int DiskGetCurrentTrack(void)  { return g_aFloppyDisk[currdrive].track; }
 int DiskGetCurrentPhase(void)  { return g_aFloppyDisk[currdrive].phase; }
 int DiskGetCurrentOffset(void) { return g_aFloppyDisk[currdrive].byte; }
+int DiskGetTrack( int drive )  { return g_aFloppyDisk[ drive   ].track; }
 
-const string& DiskGetDiskPathFilename(const int iDrive)
+const std::string& DiskGetDiskPathFilename(const int iDrive)
 {
 	return g_aFloppyDisk[iDrive].strDiskPathFilename;
 }
 
-static void DiskSetDiskPathFilename(const int iDrive, const string strPathName)
+static void DiskSetDiskPathFilename(const int iDrive, const std::string strPathName)
 {
 	g_aFloppyDisk[iDrive].strDiskPathFilename = strPathName;
 }
@@ -206,10 +215,13 @@ void Disk_SaveLastDiskImage(const int iDrive)
 static void CheckSpinning(void)
 {
 	DWORD modechange = (floppymotoron && !g_aFloppyDisk[currdrive].spinning);
+
 	if (floppymotoron)
 		g_aFloppyDisk[currdrive].spinning = 20000;
+
 	if (modechange)
-		FrameRefreshStatus(DRAW_LEDS);
+		//FrameRefreshStatus(DRAW_LEDS);
+		FrameDrawDiskLEDS( (HDC)0 );
 }
 
 //===========================================================================
@@ -295,8 +307,8 @@ static bool IsDriveValid(const int iDrive)
 
 static void AllocTrack(const int iDrive)
 {
-  Disk_t * fptr = &g_aFloppyDisk[iDrive];
-  fptr->trackimage = (LPBYTE)VirtualAlloc(NULL, NIBBLES_PER_TRACK, MEM_COMMIT, PAGE_READWRITE);
+	Disk_t * fptr = &g_aFloppyDisk[iDrive];
+	fptr->trackimage = (LPBYTE)VirtualAlloc(NULL, NIBBLES_PER_TRACK, MEM_COMMIT, PAGE_READWRITE);
 }
 
 //===========================================================================
@@ -461,6 +473,10 @@ static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG)
 			fptr->track          = newtrack;
 			fptr->trackimagedata = 0;
 		}
+
+		// Feature Request #201 Show track status
+		// https://github.com/AppleWin/AppleWin/issues/201
+		FrameDrawDiskStatus( (HDC)0 );
 	}
 #else	// Old 1.13.1 code for Chessmaster 2000 to work! (see bug#18109)
 	const int nNumTracksInImage = ImageGetNumTracks(fptr->imagehandle);
@@ -551,11 +567,9 @@ LPCTSTR DiskGetBaseName(const int iDrive)
 
 void DiskGetLightStatus(Disk_Status_e *pDisk1Status_, Disk_Status_e *pDisk2Status_)
 {
-//	*drive1 = g_aFloppyDisk[0].spinning ? g_aFloppyDisk[0].writelight ? 2 : 1 : 0;
-//	*drive2 = g_aFloppyDisk[1].spinning ? g_aFloppyDisk[1].writelight ? 2 : 1 : 0;
-
 	if (pDisk1Status_)
 		*pDisk1Status_ = GetDriveLightStatus( 0 );
+
 	if (pDisk2Status_)
 		*pDisk2Status_ = GetDriveLightStatus( 1 );
 }
@@ -812,6 +826,12 @@ static BYTE __stdcall DiskReadWrite (WORD programcounter, WORD, BYTE, BYTE, ULON
 	if (++fptr->byte >= fptr->nibbles)
 		fptr->byte = 0;
 
+	// Feature Request #201 Show track status
+	// https://github.com/AppleWin/AppleWin/issues/201
+	// NB. Prevent flooding of forcing UI to redraw!!!
+	if( ((fptr->byte) & 0xFF) == 0 )
+		FrameDrawDiskStatus( (HDC)0 ); 
+
 	return result;
 }
 
@@ -904,7 +924,10 @@ static BYTE __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG)
 	BOOL modechange = !g_aFloppyDisk[currdrive].writelight;
 	g_aFloppyDisk[currdrive].writelight = 20000;
 	if (modechange)
-		FrameRefreshStatus(DRAW_LEDS);
+	{
+		//FrameRefreshStatus(DRAW_LEDS);
+		FrameDrawDiskLEDS( (HDC)0 );
+	}
 	return MemReturnRandomData(1);
 }
 
@@ -919,7 +942,11 @@ void DiskUpdatePosition(DWORD cycles)
 
 		if (fptr->spinning && !floppymotoron) {
 			if (!(fptr->spinning -= MIN(fptr->spinning, (cycles >> 6))))
-				FrameRefreshStatus(DRAW_LEDS);
+			{
+				// FrameRefreshStatus(DRAW_LEDS);
+				FrameDrawDiskLEDS( (HDC)0 );
+				FrameDrawDiskStatus( (HDC)0 );
+			}
 		}
 
 		if (floppywritemode && (currdrive == loop) && fptr->spinning)
@@ -929,7 +956,11 @@ void DiskUpdatePosition(DWORD cycles)
 		else if (fptr->writelight)
 		{
 			if (!(fptr->writelight -= MIN(fptr->writelight, (cycles >> 6))))
-				FrameRefreshStatus(DRAW_LEDS);
+			{
+				//FrameRefreshStatus(DRAW_LEDS);
+				FrameDrawDiskLEDS( (HDC)0 );
+				FrameDrawDiskStatus( (HDC)0 );
+			}
 		}
 
 		if ((!enhancedisk) && (!diskaccessed) && fptr->spinning)
@@ -954,12 +985,12 @@ bool DiskDriveSwap(void)
 	// Swap disks between drives
 	// . NB. We swap trackimage ptrs (so don't need to swap the buffers' data)
 	// . TODO: Consider array of Pointers: Disk_t* g_aDrive[]
-	swap(g_aFloppyDisk[0], g_aFloppyDisk[1]);
+	std::swap(g_aFloppyDisk[0], g_aFloppyDisk[1]);
 
 	Disk_SaveLastDiskImage(DRIVE_1);
 	Disk_SaveLastDiskImage(DRIVE_2);
 
-	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, false );
 
 	return true;
 }

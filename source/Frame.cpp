@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,15 +27,33 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+#include <sys/stat.h>
+
+#include "AppleWin.h"
+#include "CPU.h"
+#include "Disk.h"
 #include "DiskImage.h"
 #include "Harddisk.h"
+#include "Frame.h"
+#include "Keyboard.h"
+#include "Log.h"
+#include "Memory.h"
+#include "Mockingboard.h"
 #include "MouseInterface.h"
-#include "..\resource\resource.h"
-#include <sys/stat.h>
+#include "ParallelPrinter.h"
+#include "Registry.h"
+#include "SaveState.h"
+#include "SerialComms.h"
+#include "SoundCore.h"
+#include "Speaker.h"
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
+#include "Video.h"
+
+#include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
+#include "Debugger\Debug.h"
 
 //#define ENABLE_MENU 0
 
@@ -46,7 +64,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static const int kDEFAULT_VIEWPORT_SCALE = 2;
 static int g_nViewportCX = FRAMEBUFFER_W * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportCY = FRAMEBUFFER_H * kDEFAULT_VIEWPORT_SCALE;
-static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE;
+static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
 static int g_nOldViewportScale = kDEFAULT_VIEWPORT_SCALE;
 static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
 
@@ -72,6 +90,16 @@ static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
 	static HBITMAP g_hDiskWindowedLED[ NUM_DISK_STATUS ];
 
 //static HBITMAP g_hDiskFullScreenLED[ NUM_DISK_STATUS ];
+static int    g_nTrackDrive1  = -1;
+static int    g_nTrackDrive2  = -1;
+static int    g_nSectorDrive1 = -1;
+static int    g_nSectorDrive2 = -1;
+static TCHAR  g_sTrackDrive1 [8] = TEXT("??");
+static TCHAR  g_sTrackDrive2 [8] = TEXT("??");
+static TCHAR  g_sSectorDrive1[8] = TEXT("??");
+static TCHAR  g_sSectorDrive2[8] = TEXT("??");
+Disk_Status_e g_eStatusDrive1 = DISK_STATUS_OFF;
+Disk_Status_e g_eStatusDrive2 = DISK_STATUS_OFF;
 
 // Must keep in sync with Disk_Status_e g_aDiskFullScreenColors
 static DWORD g_aDiskFullScreenColorsLED[ NUM_DISK_STATUS ] =
@@ -99,9 +127,10 @@ static HRGN    clipregion      = (HRGN)0;
 static HDC     g_hFrameDC      = (HDC)0;
 static RECT    framerect       = {0,0,0,0};
 
-		HWND   g_hFrameWindow  = (HWND)0;
-		BOOL   g_bIsFullScreen = 0;
-		BOOL   g_bMultiMon     = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
+		HWND   g_hFrameWindow   = (HWND)0;
+		BOOL   g_bIsFullScreen  = 0;
+		BOOL   g_bConfirmReboot = 1; // saved PageConfig REGSAVE
+		BOOL   g_bMultiMon      = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
 
 static BOOL    helpquit        = 0;
 static BOOL    g_bPaintingWindow        = 0;
@@ -129,7 +158,7 @@ void    ResetMachineState ();
 void    SetFullScreenMode ();
 void    SetNormalMode ();
 void    SetUsingCursor (BOOL);
-static bool FileExists(string strFilename);
+static bool FileExists(std::string strFilename);
 
 bool	g_bScrollLock_FullSpeed = false;
 bool	g_bFreshReset = false;
@@ -527,7 +556,7 @@ static void DrawFrameWindow ()
 	}
 
 	// DRAW THE STATUS AREA
-	DrawStatusArea(dc,DRAW_BACKGROUND | DRAW_LEDS);
+	DrawStatusArea(dc,DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
 
 	// DRAW THE CONTENTS OF THE EMULATED SCREEN
 	if (g_nAppMode == MODE_LOGO)
@@ -547,24 +576,21 @@ static void DrawFrameWindow ()
 }
 
 //===========================================================================
-static void DrawStatusArea (HDC passdc, int drawflags)
+void FrameDrawDiskLEDS( HDC passdc )
 {
-	FrameReleaseDC();
-	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
-	int  x      = buttonx;
-	int  y      = buttony+BUTTONS*BUTTONCY+1;
-	const bool bCaps = KeybGetCapsStatus();
-	//const bool bP8Caps = KeybGetP8CapsStatus(); // TODO: FIXME: Not used ?!  Should show the LED status ...
-
-	Disk_Status_e eDrive1Status = DISK_STATUS_OFF;
-	Disk_Status_e eDrive2Status = DISK_STATUS_OFF;
+	static Disk_Status_e eDrive1Status = DISK_STATUS_OFF;
+	static Disk_Status_e eDrive2Status = DISK_STATUS_OFF;
 	DiskGetLightStatus(&eDrive1Status, &eDrive2Status);
 
-#if HD_LED
-	// 1.19.0.0 Hard Disk Status/Indicator Light
-	Disk_Status_e eHardDriveStatus = DISK_STATUS_OFF;
-	HD_GetLightStatus(&eHardDriveStatus);
-#endif
+	g_eStatusDrive1 = eDrive1Status;
+	g_eStatusDrive2 = eDrive2Status;
+
+	// Draw Track/Sector
+	FrameReleaseDC();
+	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
+
+	int  x      = buttonx;
+	int  y      = buttony+BUTTONS*BUTTONCY+1;
 
 	if (g_bIsFullScreen)
 	{
@@ -578,6 +604,181 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive2Status ] );
 		TextOut(dc,x+13,y+2,TEXT("2"),1);
+	}
+	else
+	{
+		RECT rDiskLed = {0,0,8,8};
+		DrawBitmapRect(dc,x+12,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive1Status]);
+		DrawBitmapRect(dc,x+31,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive2Status]);
+	}
+}
+
+// Feature Request #201 Show track status
+// https://github.com/AppleWin/AppleWin/issues/201
+//===========================================================================
+void FrameDrawDiskStatus( HDC passdc )
+{
+	// We use the actual drive since probing from memory doesn't tell us anything we don't already know.
+	//        DOS3.3   ProDOS
+	// Drive  $B7EA    $BE3D
+	// Track  $B7EC    LC1 $D356
+	// Sector $B7ED    LC1 $D357
+	// RWTS            LC1 $D300
+	int nActiveFloppy = DiskGetCurrentDrive();
+
+	int nDisk1Track  = DiskGetTrack(0);
+	int nDisk2Track  = DiskGetTrack(1);
+	
+	// Probe known OS's for Track/Sector
+	int  isProDOS = mem[ 0xBF00 ] == 0x4C;
+	bool isValid  = true;
+
+	// Try DOS3.3 Sector
+	if ( !isProDOS )
+	{
+		int nDOS33track  = mem[ 0xB7EC ];
+		int nDOS33sector = mem[ 0xB7ED ];
+
+		if ((nDOS33track  >= 0 && nDOS33track  < 40)
+		&&  (nDOS33sector >= 0 && nDOS33sector < 16))
+		{
+#if _DEBUG && 0
+			if (nDOS33track != nDisk1Track)
+			{
+				char text[128];
+				sprintf( text, "\n\n\nWARNING: DOS33Track: %d (%02X) != nDisk1Track: %d (%02X)\n\n\n", nDOS33track, nDOS33track, nDisk1Track, nDisk1Track );
+				OutputDebugString( text );
+			}
+#endif // _DEBUG
+
+			/**/ if (nActiveFloppy == 0) g_nSectorDrive1 = nDOS33sector;
+			else if (nActiveFloppy == 1) g_nSectorDrive2 = nDOS33sector;
+		}
+		else
+			isValid = false;
+	}
+	else // isProDOS
+	{
+		// we can't just read from mem[ 0xD357 ] since it might be bank-switched from ROM
+		// and we need the Language Card RAM
+		// memrom[ 0xD350 ] = " ERROR\x07\x00"  Applesoft error message
+		//                             T   S
+		int nProDOStrack  = *MemGetMainPtr( 0xC356 ); // LC1 $D356
+		int nProDOSsector = *MemGetMainPtr( 0xC357 ); // LC1 $D357
+
+		if ((nProDOStrack  >= 0 && nProDOStrack  < 40)
+		&&  (nProDOSsector >= 0 && nProDOSsector < 16))
+		{
+			/**/ if (nActiveFloppy == 0) g_nSectorDrive1 = nProDOSsector;
+			else if (nActiveFloppy == 1) g_nSectorDrive2 = nProDOSsector;
+		}
+		else
+			isValid = false;
+	}
+
+	g_nTrackDrive1  = nDisk1Track;
+	g_nTrackDrive2  = nDisk2Track;
+
+	if( !isValid )
+	{
+		if (nActiveFloppy == 0) g_nSectorDrive1 = -1;
+		else                    g_nSectorDrive2 = -1;
+	}
+
+	sprintf_s( g_sTrackDrive1 , sizeof(g_sTrackDrive1 ), "%2d", g_nTrackDrive1 );
+	if (g_nSectorDrive1 < 0) sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" , g_nSectorDrive1 );
+	else                     sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%2d", g_nSectorDrive1 ); 
+
+	sprintf_s( g_sTrackDrive2 , sizeof(g_sTrackDrive2),  "%2d", g_nTrackDrive2 );
+	if (g_nSectorDrive2 < 0) sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" , g_nSectorDrive2 );
+	else                     sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%2d", g_nSectorDrive2 );
+
+	// Draw Track/Sector
+	FrameReleaseDC();
+	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
+
+	int  x      = buttonx;
+	int  y      = buttony+BUTTONS*BUTTONCY+1;
+
+	SelectObject(dc,smallfont);
+	SetBkMode(dc,OPAQUE);
+	SetBkColor(dc,RGB(0,0,0));
+	SetTextAlign(dc,TA_LEFT | TA_TOP);
+
+	char text[ 16 ];
+
+	if (g_bIsFullScreen)
+	{
+#if _DEBUG && 0
+		SetBkColor(dc,RGB(255,0,255));
+#endif
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive1 ] );
+		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
+
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive2 ] );
+		TextOut(dc,x+13,y+2,TEXT("2"),1);
+
+		int dx = 0;
+		if( nActiveFloppy == 0 )
+			sprintf( text, "%s/%s    ", g_sTrackDrive1, g_sSectorDrive1 );
+		else
+			sprintf( text, "%s/%s    ", g_sTrackDrive2, g_sSectorDrive2 );
+
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ DISK_STATUS_READ ] );
+		TextOut(dc,x+dx,y-12,text, strlen(text) ); // original: y+2; y-12 puts status in the Configuration Button Icon
+	}
+	else
+	{
+		// NB. Only draw Track/Sector if 2x windowed
+		if (g_nOldViewportScale == 1)
+			return;
+
+		// Erase background
+		SelectObject(dc,GetStockObject(NULL_PEN));
+#if _DEBUG && 0
+		SelectObject( dc, CreateSolidBrush( RGB(255,0,255) ) );
+#else
+		SelectObject(dc,btnfacebrush);
+#endif
+		Rectangle(dc,x+4,y+32,x+BUTTONCX+1,y+56); // y+35 -> 44 -> 56
+
+		SetTextColor(dc,RGB(0,0,0));
+		SetBkMode(dc,TRANSPARENT);
+
+		sprintf( text, "T%s", g_sTrackDrive1 );
+		TextOut(dc,x+6 ,y+32,text, strlen(text) );
+		sprintf( text, "S%s", g_sSectorDrive1 );
+		TextOut(dc,x+ 6,y+42, text, strlen(text) );
+
+		sprintf( text, "T%s", g_sTrackDrive2 );
+		TextOut(dc,x+26,y+32,text, strlen(text) );
+		sprintf( text, "S%s", g_sSectorDrive2 );
+		TextOut(dc,x+26,y+42, text, strlen(text) );
+	}
+}
+
+//===========================================================================
+static void DrawStatusArea (HDC passdc, int drawflags)
+{
+	FrameReleaseDC();
+	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
+	int  x      = buttonx;
+	int  y      = buttony+BUTTONS*BUTTONCY+1;
+	const bool bCaps = KeybGetCapsStatus();
+	//const bool bP8Caps = KeybGetP8CapsStatus(); // TODO: FIXME: Not used ?!  Should show the LED status ...
+
+#if HD_LED
+	// 1.19.0.0 Hard Disk Status/Indicator Light
+	Disk_Status_e eHardDriveStatus = DISK_STATUS_OFF;
+	HD_GetLightStatus(&eHardDriveStatus);
+#endif
+
+	if (g_bIsFullScreen)
+	{
+		SelectObject(dc,smallfont);
+
+		if (drawflags & DRAW_DISK_STATUS)
+			FrameDrawDiskStatus( dc );
 
 #if HD_LED
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
@@ -609,7 +810,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 //			const int   nCapsLen = sizeof(sCapsStatus) / sizeof(TCHAR);
 //			TextOut(dc,x+BUTTONCX,y+2,"Caps",4); // sCapsStatus,nCapsLen - 1);
 
-			TextOut(dc,x+BUTTONCX,y+2,TEXT("A"),1);
+			TextOut(dc,x+BUTTONCX,y+2,TEXT("A"),1); // NB. Caps Lock indicator is already flush right!
 		}
 		SetTextAlign(dc,TA_CENTER | TA_TOP);
 		SetTextColor(dc,(g_nAppMode == MODE_PAUSED || g_nAppMode == MODE_STEPPING
@@ -618,16 +819,16 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		TextOut(dc,x+BUTTONCX/2,y+13,(g_nAppMode == MODE_PAUSED
 			? TITLE_PAUSED
 			: TITLE_STEPPING) ,8);
-
 	}
-	else
+	else // g_bIsFullScreen
 	{
 		if (drawflags & DRAW_BACKGROUND)
 		{
 			SelectObject(dc,GetStockObject(NULL_PEN));
 			SelectObject(dc,btnfacebrush);
-			Rectangle(dc,x,y,x+BUTTONCX+2,y+35);
-			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+31,0);
+			Rectangle(dc,x,y,x+BUTTONCX+2,y+60); // y+35 --> 48  --> 60
+			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+56,0); // y+31 --> 44 --> 56
+
 			SelectObject(dc,smallfont);
 			SetTextAlign(dc,TA_CENTER | TA_TOP);
 			SetTextColor(dc,RGB(0,0,0));
@@ -638,12 +839,13 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 			// 1.19.0.0 Hard Disk Status/Indicator Light
 			TextOut(dc,x+ 7,y+17,TEXT("H"),1);
 		}
+
 		if (drawflags & DRAW_LEDS)
 		{
-			RECT rDiskLed = {0,0,8,8};
+			FrameDrawDiskLEDS( dc );
 
-			DrawBitmapRect(dc,x+12,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive1Status]);
-			DrawBitmapRect(dc,x+31,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive2Status]);
+			if (drawflags & DRAW_DISK_STATUS)
+				FrameDrawDiskStatus( dc );
 
 			if (!IS_APPLE2)
 			{
@@ -662,6 +864,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 #if HD_LED
 				// 1.19.0.0 Hard Disk Status/Indicator Light
+				RECT rDiskLed = {0,0,8,8};
 				DrawBitmapRect(dc,x+12,y+18,&rDiskLed,g_hDiskWindowedLED[eHardDriveStatus]);
 #endif
 			}
@@ -672,6 +875,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 			GetAppleWindowTitle(); // SetWindowText() // WindowTitle
 			SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)g_pAppTitle);
 		}
+
 		if (drawflags & DRAW_BUTTON_DRIVES)
 		{
 			DrawButton(dc, BTN_DRIVE1);
@@ -1368,6 +1572,10 @@ LRESULT CALLBACK FrameWndProc (
       break;
 
     case WM_SYSKEYDOWN:
+		KeybUpdateCtrlShiftStatus();
+		if (g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN
+			ScreenWindowResize(true);
+		else
       PostMessage(window,WM_KEYDOWN,wparam,lparam);
       if ((wparam == VK_F10) || (wparam == VK_MENU))	// VK_MENU == ALT Key
         return 0;
@@ -1500,10 +1708,20 @@ static void ScreenWindowResize(const bool bCtrlKey)
 
 static bool ConfirmReboot(bool bFromButtonUI)
 {
-	if (!bFromButtonUI)
+	if (!bFromButtonUI || !g_bConfirmReboot)
 		return true;
 
-	int res = MessageBox(g_hFrameWindow, "Are you sure you want to reboot?\n(All data will be lost!)", "Reboot", MB_ICONWARNING|MB_YESNO);
+	int res = MessageBox(g_hFrameWindow, 
+		"Are you sure you want to reboot?\n"
+		"(All data will be lost!)\n"
+		"\n"
+		"You can skip this dialog from displaying\n"
+		"in the future by unchecking:\n"
+		"\n"
+		"    [ ] Confirm reboot\n"
+		"\n"
+		"in the Configuration dialog.\n"
+		, "Reboot", MB_ICONWARNING|MB_YESNO);
 	return res == IDYES;
 }
 
@@ -1636,10 +1854,10 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress,MAX_PATH);
 	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
 
-	string filename1= "\"";
+	std::string filename1= "\"";
 	filename1.append( DiskGetDiskPathFilename(iDrive) );
 	filename1.append("\"");
-	string sFileNameEmpty = "\"";
+	std::string sFileNameEmpty = "\"";
 	sFileNameEmpty.append("\"");
 
 	//  Load the menu template containing the shortcut menu from the
@@ -2149,8 +2367,10 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 }
 
 //===========================================================================
-void FrameRefreshStatus (int drawflags) {
-  DrawStatusArea((HDC)0,drawflags);
+void FrameRefreshStatus (int drawflags, bool bUpdateDiskStatus) {
+	// NB. 99% of the time we draw the disk status.  On DiskDriveSwap() we don't.
+ 	drawflags |= bUpdateDiskStatus ? DRAW_DISK_STATUS : 0;
+	DrawStatusArea((HDC)0,drawflags);
 }
 
 //===========================================================================
@@ -2203,7 +2423,7 @@ void FrameReleaseVideoDC ()
 
 //===========================================================================
 // TODO: FIXME: Util_TestFileExists()
-static bool FileExists(string strFilename) 
+static bool FileExists(std::string strFilename) 
 { 
 	struct stat stFileInfo; 
 	int intStat = stat(strFilename.c_str(),&stFileInfo); 

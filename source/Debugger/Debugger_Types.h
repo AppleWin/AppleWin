@@ -1161,8 +1161,8 @@ const	DisasmData_t* pDisasmData;
 		bool           m_bFound  ; // 
 	};
 
-	typedef vector<MemorySearch_t> MemorySearchValues_t;
-	typedef vector<int>            MemorySearchResults_t;
+	typedef std::vector<MemorySearch_t> MemorySearchValues_t;
+	typedef std::vector<int>            MemorySearchResults_t;
 
 // Parameters _____________________________________________________________________________________
 
@@ -1419,7 +1419,7 @@ const	DisasmData_t* pDisasmData;
 		NO_SOURCE_LINE = -1
 	};
 
-	typedef map<WORD, int> SourceAssembly_t; // Address -> Line #  &  FileName
+	typedef std::map<WORD, int> SourceAssembly_t; // Address -> Line #  &  FileName
 
 
 // Symbols ________________________________________________________________________________________
@@ -1459,7 +1459,7 @@ const	DisasmData_t* pDisasmData;
 		SYMBOL_TABLE_PRODOS    = (1 << 8),
 	};
 
-	typedef map<WORD, string> SymbolTable_t;
+	typedef std::map<WORD, std::string> SymbolTable_t;
 
 
 // Watches ________________________________________________________________________________________

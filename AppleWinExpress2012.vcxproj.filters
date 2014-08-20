@@ -162,7 +162,7 @@
     <ClInclude Include="source\Debugger\Debugger_Types.h">
       <Filter>Source Files\Debugger</Filter>
     </ClInclude>
-    <ClInclude Include="source\Util_MemoryTextFile.h">
+    <ClInclude Include="source\Debugger\Util_MemoryTextFile.h">
       <Filter>Source Files\Debugger</Filter>
     </ClInclude>
     <ClInclude Include="source\Disk.h">
@@ -282,6 +282,15 @@
     <ClInclude Include="resource\winres.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
+    <ClInclude Include="source\DiskDefs.h">
+      <Filter>Source Files\Disk</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Debugger\DebugDefs.h">
+      <Filter>Source Files\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Debugger\Util_Text.h">
+      <Filter>Source Files\Debugger</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="docs\CodingConventions.txt">
@@ -293,7 +302,7 @@
     <Text Include="docs\FAQ.txt">
       <Filter>Docs</Filter>
     </Text>
-    <Text Include="docs\History.txt">
+    <Text Include="bin\History.txt">
       <Filter>Docs</Filter>
     </Text>
     <Text Include="docs\ToDo.txt">
@@ -376,7 +385,7 @@
     <ClCompile Include="source\Debugger\Debugger_Symbols.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
-    <ClCompile Include="source\Util_MemoryTextFile.cpp">
+    <ClCompile Include="source\Debugger\Util_MemoryTextFile.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
     <ClCompile Include="source\Disk.cpp">

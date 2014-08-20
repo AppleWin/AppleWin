@@ -22,9 +22,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include "stdafx.h"
-#include "PropertySheetHelper.h"
+
 #include "..\AppleWin.h"	// g_nAppMode, g_uScrollLockToggle, sg_PropertySheet
+#include "..\Disk.h"
+#include "..\Frame.h"
+#include "..\Registry.h"
+#include "..\SaveState.h"
 #include "IPropertySheet.h"
+#include "PropertySheetHelper.h"
 
 /*
 Config causing AfterClose msgs:
@@ -114,7 +119,7 @@ void CPropertySheetHelper::SetSlot5(SS_CARDTYPE NewCardType)
 // Used by:
 // . CPageDisk:		IDC_CIDERPRESS_BROWSE
 // . CPageAdvanced:	IDC_PRINTER_DUMP_FILENAME_BROWSE
-string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE, TCHAR* FILEMASKS)
+std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE, TCHAR* FILEMASKS)
 {
 	static char PathToFile[MAX_PATH] = {0}; //This is a really awkward way to prevent mixing CiderPress and SaveStated values (RAPCS), but it seem the quickest. Here is its Line 1.
 	strcpy(PathToFile, Snapshot_GetFilename()); //RAPCS, line 2.
@@ -122,7 +127,7 @@ string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* 
 	TCHAR szFilename[MAX_PATH];
 	strcpy(szFilename, "");
 	RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename ,MAX_PATH);
-	string PathName = szFilename;
+	std::string PathName = szFilename;
 
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn,sizeof(OPENFILENAME));

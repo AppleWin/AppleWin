@@ -113,6 +113,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>$(MSBuildProjectDirectory)\ddraw_lib\x86;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">
@@ -161,6 +162,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>$(MSBuildProjectDirectory)\ddraw_lib\x86;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -201,6 +203,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>$(MSBuildProjectDirectory)\ddraw_lib\x86;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|Win32'">
@@ -241,6 +244,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>$(MSBuildProjectDirectory)\ddraw_lib\x86;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -267,7 +271,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="source\Util_MemoryTextFile.cpp" />
+    <ClCompile Include="source\Debugger\Util_MemoryTextFile.cpp" />
     <ClCompile Include="source\Tfe\Tfe.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
@@ -387,7 +391,7 @@
     <ClInclude Include="source\Debugger\Debugger_Range.h" />
     <ClInclude Include="source\Debugger\Debugger_Symbols.h" />
     <ClInclude Include="source\Debugger\Debugger_Types.h" />
-    <ClInclude Include="source\Util_MemoryTextFile.h" />
+    <ClInclude Include="source\Debugger\Util_MemoryTextFile.h" />
     <ClInclude Include="source\Tfe\Bittypes.h" />
     <ClInclude Include="source\Tfe\Bpf.h" />
     <ClInclude Include="source\Tfe\Ip6_misc.h" />
@@ -461,7 +465,7 @@
     <None Include="docs\CodingConventions.txt" />
     <None Include="docs\Debugger_Changelog.txt" />
     <None Include="docs\FAQ.txt" />
-    <None Include="docs\History.txt" />
+    <None Include="bin\History.txt" />
     <None Include="docs\ToDo.txt" />
     <None Include="docs\Video_Cleanup.txt" />
     <None Include="docs\Wishlist.txt" />

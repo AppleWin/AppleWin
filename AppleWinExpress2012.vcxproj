@@ -48,6 +48,7 @@
     <ClInclude Include="source\CPU\cpu65C02.h" />
     <ClInclude Include="source\CPU\cpu65d02.h" />
     <ClInclude Include="source\Debugger\Debug.h" />
+    <ClInclude Include="source\Debugger\DebugDefs.h" />
     <ClInclude Include="source\Debugger\Debugger_Assembler.h" />
     <ClInclude Include="source\Debugger\Debugger_Color.h" />
     <ClInclude Include="source\Debugger\Debugger_Console.h" />
@@ -58,7 +59,9 @@
     <ClInclude Include="source\Debugger\Debugger_Range.h" />
     <ClInclude Include="source\Debugger\Debugger_Symbols.h" />
     <ClInclude Include="source\Debugger\Debugger_Types.h" />
+    <ClInclude Include="source\Debugger\Util_Text.h" />
     <ClInclude Include="source\Disk.h" />
+    <ClInclude Include="source\DiskDefs.h" />
     <ClInclude Include="source\DiskImage.h" />
     <ClInclude Include="source\DiskImageHelper.h" />
     <ClInclude Include="source\Frame.h" />
@@ -91,7 +94,7 @@
     <ClInclude Include="source\Tfe\Tfearch.h" />
     <ClInclude Include="source\Tfe\Tfesupp.h" />
     <ClInclude Include="source\Tfe\Uilib.h" />
-    <ClInclude Include="source\Util_MemoryTextFile.h" />
+    <ClInclude Include="source\Debugger\Util_MemoryTextFile.h" />
     <ClInclude Include="source\Video.h" />
     <ClInclude Include="source\z80emu.h" />
     <ClInclude Include="source\Z80VICE\daa.h" />
@@ -103,7 +106,7 @@
     <Text Include="docs\CodingConventions.txt" />
     <Text Include="docs\Debugger_Changelog.txt" />
     <Text Include="docs\FAQ.txt" />
-    <Text Include="docs\History.txt" />
+    <Text Include="bin\History.txt" />
     <Text Include="docs\ToDo.txt" />
     <Text Include="docs\Video_Cleanup.txt" />
     <Text Include="docs\Wishlist.txt" />
@@ -184,7 +187,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="source\Util_MemoryTextFile.cpp" />
+    <ClCompile Include="source\Debugger\Util_MemoryTextFile.cpp" />
     <ClCompile Include="source\Video.cpp" />
     <ClCompile Include="source\z80emu.cpp" />
     <ClCompile Include="source\Z80VICE\daa.cpp">

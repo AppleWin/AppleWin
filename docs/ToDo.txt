@@ -3,6 +3,12 @@ To-do list (Tom)
 
 This is a (non-exhaustive) list of stuff that I personally would like to get done:
 
+(14/8/2014) Having moved all non-system headers out of stdafx.h, it looks like
+  many headers are included just to call Init() or Reset() methods for Apple II sub-systems.
+Cut down on the headers by:
+- Using the Visitor pattern (for all Apple II sub-systems)?
+- Or just a vector which contains all sub-system Reset() methods?
+
 . Consolidate the Spkr_SubmitWaveBuffer() & Spkr_SubmitWaveBuffer_FullSpeed() funcs.
 This will make the code cleaner & simpler.
 
@@ -20,21 +26,16 @@ So that the sound is continuous when dragging the window or starting other appli
 
 . Fix SSI263 so that phonemes are overlapped (like Votrax).
 
-. Support for zipped disk images (r/w) & harddisk images (read-only, but maybe write too?)
-
 . Save-state supporting Phasor, harddisk & Ramworks III
 
-. [NICK] Floating-bus support (using Nick Westgate's code)
-For Drol, Lock'n'Chase, TetrisII, etc
-
 . Support for switching display modes mid-frame
-To support Bob Bishop's intros
+To support Bob Bishop's intros, tight-loop page-flipping, etc
 
 ---
 
 Plans for (1st pass) cleaning up are:
-. Ditch the x86 code to access the PC speaker + ditch PC speaker support
-. The arrays ioread[] & iowrite[] in Memory.cpp should be switched from units of 1 byte to 16 bytes.
+. [DONE] Ditch the x86 code to access the PC speaker + ditch PC speaker support
+. [DONE] The arrays ioread[] & iowrite[] in Memory.cpp should be switched from units of 1 byte to 16 bytes.
   This will yield 256 entries spanning [$C000…$CFFF] – currently it’s only [$C000…$C0FF]. This will mean that:
 	a) cards with I/O mapped above $C0FF (eg Mockingboard, Mouse?) don’t have to be kludged as in the READ/WRITE macros in CPU.cpp
 	b) $CFFF (ROMs out) can be emulated

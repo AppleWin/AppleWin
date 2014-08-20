@@ -27,8 +27,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+
+#include "AppleWin.h"
+#include "CPU.h"
+#include "Frame.h"
+#include "Keyboard.h"
+#include "Memory.h"
+#include "Registry.h"
+#include "Video.h"
+
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
+#include "Debugger\Debugger_Color.h"	// For NUM_DEBUG_COLORS
 
 #define HALF_PIXEL_SOLID 1
 #define HALF_PIXEL_BLEED 0
