@@ -371,14 +371,20 @@ static inline void CopySource8(int dx, int dy, int w, int h, int sx, int sy)
 		while (nBytes & 3)
 		{
 			--nBytes;
-			*(pDst+nBytes) = *(pSrc+nBytes);
+			if (g_uHalfScanLines && !(h & 1))
+				*(pDst+nBytes) = 0;				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+			else
+				*(pDst+nBytes) = *(pSrc+nBytes);
 		}
 
 		// Copy 4 bytes at a time
 		while (nBytes)
 		{
 			nBytes -= 4;
-			*(LPDWORD)(pDst+nBytes) = *(LPDWORD)(pSrc+nBytes);
+			if (g_uHalfScanLines && !(h & 1))
+				*(LPDWORD)(pDst+nBytes) = 0;	// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+			else
+				*(LPDWORD)(pDst+nBytes) = *(LPDWORD)(pSrc+nBytes);
 		}
 
 		pDst -= g_nFrameBufferPitch;
@@ -404,9 +410,17 @@ static void CopySource(int dx, int dy, int w, int h, int sx, int sy)
 		while (nBytes)
 		{
 			--nBytes;
-			const RGBQUAD& rRGB = g_pFramebufferinfo->bmiColors[ *(pSrc+nBytes) ];
-			const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
-			*(pDst+nBytes) = rgb;
+			if (g_uHalfScanLines && !(h & 1))
+			{
+				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+				*(pDst+nBytes) = 0;
+			}
+			else
+			{
+				const RGBQUAD& rRGB = g_pFramebufferinfo->bmiColors[ *(pSrc+nBytes) ];
+				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
+				*(pDst+nBytes) = rgb;
+			}
 		}
 
 		pDst -= g_nFrameBufferPitch / sizeof(UINT32);
@@ -1745,7 +1759,10 @@ static inline void __stdcall CopyMixedSource8(int x, int y, int sourcex, int sou
 
 		for (int i = istart; i <= iend; currptr -= g_nFrameBufferPitch, i++)
 		{
-			*currptr = *(currptr+1) = colormixbuffer[i];
+			if (g_uHalfScanLines && (i & 1))
+				*currptr = *(currptr+1) = 0;	// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+			else
+				*currptr = *(currptr+1) = colormixbuffer[i];
 		}
 	}
 }
@@ -1784,9 +1801,17 @@ static void __stdcall CopyMixedSource(int x, int y, int sourcex, int sourcey)
 
 		for (int i = istart; i <= iend; currptr -= g_nFrameBufferPitch/sizeof(UINT32), i++)
 		{
-			RGBQUAD& rRGB = g_pFramebufferinfo->bmiColors[ colormixbuffer[i] ];
-			const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
-			*currptr = *(currptr+1) = rgb;
+			if (g_uHalfScanLines && (i & 1))
+			{
+				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+				*currptr = *(currptr+1) = 0;
+			}
+			else
+			{
+				const RGBQUAD& rRGB = g_pFramebufferinfo->bmiColors[ colormixbuffer[i] ];
+				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
+				*currptr = *(currptr+1) = rgb;
+			}
 		}
 	}
 }
@@ -2549,33 +2574,6 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
   // Clear this flag after TEXT screen has been updated
   g_bTextFlashFlag = false;
 
-	// 50% Half Scan Line
-	if( g_uHalfScanLines )
-	{
-		// 50% Half Scan Line clears every odd scanline.
-		// Shift-Print Screen saves only the even rows.
-		// NOTE: Keep in sync with _Video_RedrawScreen() & Video_MakeScreenShot()
-
-		// [TC-10/06-2014] In full-screen mode, there's noticable flicker when blanking out these alt lines.
-		// - Consider doing this 50% operation in CopySource() instead
-
-		for( int y = 1; y < FRAMEBUFFER_H; y += 2 )
-		{
-			if (!g_bIsFullScreen || !GetFullScreen32Bit())
-			{
-				unsigned char *pSrc = g_aFrameBufferOffset[y];	// 8-bit
-				for( int x = 0; x < FRAMEBUFFER_W; x++ )
-					*pSrc++ = 0;
-			}
-			else
-			{
-				unsigned int *pSrc = (unsigned int *) g_aFrameBufferOffset[y];	// 32-bit
-				for( int x = 0; x < FRAMEBUFFER_W; x++ )
-					*pSrc++ = 0;
-			}
-		}
-	}
-
 #if 1
 	// New simpified code:
 	// . Oliver Schmidt gets a flickering mouse cursor with this code
@@ -3185,7 +3183,7 @@ void Video_MakeScreenShot(FILE *pFile)
 		u8 *pDst;
 
 		// 50% Half Scan Line clears every odd scanline.
-		// Shift-Print Screen saves only the even rows.
+		// SHIFT+PrintScreen saves only the even rows.
 		// NOTE: Keep in sync with _Video_RedrawScreen() & Video_MakeScreenShot()
 		for( int y = 0; y < FRAMEBUFFER_H/2; y++ )
 		{
