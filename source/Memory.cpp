@@ -1490,6 +1490,12 @@ void MemReset ()
 	memmain[ 0x4E ] = 0x20 | (clock >> 0) & 0xFF;
 	memmain[ 0x4F ] = 0x20 | (clock >> 8) & 0xFF;
 
+	// https://github.com/AppleWin/AppleWin/issues/222
+	// "Beautiful Boot by Mini Appler" reads past $61FF into $6200
+	// - "BeachParty-PoacherWars-DaytonDinger-BombsAway.dsk"
+	// - "Dung Beetles, Ms. PacMan, Pooyan, Star Cruiser, Star Thief, Invas. Force.dsk"
+	memmain[ 0x620B ] = 0x0;
+
 	// SET UP THE MEMORY IMAGE
 	mem   = memimage;
 	//image = 0;
