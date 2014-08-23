@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -3994,7 +3994,7 @@ Update_t CmdMemoryFill (int nArgs)
 		MemMarkDirty( nAddressStart, nAddressEnd );
 
 		nValue = g_aArgs[nArgs].nValue & 0xFF;
-		while( nAddressStart <= nAddressEnd )
+		while( nAddressLen-- )
 		{
 			// TODO: Optimize - split into pre_io, and post_io
 			if ((nAddress2 < _6502_IO_BEGIN) || (nAddress2 > _6502_IO_END))
@@ -4340,7 +4340,7 @@ Update_t CmdMemoryMove (int nArgs)
 //			BYTE *pDst = mem + nDst;
 //			BYTE *pEnd = pSrc + nAddressLen;
 
-		while( nAddressStart <= nAddressEnd )
+		while( nAddressLen-- )
 		{
 			// TODO: Optimize - split into pre_io, and post_io
 			if ((nDst < _6502_IO_BEGIN) || (nDst > _6502_IO_END))
