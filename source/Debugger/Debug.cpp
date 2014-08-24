@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,23);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,24);
 
 
 // Public _________________________________________________________________________________________
@@ -4638,6 +4638,150 @@ Update_t CmdMemorySave (int nArgs)
 	return ConsoleUpdate();
 }
 #endif
+
+
+//===========================================================================
+int CmdTextSave (int nArgs)
+{
+	// Save the TEXT1 40-colomn to text file (Default: AppleWin_Text40.txt"
+	// TSAVE ["Filename"]
+	// TSAVE ["Filename"]
+	//       1           
+	static WORD nAddressStart = 0;
+
+	if (nArgs > 1)
+		return Help_Arg_1( CMD_TEXT_SAVE );
+
+	bool bHaveFileName = false;
+
+	if (g_aArgs[1].bType & TYPE_QUOTED_2)
+		bHaveFileName = true;
+
+	char   text[24][82]; // 80 column + CR + LF
+	memset( text, 0, sizeof( text ) );
+
+	char  *pDst = &text[0][0];
+	size_t size = 0;
+
+		/*
+			$FBC1 BASCALC  IN: A=row, OUT: $29=hi, $28=lo
+			    PHA          temp = 00ab cdef
+			    LSR          y /= 2 0000 abcd
+			    AND #3       y & 3  0000 00cd
+			    ORA #4       y | 4  0000 01cd
+			    STA $29
+			    PLA
+			    AND #$18     24   y & 0z00011000  = 000b c000
+			    BCC BASCLC2  y=23, C=1
+			    ADC #7F      y + 0x80
+			    STA $28      = 000b c000
+			    ASL            0abc def0
+			    ASL            abcd ef00
+			    ORA $28      | 000b c000
+			    STA $28
+			  
+		300:A9 00 20 C1 FB A5 29 A6 28 4C 41 F9
+
+		y  Hex  000a_bcde            01cd_eaba_b000
+			0  00  0000_0000  ->  $400  0100 0000_0000
+			1  01  0000_0001  ->  $480  0100 1000_0000
+			2  02  0000_0010  ->  $500  0101 0000_0000
+			3  03  0000_0011  ->  $580  0101 1000_0000
+			4  04  0000_0100  ->  $600  0110 0000_0000
+			5  05  0000_0101  ->  $680  0110 1000_0000
+			6  06  0000_0110  ->  $700  0111 0000_0000
+			7  07  0000_0111  ->  $780  0111 1000_0000
+
+			8  08  0000_1000  ->  $428  0100 0010_1000
+			9  09  0000_1001  ->  $4A8  0100 1010_1000
+		10  0A  0000_1010  ->  $528  0101 0010_1000
+		11  0B  0000_1011  ->  $5A8  0101 1010_1000
+		12  0C  0000_1100  ->  $628  0110 0010_1000
+		13  0D  0000_1101  ->  $6A8  0110 1010_1000
+		14  0E  0000_1110  ->  $728  0111 0010_1000
+		15  0F  0000_1111  ->  $7A8  0111 1010_1000
+
+		16  10  0001_0000  ->  $450  0100 0101_0000
+		17  11  0001_0001  ->  $4D0  0100 1101_0000
+		18  12  0001_0010  ->  $550  0101 0101_0000
+		19  13  0001_0011  ->  $5D0  0101 1101_0000
+		20  14  0001_0100  ->  $650  0110 0101_0000
+		21  15  0001_0101  ->  $6D0  0110_1101_0000
+		22  16  0001_0110  ->  $750  0111_0101_0000
+		23  17  0001_0111  ->  $7D0  0111 1101 0000
+		*/
+
+	int bBank2 = g_bVideoDisplayPage2;
+	LPBYTE g_pTextBank1  = MemGetAuxPtr (0x400  << (int)bBank2);
+	LPBYTE g_pTextBank0  = MemGetMainPtr(0x400  << (int)bBank2);
+
+	for( int y = 0; y < 24; y++ )
+	{
+		// nAddressStart = 0x400 + (y%8)*0x80 + (y/8)*0x28;
+		nAddressStart = ((y&7)<<7) | ((y&0x18)<<2) | (y&0x18); // no 0x400| since using MemGet*Ptr()
+
+		for( int x = 0; x < 40; x++ ) // always 40 columns
+		{
+			if( g_bVideoMode & VF_80COL )
+			// AUX
+				*pDst++ = g_pTextBank1[ nAddressStart ] & 0x7F;
+			// MAIN
+			    *pDst++ = g_pTextBank0[ nAddressStart ] & 0x7F; // mem[ nAddressStart++ ] & 0x7F;
+
+			nAddressStart++;
+		}
+
+		// MSDOS Newline // http://en.wikipedia.org/wiki/Newline
+		*pDst++ = 0x0D;
+		*pDst++ = 0x0A;
+	}
+	size = pDst - &text[0][0];
+
+	TCHAR sLoadSaveFilePath[ MAX_PATH ];
+	_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
+
+	if( bHaveFileName )
+		_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
+	else
+	{
+		if( g_bVideoMode & VF_80COL )
+			sprintf( g_sMemoryLoadSaveFileName, "AppleWin_Text80.txt" );
+		else
+			sprintf( g_sMemoryLoadSaveFileName, "AppleWin_Text40.txt" );
+	}
+
+	_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
+
+	FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
+	if (hFile)
+	{
+		ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
+		fclose( hFile );
+	}
+
+	hFile = fopen( sLoadSaveFilePath, "wb" );
+	if (hFile)
+	{
+		size_t nWrote = fwrite( text, size, 1, hFile );
+		if (nWrote == 1)
+		{
+			TCHAR text[ CONSOLE_WIDTH ] = TEXT("");
+			sprintf( text, "Saved: %s", g_sMemoryLoadSaveFileName );
+			ConsoleBufferPush( text ); // "Saved."
+		}
+		else
+		{
+			ConsoleBufferPush( TEXT( "Error saving." ) );
+		}
+		fclose( hFile );
+	}
+	else
+	{
+		ConsoleBufferPush( TEXT( "Error opening file." ) );
+	}
+
+	return ConsoleUpdate();
+}
 
 //===========================================================================
 int _SearchMemoryFind(

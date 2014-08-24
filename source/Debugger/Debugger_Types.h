@@ -442,6 +442,7 @@
 //		, CMD_MEMORY_SEARCH_APPLE   // Flashing Chars, Hi-Bit Set
 		, CMD_MEMORY_SEARCH_HEX
 		, CMD_MEMORY_FILL
+		, CMD_TEXT_SAVE
 // Output
 		, CMD_OUTPUT_CALC
 		, CMD_OUTPUT_ECHO
@@ -671,6 +672,8 @@
 	Update_t CmdMemoryEnterByte    (int nArgs);
 	Update_t CmdMemoryEnterWord    (int nArgs);
 	Update_t CmdMemoryFill         (int nArgs);
+	Update_t CmdTextSave           (int nArgs);
+
 	Update_t CmdMemoryLoad         (int nArgs);
 	Update_t CmdMemoryMove         (int nArgs);
 	Update_t CmdMemorySave         (int nArgs);

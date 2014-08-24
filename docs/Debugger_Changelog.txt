@@ -1,5 +1,10 @@
 /*
 2.7.0.#
+.24 Added: TSAVE "filename" to save the text screen to file
+    Default filename for 40 columns is: AppleWin_Text40.txt
+    Default filename for 80 columns is: AppleWin_Text80.txt
+.23 Fixed: HanG with Memory Move when memory ends at FFFF, i.e. 2000<FFFE.FFFFM
+.22 Fixed: Hang with Memory Fill when memory ends at FFFF, i.e. F D000:FFFF 0
 .21 Added: Help for BRK
 .20 Moved: BRK and BRKOP now under HELP BREAKPOINTS
 .19 Added: Shift-F7 will run the emulator at normal speed but with debugger breakpoints active!
