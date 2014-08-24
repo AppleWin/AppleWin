@@ -1411,7 +1411,15 @@ void MemReset ()
 	if (g_nMemoryClearType >= 0)
 		g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>(g_nMemoryClearType);
 	else // random
+	{
 		g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>( clock % NUM_MIP );
+
+		// Don't use unless manually specified as a
+		// few badly written programs will not work correctly
+		// due to buffer overflows or not initializig memory before using.
+		if( g_eMemoryInitPattern == MIP_PAGE_ADDRESS_LOW )
+			g_eMemoryInitPattern = MIP_FF_FF_00_00;
+	}
 
 	switch( g_eMemoryInitPattern )
 	{
@@ -1491,10 +1499,20 @@ void MemReset ()
 	memmain[ 0x4F ] = 0x20 | (clock >> 8) & 0xFF;
 
 	// https://github.com/AppleWin/AppleWin/issues/222
+	// MIP_PAGE_ADDRESS_LOW breaks a few badly written programs!
 	// "Beautiful Boot by Mini Appler" reads past $61FF into $6200
 	// - "BeachParty-PoacherWars-DaytonDinger-BombsAway.dsk"
 	// - "Dung Beetles, Ms. PacMan, Pooyan, Star Cruiser, Star Thief, Invas. Force.dsk"
 	memmain[ 0x620B ] = 0x0;
+	
+	// https://github.com/AppleWin/AppleWin/issues/222
+	// MIP_PAGE_ADDRESS_LOW
+	// "Copy II+ v5.0.dsk"
+	// There is a strange memory checker from $1B03 .. $1C25
+	// Stuck in loop at $1BC2: JSR $F88E INSDS2 before crashing to $0: 00 BRK
+	memmain[ 0xBFFD ] = 0;
+	memmain[ 0xBFFE ] = 0;
+	memmain[ 0xBFFF ] = 0;
 
 	// SET UP THE MEMORY IMAGE
 	mem   = memimage;
