@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,21);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,7,0,23);
 
 
 // Public _________________________________________________________________________________________
@@ -86,7 +86,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"X", // Reg X
 		"Y", // Reg Y
 		// Special
-		"PC", // Program Counter
+		"PC", // Program Counter -- could use "$"
 		"S" , // Stack Pointer
 		// Flags -- .8 Moved: Flag names from g_aFlagNames[] to "inlined" g_aBreakpointSource[]
 		"P", // Processor Status
@@ -98,7 +98,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"R", // --1- ---- Reserved
 		"V", // -1-- ---- Overflow
 		"N", // 1--- ---- Sign
-		// Misc		
+		// Misc
 		"OP", // Opcode/Instruction/Mnemonic
 		// Memory
 		"M" // Main
@@ -3994,7 +3994,7 @@ Update_t CmdMemoryFill (int nArgs)
 		MemMarkDirty( nAddressStart, nAddressEnd );
 
 		nValue = g_aArgs[nArgs].nValue & 0xFF;
-		while( nAddressLen-- )
+		while( nAddressLen-- ) // v2.7.0.22
 		{
 			// TODO: Optimize - split into pre_io, and post_io
 			if ((nAddress2 < _6502_IO_BEGIN) || (nAddress2 > _6502_IO_END))
@@ -4314,6 +4314,10 @@ Update_t CmdMemoryLoad (int nArgs)
 //===========================================================================
 Update_t CmdMemoryMove (int nArgs)
 {
+	// M destaddr address end
+	// M destaddr address,len
+	// M destaddr address:end
+	// 2000<4000.5FFFM
 	if (nArgs < 3)
 		return Help_Arg_1( CMD_MEMORY_MOVE );
 
@@ -4340,7 +4344,7 @@ Update_t CmdMemoryMove (int nArgs)
 //			BYTE *pDst = mem + nDst;
 //			BYTE *pEnd = pSrc + nAddressLen;
 
-		while( nAddressLen-- )
+		while( nAddressLen-- ) // v2.7.0.23
 		{
 			// TODO: Optimize - split into pre_io, and post_io
 			if ((nDst < _6502_IO_BEGIN) || (nDst > _6502_IO_END))

@@ -40,6 +40,9 @@ Fixes:
   a cold boot.
 . [Bug #177] Full-screen under Windows8/8.1 would show a corrupt, pastelle color palette.
 
+. Debugger (v2.7.0.23):
+  - Hang with Memory Fill when memory ends at FFFF, i.e. F D000:FFFF 0
+  - Hand with Memory Move when memory ends at FFFF, i.e. 2000<FFFE.FFFFM
 
 Latest:
 -------
