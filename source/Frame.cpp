@@ -1688,7 +1688,7 @@ LRESULT CALLBACK FrameWndProc (
 	// Message posted by: Cmd-line boot
 	case WM_USER_FULLSCREEN:
 	{
-		ScreenWindowResize(true);
+		ScreenWindowResize(false);
 		break;
 	}
 
