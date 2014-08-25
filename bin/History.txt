@@ -13,9 +13,12 @@ In Development: 1.25.0
 ---------------
 Changes:
 . Changed the AppleWin project host from BerliOS to GitHub.
-. Ctrl-PrintScreen will copy the text screen (auto detect 40/80) to the clipboard.
+. [Bug #221] Restored F6 original behavior that was changed in v1.22.0.
+     F6 Toggle full-screen / windowed mode.
+     Ctrl-F6 Toggle windowed 1x/2x zoom.
+. Ctrl-PrintScreen will copy the text screen (auto detect 40/80 columns) to the clipboard.
 . [Feature #198] Alt-Return toggles full screen.
-. [Feature #199] Added the option to skip the reboot confirmation in the configuration.
+. [Feature #199] Added a configuration option "Confirm reboot" to skip the F2 reboot confirmation.
 . [Feature #201] Added display of current Track/Sector for the floppy drives.
   - In 2x window mode the status is displayed below the drive LEDs.
   - In full screen mode the status is displayed above the drive LEDS. The track/sector
@@ -42,16 +45,19 @@ Changes:
   NOTE: -memclear 6 can cause a few programs to NOT function correctly
         due to hidden bugs of programmers not correctly initializing memory or
         using uninitialized memory.  RNDL/RHND and $620B are initialized to
-        allow Pooyan, and the Beautiful Boot game launcher to run.
-. Debugger
+        allow Pooyan, and the Beautiful Boot game launcher to run, along with
+        BFFD..BFFE to allow Copy ][ v5 to boot correctly.
+. Debugger (v2.7.0.23):
   - Added: TSAVE "filename" to save the text screen to a file.
+    It will auto-detect the current video mode: 40/80 columns.
     Default filename for 40 columns is: AppleWin_Text40.txt
     Default filename for 80 columns is: AppleWin_Text80.txt
+
 Fixes:
 . [Bug #206] Pooyan would freeze due to RNDL/RNDH not initialized to non-zero values on
   a cold boot.
 . [Bug #177] Full-screen under Windows8/8.1 would show a corrupt, pastelle color palette.
-. Debugger (v2.7.0.23):
+. Debugger:
   - Hang with Memory Fill when memory ends at FFFF, i.e. F D000:FFFF 0
   - Hang with Memory Move when memory ends at FFFF, i.e. 2000<FFFE.FFFFM
 

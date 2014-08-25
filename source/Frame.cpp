@@ -1111,6 +1111,7 @@ LRESULT CALLBACK FrameWndProc (
 	case WM_KEYDOWN:
 		KeybUpdateCtrlShiftStatus();
 
+		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
 		{
 			SetUsingCursor(0);
@@ -1252,7 +1253,8 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		break;
 
-    case WM_KEYUP:
+	case WM_KEYUP:
+		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == (int)wparam-VK_F1))
 		{
 			buttondown = -1;
@@ -1575,19 +1577,29 @@ LRESULT CALLBACK FrameWndProc (
       }
       break;
 
-    case WM_SYSKEYDOWN:
+	case WM_SYSKEYDOWN:
 		KeybUpdateCtrlShiftStatus();
-		if (g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN
-			ScreenWindowResize(true);
-		else
-      PostMessage(window,WM_KEYDOWN,wparam,lparam);
-      if ((wparam == VK_F10) || (wparam == VK_MENU))	// VK_MENU == ALT Key
-        return 0;
-      break;
 
-    case WM_SYSKEYUP:
-      PostMessage(window,WM_KEYUP,wparam,lparam);
-      break;
+		// http://msdn.microsoft.com/en-us/library/windows/desktop/gg153546(v=vs.85).aspx
+		// v1.25.0: Alt-Return Alt-Enter toggle fullscreen
+		if (g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
+			return 0; // NOP -- eat key
+		else
+			PostMessage(window,WM_KEYDOWN,wparam,lparam);
+
+		if ((wparam == VK_F10) || (wparam == VK_MENU))	// VK_MENU == ALT Key
+			return 0;
+		break;
+
+	case WM_SYSKEYUP:
+		KeybUpdateCtrlShiftStatus();
+
+		// v1.25.0: Alt-Return Alt-Enter toggle fullscreen
+		if (g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
+			ScreenWindowResize(false);
+		else
+			PostMessage(window,WM_KEYUP,wparam,lparam);
+		break;
 
     case WM_USER_BENCHMARK: {
       UpdateWindow(window);
@@ -1669,7 +1681,7 @@ LRESULT CALLBACK FrameWndProc (
 		SetForegroundWindow(window);
 		Sleep(500);	// Wait for SetForegroundWindow() to take affect (400ms seems OK, so use 500ms to be sure)
 		SoundCore_TweakVolumes();
-        ProcessButtonClick(BTN_RUN);
+		ProcessButtonClick(BTN_RUN);
 		break;
 	}
 
@@ -1688,7 +1700,7 @@ LRESULT CALLBACK FrameWndProc (
 
 
 //===========================================================================
-
+// Process: VK_F6
 static void ScreenWindowResize(const bool bCtrlKey)
 {
 	if (g_bIsFullScreen)	// if full screen: then switch back to normal (regardless of CTRL)
@@ -1698,15 +1710,15 @@ static void ScreenWindowResize(const bool bCtrlKey)
 	}
 	else if (bCtrlKey)		// if normal screen && CTRL: then switch to full screen
 	{
+		FrameResizeWindow( (g_nViewportScale == 1) ? 2 : 1 );	// Toggle between 1x and 2x
+		REGSAVE(TEXT(REGVALUE_WINDOW_SCALE), g_nViewportScale);
+	}
+	else
+	{
 		g_nOldViewportScale = g_nViewportScale;
 		FrameResizeWindow(1);	// reset to 1x
 		SetFullScreenMode();
 		//VideoRedrawScreen(1);	// [TC-10/06/2014] Remove this once checked it's not needed by Win8
-	}
-	else
-	{
-		FrameResizeWindow( (g_nViewportScale == 1) ? 2 : 1 );	// Toggle between 1x and 2x
-		REGSAVE(TEXT(REGVALUE_WINDOW_SCALE), g_nViewportScale);
 	}
 }
 
