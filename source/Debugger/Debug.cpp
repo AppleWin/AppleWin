@@ -4712,11 +4712,20 @@ size_t Util_GetTextScreen ( char* &pText_ )
 
 		for( int x = 0; x < 40; x++ ) // always 40 columns
 		{
+			char c; // TODO: FormatCharTxtCtrl() ?
+
 			if( g_bVideoMode & VF_80COL )
 			{ // AUX
-				*pEnd++ = g_pTextBank1[ nAddressStart ] & 0x7F;
+				c = g_pTextBank1[ nAddressStart ] & 0x7F;
+				if( c < 0x20)
+					c = ' '; // INVERSE control character
+				*pEnd++ = c;
 			} // MAIN -- NOTE: intentional indent & outside if() !
-				*pEnd++ = g_pTextBank0[ nAddressStart ] & 0x7F; // mem[ nAddressStart++ ] & 0x7F;
+
+				c = g_pTextBank0[ nAddressStart ] & 0x7F;
+				if( c < 0x20 )
+					c = ' '; // INVERSE control character
+				*pEnd++ = c;
 
 			nAddressStart++;
 		}
