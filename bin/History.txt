@@ -46,7 +46,7 @@ Changes:
         due to hidden bugs of programmers not correctly initializing memory or
         using uninitialized memory.  RNDL/RHND and $620B are initialized to
         allow Pooyan, and the Beautiful Boot game launcher to run, along with
-        BFFD..BFFE to allow Copy ][ v5 to boot correctly.
+        $BFFD..BFFF to allow Copy ][ v5 to boot correctly.
 . Debugger (v2.7.0.23):
   - Added: TSAVE "filename" to save the text screen to a file.
     It will auto-detect the current video mode: 40/80 columns.
@@ -56,7 +56,7 @@ Changes:
 Fixes:
 . [Bug #206] Pooyan would freeze due to RNDL/RNDH not initialized to non-zero values on
   a cold boot.
-. [Bug #177] Full-screen under Windows8/8.1 would show a corrupt, pastelle color palette.
+. [Bug #177] Full-screen under Windows8/8.1 would show a corrupt, pastel color palette.
 . Debugger:
   - Hang with Memory Fill when memory ends at FFFF, i.e. F D000:FFFF 0
   - Hang with Memory Move when memory ends at FFFF, i.e. 2000<FFFE.FFFFM
