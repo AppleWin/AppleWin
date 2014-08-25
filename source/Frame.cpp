@@ -730,7 +730,7 @@ void FrameDrawDiskStatus( HDC passdc )
 	else
 	{
 		// NB. Only draw Track/Sector if 2x windowed
-		if (g_nOldViewportScale == 1)
+		if (g_nViewportScale == 1)
 			return;
 
 		// Erase background
