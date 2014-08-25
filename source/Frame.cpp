@@ -65,7 +65,6 @@ static const int kDEFAULT_VIEWPORT_SCALE = 2;
 static int g_nViewportCX = FRAMEBUFFER_W * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportCY = FRAMEBUFFER_H * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
-static int g_nOldViewportScale = kDEFAULT_VIEWPORT_SCALE;
 static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
 
 #define  BUTTONX     (g_nViewportCX + VIEWPORTX*2)
@@ -1703,19 +1702,21 @@ LRESULT CALLBACK FrameWndProc (
 // Process: VK_F6
 static void ScreenWindowResize(const bool bCtrlKey)
 {
-	if (g_bIsFullScreen)	// if full screen: then switch back to normal (regardless of CTRL)
+	static int nOldViewportScale = kDEFAULT_VIEWPORT_SCALE;
+
+	if (g_bIsFullScreen)	// if full screen: then switch back to normal
 	{
 		SetNormalMode();
-		FrameResizeWindow(g_nOldViewportScale);
+		FrameResizeWindow(nOldViewportScale);
 	}
-	else if (bCtrlKey)		// if normal screen && CTRL: then switch to full screen
+	else if (bCtrlKey)		// if normal screen && CTRL: then toggle scaling
 	{
 		FrameResizeWindow( (g_nViewportScale == 1) ? 2 : 1 );	// Toggle between 1x and 2x
 		REGSAVE(TEXT(REGVALUE_WINDOW_SCALE), g_nViewportScale);
 	}
 	else
 	{
-		g_nOldViewportScale = g_nViewportScale;
+		nOldViewportScale = g_nViewportScale;
 		FrameResizeWindow(1);	// reset to 1x
 		SetFullScreenMode();
 		//VideoRedrawScreen(1);	// [TC-10/06/2014] Remove this once checked it's not needed by Win8
