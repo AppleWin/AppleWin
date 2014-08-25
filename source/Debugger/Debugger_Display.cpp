@@ -828,7 +828,7 @@ char  FormatCharTxtAsci ( const BYTE b, bool * pWasAsci_ )
 	{
 		if (pWasAsci_)
 		{
-			*pWasAsci_ = true;			
+			*pWasAsci_ = true;
 		}
 	}
 	return c;
@@ -845,7 +845,7 @@ char  FormatCharTxtCtrl ( const BYTE b, bool * pWasCtrl_ )
 	{
 		if (pWasCtrl_)
 		{
-			*pWasCtrl_ = true;			
+			*pWasCtrl_ = true;
 		}
 		c = b + '@'; // map ctrl chars to visible
 	}
