@@ -1092,15 +1092,19 @@ LRESULT CALLBACK FrameWndProc (
 			Video_TakeScreenShot( SCREENSHOT_560x384 );
 		}
 		else
-		if (wparam == VK_SNAPSHOT_280)
+		if (wparam == VK_SNAPSHOT_280) // ( lparam & MOD_SHIFT )
 		{
-			if( lparam & MOD_SHIFT)
-			{
 #if _DEBUG
-//				MessageBox( g_hFrameWindow, "Normal 280x192 size!", "PrintScreen", MB_OK );
+//			MessageBox( g_hFrameWindow, "Normal 280x192 size!", "PrintScreen", MB_OK );
 #endif
-			}
 			Video_TakeScreenShot( SCREENSHOT_280x192 );
+		}
+		else
+		if (wparam == VK_SNAPSHOT_TEXT) // ( lparam & MOD_CONTROL )
+		{
+			char  *pText;
+			size_t nSize = Util_GetTextScreen( pText );
+			Util_CopyTextToClipboard( nSize, pText );
 		}
 		break;
 

@@ -130,11 +130,12 @@ enum AppMode_e
 #define WM_USER_RESTART		WM_USER+2
 #define WM_USER_SAVESTATE	WM_USER+3
 #define WM_USER_LOADSTATE	WM_USER+4
-#define VK_SNAPSHOT_560		WM_USER+5
-#define VK_SNAPSHOT_280		WM_USER+6
+#define VK_SNAPSHOT_560		WM_USER+5 // PrintScreen
+#define VK_SNAPSHOT_280		WM_USER+6 // PrintScreen+Shift
 #define WM_USER_TCP_SERIAL	WM_USER+7
 #define WM_USER_BOOT		WM_USER+8
 #define WM_USER_FULLSCREEN	WM_USER+9
+#define VK_SNAPSHOT_TEXT	WM_USER+10 // PrintScreen+Ctrl
 
 // TODO-TC: Refactor codebase by renaming /nCyclesLeft/ to /uExecutedCycles/
 typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);

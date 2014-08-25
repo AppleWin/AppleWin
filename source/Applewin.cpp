@@ -705,18 +705,25 @@ void AppleWin_RegisterHotKeys(void)
 {
 	BOOL bStatus = true;
 	
-	bStatus &= RegisterHotKey(      
-		g_hFrameWindow	, // HWND hWnd
-		VK_SNAPSHOT_560	, // int id (user/custom id)
-		0					, // UINT fsModifiers
-		VK_SNAPSHOT		  // UINT vk = PrintScreen
+	bStatus &= RegisterHotKey( 
+		g_hFrameWindow , // HWND hWnd
+		VK_SNAPSHOT_560, // int id (user/custom id)
+		0              , // UINT fsModifiers
+		VK_SNAPSHOT      // UINT vk = PrintScreen
 	);
 
-	bStatus &= RegisterHotKey(      
-		g_hFrameWindow	, // HWND hWnd
+	bStatus &= RegisterHotKey( 
+		g_hFrameWindow , // HWND hWnd
 		VK_SNAPSHOT_280, // int id (user/custom id)
-		MOD_SHIFT		, // UINT fsModifiers
-		VK_SNAPSHOT		  // UINT vk = PrintScreen
+		MOD_SHIFT      , // UINT fsModifiers
+		VK_SNAPSHOT      // UINT vk = PrintScreen
+	);
+
+	bStatus &= RegisterHotKey( 
+		g_hFrameWindow  , // HWND hWnd
+		VK_SNAPSHOT_TEXT, // int id (user/custom id)
+		MOD_CONTROL     , // UINT fsModifiers
+		VK_SNAPSHOT       // UINT vk = PrintScreen
 	);
 
 	if (!bStatus && g_bShowPrintScreenWarningDialog)

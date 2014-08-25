@@ -9,10 +9,20 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-In Development:
+In Development: 1.25.0
 ---------------
 Changes:
 . Changed the AppleWin project host from BerliOS to GitHub.
+. Ctrl-PrintScreen will copy the text screen (auto detect 40/80) to the clipboard.
+. [Feature #198] Alt-Return toggles full screen.
+. [Feature #199] Added the option to skip the reboot confirmation in the configuration.
+. [Feature #201] Added display of current Track/Sector for the floppy drives.
+  - In 2x window mode the status is displayed below the drive LEDs.
+  - In full screen mode the status is displayed above the drive LEDS. The track/sector
+    is shown only for the last drive accessed.
+  Note: DOS3.3 Track/Sector status should be accurate.
+        ProDOS support is preliminary -- the track/sector may show zero after an operation.
+. Memory initialization defaults to a randomly selected memory initialization pattern.
 . Added command line switch to specify the type of memory initialization pattern.
     -memclear #
   Where # ranges from 0 to 7.
@@ -23,30 +33,30 @@ Changes:
      -memclear 3   Initialize memory to even pages FF, odd pages 00
      -memclear 4   Initialize memory to first half page 00, last half page FF
      -memclear 5   Initialize memory to first half page FF, last half page 00
-     -memclear 6   Initialize memory to byte offset of page
+     -memclear 6   Initialize memory to byte offset of that page
                    (current memory address low byte)
+                   i.e. 00:00 01 02 03 ... for page $20
      -memclear 7   Initialize memory to page address
                    (current memory address high byte)
-. [Feature #198] Alt-Return toggles full screen.
-. [Feature #199] Added the option to skip the reboot confirmation in the configuration.
-. [Feature #201] Added display of current Track/Sector for the floppy drives.
-  - In 2x window mode the status is displayed below the drive LEDs.
-  - In full screen mode the status is displayed above the drive LEDS. The track/sector
-    is shown only for the last drive accessed.
-  Note: DOS3.3 Track/Sector status should be accurate.
-        ProDOS support is preliminary -- the track/sector may show zero after an operation.
+                   i.e. 00:20 20 20 20 ... for page $20
+  NOTE: -memclear 6 can cause a few programs to NOT function correctly
+        due to hidden bugs of programmers not correctly initializing memory or
+        using uninitialized memory.  RNDL/RHND and $620B are initialized to
+        allow Pooyan, and the Beautiful Boot game launcher to run.
+. Debugger
+  - Added: TSAVE "filename" to save the text screen to a file.
+    Default filename for 40 columns is: AppleWin_Text40.txt
+    Default filename for 80 columns is: AppleWin_Text80.txt
 Fixes:
 . [Bug #206] Pooyan would freeze due to RNDL/RNDH not initialized to non-zero values on
   a cold boot.
 . [Bug #177] Full-screen under Windows8/8.1 would show a corrupt, pastelle color palette.
-
 . Debugger (v2.7.0.23):
   - Hang with Memory Fill when memory ends at FFFF, i.e. F D000:FFFF 0
   - Hang with Memory Move when memory ends at FFFF, i.e. 2000<FFFE.FFFFM
 
 Latest:
 -------
-
 
 1.24.0 - 11 Jan 2014
 --------------------

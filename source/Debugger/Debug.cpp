@@ -4640,60 +4640,40 @@ Update_t CmdMemorySave (int nArgs)
 #endif
 
 
-//===========================================================================
-int CmdTextSave (int nArgs)
-{
-	// Save the TEXT1 40-colomn to text file (Default: AppleWin_Text40.txt"
-	// TSAVE ["Filename"]
-	// TSAVE ["Filename"]
-	//       1           
-	static WORD nAddressStart = 0;
-
-	if (nArgs > 1)
-		return Help_Arg_1( CMD_TEXT_SAVE );
-
-	bool bHaveFileName = false;
-
-	if (g_aArgs[1].bType & TYPE_QUOTED_2)
-		bHaveFileName = true;
-
-	char   text[24][82]; // 80 column + CR + LF
-	memset( text, 0, sizeof( text ) );
-
-	char  *pDst = &text[0][0];
-	size_t size = 0;
+char g_aTextScreen[ 24*82 + 1 ]; // (80 column + CR + LF) * 24 rows + NULL
+int  g_nTextScreen = 0;
 
 		/*
-			$FBC1 BASCALC  IN: A=row, OUT: $29=hi, $28=lo
-			    PHA          temp = 00ab cdef
-			    LSR          y /= 2 0000 abcd
-			    AND #3       y & 3  0000 00cd
-			    ORA #4       y | 4  0000 01cd
-			    STA $29
-			    PLA
-			    AND #$18     24   y & 0z00011000  = 000b c000
-			    BCC BASCLC2  y=23, C=1
-			    ADC #7F      y + 0x80
-			    STA $28      = 000b c000
-			    ASL            0abc def0
-			    ASL            abcd ef00
-			    ORA $28      | 000b c000
-			    STA $28
-			  
+			$FBC1 BASCALC  IN: A=row, OUT: $28=low, $29=hi
+			BASCALC     PHA          ; 000abcde  -> temp
+			            LSR          ; 0000abcd  CARRY=e y /= 2
+			            AND #3       ; 000000cd  y & 3
+			            ORA #4       ; 000001cd  y | 4 
+			            STA $29
+			            PLA          ; 000abcde <- temp
+			            AND #$18     ; 000ab000 
+			            BCC BASCLC2  ; e=0?
+			            ADC #7F      ; 100ab000  yes CARRY=e=1 -> #$+80
+			BASCLC2     STA $28      ; e00ab000  no  CARRY=e=0
+			            ASL          ; 00ab0000
+			            ASL          ; 0ab00000
+			            ORA $28      ; 0abab000
+			            STA $28      ; eabab000
+			
 		300:A9 00 20 C1 FB A5 29 A6 28 4C 41 F9
 
 		y  Hex  000a_bcde            01cd_eaba_b000
-			0  00  0000_0000  ->  $400  0100 0000_0000
-			1  01  0000_0001  ->  $480  0100 1000_0000
-			2  02  0000_0010  ->  $500  0101 0000_0000
-			3  03  0000_0011  ->  $580  0101 1000_0000
-			4  04  0000_0100  ->  $600  0110 0000_0000
-			5  05  0000_0101  ->  $680  0110 1000_0000
-			6  06  0000_0110  ->  $700  0111 0000_0000
-			7  07  0000_0111  ->  $780  0111 1000_0000
+		 0  00  0000_0000  ->  $400  0100 0000_0000
+		 1  01  0000_0001  ->  $480  0100 1000_0000
+		 2  02  0000_0010  ->  $500  0101 0000_0000
+		 3  03  0000_0011  ->  $580  0101 1000_0000
+		 4  04  0000_0100  ->  $600  0110 0000_0000
+		 5  05  0000_0101  ->  $680  0110 1000_0000
+		 6  06  0000_0110  ->  $700  0111 0000_0000
+		 7  07  0000_0111  ->  $780  0111 1000_0000
 
-			8  08  0000_1000  ->  $428  0100 0010_1000
-			9  09  0000_1001  ->  $4A8  0100 1010_1000
+		 8  08  0000_1000  ->  $428  0100 0010_1000
+		 9  09  0000_1001  ->  $4A8  0100 1010_1000
 		10  0A  0000_1010  ->  $528  0101 0010_1000
 		11  0B  0000_1011  ->  $5A8  0101 1010_1000
 		12  0C  0000_1100  ->  $628  0110 0010_1000
@@ -4709,7 +4689,17 @@ int CmdTextSave (int nArgs)
 		21  15  0001_0101  ->  $6D0  0110_1101_0000
 		22  16  0001_0110  ->  $750  0111_0101_0000
 		23  17  0001_0111  ->  $7D0  0111 1101 0000
-		*/
+	*/
+
+size_t Util_GetTextScreen ( char* &pText_ )
+{
+	WORD nAddressStart = 0;
+
+	char  *pBeg = &g_aTextScreen[0];
+	char  *pEnd = &g_aTextScreen[0];
+
+	g_nTextScreen = 0;
+	memset( pBeg, 0, sizeof( g_aTextScreen ) );
 
 	int bBank2 = g_bVideoDisplayPage2;
 	LPBYTE g_pTextBank1  = MemGetAuxPtr (0x400  << (int)bBank2);
@@ -4723,19 +4713,60 @@ int CmdTextSave (int nArgs)
 		for( int x = 0; x < 40; x++ ) // always 40 columns
 		{
 			if( g_bVideoMode & VF_80COL )
-			// AUX
-				*pDst++ = g_pTextBank1[ nAddressStart ] & 0x7F;
-			// MAIN
-			    *pDst++ = g_pTextBank0[ nAddressStart ] & 0x7F; // mem[ nAddressStart++ ] & 0x7F;
+			{ // AUX
+				*pEnd++ = g_pTextBank1[ nAddressStart ] & 0x7F;
+			} // MAIN -- NOTE: intentional indent & outside if() !
+				*pEnd++ = g_pTextBank0[ nAddressStart ] & 0x7F; // mem[ nAddressStart++ ] & 0x7F;
 
 			nAddressStart++;
 		}
 
-		// MSDOS Newline // http://en.wikipedia.org/wiki/Newline
-		*pDst++ = 0x0D;
-		*pDst++ = 0x0A;
+		// Newline // http://en.wikipedia.org/wiki/Newline
+#ifdef _WIN32
+		*pEnd++ = 0x0D; // CR // Windows inserts extra char
+#endif
+		*pEnd++ = 0x0A; // LF // OSX, Linux
 	}
-	size = pDst - &text[0][0];
+	*pEnd = 0;
+
+	g_nTextScreen = pEnd - pBeg;
+	
+	pText_ = pBeg;
+	return g_nTextScreen;
+}
+
+void Util_CopyTextToClipboard ( const size_t nSize, const char *pText )
+{
+	HGLOBAL hMem =  GlobalAlloc(GMEM_MOVEABLE, nSize + 1 );
+	memcpy( GlobalLock(hMem), pText, nSize + 1 );
+	GlobalUnlock( hMem );
+
+	OpenClipboard(0);
+		EmptyClipboard();
+		SetClipboardData( CF_TEXT, hMem );
+	CloseClipboard();
+
+	// GlobalFree() ??
+}
+
+
+//===========================================================================
+int CmdTextSave (int nArgs)
+{
+	// Save the TEXT1 40-colomn to text file (Default: AppleWin_Text40.txt"
+	// TSAVE ["Filename"]
+	// TSAVE ["Filename"]
+	//       1           
+	if (nArgs > 1)
+		return Help_Arg_1( CMD_TEXT_SAVE );
+
+	bool bHaveFileName = false;
+
+	if (g_aArgs[1].bType & TYPE_QUOTED_2)
+		bHaveFileName = true;
+
+	char  *pText;
+	size_t nSize = Util_GetTextScreen( pText );
 
 	TCHAR sLoadSaveFilePath[ MAX_PATH ];
 	_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
@@ -4762,7 +4793,7 @@ int CmdTextSave (int nArgs)
 	hFile = fopen( sLoadSaveFilePath, "wb" );
 	if (hFile)
 	{
-		size_t nWrote = fwrite( text, size, 1, hFile );
+		size_t nWrote = fwrite( pText, nSize, 1, hFile );
 		if (nWrote == 1)
 		{
 			TCHAR text[ CONSOLE_WIDTH ] = TEXT("");

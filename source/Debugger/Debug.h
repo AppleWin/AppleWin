@@ -217,12 +217,17 @@
 
 // Symbol Table / Memory
 	bool FindAddressFromSymbol( const char* pSymbol, WORD * pAddress_ = NULL, int * iTable_ = NULL );
-	WORD GetAddressFromSymbol ( const char* symbol); // HACK: returns 0 if symbol not found
+	WORD GetAddressFromSymbol( const char* symbol); // HACK: returns 0 if symbol not found
 	void SymbolUpdate( SymbolTable_Index_e eSymbolTable, char *pSymbolName, WORD nAddrss, bool bRemoveSymbol, bool bUpdateSymbol );
 
-	const char* FindSymbolFromAddress (WORD nAdress, int * iTable_ = NULL );
-	const char* GetSymbol   (WORD nAddress, int nBytes);
+	const char* FindSymbolFromAddress( WORD nAdress, int * iTable_ = NULL );
+	const char* GetSymbol( WORD nAddress, int nBytes);
 
+// Memory
+	size_t Util_GetTextScreen( char* &pText_ );
+	void   Util_CopyTextToClipboard( const size_t nSize, const char *pText );
+
+// Main
 	Update_t DebuggerProcessCommand( const bool bEchoConsoleInput );
 
 // Prototypes _______________________________________________________________
