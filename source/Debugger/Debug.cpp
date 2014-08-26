@@ -4714,16 +4714,16 @@ size_t Util_GetTextScreen ( char* &pText_ )
 		{
 			char c; // TODO: FormatCharTxtCtrl() ?
 
-			if( g_bVideoMode & VF_80COL )
+			if ( g_bVideoMode & VF_80COL )
 			{ // AUX
 				c = g_pTextBank1[ nAddressStart ] & 0x7F;
-				if( c < 0x20)
+				if ( c < 0x20 )
 					c = ' '; // INVERSE control character
 				*pEnd++ = c;
 			} // MAIN -- NOTE: intentional indent & outside if() !
 
 				c = g_pTextBank0[ nAddressStart ] & 0x7F;
-				if( c < 0x20 )
+				if ( c < 0x20 )
 					c = ' '; // INVERSE control character
 				*pEnd++ = c;
 
