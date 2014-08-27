@@ -4691,6 +4691,16 @@ int  g_nTextScreen = 0;
 		23  17  0001_0111  ->  $7D0  0111 1101 0000
 	*/
 
+static char RemapChar(const char c)
+{
+	if ( c < 0x20 )
+		return c + '@'; // Remap INVERSE control character to NORMAL
+	else if ( c == 0x7F )
+		return ' ';		// Remap checkboard (DEL) to space
+
+	return c;
+}
+
 size_t Util_GetTextScreen ( char* &pText_ )
 {
 	WORD nAddressStart = 0;
@@ -4717,14 +4727,12 @@ size_t Util_GetTextScreen ( char* &pText_ )
 			if ( g_bVideoMode & VF_80COL )
 			{ // AUX
 				c = g_pTextBank1[ nAddressStart ] & 0x7F;
-				if ( c < 0x20 )
-					c = ' '; // INVERSE control character
+				c = RemapChar(c);
 				*pEnd++ = c;
 			} // MAIN -- NOTE: intentional indent & outside if() !
 
 				c = g_pTextBank0[ nAddressStart ] & 0x7F;
-				if ( c < 0x20 )
-					c = ' '; // INVERSE control character
+				c = RemapChar(c);
 				*pEnd++ = c;
 
 			nAddressStart++;
