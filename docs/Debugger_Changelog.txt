@@ -1,5 +1,8 @@
 /*
+2.8.0.0 Released with AppleWin 1.25
+
 2.7.0.#
+.30 Fixed: ASC overflowing sOpCodes in FormatOpcodeBytes()
 .29 Added: Help for DB and DW
 .28 Added: ASC so it disassemblies intertwined code and data correctly.
     Example:
