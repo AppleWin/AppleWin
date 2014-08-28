@@ -1,7 +1,7 @@
 /*
 AppleWin : An Apple //e emulator for Windows
 
-Copyright (C) 2009-2010, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2009-2014, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -130,7 +130,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("DW")          , CmdDisasmDataDefWord1       , CMD_DEFINE_DATA_WORD1, "Define address array"                       },
 		{TEXT("DW2")         , CmdDisasmDataDefWord2       , CMD_DEFINE_DATA_WORD2, "Define address array, display 2 words/line" },
 		{TEXT("DW4")         , CmdDisasmDataDefWord4       , CMD_DEFINE_DATA_WORD4, "Define address array, display 4 words/line" },
-		{TEXT("DS")          , CmdDisasmDataDefString      , CMD_DEFINE_DATA_STR  , "Define string"                              },
+		{TEXT("ASC")         , CmdDisasmDataDefString      , CMD_DEFINE_DATA_STR  , "Define text string"                         }, // 2.7.0.26 Changed: DS to ASC because DS is used as "Define Space" assembler directive
 //		{TEXT("DF")          , CmdDisasmDataDefFloat       , CMD_DEFINE_DATA_FLOAT, "Define AppleSoft (packed) Float"            },
 //		{TEXT("DFX")         , CmdDisasmDataDefFloatUnpack , CMD_DEFINE_DATA_FLOAT2,"Define AppleSoft (unpacked) Float"          },
 		// with symbol lookup

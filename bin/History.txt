@@ -47,11 +47,19 @@ Changes:
         using uninitialized memory.  RNDL/RHND and $620B are initialized to
         allow Pooyan, and the Beautiful Boot game launcher to run, along with
         $BFFD..BFFF to allow Copy ][ v5 to boot correctly.
-. Debugger (v2.7.0.23):
+. Debugger (v2.7.0.29):
   - Added: TSAVE "filename" to save the text screen to a file.
     It will auto-detect the current video mode: 40/80 columns.
     Default filename for 40 columns is: AppleWin_Text40.txt
     Default filename for 80 columns is: AppleWin_Text80.txt
+ - Changed: DS to ASC because DS is used as a common "Define Space" assembler directive
+
+ - Added: Experimental "ASC" command to mark up data as Apple text.
+    using Castle Wolfenstien.DSK
+    BLOAD ^VOCAB
+    ASC name1 17DA:17F5
+ - Fixed:  DB address now auto-defines the symbol D_#### if no symbol is given.
+ - Added: Help for DB and DW.
 
 Fixes:
 . [Bug #206] Pooyan would freeze due to RNDL/RNDH not initialized to non-zero values on

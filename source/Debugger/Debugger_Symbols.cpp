@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -793,6 +793,15 @@ void SymbolUpdate( SymbolTable_Index_e eSymbolTable, char *pSymbolName, WORD nAd
 			}
 #endif
 			g_aSymbols[ eSymbolTable ][ nAddress ] = pSymbolName;
+
+			// Tell user symbol was added
+			char sText[ CONSOLE_WIDTH * 2 ];
+			sprintf( sText, " Added symbol: %s%s%s %s$%s%04X%s"
+				, CHC_SYMBOL, pSymbolName, CHC_DEFAULT
+				, CHC_ARG_SEP					
+				, CHC_ADDRESS, nAddress, CHC_DEFAULT
+			);
+			ConsolePrint( sText );
 		}
 	}
 }

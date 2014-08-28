@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -489,13 +489,13 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 	DisasmData_t* pData = Disassembly_IsDataAddress( nBaseAddress );
 	if( pData )
 	{
-	// Data Disassembler
-	// Smart Disassembly - Data Section
-	// Assemblyer Directives - Psuedo Mnemonics
+		nSlack = pData->nEndAddress - pData->nStartAddress + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 
+		// Data Disassembler
+		// Smart Disassembly - Data Section
+		// Assemblyer Directives - Psuedo Mnemonics
 		switch( pData->eElementType )
 		{
-			default        : nOpbyte_ = 1; iOpmode_ = AM_M; break;
 			case NOP_BYTE_1: nOpbyte_ = 1; iOpmode_ = AM_M; break;
 			case NOP_BYTE_2: nOpbyte_ = 2; iOpmode_ = AM_M; break;
 			case NOP_BYTE_4: nOpbyte_ = 4; iOpmode_ = AM_M; break;
@@ -506,13 +506,23 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 			case NOP_ADDRESS:nOpbyte_ = 2; iOpmode_ = AM_A; // BUGFIX: 2.6.2.33 Define Address should be shown as Absolute mode, not Indirect Absolute mode. DA BASIC.FPTR D000:D080 // was showing as "da (END-1)" now shows as "da END-1"
 				pData->nTargetAddress = *(LPWORD)(mem+nBaseAddress);
 				break;
+			case NOP_STRING_APPLE:
+				iOpmode_ = AM_DATA;
+				nOpbyte_ = nSlack;
+				break;
 			case NOP_STRING_APPLESOFT:
 				// TODO: FIXME: scan memory for high byte
 				nOpbyte_ = 8;
-				iOpmode_ = AM_M;
+				iOpmode_ = AM_DATA;
 				break;
+			default:
+#if _DEBUG // not implemented!
+				int *fatal = 0;
+				*fatal = 0xDEADC0DE;
+#endif
 		}
-
+/*
+		// REMOVED in v1.25 ... because of AppleSoft Basic:  DW NEXT1 801  DW LINE1 803
 		// Check if we are not element aligned ...
 		nSlack = (nOpbyte_ > 1) ? (nBaseAddress & nOpbyte_-1 ) : 0;
 		if (nSlack)
@@ -520,7 +530,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 			nOpbyte_ = nSlack;
 			iOpmode_ = AM_M;
 		}
-
+*/
 		//iOpcode_ = NUM_OPCODES; // Don't have valid opcodes ... we have data !
 		// iOpcode_ = (int)( pData ); // HACK: pass pData back to caller ...
 		iOpcode_ = 0xEA; // OP_NOP

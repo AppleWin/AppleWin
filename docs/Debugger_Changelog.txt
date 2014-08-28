@@ -1,9 +1,19 @@
 /*
 2.7.0.#
+.29 Added: Help for DB and DW
+.28 Added: ASC so it disassemblies intertwined code and data correctly.
+    Example:
+        using Castle Wolfenstien.DSK
+        BLOAD ^VOCAB
+        ASC name1 17DA:17F5
+.27 Added: DB address now auto-defines the symbol D_####
+.26 Changed: DS to ASC because DS is used as "Define Space" assembler directive
+.25 Fixed : DW address so that odd address work.
+    i.e. DW NEXT1 801   // AppleSoft Basic Line#1 Pointer to Next line
 .24 Added: TSAVE "filename" to save the text screen to file
     Default filename for 40 columns is: AppleWin_Text40.txt
     Default filename for 80 columns is: AppleWin_Text80.txt
-.23 Fixed: HanG with Memory Move when memory ends at FFFF, i.e. 2000<FFFE.FFFFM
+.23 Fixed: Hang with Memory Move when memory ends at FFFF, i.e. 2000<FFFE.FFFFM
 .22 Fixed: Hang with Memory Fill when memory ends at FFFF, i.e. F D000:FFFF 0
 .21 Added: Help for BRK
 .20 Moved: BRK and BRKOP now under HELP BREAKPOINTS

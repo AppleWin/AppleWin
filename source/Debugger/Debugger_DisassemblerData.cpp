@@ -1,7 +1,7 @@
 /*
 AppleWin : An Apple //e emulator for Windows
 
-Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -42,7 +42,11 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 
 	memset( (void*) &tData_, 0, sizeof(tData_) );
 
-	if( nArgs < 2 )
+	// DB address
+	// DB symbol
+	// bool bisAddress ...
+
+	if( nArgs < 1 )
 	{
 		nAddress = g_nDisasmCurAddress;
 	}
@@ -53,36 +57,51 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 			(eRange == RANGE_HAS_LEN))
 		{
 			Range_CalcEndLen( eRange, nAddress, nAddress2, nEnd, nLen );
-			//dArg = 2;
+			nLen--; // Disassembly_IsDataAddress() is *inclusive* // KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 		}
 		else
 		{
+			if( nArgs > 1 )
 				nAddress = g_aArgs[ 2 ].nValue;
+			else
+				nAddress = g_aArgs[ 1 ].nValue;
 		}
 	}
 
+/*
+	// Removed so DW 801 works
 	if (!nLen)
 	{
 		nLen = 1;
 	}
+*/
 
 	tData_.nStartAddress = nAddress;
 	tData_.nEndAddress = nAddress + nLen;
 //	tData_.nArraySize = 0;
+
 	char *pSymbolName = "";
-	if( nArgs )
+	char aSymbolName[ 32 ];
+	SymbolTable_Index_e eSymbolTable = SYMBOLS_ASSEMBLY;
+
+	if( nArgs > 1 )
 	{
 		pSymbolName = g_aArgs[ 1 ].sArg;
-		SymbolTable_Index_e eSymbolTable = SYMBOLS_ASSEMBLY;
-		// bRemoveSymbol = false // use arg[2]
-		// bUpdateSymbol = true // add the symbol to the table
-		SymbolUpdate( eSymbolTable, pSymbolName, nAddress, false, true ); 
-		// Note: need to call ConsoleUpdate(), as may print symbol has been updated
 	}
 	else
 	{
-		// TODO: 'DB' with no args, should define D_# DB $XX
+		// 'DB' with 1 arg
+		// DB 801
+		// auto define D_# DB $XX
+		sprintf( aSymbolName, "D_%04X", tData_.nStartAddress );
+		pSymbolName = aSymbolName;
 	}
+
+	// bRemoveSymbol = false // use arg[2]
+	// bUpdateSymbol = true // add the symbol to the table
+	SymbolUpdate( eSymbolTable, pSymbolName, nAddress, false, true ); 
+
+	// TODO: Note: need to call ConsoleUpdate(), as may print symbol has been updated
 
 	strcpy( tData_.sSymbol, pSymbolName );
 
@@ -115,6 +134,8 @@ Update_t CmdDisasmDataDefCode (int nArgs)
 		// TODO: Do we need to split the data !?
 		//Disassembly_DelData( tData );
 		pData->iDirective = _NOP_REMOVED;
+
+		// TODO: Remove symbol 'D_FA62' from symbol table!
 	}
 	else
 	{
@@ -144,10 +165,13 @@ char* g_aNopcodeTypes[ NUM_NOPCODE_TYPES ] =
 	,"bmp  "
 };
 
+// Command: B
+// no args
 // List the data blocks
 //===========================================================================
 Update_t CmdDisasmDataList (int nArgs)
 {
+
 	// Need to iterate through all blocks
 	DisasmData_t* pData = NULL;
 	char sText[ CONSOLE_WIDTH * 2 ];
@@ -170,7 +194,7 @@ Update_t CmdDisasmDataList (int nArgs)
 				, pData->nStartAddress
 				, CHC_ARG_SEP
 				, CHC_ADDRESS
-				, pData->nEndAddress - 1
+				, pData->nEndAddress // Disassembly_IsDataAddress() is *inclusive* // KEEP IN SYNC:  _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 			);
 			ConsolePrint( sText );
 		}
@@ -184,13 +208,14 @@ Update_t CmdDisasmDataList (int nArgs)
 Update_t _CmdDisasmDataDefByteX (int nArgs)
 {
 	// DB
-	// DB symbol
+	// DB symbol // use current instruction pointer
 	// DB symbol address
 	// DB symbol range:range
+	// DB address
+	// To "return to code" use ."X" 
 	int iCmd = g_aArgs[0].nValue - NOP_BYTE_1;
 
-//	if ((!nArgs) || (nArgs > 2))
-	if (! ((nArgs <= 2) || (nArgs == 4)))
+	if (nArgs > 3) // ! ((nArgs < 2) || (nArgs == 4)))
 	{
 		return Help_Arg_1( CMD_DEFINE_DATA_BYTE1 + iCmd );
 	}
@@ -222,10 +247,16 @@ Update_t _CmdDisasmDataDefByteX (int nArgs)
 //===========================================================================
 Update_t _CmdDisasmDataDefWordX (int nArgs)
 {
-	// DW
-	// DW symbol
-	// DW symbol address
-	// DW symbol range:range
+/*
+	Usage:
+		DW
+		DW symbol
+		DW symbol address
+		DW symbol range:range
+		DW address  Auto-define D_#### where # is the address
+	Examples:
+		DW 
+*/
 	int iCmd = g_aArgs[0].nValue - NOP_WORD_1;
 
 	if (! ((nArgs <= 2) || (nArgs == 4)))
@@ -301,12 +332,14 @@ Update_t CmdDisasmDataDefAddress16 (int nArgs)
 	return UPDATE_DISASM | ConsoleUpdate();
 }
 
+// DB
 Update_t CmdDisasmDataDefByte1 ( int nArgs )
 {
 	g_aArgs[0].nValue = NOP_BYTE_1;
 	return _CmdDisasmDataDefByteX( nArgs );	
 }
 
+// DB2
 Update_t CmdDisasmDataDefByte2 ( int nArgs )
 {
 	g_aArgs[0].nValue = NOP_BYTE_2;
@@ -325,12 +358,14 @@ Update_t CmdDisasmDataDefByte8 ( int nArgs )
 	return _CmdDisasmDataDefByteX( nArgs );	
 }
 
+// DW
 Update_t CmdDisasmDataDefWord1 ( int nArgs )
 {
 	g_aArgs[0].nValue = NOP_WORD_1;
 	return _CmdDisasmDataDefWordX( nArgs );	
 }
 
+// DW2
 Update_t CmdDisasmDataDefWord2 ( int nArgs )
 {
 	g_aArgs[0].nValue = NOP_WORD_2;
@@ -343,9 +378,31 @@ Update_t CmdDisasmDataDefWord4 ( int nArgs )
 	return _CmdDisasmDataDefWordX( nArgs );	
 }
 
+// Command: DS
 Update_t CmdDisasmDataDefString ( int nArgs )
 {
-	return UPDATE_DISASM;
+	int iCmd = 0; // Define Ascii, AppleText, MixedText (DOS3.3)
+
+	DisasmData_t tData;
+	int iArg = 2;
+	WORD nAddress = _CmdDefineByteRange( nArgs, iArg, tData );
+
+	tData.iDirective = g_aAssemblerFirstDirective[ g_iAssemblerSyntax ] + ASM_DEFINE_APPLE_TEXT;
+
+	tData.eElementType = (Nopcode_e)( NOP_STRING_APPLE + iCmd );
+	tData.bSymbolLookup = false;
+	tData.nTargetAddress = 0;
+
+	// Already exists, so update
+	DisasmData_t *pData = Disassembly_IsDataAddress( nAddress );
+	if( pData )
+	{
+		*pData = tData;
+	}
+	else
+		Disassembly_AddData( tData );
+
+	return UPDATE_DISASM | ConsoleUpdate();
 }
 
 // __ Disassembler View Interface ____________________________________________________________________
@@ -366,7 +423,7 @@ DisasmData_t* Disassembly_Enumerate( DisasmData_t *pCurrent )
 		{
 			pCurrent++;
 			if (pCurrent <= pEnd)
-				pData = pCurrent;			
+				pData = pCurrent;
 		} else {
 			pData = pBegin;
 		}
@@ -389,7 +446,7 @@ DisasmData_t* Disassembly_IsDataAddress ( WORD nAddress )
 		{
 			if( pData->iDirective != _NOP_REMOVED )
 			{
-				if( (nAddress >= pData->nStartAddress) && (nAddress < pData->nEndAddress) )
+				if( (nAddress >= pData->nStartAddress) && (nAddress <= pData->nEndAddress) )
 				{
 					return pData;
 				}

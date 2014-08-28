@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -1551,6 +1551,7 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 		strcpy( line_.sMnemonic, g_aOpcodes[ line_.iOpcode ].sMnemonic );
 	}
 
+	// TODO: BUG! _sOpcOdes overflow!
 	int nSpaces = strlen( line_.sOpCodes );
     while (nSpaces < (int)nMinBytesLen)
 	{
@@ -1603,6 +1604,12 @@ void FormatOpcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 void FormatNopcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 {
 	char *pDst = line_.sTarget;
+	DWORD nStartAddress = line_.pDisasmData->nStartAddress;
+	DWORD nEndAddress   = line_.pDisasmData->nEndAddress;
+	int   nDataLen      = nEndAddress - nStartAddress + 1;
+	int   nDisplayLen   = nEndAddress - nBaseAddress  + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
+	int   len           = nDisplayLen;
+
 	for( int iByte = 0; iByte < line_.nOpbyte; )
 	{
 		BYTE nTarget8  = *(LPBYTE)(mem + nBaseAddress + iByte);
@@ -1643,8 +1650,27 @@ void FormatNopcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 				strncpy( pDst, (const char*)(mem + nBaseAddress), iByte );
 				pDst += iByte;
 				*pDst = 0;
+			case NOP_STRING_APPLE:
+				iByte = line_.nOpbyte; // handled all bytes of text
+				if( len > MAX_IMMEDIATE_LEN )
+					len = MAX_IMMEDIATE_LEN;
+
+				*pDst++ = '"';
+				for( int i = 0; i < len; i++ ) // iNopcode = Length of Data
+					*pDst++ =  *(const char*)(mem + nStartAddress + i) & 0x7F;
+				*pDst++ = '"';
+
+				if( nDisplayLen > len ) // ellipsis
+				{
+					*pDst++ = '.';
+					*pDst++ = '.';
+					*pDst++ = '.';
+				}
+
+				*pDst = 0;
+				break;
 			default:
-#if _DEBUG
+#if _DEBUG // Unhandled data disassembly!
 	int *FATAL = 0;
 	*FATAL = 0xDEADC0DE;
 #endif				

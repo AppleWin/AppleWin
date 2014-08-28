@@ -104,7 +104,7 @@
 		, AM_NZY  // 14 Indirect (Zeropage) Indexed, Y
 		, AM_NZ   // 15 Indirect (Zeropage)
 		, AM_NA   // 16 Indirect (Absolute) i.e. JMP
-
+		, AM_DATA // Not an opcode! Markup as data
 		, NUM_ADDRESSING_MODES
 		, NUM_OPMODES = NUM_ADDRESSING_MODES
 		, AM_I = NUM_ADDRESSING_MODES, // for assemler
@@ -888,9 +888,10 @@
 
 	enum DisasmText_e
 	{
-		nMaxAddressLen    = 40,
+		MAX_ADDRESS_LEN   = 40,
 		nMaxOpcodes       =  3,
 		CHARS_FOR_ADDRESS =  8, // 4 digits + end-of-string + padding
+		MAX_IMMEDIATE_LEN = 16, // Data Disassembly
 	};
 
 	struct DisasmLine_t
@@ -914,7 +915,7 @@ const	DisasmData_t* pDisasmData;
 		//
 
 		int  nTarget; // address -> string
-		char sTarget   [nMaxAddressLen];
+		char sTarget   [ MAX_ADDRESS_LEN ];
 
 		char sTargetOffset[ CHARS_FOR_ADDRESS ]; // +/- 255, realistically +/-1
 		int  nTargetOffset;

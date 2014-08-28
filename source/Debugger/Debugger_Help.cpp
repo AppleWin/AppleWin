@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -1099,6 +1099,51 @@ Update_t CmdHelpSpecific (int nArgs)
 				FONT_SPACING_CLASSIC, FONT_SPACING_CLEAN, FONT_SPACING_COMPRESSED );
 			ConsoleBufferPush( sText );
 */
+			break;
+	// Disasm
+		case CMD_DEFINE_DATA_BYTE1:
+			sprintf( sTemp, " Usage: %s <address> | <symbol address> | <symbol range>", pCommand->m_sName );
+			Colorize( sText, sTemp );
+			ConsolePrint( sText );
+
+			ConsoleBufferPush( TEXT("  Tell the diassembler to treat the BYTES as data instead of code." ) );
+
+			Help_Examples();
+			sprintf( sText,  "%s   %s WNDTOP 22", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrint( sText );
+			sprintf( sText,  "%s   %s WNDBTM 23", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrint( sText );
+			sprintf( sText,  "%s   %s WNDTOP       // treat as code again", CHC_EXAMPLE, g_aCommands[ CMD_DISASM_CODE ].m_sName );
+			ConsolePrint( sText );
+			sprintf( sText,  "%s   %s              // list all addresses viewed as data", CHC_EXAMPLE, g_aCommands[ CMD_DISASM_LIST ].m_sName  );
+			ConsolePrint( sText );
+			break;
+
+		case CMD_DEFINE_DATA_WORD1:
+			// DW        // use current debug line
+			// DW symbol 
+			// DW symbol address
+			// DW symbol range:range
+			// DW address
+			sprintf( sTemp, " Usage: %s <address> | <symbol address> | <symbol range>", pCommand->m_sName );
+			Colorize( sText, sTemp );
+			ConsolePrint( sText );
+
+			ConsoleBufferPush( TEXT("  Tell the diassembler to treat the WORDS as data instead of code." ) );
+
+			sprintf( sTemp, "  The data is a range of 2-byte pointer data.");
+			Colorize( sText, sTemp );
+			ConsolePrint( sText );
+
+			Help_Examples();
+			sprintf( sText,  "%s   %s NEXT1 801   // AppleSoft Basic Line#1 Pointer to Next line", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrint( sText );
+			sprintf( sText,  "%s   %s LINE1 803   // Applesoft Basic Line#1 Line Number", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrint( sText );
+			sprintf( sText,  "%s   %s NEXT1        // treat as code again", CHC_EXAMPLE, g_aCommands[ CMD_DISASM_CODE ].m_sName );
+			ConsolePrint( sText );
+			sprintf( sText,  "%s   %s              // list all addresses viewed as data", CHC_EXAMPLE, g_aCommands[ CMD_DISASM_LIST ].m_sName  );
+			ConsolePrint( sText );
 			break;
 
 	// Memory
