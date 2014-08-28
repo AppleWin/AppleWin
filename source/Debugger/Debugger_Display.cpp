@@ -1298,9 +1298,8 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 	int iOpmode;
 	int nOpbyte;
 
-	iOpcode = _6502_GetOpmodeOpbyte( nBaseAddress, iOpmode, nOpbyte );
-	DisasmData_t* pData = Disassembly_IsDataAddress( nBaseAddress );
-	line_.pDisasmData = pData;
+	iOpcode = _6502_GetOpmodeOpbyte( nBaseAddress, iOpmode, nOpbyte, &line_.pDisasmData );
+	const DisasmData_t* pData = line_.pDisasmData; // Disassembly_IsDataAddress( nBaseAddress );
 
 	line_.iOpcode = iOpcode;
 	line_.iOpmode = iOpmode;
@@ -1329,8 +1328,7 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 	if ((iOpmode == AM_AY) || (iOpmode == AM_ZY) || (iOpmode == AM_NZY))
 		line_.bTargetY = true; // ,Y
 
-	const int nMaxOpcodes = 3;
-	unsigned int nMinBytesLen = (nMaxOpcodes * (2 + g_bConfigDisasmOpcodeSpaces)); // 2 char for byte (or 3 with space)
+	unsigned int nMinBytesLen = (MAX_OPCODES * (2 + g_bConfigDisasmOpcodeSpaces)); // 2 char for byte (or 3 with space)
 
 	int bDisasmFormatFlags = 0;
 
@@ -1551,7 +1549,6 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 		strcpy( line_.sMnemonic, g_aOpcodes[ line_.iOpcode ].sMnemonic );
 	}
 
-	// TODO: BUG! _sOpcOdes overflow!
 	int nSpaces = strlen( line_.sOpCodes );
     while (nSpaces < (int)nMinBytesLen)
 	{
@@ -1585,12 +1582,17 @@ void FormatOpcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 	int nOpbyte = line_.nOpbyte;
 
 	char *pDst = line_.sOpCodes;
-	for( int iByte = 0; iByte < nOpbyte; iByte++ )
+	int nMaxOpBytes = nOpbyte;
+	if ( nMaxOpBytes > MAX_OPCODES) // 2.8.0.0 fix // TODO: FIX: show max 8 bytes for HEX
+		nMaxOpBytes = MAX_OPCODES;
+
+	for( int iByte = 0; iByte < nMaxOpBytes; iByte++ )
 	{
 		BYTE nMem = (unsigned)*(mem+nBaseAddress + iByte);
 		sprintf( pDst, "%02X", nMem ); // sBytes+strlen(sBytes)
 		pDst += 2;
 
+		// TODO: If Disassembly_IsDataAddress() don't show spaces...
 		if (g_bConfigDisasmOpcodeSpaces)
 		{
 			strcat( pDst, " " );
@@ -1652,8 +1654,8 @@ void FormatNopcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 				*pDst = 0;
 			case NOP_STRING_APPLE:
 				iByte = line_.nOpbyte; // handled all bytes of text
-				if( len > MAX_IMMEDIATE_LEN )
-					len = MAX_IMMEDIATE_LEN;
+				if( len > (MAX_IMMEDIATE_LEN - 5)) // need 5 extra characters
+					len = (MAX_IMMEDIATE_LEN - 5); // 1=", 2=", 5=...
 
 				*pDst++ = '"';
 				for( int i = 0; i < len; i++ ) // iNopcode = Length of Data
@@ -3203,10 +3205,10 @@ void DrawSubWindow_Console (Update_t bUpdate)
 void DrawSubWindow_Data (Update_t bUpdate)
 {
 //	HDC hDC = g_hDC;
-	int iBackground;	
+	int iBackground;
 
 	const int nMaxOpcodes = WINDOW_DATA_BYTES_PER_LINE;
-	char  sAddress  [ 5];
+	char  sAddress[ 5 ];
 
 	assert( CONSOLE_WIDTH > WINDOW_DATA_BYTES_PER_LINE );
 

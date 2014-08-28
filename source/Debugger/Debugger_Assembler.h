@@ -119,18 +119,18 @@
 	// NOTE: Keep in sync AsmDirectives_e g_aAssemblerDirectives !
 	enum AsmDirectives_e
 	{
-		FIRST_A_DIRECTIVE = 1,
-		FIRST_B_DIRECTIVE = FIRST_A_DIRECTIVE + NUM_ASM_A_DIRECTIVES, // Acme
-		FIRST_D_DIRECTIVE = FIRST_B_DIRECTIVE + NUM_ASM_B_DIRECTIVES, // Big Mac
-		FIRST_L_DIRECTIVE = FIRST_D_DIRECTIVE + NUM_ASM_D_DIRECTIVES, // DOS Tool Kit
-		FIRST_M_DIRECTIVE = FIRST_L_DIRECTIVE + NUM_ASM_L_DIRECTIVES, // Lisa
-		FIRST_u_DIRECTIVE = FIRST_M_DIRECTIVE + NUM_ASM_M_DIRECTIVES, // Merlin
-		FIRST_O_DIRECTIVE = FIRST_u_DIRECTIVE + NUM_ASM_u_DIRECTIVES, // MicroSparc
-		FIRST_S_DIRECTIVE = FIRST_O_DIRECTIVE + NUM_ASM_O_DIRECTIVES, // Orca
-		FIRST_T_DIRECTIVE = FIRST_S_DIRECTIVE + NUM_ASM_S_DIRECTIVES, // SC
-		FIRST_W_DIRECTIVE = FIRST_T_DIRECTIVE + NUM_ASM_T_DIRECTIVES, // Ted
-		FIRST_Z_DIRECTIVE = FIRST_W_DIRECTIVE + NUM_ASM_W_DIRECTIVES, // Weller
-	NUM_ASM_DIRECTIVES    = FIRST_Z_DIRECTIVE + NUM_ASM_Z_DIRECTIVES  // Custom
+		FIRST_A_DIRECTIVE = 1                                       , // Acme
+		FIRST_B_DIRECTIVE = FIRST_A_DIRECTIVE + NUM_ASM_A_DIRECTIVES, // Big Mac
+		FIRST_D_DIRECTIVE = FIRST_B_DIRECTIVE + NUM_ASM_B_DIRECTIVES, // DOS Tool Kit
+		FIRST_L_DIRECTIVE = FIRST_D_DIRECTIVE + NUM_ASM_D_DIRECTIVES, // Lisa
+		FIRST_M_DIRECTIVE = FIRST_L_DIRECTIVE + NUM_ASM_L_DIRECTIVES, // Merlin
+		FIRST_u_DIRECTIVE = FIRST_M_DIRECTIVE + NUM_ASM_M_DIRECTIVES, // MicroSparc
+		FIRST_O_DIRECTIVE = FIRST_u_DIRECTIVE + NUM_ASM_u_DIRECTIVES, // Orca
+		FIRST_S_DIRECTIVE = FIRST_O_DIRECTIVE + NUM_ASM_O_DIRECTIVES, // SC
+		FIRST_T_DIRECTIVE = FIRST_S_DIRECTIVE + NUM_ASM_S_DIRECTIVES, // Ted
+		FIRST_W_DIRECTIVE = FIRST_T_DIRECTIVE + NUM_ASM_T_DIRECTIVES, // Weller
+		FIRST_Z_DIRECTIVE = FIRST_W_DIRECTIVE + NUM_ASM_W_DIRECTIVES, // Custom
+	NUM_ASM_DIRECTIVES    = FIRST_Z_DIRECTIVE + NUM_ASM_Z_DIRECTIVES  
 
 //		NUM_ASM_DIRECTIVES =  1 +  // Opcode ... rest are psuedo opcodes
 //			NUM_ASM_A_DIRECTIVES + // Acme
@@ -190,8 +190,7 @@ extern	int g_aAssemblerFirstDirective[ NUM_ASSEMBLERS ];
 
 // Prototypes _______________________________________________________________
 
-	int  _6502_GetOpmodeOpbyte( const int iAddress, int & iOpmode_, int & nOpbytes_ );
-//	void _6502_GetOpcodeOpmode( int & iOpcode_, int & iOpmode_, int & nOpbytes_ );
+	int  _6502_GetOpmodeOpbyte( const int iAddress, int & iOpmode_, int & nOpbytes_, const DisasmData_t** pData = NULL );
 	void _6502_GetOpcodeOpmodeOpbyte( int & iOpcode_, int & iOpmode_, int & nOpbytes_ );
 	bool _6502_GetStackReturnAddress( WORD & nAddress_ );
 	bool _6502_GetTargets( WORD nAddress, int *pTargetPartial_, int *pTargetPointer_, int * pBytes_

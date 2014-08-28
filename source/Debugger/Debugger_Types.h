@@ -889,9 +889,9 @@
 	enum DisasmText_e
 	{
 		MAX_ADDRESS_LEN   = 40,
-		nMaxOpcodes       =  3,
+		MAX_OPCODES       =  3, // only display 3 opcode bytes
 		CHARS_FOR_ADDRESS =  8, // 4 digits + end-of-string + padding
-		MAX_IMMEDIATE_LEN = 16, // Data Disassembly
+		MAX_IMMEDIATE_LEN = 20, // Data Disassembly
 	};
 
 	struct DisasmLine_t
@@ -901,7 +901,7 @@
 		int   nOpbyte;
 
 		char sAddress  [ CHARS_FOR_ADDRESS ];
-		char sOpCodes  [(nMaxOpcodes*3)+1];
+		char sOpCodes  [(MAX_OPCODES*3)+1];
 
 		// Added for Data Disassembler
 		char sLabel    [ MAX_SYMBOLS_LEN+1 ]; // label is a symbol
@@ -911,7 +911,7 @@
 		int       nSlack  ;
 
 		char sMnemonic [ MAX_SYMBOLS_LEN+1 ]; // either the real Mnemonic or the Assembler Directive
-const	DisasmData_t* pDisasmData;
+const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data not code
 		//
 
 		int  nTarget; // address -> string

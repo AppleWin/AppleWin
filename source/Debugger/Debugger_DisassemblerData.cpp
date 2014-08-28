@@ -387,7 +387,8 @@ Update_t CmdDisasmDataDefString ( int nArgs )
 	int iArg = 2;
 	WORD nAddress = _CmdDefineByteRange( nArgs, iArg, tData );
 
-	tData.iDirective = g_aAssemblerFirstDirective[ g_iAssemblerSyntax ] + ASM_DEFINE_APPLE_TEXT;
+//	tData.iDirective = g_aAssemblerFirstDirective[ g_iAssemblerSyntax ] + ASM_DEFINE_APPLE_TEXT;
+	tData.iDirective = FIRST_M_DIRECTIVE + ASM_M_ASCII; // ASM_MERLIN
 
 	tData.eElementType = (Nopcode_e)( NOP_STRING_APPLE + iCmd );
 	tData.bSymbolLookup = false;

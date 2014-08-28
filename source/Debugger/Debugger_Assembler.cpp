@@ -464,7 +464,7 @@ bool _6502_CalcRelativeOffset( int nOpcode, int nBaseAddress, int nTargetAddress
 
 
 //===========================================================================
-int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpbyte_ )
+int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpbyte_, const DisasmData_t** pData_ )
 {
 #if _DEBUG
 	if (! g_aOpcodes)
@@ -489,6 +489,9 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 	DisasmData_t* pData = Disassembly_IsDataAddress( nBaseAddress );
 	if( pData )
 	{
+		if( pData_ )
+			*pData_ = pData;
+
 		nSlack = pData->nEndAddress - pData->nStartAddress + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 
 		// Data Disassembler
