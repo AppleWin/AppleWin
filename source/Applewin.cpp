@@ -96,7 +96,7 @@ FILE*		g_fh			= NULL;
 bool		g_bDisableDirectInput = false;
 bool		g_bDisableDirectSound = false;
 bool		g_bDisableDirectSoundMockingboard = false;
-int			g_nMemoryClearType = MIP_FF_00_FULL_PAGE; // Note: -1 = random
+int			g_nMemoryClearType = MIP_FF_00_FULL_PAGE; // Note: -1 = random in Memory.cpp MemReset()
 
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 CSuperSerialCard	sg_SSC;
