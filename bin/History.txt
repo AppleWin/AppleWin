@@ -9,11 +9,13 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-In Development: 1.25.0
----------------
+1.25.0 - 28 Aug 2014
+--------------------
 Changes:
 . Changed the AppleWin project host from BerliOS to GitHub.
-. [Bug #221] Restored F6 original behavior that was changed in v1.22.0.
+. Dropped support for Win98/ME, as AppleWin now built with VS2008 Express:
+     So AppleWin will only work under Windows 2000 and later.
+. [Feature #221] Restored F6 original behavior that was changed in v1.22.0.
      F6 Toggle full-screen / windowed mode.
      Ctrl-F6 Toggle windowed 1x/2x zoom.
 . Ctrl-PrintScreen will copy the text screen (auto detect 40/80 columns) to the clipboard.
@@ -69,8 +71,6 @@ Fixes:
   - Hang with Memory Fill when memory ends at FFFF, i.e. F D000:FFFF 0
   - Hang with Memory Move when memory ends at FFFF, i.e. 2000<FFFE.FFFFM
 
-Latest:
--------
 
 1.24.0 - 11 Jan 2014
 --------------------

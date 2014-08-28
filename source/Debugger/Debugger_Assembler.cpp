@@ -520,6 +520,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 				int *fatal = 0;
 				*fatal = 0xDEADC0DE;
 #endif
+				break;
 		}
 /*
 		// REMOVED in v1.25 ... because of AppleSoft Basic:  DW NEXT1 801  DW LINE1 803
