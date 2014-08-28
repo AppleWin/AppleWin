@@ -26,7 +26,23 @@
 		-use-real-printer<br>
 		Enables Advanced configuration control to allow dumping to a real printer<br><br>
 		-noreg<br>
-		Disable registration of file extensions (.do/.dsk/.nib/.po)<br>
+		Disable registration of file extensions (.do/.dsk/.nib/.po)<br><br>
+		-memclear &lt;n&gt;<br>
+		Where n is [0..7]:
+		<ul>
+			<li>0 Initialize memory to zero</li>
+			<li>1 Initialize memory to random values</li>
+			<li>2 Initialize memory to 4 byte pattern: FF FF 00 00</li>
+			<li>3 Initialize memory to even pages FF, odd pages 00</li>
+			<li>4 Initialize memory to first half page 00, last half page FF</li>
+			<li>5 Initialize memory to first half page FF, last half page 00</li>
+			<li>6 Initialize memory to byte offset of that page
+						(current memory address low byte)
+						i.e. 00:00 01 02 03 ... for page $20</li>
+			<li>7 Initialize memory to page address
+						(current memory address high byte)
+						i.e. 00:20 20 20 20 ... for page $20</li>
+		</ul>
 		<P>&nbsp;</P>
 		<P style="FONT-WEIGHT: bold">Debug arguments:
 		</P>
