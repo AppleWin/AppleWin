@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Disassembler Data ______________________________________________________________________________
 
-// __ Debugger Interaface ____________________________________________________________________________
+// __ Debugger Interface ____________________________________________________________________________
 
 //===========================================================================
 WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
@@ -68,14 +68,6 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 		}
 	}
 
-/*
-	// Removed so DW 801 works
-	if (!nLen)
-	{
-		nLen = 1;
-	}
-*/
-
 	tData_.nStartAddress = nAddress;
 	tData_.nEndAddress = nAddress + nLen;
 //	tData_.nArraySize = 0;
@@ -88,7 +80,13 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 	{
 		if( g_aArgs[ 2 ].eToken == TOKEN_COLON ) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:174F
 		{
-			sprintf( aSymbolName, "B_%04X", tData_.nStartAddress );
+			if( g_iCommand == CMD_DEFINE_DATA_STR )
+				sprintf( aSymbolName, "T_%04X", tData_.nStartAddress ); // ASC range
+			else
+			if( g_iCommand == CMD_DEFINE_DATA_WORD1 )
+				sprintf( aSymbolName, "W_%04X", tData_.nStartAddress ); // DW range
+			else
+				sprintf( aSymbolName, "B_%04X", tData_.nStartAddress ); // DB range
 			pSymbolName = aSymbolName;
 		}
 		else
@@ -132,7 +130,7 @@ Update_t CmdDisasmDataDefCode (int nArgs)
 	// DB TEST1 300:320
 	// DB TEST2 310:330
 	// DB TEST3 320:340
-	// !DB 300
+	// X  TEST1
 
 	DisasmData_t *pData = Disassembly_IsDataAddress( nAddress );
 	if( pData )
@@ -257,28 +255,36 @@ Update_t _CmdDisasmDataDefByteX (int nArgs)
 	return UPDATE_DISASM | ConsoleUpdate();
 }
 
-//===========================================================================
-Update_t _CmdDisasmDataDefWordX (int nArgs)
-{
 /*
 	Usage:
 		DW
 		DW symbol
 		DW symbol address
 		DW symbol range:range
-		DW address  Auto-define D_#### where # is the address
+		DW address  Auto-define W_#### where # is the address
+		DW range    Auto-define W_#### where # is the address
 	Examples:
-		DW 
+		DW 3F2:3F3
 */
+//===========================================================================
+Update_t _CmdDisasmDataDefWordX (int nArgs)
+{
 	int iCmd = g_aArgs[0].nValue - NOP_WORD_1;
 
-	if (! ((nArgs <= 2) || (nArgs == 4)))
+	if (nArgs > 4) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:174F
 	{
 		return Help_Arg_1( CMD_DEFINE_DATA_WORD1 + iCmd );
 	}
 
 	DisasmData_t tData;
 	int iArg = 2;
+
+	if (nArgs == 3 ) // 2.7.0.33 Bug fix: DW range, i.e. DW 3F2:3F3
+	{
+		if ( g_aArgs[ 2 ].eToken == TOKEN_COLON )
+			iArg = 1;
+	}
+
 	WORD nAddress = _CmdDefineByteRange( nArgs, iArg, tData );
 
 //	tData.iDirective = FIRST_M_DIRECTIVE + ASM_M_DEFINE_WORD;
@@ -392,12 +398,25 @@ Update_t CmdDisasmDataDefWord4 ( int nArgs )
 }
 
 // Command: DS
+//		ASC range    Auto-define T_#### where # is the address
 Update_t CmdDisasmDataDefString ( int nArgs )
 {
 	int iCmd = 0; // Define Ascii, AppleText, MixedText (DOS3.3)
 
+	if (nArgs > 4) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:174F
+	{
+		return Help_Arg_1( CMD_DEFINE_DATA_STR + iCmd );
+	}
+
 	DisasmData_t tData;
 	int iArg = 2;
+
+	if (nArgs == 3 ) // 2.7.0.32 Bug fix: ASC range, i.e. ASC 174E:175F
+	{
+		if ( g_aArgs[ 2 ].eToken == TOKEN_COLON )
+			iArg = 1;
+	}
+
 	WORD nAddress = _CmdDefineByteRange( nArgs, iArg, tData );
 
 //	tData.iDirective = g_aAssemblerFirstDirective[ g_iAssemblerSyntax ] + ASM_DEFINE_APPLE_TEXT;

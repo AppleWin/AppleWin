@@ -2,7 +2,9 @@
 2.8.0.0 Released with AppleWin 1.25
 
 2.7.0.#
-.31 Fixed: DB range -- autogenerate symbol name B_####
+.33 Fixed: ASC range -- auto-define symbol name: T_####
+.32 Fixed: DW range -- auto-define symbol name: W_####
+.31 Fixed: DB range -- auto-define symbol name B_####
 .30 Fixed: ASC overflowing sOpCodes in FormatOpcodeBytes()
 .29 Added: Help for DB and DW
 .28 Added: ASC so it disassemblies intertwined code and data correctly.
