@@ -86,7 +86,13 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 
 	if( nArgs > 1 )
 	{
-		pSymbolName = g_aArgs[ 1 ].sArg;
+		if( g_aArgs[ 2 ].eToken == TOKEN_COLON ) // // 2.8.0.1 Bug fix: DB range
+		{
+			sprintf( aSymbolName, "B_%04X", tData_.nStartAddress );
+			pSymbolName = aSymbolName;
+		}
+		else
+			pSymbolName = g_aArgs[ 1 ].sArg;
 	}
 	else
 	{
@@ -215,13 +221,20 @@ Update_t _CmdDisasmDataDefByteX (int nArgs)
 	// To "return to code" use ."X" 
 	int iCmd = g_aArgs[0].nValue - NOP_BYTE_1;
 
-	if (nArgs > 3) // ! ((nArgs < 2) || (nArgs == 4)))
+	if (nArgs > 4) // 2.8.0.1 Bug fix: DB 174E:175E
 	{
 		return Help_Arg_1( CMD_DEFINE_DATA_BYTE1 + iCmd );
 	}
 
 	DisasmData_t tData;
 	int iArg = 2;
+
+	if (nArgs == 3 ) // 2.8.0.1 DB range
+	{
+		if ( g_aArgs[ 2 ].eToken == TOKEN_COLON )
+			iArg = 1;
+	}
+
 	WORD nAddress = _CmdDefineByteRange( nArgs, iArg, tData );
 
 	// TODO: Allow user to select which assembler to use for displaying directives!
