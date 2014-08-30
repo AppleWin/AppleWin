@@ -1605,12 +1605,13 @@ void FormatOpcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 //===========================================================================
 void FormatNopcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 {
-	char *pDst = line_.sTarget;
-	DWORD nStartAddress = line_.pDisasmData->nStartAddress;
-	DWORD nEndAddress   = line_.pDisasmData->nEndAddress;
-	int   nDataLen      = nEndAddress - nStartAddress + 1;
-	int   nDisplayLen   = nEndAddress - nBaseAddress  + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
-	int   len           = nDisplayLen;
+		char *pDst = line_.sTarget;
+const	char *pSrc = 0;
+		DWORD nStartAddress = line_.pDisasmData->nStartAddress;
+		DWORD nEndAddress   = line_.pDisasmData->nEndAddress  ;
+		int   nDataLen      = nEndAddress - nStartAddress + 1 ;
+		int   nDisplayLen   = nEndAddress - nBaseAddress  + 1 ; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
+		int   len           = nDisplayLen;
 
 	for( int iByte = 0; iByte < line_.nOpbyte; )
 	{
@@ -1653,20 +1654,29 @@ void FormatNopcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 				pDst += iByte;
 				*pDst = 0;
 			case NOP_STRING_APPLE:
-				iByte = line_.nOpbyte; // handled all bytes of text
-				if( len > (MAX_IMMEDIATE_LEN - 5)) // need 5 extra characters
-					len = (MAX_IMMEDIATE_LEN - 5); // 1=", 2=", 5=...
-
-				*pDst++ = '"';
-				for( int i = 0; i < len; i++ ) // iNopcode = Length of Data
-					*pDst++ =  *(const char*)(mem + nStartAddress + i) & 0x7F;
-				*pDst++ = '"';
-
-				if( nDisplayLen > len ) // ellipsis
+				iByte = line_.nOpbyte; // handle all bytes of text
+				pSrc = (const char*)mem + nStartAddress;
+				
+				if (len > (MAX_IMMEDIATE_LEN - 2)) // does "text" fit?
 				{
-					*pDst++ = '.';
-					*pDst++ = '.';
-					*pDst++ = '.';
+					if (len > MAX_IMMEDIATE_LEN) // no; need extra characters for ellipsis?
+						len = (MAX_IMMEDIATE_LEN - 3); // ellipsis = true
+
+					// DISPLAY: text_longer_18...
+					for( int i = 0; i < len; i++ )
+						*pDst++ =  (*pSrc++) & 0x7F;
+
+					if( nDisplayLen > len ) // ellipsis
+					{
+						*pDst++ = '.';
+						*pDst++ = '.';
+						*pDst++ = '.';
+					}
+				} else { // DISPLAY: "max_18_char"
+					*pDst++ = '"';
+					for( int i = 0; i < len; i++ )
+						*pDst++ =  (*pSrc++) & 0x7F;
+					*pDst++ = '"';
 				}
 
 				*pDst = 0;
