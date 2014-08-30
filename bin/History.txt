@@ -59,7 +59,9 @@ Changes:
     using Castle Wolfenstien.DSK
     BLOAD ^VOCAB
     ASC name1 17DA:17F5
- - Fixed:  DB address now auto-defines the symbol D_#### if no symbol is given.
+ - Fixed: DB address now auto-defines the symbol D_#### if no symbol is given.
+ - Fixed: DW address now auto-defines the symbol W_#### if no symbol is given.
+ - Fixed: ASB address now auto-defines the symbol T_#### if no symbol is given.
  - Added: Help for DB and DW.
 
 Fixes:
