@@ -27,7 +27,7 @@ Changes:
     is shown only for the last drive accessed.
   Note: DOS3.3 Track/Sector status should be accurate.
         ProDOS support is preliminary -- the track/sector may show zero after an operation.
-. Memory initialization defaults to defaults to even pages FF, odd pages 00.
+. Memory initialization defaults to defaults to even pages FF, odd pages 00 (memclear 3).
 . Added command line switch to specify the type of memory initialization pattern.
     -memclear #
   Where # ranges from 0 to 7.
