@@ -6999,7 +6999,6 @@ Update_t ExecuteCommand (int nArgs)
 	int nFound = FindCommand( pCommand, pFunction );
 
 //	int nCookMask = (1 << NUM_TOKENS) - 1; // ArgToken_e used as bit mask!
-
 	
 	// BUGFIX: commands that are also valid hex addresses
 	// ####:# [#]
@@ -7008,6 +7007,8 @@ Update_t ExecuteCommand (int nArgs)
 
 	if ((! nFound) || (nLen < 6))
 	{
+		// 2.7.0.36 Fixed: empty command was re-triggering previous command. Example: DW 6062, // test
+		if ( nLen > 0 )
 		{
 			// verify pCommand[ 0 .. (nLen-1) ] are hex digits
 			bool bIsHex = true;
@@ -7175,6 +7176,8 @@ Update_t ExecuteCommand (int nArgs)
 				// addr1 [addr2] -> display byte at address
 				// MDB memory display byte (is deprecated, so can be re-used)
 			}
+		} else {
+			return UPDATE_CONSOLE_DISPLAY;
 		}
 	}
 

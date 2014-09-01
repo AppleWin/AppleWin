@@ -168,24 +168,33 @@ int _Args_Insert( int iSrc, int iEnd, int nLen )
 }
 
 
+static void ClearArg( Arg_t *pArg )
+{
+	pArg->sArg[0] = 0;
+	pArg->nArgLen = 0;
+	pArg->bSymbol = false;
+	pArg->eDevice = NUM_DEVICES; // none
+	pArg->eToken  = NO_TOKEN   ; // none
+	pArg->bType   = TYPE_STRING;
+	pArg->nValue  = 0;
+#if DEBUG_VAL_2
+	pArg->nVal2   = 0;
+#endif
+}
+
 //===========================================================================
 void ArgsClear ()
 {
 	Arg_t *pArg = &g_aArgs[0];
+	Arg_t *pRaw = &g_aArgRaw[0];
 
 	for (int iArg = 0; iArg < MAX_ARGS; iArg++ )
 	{
-		pArg->bSymbol = false;
-		pArg->eDevice = NUM_DEVICES; // none
-		pArg->eToken  = NO_TOKEN   ; // none
-		pArg->bType   = TYPE_STRING;
-		pArg->nValue  = 0;
-#if DEBUG_VAL_2
-		pArg->nVal2   = 0;
-#endif
-		pArg->sArg[0] = 0;
+		ClearArg( pArg );
+		ClearArg( pRaw );
 
 		pArg++;
+		pRaw++;
 	}
 }
 
@@ -219,7 +228,7 @@ bool ArgsGetImmediateValue ( Arg_t *pArg, WORD * pAddressValue_ )
 	return false;
 }
 
-// Processes the raw args, turning them into tokens and types.
+// Read console input, process the raw args, turning them into tokens and types.
 //===========================================================================
 int	ArgsGet ( TCHAR * pInput )
 {
@@ -262,7 +271,7 @@ int	ArgsGet ( TCHAR * pInput )
 			}
 
 			if (iTokenSrc == TOKEN_COMMENT_EOL)
-				break;
+				break; //pArg->eToken = iTokenSrc;
 			
 			if (iTokenSrc == NO_TOKEN)
 			{
