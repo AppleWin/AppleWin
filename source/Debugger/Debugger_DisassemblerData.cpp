@@ -68,6 +68,14 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 		}
 	}
 
+	// 2.7.0.35 DW address -- round the length up to even number for convenience.
+	// Example: 'DW 6062' is equivalent to: 'DW 6062:6063'
+	if( g_iCommand == CMD_DEFINE_DATA_WORD1 )
+	{
+		if( ~nLen & 1 )
+			nLen++;
+	}
+
 	tData_.nStartAddress = nAddress;
 	tData_.nEndAddress = nAddress + nLen;
 //	tData_.nArraySize = 0;
@@ -75,30 +83,35 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 	char *pSymbolName = "";
 	char aSymbolName[ 32 ];
 	SymbolTable_Index_e eSymbolTable = SYMBOLS_ASSEMBLY;
+	bool bAutoDefineName = false; // 2.7.0.34
 
 	if( nArgs > 1 )
 	{
 		if( g_aArgs[ 2 ].eToken == TOKEN_COLON ) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:174F
-		{
-			if( g_iCommand == CMD_DEFINE_DATA_STR )
-				sprintf( aSymbolName, "T_%04X", tData_.nStartAddress ); // ASC range
-			else
-			if( g_iCommand == CMD_DEFINE_DATA_WORD1 )
-				sprintf( aSymbolName, "W_%04X", tData_.nStartAddress ); // DW range
-			else
-				sprintf( aSymbolName, "B_%04X", tData_.nStartAddress ); // DB range
-			pSymbolName = aSymbolName;
-		}
+			bAutoDefineName = true;
 		else
 			pSymbolName = g_aArgs[ 1 ].sArg;
 	}
 	else
 	{
-		// 'DB' with 1 arg
-		// DB 801
-		// auto define D_# DB $XX
-		sprintf( aSymbolName, "D_%04X", tData_.nStartAddress );
-		pSymbolName = aSymbolName;
+		bAutoDefineName = true;
+	}
+
+	// 2.7.0.34 Unified auto-defined name: B_, W_, T_ for byte, word, or text respectively
+	// Old name: auto define D_# DB $XX
+	// Example 'DB' or 'DW' with 1 arg
+	//   DB 801
+	if( bAutoDefineName )
+	{
+		if( g_iCommand == CMD_DEFINE_DATA_STR )
+			sprintf( aSymbolName, "T_%04X", tData_.nStartAddress ); // ASC range
+		else
+		if( g_iCommand == CMD_DEFINE_DATA_WORD1 )
+			sprintf( aSymbolName, "W_%04X", tData_.nStartAddress ); // DW range
+		else
+			sprintf( aSymbolName, "B_%04X", tData_.nStartAddress ); // DB range
+
+			pSymbolName = aSymbolName;
 	}
 
 	// bRemoveSymbol = false // use arg[2]

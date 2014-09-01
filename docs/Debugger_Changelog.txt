@@ -2,6 +2,8 @@
 2.8.0.0 Released with AppleWin 1.25
 
 2.7.0.#
+.35 Added: DW address -- round the length up to even number for convenience. Example: DW 6062 is equivalent to: DW 6062:6063
+.34 Fixed: Unified auto-defined name: B_, W_, T_ for byte, word, or text respectively
 .33 Fixed: ASC range -- auto-define symbol name: T_####
 .32 Fixed: DW range -- auto-define symbol name: W_####
 .31 Fixed: DB range -- auto-define symbol name B_####
