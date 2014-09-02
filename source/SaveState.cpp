@@ -74,7 +74,7 @@ void Snapshot_SetFilename(std::string strPathname)
 	if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())
 	{
 		strFilename = &strPathname[nIdx+1];
-		g_strSaveStatePath = strPathname.substr(0, nIdx);
+		g_strSaveStatePath = strPathname.substr(0, nIdx+1); // Bugfix: 1.25.0.2 // Snapshot_LoadState() -> SetCurrentImageDir() -> g_sCurrentDir 
 	}
 
 	g_strSaveStateFilename = strFilename;
