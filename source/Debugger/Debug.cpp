@@ -2260,7 +2260,7 @@ bool ConfigSave_BufferToDisk ( char *pFileName, ConfigSave_t eConfigSave )
 
 	char sFileName[ MAX_PATH ];
 
-	_tcscpy(sFileName, g_sCurrentDir);
+	_tcscpy(sFileName, g_sCurrentDir); // TODO: g_sDebugDir
 	_tcscat(sFileName, pFileName    );
 
 	FILE *hFile = fopen( pFileName, pMode );
