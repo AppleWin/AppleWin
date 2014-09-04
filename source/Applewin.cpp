@@ -622,14 +622,12 @@ void SetCurrentImageDir(const char* pszImageDir)
 {
 	strcpy(g_sCurrentDir, pszImageDir);
 
-#if _DEBUG
 	int nLen = strlen( g_sCurrentDir );
 	if( g_sCurrentDir[ nLen - 1 ] != '\\' )
 	{
-		g_sCurrentDir[ nLen - 1 ] = '\\';
-		g_sCurrentDir[ nLen     ] = 0;
+		g_sCurrentDir[ nLen + 0 ] = '\\';
+		g_sCurrentDir[ nLen + 1 ] = 0;
 	}
-#endif
 
 	SetCurrentDirectory(g_sCurrentDir);
 }
