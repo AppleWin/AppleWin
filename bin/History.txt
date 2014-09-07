@@ -9,7 +9,7 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.25.0.1 - 1 Sep 2014
+1.25.0.2 - 7 Sep 2014
 ---------------------
 Note: This is the last planned version to support Win98/ME.
 . The next release of AppleWin will be built with VS2008 Express, so will only work under Windows 2000 and later.
