@@ -2041,6 +2041,8 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		}
 
 		char *pTarget = line.sTarget;
+		int nLen = strlen( pTarget );
+
 		if (*pTarget == '$')
 		{
 			pTarget++;
@@ -2068,6 +2070,24 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 				}
 			}
 		}
+
+		// https://github.com/AppleWin/AppleWin/issues/227
+		// (Debugger)[1.25] AppleSoft symbol: COPY.FAC.TO.ARG.ROUNDED overflows into registers
+		// Repro:
+		//    UEA39
+		// 2.8.0.1 Clamp excessive symbol target to not overflow
+		//    SYM COPY.FAC.TO.ARG.ROUNDED = EB63
+		// If opcodes aren't showing then length can be longer!
+		// FormatOpcodeBytes() uses 3 chars/MAX_OPCODES. i.e. "## "
+		int nMaxLen = g_bConfigDisasmOpcodesView ? MAX_TARGET_LEN : MAX_TARGET_LEN + (MAX_OPCODES*3);
+		if( nLen >=  nMaxLen )
+		{
+#if _DEBUG
+			// TODO: Warn on import about long symbol/target names
+#endif
+			pTarget[ nMaxLen ] = 0;
+		}
+
 		PrintTextCursorX( pTarget, linerect );
 //		PrintTextCursorX( " ", linerect );
 

@@ -886,12 +886,13 @@
 		, NUM_DISASM_TARGET_TYPES
 	};
 
-	enum DisasmText_e
+	enum DisasmDisplay_e // TODO: Prefix enums with DISASM_DISPLAY_
 	{
 		MAX_ADDRESS_LEN   = 40,
-		MAX_OPCODES       =  3, // only display 3 opcode bytes
+		MAX_OPCODES       =  3, // only display 3 opcode bytes -- See FormatOpcodeBytes() // TODO: FIX when showing data hex
 		CHARS_FOR_ADDRESS =  8, // 4 digits + end-of-string + padding
 		MAX_IMMEDIATE_LEN = 20, // Data Disassembly
+		MAX_TARGET_LEN    = MAX_IMMEDIATE_LEN, // Debugger Display: pTarget = line.sTarget
 	};
 
 	struct DisasmLine_t
