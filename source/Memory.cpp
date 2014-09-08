@@ -1443,6 +1443,11 @@ void MemReset ()
 			break;
 		
 		case MIP_FF_00_FULL_PAGE:
+			// https://github.com/AppleWin/AppleWin/issues/225
+			// AppleWin 1.25 RC2 fails to boot Castle Wolfenstein #225
+			// This causes Castle Wolfenstein to not boot properly 100% with an error:
+			// ?OVERFLOW ERROR IN 10
+			// http://mirrors.apple2.org.za/ftp.apple.asimov.net/images/games/action/wolfenstein/castle_wolfenstein-fixed.dsk
 			for( iByte = 0x0000; iByte < 0xC000; iByte += 512 )
 			{
 				memset( &memmain[ iByte ], 0xFF, 256 );
