@@ -193,7 +193,6 @@ static LPBYTE	pCxRomPeripheral	= NULL;
 static DWORD   memmode      = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM;
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 static BOOL    Pravets8charmode = 0;
-MemoryInitPattern_e g_eMemoryInitPattern = MIP_FF_FF_00_00;
 
 static CNoSlotClock g_NoSlotClock;
 
@@ -1407,21 +1406,20 @@ void MemReset ()
 	// OR
 	//   F2, Ctrl-F2, F7, HGR
 	DWORD clock = getRandomTime();
+	MemoryInitPattern_e eMemoryInitPattern = static_cast<MemoryInitPattern_e>(g_nMemoryClearType);
 
-	if (g_nMemoryClearType >= 0)
-		g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>(g_nMemoryClearType);
-	else // random
+	if (g_nMemoryClearType < 0)	// random
 	{
-		g_eMemoryInitPattern = static_cast<MemoryInitPattern_e>( clock % NUM_MIP );
+		eMemoryInitPattern = static_cast<MemoryInitPattern_e>( clock % NUM_MIP );
 
 		// Don't use unless manually specified as a
 		// few badly written programs will not work correctly
 		// due to buffer overflows or not initializig memory before using.
-		if( g_eMemoryInitPattern == MIP_PAGE_ADDRESS_LOW )
-			g_eMemoryInitPattern = MIP_FF_FF_00_00;
+		if( eMemoryInitPattern == MIP_PAGE_ADDRESS_LOW )
+			eMemoryInitPattern = MIP_FF_FF_00_00;
 	}
 
-	switch( g_eMemoryInitPattern )
+	switch( eMemoryInitPattern )
 	{
 		case MIP_FF_FF_00_00:
 			for( iByte = 0x0000; iByte < 0xC000; iByte += 4 ) // NB. ODD 16-bit words are zero'd above...

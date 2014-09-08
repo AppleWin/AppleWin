@@ -24,7 +24,6 @@ enum MemoryInitPattern_e
 	, MIP_PAGE_ADDRESS_HIGH
 	, NUM_MIP
 };
-extern MemoryInitPattern_e g_eMemoryInitPattern;
 
 extern iofunction IORead[256];
 extern iofunction IOWrite[256];

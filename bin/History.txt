@@ -9,7 +9,7 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.25.0.2 - 7 Sep 2014
+1.25.0.3 - 8 Sep 2014
 ---------------------
 Note: This is the last planned version to support Win98/ME.
 . The next release of AppleWin will be built with VS2008 Express, so will only work under Windows 2000 and later.
@@ -28,14 +28,14 @@ Changes:
     is shown only for the last drive accessed.
   Note: DOS3.3 Track/Sector status should be accurate.
         ProDOS support is preliminary -- the track/sector may show zero after an operation.
-. Memory initialization defaults to defaults to even pages FF, odd pages 00 (memclear 3).
+. Memory initialization defaults to a pattern of FF FF 00 00 (memclear 2).
 . Added command line switch to specify the type of memory initialization pattern.
     -memclear #
   Where # ranges from 0 to 7.
   i.e.
      -memclear 0   Initialize memory to zero
      -memclear 1   Initialize memory to random values
-     -memclear 2   Initialize memory to 4 byte pattern: FF FF 00 00
+     -memclear 2   Initialize memory to 4 byte pattern: FF FF 00 00 (default, same as v1.24.0)
      -memclear 3   Initialize memory to even pages FF, odd pages 00
      -memclear 4   Initialize memory to first half page 00, last half page FF
      -memclear 5   Initialize memory to first half page FF, last half page 00

@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2009, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ FILE*		g_fh			= NULL;
 bool		g_bDisableDirectInput = false;
 bool		g_bDisableDirectSound = false;
 bool		g_bDisableDirectSoundMockingboard = false;
-int			g_nMemoryClearType = MIP_FF_00_FULL_PAGE; // Note: -1 = random in Memory.cpp MemReset()
+int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.cpp MemReset()
 
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 CSuperSerialCard	sg_SSC;
