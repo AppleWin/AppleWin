@@ -254,40 +254,12 @@ void ContinueExecution(void)
 		emulmsec_frac %= CLKS_PER_MS;
 	}
 
-	// DETERMINE WHETHER THE SCREEN WAS UPDATED THIS CLOCKTICK
-	static BOOL anyupdates = 0;
-	VideoCheckPage(0);								// force=0
-	anyupdates |= VideoHasRefreshed();				// Only called from here. Returns & clears 'hasrefreshed' flag
-
-	//
-
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
-		VideoUpdateFlash();
-
-		static BOOL lastupdates[2] = {0,0};
-		if (!anyupdates && !lastupdates[0] && !lastupdates[1] && VideoApparentlyDirty())
-		{
-			VideoCheckPage(1);						// force=1
-			static DWORD lasttime = 0;
-			DWORD currtime = GetTickCount();
-			if ((!g_bFullSpeed) ||
-				(currtime-lasttime >= (DWORD)(g_bGraphicsMode ? 100 : 25)))
-			{
-				VideoRefreshScreen();
-				lasttime = currtime;
-			}
-		}
-
-		lastupdates[1] = lastupdates[0];
-		lastupdates[0] = anyupdates;
-		anyupdates     = 0;
-
+		VideoEndOfVideoFrame();
 		MB_EndOfVideoFrame();
 	}
-
-	//
 
 	if (!g_bFullSpeed)
 	{

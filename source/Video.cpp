@@ -197,10 +197,21 @@ const BYTE DoubleHiresPalIndex[16] = {
 	const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512); // 1168
 	const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3278
 
+	enum VideoFlag_e
+	{
+		VF_80COL  = 0x00000001,
+		VF_DHIRES = 0x00000002,
+		VF_HIRES  = 0x00000004,
+		VF_80STORE= 0x00000008,
+		VF_MIXED  = 0x00000010,
+		VF_PAGE2  = 0x00000020,
+		VF_TEXT   = 0x00000040
+	};
+
 	#define  SW_80COL         (g_bVideoMode & VF_80COL)
 	#define  SW_DHIRES        (g_bVideoMode & VF_DHIRES)
 	#define  SW_HIRES         (g_bVideoMode & VF_HIRES)
-	#define  SW_MASK2         (g_bVideoMode & VF_MASK2)
+	#define  SW_80STORE       (g_bVideoMode & VF_80STORE)
 	#define  SW_MIXED         (g_bVideoMode & VF_MIXED)
 	#define  SW_PAGE2         (g_bVideoMode & VF_PAGE2)
 	#define  SW_TEXT          (g_bVideoMode & VF_TEXT)
@@ -261,24 +272,21 @@ static BYTE          colormixbuffer[6];
 static WORD          colormixmap[6][6][6];
 //
 
-	int       g_nAltCharSetOffset  = 0; // alternate character set
+static int           g_nAltCharSetOffset  = 0; // alternate character set
 
-	bool      g_bVideoDisplayPage2 = 0;
-	/*bool*/ UINT     g_VideoForceFullRedraw = 1;
+static /*bool*/ UINT g_VideoForceFullRedraw = 1;
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      g_nFrameBufferPitch = 0;
-BOOL             g_bGraphicsMode     = 0;
-static BOOL      hasrefreshed     = 0;
 static DWORD     lastpageflip     = 0;
 COLORREF         monochrome       = RGB(0xC0,0xC0,0xC0);
 static BOOL      rebuiltsource    = 0;
 static LPBYTE    vidlastmem       = NULL;
 
-	int           g_bVideoMode          = VF_TEXT;
+static	int      g_bVideoMode     = VF_TEXT;
 
 	DWORD     g_eVideoType     = VT_COLOR_TVEMU;
-	DWORD     g_uHalfScanLines = true; // drop 50% scan lines for a more authentic look
+	DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
 
 
 static bool g_bTextFlashState = false;
@@ -1924,8 +1932,8 @@ BOOL VideoApparentlyDirty ()
 		return 1;
 
 	DWORD address = (SW_HIRES && !SW_TEXT)
-		? (0x20 << (int)g_bVideoDisplayPage2)
-		: (0x04 << (int)g_bVideoDisplayPage2);
+		? (0x20 << (SW_PAGE2 ? 1 : 0))
+		: (0x04 << (SW_PAGE2 ? 1 : 0));
 	DWORD length  = (SW_HIRES && !SW_TEXT) ? 0x20 : 0x4;
 	while (length--)
 		if (*(memdirty+(address++)) & 2)
@@ -1938,7 +1946,7 @@ BOOL VideoApparentlyDirty ()
 	// Scan visible text page for any flashing chars
 	if((SW_TEXT || SW_MIXED) && (g_nAltCharSetOffset == 0))
 	{
-		BYTE* pnMemText = MemGetMainPtr(0x400 << (int)g_bVideoDisplayPage2);
+		BYTE* pnMemText = MemGetMainPtr(0x400 << (SW_PAGE2 ? 1 : 0));
 
 		// Scan 8 long-lines of 120 chars (at 128 char offsets):
 		// . Skip 8-char holes in TEXT
@@ -2150,25 +2158,6 @@ BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
     }
     return KeybGetKeycode() | (result ? 0x80 : 0);
   }
-}
-
-//===========================================================================
-
-// Check if we should call VideoRefreshScreen() based on unexpected page
-// - Only called from 2 places in main ContinueExecution() loop
-void VideoCheckPage(BOOL force)
-{
-	const bool bUnexpectedPage = (g_bVideoDisplayPage2 != (SW_PAGE2 != 0));
-	//_ASSERT(!bUnexpectedPage);					// [TC] Q: When does this happen? A: EG. When page-flipping && Scroll-Lock is pressed
-
-	if (bUnexpectedPage &&							// Unexpected page &&
-		(force || (emulmsec-lastpageflip > 500)))	// force || >500ms since last flip
-	{
-		g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
-		VideoRefreshScreen();
-		hasrefreshed = 1;
-		lastpageflip = emulmsec;
-	}
 }
 
 //===========================================================================
@@ -2385,13 +2374,6 @@ void VideoDisplayLogo ()
 }
 
 //===========================================================================
-BOOL VideoHasRefreshed () {
-  BOOL result = hasrefreshed;
-  hasrefreshed = 0;
-  return result;
-}
-
-//===========================================================================
 void VideoRealizePalette(HDC dc)
 {
 #if 0
@@ -2505,7 +2487,7 @@ VideoUpdateFuncPtr_t VideoRefreshScreen ()
 	// IN THE FRAME BUFFER.  MARK CELLS IN WHICH REDRAWING HAS TAKEN PLACE AS
 	// DIRTY.
 	_Video_Dirty();
-	_Video_SetupBanks( g_bVideoDisplayPage2 );
+	_Video_SetupBanks( SW_PAGE2 != 0 );
 
 	VideoUpdateFuncPtr_t pfUpdate = SW_TEXT
 		? SW_80COL
@@ -2694,15 +2676,8 @@ void VideoReinitialize ()
 void VideoResetState ()
 {
 	g_nAltCharSetOffset    = 0;
-	g_bVideoDisplayPage2   = 0;
 	g_bVideoMode           = VF_TEXT;
 	g_VideoForceFullRedraw = 1;
-
-#if 0 // Debug HGR2 without having to exec 6502 code
-	g_bVideoDisplayPage2   = 1;
-	g_bVideoMode           = VF_TEXT | VF_HIRES;
-#endif
-
 }
 
 
@@ -2711,10 +2686,12 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
 	DWORD oldpage2 = SW_PAGE2;
-	int   oldvalue = g_nAltCharSetOffset+(int)(g_bVideoMode & ~(VF_MASK2 | VF_PAGE2));
-	switch (address) {
-		case 0x00: g_bVideoMode &= ~VF_MASK2;   break;
-		case 0x01: g_bVideoMode |=  VF_MASK2;   break;
+	int   oldvalue = g_nAltCharSetOffset+(int)(g_bVideoMode & ~(VF_80STORE | VF_PAGE2));
+
+	switch (address)
+	{
+		case 0x00: g_bVideoMode &= ~VF_80STORE;   break;
+		case 0x01: g_bVideoMode |=  VF_80STORE;   break;
 		case 0x0C: if (!IS_APPLE2) g_bVideoMode &= ~VF_80COL;   break;
 		case 0x0D: if (!IS_APPLE2) g_bVideoMode |=  VF_80COL;   break;
 		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
@@ -2730,29 +2707,21 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x5E: if (!IS_APPLE2) g_bVideoMode |=  VF_DHIRES;  break;
 		case 0x5F: if (!IS_APPLE2) g_bVideoMode &= ~VF_DHIRES;  break;
 	}
-	if (SW_MASK2)
+
+	if (SW_80STORE)
 		g_bVideoMode &= ~VF_PAGE2;
-	if (oldvalue != g_nAltCharSetOffset+(int)(g_bVideoMode & ~(VF_MASK2 | VF_PAGE2))) {
-		g_bGraphicsMode = !SW_TEXT;
-		g_VideoForceFullRedraw   = 1;
-	}
-	if (g_bFullSpeed && oldpage2 && !SW_PAGE2) {
-		static DWORD lasttime = 0;
-		DWORD currtime = GetTickCount();
-		if (currtime-lasttime >= 20)
-			lasttime = currtime;
-		else
-			oldpage2 = SW_PAGE2;
+
+	if (oldvalue != g_nAltCharSetOffset+(int)(g_bVideoMode & ~(VF_80STORE | VF_PAGE2)))
+	{
+		g_VideoForceFullRedraw = 1;
 	}
 
 	if (oldpage2 != SW_PAGE2)
 	{
-		g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
 		if (!g_VideoForceFullRedraw)
 		{
 #if 1
 			VideoRefreshScreen();
-			hasrefreshed = 1;
 #else
 			g_VideoForceFullRedraw = 1;		// GH#129,GH204: Defer the redraw until the main ContinueExecution() loop (TODO: What effect does this have on other games?)
 #endif
@@ -2766,7 +2735,7 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 //===========================================================================
 
 // Called at 60Hz (every 16.666ms)
-void VideoUpdateFlash()
+static void VideoUpdateFlash()
 {
 	static UINT nTextFlashCnt = 0;
 
@@ -2788,9 +2757,73 @@ void VideoUpdateFlash()
 
 //===========================================================================
 
-bool VideoGetSW80COL()
+// Called from main-loop every 17030 cycles (ie. 60Hz when CPU = 1MHz)
+void VideoEndOfVideoFrame(void)
+{
+	VideoUpdateFlash();						// TODO: Flash rate should be constant (regardless of CPU speed)
+
+	if (!VideoApparentlyDirty())
+		return;
+
+	// Apple II is not page flipping...
+
+	static DWORD dwLastTime = 0;
+	DWORD dwCurrTime = GetTickCount();
+	if (!g_bFullSpeed ||
+		(dwCurrTime-dwLastTime >= 100))		// FullSpeed: update every 100ms
+	{
+		VideoRefreshScreen();
+		dwLastTime = dwCurrTime;
+	}
+}
+
+//===========================================================================
+
+bool VideoGetSW80COL(void)
 {
 	return SW_80COL ? true : false;
+}
+
+bool VideoGetSWDHIRES(void)
+{
+	return SW_DHIRES ? true : false;
+}
+
+bool VideoGetSWHIRES(void)
+{
+	return SW_HIRES ? true : false;
+}
+
+bool VideoGetSW80STORE(void)
+{
+	return SW_80STORE ? true : false;
+}
+
+bool VideoGetSWMIXED(void)
+{
+	return SW_MIXED ? true : false;
+}
+
+bool VideoGetSWPAGE2(void)
+{
+	return SW_PAGE2 ? true : false;
+}
+
+bool VideoGetSWTEXT(void)
+{
+	return SW_TEXT ? true : false;
+}
+
+bool VideoGetSWAltCharSet(void)
+{
+	return g_nAltCharSetOffset == 0;
+}
+
+//===========================================================================
+
+void VideoSetForceFullRedraw(void)
+{
+	g_VideoForceFullRedraw = 1;
 }
 
 //===========================================================================
@@ -2808,12 +2841,6 @@ DWORD VideoSetSnapshot(SS_IO_Video* pSS)
 {
 	g_nAltCharSetOffset = !pSS->bAltCharSet ? 0 : 256;
 	g_bVideoMode = pSS->dwVidMode;
-
-	//
-
-	g_bGraphicsMode = !SW_TEXT;
-    g_bVideoDisplayPage2 = (SW_PAGE2 != 0);
-
 	return 0;
 }
 

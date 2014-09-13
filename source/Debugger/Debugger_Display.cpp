@@ -2735,38 +2735,38 @@ void DrawSoftSwitches( int iSoftSwitch )
 		// GR  / TEXT
 		// GRAPH/TEXT
 		// TEXT ON/OFF
-		sprintf( sText, !(g_bVideoMode & VF_TEXT) ? "GR  / ----" : "--  / TEXT" );
+		sprintf( sText, !VideoGetSWTEXT() ? "GR  / ----" : "--  / TEXT" );
 		PrintTextCursorY( sText, rect );
 
 		// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
 		// FULL/MIXED
 		// MIX OFF/ON
-		sprintf( sText, !(g_bVideoMode & VF_MIXED) ? "FULL/-----" : "----/MIXED" );
+		sprintf( sText, !VideoGetSWMIXED() ? "FULL/-----" : "----/MIXED" );
 		PrintTextCursorY( sText, rect );
 
 		// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
 		// PAGE 1 / 2
-		sprintf( sText, !(g_bVideoMode & VF_PAGE2) ? "PAGE 1 / -" : "PAGE - / 2" );
+		sprintf( sText, !VideoGetSWPAGE2() ? "PAGE 1 / -" : "PAGE - / 2" );
 		PrintTextCursorY( sText, rect );
 		
 		// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
 		// LO / HIRES
 		// LO / -----
 		// -- / HIRES
-		sprintf( sText, !(g_bVideoMode & VF_HIRES) ? "LO /-- RES" : "---/HI RES" );
+		sprintf( sText, !VideoGetSWHIRES() ? "LO /-- RES" : "---/HI RES" );
 		PrintTextCursorY( sText, rect );
 
 		PrintTextCursorY( "", rect );
 
 		// Extended soft switches
-		sprintf( sText, !(g_bVideoMode & VF_80COL) ? "40 / -- COL" : "-- / 80 COL" );
+		sprintf( sText, !VideoGetSW80COL() ? "40 / -- COL" : "-- / 80 COL" );
 		PrintTextCursorY( sText, rect );
 
-		sprintf(sText, (g_nAltCharSetOffset == 0) ? "ASCII/-----" : "-----/MOUSE" );
+		sprintf(sText, VideoGetSWAltCharSet() ? "ASCII/-----" : "-----/MOUSE" );
 		PrintTextCursorY( sText, rect );
 
 		// 280/560 HGR
-		sprintf(sText, !(g_bVideoMode & VF_DHIRES) ? "HGR / ----" : "--- / DHGR" );
+		sprintf(sText, !VideoGetSWDHIRES() ? "HGR / ----" : "--- / DHGR" );
 		PrintTextCursorY( sText, rect );
 #else //SOFTSWITCH_OLD
 		// See: VideoSetMode()
@@ -2778,25 +2778,25 @@ void DrawSoftSwitches( int iSoftSwitch )
 		bool bSet;
 
 		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
-		bSet = !(g_bVideoMode & VF_TEXT);
+		bSet = !VideoGetSWTEXT();
 		_DrawSoftSwitch( rect, 0xC050, bSet, NULL, "GR.", "TEXT" );
 
 		// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
 		// FULL/MIXED
 		// MIX OFF/ON
-		bSet = !(g_bVideoMode & VF_MIXED);
+		bSet = !VideoGetSWMIXED();
 		_DrawSoftSwitch( rect, 0xC052, bSet, NULL, "FULL", "MIX" );
 
 		// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
 		// PAGE 1 / 2
-		bSet = !(g_bVideoMode & VF_PAGE2);
+		bSet = !VideoGetSWPAGE2();
 		_DrawSoftSwitch( rect, 0xC054, bSet, "PAGE ", "1", "2" );
 		
 		// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
 		// LO / HIRES
 		// LO / -----
 		// -- / HIRES
-		bSet = !(g_bVideoMode & VF_HIRES);
+		bSet = !VideoGetSWHIRES();
 		_DrawSoftSwitch( rect, 0xC056, bSet, NULL, "LO", "HI", "RES" );
 
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
@@ -2805,20 +2805,20 @@ void DrawSoftSwitches( int iSoftSwitch )
 
 		// 280/560 HGR
 		// C05E = ON, C05F = OFF
-		bSet = (g_bVideoMode & VF_DHIRES) ? true : false;
+		bSet = VideoGetSWDHIRES();
 		_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
 
 		// Extended soft switches
 		// C00C = off, C00D = on
-		bSet = !(g_bVideoMode & VF_80COL);
+		bSet = !VideoGetSW80COL();
 		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80" );
 
 		// C00E = off, C00F = on
-		bSet = (g_nAltCharSetOffset == 0);
+		bSet = VideoGetSWAltCharSet();
 		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS" ); // ASCII/MouseText
 
 		// C000 = 80STOREOFF, C001 = 80STOREON
-		bSet = !(g_bVideoMode & VF_MASK2);
+		bSet = !VideoGetSW80STORE();
 		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1" );
 #endif // SOFTSWITCH_OLD
 }

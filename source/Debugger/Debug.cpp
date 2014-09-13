@@ -4711,9 +4711,9 @@ size_t Util_GetTextScreen ( char* &pText_ )
 	g_nTextScreen = 0;
 	memset( pBeg, 0, sizeof( g_aTextScreen ) );
 
-	int bBank2 = g_bVideoDisplayPage2;
-	LPBYTE g_pTextBank1  = MemGetAuxPtr (0x400  << (int)bBank2);
-	LPBYTE g_pTextBank0  = MemGetMainPtr(0x400  << (int)bBank2);
+	unsigned int uBank2 = VideoGetSWPAGE2() ? 1 : 0;
+	LPBYTE g_pTextBank1  = MemGetAuxPtr (0x400 << uBank2);
+	LPBYTE g_pTextBank0  = MemGetMainPtr(0x400 << uBank2);
 
 	for( int y = 0; y < 24; y++ )
 	{
@@ -4724,7 +4724,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 		{
 			char c; // TODO: FormatCharTxtCtrl() ?
 
-			if ( g_bVideoMode & VF_80COL )
+			if ( VideoGetSW80COL() )
 			{ // AUX
 				c = g_pTextBank1[ nAddressStart ] & 0x7F;
 				c = RemapChar(c);
@@ -4792,7 +4792,7 @@ int CmdTextSave (int nArgs)
 		_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
 	else
 	{
-		if( g_bVideoMode & VF_80COL )
+		if( VideoGetSW80COL() )
 			sprintf( g_sMemoryLoadSaveFileName, "AppleWin_Text80.txt" );
 		else
 			sprintf( g_sMemoryLoadSaveFileName, "AppleWin_Text40.txt" );
@@ -5997,11 +5997,11 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate );
 
 Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate )
 {
-	g_VideoForceFullRedraw = true;
+	VideoSetForceFullRedraw();
 	_Video_Dirty();
 	switch( iPage ) 
 	{
-		case VIEW_PAGE_X: _Video_SetupBanks( g_bVideoDisplayPage2 ); break; // Page Current
+		case VIEW_PAGE_X: _Video_SetupBanks( VideoGetSWPAGE2() ); break; // Page Current
 		case VIEW_PAGE_1: _Video_SetupBanks( false ); break; // Page 1
 		case VIEW_PAGE_2: _Video_SetupBanks( true ); break; // Page 2 !
 		default:
