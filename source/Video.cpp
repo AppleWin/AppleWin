@@ -278,12 +278,11 @@ static /*bool*/ UINT g_VideoForceFullRedraw = 1;
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      g_nFrameBufferPitch = 0;
-static DWORD     lastpageflip     = 0;
 COLORREF         monochrome       = RGB(0xC0,0xC0,0xC0);
 static BOOL      rebuiltsource    = 0;
 static LPBYTE    vidlastmem       = NULL;
 
-static	int      g_bVideoMode     = VF_TEXT;
+static UINT      g_bVideoMode     = VF_TEXT;
 
 	DWORD     g_eVideoType     = VT_COLOR_TVEMU;
 	DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
@@ -2465,8 +2464,9 @@ static void DebugRefresh(char uDebugFlag)
 {
 	static DWORD uLastRefreshTime = 0;
 
-	const DWORD uTimeBetweenRefreshes = uLastRefreshTime ? emulmsec - uLastRefreshTime : 0;
-	uLastRefreshTime = emulmsec;
+	const DWORD dwEmuTime_ms = CpuGetEmulationTime_ms();
+	const DWORD uTimeBetweenRefreshes = uLastRefreshTime ? dwEmuTime_ms - uLastRefreshTime : 0;
+	uLastRefreshTime = dwEmuTime_ms;
 
 	if (!uTimeBetweenRefreshes)
 		return;					// 1st time in func
@@ -2726,7 +2726,6 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 			g_VideoForceFullRedraw = 1;		// GH#129,GH204: Defer the redraw until the main ContinueExecution() loop (TODO: What effect does this have on other games?)
 #endif
 		}
-		lastpageflip = emulmsec;
 	}
 
 	return MemReadFloatingBus(uExecutedCycles);
@@ -2858,8 +2857,8 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
     // machine state switches
     //
     int nHires   = (SW_HIRES && !SW_TEXT) ? 1 : 0;
-    int nPage2   = (SW_PAGE2) ? 1 : 0;
-    int n80Store = (MemGet80Store()) ? 1 : 0;
+    int nPage2   = SW_PAGE2 ? 1 : 0;
+    int n80Store = SW_80STORE ? 1 : 0;
 
     // calculate video parameters according to display standard
     //

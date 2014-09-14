@@ -63,8 +63,6 @@ eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
 DWORD     cumulativecycles  = 0;			// Wraps after ~1hr 9mins
 DWORD     cyclenum          = 0;			// Used by SpkrToggle() for non-wave sound
-DWORD     emulmsec          = 0;
-static DWORD emulmsec_frac  = 0;
 bool      g_bFullSpeed      = false;
 
 //Pravets 8A/C variables
@@ -229,14 +227,10 @@ void ContinueExecution(void)
 	if (nCyclesToExecute < 0)
 		nCyclesToExecute = 0;
 
-	DWORD dwExecutedCycles = CpuExecute(nCyclesToExecute);
-	g_dwCyclesThisFrame += dwExecutedCycles;
+	cyclenum = CpuExecute(nCyclesToExecute);
+	g_dwCyclesThisFrame += cyclenum;
 
-	//
-
-	cyclenum = dwExecutedCycles;
-
-	DiskUpdatePosition(dwExecutedCycles);
+	DiskUpdatePosition(cyclenum);
 	JoyUpdatePosition();
 
 	SpkrUpdate(cyclenum);
@@ -244,15 +238,6 @@ void ContinueExecution(void)
 	PrintUpdate(cyclenum);
 
 	//
-
-	const DWORD CLKS_PER_MS = (DWORD)g_fCurrentCLK6502 / 1000;
-
-	emulmsec_frac += dwExecutedCycles;
-	if (emulmsec_frac > CLKS_PER_MS)
-	{
-		emulmsec += emulmsec_frac / CLKS_PER_MS;
-		emulmsec_frac %= CLKS_PER_MS;
-	}
 
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{

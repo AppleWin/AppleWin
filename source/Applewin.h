@@ -15,7 +15,6 @@ extern eApple2Type g_Apple2Type;
 
 extern DWORD      cumulativecycles;
 extern DWORD      cyclenum;
-extern DWORD      emulmsec;
 extern bool       g_bFullSpeed;
 
 //Pravets 8A/C only variables
