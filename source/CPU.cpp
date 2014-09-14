@@ -176,16 +176,18 @@ void RequestDebugger()
 *
 ***/
 
-unsigned __int64 g_nCycleIrqStart;
-unsigned __int64 g_nCycleIrqEnd;
-UINT g_nCycleIrqTime;
+#ifdef _DEBUG
+static unsigned __int64 g_nCycleIrqStart;
+static unsigned __int64 g_nCycleIrqEnd;
+static UINT g_nCycleIrqTime;
 
-UINT g_nIdx = 0;
-const UINT BUFFER_SIZE = 4096;	// 80 secs
-UINT g_nBuffer[BUFFER_SIZE];
-UINT g_nMean = 0;
-UINT g_nMin = 0xFFFFFFFF;
-UINT g_nMax = 0;
+static UINT g_nIdx = 0;
+static const UINT BUFFER_SIZE = 4096;	// 80 secs
+static UINT g_nBuffer[BUFFER_SIZE];
+static UINT g_nMean = 0;
+static UINT g_nMin = 0xFFFFFFFF;
+static UINT g_nMax = 0;
+#endif
 
 static __forceinline void DoIrqProfiling(DWORD uCycles)
 {
@@ -352,7 +354,9 @@ static __forceinline void NMI(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& 
 	{
 		// NMI signals are only serviced once
 		g_bNmiFlank = FALSE;
+#ifdef _DEBUG
 		g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
+#endif
 		PUSH(regs.pc >> 8)
 		PUSH(regs.pc & 0xFF)
 		EF_TO_AF
@@ -369,7 +373,9 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& 
 	if(g_bmIRQ && !(regs.ps & AF_INTERRUPT))
 	{
 		// IRQ signals are deasserted when a specific r/w operation is done on device
+#ifdef _DEBUG
 		g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
+#endif
 		PUSH(regs.pc >> 8)
 		PUSH(regs.pc & 0xFF)
 		EF_TO_AF

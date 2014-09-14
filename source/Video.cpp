@@ -2106,7 +2106,7 @@ void VideoBenchmark () {
         DWORD executedcycles = CpuExecute(103);
         cycles -= executedcycles;
         DiskUpdatePosition(executedcycles);
-        JoyUpdatePosition();
+        JoyUpdateButtonLatch(executedcycles);
 	  }
     }
     if (cycle & 1)

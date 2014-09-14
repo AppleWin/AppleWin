@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskImage.h"
 #include "Frame.h"
 #include "Harddisk.h"
+#include "Joystick.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
@@ -61,8 +62,6 @@ TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
-DWORD     cumulativecycles  = 0;			// Wraps after ~1hr 9mins
-DWORD     cyclenum          = 0;			// Used by SpkrToggle() for non-wave sound
 bool      g_bFullSpeed      = false;
 
 //Pravets 8A/C variables
@@ -76,7 +75,6 @@ HINSTANCE g_hInstance          = (HINSTANCE)0;
 AppMode_e	g_nAppMode = MODE_LOGO;
 static bool g_bLoadedSaveState = false;
 
-static int lastmode         = MODE_LOGO;
 TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin executable resides
 TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
@@ -114,17 +112,6 @@ CSpeech		g_Speech;
 #endif
 
 //===========================================================================
-
-#define DBG_CALC_FREQ 0
-#if DBG_CALC_FREQ
-const UINT MAX_CNT = 256;
-double g_fDbg[MAX_CNT];
-UINT g_nIdx = 0;
-double g_fMeanPeriod,g_fMeanFreq;
-ULONGLONG g_nPerfFreq = 0;
-#endif
-
-//---------------------------------------------------------------------------
 
 bool GetLoadedSaveStateFlag(void)
 {
@@ -227,15 +214,15 @@ void ContinueExecution(void)
 	if (nCyclesToExecute < 0)
 		nCyclesToExecute = 0;
 
-	cyclenum = CpuExecute(nCyclesToExecute);
-	g_dwCyclesThisFrame += cyclenum;
+	const DWORD uActualCyclesExecuted = CpuExecute(nCyclesToExecute);
+	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-	DiskUpdatePosition(cyclenum);
-	JoyUpdatePosition();
+	DiskUpdatePosition(uActualCyclesExecuted);
+	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 
-	SpkrUpdate(cyclenum);
-	sg_SSC.CommUpdate(cyclenum);
-	PrintUpdate(cyclenum);
+	SpkrUpdate(uActualCyclesExecuted);
+	sg_SSC.CommUpdate(uActualCyclesExecuted);
+	PrintUpdate(uActualCyclesExecuted);
 
 	//
 
@@ -249,23 +236,6 @@ void ContinueExecution(void)
 	if (!g_bFullSpeed)
 	{
 		SysClk_WaitTimer();
-
-#if DBG_CALC_FREQ
-		if (g_nPerfFreq)
-		{
-			QueryPerformanceCounter((LARGE_INTEGER*)&nTime1);
-			LONGLONG nTimeDiff = nTime1 - nTime0;
-			double fTime = (double)nTimeDiff / (double)(LONGLONG)g_nPerfFreq;
-
-			g_fDbg[g_nIdx] = fTime;
-			g_nIdx = (g_nIdx+1) & (MAX_CNT-1);
-			g_fMeanPeriod = 0.0;
-			for(UINT n=0; n<MAX_CNT; n++)
-				g_fMeanPeriod += g_fDbg[n];
-			g_fMeanPeriod /= (double)MAX_CNT;
-			g_fMeanFreq = 1.0 / g_fMeanPeriod;
-		}
-#endif
 	}
 }
 
@@ -941,11 +911,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
     }
 
 	LogFileOutput("AppleWin version: %s\n",  VERSIONSTRING);
-
-#if DBG_CALC_FREQ
-	QueryPerformanceFrequency((LARGE_INTEGER*)&g_nPerfFreq);
-	if(g_fh) fprintf(g_fh, "Performance frequency = %d\n",g_nPerfFreq);
-#endif
 
 	//-----
 

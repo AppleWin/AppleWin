@@ -479,7 +479,9 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
     if (lastcyclenum)
 	{
       toggles++;
-      DWORD delta = cyclenum-lastcyclenum;
+      //DWORD delta = cyclenum-lastcyclenum;	// [TC: 14/09/2014] Looks broken, since 'cyclenum' is cycles executed in previous call to CpuExecute()
+      CpuCalcCycles(nCyclesLeft);
+	  DWORD delta = (DWORD)g_nCumulativeCycles - lastcyclenum;
 
       // DETERMINE WHETHER WE ARE PLAYING A SOUND EFFECT
       if (directio &&
@@ -493,7 +495,8 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
       lastdelta[0] = delta;
       totaldelta  += delta;
     }
-    lastcyclenum = cyclenum;
+    //lastcyclenum = cyclenum;
+    lastcyclenum = (DWORD)g_nCumulativeCycles;
 
   }
 
@@ -610,7 +613,7 @@ void SpkrUpdate_Timer()
 		nSamplesUsed = Spkr_SubmitWaveBuffer_FullSpeed(g_pSpeakerBuffer, g_nBufferIdx);
 
 		_ASSERT(nSamplesUsed <=	g_nBufferIdx);
-		memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], g_nBufferIdx-nSamplesUsed);	// FIXME-TC: _Size * 2
+		memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], g_nBufferIdx-nSamplesUsed);	// FIXME-TC: _Size * 2 (GH#213?)
 		g_nBufferIdx -=	nSamplesUsed;
 	}
 }
