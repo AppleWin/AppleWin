@@ -208,13 +208,13 @@ const BYTE DoubleHiresPalIndex[16] = {
 		VF_TEXT   = 0x00000040
 	};
 
-	#define  SW_80COL         (g_bVideoMode & VF_80COL)
-	#define  SW_DHIRES        (g_bVideoMode & VF_DHIRES)
-	#define  SW_HIRES         (g_bVideoMode & VF_HIRES)
-	#define  SW_80STORE       (g_bVideoMode & VF_80STORE)
-	#define  SW_MIXED         (g_bVideoMode & VF_MIXED)
-	#define  SW_PAGE2         (g_bVideoMode & VF_PAGE2)
-	#define  SW_TEXT          (g_bVideoMode & VF_TEXT)
+	#define  SW_80COL         (g_uVideoMode & VF_80COL)
+	#define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
+	#define  SW_HIRES         (g_uVideoMode & VF_HIRES)
+	#define  SW_80STORE       (g_uVideoMode & VF_80STORE)
+	#define  SW_MIXED         (g_uVideoMode & VF_MIXED)
+	#define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
+	#define  SW_TEXT          (g_uVideoMode & VF_TEXT)
 
 #define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
 
@@ -282,7 +282,7 @@ COLORREF         monochrome       = RGB(0xC0,0xC0,0xC0);
 static BOOL      rebuiltsource    = 0;
 static LPBYTE    vidlastmem       = NULL;
 
-static UINT      g_bVideoMode     = VF_TEXT;
+static UINT      g_uVideoMode     = VF_TEXT;
 
 	DWORD     g_eVideoType     = VT_COLOR_TVEMU;
 	DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
@@ -1988,7 +1988,7 @@ void VideoBenchmark () {
   // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totaltextfps = 0;
-  g_bVideoMode            = VF_TEXT;
+  g_uVideoMode            = VF_TEXT;
   FillMemory(mem+0x400,0x400,0x14);
   VideoRedrawScreen();
   DWORD milliseconds = GetTickCount();
@@ -2010,7 +2010,7 @@ void VideoBenchmark () {
   // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totalhiresfps = 0;
-  g_bVideoMode             = VF_HIRES;
+  g_uVideoMode             = VF_HIRES;
   FillMemory(mem+0x2000,0x2000,0x14);
   VideoRedrawScreen();
   milliseconds = GetTickCount();
@@ -2676,7 +2676,7 @@ void VideoReinitialize ()
 void VideoResetState ()
 {
 	g_nAltCharSetOffset    = 0;
-	g_bVideoMode           = VF_TEXT;
+	g_uVideoMode           = VF_TEXT;
 	g_VideoForceFullRedraw = 1;
 }
 
@@ -2686,32 +2686,32 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
 	DWORD oldpage2 = SW_PAGE2;
-	int   oldvalue = g_nAltCharSetOffset+(int)(g_bVideoMode & ~(VF_80STORE | VF_PAGE2));
+	int   oldvalue = g_nAltCharSetOffset+(int)(g_uVideoMode & ~(VF_80STORE | VF_PAGE2));
 
 	switch (address)
 	{
-		case 0x00: g_bVideoMode &= ~VF_80STORE;   break;
-		case 0x01: g_bVideoMode |=  VF_80STORE;   break;
-		case 0x0C: if (!IS_APPLE2) g_bVideoMode &= ~VF_80COL;   break;
-		case 0x0D: if (!IS_APPLE2) g_bVideoMode |=  VF_80COL;   break;
+		case 0x00: g_uVideoMode &= ~VF_80STORE;   break;
+		case 0x01: g_uVideoMode |=  VF_80STORE;   break;
+		case 0x0C: if (!IS_APPLE2) g_uVideoMode &= ~VF_80COL;   break;
+		case 0x0D: if (!IS_APPLE2) g_uVideoMode |=  VF_80COL;   break;
 		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
 		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
-		case 0x50: g_bVideoMode &= ~VF_TEXT;    break;
-		case 0x51: g_bVideoMode |=  VF_TEXT;    break;
-		case 0x52: g_bVideoMode &= ~VF_MIXED;   break;
-		case 0x53: g_bVideoMode |=  VF_MIXED;   break;
-		case 0x54: g_bVideoMode &= ~VF_PAGE2;   break;
-		case 0x55: g_bVideoMode |=  VF_PAGE2;   break;
-		case 0x56: g_bVideoMode &= ~VF_HIRES;   break;
-		case 0x57: g_bVideoMode |=  VF_HIRES;   break;
-		case 0x5E: if (!IS_APPLE2) g_bVideoMode |=  VF_DHIRES;  break;
-		case 0x5F: if (!IS_APPLE2) g_bVideoMode &= ~VF_DHIRES;  break;
+		case 0x50: g_uVideoMode &= ~VF_TEXT;    break;
+		case 0x51: g_uVideoMode |=  VF_TEXT;    break;
+		case 0x52: g_uVideoMode &= ~VF_MIXED;   break;
+		case 0x53: g_uVideoMode |=  VF_MIXED;   break;
+		case 0x54: g_uVideoMode &= ~VF_PAGE2;   break;
+		case 0x55: g_uVideoMode |=  VF_PAGE2;   break;
+		case 0x56: g_uVideoMode &= ~VF_HIRES;   break;
+		case 0x57: g_uVideoMode |=  VF_HIRES;   break;
+		case 0x5E: if (!IS_APPLE2) g_uVideoMode |=  VF_DHIRES;  break;
+		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
 
 	if (SW_80STORE)
-		g_bVideoMode &= ~VF_PAGE2;
+		g_uVideoMode &= ~VF_PAGE2;
 
-	if (oldvalue != g_nAltCharSetOffset+(int)(g_bVideoMode & ~(VF_80STORE | VF_PAGE2)))
+	if (oldvalue != g_nAltCharSetOffset+(int)(g_uVideoMode & ~(VF_80STORE | VF_PAGE2)))
 	{
 		g_VideoForceFullRedraw = 1;
 	}
@@ -2830,7 +2830,7 @@ void VideoSetForceFullRedraw(void)
 DWORD VideoGetSnapshot(SS_IO_Video* pSS)
 {
 	pSS->bAltCharSet = !(g_nAltCharSetOffset == 0);
-	pSS->dwVidMode = g_bVideoMode;
+	pSS->dwVidMode = g_uVideoMode;
 	return 0;
 }
 
@@ -2839,7 +2839,7 @@ DWORD VideoGetSnapshot(SS_IO_Video* pSS)
 DWORD VideoSetSnapshot(SS_IO_Video* pSS)
 {
 	g_nAltCharSetOffset = !pSS->bAltCharSet ? 0 : 256;
-	g_bVideoMode = pSS->dwVidMode;
+	g_uVideoMode = pSS->dwVidMode;
 	return 0;
 }
 
