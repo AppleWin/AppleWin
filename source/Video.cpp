@@ -1940,12 +1940,12 @@ BOOL VideoApparentlyDirty ()
 
 	//
 
-	bool bCharFlashing = false;
-
 	// Scan visible text page for any flashing chars
 	if((SW_TEXT || SW_MIXED) && (g_nAltCharSetOffset == 0))
 	{
-		BYTE* pnMemText = MemGetMainPtr(0x400 << (SW_PAGE2 ? 1 : 0));
+		BYTE* pTextBank0  = MemGetMainPtr(0x400 << (SW_PAGE2 ? 1 : 0));
+		BYTE* pTextBank1  = MemGetAuxPtr (0x400 << (SW_PAGE2 ? 1 : 0));
+		const bool b80Col = SW_80COL;
 
 		// Scan 8 long-lines of 120 chars (at 128 char offsets):
 		// . Skip 8-char holes in TEXT
@@ -1953,18 +1953,19 @@ BOOL VideoApparentlyDirty ()
 		{
 			for(UINT x=0; x<40*3; x++)
 			{
-				BYTE ch = pnMemText[y*128+x];
+				BYTE ch = pTextBank0[y*128+x];
 				if((ch >= 0x40) && (ch <= 0x7F))
+					return 1;
+
+				if (b80Col)
 				{
-					bCharFlashing = true;
-					break;
+					ch = pTextBank1[y*128+x];
+					if((ch >= 0x40) && (ch <= 0x7F))
+						return 1;
 				}
 			}
 		}
 	}
-
-	if(bCharFlashing)
-		return 1;
 
 	return 0;
 }
