@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Configuration\PropertySheet.h"
 
-#define BUTTONTIME	5000	// TODO: Describe this magic number
+#define BUTTONTIME	5000	// This is the latch (debounce) time in usecs for the joystick buttons
 
 enum {DEVICE_NONE=0, DEVICE_JOYSTICK, DEVICE_KEYBOARD, DEVICE_MOUSE};
 
@@ -82,7 +82,7 @@ static POINT keyvalue[9] = {{PDL_MIN,PDL_MAX},    {PDL_CENTRAL,PDL_MAX},    {PDL
                             {PDL_MIN,PDL_CENTRAL},{PDL_CENTRAL,PDL_CENTRAL},{PDL_MAX,PDL_CENTRAL},
                             {PDL_MIN,PDL_MIN},    {PDL_CENTRAL,PDL_MIN},    {PDL_MAX,PDL_MIN}};
 
-static DWORD buttonlatch[3] = {0,0,0};
+static int   buttonlatch[3] = {0,0,0};
 static BOOL  joybutton[3]   = {0,0,0};
 
 static int   joyshrx[2]     = {8,8};
@@ -703,11 +703,19 @@ void JoySetPosition(int xvalue, int xrange, int yvalue, int yrange)
 }
  
 //===========================================================================
-void JoyUpdatePosition()
+
+// Update the latch (debounce) time for each button
+void JoyUpdateButtonLatch(const UINT nExecutionPeriodUsec)
 {
-	if (buttonlatch[0]) --buttonlatch[0];
-	if (buttonlatch[1]) --buttonlatch[1];
-	if (buttonlatch[2]) --buttonlatch[2];
+	for (UINT i=0; i<3; i++)
+	{
+		if (buttonlatch[i])
+		{
+			buttonlatch[i] -= nExecutionPeriodUsec;
+			if (buttonlatch[i] < 0)
+				buttonlatch[i] = 0;
+		}
+	}
 }
 
 //===========================================================================

@@ -88,7 +88,7 @@ MEMORY MANAGEMENT SOFT SWITCHES
  $C005   W       RAMWRTON        Write enable aux memory from $0200-$BFFF
  $C006   W       INTCXROMOFF     Enable slot ROM from $C100-$CFFF
  $C007   W       INTCXROMON      Enable main ROM from $C100-$CFFF
- $C008   W       ALZTPOFF        Enable main memory from $0000-$01FF & avl BSR
+ $C008   W       ALTZPOFF        Enable main memory from $0000-$01FF & avl BSR
  $C009   W       ALTZPON         Enable aux memory from $0000-$01FF & avl BSR
  $C00A   W       SLOTC3ROMOFF    Enable main ROM from $C300-$C3FF
  $C00B   W       SLOTC3ROMON     Enable slot ROM from $C300-$C3FF
@@ -1070,13 +1070,6 @@ void MemDestroy ()
 
 	ZeroMemory(memwrite, sizeof(memwrite));
 	ZeroMemory(memshadow,sizeof(memshadow));
-}
-
-//===========================================================================
-
-bool MemGet80Store()
-{
-	return SW_80STORE != 0;
 }
 
 //===========================================================================
