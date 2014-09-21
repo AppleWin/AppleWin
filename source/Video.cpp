@@ -772,41 +772,6 @@ void V_CreateIdentityPalette ()
 }
 
 //===========================================================================
-void V_CreateLookup_MonoText (HDC hDstDC)
-{
-	static HBITMAP hCharBitmap[4];
-	HDC     hSrcDC  = CreateCompatibleDC(hDstDC);
-
-	hCharBitmap[0] = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
-	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));
-	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));  // FIXME: Pravets 8M probably has the same charset as Pravets 8C
-	hCharBitmap[3] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
-
-	HBRUSH hBrush;
-	switch (g_eVideoType)
-	{
-		case VT_MONO_AMBER: hBrush = CreateSolidBrush(RGB(0xFF,0x80,0x00)); break;
-		case VT_MONO_GREEN: hBrush = CreateSolidBrush(RGB(0x00,0xC0,0x00)); break;
-		case VT_MONO_WHITE: hBrush = CreateSolidBrush(RGB(0xFF,0xFF,0xFF)); break;
-		default           : hBrush = CreateSolidBrush(monochrome); break;
-	}
-
-	SelectObject(hSrcDC,hCharBitmap[g_nCharsetType]);
-	SelectObject(hDstDC,hBrush);
-
-	// TODO: Update with APPLE_FONT_Y_ values
-	BitBlt(    hDstDC,SRCOFFS_40COL ,0,256,512,hSrcDC,0,  0,MERGECOPY);
-	BitBlt(    hDstDC,SRCOFFS_IIPLUS,0,256,256,hSrcDC,0,512,MERGECOPY);
-	StretchBlt(hDstDC,SRCOFFS_80COL ,0,128,512,hSrcDC,0,  0,256,512,MERGECOPY);
-	SelectObject(hDstDC,GetStockObject(NULL_BRUSH));
-
-	DeleteObject(hBrush);
-	DeleteDC(hSrcDC);
-	DeleteObject(hCharBitmap);
-}
-
-
-//===========================================================================
 void V_CreateDIBSections () 
 {
 	CopyMemory(g_pSourceHeader->bmiColors,g_pFramebufferinfo->bmiColors,256*sizeof(RGBQUAD));
@@ -1434,34 +1399,53 @@ HBRUSH V_CreateCustomBrush(COLORREF nColor)
 
 
 //===========================================================================
-void V_CreateLookup_Text (HDC dc)
+
+static void CreateLookup_TextCommon(HDC hDstDC, DWORD rop)
 {
-	HDC     memdc  = CreateCompatibleDC(dc);
-	static HBITMAP hCharBitmap[4];
-	//The charset is set below
+	HBITMAP hCharBitmap[4];
+	HDC     hSrcDC = CreateCompatibleDC(hDstDC);
+
 	hCharBitmap[0] = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
 	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));
 	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C")); // FIXME: Pravets 8M probably has the same charset as Pravets 8C
 	hCharBitmap[3] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
-	SelectObject(memdc,hCharBitmap[g_nCharsetType]);
+	SelectObject(hSrcDC, hCharBitmap[g_nCharsetType]);
 
-	BitBlt(
-		dc                // hdcDest
-		,SRCOFFS_40COL ,0 // nXDest, nYDest
-		,256 ,512         // nWidth, nHeight
-		,memdc            // hdcSrc
-		,0 ,0             // nXSrc, nYSrc
-		,SRCCOPY );       // dwRop
+	// TODO: Update with APPLE_FONT_Y_ values
+	BitBlt(    hDstDC, SRCOFFS_40COL ,0,256,512,hSrcDC,0,  0,rop);
+	BitBlt(    hDstDC, SRCOFFS_IIPLUS,0,256,256,hSrcDC,0,512,rop);			// Chars for Apple ][
+	StretchBlt(hDstDC, SRCOFFS_80COL ,0,128,512,hSrcDC,0,  0,256,512,rop);	// Chars for 80 col mode
 
-	// Chars for Apple ][
-	BitBlt(dc,SRCOFFS_IIPLUS,0,256,256,memdc,0,512,SRCCOPY);
-
-	// Chars for 80 col mode
-	StretchBlt(dc,SRCOFFS_80COL,0,128,512,memdc,0,0,256,512,SRCCOPY);
-	DeleteDC(memdc);
-	DeleteObject(hCharBitmap); 
-	
+	DeleteDC(hSrcDC);
+	for (UINT i=0; i<4; i++)
+		DeleteObject(hCharBitmap[i]); 
 }
+
+static void V_CreateLookup_Text(HDC hDstDC)
+{
+	CreateLookup_TextCommon(hDstDC, SRCCOPY);
+}
+
+static void V_CreateLookup_MonoText(HDC hDstDC)
+{
+	HBRUSH hBrush;
+	switch (g_eVideoType)
+	{
+		case VT_MONO_AMBER: hBrush = CreateSolidBrush(RGB(0xFF,0x80,0x00)); break;
+		case VT_MONO_GREEN: hBrush = CreateSolidBrush(RGB(0x00,0xC0,0x00)); break;
+		case VT_MONO_WHITE: hBrush = CreateSolidBrush(RGB(0xFF,0xFF,0xFF)); break;
+		default           : hBrush = CreateSolidBrush(monochrome); break;
+	}
+
+	SelectObject(hDstDC, hBrush);
+
+	// NB. MERGECOPY (not SRCCOPY) to merge the src with the colour of the dst's selected brush
+	CreateLookup_TextCommon(hDstDC, MERGECOPY);
+
+	SelectObject(hDstDC,GetStockObject(NULL_BRUSH));
+	DeleteObject(hBrush);
+}
+
 
 //===========================================================================
 void SetLastDrawnImage ()
