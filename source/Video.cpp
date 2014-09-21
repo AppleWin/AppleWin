@@ -275,6 +275,7 @@ static WORD          colormixmap[6][6][6];
 static int           g_nAltCharSetOffset  = 0; // alternate character set
 
 static /*bool*/ UINT g_VideoForceFullRedraw = 1;
+static bool g_bVideoUpdatedThisFrame = false;
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      g_nFrameBufferPitch = 0;
@@ -2663,6 +2664,7 @@ void VideoResetState ()
 	g_nAltCharSetOffset    = 0;
 	g_uVideoMode           = VF_TEXT;
 	g_VideoForceFullRedraw = 1;
+	g_bVideoUpdatedThisFrame = false;
 }
 
 
@@ -2697,19 +2699,22 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		g_uVideoMode &= ~VF_PAGE2;
 
 	if (oldvalue != g_nAltCharSetOffset+(int)(g_uVideoMode & ~(VF_80STORE | VF_PAGE2)))
-	{
-		g_VideoForceFullRedraw = 1;
-	}
+		g_VideoForceFullRedraw = 1;	// Defer video redraw until VideoEndOfVideoFrame()
 
 	if (oldpage2 != SW_PAGE2)
 	{
-		if (!g_VideoForceFullRedraw)
+		// /g_bVideoUpdatedThisFrame/ is used to limit the video update to once per 60Hz frame (CPU clk=1MHz):
+		// . this easily supports the common double-buffered "flip-immediate" case (eg. Airheart flips at a max of ~15Hz, Skyfox/Boulderdash at a max of ~11Hz)
+		// . crucially this prevents tight-loop page flipping (GH#129,GH#204) from max'ing out an x86 CPU core (and not providing realtime emulation)
+		// NB. Deferring the update by just setting /g_VideoForceFullRedraw/ is not an option, since this doesn't provide "flip-immediate"
+		//
+		// Ultimately this isn't the correct solution, and proper cycle-accurate video rendering should be done, but this is a much bigger job!
+		//
+
+		if (!g_bVideoUpdatedThisFrame)
 		{
-#if 1
 			VideoRefreshScreen();
-#else
-			g_VideoForceFullRedraw = 1;		// GH#129,GH204: Defer the redraw until the main ContinueExecution() loop (TODO: What effect does this have on other games?)
-#endif
+			g_bVideoUpdatedThisFrame = true;
 		}
 	}
 
@@ -2744,6 +2749,8 @@ static void VideoUpdateFlash()
 // Called from main-loop every 17030 cycles (ie. 60Hz when CPU = 1MHz)
 void VideoEndOfVideoFrame(void)
 {
+	g_bVideoUpdatedThisFrame = false;		// Allow page1/2 toggle to result in an immediate video redraw
+
 	VideoUpdateFlash();						// TODO: Flash rate should be constant (regardless of CPU speed)
 
 	if (!VideoApparentlyDirty())
