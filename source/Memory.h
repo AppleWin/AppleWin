@@ -49,7 +49,6 @@ BYTE    MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles);
 void    MemReset ();
 void    MemResetPaging ();
 void    MemUpdatePaging(BOOL initialize);
-BYTE    MemReturnRandomData (BYTE highbit);
 LPVOID	MemGetSlotParameters (UINT uSlot);
 DWORD   MemGetSnapshot(SS_BaseMemory* pSS);
 DWORD   MemSetSnapshot(SS_BaseMemory* pSS);
