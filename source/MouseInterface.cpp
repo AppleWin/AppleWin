@@ -195,6 +195,7 @@ void CMouseInterface::Reset()
 	m_by6821B = 0x40;		// Set PB6
 	m_6821.SetPB(m_by6821B);
 	m_bVBL = false;
+	m_byMode = 0;
 
 	//
 
@@ -474,6 +475,9 @@ void CMouseInterface::OnMouseEvent(bool bEventVBL)
 
 void CMouseInterface::SetVBlank(bool bVBL)
 {
+	if (!m_bActive)
+		return;
+
 	if ( m_bVBL != bVBL )
 	{
 		m_bVBL = bVBL;
