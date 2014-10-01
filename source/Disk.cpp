@@ -610,6 +610,12 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 	else
 		fptr->bWriteProtected = bForceWriteProtected ? true : (dwAttributes & FILE_ATTRIBUTE_READONLY);
 
+	// Check if image is being used by the other HDD, and unplug it in order to be swapped
+	std::string otherDisk = DiskGetDiskPathFilename(!iDrive);
+	if (!strcmp(otherDisk.c_str(), pszImageFilename)) {
+		DiskEject(!iDrive);
+	}
+
 	ImageError_e Error = ImageOpen(pszImageFilename,
 		&fptr->imagehandle,
 		&fptr->bWriteProtected,
