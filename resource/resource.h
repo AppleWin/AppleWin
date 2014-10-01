@@ -128,11 +128,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        147
 #define _APS_NEXT_COMMAND_VALUE         40012
-<<<<<<< HEAD
 #define _APS_NEXT_CONTROL_VALUE         1082
-=======
-#define _APS_NEXT_CONTROL_VALUE         1080
->>>>>>> d9e37e007c26236870ebc635c22e944d2d271d6e
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
