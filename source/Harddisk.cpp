@@ -353,6 +353,11 @@ BOOL HD_InsertDisk(const int iDrive, LPCTSTR pszImageFilename)
 	if (g_HardDisk[iDrive].hd_imageloaded)
 		HD_CleanupDrive(iDrive);
 
+	// Check if image is being used by the other HDD, and unplug it in order to be swapped
+	if (!strcmp(HD_GetFullPathName(!iDrive), pszImageFilename)) {
+		HD_Unplug(!iDrive);
+	}
+
 	BOOL bResult = HD_Load_Image(iDrive, pszImageFilename);
 
 	if (bResult)
