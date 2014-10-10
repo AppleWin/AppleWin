@@ -351,17 +351,6 @@ BEGIN
     END
 END
 
-IDR_MENU_DISK_CFG_POPUP MENU
-BEGIN
-    POPUP "Disk Menu"
-    BEGIN
-        MENUITEM "Eject disk in Drive 1",       ID_DISKMENU_EJECT_DISK1
-        MENUITEM "Eject disk in Drive 2",       ID_DISKMENU_EJECT_DISK2
-        MENUITEM "Unplug harddisk-1",           ID_DISKMENU_UNPLUG_HARDDISK1
-        MENUITEM "Unplug harddisk-2",           ID_DISKMENU_UNPLUG_HARDDISK2
-    END
-END
-
 
 /////////////////////////////////////////////////////////////////////////////
 //

@@ -44,7 +44,6 @@
 #define IDR_PRAVETS_8M_ROM              140
 #define IDR_PRAVETS_8C_ROM              142
 #define IDR_MENU_DISK_POPUP             143
-#define IDR_MENU_DISK_CFG_POPUP         144
 #define IDD_ABOUT                       145
 #define IDC_CHECK_CONFIRM_REBOOT        146
 #define IDC_KEYB_BUFFER_ENABLE          1005
@@ -116,10 +115,6 @@
 #define ID_DISKMENU_WRITEPROTECTION_ON  40005
 #define ID_DISKMENU_WRITEPROTECTION_OFF 40006
 #define ID_DISKMENU_SENDTO_CIDERPRESS   40007
-#define ID_DISKMENU_EJECT_DISK1         40008
-#define ID_DISKMENU_EJECT_DISK2         40009
-#define ID_DISKMENU_UNPLUG_HARDDISK1    40010
-#define ID_DISKMENU_UNPLUG_HARDDISK2    40011
 
 // Next default values for new objects
 // 
