@@ -415,16 +415,16 @@ void DiskBoot(void)
 
 //===========================================================================
 
-static BYTE __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG)
+static BYTE __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	floppymotoron = address & 1;
 	CheckSpinning();
-	return MemReturnRandomData(1);
+	return MemReadFloatingBus(1, uExecutedCycles);	// TC-TODO: Check b7 always set
 }
 
 //===========================================================================
 
-static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG)
+static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	Disk_t * fptr = &g_aFloppyDisk[currdrive];
 #if 1
@@ -501,7 +501,8 @@ static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG)
 		}
 	}
 #endif
-	return (address == 0xE0) ? 0xFF : MemReturnRandomData(1);
+	return ((address & 0xF) == 0)	? 0xFF		// TC-TODO: Check why $C0E0 only returns 0xFF
+									: MemReadFloatingBus(1, uExecutedCycles);	// TC-TODO: Check b7 always set
 }
 
 //===========================================================================
@@ -519,13 +520,13 @@ void DiskDestroy(void)
 
 //===========================================================================
 
-static BYTE __stdcall DiskEnable(WORD, WORD address, BYTE, BYTE, ULONG)
+static BYTE __stdcall DiskEnable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	currdrive = address & 1;
 	g_aFloppyDisk[!currdrive].spinning   = 0;
 	g_aFloppyDisk[!currdrive].writelight = 0;
 	CheckSpinning();
-	return 0;
+	return MemReadFloatingBus(uExecutedCycles);
 }
 
 //===========================================================================
@@ -908,7 +909,8 @@ void DiskSelect(const int iDrive)
 
 //===========================================================================
 
-static BYTE __stdcall DiskSetLatchValue(WORD, WORD, BYTE write, BYTE value, ULONG) {
+static BYTE __stdcall DiskSetLatchValue(WORD, WORD, BYTE write, BYTE value, ULONG)
+{
 	if (write)
 		floppylatch = value;
 	return floppylatch;
@@ -916,15 +918,15 @@ static BYTE __stdcall DiskSetLatchValue(WORD, WORD, BYTE write, BYTE value, ULON
 
 //===========================================================================
 
-static BYTE __stdcall DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG)
+static BYTE __stdcall DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	floppywritemode = 0;
-	return MemReturnRandomData(g_aFloppyDisk[currdrive].bWriteProtected);
+	return MemReadFloatingBus(g_aFloppyDisk[currdrive].bWriteProtected, uExecutedCycles);
 }
 
 //===========================================================================
 
-static BYTE __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG)
+static BYTE __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	floppywritemode = 1;
 	BOOL modechange = !g_aFloppyDisk[currdrive].writelight;
@@ -934,7 +936,8 @@ static BYTE __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG)
 		//FrameRefreshStatus(DRAW_LEDS);
 		FrameDrawDiskLEDS( (HDC)0 );
 	}
-	return MemReturnRandomData(1);
+
+	return MemReadFloatingBus(1, uExecutedCycles);	// TC-TODO: Check b7 always set
 }
 
 //===========================================================================
