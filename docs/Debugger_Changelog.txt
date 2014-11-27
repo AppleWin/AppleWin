@@ -2,6 +2,7 @@
 
  .1 Fixe: Symbolic Targets > 20 chars no longer overflow into register window
 
+2.8.0.2 Cleaned up error message for syminfo on invalid symbol table.
 2.8.0.0 Released with AppleWin 1.25
 
 2.7.0.#

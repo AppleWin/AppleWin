@@ -74,7 +74,54 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Utils _ ________________________________________________________________________________________
 
-	void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize = 0 );
+	void      _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize = 0 );
+	void      _PrintCurrentPath();
+	Update_t  _PrintSymbolInvalidTable();
+
+
+// Private ________________________________________________________________________________________
+
+//===========================================================================
+void _PrintCurrentPath()
+{
+	ConsoleDisplayError( g_sProgramDir );
+}
+
+Update_t _PrintSymbolInvalidTable()
+{
+	char sText[ CONSOLE_WIDTH * 2 ];
+	char sTemp[ CONSOLE_WIDTH * 2 ];
+
+	// TODO: display the user specified file name
+	ConsoleBufferPush( "Invalid symbol table." );
+
+	sprintf( sText, "Only %s%d%s symbol tables are supported:"
+		, CHC_NUM_DEC, NUM_SYMBOL_TABLES
+		, CHC_DEFAULT
+	);
+	ConsolePrint( sText );
+
+	// Similar to _CmdSymbolsInfoHeader()
+	sText[0] = 0;
+	for( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
+	{
+		sprintf( sTemp, "%s%s%s%c " // %s"
+			, CHC_USAGE, g_aSymbolTableNames[ iTable ]
+			, CHC_ARG_SEP
+			, (iTable != (NUM_SYMBOL_TABLES-1))
+				? ','
+				: '.'
+		);
+		strcat( sText, sTemp );
+	}
+
+//	return ConsoleDisplayError( sText );
+	ConsolePrint( sText );
+	return ConsoleUpdate();
+}
+
+
+// Public _________________________________________________________________________________________
 
 
 //===========================================================================
@@ -284,11 +331,7 @@ Update_t CmdSymbolsInfo (int nArgs)
 		int iWhichTable = GetSymbolTableFromCommand();
 		if ((iWhichTable < 0) || (iWhichTable >= NUM_SYMBOL_TABLES))
 		{
-			sprintf( sText, "Only %s%d%s symbol tables supported!"
-				, CHC_NUM_DEC, NUM_SYMBOL_TABLES
-				, CHC_DEFAULT
-			);
-			return ConsoleDisplayError( sText );
+			return _PrintSymbolInvalidTable();
 		}
 
 		bDisplaySymbolTables = (1 << iWhichTable);
@@ -514,11 +557,6 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 }
 
 
-void Print_Current_Path()
-{
-	ConsoleDisplayError( g_sProgramDir );
-}
-
 //===========================================================================
 int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrite, int nSymbolOffset )
 {
@@ -542,8 +580,9 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 
 	if( !hFile && g_bSymbolsDisplayMissingFile )
 	{
+		// TODO: print filename! Bug #242 Help file (.chm) description for "Symbols" #242
 		ConsoleDisplayError( "Symbol File not found:" );
-		Print_Current_Path();
+		_PrintCurrentPath();
 		nSymbolsLoaded = -1; // HACK: ERROR: FILE NOT EXIST
 	}
 	
@@ -650,8 +689,7 @@ Update_t CmdSymbolsLoad (int nArgs)
 	int iSymbolTable = GetSymbolTableFromCommand();
 	if ((iSymbolTable < 0) || (iSymbolTable >= NUM_SYMBOL_TABLES))
 	{
-		wsprintf( sFileName, "Only %d symbol tables supported!", NUM_SYMBOL_TABLES );
-		return ConsoleDisplayError( sFileName );
+		return _PrintSymbolInvalidTable();
 	}
 
 	int nSymbols = 0;
