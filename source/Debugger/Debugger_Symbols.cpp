@@ -641,7 +641,6 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 	return nSymbolsLoaded;
 }
 
-
 //===========================================================================
 Update_t CmdSymbolsLoad (int nArgs)
 {
@@ -657,20 +656,9 @@ Update_t CmdSymbolsLoad (int nArgs)
 
 	int nSymbols = 0;
 
+	// Debugger will call us with 0 args on startup as a way to pre-load symbol tables
 	if (! nArgs)
 	{
-		// Default to main table
-//		if (g_iCommand == CMD_SYMBOLS_MAIN)
-//			_tcscat(sFileName, g_sFileNameSymbolsMain );
-//		else
-//		{
-//			if (! _tcslen( g_sFileNameSymbolsUser ))
-//			{
-//				return ConsoleDisplayError(TEXT("No user symbol file to reload."));
-//			}
-//			// load user symbols
-//			_tcscat( sFileName, g_sFileNameSymbolsUser );
-//		}
 		_tcscat(sFileName, g_sFileNameSymbols[ iSymbolTable ]);
 		nSymbols = ParseSymbolTable( sFileName, (SymbolTable_Index_e) iSymbolTable );
 	}
