@@ -520,11 +520,11 @@ void Print_Current_Path()
 }
 
 //===========================================================================
-int ParseSymbolTable( TCHAR *pFileName, SymbolTable_Index_e eSymbolTableWrite, int nSymbolOffset )
+int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrite, int nSymbolOffset )
 {
 	int nSymbolsLoaded = 0;
 
-	if (! pFileName)
+	if (! pPathFileName)
 		return nSymbolsLoaded;
 
 //#if _UNICODE
@@ -538,7 +538,7 @@ int ParseSymbolTable( TCHAR *pFileName, SymbolTable_Index_e eSymbolTableWrite, i
 	sprintf( sFormat1, "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %13s"
 	sprintf( sFormat2, "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
 
-	FILE *hFile = fopen(pFileName,"rt");
+	FILE *hFile = fopen( pPathFileName, "rt" );
 
 	if( !hFile && g_bSymbolsDisplayMissingFile )
 	{
@@ -616,7 +616,7 @@ int ParseSymbolTable( TCHAR *pFileName, SymbolTable_Index_e eSymbolTableWrite, i
 						, CHC_STRING
 						, g_aSymbolTableNames[ iTable ]
 						, CHC_DEFAULT
-						, pFileName
+						, pPathFileName
 					);
 					ConsolePrint( sText );
 				}
