@@ -6,11 +6,42 @@
 	</head>
 	<body style="DIRECTION: ltr" lang="en-US">
 		<h2><a name="Symbols"></a>Symbols</h2>
-		<p>AppleWin supports loading of ACME, and Merlin Symbol Tables. The default 
-			filename read into the Main Symbol Table is “APPLE2E.SYM”.</p>
-		<p>Looking up symbols is now easier.&nbsp; Can't remember an address of a symbol, 
-			or can't remember the symbol for an address?&nbsp; The new symbol commands 
-			makes it easy:</p>
+        <p>
+			When a programmer writes an assembly language program instead of directly referring to a memory address over and over again they use a <b>symbolic name</b> instead.
+			For example, instead of always directly hard-coding $C000 everywhere to read the keyboard they would instead write:
+									<p><font color="#00b8ff"><font face="courier"><b><pre style="background: rgb(0,0,0) 0% 50%;">
+    KEYBOARD EQU $C000
+1   LDA KEYBOARD
+    BPL 1
+</pre></b></font></font></p>
+		</p>When debugging assembly programs since you typically don't have the source file availabe you can tell the debugger how to interpret a memory address as a variable name or symbol.
+		A <b>symbol</b> is the symbolic name and the address assigned to it.</P>
+		<p>AppleWin supports loading of the assemblers ACME, and Merlin's symbol tables -- a collection of symbols, one per line, organized and collectively called a symbol table.
+The semi-colon is a comment-till-end-of-line.  The file format per line is: <b>ADDRESS SYMBOL</b></p>
+<p>e.g.
+									<p><font color="#00b8ff"><font face="courier"><b><pre style="background: rgb(0,0,0) 0% 50%;">
+; IO Map
+C000 KEYBOARD
+</pre></b></font></font></p>
+
+		<p>There are 9 symbol tables to help organize "modules"; each symbol table individually can be turned off/on independently.
+<pre>
+ MAIN    APPLE2E.SYM
+ BASIC   A2_BASIC.SYM
+ ASM     A2_ASM.SYM
+ User1   A2_USER1.SYM
+ User2   A2_USER2.SYM
+ Src1    A2_SRC1.SYM
+ Src2    A2_SRC2.SYM
+ DOS33   A2_DOS33.SYM
+ PRODOS  A2_PRODOS.SYM
+</pre></p>
+		<p>On startup the debugger reads 3 symbol tables by default: Main, Basic, User1.</p>
+</p>
+		<p>Looking up symbols is easy.&nbsp; If you can't remember an address of a symbol, 
+			or the reversse -- can't remember the symbol for an address -- you can use the following symbol commands:
+ (#### referes to either a hex address or a symbolic name)
+        </p>
 		<p><br>
 			<br>
 		</p>
@@ -48,22 +79,22 @@ the Symbol or Address, and display which Symbol Table it is in.</span></i></p>
 							</tr>
 							<tr bgcolor="#cccccc">
 								<td width="25%">
-									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SYMUSER
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; ">SYMUSER
 LOAD</span></b></font></font></p>
 								</td>
 								<td width="75%">
-									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Loads
-the User Symbol Table.</span></i></p>
+									<p><i><span style="BACKGROUND: 0% 50%; ">Reloads
+the User Symbol Table: <b>A2_USER1.SYM</b></span></i></p>
 								</td>
 							</tr>
 							<tr bgcolor="#999999">
 								<td width="25%">
-									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SYMUSER
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; ">SYMUSER
 CLEAR</span></b></font></font></p>
 								</td>
 								<td width="75%">
-									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Clears
-the User Symbol Table!</span></i></p>
+									<p><i><span style="BACKGROUND: 0% 50%;">Clears
+the User Symbol Table from RAM.</span></i></p>
 								</td>
 							</tr>
 							<tr bgcolor="#cccccc">
@@ -239,8 +270,8 @@ LIFE 64</span></b></font></font></p>
 							</tr>
 							<tr bgcolor="#000000">
 								<td bgcolor="#000000" width="276">
-									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">EW
-LIFE 3E8</span></b></font></font></p>
+									<p><font color="#00b8ff"><font face="courier"><b><span style="background: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">ew
+life 3e8</span></b></font></font></p>
 								</td>
 								<td bgcolor="#000000" width="515">
 									<p><font color="#ffffff"><i>Set 16-Bit variable (@ $<b><font color="#ffff00">0300</font></b>)“Life” 
