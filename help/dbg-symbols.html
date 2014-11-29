@@ -6,25 +6,48 @@
 	</head>
 	<body style="DIRECTION: ltr" lang="en-US">
 		<h2><a name="Symbols"></a>Symbols</h2>
-        <p>
+		<p>
 			When a programmer writes an assembly language program instead of directly referring to a memory address over and over again they use a <b>symbolic name</b> instead.
 			For example, instead of always directly hard-coding $C000 everywhere to read the keyboard they would instead write:
-									<p><font color="#00b8ff"><font face="courier"><b><pre style="background: rgb(0,0,0) 0% 50%;">
-    KEYBOARD EQU $C000
-1   LDA KEYBOARD
-    BPL 1
+		</p>
+		<p><font color="#00b8ff"><font face="courier"><b><pre style="background: rgb(0,0,0) 0% 50%;">
+                       ORG $300
+                       KEYBOARD EQU $C000
+300:AD 00 C0 .1        LDA KEYBOARD
+303:10 FB              BPL .1
+305:8D 00 04           STA $0400
+306:60                 RTS
 </pre></b></font></font></p>
-		</p>When debugging assembly programs since you typically don't have the source file availabe you can tell the debugger how to interpret a memory address as a variable name or symbol.
-		A <b>symbol</b> is the symbolic name and the address assigned to it.</P>
+		<p>
+			Let's try this out in the debugger. Make sure AppleWin is running. Press F2 (to reboot), then Ctrl-F2 (to break), and F7 (to enter the debugger.)
+			&nbsp; If you don't want to type in the following hex code, you can select it, copy it (Ctrl-C), and paste it into the Debugger console (Ctrl-V).
+		</p>
+		<p><font color="#00b8ff"><font face="Courier"><b><pre style="BACKGROUND: rgb(0,0,0) 0% 50%;">
+300:AD 00 C0 10 FB 8D 00 04 60
+300L
+</pre></b></font></font></p>
+		<p>
+			Press F7 to exit the debugger, then type:
+		</p>
+		<p><font color="#00b8ff"><font face="Courier"><b><pre style="BACKGROUND: rgb(0,0,0) 0% 50%;">
+HOME:CALL 768
+</pre></b></font></font></p>
+		<p>
+			Press Enter.&nbsp; The emulated computer will wait for your to press a key and then echo it in the top left.
+        </p>
+		<p>
+			When debugging assembly programs since you typically don't have the source file availabe you can tell the debugger how to interpret a memory address as a variable name or symbol.
+			A <b>symbol</b> is the symbolic name and the address assigned to it.
+		</p>
 		<p>AppleWin supports loading of the assemblers ACME, and Merlin's symbol tables -- a collection of symbols, one per line, organized and collectively called a symbol table.
 The semi-colon is a comment-till-end-of-line.  The file format per line is: <b>ADDRESS SYMBOL</b></p>
-<p>e.g.
-									<p><font color="#00b8ff"><font face="courier"><b><pre style="background: rgb(0,0,0) 0% 50%;">
+		<p>e.g.</p>
+		<p><font color="#00b8ff"><font face="courier"><b><pre style="background: rgb(0,0,0) 0% 50%;">
 ; IO Map
 C000 KEYBOARD
 </pre></b></font></font></p>
-
-		<p>There are 9 symbol tables to help organize "modules"; each symbol table individually can be turned off/on independently.
+		<p>
+			There are <b>9</b> symbol tables to help organize "modules"; each symbol table individually can be turned off/on independently.
 <pre>
  MAIN    APPLE2E.SYM
  BASIC   A2_BASIC.SYM
@@ -37,11 +60,11 @@ C000 KEYBOARD
  PRODOS  A2_PRODOS.SYM
 </pre></p>
 		<p>On startup the debugger reads 3 symbol tables by default: Main, Basic, User1.</p>
-</p>
+		</p>
 		<p>Looking up symbols is easy.&nbsp; If you can't remember an address of a symbol, 
 			or the reversse -- can't remember the symbol for an address -- you can use the following symbol commands:
- (#### referes to either a hex address or a symbolic name)
-        </p>
+			 (#### referes to either a hex address or a symbolic name)
+		</p>
 		<p><br>
 			<br>
 		</p>
@@ -60,10 +83,10 @@ C000 KEYBOARD
 							</tr>
 							<tr bgcolor="#cccccc">
 								<td width="25%">
-									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SYM</span></b></font></font></p>
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; ">SYM</span></b></font></font></p>
 								</td>
 								<td width="75%">
-									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Display
+									<p><i><span style="BACKGROUND: 0% 50%; ">Display
 the number of symbols in the Main, User, and Source symbol tables.</span></i></p>
 								</td>
 							</tr>
@@ -251,7 +274,7 @@ HOME</span></b></font></font></p>
 							</tr>
 							<tr bgcolor="#000000">
 								<td bgcolor="#000000" width="276">
-									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SYM
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%;">SYM
 LIFE = 300</span></b></font></font></p>
 								</td>
 								<td bgcolor="#000000" width="515">
@@ -260,7 +283,7 @@ LIFE = 300</span></b></font></font></p>
 							</tr>
 							<tr bgcolor="#000000">
 								<td bgcolor="#000000" width="276">
-									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">E
+									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%;">E
 LIFE 64</span></b></font></font></p>
 								</td>
 								<td bgcolor="#000000" width="515">
