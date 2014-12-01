@@ -38,7 +38,7 @@
 		CONSOLE_COLOR_W, // 7 White
 		CONSOLE_COLOR_O, // 8 Orange
 		CONSOLE_COLOR_k, // 9 Grey
-		CONSOLE_COLOR_b, // : Lite Blue
+		CONSOLE_COLOR_b, // : Light Blue
 		NUM_CONSOLE_COLORS
 	};
 	extern COLORREF g_anConsoleColor[ NUM_CONSOLE_COLORS ];
@@ -62,7 +62,7 @@
 	#define CHC_USAGE    "`3"
 	#define CHC_CATEGORY "`6"
 	#define CHC_COMMAND  "`2" // Green
-	#define CHC_KEY      "`1"
+	#define CHC_KEY      "`1" // Red
 	#define CHC_ARG_MAND "`7" // < >
 	#define CHC_ARG_OPT  "`4" // [ ] 
 	#define CHC_ARG_SEP  "`9" //  |  grey
@@ -70,10 +70,12 @@
 	#define CHC_NUM_HEX  "`3"
 	#define CHC_SYMBOL   "`2" // Symbols
 	#define CHC_ADDRESS  "`8" // Hex Address
-	#define CHC_ERROR    "`1"
-	#define CHC_WARNING  "`5"
-	#define CHC_STRING   "`6"
+	#define CHC_ERROR    "`1" // Red
+	#define CHC_WARNING  "`5" // Purple
+	#define CHC_INFO     "`3" // Yellow
+	#define CHC_STRING   "`6" // 
 	#define CHC_EXAMPLE  "`:"
+	#define CHC_PATH     "`:" // Light Blue
 #else
 	#define CHC_DEFAULT  ""
 	#define CHC_USAGE    ""
