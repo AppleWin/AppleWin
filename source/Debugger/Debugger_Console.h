@@ -184,6 +184,27 @@
 		return g;
 	}
 
+	// Return the string length without the markup
+	inline int ConsoleColor_StringLength( const char *pText )
+	{
+		const char *pSrc = pText;
+		/* */ int   nLen = 0;
+
+		if( pText )
+		{
+			while( *pSrc )
+			{
+				if( ConsoleColor_IsCharMeta( *pSrc ) )
+					pSrc++;
+				else
+					nLen++;
+				pSrc++;
+			}
+		}
+
+		return nLen;
+	}
+
 // Globals __________________________________________________________________
 
 	// Buffer
