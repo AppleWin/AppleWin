@@ -557,6 +557,9 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 //===========================================================================
 int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrite, int nSymbolOffset )
 {
+	char sText[ CONSOLE_WIDTH * 3 ];
+	bool bFileDisplayed = false;
+
 	int nSymbolsLoaded = 0;
 
 	if (! pPathFileName)
@@ -635,14 +638,72 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 			if( (nAddress > _6502_MEM_END) || (sName[0] == 0) )
 				continue;
 
-	#if 1 // _DEBUG
 			// If updating symbol, print duplicate symbols
 			WORD nAddressPrev;
 			int  iTable;
-			bool bExists = FindAddressFromSymbol( sName, &nAddressPrev, &iTable );
+
+			// 2.8.0.5 Bug #244 (Debugger) Duplicate symbols for identical memory addresses in APPLE2E.SYM
+			const char *pSymbolPrev = FindSymbolFromAddress( (WORD)nAddress, &iTable ); // don't care which table it is in
+			if( pSymbolPrev )
+			{
+				if( !bFileDisplayed )
+				{
+					bFileDisplayed = true;
+
+					// TODO: Must check for buffer overflow !
+					sprintf( sText, "%s%s"
+						, CHC_PATH
+						, pPathFileName
+					);
+					ConsolePrint( sText );
+				}
+
+				sprintf( sText, " %sWarning: %s%-16s %saliases %s$%s%04X %s%-12s%s (%s%s%s)"
+					, CHC_WARNING
+					, CHC_SYMBOL
+					, sName
+					, CHC_INFO
+					, CHC_ARG_SEP
+					, CHC_ADDRESS
+					, nAddress
+					, CHC_SYMBOL
+					, pSymbolPrev
+					, CHC_DEFAULT
+					, CHC_STRING
+					, g_aSymbolTableNames[ iTable ]
+					, CHC_DEFAULT
+				);
+				ConsolePrint( sText );
+
+				ConsoleUpdate(); // Flush buffered output so we don't ask the user to pause
+/*
+				sprintf( sText, " %sWarning: %sAddress already has symbol Name%s (%s%s%s): %s%s"
+					, CHC_WARNING
+					, CHC_INFO
+					, CHC_ARG_SEP
+					, CHC_STRING
+					, g_aSymbolTableNames[ iTable ]
+					, CHC_DEFAULT
+					, CHC_SYMBOL
+					, pSymbolPrev
+				);
+				ConsolePrint( sText );
+
+				sprintf( sText, "  %s$%s%04X %s%-31s%s"
+					, CHC_ARG_SEP
+					, CHC_ADDRESS
+					, nAddress
+					, CHC_SYMBOL
+					, sName
+					, CHC_DEFAULT
+				);
+				ConsolePrint( sText );
+*/
+			}
+
+			bool bExists  = FindAddressFromSymbol( sName, &nAddressPrev, &iTable );
 			if( bExists )
 			{
-				char sText[ CONSOLE_WIDTH * 3 ];
 				if( !bDupSymbolHeader )
 				{
 					bDupSymbolHeader = true;
@@ -667,9 +728,11 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 				);
 				ConsolePrint( sText );
 			}
-	#endif
+	
+			// else // It is not a bug to have duplicate addresses by different names
+
 			g_aSymbols[ eSymbolTableWrite ] [ (WORD) nAddress ] = sName;
-			nSymbolsLoaded++;
+			nSymbolsLoaded++; // TODO: FIXME: BUG: This is the total symbols read, not added
 		}
 		fclose(hFile);
 	}
