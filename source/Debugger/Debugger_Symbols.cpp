@@ -285,24 +285,7 @@ void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize /* = 0 */
 	bool bActive = (g_bDisplaySymbolTables & (1 << iTable)) ? true : false;
 	int nSymbols  = nDisplaySize ? nDisplaySize : g_aSymbols[ iTable ].size();
 
-	// Long Desc: `MAIN`: `1000 `symbols`, `on`
-	// full
-#if 0
-	sprintf( pText, "  %s%s%s: %s# %s%d %ssymbols%s, (%s%s%s)%s"
-		// , CHC_SYMBOL, g_aSymbolTableNames[ iTable ]
-		, CHC_STRING, g_aSymbolTableNames[ iTable ]
-		, CHC_ARG_SEP
-		CHC_DEFAULT
-		, CHC_NUM_DEC, nSymbols
-		, CHC_DEFAULT, CHC_ARG_SEP,
-
-		, CHC_STRING, 
-		, CHC_ARG_SEP, CHC_DEFAULT
-	);
-#endif
-	// sprintf( pText, "  %s: %s%d%s"
 	// Short Desc: `MAIN`: `1000`
-
 	// // 2.6.2.19 Color for name of symbol table: _CmdPrintSymbol() "SYM HOME" _CmdSymbolsInfoHeader "SYM"
 	// CHC_STRING and CHC_NUM_DEC are both cyan, using CHC_USAGE instead of CHC_STRING
 	sprintf( pText, "%s%s%s:%s%d " // %s"
@@ -316,10 +299,13 @@ void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize /* = 0 */
 //===========================================================================
 Update_t CmdSymbolsInfo (int nArgs)
 {
-	char sText[ CONSOLE_WIDTH * 4 ] = "  ";
+	const char sIndent[] = "  ";
+	char sText[ CONSOLE_WIDTH * 4 ] = "";
 	char sTemp[ CONSOLE_WIDTH * 2 ] = "";
 
 	int bDisplaySymbolTables = 0;
+
+	strcpy( sText, sIndent ); // Indent new line
 
 	if (! nArgs)
 	{
@@ -342,9 +328,20 @@ Update_t CmdSymbolsInfo (int nArgs)
 
 	int bTable = 1;
 	int iTable = 0;
-	for( ; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 ) {
-		if( bDisplaySymbolTables & bTable ) {
+	for( ; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 )
+	{
+		if( bDisplaySymbolTables & bTable )
+		{
 			_CmdSymbolsInfoHeader( iTable, sTemp ); // 15 chars per table
+
+			// 2.8.0.4 BUGFIX: Check for buffer overflow and wrap text
+			int nLen = ConsoleColor_StringLength( sTemp );
+			int nDst = ConsoleColor_StringLength( sText );
+			if((nDst + nLen) > CONSOLE_WIDTH )
+			{
+				ConsolePrint( sText );
+				strcpy( sText, sIndent ); // Indent new line
+			}
 			strcat( sText, sTemp );
 		}
 	}
