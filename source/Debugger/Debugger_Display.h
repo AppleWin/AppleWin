@@ -96,3 +96,12 @@
 	extern HDC GetDebuggerMemDC(void);
 	extern void ReleaseDebuggerMemDC(void);
 	extern void StretchBltMemToFrameDC(void);
+
+	enum DebugVirtualTextScreen_e
+	{
+		DEBUG_VIRTUAL_TEXT_WIDTH  = 80,
+		DEBUG_VIRTUAL_TEXT_HEIGHT = 43
+	};
+
+	extern char g_aDebuggerVirtualTextScreen[ DEBUG_VIRTUAL_TEXT_HEIGHT ][ DEBUG_VIRTUAL_TEXT_WIDTH ];
+	extern size_t Util_GetDebuggerText( char* &pText_ ); // Same API as Util_GetTextScreen()

@@ -61,6 +61,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //	#define DISPLAY_BREAKPOINT_TITLE 1
 //	#define DISPLAY_WATCH_TITLE      1
 
+
 // Public _________________________________________________________________________________________
 
 // Font
@@ -68,6 +69,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Private ________________________________________________________________________________________
 
+	char g_aDebuggerVirtualTextScreen[ DEBUG_VIRTUAL_TEXT_HEIGHT ][ DEBUG_VIRTUAL_TEXT_WIDTH ];
 
 // HACK HACK HACK
 	//g_nDisasmWinHeight
@@ -150,7 +152,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_STACK_COLUMN      = INFO_COL_1;
 		const int DISPLAY_TARGETS_COLUMN    = INFO_COL_1;
 		const int DISPLAY_ZEROPAGE_COLUMN   = INFO_COL_1;
-		const int DISPLAY_SOFTSWITCH_COLUMN = INFO_COL_1 - (CONSOLE_FONT_WIDTH/2) + 1;;
+		const int DISPLAY_SOFTSWITCH_COLUMN = INFO_COL_1 - (CONSOLE_FONT_WIDTH/2) + 1; // 1/2 char width padding around soft switches
 
 		// Horizontal Column (pixels) of BPs, Watches & Mem
 		const int INFO_COL_2 = (62 * 7); // nFontWidth
@@ -616,6 +618,27 @@ void PrintGlyph( const int x, const int y, const char glyph )
 	// 16x8 chars in bitmap
 	int xSrc = (glyph & 0x0F) * CONSOLE_FONT_GRID_X;
 	int ySrc = (glyph >>   4) * CONSOLE_FONT_GRID_Y;
+
+	// BUG #239 - (Debugger) Save debugger "text screen" to clipboard / file
+	//	if( g_bDebuggerVirtualTextCapture )
+	// 
+	{
+#if _DEBUG
+		if ((x < 0) || (y < 0))
+			MessageBox( g_hFrameWindow, "X or Y out of bounds!", "PrintGlyph()", MB_OK );
+#endif
+		int col = x / CONSOLE_FONT_WIDTH ;
+		int row = y / CONSOLE_FONT_HEIGHT;
+		
+		// if( !g_bDebuggerCopyInfoPane )
+		//    if( col < 50
+		if (x > DISPLAY_DISASM_RIGHT) // INFO_COL_2 // DISPLAY_CPU_INFO_LEFT_COLUMN
+			col++;
+
+		if ((col < DEBUG_VIRTUAL_TEXT_WIDTH)
+		&&  (row < DEBUG_VIRTUAL_TEXT_HEIGHT))
+			g_aDebuggerVirtualTextScreen[ row ][ col ] = glyph;
+	}
 
 #if !DEBUG_FONT_NO_BACKGROUND_CHAR 
 	// Background color

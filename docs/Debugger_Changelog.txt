@@ -1,5 +1,6 @@
 /*
 
+ .6 Added: Print-Screen when in debugger will copy the debugger window as text
  .5 Added: Print warnings about duplicate symbols when symbol tables are loaded
  .4 Fixed: Check for buffer overflow in CmdSymbolsInfo() if _CmdSymbolsInfoHeader() returns a very long string
  .3 Removed EXITBENCH from falsely being triggered with E.

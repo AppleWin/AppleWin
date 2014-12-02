@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,8,0,5);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,8,0,6);
 
 
 // Public _________________________________________________________________________________________
@@ -4640,7 +4640,7 @@ Update_t CmdMemorySave (int nArgs)
 #endif
 
 
-char g_aTextScreen[ 24*82 + 1 ]; // (80 column + CR + LF) * 24 rows + NULL
+char g_aTextScreen[ DEBUG_VIRTUAL_TEXT_HEIGHT * (DEBUG_VIRTUAL_TEXT_WIDTH + 4) ]; // (80 column + CR + LF) * 24 rows + NULL
 int  g_nTextScreen = 0;
 
 		/*
@@ -4696,9 +4696,43 @@ static char RemapChar(const char c)
 	if ( c < 0x20 )
 		return c + '@'; // Remap INVERSE control character to NORMAL
 	else if ( c == 0x7F )
-		return ' ';		// Remap checkboard (DEL) to space
+		return ' '; // Remap checkboard (DEL) to space
 
 	return c;
+}
+
+
+size_t Util_GetDebuggerText( char* &pText_ )
+{
+	char  *pBeg = &g_aTextScreen[0];
+	char  *pEnd = &g_aTextScreen[0];
+
+	g_nTextScreen = 0;
+	memset( pBeg, 0, sizeof( g_aTextScreen ) );
+
+	memset( g_aDebuggerVirtualTextScreen, 0, sizeof( g_aDebuggerVirtualTextScreen ) );
+	DebugDisplay(1);
+
+	for( int y = 0; y < DEBUG_VIRTUAL_TEXT_HEIGHT; y++ )
+	{
+		for( int x = 0; x < DEBUG_VIRTUAL_TEXT_WIDTH; x++ )
+		{
+			char c = g_aDebuggerVirtualTextScreen[y][x];
+			if( (c < 0x20) || (c >= 0x7F) )
+				c = ' '; // convert null to spaces to keep everything non-proptional
+			*pEnd++ = c;
+		}
+#ifdef _WIN32
+		*pEnd++ = 0x0D; // CR // Windows inserts extra char
+#endif
+		*pEnd++ = 0x0A; // LF // OSX, Linux
+	}
+
+	*pEnd = 0;
+	g_nTextScreen = pEnd - pBeg;
+	
+	pText_ = pBeg;
+	return g_nTextScreen;
 }
 
 size_t Util_GetTextScreen ( char* &pText_ )
