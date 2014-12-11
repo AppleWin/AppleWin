@@ -1050,6 +1050,8 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		OPCODE_JMP_A   = 0x4C, // Absolute
 		OPCODE_JMP_NA  = 0x6C, // Indirect Absolute
 		OPCODE_JMP_IAX = 0x7C, // Indexed (Absolute Indirect, X)
+
+		OPCODE_NOP     = 0xEA, // No operation
 	};
 
 	// Note: "int" causes overflow when profiling for any amount of time.
