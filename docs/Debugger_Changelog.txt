@@ -1,4 +1,5 @@
 /*
+ .8 Fixed: Showing/hiding the address and/or opcodes will show long symbolic targets without overflowing into the register info pane Bug #227
  .7 Fixed: ASC #:# with string containing null byte wouldn't show rest of string
  .6 Added: Print-Screen when in debugger will copy the debugger window as text
  .5 Added: Print warnings about duplicate symbols when symbol tables are loaded
