@@ -1,5 +1,5 @@
 /*
-
+ .7 Fixed: ASC #:# with string containing null byte wouldn't show rest of string
  .6 Added: Print-Screen when in debugger will copy the debugger window as text
  .5 Added: Print warnings about duplicate symbols when symbol tables are loaded
  .4 Fixed: Check for buffer overflow in CmdSymbolsInfo() if _CmdSymbolsInfoHeader() returns a very long string

@@ -216,6 +216,11 @@ static	char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iV
 
 	void DrawWindowBottom ( Update_t bUpdate, int iWindow );
 
+	char* FormatCharCopy( char *pDst, const char *pSrc, const int nLen );
+	char  FormatCharTxtAsci( const BYTE b, bool * pWasAsci_ = NULL );
+	char  FormatCharTxtCtrl( const BYTE b, bool * pWasCtrl_ = NULL );
+	char  FormatCharTxtHigh( const BYTE b, bool *pWasHi_ = NULL );
+	char  FormatChar4Font  ( const BYTE b, bool *pWasHi_, bool *pWasLo_ );
 
 // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/gdi/pantdraw_6n77.asp
 enum WinROP4_e
@@ -840,6 +845,15 @@ int PrintTextCursorY ( const char * pText, RECT & rRect )
 	return nChars;
 }
 
+
+//===========================================================================
+char* FormatCharCopy( char *pDst, const char *pSrc, const int nLen )
+{
+	for( int i = 0; i < nLen; i++ )
+		*pDst++ = FormatCharTxtCtrl( *pSrc++ );
+	return pDst;
+}
+
 //===========================================================================
 char  FormatCharTxtAsci ( const BYTE b, bool * pWasAsci_ )
 {
@@ -857,6 +871,7 @@ char  FormatCharTxtAsci ( const BYTE b, bool * pWasAsci_ )
 	return c;
 }
 
+// Note: FormatCharTxtCtrl() and RemapChar()
 //===========================================================================
 char  FormatCharTxtCtrl ( const BYTE b, bool * pWasCtrl_ )
 {
@@ -1686,8 +1701,7 @@ const	char *pSrc = 0;
 						len = (MAX_IMMEDIATE_LEN - 3); // ellipsis = true
 
 					// DISPLAY: text_longer_18...
-					for( int i = 0; i < len; i++ )
-						*pDst++ =  (*pSrc++) & 0x7F;
+					FormatCharCopy( pDst, pSrc, len ); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
 
 					if( nDisplayLen > len ) // ellipsis
 					{
@@ -1697,8 +1711,7 @@ const	char *pSrc = 0;
 					}
 				} else { // DISPLAY: "max_18_char"
 					*pDst++ = '"';
-					for( int i = 0; i < len; i++ )
-						*pDst++ =  (*pSrc++) & 0x7F;
+					pDst = FormatCharCopy( pDst, pSrc, len ); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
 					*pDst++ = '"';
 				}
 
@@ -2066,7 +2079,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		char *pTarget = line.sTarget;
 		int nLen = strlen( pTarget );
 
-		if (*pTarget == '$')
+		if (*pTarget == '$') // BUG? if ASC #:# starts with '$' ? // && (iOpcode != OPCODE_NOP)
 		{
 			pTarget++;
 			if (! bCursorLine)
@@ -2111,6 +2124,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 			pTarget[ nMaxLen ] = 0;
 		}
 
+		// TODO: FIXME: 2.8.0.7: Allow ctrl characters to show as inverse; i.e. ASC 400:40F
 		PrintTextCursorX( pTarget, linerect );
 //		PrintTextCursorX( " ", linerect );
 

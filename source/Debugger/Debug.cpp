@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,8,0,6);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,8,0,7);
 
 
 // Public _________________________________________________________________________________________
@@ -4691,6 +4691,8 @@ int  g_nTextScreen = 0;
 		23  17  0001_0111  ->  $7D0  0111 1101 0000
 	*/
 
+// Convert ctrl characters to displayable
+// Note: FormatCharTxtCtrl() and RemapChar()
 static char RemapChar(const char c)
 {
 	if ( c < 0x20 )
