@@ -45,29 +45,35 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define COLORS_TWEAKED 1 
 
-/* reference: technote tn-iigs-063 "Master Color Values"
+/*
+   Reference: Technote TN-IIGS-063 "Master Color Values"
+   Note:The IIGS colors do NOT map correctly to _accurate_ //e colors.
 
-          Color  Color Register LR HR  DHR Master Color R,G,B
-          Name       Value      #  #   #      Value
-          ----------------------------------------------------
-          Black       0         0  0,4 0      $0000    (0,0,0) -> (00,00,00) Windows
-(Magenta) Deep Red    1         1      1      $0D03    (D,0,3) -> (D0,00,30) Custom
-          Dark Blue   2         2      8      $0009    (0,0,9) -> (00,00,80) Windows
- (Violet) Purple      3         3  2   9      $0D2D    (D,2,D) -> (FF,00,FF) Windows
-          Dark Green  4         4      4      $0072    (0,7,2) -> (00,80,00) Windows
- (Gray 1) Dark Gray   5         5      5      $0555    (5,5,5) -> (80,80,80) Windows
-   (Blue) Medium Blue 6         6  6   C      $022F    (2,2,F) -> (00,00,FF) Windows
-   (Cyan) Light Blue  7         7      D      $06AF    (6,A,F) -> (60,A0,FF) Custom
-          Brown       8         8      2      $0850    (8,5,0) -> (80,50,00) Custom
-          Orange      9         9  5   3      $0F60    (F,6,0) -> (FF,80,00) Custom (modified to match better with the other Hi-Res Colors)
- (Gray 2) Light Gray  A         A      A      $0AAA    (A,A,A) -> (C0,C0,C0) Windows
-          Pink        B         B      B      $0F98    (F,9,8) -> (FF,90,80) Custom
-  (Green) Light Green C         C  1   6      $01D0    (1,D,0) -> (00,FF,00) Windows
-          Yellow      D         D      7      $0FF0    (F,F,0) -> (FF,FF,00) Windows
-   (Aqua) Aquamarine  E         E      E      $04F9    (4,F,9) -> (40,FF,90) Custom
-          White       F         F  3,7 F      $0FFF    (F,F,F) -> (FF,FF,FF) Windows
+          Color       LO HI  DHR Master Color R,G,B                         HGR
+          Name        #  #   #      Value                                   Bytes
+          -----------------------------------------------------------------------
+          Black       0  0,4 0      $0000    (0,0,0) -> (00,00,00) Windows 
+(Magenta) Deep Red    1      1      $0D03    (D,0,3) -> (D0,00,30) Custom
+          Dark Blue   2      8      $0009    (0,0,9) -> (00,00,80) Windows
+ (Violet) Purple      3  2   9      $0D2D    (D,2,D) -> (FF,00,FF) Windows  55 2A
+          Dark Green  4      4      $0072    (0,7,2) -> (00,80,00) Windows
+ (Gray 1) Dark Gray   5      5      $0555    (5,5,5) -> (80,80,80) Windows
+   (Blue) Medium Blue 6  6   C      $022F    (2,2,F) -> (00,00,FF) Windows  D5 AA
+   (Cyan) Light Blue  7      D      $06AF    (6,A,F) -> (60,A0,FF) Custom
+          Brown       8      2      $0850    (8,5,0) -> (80,50,00) Custom
+          Orange      9  5   3      $0F60    (F,6,0) -> (FF,80,00) Custom   AA D5 (modified to match better with the other Hi-Res Colors)
+ (Gray 2) Light Gray  A      A      $0AAA    (A,A,A) -> (C0,C0,C0) Windows
+          Pink        B      B      $0F98    (F,9,8) -> (FF,90,80) Custom
+  (Green) Light Green C  1   6      $01D0    (1,D,0) -> (00,FF,00) Windows  2A 55
+          Yellow      D      7      $0FF0    (F,F,0) -> (FF,FF,00) Windows
+   (Aqua) Aquamarine  E      E      $04F9    (4,F,9) -> (40,FF,90) Custom
+          White       F  3,7 F      $0FFF    (F,F,F) -> (FF,FF,FF) Windows
 
-   LR: Lo-Res   HR: Hi-Res   DHR: Double Hi-Res */
+   Legend:
+       LO: Lo-Res
+       HI: Hi-Res
+      DHR: Double Hi-Res
+*/
 
 #define FLASH_80_COL 1	// Bug #7238
 
