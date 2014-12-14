@@ -101,7 +101,7 @@ enum Color_Palette_Index_e
 	, HGR_BLACK        
 	, HGR_WHITE        
 	, HGR_BLUE         // HCOLOR=6 BLUE   , $81
-	, HGR_RED          // HCOLOR=5 ORANGE , $82
+	, HGR_ORANGE       // HCOLOR=5 ORANGE , $82
 	, HGR_GREEN        // HCOLOR=1 GREEN  , $01 
 	, HGR_MAGENTA      // HCOLOR=2 MAGENTA, $02
 	, HGR_GREY1        
@@ -161,7 +161,7 @@ const BYTE HiresToPalIndex[ NUM_COLOR_MAPPING ] =
 		  HGR_MAGENTA
 		, HGR_BLUE
 		, HGR_GREEN
-		, HGR_RED
+		, HGR_ORANGE
 		, HGR_BLACK
 		, HGR_WHITE
 	};
@@ -563,7 +563,7 @@ void V_CreateIdentityPalette ()
 	SETFRAMECOLOR(HGR_BLACK,  0x00,0x00,0x00); // For TV emulation HGR Video Mode
 	SETFRAMECOLOR(HGR_WHITE,  0xFF,0xFF,0xFE); // BUG: PALETTE COLLAPSE!  NOT white!? Win32 collapses the palette if you have duplicate colors!
 	SETFRAMECOLOR(HGR_BLUE,   0x0D,0xA1,0xFF); // 0x00,0x80,0xFF -> Linards Tweaked 0x0D,0xA1,0xFF
-	SETFRAMECOLOR(HGR_RED,    0xF2,0x5E,0x00); // 0xF0,0x50,0x00 -> Linards Tweaked 0xF2,0x5E,0x00 
+	SETFRAMECOLOR(HGR_ORANGE, 0xF2,0x5E,0x00); // 0xF0,0x50,0x00 -> Linards Tweaked 0xF2,0x5E,0x00 
 	SETFRAMECOLOR(HGR_GREEN,  0x38,0xCB,0x00); // 0x20,0xC0,0x00 -> Linards Tweaked 0x38,0xCB,0x00
 	SETFRAMECOLOR(HGR_MAGENTA,0xC7,0x34,0xFF); // 0xA0,0x00,0xFF -> Linards Tweaked 0xC7,0x34,0xFF
 	SETFRAMECOLOR(HGR_GREY1,  0x80,0x80,0x80);
@@ -583,7 +583,7 @@ void V_CreateIdentityPalette ()
 	SETFRAMECOLOR(HGR_BLACK,  0x00,0x00,0x00); // For TV emulation HGR Video Mode
 	SETFRAMECOLOR(HGR_WHITE,  0xFF,0xFF,0xFE); // BUG: PALETTE COLLAPSE!  NOT white!? Win32 collapses the palette if you have duplicate colors!
 	SETFRAMECOLOR(HGR_BLUE,   0x00,0x80,0xFF); // 0x00,0x80,0xFF
-	SETFRAMECOLOR(HGR_RED,    0xF0,0x50,0x00); // 0xF0,0x50,0x00
+	SETFRAMECOLOR(HGR_ORANGE, 0xF0,0x50,0x00); // 0xF0,0x50,0x00
 	SETFRAMECOLOR(HGR_GREEN,  0x20,0xC0,0x00); // 0x20,0xC0,0x00
 	SETFRAMECOLOR(HGR_MAGENTA,0xA0,0x00,0xFF); // 0xA0,0x00,0xFF
 	SETFRAMECOLOR(HGR_GREY1,  0x80,0x80,0x80);
@@ -906,7 +906,7 @@ void V_CreateLookup_Hires ()
 	int iMonochrome = GetMonochromeIndex();
 
 	// BYTE colorval[6] = {MAGENTA,BLUE,GREEN,ORANGE,BLACK,WHITE};
-	// BYTE colorval[6] = {HGR_MAGENTA,HGR_BLUE,HGR_GREEN,HGR_RED,HGR_BLACK,HGR_WHITE};
+	// BYTE colorval[6] = {HGR_MAGENTA,HGR_BLUE,HGR_GREEN,HGR_ORANGE,HGR_BLACK,HGR_WHITE};
 	for (int iColumn = 0; iColumn < 16; iColumn++)
 	{
 		int coloffs = iColumn << 5;
@@ -1125,8 +1125,8 @@ Legend:
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_WHITE );
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_WHITE );
 							} else {   // Optimization:   odd = (iPixel & 1); if (!odd) case is same as if(odd) !!! // Reference: Gumball - Gumball Machine
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_RED ); // left half of orange pixels 
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_RED );
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_ORANGE ); // left half of orange pixels 
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_ORANGE );
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_BLUE ); // right half of blue pixels 4, 11, 18, ...
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_BLUE );
 							}
@@ -1169,16 +1169,16 @@ Legend:
 						} else {
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_RED ); // 2000: AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_RED );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_ORANGE );
 						}
 #else
 						if ((g_eVideoType == VT_COLOR_STANDARD) || ( !aPixels[3] ))
 						{ // "Text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_RED ); // 2000: AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_RED );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_ORANGE );
 						}
 #endif // HALF_PIXEL_BLEED
 				}
@@ -1282,7 +1282,7 @@ void V_CreateLookup_MonoHiResHalfPixel_Real ()
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x   ,y  ,iMono); // first 7 HGR_BLUE
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x   ,y+1,iMono); // first 7
 
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y  ,iMono); // second 7 HGR_RED
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y  ,iMono); // second 7 HGR_ORANGE
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y+1,iMono); // second 7
 				}
 			}
@@ -1618,17 +1618,17 @@ BYTE MixColors(BYTE c1, BYTE c2)
 
 	if (c1 == c2)
 		return c1;
-	if (COMBINATION(c1,c2,HGR_BLUE,HGR_RED))
+	if (COMBINATION(c1,c2,HGR_BLUE,HGR_ORANGE))
 		return HGR_GREY1;
 	else if (COMBINATION(c1,c2,HGR_GREEN,HGR_MAGENTA))
 		return HGR_GREY2;
-	else if (COMBINATION(c1,c2,HGR_RED,HGR_GREEN))
+	else if (COMBINATION(c1,c2,HGR_ORANGE,HGR_GREEN))
 		return HGR_YELLOW;
 	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_GREEN))
 		return HGR_AQUA;
 	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_MAGENTA))
 		return HGR_PURPLE;
-	else if (COMBINATION(c1,c2,HGR_RED,HGR_MAGENTA))
+	else if (COMBINATION(c1,c2,HGR_ORANGE,HGR_MAGENTA))
 		return HGR_PINK;
 	else
 		return MONOCHROME_CUSTOM; // visible failure indicator
