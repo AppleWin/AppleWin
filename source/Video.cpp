@@ -109,7 +109,7 @@ enum Color_Palette_Index_e
 	, HGR_BLUE         // HCOLOR=6 BLUE   , $81
 	, HGR_ORANGE       // HCOLOR=5 ORANGE , $82
 	, HGR_GREEN        // HCOLOR=1 GREEN  , $01 
-	, HGR_MAGENTA      // HCOLOR=2 MAGENTA, $02
+	, HGR_VIOLET       // HCOLOR=2 VIOLET , $02
 	, HGR_GREY1        
 	, HGR_GREY2        
 	, HGR_YELLOW       
@@ -153,7 +153,7 @@ enum Color_Palette_Index_e
 // __ Map HGR color index to Palette index
 	enum ColorMapping
 	{
-		  CM_Magenta
+		  CM_Violet
 		, CM_Blue
 		, CM_Green
 		, CM_Orange
@@ -164,7 +164,7 @@ enum Color_Palette_Index_e
 
 const BYTE HiresToPalIndex[ NUM_COLOR_MAPPING ] =
 	{
-		  HGR_MAGENTA
+		  HGR_VIOLET
 		, HGR_BLUE
 		, HGR_GREEN
 		, HGR_ORANGE
@@ -571,7 +571,7 @@ void V_CreateIdentityPalette ()
 	SETFRAMECOLOR(HGR_BLUE,   0x0D,0xA1,0xFF); // 0x00,0x80,0xFF -> Linards Tweaked 0x0D,0xA1,0xFF
 	SETFRAMECOLOR(HGR_ORANGE, 0xF2,0x5E,0x00); // 0xF0,0x50,0x00 -> Linards Tweaked 0xF2,0x5E,0x00 
 	SETFRAMECOLOR(HGR_GREEN,  0x38,0xCB,0x00); // 0x20,0xC0,0x00 -> Linards Tweaked 0x38,0xCB,0x00
-	SETFRAMECOLOR(HGR_MAGENTA,0xC7,0x34,0xFF); // 0xA0,0x00,0xFF -> Linards Tweaked 0xC7,0x34,0xFF
+	SETFRAMECOLOR(HGR_VIOLET, 0xC7,0x34,0xFF); // 0xA0,0x00,0xFF -> Linards Tweaked 0xC7,0x34,0xFF
 	SETFRAMECOLOR(HGR_GREY1,  0x80,0x80,0x80);
 	SETFRAMECOLOR(HGR_GREY2,  0x80,0x80,0x80);
 	SETFRAMECOLOR(HGR_YELLOW, 0x9E,0x9E,0x00); // 0xD0,0xB0,0x10 -> 0x9E,0x9E,0x00
@@ -591,7 +591,7 @@ void V_CreateIdentityPalette ()
 	SETFRAMECOLOR(HGR_BLUE,   0x00,0x80,0xFF); // 0x00,0x80,0xFF
 	SETFRAMECOLOR(HGR_ORANGE, 0xF0,0x50,0x00); // 0xF0,0x50,0x00
 	SETFRAMECOLOR(HGR_GREEN,  0x20,0xC0,0x00); // 0x20,0xC0,0x00
-	SETFRAMECOLOR(HGR_MAGENTA,0xA0,0x00,0xFF); // 0xA0,0x00,0xFF
+	SETFRAMECOLOR(HGR_VIOLET, 0xA0,0x00,0xFF); // 0xA0,0x00,0xFF
 	SETFRAMECOLOR(HGR_GREY1,  0x80,0x80,0x80);
 	SETFRAMECOLOR(HGR_GREY2,  0x80,0x80,0x80);
 	SETFRAMECOLOR(HGR_YELLOW, 0xD0,0xB0,0x10); // 0xD0,0xB0,0x10
@@ -912,7 +912,7 @@ void V_CreateLookup_Hires ()
 	int iMonochrome = GetMonochromeIndex();
 
 	// BYTE colorval[6] = {MAGENTA,BLUE,GREEN,ORANGE,BLACK,WHITE};
-	// BYTE colorval[6] = {HGR_MAGENTA,HGR_BLUE,HGR_GREEN,HGR_ORANGE,HGR_BLACK,HGR_WHITE};
+	// BYTE colorval[6] = {HGR_VIOLET,HGR_BLUE,HGR_GREEN,HGR_ORANGE,HGR_BLACK,HGR_WHITE};
 	for (int iColumn = 0; iColumn < 16; iColumn++)
 	{
 		int coloffs = iColumn << 5;
@@ -1626,15 +1626,15 @@ BYTE MixColors(BYTE c1, BYTE c2)
 		return c1;
 	if (COMBINATION(c1,c2,HGR_BLUE,HGR_ORANGE))
 		return HGR_GREY1;
-	else if (COMBINATION(c1,c2,HGR_GREEN,HGR_MAGENTA))
+	else if (COMBINATION(c1,c2,HGR_GREEN,HGR_VIOLET))
 		return HGR_GREY2;
 	else if (COMBINATION(c1,c2,HGR_ORANGE,HGR_GREEN))
 		return HGR_YELLOW;
 	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_GREEN))
 		return HGR_AQUA;
-	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_MAGENTA))
+	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_VIOLET))
 		return HGR_PURPLE;
-	else if (COMBINATION(c1,c2,HGR_ORANGE,HGR_MAGENTA))
+	else if (COMBINATION(c1,c2,HGR_ORANGE,HGR_VIOLET))
 		return HGR_PINK;
 	else
 		return MONOCHROME_CUSTOM; // visible failure indicator
