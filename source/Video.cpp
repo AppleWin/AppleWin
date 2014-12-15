@@ -43,8 +43,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define HALF_PIXEL_SOLID 1
 #define HALF_PIXEL_BLEED 0
 
-#define COLORS_TWEAKED 1 
-
 /*
    Reference: Technote TN-IIGS-063 "Master Color Values"
    Note:The IIGS colors do NOT map correctly to _accurate_ //e colors.
@@ -106,10 +104,10 @@ enum Color_Palette_Index_e
 // CUSTOM HGR COLORS (don't change order) - For tv emulation HGR Video Mode
 	, HGR_BLACK        
 	, HGR_WHITE        
-	, HGR_BLUE         // HCOLOR=6 BLUE   , $81
-	, HGR_ORANGE       // HCOLOR=5 ORANGE , $82
-	, HGR_GREEN        // HCOLOR=1 GREEN  , $01 
-	, HGR_VIOLET       // HCOLOR=2 VIOLET , $02
+	, HGR_BLUE         // HCOLOR=6 BLUE   , 3000: 81 00 D5 AA
+	, HGR_ORANGE       // HCOLOR=5 ORANGE , 2C00: 82 00 AA D5
+	, HGR_GREEN        // HCOLOR=1 GREEN  , 2400: 02 00 2A 55
+	, HGR_VIOLET       // HCOLOR=2 VIOLET , 2800: 01 00 55 2A
 	, HGR_GREY1        
 	, HGR_GREY2        
 	, HGR_YELLOW       
@@ -157,8 +155,8 @@ enum Color_Palette_Index_e
 		, CM_Blue
 		, CM_Green
 		, CM_Orange
-		, CM_Black
-		, CM_White
+		, CM_Black // Used
+		, CM_White // Used
 		, NUM_COLOR_MAPPING
 	};
 
@@ -535,10 +533,10 @@ void V_CreateIdentityPalette ()
 	g_hPalette = (HPALETTE)0;
 
 	SETFRAMECOLOR(BLACK,       0x00,0x00,0x00); // 0
-	SETFRAMECOLOR(DARK_RED,    0x80,0x00,0x00); // 1 // used by TV 
-	SETFRAMECOLOR(DARK_GREEN,  0x00,0x80,0x00); // 2
+	SETFRAMECOLOR(DARK_RED,    0x80,0x00,0x00); // 1 // not used
+	SETFRAMECOLOR(DARK_GREEN,  0x00,0x80,0x00); // 2 // not used
 	SETFRAMECOLOR(DARK_YELLOW, 0x80,0x80,0x00); // 3
-	SETFRAMECOLOR(DARK_BLUE,   0x00,0x00,0x80); // 4
+	SETFRAMECOLOR(DARK_BLUE,   0x00,0x00,0x80); // 4 // not used
 	SETFRAMECOLOR(DARK_MAGENTA,0x80,0x00,0x80); // 5
 	SETFRAMECOLOR(DARK_CYAN,   0x00,0x80,0x80); // 6
 	SETFRAMECOLOR(LIGHT_GRAY,  0xC0,0xC0,0xC0); // 7 // GR: COLOR=10
@@ -546,10 +544,9 @@ void V_CreateIdentityPalette ()
 	SETFRAMECOLOR(SKY_BLUE,    0xA6,0xCA,0xF0); // 9 // not used
 
 	// SET FRAME BUFFER TABLE ENTRIES TO CUSTOM COLORS
-#if COLORS_TWEAKED
-	SETFRAMECOLOR(DARK_RED,    0x9D,0x09,0x66); // 1 // Linards Tweaked
-	SETFRAMECOLOR(DARK_GREEN,  0x00,0x76,0x1A); // 2 // Linards Tweaked
-	SETFRAMECOLOR(DARK_BLUE,   0x2A,0x2A,0xE5); // 4 // Linards Tweaked
+//	SETFRAMECOLOR(DARK_RED,    0x9D,0x09,0x66); // 1 // Linards Tweaked 0x80,0x00,0x00 -> 0x9D,0x09,0x66
+//	SETFRAMECOLOR(DARK_GREEN,  0x00,0x76,0x1A); // 2 // Linards Tweaked 0x00,0x80,0x00 -> 0x00,0x76,0x1A
+//	SETFRAMECOLOR(DARK_BLUE,   0x2A,0x2A,0xE5); // 4 // Linards Tweaked 0x00,0x00,0x80 -> 0x2A,0x2A,0xE5
 
 	SETFRAMECOLOR(DEEP_RED,  0x9D,0x09,0x66); // 0xD0,0x00,0x30 -> Linards Tweaked 0x9D,0x09,0x66
 	SETFRAMECOLOR(LIGHT_BLUE,0xAA,0xAA,0xFF); // 0x60,0xA0,0xFF -> Linards Tweaked 0xAA,0xAA,0xFF
@@ -560,37 +557,18 @@ void V_CreateIdentityPalette ()
 
 	SETFRAMECOLOR(HGR_BLACK,  0x00,0x00,0x00); // For TV emulation HGR Video Mode
 	SETFRAMECOLOR(HGR_WHITE,  0xFF,0xFF,0xFE); // BUG: PALETTE COLLAPSE!  NOT white!? Win32 collapses the palette if you have duplicate colors!
-	SETFRAMECOLOR(HGR_BLUE,   0x0D,0xA1,0xFF); // 0x00,0x80,0xFF -> Linards Tweaked 0x0D,0xA1,0xFF
-	SETFRAMECOLOR(HGR_ORANGE, 0xF2,0x5E,0x00); // 0xF0,0x50,0x00 -> Linards Tweaked 0xF2,0x5E,0x00 
-	SETFRAMECOLOR(HGR_GREEN,  0x38,0xCB,0x00); // 0x20,0xC0,0x00 -> Linards Tweaked 0x38,0xCB,0x00
-	SETFRAMECOLOR(HGR_VIOLET, 0xC7,0x34,0xFF); // 0xA0,0x00,0xFF -> Linards Tweaked 0xC7,0x34,0xFF
+// 20 207 253 = 0x14 0xCF 0xFD
+	SETFRAMECOLOR(HGR_BLUE,     24, 115, 229); // HCOLOR=6 BLUE    3000: 81 00 D5 AA // 0x00,0x80,0xFF -> Linards Tweaked 0x0D,0xA1,0xFF
+	SETFRAMECOLOR(HGR_ORANGE,  247,  64,  30); // HCOLOR=5 ORANGE  2C00: 82 00 AA D5 // 0xF0,0x50,0x00 -> Linards Tweaked 0xF2,0x5E,0x00 
+	SETFRAMECOLOR(HGR_GREEN,    27, 211,  79); // HCOLOR=1 GREEN   2400: 02 00 2A 55 // 0x20,0xC0,0x00 -> Linards Tweaked 0x38,0xCB,0x00
+	SETFRAMECOLOR(HGR_VIOLET,  227,  20, 255); // HCOLOR=2 VIOLET  2800: 01 00 55 2A // 0xA0,0x00,0xFF -> Linards Tweaked 0xC7,0x34,0xFF
+
 	SETFRAMECOLOR(HGR_GREY1,  0x80,0x80,0x80);
 	SETFRAMECOLOR(HGR_GREY2,  0x80,0x80,0x80);
 	SETFRAMECOLOR(HGR_YELLOW, 0x9E,0x9E,0x00); // 0xD0,0xB0,0x10 -> 0x9E,0x9E,0x00
 	SETFRAMECOLOR(HGR_AQUA,   0x00,0xCD,0x4A); // 0x20,0xB0,0xB0 -> 0x00,0xCD,0x4A
 	SETFRAMECOLOR(HGR_PURPLE, 0x61,0x61,0xFF); // 0x60,0x50,0xE0 -> 0x61,0x61,0xFF
 	SETFRAMECOLOR(HGR_PINK,   0xFF,0x32,0xB5); // 0xD0,0x40,0xA0 -> 0xFF,0x32,0xB5
-#else
-	SETFRAMECOLOR(DEEP_RED,  0xD0,0x00,0x30); // 0xD0,0x00,0x30
-	SETFRAMECOLOR(LIGHT_BLUE,0x60,0xA0,0xFF); // 0x60,0xA0,0xFF
-	SETFRAMECOLOR(BROWN,     0x80,0x50,0x00); // 0x80,0x50,0x00
-	SETFRAMECOLOR(ORANGE,    0xFF,0x80,0x00); // 0xFF,0x80,0x00
-	SETFRAMECOLOR(PINK,      0xFF,0x90,0x80); // 0xFF,0x90,0x80
-	SETFRAMECOLOR(AQUA,      0x40,0xFF,0x90); // 0x40,0xFF,0x90
-
-	SETFRAMECOLOR(HGR_BLACK,  0x00,0x00,0x00); // For TV emulation HGR Video Mode
-	SETFRAMECOLOR(HGR_WHITE,  0xFF,0xFF,0xFE); // BUG: PALETTE COLLAPSE!  NOT white!? Win32 collapses the palette if you have duplicate colors!
-	SETFRAMECOLOR(HGR_BLUE,   0x00,0x80,0xFF); // 0x00,0x80,0xFF
-	SETFRAMECOLOR(HGR_ORANGE, 0xF0,0x50,0x00); // 0xF0,0x50,0x00
-	SETFRAMECOLOR(HGR_GREEN,  0x20,0xC0,0x00); // 0x20,0xC0,0x00
-	SETFRAMECOLOR(HGR_VIOLET, 0xA0,0x00,0xFF); // 0xA0,0x00,0xFF
-	SETFRAMECOLOR(HGR_GREY1,  0x80,0x80,0x80);
-	SETFRAMECOLOR(HGR_GREY2,  0x80,0x80,0x80);
-	SETFRAMECOLOR(HGR_YELLOW, 0xD0,0xB0,0x10); // 0xD0,0xB0,0x10
-	SETFRAMECOLOR(HGR_AQUA,   0x20,0xB0,0xB0); // 0x20,0xB0,0xB0
-	SETFRAMECOLOR(HGR_PURPLE, 0x60,0x50,0xE0); // 0x60,0x50,0xE0
-	SETFRAMECOLOR(HGR_PINK,   0xD0,0x40,0xA0); // 0xD0,0x40,0xA0
-#endif
 
 	SETFRAMECOLOR( MONOCHROME_CUSTOM
 		, GetRValue(monochrome)
@@ -611,29 +589,16 @@ void V_CreateIdentityPalette ()
 	// Windows is collapsing the palette!!!
 	//SETFRAMECOLOR( MONOCHROME_WHITE   , 0xFE,0xFE,0xFE); // Used for Monochrome Hi-Res graphics not text!
 
-#if COLORS_TWEAKED
 	SETFRAMECOLOR(CREAM,       0xFF,0xFB,0xF0); // F6
 	SETFRAMECOLOR(MEDIUM_GRAY, 0xA0,0xA0,0xA4); // F7
 	SETFRAMECOLOR(DARK_GRAY,   0x80,0x80,0x80); // F8
 	SETFRAMECOLOR(RED,         0xFF,0x00,0x00); // F9
-	SETFRAMECOLOR(GREEN,       0x38,0xCB,0x00); // FA Linards Tweaked
-	SETFRAMECOLOR(YELLOW,      0xD5,0xD5,0x1A); // FB Linards Tweaked
-	SETFRAMECOLOR(BLUE,        0x0D,0xA1,0xFF); // FC Linards Tweaked
-	SETFRAMECOLOR(MAGENTA,     0xC7,0x34,0xFF); // FD Linards Tweaked
+	SETFRAMECOLOR(GREEN,       0x38,0xCB,0x00); // FA Linards Tweaked 0x00,0xFF,0x00 -> 0x38,0xCB,0x00
+	SETFRAMECOLOR(YELLOW,      0xD5,0xD5,0x1A); // FB Linards Tweaked 0xFF,0xFF,0x00 -> 0xD5,0xD5,0x1A
+	SETFRAMECOLOR(BLUE,        0x0D,0xA1,0xFF); // FC Linards Tweaked 0x00,0x00,0xFF -> 0x0D,0xA1,0xFF
+	SETFRAMECOLOR(MAGENTA,     0xC7,0x34,0xFF); // FD Linards Tweaked 0xFF,0x00,0xFF -> 0xC7,0x34,0xFF
 	SETFRAMECOLOR(CYAN,        0x00,0xFF,0xFF); // FE
 	SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF); // FF
-#else
-	SETFRAMECOLOR(CREAM,       0xFF,0xFB,0xF0); // F6
-	SETFRAMECOLOR(MEDIUM_GRAY, 0xA0,0xA0,0xA4); // F7
-	SETFRAMECOLOR(DARK_GRAY,   0x80,0x80,0x80); // F8
-	SETFRAMECOLOR(RED,         0xFF,0x00,0x00); // F9
-	SETFRAMECOLOR(GREEN,       0x00,0xFF,0x00); // FA
-	SETFRAMECOLOR(YELLOW,      0xFF,0xFF,0x00); // FB
-	SETFRAMECOLOR(BLUE,        0x00,0x00,0xFF); // FC
-	SETFRAMECOLOR(MAGENTA,     0xFF,0x00,0xFF); // FD
-	SETFRAMECOLOR(CYAN,        0x00,0xFF,0xFF); // FE
-	SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF); // FF
-#endif
 
 	// IF WE ARE IN A PALETTIZED VIDEO MODE, CREATE AN IDENTITY PALETTE
 	HWND window = GetDesktopWindow();
@@ -1599,11 +1564,11 @@ bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset)
 Color Reference Tests:
 
 2000:D5 AA D5 AA D5 AA //  blue blue  blue
-2400:AA D5 2A 55 55 2A //+ red  green magenta
-//                     //= grey aqua  purple
+2400:AA D5 2A 55 55 2A //+ red  green violet
+//                     //= grey aqua  violet
 
 2C00:AA D5 AA D5 2A 55 //  red    red     green
-3000:2A 55 55 2A 55 2A //+ green  magenta magenta
+3000:2A 55 55 2A 55 2A //+ green  violet  violet
 //                     //= yellow pink    grey
 
 */
