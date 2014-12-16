@@ -102,7 +102,7 @@
     <ClCompile>
       <AdditionalOptions>/Zm200  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>C:\Users\Miyeong\Projects\trunk\AppleWin\source;C:\Users\Miyeong\Projects\trunk\AppleWin\zlib;C:\Users\Miyeong\Projects\trunk\AppleWin\zip_lib;C:\Users\Miyeong\Projects\trunk\AppleWin\source\Debugger;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;zlib;zip_lib;source\Debugger;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;HAS_M6803;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
