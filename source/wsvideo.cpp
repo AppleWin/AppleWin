@@ -212,9 +212,9 @@ static int colorBurst;
 #define NTSC_NUM_PHASES     4
 #define NTSC_NUM_SEQUENCES  4096
 #define NTSC_PIXEL_WIDTH    4
-static unsigned char NTSCMono[NTSC_NUM_SEQUENCES][NTSC_PIXEL_WIDTH];
-static unsigned char NTSCColor[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES][NTSC_PIXEL_WIDTH];
-static unsigned char NTSCMonoTV[NTSC_NUM_SEQUENCES][NTSC_PIXEL_WIDTH];
+static unsigned char NTSCMono                    [NTSC_NUM_SEQUENCES][NTSC_PIXEL_WIDTH];
+static unsigned char NTSCColor  [NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES][NTSC_PIXEL_WIDTH];
+static unsigned char NTSCMonoTV                  [NTSC_NUM_SEQUENCES][NTSC_PIXEL_WIDTH];
 static unsigned char NTSCColorTV[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES][NTSC_PIXEL_WIDTH];
 
 #define SIGZEROS 2
