@@ -43,6 +43,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define HALF_PIXEL_SOLID 1
 #define HALF_PIXEL_BLEED 0
 
+#define HALF_DIM_SUPPORT 0
+
 /*
    Reference: Technote TN-IIGS-063 "Master Color Values"
    Note:The IIGS colors do NOT map correctly to _accurate_ //e colors.
@@ -326,7 +328,7 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	void V_CreateLookup_DoubleHires ();
 	void V_CreateLookup_Hires (); // Old "Full-Pixel" support only: STANDARD, TEXT_OPTIMIZED, TVEMU
 	void V_CreateLookup_HiResHalfPixel_Authentic (); // New "Half_Pixel" support: STANDARD, TEXT_OPTIMIZED
-	void V_CreateLookup_HiresHalfShiftFull ();
+	void V_CreateLookup_HiresHalfShiftDim();
 	void V_CreateLookup_Lores ();
 	void V_CreateLookup_Text (HDC dc);
 // Monochrome Full-Pixel Support
@@ -790,7 +792,11 @@ void V_CreateDIBSections ()
 		if ( g_eVideoType == VT_COLOR_TVEMU )
 			V_CreateLookup_Hires();
 		else
+#if HALF_DIM_SUPPORT
+			V_CreateLookup_HiresHalfShiftDim();
+#else
 			V_CreateLookup_HiResHalfPixel_Authentic();
+#endif
 		V_CreateLookup_DoubleHires();
 	}
 	else
@@ -1186,6 +1192,163 @@ Legend:
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
+					x += 2;
+				}
+			}
+		}
+	}
+}
+
+//===========================================================================
+void V_CreateLookup_HiresHalfShiftDim ()
+{
+	// BYTE colorval[6] = {HGR_MAGENTA,HGR_BLUE,HGR_GREEN,HGR_RED,HGR_BLACK,HGR_WHITE};
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		int coloffs = iColumn << 5;
+
+		for (unsigned iByte = 0; iByte < 256; iByte++)
+		{
+			int aPixels[11];
+
+			aPixels[ 0] = iColumn & 4;
+			aPixels[ 1] = iColumn & 8;
+			aPixels[ 9] = iColumn & 1;
+			aPixels[10] = iColumn & 2;
+
+			int nBitMask = 1;
+			int iPixel;
+			for (iPixel  = 2; iPixel < 9; iPixel++) {
+				aPixels[iPixel] = ((iByte & nBitMask) != 0);
+				nBitMask <<= 1;
+			}
+
+			int hibit = ((iByte & 0x80) != 0);
+			int x     = 0;
+			int y     = iByte << 1;
+
+			while (x < 28)
+			{
+				int adj = (x >= 14) << 1;
+				int odd = (x >= 14);
+
+				for (iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color = CM_Black;
+					if (aPixels[iPixel])
+					{
+						if (aPixels[iPixel-1] || aPixels[iPixel+1])
+						{
+							color = CM_White;
+						}
+						else
+							color = ((odd ^ (iPixel&1)) << 1) | hibit;
+					}
+					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
+					{
+						/*
+						activate for fringe reduction on white hgr text - 
+						drawback: loss of color mix patterns in HGR mode.
+						select g_eVideoType by index exclusion
+						*/
+						if (
+							(g_eVideoType == VT_COLOR_STANDARD) // Fill in colors in between white pixels
+						||	(g_eVideoType == VT_COLOR_TVEMU)    // Fill in colors in between white pixels (Post Processing will mix/merge colors)
+						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
+							color = ((odd ^ !(iPixel&1)) << 1) | hibit;
+					}
+
+					/*
+						Address Binary   -> Displayed
+						2000:01 0---0001 -> 1 0 0 0  column 1
+						2400:81 1---0001 ->  1 0 0 0 half-pixel shift right
+						2800:02 1---0010 -> 0 1 0 0  column 2
+
+						2000:02 column 2
+						2400:82 half-pixel shift right
+						2800:04 column 3
+
+						2000:03 0---0011 -> 1 1 0 0  column 1 & 2
+						2400:83 1---0011 ->  1 1 0 0 half-pixel shift right
+						2800:06 1---0110 -> 0 1 1 0  column 2 & 3
+
+						@reference: see Beagle Bro's Disk: "Silicon Salad", File: DOUBLE HI-RES
+						Fortunately double-hires is supported via pixel doubling, so we can do half-pixel shifts ;-)
+					*/
+					switch (color)
+					{
+						case CM_Violet:
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_VIOLET   ); // HiresToPalIndex
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , DARK_MAGENTA ); // HiresDimmedIndex
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_VIOLET   ); // HiresToPalIndex
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, DARK_MAGENTA ); // HiresDimmedIndex
+							break;
+
+						case CM_Blue   :
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_BLUE  );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y  , DARK_BLUE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_BLUE  );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y+1, DARK_BLUE );
+							// Prevent column gaps
+							if (hibit)
+							{
+								if (iPixel <= 2)
+								{
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , DARK_BLUE );
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, DARK_BLUE );
+								}
+							}
+							break;
+
+						case CM_Green :
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_GREEN  );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , DARK_GREEN );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_GREEN  );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, DARK_GREEN );
+							break;
+
+						case CM_Orange:
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_ORANGE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y  , BROWN      ); // DARK_RED is a bit "too" red
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_ORANGE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y+1, BROWN      ); // DARK_RED is a bit "too" red
+							// Prevent column gaps
+							if (hibit)
+							{
+								if (iPixel <= 2)
+								{
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , BROWN ); // DARK_RED is a bit "too" red
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, BROWN ); // DARK_RED is a bit "too" red
+								}
+							}
+							break;
+
+						case CM_Black :
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_BLACK );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_BLACK );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_BLACK );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_BLACK );
+							break;
+
+						case CM_White :
+							// Don't dither / half-shift white, since DROL cutscene looks bad :(
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_WHITE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_WHITE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_WHITE ); // LIGHT_GRAY <- for that half scan-line look
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_WHITE ); // LIGHT_GRAY <- for that half scan-line look
+							// Prevent column gaps
+							if (hibit)
+							{
+								if (iPixel <= 2)
+								{
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_WHITE ); // LIGHT_GRAY HGR_GREY1
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_WHITE ); // LIGHT_GRAY HGR_GREY1
+								}
+							}
+							break;
+						default:
+							break;
+					}
 					x += 2;
 				}
 			}
