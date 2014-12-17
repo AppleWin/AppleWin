@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <stdio.h>
 #include <stdlib.h>
 
+#define HGR_TEST_PATTERN 0
+
 // from Frame.h (Must keep in sync!)
 #define FRAMEBUFFER_W 600
 #define FRAMEBUFFER_H 420
@@ -426,10 +428,54 @@ void wsVideoInit ()
 	filterloop();
 
 	vbp0 = wsLines[0];
+
+#if HGR_TEST_PATTERN
+// Michael -- Init HGR to almsot all-possible-combinations
+// CALL-151
+// C050 C053 C057
+	unsigned ad;
+	unsigned char b = 0;
+	unsigned char *main, *aux;
+
+	for( unsigned page = 0; page < 2; page++ )
+	{
+		for( unsigned w = 0; w < 2; w++ ) // 16 cols
+		{
+			for( unsigned z = 0; z < 2; z++ ) // 8 cols
+			{
+				b  = 0; // 4 columns * 64 rows
+				for( unsigned x = 0; x < 4; x++ ) // 4 cols
+				{
+					for( unsigned y = 0; y < 64; y++ ) // 1 col
+					{
+						unsigned y2 = y*2;
+						ad = 0x2000 + (y2&7)*0x400 + ((y2/8)&7)*0x80 + (y2/64)*0x28 + 2*x + 10*z + 20*w;
+						ad += 0x2000*page;
+						main = MemGetMainPtr(ad);
+						aux  = MemGetAuxPtr (ad);
+						main[0] = b; main[1] = w + page*0x80;
+						aux [0] = z; aux [1] = 0;
+
+						y2 = y*2 + 1;
+						ad = 0x2000 + (y2&7)*0x400 + ((y2/8)&7)*0x80 + (y2/64)*0x28 + 2*x + 10*z + 20*w;
+						ad += 0x2000*page;
+						main = MemGetMainPtr(ad);
+						aux  = MemGetAuxPtr (ad);
+						main[0] =   0; main[1] = w + page*0x80;
+						aux [0] =   b; aux [1] = 0;
+
+						b++;
+					}
+				}
+			}
+		}
+	}
+#endif
+
 }
 
-static unsigned vc = 0;
-static unsigned hc = 0;
+static unsigned vc = 0; // Vertical Clock ?
+static unsigned hc = 0; // Horizontal Clock ?
 
 #define INITIAL_COLOR_PHASE 0
 static int colorPhase = INITIAL_COLOR_PHASE;
