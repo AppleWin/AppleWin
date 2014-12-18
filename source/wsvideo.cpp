@@ -297,7 +297,7 @@ static double chroma_filter (double z)
 }
 
 #define PI 3.1415926535898
-#define CYCLESTART (PI * 4.0 / 16.0)
+#define CYCLESTART (PI * 4.0 / 16.0) // 2PI=180, start at pi/8 = 22.5 degrees
 
 static void filterloop (void)
 {
