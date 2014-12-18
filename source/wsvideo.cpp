@@ -24,9 +24,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifndef CHROMA_BLUR
+	#define CHROMA_BLUR      1 // Default: 1; 1 = blur along ~8 pixels; 0 = sharper
+#endif
 
-#define CHROMA_BLUR      1 // Default: 1; 1 = blur along ~8 pixels; 0 = sharper
-#define CHROMA_FILTER    1 // If no chroma blur; 0 = use chroma as-is, 1 = soft chroma blur, strong color fringes 2 = more blur, muted chroma fringe
+#ifndef CHROMA_FILTER
+	#define CHROMA_FILTER    1 // If no chroma blur; 0 = use chroma as-is, 1 = soft chroma blur, strong color fringes 2 = more blur, muted chroma fringe
+#endif
+
 #define HGR_TEST_PATTERN 0
 
 // from Frame.h (Must keep in sync!)
@@ -305,7 +310,7 @@ static double chroma_filter (double z)
 #if CHROMA_BLUR
 	#define CYCLESTART (PI/4.0) // PI/4 = 45 degrees
 #else // sharpness is higher, less color bleed
-	#if CHROMA_FILTER
+	#if CHROMA_FILTER == 2
 		#define CYCLESTART (PI/4.0) // PI/4 = 45 degrees // c = signal_prefilter(z);
 	#else
 //		#define CYCLESTART DEG_TO_RAD(90) // (PI*0.5) // PI/2 = 90 degrees // HGR: Great, GR: fail on brown
