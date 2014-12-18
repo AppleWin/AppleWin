@@ -326,25 +326,17 @@ static void filterloop (void)
 					c = chroma_filter(zz);
 					y0 = luma0_filter(zz);
 					y1 = luma1_filter(zz - c);
-
-					c = c * 2.0;
-					i = i + (c * cos(phi) - i) / 8.0;
-					q = q + (c * sin(phi) - q) / 8.0;
-
-					phi += (PI / 4);
-					if (fabs((2 * PI) - phi) < 0.001) phi = phi - 2 * PI;
 #else
 					// NOTE: This has incorrect colors! The chroma is 180 degrees out of phase: violet <-> orange, green <-> blue
 					y0 = y0 + (z - y0) / 4.0;
 					c = z - y0;
-
+#endif
 					c = c * 2.0;
 					i = i + (c * cos(phi) - i) / 8.0;
 					q = q + (c * sin(phi) - q) / 8.0;
 
 					phi += (PI / 4);
 					if (fabs((2 * PI) - phi) < 0.001) phi = phi - 2 * PI;
-#endif
 				} // k
 			} // samples
 
