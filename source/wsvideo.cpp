@@ -319,30 +319,20 @@ static void filterloop (void)
 				t = t << 1;
 #if 1
 				//z = z * 1.25;
+				for(int k = 0; k < 2; k++ )
+				{
+					zz = signal_prefilter(z);
+					c = chroma_filter(zz);
+					y0 = luma0_filter(zz);
+					y1 = luma1_filter(zz - c);
 
-				zz = signal_prefilter(z);
-				c = chroma_filter(zz);
-				y0 = luma0_filter(zz);
-				y1 = luma1_filter(zz - c);
+					c = c * 2.0;
+					i = i + (c * cos(phi) - i) / 8.0;
+					q = q + (c * sin(phi) - q) / 8.0;
 
-				c = c * 2.0;
-				i = i + (c * cos(phi) - i) / 8.0;
-				q = q + (c * sin(phi) - q) / 8.0;
-
-				phi += (PI / 4);
-				if (fabs((2 * PI) - phi) < 0.001) phi = phi - 2 * PI;
-				
-				zz = signal_prefilter(z);
-				c = chroma_filter(zz);
-				y0 = luma0_filter(zz);
-				y1 = luma1_filter(zz - c);
-
-				c = c * 2.0;
-				i = i + (c * cos(phi) - i) / 8.0;
-				q = q + (c * sin(phi) - q) / 8.0;
-
-				phi += (PI / 4);
-				if (fabs((2 * PI) - phi) < 0.001) phi = phi - 2 * PI;
+					phi += (PI / 4);
+					if (fabs((2 * PI) - phi) < 0.001) phi = phi - 2 * PI;
+				}
 #else
 				y = y + (z - y) / 4.0;
 				c = z - y;
