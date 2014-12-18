@@ -51,7 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  FSVIEWPORTY ((480-VIEWPORTCY)/2)
 #define  FSBUTTONX   (640-BUTTONCX)
 #define  FSBUTTONY   (((480-VIEWPORTCY)/2)-1)
-#define  BUTTONS     8
+#define  BUTTONS     10
 
 	static HBITMAP g_hCapsLockBitmap[2];
 	static HBITMAP g_hHardDiskBitmap[2];
