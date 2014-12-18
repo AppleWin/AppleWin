@@ -317,10 +317,11 @@ static void filterloop (void)
 			{
 				z = (double)(0 != (t & 0x800));
 				t = t << 1;
-#if 1
-				//z = z * 1.25;
+
 				for(int k = 0; k < 2; k++ )
 				{
+#if 1
+					//z = z * 1.25;
 					zz = signal_prefilter(z);
 					c = chroma_filter(zz);
 					y0 = luma0_filter(zz);
@@ -332,28 +333,20 @@ static void filterloop (void)
 
 					phi += (PI / 4);
 					if (fabs((2 * PI) - phi) < 0.001) phi = phi - 2 * PI;
-				}
 #else
-				// NOTE: This has incorrect colors! The chroma is 180 degrees out of phase: violet <-> orange, green <-> blue
-				y0 = y0 + (z - y0) / 4.0;
-				c = z - y0;
-				c = c * 2.0;
+					// NOTE: This has incorrect colors! The chroma is 180 degrees out of phase: violet <-> orange, green <-> blue
+					y0 = y0 + (z - y0) / 4.0;
+					c = z - y0;
 
-				i = i + (c * cos(phi) - i) / 8.0;
-				q = q + (c * sin(phi) - q) / 8.0;
-				phi += (PI / 4);
-				if (fabs((2 * PI) - phi) < 0.001) phi = phi - 2 * PI;
-				
-				y0 = y0 + (z - y0) / 4.0;
-				c = z - y0;
-				c = c * 2.0;
-				
-				i = i + (c * cos(phi) - i) / 8.0;
-				q = q + (c * sin(phi) - q) / 8.0;
-				phi += (PI / 4);
-				if (fabs((2 * PI) - phi) < 0.001) phi = phi - 2 * PI;
+					c = c * 2.0;
+					i = i + (c * cos(phi) - i) / 8.0;
+					q = q + (c * sin(phi) - q) / 8.0;
+
+					phi += (PI / 4);
+					if (fabs((2 * PI) - phi) < 0.001) phi = phi - 2 * PI;
 #endif
-			}
+				} // k
+			} // samples
 
 			     if (z < 0.0) NTSCMono[s][0] = NTSCMono[s][1] = NTSCMono[s][2] = 0;
 			else if (z > 1.0) NTSCMono[s][0] = NTSCMono[s][1] = NTSCMono[s][2] = 255;
