@@ -308,7 +308,7 @@ static void filterloop (void)
 	for (p = 0; p < 4; ++p)
 	{
 		phi = p * PI / 2.0 + CYCLESTART;
-		for (s = 0; s < 4096; ++s)
+		for (s = 0; s < NTSC_NUM_SEQUENCES; ++s)
 		{
 			t = s;
 			y0 = y1 = c = i = q = 0.0;
