@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <stdio.h>
 #include <stdlib.h>
 
+
+#define CHROMA_BLUR      1 // Default: 1; 1 = blur along ~8 pixels; 0 = sharper
+#define CHROMA_FILTER    1 // If no chroma blur; 0 = use chroma as-is, 1 = soft chroma blur, strong color fringes 2 = more blur, muted chroma fringe
 #define HGR_TEST_PATTERN 0
 
 // from Frame.h (Must keep in sync!)
@@ -225,8 +228,8 @@ static unsigned char NTSCColorTV[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES][NTSC_PIXEL
 
 static double signal_prefilter (double z)
 {
-	static double xv[SIGZEROS+1];
-	static double yv[SIGPOLES+1];
+	static double xv[SIGZEROS+1] = { 0,0,0 };
+	static double yv[SIGPOLES+1] = { 0,0,0 };
 
 	xv[0] = xv[1];
 	xv[1] = xv[2]; 
@@ -297,7 +300,18 @@ static double chroma_filter (double z)
 }
 
 #define PI 3.1415926535898
-#define CYCLESTART (PI * 4.0 / 16.0) // 2PI=180, start at pi/8 = 22.5 degrees
+#define DEG_TO_RAD(x) (PI*(x)/180.) // 2PI=360, PI=180
+
+#if CHROMA_BLUR
+	#define CYCLESTART (PI/4.0) // PI/4 = 45 degrees
+#else // sharpness is higher, less color bleed
+	#if CHROMA_FILTER
+		#define CYCLESTART (PI/4.0) // PI/4 = 45 degrees // c = signal_prefilter(z);
+	#else
+//		#define CYCLESTART DEG_TO_RAD(90) // (PI*0.5) // PI/2 = 90 degrees // HGR: Great, GR: fail on brown
+		#define CYCLESTART DEG_TO_RAD(115) // GR perfect match of slow method
+	#endif
+#endif
 
 static void filterloop (void)
 {
@@ -320,17 +334,34 @@ static void filterloop (void)
 
 				for(int k = 0; k < 2; k++ )
 				{
-#if 1
+#if CHROMA_BLUR
 					//z = z * 1.25;
 					zz = signal_prefilter(z);
-					c = chroma_filter(zz);
+					c = chroma_filter(zz); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
 					y0 = luma0_filter(zz);
 					y1 = luma1_filter(zz - c);
-#else
-					// NOTE: This has incorrect colors! The chroma is 180 degrees out of phase: violet <-> orange, green <-> blue
+#else // CHROMA_BLUR
 					y0 = y0 + (z - y0) / 4.0;
-					c = z - y0;
-#endif
+					y1 = y0; // fix TV mode
+
+	#if CHROMA_FILTER == 0
+					c = z; // sharper; "Mostly" correct _if_ CYCLESTART = 115 degrees
+	#endif // CHROMA_FILTER
+	#if CHROMA_FILTER == 1 // soft chroma blur, strong color fringes
+					// NOTE: This has incorrect colors! Chroma is (115-45)=70 degrees out of phase! violet <-> orange, green <-> blue
+					c = (z - y0); // Original -- smoother, white is solid, brighter; other colors
+					//   ->
+					// c = (z - (y0 + (z-y0)/4))
+					// c = z - y0 - (z-y0)/4
+					// c = z - y0 - z/4 + y0/4
+					// c = z-z/4 - y0+y0/4; // Which is clearly wrong, unless CYCLESTART DEG_TO_RAD(115)
+					// This mode looks the most accurate for white, has better color fringes
+	#endif
+	#if CHROMA_FILTER == 2 // more blur, muted chroma fringe
+					// White has too much ringing, and the color fringes are muted
+					c = signal_prefilter(z); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
+	#endif
+#endif // CHROMA_BLUR
 					c = c * 2.0;
 					i = i + (c * cos(phi) - i) / 8.0;
 					q = q + (c * sin(phi) - q) / 8.0;
