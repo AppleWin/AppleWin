@@ -334,8 +334,9 @@ static void filterloop (void)
 					if (fabs((2 * PI) - phi) < 0.001) phi = phi - 2 * PI;
 				}
 #else
-				y = y + (z - y) / 4.0;
-				c = z - y;
+				// NOTE: This has incorrect colors! The chroma is 180 degrees out of phase: violet <-> orange, green <-> blue
+				y0 = y0 + (z - y0) / 4.0;
+				c = z - y0;
 				c = c * 2.0;
 
 				i = i + (c * cos(phi) - i) / 8.0;
@@ -343,8 +344,8 @@ static void filterloop (void)
 				phi += (PI / 4);
 				if (fabs((2 * PI) - phi) < 0.001) phi = phi - 2 * PI;
 				
-				y = y + (z - y) / 4.0;
-				c = z - y;
+				y0 = y0 + (z - y0) / 4.0;
+				c = z - y0;
 				c = c * 2.0;
 				
 				i = i + (c * cos(phi) - i) / 8.0;
