@@ -493,7 +493,7 @@ void VideoInitialize ()
 //===========================================================================
 int GetMonochromeIndex()
 {
-	int iMonochrome;
+	int iMonochrome = WHITE;
 #ifndef WS_VIDEO
 	switch (g_eVideoType)
 	{
