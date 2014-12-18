@@ -3065,7 +3065,7 @@ void VideoDisplayLogo ()
 	//	szVersion[strlen(szVersion)] = 0x00;
 	char szVersion[ 32 ];
 #ifdef WS_VIDEO
-	strcpy(szVersion, "Version WS-NTSC 05");
+	strcpy(szVersion, "Version WS-NTSC 06");
 #else
 	sprintf( szVersion, "Version %s", VERSIONSTRING );
 #endif
