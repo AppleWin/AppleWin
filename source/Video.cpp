@@ -43,31 +43,37 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define HALF_PIXEL_SOLID 1
 #define HALF_PIXEL_BLEED 0
 
-#define COLORS_TWEAKED 1 
+#define HALF_DIM_SUPPORT 0
 
-/* reference: technote tn-iigs-063 "Master Color Values"
+/*
+   Reference: Technote TN-IIGS-063 "Master Color Values"
+   Note:The IIGS colors do NOT map correctly to _accurate_ //e colors.
 
-          Color  Color Register LR HR  DHR Master Color R,G,B
-          Name       Value      #  #   #      Value
-          ----------------------------------------------------
-          Black       0         0  0,4 0      $0000    (0,0,0) -> (00,00,00) Windows
-(Magenta) Deep Red    1         1      1      $0D03    (D,0,3) -> (D0,00,30) Custom
-          Dark Blue   2         2      8      $0009    (0,0,9) -> (00,00,80) Windows
- (Violet) Purple      3         3  2   9      $0D2D    (D,2,D) -> (FF,00,FF) Windows
-          Dark Green  4         4      4      $0072    (0,7,2) -> (00,80,00) Windows
- (Gray 1) Dark Gray   5         5      5      $0555    (5,5,5) -> (80,80,80) Windows
-   (Blue) Medium Blue 6         6  6   C      $022F    (2,2,F) -> (00,00,FF) Windows
-   (Cyan) Light Blue  7         7      D      $06AF    (6,A,F) -> (60,A0,FF) Custom
-          Brown       8         8      2      $0850    (8,5,0) -> (80,50,00) Custom
-          Orange      9         9  5   3      $0F60    (F,6,0) -> (FF,80,00) Custom (modified to match better with the other Hi-Res Colors)
- (Gray 2) Light Gray  A         A      A      $0AAA    (A,A,A) -> (C0,C0,C0) Windows
-          Pink        B         B      B      $0F98    (F,9,8) -> (FF,90,80) Custom
-  (Green) Light Green C         C  1   6      $01D0    (1,D,0) -> (00,FF,00) Windows
-          Yellow      D         D      7      $0FF0    (F,F,0) -> (FF,FF,00) Windows
-   (Aqua) Aquamarine  E         E      E      $04F9    (4,F,9) -> (40,FF,90) Custom
-          White       F         F  3,7 F      $0FFF    (F,F,F) -> (FF,FF,FF) Windows
+          Color       LO HI  DHR Master Color R,G,B                         HGR
+          Name        #  #   #      Value                                   Bytes
+          -----------------------------------------------------------------------
+          Black       0  0,4 0      $0000    (0,0,0) -> (00,00,00) Windows 
+(Magenta) Deep Red    1      1      $0D03    (D,0,3) -> (D0,00,30) Custom
+          Dark Blue   2      8      $0009    (0,0,9) -> (00,00,80) Windows
+ (Violet) Purple      3  2   9      $0D2D    (D,2,D) -> (FF,00,FF) Windows  55 2A
+          Dark Green  4      4      $0072    (0,7,2) -> (00,80,00) Windows
+ (Gray 1) Dark Gray   5      5      $0555    (5,5,5) -> (80,80,80) Windows
+   (Blue) Medium Blue 6  6   C      $022F    (2,2,F) -> (00,00,FF) Windows  D5 AA
+   (Cyan) Light Blue  7      D      $06AF    (6,A,F) -> (60,A0,FF) Custom
+          Brown       8      2      $0850    (8,5,0) -> (80,50,00) Custom
+          Orange      9  5   3      $0F60    (F,6,0) -> (FF,80,00) Custom   AA D5 (modified to match better with the other Hi-Res Colors)
+ (Gray 2) Light Gray  A      A      $0AAA    (A,A,A) -> (C0,C0,C0) Windows
+          Pink        B      B      $0F98    (F,9,8) -> (FF,90,80) Custom
+  (Green) Light Green C  1   6      $01D0    (1,D,0) -> (00,FF,00) Windows  2A 55
+          Yellow      D      7      $0FF0    (F,F,0) -> (FF,FF,00) Windows
+   (Aqua) Aquamarine  E      E      $04F9    (4,F,9) -> (40,FF,90) Custom
+          White       F  3,7 F      $0FFF    (F,F,F) -> (FF,FF,FF) Windows
 
-   LR: Lo-Res   HR: Hi-Res   DHR: Double Hi-Res */
+   Legend:
+       LO: Lo-Res
+       HI: Hi-Res
+      DHR: Double Hi-Res
+*/
 
 #define FLASH_80_COL 1	// Bug #7238
 
@@ -100,10 +106,10 @@ enum Color_Palette_Index_e
 // CUSTOM HGR COLORS (don't change order) - For tv emulation HGR Video Mode
 	, HGR_BLACK        
 	, HGR_WHITE        
-	, HGR_BLUE         // HCOLOR=6 BLUE   , $81
-	, HGR_RED          // HCOLOR=5 ORANGE , $82
-	, HGR_GREEN        // HCOLOR=1 GREEN  , $01 
-	, HGR_MAGENTA      // HCOLOR=2 MAGENTA, $02
+	, HGR_BLUE         // HCOLOR=6 BLUE   , 3000: 81 00 D5 AA
+	, HGR_ORANGE       // HCOLOR=5 ORANGE , 2C00: 82 00 AA D5
+	, HGR_GREEN        // HCOLOR=1 GREEN  , 2400: 02 00 2A 55
+	, HGR_VIOLET       // HCOLOR=2 VIOLET , 2800: 01 00 55 2A
 	, HGR_GREY1        
 	, HGR_GREY2        
 	, HGR_YELLOW       
@@ -147,30 +153,26 @@ enum Color_Palette_Index_e
 // __ Map HGR color index to Palette index
 	enum ColorMapping
 	{
-		  CM_Magenta
+		  CM_Violet
 		, CM_Blue
 		, CM_Green
 		, CM_Orange
-		, CM_Black
-		, CM_White
+		, CM_Black // Used
+		, CM_White // Used
 		, NUM_COLOR_MAPPING
 	};
 
 const BYTE HiresToPalIndex[ NUM_COLOR_MAPPING ] =
 	{
-		  HGR_MAGENTA
+		  HGR_VIOLET
 		, HGR_BLUE
 		, HGR_GREEN
-		, HGR_RED
+		, HGR_ORANGE
 		, HGR_BLACK
 		, HGR_WHITE
 	};
 
 const BYTE LoresResColors[16] = {
-//		BLACK,     DEEP_RED, DARK_BLUE, MAGENTA,
-//		DARK_GREEN,DARK_GRAY,BLUE,      LIGHT_BLUE,
-//		BROWN,     ORANGE,   LIGHT_GRAY,PINK,
-//		GREEN,     YELLOW,   AQUA,      WHITE
 		BLACK,     DEEP_RED, DARK_BLUE, MAGENTA,
 		DARK_GREEN,DARK_GRAY,BLUE,      LIGHT_BLUE,
 		BROWN,     ORANGE,   LIGHT_GRAY,PINK,
@@ -179,10 +181,6 @@ const BYTE LoresResColors[16] = {
 
 
 const BYTE DoubleHiresPalIndex[16] = {
-//		BLACK,   DARK_BLUE, DARK_GREEN,BLUE,
-//		BROWN,   LIGHT_GRAY,GREEN,     AQUA,
-//		DEEP_RED,MAGENTA,   DARK_GRAY, LIGHT_BLUE,
-//		ORANGE,  PINK,      YELLOW,    WHITE
 		BLACK,   DARK_BLUE, DARK_GREEN,BLUE,
 		BROWN,   LIGHT_GRAY, GREEN,     AQUA,
 		DEEP_RED,MAGENTA,   DARK_GRAY, LIGHT_BLUE,
@@ -330,7 +328,7 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	void V_CreateLookup_DoubleHires ();
 	void V_CreateLookup_Hires (); // Old "Full-Pixel" support only: STANDARD, TEXT_OPTIMIZED, TVEMU
 	void V_CreateLookup_HiResHalfPixel_Authentic (); // New "Half_Pixel" support: STANDARD, TEXT_OPTIMIZED
-	void V_CreateLookup_HiresHalfShiftFull ();
+	void V_CreateLookup_HiresHalfShiftDim();
 	void V_CreateLookup_Lores ();
 	void V_CreateLookup_Text (HDC dc);
 // Monochrome Full-Pixel Support
@@ -537,10 +535,10 @@ void V_CreateIdentityPalette ()
 	g_hPalette = (HPALETTE)0;
 
 	SETFRAMECOLOR(BLACK,       0x00,0x00,0x00); // 0
-	SETFRAMECOLOR(DARK_RED,    0x80,0x00,0x00); // 1 // used by TV 
-	SETFRAMECOLOR(DARK_GREEN,  0x00,0x80,0x00); // 2
+	SETFRAMECOLOR(DARK_RED,    0x80,0x00,0x00); // 1 // not used
+	SETFRAMECOLOR(DARK_GREEN,  0x00,0x80,0x00); // 2 // not used
 	SETFRAMECOLOR(DARK_YELLOW, 0x80,0x80,0x00); // 3
-	SETFRAMECOLOR(DARK_BLUE,   0x00,0x00,0x80); // 4
+	SETFRAMECOLOR(DARK_BLUE,   0x00,0x00,0x80); // 4 // not used
 	SETFRAMECOLOR(DARK_MAGENTA,0x80,0x00,0x80); // 5
 	SETFRAMECOLOR(DARK_CYAN,   0x00,0x80,0x80); // 6
 	SETFRAMECOLOR(LIGHT_GRAY,  0xC0,0xC0,0xC0); // 7 // GR: COLOR=10
@@ -548,10 +546,9 @@ void V_CreateIdentityPalette ()
 	SETFRAMECOLOR(SKY_BLUE,    0xA6,0xCA,0xF0); // 9 // not used
 
 	// SET FRAME BUFFER TABLE ENTRIES TO CUSTOM COLORS
-#if COLORS_TWEAKED
-	SETFRAMECOLOR(DARK_RED,    0x9D,0x09,0x66); // 1 // Linards Tweaked
-	SETFRAMECOLOR(DARK_GREEN,  0x00,0x76,0x1A); // 2 // Linards Tweaked
-	SETFRAMECOLOR(DARK_BLUE,   0x2A,0x2A,0xE5); // 4 // Linards Tweaked
+//	SETFRAMECOLOR(DARK_RED,    0x9D,0x09,0x66); // 1 // Linards Tweaked 0x80,0x00,0x00 -> 0x9D,0x09,0x66
+//	SETFRAMECOLOR(DARK_GREEN,  0x00,0x76,0x1A); // 2 // Linards Tweaked 0x00,0x80,0x00 -> 0x00,0x76,0x1A
+//	SETFRAMECOLOR(DARK_BLUE,   0x2A,0x2A,0xE5); // 4 // Linards Tweaked 0x00,0x00,0x80 -> 0x2A,0x2A,0xE5
 
 	SETFRAMECOLOR(DEEP_RED,  0x9D,0x09,0x66); // 0xD0,0x00,0x30 -> Linards Tweaked 0x9D,0x09,0x66
 	SETFRAMECOLOR(LIGHT_BLUE,0xAA,0xAA,0xFF); // 0x60,0xA0,0xFF -> Linards Tweaked 0xAA,0xAA,0xFF
@@ -562,37 +559,18 @@ void V_CreateIdentityPalette ()
 
 	SETFRAMECOLOR(HGR_BLACK,  0x00,0x00,0x00); // For TV emulation HGR Video Mode
 	SETFRAMECOLOR(HGR_WHITE,  0xFF,0xFF,0xFE); // BUG: PALETTE COLLAPSE!  NOT white!? Win32 collapses the palette if you have duplicate colors!
-	SETFRAMECOLOR(HGR_BLUE,   0x0D,0xA1,0xFF); // 0x00,0x80,0xFF -> Linards Tweaked 0x0D,0xA1,0xFF
-	SETFRAMECOLOR(HGR_RED,    0xF2,0x5E,0x00); // 0xF0,0x50,0x00 -> Linards Tweaked 0xF2,0x5E,0x00 
-	SETFRAMECOLOR(HGR_GREEN,  0x38,0xCB,0x00); // 0x20,0xC0,0x00 -> Linards Tweaked 0x38,0xCB,0x00
-	SETFRAMECOLOR(HGR_MAGENTA,0xC7,0x34,0xFF); // 0xA0,0x00,0xFF -> Linards Tweaked 0xC7,0x34,0xFF
+// 20 207 253 = 0x14 0xCF 0xFD
+	SETFRAMECOLOR(HGR_BLUE,     24, 115, 229); // HCOLOR=6 BLUE    3000: 81 00 D5 AA // 0x00,0x80,0xFF -> Linards Tweaked 0x0D,0xA1,0xFF
+	SETFRAMECOLOR(HGR_ORANGE,  247,  64,  30); // HCOLOR=5 ORANGE  2C00: 82 00 AA D5 // 0xF0,0x50,0x00 -> Linards Tweaked 0xF2,0x5E,0x00 
+	SETFRAMECOLOR(HGR_GREEN,    27, 211,  79); // HCOLOR=1 GREEN   2400: 02 00 2A 55 // 0x20,0xC0,0x00 -> Linards Tweaked 0x38,0xCB,0x00
+	SETFRAMECOLOR(HGR_VIOLET,  227,  20, 255); // HCOLOR=2 VIOLET  2800: 01 00 55 2A // 0xA0,0x00,0xFF -> Linards Tweaked 0xC7,0x34,0xFF
+
 	SETFRAMECOLOR(HGR_GREY1,  0x80,0x80,0x80);
 	SETFRAMECOLOR(HGR_GREY2,  0x80,0x80,0x80);
 	SETFRAMECOLOR(HGR_YELLOW, 0x9E,0x9E,0x00); // 0xD0,0xB0,0x10 -> 0x9E,0x9E,0x00
 	SETFRAMECOLOR(HGR_AQUA,   0x00,0xCD,0x4A); // 0x20,0xB0,0xB0 -> 0x00,0xCD,0x4A
 	SETFRAMECOLOR(HGR_PURPLE, 0x61,0x61,0xFF); // 0x60,0x50,0xE0 -> 0x61,0x61,0xFF
 	SETFRAMECOLOR(HGR_PINK,   0xFF,0x32,0xB5); // 0xD0,0x40,0xA0 -> 0xFF,0x32,0xB5
-#else
-	SETFRAMECOLOR(DEEP_RED,  0xD0,0x00,0x30); // 0xD0,0x00,0x30
-	SETFRAMECOLOR(LIGHT_BLUE,0x60,0xA0,0xFF); // 0x60,0xA0,0xFF
-	SETFRAMECOLOR(BROWN,     0x80,0x50,0x00); // 0x80,0x50,0x00
-	SETFRAMECOLOR(ORANGE,    0xFF,0x80,0x00); // 0xFF,0x80,0x00
-	SETFRAMECOLOR(PINK,      0xFF,0x90,0x80); // 0xFF,0x90,0x80
-	SETFRAMECOLOR(AQUA,      0x40,0xFF,0x90); // 0x40,0xFF,0x90
-
-	SETFRAMECOLOR(HGR_BLACK,  0x00,0x00,0x00); // For TV emulation HGR Video Mode
-	SETFRAMECOLOR(HGR_WHITE,  0xFF,0xFF,0xFE); // BUG: PALETTE COLLAPSE!  NOT white!? Win32 collapses the palette if you have duplicate colors!
-	SETFRAMECOLOR(HGR_BLUE,   0x00,0x80,0xFF); // 0x00,0x80,0xFF
-	SETFRAMECOLOR(HGR_RED,    0xF0,0x50,0x00); // 0xF0,0x50,0x00
-	SETFRAMECOLOR(HGR_GREEN,  0x20,0xC0,0x00); // 0x20,0xC0,0x00
-	SETFRAMECOLOR(HGR_MAGENTA,0xA0,0x00,0xFF); // 0xA0,0x00,0xFF
-	SETFRAMECOLOR(HGR_GREY1,  0x80,0x80,0x80);
-	SETFRAMECOLOR(HGR_GREY2,  0x80,0x80,0x80);
-	SETFRAMECOLOR(HGR_YELLOW, 0xD0,0xB0,0x10); // 0xD0,0xB0,0x10
-	SETFRAMECOLOR(HGR_AQUA,   0x20,0xB0,0xB0); // 0x20,0xB0,0xB0
-	SETFRAMECOLOR(HGR_PURPLE, 0x60,0x50,0xE0); // 0x60,0x50,0xE0
-	SETFRAMECOLOR(HGR_PINK,   0xD0,0x40,0xA0); // 0xD0,0x40,0xA0
-#endif
 
 	SETFRAMECOLOR( MONOCHROME_CUSTOM
 		, GetRValue(monochrome)
@@ -613,29 +591,16 @@ void V_CreateIdentityPalette ()
 	// Windows is collapsing the palette!!!
 	//SETFRAMECOLOR( MONOCHROME_WHITE   , 0xFE,0xFE,0xFE); // Used for Monochrome Hi-Res graphics not text!
 
-#if COLORS_TWEAKED
 	SETFRAMECOLOR(CREAM,       0xFF,0xFB,0xF0); // F6
 	SETFRAMECOLOR(MEDIUM_GRAY, 0xA0,0xA0,0xA4); // F7
 	SETFRAMECOLOR(DARK_GRAY,   0x80,0x80,0x80); // F8
 	SETFRAMECOLOR(RED,         0xFF,0x00,0x00); // F9
-	SETFRAMECOLOR(GREEN,       0x38,0xCB,0x00); // FA Linards Tweaked
-	SETFRAMECOLOR(YELLOW,      0xD5,0xD5,0x1A); // FB Linards Tweaked
-	SETFRAMECOLOR(BLUE,        0x0D,0xA1,0xFF); // FC Linards Tweaked
-	SETFRAMECOLOR(MAGENTA,     0xC7,0x34,0xFF); // FD Linards Tweaked
+	SETFRAMECOLOR(GREEN,       0x38,0xCB,0x00); // FA Linards Tweaked 0x00,0xFF,0x00 -> 0x38,0xCB,0x00
+	SETFRAMECOLOR(YELLOW,      0xD5,0xD5,0x1A); // FB Linards Tweaked 0xFF,0xFF,0x00 -> 0xD5,0xD5,0x1A
+	SETFRAMECOLOR(BLUE,        0x0D,0xA1,0xFF); // FC Linards Tweaked 0x00,0x00,0xFF -> 0x0D,0xA1,0xFF
+	SETFRAMECOLOR(MAGENTA,     0xC7,0x34,0xFF); // FD Linards Tweaked 0xFF,0x00,0xFF -> 0xC7,0x34,0xFF
 	SETFRAMECOLOR(CYAN,        0x00,0xFF,0xFF); // FE
 	SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF); // FF
-#else
-	SETFRAMECOLOR(CREAM,       0xFF,0xFB,0xF0); // F6
-	SETFRAMECOLOR(MEDIUM_GRAY, 0xA0,0xA0,0xA4); // F7
-	SETFRAMECOLOR(DARK_GRAY,   0x80,0x80,0x80); // F8
-	SETFRAMECOLOR(RED,         0xFF,0x00,0x00); // F9
-	SETFRAMECOLOR(GREEN,       0x00,0xFF,0x00); // FA
-	SETFRAMECOLOR(YELLOW,      0xFF,0xFF,0x00); // FB
-	SETFRAMECOLOR(BLUE,        0x00,0x00,0xFF); // FC
-	SETFRAMECOLOR(MAGENTA,     0xFF,0x00,0xFF); // FD
-	SETFRAMECOLOR(CYAN,        0x00,0xFF,0xFF); // FE
-	SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF); // FF
-#endif
 
 	// IF WE ARE IN A PALETTIZED VIDEO MODE, CREATE AN IDENTITY PALETTE
 	HWND window = GetDesktopWindow();
@@ -827,7 +792,11 @@ void V_CreateDIBSections ()
 		if ( g_eVideoType == VT_COLOR_TVEMU )
 			V_CreateLookup_Hires();
 		else
+#if HALF_DIM_SUPPORT
+			V_CreateLookup_HiresHalfShiftDim();
+#else
 			V_CreateLookup_HiResHalfPixel_Authentic();
+#endif
 		V_CreateLookup_DoubleHires();
 	}
 	else
@@ -906,7 +875,7 @@ void V_CreateLookup_Hires ()
 	int iMonochrome = GetMonochromeIndex();
 
 	// BYTE colorval[6] = {MAGENTA,BLUE,GREEN,ORANGE,BLACK,WHITE};
-	// BYTE colorval[6] = {HGR_MAGENTA,HGR_BLUE,HGR_GREEN,HGR_RED,HGR_BLACK,HGR_WHITE};
+	// BYTE colorval[6] = {HGR_VIOLET,HGR_BLUE,HGR_GREEN,HGR_ORANGE,HGR_BLACK,HGR_WHITE};
 	for (int iColumn = 0; iColumn < 16; iColumn++)
 	{
 		int coloffs = iColumn << 5;
@@ -1125,8 +1094,8 @@ Legend:
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_WHITE );
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_WHITE );
 							} else {   // Optimization:   odd = (iPixel & 1); if (!odd) case is same as if(odd) !!! // Reference: Gumball - Gumball Machine
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_RED ); // left half of orange pixels 
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_RED );
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_ORANGE ); // left half of orange pixels 
+								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_ORANGE );
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_BLUE ); // right half of blue pixels 4, 11, 18, ...
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_BLUE );
 							}
@@ -1169,16 +1138,16 @@ Legend:
 						} else {
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_RED ); // 2000: AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_RED );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_ORANGE );
 						}
 #else
 						if ((g_eVideoType == VT_COLOR_STANDARD) || ( !aPixels[3] ))
 						{ // "Text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_RED ); // 2000: AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_RED );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_ORANGE );
 						}
 #endif // HALF_PIXEL_BLEED
 				}
@@ -1223,6 +1192,163 @@ Legend:
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
+					x += 2;
+				}
+			}
+		}
+	}
+}
+
+//===========================================================================
+void V_CreateLookup_HiresHalfShiftDim ()
+{
+	// BYTE colorval[6] = {HGR_MAGENTA,HGR_BLUE,HGR_GREEN,HGR_RED,HGR_BLACK,HGR_WHITE};
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		int coloffs = iColumn << 5;
+
+		for (unsigned iByte = 0; iByte < 256; iByte++)
+		{
+			int aPixels[11];
+
+			aPixels[ 0] = iColumn & 4;
+			aPixels[ 1] = iColumn & 8;
+			aPixels[ 9] = iColumn & 1;
+			aPixels[10] = iColumn & 2;
+
+			int nBitMask = 1;
+			int iPixel;
+			for (iPixel  = 2; iPixel < 9; iPixel++) {
+				aPixels[iPixel] = ((iByte & nBitMask) != 0);
+				nBitMask <<= 1;
+			}
+
+			int hibit = ((iByte & 0x80) != 0);
+			int x     = 0;
+			int y     = iByte << 1;
+
+			while (x < 28)
+			{
+				int adj = (x >= 14) << 1;
+				int odd = (x >= 14);
+
+				for (iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color = CM_Black;
+					if (aPixels[iPixel])
+					{
+						if (aPixels[iPixel-1] || aPixels[iPixel+1])
+						{
+							color = CM_White;
+						}
+						else
+							color = ((odd ^ (iPixel&1)) << 1) | hibit;
+					}
+					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
+					{
+						/*
+						activate for fringe reduction on white hgr text - 
+						drawback: loss of color mix patterns in HGR mode.
+						select g_eVideoType by index exclusion
+						*/
+						if (
+							(g_eVideoType == VT_COLOR_STANDARD) // Fill in colors in between white pixels
+						||	(g_eVideoType == VT_COLOR_TVEMU)    // Fill in colors in between white pixels (Post Processing will mix/merge colors)
+						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
+							color = ((odd ^ !(iPixel&1)) << 1) | hibit;
+					}
+
+					/*
+						Address Binary   -> Displayed
+						2000:01 0---0001 -> 1 0 0 0  column 1
+						2400:81 1---0001 ->  1 0 0 0 half-pixel shift right
+						2800:02 1---0010 -> 0 1 0 0  column 2
+
+						2000:02 column 2
+						2400:82 half-pixel shift right
+						2800:04 column 3
+
+						2000:03 0---0011 -> 1 1 0 0  column 1 & 2
+						2400:83 1---0011 ->  1 1 0 0 half-pixel shift right
+						2800:06 1---0110 -> 0 1 1 0  column 2 & 3
+
+						@reference: see Beagle Bro's Disk: "Silicon Salad", File: DOUBLE HI-RES
+						Fortunately double-hires is supported via pixel doubling, so we can do half-pixel shifts ;-)
+					*/
+					switch (color)
+					{
+						case CM_Violet:
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_VIOLET   ); // HiresToPalIndex
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , DARK_MAGENTA ); // HiresDimmedIndex
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_VIOLET   ); // HiresToPalIndex
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, DARK_MAGENTA ); // HiresDimmedIndex
+							break;
+
+						case CM_Blue   :
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_BLUE  );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y  , DARK_BLUE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_BLUE  );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y+1, DARK_BLUE );
+							// Prevent column gaps
+							if (hibit)
+							{
+								if (iPixel <= 2)
+								{
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , DARK_BLUE );
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, DARK_BLUE );
+								}
+							}
+							break;
+
+						case CM_Green :
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_GREEN  );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , DARK_GREEN );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_GREEN  );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, DARK_GREEN );
+							break;
+
+						case CM_Orange:
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_ORANGE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y  , BROWN      ); // DARK_RED is a bit "too" red
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_ORANGE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y+1, BROWN      ); // DARK_RED is a bit "too" red
+							// Prevent column gaps
+							if (hibit)
+							{
+								if (iPixel <= 2)
+								{
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , BROWN ); // DARK_RED is a bit "too" red
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, BROWN ); // DARK_RED is a bit "too" red
+								}
+							}
+							break;
+
+						case CM_Black :
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_BLACK );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_BLACK );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_BLACK );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_BLACK );
+							break;
+
+						case CM_White :
+							// Don't dither / half-shift white, since DROL cutscene looks bad :(
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_WHITE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_WHITE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_WHITE ); // LIGHT_GRAY <- for that half scan-line look
+							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_WHITE ); // LIGHT_GRAY <- for that half scan-line look
+							// Prevent column gaps
+							if (hibit)
+							{
+								if (iPixel <= 2)
+								{
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_WHITE ); // LIGHT_GRAY HGR_GREY1
+									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_WHITE ); // LIGHT_GRAY HGR_GREY1
+								}
+							}
+							break;
+						default:
+							break;
+					}
 					x += 2;
 				}
 			}
@@ -1282,7 +1408,7 @@ void V_CreateLookup_MonoHiResHalfPixel_Real ()
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x   ,y  ,iMono); // first 7 HGR_BLUE
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x   ,y+1,iMono); // first 7
 
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y  ,iMono); // second 7 HGR_RED
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y  ,iMono); // second 7 HGR_ORANGE
 					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y+1,iMono); // second 7
 				}
 			}
@@ -1601,11 +1727,11 @@ bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset)
 Color Reference Tests:
 
 2000:D5 AA D5 AA D5 AA //  blue blue  blue
-2400:AA D5 2A 55 55 2A //+ red  green magenta
-//                     //= grey aqua  purple
+2400:AA D5 2A 55 55 2A //+ red  green violet
+//                     //= grey aqua  violet
 
 2C00:AA D5 AA D5 2A 55 //  red    red     green
-3000:2A 55 55 2A 55 2A //+ green  magenta magenta
+3000:2A 55 55 2A 55 2A //+ green  violet  violet
 //                     //= yellow pink    grey
 
 */
@@ -1618,17 +1744,17 @@ BYTE MixColors(BYTE c1, BYTE c2)
 
 	if (c1 == c2)
 		return c1;
-	if (COMBINATION(c1,c2,HGR_BLUE,HGR_RED))
+	if (COMBINATION(c1,c2,HGR_BLUE,HGR_ORANGE))
 		return HGR_GREY1;
-	else if (COMBINATION(c1,c2,HGR_GREEN,HGR_MAGENTA))
+	else if (COMBINATION(c1,c2,HGR_GREEN,HGR_VIOLET))
 		return HGR_GREY2;
-	else if (COMBINATION(c1,c2,HGR_RED,HGR_GREEN))
+	else if (COMBINATION(c1,c2,HGR_ORANGE,HGR_GREEN))
 		return HGR_YELLOW;
 	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_GREEN))
 		return HGR_AQUA;
-	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_MAGENTA))
+	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_VIOLET))
 		return HGR_PURPLE;
-	else if (COMBINATION(c1,c2,HGR_RED,HGR_MAGENTA))
+	else if (COMBINATION(c1,c2,HGR_ORANGE,HGR_VIOLET))
 		return HGR_PINK;
 	else
 		return MONOCHROME_CUSTOM; // visible failure indicator

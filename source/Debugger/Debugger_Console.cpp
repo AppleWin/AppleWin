@@ -270,7 +270,7 @@ bool ConsoleBufferPush ( const char * pText )
 {
 	while (g_nConsoleBuffer >= CONSOLE_BUFFER_HEIGHT)
 	{
-		ConsoleBufferToDisplay();	
+		ConsoleBufferToDisplay();
 	}
 
 	conchar_t c;
@@ -292,7 +292,7 @@ bool ConsoleBufferPush ( const char * pText )
 			else
 			{
 				g_nConsoleBuffer++;
-			}							
+			}
 			pSrc++;
 			pDst = & g_aConsoleBuffer[ g_nConsoleBuffer ][ 0 ];
 		}

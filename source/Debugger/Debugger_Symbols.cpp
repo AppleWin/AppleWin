@@ -74,7 +74,54 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Utils _ ________________________________________________________________________________________
 
-	void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize = 0 );
+	void      _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize = 0 );
+	void      _PrintCurrentPath();
+	Update_t  _PrintSymbolInvalidTable();
+
+
+// Private ________________________________________________________________________________________
+
+//===========================================================================
+void _PrintCurrentPath()
+{
+	ConsoleDisplayError( g_sProgramDir );
+}
+
+Update_t _PrintSymbolInvalidTable()
+{
+	char sText[ CONSOLE_WIDTH * 2 ];
+	char sTemp[ CONSOLE_WIDTH * 2 ];
+
+	// TODO: display the user specified file name
+	ConsoleBufferPush( "Invalid symbol table." );
+
+	sprintf( sText, "Only %s%d%s symbol tables are supported:"
+		, CHC_NUM_DEC, NUM_SYMBOL_TABLES
+		, CHC_DEFAULT
+	);
+	ConsolePrint( sText );
+
+	// Similar to _CmdSymbolsInfoHeader()
+	sText[0] = 0;
+	for( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
+	{
+		sprintf( sTemp, "%s%s%s%c " // %s"
+			, CHC_USAGE, g_aSymbolTableNames[ iTable ]
+			, CHC_ARG_SEP
+			, (iTable != (NUM_SYMBOL_TABLES-1))
+				? ','
+				: '.'
+		);
+		strcat( sText, sTemp );
+	}
+
+//	return ConsoleDisplayError( sText );
+	ConsolePrint( sText );
+	return ConsoleUpdate();
+}
+
+
+// Public _________________________________________________________________________________________
 
 
 //===========================================================================
@@ -238,24 +285,7 @@ void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize /* = 0 */
 	bool bActive = (g_bDisplaySymbolTables & (1 << iTable)) ? true : false;
 	int nSymbols  = nDisplaySize ? nDisplaySize : g_aSymbols[ iTable ].size();
 
-	// Long Desc: `MAIN`: `1000 `symbols`, `on`
-	// full
-#if 0
-	sprintf( pText, "  %s%s%s: %s# %s%d %ssymbols%s, (%s%s%s)%s"
-		// , CHC_SYMBOL, g_aSymbolTableNames[ iTable ]
-		, CHC_STRING, g_aSymbolTableNames[ iTable ]
-		, CHC_ARG_SEP
-		CHC_DEFAULT
-		, CHC_NUM_DEC, nSymbols
-		, CHC_DEFAULT, CHC_ARG_SEP,
-
-		, CHC_STRING, 
-		, CHC_ARG_SEP, CHC_DEFAULT
-	);
-#endif
-	// sprintf( pText, "  %s: %s%d%s"
 	// Short Desc: `MAIN`: `1000`
-
 	// // 2.6.2.19 Color for name of symbol table: _CmdPrintSymbol() "SYM HOME" _CmdSymbolsInfoHeader "SYM"
 	// CHC_STRING and CHC_NUM_DEC are both cyan, using CHC_USAGE instead of CHC_STRING
 	sprintf( pText, "%s%s%s:%s%d " // %s"
@@ -269,10 +299,13 @@ void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize /* = 0 */
 //===========================================================================
 Update_t CmdSymbolsInfo (int nArgs)
 {
-	char sText[ CONSOLE_WIDTH * 4 ] = "  ";
+	const char sIndent[] = "  ";
+	char sText[ CONSOLE_WIDTH * 4 ] = "";
 	char sTemp[ CONSOLE_WIDTH * 2 ] = "";
 
 	int bDisplaySymbolTables = 0;
+
+	strcpy( sText, sIndent ); // Indent new line
 
 	if (! nArgs)
 	{
@@ -284,11 +317,7 @@ Update_t CmdSymbolsInfo (int nArgs)
 		int iWhichTable = GetSymbolTableFromCommand();
 		if ((iWhichTable < 0) || (iWhichTable >= NUM_SYMBOL_TABLES))
 		{
-			sprintf( sText, "Only %s%d%s symbol tables supported!"
-				, CHC_NUM_DEC, NUM_SYMBOL_TABLES
-				, CHC_DEFAULT
-			);
-			return ConsoleDisplayError( sText );
+			return _PrintSymbolInvalidTable();
 		}
 
 		bDisplaySymbolTables = (1 << iWhichTable);
@@ -299,9 +328,20 @@ Update_t CmdSymbolsInfo (int nArgs)
 
 	int bTable = 1;
 	int iTable = 0;
-	for( ; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 ) {
-		if( bDisplaySymbolTables & bTable ) {
+	for( ; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 )
+	{
+		if( bDisplaySymbolTables & bTable )
+		{
 			_CmdSymbolsInfoHeader( iTable, sTemp ); // 15 chars per table
+
+			// 2.8.0.4 BUGFIX: Check for buffer overflow and wrap text
+			int nLen = ConsoleColor_StringLength( sTemp );
+			int nDst = ConsoleColor_StringLength( sText );
+			if((nDst + nLen) > CONSOLE_WIDTH )
+			{
+				ConsolePrint( sText );
+				strcpy( sText, sIndent ); // Indent new line
+			}
 			strcat( sText, sTemp );
 		}
 	}
@@ -514,17 +554,15 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 }
 
 
-void Print_Current_Path()
-{
-	ConsoleDisplayError( g_sProgramDir );
-}
-
 //===========================================================================
-int ParseSymbolTable( TCHAR *pFileName, SymbolTable_Index_e eSymbolTableWrite, int nSymbolOffset )
+int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrite, int nSymbolOffset )
 {
+	char sText[ CONSOLE_WIDTH * 3 ];
+	bool bFileDisplayed = false;
+
 	int nSymbolsLoaded = 0;
 
-	if (! pFileName)
+	if (! pPathFileName)
 		return nSymbolsLoaded;
 
 //#if _UNICODE
@@ -538,12 +576,13 @@ int ParseSymbolTable( TCHAR *pFileName, SymbolTable_Index_e eSymbolTableWrite, i
 	sprintf( sFormat1, "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %13s"
 	sprintf( sFormat2, "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
 
-	FILE *hFile = fopen(pFileName,"rt");
+	FILE *hFile = fopen( pPathFileName, "rt" );
 
 	if( !hFile && g_bSymbolsDisplayMissingFile )
 	{
+		// TODO: print filename! Bug #242 Help file (.chm) description for "Symbols" #242
 		ConsoleDisplayError( "Symbol File not found:" );
-		Print_Current_Path();
+		_PrintCurrentPath();
 		nSymbolsLoaded = -1; // HACK: ERROR: FILE NOT EXIST
 	}
 	
@@ -599,14 +638,72 @@ int ParseSymbolTable( TCHAR *pFileName, SymbolTable_Index_e eSymbolTableWrite, i
 			if( (nAddress > _6502_MEM_END) || (sName[0] == 0) )
 				continue;
 
-	#if 1 // _DEBUG
 			// If updating symbol, print duplicate symbols
 			WORD nAddressPrev;
 			int  iTable;
-			bool bExists = FindAddressFromSymbol( sName, &nAddressPrev, &iTable );
+
+			// 2.8.0.5 Bug #244 (Debugger) Duplicate symbols for identical memory addresses in APPLE2E.SYM
+			const char *pSymbolPrev = FindSymbolFromAddress( (WORD)nAddress, &iTable ); // don't care which table it is in
+			if( pSymbolPrev )
+			{
+				if( !bFileDisplayed )
+				{
+					bFileDisplayed = true;
+
+					// TODO: Must check for buffer overflow !
+					sprintf( sText, "%s%s"
+						, CHC_PATH
+						, pPathFileName
+					);
+					ConsolePrint( sText );
+				}
+
+				sprintf( sText, " %sWarning: %s%-16s %saliases %s$%s%04X %s%-12s%s (%s%s%s)"
+					, CHC_WARNING
+					, CHC_SYMBOL
+					, sName
+					, CHC_INFO
+					, CHC_ARG_SEP
+					, CHC_ADDRESS
+					, nAddress
+					, CHC_SYMBOL
+					, pSymbolPrev
+					, CHC_DEFAULT
+					, CHC_STRING
+					, g_aSymbolTableNames[ iTable ]
+					, CHC_DEFAULT
+				);
+				ConsolePrint( sText );
+
+				ConsoleUpdate(); // Flush buffered output so we don't ask the user to pause
+/*
+				sprintf( sText, " %sWarning: %sAddress already has symbol Name%s (%s%s%s): %s%s"
+					, CHC_WARNING
+					, CHC_INFO
+					, CHC_ARG_SEP
+					, CHC_STRING
+					, g_aSymbolTableNames[ iTable ]
+					, CHC_DEFAULT
+					, CHC_SYMBOL
+					, pSymbolPrev
+				);
+				ConsolePrint( sText );
+
+				sprintf( sText, "  %s$%s%04X %s%-31s%s"
+					, CHC_ARG_SEP
+					, CHC_ADDRESS
+					, nAddress
+					, CHC_SYMBOL
+					, sName
+					, CHC_DEFAULT
+				);
+				ConsolePrint( sText );
+*/
+			}
+
+			bool bExists  = FindAddressFromSymbol( sName, &nAddressPrev, &iTable );
 			if( bExists )
 			{
-				char sText[ CONSOLE_WIDTH * 3 ];
 				if( !bDupSymbolHeader )
 				{
 					bDupSymbolHeader = true;
@@ -616,7 +713,7 @@ int ParseSymbolTable( TCHAR *pFileName, SymbolTable_Index_e eSymbolTableWrite, i
 						, CHC_STRING
 						, g_aSymbolTableNames[ iTable ]
 						, CHC_DEFAULT
-						, pFileName
+						, pPathFileName
 					);
 					ConsolePrint( sText );
 				}
@@ -631,16 +728,17 @@ int ParseSymbolTable( TCHAR *pFileName, SymbolTable_Index_e eSymbolTableWrite, i
 				);
 				ConsolePrint( sText );
 			}
-	#endif
+	
+			// else // It is not a bug to have duplicate addresses by different names
+
 			g_aSymbols[ eSymbolTableWrite ] [ (WORD) nAddress ] = sName;
-			nSymbolsLoaded++;
+			nSymbolsLoaded++; // TODO: FIXME: BUG: This is the total symbols read, not added
 		}
 		fclose(hFile);
 	}
 
 	return nSymbolsLoaded;
 }
-
 
 //===========================================================================
 Update_t CmdSymbolsLoad (int nArgs)
@@ -651,26 +749,14 @@ Update_t CmdSymbolsLoad (int nArgs)
 	int iSymbolTable = GetSymbolTableFromCommand();
 	if ((iSymbolTable < 0) || (iSymbolTable >= NUM_SYMBOL_TABLES))
 	{
-		wsprintf( sFileName, "Only %d symbol tables supported!", NUM_SYMBOL_TABLES );
-		return ConsoleDisplayError( sFileName );
+		return _PrintSymbolInvalidTable();
 	}
 
 	int nSymbols = 0;
 
+	// Debugger will call us with 0 args on startup as a way to pre-load symbol tables
 	if (! nArgs)
 	{
-		// Default to main table
-//		if (g_iCommand == CMD_SYMBOLS_MAIN)
-//			_tcscat(sFileName, g_sFileNameSymbolsMain );
-//		else
-//		{
-//			if (! _tcslen( g_sFileNameSymbolsUser ))
-//			{
-//				return ConsoleDisplayError(TEXT("No user symbol file to reload."));
-//			}
-//			// load user symbols
-//			_tcscat( sFileName, g_sFileNameSymbolsUser );
-//		}
 		_tcscat(sFileName, g_sFileNameSymbols[ iSymbolTable ]);
 		nSymbols = ParseSymbolTable( sFileName, (SymbolTable_Index_e) iSymbolTable );
 	}

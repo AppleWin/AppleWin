@@ -537,7 +537,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 */
 		//iOpcode_ = NUM_OPCODES; // Don't have valid opcodes ... we have data !
 		// iOpcode_ = (int)( pData ); // HACK: pass pData back to caller ...
-		iOpcode_ = 0xEA; // OP_NOP
+		iOpcode_ = OPCODE_NOP;
 	}
 
 #if _DEBUG

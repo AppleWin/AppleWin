@@ -1102,7 +1102,13 @@ LRESULT CALLBACK FrameWndProc (
 		if (wparam == VK_SNAPSHOT_TEXT) // ( lparam & MOD_CONTROL )
 		{
 			char  *pText;
-			size_t nSize = Util_GetTextScreen( pText );
+			size_t nSize = 0;
+
+			// if viewing the debugger, get the last virtual debugger screen
+			if ((g_nAppMode == MODE_DEBUG) && !g_bDebuggerViewingAppleOutput)
+				nSize = Util_GetDebuggerText( pText );
+			else
+				nSize = Util_GetTextScreen( pText );
 			Util_CopyTextToClipboard( nSize, pText );
 		}
 		break;
