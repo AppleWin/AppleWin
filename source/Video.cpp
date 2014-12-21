@@ -2196,11 +2196,10 @@ BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 
 BYTE VideoCheckVbl (WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 {
-	bool bVblBar = false;
-	VideoGetScannerAddress(&bVblBar, uExecutedCycles);
+	bool bVblBar = VideoGetVbl(uExecutedCycles);
 
 	BYTE r = KeybGetKeycode();
-	return (r & ~0x80) | ((bVblBar) ? 0x80 : 0);
+	return (r & ~0x80) | (bVblBar ? 0x80 : 0);
  }
 
 //===========================================================================
@@ -2669,6 +2668,7 @@ void VideoResetState ()
 
 
 //===========================================================================
+
 BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
