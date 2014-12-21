@@ -294,10 +294,6 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 //-------------------------------------
 
-// Video consts:
-	const UINT nVBlStop_NTSC	= 21;
-	const UINT nVBlStop_PAL		= 29;
-
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	TCHAR g_aVideoChoices[] =
 		TEXT("Monochrome (Custom Luminance)\0")
