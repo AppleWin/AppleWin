@@ -45,6 +45,9 @@ unsigned char CpuRead(unsigned short addr, unsigned long uExecutedCycles);
 unsigned char * MemGetAuxPtr (unsigned short);
 unsigned char * MemGetMainPtr (unsigned short);
 
+//
+	void init_chroma_phase_table();
+
 int wsVideoCharSet = 0;
 int wsVideoMixed = 0;
 int wsHiresPage = 1;
@@ -324,7 +327,9 @@ static double chroma_filter (double z)
 	#endif
 #endif
 
-static void filterloop (void)
+// Build the 4 phase chroma lookup table
+// The YI'Q' colors are hard-coded
+static void init_chroma_phase_table (void)
 {
 	int p,s,t,n;
 	double z,y0,y1,c,i,q,r,g,b;
@@ -443,7 +448,7 @@ void wsVideoInit ()
 	make_csbits();
 	init_video_tables();
 
-	filterloop();
+	init_chroma_phase_table();
 
 	vbp0 = wsLines[0];
 
