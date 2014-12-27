@@ -179,8 +179,8 @@ static unsigned std_hcoffs[5][65] = {
 
 static unsigned (*hcoffs)[65] = std_hcoffs;
 
-#define TEXT_ADDRESS() (txt_vcoffs[vc/8] + hcoffs[vc/64][hc] + (wsTextPage * 0x400))
-#define HGR_ADDRESS() (hgr_vcoffs[vc] + std_hcoffs[vc/64][hc] + (wsHiresPage * 0x2000))
+#define TEXT_ADDRESS() (txt_vcoffs[vc/8] + hcoffs    [vc/64][g_nVideoClockHorz] + (wsTextPage  *  0x400))
+#define HGR_ADDRESS()  (hgr_vcoffs[vc  ] + std_hcoffs[vc/64][g_nVideoClockHorz] + (wsHiresPage * 0x2000))
 
 void wsVideoInitModel (int model)
 {
@@ -442,7 +442,6 @@ void wsVideoInit ()
 // Michael -- Init HGR to almsot all-possible-combinations
 // CALL-151
 // C050 C053 C057
-	unsigned ad;
 	unsigned char b = 0;
 	unsigned char *main, *aux;
 
@@ -484,7 +483,7 @@ void wsVideoInit ()
 }
 
 static unsigned vc = 0; // Vertical Clock ?
-static unsigned hc = 0; // Horizontal Clock ?
+static unsigned g_nVideoClockHorz = 0; // hc = 0
 
 #define INITIAL_COLOR_PHASE 0
 static int colorPhase = INITIAL_COLOR_PHASE;
@@ -644,7 +643,7 @@ int wsVideoIsVbl ()
 unsigned char wsVideoByte (unsigned long cycle)
 {
 	unsigned char * mem;
-	mem = MemGetMainPtr(wsVideoAddress[hc]);
+	mem = MemGetMainPtr(wsVideoAddress[ g_nVideoClockHorz ]);
 	return mem[0];
 }
 
@@ -717,7 +716,7 @@ unsigned char wsVideoByte (unsigned long cycle)
 } while(0)
 
 #define END_OF_LINE() do { \
-	hc = 0; \
+	g_nVideoClockHorz = 0; \
 	if (vc < 192) VIDEO_DRAW_ENDLINE(); \
 	if (++vc == 262) \
 	{ \
@@ -744,16 +743,17 @@ void wsUpdateVideoText (long ticks)
 	for (; ticks; --ticks)
 	{
 		ad = TEXT_ADDRESS();
-		wsVideoAddress[hc] = ad;
+//		updateVideoAddressHorzClock(); 
+		wsVideoAddress[ g_nVideoClockHorz ] = ad;
 
-		if (hc < 16 && hc >= 12)
+		if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
 		{
 			if (colorBurst > 0)
 				colorBurst -= 1;
 		}
 		else if (vc < 192)
 		{
-			if (hc >= 25)
+			if (g_nVideoClockHorz >= 25)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
 
@@ -765,7 +765,7 @@ void wsUpdateVideoText (long ticks)
 		}
 			
 		/* increment scanner */
-		if (++hc == 65)
+		if (++g_nVideoClockHorz == 65)
 			END_OF_LINE();
 	}
 }
@@ -777,16 +777,17 @@ void wsUpdateVideoDblText (long ticks)
 	for (; ticks; --ticks)
 	{
 		ad = TEXT_ADDRESS();
-		wsVideoAddress[hc] = ad;
+//		updateVideoAddressHorzClock(); 
+		wsVideoAddress[ g_nVideoClockHorz ] = ad;
 
-		if (hc < 16 && hc >= 12)
+		if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
 		{
 			if (colorBurst > 0)
 				colorBurst -= 1;
 		}
 		else if (vc < 192)
 		{
-			if (hc >= 25)
+			if (g_nVideoClockHorz >= 25)
 			{
 				unsigned char * aux = MemGetAuxPtr(ad);
 				unsigned char * main = MemGetMainPtr(ad);
@@ -803,7 +804,8 @@ void wsUpdateVideoDblText (long ticks)
 		}
 			
 		/* increment scanner */
-		if (++hc == 65)
+//		checkHorzClockEnd();
+		if (++g_nVideoClockHorz == 65)
 			END_OF_LINE();
 	}
 }
@@ -821,24 +823,26 @@ void wsUpdateVideo7MLores (long ticks)
 	for (; ticks; --ticks)
 	{
 		ad = TEXT_ADDRESS();
-		wsVideoAddress[hc] = ad;
+//		updateVideoAddressHorzClock();
+		wsVideoAddress[ g_nVideoClockHorz ] = ad;
 
 		if (vc < 192)
 		{
-			if (hc < 16 && hc >= 12)
+			if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
 			{
 				colorBurst = 1024;
 			}
-			else if (hc >= 25)
+			else if (g_nVideoClockHorz >= 25)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
-				bt = g_aPixelDoubleMaskHGR[(0xFF & grbits[(main[0] >> (vc & 4)) & 0xF] >> ((1 - (hc & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
+				bt = g_aPixelDoubleMaskHGR[(0xFF & grbits[(main[0] >> (vc & 4)) & 0xF] >> ((1 - (g_nVideoClockHorz & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
 				VIDEO_DRAW_BITS();
 			}
 		}
 		
 		/* increment scanner */
-		if (65 == ++hc)
+//		checkHorzClockEnd();
+		if (65 == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
@@ -856,24 +860,26 @@ void wsUpdateVideoLores (long ticks)
 	for (; ticks; --ticks)
 	{
 		ad = TEXT_ADDRESS();
-		wsVideoAddress[hc] = ad;
+//		updateVideoAddressHorzClock();
+		wsVideoAddress[ g_nVideoClockHorz ] = ad;
 
 		if (vc < 192)
 		{
-			if (hc < 16 && hc >= 12)
+			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
 				colorBurst = 1024;
 			}
-			else if (hc >= 25)
+			else if (g_nVideoClockHorz >= 25)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
-				bt = grbits[(main[0] >> (vc & 4)) & 0xF] >> ((1 - (hc & 1)) * 2);
+				bt = grbits[(main[0] >> (vc & 4)) & 0xF] >> ((1 - (g_nVideoClockHorz & 1)) * 2);
 				VIDEO_DRAW_BITS();
 			}
 		}
 		
 		/* increment scanner */
-		if (65 == ++hc)
+//		checkHorzClockEnd();
+		if (65 == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
@@ -891,21 +897,22 @@ void wsUpdateVideoDblLores (long ticks)
 	for (; ticks; --ticks)
 	{
 		ad = TEXT_ADDRESS();
-		wsVideoAddress[hc] = ad;
+//		updateVideoAddressHorzClock();
+		wsVideoAddress[ g_nVideoClockHorz ] = ad;
 
 		if (vc < 192)
 		{
-			if (hc < 16 && hc >= 12)
+			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
 				colorBurst = 1024;
 			}
-			else if (hc >= 25)
+			else if (g_nVideoClockHorz >= 25)
 			{
 				unsigned char * aux = MemGetAuxPtr(ad);
 				unsigned char * main = MemGetMainPtr(ad);
 
-				abt = grbits[(aux[0] >> (vc & 4)) & 0xF] >> (((1 - (hc & 1)) * 2) + 3);
-				mbt = grbits[(main[0] >> (vc & 4)) & 0xF] >> (((1 - (hc & 1)) * 2) + 3);
+				abt = grbits[(aux [0] >> (vc & 4)) & 0xF] >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
+				mbt = grbits[(main[0] >> (vc & 4)) & 0xF] >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
 				bt = (mbt << 7) | (abt & 0x7f);
 			
 				VIDEO_DRAW_BITS();
@@ -914,7 +921,8 @@ void wsUpdateVideoDblLores (long ticks)
 		}
 		
 		/* increment scanner */
-		if (65 == ++hc)
+//		checkHorzClockEnd();
+		if (65 == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
@@ -932,15 +940,16 @@ void wsUpdateVideoDblHires (long ticks)
 	for (; ticks; --ticks)
 	{
 		ad = HGR_ADDRESS();
-		wsVideoAddress[hc] = ad;
+//		updateVideoAddressHorzClock();
+		wsVideoAddress[ g_nVideoClockHorz ] = ad;
 
 		if (vc < 192)
 		{
-			if (hc < 16 && hc >= 12)
+			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
 				colorBurst = 1024;
 			}
-			else if (hc >= 25)
+			else if (g_nVideoClockHorz >= 25)
 			{
 				unsigned char * aux = MemGetAuxPtr(ad);
 				unsigned char * main = MemGetMainPtr(ad);
@@ -953,7 +962,8 @@ void wsUpdateVideoDblHires (long ticks)
 		}
 		
 		/* increment scanner */
-		if (65 == ++hc)
+//		checkHorzClockEnd();
+		if (65 == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
@@ -971,15 +981,16 @@ void wsUpdateVideoHires (long ticks)
 	for (; ticks; --ticks)
 	{
 		ad = HGR_ADDRESS();
-		wsVideoAddress[hc] = ad;
+//		updateVideoAddressHorzClock();
+		wsVideoAddress[ g_nVideoClockHorz ] = ad;
 
 		if (vc < 192)
 		{
-			if (hc < 16 && hc >= 12)
+			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
 				colorBurst = 1024;
 			}
-			else if (hc >= 25)
+			else if (g_nVideoClockHorz >= 25)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
 
@@ -990,7 +1001,8 @@ void wsUpdateVideoHires (long ticks)
 		}
 		
 		/* increment scanner */
-		if (65 == ++hc)
+//		checkHorzClockEnd();
+		if (65 == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
@@ -1008,15 +1020,16 @@ void wsUpdateVideoHires0 (long ticks)
 	for (; ticks; --ticks)
 	{
 		ad = HGR_ADDRESS();
-		wsVideoAddress[hc] = ad;
+//		updateVideoAddressHorzClock();
+		wsVideoAddress[ g_nVideoClockHorz ] = ad;
 
 		if (vc < 192)
 		{
-			if (hc < 16 && hc >= 12)
+			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
 				colorBurst = 1024;
 			}
-			else if (hc >= 25)
+			else if (g_nVideoClockHorz >= 25)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
 				bt = g_aPixelDoubleMaskHGR[main[0] & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
@@ -1025,7 +1038,8 @@ void wsUpdateVideoHires0 (long ticks)
 		}
 		
 		/* increment scanner */
-		if (65 == ++hc)
+//		checkHorzClockEnd();
+		if (65 == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
