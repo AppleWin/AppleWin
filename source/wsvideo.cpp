@@ -83,8 +83,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static unsigned grbits[16];
 	static uint16_t g_aPixelDoubleMaskHGR[128]; // hgrbits -> g_aPixelDoubleMaskHGR: 7-bit mono 280 pixels to 560 pixel doubling
 
-#define TEXT_ADDRESS() (g_aClockVertOffsetsTXT[g_nVideoClockVert/8] + g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz] + (wsTextPage  *  0x400))
-#define HGR_ADDRESS()  (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (wsHiresPage * 0x2000)) // BUG? g_pHorzClockOffset
+#define UpdateVideoAddressTXT() g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad = (g_aClockVertOffsetsTXT[g_nVideoClockVert/8] + g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz] + (wsTextPage  *  0x400))
+#define UpdateVideoAddressHGR() g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad = (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (wsHiresPage * 0x2000)) // BUG? g_pHorzClockOffset
 
 	static unsigned char *vbp0;
 	static int sbitstab[192][66];
@@ -444,20 +444,24 @@ static void init_chroma_phase_table (void)
 			NTSCMonoTV[s][_R] = (uint8_t)(brightness * 255);
 			NTSCMonoTV[s][_A] = 255;
 			
-/*
-	YI'V' to RGB
+			/*
+				YI'V' to RGB
 
-	[r g b] = [y i v][ 1      1      1    ]    
-                     [0.956  -0.272 -1.105]
-                     [0.621  -0.647  1.702]
-*/
-#define I_TO_R  0.956f
-#define I_TO_G -0.272f
-#define I_TO_B -1.105f
+				[r g b] = [y i v][ 1      1      1    ]    
+								 [0.956  -0.272 -1.105]
+								 [0.621  -0.647  1.702]
 
-#define Q_TO_R  0.621f
-#define Q_TO_G -0.647f
-#define Q_TO_B  1.702f
+				[r]   [1   0.956  0.621][y]    
+				[g]	= [1  -0.272 -0.647][i]
+				[b]	  [1  -1.105  1.702][v]
+			*/
+			#define I_TO_R  0.956f
+			#define I_TO_G -0.272f
+			#define I_TO_B -1.105f
+
+			#define Q_TO_R  0.621f
+			#define Q_TO_G -0.647f
+			#define Q_TO_B  1.702f
 
 			r64 = y0 + (I_TO_R * i) + (Q_TO_R * q);
 			g64 = y0 + (I_TO_G * i) + (Q_TO_G * q);
@@ -803,9 +807,7 @@ void wsUpdateVideoText (long ticks)
 
 	for (; ticks; --ticks)
 	{
-		ad = TEXT_ADDRESS();
-//		updateVideoAddressHorzClock(); 
-		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
+		UpdateVideoAddressTXT();
 
 		if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
 		{
@@ -837,9 +839,7 @@ void wsUpdateVideoDblText (long ticks)
 
 	for (; ticks; --ticks)
 	{
-		ad = TEXT_ADDRESS();
-//		updateVideoAddressHorzClock(); 
-		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
+		UpdateVideoAddressTXT();
 
 		if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
 		{
@@ -883,9 +883,7 @@ void wsUpdateVideo7MLores (long ticks)
 
 	for (; ticks; --ticks)
 	{
-		ad = TEXT_ADDRESS();
-//		updateVideoAddressHorzClock();
-		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
+		UpdateVideoAddressTXT();
 
 		if (g_nVideoClockVert < 192)
 		{
@@ -920,9 +918,7 @@ void wsUpdateVideoLores (long ticks)
 
 	for (; ticks; --ticks)
 	{
-		ad = TEXT_ADDRESS();
-//		updateVideoAddressHorzClock();
-		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
+		UpdateVideoAddressTXT();
 
 		if (g_nVideoClockVert < 192)
 		{
@@ -957,9 +953,7 @@ void wsUpdateVideoDblLores (long ticks)
 
 	for (; ticks; --ticks)
 	{
-		ad = TEXT_ADDRESS();
-//		updateVideoAddressHorzClock();
-		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
+		UpdateVideoAddressTXT();
 
 		if (g_nVideoClockVert < 192)
 		{
@@ -1000,9 +994,7 @@ void wsUpdateVideoDblHires (long ticks)
 
 	for (; ticks; --ticks)
 	{
-		ad = HGR_ADDRESS();
-//		updateVideoAddressHorzClock();
-		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
+		UpdateVideoAddressHGR();
 
 		if (g_nVideoClockVert < 192)
 		{
@@ -1041,9 +1033,7 @@ void wsUpdateVideoHires (long ticks)
 	
 	for (; ticks; --ticks)
 	{
-		ad = HGR_ADDRESS();
-//		updateVideoAddressHorzClock();
-		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
+		UpdateVideoAddressHGR();
 
 		if (g_nVideoClockVert < 192)
 		{
@@ -1080,9 +1070,7 @@ void wsUpdateVideoHires0 (long ticks)
 	
 	for (; ticks; --ticks)
 	{
-		ad = HGR_ADDRESS();
-//		updateVideoAddressHorzClock();
-		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
+		UpdateVideoAddressHGR();
 
 		if (g_nVideoClockVert < 192)
 		{
