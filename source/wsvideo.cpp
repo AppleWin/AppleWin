@@ -50,9 +50,6 @@ int wsVideoMixed = 0;
 int wsHiresPage = 1;
 int wsTextPage = 1;
 
-struct wsVideoDirtyRect wsVideoNewDirtyRect;
-#define dirty wsVideoNewDirtyRect
-
 unsigned wsVideoAddress[65];
 unsigned char wsTouched[32768];
 unsigned char * wsLines[384];
