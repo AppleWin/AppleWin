@@ -25,85 +25,145 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <stdlib.h>
 #include <stdint.h> // uint8_t
 
-#ifndef CHROMA_BLUR
-	#define CHROMA_BLUR      1 // Default: 1; 1 = blur along ~8 pixels; 0 = sharper
-#endif
+// Defines
+	#define PI 3.1415926535898f
+	#define RAD_45  PI*0.25f
+	#define RAD_90  PI*0.5f
+	#define RAD_360 PI*2.f
 
-#ifndef CHROMA_FILTER
-	#define CHROMA_FILTER    1 // If no chroma blur; 0 = use chroma as-is, 1 = soft chroma blur, strong color fringes 2 = more blur, muted chroma fringe
-#endif
+	#define DEG_TO_RAD(x) (PI*(x)/180.f) // 2PI=360, PI=180,PI/2=90,PI/4=45
 
-#define HGR_TEST_PATTERN 0
+	#ifndef CHROMA_BLUR
+		#define CHROMA_BLUR      1 // Default: 1; 1 = blur along ~8 pixels; 0 = sharper
+	#endif
 
-// from Frame.h (Must keep in sync!)
-#define FRAMEBUFFER_W 600
-#define FRAMEBUFFER_H 420
+	#ifndef CHROMA_FILTER
+		#define CHROMA_FILTER    1 // If no chroma blur; 0 = use chroma as-is, 1 = soft chroma blur, strong color fringes 2 = more blur, muted chroma fringe
+	#endif
 
-// prototype from CPU.h
-unsigned char CpuRead(unsigned short addr, unsigned long uExecutedCycles);
-// prototypes from Memory.h
-unsigned char * MemGetAuxPtr (unsigned short);
-unsigned char * MemGetMainPtr (unsigned short);
+	#if CHROMA_BLUR
+		#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees
+	#else // sharpness is higher, less color bleed
+		#if CHROMA_FILTER == 2
+			#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees // c = signal_prefilter(z);
+		#else
+	//		#define CYCLESTART DEG_TO_RAD(90) // (PI*0.5) // PI/2 = 90 degrees // HGR: Great, GR: fail on brown
+			#define CYCLESTART DEG_TO_RAD(115.f) // GR perfect match of slow method
+		#endif
+	#endif
 
-//
-	void init_chroma_phase_table();
+	#define HGR_TEST_PATTERN 0
 
-int wsVideoCharSet = 0;
-int wsVideoMixed = 0;
-int wsHiresPage = 1;
-int wsTextPage = 1;
+	// from Frame.h (Must keep in sync!)
+	#define FRAMEBUFFER_W 600
+	#define FRAMEBUFFER_H 420
 
-// Understanding the Apple II, Timing Generation and the Video Scanner, Pg 3-11
-// Vertical Scanning
-// Horizontal Scanning
-// "There are exactly 17030 (65 x 262) 6502 cycles in every television scan of an American Apple."
-#define VIDEO_SCANNER_MAX_HORZ  65
-#define VIDEO_SCANNER_MAX_VERT 262
-static unsigned g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
-static unsigned g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible
+// Data
+	int wsVideoCharSet = 0;
+	int wsVideoMixed = 0;
+	int wsHiresPage = 1;
+	int wsTextPage = 1;
 
-unsigned g_aHorzClockMemAddress[65];
-unsigned char wsTouched[32768];
-unsigned char * wsLines[384];
+	// Understanding the Apple II, Timing Generation and the Video Scanner, Pg 3-11
+	// Vertical Scanning
+	// Horizontal Scanning
+	// "There are exactly 17030 (65 x 262) 6502 cycles in every television scan of an American Apple."
+	#define VIDEO_SCANNER_MAX_HORZ  65
+	#define VIDEO_SCANNER_MAX_VERT 262
+	static unsigned g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
+	static unsigned g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible
 
-unsigned wsFlashidx = 0;
-unsigned wsFlashmask = 0;
+	unsigned g_aHorzClockMemAddress[VIDEO_SCANNER_MAX_HORZ];
+	unsigned char wsTouched[32768];
+	unsigned char * wsLines[384];
 
-static unsigned grbits[16];
-static uint16_t g_aPixelDoubleMaskHGR[128]; // hgrbits -> g_aPixelDoubleMaskHGR
+	unsigned wsFlashidx = 0;
+	unsigned wsFlashmask = 0;
 
-static unsigned hgr_vcoffs[262] = {
-	0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
-	0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
-	0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
-	0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
+	static unsigned grbits[16];
+	static uint16_t g_aPixelDoubleMaskHGR[128]; // hgrbits -> g_aPixelDoubleMaskHGR: 7-bit mono 280 pixels to 560 pixel doubling
 
-	0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
-	0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
-	0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
-	0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
+#define TEXT_ADDRESS() (g_aClockVertOffsetsTXT[g_nVideoClockVert/8] + g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz] + (wsTextPage  *  0x400))
+#define HGR_ADDRESS()  (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (wsHiresPage * 0x2000)) // BUG? g_pHorzClockOffset
 
-	0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
-	0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
-	0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
-	0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
+	static unsigned char *vbp0;
+	static int sbitstab[192][66];
+	static int lastsignal;
+	static int colorBurst;
 
-	0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
-	0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
-	0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
-	0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
+	#define INITIAL_COLOR_PHASE 0
+	static int colorPhase = INITIAL_COLOR_PHASE;
+	static int sbits = 0;
 
-	0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80
-};
+	#define NTSC_NUM_PHASES     4
+	#define NTSC_NUM_SEQUENCES  4096
+	enum ColorChannel
+	{	// Win32 DIB: BGRA format
+		_B = 0,
+		_G = 1,
+		_R = 2,
+		_A = 3,
+		NUM_COLOR_CHANNELS = 4
+	};
 
-static unsigned txt_vcoffs[33] = {
-	0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
-	0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
-	0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
-	0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,0x380
-};
+	static unsigned char NTSCMono                    [NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
+	static unsigned char NTSCColor  [NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
+	static unsigned char NTSCMonoTV                  [NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
+	static unsigned char NTSCColorTV[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
 
-static unsigned ii_hcoffs[5][65] = {
+	#define NUM_SIGZEROS 2
+	#define NUM_SIGPOLES 2
+	#define SIGGAIN  7.614490548f
+
+	#define NUM_LUMZEROS 2
+	#define NUM_LUMPOLES 2
+	//#define LUMGAIN  1.062635655e+01
+	//#define LUMCOEF1  -0.3412038399
+	//#define LUMCOEF2  0.9647813115
+	#define LUMGAIN  13.71331570f
+	#define LUMCOEF1 -0.3961075449f
+	#define LUMCOEF2 1.1044202472f
+
+	#define NUM_CHRZEROS 2
+	#define NUM_CHRPOLES 2
+	#define CHRGAIN  7.438011255f
+
+// Tables
+	static unsigned g_aClockVertOffsetsHGR[ VIDEO_SCANNER_MAX_VERT ] = 
+	{
+		0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
+		0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
+		0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
+		0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
+
+		0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
+		0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
+		0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
+		0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
+
+		0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
+		0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
+		0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
+		0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
+
+		0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
+		0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
+		0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
+		0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
+
+		0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80
+	};
+
+	static unsigned g_aClockVertOffsetsTXT[33] = 
+	{
+		0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
+		0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
+		0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
+		0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,0x380
+	};
+
+	static unsigned APPLE_IIP_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ] =
+	{
 		{0x1068,0x1068,0x1069,0x106A,0x106B,0x106C,0x106D,0x106E,0x106F,
 		 0x1070,0x1071,0x1072,0x1073,0x1074,0x1075,0x1076,0x1077,
 		 0x1078,0x1079,0x107A,0x107B,0x107C,0x107D,0x107E,0x107F,
@@ -112,6 +172,7 @@ static unsigned ii_hcoffs[5][65] = {
 		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
 		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F,
 		 0x0020,0x0021,0x0022,0x0023,0x0024,0x0025,0x0026,0x0027},
+
 		{0x1010,0x1010,0x1011,0x1012,0x1013,0x1014,0x1015,0x1016,0x1017,
 		 0x1018,0x1019,0x101A,0x101B,0x101C,0x101D,0x101E,0x101F,
 		 0x1020,0x1021,0x1022,0x1023,0x1024,0x1025,0x1026,0x1027,
@@ -120,6 +181,7 @@ static unsigned ii_hcoffs[5][65] = {
 		 0x0038,0x0039,0x003A,0x003B,0x003C,0x003D,0x003E,0x003F,
 		 0x0040,0x0041,0x0042,0x0043,0x0044,0x0045,0x0046,0x0047,
 		 0x0048,0x0049,0x004A,0x004B,0x004C,0x004D,0x004E,0x004F},
+
 		{0x1038,0x1038,0x1039,0x103A,0x103B,0x103C,0x103D,0x103E,0x103F,
 		 0x1040,0x1041,0x1042,0x1043,0x1044,0x1045,0x1046,0x1047,
 		 0x1048,0x1049,0x104A,0x104B,0x104C,0x104D,0x104E,0x104F,
@@ -128,6 +190,7 @@ static unsigned ii_hcoffs[5][65] = {
 		 0x0060,0x0061,0x0062,0x0063,0x0064,0x0065,0x0066,0x0067,
 		 0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
 		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077},
+
 		{0x1060,0x1060,0x1061,0x1062,0x1063,0x1064,0x1065,0x1066,0x1067,
 		 0x1068,0x1069,0x106A,0x106B,0x106C,0x106D,0x106E,0x106F,
 		 0x1070,0x1071,0x1072,0x1073,0x1074,0x1075,0x1076,0x1077,
@@ -136,6 +199,7 @@ static unsigned ii_hcoffs[5][65] = {
 		 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
 		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
 		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F},
+
 		{0x1060,0x1060,0x1061,0x1062,0x1063,0x1064,0x1065,0x1066,0x1067,
 		 0x1068,0x1069,0x106A,0x106B,0x106C,0x106D,0x106E,0x106F,
 		 0x1070,0x1071,0x1072,0x1073,0x1074,0x1075,0x1076,0x1077,
@@ -144,9 +208,10 @@ static unsigned ii_hcoffs[5][65] = {
 		 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
 		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
 		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F}
-};
+	};
 
-static unsigned std_hcoffs[5][65] = {
+	static unsigned APPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ] =
+	{
 		{0x0068,0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x106F,
 		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077,
 		 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
@@ -155,6 +220,7 @@ static unsigned std_hcoffs[5][65] = {
 		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
 		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F,
 		 0x0020,0x0021,0x0022,0x0023,0x0024,0x0025,0x0026,0x0027},
+
 		{0x0010,0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
 		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F,
 		 0x0020,0x0021,0x0022,0x0023,0x0024,0x0025,0x0026,0x0027,
@@ -163,6 +229,7 @@ static unsigned std_hcoffs[5][65] = {
 		 0x0038,0x0039,0x003A,0x003B,0x003C,0x003D,0x003E,0x003F,
 		 0x0040,0x0041,0x0042,0x0043,0x0044,0x0045,0x0046,0x0047,
 		 0x0048,0x0049,0x004A,0x004B,0x004C,0x004D,0x004E,0x004F},
+
 		{0x0038,0x0038,0x0039,0x003A,0x003B,0x003C,0x003D,0x003E,0x003F,
 		 0x0040,0x0041,0x0042,0x0043,0x0044,0x0045,0x0046,0x0047,
 		 0x0048,0x0049,0x004A,0x004B,0x004C,0x004D,0x004E,0x004F,
@@ -171,6 +238,7 @@ static unsigned std_hcoffs[5][65] = {
 		 0x0060,0x0061,0x0062,0x0063,0x0064,0x0065,0x0066,0x0067,
 		 0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
 		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077},
+
 		{0x0060,0x0060,0x0061,0x0062,0x0063,0x0064,0x0065,0x0066,0x0067,
 		 0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
 		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077,
@@ -179,6 +247,7 @@ static unsigned std_hcoffs[5][65] = {
 		 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
 		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
 		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F},
+
 		{0x0060,0x0060,0x0061,0x0062,0x0063,0x0064,0x0065,0x0066,0x0067,
 		 0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
 		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077,
@@ -187,20 +256,33 @@ static unsigned std_hcoffs[5][65] = {
 		 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
 		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
 		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F}
-};
+	};
 
-static unsigned (*hcoffs)[65] = std_hcoffs;
+	static unsigned (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
 
-#define TEXT_ADDRESS() (txt_vcoffs[g_nVideoClockVert/8] + hcoffs    [g_nVideoClockVert/64][g_nVideoClockHorz] + (wsTextPage  *  0x400))
-#define HGR_ADDRESS()  (hgr_vcoffs[g_nVideoClockVert  ] + std_hcoffs[g_nVideoClockVert/64][g_nVideoClockHorz] + (wsHiresPage * 0x2000))
+
+// Prototypes
+	// prototype from CPU.h
+	//unsigned char CpuRead(unsigned short addr, unsigned long uExecutedCycles);
+	// prototypes from Memory.h
+	//unsigned char * MemGetAuxPtr (unsigned short);
+	//unsigned char * MemGetMainPtr (unsigned short);
+	void init_chroma_phase_table();
+
+inline float clampZeroOne( const float & x )
+{
+	if (x < 0.f) return 0.f;
+	if (x > 1.f) return 1.f;
+	/* ...... */ return x;
+}
 
 void wsVideoInitModel (int model)
 {
 	// anything other than low bit set means not II/II+
 	if (model & 0xFFFE)
-		hcoffs = std_hcoffs;
+		g_pHorzClockOffset = APPLE_IIE_HORZ_CLOCK_OFFSET;
 	else
-		hcoffs = ii_hcoffs;
+		g_pHorzClockOffset = APPLE_IIP_HORZ_CLOCK_OFFSET;
 }
 
 static void init_video_tables (void)
@@ -223,51 +305,43 @@ static void init_video_tables (void)
 		grbits[ color ] = (color << 12) | (color << 8) | (color << 4) | (color << 0);
 }
 
-static unsigned char *vbp0;
-static int sbitstab[192][66];
-static int lastsignal;
-static int colorBurst;
+// sadly float64 precision is needed
+#define real double
 
-#define NTSC_NUM_PHASES     4
-#define NTSC_NUM_SEQUENCES  4096
-#define NTSC_PIXEL_WIDTH    4
-static unsigned char NTSCMono                    [NTSC_NUM_SEQUENCES][NTSC_PIXEL_WIDTH];
-static unsigned char NTSCColor  [NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES][NTSC_PIXEL_WIDTH];
-static unsigned char NTSCMonoTV                  [NTSC_NUM_SEQUENCES][NTSC_PIXEL_WIDTH];
-static unsigned char NTSCColorTV[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES][NTSC_PIXEL_WIDTH];
-
-#define SIGZEROS 2
-#define SIGPOLES 2
-#define SIGGAIN  7.614490548e+00
-
-static double signal_prefilter (double z)
+static real signal_prefilter (real z)
 {
-	static double xv[SIGZEROS+1] = { 0,0,0 };
-	static double yv[SIGPOLES+1] = { 0,0,0 };
+	static real xv[NUM_SIGZEROS + 1] = { 0,0,0 };
+	static real yv[NUM_SIGPOLES + 1] = { 0,0,0 };
 
 	xv[0] = xv[1];
 	xv[1] = xv[2]; 
 	xv[2] = z / SIGGAIN;
 	yv[0] = yv[1];
 	yv[1] = yv[2]; 
-	yv[2] = xv[0] + xv[2] + (2.0 * xv[1]) + (-0.2718798058 * yv[0]) + (0.7465656072 * yv[1]);
+	yv[2] = xv[0] + xv[2] + (2.f * xv[1]) + (-0.2718798058f * yv[0]) + (0.7465656072f * yv[1]);
 
 	return yv[2];
 }
 
-#define LUMZEROS 2
-#define LUMPOLES 2
-//#define LUMGAIN  1.062635655e+01
-//#define LUMCOEF1  -0.3412038399
-//#define LUMCOEF2  0.9647813115
-#define LUMGAIN  1.371331570e+01
-#define LUMCOEF1 -0.3961075449
-#define LUMCOEF2 1.1044202472
-
-static double luma0_filter (double z)
+static real luma0_filter (real z)
 {
-	static double xv[LUMZEROS+1];
-	static double yv[LUMPOLES+1];
+	static real xv[NUM_LUMZEROS + 1];
+	static real yv[NUM_LUMPOLES + 1];
+
+	xv[0] = xv[1];
+	xv[1] = xv[2];
+	xv[2] = z / LUMGAIN;
+	yv[0] = yv[1];
+	yv[1] = yv[2]; 
+	yv[2] = xv[0] + xv[2] + (2.f * xv[1]) + (LUMCOEF1 * yv[0]) + (LUMCOEF2 * yv[1]);
+
+	return yv[2];
+}
+
+static real luma1_filter (real z)
+{
+	static real xv[NUM_LUMZEROS + 1];
+	static real yv[NUM_LUMPOLES + 1];
 
 	xv[0] = xv[1];
 	xv[1] = xv[2];
@@ -279,65 +353,35 @@ static double luma0_filter (double z)
 	return yv[2];
 }
 
-static double luma1_filter (double z)
+static real chroma_filter (real z)
 {
-	static double xv[LUMZEROS+1];
-	static double yv[LUMPOLES+1];
-
-	xv[0] = xv[1];
-	xv[1] = xv[2];
-	xv[2] = z / LUMGAIN;
-	yv[0] = yv[1];
-	yv[1] = yv[2]; 
-	yv[2] = xv[0] + xv[2] + (2 * xv[1]) + (LUMCOEF1 * yv[0]) + (LUMCOEF2 * yv[1]);
-
-	return yv[2];
-}
-
-#define CHRZEROS 2
-#define CHRPOLES 2
-#define CHRGAIN  7.438011255e+00
-
-static double chroma_filter (double z)
-{
-	static double xv[CHRZEROS+1];
-	static double yv[CHRPOLES+1];
+	static real xv[NUM_CHRZEROS + 1];
+	static real yv[NUM_CHRPOLES + 1];
 
 	xv[0] = xv[1];
 	xv[1] = xv[2]; 
 	xv[2] = z / CHRGAIN;
 	yv[0] = yv[1];
 	yv[1] = yv[2]; 
-	yv[2] = xv[2] - xv[0] + (-0.7318893645 * yv[0]) + (1.2336442711 * yv[1]);
+	yv[2] = xv[2] - xv[0] + (-0.7318893645f * yv[0]) + (1.2336442711f * yv[1]);
 
 	return yv[2];
 }
-
-#define PI 3.1415926535898
-#define DEG_TO_RAD(x) (PI*(x)/180.) // 2PI=360, PI=180
-
-#if CHROMA_BLUR
-	#define CYCLESTART (PI/4.0) // PI/4 = 45 degrees
-#else // sharpness is higher, less color bleed
-	#if CHROMA_FILTER == 2
-		#define CYCLESTART (PI/4.0) // PI/4 = 45 degrees // c = signal_prefilter(z);
-	#else
-//		#define CYCLESTART DEG_TO_RAD(90) // (PI*0.5) // PI/2 = 90 degrees // HGR: Great, GR: fail on brown
-		#define CYCLESTART DEG_TO_RAD(115) // GR perfect match of slow method
-	#endif
-#endif
 
 // Build the 4 phase chroma lookup table
 // The YI'Q' colors are hard-coded
 static void init_chroma_phase_table (void)
 {
-	int p,s,t,n;
-	double z,y0,y1,c,i,q,r,g,b;
-	double phi,zz;
-	
-	for (p = 0; p < 4; ++p)
+	int phase,s,t,n;
+	real z,y0,y1,c,i,q;
+	real phi,zz;
+	float brightness;
+	double r64,g64,b64;
+	float  r32,g32,b32;	
+
+	for (phase = 0; phase < 4; ++phase)
 	{
-		phi = p * PI / 2.0 + CYCLESTART;
+		phi = (phase * RAD_90) + CYCLESTART;
 		for (s = 0; s < NTSC_NUM_SEQUENCES; ++s)
 		{
 			t = s;
@@ -345,7 +389,7 @@ static void init_chroma_phase_table (void)
 
 			for (n = 0; n < 12; ++n)
 			{
-				z = (double)(0 != (t & 0x800));
+				z = (real)(0 != (t & 0x800));
 				t = t << 1;
 
 				for(int k = 0; k < 2; k++ )
@@ -378,58 +422,68 @@ static void init_chroma_phase_table (void)
 					c = signal_prefilter(z); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
 	#endif
 #endif // CHROMA_BLUR
-					c = c * 2.0;
-					i = i + (c * cos(phi) - i) / 8.0;
-					q = q + (c * sin(phi) - q) / 8.0;
+					c = c * 2.f;
+					i = i + (c * cos(phi) - i) / 8.f;
+					q = q + (c * sin(phi) - q) / 8.f;
 
-					phi += (PI / 4);
-					if (fabs((2 * PI) - phi) < 0.001) phi = phi - 2 * PI;
+					phi += RAD_45; //(PI / 4);
+					if (fabs((RAD_360) - phi) < 0.001)
+						phi = phi - RAD_360; // 2 * PI;
 				} // k
 			} // samples
 
-			     if (z < 0.0) NTSCMono[s][0] = NTSCMono[s][1] = NTSCMono[s][2] = 0;
-			else if (z > 1.0) NTSCMono[s][0] = NTSCMono[s][1] = NTSCMono[s][2] = 255;
-			             else NTSCMono[s][0] = NTSCMono[s][1] = NTSCMono[s][2] = (unsigned char)(z * 255);
+			brightness = clampZeroOne( (float)z );
+			NTSCMono[s][_B] = (uint8_t)(brightness * 255);
+			NTSCMono[s][_G] = (uint8_t)(brightness * 255);
+			NTSCMono[s][_R] = (uint8_t)(brightness * 255);
+			NTSCMono[s][_A] = 255;
 
-			     if (y1 < 0.0) NTSCMonoTV[s][0] = NTSCMonoTV[s][1] = NTSCMonoTV[s][2] = 0;
-			else if (y1 > 1.0) NTSCMonoTV[s][0] = NTSCMonoTV[s][1] = NTSCMonoTV[s][2] = 255;
-			              else NTSCMonoTV[s][0] = NTSCMonoTV[s][1] = NTSCMonoTV[s][2] = (unsigned char)(y1 * 255);
+			brightness = clampZeroOne( (float)y1);
+			NTSCMonoTV[s][_B] = (uint8_t)(brightness * 255);
+			NTSCMonoTV[s][_G] = (uint8_t)(brightness * 255);
+			NTSCMonoTV[s][_R] = (uint8_t)(brightness * 255);
+			NTSCMonoTV[s][_A] = 255;
 			
-			NTSCMono[s][3] = NTSCMonoTV[s][3] = 255;
+/*
+	YI'V' to RGB
+
+	[r g b] = [y i v][ 1      1      1    ]    
+                     [0.956  -0.272 -1.105]
+                     [0.621  -0.647  1.702]
+*/
+#define I_TO_R  0.956f
+#define I_TO_G -0.272f
+#define I_TO_B -1.105f
+
+#define Q_TO_R  0.621f
+#define Q_TO_G -0.647f
+#define Q_TO_B  1.702f
+
+			r64 = y0 + (I_TO_R * i) + (Q_TO_R * q);
+			g64 = y0 + (I_TO_G * i) + (Q_TO_G * q);
+			b64 = y0 + (I_TO_B * i) + (Q_TO_B * q);
 			
-			r = y0 + 0.956 * i + 0.621 * q;
-			g = y0 - 0.272 * i - 0.647 * q;
-			b = y0 - 1.105 * i + 1.702 * q;
+			b32 = clampZeroOne( (float)b64);
+			g32 = clampZeroOne( (float)g64);
+			r32 = clampZeroOne( (float)r64);
+
+			NTSCColor[phase][s][_B] = (uint8_t)(b32 * 255);
+			NTSCColor[phase][s][_G] = (uint8_t)(g32 * 255);
+			NTSCColor[phase][s][_R] = (uint8_t)(r32 * 255);
+			NTSCColor[phase][s][_A] = 255;
 			
-			     if (b < 0.0) NTSCColor[p][s][0] = 0;
-			else if (b > 1.0) NTSCColor[p][s][0] = 255;
-			             else NTSCColor[p][s][0] = (unsigned char)(b * 255);
+			r64 = y1 + (I_TO_R * i) + (Q_TO_R * q);
+			g64 = y1 + (I_TO_G * i) + (Q_TO_G * q);
+			b64 = y1 + (I_TO_B * i) + (Q_TO_B * q);
 			
-			     if (g < 0.0) NTSCColor[p][s][1] = 0;
-			else if (g > 1.0) NTSCColor[p][s][1] = 255;
-			             else NTSCColor[p][s][1] = (unsigned char)(g * 255);
-			
-			     if (r < 0.0) NTSCColor[p][s][2] = 0;
-			else if (r > 1.0) NTSCColor[p][s][2] = 255;
-			             else NTSCColor[p][s][2] = (unsigned char)(r * 255);
-			
-			r = y1 + 0.956 * i + 0.621 * q;
-			g = y1 - 0.272 * i - 0.647 * q;
-			b = y1 - 1.105 * i + 1.702 * q;
-			
-			     if (b < 0.0) NTSCColorTV[p][s][0] = 0;
-			else if (b > 1.0) NTSCColorTV[p][s][0] = 255;
-			             else NTSCColorTV[p][s][0] = (unsigned char)(b * 255);
-			
-			     if (g < 0.0) NTSCColorTV[p][s][1] = 0;
-			else if (g > 1.0) NTSCColorTV[p][s][1] = 255;
-			             else NTSCColorTV[p][s][1] = (unsigned char)(g * 255);
-			
-			     if (r < 0.0) NTSCColorTV[p][s][2] = 0;
-			else if (r > 1.0) NTSCColorTV[p][s][2] = 255;
-			             else NTSCColorTV[p][s][2] = (unsigned char)(r * 255);
-			
-			NTSCColor[p][s][3] = NTSCColorTV[p][s][3] = 255;
+			b32 = clampZeroOne( (float)b64 );
+			g32 = clampZeroOne( (float)g64 );
+			r32 = clampZeroOne( (float)r64 );
+
+			NTSCColorTV[phase][s][_B] = (uint8_t)(b32 * 255);
+			NTSCColorTV[phase][s][_G] = (uint8_t)(g32 * 255);
+			NTSCColorTV[phase][s][_R] = (uint8_t)(r32 * 255);
+			NTSCColorTV[phase][s][_A] = 255;
 		}
 	}
 }
@@ -495,10 +549,6 @@ void wsVideoInit ()
 #endif
 
 }
-
-#define INITIAL_COLOR_PHASE 0
-static int colorPhase = INITIAL_COLOR_PHASE;
-static int sbits = 0;
 
 #define SINGLEPIXEL(signal,table) \
 	do { \
@@ -776,7 +826,7 @@ void wsUpdateVideoText (long ticks)
 		}
 			
 		/* increment scanner */
-		if (++g_nVideoClockHorz == 65)
+		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
@@ -816,7 +866,7 @@ void wsUpdateVideoDblText (long ticks)
 			
 		/* increment scanner */
 //		checkHorzClockEnd();
-		if (++g_nVideoClockHorz == 65)
+		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
@@ -853,7 +903,7 @@ void wsUpdateVideo7MLores (long ticks)
 		
 		/* increment scanner */
 //		checkHorzClockEnd();
-		if (65 == ++g_nVideoClockHorz)
+		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
@@ -890,7 +940,7 @@ void wsUpdateVideoLores (long ticks)
 		
 		/* increment scanner */
 //		checkHorzClockEnd();
-		if (65 == ++g_nVideoClockHorz)
+		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
@@ -933,7 +983,7 @@ void wsUpdateVideoDblLores (long ticks)
 		
 		/* increment scanner */
 //		checkHorzClockEnd();
-		if (65 == ++g_nVideoClockHorz)
+		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
@@ -974,7 +1024,7 @@ void wsUpdateVideoDblHires (long ticks)
 		
 		/* increment scanner */
 //		checkHorzClockEnd();
-		if (65 == ++g_nVideoClockHorz)
+		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
@@ -1013,7 +1063,7 @@ void wsUpdateVideoHires (long ticks)
 		
 		/* increment scanner */
 //		checkHorzClockEnd();
-		if (65 == ++g_nVideoClockHorz)
+		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
@@ -1050,7 +1100,7 @@ void wsUpdateVideoHires0 (long ticks)
 		
 		/* increment scanner */
 //		checkHorzClockEnd();
-		if (65 == ++g_nVideoClockHorz)
+		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 			END_OF_LINE();
 	}
 }
