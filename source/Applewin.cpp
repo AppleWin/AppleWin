@@ -195,13 +195,6 @@ void ContinueExecution()
 		SetPriorityAboveNormal();
 	}
 
-#ifdef WS_VIDEO
-	wsVideoNewDirtyRect.ulx = FRAMEBUFFER_W;
-	wsVideoNewDirtyRect.uly = FRAMEBUFFER_H;
-	wsVideoNewDirtyRect.lrx = 0;
-	wsVideoNewDirtyRect.lry = 0;
-#endif
-
 	//
 
 	int nCyclesToExecute = (int) fExecutionPeriodClks + g_nCpuCyclesFeedback;
@@ -234,14 +227,6 @@ void ContinueExecution()
 	}
 
 #ifdef WS_VIDEO
-	if (wsVideoNewDirtyRect.lrx > wsVideoNewDirtyRect.ulx)
-	  {
-	    if (wsVideoNewDirtyRect.ulx < wsVideoAllDirtyRect.ulx) wsVideoAllDirtyRect.ulx = wsVideoNewDirtyRect.ulx;
-	    if (wsVideoNewDirtyRect.uly < wsVideoAllDirtyRect.uly) wsVideoAllDirtyRect.uly = wsVideoNewDirtyRect.uly;
-	    if (wsVideoNewDirtyRect.lrx > wsVideoAllDirtyRect.lrx) wsVideoAllDirtyRect.lrx = wsVideoNewDirtyRect.lrx;
-	    if (wsVideoNewDirtyRect.lry > wsVideoAllDirtyRect.lry) wsVideoAllDirtyRect.lry = wsVideoNewDirtyRect.lry;
-	  }
-
 	if(g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;

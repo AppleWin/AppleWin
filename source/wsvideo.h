@@ -21,18 +21,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef WS_VIDEO
 #define WS_VIDEO
 
-struct wsVideoDirtyRect {
-  unsigned int ulx, uly, lrx, lry;
-};
-
-extern struct wsVideoDirtyRect wsVideoNewDirtyRect;
-extern struct wsVideoDirtyRect wsVideoAllDirtyRect;
-
 extern unsigned char wsTouched[32768];
 extern unsigned char * wsLines[384];
-
-//extern unsigned wsFlashidx;
-//extern unsigned wsFlashmask;
 
 extern int wsTextPage;
 extern int wsHiresPage;

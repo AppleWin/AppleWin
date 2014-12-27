@@ -337,10 +337,6 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	void V_CreateDIBSections ();
 	HBRUSH V_CreateCustomBrush (COLORREF nColor);
 
-#ifdef WS_VIDEO
-struct wsVideoDirtyRect wsVideoAllDirtyRect;
-#endif
-
 /** Our BitBlit() / VRAM_Copy()
 	@param dx Dst X
 	@param dy Dst Y
@@ -3208,27 +3204,13 @@ VideoUpdateFuncPtr_t VideoRefreshScreen ()
 #ifdef WS_VIDEO
 void wsVideoRefresh ()
 {
-  // if (wsVideoAllDirtyRect.lrx <= wsVideoAllDirtyRect.ulx) return;
-
   LPBYTE pDstFrameBufferBits = 0;
   LONG   pitch = 0;
   HDC    hFrameDC = FrameGetVideoDC(&pDstFrameBufferBits,&pitch);
 
   if (hFrameDC)
     {
-#if 0
-      BitBlt(hFrameDC,
-	     wsVideoAllDirtyRect.ulx,
-	     wsVideoAllDirtyRect.uly,
-	     wsVideoAllDirtyRect.lrx - wsVideoAllDirtyRect.ulx,
-	     wsVideoAllDirtyRect.lry - wsVideoAllDirtyRect.uly,
-	     g_hDeviceDC,
-	     wsVideoAllDirtyRect.ulx,
-	     wsVideoAllDirtyRect.uly,
-	     SRCCOPY);
-#else
       StretchBlt(hFrameDC,0,0,VIEWPORTCX,VIEWPORTCY,g_hDeviceDC,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,SRCCOPY);
-#endif
       GdiFlush();
     }
 }
