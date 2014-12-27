@@ -50,7 +50,7 @@ int wsVideoMixed = 0;
 int wsHiresPage = 1;
 int wsTextPage = 1;
 
-unsigned wsVideoAddress[65];
+unsigned g_aHorzClockMemAddress[65];
 unsigned char wsTouched[32768];
 unsigned char * wsLines[384];
 
@@ -643,7 +643,7 @@ int wsVideoIsVbl ()
 unsigned char wsVideoByte (unsigned long cycle)
 {
 	unsigned char * mem;
-	mem = MemGetMainPtr(wsVideoAddress[ g_nVideoClockHorz ]);
+	mem = MemGetMainPtr(g_aHorzClockMemAddress[ g_nVideoClockHorz ]);
 	return mem[0];
 }
 
@@ -744,7 +744,7 @@ void wsUpdateVideoText (long ticks)
 	{
 		ad = TEXT_ADDRESS();
 //		updateVideoAddressHorzClock(); 
-		wsVideoAddress[ g_nVideoClockHorz ] = ad;
+		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
 		if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
 		{
@@ -778,7 +778,7 @@ void wsUpdateVideoDblText (long ticks)
 	{
 		ad = TEXT_ADDRESS();
 //		updateVideoAddressHorzClock(); 
-		wsVideoAddress[ g_nVideoClockHorz ] = ad;
+		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
 		if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
 		{
@@ -824,7 +824,7 @@ void wsUpdateVideo7MLores (long ticks)
 	{
 		ad = TEXT_ADDRESS();
 //		updateVideoAddressHorzClock();
-		wsVideoAddress[ g_nVideoClockHorz ] = ad;
+		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
 		if (vc < 192)
 		{
@@ -861,7 +861,7 @@ void wsUpdateVideoLores (long ticks)
 	{
 		ad = TEXT_ADDRESS();
 //		updateVideoAddressHorzClock();
-		wsVideoAddress[ g_nVideoClockHorz ] = ad;
+		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
 		if (vc < 192)
 		{
@@ -898,7 +898,7 @@ void wsUpdateVideoDblLores (long ticks)
 	{
 		ad = TEXT_ADDRESS();
 //		updateVideoAddressHorzClock();
-		wsVideoAddress[ g_nVideoClockHorz ] = ad;
+		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
 		if (vc < 192)
 		{
@@ -941,7 +941,7 @@ void wsUpdateVideoDblHires (long ticks)
 	{
 		ad = HGR_ADDRESS();
 //		updateVideoAddressHorzClock();
-		wsVideoAddress[ g_nVideoClockHorz ] = ad;
+		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
 		if (vc < 192)
 		{
@@ -982,7 +982,7 @@ void wsUpdateVideoHires (long ticks)
 	{
 		ad = HGR_ADDRESS();
 //		updateVideoAddressHorzClock();
-		wsVideoAddress[ g_nVideoClockHorz ] = ad;
+		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
 		if (vc < 192)
 		{
@@ -1021,7 +1021,7 @@ void wsUpdateVideoHires0 (long ticks)
 	{
 		ad = HGR_ADDRESS();
 //		updateVideoAddressHorzClock();
-		wsVideoAddress[ g_nVideoClockHorz ] = ad;
+		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
 		if (vc < 192)
 		{
