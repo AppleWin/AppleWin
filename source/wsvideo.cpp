@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h> // uint8_t
 
 #ifndef CHROMA_BLUR
 	#define CHROMA_BLUR      1 // Default: 1; 1 = blur along ~8 pixels; 0 = sharper
@@ -60,7 +61,7 @@ unsigned wsFlashidx = 0;
 unsigned wsFlashmask = 0;
 
 static unsigned grbits[16];
-static unsigned hgrbits[256];
+static uint16_t g_aPixelDoubleMaskHGR[128]; // hgrbits -> g_aPixelDoubleMaskHGR
 
 static unsigned hgr_vcoffs[262] = {
 	0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
@@ -195,23 +196,22 @@ void wsVideoInitModel (int model)
 
 static void init_video_tables (void)
 {
-	unsigned i, b, m;
-	
-	for (i = 0; i < 256; ++i) {
-		b = 0;
-		for (m = 0x40; m; m >>= 1) {
-			b <<= 2;
-			if (i & m) b |= 3;
-		}
-		hgrbits[i] = b;
-	}
-	
-	for (i = 0; i < 16; ++i)	{
-		b = i;
-		b = b * 16 + b;
-		b = b * 256 + b;
-		grbits[i] = b;
-	}
+	/*
+		Convert 7-bit monochrome luminance to 14-bit double pixel luminance
+		Chroma will be applied later based on the color phase in ntscColorDoublePixel( luminanceBit )
+		0x001 -> 0x0003
+		0x002 -> 0x000C
+		0x004 -> 0x0030
+		0x008 -> 0x00C0
+		0x100 -> 0x4000
+	*/
+	for (uint8_t byte = 0; byte < 0x80; byte++ ) // Optimization: hgrbits second 128 entries are mirror of first 128
+		for (uint8_t bits = 0; bits < 7; bits++ ) // high bit = half pixel shift; pre-optimization: bits < 8
+			if (byte & (1 << bits)) // pow2 mask
+				g_aPixelDoubleMaskHGR[byte] |= 3 << (bits*2);
+
+	for ( uint16_t color = 0; color < 16; color++ )
+		grbits[ color ] = (color << 12) | (color << 8) | (color << 4) | (color << 0);
 }
 
 static unsigned char *vbp0;
@@ -760,7 +760,7 @@ void wsUpdateVideoText (long ticks)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
 
-				bt = hgrbits[csbits[wsVideoCharSet][main[0]][vc & 7]];
+				bt = g_aPixelDoubleMaskHGR[(csbits[wsVideoCharSet][main[0]][vc & 7]) & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
 				if (0 == wsVideoCharSet && 0x40 == (main[0] & 0xC0))
 					bt ^= wsFlashmask;
 				VIDEO_DRAW_BITS();
@@ -839,7 +839,7 @@ void wsUpdateVideoLores (long ticks)
 				wsVideoByte = main[0];
 
 				if (txt) {
-					bt = hgrbits[csbits[(wsVideoByte * 8) + (vc & 7)]];
+					bt = g_aPixelDoubleMaskHGR[(csbits[(wsVideoByte * 8) + (vc & 7))&0x7F]];
 					if (0x40 == (wsVideoByte & 0xC0)) {
 						bt ^= wsFlashmask;
 #if 0
@@ -965,7 +965,7 @@ void wsUpdateVideo7MLores (long ticks)
 			else if (hc >= 25)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
-				bt = hgrbits[0xFF & grbits[(main[0] >> (vc & 4)) & 0xF] >> ((1 - (hc & 1)) * 2)];
+				bt = g_aPixelDoubleMaskHGR[(0xFF & grbits[(main[0] >> (vc & 4)) & 0xF] >> ((1 - (hc & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
 				VIDEO_DRAW_BITS();
 			}
 		}
@@ -1116,7 +1116,7 @@ void wsUpdateVideoHires (long ticks)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
 
-				bt = hgrbits[main[0]];
+				bt = g_aPixelDoubleMaskHGR[main[0] & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
 				if (main[0] & 0x80) bt = (bt << 1) | lastsignal;
 				VIDEO_DRAW_BITS();
 			}
@@ -1152,7 +1152,7 @@ void wsUpdateVideoHires0 (long ticks)
 			else if (hc >= 25)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
-				bt = hgrbits[main[0]];
+				bt = g_aPixelDoubleMaskHGR[main[0] & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
 				VIDEO_DRAW_BITS();
 			}
 		}
@@ -1197,7 +1197,7 @@ void wsUpdateVideoHires (long ticks)
 
 				if (txt) {
 					bt = csbits[(8 * wsVideoByte) + (vc % 8)];
-					bt = hgrbits[bt];
+					bt = g_aPixelDoubleMaskHGR[bt & 0x7F];
 					if (0x40 == (wsVideoByte & 0xC0)) {
 						bt ^= wsFlashmask;
 						if (0 == wsFlashidx)
@@ -1206,7 +1206,7 @@ void wsUpdateVideoHires (long ticks)
 					}
 				}
 				else {
-					bt = hgrbits[wsVideoByte];
+					bt = g_aPixelDoubleMaskHGR[wsVideoByte & 0x7F];
 				}
 #if 0
 				if (1 || wsTouched[ad])
