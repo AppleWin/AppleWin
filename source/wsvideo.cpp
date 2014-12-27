@@ -50,6 +50,15 @@ int wsVideoMixed = 0;
 int wsHiresPage = 1;
 int wsTextPage = 1;
 
+// Understanding the Apple II, Timing Generation and the Video Scanner, Pg 3-11
+// Vertical Scanning
+// Horizontal Scanning
+// "There are exactly 17030 (65 x 262) 6502 cycles in every television scan of an American Apple."
+#define VIDEO_SCANNER_MAX_HORZ  65
+#define VIDEO_SCANNER_MAX_VERT 262
+static unsigned g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
+static unsigned g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible
+
 unsigned g_aHorzClockMemAddress[65];
 unsigned char wsTouched[32768];
 unsigned char * wsLines[384];
@@ -179,8 +188,8 @@ static unsigned std_hcoffs[5][65] = {
 
 static unsigned (*hcoffs)[65] = std_hcoffs;
 
-#define TEXT_ADDRESS() (txt_vcoffs[vc/8] + hcoffs    [vc/64][g_nVideoClockHorz] + (wsTextPage  *  0x400))
-#define HGR_ADDRESS()  (hgr_vcoffs[vc  ] + std_hcoffs[vc/64][g_nVideoClockHorz] + (wsHiresPage * 0x2000))
+#define TEXT_ADDRESS() (txt_vcoffs[g_nVideoClockVert/8] + hcoffs    [g_nVideoClockVert/64][g_nVideoClockHorz] + (wsTextPage  *  0x400))
+#define HGR_ADDRESS()  (hgr_vcoffs[g_nVideoClockVert  ] + std_hcoffs[g_nVideoClockVert/64][g_nVideoClockHorz] + (wsHiresPage * 0x2000))
 
 void wsVideoInitModel (int model)
 {
@@ -482,9 +491,6 @@ void wsVideoInit ()
 
 }
 
-static unsigned vc = 0; // Vertical Clock ?
-static unsigned g_nVideoClockHorz = 0; // hc = 0
-
 #define INITIAL_COLOR_PHASE 0
 static int colorPhase = INITIAL_COLOR_PHASE;
 static int sbits = 0;
@@ -637,7 +643,7 @@ void wsVideoStyle (int v, int s)
 
 int wsVideoIsVbl ()
 {
-	return vc >= 192 && vc < 262;
+	return g_nVideoClockVert >= 192 && g_nVideoClockVert < 262;
 }
 
 unsigned char wsVideoByte (unsigned long cycle)
@@ -717,19 +723,19 @@ unsigned char wsVideoByte (unsigned long cycle)
 
 #define END_OF_LINE() do { \
 	g_nVideoClockHorz = 0; \
-	if (vc < 192) VIDEO_DRAW_ENDLINE(); \
-	if (++vc == 262) \
+	if (g_nVideoClockVert < 192) VIDEO_DRAW_ENDLINE(); \
+	if (++g_nVideoClockVert == 262) \
 	{ \
-		vc = 0; \
+		g_nVideoClockVert = 0; \
 		if (++wsFlashidx == 16) \
 		{ \
 			wsFlashidx = 0; \
 			wsFlashmask ^= 0xffff; \
 		} \
 	} \
-	if (vc < 192) \
+	if (g_nVideoClockVert < 192) \
 	{ \
-		vbp0 = wsLines[2*vc]; \
+		vbp0 = wsLines[2*g_nVideoClockVert]; \
 		colorPhase = INITIAL_COLOR_PHASE; \
 		lastsignal = 0; \
 		sbits = 0; \
@@ -751,13 +757,13 @@ void wsUpdateVideoText (long ticks)
 			if (colorBurst > 0)
 				colorBurst -= 1;
 		}
-		else if (vc < 192)
+		else if (g_nVideoClockVert < 192)
 		{
 			if (g_nVideoClockHorz >= 25)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
 
-				bt = g_aPixelDoubleMaskHGR[(csbits[wsVideoCharSet][main[0]][vc & 7]) & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
+				bt = g_aPixelDoubleMaskHGR[(csbits[wsVideoCharSet][main[0]][g_nVideoClockVert & 7]) & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
 				if (0 == wsVideoCharSet && 0x40 == (main[0] & 0xC0))
 					bt ^= wsFlashmask;
 				VIDEO_DRAW_BITS();
@@ -785,17 +791,17 @@ void wsUpdateVideoDblText (long ticks)
 			if (colorBurst > 0)
 				colorBurst -= 1;
 		}
-		else if (vc < 192)
+		else if (g_nVideoClockVert < 192)
 		{
 			if (g_nVideoClockHorz >= 25)
 			{
 				unsigned char * aux = MemGetAuxPtr(ad);
 				unsigned char * main = MemGetMainPtr(ad);
 				
-				mbt = csbits[wsVideoCharSet][main[0]][vc & 7];
+				mbt = csbits[wsVideoCharSet][main[0]][g_nVideoClockVert & 7];
 				if (0 == wsVideoCharSet && 0x40 == (main[0] & 0xC0)) mbt ^= wsFlashmask;
 
-				abt = csbits[wsVideoCharSet][aux[0]][vc & 7];
+				abt = csbits[wsVideoCharSet][aux[0]][g_nVideoClockVert & 7];
 				if (0 == wsVideoCharSet && 0x40 == (aux[0] & 0xC0)) abt ^= wsFlashmask;
 
 				bt = (mbt << 7) | abt;
@@ -814,7 +820,7 @@ void wsUpdateVideo7MLores (long ticks)
 {
 	unsigned ad, bt;
 	
-	if (wsVideoMixed && vc >= 160)
+	if (wsVideoMixed && g_nVideoClockVert >= 160)
 	{
 		wsVideoText(ticks);
 		return;
@@ -826,7 +832,7 @@ void wsUpdateVideo7MLores (long ticks)
 //		updateVideoAddressHorzClock();
 		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
-		if (vc < 192)
+		if (g_nVideoClockVert < 192)
 		{
 			if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
 			{
@@ -835,7 +841,7 @@ void wsUpdateVideo7MLores (long ticks)
 			else if (g_nVideoClockHorz >= 25)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
-				bt = g_aPixelDoubleMaskHGR[(0xFF & grbits[(main[0] >> (vc & 4)) & 0xF] >> ((1 - (g_nVideoClockHorz & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
+				bt = g_aPixelDoubleMaskHGR[(0xFF & grbits[(main[0] >> (g_nVideoClockVert & 4)) & 0xF] >> ((1 - (g_nVideoClockHorz & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
 				VIDEO_DRAW_BITS();
 			}
 		}
@@ -851,7 +857,7 @@ void wsUpdateVideoLores (long ticks)
 {
 	unsigned ad, bt;
 	
-	if (wsVideoMixed && vc >= 160)
+	if (wsVideoMixed && g_nVideoClockVert >= 160)
 	{
 		wsVideoText(ticks);
 		return;
@@ -863,7 +869,7 @@ void wsUpdateVideoLores (long ticks)
 //		updateVideoAddressHorzClock();
 		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
-		if (vc < 192)
+		if (g_nVideoClockVert < 192)
 		{
 			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
@@ -872,7 +878,7 @@ void wsUpdateVideoLores (long ticks)
 			else if (g_nVideoClockHorz >= 25)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
-				bt = grbits[(main[0] >> (vc & 4)) & 0xF] >> ((1 - (g_nVideoClockHorz & 1)) * 2);
+				bt = grbits[(main[0] >> (g_nVideoClockVert & 4)) & 0xF] >> ((1 - (g_nVideoClockHorz & 1)) * 2);
 				VIDEO_DRAW_BITS();
 			}
 		}
@@ -888,7 +894,7 @@ void wsUpdateVideoDblLores (long ticks)
 {
 	unsigned ad, bt, abt, mbt;
 	
-	if (wsVideoMixed && vc >= 160)
+	if (wsVideoMixed && g_nVideoClockVert >= 160)
 	{
 		wsVideoText(ticks);
 		return;
@@ -900,7 +906,7 @@ void wsUpdateVideoDblLores (long ticks)
 //		updateVideoAddressHorzClock();
 		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
-		if (vc < 192)
+		if (g_nVideoClockVert < 192)
 		{
 			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
@@ -911,8 +917,8 @@ void wsUpdateVideoDblLores (long ticks)
 				unsigned char * aux = MemGetAuxPtr(ad);
 				unsigned char * main = MemGetMainPtr(ad);
 
-				abt = grbits[(aux [0] >> (vc & 4)) & 0xF] >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
-				mbt = grbits[(main[0] >> (vc & 4)) & 0xF] >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
+				abt = grbits[(aux [0] >> (g_nVideoClockVert & 4)) & 0xF] >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
+				mbt = grbits[(main[0] >> (g_nVideoClockVert & 4)) & 0xF] >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
 				bt = (mbt << 7) | (abt & 0x7f);
 			
 				VIDEO_DRAW_BITS();
@@ -931,7 +937,7 @@ void wsUpdateVideoDblHires (long ticks)
 {
 	unsigned ad, bt;
 	
-	if (wsVideoMixed && vc >= 160)
+	if (wsVideoMixed && g_nVideoClockVert >= 160)
 	{
 		wsVideoText(ticks);
 		return;
@@ -943,7 +949,7 @@ void wsUpdateVideoDblHires (long ticks)
 //		updateVideoAddressHorzClock();
 		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
-		if (vc < 192)
+		if (g_nVideoClockVert < 192)
 		{
 			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
@@ -972,7 +978,7 @@ void wsUpdateVideoHires (long ticks)
 {
 	unsigned ad, bt;
 	
-	if (wsVideoMixed && vc >= 160)
+	if (wsVideoMixed && g_nVideoClockVert >= 160)
 	{
 		wsVideoText(ticks);
 		return;
@@ -984,7 +990,7 @@ void wsUpdateVideoHires (long ticks)
 //		updateVideoAddressHorzClock();
 		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
-		if (vc < 192)
+		if (g_nVideoClockVert < 192)
 		{
 			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
@@ -1011,7 +1017,7 @@ void wsUpdateVideoHires0 (long ticks)
 {
 	unsigned ad, bt;
 	
-	if (wsVideoMixed && vc >= 160)
+	if (wsVideoMixed && g_nVideoClockVert >= 160)
 	{
 		wsVideoText(ticks);
 		return;
@@ -1023,7 +1029,7 @@ void wsUpdateVideoHires0 (long ticks)
 //		updateVideoAddressHorzClock();
 		g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad;
 
-		if (vc < 192)
+		if (g_nVideoClockVert < 192)
 		{
 			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
