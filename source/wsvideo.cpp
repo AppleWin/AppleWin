@@ -78,7 +78,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static unsigned g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible
 
 	unsigned g_aHorzClockMemAddress[VIDEO_SCANNER_MAX_HORZ];
-	unsigned char wsTouched[32768];
 	unsigned char * wsLines[384];
 
 	unsigned wsFlashidx = 0;
@@ -91,13 +90,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define UpdateVideoAddressHGR() g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad = (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (wsHiresPage * 0x2000)) // BUG? g_pHorzClockOffset
 
 	static unsigned char *vbp0;
-//	static int sbitstab[VIDEO_SCANNER_Y_DISPLAY][VIDEO_SCANNER_MAX_HORZ+1];
-	static int lastsignal;
-	static int colorBurst;
+	static int g_nLastColumnPixelNTSC;
+	static int g_nColorBurstPixels;
 
 	#define INITIAL_COLOR_PHASE 0
-	static int colorPhase = INITIAL_COLOR_PHASE;
-	static int sbits = 0;
+	static int g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
+	static int g_nSignalBitsNTSC = 0;
 
 	#define NTSC_NUM_PHASES     4
 	#define NTSC_NUM_SEQUENCES  4096
@@ -272,12 +270,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	//unsigned char * MemGetAuxPtr (unsigned short);
 	//unsigned char * MemGetMainPtr (unsigned short);
 	void init_chroma_phase_table();
+	void updateColorPhase();
+	void updateVideoHorzEOL();
 
 inline float clampZeroOne( const float & x )
 {
 	if (x < 0.f) return 0.f;
 	if (x > 1.f) return 1.f;
 	/* ...... */ return x;
+}
+
+inline void updateColorPhase()
+{
+	g_nColorPhaseNTSC++;
+	g_nColorPhaseNTSC &= 3;
 }
 
 void wsVideoInitModel (int model)
@@ -561,8 +567,8 @@ void wsVideoInit ()
 #define SINGLEPIXEL(signal,table) \
 	do { \
 		unsigned int *cp, *mp; \
-		sbits = ((sbits << 1) | signal) & 0xFFF; \
-		cp = (unsigned int *)(&(table[sbits][0])); \
+		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
+		cp = (unsigned int *)(&(table[g_nSignalBitsNTSC][0])); \
 		*((unsigned int *)vbp0) = *cp; \
 		mp = (unsigned int *)(vbp0 - 4 * FRAMEBUFFER_W); \
 		*mp = ((*cp & 0x00fcfcfc) >> 2) + 0xff000000; \
@@ -573,10 +579,10 @@ void wsVideoInit ()
 	do { \
 		unsigned int ntscp, prevp, betwp; \
 		unsigned int *prevlin, *between; \
-		sbits = ((sbits << 1) | signal) & 0xFFF; \
+		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
 		prevlin = (unsigned int *)(vbp0 + 8 * FRAMEBUFFER_W); \
 		between = (unsigned int *)(vbp0 + 4 * FRAMEBUFFER_W); \
-		ntscp = *(unsigned int *)(&(table[sbits][0])); /* raw current NTSC color */ \
+		ntscp = *(unsigned int *)(&(table[g_nSignalBitsNTSC][0])); /* raw current NTSC color */ \
 		prevp = *prevlin; \
 		betwp = ntscp - ((ntscp & 0x00fcfcfc) >> 2); \
 		*between = betwp | 0xff000000; \
@@ -587,8 +593,8 @@ void wsVideoInit ()
 #define DOUBLEPIXEL(signal,table) \
 	do { \
 		unsigned int *cp, *mp; \
-		sbits = ((sbits << 1) | signal) & 0xFFF; \
-		cp = (unsigned int *)(&(table[sbits][0])); \
+		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
+		cp = (unsigned int *)(&(table[g_nSignalBitsNTSC][0])); \
 		mp = (unsigned int *)(vbp0 - 4 * FRAMEBUFFER_W); \
 		*((unsigned int *)vbp0) = *mp = *cp; \
 		vbp0 += 4; \
@@ -598,10 +604,10 @@ void wsVideoInit ()
 	do { \
 		unsigned int ntscp, prevp, betwp; \
 		unsigned int *prevlin, *between; \
-		sbits = ((sbits << 1) | signal) & 0xFFF; \
+		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
 		prevlin = (unsigned int *)(vbp0 + 8 * FRAMEBUFFER_W); \
 		between = (unsigned int *)(vbp0 + 4 * FRAMEBUFFER_W); \
-		ntscp = *(unsigned int *)(&(table[sbits][0])); /* raw current NTSC color */ \
+		ntscp = *(unsigned int *)(&(table[g_nSignalBitsNTSC][0])); /* raw current NTSC color */ \
 		prevp = *prevlin; \
 		betwp = ((ntscp & 0x00fefefe) >> 1) + ((prevp & 0x00fefefe) >> 1); \
 		*between = betwp | 0xff000000; \
@@ -621,17 +627,16 @@ static void ntscMonoDoublePixel (int compositeSignal)
 
 static void ntscColorSinglePixel (int compositeSignal)
 {
-	static int nextPhase[] = {1,2,3,0};
-	SINGLEPIXEL(compositeSignal, NTSCColor[colorPhase]);
-	colorPhase = nextPhase[colorPhase];
+	SINGLEPIXEL(compositeSignal, NTSCColor[g_nColorPhaseNTSC]);
+	updateColorPhase();
 }
 
 static void ntscColorDoublePixel (int compositeSignal)
 {
-	static int nextPhase[] = {1,2,3,0};
-	DOUBLEPIXEL(compositeSignal, NTSCColor[colorPhase]);
-	colorPhase = nextPhase[colorPhase];
+	DOUBLEPIXEL(compositeSignal, NTSCColor[g_nColorPhaseNTSC]);
+	updateColorPhase();
 }
+
 
 static void ntscMonoTVSinglePixel (int compositeSignal)
 {
@@ -645,16 +650,14 @@ static void ntscMonoTVDoublePixel (int compositeSignal)
 
 static void ntscColorTVSinglePixel (int compositeSignal)
 {
-	static int nextPhase[] = {1,2,3,0};
-	SINGLETVPIXEL(compositeSignal, NTSCColorTV[colorPhase]);
-	colorPhase = nextPhase[colorPhase];
+	SINGLETVPIXEL(compositeSignal, NTSCColorTV[g_nColorPhaseNTSC]);
+	updateColorPhase();
 }
 
 static void ntscColorTVDoublePixel (int compositeSignal)
 {
-	static int nextPhase[] = {1,2,3,0};
-	DOUBLETVPIXEL(compositeSignal, NTSCColorTV[colorPhase]);
-	colorPhase = nextPhase[colorPhase];
+	DOUBLETVPIXEL(compositeSignal, NTSCColorTV[g_nColorPhaseNTSC]);
+	updateColorPhase();
 }
 
 static void (*ntscMonoPixel)(int) = ntscMonoSinglePixel;
@@ -717,7 +720,7 @@ unsigned char wsVideoByte (unsigned long cycle)
 }
 
 #define VIDEO_DRAW_BITS() do { \
-	if (colorBurst < 2) \
+	if (g_nColorBurstPixels < 2) \
 	{ \
 		/* #1 of 7 */ \
 		ntscMonoPixel(bt & 1); bt >>= 1; \
@@ -739,7 +742,7 @@ unsigned char wsVideoByte (unsigned long cycle)
 		ntscMonoPixel(bt & 1); bt >>= 1; \
 		/* #7 of 7 */ \
 		ntscMonoPixel(bt & 1); bt >>= 1; \
-		ntscMonoPixel(bt & 1); lastsignal = bt & 1; bt >>= 1;\
+		ntscMonoPixel(bt & 1); g_nLastColumnPixelNTSC = bt & 1; bt >>= 1;\
 	} \
 	else \
 	{ \
@@ -763,48 +766,54 @@ unsigned char wsVideoByte (unsigned long cycle)
 		ntscColorPixel(bt & 1); bt >>= 1; \
 		/* #7 of 7 */ \
 		ntscColorPixel(bt & 1); bt >>= 1; \
-		ntscColorPixel(bt & 1); lastsignal = bt & 1; bt >>= 1;\
+		ntscColorPixel(bt & 1); g_nLastColumnPixelNTSC = bt & 1; bt >>= 1;\
 	} \
 } while(0)
 
-#define VIDEO_DRAW_ENDLINE() do { \
-	if (colorBurst < 2) \
-	{ \
-		ntscMonoPixel(lastsignal); \
-		ntscMonoPixel(0); \
-		ntscMonoPixel(0); \
-		ntscMonoPixel(0); \
-	} \
-	else \
-	{ \
-		ntscColorPixel(lastsignal); \
-		ntscColorPixel(0); \
-		ntscColorPixel(0); \
-		ntscColorPixel(0); \
-	} \
-} while(0)
+inline
+void updateVideoHorzEOL()
+{
+	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
+	{
+		g_nVideoClockHorz = 0;
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			//VIDEO_DRAW_ENDLINE();
+			if (g_nColorBurstPixels < 2)
+			{
+				ntscMonoPixel(g_nLastColumnPixelNTSC);
+				ntscMonoPixel(0);
+				ntscMonoPixel(0);
+				ntscMonoPixel(0);
+			}
+			else
+			{
+				ntscColorPixel(g_nLastColumnPixelNTSC);
+				ntscColorPixel(0);
+				ntscColorPixel(0);
+				ntscColorPixel(0);
+			}
+		}
 
-#define END_OF_LINE() do { \
-	g_nVideoClockHorz = 0; \
-	if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY) \
-		VIDEO_DRAW_ENDLINE(); \
-	if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT) \
-	{ \
-		g_nVideoClockVert = 0; \
-		if (++wsFlashidx == 16) \
-		{ \
-			wsFlashidx = 0; \
-			wsFlashmask ^= 0xffff; \
-		} \
-	} \
-	if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY) \
-	{ \
-		vbp0 = wsLines[2*g_nVideoClockVert]; \
-		colorPhase = INITIAL_COLOR_PHASE; \
-		lastsignal = 0; \
-		sbits = 0; \
-	} \
-} while(0)
+		if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
+		{
+			g_nVideoClockVert = 0;
+			if (++wsFlashidx == 16)
+			{
+				wsFlashidx = 0;
+				wsFlashmask ^= 0xffff;
+			}
+		}
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			vbp0 = wsLines[2*g_nVideoClockVert];
+			g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
+			g_nLastColumnPixelNTSC = 0;
+			g_nSignalBitsNTSC = 0;
+		}
+	}
+}
 
 void wsUpdateVideoText (long ticks)
 {
@@ -816,8 +825,8 @@ void wsUpdateVideoText (long ticks)
 
 		if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
 		{
-			if (colorBurst > 0)
-				colorBurst -= 1;
+			if (g_nColorBurstPixels > 0)
+				g_nColorBurstPixels -= 1;
 		}
 		else if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -831,10 +840,7 @@ void wsUpdateVideoText (long ticks)
 				VIDEO_DRAW_BITS();
 			}
 		}
-			
-		/* increment scanner */
-		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
-			END_OF_LINE();
+		updateVideoHorzEOL();
 	}
 }
 
@@ -848,8 +854,8 @@ void wsUpdateVideoDblText (long ticks)
 
 		if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
 		{
-			if (colorBurst > 0)
-				colorBurst -= 1;
+			if (g_nColorBurstPixels > 0)
+				g_nColorBurstPixels -= 1;
 		}
 		else if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -868,11 +874,7 @@ void wsUpdateVideoDblText (long ticks)
 				VIDEO_DRAW_BITS();
 			}
 		}
-			
-		/* increment scanner */
-//		checkHorzClockEnd();
-		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
-			END_OF_LINE();
+		updateVideoHorzEOL();
 	}
 }
 
@@ -894,7 +896,7 @@ void wsUpdateVideo7MLores (long ticks)
 		{
 			if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
 			{
-				colorBurst = 1024;
+				g_nColorBurstPixels = 1024;
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
@@ -903,11 +905,7 @@ void wsUpdateVideo7MLores (long ticks)
 				VIDEO_DRAW_BITS();
 			}
 		}
-		
-		/* increment scanner */
-//		checkHorzClockEnd();
-		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
-			END_OF_LINE();
+		updateVideoHorzEOL();
 	}
 }
 
@@ -929,7 +927,7 @@ void wsUpdateVideoLores (long ticks)
 		{
 			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
-				colorBurst = 1024;
+				g_nColorBurstPixels = 1024;
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
@@ -938,11 +936,7 @@ void wsUpdateVideoLores (long ticks)
 				VIDEO_DRAW_BITS();
 			}
 		}
-		
-		/* increment scanner */
-//		checkHorzClockEnd();
-		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
-			END_OF_LINE();
+		updateVideoHorzEOL();
 	}
 }
 
@@ -964,7 +958,7 @@ void wsUpdateVideoDblLores (long ticks)
 		{
 			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
-				colorBurst = 1024;
+				g_nColorBurstPixels = 1024;
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
@@ -976,14 +970,10 @@ void wsUpdateVideoDblLores (long ticks)
 				bt = (mbt << 7) | (abt & 0x7f);
 			
 				VIDEO_DRAW_BITS();
-				lastsignal = bt & 1;
+				g_nLastColumnPixelNTSC = bt & 1;
 			}
 		}
-		
-		/* increment scanner */
-//		checkHorzClockEnd();
-		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
-			END_OF_LINE();
+		updateVideoHorzEOL();
 	}
 }
 
@@ -1005,7 +995,7 @@ void wsUpdateVideoDblHires (long ticks)
 		{
 			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
-				colorBurst = 1024;
+				g_nColorBurstPixels = 1024;
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
@@ -1013,16 +1003,12 @@ void wsUpdateVideoDblHires (long ticks)
 				unsigned char * main = MemGetMainPtr(ad);
 
 				bt = ((main[0] & 0x7f) << 7) | (aux[0] & 0x7f);
-				bt = (bt << 1) | lastsignal;
+				bt = (bt << 1) | g_nLastColumnPixelNTSC;
 				VIDEO_DRAW_BITS();
-				lastsignal = bt & 1;
+				g_nLastColumnPixelNTSC = bt & 1;
 			}
 		}
-		
-		/* increment scanner */
-//		checkHorzClockEnd();
-		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
-			END_OF_LINE();
+		updateVideoHorzEOL();
 	}
 }
 
@@ -1044,22 +1030,18 @@ void wsUpdateVideoHires (long ticks)
 		{
 			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
-				colorBurst = 1024;
+				g_nColorBurstPixels = 1024;
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				unsigned char * main = MemGetMainPtr(ad);
 
 				bt = g_aPixelDoubleMaskHGR[main[0] & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
-				if (main[0] & 0x80) bt = (bt << 1) | lastsignal;
+				if (main[0] & 0x80) bt = (bt << 1) | g_nLastColumnPixelNTSC;
 				VIDEO_DRAW_BITS();
 			}
 		}
-		
-		/* increment scanner */
-//		checkHorzClockEnd();
-		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
-			END_OF_LINE();
+		updateVideoHorzEOL();
 	}
 }
 
@@ -1081,7 +1063,7 @@ void wsUpdateVideoHires0 (long ticks)
 		{
 			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
 			{
-				colorBurst = 1024;
+				g_nColorBurstPixels = 1024;
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
@@ -1090,11 +1072,7 @@ void wsUpdateVideoHires0 (long ticks)
 				VIDEO_DRAW_BITS();
 			}
 		}
-		
-		/* increment scanner */
-//		checkHorzClockEnd();
-		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
-			END_OF_LINE();
+		updateVideoHorzEOL();
 	}
 }
 
