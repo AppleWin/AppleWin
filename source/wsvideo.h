@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef WS_VIDEO
 #define WS_VIDEO
 
-extern unsigned char wsTouched[32768];
 extern unsigned char * wsLines[384];
 
 extern int wsTextPage;
