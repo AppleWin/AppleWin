@@ -119,6 +119,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug-Win98|Win32'">.\Debug-Win98\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug-Win98|Win32'">.\Debug-Win98\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug-Win98|Win32'">false</LinkIncremental>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AppleWinNTSC</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -160,7 +161,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>htmlhelp.lib;comctl32.lib;ddraw.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;Advapi32.lib;shell32.lib;Comdlg32.lib;ole32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>.\Release\ApplewinNTSC.exe</OutputFile>
+      <OutputFile>.\Release\$(TargetName).exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalManifestDependencies>type=%27Win32%27 name=%27Microsoft.Windows.Common-Controls%27 version=%276.0.0.0%27 processorArchitecture=%27X86%27 publicKeyToken=%276595b64144ccf1df%27 language=%27*%27;%(AdditionalManifestDependencies)</AdditionalManifestDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -171,6 +172,9 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>AppleWinNTSC.map</MapFileName>
+      <MapExports>true</MapExports>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NTSC Alt Chroma=as-is|Win32'">
