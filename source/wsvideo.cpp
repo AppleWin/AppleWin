@@ -504,18 +504,8 @@ static void init_chroma_phase_table (void)
 
 void wsVideoInit ()
 {
-//	int i,j;
-
-//	for (i = 0; i < 32768; ++i)
-//		wsTouched[i] = 8;
-	
-//	for (int j = 0; j < VIDEO_SCANNER_Y_DISPLAY; ++j)
-//		for (i = 0; i < (VIDEO_SCANNER_MAX_HORZ+1); ++i)
-//			sbitstab[j][i] = 0;
-	
 	make_csbits();
 	init_video_tables();
-
 	init_chroma_phase_table();
 
 	vbp0 = wsLines[0];
