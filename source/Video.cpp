@@ -2648,9 +2648,9 @@ void VideoBenchmark () {
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totaltextfps = 0;
 #ifdef WS_VIDEO
-  wsVideoUpdate = wsUpdateVideoText;
+  g_pFuncVideoUpdate = wsUpdateVideoText40;
   FillMemory(mem+0x400,0x400,0x14);
-  wsVideoUpdate(17030);
+  g_pFuncVideoUpdate( VIDEO_SCANNER_6502_CYCLES );
   wsVideoRefresh();
 #else
   g_bVideoMode            = VF_TEXT;
@@ -2667,7 +2667,7 @@ void VideoBenchmark () {
     else
       CopyMemory(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
 #ifdef WS_VIDEO
-	wsVideoUpdate(17030);
+	g_pFuncVideoUpdate( VIDEO_SCANNER_6502_CYCLES );
 	wsVideoRefresh();
 #else
     VideoRefreshScreen();
@@ -2682,9 +2682,9 @@ void VideoBenchmark () {
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totalhiresfps = 0;
 #ifdef WS_VIDEO
-  wsVideoUpdate = wsUpdateVideoHires;
+  g_pFuncVideoUpdate = wsUpdateVideoHires;
   FillMemory(mem+0x2000,0x2000,0x14);
-  wsVideoUpdate(17030);
+  g_pFuncVideoUpdate( VIDEO_SCANNER_6502_CYCLES );
   wsVideoRefresh();
 #else
   g_bVideoMode             = VF_HIRES;
@@ -2701,7 +2701,7 @@ void VideoBenchmark () {
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
 #ifdef WS_VIDEO
-    wsVideoUpdate(17030);
+    g_pFuncVideoUpdate( VIDEO_SCANNER_6502_CYCLES );
     wsVideoRefresh();
 #else
     VideoRefreshScreen();
@@ -2778,7 +2778,7 @@ void VideoBenchmark () {
   DWORD realisticfps = 0;
   FillMemory(mem+0x2000,0x2000,0xAA);
 #ifdef WS_VIDEO
-  wsVideoUpdate(17030);
+  g_pFuncVideoUpdate( VIDEO_SCANNER_6502_CYCLES );
   wsVideoRefresh();
 #else
   VideoRedrawScreen();
@@ -3423,8 +3423,8 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x00: g_bVideoMode &= ~VF_MASK2; break;
 		case 0x01: g_bVideoMode |=  VF_MASK2; break;
 #ifdef WS_VIDEO
-		case 0x0C: if (!IS_APPLE2) { g_bVideoMode &= ~VF_80COL; wsVideoText = wsUpdateVideoText; } break;
-		case 0x0D: if (!IS_APPLE2) { g_bVideoMode |=  VF_80COL; wsVideoText = wsUpdateVideoDblText; } break;
+		case 0x0C: if (!IS_APPLE2) { g_bVideoMode &= ~VF_80COL; g_pFuncVideoText = wsUpdateVideoText40; } break;
+		case 0x0D: if (!IS_APPLE2) { g_bVideoMode |=  VF_80COL; g_pFuncVideoText = wsUpdateVideoText80; } break;
 		case 0x0E: if (!IS_APPLE2) { g_nAltCharSetOffset = 0;   wsVideoCharSet = 0; } break; // Alternate char set off
 		case 0x0F: if (!IS_APPLE2) { g_nAltCharSetOffset = 256; wsVideoCharSet = 1; } break; // Alternate char set on
         case 0x50: g_bVideoMode &= ~VF_TEXT; break;
@@ -3461,27 +3461,27 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 
 	if (g_bVideoMode & VF_TEXT) {
 		if (g_bVideoMode & VF_80COL)
-			wsVideoUpdate = wsUpdateVideoDblText;
+			g_pFuncVideoUpdate = wsUpdateVideoText80;
 		else
-			wsVideoUpdate = wsUpdateVideoText;
+			g_pFuncVideoUpdate = wsUpdateVideoText40;
 	}
 	else if (g_bVideoMode & VF_HIRES) {
 		if (g_bVideoMode & VF_DHIRES)
 			if (g_bVideoMode & VF_80COL)
-				wsVideoUpdate = wsUpdateVideoDblHires;
+				g_pFuncVideoUpdate = wsUpdateVideoDblHires;
 			else
-				wsVideoUpdate = wsUpdateVideoHires0;
+				g_pFuncVideoUpdate = wsUpdateVideoHires0;
 	    else
-	      wsVideoUpdate = wsUpdateVideoHires;
+	      g_pFuncVideoUpdate = wsUpdateVideoHires;
 	}
 	else {
 	    if (g_bVideoMode & VF_DHIRES)
 			if (g_bVideoMode & VF_80COL)
-				wsVideoUpdate = wsUpdateVideoDblLores;
+				g_pFuncVideoUpdate = wsUpdateVideoDblLores;
 			else
-				wsVideoUpdate = wsUpdateVideo7MLores;
+				g_pFuncVideoUpdate = wsUpdateVideo7MLores;
 	    else
-	      wsVideoUpdate = wsUpdateVideoLores;
+	      g_pFuncVideoUpdate = wsUpdateVideoLores;
 	}
 #endif
 

@@ -324,7 +324,7 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 
 #ifdef WS_VIDEO
 		uElapsedCycles = uExecutedCycles - uPreviousCycles;
-		wsVideoUpdate(uElapsedCycles);
+		g_pFuncVideoUpdate(uElapsedCycles);
 #endif
 
 		CheckInterruptSources(uExecutedCycles);

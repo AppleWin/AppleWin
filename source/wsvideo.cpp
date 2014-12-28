@@ -815,7 +815,7 @@ void updateVideoHorzEOL()
 	}
 }
 
-void wsUpdateVideoText (long ticks)
+void wsUpdateVideoText40 (long ticks)
 {
 	unsigned ad, bt;
 
@@ -844,7 +844,7 @@ void wsUpdateVideoText (long ticks)
 	}
 }
 
-void wsUpdateVideoDblText (long ticks)
+void wsUpdateVideoText80 (long ticks)
 {
 	unsigned int ad, bt, mbt, abt;
 
@@ -884,7 +884,7 @@ void wsUpdateVideo7MLores (long ticks)
 	
 	if (wsVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		wsVideoText(ticks);
+		g_pFuncVideoText(ticks);
 		return;
 	}
 
@@ -915,7 +915,7 @@ void wsUpdateVideoLores (long ticks)
 	
 	if (wsVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		wsVideoText(ticks);
+		g_pFuncVideoText(ticks);
 		return;
 	}
 
@@ -946,7 +946,7 @@ void wsUpdateVideoDblLores (long ticks)
 	
 	if (wsVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		wsVideoText(ticks);
+		g_pFuncVideoText(ticks);
 		return;
 	}
 
@@ -983,7 +983,7 @@ void wsUpdateVideoDblHires (long ticks)
 	
 	if (wsVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		wsVideoText(ticks);
+		g_pFuncVideoText(ticks);
 		return;
 	}
 
@@ -1018,7 +1018,7 @@ void wsUpdateVideoHires (long ticks)
 	
 	if (wsVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		wsVideoText(ticks);
+		g_pFuncVideoText(ticks);
 		return;
 	}
 	
@@ -1051,7 +1051,7 @@ void wsUpdateVideoHires0 (long ticks)
 	
 	if (wsVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		wsVideoText(ticks);
+		g_pFuncVideoText(ticks);
 		return;
 	}
 	
@@ -1076,5 +1076,5 @@ void wsUpdateVideoHires0 (long ticks)
 	}
 }
 
-void (* wsVideoText)(long) = wsUpdateVideoText;
-void (* wsVideoUpdate)(long) = wsUpdateVideoText;
+void (* g_pFuncVideoText  )(long) = wsUpdateVideoText40;
+void (* g_pFuncVideoUpdate)(long) = wsUpdateVideoText40;

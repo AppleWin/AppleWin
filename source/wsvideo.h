@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef WS_VIDEO
 #define WS_VIDEO
 
+#define VIDEO_SCANNER_6502_CYCLES 17030
+
 extern unsigned char * wsLines[384];
 
 extern int wsTextPage;
@@ -30,8 +32,8 @@ extern int wsVideoCharSet;
 
 void wsVideoInit();
 void wsVideoInitModel(int);
-void wsUpdateVideoText(long);
-void wsUpdateVideoDblText(long);
+void wsUpdateVideoText40(long);
+void wsUpdateVideoText80(long);
 
 void wsUpdateVideoLores(long);
 void wsUpdateVideo7MLores(long);
@@ -41,8 +43,8 @@ void wsUpdateVideoHires(long);
 void wsUpdateVideoHires0(long);
 void wsUpdateVideoDblHires(long);
 
-extern void (* wsVideoText)(long);
-extern void (* wsVideoUpdate)(long);
+extern void (* g_pFuncVideoText  )(long); //wsVideoText)(long);
+extern void (* g_pFuncVideoUpdate)(long); // wsVideoUpdate)(long);
 
 extern unsigned char wsVideoByte(unsigned long);
 extern void wsVideoRefresh();
