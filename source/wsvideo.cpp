@@ -77,7 +77,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static unsigned g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
 	static unsigned g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible
 
-	unsigned g_aHorzClockMemAddress[VIDEO_SCANNER_MAX_HORZ];
+	uint16_t g_aHorzClockMemAddress[VIDEO_SCANNER_MAX_HORZ];
 	unsigned char * wsLines[384];
 
 	unsigned wsFlashidx = 0;
@@ -324,10 +324,10 @@ static real signal_prefilter (real z)
 	static real yv[NUM_SIGPOLES + 1] = { 0,0,0 };
 
 	xv[0] = xv[1];
-	xv[1] = xv[2]; 
+	xv[1] = xv[2];
 	xv[2] = z / SIGGAIN;
 	yv[0] = yv[1];
-	yv[1] = yv[2]; 
+	yv[1] = yv[2];
 	yv[2] = xv[0] + xv[2] + (2.f * xv[1]) + (-0.2718798058f * yv[0]) + (0.7465656072f * yv[1]);
 
 	return yv[2];
@@ -342,7 +342,7 @@ static real luma0_filter (real z)
 	xv[1] = xv[2];
 	xv[2] = z / LUMGAIN;
 	yv[0] = yv[1];
-	yv[1] = yv[2]; 
+	yv[1] = yv[2];
 	yv[2] = xv[0] + xv[2] + (2.f * xv[1]) + (LUMCOEF1 * yv[0]) + (LUMCOEF2 * yv[1]);
 
 	return yv[2];
@@ -357,7 +357,7 @@ static real luma1_filter (real z)
 	xv[1] = xv[2];
 	xv[2] = z / LUMGAIN;
 	yv[0] = yv[1];
-	yv[1] = yv[2]; 
+	yv[1] = yv[2];
 	yv[2] = xv[0] + xv[2] + (2 * xv[1]) + (LUMCOEF1 * yv[0]) + (LUMCOEF2 * yv[1]);
 
 	return yv[2];
@@ -369,10 +369,10 @@ static real chroma_filter (real z)
 	static real yv[NUM_CHRPOLES + 1];
 
 	xv[0] = xv[1];
-	xv[1] = xv[2]; 
+	xv[1] = xv[2];
 	xv[2] = z / CHRGAIN;
 	yv[0] = yv[1];
-	yv[1] = yv[2]; 
+	yv[1] = yv[2];
 	yv[2] = xv[2] - xv[0] + (-0.7318893645f * yv[0]) + (1.2336442711f * yv[1]);
 
 	return yv[2];
@@ -457,7 +457,7 @@ static void init_chroma_phase_table (void)
 			/*
 				YI'V' to RGB
 
-				[r g b] = [y i v][ 1      1      1    ]    
+				[r g b] = [y i v][ 1      1      1    ]
 				                 [0.956  -0.272 -1.105]
 				                 [0.621  -0.647  1.702]
 
@@ -511,7 +511,7 @@ void wsVideoInit ()
 	vbp0 = wsLines[0];
 
 #if HGR_TEST_PATTERN
-// Michael -- Init HGR to almsot all-possible-combinations
+// Michael -- Init HGR to almost all-possible-combinations
 // CALL-151
 // C050 C053 C057
 	unsigned char b = 0;
