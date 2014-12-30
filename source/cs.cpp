@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 unsigned char csbits[2][256][8];
 
-static char *csstrs[] = {
+static const char *csstrs[] = {
 	"   ###  ","    #   ","  ####  ","   ###  ","  ####  ","  ##### ","  ##### ","   #### ",
 	"  #   # ","   # #  ","  #   # ","  #   # ","  #   # ","  #     ","  #     ","  #     ",
 	"  # # # ","  #   # ","  #   # ","  #     ","  #   # ","  #     ","  #     ","  #     ",
@@ -167,7 +167,7 @@ void make_csbits (void) {
 		int si = ((i / STRINGS_PER_CHAR) * STRINGS_PER_CHAR_ROW) + (i % CHARS_PER_ROW);
 		for (j = 0; j < STRINGS_PER_CHAR; ++j)
 		{
-			char *sp = csstrs[si];
+			const char *sp = csstrs[si];
 			unsigned char cb = 0;
 		
 			si += CHARS_PER_ROW;
