@@ -212,6 +212,9 @@
     <ClCompile Include="source\StdAfx.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="source\NTSC.cpp">
+      <Filter>Source\Video</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -450,6 +453,9 @@
     </ClInclude>
     <ClInclude Include="source\StdAfx.h">
       <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="source\NTSC.h">
+      <Filter>Source\Video</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
