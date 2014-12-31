@@ -289,10 +289,6 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 //-------------------------------------
 
-// Video consts:
-	const UINT nVBlStop_NTSC	= 21;
-	const UINT nVBlStop_PAL		= 29;
-
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	TCHAR g_aVideoChoices[] =
 		TEXT("Monochrome (Custom Luminance)\0")
@@ -2288,11 +2284,10 @@ BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 
 BYTE VideoCheckVbl (WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 {
-	bool bVblBar = false;
-	VideoGetScannerAddress(&bVblBar, uExecutedCycles);
+	bool bVblBar = VideoGetVbl(uExecutedCycles);
 
 	BYTE r = KeybGetKeycode();
-	return (r & ~0x80) | ((bVblBar) ? 0x80 : 0);
+	return (r & ~0x80) | (bVblBar ? 0x80 : 0);
  }
 
 // This is called from PageConfig
@@ -2776,6 +2771,7 @@ void VideoResetState ()
 
 
 //===========================================================================
+
 BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
