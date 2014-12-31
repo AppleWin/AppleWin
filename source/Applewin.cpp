@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 #include "Video.h"
+#include "NTSC.h"
 
 #include "Configuration\About.h"
 #include "Configuration\PropertySheet.h"
@@ -408,7 +409,7 @@ void LoadConfiguration(void)
 	case A2TYPE_PRAVETS8M:	    g_nCharsetType  = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because setting charset to 3 results in some problems.
 	}
 
-	//
+	NTSC_VideoInitAppleType();
 
 	if (!REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &joytype[JN_JOYSTICK0]))
 		LoadConfigOldJoystick(JN_JOYSTICK0);

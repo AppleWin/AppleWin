@@ -8,8 +8,8 @@
 	{
 		  VT_MONO_HALFPIXEL_REAL // uses custom monochrome
 		, VT_COLOR_STANDARD
-		, VT_COLOR_TEXT_OPTIMIZED 
-		, VT_COLOR_TVEMU          
+		, VT_COLOR_TEXT_OPTIMIZED
+		, VT_COLOR_TVEMU
 		, VT_MONO_AMBER // now half pixel
 		, VT_MONO_GREEN // now half pixel
 		, VT_MONO_WHITE // now half pixel
@@ -19,28 +19,39 @@
 	extern TCHAR g_aVideoChoices[];
 	extern char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
 
-enum AppleFont_e
-{
-	// 40-Column mode is 1x Zoom (default)
-	// 80-Column mode is ~0.75x Zoom (7 x 16)
-	// Tiny mode is 0.5 zoom (7x8) for debugger
-	APPLE_FONT_WIDTH  = 14, // in pixels
-	APPLE_FONT_HEIGHT = 16, // in pixels
+	enum VideoFlag_e
+	{
+		VF_80COL  = 0x00000001,
+		VF_DHIRES = 0x00000002,
+		VF_HIRES  = 0x00000004,
+		VF_80STORE= 0x00000008, // was called VF_MASK2
+		VF_MIXED  = 0x00000010,
+		VF_PAGE2  = 0x00000020,
+		VF_TEXT   = 0x00000040
+	};
 
-	// Each cell has a reserved aligned pixel area (grid spacing)
-	APPLE_FONT_CELL_WIDTH  = 16,
-	APPLE_FONT_CELL_HEIGHT = 16,
+	enum AppleFont_e
+	{
+		// 40-Column mode is 1x Zoom (default)
+		// 80-Column mode is ~0.75x Zoom (7 x 16)
+		// Tiny mode is 0.5 zoom (7x8) for debugger
+		APPLE_FONT_WIDTH  = 14, // in pixels
+		APPLE_FONT_HEIGHT = 16, // in pixels
 
-	// The bitmap contains 3 regions
-	// Each region is 256x256 pixels = 16x16 chars
-	APPLE_FONT_X_REGIONSIZE = 256, // in pixelx
-	APPLE_FONT_Y_REGIONSIZE = 256, // in pixels
+		// Each cell has a reserved aligned pixel area (grid spacing)
+		APPLE_FONT_CELL_WIDTH  = 16,
+		APPLE_FONT_CELL_HEIGHT = 16,
 
-	// Starting Y offsets (pixels) for the regions
-	APPLE_FONT_Y_APPLE_2PLUS =   0, // ][+
-	APPLE_FONT_Y_APPLE_80COL = 256, // //e (inc. Mouse Text)
-	APPLE_FONT_Y_APPLE_40COL = 512, // ][
-};
+		// The bitmap contains 3 regions
+		// Each region is 256x256 pixels = 16x16 chars
+		APPLE_FONT_X_REGIONSIZE = 256, // in pixelx
+		APPLE_FONT_Y_REGIONSIZE = 256, // in pixels
+
+		// Starting Y offsets (pixels) for the regions
+		APPLE_FONT_Y_APPLE_2PLUS =   0, // ][+
+		APPLE_FONT_Y_APPLE_80COL = 256, // //e (inc. Mouse Text)
+		APPLE_FONT_Y_APPLE_40COL = 512, // ][
+	};
 
 // Globals __________________________________________________________
 
@@ -49,7 +60,8 @@ extern HBITMAP g_hLogoBitmap;
 extern COLORREF   monochrome; // saved
 extern DWORD      g_eVideoType; // saved
 extern DWORD      g_uHalfScanLines; // saved
-extern LPBYTE     g_pFramebufferbits;
+extern uint8_t   *g_pFramebufferbits;
+extern int        g_nAltCharSetOffset; // alternate character set
 
 typedef bool (*VideoUpdateFuncPtr_t)(int,int,int,int,int);
 
@@ -59,7 +71,7 @@ void    CreateColorMixMap();
 
 BOOL    VideoApparentlyDirty ();
 void    VideoBenchmark ();
-void    VideoChooseColor ();
+void    VideoChooseMonochromeColor (); // FIXME: Should be moved to PageConfig and call VideoSetMonochromeColor()
 void    VideoDestroy ();
 void    VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
 void    VideoDisplayLogo ();
@@ -84,9 +96,6 @@ bool    VideoGetSWTEXT(void);
 bool    VideoGetSWAltCharSet(void);
 
 void    VideoSetForceFullRedraw(void);
-
-DWORD   VideoGetSnapshot(SS_IO_Video* pSS);
-DWORD   VideoSetSnapshot(SS_IO_Video* pSS);
 
 void _Video_Dirty();
 void _Video_RedrawScreen( VideoUpdateFuncPtr_t update, bool bMixed = false );

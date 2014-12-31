@@ -40,6 +40,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speaker.h"
 #include "Video.h"
 
+// Prototypes (Public)
+	// Note: This is here and not in Video.h to prevent header include bloat.
+	// i.e. so we don't need to incude "Structs.h" for NTSC.cpp
+	DWORD   VideoGetSnapshot(SS_IO_Video* pSS);
+	DWORD   VideoSetSnapshot(SS_IO_Video* pSS);
 
 #define DEFAULT_SNAPSHOT_NAME "SaveState.aws"
 

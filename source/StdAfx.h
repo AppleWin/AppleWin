@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdint.h> // uint8_t
 
 #include <windows.h>
 #include <winuser.h> // WM_MOUSEWHEEL

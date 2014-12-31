@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Registry.h"
 #include "Video.h"
+#include "NTSC.h"
 
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
@@ -195,17 +196,6 @@ const BYTE DoubleHiresPalIndex[16] = {
 	const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512); // 1168
 	const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3278
 
-	enum VideoFlag_e
-	{
-		VF_80COL  = 0x00000001,
-		VF_DHIRES = 0x00000002,
-		VF_HIRES  = 0x00000004,
-		VF_80STORE= 0x00000008,
-		VF_MIXED  = 0x00000010,
-		VF_PAGE2  = 0x00000020,
-		VF_TEXT   = 0x00000040
-	};
-
 	#define  SW_80COL         (g_uVideoMode & VF_80COL)
 	#define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
 	#define  SW_HIRES         (g_uVideoMode & VF_HIRES)
@@ -222,6 +212,13 @@ const BYTE DoubleHiresPalIndex[16] = {
 								 g_pFramebufferinfo->bmiColors[i].rgbReserved = PC_NOCOLLAPSE;
 
 #define  HGR_MATRIX_YOFFSET 2	// For tv emulation HGR Video Mode
+
+// Globals (Public)
+
+    uint8_t      *g_pFramebufferbits = NULL; // last drawn frame
+	int           g_nAltCharSetOffset  = 0; // alternate character set
+
+// Globals (Private)
 
 // video scanner constants
 int const kHBurstClock      =    53; // clock when Color Burst starts
@@ -246,7 +243,6 @@ static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
 static HBITMAP       g_hDeviceBitmap;
 static HDC           g_hDeviceDC;
-       LPBYTE        g_pFramebufferbits = NULL; // last drawn frame
 static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
 static LPBYTE        g_aFrameBufferOffset[FRAMEBUFFER_H]; // array of pointers to start of each scanline
@@ -270,7 +266,6 @@ static BYTE          colormixbuffer[6];
 static WORD          colormixmap[6][6][6];
 //
 
-static int           g_nAltCharSetOffset  = 0; // alternate character set
 
 static /*bool*/ UINT g_VideoForceFullRedraw = 1;
 static bool g_bVideoUpdatedThisFrame = false;
@@ -451,6 +446,9 @@ void CreateFrameOffsetTable (LPBYTE addr, LONG pitch)
 //===========================================================================
 void VideoInitialize ()
 {
+	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
+	VideoResetState();
+
 	// CREATE A BUFFER FOR AN IMAGE OF THE LAST DRAWN MEMORY
 	vidlastmem = (LPBYTE)VirtualAlloc(NULL,0x10000,MEM_COMMIT,PAGE_READWRITE);
 	ZeroMemory(vidlastmem,0x10000);
@@ -466,47 +464,15 @@ void VideoInitialize ()
 		PAGE_READWRITE);
 
 	ZeroMemory(g_pFramebufferinfo,sizeof(BITMAPINFOHEADER)+256*sizeof(RGBQUAD));
-	g_pFramebufferinfo->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
-	g_pFramebufferinfo->bmiHeader.biWidth    = FRAMEBUFFER_W;
-	g_pFramebufferinfo->bmiHeader.biHeight   = FRAMEBUFFER_H;
-	g_pFramebufferinfo->bmiHeader.biPlanes   = 1;
-	g_pFramebufferinfo->bmiHeader.biBitCount = 8;
-	g_pFramebufferinfo->bmiHeader.biClrUsed  = 256;
+	g_pFramebufferinfo->bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
+	g_pFramebufferinfo->bmiHeader.biWidth       = FRAMEBUFFER_W;
+	g_pFramebufferinfo->bmiHeader.biHeight      = FRAMEBUFFER_H;
+	g_pFramebufferinfo->bmiHeader.biPlanes      = 1;
+	g_pFramebufferinfo->bmiHeader.biBitCount    = 32;
+	g_pFramebufferinfo->bmiHeader.biCompression = BI_RGB;
+	g_pFramebufferinfo->bmiHeader.biClrUsed     = 0;
 
-	// CREATE A BITMAPINFO STRUCTURE FOR THE SOURCE IMAGE
-	g_pSourceHeader = (LPBITMAPINFO)VirtualAlloc(
-		NULL,
-		sizeof(BITMAPINFOHEADER) + 256*sizeof(RGBQUAD),
-		MEM_COMMIT,
-		PAGE_READWRITE);
-
-	ZeroMemory(g_pSourceHeader,sizeof(BITMAPINFOHEADER));
-	g_pSourceHeader->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
-	g_pSourceHeader->bmiHeader.biWidth    = SRCOFFS_TOTAL;
-	g_pSourceHeader->bmiHeader.biHeight   = 512;
-	g_pSourceHeader->bmiHeader.biPlanes   = 1;
-	g_pSourceHeader->bmiHeader.biBitCount = 8;
-	g_pSourceHeader->bmiHeader.biClrUsed  = 256;
-
-	// VideoReinitialize() ... except we set the frame buffer palette....
-		V_CreateIdentityPalette();
-
-		//RGB() -> none
-		//PALETTERGB() -> PC_EXPLICIT
-		//??? RGB() -> PC_NOCOLLAPSE
-		for( int iColor = 0; iColor < NUM_COLOR_PALETTE; iColor++ )
-			customcolors[ iColor ] = ((DWORD)PC_EXPLICIT << 24) | RGB(
-			g_pFramebufferinfo->bmiColors[iColor].rgbRed,
-			g_pFramebufferinfo->bmiColors[iColor].rgbGreen,
-			g_pFramebufferinfo->bmiColors[iColor].rgbBlue
-		);
-
-		// CREATE THE FRAME BUFFER DIB SECTION AND DEVICE CONTEXT,
-		// CREATE THE SOURCE IMAGE DIB SECTION AND DRAW INTO THE SOURCE BIT BUFFER
-		V_CreateDIBSections();
-
-	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
-	VideoResetState();
+	NTSC_VideoCreateDIBSection();
 }
 
 //===========================================================================
@@ -2329,8 +2295,9 @@ BYTE VideoCheckVbl (WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 	return (r & ~0x80) | ((bVblBar) ? 0x80 : 0);
  }
 
+// This is called from PageConfig
 //===========================================================================
-void VideoChooseColor ()
+void VideoChooseMonochromeColor ()
 {
 	CHOOSECOLOR cc;
 	ZeroMemory(&cc,sizeof(CHOOSECOLOR));
@@ -2595,6 +2562,20 @@ VideoUpdateFuncPtr_t VideoRefreshScreen ()
 	DebugRefresh(0);
 #endif
 
+// NTSC_BEGIN: wsVideoRefresh()
+	LPBYTE pDstFrameBufferBits = 0;
+	LONG   pitch = 0;
+	HDC    hFrameDC = FrameGetVideoDC(&pDstFrameBufferBits,&pitch);
+
+	if (hFrameDC)
+	{
+//		StretchBlt(hFrameDC,0,0,VIEWPORTCX,VIEWPORTCY,g_hDeviceDC,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,SRCCOPY);
+		StretchBlt(hFrameDC,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,g_hDeviceDC,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,SRCCOPY);
+		GdiFlush();
+	}
+	return NULL;
+// NTSC_END
+
 	// CHECK EACH CELL FOR CHANGED BYTES.  REDRAW PIXELS FOR THE CHANGED BYTES
 	// IN THE FRAME BUFFER.  MARK CELLS IN WHICH REDRAWING HAS TAKEN PLACE AS
 	// DIRTY.
@@ -2779,8 +2760,8 @@ void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
 //===========================================================================
 void VideoReinitialize ()
 {
-	V_CreateIdentityPalette();
-	V_CreateDIBSections();
+	NTSC_VideoInitAppleType();
+	NTSC_SetVideoStyle();
 }
 
 
@@ -2803,10 +2784,10 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 
 	switch (address)
 	{
-		case 0x00: g_uVideoMode &= ~VF_80STORE;   break;
-		case 0x01: g_uVideoMode |=  VF_80STORE;   break;
-		case 0x0C: if (!IS_APPLE2) g_uVideoMode &= ~VF_80COL;   break;
-		case 0x0D: if (!IS_APPLE2) g_uVideoMode |=  VF_80COL;   break;
+		case 0x00:                 g_uVideoMode &= ~VF_80STORE;                          ; break;
+		case 0x01:                 g_uVideoMode |=  VF_80STORE;                          ; break;
+		case 0x0C: if (!IS_APPLE2) g_uVideoMode &= ~VF_80COL;   NTSC_SetVideoTextMode(40); break;
+		case 0x0D: if (!IS_APPLE2) g_uVideoMode |=  VF_80COL;   NTSC_SetVideoTextMode(80); break;
 		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
 		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
 		case 0x50: g_uVideoMode &= ~VF_TEXT;    break;
@@ -2820,6 +2801,10 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x5E: if (!IS_APPLE2) g_uVideoMode |=  VF_DHIRES;  break;
 		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
+
+// NTSC_BEGIN
+	NTSC_SetVideoMode( g_uVideoMode );
+// NTSC_END
 
 	if (SW_80STORE)
 		g_uVideoMode &= ~VF_PAGE2;
@@ -3316,7 +3301,7 @@ void Video_MakeScreenShot(FILE *pFile)
 	// Write Pixel Data
 	// No need to use GetDibBits() since we already have http://msdn.microsoft.com/en-us/library/ms532334.aspx
 	// @reference: "Storing an Image" http://msdn.microsoft.com/en-us/library/ms532340(VS.85).aspx
-	pSrc = ((u8*)g_pFramebufferbits);
+	pSrc = ((uint8_t*)g_pFramebufferbits);
 	nLen = g_tBmpHeader.nWidthPixels * g_tBmpHeader.nHeightPixels * g_tBmpHeader.nBitsPerPixel / 8;
 
 	if( g_iScreenshotType == SCREENSHOT_280x192 )
@@ -3351,10 +3336,10 @@ void Video_MakeScreenShot(FILE *pFile)
 	TargaHeader_t *pHeader = &g_tTargaHeader;
 	memset( (void*)pHeader, 0, sizeof( TargaHeader_t ) );
 
-	pHeader->iImageType = TARGA_RGB;
+	pHeader->iImageType    = TARGA_RGB;
 	pHeader->nWidthPixels  = FRAMEBUFFER_W;
 	pHeader->nHeightPixels = FRAMEBUFFER_H;
-	pHeader->nBitsPerPixel =  24;
+	pHeader->nBitsPerPixel = 24;
 #endif // SCREENSHOT_TGA
 
 }
@@ -3393,3 +3378,36 @@ void Config_Save_Video()
 	REGSAVE(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),g_uHalfScanLines);
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),monochrome);
 }
+
+// ____________________________________________________________________
+
+//===========================================================================
+void NTSC_VideoCreateDIBSection()
+{
+	// CREATE THE DEVICE CONTEXT
+	HWND window  = GetDesktopWindow();
+	HDC dc       = GetDC(window);
+	if (g_hDeviceDC)
+	{
+		DeleteDC(g_hDeviceDC);
+	}
+	g_hDeviceDC = CreateCompatibleDC(dc);
+
+	// CREATE THE FRAME BUFFER DIB SECTION
+	if (g_hDeviceBitmap)
+		DeleteObject(g_hDeviceBitmap);
+		g_hDeviceBitmap = CreateDIBSection(
+			dc,
+			g_pFramebufferinfo,
+			DIB_RGB_COLORS,
+			(LPVOID *)&g_pFramebufferbits,0,0
+		);
+	SelectObject(g_hDeviceDC,g_hDeviceBitmap);
+
+	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
+	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
+	ZeroMemory( g_pFramebufferbits, FRAMEBUFFER_W*FRAMEBUFFER_H*4 );
+
+	NTSC_VideoInit( g_pFramebufferbits );
+}
+

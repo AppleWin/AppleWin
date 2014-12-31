@@ -12,8 +12,15 @@
 
 	// 560 = Double Hi-Res
 	// 384 = Doule Scan Line
+// NTSC_BEGIN
+#if 0
 	#define  FRAMEBUFFER_W  560
 	#define  FRAMEBUFFER_H  384
+#else
+	#define  FRAMEBUFFER_W  600
+	#define  FRAMEBUFFER_H  420
+#endif
+// NTSC_END
 
 // Direct Draw -- For Full Screen
 	extern	LPDIRECTDRAW        g_pDD;

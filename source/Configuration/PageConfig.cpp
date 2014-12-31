@@ -114,7 +114,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 			break;
 
 		case IDC_MONOCOLOR:
-			VideoChooseColor();
+			VideoChooseMonochromeColor();
 			break;
 
 		case IDC_CHECK_CONFIRM_REBOOT:
