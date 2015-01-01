@@ -409,8 +409,6 @@ void LoadConfiguration(void)
 	case A2TYPE_PRAVETS8M:	    g_nCharsetType  = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because setting charset to 3 results in some problems.
 	}
 
-	NTSC_VideoInitAppleType();
-
 	if (!REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &joytype[JN_JOYSTICK0]))
 		LoadConfigOldJoystick(JN_JOYSTICK0);
 	if (!REGLOAD(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), &joytype[JN_JOYSTICK1]))
@@ -432,6 +430,7 @@ void LoadConfiguration(void)
 	REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED),(DWORD *)&enhancedisk);
 
 	Config_Load_Video();
+	VideoReinitialize();
 
 	REGLOAD(TEXT("Uthernet Active")   ,(DWORD *)&tfe_enabled);
 
