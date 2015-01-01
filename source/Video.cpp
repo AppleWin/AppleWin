@@ -2074,7 +2074,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x400,0x400,0x14);
     else
       CopyMemory(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
-    VideoRefreshScreen();
+    VideoRedrawScreen(); // VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
     totaltextfps++;
@@ -2096,7 +2096,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x2000,0x2000,0x14);
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRefreshScreen();
+    VideoRedrawScreen(); // VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
     totalhiresfps++;
@@ -2187,7 +2187,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x2000,0x2000,0xAA);
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRefreshScreen();
+    VideoRedrawScreen(); // VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
     realisticfps++;
@@ -2499,17 +2499,10 @@ void VideoRealizePalette(HDC dc)
 
 //===========================================================================
 
-// Called by DrawFrameWindow() when in fullscreen mode (eg. after WM_PAINT msg)
-VideoUpdateFuncPtr_t VideoRedrawScreen (UINT n)
-{
-	g_VideoForceFullRedraw = n;
-	return VideoRefreshScreen();
-}
-
-VideoUpdateFuncPtr_t VideoRedrawScreen ()
+void VideoRedrawScreen ()
 {
 	g_VideoForceFullRedraw = 1;
-	return VideoRefreshScreen();
+	VideoRefreshScreen( g_uVideoMode );
 }
 
 //===========================================================================
@@ -2519,12 +2512,14 @@ void _Video_Dirty()
 }
 
 //===========================================================================
-void _Video_SetupBanks( bool bBank2 )
+int _Video_SetupBanks( bool bBank2 )
 {
 	g_pHiresBank1 = MemGetAuxPtr (0x2000 << (int)bBank2);
 	g_pHiresBank0 = MemGetMainPtr(0x2000 << (int)bBank2);
 	g_pTextBank1  = MemGetAuxPtr (0x400  << (int)bBank2);
 	g_pTextBank0  = MemGetMainPtr(0x400  << (int)bBank2);
+
+	return bBank2 ? VF_PAGE2 : 0;
 }
 
 //===========================================================================
@@ -2551,11 +2546,14 @@ static void DebugRefresh(char uDebugFlag)
 }
 #endif
 
-VideoUpdateFuncPtr_t VideoRefreshScreen ()
+void VideoRefreshScreen ( int bVideoModeFlags )
 {
 #if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
 	DebugRefresh(0);
 #endif
+
+	NTSC_SetVideoMode( bVideoModeFlags );
+	g_pNTSC_FuncVideoUpdate( VIDEO_SCANNER_6502_CYCLES );
 
 // NTSC_BEGIN: wsVideoRefresh()
 	LPBYTE pDstFrameBufferBits = 0;
@@ -2568,189 +2566,16 @@ VideoUpdateFuncPtr_t VideoRefreshScreen ()
 		StretchBlt(hFrameDC,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,g_hDeviceDC,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,SRCCOPY);
 		GdiFlush();
 	}
-	return NULL;
+
+	if (g_VideoForceFullRedraw)
+		--g_VideoForceFullRedraw;
 // NTSC_END
-
-	// CHECK EACH CELL FOR CHANGED BYTES.  REDRAW PIXELS FOR THE CHANGED BYTES
-	// IN THE FRAME BUFFER.  MARK CELLS IN WHICH REDRAWING HAS TAKEN PLACE AS
-	// DIRTY.
-	_Video_Dirty();
-	_Video_SetupBanks( SW_PAGE2 != 0 );
-
-	VideoUpdateFuncPtr_t pfUpdate = SW_TEXT
-		? SW_80COL
-			? Update80ColCell
-			: Update40ColCell
-		: SW_HIRES
-			? (SW_DHIRES && SW_80COL)
-				? UpdateDHiResCell
-				: UpdateHiResCell
-			: (SW_DHIRES && SW_80COL)
-				? UpdateDLoResCell
-				: UpdateLoResCell;
-
-	bool bMixed = (SW_MIXED) ? true : false;
-	_Video_RedrawScreen( pfUpdate, bMixed );
-
-	//g_VideoForceFullRedraw = 0;
-	if (g_VideoForceFullRedraw) --g_VideoForceFullRedraw;
-	return pfUpdate;
 }
 
 //===========================================================================
-void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
-{
-  LPBYTE pDstFrameBufferBits = 0;
-  LONG   pitch = 0;
-  HDC    hFrameDC = FrameGetVideoDC(&pDstFrameBufferBits,&pitch);
-  CreateFrameOffsetTable(pDstFrameBufferBits,pitch); // ptr to start of each scanline
-
-  BOOL anydirty = 0;
-  int  y        = 0;
-  int  ypixel   = 0;
-
-  while (y < 20) {
-    int offset = ((y & 7) << 7) + ((y >> 3) * 40);
-    int x      = 0;
-    int xpixel = 0;
-    while (x < 40) {
-      anydirty |= celldirty[x][y] = pfUpdate(x,y,xpixel,ypixel,offset+x);
-      ++x;
-      xpixel += 14;
-    }
-    ++y;
-    ypixel += 16;
-  }
-
-	if( bMixed ) {
-		pfUpdate = SW_80COL
-			? Update80ColCell
-			: Update40ColCell;
-	}
-
-  while (y < 24) {
-    int offset = ((y & 7) << 7) + ((y >> 3) * 40);
-    int x      = 0;
-    int xpixel = 0;
-    while (x < 40) {
-      anydirty |= celldirty[x][y] = pfUpdate(x,y,xpixel,ypixel,offset+x);
-      ++x;
-      xpixel += 14;
-    }
-    ++y;
-    ypixel += 16;
-  }
-
-  // Clear this flag after TEXT screen has been updated
-  g_bTextFlashFlag = false;
-
-#if 1
-	// New simpified code:
-	// . Oliver Schmidt gets a flickering mouse cursor with this code
-	if (hFrameDC && anydirty)
-	{
-		int nViewportCX, nViewportCY;
-		GetViewportCXCY(nViewportCX, nViewportCY);
-	    StretchBlt(hFrameDC, 0 ,0, nViewportCX, nViewportCY, g_hDeviceDC, 0, 0, FRAMEBUFFER_W, FRAMEBUFFER_H, SRCCOPY);
-		GdiFlush();
-	}
-#else
-	// Original code:
-	if (!hFrameDC || !anydirty)
-	{
-		FrameReleaseVideoDC();
-		SetLastDrawnImage();
-		g_VideoForceFullRedraw = 0;
-		return;
-	}
-
-  // COPY DIRTY CELLS FROM THE DEVICE DEPENDENT BITMAP ONTO THE SCREEN
-  // IN LONG HORIZONTAL RECTANGLES
-  BOOL remainingdirty = 0;
-  y                   = 0;
-  ypixel              = 0;
-  while (y < 24) {
-	int start  = -1;
-	int startx = 0;
-	int x      = 0;
-	int xpixel = 0;
-	while (x < 40) {
-	  if ((x == 39) && celldirty[x][y])
-		if (start >= 0) {
-		  xpixel += 14;
-		  celldirty[x][y] = 0;
-		}
-		else
-		  remainingdirty = 1;
-	  if ((start >= 0) && !celldirty[x][y]) {
-		if ((x - startx > 1) || ((x == 39) && (xpixel == FRAMEBUFFER_W))) {
-		  int height = 1;
-		  while ((y+height < 24)
-				   && celldirty[startx][y+height]
-				   && celldirty[x-1][y+height]
-				   && celldirty[(startx+x-1) >> 1][y+height])
-			height++;
-		  BitBlt(hFrameDC,start,ypixel,xpixel-start,height << 4,
-				 g_hDeviceDC,start,ypixel,SRCCOPY);
-		  while (height--) {
-			int loop = startx;
-			while (loop < x+(xpixel == FRAMEBUFFER_W))
-			  celldirty[loop++][y+height] = 0;
-		  }
-		  start = -1;
-		}
-		else
-		  remainingdirty = 1;
-		start = -1;
-	  }
-	  else if ((start == -1) && celldirty[x][y] && (x < 39)) {
-		start  = xpixel;
-		startx = x;
-	  }
-	  x++;
-	  xpixel += 14;
-	}
-	y++;
-	ypixel += 16;
-  }
-
-  // COPY ANY REMAINING DIRTY CELLS FROM THE DEVICE DEPENDENT BITMAP
-  // ONTO THE SCREEN IN VERTICAL RECTANGLES
-  if (remainingdirty) {
-	int x      = 0;
-	int xpixel = 0;
-	while (x < 40) {
-	  int start  = -1;
-	  int y      = 0;
-	  int ypixel = 0;
-	  while (y < 24) {
-		if ((y == 23) && celldirty[x][y]) {
-		  if (start == -1)
-			start = ypixel;
-		  ypixel += 16;
-		  celldirty[x][y] = 0;
-		}
-		if ((start >= 0) && !celldirty[x][y]) {
-		  BitBlt(hFrameDC,xpixel,start,14,ypixel-start,
-				 g_hDeviceDC,xpixel,start,SRCCOPY);
-		  start = -1;
-		}
-		else if ((start == -1) && celldirty[x][y])
-		  start = ypixel;
-		y++;
-		ypixel += 16;
-	  }
-	  x++;
-	  xpixel += 14;
-	}
-  }
-
-  GdiFlush();
-#endif
-
-	FrameReleaseVideoDC();
-	SetLastDrawnImage();
-}
+//void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
+//	FrameReleaseVideoDC();
+//	SetLastDrawnImage();
 
 //===========================================================================
 void VideoReinitialize ()
@@ -2820,7 +2645,7 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 
 		if (!g_bVideoUpdatedThisFrame)
 		{
-			VideoRefreshScreen();
+			VideoRedrawScreen(); // VideoRefreshScreen();
 			g_bVideoUpdatedThisFrame = true;
 		}
 	}
@@ -2870,7 +2695,8 @@ void VideoEndOfVideoFrame(void)
 	if (!g_bFullSpeed ||
 		(dwCurrTime-dwLastTime >= 100))		// FullSpeed: update every 100ms
 	{
-		VideoRefreshScreen();
+		// Required or else screen won't update -- Sheldon's NTSC doesn't have VideoEndOfVideoFrame -- simply calls wsVideoRefresh()
+		VideoRedrawScreen(); // VideoRefreshScreen();
 		dwLastTime = dwCurrTime;
 	}
 }

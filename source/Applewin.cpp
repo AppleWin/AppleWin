@@ -230,7 +230,7 @@ void ContinueExecution(void)
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
-		VideoEndOfVideoFrame();
+		VideoEndOfVideoFrame(); // NTSC currently requires this ... need to investigate why
 		MB_EndOfVideoFrame();
 	}
 

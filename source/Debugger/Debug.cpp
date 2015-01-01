@@ -4215,7 +4215,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	{
 		bBankSpecified = false;
 	}
-
+// TODO: check if extension ".hgr", ".hgr2", ".dhgr", ".dhgr2"
 	if (g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA)
 		return Help_Arg_1( CMD_MEMORY_LOAD );
 
@@ -6031,19 +6031,20 @@ enum ViewVideoPage_t
 
 Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate );
 
-Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate )
+Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 {
 	VideoSetForceFullRedraw();
-	_Video_Dirty();
+
 	switch( iPage ) 
 	{
-		case VIEW_PAGE_X: _Video_SetupBanks( VideoGetSWPAGE2() ); break; // Page Current
-		case VIEW_PAGE_1: _Video_SetupBanks( false ); break; // Page 1
-		case VIEW_PAGE_2: _Video_SetupBanks( true ); break; // Page 2 !
+		case VIEW_PAGE_X: bVideoModeFlags |= _Video_SetupBanks( VideoGetSWPAGE2() ); break; // Page Current
+		case VIEW_PAGE_1: bVideoModeFlags |= _Video_SetupBanks( false ); break; // Page 1
+		case VIEW_PAGE_2: bVideoModeFlags |= _Video_SetupBanks( true ); break; // Page 2 !
 		default:
 			break;
 	}
-	_Video_RedrawScreen( pfUpdate );
+
+	VideoRefreshScreen( bVideoModeFlags );
 	g_bDebuggerViewingAppleOutput = true;
 	return UPDATE_NOTHING; // intentional
 }
@@ -6051,80 +6052,80 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate )
 // Text 40
 	Update_t CmdViewOutput_Text4X (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, Update40ColCell );
+		return _ViewOutput( VIEW_PAGE_X, VF_TEXT );
 	}
 	Update_t CmdViewOutput_Text41 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, Update40ColCell );
+		return _ViewOutput( VIEW_PAGE_1, VF_TEXT );
 	}
 	Update_t CmdViewOutput_Text42 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, Update40ColCell );
+		return _ViewOutput( VIEW_PAGE_2, VF_TEXT );
 	}
 // Text 80
 	Update_t CmdViewOutput_Text8X (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, Update80ColCell );
+		return _ViewOutput( VIEW_PAGE_X, VF_TEXT | VF_80COL );
 	}
 	Update_t CmdViewOutput_Text81 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, Update80ColCell );
+		return _ViewOutput( VIEW_PAGE_1, VF_TEXT | VF_80COL );
 	}
 	Update_t CmdViewOutput_Text82 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, Update80ColCell );
+		return _ViewOutput( VIEW_PAGE_2, VF_TEXT | VF_80COL );
 	}
 // Lo-Res
 	Update_t CmdViewOutput_GRX (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, UpdateLoResCell );
+		return _ViewOutput( VIEW_PAGE_X, 0 );
 	}
 	Update_t CmdViewOutput_GR1 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, UpdateLoResCell );
+		return _ViewOutput( VIEW_PAGE_1, 0 );
 	}
 	Update_t CmdViewOutput_GR2 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, UpdateLoResCell );
+		return _ViewOutput( VIEW_PAGE_2, 0 );
 	}
 // Double Lo-Res
 	Update_t CmdViewOutput_DGRX (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, UpdateDLoResCell );
+		return _ViewOutput( VIEW_PAGE_X, VF_DHIRES | VF_80COL );
 	}
 	Update_t CmdViewOutput_DGR1 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, UpdateDLoResCell );
+		return _ViewOutput( VIEW_PAGE_1, VF_DHIRES | VF_80COL );
 	}
 	Update_t CmdViewOutput_DGR2 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, UpdateDLoResCell );
+		return _ViewOutput( VIEW_PAGE_2, VF_DHIRES | VF_80COL );
 	}
 // Hi-Res
 	Update_t CmdViewOutput_HGRX (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, UpdateHiResCell );
+		return _ViewOutput( VIEW_PAGE_X, VF_HIRES );
 	}
 	Update_t CmdViewOutput_HGR1 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, UpdateHiResCell );
+		return _ViewOutput( VIEW_PAGE_1, VF_HIRES );
 	}
 	Update_t CmdViewOutput_HGR2 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, UpdateHiResCell );
+		return _ViewOutput( VIEW_PAGE_2, VF_HIRES );
 	}
 // Double Hi-Res
 	Update_t CmdViewOutput_DHGRX (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, UpdateDHiResCell );
+		return _ViewOutput( VIEW_PAGE_X, VF_HIRES | VF_DHIRES );
 	}
 	Update_t CmdViewOutput_DHGR1 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, UpdateDHiResCell );
+		return _ViewOutput( VIEW_PAGE_1, VF_HIRES | VF_DHIRES );
 	}
 	Update_t CmdViewOutput_DHGR2 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, UpdateDHiResCell );
+		return _ViewOutput( VIEW_PAGE_2, VF_HIRES | VF_DHIRES );
 	}
 
 // Watches ________________________________________________________________________________________
@@ -7783,8 +7784,8 @@ void DebugContinueStepping ()
 		{
 			if (nStepsTaken == 0x10000) // HACK_MAGIC_NUM
 				VideoRedrawScreen();
-			else
-				VideoRefreshScreen();
+//			else
+//				VideoRefreshScreen();
 		}
 	}
 	else

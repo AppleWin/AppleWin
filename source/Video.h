@@ -77,9 +77,8 @@ void    VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, 
 void    VideoDisplayLogo ();
 void    VideoInitialize ();
 void    VideoRealizePalette (HDC);
-VideoUpdateFuncPtr_t VideoRedrawScreen (UINT);
-VideoUpdateFuncPtr_t VideoRedrawScreen ();
-VideoUpdateFuncPtr_t VideoRefreshScreen ();
+void    VideoRedrawScreen ();
+void    VideoRefreshScreen (int bVideoFlags );
 void    VideoReinitialize ();
 void    VideoResetState ();
 WORD    VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles);
@@ -98,8 +97,7 @@ bool    VideoGetSWAltCharSet(void);
 void    VideoSetForceFullRedraw(void);
 
 void _Video_Dirty();
-void _Video_RedrawScreen( VideoUpdateFuncPtr_t update, bool bMixed = false );
-void _Video_SetupBanks( bool bBank2 );
+int _Video_SetupBanks( bool bBank2 );
 bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset);
 bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset);
 bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset);
