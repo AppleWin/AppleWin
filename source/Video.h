@@ -67,8 +67,6 @@ typedef bool (*VideoUpdateFuncPtr_t)(int,int,int,int,int);
 
 // Prototypes _______________________________________________________
 
-void    CreateColorMixMap();
-
 BOOL    VideoApparentlyDirty ();
 void    VideoBenchmark ();
 void    VideoChooseMonochromeColor (); // FIXME: Should be moved to PageConfig and call VideoSetMonochromeColor()
