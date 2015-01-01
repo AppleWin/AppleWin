@@ -87,7 +87,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	unsigned char * g_NTSC_Lines[384];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
 
 	static unsigned g_nTextFlashCounter = 0;
-	static unsigned g_nTextFlashMask    = 0;
+	static uint16_t g_nTextFlashMask    = 0;
 
 	static unsigned g_aPixelMaskGR[16];
 	static uint16_t g_aPixelDoubleMaskHGR[128]; // hgrbits -> g_aPixelDoubleMaskHGR: 7-bit mono 280 pixels to 560 pixel doubling
@@ -675,7 +675,7 @@ static void ntscColorTVDoublePixel (int compositeSignal)
 	updateColorPhase();
 }
 
-static void (*ntscMonoPixel)(int) = ntscMonoSinglePixel;
+static void (*ntscMonoPixel )(int) = ntscMonoSinglePixel ;
 static void (*ntscColorPixel)(int) = ntscColorSinglePixel;
 
 //===========================================================================
@@ -789,56 +789,58 @@ unsigned char NTSC_VideoByte (unsigned long cycle)
 	return mem[0];
 }
 
-#define VIDEO_DRAW_BITS() do { \
-	if (g_nColorBurstPixels < 2) \
-	{ \
-		/* #1 of 7 */ \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		/* #2 of 7 */ \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		/* #3 of 7 */ \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		/* #4 of 7 */ \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		/* #5 of 7 */ \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		/* #6 of 7 */ \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		/* #7 of 7 */ \
-		ntscMonoPixel(bt & 1); bt >>= 1; \
-		ntscMonoPixel(bt & 1); g_nLastColumnPixelNTSC = bt & 1; bt >>= 1;\
-	} \
-	else \
-	{ \
-		/* #1 of 7 */ \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		/* #2 of 7 */ \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		/* #3 of 7 */ \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		/* #4 of 7 */ \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		/* #5 of 7 */ \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		/* #6 of 7 */ \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		/* #7 of 7 */ \
-		ntscColorPixel(bt & 1); bt >>= 1; \
-		ntscColorPixel(bt & 1); g_nLastColumnPixelNTSC = bt & 1; bt >>= 1;\
-	} \
-} while(0)
+inline
+void VIDEO_DRAW_BITS( uint16_t bt )
+{
+	if (g_nColorBurstPixels < 2)
+	{ 
+		/* #1 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		/* #2 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		/* #3 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		/* #4 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		/* #5 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		/* #6 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		/* #7 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); g_nLastColumnPixelNTSC = bt & 1; bt >>= 1;
+	}
+	else
+	{
+		/* #1 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #2 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #3 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #4 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #5 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #6 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #7 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); g_nLastColumnPixelNTSC = bt & 1; bt >>= 1;
+	}
+}
 
 inline
 void updateVideoHorzEOL()
@@ -871,7 +873,7 @@ void updateVideoHorzEOL()
 			if (++g_nTextFlashCounter == 16)
 			{
 				g_nTextFlashCounter = 0;
-				g_nTextFlashMask ^= 0xffff;
+				g_nTextFlashMask ^= -1; // 16-bits
 			}
 		}
 
@@ -889,6 +891,9 @@ void updateVideoHorzEOL()
 //===========================================================================
 void NTSC_VideoUpdateCycles( long cycles )
 {
+//	if( !g_bFullSpeed )
+//			g_pNTSC_FuncVideoUpdate( uElapsedCycles );
+//	else
 	for( ; cycles > 0; cycles-- )
 	{
 		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
@@ -900,7 +905,7 @@ void NTSC_VideoUpdateCycles( long cycles )
 				if (++g_nTextFlashCounter == 16)
 				{
 					g_nTextFlashCounter = 0;
-					g_nTextFlashMask ^= 0xffff;
+					g_nTextFlashMask ^= -1; // 16-bits
 				}
 
 				// Force full refresh
@@ -918,11 +923,16 @@ void NTSC_VideoUpdateCycles( long cycles )
 	}
 }
 
+inline
+uint8_t getCharSetBits(int iBank)
+{
+    return csbits[g_nVideoCharSet][iBank][g_nVideoClockVert & 7];
+}
 
 //===========================================================================
 void NTSC_UpdateVideoText40 (long ticks)
 {
-	unsigned ad, bt;
+	unsigned ad;
 
 	for (; ticks; --ticks)
 	{
@@ -937,12 +947,13 @@ void NTSC_UpdateVideoText40 (long ticks)
 		{
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				unsigned char * main = MemGetMainPtr(ad);
-
-				bt = g_aPixelDoubleMaskHGR[(csbits[g_nVideoCharSet][main[0]][g_nVideoClockVert & 7]) & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
-				if (0 == g_nVideoCharSet && 0x40 == (main[0] & 0xC0))
-					bt ^= g_nTextFlashMask;
-				VIDEO_DRAW_BITS();
+				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t  m     = pMain[0];
+				uint8_t  c     = getCharSetBits(m);
+				uint16_t bits  = g_aPixelDoubleMaskHGR[c & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
+				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0))
+					bits ^= g_nTextFlashMask;
+				VIDEO_DRAW_BITS( bits );
 			}
 		}
 		updateVideoHorzEOL();
@@ -952,7 +963,7 @@ void NTSC_UpdateVideoText40 (long ticks)
 //===========================================================================
 void NTSC_UpdateVideoText80 (long ticks)
 {
-	unsigned int ad, bt, mbt, abt;
+	unsigned int ad;
 
 	for (; ticks; --ticks)
 	{
@@ -967,27 +978,39 @@ void NTSC_UpdateVideoText80 (long ticks)
 		{
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				unsigned char * aux = MemGetAuxPtr(ad);
-				unsigned char * main = MemGetMainPtr(ad);
-				
-				mbt = csbits[g_nVideoCharSet][main[0]][g_nVideoClockVert & 7];
-				if (0 == g_nVideoCharSet && 0x40 == (main[0] & 0xC0)) mbt ^= g_nTextFlashMask;
+				uint8_t *pAux  = MemGetAuxPtr(ad);
+				uint8_t *pMain = MemGetMainPtr(ad);
 
-				abt = csbits[g_nVideoCharSet][aux[0]][g_nVideoClockVert & 7];
-				if (0 == g_nVideoCharSet && 0x40 == (aux[0] & 0xC0)) abt ^= g_nTextFlashMask;
+				uint8_t m = pMain[0];
+				uint8_t a = pAux [0];
 
-				bt = (mbt << 7) | abt;
-				VIDEO_DRAW_BITS();
+				uint16_t main = getCharSetBits( m );
+				uint16_t aux  = getCharSetBits( a );
+
+				if ((0 == g_nVideoCharSet) && 0x40 == (m & 0xC0))
+                    main ^= g_nTextFlashMask;
+
+				if ((0 == g_nVideoCharSet) && 0x40 == (a & 0xC0))
+                    aux ^= g_nTextFlashMask;
+
+				uint16_t bits = (main << 7) | aux;
+				VIDEO_DRAW_BITS( bits );
 			}
 		}
 		updateVideoHorzEOL();
 	}
 }
 
+inline
+uint8_t getLoResBits( int iBank )
+{
+    return g_aPixelMaskGR[ (iBank >> (g_nVideoClockVert & 4)) & 0xF ]; 
+}
+
 //===========================================================================
 void NTSC_UpdateVideoDblLores40 (long ticks) // wsUpdateVideo7MLores
 {
-	unsigned ad, bt;
+	unsigned ad;
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1007,9 +1030,11 @@ void NTSC_UpdateVideoDblLores40 (long ticks) // wsUpdateVideo7MLores
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				unsigned char * main = MemGetMainPtr(ad);
-				bt = g_aPixelDoubleMaskHGR[(0xFF & g_aPixelMaskGR[(main[0] >> (g_nVideoClockVert & 4)) & 0xF] >> ((1 - (g_nVideoClockHorz & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
-				VIDEO_DRAW_BITS();
+				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t  m     = pMain[0];
+                uint8_t  lo    = getLoResBits( m ); 
+				uint16_t bits  = g_aPixelDoubleMaskHGR[(0xFF & lo >> ((1 - (g_nVideoClockHorz & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
+				VIDEO_DRAW_BITS( bits );
 			}
 		}
 		updateVideoHorzEOL();
@@ -1019,7 +1044,7 @@ void NTSC_UpdateVideoDblLores40 (long ticks) // wsUpdateVideo7MLores
 //===========================================================================
 void NTSC_UpdateVideoLores40 (long ticks)
 {
-	unsigned ad, bt;
+	unsigned ad;
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1039,9 +1064,11 @@ void NTSC_UpdateVideoLores40 (long ticks)
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				unsigned char * main = MemGetMainPtr(ad);
-				bt = g_aPixelMaskGR[(main[0] >> (g_nVideoClockVert & 4)) & 0xF] >> ((1 - (g_nVideoClockHorz & 1)) * 2);
-				VIDEO_DRAW_BITS();
+				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t  m     = pMain[0];
+                uint8_t  lo    = getLoResBits( m ); 
+				uint16_t bits  = lo >> ((1 - (g_nVideoClockHorz & 1)) * 2);
+				VIDEO_DRAW_BITS( bits );
 			}
 		}
 		updateVideoHorzEOL();
@@ -1051,7 +1078,7 @@ void NTSC_UpdateVideoLores40 (long ticks)
 //===========================================================================
 void NTSC_UpdateVideoDblLores80 (long ticks) // wsUpdateVideoDblLores
 {
-	unsigned ad, bt, abt, mbt;
+	unsigned ad;
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1071,15 +1098,19 @@ void NTSC_UpdateVideoDblLores80 (long ticks) // wsUpdateVideoDblLores
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				unsigned char * aux = MemGetAuxPtr(ad);
-				unsigned char * main = MemGetMainPtr(ad);
+				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t *pAux  = MemGetAuxPtr(ad);
 
-				abt = g_aPixelMaskGR[(aux [0] >> (g_nVideoClockVert & 4)) & 0xF] >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
-				mbt = g_aPixelMaskGR[(main[0] >> (g_nVideoClockVert & 4)) & 0xF] >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
-				bt = (mbt << 7) | (abt & 0x7f);
-			
-				VIDEO_DRAW_BITS();
-				g_nLastColumnPixelNTSC = bt & 1;
+				uint8_t m = pMain[0];
+				uint8_t a = pAux [0];
+
+				uint8_t lo = getLoResBits( m );
+				uint8_t hi = getLoResBits( a );
+
+				uint16_t main = lo >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
+				uint16_t aux  = hi >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
+				uint16_t bits = (main << 7) | (aux & 0x7f);
+				VIDEO_DRAW_BITS( bits );
 			}
 		}
 		updateVideoHorzEOL();
@@ -1089,7 +1120,8 @@ void NTSC_UpdateVideoDblLores80 (long ticks) // wsUpdateVideoDblLores
 //===========================================================================
 void NTSC_UpdateVideoDblHires80 (long ticks) // wsUpdateVideoDblHires
 {
-	unsigned ad, bt;
+	unsigned ad;
+	uint16_t bits;
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1109,13 +1141,15 @@ void NTSC_UpdateVideoDblHires80 (long ticks) // wsUpdateVideoDblHires
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				unsigned char * aux = MemGetAuxPtr(ad);
-				unsigned char * main = MemGetMainPtr(ad);
+				uint8_t  *pMain = MemGetMainPtr(ad);
+				uint8_t  *pAux  = MemGetAuxPtr(ad);
 
-				bt = ((main[0] & 0x7f) << 7) | (aux[0] & 0x7f);
-				bt = (bt << 1) | g_nLastColumnPixelNTSC;
-				VIDEO_DRAW_BITS();
-				g_nLastColumnPixelNTSC = bt & 1;
+				uint8_t m = pMain[0];
+				uint8_t a = pAux [0];
+
+				bits = ((m & 0x7f) << 7) | (a & 0x7f);
+				bits = (bits << 1) | g_nLastColumnPixelNTSC;
+				VIDEO_DRAW_BITS( bits );
 			}
 		}
 		updateVideoHorzEOL();
@@ -1126,7 +1160,7 @@ void NTSC_UpdateVideoDblHires80 (long ticks) // wsUpdateVideoDblHires
 //===========================================================================
 void NTSC_UpdateVideoHires40 (long ticks)
 {
-	unsigned ad, bt;
+	unsigned ad;
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1146,12 +1180,12 @@ void NTSC_UpdateVideoHires40 (long ticks)
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				unsigned char * main = MemGetMainPtr(ad);
-
-				bt = g_aPixelDoubleMaskHGR[main[0] & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
-				if (main[0] & 0x80)
-					bt = (bt << 1) | g_nLastColumnPixelNTSC;
-				VIDEO_DRAW_BITS();
+				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t  m     = pMain[0];
+				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
+				if (m & 0x80)
+					bits = (bits << 1) | g_nLastColumnPixelNTSC;
+				VIDEO_DRAW_BITS( bits );
 			}
 		}
 		updateVideoHorzEOL();
@@ -1161,7 +1195,7 @@ void NTSC_UpdateVideoHires40 (long ticks)
 //===========================================================================
 void NTSC_UpdateVideoDblHires40 (long ticks) // wsUpdateVideoHires0
 {
-	unsigned ad, bt;
+	unsigned ad;
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1181,9 +1215,10 @@ void NTSC_UpdateVideoDblHires40 (long ticks) // wsUpdateVideoHires0
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				unsigned char * main = MemGetMainPtr(ad);
-				bt = g_aPixelDoubleMaskHGR[main[0] & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
-				VIDEO_DRAW_BITS();
+				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t  m     = pMain[0];
+				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
+				VIDEO_DRAW_BITS( bits );
 			}
 		}
 		updateVideoHorzEOL();
@@ -1202,8 +1237,8 @@ void NTSC_SetVideoTextMode( int cols )
 //===========================================================================
 void NTSC_SetVideoMode( int bVideoModeFlags )
 {
-	g_nVideoMixed  = bVideoModeFlags & VF_MIXED;
-	g_nVideoCharSet      = g_nAltCharSetOffset;
+	g_nVideoMixed   = bVideoModeFlags & VF_MIXED;
+	g_nVideoCharSet = g_nAltCharSetOffset;
 
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
