@@ -262,9 +262,9 @@ static bool g_bVideoUpdatedThisFrame = false;
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      g_nFrameBufferPitch = 0;
-COLORREF         monochrome       = RGB(0xC0,0xC0,0xC0);
-static BOOL      rebuiltsource    = 0;
-static LPBYTE    vidlastmem       = NULL;
+COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
+static BOOL      rebuiltsource       = 0;
+static LPBYTE    vidlastmem          = NULL;
 
 static UINT      g_uVideoMode     = VF_TEXT;
 
@@ -324,7 +324,6 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 	void V_CreateIdentityPalette ();
 	void V_CreateDIBSections ();
-	HBRUSH V_CreateCustomBrush (COLORREF nColor);
 
 /** Our BitBlit() / VRAM_Copy()
 	@param dx Dst X
@@ -379,6 +378,7 @@ void VideoInitialize ()
 	g_pFramebufferinfo->bmiHeader.biClrUsed     = 0;
 
 	NTSC_VideoCreateDIBSection();
+//	VideoReinitialize(); // Can't call here since Config_Video_Load() hasn't been called yet
 }
 
 //===========================================================================
@@ -439,15 +439,15 @@ void V_CreateIdentityPalette ()
 	SETFRAMECOLOR(HGR_PINK,   0xFF,0x32,0xB5); // 0xD0,0x40,0xA0 -> 0xFF,0x32,0xB5
 
 	SETFRAMECOLOR( MONOCHROME_CUSTOM
-		, GetRValue(monochrome)
-		, GetGValue(monochrome)
-		, GetBValue(monochrome)
+		, GetRValue(g_nMonochromeRGB)
+		, GetGValue(g_nMonochromeRGB)
+		, GetBValue(g_nMonochromeRGB)
 	);
 
 	SETFRAMECOLOR( MONOCHROME_CUSTOM_50
-		, ((GetRValue(monochrome)/2) & 0xFF)
-		, ((GetGValue(monochrome)/2) & 0xFF)
-		, ((GetBValue(monochrome)/2) & 0xFF)
+		, ((GetRValue(g_nMonochromeRGB)/2) & 0xFF)
+		, ((GetGValue(g_nMonochromeRGB)/2) & 0xFF)
+		, ((GetBValue(g_nMonochromeRGB)/2) & 0xFF)
 	);
 
 	SETFRAMECOLOR( MONOCHROME_AMBER   , 0xFF,0x80,0x01); // Used for Monochrome Hi-Res graphics not text!
@@ -619,57 +619,6 @@ struct BRUSHBMP
     COLORREF dwPal[2];
     BYTE bBits[64];
 };
-
-HBRUSH V_CreateCustomBrush(COLORREF nColor)
-{
-	BRUSHBMP brbmp;
-	BYTE *pBytes;
-	int i;
-	//DWORD dwBits[6][2] =
-	//{
-	//    {0x000000ff,0x00000000}, // HS_HORIZONTAL       0       /* ----- */
-	//    {0x10101010,0x10101010}, // HS_VERTICAL         1       /* ||||| */
-	//    {0x01020408,0x10204080}, // HS_FDIAGONAL        2       /* \\\\\ */
-	//    {0x80402010,0x08040201}, // HS_BDIAGONAL        3       /* ///// */
-	//    {0x101010ff,0x10101010}, // HS_CROSS            4       /* +++++ */
-	//    {0x81422418,0x18244281}, // HS_DIAGCROSS        5       /* xxxxx */
-	//};
-	//    if ((HatchStyle < 0) || (HatchStyle > 6))
-	//        return 0;
-
-	int HatchStyle = 0;
-	DWORD dwBits[1][2] = 
-	{
-//		{0xff00ff00,0xff00ff00} // every other scan line
-		{0xFFFFFFFF,0xFFFFFFFF}
-	};
-
-	memset (&brbmp, 0, sizeof (brbmp));
-
-    brbmp.bmi.biSize = sizeof (BITMAPINFOHEADER);
-    brbmp.bmi.biWidth = 8;
-    brbmp.bmi.biHeight = 8;
-    brbmp.bmi.biPlanes = 1;
-    brbmp.bmi.biBitCount = 1;
-    brbmp.bmi.biClrUsed = 2;
-    brbmp.bmi.biClrImportant = 2;
-
-    // Initialize the palette of the bitmap.
-    brbmp.dwPal[0] = PALETTERGB(0x00,0x00,0x00);
-    brbmp.dwPal[1] = PALETTERGB(
-		(BYTE)((nColor >> 16) & 0xff),
-		(BYTE)((nColor >>  8) & 0xff),
-		(BYTE)((nColor >>  0) & 0xff));
-
-    // Write the hatch data to the bitmap.  
-    pBytes = (BYTE *)&dwBits[HatchStyle];
-    for (i = 0; i < 8; i++)
-        brbmp.bBits[i*4] = *pBytes++;
-
-    // Return the handle of the brush created.
-    return CreateDIBPatternBrushPt (&brbmp, DIB_RGB_COLORS);
-}
-
 
 //===========================================================================
 
@@ -1043,12 +992,12 @@ void VideoChooseMonochromeColor ()
 	ZeroMemory(&cc,sizeof(CHOOSECOLOR));
 	cc.lStructSize     = sizeof(CHOOSECOLOR);
 	cc.hwndOwner       = g_hFrameWindow;
-	cc.rgbResult       = monochrome;
+	cc.rgbResult       = g_nMonochromeRGB;
 	cc.lpCustColors    = customcolors + 1;
 	cc.Flags           = CC_RGBINIT | CC_SOLIDCOLOR;
 	if (ChooseColor(&cc))
 	{
-		monochrome = cc.rgbResult;
+		g_nMonochromeRGB = cc.rgbResult;
 		VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
@@ -1933,7 +1882,7 @@ void Config_Load_Video()
 {
 	REGLOAD(TEXT(REGVALUE_VIDEO_MODE           ),&g_eVideoType);
 	REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&g_uHalfScanLines);
-	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&monochrome);
+	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&g_nMonochromeRGB);
 
 	if (g_eVideoType >= NUM_VIDEO_MODES)
 		g_eVideoType = VT_COLOR_STANDARD; // Old default: VT_COLOR_TVEMU
@@ -1943,7 +1892,7 @@ void Config_Save_Video()
 {
 	REGSAVE(TEXT(REGVALUE_VIDEO_MODE           ),g_eVideoType);
 	REGSAVE(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),g_uHalfScanLines);
-	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),monochrome);
+	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),g_nMonochromeRGB);
 }
 
 // ____________________________________________________________________

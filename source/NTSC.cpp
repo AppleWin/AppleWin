@@ -119,6 +119,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static unsigned char g_aNTSCMonoTelevision                  [NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
 	static unsigned char g_aNTSCColorTelevision[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
 
+// g_aNTSCMonoMonitor    * g_nMonochromeRGB -> g_aNTSCMonoMonitorCustom
+// g_aNTSCMonoTelevision * g_nMonochromeRGB -> g_aNTSCMonoTelevisionCustom
+	static unsigned char g_aNTSCMonoMonitorCustom               [NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
+	static unsigned char g_aNTSCMonoTelevisionCustom            [NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
+
 	#define NUM_SIGZEROS 2
 	#define NUM_SIGPOLES 2
 	#define SIGGAIN  7.614490548f
@@ -280,6 +285,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void init_chroma_phase_table();
 	void updateColorPhase();
 	void updateVideoHorzEOL();
+	void updateMonochromeColor( uint16_t r, uint16_t g, uint16_t b );
 
 //===========================================================================
 inline float clampZeroOne( const float & x )
@@ -522,6 +528,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	make_csbits();
 	init_video_tables();
 	init_chroma_phase_table();
+	updateMonochromeColor( 0xFF, 0xFF, 0xFF );
 
 	for (int y = 0; y < 384; y++)
 		g_NTSC_Lines[y] = g_pFramebufferbits + 4 * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - 18) + 80;
@@ -625,12 +632,12 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 
 static void ntscMonoSinglePixel (int compositeSignal)
 {
-	SINGLEPIXEL(compositeSignal, g_aNTSCMonoMonitor);
+	SINGLEPIXEL(compositeSignal, g_aNTSCMonoMonitorCustom);
 }
 
 static void ntscMonoDoublePixel (int compositeSignal)
 {
-	DOUBLEPIXEL(compositeSignal, g_aNTSCMonoMonitor);
+	DOUBLEPIXEL(compositeSignal, g_aNTSCMonoMonitorCustom);
 }
 
 static void ntscColorSinglePixel (int compositeSignal)
@@ -648,12 +655,12 @@ static void ntscColorDoublePixel (int compositeSignal)
 
 static void ntscMonoTVSinglePixel (int compositeSignal)
 {
-	SINGLETVPIXEL(compositeSignal, g_aNTSCMonoTelevision);
+	SINGLETVPIXEL(compositeSignal, g_aNTSCMonoTelevisionCustom);
 }
 
 static void ntscMonoTVDoublePixel (int compositeSignal)
 {
-	DOUBLETVPIXEL(compositeSignal, g_aNTSCMonoTelevision);
+	DOUBLETVPIXEL(compositeSignal, g_aNTSCMonoTelevisionCustom);
 }
 
 static void ntscColorTVSinglePixel (int compositeSignal)
@@ -672,10 +679,29 @@ static void (*ntscMonoPixel)(int) = ntscMonoSinglePixel;
 static void (*ntscColorPixel)(int) = ntscColorSinglePixel;
 
 //===========================================================================
+void updateMonochromeColor( uint16_t r, uint16_t g, uint16_t b )
+{
+	for( int iSample = 0; iSample < NTSC_NUM_SEQUENCES; iSample++ )
+	{
+		g_aNTSCMonoMonitorCustom[ iSample ][ _B ] = (g_aNTSCMonoMonitor[ iSample ][_B] * b) >> 8;
+		g_aNTSCMonoMonitorCustom[ iSample ][ _G ] = (g_aNTSCMonoMonitor[ iSample ][_G] * g) >> 8;
+		g_aNTSCMonoMonitorCustom[ iSample ][ _R ] = (g_aNTSCMonoMonitor[ iSample ][_R] * r) >> 8;
+		g_aNTSCMonoMonitorCustom[ iSample ][ _A ] = 0xFF;
+
+		g_aNTSCMonoTelevisionCustom[ iSample ][ _B ] = (g_aNTSCMonoTelevision[ iSample ][_B] * b) >> 8;
+		g_aNTSCMonoTelevisionCustom[ iSample ][ _G ] = (g_aNTSCMonoTelevision[ iSample ][_G] * g) >> 8;
+		g_aNTSCMonoTelevisionCustom[ iSample ][ _B ] = (g_aNTSCMonoTelevision[ iSample ][_R] * r) >> 8;
+		g_aNTSCMonoTelevisionCustom[ iSample ][ _A ] = 0xFF;
+	}
+}
+
+
+//===========================================================================
 void NTSC_SetVideoStyle() // (int v, int s)
 {
 	int v = g_eVideoType;
     int s = g_uHalfScanLines;
+	uint8_t r, g, b;
 
 	switch (v)
 	{
@@ -712,10 +738,35 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			break;
 
 //		case VT_MONO_WHITE: //VT_MONO_MONITOR: //3:
-		case VT_MONO_AMBER: // RGB(0xFF,0x80,0x00)
-		case VT_MONO_GREEN: // RGB(0x00,0xC0,0x00)
-		case VT_MONO_WHITE: // RGB(0xFF,0xFF,0xFF)
+		case VT_MONO_AMBER:
+			r = 0xFF;
+			g = 0x80;
+			b = 0x00;
+			goto _mono;
+
+		case VT_MONO_GREEN:
+			r = 0x00;
+			g = 0xC0;
+			b = 0x00;
+			goto _mono;
+
+		case VT_MONO_WHITE:
+			r = 0xFF;
+			g = 0xFF;
+			b = 0xFF;
+			goto _mono;
+
 		case VT_MONO_HALFPIXEL_REAL:
+			// From WinGDI.h
+			// #define RGB(r,g,b)         ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
+			//#define GetRValue(rgb)      (LOBYTE(rgb))
+			//#define GetGValue(rgb)      (LOBYTE(((WORD)(rgb)) >> 8))
+			//#define GetBValue(rgb)      (LOBYTE((rgb)>>16))
+			r = (g_nMonochromeRGB >>  0) & 0xFF;
+			g = (g_nMonochromeRGB >>  8) & 0xFF;
+			b = (g_nMonochromeRGB >> 16) & 0xFF;
+_mono:
+			updateMonochromeColor( r, g, b ); // Custom Monochrome color
 			if (s) {
 				ntscMonoPixel = ntscColorPixel = ntscMonoSinglePixel;
 			}
