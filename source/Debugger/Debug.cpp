@@ -4215,9 +4215,50 @@ Update_t CmdMemoryLoad (int nArgs)
 	{
 		bBankSpecified = false;
 	}
-// TODO: check if extension ".hgr", ".hgr2", ".dhgr", ".dhgr2"
-	if (g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA)
-		return Help_Arg_1( CMD_MEMORY_LOAD );
+
+	struct KnownFileType_t
+	{
+		char *pExtension;
+		int   nAddress;
+		int   nLength;
+	};
+
+	const KnownFileType_t aFileTypes[] = 
+	{
+		 { ""     ,      0,      0 } // n/a
+		,{ ".hgr" , 0x2000, 0x2000 }
+		,{ ".hgr2", 0x4000, 0x2000 }
+		// TODO: extension ".dhgr", ".dhgr2"
+	};
+	const int        nFileTypes = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
+	const KnownFileType_t *pFileType = NULL;
+
+	char *pFileName = g_aArgs[ 1 ].sArg;
+	int   nLen = strlen( pFileName );
+	char *pEnd = pFileName + + nLen - 1;
+	while( pEnd > pFileName )
+	{
+		if( *pEnd == '.' )
+		{
+			for( int i = 1; i < nFileTypes; i++ )
+			{
+				if( strcmp( pEnd, aFileTypes[i].pExtension ) == 0 )
+				{
+					pFileType = &aFileTypes[i];
+					break;
+				}
+			}
+		}
+
+		if( pFileType )
+			break;
+
+		pEnd--;
+	}
+
+	if( !pFileType )
+		if (g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA)
+			return Help_Arg_1( CMD_MEMORY_LOAD );
 
 	TCHAR sLoadSaveFilePath[ MAX_PATH ];
 	_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // TODO: g_sDebugDir
@@ -4227,9 +4268,19 @@ Update_t CmdMemoryLoad (int nArgs)
 	WORD nAddressEnd = 0;
 	int  nAddressLen = 0;
 
-	RangeType_t eRange;
-	eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
-	if (nArgs > iArgComma2)
+	if( pFileType )
+	{
+		nAddressStart = pFileType->nAddress;
+		nAddressLen   = pFileType->nLength;
+		nAddressEnd   = pFileType->nLength + nAddressLen;
+	}
+
+	RangeType_t eRange = RANGE_MISSING_ARG_2;
+
+	if (g_aArgs[ iArgComma1 ].eToken == TOKEN_COMMA)
+		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
+
+	if( nArgs > iArgComma2 )
 	{
 		if (eRange == RANGE_MISSING_ARG_2)
 		{
@@ -4245,7 +4296,7 @@ Update_t CmdMemoryLoad (int nArgs)
 
 	if (bHaveFileName)
 	{
-		_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
+		_tcscpy( g_sMemoryLoadSaveFileName, pFileName );
 	}
 	_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
 	
@@ -4275,7 +4326,9 @@ Update_t CmdMemoryLoad (int nArgs)
 		size_t nRead = fread( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
 		if (nRead == 1)
 		{
-			ConsoleBufferPush( TEXT( "Loaded." ) );
+			char text[ 128 ];
+			sprintf( text, "Loaded @ A$%04X,L$%04X", nAddressStart, nAddressLen );
+			ConsoleBufferPush( text );
 		}
 		else
 		{
