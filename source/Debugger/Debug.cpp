@@ -4223,14 +4223,15 @@ Update_t CmdMemoryLoad (int nArgs)
 		int   nLength;
 	};
 
-	KnownFileType_t aFileTypes[] = 
+	const KnownFileType_t aFileTypes[] = 
 	{
 		 { ""     ,      0,      0 } // n/a
 		,{ ".hgr" , 0x2000, 0x2000 }
 		,{ ".hgr2", 0x4000, 0x2000 }
+		// TODO: extension ".dhgr", ".dhgr2"
 	};
 	const int        nFileTypes = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
-	KnownFileType_t *pFileType = NULL;
+	const KnownFileType_t *pFileType = NULL;
 
 	char *pFileName = g_aArgs[ 1 ].sArg;
 	int   nLen = strlen( pFileName );
@@ -4267,10 +4268,19 @@ Update_t CmdMemoryLoad (int nArgs)
 	WORD nAddressEnd = 0;
 	int  nAddressLen = 0;
 
-	RangeType_t eRange;
-	eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
+	if( pFileType )
+	{
+		nAddressStart = pFileType->nAddress;
+		nAddressLen   = pFileType->nLength;
+		nAddressEnd   = pFileType->nLength + nAddressLen;
+	}
 
-	if( !pFileType && (nArgs > iArgComma2) )
+	RangeType_t eRange = RANGE_MISSING_ARG_2;
+
+	if (g_aArgs[ iArgComma1 ].eToken == TOKEN_COMMA)
+		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
+
+	if( nArgs > iArgComma2 )
 	{
 		if (eRange == RANGE_MISSING_ARG_2)
 		{
@@ -4282,13 +4292,6 @@ Update_t CmdMemoryLoad (int nArgs)
 		{
 			return Help_Arg_1( CMD_MEMORY_LOAD );
 		}
-	}
-
-	if( pFileType )
-	{
-		nAddressStart = pFileType->nAddress;
-		nAddressLen   = pFileType->nLength;
-		nAddressEnd   = pFileType->nLength + nAddressLen;
 	}
 
 	if (bHaveFileName)
@@ -4323,7 +4326,9 @@ Update_t CmdMemoryLoad (int nArgs)
 		size_t nRead = fread( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
 		if (nRead == 1)
 		{
-			ConsoleBufferPush( TEXT( "Loaded." ) );
+			char text[ 128 ];
+			sprintf( text, "Loaded @ A$%04X,L$%04X", nAddressStart, nAddressLen );
+			ConsoleBufferPush( text );
 		}
 		else
 		{
