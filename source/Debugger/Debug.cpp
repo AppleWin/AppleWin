@@ -310,7 +310,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool      g_bTraceHeader     = false; // semaphore, flag header to be printed
 
 	DWORD     extbench      = 0;
-	bool      g_bDebuggerViewingAppleOutput = false;
+	int       g_bDebuggerViewingAppleOutput = false; // NOTE: alias for bVideoModeFlags!
 
 	bool      g_bIgnoreNextKey = false;
 
@@ -6096,9 +6096,12 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 		default:
 			break;
 	}
-
+#if _DEBUG
+	if(!bVideoModeFlags)
+		MessageBoxA( NULL, "bVideoModeFlags = ZERO !?", "Information", MB_OK );
+#endif
+	g_bDebuggerViewingAppleOutput = bVideoModeFlags;
 	VideoRefreshScreen( bVideoModeFlags );
-	g_bDebuggerViewingAppleOutput = true;
 	return UPDATE_NOTHING; // intentional
 }
 

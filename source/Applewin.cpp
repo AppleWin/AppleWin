@@ -230,7 +230,9 @@ void ContinueExecution(void)
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
-		VideoEndOfVideoFrame(); // NTSC currently requires this ... need to investigate why
+
+		// VideoEndOfVideoFrame(); // NTSC_TODO: is this still required? updates flash: if ((SW_TEXT || SW_MIXED) ) g_bTextFlashFlag = true
+		VideoRefreshScreen(0); // Just copy the output of our Apple framebuffer to the system Back Buffer
 		MB_EndOfVideoFrame();
 	}
 

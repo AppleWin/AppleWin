@@ -1196,7 +1196,8 @@ void VideoRealizePalette(HDC dc)
 void VideoRedrawScreen ()
 {
 	g_VideoForceFullRedraw = 1;
-	VideoRefreshScreen( g_uVideoMode );
+
+	VideoRefreshScreen( g_uVideoMode ); //g_uVideoMode );
 }
 
 //===========================================================================
@@ -1246,8 +1247,11 @@ void VideoRefreshScreen ( int bVideoModeFlags )
 	DebugRefresh(0);
 #endif
 
-	NTSC_SetVideoMode( bVideoModeFlags );
-	g_pNTSC_FuncVideoUpdate( VIDEO_SCANNER_6502_CYCLES );
+	if( bVideoModeFlags )
+	{
+		NTSC_SetVideoMode( bVideoModeFlags );
+		g_pNTSC_FuncVideoUpdate( VIDEO_SCANNER_6502_CYCLES );
+	}
 
 // NTSC_BEGIN: wsVideoRefresh()
 	LPBYTE pDstFrameBufferBits = 0;
@@ -1256,8 +1260,14 @@ void VideoRefreshScreen ( int bVideoModeFlags )
 
 	if (hFrameDC)
 	{
-//		StretchBlt(hFrameDC,0,0,VIEWPORTCX,VIEWPORTCY,g_hDeviceDC,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,SRCCOPY);
-		StretchBlt(hFrameDC,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,g_hDeviceDC,0,0,FRAMEBUFFER_W,FRAMEBUFFER_H,SRCCOPY);
+		StretchBlt(
+			hFrameDC,
+			0,0,
+			FRAMEBUFFER_W,FRAMEBUFFER_H,
+			g_hDeviceDC,
+			0,0,
+			FRAMEBUFFER_W,FRAMEBUFFER_H,
+			SRCCOPY );
 		GdiFlush();
 	}
 
@@ -1335,7 +1345,7 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		// NB. Deferring the update by just setting /g_VideoForceFullRedraw/ is not an option, since this doesn't provide "flip-immediate"
 		//
 		// Ultimately this isn't the correct solution, and proper cycle-accurate video rendering should be done, but this is a much bigger job!
-		//
+		// TODO: Is MemReadFloatingBus() still accurate now that we have proper per cycle video rendering??
 
 		if (!g_bVideoUpdatedThisFrame)
 		{

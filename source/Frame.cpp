@@ -565,6 +565,7 @@ static void DrawFrameWindow ()
 	else
 		// Win7: In fullscreen mode with 1 redraw, the the screen doesn't get redraw.
 		//VideoRedrawScreen(g_bIsFullScreen ? 2 : 1);	// TC: 22/06/2014: Why 2 redraws in full-screen mode (32-bit only)? (8-bit doesn't need this nor does Win8, just Win7 or older OS's)
+		//VideoRefreshScreen(0);
 		VideoRedrawScreen();
 
 	// DD Full-Screen Palette: BUGFIX: needs to come _after_ all drawing...
@@ -1173,8 +1174,8 @@ LRESULT CALLBACK FrameWndProc (
 			VideoReinitialize();
 			if ((g_nAppMode != MODE_LOGO) || ((g_nAppMode == MODE_DEBUG) && (g_bDebuggerViewingAppleOutput)))
 			{
-				VideoRedrawScreen();
-				g_bDebuggerViewingAppleOutput = true;
+				//VideoRedrawScreen();
+				VideoRefreshScreen( g_bDebuggerViewingAppleOutput );
 			}
 
 			Config_Save_Video();
