@@ -711,7 +711,11 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			}
 			break;
 
-		case VT_MONO_WHITE: //VT_MONO_MONITOR: //3:
+//		case VT_MONO_WHITE: //VT_MONO_MONITOR: //3:
+		case VT_MONO_AMBER: // RGB(0xFF,0x80,0x00)
+		case VT_MONO_GREEN: // RGB(0x00,0xC0,0x00)
+		case VT_MONO_WHITE: // RGB(0xFF,0xFF,0xFF)
+		case VT_MONO_HALFPIXEL_REAL:
 			if (s) {
 				ntscMonoPixel = ntscColorPixel = ntscMonoSinglePixel;
 			}
@@ -1094,7 +1098,8 @@ void NTSC_UpdateVideoHires40 (long ticks)
 				unsigned char * main = MemGetMainPtr(ad);
 
 				bt = g_aPixelDoubleMaskHGR[main[0] & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
-				if (main[0] & 0x80) bt = (bt << 1) | g_nLastColumnPixelNTSC;
+				if (main[0] & 0x80)
+					bt = (bt << 1) | g_nLastColumnPixelNTSC;
 				VIDEO_DRAW_BITS();
 			}
 		}
