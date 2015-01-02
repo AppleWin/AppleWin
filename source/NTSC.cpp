@@ -690,7 +690,7 @@ void updateMonochromeColor( uint16_t r, uint16_t g, uint16_t b )
 
 		g_aNTSCMonoTelevisionCustom[ iSample ][ _B ] = (g_aNTSCMonoTelevision[ iSample ][_B] * b) >> 8;
 		g_aNTSCMonoTelevisionCustom[ iSample ][ _G ] = (g_aNTSCMonoTelevision[ iSample ][_G] * g) >> 8;
-		g_aNTSCMonoTelevisionCustom[ iSample ][ _B ] = (g_aNTSCMonoTelevision[ iSample ][_R] * r) >> 8;
+		g_aNTSCMonoTelevisionCustom[ iSample ][ _R ] = (g_aNTSCMonoTelevision[ iSample ][_R] * r) >> 8;
 		g_aNTSCMonoTelevisionCustom[ iSample ][ _A ] = 0xFF;
 	}
 }
@@ -729,6 +729,10 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			break;
 
 		case VT_COLOR_TEXT_OPTIMIZED: // VT_MONO_TV: //2:
+			r = 0xFF;
+			g = 0xFF;
+			b = 0xFF;
+			updateMonochromeColor( r, g, b ); // Custom Monochrome color
 			if (s) {
 				ntscMonoPixel = ntscColorPixel = ntscMonoTVSinglePixel;
 			}
