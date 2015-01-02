@@ -771,7 +771,7 @@ void NTSC_SetVideoTextMode( int cols )
 void NTSC_SetVideoMode( int bVideoModeFlags )
 {
 	g_nVideoMixed   = bVideoModeFlags & VF_MIXED;
-	g_nVideoCharSet = g_nAltCharSetOffset;
+	g_nVideoCharSet = g_nAltCharSetOffset != 0;
 
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
