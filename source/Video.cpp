@@ -1263,10 +1263,10 @@ void VideoRefreshScreen ( int bVideoModeFlags )
 		StretchBlt(
 			hFrameDC,
 			0,0,
-			FRAMEBUFFER_W,FRAMEBUFFER_H,
+			g_nViewportCX,g_nViewportCY, //dst
 			g_hDeviceDC,
 			0,0,
-			FRAMEBUFFER_W,FRAMEBUFFER_H,
+			FRAMEBUFFER_W,FRAMEBUFFER_H, // src
 			SRCCOPY );
 		GdiFlush();
 	}

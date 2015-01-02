@@ -62,8 +62,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAGICY 5	// 3D border between Apple window & Title bar
 
 static const int kDEFAULT_VIEWPORT_SCALE = 2;
-static int g_nViewportCX = FRAMEBUFFER_W * kDEFAULT_VIEWPORT_SCALE;
-static int g_nViewportCY = FRAMEBUFFER_H * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCX = FRAMEBUFFER_W * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCY = FRAMEBUFFER_H * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
 static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
 
