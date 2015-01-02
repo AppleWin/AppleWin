@@ -53,7 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees
 	#else // sharpness is higher, less color bleed
 		#if CHROMA_FILTER == 2
-			#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees // c = signal_prefilter(z);
+			#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees // c = init_signal_prefilter(z);
 		#else
 	//		#define CYCLESTART DEG_TO_RAD(90) // (PI*0.5) // PI/2 = 90 degrees // HGR: Great, GR: fail on brown
 			#define CYCLESTART DEG_TO_RAD(115.f) // GR perfect match of slow method
@@ -276,6 +276,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void (* g_pNTSC_FuncVideoText  )(long) = NTSC_UpdateVideoText40;
 	       void (* g_pNTSC_FuncVideoUpdate)(long) = NTSC_UpdateVideoText40;
 
+	static void (*ntscMonoPixel )(int) = 0; //ntscMonoSinglePixel ;
+	static void (*ntscColorPixel)(int) = 0; //ntscColorSinglePixel;
+
 // Prototypes
 	// prototype from CPU.h
 	//unsigned char CpuRead(unsigned short addr, unsigned long uExecutedCycles);
@@ -285,7 +288,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void init_chroma_phase_table();
 	void updateColorPhase();
 	void updateVideoHorzEOL();
-	void updateMonochromeColor( uint16_t r, uint16_t g, uint16_t b );
+
+	static void ntscMonoSinglePixel (int compositeSignal);
+	static void ntscMonoDoublePixel (int compositeSignal);
+	static void ntscColorSinglePixel (int compositeSignal);
+	static void ntscColorDoublePixel (int compositeSignal);
+	static void ntscMonoTVSinglePixel (int compositeSignal);
+	static void ntscMonoTVDoublePixel (int compositeSignal);
+	static void ntscColorTVSinglePixel (int compositeSignal);
+	static void ntscColorTVDoublePixel (int compositeSignal);
+	static void updateMonochromeColor( uint16_t r, uint16_t g, uint16_t b );
 
 //===========================================================================
 inline float clampZeroOne( const float & x )
@@ -296,6 +308,18 @@ inline float clampZeroOne( const float & x )
 }
 
 //===========================================================================
+inline uint8_t getCharSetBits(int iChar)
+{
+    return csbits[g_nVideoCharSet][iChar][g_nVideoClockVert & 7];
+}
+
+//===========================================================================
+inline uint16_t getLoResBits( uint8_t iByte )
+{
+	return g_aPixelMaskGR[ (iByte >> (g_nVideoClockVert & 4)) & 0xF ]; 
+}
+
+//===========================================================================
 inline void updateColorPhase()
 {
 	g_nColorPhaseNTSC++;
@@ -303,17 +327,156 @@ inline void updateColorPhase()
 }
 
 //===========================================================================
-void NTSC_VideoInitAppleType ()
+inline void updateVideoHorzEOL()
 {
-	int model = g_Apple2Type;
+	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
+	{
+		g_nVideoClockHorz = 0;
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			//VIDEO_DRAW_ENDLINE();
+			if (g_nColorBurstPixels < 2)
+			{
+				ntscMonoPixel(g_nLastColumnPixelNTSC);
+				ntscMonoPixel(0);
+				ntscMonoPixel(0);
+				ntscMonoPixel(0);
+			}
+			else
+			{
+				ntscColorPixel(g_nLastColumnPixelNTSC);
+				ntscColorPixel(0);
+				ntscColorPixel(0);
+				ntscColorPixel(0);
+			}
+		}
 
-	// anything other than low bit set means not II/II+
-	if (model & 0xFFFE)
-		g_pHorzClockOffset = APPLE_IIE_HORZ_CLOCK_OFFSET;
-	else
-		g_pHorzClockOffset = APPLE_IIP_HORZ_CLOCK_OFFSET;
+		if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
+		{
+			g_nVideoClockVert = 0;
+			if (++g_nTextFlashCounter == 16)
+			{
+				g_nTextFlashCounter = 0;
+				g_nTextFlashMask ^= -1; // 16-bits
+			}
+		}
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			vbp0 = g_NTSC_Lines[2*g_nVideoClockVert];
+			g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
+			g_nLastColumnPixelNTSC = 0;
+			g_nSignalBitsNTSC = 0;
+		}
+	}
 }
 
+#define SINGLE_SCANLINE_MONITOR(signal,table) \
+	do { \
+		unsigned int *cp, *mp; \
+		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
+		cp = (unsigned int *)(&(table[g_nSignalBitsNTSC][0])); \
+		*((unsigned int *)vbp0) = *cp; \
+		mp = (unsigned int *)(vbp0 - 4 * FRAMEBUFFER_W); \
+		*mp = ((*cp & 0x00fcfcfc) >> 2) + 0xff000000; \
+		vbp0 += 4; \
+	} while(0)
+
+#define SINGLE_SCANLINE_TELEVISION(signal,table) \
+	do { \
+		unsigned int ntscp, prevp, betwp; \
+		unsigned int *prevlin, *between; \
+		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
+		prevlin = (unsigned int *)(vbp0 + 8 * FRAMEBUFFER_W); \
+		between = (unsigned int *)(vbp0 + 4 * FRAMEBUFFER_W); \
+		ntscp = *(unsigned int *)(&(table[g_nSignalBitsNTSC][0])); /* raw current NTSC color */ \
+		prevp = *prevlin; \
+		betwp = ntscp - ((ntscp & 0x00fcfcfc) >> 2); \
+		*between = betwp | 0xff000000; \
+		*((unsigned int *)vbp0) = ntscp; \
+		vbp0 += 4; \
+	} while(0)
+
+#define DOUBLE_SCANLINE_MONITOR(signal,table) \
+	do { \
+		unsigned int *cp, *mp; \
+		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
+		cp = (unsigned int *)(&(table[g_nSignalBitsNTSC][0])); \
+		mp = (unsigned int *)(vbp0 - 4 * FRAMEBUFFER_W); \
+		*((unsigned int *)vbp0) = *mp = *cp; \
+		vbp0 += 4; \
+	} while(0)
+
+#define DOUBLE_SCANLINE_TELEVISION(signal,table) \
+	do { \
+		unsigned int ntscp, prevp, betwp; \
+		unsigned int *prevlin, *between; \
+		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
+		prevlin = (unsigned int *)(vbp0 + 8 * FRAMEBUFFER_W); \
+		between = (unsigned int *)(vbp0 + 4 * FRAMEBUFFER_W); \
+		ntscp = *(unsigned int *)(&(table[g_nSignalBitsNTSC][0])); /* raw current NTSC color */ \
+		prevp = *prevlin; \
+		betwp = ((ntscp & 0x00fefefe) >> 1) + ((prevp & 0x00fefefe) >> 1); \
+		*between = betwp | 0xff000000; \
+		*((unsigned int *)vbp0) = ntscp; \
+		vbp0 += 4; \
+	} while(0)
+
+//===========================================================================
+inline
+void VIDEO_DRAW_BITS( uint16_t bt )
+{
+	if (g_nColorBurstPixels < 2)
+	{ 
+		/* #1 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		/* #2 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		/* #3 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		/* #4 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		/* #5 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		/* #6 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		/* #7 of 7 */
+		ntscMonoPixel(bt & 1); bt >>= 1;
+		ntscMonoPixel(bt & 1); g_nLastColumnPixelNTSC = bt & 1; bt >>= 1;
+	}
+	else
+	{
+		/* #1 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #2 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #3 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #4 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #5 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #6 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #7 of 7 */
+		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); g_nLastColumnPixelNTSC = bt & 1; bt >>= 1;
+	}
+}
+
+//===========================================================================
 static void init_video_tables (void)
 {
 	/*
@@ -337,7 +500,8 @@ static void init_video_tables (void)
 // sadly float64 precision is needed
 #define real double
 
-static real signal_prefilter (real z)
+//===========================================================================
+static real init_signal_prefilter (real z)
 {
 	static real xv[NUM_SIGZEROS + 1] = { 0,0,0 };
 	static real yv[NUM_SIGPOLES + 1] = { 0,0,0 };
@@ -352,10 +516,11 @@ static real signal_prefilter (real z)
 	return yv[2];
 }
 
-static real luma0_filter (real z)
+//===========================================================================
+static real init_luma0_filter (real z)
 {
-	static real xv[NUM_LUMZEROS + 1];
-	static real yv[NUM_LUMPOLES + 1];
+	static real xv[NUM_LUMZEROS + 1] = { 0,0,0 };
+	static real yv[NUM_LUMPOLES + 1] = { 0,0,0 };
 
 	xv[0] = xv[1];
 	xv[1] = xv[2];
@@ -367,10 +532,11 @@ static real luma0_filter (real z)
 	return yv[2];
 }
 
-static real luma1_filter (real z)
+//===========================================================================
+static real init_luma1_filter (real z)
 {
-	static real xv[NUM_LUMZEROS + 1];
-	static real yv[NUM_LUMPOLES + 1];
+	static real xv[NUM_LUMZEROS + 1] = { 0,0,0};
+	static real yv[NUM_LUMPOLES + 1] = { 0,0,0};
 
 	xv[0] = xv[1];
 	xv[1] = xv[2];
@@ -382,10 +548,11 @@ static real luma1_filter (real z)
 	return yv[2];
 }
 
-static real chroma_filter (real z)
+//===========================================================================
+static real init_chroma_filter (real z)
 {
-	static real xv[NUM_CHRZEROS + 1];
-	static real yv[NUM_CHRPOLES + 1];
+	static real xv[NUM_CHRZEROS + 1] = {0,0,0};
+	static real yv[NUM_CHRPOLES + 1] = {0,0,0};
 
 	xv[0] = xv[1];
 	xv[1] = xv[2];
@@ -426,10 +593,10 @@ static void init_chroma_phase_table (void)
 				{
 #if CHROMA_BLUR
 					//z = z * 1.25;
-					zz = signal_prefilter(z);
-					c = chroma_filter(zz); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
-					y0 = luma0_filter(zz);
-					y1 = luma1_filter(zz - c);
+					zz = init_signal_prefilter(z);
+					c = init_chroma_filter(zz); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
+					y0 = init_luma0_filter(zz);
+					y1 = init_luma1_filter(zz - c);
 #else // CHROMA_BLUR
 					y0 = y0 + (z - y0) / 4.0;
 					y1 = y0; // fix TV mode
@@ -449,7 +616,7 @@ static void init_chroma_phase_table (void)
 	#endif
 	#if CHROMA_FILTER == 2 // more blur, muted chroma fringe
 					// White has too much ringing, and the color fringes are muted
-					c = signal_prefilter(z); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
+					c = init_signal_prefilter(z); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
 	#endif
 #endif // CHROMA_BLUR
 					c = c * 2.f;
@@ -523,160 +690,56 @@ static void init_chroma_phase_table (void)
 }
 
 //===========================================================================
-void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
-{
-	make_csbits();
-	init_video_tables();
-	init_chroma_phase_table();
-	updateMonochromeColor( 0xFF, 0xFF, 0xFF );
-
-	for (int y = 0; y < 384; y++)
-		g_NTSC_Lines[y] = g_pFramebufferbits + 4 * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - 18) + 80;
-
-	vbp0 = g_NTSC_Lines[0]; // wsLines
-
-#if HGR_TEST_PATTERN
-// Michael -- Init HGR to almost all-possible-combinations
-// CALL-151
-// C050 C053 C057
-	unsigned char b = 0;
-	unsigned char *main, *aux;
-
-	for( unsigned page = 0; page < 2; page++ )
-	{
-		for( unsigned w = 0; w < 2; w++ ) // 16 cols
-		{
-			for( unsigned z = 0; z < 2; z++ ) // 8 cols
-			{
-				b  = 0; // 4 columns * 64 rows
-				for( unsigned x = 0; x < 4; x++ ) // 4 cols
-				{
-					for( unsigned y = 0; y < 64; y++ ) // 1 col
-					{
-						unsigned y2 = y*2;
-						ad = 0x2000 + (y2&7)*0x400 + ((y2/8)&7)*0x80 + (y2/64)*0x28 + 2*x + 10*z + 20*w;
-						ad += 0x2000*page;
-						main = MemGetMainPtr(ad);
-						aux  = MemGetAuxPtr (ad);
-						main[0] = b; main[1] = w + page*0x80;
-						aux [0] = z; aux [1] = 0;
-
-						y2 = y*2 + 1;
-						ad = 0x2000 + (y2&7)*0x400 + ((y2/8)&7)*0x80 + (y2/64)*0x28 + 2*x + 10*z + 20*w;
-						ad += 0x2000*page;
-						main = MemGetMainPtr(ad);
-						aux  = MemGetAuxPtr (ad);
-						main[0] =   0; main[1] = w + page*0x80;
-						aux [0] =   b; aux [1] = 0;
-
-						b++;
-					}
-				}
-			}
-		}
-	}
-#endif
-
-}
-
-#define SINGLEPIXEL(signal,table) \
-	do { \
-		unsigned int *cp, *mp; \
-		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
-		cp = (unsigned int *)(&(table[g_nSignalBitsNTSC][0])); \
-		*((unsigned int *)vbp0) = *cp; \
-		mp = (unsigned int *)(vbp0 - 4 * FRAMEBUFFER_W); \
-		*mp = ((*cp & 0x00fcfcfc) >> 2) + 0xff000000; \
-		vbp0 += 4; \
-	} while(0)
-
-#define SINGLETVPIXEL(signal,table) \
-	do { \
-		unsigned int ntscp, prevp, betwp; \
-		unsigned int *prevlin, *between; \
-		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
-		prevlin = (unsigned int *)(vbp0 + 8 * FRAMEBUFFER_W); \
-		between = (unsigned int *)(vbp0 + 4 * FRAMEBUFFER_W); \
-		ntscp = *(unsigned int *)(&(table[g_nSignalBitsNTSC][0])); /* raw current NTSC color */ \
-		prevp = *prevlin; \
-		betwp = ntscp - ((ntscp & 0x00fcfcfc) >> 2); \
-		*between = betwp | 0xff000000; \
-		*((unsigned int *)vbp0) = ntscp; \
-		vbp0 += 4; \
-	} while(0)
-
-#define DOUBLEPIXEL(signal,table) \
-	do { \
-		unsigned int *cp, *mp; \
-		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
-		cp = (unsigned int *)(&(table[g_nSignalBitsNTSC][0])); \
-		mp = (unsigned int *)(vbp0 - 4 * FRAMEBUFFER_W); \
-		*((unsigned int *)vbp0) = *mp = *cp; \
-		vbp0 += 4; \
-	} while(0)
-
-#define DOUBLETVPIXEL(signal,table) \
-	do { \
-		unsigned int ntscp, prevp, betwp; \
-		unsigned int *prevlin, *between; \
-		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
-		prevlin = (unsigned int *)(vbp0 + 8 * FRAMEBUFFER_W); \
-		between = (unsigned int *)(vbp0 + 4 * FRAMEBUFFER_W); \
-		ntscp = *(unsigned int *)(&(table[g_nSignalBitsNTSC][0])); /* raw current NTSC color */ \
-		prevp = *prevlin; \
-		betwp = ((ntscp & 0x00fefefe) >> 1) + ((prevp & 0x00fefefe) >> 1); \
-		*between = betwp | 0xff000000; \
-		*((unsigned int *)vbp0) = ntscp; \
-		vbp0 += 4; \
-	} while(0)
-
-static void ntscMonoSinglePixel (int compositeSignal)
-{
-	SINGLEPIXEL(compositeSignal, g_aNTSCMonoMonitorCustom);
-}
-
-static void ntscMonoDoublePixel (int compositeSignal)
-{
-	DOUBLEPIXEL(compositeSignal, g_aNTSCMonoMonitorCustom);
-}
-
-static void ntscColorSinglePixel (int compositeSignal)
-{
-	SINGLEPIXEL(compositeSignal, g_aNTSCColorMonitor[g_nColorPhaseNTSC]);
-	updateColorPhase();
-}
-
-static void ntscColorDoublePixel (int compositeSignal)
-{
-	DOUBLEPIXEL(compositeSignal, g_aNTSCColorMonitor[g_nColorPhaseNTSC]);
-	updateColorPhase();
-}
-
-
-static void ntscMonoTVSinglePixel (int compositeSignal)
-{
-	SINGLETVPIXEL(compositeSignal, g_aNTSCMonoTelevisionCustom);
-}
-
-static void ntscMonoTVDoublePixel (int compositeSignal)
-{
-	DOUBLETVPIXEL(compositeSignal, g_aNTSCMonoTelevisionCustom);
-}
-
 static void ntscColorTVSinglePixel (int compositeSignal)
 {
-	SINGLETVPIXEL(compositeSignal, g_aNTSCColorTelevision[g_nColorPhaseNTSC]);
+	SINGLE_SCANLINE_TELEVISION(compositeSignal, g_aNTSCColorTelevision[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
+//===========================================================================
 static void ntscColorTVDoublePixel (int compositeSignal)
 {
-	DOUBLETVPIXEL(compositeSignal, g_aNTSCColorTelevision[g_nColorPhaseNTSC]);
+	DOUBLE_SCANLINE_TELEVISION(compositeSignal, g_aNTSCColorTelevision[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
-static void (*ntscMonoPixel )(int) = ntscMonoSinglePixel ;
-static void (*ntscColorPixel)(int) = ntscColorSinglePixel;
+//===========================================================================
+static void ntscColorSinglePixel (int compositeSignal)
+{
+	SINGLE_SCANLINE_MONITOR(compositeSignal, g_aNTSCColorMonitor[g_nColorPhaseNTSC]);
+	updateColorPhase();
+}
+
+//===========================================================================
+static void ntscColorDoublePixel (int compositeSignal)
+{
+	DOUBLE_SCANLINE_MONITOR(compositeSignal, g_aNTSCColorMonitor[g_nColorPhaseNTSC]);
+	updateColorPhase();
+}
+
+//===========================================================================
+static void ntscMonoSinglePixel (int compositeSignal)
+{
+	SINGLE_SCANLINE_MONITOR(compositeSignal, g_aNTSCMonoMonitorCustom);
+}
+
+//===========================================================================
+static void ntscMonoDoublePixel (int compositeSignal)
+{
+	DOUBLE_SCANLINE_MONITOR(compositeSignal, g_aNTSCMonoMonitorCustom);
+}
+
+//===========================================================================
+static void ntscMonoTVSinglePixel (int compositeSignal)
+{
+	SINGLE_SCANLINE_TELEVISION(compositeSignal, g_aNTSCMonoTelevisionCustom);
+}
+
+//===========================================================================
+static void ntscMonoTVDoublePixel (int compositeSignal)
+{
+	DOUBLE_SCANLINE_TELEVISION(compositeSignal, g_aNTSCMonoTelevisionCustom);
+}
 
 //===========================================================================
 void updateMonochromeColor( uint16_t r, uint16_t g, uint16_t b )
@@ -695,6 +758,55 @@ void updateMonochromeColor( uint16_t r, uint16_t g, uint16_t b )
 	}
 }
 
+//===========================================================================
+void NTSC_SetVideoTextMode( int cols )
+{
+    if( cols == 40 )
+		g_pNTSC_FuncVideoText = NTSC_UpdateVideoText40;
+	else
+		g_pNTSC_FuncVideoText = NTSC_UpdateVideoText80;
+}
+
+//===========================================================================
+void NTSC_SetVideoMode( int bVideoModeFlags )
+{
+	g_nVideoMixed   = bVideoModeFlags & VF_MIXED;
+	g_nVideoCharSet = g_nAltCharSetOffset;
+
+	g_nTextPage  = 1;
+	g_nHiresPage = 1;
+	if (bVideoModeFlags & VF_PAGE2) {
+		if (0 == (bVideoModeFlags & VF_80STORE)) {
+			g_nTextPage  = 2;
+			g_nHiresPage = 2;
+		}
+	}
+
+	if (bVideoModeFlags & VF_TEXT) {
+		if (bVideoModeFlags & VF_80COL)
+			g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoText80;
+		else
+			g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoText40;
+	}
+	else if (bVideoModeFlags & VF_HIRES) {
+		if (bVideoModeFlags & VF_DHIRES)
+			if (bVideoModeFlags & VF_80COL)
+				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDblHires80;
+			else
+				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDblHires40;
+		else
+			g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoHires40;
+	}
+	else {
+		if (bVideoModeFlags & VF_DHIRES)
+			if (bVideoModeFlags & VF_80COL)
+				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDblLores80;
+			else
+				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDblLores40;
+		else
+			g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoLores40;
+	}
+}
 
 //===========================================================================
 void NTSC_SetVideoStyle() // (int v, int s)
@@ -781,158 +893,6 @@ _mono:
 		}
 }
 
-int NTSC_VideoIsVbl ()
-{
-	return (g_nVideoClockVert >= VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockVert < VIDEO_SCANNER_MAX_VERT);
-}
-
-unsigned char NTSC_VideoByte (unsigned long cycle)
-{
-	unsigned char * mem;
-	mem = MemGetMainPtr(g_aHorzClockMemAddress[ g_nVideoClockHorz ]);
-	return mem[0];
-}
-
-inline
-void VIDEO_DRAW_BITS( uint16_t bt )
-{
-	if (g_nColorBurstPixels < 2)
-	{ 
-		/* #1 of 7 */
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		/* #2 of 7 */
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		/* #3 of 7 */
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		/* #4 of 7 */
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		/* #5 of 7 */
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		/* #6 of 7 */
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		/* #7 of 7 */
-		ntscMonoPixel(bt & 1); bt >>= 1;
-		ntscMonoPixel(bt & 1); g_nLastColumnPixelNTSC = bt & 1; bt >>= 1;
-	}
-	else
-	{
-		/* #1 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); bt >>= 1;
-		/* #2 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); bt >>= 1;
-		/* #3 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); bt >>= 1;
-		/* #4 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); bt >>= 1;
-		/* #5 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); bt >>= 1;
-		/* #6 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); bt >>= 1;
-		/* #7 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); g_nLastColumnPixelNTSC = bt & 1; bt >>= 1;
-	}
-}
-
-inline
-void updateVideoHorzEOL()
-{
-	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
-	{
-		g_nVideoClockHorz = 0;
-		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-		{
-			//VIDEO_DRAW_ENDLINE();
-			if (g_nColorBurstPixels < 2)
-			{
-				ntscMonoPixel(g_nLastColumnPixelNTSC);
-				ntscMonoPixel(0);
-				ntscMonoPixel(0);
-				ntscMonoPixel(0);
-			}
-			else
-			{
-				ntscColorPixel(g_nLastColumnPixelNTSC);
-				ntscColorPixel(0);
-				ntscColorPixel(0);
-				ntscColorPixel(0);
-			}
-		}
-
-		if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
-		{
-			g_nVideoClockVert = 0;
-			if (++g_nTextFlashCounter == 16)
-			{
-				g_nTextFlashCounter = 0;
-				g_nTextFlashMask ^= -1; // 16-bits
-			}
-		}
-
-		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-		{
-			vbp0 = g_NTSC_Lines[2*g_nVideoClockVert];
-			g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
-			g_nLastColumnPixelNTSC = 0;
-			g_nSignalBitsNTSC = 0;
-		}
-	}
-}
-
-// Light-weight Video Clock Update
-//===========================================================================
-void NTSC_VideoUpdateCycles( long cycles )
-{
-//	if( !g_bFullSpeed )
-//			g_pNTSC_FuncVideoUpdate( uElapsedCycles );
-//	else
-	for( ; cycles > 0; cycles-- )
-	{
-		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
-		{
-			g_nVideoClockHorz = 0;
-			if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
-			{
-				g_nVideoClockVert = 0;
-				if (++g_nTextFlashCounter == 16)
-				{
-					g_nTextFlashCounter = 0;
-					g_nTextFlashMask ^= -1; // 16-bits
-				}
-
-				// Force full refresh
-				g_pNTSC_FuncVideoUpdate( VIDEO_SCANNER_6502_CYCLES );
-			}
-
-			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-			{
-				vbp0 = g_NTSC_Lines[2*g_nVideoClockVert];
-				g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
-				g_nLastColumnPixelNTSC = 0;
-				g_nSignalBitsNTSC = 0;
-			}
-		}
-	}
-}
-
-inline
-uint8_t getCharSetBits(int iBank)
-{
-    return csbits[g_nVideoCharSet][iBank][g_nVideoClockVert & 7];
-}
-
 //===========================================================================
 void NTSC_UpdateVideoText40 (long ticks)
 {
@@ -982,6 +942,10 @@ void NTSC_UpdateVideoText80 (long ticks)
 		{
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
+vbp0[0] ^= 0xD5;
+vbp0[1] ^= 0xAA;
+vbp0[2] ^= 0xFF;
+
 				uint8_t *pAux  = MemGetAuxPtr(ad);
 				uint8_t *pMain = MemGetMainPtr(ad);
 
@@ -1003,12 +967,6 @@ void NTSC_UpdateVideoText80 (long ticks)
 		}
 		updateVideoHorzEOL();
 	}
-}
-
-inline
-uint16_t getLoResBits( uint8_t iByte )
-{
-	return g_aPixelMaskGR[ (iByte >> (g_nVideoClockVert & 4)) & 0xF ]; 
 }
 
 //===========================================================================
@@ -1160,7 +1118,6 @@ void NTSC_UpdateVideoDblHires80 (long ticks) // wsUpdateVideoDblHires
 	}
 }
 
-
 //===========================================================================
 void NTSC_UpdateVideoHires40 (long ticks)
 {
@@ -1230,51 +1187,123 @@ void NTSC_UpdateVideoDblHires40 (long ticks) // wsUpdateVideoHires0
 }
 
 //===========================================================================
-void NTSC_SetVideoTextMode( int cols )
+unsigned char NTSC_VideoByte (unsigned long cycle)
 {
-    if( cols == 40 )
-		g_pNTSC_FuncVideoText = NTSC_UpdateVideoText40;
-	else
-		g_pNTSC_FuncVideoText = NTSC_UpdateVideoText80;
+	unsigned char * mem;
+	mem = MemGetMainPtr(g_aHorzClockMemAddress[ g_nVideoClockHorz ]);
+	return mem[0];
 }
 
 //===========================================================================
-void NTSC_SetVideoMode( int bVideoModeFlags )
+void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 {
-	g_nVideoMixed   = bVideoModeFlags & VF_MIXED;
-	g_nVideoCharSet = g_nAltCharSetOffset;
+	make_csbits();
+	init_video_tables();
+	init_chroma_phase_table();
+	updateMonochromeColor( 0xFF, 0xFF, 0xFF );
 
-	g_nTextPage  = 1;
-	g_nHiresPage = 1;
-	if (bVideoModeFlags & VF_PAGE2) {
-		if (0 == (bVideoModeFlags & VF_80STORE)) {
-			g_nTextPage  = 2;
-			g_nHiresPage = 2;
+	for (int y = 0; y < 384; y++)
+		g_NTSC_Lines[y] = g_pFramebufferbits + 4 * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - 18) + 80;
+
+	vbp0 = g_NTSC_Lines[0]; // wsLines
+
+	ntscMonoPixel  = ntscMonoSinglePixel ;
+	ntscColorPixel = ntscColorSinglePixel;
+
+#if HGR_TEST_PATTERN
+// Michael -- Init HGR to almost all-possible-combinations
+// CALL-151
+// C050 C053 C057
+	unsigned char b = 0;
+	unsigned char *main, *aux;
+
+	for( unsigned page = 0; page < 2; page++ )
+	{
+		for( unsigned w = 0; w < 2; w++ ) // 16 cols
+		{
+			for( unsigned z = 0; z < 2; z++ ) // 8 cols
+			{
+				b  = 0; // 4 columns * 64 rows
+				for( unsigned x = 0; x < 4; x++ ) // 4 cols
+				{
+					for( unsigned y = 0; y < 64; y++ ) // 1 col
+					{
+						unsigned y2 = y*2;
+						ad = 0x2000 + (y2&7)*0x400 + ((y2/8)&7)*0x80 + (y2/64)*0x28 + 2*x + 10*z + 20*w;
+						ad += 0x2000*page;
+						main = MemGetMainPtr(ad);
+						aux  = MemGetAuxPtr (ad);
+						main[0] = b; main[1] = w + page*0x80;
+						aux [0] = z; aux [1] = 0;
+
+						y2 = y*2 + 1;
+						ad = 0x2000 + (y2&7)*0x400 + ((y2/8)&7)*0x80 + (y2/64)*0x28 + 2*x + 10*z + 20*w;
+						ad += 0x2000*page;
+						main = MemGetMainPtr(ad);
+						aux  = MemGetAuxPtr (ad);
+						main[0] =   0; main[1] = w + page*0x80;
+						aux [0] =   b; aux [1] = 0;
+
+						b++;
+					}
+				}
+			}
 		}
 	}
+#endif
 
-	if (bVideoModeFlags & VF_TEXT) {
-		if (bVideoModeFlags & VF_80COL)
-			g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoText80;
-		else
-			g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoText40;
-	}
-	else if (bVideoModeFlags & VF_HIRES) {
-		if (bVideoModeFlags & VF_DHIRES)
-			if (bVideoModeFlags & VF_80COL)
-				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDblHires80;
-			else
-				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDblHires40;
-		else
-			g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoHires40;
-	}
-	else {
-		if (bVideoModeFlags & VF_DHIRES)
-			if (bVideoModeFlags & VF_80COL)
-				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDblLores80;
-			else
-				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDblLores40;
-		else
-			g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoLores40;
+}
+
+//===========================================================================
+void NTSC_VideoInitAppleType ()
+{
+	int model = g_Apple2Type;
+
+	// anything other than low bit set means not II/II+
+	if (model & 0xFFFE)
+		g_pHorzClockOffset = APPLE_IIE_HORZ_CLOCK_OFFSET;
+	else
+		g_pHorzClockOffset = APPLE_IIP_HORZ_CLOCK_OFFSET;
+}
+
+//===========================================================================
+int NTSC_VideoIsVbl ()
+{
+	return (g_nVideoClockVert >= VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockVert < VIDEO_SCANNER_MAX_VERT);
+}
+
+// Light-weight Video Clock Update
+//===========================================================================
+void NTSC_VideoUpdateCycles( long cycles )
+{
+//	if( !g_bFullSpeed )
+//			g_pNTSC_FuncVideoUpdate( uElapsedCycles );
+//	else
+	for( ; cycles > 0; cycles-- )
+	{
+		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
+		{
+			g_nVideoClockHorz = 0;
+			if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
+			{
+				g_nVideoClockVert = 0;
+				if (++g_nTextFlashCounter == 16)
+				{
+					g_nTextFlashCounter = 0;
+					g_nTextFlashMask ^= -1; // 16-bits
+				}
+
+				// Force full refresh
+				g_pNTSC_FuncVideoUpdate( VIDEO_SCANNER_6502_CYCLES );
+			}
+
+			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+			{
+				vbp0 = g_NTSC_Lines[2*g_nVideoClockVert];
+				g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
+				g_nLastColumnPixelNTSC = 0;
+				g_nSignalBitsNTSC = 0;
+			}
+		}
 	}
 }
