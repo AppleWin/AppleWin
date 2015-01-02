@@ -1232,11 +1232,10 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 
 	vbp0 = g_aNTSC_Lines[0]; // wsLines
 
-	g_pFunc_ntscMonoPixel  = ntscMonoSinglePixel ;
-	g_pFunc_ntscColorPixel = ntscColorSinglePixel;
-
-	g_pFunc_NTSCVideoUpdateText   = NTSC_UpdateVideoText40;
+	g_pFunc_NTSCVideoUpdateText     = NTSC_UpdateVideoText40;
 	g_pFunc_NTSCVideoUpdateGraphics = NTSC_UpdateVideoText40;
+
+	VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
 
 #if HGR_TEST_PATTERN
 // Michael -- Init HGR to almost all-possible-combinations

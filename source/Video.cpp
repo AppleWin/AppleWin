@@ -378,7 +378,6 @@ void VideoInitialize ()
 	g_pFramebufferinfo->bmiHeader.biClrUsed     = 0;
 
 	NTSC_VideoCreateDIBSection();
-//	VideoReinitialize(); // Can't call here since Config_Video_Load() hasn't been called yet
 }
 
 //===========================================================================
@@ -1197,7 +1196,7 @@ void VideoRedrawScreen ()
 {
 	g_VideoForceFullRedraw = 1;
 
-	VideoRefreshScreen( g_uVideoMode ); //g_uVideoMode );
+	VideoRefreshScreen( g_uVideoMode );
 }
 
 //===========================================================================
@@ -1275,11 +1274,6 @@ void VideoRefreshScreen ( int bVideoModeFlags )
 		--g_VideoForceFullRedraw;
 // NTSC_END
 }
-
-//===========================================================================
-//void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
-//	FrameReleaseVideoDC();
-//	SetLastDrawnImage();
 
 //===========================================================================
 void VideoReinitialize ()

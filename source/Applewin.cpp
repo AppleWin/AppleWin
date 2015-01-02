@@ -432,7 +432,6 @@ void LoadConfiguration(void)
 	REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED),(DWORD *)&enhancedisk);
 
 	Config_Load_Video();
-	VideoReinitialize();
 
 	REGLOAD(TEXT("Uthernet Active")   ,(DWORD *)&tfe_enabled);
 
