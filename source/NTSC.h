@@ -12,15 +12,6 @@
 	extern void    NTSC_SetVideoMode( int flags );
 	extern void    NTSC_SetVideoStyle();
 
-	extern void    NTSC_UpdateVideoText40    (long cycles);
-	extern void    NTSC_UpdateVideoText80    (long cyckes);
-	extern void    NTSC_UpdateVideoLores40   (long cycles);
-	extern void    NTSC_UpdateVideoDblLores40(long cycles);
-	extern void    NTSC_UpdateVideoDblLores80(long cycles);
-	extern void    NTSC_UpdateVideoHires40   (long cycles);
-	extern void    NTSC_UpdateVideoDblHires40(long cycles);
-	extern void    NTSC_UpdateVideoDblHires80(long cycles);
-
 	extern uint8_t NTSC_VideoByte(unsigned long);
 	extern void    NTSC_VideoCreateDIBSection();
 	extern void    NTSC_VideoInit( uint8_t *pFramebuffer );

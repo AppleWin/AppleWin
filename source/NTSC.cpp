@@ -2,7 +2,7 @@
 AppleWin : An Apple //e emulator for Windows
 
 Copyright (C) 2010-2011, William S Simms
-Copyright (C) 2014 Michael Pohoreski
+Copyright (C) 2014-2015 Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -50,7 +50,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#endif
 
 	#if CHROMA_BLUR
-		#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees
+		//#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees
+		#define CYCLESTART (DEG_TO_RAD(45))
 	#else // sharpness is higher, less color bleed
 		#if CHROMA_FILTER == 2
 			#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees // c = init_signal_prefilter(z);
@@ -79,12 +80,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#define VIDEO_SCANNER_MAX_HORZ   65 // TODO: use Video.cpp: kHClocks
 	#define VIDEO_SCANNER_MAX_VERT  262 // TODO: use Video.cpp: kNTSCScanLines
 
+	#define VIDEO_SCANNER_HORZ_COLORBURST_BEG 12
+	#define VIDEO_SCANNER_HORZ_COLORBURST_END 16
+
 	#define VIDEO_SCANNER_HORZ_START 25 // first displayable horz scanner index
 	#define VIDEO_SCANNER_Y_MIXED   160 // num scanlins for mixed graphics + text
 	#define VIDEO_SCANNER_Y_DISPLAY 192 // max displayable scanlines
 
 	uint16_t g_aHorzClockMemAddress[VIDEO_SCANNER_MAX_HORZ];
-	unsigned char * g_NTSC_Lines[384];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
+	unsigned char * g_aNTSC_Lines[384];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
 
 	static unsigned g_nTextFlashCounter = 0;
 	static uint16_t g_nTextFlashMask    = 0;
@@ -273,8 +277,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static unsigned (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
 
-	static void (* g_pNTSC_FuncVideoText  )(long) = NTSC_UpdateVideoText40;
-	       void (* g_pNTSC_FuncVideoUpdate)(long) = NTSC_UpdateVideoText40;
+	static void (* g_pNTSC_FuncVideoText  )(long) = 0; // NTSC_UpdateVideoText40;
+	       void (* g_pNTSC_FuncVideoUpdate)(long) = 0; // NTSC_UpdateVideoText40;
 
 	static void (*ntscMonoPixel )(int) = 0; //ntscMonoSinglePixel ;
 	static void (*ntscColorPixel)(int) = 0; //ntscColorSinglePixel;
@@ -289,14 +293,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void updateColorPhase();
 	void updateVideoHorzEOL();
 
-	static void ntscMonoSinglePixel (int compositeSignal);
-	static void ntscMonoDoublePixel (int compositeSignal);
-	static void ntscColorSinglePixel (int compositeSignal);
-	static void ntscColorDoublePixel (int compositeSignal);
+	static void    NTSC_UpdateVideoDoubleHires40(long cycles6502);
+	static void    NTSC_UpdateVideoDoubleHires80(long cycles6502);
+	static void    NTSC_UpdateVideoDoubleLores40(long cycles6502);
+	static void    NTSC_UpdateVideoDoubleLores80(long cycles6502);
+	static void    NTSC_UpdateVideoSingleHires40(long cycles6502);
+	static void    NTSC_UpdateVideoSingleLores40(long cycles6502);
+	static void    NTSC_UpdateVideoText40       (long cycles6502);
+	static void    NTSC_UpdateVideoText80       (long cycles6502);
+
+	static void ntscMonoSinglePixel   (int compositeSignal);
+	static void ntscMonoDoublePixel   (int compositeSignal);
+	static void ntscColorSinglePixel  (int compositeSignal);
+	static void ntscColorDoublePixel  (int compositeSignal);
 	static void ntscMonoTVSinglePixel (int compositeSignal);
 	static void ntscMonoTVDoublePixel (int compositeSignal);
-	static void ntscColorTVSinglePixel (int compositeSignal);
-	static void ntscColorTVDoublePixel (int compositeSignal);
+	static void ntscColorTVSinglePixel(int compositeSignal);
+	static void ntscColorTVDoublePixel(int compositeSignal);
 	static void updateMonochromeColor( uint16_t r, uint16_t g, uint16_t b );
 
 //===========================================================================
@@ -310,7 +323,7 @@ inline float clampZeroOne( const float & x )
 //===========================================================================
 inline uint8_t getCharSetBits(int iChar)
 {
-    return csbits[g_nVideoCharSet][iChar][g_nVideoClockVert & 7];
+	return csbits[g_nVideoCharSet][iChar][g_nVideoClockVert & 7];
 }
 
 //===========================================================================
@@ -363,7 +376,7 @@ inline void updateVideoHorzEOL()
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
-			vbp0 = g_NTSC_Lines[2*g_nVideoClockVert];
+			vbp0 = g_aNTSC_Lines[2*g_nVideoClockVert];
 			g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
 			g_nLastColumnPixelNTSC = 0;
 			g_nSignalBitsNTSC = 0;
@@ -424,7 +437,7 @@ inline void updateVideoHorzEOL()
 
 //===========================================================================
 inline
-void VIDEO_DRAW_BITS( uint16_t bt )
+void VIDEO_DRAW_BITS( uint16_t bt ) // VIDEO_DRAW_BITS
 {
 	if (g_nColorBurstPixels < 2)
 	{ 
@@ -483,11 +496,12 @@ static void init_video_tables (void)
 	/*
 		Convert 7-bit monochrome luminance to 14-bit double pixel luminance
 		Chroma will be applied later based on the color phase in ntscColorDoublePixel( luminanceBit )
-		0x001 -> 0x0003
-		0x002 -> 0x000C
-		0x004 -> 0x0030
-		0x008 -> 0x00C0
-		0x100 -> 0x4000
+			0x001 -> 0x0003
+			0x002 -> 0x000C
+			0x004 -> 0x0030
+			0x008 -> 0x00C0
+			:     -> :
+			0x100 -> 0x4000
 	*/
 	for (uint8_t byte = 0; byte < 0x80; byte++ ) // Optimization: hgrbits second 128 entries are mirror of first 128
 		for (uint8_t bits = 0; bits < 7; bits++ ) // high bit = half pixel shift; pre-optimization: bits < 8
@@ -625,8 +639,8 @@ static void init_chroma_phase_table (void)
 					q = q + (c * sin(phi) - q) / 8.f;
 
 					phi += RAD_45; //(PI / 4);
-					if (fabs((RAD_360) - phi) < 0.001)
-						phi = phi - RAD_360; // 2 * PI;
+//					if (fabs((RAD_360) - phi) < 0.001)
+//						phi = phi - RAD_360; // 2 * PI;
 				} // k
 			} // samples
 
@@ -664,7 +678,7 @@ static void init_chroma_phase_table (void)
 			r64 = y0 + (I_TO_R * i) + (Q_TO_R * q);
 			g64 = y0 + (I_TO_G * i) + (Q_TO_G * q);
 			b64 = y0 + (I_TO_B * i) + (Q_TO_B * q);
-			
+
 			b32 = clampZeroOne( (float)b64);
 			g32 = clampZeroOne( (float)g64);
 			r32 = clampZeroOne( (float)r64);
@@ -677,7 +691,7 @@ static void init_chroma_phase_table (void)
 			r64 = y1 + (I_TO_R * i) + (Q_TO_R * q);
 			g64 = y1 + (I_TO_G * i) + (Q_TO_G * q);
 			b64 = y1 + (I_TO_B * i) + (Q_TO_B * q);
-			
+
 			b32 = clampZeroOne( (float)b64 );
 			g32 = clampZeroOne( (float)g64 );
 			r32 = clampZeroOne( (float)r64 );
@@ -762,7 +776,7 @@ void updateMonochromeColor( uint16_t r, uint16_t g, uint16_t b )
 //===========================================================================
 void NTSC_SetVideoTextMode( int cols )
 {
-    if( cols == 40 )
+	if( cols == 40 )
 		g_pNTSC_FuncVideoText = NTSC_UpdateVideoText40;
 	else
 		g_pNTSC_FuncVideoText = NTSC_UpdateVideoText80;
@@ -792,34 +806,34 @@ void NTSC_SetVideoMode( int bVideoModeFlags )
 	else if (bVideoModeFlags & VF_HIRES) {
 		if (bVideoModeFlags & VF_DHIRES)
 			if (bVideoModeFlags & VF_80COL)
-				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDblHires80;
+				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDoubleHires80;
 			else
-				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDblHires40;
+				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDoubleHires40;
 		else
-			g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoHires40;
+			g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoSingleHires40;
 	}
 	else {
 		if (bVideoModeFlags & VF_DHIRES)
 			if (bVideoModeFlags & VF_80COL)
-				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDblLores80;
+				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDoubleLores80;
 			else
-				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDblLores40;
+				g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoDoubleLores40;
 		else
-			g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoLores40;
+			g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoSingleLores40;
 	}
 }
 
 //===========================================================================
 void NTSC_SetVideoStyle() // (int v, int s)
 {
-	int v = g_eVideoType;
-    int s = g_uHalfScanLines;
+    int half = g_uHalfScanLines;
 	uint8_t r, g, b;
 
-	switch (v)
+	switch ( g_eVideoType )
 	{
 		case VT_COLOR_TVEMU: // VT_COLOR_TV: // 0:
-			if (s) {
+			if (half)
+			{
 				ntscMonoPixel = ntscMonoTVSinglePixel;
 				ntscColorPixel = ntscColorTVSinglePixel;
 			}
@@ -831,7 +845,8 @@ void NTSC_SetVideoStyle() // (int v, int s)
 
 		case VT_COLOR_STANDARD: // VT_COLOR_MONITOR: //1:
 		default:
-			if (s) {
+			if (half)
+			{
 				ntscMonoPixel = ntscMonoSinglePixel;
 				ntscColorPixel = ntscColorSinglePixel;
 			}
@@ -846,7 +861,8 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			g = 0xFF;
 			b = 0xFF;
 			updateMonochromeColor( r, g, b ); // Custom Monochrome color
-			if (s) {
+			if (half)
+			{
 				ntscMonoPixel = ntscColorPixel = ntscMonoTVSinglePixel;
 			}
 			else {
@@ -884,10 +900,12 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			b = (g_nMonochromeRGB >> 16) & 0xFF;
 _mono:
 			updateMonochromeColor( r, g, b ); // Custom Monochrome color
-			if (s) {
+			if (half)
+			{
 				ntscMonoPixel = ntscColorPixel = ntscMonoSinglePixel;
 			}
-			else {
+			else
+			{
 				ntscMonoPixel = ntscColorPixel = ntscMonoDoublePixel;
 			}
 			break;
@@ -895,15 +913,234 @@ _mono:
 }
 
 //===========================================================================
-void NTSC_UpdateVideoText40 (long ticks)
+void NTSC_UpdateVideoDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 {
 	unsigned ad;
+	
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pNTSC_FuncVideoText( cycles6502 );
+		return;
+	}
+	
+	for (; cycles6502; --cycles6502)
+	{
+		UpdateVideoAddressHGR();
 
-	for (; ticks; --ticks)
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t  m     = pMain[0];
+				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
+				VIDEO_DRAW_BITS( bits );
+			}
+		}
+		updateVideoHorzEOL();
+	}
+}
+
+//===========================================================================
+void NTSC_UpdateVideoDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
+{
+	unsigned ad;
+	uint16_t bits;
+	
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pNTSC_FuncVideoText( cycles6502 );
+		return;
+	}
+
+	for (; cycles6502; --cycles6502)
+	{
+		UpdateVideoAddressHGR();
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint8_t  *pMain = MemGetMainPtr(ad);
+				uint8_t  *pAux  = MemGetAuxPtr(ad);
+
+				uint8_t m = pMain[0];
+				uint8_t a = pAux [0];
+
+				bits = ((m & 0x7f) << 7) | (a & 0x7f);
+				bits = (bits << 1) | g_nLastColumnPixelNTSC;
+				VIDEO_DRAW_BITS( bits );
+				g_nLastColumnPixelNTSC = (bits >> 14) & 3;
+			}
+		}
+		updateVideoHorzEOL();
+	}
+}
+
+//===========================================================================
+void NTSC_UpdateVideoDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
+{
+	unsigned ad;
+	
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pNTSC_FuncVideoText( cycles6502 );
+		return;
+	}
+
+	for (; cycles6502; --cycles6502)
 	{
 		UpdateVideoAddressTXT();
 
-		if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t  m     = pMain[0];
+				uint16_t lo    = getLoResBits( m ); 
+				uint16_t bits  = g_aPixelDoubleMaskHGR[(0xFF & lo >> ((1 - (g_nVideoClockHorz & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
+				VIDEO_DRAW_BITS( bits );
+			}
+		}
+		updateVideoHorzEOL();
+	}
+}
+
+//===========================================================================
+void NTSC_UpdateVideoDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
+{
+	unsigned ad;
+	
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pNTSC_FuncVideoText( cycles6502 );
+		return;
+	}
+
+	for (; cycles6502; --cycles6502)
+	{
+		UpdateVideoAddressTXT();
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t *pAux  = MemGetAuxPtr(ad);
+
+				uint8_t m = pMain[0];
+				uint8_t a = pAux [0];
+
+				uint16_t lo = getLoResBits( m );
+				uint16_t hi = getLoResBits( a );
+
+				uint16_t main = lo >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
+				uint16_t aux  = hi >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
+				uint16_t bits = (main << 7) | (aux & 0x7f);
+				VIDEO_DRAW_BITS( bits );
+				g_nLastColumnPixelNTSC = (bits >> 14) & 3;
+			}
+		}
+		updateVideoHorzEOL();
+	}
+}
+
+//===========================================================================
+void NTSC_UpdateVideoSingleHires40 (long cycles6502)
+{
+	unsigned ad;
+	
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pNTSC_FuncVideoText( cycles6502 );
+		return;
+	}
+	
+	for (; cycles6502; --cycles6502)
+	{
+		UpdateVideoAddressHGR();
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t  m     = pMain[0];
+				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
+				if (m & 0x80)
+					bits = (bits << 1) | g_nLastColumnPixelNTSC;
+				VIDEO_DRAW_BITS( bits );
+			}
+		}
+		updateVideoHorzEOL();
+	}
+}
+
+//===========================================================================
+void NTSC_UpdateVideoSingleLores40 (long cycles6502)
+{
+	unsigned ad;
+	
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pNTSC_FuncVideoText( cycles6502 );
+		return;
+	}
+
+	for (; cycles6502; --cycles6502)
+	{
+		UpdateVideoAddressTXT();
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t  m     = pMain[0];
+				uint16_t lo    = getLoResBits( m ); 
+				uint16_t bits  = lo >> ((1 - (g_nVideoClockHorz & 1)) * 2);
+				VIDEO_DRAW_BITS( bits );
+			}
+		}
+		updateVideoHorzEOL();
+	}
+}
+
+//===========================================================================
+void NTSC_UpdateVideoText40 (long cycles6502)
+{
+	unsigned ad;
+
+	for (; cycles6502; --cycles6502)
+	{
+		UpdateVideoAddressTXT();
+
+		if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
 		{
 			if (g_nColorBurstPixels > 0)
 				g_nColorBurstPixels -= 1;
@@ -934,7 +1171,7 @@ void NTSC_UpdateVideoText80 (long ticks)
 	{
 		UpdateVideoAddressTXT();
 
-		if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
+		if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
 		{
 			if (g_nColorBurstPixels > 0)
 				g_nColorBurstPixels -= 1;
@@ -967,225 +1204,6 @@ void NTSC_UpdateVideoText80 (long ticks)
 }
 
 //===========================================================================
-void NTSC_UpdateVideoDblLores40 (long ticks) // wsUpdateVideo7MLores
-{
-	unsigned ad;
-	
-	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
-	{
-		g_pNTSC_FuncVideoText(ticks);
-		return;
-	}
-
-	for (; ticks; --ticks)
-	{
-		UpdateVideoAddressTXT();
-
-		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-		{
-			if (g_nVideoClockHorz < 16 && g_nVideoClockHorz >= 12)
-			{
-				g_nColorBurstPixels = 1024;
-			}
-			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
-			{
-				uint8_t *pMain = MemGetMainPtr(ad);
-				uint8_t  m     = pMain[0];
-				uint16_t lo    = getLoResBits( m ); 
-				uint16_t bits  = g_aPixelDoubleMaskHGR[(0xFF & lo >> ((1 - (g_nVideoClockHorz & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
-				VIDEO_DRAW_BITS( bits );
-			}
-		}
-		updateVideoHorzEOL();
-	}
-}
-
-//===========================================================================
-void NTSC_UpdateVideoLores40 (long ticks)
-{
-	unsigned ad;
-	
-	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
-	{
-		g_pNTSC_FuncVideoText(ticks);
-		return;
-	}
-
-	for (; ticks; --ticks)
-	{
-		UpdateVideoAddressTXT();
-
-		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-		{
-			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
-			{
-				g_nColorBurstPixels = 1024;
-			}
-			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
-			{
-				uint8_t *pMain = MemGetMainPtr(ad);
-				uint8_t  m     = pMain[0];
-				uint16_t lo    = getLoResBits( m ); 
-				uint16_t bits  = lo >> ((1 - (g_nVideoClockHorz & 1)) * 2);
-				VIDEO_DRAW_BITS( bits );
-			}
-		}
-		updateVideoHorzEOL();
-	}
-}
-
-//===========================================================================
-void NTSC_UpdateVideoDblLores80 (long ticks) // wsUpdateVideoDblLores
-{
-	unsigned ad;
-	
-	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
-	{
-		g_pNTSC_FuncVideoText(ticks);
-		return;
-	}
-
-	for (; ticks; --ticks)
-	{
-		UpdateVideoAddressTXT();
-
-		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-		{
-			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
-			{
-				g_nColorBurstPixels = 1024;
-			}
-			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
-			{
-				uint8_t *pMain = MemGetMainPtr(ad);
-				uint8_t *pAux  = MemGetAuxPtr(ad);
-
-				uint8_t m = pMain[0];
-				uint8_t a = pAux [0];
-
-				uint16_t lo = getLoResBits( m );
-				uint16_t hi = getLoResBits( a );
-
-				uint16_t main = lo >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
-				uint16_t aux  = hi >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
-				uint16_t bits = (main << 7) | (aux & 0x7f);
-				VIDEO_DRAW_BITS( bits );
-				g_nLastColumnPixelNTSC = (bits >> 14) & 3;
-			}
-		}
-		updateVideoHorzEOL();
-	}
-}
-
-//===========================================================================
-void NTSC_UpdateVideoDblHires80 (long ticks) // wsUpdateVideoDblHires
-{
-	unsigned ad;
-	uint16_t bits;
-	
-	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
-	{
-		g_pNTSC_FuncVideoText(ticks);
-		return;
-	}
-
-	for (; ticks; --ticks)
-	{
-		UpdateVideoAddressHGR();
-
-		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-		{
-			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
-			{
-				g_nColorBurstPixels = 1024;
-			}
-			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
-			{
-				uint8_t  *pMain = MemGetMainPtr(ad);
-				uint8_t  *pAux  = MemGetAuxPtr(ad);
-
-				uint8_t m = pMain[0];
-				uint8_t a = pAux [0];
-
-				bits = ((m & 0x7f) << 7) | (a & 0x7f);
-				bits = (bits << 1) | g_nLastColumnPixelNTSC;
-				VIDEO_DRAW_BITS( bits );
-				g_nLastColumnPixelNTSC = (bits >> 14) & 3;
-			}
-		}
-		updateVideoHorzEOL();
-	}
-}
-
-//===========================================================================
-void NTSC_UpdateVideoHires40 (long ticks)
-{
-	unsigned ad;
-	
-	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
-	{
-		g_pNTSC_FuncVideoText(ticks);
-		return;
-	}
-	
-	for (; ticks; --ticks)
-	{
-		UpdateVideoAddressHGR();
-
-		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-		{
-			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
-			{
-				g_nColorBurstPixels = 1024;
-			}
-			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
-			{
-				uint8_t *pMain = MemGetMainPtr(ad);
-				uint8_t  m     = pMain[0];
-				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
-				if (m & 0x80)
-					bits = (bits << 1) | g_nLastColumnPixelNTSC;
-				VIDEO_DRAW_BITS( bits );
-			}
-		}
-		updateVideoHorzEOL();
-	}
-}
-
-//===========================================================================
-void NTSC_UpdateVideoDblHires40 (long ticks) // wsUpdateVideoHires0
-{
-	unsigned ad;
-	
-	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
-	{
-		g_pNTSC_FuncVideoText(ticks);
-		return;
-	}
-	
-	for (; ticks; --ticks)
-	{
-		UpdateVideoAddressHGR();
-
-		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-		{
-			if ((g_nVideoClockHorz < 16) && (g_nVideoClockHorz >= 12))
-			{
-				g_nColorBurstPixels = 1024;
-			}
-			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
-			{
-				uint8_t *pMain = MemGetMainPtr(ad);
-				uint8_t  m     = pMain[0];
-				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
-				VIDEO_DRAW_BITS( bits );
-			}
-		}
-		updateVideoHorzEOL();
-	}
-}
-
-//===========================================================================
 unsigned char NTSC_VideoByte (unsigned long cycle)
 {
 	unsigned char * mem;
@@ -1202,12 +1220,15 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	updateMonochromeColor( 0xFF, 0xFF, 0xFF );
 
 	for (int y = 0; y < 384; y++)
-		g_NTSC_Lines[y] = g_pFramebufferbits + 4 * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - 18) + 80;
+		g_aNTSC_Lines[y] = g_pFramebufferbits + 4 * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - 18) + 80;
 
-	vbp0 = g_NTSC_Lines[0]; // wsLines
+	vbp0 = g_aNTSC_Lines[0]; // wsLines
 
 	ntscMonoPixel  = ntscMonoSinglePixel ;
 	ntscColorPixel = ntscColorSinglePixel;
+
+	g_pNTSC_FuncVideoText   = NTSC_UpdateVideoText40;
+	g_pNTSC_FuncVideoUpdate = NTSC_UpdateVideoText40;
 
 #if HGR_TEST_PATTERN
 // Michael -- Init HGR to almost all-possible-combinations
@@ -1298,7 +1319,7 @@ void NTSC_VideoUpdateCycles( long cycles )
 
 			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 			{
-				vbp0 = g_NTSC_Lines[2*g_nVideoClockVert];
+				vbp0 = g_aNTSC_Lines[2*g_nVideoClockVert];
 				g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
 				g_nLastColumnPixelNTSC = 0;
 				g_nSignalBitsNTSC = 0;
