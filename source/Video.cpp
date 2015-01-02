@@ -1132,6 +1132,23 @@ void VideoDisplayLogo ()
 	DRAWVERSION( 0, -356*scale,RGB(0xFF,0x00,0xFF));
 #endif
 
+// NTSC Alpha Version
+	DeleteObject(font);
+	font = CreateFontA(
+		-56,0,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
+		OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,
+		VARIABLE_PITCH | 4 | FF_SWISS,
+		TEXT("Arial")
+	);
+	SelectObject(hFrameDC,font);
+	sprintf( szVersion, "NTSC ALPHA v11" );
+	xoff = 0;
+	yoff = 0;
+	DRAWVERSION( 2, -158*scale,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 1, -157*scale,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 0, -156*scale,RGB(0xFF,0x00,0xFF));
+// NTSC END
+
 #undef  DRAWVERSION
 
 	FrameReleaseDC();
