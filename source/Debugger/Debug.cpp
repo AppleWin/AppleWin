@@ -6097,7 +6097,7 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 			break;
 	}
 #if _DEBUG
-	if(!bVideoModeFlags)
+	if (bVideoModeFlags == 0)
 		MessageBoxA( NULL, "bVideoModeFlags = ZERO !?", "Information", MB_OK );
 #endif
 	g_bDebuggerViewingAppleOutput = bVideoModeFlags;
@@ -6134,15 +6134,15 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 // Lo-Res
 	Update_t CmdViewOutput_GRX (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, 0 );
+		return _ViewOutput( VIEW_PAGE_X, VF_80STORE ); // NTSC VideoRefresh() Hack: flags != 0
 	}
 	Update_t CmdViewOutput_GR1 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, 0 );
+		return _ViewOutput( VIEW_PAGE_1, VF_80STORE ); // NTSC VideoRefresh() Hack: flags != 0
 	}
 	Update_t CmdViewOutput_GR2 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, 0 );
+		return _ViewOutput( VIEW_PAGE_2, VF_80STORE ); // NTSC VideoRefresh() Hack: flags != 0
 	}
 // Double Lo-Res
 	Update_t CmdViewOutput_DGRX (int nArgs)
@@ -6173,15 +6173,15 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 // Double Hi-Res
 	Update_t CmdViewOutput_DHGRX (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_HIRES | VF_DHIRES );
+		return _ViewOutput( VIEW_PAGE_X, VF_HIRES | VF_DHIRES | VF_80COL );
 	}
 	Update_t CmdViewOutput_DHGR1 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_HIRES | VF_DHIRES );
+		return _ViewOutput( VIEW_PAGE_1, VF_HIRES | VF_DHIRES | VF_80COL);
 	}
 	Update_t CmdViewOutput_DHGR2 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, VF_HIRES | VF_DHIRES );
+		return _ViewOutput( VIEW_PAGE_2, VF_HIRES | VF_DHIRES | VF_80COL );
 	}
 
 // Watches ________________________________________________________________________________________
