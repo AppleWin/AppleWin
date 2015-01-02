@@ -679,6 +679,14 @@ static void init_chroma_phase_table (void)
 			g64 = y0 + (I_TO_G * i) + (Q_TO_G * q);
 			b64 = y0 + (I_TO_B * i) + (Q_TO_B * q);
 
+			// Remove white ringing
+			if(brightness > 0.9f)
+			{
+				b64 += 0.25;
+				g64 += 0.25;
+				r64 += 0.25;
+			}			
+			
 			b32 = clampZeroOne( (float)b64);
 			g32 = clampZeroOne( (float)g64);
 			r32 = clampZeroOne( (float)r64);
