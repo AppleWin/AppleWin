@@ -452,27 +452,28 @@ void VIDEO_DRAW_BITS( uint16_t bt )
 	}
 	else
 	{
-		/* #1 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); bt >>= 1;
+		/* #1 of 7 */                     // abcd efgh ijkl mnop
+		ntscColorPixel(bt & 1); bt >>= 1; // 0abc defg hijk lmno
+		ntscColorPixel(bt & 1); bt >>= 1; // 00ab cdef ghi jklmn
 		/* #2 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1; // 000a bcde fghi jklm
+		ntscColorPixel(bt & 1); bt >>= 1; // 0000 abcd efgh ijkl
 		/* #3 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1; // 0000 0abc defg hijk
+		ntscColorPixel(bt & 1); bt >>= 1; // 0000 00ab cdef ghij
 		/* #4 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1; // 0000 000a bcde fghi
+		ntscColorPixel(bt & 1); bt >>= 1; // 0000 0000 abcd efgh
 		/* #5 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1; // 0000 0000 0abc defg
+		ntscColorPixel(bt & 1); bt >>= 1; // 0000 0000 00ab cdef
 		/* #6 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1; // 0000 0000 000a bcde
+		ntscColorPixel(bt & 1); bt >>= 1; // 0000 0000 0000 abcd
 		/* #7 of 7 */
-		ntscColorPixel(bt & 1); bt >>= 1;
-		ntscColorPixel(bt & 1); g_nLastColumnPixelNTSC = bt & 1; bt >>= 1;
+		ntscColorPixel(bt & 1); bt >>= 1; // 0000 0000 0000 0abc
+		ntscColorPixel(bt & 1);           
+g_nLastColumnPixelNTSC=bt & 1 ; bt >>= 1; // 0000 0000 0000 00ab
 	}
 }
 
@@ -1069,6 +1070,7 @@ void NTSC_UpdateVideoDblLores80 (long ticks) // wsUpdateVideoDblLores
 				uint16_t aux  = hi >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
 				uint16_t bits = (main << 7) | (aux & 0x7f);
 				VIDEO_DRAW_BITS( bits );
+				g_nLastColumnPixelNTSC = (bits >> 14) & 3;
 			}
 		}
 		updateVideoHorzEOL();
@@ -1108,6 +1110,7 @@ void NTSC_UpdateVideoDblHires80 (long ticks) // wsUpdateVideoDblHires
 				bits = ((m & 0x7f) << 7) | (a & 0x7f);
 				bits = (bits << 1) | g_nLastColumnPixelNTSC;
 				VIDEO_DRAW_BITS( bits );
+				g_nLastColumnPixelNTSC = (bits >> 14) & 3;
 			}
 		}
 		updateVideoHorzEOL();
