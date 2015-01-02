@@ -329,7 +329,7 @@ static DWORD Cpu65C02 (DWORD uTotalCycles)
 		if( g_bFullSpeed )
 			NTSC_VideoUpdateCycles( uElapsedCycles );
 		else
-			g_pNTSC_FuncVideoUpdate( uElapsedCycles );
+			g_pFunc_NTSCVideoUpdateGraphics( uElapsedCycles );
 // NTSC_END
 
 		CheckInterruptSources(uExecutedCycles);

@@ -1250,7 +1250,7 @@ void VideoRefreshScreen ( int bVideoModeFlags )
 	if( bVideoModeFlags )
 	{
 		NTSC_SetVideoMode( bVideoModeFlags );
-		g_pNTSC_FuncVideoUpdate( VIDEO_SCANNER_6502_CYCLES );
+		g_pFunc_NTSCVideoUpdateGraphics( VIDEO_SCANNER_6502_CYCLES );
 	}
 
 // NTSC_BEGIN: wsVideoRefresh()

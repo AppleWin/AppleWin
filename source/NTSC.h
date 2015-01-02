@@ -5,7 +5,7 @@
 	extern uint16_t g_nVideoClockVert;
 	extern uint16_t g_nVideoClockHorz;
 	extern uint8_t* g_NTSC_pLines[384];
-	extern void (* g_pNTSC_FuncVideoUpdate)(long);
+	extern void (* g_pFunc_NTSCVideoUpdateGraphics)(long);
 
 // Prototypes (Public) ________________________________________________
 	extern void    NTSC_SetVideoTextMode( int cols );
