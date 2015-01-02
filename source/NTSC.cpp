@@ -84,6 +84,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		uint8_t r;
 		uint8_t a;
 	};
+
 	struct rgba_t
 	{
 		uint8_t r;
@@ -185,18 +186,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#define VIDEO_SCANNER_Y_DISPLAY 192 // max displayable scanlines
 
 	uint16_t g_aHorzClockMemAddress[VIDEO_SCANNER_MAX_HORZ];
-	unsigned char * g_aNTSC_Lines[384];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
+
+	bgra_t *g_pVideoAddress;
+	bgra_t *g_aNTSC_Lines[VIDEO_SCANNER_Y_DISPLAY*2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
 
 	static unsigned g_nTextFlashCounter = 0;
 	static uint16_t g_nTextFlashMask    = 0;
 
-	static unsigned g_aPixelMaskGR[16];
+	static unsigned g_aPixelMaskGR       [ 16];
 	static uint16_t g_aPixelDoubleMaskHGR[128]; // hgrbits -> g_aPixelDoubleMaskHGR: 7-bit mono 280 pixels to 560 pixel doubling
 
 #define UpdateVideoAddressTXT() g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad = (g_aClockVertOffsetsTXT[g_nVideoClockVert/8] + g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nTextPage  *  0x400))
 #define UpdateVideoAddressHGR() g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad = (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nHiresPage * 0x2000)) // BUG? g_pHorzClockOffset
 
-	static unsigned char *vbp0;
 	static int g_nLastColumnPixelNTSC;
 	static int g_nColorBurstPixels;
 
@@ -206,24 +208,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	#define NTSC_NUM_PHASES     4
 	#define NTSC_NUM_SEQUENCES  4096
-	enum ColorChannel
-	{	// Win32 DIB: BGRA format
-		_B = 0,
-		_G = 1,
-		_R = 2,
-		_A = 3,
-		NUM_COLOR_CHANNELS = 4
-	};
 
-	static unsigned char g_aNTSCMonoMonitor                     [NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
-	static unsigned char g_aNTSCColorMonitor   [NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
-	static unsigned char g_aNTSCMonoTelevision                  [NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
-	static unsigned char g_aNTSCColorTelevision[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
+	const uint32_t ALPHA32_MASK = 0xFF000000; // aarrggbb
+
+	static bgra_t g_aNTSCMonoMonitor                     [NTSC_NUM_SEQUENCES];
+	static bgra_t g_aNTSCColorMonitor   [NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES];
+	static bgra_t g_aNTSCMonoTelevision                  [NTSC_NUM_SEQUENCES];
+	static bgra_t g_aNTSCColorTelevision[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES];
 
 // g_aNTSCMonoMonitor    * g_nMonochromeRGB -> g_aNTSCMonoMonitorCustom
 // g_aNTSCMonoTelevision * g_nMonochromeRGB -> g_aNTSCMonoTelevisionCustom
-	static unsigned char g_aNTSCMonoMonitorCustom               [NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
-	static unsigned char g_aNTSCMonoTelevisionCustom            [NTSC_NUM_SEQUENCES][NUM_COLOR_CHANNELS];
+	static bgra_t g_aNTSCMonoMonitorCustom               [NTSC_NUM_SEQUENCES];
+	static bgra_t g_aNTSCMonoTelevisionCustom            [NTSC_NUM_SEQUENCES];
 
 	#define NUM_SIGZEROS 2
 	#define NUM_SIGPOLES 2
@@ -374,7 +370,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static unsigned (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
 
-	static void (* g_pFunc_NTSCVideoUpdateText  )(long) = 0; // NTSC_UpdateVideoText40;
+	static void (* g_pFunc_NTSCVideoUpdateText    )(long) = 0; // NTSC_UpdateVideoText40;
 	       void (* g_pFunc_NTSCVideoUpdateGraphics)(long) = 0; // NTSC_UpdateVideoText40;
 
 	static void (*g_pFunc_ntscMonoPixel )(int) = 0; //ntscMonoSinglePixel ;
@@ -473,7 +469,7 @@ inline void updateVideoHorzEOL()
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
-			vbp0 = g_aNTSC_Lines[2*g_nVideoClockVert];
+			g_pVideoAddress = g_aNTSC_Lines[2*g_nVideoClockVert];
 			g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
 			g_nLastColumnPixelNTSC = 0;
 			g_nSignalBitsNTSC = 0;
@@ -481,56 +477,135 @@ inline void updateVideoHorzEOL()
 	}
 }
 
-#define SINGLE_SCANLINE_MONITOR(signal,table) \
+#if 0
+#define updateFramebufferMonitorSingleScanline(signal,table) \
 	do { \
-		unsigned int *cp, *mp; \
+		uint32_t *cp, *mp; \
 		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
-		cp = (unsigned int *)(&(table[g_nSignalBitsNTSC][0])); \
-		*((unsigned int *)vbp0) = *cp; \
-		mp = (unsigned int *)(vbp0 - 4 * FRAMEBUFFER_W); \
-		*mp = ((*cp & 0x00fcfcfc) >> 2) + 0xff000000; \
-		vbp0 += 4; \
+		cp = (uint32_t*) &table[g_nSignalBitsNTSC]; \
+		*(uint32_t*)g_pVideoAddress = *cp; \
+		mp = (uint32_t*)(g_pVideoAddress - FRAMEBUFFER_W); \
+		*mp = ((*cp & 0x00fcfcfc) >> 2) | ALPHA32_MASK; \
+		g_pVideoAddress++; \
 	} while(0)
 
-#define SINGLE_SCANLINE_TELEVISION(signal,table) \
+#define updateFramebufferTelevisionSingleScanline(signal,table) \
 	do { \
-		unsigned int ntscp, prevp, betwp; \
-		unsigned int *prevlin, *between; \
+		uint32_t ntscp, prevp, betwp; \
+		uint32_t *prevlin, *between; \
 		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
-		prevlin = (unsigned int *)(vbp0 + 8 * FRAMEBUFFER_W); \
-		between = (unsigned int *)(vbp0 + 4 * FRAMEBUFFER_W); \
-		ntscp = *(unsigned int *)(&(table[g_nSignalBitsNTSC][0])); /* raw current NTSC color */ \
+		prevlin = (uint32_t*)(g_pVideoAddress + 2*FRAMEBUFFER_W); \
+		between = (uint32_t*)(g_pVideoAddress + 1*FRAMEBUFFER_W); \
+		ntscp = *(uint32_t*) &table[g_nSignalBitsNTSC]; /* raw current NTSC color */ \
 		prevp = *prevlin; \
 		betwp = ntscp - ((ntscp & 0x00fcfcfc) >> 2); \
-		*between = betwp | 0xff000000; \
-		*((unsigned int *)vbp0) = ntscp; \
-		vbp0 += 4; \
+		*between = betwp | ALPHA32_MASK; \
+		*(uint32_t*)g_pVideoAddress = ntscp; \
+		g_pVideoAddress++; \
 	} while(0)
 
-#define DOUBLE_SCANLINE_MONITOR(signal,table) \
+#define updateFramebufferMonitorDoubleScanline(signal,table) \
 	do { \
-		unsigned int *cp, *mp; \
+		uint32_t *cp, *mp; \
 		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
-		cp = (unsigned int *)(&(table[g_nSignalBitsNTSC][0])); \
-		mp = (unsigned int *)(vbp0 - 4 * FRAMEBUFFER_W); \
-		*((unsigned int *)vbp0) = *mp = *cp; \
-		vbp0 += 4; \
+		cp = (uint32_t*) &table[g_nSignalBitsNTSC]; \
+		mp = (uint32_t*)(g_pVideoAddress - FRAMEBUFFER_W); \
+		*(uint32_t*)g_pVideoAddress = *mp = *cp; \
+		g_pVideoAddress++; \
 	} while(0)
 
-#define DOUBLE_SCANLINE_TELEVISION(signal,table) \
+#define updateFramebufferTelevisionDoubleScanline(signal,table) \
 	do { \
-		unsigned int ntscp, prevp, betwp; \
-		unsigned int *prevlin, *between; \
+		uint32_t ntscp, prevp, betwp; \
+		uint32_t *prevlin, *between; \
 		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
-		prevlin = (unsigned int *)(vbp0 + 8 * FRAMEBUFFER_W); \
-		between = (unsigned int *)(vbp0 + 4 * FRAMEBUFFER_W); \
-		ntscp = *(unsigned int *)(&(table[g_nSignalBitsNTSC][0])); /* raw current NTSC color */ \
+		prevlin = (uint32_t*)(g_pVideoAddress + 2*FRAMEBUFFER_W); \
+		between = (uint32_t*)(g_pVideoAddress + 1*FRAMEBUFFER_W); \
+		ntscp = *(uint32_t*) &table[g_nSignalBitsNTSC]; /* raw current NTSC color */ \
 		prevp = *prevlin; \
 		betwp = ((ntscp & 0x00fefefe) >> 1) + ((prevp & 0x00fefefe) >> 1); \
-		*between = betwp | 0xff000000; \
-		*((unsigned int *)vbp0) = ntscp; \
-		vbp0 += 4; \
+		*between = betwp | ALPHA32_MASK; \
+		*(uint32_t*)g_pVideoAddress = ntscp; \
+		g_pVideoAddress++; \
 	} while(0)
+#else
+
+inline uint32_t* getScanlineNext1Address()
+{
+	return (uint32_t*) (g_pVideoAddress - 1*FRAMEBUFFER_W);
+}
+
+inline uint32_t* getScanlinePrev1Address()
+{
+	return (uint32_t*) (g_pVideoAddress + 1*FRAMEBUFFER_W);
+}
+
+inline uint32_t* getScanlinePrev2Address()
+{
+	return (uint32_t*) (g_pVideoAddress + 2*FRAMEBUFFER_W);
+}
+
+uint32_t getScanlineColor( const uint16_t signal, const bgra_t *pTable )
+{
+	g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; // 14-bit
+	return *(uint32_t*) &pTable[ g_nSignalBitsNTSC ];
+}
+
+inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable )
+{
+	/* */ uint32_t *pLine0Address = (uint32_t*)g_pVideoAddress;
+	/* */ uint32_t *pLine1Address = getScanlineNext1Address();
+	const uint32_t color0 = getScanlineColor( signal, pTable );
+	const uint32_t color1 = ((color0 & 0x00fcfcfc) >> 2); // 25% Blend (original)
+//	const uint32_t color1 = ((color0 & 0x00fefefe) >> 1); // 50% Blend -- looks OK most of the time; Archon looks poor
+
+	/* */  *pLine1Address = color1 | ALPHA32_MASK;
+	/* */  *pLine0Address = color0;
+	/* */ g_pVideoAddress++;
+}
+
+inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable )
+{
+	/* */ uint32_t *pLine0Address = (uint32_t*)g_pVideoAddress;
+	/* */ uint32_t *pLine1Address = getScanlineNext1Address();
+	const uint32_t color0 = getScanlineColor( signal, pTable );
+
+	/* */  *pLine1Address = color0;
+	/* */  *pLine0Address = color0;
+	/* */ g_pVideoAddress++;
+}
+
+inline void updateFramebufferTelevisionSingleScanline( uint16_t signal, bgra_t *pTable )
+{
+	/* */ uint32_t *pLine0Address = (uint32_t*)g_pVideoAddress;
+	/* */ uint32_t *pLine1Address = getScanlinePrev1Address();
+	/* */ uint32_t *pLine2Address = getScanlinePrev2Address();
+
+	const uint32_t color0 = getScanlineColor( signal, pTable );
+	const uint32_t color2 = *pLine2Address;
+	const uint32_t color1 = color0 - ((color0 & 0x00fcfcfc) >> 2);
+
+	/* */  *pLine1Address = color1 | ALPHA32_MASK;
+	/* */  *pLine0Address = color0;
+	/* */ g_pVideoAddress++;
+}
+
+inline void updateFramebufferTelevisionDoubleScanline( uint16_t signal, bgra_t *pTable )
+{
+	/* */ uint32_t *pLine0Address = (uint32_t*)g_pVideoAddress;
+	/* */ uint32_t *pLine1Address = getScanlinePrev1Address();
+	const uint32_t *pLine2Address = getScanlinePrev2Address();
+
+	const uint32_t color0 = getScanlineColor( signal, pTable );
+	const uint32_t color2 = *pLine2Address;
+	const uint32_t color1 = ((color0 & 0x00fefefe) >> 1) + ((color2 & 0x00fefefe) >> 1); // 50% Blend
+
+	/* */  *pLine1Address = color1 | ALPHA32_MASK;
+	/* */  *pLine0Address = color0;
+	/* */ g_pVideoAddress++;
+}
+
+#endif
 
 //===========================================================================
 inline
@@ -742,16 +817,16 @@ static void init_chroma_phase_table (void)
 			} // samples
 
 			brightness = clampZeroOne( (float)z );
-			g_aNTSCMonoMonitor[s][_B] = (uint8_t)(brightness * 255);
-			g_aNTSCMonoMonitor[s][_G] = (uint8_t)(brightness * 255);
-			g_aNTSCMonoMonitor[s][_R] = (uint8_t)(brightness * 255);
-			g_aNTSCMonoMonitor[s][_A] = 255;
+			g_aNTSCMonoMonitor[s].b = (uint8_t)(brightness * 255);
+			g_aNTSCMonoMonitor[s].g = (uint8_t)(brightness * 255);
+			g_aNTSCMonoMonitor[s].r = (uint8_t)(brightness * 255);
+			g_aNTSCMonoMonitor[s].a = 255;
 
 			brightness = clampZeroOne( (float)y1);
-			g_aNTSCMonoTelevision[s][_B] = (uint8_t)(brightness * 255);
-			g_aNTSCMonoTelevision[s][_G] = (uint8_t)(brightness * 255);
-			g_aNTSCMonoTelevision[s][_R] = (uint8_t)(brightness * 255);
-			g_aNTSCMonoTelevision[s][_A] = 255;
+			g_aNTSCMonoTelevision[s].b = (uint8_t)(brightness * 255);
+			g_aNTSCMonoTelevision[s].g = (uint8_t)(brightness * 255);
+			g_aNTSCMonoTelevision[s].r = (uint8_t)(brightness * 255);
+			g_aNTSCMonoTelevision[s].a = 255;
 			
 			/*
 				YI'V' to RGB
@@ -788,10 +863,10 @@ static void init_chroma_phase_table (void)
 			g32 = clampZeroOne( (float)g64);
 			r32 = clampZeroOne( (float)r64);
 
-			g_aNTSCColorMonitor[phase][s][_B] = (uint8_t)(b32 * 255);
-			g_aNTSCColorMonitor[phase][s][_G] = (uint8_t)(g32 * 255);
-			g_aNTSCColorMonitor[phase][s][_R] = (uint8_t)(r32 * 255);
-			g_aNTSCColorMonitor[phase][s][_A] = 255;
+			g_aNTSCColorMonitor[phase][s].b = (uint8_t)(b32 * 255);
+			g_aNTSCColorMonitor[phase][s].g = (uint8_t)(g32 * 255);
+			g_aNTSCColorMonitor[phase][s].r = (uint8_t)(r32 * 255);
+			g_aNTSCColorMonitor[phase][s].a = 255;
 			
 			r64 = y1 + (I_TO_R * i) + (Q_TO_R * q);
 			g64 = y1 + (I_TO_G * i) + (Q_TO_G * q);
@@ -801,10 +876,10 @@ static void init_chroma_phase_table (void)
 			g32 = clampZeroOne( (float)g64 );
 			r32 = clampZeroOne( (float)r64 );
 
-			g_aNTSCColorTelevision[phase][s][_B] = (uint8_t)(b32 * 255);
-			g_aNTSCColorTelevision[phase][s][_G] = (uint8_t)(g32 * 255);
-			g_aNTSCColorTelevision[phase][s][_R] = (uint8_t)(r32 * 255);
-			g_aNTSCColorTelevision[phase][s][_A] = 255;
+			g_aNTSCColorTelevision[phase][s].b = (uint8_t)(b32 * 255);
+			g_aNTSCColorTelevision[phase][s].g = (uint8_t)(g32 * 255);
+			g_aNTSCColorTelevision[phase][s].r = (uint8_t)(r32 * 255);
+			g_aNTSCColorTelevision[phase][s].a = 255;
 		}
 	}
 }
@@ -812,53 +887,53 @@ static void init_chroma_phase_table (void)
 //===========================================================================
 static void ntscColorTVSinglePixel (int compositeSignal)
 {
-	SINGLE_SCANLINE_TELEVISION(compositeSignal, g_aNTSCColorTelevision[g_nColorPhaseNTSC]);
+	updateFramebufferTelevisionSingleScanline(compositeSignal, g_aNTSCColorTelevision[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
 static void ntscColorTVDoublePixel (int compositeSignal)
 {
-	DOUBLE_SCANLINE_TELEVISION(compositeSignal, g_aNTSCColorTelevision[g_nColorPhaseNTSC]);
+	updateFramebufferTelevisionDoubleScanline(compositeSignal, g_aNTSCColorTelevision[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
 static void ntscColorSinglePixel (int compositeSignal)
 {
-	SINGLE_SCANLINE_MONITOR(compositeSignal, g_aNTSCColorMonitor[g_nColorPhaseNTSC]);
+	updateFramebufferMonitorSingleScanline(compositeSignal, g_aNTSCColorMonitor[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
 static void ntscColorDoublePixel (int compositeSignal)
 {
-	DOUBLE_SCANLINE_MONITOR(compositeSignal, g_aNTSCColorMonitor[g_nColorPhaseNTSC]);
+	updateFramebufferMonitorDoubleScanline(compositeSignal, g_aNTSCColorMonitor[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
 static void ntscMonoSinglePixel (int compositeSignal)
 {
-	SINGLE_SCANLINE_MONITOR(compositeSignal, g_aNTSCMonoMonitorCustom);
+	updateFramebufferMonitorSingleScanline(compositeSignal, g_aNTSCMonoMonitorCustom);
 }
 
 //===========================================================================
 static void ntscMonoDoublePixel (int compositeSignal)
 {
-	DOUBLE_SCANLINE_MONITOR(compositeSignal, g_aNTSCMonoMonitorCustom);
+	updateFramebufferMonitorDoubleScanline(compositeSignal, g_aNTSCMonoMonitorCustom);
 }
 
 //===========================================================================
 static void ntscMonoTVSinglePixel (int compositeSignal)
 {
-	SINGLE_SCANLINE_TELEVISION(compositeSignal, g_aNTSCMonoTelevisionCustom);
+	updateFramebufferTelevisionSingleScanline(compositeSignal, g_aNTSCMonoTelevisionCustom);
 }
 
 //===========================================================================
 static void ntscMonoTVDoublePixel (int compositeSignal)
 {
-	DOUBLE_SCANLINE_TELEVISION(compositeSignal, g_aNTSCMonoTelevisionCustom);
+	updateFramebufferTelevisionDoubleScanline(compositeSignal, g_aNTSCMonoTelevisionCustom);
 }
 
 //===========================================================================
@@ -866,15 +941,15 @@ void updateMonochromeColor( uint16_t r, uint16_t g, uint16_t b )
 {
 	for( int iSample = 0; iSample < NTSC_NUM_SEQUENCES; iSample++ )
 	{
-		g_aNTSCMonoMonitorCustom[ iSample ][ _B ] = (g_aNTSCMonoMonitor[ iSample ][_B] * b) >> 8;
-		g_aNTSCMonoMonitorCustom[ iSample ][ _G ] = (g_aNTSCMonoMonitor[ iSample ][_G] * g) >> 8;
-		g_aNTSCMonoMonitorCustom[ iSample ][ _R ] = (g_aNTSCMonoMonitor[ iSample ][_R] * r) >> 8;
-		g_aNTSCMonoMonitorCustom[ iSample ][ _A ] = 0xFF;
+		g_aNTSCMonoMonitorCustom[ iSample ].b = (g_aNTSCMonoMonitor[ iSample ].b * b) >> 8;
+		g_aNTSCMonoMonitorCustom[ iSample ].g = (g_aNTSCMonoMonitor[ iSample ].g * g) >> 8;
+		g_aNTSCMonoMonitorCustom[ iSample ].r = (g_aNTSCMonoMonitor[ iSample ].r * r) >> 8;
+		g_aNTSCMonoMonitorCustom[ iSample ].a = 0xFF;
 
-		g_aNTSCMonoTelevisionCustom[ iSample ][ _B ] = (g_aNTSCMonoTelevision[ iSample ][_B] * b) >> 8;
-		g_aNTSCMonoTelevisionCustom[ iSample ][ _G ] = (g_aNTSCMonoTelevision[ iSample ][_G] * g) >> 8;
-		g_aNTSCMonoTelevisionCustom[ iSample ][ _R ] = (g_aNTSCMonoTelevision[ iSample ][_R] * r) >> 8;
-		g_aNTSCMonoTelevisionCustom[ iSample ][ _A ] = 0xFF;
+		g_aNTSCMonoTelevisionCustom[ iSample ].b = (g_aNTSCMonoTelevision[ iSample ].b * b) >> 8;
+		g_aNTSCMonoTelevisionCustom[ iSample ].g = (g_aNTSCMonoTelevision[ iSample ].g * g) >> 8;
+		g_aNTSCMonoTelevisionCustom[ iSample ].r = (g_aNTSCMonoTelevision[ iSample ].r * r) >> 8;
+		g_aNTSCMonoTelevisionCustom[ iSample ].a = 0xFF;
 	}
 }
 
@@ -1324,10 +1399,10 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	init_chroma_phase_table();
 	updateMonochromeColor( 0xFF, 0xFF, 0xFF );
 
-	for (int y = 0; y < 384; y++)
-		g_aNTSC_Lines[y] = g_pFramebufferbits + 4 * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - 18) + 80;
+	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
+		g_aNTSC_Lines[y] = (bgra_t*)(g_pFramebufferbits + 4 * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - 18) + 80);
 
-	vbp0 = g_aNTSC_Lines[0]; // wsLines
+	g_pVideoAddress = g_aNTSC_Lines[0]; // wsLines
 
 	g_pFunc_NTSCVideoUpdateText     = NTSC_UpdateVideoText40;
 	g_pFunc_NTSCVideoUpdateGraphics = NTSC_UpdateVideoText40;
@@ -1423,7 +1498,7 @@ void NTSC_VideoUpdateCycles( long cycles )
 
 			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 			{
-				vbp0 = g_aNTSC_Lines[2*g_nVideoClockVert];
+				g_pVideoAddress = g_aNTSC_Lines[2*g_nVideoClockVert];
 				g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
 				g_nLastColumnPixelNTSC = 0;
 				g_nSignalBitsNTSC = 0;

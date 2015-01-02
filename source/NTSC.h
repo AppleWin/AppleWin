@@ -1,11 +1,9 @@
 #define VIDEO_SCANNER_6502_CYCLES 17030
 
 // Globals (Public)
-
 	extern uint16_t g_nVideoClockVert;
 	extern uint16_t g_nVideoClockHorz;
-	extern uint8_t* g_NTSC_pLines[384];
-	extern void (* g_pFunc_NTSCVideoUpdateGraphics)(long);
+	extern void  (* g_pFunc_NTSCVideoUpdateGraphics)(long);
 
 // Prototypes (Public) ________________________________________________
 	extern void    NTSC_SetVideoTextMode( int cols );
