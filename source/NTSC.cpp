@@ -942,10 +942,6 @@ void NTSC_UpdateVideoText80 (long ticks)
 		{
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-vbp0[0] ^= 0xD5;
-vbp0[1] ^= 0xAA;
-vbp0[2] ^= 0xFF;
-
 				uint8_t *pAux  = MemGetAuxPtr(ad);
 				uint8_t *pMain = MemGetMainPtr(ad);
 
