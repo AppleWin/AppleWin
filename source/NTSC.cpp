@@ -1027,7 +1027,7 @@ void NTSC_SetVideoStyle() // (int v, int s)
 		default:
 			if (half)
 			{
-				g_pFunc_ntscMonoPixel = ntscMonoSinglePixel;
+				g_pFunc_ntscMonoPixel  = ntscMonoSinglePixel;
 				g_pFunc_ntscColorPixel = ntscColorSinglePixel;
 			}
 			else {
