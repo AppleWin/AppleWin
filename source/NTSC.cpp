@@ -988,10 +988,10 @@ void NTSC_UpdateVideoText80 (long ticks)
 				uint16_t aux  = getCharSetBits( a );
 
 				if ((0 == g_nVideoCharSet) && 0x40 == (m & 0xC0))
-                    main ^= g_nTextFlashMask;
+					main ^= g_nTextFlashMask;
 
 				if ((0 == g_nVideoCharSet) && 0x40 == (a & 0xC0))
-                    aux ^= g_nTextFlashMask;
+					aux ^= g_nTextFlashMask;
 
 				uint16_t bits = (main << 7) | aux;
 				VIDEO_DRAW_BITS( bits );
@@ -1002,9 +1002,9 @@ void NTSC_UpdateVideoText80 (long ticks)
 }
 
 inline
-uint8_t getLoResBits( int iBank )
+uint16_t getLoResBits( uint8_t iByte )
 {
-    return g_aPixelMaskGR[ (iBank >> (g_nVideoClockVert & 4)) & 0xF ]; 
+	return g_aPixelMaskGR[ (iByte >> (g_nVideoClockVert & 4)) & 0xF ]; 
 }
 
 //===========================================================================
@@ -1032,7 +1032,7 @@ void NTSC_UpdateVideoDblLores40 (long ticks) // wsUpdateVideo7MLores
 			{
 				uint8_t *pMain = MemGetMainPtr(ad);
 				uint8_t  m     = pMain[0];
-                uint8_t  lo    = getLoResBits( m ); 
+				uint16_t lo    = getLoResBits( m ); 
 				uint16_t bits  = g_aPixelDoubleMaskHGR[(0xFF & lo >> ((1 - (g_nVideoClockHorz & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
 				VIDEO_DRAW_BITS( bits );
 			}
@@ -1066,7 +1066,7 @@ void NTSC_UpdateVideoLores40 (long ticks)
 			{
 				uint8_t *pMain = MemGetMainPtr(ad);
 				uint8_t  m     = pMain[0];
-                uint8_t  lo    = getLoResBits( m ); 
+				uint16_t lo    = getLoResBits( m ); 
 				uint16_t bits  = lo >> ((1 - (g_nVideoClockHorz & 1)) * 2);
 				VIDEO_DRAW_BITS( bits );
 			}
@@ -1104,8 +1104,8 @@ void NTSC_UpdateVideoDblLores80 (long ticks) // wsUpdateVideoDblLores
 				uint8_t m = pMain[0];
 				uint8_t a = pAux [0];
 
-				uint8_t lo = getLoResBits( m );
-				uint8_t hi = getLoResBits( a );
+				uint16_t lo = getLoResBits( m );
+				uint16_t hi = getLoResBits( a );
 
 				uint16_t main = lo >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
 				uint16_t aux  = hi >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
