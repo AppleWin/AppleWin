@@ -63,6 +63,103 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	#define HGR_TEST_PATTERN 0
 
+// Types
+
+	struct ColorSpace_PAL_t // Phase Amplitute Luma
+	{
+		float phase;
+		float amp;
+		float luma;
+	};
+
+	struct ColorSpace_YIQ_t
+	{
+		float y, i, q;
+	};
+
+	struct bgra_t
+	{
+		uint8_t b;
+		uint8_t g;
+		uint8_t r;
+		uint8_t a;
+	};
+	struct rgba_t
+	{
+		uint8_t r;
+		uint8_t g;
+		uint8_t b;
+		uint8_t a;
+	};
+
+	struct ColorSpace_BGRA_t
+	{
+		union
+		{
+			uint32_t n;
+			bgra_t   bgra;
+			rgba_t   rgba;
+		};
+	};
+
+	/*
+		http://www.kreativekorp.com/miscpages/a2info/munafo.shtml
+
+		"Primary" lo-res colors
+		Color      GR        Duty cycle  Phase
+		======================================
+		Red        COLOR=1    45 to 135    90
+		Dark-blue  COLOR=2   315 to 45      0
+		Dark-green COLOR=4   225 to 315   270
+		Brown      COLOR=8   135 to 225   180
+	*/
+	ColorSpace_PAL_t aPaletteYIQ[ 16 ] =
+	{                   // Lo Hi Dh
+		 {  0,  0,  0 } //  0  0     Black
+		,{ 90, 60, 25 } //  1     1  Red
+		,{  0, 60, 25 } //  2     8  Dark Blue
+		,{ 45,100, 50 } //  3  2  9  Purple
+		,{270, 60, 25 } //  4        Dark Green
+		,{  0,  0, 50 } //  5        Grey
+		,{315,100, 50 } //  6        Medium Blue
+		,{  0, 60, 75 } //  7        Light Blue
+		,{180, 60, 25 } //  8        Brown
+		,{135,100, 50 } //  9        Orange
+		,{  0,  0, 50 } // 10
+		,{ 90, 60, 75 } // 11        Pink
+		,{225,100, 50 } // 12        Light Green
+		,{180, 60, 75 } // 13        Yellow
+		,{270,  60, 75} // 14        Aqua
+		,{  0,  0,100 } // 15        White
+	};
+
+// purple   HCOLOR=2  45 100   50    255  68 253
+// orange   HCOLOR=5 135 100   50    255 106  60
+// green    HCOLOR=1 225 100   50     20 245  60
+// blue     HCOLOR=6 315 100   50     20 207 253
+
+	rgba_t aPaletteRGB[ 16 ] =
+	{
+		 {   0,   0,   0 } //  0
+		,{ 227,  30,  96 } //  1
+		,{  96,  78, 189 } //  2
+		,{ 255,  68, 253 } //  3
+		,{   0, 163,  96 } //  4
+		,{ 156, 156, 156 } //  5
+		,{  20, 207, 253 } //  6
+		,{ 208, 195, 255 } //  7
+		,{  96, 114,   3 } //  8
+		,{ 255, 106,  60 } //  9
+		,{ 156, 156, 156 } // 10
+		,{ 255, 160, 208 } // 11
+		,{  20, 245,  60 } // 12
+		,{ 208, 221, 141 } // 13
+		,{ 114, 255, 208 } // 14
+		,{ 255, 255, 255 } // 15
+	};
+
+
+
 // Globals (Public) ___________________________________________________
 	uint16_t g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
 	uint16_t g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible
