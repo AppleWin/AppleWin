@@ -248,7 +248,6 @@ static LPBYTE        g_pTextBank1; // Aux
 static LPBYTE        g_pTextBank0; // Main
 
 static /*bool*/ UINT g_VideoForceFullRedraw = 1;
-static bool g_bVideoUpdatedThisFrame = false;
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      g_nFrameBufferPitch = 0;
@@ -260,10 +259,6 @@ static UINT      g_uVideoMode     = VF_TEXT;
 
 	DWORD     g_eVideoType     = VT_COLOR_TVEMU;
 	DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
-
-
-static bool g_bTextFlashState = false;
-static bool g_bTextFlashFlag = false;
 
 static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
@@ -665,6 +660,7 @@ void VideoBenchmark () {
   // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totaltextfps = 0;
+
   g_uVideoMode            = VF_TEXT;
   FillMemory(mem+0x400,0x400,0x14);
   VideoRedrawScreen();
@@ -677,7 +673,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x400,0x400,0x14);
     else
       CopyMemory(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
-    VideoRedrawScreen(); // VideoRefreshScreen();
+    VideoRefreshScreen(0);
     if (cycle++ >= 3)
       cycle = 0;
     totaltextfps++;
@@ -699,7 +695,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x2000,0x2000,0x14);
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRedrawScreen(); // VideoRefreshScreen();
+    VideoRefreshScreen(0);
     if (cycle++ >= 3)
       cycle = 0;
     totalhiresfps++;
@@ -1048,18 +1044,18 @@ void VideoDisplayLogo ()
 // NTSC Alpha Version
 	DeleteObject(font);
 	font = CreateFontA(
-		-56,0,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
+		-48,0,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
 		OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,
 		VARIABLE_PITCH | 4 | FF_SWISS,
 		TEXT("Arial")
 	);
 	SelectObject(hFrameDC,font);
-	sprintf( szVersion, "NTSC ALPHA v11" );
+	sprintf( szVersion, "NTSC Alpha v12 AnsiStory" );
 	xoff = 0;
 	yoff = 0;
-	DRAWVERSION( 2, -158*scale,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 1, -157*scale,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 0, -156*scale,RGB(0xFF,0x00,0xFF));
+	DRAWVERSION( 42, -158*scale,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 41, -157*scale,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 40, -156*scale,RGB(0xFF,0x00,0xFF));
 // NTSC END
 
 #undef  DRAWVERSION
@@ -1172,7 +1168,6 @@ void VideoResetState ()
 	g_nAltCharSetOffset    = 0;
 	g_uVideoMode           = VF_TEXT;
 	g_VideoForceFullRedraw = 1;
-	g_bVideoUpdatedThisFrame = false;
 }
 
 
@@ -1207,6 +1202,7 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 // NTSC_BEGIN
 	NTSC_SetVideoMode( g_uVideoMode );
 // NTSC_END
+
 #if 0 // NTSC_CLEANUP: Is this still needed??
 	if (SW_80STORE)
 		g_uVideoMode &= ~VF_PAGE2;
@@ -1232,54 +1228,6 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 	}
 #endif // NTSC_CLEANUP
 	return MemReadFloatingBus(uExecutedCycles);
-}
-
-//===========================================================================
-
-// Called at 60Hz (every 16.666ms)
-static void VideoUpdateFlash()
-{
-	static UINT nTextFlashCnt = 0;
-
-	// Flash rate:
-	// . NTSC : 60/16 ~= 4Hz
-	// . PAL  : 50/16 ~= 3Hz
-	nTextFlashCnt = (nTextFlashCnt+1) & 0xf;
-
-	// BUG: In unthrottled CPU mode, flash rate should not be affected
-	if(nTextFlashCnt == 0)
-	{
-		g_bTextFlashState = !g_bTextFlashState;
-		
-		// Redraw any FLASHing chars if any text showing. NB. No FLASH g_nAppMode for 80 cols
-		if ((SW_TEXT || SW_MIXED) ) // && !SW_80COL) // FIX: FLASH 80-Column
-			g_bTextFlashFlag = true;
-	}
-}
-
-//===========================================================================
-
-// Called from main-loop every 17030 cycles (ie. 60Hz when CPU = 1MHz)
-void VideoEndOfVideoFrame(void)
-{
-	g_bVideoUpdatedThisFrame = false;		// Allow page1/2 toggle to result in an immediate video redraw
-
-	VideoUpdateFlash();						// TODO: Flash rate should be constant (regardless of CPU speed)
-
-	if (!VideoApparentlyDirty())
-		return;
-
-	// Apple II is not page flipping...
-
-	static DWORD dwLastTime = 0;
-	DWORD dwCurrTime = GetTickCount();
-	if (!g_bFullSpeed ||
-		(dwCurrTime-dwLastTime >= 100))		// FullSpeed: update every 100ms
-	{
-		// Required or else screen won't update -- Sheldon's NTSC doesn't have VideoEndOfVideoFrame -- simply calls wsVideoRefresh()
-		VideoRedrawScreen(); // VideoRefreshScreen();
-		dwLastTime = dwCurrTime;
-	}
 }
 
 //===========================================================================
