@@ -231,7 +231,6 @@ void ContinueExecution(void)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
-		// VideoEndOfVideoFrame(); // NTSC_TODO: is this still required? updates flash: if ((SW_TEXT || SW_MIXED) ) g_bTextFlashFlag = true
 		VideoRefreshScreen(0); // Just copy the output of our Apple framebuffer to the system Back Buffer
 		MB_EndOfVideoFrame();
 	}
