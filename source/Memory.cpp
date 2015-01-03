@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
+#include "NTSC.h"
 #include "NoSlotClock.h"
 #include "ParallelPrinter.h"
 #include "Registry.h"
@@ -230,7 +231,7 @@ static BYTE __stdcall IORead_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0x6:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
 	case 0x7:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
 	case 0x8:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x9:	return VideoCheckVbl(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x9:	return VideoCheckVbl( nCyclesLeft ); // NTSC cleanup
 	case 0xA:	return VideoCheckMode(pc, addr, bWrite, d, nCyclesLeft);
 	case 0xB:	return VideoCheckMode(pc, addr, bWrite, d, nCyclesLeft);
 	case 0xC:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
@@ -1477,13 +1478,25 @@ void MemResetPaging()
 
 BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
-	return*(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
+	// NTSC: It is tempting to replace with
+	//     return NTSC_VideoGetByte( uExecutedCycles );
+	// But that breaks "Rainbow" Bug #254
+    // Why is this out of sync??
+    //uint8_t val1 = NTSC_VideoGetByte( uExecutedCycles );
+    //uint8_t val2 = *(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
+    //if( val1 != val2 ) mem[ 0x2000 ] ^= 0xFF;
+
+	return *(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
 }
 
 //===========================================================================
 
 BYTE MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles)
 {
+	// NTSC: It is tempting to replace with
+	//     return NTSC_VideoGetByte( uExecutedCycles );
+	// But that breaks "Rainbow" Bug #254
+	// BYTE r= NTSC_VideoGetByte( uExecutedCycles );
 	BYTE r = *(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
 	return (r & ~0x80) | ((highbit) ? 0x80 : 0);
 }

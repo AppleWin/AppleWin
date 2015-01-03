@@ -94,7 +94,6 @@ bool    VideoGetSWAltCharSet(void);
 
 void    VideoSetForceFullRedraw(void);
 
-void _Video_Dirty();
 int _Video_SetupBanks( bool bBank2 );
 bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset);
 bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset);
@@ -116,7 +115,7 @@ void Video_TakeScreenShot( int iScreenShotType );
 
 // Win32/MSVC: __stdcall 
 BYTE VideoCheckMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
-BYTE VideoCheckVbl (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+BYTE VideoCheckVbl ( ULONG uExecutedCycles );
 BYTE VideoSetMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 
 void Config_Load_Video(void);

@@ -65,7 +65,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		#endif
 	#endif
 
-
 // Types
 
 	struct ColorSpace_PAL_t // Phase Amplitute Luma
@@ -142,6 +141,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static UpdateScreenFunc_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
 	static UpdateScreenFunc_t g_pFuncUpdateTextScreen     = 0; // updateScreenText40;
 	static UpdateScreenFunc_t g_pFuncUpdateGraphicsScreen = 0; // updateScreenText40;
+	static UpdateScreenFunc_t g_pFuncModeSwitchDelayed = 0;
+
+	static UpdateScreenFunc_t g_aFuncUpdateHorz     [VIDEO_SCANNER_MAX_HORZ]; // ANSI STORY:  DGR80/TEXT80 vert/horz scrolll switches video mode mid-scan line!
+	static uint32_t           g_aHorzClockVideoMode [VIDEO_SCANNER_MAX_HORZ]; // ANSI STORY:  DGR80/TEXT80 vert/horz scrolll switches video mode mid-scan line!
 
 	typedef void (*UpdatePixelFunc_t)(uint16_t);
 	static UpdatePixelFunc_t g_pFuncUpdateBnWPixel = 0; //updatePixelBnWMonitorSingleScanline;
@@ -404,6 +407,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	inline void      updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable );
 	inline void      updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable );
 	inline void      updatePixels( uint16_t bits );
+	inline bool      updateScanLineModeSwitch( long cycles6502, UpdateScreenFunc_t self );
 	inline void      updateVideoScannerHorzEOL();
 	inline void      updateVideoScannerAddress();
 
@@ -661,6 +665,25 @@ inline void updatePixels( uint16_t bits )
 }
 
 //===========================================================================
+inline bool updateScanLineModeSwitch( long cycles6502, UpdateScreenFunc_t self )
+{
+	bool bBail = false;
+	if( g_aHorzClockVideoMode[ g_nVideoClockHorz ] != g_aHorzClockVideoMode[ g_nVideoClockHorz+1 ] && !g_nVideoMixed ) // !g_nVideoMixed for "Rainbow"
+	{
+		UpdateScreenFunc_t pFunc = g_aFuncUpdateHorz[ g_nVideoClockHorz ];
+		if( pFunc && pFunc != self ) 
+		{
+			g_pFuncUpdateGraphicsScreen = pFunc;
+//			g_pFuncUpdateTextScreen     = pFunc; // No, as we can't break mixed mode for "Rainbow"
+			pFunc( cycles6502 );
+			bBail = true;
+		}
+	}
+
+	return bBail;
+}
+ 
+//===========================================================================
 inline void updateVideoScannerHorzEOL()
 {
 	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
@@ -711,6 +734,12 @@ inline void updateVideoScannerAddress()
 	g_nColorPhaseNTSC      = INITIAL_COLOR_PHASE;
 	g_nLastColumnPixelNTSC = 0;
 	g_nSignalBitsNTSC      = 0;
+
+	// ANSI STORY: clear mode and pointer to draw func
+	memset( g_aFuncUpdateHorz    , 0, sizeof( g_aFuncUpdateHorz     ) );
+	memset( g_aHorzClockVideoMode, 0, sizeof( g_aHorzClockVideoMode ) );
+
+	g_aFuncUpdateHorz[0] = g_pFuncUpdateGraphicsScreen;
 }
 
 // Non-Inline _________________________________________________________
@@ -1014,7 +1043,7 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 		return;
 	}
 	
-	for (; cycles6502; --cycles6502)
+	for (; cycles6502 > 0; --cycles6502)
 	{
 		UpdateVideoAddressHGR();
 
@@ -1026,6 +1055,8 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
+				if ( updateScanLineModeSwitch( cycles6502, updateScreenDoubleHires40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
+
 				uint8_t *pMain = MemGetMainPtr(ad);
 				uint8_t  m     = pMain[0];
 				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
@@ -1048,7 +1079,7 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 		return;
 	}
 
-	for (; cycles6502; --cycles6502)
+	for (; cycles6502 > 0; --cycles6502)
 	{
 		UpdateVideoAddressHGR();
 
@@ -1060,6 +1091,8 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
+				if ( updateScanLineModeSwitch( cycles6502, updateScreenDoubleHires80 ) ) return; // ANSI STORY: vide mode switch mid scan line!
+
 				uint8_t  *pMain = MemGetMainPtr(ad);
 				uint8_t  *pAux  = MemGetAuxPtr(ad);
 
@@ -1087,7 +1120,7 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 		return;
 	}
 
-	for (; cycles6502; --cycles6502)
+	for (; cycles6502 > 0; --cycles6502)
 	{
 		UpdateVideoAddressTXT();
 
@@ -1099,6 +1132,8 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
+				if ( updateScanLineModeSwitch( cycles6502, updateScreenDoubleLores40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
+
 				uint8_t *pMain = MemGetMainPtr(ad);
 				uint8_t  m     = pMain[0];
 				uint16_t lo    = getLoResBits( m ); 
@@ -1121,7 +1156,7 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 		return;
 	}
 
-	for (; cycles6502; --cycles6502)
+	for (; cycles6502 > 0; --cycles6502)
 	{
 		UpdateVideoAddressTXT();
 
@@ -1133,6 +1168,8 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
+				if( updateScanLineModeSwitch( cycles6502, updateScreenDoubleLores80 ) ) return; // ANSI STORY: vide mode switch mid scan line!
+
 				uint8_t *pMain = MemGetMainPtr(ad);
 				uint8_t *pAux  = MemGetAuxPtr(ad);
 
@@ -1147,9 +1184,11 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 				uint16_t bits = (main << 7) | (aux & 0x7f);
 				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 3;
+
 			}
 		}
 		updateVideoScannerHorzEOL();
+
 	}
 }
 
@@ -1164,7 +1203,7 @@ void updateScreenSingleHires40 (long cycles6502)
 		return;
 	}
 	
-	for (; cycles6502; --cycles6502)
+	for (; cycles6502 > 0; --cycles6502)
 	{
 		UpdateVideoAddressHGR();
 
@@ -1176,6 +1215,8 @@ void updateScreenSingleHires40 (long cycles6502)
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
+				if ( updateScanLineModeSwitch( cycles6502, updateScreenSingleHires40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
+
 				uint8_t *pMain = MemGetMainPtr(ad);
 				uint8_t  m     = pMain[0];
 				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
@@ -1199,7 +1240,7 @@ void updateScreenSingleLores40 (long cycles6502)
 		return;
 	}
 
-	for (; cycles6502; --cycles6502)
+	for (; cycles6502 > 0; --cycles6502)
 	{
 		UpdateVideoAddressTXT();
 
@@ -1211,6 +1252,8 @@ void updateScreenSingleLores40 (long cycles6502)
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
+				if( updateScanLineModeSwitch( cycles6502, updateScreenSingleLores40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
+
 				uint8_t *pMain = MemGetMainPtr(ad);
 				uint8_t  m     = pMain[0];
 				uint16_t lo    = getLoResBits( m ); 
@@ -1227,7 +1270,7 @@ void updateScreenText40 (long cycles6502)
 {
 	unsigned ad;
 
-	for (; cycles6502; --cycles6502)
+	for (; cycles6502 > 0; --cycles6502)
 	{
 		UpdateVideoAddressTXT();
 
@@ -1240,6 +1283,8 @@ void updateScreenText40 (long cycles6502)
 		{
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
+				if ( updateScanLineModeSwitch( cycles6502, updateScreenText40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
+
 				uint8_t *pMain = MemGetMainPtr(ad);
 				uint8_t  m     = pMain[0];
 				uint8_t  c     = getCharSetBits(m);
@@ -1247,6 +1292,7 @@ void updateScreenText40 (long cycles6502)
 				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0))
 					bits ^= g_nTextFlashMask;
 				updatePixels( bits );
+
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1258,7 +1304,7 @@ void updateScreenText80 (long cycles6502)
 {
 	unsigned int ad;
 
-	for (; cycles6502; --cycles6502)
+	for (; cycles6502 > 0; --cycles6502)
 	{
 		UpdateVideoAddressTXT();
 
@@ -1271,6 +1317,8 @@ void updateScreenText80 (long cycles6502)
 		{
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
+				if ( updateScanLineModeSwitch( cycles6502, updateScreenText80 ) ) return; // ANSI STORY: vide mode switch mid scan line!
+
 				uint8_t *pAux  = MemGetAuxPtr(ad);
 				uint8_t *pMain = MemGetMainPtr(ad);
 
@@ -1308,6 +1356,11 @@ void NTSC_SetVideoTextMode( int cols )
 //===========================================================================
 void NTSC_SetVideoMode( int bVideoModeFlags )
 {
+	int h = g_nVideoClockHorz;
+//	int h = (g_dwCyclesThisFrame + 40) % 65;
+
+	g_aHorzClockVideoMode[ h ] = bVideoModeFlags;
+
 	g_nVideoMixed   = bVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = g_nAltCharSetOffset != 0;
 
@@ -1319,6 +1372,8 @@ void NTSC_SetVideoMode( int bVideoModeFlags )
 			g_nHiresPage = 2;
 		}
 	}
+
+	UpdateScreenFunc_t pPrevUpdate = g_pFuncUpdateGraphicsScreen;
 
 	if (bVideoModeFlags & VF_TEXT) {
 		if (bVideoModeFlags & VF_80COL)
@@ -1344,6 +1399,16 @@ void NTSC_SetVideoMode( int bVideoModeFlags )
 		else
 			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
 	}
+#if 0
+	g_aFuncUpdateHorz[ g_nVideoClockHorz ] = g_pFuncUpdateGraphicsScreen; // ANSI STORY
+
+	if( g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START )
+		g_pFuncUpdateGraphicsScreen = pPrevUpdate;
+	else
+		g_aFuncUpdateHorz[0] = g_pFuncUpdateGraphicsScreen;
+#else
+	g_aFuncUpdateHorz[ h ] = g_pFuncUpdateGraphicsScreen; // NTSC: ANSI STORY
+#endif
 }
 
 //===========================================================================
@@ -1514,6 +1579,10 @@ void NTSC_VideoInitAppleType ()
 		g_pHorzClockOffset = APPLE_IIE_HORZ_CLOCK_OFFSET;
 	else
 		g_pHorzClockOffset = APPLE_IIP_HORZ_CLOCK_OFFSET;
+
+	g_nVideoClockVert = 0;
+	g_nVideoClockHorz = 0;
+
 }
 
 //===========================================================================
@@ -1528,10 +1597,11 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 {
 	bool bRedraw = cycles6502 >= VIDEO_SCANNER_6502_CYCLES;
 
-//	if( g_bFullSpeed )
-//			g_pFuncUpdateGraphicsScreen( cycles6502 );
-//	else
-
+//	if( !g_bFullSpeed )
+if(true)
+		g_pFuncUpdateGraphicsScreen( cycles6502 );
+	else
+{
 	while( cycles6502 >  VIDEO_SCANNER_6502_CYCLES )
 	/* */  cycles6502 -= VIDEO_SCANNER_6502_CYCLES ;
 
@@ -1566,4 +1636,5 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 		int nCyclesVBlank = (VIDEO_SCANNER_MAX_VERT - VIDEO_SCANNER_Y_DISPLAY) * VIDEO_SCANNER_MAX_HORZ;
 		g_pFuncUpdateGraphicsScreen( nCyclesVBlank );
 	}
+}
 }

@@ -227,8 +227,6 @@ int const kVLine0State      = 0x100; // V[543210CBA] = 100000000
 int const kVPresetLine      =   256; // line when V state presets
 int const kVSyncLines       =     4; // lines per VSync duration
 
-static BYTE          celldirty[40][32];	// [TC: 27/06/2014] NB. No longer used!
-// NUM_COLOR_PALETTE
 static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
 static HBITMAP       g_hDeviceBitmap;
@@ -248,14 +246,6 @@ const int MAX_SOURCE_Y = 512;
 static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 static LPBYTE        g_pTextBank1; // Aux
 static LPBYTE        g_pTextBank0; // Main
-
-// For tv emulation HGR Video Mode
-// 2 extra scan lines on bottom?
-static BYTE          hgrpixelmatrix[FRAMEBUFFER_W/2][FRAMEBUFFER_H/2 + 2 * HGR_MATRIX_YOFFSET];
-static BYTE          colormixbuffer[6];
-static WORD          colormixmap[6][6][6];
-//
-
 
 static /*bool*/ UINT g_VideoForceFullRedraw = 1;
 static bool g_bVideoUpdatedThisFrame = false;
@@ -895,10 +885,12 @@ BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 
 */
 
-BYTE VideoCheckVbl (WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
+BYTE VideoCheckVbl ( ULONG uExecutedCycles )
 {
-	//bool bVblBar = VideoGetVbl(uExecutedCycles);
-	bool bVblBar = NTSC_VideoIsVbl();
+	bool bVblBar = VideoGetVbl(uExecutedCycles);
+	// NTSC: It is tempting to replace with
+	//	bool bVblBar = NTSC_VideoIsVbl();
+	// But this breaks "ANSI STORY"
 
 	BYTE r = KeybGetKeycode();
 	return (r & ~0x80) | (bVblBar ? 0x80 : 0);
@@ -1080,47 +1072,6 @@ void VideoDisplayLogo ()
 //===========================================================================
 void VideoRealizePalette(HDC dc)
 {
-#if 0
-	if( g_bIsFullScreen )	
-	{
-		if( !g_pDDPal )
-		{
-			PALETTEENTRY aPal[256];
-
-			BYTE *pSrc = ((BYTE*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
-			BYTE *pDst = ((BYTE*)aPal);
-
-			int iPal;
-			for(iPal = 0; iPal < 256; iPal++ )
-			{
-				*(pDst + 0) = *(pSrc + 2); // BGR -> RGB
-				*(pDst + 1) = *(pSrc + 1);
-				*(pDst + 2) = *(pSrc + 0);
-				*(pDst + 3) = 0;
-				pDst += 4;
-				pSrc += 4;
-			}
-			if (g_pDD->CreatePalette(DDPCAPS_8BIT, aPal, &g_pDDPal, NULL) != DD_OK)
-			{
-				g_pDDPal = NULL;
-			}
-		}
-
-		if (g_pDDPal)
-		{
-			g_pDDPrimarySurface->SetPalette(g_pDDPal); // this sets the palette for the primary surface
-		}
-	}
-	else
-	{
-		if (g_hPalette)
-		{
-			SelectPalette(dc,g_hPalette,0);
-			RealizePalette(dc);
-		}
-	}
-#endif
-
 	if (g_hPalette)
 	{
 		SelectPalette(dc,g_hPalette,0);
@@ -1135,12 +1086,6 @@ void VideoRedrawScreen ()
 	g_VideoForceFullRedraw = 1;
 
 	VideoRefreshScreen( g_uVideoMode );
-}
-
-//===========================================================================
-void _Video_Dirty()
-{
-	ZeroMemory(celldirty,40*32);
 }
 
 //===========================================================================
