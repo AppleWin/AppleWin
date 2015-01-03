@@ -1266,7 +1266,7 @@ void VideoRefreshScreen ( int bVideoModeFlags )
 	if( bVideoModeFlags )
 	{
 		NTSC_SetVideoMode( bVideoModeFlags );
-		g_pFunc_NTSCVideoUpdateGraphics( VIDEO_SCANNER_6502_CYCLES );
+		NTSC_VideoUpdateCycles( VIDEO_SCANNER_6502_CYCLES );
 	}
 
 // NTSC_BEGIN: wsVideoRefresh()
@@ -1341,7 +1341,7 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 // NTSC_BEGIN
 	NTSC_SetVideoMode( g_uVideoMode );
 // NTSC_END
-
+#if 0 // NTSC_CLEANUP: Is this still needed??
 	if (SW_80STORE)
 		g_uVideoMode &= ~VF_PAGE2;
 
@@ -1364,7 +1364,7 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 			g_bVideoUpdatedThisFrame = true;
 		}
 	}
-
+#endif // NTSC_CLEANUP
 	return MemReadFloatingBus(uExecutedCycles);
 }
 

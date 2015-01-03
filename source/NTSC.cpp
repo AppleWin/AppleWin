@@ -132,6 +132,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	bgra_t *g_pVideoAddress;
 	bgra_t *g_aNTSC_Lines[VIDEO_SCANNER_Y_DISPLAY*2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
+	static unsigned (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
+
+	typedef void (*Func_t)(long);
+	static Func_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
+
+	static void (* g_pFunc_NTSCVideoUpdateText    )(long) = 0; // NTSC_UpdateVideoText40;
+	       void (* g_pFunc_NTSCVideoUpdateGraphics)(long) = 0; // NTSC_UpdateVideoText40;
+
+	static void (*g_pFunc_ntscMonoPixel )(int) = 0; //ntscMonoSinglePixel ;
+	static void (*g_pFunc_ntscColorPixel)(int) = 0; //ntscColorSinglePixel;
+
 
 	static unsigned g_nTextFlashCounter = 0;
 	static uint16_t g_nTextFlashMask    = 0;
@@ -367,17 +378,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		,{ 255, 255, 255 } // 15
 	};
 
-
-	static unsigned (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
-
-	static void (* g_pFunc_NTSCVideoUpdateText    )(long) = 0; // NTSC_UpdateVideoText40;
-	       void (* g_pFunc_NTSCVideoUpdateGraphics)(long) = 0; // NTSC_UpdateVideoText40;
-
-	static void (*g_pFunc_ntscMonoPixel )(int) = 0; //ntscMonoSinglePixel ;
-	static void (*g_pFunc_ntscColorPixel)(int) = 0; //ntscColorSinglePixel;
-
-	typedef void (*Func_t)(long);
-	static Func_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
 
 // Prototypes
 	// prototype from CPU.h
@@ -1479,11 +1479,15 @@ int NTSC_VideoIsVbl ()
 //===========================================================================
 void NTSC_VideoUpdateCycles( long cycles6502 )
 {
-	bool bRedraw = false;
+	bool bRedraw = cycles6502 >= VIDEO_SCANNER_6502_CYCLES;
 
-//	if( !g_bFullSpeed )
+//	if( g_bFullSpeed )
 //			g_pFunc_NTSCVideoUpdateGraphics( cycles6502 );
 //	else
+
+	while( cycles6502 >  VIDEO_SCANNER_6502_CYCLES )
+	/* */  cycles6502 -= VIDEO_SCANNER_6502_CYCLES ;
+
 	for( ; cycles6502 > 0; cycles6502-- )
 	{
 		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
@@ -1515,9 +1519,7 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 	if( bRedraw ) // Force full refresh
 	{
 		for( int y = 0; y < VIDEO_SCANNER_Y_DISPLAY; y++ )
-		{
 			g_apFuncVideoUpdateScanline[ y ]( VIDEO_SCANNER_MAX_HORZ );
-		}
 
 		int nCyclesVBlank = (VIDEO_SCANNER_MAX_VERT - VIDEO_SCANNER_Y_DISPLAY) * VIDEO_SCANNER_MAX_HORZ;
 		g_pFunc_NTSCVideoUpdateGraphics( nCyclesVBlank );

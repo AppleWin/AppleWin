@@ -322,10 +322,7 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 
 // NTSC_BEGIN
 		uElapsedCycles = uExecutedCycles - uPreviousCycles;
-		if( g_bFullSpeed )
-			NTSC_VideoUpdateCycles( uElapsedCycles );
-		else
-			g_pFunc_NTSCVideoUpdateGraphics( uElapsedCycles );
+		NTSC_VideoUpdateCycles( uElapsedCycles );
 // NTSC_END
 
 		CheckInterruptSources(uExecutedCycles);
