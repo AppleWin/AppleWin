@@ -442,7 +442,6 @@ inline void updateVideoHorzEOL()
 {
 	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 	{
-		g_nVideoClockHorz = 0;
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
 			//VIDEO_DRAW_ENDLINE();
@@ -465,6 +464,8 @@ inline void updateVideoHorzEOL()
 #endif
 			}
 		}
+
+		g_nVideoClockHorz = 0;
 
 		if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
 		{
