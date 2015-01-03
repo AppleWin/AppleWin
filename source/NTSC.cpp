@@ -142,8 +142,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static UpdateScreenFunc_t g_pFuncUpdateGraphicsScreen = 0; // updateScreenText40;
 
 	typedef void (*UpdatePixelFunc_t)(uint16_t);
-	static UpdatePixelFunc_t g_pFuncUpdateBnWPixel = 0; //ntscMonoSinglePixel ;
-	static UpdatePixelFunc_t g_pFuncUpdateHuePixel = 0; //ntscColorSinglePixel;
+	static UpdatePixelFunc_t g_pFuncUpdateBnWPixel = 0; //updatePixelBnWMonitorSingleScanline;
+	static UpdatePixelFunc_t g_pFuncUpdateHuePixel = 0; //updatePixelHueMonitorSingleScanline;
 
 	static uint8_t  g_nTextFlashCounter = 0;
 	static uint16_t g_nTextFlashMask    = 0;
@@ -402,25 +402,26 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	inline void      updateVideoScannerAddress();
 
 	static void init_chroma_phase_table();
-
-	static void    updateScreenDoubleHires40(long cycles6502);
-	static void    updateScreenDoubleHires80(long cycles6502);
-	static void    updateScreenDoubleLores40(long cycles6502);
-	static void    updateScreenDoubleLores80(long cycles6502);
-	static void    updateScreenSingleHires40(long cycles6502);
-	static void    updateScreenSingleLores40(long cycles6502);
-	static void    updateScreenText40       (long cycles6502);
-	static void    updateScreenText80       (long cycles6502);
-
 	static void updateMonochromeTables( uint16_t r, uint16_t g, uint16_t b );
-	static void ntscMonoSinglePixel   (uint16_t compositeSignal);
-	static void ntscMonoDoublePixel   (uint16_t compositeSignal);
-	static void ntscColorSinglePixel  (uint16_t compositeSignal);
-	static void ntscColorDoublePixel  (uint16_t compositeSignal);
-	static void ntscMonoTVSinglePixel (uint16_t compositeSignal);
-	static void ntscMonoTVDoublePixel (uint16_t compositeSignal);
-	static void ntscColorTVSinglePixel(uint16_t compositeSignal);
-	static void ntscColorTVDoublePixel(uint16_t compositeSignal);
+
+	static void updatePixelBnWColorTVSingleScanline( uint16_t compositeSignal );
+	static void updatePixelBnWColorTVDoubleScanline( uint16_t compositeSignal );
+	static void updatePixelBnWMonitorSingleScanline( uint16_t compositeSignal );
+	static void updatePixelBnWMonitorDoubleScanline( uint16_t compositeSignal );
+	static void updatePixelHueColorTVSingleScanline( uint16_t compositeSignal );
+	static void updatePixelHueColorTVDoubleScanline( uint16_t compositeSignal );
+	static void updatePixelHueMonitorSingleScanline( uint16_t compositeSignal );
+	static void updatePixelHueMonitorDoubleScanline( uint16_t compositeSignal );
+
+	static void updateScreenDoubleHires40( long cycles6502 );
+	static void updateScreenDoubleHires80( long cycles6502 );
+	static void updateScreenDoubleLores40( long cycles6502 );
+	static void updateScreenDoubleLores80( long cycles6502 );
+	static void updateScreenSingleHires40( long cycles6502 );
+	static void updateScreenSingleLores40( long cycles6502 );
+	static void updateScreenText40       ( long cycles6502 );
+	static void updateScreenText80       ( long cycles6502 );
+
 
 //===========================================================================
 inline float clampZeroOne( const float & x )
@@ -697,7 +698,7 @@ static void init_video_tables (void)
 {
 	/*
 		Convert 7-bit monochrome luminance to 14-bit double pixel luminance
-		Chroma will be applied later based on the color phase in ntscColorDoublePixel( luminanceBit )
+		Chroma will be applied later based on the color phase in updatePixelHueMonitorDoubleScanline( luminanceBit )
 			0x001 -> 0x0003
 			0x002 -> 0x000C
 			0x004 -> 0x0030
@@ -915,53 +916,53 @@ static void init_chroma_phase_table (void)
 }
 
 //===========================================================================
-static void ntscColorTVSinglePixel (uint16_t compositeSignal)
+static void updatePixelHueColorTVSingleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferColorTVSingleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
-static void ntscColorTVDoublePixel (uint16_t compositeSignal)
+static void updatePixelHueColorTVDoubleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferColorTVDoubleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
-static void ntscColorSinglePixel (uint16_t compositeSignal)
+static void updatePixelHueMonitorSingleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorSingleScanline(compositeSignal, g_aHueMonitor[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
-static void ntscColorDoublePixel (uint16_t compositeSignal)
+static void updatePixelHueMonitorDoubleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorDoubleScanline(compositeSignal, g_aHueMonitor[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
-static void ntscMonoSinglePixel (uint16_t compositeSignal)
+static void updatePixelBnWMonitorSingleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorSingleScanline(compositeSignal, g_aBnWMonitorCustom);
 }
 
 //===========================================================================
-static void ntscMonoDoublePixel (uint16_t compositeSignal)
+static void updatePixelBnWMonitorDoubleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorDoubleScanline(compositeSignal, g_aBnWMonitorCustom);
 }
 
 //===========================================================================
-static void ntscMonoTVSinglePixel (uint16_t compositeSignal)
+static void updatePixelBnWColorTVSingleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferColorTVSingleScanline(compositeSignal, g_aBnWColorTVCustom);
 }
 
 //===========================================================================
-static void ntscMonoTVDoublePixel (uint16_t compositeSignal)
+static void updatePixelBnWColorTVDoubleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferColorTVDoubleScanline(compositeSignal, g_aBnWColorTVCustom);
 }
@@ -1044,12 +1045,12 @@ void NTSC_SetVideoStyle() // (int v, int s)
 		case VT_COLOR_TVEMU: // VT_COLOR_TV: // 0:
 			if (half)
 			{
-				g_pFuncUpdateBnWPixel = ntscMonoTVSinglePixel;
-				g_pFuncUpdateHuePixel = ntscColorTVSinglePixel;
+				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVSingleScanline;
+				g_pFuncUpdateHuePixel = updatePixelHueColorTVSingleScanline;
 			}
 			else {
-				g_pFuncUpdateBnWPixel = ntscMonoTVDoublePixel;
-				g_pFuncUpdateHuePixel = ntscColorTVDoublePixel;
+				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVDoubleScanline;
+				g_pFuncUpdateHuePixel = updatePixelHueColorTVDoubleScanline;
 			}
 			break;
 
@@ -1057,12 +1058,12 @@ void NTSC_SetVideoStyle() // (int v, int s)
 		default:
 			if (half)
 			{
-				g_pFuncUpdateBnWPixel = ntscMonoSinglePixel;
-				g_pFuncUpdateHuePixel = ntscColorSinglePixel;
+				g_pFuncUpdateBnWPixel = updatePixelBnWMonitorSingleScanline;
+				g_pFuncUpdateHuePixel = updatePixelHueMonitorSingleScanline;
 			}
 			else {
-				g_pFuncUpdateBnWPixel = ntscMonoDoublePixel;
-				g_pFuncUpdateHuePixel = ntscColorDoublePixel;
+				g_pFuncUpdateBnWPixel = updatePixelBnWMonitorDoubleScanline;
+				g_pFuncUpdateHuePixel = updatePixelHueMonitorDoubleScanline;
 			}
 			break;
 
@@ -1073,10 +1074,10 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			updateMonochromeTables( r, g, b ); // Custom Monochrome color
 			if (half)
 			{
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = ntscMonoTVSinglePixel;
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWColorTVSingleScanline;
 			}
 			else {
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = ntscMonoTVDoublePixel;
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWColorTVDoubleScanline;
 			}
 			break;
 
@@ -1112,11 +1113,11 @@ _mono:
 			updateMonochromeTables( r, g, b ); // Custom Monochrome color
 			if (half)
 			{
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = ntscMonoSinglePixel;
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWMonitorSingleScanline;
 			}
 			else
 			{
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = ntscMonoDoublePixel;
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWMonitorDoubleScanline;
 			}
 			break;
 		}
