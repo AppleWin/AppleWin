@@ -42,6 +42,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#define RAD_90  PI*0.5f
 	#define RAD_360 PI*2.f
 
+	// sadly float64 precision is needed
+	#define real double
 
 	#ifndef CHROMA_BLUR
 		#define CHROMA_BLUR      1 // Default: 1; 1 = blur along ~8 pixels; 0 = sharper
@@ -56,7 +58,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		#define CYCLESTART (DEG_TO_RAD(45))
 	#else // sharpness is higher, less color bleed
 		#if CHROMA_FILTER == 2
-			#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees // c = init_signal_prefilter(z);
+			#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees // c = initFilterSignal(z);
 		#else
 	//		#define CYCLESTART DEG_TO_RAD(90) // (PI*0.5) // PI/2 = 90 degrees // HGR: Great, GR: fail on brown
 			#define CYCLESTART DEG_TO_RAD(115.f) // GR perfect match of slow method
@@ -393,15 +395,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	inline uint16_t  getLoResBits( uint8_t iByte );
 	inline uint32_t  getScanlineColor( const uint16_t signal, const bgra_t *pTable );
 	inline uint32_t* getScanlineNext1Address();
-	inline uint32_t* getScanlineThis0Address();
 	inline uint32_t* getScanlinePrev1Address();
 	inline uint32_t* getScanlinePrev2Address();
+	inline uint32_t* getScanlineThis0Address();
 	inline void      updateColorPhase();
+	inline void      updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable );
+	inline void      updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable );
+	inline void      updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable );
+	inline void      updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable );
 	inline void      updatePixels( uint16_t bits );
 	inline void      updateVideoScannerHorzEOL();
 	inline void      updateVideoScannerAddress();
 
-	static void init_chroma_phase_table();
+	static void initChromaPhaseTables();
+	static real initFilterChroma   (real z);
+	static real initFilterLuma0    (real z);
+	static real initFilterLuma1    (real z);
+	static real initFilterSignal(real z);
+	static void initPixelDoubleMasks(void);
 	static void updateMonochromeTables( uint16_t r, uint16_t g, uint16_t b );
 
 	static void updatePixelBnWColorTVSingleScanline( uint16_t compositeSignal );
@@ -444,54 +455,42 @@ inline uint16_t getLoResBits( uint8_t iByte )
 }
 
 //===========================================================================
+inline uint32_t getScanlineColor( const uint16_t signal, const bgra_t *pTable )
+{
+	g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; // 14-bit
+	return *(uint32_t*) &pTable[ g_nSignalBitsNTSC ];
+}
+
+//===========================================================================
+inline uint32_t* getScanlineNext1Address()
+{
+	return (uint32_t*) (g_pVideoAddress - 1*FRAMEBUFFER_W);
+}
+
+//===========================================================================
+inline uint32_t* getScanlinePrev1Address()
+{
+	return (uint32_t*) (g_pVideoAddress + 1*FRAMEBUFFER_W);
+}
+
+//===========================================================================
+inline uint32_t* getScanlinePrev2Address()
+{
+	return (uint32_t*) (g_pVideoAddress + 2*FRAMEBUFFER_W);
+
+}
+
+//===========================================================================
+inline uint32_t* getScanlineThis0Address()
+{
+	return (uint32_t*) g_pVideoAddress;
+}
+
+//===========================================================================
 inline void updateColorPhase()
 {
 	g_nColorPhaseNTSC++;
 	g_nColorPhaseNTSC &= 3;
-}
-
-//===========================================================================
-inline void updateVideoScannerHorzEOL()
-{
-	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
-	{
-		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-		{
-			//VIDEO_DRAW_ENDLINE();
-			if (g_nColorBurstPixels < 2)
-			{
-				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
-#if 0			// BUGFIX: This writes out-of-bounds for a 560x384 framebuffer
-				g_pFuncUpdateBnWPixel(0);
-				g_pFuncUpdateBnWPixel(0);
-				g_pFuncUpdateBnWPixel(0);
-#endif
-			}
-			else
-			{
-				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
-#if 0			// BUGFIX: This writes out-of-bounds for a 560x384 framebuffer
-				g_pFuncUpdateHuePixel(0);
-				g_pFuncUpdateHuePixel(0);
-				g_pFuncUpdateHuePixel(0);
-#endif
-			}
-		}
-
-		g_nVideoClockHorz = 0;
-
-		if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
-		{
-			g_nVideoClockVert = 0;
-			if ((++g_nTextFlashCounter & 0xF) == 0)
-				g_nTextFlashMask ^= -1; // 16-bits
-		}
-
-		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-		{
-			updateVideoScannerAddress();
-		}
-	}
 }
 
 #if 0
@@ -547,57 +546,7 @@ inline void updateVideoScannerHorzEOL()
 	} while(0)
 #else
 
-inline uint32_t* getScanlineNext1Address()
-{
-	return (uint32_t*) (g_pVideoAddress - 1*FRAMEBUFFER_W);
-}
-
-inline uint32_t* getScanlineThis0Address()
-{
-	return (uint32_t*) g_pVideoAddress;
-}
-
-inline uint32_t* getScanlinePrev1Address()
-{
-	return (uint32_t*) (g_pVideoAddress + 1*FRAMEBUFFER_W);
-}
-
-inline uint32_t* getScanlinePrev2Address()
-{
-	return (uint32_t*) (g_pVideoAddress + 2*FRAMEBUFFER_W);
-
-}
-
-inline uint32_t getScanlineColor( const uint16_t signal, const bgra_t *pTable )
-{
-	g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; // 14-bit
-	return *(uint32_t*) &pTable[ g_nSignalBitsNTSC ];
-}
-
-inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable )
-{
-	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
-	/* */ uint32_t *pLine1Address = getScanlineNext1Address();
-	const uint32_t color0 = getScanlineColor( signal, pTable );
-	const uint32_t color1 = ((color0 & 0x00fcfcfc) >> 2); // 25% Blend (original)
-//	const uint32_t color1 = ((color0 & 0x00fefefe) >> 1); // 50% Blend -- looks OK most of the time; Archon looks poor
-
-	/* */  *pLine1Address = color1 | ALPHA32_MASK;
-	/* */  *pLine0Address = color0;
-	/* */ g_pVideoAddress++;
-}
-
-inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable )
-{
-	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
-	/* */ uint32_t *pLine1Address = getScanlineNext1Address();
-	const uint32_t color0 = getScanlineColor( signal, pTable );
-
-	/* */  *pLine1Address = color0;
-	/* */  *pLine0Address = color0;
-	/* */ g_pVideoAddress++;
-}
-
+//===========================================================================
 inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable )
 {
 	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
@@ -613,6 +562,7 @@ inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTa
 	/* */ g_pVideoAddress++;
 }
 
+//===========================================================================
 inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
 	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
@@ -628,6 +578,31 @@ inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTa
 	/* */ g_pVideoAddress++;
 }
 
+//===========================================================================
+inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable )
+{
+	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
+	/* */ uint32_t *pLine1Address = getScanlineNext1Address();
+	const uint32_t color0 = getScanlineColor( signal, pTable );
+	const uint32_t color1 = ((color0 & 0x00fcfcfc) >> 2); // 25% Blend (original)
+//	const uint32_t color1 = ((color0 & 0x00fefefe) >> 1); // 50% Blend -- looks OK most of the time; Archon looks poor
+
+	/* */  *pLine1Address = color1 | ALPHA32_MASK;
+	/* */  *pLine0Address = color0;
+	/* */ g_pVideoAddress++;
+}
+
+//===========================================================================
+inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable )
+{
+	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
+	/* */ uint32_t *pLine1Address = getScanlineNext1Address();
+	const uint32_t color0 = getScanlineColor( signal, pTable );
+
+	/* */  *pLine1Address = color0;
+	/* */  *pLine0Address = color0;
+	/* */ g_pVideoAddress++;
+}
 #endif
 
 //===========================================================================
@@ -685,6 +660,51 @@ inline void updatePixels( uint16_t bits )
 	}
 }
 
+//===========================================================================
+inline void updateVideoScannerHorzEOL()
+{
+	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
+	{
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			//VIDEO_DRAW_ENDLINE();
+			if (g_nColorBurstPixels < 2)
+			{
+				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
+#if 0			// BUGFIX: This writes out-of-bounds for a 560x384 framebuffer
+				g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateBnWPixel(0);
+#endif
+			}
+			else
+			{
+				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
+#if 0			// BUGFIX: This writes out-of-bounds for a 560x384 framebuffer
+				g_pFuncUpdateHuePixel(0);
+				g_pFuncUpdateHuePixel(0);
+				g_pFuncUpdateHuePixel(0);
+#endif
+			}
+		}
+
+		g_nVideoClockHorz = 0;
+
+		if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
+		{
+			g_nVideoClockVert = 0;
+			if ((++g_nTextFlashCounter & 0xF) == 0)
+				g_nTextFlashMask ^= -1; // 16-bits
+		}
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			updateVideoScannerAddress();
+		}
+	}
+}
+
+//===========================================================================
 inline void updateVideoScannerAddress()
 {
 	g_pVideoAddress        = g_pScanLines[2*g_nVideoClockVert];
@@ -693,99 +713,12 @@ inline void updateVideoScannerAddress()
 	g_nSignalBitsNTSC      = 0;
 }
 
-//===========================================================================
-static void init_video_tables (void)
-{
-	/*
-		Convert 7-bit monochrome luminance to 14-bit double pixel luminance
-		Chroma will be applied later based on the color phase in updatePixelHueMonitorDoubleScanline( luminanceBit )
-			0x001 -> 0x0003
-			0x002 -> 0x000C
-			0x004 -> 0x0030
-			0x008 -> 0x00C0
-			:     -> :
-			0x100 -> 0x4000
-	*/
-	for (uint8_t byte = 0; byte < 0x80; byte++ ) // Optimization: hgrbits second 128 entries are mirror of first 128
-		for (uint8_t bits = 0; bits < 7; bits++ ) // high bit = half pixel shift; pre-optimization: bits < 8
-			if (byte & (1 << bits)) // pow2 mask
-				g_aPixelDoubleMaskHGR[byte] |= 3 << (bits*2);
-
-	for ( uint16_t color = 0; color < 16; color++ )
-		g_aPixelMaskGR[ color ] = (color << 12) | (color << 8) | (color << 4) | (color << 0);
-}
-
-// sadly float64 precision is needed
-#define real double
-
-//===========================================================================
-static real init_signal_prefilter (real z)
-{
-	static real xv[NUM_SIGZEROS + 1] = { 0,0,0 };
-	static real yv[NUM_SIGPOLES + 1] = { 0,0,0 };
-
-	xv[0] = xv[1];
-	xv[1] = xv[2];
-	xv[2] = z / SIGGAIN;
-	yv[0] = yv[1];
-	yv[1] = yv[2];
-	yv[2] = xv[0] + xv[2] + (2.f * xv[1]) + (-0.2718798058f * yv[0]) + (0.7465656072f * yv[1]);
-
-	return yv[2];
-}
-
-//===========================================================================
-static real init_luma0_filter (real z)
-{
-	static real xv[NUM_LUMZEROS + 1] = { 0,0,0 };
-	static real yv[NUM_LUMPOLES + 1] = { 0,0,0 };
-
-	xv[0] = xv[1];
-	xv[1] = xv[2];
-	xv[2] = z / LUMGAIN;
-	yv[0] = yv[1];
-	yv[1] = yv[2];
-	yv[2] = xv[0] + xv[2] + (2.f * xv[1]) + (LUMCOEF1 * yv[0]) + (LUMCOEF2 * yv[1]);
-
-	return yv[2];
-}
-
-//===========================================================================
-static real init_luma1_filter (real z)
-{
-	static real xv[NUM_LUMZEROS + 1] = { 0,0,0};
-	static real yv[NUM_LUMPOLES + 1] = { 0,0,0};
-
-	xv[0] = xv[1];
-	xv[1] = xv[2];
-	xv[2] = z / LUMGAIN;
-	yv[0] = yv[1];
-	yv[1] = yv[2];
-	yv[2] = xv[0] + xv[2] + (2 * xv[1]) + (LUMCOEF1 * yv[0]) + (LUMCOEF2 * yv[1]);
-
-	return yv[2];
-}
-
-//===========================================================================
-static real init_chroma_filter (real z)
-{
-	static real xv[NUM_CHRZEROS + 1] = {0,0,0};
-	static real yv[NUM_CHRPOLES + 1] = {0,0,0};
-
-	xv[0] = xv[1];
-	xv[1] = xv[2];
-	xv[2] = z / CHRGAIN;
-	yv[0] = yv[1];
-	yv[1] = yv[2];
-	yv[2] = xv[2] - xv[0] + (-0.7318893645f * yv[0]) + (1.2336442711f * yv[1]);
-
-	return yv[2];
-}
+// Non-Inline _________________________________________________________
 
 // Build the 4 phase chroma lookup table
 // The YI'Q' colors are hard-coded
 //===========================================================================
-static void init_chroma_phase_table (void)
+static void initChromaPhaseTables (void)
 {
 	int phase,s,t,n;
 	real z,y0,y1,c,i,q;
@@ -811,10 +744,10 @@ static void init_chroma_phase_table (void)
 				{
 #if CHROMA_BLUR
 					//z = z * 1.25;
-					zz = init_signal_prefilter(z);
-					c = init_chroma_filter(zz); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
-					y0 = init_luma0_filter(zz);
-					y1 = init_luma1_filter(zz - c);
+					zz = initFilterSignal(z);
+					c = initFilterChroma(zz); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
+					y0 = initFilterLuma0(zz);
+					y1 = initFilterLuma1(zz - c);
 #else // CHROMA_BLUR
 					y0 = y0 + (z - y0) / 4.0;
 					y1 = y0; // fix TV mode
@@ -834,7 +767,7 @@ static void init_chroma_phase_table (void)
 	#endif
 	#if CHROMA_FILTER == 2 // more blur, muted chroma fringe
 					// White has too much ringing, and the color fringes are muted
-					c = init_signal_prefilter(z); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
+					c = initFilterSignal(z); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
 	#endif
 #endif // CHROMA_BLUR
 					c = c * 2.f;
@@ -916,31 +849,106 @@ static void init_chroma_phase_table (void)
 }
 
 //===========================================================================
-static void updatePixelHueColorTVSingleScanline (uint16_t compositeSignal)
+static real initFilterChroma (real z)
 {
-	updateFramebufferColorTVSingleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
-	updateColorPhase();
+	static real xv[NUM_CHRZEROS + 1] = {0,0,0};
+	static real yv[NUM_CHRPOLES + 1] = {0,0,0};
+
+	xv[0] = xv[1];
+	xv[1] = xv[2];
+	xv[2] = z / CHRGAIN;
+	yv[0] = yv[1];
+	yv[1] = yv[2];
+	yv[2] = xv[2] - xv[0] + (-0.7318893645f * yv[0]) + (1.2336442711f * yv[1]);
+
+	return yv[2];
 }
 
 //===========================================================================
-static void updatePixelHueColorTVDoubleScanline (uint16_t compositeSignal)
+static real initFilterLuma0 (real z)
 {
-	updateFramebufferColorTVDoubleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
-	updateColorPhase();
+	static real xv[NUM_LUMZEROS + 1] = { 0,0,0 };
+	static real yv[NUM_LUMPOLES + 1] = { 0,0,0 };
+
+	xv[0] = xv[1];
+	xv[1] = xv[2];
+	xv[2] = z / LUMGAIN;
+	yv[0] = yv[1];
+	yv[1] = yv[2];
+	yv[2] = xv[0] + xv[2] + (2.f * xv[1]) + (LUMCOEF1 * yv[0]) + (LUMCOEF2 * yv[1]);
+
+	return yv[2];
 }
 
 //===========================================================================
-static void updatePixelHueMonitorSingleScanline (uint16_t compositeSignal)
+static real initFilterLuma1 (real z)
 {
-	updateFramebufferMonitorSingleScanline(compositeSignal, g_aHueMonitor[g_nColorPhaseNTSC]);
-	updateColorPhase();
+	static real xv[NUM_LUMZEROS + 1] = { 0,0,0};
+	static real yv[NUM_LUMPOLES + 1] = { 0,0,0};
+
+	xv[0] = xv[1];
+	xv[1] = xv[2];
+	xv[2] = z / LUMGAIN;
+	yv[0] = yv[1];
+	yv[1] = yv[2];
+	yv[2] = xv[0] + xv[2] + (2 * xv[1]) + (LUMCOEF1 * yv[0]) + (LUMCOEF2 * yv[1]);
+
+	return yv[2];
 }
 
 //===========================================================================
-static void updatePixelHueMonitorDoubleScanline (uint16_t compositeSignal)
+static real initFilterSignal (real z)
 {
-	updateFramebufferMonitorDoubleScanline(compositeSignal, g_aHueMonitor[g_nColorPhaseNTSC]);
-	updateColorPhase();
+	static real xv[NUM_SIGZEROS + 1] = { 0,0,0 };
+	static real yv[NUM_SIGPOLES + 1] = { 0,0,0 };
+
+	xv[0] = xv[1];
+	xv[1] = xv[2];
+	xv[2] = z / SIGGAIN;
+	yv[0] = yv[1];
+	yv[1] = yv[2];
+	yv[2] = xv[0] + xv[2] + (2.f * xv[1]) + (-0.2718798058f * yv[0]) + (0.7465656072f * yv[1]);
+
+	return yv[2];
+}
+
+//===========================================================================
+static void initPixelDoubleMasks (void)
+{
+	/*
+		Convert 7-bit monochrome luminance to 14-bit double pixel luminance
+		Chroma will be applied later based on the color phase in updatePixelHueMonitorDoubleScanline( luminanceBit )
+			0x001 -> 0x0003
+			0x002 -> 0x000C
+			0x004 -> 0x0030
+			0x008 -> 0x00C0
+			:     -> :
+			0x100 -> 0x4000
+	*/
+	for (uint8_t byte = 0; byte < 0x80; byte++ ) // Optimization: hgrbits second 128 entries are mirror of first 128
+		for (uint8_t bits = 0; bits < 7; bits++ ) // high bit = half pixel shift; pre-optimization: bits < 8
+			if (byte & (1 << bits)) // pow2 mask
+				g_aPixelDoubleMaskHGR[byte] |= 3 << (bits*2);
+
+	for ( uint16_t color = 0; color < 16; color++ )
+		g_aPixelMaskGR[ color ] = (color << 12) | (color << 8) | (color << 4) | (color << 0);
+}
+
+//===========================================================================
+void updateMonochromeTables( uint16_t r, uint16_t g, uint16_t b )
+{
+	for( int iSample = 0; iSample < NTSC_NUM_SEQUENCES; iSample++ )
+	{
+		g_aBnWMonitorCustom[ iSample ].b = (g_aBnWMonitor[ iSample ].b * b) >> 8;
+		g_aBnWMonitorCustom[ iSample ].g = (g_aBnWMonitor[ iSample ].g * g) >> 8;
+		g_aBnWMonitorCustom[ iSample ].r = (g_aBnWMonitor[ iSample ].r * r) >> 8;
+		g_aBnWMonitorCustom[ iSample ].a = 0xFF;
+
+		g_aBnWColorTVCustom[ iSample ].b = (g_aBnwColorTV[ iSample ].b * b) >> 8;
+		g_aBnWColorTVCustom[ iSample ].g = (g_aBnwColorTV[ iSample ].g * g) >> 8;
+		g_aBnWColorTVCustom[ iSample ].r = (g_aBnwColorTV[ iSample ].r * r) >> 8;
+		g_aBnWColorTVCustom[ iSample ].a = 0xFF;
+	}
 }
 
 //===========================================================================
@@ -968,159 +976,31 @@ static void updatePixelBnWColorTVDoubleScanline (uint16_t compositeSignal)
 }
 
 //===========================================================================
-void updateMonochromeTables( uint16_t r, uint16_t g, uint16_t b )
+static void updatePixelHueColorTVSingleScanline (uint16_t compositeSignal)
 {
-	for( int iSample = 0; iSample < NTSC_NUM_SEQUENCES; iSample++ )
-	{
-		g_aBnWMonitorCustom[ iSample ].b = (g_aBnWMonitor[ iSample ].b * b) >> 8;
-		g_aBnWMonitorCustom[ iSample ].g = (g_aBnWMonitor[ iSample ].g * g) >> 8;
-		g_aBnWMonitorCustom[ iSample ].r = (g_aBnWMonitor[ iSample ].r * r) >> 8;
-		g_aBnWMonitorCustom[ iSample ].a = 0xFF;
-
-		g_aBnWColorTVCustom[ iSample ].b = (g_aBnwColorTV[ iSample ].b * b) >> 8;
-		g_aBnWColorTVCustom[ iSample ].g = (g_aBnwColorTV[ iSample ].g * g) >> 8;
-		g_aBnWColorTVCustom[ iSample ].r = (g_aBnwColorTV[ iSample ].r * r) >> 8;
-		g_aBnWColorTVCustom[ iSample ].a = 0xFF;
-	}
+	updateFramebufferColorTVSingleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
+	updateColorPhase();
 }
 
 //===========================================================================
-void NTSC_SetVideoTextMode( int cols )
+static void updatePixelHueColorTVDoubleScanline (uint16_t compositeSignal)
 {
-	if( cols == 40 )
-		g_pFuncUpdateTextScreen = updateScreenText40;
-	else
-		g_pFuncUpdateTextScreen = updateScreenText80;
+	updateFramebufferColorTVDoubleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
+	updateColorPhase();
 }
 
 //===========================================================================
-void NTSC_SetVideoMode( int bVideoModeFlags )
+static void updatePixelHueMonitorSingleScanline (uint16_t compositeSignal)
 {
-	g_nVideoMixed   = bVideoModeFlags & VF_MIXED;
-	g_nVideoCharSet = g_nAltCharSetOffset != 0;
-
-	g_nTextPage  = 1;
-	g_nHiresPage = 1;
-	if (bVideoModeFlags & VF_PAGE2) {
-		if (0 == (bVideoModeFlags & VF_80STORE)) {
-			g_nTextPage  = 2;
-			g_nHiresPage = 2;
-		}
-	}
-
-	if (bVideoModeFlags & VF_TEXT) {
-		if (bVideoModeFlags & VF_80COL)
-			g_pFuncUpdateGraphicsScreen = updateScreenText80;
-		else
-			g_pFuncUpdateGraphicsScreen = updateScreenText40;
-	}
-	else if (bVideoModeFlags & VF_HIRES) {
-		if (bVideoModeFlags & VF_DHIRES)
-			if (bVideoModeFlags & VF_80COL)
-				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
-			else
-				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires40;
-		else
-			g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
-	}
-	else {
-		if (bVideoModeFlags & VF_DHIRES)
-			if (bVideoModeFlags & VF_80COL)
-				g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
-			else
-				g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores40;
-		else
-			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
-	}
+	updateFramebufferMonitorSingleScanline(compositeSignal, g_aHueMonitor[g_nColorPhaseNTSC]);
+	updateColorPhase();
 }
 
 //===========================================================================
-void NTSC_SetVideoStyle() // (int v, int s)
+static void updatePixelHueMonitorDoubleScanline (uint16_t compositeSignal)
 {
-    int half = g_uHalfScanLines;
-	uint8_t r, g, b;
-
-	switch ( g_eVideoType )
-	{
-		case VT_COLOR_TVEMU: // VT_COLOR_TV: // 0:
-			if (half)
-			{
-				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVSingleScanline;
-				g_pFuncUpdateHuePixel = updatePixelHueColorTVSingleScanline;
-			}
-			else {
-				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVDoubleScanline;
-				g_pFuncUpdateHuePixel = updatePixelHueColorTVDoubleScanline;
-			}
-			break;
-
-		case VT_COLOR_STANDARD: // VT_COLOR_MONITOR: //1:
-		default:
-			if (half)
-			{
-				g_pFuncUpdateBnWPixel = updatePixelBnWMonitorSingleScanline;
-				g_pFuncUpdateHuePixel = updatePixelHueMonitorSingleScanline;
-			}
-			else {
-				g_pFuncUpdateBnWPixel = updatePixelBnWMonitorDoubleScanline;
-				g_pFuncUpdateHuePixel = updatePixelHueMonitorDoubleScanline;
-			}
-			break;
-
-		case VT_COLOR_TEXT_OPTIMIZED: // VT_MONO_TV: //2:
-			r = 0xFF;
-			g = 0xFF;
-			b = 0xFF;
-			updateMonochromeTables( r, g, b ); // Custom Monochrome color
-			if (half)
-			{
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWColorTVSingleScanline;
-			}
-			else {
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWColorTVDoubleScanline;
-			}
-			break;
-
-//		case VT_MONO_WHITE: //VT_MONO_MONITOR: //3:
-		case VT_MONO_AMBER:
-			r = 0xFF;
-			g = 0x80;
-			b = 0x00;
-			goto _mono;
-
-		case VT_MONO_GREEN:
-			r = 0x00;
-			g = 0xC0;
-			b = 0x00;
-			goto _mono;
-
-		case VT_MONO_WHITE:
-			r = 0xFF;
-			g = 0xFF;
-			b = 0xFF;
-			goto _mono;
-
-		case VT_MONO_HALFPIXEL_REAL:
-			// From WinGDI.h
-			// #define RGB(r,g,b)         ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
-			//#define GetRValue(rgb)      (LOBYTE(rgb))
-			//#define GetGValue(rgb)      (LOBYTE(((WORD)(rgb)) >> 8))
-			//#define GetBValue(rgb)      (LOBYTE((rgb)>>16))
-			r = (g_nMonochromeRGB >>  0) & 0xFF;
-			g = (g_nMonochromeRGB >>  8) & 0xFF;
-			b = (g_nMonochromeRGB >> 16) & 0xFF;
-_mono:
-			updateMonochromeTables( r, g, b ); // Custom Monochrome color
-			if (half)
-			{
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWMonitorSingleScanline;
-			}
-			else
-			{
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWMonitorDoubleScanline;
-			}
-			break;
-		}
+	updateFramebufferMonitorDoubleScanline(compositeSignal, g_aHueMonitor[g_nColorPhaseNTSC]);
+	updateColorPhase();
 }
 
 //===========================================================================
@@ -1414,20 +1294,160 @@ void updateScreenText80 (long cycles6502)
 	}
 }
 
+// Functions (Public) _________________________________________________
+
 //===========================================================================
-unsigned char NTSC_VideoByte (unsigned long cycles6502)
+void NTSC_SetVideoTextMode( int cols )
 {
-	unsigned char * mem;
-	mem = MemGetMainPtr(g_aHorzClockMemAddress[ g_nVideoClockHorz ]);
-	return mem[0];
+	if( cols == 40 )
+		g_pFuncUpdateTextScreen = updateScreenText40;
+	else
+		g_pFuncUpdateTextScreen = updateScreenText80;
+}
+
+//===========================================================================
+void NTSC_SetVideoMode( int bVideoModeFlags )
+{
+	g_nVideoMixed   = bVideoModeFlags & VF_MIXED;
+	g_nVideoCharSet = g_nAltCharSetOffset != 0;
+
+	g_nTextPage  = 1;
+	g_nHiresPage = 1;
+	if (bVideoModeFlags & VF_PAGE2) {
+		if (0 == (bVideoModeFlags & VF_80STORE)) {
+			g_nTextPage  = 2;
+			g_nHiresPage = 2;
+		}
+	}
+
+	if (bVideoModeFlags & VF_TEXT) {
+		if (bVideoModeFlags & VF_80COL)
+			g_pFuncUpdateGraphicsScreen = updateScreenText80;
+		else
+			g_pFuncUpdateGraphicsScreen = updateScreenText40;
+	}
+	else if (bVideoModeFlags & VF_HIRES) {
+		if (bVideoModeFlags & VF_DHIRES)
+			if (bVideoModeFlags & VF_80COL)
+				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
+			else
+				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires40;
+		else
+			g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
+	}
+	else {
+		if (bVideoModeFlags & VF_DHIRES)
+			if (bVideoModeFlags & VF_80COL)
+				g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
+			else
+				g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores40;
+		else
+			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
+	}
+}
+
+//===========================================================================
+void NTSC_SetVideoStyle() // (int v, int s)
+{
+    int half = g_uHalfScanLines;
+	uint8_t r, g, b;
+
+	switch ( g_eVideoType )
+	{
+		case VT_COLOR_TVEMU: // VT_COLOR_TV: // 0:
+			if (half)
+			{
+				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVSingleScanline;
+				g_pFuncUpdateHuePixel = updatePixelHueColorTVSingleScanline;
+			}
+			else {
+				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVDoubleScanline;
+				g_pFuncUpdateHuePixel = updatePixelHueColorTVDoubleScanline;
+			}
+			break;
+
+		case VT_COLOR_STANDARD: // VT_COLOR_MONITOR: //1:
+		default:
+			if (half)
+			{
+				g_pFuncUpdateBnWPixel = updatePixelBnWMonitorSingleScanline;
+				g_pFuncUpdateHuePixel = updatePixelHueMonitorSingleScanline;
+			}
+			else {
+				g_pFuncUpdateBnWPixel = updatePixelBnWMonitorDoubleScanline;
+				g_pFuncUpdateHuePixel = updatePixelHueMonitorDoubleScanline;
+			}
+			break;
+
+		case VT_COLOR_TEXT_OPTIMIZED: // VT_MONO_TV: //2:
+			r = 0xFF;
+			g = 0xFF;
+			b = 0xFF;
+			updateMonochromeTables( r, g, b ); // Custom Monochrome color
+			if (half)
+			{
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWColorTVSingleScanline;
+			}
+			else {
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWColorTVDoubleScanline;
+			}
+			break;
+
+//		case VT_MONO_WHITE: //VT_MONO_MONITOR: //3:
+		case VT_MONO_AMBER:
+			r = 0xFF;
+			g = 0x80;
+			b = 0x00;
+			goto _mono;
+
+		case VT_MONO_GREEN:
+			r = 0x00;
+			g = 0xC0;
+			b = 0x00;
+			goto _mono;
+
+		case VT_MONO_WHITE:
+			r = 0xFF;
+			g = 0xFF;
+			b = 0xFF;
+			goto _mono;
+
+		case VT_MONO_HALFPIXEL_REAL:
+			// From WinGDI.h
+			// #define RGB(r,g,b)         ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
+			//#define GetRValue(rgb)      (LOBYTE(rgb))
+			//#define GetGValue(rgb)      (LOBYTE(((WORD)(rgb)) >> 8))
+			//#define GetBValue(rgb)      (LOBYTE((rgb)>>16))
+			r = (g_nMonochromeRGB >>  0) & 0xFF;
+			g = (g_nMonochromeRGB >>  8) & 0xFF;
+			b = (g_nMonochromeRGB >> 16) & 0xFF;
+_mono:
+			updateMonochromeTables( r, g, b ); // Custom Monochrome color
+			if (half)
+			{
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWMonitorSingleScanline;
+			}
+			else
+			{
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWMonitorDoubleScanline;
+			}
+			break;
+		}
+}
+
+//===========================================================================
+uint8_t NTSC_VideoGetByte (unsigned long cycles6502)
+{
+	uint8_t *pMain = MemGetMainPtr( g_aHorzClockMemAddress[ g_nVideoClockHorz ] );
+	return pMain[0];
 }
 
 //===========================================================================
 void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 {
 	make_csbits();
-	init_video_tables();
-	init_chroma_phase_table();
+	initPixelDoubleMasks();
+	initChromaPhaseTables();
 	updateMonochromeTables( 0xFF, 0xFF, 0xFF );
 
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
@@ -1497,7 +1517,7 @@ void NTSC_VideoInitAppleType ()
 }
 
 //===========================================================================
-int NTSC_VideoIsVbl ()
+bool NTSC_VideoIsVbl ()
 {
 	return (g_nVideoClockVert >= VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockVert < VIDEO_SCANNER_MAX_VERT);
 }
