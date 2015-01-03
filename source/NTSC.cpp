@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	//LPBYTE  MemGetBankPtr(const UINT nBank);
 
 // Defines
+	#define HGR_TEST_PATTERN 0
 	#define PI 3.1415926535898f
 	#define RAD_45  PI*0.25f
 	#define RAD_90  PI*0.5f
@@ -61,7 +62,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		#endif
 	#endif
 
-	#define HGR_TEST_PATTERN 0
 
 // Types
 
@@ -130,8 +130,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	uint16_t g_aHorzClockMemAddress[VIDEO_SCANNER_MAX_HORZ];
 
-	bgra_t *g_pVideoAddress;
-	bgra_t *g_aNTSC_Lines[VIDEO_SCANNER_Y_DISPLAY*2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
+	bgra_t *g_pVideoAddress = 0;
+	bgra_t *g_pScanLines[VIDEO_SCANNER_Y_DISPLAY*2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
 	static unsigned (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
 
 	typedef void (*Func_t)(long);
@@ -390,6 +390,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void init_chroma_phase_table();
 	void updateColorPhase();
 	void updateVideoHorzEOL();
+    inline void updateVideoScannerAddress();
 
 	static void    NTSC_UpdateVideoDoubleHires40(long cycles6502);
 	static void    NTSC_UpdateVideoDoubleHires80(long cycles6502);
@@ -476,10 +477,7 @@ inline void updateVideoHorzEOL()
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
-			g_pVideoAddress = g_aNTSC_Lines[2*g_nVideoClockVert];
-			g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
-			g_nLastColumnPixelNTSC = 0;
-			g_nSignalBitsNTSC = 0;
+			updateVideoScannerAddress();
 		}
 	}
 }
@@ -672,7 +670,7 @@ g_nLastColumnPixelNTSC=bt & 1 ; bt >>= 1; // 0000 0000 0000 00ab
 
 inline void updateVideoScannerAddress()
 {
-	g_pVideoAddress        = g_aNTSC_Lines[2*g_nVideoClockVert];
+	g_pVideoAddress        = g_pScanLines[2*g_nVideoClockVert];
 	g_nColorPhaseNTSC      = INITIAL_COLOR_PHASE;
 	g_nLastColumnPixelNTSC = 0;
 	g_nSignalBitsNTSC      = 0;
@@ -1416,9 +1414,9 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	updateMonochromeColor( 0xFF, 0xFF, 0xFF );
 
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
-		g_aNTSC_Lines[y] = (bgra_t*)(g_pFramebufferbits + 4 * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - 18) + 80);
+		g_pScanLines[y] = (bgra_t*)(g_pFramebufferbits + 4 * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - 18) + 80);
 
-	g_pVideoAddress = g_aNTSC_Lines[0]; // wsLines
+	g_pVideoAddress = g_pScanLines[0];
 
 	g_pFunc_NTSCVideoUpdateText     = NTSC_UpdateVideoText40;
 	g_pFunc_NTSCVideoUpdateGraphics = NTSC_UpdateVideoText40;
