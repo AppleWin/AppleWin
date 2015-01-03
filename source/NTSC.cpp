@@ -144,7 +144,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void (*g_pFunc_ntscColorPixel)(int) = 0; //ntscColorSinglePixel;
 
 
-	static unsigned g_nTextFlashCounter = 0;
+	static uint8_t  g_nTextFlashCounter = 0;
 	static uint16_t g_nTextFlashMask    = 0;
 
 	static unsigned g_aPixelMaskGR       [ 16];
@@ -463,11 +463,8 @@ inline void updateVideoHorzEOL()
 		if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
 		{
 			g_nVideoClockVert = 0;
-			if (++g_nTextFlashCounter == 16)
-			{
-				g_nTextFlashCounter = 0;
+			if ((++g_nTextFlashCounter & 0xF) == 0)
 				g_nTextFlashMask ^= -1; // 16-bits
-			}
 		}
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
@@ -1496,11 +1493,9 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 			if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
 			{
 				g_nVideoClockVert = 0;
-				if (++g_nTextFlashCounter == 16)
-				{
-					g_nTextFlashCounter = 0;
+				if ((++g_nTextFlashCounter & 0xF) == 0)
 					g_nTextFlashMask ^= -1; // 16-bits
-				}
+
 				bRedraw = true;
 			}
 
