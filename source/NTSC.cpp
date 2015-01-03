@@ -36,6 +36,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Defines
 	#define HGR_TEST_PATTERN 0
 
+#ifdef _MSC_VER
+	#define INLINE __forceinline
+#else
+	#define INLINE inline
+#endif
+
 	#define PI 3.1415926535898f
 	#define DEG_TO_RAD(x) (PI*(x)/180.f) // 2PI=360, PI=180,PI/2=90,PI/4=45
 	#define RAD_45  PI*0.25f
@@ -393,24 +399,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// prototypes from Memory.h
 	//unsigned char * MemGetAuxPtr (unsigned short);
 	//unsigned char * MemGetMainPtr (unsigned short);
-	inline float     clampZeroOne( const float & x );
-	inline uint8_t   getCharSetBits( const int iChar );
-	inline uint16_t  getLoResBits( uint8_t iByte );
-	inline uint32_t  getScanlineColor( const uint16_t signal, const bgra_t *pTable );
-	inline uint32_t* getScanlineNext1Address();
-	inline uint32_t* getScanlinePrev1Address();
-	inline uint32_t* getScanlinePrev2Address();
-	inline uint32_t* getScanlineThis0Address();
-	inline void      updateColorPhase();
-	inline void      updateFlashRate();
-	inline void      updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable );
-	inline void      updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable );
-	inline void      updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable );
-	inline void      updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable );
-	inline void      updatePixels( uint16_t bits );
-	inline bool      updateScanLineModeSwitch( long cycles6502, UpdateScreenFunc_t self );
-	inline void      updateVideoScannerHorzEOL();
-	inline void      updateVideoScannerAddress();
+	INLINE float     clampZeroOne( const float & x );
+	INLINE uint8_t   getCharSetBits( const int iChar );
+	INLINE uint16_t  getLoResBits( uint8_t iByte );
+	INLINE uint32_t  getScanlineColor( const uint16_t signal, const bgra_t *pTable );
+	INLINE uint32_t* getScanlineNext1Address();
+	INLINE uint32_t* getScanlinePrev1Address();
+	INLINE uint32_t* getScanlinePrev2Address();
+	INLINE uint32_t* getScanlineThis0Address();
+	INLINE void      updateColorPhase();
+	INLINE void      updateFlashRate();
+	INLINE void      updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable );
+	INLINE void      updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable );
+	INLINE void      updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable );
+	INLINE void      updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable );
+	INLINE void      updatePixels( uint16_t bits );
+	INLINE bool      updateScanLineModeSwitch( long cycles6502, UpdateScreenFunc_t self );
+	INLINE void      updateVideoScannerHorzEOL();
+	INLINE void      updateVideoScannerAddress();
 
 	static void initChromaPhaseTables();
 	static real initFilterChroma   (real z);
