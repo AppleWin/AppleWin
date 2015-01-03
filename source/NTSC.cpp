@@ -391,11 +391,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	inline float     clampZeroOne( const float & x );
 	inline uint8_t   getCharSetBits( const int iChar );
 	inline uint16_t  getLoResBits( uint8_t iByte );
+	inline uint32_t  getScanlineColor( const uint16_t signal, const bgra_t *pTable );
 	inline uint32_t* getScanlineNext1Address();
 	inline uint32_t* getScanlineThis0Address();
 	inline uint32_t* getScanlinePrev1Address();
 	inline uint32_t* getScanlinePrev2Address();
 	inline void      updateColorPhase();
+	inline void      updatePixels( uint16_t bits );
 	inline void      updateVideoScannerHorzEOL();
 	inline void      updateVideoScannerAddress();
 
@@ -565,7 +567,7 @@ inline uint32_t* getScanlinePrev2Address()
 
 }
 
-uint32_t getScanlineColor( const uint16_t signal, const bgra_t *pTable )
+inline uint32_t getScanlineColor( const uint16_t signal, const bgra_t *pTable )
 {
 	g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; // 14-bit
 	return *(uint32_t*) &pTable[ g_nSignalBitsNTSC ];
@@ -628,8 +630,7 @@ inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTa
 #endif
 
 //===========================================================================
-inline
-void VIDEO_DRAW_BITS( uint16_t bt ) // VIDEO_DRAW_BITS
+inline void updatePixels( uint16_t bt )
 {
 	if (g_nColorBurstPixels < 2)
 	{ 
@@ -1147,7 +1148,7 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 				uint8_t *pMain = MemGetMainPtr(ad);
 				uint8_t  m     = pMain[0];
 				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
-				VIDEO_DRAW_BITS( bits );
+				updatePixels( bits );
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1186,7 +1187,7 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 
 				bits = ((m & 0x7f) << 7) | (a & 0x7f);
 				bits = (bits << 1) | g_nLastColumnPixelNTSC;
-				VIDEO_DRAW_BITS( bits );
+				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 3;
 			}
 		}
@@ -1221,7 +1222,7 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 				uint8_t  m     = pMain[0];
 				uint16_t lo    = getLoResBits( m ); 
 				uint16_t bits  = g_aPixelDoubleMaskHGR[(0xFF & lo >> ((1 - (g_nVideoClockHorz & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
-				VIDEO_DRAW_BITS( bits );
+				updatePixels( bits );
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1263,7 +1264,7 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 				uint16_t main = lo >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
 				uint16_t aux  = hi >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
 				uint16_t bits = (main << 7) | (aux & 0x7f);
-				VIDEO_DRAW_BITS( bits );
+				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 3;
 			}
 		}
@@ -1299,7 +1300,7 @@ void updateScreenSingleHires40 (long cycles6502)
 				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
 				if (m & 0x80)
 					bits = (bits << 1) | g_nLastColumnPixelNTSC;
-				VIDEO_DRAW_BITS( bits );
+				updatePixels( bits );
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1333,7 +1334,7 @@ void updateScreenSingleLores40 (long cycles6502)
 				uint8_t  m     = pMain[0];
 				uint16_t lo    = getLoResBits( m ); 
 				uint16_t bits  = lo >> ((1 - (g_nVideoClockHorz & 1)) * 2);
-				VIDEO_DRAW_BITS( bits );
+				updatePixels( bits );
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1364,7 +1365,7 @@ void updateScreenText40 (long cycles6502)
 				uint16_t bits  = g_aPixelDoubleMaskHGR[c & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
 				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0))
 					bits ^= g_nTextFlashMask;
-				VIDEO_DRAW_BITS( bits );
+				updatePixels( bits );
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1405,7 +1406,7 @@ void updateScreenText80 (long cycles6502)
 					aux ^= g_nTextFlashMask;
 
 				uint16_t bits = (main << 7) | aux;
-				VIDEO_DRAW_BITS( bits );
+				updatePixels( bits );
 			}
 		}
 		updateVideoScannerHorzEOL();
