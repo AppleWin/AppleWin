@@ -540,6 +540,11 @@ inline uint32_t* getScanlineNext1Address()
 	return (uint32_t*) (g_pVideoAddress - 1*FRAMEBUFFER_W);
 }
 
+inline uint32_t* getScanlineThis0Address()
+{
+	return (uint32_t*) g_pVideoAddress;
+}
+
 inline uint32_t* getScanlinePrev1Address()
 {
 	return (uint32_t*) (g_pVideoAddress + 1*FRAMEBUFFER_W);
@@ -559,7 +564,7 @@ uint32_t getScanlineColor( const uint16_t signal, const bgra_t *pTable )
 
 inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable )
 {
-	/* */ uint32_t *pLine0Address = (uint32_t*)g_pVideoAddress;
+	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
 	/* */ uint32_t *pLine1Address = getScanlineNext1Address();
 	const uint32_t color0 = getScanlineColor( signal, pTable );
 	const uint32_t color1 = ((color0 & 0x00fcfcfc) >> 2); // 25% Blend (original)
@@ -572,7 +577,7 @@ inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTa
 
 inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
-	/* */ uint32_t *pLine0Address = (uint32_t*)g_pVideoAddress;
+	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
 	/* */ uint32_t *pLine1Address = getScanlineNext1Address();
 	const uint32_t color0 = getScanlineColor( signal, pTable );
 
@@ -583,7 +588,7 @@ inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTa
 
 inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable )
 {
-	/* */ uint32_t *pLine0Address = (uint32_t*)g_pVideoAddress;
+	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
 	/* */ uint32_t *pLine1Address = getScanlinePrev1Address();
 	/* */ uint32_t *pLine2Address = getScanlinePrev2Address();
 
@@ -598,7 +603,7 @@ inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTa
 
 inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
-	/* */ uint32_t *pLine0Address = (uint32_t*)g_pVideoAddress;
+	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
 	/* */ uint32_t *pLine1Address = getScanlinePrev1Address();
 	const uint32_t *pLine2Address = getScanlinePrev2Address();
 
