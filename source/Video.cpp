@@ -306,8 +306,6 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 // Prototypes (Private) _____________________________________________
 
-	void V_CreateLookup_Lores ();
-
 // Monochrome Half-Pixel Support
 	void V_CreateLookup_MonoHiResHalfPixel_Real ();
 
@@ -323,16 +321,7 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	int GetMonochromeIndex();
 
 	void V_CreateIdentityPalette ();
-	void V_CreateDIBSections ();
-
-/** Our BitBlit() / VRAM_Copy()
-	@param dx Dst X
-	@param dy Dst Y
-	@param w  Width (same for src & dst)
-	@param h  Height (same for src & dst)
-	@param sx Src X
-	@param sy Src Y
-// =========================================================================== */
+	void  videoCreateDIBSection();
 
 //===========================================================================
 void CreateFrameOffsetTable (LPBYTE addr, LONG pitch)
@@ -377,23 +366,7 @@ void VideoInitialize ()
 	g_pFramebufferinfo->bmiHeader.biCompression = BI_RGB;
 	g_pFramebufferinfo->bmiHeader.biClrUsed     = 0;
 
-	NTSC_VideoCreateDIBSection();
-}
-
-//===========================================================================
-int GetMonochromeIndex()
-{
-	int iMonochrome;
-	
-	switch (g_eVideoType)
-	{
-		case VT_MONO_AMBER : iMonochrome = MONOCHROME_AMBER ; break;
-		case VT_MONO_GREEN : iMonochrome = MONOCHROME_GREEN ; break;
-		case VT_MONO_WHITE : iMonochrome = HGR_WHITE        ; break;
-		default            : iMonochrome = MONOCHROME_CUSTOM; break; // caller will use MONOCHROME_CUSTOM MONOCHROME_CUSTOM_50 !
-	}
-
-	return iMonochrome;
+	videoCreateDIBSection();
 }
 
 //===========================================================================
@@ -468,18 +441,6 @@ void V_CreateIdentityPalette ()
 }
 
 #if 0
-//===========================================================================
-void V_CreateLookup_HiResHalfPixel_Authentic () // Colors are solid (100% coverage)
-{
-	// 2-bits from previous byte, 2-bits from next byte = 2^4 = 16 total permutations
-	for (int iColumn = 0; iColumn < 16; iColumn++)
-	{
-		int offsetx = iColumn << 5; // every column is 32 bytes wide -- 7 apple pixels = 14 pixels + 2 pad + 14 pixels + 2 pad
-
-		for (unsigned iByte = 0; iByte < 256; iByte++)
-		{
-			int aPixels[11]; // c2 c1 b7 b6 b5 b4 b3 b2 b1 b0 c8 c4
-
 /*
 aPixel[i]
  A 9|8 7 6 5 4 3 2|1 0
@@ -511,7 +472,19 @@ Legend:
 			int x     = 0;
 			int y     = iByte << 1;
 
-/* Test cases
+/*
+Color Reference Tests:
+
+2000:D5 AA D5 AA D5 AA //  blue blue  blue
+2400:AA D5 2A 55 55 2A //+ red  green violet
+//                     //= grey aqua  violet
+
+2C00:AA D5 AA D5 2A 55 //  red    red     green
+3000:2A 55 55 2A 55 2A //+ green  violet  violet
+//                     //= yellow pink    grey
+
+Test cases
+==========
  81 blue
    2000:D5 AA D5 AA
  82 orange
@@ -527,11 +500,6 @@ Legend:
  Edge Case for Color Bleed !
    2000:40 00
    2400:40 80
-*/
-
-			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but cross 14-pixel boundaries.
-			if( hibit )
-			{
 
 // Test Patterns 
 // 81 blue
@@ -557,24 +525,13 @@ Legend:
 //  or
 //   2000:A0 83 orange should "bleed" thru
 //   2400:B0 83 should have black gap
-
-					if ( aPixels[2] )
-#if HALF_PIXEL_BLEED // No Half-Pixel Bleed
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , DARK_BLUE ); // Gumball: 229A: AB A9 87
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , BROWN ); // half luminance red Elite: 2444: BB F7
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, BROWN ); // half luminance red Gumball: 218E: AA 97
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
-#else
-// "Text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
-#endif // HALF_PIXEL_BLEED
 							// Test Pattern: Ultima 4 Logo - Castle
 							// 3AC8: 36 5B 6D 36
-}
-
-					/*
 						Address Binary   -> Displayed
 						2000:01 0---0001 -> 1 0 0 0  column 1
 						2400:81 1---0001 ->  1 0 0 0 half-pixel shift right
@@ -590,10 +547,6 @@ Legend:
 
 						@reference: see Beagle Bro's Disk: "Silicon Salad", File: DOUBLE HI-RES
 						Fortunately double-hires is supported via pixel doubling, so we can do half-pixel shifts ;-)
-					*/
-
-			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but cross 14-pixel boundaries.
-				/* Test Cases
 					// Games
 						Archon Logo
 						Gumball (at Machine)
@@ -606,7 +559,7 @@ Legend:
 						C050 C052 C057
 						2000:D0 80 00
 						2800:80 D0 00
-				*/
+*/
 #endif
 
 // google: CreateDIBPatternBrushPt
@@ -643,45 +596,12 @@ static void CreateLookup_TextCommon(HDC hDstDC, DWORD rop)
 }
 
 //===========================================================================
-void SetLastDrawnImage ()
-{
-	memcpy(vidlastmem+0x400,g_pTextBank0,0x400);
-
-	if (SW_HIRES)
-		memcpy(vidlastmem+0x2000,g_pHiresBank0,0x2000);
-	if (SW_DHIRES && SW_HIRES)
-		memcpy(vidlastmem,g_pHiresBank1,0x2000);
-	else if (SW_80COL)	// Don't test for !SW_HIRES, as some 80-col text routines have SW_HIRES set (Bug #8300)
-		memcpy(vidlastmem,g_pTextBank1,0x400);
-
-	int loop;
-	for (loop = 0; loop < 256; loop++)
-	{
-		*(memdirty+loop) &= ~2;
-	}
-}
-
-//===========================================================================
 
 static inline int GetOriginal2EOffset(BYTE ch)
 {
 	// No mousetext for original IIe
 	return !IsOriginal2E() || !g_nAltCharSetOffset || (ch<0x40) || (ch>0x5F) ? 0 : -g_nAltCharSetOffset;
 }
-
-/*
-
-Color Reference Tests:
-
-2000:D5 AA D5 AA D5 AA //  blue blue  blue
-2400:AA D5 2A 55 55 2A //+ red  green violet
-//                     //= grey aqua  violet
-
-2C00:AA D5 AA D5 2A 55 //  red    red     green
-3000:2A 55 55 2A 55 2A //+ green  violet  violet
-//                     //= yellow pink    grey
-
-*/
 
 //===========================================================================
 #define ROL_NIB(x) ( (((x)<<1)&0xF) | (((x)>>3)&1) )
@@ -978,6 +898,7 @@ BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 BYTE VideoCheckVbl (WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	bool bVblBar = VideoGetVbl(uExecutedCycles);
+	//bool bVblBar = NTSC_VideoIsVbl();
 
 	BYTE r = KeybGetKeycode();
 	return (r & ~0x80) | (bVblBar ? 0x80 : 0);
@@ -1919,7 +1840,7 @@ void Config_Save_Video()
 // ____________________________________________________________________
 
 //===========================================================================
-void NTSC_VideoCreateDIBSection()
+void videoCreateDIBSection()
 {
 	// CREATE THE DEVICE CONTEXT
 	HWND window  = GetDesktopWindow();
