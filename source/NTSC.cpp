@@ -630,57 +630,57 @@ inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTa
 #endif
 
 //===========================================================================
-inline void updatePixels( uint16_t bt )
+inline void updatePixels( uint16_t bits )
 {
 	if (g_nColorBurstPixels < 2)
 	{ 
 		/* #1 of 7 */
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		/* #2 of 7 */
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		/* #3 of 7 */
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		/* #4 of 7 */
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		/* #5 of 7 */
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		/* #6 of 7 */
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		/* #7 of 7 */
-		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
-		g_pFuncUpdateBnWPixel(bt & 1);
-        g_nLastColumnPixelNTSC=bt& 1 ; bt >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		g_pFuncUpdateBnWPixel(bits & 1);
+        g_nLastColumnPixelNTSC=bits& 1 ; bits >>= 1;
 	}
 	else
 	{
-		/* #1 of 7 */                            // abcd efgh ijkl mnop
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0abc defg hijk lmno
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 00ab cdef ghi jklmn
+		/* #1 of 7 */                                // abcd efgh ijkl mnop
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0abc defg hijk lmno
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 00ab cdef ghi jklmn
 		/* #2 of 7 */
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 000a bcde fghi jklm
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 abcd efgh ijkl
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 000a bcde fghi jklm
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 abcd efgh ijkl
 		/* #3 of 7 */
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0abc defg hijk
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 00ab cdef ghij
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0abc defg hijk
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 00ab cdef ghij
 		/* #4 of 7 */
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 000a bcde fghi
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0000 abcd efgh
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 000a bcde fghi
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 abcd efgh
 		/* #5 of 7 */
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0000 0abc defg
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0000 00ab cdef
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 0abc defg
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 00ab cdef
 		/* #6 of 7 */
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0000 000a bcde
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0000 0000 abcd
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 000a bcde
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 0000 abcd
 		/* #7 of 7 */
-		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0000 0000 0abc
-		g_pFuncUpdateHuePixel(bt & 1);           
-        g_nLastColumnPixelNTSC=bt& 1 ; bt >>= 1; // 0000 0000 0000 00ab
+		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 0000 0abc
+		g_pFuncUpdateHuePixel(bits & 1);           
+        g_nLastColumnPixelNTSC=bits& 1 ; bits >>= 1; // 0000 0000 0000 00ab
 	}
 }
 
