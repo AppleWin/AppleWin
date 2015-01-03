@@ -543,6 +543,7 @@ inline uint32_t* getScanlinePrev1Address()
 inline uint32_t* getScanlinePrev2Address()
 {
 	return (uint32_t*) (g_pVideoAddress + 2*FRAMEBUFFER_W);
+
 }
 
 uint32_t getScanlineColor( const uint16_t signal, const bgra_t *pTable )
@@ -1343,11 +1344,11 @@ void NTSC_UpdateVideoText40 (long cycles6502)
 }
 
 //===========================================================================
-void NTSC_UpdateVideoText80 (long ticks)
+void NTSC_UpdateVideoText80 (long cycles6502)
 {
 	unsigned int ad;
 
-	for (; ticks; --ticks)
+	for (; cycles6502; --cycles6502)
 	{
 		UpdateVideoAddressTXT();
 
@@ -1384,7 +1385,7 @@ void NTSC_UpdateVideoText80 (long ticks)
 }
 
 //===========================================================================
-unsigned char NTSC_VideoByte (unsigned long cycle)
+unsigned char NTSC_VideoByte (unsigned long cycles6502)
 {
 	unsigned char * mem;
 	mem = MemGetMainPtr(g_aHorzClockMemAddress[ g_nVideoClockHorz ]);
@@ -1473,12 +1474,12 @@ int NTSC_VideoIsVbl ()
 
 // Light-weight Video Clock Update
 //===========================================================================
-void NTSC_VideoUpdateCycles( long cycles )
+void NTSC_VideoUpdateCycles( long cycles6502 )
 {
 //	if( !g_bFullSpeed )
-//			g_pFunc_NTSCVideoUpdateGraphics( uElapsedCycles );
+//			g_pFunc_NTSCVideoUpdateGraphics( cycles6502 );
 //	else
-	for( ; cycles > 0; cycles-- )
+	for( ; cycles6502 > 0; cycles6502-- )
 	{
 		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 		{
