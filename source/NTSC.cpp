@@ -663,6 +663,14 @@ g_nLastColumnPixelNTSC=bt & 1 ; bt >>= 1; // 0000 0000 0000 00ab
 	}
 }
 
+inline void updateVideoScannerAddress()
+{
+	g_pVideoAddress        = g_pScanLines[2*g_nVideoClockVert];
+	g_nColorPhaseNTSC      = INITIAL_COLOR_PHASE;
+	g_nLastColumnPixelNTSC = 0;
+	g_nSignalBitsNTSC      = 0;
+}
+
 //===========================================================================
 static void init_video_tables (void)
 {
@@ -1502,11 +1510,7 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 			{
 				g_apFuncVideoUpdateScanline[ g_nVideoClockVert ] = g_pFunc_NTSCVideoUpdateGraphics;
-
-				g_pVideoAddress = g_aNTSC_Lines[2*g_nVideoClockVert];
-				g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
-				g_nLastColumnPixelNTSC = 0;
-				g_nSignalBitsNTSC = 0;
+				updateVideoScannerAddress();
 			}
 		}
 	}
