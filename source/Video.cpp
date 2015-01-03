@@ -885,8 +885,8 @@ BYTE VideoCheckVbl ( ULONG uExecutedCycles )
 {
 	bool bVblBar = VideoGetVbl(uExecutedCycles);
 	// NTSC: It is tempting to replace with
-	//	bool bVblBar = NTSC_VideoIsVbl();
-	// But this breaks "ANSI STORY"
+	//     bool bVblBar = NTSC_VideoIsVbl();
+	// But this breaks "ANSI STORY" intro center fade
 
 	BYTE r = KeybGetKeycode();
 	return (r & ~0x80) | (bVblBar ? 0x80 : 0);
@@ -1006,10 +1006,11 @@ void VideoDisplayLogo ()
 	}
 
 	// DRAW THE VERSION NUMBER
+	TCHAR sFontName[] = TEXT("Arial");
 	HFONT font = CreateFont(-20,0,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
 							OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,
 							VARIABLE_PITCH | 4 | FF_SWISS,
-							TEXT("Arial"));
+							sFontName );
 	SelectObject(hFrameDC,font);
 	SetTextAlign(hFrameDC,TA_RIGHT | TA_TOP);
 	SetBkMode(hFrameDC,TRANSPARENT);
@@ -1043,19 +1044,35 @@ void VideoDisplayLogo ()
 
 // NTSC Alpha Version
 	DeleteObject(font);
+/*
 	font = CreateFontA(
 		-48,0,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
 		OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,
 		VARIABLE_PITCH | 4 | FF_SWISS,
-		TEXT("Arial")
+		sFontName)
 	);
+*/
+	PLOGFONT pLogFont = (PLOGFONT) LocalAlloc(LPTR, sizeof(LOGFONT));
+	int angle = 33 * 10; // 3600 = 360 degrees
+	pLogFont->lfHeight = -48;
+	pLogFont->lfWeight = FW_NORMAL;
+	pLogFont->lfEscapement  = angle;
+	pLogFont->lfOrientation = angle;
+	SetTextAlign(hFrameDC,TA_BASELINE);
+
+	font = CreateFontIndirect( pLogFont );
+    HGDIOBJ  hFontPrev = SelectObject(hFrameDC, font);
+
 	SelectObject(hFrameDC,font);
-	sprintf( szVersion, "NTSC Alpha v12 AnsiStory" );
-	xoff = 0;
-	yoff = 0;
-	DRAWVERSION( 42, -158*scale,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 41, -157*scale,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 40, -156*scale,RGB(0xFF,0x00,0xFF));
+	sprintf( szVersion, "NTSC Alpha v13 FullScreen" );
+	xoff = -nViewportCX + nViewportCX/6;
+	yoff = +nViewportCY/16;
+	DRAWVERSION( 0, 0,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 2, 2,RGB(0xFF,0x00,0xFF));
+
+	LocalFree((LOCALHANDLE)pLogFont);
+	SelectObject(hFrameDC,hFontPrev);
 // NTSC END
 
 #undef  DRAWVERSION
@@ -1126,15 +1143,26 @@ void VideoRefreshScreen ( int bVideoModeFlags )
 	LONG   pitch = 0;
 	HDC    hFrameDC = FrameGetVideoDC(&pDstFrameBufferBits,&pitch);
 
+#if 1 // Keep Aspect Ratio
+	// Need to clear full screen logo to black
+	#define W g_nViewportCX
+	#define H g_nViewportCY
+#else // Stretch
+	// Stretch - doesn't preserve 1:1 aspect ratio
+	#define W g_bIsFullScreen ? g_nDDFullScreenW : g_nViewportCX
+	#define H g_bIsFullScreen ? g_nDDFullScreenH : g_nViewportCY
+#endif
+
 	if (hFrameDC)
 	{
 		StretchBlt(
 			hFrameDC,
-			0,0,
-			g_nViewportCX,g_nViewportCY, //dst
+			0, 0,
+			W, // dst
+			H, // dst
 			g_hDeviceDC,
-			0,0,
-			FRAMEBUFFER_W,FRAMEBUFFER_H, // src
+			0, 0, 
+			FRAMEBUFFER_W, FRAMEBUFFER_H, // src // NOT 560, 384
 			SRCCOPY );
 		GdiFlush();
 	}

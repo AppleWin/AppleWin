@@ -144,6 +144,8 @@ int g_nCharsetType = 0;
 		LPDIRECTDRAW        g_pDD               = (LPDIRECTDRAW)0;
 		LPDIRECTDRAWSURFACE g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
 		HDC                 g_hDDdc             = 0;
+		int                 g_nDDFullScreenW    = 640;
+		int                 g_nDDFullScreenH    = 480;
 
 static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
@@ -565,7 +567,6 @@ static void DrawFrameWindow ()
 		//VideoRefreshScreen(0);
 		VideoRedrawScreen();
 
-	// DD Full-Screen Palette: BUGFIX: needs to come _after_ all drawing...
 	if (g_bPaintingWindow)
 		EndPaint(g_hFrameWindow,&ps);
 	else
@@ -892,9 +893,6 @@ static void EraseButton (int number) {
   rect.right  = rect.left+BUTTONCX;
   rect.top    = buttony+number*BUTTONCY;
   rect.bottom = rect.top+BUTTONCY;
-
-	// TODO: DD Full-Screen Palette
-	//	if( !g_bIsFullScreen )
 
 	InvalidateRect(g_hFrameWindow,&rect,1);
 }
@@ -1476,26 +1474,10 @@ LRESULT CALLBACK FrameWndProc (
 		// message must not realize its palette, unless it determines that
 		// wParam does not contain its own window handle.
 		if ((HWND)wparam == window)
-	  {
-#if DEBUG_DD_PALETTE
-		if( g_bIsFullScreen )
-			OutputDebugString( "WM_PALETTECHANGED: Full Screen\n" );
-		else
-			OutputDebugString( "WM_PALETTECHANGED: Windowed\n" );
-#endif
-		break;
-	  } 
+			break;
 	  // else fall through
 
     case WM_QUERYNEWPALETTE:
-#if DEBUG_DD_PALETTE
-		if( g_bIsFullScreen )
-			OutputDebugString( "WM_QUERYNEWPALETTE: Full Screen\n" );
-		else
-			OutputDebugString( "WM_QUERYNEWPALETTE: Windowed\n" );
-#endif
-
-		// TODO: DD Full-Screen Palette
       DrawFrameWindow();
       break;
 
@@ -1564,7 +1546,6 @@ LRESULT CALLBACK FrameWndProc (
 			OutputDebugString( "WM_SYSCOLORCHANGE: Windowed\n" );
 #endif
 
-		// TODO: DD Full-Screen Palette
 		DeleteGdiObjects();
 		CreateGdiObjects();
 		break;
@@ -2069,7 +2050,7 @@ void SetFullScreenMode ()
 
 	if (DirectDrawCreate(NULL,&g_pDD,NULL) != DD_OK ||
 		g_pDD->SetCooperativeLevel(g_hFrameWindow,DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN) != DD_OK ||
-		g_pDD->SetDisplayMode(640,480,32) != DD_OK ||
+		g_pDD->SetDisplayMode(g_nDDFullScreenW,g_nDDFullScreenH,32) != DD_OK ||
 		g_pDD->CreateSurface(&ddsd,&g_pDDPrimarySurface,NULL) != DD_OK)
 	{
 		g_pDDPrimarySurface = NULL;
@@ -2352,10 +2333,15 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 	// ASSERT( pPitch_ );
 	if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
 	{
-		RECT rect = {	FSVIEWPORTX,
-						FSVIEWPORTY,
-						FSVIEWPORTX+g_nViewportCX,
-						FSVIEWPORTY+g_nViewportCY};
+		// Reference: http://archive.gamedev.net/archive/reference/articles/article608.html
+		// NTSC TODO: Are these coordinates correct?? Coordinates don't seem to matter on Win7 fullscreen!?
+		// g_nViewportCX = FRAMEBUFFER_W * kDEFAULT_VIEWPORT_SCALE;
+		RECT rect = {
+			FSVIEWPORTX,
+			FSVIEWPORTY,
+			FSVIEWPORTX+g_nViewportCX,
+			FSVIEWPORTY+g_nViewportCY
+		};
 		DDSURFACEDESC surfacedesc;
 		surfacedesc.dwSize = sizeof(surfacedesc);
 		// TC: Use DDLOCK_WAIT - see Bug #13425
