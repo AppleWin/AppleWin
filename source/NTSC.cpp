@@ -402,6 +402,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	inline uint32_t* getScanlinePrev2Address();
 	inline uint32_t* getScanlineThis0Address();
 	inline void      updateColorPhase();
+	inline void      updateFlashRate();
 	inline void      updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable );
 	inline void      updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable );
 	inline void      updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable );
@@ -495,6 +496,24 @@ inline void updateColorPhase()
 {
 	g_nColorPhaseNTSC++;
 	g_nColorPhaseNTSC &= 3;
+}
+
+//===========================================================================
+inline void updateFlashRate() // TODO: Flash rate should be constant (regardless of CPU speed)
+{
+	// BUG: In unthrottled CPU mode, flash rate should not be affected
+
+	// Flash rate:
+	// . NTSC : 60/16 ~= 4Hz
+	// . PAL  : 50/16 ~= 3Hz
+	if ((++g_nTextFlashCounter & 0xF) == 0)
+		g_nTextFlashMask ^= -1; // 16-bits
+
+	// The old way to handle flashing was
+	//     if ((SW_TEXT || SW_MIXED) ) // && !SW_80COL) // FIX: FLASH 80-Column
+	//	       g_nTextFlashMask = true;
+	// The new way is to check the active char set, inlined:
+	//     if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
 }
 
 #if 0
@@ -716,8 +735,9 @@ inline void updateVideoScannerHorzEOL()
 		if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
 		{
 			g_nVideoClockVert = 0;
-			if ((++g_nTextFlashCounter & 0xF) == 0)
-				g_nTextFlashMask ^= -1; // 16-bits
+
+			updateFlashRate();
+			//VideoRefreshScreen(0); // ContinueExecution() calls VideoRefreshScreen(0) ever dwClksPerFrame (17030)
 		}
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
@@ -1289,8 +1309,10 @@ void updateScreenText40 (long cycles6502)
 				uint8_t  m     = pMain[0];
 				uint8_t  c     = getCharSetBits(m);
 				uint16_t bits  = g_aPixelDoubleMaskHGR[c & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
-				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0))
+
+				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
 					bits ^= g_nTextFlashMask;
+
 				updatePixels( bits );
 
 			}
@@ -1328,10 +1350,10 @@ void updateScreenText80 (long cycles6502)
 				uint16_t main = getCharSetBits( m );
 				uint16_t aux  = getCharSetBits( a );
 
-				if ((0 == g_nVideoCharSet) && 0x40 == (m & 0xC0))
+				if ((0 == g_nVideoCharSet) && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
 					main ^= g_nTextFlashMask;
 
-				if ((0 == g_nVideoCharSet) && 0x40 == (a & 0xC0))
+				if ((0 == g_nVideoCharSet) && 0x40 == (a & 0xC0)) // Flash only if mousetext not active
 					aux ^= g_nTextFlashMask;
 
 				uint16_t bits = (main << 7) | aux;
@@ -1617,8 +1639,8 @@ if(true)
 			if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
 			{
 				g_nVideoClockVert = 0;
-				if ((++g_nTextFlashCounter & 0xF) == 0)
-					g_nTextFlashMask ^= -1; // 16-bits
+
+				updateFlashRate();
 
 				bRedraw = true;
 			}
@@ -1635,6 +1657,8 @@ if(true)
 
 		int nCyclesVBlank = (VIDEO_SCANNER_MAX_VERT - VIDEO_SCANNER_Y_DISPLAY) * VIDEO_SCANNER_MAX_HORZ;
 		g_pFuncUpdateGraphicsScreen( nCyclesVBlank );
+
+		VideoRefreshScreen(0);
 	}
 }
 }
