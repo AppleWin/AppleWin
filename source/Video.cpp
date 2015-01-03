@@ -1066,16 +1066,6 @@ void VideoDisplayLogo ()
 }
 
 //===========================================================================
-void VideoRealizePalette(HDC dc)
-{
-	if (g_hPalette)
-	{
-		SelectPalette(dc,g_hPalette,0);
-		RealizePalette(dc);
-	}
-}
-
-//===========================================================================
 
 void VideoRedrawScreen ()
 {
@@ -1131,7 +1121,7 @@ void VideoRefreshScreen ( int bVideoModeFlags )
 		NTSC_VideoUpdateCycles( VIDEO_SCANNER_6502_CYCLES );
 	}
 
-// NTSC_BEGIN: wsVideoRefresh()
+// NTSC_BEGIN
 	LPBYTE pDstFrameBufferBits = 0;
 	LONG   pitch = 0;
 	HDC    hFrameDC = FrameGetVideoDC(&pDstFrameBufferBits,&pitch);
@@ -1148,6 +1138,8 @@ void VideoRefreshScreen ( int bVideoModeFlags )
 			SRCCOPY );
 		GdiFlush();
 	}
+
+	FrameReleaseVideoDC();
 
 	if (g_VideoForceFullRedraw)
 		--g_VideoForceFullRedraw;
@@ -1761,4 +1753,3 @@ void videoCreateDIBSection()
 
 	NTSC_VideoInit( g_pFramebufferbits );
 }
-

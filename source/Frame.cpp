@@ -141,10 +141,9 @@ static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen
 int g_nCharsetType = 0;
 
 // Direct Draw -- For Full Screen
-		LPDIRECTDRAW        g_pDD = (LPDIRECTDRAW)0;
-		LPDIRECTDRAWSURFACE g_pDDPrimarySurface    = (LPDIRECTDRAWSURFACE)0;
-		IDirectDrawPalette* g_pDDPal = (IDirectDrawPalette*)0;
-
+		LPDIRECTDRAW        g_pDD               = (LPDIRECTDRAW)0;
+		LPDIRECTDRAWSURFACE g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
+		HDC                 g_hDDdc             = 0;
 
 static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
@@ -516,8 +515,6 @@ static void DrawFrameWindow ()
 		? BeginPaint(g_hFrameWindow,&ps)
 		: GetDC(g_hFrameWindow));
 
-	VideoRealizePalette(dc);
-
 	if (!g_bIsFullScreen)
 	{
 		// DRAW THE 3D BORDER AROUND THE EMULATED SCREEN
@@ -563,7 +560,7 @@ static void DrawFrameWindow ()
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay(1);
 	else
-		// Win7: In fullscreen mode with 1 redraw, the the screen doesn't get redraw.
+		// Win7: In fullscreen mode with 1 redraw the screen doesn't get redrawn.
 		//VideoRedrawScreen(g_bIsFullScreen ? 2 : 1);	// TC: 22/06/2014: Why 2 redraws in full-screen mode (32-bit only)? (8-bit doesn't need this nor does Win8, just Win7 or older OS's)
 		//VideoRefreshScreen(0);
 		VideoRedrawScreen();
@@ -2068,18 +2065,17 @@ void SetFullScreenMode ()
 	ddsd.dwSize = sizeof(ddsd);
 	ddsd.dwFlags = DDSD_CAPS;
 	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+	ddsd.dwBackBufferCount = 1;
+
 	if (DirectDrawCreate(NULL,&g_pDD,NULL) != DD_OK ||
 		g_pDD->SetCooperativeLevel(g_hFrameWindow,DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN) != DD_OK ||
-		g_pDD->SetDisplayMode(640,480,g_bFullScreen32Bit ? 32 : 8) != DD_OK ||
+		g_pDD->SetDisplayMode(640,480,32) != DD_OK ||
 		g_pDD->CreateSurface(&ddsd,&g_pDDPrimarySurface,NULL) != DD_OK)
 	{
 		g_pDDPrimarySurface = NULL;
 		SetNormalMode();
 		return;
 	}
-
-	// TODO: DD Full-Screen Palette
-	//	if( !g_bIsFullScreen )
 
 	InvalidateRect(g_hFrameWindow,NULL,1);
 
@@ -2105,15 +2101,6 @@ void SetNormalMode ()
                              framerect.right - framerect.left,
                              framerect.bottom - framerect.top,
                              SWP_NOZORDER | SWP_FRAMECHANGED);
-
-	// DD Full-Screen Palette: BUGFIX: Re-attach new palette on next new surface
-	// Delete Palette
-	if (g_pDDPal)
-	{
-		g_pDDPal->Release();
-		g_pDDPal = (LPDIRECTDRAWPALETTE)0;
-	}
-
 	if (g_pDDPrimarySurface)
 	{
 		g_pDDPrimarySurface->Release();
@@ -2359,6 +2346,8 @@ HDC FrameGetDC () {
 //===========================================================================
 HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 {
+	HDC hDC = 0;
+
 	// ASSERT( pAddr_ );
 	// ASSERT( pPitch_ );
 	if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
@@ -2374,23 +2363,23 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 		{
 			g_pDDPrimarySurface->Restore();
 			g_pDDPrimarySurface->Lock(&rect,&surfacedesc,DDLOCK_WAIT,NULL);
-
-			// DD Full Screen Palette
-//			if (g_pDDPal)
-//			{
-//				g_pDDPrimarySurface->SetPalette(g_pDDPal); // this sets the palette for the primary surface
-//			}
 		}
 		*pAddr_  = (LPBYTE)surfacedesc.lpSurface + (g_nViewportCY-1) * surfacedesc.lPitch;
 		*pPitch_ = -surfacedesc.lPitch;
-		return (HDC)0;
+
+		if( g_pDDPrimarySurface->GetDC( &hDC ) == DD_OK )
+			g_hDDdc = hDC; // intentional "null" copy
+		else
+			hDC = 0;
 	}
 	else
 	{
 		*pAddr_ = g_pFramebufferbits;
 		*pPitch_ = FRAMEBUFFER_W;
-		return FrameGetDC();
+		hDC = FrameGetDC();
 	}
+
+	return hDC;
 }
 
 //===========================================================================
@@ -2445,6 +2434,9 @@ void FrameReleaseVideoDC ()
 
 		// BUT THIS SEEMS TO BE WORKING
 		g_pDDPrimarySurface->Unlock(NULL);
+
+		g_pDDPrimarySurface->ReleaseDC( g_hDDdc ); // NTSC Full Screen
+		g_hDDdc = 0;
 	}
 }
 
