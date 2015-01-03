@@ -897,8 +897,8 @@ BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 
 BYTE VideoCheckVbl (WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 {
-	bool bVblBar = VideoGetVbl(uExecutedCycles);
-	//bool bVblBar = NTSC_VideoIsVbl();
+	//bool bVblBar = VideoGetVbl(uExecutedCycles);
+	bool bVblBar = NTSC_VideoIsVbl();
 
 	BYTE r = KeybGetKeycode();
 	return (r & ~0x80) | (bVblBar ? 0x80 : 0);
