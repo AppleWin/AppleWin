@@ -35,12 +35,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Defines
 	#define HGR_TEST_PATTERN 0
+
 	#define PI 3.1415926535898f
+	#define DEG_TO_RAD(x) (PI*(x)/180.f) // 2PI=360, PI=180,PI/2=90,PI/4=45
 	#define RAD_45  PI*0.25f
 	#define RAD_90  PI*0.5f
 	#define RAD_360 PI*2.f
 
-	#define DEG_TO_RAD(x) (PI*(x)/180.f) // 2PI=360, PI=180,PI/2=90,PI/4=45
 
 	#ifndef CHROMA_BLUR
 		#define CHROMA_BLUR      1 // Default: 1; 1 = blur along ~8 pixels; 0 = sharper
@@ -132,17 +133,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	bgra_t *g_pVideoAddress = 0;
 	bgra_t *g_pScanLines[VIDEO_SCANNER_Y_DISPLAY*2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
+
 	static unsigned (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
 
-	typedef void (*Func_t)(long);
-	static Func_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
+	typedef void (*UpdateScreenFunc_t)(long);
+	static UpdateScreenFunc_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
+	static UpdateScreenFunc_t g_pFuncUpdateTextScreen     = 0; // NTSC_UpdateVideoText40;
+	static UpdateScreenFunc_t g_pFuncUpdateGraphicsScreen = 0; // NTSC_UpdateVideoText40;
 
-	static void (* g_pFunc_NTSCVideoUpdateText    )(long) = 0; // NTSC_UpdateVideoText40;
-	       void (* g_pFunc_NTSCVideoUpdateGraphics)(long) = 0; // NTSC_UpdateVideoText40;
-
-	static void (*g_pFunc_ntscMonoPixel )(int) = 0; //ntscMonoSinglePixel ;
-	static void (*g_pFunc_ntscColorPixel)(int) = 0; //ntscColorSinglePixel;
-
+	typedef void (*UpdatePixelFunc_t)(uint16_t);
+	static UpdatePixelFunc_t g_pFuncUpdateBnWPixel = 0; //ntscMonoSinglePixel ;
+	static UpdatePixelFunc_t g_pFuncUpdateHuePixel = 0; //ntscColorSinglePixel;
 
 	static uint8_t  g_nTextFlashCounter = 0;
 	static uint16_t g_nTextFlashMask    = 0;
@@ -401,14 +402,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void    NTSC_UpdateVideoText40       (long cycles6502);
 	static void    NTSC_UpdateVideoText80       (long cycles6502);
 
-	static void ntscMonoSinglePixel   (int compositeSignal);
-	static void ntscMonoDoublePixel   (int compositeSignal);
-	static void ntscColorSinglePixel  (int compositeSignal);
-	static void ntscColorDoublePixel  (int compositeSignal);
-	static void ntscMonoTVSinglePixel (int compositeSignal);
-	static void ntscMonoTVDoublePixel (int compositeSignal);
-	static void ntscColorTVSinglePixel(int compositeSignal);
-	static void ntscColorTVDoublePixel(int compositeSignal);
+	static void ntscMonoSinglePixel   (uint16_t compositeSignal);
+	static void ntscMonoDoublePixel   (uint16_t compositeSignal);
+	static void ntscColorSinglePixel  (uint16_t compositeSignal);
+	static void ntscColorDoublePixel  (uint16_t compositeSignal);
+	static void ntscMonoTVSinglePixel (uint16_t compositeSignal);
+	static void ntscMonoTVDoublePixel (uint16_t compositeSignal);
+	static void ntscColorTVSinglePixel(uint16_t compositeSignal);
+	static void ntscColorTVDoublePixel(uint16_t compositeSignal);
 	static void updateMonochromeColor( uint16_t r, uint16_t g, uint16_t b );
 
 //===========================================================================
@@ -448,20 +449,20 @@ inline void updateVideoHorzEOL()
 			//VIDEO_DRAW_ENDLINE();
 			if (g_nColorBurstPixels < 2)
 			{
-				g_pFunc_ntscMonoPixel(g_nLastColumnPixelNTSC);
+				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
 #if 0			// BUGFIX: This writes out-of-bounds for a 560x384 framebuffer
-				g_pFunc_ntscMonoPixel(0);
-				g_pFunc_ntscMonoPixel(0);
-				g_pFunc_ntscMonoPixel(0);
+				g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateBnWPixel(0);
 #endif
 			}
 			else
 			{
-				g_pFunc_ntscColorPixel(g_nLastColumnPixelNTSC);
+				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
 #if 0			// BUGFIX: This writes out-of-bounds for a 560x384 framebuffer
-				g_pFunc_ntscColorPixel(0);
-				g_pFunc_ntscColorPixel(0);
-				g_pFunc_ntscColorPixel(0);
+				g_pFuncUpdateHuePixel(0);
+				g_pFuncUpdateHuePixel(0);
+				g_pFuncUpdateHuePixel(0);
 #endif
 			}
 		}
@@ -625,51 +626,52 @@ void VIDEO_DRAW_BITS( uint16_t bt ) // VIDEO_DRAW_BITS
 	if (g_nColorBurstPixels < 2)
 	{ 
 		/* #1 of 7 */
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
 		/* #2 of 7 */
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
 		/* #3 of 7 */
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
 		/* #4 of 7 */
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
 		/* #5 of 7 */
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
 		/* #6 of 7 */
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
 		/* #7 of 7 */
-		g_pFunc_ntscMonoPixel(bt & 1); bt >>= 1;
-		g_pFunc_ntscMonoPixel(bt & 1); g_nLastColumnPixelNTSC = bt & 1; bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1); bt >>= 1;
+		g_pFuncUpdateBnWPixel(bt & 1);
+        g_nLastColumnPixelNTSC=bt& 1 ; bt >>= 1;
 	}
 	else
 	{
-		/* #1 of 7 */                     // abcd efgh ijkl mnop
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 0abc defg hijk lmno
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 00ab cdef ghi jklmn
+		/* #1 of 7 */                            // abcd efgh ijkl mnop
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0abc defg hijk lmno
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 00ab cdef ghi jklmn
 		/* #2 of 7 */
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 000a bcde fghi jklm
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 0000 abcd efgh ijkl
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 000a bcde fghi jklm
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 abcd efgh ijkl
 		/* #3 of 7 */
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 0000 0abc defg hijk
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 0000 00ab cdef ghij
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0abc defg hijk
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 00ab cdef ghij
 		/* #4 of 7 */
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 0000 000a bcde fghi
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 0000 0000 abcd efgh
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 000a bcde fghi
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0000 abcd efgh
 		/* #5 of 7 */
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 0000 0000 0abc defg
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 0000 0000 00ab cdef
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0000 0abc defg
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0000 00ab cdef
 		/* #6 of 7 */
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 0000 0000 000a bcde
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 0000 0000 0000 abcd
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0000 000a bcde
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0000 0000 abcd
 		/* #7 of 7 */
-		g_pFunc_ntscColorPixel(bt & 1); bt >>= 1; // 0000 0000 0000 0abc
-		g_pFunc_ntscColorPixel(bt & 1);           
-g_nLastColumnPixelNTSC=bt & 1 ; bt >>= 1; // 0000 0000 0000 00ab
+		g_pFuncUpdateHuePixel(bt & 1); bt >>= 1; // 0000 0000 0000 0abc
+		g_pFuncUpdateHuePixel(bt & 1);           
+        g_nLastColumnPixelNTSC=bt& 1 ; bt >>= 1; // 0000 0000 0000 00ab
 	}
 }
 
@@ -904,53 +906,53 @@ static void init_chroma_phase_table (void)
 }
 
 //===========================================================================
-static void ntscColorTVSinglePixel (int compositeSignal)
+static void ntscColorTVSinglePixel (uint16_t compositeSignal)
 {
 	updateFramebufferColorTVSingleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
-static void ntscColorTVDoublePixel (int compositeSignal)
+static void ntscColorTVDoublePixel (uint16_t compositeSignal)
 {
 	updateFramebufferColorTVDoubleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
-static void ntscColorSinglePixel (int compositeSignal)
+static void ntscColorSinglePixel (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorSingleScanline(compositeSignal, g_aHueMonitor[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
-static void ntscColorDoublePixel (int compositeSignal)
+static void ntscColorDoublePixel (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorDoubleScanline(compositeSignal, g_aHueMonitor[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
-static void ntscMonoSinglePixel (int compositeSignal)
+static void ntscMonoSinglePixel (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorSingleScanline(compositeSignal, g_aBnWMonitorCustom);
 }
 
 //===========================================================================
-static void ntscMonoDoublePixel (int compositeSignal)
+static void ntscMonoDoublePixel (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorDoubleScanline(compositeSignal, g_aBnWMonitorCustom);
 }
 
 //===========================================================================
-static void ntscMonoTVSinglePixel (int compositeSignal)
+static void ntscMonoTVSinglePixel (uint16_t compositeSignal)
 {
 	updateFramebufferColorTVSingleScanline(compositeSignal, g_aBnWColorTVCustom);
 }
 
 //===========================================================================
-static void ntscMonoTVDoublePixel (int compositeSignal)
+static void ntscMonoTVDoublePixel (uint16_t compositeSignal)
 {
 	updateFramebufferColorTVDoubleScanline(compositeSignal, g_aBnWColorTVCustom);
 }
@@ -976,9 +978,9 @@ void updateMonochromeColor( uint16_t r, uint16_t g, uint16_t b )
 void NTSC_SetVideoTextMode( int cols )
 {
 	if( cols == 40 )
-		g_pFunc_NTSCVideoUpdateText = NTSC_UpdateVideoText40;
+		g_pFuncUpdateTextScreen = NTSC_UpdateVideoText40;
 	else
-		g_pFunc_NTSCVideoUpdateText = NTSC_UpdateVideoText80;
+		g_pFuncUpdateTextScreen = NTSC_UpdateVideoText80;
 }
 
 //===========================================================================
@@ -998,27 +1000,27 @@ void NTSC_SetVideoMode( int bVideoModeFlags )
 
 	if (bVideoModeFlags & VF_TEXT) {
 		if (bVideoModeFlags & VF_80COL)
-			g_pFunc_NTSCVideoUpdateGraphics = NTSC_UpdateVideoText80;
+			g_pFuncUpdateGraphicsScreen = NTSC_UpdateVideoText80;
 		else
-			g_pFunc_NTSCVideoUpdateGraphics = NTSC_UpdateVideoText40;
+			g_pFuncUpdateGraphicsScreen = NTSC_UpdateVideoText40;
 	}
 	else if (bVideoModeFlags & VF_HIRES) {
 		if (bVideoModeFlags & VF_DHIRES)
 			if (bVideoModeFlags & VF_80COL)
-				g_pFunc_NTSCVideoUpdateGraphics = NTSC_UpdateVideoDoubleHires80;
+				g_pFuncUpdateGraphicsScreen = NTSC_UpdateVideoDoubleHires80;
 			else
-				g_pFunc_NTSCVideoUpdateGraphics = NTSC_UpdateVideoDoubleHires40;
+				g_pFuncUpdateGraphicsScreen = NTSC_UpdateVideoDoubleHires40;
 		else
-			g_pFunc_NTSCVideoUpdateGraphics = NTSC_UpdateVideoSingleHires40;
+			g_pFuncUpdateGraphicsScreen = NTSC_UpdateVideoSingleHires40;
 	}
 	else {
 		if (bVideoModeFlags & VF_DHIRES)
 			if (bVideoModeFlags & VF_80COL)
-				g_pFunc_NTSCVideoUpdateGraphics = NTSC_UpdateVideoDoubleLores80;
+				g_pFuncUpdateGraphicsScreen = NTSC_UpdateVideoDoubleLores80;
 			else
-				g_pFunc_NTSCVideoUpdateGraphics = NTSC_UpdateVideoDoubleLores40;
+				g_pFuncUpdateGraphicsScreen = NTSC_UpdateVideoDoubleLores40;
 		else
-			g_pFunc_NTSCVideoUpdateGraphics = NTSC_UpdateVideoSingleLores40;
+			g_pFuncUpdateGraphicsScreen = NTSC_UpdateVideoSingleLores40;
 	}
 }
 
@@ -1033,12 +1035,12 @@ void NTSC_SetVideoStyle() // (int v, int s)
 		case VT_COLOR_TVEMU: // VT_COLOR_TV: // 0:
 			if (half)
 			{
-				g_pFunc_ntscMonoPixel = ntscMonoTVSinglePixel;
-				g_pFunc_ntscColorPixel = ntscColorTVSinglePixel;
+				g_pFuncUpdateBnWPixel = ntscMonoTVSinglePixel;
+				g_pFuncUpdateHuePixel = ntscColorTVSinglePixel;
 			}
 			else {
-				g_pFunc_ntscMonoPixel = ntscMonoTVDoublePixel;
-				g_pFunc_ntscColorPixel = ntscColorTVDoublePixel;
+				g_pFuncUpdateBnWPixel = ntscMonoTVDoublePixel;
+				g_pFuncUpdateHuePixel = ntscColorTVDoublePixel;
 			}
 			break;
 
@@ -1046,12 +1048,12 @@ void NTSC_SetVideoStyle() // (int v, int s)
 		default:
 			if (half)
 			{
-				g_pFunc_ntscMonoPixel  = ntscMonoSinglePixel;
-				g_pFunc_ntscColorPixel = ntscColorSinglePixel;
+				g_pFuncUpdateBnWPixel = ntscMonoSinglePixel;
+				g_pFuncUpdateHuePixel = ntscColorSinglePixel;
 			}
 			else {
-				g_pFunc_ntscMonoPixel = ntscMonoDoublePixel;
-				g_pFunc_ntscColorPixel = ntscColorDoublePixel;
+				g_pFuncUpdateBnWPixel = ntscMonoDoublePixel;
+				g_pFuncUpdateHuePixel = ntscColorDoublePixel;
 			}
 			break;
 
@@ -1062,10 +1064,10 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			updateMonochromeColor( r, g, b ); // Custom Monochrome color
 			if (half)
 			{
-				g_pFunc_ntscMonoPixel = g_pFunc_ntscColorPixel = ntscMonoTVSinglePixel;
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = ntscMonoTVSinglePixel;
 			}
 			else {
-				g_pFunc_ntscMonoPixel = g_pFunc_ntscColorPixel = ntscMonoTVDoublePixel;
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = ntscMonoTVDoublePixel;
 			}
 			break;
 
@@ -1101,11 +1103,11 @@ _mono:
 			updateMonochromeColor( r, g, b ); // Custom Monochrome color
 			if (half)
 			{
-				g_pFunc_ntscMonoPixel = g_pFunc_ntscColorPixel = ntscMonoSinglePixel;
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = ntscMonoSinglePixel;
 			}
 			else
 			{
-				g_pFunc_ntscMonoPixel = g_pFunc_ntscColorPixel = ntscMonoDoublePixel;
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = ntscMonoDoublePixel;
 			}
 			break;
 		}
@@ -1118,7 +1120,7 @@ void NTSC_UpdateVideoDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFunc_NTSCVideoUpdateText( cycles6502 );
+		g_pFuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 	
@@ -1152,7 +1154,7 @@ void NTSC_UpdateVideoDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFunc_NTSCVideoUpdateText( cycles6502 );
+		g_pFuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1191,7 +1193,7 @@ void NTSC_UpdateVideoDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFunc_NTSCVideoUpdateText( cycles6502 );
+		g_pFuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1225,7 +1227,7 @@ void NTSC_UpdateVideoDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFunc_NTSCVideoUpdateText( cycles6502 );
+		g_pFuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1268,7 +1270,7 @@ void NTSC_UpdateVideoSingleHires40 (long cycles6502)
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFunc_NTSCVideoUpdateText( cycles6502 );
+		g_pFuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 	
@@ -1303,7 +1305,7 @@ void NTSC_UpdateVideoSingleLores40 (long cycles6502)
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFunc_NTSCVideoUpdateText( cycles6502 );
+		g_pFuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1423,8 +1425,8 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 
 	g_pVideoAddress = g_pScanLines[0];
 
-	g_pFunc_NTSCVideoUpdateText     = NTSC_UpdateVideoText40;
-	g_pFunc_NTSCVideoUpdateGraphics = NTSC_UpdateVideoText40;
+	g_pFuncUpdateTextScreen     = NTSC_UpdateVideoText40;
+	g_pFuncUpdateGraphicsScreen = NTSC_UpdateVideoText40;
 
 	VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
 
@@ -1497,7 +1499,7 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 	bool bRedraw = cycles6502 >= VIDEO_SCANNER_6502_CYCLES;
 
 //	if( g_bFullSpeed )
-//			g_pFunc_NTSCVideoUpdateGraphics( cycles6502 );
+//			g_pFuncUpdateGraphicsScreen( cycles6502 );
 //	else
 
 	while( cycles6502 >  VIDEO_SCANNER_6502_CYCLES )
@@ -1510,7 +1512,7 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 			g_nVideoClockHorz = 0;
 
 			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-				g_apFuncVideoUpdateScanline[ g_nVideoClockVert ] = g_pFunc_NTSCVideoUpdateGraphics;
+				g_apFuncVideoUpdateScanline[ g_nVideoClockVert ] = g_pFuncUpdateGraphicsScreen;
 
 			if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
 			{
@@ -1532,6 +1534,6 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 			g_apFuncVideoUpdateScanline[ y ]( VIDEO_SCANNER_MAX_HORZ );
 
 		int nCyclesVBlank = (VIDEO_SCANNER_MAX_VERT - VIDEO_SCANNER_Y_DISPLAY) * VIDEO_SCANNER_MAX_HORZ;
-		g_pFunc_NTSCVideoUpdateGraphics( nCyclesVBlank );
+		g_pFuncUpdateGraphicsScreen( nCyclesVBlank );
 	}
 }
