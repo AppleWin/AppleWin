@@ -449,16 +449,20 @@ inline void updateVideoHorzEOL()
 			if (g_nColorBurstPixels < 2)
 			{
 				g_pFunc_ntscMonoPixel(g_nLastColumnPixelNTSC);
+#if 0			// BUGFIX: This writes out-of-bounds for a 560x384 framebuffer
 				g_pFunc_ntscMonoPixel(0);
 				g_pFunc_ntscMonoPixel(0);
 				g_pFunc_ntscMonoPixel(0);
+#endif
 			}
 			else
 			{
 				g_pFunc_ntscColorPixel(g_nLastColumnPixelNTSC);
+#if 0			// BUGFIX: This writes out-of-bounds for a 560x384 framebuffer
 				g_pFunc_ntscColorPixel(0);
 				g_pFunc_ntscColorPixel(0);
 				g_pFunc_ntscColorPixel(0);
+#endif
 			}
 		}
 
@@ -1500,6 +1504,10 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 		{
 			g_nVideoClockHorz = 0;
+
+			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+				g_apFuncVideoUpdateScanline[ g_nVideoClockVert ] = g_pFunc_NTSCVideoUpdateGraphics;
+
 			if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
 			{
 				g_nVideoClockVert = 0;
@@ -1510,10 +1518,7 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 			}
 
 			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-			{
-				g_apFuncVideoUpdateScanline[ g_nVideoClockVert ] = g_pFunc_NTSCVideoUpdateGraphics;
 				updateVideoScannerAddress();
-			}
 		}
 	}
 
