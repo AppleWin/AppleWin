@@ -376,6 +376,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void (*g_pFunc_ntscMonoPixel )(int) = 0; //ntscMonoSinglePixel ;
 	static void (*g_pFunc_ntscColorPixel)(int) = 0; //ntscColorSinglePixel;
 
+	typedef void (*Func_t)(long);
+	static Func_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
+
 // Prototypes
 	// prototype from CPU.h
 	//unsigned char CpuRead(unsigned short addr, unsigned long uExecutedCycles);
@@ -1476,6 +1479,8 @@ int NTSC_VideoIsVbl ()
 //===========================================================================
 void NTSC_VideoUpdateCycles( long cycles6502 )
 {
+	bool bRedraw = false;
+
 //	if( !g_bFullSpeed )
 //			g_pFunc_NTSCVideoUpdateGraphics( cycles6502 );
 //	else
@@ -1492,18 +1497,29 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 					g_nTextFlashCounter = 0;
 					g_nTextFlashMask ^= -1; // 16-bits
 				}
-
-				// Force full refresh
-				g_pFunc_NTSCVideoUpdateGraphics( VIDEO_SCANNER_6502_CYCLES );
+				bRedraw = true;
 			}
 
 			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 			{
+				g_apFuncVideoUpdateScanline[ g_nVideoClockVert ] = g_pFunc_NTSCVideoUpdateGraphics;
+
 				g_pVideoAddress = g_aNTSC_Lines[2*g_nVideoClockVert];
 				g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
 				g_nLastColumnPixelNTSC = 0;
 				g_nSignalBitsNTSC = 0;
 			}
 		}
+	}
+
+	if( bRedraw ) // Force full refresh
+	{
+		for( int y = 0; y < VIDEO_SCANNER_Y_DISPLAY; y++ )
+		{
+			g_apFuncVideoUpdateScanline[ y ]( VIDEO_SCANNER_MAX_HORZ );
+		}
+
+		int nCyclesVBlank = (VIDEO_SCANNER_MAX_VERT - VIDEO_SCANNER_Y_DISPLAY) * VIDEO_SCANNER_MAX_HORZ;
+		g_pFunc_NTSCVideoUpdateGraphics( nCyclesVBlank );
 	}
 }
