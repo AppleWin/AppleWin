@@ -1478,15 +1478,20 @@ void MemResetPaging()
 
 BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
+#if 0
 	// NTSC: It is tempting to replace with
-	//     return NTSC_VideoGetByte( uExecutedCycles );
+	// return NTSC_VideoGetByte( uExecutedCycles );
 	// But that breaks "Rainbow" Bug #254
-    // Why is this out of sync??
-    //uint8_t val1 = NTSC_VideoGetByte( uExecutedCycles );
-    //uint8_t val2 = *(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
-    //if( val1 != val2 ) mem[ 0x2000 ] ^= 0xFF;
+	// Why is this out of sync??
+	uint16_t a1 = NTSC_VideoGetScannerAddressByte( uExecutedCycles );
+	uint16_t a2 = VideoGetScannerAddress(NULL, uExecutedCycles);
+	uint8_t  b1 = mem[ a1 ];
+	uint8_t  b2 = mem[ a2 ];
 
-	return *(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
+	if( val1 != val2 )
+		mem[ 0x2000 ] ^= 0xFF;
+#endif
+	return mem[ VideoGetScannerAddress(NULL, uExecutedCycles) ];
 }
 
 //===========================================================================
