@@ -414,6 +414,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	INLINE bool      updateScanLineModeSwitch( long cycles6502, UpdateScreenFunc_t self );
 	INLINE void      updateVideoScannerHorzEOL();
 	INLINE void      updateVideoScannerAddress();
+	INLINE uint16_t  updateVideoScannerAddressTXT();
+	INLINE uint16_t  updateVideoScannerAddressHGR();
 
 	static void initChromaPhaseTables();
 	static real initFilterChroma   (real z);
