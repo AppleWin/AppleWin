@@ -162,9 +162,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static unsigned g_aPixelMaskGR       [ 16];
 	static uint16_t g_aPixelDoubleMaskHGR[128]; // hgrbits -> g_aPixelDoubleMaskHGR: 7-bit mono 280 pixels to 560 pixel doubling
 
-#define UpdateVideoAddressTXT() g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad = (g_aClockVertOffsetsTXT[g_nVideoClockVert/8] + g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nTextPage  *  0x400))
-#define UpdateVideoAddressHGR() g_aHorzClockMemAddress[ g_nVideoClockHorz ] = ad = (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nHiresPage * 0x2000)) // BUG? g_pHorzClockOffset
-
 	static int g_nLastColumnPixelNTSC;
 	static int g_nColorBurstPixels;
 
@@ -768,6 +765,22 @@ inline void updateVideoScannerAddress()
 	g_aFuncUpdateHorz[0] = g_pFuncUpdateGraphicsScreen;
 }
 
+//===========================================================================
+INLINE uint16_t updateVideoScannerAddressTXT()
+{
+	return g_aHorzClockMemAddress[ g_nVideoClockHorz ] = (g_aClockVertOffsetsTXT[g_nVideoClockVert/8] + 
+		g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nTextPage  *  0x400));
+}
+
+//===========================================================================
+INLINE uint16_t updateVideoScannerAddressHGR()
+{
+	// BUG? g_pHorzClockOffset
+	return g_aHorzClockMemAddress[ g_nVideoClockHorz ] = (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + 
+		APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nHiresPage * 0x2000));
+}
+
+
 // Non-Inline _________________________________________________________
 
 // Build the 4 phase chroma lookup table
@@ -1061,8 +1074,6 @@ static void updatePixelHueMonitorDoubleScanline (uint16_t compositeSignal)
 //===========================================================================
 void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 {
-	unsigned ad;
-	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
 		g_pFuncUpdateTextScreen( cycles6502 );
@@ -1071,7 +1082,7 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 	
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		UpdateVideoAddressHGR();
+		uint16_t addr = updateVideoScannerAddressHGR();
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -1083,7 +1094,7 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 			{
 				if ( updateScanLineModeSwitch( cycles6502, updateScreenDoubleHires40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
 
-				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t *pMain = MemGetMainPtr(addr);
 				uint8_t  m     = pMain[0];
 				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
 				updatePixels( bits );
@@ -1096,7 +1107,6 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 //===========================================================================
 void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 {
-	unsigned ad;
 	uint16_t bits;
 	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
@@ -1107,7 +1117,7 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		UpdateVideoAddressHGR();
+		uint16_t addr = updateVideoScannerAddressHGR();
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -1119,8 +1129,8 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 			{
 				if ( updateScanLineModeSwitch( cycles6502, updateScreenDoubleHires80 ) ) return; // ANSI STORY: vide mode switch mid scan line!
 
-				uint8_t  *pMain = MemGetMainPtr(ad);
-				uint8_t  *pAux  = MemGetAuxPtr(ad);
+				uint8_t  *pMain = MemGetMainPtr(addr);
+				uint8_t  *pAux  = MemGetAuxPtr (addr);
 
 				uint8_t m = pMain[0];
 				uint8_t a = pAux [0];
@@ -1138,8 +1148,6 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 //===========================================================================
 void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 {
-	unsigned ad;
-	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
 		g_pFuncUpdateTextScreen( cycles6502 );
@@ -1148,7 +1156,7 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		UpdateVideoAddressTXT();
+		uint16_t addr = updateVideoScannerAddressTXT();
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -1160,7 +1168,7 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 			{
 				if ( updateScanLineModeSwitch( cycles6502, updateScreenDoubleLores40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
 
-				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t *pMain = MemGetMainPtr(addr);
 				uint8_t  m     = pMain[0];
 				uint16_t lo    = getLoResBits( m ); 
 				uint16_t bits  = g_aPixelDoubleMaskHGR[(0xFF & lo >> ((1 - (g_nVideoClockHorz & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
@@ -1174,8 +1182,6 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 //===========================================================================
 void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 {
-	unsigned ad;
-	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
 		g_pFuncUpdateTextScreen( cycles6502 );
@@ -1184,7 +1190,7 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		UpdateVideoAddressTXT();
+		uint16_t addr = updateVideoScannerAddressTXT();
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -1196,8 +1202,8 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 			{
 				if( updateScanLineModeSwitch( cycles6502, updateScreenDoubleLores80 ) ) return; // ANSI STORY: vide mode switch mid scan line!
 
-				uint8_t *pMain = MemGetMainPtr(ad);
-				uint8_t *pAux  = MemGetAuxPtr(ad);
+				uint8_t *pMain = MemGetMainPtr(addr);
+				uint8_t *pAux  = MemGetAuxPtr (addr);
 
 				uint8_t m = pMain[0];
 				uint8_t a = pAux [0];
@@ -1221,8 +1227,6 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 //===========================================================================
 void updateScreenSingleHires40 (long cycles6502)
 {
-	unsigned ad;
-	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
 		g_pFuncUpdateTextScreen( cycles6502 );
@@ -1231,7 +1235,7 @@ void updateScreenSingleHires40 (long cycles6502)
 	
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		UpdateVideoAddressHGR();
+		uint16_t addr = updateVideoScannerAddressHGR();
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -1243,7 +1247,7 @@ void updateScreenSingleHires40 (long cycles6502)
 			{
 				if ( updateScanLineModeSwitch( cycles6502, updateScreenSingleHires40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
 
-				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t *pMain = MemGetMainPtr(addr);
 				uint8_t  m     = pMain[0];
 				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
 				if (m & 0x80)
@@ -1258,8 +1262,6 @@ void updateScreenSingleHires40 (long cycles6502)
 //===========================================================================
 void updateScreenSingleLores40 (long cycles6502)
 {
-	unsigned ad;
-	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
 		g_pFuncUpdateTextScreen( cycles6502 );
@@ -1268,7 +1270,7 @@ void updateScreenSingleLores40 (long cycles6502)
 
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		UpdateVideoAddressTXT();
+		uint16_t addr = updateVideoScannerAddressTXT();
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -1280,7 +1282,7 @@ void updateScreenSingleLores40 (long cycles6502)
 			{
 				if( updateScanLineModeSwitch( cycles6502, updateScreenSingleLores40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
 
-				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t *pMain = MemGetMainPtr(addr);
 				uint8_t  m     = pMain[0];
 				uint16_t lo    = getLoResBits( m ); 
 				uint16_t bits  = lo >> ((1 - (g_nVideoClockHorz & 1)) * 2);
@@ -1294,11 +1296,9 @@ void updateScreenSingleLores40 (long cycles6502)
 //===========================================================================
 void updateScreenText40 (long cycles6502)
 {
-	unsigned ad;
-
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		UpdateVideoAddressTXT();
+		uint16_t addr = updateVideoScannerAddressTXT();
 
 		if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
 		{
@@ -1311,7 +1311,7 @@ void updateScreenText40 (long cycles6502)
 			{
 				if ( updateScanLineModeSwitch( cycles6502, updateScreenText40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
 
-				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t *pMain = MemGetMainPtr(addr);
 				uint8_t  m     = pMain[0];
 				uint8_t  c     = getCharSetBits(m);
 				uint16_t bits  = g_aPixelDoubleMaskHGR[c & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
@@ -1330,11 +1330,9 @@ void updateScreenText40 (long cycles6502)
 //===========================================================================
 void updateScreenText80 (long cycles6502)
 {
-	unsigned int ad;
-
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		UpdateVideoAddressTXT();
+		uint16_t addr = updateVideoScannerAddressTXT();
 
 		if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
 		{
@@ -1347,8 +1345,8 @@ void updateScreenText80 (long cycles6502)
 			{
 				if ( updateScanLineModeSwitch( cycles6502, updateScreenText80 ) ) return; // ANSI STORY: vide mode switch mid scan line!
 
-				uint8_t *pAux  = MemGetAuxPtr(ad);
-				uint8_t *pMain = MemGetMainPtr(ad);
+				uint8_t *pMain = MemGetMainPtr(addr);
+				uint8_t *pAux  = MemGetAuxPtr (addr);
 
 				uint8_t m = pMain[0];
 				uint8_t a = pAux [0];
