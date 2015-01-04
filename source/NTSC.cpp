@@ -184,22 +184,27 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static bgra_t g_aBnWMonitorCustom           [NTSC_NUM_SEQUENCES];
 	static bgra_t g_aBnWColorTVCustom           [NTSC_NUM_SEQUENCES];
 
-	#define NUM_SIGZEROS 2
-	#define NUM_SIGPOLES 2
-	#define SIGGAIN  7.614490548f
+	#define CHROMA_ZEROS 2
+	#define CHROMA_POLES 2
+	#define CHROMA_GAIN  7.438011255f // Should this be 7.15909 MHz ?
+	#define CHROMA_0    -0.7318893645f
+	#define CHROMA_1     1.2336442711f
 
-	#define NUM_LUMZEROS 2
-	#define NUM_LUMPOLES 2
 	//#define LUMGAIN  1.062635655e+01
 	//#define LUMCOEF1  -0.3412038399
 	//#define LUMCOEF2  0.9647813115
-	#define LUMGAIN  13.71331570f
-	#define LUMCOEF1 -0.3961075449f
-	#define LUMCOEF2 1.1044202472f
+	#define LUMA_ZEROS  2
+	#define LUMA_POLES  2
+	#define LUMA_GAIN  13.71331570f   // Should this be 14.318180 MHz ?
+	#define LUMA_0     -0.3961075449f
+	#define LUMA_1      1.1044202472f
 
-	#define NUM_CHRZEROS 2
-	#define NUM_CHRPOLES 2
-	#define CHRGAIN  7.438011255f
+	#define SIGNAL_ZEROS 2
+	#define SIGNAL_POLES 2
+	#define SIGNAL_GAIN  7.614490548f  // Should this be 7.15909 MHz ?
+	#define SIGNAL_0    -0.2718798058f 
+	#define SIGNAL_1     0.7465656072f 
+
 
 // Tables
 	static unsigned g_aClockVertOffsetsHGR[ VIDEO_SCANNER_MAX_VERT ] = 
@@ -487,7 +492,6 @@ inline uint32_t* getScanlinePrev1Address()
 inline uint32_t* getScanlinePrev2Address()
 {
 	return (uint32_t*) (g_pVideoAddress + 2*FRAMEBUFFER_W);
-
 }
 
 //===========================================================================
@@ -533,6 +537,7 @@ inline void updateFlashRate() // TODO: Flash rate should be constant (regardless
 		g_pVideoAddress++; \
 	} while(0)
 
+// prevp is never used nor blended with!
 #define updateFramebufferColorTVSingleScanline(signal,table) \
 	do { \
 		uint32_t ntscp, prevp, betwp; \
@@ -583,7 +588,7 @@ inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTa
 
 	const uint32_t color0 = getScanlineColor( signal, pTable );
 	const uint32_t color2 = *pLine2Address;
-	const uint32_t color1 = color0 - ((color0 & 0x00fcfcfc) >> 2);
+	const uint32_t color1 = color0 - ((color2 & 0x00fcfcfc) >> 2); // BUG? color0 - color0? not color0-color2?
 
 	/* */  *pLine1Address = color1 | ALPHA32_MASK;
 	/* */  *pLine0Address = color0;
@@ -815,9 +820,9 @@ static void initChromaPhaseTables (void)
 #if CHROMA_BLUR
 					//z = z * 1.25;
 					zz = initFilterSignal(z);
-					c = initFilterChroma(zz); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
-					y0 = initFilterLuma0(zz);
-					y1 = initFilterLuma1(zz - c);
+					c  = initFilterChroma(zz); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
+					y0 = initFilterLuma0 (zz);
+					y1 = initFilterLuma1 (zz - c);
 #else // CHROMA_BLUR
 					y0 = y0 + (z - y0) / 4.0;
 					y1 = y0; // fix TV mode
@@ -918,68 +923,86 @@ static void initChromaPhaseTables (void)
 	}
 }
 
+/*
+http://www-users.cs.york.ac.uk/~fisher/mkfilter/trad.html
+Sample Rate: ???
+Corner Freq 1: ?
+Corner Freq 2: ?
+
+double ButterworthLowPass2( double a, double b, double g, double z )
+{
+	const  int      POLES=2;
+	static double x[POLES+1];
+	static double y[POLES+1];
+
+	for( int iPole = 0; iPole < POLES; iPole++ )
+	{
+		x[iPole] = x[iPole+1];
+		y[iPole] = y[iPole+1];
+	}
+
+	x[POLES] = z / g;
+	y[POLES] = x[0] + x[2] + (2.f*x[1]) + (a*y[0]) + (b*y[1]);
+
+	return y[2];
+}
+
+*/
+
+// What filter is this ??
+// Filter Order: 2 -> poles for low pass
 //===========================================================================
 static real initFilterChroma (real z)
 {
-	static real xv[NUM_CHRZEROS + 1] = {0,0,0};
-	static real yv[NUM_CHRPOLES + 1] = {0,0,0};
+	static real x[CHROMA_ZEROS + 1] = {0,0,0};
+	static real y[CHROMA_POLES + 1] = {0,0,0};
 
-	xv[0] = xv[1];
-	xv[1] = xv[2];
-	xv[2] = z / CHRGAIN;
-	yv[0] = yv[1];
-	yv[1] = yv[2];
-	yv[2] = xv[2] - xv[0] + (-0.7318893645f * yv[0]) + (1.2336442711f * yv[1]);
+	x[0] = x[1];   x[1] = x[2];   x[2] = z / CHROMA_GAIN;
+	y[0] = y[1];   y[1] = y[2];   y[2] = x[2] - x[0] + (CHROMA_0*y[0]) + (CHROMA_1*y[1]);
 
-	return yv[2];
+	return y[2];
 }
 
+// Butterworth Lowpass digital filter
+// Filter Order: 2 -> poles for low pass
 //===========================================================================
 static real initFilterLuma0 (real z)
 {
-	static real xv[NUM_LUMZEROS + 1] = { 0,0,0 };
-	static real yv[NUM_LUMPOLES + 1] = { 0,0,0 };
+	static real x[LUMA_ZEROS + 1] = { 0,0,0 };
+	static real y[LUMA_POLES + 1] = { 0,0,0 };
 
-	xv[0] = xv[1];
-	xv[1] = xv[2];
-	xv[2] = z / LUMGAIN;
-	yv[0] = yv[1];
-	yv[1] = yv[2];
-	yv[2] = xv[0] + xv[2] + (2.f * xv[1]) + (LUMCOEF1 * yv[0]) + (LUMCOEF2 * yv[1]);
+	x[0] = x[1];   x[1] = x[2];   x[2] = z / LUMA_GAIN;
+	y[0] = y[1];   y[1] = y[2];   y[2] = x[0] + x[2] + (2.f*x[1]) + (LUMA_0*y[0]) + (LUMA_1*y[1]);
 
-	return yv[2];
+	return y[2];
 }
 
+// Butterworth Lowpass digital filter
+// Filter Order: 2 -> poles for low pass
 //===========================================================================
 static real initFilterLuma1 (real z)
 {
-	static real xv[NUM_LUMZEROS + 1] = { 0,0,0};
-	static real yv[NUM_LUMPOLES + 1] = { 0,0,0};
+	static real x[LUMA_ZEROS + 1] = { 0,0,0};
+	static real y[LUMA_POLES + 1] = { 0,0,0};
 
-	xv[0] = xv[1];
-	xv[1] = xv[2];
-	xv[2] = z / LUMGAIN;
-	yv[0] = yv[1];
-	yv[1] = yv[2];
-	yv[2] = xv[0] + xv[2] + (2 * xv[1]) + (LUMCOEF1 * yv[0]) + (LUMCOEF2 * yv[1]);
+	x[0] = x[1];   x[1] = x[2];   x[2] = z / LUMA_GAIN;
+	y[0] = y[1];   y[1] = y[2];   y[2] = x[0] + x[2] + (2.f*x[1]) + (LUMA_0*y[0]) + (LUMA_1*y[1]);
 
-	return yv[2];
+	return y[2];
 }
 
+// Butterworth Lowpass digital filter
+// Filter Order: 2 -> poles for low pass
 //===========================================================================
 static real initFilterSignal (real z)
 {
-	static real xv[NUM_SIGZEROS + 1] = { 0,0,0 };
-	static real yv[NUM_SIGPOLES + 1] = { 0,0,0 };
+	static real x[SIGNAL_ZEROS + 1] = { 0,0,0 };
+	static real y[SIGNAL_POLES + 1] = { 0,0,0 };
 
-	xv[0] = xv[1];
-	xv[1] = xv[2];
-	xv[2] = z / SIGGAIN;
-	yv[0] = yv[1];
-	yv[1] = yv[2];
-	yv[2] = xv[0] + xv[2] + (2.f * xv[1]) + (-0.2718798058f * yv[0]) + (0.7465656072f * yv[1]);
+	x[0] = x[1];   x[1] = x[2];   x[2] = z / SIGNAL_GAIN;
+	y[0] = y[1];   y[1] = y[2];   y[2] = x[0] + x[2] + (2.f*x[1]) + (SIGNAL_0*y[0]) + (SIGNAL_1*y[1]);
 
-	return yv[2];
+	return y[2];
 }
 
 //===========================================================================
