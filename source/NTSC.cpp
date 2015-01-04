@@ -61,7 +61,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	#if CHROMA_BLUR
 		//#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees
-		#define CYCLESTART (DEG_TO_RAD(45))
+		#define CYCLESTART (DEG_TO_RAD(33))
 	#else // sharpness is higher, less color bleed
 		#if CHROMA_FILTER == 2
 			#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees // c = initFilterSignal(z);
@@ -204,7 +204,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#define SIGNAL_GAIN  7.614490548f  // Should this be 7.15909 MHz ?
 	#define SIGNAL_0    -0.2718798058f 
 	#define SIGNAL_1     0.7465656072f 
-
 
 // Tables
 	static unsigned g_aClockVertOffsetsHGR[ VIDEO_SCANNER_MAX_VERT ] = 
@@ -958,7 +957,7 @@ static real initFilterChroma (real z)
 	static real y[CHROMA_POLES + 1] = {0,0,0};
 
 	x[0] = x[1];   x[1] = x[2];   x[2] = z / CHROMA_GAIN;
-	y[0] = y[1];   y[1] = y[2];   y[2] = x[2] - x[0] + (CHROMA_0*y[0]) + (CHROMA_1*y[1]);
+	y[0] = y[1];   y[1] = y[2];   y[2] = -x[0] + x[2] + (CHROMA_0*y[0]) + (CHROMA_1*y[1]); // inverted x[0]
 
 	return y[2];
 }
