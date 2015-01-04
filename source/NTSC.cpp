@@ -1529,10 +1529,11 @@ _mono:
 }
 
 //===========================================================================
-uint8_t NTSC_VideoGetByte (unsigned long cycles6502)
+uint16_t NTSC_VideoGetScannerAddress ( unsigned long cycles6502 )
 {
-	uint8_t *pMain = MemGetMainPtr( g_aHorzClockMemAddress[ g_nVideoClockHorz ] );
-	return pMain[0];
+    (void)cycles6502; // TODO: Do we need to offset based on the clock cycles?
+    // uint8_t h = (g_nVideoClockHorz + cycles6502) %  VIDEO_SCANNER_MAX_HORZ
+	return g_aHorzClockMemAddress[ g_nVideoClockHorz ];
 }
 
 //===========================================================================
