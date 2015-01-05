@@ -255,7 +255,7 @@ COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
 static BOOL      rebuiltsource       = 0;
 static LPBYTE    vidlastmem          = NULL;
 
-static UINT      g_uVideoMode     = VF_TEXT;
+	uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
 
 	DWORD     g_eVideoType     = VT_COLOR_TVEMU;
 	DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
@@ -1196,8 +1196,9 @@ void VideoResetState ()
 BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
-	DWORD oldpage2 = SW_PAGE2;
-	int   oldvalue = g_nAltCharSetOffset+(int)(g_uVideoMode & ~(VF_80STORE | VF_PAGE2));
+
+//	DWORD oldpage2 = SW_PAGE2;
+//	int   oldvalue = g_nAltCharSetOffset+(int)(g_uVideoMode & ~(VF_80STORE | VF_PAGE2));
 
 	switch (address)
 	{
@@ -1219,13 +1220,16 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
 
+	// Apple IIe, Techical Nodtes, #3: Double High-Resolution Graphics
+	// 80STORE must be OFF to display page 2
+	if (SW_80STORE)
+		g_uVideoMode &= ~VF_PAGE2;
+
 // NTSC_BEGIN
 	NTSC_SetVideoMode( g_uVideoMode );
 // NTSC_END
 
 #if 0 // NTSC_CLEANUP: Is this still needed??
-	if (SW_80STORE)
-		g_uVideoMode &= ~VF_PAGE2;
 
 	if (oldvalue != g_nAltCharSetOffset+(int)(g_uVideoMode & ~(VF_80STORE | VF_PAGE2)))
 		g_VideoForceFullRedraw = 1;	// Defer video redraw until VideoEndOfVideoFrame()

@@ -291,7 +291,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static unsigned APPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ] =
 	{
-		{0x0068,0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x106F, // bug? 0x106F
+		{0x0068,0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F, // bug? 0x106F
 		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077,
 		 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
 		 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
@@ -746,7 +746,7 @@ inline void updateVideoScannerHorzEOL()
 			g_nVideoClockVert = 0;
 
 			updateFlashRate();
-			//VideoRefreshScreen(0); // ContinueExecution() calls VideoRefreshScreen(0) ever dwClksPerFrame (17030)
+			//VideoRefreshScreen(0); // ContinueExecution() calls VideoRefreshScreen(0) every dwClksPerFrame (17030)
 		}
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
@@ -1392,7 +1392,7 @@ void updateScreenText80 (long cycles6502)
 	}
 }
 
-// Functions (Public) _________________________________________________
+// Functions (Public) _____________________________________________________________________________
 
 //===========================================================================
 void NTSC_SetVideoTextMode( int cols )
@@ -1407,7 +1407,6 @@ void NTSC_SetVideoTextMode( int cols )
 void NTSC_SetVideoMode( int bVideoModeFlags )
 {
 	int h = g_nVideoClockHorz;
-//	int h = (g_dwCyclesThisFrame + 40) % 65;
 
 	g_aHorzClockVideoMode[ h ] = bVideoModeFlags;
 
@@ -1417,6 +1416,8 @@ void NTSC_SetVideoMode( int bVideoModeFlags )
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
 	if (bVideoModeFlags & VF_PAGE2) {
+		// Apple IIe, Techical Nodtes, #3: Double High-Resolution Graphics
+		// 80STORE must be OFF to display page 2
 		if (0 == (bVideoModeFlags & VF_80STORE)) {
 			g_nTextPage  = 2;
 			g_nHiresPage = 2;
@@ -1553,9 +1554,16 @@ _mono:
 //===========================================================================
 uint16_t NTSC_VideoGetScannerAddress ( unsigned long cycles6502 )
 {
-    (void)cycles6502; // TODO: Do we need to offset based on the clock cycles?
-    // uint8_t h = (g_nVideoClockHorz + cycles6502) %  VIDEO_SCANNER_MAX_HORZ
-	return g_aHorzClockMemAddress[ g_nVideoClockHorz ];
+	(void)cycles6502;
+
+	int nHires   = (g_uVideoMode & VF_HIRES) && !(g_uVideoMode & VF_TEXT); // (SW_HIRES && !SW_TEXT) ? 1 : 0;
+	if( nHires )
+		updateVideoScannerAddressHGR();
+	else
+		updateVideoScannerAddressTXT();
+
+	// Required for ANSI STORY vert scrolling mid-scanline mixed mode: DGR80, TEXT80, DGR80    
+	return g_aHorzClockMemAddress[ (g_nVideoClockHorz+VIDEO_SCANNER_MAX_HORZ-2)%VIDEO_SCANNER_MAX_HORZ ]; // Optimization: (h-2)
 }
 
 //===========================================================================

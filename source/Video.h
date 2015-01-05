@@ -58,7 +58,8 @@
 extern HBITMAP g_hLogoBitmap;
 
 extern COLORREF   g_nMonochromeRGB; // saved
-extern DWORD      g_eVideoType; // saved
+extern uint32_t   g_uVideoMode    ;
+extern DWORD      g_eVideoType    ; // saved
 extern DWORD      g_uHalfScanLines; // saved
 extern uint8_t   *g_pFramebufferbits;
 extern int        g_nAltCharSetOffset; // alternate character set
