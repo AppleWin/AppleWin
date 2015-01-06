@@ -891,11 +891,7 @@ static void initChromaPhaseTables (void)
 
 			// Remove white ringing
 			if(brightness > 0.9f)
-			{
-				b64 += 0.25;
-				g64 += 0.25;
-				r64 += 0.25;
-			}			
+				b64 = g64 = r64 = 1.0;
 			
 			b32 = clampZeroOne( (float)b64);
 			g32 = clampZeroOne( (float)g64);
@@ -1585,15 +1581,16 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
 
 #if HGR_TEST_PATTERN
-// Michael -- Init HGR to almost all-possible-combinations
+// Init HGR to almost all-possible-combinations
 // CALL-151
 // C050 C053 C057
 	unsigned char b = 0;
 	unsigned char *main, *aux;
+	uint16_t ad;
 
 	for( unsigned page = 0; page < 2; page++ )
 	{
-		for( unsigned w = 0; w < 2; w++ ) // 16 cols
+//		for( unsigned w = 0; w < 2; w++ ) // 16 cols
 		{
 			for( unsigned z = 0; z < 2; z++ ) // 8 cols
 			{
@@ -1603,19 +1600,30 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 					for( unsigned y = 0; y < 64; y++ ) // 1 col
 					{
 						unsigned y2 = y*2;
-						ad = 0x2000 + (y2&7)*0x400 + ((y2/8)&7)*0x80 + (y2/64)*0x28 + 2*x + 10*z + 20*w;
+						ad = 0x2000 + (y2&7)*0x400 + ((y2/8)&7)*0x80 + (y2/64)*0x28 + 2*x + 10*z; // + 20*w;
 						ad += 0x2000*page;
 						main = MemGetMainPtr(ad);
 						aux  = MemGetAuxPtr (ad);
-						main[0] = b; main[1] = w + page*0x80;
+						main[0] = b; main[1] = z + page*0x80;
 						aux [0] = z; aux [1] = 0;
 
+						if( page == 1 )
+						{
+							// Columns = # of consecutive pixels
+							// x = 0, 1, 2, 3
+							// # = 3, 5, 7, 9
+							// b = 3, 7, 15, 31
+							//   = (4 << x) - 1
+							main[0+z] = (0x80*(y/32) + (((4 << x) - 1) << (y/8))); // (3 | 3+x*2)
+							main[1+z] = (0x80*(y/32) + (((4 << x) - 1) << (y/8))) >> 8;
+						}
+
 						y2 = y*2 + 1;
-						ad = 0x2000 + (y2&7)*0x400 + ((y2/8)&7)*0x80 + (y2/64)*0x28 + 2*x + 10*z + 20*w;
+						ad = 0x2000 + (y2&7)*0x400 + ((y2/8)&7)*0x80 + (y2/64)*0x28 + 2*x + 10*z; // + 20*w;
 						ad += 0x2000*page;
 						main = MemGetMainPtr(ad);
 						aux  = MemGetAuxPtr (ad);
-						main[0] =   0; main[1] = w + page*0x80;
+						main[0] =   0; main[1] = z + page*0x80;
 						aux [0] =   b; aux [1] = 0;
 
 						b++;
