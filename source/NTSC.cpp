@@ -1420,8 +1420,6 @@ void NTSC_SetVideoMode( int bVideoModeFlags )
 		}
 	}
 
-	UpdateScreenFunc_t pPrevUpdate = g_pFuncUpdateGraphicsScreen;
-
 	if (bVideoModeFlags & VF_TEXT) {
 		if (bVideoModeFlags & VF_80COL)
 			g_pFuncUpdateGraphicsScreen = updateScreenText80;
@@ -1446,16 +1444,8 @@ void NTSC_SetVideoMode( int bVideoModeFlags )
 		else
 			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
 	}
-#if 0
-	g_aFuncUpdateHorz[ g_nVideoClockHorz ] = g_pFuncUpdateGraphicsScreen; // ANSI STORY
 
-	if( g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START )
-		g_pFuncUpdateGraphicsScreen = pPrevUpdate;
-	else
-		g_aFuncUpdateHorz[0] = g_pFuncUpdateGraphicsScreen;
-#else
 	g_aFuncUpdateHorz[ h ] = g_pFuncUpdateGraphicsScreen; // NTSC: ANSI STORY
-#endif
 }
 
 //===========================================================================
