@@ -1064,7 +1064,7 @@ void VideoDisplayLogo ()
     HGDIOBJ  hFontPrev = SelectObject(hFrameDC, font);
 
 	SelectObject(hFrameDC,font);
-	sprintf( szVersion, "NTSC Alpha v13 FullScreen" );
+	sprintf( szVersion, "NTSC Alpha v14 HorzClock" );
 	xoff = -nViewportCX + nViewportCX/6;
 	yoff = +nViewportCY/16;
 	DRAWVERSION( 0, 0,RGB(0x00,0x00,0x00));
