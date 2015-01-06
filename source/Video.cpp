@@ -333,7 +333,8 @@ void VideoInitialize ()
 	ZeroMemory(vidlastmem,0x10000);
 
 	// LOAD THE LOGO
-	g_hLogoBitmap = (HBITMAP)LoadImage(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+//	g_hLogoBitmap = (HBITMAP)LoadImage(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN), IMAGE_BITMAP, 560, 384, LR_CREATEDIBSECTION);
+	g_hLogoBitmap = LoadBitmap( g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN) );
 
 	// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
 	g_pFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
@@ -975,9 +976,9 @@ void VideoDisplayLogo ()
 	HDC hFrameDC = FrameGetDC();
 
 	// DRAW THE LOGO
-	HBRUSH brush = CreateSolidBrush(PALETTERGB(0x70,0x30,0xE0));
-	
-	SelectObject(hFrameDC, brush);
+//	HBRUSH brush = CreateSolidBrush(PALETTERGB(0x70,0x30,0xE0));
+//	SelectObject(hFrameDC, brush);
+
 	SelectObject(hFrameDC, GetStockObject(NULL_PEN));
 
 	int nViewportCX, nViewportCY;
@@ -999,6 +1000,11 @@ void VideoDisplayLogo ()
 					xoff = (nViewportCX - (scale * bm.bmWidth)) / 2;
 				if (nViewportCY > bm.bmHeight)
 					yoff = (nViewportCY - (scale * bm.bmHeight)) / 2;
+
+				if( g_bIsFullScreen )
+				{
+					yoff = 0;
+				}
 
 				VideoDrawLogoBitmap( hFrameDC, xoff, yoff, bm.bmWidth, bm.bmHeight, scale );
 			}
@@ -1078,7 +1084,7 @@ void VideoDisplayLogo ()
 #undef  DRAWVERSION
 
 	FrameReleaseDC();
-	DeleteObject(brush);
+//	DeleteObject(brush);
 	DeleteObject(font);
 }
 
