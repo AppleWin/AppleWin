@@ -1558,8 +1558,9 @@ uint16_t NTSC_VideoGetScannerAddress ( unsigned long cycles6502 )
 	else
 		updateVideoScannerAddressTXT();
 
-	// Required for ANSI STORY vert scrolling mid-scanline mixed mode: DGR80, TEXT80, DGR80    
-	return g_aHorzClockMemAddress[ (g_nVideoClockHorz+VIDEO_SCANNER_MAX_HORZ-2)%VIDEO_SCANNER_MAX_HORZ ]; // Optimization: (h-2)
+	// Required for ANSI STORY vert scrolling mid-scanline mixed mode: DGR80, TEXT80, DGR80
+	uint8_t hclock = (g_nVideoClockHorz + VIDEO_SCANNER_MAX_HORZ - 2) % VIDEO_SCANNER_MAX_HORZ; // Optimization: (h-2)
+	return g_aHorzClockMemAddress[ hclock ]; 
 }
 
 //===========================================================================
