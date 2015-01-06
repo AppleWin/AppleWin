@@ -55,6 +55,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration\PropertySheet.h"
 #include "Debugger\Debug.h"
 
+#define DIRECTX_PAGE_FLIP 1
+
 //#define ENABLE_MENU 0
 
 // Magic numbers (used by FrameCreateWindow to calc width/height):
@@ -143,6 +145,9 @@ int g_nCharsetType = 0;
 // Direct Draw -- For Full Screen
 		LPDIRECTDRAW        g_pDD               = (LPDIRECTDRAW)0;
 		LPDIRECTDRAWSURFACE g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
+#if DIRECTX_PAGE_FLIP
+		LPDIRECTDRAWSURFACE g_pDDBackSurface    = (LPDIRECTDRAWSURFACE)0;
+#endif
 		HDC                 g_hDDdc             = 0;
 		int                 g_nDDFullScreenW    = 640;
 		int                 g_nDDFullScreenH    = 480;
@@ -2044,14 +2049,22 @@ void SetFullScreenMode ()
 
 	DDSURFACEDESC ddsd;
 	ddsd.dwSize = sizeof(ddsd);
-	ddsd.dwFlags = DDSD_CAPS;
-	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+	ddsd.dwFlags = DDSD_CAPS | DDSD_BACKBUFFERCOUNT;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE | DDSCAPS_FLIP | DDSCAPS_COMPLEX;
 	ddsd.dwBackBufferCount = 1;
 
-	if (DirectDrawCreate(NULL,&g_pDD,NULL) != DD_OK ||
-		g_pDD->SetCooperativeLevel(g_hFrameWindow,DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN) != DD_OK ||
-		g_pDD->SetDisplayMode(g_nDDFullScreenW,g_nDDFullScreenH,32) != DD_OK ||
-		g_pDD->CreateSurface(&ddsd,&g_pDDPrimarySurface,NULL) != DD_OK)
+	DDSCAPS ddscaps;
+	ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
+
+	if ( 0
+		|| DD_OK != DirectDrawCreate(NULL,&g_pDD,NULL)
+		|| DD_OK != g_pDD->SetCooperativeLevel(g_hFrameWindow,DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN)
+		|| DD_OK != g_pDD->SetDisplayMode(g_nDDFullScreenW,g_nDDFullScreenH,32)
+		|| DD_OK != g_pDD->CreateSurface(&ddsd,&g_pDDPrimarySurface,NULL)
+#if DIRECTX_PAGE_FLIP
+		|| DD_OK != g_pDDPrimarySurface->GetAttachedSurface( &ddscaps, &g_pDDBackSurface)
+#endif
+	)
 	{
 		g_pDDPrimarySurface = NULL;
 		SetNormalMode();
@@ -2416,6 +2429,12 @@ void FrameReleaseVideoDC ()
 			FSVIEWPORTX+g_nViewportCX,
 			FSVIEWPORTY+g_nViewportCY
 		};
+
+		//g_pDDBackSurface->BltFast( 0, 0, g_pDDPrimarySurface, &rcRect,DDBLTFAST_NOCOLORKEY | DDBLTFAST_WAIT);
+#if DIRECTX_PAGE_FLIP
+		g_pDDBackSurface->Flip( g_pDDPrimarySurface, 0 );
+#endif
+
 		g_pDDPrimarySurface->Unlock(&rect);
 
 		// BUT THIS SEEMS TO BE WORKING
