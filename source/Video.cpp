@@ -969,45 +969,37 @@ void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int
 	DeleteObject( hSrcDC );
 }
 
+int g_nLogoWidth = FRAMEBUFFER_W;
+int g_nLogoX     = 0;
+int g_nLogoY     = 0;
+
 //===========================================================================
 void VideoDisplayLogo () 
 {
-	int xoff = 0, yoff = 0, scale = 0;
+	int xoff = 0, yoff = 0;
+	const int scale = GetViewportScale();
+
 	HDC hFrameDC = FrameGetDC();
 
 	// DRAW THE LOGO
-//	HBRUSH brush = CreateSolidBrush(PALETTERGB(0x70,0x30,0xE0));
-//	SelectObject(hFrameDC, brush);
-
 	SelectObject(hFrameDC, GetStockObject(NULL_PEN));
-
-	int nViewportCX, nViewportCY;
-	GetViewportCXCY(nViewportCX, nViewportCY);
-	Rectangle(hFrameDC, 0, 0, nViewportCX+1, nViewportCY+1);
 
 	if (g_hLogoBitmap)
 	{
 		BITMAP bm;
 		if (GetObject(g_hLogoBitmap, sizeof(bm), &bm))
 		{
-			scale = nViewportCX / bm.bmWidth;
-			if (nViewportCY / bm.bmHeight < scale)
-				scale = nViewportCY / bm.bmHeight;
+			g_nLogoWidth = bm.bmWidth;
+			g_nLogoX     = (g_nViewportCX - scale*g_nLogoWidth)/2;
+			g_nLogoY     = (g_nViewportCY - scale*bm.bmHeight )/2;
 
-			if (scale > 0)
+			// Draw Logo at top of screen so when the Apple display is refreshed it will automagically clear it
+			if( g_bIsFullScreen )
 			{
-				if (nViewportCX > bm.bmWidth)
-					xoff = (nViewportCX - (scale * bm.bmWidth)) / 2;
-				if (nViewportCY > bm.bmHeight)
-					yoff = (nViewportCY - (scale * bm.bmHeight)) / 2;
-
-				if( g_bIsFullScreen )
-				{
-					yoff = 0;
-				}
-
-				VideoDrawLogoBitmap( hFrameDC, xoff, yoff, bm.bmWidth, bm.bmHeight, scale );
+				g_nLogoX = 10;
+				g_nLogoY = 0;
 			}
+			VideoDrawLogoBitmap( hFrameDC, g_nLogoX, g_nLogoY, bm.bmWidth, bm.bmHeight, scale );
 		}
 	}
 
@@ -1059,7 +1051,7 @@ void VideoDisplayLogo ()
 	);
 */
 	PLOGFONT pLogFont = (PLOGFONT) LocalAlloc(LPTR, sizeof(LOGFONT));
-	int angle = 33 * 10; // 3600 = 360 degrees
+	int angle = 7.5 * 10; // 3600 = 360 degrees
 	pLogFont->lfHeight = -48;
 	pLogFont->lfWeight = FW_NORMAL;
 	pLogFont->lfEscapement  = angle;
@@ -1067,12 +1059,13 @@ void VideoDisplayLogo ()
 	SetTextAlign(hFrameDC,TA_BASELINE);
 
 	font = CreateFontIndirect( pLogFont );
-    HGDIOBJ  hFontPrev = SelectObject(hFrameDC, font);
+	HGDIOBJ  hFontPrev = SelectObject(hFrameDC, font);
 
 	SelectObject(hFrameDC,font);
-	sprintf( szVersion, "NTSC Alpha v14 HorzClock" );
-	xoff = -nViewportCX + nViewportCX/6;
-	yoff = +nViewportCY/16;
+//	sprintf( szVersion, "NTSC Alpha v14 HorzClock" );
+	sprintf( szVersion, "NTSC Alpha v15 Fraps" );
+	xoff = -g_nViewportCX + g_nViewportCX/6;
+	yoff = +g_nViewportCY/16;
 	DRAWVERSION( 0, 0,RGB(0x00,0x00,0x00));
 	DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
 	DRAWVERSION( 2, 2,RGB(0xFF,0x00,0xFF));
@@ -1083,8 +1076,8 @@ void VideoDisplayLogo ()
 
 #undef  DRAWVERSION
 
-	FrameReleaseDC();
-//	DeleteObject(brush);
+	FrameReleaseVideoDC();
+
 	DeleteObject(font);
 }
 
@@ -1161,17 +1154,25 @@ void VideoRefreshScreen ( int bVideoModeFlags )
 
 	if (hFrameDC)
 	{
-		StretchBlt(
-			hFrameDC,
-			0, 0,
-			W, // dst
-			H, // dst
-			g_hDeviceDC,
-			0, 0, 
-			FRAMEBUFFER_W, FRAMEBUFFER_H, // src // NOT 560, 384
-			SRCCOPY );
-		GdiFlush();
+		// Display the logo for a second so that any full screen screen-caps will have it
+		static int nLogo = 30; // HACK 
+		if ((nLogo > 0) && nLogo-- )
+		{
+			int nScale = g_bIsFullScreen ? 1 : GetViewportScale();
+			VideoDrawLogoBitmap( hFrameDC, g_nLogoX, g_nLogoY, 560, 384, nScale );
+		}
+		else
+			StretchBlt(
+				hFrameDC,
+				0, 0,
+				W, // dst
+				H, // dst
+				g_hDeviceDC,
+				0, 0, 
+				FRAMEBUFFER_W, FRAMEBUFFER_H, // src // NOT 560, 384
+				SRCCOPY );
 	}
+	GdiFlush();
 
 	FrameReleaseVideoDC();
 
