@@ -249,8 +249,8 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,25,0,3
- PRODUCTVERSION 1,25,0,3
+ FILEVERSION 1,26,0,0
+ PRODUCTVERSION 1,26,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -268,12 +268,12 @@ BEGIN
             VALUE "Comments", "https://github.com/AppleWin"
             VALUE "CompanyName", "AppleWin"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1, 25, 0, 3"
+            VALUE "FileVersion", "1.26.0.0"
             VALUE "InternalName", "APPLEWIN"
             VALUE "LegalCopyright", " 1994-2014 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1, 25, 0, 3"
+            VALUE "ProductVersion", "1.26.0.0 Alpha"
         END
     END
     BLOCK "VarFileInfo"
