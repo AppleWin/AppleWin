@@ -4,14 +4,17 @@
 // Globals (Public)
 	extern uint16_t g_nVideoClockVert;
 	extern uint16_t g_nVideoClockHorz;
+	extern uint32_t g_nChromaSize;
 
 // Prototypes (Public) ________________________________________________
 	extern void     NTSC_SetVideoMode( int bVideoModeFlags );
 	extern void     NTSC_SetVideoStyle();
 	extern void     NTSC_SetVideoTextMode( int cols );
+	extern uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeColorTV );
 	extern uint16_t NTSC_VideoGetScannerAddress( unsigned long cycles6502 );
 	extern void     NTSC_VideoInit( uint8_t *pFramebuffer );
 	extern void     NTSC_VideoInitAppleType ();
+	extern void     NTSC_VideoInitChroma();
 	extern bool     NTSC_VideoIsVbl();
 	extern void     NTSC_VideoUpdateCycles( long cycles6502 );
 

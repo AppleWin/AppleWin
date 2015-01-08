@@ -174,10 +174,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	const uint32_t ALPHA32_MASK = 0xFF000000; // Win32: aarrggbb
 
-	static bgra_t g_aBnWMonitor                 [NTSC_NUM_SEQUENCES];
-	static bgra_t g_aHueMonitor[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES];
-	static bgra_t g_aBnwColorTV                 [NTSC_NUM_SEQUENCES];
-	static bgra_t g_aHueColorTV[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES];
+/*extern*/ uint32_t g_nChromaSize = 0; // for NTSC_VideoGetChromaTable()
+	static bgra_t   g_aBnWMonitor                 [NTSC_NUM_SEQUENCES];
+	static bgra_t   g_aHueMonitor[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES];
+	static bgra_t   g_aBnwColorTV                 [NTSC_NUM_SEQUENCES];
+	static bgra_t   g_aHueColorTV[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES];
 
 	// g_aBnWMonitor * g_nMonochromeRGB -> g_aBnWMonitorCustom
 	// g_aBnwColorTV * g_nMonochromeRGB -> g_aBnWColorTVCustom
@@ -1391,6 +1392,43 @@ void updateScreenText80 (long cycles6502)
 // Functions (Public) _____________________________________________________________________________
 
 //===========================================================================
+uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeColorTV )
+{
+	if( bHueTypeMonochrome )
+	{
+		g_nChromaSize = sizeof( g_aBnwColorTV );
+
+		if( bMonitorTypeColorTV )
+			return (uint32_t*) g_aBnwColorTV;
+		else
+			return (uint32_t*) g_aBnWMonitor;
+	} else {
+		g_nChromaSize = sizeof( g_aHueColorTV );
+
+		if( bMonitorTypeColorTV )
+			return (uint32_t*) g_aHueColorTV;
+		else
+			return (uint32_t*) g_aHueMonitor;
+	}
+}
+
+//===========================================================================
+uint16_t NTSC_VideoGetScannerAddress ( unsigned long cycles6502 )
+{
+	(void)cycles6502;
+
+	int nHires   = (g_uVideoMode & VF_HIRES) && !(g_uVideoMode & VF_TEXT); // (SW_HIRES && !SW_TEXT) ? 1 : 0;
+	if( nHires )
+		updateVideoScannerAddressHGR();
+	else
+		updateVideoScannerAddressTXT();
+
+	// Required for ANSI STORY vert scrolling mid-scanline mixed mode: DGR80, TEXT80, DGR80
+	uint8_t hclock = (g_nVideoClockHorz + VIDEO_SCANNER_MAX_HORZ - 2) % VIDEO_SCANNER_MAX_HORZ; // Optimization: (h-2)
+	return g_aHorzClockMemAddress[ hclock ]; 
+}
+
+//===========================================================================
 void NTSC_SetVideoTextMode( int cols )
 {
 	if( cols == 40 )
@@ -1538,22 +1576,6 @@ _mono:
 }
 
 //===========================================================================
-uint16_t NTSC_VideoGetScannerAddress ( unsigned long cycles6502 )
-{
-	(void)cycles6502;
-
-	int nHires   = (g_uVideoMode & VF_HIRES) && !(g_uVideoMode & VF_TEXT); // (SW_HIRES && !SW_TEXT) ? 1 : 0;
-	if( nHires )
-		updateVideoScannerAddressHGR();
-	else
-		updateVideoScannerAddressTXT();
-
-	// Required for ANSI STORY vert scrolling mid-scanline mixed mode: DGR80, TEXT80, DGR80
-	uint8_t hclock = (g_nVideoClockHorz + VIDEO_SCANNER_MAX_HORZ - 2) % VIDEO_SCANNER_MAX_HORZ; // Optimization: (h-2)
-	return g_aHorzClockMemAddress[ hclock ]; 
-}
-
-//===========================================================================
 void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 {
 	make_csbits();
@@ -1641,6 +1663,12 @@ void NTSC_VideoInitAppleType ()
 	g_nVideoClockVert = 0;
 	g_nVideoClockHorz = 0;
 
+}
+
+//===========================================================================
+void NTSC_VideoInitChroma()
+{
+	initChromaPhaseTables();
 }
 
 //===========================================================================
