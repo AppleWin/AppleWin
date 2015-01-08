@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\Frame.h"
 #include "..\Keyboard.h"
 #include "..\Memory.h"
+#include "..\NTSC.h"
 #include "..\Video.h"
 
 //	#define DEBUG_COMMAND_HELP  1
@@ -47,7 +48,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,8,0,8);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,0);
 
 
 // Public _________________________________________________________________________________________
@@ -377,6 +378,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void DisasmCalcBotFromTopAddress();
 	void DisasmCalcTopBotAddress ();
 	WORD DisasmCalcAddressFromLines( WORD iAddress, int nLines );
+
+
+// File _______________________________________________________________________
+
+int _GetFileSize( FILE *hFile )
+{
+	fseek( hFile, 0, SEEK_END );
+	int nFileBytes = ftell( hFile );
+	fseek( hFile, 0, SEEK_SET );
+
+	return nFileBytes;
+}
+
 
 
 // Bookmarks __________________________________________________________________
@@ -4108,9 +4122,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
 		if (hFile)
 		{
-			fseek( hFile, 0, SEEK_END );
-			int nFileBytes = ftell( hFile );
-			fseek( hFile, 0, SEEK_SET );
+			int nFileBytes = _GetFileSize( hFile );
 
 			if (nFileBytes > _6502_MEM_END)
 				nFileBytes = _6502_MEM_END + 1; // Bank-switched RAMR/ROM is only 16-bit
@@ -4230,12 +4242,12 @@ Update_t CmdMemoryLoad (int nArgs)
 		,{ ".hgr2", 0x4000, 0x2000 }
 		// TODO: extension ".dhgr", ".dhgr2"
 	};
-	const int        nFileTypes = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
+	const int              nFileTypes = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
 	const KnownFileType_t *pFileType = NULL;
 
 	char *pFileName = g_aArgs[ 1 ].sArg;
 	int   nLen = strlen( pFileName );
-	char *pEnd = pFileName + + nLen - 1;
+	char *pEnd = pFileName + nLen - 1;
 	while( pEnd > pFileName )
 	{
 		if( *pEnd == '.' )
@@ -4310,9 +4322,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
 	if (hFile)
 	{
-		fseek( hFile, 0, SEEK_END );
-		int nFileBytes = ftell( hFile );
-		fseek( hFile, 0, SEEK_SET );
+		int nFileBytes = _GetFileSize( hFile );
 
 		if (nFileBytes > _6502_MEM_END)
 			nFileBytes = _6502_MEM_END + 1; // Bank-switched RAM/ROM is only 16-bit
@@ -4413,7 +4423,6 @@ Update_t CmdMemoryMove (int nArgs)
 
 	return UPDATE_CONSOLE_DISPLAY;
 }
-
 
 //===========================================================================
 #if 0	// Original
@@ -4665,6 +4674,7 @@ Update_t CmdMemorySave (int nArgs)
 			{
 				ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
 				fclose( hFile );
+				// TODO: BUG: Is this a bug/feature that we can over-write files and the user has no control over that?
 			}
 
 			hFile = fopen( sLoadSaveFilePath, "wb" );
@@ -4853,6 +4863,169 @@ void Util_CopyTextToClipboard ( const size_t nSize, const char *pText )
 	CloseClipboard();
 
 	// GlobalFree() ??
+}
+
+//===========================================================================
+Update_t CmdNTSC (int nArgs)
+{
+	int iParam;
+	int nFound = FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_GENERAL_BEGIN, _PARAM_GENERAL_END );
+
+	struct KnownFileType_t
+	{
+		char *pExtension;
+	};
+
+	const KnownFileType_t aFileTypes[] = 
+	{
+		 { ""      } // n/a
+		,{ ".bmp"  }
+		,{ ".data" }
+//		,{ ".raw"  }
+//		,{ ".ntsc" }
+	};
+	const int              nFileTypes = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
+	const KnownFileType_t *pFileType = NULL;
+
+	char *pFileName = (nArgs > 1) ? g_aArgs[ 2 ].sArg : "";
+	int   nLen = strlen( pFileName );
+	char *pEnd = pFileName + nLen - 1;
+	while( pEnd > pFileName )
+	{
+		if( *pEnd == '.' )
+		{
+			for( int i = 1; i < nFileTypes; i++ )
+			{
+				if( strcmp( pEnd, aFileTypes[i].pExtension ) == 0 )
+				{
+					pFileType = &aFileTypes[i];
+					break;
+				}
+			}
+		}
+
+		if( pFileType )
+			break;
+
+		pEnd--;
+	}
+
+	if( nLen == 0 )
+		pFileName = "AppleWinNTSC4096x4@32.data";
+
+	static TCHAR sPaletteFilePath[ MAX_PATH ];
+	_tcscpy( sPaletteFilePath, g_sCurrentDir );
+	_tcscat( sPaletteFilePath, pFileName );
+
+	class ConsoleFilename
+	{
+		public:
+			static void update( const char *pPrefixText )
+			{
+					TCHAR text[ CONSOLE_WIDTH ] = TEXT("");
+					sprintf( text, "%s: %s", pPrefixText, sPaletteFilePath );
+					ConsoleBufferPush( text ); // "Saved."
+			}
+	};
+
+	class Swizzle32
+	{
+		public:
+			static void swizzleRB( size_t nSize, const uint8_t *pSrc, uint8_t *pDst )
+			{
+				const uint8_t* pEnd = pSrc + nSize;
+				while ( pSrc < pEnd )
+				{
+					*pDst++ = pSrc[2];
+					*pDst++ = pSrc[1];
+					*pDst++ = pSrc[0];
+					*pDst++ = pSrc[3];
+
+					pSrc += 4;
+				}
+			}
+	};
+
+	uint32_t* pChromaTable = NTSC_VideoGetChromaTable( false, false );
+
+	if (nFound)
+	{
+		if (iParam == PARAM_RESET)
+		{
+			NTSC_VideoInitChroma();
+			ConsoleBufferPush( TEXT(" Resetting NTSC palette." ) );
+		}
+		else
+		if (iParam == PARAM_SAVE)
+		{
+			FILE *pFile = fopen( sPaletteFilePath, "w+b" );
+			if( pFile )
+			{
+				size_t nWrote = 0;
+
+				// Write BMP
+					// need to save 32-bit bpp as 24-bit bpp
+					// VideoSaveScreenShot()
+
+				// Write RAW
+				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
+				Swizzle32::swizzleRB( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
+				nWrote = fwrite( pSwizzled, g_nChromaSize, 1, pFile );
+
+				delete [] pSwizzled;
+				fclose( pFile );
+
+				if (nWrote == 1)
+				{
+					ConsoleFilename::update( "Saved" );
+				}
+				else
+					ConsoleBufferPush( TEXT( "Error saving." ) );
+			}
+			else
+			{
+					ConsoleFilename::update( "File: " );
+					ConsoleBufferPush( TEXT( "Error couldn't open file for writing." ) );
+			}
+		}
+		else
+		if (iParam == PARAM_LOAD)
+		{
+			FILE *pFile = fopen( sPaletteFilePath, "rb" );
+			if( pFile )
+			{
+				// Get File Size
+				size_t nFileSize = _GetFileSize( pFile );
+
+				if( nFileSize != g_nChromaSize )
+				{
+					fclose( pFile );
+					return ConsoleUpdate();
+				}
+
+				// BMP
+				// RAW
+				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
+				size_t nRead = fread( pSwizzled, g_nChromaSize, 1, pFile );
+				Swizzle32::swizzleRB( g_nChromaSize, pSwizzled, (uint8_t*) pChromaTable );
+
+				delete [] pSwizzled;
+ 				fclose( pFile );
+
+				ConsoleFilename::update( "Loaded" );
+			}
+			else
+			{
+					ConsoleFilename::update( "File: " );
+					ConsoleBufferPush( TEXT( "Error couldn't open file for reading." ) );
+			}
+		}
+		else
+			return HelpLastCommand();
+	}
+//	else
+
+	return ConsoleUpdate();
 }
 
 
