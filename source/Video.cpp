@@ -1051,7 +1051,7 @@ void VideoDisplayLogo ()
 	);
 */
 	PLOGFONT pLogFont = (PLOGFONT) LocalAlloc(LPTR, sizeof(LOGFONT));
-	int angle = 7.5 * 10; // 3600 = 360 degrees
+	int angle = (int)(7.5 * 10); // 3600 = 360 degrees
 	pLogFont->lfHeight = -48;
 	pLogFont->lfWeight = FW_NORMAL;
 	pLogFont->lfEscapement  = angle;
