@@ -4964,38 +4964,38 @@ Update_t CmdNTSC (int nArgs)
 			}
 	};
 
-	class Transpose4096x4to64x256
+	class Transpose4096x4
 	{
 		public:
-			static void transpose( size_t nSize, const uint8_t *pSrc, uint8_t *pDst )
+			static void transposeTo64x256( size_t nSize, const uint8_t *pSrc, uint8_t *pDst )
 			{
-			/*
-				Source layout = 4096x4 @ 32-bit
-				+----+----+----+----+----+
-				|BGRA|BGRA|BGRA|... |BGRA| phase 0
-				+----+----+----+----+----+
-				|BGRA|BGRA|BGRA|... |BGRA| phase 1
-				+----+----+----+----+----|
-				|BGRA|BGRA|BGRA|... |BGRA| phase 2
-				+----+----+----+----+----+
-				|BGRA|BGRA|BGRA|... |BGRA| phase 3
-				+----+----+----+----+----+
-				 0    1    2         4095  column
+				/*
+					Source layout = 4096x4 @ 32-bit
+					+----+----+----+----+----+
+					|BGRA|BGRA|BGRA|... |BGRA| phase 0
+					+----+----+----+----+----+
+					|BGRA|BGRA|BGRA|... |BGRA| phase 1
+					+----+----+----+----+----|
+					|BGRA|BGRA|BGRA|... |BGRA| phase 2
+					+----+----+----+----+----+
+					|BGRA|BGRA|BGRA|... |BGRA| phase 3
+					+----+----+----+----+----+
+					 0    1    2         4095  column
 
-				Destination layout = 16x1024 @ 32-bit
-				| phase 0 | phase 1 | phase 2 | phase 3 |
-				+----+----+----+----+----+----+----+----+
-				|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 0
-				+----+----+----+----+----+----+----+----+
-				|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 1
-				+----+----+----+----+----+----+----+----+
-				|... |... |... |... |... |... |... |... |
-				+----+----+----+----+----+----+----+----+
-				|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 1024
-				+----+----+----+----+----+----+----+----+
-				 \ 16 px / \ 16 px / \ 16 px / \ 16 px  / = 64 pixels
-				  64 byte
-			*/
+					Destination layout = 16x1024 @ 32-bit
+					| phase 0 | phase 1 | phase 2 | phase 3 |
+					+----+----+----+----+----+----+----+----+
+					|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 0
+					+----+----+----+----+----+----+----+----+
+					|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 1
+					+----+----+----+----+----+----+----+----+
+					|... |... |... |... |... |... |... |... |
+					+----+----+----+----+----+----+----+----+
+					|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 1024
+					+----+----+----+----+----+----+----+----+
+					 \ 16 px / \ 16 px / \ 16 px / \ 16 px  / = 64 pixels
+					  64 byte
+				*/
 
 				/* */ uint8_t *pTmp = pDst;
 				const uint32_t nBPP = 4; // bytes per pixel
@@ -5013,17 +5013,16 @@ Update_t CmdNTSC (int nArgs)
 						pDst += (64*nBPP); // move to next scan line
 					}
 				}
+			}
 
-/*
-					for( int nPhase = 0; nPhase < 4; nPhase++ )
+			static void transposeFrom64x256( size_t nSize, const uint8_t *pSrc, uint8_t *pDst )
+			{
+				for( int iPhase = 0; iPhase < 4; iPhase++ )
+				{
+					for( int y = 0; y < 256; y++ )
 					{
-						for( int x = 0; x < 1024; x++ )
-							for( int y = 0; y < 4; y+= )
-							{
-								pSrc = pBeg + (nPhase * 4)
-							}
 					}
-*/
+				}
 			}
 	};
 
@@ -5045,20 +5044,21 @@ Update_t CmdNTSC (int nArgs)
 				size_t nWrote = 0;
 				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
 
-				// Write BMP
 				if( iFileType == TYPE_BMP )
 				{
 					// need to save 32-bit bpp as 24-bit bpp
 					// VideoSaveScreenShot()
-					Swizzle32::swizzleRB( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
-					Transpose4096x4to64x256::transpose( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
+					Transpose4096x4::transposeTo64x256( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
+					Swizzle32::swizzleRB( g_nChromaSize, pSwizzled, pSwizzled ); // Note: Swizzle in-place!
 
 					// Write BMP header
-
+					WinBmpHeader_t bmp, *pBmp = &bmp;
+					Video_SetBitmapHeader( pBmp, 64, 256, 32 );
+					fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
 				}
 				else
 				{
-					// Write RAW
+					// RAW has no header
 					Swizzle32::swizzleRB( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
 				}
 
@@ -5082,9 +5082,13 @@ Update_t CmdNTSC (int nArgs)
 		else
 		if (iParam == PARAM_LOAD)
 		{
+			char aStatusText[64] = "Loaded";
+
 			FILE *pFile = fopen( sPaletteFilePath, "rb" );
 			if( pFile )
 			{
+				strcpy( aStatusText, "Loaded" );
+
 				// Get File Size
 				size_t nFileSize = _GetFileSize( pFile );
 				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
@@ -5095,26 +5099,46 @@ Update_t CmdNTSC (int nArgs)
 					return ConsoleUpdate();
 				}
 
+				if( iFileType == TYPE_BMP )
+				{
+					WinBmpHeader_t bmp, *pBmp = &bmp;
+					fread( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
+					fseek( pFile, pBmp->nOffsetData, SEEK_SET );
+
+					if( 0
+					|| (pBmp->nWidthPixels  != 64 )
+					|| (pBmp->nHeightPixels != 256)
+					|| (pBmp->nBitsPerPixel != 32 )
+					|| (pBmp->nOffsetData > nFileSize)
+					)
+					{
+						strcpy( aStatusText, "Bitmap not 64x256@32" );
+						goto _error;
+					}
+				}
+
 				size_t nRead = fread( pSwizzled, g_nChromaSize, 1, pFile );
 
 				if( iFileType == TYPE_BMP )
 				{
+					Transpose4096x4::transposeFrom64x256( g_nChromaSize, pSwizzled, (uint8_t*) pChromaTable );
+					Swizzle32::swizzleRB( g_nChromaSize, (uint8_t*)pChromaTable, (uint8_t*)pChromaTable ); // Note: Swizzle in-place!
 				}
 				else // RAW
 				{
 					Swizzle32::swizzleRB( g_nChromaSize, pSwizzled, (uint8_t*) pChromaTable );
 				}
-
+_error:
 				fclose( pFile );
 				delete [] pSwizzled;
-
-				ConsoleFilename::update( "Loaded" );
 			}
 			else
 			{
-					ConsoleFilename::update( "File: " );
-					ConsoleBufferPush( TEXT( "Error couldn't open file for reading." ) );
+				strcpy( aStatusText, "File: " );
+				ConsoleBufferPush( TEXT( "Error couldn't open file for reading." ) );
 			}
+
+			ConsoleFilename::update( aStatusText );
 		}
 		else
 			return HelpLastCommand();
