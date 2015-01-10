@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "NTSC.h"
 	#include "NTSC_CharSet.cpp"
 
+#define NTSC_REMOVE_WHITE_RING 1 // 0 = theoritical dimmed white, 1 = practical pure white
+
 #define ALT_TABLE 0
 #if ALT_TABLE
 	#include "ntsc_rgb.h"
@@ -88,14 +90,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	struct ColorSpace_YIQ_t
 	{
 		float y, i, q;
-	};
-
-	struct bgra_t
-	{
-		uint8_t b;
-		uint8_t g;
-		uint8_t r;
-		uint8_t a;
 	};
 
 	struct rgba_t
@@ -894,11 +888,11 @@ static void initChromaPhaseTables (void)
 			r64 = y0 + (I_TO_R * i) + (Q_TO_R * q);
 			g64 = y0 + (I_TO_G * i) + (Q_TO_G * q);
 			b64 = y0 + (I_TO_B * i) + (Q_TO_B * q);
-
+#if NTSC_REMOVE_WHITE_RING
 			// Remove white ringing
 			if(brightness > 0.9f)
 				b64 = g64 = r64 = 1.0;
-			
+#endif			
 			b32 = clampZeroOne( (float)b64);
 			g32 = clampZeroOne( (float)g64);
 			r32 = clampZeroOne( (float)r64);
