@@ -4939,8 +4939,8 @@ Update_t CmdNTSC (int nArgs)
 					*pDst++ = pSrc[2];
 					*pDst++ = pSrc[1];
 					*pDst++ = pSrc[0];
-					*pDst++ = pSrc[3];
-
+//					*pDst++ = pSrc[3];
+					*pDst++ = 0xFF; // Force A=1, 100% opacity
 					pSrc += 4;
 				}
 			}
