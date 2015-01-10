@@ -30,6 +30,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "NTSC.h"
 	#include "NTSC_CharSet.cpp"
 
+#define ALT_TABLE 0
+#if ALT_TABLE
+	#include "ntsc_rgb.h"
+#endif
+
 	//LPBYTE  MemGetMainPtr(const WORD);
 	//LPBYTE  MemGetBankPtr(const UINT nBank);
 
@@ -1408,6 +1413,10 @@ uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeCol
 		if( bMonitorTypeColorTV )
 			return (uint32_t*) g_aHueColorTV;
 		else
+#if ALT_TABLE
+			g_nChromaSize = sizeof(T_NTSC);
+			return (uint32_t*)T_NTSC;
+#endif
 			return (uint32_t*) g_aHueMonitor;
 	}
 }
