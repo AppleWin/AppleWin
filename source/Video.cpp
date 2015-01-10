@@ -1561,48 +1561,6 @@ void Video_TakeScreenShot( int iScreenShotType )
 	g_nLastScreenShot++;
 }
 
-#ifdef _MSC_VER
-	/// turn of MSVC struct member padding
-	#pragma pack(push,1)
-#endif
-
-struct bgra_t
-{
-	uint8_t b;
-	uint8_t g;
-	uint8_t r;
-	uint8_t a; // reserved on Win32
-};
-
-struct WinBmpHeader_t
-{
-	// BITMAPFILEHEADER     // Addr Size
-	uint8_t  nCookie[2]      ; // 0x00 0x02 BM
-	uint32_t nSizeFile       ; // 0x02 0x04 0 = ignore
-	uint16_t nReserved1      ; // 0x06 0x02
-	uint16_t nReserved2      ; // 0x08 0x02
-	uint32_t nOffsetData     ; // 0x0A 0x04
-	//                      ==      0x0D (14)
-
-	// BITMAPINFOHEADER
-	uint32_t nStructSize     ; // 0x0E 0x04 biSize
-	uint32_t nWidthPixels    ; // 0x12 0x04 biWidth
-	uint32_t nHeightPixels   ; // 0x16 0x04 biHeight
-	uint16_t nPlanes         ; // 0x1A 0x02 biPlanes
-	uint16_t nBitsPerPixel   ; // 0x1C 0x02 biBitCount
-	uint32_t nCompression    ; // 0x1E 0x04 biCompression 0 = BI_RGB
-	uint32_t nSizeImage      ; // 0x22 0x04 0 = ignore
-	uint32_t nXPelsPerMeter  ; // 0x26 0x04
-	uint32_t nYPelsPerMeter  ; // 0x2A 0x04
-	uint32_t nPaletteColors  ; // 0x2E 0x04
-	uint32_t nImportantColors; // 0x32 0x04
-	//                      ==      0x28 (40)
-
-	// RGBQUAD
-	// pixelmap
-};
-#pragma pack(pop)
-
 WinBmpHeader_t g_tBmpHeader;
 
 #if SCREENSHOT_TGA
@@ -1635,35 +1593,51 @@ WinBmpHeader_t g_tBmpHeader;
 	TargaHeader_t g_tTargaHeader;
 #endif // SCREENSHOT_TGA
 
+void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel )
+{
+#if SCREENSHOT_BMP
+	pBmp->nCookie[ 0 ]     = 'B'; // 0x42
+	pBmp->nCookie[ 1 ]     = 'M'; // 0x4d
+	pBmp->nSizeFile        = 0;
+	pBmp->nReserved1       = 0;
+	pBmp->nReserved2       = 0;
+#if VIDEO_SCREENSHOT_PALETTE
+	pBmp->nOffsetData      = sizeof(WinBmpHeader_t) + (256 * sizeof(bgra_t));
+#else
+	pBmp->nOffsetData      = sizeof(WinBmpHeader_t);
+#endif
+	pBmp->nStructSize      = 0x28; // sizeof( WinBmpHeader_t );
+	pBmp->nWidthPixels     = nWidth;
+	pBmp->nHeightPixels    = nHeight;
+	pBmp->nPlanes          = 1;
+#if VIDEO_SCREENSHOT_PALETTE
+	pBmp->nBitsPerPixel    = 8;
+#else
+	pBmp->nBitsPerPixel    = nBitsPerPixel;
+#endif
+	pBmp->nCompression     = BI_RGB; // none
+	pBmp->nSizeImage       = 0;
+	pBmp->nXPelsPerMeter   = 0;
+	pBmp->nYPelsPerMeter   = 0;
+#if VIDEO_SCREENSHOT_PALETTE
+	pBmp->nPaletteColors   = 256;
+#else
+	pBmp->nPaletteColors   = 0;
+#endif
+	pBmp->nImportantColors = 0;
+}
+
 //===========================================================================
 void Video_MakeScreenShot(FILE *pFile)
 {
-#if SCREENSHOT_BMP
-	g_tBmpHeader.nCookie[ 0 ]     = 'B'; // 0x42
-	g_tBmpHeader.nCookie[ 1 ]     = 'M'; // 0x4d
-	g_tBmpHeader.nSizeFile        = 0;
-	g_tBmpHeader.nReserved1       = 0;
-	g_tBmpHeader.nReserved2       = 0;
-	g_tBmpHeader.nOffsetData      = sizeof(WinBmpHeader_t) + (256 * sizeof(bgra_t));
-	g_tBmpHeader.nStructSize      = 0x28; // sizeof( WinBmpHeader_t );
-	g_tBmpHeader.nWidthPixels     = g_iScreenshotType ? FRAMEBUFFER_W/2 :FRAMEBUFFER_W;
-	g_tBmpHeader.nHeightPixels    = g_iScreenshotType ?  FRAMEBUFFER_H/2 : FRAMEBUFFER_H;
-	g_tBmpHeader.nPlanes          = 1;
-#if VIDEO_SCREENSHOT_PALETTE
-	g_tBmpHeader.nBitsPerPixel    = 8;
-#else
-	g_tBmpHeader.nBitsPerPixel    = 32;
-#endif
-	g_tBmpHeader.nCompression     = BI_RGB; // none
-	g_tBmpHeader.nSizeImage       = 0;
-	g_tBmpHeader.nXPelsPerMeter   = 0;
-	g_tBmpHeader.nYPelsPerMeter   = 0;
-#if VIDEO_SCREENSHOT_PALETTE
-	g_tBmpHeader.nPaletteColors   = 256;
-#else
-	g_tBmpHeader.nPaletteColors   = 0;
-#endif
-	g_tBmpHeader.nImportantColors = 0;
+	WinBmpHeader_t *pBmp = &g_tBmpHeader;
+
+	Video_SetBitmapHeader(
+		pBmp,
+		g_iScreenshotType ? FRAMEBUFFER_W/2 :FRAMEBUFFER_W,
+		g_iScreenshotType ?  FRAMEBUFFER_H/2 : FRAMEBUFFER_H,
+		32
+	);
 
 //	char sText[256];
 //	sprintf( sText, "sizeof: BITMAPFILEHEADER = %d\n", sizeof(BITMAPFILEHEADER) ); // = 14
@@ -1671,12 +1645,12 @@ void Video_MakeScreenShot(FILE *pFile)
 //	sprintf( sText, "sizeof: BITMAPINFOHEADER = %d\n", sizeof(BITMAPINFOHEADER) ); // = 40
 //	MessageBox( g_hFrameWindow, sText, "Info 2", MB_OK );
 
-	char sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize[ sizeof( WinBmpHeader_t ) == (14 + 40) ];
-	sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize;
+	char sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[ sizeof( WinBmpHeader_t ) == (14 + 40) ];
+	/**/ sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[0]=0;
 
 	// Write Header
 	int nLen;
-	fwrite( &g_tBmpHeader, sizeof( g_tBmpHeader ), 1, pFile );
+	fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
 
 	uint32_t *pSrc;
 #if VIDEO_SCREENSHOT_PALETTE

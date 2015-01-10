@@ -53,6 +53,54 @@
 		APPLE_FONT_Y_APPLE_40COL = 512, // ][
 	};
 
+#ifdef _MSC_VER
+	/// turn of MSVC struct member padding
+	#pragma pack(push,1)
+	#define PACKED
+#else
+	#define PACKED // TODO: FIXME: gcc/clang __attribute__
+#endif
+
+struct bgra_t
+{
+	uint8_t b;
+	uint8_t g;
+	uint8_t r;
+	uint8_t a; // reserved on Win32
+};
+
+struct WinBmpHeader_t
+{
+	// BITMAPFILEHEADER     // Addr Size
+	uint8_t  nCookie[2]      ; // 0x00 0x02 BM
+	uint32_t nSizeFile       ; // 0x02 0x04 0 = ignore
+	uint16_t nReserved1      ; // 0x06 0x02
+	uint16_t nReserved2      ; // 0x08 0x02
+	uint32_t nOffsetData     ; // 0x0A 0x04
+	//                      ==      0x0D (14)
+
+	// BITMAPINFOHEADER
+	uint32_t nStructSize     ; // 0x0E 0x04 biSize
+	uint32_t nWidthPixels    ; // 0x12 0x04 biWidth
+	uint32_t nHeightPixels   ; // 0x16 0x04 biHeight
+	uint16_t nPlanes         ; // 0x1A 0x02 biPlanes
+	uint16_t nBitsPerPixel   ; // 0x1C 0x02 biBitCount
+	uint32_t nCompression    ; // 0x1E 0x04 biCompression 0 = BI_RGB
+	uint32_t nSizeImage      ; // 0x22 0x04 0 = ignore
+	uint32_t nXPelsPerMeter  ; // 0x26 0x04
+	uint32_t nYPelsPerMeter  ; // 0x2A 0x04
+	uint32_t nPaletteColors  ; // 0x2E 0x04
+	uint32_t nImportantColors; // 0x32 0x04
+	//                      ==      0x28 (40)
+
+	// RGBQUAD
+	// pixelmap
+};
+
+#ifdef _MSC_VER
+	#pragma pack(pop)
+#endif
+
 // Globals __________________________________________________________
 
 extern HBITMAP g_hLogoBitmap;
@@ -113,6 +161,8 @@ enum VideoScreenShot_e
 	SCREENSHOT_280x192
 };
 void Video_TakeScreenShot( int iScreenShotType );
+void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel );
+
 
 // Win32/MSVC: __stdcall 
 BYTE VideoCheckMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
