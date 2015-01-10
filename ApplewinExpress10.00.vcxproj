@@ -463,6 +463,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\ApplewinLogo.bmp" />
+    <None Include="RESOURCE\LED_CAPS_OFF.BMP" />
+    <None Include="RESOURCE\LED_CAPS_OFF_LAT.BMP" />
+    <None Include="RESOURCE\LED_CAPS_OFF_P8.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON_LAT.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON_P8.BMP" />
+    <None Include="RESOURCE\Pravets8M.rom" />
     <None Include="source\CPU\cpu_general.inl" />
     <None Include="source\CPU\cpu_instructions.inl" />
     <None Include="docs\CodingConventions.txt" />
