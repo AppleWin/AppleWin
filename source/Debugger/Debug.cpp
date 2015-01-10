@@ -4876,7 +4876,15 @@ Update_t CmdNTSC (int nArgs)
 		char *pExtension;
 	};
 
-	const KnownFileType_t aFileTypes[] = 
+	enum KnownFileType_e
+	{
+		 TYPE_UNKNOWN
+		,TYPE_BMP
+		,TYPE_RAW
+		,NUM_FILE_TYPES
+	};
+
+	const KnownFileType_t aFileTypes[ NUM_FILE_TYPES ] = 
 	{
 		 { ""      } // n/a
 		,{ ".bmp"  }
@@ -4884,8 +4892,13 @@ Update_t CmdNTSC (int nArgs)
 //		,{ ".raw"  }
 //		,{ ".ntsc" }
 	};
-	const int              nFileTypes = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
+	const int              nFileType = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
 	const KnownFileType_t *pFileType = NULL;
+	/* */ KnownFileType_e  iFileType = TYPE_UNKNOWN;
+
+#if _DEBUG
+	assert( (nFileType == NUM_FILE_TYPES) );
+#endif
 
 	char *pFileName = (nArgs > 1) ? g_aArgs[ 2 ].sArg : "";
 	int   nLen = strlen( pFileName );
@@ -4894,11 +4907,12 @@ Update_t CmdNTSC (int nArgs)
 	{
 		if( *pEnd == '.' )
 		{
-			for( int i = 1; i < nFileTypes; i++ )
+			for( int i = TYPE_BMP; i < NUM_FILE_TYPES; i++ )
 			{
 				if( strcmp( pEnd, aFileTypes[i].pExtension ) == 0 )
 				{
 					pFileType = &aFileTypes[i];
+					iFileType = (KnownFileType_e) i;
 					break;
 				}
 			}
@@ -4931,18 +4945,85 @@ Update_t CmdNTSC (int nArgs)
 	class Swizzle32
 	{
 		public:
-			static void swizzleRB( size_t nSize, const uint8_t *pSrc, uint8_t *pDst )
+			static void swizzleRB( size_t nSize, const uint8_t *pSrc, uint8_t *pDst ) // Note: pSrc and pDst _may_ alias; code handles this properly
 			{
 				const uint8_t* pEnd = pSrc + nSize;
 				while ( pSrc < pEnd )
 				{
-					*pDst++ = pSrc[2];
-					*pDst++ = pSrc[1];
-					*pDst++ = pSrc[0];
-//					*pDst++ = pSrc[3];
-					*pDst++ = 0xFF; // Force A=1, 100% opacity
+					uint8_t r = pSrc[2];
+					uint8_t g = pSrc[1];
+					uint8_t b = pSrc[0];
+					uint8_t a = 255; // Force A=1, 100% opacity; as pSrc[3] might not be 255
+
+					*pDst++ = r;
+					*pDst++ = g;
+					*pDst++ = b;
+					*pDst++ = a;
 					pSrc += 4;
 				}
+			}
+	};
+
+	class Transpose4096x4to64x256
+	{
+		public:
+			static void transpose( size_t nSize, const uint8_t *pSrc, uint8_t *pDst )
+			{
+			/*
+				Source layout = 4096x4 @ 32-bit
+				+----+----+----+----+----+
+				|BGRA|BGRA|BGRA|... |BGRA| phase 0
+				+----+----+----+----+----+
+				|BGRA|BGRA|BGRA|... |BGRA| phase 1
+				+----+----+----+----+----|
+				|BGRA|BGRA|BGRA|... |BGRA| phase 2
+				+----+----+----+----+----+
+				|BGRA|BGRA|BGRA|... |BGRA| phase 3
+				+----+----+----+----+----+
+				 0    1    2         4095  column
+
+				Destination layout = 16x1024 @ 32-bit
+				| phase 0 | phase 1 | phase 2 | phase 3 |
+				+----+----+----+----+----+----+----+----+
+				|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 0
+				+----+----+----+----+----+----+----+----+
+				|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 1
+				+----+----+----+----+----+----+----+----+
+				|... |... |... |... |... |... |... |... |
+				+----+----+----+----+----+----+----+----+
+				|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 1024
+				+----+----+----+----+----+----+----+----+
+				 \ 16 px / \ 16 px / \ 16 px / \ 16 px  / = 64 pixels
+				  64 byte
+			*/
+
+				/* */ uint8_t *pTmp = pDst;
+				const uint32_t nBPP = 4; // bytes per pixel
+
+				for( int iPhase = 0; iPhase < 4; iPhase++ )
+				{
+					pDst = pTmp + (iPhase * 16 * nBPP);
+
+					for( int x = 0; x < 4096/16; x++ ) // 4096px/16 px = 256 columns
+					{
+						for( int i = 0; i < 16*nBPP; i++ ) // 16 px, 32-bit
+							*pDst++ = *pSrc++;
+
+						pDst -= (16*nBPP);
+						pDst += (64*nBPP); // move to next scan line
+					}
+				}
+
+/*
+					for( int nPhase = 0; nPhase < 4; nPhase++ )
+					{
+						for( int x = 0; x < 1024; x++ )
+							for( int y = 0; y < 4; y+= )
+							{
+								pSrc = pBeg + (nPhase * 4)
+							}
+					}
+*/
 			}
 	};
 
@@ -4962,18 +5043,28 @@ Update_t CmdNTSC (int nArgs)
 			if( pFile )
 			{
 				size_t nWrote = 0;
+				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
 
 				// Write BMP
+				if( iFileType == TYPE_BMP )
+				{
 					// need to save 32-bit bpp as 24-bit bpp
 					// VideoSaveScreenShot()
+					Swizzle32::swizzleRB( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
+					Transpose4096x4to64x256::transpose( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
 
-				// Write RAW
-				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
-				Swizzle32::swizzleRB( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
+					// Write BMP header
+
+				}
+				else
+				{
+					// Write RAW
+					Swizzle32::swizzleRB( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
+				}
+
 				nWrote = fwrite( pSwizzled, g_nChromaSize, 1, pFile );
-
-				delete [] pSwizzled;
 				fclose( pFile );
+				delete [] pSwizzled;
 
 				if (nWrote == 1)
 				{
@@ -4996,6 +5087,7 @@ Update_t CmdNTSC (int nArgs)
 			{
 				// Get File Size
 				size_t nFileSize = _GetFileSize( pFile );
+				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
 
 				if( nFileSize != g_nChromaSize )
 				{
@@ -5003,14 +5095,18 @@ Update_t CmdNTSC (int nArgs)
 					return ConsoleUpdate();
 				}
 
-				// BMP
-				// RAW
-				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
 				size_t nRead = fread( pSwizzled, g_nChromaSize, 1, pFile );
-				Swizzle32::swizzleRB( g_nChromaSize, pSwizzled, (uint8_t*) pChromaTable );
 
+				if( iFileType == TYPE_BMP )
+				{
+				}
+				else // RAW
+				{
+					Swizzle32::swizzleRB( g_nChromaSize, pSwizzled, (uint8_t*) pChromaTable );
+				}
+
+				fclose( pFile );
 				delete [] pSwizzled;
- 				fclose( pFile );
 
 				ConsoleFilename::update( "Loaded" );
 			}
