@@ -1561,46 +1561,41 @@ void Video_TakeScreenShot( int iScreenShotType )
 	g_nLastScreenShot++;
 }
 
-
-typedef char	int8;
-typedef short	int16;
-typedef int		int32;
-typedef unsigned	char	u8;
-typedef signed		short	s16;
-
-/// turn of MSVC struct member padding
-#pragma pack(push,1)
+#ifdef _MSC_VER
+	/// turn of MSVC struct member padding
+	#pragma pack(push,1)
+#endif
 
 struct bgra_t
 {
-	u8 b;
-	u8 g;
-	u8 r;
-	u8 a; // reserved on Win32
+	uint8_t b;
+	uint8_t g;
+	uint8_t r;
+	uint8_t a; // reserved on Win32
 };
 
 struct WinBmpHeader_t
 {
 	// BITMAPFILEHEADER     // Addr Size
-	char  nCookie[2]      ; // 0x00 0x02 BM
-	int32 nSizeFile       ; // 0x02 0x04 0 = ignore
-	int16 nReserved1      ; // 0x06 0x02
-	int16 nReserved2      ; // 0x08 0x02
-	int32 nOffsetData     ; // 0x0A 0x04
+	uint8_t  nCookie[2]      ; // 0x00 0x02 BM
+	uint32_t nSizeFile       ; // 0x02 0x04 0 = ignore
+	uint16_t nReserved1      ; // 0x06 0x02
+	uint16_t nReserved2      ; // 0x08 0x02
+	uint32_t nOffsetData     ; // 0x0A 0x04
 	//                      ==      0x0D (14)
 
 	// BITMAPINFOHEADER
-	int32 nStructSize     ; // 0x0E 0x04 biSize
-	int32 nWidthPixels    ; // 0x12 0x04 biWidth
-	int32 nHeightPixels   ; // 0x16 0x04 biHeight
-	int16 nPlanes         ; // 0x1A 0x02 biPlanes
-	int16 nBitsPerPixel   ; // 0x1C 0x02 biBitCount
-	int32 nCompression    ; // 0x1E 0x04 biCompression 0 = BI_RGB
-	int32 nSizeImage      ; // 0x22 0x04 0 = ignore
-	int32 nXPelsPerMeter  ; // 0x26 0x04
-	int32 nYPelsPerMeter  ; // 0x2A 0x04
-	int32 nPaletteColors  ; // 0x2E 0x04
-	int32 nImportantColors; // 0x32 0x04
+	uint32_t nStructSize     ; // 0x0E 0x04 biSize
+	uint32_t nWidthPixels    ; // 0x12 0x04 biWidth
+	uint32_t nHeightPixels   ; // 0x16 0x04 biHeight
+	uint16_t nPlanes         ; // 0x1A 0x02 biPlanes
+	uint16_t nBitsPerPixel   ; // 0x1C 0x02 biBitCount
+	uint32_t nCompression    ; // 0x1E 0x04 biCompression 0 = BI_RGB
+	uint32_t nSizeImage      ; // 0x22 0x04 0 = ignore
+	uint32_t nXPelsPerMeter  ; // 0x26 0x04
+	uint32_t nYPelsPerMeter  ; // 0x2A 0x04
+	uint32_t nPaletteColors  ; // 0x2E 0x04
+	uint32_t nImportantColors; // 0x32 0x04
 	//                      ==      0x28 (40)
 
 	// RGBQUAD
@@ -1644,22 +1639,30 @@ WinBmpHeader_t g_tBmpHeader;
 void Video_MakeScreenShot(FILE *pFile)
 {
 #if SCREENSHOT_BMP
-	g_tBmpHeader.nCookie[ 0 ] = 'B'; // 0x42
-	g_tBmpHeader.nCookie[ 1 ] = 'M'; // 0x4d
-	g_tBmpHeader.nSizeFile  = 0;
-	g_tBmpHeader.nReserved1 = 0;
-	g_tBmpHeader.nReserved2 = 0;
-	g_tBmpHeader.nOffsetData = sizeof(WinBmpHeader_t) + (256 * sizeof(bgra_t));
-	g_tBmpHeader.nStructSize = 0x28; // sizeof( WinBmpHeader_t );
-	g_tBmpHeader.nWidthPixels = g_iScreenshotType ? FRAMEBUFFER_W/2 :FRAMEBUFFER_W;
-	g_tBmpHeader.nHeightPixels = g_iScreenshotType ?  FRAMEBUFFER_H/2 : FRAMEBUFFER_H;
-	g_tBmpHeader.nPlanes = 1;
-	g_tBmpHeader.nBitsPerPixel = 8;
-	g_tBmpHeader.nCompression = BI_RGB;
-	g_tBmpHeader.nSizeImage = 0;
-	g_tBmpHeader.nXPelsPerMeter = 0;
-	g_tBmpHeader.nYPelsPerMeter = 0;
-	g_tBmpHeader.nPaletteColors = 256;
+	g_tBmpHeader.nCookie[ 0 ]     = 'B'; // 0x42
+	g_tBmpHeader.nCookie[ 1 ]     = 'M'; // 0x4d
+	g_tBmpHeader.nSizeFile        = 0;
+	g_tBmpHeader.nReserved1       = 0;
+	g_tBmpHeader.nReserved2       = 0;
+	g_tBmpHeader.nOffsetData      = sizeof(WinBmpHeader_t) + (256 * sizeof(bgra_t));
+	g_tBmpHeader.nStructSize      = 0x28; // sizeof( WinBmpHeader_t );
+	g_tBmpHeader.nWidthPixels     = g_iScreenshotType ? FRAMEBUFFER_W/2 :FRAMEBUFFER_W;
+	g_tBmpHeader.nHeightPixels    = g_iScreenshotType ?  FRAMEBUFFER_H/2 : FRAMEBUFFER_H;
+	g_tBmpHeader.nPlanes          = 1;
+#if VIDEO_SCREENSHOT_PALETTE
+	g_tBmpHeader.nBitsPerPixel    = 8;
+#else
+	g_tBmpHeader.nBitsPerPixel    = 32;
+#endif
+	g_tBmpHeader.nCompression     = BI_RGB; // none
+	g_tBmpHeader.nSizeImage       = 0;
+	g_tBmpHeader.nXPelsPerMeter   = 0;
+	g_tBmpHeader.nYPelsPerMeter   = 0;
+#if VIDEO_SCREENSHOT_PALETTE
+	g_tBmpHeader.nPaletteColors   = 256;
+#else
+	g_tBmpHeader.nPaletteColors   = 0;
+#endif
 	g_tBmpHeader.nImportantColors = 0;
 
 //	char sText[256];
@@ -1675,24 +1678,27 @@ void Video_MakeScreenShot(FILE *pFile)
 	int nLen;
 	fwrite( &g_tBmpHeader, sizeof( g_tBmpHeader ), 1, pFile );
 
+	uint32_t *pSrc;
+#if VIDEO_SCREENSHOT_PALETTE
 	// Write Palette Data
-	u8 *pSrc = ((u8*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
+	pSrc = ((uint8_t*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
 	nLen = g_tBmpHeader.nPaletteColors * sizeof(bgra_t); // RGBQUAD
 	fwrite( pSrc, nLen, 1, pFile );
 	pSrc += nLen;
+#endif
 
 	// Write Pixel Data
 	// No need to use GetDibBits() since we already have http://msdn.microsoft.com/en-us/library/ms532334.aspx
 	// @reference: "Storing an Image" http://msdn.microsoft.com/en-us/library/ms532340(VS.85).aspx
-	pSrc = ((uint8_t*)g_pFramebufferbits);
-	nLen = g_tBmpHeader.nWidthPixels * g_tBmpHeader.nHeightPixels * g_tBmpHeader.nBitsPerPixel / 8;
+	pSrc = (uint32_t*) g_pFramebufferbits;
+	nLen = (g_tBmpHeader.nWidthPixels * g_tBmpHeader.nHeightPixels * g_tBmpHeader.nBitsPerPixel) / 8;
 
 	if( g_iScreenshotType == SCREENSHOT_280x192 )
 	{
 		pSrc += FRAMEBUFFER_W;	// Start on odd scanline (otherwise for 50% scanline mode get an all black image!)
 
-		u8 aScanLine[ 280 ];
-		u8 *pDst;
+		uint32_t  aScanLine[ 280 ];
+		uint32_t *pDst;
 
 		// 50% Half Scan Line clears every odd scanline.
 		// SHIFT+PrintScreen saves only the even rows.
