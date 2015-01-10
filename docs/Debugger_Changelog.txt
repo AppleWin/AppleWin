@@ -1,4 +1,11 @@
 /*
+
+2.9.0.0 Added: ntsc save [filename], ntsc load [filename], to save/load the NTSC palette.
+  Default filename is "AppleWinNTSC4096x4@32.data"
+  To load this file in GIMP: Open, Select File Type: "Raw image data", Raw image data (*.data), RGB Alpha, Width: 4096, Height: 4
+  to save this file in GIMP: Open, Export To, Select File Type (By Extension) Raw image data, RGB Type: Standard (R,G,B)
+
+
  .8 Fixed: Showing/hiding the address and/or opcodes will show long symbolic targets without overflowing into the register info pane Bug #227
  .7 Fixed: ASC #:# with string containing null byte wouldn't show rest of string
  .6 Added: Print-Screen when in debugger will copy the debugger window as text
