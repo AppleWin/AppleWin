@@ -97,6 +97,53 @@ struct WinBmpHeader_t
 	// pixelmap
 };
 
+struct WinCIEXYZ
+{
+	uint32_t r; // fixed point 2.30
+	uint32_t g; // fixed point 2.30
+	uint32_t b; // fixed point 2.30
+};
+
+struct WinBmpHeader4_t
+{
+	// BITMAPFILEHEADER        // Addr Size
+	uint8_t  nCookie[2]      ; // 0x00 0x02 BM
+	uint32_t nSizeFile       ; // 0x02 0x04 0 = ignore
+	uint16_t nReserved1      ; // 0x06 0x02
+	uint16_t nReserved2      ; // 0x08 0x02
+	uint32_t nOffsetData     ; // 0x0A 0x04
+	//                            ==== 0x0D (14)
+
+	// BITMAPINFOHEADER
+	uint32_t nStructSize     ; // 0x0E 0x04 biSize
+	uint32_t nWidthPixels    ; // 0x12 0x04 biWidth
+	uint32_t nHeightPixels   ; // 0x16 0x04 biHeight
+	uint16_t nPlanes         ; // 0x1A 0x02 biPlanes
+	uint16_t nBitsPerPixel   ; // 0x1C 0x02 biBitCount
+	uint32_t nCompression    ; // 0x1E 0x04 biCompression 0 = BI_RGB
+	uint32_t nSizeImage      ; // 0x22 0x04 0 = ignore
+	uint32_t nXPelsPerMeter  ; // 0x26 0x04
+	uint32_t nYPelsPerMeter  ; // 0x2A 0x04
+	uint32_t nPaletteColors  ; // 0x2E 0x04
+	uint32_t nImportantColors; // 0x32 0x04
+	//                            ==== 0x28 (40)
+
+	//BITMAPV4HEADER new fields
+	uint32_t nRedMask        ; // 0x36 0x04
+	uint32_t nGreenMask      ; // 0x3A 0x04
+	uint32_t nBlueMask       ; // 0x3E 0x04
+	uint32_t nAlphaMask      ; // 0x42 0x04
+	uint32_t nType           ; // 0x46 0x04
+
+	uint32_t Rx, Ry, Rz      ; // 0x4A 0x0C
+	uint32_t Gx, Gy, Gz      ; // 0x56 0x0C
+	uint32_t Bx, By, Bz      ; // 0x62 0x0C
+
+	uint32_t nRedGamma       ; // 0x6E 0x04
+	uint32_t nGreenGamma     ; // 0x72 0x04
+	uint32_t nBlueGamma      ; // 0x76 0x04
+};
+
 #ifdef _MSC_VER
 	#pragma pack(pop)
 #endif
