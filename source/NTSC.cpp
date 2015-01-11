@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "NTSC_CharSet.cpp"
 
 #define NTSC_REMOVE_WHITE_RING 1 // 0 = theoritical dimmed white, 1 = practical pure white
+#define DEBUG_PHASE_ZERO       0
 
 #define ALT_TABLE 0
 #if ALT_TABLE
@@ -68,7 +69,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	#if CHROMA_BLUR
 		//#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees
-		#define CYCLESTART (DEG_TO_RAD(33))
+		#define CYCLESTART (DEG_TO_RAD(45))
 	#else // sharpness is higher, less color bleed
 		#if CHROMA_FILTER == 2
 			#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees // c = initFilterSignal(z);
@@ -916,6 +917,15 @@ static void initChromaPhaseTables (void)
 			g_aHueColorTV[phase][s].a = 255;
 		}
 	}
+
+#if DEBUG_PHASE_ZERO
+	uint8_t *p = (uint8_t*)g_aHueMonitor;
+	*p++ = 0xFF;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0xFF;
+#endif
+
 }
 
 /*
