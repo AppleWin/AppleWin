@@ -5038,7 +5038,7 @@ Update_t CmdNTSC (int nArgs)
 		.   +----+----+----+----+----+
 		.    0    1    2         4095  column
 		.
-		.   Destination layout = 16x1024 @ 32-bit
+		.   Destination layout = 64x256 @ 32-bit
 		.   | phase 0 | phase 1 | phase 2 | phase 3 |
 		.   +----+----+----+----+----+----+----+----+
 		.   |BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 0
@@ -5047,7 +5047,7 @@ Update_t CmdNTSC (int nArgs)
 		.   +----+----+----+----+----+----+----+----+
 		.   |... |... |... |... |... |... |... |... |
 		.   +----+----+----+----+----+----+----+----+
-		.   |BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 1024
+		.   |BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 255
 		.   +----+----+----+----+----+----+----+----+
 		.    \ 16 px / \ 16 px / \ 16 px / \ 16 px  / = 64 pixels
 		.     64 byte   64 byte   64 byte   64 byte
