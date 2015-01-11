@@ -1064,7 +1064,9 @@ void VideoDisplayLogo ()
 	SelectObject(hFrameDC,font);
 //	sprintf( szVersion, "NTSC Alpha v14 HorzClock" );
 //	sprintf( szVersion, "NTSC Alpha v15 Fraps" );
-	sprintf( szVersion, "NTSC Alpha v16 Palette" );
+//	sprintf( szVersion, "NTSC Alpha v16 Palette" );
+	sprintf( szVersion, "NTSC Alpha v17 BMP Palette" );
+
 	xoff = -g_nViewportCX + g_nViewportCX/6;
 	yoff = +g_nViewportCY/16;
 	DRAWVERSION( 0, 0,RGB(0x00,0x00,0x00));
