@@ -1,5 +1,6 @@
 /*
 
+.1 Fixed: Implemented missing debugger "CD" command
 2.9.0.0 Added: ntsc save [filename], ntsc load [filename], to save/load the NTSC palette.
   Default filename is "AppleWinNTSC4096x4@32.data"
   To load this file in GIMP: Open, Select File Type: "Raw image data", Raw image data (*.data), RGB Alpha, Width: 4096, Height: 4

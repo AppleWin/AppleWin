@@ -48,7 +48,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,0);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,1);
 
 
 // Public _________________________________________________________________________________________
@@ -4041,6 +4041,26 @@ Update_t CmdConfigGetDebugDir (int nArgs)
 //===========================================================================
 Update_t CmdConfigSetDebugDir (int nArgs)
 {
+	//if( nArgs > 2 )
+	//	return;
+
+	// PWD directory
+#if _WIN32
+	// http://msdn.microsoft.com/en-us/library/aa365530(VS.85).aspx
+	TCHAR sPath[ MAX_PATH + 1 ];
+	_tcscpy( sPath, g_sCurrentDir ); // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
+	_tcscat( sPath, g_aArgs[ 1 ].sArg );
+
+	if( SetCurrentImageDir( sPath ) )
+		nArgs = 0; // intentional fall into
+#else
+	#error "Need chdir() implemented"
+#endif
+
+	// PWD
+	if( nArgs == 0 )
+		return CmdConfigGetDebugDir(0);
+
 	return ConsoleUpdate();
 }
 
