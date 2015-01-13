@@ -30,7 +30,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "NTSC.h"
 	#include "NTSC_CharSet.cpp"
 
-#define NTSC_REMOVE_WHITE_RING 1 // 0 = theoritical dimmed white, 1 = practical pure white
+#define NTSC_REMOVE_WHITE_RINGING  1 // 0 = theoritical dimmed white, 1 = practical pure white
+#define NTSC_REMOVE_BLACK_GHOSTING 1
+
 #define DEBUG_PHASE_ZERO       0
 
 #define ALT_TABLE 0
@@ -59,25 +61,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// sadly float64 precision is needed
 	#define real double
 
-	#ifndef CHROMA_BLUR
-		#define CHROMA_BLUR      1 // Default: 1; 1 = blur along ~8 pixels; 0 = sharper
-	#endif
-
-	#ifndef CHROMA_FILTER
-		#define CHROMA_FILTER    1 // If no chroma blur; 0 = use chroma as-is, 1 = soft chroma blur, strong color fringes 2 = more blur, muted chroma fringe
-	#endif
-
-	#if CHROMA_BLUR
-		//#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees
-		#define CYCLESTART (DEG_TO_RAD(45))
-	#else // sharpness is higher, less color bleed
-		#if CHROMA_FILTER == 2
-			#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees // c = initFilterSignal(z);
-		#else
-	//		#define CYCLESTART DEG_TO_RAD(90) // (PI*0.5) // PI/2 = 90 degrees // HGR: Great, GR: fail on brown
-			#define CYCLESTART DEG_TO_RAD(115.f) // GR perfect match of slow method
-		#endif
-	#endif
+	//#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees
+	#define CYCLESTART (DEG_TO_RAD(45))
 
 // Types
 
@@ -817,39 +802,20 @@ static void initChromaPhaseTables (void)
 
 				for(int k = 0; k < 2; k++ )
 				{
-#if CHROMA_BLUR
 					//z = z * 1.25;
 					zz = initFilterSignal(z);
 					c  = initFilterChroma(zz); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
 					y0 = initFilterLuma0 (zz);
 					y1 = initFilterLuma1 (zz - c);
-#else // CHROMA_BLUR
+
 					y0 = y0 + (z - y0) / 4.0;
 					y1 = y0; // fix TV mode
 
-	#if CHROMA_FILTER == 0
-					c = z; // sharper; "Mostly" correct _if_ CYCLESTART = 115 degrees
-	#endif // CHROMA_FILTER
-	#if CHROMA_FILTER == 1 // soft chroma blur, strong color fringes
-					// NOTE: This has incorrect colors! Chroma is (115-45)=70 degrees out of phase! violet <-> orange, green <-> blue
-					c = (z - y0); // Original -- smoother, white is solid, brighter; other colors
-					//   ->
-					// c = (z - (y0 + (z-y0)/4))
-					// c = z - y0 - (z-y0)/4
-					// c = z - y0 - z/4 + y0/4
-					// c = z-z/4 - y0+y0/4; // Which is clearly wrong, unless CYCLESTART DEG_TO_RAD(115)
-					// This mode looks the most accurate for white, has better color fringes
-	#endif
-	#if CHROMA_FILTER == 2 // more blur, muted chroma fringe
-					// White has too much ringing, and the color fringes are muted
-					c = initFilterSignal(z); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
-	#endif
-#endif // CHROMA_BLUR
 					c = c * 2.f;
 					i = i + (c * cos(phi) - i) / 8.f;
 					q = q + (c * sin(phi) - q) / 8.f;
 
-					phi += RAD_45; //(PI / 4);
+					phi += RAD_45;
 //					if (fabs((RAD_360) - phi) < 0.001)
 //						phi = phi - RAD_360; // 2 * PI;
 				} // k
@@ -889,14 +855,28 @@ static void initChromaPhaseTables (void)
 			r64 = y0 + (I_TO_R * i) + (Q_TO_R * q);
 			g64 = y0 + (I_TO_G * i) + (Q_TO_G * q);
 			b64 = y0 + (I_TO_B * i) + (Q_TO_B * q);
-#if NTSC_REMOVE_WHITE_RING
-			// Remove white ringing
-			if(brightness > 0.9f)
-				b64 = g64 = r64 = 1.0;
-#endif			
+
 			b32 = clampZeroOne( (float)b64);
 			g32 = clampZeroOne( (float)g64);
 			r32 = clampZeroOne( (float)r64);
+
+#if NTSC_REMOVE_WHITE_RINGING
+			if( (s & 15) == 15 )
+			{
+				r32 = 1;
+				g32 = 1;
+				b32 = 1;
+			}
+#endif			
+
+#if NTSC_REMOVE_BLACK_GHOSTING
+			if( (s & 15) == 0 )
+			{
+				r32 = 0;
+				g32 = 0;
+				b32 = 0;
+			}
+#endif
 
 			g_aHueMonitor[phase][s].b = (uint8_t)(b32 * 255);
 			g_aHueMonitor[phase][s].g = (uint8_t)(g32 * 255);
@@ -910,6 +890,24 @@ static void initChromaPhaseTables (void)
 			b32 = clampZeroOne( (float)b64 );
 			g32 = clampZeroOne( (float)g64 );
 			r32 = clampZeroOne( (float)r64 );
+
+#if NTSC_REMOVE_WHITE_RINGING
+			if( (s & 15) == 15 )
+			{
+				r32 = 1;
+				g32 = 1;
+				b32 = 1;
+			}
+#endif			
+
+#if NTSC_REMOVE_BLACK_GHOSTING
+			if( (s & 15) == 0 )
+			{
+				r32 = 0;
+				g32 = 0;
+				b32 = 0;
+			}
+#endif
 
 			g_aHueColorTV[phase][s].b = (uint8_t)(b32 * 255);
 			g_aHueColorTV[phase][s].g = (uint8_t)(g32 * 255);
