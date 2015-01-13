@@ -30,8 +30,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "NTSC.h"
 	#include "NTSC_CharSet.cpp"
 
-#define NTSC_REMOVE_WHITE_RINGING  1 // 0 = theoritical dimmed white, 1 = practical pure white
-#define NTSC_REMOVE_BLACK_GHOSTING 1
+#define NTSC_REMOVE_WHITE_RINGING  1 // 0 = theoritical dimmed white has chroma, 1 = pure white without chroma tinting
+#define NTSC_REMOVE_BLACK_GHOSTING 1 // 1 = remove black smear/smudges carrying over
 
 #define DEBUG_PHASE_ZERO       0
 
@@ -707,21 +707,19 @@ inline void updateVideoScannerHorzEOL()
 			//VIDEO_DRAW_ENDLINE();
 			if (g_nColorBurstPixels < 2)
 			{
-				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
-#if 0			// BUGFIX: This writes out-of-bounds for a 560x384 framebuffer
+				// NOTE: This writes out-of-bounds for a 560x384 framebuffer
 				g_pFuncUpdateBnWPixel(0);
 				g_pFuncUpdateBnWPixel(0);
 				g_pFuncUpdateBnWPixel(0);
-#endif
+				g_pFuncUpdateBnWPixel(0);
 			}
 			else
 			{
-				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
-#if 0			// BUGFIX: This writes out-of-bounds for a 560x384 framebuffer
+				// NOTE: This writes out-of-bounds for a 560x384 framebuffer
 				g_pFuncUpdateHuePixel(0);
 				g_pFuncUpdateHuePixel(0);
 				g_pFuncUpdateHuePixel(0);
-#endif
+				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC); // BUGFIX: ARCHON: green fringe on end of line
 			}
 		}
 
