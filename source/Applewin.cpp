@@ -545,7 +545,7 @@ void LoadConfiguration(void)
 
 //===========================================================================
 
-void SetCurrentImageDir(const char* pszImageDir)
+bool SetCurrentImageDir(const char* pszImageDir)
 {
 	strcpy(g_sCurrentDir, pszImageDir);
 
@@ -556,7 +556,10 @@ void SetCurrentImageDir(const char* pszImageDir)
 		g_sCurrentDir[ nLen + 1 ] = 0;
 	}
 
-	SetCurrentDirectory(g_sCurrentDir);
+	if( SetCurrentDirectory(g_sCurrentDir) )
+		return true;
+
+	return false;
 }
 
 //===========================================================================

@@ -4,7 +4,7 @@
 #include "Common.h"
 
 void SetCurrentCLK6502();
-void SetCurrentImageDir(const char* pszImageDir);
+bool SetCurrentImageDir(const char* pszImageDir);
 
 
 extern char VERSIONSTRING[];	// Constructed in WinMain()
