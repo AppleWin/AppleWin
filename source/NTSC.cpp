@@ -806,16 +806,11 @@ static void initChromaPhaseTables (void)
 					y0 = initFilterLuma0 (zz);
 					y1 = initFilterLuma1 (zz - c);
 
-					y0 = y0 + (z - y0) / 4.0;
-					y1 = y0; // fix TV mode
-
 					c = c * 2.f;
 					i = i + (c * cos(phi) - i) / 8.f;
 					q = q + (c * sin(phi) - q) / 8.f;
 
 					phi += RAD_45;
-//					if (fabs((RAD_360) - phi) < 0.001)
-//						phi = phi - RAD_360; // 2 * PI;
 				} // k
 			} // samples
 
