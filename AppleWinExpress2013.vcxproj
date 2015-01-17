@@ -74,6 +74,7 @@
     <ClInclude Include="source\Mockingboard.h" />
     <ClInclude Include="source\MouseInterface.h" />
     <ClInclude Include="source\NoSlotClock.h" />
+    <ClInclude Include="source\NTSC.h" />
     <ClInclude Include="source\ParallelPrinter.h" />
     <ClInclude Include="source\Registry.h" />
     <ClInclude Include="source\Riff.h" />
@@ -149,6 +150,7 @@
     <ClCompile Include="source\Mockingboard.cpp" />
     <ClCompile Include="source\MouseInterface.cpp" />
     <ClCompile Include="source\NoSlotClock.cpp" />
+    <ClCompile Include="source\NTSC.cpp" />
     <ClCompile Include="source\ParallelPrinter.cpp" />
     <ClCompile Include="source\Registry.cpp" />
     <ClCompile Include="source\Riff.cpp" />
