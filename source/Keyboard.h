@@ -11,12 +11,12 @@ bool    KeybGetShiftStatus();
 bool    KeybGetCapsAllowed(); //For Pravets8A/C only
 void    KeybUpdateCtrlShiftStatus();
 BYTE    KeybGetKeycode ();
-DWORD   KeybGetNumQueries ();
 void    KeybQueueKeypress (int,BOOL);
 void    KeybToggleCapsLock ();
 void    KeybToggleP8ACapsLock ();
-DWORD   KeybGetSnapshot(SS_IO_Keyboard* pSS);
-DWORD   KeybSetSnapshot(SS_IO_Keyboard* pSS);
+void    KeybSetSnapshot_v1(const BYTE LastKey);
+void    KeybGetSnapshot(BYTE& rLastKey);
+void    KeybSetSnapshot(const BYTE LastKey);
 
 BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);

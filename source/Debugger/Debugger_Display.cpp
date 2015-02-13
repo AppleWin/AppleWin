@@ -2437,7 +2437,7 @@ void DrawMemory ( int line, int iMemDump )
 	SS_CARD_MOCKINGBOARD SS_MB;
 
 	if ((eDevice == DEV_SY6522) || (eDevice == DEV_AY8910))
-		MB_GetSnapshot(&SS_MB, 4+(nAddr>>1));		// Slot4 or Slot5
+		MB_GetSnapshot_v1(&SS_MB, 4+(nAddr>>1));		// Slot4 or Slot5
 
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 

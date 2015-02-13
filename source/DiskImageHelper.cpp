@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 #include "stdafx.h"
-#include "Structs.h"
 #include "Common.h"
 
 #include "zlib.h"
@@ -1435,7 +1434,9 @@ ImageError_e CImageHelperBase::Open(	LPCTSTR pszImageFilename,
 	if (Err != eIMAGE_ERROR_NONE)
 		return Err;
 
-	_tcsncpy(pImageInfo->szFilename, pszImageFilename, MAX_PATH);
+	DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, pImageInfo->szFilename, NULL);
+	if (uNameLen == 0 || uNameLen >= MAX_PATH)
+		Err = eIMAGE_ERROR_FAILED_TO_GET_PATHNAME;
 
 	return eIMAGE_ERROR_NONE;
 }
@@ -1453,8 +1454,9 @@ void CImageHelperBase::Close(ImageInfo* pImageInfo, const bool bDeleteFile)
 	if (bDeleteFile)
 	{
 		DeleteFile(pImageInfo->szFilename);
-		pImageInfo->szFilename[0] = 0;
 	}
+
+	pImageInfo->szFilename[0] = 0;
 
 	delete [] pImageInfo->pImageBuffer;
 	pImageInfo->pImageBuffer = NULL;

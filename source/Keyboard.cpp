@@ -50,7 +50,6 @@ static bool  g_bCapsLock = true; //Caps lock key for Apple2 and Lat/Cyr lock for
 static bool  g_bP8CapsLock = true; //Caps lock key of Pravets 8A/C
 static int   lastvirtkey     = 0;	// Current PC keycode
 static BYTE  keycode         = 0;	// Current Apple keycode
-static DWORD keyboardqueries = 0;
 
 #ifdef KEY_OLD
 // Original
@@ -158,14 +157,6 @@ void KeybUpdateCtrlShiftStatus()
 BYTE KeybGetKeycode ()		// Used by MemCheckPaging() & VideoCheckMode()
 {
 	return keycode;
-}
-
-//===========================================================================
-DWORD KeybGetNumQueries ()	// Used in determining 'idleness' of Apple system
-{
-	DWORD result = keyboardqueries;
-	keyboardqueries = 0;
-	return result;
 }
 
 //===========================================================================
@@ -425,10 +416,6 @@ static char ClipboardCurrChar(bool bIncPtr)
 
 BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
 {
-	keyboardqueries++;
-
-	//
-
 	if(g_bPasteFromClipboard)
 		ClipboardInit();
 
@@ -463,10 +450,6 @@ BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
 
 BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
 {
-	keyboardqueries++;
-
-	//
-
 	if(g_bPasteFromClipboard)
 		ClipboardInit();
 
@@ -516,16 +499,19 @@ void KeybToggleP8ACapsLock ()
 
 //===========================================================================
 
-DWORD KeybGetSnapshot(SS_IO_Keyboard* pSS)
+void KeybSetSnapshot_v1(const BYTE LastKey)
 {
-	pSS->keyboardqueries	= keyboardqueries;
-	pSS->nLastKey			= g_nLastKey;
-	return 0;
+	g_nLastKey = LastKey;
 }
 
-DWORD KeybSetSnapshot(SS_IO_Keyboard* pSS)
+//
+
+void KeybGetSnapshot(BYTE& rLastKey)
 {
-	keyboardqueries	= pSS->keyboardqueries;
-	g_nLastKey		= pSS->nLastKey;
-	return 0;
+	rLastKey = g_nLastKey;
+}
+
+void KeybSetSnapshot(const BYTE LastKey)
+{
+	g_nLastKey = LastKey;
 }

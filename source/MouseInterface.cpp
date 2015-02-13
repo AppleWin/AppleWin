@@ -41,7 +41,7 @@ Etc.
 
 
 #include "stdafx.h"
-#include "Structs.h"
+#include "SaveState_Structs_common.h"
 #include "Common.h"
 
 #include "CPU.h"
@@ -596,6 +596,166 @@ void CMouseInterface::SetButton(eBUTTON Button, eBUTTONSTATE State)
 {
 	m_bButtons[Button]= (State == BUTTON_DOWN) ? TRUE : FALSE;
 	OnMouseEvent();
+}
+
+struct MouseCard_Unit
+{
+	//6821
+	mc6821_t	mc6821;
+	BYTE	byIA;
+	BYTE	byIB;
+
+	//MouseCard
+	int		nDataLen;
+	BYTE	byMode;
+
+	BYTE	by6821B;
+	BYTE	by6821A;
+	BYTE	byBuff[8];
+	int		nBuffPos;
+
+	BYTE	byState;
+	int		nX;
+	int		nY;
+	BOOL	bBtn0;
+	BOOL	bBtn1;
+
+	bool	bVBL;
+
+	//
+
+	int		iX;
+	int		iMinX;
+	int		iMaxX;
+	int		iY;
+	int		iMinY;
+	int		iMaxY;
+
+	BOOL	bButtons[2];
+
+	//
+
+	bool	bActive;		// Mouse h/w is active within the Apple][ VM
+	bool	bEnabled;		// Windows' mouse events get passed to Apple]['s mouse h/w
+};
+
+struct SS_CARD_MOUSECARD
+{
+	SS_CARD_HDR		Hdr;
+	MouseCard_Unit	Unit;
+};
+
+// Post:
+//  0 = No mouse card
+// >0 = Mouse card saved OK from slot n
+// -1 = File error
+int CMouseInterface::GetSnapshot(const HANDLE hFile)
+{
+	if (!m_bActive)
+		return 0;
+
+	SS_CARD_MOUSECARD CardMouseCard;
+
+	CardMouseCard.Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_MOUSECARD);
+	CardMouseCard.Hdr.UnitHdr.hdr.v2.Type = UT_Card;
+	CardMouseCard.Hdr.UnitHdr.hdr.v2.Version = 1;
+
+	CardMouseCard.Hdr.Slot = m_uSlot;
+	CardMouseCard.Hdr.Type = CT_MouseInterface;
+
+	MouseCard_Unit& Unit = CardMouseCard.Unit;
+
+	m_6821.Get6821(Unit.mc6821, Unit.byIA, Unit.byIB);
+
+	Unit.nDataLen = m_nDataLen;
+	Unit.byMode = m_byMode;
+	Unit.by6821B = m_by6821B;
+	Unit.by6821A = m_by6821A;
+	memcpy(Unit.byBuff, m_byBuff, sizeof(Unit.byBuff));
+	Unit.nBuffPos = m_nBuffPos;
+	Unit.byState = m_byState;
+	Unit.nX = m_nX;
+	Unit.nY = m_nY;
+	Unit.bBtn0 = m_bBtn0;
+	Unit.bBtn1 = m_bBtn1;
+	Unit.bVBL = m_bVBL;
+	Unit.iX = m_iX;
+	Unit.iMinX = m_iMinX;
+	Unit.iMaxX = m_iMaxX;
+	Unit.iY = m_iY;
+	Unit.iMinY = m_iMinY;
+	Unit.iMaxY = m_iMaxY;
+	Unit.bButtons[0] = m_bButtons[0];
+	Unit.bButtons[1] = m_bButtons[1];
+	Unit.bActive = m_bActive;
+	Unit.bEnabled = m_bEnabled;
+
+	//
+
+	DWORD dwBytesWritten;
+	BOOL bRes = WriteFile(	hFile,
+							&CardMouseCard,
+							CardMouseCard.Hdr.UnitHdr.hdr.v2.Length,
+							&dwBytesWritten,
+							NULL);
+
+	if(!bRes || (dwBytesWritten != CardMouseCard.Hdr.UnitHdr.hdr.v2.Length))
+		throw std::string("Save error: Mouse");
+
+	return m_uSlot;
+}
+
+void CMouseInterface::SetSnapshot(const HANDLE hFile)
+{
+	SS_CARD_MOUSECARD CardMouseCard;
+
+	DWORD dwBytesRead;
+	BOOL bRes = ReadFile(	hFile,
+							&CardMouseCard,
+							sizeof(CardMouseCard),
+							&dwBytesRead,
+							NULL);
+
+	if (dwBytesRead != sizeof(CardMouseCard))
+		throw std::string("Card: file corrupt");
+
+	if (CardMouseCard.Hdr.Slot != 4)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (CardMouseCard.Hdr.UnitHdr.hdr.v2.Version > 1)
+		throw std::string("Card: wrong version");
+
+	if (CardMouseCard.Hdr.UnitHdr.hdr.v2.Length != sizeof(SS_CARD_MOUSECARD))
+		throw std::string("Card: unit size mismatch");
+
+	const MouseCard_Unit& Unit = CardMouseCard.Unit;
+
+	m_6821.Set6821(Unit.mc6821, Unit.byIA, Unit.byIB);
+
+	m_nDataLen = Unit.nDataLen;
+	m_byMode = Unit.byMode;
+	m_by6821B = Unit.by6821B;
+	m_by6821A = Unit.by6821A;
+	memcpy(m_byBuff, Unit.byBuff, sizeof(Unit.byBuff));
+	m_nBuffPos = Unit.nBuffPos;
+	m_byState = Unit.byState;
+	m_nX = Unit.nX;
+	m_nY = Unit.nY;
+	m_bBtn0 = Unit.bBtn0;
+	m_bBtn1 = Unit.bBtn1;
+	m_bVBL = Unit.bVBL;
+	m_iX = Unit.iX;
+	m_iMinX = Unit.iMinX;
+	m_iMaxX = Unit.iMaxX;
+	m_iY = Unit.iY;
+	m_iMinY = Unit.iMinY;
+	m_iMaxY = Unit.iMaxY;
+	m_bButtons[0] = Unit.bButtons[0];
+	m_bButtons[1] = Unit.bButtons[1];
+
+	m_bActive = Unit.bActive;
+	//m_bEnabled = Unit.bEnabled;
+	//m_uSlot = CardMouseCard.Hdr.Slot;
 }
 
 //=============================================================================

@@ -19,7 +19,8 @@ void    Spkr_Demute();
 bool    Spkr_IsActive();
 bool    Spkr_DSInit();
 void    Spkr_DSUninit();
-DWORD   SpkrGetSnapshot(SS_IO_Speaker* pSS);
-DWORD   SpkrSetSnapshot(SS_IO_Speaker* pSS);
+void    SpkrSetSnapshot_v1(const unsigned __int64 SpkrLastCycle);
+void    SpkrGetSnapshot(unsigned __int64& rSpkrLastCycle);
+void    SpkrSetSnapshot(const unsigned __int64 SpkrLastCycle);
 
 BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);

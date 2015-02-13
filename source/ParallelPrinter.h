@@ -9,11 +9,11 @@ char*			Printer_GetFilename();
 void			Printer_SetIdleLimit(unsigned int Duration);
 unsigned int	Printer_GetIdleLimit();
 
+void Printer_GetSnapshot(const HANDLE hFile);
+void Printer_SetSnapshot(const HANDLE hFile);
+
 extern bool		g_bDumpToPrinter;
 extern bool		g_bConvertEncoding;
-extern bool		g_bFilterUnprintable;
-extern bool		g_bPrinterAppend;
-extern int		g_iPrinterIdleLimit;
 extern bool		g_bFilterUnprintable;
 extern bool		g_bPrinterAppend;
 extern bool		g_bEnableDumpToRealPrinter;	// Set by cmd-line: -printer-real

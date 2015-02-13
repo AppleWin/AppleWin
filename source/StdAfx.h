@@ -23,7 +23,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
 
 #include <windows.h>
@@ -36,6 +35,7 @@
 #include <algorithm>
 #include <map>
 #include <queue>
+#include <string>
 #include <vector>
 
 // SM_CXPADDEDBORDER is not supported on 2000 & XP:

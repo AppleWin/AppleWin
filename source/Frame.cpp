@@ -563,7 +563,8 @@ static void DrawFrameWindow ()
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay(1);
 	else
-		// Win7: In fullscreen mode with 1 redraw, the the screen doesn't get redraw.
+		// Win7: In fullscreen mode with 1 redraw, the screen doesn't get redraw.
+		// TC: 07/01/2015: Tryed with MP's double-buffered DX full-screen code, but still the same.
 		VideoRedrawScreen(g_bIsFullScreen ? 2 : 1);	// TC: 22/06/2014: Why 2 redraws in full-screen mode (32-bit only)? (8-bit doesn't need this nor does Win8, just Win7 or older OS's)
 
 	// DD Full-Screen Palette: BUGFIX: needs to come _after_ all drawing...
@@ -617,6 +618,9 @@ void FrameDrawDiskLEDS( HDC passdc )
 //===========================================================================
 void FrameDrawDiskStatus( HDC passdc )
 {
+	if (mem == NULL)
+		return;
+
 	// We use the actual drive since probing from memory doesn't tell us anything we don't already know.
 	//        DOS3.3   ProDOS
 	// Drive  $B7EA    $BE3D
@@ -1023,7 +1027,7 @@ LRESULT CALLBACK FrameWndProc (
       if (!restart) {
         DiskDestroy();
         ImageDestroy();
-        HD_Cleanup();
+        HD_Destroy();
       }
       PrintDestroy();
       sg_SSC.CommDestroy();

@@ -12,7 +12,6 @@ public:
 	void Initialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void Uninitialize();
 	void Reset();
-	void SetSlotRom();
 	static BYTE __stdcall IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
 	static BYTE __stdcall IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
 
@@ -38,7 +37,11 @@ public:
 		m_iY = iY;
 	}
 
+	int GetSnapshot(const HANDLE hFile);
+	void SetSnapshot(const HANDLE hFile);
+
 protected:
+	void SetSlotRom();
 	void On6821_A(BYTE byData);
 	void On6821_B(BYTE byData);
 	void OnCommand();

@@ -24,8 +24,9 @@ void    JoyDisableUsingMouse();
 void    JoySetTrim(short nValue, bool bAxisX);
 short   JoyGetTrim(bool bAxisX);
 void	JoyportControl(const UINT uControl);
-DWORD   JoyGetSnapshot(SS_IO_Joystick* pSS);
-DWORD   JoySetSnapshot(SS_IO_Joystick* pSS);
+void    JoySetSnapshot_v1(const unsigned __int64 JoyCntrResetCycle);
+void    JoyGetSnapshot(unsigned __int64& rJoyCntrResetCycle);
+void    JoySetSnapshot(const unsigned __int64 JoyCntrResetCycle);
 
 BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);

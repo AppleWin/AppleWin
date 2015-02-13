@@ -824,14 +824,19 @@ void JoyportControl(const UINT uControl)
 
 //===========================================================================
 
-DWORD JoyGetSnapshot(SS_IO_Joystick* pSS)
+void JoySetSnapshot_v1(const unsigned __int64 JoyCntrResetCycle)
 {
-	pSS->g_nJoyCntrResetCycle = g_nJoyCntrResetCycle;
-	return 0;
+	g_nJoyCntrResetCycle = JoyCntrResetCycle;
 }
 
-DWORD JoySetSnapshot(SS_IO_Joystick* pSS)
+//
+
+void JoyGetSnapshot(unsigned __int64& rJoyCntrResetCycle)
 {
-	g_nJoyCntrResetCycle = pSS->g_nJoyCntrResetCycle;
-	return 0;
+	rJoyCntrResetCycle = g_nJoyCntrResetCycle;
+}
+
+void JoySetSnapshot(const unsigned __int64 JoyCntrResetCycle)
+{
+	g_nJoyCntrResetCycle = JoyCntrResetCycle;
 }

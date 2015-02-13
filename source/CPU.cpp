@@ -102,6 +102,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Z80VICE\z80mem.h"
 
 #include "Debugger\Debug.h"
+#include "SaveState_Structs_v2.h"
 
 
 #define	 AF_SIGN       0x80
@@ -642,30 +643,46 @@ void CpuReset()
 
 //===========================================================================
 
-DWORD CpuGetSnapshot(SS_CPU6502* pSS)
+void CpuSetSnapshot_v1(const BYTE A, const BYTE X, const BYTE Y, const BYTE P, const BYTE SP, const USHORT PC, const unsigned __int64 CumulativeCycles)
 {
-	pSS->A = regs.a;
-	pSS->X = regs.x;
-	pSS->Y = regs.y;
-	pSS->P = regs.ps | AF_RESERVED | AF_BREAK;
-	pSS->S = (BYTE) (regs.sp & 0xff);
-	pSS->PC = regs.pc;
-	pSS->g_nCumulativeCycles = g_nCumulativeCycles;
+	regs.a  = A;
+	regs.x  = X;
+	regs.y  = Y;
+	regs.ps = P | (AF_RESERVED | AF_BREAK);
+	regs.sp = ((USHORT)SP) | 0x100;
+	regs.pc = PC;
 
-	return 0;
-}
-
-DWORD CpuSetSnapshot(SS_CPU6502* pSS)
-{
-	regs.a = pSS->A;
-	regs.x = pSS->X;
-	regs.y = pSS->Y;
-	regs.ps = pSS->P | AF_RESERVED | AF_BREAK;
-	regs.sp = (USHORT)pSS->S | 0x100;
-	regs.pc = pSS->PC;
 	CpuIrqReset();
 	CpuNmiReset();
-	g_nCumulativeCycles = pSS->g_nCumulativeCycles;
+	g_nCumulativeCycles = CumulativeCycles;
+}
 
-	return 0;
+//
+
+void CpuGetSnapshot(SS_CPU6502_v2& CPU)
+{
+	regs.ps |= (AF_RESERVED | AF_BREAK);
+
+	CPU.A  = regs.a;
+	CPU.X  = regs.x;
+	CPU.Y  = regs.y;
+	CPU.P  = regs.ps;
+	CPU.S  = (BYTE) regs.sp;
+	CPU.PC = regs.pc;
+
+	CPU.CumulativeCycles = g_nCumulativeCycles;
+}
+
+void CpuSetSnapshot(const SS_CPU6502_v2& CPU)
+{
+	regs.a  = CPU.A;
+	regs.x  = CPU.X;
+	regs.y  = CPU.Y;
+	regs.ps = CPU.P | (AF_RESERVED | AF_BREAK);
+	regs.sp = ((USHORT)CPU.S) | 0x100;
+	regs.pc = CPU.PC;
+
+	CpuIrqReset();
+	CpuNmiReset();
+	g_nCumulativeCycles = CPU.CumulativeCycles;
 }

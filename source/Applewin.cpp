@@ -469,12 +469,6 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
 		HD_SetEnabled(dwTmp ? true : false);
 
-	char szHDVPathname[MAX_PATH] = {0};
-	if(RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_1), 1, szHDVPathname, sizeof(szHDVPathname)))
-		HD_InsertDisk(HARDDISK_1, szHDVPathname);
-	if(RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_2), 1, szHDVPathname, sizeof(szHDVPathname)))
-		HD_InsertDisk(HARDDISK_2, szHDVPathname);
-
 	if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
 		JoySetTrim((short)dwTmp, true);
 	if(REGLOAD(TEXT(REGVALUE_PDL_YTRIM), &dwTmp))
@@ -508,6 +502,16 @@ void LoadConfiguration(void)
 	//
 
 	char szFilename[MAX_PATH] = {0};
+
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH);
+	if (szFilename[0] == 0)
+		GetCurrentDirectory(sizeof(szFilename), szFilename);
+	SetCurrentImageDir(szFilename);
+
+	HD_LoadLastDiskImage(HARDDISK_1);
+	HD_LoadLastDiskImage(HARDDISK_2);
+
+	//
 
 	// Current/Starting Dir is the "root" of where the user keeps his disk images
 	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH);

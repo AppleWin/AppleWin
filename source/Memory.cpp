@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
 #include "Debugger\DebugDefs.h"
+#include "SaveState_Structs_v2.h"
 
 // Memory Flag
 #define  MF_80STORE    0x00000001
@@ -1103,17 +1104,14 @@ LPBYTE MemGetCxRomPeripheral()
 
 //===========================================================================
 
+const UINT CxRomSize = 4*1024;
+const UINT Apple2RomSize = 12*1024;
+const UINT Apple2eRomSize = Apple2RomSize+CxRomSize;
+//const UINT Pravets82RomSize = 12*1024;
+//const UINT Pravets8ARomSize = Pravets82RomSize+CxRomSize;
+
 void MemInitialize()
 {
-	// Init the I/O handlers
-	InitIoHandlers();
-
-	const UINT CxRomSize = 4*1024;
-	const UINT Apple2RomSize = 12*1024;
-	const UINT Apple2eRomSize = Apple2RomSize+CxRomSize;
-	//const UINT Pravets82RomSize = 12*1024;
-	//const UINT Pravets8ARomSize = Pravets82RomSize+CxRomSize;
-
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
 	memaux   = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
 	memmain  = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
@@ -1154,6 +1152,14 @@ void MemInitialize()
 		i++;
 #endif
 
+	MemInitializeROM();
+	MemInitializeCustomF8ROM();
+	MemInitializeIO();
+	MemReset();
+}
+
+void MemInitializeROM(void)
+{
 	// READ THE APPLE FIRMWARE ROMS INTO THE ROM IMAGE
 	UINT ROM_SIZE = 0;
 	HRSRC hResInfo = NULL;
@@ -1210,8 +1216,6 @@ void MemInitialize()
 	if (pData == NULL)
 		return;
 
-	//
-
 	memset(pCxRomInternal,0,CxRomSize);
 	memset(pCxRomPeripheral,0,CxRomSize);
 
@@ -1223,17 +1227,23 @@ void MemInitialize()
 	}
 
 	_ASSERT(ROM_SIZE == Apple2RomSize);
-	memcpy(memrom, pData, Apple2RomSize);			// ROM at $D000...$FFFF 
+	memcpy(memrom, pData, Apple2RomSize);			// ROM at $D000...$FFFF
+}
 
+void MemInitializeCustomF8ROM(void)
+{
 	const UINT F8RomSize = 0x800;
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 	{
+		BYTE OldRom[Apple2RomSize];	// NB. 12KB on stack
+		memcpy(OldRom, memrom, Apple2RomSize);
+
 		SetFilePointer(g_hCustomRomF8, 0, NULL, FILE_BEGIN);
 		DWORD uNumBytesRead;
 		BOOL bRes = ReadFile(g_hCustomRomF8, memrom+Apple2RomSize-F8RomSize, F8RomSize, &uNumBytesRead, NULL);
 		if (uNumBytesRead != F8RomSize)
 		{
-			memcpy(memrom, pData, Apple2RomSize);	// ROM at $D000...$FFFF 
+			memcpy(memrom, OldRom, Apple2RomSize);	// ROM at $D000...$FFFF
 			bRes = FALSE;
 		}
 
@@ -1248,15 +1258,27 @@ void MemInitialize()
 
 	if (sg_PropertySheet.GetTheFreezesF8Rom() && IS_APPLE2)
 	{
-		hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_FREEZES_F8_ROM), "ROM");
+		HGLOBAL hResData = NULL;
+		BYTE* pData = NULL;
+
+		HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_FREEZES_F8_ROM), "ROM");
 
 		if (hResInfo && (SizeofResource(NULL, hResInfo) == 0x800) && (hResData = LoadResource(NULL, hResInfo)) && (pData = (BYTE*) LockResource(hResData)))
 		{
 			memcpy(memrom+Apple2RomSize-F8RomSize, pData, F8RomSize);
 		}
 	}
+}
 
-	//
+// Called by:
+// . MemInitialize()
+// . Snapshot_LoadState_v2()
+//
+// Since called by LoadState(), then this must not init any cards
+// - it should only init the card I/O hooks
+void MemInitializeIO(void)
+{
+	InitIoHandlers();
 
 	const UINT uSlot = 0;
 	RegisterIoHandler(uSlot, MemSetPaging, MemSetPaging, NULL, NULL, NULL, NULL);
@@ -1297,8 +1319,6 @@ void MemInitialize()
 
 	DiskLoadRom(pCxRomPeripheral, 6);				// $C600 : Disk][ f/w
 	HD_Load_Rom(pCxRomPeripheral, 7);				// $C700 : HDD f/w
-
-	MemReset();
 }
 
 inline DWORD getRandomTime()
@@ -1647,27 +1667,13 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 // . If we were to save the state when 'modechanging' is set, then on restoring the state, the 6502 code will immediately update the read memory mode.
 // . This will work correctly.
 
-DWORD MemGetSnapshot(SS_BaseMemory* pSS)
+void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE* const pMemMain, const BYTE* const pMemAux)
 {
-	pSS->dwMemMode = memmode;
-	pSS->bLastWriteRam = lastwriteram;
+	SetMemMode(MemMode);
+	lastwriteram = LastWriteRam;
 
-	for(DWORD dwOffset = 0x0000; dwOffset < 0x10000; dwOffset+=0x100)
-	{
-		memcpy(pSS->nMemMain+dwOffset, MemGetMainPtr((WORD)dwOffset), 0x100);
-		memcpy(pSS->nMemAux+dwOffset, MemGetAuxPtr((WORD)dwOffset), 0x100);
-	}
-
-	return 0;
-}
-
-DWORD MemSetSnapshot(SS_BaseMemory* pSS)
-{
-	SetMemMode(pSS->dwMemMode);
-	lastwriteram = pSS->bLastWriteRam;
-
-	memcpy(memmain, pSS->nMemMain, nMemMainSize);
-	memcpy(memaux, pSS->nMemAux, nMemAuxSize);
+	memcpy(memmain, pMemMain, nMemMainSize);
+	memcpy(memaux, pMemAux, nMemAuxSize);
 	memset(memdirty, 0, 0x100);
 
 	//
@@ -1675,6 +1681,34 @@ DWORD MemSetSnapshot(SS_BaseMemory* pSS)
 	modechanging = 0;
 
 	UpdatePaging(1);	// Initialize=1
+}
 
-	return 0;
+//
+
+void MemGetSnapshot(SS_BaseMemory_v2& Memory)
+{
+	Memory.dwMemMode = memmode;
+	Memory.bLastWriteRam = lastwriteram;
+
+	for(DWORD dwOffset = 0x0000; dwOffset < 0x10000; dwOffset+=0x100)
+	{
+		memcpy(Memory.MemMain+dwOffset, MemGetMainPtr((WORD)dwOffset), 0x100);
+		memcpy(Memory.MemAux+dwOffset, MemGetAuxPtr((WORD)dwOffset), 0x100);
+	}
+}
+
+void MemSetSnapshot(const SS_BaseMemory_v2& Memory)
+{
+	SetMemMode(Memory.dwMemMode);
+	lastwriteram = Memory.bLastWriteRam;
+
+	memcpy(memmain, Memory.MemMain, nMemMainSize);
+	memcpy(memaux, Memory.MemAux, nMemAuxSize);
+	memset(memdirty, 0, 0x100);
+
+	//
+
+	modechanging = 0;
+
+	UpdatePaging(1);	// Initialize=1
 }

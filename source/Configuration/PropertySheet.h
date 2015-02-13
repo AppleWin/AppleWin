@@ -24,6 +24,10 @@ public:
 	virtual void Init(void);
 	virtual DWORD GetVolumeMax(void);								// TODO:TC: Move out of here
 	virtual bool SaveStateSelectImage(HWND hWindow, bool bSave);	// TODO:TC: Move out of here
+	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
+	{
+		m_PropertySheetHelper.ApplyNewConfig(ConfigNew, ConfigOld);
+	}
 
 	virtual UINT GetScrollLockToggle(void){ return m_PageInput.GetScrollLockToggle(); }
 	virtual void SetScrollLockToggle(UINT uValue){ m_PageInput.SetScrollLockToggle(uValue); }

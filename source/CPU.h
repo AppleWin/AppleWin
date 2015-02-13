@@ -1,6 +1,7 @@
 #pragma once
 
-typedef struct _regsrec {
+struct regsrec
+{
   BYTE a;   // accumulator
   BYTE x;   // index X
   BYTE y;   // index Y
@@ -8,7 +9,7 @@ typedef struct _regsrec {
   WORD pc;  // program counter
   WORD sp;  // stack pointer
   BYTE bJammed; // CPU has crashed (NMOS 6502 only)
-} regsrec, *regsptr;
+};
 
 extern regsrec    regs;
 extern unsigned __int64 g_nCumulativeCycles;
@@ -26,8 +27,9 @@ void	CpuNmiReset();
 void	CpuNmiAssert(eIRQSRC Device);
 void	CpuNmiDeassert(eIRQSRC Device);
 void    CpuReset ();
-DWORD   CpuGetSnapshot(SS_CPU6502* pSS);
-DWORD   CpuSetSnapshot(SS_CPU6502* pSS);
+void    CpuSetSnapshot_v1(const BYTE A, const BYTE X, const BYTE Y, const BYTE P, const BYTE SP, const USHORT PC, const unsigned __int64 CumulativeCycles);
+void    CpuGetSnapshot(struct SS_CPU6502_v2& CPU);
+void    CpuSetSnapshot(const struct SS_CPU6502_v2& CPU);
 
 BYTE	CpuRead(USHORT addr, ULONG uExecutedCycles);
 void	CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles);

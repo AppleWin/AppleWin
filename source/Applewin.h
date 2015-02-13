@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Structs.h"
+#include "SaveState_Structs_common.h"
 #include "Common.h"
 
 void SetCurrentCLK6502();

@@ -72,7 +72,8 @@ SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 
 CSuperSerialCard::CSuperSerialCard() :
 	m_aySerialPortChoices(NULL),
-	m_uTCPChoiceItemIdx(0)
+	m_uTCPChoiceItemIdx(0),
+	m_uSlot(0)
 {
 	memset(m_ayCurrentSerialPortName, 0, sizeof(m_ayCurrentSerialPortName));
 	m_dwSerialPortItem = 0;
@@ -831,6 +832,8 @@ void CSuperSerialCard::CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 
 	memcpy(pCxRomPeripheral + uSlot*256, pData+SSC_SLOT_FW_OFFSET, SSC_SLOT_FW_SIZE);
 
+	m_uSlot = uSlot;
+
 	// Expansion ROM
 	if (m_pExpansionRom == NULL)
 	{
@@ -1293,30 +1296,144 @@ void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 
 //===========================================================================
 
-DWORD CSuperSerialCard::CommGetSnapshot(SS_IO_Comms* pSS)
+void CSuperSerialCard::SetSnapshot_v1(	const DWORD  baudrate,
+										const BYTE   bytesize,
+										const BYTE   commandbyte,
+										const DWORD  comminactivity,
+										const BYTE   controlbyte,
+										const BYTE   parity,
+										const BYTE   stopbits)
 {
-	pSS->baudrate		= m_uBaudRate;
-	pSS->bytesize		= m_uByteSize;
-	pSS->commandbyte	= m_uCommandByte;
-	pSS->comminactivity	= m_dwCommInactivity;
-	pSS->controlbyte	= m_uControlByte;
-	pSS->parity			= m_uParity;
-//	memcpy(pSS->recvbuffer, m_RecvBuffer, uRecvBufferSize);
-	pSS->recvbytes		= 0;
-	pSS->stopbits		= m_uStopBits;
-	return 0;
+	m_uBaudRate			= baudrate;
+	m_uByteSize			= bytesize;
+	m_uCommandByte		= commandbyte;
+	m_dwCommInactivity	= comminactivity;
+	m_uControlByte		= controlbyte;
+	m_uParity			= parity;
+//	memcpy(m_RecvBuffer, pSS->recvbuffer, uRecvBufferSize);
+//	m_vRecvBytes		= recvbytes;
+	m_uStopBits			= stopbits;
 }
 
-DWORD CSuperSerialCard::CommSetSnapshot(SS_IO_Comms* pSS)
+//===========================================================================
+
+struct SSC_Unit
 {
-	m_uBaudRate		= pSS->baudrate;
-	m_uByteSize		= pSS->bytesize;
-	m_uCommandByte		= pSS->commandbyte;
-	m_dwCommInactivity	= pSS->comminactivity;
-	m_uControlByte		= pSS->controlbyte;
-	m_uParity			= pSS->parity;
-//	memcpy(m_RecvBuffer, pSS->recvbuffer, uRecvBufferSize);
-//	m_vRecvBytes	= pSS->recvbytes;
-	m_uStopBits		= pSS->stopbits;
+	SSC_DIPSW	DIPSWDefault;
+	SSC_DIPSW	DIPSWCurrent;
+
+	DWORD	uBaudRate;
+
+	BYTE	uStopBits;
+	BYTE	uByteSize;
+	BYTE	uParity;
+
+	BYTE	uControlByte;
+	BYTE	uCommandByte;
+
+	DWORD	dwCommInactivity;	// If non-zero then COM port open
+
+	bool	bTxIrqEnabled;
+	bool	bRxIrqEnabled;
+
+	bool	vbTxIrqPending;
+	bool	vbRxIrqPending;
+
+	bool	bWrittenTx;
+};
+
+struct SS_CARD_SSC
+{
+	SS_CARD_HDR	Hdr;
+	SSC_Unit Unit;
+};
+
+// Post:
+//  0 = No card
+// >0 = Card saved OK from slot n
+// -1 = File error
+int CSuperSerialCard::GetSnapshot(const HANDLE hFile)
+{
+	SS_CARD_SSC CardSuperSerial;
+
+	CardSuperSerial.Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_SSC);
+	CardSuperSerial.Hdr.UnitHdr.hdr.v2.Type = UT_Card;
+	CardSuperSerial.Hdr.UnitHdr.hdr.v2.Version = 1;
+
+	CardSuperSerial.Hdr.Slot = m_uSlot;
+	CardSuperSerial.Hdr.Type = CT_SSC;
+
+	SSC_Unit& Unit = CardSuperSerial.Unit;
+
+	Unit.DIPSWDefault		= m_DIPSWDefault;
+	Unit.DIPSWCurrent		= m_DIPSWCurrent;
+	Unit.uBaudRate			= m_uBaudRate;
+	Unit.uStopBits			= m_uStopBits;
+	Unit.uByteSize			= m_uByteSize;
+	Unit.uParity			= m_uParity;
+	Unit.uControlByte		= m_uControlByte;
+	Unit.uCommandByte		= m_uCommandByte;
+	Unit.dwCommInactivity	= m_dwCommInactivity;
+	Unit.bTxIrqEnabled		= m_bTxIrqEnabled;
+	Unit.bRxIrqEnabled		= m_bRxIrqEnabled;
+	Unit.vbTxIrqPending		= m_vbTxIrqPending;
+	Unit.vbRxIrqPending		= m_vbRxIrqPending;
+	Unit.bWrittenTx			= m_bWrittenTx;
+
+	//
+
+	DWORD dwBytesWritten;
+	BOOL bRes = WriteFile(	hFile,
+							&CardSuperSerial,
+							CardSuperSerial.Hdr.UnitHdr.hdr.v2.Length,
+							&dwBytesWritten,
+							NULL);
+
+	if(!bRes || (dwBytesWritten != CardSuperSerial.Hdr.UnitHdr.hdr.v2.Length))
+		throw std::string("Save error: SSC");
+
+	return m_uSlot;
+}
+
+int CSuperSerialCard::SetSnapshot(const HANDLE hFile)
+{
+	SS_CARD_SSC CardSuperSerial;
+
+	DWORD dwBytesRead;
+	BOOL bRes = ReadFile(	hFile,
+							&CardSuperSerial,
+							sizeof(CardSuperSerial),
+							&dwBytesRead,
+							NULL);
+
+	if (dwBytesRead != sizeof(CardSuperSerial))
+		throw std::string("Card: file corrupt");
+
+	if (CardSuperSerial.Hdr.Slot != 2)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (CardSuperSerial.Hdr.UnitHdr.hdr.v2.Version != 1)
+		throw std::string("Card: wrong version");
+
+	if (CardSuperSerial.Hdr.UnitHdr.hdr.v2.Length != sizeof(SS_CARD_SSC))
+		throw std::string("Card: unit size mismatch");
+
+	SSC_Unit& Unit = CardSuperSerial.Unit;
+
+	m_DIPSWDefault		= Unit.DIPSWDefault;
+	m_DIPSWCurrent		= Unit.DIPSWCurrent;
+	m_uBaudRate			= Unit.uBaudRate;
+	m_uStopBits			= Unit.uStopBits;
+	m_uByteSize			= Unit.uByteSize;
+	m_uParity			= Unit.uParity;
+	m_uControlByte		= Unit.uControlByte;
+	m_uCommandByte		= Unit.uCommandByte;
+	m_dwCommInactivity	= Unit.dwCommInactivity;
+	m_bTxIrqEnabled		= Unit.bTxIrqEnabled;
+	m_bRxIrqEnabled		= Unit.bRxIrqEnabled;
+	m_vbTxIrqPending	= Unit.vbTxIrqPending;
+	m_vbRxIrqPending	= Unit.vbRxIrqPending;
+	m_bWrittenTx		= Unit.bWrittenTx;
+
 	return 0;
 }

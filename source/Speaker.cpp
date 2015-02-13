@@ -1080,14 +1080,19 @@ void Spkr_DSUninit()
 
 //=============================================================================
 
-DWORD SpkrGetSnapshot(SS_IO_Speaker* pSS)
+void SpkrSetSnapshot_v1(const unsigned __int64 SpkrLastCycle)
 {
-	pSS->g_nSpkrLastCycle = g_nSpkrLastCycle;
-	return 0;
+	g_nSpkrLastCycle = SpkrLastCycle;
 }
 
-DWORD SpkrSetSnapshot(SS_IO_Speaker* pSS)
+//
+
+void SpkrGetSnapshot(unsigned __int64& rSpkrLastCycle)
 {
-	g_nSpkrLastCycle = pSS->g_nSpkrLastCycle;
-	return 0;
+	rSpkrLastCycle = g_nSpkrLastCycle;
+}
+
+void SpkrSetSnapshot(const unsigned __int64 SpkrLastCycle)
+{
+	g_nSpkrLastCycle = SpkrLastCycle;
 }

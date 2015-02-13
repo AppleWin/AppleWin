@@ -77,6 +77,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "SaveState_Structs_v1.h"
+
 #include "AppleWin.h"
 #include "CPU.h"
 #include "Log.h"
@@ -1761,13 +1763,15 @@ void MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 
 //===========================================================================
 
-DWORD MB_GetSnapshot(SS_CARD_MOCKINGBOARD* pSS, DWORD dwSlot)
+// Called by debugger - Debugger_Display.cpp
+void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD* const pSS, const DWORD dwSlot)
 {
-	pSS->Hdr.UnitHdr.dwLength = sizeof(SS_CARD_DISK2);
-	pSS->Hdr.UnitHdr.dwVersion = MAKE_VERSION(1,0,0,0);
+	pSS->Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_MOCKINGBOARD);
+	pSS->Hdr.UnitHdr.hdr.v2.Type = UT_Card;
+	pSS->Hdr.UnitHdr.hdr.v2.Version = 1;
 
-	pSS->Hdr.dwSlot = dwSlot;
-	pSS->Hdr.dwType = CT_MockingboardC;
+	pSS->Hdr.Slot = dwSlot;
+	pSS->Hdr.Type = CT_MockingboardC;
 
 	UINT nMbCardNum = dwSlot - SLOT4;
 	UINT nDeviceNum = nMbCardNum*2;
@@ -1783,16 +1787,14 @@ DWORD MB_GetSnapshot(SS_CARD_MOCKINGBOARD* pSS, DWORD dwSlot)
 		nDeviceNum++;
 		pMB++;
 	}
-
-	return 0;
 }
 
-DWORD MB_SetSnapshot(SS_CARD_MOCKINGBOARD* pSS, DWORD /*dwSlot*/)
+int MB_SetSnapshot_v1(const SS_CARD_MOCKINGBOARD* const pSS, const DWORD /*dwSlot*/)
 {
-	if(pSS->Hdr.UnitHdr.dwVersion != MAKE_VERSION(1,0,0,0))
+	if(pSS->Hdr.UnitHdr.hdr.v1.dwVersion != MAKE_VERSION(1,0,0,0))
 		return -1;
 
-	UINT nMbCardNum = pSS->Hdr.dwSlot - SLOT4;
+	UINT nMbCardNum = pSS->Hdr.Slot - SLOT4;
 	UINT nDeviceNum = nMbCardNum*2;
 	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
 
@@ -1831,4 +1833,112 @@ DWORD MB_SetSnapshot(SS_CARD_MOCKINGBOARD* pSS, DWORD /*dwSlot*/)
 	}
 
 	return 0;
+}
+
+//===========================================================================
+
+void MB_GetSnapshot(const HANDLE hFile, const UINT uSlot)
+{
+	SS_CARD_MOCKINGBOARD CardMockingboardC;
+
+	SS_CARD_MOCKINGBOARD* const pSS = &CardMockingboardC;
+
+	pSS->Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_MOCKINGBOARD);
+	pSS->Hdr.UnitHdr.hdr.v2.Type = UT_Card;
+	pSS->Hdr.UnitHdr.hdr.v2.Version = 1;
+
+	pSS->Hdr.Slot = uSlot;	// fixme: object should be just 1 Mockingboard card & it will know its slot
+	pSS->Hdr.Type = CT_MockingboardC;
+
+	UINT nMbCardNum = uSlot - SLOT4;
+	UINT nDeviceNum = nMbCardNum*2;
+	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
+
+	for(UINT i=0; i<MB_UNITS_PER_CARD; i++)
+	{
+		memcpy(&pSS->Unit[i].RegsSY6522, &pMB->sy6522, sizeof(SY6522));
+		memcpy(&pSS->Unit[i].RegsAY8910, AY8910_GetRegsPtr(nDeviceNum), 16);
+		memcpy(&pSS->Unit[i].RegsSSI263, &pMB->SpeechChip, sizeof(SSI263A));
+		pSS->Unit[i].nAYCurrentRegister = pMB->nAYCurrentRegister;
+
+		nDeviceNum++;
+		pMB++;
+	}
+
+	//
+
+	DWORD dwBytesWritten;
+	BOOL bRes = WriteFile(	hFile,
+							&CardMockingboardC,
+							CardMockingboardC.Hdr.UnitHdr.hdr.v2.Length,
+							&dwBytesWritten,
+							NULL);
+
+	if(!bRes || (dwBytesWritten != CardMockingboardC.Hdr.UnitHdr.hdr.v2.Length))
+	{
+		//dwError = GetLastError();
+		throw std::string("Save error: Mockingboard");
+	}
+}
+
+void MB_SetSnapshot(const HANDLE hFile)
+{
+	SS_CARD_MOCKINGBOARD CardMockingboardC;
+
+	DWORD dwBytesRead;
+	BOOL bRes = ReadFile(	hFile,
+							&CardMockingboardC,
+							sizeof(CardMockingboardC),
+							&dwBytesRead,
+							NULL);
+
+	if (dwBytesRead != sizeof(CardMockingboardC))
+		throw std::string("Card: file corrupt");
+
+	if (CardMockingboardC.Hdr.Slot != 4 && CardMockingboardC.Hdr.Slot != 5)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (CardMockingboardC.Hdr.UnitHdr.hdr.v2.Version > 1)
+		throw std::string("Card: wrong version");
+
+	if (CardMockingboardC.Hdr.UnitHdr.hdr.v2.Length != sizeof(SS_CARD_MOCKINGBOARD))
+		throw std::string("Card: unit size mismatch");
+
+	UINT nMbCardNum = CardMockingboardC.Hdr.Slot - SLOT4;
+	UINT nDeviceNum = nMbCardNum*2;
+	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
+
+	g_nSSI263Device = 0;
+	g_nCurrentActivePhoneme = -1;
+
+	for(UINT i=0; i<MB_UNITS_PER_CARD; i++)
+	{
+		memcpy(&pMB->sy6522, &CardMockingboardC.Unit[i].RegsSY6522, sizeof(SY6522));
+		memcpy(AY8910_GetRegsPtr(nDeviceNum), &CardMockingboardC.Unit[i].RegsAY8910, 16);
+		memcpy(&pMB->SpeechChip, &CardMockingboardC.Unit[i].RegsSSI263, sizeof(SSI263A));
+		pMB->nAYCurrentRegister = CardMockingboardC.Unit[i].nAYCurrentRegister;
+
+		StartTimer(pMB);	// Attempt to start timer
+
+		//
+
+		// Crude - currently only support a single speech chip
+		// FIX THIS:
+		// . Speech chip could be Votrax instead
+		// . Is this IRQ compatible with Phasor?
+		if(pMB->SpeechChip.DurationPhonome)
+		{
+			g_nSSI263Device = nDeviceNum;
+
+			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
+			{
+				pMB->sy6522.IFR |= IxR_PERIPHERAL;
+				UpdateIFR(pMB);
+				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
+			}
+		}
+
+		nDeviceNum++;
+		pMB++;
+	}
 }

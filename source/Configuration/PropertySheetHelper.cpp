@@ -319,35 +319,40 @@ bool CPropertySheetHelper::CheckChangesForRestart(HWND hWnd)
 	return true;		// OK
 }
 
-#define CONFIG_CHANGED(var) \
-	(m_ConfigOld.var != m_ConfigNew.var)
+#define CONFIG_CHANGED_LOCAL(var) \
+	(ConfigOld.var != ConfigNew.var)
 
 // Apply changes to Registry
+void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
+{
+	if (CONFIG_CHANGED_LOCAL(m_Apple2Type))
+	{
+		SaveComputerType(ConfigNew.m_Apple2Type);
+	}
+
+	if (CONFIG_CHANGED_LOCAL(m_Slot[4]))
+		SetSlot4(ConfigNew.m_Slot[4]);
+
+	if (CONFIG_CHANGED_LOCAL(m_Slot[5]))
+		SetSlot5(ConfigNew.m_Slot[5]);
+
+	if (CONFIG_CHANGED_LOCAL(m_bEnhanceDisk))
+		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), ConfigNew.m_bEnhanceDisk);
+
+	if (CONFIG_CHANGED_LOCAL(m_bEnableHDD))
+	{
+		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), ConfigNew.m_bEnableHDD ? 1 : 0);
+	}
+
+	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
+	{
+		REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), ConfigNew.m_bEnableTheFreezesF8Rom);
+	}
+}
+
 void CPropertySheetHelper::ApplyNewConfig(void)
 {
-	if (CONFIG_CHANGED(m_Apple2Type))
-	{
-		SaveComputerType(m_ConfigNew.m_Apple2Type);
-	}
-
-	if (CONFIG_CHANGED(m_Slot[4]))
-		SetSlot4(m_ConfigNew.m_Slot[4]);
-
-	if (CONFIG_CHANGED(m_Slot[5]))
-		SetSlot5(m_ConfigNew.m_Slot[5]);
-
-	if (CONFIG_CHANGED(m_bEnhanceDisk))
-		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), m_ConfigNew.m_bEnhanceDisk);
-
-	if (CONFIG_CHANGED(m_bEnableHDD))
-	{
-		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), m_ConfigNew.m_bEnableHDD ? 1 : 0);
-	}
-
-	if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
-	{
-		REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), m_ConfigNew.m_bEnableTheFreezesF8Rom);
-	}
+	ApplyNewConfig(m_ConfigNew, m_ConfigOld);
 }
 
 void CPropertySheetHelper::SaveCurrentConfig(void)
@@ -410,6 +415,9 @@ bool CPropertySheetHelper::IsOkToRestart(HWND hWnd)
 
 	return true;
 }
+
+#define CONFIG_CHANGED(var) \
+	(m_ConfigOld.var != m_ConfigNew.var)
 
 bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 {

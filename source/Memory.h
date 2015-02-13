@@ -44,14 +44,18 @@ LPBYTE  MemGetMainPtr(const WORD);
 LPBYTE  MemGetBankPtr(const UINT nBank);
 LPBYTE  MemGetCxRomPeripheral();
 void    MemInitialize ();
+void    MemInitializeROM(void);
+void    MemInitializeCustomF8ROM(void);
+void    MemInitializeIO(void);
 BYTE    MemReadFloatingBus(const ULONG uExecutedCycles);
 BYTE    MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles);
 void    MemReset ();
 void    MemResetPaging ();
 void    MemUpdatePaging(BOOL initialize);
 LPVOID	MemGetSlotParameters (UINT uSlot);
-DWORD   MemGetSnapshot(SS_BaseMemory* pSS);
-DWORD   MemSetSnapshot(SS_BaseMemory* pSS);
+void    MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE* const pMemMain, const BYTE* const pMemAux);
+void    MemGetSnapshot(struct SS_BaseMemory_v2& Memory);
+void    MemSetSnapshot(const struct SS_BaseMemory_v2& Memory);
 
 BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 

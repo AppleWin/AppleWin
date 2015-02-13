@@ -755,11 +755,19 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\SSI263Phonemes.h"
+					RelativePath=".\source\SaveState_Structs_common.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Structs.h"
+					RelativePath=".\source\SaveState_Structs_v1.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\SaveState_Structs_v2.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\SSI263Phonemes.h"
 					>
 				</File>
 			</Filter>

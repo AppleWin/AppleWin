@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
 #include "Debugger\Debugger_Color.h"	// For NUM_DEBUG_COLORS
+#include "SaveState_Structs_v2.h"
 
 #define HALF_PIXEL_SOLID 1
 #define HALF_PIXEL_BLEED 0
@@ -2941,20 +2942,26 @@ void VideoSetForceFullRedraw(void)
 
 //===========================================================================
 
-DWORD VideoGetSnapshot(SS_IO_Video* pSS)
+void VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode)
 {
-	pSS->bAltCharSet = !(g_nAltCharSetOffset == 0);
-	pSS->dwVidMode = g_uVideoMode;
-	return 0;
+	g_nAltCharSetOffset = !AltCharSet ? 0 : 256;
+	g_uVideoMode = VideoMode;
 }
 
-//===========================================================================
+//
 
-DWORD VideoSetSnapshot(SS_IO_Video* pSS)
+void VideoGetSnapshot(SS_IO_Video_v2& Video)
 {
-	g_nAltCharSetOffset = !pSS->bAltCharSet ? 0 : 256;
-	g_uVideoMode = pSS->dwVidMode;
-	return 0;
+	Video.AltCharSet = !(g_nAltCharSetOffset == 0);
+	Video.VideoMode = g_uVideoMode;
+	Video.CyclesThisVideoFrame = g_dwCyclesThisFrame;
+}
+
+void VideoSetSnapshot(const SS_IO_Video_v2& Video)
+{
+	g_nAltCharSetOffset = !Video.AltCharSet ? 0 : 256;
+	g_uVideoMode = Video.VideoMode;
+	g_dwCyclesThisFrame = Video.CyclesThisVideoFrame;
 }
 
 //===========================================================================

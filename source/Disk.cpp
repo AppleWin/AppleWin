@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "SaveState_Structs_v1.h"
+
 #include "AppleWin.h"
 #include "Disk.h"
 #include "DiskImage.h"
@@ -61,21 +63,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Private ________________________________________________________________________________________
 
-	const int MAX_DISK_IMAGE_NAME = 15;
-	const int MAX_DISK_FULL_NAME  = 127;
-
 	struct Disk_t
 	{
 		TCHAR  imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
 		TCHAR  fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
-		std::string strDiskPathFilename;
-		std::string strFilenameInZip;					// 0x00           or <FILENAME.EXT>
+		std::string strFilenameInZip;					// ""             or <FILENAME.EXT>
 		HIMAGE imagehandle;					// Init'd by DiskInsert() -> ImageOpen()
+		bool   bWriteProtected;
+		//
 		int    track;
 		LPBYTE trackimage;
 		int    phase;
 		int    byte;
-		bool   bWriteProtected;
 		BOOL   trackimagedata;
 		BOOL   trackimagedirty;
 		DWORD  spinning;
@@ -86,14 +85,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{
 			memcpy(imagename, other.imagename, sizeof(imagename));
 			memcpy(fullname , other.fullname,  sizeof(fullname));
-			strDiskPathFilename = other.strDiskPathFilename;
 			strFilenameInZip    = other.strFilenameInZip;
 			imagehandle         = other.imagehandle;
+			bWriteProtected     = other.bWriteProtected;
 			track               = other.track;
 			trackimage          = other.trackimage;
 			phase               = other.phase;
 			byte                = other.byte;
-			bWriteProtected     = other.bWriteProtected;
 			trackimagedata      = other.trackimagedata;
 			trackimagedirty     = other.trackimagedirty;
 			spinning            = other.spinning;
@@ -109,8 +107,9 @@ static Disk_t	g_aFloppyDisk[NUM_DRIVES];
 static BYTE		floppylatch     = 0;
 static BOOL		floppymotoron   = 0;
 static BOOL		floppywritemode = 0;
-static WORD		phases;						// state bits for stepper magnet phases 0 - 3
+static WORD		phases = 0;						// state bits for stepper magnet phases 0 - 3
 static bool		g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
+static UINT		g_uSlot = 0;
 
 static void CheckSpinning();
 static Disk_Status_e GetDriveLightStatus( const int iDrive );
@@ -127,14 +126,9 @@ int DiskGetCurrentPhase(void)  { return g_aFloppyDisk[currdrive].phase; }
 int DiskGetCurrentOffset(void) { return g_aFloppyDisk[currdrive].byte; }
 int DiskGetTrack( int drive )  { return g_aFloppyDisk[ drive   ].track; }
 
-const std::string& DiskGetDiskPathFilename(const int iDrive)
+const char* DiskGetDiskPathFilename(const int iDrive)
 {
-	return g_aFloppyDisk[iDrive].strDiskPathFilename;
-}
-
-static void DiskSetDiskPathFilename(const int iDrive, const std::string strPathName)
-{
-	g_aFloppyDisk[iDrive].strDiskPathFilename = strPathName;
+	return g_aFloppyDisk[iDrive].fullname;
 }
 
 char* DiskGetCurrentState(void)
@@ -164,7 +158,7 @@ char* DiskGetCurrentState(void)
 
 //===========================================================================
 
- void Disk_LoadLastDiskImage(const int iDrive)
+void Disk_LoadLastDiskImage(const int iDrive)
 {
 	_ASSERT(iDrive == DRIVE_1 || iDrive == DRIVE_2);
 
@@ -175,22 +169,15 @@ char* DiskGetCurrentState(void)
 		? REGVALUE_PREF_LAST_DISK_1
 		: REGVALUE_PREF_LAST_DISK_2;
 
-	if (RegLoadString(TEXT(REG_PREFS),pRegKey,1,sFilePath,MAX_PATH))
+	if (RegLoadString(TEXT(REG_PREFS), pRegKey, 1, sFilePath, MAX_PATH))
 	{
 		sFilePath[ MAX_PATH ] = 0;
-		DiskSetDiskPathFilename(iDrive, sFilePath);
 
-#if _DEBUG
-//		MessageBox(g_hFrameWindow,pFileName,pRegKey,MB_OK);
-#endif
-
-		//	_tcscat(imagefilename,TEXT("MASTER.DSK")); // TODO: Should remember last disk by user
 		g_bSaveDiskImage = false;
 		// Pass in ptr to local copy of filepath, since RemoveDisk() sets DiskPathFilename = ""
 		DiskInsert(iDrive, sFilePath, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 		g_bSaveDiskImage = true;
 	}
-	//else MessageBox(g_hFrameWindow,"Reg Key/Value not found",pRegKey,MB_OK);
 }
 
 //===========================================================================
@@ -202,7 +189,7 @@ void Disk_SaveLastDiskImage(const int iDrive)
 	if (!g_bSaveDiskImage)
 		return;
 
-	const char *pFileName = DiskGetDiskPathFilename(iDrive).c_str();
+	const char *pFileName = g_aFloppyDisk[iDrive].fullname;
 
 	if (iDrive == DRIVE_1)
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_1, TRUE, pFileName);
@@ -248,53 +235,6 @@ static Disk_Status_e GetDriveLightStatus(const int iDrive)
 
 	return DISK_STATUS_OFF;
 }
-
-//===========================================================================
-
-static void GetImageTitle(LPCTSTR imagefilename, Disk_t* fptr)
-{
-	TCHAR   imagetitle[ MAX_DISK_FULL_NAME+1 ];
-	LPCTSTR startpos = imagefilename;
-
-	// imagetitle = <FILENAME.EXT>
-	if (_tcsrchr(startpos,TEXT('\\')))
-		startpos = _tcsrchr(startpos,TEXT('\\'))+1;
-
-	_tcsncpy(imagetitle,startpos,MAX_DISK_FULL_NAME);
-	imagetitle[MAX_DISK_FULL_NAME] = 0;
-
-	// if imagetitle contains a lowercase char, then found=1 (why?)
-	BOOL found = 0;
-	int  loop  = 0;
-	while (imagetitle[loop] && !found)
-	{
-		if (IsCharLower(imagetitle[loop]))
-			found = 1;
-		else
-			loop++;
-	}
-
-	if ((!found) && (loop > 2))
-		CharLowerBuff(imagetitle+1,_tcslen(imagetitle+1));
-
-	// fptr->fullname = <FILENAME.EXT>
-	_tcsncpy( fptr->fullname, imagetitle, MAX_DISK_FULL_NAME );
-	fptr->fullname[ MAX_DISK_FULL_NAME ] = 0;
-
-	if (imagetitle[0])
-	{
-		LPTSTR dot = imagetitle;
-		if (_tcsrchr(dot,TEXT('.')))
-			dot = _tcsrchr(dot,TEXT('.'));
-		if (dot > imagetitle)
-			*dot = 0;
-	}
-
-	// fptr->imagename = <FILENAME> (ie. no extension)
-	_tcsncpy( fptr->imagename, imagetitle, MAX_DISK_IMAGE_NAME );
-	fptr->imagename[ MAX_DISK_IMAGE_NAME ] = 0;
-}
-
 
 //===========================================================================
 
@@ -370,7 +310,6 @@ static void RemoveDisk(const int iDrive)
 	memset( pFloppy->imagename, 0, MAX_DISK_IMAGE_NAME+1 );
 	memset( pFloppy->fullname , 0, MAX_DISK_FULL_NAME +1 );
 	pFloppy->strFilenameInZip = "";
-	DiskSetDiskPathFilename(iDrive, "");
 
 	Disk_SaveLastDiskImage( iDrive );
 	Video_ResetScreenshotCounter( NULL );
@@ -558,6 +497,11 @@ LPCTSTR DiskGetFullDiskFilename(const int iDrive)
 	return DiskGetFullName(iDrive);
 }
 
+static LPCTSTR DiskGetFullPathName(const int iDrive)
+{
+	return ImageGetPathname(g_aFloppyDisk[iDrive].imagehandle);
+}
+
 // Return the imagename
 // . Used by Drive Button's icons & Property Sheet Page (Save snapshot)
 LPCTSTR DiskGetBaseName(const int iDrive)
@@ -611,10 +555,20 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 	else
 		fptr->bWriteProtected = bForceWriteProtected ? true : (dwAttributes & FILE_ATTRIBUTE_READONLY);
 
-	// Check if image is being used by the other HDD, and unplug it in order to be swapped
-	std::string otherDisk = DiskGetDiskPathFilename(!iDrive);
-	if (!strcmp(otherDisk.c_str(), pszImageFilename)) {
-		DiskEject(!iDrive);
+	// Check if image is being used by the other drive, and if so remove it in order so it can be swapped
+	{
+		const char* pszOtherPathname = DiskGetFullPathName(!iDrive);
+
+		char szCurrentPathname[MAX_PATH]; 
+		DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, szCurrentPathname, NULL);
+		if (uNameLen == 0 || uNameLen >= MAX_PATH)
+			strcpy_s(szCurrentPathname, MAX_PATH, pszImageFilename);
+
+ 		if (!strcmp(pszOtherPathname, szCurrentPathname))
+		{
+			DiskEject(!iDrive);
+			FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+		}
 	}
 
 	ImageError_e Error = ImageOpen(pszImageFilename,
@@ -637,19 +591,15 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 
 	if (Error == eIMAGE_ERROR_NONE)
 	{
-		GetImageTitle(pszImageFilename, fptr);
-
-		DiskSetDiskPathFilename(iDrive, pszImageFilename);
-
-		//MessageBox( g_hFrameWindow, imagefilename, fptr->imagename, MB_OK );
-		Video_ResetScreenshotCounter( fptr->imagename );
+		GetImageTitle(pszImageFilename, fptr->imagename, fptr->fullname);
+		Video_ResetScreenshotCounter(fptr->imagename);
 	}
 	else
 	{
-		Video_ResetScreenshotCounter( NULL );
+		Video_ResetScreenshotCounter(NULL);
 	}
 
-	Disk_SaveLastDiskImage( iDrive );
+	Disk_SaveLastDiskImage(iDrive);
 	
 	return Error;
 }
@@ -730,6 +680,13 @@ void DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const Im
 			pszImageFilename);
 		break;
 
+	case eIMAGE_ERROR_FAILED_TO_GET_PATHNAME:
+		wsprintf(
+			szBuffer,
+			TEXT("Unable to GetFullPathName() for the file: %s."),
+			pszImageFilename);
+		break;
+		
 	default:
 		// IGNORE OTHER ERRORS SILENTLY
 		return;
@@ -852,7 +809,7 @@ void DiskReset(void)
 
 //===========================================================================
 
-void DiskSelectImage(const int iDrive, LPSTR pszFilename)
+static bool DiskSelectImage(const int iDrive, LPCSTR pszFilename)
 {
 	TCHAR directory[MAX_PATH] = TEXT("");
 	TCHAR filename[MAX_PATH]  = TEXT("");
@@ -880,6 +837,8 @@ void DiskSelectImage(const int iDrive, LPSTR pszFilename)
 	ofn.Flags           = OFN_PATHMUSTEXIST;
 	ofn.lpstrTitle      = title;
 
+	bool bRes = false;
+
 	if (GetOpenFileName(&ofn))
 	{
 		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
@@ -888,16 +847,18 @@ void DiskSelectImage(const int iDrive, LPSTR pszFilename)
 		ImageError_e Error = DiskInsert(iDrive, filename, ofn.Flags & OFN_READONLY, IMAGE_CREATE);
 		if (Error == eIMAGE_ERROR_NONE)
 		{
-			DiskSetDiskPathFilename(iDrive, filename); 
 			filename[ofn.nFileOffset] = 0;
 			if (_tcsicmp(directory, filename))
 				RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, filename);
+			bRes = true;
 		}
 		else
 		{
 			DiskNotifyInvalidImage(iDrive, filename, Error);
 		}
 	}
+
+	return bRes;
 }
 
 //===========================================================================
@@ -1040,6 +1001,8 @@ void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
 	// . In this case we can patch to compensate for an ADC or EOR checksum but not both
 
 	RegisterIoHandler(uSlot, Disk_IORead, Disk_IOWrite, NULL, NULL, NULL, NULL);
+
+	g_uSlot = uSlot;
 }
 
 //===========================================================================
@@ -1100,53 +1063,13 @@ static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 
 //===========================================================================
 
-DWORD DiskGetSnapshot(SS_CARD_DISK2* pSS, DWORD dwSlot)
+int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 {
-	pSS->Hdr.UnitHdr.dwLength = sizeof(SS_CARD_DISK2);
-	pSS->Hdr.UnitHdr.dwVersion = MAKE_VERSION(1,0,0,2);
+	if(pSS->Hdr.UnitHdr.hdr.v1.dwVersion > MAKE_VERSION(1,0,0,2))
+		return -1;
 
-	pSS->Hdr.dwSlot = dwSlot;
-	pSS->Hdr.dwType = CT_Disk2;
-
-	pSS->phases			    = phases; // new in 1.0.0.2 disk snapshots
-	pSS->currdrive			= currdrive; // this was an int in 1.0.0.1 disk snapshots
-	pSS->diskaccessed		= diskaccessed;
-	pSS->enhancedisk		= enhancedisk;
-	pSS->floppylatch		= floppylatch;
-	pSS->floppymotoron		= floppymotoron;
-	pSS->floppywritemode	= floppywritemode;
-
-	for(UINT i=0; i<NUM_DRIVES; i++)
-	{
-		strcpy(pSS->Unit[i].szFileName, g_aFloppyDisk[i].fullname);
-		pSS->Unit[i].track				= g_aFloppyDisk[i].track;
-		pSS->Unit[i].phase				= g_aFloppyDisk[i].phase;
-		pSS->Unit[i].byte				= g_aFloppyDisk[i].byte;
-		pSS->Unit[i].writeprotected		= g_aFloppyDisk[i].bWriteProtected ? TRUE : FALSE;
-		pSS->Unit[i].trackimagedata		= g_aFloppyDisk[i].trackimagedata;
-		pSS->Unit[i].trackimagedirty	= g_aFloppyDisk[i].trackimagedirty;
-		pSS->Unit[i].spinning			= g_aFloppyDisk[i].spinning;
-		pSS->Unit[i].writelight			= g_aFloppyDisk[i].writelight;
-		pSS->Unit[i].nibbles			= g_aFloppyDisk[i].nibbles;
-
-		if(g_aFloppyDisk[i].trackimage)
-			memcpy(pSS->Unit[i].nTrack, g_aFloppyDisk[i].trackimage, NIBBLES_PER_TRACK);
-		else
-			memset(pSS->Unit[i].nTrack, 0, NIBBLES_PER_TRACK);
-	}
-
-	return 0;
-}
-
-DWORD DiskSetSnapshot(SS_CARD_DISK2* pSS, DWORD /*dwSlot*/)
-{
-	if(pSS->Hdr.UnitHdr.dwVersion > MAKE_VERSION(1,0,0,2))
-    {
-        return -1;
-    }
-
-	phases  		= pSS->phases; // new in 1.0.0.2 disk snapshots
-	currdrive		= pSS->currdrive; // this was an int in 1.0.0.1 disk snapshots
+	phases  		= pSS->phases;
+	currdrive		= pSS->currdrive;
 	diskaccessed	= pSS->diskaccessed;
 	enhancedisk		= pSS->enhancedisk;
 	floppylatch		= pSS->floppylatch;
@@ -1183,7 +1106,6 @@ DWORD DiskSetSnapshot(SS_CARD_DISK2* pSS, DWORD /*dwSlot*/)
 			// DiskInsert() sets up:
 			// . imagename
 			// . fullname
-			// . strDiskPathFilename
 			// . writeprotected
 		}
 
@@ -1224,4 +1146,195 @@ DWORD DiskSetSnapshot(SS_CARD_DISK2* pSS, DWORD /*dwSlot*/)
 	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
 	return 0;
+}
+
+//===========================================================================
+
+struct DISK2_Unit_v2
+{
+	char	szFileName[MAX_PATH];
+	UINT	Track;
+	UINT	Phase;
+	UINT	Byte;
+	BOOL	WriteProtected;
+	BOOL	TrackImageData;
+	BOOL	TrackImageDirty;
+	DWORD	Spinning;
+	DWORD	WriteLight;
+	UINT	Nibbles;
+	BYTE	TrackImage[NIBBLES_PER_TRACK];
+};
+
+struct SS_CARD_DISK2_v2
+{
+	SS_CARD_HDR	Hdr;
+	DISK2_Unit_v2	Unit[2];
+    WORD    Phases;
+	WORD	CurrDrive;
+	BOOL	DiskAccessed;
+	BOOL	EnhanceDisk;
+	BYTE	FloppyLatch;
+	BOOL	FloppyMotorOn;
+	BOOL	FloppyWriteMode;
+};
+
+void DiskGetSnapshot(const HANDLE hFile)
+{
+	SS_CARD_DISK2_v2 CardDisk2;
+
+	SS_CARD_DISK2_v2* const pSS = &CardDisk2;
+
+	pSS->Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_DISK2);
+	pSS->Hdr.UnitHdr.hdr.v2.Type = UT_Card;
+	pSS->Hdr.UnitHdr.hdr.v2.Version = 1;
+
+	pSS->Hdr.Slot = g_uSlot;
+	pSS->Hdr.Type = CT_Disk2;
+
+	pSS->Phases			    = phases;
+	pSS->CurrDrive			= currdrive;
+	pSS->DiskAccessed		= diskaccessed;
+	pSS->EnhanceDisk		= enhancedisk;
+	pSS->FloppyLatch		= floppylatch;
+	pSS->FloppyMotorOn		= floppymotoron;
+	pSS->FloppyWriteMode	= floppywritemode;
+
+	for(UINT i=0; i<NUM_DRIVES; i++)
+	{
+		strcpy(pSS->Unit[i].szFileName, g_aFloppyDisk[i].fullname);
+		pSS->Unit[i].Track				= g_aFloppyDisk[i].track;
+		pSS->Unit[i].Phase				= g_aFloppyDisk[i].phase;
+		pSS->Unit[i].Byte				= g_aFloppyDisk[i].byte;
+		pSS->Unit[i].WriteProtected		= g_aFloppyDisk[i].bWriteProtected ? TRUE : FALSE;
+		pSS->Unit[i].TrackImageData		= g_aFloppyDisk[i].trackimagedata;
+		pSS->Unit[i].TrackImageDirty	= g_aFloppyDisk[i].trackimagedirty;
+		pSS->Unit[i].Spinning			= g_aFloppyDisk[i].spinning;
+		pSS->Unit[i].WriteLight			= g_aFloppyDisk[i].writelight;
+		pSS->Unit[i].Nibbles			= g_aFloppyDisk[i].nibbles;
+
+		if(g_aFloppyDisk[i].trackimage)
+			memcpy(pSS->Unit[i].TrackImage, g_aFloppyDisk[i].trackimage, NIBBLES_PER_TRACK);
+		else
+			memset(pSS->Unit[i].TrackImage, 0, NIBBLES_PER_TRACK);
+	}
+
+	//
+
+	DWORD dwBytesWritten;
+	BOOL bRes = WriteFile(	hFile,
+							&CardDisk2,
+							CardDisk2.Hdr.UnitHdr.hdr.v2.Length,
+							&dwBytesWritten,
+							NULL);
+
+	if(!bRes || (dwBytesWritten != CardDisk2.Hdr.UnitHdr.hdr.v2.Length))
+	{
+		//dwError = GetLastError();
+		throw std::string("Save error: Disk][");
+	}
+}
+
+void DiskSetSnapshot(const HANDLE hFile)
+{
+	SS_CARD_DISK2_v2 CardDisk2;
+
+	DWORD dwBytesRead;
+	BOOL bRes = ReadFile(	hFile,
+							&CardDisk2,
+							sizeof(CardDisk2),
+							&dwBytesRead,
+							NULL);
+
+	if (dwBytesRead != sizeof(CardDisk2))
+		throw std::string("Card: file corrupt");
+
+	if (CardDisk2.Hdr.Slot != 6)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (CardDisk2.Hdr.UnitHdr.hdr.v2.Version > 1)
+		throw std::string("Card: wrong version");
+
+	if (CardDisk2.Hdr.UnitHdr.hdr.v2.Length != sizeof(SS_CARD_DISK2_v2))
+		throw std::string("Card: unit size mismatch");
+
+	const SS_CARD_DISK2_v2* const pSS = &CardDisk2;
+
+	phases  		= pSS->Phases;
+	currdrive		= pSS->CurrDrive;
+	diskaccessed	= pSS->DiskAccessed;
+	enhancedisk		= pSS->EnhanceDisk;
+	floppylatch		= pSS->FloppyLatch;
+	floppymotoron	= pSS->FloppyMotorOn;
+	floppywritemode	= pSS->FloppyWriteMode;
+
+	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
+	for(UINT i=0; i<NUM_DRIVES; i++)
+	{
+		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
+		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t ));
+	}
+
+	bool bResSelectImage = false;
+
+	for(UINT i=0; i<NUM_DRIVES; i++)
+	{
+		if(pSS->Unit[i].szFileName[0] == 0x00)
+			continue;
+
+		DWORD dwAttributes = GetFileAttributes(pSS->Unit[i].szFileName);
+		if(dwAttributes == INVALID_FILE_ATTRIBUTES)
+		{
+			// Get user to browse for file
+			bResSelectImage = DiskSelectImage(i, pSS->Unit[i].szFileName);
+
+			dwAttributes = GetFileAttributes(pSS->Unit[i].szFileName);
+		}
+
+		bool bImageError = (dwAttributes == INVALID_FILE_ATTRIBUTES);
+		if (!bImageError)
+		{
+			if(DiskInsert(i, pSS->Unit[i].szFileName, dwAttributes & FILE_ATTRIBUTE_READONLY, IMAGE_DONT_CREATE) != eIMAGE_ERROR_NONE)
+				bImageError = true;
+
+			// DiskInsert() sets up:
+			// . imagename
+			// . fullname
+			// . writeprotected
+		}
+
+		//
+
+//		strcpy(g_aFloppyDisk[i].fullname, pSS->Unit[i].szFileName);
+		g_aFloppyDisk[i].track				= pSS->Unit[i].Track;
+		g_aFloppyDisk[i].phase				= pSS->Unit[i].Phase;
+		g_aFloppyDisk[i].byte				= pSS->Unit[i].Byte;
+//		g_aFloppyDisk[i].writeprotected		= pSS->Unit[i].WriteProtected;
+		g_aFloppyDisk[i].trackimagedata		= pSS->Unit[i].TrackImageData;
+		g_aFloppyDisk[i].trackimagedirty	= pSS->Unit[i].TrackImageDirty;
+		g_aFloppyDisk[i].spinning			= pSS->Unit[i].Spinning;
+		g_aFloppyDisk[i].writelight			= pSS->Unit[i].WriteLight;
+		g_aFloppyDisk[i].nibbles			= pSS->Unit[i].Nibbles;
+
+		//
+
+		if(!bImageError)
+		{
+			if((g_aFloppyDisk[i].trackimage == NULL) && g_aFloppyDisk[i].nibbles)
+				AllocTrack(i);
+
+			if(g_aFloppyDisk[i].trackimage == NULL)
+				bImageError = true;
+			else
+				memcpy(g_aFloppyDisk[i].trackimage, pSS->Unit[i].TrackImage, NIBBLES_PER_TRACK);
+		}
+
+		if(bImageError)
+		{
+			g_aFloppyDisk[i].trackimagedata		= 0;
+			g_aFloppyDisk[i].trackimagedirty	= 0;
+			g_aFloppyDisk[i].nibbles			= 0;
+		}
+	}
+
+	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 }
