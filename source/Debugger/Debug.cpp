@@ -1941,7 +1941,7 @@ Update_t CmdTraceFile (int nArgs)
 		fclose( g_hTraceFile );
 		g_hTraceFile = NULL;
 
-		sprintf( sText, "Trace stopped." );
+		_snprintf( sText, sizeof(sText), "Trace stopped." );
 	}
 	else
 	{
@@ -1961,16 +1961,17 @@ Update_t CmdTraceFile (int nArgs)
 
 		if (g_hTraceFile)
 		{
-			sprintf( sText, "Trace started: %s", sFilePath );
+			_snprintf( sText, sizeof(sText), "Trace started: %s", sFilePath );
 
 			g_bTraceHeader = true;
 		}
 		else
 		{
-			sprintf( sText, "Trace ERROR: %s", sFilePath );
+			_snprintf( sText, sizeof(sText), "Trace ERROR: %s", sFilePath );
 		}
 	}
-	
+
+	sText[sizeof(sText)-1] = 0;	// _snprintf needs null if string was longer than buffer
 	ConsoleBufferPush( sText );
 	ConsoleBufferToDisplay();
 
