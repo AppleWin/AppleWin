@@ -2469,7 +2469,6 @@ void FrameSetCursorPosByMousePos()
 	int iY, iMinY, iMaxY;
 	sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 
-	_ASSERT(iMinX == 0 && iMinY == 0);
 	float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));
 	float fScaleY = (float)(iY-iMinY) / ((float)(iMaxY-iMinY));
 
@@ -2505,7 +2504,6 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 	int iX, iMinX, iMaxX;
 	int iY, iMinY, iMaxY;
 	sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
-	_ASSERT(iMinX == 0 && iMinY == 0);
 
 	if (bLeavingAppleScreen)
 	{
