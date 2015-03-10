@@ -125,6 +125,7 @@
     <ClCompile Include="source\Configuration\PropertySheet.cpp" />
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CPU.cpp" />
+    <ClCompile Include="source\DAC.cpp" />
     <ClCompile Include="source\Debugger\Debug.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Assembler.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Color.cpp" />
