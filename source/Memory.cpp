@@ -1296,7 +1296,8 @@ void MemInitialize()
 		ConfigureSoftcard(pCxRomPeripheral, 5);		// $C500 : Z80 card
 	}
         else
-         ConfigureDAC(pCxRomPeripheral, 5);		// $C500 : Z80 card
+         if (g_Slot5 == CT_SAM)
+          ConfigureDAC(pCxRomPeripheral, 5);		// $C500 : Z80 card
 
 	DiskLoadRom(pCxRomPeripheral, 6);				// $C600 : Disk][ f/w
 	HD_Load_Rom(pCxRomPeripheral, 7);				// $C700 : HDD f/w
