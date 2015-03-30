@@ -21,7 +21,7 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 /*
-  DAC.CPP
+  SAM.CPP
 
   Emulate an 8 bit DAC (eg: SAM card) which writes unsigned byte
   data written to its IO area to the audio buffer (as used by the speaker).
@@ -34,7 +34,7 @@
 
 #include "AppleWin.h"
 #include "Memory.h"
-#include "DAC.h"
+#include "SAM.h"
 #include "Speaker.h"
 
 //

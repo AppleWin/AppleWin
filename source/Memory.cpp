@@ -51,7 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
 #include "Debugger\DebugDefs.h"
-#include "DAC.h"
+#include "SAM.h"
 
 // Memory Flag
 #define  MF_80STORE    0x00000001
