@@ -1297,7 +1297,7 @@ void MemInitialize()
 	}
         else
          if (g_Slot5 == CT_SAM)
-          ConfigureDAC(pCxRomPeripheral, 5);		// $C500 : Z80 card
+          ConfigureSAM(pCxRomPeripheral, 5);		// $C500 : Z80 card
 
 	DiskLoadRom(pCxRomPeripheral, 6);				// $C600 : Disk][ f/w
 	HD_Load_Rom(pCxRomPeripheral, 7);				// $C700 : HDD f/w
