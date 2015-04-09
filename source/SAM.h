@@ -1,2 +1,3 @@
-// SAM speech card (8 bit DAC):
+#pragma once
+
 void ConfigureSAM(LPBYTE pCxRomPeripheral, UINT uSlot);

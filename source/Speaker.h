@@ -7,7 +7,7 @@
 
 extern DWORD      soundtype;
 extern double     g_fClksPerSpkrSample;
-extern UINT       g_quieterSpeaker;
+extern bool       g_bQuieterSpeaker;
 extern short      g_nSpeakerData;
 
 void    SpkrDestroy ();
@@ -30,5 +30,3 @@ DWORD   SpkrGetSnapshot(SS_IO_Speaker* pSS);
 DWORD   SpkrSetSnapshot(SS_IO_Speaker* pSS);
 
 BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-
-		    
