@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
 #include "Debugger\DebugDefs.h"
+#include "SAM.h"
 
 // Memory Flag
 #define  MF_80STORE    0x00000001
@@ -1294,6 +1295,9 @@ void MemInitialize()
 	{
 		ConfigureSoftcard(pCxRomPeripheral, 5);		// $C500 : Z80 card
 	}
+        else
+         if (g_Slot5 == CT_SAM)
+          ConfigureSAM(pCxRomPeripheral, 5);		// $C500 : Z80 card
 
 	DiskLoadRom(pCxRomPeripheral, 6);				// $C600 : Disk][ f/w
 	HD_Load_Rom(pCxRomPeripheral, 7);				// $C700 : HDD f/w
