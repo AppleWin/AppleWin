@@ -118,10 +118,10 @@ BOOL CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM 
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETTICFREQ,10,0);
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPOS,1,MB_GetVolume());
 
-                        if (g_Slot5 == CT_SAM)
+			if (g_Slot5 == CT_SAM)
 				m_NewCardType = CT_SAM;
-       			else
-			       	m_NewCardType = MB_GetSoundcardType();	// Reinit 1st time page is activated (fires before PSN_SETACTIVE)
+			else
+				m_NewCardType = MB_GetSoundcardType();	// Reinit 1st time page is activated (fires before PSN_SETACTIVE)
 
 			InitOptions(hWnd);
 
@@ -163,7 +163,7 @@ void CPageSound::InitOptions(HWND hWnd)
 		m_nCurrentIDCheckButton = IDC_PHASOR_ENABLE;
 	else if(m_NewCardType == CT_SAM) 
 		m_nCurrentIDCheckButton = IDC_SAM_ENABLE; 
-        else
+	else
 		m_nCurrentIDCheckButton = IDC_SOUNDCARD_DISABLE;
 
 	CheckRadioButton(hWnd, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, m_nCurrentIDCheckButton);
@@ -178,20 +178,20 @@ void CPageSound::InitOptions(HWND hWnd)
 
 	// Phasor button
 	{
-         const BOOL bEnable = bIsSlot4Empty || Slot4 == CT_MockingboardC || Slot4 == CT_Phasor;
+		const BOOL bEnable = bIsSlot4Empty || Slot4 == CT_MockingboardC || Slot4 == CT_Phasor;
 		EnableWindow(GetDlgItem(hWnd, IDC_PHASOR_ENABLE), bEnable);	// Disable Phasor (slot 4)
 	}
 
 	// Mockingboard button
 	{
 		const BOOL bEnable = (bIsSlot4Empty || Slot4 == CT_Phasor || Slot4 == CT_MockingboardC) &&
-                 (bIsSlot5Empty || Slot5 == CT_SAM || Slot5 == CT_MockingboardC);
+							 (bIsSlot5Empty || Slot5 == CT_SAM    || Slot5 == CT_MockingboardC);
 		EnableWindow(GetDlgItem(hWnd, IDC_MB_ENABLE), bEnable);		// Disable Mockingboard (slot 4 & 5)
 	}
 
-        // SAM button
+	// SAM button
 	{
-         const BOOL bEnable = bIsSlot5Empty || Slot5 == CT_MockingboardC || Slot5 == CT_SAM;
+		const BOOL bEnable = bIsSlot5Empty || Slot5 == CT_MockingboardC || Slot5 == CT_SAM;
 		EnableWindow(GetDlgItem(hWnd, IDC_SAM_ENABLE), bEnable);	// Disable SAM (slot 5)
 	}
 
@@ -223,17 +223,17 @@ bool CPageSound::NewSoundcardConfigured(HWND hWnd, WPARAM wparam, SS_CARDTYPE Ne
 			m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_Empty;
 	}
 	else if (NewCardType == CT_SAM)
-        {
-         if ((Slot4 == CT_MockingboardC) || (Slot4 == CT_Phasor))
+	{
+	if ((Slot4 == CT_MockingboardC) || (Slot4 == CT_Phasor))
 		m_PropertySheetHelper.GetConfigNew().m_Slot[4] = CT_Empty;
 		m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_SAM;
-        }
-        else    
+	}
+	else
 	{
 		if ((Slot4 == CT_MockingboardC) || (Slot4 == CT_Phasor))
-		   m_PropertySheetHelper.GetConfigNew().m_Slot[4] = CT_Empty;
+			m_PropertySheetHelper.GetConfigNew().m_Slot[4] = CT_Empty;
 		if ((Slot5 == CT_MockingboardC) || (Slot5 == CT_SAM))
-                   m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_Empty;
+			m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_Empty;
 	}
 
 	return true;

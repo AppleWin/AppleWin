@@ -73,7 +73,7 @@ DWORD			soundtype		= SOUND_WAVE;
 double		    g_fClksPerSpkrSample;		// Setup in SetClksPerSpkrSample()
 
 // Allow temporary quietening of speaker (8 bit DAC)
-UINT		    g_quieterSpeaker = 0;
+bool			g_bQuieterSpeaker = false;
 
 // Globals
 static DWORD	lastcyclenum	= 0;
@@ -444,19 +444,21 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 
 	  UpdateSpkr();
 
-          // quieten the speaker if 8 bit DAC in use
-          
-	  // g_nSpeakerData = ~g_nSpeakerData;
-          if (g_quieterSpeaker)
-           if (g_nSpeakerData == (SPKR_DATA_INIT >> 2))
-            g_nSpeakerData = ~g_nSpeakerData;
-           else
-            g_nSpeakerData = SPKR_DATA_INIT>>2;
-          else
-           if (g_nSpeakerData == SPKR_DATA_INIT)
-            g_nSpeakerData = ~g_nSpeakerData;
-           else
-            g_nSpeakerData = SPKR_DATA_INIT;
+      if (g_bQuieterSpeaker)
+      {
+       // quieten the speaker if 8 bit DAC in use
+       if (g_nSpeakerData == (SPKR_DATA_INIT >> 2))
+        g_nSpeakerData = ~g_nSpeakerData;
+       else
+        g_nSpeakerData = SPKR_DATA_INIT>>2;
+      }
+      else
+      {
+       if (g_nSpeakerData == SPKR_DATA_INIT)
+        g_nSpeakerData = ~g_nSpeakerData;
+       else
+        g_nSpeakerData = SPKR_DATA_INIT;
+      }
   }
   else if (soundtype != SOUND_NONE)
   {
@@ -1002,7 +1004,7 @@ static void Spkr_SetActive(bool bActive)
 		// Called by SpkrUpdate() after 0.2s of speaker inactivity
 		g_bSpkrRecentlyActive = false;
 		SpeakerVoice.bRecentlyActive = false;
-                g_quieterSpeaker = 0;  // undo any muting (for 8 bit DAC)
+		g_bQuieterSpeaker = 0;	// undo any muting (for 8 bit DAC)
 	}
 }
 
