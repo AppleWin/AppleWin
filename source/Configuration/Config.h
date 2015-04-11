@@ -15,6 +15,7 @@ public:
 		m_bEnableHDD = HD_CardIsEnabled();
 		m_bEnableTheFreezesF8Rom = bEnableTheFreezesF8Rom;
 		memset(&m_Slot, 0, sizeof(m_Slot));
+		m_SlotAux = CT_Empty;
 		m_Slot[4] = g_Slot4;
 		m_Slot[5] = g_Slot5;
 	}
@@ -47,6 +48,7 @@ public:
 
 	eApple2Type	m_Apple2Type;
 	SS_CARDTYPE m_Slot[NUM_SLOTS];	// 0..7
+	SS_CARDTYPE m_SlotAux;
 	BOOL m_bEnhanceDisk;
 	bool m_bEnableHDD;
 	UINT m_bEnableTheFreezesF8Rom;

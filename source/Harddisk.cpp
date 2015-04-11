@@ -218,6 +218,17 @@ static void HD_SaveLastDiskImage(const int iDrive)
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_HARDDISK_1, TRUE, pFileName);
 	else
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_HARDDISK_2, TRUE, pFileName);
+
+	//
+
+	char szPathName[MAX_PATH];
+	strcpy(szPathName, HD_GetFullPathName(iDrive));
+	if (_tcsrchr(szPathName, TEXT('\\')))
+	{
+		char* pPathEnd = _tcsrchr(szPathName, TEXT('\\'))+1;
+		*pPathEnd = 0;
+		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szPathName);
+	}
 }
 
 //===========================================================================
@@ -407,9 +418,6 @@ static bool HD_SelectImage(const int iDrive, LPCSTR pszFilename)
 		
 		if (HD_Insert(iDrive, filename))
 		{
-			filename[ofn.nFileOffset] = 0;
-			if (_tcsicmp(directory, filename))
-				RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, filename);
 			bRes = true;
 		}
 		else

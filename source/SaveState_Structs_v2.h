@@ -46,8 +46,11 @@ struct SS_BaseMemory_v2
 {
 	DWORD dwMemMode;
 	BOOL bLastWriteRam;
+	BYTE IO_SELECT;
+	BYTE IO_SELECT_InternalROM;
+	UINT ExpansionRomType;
+	UINT PeripheralRomSlot;
 	BYTE MemMain[nMemMainSize];
-	BYTE MemAux[nMemAuxSize];
 };
 
 struct SS_APPLE2_Unit_v2
@@ -72,7 +75,7 @@ struct APPLEWIN_SNAPSHOT_v2
 {
 	SS_FILE_HDR Hdr;
 	SS_APPLE2_Unit_v2 Apple2Unit;
-//	SS_CARD_EMPTY[7] Slots;				// Slot 0..7 (0=language card for Apple][)
+//	SS_CARD_EMPTY[8] Slots;				// Slot 0..7 (0=language card for Apple][)
 //	SS_CARD_EMPTY AuxSlot;				// Apple//e auxiliary slot (including optional RAMworks memory)
 //	SS_APPLEWIN_CONFIG AppleWinCfg;
 };

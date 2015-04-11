@@ -23,7 +23,10 @@ bool    MB_IsActive();
 DWORD   MB_GetVolume();
 void    MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 
-void    MB_GetSnapshot_v1(struct SS_CARD_MOCKINGBOARD* const pSS, const DWORD dwSlot);	// For debugger
-int     MB_SetSnapshot_v1(const struct SS_CARD_MOCKINGBOARD* const pSS, const DWORD dwSlot);
+void    MB_GetSnapshot_v1(struct SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot);	// For debugger
+int     MB_SetSnapshot_v1(const struct SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot);
 void    MB_GetSnapshot(const HANDLE hFile, const UINT uSlot);
 void    MB_SetSnapshot(const HANDLE hFile);
+
+void Phasor_GetSnapshot(const HANDLE hFile);
+void Phasor_SetSnapshot(const HANDLE hFile);

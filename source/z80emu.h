@@ -14,3 +14,7 @@
 
 // Protótipos
 void ConfigureSoftcard(LPBYTE pCxRomPeripheral, UINT uSlot);
+
+// NB. These are in z80.cpp:
+void Z80_GetSnapshot(const HANDLE hFile, const UINT uZ80Slot);
+void Z80_SetSnapshot(const HANDLE hFile);

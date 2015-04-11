@@ -494,11 +494,6 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
 		g_Slot5 = (SS_CARDTYPE) dwTmp;
 
-	if (g_Slot4 == CT_MockingboardC || g_Slot4 == CT_Phasor)
-		MB_SetSoundcardType(g_Slot4);
-	else
-		MB_SetSoundcardType(CT_Empty);
-
 	//
 
 	char szFilename[MAX_PATH] = {0};

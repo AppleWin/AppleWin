@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SerialComms.h"
 #include "Speaker.h"
 #include "Video.h"
+#include "z80emu.h"
 
 #include "Configuration\Config.h"
 #include "Configuration\IPropertySheet.h"
@@ -211,6 +212,8 @@ static void Snapshot_LoadState_v1()	// .aws v1.0.0.1, up to (and including) Appl
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
 		SetCurrentImageDir(strOldImageDir.c_str());
+
+		PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
 	}
 
 	delete [] pSS;
@@ -270,17 +273,16 @@ static void Snapshot_LoadState_FileHdr(SS_FILE_HDR& Hdr)
 
 static void LoadUnitApple2(DWORD Length, DWORD Version)
 {
-	SS_APPLE2_Unit_v2 Apple2Unit;
-
 	if (Version != UNIT_APPLE2_VER)
 		throw std::string("Apple2: Version mismatch");
 
-	if (Length != sizeof(Apple2Unit))
+	if (Length != sizeof(SS_APPLE2_Unit_v2))
 		throw std::string("Apple2: Length mismatch");
 
-	if (SetFilePointer(m_hFile, -(LONG)sizeof(Apple2Unit.UnitHdr), NULL, FILE_CURRENT) == INVALID_SET_FILE_POINTER)
+	if (SetFilePointer(m_hFile, -(LONG)sizeof(SS_UNIT_HDR), NULL, FILE_CURRENT) == INVALID_SET_FILE_POINTER)
 		throw std::string("Apple2: file corrupt");
 
+	SS_APPLE2_Unit_v2 Apple2Unit;
 	DWORD dwBytesRead;
 	BOOL bRes = ReadFile(	m_hFile,
 							&Apple2Unit,
@@ -333,6 +335,21 @@ static void LoadCardHDD(void)
 {
 	HD_SetSnapshot(m_hFile, g_strSaveStatePath);
 	m_ConfigNew.m_bEnableHDD = true;
+}
+
+static void LoadCardPhasor(void)
+{
+	Phasor_SetSnapshot(m_hFile);
+}
+
+static void LoadCardZ80(void)
+{
+	Z80_SetSnapshot(m_hFile);
+}
+
+static void LoadCard80ColAuxMem(void)
+{
+	MemSetSnapshotAux(m_hFile);
 }
 
 //===
@@ -391,10 +408,15 @@ static void LoadUnitCard(DWORD Length, DWORD Version)
 		LoadCardMouseInterface();
 		break;
 	case CT_Z80:
-		throw std::string("Card: todo");
+		LoadCardZ80();
 		break;
 	case CT_Phasor:
-		throw std::string("Card: todo");
+		LoadCardPhasor();
+		break;
+	case CT_80Col:
+	case CT_Extended80Col:
+	case CT_RamWorksIII:
+		LoadCard80ColAuxMem();
 		break;
 	default:
 		//throw std::string("Card: unsupported");
@@ -404,7 +426,12 @@ static void LoadUnitCard(DWORD Length, DWORD Version)
 	}
 
 	if (bIsCardSupported)
-		m_ConfigNew.m_Slot[Card.Slot] = (SS_CARDTYPE) Card.Type;
+	{
+		if (Card.Slot <= 7)
+			m_ConfigNew.m_Slot[Card.Slot] = (SS_CARDTYPE) Card.Type;
+		else
+			m_ConfigNew.m_SlotAux         = (SS_CARDTYPE) Card.Type;
+	}
 }
 
 static void LoadUnitConfig(DWORD Length, DWORD Version)
@@ -432,7 +459,6 @@ static void LoadUnitConfig(DWORD Length, DWORD Version)
 
 	// todo:
 	//m_ConfigNew.m_bEnhanceDisk;
-	//m_ConfigNew.m_bEnableHDD;
 }
 
 static void Snapshot_LoadState_v2(DWORD dwVersion)
@@ -447,14 +473,18 @@ static void Snapshot_LoadState_v2(DWORD dwVersion)
 		ConfigOld.m_Slot[2] = CT_SSC;				// fixme
 		ConfigOld.m_Slot[6] = CT_Disk2;				// fixme
 		ConfigOld.m_Slot[7] = ConfigOld.m_bEnableHDD ? CT_GenericHDD : CT_Empty;	// fixme
+		//ConfigOld.m_SlotAux = ?;					// fixme
 
 		for (UINT i=0; i<NUM_SLOTS; i++)
 			m_ConfigNew.m_Slot[i] = CT_Empty;
+		m_ConfigNew.m_SlotAux = CT_Empty;
 
 		MemReset();
 
+		// fixme: Apple type may change - assume ths can be removed?
 		if (!IS_APPLE2)
 			MemResetPaging();
+		// fixme-end
 
 		DiskReset();
 		KeybReset();
@@ -520,6 +550,8 @@ static void Snapshot_LoadState_v2(DWORD dwVersion)
 					szMessage.c_str(),
 					TEXT("Load State"),
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+
+		PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
 	}
 
 	CloseHandle(m_hFile);
@@ -575,19 +607,19 @@ void Snapshot_SaveState()
 
 		//
 
-		APPLEWIN_SNAPSHOT_v2 AppleSnapshotv2;
+		APPLEWIN_SNAPSHOT_v2 AppleSnapshot;
 
-		AppleSnapshotv2.Hdr.dwTag = AW_SS_TAG;
-		AppleSnapshotv2.Hdr.dwVersion = MAKE_VERSION(2,0,0,0);
-		AppleSnapshotv2.Hdr.dwChecksum = 0;	// TO DO
+		AppleSnapshot.Hdr.dwTag = AW_SS_TAG;
+		AppleSnapshot.Hdr.dwVersion = MAKE_VERSION(2,0,0,0);
+		AppleSnapshot.Hdr.dwChecksum = 0;	// TO DO
 
-		SS_APPLE2_Unit_v2& Apple2Unit = AppleSnapshotv2.Apple2Unit;
+		SS_APPLE2_Unit_v2& Apple2Unit = AppleSnapshot.Apple2Unit;
 
 		//
 		// Apple2 unit
 		//
 
-		Apple2Unit.UnitHdr.hdr.v2.Length = sizeof(SS_APPLE2_Unit_v2);
+		Apple2Unit.UnitHdr.hdr.v2.Length = sizeof(Apple2Unit);
 		Apple2Unit.UnitHdr.hdr.v2.Type = UT_Apple2;
 		Apple2Unit.UnitHdr.hdr.v2.Version = UNIT_APPLE2_VER;
 
@@ -602,12 +634,12 @@ void Snapshot_SaveState()
 
 		DWORD dwBytesWritten;
 		BOOL bRes = WriteFile(	m_hFile,
-								&AppleSnapshotv2,
-								sizeof(APPLEWIN_SNAPSHOT_v2),
+								&AppleSnapshot,
+								sizeof(AppleSnapshot),
 								&dwBytesWritten,
 								NULL);
 
-		if(!bRes || (dwBytesWritten != sizeof(APPLEWIN_SNAPSHOT_v2)))
+		if(!bRes || (dwBytesWritten != sizeof(AppleSnapshot)))
 		{
 			//dwError = GetLastError();
 			throw std::string("Save error");
@@ -615,17 +647,28 @@ void Snapshot_SaveState()
 
 		//
 
+		MemGetSnapshotAux(m_hFile);
+
 		Printer_GetSnapshot(m_hFile);
 
 		sg_SSC.GetSnapshot(m_hFile);
 
 		sg_Mouse.GetSnapshot(m_hFile);
 
+		if (g_Slot4 == CT_Z80)
+			Z80_GetSnapshot(m_hFile, 4);
+
+		if (g_Slot5 == CT_Z80)
+			Z80_GetSnapshot(m_hFile, 5);
+
 		if (g_Slot4 == CT_MockingboardC)
 			MB_GetSnapshot(m_hFile, 4);
 
 		if (g_Slot5 == CT_MockingboardC)
 			MB_GetSnapshot(m_hFile, 5);
+
+		if (g_Slot4 == CT_Phasor)
+			Phasor_GetSnapshot(m_hFile);
 
 		DiskGetSnapshot(m_hFile);
 

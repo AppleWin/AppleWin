@@ -117,6 +117,7 @@ static bool IsDriveValid( const int iDrive );
 static void ReadTrack (int drive);
 static void RemoveDisk (int drive);
 static void WriteTrack (int drive);
+static LPCTSTR DiskGetFullPathName(const int iDrive);
 
 //===========================================================================
 
@@ -195,6 +196,17 @@ void Disk_SaveLastDiskImage(const int iDrive)
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_1, TRUE, pFileName);
 	else
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_2, TRUE, pFileName);
+
+	//
+
+	char szPathName[MAX_PATH];
+	strcpy(szPathName, DiskGetFullPathName(iDrive));
+	if (_tcsrchr(szPathName, TEXT('\\')))
+	{
+		char* pPathEnd = _tcsrchr(szPathName, TEXT('\\'))+1;
+		*pPathEnd = 0;
+		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szPathName);
+	}
 }
 
 //===========================================================================
@@ -847,9 +859,6 @@ static bool DiskSelectImage(const int iDrive, LPCSTR pszFilename)
 		ImageError_e Error = DiskInsert(iDrive, filename, ofn.Flags & OFN_READONLY, IMAGE_CREATE);
 		if (Error == eIMAGE_ERROR_NONE)
 		{
-			filename[ofn.nFileOffset] = 0;
-			if (_tcsicmp(directory, filename))
-				RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, filename);
 			bRes = true;
 		}
 		else

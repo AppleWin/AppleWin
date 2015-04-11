@@ -56,6 +56,8 @@ LPVOID	MemGetSlotParameters (UINT uSlot);
 void    MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE* const pMemMain, const BYTE* const pMemAux);
 void    MemGetSnapshot(struct SS_BaseMemory_v2& Memory);
 void    MemSetSnapshot(const struct SS_BaseMemory_v2& Memory);
+void    MemGetSnapshotAux(const HANDLE hFile);
+void    MemSetSnapshotAux(const HANDLE hFile);
 
 BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 

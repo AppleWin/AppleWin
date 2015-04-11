@@ -116,14 +116,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define Phasor_SY6522A_Offset	(1<<Phasor_SY6522A_CS)
 #define Phasor_SY6522B_Offset	(1<<Phasor_SY6522B_CS)
 
-typedef struct
+struct SY6522_AY8910
 {
 	SY6522 sy6522;
 	BYTE nAY8910Number;
 	BYTE nAYCurrentRegister;
 	BYTE nTimerStatus;
 	SSI263A SpeechChip;
-} SY6522_AY8910;
+};
 
 
 // IFR & IER:
@@ -178,6 +178,7 @@ static bool g_bMBAvailable = false;
 static SS_CARDTYPE g_SoundcardType = CT_Empty;	// Use CT_Empty to mean: no soundcard
 static bool g_bPhasorEnable = false;
 static BYTE g_nPhasorMode = 0;	// 0=Mockingboard emulation, 1=Phasor native
+static UINT g_PhasorClockScaleFactor = 1;	// for save-state only
 
 //-------------------------------------
 
@@ -999,6 +1000,13 @@ static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
 
 //-----------------------------------------------------------------------------
 
+// Warning! Data-race!
+// . SSI263Thread() can asynchronously set /g_nCurrentActivePhoneme/ to -1
+// . I have seen it on a call to Play(0,0,0)
+// . eg. could occur between [1] and [2]
+//	 - presumably after Stop(), wait for: g_bStopPhoneme == false OR for g_nCurrentActivePhoneme == -1
+//   - NB. sample could finish between: if (g_nCurrentActivePhoneme >= 0) and g_bStopPhoneme = true
+
 static void SSI263_Play(unsigned int nPhoneme)
 {
 #if 1
@@ -1013,6 +1021,8 @@ static void SSI263_Play(unsigned int nPhoneme)
 
 	g_nCurrentActivePhoneme = nPhoneme;
 
+	// [1]
+
 	hr = SSI263Voice[g_nCurrentActivePhoneme].lpDSBvoice->SetCurrentPosition(0);
 	if(FAILED(hr))
 		return;
@@ -1022,6 +1032,8 @@ static void SSI263_Play(unsigned int nPhoneme)
 		return;
 
 	SSI263Voice[g_nCurrentActivePhoneme].bActive = true;
+
+	// [2]
 #else
 	HRESULT hr;
 	bool bPause;
@@ -1373,7 +1385,8 @@ void MB_Initialize()
 // NB. Called when /g_fCurrentCLK6502/ changes
 void MB_Reinitialize()
 {
-	AY8910_InitClock((int)g_fCurrentCLK6502);
+	AY8910_InitClock((int)g_fCurrentCLK6502);	// todo: account for g_PhasorClockScaleFactor?
+												// NB. Other calls to AY8910_InitClock() use the constant CLK_6502
 }
 
 //-----------------------------------------------------------------------------
@@ -1405,9 +1418,10 @@ static void ResetState()
 
 	//g_bMBAvailable = false;
 
-	//g_SoundcardType = CT_Empty;
-	//g_bPhasorEnable = false;
+//	g_SoundcardType = CT_Empty;	// Don't uncomment, else _ASSERT will fire in MB_Read() after an F2->MB_Reset()
+//	g_bPhasorEnable = false;
 	g_nPhasorMode = 0;
+	g_PhasorClockScaleFactor = 1;
 }
 
 void MB_Reset()
@@ -1555,9 +1569,9 @@ static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 	if(g_nPhasorMode < 2)
 		g_nPhasorMode = nAddr & 1;
 
-	double fCLK = (nAddr & 4) ? CLK_6502*2 : CLK_6502;
+	g_PhasorClockScaleFactor = (nAddr & 4) ? 2 : 1;
 
-	AY8910_InitClock((int)fCLK);
+	AY8910_InitClock((int)(CLK_6502 * g_PhasorClockScaleFactor));
 
 	return MemReadFloatingBus(nCyclesLeft);
 }
@@ -1764,9 +1778,9 @@ void MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 //===========================================================================
 
 // Called by debugger - Debugger_Display.cpp
-void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD* const pSS, const DWORD dwSlot)
+void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
 {
-	pSS->Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_MOCKINGBOARD);
+	pSS->Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_MOCKINGBOARD_v1);
 	pSS->Hdr.UnitHdr.hdr.v2.Type = UT_Card;
 	pSS->Hdr.UnitHdr.hdr.v2.Version = 1;
 
@@ -1777,19 +1791,22 @@ void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD* const pSS, const DWORD dwSlot)
 	UINT nDeviceNum = nMbCardNum*2;
 	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
 
-	for(UINT i=0; i<MB_UNITS_PER_CARD; i++)
+	for(UINT i=0; i<MB_UNITS_PER_CARD_v1; i++)
 	{
 		memcpy(&pSS->Unit[i].RegsSY6522, &pMB->sy6522, sizeof(SY6522));
 		memcpy(&pSS->Unit[i].RegsAY8910, AY8910_GetRegsPtr(nDeviceNum), 16);
 		memcpy(&pSS->Unit[i].RegsSSI263, &pMB->SpeechChip, sizeof(SSI263A));
 		pSS->Unit[i].nAYCurrentRegister = pMB->nAYCurrentRegister;
+		pSS->Unit[i].bTimer1IrqPending = false;
+		pSS->Unit[i].bTimer2IrqPending = false;
+		pSS->Unit[i].bSpeechIrqPending = false;
 
 		nDeviceNum++;
 		pMB++;
 	}
 }
 
-int MB_SetSnapshot_v1(const SS_CARD_MOCKINGBOARD* const pSS, const DWORD /*dwSlot*/)
+int MB_SetSnapshot_v1(const SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD /*dwSlot*/)
 {
 	if(pSS->Hdr.UnitHdr.hdr.v1.dwVersion != MAKE_VERSION(1,0,0,0))
 		return -1;
@@ -1801,7 +1818,7 @@ int MB_SetSnapshot_v1(const SS_CARD_MOCKINGBOARD* const pSS, const DWORD /*dwSlo
 	g_nSSI263Device = 0;
 	g_nCurrentActivePhoneme = -1;
 
-	for(UINT i=0; i<MB_UNITS_PER_CARD; i++)
+	for(UINT i=0; i<MB_UNITS_PER_CARD_v1; i++)
 	{
 		memcpy(&pMB->sy6522, &pSS->Unit[i].RegsSY6522, sizeof(SY6522));
 		memcpy(AY8910_GetRegsPtr(nDeviceNum), &pSS->Unit[i].RegsAY8910, 16);
@@ -1837,86 +1854,134 @@ int MB_SetSnapshot_v1(const SS_CARD_MOCKINGBOARD* const pSS, const DWORD /*dwSlo
 
 //===========================================================================
 
+static UINT DoWriteFile(const HANDLE hFile, const void* const pData, const UINT Length)
+{
+	DWORD dwBytesWritten;
+	BOOL bRes = WriteFile(	hFile,
+							pData,
+							Length,
+							&dwBytesWritten,
+							NULL);
+
+	if(!bRes || (dwBytesWritten != Length))
+	{
+		//dwError = GetLastError();
+		throw std::string("Card: save error");
+	}
+
+	return dwBytesWritten;
+}
+
+static UINT DoReadFile(const HANDLE hFile, void* const pData, const UINT Length)
+{
+	DWORD dwBytesRead;
+	BOOL bRes = ReadFile(	hFile,
+							pData,
+							Length,
+							&dwBytesRead,
+							NULL);
+
+	if (dwBytesRead != Length)
+		throw std::string("Card: file corrupt");
+
+	return dwBytesRead;
+}
+
+//===========================================================================
+
+struct Mockingboard_Unit
+{
+	SY6522		RegsSY6522;
+	SSI263A		RegsSSI263;
+	BYTE		AYCurrentRegister;
+	bool		bTimer1IrqPending;
+	bool		bTimer2IrqPending;
+	bool		bSpeechIrqPending;
+//	SS_AY8910	AY8910;	// Internal state of AY8910
+};
+
+const UINT NUM_MB_UNITS = 2;
+
+struct SS_CARD_MOCKINGBOARD
+{
+	SS_CARD_HDR Hdr;
+	Mockingboard_Unit Unit[NUM_MB_UNITS];
+};
+
 void MB_GetSnapshot(const HANDLE hFile, const UINT uSlot)
 {
-	SS_CARD_MOCKINGBOARD CardMockingboardC;
+	SS_CARD_MOCKINGBOARD Card;
 
-	SS_CARD_MOCKINGBOARD* const pSS = &CardMockingboardC;
+	Card.Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_MOCKINGBOARD);
+	Card.Hdr.UnitHdr.hdr.v2.Type = UT_Card;
+	Card.Hdr.UnitHdr.hdr.v2.Version = 1;
 
-	pSS->Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_MOCKINGBOARD);
-	pSS->Hdr.UnitHdr.hdr.v2.Type = UT_Card;
-	pSS->Hdr.UnitHdr.hdr.v2.Version = 1;
+	Card.Hdr.Slot = uSlot;	// fixme: object should be just 1 Mockingboard card & it will know its slot
+	Card.Hdr.Type = CT_MockingboardC;
 
-	pSS->Hdr.Slot = uSlot;	// fixme: object should be just 1 Mockingboard card & it will know its slot
-	pSS->Hdr.Type = CT_MockingboardC;
+	const UINT nMbCardNum = uSlot - SLOT4;
+	Card.Hdr.UnitHdr.hdr.v2.Length += AY8910_GetSnapshot(NULL, nMbCardNum*2+0);
+	Card.Hdr.UnitHdr.hdr.v2.Length += AY8910_GetSnapshot(NULL, nMbCardNum*2+1);
 
-	UINT nMbCardNum = uSlot - SLOT4;
+	UINT uTotalWriteSize = DoWriteFile(hFile, &Card, (UINT)&Card.Unit-(UINT)&Card);
+
+	//
+
 	UINT nDeviceNum = nMbCardNum*2;
 	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
 
-	for(UINT i=0; i<MB_UNITS_PER_CARD; i++)
+	for(UINT i=0; i<NUM_MB_UNITS; i++)
 	{
-		memcpy(&pSS->Unit[i].RegsSY6522, &pMB->sy6522, sizeof(SY6522));
-		memcpy(&pSS->Unit[i].RegsAY8910, AY8910_GetRegsPtr(nDeviceNum), 16);
-		memcpy(&pSS->Unit[i].RegsSSI263, &pMB->SpeechChip, sizeof(SSI263A));
-		pSS->Unit[i].nAYCurrentRegister = pMB->nAYCurrentRegister;
+		memcpy(&Card.Unit[i].RegsSY6522, &pMB->sy6522, sizeof(SY6522));
+		memcpy(&Card.Unit[i].RegsSSI263, &pMB->SpeechChip, sizeof(SSI263A));
+		Card.Unit[i].AYCurrentRegister = pMB->nAYCurrentRegister;
+		Card.Unit[i].bTimer1IrqPending = false;
+		Card.Unit[i].bTimer2IrqPending = false;
+		Card.Unit[i].bSpeechIrqPending = false;
+		uTotalWriteSize += DoWriteFile(hFile, &Card.Unit[i], sizeof(Card.Unit[0]));
+
+		uTotalWriteSize += AY8910_GetSnapshot(hFile, nDeviceNum);
 
 		nDeviceNum++;
 		pMB++;
 	}
 
-	//
-
-	DWORD dwBytesWritten;
-	BOOL bRes = WriteFile(	hFile,
-							&CardMockingboardC,
-							CardMockingboardC.Hdr.UnitHdr.hdr.v2.Length,
-							&dwBytesWritten,
-							NULL);
-
-	if(!bRes || (dwBytesWritten != CardMockingboardC.Hdr.UnitHdr.hdr.v2.Length))
-	{
-		//dwError = GetLastError();
-		throw std::string("Save error: Mockingboard");
-	}
+	_ASSERT(uTotalWriteSize == Card.Hdr.UnitHdr.hdr.v2.Length);
+	if (uTotalWriteSize != Card.Hdr.UnitHdr.hdr.v2.Length)
+		throw std::string("Card: unit size mismatch");
 }
 
 void MB_SetSnapshot(const HANDLE hFile)
 {
-	SS_CARD_MOCKINGBOARD CardMockingboardC;
+	SS_CARD_MOCKINGBOARD Card;
 
-	DWORD dwBytesRead;
-	BOOL bRes = ReadFile(	hFile,
-							&CardMockingboardC,
-							sizeof(CardMockingboardC),
-							&dwBytesRead,
-							NULL);
+	UINT uTotalReadSize = DoReadFile(hFile, &Card, (UINT)&Card.Unit-(UINT)&Card);
 
-	if (dwBytesRead != sizeof(CardMockingboardC))
-		throw std::string("Card: file corrupt");
-
-	if (CardMockingboardC.Hdr.Slot != 4 && CardMockingboardC.Hdr.Slot != 5)	// fixme
+	if (Card.Hdr.Slot != 4 && Card.Hdr.Slot != 5)	// fixme
 		throw std::string("Card: wrong slot");
 
-	if (CardMockingboardC.Hdr.UnitHdr.hdr.v2.Version > 1)
+	if (Card.Hdr.UnitHdr.hdr.v2.Version > 1)
 		throw std::string("Card: wrong version");
 
-	if (CardMockingboardC.Hdr.UnitHdr.hdr.v2.Length != sizeof(SS_CARD_MOCKINGBOARD))
+	if (Card.Hdr.UnitHdr.hdr.v2.Length <= sizeof(SS_CARD_MOCKINGBOARD))
 		throw std::string("Card: unit size mismatch");
 
-	UINT nMbCardNum = CardMockingboardC.Hdr.Slot - SLOT4;
+	AY8910UpdateSetCycles();
+
+	const UINT nMbCardNum = Card.Hdr.Slot - SLOT4;
 	UINT nDeviceNum = nMbCardNum*2;
 	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
 
 	g_nSSI263Device = 0;
 	g_nCurrentActivePhoneme = -1;
 
-	for(UINT i=0; i<MB_UNITS_PER_CARD; i++)
+	for(UINT i=0; i<NUM_MB_UNITS; i++)
 	{
-		memcpy(&pMB->sy6522, &CardMockingboardC.Unit[i].RegsSY6522, sizeof(SY6522));
-		memcpy(AY8910_GetRegsPtr(nDeviceNum), &CardMockingboardC.Unit[i].RegsAY8910, 16);
-		memcpy(&pMB->SpeechChip, &CardMockingboardC.Unit[i].RegsSSI263, sizeof(SSI263A));
-		pMB->nAYCurrentRegister = CardMockingboardC.Unit[i].nAYCurrentRegister;
+		uTotalReadSize += DoReadFile(hFile, &Card.Unit[i], sizeof(Card.Unit[0]));
+
+		memcpy(&pMB->sy6522, &Card.Unit[i].RegsSY6522, sizeof(SY6522));
+		memcpy(&pMB->SpeechChip, &Card.Unit[i].RegsSSI263, sizeof(SSI263A));
+		pMB->nAYCurrentRegister = Card.Unit[i].AYCurrentRegister;
 
 		StartTimer(pMB);	// Attempt to start timer
 
@@ -1938,7 +2003,163 @@ void MB_SetSnapshot(const HANDLE hFile)
 			}
 		}
 
+		uTotalReadSize += AY8910_SetSnapshot(hFile, nDeviceNum);
+
 		nDeviceNum++;
 		pMB++;
 	}
+
+	_ASSERT(uTotalReadSize == Card.Hdr.UnitHdr.hdr.v2.Length);
+	if (uTotalReadSize != Card.Hdr.UnitHdr.hdr.v2.Length)
+		throw std::string("Card: unit size mismatch");
+
+	AY8910_InitClock((int)CLK_6502);
+
+	// Setup in MB_InitializeIO() -> MB_SetSoundcardType()
+	g_SoundcardType = CT_Empty;
+	g_bPhasorEnable = false;
+}
+
+//===========================================================================
+
+struct Phasor_Unit
+{
+	SY6522		RegsSY6522;
+	SSI263A		RegsSSI263;
+	BYTE		AYCurrentRegister;
+	bool		bTimer1IrqPending;
+	bool		bTimer2IrqPending;
+	bool		bSpeechIrqPending;
+//	SS_AY8910	AY8910[2];	// Internal state of AY8910
+};
+
+const UINT NUM_PHASOR_UNITS = 2;
+
+struct SS_CARD_PHASOR
+{
+	SS_CARD_HDR Hdr;
+	UINT		ClockScaleFactor;
+	UINT		Mode;
+	Phasor_Unit Unit[NUM_PHASOR_UNITS];
+};
+
+void Phasor_GetSnapshot(const HANDLE hFile)
+{
+	SS_CARD_PHASOR Card;
+
+	Card.Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_PHASOR);
+	Card.Hdr.UnitHdr.hdr.v2.Type = UT_Card;
+	Card.Hdr.UnitHdr.hdr.v2.Version = 1;
+
+	const UINT uSlot = 4;	// fixme
+	Card.Hdr.Slot = uSlot;	// fixme: object should just be Phasor card & it will know its slot
+	Card.Hdr.Type = CT_Phasor;
+
+	Card.ClockScaleFactor = g_PhasorClockScaleFactor;
+	Card.Mode = g_nPhasorMode;
+
+	for (UINT i=0; i<4; i++)
+		Card.Hdr.UnitHdr.hdr.v2.Length += AY8910_GetSnapshot(NULL, i);
+
+	UINT uTotalWriteSize = DoWriteFile(hFile, &Card, (UINT)&Card.Unit-(UINT)&Card);
+
+	//
+
+	UINT nDeviceNum = 0;
+	SY6522_AY8910* pMB = &g_MB[0];	// fixme: Phasor uses MB's slot4(2x6522), slot4(2xSSI263), but slot4+5(4xAY8910)
+
+	for(UINT i=0; i<NUM_PHASOR_UNITS; i++)
+	{
+		memcpy(&Card.Unit[i].RegsSY6522, &pMB->sy6522, sizeof(SY6522));
+		memcpy(&Card.Unit[i].RegsSSI263, &pMB->SpeechChip, sizeof(SSI263A));
+		Card.Unit[i].AYCurrentRegister = pMB->nAYCurrentRegister;
+		Card.Unit[i].bTimer1IrqPending = false;
+		Card.Unit[i].bTimer2IrqPending = false;
+		Card.Unit[i].bSpeechIrqPending = false;
+		uTotalWriteSize += DoWriteFile(hFile, &Card.Unit[i], sizeof(Card.Unit[0]));
+
+		uTotalWriteSize += AY8910_GetSnapshot(hFile, nDeviceNum+0);
+		uTotalWriteSize += AY8910_GetSnapshot(hFile, nDeviceNum+1);
+
+		nDeviceNum += 2;
+		pMB++;
+	}
+
+	_ASSERT(uTotalWriteSize == Card.Hdr.UnitHdr.hdr.v2.Length);
+	if (uTotalWriteSize != Card.Hdr.UnitHdr.hdr.v2.Length)
+		throw std::string("Card: unit size mismatch");
+}
+
+void Phasor_SetSnapshot(const HANDLE hFile)
+{
+	SS_CARD_PHASOR Card;
+
+	UINT uTotalReadSize = DoReadFile(hFile, &Card, (UINT)&Card.Unit-(UINT)&Card);
+
+	if (Card.Hdr.Slot != 4)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (Card.Hdr.UnitHdr.hdr.v2.Version > 1)
+		throw std::string("Card: wrong version");
+
+	if (Card.Hdr.UnitHdr.hdr.v2.Length <= sizeof(SS_CARD_PHASOR))
+		throw std::string("Card: unit size mismatch");
+
+	g_PhasorClockScaleFactor = Card.ClockScaleFactor;
+	g_nPhasorMode = Card.Mode;
+
+	AY8910UpdateSetCycles();
+
+	UINT nDeviceNum = 0;
+	SY6522_AY8910* pMB = &g_MB[0];
+
+	g_nSSI263Device = 0;
+	g_nCurrentActivePhoneme = -1;
+
+	for(UINT i=0; i<NUM_PHASOR_UNITS; i++)
+	{
+		uTotalReadSize += DoReadFile(hFile, &Card.Unit[i], sizeof(Card.Unit[0]));
+
+		memcpy(&pMB->sy6522, &Card.Unit[i].RegsSY6522, sizeof(SY6522));
+		memcpy(&pMB->SpeechChip, &Card.Unit[i].RegsSSI263, sizeof(SSI263A));
+		pMB->nAYCurrentRegister = Card.Unit[i].AYCurrentRegister;
+
+		StartTimer(pMB);	// Attempt to start timer
+
+		//
+
+		// Crude - currently only support a single speech chip
+		// FIX THIS:
+		// . Speech chip could be Votrax instead
+		// . Is this IRQ compatible with Phasor?
+		if(pMB->SpeechChip.DurationPhonome)
+		{
+			g_nSSI263Device = nDeviceNum;
+
+			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
+			{
+				pMB->sy6522.IFR |= IxR_PERIPHERAL;
+				UpdateIFR(pMB);
+				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
+			}
+		}
+
+		//
+
+		uTotalReadSize += AY8910_SetSnapshot(hFile, nDeviceNum+0);
+		uTotalReadSize += AY8910_SetSnapshot(hFile, nDeviceNum+1);
+
+		nDeviceNum += 2;
+		pMB++;
+	}
+
+	_ASSERT(uTotalReadSize == Card.Hdr.UnitHdr.hdr.v2.Length);
+	if (uTotalReadSize != Card.Hdr.UnitHdr.hdr.v2.Length)
+		throw std::string("Card: unit size mismatch");
+
+	AY8910_InitClock((int)(CLK_6502 * g_PhasorClockScaleFactor));
+
+	// Setup in MB_InitializeIO() -> MB_SetSoundcardType()
+	g_SoundcardType = CT_Empty;
+	g_bPhasorEnable = false;
 }

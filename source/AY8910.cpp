@@ -114,12 +114,17 @@ static int rstereopos, rchan1pos, rchan2pos, rchan3pos;
 double CAY8910::m_fCurrentCLK_AY8910 = 0.0;
 
 
-CAY8910::CAY8910() :
-	// Init the statics that were in sound_ay_overlay()
-	rng(1),
-	noise_toggle(0),
-	env_first(1), env_rev(0), env_counter(15)
+void CAY8910::init(void)
 {
+	// Init the statics that were in sound_ay_overlay()
+	rng = 1;
+	noise_toggle = 0;
+	env_first = 1; env_rev = 0; env_counter = 15;
+}
+
+CAY8910::CAY8910(void)
+{
+	init();
 	m_fCurrentCLK_AY8910 = g_fCurrentCLK6502;
 };
 
@@ -731,6 +736,8 @@ void CAY8910::sound_ay_reset( void )
 {
   int f;
 
+  init();	// AppleWin:TC
+
 /* recalculate timings based on new machines ay clock */
   sound_ay_init();
 
@@ -940,6 +947,157 @@ sound_beeper( int is_tape, int on )
 }
 #endif
 
+// disable warning C4200: zero-sized array in struct/union
+#pragma warning(disable: 4200)
+
+struct SS_AY8910
+{
+	unsigned int ay_tone_tick[3], ay_tone_high[3], ay_noise_tick;
+	unsigned int ay_tone_subcycles, ay_env_subcycles;
+	unsigned int ay_env_internal_tick, ay_env_tick;
+	unsigned int ay_tick_incr;
+	unsigned int ay_tone_period[3], ay_noise_period, ay_env_period;
+
+	BYTE sound_ay_registers[16];
+
+	int rng;
+	int noise_toggle;
+	int env_first, env_rev, env_counter;
+
+	int ay_change_count;
+	void* ay_change[0];	// real type is ay_change_tag (but this is private)
+};
+
+UINT CAY8910::GetSnapshot(const HANDLE hFile)
+{
+	const UINT uAYChangeLength = ay_change_count * sizeof(ay_change_tag);
+	const UINT uAYTotalLength = sizeof(SS_AY8910) + uAYChangeLength;
+
+	if (hFile == NULL)
+		return uAYTotalLength;
+
+	//
+
+	SS_AY8910 ay_state;
+
+	memcpy(ay_state.ay_tone_tick, ay_tone_tick, sizeof(ay_tone_tick));
+	memcpy(ay_state.ay_tone_high, ay_tone_high, sizeof(ay_tone_high));
+	ay_state.ay_noise_tick = ay_noise_tick;
+	ay_state.ay_tone_subcycles = ay_tone_subcycles;
+	ay_state.ay_env_subcycles = ay_env_subcycles;
+	ay_state.ay_env_internal_tick = ay_env_internal_tick;
+	ay_state.ay_env_tick = ay_env_tick;
+	ay_state.ay_tick_incr = ay_tick_incr;
+	memcpy(ay_state.ay_tone_period, ay_tone_period, sizeof(ay_tone_period));
+	ay_state.ay_noise_period = ay_noise_period;
+	ay_state.ay_env_period = ay_env_period;
+
+	memcpy(ay_state.sound_ay_registers, sound_ay_registers, sizeof(sound_ay_registers));
+
+	ay_state.rng = rng;
+	ay_state.noise_toggle = noise_toggle;
+	ay_state.env_first = env_first;
+	ay_state.env_rev = env_rev;
+	ay_state.env_counter = env_counter;
+
+	ay_state.ay_change_count = ay_change_count;
+
+	//
+
+	DWORD dwBytesWritten;
+	BOOL bRes = WriteFile(	hFile,
+							&ay_state,
+							sizeof(SS_AY8910),
+							&dwBytesWritten,
+							NULL);
+
+	if(!bRes || (dwBytesWritten != sizeof(SS_AY8910)))
+	{
+		//dwError = GetLastError();
+		throw std::string("Save error: AY8910");
+	}
+
+	//
+
+	if (uAYChangeLength)
+	{
+		DWORD dwBytesWritten2;
+		BOOL bRes2 = WriteFile(	hFile,
+								ay_change,
+								uAYChangeLength,
+								&dwBytesWritten2,
+								NULL);
+
+		if(!bRes2 || (dwBytesWritten2 != uAYChangeLength))
+		{
+			//dwError = GetLastError();
+			throw std::string("Save error: AY8910");
+		}
+	}
+
+	return uAYTotalLength;
+}
+
+UINT CAY8910::SetSnapshot(const HANDLE hFile)
+{
+	SS_AY8910 ay_state;
+
+	DWORD dwBytesRead;
+	BOOL bRes = ReadFile(	hFile,
+							&ay_state,
+							sizeof(SS_AY8910),
+							&dwBytesRead,
+							NULL);
+
+	if (dwBytesRead != sizeof(SS_AY8910))
+		throw std::string("Card: file corrupt");
+
+	if (ay_state.ay_change_count > AY_CHANGE_MAX)
+		throw std::string("Card: file corrupt");
+
+	//
+
+	memcpy(ay_tone_tick, ay_state.ay_tone_tick, sizeof(ay_tone_tick));
+	memcpy(ay_tone_high, ay_state.ay_tone_high, sizeof(ay_tone_high));
+	ay_noise_tick = ay_state.ay_noise_tick;
+	ay_tone_subcycles = ay_state.ay_tone_subcycles;
+	ay_env_subcycles = ay_state.ay_env_subcycles;
+	ay_env_internal_tick = ay_state.ay_env_internal_tick;
+	ay_env_tick = ay_state.ay_env_tick;
+	ay_tick_incr = ay_state.ay_tick_incr;
+	memcpy(ay_tone_period, ay_state.ay_tone_period, sizeof(ay_tone_period));
+	ay_noise_period = ay_state.ay_noise_period;
+	ay_env_period = ay_state.ay_env_period;
+
+	memcpy(sound_ay_registers, ay_state.sound_ay_registers, sizeof(sound_ay_registers));
+
+	rng = ay_state.rng;
+	noise_toggle = ay_state.noise_toggle;
+	env_first = ay_state.env_first;
+	env_rev = ay_state.env_rev;
+	env_counter = ay_state.env_counter;
+
+	ay_change_count = ay_state.ay_change_count;
+
+	//
+
+	const UINT uLength = ay_change_count * sizeof(ay_change_tag);
+	if (uLength)
+	{
+		DWORD dwBytesRead2;
+		BOOL bRes = ReadFile(	hFile,
+								ay_change,
+								uLength,
+								&dwBytesRead2,
+								NULL);
+
+		if (dwBytesRead2 != uLength)
+			throw std::string("Card: file corrupt");
+	}
+
+	return dwBytesRead+uLength;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // AY8910 interface
@@ -996,8 +1154,24 @@ void AY8910_InitClock(int nClock)
 
 BYTE* AY8910_GetRegsPtr(UINT uChip)
 {
-	if(uChip >= MAX_8910)
+	if (uChip >= MAX_8910)
 		return NULL;
 
 	return g_AY8910[uChip].GetAYRegsPtr();
+}
+
+UINT AY8910_GetSnapshot(const HANDLE hFile, UINT uChip)
+{
+	if (uChip >= MAX_8910)
+		return 0;
+
+	return g_AY8910[uChip].GetSnapshot(hFile);
+}
+
+UINT AY8910_SetSnapshot(const HANDLE hFile, UINT uChip)
+{
+	if (uChip >= MAX_8910)
+		return 0;
+
+	return g_AY8910[uChip].SetSnapshot(hFile);
 }

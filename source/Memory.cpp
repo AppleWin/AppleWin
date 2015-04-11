@@ -170,7 +170,7 @@ iofunction		IORead[256];
 iofunction		IOWrite[256];
 static LPVOID	SlotParameters[NUM_SLOTS];
 
-static BOOL    lastwriteram = 0;
+static BOOL    lastwriteram = 0;	// NB. redundant - only used in MemSetPaging(), where it's forced to 1
 
 LPBYTE         mem          = NULL;
 
@@ -194,7 +194,8 @@ static BOOL    Pravets8charmode = 0;
 static CNoSlotClock g_NoSlotClock;
 
 #ifdef RAMWORKS
-UINT			g_uMaxExPages	= 1;			// user requested ram pages
+UINT			g_uMaxExPages = 1;				// user requested ram pages
+UINT			g_uActiveBank = 0;				// 0 = memaux
 static LPBYTE	RWpages[128];					// pointers to RW memory banks
 #endif
 
@@ -694,11 +695,6 @@ static void InitIoHandlers()
 
 	//
 
-	IO_SELECT = 0;
-	IO_SELECT_InternalROM = 0;
-	g_eExpansionRomType = eExpRomNull;
-	g_uPeripheralRomSlot = 0;
-
 	for (i=0; i<NUM_SLOTS; i++)
 	{
 		g_SlotInfo[i].bHasCard = false;
@@ -1028,6 +1024,7 @@ static LPBYTE MemGetPtrBANK1(const WORD offset, const LPBYTE pMemBase)
 	if ((offset & 0xF000) != 0xC000)	// Requesting RAM at physical addr $Cxxx (ie. 4K RAM BANK1)
 		return NULL;
 
+	// fixme: Need to extend for RAMWORKS / RWpages (when pMemBase == memaux)
 	const BYTE bank1page = (offset >> 8) & 0xF;
 	return (memshadow[0xD0+bank1page] == pMemBase+(0xC0+bank1page)*256)
 		? mem+offset+0x1000				// Return ptr to $Dxxx address - 'mem' has (a potentially dirty) 4K RAM BANK1 mapped in at $D000
@@ -1146,7 +1143,9 @@ void MemInitialize()
 
 #ifdef RAMWORKS
 	// allocate memory for RAMWorks III - up to 8MB
-	RWpages[0] = memaux;
+	g_uActiveBank = 0;
+	RWpages[g_uActiveBank] = memaux;
+
 	UINT i = 1;
 	while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE)))
 		i++;
@@ -1340,8 +1339,15 @@ void MemReset()
 
 	// INITIALIZE THE RAM IMAGES
 	ZeroMemory(memaux ,0x10000);
-
 	ZeroMemory(memmain,0x10000);
+
+	// Init the I/O ROM vars
+	IO_SELECT = 0;
+	IO_SELECT_InternalROM = 0;
+	g_eExpansionRomType = eExpRomNull;
+	g_uPeripheralRomSlot = 0;
+
+	//
 
 	int iByte;
 
@@ -1453,7 +1459,7 @@ void MemReset()
 	// - "BeachParty-PoacherWars-DaytonDinger-BombsAway.dsk"
 	// - "Dung Beetles, Ms. PacMan, Pooyan, Star Cruiser, Star Thief, Invas. Force.dsk"
 	memmain[ 0x620B ] = 0x0;
-	
+
 	// https://github.com/AppleWin/AppleWin/issues/222
 	// MIP_PAGE_ADDRESS_LOW
 	// "Copy II+ v5.0.dsk"
@@ -1474,7 +1480,7 @@ void MemReset()
 	CpuInitialize();
 	//Sets Caps Lock = false (Pravets 8A/C only)
 
-	z80_reset();
+	z80_reset();	// NB. Also called above in CpuInitialize()
 }
 
 //===========================================================================
@@ -1589,7 +1595,8 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 			case 0x73: // Ramworks III set aux page number
 				if ((value < g_uMaxExPages) && RWpages[value])
 				{
-					memaux = RWpages[value];
+					g_uActiveBank = value;
+					memaux = RWpages[g_uActiveBank];
 					UpdatePaging(0);	// Initialize=0
 				}
 				break;
@@ -1679,7 +1686,7 @@ void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE*
 	//
 
 	modechanging = 0;
-
+	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v1()
 	UpdatePaging(1);	// Initialize=1
 }
 
@@ -1689,11 +1696,14 @@ void MemGetSnapshot(SS_BaseMemory_v2& Memory)
 {
 	Memory.dwMemMode = memmode;
 	Memory.bLastWriteRam = lastwriteram;
+	Memory.IO_SELECT = IO_SELECT;
+	Memory.IO_SELECT_InternalROM = IO_SELECT_InternalROM;
+	Memory.ExpansionRomType = g_eExpansionRomType;
+	Memory.PeripheralRomSlot = g_uPeripheralRomSlot;
 
 	for(DWORD dwOffset = 0x0000; dwOffset < 0x10000; dwOffset+=0x100)
 	{
 		memcpy(Memory.MemMain+dwOffset, MemGetMainPtr((WORD)dwOffset), 0x100);
-		memcpy(Memory.MemAux+dwOffset, MemGetAuxPtr((WORD)dwOffset), 0x100);
 	}
 }
 
@@ -1701,14 +1711,132 @@ void MemSetSnapshot(const SS_BaseMemory_v2& Memory)
 {
 	SetMemMode(Memory.dwMemMode);
 	lastwriteram = Memory.bLastWriteRam;
+	IO_SELECT = Memory.IO_SELECT;
+	IO_SELECT_InternalROM = Memory.IO_SELECT_InternalROM;
+	g_eExpansionRomType = (eExpansionRomType) Memory.ExpansionRomType;
+	g_uPeripheralRomSlot = Memory.PeripheralRomSlot;
 
 	memcpy(memmain, Memory.MemMain, nMemMainSize);
-	memcpy(memaux, Memory.MemAux, nMemAuxSize);
 	memset(memdirty, 0, 0x100);
 
 	//
 
 	modechanging = 0;
+	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
+	UpdatePaging(1);	// Initialize=1 (Still needed, even with call to MemUpdatePaging() - why?)
+}
 
-	UpdatePaging(1);	// Initialize=1
+//
+
+// disable warning C4200: zero-sized array in struct/union
+#pragma warning(disable: 4200)
+
+struct SS_CARD_80COL_AUX_MEMORY
+{
+	SS_CARD_HDR Hdr;
+	UINT NumBanks;
+	UINT ActiveBank;
+	BYTE MemAux[0];
+};
+
+void MemGetSnapshotAux(const HANDLE hFile)
+{
+	if (IS_APPLE2)
+	{
+		return;	// No Aux slot for AppleII
+	}
+
+	if (IS_APPLE2C)
+	{
+		_ASSERT(g_uMaxExPages == 1);
+	}
+
+	const UINT uSize = sizeof(SS_CARD_80COL_AUX_MEMORY) + g_uMaxExPages*(_6502_MEM_END+1);
+
+	SS_CARD_80COL_AUX_MEMORY* const pSS = (SS_CARD_80COL_AUX_MEMORY*) new BYTE [uSize];
+
+	pSS->Hdr.UnitHdr.hdr.v2.Length = uSize;
+	pSS->Hdr.UnitHdr.hdr.v2.Type = UT_Card;
+	pSS->Hdr.UnitHdr.hdr.v2.Version = 1;
+
+	pSS->Hdr.Slot = kSLOT_AUX;
+	pSS->Hdr.Type = g_uMaxExPages == 0 ? CT_80Col :
+					g_uMaxExPages == 1 ? CT_Extended80Col :
+										 CT_RamWorksIII;
+
+	pSS->ActiveBank = g_uActiveBank;
+	pSS->NumBanks = g_uMaxExPages;
+
+	for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
+	{
+		memcpy(pSS->MemAux+(uBank-1)*(_6502_MEM_END+1), MemGetBankPtr(uBank), _6502_MEM_END+1);
+	}
+
+	//
+
+	DWORD dwBytesWritten;
+	BOOL bRes = WriteFile(	hFile,
+							pSS,
+							pSS->Hdr.UnitHdr.hdr.v2.Length,
+							&dwBytesWritten,
+							NULL);
+
+	delete [] pSS;
+
+	if(!bRes || (dwBytesWritten != uSize))
+	{
+		//dwError = GetLastError();
+		throw std::string("Save error: 80COL_AUX_MEMORY card");
+	}
+
+}
+
+void MemSetSnapshotAux(const HANDLE hFile)
+{
+	SS_CARD_80COL_AUX_MEMORY Card;
+
+	DWORD dwBytesRead;
+	BOOL bRes = ReadFile(	hFile,
+							&Card,
+							sizeof(Card),
+							&dwBytesRead,
+							NULL);
+
+	if (dwBytesRead != sizeof(Card))
+		throw std::string("Card: file corrupt");
+
+	if (Card.Hdr.Slot != kSLOT_AUX)
+		throw std::string("Card: wrong slot");
+
+	if (Card.Hdr.UnitHdr.hdr.v2.Version > 1)
+		throw std::string("Card: wrong version");
+
+	if (Card.Hdr.UnitHdr.hdr.v2.Length < sizeof(SS_CARD_80COL_AUX_MEMORY))
+		throw std::string("Card: unit size mismatch");
+
+	g_uActiveBank = Card.ActiveBank;
+	g_uMaxExPages = Card.NumBanks;
+
+	for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
+	{
+		LPBYTE pBank = MemGetBankPtr(uBank);
+		if (!pBank)
+		{
+			// todo: alloc
+			_ASSERT(pBank);
+			break;
+		}
+
+		bRes = ReadFile(	hFile,
+							pBank,
+							_6502_MEM_END+1,
+							&dwBytesRead,
+							NULL);
+
+		if (dwBytesRead != _6502_MEM_END+1)
+			throw std::string("Card: file corrupt");
+	}
+
+	memaux = RWpages[g_uActiveBank];
+	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
 }
