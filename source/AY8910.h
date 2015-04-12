@@ -46,7 +46,6 @@ public:
 	void sound_frame( void );
 	BYTE* GetAYRegsPtr( void ) { return &sound_ay_registers[0]; }
 	static void SetCLK( double CLK ) { m_fCurrentCLK_AY8910 = CLK; }
-	void ClearAYChangeCount( void ) { ay_change_count = 0; }
 	UINT GetSnapshot(const HANDLE hFile);
 	UINT SetSnapshot(const HANDLE hFile);
 

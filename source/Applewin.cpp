@@ -807,8 +807,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			g_uMaxExPages = atoi(lpCmdLine);
-			if (g_uMaxExPages > 127)
-				g_uMaxExPages = 128;
+			if (g_uMaxExPages > kMaxExMemoryBanks)
+				g_uMaxExPages = kMaxExMemoryBanks;
 			else if (g_uMaxExPages < 1)
 				g_uMaxExPages = 1;
 		}

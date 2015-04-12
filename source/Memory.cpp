@@ -194,9 +194,9 @@ static BOOL    Pravets8charmode = 0;
 static CNoSlotClock g_NoSlotClock;
 
 #ifdef RAMWORKS
-UINT			g_uMaxExPages = 1;				// user requested ram pages
-UINT			g_uActiveBank = 0;				// 0 = memaux
-static LPBYTE	RWpages[128];					// pointers to RW memory banks
+UINT			g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
+UINT			g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c
+static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
@@ -1024,7 +1024,7 @@ static LPBYTE MemGetPtrBANK1(const WORD offset, const LPBYTE pMemBase)
 	if ((offset & 0xF000) != 0xC000)	// Requesting RAM at physical addr $Cxxx (ie. 4K RAM BANK1)
 		return NULL;
 
-	// fixme: Need to extend for RAMWORKS / RWpages (when pMemBase == memaux)
+	// NB. This works for memaux when set to any RWpages[] value, ie. RamWork III "just works"
 	const BYTE bank1page = (offset >> 8) & 0xF;
 	return (memshadow[0xD0+bank1page] == pMemBase+(0xC0+bank1page)*256)
 		? mem+offset+0x1000				// Return ptr to $Dxxx address - 'mem' has (a potentially dirty) 4K RAM BANK1 mapped in at $D000
@@ -1734,8 +1734,8 @@ void MemSetSnapshot(const SS_BaseMemory_v2& Memory)
 struct SS_CARD_80COL_AUX_MEMORY
 {
 	SS_CARD_HDR Hdr;
-	UINT NumBanks;
-	UINT ActiveBank;
+	UINT NumAuxBanks;	// [0,1..127] 0=no aux mem, 1=128K system, etc
+	UINT ActiveAuxBank;	// [  0..126] 0=memaux
 	BYTE MemAux[0];
 };
 
@@ -1764,8 +1764,8 @@ void MemGetSnapshotAux(const HANDLE hFile)
 					g_uMaxExPages == 1 ? CT_Extended80Col :
 										 CT_RamWorksIII;
 
-	pSS->ActiveBank = g_uActiveBank;
-	pSS->NumBanks = g_uMaxExPages;
+	pSS->ActiveAuxBank = g_uActiveBank;
+	pSS->NumAuxBanks = g_uMaxExPages;
 
 	for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
 	{
@@ -1814,17 +1814,23 @@ void MemSetSnapshotAux(const HANDLE hFile)
 	if (Card.Hdr.UnitHdr.hdr.v2.Length < sizeof(SS_CARD_80COL_AUX_MEMORY))
 		throw std::string("Card: unit size mismatch");
 
-	g_uActiveBank = Card.ActiveBank;
-	g_uMaxExPages = Card.NumBanks;
+	if (Card.NumAuxBanks > kMaxExMemoryBanks)
+		throw std::string("Card: file corrupt");
+
+	if (Card.ActiveAuxBank >= Card.NumAuxBanks)
+		throw std::string("Card: file corrupt");
+
+	g_uActiveBank = Card.ActiveAuxBank;
+	g_uMaxExPages = Card.NumAuxBanks;
 
 	for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
 	{
 		LPBYTE pBank = MemGetBankPtr(uBank);
 		if (!pBank)
 		{
-			// todo: alloc
-			_ASSERT(pBank);
-			break;
+			pBank = RWpages[uBank-1] = (LPBYTE) VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
+			if (!pBank)
+				throw std::string("Card: mem alloc failed");
 		}
 
 		bRes = ReadFile(	hFile,

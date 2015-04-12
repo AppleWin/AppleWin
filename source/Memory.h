@@ -32,6 +32,7 @@ extern LPBYTE     mem;
 extern LPBYTE     memdirty;
 
 #ifdef RAMWORKS
+const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB
 extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)
 #endif
 

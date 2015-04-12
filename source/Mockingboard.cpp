@@ -1000,7 +1000,7 @@ static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
 
 //-----------------------------------------------------------------------------
 
-// Warning! Data-race!
+// Warning! Data-race! [FIXME]
 // . SSI263Thread() can asynchronously set /g_nCurrentActivePhoneme/ to -1
 // . I have seen it on a call to Play(0,0,0)
 // . eg. could occur between [1] and [2]
