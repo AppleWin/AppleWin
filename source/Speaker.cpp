@@ -117,6 +117,77 @@ static void DisplayBenchmarkResults ()
 }
 
 //=============================================================================
+//
+// DC blocking   (Riccardo Macri April 2015)
+// To prevent loud clicks on underruns and constant DC voltages being sent out
+// to amplifiers (some soundcards are DC coupled) which is not good for them,
+// slowly integrate away any DC offsets.
+//
+// This is invoked for 44kHz samples and given its decrementing only
+// 1 sample per call, the cutoff frequency is still well under a few Hz,
+// no loss of fidelity for those who hooked their Apple speakers
+// to external amplifiers ;-)
+//
+// This has insignificant impact for the usual Apple
+// buzzes, bleeps and PWm as 'sample_in' is swinging +/- so fast 
+// that the 's_dcfilterstate' has little time to accumulate significantly
+// in either direction.
+// 
+// CLAMPING: this is needed to avoid 16 bit overflow as described
+// below. It crudely reflects the quicker response that a real DC
+// blocking capacitor would have for a large transition.
+// 
+// eg:
+// - Apple speaker is "high", sample is at +32767.
+// - over a second or so the "capacitor" (s_dcfilterstate) has accumulated
+//   to 32767 so the soundcard output has dropped to (32767-32767=zero (good).
+// - Now apple speaker toggles "low", sample  -32768.
+//   This causes 's_out' to calculate as -32768-32767=-65535 (hence the long)
+//
+// we'd have to wait (with output clamped at -32768) for 32767
+// samples just for s_dcfilterstate to reach zero before it starts going -ve
+// This is avoided by shifting the filter state proportional to the
+// overflow during a clamp.
+// 
+// Note: A workaround would be to halve the value of SPKR_DATA_INIT but
+//       this is less faithful to a real blocking capacitor and this
+//       same mechanism also supports the 8 bit DAC/SAM for which we
+//       want full -32768...32768 sample range.
+//
+
+static short s_dcfilterstate = 0;
+inline short DCFilter(short sample_in)
+{
+ // need long to avoid overflow on large transitions over a long period
+ long s_output = sample_in - s_dcfilterstate;
+ 
+ if (s_output > 0)
+  {
+   if (s_output > 32767)
+    {
+     // offset so next sample will start decaying to 0
+     s_dcfilterstate += (short)(s_output-32767);
+     s_output = 32767;
+    }
+   else
+    s_dcfilterstate++;
+  }
+ else
+  if (s_output < 0)
+   {
+    if (s_output < -32768)
+     {
+      s_dcfilterstate -= (short)(-s_output-32768);
+      s_output = -32768;
+     }
+    else
+     s_dcfilterstate--;
+   }
+ 
+ return (short)s_output;
+}
+
+//=============================================================================
 
 static void InternalBeep (DWORD frequency, DWORD duration)
 {
@@ -391,7 +462,7 @@ static void UpdateRemainderBuffer(ULONG* pnCycleDiff)
 			nSampleMean /= (signed long) g_nRemainderBufferSize;
 
 			if(g_nBufferIdx < SPKR_SAMPLE_RATE-1)
-				g_pSpeakerBuffer[g_nBufferIdx++] = (short) nSampleMean;
+                         g_pSpeakerBuffer[g_nBufferIdx++] = DCFilter((short) nSampleMean);
 		}
 	}
 }
@@ -409,7 +480,7 @@ static void UpdateSpkr()
 	  ULONG nCyclesRemaining = (ULONG) ((double)nCycleDiff - (double)nNumSamples * g_fClksPerSpkrSample);
 
 	  while((nNumSamples--) && (g_nBufferIdx < SPKR_SAMPLE_RATE-1))
-		  g_pSpeakerBuffer[g_nBufferIdx++] = g_nSpeakerData;
+           g_pSpeakerBuffer[g_nBufferIdx++] = DCFilter(g_nSpeakerData);
 
 	  ReinitRemainderBuffer(nCyclesRemaining);	// Partially fill 1Mhz sample buffer
   }
@@ -444,21 +515,14 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 
 	  UpdateSpkr();
 
+      short speakerDriveLevel = SPKR_DATA_INIT;
       if (g_bQuieterSpeaker)
-      {
-       // quieten the speaker if 8 bit DAC in use
-       if (g_nSpeakerData == (SPKR_DATA_INIT >> 2))
-        g_nSpeakerData = ~g_nSpeakerData;
+       speakerDriveLevel >>= 2;
+
+      if (g_nSpeakerData == speakerDriveLevel)
+        g_nSpeakerData = ~speakerDriveLevel;
        else
-        g_nSpeakerData = SPKR_DATA_INIT>>2;
-      }
-      else
-      {
-       if (g_nSpeakerData == SPKR_DATA_INIT)
-        g_nSpeakerData = ~g_nSpeakerData;
-       else
-        g_nSpeakerData = SPKR_DATA_INIT;
-      }
+        g_nSpeakerData = speakerDriveLevel;
   }
   else if (soundtype != SOUND_NONE)
   {
