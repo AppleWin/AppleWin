@@ -157,8 +157,8 @@ static UINT64 g_uLastCumulativeCycles = 0;
 
 // SSI263 vars:
 static USHORT g_nSSI263Device = 0;	// SSI263 device# which is generating phoneme-complete IRQ
-static int g_nCurrentActivePhoneme = -1;
-static bool g_bStopPhoneme = false;
+static volatile int g_nCurrentActivePhoneme = -1;	// Modified by threads: main & SSI263Thread
+static volatile bool g_bStopPhoneme = false;		// Modified by threads: main & SSI263Thread
 static bool g_bVotraxPhoneme = false;
 
 static const DWORD SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
@@ -1000,28 +1000,30 @@ static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
 
 //-----------------------------------------------------------------------------
 
-// Warning! Data-race! [FIXME]
-// . SSI263Thread() can asynchronously set /g_nCurrentActivePhoneme/ to -1
-// . I have seen it on a call to Play(0,0,0)
-// . eg. could occur between [1] and [2]
-//	 - presumably after Stop(), wait for: g_bStopPhoneme == false OR for g_nCurrentActivePhoneme == -1
-//   - NB. sample could finish between: if (g_nCurrentActivePhoneme >= 0) and g_bStopPhoneme = true
-
 static void SSI263_Play(unsigned int nPhoneme)
 {
 #if 1
 	HRESULT hr;
 
-	if(g_nCurrentActivePhoneme >= 0)
 	{
-		// A write to DURPHON before previous phoneme has completed
-		g_bStopPhoneme = true;
-		hr = SSI263Voice[g_nCurrentActivePhoneme].lpDSBvoice->Stop();
+		int nCurrPhoneme = g_nCurrentActivePhoneme;	// local copy in case SSI263Thread sets it to -1
+		if (nCurrPhoneme >= 0)
+		{
+			// A write to DURPHON before previous phoneme has completed
+			g_bStopPhoneme = true;
+			hr = SSI263Voice[nCurrPhoneme].lpDSBvoice->Stop();
+
+			// Busy-wait until ACK from SSI263Thread
+			// . required to avoid data-race
+			while (	g_bStopPhoneme &&				// wait for SSI263Thread to ACK the lpDSBVoice->Stop()
+					g_nCurrentActivePhoneme >= 0)	// wait for SSI263Thread to get end of sample event
+				;
+
+			g_bStopPhoneme = false;
+		}
 	}
 
 	g_nCurrentActivePhoneme = nPhoneme;
-
-	// [1]
 
 	hr = SSI263Voice[g_nCurrentActivePhoneme].lpDSBvoice->SetCurrentPosition(0);
 	if(FAILED(hr))
@@ -1032,8 +1034,6 @@ static void SSI263_Play(unsigned int nPhoneme)
 		return;
 
 	SSI263Voice[g_nCurrentActivePhoneme].bActive = true;
-
-	// [2]
 #else
 	HRESULT hr;
 	bool bPause;
