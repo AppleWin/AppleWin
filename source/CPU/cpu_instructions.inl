@@ -177,7 +177,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // ==========
 
-#define ADC_NMOS bSlowerOnPagecross = 1;						    \
+#define ADC_NMOS /*bSlowerOnPagecross = 1;*/						    \
 		 temp = READ;						    \
 		 if (regs.ps & AF_DECIMAL) {				    \
 		   val	  = (regs.a & 0x0F) + (temp & 0x0F) + flagc;	    \
@@ -203,7 +203,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		   regs.a = val & 0xFF;					    \
 		   SETNZ(regs.a);					    \
 		 }
-#define ADC_CMOS bSlowerOnPagecross = 1;						    \
+#define ADC_CMOS /*bSlowerOnPagecross = 1*/;						    \
                  temp = READ;						    \
                  flagv = !((regs.a ^ temp) & 0x80);			    \
 		 if (regs.ps & AF_DECIMAL) {				    \
@@ -242,7 +242,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 flagn = 0;						    \
 		 regs.a >>= 1;						    \
 		 SETZ(regs.a)
-#define AND	 bSlowerOnPagecross = 1;						    \
+#define AND	 /*bSlowerOnPagecross = 1;*/						    \
 		 regs.a &= READ;					    \
 		 SETNZ(regs.a)
 #define ANC	 regs.a &= READ;					    \
@@ -274,12 +274,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		   flagv = ((val & 0x40) ^ ((val & 0x20) << 1));	    \
 		   regs.a = (val & 0xFF);				    \
 		 }
-#define ASL_NMOS bSlowerOnPagecross = 0;						    \
+#define ASL_NMOS /*bSlowerOnPagecross = 0;*/						    \
 		 val   = READ << 1;					    \
 		 flagc = (val > 0xFF);					    \
 		 SETNZ(val)						    \
 		 WRITE(val)
-#define ASL_CMOS bSlowerOnPagecross = 1;						    \
+#define ASL_CMOS /*bSlowerOnPagecross = 1*/;						    \
 		 val   = READ << 1;					    \
 		 flagc = (val > 0xFF);					    \
 		 SETNZ(val)						    \
@@ -288,21 +288,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 flagc = (val > 0xFF);					    \
 		 SETNZ(val)						    \
 		 regs.a = (BYTE)val;
-#define ASO	 bSlowerOnPagecross = 0;						    \
+#define ASO	 /*bSlowerOnPagecross = 0;*/						    \
 		 val   = READ << 1;					    \
 		 flagc = (val > 0xFF);					    \
 		 WRITE(val)						    \
 		 regs.a |= val;						    \
 		 SETNZ(regs.a)
-#define AXA	 bSlowerOnPagecross = 0;/*FIXME: $93 case is still unclear*/	    \
+#define AXA	 /*bSlowerOnPagecross = 0;*//*FIXME: $93 case is still unclear*/	    \
 		 val = regs.a & regs.x & (((base >> 8) + 1) & 0xFF);	    \
 		 WRITE(val)
-#define AXS	 bSlowerOnPagecross = 0;						    \
+#define AXS	 /*bSlowerOnPagecross = 0;*/						    \
 		 WRITE(regs.a & regs.x)
 #define BCC	 if (!flagc) BRANCH_TAKEN;
 #define BCS	 if ( flagc) BRANCH_TAKEN;
 #define BEQ	 if ( flagz) BRANCH_TAKEN;
-#define BIT	 bSlowerOnPagecross = 1;						    \
+#define BIT	 /*bSlowerOnPagecross = 1;*/						    \
 		 val   = READ;						    \
 		 flagz = !(regs.a & val);				    \
 		 flagn = val & 0x80;					    \
@@ -325,7 +325,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define CLD	 regs.ps &= ~AF_DECIMAL;
 #define CLI	 regs.ps &= ~AF_INTERRUPT;
 #define CLV	 flagv = 0;
-#define CMP	 bSlowerOnPagecross = 1;						    \
+#define CMP	 /*bSlowerOnPagecross = 1;*/						    \
 		 val   = READ;						    \
 		 flagc = (regs.a >= val);				    \
 		 val   = regs.a-val;					    \
@@ -338,7 +338,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 flagc = (regs.y >= val);				    \
 		 val   = regs.y-val;					    \
 		 SETNZ(val)
-#define DCM	 bSlowerOnPagecross = 0;						    \
+#define DCM	 /*bSlowerOnPagecross = 0;*/						    \
 		 val = READ-1;						    \
 		 WRITE(val)						    \
 		 flagc = (regs.a >= val);				    \
@@ -346,11 +346,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 SETNZ(val)
 #define DEA	 --regs.a;						    \
 		 SETNZ(regs.a)
-#define DEC_NMOS bSlowerOnPagecross = 0;						    \
+#define DEC_NMOS /*bSlowerOnPagecross = 0;*/						    \
 		 val = READ-1;						    \
 		 SETNZ(val)						    \
 		 WRITE(val)
-#define DEC_CMOS bSlowerOnPagecross = 1;						    \
+#define DEC_CMOS /*bSlowerOnPagecross = 1;*/						    \
 		 val = READ-1;						    \
 		 SETNZ(val)						    \
 		 WRITE(val)
@@ -358,22 +358,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 SETNZ(regs.x)
 #define DEY	 --regs.y;						    \
 		 SETNZ(regs.y)
-#define EOR	 bSlowerOnPagecross = 1;						    \
+#define EOR	 /*bSlowerOnPagecross = 1;*/						    \
 		 regs.a ^= READ;					    \
 		 SETNZ(regs.a)
 #define HLT	 regs.bJammed = 1;					    \
 		 --regs.pc;
 #define INA	 ++regs.a;						    \
 		 SETNZ(regs.a)
-#define INC_NMOS bSlowerOnPagecross = 0;						    \
+#define INC_NMOS /*bSlowerOnPagecross = 0;*/						    \
 		 val = READ+1;						    \
 		 SETNZ(val)						    \
 		 WRITE(val)
-#define INC_CMOS bSlowerOnPagecross = 1;						    \
+#define INC_CMOS /*bSlowerOnPagecross = 1;*/						    \
 		 val = READ+1;						    \
 		 SETNZ(val)						    \
 		 WRITE(val)
-#define INS	 bSlowerOnPagecross = 0;						    \
+#define INS	 /*bSlowerOnPagecross = 0;*/						    \
 		 val = READ+1;						    \
 		 WRITE(val)						    \
 		 temp = val;                                                \
@@ -408,38 +408,38 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 PUSH(regs.pc >> 8)					    \
 		 PUSH(regs.pc & 0xFF)					    \
 		 regs.pc = addr;
-#define LAS	 bSlowerOnPagecross = 1;						    \
+#define LAS	 /*bSlowerOnPagecross = 1*/;						    \
 		 val = (BYTE)(READ & regs.sp);				    \
 		 regs.a = regs.x = (BYTE) val;				    \
 		 regs.sp = val | 0x100;					    \
 		 SETNZ(val)
-#define LAX	 bSlowerOnPagecross = 1;						    \
+#define LAX	 /*bSlowerOnPagecross = 1;*/						    \
 		 regs.a = regs.x = READ;				    \
 		 SETNZ(regs.a)
-#define LDA	 bSlowerOnPagecross = 1;						    \
+#define LDA	 /*bSlowerOnPagecross = 1;*/						    \
 		 regs.a = READ;						    \
 		 SETNZ(regs.a)
-#define LDX	 bSlowerOnPagecross = 1;						    \
+#define LDX	 /*bSlowerOnPagecross = 1;*/						    \
 		 regs.x = READ;						    \
 		 SETNZ(regs.x)
-#define LDY	 bSlowerOnPagecross = 1;						    \
+#define LDY	 /*bSlowerOnPagecross = 1;*/						    \
 		 regs.y = READ;						    \
 		 SETNZ(regs.y)
-#define LSE	 bSlowerOnPagecross = 0;						    \
+#define LSE	 /*bSlowerOnPagecross = 0;*/						    \
 		 val   = READ;						    \
 		 flagc = (val & 1);					    \
 		 val >>= 1;						    \
 		 WRITE(val)						    \
 		 regs.a ^= val;						    \
 		 SETNZ(regs.a)
-#define LSR_NMOS bSlowerOnPagecross = 0;						    \
+#define LSR_NMOS /*bSlowerOnPagecross = 0;*/						    \
 		 val   = READ;						    \
 		 flagc = (val & 1);					    \
 		 flagn = 0;						    \
 		 val >>= 1;						    \
 		 SETZ(val)						    \
 		 WRITE(val)
-#define LSR_CMOS bSlowerOnPagecross = 1;						    \
+#define LSR_CMOS /*bSlowerOnPagecross = 1;*/						    \
 		 val   = READ;						    \
 		 flagc = (val & 1);					    \
 		 flagn = 0;						    \
@@ -450,12 +450,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 flagn = 0;						    \
 		 regs.a >>= 1;						    \
 		 SETZ(regs.a)
-#define NOP	 bSlowerOnPagecross = 1;
+#define NOP	 /*bSlowerOnPagecross = 1;*/
 #define OAL	 regs.a |= 0xEE;					    \
 		 regs.a &= READ;					    \
 		 regs.x = regs.a;					    \
 		 SETNZ(regs.a)
-#define ORA	 bSlowerOnPagecross = 1;						    \
+#define ORA	 /*bSlowerOnPagecross = 1;*/						    \
 		 regs.a |= READ;					    \
 		 SETNZ(regs.a)
 #define PHA	 PUSH(regs.a)
@@ -471,18 +471,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 SETNZ(regs.x)
 #define PLY	 regs.y = POP;						    \
 		 SETNZ(regs.y)
-#define RLA	 bSlowerOnPagecross = 0;						    \
+#define RLA	 /*bSlowerOnPagecross = 0;*/						    \
 		 val   = (READ << 1) | flagc;				    \
 		 flagc = (val > 0xFF);					    \
 		 WRITE(val)						    \
 		 regs.a &= val;						    \
 		 SETNZ(regs.a)
-#define ROL_NMOS bSlowerOnPagecross = 0;						    \
+#define ROL_NMOS /*bSlowerOnPagecross = 0;*/						    \
 		 val   = (READ << 1) | flagc;				    \
 		 flagc = (val > 0xFF);					    \
 		 SETNZ(val)						    \
 		 WRITE(val)
-#define ROL_CMOS bSlowerOnPagecross = 1;						    \
+#define ROL_CMOS /*bSlowerOnPagecross = 1;*/						    \
 		 val   = (READ << 1) | flagc;				    \
 		 flagc = (val > 0xFF);					    \
 		 SETNZ(val)						    \
@@ -491,13 +491,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 flagc	= (val > 0xFF);					    \
 		 regs.a = val & 0xFF;					    \
 		 SETNZ(regs.a);
-#define ROR_NMOS bSlowerOnPagecross = 0;						    \
+#define ROR_NMOS /*bSlowerOnPagecross = 0;*/						    \
 		 temp  = READ;						    \
 		 val   = (temp >> 1) | (flagc ? 0x80 : 0);		    \
 		 flagc = (temp & 1);					    \
 		 SETNZ(val)						    \
 		 WRITE(val)
-#define ROR_CMOS bSlowerOnPagecross = 1;						    \
+#define ROR_CMOS /*bSlowerOnPagecross = 1;*/						    \
 		 temp  = READ;						    \
 		 val   = (temp >> 1) | (flagc ? 0x80 : 0);		    \
 		 flagc = (temp & 1);					    \
@@ -507,7 +507,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 flagc	= (regs.a & 1);					    \
 		 regs.a = val & 0xFF;					    \
 		 SETNZ(regs.a)
-#define RRA	 bSlowerOnPagecross = 0;						    \
+#define RRA	 /*bSlowerOnPagecross = 0;*/						    \
 		 temp  = READ;						    \
 		 val   = (temp >> 1) | (flagc ? 0x80 : 0);		    \
 		 flagc = (temp & 1);					    \
@@ -549,10 +549,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 flagc	= (temp >= val);				    \
 		 regs.x = temp-val;					    \
 		 SETNZ(regs.x)
-#define SAY	 bSlowerOnPagecross = 0;						    \
+#define SAY	 /*bSlowerOnPagecross = 0;*/						    \
 		 val = regs.y & (((base >> 8) + 1) & 0xFF);		    \
 		 WRITE(val)
-#define SBC_NMOS bSlowerOnPagecross = 1;						    \
+#define SBC_NMOS /*bSlowerOnPagecross = 1;*/						    \
 		 temp = READ;						    \
 		 temp2 = regs.a - temp - !flagc;			    \
 		 if (regs.ps & AF_DECIMAL) {				    \
@@ -576,7 +576,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		   regs.a = val & 0xFF;					    \
 		   SETNZ(regs.a);					    \
 		 }
-#define SBC_CMOS bSlowerOnPagecross = 1;						    \
+#define SBC_CMOS /*bSlowerOnPagecross = 1;*/						    \
 	         temp = READ;						    \
 		 flagv = ((regs.a ^ temp) & 0x80);			    \
 		 if (regs.ps & AF_DECIMAL) {				    \
@@ -622,15 +622,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define SEC	 flagc = 1;
 #define SED	 regs.ps |= AF_DECIMAL;
 #define SEI	 regs.ps |= AF_INTERRUPT;
-#define STA	 bSlowerOnPagecross = 0;						    \
+#define STA	 /*bSlowerOnPagecross = 0;*/						    \
 		 WRITE(regs.a)
-#define STX	 bSlowerOnPagecross = 0;						    \
+#define STX	 /*bSlowerOnPagecross = 0;*/						    \
 		 WRITE(regs.x)
-#define STY	 bSlowerOnPagecross = 0;						    \
+#define STY	 /*bSlowerOnPagecross = 0;*/						    \
 		 WRITE(regs.y)
-#define STZ	 bSlowerOnPagecross = 0;						    \
+#define STZ	 /*bSlowerOnPagecross = 0;*/						    \
 		 WRITE(0)
-#define TAS	 bSlowerOnPagecross = 0;						    \
+#define TAS	 /*bSlowerOnPagecross = 0;*/						    \
 		 val = regs.a & regs.x;					    \
 		 regs.sp = 0x100 | val;					    \
 		 val &= (((base >> 8) + 1) & 0xFF);			    \
@@ -639,12 +639,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 SETNZ(regs.x)
 #define TAY	 regs.y = regs.a;					    \
 		 SETNZ(regs.y)
-#define TRB	 bSlowerOnPagecross = 0;						    \
+#define TRB	 /*bSlowerOnPagecross = 0;*/						    \
 		 val   = READ;						    \
 		 flagz = !(regs.a & val);				    \
 		 val  &= ~regs.a;					    \
 		 WRITE(val)
-#define TSB	 bSlowerOnPagecross = 0;						    \
+#define TSB	 /*bSlowerOnPagecross = 0;*/						    \
 		 val   = READ;						    \
 		 flagz = !(regs.a & val);				    \
 		 val   |= regs.a;					    \
@@ -659,7 +659,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define XAA	 regs.a = regs.x;					    \
 		 regs.a &= READ;					    \
 		 SETNZ(regs.a)
-#define XAS	 bSlowerOnPagecross = 0;						    \
+#define XAS	 /*bSlowerOnPagecross = 0;*/						    \
 		 val = regs.x & (((base >> 8) + 1) & 0xFF);		    \
 		 WRITE(val)
 

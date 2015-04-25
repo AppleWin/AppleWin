@@ -35,7 +35,6 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 	WORD val;
 	AF_TO_EF
 	ULONG uExecutedCycles = 0;
-	BOOL bSlowerOnPagecross = 0; // Set if opcode writes to memory (eg. ASL, STA)
 	WORD base;
 	g_bDebugBreakpointHit = 0;
 
@@ -67,27 +66,27 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		case 0x08:       PHP	CYC(3)  break;
 		case 0x09:   IMM ORA	CYC(2)  break;
 		case 0x0A:       asl	CYC(2)  break;
-		case 0x0B: $ IMM ANC	CYC(2)  break; // invald
-		case 0x0C: $ abx NOP	CYC(4)  break;
+		case 0x0B: $ IMM ANC	CYC(2)  break; // invalid
+		case 0x0C: $ ABSX_SLOW NOP	CYC(4)  break;
 		case 0x0D:   ABS ORA	CYC(4)  break;
 		case 0x0E:   ABS ASLn	CYC(6)  break;
 		case 0x0F: $ ABS ASO	CYC(6)  break; // invalid
 		case 0x10:   REL BPL	CYC(2)  break;
-		case 0x11:   idy ORA	CYC(5)  break;
+		case 0x11:   INDY_SLOW ORA	CYC(5)  break;
 		case 0x12: $     HLT	CYC(2)  break;
-		case 0x13: $ idy ASO	CYC(8)  break; // invalid
+		case 0x13: $ INDY_FAST ASO	CYC(8)  break; // invalid
 		case 0x14: $ zpx NOP	CYC(4)  break;
 		case 0x15:   zpx ORA	CYC(4)  break;
 		case 0x16:   zpx ASLn	CYC(6)  break;
 		case 0x17: $ zpx ASO	CYC(6)  break; // invalid
 		case 0x18:       CLC	CYC(2)  break;
-		case 0x19:   aby ORA	CYC(4)  break;
+		case 0x19:   ABSY_SLOW ORA	CYC(4)  break;
 		case 0x1A: $     NOP	CYC(2)  break;
-		case 0x1B: $ aby ASO	CYC(7)  break; // invalid
-		case 0x1C: $ abx NOP	CYC(4)  break;
-		case 0x1D:   abx ORA	CYC(4)  break;
-		case 0x1E:   abx ASLn	CYC(6)  break;
-		case 0x1F: $ abx ASO	CYC(7)  break; // invalid
+		case 0x1B: $ ABSY_FAST ASO	CYC(7)  break; // invalid
+		case 0x1C: $ ABSX_SLOW NOP	CYC(4)  break;
+		case 0x1D:   ABSX_SLOW ORA	CYC(4)  break;
+		case 0x1E:   ABSX_NMOS_RMW ASLn	CYC(7)  break;
+		case 0x1F: $ ABSX_FAST ASO	CYC(7)  break; // invalid
 		case 0x20:   ABS JSR	CYC(6)  break;
 		case 0x21:   idx AND	CYC(6)  break;
 		case 0x22: $     HLT	CYC(2)  break;
@@ -105,21 +104,21 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		case 0x2E:   ABS ROLn	CYC(6)  break;
 		case 0x2F: $ ABS RLA	CYC(6)  break;
 		case 0x30:   REL BMI	CYC(2)  break;
-		case 0x31:   idy AND	CYC(5)  break;
+		case 0x31:   INDY_SLOW AND	CYC(5)  break;
 		case 0x32: $     HLT	CYC(2)  break;
-		case 0x33: $ idy RLA	CYC(8)  break; // invalid
+		case 0x33: $ INDY_FAST RLA	CYC(8)  break; // invalid
 		case 0x34: $ zpx NOP	CYC(4)  break;
 		case 0x35:   zpx AND	CYC(4)  break;
 		case 0x36:   zpx ROLn	CYC(6)  break;
 		case 0x37: $ zpx RLA	CYC(6)  break;
 		case 0x38:       SEC	CYC(2)  break;
-		case 0x39:   aby AND	CYC(4)  break;
+		case 0x39:   ABSY_SLOW AND	CYC(4)  break;
 		case 0x3A: $     NOP	CYC(2)  break;
-		case 0x3B: $ aby RLA	CYC(7)  break; // invalid
-		case 0x3C: $ abx NOP	CYC(4)  break;
-		case 0x3D:   abx AND	CYC(4)  break;
-		case 0x3E:   abx ROLn	CYC(6)  break;
-		case 0x3F: $ abx RLA	CYC(7)  break; // invalid
+		case 0x3B: $ ABSY_FAST RLA	CYC(7)  break; // invalid
+		case 0x3C: $ ABSX_SLOW NOP	CYC(4)  break;
+		case 0x3D:   ABSX_SLOW AND	CYC(4)  break;
+		case 0x3E:   ABSX_FAST ROLn	CYC(6)  break;
+		case 0x3F: $ ABSX_FAST RLA	CYC(7)  break; // invalid
 		case 0x40:       RTI	CYC(6)  DoIrqProfiling(uExecutedCycles); break;
 		case 0x41:   idx EOR	CYC(6)  break;
 		case 0x42: $     HLT	CYC(2)  break;
@@ -137,21 +136,21 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		case 0x4E:   ABS LSRn	CYC(6)  break;
 		case 0x4F: $ ABS LSE	CYC(6)  break;
 		case 0x50:   REL BVC	CYC(2)  break;
-		case 0x51:   idy EOR	CYC(5)  break;
+		case 0x51:   INDY_SLOW EOR	CYC(5)  break;
 		case 0x52: $     HLT	CYC(2)  break;
-		case 0x53: $ idy LSE	CYC(8)  break;
+		case 0x53: $ INDY_FAST LSE	CYC(8)  break;
 		case 0x54: $ zpx NOP	CYC(4)  break;
 		case 0x55:   zpx EOR	CYC(4)  break;
 		case 0x56:   zpx LSRn	CYC(6)  break;
 		case 0x57: $ zpx LSE	CYC(6)  break; // invalid
 		case 0x58:       CLI	CYC(2)  break;
-		case 0x59:   aby EOR	CYC(4)  break;
+		case 0x59:   ABSY_SLOW EOR	CYC(4)  break;
 		case 0x5A: $     NOP	CYC(2)  break;
-		case 0x5B: $ aby LSE	CYC(7)  break; // invalid
-		case 0x5C: $ abx NOP	CYC(4)  break;
-		case 0x5D:   abx EOR	CYC(4)  break;
-		case 0x5E:   abx LSRn	CYC(6)  break;
-		case 0x5F: $ abx LSE	CYC(7)  break;
+		case 0x5B: $ ABSY_FAST LSE	CYC(7)  break; // invalid
+		case 0x5C: $ ABSX_SLOW NOP	CYC(4)  break;
+		case 0x5D:   ABSX_SLOW EOR	CYC(4)  break;
+		case 0x5E:   ABSX_FAST LSRn	CYC(6)  break;
+		case 0x5F: $ ABSX_FAST LSE	CYC(7)  break;
 		case 0x60:       RTS	CYC(6)  break;
 		case 0x61:   idx ADCn	CYC(6)  break;
 		case 0x62: $     HLT	CYC(2)  break;
@@ -164,26 +163,26 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		case 0x69:   IMM ADCn	CYC(2)  break;
 		case 0x6A:       ror	CYC(2)  break;
 		case 0x6B: $ IMM ARR	CYC(2)  break; // invalid
-		case 0x6C:   IABSNMOS JMP  CYC(6)  break;
+		case 0x6C:   IABSNMOS JMP  CYC(5)  break;	// GH#264
 		case 0x6D:   ABS ADCn	CYC(4)  break;
 		case 0x6E:   ABS RORn	CYC(6)  break;
 		case 0x6F: $ ABS RRA	CYC(6)  break; // invalid
 		case 0x70:   REL BVS	CYC(2)  break;
-		case 0x71:   idy ADCn	CYC(5)  break;
+		case 0x71:   INDY_SLOW ADCn	CYC(5)  break;
 		case 0x72: $     HLT	CYC(2)  break;
-		case 0x73: $ idy RRA	CYC(8)  break; // invalid
+		case 0x73: $ INDY_FAST RRA	CYC(8)  break; // invalid
 		case 0x74: $ zpx NOP	CYC(4)  break;
 		case 0x75:   zpx ADCn	CYC(4)  break;
 		case 0x76:   zpx RORn	CYC(6)  break;
 		case 0x77: $ zpx RRA	CYC(6)  break; // invalid
 		case 0x78:       SEI	CYC(2)  break;
-		case 0x79:   aby ADCn	CYC(4)  break;
+		case 0x79:   ABSY_SLOW ADCn	CYC(4)  break;
 		case 0x7A: $     NOP	CYC(2)  break;
-		case 0x7B: $ aby RRA	CYC(7)  break; // invalid
-		case 0x7C: $ abx NOP	CYC(4)  break;
-		case 0x7D:   abx ADCn	CYC(4)  break;
-		case 0x7E:   abx RORn	CYC(6)  break;
-		case 0x7F: $ abx RRA	CYC(7)  break; // invalid
+		case 0x7B: $ ABSY_FAST RRA	CYC(7)  break; // invalid
+		case 0x7C: $ ABSX_SLOW NOP	CYC(4)  break;
+		case 0x7D:   ABSX_SLOW ADCn	CYC(4)  break;
+		case 0x7E:   ABSX_FAST RORn	CYC(6)  break;
+		case 0x7F: $ ABSX_FAST RRA	CYC(7)  break; // invalid
 		case 0x80: $ IMM NOP	CYC(2)  break;
 		case 0x81:   idx STA	CYC(6)  break;
 		case 0x82: $ IMM NOP	CYC(2)  break;
@@ -201,21 +200,21 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		case 0x8E:   ABS STX	CYC(4)  break;
 		case 0x8F: $ ABS AXS	CYC(4)  break; // invalid
 		case 0x90:   REL BCC	CYC(2)  break;
-		case 0x91:   idy STA	CYC(6)  break;
+		case 0x91:   INDY_FAST STA	CYC(6)  break;
 		case 0x92: $     HLT	CYC(2)  break;
-		case 0x93: $ idy AXA	CYC(6)  break; // invalid
+		case 0x93: $ INDY_FAST AXA	CYC(6)  break; // invalid
 		case 0x94:   zpx STY	CYC(4)  break;
 		case 0x95:   zpx STA	CYC(4)  break;
 		case 0x96:   zpy STX	CYC(4)  break;
 		case 0x97: $ zpy AXS	CYC(4)  break; // invalid
 		case 0x98:       TYA	CYC(2)  break;
-		case 0x99:   aby STA	CYC(5)  break;
+		case 0x99:   ABSY_FAST STA	CYC(5)  break;
 		case 0x9A:       TXS	CYC(2)  break;
-		case 0x9B: $ aby TAS	CYC(5)  break; // invalid
-		case 0x9C: $ abx SAY	CYC(5)  break; // invalid
-		case 0x9D:   abx STA	CYC(5)  break;
-		case 0x9E: $ aby XAS	CYC(5)  break;
-		case 0x9F: $ aby AXA	CYC(5)  break;
+		case 0x9B: $ ABSY_FAST TAS	CYC(5)  break; // invalid
+		case 0x9C: $ ABSX_FAST SAY	CYC(5)  break; // invalid
+		case 0x9D:   ABSX_FAST STA	CYC(5)  break;
+		case 0x9E: $ ABSY_FAST XAS	CYC(5)  break;
+		case 0x9F: $ ABSY_FAST AXA	CYC(5)  break;
 		case 0xA0:   IMM LDY	CYC(2)  break;
 		case 0xA1:   idx LDA	CYC(6)  break;
 		case 0xA2:   IMM LDX	CYC(2)  break;
@@ -233,21 +232,21 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		case 0xAE:   ABS LDX	CYC(4)  break;
 		case 0xAF: $ ABS LAX	CYC(4)  break; // invalid
 		case 0xB0:   REL BCS	CYC(2)  break;
-		case 0xB1:   idy LDA	CYC(5)  break;
+		case 0xB1:   INDY_SLOW LDA	CYC(5)  break;
 		case 0xB2: $     HLT	CYC(2)  break;
-		case 0xB3: $ idy LAX	CYC(5)  break;
+		case 0xB3: $ INDY_SLOW LAX	CYC(5)  break;
 		case 0xB4:   zpx LDY	CYC(4)  break;
 		case 0xB5:   zpx LDA	CYC(4)  break;
 		case 0xB6:   zpy LDX	CYC(4)  break;
 		case 0xB7: $ zpy LAX	CYC(4)  break; // invalid
 		case 0xB8:       CLV	CYC(2)  break;
-		case 0xB9:   aby LDA	CYC(4)  break;
+		case 0xB9:   ABSY_SLOW LDA	CYC(4)  break;
 		case 0xBA:       TSX	CYC(2)  break;
-		case 0xBB: $ aby LAS	CYC(4)  break; // invalid
-		case 0xBC:   abx LDY	CYC(4)  break;
-		case 0xBD:   abx LDA	CYC(4)  break;
-		case 0xBE:   aby LDX	CYC(4)  break;
-		case 0xBF: $ aby LAX	CYC(4)  break; // invalid
+		case 0xBB: $ ABSY_SLOW LAS	CYC(4)  break; // invalid
+		case 0xBC:   ABSX_SLOW LDY	CYC(4)  break;
+		case 0xBD:   ABSX_SLOW LDA	CYC(4)  break;
+		case 0xBE:   ABSY_SLOW LDX	CYC(4)  break;
+		case 0xBF: $ ABSY_SLOW LAX	CYC(4)  break; // invalid
 		case 0xC0:   IMM CPY	CYC(2)  break;
 		case 0xC1:   idx CMP	CYC(6)  break;
 		case 0xC2: $ IMM NOP	CYC(2)  break;
@@ -265,21 +264,21 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		case 0xCE:   ABS DECn	CYC(5)  break;
 		case 0xCF: $ ABS DCM	CYC(6)  break; // invalid
 		case 0xD0:   REL BNE	CYC(2)  break;
-		case 0xD1:   idy CMP	CYC(5)  break;
+		case 0xD1:   INDY_SLOW CMP	CYC(5)  break;
 		case 0xD2: $     HLT	CYC(2)  break;
-		case 0xD3: $ idy DCM	CYC(8)  break; // invalid
+		case 0xD3: $ INDY_FAST DCM	CYC(8)  break; // invalid
 		case 0xD4: $ zpx NOP	CYC(4)  break;
 		case 0xD5:   zpx CMP	CYC(4)  break;
 		case 0xD6:   zpx DECn	CYC(6)  break;
 		case 0xD7: $ zpx DCM	CYC(6)  break; // invalid
 		case 0xD8:       CLD	CYC(2)  break;
-		case 0xD9:   aby CMP	CYC(4)  break;
+		case 0xD9:   ABSY_SLOW CMP	CYC(4)  break;
 		case 0xDA: $     NOP	CYC(2)  break;
-		case 0xDB: $ aby DCM	CYC(7)  break; // invalid
-		case 0xDC: $ abx NOP	CYC(4)  break;
-		case 0xDD:   abx CMP	CYC(4)  break;
-		case 0xDE:   abx DECn	CYC(6)  break;
-		case 0xDF: $ abx DCM	CYC(7)  break; // invalid
+		case 0xDB: $ ABSY_FAST DCM	CYC(7)  break; // invalid
+		case 0xDC: $ ABSX_SLOW NOP	CYC(4)  break;
+		case 0xDD:   ABSX_SLOW CMP	CYC(4)  break;
+		case 0xDE:   ABSX_NMOS_RMW DECn	CYC(7)  break;
+		case 0xDF: $ ABSX_FAST DCM	CYC(7)  break; // invalid
 		case 0xE0:   IMM CPX	CYC(2)  break;
 		case 0xE1:   idx SBCn	CYC(6)  break;
 		case 0xE2: $ IMM NOP	CYC(2)  break;
@@ -297,21 +296,21 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		case 0xEE:   ABS INCn	CYC(6)  break;
 		case 0xEF: $ ABS INS	CYC(6)  break; // invalid
 		case 0xF0:   REL BEQ	CYC(2)  break;
-		case 0xF1:   idy SBCn	CYC(5)  break;
+		case 0xF1:   INDY_SLOW SBCn	CYC(5)  break;
 		case 0xF2: $     HLT	CYC(2)  break;
-		case 0xF3: $ idy INS	CYC(8)  break; // invalid
+		case 0xF3: $ INDY_FAST INS	CYC(8)  break; // invalid
 		case 0xF4: $ zpx NOP	CYC(4)  break;
 		case 0xF5:   zpx SBCn	CYC(4)  break;
 		case 0xF6:   zpx INCn	CYC(6)  break;
 		case 0xF7: $ zpx INS	CYC(6)  break; // invalid
 		case 0xF8:       SED	CYC(2)  break;
-		case 0xF9:   aby SBCn	CYC(4)  break;
+		case 0xF9:   ABSY_SLOW SBCn	CYC(4)  break;
 		case 0xFA: $     NOP	CYC(2)  break;
-		case 0xFB: $ aby INS	CYC(7)  break;
-		case 0xFC: $ abx NOP	CYC(4)  break;
-		case 0xFD:   abx SBCn	CYC(4)  break;
-		case 0xFE:   abx INCn	CYC(6)  break;
-		case 0xFF: $ abx INS	CYC(7)  break;
+		case 0xFB: $ ABSY_FAST INS	CYC(7)  break;
+		case 0xFC: $ ABSX_SLOW NOP	CYC(4)  break;
+		case 0xFD:   ABSX_SLOW SBCn	CYC(4)  break;
+		case 0xFE:   ABSX_NMOS_RMW INCn	CYC(7)  break;
+		case 0xFF: $ ABSX_FAST INS	CYC(7)  break;
 		}
 		}
 

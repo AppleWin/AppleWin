@@ -89,10 +89,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //
 
-#define CHECK_PAGE_CHANGE  if (bSlowerOnPagecross) {		      \
-			       if ((base ^ addr) & 0xFF00)    \
-				   uExtraCycles=1;	      \
-			   }
+// TODO Optimization Note: uExtraCycles = ((base ^ addr) >> 8) & 1;
+#define CHECK_PAGE_CHANGE	if ((base ^ addr) & 0xFF00)			\
+									uExtraCycles=1;
 
 /****************************************************************************
 *
@@ -102,8 +101,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define ABS	 addr = *(LPWORD)(mem+regs.pc);	 regs.pc += 2;
 #define IABSX    addr = *(LPWORD)(mem+(*(LPWORD)(mem+regs.pc))+(WORD)regs.x); regs.pc += 2;
-#define ABSX	 base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2; CHECK_PAGE_CHANGE;
-#define ABSY	 base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2; CHECK_PAGE_CHANGE;
+
+#define ABSX_SLOW base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2; CHECK_PAGE_CHANGE;
+#define ABSX_FAST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2;
+
+#define ABSY_SLOW base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2; CHECK_PAGE_CHANGE;
+#define ABSY_FAST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2;
+
+// NMOS read-modify-write opcodes (asl/dec/inc abs,x) don't take an extra cycle if page-crossing (GH#271)
+#define ABSX_NMOS_RMW base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2;
+
 // TODO Optimization Note: uExtraCycles = ((base & 0xFF) + 1) >> 8;
 #define IABSCMOS base = *(LPWORD)(mem+regs.pc);	                          \
 		 addr = *(LPWORD)(mem+base);		                  \
@@ -121,13 +128,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		     addr = *(mem+0xFF)+(((WORD)*mem)<<8);           \
 		 else                                                \
 		     addr = *(LPWORD)(mem+base);
-#define INDY	 if (*(mem+regs.pc) == 0xFF)                         \
+
+#define INDY_SLOW	 if (*(mem+regs.pc) == 0xFF)             /*SLOW: incurs an extra cycle for page-crossing*/ \
 		     base = *(mem+0xFF)+(((WORD)*mem)<<8);           \
 		 else                                                \
 		     base = *(LPWORD)(mem+*(mem+regs.pc));           \
 		 regs.pc++;                                          \
 		 addr = base+(WORD)regs.y;                           \
 		 CHECK_PAGE_CHANGE;
+#define INDY_FAST	 if (*(mem+regs.pc) == 0xFF)             /*FAST: no extra cycle for page-crossing*/ \
+		     base = *(mem+0xFF)+(((WORD)*mem)<<8);           \
+		 else                                                \
+		     base = *(LPWORD)(mem+*(mem+regs.pc));           \
+		 regs.pc++;                                          \
+		 addr = base+(WORD)regs.y;
+
 #define IZPG	 base = *(mem+regs.pc++);                            \
 		 if (base == 0xFF)                                   \
 		     addr = *(mem+0xFF)+(((WORD)*mem)<<8);           \
@@ -143,12 +158,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ZPGY	 addr = ((*(mem+regs.pc++))+regs.y) & 0xFF;
 
 // Tidy 3 char addressing modes to keep the opcode table visually aligned, clean, and readable.
-#undef abx
-#undef abx
-#undef aby
+//#undef abx
+//#undef aby
 #undef asl
 #undef idx
-#undef idy
+//#undef idy
 #undef imm
 #undef izp
 #undef lsr
@@ -158,11 +172,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #undef zpx
 #undef zpy
 
-#define abx ABSX
-#define aby ABSY
+//#define abx ABSX	// ABSX -> ABSX_SLOW or ABSX_FAST
+//#define aby ABSY	// ABSY -> ABSY_SLOW or ABSY_FAST
 #define asl ASLA // Arithmetic Shift Left
 #define idx INDX
-#define idy INDY
+//#define idy INDY	// INDY -> INDY_SLOW or INDY_FAST
 #define imm IMM
 #define izp IZPG
 #define lsr LSRA // Logical Shift Right
