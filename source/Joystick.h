@@ -15,7 +15,7 @@ void    JoyReset();
 void    JoySetButton(eBUTTON,eBUTTONSTATE);
 BOOL    JoySetEmulationType(HWND,DWORD,int, const bool bMousecardActive);
 void    JoySetPosition(int,int,int,int);
-void    JoyUpdateButtonLatch(const UINT nExecutionPeriodUsec);
+void    JoyUpdatePosition();
 BOOL    JoyUsingMouse();
 BOOL    JoyUsingKeyboard();
 BOOL    JoyUsingKeyboardCursors();

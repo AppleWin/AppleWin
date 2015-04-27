@@ -38,6 +38,7 @@ extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
 
 void    MemDestroy ();
+bool    MemGet80Store();
 bool	MemCheckSLOTCXROM();
 LPBYTE  MemGetAuxPtr(const WORD);
 LPBYTE  MemGetMainPtr(const WORD);
@@ -49,6 +50,7 @@ BYTE    MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles);
 void    MemReset ();
 void    MemResetPaging ();
 void    MemUpdatePaging(BOOL initialize);
+BYTE    MemReturnRandomData (BYTE highbit);
 LPVOID	MemGetSlotParameters (UINT uSlot);
 DWORD   MemGetSnapshot(SS_BaseMemory* pSS);
 DWORD   MemSetSnapshot(SS_BaseMemory* pSS);

@@ -26,14 +26,9 @@ protected:
 private:
 	void InitOptions(HWND hWnd);
 	void EnableHDD(HWND hWnd, BOOL bEnable);
-	void HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected);
-	void HandleDiskCombo(HWND hWnd, UINT driveSelected, UINT comboSelected);
-	UINT RemovalConfirmation(UINT uCommand);
 
 	static CPageDisk* ms_this;
 	static const TCHAR m_discchoices[];
-	static const TCHAR m_defaultDiskOptions[];
-	static const TCHAR m_defaultHDDOptions[];
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;

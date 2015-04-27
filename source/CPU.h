@@ -31,5 +31,3 @@ DWORD   CpuSetSnapshot(SS_CPU6502* pSS);
 
 BYTE	CpuRead(USHORT addr, ULONG uExecutedCycles);
 void	CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles);
-
-DWORD   CpuGetEmulationTime_ms(void);

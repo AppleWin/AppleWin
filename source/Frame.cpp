@@ -188,6 +188,7 @@ void GetAppleWindowTitle()
 		case A2TYPE_APPLE2PLUS:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2_PLUS     ); break; 
 		case A2TYPE_APPLE2E:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E         ); break; 
 		case A2TYPE_APPLE2EENHANCED:_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E_ENHANCED); break; 
+		case A2TYPE_TK30002E:       _tcscpy(g_pAppleWindowTitle, TITLE_TK3000_2E        ); break; 
 		case A2TYPE_PRAVETS82:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_82       ); break; 
 		case A2TYPE_PRAVETS8M:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8M       ); break; 
 		case A2TYPE_PRAVETS8A:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8A       ); break; 
@@ -1105,13 +1106,7 @@ LRESULT CALLBACK FrameWndProc (
 		if (wparam == VK_SNAPSHOT_TEXT) // ( lparam & MOD_CONTROL )
 		{
 			char  *pText;
-			size_t nSize = 0;
-
-			// if viewing the debugger, get the last virtual debugger screen
-			if ((g_nAppMode == MODE_DEBUG) && !g_bDebuggerViewingAppleOutput)
-				nSize = Util_GetDebuggerText( pText );
-			else
-				nSize = Util_GetTextScreen( pText );
+			size_t nSize = Util_GetTextScreen( pText );
 			Util_CopyTextToClipboard( nSize, pText );
 		}
 		break;
@@ -1315,7 +1310,7 @@ LRESULT CALLBACK FrameWndProc (
 			{
 				RevealCursor();
 			}
-			else if (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING)
+			else if (g_nAppMode == MODE_RUNNING)
 			{
 				if (!sg_Mouse.IsEnabled())
 				{
@@ -1392,7 +1387,7 @@ LRESULT CALLBACK FrameWndProc (
         DrawCrosshairs(x,y);
 	    JoySetPosition(x-viewportx-2, g_nViewportCX-4, y-viewporty-2, g_nViewportCY-4);
       }
-	  else if (sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
+	  else if (sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING))
 	  {
 			if (g_bLastCursorInAppleViewport)
 				break;
@@ -1423,7 +1418,7 @@ LRESULT CALLBACK FrameWndProc (
 		if (wparam == IDEVENT_TIMER_MOUSE)
 		{
 			// NB. Need to check /g_bAppActive/ since WM_TIMER events still occur after AppleWin app has lost focus
-			if (g_bAppActive && sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
+			if (g_bAppActive && sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING))
 			{
 				if (!g_bLastCursorInAppleViewport)
 					break;
@@ -2472,6 +2467,7 @@ void FrameSetCursorPosByMousePos()
 	int iY, iMinY, iMaxY;
 	sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 
+	_ASSERT(iMinX == 0 && iMinY == 0);
 	float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));
 	float fScaleY = (float)(iY-iMinY) / ((float)(iMaxY-iMinY));
 
@@ -2507,6 +2503,7 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 	int iX, iMinX, iMaxX;
 	int iY, iMinY, iMaxY;
 	sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
+	_ASSERT(iMinX == 0 && iMinY == 0);
 
 	if (bLeavingAppleScreen)
 	{

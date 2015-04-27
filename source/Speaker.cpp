@@ -51,6 +51,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // their buffers are running low.
 //
 
+#define  SOUND_NONE    0
+#define  SOUND_DIRECT  1
+#define  SOUND_SMART   2
+#define  SOUND_WAVE    3
+
 static const unsigned short g_nSPKR_NumChannels = 1;
 static const DWORD g_dwDSSpkrBufferSize = MAX_SAMPLES * sizeof(short) * g_nSPKR_NumChannels;
 
@@ -61,19 +66,17 @@ static short*	g_pSpeakerBuffer = NULL;
 // Globals (SOUND_WAVE)
 const short		SPKR_DATA_INIT = (short)0x8000;
 
-short		g_nSpeakerData	= SPKR_DATA_INIT;
+static short	g_nSpeakerData	= SPKR_DATA_INIT;
 static UINT		g_nBufferIdx	= 0;
 
 static short*	g_pRemainderBuffer = NULL;
 static UINT		g_nRemainderBufferSize;		// Setup in SpkrInitialize()
 static UINT		g_nRemainderBufferIdx;		// Setup in SpkrInitialize()
 
+
 // Application-wide globals:
 DWORD			soundtype		= SOUND_WAVE;
 double		    g_fClksPerSpkrSample;		// Setup in SetClksPerSpkrSample()
-
-// Allow temporary quietening of speaker (8 bit DAC)
-bool			g_bQuieterSpeaker = false;
 
 // Globals
 static DWORD	lastcyclenum	= 0;
@@ -444,21 +447,7 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 
 	  UpdateSpkr();
 
-      if (g_bQuieterSpeaker)
-      {
-       // quieten the speaker if 8 bit DAC in use
-       if (g_nSpeakerData == (SPKR_DATA_INIT >> 2))
-        g_nSpeakerData = ~g_nSpeakerData;
-       else
-        g_nSpeakerData = SPKR_DATA_INIT>>2;
-      }
-      else
-      {
-       if (g_nSpeakerData == SPKR_DATA_INIT)
-        g_nSpeakerData = ~g_nSpeakerData;
-       else
-        g_nSpeakerData = SPKR_DATA_INIT;
-      }
+	  g_nSpeakerData = ~g_nSpeakerData;
   }
   else if (soundtype != SOUND_NONE)
   {
@@ -490,9 +479,7 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
     if (lastcyclenum)
 	{
       toggles++;
-      //DWORD delta = cyclenum-lastcyclenum;	// [TC: 14/09/2014] Looks broken, since 'cyclenum' is cycles executed in previous call to CpuExecute()
-      CpuCalcCycles(nCyclesLeft);
-	  DWORD delta = (DWORD)g_nCumulativeCycles - lastcyclenum;
+      DWORD delta = cyclenum-lastcyclenum;
 
       // DETERMINE WHETHER WE ARE PLAYING A SOUND EFFECT
       if (directio &&
@@ -506,8 +493,7 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
       lastdelta[0] = delta;
       totaldelta  += delta;
     }
-    //lastcyclenum = cyclenum;
-    lastcyclenum = (DWORD)g_nCumulativeCycles;
+    lastcyclenum = cyclenum;
 
   }
 
@@ -624,7 +610,7 @@ void SpkrUpdate_Timer()
 		nSamplesUsed = Spkr_SubmitWaveBuffer_FullSpeed(g_pSpeakerBuffer, g_nBufferIdx);
 
 		_ASSERT(nSamplesUsed <=	g_nBufferIdx);
-		memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], g_nBufferIdx-nSamplesUsed);	// FIXME-TC: _Size * 2 (GH#213?)
+		memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], g_nBufferIdx-nSamplesUsed);	// FIXME-TC: _Size * 2
 		g_nBufferIdx -=	nSamplesUsed;
 	}
 }
@@ -1004,7 +990,6 @@ static void Spkr_SetActive(bool bActive)
 		// Called by SpkrUpdate() after 0.2s of speaker inactivity
 		g_bSpkrRecentlyActive = false;
 		SpeakerVoice.bRecentlyActive = false;
-		g_bQuieterSpeaker = 0;	// undo any muting (for 8 bit DAC)
 	}
 }
 
