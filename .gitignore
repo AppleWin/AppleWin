@@ -17,6 +17,10 @@ build/
 bld/
 [Bb]in/
 [Oo]bj/
+zip_lib/[Dd]ebug
+zip_lib/[Rr]elease
+zlib/[Dd]ebug
+zlib/[Rr]elease
 
 # Roslyn cache directories
 *.ide/
