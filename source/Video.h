@@ -19,6 +19,17 @@
 	extern TCHAR g_aVideoChoices[];
 	extern char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
 
+	enum VideoFlag_e
+	{
+		VF_80COL  = 0x00000001,
+		VF_DHIRES = 0x00000002,
+		VF_HIRES  = 0x00000004,
+		VF_MASK2  = 0x00000008,
+		VF_MIXED  = 0x00000010,
+		VF_PAGE2  = 0x00000020,
+		VF_TEXT   = 0x00000040
+	};
+
 enum AppleFont_e
 {
 	// 40-Column mode is 1x Zoom (default)
@@ -46,10 +57,14 @@ enum AppleFont_e
 
 extern HBITMAP g_hLogoBitmap;
 
+extern BOOL       g_bGraphicsMode;
 extern COLORREF   monochrome; // saved
 extern DWORD      g_eVideoType; // saved
 extern DWORD      g_uHalfScanLines; // saved
 extern LPBYTE     g_pFramebufferbits;
+
+extern int g_nAltCharSetOffset;
+extern int g_bVideoMode; // g_bVideoMode
 
 typedef bool (*VideoUpdateFuncPtr_t)(int,int,int,int,int);
 
@@ -59,10 +74,12 @@ void    CreateColorMixMap();
 
 BOOL    VideoApparentlyDirty ();
 void    VideoBenchmark ();
+void    VideoCheckPage (BOOL);
 void    VideoChooseColor ();
 void    VideoDestroy ();
 void    VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
 void    VideoDisplayLogo ();
+BOOL    VideoHasRefreshed ();
 void    VideoInitialize ();
 void    VideoRealizePalette (HDC);
 VideoUpdateFuncPtr_t VideoRedrawScreen (UINT);
@@ -72,21 +89,14 @@ void    VideoReinitialize ();
 void    VideoResetState ();
 WORD    VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles);
 bool    VideoGetVbl(DWORD uExecutedCycles);
-void    VideoEndOfVideoFrame(void);
-
-bool    VideoGetSW80COL(void);
-bool    VideoGetSWDHIRES(void);
-bool    VideoGetSWHIRES(void);
-bool    VideoGetSW80STORE(void);
-bool    VideoGetSWMIXED(void);
-bool    VideoGetSWPAGE2(void);
-bool    VideoGetSWTEXT(void);
-bool    VideoGetSWAltCharSet(void);
-
-void    VideoSetForceFullRedraw(void);
-
+void    VideoUpdateFlash();
+bool    VideoGetSW80COL();
 DWORD   VideoGetSnapshot(SS_IO_Video* pSS);
 DWORD   VideoSetSnapshot(SS_IO_Video* pSS);
+
+
+extern bool g_bVideoDisplayPage2;
+extern /*bool*/ UINT g_VideoForceFullRedraw;
 
 void _Video_Dirty();
 void _Video_RedrawScreen( VideoUpdateFuncPtr_t update, bool bMixed = false );

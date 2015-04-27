@@ -61,7 +61,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //	#define DISPLAY_BREAKPOINT_TITLE 1
 //	#define DISPLAY_WATCH_TITLE      1
 
-
 // Public _________________________________________________________________________________________
 
 // Font
@@ -69,7 +68,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Private ________________________________________________________________________________________
 
-	char g_aDebuggerVirtualTextScreen[ DEBUG_VIRTUAL_TEXT_HEIGHT ][ DEBUG_VIRTUAL_TEXT_WIDTH ];
 
 // HACK HACK HACK
 	//g_nDisasmWinHeight
@@ -152,7 +150,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_STACK_COLUMN      = INFO_COL_1;
 		const int DISPLAY_TARGETS_COLUMN    = INFO_COL_1;
 		const int DISPLAY_ZEROPAGE_COLUMN   = INFO_COL_1;
-		const int DISPLAY_SOFTSWITCH_COLUMN = INFO_COL_1 - (CONSOLE_FONT_WIDTH/2) + 1; // 1/2 char width padding around soft switches
+		const int DISPLAY_SOFTSWITCH_COLUMN = INFO_COL_1 - (CONSOLE_FONT_WIDTH/2) + 1;;
 
 		// Horizontal Column (pixels) of BPs, Watches & Mem
 		const int INFO_COL_2 = (62 * 7); // nFontWidth
@@ -216,11 +214,6 @@ static	char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iV
 
 	void DrawWindowBottom ( Update_t bUpdate, int iWindow );
 
-	char* FormatCharCopy( char *pDst, const char *pSrc, const int nLen );
-	char  FormatCharTxtAsci( const BYTE b, bool * pWasAsci_ = NULL );
-	char  FormatCharTxtCtrl( const BYTE b, bool * pWasCtrl_ = NULL );
-	char  FormatCharTxtHigh( const BYTE b, bool *pWasHi_ = NULL );
-	char  FormatChar4Font  ( const BYTE b, bool *pWasHi_, bool *pWasLo_ );
 
 // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/gdi/pantdraw_6n77.asp
 enum WinROP4_e
@@ -624,27 +617,6 @@ void PrintGlyph( const int x, const int y, const char glyph )
 	int xSrc = (glyph & 0x0F) * CONSOLE_FONT_GRID_X;
 	int ySrc = (glyph >>   4) * CONSOLE_FONT_GRID_Y;
 
-	// BUG #239 - (Debugger) Save debugger "text screen" to clipboard / file
-	//	if( g_bDebuggerVirtualTextCapture )
-	// 
-	{
-#if _DEBUG
-		if ((x < 0) || (y < 0))
-			MessageBox( g_hFrameWindow, "X or Y out of bounds!", "PrintGlyph()", MB_OK );
-#endif
-		int col = x / CONSOLE_FONT_WIDTH ;
-		int row = y / CONSOLE_FONT_HEIGHT;
-		
-		// if( !g_bDebuggerCopyInfoPane )
-		//    if( col < 50
-		if (x > DISPLAY_DISASM_RIGHT) // INFO_COL_2 // DISPLAY_CPU_INFO_LEFT_COLUMN
-			col++;
-
-		if ((col < DEBUG_VIRTUAL_TEXT_WIDTH)
-		&&  (row < DEBUG_VIRTUAL_TEXT_HEIGHT))
-			g_aDebuggerVirtualTextScreen[ row ][ col ] = glyph;
-	}
-
 #if !DEBUG_FONT_NO_BACKGROUND_CHAR 
 	// Background color
 	if (g_hConsoleBrushBG)
@@ -845,15 +817,6 @@ int PrintTextCursorY ( const char * pText, RECT & rRect )
 	return nChars;
 }
 
-
-//===========================================================================
-char* FormatCharCopy( char *pDst, const char *pSrc, const int nLen )
-{
-	for( int i = 0; i < nLen; i++ )
-		*pDst++ = FormatCharTxtCtrl( *pSrc++ );
-	return pDst;
-}
-
 //===========================================================================
 char  FormatCharTxtAsci ( const BYTE b, bool * pWasAsci_ )
 {
@@ -871,7 +834,6 @@ char  FormatCharTxtAsci ( const BYTE b, bool * pWasAsci_ )
 	return c;
 }
 
-// Note: FormatCharTxtCtrl() and RemapChar()
 //===========================================================================
 char  FormatCharTxtCtrl ( const BYTE b, bool * pWasCtrl_ )
 {
@@ -1701,7 +1663,8 @@ const	char *pSrc = 0;
 						len = (MAX_IMMEDIATE_LEN - 3); // ellipsis = true
 
 					// DISPLAY: text_longer_18...
-					FormatCharCopy( pDst, pSrc, len ); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
+					for( int i = 0; i < len; i++ )
+						*pDst++ =  (*pSrc++) & 0x7F;
 
 					if( nDisplayLen > len ) // ellipsis
 					{
@@ -1711,7 +1674,8 @@ const	char *pSrc = 0;
 					}
 				} else { // DISPLAY: "max_18_char"
 					*pDst++ = '"';
-					pDst = FormatCharCopy( pDst, pSrc, len ); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
+					for( int i = 0; i < len; i++ )
+						*pDst++ =  (*pSrc++) & 0x7F;
 					*pDst++ = '"';
 				}
 
@@ -2079,7 +2043,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		char *pTarget = line.sTarget;
 		int nLen = strlen( pTarget );
 
-		if (*pTarget == '$') // BUG? if ASC #:# starts with '$' ? // && (iOpcode != OPCODE_NOP)
+		if (*pTarget == '$')
 		{
 			pTarget++;
 			if (! bCursorLine)
@@ -2115,14 +2079,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		//    SYM COPY.FAC.TO.ARG.ROUNDED = EB63
 		// If opcodes aren't showing then length can be longer!
 		// FormatOpcodeBytes() uses 3 chars/MAX_OPCODES. i.e. "## "
-		int nMaxLen = MAX_TARGET_LEN;
-
-		// 2.8.0.8: Bug #227: AppleSoft symbol: COPY.FAC.TO.ARG.ROUNDED overflows into registers
-		if ( !g_bConfigDisasmAddressView )
-		    nMaxLen += 4;
-		if ( !g_bConfigDisasmOpcodesView )
-		    nMaxLen += (MAX_OPCODES*3);
-
+		int nMaxLen = g_bConfigDisasmOpcodesView ? MAX_TARGET_LEN : MAX_TARGET_LEN + (MAX_OPCODES*3);
 		if( nLen >=  nMaxLen )
 		{
 #if _DEBUG
@@ -2131,7 +2088,6 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 			pTarget[ nMaxLen ] = 0;
 		}
 
-		// TODO: FIXME: 2.8.0.7: Allow ctrl characters to show as inverse; i.e. ASC 400:40F
 		PrintTextCursorX( pTarget, linerect );
 //		PrintTextCursorX( " ", linerect );
 
@@ -2779,38 +2735,38 @@ void DrawSoftSwitches( int iSoftSwitch )
 		// GR  / TEXT
 		// GRAPH/TEXT
 		// TEXT ON/OFF
-		sprintf( sText, !VideoGetSWTEXT() ? "GR  / ----" : "--  / TEXT" );
+		sprintf( sText, !(g_bVideoMode & VF_TEXT) ? "GR  / ----" : "--  / TEXT" );
 		PrintTextCursorY( sText, rect );
 
 		// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
 		// FULL/MIXED
 		// MIX OFF/ON
-		sprintf( sText, !VideoGetSWMIXED() ? "FULL/-----" : "----/MIXED" );
+		sprintf( sText, !(g_bVideoMode & VF_MIXED) ? "FULL/-----" : "----/MIXED" );
 		PrintTextCursorY( sText, rect );
 
 		// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
 		// PAGE 1 / 2
-		sprintf( sText, !VideoGetSWPAGE2() ? "PAGE 1 / -" : "PAGE - / 2" );
+		sprintf( sText, !(g_bVideoMode & VF_PAGE2) ? "PAGE 1 / -" : "PAGE - / 2" );
 		PrintTextCursorY( sText, rect );
 		
 		// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
 		// LO / HIRES
 		// LO / -----
 		// -- / HIRES
-		sprintf( sText, !VideoGetSWHIRES() ? "LO /-- RES" : "---/HI RES" );
+		sprintf( sText, !(g_bVideoMode & VF_HIRES) ? "LO /-- RES" : "---/HI RES" );
 		PrintTextCursorY( sText, rect );
 
 		PrintTextCursorY( "", rect );
 
 		// Extended soft switches
-		sprintf( sText, !VideoGetSW80COL() ? "40 / -- COL" : "-- / 80 COL" );
+		sprintf( sText, !(g_bVideoMode & VF_80COL) ? "40 / -- COL" : "-- / 80 COL" );
 		PrintTextCursorY( sText, rect );
 
-		sprintf(sText, VideoGetSWAltCharSet() ? "ASCII/-----" : "-----/MOUSE" );
+		sprintf(sText, (g_nAltCharSetOffset == 0) ? "ASCII/-----" : "-----/MOUSE" );
 		PrintTextCursorY( sText, rect );
 
 		// 280/560 HGR
-		sprintf(sText, !VideoGetSWDHIRES() ? "HGR / ----" : "--- / DHGR" );
+		sprintf(sText, !(g_bVideoMode & VF_DHIRES) ? "HGR / ----" : "--- / DHGR" );
 		PrintTextCursorY( sText, rect );
 #else //SOFTSWITCH_OLD
 		// See: VideoSetMode()
@@ -2822,25 +2778,25 @@ void DrawSoftSwitches( int iSoftSwitch )
 		bool bSet;
 
 		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
-		bSet = !VideoGetSWTEXT();
+		bSet = !(g_bVideoMode & VF_TEXT);
 		_DrawSoftSwitch( rect, 0xC050, bSet, NULL, "GR.", "TEXT" );
 
 		// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
 		// FULL/MIXED
 		// MIX OFF/ON
-		bSet = !VideoGetSWMIXED();
+		bSet = !(g_bVideoMode & VF_MIXED);
 		_DrawSoftSwitch( rect, 0xC052, bSet, NULL, "FULL", "MIX" );
 
 		// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
 		// PAGE 1 / 2
-		bSet = !VideoGetSWPAGE2();
+		bSet = !(g_bVideoMode & VF_PAGE2);
 		_DrawSoftSwitch( rect, 0xC054, bSet, "PAGE ", "1", "2" );
 		
 		// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
 		// LO / HIRES
 		// LO / -----
 		// -- / HIRES
-		bSet = !VideoGetSWHIRES();
+		bSet = !(g_bVideoMode & VF_HIRES);
 		_DrawSoftSwitch( rect, 0xC056, bSet, NULL, "LO", "HI", "RES" );
 
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
@@ -2849,20 +2805,20 @@ void DrawSoftSwitches( int iSoftSwitch )
 
 		// 280/560 HGR
 		// C05E = ON, C05F = OFF
-		bSet = VideoGetSWDHIRES();
+		bSet = (g_bVideoMode & VF_DHIRES) ? true : false;
 		_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
 
 		// Extended soft switches
 		// C00C = off, C00D = on
-		bSet = !VideoGetSW80COL();
+		bSet = !(g_bVideoMode & VF_80COL);
 		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80" );
 
 		// C00E = off, C00F = on
-		bSet = VideoGetSWAltCharSet();
+		bSet = (g_nAltCharSetOffset == 0);
 		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS" ); // ASCII/MouseText
 
 		// C000 = 80STOREOFF, C001 = 80STOREON
-		bSet = !VideoGetSW80STORE();
+		bSet = !(g_bVideoMode & VF_MASK2);
 		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1" );
 #endif // SOFTSWITCH_OLD
 }

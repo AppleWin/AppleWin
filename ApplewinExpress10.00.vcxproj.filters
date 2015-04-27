@@ -606,6 +606,12 @@
     <None Include="resource\ThunderClockPlus.rom">
       <Filter>Resources</Filter>
     </None>
+    <None Include="resource\TK3000e.rom">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="resource\TKClock.rom">
+      <Filter>Resources</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RESOURCE\APPLEWIN.RC">

@@ -1,14 +1,7 @@
 #pragma once
 
-#define  SOUND_NONE    0
-#define  SOUND_DIRECT  1
-#define  SOUND_SMART   2
-#define  SOUND_WAVE    3
-
 extern DWORD      soundtype;
 extern double     g_fClksPerSpkrSample;
-extern bool       g_bQuieterSpeaker;
-extern short      g_nSpeakerData;
 
 void    SpkrDestroy ();
 void    SpkrInitialize ();

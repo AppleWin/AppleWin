@@ -460,6 +460,8 @@
     <ClInclude Include="resource\winres.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="resource\TK3000e.rom" />
+    <None Include="resource\TKClock.rom" />
     <None Include="source\CPU\cpu_general.inl" />
     <None Include="source\CPU\cpu_instructions.inl" />
     <None Include="docs\CodingConventions.txt" />

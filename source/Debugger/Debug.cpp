@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,8,0,9);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,8,0,1);
 
 
 // Public _________________________________________________________________________________________
@@ -1941,7 +1941,7 @@ Update_t CmdTraceFile (int nArgs)
 		fclose( g_hTraceFile );
 		g_hTraceFile = NULL;
 
-		_snprintf( sText, sizeof(sText), "Trace stopped." );
+		sprintf( sText, "Trace stopped." );
 	}
 	else
 	{
@@ -1961,17 +1961,16 @@ Update_t CmdTraceFile (int nArgs)
 
 		if (g_hTraceFile)
 		{
-			_snprintf( sText, sizeof(sText), "Trace started: %s", sFilePath );
+			sprintf( sText, "Trace started: %s", sFilePath );
 
 			g_bTraceHeader = true;
 		}
 		else
 		{
-			_snprintf( sText, sizeof(sText), "Trace ERROR: %s", sFilePath );
+			sprintf( sText, "Trace ERROR: %s", sFilePath );
 		}
 	}
-
-	sText[sizeof(sText)-1] = 0;	// _snprintf needs null if string was longer than buffer
+	
 	ConsoleBufferPush( sText );
 	ConsoleBufferToDisplay();
 
@@ -4217,49 +4216,8 @@ Update_t CmdMemoryLoad (int nArgs)
 		bBankSpecified = false;
 	}
 
-	struct KnownFileType_t
-	{
-		char *pExtension;
-		int   nAddress;
-		int   nLength;
-	};
-
-	const KnownFileType_t aFileTypes[] = 
-	{
-		 { ""     ,      0,      0 } // n/a
-		,{ ".hgr" , 0x2000, 0x2000 }
-		,{ ".hgr2", 0x4000, 0x2000 }
-		// TODO: extension ".dhgr", ".dhgr2"
-	};
-	const int        nFileTypes = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
-	const KnownFileType_t *pFileType = NULL;
-
-	char *pFileName = g_aArgs[ 1 ].sArg;
-	int   nLen = strlen( pFileName );
-	char *pEnd = pFileName + + nLen - 1;
-	while( pEnd > pFileName )
-	{
-		if( *pEnd == '.' )
-		{
-			for( int i = 1; i < nFileTypes; i++ )
-			{
-				if( strcmp( pEnd, aFileTypes[i].pExtension ) == 0 )
-				{
-					pFileType = &aFileTypes[i];
-					break;
-				}
-			}
-		}
-
-		if( pFileType )
-			break;
-
-		pEnd--;
-	}
-
-	if( !pFileType )
-		if (g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA)
-			return Help_Arg_1( CMD_MEMORY_LOAD );
+	if (g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA)
+		return Help_Arg_1( CMD_MEMORY_LOAD );
 
 	TCHAR sLoadSaveFilePath[ MAX_PATH ];
 	_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // TODO: g_sDebugDir
@@ -4269,19 +4227,9 @@ Update_t CmdMemoryLoad (int nArgs)
 	WORD nAddressEnd = 0;
 	int  nAddressLen = 0;
 
-	if( pFileType )
-	{
-		nAddressStart = pFileType->nAddress;
-		nAddressLen   = pFileType->nLength;
-		nAddressEnd   = pFileType->nLength + nAddressLen;
-	}
-
-	RangeType_t eRange = RANGE_MISSING_ARG_2;
-
-	if (g_aArgs[ iArgComma1 ].eToken == TOKEN_COMMA)
-		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
-
-	if( nArgs > iArgComma2 )
+	RangeType_t eRange;
+	eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
+	if (nArgs > iArgComma2)
 	{
 		if (eRange == RANGE_MISSING_ARG_2)
 		{
@@ -4297,7 +4245,7 @@ Update_t CmdMemoryLoad (int nArgs)
 
 	if (bHaveFileName)
 	{
-		_tcscpy( g_sMemoryLoadSaveFileName, pFileName );
+		_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
 	}
 	_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
 	
@@ -4327,9 +4275,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		size_t nRead = fread( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
 		if (nRead == 1)
 		{
-			char text[ 128 ];
-			sprintf( text, "Loaded @ A$%04X,L$%04X", nAddressStart, nAddressLen );
-			ConsoleBufferPush( text );
+			ConsoleBufferPush( TEXT( "Loaded." ) );
 		}
 		else
 		{
@@ -4694,7 +4640,7 @@ Update_t CmdMemorySave (int nArgs)
 #endif
 
 
-char g_aTextScreen[ DEBUG_VIRTUAL_TEXT_HEIGHT * (DEBUG_VIRTUAL_TEXT_WIDTH + 4) ]; // (80 column + CR + LF) * 24 rows + NULL
+char g_aTextScreen[ 24*82 + 1 ]; // (80 column + CR + LF) * 24 rows + NULL
 int  g_nTextScreen = 0;
 
 		/*
@@ -4745,50 +4691,14 @@ int  g_nTextScreen = 0;
 		23  17  0001_0111  ->  $7D0  0111 1101 0000
 	*/
 
-// Convert ctrl characters to displayable
-// Note: FormatCharTxtCtrl() and RemapChar()
 static char RemapChar(const char c)
 {
 	if ( c < 0x20 )
 		return c + '@'; // Remap INVERSE control character to NORMAL
 	else if ( c == 0x7F )
-		return ' '; // Remap checkboard (DEL) to space
+		return ' ';		// Remap checkboard (DEL) to space
 
 	return c;
-}
-
-
-size_t Util_GetDebuggerText( char* &pText_ )
-{
-	char  *pBeg = &g_aTextScreen[0];
-	char  *pEnd = &g_aTextScreen[0];
-
-	g_nTextScreen = 0;
-	memset( pBeg, 0, sizeof( g_aTextScreen ) );
-
-	memset( g_aDebuggerVirtualTextScreen, 0, sizeof( g_aDebuggerVirtualTextScreen ) );
-	DebugDisplay(1);
-
-	for( int y = 0; y < DEBUG_VIRTUAL_TEXT_HEIGHT; y++ )
-	{
-		for( int x = 0; x < DEBUG_VIRTUAL_TEXT_WIDTH; x++ )
-		{
-			char c = g_aDebuggerVirtualTextScreen[y][x];
-			if( (c < 0x20) || (c >= 0x7F) )
-				c = ' '; // convert null to spaces to keep everything non-proptional
-			*pEnd++ = c;
-		}
-#ifdef _WIN32
-		*pEnd++ = 0x0D; // CR // Windows inserts extra char
-#endif
-		*pEnd++ = 0x0A; // LF // OSX, Linux
-	}
-
-	*pEnd = 0;
-	g_nTextScreen = pEnd - pBeg;
-	
-	pText_ = pBeg;
-	return g_nTextScreen;
 }
 
 size_t Util_GetTextScreen ( char* &pText_ )
@@ -4801,9 +4711,9 @@ size_t Util_GetTextScreen ( char* &pText_ )
 	g_nTextScreen = 0;
 	memset( pBeg, 0, sizeof( g_aTextScreen ) );
 
-	unsigned int uBank2 = VideoGetSWPAGE2() ? 1 : 0;
-	LPBYTE g_pTextBank1  = MemGetAuxPtr (0x400 << uBank2);
-	LPBYTE g_pTextBank0  = MemGetMainPtr(0x400 << uBank2);
+	int bBank2 = g_bVideoDisplayPage2;
+	LPBYTE g_pTextBank1  = MemGetAuxPtr (0x400  << (int)bBank2);
+	LPBYTE g_pTextBank0  = MemGetMainPtr(0x400  << (int)bBank2);
 
 	for( int y = 0; y < 24; y++ )
 	{
@@ -4814,7 +4724,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 		{
 			char c; // TODO: FormatCharTxtCtrl() ?
 
-			if ( VideoGetSW80COL() )
+			if ( g_bVideoMode & VF_80COL )
 			{ // AUX
 				c = g_pTextBank1[ nAddressStart ] & 0x7F;
 				c = RemapChar(c);
@@ -4882,7 +4792,7 @@ int CmdTextSave (int nArgs)
 		_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
 	else
 	{
-		if( VideoGetSW80COL() )
+		if( g_bVideoMode & VF_80COL )
 			sprintf( g_sMemoryLoadSaveFileName, "AppleWin_Text80.txt" );
 		else
 			sprintf( g_sMemoryLoadSaveFileName, "AppleWin_Text40.txt" );
@@ -6087,11 +5997,11 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate );
 
 Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate )
 {
-	VideoSetForceFullRedraw();
+	g_VideoForceFullRedraw = true;
 	_Video_Dirty();
 	switch( iPage ) 
 	{
-		case VIEW_PAGE_X: _Video_SetupBanks( VideoGetSWPAGE2() ); break; // Page Current
+		case VIEW_PAGE_X: _Video_SetupBanks( g_bVideoDisplayPage2 ); break; // Page Current
 		case VIEW_PAGE_1: _Video_SetupBanks( false ); break; // Page 1
 		case VIEW_PAGE_2: _Video_SetupBanks( true ); break; // Page 2 !
 		default:

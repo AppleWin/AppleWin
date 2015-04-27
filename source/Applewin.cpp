@@ -35,7 +35,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskImage.h"
 #include "Frame.h"
 #include "Harddisk.h"
-#include "Joystick.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
@@ -62,6 +61,10 @@ TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
+DWORD     cumulativecycles  = 0;			// Wraps after ~1hr 9mins
+DWORD     cyclenum          = 0;			// Used by SpkrToggle() for non-wave sound
+DWORD     emulmsec          = 0;
+static DWORD emulmsec_frac  = 0;
 bool      g_bFullSpeed      = false;
 
 //Pravets 8A/C variables
@@ -75,6 +78,7 @@ HINSTANCE g_hInstance          = (HINSTANCE)0;
 AppMode_e	g_nAppMode = MODE_LOGO;
 static bool g_bLoadedSaveState = false;
 
+static int lastmode         = MODE_LOGO;
 TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin executable resides
 TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
@@ -112,6 +116,17 @@ CSpeech		g_Speech;
 #endif
 
 //===========================================================================
+
+#define DBG_CALC_FREQ 0
+#if DBG_CALC_FREQ
+const UINT MAX_CNT = 256;
+double g_fDbg[MAX_CNT];
+UINT g_nIdx = 0;
+double g_fMeanPeriod,g_fMeanFreq;
+ULONGLONG g_nPerfFreq = 0;
+#endif
+
+//---------------------------------------------------------------------------
 
 bool GetLoadedSaveStateFlag(void)
 {
@@ -214,28 +229,86 @@ void ContinueExecution(void)
 	if (nCyclesToExecute < 0)
 		nCyclesToExecute = 0;
 
-	const DWORD uActualCyclesExecuted = CpuExecute(nCyclesToExecute);
-	g_dwCyclesThisFrame += uActualCyclesExecuted;
+	DWORD dwExecutedCycles = CpuExecute(nCyclesToExecute);
+	g_dwCyclesThisFrame += dwExecutedCycles;
 
-	DiskUpdatePosition(uActualCyclesExecuted);
-	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
+	//
 
-	SpkrUpdate(uActualCyclesExecuted);
-	sg_SSC.CommUpdate(uActualCyclesExecuted);
-	PrintUpdate(uActualCyclesExecuted);
+	cyclenum = dwExecutedCycles;
+
+	DiskUpdatePosition(dwExecutedCycles);
+	JoyUpdatePosition();
+
+	SpkrUpdate(cyclenum);
+	sg_SSC.CommUpdate(cyclenum);
+	PrintUpdate(cyclenum);
+
+	//
+
+	const DWORD CLKS_PER_MS = (DWORD)g_fCurrentCLK6502 / 1000;
+
+	emulmsec_frac += dwExecutedCycles;
+	if (emulmsec_frac > CLKS_PER_MS)
+	{
+		emulmsec += emulmsec_frac / CLKS_PER_MS;
+		emulmsec_frac %= CLKS_PER_MS;
+	}
+
+	// DETERMINE WHETHER THE SCREEN WAS UPDATED THIS CLOCKTICK
+	static BOOL anyupdates = 0;
+	VideoCheckPage(0);								// force=0
+	anyupdates |= VideoHasRefreshed();				// Only called from here. Returns & clears 'hasrefreshed' flag
 
 	//
 
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
-		VideoEndOfVideoFrame();
+		VideoUpdateFlash();
+
+		static BOOL lastupdates[2] = {0,0};
+		if (!anyupdates && !lastupdates[0] && !lastupdates[1] && VideoApparentlyDirty())
+		{
+			VideoCheckPage(1);						// force=1
+			static DWORD lasttime = 0;
+			DWORD currtime = GetTickCount();
+			if ((!g_bFullSpeed) ||
+				(currtime-lasttime >= (DWORD)(g_bGraphicsMode ? 100 : 25)))
+			{
+				VideoRefreshScreen();
+				lasttime = currtime;
+			}
+		}
+
+		lastupdates[1] = lastupdates[0];
+		lastupdates[0] = anyupdates;
+		anyupdates     = 0;
+
 		MB_EndOfVideoFrame();
 	}
+
+	//
 
 	if (!g_bFullSpeed)
 	{
 		SysClk_WaitTimer();
+
+#if DBG_CALC_FREQ
+		if (g_nPerfFreq)
+		{
+			QueryPerformanceCounter((LARGE_INTEGER*)&nTime1);
+			LONGLONG nTimeDiff = nTime1 - nTime0;
+			double fTime = (double)nTimeDiff / (double)(LONGLONG)g_nPerfFreq;
+
+			g_fDbg[g_nIdx] = fTime;
+			g_nIdx = (g_nIdx+1) & (MAX_CNT-1);
+			g_fMeanPeriod = 0.0;
+			for(UINT n=0; n<MAX_CNT; n++)
+				g_fMeanPeriod += g_fDbg[n];
+			g_fMeanPeriod /= (double)MAX_CNT;
+			g_fMeanFreq = 1.0 / g_fMeanPeriod;
+		}
+#endif
 	}
 }
 
@@ -403,6 +476,7 @@ void LoadConfiguration(void)
 	case A2TYPE_APPLE2PLUS:		g_nCharsetType  = 0; break; 
 	case A2TYPE_APPLE2E:		g_nCharsetType  = 0; break; 
 	case A2TYPE_APPLE2EENHANCED:g_nCharsetType  = 0; break; 
+	case A2TYPE_TK30002E:       g_nCharsetType  = 0; break; 
 	case A2TYPE_PRAVETS82:	    g_nCharsetType  = 1; break; 
 	case A2TYPE_PRAVETS8A:	    g_nCharsetType  = 2; break; 
 	case A2TYPE_PRAVETS8M:	    g_nCharsetType  = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because setting charset to 3 results in some problems.
@@ -911,6 +985,11 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
     }
 
 	LogFileOutput("AppleWin version: %s\n",  VERSIONSTRING);
+
+#if DBG_CALC_FREQ
+	QueryPerformanceFrequency((LARGE_INTEGER*)&g_nPerfFreq);
+	if(g_fh) fprintf(g_fh, "Performance frequency = %d\n",g_nPerfFreq);
+#endif
 
 	//-----
 
