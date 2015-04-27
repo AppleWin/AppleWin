@@ -34,11 +34,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 CPageAdvanced* CPageAdvanced::ms_this = 0;	// reinit'd in ctor
 
-enum CLONECHOICE {MENUITEM_CLONEMIN, MENUITEM_PRAVETS82=MENUITEM_CLONEMIN, MENUITEM_PRAVETS8M, MENUITEM_PRAVETS8A, MENUITEM_CLONEMAX};
+enum CLONECHOICE {MENUITEM_CLONEMIN, MENUITEM_PRAVETS82=MENUITEM_CLONEMIN, MENUITEM_PRAVETS8M, MENUITEM_PRAVETS8A, MENUITEM_TK30002E, MENUITEM_CLONEMAX};
 const TCHAR CPageAdvanced::m_CloneChoices[] =
 				TEXT("Pravets 82\0")	// Bulgarian
 				TEXT("Pravets 8M\0")    // Bulgarian
-				TEXT("Pravets 8A\0");	// Bulgarian
+				TEXT("Pravets 8A\0")	// Bulgarian
+				TEXT("TK3000 //e");	    // Brazilian
 
 
 BOOL CALLBACK CPageAdvanced::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
@@ -222,7 +223,8 @@ eApple2Type CPageAdvanced::GetCloneType(DWORD NewMenuItem)
 		case MENUITEM_PRAVETS82:	return A2TYPE_PRAVETS82;
 		case MENUITEM_PRAVETS8M:	return A2TYPE_PRAVETS8M;
 		case MENUITEM_PRAVETS8A:	return A2TYPE_PRAVETS8A;
-		default:					return A2TYPE_PRAVETS82;
+        case MENUITEM_TK30002E:     return A2TYPE_TK30002E;
+		default:					return A2TYPE_TK30002E;
 	}
 }
 

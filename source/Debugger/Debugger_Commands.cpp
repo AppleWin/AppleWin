@@ -372,7 +372,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	// DEPRECATED  -- Probably should be removed in a future version
 		{TEXT("BENCH")       , CmdBenchmarkStart    , CMD_BENCHMARK            },
-		{TEXT("EXITBENCH")   , NULL                 , CMD_BENCHMARK            }, // 2.8.03 was incorrectly alias with 'E' Bug #246. // CmdBenchmarkStop
+		{TEXT("EXITBENCH")   , CmdBenchmarkStop     , CMD_BENCHMARK            },
 		{TEXT("MDB")         , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
 //		{TEXT("MEMORY")      , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
 };

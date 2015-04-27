@@ -1,13 +1,7 @@
 /*
- .9 Added: BLOAD now recognizes the extensions .hgr or .hgr2 to load to $2000, or $4000 respectfully
- .8 Fixed: Showing/hiding the address and/or opcodes will show long symbolic targets without overflowing into the register info pane Bug #227
- .7 Fixed: ASC #:# with string containing null byte wouldn't show rest of string
- .6 Added: Print-Screen when in debugger will copy the debugger window as text
- .5 Added: Print warnings about duplicate symbols when symbol tables are loaded
- .4 Fixed: Check for buffer overflow in CmdSymbolsInfo() if _CmdSymbolsInfoHeader() returns a very long string
- .3 Removed EXITBENCH from falsely being triggered with E.
- .2 Cleaned up error message for syminfo on invalid symbol table.
- .1 Fixed: Symbolic Targets > 20 chars no longer overflow into register window
+
+ .1 Fixe: Symbolic Targets > 20 chars no longer overflow into register window
+
 2.8.0.0 Released with AppleWin 1.25
 
 2.7.0.#

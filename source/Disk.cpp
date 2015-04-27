@@ -415,16 +415,16 @@ void DiskBoot(void)
 
 //===========================================================================
 
-static BYTE __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
+static BYTE __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG)
 {
 	floppymotoron = address & 1;
 	CheckSpinning();
-	return MemReadFloatingBus(1, uExecutedCycles);	// TC-TODO: Check b7 always set
+	return MemReturnRandomData(1);
 }
 
 //===========================================================================
 
-static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
+static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG)
 {
 	Disk_t * fptr = &g_aFloppyDisk[currdrive];
 #if 1
@@ -501,8 +501,7 @@ static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG u
 		}
 	}
 #endif
-	return ((address & 0xF) == 0)	? 0xFF		// TC-TODO: Check why $C0E0 only returns 0xFF
-									: MemReadFloatingBus(1, uExecutedCycles);	// TC-TODO: Check b7 always set
+	return (address == 0xE0) ? 0xFF : MemReturnRandomData(1);
 }
 
 //===========================================================================
@@ -520,13 +519,13 @@ void DiskDestroy(void)
 
 //===========================================================================
 
-static BYTE __stdcall DiskEnable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
+static BYTE __stdcall DiskEnable(WORD, WORD address, BYTE, BYTE, ULONG)
 {
 	currdrive = address & 1;
 	g_aFloppyDisk[!currdrive].spinning   = 0;
 	g_aFloppyDisk[!currdrive].writelight = 0;
 	CheckSpinning();
-	return MemReadFloatingBus(uExecutedCycles);
+	return 0;
 }
 
 //===========================================================================
@@ -610,12 +609,6 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 		fptr->bWriteProtected = false;	// Assume this is a new file to create
 	else
 		fptr->bWriteProtected = bForceWriteProtected ? true : (dwAttributes & FILE_ATTRIBUTE_READONLY);
-
-	// Check if image is being used by the other HDD, and unplug it in order to be swapped
-	std::string otherDisk = DiskGetDiskPathFilename(!iDrive);
-	if (!strcmp(otherDisk.c_str(), pszImageFilename)) {
-		DiskEject(!iDrive);
-	}
 
 	ImageError_e Error = ImageOpen(pszImageFilename,
 		&fptr->imagehandle,
@@ -909,8 +902,7 @@ void DiskSelect(const int iDrive)
 
 //===========================================================================
 
-static BYTE __stdcall DiskSetLatchValue(WORD, WORD, BYTE write, BYTE value, ULONG)
-{
+static BYTE __stdcall DiskSetLatchValue(WORD, WORD, BYTE write, BYTE value, ULONG) {
 	if (write)
 		floppylatch = value;
 	return floppylatch;
@@ -918,15 +910,15 @@ static BYTE __stdcall DiskSetLatchValue(WORD, WORD, BYTE write, BYTE value, ULON
 
 //===========================================================================
 
-static BYTE __stdcall DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
+static BYTE __stdcall DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG)
 {
 	floppywritemode = 0;
-	return MemReadFloatingBus(g_aFloppyDisk[currdrive].bWriteProtected, uExecutedCycles);
+	return MemReturnRandomData(g_aFloppyDisk[currdrive].bWriteProtected);
 }
 
 //===========================================================================
 
-static BYTE __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
+static BYTE __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG)
 {
 	floppywritemode = 1;
 	BOOL modechange = !g_aFloppyDisk[currdrive].writelight;
@@ -936,8 +928,7 @@ static BYTE __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCy
 		//FrameRefreshStatus(DRAW_LEDS);
 		FrameDrawDiskLEDS( (HDC)0 );
 	}
-
-	return MemReadFloatingBus(1, uExecutedCycles);	// TC-TODO: Check b7 always set
+	return MemReturnRandomData(1);
 }
 
 //===========================================================================

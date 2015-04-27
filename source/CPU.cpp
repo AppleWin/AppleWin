@@ -176,18 +176,16 @@ void RequestDebugger()
 *
 ***/
 
-#ifdef _DEBUG
-static unsigned __int64 g_nCycleIrqStart;
-static unsigned __int64 g_nCycleIrqEnd;
-static UINT g_nCycleIrqTime;
+unsigned __int64 g_nCycleIrqStart;
+unsigned __int64 g_nCycleIrqEnd;
+UINT g_nCycleIrqTime;
 
-static UINT g_nIdx = 0;
-static const UINT BUFFER_SIZE = 4096;	// 80 secs
-static UINT g_nBuffer[BUFFER_SIZE];
-static UINT g_nMean = 0;
-static UINT g_nMin = 0xFFFFFFFF;
-static UINT g_nMax = 0;
-#endif
+UINT g_nIdx = 0;
+const UINT BUFFER_SIZE = 4096;	// 80 secs
+UINT g_nBuffer[BUFFER_SIZE];
+UINT g_nMean = 0;
+UINT g_nMin = 0xFFFFFFFF;
+UINT g_nMax = 0;
 
 static __forceinline void DoIrqProfiling(DWORD uCycles)
 {
@@ -354,9 +352,7 @@ static __forceinline void NMI(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& 
 	{
 		// NMI signals are only serviced once
 		g_bNmiFlank = FALSE;
-#ifdef _DEBUG
 		g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
-#endif
 		PUSH(regs.pc >> 8)
 		PUSH(regs.pc & 0xFF)
 		EF_TO_AF
@@ -373,9 +369,7 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& 
 	if(g_bmIRQ && !(regs.ps & AF_INTERRUPT))
 	{
 		// IRQ signals are deasserted when a specific r/w operation is done on device
-#ifdef _DEBUG
 		g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
-#endif
 		PUSH(regs.pc >> 8)
 		PUSH(regs.pc & 0xFF)
 		EF_TO_AF
@@ -471,29 +465,6 @@ ULONG CpuGetCyclesThisVideoFrame(const ULONG nExecutedCycles)
 }
 #endif
 
-//---------------------------------------------------------------------------
-
-static DWORD g_dwEmulationTime_ms = 0;
-
-static void UpdateEmulationTime(const DWORD dwExecutedCycles)
-{
-	static DWORD dwEmulationTimeFrac_clks  = 0;
-
-	const DWORD CLKS_PER_MS = (DWORD)g_fCurrentCLK6502 / 1000;
-
-	dwEmulationTimeFrac_clks += dwExecutedCycles;
-	if (dwEmulationTimeFrac_clks > CLKS_PER_MS)
-	{
-		g_dwEmulationTime_ms += dwEmulationTimeFrac_clks / CLKS_PER_MS;
-		dwEmulationTimeFrac_clks %= CLKS_PER_MS;
-	}
-}
-
-DWORD CpuGetEmulationTime_ms(void)
-{
-	return g_dwEmulationTime_ms;
-}
-
 //===========================================================================
 
 DWORD CpuExecute(const DWORD uCycles)
@@ -508,7 +479,6 @@ DWORD CpuExecute(const DWORD uCycles)
 	const DWORD uExecutedCycles = InternalCpuExecute(uCycles);
 
 	MB_UpdateCycles(uExecutedCycles);	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
-	UpdateEmulationTime(uExecutedCycles);
 
 	//
 

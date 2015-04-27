@@ -687,14 +687,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\SAM.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\SAM.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\SaveState.cpp"
 					>
 				</File>

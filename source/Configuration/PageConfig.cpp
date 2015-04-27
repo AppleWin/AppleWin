@@ -164,6 +164,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				case A2TYPE_APPLE2PLUS:		nCurrentChoice = MENUITEM_IIPLUS; break;
 				case A2TYPE_APPLE2E:		nCurrentChoice = MENUITEM_IIE; break;
 				case A2TYPE_APPLE2EENHANCED:nCurrentChoice = MENUITEM_ENHANCEDIIE; break;
+				case A2TYPE_TK30002E:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_PRAVETS82:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_PRAVETS8M:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_PRAVETS8A:		nCurrentChoice = MENUITEM_CLONE; break;

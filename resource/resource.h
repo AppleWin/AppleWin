@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by Applewin.rc
+// Used by APPLEWIN.RC
 //
 #define IDC_COMPUTER                    101
 #define IDC_JOYSTICK0                   102
@@ -44,8 +44,11 @@
 #define IDR_PRAVETS_8M_ROM              140
 #define IDR_PRAVETS_8C_ROM              142
 #define IDR_MENU_DISK_POPUP             143
+#define IDR_MENU_DISK_CFG_POPUP         144
 #define IDD_ABOUT                       145
 #define IDC_CHECK_CONFIRM_REBOOT        146
+#define IDR_TK3000_2E_ROM               147
+#define IDR_TKCLOCK_FW                  148
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -67,39 +70,36 @@
 #define IDC_SPIN_XTRIM                  1026
 #define IDC_SPIN_YTRIM                  1027
 #define IDC_PHASOR_ENABLE               1029
-#define IDC_SAM_ENABLE                  1030
-#define IDC_SOUNDCARD_DISABLE           1031
-
-#define IDC_TFE_SETTINGS_ENABLE_T       1032
-#define IDC_TFE_SETTINGS_ENABLE         1033
-#define IDC_TFE_SETTINGS_INTERFACE_T    1034
-#define IDC_TFE_SETTINGS_INTERFACE      1035
-#define IDC_TFE_SETTINGS_INTERFACE_NAME 1036
-#define IDC_TFE_SETTINGS_INTERFACE_DESC 1037
-#define IDS_TFE_CAPTION                 1038
-#define IDS_TFE_ETHERNET                1039
-#define IDS_TFE_INTERFACE               1040
-#define IDS_OK                          1041
-#define IDS_CANCEL                      1042
-#define IDC_ETHERNET                    1043
-#define IDC_SCROLLLOCK_TOGGLE           1044
-#define IDC_MOUSE_IN_SLOT4              1045
-#define IDC_THE_FREEZES_F8_ROM_FW       1046
-#define IDC_MOUSE_CROSSHAIR             1047
-#define IDC_CLONETYPE                   1048
-#define IDC_MOUSE_RESTRICT_TO_WINDOW    1049
-#define IDC_CIDERPRESS_BROWSE           1050
-#define IDC_CIDERPRESS_FILENAME         1051
-#define IDC_CPM_CONFIG                  1052
-#define IDC_DUMPTOPRINTER               1053
-#define IDC_PRINTER_DUMP_FILENAME       1054
-#define IDC_PRINTER_DUMP_FILENAME_BROWSE 1055
-#define IDC_PRINTER_CONVERT_ENCODING    1056
-#define IDC_PRINTER_FILTER_UNPRINTABLE  1057
-#define IDC_PRINTER_APPEND              1058
-#define IDC_SPIN_PRINTER_IDLE           1059
-
-#define IDC_CHECK_HALF_SCAN_LINES       1060
+#define IDC_SOUNDCARD_DISABLE           1030
+#define IDC_TFE_SETTINGS_ENABLE_T       1031
+#define IDC_TFE_SETTINGS_ENABLE         1032
+#define IDC_TFE_SETTINGS_INTERFACE_T    1033
+#define IDC_TFE_SETTINGS_INTERFACE      1034
+#define IDC_TFE_SETTINGS_INTERFACE_NAME 1035
+#define IDC_TFE_SETTINGS_INTERFACE_DESC 1036
+#define IDS_TFE_CAPTION                 1037
+#define IDS_TFE_ETHERNET                1038
+#define IDS_TFE_INTERFACE               1039
+#define IDS_OK                          1040
+#define IDS_CANCEL                      1041
+#define IDC_ETHERNET                    1042
+#define IDC_SCROLLLOCK_TOGGLE           1043
+#define IDC_MOUSE_IN_SLOT4              1044
+#define IDC_THE_FREEZES_F8_ROM_FW       1045
+#define IDC_MOUSE_CROSSHAIR             1046
+#define IDC_CLONETYPE                   1047
+#define IDC_MOUSE_RESTRICT_TO_WINDOW    1048
+#define IDC_CIDERPRESS_BROWSE           1049
+#define IDC_CIDERPRESS_FILENAME         1050
+#define IDC_CPM_CONFIG                  1051
+#define IDC_DUMPTOPRINTER               1052
+#define IDC_PRINTER_DUMP_FILENAME       1053
+#define IDC_PRINTER_DUMP_FILENAME_BROWSE 1054
+#define IDC_PRINTER_CONVERT_ENCODING    1055
+#define IDC_PRINTER_FILTER_UNPRINTABLE  1056
+#define IDC_PRINTER_APPEND              1057
+#define IDC_SPIN_PRINTER_IDLE           1058
+#define IDC_CHECK_HALF_SCAN_LINES       1059
 #define IDC_GPL_TEXT                    1061
 #define IDC_GPL_BORDER                  1063
 #define IDC_APPLEWIN_VERSION            1064
@@ -107,10 +107,6 @@
 #define IDC_CURSORCONTROL               1066
 #define IDC_AUTOFIRE                    1067
 #define IDC_CENTERINGCONTROL            1068
-#define IDC_COMBO_HDD1                  1078
-#define IDC_COMBO_HDD2                  1079
-#define IDC_COMBO_DISK1                 1080
-#define IDC_COMBO_DISK2                 1081
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
@@ -118,6 +114,10 @@
 #define ID_DISKMENU_WRITEPROTECTION_ON  40005
 #define ID_DISKMENU_WRITEPROTECTION_OFF 40006
 #define ID_DISKMENU_SENDTO_CIDERPRESS   40007
+#define ID_DISKMENU_EJECT_DISK1         40008
+#define ID_DISKMENU_EJECT_DISK2         40009
+#define ID_DISKMENU_UNPLUG_HARDDISK1    40010
+#define ID_DISKMENU_UNPLUG_HARDDISK2    40011
 
 // Next default values for new objects
 // 
@@ -126,7 +126,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        147
 #define _APS_NEXT_COMMAND_VALUE         40012
-#define _APS_NEXT_CONTROL_VALUE         1082
+#define _APS_NEXT_CONTROL_VALUE         1069
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

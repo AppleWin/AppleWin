@@ -13,11 +13,13 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (United States) resources
+// English (U.S.) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
+#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -154,35 +156,34 @@ BEGIN
     CONTROL         "Slider1",IDC_SPKR_VOLUME,"msctls_trackbar32",TBS_AUTOTICKS | TBS_VERT | TBS_BOTH | WS_TABSTOP,13,47,28,60
     LTEXT           "&Mockingboard:",IDC_STATIC,49,39,51,8
     CONTROL         "Slider1",IDC_MB_VOLUME,"msctls_trackbar32",TBS_AUTOTICKS | TBS_VERT | TBS_BOTH | WS_TABSTOP,59,47,25,60
-    GROUPBOX        "Sound Cards",IDC_STATIC,6,122,197,64
+    GROUPBOX        "Sound Cards",IDC_STATIC,6,122,197,61
     CONTROL         "Mockingboards (in slots 4 && 5)",IDC_MB_ENABLE,"Button",BS_AUTORADIOBUTTON,10,136,142,8
     CONTROL         "Phasor (in slot 4)",IDC_PHASOR_ENABLE,"Button",BS_AUTORADIOBUTTON,10,149,92,10
-    CONTROL         "SAM/DAC (in slot 5)",IDC_SAM_ENABLE,"Button",BS_AUTORADIOBUTTON,10,162,95,10
-    CONTROL         "No sound cards",IDC_SOUNDCARD_DISABLE,"Button",BS_AUTORADIOBUTTON,10,175,78,10
+    CONTROL         "No sound cards",IDC_SOUNDCARD_DISABLE,"Button",BS_AUTORADIOBUTTON,10,163,78,10
 END
 
-IDD_PROPPAGE_DISK DIALOGEX 0, 0, 211, 188
+IDD_PROPPAGE_DISK DIALOGEX 0, 0, 210, 190
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_CAPTION | WS_SYSMENU
 CAPTION "Disk"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    GROUPBOX        "Floppy Disk Drives",IDC_STATIC,5,7,200,72
+    GROUPBOX        "Floppy Disk Drives",IDC_STATIC,5,7,200,73
     LTEXT           "&Disk access speed:",IDC_STATIC,12,21,64,8
     COMBOBOX        IDC_DISKTYPE,80,18,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "Hard Disk Drives",IDC_STATIC,5,83,200,64
+    PUSHBUTTON      "Select Disk &1",IDC_DISK1,10,39,70,14
+    EDITTEXT        IDC_EDIT_DISK1,84,40,115,12,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "Select Disk &2",IDC_DISK2,10,60,70,14
+    EDITTEXT        IDC_EDIT_DISK2,84,60,115,12,ES_AUTOHSCROLL | ES_READONLY
+    GROUPBOX        "Hard Disk Drives",IDC_STATIC,5,85,200,71
     CONTROL         "&Enable hard disk controller in slot 7",IDC_HDD_ENABLE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,96,122,10
-    LTEXT           "&Path to CiderPress:",IDC_STATIC,7,155,74,8
-    EDITTEXT        IDC_CIDERPRESS_FILENAME,7,165,143,12,ES_AUTOHSCROLL | ES_READONLY
-    PUSHBUTTON      "&Browse...",IDC_CIDERPRESS_BROWSE,156,164,50,14
-    LTEXT           "HDD 1:",IDC_STATIC,11,113,23,8
-    LTEXT           "HDD 2:",IDC_STATIC,11,130,23,8
-    COMBOBOX        IDC_COMBO_HDD1,46,112,150,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    COMBOBOX        IDC_COMBO_HDD2,46,128,150,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Disk 1:",IDC_STATIC,10,41,23,8
-    LTEXT           "Disk 2:",IDC_STATIC,10,58,23,8
-    COMBOBOX        IDC_COMBO_DISK1,40,40,150,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    COMBOBOX        IDC_COMBO_DISK2,40,57,150,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,98,122,10
+    PUSHBUTTON      "Select &HDD 1",IDC_HDD1,10,114,70,14
+    EDITTEXT        IDC_EDIT_HDD1,85,115,115,12,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "Selec&t HDD 2",IDC_HDD2,10,134,70,14
+    EDITTEXT        IDC_EDIT_HDD2,85,135,115,12,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "&Path to CiderPress:",IDC_STATIC,5,162,74,8
+    EDITTEXT        IDC_CIDERPRESS_FILENAME,5,172,143,12,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "&Browse...",IDC_CIDERPRESS_BROWSE,154,171,50,14
 END
 
 IDD_TFE_SETTINGS_DIALOG DIALOGEX 0, 0, 270, 100
@@ -289,7 +290,7 @@ END
 // Accelerator
 //
 
-IDR_ACCELERATOR1 ACCELERATORS
+IDR_ACCELERATOR1 ACCELERATORS 
 BEGIN
     "/",            IDM_ABOUT,              ASCII,  ALT, NOINVERT
     "?",            IDM_ABOUT,              ASCII,  ALT, NOINVERT
@@ -308,6 +309,7 @@ IDR_PRINTDRVR_FW        FIRMWARE                "Parallel.rom"
 IDR_MOCKINGBOARD_D_FW   FIRMWARE                "Mockingboard-D.rom"
 IDR_MOUSEINTERFACE_FW   FIRMWARE                "MouseInterface.rom"
 IDR_THUNDERCLOCKPLUS_FW FIRMWARE                "ThunderClockPlus.rom"
+IDR_TKCLOCK_FW          FIRMWARE                "TKClock.rom"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -317,7 +319,8 @@ IDR_THUNDERCLOCKPLUS_FW FIRMWARE                "ThunderClockPlus.rom"
 IDR_APPLE2_ROM          ROM                     "Apple2.rom"
 IDR_APPLE2_PLUS_ROM     ROM                     "Apple2_Plus.rom"
 IDR_APPLE2E_ROM         ROM                     "Apple2e.rom"
-IDR_APPLE2E_ENHANCED_ROM ROM                     "Apple2e_Enhanced.rom"
+IDR_APPLE2E_ENHANCED_ROM ROM                    "Apple2e_Enhanced.rom"
+IDR_TK3000_2E_ROM       ROM                     "TK3000e.rom"
 IDR_PRAVETS_82_ROM      ROM                     "Pravets82.rom"
 IDR_PRAVETS_8M_ROM      ROM                     "Pravets8M.rom"
 IDR_PRAVETS_8C_ROM      ROM                     "Pravets8C.rom"
@@ -328,7 +331,7 @@ IDR_FREEZES_F8_ROM      ROM                     "FREEZES_NON-AUTOSTART_F8_ROM.ro
 // Menu
 //
 
-IDR_MENU MENU
+IDR_MENU MENU 
 BEGIN
     POPUP "&File"
     BEGIN
@@ -341,7 +344,7 @@ BEGIN
     END
 END
 
-IDR_MENU_DISK_POPUP MENU
+IDR_MENU_DISK_POPUP MENU 
 BEGIN
     POPUP "Disk Menu"
     BEGIN
@@ -352,6 +355,17 @@ BEGIN
     END
 END
 
+IDR_MENU_DISK_CFG_POPUP MENU 
+BEGIN
+    POPUP "Disk Menu"
+    BEGIN
+        MENUITEM "Eject disk in Drive 1",       ID_DISKMENU_EJECT_DISK1
+        MENUITEM "Eject disk in Drive 2",       ID_DISKMENU_EJECT_DISK2
+        MENUITEM "Unplug harddisk-1",           ID_DISKMENU_UNPLUG_HARDDISK1
+        MENUITEM "Unplug harddisk-2",           ID_DISKMENU_UNPLUG_HARDDISK2
+    END
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -359,21 +373,11 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO
+GUIDELINES DESIGNINFO 
 BEGIN
     IDD_PROPPAGE_INPUT, DIALOG
     BEGIN
         BOTTOMMARGIN, 182
-    END
-
-    IDD_PROPPAGE_DISK, DIALOG
-    BEGIN
-        RIGHTMARGIN, 210
-        BOTTOMMARGIN, 185
-    END
-
-    IDD_TFE_SETTINGS_DIALOG, DIALOG
-    BEGIN
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -384,29 +388,31 @@ END
 // String Table
 //
 
-STRINGTABLE
+STRINGTABLE 
 BEGIN
     IDS_TFE_CAPTION         "Ethernet Settings"
     IDS_TFE_ETHERNET        "Ethernet"
     IDS_TFE_INTERFACE       "Interface"
 END
 
-STRINGTABLE
+STRINGTABLE 
 BEGIN
     IDS_OK                  "OK"
     IDS_CANCEL              "Cancel"
 END
 
-#endif    // English (United States) resources
+#endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// English (United Kingdom) resources
+// English (U.K.) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 #pragma code_page(1252)
+#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -433,7 +439,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO
+GUIDELINES DESIGNINFO 
 BEGIN
     IDD_ABOUT, DIALOG
     BEGIN
@@ -445,7 +451,7 @@ BEGIN
 END
 #endif    // APSTUDIO_INVOKED
 
-#endif    // English (United Kingdom) resources
+#endif    // English (U.K.) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
