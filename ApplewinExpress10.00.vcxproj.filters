@@ -212,6 +212,9 @@
     <ClCompile Include="source\StdAfx.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="source\SAM.cpp">
+      <Filter>Source\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -604,6 +607,24 @@
       <Filter>Resources</Filter>
     </None>
     <None Include="resource\ThunderClockPlus.rom">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="resource\TK3000e.rom">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="resource\TKClock.rom">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="RESOURCE\ROM1.BIN" />
+    <None Include="RESOURCE\LED_CAPS_OFF.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON.BMP" />
+    <None Include="RESOURCE\LED_CAPS_OFF_P8.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON_P8.BMP" />
+    <None Include="RESOURCE\LED_CAPS_OFF_LAT.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON_LAT.BMP" />
+    <None Include="RESOURCE\Pravets8M.rom" />
+    <None Include="RESOURCE\ROM2.BIN" />
+    <None Include="resource\RUN3000E.bmp">
       <Filter>Resources</Filter>
     </None>
   </ItemGroup>

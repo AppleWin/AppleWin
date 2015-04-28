@@ -191,6 +191,7 @@ void GetAppleWindowTitle()
 		case A2TYPE_PRAVETS82:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_82       ); break; 
 		case A2TYPE_PRAVETS8M:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8M       ); break; 
 		case A2TYPE_PRAVETS8A:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8A       ); break; 
+        case A2TYPE_TK30002E:       _tcscpy(g_pAppleWindowTitle, TITLE_TK3000_2E        ); break;
 	}
 
 #if _DEBUG
@@ -291,6 +292,9 @@ static void CreateGdiObjects(void)
 	case A2TYPE_PRAVETS8M:
 	case A2TYPE_PRAVETS8A:
 		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON"));
+		break;
+	case A2TYPE_TK30002E:
+		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN3000E_BUTTON"));
 		break;
 	default:
 		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON"));
