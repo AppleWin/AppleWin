@@ -294,8 +294,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 WRITE(val)						    \
 		 regs.a |= val;						    \
 		 SETNZ(regs.a)
-#define AXA	 /*bSlowerOnPagecross = 0;*//*FIXME: $93 case is still unclear*/	    \
+#define AXA	 /*bSlowerOnPagecross = 0;*/	    \
 		 val = regs.a & regs.x & (((base >> 8) + 1) & 0xFF);	    \
+		 if (uExtraCycles) {addr = (val<<8) | (addr&0xff); uExtraCycles = 0;} /* NB. Use 'uExtraCycles' to flag page-cross only */ \
 		 WRITE(val)
 #define AXS	 /*bSlowerOnPagecross = 0;*/						    \
 		 WRITE(regs.a & regs.x)

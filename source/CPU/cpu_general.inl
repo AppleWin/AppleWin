@@ -93,6 +93,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define CHECK_PAGE_CHANGE	if ((base ^ addr) & 0xFF00)			\
 									uExtraCycles=1;
 
+#define CHECK_PAGE_CHANGE_INV	if ((base ^ addr) & 0xFF00)			\
+									uExtraCycles=1;	/* Reuse as flag to opcode to replace hi-addr! */
+
 /****************************************************************************
 *
 *  ADDRESSING MODE MACROS
@@ -107,6 +110,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define ABSY_SLOW base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2; CHECK_PAGE_CHANGE;
 #define ABSY_FAST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2;
+#define ABSY_INV  base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2; CHECK_PAGE_CHANGE_INV;
 
 // NMOS read-modify-write opcodes (asl/dec/inc abs,x) don't take an extra cycle if page-crossing (GH#271)
 #define ABSX_NMOS_RMW base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2;
@@ -142,6 +146,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		     base = *(LPWORD)(mem+*(mem+regs.pc));           \
 		 regs.pc++;                                          \
 		 addr = base+(WORD)regs.y;
+#define INDY_INV	 if (*(mem+regs.pc) == 0xFF)             /*FAST: no extra cycle for page-crossing*/ \
+		     base = *(mem+0xFF)+(((WORD)*mem)<<8);           \
+		 else                                                \
+		     base = *(LPWORD)(mem+*(mem+regs.pc));           \
+		 regs.pc++;                                          \
+		 addr = base+(WORD)regs.y;                           \
+		 CHECK_PAGE_CHANGE_INV;
 
 #define IZPG	 base = *(mem+regs.pc++);                            \
 		 if (base == 0xFF)                                   \
