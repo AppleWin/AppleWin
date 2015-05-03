@@ -202,7 +202,7 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		case 0x90:   REL BCC	CYC(2)  break;
 		case 0x91:   INDY_FAST STA	CYC(6)  break;
 		case 0x92: $     HLT	CYC(2)  break;
-		case 0x93: $ INDY_INV AXA	CYC(6)  break; // invalid
+		case 0x93: $ INDY_FAST AXA	CYC(6)  break; // invalid
 		case 0x94:   zpx STY	CYC(4)  break;
 		case 0x95:   zpx STA	CYC(4)  break;
 		case 0x96:   zpy STX	CYC(4)  break;
@@ -214,7 +214,7 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		case 0x9C: $ ABSX_FAST SAY	CYC(5)  break; // invalid
 		case 0x9D:   ABSX_FAST STA	CYC(5)  break;
 		case 0x9E: $ ABSY_FAST XAS	CYC(5)  break;
-		case 0x9F: $ ABSY_INV AXA	CYC(5)  break;
+		case 0x9F: $ ABSY_FAST AXA	CYC(5)  break;
 		case 0xA0:   IMM LDY	CYC(2)  break;
 		case 0xA1:   idx LDA	CYC(6)  break;
 		case 0xA2:   IMM LDX	CYC(2)  break;

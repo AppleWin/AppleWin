@@ -296,7 +296,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 SETNZ(regs.a)
 #define AXA	 /*bSlowerOnPagecross = 0;*/	    \
 		 val = regs.a & regs.x & (((base >> 8) + 1) & 0xFF);	    \
-		 if (uExtraCycles) {addr = (val<<8) | (addr&0xff); uExtraCycles = 0;} /* NB. Use 'uExtraCycles' to flag page-cross only */ \
+		 if ((base ^ addr) >> 8) {addr = (val<<8) | (addr&0xff);} /* GH#282 */	\
 		 WRITE(val)
 #define AXS	 /*bSlowerOnPagecross = 0;*/						    \
 		 WRITE(regs.a & regs.x)
@@ -552,6 +552,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 SETNZ(regs.x)
 #define SAY	 /*bSlowerOnPagecross = 0;*/						    \
 		 val = regs.y & (((base >> 8) + 1) & 0xFF);		    \
+		 if ((base ^ addr) >> 8) {addr = (val<<8) | (addr&0xff);} /* GH#282 */	\
 		 WRITE(val)
 #define SBC_NMOS /*bSlowerOnPagecross = 1;*/						    \
 		 temp = READ;						    \
@@ -635,6 +636,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 val = regs.a & regs.x;					    \
 		 regs.sp = 0x100 | val;					    \
 		 val &= (((base >> 8) + 1) & 0xFF);			    \
+		 if ((base ^ addr) >> 8) {addr = (val<<8) | (addr&0xff);} /* GH#282 */	\
 		 WRITE(val)
 #define TAX	 regs.x = regs.a;					    \
 		 SETNZ(regs.x)
@@ -662,5 +664,5 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 SETNZ(regs.a)
 #define XAS	 /*bSlowerOnPagecross = 0;*/						    \
 		 val = regs.x & (((base >> 8) + 1) & 0xFF);		    \
+		 if ((base ^ addr) >> 8) {addr = (val<<8) | (addr&0xff);} /* GH#282 */	\
 		 WRITE(val)
-
