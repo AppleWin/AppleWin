@@ -86,9 +86,12 @@ DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
 	return 0;
 }
 
+//-------------------------------------
+
 #include "../../source/cpu/cpu_general.inl"
 #include "../../source/cpu/cpu_instructions.inl"
 #include "../../source/cpu/cpu6502.h"  // MOS 6502
+#include "../../source/cpu/cpu65C02.h"  // WDC 65C02
 
 void init(void)
 {
@@ -111,6 +114,172 @@ void reset(void)
 	regs.ps = 0;
 	regs.bJammed = 0;
 }
+
+//-------------------------------------
+
+int test_GH264(void)
+{
+	reset();
+	WORD abs = regs.pc+3;
+	WORD dst = abs+2;
+	mem[regs.pc+0] = 0x6c;	// JMP (IND) 
+	mem[regs.pc+1] = abs&0xff;
+	mem[regs.pc+2] = abs>>8;
+	mem[regs.pc+3] = dst&0xff;
+	mem[regs.pc+4] = dst>>8;
+
+	DWORD cycles = Cpu6502(0);
+	if (cycles != 5) return 1;
+	if (regs.pc != dst) return 1;
+
+	reset();
+	cycles = Cpu65C02(0);
+	if (cycles != 6) return 1;
+	if (regs.pc != dst) return 1;
+
+	return 0;
+}
+
+//-------------------------------------
+
+void ASL_ABSX(BYTE x, WORD base, BYTE d)
+{
+	WORD addr = base+x;
+	mem[addr] = d;
+
+	reset();
+	regs.x = x;
+	mem[regs.pc+0] = 0x1e;
+	mem[regs.pc+1] = base&0xff;
+	mem[regs.pc+2] = base>>8;
+}
+
+void DEC_ABSX(BYTE x, WORD base, BYTE d)
+{
+	WORD addr = base+x;
+	mem[addr] = d;
+
+	reset();
+	regs.x = x;
+	mem[regs.pc+0] = 0xde;
+	mem[regs.pc+1] = base&0xff;
+	mem[regs.pc+2] = base>>8;
+}
+
+void INC_ABSX(BYTE x, WORD base, BYTE d)
+{
+	WORD addr = base+x;
+	mem[addr] = d;
+
+	reset();
+	regs.x = x;
+	mem[regs.pc+0] = 0xfe;
+	mem[regs.pc+1] = base&0xff;
+	mem[regs.pc+2] = base>>8;
+}
+
+int test_GH271(void)
+{
+	// asl abs,x
+	{
+		const WORD base = 0x20ff;
+		const BYTE d = 0x40;
+
+		// no page-cross
+		{
+			const BYTE x = 0;
+
+			ASL_ABSX(x, base, d);
+			if (Cpu6502(0) != 7) return 1;
+			if (mem[base+x] != ((d<<1)&0xff)) return 1;
+
+			ASL_ABSX(x, base, d);
+			if (Cpu65C02(0) != 6) return 1;	// Non-PX case is optimised on 65C02
+			if (mem[base+x] != ((d<<1)&0xff)) return 1;
+		}
+
+		// page-cross
+		{
+			const BYTE x = 1;
+
+			ASL_ABSX(x, base, d);
+			if (Cpu6502(0) != 7) return 1;
+			if (mem[base+x] != ((d<<1)&0xff)) return 1;
+
+			ASL_ABSX(x, base, d);
+			if (Cpu65C02(0) != 7) return 1;
+			if (mem[base+x] != ((d<<1)&0xff)) return 1;
+		}
+	}
+
+	// dec abs,x
+	{
+		const WORD base = 0x20ff;
+		const BYTE d = 0x40;
+
+		// no page-cross
+		{
+			const BYTE x = 0;
+
+			DEC_ABSX(x, base, d);
+			if (Cpu6502(0) != 7) return 1;
+			if (mem[base+x] != ((d-1)&0xff)) return 1;
+
+			DEC_ABSX(x, base, d);
+			if (Cpu65C02(0) != 7) return 1;	// NB. Not optimised for 65C02
+			if (mem[base+x] != ((d-1)&0xff)) return 1;
+		}
+
+		// page-cross
+		{
+			const BYTE x = 1;
+
+			DEC_ABSX(x, base, d);
+			if (Cpu6502(0) != 7) return 1;
+			if (mem[base+x] != ((d-1)&0xff)) return 1;
+
+			DEC_ABSX(x, base, d);
+			if (Cpu65C02(0) != 7) return 1;
+			if (mem[base+x] != ((d-1)&0xff)) return 1;
+		}
+	}
+
+	// inc abs,x
+	{
+		const WORD base = 0x20ff;
+		const BYTE d = 0x40;
+
+		// no page-cross
+		{
+			const BYTE x = 0;
+
+			INC_ABSX(x, base, d);
+			if (Cpu6502(0) != 7) return 1;
+			if (mem[base+x] != ((d+1)&0xff)) return 1;
+
+			INC_ABSX(x, base, d);
+			if (Cpu65C02(0) != 7) return 1;	// NB. Not optimised for 65C02
+			if (mem[base+x] != ((d+1)&0xff)) return 1;
+		}
+
+		// page-cross
+		{
+			const BYTE x = 1;
+
+			INC_ABSX(x, base, d);
+			if (Cpu6502(0) != 7) return 1;
+			if (mem[base+x] != ((d+1)&0xff)) return 1;
+
+			INC_ABSX(x, base, d);
+			if (Cpu65C02(0) != 7) return 1;
+			if (mem[base+x] != ((d+1)&0xff)) return 1;
+		}
+	}
+
+	return 0;
+}
+
+//-------------------------------------
 
 DWORD AXA_ZPY(BYTE a, BYTE x, BYTE y, WORD base)
 {
@@ -173,7 +342,7 @@ DWORD XAS_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
 	return Cpu6502(0);
 }
 
-int test6502_GH282(void)
+int test_GH282(void)
 {
 	// axa (zp),y
 	{
@@ -288,12 +457,22 @@ int test6502_GH282(void)
 	return 0;
 }
 
+//-------------------------------------
+
 int _tmain(int argc, _TCHAR* argv[])
 {
+	int res = 1;
 	init();
 	reset();
 
-	int res = test6502_GH282();
+	res = test_GH264();
+	if (res) return res;
 
-	return res;
+	res = test_GH271();
+	if (res) return res;
+
+	res = test_GH282();
+	if (res) return res;
+
+	return 0;
 }

@@ -73,6 +73,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		     IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles); \
 		 }
 
+#define ON_PAGECROSS_REPLACE_HI_ADDR if ((base ^ addr) >> 8) {addr = (val<<8) | (addr&0xff);} /* GH#282 */
+
 //
 
 // ExtraCycles:
@@ -102,14 +104,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ABS	 addr = *(LPWORD)(mem+regs.pc);	 regs.pc += 2;
 #define IABSX    addr = *(LPWORD)(mem+(*(LPWORD)(mem+regs.pc))+(WORD)regs.x); regs.pc += 2;
 
-#define ABSX_SLOW base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2; CHECK_PAGE_CHANGE;
-#define ABSX_FAST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2;
+// Optimised for page-cross
+#define ABSX_OPT base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2; CHECK_PAGE_CHANGE;
+// Not optimised for page-cross
+#define ABSX_CONST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2;
 
-#define ABSY_SLOW base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2; CHECK_PAGE_CHANGE;
-#define ABSY_FAST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2;
-
-// NMOS read-modify-write opcodes (asl/dec/inc abs,x) don't take an extra cycle if page-crossing (GH#271)
-#define ABSX_NMOS_RMW base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2;
+// Optimised for page-cross
+#define ABSY_OPT base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2; CHECK_PAGE_CHANGE;
+// Not optimised for page-cross
+#define ABSY_CONST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2;
 
 // TODO Optimization Note (just for IABSCMOS): uExtraCycles = ((base & 0xFF) + 1) >> 8;
 #define IABSCMOS base = *(LPWORD)(mem+regs.pc);	                          \
@@ -131,14 +134,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 else                                                \
 		     addr = *(LPWORD)(mem+base);
 
-#define INDY_SLOW	 if (*(mem+regs.pc) == 0xFF)             /*SLOW: incurs an extra cycle for page-crossing*/ \
+// Optimised for page-cross
+#define INDY_OPT	 if (*(mem+regs.pc) == 0xFF)             /*incurs an extra cycle for page-crossing*/ \
 		     base = *(mem+0xFF)+(((WORD)*mem)<<8);           \
 		 else                                                \
 		     base = *(LPWORD)(mem+*(mem+regs.pc));           \
 		 regs.pc++;                                          \
 		 addr = base+(WORD)regs.y;                           \
 		 CHECK_PAGE_CHANGE;
-#define INDY_FAST	 if (*(mem+regs.pc) == 0xFF)             /*FAST: no extra cycle for page-crossing*/ \
+// Not optimised for page-cross
+#define INDY_CONST	 if (*(mem+regs.pc) == 0xFF)             /*no extra cycle for page-crossing*/ \
 		     base = *(mem+0xFF)+(((WORD)*mem)<<8);           \
 		 else                                                \
 		     base = *(LPWORD)(mem+*(mem+regs.pc));           \
@@ -156,16 +161,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO Optimization Note:
 // . Opcodes that generate zero-page addresses can't be accessing $C000..$CFFF
 //   so they could be paired with special READZP/WRITEZP macros (instead of READ/WRITE)
-#define ZPG 	 addr = *(mem+regs.pc++);
+#define ZPG 	 addr =   *(mem+regs.pc++);
 #define ZPGX	 addr = ((*(mem+regs.pc++))+regs.x) & 0xFF;
 #define ZPGY	 addr = ((*(mem+regs.pc++))+regs.y) & 0xFF;
 
 // Tidy 3 char addressing modes to keep the opcode table visually aligned, clean, and readable.
-//#undef abx
-//#undef aby
 #undef asl
 #undef idx
-//#undef idy
 #undef imm
 #undef izp
 #undef lsr
@@ -175,11 +177,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #undef zpx
 #undef zpy
 
-//#define abx ABSX	// ABSX -> ABSX_SLOW or ABSX_FAST
-//#define aby ABSY	// ABSY -> ABSY_SLOW or ABSY_FAST
 #define asl ASLA // Arithmetic Shift Left
 #define idx INDX
-//#define idy INDY	// INDY -> INDY_SLOW or INDY_FAST
 #define imm IMM
 #define izp IZPG
 #define lsr LSRA // Logical Shift Right
@@ -188,6 +187,3 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ror RORA // Rotate Right
 #define zpx ZPGX
 #define zpy ZPGY
-// 0x6C // 65c02 IABSCMOS JMP // 6502  IABSNMOS JMP
-// 0x7C IABSX
-

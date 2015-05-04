@@ -68,15 +68,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #undef CPY
 #undef DCM
 #undef DEA
-#undef DEC_NMOS
-#undef DEC_CMOS
+#undef DEC
 #undef DEX
 #undef DEY
 #undef EOR
 #undef HLT
 #undef INA
-#undef INC_NMOS
-#undef INC_CMOS
+#undef INC
 #undef INS
 #undef INX
 #undef INY
@@ -139,8 +137,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #undef ADCn
 #undef ASLn
-#undef DECn
-#undef INCn
 #undef LSRn
 #undef ROLn
 #undef RORn
@@ -148,8 +144,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define ADCn ADC_NMOS
 #define ASLn ASL_NMOS
-#define DECn DEC_NMOS
-#define INCn INC_NMOS
 #define LSRn LSR_NMOS
 #define ROLn ROL_NMOS
 #define RORn ROR_NMOS
@@ -159,8 +153,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #undef ADCc
 #undef ASLc
-#undef DECc
-#undef INCc
 #undef LSRc
 #undef ROLc
 #undef RORc
@@ -168,8 +160,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define ADCc ADC_CMOS
 #define ASLc ASL_CMOS
-#define DECc DEC_CMOS
-#define INCc INC_CMOS
 #define LSRc LSR_CMOS
 #define ROLc ROL_CMOS
 #define RORc ROR_CMOS
@@ -296,7 +286,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 SETNZ(regs.a)
 #define AXA	 /*bSlowerOnPagecross = 0;*/	    \
 		 val = regs.a & regs.x & (((base >> 8) + 1) & 0xFF);	    \
-		 if ((base ^ addr) >> 8) {addr = (val<<8) | (addr&0xff);} /* GH#282 */	\
+		 ON_PAGECROSS_REPLACE_HI_ADDR								\
 		 WRITE(val)
 #define AXS	 /*bSlowerOnPagecross = 0;*/						    \
 		 WRITE(regs.a & regs.x)
@@ -347,11 +337,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 SETNZ(val)
 #define DEA	 --regs.a;						    \
 		 SETNZ(regs.a)
-#define DEC_NMOS /*bSlowerOnPagecross = 0;*/						    \
-		 val = READ-1;						    \
-		 SETNZ(val)						    \
-		 WRITE(val)
-#define DEC_CMOS /*bSlowerOnPagecross = 1;*/						    \
+#define DEC /*bSlowerOnPagecross = 0;*/						    \
 		 val = READ-1;						    \
 		 SETNZ(val)						    \
 		 WRITE(val)
@@ -366,11 +352,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 --regs.pc;
 #define INA	 ++regs.a;						    \
 		 SETNZ(regs.a)
-#define INC_NMOS /*bSlowerOnPagecross = 0;*/						    \
-		 val = READ+1;						    \
-		 SETNZ(val)						    \
-		 WRITE(val)
-#define INC_CMOS /*bSlowerOnPagecross = 1;*/						    \
+#define INC /*bSlowerOnPagecross = 0;*/						    \
 		 val = READ+1;						    \
 		 SETNZ(val)						    \
 		 WRITE(val)
@@ -552,7 +534,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 SETNZ(regs.x)
 #define SAY	 /*bSlowerOnPagecross = 0;*/						    \
 		 val = regs.y & (((base >> 8) + 1) & 0xFF);		    \
-		 if ((base ^ addr) >> 8) {addr = (val<<8) | (addr&0xff);} /* GH#282 */	\
+		 ON_PAGECROSS_REPLACE_HI_ADDR								\
 		 WRITE(val)
 #define SBC_NMOS /*bSlowerOnPagecross = 1;*/						    \
 		 temp = READ;						    \
@@ -636,7 +618,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 val = regs.a & regs.x;					    \
 		 regs.sp = 0x100 | val;					    \
 		 val &= (((base >> 8) + 1) & 0xFF);			    \
-		 if ((base ^ addr) >> 8) {addr = (val<<8) | (addr&0xff);} /* GH#282 */	\
+		 ON_PAGECROSS_REPLACE_HI_ADDR								\
 		 WRITE(val)
 #define TAX	 regs.x = regs.a;					    \
 		 SETNZ(regs.x)
@@ -664,5 +646,5 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 SETNZ(regs.a)
 #define XAS	 /*bSlowerOnPagecross = 0;*/						    \
 		 val = regs.x & (((base >> 8) + 1) & 0xFF);		    \
-		 if ((base ^ addr) >> 8) {addr = (val<<8) | (addr&0xff);} /* GH#282 */	\
+		 ON_PAGECROSS_REPLACE_HI_ADDR								\
 		 WRITE(val)
