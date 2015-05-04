@@ -351,7 +351,7 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 			case 0xDB:   INV NOP           CYC(2)  break;
 			case 0xDC:   INV ABSX_OPT NOP       CYC(4)  break;
 			case 0xDD:       ABSX_OPT CMP       CYC(4)  break;
-			case 0xDE:       ABSX_OPT DEC_CMOS  CYC(6)  break;
+			case 0xDE:       ABSX_CONST DEC_CMOS  CYC(7)  break;
 			case 0xDF:   INV NOP           CYC(2)  break;
 			case 0xE0:       IMM CPX       CYC(2)  break;
 			case 0xE1:       idx SBC_CMOS  CYC(6)  break;
@@ -383,7 +383,7 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 			case 0xFB:   INV NOP           CYC(2)  break;
 			case 0xFC:   INV ABSX_OPT NOP       CYC(4)  break;
 			case 0xFD:       ABSX_OPT SBC_CMOS  CYC(4)  break;
-			case 0xFE:       ABSX_OPT INC_CMOS  CYC(6)  break;
+			case 0xFE:       ABSX_CONST INC_CMOS  CYC(7)  break;
 			case 0xFF:   INV NOP           CYC(2)  break;
 */
 // Version 2   opcode: $ AM  Instruction // $=DebugBreak AM=AddressingMode
@@ -610,7 +610,7 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 			case 0xDB: $     NOP	CYC(2)  break;
 			case 0xDC: $ ABSX_OPT NOP	CYC(4)  break;
 			case 0xDD:   ABSX_OPT CMP	CYC(4)  break;
-			case 0xDE:   ABSX_CONST DEC	CYC(6)  break;
+			case 0xDE:   ABSX_CONST DEC	CYC(7)  break;
 			case 0xDF: $     NOP	CYC(2)  break;
 			case 0xE0:   IMM CPX	CYC(2)  break;
 			case 0xE1:   idx SBCc	CYC(6)  break;
@@ -642,7 +642,7 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 			case 0xFB: $     NOP	CYC(2)  break;
 			case 0xFC: $ ABSX_OPT NOP	CYC(4)  break;
 			case 0xFD:   ABSX_OPT SBCc	CYC(4)  break;
-			case 0xFE:   ABSX_CONST INC	CYC(6)  break;
+			case 0xFE:   ABSX_CONST INC	CYC(7)  break;
 			case 0xFF: $     NOP	CYC(2)  break;
 		}
 #undef $
