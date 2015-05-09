@@ -335,7 +335,7 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 			case 0xCB:   INV NOP           CYC(2)  break;
 			case 0xCC:       ABS CPY       CYC(4)  break;
 			case 0xCD:       ABS CMP       CYC(4)  break;
-			case 0xCE:       ABS DEC_CMOS  CYC(5)  break;
+			case 0xCE:       ABS DEC_CMOS  CYC(6)  break;
 			case 0xCF:   INV NOP           CYC(2)  break;
 			case 0xD0:       REL BNE       CYC(2)  break;
 			case 0xD1:       INDY_OPT CMP       CYC(5)  break;
@@ -594,7 +594,7 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 			case 0xCB: $     NOP	CYC(2)  break;
 			case 0xCC:   ABS CPY	CYC(4)  break;
 			case 0xCD:   ABS CMP	CYC(4)  break;
-			case 0xCE:   ABS DEC	CYC(5)  break;
+			case 0xCE:   ABS DEC	CYC(6)  break;
 			case 0xCF: $     NOP	CYC(2)  break;
 			case 0xD0:   REL BNE	CYC(2)  break;
 			case 0xD1:   INDY_OPT CMP	CYC(5)  break;

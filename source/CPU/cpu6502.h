@@ -261,7 +261,7 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		case 0xCB: $ IMM SAX	CYC(2)  break; // invalid
 		case 0xCC:   ABS CPY	CYC(4)  break;
 		case 0xCD:   ABS CMP	CYC(4)  break;
-		case 0xCE:   ABS DEC	CYC(5)  break;
+		case 0xCE:   ABS DEC	CYC(6)  break;
 		case 0xCF: $ ABS DCM	CYC(6)  break; // invalid
 		case 0xD0:   REL BNE	CYC(2)  break;
 		case 0xD1:   INDY_OPT CMP	CYC(5)  break;
