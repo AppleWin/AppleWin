@@ -182,7 +182,7 @@ static DWORD Cpu65C02 (DWORD uTotalCycles)
 			case 0x79:   ABSY_OPT   ADCc CYC(4)  break;
 			case 0x7A:              PLY  CYC(4)  break;
 			case 0x7B: $            NOP  CYC(2)  break;
-			case 0x7C:   IABSX      JMP  CYC(6)  break; //
+			case 0x7C:   IABSX      JMP  CYC(6)  break;
 			case 0x7D:   ABSX_OPT   ADCc CYC(4)  break;
 			case 0x7E:   ABSX_OPT   RORc CYC(6)  break;
 			case 0x7F: $            NOP  CYC(2)  break;
