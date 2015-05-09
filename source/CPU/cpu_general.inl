@@ -115,11 +115,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ABSY_CONST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2;
 
 // TODO Optimization Note (just for IABSCMOS): uExtraCycles = ((base & 0xFF) + 1) >> 8;
-#define IABSCMOS base = *(LPWORD)(mem+regs.pc);	                          \
+#define IABS_CMOS base = *(LPWORD)(mem+regs.pc);	                          \
 		 addr = *(LPWORD)(mem+base);		                  \
 		 if ((base & 0xFF) == 0xFF) uExtraCycles=1;		  \
 		 regs.pc += 2;
-#define IABSNMOS base = *(LPWORD)(mem+regs.pc);	                          \
+#define IABS_NMOS base = *(LPWORD)(mem+regs.pc);	                          \
 		 if ((base & 0xFF) == 0xFF)				  \
 		       addr = *(mem+base)+((WORD)*(mem+(base&0xFF00))<<8);\
 		 else                                                   \

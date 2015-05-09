@@ -496,7 +496,7 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 			case 0x69:   IMM ADCc	CYC(2)  break;
 			case 0x6A:       ror	CYC(2)  break;
 			case 0x6B: $     NOP	CYC(2)  break;
-			case 0x6C:   IABSCMOS JMP CYC(6)  break; // 0x6C // 65c02 IABSCMOS JMP // 6502  IABSNMOS JMP
+			case 0x6C:   IABS_CMOS JMP CYC(6)  break; // 0x6C // 65c02 IABSCMOS JMP // 6502  IABSNMOS JMP
 			case 0x6D:   ABS ADCc	CYC(4)  break;
 			case 0x6E:   ABS RORc	CYC(6)  break;
 			case 0x6F: $     NOP	CYC(2)  break;
