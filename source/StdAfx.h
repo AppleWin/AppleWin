@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdint.h> // cleanup WORD DWORD -> uint16_t uint32_t
 
 #include <windows.h>
 #include <winuser.h> // WM_MOUSEWHEEL
