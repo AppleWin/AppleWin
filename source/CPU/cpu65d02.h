@@ -67,24 +67,21 @@ inline u8 ReadByte( u16 addr, int uExecutedCycles )
     // TODO: We should have a single g_bDebuggerActive so we can have a single implementation across ][+ //e
 	HEATMAP_R(addr);
 
-	return
-	( \
-	((addr & 0xF000) == 0xC000) \
-	? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles) \
-	: *(mem+addr) \
-	);
+	return ((addr & 0xF000) == 0xC000)
+		? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)
+		: *(mem+addr);
 }
 
-#undef WRITE		 
-#define WRITE(a) \
-	HEATMAP_W(addr);                                    \
-	{							    \
-	   memdirty[addr >> 8] = 0xFF;				    \
-	   LPBYTE page = memwrite[addr >> 8];		    \
-	   if (page)						    \
-		 *(page+(addr & 0xFF)) = (BYTE)(a);			    \
-	   else if ((addr & 0xF000) == 0xC000)			    \
-		 IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles); \
+#undef WRITE
+#define WRITE(a)                                              \
+	HEATMAP_W(addr);                                          \
+	{                                                         \
+		memdirty[addr >> 8] = 0xFF;                           \
+		LPBYTE page = memwrite[addr >> 8];                    \
+		if (page)                                             \
+			*(page+(addr & 0xFF)) = (BYTE)(a);                \
+		else if ((addr & 0xF000) == 0xC000)                   \
+			IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles); \
 	 }
 
 #include "cpu/cpu_instructions.inl"
