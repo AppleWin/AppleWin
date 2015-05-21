@@ -18,8 +18,8 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-typedef unsigned char  u8;
-typedef unsigned short u16;
+typedef unsigned char  u8;  // TODO: change to <stdint.h> uint8_t
+typedef unsigned short u16; // TODO: change to <stdint.h> uint16_t
 
 // return (x < 255) ? (x+1) : 255;
 inline u8 IncClamp8( u8 x )
@@ -42,8 +42,8 @@ inline u8 DecClamp8( u8 x )
 // 2 G Read
 // 3 R Write
 // RGBA r= write, g = read, b = pc
-int g_aMemoryAccess[ 65536 ];
-u8 *g_pRead = 0;
+int g_aMemoryAccess[ 65536 ]; // TODO: Change to <stdint.h> int32_t
+u8 *g_pRead  = 0;
 u8 *g_pWrite = 0;
 u8 *g_pExeec = 0;
 
@@ -52,6 +52,7 @@ u8 *g_pExeec = 0;
 
 inline u8 ReadByte( u16 addr, int uExecutedCycles )
 {
+    // TODO: We should have a single g_bDebuggerActive so we can have a single implementation across ][+ //e
 	(u8*) g_pRead = ((u8*)g_aMemoryAccess) + (addr * 4) + 3;
 	*g_pRead = IncClamp8( *g_pRead );
 
