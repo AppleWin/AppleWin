@@ -45,7 +45,7 @@ inline u8 DecClamp8( u8 x )
 int g_aMemoryAccess[ 65536 ]; // TODO: Change to <stdint.h> int32_t
 u8 *g_pRead  = 0;
 u8 *g_pWrite = 0;
-u8 *g_pExeec = 0;
+u8 *g_pExec  = 0;
 
 #undef READ
 #define READ ReadByte( addr, uExecutedCycles )
