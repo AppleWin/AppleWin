@@ -37,10 +37,17 @@ inline u8 DecClamp8( u8 x )
 	return r;
 }
 
+// TODO: Verify: RGBA or BGRA (.bmp format)
 // 0 A n/a
 // 1 B Exec
 // 2 G Read
 // 3 R Write
+//
+// 0xAARRGGBB
+// [0] B Exec
+// [1] G Load
+// [2] R Store
+// [3] A n/a
 // RGBA r = write, g = read, b = Program Counter
 const int HEATMAP_W_MASK = 0x00FF0000; // Red   Store
 const int HEATMAP_R_MASK = 0x0000FF00; // Green Load
