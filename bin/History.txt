@@ -9,6 +9,12 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.25.0.4 - 23 Apr 2015
+----------------------
+Fixes:
+. [Bug #276] -d1 command line argument caused AppleWin to quickly exit. 
+
+
 1.25.0.3 - 8 Sep 2014
 ---------------------
 Note: This is the last planned version to support Win98/ME.

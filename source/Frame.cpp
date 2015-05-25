@@ -617,6 +617,9 @@ void FrameDrawDiskLEDS( HDC passdc )
 //===========================================================================
 void FrameDrawDiskStatus( HDC passdc )
 {
+	if (mem == NULL)
+		return;
+
 	// We use the actual drive since probing from memory doesn't tell us anything we don't already know.
 	//        DOS3.3   ProDOS
 	// Drive  $B7EA    $BE3D

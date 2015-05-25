@@ -73,6 +73,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		     IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles); \
 		 }
 
+#define ON_PAGECROSS_REPLACE_HI_ADDR if ((base ^ addr) >> 8) {addr = (val<<8) | (addr&0xff);} /* GH#282 */
+
 //
 
 // ExtraCycles:
@@ -89,10 +91,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //
 
-#define CHECK_PAGE_CHANGE  if (bSlowerOnPagecross) {		      \
-			       if ((base ^ addr) & 0xFF00)    \
-				   uExtraCycles=1;	      \
-			   }
+// TODO Optimization Note: uExtraCycles = ((base ^ addr) >> 8) & 1;
+#define CHECK_PAGE_CHANGE	if ((base ^ addr) & 0xFF00)			\
+									uExtraCycles=1;
 
 /****************************************************************************
 *
@@ -102,53 +103,71 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define ABS	 addr = *(LPWORD)(mem+regs.pc);	 regs.pc += 2;
 #define IABSX    addr = *(LPWORD)(mem+(*(LPWORD)(mem+regs.pc))+(WORD)regs.x); regs.pc += 2;
-#define ABSX	 base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2; CHECK_PAGE_CHANGE;
-#define ABSY	 base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2; CHECK_PAGE_CHANGE;
-// TODO Optimization Note: uExtraCycles = ((base & 0xFF) + 1) >> 8;
-#define IABSCMOS base = *(LPWORD)(mem+regs.pc);	                          \
+
+// Optimised for page-cross
+#define ABSX_OPT base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2; CHECK_PAGE_CHANGE;
+// Not optimised for page-cross
+#define ABSX_CONST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2;
+
+// Optimised for page-cross
+#define ABSY_OPT base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2; CHECK_PAGE_CHANGE;
+// Not optimised for page-cross
+#define ABSY_CONST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2;
+
+// TODO Optimization Note (just for IABSCMOS): uExtraCycles = ((base & 0xFF) + 1) >> 8;
+#define IABS_CMOS base = *(LPWORD)(mem+regs.pc);	                          \
 		 addr = *(LPWORD)(mem+base);		                  \
 		 if ((base & 0xFF) == 0xFF) uExtraCycles=1;		  \
 		 regs.pc += 2;
-#define IABSNMOS base = *(LPWORD)(mem+regs.pc);	                          \
+#define IABS_NMOS base = *(LPWORD)(mem+regs.pc);	                          \
 		 if ((base & 0xFF) == 0xFF)				  \
 		       addr = *(mem+base)+((WORD)*(mem+(base&0xFF00))<<8);\
-		   else                                                   \
+		 else                                                   \
 		       addr = *(LPWORD)(mem+base);                        \
 		 regs.pc += 2;
+
 #define IMM	 addr = regs.pc++;
+
 #define INDX	 base = ((*(mem+regs.pc++))+regs.x) & 0xFF;          \
 		 if (base == 0xFF)                                   \
 		     addr = *(mem+0xFF)+(((WORD)*mem)<<8);           \
 		 else                                                \
 		     addr = *(LPWORD)(mem+base);
-#define INDY	 if (*(mem+regs.pc) == 0xFF)                         \
+
+// Optimised for page-cross
+#define INDY_OPT	 if (*(mem+regs.pc) == 0xFF)             /*incurs an extra cycle for page-crossing*/ \
 		     base = *(mem+0xFF)+(((WORD)*mem)<<8);           \
 		 else                                                \
 		     base = *(LPWORD)(mem+*(mem+regs.pc));           \
 		 regs.pc++;                                          \
 		 addr = base+(WORD)regs.y;                           \
 		 CHECK_PAGE_CHANGE;
+// Not optimised for page-cross
+#define INDY_CONST	 if (*(mem+regs.pc) == 0xFF)             /*no extra cycle for page-crossing*/ \
+		     base = *(mem+0xFF)+(((WORD)*mem)<<8);           \
+		 else                                                \
+		     base = *(LPWORD)(mem+*(mem+regs.pc));           \
+		 regs.pc++;                                          \
+		 addr = base+(WORD)regs.y;
+
 #define IZPG	 base = *(mem+regs.pc++);                            \
 		 if (base == 0xFF)                                   \
 		     addr = *(mem+0xFF)+(((WORD)*mem)<<8);           \
 		 else                                                \
 		     addr = *(LPWORD)(mem+base);
+
 #define REL	 addr = (signed char)*(mem+regs.pc++);
 
 // TODO Optimization Note:
 // . Opcodes that generate zero-page addresses can't be accessing $C000..$CFFF
 //   so they could be paired with special READZP/WRITEZP macros (instead of READ/WRITE)
-#define ZPG 	 addr = *(mem+regs.pc++);
+#define ZPG 	 addr =   *(mem+regs.pc++);
 #define ZPGX	 addr = ((*(mem+regs.pc++))+regs.x) & 0xFF;
 #define ZPGY	 addr = ((*(mem+regs.pc++))+regs.y) & 0xFF;
 
 // Tidy 3 char addressing modes to keep the opcode table visually aligned, clean, and readable.
-#undef abx
-#undef abx
-#undef aby
 #undef asl
 #undef idx
-#undef idy
 #undef imm
 #undef izp
 #undef lsr
@@ -158,11 +177,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #undef zpx
 #undef zpy
 
-#define abx ABSX
-#define aby ABSY
 #define asl ASLA // Arithmetic Shift Left
 #define idx INDX
-#define idy INDY
 #define imm IMM
 #define izp IZPG
 #define lsr LSRA // Logical Shift Right
@@ -171,6 +187,3 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ror RORA // Rotate Right
 #define zpx ZPGX
 #define zpy ZPGY
-// 0x6C // 65c02 IABSCMOS JMP // 6502  IABSNMOS JMP
-// 0x7C IABSX
-
