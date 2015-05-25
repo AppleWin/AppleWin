@@ -118,73 +118,61 @@ static void DisplayBenchmarkResults ()
 
 //=============================================================================
 //
-// DC blocking   (Riccardo Macri April 2015)
-// To prevent loud clicks on underruns and constant DC voltages being sent out
-// to amplifiers (some soundcards are DC coupled) which is not good for them,
-// slowly integrate away any DC offsets.
+// DC filtering V2  (Riccardo Macri May 2015)
 //
-// This is invoked for 44kHz samples and given its decrementing only
-// 1 sample per call, the cutoff frequency is still well under a few Hz,
-// no loss of fidelity for those who hooked their Apple speakers
-// to external amplifiers ;-)
+// To prevent loud clicks on Window's sound buffer underruns and constant DC
+// being sent out to amplifiers (some soundcards are DC coupled) which is
+// not good for them, an attenuator slowly drops the speaker output
+// to 0 after the speaker (or 8 bit DAC) has been idle for a couple hundred
+// milliseconds.
 //
-// This has insignificant impact for the usual Apple
-// buzzes, bleeps and PWm as 'sample_in' is swinging +/- so fast 
-// that the 's_dcfilterstate' has little time to accumulate significantly
-// in either direction.
+// The approach works as follows:
+// - SpkrToggle is called when the speaker state is flipped by reading $C030
+// - This brings audio up to date then calls ResetDCFilter()
+// - ResetDCFilter() sets a counter to a high value
+// - every audio sample is processed by DCFilter() as follows:
+//   - if the counter is >= 32768, the speaker has been recently toggled
+//     and the samples are unaffected
+//   - if the counter is < 32768 but > 0, it is used to scale the
+//     sample to reduce +ve or -ve speaker states towards zero
+//   - In the two cases above, the counter is decremented 
+//   - if the counter is zero, the speaker has been silent for a while
+//     and the output is 0 regardless of the speaker state.
+//
+// - the initial "high value" is chosen so 10000/44100 = about a 
+//   quarter of a second of speaker inactivity is needed before attenuation
+//   begins.
+//
+//   NOTE: The attenuation is not ever reducing the level of audio, just
+//         the DC offset at which the speaker has been left.  
+//
+//  This approach has zero impact on any speaker tones including PWM
+//  due to the samples being unchanged for at least 0.25 seconds after
+//  any speaker activity.
 // 
-// CLAMPING: this is needed to avoid 16 bit overflow as described
-// below. It crudely reflects the quicker response that a real DC
-// blocking capacitor would have for a large transition.
-// 
-// eg:
-// - Apple speaker is "high", sample is at +32767.
-// - over a second or so the "capacitor" (s_dcfilterstate) has accumulated
-//   to 32767 so the soundcard output has dropped to (32767-32767=zero (good).
-// - Now apple speaker toggles "low", sample  -32768.
-//   This causes 's_out' to calculate as -32768-32767=-65535 (hence the long)
-//
-// we'd have to wait (with output clamped at -32768) for 32767
-// samples just for s_dcfilterstate to reach zero before it starts going -ve
-// This is avoided by shifting the filter state proportional to the
-// overflow during a clamp.
-// 
-// Note: A workaround would be to halve the value of SPKR_DATA_INIT but
-//       this is less faithful to a real blocking capacitor and this
-//       same mechanism also supports the 8 bit DAC/SAM for which we
-//       want full -32768...32768 sample range.
-//
 
-static short s_dcfilterstate = 0;
+static int s_dcfilterstate = 0;
+
+inline void  ResetDCFilter()
+{
+ // reset the attenuator with an additional 250ms of full gain
+ // (10000 samples) before it starts attenuating
+
+ s_dcfilterstate = 32768 + 10000;
+}
+
 inline short DCFilter(short sample_in)
 {
- // need long to avoid overflow on large transitions over a long period
- long s_output = sample_in - s_dcfilterstate;
- 
- if (s_output > 0)
-  {
-   if (s_output > 32767)
-    {
-     // offset so next sample will start decaying to 0
-     s_dcfilterstate += (short)(s_output-32767);
-     s_output = 32767;
-    }
-   else
-    s_dcfilterstate++;
-  }
+ if (!s_dcfilterstate)             // no sound for a while, stay 0
+  return 0;
  else
-  if (s_output < 0)
+  if (s_dcfilterstate >= 32768)  // full gain after recent sound
    {
-    if (s_output < -32768)
-     {
-      s_dcfilterstate -= (short)(-s_output-32768);
-      s_output = -32768;
-     }
-    else
-     s_dcfilterstate--;
+    s_dcfilterstate--;
+    return sample_in;
    }
- 
- return (short)s_output;
+  else
+   return (((int)sample_in) * (s_dcfilterstate--)) >> 15;  // scale & divide by 32768
 }
 
 //=============================================================================
@@ -517,7 +505,9 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 
       short speakerDriveLevel = SPKR_DATA_INIT;
       if (g_bQuieterSpeaker)
-       speakerDriveLevel >>= 2;
+        speakerDriveLevel >>= 2;
+
+      ResetDCFilter();
 
       if (g_nSpeakerData == speakerDriveLevel)
         g_nSpeakerData = ~speakerDriveLevel;
