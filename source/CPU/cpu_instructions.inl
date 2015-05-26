@@ -402,6 +402,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define LDA	 /*bSlowerOnPagecross = 1;*/						    \
 		 regs.a = READ;						    \
 		 SETNZ(regs.a)
+#define LDD	 /*Undocumented 65C02: LoaD and Discard*/		\
+		 READ;
 #define LDX	 /*bSlowerOnPagecross = 1;*/						    \
 		 regs.x = READ;						    \
 		 SETNZ(regs.x)

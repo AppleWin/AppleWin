@@ -100,7 +100,7 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 			case 0x2A:              rol  CYC(2)  break;
 			case 0x2B: $ IMM        ANC  CYC(2)  break;
 			case 0x2C:   ABS        BIT  CYC(4)  break;
-			case 0x2D:   ABS        AND  CYC(2)  break;
+			case 0x2D:   ABS        AND  CYC(4)  break;
 			case 0x2E:   ABS        ROLn CYC(6)  break;
 			case 0x2F: $ ABS        RLA  CYC(6)  break;
 			case 0x30:   REL        BMI  CYC(2)  break;
