@@ -18,8 +18,8 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-typedef unsigned char  u8;
-typedef unsigned short u16;
+typedef unsigned char  u8;  // TODO: change to <stdint.h> uint8_t
+typedef unsigned short u16; // TODO: change to <stdint.h> uint16_t
 
 // return (x < 255) ? (x+1) : 255;
 inline u8 IncClamp8( u8 x )
@@ -37,43 +37,58 @@ inline u8 DecClamp8( u8 x )
 	return r;
 }
 
+// TODO: Verify: RGBA or BGRA (.bmp format)
 // 0 A n/a
 // 1 B Exec
 // 2 G Read
 // 3 R Write
-// RGBA r= write, g = read, b = pc
-int g_aMemoryAccess[ 65536 ];
-u8 *g_pRead = 0;
-u8 *g_pWrite = 0;
-u8 *g_pExeec = 0;
+//
+// 0xAARRGGBB
+// [0] B Exec
+// [1] G Load
+// [2] R Store
+// [3] A n/a
+// RGBA r = write, g = read, b = Program Counter
+const int HEATMAP_W_MASK = 0x00FF0000; // Red   Store
+const int HEATMAP_R_MASK = 0x0000FF00; // Green Load
+const int HEATMAP_X_MASK = 0x000000FF; // Blue  Exec
+
+
+// This is a memory heatmap
+// FF = accessed on this clock cycle
+// FE = accessed 1 clock cycles ago
+// FD = accessed 2 clock cycles ago
+// etc.
+// Displayed as 256x256 64K memory access
+int g_aMemoryHeatmap[ 65536 ]; // TODO: Change to <stdint.h> int32_t
+
+#define HEATMAP_W(addr) g_aMemoryHeatmap[ addr ] |= HEATMAP_W_MASK
+#define HEATMAP_R(addr) g_aMemoryHeatmap[ addr ] |= HEATMAP_R_MASK
+#define HEATMAP_X(addr) g_aMemoryHeatmap[ addr ] |= HEATMAP_X_MASK
 
 #undef READ
 #define READ ReadByte( addr, uExecutedCycles )
 
 inline u8 ReadByte( u16 addr, int uExecutedCycles )
 {
-	(u8*) g_pRead = ((u8*)g_aMemoryAccess) + (addr * 4) + 3;
-	*g_pRead = IncClamp8( *g_pRead );
+    // TODO: We should have a single g_bDebuggerActive so we can have a single implementation across ][+ //e
+	HEATMAP_R(addr);
 
-	return
-	( \
-	((addr & 0xF000) == 0xC000) \
-	? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles) \
-	: *(mem+addr) \
-	);
+	return ((addr & 0xF000) == 0xC000)
+		? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)
+		: *(mem+addr);
 }
 
-#undef WRITE		 
-#define WRITE(a) \
-	(u8*) g_pWrite = ((u8*)g_aMemoryAccess) + (addr * 4) + 0; \
-	*g_pWrite = DecClamp8( *g_pWrite ); \
-	{							    \
-	   memdirty[addr >> 8] = 0xFF;				    \
-	   LPBYTE page = memwrite[addr >> 8];		    \
-	   if (page)						    \
-		 *(page+(addr & 0xFF)) = (BYTE)(a);			    \
-	   else if ((addr & 0xF000) == 0xC000)			    \
-		 IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles); \
+#undef WRITE
+#define WRITE(a)                                              \
+	HEATMAP_W(addr);                                          \
+	{                                                         \
+		memdirty[addr >> 8] = 0xFF;                           \
+		LPBYTE page = memwrite[addr >> 8];                    \
+		if (page)                                             \
+			*(page+(addr & 0xFF)) = (BYTE)(a);                \
+		else if ((addr & 0xF000) == 0xC000)                   \
+			IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles); \
 	 }
 
 #include "cpu/cpu_instructions.inl"
@@ -110,6 +125,8 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 			const UINT uZ80Cycles = z80_mainloop(uTotalCycles, uExecutedCycles); CYC(uZ80Cycles)
 		}
 		else
+
+        HEATMAP_X( regs.pc );
 
 		if (!Fetch(iOpcode, uExecutedCycles))
 			break;
