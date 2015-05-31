@@ -242,18 +242,17 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 
 	if(nRes)
 	{
-		strcpy(m_szSSNewFilename, &szFilename[ofn.nFileOffset]);
-
 		if (bSave)	// Only for saving (allow loading of any file for backwards compatibility)
 		{
 			// Append .aws if it's not there
 			const char szAWS_EXT[] = ".aws";
-			const UINT uStrLenFile = strlen(m_szSSNewFilename);
+			const UINT uStrLenFile = strlen(&szFilename[ofn.nFileOffset]);
 			const UINT uStrLenExt  = strlen(szAWS_EXT);
-			if ((uStrLenFile <= uStrLenExt) || (strcmp(&m_szSSNewFilename[uStrLenFile-uStrLenExt], szAWS_EXT) != 0))
-				strcpy(&m_szSSNewFilename[uStrLenFile], szAWS_EXT);
+			if ((uStrLenFile <= uStrLenExt) || (strcmp(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt], szAWS_EXT) != 0))
+				strcpy(&szFilename[ofn.nFileOffset+uStrLenFile], szAWS_EXT);
 		}
 
+		strcpy(m_szSSNewFilename, &szFilename[ofn.nFileOffset]);
 		strcpy(m_szSSNewPathname, szFilename);
 
 		szFilename[ofn.nFileOffset] = 0;

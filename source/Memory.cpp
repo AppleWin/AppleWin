@@ -200,7 +200,6 @@ static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
-void UpdatePaging(BOOL initialize);
 
 //=============================================================================
 
@@ -811,6 +810,16 @@ static void SetMemMode(const DWORD uNewMemMode)
 
 //===========================================================================
 
+static void ResetPaging(BOOL initialize);
+static void UpdatePaging(BOOL initialize);
+
+// Call by:
+// . CtrlReset() Soft-reset (Ctrl+Reset)
+void MemResetPaging()
+{
+	ResetPaging(0);		// Initialize=0
+}
+
 static void ResetPaging(BOOL initialize)
 {
 	lastwriteram = 0;
@@ -1330,7 +1339,8 @@ inline DWORD getRandomTime()
 // Called by:
 // . MemInitialize()
 // . ResetMachineState()	eg. Power-cycle ('Apple-Go' button)
-// . Snapshot_LoadState()
+// . Snapshot_LoadState_v1()
+// . Snapshot_LoadState_v2()
 void MemReset()
 {
 	// INITIALIZE THE PAGING TABLES
@@ -1481,22 +1491,6 @@ void MemReset()
 	//Sets Caps Lock = false (Pravets 8A/C only)
 
 	z80_reset();	// NB. Also called above in CpuInitialize()
-}
-
-//===========================================================================
-
-// Call by:
-// . Soft-reset (Ctrl+Reset)
-// . Snapshot_LoadState()
-void MemResetPaging()
-{
-	ResetPaging(0);		// Initialize=0
-	if (g_Apple2Type == A2TYPE_PRAVETS8A)
-	{
-		P8CAPS_ON = false; 
-		TapeWrite (0, 0, 0, 0 ,0);
-		FrameRefreshStatus(DRAW_LEDS);
-	}
 }
 
 //===========================================================================

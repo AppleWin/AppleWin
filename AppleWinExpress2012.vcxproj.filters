@@ -30,6 +30,9 @@
     <Filter Include="Source Files\Emulator">
       <UniqueIdentifier>{9b13bfc1-31ab-4f55-bb69-b8620ebdc2be}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Model">
+      <UniqueIdentifier>{15b450e4-f89f-4d80-9c44-48b32f33f3e3}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files\Uthernet">
       <UniqueIdentifier>{9bcc8097-f610-4843-bd76-a313aa54fbb0}</UniqueIdentifier>
     </Filter>
@@ -291,6 +294,9 @@
     <ClInclude Include="source\Debugger\Util_Text.h">
       <Filter>Source Files\Debugger</Filter>
     </ClInclude>
+    <ClInclude Include="source\Pravets.h">
+      <Filter>Source Files\Model</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="docs\CodingConventions.txt">
@@ -483,6 +489,9 @@
     </ClCompile>
     <ClCompile Include="source\Tfe\Uilib.cpp">
       <Filter>Source Files\Uthernet</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Pravets.cpp">
+      <Filter>Source Files\Model</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

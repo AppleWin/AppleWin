@@ -1348,11 +1348,7 @@ struct SS_CARD_SSC
 	SSC_Unit Unit;
 };
 
-// Post:
-//  0 = No card
-// >0 = Card saved OK from slot n
-// -1 = File error
-int CSuperSerialCard::GetSnapshot(const HANDLE hFile)
+void CSuperSerialCard::GetSnapshot(const HANDLE hFile)
 {
 	SS_CARD_SSC CardSuperSerial;
 
@@ -1391,11 +1387,9 @@ int CSuperSerialCard::GetSnapshot(const HANDLE hFile)
 
 	if(!bRes || (dwBytesWritten != CardSuperSerial.Hdr.UnitHdr.hdr.v2.Length))
 		throw std::string("Save error: SSC");
-
-	return m_uSlot;
 }
 
-int CSuperSerialCard::SetSnapshot(const HANDLE hFile)
+void CSuperSerialCard::SetSnapshot(const HANDLE hFile)
 {
 	SS_CARD_SSC CardSuperSerial;
 
@@ -1434,6 +1428,4 @@ int CSuperSerialCard::SetSnapshot(const HANDLE hFile)
 	m_vbTxIrqPending	= Unit.vbTxIrqPending;
 	m_vbRxIrqPending	= Unit.vbRxIrqPending;
 	m_bWrittenTx		= Unit.bWrittenTx;
-
-	return 0;
 }

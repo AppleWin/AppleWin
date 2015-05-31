@@ -34,8 +34,8 @@ public:
 	void    CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem);
 	void    CommUpdate(DWORD);
 	void    SetSnapshot_v1(const DWORD baudrate, const BYTE bytesize, const BYTE commandbyte, const DWORD comminactivity, const BYTE controlbyte, const BYTE parity, const BYTE stopbits);
-	int     GetSnapshot(const HANDLE hFile);
-	int     SetSnapshot(const HANDLE hFile);
+	void    GetSnapshot(const HANDLE hFile);
+	void    SetSnapshot(const HANDLE hFile);
 
 	char*	GetSerialPortChoices();
 	DWORD	GetSerialPort() { return m_dwSerialPortItem; }	// Drop-down list item

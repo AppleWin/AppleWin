@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
+#include "Pravets.h"
 #include "Registry.h"
 #include "SaveState.h"
 #include "SerialComms.h"
@@ -1992,12 +1993,15 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 }
 
 //===========================================================================
+
+// todo: consolidate CtrlReset() and ResetMachineState()
 void ResetMachineState ()
 {
   DiskReset();		// Set floppymotoron=0
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
   MemReset();
+  PravetsReset();
   DiskBoot();
   VideoResetState();
   sg_SSC.CommReset();
@@ -2016,12 +2020,15 @@ void ResetMachineState ()
 
 
 //===========================================================================
+
+// todo: consolidate CtrlReset() and ResetMachineState()
 void CtrlReset()
 {
 	// Ctrl+Reset - TODO: This is a terrible place for this code!
 	if (!IS_APPLE2)
 		MemResetPaging();
 
+	PravetsReset();
 	DiskReset();
 	KeybReset();
 	if (!IS_APPLE2)

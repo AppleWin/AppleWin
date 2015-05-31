@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2015, Tom Charlesworth, Michael Pohoreski
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -41,8 +41,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
+#include "Pravets.h"
 #include "SerialComms.h"
 #include "Speaker.h"
+#include "Speech.h"
 #include "Video.h"
 #include "z80emu.h"
 
@@ -161,10 +163,6 @@ static void Snapshot_LoadState_v1()	// .aws v1.0.0.1, up to (and including) Appl
 		//
 		// Reset all sub-systems
 		MemReset();
-
-		if (!IS_APPLE2)
-			MemResetPaging();
-
 		DiskReset();
 		KeybReset();
 		VideoResetState();
@@ -221,8 +219,8 @@ static void Snapshot_LoadState_v1()	// .aws v1.0.0.1, up to (and including) Appl
 
 //-----------------------------------------------------------------------------
 
-HANDLE m_hFile = INVALID_HANDLE_VALUE;
-CConfigNeedingRestart m_ConfigNew;
+static HANDLE m_hFile = INVALID_HANDLE_VALUE;
+static CConfigNeedingRestart m_ConfigNew;
 
 static void Snapshot_LoadState_FileHdr(SS_FILE_HDR& Hdr)
 {
@@ -266,10 +264,6 @@ static void Snapshot_LoadState_FileHdr(SS_FILE_HDR& Hdr)
 		}
 	}
 }
-
-#define UNIT_APPLE2_VER 1
-#define UNIT_CARD_VER 1
-#define UNIT_CONFIG_VER 1
 
 static void LoadUnitApple2(DWORD Length, DWORD Version)
 {
@@ -434,6 +428,7 @@ static void LoadUnitCard(DWORD Length, DWORD Version)
 	}
 }
 
+#if 0
 static void LoadUnitConfig(DWORD Length, DWORD Version)
 {
 	SS_APPLEWIN_CONFIG Cfg;
@@ -460,6 +455,7 @@ static void LoadUnitConfig(DWORD Length, DWORD Version)
 	// todo:
 	//m_ConfigNew.m_bEnhanceDisk;
 }
+#endif
 
 static void Snapshot_LoadState_v2(DWORD dwVersion)
 {
@@ -480,16 +476,14 @@ static void Snapshot_LoadState_v2(DWORD dwVersion)
 		m_ConfigNew.m_SlotAux = CT_Empty;
 
 		MemReset();
-
-		// fixme: Apple type may change - assume ths can be removed?
-		if (!IS_APPLE2)
-			MemResetPaging();
-		// fixme-end
-
+		PravetsReset();
 		DiskReset();
 		KeybReset();
 		VideoResetState();
 		MB_Reset();
+#ifdef USE_SPEECH_API
+		g_Speech.Reset();
+#endif
 		sg_Mouse.Uninitialize();
 		sg_Mouse.Reset();
 		HD_SetEnabled(false);
@@ -518,9 +512,11 @@ static void Snapshot_LoadState_v2(DWORD dwVersion)
 			case UT_Card:
 				LoadUnitCard(UnitHdr.hdr.v2.Length, UnitHdr.hdr.v2.Version);
 				break;
+#if 0
 			case UT_Config:
 				LoadUnitConfig(UnitHdr.hdr.v2.Length, UnitHdr.hdr.v2.Version);
 				break;
+#endif
 			default:
 				// Log then skip unsupported unit type
 				break;
@@ -541,8 +537,6 @@ static void Snapshot_LoadState_v2(DWORD dwVersion)
 		MemInitializeIO();
 
 		MemUpdatePaging(TRUE);
-
-		//PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);	// No, as this power-cycles VM (undoing all the new state just loaded)
 	}
 	catch(std::string szMessage)
 	{
@@ -584,8 +578,6 @@ void Snapshot_SaveState()
 {
 	try
 	{
-		// todo: append '.aws' if missing
-
 		m_hFile = CreateFile(	g_strSaveStatePathname.c_str(),
 									GENERIC_WRITE,
 									0,

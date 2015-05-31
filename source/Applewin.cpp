@@ -64,9 +64,6 @@ eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
 bool      g_bFullSpeed      = false;
 
-//Pravets 8A/C variables
-bool P8CAPS_ON = false;
-bool P8Shift = false;
 //=================================================
 
 // Win32

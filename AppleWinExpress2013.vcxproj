@@ -75,6 +75,7 @@
     <ClInclude Include="source\MouseInterface.h" />
     <ClInclude Include="source\NoSlotClock.h" />
     <ClInclude Include="source\ParallelPrinter.h" />
+    <ClInclude Include="source\Pravets.h" />
     <ClInclude Include="source\Registry.h" />
     <ClInclude Include="source\Riff.h" />
     <ClInclude Include="source\SaveState.h" />
@@ -106,7 +107,7 @@
     <Text Include="docs\CodingConventions.txt" />
     <Text Include="docs\Debugger_Changelog.txt" />
     <Text Include="docs\FAQ.txt" />
-    <Text Include="docs\History.txt" />
+    <Text Include="bin\History.txt" />
     <Text Include="docs\ToDo.txt" />
     <Text Include="docs\Video_Cleanup.txt" />
     <Text Include="docs\Wishlist.txt" />
@@ -150,6 +151,7 @@
     <ClCompile Include="source\MouseInterface.cpp" />
     <ClCompile Include="source\NoSlotClock.cpp" />
     <ClCompile Include="source\ParallelPrinter.cpp" />
+    <ClCompile Include="source\Pravets.cpp" />
     <ClCompile Include="source\Registry.cpp" />
     <ClCompile Include="source\Riff.cpp" />
     <ClCompile Include="source\SaveState.cpp" />

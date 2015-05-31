@@ -1178,7 +1178,7 @@ struct SS_CARD_DISK2_v2
 {
 	SS_CARD_HDR	Hdr;
 	DISK2_Unit_v2	Unit[2];
-    WORD    Phases;
+	WORD	Phases;
 	WORD	CurrDrive;
 	BOOL	DiskAccessed;
 	BOOL	EnhanceDisk;
@@ -1200,7 +1200,7 @@ void DiskGetSnapshot(const HANDLE hFile)
 	pSS->Hdr.Slot = g_uSlot;
 	pSS->Hdr.Type = CT_Disk2;
 
-	pSS->Phases			    = phases;
+	pSS->Phases				= phases;
 	pSS->CurrDrive			= currdrive;
 	pSS->DiskAccessed		= diskaccessed;
 	pSS->EnhanceDisk		= enhancedisk;

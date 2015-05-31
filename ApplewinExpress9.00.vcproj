@@ -955,6 +955,18 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="Model"
+				>
+				<File
+					RelativePath=".\source\Pravets.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Pravets.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Docs"

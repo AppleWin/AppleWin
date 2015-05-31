@@ -169,6 +169,9 @@
     <ClCompile Include="source\Debugger\Util_MemoryTextFile.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
+    <ClCompile Include="source\Pravets.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -417,6 +420,9 @@
     <ClInclude Include="source\DiskDefs.h">
       <Filter>Source Files\Disk</Filter>
     </ClInclude>
+    <ClInclude Include="source\Pravets.h">
+      <Filter>Source Files\Model</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\Applewin.bmp">
@@ -637,6 +643,9 @@
     </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{b5c6889e-727d-4339-96c8-e4284e1d6e0f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Model">
+      <UniqueIdentifier>{15b450e4-f89f-4d80-9c44-48b32f33f3e3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

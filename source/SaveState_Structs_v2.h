@@ -8,6 +8,10 @@
 
 /////////////////////////////////////////////////////////////////////////////////
 
+#define UNIT_APPLE2_VER 1
+#define UNIT_CARD_VER 1
+#define UNIT_CONFIG_VER 1
+
 struct SS_CPU6502_v2
 {
 	BYTE A;
