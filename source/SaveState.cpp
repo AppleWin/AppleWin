@@ -474,6 +474,9 @@ static void Snapshot_LoadState_v2(DWORD dwVersion)
 		for (UINT i=0; i<NUM_SLOTS; i++)
 			m_ConfigNew.m_Slot[i] = CT_Empty;
 		m_ConfigNew.m_SlotAux = CT_Empty;
+		m_ConfigNew.m_bEnableHDD = false;
+		//m_ConfigNew.m_bEnableTheFreezesF8Rom = ?;	// todo: when support saving config
+		//m_ConfigNew.m_bEnhanceDisk = ?;			// todo: when support saving config
 
 		MemReset();
 		PravetsReset();
