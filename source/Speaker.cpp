@@ -223,7 +223,7 @@ void SpkrDestroy ()
 		g_pSpeakerBuffer = NULL;
 		g_pRemainderBuffer = NULL;
 	}
-	else
+	else if (soundtype == SOUND_DIRECT || soundtype == SOUND_SMART)
 	{
 		InternalBeep(0,0);
 	}
@@ -325,8 +325,8 @@ void SpkrReset()
 
 BOOL SpkrSetEmulationType (HWND window, DWORD newtype)
 {
-  if (soundtype != SOUND_NONE)
-    SpkrDestroy();
+  SpkrDestroy();	// GH#295: Destroy for all types (even SOUND_NONE)
+
   soundtype = newtype;
   if (soundtype != SOUND_NONE)
     SpkrInitialize();
