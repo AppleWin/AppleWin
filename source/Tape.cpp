@@ -24,8 +24,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* Description: This module is created for emulation of the 8bit character mode (mode 1) switch, 
  * which is located in $c060, and so far does not intend to emulate a tape device.
  *
- *
  * Author: Various
+ *
+ * In comments, UTA2E is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
  */
 
 #include "StdAfx.h"
@@ -76,7 +77,7 @@ BYTE __stdcall TapeRead(WORD, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
 		return C060;
 	}
 	
-	return (1<<7) | (MemReadFloatingBus(nCyclesLeft) & 0x7F);	// Keep high-bit fixed (since TAPEIN isn't supported)
+	return MemReadFloatingBus(1, nCyclesLeft); // TAPEIN has high bit 1 when input is low or not connected (UTA2E page 7-5, 7-6)
 }
 
 /*

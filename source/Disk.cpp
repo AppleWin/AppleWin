@@ -42,6 +42,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 
 #define LOG_DISK_ENABLED 0
+#define LOG_DISK_TRACKS 1
+#define LOG_DISK_MOTOR 0
+#define LOG_DISK_PHASES 0
+#define LOG_DISK_NIBBLES 0
 
 // __VA_ARGS__ not supported on MSVC++ .NET 7.x
 #if (LOG_DISK_ENABLED)
@@ -343,8 +347,9 @@ static void ReadTrack(const int iDrive)
 
 	if (pFloppy->trackimage && pFloppy->imagehandle)
 	{
+#if LOG_DISK_TRACKS
 		LOG_DISK("track $%02X%s read\r\n", pFloppy->track, (pFloppy->phase & 1) ? ".5" : "  ");
-
+#endif
 		ImageReadTrack(
 			pFloppy->imagehandle,
 			pFloppy->track,
@@ -402,8 +407,9 @@ static void WriteTrack(const int iDrive)
 
 	if (pFloppy->trackimage && pFloppy->imagehandle)
 	{
+#if LOG_DISK_TRACKS
 		LOG_DISK("track $%02X%s write\r\n", pFloppy->track, (pFloppy->phase & 0) ? ".5" : "  "); // TODO: hard-coded to whole tracks - see below (nickw)
-
+#endif
 		ImageWriteTrack(
 			pFloppy->imagehandle,
 			pFloppy->track,
@@ -434,7 +440,9 @@ void DiskBoot(void)
 static void __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	floppymotoron = address & 1;
-	//LOG_DISK("motor %s\r\n", (floppymotoron) ? "on" : "off");
+#if LOG_DISK_MOTOR
+	LOG_DISK("motor %s\r\n", (floppymotoron) ? "on" : "off");
+#endif
 	CheckSpinning();
 }
 
@@ -494,7 +502,7 @@ static void __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG u
 #else
 	// substitute alternate stepping code here to test
 #endif
-#if 0
+#if LOG_DISK_PHASES
 	LOG_DISK("track $%02X%s phases %d%d%d%d phase %d %s address $%4X\r\n",
 		fptr->phase >> 1,
 		(fptr->phase & 1) ? ".5" : "  ",
@@ -814,7 +822,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	if (!floppywritemode)
 	{
 		floppylatch = *(fptr->trackimage + fptr->byte);
-#if 0
+#if LOG_DISK_NIBBLES
 		LOG_DISK("read %4X = %2X\r\n", fptr->byte, floppylatch);
 #endif
 	}
