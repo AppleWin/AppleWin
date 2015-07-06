@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2015, Tom Charlesworth, Michael Pohoreski, Nick Westgate
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* Description: Disk
  *
  * Author: Various
+ *
+ * In comments, UTA2E is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
  */
 
 #include "StdAfx.h"
@@ -32,6 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Disk.h"
 #include "DiskImage.h"
 #include "Frame.h"
+#include "Log.h"
 #include "Memory.h"
 #include "Registry.h"
 #include "Video.h"
@@ -39,6 +42,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 
 #define LOG_DISK_ENABLED 0
+#define LOG_DISK_TRACKS 1
+#define LOG_DISK_MOTOR 0
+#define LOG_DISK_PHASES 0
+#define LOG_DISK_NIBBLES 0
 
 // __VA_ARGS__ not supported on MSVC++ .NET 7.x
 #if (LOG_DISK_ENABLED)
@@ -108,6 +115,7 @@ static BOOL		diskaccessed    = 0;
 static Disk_t	g_aFloppyDisk[NUM_DRIVES];
 static BYTE		floppylatch     = 0;
 static BOOL		floppymotoron   = 0;
+static BOOL		floppyloadmode  = 0; // for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)
 static BOOL		floppywritemode = 0;
 static WORD		phases;						// state bits for stepper magnet phases 0 - 3
 static bool		g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
@@ -152,13 +160,21 @@ char* DiskGetCurrentState(void)
 	else if (floppywritemode)
 	{
 		if (g_aFloppyDisk[currdrive].bWriteProtected)
-			return "Writing";
-		else
 			return "Writing (write protected)";
+		else
+			return "Writing";
 	}
 	else
 	{
-		return "Reading";
+		/*if (floppyloadmode)
+		{
+			if (g_aFloppyDisk[currdrive].bWriteProtected)
+				return "Reading write protect state (write protected)";
+			else
+				return "Reading write protect state (not write protected)";
+		}
+		else*/
+			return "Reading";
 	}
 }
 
@@ -331,8 +347,9 @@ static void ReadTrack(const int iDrive)
 
 	if (pFloppy->trackimage && pFloppy->imagehandle)
 	{
-		LOG_DISK("read track %2X%s\r", pFloppy->track, (pFloppy->phase & 1) ? ".5" : "");
-
+#if LOG_DISK_TRACKS
+		LOG_DISK("track $%02X%s read\r\n", pFloppy->track, (pFloppy->phase & 1) ? ".5" : "  ");
+#endif
 		ImageReadTrack(
 			pFloppy->imagehandle,
 			pFloppy->track,
@@ -389,12 +406,17 @@ static void WriteTrack(const int iDrive)
 		return;
 
 	if (pFloppy->trackimage && pFloppy->imagehandle)
+	{
+#if LOG_DISK_TRACKS
+		LOG_DISK("track $%02X%s write\r\n", pFloppy->track, (pFloppy->phase & 0) ? ".5" : "  "); // TODO: hard-coded to whole tracks - see below (nickw)
+#endif
 		ImageWriteTrack(
 			pFloppy->imagehandle,
 			pFloppy->track,
-			pFloppy->phase,
+			pFloppy->phase, // TODO: this should never be used; it's the current phase (half-track), not that of the track to be written (nickw)
 			pFloppy->trackimage,
-			pFloppy->nibbles );
+			pFloppy->nibbles);
+	}
 
 	pFloppy->trackimagedirty = 0;
 }
@@ -415,34 +437,34 @@ void DiskBoot(void)
 
 //===========================================================================
 
-static BYTE __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
+static void __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	floppymotoron = address & 1;
+#if LOG_DISK_MOTOR
+	LOG_DISK("motor %s\r\n", (floppymotoron) ? "on" : "off");
+#endif
 	CheckSpinning();
-	return MemReadFloatingBus(1, uExecutedCycles);	// TC-TODO: Check b7 always set
 }
 
 //===========================================================================
 
-static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
+static void __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	Disk_t * fptr = &g_aFloppyDisk[currdrive];
-#if 1
-	int phase     = (address >> 1) & 3;
+	int phase = (address >> 1) & 3;
 	int phase_bit = (1 << phase);
 
+#if 1
 	// update the magnet states
 	if (address & 1)
 	{
 		// phase on
 		phases |= phase_bit;
-		LOG_DISK("track %02X phases %X phase %d on  address $C0E%X\r", fptr->phase, phases, phase, address & 0xF);
 	}
 	else
 	{
 		// phase off
 		phases &= ~phase_bit;
-		LOG_DISK("track %02X phases %X phase %d off address $C0E%X\r", fptr->phase, phases, phase, address & 0xF);
 	}
 
 	// check for any stepping effect from a magnet
@@ -463,7 +485,6 @@ static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG u
 		const int nNumTracksInImage = ImageGetNumTracks(fptr->imagehandle);
 		const int newtrack = (nNumTracksInImage == 0)	? 0
 														: MIN(nNumTracksInImage-1, fptr->phase >> 1); // (round half tracks down)
-		LOG_DISK("newtrack %2X%s\r", newtrack, (fptr->phase & 1) ? ".5" : "");
 		if (newtrack != fptr->track)
 		{
 			if (fptr->trackimage && fptr->trackimagedirty)
@@ -478,31 +499,21 @@ static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG u
 		// https://github.com/AppleWin/AppleWin/issues/201
 		FrameDrawDiskStatus( (HDC)0 );
 	}
-#else	// Old 1.13.1 code for Chessmaster 2000 to work! (see bug#18109)
-	const int nNumTracksInImage = ImageGetNumTracks(fptr->imagehandle);
-	if (address & 1) {
-		int phase = (address >> 1) & 3;
-		int direction = 0;
-		if (phase == ((fptr->phase+1) & 3))
-			direction = 1;
-		if (phase == ((fptr->phase+3) & 3))
-			direction = -1;
-		if (direction) {
-			fptr->phase = MAX(0,MIN(79,fptr->phase+direction));
-			if (!(fptr->phase & 1)) {
-				int newtrack = MIN(nNumTracksInImage-1,fptr->phase >> 1);
-				if (newtrack != fptr->track) {
-					if (fptr->trackimage && fptr->trackimagedirty)
-						WriteTrack(currdrive);
-					fptr->track = newtrack;
-					fptr->trackimagedata = 0;
-				}
-			}
-		}
-	}
+#else
+	// substitute alternate stepping code here to test
 #endif
-	return ((address & 0xF) == 0)	? 0xFF		// TC-TODO: Check why $C0E0 only returns 0xFF
-									: MemReadFloatingBus(1, uExecutedCycles);	// TC-TODO: Check b7 always set
+#if LOG_DISK_PHASES
+	LOG_DISK("track $%02X%s phases %d%d%d%d phase %d %s address $%4X\r\n",
+		fptr->phase >> 1,
+		(fptr->phase & 1) ? ".5" : "  ",
+		(phases >> 3) & 1,
+		(phases >> 2) & 1,
+		(phases >> 1) & 1,
+		(phases >> 0) & 1,
+		phase,
+		(address & 1) ? "on " : "off",
+		address);
+#endif
 }
 
 //===========================================================================
@@ -520,13 +531,12 @@ void DiskDestroy(void)
 
 //===========================================================================
 
-static BYTE __stdcall DiskEnable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
+static void __stdcall DiskEnable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	currdrive = address & 1;
 	g_aFloppyDisk[!currdrive].spinning   = 0;
 	g_aFloppyDisk[!currdrive].writelight = 0;
 	CheckSpinning();
-	return MemReadFloatingBus(uExecutedCycles);
 }
 
 //===========================================================================
@@ -793,8 +803,9 @@ bool Disk_IsDriveEmpty(const int iDrive)
 
 //===========================================================================
 
-static BYTE __stdcall DiskReadWrite (WORD programcounter, WORD, BYTE, BYTE, ULONG)
+static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
 {
+	/* floppyloadmode = 0; */
 	Disk_t * fptr = &g_aFloppyDisk[currdrive];
 
 	diskaccessed = 1;
@@ -803,32 +814,23 @@ static BYTE __stdcall DiskReadWrite (WORD programcounter, WORD, BYTE, BYTE, ULON
 		ReadTrack(currdrive);
 
 	if (!fptr->trackimagedata)
-		return 0xFF;
-
-	BYTE result = 0;
-
-	if (!floppywritemode || !fptr->bWriteProtected)
 	{
-		if (floppywritemode)
-		{
-			if (floppylatch & 0x80)
-			{
-				*(fptr->trackimage+fptr->byte) = floppylatch;
-				fptr->trackimagedirty = 1;
-			}
-			else
-			{
-				return 0;
-			}
-		}
-		else
-		{
-			result = *(fptr->trackimage+fptr->byte);
-		}
+		floppylatch = 0xFF;
+		return;
 	}
 
-	if (0)
-		{ LOG_DISK("nib %4X = %2X\r", fptr->byte, result); }
+	if (!floppywritemode)
+	{
+		floppylatch = *(fptr->trackimage + fptr->byte);
+#if LOG_DISK_NIBBLES
+		LOG_DISK("read %4X = %2X\r\n", fptr->byte, floppylatch);
+#endif
+	}
+	else if ((floppylatch & 0x80) && !fptr->bWriteProtected) // && floppywritemode
+	{
+		*(fptr->trackimage + fptr->byte) = floppylatch;
+		fptr->trackimagedirty = 1;
+	}
 
 	if (++fptr->byte >= fptr->nibbles)
 		fptr->byte = 0;
@@ -838,8 +840,6 @@ static BYTE __stdcall DiskReadWrite (WORD programcounter, WORD, BYTE, BYTE, ULON
 	// NB. Prevent flooding of forcing UI to redraw!!!
 	if( ((fptr->byte) & 0xFF) == 0 )
 		FrameDrawDiskStatus( (HDC)0 ); 
-
-	return result;
 }
 
 //===========================================================================
@@ -909,24 +909,31 @@ void DiskSelect(const int iDrive)
 
 //===========================================================================
 
-static BYTE __stdcall DiskSetLatchValue(WORD, WORD, BYTE write, BYTE value, ULONG)
-{
-	if (write)
-		floppylatch = value;
-	return floppylatch;
+static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG) {
+	/* floppyloadmode = 1; */
+	if (!write)
+	{
+		if (floppymotoron && !floppywritemode)
+		{
+			// phase 1 on also forces write protect in the Disk II drive (UTA2E page 9-7) but we don't implement that
+			if (g_aFloppyDisk[currdrive].bWriteProtected)
+				floppylatch |= 0x80;
+			else
+				floppylatch &= 0x7F;
+		}
+	}
 }
 
 //===========================================================================
 
-static BYTE __stdcall DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
+static void __stdcall DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG)
 {
 	floppywritemode = 0;
-	return MemReadFloatingBus(g_aFloppyDisk[currdrive].bWriteProtected, uExecutedCycles);
 }
 
 //===========================================================================
 
-static BYTE __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
+static void __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	floppywritemode = 1;
 	BOOL modechange = !g_aFloppyDisk[currdrive].writelight;
@@ -936,8 +943,6 @@ static BYTE __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCy
 		//FrameRefreshStatus(DRAW_LEDS);
 		FrameDrawDiskLEDS( (HDC)0 );
 	}
-
-	return MemReadFloatingBus(1, uExecutedCycles);	// TC-TODO: Check b7 always set
 }
 
 //===========================================================================
@@ -1032,12 +1037,12 @@ void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
 
 	memcpy(pCxRomPeripheral + uSlot*APPLE_SLOT_SIZE, pData, DISK2_FW_SIZE);
 
-	// NB. We used to disable the track stepping delay in the Disk II controller firmware by
+	// Note: We used to disable the track stepping delay in the Disk II controller firmware by
 	// patching $C64C with $A9,$00,$EA. Now not doing this since:
 	// . Authentic Speed should be authentic
 	// . Enhanced Speed runs emulation unthrottled, so removing the delay has negligible effect
 	// . Patching the firmware breaks the ADC checksum used by "The CIA Files" (Tricky Dick)
-	// . In this case we can patch to compensate for an ADC or EOR checksum but not both
+	// . In this case we can patch to compensate for an ADC or EOR checksum but not both (nickw)
 
 	RegisterIoHandler(uSlot, Disk_IORead, Disk_IOWrite, NULL, NULL, NULL, NULL);
 }
@@ -1046,55 +1051,60 @@ void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
 
 static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
 {
-	addr &= 0xFF;
-
-	switch (addr & 0xf)
+	switch (addr & 0xF)
 	{
-	case 0x0:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x1:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x2:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x3:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x4:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x5:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x6:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x7:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x8:	return DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x9:	return DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xA:	return DiskEnable(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xB:	return DiskEnable(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xC:	return DiskReadWrite(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xD:	return DiskSetLatchValue(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xE:	return DiskSetReadMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xF:	return DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x0:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x1:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x2:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x3:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x4:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x5:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x6:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x7:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x8:	DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x9:	DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0xA:	DiskEnable(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0xB:	DiskEnable(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0xC:	DiskReadWrite(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0xD:	DiskLoadWriteProtect(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0xE:	DiskSetReadMode(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft); break;
 	}
 
-	return 0;
+	// only even addresses return the latch (UTA2E Table 9.1)
+	if (!(addr & 1))
+		return floppylatch;
+	else
+		return MemReadFloatingBus(nCyclesLeft);
 }
 
 static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
 {
-	addr &= 0xFF;
-
-	switch (addr & 0xf)
+	switch (addr & 0xF)
 	{
-	case 0x0:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x1:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x2:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x3:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x4:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x5:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x6:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x7:	return DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x8:	return DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x9:	return DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xA:	return DiskEnable(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xB:	return DiskEnable(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xC:	return DiskReadWrite(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xD:	return DiskSetLatchValue(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xE:	return DiskSetReadMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xF:	return DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x0:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x1:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x2:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x3:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x4:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x5:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x6:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x7:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x8:	DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x9:	DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0xA:	DiskEnable(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0xB:	DiskEnable(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0xC:	DiskReadWrite(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0xD:	DiskLoadWriteProtect(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0xE:	DiskSetReadMode(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft); break;
 	}
 
+	// any address writes the latch via sequencer LD command (74LS323 datasheet)
+	if (floppywritemode /* && floppyloadmode */)
+	{
+		floppylatch = d;
+	}
 	return 0;
 }
 

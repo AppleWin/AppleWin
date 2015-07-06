@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* Description: Memory emulation
  *
  * Author: Various
+ *
+ * In comments, UTA2E is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
  */
 
 #include "StdAfx.h"
@@ -342,7 +344,7 @@ static BYTE __stdcall IORead_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 {	
 	static byte CurrentKestroke = 0;
 	CurrentKestroke = KeybGetKeycode();
-	switch (addr & 0xf)
+	switch (addr & 0x7) // address bit 4 is ignored (UTA2E page 7-5)
 	{
 	//In Pravets8A/C if SETMODE (8bit character encoding) is enabled, bit6 in $C060 is 0; Else it is 1
 	//If (CAPS lOCK of Pravets8A/C is on or Shift is pressed) and (MODE is enabled), bit7 in $C000 is 1; Else it is 0
@@ -356,14 +358,6 @@ static BYTE __stdcall IORead_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0x5:	return JoyReadPosition(pc, addr, bWrite, d, nCyclesLeft); //$C065 Analog input 1
 	case 0x6:	return JoyReadPosition(pc, addr, bWrite, d, nCyclesLeft); //$C066 Analog input 2
 	case 0x7:	return JoyReadPosition(pc, addr, bWrite, d, nCyclesLeft); //$C067 Analog input 3
-	case 0x8:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x9:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xA:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xB:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xC:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xD:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xE:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xF:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
 	}
 
 	return 0;
