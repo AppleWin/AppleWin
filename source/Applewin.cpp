@@ -74,6 +74,7 @@ static double g_fMHz		= 1.0;			// Affected by Config dialog's speed slider bar
 
 int			g_nCpuCyclesFeedback = 0;
 DWORD       g_dwCyclesThisFrame = 0;
+INT64       g_nCyclesTotal = 0;
 
 FILE*		g_fh			= NULL;
 bool		g_bDisableDirectInput = false;
@@ -225,6 +226,7 @@ void ContinueExecution(void)
 	SpkrUpdate(cyclenum);
 	sg_SSC.CommUpdate(cyclenum);
 	PrintUpdate(cyclenum);
+	TcpIpJoystickUpdate();
 
 	//
 
@@ -247,6 +249,7 @@ void ContinueExecution(void)
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
+		g_nCyclesTotal += dwClksPerFrame;
 		VideoUpdateFlash();
 
 		static BOOL lastupdates[2] = {0,0};
@@ -541,7 +544,9 @@ void LoadConfiguration(void)
 
 	if(REGLOAD(TEXT(REGVALUE_CURSOR_CONTROL), &dwTmp))
 		sg_PropertySheet.SetJoystickCursorControl(dwTmp);
-	if(REGLOAD(TEXT(REGVALUE_AUTOFIRE), &dwTmp))
+	if (REGLOAD(TEXT(REGVALUE_TCPIPJOYSTICK), &dwTmp))
+		sg_PropertySheet.SetTcpIpJoystock(dwTmp);
+	if (REGLOAD(TEXT(REGVALUE_AUTOFIRE), &dwTmp))
 		sg_PropertySheet.SetAutofire(dwTmp);
 	if(REGLOAD(TEXT(REGVALUE_CENTERING_CONTROL), &dwTmp))
 		sg_PropertySheet.SetJoystickCenteringControl(dwTmp);

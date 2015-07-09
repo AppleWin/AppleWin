@@ -62,6 +62,7 @@
     <ClInclude Include="source\DiskImage.h" />
     <ClInclude Include="source\DiskImageHelper.h" />
     <ClInclude Include="source\Frame.h" />
+    <ClInclude Include="source\GenericSocketDriver.h" />
     <ClInclude Include="source\Harddisk.h" />
     <ClInclude Include="source\Joystick.h" />
     <ClInclude Include="source\Keyboard.h" />
@@ -137,6 +138,7 @@
     <ClCompile Include="source\DiskImage.cpp" />
     <ClCompile Include="source\DiskImageHelper.cpp" />
     <ClCompile Include="source\Frame.cpp" />
+    <ClCompile Include="source\GenericSocketDriver.cpp" />
     <ClCompile Include="source\Harddisk.cpp" />
     <ClCompile Include="source\Joystick.cpp" />
     <ClCompile Include="source\Keyboard.cpp" />
@@ -342,6 +344,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>source\cpu;source\emulator;source\debugger;zlib;zip_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <ShowIncludes>true</ShowIncludes>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

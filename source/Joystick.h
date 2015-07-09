@@ -9,6 +9,8 @@ extern DWORD      joytype[2];
 
 enum {JOYSTICK_MODE_FLOATING=0, JOYSTICK_MODE_CENTERING};	// Joystick centering control
 
+void TcpIpJoystickUpdate();
+
 void    JoyInitialize();
 BOOL    JoyProcessKey(int,BOOL,BOOL,BOOL);
 void    JoyReset();

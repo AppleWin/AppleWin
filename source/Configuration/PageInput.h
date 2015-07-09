@@ -15,6 +15,7 @@ public:
 		m_uScrollLockToggle(0),
 		m_uCursorControl(1),
 		m_uCenteringControl(JOYSTICK_MODE_CENTERING),
+		m_uTcpIpJoystick(0),
 		m_bmAutofire(0),
 		m_uMouseShowCrosshair(0),
 		m_uMouseRestrictToWindow(0),
@@ -32,6 +33,8 @@ public:
 	void SetJoystickCursorControl(UINT uValue){ m_uCursorControl = uValue; }
 	UINT GetJoystickCenteringControl(void){ return m_uCenteringControl; }
 	void SetJoystickCenteringControl(UINT uValue){ m_uCenteringControl = uValue; }
+	UINT GetTcpIpJoystick(void){ return m_uTcpIpJoystick; }
+	void SetTcpIpJoystick(UINT uValue){ m_uTcpIpJoystick = uValue; }
 	UINT GetAutofire(UINT uButton) { return (m_bmAutofire >> uButton) & 1; }	// Get a specific button
 	void SetAutofire(UINT uValue) { m_bmAutofire = uValue; }					// Set all buttons
 	UINT GetMouseShowCrosshair(void){ return m_uMouseShowCrosshair; }
@@ -82,6 +85,7 @@ private:
 	UINT m_bmAutofire;			// bitmask b2:0
 	UINT m_uMouseShowCrosshair;
 	UINT m_uMouseRestrictToWindow;
+	UINT m_uTcpIpJoystick;
 
 	enum CPMCHOICE {CPM_SLOT4=0, CPM_SLOT5, CPM_UNPLUGGED, CPM_UNAVAILABLE, _CPM_MAX_CHOICES};
 	TCHAR m_szCPMSlotChoices[_CPM_MAX_CHOICES * MaxMenuChoiceLen];

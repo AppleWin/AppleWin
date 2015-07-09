@@ -37,6 +37,7 @@ extern double     g_fCurrentCLK6502;
 
 extern int        g_nCpuCyclesFeedback;
 extern DWORD      g_dwCyclesThisFrame;
+extern INT64      g_nCyclesTotal;
 
 extern FILE*      g_fh;				// Filehandle for log file
 extern bool       g_bDisableDirectInput;				// Cmd line switch: don't init DI (so no DIMouse support)

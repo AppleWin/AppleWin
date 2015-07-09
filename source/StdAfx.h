@@ -13,6 +13,8 @@
 #define WM_MOUSEWHEEL 0x020A
 #endif
 
+#include <winsock2.h>
+
 // Not needed in VC7.1, but needed in VC Express
 #include <tchar.h> 
 

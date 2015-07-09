@@ -12,6 +12,8 @@ __interface IPropertySheet
 	void SetJoystickCursorControl(UINT uValue);
 	UINT GetJoystickCenteringControl(void);
 	void SetJoystickCenteringControl(UINT uValue);
+	UINT GetTcpIpJoystock(void);
+	void SetTcpIpJoystock(UINT uValue);
 	UINT GetAutofire(UINT uButton);
 	void SetAutofire(UINT uValue);
 	UINT GetMouseShowCrosshair(void);

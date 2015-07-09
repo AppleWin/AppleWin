@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #include "MouseInterface.h"
 #include "Configuration\PropertySheet.h"
+#include "GenericSocketDriver.h"
 
 #define BUTTONTIME	5000	// TODO: Describe this magic number
 
@@ -104,6 +105,136 @@ enum {JOYPORT_LEFTRIGHT=0, JOYPORT_UPDOWN=1};
 static UINT g_bJoyportEnabled = 0;	// Set to use Joyport to drive the 3 button inputs
 static UINT g_uJoyportActiveStick = 0;
 static UINT g_uJoyportReadMode = JOYPORT_LEFTRIGHT;
+
+//===========================================================================
+// TCP/IP Joystick
+
+static char joystick_device_name[] = "TCP/IP Joystick";
+static SocketInfo TcpIpJoystickSocketInfo[1];
+static int const TcpIpJoystickCommandMaxLength = 1 << 5; // must be a power of 2
+static char TcpIpJoystickCommandBuffer[TcpIpJoystickCommandMaxLength] = "J1 65535 65535 15\n"; // sample data
+static int TcpIpJoystickCommandLength = 0;
+static bool TcpIpJoystickInitialized = false;
+
+BOOL TcpIpJoystickSocketRxHandler(SocketInfo *socket_info_ptr, int c)
+{
+	if (c != '\n') {
+		TcpIpJoystickCommandBuffer[TcpIpJoystickCommandLength++] = c;
+		TcpIpJoystickCommandLength &= (TcpIpJoystickCommandMaxLength - 1);
+		return TRUE; // we handled this
+	}
+
+	char *token;
+	int device = 0;
+	int x = 0, y = 0, buttons = 0;
+
+	TcpIpJoystickCommandBuffer[TcpIpJoystickCommandLength] = '\0';
+	TcpIpJoystickCommandLength = 0;
+	//printf("TCP/IP joystick command=%s\n", TcpIpJoystickCommandBuffer);
+	token = strtok(TcpIpJoystickCommandBuffer, " ");
+	if (token != NULL) {
+		// Device ID: J1, J2, P1, P2, M1
+		if (strlen(token) == 2) {
+			device = token[0] + (token[1] & 0xF);
+		}
+		token = strtok(NULL, " ");
+	}
+	if (token != NULL) {
+		x = atoi(token) >> 8; // 0 to 65335 -> 0 to 255
+		token = strtok(NULL, " ");
+	}
+	if (token != NULL) {
+		y = atoi(token) >> 8; // 0 to 65335 -> 0 to 255
+		token = strtok(NULL, " ");
+	}
+	if (token != NULL) {
+		buttons = atoi(token); // bitfield: 1=SW0 2=SW1 4=SW2 8=SW3
+	}
+
+	switch (device)
+	{
+	case 'J' + 1:
+		xpos[0] = x;
+		ypos[0] = y;
+		joybutton[0] = buttons & 0x1;
+		joybutton[1] = buttons & 0x2;
+		break;
+
+	case 'J' + 2:
+		xpos[1] = x;
+		ypos[1] = y;
+		joybutton[2] = buttons & 0x1;
+		break;
+
+	case 'P' + 1:
+		xpos[0] = x;
+		joybutton[0] = buttons & 0x1;
+		break;
+
+	case 'P' + 2:
+		ypos[0] = x;
+		joybutton[1] = buttons & 0x1;
+		break;
+
+	case 'M' + 1:
+		int iX, iMinX, iMaxX;
+		int iY, iMinY, iMaxY;
+		sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
+		float fScaleX = (float)x / (float)255;
+		float fScaleY = (float)y / (float)255;
+		int iAppleX = iMinX + (int)(fScaleX * (float)(iMaxX - iMinX));
+		int iAppleY = iMinY + (int)(fScaleY * (float)(iMaxY - iMinY));
+		sg_Mouse.SetCursorPos(iAppleX, iAppleY);	// Set new entry position
+		sg_Mouse.SetButton(BUTTON0, (buttons & 0x1) ? BUTTON_DOWN : BUTTON_UP);
+		sg_Mouse.SetButton(BUTTON1, (buttons & 0x2) ? BUTTON_DOWN : BUTTON_UP);
+		break;
+	}
+	return TRUE; // we handled this
+}
+
+void TcpIpJoystickShutdown()
+{
+	if (TcpIpJoystickInitialized)
+	{
+		socket_close(&TcpIpJoystickSocketInfo[0], 0);
+		socket_shutdown(&TcpIpJoystickSocketInfo[0]);
+		TcpIpJoystickInitialized = false;
+	}
+}
+
+void TcpIpJoystickInit()
+{
+	if (TcpIpJoystickInitialized)
+		return;
+	
+	TcpIpJoystickSocketInfo[0].device_name = joystick_device_name;
+	TcpIpJoystickSocketInfo[0].device_data = NULL;
+	TcpIpJoystickSocketInfo[0].listen_port = 6503;
+	TcpIpJoystickSocketInfo[0].listen_tries = 2;
+	TcpIpJoystickSocketInfo[0].rx_handler = TcpIpJoystickSocketRxHandler;
+
+	if (sg_PropertySheet.GetTcpIpJoystock())
+	{
+		socket_init(&TcpIpJoystickSocketInfo[0]);
+		TcpIpJoystickInitialized = true;
+	}
+}
+
+void TcpIpJoystickUpdate()
+{
+	if (sg_PropertySheet.GetTcpIpJoystock())
+	{
+		if (TcpIpJoystickInitialized)
+			socket_fill_readbuf(&TcpIpJoystickSocketInfo[0], 100, 0);
+		else
+			TcpIpJoystickInit();
+	}
+	else
+	{
+		if (TcpIpJoystickInitialized)
+			TcpIpJoystickShutdown();
+	}
+}
 
 //===========================================================================
 void CheckJoystick0()
@@ -240,6 +371,8 @@ void JoyInitialize()
       joytype[1] = J1C_DISABLED;
 	}
   }
+
+  TcpIpJoystickInit();
 }
 
 //===========================================================================
@@ -486,6 +619,8 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nCyclesLef
 {
 	address &= 0xFF;
 
+	TcpIpJoystickUpdate();
+
 	if(joyinfo[joytype[0]] == DEVICE_JOYSTICK)
 		CheckJoystick0();
 	if(joyinfo[joytype[1]] == DEVICE_JOYSTICK)
@@ -557,6 +692,8 @@ static const double PDL_CNTR_INTERVAL = 2816.0 / 255.0;	// 11.04 (From KEGS)
 
 BYTE __stdcall JoyReadPosition(WORD programcounter, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
 {
+	TcpIpJoystickUpdate();
+
 	int nJoyNum = (address & 2) ? 1 : 0;	// $C064..$C067
 
 	CpuCalcCycles(nCyclesLeft);

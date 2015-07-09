@@ -104,6 +104,7 @@
 #define IDC_CURSORCONTROL               1066
 #define IDC_AUTOFIRE                    1067
 #define IDC_CENTERINGCONTROL            1068
+#define IDC_TCPIP_JOYSTICK              1069
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003

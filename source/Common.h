@@ -88,6 +88,7 @@ enum AppMode_e
 #define  REGVALUE_SCROLLLOCK_TOGGLE  "ScrollLock Toggle"
 #define  REGVALUE_CURSOR_CONTROL		"Joystick Cursor Control"
 #define  REGVALUE_CENTERING_CONTROL		"Joystick Centering Control"
+#define  REGVALUE_TCPIPJOYSTICK      "TCP/IP Joystick"
 #define  REGVALUE_AUTOFIRE           "Autofire"
 #define  REGVALUE_MOUSE_CROSSHAIR    "Mouse crosshair"
 #define  REGVALUE_MOUSE_RESTRICT_TO_WINDOW "Mouse restrict to window"

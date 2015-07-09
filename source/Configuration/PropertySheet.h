@@ -31,6 +31,8 @@ public:
 	virtual void SetJoystickCursorControl(UINT uValue){ m_PageInput.SetJoystickCursorControl(uValue); }
 	virtual UINT GetJoystickCenteringControl(void){ return m_PageInput.GetJoystickCenteringControl(); }
 	virtual void SetJoystickCenteringControl(UINT uValue){ m_PageInput.SetJoystickCenteringControl(uValue); }
+	virtual UINT GetTcpIpJoystock(void){ return m_PageInput.GetTcpIpJoystick(); }
+	virtual void SetTcpIpJoystock(UINT uValue){ m_PageInput.SetTcpIpJoystick(uValue); }
 	virtual UINT GetAutofire(UINT uButton) { return m_PageInput.GetAutofire(uButton); }
 	virtual void SetAutofire(UINT uValue) { m_PageInput.SetAutofire(uValue); }
 	virtual UINT GetMouseShowCrosshair(void){ return m_PageInput.GetMouseShowCrosshair(); }

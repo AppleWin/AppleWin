@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 #include "DiskImage.h"
+#include "CPU.h"
 #include "..\resource\resource.h"
 
 #define LOG_DISK_ENABLED 0
@@ -103,6 +104,8 @@ static BOOL		floppymotoron   = 0;
 static BOOL		floppywritemode = 0;
 static WORD		phases;						// state bits for stepper magnet phases 0 - 3
 static bool		g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
+
+static DWORD nCyclesLastStep = 0;
 
 static void CheckSpinning();
 static Disk_Status_e GetDriveLightStatus( const int iDrive );
@@ -319,7 +322,7 @@ static void ReadTrack(const int iDrive)
 
 	if (pFloppy->trackimage && pFloppy->imagehandle)
 	{
-		LOG_DISK("read track %2X%s\r", pFloppy->track, (pFloppy->phase & 1) ? ".5" : "");
+		LOG_DISK("track %02X%s read\r", pFloppy->track, (pFloppy->phase & 1) ? ".5" : "  ");
 
 		ImageReadTrack(
 			pFloppy->imagehandle,
@@ -406,6 +409,7 @@ void DiskBoot(void)
 static BYTE __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG)
 {
 	floppymotoron = address & 1;
+	LOG_DISK("motor %s\r", (floppymotoron) ? "on" : "off");
 	CheckSpinning();
 	return MemReturnRandomData(1);
 }
@@ -415,22 +419,19 @@ static BYTE __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG)
 static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG)
 {
 	Disk_t * fptr = &g_aFloppyDisk[currdrive];
-#if 1
-	int phase     = (address >> 1) & 3;
+	int phase = (address >> 1) & 3;
 	int phase_bit = (1 << phase);
-
+#if 1
 	// update the magnet states
 	if (address & 1)
 	{
 		// phase on
 		phases |= phase_bit;
-		LOG_DISK("track %02X phases %X phase %d on  address $C0E%X\r", fptr->phase, phases, phase, address & 0xF);
 	}
 	else
 	{
 		// phase off
 		phases &= ~phase_bit;
-		LOG_DISK("track %02X phases %X phase %d off address $C0E%X\r", fptr->phase, phases, phase, address & 0xF);
 	}
 
 	// check for any stepping effect from a magnet
@@ -451,9 +452,11 @@ static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG)
 		const int nNumTracksInImage = ImageGetNumTracks(fptr->imagehandle);
 		const int newtrack = (nNumTracksInImage == 0)	? 0
 														: MIN(nNumTracksInImage-1, fptr->phase >> 1); // (round half tracks down)
-		LOG_DISK("newtrack %2X%s\r", newtrack, (fptr->phase & 1) ? ".5" : "");
 		if (newtrack != fptr->track)
 		{
+			if (address & 1 == 0)
+				LOG_DISK("phase off stepped\r");
+
 			if (fptr->trackimage && fptr->trackimagedirty)
 			{
 				WriteTrack(currdrive);
@@ -465,7 +468,6 @@ static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG)
 #else	// Old 1.13.1 code for Chessmaster 2000 to work! (see bug#18109)
 	const int nNumTracksInImage = ImageGetNumTracks(fptr->imagehandle);
 	if (address & 1) {
-		int phase = (address >> 1) & 3;
 		int direction = 0;
 		if (phase == ((fptr->phase+1) & 3))
 			direction = 1;
@@ -485,6 +487,22 @@ static BYTE __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG)
 		}
 	}
 #endif
+	if (address & 1)
+	{
+		// phase on
+		phases |= phase_bit;
+		LOG_DISK("track %02X%s phases %d%d%d%d phase %d on  address $C0E%X at %08X\r",
+			fptr->phase >> 1, (fptr->phase & 1) ? ".5" : "  ", phases >> 3, (phases >> 2) & 1, (phases >> 1) & 1, phases & 1, phase, address & 0xF, ((DWORD)g_nCyclesTotal + g_dwCyclesThisFrame) - nCyclesLastStep);
+		nCyclesLastStep = g_nCyclesTotal + g_dwCyclesThisFrame;
+	}
+	else
+	{
+		// phase off
+		phases &= ~phase_bit;
+		LOG_DISK("track %02X%s phases %d%d%d%d phase %d off address $C0E%X at %08X\r",
+			fptr->phase >> 1, (fptr->phase & 1) ? ".5" : "  ", phases >> 3, (phases >> 2) & 1, (phases >> 1) & 1, phases & 1, phase, address & 0xF, ((DWORD)g_nCyclesTotal + g_dwCyclesThisFrame) - nCyclesLastStep);
+		nCyclesLastStep = g_nCyclesTotal + g_dwCyclesThisFrame;
+	}
 	return (address == 0xE0) ? 0xFF : MemReturnRandomData(1);
 }
 
@@ -802,7 +820,10 @@ static BYTE __stdcall DiskReadWrite (WORD programcounter, WORD, BYTE, BYTE, ULON
 		}
 		else
 		{
-			result = *(fptr->trackimage+fptr->byte);
+			if (!floppymotoron)
+				LOG_DISK("reading with motor off at $%04X\r", regs.pc);
+
+			result = *(fptr->trackimage + fptr->byte);
 		}
 	}
 

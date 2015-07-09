@@ -128,7 +128,8 @@ BEGIN
     CONTROL         "Spin1",IDC_SPIN_YTRIM,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY,161,53,10,14
     CONTROL         "Allow cursor keys to be read from keyboard ",IDC_CURSORCONTROL,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,75,155,10
-    CONTROL         "Auto-fire (all 3 buttons)",IDC_AUTOFIRE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,90,89,10
+    CONTROL         "TCP/IP", IDC_TCPIP_JOYSTICK, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 163, 76, 37, 8
+    CONTROL         "Auto-fire (all 3 buttons)", IDC_AUTOFIRE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 8, 90, 89, 10
     CONTROL         "Keyboard auto-centering",IDC_CENTERINGCONTROL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,102,90,96,10
     CONTROL         "&Scroll Lock acts as toggle for full-speed CPU",IDC_SCROLLLOCK_TOGGLE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,113,166,10
