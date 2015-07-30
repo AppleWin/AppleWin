@@ -1176,8 +1176,6 @@ Update_t CmdBreakpointAddSmart (int nArgs)
 		CmdBreakpointAddMem( nArgs );	
 		return UPDATE_BREAKPOINTS;
 	}
-		
-	return UPDATE_CONSOLE_DISPLAY;
 }
 
 
