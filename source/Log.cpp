@@ -57,5 +57,5 @@ void LogFileOutput(LPCTSTR format, ...)
     va_start(args, format);
 
     _vsntprintf(output, sizeof(output) - 1, format, args);
-    fprintf(g_fh, output);
+    fprintf(g_fh, "%s", output);
 }

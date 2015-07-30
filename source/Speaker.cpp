@@ -886,7 +886,7 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
 				sprintf(szDbg, "%010.3f: [Submit]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
 				OutputDebugString(szDbg);
-				if (g_fh) fprintf(g_fh, szDbg);
+				if (g_fh) fprintf(g_fh, "%s", szDbg);
 
 				dwByteOffset = dwCurrentWriteCursor;
 				nNumSamplesError = 0;

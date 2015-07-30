@@ -1045,7 +1045,7 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 						sprintf(szDbg, "CommThread: Err=Other (0x%08X): InQueue=0x%08X, OutQueue=0x%08X\n", dwErrors, Stat.cbInQue, Stat.cbOutQue);
 					OutputDebugString(szDbg);
 					if (g_fh)
-						fprintf(g_fh, szDbg);
+						fprintf(g_fh, "%s", szDbg);
 				}
 				return -1;
 			}
