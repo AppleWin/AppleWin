@@ -728,7 +728,7 @@ Update_t CmdProfile (int nArgs)
 {
 	if (! nArgs)
 	{
-		sprintf( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_RESET ].m_sName );
+		sprintf( g_aArgs[ 1 ].sArg, "%s", g_aParameters[ PARAM_RESET ].m_sName );
 		nArgs = 1;
 	}
 
