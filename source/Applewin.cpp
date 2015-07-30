@@ -550,7 +550,7 @@ void SetCurrentImageDir(const char* pszImageDir)
 	strcpy(g_sCurrentDir, pszImageDir);
 
 	int nLen = strlen( g_sCurrentDir );
-	if( g_sCurrentDir[ nLen - 1 ] != '\\' )
+	if ((nLen > 0) && (g_sCurrentDir[ nLen - 1 ] != '\\'))
 	{
 		g_sCurrentDir[ nLen + 0 ] = '\\';
 		g_sCurrentDir[ nLen + 1 ] = 0;

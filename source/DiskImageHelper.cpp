@@ -436,7 +436,7 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 				offset = 0;
 		}
 
-		if ((bytenum == 3) && (byteval[1] = 0xAA))
+		if ((bytenum == 3) && (byteval[1] == 0xAA))
 		{
 			int loop       = 0;
 			int tempoffset = offset;
