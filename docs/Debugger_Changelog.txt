@@ -1,4 +1,7 @@
 /*
+.12 Fixed: [PVS-Studio] Fixed false positive of buffer overflow with MIP_RANDOM
+.11 Fixed: [PVS-Studio] Fixed missing call to sprintf() in ConfigSave_PrepareHeader()
+.10 Fixed: [PVS-Studio] Fixed no-op in _6502_GetStackReturnAddress()
  .9 Added: BLOAD now recognizes the extensions .hgr or .hgr2 to load to $2000, or $4000 respectfully
  .8 Fixed: Showing/hiding the address and/or opcodes will show long symbolic targets without overflowing into the register info pane Bug #227
  .7 Fixed: ASC #:# with string containing null byte wouldn't show rest of string

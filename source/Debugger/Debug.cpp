@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,8,0,9);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,8,0,12);
 
 
 // Public _________________________________________________________________________________________
@@ -2300,7 +2300,7 @@ void ConfigSave_PrepareHeader ( const Parameters_e eCategory, const Commands_e e
 	sprintf( sText, "%s %s = %s\n"
 		, g_aTokens[ TOKEN_COMMENT_EOL  ].sToken
 		, g_aParameters[ PARAM_CATEGORY ].m_sName
-		, g_aParameters[ eCategory ]
+		, g_aParameters[ eCategory ].m_sName
 		);
 	g_ConfigState.PushLine( sText );
 
@@ -5591,6 +5591,7 @@ Update_t CmdOutputPrintf (int nArgs)
 						{
 							case '\\':
 								eThis = PS_ESCAPE;
+								break;
 							case '%':
 								eThis = PS_TYPE;
 								break;

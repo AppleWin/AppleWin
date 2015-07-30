@@ -565,7 +565,6 @@ bool _6502_GetStackReturnAddress ( WORD & nAddress_ )
 
 	if (nStack <= (_6502_STACK_END - 1))
 	{
-		nAddress_ = 0;
 		nAddress_ = (unsigned)*(LPBYTE)(mem + nStack);
 		nStack++;
 		

@@ -1391,14 +1391,14 @@ void MemReset()
 			break;
 
 		case MIP_RANDOM:
-			unsigned char random[ 256 + 4 ];
+			unsigned char random[ 256 ];
 			for( iByte = 0x0000; iByte < 0xC000; iByte += 256 )
 			{
 				for( int i = 0; i < 256; i++ )
 				{
 					clock = getRandomTime();
-					random[ i+0 ] ^= (clock >>  0) & 0xFF;
-					random[ i+1 ] ^= (clock >> 11) & 0xFF;
+					random[ (i+0) & 0xFF ] ^= (clock >>  0) & 0xFF;
+					random[ (i+1) & 0xFF ] ^= (clock >> 11) & 0xFF;
 				}
 
 				memcpy( &memmain[ iByte ], random, 256 );
