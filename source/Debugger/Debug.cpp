@@ -4250,10 +4250,10 @@ Update_t CmdMemoryLoad (int nArgs)
 	TCHAR sLoadSaveFilePath[ MAX_PATH ];
 	_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // TODO: g_sDebugDir
 
-	WORD nAddressStart;
-	WORD nAddress2   = 0;
-	WORD nAddressEnd = 0;
-	int  nAddressLen = 0;
+	WORD nAddressStart = 0;
+	WORD nAddress2     = 0;
+	WORD nAddressEnd   = 0;
+	int  nAddressLen   = 0;
 
 	if( pFileType )
 	{
