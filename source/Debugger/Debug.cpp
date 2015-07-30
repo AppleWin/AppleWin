@@ -938,8 +938,6 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 		// Show what the current break opcode is
 		wsprintf( sText, TEXT("%s full speed Break on Opcode: None")
 			, sAction
-			, g_iDebugBreakOnOpcode
-			, g_aOpcodes65C02[ g_iDebugBreakOnOpcode ].sMnemonic
 		);
 	else
 		// Show what the current break opcode is
