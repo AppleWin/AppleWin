@@ -7382,7 +7382,7 @@ void OutputTraceLine ()
 			(unsigned)regs.sp,
 			(char*) sFlags
 			, sDisassembly
-			, sTarget
+			//, sTarget // TODO: Show target?
 		);
 	}
 }
@@ -8929,7 +8929,7 @@ void DebuggerMouseClick( int x, int y )
 				DebugDisplay( UPDATE_DISASM );
 			}
 			else         //      AD 00 00
-			if ((cx > 4) & (cx <= 13))
+			if ((cx > 4) && (cx <= 13))
 			{
 				g_bConfigDisasmOpcodesView ^= true;
 				DebugDisplay( UPDATE_DISASM );
