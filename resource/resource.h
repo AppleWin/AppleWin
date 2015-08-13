@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by Applewin.rc
+// Used by APPLEWIN.RC
 //
 #define IDC_COMPUTER                    101
 #define IDC_JOYSTICK0                   102
@@ -46,6 +46,10 @@
 #define IDR_MENU_DISK_POPUP             143
 #define IDD_ABOUT                       145
 #define IDC_CHECK_CONFIRM_REBOOT        146
+#define IDR_ROM1                        147
+#define IDR_ROM2                        148
+#define IDR_TK3000_2E_ROM               149
+#define IDR_TKCLOCK_FW                  150
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -69,7 +73,6 @@
 #define IDC_PHASOR_ENABLE               1029
 #define IDC_SAM_ENABLE                  1030
 #define IDC_SOUNDCARD_DISABLE           1031
-
 #define IDC_TFE_SETTINGS_ENABLE_T       1032
 #define IDC_TFE_SETTINGS_ENABLE         1033
 #define IDC_TFE_SETTINGS_INTERFACE_T    1034
@@ -98,7 +101,6 @@
 #define IDC_PRINTER_FILTER_UNPRINTABLE  1057
 #define IDC_PRINTER_APPEND              1058
 #define IDC_SPIN_PRINTER_IDLE           1059
-
 #define IDC_CHECK_HALF_SCAN_LINES       1060
 #define IDC_GPL_TEXT                    1061
 #define IDC_GPL_BORDER                  1063
@@ -124,7 +126,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        147
+#define _APS_NEXT_RESOURCE_VALUE        149
 #define _APS_NEXT_COMMAND_VALUE         40012
 #define _APS_NEXT_CONTROL_VALUE         1082
 #define _APS_NEXT_SYMED_VALUE           101

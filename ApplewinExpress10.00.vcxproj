@@ -265,6 +265,7 @@
     <ClCompile Include="source\Debugger\Debugger_Parser.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Range.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Symbols.cpp" />
+    <ClCompile Include="source\SAM.cpp" />
     <ClCompile Include="source\StdAfx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|Win32'">Create</PrecompiledHeader>
@@ -461,6 +462,18 @@
     <ClInclude Include="resource\winres.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="RESOURCE\LED_CAPS_OFF.BMP" />
+    <None Include="RESOURCE\LED_CAPS_OFF_LAT.BMP" />
+    <None Include="RESOURCE\LED_CAPS_OFF_P8.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON_LAT.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON_P8.BMP" />
+    <None Include="RESOURCE\Pravets8M.rom" />
+    <None Include="RESOURCE\ROM1.BIN" />
+    <None Include="RESOURCE\ROM2.BIN" />
+    <None Include="resource\RUN3000E.bmp" />
+    <None Include="resource\TK3000e.rom" />
+    <None Include="resource\TKClock.rom" />
     <None Include="source\CPU\cpu_general.inl" />
     <None Include="source\CPU\cpu_instructions.inl" />
     <None Include="docs\CodingConventions.txt" />
