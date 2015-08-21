@@ -214,12 +214,12 @@ void CPageInput::DlgOK(HWND hWnd)
 
 	if (JoySetEmulationType(hWnd, m_nJoy0ChoiceTranlationTbl[uNewJoyType0], JN_JOYSTICK0, bIsSlot4Mouse))
 	{
-		REGSAVE(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), joytype[0]);
+		REGSAVE(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), JoyGetJoyType(0));
 	}
 
 	if (JoySetEmulationType(hWnd, m_nJoy1ChoiceTranlationTbl[uNewJoyType1], JN_JOYSTICK1, bIsSlot4Mouse))
 	{
-		REGSAVE(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), joytype[1]);
+		REGSAVE(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), JoyGetJoyType(1));
 	}
 
 	JoySetTrim((short)SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0), true);
@@ -305,7 +305,7 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 	for(UINT i=nJC_KEYBD_CURSORS; i<nJC_MAX; i++)
 	{
 		if( ( (i == nJC_KEYBD_CURSORS) || (i == nJC_KEYBD_NUMPAD) ) &&
-			( (joytype[nOtherJoyNum] == nJC_KEYBD_CURSORS) || (joytype[nOtherJoyNum] == nJC_KEYBD_NUMPAD) )
+			( (JoyGetJoyType(nOtherJoyNum) == nJC_KEYBD_CURSORS) || (JoyGetJoyType(nOtherJoyNum) == nJC_KEYBD_NUMPAD) )
 		  )
 		{
 			continue;
@@ -314,7 +314,7 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 		if (i == nJC_MOUSE && bIsSlot4Mouse)
 			continue;
 
-		if(joytype[nOtherJoyNum] != i)
+		if (JoyGetJoyType(nOtherJoyNum) != i)
 		{
 			memcpy(pszMem, ppszJoyChoices[i], strlen(ppszJoyChoices[i])+1);
 			pszMem += strlen(ppszJoyChoices[i])+1;
@@ -324,7 +324,7 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 
 	*pszMem = 0x00;	// Doubly null terminated
 
-	m_PropertySheetHelper.FillComboBox(hWnd, nIdcValue, pnzJoystickChoices, joytype[nJoyNum]);
+	m_PropertySheetHelper.FillComboBox(hWnd, nIdcValue, pnzJoystickChoices, JoyGetJoyType(nJoyNum));
 }
 
 void CPageInput::InitSlotOptions(HWND hWnd)

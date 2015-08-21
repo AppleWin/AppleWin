@@ -73,6 +73,7 @@ enum SS_CARDTYPE
 	CT_80Col,			// 80 column card (no memory)
 	CT_Extended80Col,	// Extended 80-col card (64K)
 	CT_RamWorksIII,		// RamWorksIII (up to 8MB)
+	CT_Uthernet,
 };
 
 /////////////////////////////////////////////////////////////////////////////////

@@ -91,7 +91,7 @@ static int   joysubx[2]     = {0,0};
 static int   joysuby[2]     = {0,0};
 
 // Value persisted to Registry for REGVALUE_JOYSTICK0_EMU_TYPE
-DWORD joytype[2]            = {J0C_JOYSTICK1, J1C_DISABLED};	// Emulation Type for joysticks #0 & #1
+static DWORD joytype[2]            = {J0C_JOYSTICK1, J1C_DISABLED};	// Emulation Type for joysticks #0 & #1
 
 static BOOL  setbutton[3]   = {0,0,0};	// Used when a mouse button is pressed/released
 
@@ -753,6 +753,30 @@ void JoyDisableUsingMouse()
 
 //===========================================================================
 
+void JoySetJoyType(UINT num, DWORD type)
+{
+	_ASSERT(num <= JN_JOYSTICK1);
+	if (num > JN_JOYSTICK1)
+		return;
+
+	joytype[num] = type;
+
+	// Refresh centre positions whenever 'joytype' changes
+	JoySetTrim(JoyGetTrim(true) , true);
+	JoySetTrim(JoyGetTrim(false), false);
+}
+
+DWORD JoyGetJoyType(UINT num)
+{
+	_ASSERT(num <= JN_JOYSTICK1);
+	if (num > JN_JOYSTICK1)
+		return J0C_DISABLED;
+
+	return joytype[num];
+}
+
+//===========================================================================
+
 void JoySetTrim(short nValue, bool bAxisX)
 {
 	if(bAxisX)
@@ -831,12 +855,18 @@ void JoySetSnapshot_v1(const unsigned __int64 JoyCntrResetCycle)
 
 //
 
-void JoyGetSnapshot(unsigned __int64& rJoyCntrResetCycle)
+void JoyGetSnapshot(unsigned __int64& rJoyCntrResetCycle, short* pJoystick0Trim, short* pJoystick1Trim)
 {
 	rJoyCntrResetCycle = g_nJoyCntrResetCycle;
+	pJoystick0Trim[0] = JoyGetTrim(true);
+	pJoystick0Trim[1] = JoyGetTrim(false);
+	pJoystick1Trim[0] = 0;	// TBD: not implemented yet
+	pJoystick1Trim[1] = 0;	// TBD: not implemented yet
 }
 
-void JoySetSnapshot(const unsigned __int64 JoyCntrResetCycle)
+void JoySetSnapshot(const unsigned __int64 JoyCntrResetCycle, const short* pJoystick0Trim, const short* pJoystick1Trim)
 {
 	g_nJoyCntrResetCycle = JoyCntrResetCycle;
+	JoySetTrim(pJoystick0Trim[0], true);
+	JoySetTrim(pJoystick0Trim[1], false);
 }

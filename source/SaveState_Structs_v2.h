@@ -27,6 +27,8 @@ struct SS_CPU6502_v2
 struct SS_IO_Joystick_v2
 {
 	unsigned __int64 JoyCntrResetCycle;
+	short Joystick0Trim[2];	// [x,y]
+	short Joystick1Trim[2];	// [x,y]
 };
 
 struct SS_IO_Keyboard_v2
@@ -90,27 +92,31 @@ struct APPLEWIN_SNAPSHOT_v2
 
 struct SS_AW_CFG
 {
-	UINT32 AppleWinVersion;
+	UINT16 AppleWinVersion[4];	// major,minor,fix,fix_minor
 	UINT32 VideoMode;
+	UINT32 IsHalfScanLines;
+	UINT32 IsConfirmReboot;
 	UINT32 MonochromeColor;
-	float ClockFreqMHz;
+	UINT32 WindowScale;
+	UINT32 CpuSpeed;
 	//
 	UINT32 JoystickType[2];
-	UINT32 JoystickTrim[2];
 	UINT32 IsAllowCursorsToBeRead;
 	UINT32 IsAutofire;
 	UINT32 IsKeyboardAutocentering;
 	UINT32 IsSwapButton0and1;
+	UINT32 IsScrollLockToggle;
+	UINT32 IsMouseShowCrosshair;
+	UINT32 IsMouseRestrictToWindow;
 	//
+	UINT32 SoundType;
 	UINT32 SpeakerVolume;
 	UINT32 MockingboardVolume;
 	//
 	UINT32 IsEnhancedDiskSpeed;
+	UINT32 IsSaveStateOnExit;
 	//
-	UINT32 IsEncodingConversionForClones;
-	UINT32 IsFilterUnprintableChars;
 	UINT32 IsAppendToFile;
-	UINT32 TerminatePrintingAfterIdleSecs;
 	UINT32 IsUsingFreezesF8Rom;
 };
 

@@ -291,7 +291,7 @@ static void LoadUnitApple2(DWORD Length, DWORD Version)
 	m_ConfigNew.m_Apple2Type = g_Apple2Type;
 
 	CpuSetSnapshot(Apple2Unit.CPU6502);
-	JoySetSnapshot(Apple2Unit.Joystick.JoyCntrResetCycle);
+	JoySetSnapshot(Apple2Unit.Joystick.JoyCntrResetCycle, &Apple2Unit.Joystick.Joystick0Trim[0], &Apple2Unit.Joystick.Joystick1Trim[0]);
 	KeybSetSnapshot(Apple2Unit.Keyboard.LastKey);
 	SpkrSetSnapshot(Apple2Unit.Speaker.SpkrLastCycle);
 	VideoSetSnapshot(Apple2Unit.Video);
@@ -428,23 +428,22 @@ static void LoadUnitCard(DWORD Length, DWORD Version)
 	}
 }
 
-#if 0
 static void LoadUnitConfig(DWORD Length, DWORD Version)
 {
-	SS_APPLEWIN_CONFIG Cfg;
+	SS_APPLEWIN_CONFIG Config;
 
 	if (Version != UNIT_CONFIG_VER)
 		throw std::string("Config: Version mismatch");
 
-	if (Length != sizeof(Cfg))
+	if (Length != sizeof(Config))
 		throw std::string("Config: Length mismatch");
 
-	if (SetFilePointer(m_hFile, -(LONG)sizeof(Cfg.UnitHdr), NULL, FILE_CURRENT) == INVALID_SET_FILE_POINTER)
+	if (SetFilePointer(m_hFile, -(LONG)sizeof(Config.UnitHdr), NULL, FILE_CURRENT) == INVALID_SET_FILE_POINTER)
 		throw std::string("Config: file corrupt");
 
 	DWORD dwBytesRead;
 	BOOL bRes = ReadFile(	m_hFile,
-							&Cfg,
+							&Config,
 							Length,
 							&dwBytesRead,
 							NULL);
@@ -452,10 +451,38 @@ static void LoadUnitConfig(DWORD Length, DWORD Version)
 	if (dwBytesRead != Length)
 		throw std::string("Config: file corrupt");
 
-	// todo:
-	//m_ConfigNew.m_bEnhanceDisk;
+	// Restore all config state
+
+	//Config.Cfg.AppleWinVersion	// Nothing to do
+	g_eVideoType = Config.Cfg.VideoMode;
+	g_uHalfScanLines = Config.Cfg.IsHalfScanLines;
+	g_bConfirmReboot = Config.Cfg.IsConfirmReboot;
+	monochrome = Config.Cfg.MonochromeColor;
+	SetViewportScale(Config.Cfg.WindowScale);
+
+	g_dwSpeed = Config.Cfg.CpuSpeed;
+	SetCurrentCLK6502();
+
+	JoySetJoyType(JN_JOYSTICK0, Config.Cfg.JoystickType[0]);
+	JoySetJoyType(JN_JOYSTICK1, Config.Cfg.JoystickType[1]);
+	sg_PropertySheet.SetJoystickCursorControl(Config.Cfg.IsAllowCursorsToBeRead);
+	sg_PropertySheet.SetAutofire(Config.Cfg.IsAutofire);
+	sg_PropertySheet.SetJoystickCenteringControl(Config.Cfg.IsKeyboardAutocentering);
+	//Config.Cfg.IsSwapButton0and1;	// TBD: not implemented yet
+	sg_PropertySheet.SetScrollLockToggle(Config.Cfg.IsScrollLockToggle);
+	sg_PropertySheet.SetMouseShowCrosshair(Config.Cfg.IsMouseShowCrosshair);
+	sg_PropertySheet.SetMouseRestrictToWindow(Config.Cfg.IsMouseRestrictToWindow);
+
+	soundtype = Config.Cfg.SoundType;
+	SpkrSetVolume(Config.Cfg.SpeakerVolume, sg_PropertySheet.GetVolumeMax());
+	MB_SetVolume(Config.Cfg.MockingboardVolume, sg_PropertySheet.GetVolumeMax());
+
+	enhancedisk = Config.Cfg.IsEnhancedDiskSpeed;
+	g_bSaveStateOnExit = Config.Cfg.IsSaveStateOnExit ? true : false;
+
+	g_bPrinterAppend = Config.Cfg.IsAppendToFile ? true : false;
+	sg_PropertySheet.SetTheFreezesF8Rom(Config.Cfg.IsUsingFreezesF8Rom);
 }
-#endif
 
 static void Snapshot_LoadState_v2(DWORD dwVersion)
 {
@@ -467,6 +494,7 @@ static void Snapshot_LoadState_v2(DWORD dwVersion)
 		CConfigNeedingRestart ConfigOld;
 		ConfigOld.m_Slot[1] = CT_GenericPrinter;	// fixme
 		ConfigOld.m_Slot[2] = CT_SSC;				// fixme
+		//ConfigOld.m_Slot[3] = CT_Uthernet;		// todo
 		ConfigOld.m_Slot[6] = CT_Disk2;				// fixme
 		ConfigOld.m_Slot[7] = ConfigOld.m_bEnableHDD ? CT_GenericHDD : CT_Empty;	// fixme
 		//ConfigOld.m_SlotAux = ?;					// fixme
@@ -515,11 +543,9 @@ static void Snapshot_LoadState_v2(DWORD dwVersion)
 			case UT_Card:
 				LoadUnitCard(UnitHdr.hdr.v2.Length, UnitHdr.hdr.v2.Version);
 				break;
-#if 0
 			case UT_Config:
 				LoadUnitConfig(UnitHdr.hdr.v2.Length, UnitHdr.hdr.v2.Version);
 				break;
-#endif
 			default:
 				// Log then skip unsupported unit type
 				break;
@@ -577,22 +603,84 @@ void Snapshot_LoadState()
 
 //-----------------------------------------------------------------------------
 
+// todo:
+// . "Uthernet Active"
+
+static void SaveUnitConfig()
+{
+	SS_APPLEWIN_CONFIG Config;
+	memset(&Config, 0, sizeof(Config));
+
+	Config.UnitHdr.hdr.v2.Length = sizeof(Config);
+	Config.UnitHdr.hdr.v2.Type = UT_Config;
+	Config.UnitHdr.hdr.v2.Version = UNIT_CONFIG_VER;
+
+	//
+
+	memcpy(Config.Cfg.AppleWinVersion, GetAppleWinVersion(), sizeof(Config.Cfg.AppleWinVersion));
+	Config.Cfg.VideoMode = g_eVideoType;
+	Config.Cfg.IsHalfScanLines = g_uHalfScanLines;
+	Config.Cfg.IsConfirmReboot = g_bConfirmReboot;
+	Config.Cfg.MonochromeColor = monochrome;
+	Config.Cfg.WindowScale = GetViewportScale();
+	Config.Cfg.CpuSpeed = g_dwSpeed;
+
+	Config.Cfg.JoystickType[0] = JoyGetJoyType(JN_JOYSTICK0);
+	Config.Cfg.JoystickType[1] = JoyGetJoyType(JN_JOYSTICK1);
+	Config.Cfg.IsAllowCursorsToBeRead = sg_PropertySheet.GetJoystickCursorControl();
+	Config.Cfg.IsAutofire = (sg_PropertySheet.GetAutofire(1)<<1) | sg_PropertySheet.GetAutofire(0);
+	Config.Cfg.IsKeyboardAutocentering = sg_PropertySheet.GetJoystickCenteringControl();
+	Config.Cfg.IsSwapButton0and1 = 0;	// TBD: not implemented yet
+	Config.Cfg.IsScrollLockToggle = sg_PropertySheet.GetScrollLockToggle();
+	Config.Cfg.IsMouseShowCrosshair = sg_PropertySheet.GetMouseShowCrosshair();
+	Config.Cfg.IsMouseRestrictToWindow = sg_PropertySheet.GetMouseRestrictToWindow();
+
+	Config.Cfg.SoundType = soundtype;
+	Config.Cfg.SpeakerVolume = SpkrGetVolume();
+	Config.Cfg.MockingboardVolume = MB_GetVolume();
+
+	Config.Cfg.IsEnhancedDiskSpeed = enhancedisk;
+	Config.Cfg.IsSaveStateOnExit = g_bSaveStateOnExit;
+
+	Config.Cfg.IsAppendToFile = g_bPrinterAppend;
+	Config.Cfg.IsUsingFreezesF8Rom = sg_PropertySheet.GetTheFreezesF8Rom();
+
+	//
+
+	DWORD dwBytesWritten;
+	BOOL bRes = WriteFile(	m_hFile,
+							&Config,
+							Config.UnitHdr.hdr.v2.Length,
+							&dwBytesWritten,
+							NULL);
+
+	if(!bRes || (dwBytesWritten != Config.UnitHdr.hdr.v2.Length))
+	{
+		//dwError = GetLastError();
+		throw std::string("Save error: Config");
+	}
+}
+
+// todo:
+// . Uthernet card
+
 void Snapshot_SaveState()
 {
 	try
 	{
 		m_hFile = CreateFile(	g_strSaveStatePathname.c_str(),
-									GENERIC_WRITE,
-									0,
-									NULL,
-									CREATE_ALWAYS,
-									FILE_ATTRIBUTE_NORMAL,
-									NULL);
+								GENERIC_WRITE,
+								0,
+								NULL,
+								CREATE_ALWAYS,
+								FILE_ATTRIBUTE_NORMAL,
+								NULL);
 
 		DWORD dwError = GetLastError();
 		_ASSERT((dwError == 0) || (dwError == ERROR_ALREADY_EXISTS));
 
 		// todo: handle ERROR_ALREADY_EXISTS - ask if user wants to replace existing file
+		// - at this point any old file will have been truncated to zero
 
 		if(m_hFile == INVALID_HANDLE_VALUE)
 		{
@@ -621,7 +709,7 @@ void Snapshot_SaveState()
 		Apple2Unit.Apple2Type = g_Apple2Type;
 
 		CpuGetSnapshot(Apple2Unit.CPU6502);
-		JoyGetSnapshot(Apple2Unit.Joystick.JoyCntrResetCycle);
+		JoyGetSnapshot(Apple2Unit.Joystick.JoyCntrResetCycle, &Apple2Unit.Joystick.Joystick0Trim[0], &Apple2Unit.Joystick.Joystick1Trim[0]);
 		KeybGetSnapshot(Apple2Unit.Keyboard.LastKey);
 		SpkrGetSnapshot(Apple2Unit.Speaker.SpkrLastCycle);
 		VideoGetSnapshot(Apple2Unit.Video);
@@ -668,6 +756,10 @@ void Snapshot_SaveState()
 		DiskGetSnapshot(m_hFile);
 
 		HD_GetSnapshot(m_hFile);
+
+		//
+
+		SaveUnitConfig();
 	}
 	catch(std::string szMessage)
 	{

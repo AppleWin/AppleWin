@@ -6,7 +6,7 @@
 void SetCurrentCLK6502();
 void SetCurrentImageDir(const char* pszImageDir);
 
-
+extern const UINT16* GetAppleWinVersion(void);
 extern char VERSIONSTRING[];	// Constructed in WinMain()
 
 extern TCHAR     *g_pAppTitle;

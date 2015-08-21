@@ -56,6 +56,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration\PropertySheet.h"
 #include "Tfe\Tfe.h"
 
+static UINT16 g_AppleWinVersion[4] = {0};
 char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
 TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
@@ -109,6 +110,11 @@ CSpeech		g_Speech;
 #endif
 
 //===========================================================================
+
+const UINT16* GetAppleWinVersion(void)
+{
+	return &g_AppleWinVersion[0];
+}
 
 bool GetLoadedSaveStateFlag(void)
 {
@@ -366,7 +372,7 @@ static void LoadConfigOldJoystick(const UINT uJoyNum)
 		break;
 	}
 
-	joytype[uJoyNum] = uNewJoyType;
+	JoySetJoyType(uJoyNum, uNewJoyType);
 }
 
 //Reads configuration from the registry entries
@@ -407,9 +413,15 @@ void LoadConfiguration(void)
 
 	//
 
-	if (!REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &joytype[JN_JOYSTICK0]))
+	DWORD dwJoyType;
+	if (REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &dwJoyType))
+		JoySetJoyType(JN_JOYSTICK0, dwJoyType);
+	else
 		LoadConfigOldJoystick(JN_JOYSTICK0);
-	if (!REGLOAD(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), &joytype[JN_JOYSTICK1]))
+
+	if (REGLOAD(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), &dwJoyType))
+		JoySetJoyType(JN_JOYSTICK1, dwJoyType);
+	else
 		LoadConfigOldJoystick(JN_JOYSTICK1);
 
 	REGLOAD(TEXT("Sound Emulation")     ,&soundtype);
@@ -898,11 +910,11 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
             // Construct version string from fixed file info block
 
-            unsigned long major     = pFixedFileInfo->dwFileVersionMS >> 16;
-            unsigned long minor     = pFixedFileInfo->dwFileVersionMS & 0xffff;
-            unsigned long fix       = pFixedFileInfo->dwFileVersionLS >> 16;
-			unsigned long fix_minor = pFixedFileInfo->dwFileVersionLS & 0xffff;
-            sprintf(VERSIONSTRING, "%d.%d.%d.%d", major, minor, fix, fix_minor); // potential buffer overflow
+            unsigned long major     = g_AppleWinVersion[0] = pFixedFileInfo->dwFileVersionMS >> 16;
+            unsigned long minor     = g_AppleWinVersion[1] = pFixedFileInfo->dwFileVersionMS & 0xffff;
+            unsigned long fix       = g_AppleWinVersion[2] = pFixedFileInfo->dwFileVersionLS >> 16;
+			unsigned long fix_minor = g_AppleWinVersion[3] = pFixedFileInfo->dwFileVersionLS & 0xffff;
+			sprintf(VERSIONSTRING, "%d.%d.%d.%d", major, minor, fix, fix_minor); // potential buffer overflow
 		}
     }
 

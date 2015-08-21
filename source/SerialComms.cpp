@@ -1340,6 +1340,8 @@ struct SSC_Unit
 	bool	vbRxIrqPending;
 
 	bool	bWrittenTx;
+
+	char	SerialPortName[8];
 };
 
 struct SS_CARD_SSC
@@ -1375,6 +1377,8 @@ void CSuperSerialCard::GetSnapshot(const HANDLE hFile)
 	Unit.vbTxIrqPending		= m_vbTxIrqPending;
 	Unit.vbRxIrqPending		= m_vbRxIrqPending;
 	Unit.bWrittenTx			= m_bWrittenTx;
+
+	strncpy_s(Unit.SerialPortName, sizeof(Unit.SerialPortName), GetSerialPortName(), _TRUNCATE);
 
 	//
 
@@ -1428,4 +1432,6 @@ void CSuperSerialCard::SetSnapshot(const HANDLE hFile)
 	m_vbTxIrqPending	= Unit.vbTxIrqPending;
 	m_vbRxIrqPending	= Unit.vbRxIrqPending;
 	m_bWrittenTx		= Unit.bWrittenTx;
+
+	SetSerialPortName(Unit.SerialPortName);
 }
