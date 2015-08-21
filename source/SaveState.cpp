@@ -428,6 +428,12 @@ static void LoadUnitCard(DWORD Length, DWORD Version)
 	}
 }
 
+// Todo:
+// . Should this newly loaded config state be persisted to the Registry?
+//   - NB. it will get saved if the user opens the Config dialog + makes a change. Is this confusing to the user?
+// Notes:
+// . WindowScale - don't think this needs restoring (eg. like FullScreen)
+
 static void LoadUnitConfig(DWORD Length, DWORD Version)
 {
 	SS_APPLEWIN_CONFIG Config;
@@ -458,7 +464,7 @@ static void LoadUnitConfig(DWORD Length, DWORD Version)
 	g_uHalfScanLines = Config.Cfg.IsHalfScanLines;
 	g_bConfirmReboot = Config.Cfg.IsConfirmReboot;
 	monochrome = Config.Cfg.MonochromeColor;
-	SetViewportScale(Config.Cfg.WindowScale);
+	//Config.Cfg.WindowScale		// NB. Just calling SetViewportScale() is no good. Use PostMessage() instead.
 
 	g_dwSpeed = Config.Cfg.CpuSpeed;
 	SetCurrentCLK6502();
@@ -603,8 +609,10 @@ void Snapshot_LoadState()
 
 //-----------------------------------------------------------------------------
 
-// todo:
-// . "Uthernet Active"
+// Todo:
+// . "Uthernet Active" - save this in slot3 card's state?
+// Notes:
+// . Full Screen - don't think this needs save/restoring
 
 static void SaveUnitConfig()
 {
