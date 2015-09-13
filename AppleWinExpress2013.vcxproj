@@ -78,6 +78,7 @@
     <ClInclude Include="source\Pravets.h" />
     <ClInclude Include="source\Registry.h" />
     <ClInclude Include="source\Riff.h" />
+    <ClInclude Include="source\SAM.h" />
     <ClInclude Include="source\SaveState.h" />
     <ClInclude Include="source\SerialComms.h" />
     <ClInclude Include="source\SoundCore.h" />
@@ -126,6 +127,7 @@
     <ClCompile Include="source\Configuration\PropertySheet.cpp" />
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CPU.cpp" />
+    <ClCompile Include="source\SAM.cpp" />
     <ClCompile Include="source\Debugger\Debug.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Assembler.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Color.cpp" />

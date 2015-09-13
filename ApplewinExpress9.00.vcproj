@@ -26,6 +26,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				Description="Performing unit-test: TestCPU6502"
+				CommandLine=".\Release\TestCPU6502.exe"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -130,6 +132,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				Description="Performing unit-test: TestCPU6502"
+				CommandLine=".\Debug\TestCPU6502.exe"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -684,6 +688,14 @@
 				</File>
 				<File
 					RelativePath=".\source\Riff.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\SAM.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\SAM.h"
 					>
 				</File>
 				<File

@@ -126,7 +126,7 @@ Update_t Help_Arg_1( int iCommandHelp )
 {
 	_Arg_1( iCommandHelp );
 
-	wsprintf( g_aArgs[ 1 ].sArg, g_aCommands[ iCommandHelp ].m_sName ); // .3 Fixed: Help_Arg_1() now copies command name into arg.name
+	wsprintf( g_aArgs[ 1 ].sArg, "%s", g_aCommands[ iCommandHelp ].m_sName ); // .3 Fixed: Help_Arg_1() now copies command name into arg.name
 
 	return CmdHelpSpecific( 1 );
 }
@@ -669,49 +669,49 @@ Update_t CmdHelpSpecific (int nArgs)
 
 			// HACK: Major kludge to display category!!!
 			if (iCmd <= CMD_UNASSEMBLE)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_CPU ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_CPU ].m_sName );
 			else
 			if (iCmd <= CMD_BOOKMARK_SAVE)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_BOOKMARKS ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_BOOKMARKS ].m_sName );
 			else
 			if (iCmd <= CMD_BREAKPOINT_SAVE)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_BREAKPOINTS ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_BREAKPOINTS ].m_sName );
 			else
 			if (iCmd <= CMD_CONFIG_SAVE)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_CONFIG ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_CONFIG ].m_sName );
 			else
 			if (iCmd <= CMD_CURSOR_PAGE_DOWN_4K)
 				wsprintf( sCategory, "Scrolling" );
 			else
 			if (iCmd <= CMD_FLAG_SET_N)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_FLAGS ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_FLAGS ].m_sName );
 			else
 			if (iCmd <= CMD_MOTD)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_HELP ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_HELP ].m_sName );
 			else
 			if (iCmd <= CMD_MEMORY_FILL)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_MEMORY ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_MEMORY ].m_sName );
 			else
 			if (iCmd <= CMD_OUTPUT_RUN)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_OUTPUT ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_OUTPUT ].m_sName );
 			else
 			if (iCmd <= CMD_SYNC)
 				wsprintf( sCategory, "Source" );
 			else
 			if (iCmd <= CMD_SYMBOLS_LIST)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_SYMBOLS ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_SYMBOLS ].m_sName );
 			else
 			if (iCmd <= CMD_VIEW_DHGR2)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_VIEW ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_VIEW ].m_sName );
 			else
 			if (iCmd <= CMD_WATCH_SAVE)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_WATCHES ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_WATCHES ].m_sName );
 			else
 			if (iCmd <= CMD_WINDOW_OUTPUT)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_WINDOW ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_WINDOW ].m_sName );
 			else
 			if (iCmd <= CMD_ZEROPAGE_POINTER_SAVE)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_ZEROPAGE ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_ZEROPAGE ].m_sName );
 			else
 				wsprintf( sCategory, "Unknown!" );
 

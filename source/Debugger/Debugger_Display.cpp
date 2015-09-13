@@ -1223,7 +1223,7 @@ void DrawBreakpoints ( int line )
 //===========================================================================
 int GetConsoleLineHeightPixels()
 {
-	int nHeight = nHeight = g_aFontConfig[ FONT_CONSOLE ]._nFontHeight; // _nLineHeight; // _nFontHeight;
+	int nHeight = g_aFontConfig[ FONT_CONSOLE ]._nFontHeight; // _nLineHeight; // _nFontHeight;
 /*
 	if (g_iFontSpacing == FONT_SPACING_CLASSIC)
 	{

@@ -558,7 +558,7 @@ void SetCurrentImageDir(const char* pszImageDir)
 	strcpy(g_sCurrentDir, pszImageDir);
 
 	int nLen = strlen( g_sCurrentDir );
-	if( g_sCurrentDir[ nLen - 1 ] != '\\' )
+	if ((nLen > 0) && (g_sCurrentDir[ nLen - 1 ] != '\\'))
 	{
 		g_sCurrentDir[ nLen + 0 ] = '\\';
 		g_sCurrentDir[ nLen + 1 ] = 0;
@@ -744,6 +744,7 @@ static int DoDiskInsert(const int nDrive, LPCSTR szFileName)
 
 int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 {
+	bool bShutdown = false;
 	bool bSetFullScreen = false;
 	bool bBoot = false;
 	LPSTR szImageName_drive1 = NULL;
@@ -1011,7 +1012,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		if (bShowAboutDlg)
 		{
 			if (!AboutDlg())
-				PostMessage(g_hFrameWindow, WM_DESTROY, 0, 0);								// Close everything down
+				bShutdown = true;															// Close everything down
 			else
 				RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, VERSIONSTRING);	// Only save version after user accepts license
 		}
@@ -1027,13 +1028,13 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		if (!bSysClkOK)
 		{
 			MessageBox(g_hFrameWindow, "DirectX failed to create SystemClock instance", TEXT("AppleWin Error"), MB_OK);
-			PostMessage(g_hFrameWindow, WM_DESTROY, 0, 0);	// Close everything down
+			bShutdown = true;
 		}
 
 		if (g_bCustomRomF8Failed)
 		{
 			MessageBox(g_hFrameWindow, "Failed to load custom F8 rom (not found or not exactly 2KB)", TEXT("AppleWin Error"), MB_OK);
-			PostMessage(g_hFrameWindow, WM_DESTROY, 0, 0);	// Close everything down
+			bShutdown = true;
 		}
 
 		tfe_init();
@@ -1042,16 +1043,24 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		Snapshot_Startup();		// Do this after everything has been init'ed
 		LogFileOutput("Main: Snapshot_Startup()\n");
 
-		if (bSetFullScreen)
+		if (bShutdown)
 		{
-			PostMessage(g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
-			bSetFullScreen = false;
+			PostMessage(g_hFrameWindow, WM_DESTROY, 0, 0);	// Close everything down
+			// NB. If shutting down, then don't post any other messages (GH#286)
 		}
-
-		if (bBoot)
+		else
 		{
-			PostMessage(g_hFrameWindow, WM_USER_BOOT, 0, 0);
-			bBoot = false;
+			if (bSetFullScreen)
+			{
+				PostMessage(g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
+				bSetFullScreen = false;
+			}
+
+			if (bBoot)
+			{
+				PostMessage(g_hFrameWindow, WM_USER_BOOT, 0, 0);
+				bBoot = false;
+			}
 		}
 
 		// ENTER THE MAIN MESSAGE LOOP

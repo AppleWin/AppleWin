@@ -362,6 +362,7 @@
     <ClCompile Include="source\Tape.cpp" />
     <ClCompile Include="source\z80emu.cpp" />
     <ClCompile Include="source\CPU.cpp" />
+    <ClCompile Include="source\SAM.cpp" />
     <ClCompile Include="source\Disk.cpp" />
     <ClCompile Include="source\DiskImage.cpp" />
     <ClCompile Include="source\DiskImageHelper.cpp" />

@@ -51,11 +51,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // their buffers are running low.
 //
 
-#define  SOUND_NONE    0
-#define  SOUND_DIRECT  1
-#define  SOUND_SMART   2
-#define  SOUND_WAVE    3
-
 static const unsigned short g_nSPKR_NumChannels = 1;
 static const DWORD g_dwDSSpkrBufferSize = MAX_SAMPLES * sizeof(short) * g_nSPKR_NumChannels;
 
@@ -66,17 +61,19 @@ static short*	g_pSpeakerBuffer = NULL;
 // Globals (SOUND_WAVE)
 const short		SPKR_DATA_INIT = (short)0x8000;
 
-static short	g_nSpeakerData	= SPKR_DATA_INIT;
+short		g_nSpeakerData	= SPKR_DATA_INIT;
 static UINT		g_nBufferIdx	= 0;
 
 static short*	g_pRemainderBuffer = NULL;
 static UINT		g_nRemainderBufferSize;		// Setup in SpkrInitialize()
 static UINT		g_nRemainderBufferIdx;		// Setup in SpkrInitialize()
 
-
 // Application-wide globals:
 DWORD			soundtype		= SOUND_WAVE;
 double		    g_fClksPerSpkrSample;		// Setup in SetClksPerSpkrSample()
+
+// Allow temporary quietening of speaker (8 bit DAC)
+bool			g_bQuieterSpeaker = false;
 
 // Globals
 static DWORD	lastcyclenum	= 0;
@@ -226,7 +223,7 @@ void SpkrDestroy ()
 		g_pSpeakerBuffer = NULL;
 		g_pRemainderBuffer = NULL;
 	}
-	else
+	else if (soundtype == SOUND_DIRECT || soundtype == SOUND_SMART)
 	{
 		InternalBeep(0,0);
 	}
@@ -328,8 +325,8 @@ void SpkrReset()
 
 BOOL SpkrSetEmulationType (HWND window, DWORD newtype)
 {
-  if (soundtype != SOUND_NONE)
-    SpkrDestroy();
+  SpkrDestroy();	// GH#295: Destroy for all types (even SOUND_NONE)
+
   soundtype = newtype;
   if (soundtype != SOUND_NONE)
     SpkrInitialize();
@@ -447,7 +444,21 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 
 	  UpdateSpkr();
 
-	  g_nSpeakerData = ~g_nSpeakerData;
+      if (g_bQuieterSpeaker)
+      {
+       // quieten the speaker if 8 bit DAC in use
+       if (g_nSpeakerData == (SPKR_DATA_INIT >> 2))
+        g_nSpeakerData = ~g_nSpeakerData;
+       else
+        g_nSpeakerData = SPKR_DATA_INIT>>2;
+      }
+      else
+      {
+       if (g_nSpeakerData == SPKR_DATA_INIT)
+        g_nSpeakerData = ~g_nSpeakerData;
+       else
+        g_nSpeakerData = SPKR_DATA_INIT;
+      }
   }
   else if (soundtype != SOUND_NONE)
   {
@@ -875,7 +886,7 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
 				sprintf(szDbg, "%010.3f: [Submit]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
 				OutputDebugString(szDbg);
-				if (g_fh) fprintf(g_fh, szDbg);
+				if (g_fh) fprintf(g_fh, "%s", szDbg);
 
 				dwByteOffset = dwCurrentWriteCursor;
 				nNumSamplesError = 0;
@@ -993,6 +1004,7 @@ static void Spkr_SetActive(bool bActive)
 		// Called by SpkrUpdate() after 0.2s of speaker inactivity
 		g_bSpkrRecentlyActive = false;
 		SpeakerVoice.bRecentlyActive = false;
+		g_bQuieterSpeaker = 0;	// undo any muting (for 8 bit DAC)
 	}
 }
 

@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,8,0,8);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,8,0,12);
 
 
 // Public _________________________________________________________________________________________
@@ -555,8 +555,6 @@ Update_t CmdBookmarkClear (int nArgs)
 {
 	int iBookmark = 0;
 
-	bool bClearAll = false;
-		
 	int iArg;
 	for (iArg = 1; iArg <= nArgs; iArg++ )
 	{
@@ -730,7 +728,7 @@ Update_t CmdProfile (int nArgs)
 {
 	if (! nArgs)
 	{
-		sprintf( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_RESET ].m_sName );
+		sprintf( g_aArgs[ 1 ].sArg, "%s", g_aParameters[ PARAM_RESET ].m_sName );
 		nArgs = 1;
 	}
 
@@ -938,8 +936,6 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 		// Show what the current break opcode is
 		wsprintf( sText, TEXT("%s full speed Break on Opcode: None")
 			, sAction
-			, g_iDebugBreakOnOpcode
-			, g_aOpcodes65C02[ g_iDebugBreakOnOpcode ].sMnemonic
 		);
 	else
 		// Show what the current break opcode is
@@ -1180,8 +1176,6 @@ Update_t CmdBreakpointAddSmart (int nArgs)
 		CmdBreakpointAddMem( nArgs );	
 		return UPDATE_BREAKPOINTS;
 	}
-		
-	return UPDATE_CONSOLE_DISPLAY;
 }
 
 
@@ -1195,7 +1189,6 @@ Update_t CmdBreakpointAddReg (int nArgs)
 
 	BreakpointSource_t   iSrc = BP_SRC_REG_PC;
 	BreakpointOperator_t iCmp = BP_OP_EQUAL  ;
-	int nLen = 1;
 
 	bool bHaveSrc = false;
 	bool bHaveCmp = false;
@@ -1204,7 +1197,6 @@ Update_t CmdBreakpointAddReg (int nArgs)
 	int iParamCmp;
 
 	int  nFound;
-	bool bAdded = false;
 
 	int  iArg   = 0;
 	while (iArg++ < nArgs)
@@ -1352,14 +1344,12 @@ Update_t CmdBreakpointAddPC (int nArgs)
 		g_aArgs[1].nValue = g_nDisasmCurAddress;
 	}
 
-	bool bHaveSrc = false;
 	bool bHaveCmp = false;
 
 //	int iParamSrc;
 	int iParamCmp;
 
 	int  nFound = 0;
-	bool bAdded = false;
 
 	int  iArg   = 0;
 	while (iArg++ < nArgs)
@@ -1413,14 +1403,10 @@ Update_t CmdBreakpointAddMem  (int nArgs)
 	BreakpointSource_t   iSrc = BP_SRC_MEM_1;
 	BreakpointOperator_t iCmp = BP_OP_EQUAL  ;
 
-	bool bAdded = false;
-
 	int iArg = 0;
 	
 	while (iArg++ < nArgs)
 	{
-		char *sArg = g_aArgs[iArg].sArg;
-
 		if (g_aArgs[iArg].bType & TYPE_OPERATOR)
 		{
 				return Help_Arg_1( CMD_BREAKPOINT_ADD_MEM );
@@ -1941,7 +1927,7 @@ Update_t CmdTraceFile (int nArgs)
 		fclose( g_hTraceFile );
 		g_hTraceFile = NULL;
 
-		sprintf( sText, "Trace stopped." );
+		_snprintf( sText, sizeof(sText), "Trace stopped." );
 	}
 	else
 	{
@@ -1961,16 +1947,17 @@ Update_t CmdTraceFile (int nArgs)
 
 		if (g_hTraceFile)
 		{
-			sprintf( sText, "Trace started: %s", sFilePath );
+			_snprintf( sText, sizeof(sText), "Trace started: %s", sFilePath );
 
 			g_bTraceHeader = true;
 		}
 		else
 		{
-			sprintf( sText, "Trace ERROR: %s", sFilePath );
+			_snprintf( sText, sizeof(sText), "Trace ERROR: %s", sFilePath );
 		}
 	}
-	
+
+	sText[sizeof(sText)-1] = 0;	// _snprintf needs null if string was longer than buffer
 	ConsoleBufferPush( sText );
 	ConsoleBufferToDisplay();
 
@@ -2299,7 +2286,7 @@ void ConfigSave_PrepareHeader ( const Parameters_e eCategory, const Commands_e e
 	sprintf( sText, "%s %s = %s\n"
 		, g_aTokens[ TOKEN_COMMENT_EOL  ].sToken
 		, g_aParameters[ PARAM_CATEGORY ].m_sName
-		, g_aParameters[ eCategory ]
+		, g_aParameters[ eCategory ].m_sName
 		);
 	g_ConfigState.PushLine( sText );
 
@@ -3621,7 +3608,8 @@ Update_t CmdDisk ( int nArgs)
 
 	// check for info command
 	int iParam = 0;
-	int nInfoFound = FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
+	FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
+
 	if (iParam == PARAM_DISK_INFO)
 	{
 		if (nArgs > 2)
@@ -3777,7 +3765,6 @@ Update_t CmdMemoryCompare (int nArgs )
 		return Help_Arg_1( CMD_MEMORY_COMPARE );
 
 	WORD nSrcAddr = g_aArgs[1].nValue;
-	WORD nLenByte = 0;
 	WORD nDstAddr = g_aArgs[3].nValue;
 
 	WORD nSrcSymAddr;
@@ -4216,20 +4203,71 @@ Update_t CmdMemoryLoad (int nArgs)
 		bBankSpecified = false;
 	}
 
-	if (g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA)
-		return Help_Arg_1( CMD_MEMORY_LOAD );
+	struct KnownFileType_t
+	{
+		char *pExtension;
+		int   nAddress;
+		int   nLength;
+	};
+
+	const KnownFileType_t aFileTypes[] = 
+	{
+		 { ""     ,      0,      0 } // n/a
+		,{ ".hgr" , 0x2000, 0x2000 }
+		,{ ".hgr2", 0x4000, 0x2000 }
+		// TODO: extension ".dhgr", ".dhgr2"
+	};
+	const int        nFileTypes = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
+	const KnownFileType_t *pFileType = NULL;
+
+	char *pFileName = g_aArgs[ 1 ].sArg;
+	int   nLen = strlen( pFileName );
+	char *pEnd = pFileName + + nLen - 1;
+	while( pEnd > pFileName )
+	{
+		if( *pEnd == '.' )
+		{
+			for( int i = 1; i < nFileTypes; i++ )
+			{
+				if( strcmp( pEnd, aFileTypes[i].pExtension ) == 0 )
+				{
+					pFileType = &aFileTypes[i];
+					break;
+				}
+			}
+		}
+
+		if( pFileType )
+			break;
+
+		pEnd--;
+	}
+
+	if( !pFileType )
+		if (g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA)
+			return Help_Arg_1( CMD_MEMORY_LOAD );
 
 	TCHAR sLoadSaveFilePath[ MAX_PATH ];
 	_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // TODO: g_sDebugDir
 
-	WORD nAddressStart;
-	WORD nAddress2   = 0;
-	WORD nAddressEnd = 0;
-	int  nAddressLen = 0;
+	WORD nAddressStart = 0;
+	WORD nAddress2     = 0;
+	WORD nAddressEnd   = 0;
+	int  nAddressLen   = 0;
 
-	RangeType_t eRange;
-	eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
-	if (nArgs > iArgComma2)
+	if( pFileType )
+	{
+		nAddressStart = pFileType->nAddress;
+		nAddressLen   = pFileType->nLength;
+		nAddressEnd   = pFileType->nLength + nAddressLen;
+	}
+
+	RangeType_t eRange = RANGE_MISSING_ARG_2;
+
+	if (g_aArgs[ iArgComma1 ].eToken == TOKEN_COMMA)
+		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
+
+	if( nArgs > iArgComma2 )
 	{
 		if (eRange == RANGE_MISSING_ARG_2)
 		{
@@ -4245,7 +4283,7 @@ Update_t CmdMemoryLoad (int nArgs)
 
 	if (bHaveFileName)
 	{
-		_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
+		_tcscpy( g_sMemoryLoadSaveFileName, pFileName );
 	}
 	_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
 	
@@ -4275,7 +4313,9 @@ Update_t CmdMemoryLoad (int nArgs)
 		size_t nRead = fread( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
 		if (nRead == 1)
 		{
-			ConsoleBufferPush( TEXT( "Loaded." ) );
+			char text[ 128 ];
+			sprintf( text, "Loaded @ A$%04X,L$%04X", nAddressStart, nAddressLen );
+			ConsoleBufferPush( text );
 		}
 		else
 		{
@@ -5537,6 +5577,7 @@ Update_t CmdOutputPrintf (int nArgs)
 						{
 							case '\\':
 								eThis = PS_ESCAPE;
+								break;
 							case '%':
 								eThis = PS_TYPE;
 								break;
@@ -6585,7 +6626,6 @@ Update_t CmdWindowViewCode (int nArgs)
 Update_t CmdWindowViewConsole (int nArgs)
 {
 	return _CmdWindowViewFull( WINDOW_CONSOLE );
-	return UPDATE_ALL;
 }
 
 //===========================================================================
@@ -6607,14 +6647,12 @@ Update_t CmdWindowViewOutput (int nArgs)
 Update_t CmdWindowViewSource (int nArgs)
 {
 	return _CmdWindowViewFull( WINDOW_CONSOLE );
-	return UPDATE_ALL;
 }
 
 //===========================================================================
 Update_t CmdWindowViewSymbols (int nArgs)
 {
 	return _CmdWindowViewFull( WINDOW_CONSOLE );
-	return UPDATE_ALL;
 }
 
 //===========================================================================
@@ -7329,7 +7367,7 @@ void OutputTraceLine ()
 			(unsigned)regs.sp,
 			(char*) sFlags
 			, sDisassembly
-			, sTarget
+			//, sTarget // TODO: Show target?
 		);
 	}
 }
@@ -8876,7 +8914,7 @@ void DebuggerMouseClick( int x, int y )
 				DebugDisplay( UPDATE_DISASM );
 			}
 			else         //      AD 00 00
-			if ((cx > 4) & (cx <= 13))
+			if ((cx > 4) && (cx <= 13))
 			{
 				g_bConfigDisasmOpcodesView ^= true;
 				DebugDisplay( UPDATE_DISASM );

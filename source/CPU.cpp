@@ -63,7 +63,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 // What about these:
 // . 65C02: STZ?, TRB?, TSB?
-// . Answer: TRB & TSB don't have affected adressing modes
+// . Answer: TRB & TSB don't have affected addressing modes
 // .         STZ probably doesn't add a cycle since otherwise it would be slower than STA which doesn't make sense.
 //
 // NB. 'Zero-page indexed' opcodes wrap back to zero-page.

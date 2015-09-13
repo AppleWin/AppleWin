@@ -1317,7 +1317,7 @@ LRESULT CALLBACK FrameWndProc (
 			{
 				RevealCursor();
 			}
-			else if (g_nAppMode == MODE_RUNNING)
+			else if (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING)
 			{
 				if (!sg_Mouse.IsEnabled())
 				{
@@ -1394,7 +1394,7 @@ LRESULT CALLBACK FrameWndProc (
         DrawCrosshairs(x,y);
 	    JoySetPosition(x-viewportx-2, g_nViewportCX-4, y-viewporty-2, g_nViewportCY-4);
       }
-	  else if (sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING))
+	  else if (sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
 	  {
 			if (g_bLastCursorInAppleViewport)
 				break;
@@ -1425,7 +1425,7 @@ LRESULT CALLBACK FrameWndProc (
 		if (wparam == IDEVENT_TIMER_MOUSE)
 		{
 			// NB. Need to check /g_bAppActive/ since WM_TIMER events still occur after AppleWin app has lost focus
-			if (g_bAppActive && sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING))
+			if (g_bAppActive && sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
 			{
 				if (!g_bLastCursorInAppleViewport)
 					break;
@@ -2480,7 +2480,6 @@ void FrameSetCursorPosByMousePos()
 	int iY, iMinY, iMaxY;
 	sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 
-	_ASSERT(iMinX == 0 && iMinY == 0);
 	float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));
 	float fScaleY = (float)(iY-iMinY) / ((float)(iMaxY-iMinY));
 
@@ -2516,7 +2515,6 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 	int iX, iMinX, iMaxX;
 	int iY, iMinY, iMaxY;
 	sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
-	_ASSERT(iMinX == 0 && iMinY == 0);
 
 	if (bLeavingAppleScreen)
 	{

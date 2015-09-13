@@ -172,6 +172,9 @@
     <ClCompile Include="source\Pravets.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
+    <ClCompile Include="source\SAM.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -423,6 +426,9 @@
     <ClInclude Include="source\Pravets.h">
       <Filter>Source Files\Model</Filter>
     </ClInclude>
+    <ClInclude Include="source\SAM.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\Applewin.bmp">
@@ -591,9 +597,6 @@
     <Text Include="docs\FAQ.txt">
       <Filter>Docs</Filter>
     </Text>
-    <Text Include="docs\History.txt">
-      <Filter>Docs</Filter>
-    </Text>
     <Text Include="docs\ToDo.txt">
       <Filter>Docs</Filter>
     </Text>
@@ -603,6 +606,7 @@
     <Text Include="docs\Wishlist.txt">
       <Filter>Docs</Filter>
     </Text>
+    <Text Include="bin\History.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Docs">

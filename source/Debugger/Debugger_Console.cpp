@@ -279,8 +279,9 @@ bool ConsoleBufferPush ( const char * pText )
 	const char *pSrc = pText;
 	conchar_t  *pDst = & g_aConsoleBuffer[ g_nConsoleBuffer ][ 0 ];
 
-	while ((x < CONSOLE_WIDTH) && (c = *pSrc))
+	while ((x < CONSOLE_WIDTH) && *pSrc)
 	{
+		c = *pSrc;
 		if ((c == '\n') || (x == (CONSOLE_WIDTH - 1)))
 		{
 			*pDst = 0;
