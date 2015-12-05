@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "AppleWin.h"
 #include "CPU.h"
 #include "Memory.h"
+#include "YamlHelper.h"
 
 #include "Configuration\PropertySheet.h"
 
@@ -851,6 +852,44 @@ void JoyportControl(const UINT uControl)
 void JoySetSnapshot_v1(const unsigned __int64 JoyCntrResetCycle)
 {
 	g_nJoyCntrResetCycle = JoyCntrResetCycle;
+}
+
+//
+
+#define SS_YAML_KEY_COUNTERRESETCYCLE "Counter Reset Cycle"
+#define SS_YAML_KEY_JOY0TRIMX "Joystick0 TrimX"
+#define SS_YAML_KEY_JOY0TRIMY "Joystick0 TrimY"
+#define SS_YAML_KEY_JOY1TRIMX "Joystick1 TrimX"
+#define SS_YAML_KEY_JOY1TRIMY "Joystick1 TrimY"
+
+static std::string JoyGetSnapshotStructName(void)
+{
+	static const std::string name("Joystick");
+	return name;
+}
+
+void JoySaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", JoyGetSnapshotStructName().c_str());
+	yamlSaveHelper.Save("%s: 0x%016llX\n", SS_YAML_KEY_COUNTERRESETCYCLE, g_nJoyCntrResetCycle);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_JOY0TRIMX, JoyGetTrim(true));
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_JOY0TRIMY, JoyGetTrim(false));
+	yamlSaveHelper.Save("%s: %d # not implemented yet\n", SS_YAML_KEY_JOY1TRIMX, 0);	// not implemented yet
+	yamlSaveHelper.Save("%s: %d # not implemented yet\n", SS_YAML_KEY_JOY1TRIMY, 0);	// not implemented yet
+}
+
+void JoyLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(JoyGetSnapshotStructName()))
+		return;
+
+	g_nJoyCntrResetCycle = yamlLoadHelper.GetMapValueUINT64(SS_YAML_KEY_COUNTERRESETCYCLE);
+	JoySetTrim(yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_JOY0TRIMX), true);
+	JoySetTrim(yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_JOY0TRIMY), false);
+	yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_JOY1TRIMX);	// dump value
+	yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_JOY1TRIMY);	// dump value
+
+	yamlLoadHelper.PopMap();
 }
 
 //

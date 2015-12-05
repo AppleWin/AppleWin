@@ -17,6 +17,8 @@ BYTE* AY8910_GetRegsPtr(UINT uChip);
 
 void AY8910UpdateSetCycles();
 
+UINT AY8910_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, UINT uChip, std::string& suffix);
+UINT AY8910_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uChip, std::string& suffix);
 UINT AY8910_GetSnapshot(const HANDLE hFile, UINT uChip);
 UINT AY8910_SetSnapshot(const HANDLE hFile, UINT uChip);
 
@@ -46,6 +48,8 @@ public:
 	void sound_frame( void );
 	BYTE* GetAYRegsPtr( void ) { return &sound_ay_registers[0]; }
 	static void SetCLK( double CLK ) { m_fCurrentCLK_AY8910 = CLK; }
+	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, std::string& suffix);
+	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, std::string& suffix);
 	UINT GetSnapshot(const HANDLE hFile);
 	UINT SetSnapshot(const HANDLE hFile);
 

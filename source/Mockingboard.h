@@ -25,8 +25,14 @@ void    MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 
 void    MB_GetSnapshot_v1(struct SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot);	// For debugger
 int     MB_SetSnapshot_v1(const struct SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot);
+std::string MB_GetSnapshotCardName(void);
+void    MB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
+bool    MB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 void    MB_GetSnapshot(const HANDLE hFile, const UINT uSlot);
 void    MB_SetSnapshot(const HANDLE hFile);
 
+std::string Phasor_GetSnapshotCardName(void);
+void Phasor_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
+bool Phasor_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 void Phasor_GetSnapshot(const HANDLE hFile);
 void Phasor_SetSnapshot(const HANDLE hFile);

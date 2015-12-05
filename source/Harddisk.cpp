@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "HardDisk.h"
 #include "Memory.h"
 #include "Registry.h"
+#include "YamlHelper.h"
 
 #include "..\resource\resource.h"
 
@@ -136,7 +137,7 @@ struct HDD
 static bool	g_bHD_RomLoaded = false;
 static bool g_bHD_Enabled = false;
 
-static BYTE	g_nHD_UnitNum = HARDDISK_1;
+static BYTE	g_nHD_UnitNum = HARDDISK_1<<7;	// b7=unit
 
 // The HDD interface has a single Command register for both drives:
 // . ProDOS will write to Command before switching drives
@@ -661,6 +662,150 @@ void HD_GetLightStatus (Disk_Status_e *pDisk1Status_)
 }
 
 //===========================================================================
+
+#define SS_YAML_VALUE_CARD_HDD "Generic HDD"
+
+#define SS_YAML_KEY_CURRENT_UNIT "Current Unit"
+#define SS_YAML_KEY_COMMAND "Command"
+
+#define SS_YAML_KEY_HDDUNIT "HDD Unit"
+#define SS_YAML_KEY_FILENAME "Filename"
+#define SS_YAML_KEY_ERROR "Error"
+#define SS_YAML_KEY_MEMBLOCK "MemBlock"
+#define SS_YAML_KEY_DISKBLOCK "DiskBlock"
+#define SS_YAML_KEY_IMAGELOADED "ImageLoaded"
+#define SS_YAML_KEY_STATUS_NEXT "Status Next"
+#define SS_YAML_KEY_STATUS_PREV "Status Prev"
+#define SS_YAML_KEY_BUF_PTR "Buffer Offset"
+#define SS_YAML_KEY_BUF "Buffer"
+
+std::string HD_GetSnapshotCardName(void)
+{
+	static const std::string name(SS_YAML_VALUE_CARD_HDD);
+	return name;
+}
+
+static void HD_SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit)
+{
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_HDDUNIT, unit);
+	yamlSaveHelper.Save("%s: %s\n", SS_YAML_KEY_FILENAME, yamlSaveHelper.GetSaveString(g_HardDisk[unit].fullname).c_str());
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_ERROR, g_HardDisk[unit].hd_error);
+	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_MEMBLOCK, g_HardDisk[unit].hd_memblock);
+	yamlSaveHelper.Save("%s: 0x%08X\n", SS_YAML_KEY_DISKBLOCK, g_HardDisk[unit].hd_diskblock);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_IMAGELOADED, g_HardDisk[unit].hd_imageloaded);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_STATUS_NEXT, g_HardDisk[unit].hd_status_next);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_STATUS_PREV, g_HardDisk[unit].hd_status_prev);
+	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_BUF_PTR, g_HardDisk[unit].hd_buf_ptr);
+
+	// New label
+	{
+		YamlSaveHelper::Label buffer(yamlSaveHelper, "%s:\n", SS_YAML_KEY_BUF);
+		yamlSaveHelper.SaveMapValueMemory(g_HardDisk[unit].hd_buf, HD_BLOCK_SIZE);
+	}
+}
+
+void HD_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	if (!HD_CardIsEnabled())
+		return;
+
+	YamlSaveHelper::Slot slot(yamlSaveHelper, HD_GetSnapshotCardName(), g_uSlot, 1);
+
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+	yamlSaveHelper.Save("%s: %d # b7=unit\n", SS_YAML_KEY_CURRENT_UNIT, g_nHD_UnitNum);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_COMMAND, g_nHD_Command);
+
+	HD_SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_1);
+	HD_SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_2);
+}
+
+static bool HD_LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
+{
+	std::string hddUnitName = std::string(SS_YAML_KEY_HDDUNIT) + (unit == HARDDISK_1 ? std::string("0") : std::string("1"));
+	if (!yamlLoadHelper.GetSubMap(hddUnitName))
+		throw std::string("Card: Expected key: ") + hddUnitName;
+
+	std::string filename = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_FILENAME).c_str();
+	//strcpy_s(g_HardDisk[Unit].fullname, sizeof(g_HardDisk[unit].fullname), filename.c_str());
+	g_HardDisk[unit].hd_error = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ERROR);
+	g_HardDisk[unit].hd_memblock = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_MEMBLOCK);
+	g_HardDisk[unit].hd_diskblock = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_DISKBLOCK);
+	yamlLoadHelper.GetMapValueBOOL(SS_YAML_KEY_IMAGELOADED);	// Consume
+	g_HardDisk[unit].hd_imageloaded = FALSE;			// Default to FALSE (until image is successfully loaded below)
+	g_HardDisk[unit].hd_status_next = (Disk_Status_e) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_STATUS_NEXT);
+	g_HardDisk[unit].hd_status_prev = (Disk_Status_e)  yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_STATUS_PREV);
+	g_HardDisk[unit].hd_buf_ptr = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_BUF_PTR);
+
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_BUF))
+		throw hddUnitName + std::string(": Missing: ") + std::string(SS_YAML_KEY_BUF);
+	yamlLoadHelper.GetMapValueMemory(g_HardDisk[unit].hd_buf, HD_BLOCK_SIZE);
+
+	yamlLoadHelper.PopMap();
+	yamlLoadHelper.PopMap();
+
+	//
+
+	bool bResSelectImage = false;
+
+	if (!filename.empty())
+	{
+		DWORD dwAttributes = GetFileAttributes(filename.c_str());
+		if (dwAttributes == INVALID_FILE_ATTRIBUTES)
+		{
+			// Get user to browse for file
+			bResSelectImage = HD_SelectImage(unit, filename.c_str());
+
+			dwAttributes = GetFileAttributes(filename.c_str());
+		}
+
+		bool bImageError = (dwAttributes == INVALID_FILE_ATTRIBUTES);
+		if (!bImageError)
+		{
+			if (!HD_Insert(unit, filename.c_str()))
+				bImageError = true;
+
+			// HD_Insert() sets up:
+			// . imagename
+			// . fullname
+			// . hd_imageloaded
+		}
+	}
+
+	return bResSelectImage;
+}
+
+bool HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, const std::string strSaveStatePath)
+{
+	if (slot != 7)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (version != 1)
+		throw std::string("Card: wrong version");
+
+	g_nHD_UnitNum = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CURRENT_UNIT);	// b7=unit
+	g_nHD_Command = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_COMMAND);
+
+	// Unplug all HDDs first in case HDD-2 is to be plugged in as HDD-1
+	for (UINT i=0; i<NUM_HARDDISKS; i++)
+	{
+		HD_Unplug(i);
+		ZeroMemory(&g_HardDisk[i], sizeof(HDD));
+	}
+
+	bool bResSelectImage1 = HD_LoadSnapshotHDDUnit(yamlLoadHelper, HARDDISK_1);
+	bool bResSelectImage2 = HD_LoadSnapshotHDDUnit(yamlLoadHelper, HARDDISK_2);
+
+	if (!bResSelectImage1 && !bResSelectImage2)
+		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, strSaveStatePath.c_str());
+
+	HD_SetEnabled(true);
+
+	FrameRefreshStatus(DRAW_LEDS);
+
+	return true;
+}
+
+//---
 
 struct HDD_Unit
 {

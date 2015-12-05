@@ -25,6 +25,8 @@ void    JoySetTrim(short nValue, bool bAxisX);
 short   JoyGetTrim(bool bAxisX);
 void	JoyportControl(const UINT uControl);
 void    JoySetSnapshot_v1(const unsigned __int64 JoyCntrResetCycle);
+void    JoySaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+void    JoyLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 void    JoyGetSnapshot(unsigned __int64& rJoyCntrResetCycle, short* pJoystick0Trim, short* pJoystick1Trim);
 void    JoySetSnapshot(const unsigned __int64 JoyCntrResetCycle, const short* pJoystick0Trim, const short* pJoystick1Trim);
 

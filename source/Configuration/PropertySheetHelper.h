@@ -18,7 +18,6 @@ public:
 	void SetSlot5(SS_CARDTYPE NewCardType);
 	std::string BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE,TCHAR* FILEMASKS);
 	void SaveStateUpdate();
-	void GetDiskBaseNameWithAWS(TCHAR* pszFilename);
 	int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave);
 	void PostMsgAfterClose(HWND hWnd, PAGETYPE page);
 
@@ -49,6 +48,7 @@ private:
 	void RestoreCurrentConfig(void);
 	std::string GetSlot(const UINT uSlot);
 	std::string GetCardName(const SS_CARDTYPE CardType);
+	void GetDiskBaseNameWithAWS(TCHAR* pszFilename);
 
 	PAGETYPE m_LastPage;
 	UINT32 m_bmPages;

@@ -37,6 +37,9 @@ public:
 		m_iY = iY;
 	}
 
+	std::string GetSnapshotCardName(void);
+	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 	int GetSnapshot(const HANDLE hFile);
 	void SetSnapshot(const HANDLE hFile);
 
@@ -58,6 +61,8 @@ protected:
 	void SetClampX(int iMinX, int iMaxX);
 	void SetClampY(int iMinY, int iMaxY);
 
+	void SaveSnapshotMC6821(class YamlSaveHelper& yamlSaveHelper, std::string key);
+	void LoadSnapshotMC6821(class YamlLoadHelper& yamlLoadHelper, std::string key);
 
 	C6821	m_6821;
 

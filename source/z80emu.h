@@ -16,5 +16,8 @@
 void ConfigureSoftcard(LPBYTE pCxRomPeripheral, UINT uSlot);
 
 // NB. These are in z80.cpp:
+std::string Z80_GetSnapshotCardName(void);
+void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
+bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT version);
 void Z80_GetSnapshot(const HANDLE hFile, const UINT uZ80Slot);
 void Z80_SetSnapshot(const HANDLE hFile);

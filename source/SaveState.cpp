@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "SaveState_Structs_v1.h"
 #include "SaveState_Structs_v2.h"
+#include "YamlHelper.h"
 
 #include "AppleWin.h"
 #include "CPU.h"
@@ -52,13 +53,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration\IPropertySheet.h"
 
 
-#define DEFAULT_SNAPSHOT_NAME "SaveState.aws"
+#define DEFAULT_SNAPSHOT_NAME "SaveState.aws.yaml"
 
 bool g_bSaveStateOnExit = false;
 
 static std::string g_strSaveStateFilename;
 static std::string g_strSaveStatePathname;
 static std::string g_strSaveStatePath;
+
+static YamlHelper yamlHelper;
 
 //-----------------------------------------------------------------------------
 
@@ -490,6 +493,311 @@ static void LoadUnitConfig(DWORD Length, DWORD Version)
 	sg_PropertySheet.SetTheFreezesF8Rom(Config.Cfg.IsUsingFreezesF8Rom);
 }
 
+//---
+
+static std::string GetSnapshotUnitApple2Name(void)
+{
+	static const std::string name("Apple2");
+	return name;
+}
+
+static std::string GetSnapshotUnitSlotsName(void)
+{
+	static const std::string name("Slots");
+	return name;
+}
+
+#define SS_YAML_KEY_MODEL "Model"
+
+#define SS_YAML_VALUE_APPLE2			"Apple]["
+#define SS_YAML_VALUE_APPLE2PLUS		"Apple][+"
+#define SS_YAML_VALUE_APPLE2E			"Apple//e"
+#define SS_YAML_VALUE_APPLE2EENHANCED	"Enhanced Apple//e"
+#define SS_YAML_VALUE_APPLE2C			"Apple2c"
+#define SS_YAML_VALUE_PRAVETS82			"Pravets82"
+#define SS_YAML_VALUE_PRAVETS8M			"Pravets8M"
+#define SS_YAML_VALUE_PRAVETS8A			"Pravets8A"
+
+static eApple2Type ParseApple2Type(std::string type)
+{
+	if (type == SS_YAML_VALUE_APPLE2)				return A2TYPE_APPLE2;
+	else if (type == SS_YAML_VALUE_APPLE2PLUS)		return A2TYPE_APPLE2PLUS;
+	else if (type == SS_YAML_VALUE_APPLE2E)			return A2TYPE_APPLE2E;
+	else if (type == SS_YAML_VALUE_APPLE2EENHANCED)	return A2TYPE_APPLE2EENHANCED;
+	else if (type == SS_YAML_VALUE_APPLE2C)			return A2TYPE_APPLE2C;
+	else if (type == SS_YAML_VALUE_PRAVETS82)		return A2TYPE_PRAVETS82;
+	else if (type == SS_YAML_VALUE_PRAVETS8M)		return A2TYPE_PRAVETS8M;
+	else if (type == SS_YAML_VALUE_PRAVETS8A)		return A2TYPE_PRAVETS8A;
+
+	throw std::string("Load: Unknown Apple2 type");
+}
+
+static std::string GetApple2Type(void)
+{
+	switch (g_Apple2Type)
+	{
+		case A2TYPE_APPLE2:			return SS_YAML_VALUE_APPLE2;
+		case A2TYPE_APPLE2PLUS:		return SS_YAML_VALUE_APPLE2PLUS;
+		case A2TYPE_APPLE2E:		return SS_YAML_VALUE_APPLE2E;
+		case A2TYPE_APPLE2EENHANCED:return SS_YAML_VALUE_APPLE2EENHANCED;
+		case A2TYPE_APPLE2C:		return SS_YAML_VALUE_APPLE2C;
+		case A2TYPE_PRAVETS82:		return SS_YAML_VALUE_PRAVETS82;
+		case A2TYPE_PRAVETS8M:		return SS_YAML_VALUE_PRAVETS8M;
+		case A2TYPE_PRAVETS8A:		return SS_YAML_VALUE_PRAVETS8A;
+		default:
+			throw std::string("Save: Unknown Apple2 type");
+	}
+}
+
+//---
+
+static UINT ParseFileHdr(void)
+{
+	std::string scalar;
+	if (!yamlHelper.GetScalar(scalar))
+		throw std::string(SS_YAML_KEY_FILEHDR ": Failed to find scalar");
+
+	if (scalar != SS_YAML_KEY_FILEHDR)
+		throw std::string("Failed to find file header");
+
+	yamlHelper.GetMapStartEvent();
+
+	YamlLoadHelper yamlLoadHelper(yamlHelper);
+
+	//
+
+	std::string value = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_TAG);
+	if (value != SS_YAML_VALUE_AWSS)
+	{
+		//printf("%s: Bad tag (%s) - expected %s\n", SS_YAML_KEY_FILEHDR, value.c_str(), SS_YAML_VALUE_AWSS);
+		throw std::string(SS_YAML_KEY_FILEHDR ": Bad tag");
+	}
+
+	return yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_VERSION);
+}
+
+//---
+
+static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
+{
+	if (version != UNIT_APPLE2_VER)
+		throw std::string(SS_YAML_KEY_UNIT ": Apple2: Version mismatch");
+
+	std::string model = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_MODEL);
+	g_Apple2Type = ParseApple2Type(model);
+
+	CpuLoadSnapshot(yamlLoadHelper);
+	JoyLoadSnapshot(yamlLoadHelper);
+	KeybLoadSnapshot(yamlLoadHelper);
+	SpkrLoadSnapshot(yamlLoadHelper);
+	VideoLoadSnapshot(yamlLoadHelper);
+	MemLoadSnapshot(yamlLoadHelper);
+}
+
+//---
+
+static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
+{
+	if (version != UNIT_SLOTS_VER)
+		throw std::string(SS_YAML_KEY_UNIT ": Slots: Version mismatch");
+
+	while (1)
+	{
+		std::string scalar = yamlLoadHelper.GetMapNextSlotNumber();
+		if (scalar.empty())
+			break;	// done all slots
+
+		const int slot = strtoul(scalar.c_str(), NULL, 10);	// NB. aux slot supported as a different "unit"
+		if (slot < 1 || slot > 7)
+			throw std::string("Slots: Invalid slot #: ") + scalar;
+
+		yamlLoadHelper.GetSubMap(scalar);
+
+		std::string card = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_CARD);
+		UINT version     = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_VERSION);
+
+		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
+			throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
+
+		bool bIsCardSupported = true;
+		SS_CARDTYPE type = CT_Empty;
+		bool bRes = false;
+
+		if (card == Printer_GetSnapshotCardName())
+		{
+			bRes = Printer_LoadSnapshot(yamlLoadHelper, slot, version);
+			type = CT_GenericPrinter;
+		}
+		else if (card == sg_SSC.GetSnapshotCardName())
+		{
+			bRes = sg_SSC.LoadSnapshot(yamlLoadHelper, slot, version);
+			type = CT_SSC;
+		}
+		else if (card == sg_Mouse.GetSnapshotCardName())
+		{
+			bRes = sg_Mouse.LoadSnapshot(yamlLoadHelper, slot, version);
+			type = CT_MouseInterface;
+		}
+		else if (card == Z80_GetSnapshotCardName())
+		{
+			bRes = Z80_LoadSnapshot(yamlLoadHelper, slot, version);
+			type = CT_Z80;
+		}
+		else if (card == MB_GetSnapshotCardName())
+		{
+			bRes = MB_LoadSnapshot(yamlLoadHelper, slot, version);
+			type = CT_MockingboardC;
+		}
+		else if (card == Phasor_GetSnapshotCardName())
+		{
+			bRes = Phasor_LoadSnapshot(yamlLoadHelper, slot, version);
+			type = CT_Phasor;
+		}
+		else if (card == DiskGetSnapshotCardName())
+		{
+			bRes = DiskLoadSnapshot(yamlLoadHelper, slot, version);
+			type = CT_Disk2;
+		}
+		else if (card == HD_GetSnapshotCardName())
+		{
+			bRes = HD_LoadSnapshot(yamlLoadHelper, slot, version, g_strSaveStatePath);
+			m_ConfigNew.m_bEnableHDD = true;
+			type = CT_GenericHDD;
+		}
+		else
+		{
+			bIsCardSupported = false;
+			throw std::string("Slots: Unknown card: " + card);	// todo: don't throw - just ignore & continue
+		}
+
+		if (bRes && bIsCardSupported)
+		{
+			m_ConfigNew.m_Slot[slot] = type;
+		}
+
+		yamlLoadHelper.PopMap();
+		yamlLoadHelper.PopMap();
+	}
+}
+
+//---
+
+static void ParseUnit(void)
+{
+	yamlHelper.GetMapStartEvent();
+
+	YamlLoadHelper yamlLoadHelper(yamlHelper);
+
+	std::string unit = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_TYPE);
+	UINT version = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_VERSION);
+
+	if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
+		throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
+
+	if (unit == GetSnapshotUnitApple2Name())
+	{
+		ParseUnitApple2(yamlLoadHelper, version);
+	}
+	else if (unit == MemGetSnapshotUnitAuxSlotName())
+	{
+		MemLoadSnapshotAux(yamlLoadHelper, version);
+	}
+	else if (unit == GetSnapshotUnitSlotsName())
+	{
+		ParseSlots(yamlLoadHelper, version);
+	}
+	else if (unit == SS_YAML_VALUE_UNIT_CONFIG)
+	{
+		//...
+	}
+	else
+	{
+		throw std::string(SS_YAML_KEY_UNIT ": Unknown type: " ) + unit;
+	}
+}
+
+static void Snapshot_LoadState_v2(void)
+{
+	try
+	{
+		int res = yamlHelper.InitParser( g_strSaveStatePathname.c_str() );
+		if (!res)
+			throw std::string("Failed to initialize parser or open file");	// TODO: disambiguate
+
+		UINT version = ParseFileHdr();
+		if (version != SS_FILE_VER)
+			throw std::string("Version mismatch");
+
+		//
+
+		CConfigNeedingRestart ConfigOld;
+		ConfigOld.m_Slot[1] = CT_GenericPrinter;	// fixme
+		ConfigOld.m_Slot[2] = CT_SSC;				// fixme
+		//ConfigOld.m_Slot[3] = CT_Uthernet;		// todo
+		ConfigOld.m_Slot[6] = CT_Disk2;				// fixme
+		ConfigOld.m_Slot[7] = ConfigOld.m_bEnableHDD ? CT_GenericHDD : CT_Empty;	// fixme
+		//ConfigOld.m_SlotAux = ?;					// fixme
+
+		for (UINT i=0; i<NUM_SLOTS; i++)
+			m_ConfigNew.m_Slot[i] = CT_Empty;
+		m_ConfigNew.m_SlotAux = CT_Empty;
+		m_ConfigNew.m_bEnableHDD = false;
+		//m_ConfigNew.m_bEnableTheFreezesF8Rom = ?;	// todo: when support saving config
+		//m_ConfigNew.m_bEnhanceDisk = ?;			// todo: when support saving config
+
+		MemReset();
+		PravetsReset();
+		DiskReset();
+		KeybReset();
+		VideoResetState();
+		MB_Reset();
+#ifdef USE_SPEECH_API
+		g_Speech.Reset();
+#endif
+		sg_Mouse.Uninitialize();
+		sg_Mouse.Reset();
+		HD_SetEnabled(false);
+
+		while(1)
+		{
+			std::string scalar;
+			if (!yamlHelper.GetScalar(scalar))
+				break;
+
+			if (scalar == SS_YAML_KEY_UNIT)
+				ParseUnit();
+			else
+				throw std::string("Unknown top-level scalar: " + scalar);
+		}
+
+		SetLoadedSaveStateFlag(true);
+
+		// NB. The following disparity should be resolved:
+		// . A change in h/w via the Configuration property sheets results in a the VM completely restarting (via WM_USER_RESTART)
+		// . A change in h/w via loading a save-state avoids this VM restart
+		// The latter is the desired approach (as the former needs a "power-on" / F2 to start things again)
+
+		sg_PropertySheet.ApplyNewConfig(m_ConfigNew, ConfigOld);
+
+		MemInitializeROM();
+		MemInitializeCustomF8ROM();
+		MemInitializeIO();
+
+		MemUpdatePaging(TRUE);
+	}
+	catch(std::string szMessage)
+	{
+		MessageBox(	g_hFrameWindow,
+					szMessage.c_str(),
+					TEXT("Load State"),
+					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+
+		PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
+	}
+
+	yamlHelper.FinaliseParser();
+}
+
 static void Snapshot_LoadState_v2(DWORD dwVersion)
 {
 	try
@@ -589,6 +897,16 @@ static void Snapshot_LoadState_v2(DWORD dwVersion)
 
 void Snapshot_LoadState()
 {
+	const std::string ext_yaml = (".yaml");
+	const size_t pos = g_strSaveStatePathname.size() - ext_yaml.size();
+	if (g_strSaveStatePathname.find(ext_yaml, pos) != std::string::npos)	// find ".yaml" at end of pathname
+	{
+		Snapshot_LoadState_v2();
+		return;
+	}
+
+	//
+
 	SS_FILE_HDR Hdr;
 	Snapshot_LoadState_FileHdr(Hdr);
 
@@ -672,6 +990,71 @@ static void SaveUnitConfig()
 // todo:
 // . Uthernet card
 
+#if 1
+void Snapshot_SaveState(void)
+{
+	try
+	{
+		YamlSaveHelper yamlSaveHelper(g_strSaveStatePathname);
+		yamlSaveHelper.FileHdr(SS_FILE_VER);
+
+		// Unit: Apple2
+		{
+			yamlSaveHelper.UnitHdr(GetSnapshotUnitApple2Name(), UNIT_APPLE2_VER);
+			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+			yamlSaveHelper.Save("%s: %s\n", SS_YAML_KEY_MODEL, GetApple2Type().c_str());
+			CpuSaveSnapshot(yamlSaveHelper);
+			JoySaveSnapshot(yamlSaveHelper);
+			KeybSaveSnapshot(yamlSaveHelper);
+			SpkrSaveSnapshot(yamlSaveHelper);
+			VideoSaveSnapshot(yamlSaveHelper);
+			MemSaveSnapshot(yamlSaveHelper);
+		}
+
+		// Unit: Aux slot
+		MemSaveSnapshotAux(yamlSaveHelper);
+
+		// Unit: Slots
+		{
+			yamlSaveHelper.UnitHdr(GetSnapshotUnitSlotsName(), UNIT_SLOTS_VER);
+			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+			Printer_SaveSnapshot(yamlSaveHelper);
+
+			sg_SSC.SaveSnapshot(yamlSaveHelper);
+
+			sg_Mouse.SaveSnapshot(yamlSaveHelper);
+
+			if (g_Slot4 == CT_Z80)
+				Z80_SaveSnapshot(yamlSaveHelper, 4);
+
+			if (g_Slot5 == CT_Z80)
+				Z80_SaveSnapshot(yamlSaveHelper, 5);
+
+			if (g_Slot4 == CT_MockingboardC)
+				MB_SaveSnapshot(yamlSaveHelper, 4);
+
+			if (g_Slot5 == CT_MockingboardC)
+				MB_SaveSnapshot(yamlSaveHelper, 5);
+
+			if (g_Slot4 == CT_Phasor)
+				Phasor_SaveSnapshot(yamlSaveHelper, 4);
+
+			DiskSaveSnapshot(yamlSaveHelper);
+
+			HD_SaveSnapshot(yamlSaveHelper);
+		}
+	}
+	catch(std::string szMessage)
+	{
+		MessageBox(	g_hFrameWindow,
+					szMessage.c_str(),
+					TEXT("Save State"),
+					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+	}
+}
+#else
 void Snapshot_SaveState()
 {
 	try
@@ -780,6 +1163,7 @@ void Snapshot_SaveState()
 	CloseHandle(m_hFile);
 	m_hFile = INVALID_HANDLE_VALUE;
 }
+#endif
 
 //-----------------------------------------------------------------------------
 

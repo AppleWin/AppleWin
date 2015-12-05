@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Keyboard.h"
 #include "Pravets.h"
 #include "Tape.h"
+#include "YamlHelper.h"
 
 static bool g_bKeybBufferEnable = false;
 
@@ -503,6 +504,32 @@ void KeybToggleP8ACapsLock ()
 void KeybSetSnapshot_v1(const BYTE LastKey)
 {
 	g_nLastKey = LastKey;
+}
+
+//
+
+#define SS_YAML_KEY_LASTKEY "Last Key"
+
+static std::string KeybGetSnapshotStructName(void)
+{
+	static const std::string name("Keyboard");
+	return name;
+}
+
+void KeybSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", KeybGetSnapshotStructName().c_str());
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_LASTKEY, g_nLastKey);
+}
+
+void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(KeybGetSnapshotStructName()))
+		return;
+
+	g_nLastKey = (BYTE) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_LASTKEY);
+
+	yamlLoadHelper.PopMap();
 }
 
 //

@@ -126,7 +126,7 @@ struct SY6522
 
 struct SSI263A
 {
-	BYTE DurationPhonome;
+	BYTE DurationPhoneme;
 	BYTE Inflection;		// I10..I3
 	BYTE RateInflection;
 	BYTE CtrlArtAmp;

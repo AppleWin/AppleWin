@@ -85,6 +85,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "SoundCore.h"
+#include "YamlHelper.h"
 
 #include "AY8910.h"
 #include "SSI263Phonemes.h"
@@ -539,7 +540,7 @@ void SSI263_Play(unsigned int nPhoneme);
 #if 0
 typedef struct
 {
-	BYTE DurationPhonome;
+	BYTE DurationPhoneme;
 	BYTE Inflection;		// I10..I3
 	BYTE RateInflection;
 	BYTE CtrlArtAmp;
@@ -603,7 +604,7 @@ static void SSI263_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 		}
 		pMB->SpeechChip.CurrentMode &= ~1;	// Clear SSI263's D7 pin
 
-		pMB->SpeechChip.DurationPhonome = nValue;
+		pMB->SpeechChip.DurationPhoneme = nValue;
 
 		g_nSSI263Device = nDevice;
 
@@ -635,7 +636,7 @@ static void SSI263_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 		if(g_fh) fprintf(g_fh, "CTRL  = %d, ART = 0x%02X, AMP=0x%02X\n", nValue>>7, (nValue&ARTICULATION_MASK)>>4, nValue&AMPLITUDE_MASK);
 #endif
 		if((pMB->SpeechChip.CtrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK))	// H->L
-			pMB->SpeechChip.CurrentMode = pMB->SpeechChip.DurationPhonome & DURATION_MODE_MASK;
+			pMB->SpeechChip.CurrentMode = pMB->SpeechChip.DurationPhoneme & DURATION_MODE_MASK;
 		pMB->SpeechChip.CtrlArtAmp = nValue;
 		break;
 	case SSI_FILFREQ:
@@ -1833,7 +1834,7 @@ int MB_SetSnapshot_v1(const SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD /*dw
 		// FIX THIS:
 		// . Speech chip could be Votrax instead
 		// . Is this IRQ compatible with Phasor?
-		if(pMB->SpeechChip.DurationPhonome)
+		if(pMB->SpeechChip.DurationPhoneme)
 		{
 			g_nSSI263Device = nDeviceNum;
 
@@ -1889,6 +1890,325 @@ static UINT DoReadFile(const HANDLE hFile, void* const pData, const UINT Length)
 
 //===========================================================================
 
+const UINT NUM_MB_UNITS = 2;
+const UINT NUM_PHASOR_UNITS = 2;
+
+#define SS_YAML_KEY_MB_UNIT "Unit"
+#define SS_YAML_KEY_SY6522 "SY6522"
+#define SS_YAML_KEY_SY6522_REG_ORB "ORB"
+#define SS_YAML_KEY_SY6522_REG_ORA "ORA"
+#define SS_YAML_KEY_SY6522_REG_DDRB "DDRB"
+#define SS_YAML_KEY_SY6522_REG_DDRA "DDRA"
+#define SS_YAML_KEY_SY6522_REG_T1_COUNTER "Timer1 Counter"
+#define SS_YAML_KEY_SY6522_REG_T1_LATCH "Timer1 Latch"
+#define SS_YAML_KEY_SY6522_REG_T2_COUNTER "Timer2 Counter"
+#define SS_YAML_KEY_SY6522_REG_T2_LATCH "Timer2 Latch"
+#define SS_YAML_KEY_SY6522_REG_SERIAL_SHIFT "Serial Shift"
+#define SS_YAML_KEY_SY6522_REG_ACR "ACR"
+#define SS_YAML_KEY_SY6522_REG_PCR "PCR"
+#define SS_YAML_KEY_SY6522_REG_IFR "IFR"
+#define SS_YAML_KEY_SY6522_REG_IER "IER"
+#define SS_YAML_KEY_SSI263 "SSI263"
+#define SS_YAML_KEY_SSI263_REG_DUR_PHON "Duration / Phoneme"
+#define SS_YAML_KEY_SSI263_REG_INF "Inflection"
+#define SS_YAML_KEY_SSI263_REG_RATE_INF "Rate / Inflection"
+#define SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP "Control / Articulation / Amplitude"
+#define SS_YAML_KEY_SSI263_REG_FILTER_FREQ "Filter Frequency"
+#define SS_YAML_KEY_SSI263_REG_CURRENT_MODE "Current Mode"
+#define SS_YAML_KEY_AY_CURR_REG "AY Current Register"
+#define SS_YAML_KEY_TIMER1_IRQ "Timer1 IRQ Pending"
+#define SS_YAML_KEY_TIMER2_IRQ "Timer2 IRQ Pending"
+#define SS_YAML_KEY_SPEECH_IRQ "Speech IRQ Pending"
+
+#define SS_YAML_KEY_PHASOR_UNIT "Unit"
+#define SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR "Clock Scale Factor"
+#define SS_YAML_KEY_PHASOR_MODE "Mode"
+
+std::string MB_GetSnapshotCardName(void)
+{
+	static const std::string name("Mockingboard C");
+	return name;
+}
+
+std::string Phasor_GetSnapshotCardName(void)
+{
+	static const std::string name("Phasor");
+	return name;
+}
+
+static void SaveSnapshotSY6522(YamlSaveHelper& yamlSaveHelper, SY6522& sy6522)
+{
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SY6522);
+
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_ORB, sy6522.ORB);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_ORA, sy6522.ORA);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_DDRB, sy6522.DDRB);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_DDRA, sy6522.DDRA);
+	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_SY6522_REG_T1_COUNTER, sy6522.TIMER1_COUNTER);
+	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_SY6522_REG_T1_LATCH,   sy6522.TIMER1_LATCH);
+	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_SY6522_REG_T2_COUNTER, sy6522.TIMER2_COUNTER);
+	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_SY6522_REG_T2_LATCH,   sy6522.TIMER2_LATCH);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_SERIAL_SHIFT, sy6522.SERIAL_SHIFT);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_ACR, sy6522.ACR);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_PCR, sy6522.PCR);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_IFR, sy6522.IFR);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_IER, sy6522.IER);
+	// NB. No need to write ORA_NO_HS, since same data as ORA, just without handshake
+}
+
+static void SaveSnapshotSSI263(YamlSaveHelper& yamlSaveHelper, SSI263A& ssi263)
+{
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
+
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SSI263_REG_DUR_PHON, ssi263.DurationPhoneme);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SSI263_REG_INF, ssi263.Inflection);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SSI263_REG_RATE_INF, ssi263.RateInflection);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, ssi263.CtrlArtAmp);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SSI263_REG_FILTER_FREQ, ssi263.FilterFreq);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SSI263_REG_CURRENT_MODE, ssi263.CurrentMode);
+}
+
+void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
+{
+	const UINT nMbCardNum = uSlot - SLOT4;
+	UINT nDeviceNum = nMbCardNum*2;
+	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
+
+	YamlSaveHelper::Slot slot(yamlSaveHelper, MB_GetSnapshotCardName(), uSlot, 1);	// fixme: object should be just 1 Mockingboard card & it will know its slot
+
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+	for(UINT i=0; i<NUM_MB_UNITS; i++)
+	{
+		YamlSaveHelper::Label unit(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_MB_UNIT, i);
+
+		SaveSnapshotSY6522(yamlSaveHelper, pMB->sy6522);
+		AY8910_SaveSnapshot(yamlSaveHelper, nDeviceNum, std::string(""));
+		SaveSnapshotSSI263(yamlSaveHelper, pMB->SpeechChip);
+
+		yamlSaveHelper.Save("%s: 0x%1X\n", SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
+		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, 0);
+		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, 0);
+		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_SPEECH_IRQ, 0);
+
+		nDeviceNum++;
+		pMB++;
+	}
+}
+
+static void LoadSnapshotSY6522(YamlLoadHelper& yamlLoadHelper, SY6522& sy6522)
+{
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SY6522))
+		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_SY6522);
+
+	sy6522.ORB  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_ORB);
+	sy6522.ORA  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_ORA);
+	sy6522.DDRB = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_DDRB);
+	sy6522.DDRA = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_DDRA);
+	sy6522.TIMER1_COUNTER.w = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_T1_COUNTER);
+	sy6522.TIMER1_LATCH.w   = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_T1_LATCH);
+	sy6522.TIMER2_COUNTER.w = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_T2_COUNTER);
+	sy6522.TIMER2_LATCH.w   = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_T2_LATCH);
+	sy6522.SERIAL_SHIFT     = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_SERIAL_SHIFT);
+	sy6522.ACR  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_ACR);
+	sy6522.PCR  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_PCR);
+	sy6522.IFR  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_IFR);
+	sy6522.IER  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_IER);
+	sy6522.ORA_NO_HS = 0;	// Not saved
+
+	yamlLoadHelper.PopMap();
+}
+
+static void LoadSnapshotSSI263(YamlLoadHelper& yamlLoadHelper, SSI263A& ssi263)
+{
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263))
+		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_SSI263);
+
+	ssi263.DurationPhoneme = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SSI263_REG_DUR_PHON);
+	ssi263.Inflection      = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SSI263_REG_INF);
+	ssi263.RateInflection  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SSI263_REG_RATE_INF);
+	ssi263.CtrlArtAmp      = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP);
+	ssi263.FilterFreq      = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SSI263_REG_FILTER_FREQ);
+	ssi263.CurrentMode     = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SSI263_REG_CURRENT_MODE);
+
+	yamlLoadHelper.PopMap();
+}
+
+bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+{
+	if (slot != 4 && slot != 5)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (version != 1)
+		throw std::string("Card: wrong version");
+
+	AY8910UpdateSetCycles();
+
+	const UINT nMbCardNum = slot - SLOT4;
+	UINT nDeviceNum = nMbCardNum*2;
+	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
+
+	g_nSSI263Device = 0;
+	g_nCurrentActivePhoneme = -1;
+
+	for(UINT i=0; i<NUM_MB_UNITS; i++)
+	{
+		char szNum[2] = {'0'+i,0};
+		std::string unit = std::string(SS_YAML_KEY_MB_UNIT) + std::string(szNum);
+		if (!yamlLoadHelper.GetSubMap(unit))
+			throw std::string("Card: Expected key: ") + std::string(unit);
+
+		LoadSnapshotSY6522(yamlLoadHelper, pMB->sy6522);
+		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum, std::string(""));
+		LoadSnapshotSSI263(yamlLoadHelper, pMB->SpeechChip);
+
+		pMB->nAYCurrentRegister = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_AY_CURR_REG);
+		yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TIMER1_IRQ);	// Consume
+		yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TIMER2_IRQ);	// Consume
+		yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SPEECH_IRQ);	// Consume
+
+		yamlLoadHelper.PopMap();
+
+		//
+
+		StartTimer(pMB);	// Attempt to start timer
+
+		// Crude - currently only support a single speech chip
+		// FIX THIS:
+		// . Speech chip could be Votrax instead
+		// . Is this IRQ compatible with Phasor?
+		if(pMB->SpeechChip.DurationPhoneme)
+		{
+			g_nSSI263Device = nDeviceNum;
+
+			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
+			{
+				pMB->sy6522.IFR |= IxR_PERIPHERAL;
+				UpdateIFR(pMB);
+				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
+			}
+		}
+
+		nDeviceNum++;
+		pMB++;
+	}
+
+	AY8910_InitClock((int)CLK_6502);
+
+	// Setup in MB_InitializeIO() -> MB_SetSoundcardType()
+	g_SoundcardType = CT_Empty;
+	g_bPhasorEnable = false;
+
+	return true;
+}
+
+void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
+{
+	if (uSlot != 4)
+		throw std::string("Card: Phasor only supported in slot-4");
+
+	UINT nDeviceNum = 0;
+	SY6522_AY8910* pMB = &g_MB[0];	// fixme: Phasor uses MB's slot4(2x6522), slot4(2xSSI263), but slot4+5(4xAY8910)
+
+	YamlSaveHelper::Slot slot(yamlSaveHelper, Phasor_GetSnapshotCardName(), uSlot, 1);	// fixme: object should be just 1 Mockingboard card & it will know its slot
+
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR, g_PhasorClockScaleFactor);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_PHASOR_MODE, g_nPhasorMode);
+
+	for(UINT i=0; i<NUM_PHASOR_UNITS; i++)
+	{
+		YamlSaveHelper::Label unit(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_PHASOR_UNIT, i);
+
+		SaveSnapshotSY6522(yamlSaveHelper, pMB->sy6522);
+		AY8910_SaveSnapshot(yamlSaveHelper, nDeviceNum+0, std::string("-A"));
+		AY8910_SaveSnapshot(yamlSaveHelper, nDeviceNum+1, std::string("-B"));
+		SaveSnapshotSSI263(yamlSaveHelper, pMB->SpeechChip);
+
+		yamlSaveHelper.Save("%s: 0x%1X\n", SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
+		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, 0);
+		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, 0);
+		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_SPEECH_IRQ, 0);
+
+		nDeviceNum += 2;
+		pMB++;
+	}
+}
+
+bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+{
+	if (slot != 4)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (version != 1)
+		throw std::string("Card: wrong version");
+
+	g_PhasorClockScaleFactor = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);
+	g_nPhasorMode = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PHASOR_MODE);
+
+	AY8910UpdateSetCycles();
+
+	UINT nDeviceNum = 0;
+	SY6522_AY8910* pMB = &g_MB[0];
+
+	g_nSSI263Device = 0;
+	g_nCurrentActivePhoneme = -1;
+
+	for(UINT i=0; i<NUM_PHASOR_UNITS; i++)
+	{
+		char szNum[2] = {'0'+i,0};
+		std::string unit = std::string(SS_YAML_KEY_MB_UNIT) + std::string(szNum);
+		if (!yamlLoadHelper.GetSubMap(unit))
+			throw std::string("Card: Expected key: ") + std::string(unit);
+
+		LoadSnapshotSY6522(yamlLoadHelper, pMB->sy6522);
+		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+0, std::string("-A"));
+		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+1, std::string("-B"));
+		LoadSnapshotSSI263(yamlLoadHelper, pMB->SpeechChip);
+
+		pMB->nAYCurrentRegister = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_AY_CURR_REG);
+		yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TIMER1_IRQ);	// Consume
+		yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TIMER2_IRQ);	// Consume
+		yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SPEECH_IRQ);	// Consume
+
+		yamlLoadHelper.PopMap();
+
+		//
+
+		StartTimer(pMB);	// Attempt to start timer
+
+		// Crude - currently only support a single speech chip
+		// FIX THIS:
+		// . Speech chip could be Votrax instead
+		// . Is this IRQ compatible with Phasor?
+		if(pMB->SpeechChip.DurationPhoneme)
+		{
+			g_nSSI263Device = nDeviceNum;
+
+			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
+			{
+				pMB->sy6522.IFR |= IxR_PERIPHERAL;
+				UpdateIFR(pMB);
+				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
+			}
+		}
+
+		nDeviceNum += 2;
+		pMB++;
+	}
+
+	AY8910_InitClock((int)(CLK_6502 * g_PhasorClockScaleFactor));
+
+	// Setup in MB_InitializeIO() -> MB_SetSoundcardType()
+	g_SoundcardType = CT_Empty;
+	g_bPhasorEnable = false;
+
+	return true;
+}
+
+//===========================================================================
+
 struct Mockingboard_Unit
 {
 	SY6522		RegsSY6522;
@@ -1899,8 +2219,6 @@ struct Mockingboard_Unit
 	bool		bSpeechIrqPending;
 //	SS_AY8910	AY8910;	// Internal state of AY8910
 };
-
-const UINT NUM_MB_UNITS = 2;
 
 struct SS_CARD_MOCKINGBOARD
 {
@@ -1991,7 +2309,7 @@ void MB_SetSnapshot(const HANDLE hFile)
 		// FIX THIS:
 		// . Speech chip could be Votrax instead
 		// . Is this IRQ compatible with Phasor?
-		if(pMB->SpeechChip.DurationPhonome)
+		if(pMB->SpeechChip.DurationPhoneme)
 		{
 			g_nSSI263Device = nDeviceNum;
 
@@ -2032,8 +2350,6 @@ struct Phasor_Unit
 	bool		bSpeechIrqPending;
 //	SS_AY8910	AY8910[2];	// Internal state of AY8910
 };
-
-const UINT NUM_PHASOR_UNITS = 2;
 
 struct SS_CARD_PHASOR
 {
@@ -2132,7 +2448,7 @@ void Phasor_SetSnapshot(const HANDLE hFile)
 		// FIX THIS:
 		// . Speech chip could be Votrax instead
 		// . Is this IRQ compatible with Phasor?
-		if(pMB->SpeechChip.DurationPhonome)
+		if(pMB->SpeechChip.DurationPhoneme)
 		{
 			g_nSSI263Device = nDeviceNum;
 

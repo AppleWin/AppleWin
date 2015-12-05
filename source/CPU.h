@@ -28,6 +28,8 @@ void	CpuNmiAssert(eIRQSRC Device);
 void	CpuNmiDeassert(eIRQSRC Device);
 void    CpuReset ();
 void    CpuSetSnapshot_v1(const BYTE A, const BYTE X, const BYTE Y, const BYTE P, const BYTE SP, const USHORT PC, const unsigned __int64 CumulativeCycles);
+void    CpuSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+void    CpuLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 void    CpuGetSnapshot(struct SS_CPU6502_v2& CPU);
 void    CpuSetSnapshot(const struct SS_CPU6502_v2& CPU);
 

@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Registry.h"
 #include "Video.h"
+#include "YamlHelper.h"
 
 #include "..\resource\resource.h"
 
@@ -547,7 +548,7 @@ void DiskInitialize(void)
 {
 	int loop = NUM_DRIVES;
 	while (loop--)
-		ZeroMemory(&g_aFloppyDisk[loop],sizeof(Disk_t ));
+		ZeroMemory(&g_aFloppyDisk[loop], sizeof(Disk_t));
 
 	TCHAR imagefilename[MAX_PATH];
 	_tcscpy(imagefilename,g_sProgramDir);
@@ -1099,7 +1100,7 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 	for(UINT i=0; i<NUM_DRIVES; i++)
 	{
 		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
-		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t ));
+		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t));
 	}
 
 	for(UINT i=0; i<NUM_DRIVES; i++)
@@ -1168,6 +1169,182 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 }
 
 //===========================================================================
+
+#define SS_YAML_VALUE_CARD_DISK2 "Disk]["
+
+#define SS_YAML_KEY_PHASES "Phases"
+#define SS_YAML_KEY_CURRENT_DRIVE "Current Drive"
+#define SS_YAML_KEY_DISK_ACCESSED "Disk Accessed"
+#define SS_YAML_KEY_ENHANCE_DISK "Enhance Disk"
+#define SS_YAML_KEY_FLOPPY_LATCH "Floppy Latch"
+#define SS_YAML_KEY_FLOPPY_MOTOR_ON "Floppy Motor On"
+#define SS_YAML_KEY_FLOPPY_WRITE_MODE "Floppy Write Mode"
+
+#define SS_YAML_KEY_DISK2UNIT "Disk][ Unit"
+#define SS_YAML_KEY_FILENAME "Filename"
+#define SS_YAML_KEY_TRACK "Track"
+#define SS_YAML_KEY_PHASE "Phase"
+#define SS_YAML_KEY_BYTE "Byte"
+#define SS_YAML_KEY_WRITE_PROTECTED "Write Protected"
+#define SS_YAML_KEY_SPINNING "Spinning"
+#define SS_YAML_KEY_WRITE_LIGHT "Write Light"
+#define SS_YAML_KEY_NIBBLES "Nibbles"
+#define SS_YAML_KEY_TRACK_IMAGE_DATA "Track Image Data"
+#define SS_YAML_KEY_TRACK_IMAGE_DIRTY "Track Image Dirty"
+#define SS_YAML_KEY_TRACK_IMAGE "Track Image"
+
+std::string DiskGetSnapshotCardName(void)
+{
+	static const std::string name(SS_YAML_VALUE_CARD_DISK2);
+	return name;
+}
+
+static void DiskSaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit)
+{
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_DISK2UNIT, unit);
+	yamlSaveHelper.Save("%s: %s\n", SS_YAML_KEY_FILENAME, yamlSaveHelper.GetSaveString(g_aFloppyDisk[unit].fullname).c_str());
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TRACK, g_aFloppyDisk[unit].track);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_PHASE, g_aFloppyDisk[unit].phase);
+	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_BYTE, g_aFloppyDisk[unit].byte);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_WRITE_PROTECTED, g_aFloppyDisk[unit].bWriteProtected);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_SPINNING, g_aFloppyDisk[unit].spinning);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_WRITE_LIGHT, g_aFloppyDisk[unit].writelight);
+	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_NIBBLES, g_aFloppyDisk[unit].nibbles);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TRACK_IMAGE_DATA, g_aFloppyDisk[unit].trackimagedata);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TRACK_IMAGE_DIRTY, g_aFloppyDisk[unit].trackimagedirty);
+
+	// New label
+	{
+		YamlSaveHelper::Label image(yamlSaveHelper, "%s:\n", SS_YAML_KEY_TRACK_IMAGE);
+
+		std::auto_ptr<BYTE> pNullTrack( new BYTE [NIBBLES_PER_TRACK] );
+		memset(pNullTrack.get(), 0, NIBBLES_PER_TRACK);
+		LPBYTE pTrack = g_aFloppyDisk[unit].trackimage ? g_aFloppyDisk[unit].trackimage : pNullTrack.get();
+		yamlSaveHelper.SaveMapValueMemory(pTrack, NIBBLES_PER_TRACK);
+	}
+}
+
+void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Slot slot(yamlSaveHelper, DiskGetSnapshotCardName(), g_uSlot, 1);
+
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+	yamlSaveHelper.Save("%s: 0x%1X\n", SS_YAML_KEY_PHASES, phases);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_CURRENT_DRIVE, currdrive);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_DISK_ACCESSED, diskaccessed);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ENHANCE_DISK, enhancedisk);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_FLOPPY_LATCH, floppylatch);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_FLOPPY_MOTOR_ON, floppymotoron);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_FLOPPY_WRITE_MODE, floppywritemode);
+
+	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_1);
+	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_2);
+}
+
+static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
+{
+	std::string disk2UnitName = std::string(SS_YAML_KEY_DISK2UNIT) + (unit == DRIVE_1 ? std::string("0") : std::string("1"));
+	if (!yamlLoadHelper.GetSubMap(disk2UnitName))
+		throw std::string("Card: Expected key: ") + disk2UnitName;
+
+	bool bImageError = false;
+
+	std::string filename = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_FILENAME).c_str();
+	if (!filename.empty())
+	{
+		DWORD dwAttributes = GetFileAttributes(filename.c_str());
+		if(dwAttributes == INVALID_FILE_ATTRIBUTES)
+		{
+			// Get user to browse for file
+			DiskSelectImage(unit, filename.c_str());
+
+			dwAttributes = GetFileAttributes(filename.c_str());
+		}
+
+		bImageError = (dwAttributes == INVALID_FILE_ATTRIBUTES);
+		if (!bImageError)
+		{
+			if(DiskInsert(unit, filename.c_str(), dwAttributes & FILE_ATTRIBUTE_READONLY, IMAGE_DONT_CREATE) != eIMAGE_ERROR_NONE)
+				bImageError = true;
+
+			// DiskInsert() zeros g_aFloppyDisk[unit], then sets up:
+			// . imagename
+			// . fullname
+			// . writeprotected
+		}
+	}
+
+	g_aFloppyDisk[unit].track			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TRACK);
+	g_aFloppyDisk[unit].phase			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PHASE);
+	g_aFloppyDisk[unit].byte			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_BYTE);
+	yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_WRITE_PROTECTED);	// Consume
+	g_aFloppyDisk[unit].spinning		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SPINNING);
+	g_aFloppyDisk[unit].writelight		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_WRITE_LIGHT);
+	g_aFloppyDisk[unit].nibbles			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_NIBBLES);
+	g_aFloppyDisk[unit].trackimagedata	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TRACK_IMAGE_DATA);
+	g_aFloppyDisk[unit].trackimagedirty	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TRACK_IMAGE_DIRTY);
+
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
+		throw disk2UnitName + std::string(": Missing: ") + std::string(SS_YAML_KEY_TRACK_IMAGE);
+	std::auto_ptr<BYTE> pTrack( new BYTE [NIBBLES_PER_TRACK] );
+	yamlLoadHelper.GetMapValueMemory(pTrack.get(), NIBBLES_PER_TRACK);
+
+	yamlLoadHelper.PopMap();
+	yamlLoadHelper.PopMap();
+
+	//
+
+	if (!filename.empty() && !bImageError)
+	{
+		if ((g_aFloppyDisk[unit].trackimage == NULL) && g_aFloppyDisk[unit].nibbles)
+			AllocTrack(unit);
+
+		if (g_aFloppyDisk[unit].trackimage == NULL)
+			bImageError = true;
+		else
+			memcpy(g_aFloppyDisk[unit].trackimage, pTrack.get(), NIBBLES_PER_TRACK);
+	}
+
+	if (bImageError)
+	{
+		g_aFloppyDisk[unit].trackimagedata	= 0;
+		g_aFloppyDisk[unit].trackimagedirty	= 0;
+		g_aFloppyDisk[unit].nibbles			= 0;
+	}
+}
+
+bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+{
+	if (slot != 6)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (version != 1)
+		throw std::string("Card: wrong version");
+
+	phases  		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PHASES);
+	currdrive		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CURRENT_DRIVE);
+	diskaccessed	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_DISK_ACCESSED);
+	enhancedisk		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ENHANCE_DISK);
+	floppylatch		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_FLOPPY_LATCH);
+	floppymotoron	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_FLOPPY_MOTOR_ON);
+	floppywritemode	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_FLOPPY_WRITE_MODE);
+
+	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
+	for(UINT i=0; i<NUM_DRIVES; i++)
+	{
+		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
+		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t));
+	}
+
+	DiskLoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_1);
+	DiskLoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_2);
+
+	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+
+	return true;
+}
+
+//---
 
 struct DISK2_Unit_v2
 {
@@ -1290,7 +1467,7 @@ void DiskSetSnapshot(const HANDLE hFile)
 	for(UINT i=0; i<NUM_DRIVES; i++)
 	{
 		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
-		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t ));
+		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t));
 	}
 
 	bool bResSelectImage = false;

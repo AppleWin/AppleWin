@@ -29,6 +29,7 @@
 #include "..\AppleWin.h"
 #include "..\CPU.h"
 #include "..\Memory.h"
+#include "..\YamlHelper.h"
 
 
 #undef IN							// Defined in windef.h
@@ -6432,6 +6433,142 @@ void z80_WRMEM(WORD Addr, BYTE Value)
 }
 
 //===========================================================================
+
+#define SS_YAML_VALUE_CARD_Z80 "Z80"
+
+#define SS_YAML_KEY_REGA "A"
+#define SS_YAML_KEY_REGB "B"
+#define SS_YAML_KEY_REGC "C"
+#define SS_YAML_KEY_REGD "D"
+#define SS_YAML_KEY_REGE "E"
+#define SS_YAML_KEY_REGF "F"
+#define SS_YAML_KEY_REGH "H"
+#define SS_YAML_KEY_REGL "L"
+#define SS_YAML_KEY_REGIX "IX"
+#define SS_YAML_KEY_REGIY "IY"
+#define SS_YAML_KEY_REGSP "SP"
+#define SS_YAML_KEY_REGPC "PC"
+#define SS_YAML_KEY_REGI "I"
+#define SS_YAML_KEY_REGR "R"
+#define SS_YAML_KEY_IFF1 "IFF1"
+#define SS_YAML_KEY_IFF2 "IFF2"
+#define SS_YAML_KEY_IM_MODE "IM Mode"
+#define SS_YAML_KEY_REGA2 "A'"
+#define SS_YAML_KEY_REGB2 "B'"
+#define SS_YAML_KEY_REGC2 "C'"
+#define SS_YAML_KEY_REGD2 "D'"
+#define SS_YAML_KEY_REGE2 "E'"
+#define SS_YAML_KEY_REGF2 "F'"
+#define SS_YAML_KEY_REGH2 "H'"
+#define SS_YAML_KEY_REGL2 "L'"
+#define SS_YAML_KEY_ACTIVE "Active"
+
+std::string Z80_GetSnapshotCardName(void)
+{
+	static const std::string name(SS_YAML_VALUE_CARD_Z80);
+	return name;
+}
+
+void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
+{
+	YamlSaveHelper::Slot slot(yamlSaveHelper, Z80_GetSnapshotCardName(), uSlot, 1);	// fixme: object should know its slot
+
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+	// SoftCard SW & HW details: http://apple2info.net/images/f/f0/SC-SWHW.pdf
+	// . SoftCard uses the Apple II's DMA circuit to pause the 6502 (no CLK to 6502)
+	// . But: "In Apple II DMA, the 6502 CPU will die after approximately 15 clocks because it depends on the clock to refresh its internal registers."
+	//		ref: Apple Tech Note: https://archive.org/stream/IIe_2523004_RDY_Line/IIe_2523004_RDY_Line_djvu.txt
+	//      NB. Not for 65C02 which is a static processor.
+	// . SoftCard controls the 6502's RDY line to periodically allow only 1 memory fetch by 6502 (ie. the opcode fetch)
+	//
+	// So save /g_ActiveCPU/ to SS_CARD_Z80 (so RDY is like IRQ & NMI signals, ie. saved struct of the producer's card)
+	//
+	// NB. Save-state only occurs when message pump runs:
+	//		. ie. at end of 1ms emulation burst
+	// Either 6502 or Z80 could be active.
+	//
+
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ACTIVE, g_ActiveCPU == CPU_Z80 ? 1 : 0);
+
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGA, reg_a);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGB, reg_b);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGC, reg_c);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGD, reg_d);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGE, reg_e);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGF, reg_f);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGH, reg_h);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGL, reg_l);
+	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_REGIX, ((USHORT)reg_ixh<<8)|(USHORT)reg_ixl);
+	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_REGIY, ((USHORT)reg_iyh<<8)|(USHORT)reg_iyl);
+	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_REGSP, reg_sp);
+	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_REGPC, (USHORT)z80_reg_pc);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGI, reg_i);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGR, reg_r);
+
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_IFF1, iff1);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_IFF2, iff2);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_IM_MODE, im_mode);
+
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGA2, reg_a2);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGB2, reg_b2);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGC2, reg_c2);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGD2, reg_d2);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGE2, reg_e2);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGF2, reg_f2);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGH2, reg_h2);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGL2, reg_l2);
+}
+
+bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT version)
+{
+	if (uSlot != 4 && uSlot != 5)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (version != 1)
+		throw std::string("Card: wrong version");
+
+	reg_a = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGA);
+	reg_b = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGB);
+	reg_c = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGC);
+	reg_d = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGD);
+	reg_e = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGE);
+	reg_f = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGF);
+	reg_h = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGH);
+	reg_l = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGL);
+	USHORT IX = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGIX);
+	reg_ixh = IX >> 8;
+	reg_ixl = IX & 0xFF;
+	USHORT IY = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGIY);
+	reg_iyh = IY >> 8;
+	reg_iyl = IY & 0xFF;
+	reg_sp = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGSP);
+	z80_reg_pc = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGPC);
+	reg_i = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGI);
+	reg_r = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGR);
+
+	iff1 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IFF1);
+	iff2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IFF2);
+	im_mode = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IM_MODE);
+
+	reg_a2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGA2);
+	reg_b2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGB2);
+	reg_c2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGC2);
+	reg_d2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGD2);
+	reg_e2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGE2);
+	reg_f2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGF2);
+	reg_h2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGH2);
+	reg_l2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGL2);
+
+	export_registers();
+
+	if ( yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ACTIVE) )
+		g_ActiveCPU = CPU_Z80;	// Support MS SoftCard in multiple slots (only one Z80 can be active at any one time)
+
+	return true;
+}
+
+//---
 
 struct Z80_Unit
 {

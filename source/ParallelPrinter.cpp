@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "ParallelPrinter.h"
 #include "Registry.h"
+#include "YamlHelper.h"
 
 #include "..\resource\resource.h"
 
@@ -254,6 +255,75 @@ void Printer_SetIdleLimit(unsigned int Duration)
 }
 
 //===========================================================================
+
+#define SS_YAML_VALUE_CARD_PRINTER "Generic Printer"
+
+#define SS_YAML_KEY_INACTIVITY "Inactivity"
+#define SS_YAML_KEY_IDLELIMIT "Printer Idle Limit"
+#define SS_YAML_KEY_FILENAME "Print Filename"
+#define SS_YAML_KEY_FILEOPEN "Is File Open"
+#define SS_YAML_KEY_DUMPTOPRINTER "Dump To Printer"
+#define SS_YAML_KEY_CONVERTENCODING "Convert Encoding"
+#define SS_YAML_KEY_FILTERUNPRINTABLE "Filter Unprintable"
+#define SS_YAML_KEY_APPEND "Printer Append"
+#define SS_YAML_KEY_DUMPTOREALPRINTER "Enable Dump To Real Printer"
+
+std::string Printer_GetSnapshotCardName(void)
+{
+	static const std::string name(SS_YAML_VALUE_CARD_PRINTER);
+	return name;
+}
+
+void Printer_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Slot slot(yamlSaveHelper, Printer_GetSnapshotCardName(), g_uSlot, 1);
+
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_INACTIVITY, inactivity);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_IDLELIMIT, g_iPrinterIdleLimit);
+	yamlSaveHelper.Save("%s: %s\n", SS_YAML_KEY_FILENAME, yamlSaveHelper.GetSaveString(g_szPrintFilename).c_str());
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_FILEOPEN, (file != NULL) ? 1 : 0);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_DUMPTOPRINTER, g_bDumpToPrinter);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_CONVERTENCODING, g_bConvertEncoding);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_FILTERUNPRINTABLE, g_bFilterUnprintable);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_APPEND, g_bPrinterAppend);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_DUMPTOREALPRINTER, g_bEnableDumpToRealPrinter);
+}
+
+bool Printer_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+{
+	if (slot != 1)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (version != 1)
+		throw std::string("Card: wrong version");
+
+	inactivity					= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_INACTIVITY);
+	g_iPrinterIdleLimit			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IDLELIMIT);
+	strncpy(g_szPrintFilename, yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_FILENAME).c_str(), sizeof(g_szPrintFilename));
+
+	if (yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_FILEOPEN))
+	{
+		yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_APPEND);	// Consume
+		g_bPrinterAppend = true;	// Re-open print-file in append mode
+		BOOL bRes = CheckPrint();
+		if (!bRes)
+			throw std::string("Printer Card: Unable to resume printing to file");
+	}
+	else
+	{
+		g_bPrinterAppend = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_APPEND);
+	}
+
+	g_bDumpToPrinter			= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_DUMPTOPRINTER);
+	g_bConvertEncoding			= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_CONVERTENCODING);
+	g_bFilterUnprintable		= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_FILTERUNPRINTABLE);
+	g_bEnableDumpToRealPrinter	= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_DUMPTOREALPRINTER);
+
+	return true;
+}
+
+//---
 
 struct PrinterCard_Unit
 {

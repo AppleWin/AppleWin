@@ -15,6 +15,8 @@ void    KeybQueueKeypress (int,BOOL);
 void    KeybToggleCapsLock ();
 void    KeybToggleP8ACapsLock ();
 void    KeybSetSnapshot_v1(const BYTE LastKey);
+void    KeybSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+void    KeybLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 void    KeybGetSnapshot(BYTE& rLastKey);
 void    KeybSetSnapshot(const BYTE LastKey);
 

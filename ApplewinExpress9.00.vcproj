@@ -56,8 +56,8 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="source\cpu;source\emulator;source\debugger;zlib;zip_lib"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE"
+				AdditionalIncludeDirectories="source\cpu;source\emulator;source\debugger;zlib;zip_lib;libyaml\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -157,8 +157,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				Optimization="0"
-				AdditionalIncludeDirectories="source\cpu;source\emulator;source\debugger;zlib;zip_lib"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE"
+				AdditionalIncludeDirectories="source\cpu;source\emulator;source\debugger;zlib;zip_lib;libyaml\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -744,6 +744,14 @@
 				</File>
 				<File
 					RelativePath=".\source\Tape.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\YamlHelper.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\YamlHelper.h"
 					>
 				</File>
 				<File
