@@ -165,16 +165,15 @@ void SetMainCpu(eCpuType cpu)
 	g_MainCPU = cpu;
 }
 
-static bool IsCpu6502(eApple2Type apple2Type)
+static bool IsCpu65C02(eApple2Type apple2Type)
 {
-	return	IS_APPLE2 ||
-			(apple2Type == A2TYPE_APPLE2E) ||
-			IS_CLONE();		// NB. All Pravets clones are 6502 (GH#307)
+	// NB. All Pravets clones are 6502 (GH#307)
+	return (apple2Type == A2TYPE_APPLE2EENHANCED) || (apple2Type & A2TYPE_APPLE2C); 
 }
 
 eCpuType ProbeMainCpuDefault(eApple2Type apple2Type)
 {
-	return IsCpu6502(apple2Type) ? CPU_6502 : CPU_65C02;
+	return IsCpu65C02(apple2Type) ? CPU_65C02 : CPU_6502;
 }
 
 void SetMainCpuDefault(eApple2Type apple2Type)
