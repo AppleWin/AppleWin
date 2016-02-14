@@ -99,8 +99,6 @@ CMouseInterface		sg_Mouse;
 SS_CARDTYPE	g_Slot4 = CT_Empty;
 SS_CARDTYPE	g_Slot5 = CT_Empty;
 
-eCPU		g_ActiveCPU = CPU_6502;
-
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
 
@@ -110,6 +108,17 @@ CSpeech		g_Speech;
 #endif
 
 //===========================================================================
+
+eApple2Type GetApple2Type(void)
+{
+	return g_Apple2Type;
+}
+
+void SetApple2Type(eApple2Type type)
+{
+	g_Apple2Type = type;
+	SetMainCpuDefault(type);
+}
 
 const UINT16* GetAppleWinVersion(void)
 {
@@ -375,17 +384,36 @@ static void LoadConfigOldJoystick(const UINT uJoyNum)
 	JoySetJoyType(uJoyNum, uNewJoyType);
 }
 
+//Sets the character set for the Apple model/clone
+void SetCharsetType(void)
+{
+	switch ( GetApple2Type() )
+	{
+	case A2TYPE_APPLE2:			g_nCharsetType = 0; break; 
+	case A2TYPE_APPLE2PLUS:		g_nCharsetType = 0; break; 
+	case A2TYPE_APPLE2E:		g_nCharsetType = 0; break; 
+	case A2TYPE_APPLE2EENHANCED:g_nCharsetType = 0; break; 
+	case A2TYPE_PRAVETS82:	    g_nCharsetType = 1; break; 
+	case A2TYPE_PRAVETS8A:	    g_nCharsetType = 2; break; 
+	case A2TYPE_PRAVETS8M:	    g_nCharsetType = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because setting charset to 3 results in some problems.
+	default:
+		_ASSERT(0);
+		g_nCharsetType = 0;
+	}
+}
+
 //Reads configuration from the registry entries
 void LoadConfiguration(void)
 {
 	DWORD dwComputerType;
+	eApple2Type apple2Type = A2TYPE_APPLE2EENHANCED;
 
 	if (REGLOAD(TEXT(REGVALUE_APPLE2_TYPE), &dwComputerType))
 	{
 		if ((dwComputerType >= A2TYPE_MAX) || (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE))
 			dwComputerType = A2TYPE_APPLE2EENHANCED;
 
-		g_Apple2Type = (eApple2Type) dwComputerType;
+		apple2Type = (eApple2Type) dwComputerType;
 	}
 	else	// Support older AppleWin registry entries
 	{
@@ -393,23 +421,30 @@ void LoadConfiguration(void)
 		switch (dwComputerType)
 		{
 			// NB. No A2TYPE_APPLE2E (this is correct)
-		case 0:	g_Apple2Type = A2TYPE_APPLE2;
-		case 1:	g_Apple2Type = A2TYPE_APPLE2PLUS;
-		case 2:	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
-		default:	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
+		case 0:		apple2Type = A2TYPE_APPLE2; break;
+		case 1:		apple2Type = A2TYPE_APPLE2PLUS; break;
+		case 2:		apple2Type = A2TYPE_APPLE2EENHANCED; break;
+		default:	apple2Type = A2TYPE_APPLE2EENHANCED;
 		}
 	}
 
-	switch (g_Apple2Type) //Sets the character set for the Apple model/clone
+	SetApple2Type(apple2Type);
+	SetCharsetType();
+
+	//
+
+	DWORD dwCpuType;
+	eCpuType cpu = CPU_65C02;
+
+	if (REGLOAD(TEXT(REGVALUE_CPU_TYPE), &dwCpuType))
 	{
-	case A2TYPE_APPLE2:			g_nCharsetType  = 0; break; 
-	case A2TYPE_APPLE2PLUS:		g_nCharsetType  = 0; break; 
-	case A2TYPE_APPLE2E:		g_nCharsetType  = 0; break; 
-	case A2TYPE_APPLE2EENHANCED:g_nCharsetType  = 0; break; 
-	case A2TYPE_PRAVETS82:	    g_nCharsetType  = 1; break; 
-	case A2TYPE_PRAVETS8A:	    g_nCharsetType  = 2; break; 
-	case A2TYPE_PRAVETS8M:	    g_nCharsetType  = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because setting charset to 3 results in some problems.
+		if (dwCpuType != CPU_6502 && dwCpuType != CPU_65C02)
+			dwCpuType = CPU_65C02;
+
+		cpu = (eCpuType) dwCpuType;
 	}
+
+	SetMainCpu(cpu);
 
 	//
 

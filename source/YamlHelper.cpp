@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "Log.h"
 #include "YamlHelper.h"
 
 int YamlHelper::InitParser(const char* pPathname)
@@ -57,20 +58,6 @@ void YamlHelper::GetNextEvent(bool bInMap /*= false*/)
 	{
 		//printf("Parser error %d\n", m_parser.error);
 		throw std::string("Parser error");
-	}
-
-	if (m_newEvent.type == YAML_MAPPING_START_EVENT)
-	{
-		MapState state = {m_mapName, bInMap};
-		m_stackMapState.push(state);
-	}
-	else if (m_newEvent.type == YAML_MAPPING_END_EVENT)
-	{
-		MapState state = m_stackMapState.top();
-		m_lastMapName = m_mapName;	// For GetMapRemainder()
-		m_mapName = state.name;
-		// ? = state.isInMap;
-		m_stackMapState.pop();
 	}
 }
 
@@ -108,28 +95,6 @@ int YamlHelper::GetScalar(std::string& scalar)
 	return res;
 }
 
-void YamlHelper::GetListStartEvent(void)
-{
-	GetNextEvent();
-
-	if (m_newEvent.type != YAML_SEQUENCE_START_EVENT)
-	{
-		//printf("Unexpected yaml event (%d)\n", m_newEvent.type);
-		throw std::string("Unexpected yaml event");
-	}
-}
-
-//void YamlHelper::GetListEndEvent(void)
-//{
-//	GetNextEvent();
-//
-//	if (m_newEvent.type != YAML_SEQUENCE_END_EVENT)
-//	{
-//		//printf("Unexpected yaml event (%d)\n", m_newEvent.type);
-//		throw std::string("Unexpected yaml event");
-//	}
-//}
-
 void YamlHelper::GetMapStartEvent(void)
 {
 	GetNextEvent();
@@ -140,32 +105,6 @@ void YamlHelper::GetMapStartEvent(void)
 		throw std::string("Unexpected yaml event");
 	}
 }
-
-void YamlHelper::GetMapEndEvent(void)
-{
-	GetNextEvent();
-
-	if (m_newEvent.type != YAML_MAPPING_END_EVENT)
-	{
-		//printf("Unexpected yaml event (%d)\n", m_newEvent.type);
-		throw std::string("Unexpected yaml event");
-	}
-}
-
-int YamlHelper::GetMapStartOrListEndEvent(void)
-{
-	GetNextEvent();
-
-	if (m_newEvent.type != YAML_MAPPING_START_EVENT && m_newEvent.type != YAML_SEQUENCE_END_EVENT)
-	{
-		//printf("Unexpected yaml event (%d)\n", m_newEvent.type);
-		throw std::string("Unexpected yaml event");
-	}
-
-	return m_newEvent.type == YAML_MAPPING_START_EVENT ? 1 : 0;
-}
-
-//
 
 int YamlHelper::ParseMap(MapYaml& mapYaml)
 {
@@ -260,21 +199,21 @@ bool YamlHelper::GetSubMap(MapYaml** mapYaml, const std::string key)
 	return true;
 }
 
-void YamlHelper::GetMapRemainder(MapYaml& mapYaml)
+void YamlHelper::GetMapRemainder(std::string& mapName, MapYaml& mapYaml)
 {
 	for (MapYaml::iterator iter = mapYaml.begin(); iter != mapYaml.end(); ++iter)
 	{
 		if (iter->second.subMap)
 		{
-			GetMapRemainder(*iter->second.subMap);
+			std::string subMapName(iter->first);
+			GetMapRemainder(subMapName, *iter->second.subMap);
 			delete iter->second.subMap;
 		}
 		else
 		{
 			const char* pKey = iter->first.c_str();
-			char szDbg[100];
-			sprintf(szDbg, "%s: Unknown key (%s)\n", m_lastMapName.c_str(), pKey);
-			OutputDebugString(szDbg);
+			LogOutput("%s: Unknown key (%s)\n", mapName.c_str(), pKey);
+			LogFileOutput("%s: Unknown key (%s)\n", mapName.c_str(), pKey);
 		}
 	}
 

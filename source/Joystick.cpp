@@ -891,21 +891,3 @@ void JoyLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 
 	yamlLoadHelper.PopMap();
 }
-
-//
-
-void JoyGetSnapshot(unsigned __int64& rJoyCntrResetCycle, short* pJoystick0Trim, short* pJoystick1Trim)
-{
-	rJoyCntrResetCycle = g_nJoyCntrResetCycle;
-	pJoystick0Trim[0] = JoyGetTrim(true);
-	pJoystick0Trim[1] = JoyGetTrim(false);
-	pJoystick1Trim[0] = 0;	// TBD: not implemented yet
-	pJoystick1Trim[1] = 0;	// TBD: not implemented yet
-}
-
-void JoySetSnapshot(const unsigned __int64 JoyCntrResetCycle, const short* pJoystick0Trim, const short* pJoystick1Trim)
-{
-	g_nJoyCntrResetCycle = JoyCntrResetCycle;
-	JoySetTrim(pJoystick0Trim[0], true);
-	JoySetTrim(pJoystick0Trim[1], false);
-}

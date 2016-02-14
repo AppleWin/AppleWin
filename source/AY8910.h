@@ -19,8 +19,6 @@ void AY8910UpdateSetCycles();
 
 UINT AY8910_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, UINT uChip, std::string& suffix);
 UINT AY8910_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uChip, std::string& suffix);
-UINT AY8910_GetSnapshot(const HANDLE hFile, UINT uChip);
-UINT AY8910_SetSnapshot(const HANDLE hFile, UINT uChip);
 
 //-------------------------------------
 // FUSE stuff

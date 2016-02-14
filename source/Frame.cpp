@@ -178,7 +178,7 @@ static bool g_bFullScreen32Bit = true;
 
 // Updates g_pAppTitle
 // ====================================================================
-void GetAppleWindowTitle()
+static void GetAppleWindowTitle()
 {
 	g_pAppTitle = g_pAppleWindowTitle;
 
@@ -764,6 +764,14 @@ void FrameDrawDiskStatus( HDC passdc )
 //===========================================================================
 static void DrawStatusArea (HDC passdc, int drawflags)
 {
+	if (g_hFrameWindow == NULL)
+	{
+		// TC: Fix drawing of drive buttons before frame created:
+		// . Main init loop: LoadConfiguration() called before FrameCreateWindow(), eg:
+		//   LoadConfiguration() -> Disk_LoadLastDiskImage() -> DiskInsert() -> FrameRefreshStatus()
+		return;
+	}
+
 	FrameReleaseDC();
 	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
 	int  x      = buttonx;
@@ -2010,7 +2018,7 @@ void ResetMachineState ()
   MB_Reset();
   SpkrReset();
   sg_Mouse.Reset();
-  g_ActiveCPU = CPU_6502;
+  SetActiveCpu( GetMainCpu() );
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
 #endif
@@ -2633,4 +2641,18 @@ void GetViewportCXCY(int& nViewportCX, int& nViewportCY)
 {
 	nViewportCX = g_nViewportCX;
 	nViewportCY = g_nViewportCY;
+}
+
+// Call all funcs with dependency on g_Apple2Type
+void FrameUpdateApple2Type(void)
+{
+	DeleteGdiObjects();
+	CreateGdiObjects();
+
+	// DRAW_TITLE : calls GetAppleWindowTitle()
+	// DRAW_LEDS  : update LEDs (eg. CapsLock varies on Apple2 type)
+	DrawStatusArea( (HDC)0, DRAW_TITLE|DRAW_LEDS );
+
+	// Draw buttons & call DrawStatusArea(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS)
+	DrawFrameWindow();
 }

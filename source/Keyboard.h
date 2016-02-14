@@ -17,8 +17,6 @@ void    KeybToggleP8ACapsLock ();
 void    KeybSetSnapshot_v1(const BYTE LastKey);
 void    KeybSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    KeybLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
-void    KeybGetSnapshot(BYTE& rLastKey);
-void    KeybSetSnapshot(const BYTE LastKey);
 
 BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);

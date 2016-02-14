@@ -75,8 +75,6 @@ int     DiskSetSnapshot_v1(const struct SS_CARD_DISK2* const pSS);
 std::string DiskGetSnapshotCardName(void);
 void    DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 bool    DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
-void    DiskGetSnapshot(const HANDLE hFile);
-void    DiskSetSnapshot(const HANDLE hFile);
 
 void Disk_LoadLastDiskImage(const int iDrive);
 void Disk_SaveLastDiskImage(const int iDrive);

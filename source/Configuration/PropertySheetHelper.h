@@ -42,6 +42,7 @@ private:
 	bool IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged);
 	bool IsOkToRestart(HWND hWnd);
 	void SaveComputerType(eApple2Type NewApple2Type);
+	void SaveCpuType(eCpuType NewCpuType);
 	bool HardwareConfigChanged(HWND hWnd);
 	bool CheckChangesForRestart(HWND hWnd);
 	void ApplyNewConfig(void);

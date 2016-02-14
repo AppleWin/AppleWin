@@ -60,10 +60,6 @@ void    MemSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 bool    MemLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 void    MemSaveSnapshotAux(class YamlSaveHelper& yamlSaveHelper);
 bool    MemLoadSnapshotAux(class YamlLoadHelper& yamlLoadHelper, UINT version);
-void    MemGetSnapshot(struct SS_BaseMemory_v2& Memory);
-void    MemSetSnapshot(const struct SS_BaseMemory_v2& Memory);
-void    MemGetSnapshotAux(const HANDLE hFile);
-void    MemSetSnapshotAux(const HANDLE hFile);
 
 BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 

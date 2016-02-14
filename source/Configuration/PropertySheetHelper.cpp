@@ -102,6 +102,11 @@ void CPropertySheetHelper::SaveComputerType(eApple2Type NewApple2Type)
 	REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), NewApple2Type);
 }
 
+void CPropertySheetHelper::SaveCpuType(eCpuType NewCpuType)
+{
+	REGSAVE(TEXT(REGVALUE_CPU_TYPE), NewCpuType);
+}
+
 void CPropertySheetHelper::SetSlot4(SS_CARDTYPE NewCardType)
 {
 	g_Slot4 = NewCardType;
@@ -252,17 +257,34 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	{
 		if (bSave)	// Only for saving (allow loading of any file for backwards compatibility)
 		{
-			// Append .aws if it's not there
+			// Append .aws.yaml if it's not there
 			const char szAWS_EXT1[] = ".aws";
-			const char szAWS_EXT2[] = ".aws.yaml";
-			const char szAWS_EXT3[] = ".yaml";
-			const UINT uStrLenFile = strlen(&szFilename[ofn.nFileOffset]);
+			const char szAWS_EXT2[] = ".yaml";
+			const char szAWS_EXT3[] = ".aws.yaml";
+			const UINT uStrLenFile  = strlen(&szFilename[ofn.nFileOffset]);
 			const UINT uStrLenExt1  = strlen(szAWS_EXT1);
 			const UINT uStrLenExt2  = strlen(szAWS_EXT2);
-			if ((uStrLenFile <= uStrLenExt1) || (strcmp(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt1], szAWS_EXT1) == 0))
-				strcpy(&szFilename[ofn.nFileOffset+uStrLenFile], szAWS_EXT3);	// "file.aws" += ".yaml"
-			else if ((uStrLenFile <= uStrLenExt2) || (strcmp(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt2], szAWS_EXT2) != 0))
-				strcpy(&szFilename[ofn.nFileOffset+uStrLenFile], szAWS_EXT2);	// "file" += "aws.yaml"
+			const UINT uStrLenExt3  = strlen(szAWS_EXT3);
+			if (uStrLenFile <= uStrLenExt1)
+			{
+				strcpy(&szFilename[ofn.nFileOffset+uStrLenFile], szAWS_EXT3);					// "file" += ".aws.yaml"
+			}
+			else if (uStrLenFile <= uStrLenExt2)
+			{
+				if (strcmp(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt1], szAWS_EXT1) == 0)
+					strcpy(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt1], szAWS_EXT3);	// "file.aws" -> "file" + ".aws.yaml"
+				else
+					strcpy(&szFilename[ofn.nFileOffset+uStrLenFile], szAWS_EXT3);				// "file" += ".aws.yaml"
+			}
+			else if ((uStrLenFile <= uStrLenExt3) || (strcmp(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt3], szAWS_EXT3) != 0))
+			{
+				if (strcmp(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt1], szAWS_EXT1) == 0)
+					strcpy(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt1], szAWS_EXT3);	// "file.aws" -> "file" + ".aws.yaml"
+				else if (strcmp(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt2], szAWS_EXT2) == 0)
+					strcpy(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt2], szAWS_EXT3);	// "file.yaml" -> "file" + ".aws.yaml"
+				else
+					strcpy(&szFilename[ofn.nFileOffset+uStrLenFile], szAWS_EXT3);				// "file" += ".aws.yaml"
+			}
 		}
 
 		strcpy(m_szSSNewFilename, &szFilename[ofn.nFileOffset]);
@@ -342,6 +364,11 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		SaveComputerType(ConfigNew.m_Apple2Type);
 	}
 
+	if (CONFIG_CHANGED_LOCAL(m_CpuType))
+	{
+		SaveCpuType(ConfigNew.m_CpuType);
+	}
+
 	if (CONFIG_CHANGED_LOCAL(m_Slot[4]))
 		SetSlot4(ConfigNew.m_Slot[4]);
 
@@ -370,7 +397,8 @@ void CPropertySheetHelper::ApplyNewConfig(void)
 void CPropertySheetHelper::SaveCurrentConfig(void)
 {
 	// NB. clone-type is encoded in g_Apple2Type
-	m_ConfigOld.m_Apple2Type = g_Apple2Type;
+	m_ConfigOld.m_Apple2Type = GetApple2Type();
+	m_ConfigOld.m_CpuType = GetMainCpu();
 	m_ConfigOld.m_Slot[4] = g_Slot4;
 	m_ConfigOld.m_Slot[5] = g_Slot5;
 	m_ConfigOld.m_bEnhanceDisk = enhancedisk;
@@ -388,7 +416,8 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 void CPropertySheetHelper::RestoreCurrentConfig(void)
 {
 	// NB. clone-type is encoded in g_Apple2Type
-	g_Apple2Type = m_ConfigOld.m_Apple2Type;
+	SetApple2Type(m_ConfigOld.m_Apple2Type);
+	SetMainCpu(m_ConfigOld.m_CpuType);
 	g_Slot4 = m_ConfigOld.m_Slot[4];
 	g_Slot5 = m_ConfigOld.m_Slot[5];
 	enhancedisk = m_ConfigOld.m_bEnhanceDisk;
@@ -440,6 +469,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 	{
 		if (CONFIG_CHANGED(m_Apple2Type))
 			strMsgMain += ". Emulated computer has changed\n";
+
+		if (CONFIG_CHANGED(m_CpuType))
+			strMsgMain += ". Emulated main CPU has changed\n";
 
 		if (CONFIG_CHANGED(m_Slot[4]))
 			strMsgMain += GetSlot(4);

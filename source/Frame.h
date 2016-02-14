@@ -48,6 +48,7 @@
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);
 	bool	GetFullScreen32Bit(void);
 	void	SetFullScreen32Bit(bool b32Bit);
+	void    FrameUpdateApple2Type(void);
 
 	void	FrameDrawDiskLEDS( HDC hdc );
 	void	FrameDrawDiskStatus( HDC hdc );

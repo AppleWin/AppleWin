@@ -39,7 +39,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
 #include "Debugger\Debugger_Color.h"	// For NUM_DEBUG_COLORS
-#include "SaveState_Structs_v2.h"
 #include "YamlHelper.h"
 
 #define HALF_PIXEL_SOLID 1
@@ -2979,22 +2978,6 @@ void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	g_dwCyclesThisFrame = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CYCLESTHISFRAME);
 
 	yamlLoadHelper.PopMap();
-}
-
-//
-
-void VideoGetSnapshot(SS_IO_Video_v2& Video)
-{
-	Video.AltCharSet = !(g_nAltCharSetOffset == 0);
-	Video.VideoMode = g_uVideoMode;
-	Video.CyclesThisVideoFrame = g_dwCyclesThisFrame;
-}
-
-void VideoSetSnapshot(const SS_IO_Video_v2& Video)
-{
-	g_nAltCharSetOffset = !Video.AltCharSet ? 0 : 256;
-	g_uVideoMode = Video.VideoMode;
-	g_dwCyclesThisFrame = Video.CyclesThisVideoFrame;
 }
 
 //===========================================================================

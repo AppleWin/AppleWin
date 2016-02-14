@@ -30,10 +30,17 @@ void    CpuReset ();
 void    CpuSetSnapshot_v1(const BYTE A, const BYTE X, const BYTE Y, const BYTE P, const BYTE SP, const USHORT PC, const unsigned __int64 CumulativeCycles);
 void    CpuSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    CpuLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
-void    CpuGetSnapshot(struct SS_CPU6502_v2& CPU);
-void    CpuSetSnapshot(const struct SS_CPU6502_v2& CPU);
 
 BYTE	CpuRead(USHORT addr, ULONG uExecutedCycles);
 void	CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles);
 
 DWORD   CpuGetEmulationTime_ms(void);
+
+enum eCpuType {CPU_6502=1, CPU_65C02, CPU_Z80};	// Don't change! Persisted to Registry
+
+eCpuType GetMainCpu(void);
+void     SetMainCpu(eCpuType cpu);
+eCpuType ProbeMainCpuDefault(eApple2Type apple2Type);
+void     SetMainCpuDefault(eApple2Type apple2Type);
+eCpuType GetActiveCpu(void);
+void     SetActiveCpu(eCpuType cpu);

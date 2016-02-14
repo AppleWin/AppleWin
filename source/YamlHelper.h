@@ -6,14 +6,11 @@
 #define SS_YAML_KEY_TAG "Tag"
 #define SS_YAML_KEY_VERSION "Version"
 #define SS_YAML_KEY_UNIT "Unit"
-#define SS_YAML_KEY_UNIT_TYPE "Type"
 #define SS_YAML_KEY_TYPE "Type"
 #define SS_YAML_KEY_CARD "Card"
 #define SS_YAML_KEY_STATE "State"
 
 #define SS_YAML_VALUE_AWSS "AppleWin Save State"
-#define SS_YAML_VALUE_UNIT_CARD "Card"
-#define SS_YAML_VALUE_UNIT_CONFIG "Config"
 
 struct MapValue;
 typedef std::map<std::string, MapValue> MapYaml;
@@ -44,21 +41,16 @@ public:
 	int InitParser(const char* pPathname);
 	void FinaliseParser(void);
 
-	void GetNextEvent(bool bInMap = false);
 	int GetScalar(std::string& scalar);
-	void GetListStartEvent(void);
-//	void GetListEndEvent(void);
 	void GetMapStartEvent(void);
-	void GetMapEndEvent(void);
-	int GetMapStartOrListEndEvent(void);
-	std::string GetMapName(void) { return m_mapName; }
 
 private:
+	void GetNextEvent(bool bInMap = false);
 	int ParseMap(MapYaml& mapYaml);
 	std::string GetMapValue(MapYaml& mapYaml, const std::string key, bool& bFound);
 	void GetMapValueMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize);
 	bool GetSubMap(MapYaml** mapYaml, const std::string key);
-	void GetMapRemainder(MapYaml& mapYaml);
+	void GetMapRemainder(std::string& mapName, MapYaml& mapYaml);
 
 	void MakeAsciiToHexTable(void);
 
@@ -69,19 +61,6 @@ private:
 
 	FILE* m_hFile;
 	char m_AsciiToHex[256];
-
-	//
-
-	std::string m_lastMapName;
-	std::string m_mapName;
-
-	struct MapState
-	{
-		std::string name;
-		bool isInMap;
-	};
-
-	std::stack< MapState > m_stackMapState;
 
 	MapYaml m_mapYaml;
 };
@@ -94,22 +73,33 @@ public:
 	YamlLoadHelper(YamlHelper& yamlHelper)
 		: m_yamlHelper(yamlHelper),
 		  m_pMapYaml(&yamlHelper.m_mapYaml),
-		  m_bIteratingOverMap(false)
+		  m_bIteratingOverMap(false),
+		  m_bDoGetMapRemainder(true),
+		  m_topLevelMapName(yamlHelper.m_scalarName),
+		  m_currentMapName(m_topLevelMapName)
 	{
 		if (!m_yamlHelper.ParseMap(yamlHelper.m_mapYaml))
-			throw std::string(m_yamlHelper.GetMapName() + ": Failed to parse map");
+		{
+			m_bDoGetMapRemainder = false;
+			throw std::string(m_currentMapName + ": Failed to parse map");
+		}
 	}
 
 	~YamlLoadHelper(void)
 	{
-		m_yamlHelper.GetMapRemainder(m_yamlHelper.m_mapYaml);
+		if (m_bDoGetMapRemainder)
+			m_yamlHelper.GetMapRemainder(m_topLevelMapName, m_yamlHelper.m_mapYaml);
 	}
 
 	INT GetMapValueINT(const std::string key)
 	{
 		bool bFound;
 		std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
-		if (value == "") throw std::string(m_yamlHelper.GetMapName() + ": Missing: " + key);
+		if (value == "")
+		{
+			m_bDoGetMapRemainder = false;
+			throw std::string(m_currentMapName + ": Missing: " + key);
+		}
 		return strtol(value.c_str(), NULL, 0);
 	}
 
@@ -117,7 +107,11 @@ public:
 	{
 		bool bFound;
 		std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
-		if (value == "") throw std::string(m_yamlHelper.GetMapName() + ": Missing: " + key);
+		if (value == "")
+		{
+			m_bDoGetMapRemainder = false;
+			throw std::string(m_currentMapName + ": Missing: " + key);
+		}
 		return strtoul(value.c_str(), NULL, 0);
 	}
 
@@ -125,7 +119,11 @@ public:
 	{
 		bool bFound;
 		std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
-		if (value == "") throw std::string(m_yamlHelper.GetMapName() + ": Missing: " + key);
+		if (value == "")
+		{
+			m_bDoGetMapRemainder = false;
+			throw std::string(m_currentMapName + ": Missing: " + key);
+		}
 		return _strtoui64(value.c_str(), NULL, 0);
 	}
 
@@ -149,7 +147,11 @@ public:
 	{
 		bool bFound;
 		std::string value = GetMapValueSTRING_NoThrow(key, bFound);
-		if (!bFound) throw std::string(m_yamlHelper.GetMapName() + ": Missing: " + key);
+		if (!bFound)
+		{
+			m_bDoGetMapRemainder = false;
+			throw std::string(m_currentMapName + ": Missing: " + key);
+		}
 		return value;
 	}
 
@@ -160,10 +162,13 @@ public:
 
 	bool GetSubMap(const std::string key)
 	{
-		m_stackMap.push(m_pMapYaml);
+		YamlStackItem item = {m_pMapYaml, m_currentMapName};
+		m_stackMap.push(item);
 		bool res = m_yamlHelper.GetSubMap(&m_pMapYaml, key);
 		if (!res)
 			m_stackMap.pop();
+		else
+			m_currentMapName = key;
 		return res;
 	}
 
@@ -172,8 +177,11 @@ public:
 		if (m_stackMap.empty())
 			return;
 
-		m_pMapYaml = m_stackMap.top();
+		YamlStackItem item = m_stackMap.top();
 		m_stackMap.pop();
+
+		m_pMapYaml = item.pMapYaml;
+		m_currentMapName = item.mapName;
 	}
 
 	std::string GetMapNextSlotNumber(void)
@@ -198,7 +206,17 @@ public:
 private:
 	YamlHelper& m_yamlHelper;
 	MapYaml* m_pMapYaml;
-	std::stack<MapYaml*> m_stackMap;
+	bool m_bDoGetMapRemainder;
+
+	struct YamlStackItem
+	{
+		MapYaml* pMapYaml;
+		std::string mapName;
+	};
+	std::stack<YamlStackItem> m_stackMap;
+
+	std::string m_topLevelMapName;
+	std::string m_currentMapName;
 
 	bool m_bIteratingOverMap;
 	MapYaml::iterator m_iter;
@@ -209,6 +227,7 @@ private:
 class YamlSaveHelper
 {
 friend class Indent;	// Indent can access YamlSaveHelper's private members
+
 public:
 	YamlSaveHelper(std::string pathname) :
 		m_hFile(NULL),

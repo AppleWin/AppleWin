@@ -4,7 +4,6 @@
 #include "../../source/CPU.h"
 
 // From Applewin.cpp
-eCPU		g_ActiveCPU = CPU_6502;
 enum AppMode_e g_nAppMode = MODE_RUNNING;
 
 // From Memory.cpp
@@ -37,6 +36,13 @@ regsrec regs;
 
 static const int IRQ_CHECK_TIMEOUT = 128;
 static signed int g_nIrqCheckTimeout = IRQ_CHECK_TIMEOUT;
+
+static eCpuType g_ActiveCPU = CPU_65C02;
+
+eCpuType GetActiveCpu(void)
+{
+	return g_ActiveCPU;
+}
 
 static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 {

@@ -102,7 +102,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Z80VICE\z80mem.h"
 
 #include "Debugger\Debug.h"
-#include "SaveState_Structs_v2.h"
 #include "YamlHelper.h"
 
 
@@ -146,6 +145,54 @@ static CRITICAL_SECTION g_CriticalSection;	// To guard /g_bmIRQ/ & /g_bmNMI/
 static volatile UINT32 g_bmIRQ = 0;
 static volatile UINT32 g_bmNMI = 0;
 static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
+
+//
+
+static eCpuType g_MainCPU = CPU_65C02;
+static eCpuType g_ActiveCPU = CPU_65C02;
+
+eCpuType GetMainCpu(void)
+{
+	return g_MainCPU;
+}
+
+void SetMainCpu(eCpuType cpu)
+{
+	_ASSERT(cpu != CPU_Z80);
+	if (cpu == CPU_Z80)
+		return;
+
+	g_MainCPU = cpu;
+}
+
+static bool IsCpu6502(eApple2Type apple2Type)
+{
+	return	IS_APPLE2 ||
+			(apple2Type == A2TYPE_APPLE2E) ||
+			IS_CLONE();		// NB. All Pravets clones are 6502 (GH#307)
+}
+
+eCpuType ProbeMainCpuDefault(eApple2Type apple2Type)
+{
+	return IsCpu6502(apple2Type) ? CPU_6502 : CPU_65C02;
+}
+
+void SetMainCpuDefault(eApple2Type apple2Type)
+{
+	SetMainCpu( ProbeMainCpuDefault(apple2Type) );
+}
+
+eCpuType GetActiveCpu(void)
+{
+	return g_ActiveCPU;
+}
+
+void SetActiveCpu(eCpuType cpu)
+{
+	g_ActiveCPU = cpu;
+}
+
+//
 
 #include "cpu/cpu_general.inl"
 
@@ -406,16 +453,9 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles)
 
 //===========================================================================
 
-static bool IsCpu6502(void)
-{
-	return	IS_APPLE2 ||
-			(g_Apple2Type == A2TYPE_APPLE2E) ||
-			IS_CLONE();		// NB. All Pravets clones are 6502 (GH#307)
-}
-
 static DWORD InternalCpuExecute (DWORD uTotalCycles)
 {
-	if (IsCpu6502())
+	if (GetMainCpu() == CPU_6502)
 		return Cpu6502(uTotalCycles);	// Apple ][, ][+, //e, Clones
 	else
 		return Cpu65C02(uTotalCycles);	// Enhanced Apple //e
@@ -645,7 +685,7 @@ void CpuReset()
 
 	regs.bJammed = 0;
 
-	g_ActiveCPU = CPU_6502;
+	SetActiveCpu( GetMainCpu() );
 	z80_reset();
 }
 
@@ -690,7 +730,7 @@ void CpuSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	regs.ps |= (AF_RESERVED | AF_BREAK);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", CpuGetSnapshotStructName().c_str());	
-	yamlSaveHelper.Save("%s: %s # NB. Currently ignored\n", SS_YAML_KEY_CPU_TYPE, IsCpu6502() ? SS_YAML_VALUE_6502 : SS_YAML_VALUE_65C02);
+	yamlSaveHelper.Save("%s: %s\n", SS_YAML_KEY_CPU_TYPE, GetMainCpu() == CPU_6502 ? SS_YAML_VALUE_6502 : SS_YAML_VALUE_65C02);
 	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGA, regs.a);
 	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGX, regs.x);
 	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGY, regs.y);
@@ -705,7 +745,13 @@ void CpuLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap(CpuGetSnapshotStructName()))
 		return;
 
-	yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_CPU_TYPE);	// consume - not currently used
+	std::string cpuType = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_CPU_TYPE);
+	eCpuType cpu;
+	if (cpuType == SS_YAML_VALUE_6502) cpu = CPU_6502;
+	else if (cpuType == SS_YAML_VALUE_65C02) cpu = CPU_65C02;
+	else throw std::string("Load: Unknown main CPU type");
+	SetMainCpu(cpu);
+
 	regs.a  = (BYTE)     yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGA);
 	regs.x  = (BYTE)     yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGX);
 	regs.y  = (BYTE)     yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGY);
@@ -718,34 +764,4 @@ void CpuLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	g_nCumulativeCycles = yamlLoadHelper.GetMapValueUINT64(SS_YAML_KEY_CUMULATIVECYCLES);
 
 	yamlLoadHelper.PopMap();
-}
-
-//
-
-void CpuGetSnapshot(SS_CPU6502_v2& CPU)
-{
-	regs.ps |= (AF_RESERVED | AF_BREAK);
-
-	CPU.A  = regs.a;
-	CPU.X  = regs.x;
-	CPU.Y  = regs.y;
-	CPU.P  = regs.ps;
-	CPU.S  = (BYTE) regs.sp;
-	CPU.PC = regs.pc;
-
-	CPU.CumulativeCycles = g_nCumulativeCycles;
-}
-
-void CpuSetSnapshot(const SS_CPU6502_v2& CPU)
-{
-	regs.a  = CPU.A;
-	regs.x  = CPU.X;
-	regs.y  = CPU.Y;
-	regs.ps = CPU.P | (AF_RESERVED | AF_BREAK);
-	regs.sp = ((USHORT)CPU.S) | 0x100;
-	regs.pc = CPU.PC;
-
-	CpuIrqReset();
-	CpuNmiReset();
-	g_nCumulativeCycles = CPU.CumulativeCycles;
 }

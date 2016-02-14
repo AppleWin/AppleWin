@@ -783,10 +783,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\SaveState_Structs_v2.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\SSI263Phonemes.h"
 					>
 				</File>

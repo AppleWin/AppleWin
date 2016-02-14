@@ -5,6 +5,7 @@
 
 void SetCurrentCLK6502();
 void SetCurrentImageDir(const char* pszImageDir);
+void SetCharsetType(void);
 
 extern const UINT16* GetAppleWinVersion(void);
 extern char VERSIONSTRING[];	// Constructed in WinMain()
@@ -12,6 +13,8 @@ extern char VERSIONSTRING[];	// Constructed in WinMain()
 extern TCHAR     *g_pAppTitle;
 
 extern eApple2Type g_Apple2Type;
+eApple2Type GetApple2Type(void);
+void SetApple2Type(eApple2Type type);
 
 extern bool       g_bFullSpeed;
 
@@ -45,9 +48,6 @@ extern SS_CARDTYPE g_Slot4;	// Mockingboard, Z80, Mouse in slot4
 extern SS_CARDTYPE g_Slot5;	// Mockingboard, Z80,       in slot5
 
 extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom
-
-enum eCPU {CPU_6502=1, CPU_Z80};
-extern eCPU		g_ActiveCPU;
 
 #ifdef USE_SPEECH_API
 class CSpeech;

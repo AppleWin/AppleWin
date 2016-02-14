@@ -40,8 +40,6 @@ public:
 	std::string GetSnapshotCardName(void);
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
-	int GetSnapshot(const HANDLE hFile);
-	void SetSnapshot(const HANDLE hFile);
 
 protected:
 	void SetSlotRom();

@@ -531,15 +531,3 @@ void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 
 	yamlLoadHelper.PopMap();
 }
-
-//
-
-void KeybGetSnapshot(BYTE& rLastKey)
-{
-	rLastKey = g_nLastKey;
-}
-
-void KeybSetSnapshot(const BYTE LastKey)
-{
-	g_nLastKey = LastKey;
-}

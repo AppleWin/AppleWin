@@ -1123,15 +1123,3 @@ void SpkrLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 
 	yamlLoadHelper.PopMap();
 }
-
-//
-
-void SpkrGetSnapshot(unsigned __int64& rSpkrLastCycle)
-{
-	rSpkrLastCycle = g_nSpkrLastCycle;
-}
-
-void SpkrSetSnapshot(const unsigned __int64 SpkrLastCycle)
-{
-	g_nSpkrLastCycle = SpkrLastCycle;
-}

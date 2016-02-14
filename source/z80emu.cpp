@@ -16,6 +16,7 @@
 #include "StdAfx.h"
 
 #include "AppleWin.h"
+#include "CPU.h"
 #include "Memory.h"
 #include "z80emu.h"
 
@@ -30,7 +31,7 @@ BYTE __stdcall CPMZ80_IONull(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULON
 BYTE __stdcall CPMZ80_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft)
 {
 	if ((uAddr & 0xFF00) == (0xC000 + (g_uCPMZ80Slot << 8)))
-		g_ActiveCPU = (g_ActiveCPU == CPU_6502) ? CPU_Z80 : CPU_6502;
+		SetActiveCpu( GetActiveCpu() == CPU_Z80 ? GetMainCpu() : CPU_Z80 );
 
 	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
 }

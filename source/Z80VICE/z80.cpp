@@ -6339,7 +6339,7 @@ DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
 
         //cpu_int_status->num_dma_per_opcode = 0;	// [AppleWin-TC] Not used
 
-        if (g_ActiveCPU != CPU_Z80)					// [AppleWin-TC]
+        if (GetActiveCpu() != CPU_Z80)				// [AppleWin-TC]
             break;
 
     //} while (!dma_request);
@@ -6482,14 +6482,14 @@ void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 	//      NB. Not for 65C02 which is a static processor.
 	// . SoftCard controls the 6502's RDY line to periodically allow only 1 memory fetch by 6502 (ie. the opcode fetch)
 	//
-	// So save /g_ActiveCPU/ to SS_CARD_Z80 (so RDY is like IRQ & NMI signals, ie. saved struct of the producer's card)
+	// So save ActiveCPU to SS_CARD_Z80 (so RDY is like IRQ & NMI signals, ie. saved struct of the producer's card)
 	//
 	// NB. Save-state only occurs when message pump runs:
 	//		. ie. at end of 1ms emulation burst
 	// Either 6502 or Z80 could be active.
 	//
 
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ACTIVE, g_ActiveCPU == CPU_Z80 ? 1 : 0);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ACTIVE, GetActiveCpu() == CPU_Z80 ? 1 : 0);
 
 	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGA, reg_a);
 	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGB, reg_b);
@@ -6563,185 +6563,7 @@ bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT ver
 	export_registers();
 
 	if ( yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ACTIVE) )
-		g_ActiveCPU = CPU_Z80;	// Support MS SoftCard in multiple slots (only one Z80 can be active at any one time)
+		SetActiveCpu(CPU_Z80);	// Support MS SoftCard in multiple slots (only one Z80 can be active at any one time)
 
 	return true;
-}
-
-//---
-
-struct Z80_Unit
-{
-	BYTE reg_a;
-	BYTE reg_b;
-	BYTE reg_c;
-	BYTE reg_d;
-	BYTE reg_e;
-	BYTE reg_f;
-	BYTE reg_h;
-	BYTE reg_l;
-	BYTE reg_ixh;
-	BYTE reg_ixl;
-	BYTE reg_iyh;
-	BYTE reg_iyl;
-	WORD reg_sp;
-	DWORD z80_reg_pc;
-	BYTE reg_i;
-	BYTE reg_r;
-
-	BYTE iff1;
-	BYTE iff2;
-	BYTE im_mode;
-
-	BYTE reg_a2;
-	BYTE reg_b2;
-	BYTE reg_c2;
-	BYTE reg_d2;
-	BYTE reg_e2;
-	BYTE reg_f2;
-	BYTE reg_h2;
-	BYTE reg_l2;
-};
-
-struct SS_CARD_Z80
-{
-	SS_CARD_HDR	Hdr;
-	Z80_Unit	Unit;
-	UINT		Active;
-};
-
-void Z80_GetSnapshot(const HANDLE hFile, const UINT uZ80Slot)
-{
-	SS_CARD_Z80 Card;
-
-	SS_CARD_Z80* const pSS = &Card;
-
-	pSS->Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_Z80);
-	pSS->Hdr.UnitHdr.hdr.v2.Type = UT_Card;
-	pSS->Hdr.UnitHdr.hdr.v2.Version = 1;
-
-	pSS->Hdr.Slot = uZ80Slot;	// fixme: object should know its slot
-	pSS->Hdr.Type = CT_Z80;
-
-	pSS->Unit.reg_a = reg_a;
-	pSS->Unit.reg_b = reg_b;
-	pSS->Unit.reg_c = reg_c;
-	pSS->Unit.reg_d = reg_d;
-	pSS->Unit.reg_e = reg_e;
-	pSS->Unit.reg_f = reg_f;
-	pSS->Unit.reg_h = reg_h;
-	pSS->Unit.reg_l = reg_l;
-	pSS->Unit.reg_ixh = reg_ixh;
-	pSS->Unit.reg_ixl = reg_ixl;
-	pSS->Unit.reg_iyh = reg_iyh;
-	pSS->Unit.reg_iyl = reg_iyl;
-	pSS->Unit.reg_sp = reg_sp;
-	pSS->Unit.z80_reg_pc = z80_reg_pc;
-	pSS->Unit.reg_i = reg_i;
-	pSS->Unit.reg_r = reg_r;
-
-	pSS->Unit.iff1 = iff1;
-	pSS->Unit.iff2 = iff2;
-	pSS->Unit.im_mode = im_mode;
-
-	pSS->Unit.reg_a2 = reg_a2;
-	pSS->Unit.reg_b2 = reg_b2;
-	pSS->Unit.reg_c2 = reg_c2;
-	pSS->Unit.reg_d2 = reg_d2;
-	pSS->Unit.reg_e2 = reg_e2;
-	pSS->Unit.reg_f2 = reg_f2;
-	pSS->Unit.reg_h2 = reg_h2;
-	pSS->Unit.reg_l2 = reg_l2;
-
-	// SoftCard SW & HW details: http://apple2info.net/images/f/f0/SC-SWHW.pdf
-	// . SoftCard uses the Apple II's DMA circuit to pause the 6502 (no CLK to 6502)
-	// . But: "In Apple II DMA, the 6502 CPU will die after approximately 15 clocks because it depends on the clock to refresh its internal registers."
-	//		ref: Apple Tech Note: https://archive.org/stream/IIe_2523004_RDY_Line/IIe_2523004_RDY_Line_djvu.txt
-	//      NB. Not for 65C02 which is a static processor.
-	// . SoftCard controls the 6502's RDY line to periodically allow only 1 memory fetch by 6502 (ie. the opcode fetch)
-	//
-	// So save /g_ActiveCPU/ to SS_CARD_Z80 (so RDY is like IRQ & NMI signals, ie. saved struct of the producer's card)
-	//
-	// NB. Save-state only occurs when message pump runs:
-	//		. ie. at end of 1ms emulation burst
-	// Either 6502 or Z80 could be active.
-	//
-
-	pSS->Active = g_ActiveCPU == CPU_Z80 ? 1 : 0;
-
-	//
-
-	DWORD dwBytesWritten;
-	BOOL bRes = WriteFile(	hFile,
-							&Card,
-							Card.Hdr.UnitHdr.hdr.v2.Length,
-							&dwBytesWritten,
-							NULL);
-
-	if(!bRes || (dwBytesWritten != Card.Hdr.UnitHdr.hdr.v2.Length))
-	{
-		//dwError = GetLastError();
-		throw std::string("Save error: Z80");
-	}
-}
-
-void Z80_SetSnapshot(const HANDLE hFile)
-{
-	SS_CARD_Z80 Card;
-
-	DWORD dwBytesRead;
-	BOOL bRes = ReadFile(	hFile,
-							&Card,
-							sizeof(Card),
-							&dwBytesRead,
-							NULL);
-
-	if (dwBytesRead != sizeof(Card))
-		throw std::string("Card: file corrupt");
-
-	if (Card.Hdr.Slot != 4 && Card.Hdr.Slot != 5)	// fixme
-		throw std::string("Card: wrong slot");
-
-	if (Card.Hdr.UnitHdr.hdr.v2.Version > 1)
-		throw std::string("Card: wrong version");
-
-	if (Card.Hdr.UnitHdr.hdr.v2.Length != sizeof(SS_CARD_Z80))
-		throw std::string("Card: unit size mismatch");
-
-	SS_CARD_Z80* pSS = &Card;
-
-	reg_a = pSS->Unit.reg_a;
-	reg_b = pSS->Unit.reg_b;
-	reg_c = pSS->Unit.reg_c;
-	reg_d = pSS->Unit.reg_d;
-	reg_e = pSS->Unit.reg_e;
-	reg_f = pSS->Unit.reg_f;
-	reg_h = pSS->Unit.reg_h;
-	reg_l = pSS->Unit.reg_l;
-	reg_ixh = pSS->Unit.reg_ixh;
-	reg_ixl = pSS->Unit.reg_ixl;
-	reg_iyh = pSS->Unit.reg_iyh;
-	reg_iyl = pSS->Unit.reg_iyl;
-	reg_sp = pSS->Unit.reg_sp;
-	z80_reg_pc = pSS->Unit.z80_reg_pc;
-	reg_i = pSS->Unit.reg_i;
-	reg_r = pSS->Unit.reg_r;
-
-	iff1 = pSS->Unit.iff1;
-	iff2 = pSS->Unit.iff2;
-	im_mode = pSS->Unit.im_mode;
-
-	reg_a2 = pSS->Unit.reg_a2;
-	reg_b2 = pSS->Unit.reg_b2;
-	reg_c2 = pSS->Unit.reg_c2;
-	reg_d2 = pSS->Unit.reg_d2;
-	reg_e2 = pSS->Unit.reg_e2;
-	reg_f2 = pSS->Unit.reg_f2;
-	reg_h2 = pSS->Unit.reg_h2;
-	reg_l2 = pSS->Unit.reg_l2;
-
-	export_registers();
-
-	if (pSS->Active)
-		g_ActiveCPU = CPU_Z80;	// Support MS SoftCard in multiple slots (only one Z80 can be active at any one time)
 }

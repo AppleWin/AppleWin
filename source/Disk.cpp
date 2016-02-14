@@ -1213,14 +1213,10 @@ static void DiskSaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TRACK_IMAGE_DATA, g_aFloppyDisk[unit].trackimagedata);
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TRACK_IMAGE_DIRTY, g_aFloppyDisk[unit].trackimagedirty);
 
-	// New label
+	if (g_aFloppyDisk[unit].trackimage)
 	{
 		YamlSaveHelper::Label image(yamlSaveHelper, "%s:\n", SS_YAML_KEY_TRACK_IMAGE);
-
-		std::auto_ptr<BYTE> pNullTrack( new BYTE [NIBBLES_PER_TRACK] );
-		memset(pNullTrack.get(), 0, NIBBLES_PER_TRACK);
-		LPBYTE pTrack = g_aFloppyDisk[unit].trackimage ? g_aFloppyDisk[unit].trackimage : pNullTrack.get();
-		yamlSaveHelper.SaveMapValueMemory(pTrack, NIBBLES_PER_TRACK);
+		yamlSaveHelper.SaveMapValueMemory(g_aFloppyDisk[unit].trackimage, NIBBLES_PER_TRACK);
 	}
 }
 
@@ -1284,12 +1280,14 @@ static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 	g_aFloppyDisk[unit].trackimagedata	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TRACK_IMAGE_DATA);
 	g_aFloppyDisk[unit].trackimagedirty	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TRACK_IMAGE_DIRTY);
 
-	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
-		throw disk2UnitName + std::string(": Missing: ") + std::string(SS_YAML_KEY_TRACK_IMAGE);
 	std::auto_ptr<BYTE> pTrack( new BYTE [NIBBLES_PER_TRACK] );
-	yamlLoadHelper.GetMapValueMemory(pTrack.get(), NIBBLES_PER_TRACK);
+	memset(pTrack.get(), 0, NIBBLES_PER_TRACK);
+	if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
+	{
+		yamlLoadHelper.GetMapValueMemory(pTrack.get(), NIBBLES_PER_TRACK);
+		yamlLoadHelper.PopMap();
+	}
 
-	yamlLoadHelper.PopMap();
 	yamlLoadHelper.PopMap();
 
 	//
@@ -1342,195 +1340,4 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
 	return true;
-}
-
-//---
-
-struct DISK2_Unit_v2
-{
-	char	szFileName[MAX_PATH];
-	UINT	Track;
-	UINT	Phase;
-	UINT	Byte;
-	BOOL	WriteProtected;
-	BOOL	TrackImageData;
-	BOOL	TrackImageDirty;
-	DWORD	Spinning;
-	DWORD	WriteLight;
-	UINT	Nibbles;
-	BYTE	TrackImage[NIBBLES_PER_TRACK];
-};
-
-struct SS_CARD_DISK2_v2
-{
-	SS_CARD_HDR	Hdr;
-	DISK2_Unit_v2	Unit[2];
-	WORD	Phases;
-	WORD	CurrDrive;
-	BOOL	DiskAccessed;
-	BOOL	EnhanceDisk;
-	BYTE	FloppyLatch;
-	BOOL	FloppyMotorOn;
-	BOOL	FloppyWriteMode;
-};
-
-void DiskGetSnapshot(const HANDLE hFile)
-{
-	SS_CARD_DISK2_v2 CardDisk2;
-
-	SS_CARD_DISK2_v2* const pSS = &CardDisk2;
-
-	pSS->Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_DISK2);
-	pSS->Hdr.UnitHdr.hdr.v2.Type = UT_Card;
-	pSS->Hdr.UnitHdr.hdr.v2.Version = 1;
-
-	pSS->Hdr.Slot = g_uSlot;
-	pSS->Hdr.Type = CT_Disk2;
-
-	pSS->Phases				= phases;
-	pSS->CurrDrive			= currdrive;
-	pSS->DiskAccessed		= diskaccessed;
-	pSS->EnhanceDisk		= enhancedisk;
-	pSS->FloppyLatch		= floppylatch;
-	pSS->FloppyMotorOn		= floppymotoron;
-	pSS->FloppyWriteMode	= floppywritemode;
-
-	for(UINT i=0; i<NUM_DRIVES; i++)
-	{
-		strcpy(pSS->Unit[i].szFileName, g_aFloppyDisk[i].fullname);
-		pSS->Unit[i].Track				= g_aFloppyDisk[i].track;
-		pSS->Unit[i].Phase				= g_aFloppyDisk[i].phase;
-		pSS->Unit[i].Byte				= g_aFloppyDisk[i].byte;
-		pSS->Unit[i].WriteProtected		= g_aFloppyDisk[i].bWriteProtected ? TRUE : FALSE;
-		pSS->Unit[i].TrackImageData		= g_aFloppyDisk[i].trackimagedata;
-		pSS->Unit[i].TrackImageDirty	= g_aFloppyDisk[i].trackimagedirty;
-		pSS->Unit[i].Spinning			= g_aFloppyDisk[i].spinning;
-		pSS->Unit[i].WriteLight			= g_aFloppyDisk[i].writelight;
-		pSS->Unit[i].Nibbles			= g_aFloppyDisk[i].nibbles;
-
-		if(g_aFloppyDisk[i].trackimage)
-			memcpy(pSS->Unit[i].TrackImage, g_aFloppyDisk[i].trackimage, NIBBLES_PER_TRACK);
-		else
-			memset(pSS->Unit[i].TrackImage, 0, NIBBLES_PER_TRACK);
-	}
-
-	//
-
-	DWORD dwBytesWritten;
-	BOOL bRes = WriteFile(	hFile,
-							&CardDisk2,
-							CardDisk2.Hdr.UnitHdr.hdr.v2.Length,
-							&dwBytesWritten,
-							NULL);
-
-	if(!bRes || (dwBytesWritten != CardDisk2.Hdr.UnitHdr.hdr.v2.Length))
-	{
-		//dwError = GetLastError();
-		throw std::string("Save error: Disk][");
-	}
-}
-
-void DiskSetSnapshot(const HANDLE hFile)
-{
-	SS_CARD_DISK2_v2 CardDisk2;
-
-	DWORD dwBytesRead;
-	BOOL bRes = ReadFile(	hFile,
-							&CardDisk2,
-							sizeof(CardDisk2),
-							&dwBytesRead,
-							NULL);
-
-	if (dwBytesRead != sizeof(CardDisk2))
-		throw std::string("Card: file corrupt");
-
-	if (CardDisk2.Hdr.Slot != 6)	// fixme
-		throw std::string("Card: wrong slot");
-
-	if (CardDisk2.Hdr.UnitHdr.hdr.v2.Version > 1)
-		throw std::string("Card: wrong version");
-
-	if (CardDisk2.Hdr.UnitHdr.hdr.v2.Length != sizeof(SS_CARD_DISK2_v2))
-		throw std::string("Card: unit size mismatch");
-
-	const SS_CARD_DISK2_v2* const pSS = &CardDisk2;
-
-	phases  		= pSS->Phases;
-	currdrive		= pSS->CurrDrive;
-	diskaccessed	= pSS->DiskAccessed;
-	enhancedisk		= pSS->EnhanceDisk;
-	floppylatch		= pSS->FloppyLatch;
-	floppymotoron	= pSS->FloppyMotorOn;
-	floppywritemode	= pSS->FloppyWriteMode;
-
-	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
-	for(UINT i=0; i<NUM_DRIVES; i++)
-	{
-		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
-		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t));
-	}
-
-	bool bResSelectImage = false;
-
-	for(UINT i=0; i<NUM_DRIVES; i++)
-	{
-		if(pSS->Unit[i].szFileName[0] == 0x00)
-			continue;
-
-		DWORD dwAttributes = GetFileAttributes(pSS->Unit[i].szFileName);
-		if(dwAttributes == INVALID_FILE_ATTRIBUTES)
-		{
-			// Get user to browse for file
-			bResSelectImage = DiskSelectImage(i, pSS->Unit[i].szFileName);
-
-			dwAttributes = GetFileAttributes(pSS->Unit[i].szFileName);
-		}
-
-		bool bImageError = (dwAttributes == INVALID_FILE_ATTRIBUTES);
-		if (!bImageError)
-		{
-			if(DiskInsert(i, pSS->Unit[i].szFileName, dwAttributes & FILE_ATTRIBUTE_READONLY, IMAGE_DONT_CREATE) != eIMAGE_ERROR_NONE)
-				bImageError = true;
-
-			// DiskInsert() sets up:
-			// . imagename
-			// . fullname
-			// . writeprotected
-		}
-
-		//
-
-//		strcpy(g_aFloppyDisk[i].fullname, pSS->Unit[i].szFileName);
-		g_aFloppyDisk[i].track				= pSS->Unit[i].Track;
-		g_aFloppyDisk[i].phase				= pSS->Unit[i].Phase;
-		g_aFloppyDisk[i].byte				= pSS->Unit[i].Byte;
-//		g_aFloppyDisk[i].writeprotected		= pSS->Unit[i].WriteProtected;
-		g_aFloppyDisk[i].trackimagedata		= pSS->Unit[i].TrackImageData;
-		g_aFloppyDisk[i].trackimagedirty	= pSS->Unit[i].TrackImageDirty;
-		g_aFloppyDisk[i].spinning			= pSS->Unit[i].Spinning;
-		g_aFloppyDisk[i].writelight			= pSS->Unit[i].WriteLight;
-		g_aFloppyDisk[i].nibbles			= pSS->Unit[i].Nibbles;
-
-		//
-
-		if(!bImageError)
-		{
-			if((g_aFloppyDisk[i].trackimage == NULL) && g_aFloppyDisk[i].nibbles)
-				AllocTrack(i);
-
-			if(g_aFloppyDisk[i].trackimage == NULL)
-				bImageError = true;
-			else
-				memcpy(g_aFloppyDisk[i].trackimage, pSS->Unit[i].TrackImage, NIBBLES_PER_TRACK);
-		}
-
-		if(bImageError)
-		{
-			g_aFloppyDisk[i].trackimagedata		= 0;
-			g_aFloppyDisk[i].trackimagedirty	= 0;
-			g_aFloppyDisk[i].nibbles			= 0;
-		}
-	}
-
-	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 }
