@@ -1180,7 +1180,7 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 #define SS_YAML_KEY_FLOPPY_MOTOR_ON "Floppy Motor On"
 #define SS_YAML_KEY_FLOPPY_WRITE_MODE "Floppy Write Mode"
 
-#define SS_YAML_KEY_DISK2UNIT "Disk][ Unit"
+#define SS_YAML_KEY_DISK2UNIT "Unit"
 #define SS_YAML_KEY_FILENAME "Filename"
 #define SS_YAML_KEY_TRACK "Track"
 #define SS_YAML_KEY_PHASE "Phase"
@@ -1229,7 +1229,7 @@ void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_CURRENT_DRIVE, currdrive);
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_DISK_ACCESSED, diskaccessed);
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ENHANCE_DISK, enhancedisk);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_FLOPPY_LATCH, floppylatch);
+	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_FLOPPY_LATCH, floppylatch);
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_FLOPPY_MOTOR_ON, floppymotoron);
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_FLOPPY_WRITE_MODE, floppywritemode);
 

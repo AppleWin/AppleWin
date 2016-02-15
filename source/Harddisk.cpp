@@ -668,7 +668,7 @@ void HD_GetLightStatus (Disk_Status_e *pDisk1Status_)
 #define SS_YAML_KEY_CURRENT_UNIT "Current Unit"
 #define SS_YAML_KEY_COMMAND "Command"
 
-#define SS_YAML_KEY_HDDUNIT "HDD Unit"
+#define SS_YAML_KEY_HDDUNIT "Unit"
 #define SS_YAML_KEY_FILENAME "Filename"
 #define SS_YAML_KEY_ERROR "Error"
 #define SS_YAML_KEY_MEMBLOCK "MemBlock"
