@@ -48,8 +48,6 @@ public:
 	static void SetCLK( double CLK ) { m_fCurrentCLK_AY8910 = CLK; }
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, std::string& suffix);
 	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, std::string& suffix);
-	UINT GetSnapshot(const HANDLE hFile);
-	UINT SetSnapshot(const HANDLE hFile);
 
 private:
 	void init( void );
