@@ -211,7 +211,7 @@ void CMouseInterface::Reset()
 	m_iMinY = 0;
 	m_iMaxY = 1023;
 
-	m_bButtons[0] = m_bButtons[1] = FALSE;
+	m_bButtons[0] = m_bButtons[1] = false;
 
 	//
 
@@ -448,15 +448,13 @@ void CMouseInterface::OnMouseEvent(bool bEventVBL)
 	if ( !( m_byMode & MODE_MOUSE_ON ) )		// Mouse Off
 		return;
 
-	BOOL bBtn0 = m_bButtons[0];
-	BOOL bBtn1 = m_bButtons[1];
 	if ( m_nX != m_iX || m_nY != m_iY )
 	{
 		byState |= STAT_INT_MOVEMENT|STAT_MOVEMENT_SINCE_READMOUSE;	// X/Y moved since last READMOUSE | Movement interrupt
 		m_byState |= STAT_MOVEMENT_SINCE_READMOUSE;							// [TC] Used by CopyII+9.1 and ProTERM3.1
 	}
 
-	if ( m_bBtn0 != bBtn0 || m_bBtn1 != bBtn1 )
+	if ( m_bBtn0 != m_bButtons[0] || m_bBtn1 != m_bButtons[1] )
 		byState |= STAT_INT_BUTTON;		// Button 0/1 interrupt
 	if ( bEventVBL )
 		byState |= STAT_INT_VBL;
@@ -496,8 +494,8 @@ void CMouseInterface::Clear()
 	m_byState = 0;
 	m_nX = 0;
 	m_nY = 0;
-	m_bBtn0 = 0;
-	m_bBtn1 = 0;
+	m_bBtn0 = false;
+	m_bBtn1 = false;
 	SetPositionAbs( 0, 0 );
 
 //	CpuIrqDeassert(IS_MOUSE);
@@ -595,7 +593,7 @@ void CMouseInterface::SetPositionRel(long dX, long dY, int* pOutOfBoundsX, int* 
 
 void CMouseInterface::SetButton(eBUTTON Button, eBUTTONSTATE State)
 {
-	m_bButtons[Button]= (State == BUTTON_DOWN) ? TRUE : FALSE;
+	m_bButtons[Button] = (State == BUTTON_DOWN);
 	OnMouseEvent();
 }
 
@@ -743,8 +741,8 @@ bool CMouseInterface::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT sl
 	m_byState = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_MOUSESTATE);
 	m_nX = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_X);
 	m_nY = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_Y);
-	m_bBtn0 = yamlLoadHelper.GetMapValueBOOL(SS_YAML_KEY_BTN0);
-	m_bBtn1 = yamlLoadHelper.GetMapValueBOOL(SS_YAML_KEY_BTN1);
+	m_bBtn0 = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_BTN0);
+	m_bBtn1 = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_BTN1);
 	m_bVBL = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_VBL);
 	m_iX = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_IX);
 	m_iMinX = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_IMINX);
@@ -752,8 +750,8 @@ bool CMouseInterface::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT sl
 	m_iY = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_IY);
 	m_iMinY = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_IMINY);
 	m_iMaxY = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_IMAXY);
-	m_bButtons[0] = yamlLoadHelper.GetMapValueBOOL(SS_YAML_KEY_BUTTON0);
-	m_bButtons[1] = yamlLoadHelper.GetMapValueBOOL(SS_YAML_KEY_BUTTON1);
+	m_bButtons[0] = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_BUTTON0);
+	m_bButtons[1] = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_BUTTON1);
 	m_bActive = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_ACTIVE);
 	m_bEnabled = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_ENABLED);
 

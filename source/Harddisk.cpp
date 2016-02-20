@@ -125,7 +125,7 @@ struct HDD
 	WORD	hd_memblock;
 	UINT	hd_diskblock;
 	WORD	hd_buf_ptr;
-	BOOL	hd_imageloaded;
+	bool	hd_imageloaded;
 	BYTE	hd_buf[HD_BLOCK_SIZE+1];	// Why +1? Probably for erroreous reads beyond the block size (ie. reads from I/O addr 0xC0F8)
 
 #if HD_LED
@@ -443,7 +443,7 @@ void HD_Unplug(const int iDrive)
 
 bool HD_IsDriveUnplugged(const int iDrive)
 {
-	return g_HardDisk[iDrive].hd_imageloaded == FALSE;
+	return g_HardDisk[iDrive].hd_imageloaded == false;
 }
 
 //-----------------------------------------------------------------------------
@@ -726,12 +726,13 @@ static bool HD_LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 		throw std::string("Card: Expected key: ") + hddUnitName;
 
 	std::string filename = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_FILENAME).c_str();
-	//strcpy_s(g_HardDisk[Unit].fullname, sizeof(g_HardDisk[unit].fullname), filename.c_str());
+	g_HardDisk[unit].fullname[0] = 0;
+	g_HardDisk[unit].imagename[0] = 0;
 	g_HardDisk[unit].hd_error = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ERROR);
 	g_HardDisk[unit].hd_memblock = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_MEMBLOCK);
 	g_HardDisk[unit].hd_diskblock = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_DISKBLOCK);
-	yamlLoadHelper.GetMapValueBOOL(SS_YAML_KEY_IMAGELOADED);	// Consume
-	g_HardDisk[unit].hd_imageloaded = FALSE;			// Default to FALSE (until image is successfully loaded below)
+	yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_IMAGELOADED);	// Consume
+	g_HardDisk[unit].hd_imageloaded = false;			// Default to false (until image is successfully loaded below)
 	g_HardDisk[unit].hd_status_next = (Disk_Status_e) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_STATUS_NEXT);
 	g_HardDisk[unit].hd_status_prev = (Disk_Status_e)  yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_STATUS_PREV);
 	g_HardDisk[unit].hd_buf_ptr = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_BUF_PTR);

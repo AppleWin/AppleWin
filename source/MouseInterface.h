@@ -75,8 +75,8 @@ protected:
 	BYTE	m_byState;
 	int		m_nX;
 	int		m_nY;
-	BOOL	m_bBtn0;
-	BOOL	m_bBtn1;
+	bool	m_bBtn0;
+	bool	m_bBtn1;
 
 	bool	m_bVBL;
 
@@ -89,7 +89,7 @@ protected:
 	int		m_iMinY;
 	int		m_iMaxY;
 
-	BOOL	m_bButtons[2];
+	bool	m_bButtons[2];
 
 	//
 

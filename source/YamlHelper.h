@@ -132,11 +132,6 @@ public:
 		return GetMapValueUINT(key) ? true : false;
 	}
 
-	BOOL GetMapValueBOOL(const std::string key)
-	{
-		return GetMapValueUINT(key) ? TRUE : FALSE;
-	}
-
 	std::string GetMapValueSTRING_NoThrow(const std::string& key, bool& bFound)
 	{
 		std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
@@ -226,8 +221,6 @@ private:
 
 class YamlSaveHelper
 {
-friend class Indent;	// Indent can access YamlSaveHelper's private members
-
 public:
 	YamlSaveHelper(std::string pathname) :
 		m_hFile(NULL),
