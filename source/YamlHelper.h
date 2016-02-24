@@ -213,6 +213,7 @@ public:
 	void SaveHex64(const char* key, UINT64 value);
 	void SaveBool(const char* key, bool value);
 	void SaveString(const char* key,  const char* value);
+	void SaveMemory(const LPBYTE pMemBase, const UINT uMemSize);
 
 	class Label
 	{
@@ -255,7 +256,6 @@ public:
 
 	void FileHdr(UINT version);
 	void UnitHdr(std::string type, UINT version);
-	void SaveMapValueMemory(const LPBYTE pMemBase, const UINT uMemSize);
 
 private:
 	FILE* m_hFile;

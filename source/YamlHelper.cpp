@@ -401,23 +401,7 @@ void YamlSaveHelper::SaveString(const char* key,  const char* value)
 	Save("%s: %s\n", key, (value[0] != 0) ? value : "\"\"");
 }
 
-void YamlSaveHelper::FileHdr(UINT version)
-{
-	fprintf(m_hFile, "%s:\n", SS_YAML_KEY_FILEHDR);
-	m_indent = 2;
-	SaveString(SS_YAML_KEY_TAG, SS_YAML_VALUE_AWSS);
-	SaveInt(SS_YAML_KEY_VERSION, version);
-}
-
-void YamlSaveHelper::UnitHdr(std::string type, UINT version)
-{
-	fprintf(m_hFile, "\n%s:\n", SS_YAML_KEY_UNIT);
-	m_indent = 2;
-	SaveString(SS_YAML_KEY_TYPE, type.c_str());
-	SaveInt(SS_YAML_KEY_VERSION, version);
-}
-
-void YamlSaveHelper::SaveMapValueMemory(const LPBYTE pMemBase, const UINT uMemSize)
+void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize)
 {
 	const UINT kIndent = m_indent;
 
@@ -468,4 +452,20 @@ void YamlSaveHelper::SaveMapValueMemory(const LPBYTE pMemBase, const UINT uMemSi
 	}
 
 	delete [] pLine;
+}
+
+void YamlSaveHelper::FileHdr(UINT version)
+{
+	fprintf(m_hFile, "%s:\n", SS_YAML_KEY_FILEHDR);
+	m_indent = 2;
+	SaveString(SS_YAML_KEY_TAG, SS_YAML_VALUE_AWSS);
+	SaveInt(SS_YAML_KEY_VERSION, version);
+}
+
+void YamlSaveHelper::UnitHdr(std::string type, UINT version)
+{
+	fprintf(m_hFile, "\n%s:\n", SS_YAML_KEY_UNIT);
+	m_indent = 2;
+	SaveString(SS_YAML_KEY_TYPE, type.c_str());
+	SaveInt(SS_YAML_KEY_VERSION, version);
 }

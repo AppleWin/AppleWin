@@ -1731,12 +1731,12 @@ static void MemSaveSnapshotMemory(YamlSaveHelper& yamlSaveHelper, bool bIsMainMe
 	if (bIsMainMem)
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotMainMemStructName().c_str());
-		yamlSaveHelper.SaveMapValueMemory(pMemBase, 64*1024);
+		yamlSaveHelper.SaveMemory(pMemBase, 64*1024);
 	}
 	else
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s%02X:\n", MemGetSnapshotAuxMemStructName().c_str(), bank-1);
-		yamlSaveHelper.SaveMapValueMemory(pMemBase, 64*1024);
+		yamlSaveHelper.SaveMemory(pMemBase, 64*1024);
 	}
 }
 

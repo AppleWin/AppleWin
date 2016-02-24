@@ -673,7 +673,7 @@ void CMouseInterface::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	// New label
 	{
 		YamlSaveHelper::Label buffer(yamlSaveHelper, "%s:\n", SS_YAML_KEY_BUFF);
-		yamlSaveHelper.SaveMapValueMemory(m_byBuff, sizeof(m_byBuff));
+		yamlSaveHelper.SaveMemory(m_byBuff, sizeof(m_byBuff));
 	}
 
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_BUFFPOS, m_nBuffPos);

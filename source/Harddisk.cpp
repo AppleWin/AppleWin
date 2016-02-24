@@ -700,7 +700,7 @@ static void HD_SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 	// New label
 	{
 		YamlSaveHelper::Label buffer(yamlSaveHelper, "%s:\n", SS_YAML_KEY_BUF);
-		yamlSaveHelper.SaveMapValueMemory(g_HardDisk[unit].hd_buf, HD_BLOCK_SIZE);
+		yamlSaveHelper.SaveMemory(g_HardDisk[unit].hd_buf, HD_BLOCK_SIZE);
 	}
 }
 

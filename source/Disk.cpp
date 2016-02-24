@@ -1216,7 +1216,7 @@ static void DiskSaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 	if (g_aFloppyDisk[unit].trackimage)
 	{
 		YamlSaveHelper::Label image(yamlSaveHelper, "%s:\n", SS_YAML_KEY_TRACK_IMAGE);
-		yamlSaveHelper.SaveMapValueMemory(g_aFloppyDisk[unit].trackimage, NIBBLES_PER_TRACK);
+		yamlSaveHelper.SaveMemory(g_aFloppyDisk[unit].trackimage, NIBBLES_PER_TRACK);
 	}
 }
 
