@@ -883,11 +883,11 @@ void JoyLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap(JoyGetSnapshotStructName()))
 		return;
 
-	g_nJoyCntrResetCycle = yamlLoadHelper.GetMapValueUINT64(SS_YAML_KEY_COUNTERRESETCYCLE);
-	JoySetTrim(yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_JOY0TRIMX), true);
-	JoySetTrim(yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_JOY0TRIMY), false);
-	yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_JOY1TRIMX);	// dump value
-	yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_JOY1TRIMY);	// dump value
+	g_nJoyCntrResetCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_COUNTERRESETCYCLE);
+	JoySetTrim(yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY0TRIMX), true);
+	JoySetTrim(yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY0TRIMY), false);
+	yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY1TRIMX);	// dump value
+	yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY1TRIMY);	// dump value
 
 	yamlLoadHelper.PopMap();
 }

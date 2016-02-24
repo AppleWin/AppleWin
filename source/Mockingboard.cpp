@@ -2001,19 +2001,19 @@ static void LoadSnapshotSY6522(YamlLoadHelper& yamlLoadHelper, SY6522& sy6522)
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SY6522))
 		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_SY6522);
 
-	sy6522.ORB  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_ORB);
-	sy6522.ORA  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_ORA);
-	sy6522.DDRB = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_DDRB);
-	sy6522.DDRA = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_DDRA);
-	sy6522.TIMER1_COUNTER.w = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_T1_COUNTER);
-	sy6522.TIMER1_LATCH.w   = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_T1_LATCH);
-	sy6522.TIMER2_COUNTER.w = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_T2_COUNTER);
-	sy6522.TIMER2_LATCH.w   = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_T2_LATCH);
-	sy6522.SERIAL_SHIFT     = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_SERIAL_SHIFT);
-	sy6522.ACR  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_ACR);
-	sy6522.PCR  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_PCR);
-	sy6522.IFR  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_IFR);
-	sy6522.IER  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SY6522_REG_IER);
+	sy6522.ORB  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_ORB);
+	sy6522.ORA  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_ORA);
+	sy6522.DDRB = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_DDRB);
+	sy6522.DDRA = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_DDRA);
+	sy6522.TIMER1_COUNTER.w = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_T1_COUNTER);
+	sy6522.TIMER1_LATCH.w   = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_T1_LATCH);
+	sy6522.TIMER2_COUNTER.w = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_T2_COUNTER);
+	sy6522.TIMER2_LATCH.w   = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_T2_LATCH);
+	sy6522.SERIAL_SHIFT     = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_SERIAL_SHIFT);
+	sy6522.ACR  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_ACR);
+	sy6522.PCR  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_PCR);
+	sy6522.IFR  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_IFR);
+	sy6522.IER  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_IER);
 	sy6522.ORA_NO_HS = 0;	// Not saved
 
 	yamlLoadHelper.PopMap();
@@ -2024,12 +2024,12 @@ static void LoadSnapshotSSI263(YamlLoadHelper& yamlLoadHelper, SSI263A& ssi263)
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263))
 		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_SSI263);
 
-	ssi263.DurationPhoneme = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SSI263_REG_DUR_PHON);
-	ssi263.Inflection      = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SSI263_REG_INF);
-	ssi263.RateInflection  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SSI263_REG_RATE_INF);
-	ssi263.CtrlArtAmp      = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP);
-	ssi263.FilterFreq      = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SSI263_REG_FILTER_FREQ);
-	ssi263.CurrentMode     = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SSI263_REG_CURRENT_MODE);
+	ssi263.DurationPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_DUR_PHON);
+	ssi263.Inflection      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_INF);
+	ssi263.RateInflection  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_RATE_INF);
+	ssi263.CtrlArtAmp      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP);
+	ssi263.FilterFreq      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_FILTER_FREQ);
+	ssi263.CurrentMode     = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_CURRENT_MODE);
 
 	yamlLoadHelper.PopMap();
 }
@@ -2062,10 +2062,10 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum, std::string(""));
 		LoadSnapshotSSI263(yamlLoadHelper, pMB->SpeechChip);
 
-		pMB->nAYCurrentRegister = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_AY_CURR_REG);
-		yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TIMER1_IRQ);	// Consume
-		yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TIMER2_IRQ);	// Consume
-		yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SPEECH_IRQ);	// Consume
+		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_TIMER1_IRQ);	// Consume
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_TIMER2_IRQ);	// Consume
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_SPEECH_IRQ);	// Consume
 
 		yamlLoadHelper.PopMap();
 
@@ -2144,8 +2144,8 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 	if (version != 1)
 		throw std::string("Card: wrong version");
 
-	g_PhasorClockScaleFactor = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);
-	g_nPhasorMode = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PHASOR_MODE);
+	g_PhasorClockScaleFactor = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);
+	g_nPhasorMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_MODE);
 
 	AY8910UpdateSetCycles();
 
@@ -2167,10 +2167,10 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+1, std::string("-B"));
 		LoadSnapshotSSI263(yamlLoadHelper, pMB->SpeechChip);
 
-		pMB->nAYCurrentRegister = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_AY_CURR_REG);
-		yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TIMER1_IRQ);	// Consume
-		yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TIMER2_IRQ);	// Consume
-		yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SPEECH_IRQ);	// Consume
+		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_TIMER1_IRQ);	// Consume
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_TIMER2_IRQ);	// Consume
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_SPEECH_IRQ);	// Consume
 
 		yamlLoadHelper.PopMap();
 

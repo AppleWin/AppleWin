@@ -1761,12 +1761,12 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap(MemGetSnapshotStructName()))
 		return false;
 
-	SetMemMode( yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_MEMORYMODE) );
-	lastwriteram = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
-	IO_SELECT = (BYTE) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IOSELECT);
-	IO_SELECT_InternalROM = (BYTE) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IOSELECT_INT);
-	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_EXPANSIONROMTYPE);
-	g_uPeripheralRomSlot = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PERIPHERALROMSLOT);
+	SetMemMode( yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) );
+	lastwriteram = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
+	IO_SELECT = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT);
+	IO_SELECT_InternalROM = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT_INT);
+	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.LoadUint(SS_YAML_KEY_EXPANSIONROMTYPE);
+	g_uPeripheralRomSlot = yamlLoadHelper.LoadUint(SS_YAML_KEY_PERIPHERALROMSLOT);
 
 	yamlLoadHelper.PopMap();
 
@@ -1775,7 +1775,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap( MemGetSnapshotMainMemStructName() ))
 		throw std::string("Card: Expected key: ") + MemGetSnapshotMainMemStructName();
 
-	yamlLoadHelper.GetMapValueMemory(memmain, _6502_MEM_END+1);
+	yamlLoadHelper.LoadMemory(memmain, _6502_MEM_END+1);
 	memset(memdirty, 0, 0x100);
 
 	yamlLoadHelper.PopMap();
@@ -1823,10 +1823,10 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Version mismatch");
 
 	// "State"
-	UINT numAuxBanks   = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_NUMAUXBANKS);
-	UINT activeAuxBank = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ACTIVEAUXBANK);
+	UINT numAuxBanks   = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUMAUXBANKS);
+	UINT activeAuxBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVEAUXBANK);
 
-	std::string card = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_CARD);
+	std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
 	if (card == SS_YAML_VALUE_CARD_80COL)
 	{
 		if (numAuxBanks != 0 || activeAuxBank != 0)
@@ -1871,7 +1871,7 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 		if (!yamlLoadHelper.GetSubMap(auxMemName))
 			throw std::string("Memory: Missing map name: " + auxMemName);
 
-		yamlLoadHelper.GetMapValueMemory(pBank, _6502_MEM_END+1);
+		yamlLoadHelper.LoadMemory(pBank, _6502_MEM_END+1);
 
 		yamlLoadHelper.PopMap();
 	}

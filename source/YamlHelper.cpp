@@ -236,7 +236,7 @@ void YamlHelper::MakeAsciiToHexTable(void)
 		m_AsciiToHex[i] = i - 'a' + 0xA;
 }
 
-void YamlHelper::GetMapValueMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize)
+void YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize)
 {
 	for (MapYaml::iterator it = mapYaml.begin(); it != mapYaml.end(); ++it)
 	{
@@ -271,6 +271,72 @@ void YamlHelper::GetMapValueMemory(MapYaml& mapYaml, const LPBYTE pMemBase, cons
 	}
 
 	mapYaml.clear();
+}
+
+//-------------------------------------
+
+INT YamlLoadHelper::LoadInt(const std::string key)
+{
+	bool bFound;
+	std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
+	if (value == "")
+	{
+		m_bDoGetMapRemainder = false;
+		throw std::string(m_currentMapName + ": Missing: " + key);
+	}
+	return strtol(value.c_str(), NULL, 0);
+}
+
+UINT YamlLoadHelper::LoadUint(const std::string key)
+{
+	bool bFound;
+	std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
+	if (value == "")
+	{
+		m_bDoGetMapRemainder = false;
+		throw std::string(m_currentMapName + ": Missing: " + key);
+	}
+	return strtoul(value.c_str(), NULL, 0);
+}
+
+UINT64 YamlLoadHelper::LoadUint64(const std::string key)
+{
+	bool bFound;
+	std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
+	if (value == "")
+	{
+		m_bDoGetMapRemainder = false;
+		throw std::string(m_currentMapName + ": Missing: " + key);
+	}
+	return _strtoui64(value.c_str(), NULL, 0);
+}
+
+bool YamlLoadHelper::LoadBool(const std::string key)
+{
+	return LoadUint(key) ? true : false;
+}
+
+std::string YamlLoadHelper::LoadString_NoThrow(const std::string& key, bool& bFound)
+{
+	std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
+	return value;
+}
+
+std::string YamlLoadHelper::LoadString(const std::string& key)
+{
+	bool bFound;
+	std::string value = LoadString_NoThrow(key, bFound);
+	if (!bFound)
+	{
+		m_bDoGetMapRemainder = false;
+		throw std::string(m_currentMapName + ": Missing: " + key);
+	}
+	return value;
+}
+
+void YamlLoadHelper::LoadMemory(const LPBYTE pMemBase, const size_t size)
+{
+	m_yamlHelper.LoadMemory(*m_pMapYaml, pMemBase, size);
 }
 
 //-------------------------------------

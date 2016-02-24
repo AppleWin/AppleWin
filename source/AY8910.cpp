@@ -1053,51 +1053,51 @@ bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, std::string& suffix)
 	if (!yamlLoadHelper.GetSubMap(unit))
 		throw std::string("Card: Expected key: ") + unit;
 
-	ay_tone_tick[0] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TONE0_TICK);
-	ay_tone_tick[1] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TONE1_TICK);
-	ay_tone_tick[2] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TONE2_TICK);
-	ay_tone_high[0] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TONE0_HIGH);
-	ay_tone_high[1] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TONE1_HIGH);
-	ay_tone_high[2] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TONE2_HIGH);
-	ay_noise_tick = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_NOISE_TICK);
-	ay_tone_subcycles = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TONE_SUBCYCLES);
-	ay_env_subcycles = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ENV_SUBCYCLES);
-	ay_env_internal_tick = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ENV_INTERNAL_TICK);
-	ay_env_tick = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ENV_TICK);
-	ay_tick_incr = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TICK_INCR);
-	ay_tone_period[0] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TONE0_PERIOD);
-	ay_tone_period[1] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TONE1_PERIOD);
-	ay_tone_period[2] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TONE2_PERIOD);
-	ay_noise_period = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_NOISE_PERIOD);
-	rng = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_RNG);
-	noise_toggle = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_NOISE_TOGGLE);
-	env_first = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ENV_FIRST);
-	env_rev = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ENV_REV);
-	env_counter = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ENV_COUNTER);
+	ay_tone_tick[0] = yamlLoadHelper.LoadUint(SS_YAML_KEY_TONE0_TICK);
+	ay_tone_tick[1] = yamlLoadHelper.LoadUint(SS_YAML_KEY_TONE1_TICK);
+	ay_tone_tick[2] = yamlLoadHelper.LoadUint(SS_YAML_KEY_TONE2_TICK);
+	ay_tone_high[0] = yamlLoadHelper.LoadUint(SS_YAML_KEY_TONE0_HIGH);
+	ay_tone_high[1] = yamlLoadHelper.LoadUint(SS_YAML_KEY_TONE1_HIGH);
+	ay_tone_high[2] = yamlLoadHelper.LoadUint(SS_YAML_KEY_TONE2_HIGH);
+	ay_noise_tick = yamlLoadHelper.LoadUint(SS_YAML_KEY_NOISE_TICK);
+	ay_tone_subcycles = yamlLoadHelper.LoadUint(SS_YAML_KEY_TONE_SUBCYCLES);
+	ay_env_subcycles = yamlLoadHelper.LoadUint(SS_YAML_KEY_ENV_SUBCYCLES);
+	ay_env_internal_tick = yamlLoadHelper.LoadUint(SS_YAML_KEY_ENV_INTERNAL_TICK);
+	ay_env_tick = yamlLoadHelper.LoadUint(SS_YAML_KEY_ENV_TICK);
+	ay_tick_incr = yamlLoadHelper.LoadUint(SS_YAML_KEY_TICK_INCR);
+	ay_tone_period[0] = yamlLoadHelper.LoadUint(SS_YAML_KEY_TONE0_PERIOD);
+	ay_tone_period[1] = yamlLoadHelper.LoadUint(SS_YAML_KEY_TONE1_PERIOD);
+	ay_tone_period[2] = yamlLoadHelper.LoadUint(SS_YAML_KEY_TONE2_PERIOD);
+	ay_noise_period = yamlLoadHelper.LoadUint(SS_YAML_KEY_NOISE_PERIOD);
+	rng = yamlLoadHelper.LoadUint(SS_YAML_KEY_RNG);
+	noise_toggle = yamlLoadHelper.LoadUint(SS_YAML_KEY_NOISE_TOGGLE);
+	env_first = yamlLoadHelper.LoadUint(SS_YAML_KEY_ENV_FIRST);
+	env_rev = yamlLoadHelper.LoadUint(SS_YAML_KEY_ENV_REV);
+	env_counter = yamlLoadHelper.LoadUint(SS_YAML_KEY_ENV_COUNTER);
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_REGISTERS))
 		throw std::string("Card: Expected key: ") + SS_YAML_KEY_REGISTERS;
 
-	USHORT period = (USHORT) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REG_TONE0_PERIOD);
+	USHORT period = (USHORT) yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_TONE0_PERIOD);
 	sound_ay_registers[0] = period & 0xff;
 	sound_ay_registers[1] = (period >> 8) & 0xf;
-	period = (USHORT) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REG_TONE1_PERIOD);
+	period = (USHORT) yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_TONE1_PERIOD);
 	sound_ay_registers[2] = period & 0xff;
 	sound_ay_registers[3] = (period >> 8) & 0xf;
-	period = (USHORT) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REG_TONE2_PERIOD);
+	period = (USHORT) yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_TONE2_PERIOD);
 	sound_ay_registers[4] = period & 0xff;
 	sound_ay_registers[5] = (period >> 8) & 0xf;
-	sound_ay_registers[6] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REG_NOISE_PERIOD);
-	sound_ay_registers[7] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REG_MIXER);
-	sound_ay_registers[8] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REG_VOL0);
-	sound_ay_registers[9] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REG_VOL1);
-	sound_ay_registers[10] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REG_VOL2);
-	period = (USHORT) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REG_ENV_PERIOD);
+	sound_ay_registers[6] = yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_NOISE_PERIOD);
+	sound_ay_registers[7] = yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_MIXER);
+	sound_ay_registers[8] = yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_VOL0);
+	sound_ay_registers[9] = yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_VOL1);
+	sound_ay_registers[10] = yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_VOL2);
+	period = (USHORT) yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_ENV_PERIOD);
 	sound_ay_registers[11] = period & 0xff;
 	sound_ay_registers[12] = period >> 8;
-	sound_ay_registers[13] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REG_ENV_SHAPE);
-	sound_ay_registers[14] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REG_PORTA);
-	sound_ay_registers[15] = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REG_PORTB);
+	sound_ay_registers[13] = yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_ENV_SHAPE);
+	sound_ay_registers[14] = yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_PORTA);
+	sound_ay_registers[15] = yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_PORTB);
 
 	yamlLoadHelper.PopMap();
 
@@ -1110,7 +1110,7 @@ bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, std::string& suffix)
 			sprintf_s(szIndex, sizeof(szIndex), "0x%04X", ay_change_count);
 
 			bool bFound;
-			std::string value = yamlLoadHelper.GetMapValueSTRING_NoThrow(szIndex, bFound);
+			std::string value = yamlLoadHelper.LoadString_NoThrow(szIndex, bFound);
 			if (!bFound)
 				break;	// done
 

@@ -298,13 +298,13 @@ bool Printer_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT 
 	if (version != 1)
 		throw std::string("Card: wrong version");
 
-	inactivity					= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_INACTIVITY);
-	g_PrinterIdleLimit			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IDLELIMIT);
-	strncpy(g_szPrintFilename, yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_FILENAME).c_str(), sizeof(g_szPrintFilename));
+	inactivity					= yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);
+	g_PrinterIdleLimit			= yamlLoadHelper.LoadUint(SS_YAML_KEY_IDLELIMIT);
+	strncpy(g_szPrintFilename, yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME).c_str(), sizeof(g_szPrintFilename));
 
-	if (yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_FILEOPEN))
+	if (yamlLoadHelper.LoadBool(SS_YAML_KEY_FILEOPEN))
 	{
-		yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_APPEND);	// Consume
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_APPEND);	// Consume
 		g_bPrinterAppend = true;	// Re-open print-file in append mode
 		BOOL bRes = CheckPrint();
 		if (!bRes)
@@ -312,13 +312,13 @@ bool Printer_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT 
 	}
 	else
 	{
-		g_bPrinterAppend = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_APPEND);
+		g_bPrinterAppend = yamlLoadHelper.LoadBool(SS_YAML_KEY_APPEND);
 	}
 
-	g_bDumpToPrinter			= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_DUMPTOPRINTER);
-	g_bConvertEncoding			= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_CONVERTENCODING);
-	g_bFilterUnprintable		= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_FILTERUNPRINTABLE);
-	g_bEnableDumpToRealPrinter	= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_DUMPTOREALPRINTER);
+	g_bDumpToPrinter			= yamlLoadHelper.LoadBool(SS_YAML_KEY_DUMPTOPRINTER);
+	g_bConvertEncoding			= yamlLoadHelper.LoadBool(SS_YAML_KEY_CONVERTENCODING);
+	g_bFilterUnprintable		= yamlLoadHelper.LoadBool(SS_YAML_KEY_FILTERUNPRINTABLE);
+	g_bEnableDumpToRealPrinter	= yamlLoadHelper.LoadBool(SS_YAML_KEY_DUMPTOREALPRINTER);
 
 	return true;
 }

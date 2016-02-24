@@ -6528,41 +6528,41 @@ bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT ver
 	if (version != 1)
 		throw std::string("Card: wrong version");
 
-	reg_a = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGA);
-	reg_b = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGB);
-	reg_c = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGC);
-	reg_d = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGD);
-	reg_e = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGE);
-	reg_f = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGF);
-	reg_h = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGH);
-	reg_l = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGL);
-	USHORT IX = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGIX);
+	reg_a = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGA);
+	reg_b = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGB);
+	reg_c = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGC);
+	reg_d = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGD);
+	reg_e = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGE);
+	reg_f = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGF);
+	reg_h = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGH);
+	reg_l = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGL);
+	USHORT IX = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGIX);
 	reg_ixh = IX >> 8;
 	reg_ixl = IX & 0xFF;
-	USHORT IY = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGIY);
+	USHORT IY = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGIY);
 	reg_iyh = IY >> 8;
 	reg_iyl = IY & 0xFF;
-	reg_sp = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGSP);
-	z80_reg_pc = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGPC);
-	reg_i = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGI);
-	reg_r = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGR);
+	reg_sp = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGSP);
+	z80_reg_pc = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGPC);
+	reg_i = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGI);
+	reg_r = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGR);
 
-	iff1 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IFF1);
-	iff2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IFF2);
-	im_mode = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IM_MODE);
+	iff1 = yamlLoadHelper.LoadUint(SS_YAML_KEY_IFF1);
+	iff2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_IFF2);
+	im_mode = yamlLoadHelper.LoadUint(SS_YAML_KEY_IM_MODE);
 
-	reg_a2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGA2);
-	reg_b2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGB2);
-	reg_c2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGC2);
-	reg_d2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGD2);
-	reg_e2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGE2);
-	reg_f2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGF2);
-	reg_h2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGH2);
-	reg_l2 = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGL2);
+	reg_a2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGA2);
+	reg_b2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGB2);
+	reg_c2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGC2);
+	reg_d2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGD2);
+	reg_e2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGE2);
+	reg_f2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGF2);
+	reg_h2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGH2);
+	reg_l2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGL2);
 
 	export_registers();
 
-	if ( yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ACTIVE) )
+	if ( yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVE) )
 		SetActiveCpu(CPU_Z80);	// Support MS SoftCard in multiple slots (only one Z80 can be active at any one time)
 
 	return true;

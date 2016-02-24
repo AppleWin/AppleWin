@@ -700,15 +700,15 @@ void CMouseInterface::LoadSnapshotMC6821(YamlLoadHelper& yamlLoadHelper, std::st
 		throw std::string("Card: Expected key: ") + key;
 
 	mc6821_t mc6821;
-	mc6821.pra  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PRA);
-	mc6821.ddra = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_DDRA);
-	mc6821.cra  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CRA);
-	mc6821.prb  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PRB);
-	mc6821.ddrb = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_DDRB);
-	mc6821.crb  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CRB);
+	mc6821.pra  = yamlLoadHelper.LoadUint(SS_YAML_KEY_PRA);
+	mc6821.ddra = yamlLoadHelper.LoadUint(SS_YAML_KEY_DDRA);
+	mc6821.cra  = yamlLoadHelper.LoadUint(SS_YAML_KEY_CRA);
+	mc6821.prb  = yamlLoadHelper.LoadUint(SS_YAML_KEY_PRB);
+	mc6821.ddrb = yamlLoadHelper.LoadUint(SS_YAML_KEY_DDRB);
+	mc6821.crb  = yamlLoadHelper.LoadUint(SS_YAML_KEY_CRB);
 
-	BYTE byIA   = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IA);
-	BYTE byIB   = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IB);
+	BYTE byIA   = yamlLoadHelper.LoadUint(SS_YAML_KEY_IA);
+	BYTE byIB   = yamlLoadHelper.LoadUint(SS_YAML_KEY_IB);
 
 	m_6821.Set6821(mc6821, byIA, byIB);
 
@@ -725,32 +725,32 @@ bool CMouseInterface::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT sl
 
 	LoadSnapshotMC6821(yamlLoadHelper, SS_YAML_KEY_MC6821);
 
-	m_nDataLen = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_DATALEN);
-	m_byMode = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_MODE);
-	m_by6821B = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_6821B);
-	m_by6821A = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_6821A);
+	m_nDataLen = yamlLoadHelper.LoadUint(SS_YAML_KEY_DATALEN);
+	m_byMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_MODE);
+	m_by6821B = yamlLoadHelper.LoadUint(SS_YAML_KEY_6821B);
+	m_by6821A = yamlLoadHelper.LoadUint(SS_YAML_KEY_6821A);
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_BUFF))
 		throw std::string("Card: Expected key: "SS_YAML_KEY_BUFF);
-	yamlLoadHelper.GetMapValueMemory(m_byBuff, sizeof(m_byBuff));
+	yamlLoadHelper.LoadMemory(m_byBuff, sizeof(m_byBuff));
 	yamlLoadHelper.PopMap();
 
-	m_nBuffPos = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_BUFFPOS);
-	m_byState = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_MOUSESTATE);
-	m_nX = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_X);
-	m_nY = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_Y);
-	m_bBtn0 = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_BTN0);
-	m_bBtn1 = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_BTN1);
-	m_bVBL = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_VBL);
-	m_iX = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_IX);
-	m_iMinX = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_IMINX);
-	m_iMaxX = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_IMAXX);
-	m_iY = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_IY);
-	m_iMinY = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_IMINY);
-	m_iMaxY = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_IMAXY);
-	m_bButtons[0] = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_BUTTON0);
-	m_bButtons[1] = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_BUTTON1);
-	m_bEnabled = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_ENABLED);	// MemInitializeIO() calls Initialize() which sets true
+	m_nBuffPos = yamlLoadHelper.LoadUint(SS_YAML_KEY_BUFFPOS);
+	m_byState = yamlLoadHelper.LoadUint(SS_YAML_KEY_MOUSESTATE);
+	m_nX = yamlLoadHelper.LoadInt(SS_YAML_KEY_X);
+	m_nY = yamlLoadHelper.LoadInt(SS_YAML_KEY_Y);
+	m_bBtn0 = yamlLoadHelper.LoadBool(SS_YAML_KEY_BTN0);
+	m_bBtn1 = yamlLoadHelper.LoadBool(SS_YAML_KEY_BTN1);
+	m_bVBL = yamlLoadHelper.LoadBool(SS_YAML_KEY_VBL);
+	m_iX = yamlLoadHelper.LoadInt(SS_YAML_KEY_IX);
+	m_iMinX = yamlLoadHelper.LoadInt(SS_YAML_KEY_IMINX);
+	m_iMaxX = yamlLoadHelper.LoadInt(SS_YAML_KEY_IMAXX);
+	m_iY = yamlLoadHelper.LoadInt(SS_YAML_KEY_IY);
+	m_iMinY = yamlLoadHelper.LoadInt(SS_YAML_KEY_IMINY);
+	m_iMaxY = yamlLoadHelper.LoadInt(SS_YAML_KEY_IMAXY);
+	m_bButtons[0] = yamlLoadHelper.LoadBool(SS_YAML_KEY_BUTTON0);
+	m_bButtons[1] = yamlLoadHelper.LoadBool(SS_YAML_KEY_BUTTON1);
+	m_bEnabled = yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED);	// MemInitializeIO() calls Initialize() which sets true
 
 	return true;
 }

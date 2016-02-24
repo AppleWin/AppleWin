@@ -2973,9 +2973,9 @@ void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap(VideoGetSnapshotStructName()))
 		return;
 
-	g_nAltCharSetOffset = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ALTCHARSET) ? 256 : 0;
-	g_uVideoMode = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_VIDEOMODE);
-	g_dwCyclesThisFrame = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CYCLESTHISFRAME);
+	g_nAltCharSetOffset = yamlLoadHelper.LoadUint(SS_YAML_KEY_ALTCHARSET) ? 256 : 0;
+	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEOMODE);
+	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLESTHISFRAME);
 
 	yamlLoadHelper.PopMap();
 }

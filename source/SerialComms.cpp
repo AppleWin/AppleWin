@@ -1385,13 +1385,13 @@ void CSuperSerialCard::LoadSnapshotDIPSW(YamlLoadHelper& yamlLoadHelper, std::st
 	if (!yamlLoadHelper.GetSubMap(key))
 		throw std::string("Card: Expected key: " + key);
 
-	dipsw.uBaudRate		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_BAUDRATE);
-	dipsw.eFirmwareMode = (eFWMODE) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_FWMODE);
-	dipsw.uStopBits		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_STOPBITS);
-	dipsw.uByteSize		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_BYTESIZE);
-	dipsw.uParity		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PARITY);
-	dipsw.bLinefeed		= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_LINEFEED);
-	dipsw.bInterrupts	= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_INTERRUPTS);
+	dipsw.uBaudRate		= yamlLoadHelper.LoadUint(SS_YAML_KEY_BAUDRATE);
+	dipsw.eFirmwareMode = (eFWMODE) yamlLoadHelper.LoadUint(SS_YAML_KEY_FWMODE);
+	dipsw.uStopBits		= yamlLoadHelper.LoadUint(SS_YAML_KEY_STOPBITS);
+	dipsw.uByteSize		= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTESIZE);
+	dipsw.uParity		= yamlLoadHelper.LoadUint(SS_YAML_KEY_PARITY);
+	dipsw.bLinefeed		= yamlLoadHelper.LoadBool(SS_YAML_KEY_LINEFEED);
+	dipsw.bInterrupts	= yamlLoadHelper.LoadBool(SS_YAML_KEY_INTERRUPTS);
 
 	yamlLoadHelper.PopMap();
 }
@@ -1407,20 +1407,20 @@ bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, U
 	LoadSnapshotDIPSW(yamlLoadHelper, SS_YAML_KEY_DIPSWDEFAULT, m_DIPSWDefault);
 	LoadSnapshotDIPSW(yamlLoadHelper, SS_YAML_KEY_DIPSWCURRENT, m_DIPSWCurrent);
 
-	m_uBaudRate			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_BAUDRATE);
-	m_uStopBits			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_STOPBITS); 
-	m_uByteSize			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_BYTESIZE);
-	m_uParity			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PARITY);
-	m_uControlByte		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CONTROL);
-	m_uCommandByte		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_COMMAND);
-	m_dwCommInactivity	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_INACTIVITY);
-	m_bTxIrqEnabled		= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_TXIRQENABLED);
-	m_bRxIrqEnabled		= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_RXIRQENABLED);
-	m_vbTxIrqPending	= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_TXIRQPENDING);
-	m_vbRxIrqPending	= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_RXIRQPENDING);
-	m_bWrittenTx		= yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_WRITTENTX);
+	m_uBaudRate			= yamlLoadHelper.LoadUint(SS_YAML_KEY_BAUDRATE);
+	m_uStopBits			= yamlLoadHelper.LoadUint(SS_YAML_KEY_STOPBITS); 
+	m_uByteSize			= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTESIZE);
+	m_uParity			= yamlLoadHelper.LoadUint(SS_YAML_KEY_PARITY);
+	m_uControlByte		= yamlLoadHelper.LoadUint(SS_YAML_KEY_CONTROL);
+	m_uCommandByte		= yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
+	m_dwCommInactivity	= yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);
+	m_bTxIrqEnabled		= yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQENABLED);
+	m_bRxIrqEnabled		= yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQENABLED);
+	m_vbTxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQPENDING);
+	m_vbRxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQPENDING);
+	m_bWrittenTx		= yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITTENTX);
 
-	std::string serialPortName = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_SERIALPORTNAME);
+	std::string serialPortName = yamlLoadHelper.LoadString(SS_YAML_KEY_SERIALPORTNAME);
 	SetSerialPortName(serialPortName.c_str());
 
 	return true;

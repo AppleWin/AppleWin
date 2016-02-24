@@ -300,14 +300,14 @@ static UINT ParseFileHdr(void)
 
 	//
 
-	std::string value = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_TAG);
+	std::string value = yamlLoadHelper.LoadString(SS_YAML_KEY_TAG);
 	if (value != SS_YAML_VALUE_AWSS)
 	{
 		//printf("%s: Bad tag (%s) - expected %s\n", SS_YAML_KEY_FILEHDR, value.c_str(), SS_YAML_VALUE_AWSS);
 		throw std::string(SS_YAML_KEY_FILEHDR ": Bad tag");
 	}
 
-	return yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_VERSION);
+	return yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 }
 
 //---
@@ -317,7 +317,7 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	if (version != UNIT_APPLE2_VER)
 		throw std::string(SS_YAML_KEY_UNIT ": Apple2: Version mismatch");
 
-	std::string model = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_MODEL);
+	std::string model = yamlLoadHelper.LoadString(SS_YAML_KEY_MODEL);
 	SetApple2Type( ParseApple2Type(model) );	// NB. Sets default main CPU type
 	m_ConfigNew.m_Apple2Type = GetApple2Type();
 
@@ -350,8 +350,8 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 		yamlLoadHelper.GetSubMap(scalar);
 
-		std::string card = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_CARD);
-		UINT version     = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_VERSION);
+		std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
+		UINT version     = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 
 		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
 			throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
@@ -425,8 +425,8 @@ static void ParseUnit(void)
 
 	YamlLoadHelper yamlLoadHelper(yamlHelper);
 
-	std::string unit = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_TYPE);
-	UINT version = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_VERSION);
+	std::string unit = yamlLoadHelper.LoadString(SS_YAML_KEY_TYPE);
+	UINT version = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 
 	if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
 		throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);

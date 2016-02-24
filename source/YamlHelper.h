@@ -48,7 +48,7 @@ private:
 	void GetNextEvent(bool bInMap = false);
 	int ParseMap(MapYaml& mapYaml);
 	std::string GetMapValue(MapYaml& mapYaml, const std::string key, bool& bFound);
-	void GetMapValueMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize);
+	void LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize);
 	bool GetSubMap(MapYaml** mapYaml, const std::string key);
 	void GetMapRemainder(std::string& mapName, MapYaml& mapYaml);
 
@@ -91,69 +91,13 @@ public:
 			m_yamlHelper.GetMapRemainder(m_topLevelMapName, m_yamlHelper.m_mapYaml);
 	}
 
-	INT GetMapValueINT(const std::string key)
-	{
-		bool bFound;
-		std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
-		if (value == "")
-		{
-			m_bDoGetMapRemainder = false;
-			throw std::string(m_currentMapName + ": Missing: " + key);
-		}
-		return strtol(value.c_str(), NULL, 0);
-	}
-
-	UINT GetMapValueUINT(const std::string key)
-	{
-		bool bFound;
-		std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
-		if (value == "")
-		{
-			m_bDoGetMapRemainder = false;
-			throw std::string(m_currentMapName + ": Missing: " + key);
-		}
-		return strtoul(value.c_str(), NULL, 0);
-	}
-
-	UINT64 GetMapValueUINT64(const std::string key)
-	{
-		bool bFound;
-		std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
-		if (value == "")
-		{
-			m_bDoGetMapRemainder = false;
-			throw std::string(m_currentMapName + ": Missing: " + key);
-		}
-		return _strtoui64(value.c_str(), NULL, 0);
-	}
-
-	bool GetMapValueBool(const std::string key)
-	{
-		return GetMapValueUINT(key) ? true : false;
-	}
-
-	std::string GetMapValueSTRING_NoThrow(const std::string& key, bool& bFound)
-	{
-		std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
-		return value;
-	}
-
-	std::string GetMapValueSTRING(const std::string& key)
-	{
-		bool bFound;
-		std::string value = GetMapValueSTRING_NoThrow(key, bFound);
-		if (!bFound)
-		{
-			m_bDoGetMapRemainder = false;
-			throw std::string(m_currentMapName + ": Missing: " + key);
-		}
-		return value;
-	}
-
-	void GetMapValueMemory(const LPBYTE pMemBase, const size_t size)
-	{
-		m_yamlHelper.GetMapValueMemory(*m_pMapYaml, pMemBase, size);
-	}
+	INT LoadInt(const std::string key);
+	UINT LoadUint(const std::string key);
+	UINT64 LoadUint64(const std::string key);
+	bool LoadBool(const std::string key);
+	std::string LoadString_NoThrow(const std::string& key, bool& bFound);
+	std::string LoadString(const std::string& key);
+	void LoadMemory(const LPBYTE pMemBase, const size_t size);
 
 	bool GetSubMap(const std::string key)
 	{

@@ -731,18 +731,18 @@ static bool HD_LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 	g_HardDisk[unit].hd_status_next = DISK_STATUS_OFF;
 	g_HardDisk[unit].hd_status_prev = DISK_STATUS_OFF;
 
-	std::string filename = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_FILENAME).c_str();
-	g_HardDisk[unit].hd_error = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ERROR);
-	g_HardDisk[unit].hd_memblock = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_MEMBLOCK);
-	g_HardDisk[unit].hd_diskblock = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_DISKBLOCK);
-	yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_IMAGELOADED);	// Consume
-	Disk_Status_e diskStatusNext = (Disk_Status_e) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_STATUS_NEXT);
-	Disk_Status_e diskStatusPrev = (Disk_Status_e) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_STATUS_PREV);
-	g_HardDisk[unit].hd_buf_ptr = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_BUF_PTR);
+	std::string filename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
+	g_HardDisk[unit].hd_error = yamlLoadHelper.LoadUint(SS_YAML_KEY_ERROR);
+	g_HardDisk[unit].hd_memblock = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMBLOCK);
+	g_HardDisk[unit].hd_diskblock = yamlLoadHelper.LoadUint(SS_YAML_KEY_DISKBLOCK);
+	yamlLoadHelper.LoadBool(SS_YAML_KEY_IMAGELOADED);	// Consume
+	Disk_Status_e diskStatusNext = (Disk_Status_e) yamlLoadHelper.LoadUint(SS_YAML_KEY_STATUS_NEXT);
+	Disk_Status_e diskStatusPrev = (Disk_Status_e) yamlLoadHelper.LoadUint(SS_YAML_KEY_STATUS_PREV);
+	g_HardDisk[unit].hd_buf_ptr = yamlLoadHelper.LoadUint(SS_YAML_KEY_BUF_PTR);
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_BUF))
 		throw hddUnitName + std::string(": Missing: ") + std::string(SS_YAML_KEY_BUF);
-	yamlLoadHelper.GetMapValueMemory(g_HardDisk[unit].hd_buf, HD_BLOCK_SIZE);
+	yamlLoadHelper.LoadMemory(g_HardDisk[unit].hd_buf, HD_BLOCK_SIZE);
 
 	yamlLoadHelper.PopMap();
 	yamlLoadHelper.PopMap();
@@ -791,8 +791,8 @@ bool HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, co
 	if (version != 1)
 		throw std::string("Card: wrong version");
 
-	g_nHD_UnitNum = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CURRENT_UNIT);	// b7=unit
-	g_nHD_Command = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_COMMAND);
+	g_nHD_UnitNum = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_UNIT);	// b7=unit
+	g_nHD_Command = yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
 
 	// Unplug all HDDs first in case HDD-2 is to be plugged in as HDD-1
 	for (UINT i=0; i<NUM_HARDDISKS; i++)

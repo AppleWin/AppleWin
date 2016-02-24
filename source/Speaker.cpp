@@ -1119,7 +1119,7 @@ void SpkrLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap(SpkrGetSnapshotStructName()))
 		return;
 
-	g_nSpkrLastCycle = yamlLoadHelper.GetMapValueUINT64(SS_YAML_KEY_LASTCYCLE);
+	g_nSpkrLastCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LASTCYCLE);
 
 	yamlLoadHelper.PopMap();
 }

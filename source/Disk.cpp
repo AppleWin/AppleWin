@@ -1249,7 +1249,7 @@ static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 	g_aFloppyDisk[unit].imagename[0] = 0;
 	g_aFloppyDisk[unit].bWriteProtected = false;	// Default to false (until image is successfully loaded below)
 
-	std::string filename = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_FILENAME).c_str();
+	std::string filename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
 	if (!filename.empty())
 	{
 		DWORD dwAttributes = GetFileAttributes(filename.c_str());
@@ -1274,21 +1274,21 @@ static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 		}
 	}
 
-	g_aFloppyDisk[unit].track			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TRACK);
-	g_aFloppyDisk[unit].phase			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PHASE);
-	g_aFloppyDisk[unit].byte			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_BYTE);
-	yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_WRITE_PROTECTED);	// Consume
-	g_aFloppyDisk[unit].spinning		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_SPINNING);
-	g_aFloppyDisk[unit].writelight		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_WRITE_LIGHT);
-	g_aFloppyDisk[unit].nibbles			= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_NIBBLES);
-	g_aFloppyDisk[unit].trackimagedata	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TRACK_IMAGE_DATA);
-	g_aFloppyDisk[unit].trackimagedirty	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_TRACK_IMAGE_DIRTY);
+	g_aFloppyDisk[unit].track			= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);
+	g_aFloppyDisk[unit].phase			= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
+	g_aFloppyDisk[unit].byte			= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTE);
+	yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_PROTECTED);	// Consume
+	g_aFloppyDisk[unit].spinning		= yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
+	g_aFloppyDisk[unit].writelight		= yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
+	g_aFloppyDisk[unit].nibbles			= yamlLoadHelper.LoadUint(SS_YAML_KEY_NIBBLES);
+	g_aFloppyDisk[unit].trackimagedata	= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DATA);
+	g_aFloppyDisk[unit].trackimagedirty	= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY);
 
 	std::auto_ptr<BYTE> pTrack( new BYTE [NIBBLES_PER_TRACK] );
 	memset(pTrack.get(), 0, NIBBLES_PER_TRACK);
 	if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
 	{
-		yamlLoadHelper.GetMapValueMemory(pTrack.get(), NIBBLES_PER_TRACK);
+		yamlLoadHelper.LoadMemory(pTrack.get(), NIBBLES_PER_TRACK);
 		yamlLoadHelper.PopMap();
 	}
 
@@ -1323,13 +1323,13 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 	if (version != 1)
 		throw std::string("Card: wrong version");
 
-	phases  		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PHASES);
-	currdrive		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CURRENT_DRIVE);
-	diskaccessed	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_DISK_ACCESSED);
-	enhancedisk		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ENHANCE_DISK);
-	floppylatch		= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_FLOPPY_LATCH);
-	floppymotoron	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_FLOPPY_MOTOR_ON);
-	floppywritemode	= yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_FLOPPY_WRITE_MODE);
+	phases  		= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASES);
+	currdrive		= yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_DRIVE);
+	diskaccessed	= yamlLoadHelper.LoadUint(SS_YAML_KEY_DISK_ACCESSED);
+	enhancedisk		= yamlLoadHelper.LoadUint(SS_YAML_KEY_ENHANCE_DISK);
+	floppylatch		= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_LATCH);
+	floppymotoron	= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_MOTOR_ON);
+	floppywritemode	= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_WRITE_MODE);
 
 	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
 	for(UINT i=0; i<NUM_DRIVES; i++)

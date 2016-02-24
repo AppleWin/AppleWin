@@ -527,7 +527,7 @@ void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap(KeybGetSnapshotStructName()))
 		return;
 
-	g_nLastKey = (BYTE) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_LASTKEY);
+	g_nLastKey = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTKEY);
 
 	yamlLoadHelper.PopMap();
 }

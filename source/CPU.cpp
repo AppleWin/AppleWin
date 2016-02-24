@@ -744,23 +744,23 @@ void CpuLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap(CpuGetSnapshotStructName()))
 		return;
 
-	std::string cpuType = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_CPU_TYPE);
+	std::string cpuType = yamlLoadHelper.LoadString(SS_YAML_KEY_CPU_TYPE);
 	eCpuType cpu;
 	if (cpuType == SS_YAML_VALUE_6502) cpu = CPU_6502;
 	else if (cpuType == SS_YAML_VALUE_65C02) cpu = CPU_65C02;
 	else throw std::string("Load: Unknown main CPU type");
 	SetMainCpu(cpu);
 
-	regs.a  = (BYTE)     yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGA);
-	regs.x  = (BYTE)     yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGX);
-	regs.y  = (BYTE)     yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGY);
-	regs.ps = (BYTE)     yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGP) | (AF_RESERVED | AF_BREAK);
-	regs.sp = (USHORT) ((yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGS) & 0xff) | 0x100);
-	regs.pc = (USHORT)   yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_REGPC);
+	regs.a  = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGA);
+	regs.x  = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGX);
+	regs.y  = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGY);
+	regs.ps = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGP) | (AF_RESERVED | AF_BREAK);
+	regs.sp = (USHORT) ((yamlLoadHelper.LoadUint(SS_YAML_KEY_REGS) & 0xff) | 0x100);
+	regs.pc = (USHORT)   yamlLoadHelper.LoadUint(SS_YAML_KEY_REGPC);
 
 	CpuIrqReset();
 	CpuNmiReset();
-	g_nCumulativeCycles = yamlLoadHelper.GetMapValueUINT64(SS_YAML_KEY_CUMULATIVECYCLES);
+	g_nCumulativeCycles = yamlLoadHelper.LoadUint64(SS_YAML_KEY_CUMULATIVECYCLES);
 
 	yamlLoadHelper.PopMap();
 }
