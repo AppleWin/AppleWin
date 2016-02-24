@@ -784,6 +784,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bBoot = false;
 	LPSTR szImageName_drive1 = NULL;
 	LPSTR szImageName_drive2 = NULL;
+	LPSTR szSnapshotName = NULL;
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
 
 	while (*lpCmdLine)
@@ -814,6 +815,12 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			szImageName_drive2 = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-load-state") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			szSnapshotName = lpCmdLine;
 		}
 		else if (strcmp(lpCmdLine, "-f") == 0)
 		{
@@ -1075,8 +1082,25 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		tfe_init();
 		LogFileOutput("Main: tfe_init()\n");
 
-		Snapshot_Startup();		// Do this after everything has been init'ed
-		LogFileOutput("Main: Snapshot_Startup()\n");
+		if (szSnapshotName)
+		{
+			// Override value just loaded from Registry by LoadConfiguration()
+			// . NB. Registry value is not updated with this cmd-line value
+			Snapshot_SetFilename(szSnapshotName);
+			Snapshot_LoadState();
+			bBoot = true;
+#if _DEBUG && 0	// Debug/test: Save a duplicate of the save-state file in tmp folder
+			std::string saveName = std::string("tmp\\") + std::string(szSnapshotName); 
+			Snapshot_SetFilename(saveName);
+			g_bSaveStateOnExit = true;
+			bShutdown = true;
+#endif
+		}
+		else
+		{
+			Snapshot_Startup();		// Do this after everything has been init'ed
+			LogFileOutput("Main: Snapshot_Startup()\n");
+		}
 
 		if (bShutdown)
 		{

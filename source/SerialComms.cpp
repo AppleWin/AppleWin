@@ -1349,13 +1349,13 @@ std::string CSuperSerialCard::GetSnapshotCardName(void)
 void CSuperSerialCard::SaveSnapshotDIPSW(YamlSaveHelper& yamlSaveHelper, std::string key, SSC_DIPSW& dipsw)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", key.c_str());
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_BAUDRATE, dipsw.uBaudRate);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_FWMODE, dipsw.eFirmwareMode);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_STOPBITS, dipsw.uStopBits);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_BYTESIZE, dipsw.uByteSize);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_PARITY, dipsw.uParity);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_LINEFEED, dipsw.bLinefeed);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_INTERRUPTS, dipsw.bInterrupts);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_BAUDRATE, dipsw.uBaudRate);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_FWMODE, dipsw.eFirmwareMode);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_STOPBITS, dipsw.uStopBits);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_BYTESIZE, dipsw.uByteSize);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PARITY, dipsw.uParity);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_LINEFEED, dipsw.bLinefeed);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_INTERRUPTS, dipsw.bInterrupts);
 }
 
 void CSuperSerialCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
@@ -1365,19 +1365,19 @@ void CSuperSerialCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	SaveSnapshotDIPSW(yamlSaveHelper, SS_YAML_KEY_DIPSWDEFAULT, m_DIPSWDefault);
 	SaveSnapshotDIPSW(yamlSaveHelper, SS_YAML_KEY_DIPSWCURRENT, m_DIPSWCurrent);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_BAUDRATE, m_uBaudRate);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_STOPBITS, m_uStopBits);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_BYTESIZE, m_uByteSize);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_PARITY, m_uParity);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_CONTROL, m_uControlByte);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_COMMAND, m_uCommandByte);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_INACTIVITY, m_dwCommInactivity);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TXIRQENABLED, m_bTxIrqEnabled);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_RXIRQENABLED, m_bRxIrqEnabled);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TXIRQPENDING, m_vbTxIrqPending);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_RXIRQPENDING, m_vbRxIrqPending);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_WRITTENTX, m_bWrittenTx);
-	yamlSaveHelper.Save("%s: %s\n", SS_YAML_KEY_SERIALPORTNAME, yamlSaveHelper.GetSaveString(GetSerialPortName()).c_str());
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_BAUDRATE, m_uBaudRate);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_STOPBITS, m_uStopBits);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_BYTESIZE, m_uByteSize);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PARITY, m_uParity);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_CONTROL, m_uControlByte);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_COMMAND, m_uCommandByte);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, m_dwCommInactivity);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_TXIRQENABLED, m_bTxIrqEnabled);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_RXIRQENABLED, m_bRxIrqEnabled);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_TXIRQPENDING, m_vbTxIrqPending);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_RXIRQPENDING, m_vbRxIrqPending);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITTENTX, m_bWrittenTx);
+	yamlSaveHelper.SaveString(SS_YAML_KEY_SERIALPORTNAME, GetSerialPortName());
 }
 
 void CSuperSerialCard::LoadSnapshotDIPSW(YamlLoadHelper& yamlLoadHelper, std::string key, SSC_DIPSW& dipsw)

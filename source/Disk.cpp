@@ -1202,16 +1202,16 @@ std::string DiskGetSnapshotCardName(void)
 static void DiskSaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_DISK2UNIT, unit);
-	yamlSaveHelper.Save("%s: %s\n", SS_YAML_KEY_FILENAME, yamlSaveHelper.GetSaveString(g_aFloppyDisk[unit].fullname).c_str());
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TRACK, g_aFloppyDisk[unit].track);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_PHASE, g_aFloppyDisk[unit].phase);
-	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_BYTE, g_aFloppyDisk[unit].byte);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_WRITE_PROTECTED, g_aFloppyDisk[unit].bWriteProtected);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_SPINNING, g_aFloppyDisk[unit].spinning);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_WRITE_LIGHT, g_aFloppyDisk[unit].writelight);
-	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_NIBBLES, g_aFloppyDisk[unit].nibbles);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TRACK_IMAGE_DATA, g_aFloppyDisk[unit].trackimagedata);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TRACK_IMAGE_DIRTY, g_aFloppyDisk[unit].trackimagedirty);
+	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, g_aFloppyDisk[unit].fullname);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK, g_aFloppyDisk[unit].track);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, g_aFloppyDisk[unit].phase);
+	yamlSaveHelper.SaveHex16(SS_YAML_KEY_BYTE, g_aFloppyDisk[unit].byte);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_WRITE_PROTECTED, g_aFloppyDisk[unit].bWriteProtected);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SPINNING, g_aFloppyDisk[unit].spinning);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_WRITE_LIGHT, g_aFloppyDisk[unit].writelight);
+	yamlSaveHelper.SaveHex16(SS_YAML_KEY_NIBBLES, g_aFloppyDisk[unit].nibbles);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DATA, g_aFloppyDisk[unit].trackimagedata);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY, g_aFloppyDisk[unit].trackimagedirty);
 
 	if (g_aFloppyDisk[unit].trackimage)
 	{
@@ -1225,13 +1225,13 @@ void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Slot slot(yamlSaveHelper, DiskGetSnapshotCardName(), g_uSlot, 1);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
-	yamlSaveHelper.Save("%s: 0x%1X\n", SS_YAML_KEY_PHASES, phases);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_CURRENT_DRIVE, currdrive);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_DISK_ACCESSED, diskaccessed);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ENHANCE_DISK, enhancedisk);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_FLOPPY_LATCH, floppylatch);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_FLOPPY_MOTOR_ON, floppymotoron);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_FLOPPY_WRITE_MODE, floppywritemode);
+	yamlSaveHelper.SaveHex4(SS_YAML_KEY_PHASES, phases);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_CURRENT_DRIVE, currdrive);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_DISK_ACCESSED, diskaccessed);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_ENHANCE_DISK, enhancedisk);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_FLOPPY_LATCH, floppylatch);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_FLOPPY_MOTOR_ON, floppymotoron);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_FLOPPY_WRITE_MODE, floppywritemode);
 
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_1);
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_2);
@@ -1244,6 +1244,10 @@ static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 		throw std::string("Card: Expected key: ") + disk2UnitName;
 
 	bool bImageError = false;
+
+	g_aFloppyDisk[unit].fullname[0] = 0;
+	g_aFloppyDisk[unit].imagename[0] = 0;
+	g_aFloppyDisk[unit].bWriteProtected = false;	// Default to false (until image is successfully loaded below)
 
 	std::string filename = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_FILENAME).c_str();
 	if (!filename.empty())

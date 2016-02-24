@@ -688,14 +688,14 @@ std::string HD_GetSnapshotCardName(void)
 static void HD_SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_HDDUNIT, unit);
-	yamlSaveHelper.Save("%s: %s\n", SS_YAML_KEY_FILENAME, yamlSaveHelper.GetSaveString(g_HardDisk[unit].fullname).c_str());
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_ERROR, g_HardDisk[unit].hd_error);
-	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_MEMBLOCK, g_HardDisk[unit].hd_memblock);
-	yamlSaveHelper.Save("%s: 0x%08X\n", SS_YAML_KEY_DISKBLOCK, g_HardDisk[unit].hd_diskblock);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_IMAGELOADED, g_HardDisk[unit].hd_imageloaded);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_STATUS_NEXT, g_HardDisk[unit].hd_status_next);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_STATUS_PREV, g_HardDisk[unit].hd_status_prev);
-	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_BUF_PTR, g_HardDisk[unit].hd_buf_ptr);
+	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, g_HardDisk[unit].fullname);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_ERROR, g_HardDisk[unit].hd_error);
+	yamlSaveHelper.SaveHex16(SS_YAML_KEY_MEMBLOCK, g_HardDisk[unit].hd_memblock);
+	yamlSaveHelper.SaveHex32(SS_YAML_KEY_DISKBLOCK, g_HardDisk[unit].hd_diskblock);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IMAGELOADED, g_HardDisk[unit].hd_imageloaded);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_STATUS_NEXT, g_HardDisk[unit].hd_status_next);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_STATUS_PREV, g_HardDisk[unit].hd_status_prev);
+	yamlSaveHelper.SaveHex16(SS_YAML_KEY_BUF_PTR, g_HardDisk[unit].hd_buf_ptr);
 
 	// New label
 	{
@@ -713,7 +713,7 @@ void HD_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.Save("%s: %d # b7=unit\n", SS_YAML_KEY_CURRENT_UNIT, g_nHD_UnitNum);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_COMMAND, g_nHD_Command);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_COMMAND, g_nHD_Command);
 
 	HD_SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_1);
 	HD_SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_2);
@@ -725,16 +725,19 @@ static bool HD_LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 	if (!yamlLoadHelper.GetSubMap(hddUnitName))
 		throw std::string("Card: Expected key: ") + hddUnitName;
 
-	std::string filename = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_FILENAME).c_str();
 	g_HardDisk[unit].fullname[0] = 0;
 	g_HardDisk[unit].imagename[0] = 0;
+	g_HardDisk[unit].hd_imageloaded = false;	// Default to false (until image is successfully loaded below)
+	g_HardDisk[unit].hd_status_next = DISK_STATUS_OFF;
+	g_HardDisk[unit].hd_status_prev = DISK_STATUS_OFF;
+
+	std::string filename = yamlLoadHelper.GetMapValueSTRING(SS_YAML_KEY_FILENAME).c_str();
 	g_HardDisk[unit].hd_error = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_ERROR);
 	g_HardDisk[unit].hd_memblock = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_MEMBLOCK);
 	g_HardDisk[unit].hd_diskblock = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_DISKBLOCK);
 	yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_IMAGELOADED);	// Consume
-	g_HardDisk[unit].hd_imageloaded = false;			// Default to false (until image is successfully loaded below)
-	g_HardDisk[unit].hd_status_next = (Disk_Status_e) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_STATUS_NEXT);
-	g_HardDisk[unit].hd_status_prev = (Disk_Status_e)  yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_STATUS_PREV);
+	Disk_Status_e diskStatusNext = (Disk_Status_e) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_STATUS_NEXT);
+	Disk_Status_e diskStatusPrev = (Disk_Status_e) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_STATUS_PREV);
 	g_HardDisk[unit].hd_buf_ptr = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_BUF_PTR);
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_BUF))
@@ -769,6 +772,11 @@ static bool HD_LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 			// . imagename
 			// . fullname
 			// . hd_imageloaded
+			// . hd_status_next = DISK_STATUS_OFF
+			// . hd_status_prev = DISK_STATUS_OFF
+
+			g_HardDisk[unit].hd_status_next = diskStatusNext;
+			g_HardDisk[unit].hd_status_prev = diskStatusPrev;
 		}
 	}
 

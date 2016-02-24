@@ -871,9 +871,9 @@ static std::string JoyGetSnapshotStructName(void)
 void JoySaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", JoyGetSnapshotStructName().c_str());
-	yamlSaveHelper.Save("%s: 0x%016llX\n", SS_YAML_KEY_COUNTERRESETCYCLE, g_nJoyCntrResetCycle);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_JOY0TRIMX, JoyGetTrim(true));
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_JOY0TRIMY, JoyGetTrim(false));
+	yamlSaveHelper.SaveHex64(SS_YAML_KEY_COUNTERRESETCYCLE, g_nJoyCntrResetCycle);
+	yamlSaveHelper.SaveInt(SS_YAML_KEY_JOY0TRIMX, JoyGetTrim(true));
+	yamlSaveHelper.SaveInt(SS_YAML_KEY_JOY0TRIMY, JoyGetTrim(false));
 	yamlSaveHelper.Save("%s: %d # not implemented yet\n", SS_YAML_KEY_JOY1TRIMX, 0);	// not implemented yet
 	yamlSaveHelper.Save("%s: %d # not implemented yet\n", SS_YAML_KEY_JOY1TRIMY, 0);	// not implemented yet
 }
@@ -884,10 +884,10 @@ void JoyLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 		return;
 
 	g_nJoyCntrResetCycle = yamlLoadHelper.GetMapValueUINT64(SS_YAML_KEY_COUNTERRESETCYCLE);
-	JoySetTrim(yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_JOY0TRIMX), true);
-	JoySetTrim(yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_JOY0TRIMY), false);
-	yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_JOY1TRIMX);	// dump value
-	yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_JOY1TRIMY);	// dump value
+	JoySetTrim(yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_JOY0TRIMX), true);
+	JoySetTrim(yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_JOY0TRIMY), false);
+	yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_JOY1TRIMX);	// dump value
+	yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_JOY1TRIMY);	// dump value
 
 	yamlLoadHelper.PopMap();
 }

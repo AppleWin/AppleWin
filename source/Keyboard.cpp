@@ -519,7 +519,7 @@ static std::string KeybGetSnapshotStructName(void)
 void KeybSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", KeybGetSnapshotStructName().c_str());
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_LASTKEY, g_nLastKey);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_LASTKEY, g_nLastKey);
 }
 
 void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper)

@@ -1940,19 +1940,19 @@ static void SaveSnapshotSY6522(YamlSaveHelper& yamlSaveHelper, SY6522& sy6522)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SY6522);
 
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_ORB, sy6522.ORB);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_ORA, sy6522.ORA);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_DDRB, sy6522.DDRB);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_DDRA, sy6522.DDRA);
-	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_SY6522_REG_T1_COUNTER, sy6522.TIMER1_COUNTER);
-	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_SY6522_REG_T1_LATCH,   sy6522.TIMER1_LATCH);
-	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_SY6522_REG_T2_COUNTER, sy6522.TIMER2_COUNTER);
-	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_SY6522_REG_T2_LATCH,   sy6522.TIMER2_LATCH);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_SERIAL_SHIFT, sy6522.SERIAL_SHIFT);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_ACR, sy6522.ACR);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_PCR, sy6522.PCR);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_IFR, sy6522.IFR);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SY6522_REG_IER, sy6522.IER);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SY6522_REG_ORB, sy6522.ORB);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SY6522_REG_ORA, sy6522.ORA);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SY6522_REG_DDRB, sy6522.DDRB);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SY6522_REG_DDRA, sy6522.DDRA);
+	yamlSaveHelper.SaveHex16(SS_YAML_KEY_SY6522_REG_T1_COUNTER, sy6522.TIMER1_COUNTER.w);
+	yamlSaveHelper.SaveHex16(SS_YAML_KEY_SY6522_REG_T1_LATCH,   sy6522.TIMER1_LATCH.w);
+	yamlSaveHelper.SaveHex16(SS_YAML_KEY_SY6522_REG_T2_COUNTER, sy6522.TIMER2_COUNTER.w);
+	yamlSaveHelper.SaveHex16(SS_YAML_KEY_SY6522_REG_T2_LATCH,   sy6522.TIMER2_LATCH.w);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SY6522_REG_SERIAL_SHIFT, sy6522.SERIAL_SHIFT);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SY6522_REG_ACR, sy6522.ACR);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SY6522_REG_PCR, sy6522.PCR);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SY6522_REG_IFR, sy6522.IFR);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SY6522_REG_IER, sy6522.IER);
 	// NB. No need to write ORA_NO_HS, since same data as ORA, just without handshake
 }
 
@@ -1960,12 +1960,12 @@ static void SaveSnapshotSSI263(YamlSaveHelper& yamlSaveHelper, SSI263A& ssi263)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
 
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SSI263_REG_DUR_PHON, ssi263.DurationPhoneme);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SSI263_REG_INF, ssi263.Inflection);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SSI263_REG_RATE_INF, ssi263.RateInflection);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, ssi263.CtrlArtAmp);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SSI263_REG_FILTER_FREQ, ssi263.FilterFreq);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_SSI263_REG_CURRENT_MODE, ssi263.CurrentMode);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SSI263_REG_DUR_PHON, ssi263.DurationPhoneme);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SSI263_REG_INF, ssi263.Inflection);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SSI263_REG_RATE_INF, ssi263.RateInflection);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, ssi263.CtrlArtAmp);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, ssi263.FilterFreq);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_SSI263_REG_CURRENT_MODE, ssi263.CurrentMode);
 }
 
 void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
@@ -1986,7 +1986,7 @@ void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 		AY8910_SaveSnapshot(yamlSaveHelper, nDeviceNum, std::string(""));
 		SaveSnapshotSSI263(yamlSaveHelper, pMB->SpeechChip);
 
-		yamlSaveHelper.Save("%s: 0x%1X\n", SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
+		yamlSaveHelper.SaveHex4(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
 		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, 0);
 		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, 0);
 		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_SPEECH_IRQ, 0);
@@ -2114,8 +2114,8 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR, g_PhasorClockScaleFactor);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_PHASOR_MODE, g_nPhasorMode);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR, g_PhasorClockScaleFactor);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASOR_MODE, g_nPhasorMode);
 
 	for(UINT i=0; i<NUM_PHASOR_UNITS; i++)
 	{
@@ -2126,7 +2126,7 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 		AY8910_SaveSnapshot(yamlSaveHelper, nDeviceNum+1, std::string("-B"));
 		SaveSnapshotSSI263(yamlSaveHelper, pMB->SpeechChip);
 
-		yamlSaveHelper.Save("%s: 0x%1X\n", SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
+		yamlSaveHelper.SaveHex4(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
 		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, 0);
 		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, 0);
 		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_SPEECH_IRQ, 0);

@@ -285,20 +285,70 @@ void YamlSaveHelper::Save(const char* format, ...)
 	va_end(vl);
 }
 
+void YamlSaveHelper::SaveInt(const char* key, int value)
+{
+	Save("%s: %d\n", key, value);
+}
+
+void YamlSaveHelper::SaveUint(const char* key, UINT value)
+{
+	Save("%s: %u\n", key, value);
+}
+
+void YamlSaveHelper::SaveHex4(const char* key, UINT value)
+{
+	Save("%s: 0x%01X\n", key, value);
+}
+
+void YamlSaveHelper::SaveHex8(const char* key, UINT value)
+{
+	Save("%s: 0x%02X\n", key, value);
+}
+
+void YamlSaveHelper::SaveHex12(const char* key, UINT value)
+{
+	Save("%s: 0x%03X\n", key, value);
+}
+
+void YamlSaveHelper::SaveHex16(const char* key, UINT value)
+{
+	Save("%s: 0x%04X\n", key, value);
+}
+
+void YamlSaveHelper::SaveHex32(const char* key, UINT value)
+{
+	Save("%s: 0x%08X\n", key, value);
+}
+
+void YamlSaveHelper::SaveHex64(const char* key, UINT64 value)
+{
+	Save("%s: 0x%016llX\n", key, value);
+}
+
+void YamlSaveHelper::SaveBool(const char* key, bool value)
+{
+	SaveUint(key, value ? 1 : 0);
+}
+
+void YamlSaveHelper::SaveString(const char* key,  const char* value)
+{
+	Save("%s: %s\n", key, (value[0] != 0) ? value : "\"\"");
+}
+
 void YamlSaveHelper::FileHdr(UINT version)
 {
 	fprintf(m_hFile, "%s:\n", SS_YAML_KEY_FILEHDR);
 	m_indent = 2;
-	Save("%s: %s\n", SS_YAML_KEY_TAG, SS_YAML_VALUE_AWSS);
-	Save("%s: %d\n", SS_YAML_KEY_VERSION, version);
+	SaveString(SS_YAML_KEY_TAG, SS_YAML_VALUE_AWSS);
+	SaveInt(SS_YAML_KEY_VERSION, version);
 }
 
 void YamlSaveHelper::UnitHdr(std::string type, UINT version)
 {
 	fprintf(m_hFile, "\n%s:\n", SS_YAML_KEY_UNIT);
 	m_indent = 2;
-	Save("%s: %s\n", SS_YAML_KEY_TYPE, type.c_str());
-	Save("%s: %d\n", SS_YAML_KEY_VERSION, version);
+	SaveString(SS_YAML_KEY_TYPE, type.c_str());
+	SaveInt(SS_YAML_KEY_VERSION, version);
 }
 
 void YamlSaveHelper::SaveMapValueMemory(const LPBYTE pMemBase, const UINT uMemSize)
@@ -352,9 +402,4 @@ void YamlSaveHelper::SaveMapValueMemory(const LPBYTE pMemBase, const UINT uMemSi
 	}
 
 	delete [] pLine;
-}
-
-std::string YamlSaveHelper::GetSaveString(const char* pValue)
-{
-	return (pValue[0] != 0) ? pValue : "\"\"";
 }

@@ -1745,12 +1745,12 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	// Scope so that "Memory" & "Main Memory" are at same indent level
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotStructName().c_str());
-		yamlSaveHelper.Save("%s: 0x%08X\n", SS_YAML_KEY_MEMORYMODE, memmode);
-		yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_LASTRAMWRITE, lastwriteram ? 1 : 0);
-		yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_IOSELECT, IO_SELECT);
-		yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_IOSELECT_INT, IO_SELECT_InternalROM);
-		yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
-		yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_PERIPHERALROMSLOT, g_uPeripheralRomSlot);
+		yamlSaveHelper.SaveHex32(SS_YAML_KEY_MEMORYMODE, memmode);
+		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, lastwriteram ? 1 : 0);
+		yamlSaveHelper.SaveHex8(SS_YAML_KEY_IOSELECT, IO_SELECT);
+		yamlSaveHelper.SaveHex8(SS_YAML_KEY_IOSELECT_INT, IO_SELECT_InternalROM);
+		yamlSaveHelper.SaveUint(SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
+		yamlSaveHelper.SaveUint(SS_YAML_KEY_PERIPHERALROMSLOT, g_uPeripheralRomSlot);
 	}
 
 	MemSaveSnapshotMemory(yamlSaveHelper, true);
@@ -1762,7 +1762,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 		return false;
 
 	SetMemMode( yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_MEMORYMODE) );
-	lastwriteram = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_LASTRAMWRITE) ? 1 : 0;
+	lastwriteram = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
 	IO_SELECT = (BYTE) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IOSELECT);
 	IO_SELECT_InternalROM = (BYTE) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IOSELECT_INT);
 	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_EXPANSIONROMTYPE);
@@ -1807,7 +1807,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 	std::string card = 	g_uMaxExPages == 0 ?	SS_YAML_VALUE_CARD_80COL :			// todo: support empty slot
 						g_uMaxExPages == 1 ?	SS_YAML_VALUE_CARD_EXTENDED80COL :
 												SS_YAML_VALUE_CARD_RAMWORKSIII;
-	yamlSaveHelper.Save("%s: %s\n", SS_YAML_KEY_CARD, card.c_str());
+	yamlSaveHelper.SaveString(SS_YAML_KEY_CARD, card.c_str());
 	yamlSaveHelper.Save("%s: %02X   # [0,1..7F] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
 	yamlSaveHelper.Save("%s: %02X # [  0..7E] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
 

@@ -629,7 +629,6 @@ void CMouseInterface::SetButton(eBUTTON Button, eBUTTONSTATE State)
 #define SS_YAML_KEY_IMAXY "iMaxY"
 #define SS_YAML_KEY_BUTTON0 "Button0"
 #define SS_YAML_KEY_BUTTON1 "Button1"
-#define SS_YAML_KEY_ACTIVE "Active"
 #define SS_YAML_KEY_ENABLED "Enabled"
 
 std::string CMouseInterface::GetSnapshotCardName(void)
@@ -647,14 +646,14 @@ void CMouseInterface::SaveSnapshotMC6821(YamlSaveHelper& yamlSaveHelper, std::st
 	m_6821.Get6821(mc6821, byIA, byIB);
 
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", key.c_str());
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_PRA, mc6821.pra);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_DDRA, mc6821.ddra);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_CRA, mc6821.cra);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_PRB, mc6821.prb);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_DDRB, mc6821.ddrb);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_CRB, mc6821.crb);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_IA, byIA);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_IB, byIB);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PRA, mc6821.pra);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_DDRA, mc6821.ddra);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_CRA, mc6821.cra);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PRB, mc6821.prb);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_DDRB, mc6821.ddrb);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_CRB, mc6821.crb);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IA, byIA);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IB, byIB);
 }
 
 void CMouseInterface::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
@@ -667,9 +666,9 @@ void CMouseInterface::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	SaveSnapshotMC6821(yamlSaveHelper, SS_YAML_KEY_MC6821);
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_DATALEN, m_nDataLen);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_MODE, m_byMode);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_6821B, m_by6821B);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_6821A, m_by6821A);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_MODE, m_byMode);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_6821B, m_by6821B);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_6821A, m_by6821A);
 
 	// New label
 	{
@@ -678,22 +677,21 @@ void CMouseInterface::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	}
 
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_BUFFPOS, m_nBuffPos);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_MOUSESTATE, m_byState);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_X, m_nX);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_Y, m_nY);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_BTN0, m_bBtn0);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_BTN1, m_bBtn1);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_VBL, m_bVBL ? 1 : 0);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_IX, m_iX);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_IMINX, m_iMinX);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_IMAXX, m_iMaxX);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_IY, m_iY);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_IMINY, m_iMinY);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_IMAXY, m_iMaxY);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_BUTTON0, m_bButtons[0]);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_BUTTON1, m_bButtons[1]);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ACTIVE, m_bActive ? 1 : 0);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ENABLED, m_bEnabled ? 1 : 0);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_MOUSESTATE, m_byState);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_X, m_nX);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_Y, m_nY);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_BTN0, m_bBtn0);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_BTN1, m_bBtn1);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_VBL, m_bVBL);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IX, m_iX);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IMINX, m_iMinX);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IMAXX, m_iMaxX);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IY, m_iY);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IMINY, m_iMinY);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IMAXY, m_iMaxY);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_BUTTON0, m_bButtons[0]);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_BUTTON1, m_bButtons[1]);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ENABLED, m_bEnabled);
 }
 
 void CMouseInterface::LoadSnapshotMC6821(YamlLoadHelper& yamlLoadHelper, std::string key)
@@ -702,15 +700,15 @@ void CMouseInterface::LoadSnapshotMC6821(YamlLoadHelper& yamlLoadHelper, std::st
 		throw std::string("Card: Expected key: ") + key;
 
 	mc6821_t mc6821;
-	mc6821.pra = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PRA);
+	mc6821.pra  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PRA);
 	mc6821.ddra = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_DDRA);
-	mc6821.cra = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CRA);
-	mc6821.prb = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PRB);
+	mc6821.cra  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CRA);
+	mc6821.prb  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_PRB);
 	mc6821.ddrb = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_DDRB);
-	mc6821.crb = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CRB);
+	mc6821.crb  = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_CRB);
 
-	BYTE byIA = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IA);
-	BYTE byIB = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IB);
+	BYTE byIA   = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IA);
+	BYTE byIB   = yamlLoadHelper.GetMapValueUINT(SS_YAML_KEY_IB);
 
 	m_6821.Set6821(mc6821, byIA, byIB);
 
@@ -752,8 +750,7 @@ bool CMouseInterface::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT sl
 	m_iMaxY = yamlLoadHelper.GetMapValueINT(SS_YAML_KEY_IMAXY);
 	m_bButtons[0] = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_BUTTON0);
 	m_bButtons[1] = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_BUTTON1);
-	m_bActive = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_ACTIVE);
-	m_bEnabled = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_ENABLED);
+	m_bEnabled = yamlLoadHelper.GetMapValueBool(SS_YAML_KEY_ENABLED);	// MemInitializeIO() calls Initialize() which sets true
 
 	return true;
 }

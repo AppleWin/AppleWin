@@ -997,44 +997,44 @@ void CAY8910::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, std::string& suffix)
 	std::string unit = std::string(SS_YAML_KEY_AY8910) + suffix;
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", unit.c_str());
 
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TONE0_TICK, ay_tone_tick[0]);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TONE1_TICK, ay_tone_tick[1]);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TONE2_TICK, ay_tone_tick[2]);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TONE0_HIGH, ay_tone_high[0]);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TONE1_HIGH, ay_tone_high[1]);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TONE2_HIGH, ay_tone_high[2]);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_NOISE_TICK, ay_noise_tick);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TONE_SUBCYCLES, ay_tone_subcycles);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ENV_SUBCYCLES, ay_env_subcycles);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ENV_INTERNAL_TICK, ay_env_internal_tick);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ENV_TICK, ay_env_tick);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TICK_INCR, ay_tick_incr);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TONE0_PERIOD, ay_tone_period[0]);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TONE1_PERIOD, ay_tone_period[1]);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_TONE2_PERIOD, ay_tone_period[2]);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_NOISE_PERIOD, ay_noise_period);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_RNG, rng);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_NOISE_TOGGLE, noise_toggle);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ENV_FIRST, env_first);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ENV_REV, env_rev);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ENV_COUNTER, env_counter);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TONE0_TICK, ay_tone_tick[0]);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TONE1_TICK, ay_tone_tick[1]);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TONE2_TICK, ay_tone_tick[2]);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TONE0_HIGH, ay_tone_high[0]);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TONE1_HIGH, ay_tone_high[1]);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TONE2_HIGH, ay_tone_high[2]);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_NOISE_TICK, ay_noise_tick);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TONE_SUBCYCLES, ay_tone_subcycles);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_ENV_SUBCYCLES, ay_env_subcycles);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_ENV_INTERNAL_TICK, ay_env_internal_tick);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_ENV_TICK, ay_env_tick);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TICK_INCR, ay_tick_incr);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TONE0_PERIOD, ay_tone_period[0]);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TONE1_PERIOD, ay_tone_period[1]);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TONE2_PERIOD, ay_tone_period[2]);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_NOISE_PERIOD, ay_noise_period);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_RNG, rng);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_NOISE_TOGGLE, noise_toggle);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_ENV_FIRST, env_first);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_ENV_REV, env_rev);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_ENV_COUNTER, env_counter);
 
 	// New label
 	{
 		YamlSaveHelper::Label registers(yamlSaveHelper, "%s:\n", SS_YAML_KEY_REGISTERS);
 
-		yamlSaveHelper.Save("%s: 0x%03X\n", SS_YAML_KEY_REG_TONE0_PERIOD, (UINT)(sound_ay_registers[1]<<8) | sound_ay_registers[0]);
-		yamlSaveHelper.Save("%s: 0x%03X\n", SS_YAML_KEY_REG_TONE1_PERIOD, (UINT)(sound_ay_registers[3]<<8) | sound_ay_registers[2]);
-		yamlSaveHelper.Save("%s: 0x%03X\n", SS_YAML_KEY_REG_TONE2_PERIOD, (UINT)(sound_ay_registers[5]<<8) | sound_ay_registers[4]);
-		yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REG_NOISE_PERIOD, sound_ay_registers[6]);
-		yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REG_MIXER, sound_ay_registers[7]);
-		yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REG_VOL0, sound_ay_registers[8]);
-		yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REG_VOL1, sound_ay_registers[9]);
-		yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REG_VOL2, sound_ay_registers[10]);
-		yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_REG_ENV_PERIOD, (UINT)(sound_ay_registers[12]<<8) | sound_ay_registers[11]);
-		yamlSaveHelper.Save("%s: 0x%01X\n", SS_YAML_KEY_REG_ENV_SHAPE, sound_ay_registers[13]);
-		yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REG_PORTA, sound_ay_registers[14]);
-		yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REG_PORTB, sound_ay_registers[15]);
+		yamlSaveHelper.SaveHex12(SS_YAML_KEY_REG_TONE0_PERIOD, (UINT)(sound_ay_registers[1]<<8) | sound_ay_registers[0]);
+		yamlSaveHelper.SaveHex12(SS_YAML_KEY_REG_TONE1_PERIOD, (UINT)(sound_ay_registers[3]<<8) | sound_ay_registers[2]);
+		yamlSaveHelper.SaveHex12(SS_YAML_KEY_REG_TONE2_PERIOD, (UINT)(sound_ay_registers[5]<<8) | sound_ay_registers[4]);
+		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_NOISE_PERIOD, sound_ay_registers[6]);
+		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_MIXER, sound_ay_registers[7]);
+		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_VOL0, sound_ay_registers[8]);
+		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_VOL1, sound_ay_registers[9]);
+		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_VOL2, sound_ay_registers[10]);
+		yamlSaveHelper.SaveHex16(SS_YAML_KEY_REG_ENV_PERIOD, (UINT)(sound_ay_registers[12]<<8) | sound_ay_registers[11]);
+		yamlSaveHelper.SaveHex4(SS_YAML_KEY_REG_ENV_SHAPE, sound_ay_registers[13]);
+		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_PORTA, sound_ay_registers[14]);
+		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_PORTB, sound_ay_registers[15]);
 	}
 
 	// New label

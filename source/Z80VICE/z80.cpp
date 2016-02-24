@@ -6491,33 +6491,33 @@ void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ACTIVE, GetActiveCpu() == CPU_Z80 ? 1 : 0);
 
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGA, reg_a);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGB, reg_b);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGC, reg_c);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGD, reg_d);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGE, reg_e);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGF, reg_f);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGH, reg_h);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGL, reg_l);
-	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_REGIX, ((USHORT)reg_ixh<<8)|(USHORT)reg_ixl);
-	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_REGIY, ((USHORT)reg_iyh<<8)|(USHORT)reg_iyl);
-	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_REGSP, reg_sp);
-	yamlSaveHelper.Save("%s: 0x%04X\n", SS_YAML_KEY_REGPC, (USHORT)z80_reg_pc);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGI, reg_i);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGR, reg_r);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGA, reg_a);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGB, reg_b);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGC, reg_c);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGD, reg_d);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGE, reg_e);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGF, reg_f);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGH, reg_h);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGL, reg_l);
+	yamlSaveHelper.SaveHex16(SS_YAML_KEY_REGIX, ((USHORT)reg_ixh<<8)|(USHORT)reg_ixl);
+	yamlSaveHelper.SaveHex16(SS_YAML_KEY_REGIY, ((USHORT)reg_iyh<<8)|(USHORT)reg_iyl);
+	yamlSaveHelper.SaveHex16(SS_YAML_KEY_REGSP, reg_sp);
+	yamlSaveHelper.SaveHex16(SS_YAML_KEY_REGPC, (USHORT)z80_reg_pc);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGI, reg_i);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGR, reg_r);
 
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_IFF1, iff1);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_IFF2, iff2);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_IM_MODE, im_mode);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_IFF1, iff1);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_IFF2, iff2);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_IM_MODE, im_mode);
 
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGA2, reg_a2);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGB2, reg_b2);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGC2, reg_c2);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGD2, reg_d2);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGE2, reg_e2);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGF2, reg_f2);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGH2, reg_h2);
-	yamlSaveHelper.Save("%s: 0x%02X\n", SS_YAML_KEY_REGL2, reg_l2);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGA2, reg_a2);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGB2, reg_b2);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGC2, reg_c2);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGD2, reg_d2);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGE2, reg_e2);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGF2, reg_f2);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGH2, reg_h2);
+	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGL2, reg_l2);
 }
 
 bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT version)

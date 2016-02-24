@@ -18,8 +18,8 @@ public:
 	void SetPositionRel(long dx, long dy, int* pOutOfBoundsX, int* pOutOfBoundsY);
 	void SetButton(eBUTTON Button, eBUTTONSTATE State);
 	bool IsActive() { return m_bActive; }
-	bool IsEnabled() { return m_bEnabled; }
-	bool IsActiveAndEnabled() { return IsActive() && IsEnabled(); }
+	bool IsEnabled() { return m_bEnabled; }	// NB. m_bEnabled == true implies that m_bActive == true
+	bool IsActiveAndEnabled() { return IsActive() && IsEnabled(); }	// todo: just use IsEnabled()
 	void SetEnabled(bool bEnabled) { m_bEnabled = bEnabled; }
 	void SetVBlank(bool bVBL);
 	void GetXY(int& iX, int& iMinX, int& iMaxX, int& iY, int& iMinY, int& iMaxY)
@@ -93,8 +93,10 @@ protected:
 
 	//
 
+	// todo: remove m_bActive:
+	// - instantiate CMouseInterface object when active (and delete when inactive)
 	bool	m_bActive;		// Mouse h/w is active within the Apple][ VM
-	bool	m_bEnabled;		// Windows' mouse events get passed to Apple]['s mouse h/w
+	bool	m_bEnabled;		// Windows' mouse events get passed to Apple]['s mouse h/w (m_bEnabled == true implies that m_bActive == true)
 	LPBYTE	m_pSlotRom;
 	UINT	m_uSlot;
 };

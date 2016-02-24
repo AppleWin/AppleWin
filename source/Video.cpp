@@ -2963,9 +2963,9 @@ static std::string VideoGetSnapshotStructName(void)
 void VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ALTCHARSET, g_nAltCharSetOffset ? 1 : 0);
-	yamlSaveHelper.Save("%s: 0x%08X\n", SS_YAML_KEY_VIDEOMODE, g_uVideoMode);
-	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_CYCLESTHISFRAME, g_dwCyclesThisFrame);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_ALTCHARSET, g_nAltCharSetOffset ? 1 : 0);
+	yamlSaveHelper.SaveHex32(SS_YAML_KEY_VIDEOMODE, g_uVideoMode);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLESTHISFRAME, g_dwCyclesThisFrame);
 }
 
 void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
