@@ -282,7 +282,7 @@ void Printer_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, inactivity);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_IDLELIMIT, g_PrinterIdleLimit);
 	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, g_szPrintFilename);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_FILEOPEN, (file != NULL) ? 1 : 0);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_FILEOPEN, (file != NULL) ? true : false);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_DUMPTOPRINTER, g_bDumpToPrinter);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_CONVERTENCODING, g_bConvertEncoding);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FILTERUNPRINTABLE, g_bFilterUnprintable);

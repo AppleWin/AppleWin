@@ -313,7 +313,14 @@ UINT64 YamlLoadHelper::LoadUint64(const std::string key)
 
 bool YamlLoadHelper::LoadBool(const std::string key)
 {
-	return LoadUint(key) ? true : false;
+	bool bFound;
+	std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
+	if (value == "true")
+		return true;
+	else if (value == "false")
+		return false;
+	m_bDoGetMapRemainder = false;
+	throw std::string(m_currentMapName + ": Missing: " + key);
 }
 
 std::string YamlLoadHelper::LoadString_NoThrow(const std::string& key, bool& bFound)
@@ -393,7 +400,7 @@ void YamlSaveHelper::SaveHex64(const char* key, UINT64 value)
 
 void YamlSaveHelper::SaveBool(const char* key, bool value)
 {
-	SaveUint(key, value ? 1 : 0);
+	Save("%s: %s\n", key, value ? "true" : "false");
 }
 
 void YamlSaveHelper::SaveString(const char* key,  const char* value)
@@ -401,8 +408,12 @@ void YamlSaveHelper::SaveString(const char* key,  const char* value)
 	Save("%s: %s\n", key, (value[0] != 0) ? value : "\"\"");
 }
 
+// Pre: uMemSize must be multiple of 8
 void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize)
 {
+	if (uMemSize & 7)
+		throw std::string("Memory: size must be multiple of 8");
+
 	const UINT kIndent = m_indent;
 
 	const UINT kStride = 64;

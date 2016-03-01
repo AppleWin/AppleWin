@@ -1206,7 +1206,7 @@ static void DiskSaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK, g_aFloppyDisk[unit].track);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, g_aFloppyDisk[unit].phase);
 	yamlSaveHelper.SaveHex16(SS_YAML_KEY_BYTE, g_aFloppyDisk[unit].byte);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_WRITE_PROTECTED, g_aFloppyDisk[unit].bWriteProtected);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITE_PROTECTED, g_aFloppyDisk[unit].bWriteProtected);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_SPINNING, g_aFloppyDisk[unit].spinning);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_WRITE_LIGHT, g_aFloppyDisk[unit].writelight);
 	yamlSaveHelper.SaveHex16(SS_YAML_KEY_NIBBLES, g_aFloppyDisk[unit].nibbles);
@@ -1227,11 +1227,11 @@ void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.SaveHex4(SS_YAML_KEY_PHASES, phases);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_CURRENT_DRIVE, currdrive);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_DISK_ACCESSED, diskaccessed);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_ENHANCE_DISK, enhancedisk);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_DISK_ACCESSED, diskaccessed == TRUE);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ENHANCE_DISK, enhancedisk == TRUE);
 	yamlSaveHelper.SaveHex8(SS_YAML_KEY_FLOPPY_LATCH, floppylatch);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_FLOPPY_MOTOR_ON, floppymotoron);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_FLOPPY_WRITE_MODE, floppywritemode);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_MOTOR_ON, floppymotoron == TRUE);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_WRITE_MODE, floppywritemode == TRUE);
 
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_1);
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_2);
@@ -1277,7 +1277,7 @@ static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 	g_aFloppyDisk[unit].track			= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);
 	g_aFloppyDisk[unit].phase			= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
 	g_aFloppyDisk[unit].byte			= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTE);
-	yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_PROTECTED);	// Consume
+	yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITE_PROTECTED);	// Consume
 	g_aFloppyDisk[unit].spinning		= yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
 	g_aFloppyDisk[unit].writelight		= yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
 	g_aFloppyDisk[unit].nibbles			= yamlLoadHelper.LoadUint(SS_YAML_KEY_NIBBLES);
@@ -1325,11 +1325,11 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 
 	phases  		= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASES);
 	currdrive		= yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_DRIVE);
-	diskaccessed	= yamlLoadHelper.LoadUint(SS_YAML_KEY_DISK_ACCESSED);
-	enhancedisk		= yamlLoadHelper.LoadUint(SS_YAML_KEY_ENHANCE_DISK);
+	diskaccessed	= yamlLoadHelper.LoadBool(SS_YAML_KEY_DISK_ACCESSED);
+	enhancedisk		= yamlLoadHelper.LoadBool(SS_YAML_KEY_ENHANCE_DISK);
 	floppylatch		= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_LATCH);
-	floppymotoron	= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_MOTOR_ON);
-	floppywritemode	= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_WRITE_MODE);
+	floppymotoron	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_MOTOR_ON);
+	floppywritemode	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_WRITE_MODE);
 
 	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
 	for(UINT i=0; i<NUM_DRIVES; i++)

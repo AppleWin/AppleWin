@@ -692,7 +692,7 @@ static void HD_SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 	yamlSaveHelper.SaveHex8(SS_YAML_KEY_ERROR, g_HardDisk[unit].hd_error);
 	yamlSaveHelper.SaveHex16(SS_YAML_KEY_MEMBLOCK, g_HardDisk[unit].hd_memblock);
 	yamlSaveHelper.SaveHex32(SS_YAML_KEY_DISKBLOCK, g_HardDisk[unit].hd_diskblock);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_IMAGELOADED, g_HardDisk[unit].hd_imageloaded);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_IMAGELOADED, g_HardDisk[unit].hd_imageloaded);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_STATUS_NEXT, g_HardDisk[unit].hd_status_next);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_STATUS_PREV, g_HardDisk[unit].hd_status_prev);
 	yamlSaveHelper.SaveHex16(SS_YAML_KEY_BUF_PTR, g_HardDisk[unit].hd_buf_ptr);

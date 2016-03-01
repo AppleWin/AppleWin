@@ -1987,9 +1987,9 @@ void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 		SaveSnapshotSSI263(yamlSaveHelper, pMB->SpeechChip);
 
 		yamlSaveHelper.SaveHex4(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
-		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, 0);
-		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, 0);
-		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_SPEECH_IRQ, 0);
+		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, "false");
+		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, "false");
+		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_SPEECH_IRQ, "false");
 
 		nDeviceNum++;
 		pMB++;
@@ -2063,9 +2063,9 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 		LoadSnapshotSSI263(yamlLoadHelper, pMB->SpeechChip);
 
 		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
-		yamlLoadHelper.LoadUint(SS_YAML_KEY_TIMER1_IRQ);	// Consume
-		yamlLoadHelper.LoadUint(SS_YAML_KEY_TIMER2_IRQ);	// Consume
-		yamlLoadHelper.LoadUint(SS_YAML_KEY_SPEECH_IRQ);	// Consume
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER1_IRQ);	// Consume
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER2_IRQ);	// Consume
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_SPEECH_IRQ);	// Consume
 
 		yamlLoadHelper.PopMap();
 
@@ -2127,9 +2127,9 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 		SaveSnapshotSSI263(yamlSaveHelper, pMB->SpeechChip);
 
 		yamlSaveHelper.SaveHex4(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
-		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, 0);
-		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, 0);
-		yamlSaveHelper.Save("%s: %d # Not supported\n", SS_YAML_KEY_SPEECH_IRQ, 0);
+		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, "false");
+		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, "false");
+		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_SPEECH_IRQ, "false");
 
 		nDeviceNum += 2;
 		pMB++;
@@ -2168,9 +2168,9 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 		LoadSnapshotSSI263(yamlLoadHelper, pMB->SpeechChip);
 
 		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
-		yamlLoadHelper.LoadUint(SS_YAML_KEY_TIMER1_IRQ);	// Consume
-		yamlLoadHelper.LoadUint(SS_YAML_KEY_TIMER2_IRQ);	// Consume
-		yamlLoadHelper.LoadUint(SS_YAML_KEY_SPEECH_IRQ);	// Consume
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER1_IRQ);	// Consume
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER2_IRQ);	// Consume
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_SPEECH_IRQ);	// Consume
 
 		yamlLoadHelper.PopMap();
 
