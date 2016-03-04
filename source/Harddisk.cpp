@@ -689,13 +689,13 @@ static void HD_SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_HDDUNIT, unit);
 	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, g_HardDisk[unit].fullname);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_ERROR, g_HardDisk[unit].hd_error);
-	yamlSaveHelper.SaveHex16(SS_YAML_KEY_MEMBLOCK, g_HardDisk[unit].hd_memblock);
-	yamlSaveHelper.SaveHex32(SS_YAML_KEY_DISKBLOCK, g_HardDisk[unit].hd_diskblock);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_ERROR, g_HardDisk[unit].hd_error);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_MEMBLOCK, g_HardDisk[unit].hd_memblock);
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_DISKBLOCK, g_HardDisk[unit].hd_diskblock);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_IMAGELOADED, g_HardDisk[unit].hd_imageloaded);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_STATUS_NEXT, g_HardDisk[unit].hd_status_next);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_STATUS_PREV, g_HardDisk[unit].hd_status_prev);
-	yamlSaveHelper.SaveHex16(SS_YAML_KEY_BUF_PTR, g_HardDisk[unit].hd_buf_ptr);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_BUF_PTR, g_HardDisk[unit].hd_buf_ptr);
 
 	// New label
 	{
@@ -713,7 +713,7 @@ void HD_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.Save("%s: %d # b7=unit\n", SS_YAML_KEY_CURRENT_UNIT, g_nHD_UnitNum);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_COMMAND, g_nHD_Command);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_COMMAND, g_nHD_Command);
 
 	HD_SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_1);
 	HD_SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_2);

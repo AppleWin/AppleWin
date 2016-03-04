@@ -205,12 +205,12 @@ public:
 
 	void SaveInt(const char* key, int value);
 	void SaveUint(const char* key, UINT value);
-	void SaveHex4(const char* key, UINT value);
-	void SaveHex8(const char* key, UINT value);
-	void SaveHex12(const char* key, UINT value);
-	void SaveHex16(const char* key, UINT value);
-	void SaveHex32(const char* key, UINT value);
-	void SaveHex64(const char* key, UINT64 value);
+	void SaveHexUint4(const char* key, UINT value);
+	void SaveHexUint8(const char* key, UINT value);
+	void SaveHexUint12(const char* key, UINT value);
+	void SaveHexUint16(const char* key, UINT value);
+	void SaveHexUint32(const char* key, UINT value);
+	void SaveHexUint64(const char* key, UINT64 value);
 	void SaveBool(const char* key, bool value);
 	void SaveString(const char* key,  const char* value);
 	void SaveMemory(const LPBYTE pMemBase, const UINT uMemSize);

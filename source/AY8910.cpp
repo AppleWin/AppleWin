@@ -1023,18 +1023,18 @@ void CAY8910::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, std::string& suffix)
 	{
 		YamlSaveHelper::Label registers(yamlSaveHelper, "%s:\n", SS_YAML_KEY_REGISTERS);
 
-		yamlSaveHelper.SaveHex12(SS_YAML_KEY_REG_TONE0_PERIOD, (UINT)(sound_ay_registers[1]<<8) | sound_ay_registers[0]);
-		yamlSaveHelper.SaveHex12(SS_YAML_KEY_REG_TONE1_PERIOD, (UINT)(sound_ay_registers[3]<<8) | sound_ay_registers[2]);
-		yamlSaveHelper.SaveHex12(SS_YAML_KEY_REG_TONE2_PERIOD, (UINT)(sound_ay_registers[5]<<8) | sound_ay_registers[4]);
-		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_NOISE_PERIOD, sound_ay_registers[6]);
-		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_MIXER, sound_ay_registers[7]);
-		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_VOL0, sound_ay_registers[8]);
-		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_VOL1, sound_ay_registers[9]);
-		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_VOL2, sound_ay_registers[10]);
-		yamlSaveHelper.SaveHex16(SS_YAML_KEY_REG_ENV_PERIOD, (UINT)(sound_ay_registers[12]<<8) | sound_ay_registers[11]);
-		yamlSaveHelper.SaveHex4(SS_YAML_KEY_REG_ENV_SHAPE, sound_ay_registers[13]);
-		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_PORTA, sound_ay_registers[14]);
-		yamlSaveHelper.SaveHex8(SS_YAML_KEY_REG_PORTB, sound_ay_registers[15]);
+		yamlSaveHelper.SaveHexUint12(SS_YAML_KEY_REG_TONE0_PERIOD, (UINT)(sound_ay_registers[1]<<8) | sound_ay_registers[0]);
+		yamlSaveHelper.SaveHexUint12(SS_YAML_KEY_REG_TONE1_PERIOD, (UINT)(sound_ay_registers[3]<<8) | sound_ay_registers[2]);
+		yamlSaveHelper.SaveHexUint12(SS_YAML_KEY_REG_TONE2_PERIOD, (UINT)(sound_ay_registers[5]<<8) | sound_ay_registers[4]);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REG_NOISE_PERIOD, sound_ay_registers[6]);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REG_MIXER, sound_ay_registers[7]);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REG_VOL0, sound_ay_registers[8]);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REG_VOL1, sound_ay_registers[9]);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REG_VOL2, sound_ay_registers[10]);
+		yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REG_ENV_PERIOD, (UINT)(sound_ay_registers[12]<<8) | sound_ay_registers[11]);
+		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_REG_ENV_SHAPE, sound_ay_registers[13]);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REG_PORTA, sound_ay_registers[14]);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REG_PORTB, sound_ay_registers[15]);
 	}
 
 	// New label

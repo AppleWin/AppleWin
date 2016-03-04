@@ -1111,7 +1111,7 @@ static std::string SpkrGetSnapshotStructName(void)
 void SpkrSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SpkrGetSnapshotStructName().c_str());
-	yamlSaveHelper.SaveHex64(SS_YAML_KEY_LASTCYCLE, g_nSpkrLastCycle);
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LASTCYCLE, g_nSpkrLastCycle);
 }
 
 void SpkrLoadSnapshot(YamlLoadHelper& yamlLoadHelper)

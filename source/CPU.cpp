@@ -730,13 +730,13 @@ void CpuSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", CpuGetSnapshotStructName().c_str());	
 	yamlSaveHelper.SaveString(SS_YAML_KEY_CPU_TYPE, GetMainCpu() == CPU_6502 ? SS_YAML_VALUE_6502 : SS_YAML_VALUE_65C02);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGA, regs.a);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGX, regs.x);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGY, regs.y);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGP, regs.ps);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGS, (BYTE) regs.sp);
-	yamlSaveHelper.SaveHex16(SS_YAML_KEY_REGPC, regs.pc);
-	yamlSaveHelper.SaveHex64(SS_YAML_KEY_CUMULATIVECYCLES, g_nCumulativeCycles);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGA, regs.a);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGX, regs.x);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGY, regs.y);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGP, regs.ps);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGS, (BYTE) regs.sp);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REGPC, regs.pc);
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_CUMULATIVECYCLES, g_nCumulativeCycles);
 }
 
 void CpuLoadSnapshot(YamlLoadHelper& yamlLoadHelper)

@@ -1369,8 +1369,8 @@ void CSuperSerialCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_STOPBITS, m_uStopBits);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_BYTESIZE, m_uByteSize);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PARITY, m_uParity);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_CONTROL, m_uControlByte);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_COMMAND, m_uCommandByte);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_CONTROL, m_uControlByte);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_COMMAND, m_uCommandByte);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, m_dwCommInactivity);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_TXIRQENABLED, m_bTxIrqEnabled);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_RXIRQENABLED, m_bRxIrqEnabled);

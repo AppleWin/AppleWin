@@ -6491,33 +6491,33 @@ void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ACTIVE, GetActiveCpu() == CPU_Z80 ? 1 : 0);
 
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGA, reg_a);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGB, reg_b);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGC, reg_c);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGD, reg_d);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGE, reg_e);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGF, reg_f);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGH, reg_h);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGL, reg_l);
-	yamlSaveHelper.SaveHex16(SS_YAML_KEY_REGIX, ((USHORT)reg_ixh<<8)|(USHORT)reg_ixl);
-	yamlSaveHelper.SaveHex16(SS_YAML_KEY_REGIY, ((USHORT)reg_iyh<<8)|(USHORT)reg_iyl);
-	yamlSaveHelper.SaveHex16(SS_YAML_KEY_REGSP, reg_sp);
-	yamlSaveHelper.SaveHex16(SS_YAML_KEY_REGPC, (USHORT)z80_reg_pc);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGI, reg_i);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGR, reg_r);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGA, reg_a);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGB, reg_b);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGC, reg_c);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGD, reg_d);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGE, reg_e);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGF, reg_f);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGH, reg_h);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGL, reg_l);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REGIX, ((USHORT)reg_ixh<<8)|(USHORT)reg_ixl);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REGIY, ((USHORT)reg_iyh<<8)|(USHORT)reg_iyl);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REGSP, reg_sp);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REGPC, (USHORT)z80_reg_pc);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGI, reg_i);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGR, reg_r);
 
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_IFF1, iff1);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_IFF2, iff2);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_IM_MODE, im_mode);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IFF1, iff1);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IFF2, iff2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IM_MODE, im_mode);
 
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGA2, reg_a2);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGB2, reg_b2);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGC2, reg_c2);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGD2, reg_d2);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGE2, reg_e2);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGF2, reg_f2);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGH2, reg_h2);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_REGL2, reg_l2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGA2, reg_a2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGB2, reg_b2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGC2, reg_c2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGD2, reg_d2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGE2, reg_e2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGF2, reg_f2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGH2, reg_h2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGL2, reg_l2);
 }
 
 bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT version)

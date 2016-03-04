@@ -871,7 +871,7 @@ static std::string JoyGetSnapshotStructName(void)
 void JoySaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", JoyGetSnapshotStructName().c_str());
-	yamlSaveHelper.SaveHex64(SS_YAML_KEY_COUNTERRESETCYCLE, g_nJoyCntrResetCycle);
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_COUNTERRESETCYCLE, g_nJoyCntrResetCycle);
 	yamlSaveHelper.SaveInt(SS_YAML_KEY_JOY0TRIMX, JoyGetTrim(true));
 	yamlSaveHelper.SaveInt(SS_YAML_KEY_JOY0TRIMY, JoyGetTrim(false));
 	yamlSaveHelper.Save("%s: %d # not implemented yet\n", SS_YAML_KEY_JOY1TRIMX, 0);	// not implemented yet

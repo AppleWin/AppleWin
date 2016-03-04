@@ -666,9 +666,9 @@ void CMouseInterface::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	SaveSnapshotMC6821(yamlSaveHelper, SS_YAML_KEY_MC6821);
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_DATALEN, m_nDataLen);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_MODE, m_byMode);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_6821B, m_by6821B);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_6821A, m_by6821A);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_MODE, m_byMode);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_6821B, m_by6821B);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_6821A, m_by6821A);
 
 	// New label
 	{
@@ -677,7 +677,7 @@ void CMouseInterface::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	}
 
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_BUFFPOS, m_nBuffPos);
-	yamlSaveHelper.SaveHex8(SS_YAML_KEY_MOUSESTATE, m_byState);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_MOUSESTATE, m_byState);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_X, m_nX);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_Y, m_nY);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_BTN0, m_bBtn0);
