@@ -1089,7 +1089,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			Snapshot_SetFilename(szSnapshotName);
 			Snapshot_LoadState();
 			bBoot = true;
-#if _DEBUG && 1	// Debug/test: Save a duplicate of the save-state file in tmp folder
+#if _DEBUG && 0	// Debug/test: Save a duplicate of the save-state file in tmp folder
 			std::string saveName = std::string("tmp\\") + std::string(szSnapshotName); 
 			Snapshot_SetFilename(saveName);
 			g_bSaveStateOnExit = true;

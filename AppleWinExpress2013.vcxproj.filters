@@ -175,6 +175,9 @@
     <ClCompile Include="source\SAM.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\YamlHelper.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -375,9 +378,6 @@
     <ClInclude Include="source\StdAfx.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\Structs.h">
-      <Filter>Source Files\_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="source\Tape.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
@@ -428,6 +428,15 @@
     </ClInclude>
     <ClInclude Include="source\SAM.h">
       <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\YamlHelper.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\SaveState_Structs_common.h">
+      <Filter>Source Files\_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\SaveState_Structs_v1.h">
+      <Filter>Source Files\_Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
