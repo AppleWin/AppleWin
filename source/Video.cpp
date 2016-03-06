@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
 #include "Debugger\Debugger_Color.h"	// For NUM_DEBUG_COLORS
+#include "YamlHelper.h"
 
 #define HALF_PIXEL_SOLID 1
 #define HALF_PIXEL_BLEED 0
@@ -2941,20 +2942,42 @@ void VideoSetForceFullRedraw(void)
 
 //===========================================================================
 
-DWORD VideoGetSnapshot(SS_IO_Video* pSS)
+void VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode)
 {
-	pSS->bAltCharSet = !(g_nAltCharSetOffset == 0);
-	pSS->dwVidMode = g_uVideoMode;
-	return 0;
+	g_nAltCharSetOffset = !AltCharSet ? 0 : 256;
+	g_uVideoMode = VideoMode;
 }
 
-//===========================================================================
+//
 
-DWORD VideoSetSnapshot(SS_IO_Video* pSS)
+#define SS_YAML_KEY_ALTCHARSET "Alt Char Set"
+#define SS_YAML_KEY_VIDEOMODE "Video Mode"
+#define SS_YAML_KEY_CYCLESTHISFRAME "Cycles This Frame"
+
+static std::string VideoGetSnapshotStructName(void)
 {
-	g_nAltCharSetOffset = !pSS->bAltCharSet ? 0 : 256;
-	g_uVideoMode = pSS->dwVidMode;
-	return 0;
+	static const std::string name("Video");
+	return name;
+}
+
+void VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALTCHARSET, g_nAltCharSetOffset ? true : false);
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEOMODE, g_uVideoMode);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLESTHISFRAME, g_dwCyclesThisFrame);
+}
+
+void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(VideoGetSnapshotStructName()))
+		return;
+
+	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALTCHARSET) ? 256 : 0;
+	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEOMODE);
+	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLESTHISFRAME);
+
+	yamlLoadHelper.PopMap();
 }
 
 //===========================================================================

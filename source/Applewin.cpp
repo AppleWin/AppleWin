@@ -56,6 +56,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration\PropertySheet.h"
 #include "Tfe\Tfe.h"
 
+static UINT16 g_AppleWinVersion[4] = {0};
 char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
 TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
@@ -64,9 +65,6 @@ eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
 bool      g_bFullSpeed      = false;
 
-//Pravets 8A/C variables
-bool P8CAPS_ON = false;
-bool P8Shift = false;
 //=================================================
 
 // Win32
@@ -101,8 +99,6 @@ CMouseInterface		sg_Mouse;
 SS_CARDTYPE	g_Slot4 = CT_Empty;
 SS_CARDTYPE	g_Slot5 = CT_Empty;
 
-eCPU		g_ActiveCPU = CPU_6502;
-
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
 
@@ -112,6 +108,22 @@ CSpeech		g_Speech;
 #endif
 
 //===========================================================================
+
+eApple2Type GetApple2Type(void)
+{
+	return g_Apple2Type;
+}
+
+void SetApple2Type(eApple2Type type)
+{
+	g_Apple2Type = type;
+	SetMainCpuDefault(type);
+}
+
+const UINT16* GetAppleWinVersion(void)
+{
+	return &g_AppleWinVersion[0];
+}
 
 bool GetLoadedSaveStateFlag(void)
 {
@@ -369,20 +381,39 @@ static void LoadConfigOldJoystick(const UINT uJoyNum)
 		break;
 	}
 
-	joytype[uJoyNum] = uNewJoyType;
+	JoySetJoyType(uJoyNum, uNewJoyType);
+}
+
+//Sets the character set for the Apple model/clone
+void SetCharsetType(void)
+{
+	switch ( GetApple2Type() )
+	{
+	case A2TYPE_APPLE2:			g_nCharsetType = 0; break; 
+	case A2TYPE_APPLE2PLUS:		g_nCharsetType = 0; break; 
+	case A2TYPE_APPLE2E:		g_nCharsetType = 0; break; 
+	case A2TYPE_APPLE2EENHANCED:g_nCharsetType = 0; break; 
+	case A2TYPE_PRAVETS82:	    g_nCharsetType = 1; break; 
+	case A2TYPE_PRAVETS8A:	    g_nCharsetType = 2; break; 
+	case A2TYPE_PRAVETS8M:	    g_nCharsetType = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because setting charset to 3 results in some problems.
+	default:
+		_ASSERT(0);
+		g_nCharsetType = 0;
+	}
 }
 
 //Reads configuration from the registry entries
 void LoadConfiguration(void)
 {
 	DWORD dwComputerType;
+	eApple2Type apple2Type = A2TYPE_APPLE2EENHANCED;
 
 	if (REGLOAD(TEXT(REGVALUE_APPLE2_TYPE), &dwComputerType))
 	{
 		if ((dwComputerType >= A2TYPE_MAX) || (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE))
 			dwComputerType = A2TYPE_APPLE2EENHANCED;
 
-		g_Apple2Type = (eApple2Type) dwComputerType;
+		apple2Type = (eApple2Type) dwComputerType;
 	}
 	else	// Support older AppleWin registry entries
 	{
@@ -390,29 +421,42 @@ void LoadConfiguration(void)
 		switch (dwComputerType)
 		{
 			// NB. No A2TYPE_APPLE2E (this is correct)
-		case 0:	g_Apple2Type = A2TYPE_APPLE2;
-		case 1:	g_Apple2Type = A2TYPE_APPLE2PLUS;
-		case 2:	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
-		default:	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
+		case 0:		apple2Type = A2TYPE_APPLE2; break;
+		case 1:		apple2Type = A2TYPE_APPLE2PLUS; break;
+		case 2:		apple2Type = A2TYPE_APPLE2EENHANCED; break;
+		default:	apple2Type = A2TYPE_APPLE2EENHANCED;
 		}
 	}
 
-	switch (g_Apple2Type) //Sets the character set for the Apple model/clone
-	{
-	case A2TYPE_APPLE2:			g_nCharsetType  = 0; break; 
-	case A2TYPE_APPLE2PLUS:		g_nCharsetType  = 0; break; 
-	case A2TYPE_APPLE2E:		g_nCharsetType  = 0; break; 
-	case A2TYPE_APPLE2EENHANCED:g_nCharsetType  = 0; break; 
-	case A2TYPE_PRAVETS82:	    g_nCharsetType  = 1; break; 
-	case A2TYPE_PRAVETS8A:	    g_nCharsetType  = 2; break; 
-	case A2TYPE_PRAVETS8M:	    g_nCharsetType  = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because setting charset to 3 results in some problems.
-	}
+	SetApple2Type(apple2Type);
+	SetCharsetType();
 
 	//
 
-	if (!REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &joytype[JN_JOYSTICK0]))
+	DWORD dwCpuType;
+	eCpuType cpu = CPU_65C02;
+
+	if (REGLOAD(TEXT(REGVALUE_CPU_TYPE), &dwCpuType))
+	{
+		if (dwCpuType != CPU_6502 && dwCpuType != CPU_65C02)
+			dwCpuType = CPU_65C02;
+
+		cpu = (eCpuType) dwCpuType;
+	}
+
+	SetMainCpu(cpu);
+
+	//
+
+	DWORD dwJoyType;
+	if (REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &dwJoyType))
+		JoySetJoyType(JN_JOYSTICK0, dwJoyType);
+	else
 		LoadConfigOldJoystick(JN_JOYSTICK0);
-	if (!REGLOAD(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), &joytype[JN_JOYSTICK1]))
+
+	if (REGLOAD(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), &dwJoyType))
+		JoySetJoyType(JN_JOYSTICK1, dwJoyType);
+	else
 		LoadConfigOldJoystick(JN_JOYSTICK1);
 
 	REGLOAD(TEXT("Sound Emulation")     ,&soundtype);
@@ -469,12 +513,6 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
 		HD_SetEnabled(dwTmp ? true : false);
 
-	char szHDVPathname[MAX_PATH] = {0};
-	if(RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_1), 1, szHDVPathname, sizeof(szHDVPathname)))
-		HD_InsertDisk(HARDDISK_1, szHDVPathname);
-	if(RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_2), 1, szHDVPathname, sizeof(szHDVPathname)))
-		HD_InsertDisk(HARDDISK_2, szHDVPathname);
-
 	if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
 		JoySetTrim((short)dwTmp, true);
 	if(REGLOAD(TEXT(REGVALUE_PDL_YTRIM), &dwTmp))
@@ -500,14 +538,19 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
 		g_Slot5 = (SS_CARDTYPE) dwTmp;
 
-	if (g_Slot4 == CT_MockingboardC || g_Slot4 == CT_Phasor)
-		MB_SetSoundcardType(g_Slot4);
-	else
-		MB_SetSoundcardType(CT_Empty);
-
 	//
 
 	char szFilename[MAX_PATH] = {0};
+
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH);
+	if (szFilename[0] == 0)
+		GetCurrentDirectory(sizeof(szFilename), szFilename);
+	SetCurrentImageDir(szFilename);
+
+	HD_LoadLastDiskImage(HARDDISK_1);
+	HD_LoadLastDiskImage(HARDDISK_2);
+
+	//
 
 	// Current/Starting Dir is the "root" of where the user keeps his disk images
 	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH);
@@ -741,6 +784,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bBoot = false;
 	LPSTR szImageName_drive1 = NULL;
 	LPSTR szImageName_drive2 = NULL;
+	LPSTR szSnapshotName = NULL;
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
 
 	while (*lpCmdLine)
@@ -771,6 +815,12 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			szImageName_drive2 = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-load-state") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			szSnapshotName = lpCmdLine;
 		}
 		else if (strcmp(lpCmdLine, "-f") == 0)
 		{
@@ -809,8 +859,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			g_uMaxExPages = atoi(lpCmdLine);
-			if (g_uMaxExPages > 127)
-				g_uMaxExPages = 128;
+			if (g_uMaxExPages > kMaxExMemoryBanks)
+				g_uMaxExPages = kMaxExMemoryBanks;
 			else if (g_uMaxExPages < 1)
 				g_uMaxExPages = 1;
 		}
@@ -903,11 +953,11 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
             // Construct version string from fixed file info block
 
-            unsigned long major     = pFixedFileInfo->dwFileVersionMS >> 16;
-            unsigned long minor     = pFixedFileInfo->dwFileVersionMS & 0xffff;
-            unsigned long fix       = pFixedFileInfo->dwFileVersionLS >> 16;
-			unsigned long fix_minor = pFixedFileInfo->dwFileVersionLS & 0xffff;
-            sprintf(VERSIONSTRING, "%d.%d.%d.%d", major, minor, fix, fix_minor); // potential buffer overflow
+            unsigned long major     = g_AppleWinVersion[0] = pFixedFileInfo->dwFileVersionMS >> 16;
+            unsigned long minor     = g_AppleWinVersion[1] = pFixedFileInfo->dwFileVersionMS & 0xffff;
+            unsigned long fix       = g_AppleWinVersion[2] = pFixedFileInfo->dwFileVersionLS >> 16;
+			unsigned long fix_minor = g_AppleWinVersion[3] = pFixedFileInfo->dwFileVersionLS & 0xffff;
+			sprintf(VERSIONSTRING, "%d.%d.%d.%d", major, minor, fix, fix_minor); // potential buffer overflow
 		}
     }
 
@@ -1032,8 +1082,25 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		tfe_init();
 		LogFileOutput("Main: tfe_init()\n");
 
-		Snapshot_Startup();		// Do this after everything has been init'ed
-		LogFileOutput("Main: Snapshot_Startup()\n");
+		if (szSnapshotName)
+		{
+			// Override value just loaded from Registry by LoadConfiguration()
+			// . NB. Registry value is not updated with this cmd-line value
+			Snapshot_SetFilename(szSnapshotName);
+			Snapshot_LoadState();
+			bBoot = true;
+#if _DEBUG && 0	// Debug/test: Save a duplicate of the save-state file in tmp folder
+			std::string saveName = std::string("tmp\\") + std::string(szSnapshotName); 
+			Snapshot_SetFilename(saveName);
+			g_bSaveStateOnExit = true;
+			bShutdown = true;
+#endif
+		}
+		else
+		{
+			Snapshot_Startup();		// Do this after everything has been init'ed
+			LogFileOutput("Main: Snapshot_Startup()\n");
+		}
 
 		if (bShutdown)
 		{

@@ -4325,7 +4325,7 @@ Update_t CmdMemoryLoad (int nArgs)
 
 		if (bBankSpecified)
 		{
-			MemUpdatePaging(1);
+			MemUpdatePaging(TRUE);
 		}
 		else
 		{

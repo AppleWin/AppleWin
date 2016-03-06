@@ -40,7 +40,7 @@ const bool IMAGE_DONT_CREATE = false;
 const bool IMAGE_CREATE = true;
 
 extern BOOL enhancedisk;
-const std::string& DiskGetDiskPathFilename(const int iDrive);
+const char* DiskGetDiskPathFilename(const int iDrive);
 
 void    DiskInitialize(void); // DiskIIManagerStartup()
 void    DiskDestroy(void); // no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
@@ -70,8 +70,11 @@ void    DiskSelect(const int iDrive);
 void    DiskUpdatePosition(DWORD);
 bool    DiskDriveSwap(void);
 void    DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot);
-DWORD   DiskGetSnapshot(SS_CARD_DISK2* pSS, DWORD dwSlot);
-DWORD   DiskSetSnapshot(SS_CARD_DISK2* pSS, DWORD dwSlot);
+
+int     DiskSetSnapshot_v1(const struct SS_CARD_DISK2* const pSS);
+std::string DiskGetSnapshotCardName(void);
+void    DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+bool    DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 void Disk_LoadLastDiskImage(const int iDrive);
 void Disk_SaveLastDiskImage(const int iDrive);

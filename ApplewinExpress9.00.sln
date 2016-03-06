@@ -3,6 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Applewin", "ApplewinExpress9.00.vcproj", "{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}"
 	ProjectSection(ProjectDependencies) = postProject
+		{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F} = {5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}
 		{7935B998-C713-42AE-8F6D-9FF9080A1B1B} = {7935B998-C713-42AE-8F6D-9FF9080A1B1B}
 		{2CC8CA9F-E37E-41A4-BFAD-77E54EB783A2} = {2CC8CA9F-E37E-41A4-BFAD-77E54EB783A2}
 		{709278B8-C583-4BD8-90DE-4E4F35A3BD8B} = {709278B8-C583-4BD8-90DE-4E4F35A3BD8B}
@@ -13,6 +14,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zip_lib", "zip_lib\zip_lib.vcproj", "{709278B8-C583-4BD8-90DE-4E4F35A3BD8B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestCPU6502", "test\TestCPU6502\TestCPU6502.vcproj", "{2CC8CA9F-E37E-41A4-BFAD-77E54EB783A2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yaml", "libyaml\win32\yaml2008.vcproj", "{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,6 +39,10 @@ Global
 		{2CC8CA9F-E37E-41A4-BFAD-77E54EB783A2}.Debug|Win32.Build.0 = Debug|Win32
 		{2CC8CA9F-E37E-41A4-BFAD-77E54EB783A2}.Release|Win32.ActiveCfg = Release|Win32
 		{2CC8CA9F-E37E-41A4-BFAD-77E54EB783A2}.Release|Win32.Build.0 = Release|Win32
+		{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}.Debug|Win32.Build.0 = Debug|Win32
+		{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}.Release|Win32.ActiveCfg = Release|Win32
+		{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "AppleWin.h"
 #include "CPU.h"
 #include "Memory.h"
+#include "YamlHelper.h"
 
 #include "Configuration\PropertySheet.h"
 
@@ -91,7 +92,7 @@ static int   joysubx[2]     = {0,0};
 static int   joysuby[2]     = {0,0};
 
 // Value persisted to Registry for REGVALUE_JOYSTICK0_EMU_TYPE
-DWORD joytype[2]            = {J0C_JOYSTICK1, J1C_DISABLED};	// Emulation Type for joysticks #0 & #1
+static DWORD joytype[2]            = {J0C_JOYSTICK1, J1C_DISABLED};	// Emulation Type for joysticks #0 & #1
 
 static BOOL  setbutton[3]   = {0,0,0};	// Used when a mouse button is pressed/released
 
@@ -753,6 +754,30 @@ void JoyDisableUsingMouse()
 
 //===========================================================================
 
+void JoySetJoyType(UINT num, DWORD type)
+{
+	_ASSERT(num <= JN_JOYSTICK1);
+	if (num > JN_JOYSTICK1)
+		return;
+
+	joytype[num] = type;
+
+	// Refresh centre positions whenever 'joytype' changes
+	JoySetTrim(JoyGetTrim(true) , true);
+	JoySetTrim(JoyGetTrim(false), false);
+}
+
+DWORD JoyGetJoyType(UINT num)
+{
+	_ASSERT(num <= JN_JOYSTICK1);
+	if (num > JN_JOYSTICK1)
+		return J0C_DISABLED;
+
+	return joytype[num];
+}
+
+//===========================================================================
+
 void JoySetTrim(short nValue, bool bAxisX)
 {
 	if(bAxisX)
@@ -824,14 +849,45 @@ void JoyportControl(const UINT uControl)
 
 //===========================================================================
 
-DWORD JoyGetSnapshot(SS_IO_Joystick* pSS)
+void JoySetSnapshot_v1(const unsigned __int64 JoyCntrResetCycle)
 {
-	pSS->g_nJoyCntrResetCycle = g_nJoyCntrResetCycle;
-	return 0;
+	g_nJoyCntrResetCycle = JoyCntrResetCycle;
 }
 
-DWORD JoySetSnapshot(SS_IO_Joystick* pSS)
+//
+
+#define SS_YAML_KEY_COUNTERRESETCYCLE "Counter Reset Cycle"
+#define SS_YAML_KEY_JOY0TRIMX "Joystick0 TrimX"
+#define SS_YAML_KEY_JOY0TRIMY "Joystick0 TrimY"
+#define SS_YAML_KEY_JOY1TRIMX "Joystick1 TrimX"
+#define SS_YAML_KEY_JOY1TRIMY "Joystick1 TrimY"
+
+static std::string JoyGetSnapshotStructName(void)
 {
-	g_nJoyCntrResetCycle = pSS->g_nJoyCntrResetCycle;
-	return 0;
+	static const std::string name("Joystick");
+	return name;
+}
+
+void JoySaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", JoyGetSnapshotStructName().c_str());
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_COUNTERRESETCYCLE, g_nJoyCntrResetCycle);
+	yamlSaveHelper.SaveInt(SS_YAML_KEY_JOY0TRIMX, JoyGetTrim(true));
+	yamlSaveHelper.SaveInt(SS_YAML_KEY_JOY0TRIMY, JoyGetTrim(false));
+	yamlSaveHelper.Save("%s: %d # not implemented yet\n", SS_YAML_KEY_JOY1TRIMX, 0);	// not implemented yet
+	yamlSaveHelper.Save("%s: %d # not implemented yet\n", SS_YAML_KEY_JOY1TRIMY, 0);	// not implemented yet
+}
+
+void JoyLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(JoyGetSnapshotStructName()))
+		return;
+
+	g_nJoyCntrResetCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_COUNTERRESETCYCLE);
+	JoySetTrim(yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY0TRIMX), true);
+	JoySetTrim(yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY0TRIMY), false);
+	yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY1TRIMX);	// dump value
+	yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY1TRIMY);	// dump value
+
+	yamlLoadHelper.PopMap();
 }

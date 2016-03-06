@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "NoSlotClock.h"
 #include "ParallelPrinter.h"
 #include "Registry.h"
+#include "SAM.h"
 #include "SerialComms.h"
 #include "Speaker.h"
 #include "Tape.h"
@@ -53,7 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
 #include "Debugger\DebugDefs.h"
-#include "SAM.h"
+#include "YamlHelper.h"
 
 // Memory Flag
 #define  MF_80STORE    0x00000001
@@ -172,7 +173,7 @@ iofunction		IORead[256];
 iofunction		IOWrite[256];
 static LPVOID	SlotParameters[NUM_SLOTS];
 
-static BOOL    lastwriteram = 0;
+static BOOL    lastwriteram = 0;	// NB. redundant - only used in MemSetPaging(), where it's forced to 1
 
 LPBYTE         mem          = NULL;
 
@@ -196,12 +197,12 @@ static BOOL    Pravets8charmode = 0;
 static CNoSlotClock g_NoSlotClock;
 
 #ifdef RAMWORKS
-UINT			g_uMaxExPages	= 1;			// user requested ram pages
-static LPBYTE	RWpages[128];					// pointers to RW memory banks
+UINT			g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
+UINT			g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c
+static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
-void UpdatePaging(BOOL initialize);
 
 //=============================================================================
 
@@ -688,11 +689,6 @@ static void InitIoHandlers()
 
 	//
 
-	IO_SELECT = 0;
-	IO_SELECT_InternalROM = 0;
-	g_eExpansionRomType = eExpRomNull;
-	g_uPeripheralRomSlot = 0;
-
 	for (i=0; i<NUM_SLOTS; i++)
 	{
 		g_SlotInfo[i].bHasCard = false;
@@ -808,6 +804,16 @@ static void SetMemMode(const DWORD uNewMemMode)
 }
 
 //===========================================================================
+
+static void ResetPaging(BOOL initialize);
+static void UpdatePaging(BOOL initialize);
+
+// Call by:
+// . CtrlReset() Soft-reset (Ctrl+Reset)
+void MemResetPaging()
+{
+	ResetPaging(0);		// Initialize=0
+}
 
 static void ResetPaging(BOOL initialize)
 {
@@ -1022,6 +1028,7 @@ static LPBYTE MemGetPtrBANK1(const WORD offset, const LPBYTE pMemBase)
 	if ((offset & 0xF000) != 0xC000)	// Requesting RAM at physical addr $Cxxx (ie. 4K RAM BANK1)
 		return NULL;
 
+	// NB. This works for memaux when set to any RWpages[] value, ie. RamWork III "just works"
 	const BYTE bank1page = (offset >> 8) & 0xF;
 	return (memshadow[0xD0+bank1page] == pMemBase+(0xC0+bank1page)*256)
 		? mem+offset+0x1000				// Return ptr to $Dxxx address - 'mem' has (a potentially dirty) 4K RAM BANK1 mapped in at $D000
@@ -1098,17 +1105,14 @@ LPBYTE MemGetCxRomPeripheral()
 
 //===========================================================================
 
+const UINT CxRomSize = 4*1024;
+const UINT Apple2RomSize = 12*1024;
+const UINT Apple2eRomSize = Apple2RomSize+CxRomSize;
+//const UINT Pravets82RomSize = 12*1024;
+//const UINT Pravets8ARomSize = Pravets82RomSize+CxRomSize;
+
 void MemInitialize()
 {
-	// Init the I/O handlers
-	InitIoHandlers();
-
-	const UINT CxRomSize = 4*1024;
-	const UINT Apple2RomSize = 12*1024;
-	const UINT Apple2eRomSize = Apple2RomSize+CxRomSize;
-	//const UINT Pravets82RomSize = 12*1024;
-	//const UINT Pravets8ARomSize = Pravets82RomSize+CxRomSize;
-
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
 	memaux   = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
 	memmain  = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
@@ -1143,12 +1147,22 @@ void MemInitialize()
 
 #ifdef RAMWORKS
 	// allocate memory for RAMWorks III - up to 8MB
-	RWpages[0] = memaux;
+	g_uActiveBank = 0;
+	RWpages[g_uActiveBank] = memaux;
+
 	UINT i = 1;
 	while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE)))
 		i++;
 #endif
 
+	MemInitializeROM();
+	MemInitializeCustomF8ROM();
+	MemInitializeIO();
+	MemReset();
+}
+
+void MemInitializeROM(void)
+{
 	// READ THE APPLE FIRMWARE ROMS INTO THE ROM IMAGE
 	UINT ROM_SIZE = 0;
 	HRSRC hResInfo = NULL;
@@ -1205,8 +1219,6 @@ void MemInitialize()
 	if (pData == NULL)
 		return;
 
-	//
-
 	memset(pCxRomInternal,0,CxRomSize);
 	memset(pCxRomPeripheral,0,CxRomSize);
 
@@ -1218,17 +1230,23 @@ void MemInitialize()
 	}
 
 	_ASSERT(ROM_SIZE == Apple2RomSize);
-	memcpy(memrom, pData, Apple2RomSize);			// ROM at $D000...$FFFF 
+	memcpy(memrom, pData, Apple2RomSize);			// ROM at $D000...$FFFF
+}
 
+void MemInitializeCustomF8ROM(void)
+{
 	const UINT F8RomSize = 0x800;
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 	{
+		BYTE OldRom[Apple2RomSize];	// NB. 12KB on stack
+		memcpy(OldRom, memrom, Apple2RomSize);
+
 		SetFilePointer(g_hCustomRomF8, 0, NULL, FILE_BEGIN);
 		DWORD uNumBytesRead;
 		BOOL bRes = ReadFile(g_hCustomRomF8, memrom+Apple2RomSize-F8RomSize, F8RomSize, &uNumBytesRead, NULL);
 		if (uNumBytesRead != F8RomSize)
 		{
-			memcpy(memrom, pData, Apple2RomSize);	// ROM at $D000...$FFFF 
+			memcpy(memrom, OldRom, Apple2RomSize);	// ROM at $D000...$FFFF
 			bRes = FALSE;
 		}
 
@@ -1243,15 +1261,27 @@ void MemInitialize()
 
 	if (sg_PropertySheet.GetTheFreezesF8Rom() && IS_APPLE2)
 	{
-		hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_FREEZES_F8_ROM), "ROM");
+		HGLOBAL hResData = NULL;
+		BYTE* pData = NULL;
+
+		HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_FREEZES_F8_ROM), "ROM");
 
 		if (hResInfo && (SizeofResource(NULL, hResInfo) == 0x800) && (hResData = LoadResource(NULL, hResInfo)) && (pData = (BYTE*) LockResource(hResData)))
 		{
 			memcpy(memrom+Apple2RomSize-F8RomSize, pData, F8RomSize);
 		}
 	}
+}
 
-	//
+// Called by:
+// . MemInitialize()
+// . Snapshot_LoadState_v2()
+//
+// Since called by LoadState(), then this must not init any cards
+// - it should only init the card I/O hooks
+void MemInitializeIO(void)
+{
+	InitIoHandlers();
 
 	const UINT uSlot = 0;
 	RegisterIoHandler(uSlot, MemSetPaging, MemSetPaging, NULL, NULL, NULL, NULL);
@@ -1295,8 +1325,6 @@ void MemInitialize()
 
 	DiskLoadRom(pCxRomPeripheral, 6);				// $C600 : Disk][ f/w
 	HD_Load_Rom(pCxRomPeripheral, 7);				// $C700 : HDD f/w
-
-	MemReset();
 }
 
 inline DWORD getRandomTime()
@@ -1309,7 +1337,8 @@ inline DWORD getRandomTime()
 // Called by:
 // . MemInitialize()
 // . ResetMachineState()	eg. Power-cycle ('Apple-Go' button)
-// . Snapshot_LoadState()
+// . Snapshot_LoadState_v1()
+// . Snapshot_LoadState_v2()
 void MemReset()
 {
 	// INITIALIZE THE PAGING TABLES
@@ -1318,8 +1347,15 @@ void MemReset()
 
 	// INITIALIZE THE RAM IMAGES
 	ZeroMemory(memaux ,0x10000);
-
 	ZeroMemory(memmain,0x10000);
+
+	// Init the I/O ROM vars
+	IO_SELECT = 0;
+	IO_SELECT_InternalROM = 0;
+	g_eExpansionRomType = eExpRomNull;
+	g_uPeripheralRomSlot = 0;
+
+	//
 
 	int iByte;
 
@@ -1431,7 +1467,7 @@ void MemReset()
 	// - "BeachParty-PoacherWars-DaytonDinger-BombsAway.dsk"
 	// - "Dung Beetles, Ms. PacMan, Pooyan, Star Cruiser, Star Thief, Invas. Force.dsk"
 	memmain[ 0x620B ] = 0x0;
-	
+
 	// https://github.com/AppleWin/AppleWin/issues/222
 	// MIP_PAGE_ADDRESS_LOW
 	// "Copy II+ v5.0.dsk"
@@ -1452,23 +1488,7 @@ void MemReset()
 	CpuInitialize();
 	//Sets Caps Lock = false (Pravets 8A/C only)
 
-	z80_reset();
-}
-
-//===========================================================================
-
-// Call by:
-// . Soft-reset (Ctrl+Reset)
-// . Snapshot_LoadState()
-void MemResetPaging()
-{
-	ResetPaging(0);		// Initialize=0
-	if (g_Apple2Type == A2TYPE_PRAVETS8A)
-	{
-		P8CAPS_ON = false; 
-		TapeWrite (0, 0, 0, 0 ,0);
-		FrameRefreshStatus(DRAW_LEDS);
-	}
+	z80_reset();	// NB. Also called above in CpuInitialize()
 }
 
 //===========================================================================
@@ -1567,7 +1587,8 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 			case 0x73: // Ramworks III set aux page number
 				if ((value < g_uMaxExPages) && RWpages[value])
 				{
-					memaux = RWpages[value];
+					g_uActiveBank = value;
+					memaux = RWpages[g_uActiveBank];
 					UpdatePaging(0);	// Initialize=0
 				}
 				break;
@@ -1645,34 +1666,218 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 // . If we were to save the state when 'modechanging' is set, then on restoring the state, the 6502 code will immediately update the read memory mode.
 // . This will work correctly.
 
-DWORD MemGetSnapshot(SS_BaseMemory* pSS)
+void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE* const pMemMain, const BYTE* const pMemAux)
 {
-	pSS->dwMemMode = memmode;
-	pSS->bLastWriteRam = lastwriteram;
+	SetMemMode(MemMode);
+	lastwriteram = LastWriteRam;
 
-	for(DWORD dwOffset = 0x0000; dwOffset < 0x10000; dwOffset+=0x100)
-	{
-		memcpy(pSS->nMemMain+dwOffset, MemGetMainPtr((WORD)dwOffset), 0x100);
-		memcpy(pSS->nMemAux+dwOffset, MemGetAuxPtr((WORD)dwOffset), 0x100);
-	}
-
-	return 0;
-}
-
-DWORD MemSetSnapshot(SS_BaseMemory* pSS)
-{
-	SetMemMode(pSS->dwMemMode);
-	lastwriteram = pSS->bLastWriteRam;
-
-	memcpy(memmain, pSS->nMemMain, nMemMainSize);
-	memcpy(memaux, pSS->nMemAux, nMemAuxSize);
+	memcpy(memmain, pMemMain, nMemMainSize);
+	memcpy(memaux, pMemAux, nMemAuxSize);
 	memset(memdirty, 0, 0x100);
 
 	//
 
 	modechanging = 0;
-
+	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v1()
 	UpdatePaging(1);	// Initialize=1
+}
 
-	return 0;
+//
+
+#define UNIT_AUXSLOT_VER 1
+
+#define SS_YAML_KEY_MEMORYMODE "Memory Mode"
+#define SS_YAML_KEY_LASTRAMWRITE "Last RAM Write"
+#define SS_YAML_KEY_IOSELECT "IO_SELECT"
+#define SS_YAML_KEY_IOSELECT_INT "IO_SELECT_InternalROM"
+#define SS_YAML_KEY_EXPANSIONROMTYPE "Expansion ROM Type"
+#define SS_YAML_KEY_PERIPHERALROMSLOT "Peripheral ROM Slot"
+
+#define SS_YAML_VALUE_CARD_80COL "80 Column"
+#define SS_YAML_VALUE_CARD_EXTENDED80COL "Extended 80 Column"
+#define SS_YAML_VALUE_CARD_RAMWORKSIII "RamWorksIII"
+
+#define SS_YAML_KEY_NUMAUXBANKS "Num Aux Banks"
+#define SS_YAML_KEY_ACTIVEAUXBANK "Active Aux Bank"
+
+static std::string MemGetSnapshotStructName(void)
+{
+	static const std::string name("Memory");
+	return name;
+}
+
+std::string MemGetSnapshotUnitAuxSlotName(void)
+{
+	static const std::string name("Auxiliary Slot");
+	return name;
+}
+
+static std::string MemGetSnapshotMainMemStructName(void)
+{
+	static const std::string name("Main Memory");
+	return name;
+}
+
+static std::string MemGetSnapshotAuxMemStructName(void)
+{
+	static const std::string name("Auxiliary Memory Bank");
+	return name;
+}
+
+static void MemSaveSnapshotMemory(YamlSaveHelper& yamlSaveHelper, bool bIsMainMem, UINT bank=0)
+{
+	LPBYTE pMemBase = MemGetBankPtr(bank);
+
+	if (bIsMainMem)
+	{
+		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotMainMemStructName().c_str());
+		yamlSaveHelper.SaveMemory(pMemBase, 64*1024);
+	}
+	else
+	{
+		YamlSaveHelper::Label state(yamlSaveHelper, "%s%02X:\n", MemGetSnapshotAuxMemStructName().c_str(), bank-1);
+		yamlSaveHelper.SaveMemory(pMemBase, 64*1024);
+	}
+}
+
+void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	// Scope so that "Memory" & "Main Memory" are at same indent level
+	{
+		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotStructName().c_str());
+		yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, memmode);
+		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, lastwriteram ? 1 : 0);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT, IO_SELECT);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, IO_SELECT_InternalROM);
+		yamlSaveHelper.SaveUint(SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
+		yamlSaveHelper.SaveUint(SS_YAML_KEY_PERIPHERALROMSLOT, g_uPeripheralRomSlot);
+	}
+
+	MemSaveSnapshotMemory(yamlSaveHelper, true);
+}
+
+bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(MemGetSnapshotStructName()))
+		return false;
+
+	SetMemMode( yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) );
+	lastwriteram = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
+	IO_SELECT = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT);
+	IO_SELECT_InternalROM = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT_INT);
+	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.LoadUint(SS_YAML_KEY_EXPANSIONROMTYPE);
+	g_uPeripheralRomSlot = yamlLoadHelper.LoadUint(SS_YAML_KEY_PERIPHERALROMSLOT);
+
+	yamlLoadHelper.PopMap();
+
+	//
+
+	if (!yamlLoadHelper.GetSubMap( MemGetSnapshotMainMemStructName() ))
+		throw std::string("Card: Expected key: ") + MemGetSnapshotMainMemStructName();
+
+	yamlLoadHelper.LoadMemory(memmain, _6502_MEM_END+1);
+	memset(memdirty, 0, 0x100);
+
+	yamlLoadHelper.PopMap();
+
+	//
+
+	modechanging = 0;
+	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
+	UpdatePaging(1);	// Initialize=1 (Still needed, even with call to MemUpdatePaging() - why?)
+
+	return true;
+}
+
+void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
+{
+	if (IS_APPLE2)
+	{
+		return;	// No Aux slot for AppleII
+	}
+
+	if (IS_APPLE2C)
+	{
+		_ASSERT(g_uMaxExPages == 1);
+	}
+
+	yamlSaveHelper.UnitHdr(MemGetSnapshotUnitAuxSlotName(), UNIT_AUXSLOT_VER);
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+	std::string card = 	g_uMaxExPages == 0 ?	SS_YAML_VALUE_CARD_80COL :			// todo: support empty slot
+						g_uMaxExPages == 1 ?	SS_YAML_VALUE_CARD_EXTENDED80COL :
+												SS_YAML_VALUE_CARD_RAMWORKSIII;
+	yamlSaveHelper.SaveString(SS_YAML_KEY_CARD, card.c_str());
+	yamlSaveHelper.Save("%s: %02X   # [0,1..7F] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
+	yamlSaveHelper.Save("%s: %02X # [  0..7E] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
+
+	for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
+	{
+		MemSaveSnapshotMemory(yamlSaveHelper, false, uBank);
+	}
+}
+
+bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
+{
+	if (version != UNIT_AUXSLOT_VER)
+		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Version mismatch");
+
+	// "State"
+	UINT numAuxBanks   = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUMAUXBANKS);
+	UINT activeAuxBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVEAUXBANK);
+
+	std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
+	if (card == SS_YAML_VALUE_CARD_80COL)
+	{
+		if (numAuxBanks != 0 || activeAuxBank != 0)
+			throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
+	}
+	else if (card == SS_YAML_VALUE_CARD_EXTENDED80COL)
+	{
+		if (numAuxBanks != 1 || activeAuxBank != 0)
+			throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
+	}
+	else if (card == SS_YAML_VALUE_CARD_RAMWORKSIII)
+	{
+		if (numAuxBanks < 2 || numAuxBanks > 0x7F || (activeAuxBank+1) > numAuxBanks)
+			throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
+	}
+	else
+	{
+		// todo: support empty slot
+		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Unknown card: " + card);
+	}
+
+	g_uMaxExPages = numAuxBanks;
+	g_uActiveBank = activeAuxBank;
+
+	//
+
+	for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
+	{
+		LPBYTE pBank = MemGetBankPtr(uBank);
+		if (!pBank)
+		{
+			pBank = RWpages[uBank-1] = (LPBYTE) VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
+			if (!pBank)
+				throw std::string("Card: mem alloc failed");
+		}
+
+		// "Auxiliary Memory Bankxx"
+		char szBank[3];
+		sprintf(szBank, "%02X", uBank-1);
+		std::string auxMemName = MemGetSnapshotAuxMemStructName() + szBank;
+
+		if (!yamlLoadHelper.GetSubMap(auxMemName))
+			throw std::string("Memory: Missing map name: " + auxMemName);
+
+		yamlLoadHelper.LoadMemory(pBank, _6502_MEM_END+1);
+
+		yamlLoadHelper.PopMap();
+	}
+
+	memaux = RWpages[g_uActiveBank];
+	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
+
+	return true;
 }

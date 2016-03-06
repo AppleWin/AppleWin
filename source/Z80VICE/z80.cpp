@@ -29,6 +29,7 @@
 #include "..\AppleWin.h"
 #include "..\CPU.h"
 #include "..\Memory.h"
+#include "..\YamlHelper.h"
 
 
 #undef IN							// Defined in windef.h
@@ -86,16 +87,20 @@ static BYTE reg_f2 = 0;
 static BYTE reg_h2 = 0;
 static BYTE reg_l2 = 0;
 
+#if 0	// [AppleWin-TC] Not used
 static int dma_request = 0;
+#endif
 
 static BYTE *z80_bank_base;
 static int z80_bank_limit;
 
 
+#if 0	// [AppleWin-TC] Not used
 void z80_trigger_dma(void)
 {
     dma_request = 1;
 }
+#endif
 
 void z80_reset(void)
 {
@@ -162,11 +167,11 @@ void z80_reset(void)
 
 /* ------------------------------------------------------------------------- */
 
+#if 0	// [AppleWin-TC]
 static unsigned int z80_last_opcode_info;
 
 #define LAST_OPCODE_INFO z80_last_opcode_info
 
-#if 0	// [AppleWin-TC]
 /* Remember the number of the last opcode.  By default, the opcode does not
    delay interrupt and does not change the I flag.  */
 #define SET_LAST_OPCODE(x) \
@@ -463,6 +468,9 @@ static void export_registers(void)
 
 /* ------------------------------------------------------------------------- */
 
+// [AppleWin-TC] Z80 IRQs not supported
+
+#if 0
 /* Interrupt handling.  */
 
 #define DO_INTERRUPT(int_kind)                                       \
@@ -533,6 +541,7 @@ static void export_registers(void)
             }                                                        \
         }                                                            \
     } while (0)
+#endif
 
 /* ------------------------------------------------------------------------- */
 
@@ -6330,7 +6339,7 @@ DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
 
         //cpu_int_status->num_dma_per_opcode = 0;	// [AppleWin-TC] Not used
 
-        if (g_ActiveCPU != CPU_Z80)					// [AppleWin-TC]
+        if (GetActiveCpu() != CPU_Z80)				// [AppleWin-TC]
             break;
 
     //} while (!dma_request);
@@ -6421,4 +6430,140 @@ void z80_WRMEM(WORD Addr, BYTE Value)
 		case 0xF000: addr = laddr+0x0000; break;
 	}
 	CpuWrite( addr, Value, ConvertZ80TStatesTo6502Cycles(maincpu_clk) );
+}
+
+//===========================================================================
+
+#define SS_YAML_VALUE_CARD_Z80 "Z80"
+
+#define SS_YAML_KEY_REGA "A"
+#define SS_YAML_KEY_REGB "B"
+#define SS_YAML_KEY_REGC "C"
+#define SS_YAML_KEY_REGD "D"
+#define SS_YAML_KEY_REGE "E"
+#define SS_YAML_KEY_REGF "F"
+#define SS_YAML_KEY_REGH "H"
+#define SS_YAML_KEY_REGL "L"
+#define SS_YAML_KEY_REGIX "IX"
+#define SS_YAML_KEY_REGIY "IY"
+#define SS_YAML_KEY_REGSP "SP"
+#define SS_YAML_KEY_REGPC "PC"
+#define SS_YAML_KEY_REGI "I"
+#define SS_YAML_KEY_REGR "R"
+#define SS_YAML_KEY_IFF1 "IFF1"
+#define SS_YAML_KEY_IFF2 "IFF2"
+#define SS_YAML_KEY_IM_MODE "IM Mode"
+#define SS_YAML_KEY_REGA2 "A'"
+#define SS_YAML_KEY_REGB2 "B'"
+#define SS_YAML_KEY_REGC2 "C'"
+#define SS_YAML_KEY_REGD2 "D'"
+#define SS_YAML_KEY_REGE2 "E'"
+#define SS_YAML_KEY_REGF2 "F'"
+#define SS_YAML_KEY_REGH2 "H'"
+#define SS_YAML_KEY_REGL2 "L'"
+#define SS_YAML_KEY_ACTIVE "Active"
+
+std::string Z80_GetSnapshotCardName(void)
+{
+	static const std::string name(SS_YAML_VALUE_CARD_Z80);
+	return name;
+}
+
+void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
+{
+	YamlSaveHelper::Slot slot(yamlSaveHelper, Z80_GetSnapshotCardName(), uSlot, 1);	// fixme: object should know its slot
+
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+	// SoftCard SW & HW details: http://apple2info.net/images/f/f0/SC-SWHW.pdf
+	// . SoftCard uses the Apple II's DMA circuit to pause the 6502 (no CLK to 6502)
+	// . But: "In Apple II DMA, the 6502 CPU will die after approximately 15 clocks because it depends on the clock to refresh its internal registers."
+	//		ref: Apple Tech Note: https://archive.org/stream/IIe_2523004_RDY_Line/IIe_2523004_RDY_Line_djvu.txt
+	//      NB. Not for 65C02 which is a static processor.
+	// . SoftCard controls the 6502's RDY line to periodically allow only 1 memory fetch by 6502 (ie. the opcode fetch)
+	//
+	// So save ActiveCPU to SS_CARD_Z80 (so RDY is like IRQ & NMI signals, ie. saved struct of the producer's card)
+	//
+	// NB. Save-state only occurs when message pump runs:
+	//		. ie. at end of 1ms emulation burst
+	// Either 6502 or Z80 could be active.
+	//
+
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ACTIVE, GetActiveCpu() == CPU_Z80 ? 1 : 0);
+
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGA, reg_a);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGB, reg_b);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGC, reg_c);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGD, reg_d);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGE, reg_e);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGF, reg_f);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGH, reg_h);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGL, reg_l);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REGIX, ((USHORT)reg_ixh<<8)|(USHORT)reg_ixl);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REGIY, ((USHORT)reg_iyh<<8)|(USHORT)reg_iyl);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REGSP, reg_sp);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REGPC, (USHORT)z80_reg_pc);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGI, reg_i);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGR, reg_r);
+
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IFF1, iff1);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IFF2, iff2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IM_MODE, im_mode);
+
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGA2, reg_a2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGB2, reg_b2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGC2, reg_c2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGD2, reg_d2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGE2, reg_e2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGF2, reg_f2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGH2, reg_h2);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGL2, reg_l2);
+}
+
+bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT version)
+{
+	if (uSlot != 4 && uSlot != 5)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (version != 1)
+		throw std::string("Card: wrong version");
+
+	reg_a = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGA);
+	reg_b = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGB);
+	reg_c = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGC);
+	reg_d = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGD);
+	reg_e = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGE);
+	reg_f = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGF);
+	reg_h = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGH);
+	reg_l = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGL);
+	USHORT IX = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGIX);
+	reg_ixh = IX >> 8;
+	reg_ixl = IX & 0xFF;
+	USHORT IY = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGIY);
+	reg_iyh = IY >> 8;
+	reg_iyl = IY & 0xFF;
+	reg_sp = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGSP);
+	z80_reg_pc = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGPC);
+	reg_i = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGI);
+	reg_r = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGR);
+
+	iff1 = yamlLoadHelper.LoadUint(SS_YAML_KEY_IFF1);
+	iff2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_IFF2);
+	im_mode = yamlLoadHelper.LoadUint(SS_YAML_KEY_IM_MODE);
+
+	reg_a2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGA2);
+	reg_b2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGB2);
+	reg_c2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGC2);
+	reg_d2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGD2);
+	reg_e2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGE2);
+	reg_f2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGF2);
+	reg_h2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGH2);
+	reg_l2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGL2);
+
+	export_registers();
+
+	if ( yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVE) )
+		SetActiveCpu(CPU_Z80);	// Support MS SoftCard in multiple slots (only one Z80 can be active at any one time)
+
+	return true;
 }

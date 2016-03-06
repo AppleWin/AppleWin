@@ -85,8 +85,9 @@ bool    VideoGetSWAltCharSet(void);
 
 void    VideoSetForceFullRedraw(void);
 
-DWORD   VideoGetSnapshot(SS_IO_Video* pSS);
-DWORD   VideoSetSnapshot(SS_IO_Video* pSS);
+void    VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode);
+void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
 void _Video_Dirty();
 void _Video_RedrawScreen( VideoUpdateFuncPtr_t update, bool bMixed = false );

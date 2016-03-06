@@ -33,8 +33,10 @@ public:
 	void    CommDestroy();
 	void    CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem);
 	void    CommUpdate(DWORD);
-	DWORD   CommGetSnapshot(SS_IO_Comms* pSS);
-	DWORD   CommSetSnapshot(SS_IO_Comms* pSS);
+	void    SetSnapshot_v1(const DWORD baudrate, const BYTE bytesize, const BYTE commandbyte, const DWORD comminactivity, const BYTE controlbyte, const BYTE parity, const BYTE stopbits);
+	std::string GetSnapshotCardName(void);
+	void	SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	bool	LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 	char*	GetSerialPortChoices();
 	DWORD	GetSerialPort() { return m_dwSerialPortItem; }	// Drop-down list item
@@ -72,6 +74,8 @@ private:
 	void	CommThUninit();
 	UINT	GetNumSerialPortChoices() { return m_vecSerialPortsItems.size(); }
 	void	ScanCOMPorts();
+	void	SaveSnapshotDIPSW(class YamlSaveHelper& yamlSaveHelper, std::string key, SSC_DIPSW& dipsw);
+	void	LoadSnapshotDIPSW(class YamlLoadHelper& yamlLoadHelper, std::string key, SSC_DIPSW& dipsw);
 
 	//
 
@@ -134,4 +138,5 @@ private:
 	OVERLAPPED m_o;
 
 	BYTE* m_pExpansionRom;
+	UINT m_uSlot;
 };

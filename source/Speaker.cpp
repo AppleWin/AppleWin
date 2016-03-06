@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SoundCore.h"
 #include "Speaker.h"
 #include "Video.h"	// VideoRedrawScreen()
+#include "YamlHelper.h"
 
 #include "Debugger\Debug.h"	// For DWORD extbench
 
@@ -1092,14 +1093,33 @@ void Spkr_DSUninit()
 
 //=============================================================================
 
-DWORD SpkrGetSnapshot(SS_IO_Speaker* pSS)
+void SpkrSetSnapshot_v1(const unsigned __int64 SpkrLastCycle)
 {
-	pSS->g_nSpkrLastCycle = g_nSpkrLastCycle;
-	return 0;
+	g_nSpkrLastCycle = SpkrLastCycle;
 }
 
-DWORD SpkrSetSnapshot(SS_IO_Speaker* pSS)
+//
+
+#define SS_YAML_KEY_LASTCYCLE "Last Cycle"
+
+static std::string SpkrGetSnapshotStructName(void)
 {
-	g_nSpkrLastCycle = pSS->g_nSpkrLastCycle;
-	return 0;
+	static const std::string name("Speaker");
+	return name;
+}
+
+void SpkrSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SpkrGetSnapshotStructName().c_str());
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LASTCYCLE, g_nSpkrLastCycle);
+}
+
+void SpkrLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(SpkrGetSnapshotStructName()))
+		return;
+
+	g_nSpkrLastCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LASTCYCLE);
+
+	yamlLoadHelper.PopMap();
 }

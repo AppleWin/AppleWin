@@ -46,6 +46,7 @@ typedef struct z80_regs_s {
     WORD reg_hl2;
 } z80_regs_t;
 
+#if 0	// [AppleWin-TC]: unused, so comment out
 #define Z80_REGS_GET_AF(reg_ptr) ((reg_ptr)->reg_af)
 #define Z80_REGS_GET_BC(reg_ptr) ((reg_ptr)->reg_bc)
 #define Z80_REGS_GET_DE(reg_ptr) ((reg_ptr)->reg_de)
@@ -75,6 +76,7 @@ typedef struct z80_regs_s {
 #define Z80_REGS_SET_BC2(reg_ptr, val) ((reg_ptr)->reg_bc2 = (val))
 #define Z80_REGS_SET_DE2(reg_ptr, val) ((reg_ptr)->reg_de2 = (val))
 #define Z80_REGS_SET_HL2(reg_ptr, val) ((reg_ptr)->reg_hl2 = (val))
+#endif
 
 #endif
 

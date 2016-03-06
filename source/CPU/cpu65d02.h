@@ -120,7 +120,7 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 		UINT uExtraCycles = 0;
 		BYTE iOpcode;
 
-		if (g_ActiveCPU == CPU_Z80)
+		if (GetActiveCpu() == CPU_Z80)
 		{
 			const UINT uZ80Cycles = z80_mainloop(uTotalCycles, uExecutedCycles); CYC(uZ80Cycles)
 		}

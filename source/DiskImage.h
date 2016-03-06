@@ -55,9 +55,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		eIMAGE_ERROR_UNABLE_TO_OPEN,
 		eIMAGE_ERROR_UNABLE_TO_OPEN_GZ,
 		eIMAGE_ERROR_UNABLE_TO_OPEN_ZIP,
+		eIMAGE_ERROR_FAILED_TO_GET_PATHNAME,
 	};
 
-ImageError_e ImageOpen(LPCTSTR pszImageFilename, HIMAGE* hDiskImage_, bool* pWriteProtected_, const bool bCreateIfNecessary, std::string& strFilenameInZip);
+	const int MAX_DISK_IMAGE_NAME = 15;
+	const int MAX_DISK_FULL_NAME  = 127;
+
+
+ImageError_e ImageOpen(LPCTSTR pszImageFilename, HIMAGE* hDiskImage, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true);
 void ImageClose(const HIMAGE hDiskImage, const bool bOpenError=false);
 BOOL ImageBoot(const HIMAGE hDiskImage);
 void ImageDestroy(void);
@@ -65,7 +70,13 @@ void ImageInitialize(void);
 
 void ImageReadTrack(const HIMAGE hDiskImage, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles);
 void ImageWriteTrack(const HIMAGE hDiskImage, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles);
+bool ImageReadBlock(const HIMAGE hDiskImage, UINT nBlock, LPBYTE pBlockBuffer);
+bool ImageWriteBlock(const HIMAGE hDiskImage, UINT nBlock, LPBYTE pBlockBuffer);
 
 int ImageGetNumTracks(const HIMAGE hDiskImage);
 bool ImageIsWriteProtected(const HIMAGE hDiskImage);
 bool ImageIsMultiFileZip(const HIMAGE hDiskImage);
+const char* ImageGetPathname(const HIMAGE hDiskImage);
+UINT ImageGetImageSize(const HIMAGE hDiskImage);
+
+void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName);
