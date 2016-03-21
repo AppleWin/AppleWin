@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..\Structs.h"
+#include "..\SaveState_Structs_v1.h"	// For SS_CARD_MOCKINGBOARD
 #include "..\Common.h"
 
 #include "Debugger_Types.h"

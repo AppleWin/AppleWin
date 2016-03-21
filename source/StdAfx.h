@@ -14,7 +14,7 @@
 #endif
 
 // Not needed in VC7.1, but needed in VC Express
-#include <tchar.h> 
+#include <tchar.h>
 
 #include <crtdbg.h>
 #include <dsound.h>
@@ -23,7 +23,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
 #if _MSC_VER >= 1600	// <stdint.h> supported from VS2010 (cl.exe v16.00)
 #include <stdint.h> // cleanup WORD DWORD -> uint16_t uint32_t
@@ -43,6 +42,8 @@ typedef UINT32 uint32_t;
 #include <algorithm>
 #include <map>
 #include <queue>
+#include <stack>
+#include <string>
 #include <vector>
 
 // SM_CXPADDEDBORDER is not supported on 2000 & XP:

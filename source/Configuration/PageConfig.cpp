@@ -129,6 +129,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				const DWORD NewComputerMenuItem = (DWORD) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
 				const eApple2Type NewApple2Type = GetApple2Type(NewComputerMenuItem);
 				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewApple2Type;
+				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewApple2Type);
 			}
 			break;
 

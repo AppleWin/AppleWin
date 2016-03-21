@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
+#include "Pravets.h"
 #include "Registry.h"
 #include "SaveState.h"
 #include "SerialComms.h"
@@ -183,7 +184,7 @@ static bool g_bFullScreen32Bit = true;
 
 // Updates g_pAppTitle
 // ====================================================================
-void GetAppleWindowTitle()
+static void GetAppleWindowTitle()
 {
 	g_pAppTitle = g_pAppleWindowTitle;
 
@@ -568,6 +569,7 @@ static void DrawFrameWindow ()
 		DebugDisplay(1);
 	else
 		// Win7: In fullscreen mode with 1 redraw the screen doesn't get redrawn.
+		// TC: 07/01/2015: Tryed with MP's double-buffered DX full-screen code, but still the same.	
 		//VideoRedrawScreen(g_bIsFullScreen ? 2 : 1);	// TC: 22/06/2014: Why 2 redraws in full-screen mode (32-bit only)? (8-bit doesn't need this nor does Win8, just Win7 or older OS's)
 		//VideoRefreshScreen(0);
 		VideoRedrawScreen();
@@ -622,6 +624,9 @@ void FrameDrawDiskLEDS( HDC passdc )
 //===========================================================================
 void FrameDrawDiskStatus( HDC passdc )
 {
+	if (mem == NULL)
+		return;
+
 	// We use the actual drive since probing from memory doesn't tell us anything we don't already know.
 	//        DOS3.3   ProDOS
 	// Drive  $B7EA    $BE3D
@@ -764,6 +769,14 @@ void FrameDrawDiskStatus( HDC passdc )
 //===========================================================================
 static void DrawStatusArea (HDC passdc, int drawflags)
 {
+	if (g_hFrameWindow == NULL)
+	{
+		// TC: Fix drawing of drive buttons before frame created:
+		// . Main init loop: LoadConfiguration() called before FrameCreateWindow(), eg:
+		//   LoadConfiguration() -> Disk_LoadLastDiskImage() -> DiskInsert() -> FrameRefreshStatus()
+		return;
+	}
+
 	FrameReleaseDC();
 	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
 	int  x      = buttonx;
@@ -1025,7 +1038,7 @@ LRESULT CALLBACK FrameWndProc (
       if (!restart) {
         DiskDestroy();
         ImageDestroy();
-        HD_Cleanup();
+        HD_Destroy();
       }
       PrintDestroy();
       sg_SSC.CommDestroy();
@@ -1314,7 +1327,7 @@ LRESULT CALLBACK FrameWndProc (
 			{
 				RevealCursor();
 			}
-			else if (g_nAppMode == MODE_RUNNING)
+			else if (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING)
 			{
 				if (!sg_Mouse.IsEnabled())
 				{
@@ -1391,7 +1404,7 @@ LRESULT CALLBACK FrameWndProc (
         DrawCrosshairs(x,y);
 	    JoySetPosition(x-viewportx-2, g_nViewportCX-4, y-viewporty-2, g_nViewportCY-4);
       }
-	  else if (sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING))
+	  else if (sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
 	  {
 			if (g_bLastCursorInAppleViewport)
 				break;
@@ -1422,7 +1435,7 @@ LRESULT CALLBACK FrameWndProc (
 		if (wparam == IDEVENT_TIMER_MOUSE)
 		{
 			// NB. Need to check /g_bAppActive/ since WM_TIMER events still occur after AppleWin app has lost focus
-			if (g_bAppActive && sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING))
+			if (g_bAppActive && sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
 			{
 				if (!g_bLastCursorInAppleViewport)
 					break;
@@ -1973,12 +1986,15 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 }
 
 //===========================================================================
+
+// todo: consolidate CtrlReset() and ResetMachineState()
 void ResetMachineState ()
 {
   DiskReset();		// Set floppymotoron=0
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
   MemReset();
+  PravetsReset();
   DiskBoot();
   VideoResetState();
   sg_SSC.CommReset();
@@ -1987,7 +2003,7 @@ void ResetMachineState ()
   MB_Reset();
   SpkrReset();
   sg_Mouse.Reset();
-  g_ActiveCPU = CPU_6502;
+  SetActiveCpu( GetMainCpu() );
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
 #endif
@@ -1997,12 +2013,15 @@ void ResetMachineState ()
 
 
 //===========================================================================
+
+// todo: consolidate CtrlReset() and ResetMachineState()
 void CtrlReset()
 {
 	// Ctrl+Reset - TODO: This is a terrible place for this code!
 	if (!IS_APPLE2)
 		MemResetPaging();
 
+	PravetsReset();
 	DiskReset();
 	KeybReset();
 	if (!IS_APPLE2)
@@ -2468,7 +2487,6 @@ void FrameSetCursorPosByMousePos()
 	int iY, iMinY, iMaxY;
 	sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 
-	_ASSERT(iMinX == 0 && iMinY == 0);
 	float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));
 	float fScaleY = (float)(iY-iMinY) / ((float)(iMaxY-iMinY));
 
@@ -2504,7 +2522,6 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 	int iX, iMinX, iMaxX;
 	int iY, iMinY, iMaxY;
 	sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
-	_ASSERT(iMinX == 0 && iMinY == 0);
 
 	if (bLeavingAppleScreen)
 	{
@@ -2623,4 +2640,18 @@ void GetViewportCXCY(int& nViewportCX, int& nViewportCY)
 {
 	nViewportCX = g_nViewportCX;
 	nViewportCY = g_nViewportCY;
+}
+
+// Call all funcs with dependency on g_Apple2Type
+void FrameUpdateApple2Type(void)
+{
+	DeleteGdiObjects();
+	CreateGdiObjects();
+
+	// DRAW_TITLE : calls GetAppleWindowTitle()
+	// DRAW_LEDS  : update LEDs (eg. CapsLock varies on Apple2 type)
+	DrawStatusArea( (HDC)0, DRAW_TITLE|DRAW_LEDS );
+
+	// Draw buttons & call DrawStatusArea(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS)
+	DrawFrameWindow();
 }

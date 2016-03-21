@@ -1955,7 +1955,7 @@ Update_t CmdTraceFile (int nArgs)
 		fclose( g_hTraceFile );
 		g_hTraceFile = NULL;
 
-		sprintf( sText, "Trace stopped." );
+		_snprintf( sText, sizeof(sText), "Trace stopped." );
 	}
 	else
 	{
@@ -1975,16 +1975,17 @@ Update_t CmdTraceFile (int nArgs)
 
 		if (g_hTraceFile)
 		{
-			sprintf( sText, "Trace started: %s", sFilePath );
+			_snprintf( sText, sizeof(sText), "Trace started: %s", sFilePath );
 
 			g_bTraceHeader = true;
 		}
 		else
 		{
-			sprintf( sText, "Trace ERROR: %s", sFilePath );
+			_snprintf( sText, sizeof(sText), "Trace ERROR: %s", sFilePath );
 		}
 	}
-	
+
+	sText[sizeof(sText)-1] = 0;	// _snprintf needs null if string was longer than buffer
 	ConsoleBufferPush( sText );
 	ConsoleBufferToDisplay();
 
@@ -2313,7 +2314,7 @@ void ConfigSave_PrepareHeader ( const Parameters_e eCategory, const Commands_e e
 	sprintf( sText, "%s %s = %s\n"
 		, g_aTokens[ TOKEN_COMMENT_EOL  ].sToken
 		, g_aParameters[ PARAM_CATEGORY ].m_sName
-		, g_aParameters[ eCategory ]
+		, g_aParameters[ eCategory ].m_sName
 		);
 	g_ConfigState.PushLine( sText );
 
@@ -4297,10 +4298,10 @@ Update_t CmdMemoryLoad (int nArgs)
 	TCHAR sLoadSaveFilePath[ MAX_PATH ];
 	_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // TODO: g_sDebugDir
 
-	WORD nAddressStart;
-	WORD nAddress2   = 0;
-	WORD nAddressEnd = 0;
-	int  nAddressLen = 0;
+	WORD nAddressStart = 0;
+	WORD nAddress2     = 0;
+	WORD nAddressEnd   = 0;
+	int  nAddressLen   = 0;
 
 	if( pFileType )
 	{
@@ -4370,7 +4371,7 @@ Update_t CmdMemoryLoad (int nArgs)
 
 		if (bBankSpecified)
 		{
-			MemUpdatePaging(1);
+			MemUpdatePaging(TRUE);
 		}
 		else
 		{
@@ -5975,6 +5976,7 @@ Update_t CmdOutputPrintf (int nArgs)
 						{
 							case '\\':
 								eThis = PS_ESCAPE;
+								break;
 							case '%':
 								eThis = PS_TYPE;
 								break;
@@ -7027,7 +7029,6 @@ Update_t CmdWindowViewCode (int nArgs)
 Update_t CmdWindowViewConsole (int nArgs)
 {
 	return _CmdWindowViewFull( WINDOW_CONSOLE );
-	return UPDATE_ALL;
 }
 
 //===========================================================================
@@ -7049,14 +7050,12 @@ Update_t CmdWindowViewOutput (int nArgs)
 Update_t CmdWindowViewSource (int nArgs)
 {
 	return _CmdWindowViewFull( WINDOW_CONSOLE );
-	return UPDATE_ALL;
 }
 
 //===========================================================================
 Update_t CmdWindowViewSymbols (int nArgs)
 {
 	return _CmdWindowViewFull( WINDOW_CONSOLE );
-	return UPDATE_ALL;
 }
 
 //===========================================================================
@@ -7771,7 +7770,7 @@ void OutputTraceLine ()
 			(unsigned)regs.sp,
 			(char*) sFlags
 			, sDisassembly
-			, sTarget
+			//, sTarget // TODO: Show target?
 		);
 	}
 }

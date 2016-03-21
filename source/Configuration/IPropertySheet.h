@@ -1,10 +1,13 @@
 #pragma once
 
+class CConfigNeedingRestart;
+
 __interface IPropertySheet
 {
 	void Init(void);
 	DWORD GetVolumeMax(void);								// TODO:TC: Move out of here
 	bool SaveStateSelectImage(HWND hWindow, bool bSave);	// TODO:TC: Move out of here
+	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld);
 
 	UINT GetScrollLockToggle(void);
 	void SetScrollLockToggle(UINT uValue);

@@ -152,12 +152,11 @@ struct WinBmpHeader4_t
 
 extern HBITMAP g_hLogoBitmap;
 
-extern COLORREF   g_nMonochromeRGB; // saved
-extern uint32_t   g_uVideoMode    ;
-extern DWORD      g_eVideoType    ; // saved
-extern DWORD      g_uHalfScanLines; // saved
+extern COLORREF   g_nMonochromeRGB;	// saved to Registry
+extern uint32_t   g_uVideoMode;
+extern DWORD      g_eVideoType;		// saved to Registry
+extern DWORD      g_uHalfScanLines;	// saved to Registry
 extern uint8_t   *g_pFramebufferbits;
-extern int        g_nAltCharSetOffset; // alternate character set
 
 typedef bool (*VideoUpdateFuncPtr_t)(int,int,int,int,int);
 
@@ -177,7 +176,6 @@ void    VideoReinitialize ();
 void    VideoResetState ();
 WORD    VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles);
 bool    VideoGetVbl(DWORD uExecutedCycles);
-void    VideoEndOfVideoFrame(void);
 
 bool    VideoGetSW80COL(void);
 bool    VideoGetSWDHIRES(void);
@@ -189,6 +187,10 @@ bool    VideoGetSWTEXT(void);
 bool    VideoGetSWAltCharSet(void);
 
 void    VideoSetForceFullRedraw(void);
+
+void    VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode);
+void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
 int _Video_SetupBanks( bool bBank2 );
 bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset);

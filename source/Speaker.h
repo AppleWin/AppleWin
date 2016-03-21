@@ -1,7 +1,14 @@
 #pragma once
 
+#define  SOUND_NONE    0
+#define  SOUND_DIRECT  1
+#define  SOUND_SMART   2
+#define  SOUND_WAVE    3
+
 extern DWORD      soundtype;
 extern double     g_fClksPerSpkrSample;
+extern bool       g_bQuieterSpeaker;
+extern short      g_nSpeakerData;
 
 void    SpkrDestroy ();
 void    SpkrInitialize ();
@@ -19,7 +26,8 @@ void    Spkr_Demute();
 bool    Spkr_IsActive();
 bool    Spkr_DSInit();
 void    Spkr_DSUninit();
-DWORD   SpkrGetSnapshot(SS_IO_Speaker* pSS);
-DWORD   SpkrSetSnapshot(SS_IO_Speaker* pSS);
+void    SpkrSetSnapshot_v1(const unsigned __int64 SpkrLastCycle);
+void    SpkrSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+void    SpkrLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
 BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);

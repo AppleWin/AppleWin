@@ -32,6 +32,7 @@ extern LPBYTE     mem;
 extern LPBYTE     memdirty;
 
 #ifdef RAMWORKS
+const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB
 extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)
 #endif
 
@@ -44,14 +45,21 @@ LPBYTE  MemGetMainPtr(const WORD);
 LPBYTE  MemGetBankPtr(const UINT nBank);
 LPBYTE  MemGetCxRomPeripheral();
 void    MemInitialize ();
+void    MemInitializeROM(void);
+void    MemInitializeCustomF8ROM(void);
+void    MemInitializeIO(void);
 BYTE    MemReadFloatingBus(const ULONG uExecutedCycles);
 BYTE    MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles);
 void    MemReset ();
 void    MemResetPaging ();
 void    MemUpdatePaging(BOOL initialize);
 LPVOID	MemGetSlotParameters (UINT uSlot);
-DWORD   MemGetSnapshot(SS_BaseMemory* pSS);
-DWORD   MemSetSnapshot(SS_BaseMemory* pSS);
+void    MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE* const pMemMain, const BYTE* const pMemAux);
+std::string MemGetSnapshotUnitAuxSlotName(void);
+void    MemSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+bool    MemLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
+void    MemSaveSnapshotAux(class YamlSaveHelper& yamlSaveHelper);
+bool    MemLoadSnapshotAux(class YamlLoadHelper& yamlLoadHelper, UINT version);
 
 BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 

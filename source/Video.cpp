@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
 #include "Debugger\Debugger_Color.h"	// For NUM_DEBUG_COLORS
+#include "YamlHelper.h"
 
 #define HALF_PIXEL_SOLID 1
 #define HALF_PIXEL_BLEED 0
@@ -590,7 +591,6 @@ static inline int GetOriginal2EOffset(BYTE ch)
 }
 
 //===========================================================================
-#define ROL_NIB(x) ( (((x)<<1)&0xF) | (((x)>>3)&1) )
 
 //
 // ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
@@ -1195,10 +1195,9 @@ void VideoRefreshScreen ( int bVideoModeFlags )
 //===========================================================================
 void VideoReinitialize ()
 {
-	NTSC_VideoInitAppleType();
+	NTSC_VideoInitAppleType(g_dwCyclesThisFrame);
 	NTSC_SetVideoStyle();
 }
-
 
 //===========================================================================
 void VideoResetState ()
@@ -1220,8 +1219,8 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 
 	switch (address)
 	{
-		case 0x00:                 g_uVideoMode &= ~VF_80STORE;                          ; break;
-		case 0x01:                 g_uVideoMode |=  VF_80STORE;                          ; break;
+		case 0x00:                 g_uVideoMode &= ~VF_80STORE;                            break;
+		case 0x01:                 g_uVideoMode |=  VF_80STORE;                            break;
 		case 0x0C: if (!IS_APPLE2){g_uVideoMode &= ~VF_80COL; NTSC_SetVideoTextMode(40);}; break;
 		case 0x0D: if (!IS_APPLE2){g_uVideoMode |=  VF_80COL; NTSC_SetVideoTextMode(80);}; break;
 		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
@@ -1238,7 +1237,7 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
 
-	// Apple IIe, Techical Nodtes, #3: Double High-Resolution Graphics
+	// Apple IIe, Techical Notes, #3: Double High-Resolution Graphics
 	// 80STORE must be OFF to display page 2
 	if (SW_80STORE)
 		g_uVideoMode &= ~VF_PAGE2;
@@ -1260,7 +1259,7 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		// NB. Deferring the update by just setting /g_VideoForceFullRedraw/ is not an option, since this doesn't provide "flip-immediate"
 		//
 		// Ultimately this isn't the correct solution, and proper cycle-accurate video rendering should be done, but this is a much bigger job!
-		// TODO: Is MemReadFloatingBus() still accurate now that we have proper per cycle video rendering??
+		// TODO-Michael: Is MemReadFloatingBus() still accurate now that we have proper per cycle video rendering??
 
 		if (!g_bVideoUpdatedThisFrame)
 		{
@@ -1323,20 +1322,42 @@ void VideoSetForceFullRedraw(void)
 
 //===========================================================================
 
-DWORD VideoGetSnapshot(SS_IO_Video* pSS)
+void VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode)
 {
-	pSS->bAltCharSet = !(g_nAltCharSetOffset == 0);
-	pSS->dwVidMode = g_uVideoMode;
-	return 0;
+	g_nAltCharSetOffset = !AltCharSet ? 0 : 256;
+	g_uVideoMode = VideoMode;
 }
 
-//===========================================================================
+//
 
-DWORD VideoSetSnapshot(SS_IO_Video* pSS)
+#define SS_YAML_KEY_ALTCHARSET "Alt Char Set"
+#define SS_YAML_KEY_VIDEOMODE "Video Mode"
+#define SS_YAML_KEY_CYCLESTHISFRAME "Cycles This Frame"
+
+static std::string VideoGetSnapshotStructName(void)
 {
-	g_nAltCharSetOffset = !pSS->bAltCharSet ? 0 : 256;
-	g_uVideoMode = pSS->dwVidMode;
-	return 0;
+	static const std::string name("Video");
+	return name;
+}
+
+void VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALTCHARSET, g_nAltCharSetOffset ? true : false);
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEOMODE, g_uVideoMode);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLESTHISFRAME, g_dwCyclesThisFrame);
+}
+
+void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(VideoGetSnapshotStructName()))
+		return;
+
+	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALTCHARSET) ? 256 : 0;
+	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEOMODE);
+	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLESTHISFRAME);
+
+	yamlLoadHelper.PopMap();
 }
 
 //===========================================================================

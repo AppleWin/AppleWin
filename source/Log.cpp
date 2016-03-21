@@ -33,13 +33,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 void LogOutput(LPCTSTR format, ...)
 {
-    TCHAR output[256];
+	TCHAR output[256];
 
-    va_list args;
-    va_start(args, format);
+	va_list args;
+	va_start(args, format);
 
-    _vsntprintf(output, sizeof(output) - 1, format, args);
-    OutputDebugString(output);
+	_vsntprintf(output, sizeof(output) - 1, format, args);
+	OutputDebugString(output);
 }
 
 //---------------------------------------------------------------------------
@@ -51,11 +51,11 @@ void LogFileOutput(LPCTSTR format, ...)
 	if (!g_fh)
 		return;
 
-    TCHAR output[256];
+	TCHAR output[256];
 
-    va_list args;
-    va_start(args, format);
+	va_list args;
+	va_start(args, format);
 
-    _vsntprintf(output, sizeof(output) - 1, format, args);
-    fprintf(g_fh, output);
+	_vsntprintf(output, sizeof(output) - 1, format, args);
+	fprintf(g_fh, "%s", output);
 }

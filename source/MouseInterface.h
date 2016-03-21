@@ -12,15 +12,14 @@ public:
 	void Initialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void Uninitialize();
 	void Reset();
-	void SetSlotRom();
 	static BYTE __stdcall IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
 	static BYTE __stdcall IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
 
 	void SetPositionRel(long dx, long dy, int* pOutOfBoundsX, int* pOutOfBoundsY);
 	void SetButton(eBUTTON Button, eBUTTONSTATE State);
 	bool IsActive() { return m_bActive; }
-	bool IsEnabled() { return m_bEnabled; }
-	bool IsActiveAndEnabled() { return IsActive() && IsEnabled(); }
+	bool IsEnabled() { return m_bEnabled; }	// NB. m_bEnabled == true implies that m_bActive == true
+	bool IsActiveAndEnabled() { return IsActive() && IsEnabled(); }	// todo: just use IsEnabled()
 	void SetEnabled(bool bEnabled) { m_bEnabled = bEnabled; }
 	void SetVBlank(bool bVBL);
 	void GetXY(int& iX, int& iMinX, int& iMaxX, int& iY, int& iMinY, int& iMaxY)
@@ -38,7 +37,12 @@ public:
 		m_iY = iY;
 	}
 
+	std::string GetSnapshotCardName(void);
+	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+
 protected:
+	void SetSlotRom();
 	void On6821_A(BYTE byData);
 	void On6821_B(BYTE byData);
 	void OnCommand();
@@ -55,6 +59,8 @@ protected:
 	void SetClampX(int iMinX, int iMaxX);
 	void SetClampY(int iMinY, int iMaxY);
 
+	void SaveSnapshotMC6821(class YamlSaveHelper& yamlSaveHelper, std::string key);
+	void LoadSnapshotMC6821(class YamlLoadHelper& yamlLoadHelper, std::string key);
 
 	C6821	m_6821;
 
@@ -69,8 +75,8 @@ protected:
 	BYTE	m_byState;
 	int		m_nX;
 	int		m_nY;
-	BOOL	m_bBtn0;
-	BOOL	m_bBtn1;
+	bool	m_bBtn0;
+	bool	m_bBtn1;
 
 	bool	m_bVBL;
 
@@ -83,12 +89,14 @@ protected:
 	int		m_iMinY;
 	int		m_iMaxY;
 
-	BOOL	m_bButtons[2];
+	bool	m_bButtons[2];
 
 	//
 
+	// todo: remove m_bActive:
+	// - instantiate CMouseInterface object when active (and delete when inactive)
 	bool	m_bActive;		// Mouse h/w is active within the Apple][ VM
-	bool	m_bEnabled;		// Windows' mouse events get passed to Apple]['s mouse h/w
+	bool	m_bEnabled;		// Windows' mouse events get passed to Apple]['s mouse h/w (m_bEnabled == true implies that m_bActive == true)
 	LPBYTE	m_pSlotRom;
 	UINT	m_uSlot;
 };

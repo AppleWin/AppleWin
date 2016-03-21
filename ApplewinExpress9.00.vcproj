@@ -26,6 +26,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				Description="Performing unit-test: TestCPU6502"
+				CommandLine=".\Release\TestCPU6502.exe"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -54,8 +56,8 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="source\cpu;source\emulator;source\debugger;zlib;zip_lib"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE"
+				AdditionalIncludeDirectories="source\cpu;source\emulator;source\debugger;zlib;zip_lib;libyaml\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -130,6 +132,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				Description="Performing unit-test: TestCPU6502"
+				CommandLine=".\Debug\TestCPU6502.exe"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -153,8 +157,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				Optimization="0"
-				AdditionalIncludeDirectories="source\cpu;source\emulator;source\debugger;zlib;zip_lib"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE"
+				AdditionalIncludeDirectories="source\cpu;source\emulator;source\debugger;zlib;zip_lib;libyaml\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -687,6 +691,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\SAM.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\SAM.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\SaveState.cpp"
 					>
 				</File>
@@ -735,6 +747,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\YamlHelper.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\YamlHelper.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\z80emu.cpp"
 					>
 				</File>
@@ -755,11 +775,15 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\SSI263Phonemes.h"
+					RelativePath=".\source\SaveState_Structs_common.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Structs.h"
+					RelativePath=".\source\SaveState_Structs_v1.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\SSI263Phonemes.h"
 					>
 				</File>
 			</Filter>
@@ -956,6 +980,18 @@
 				</File>
 				<File
 					RelativePath=".\source\Configuration\PropertySheetHelper.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Model"
+				>
+				<File
+					RelativePath=".\source\Pravets.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Pravets.h"
 					>
 				</File>
 			</Filter>

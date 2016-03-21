@@ -63,7 +63,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 // What about these:
 // . 65C02: STZ?, TRB?, TSB?
-// . Answer: TRB & TSB don't have affected adressing modes
+// . Answer: TRB & TSB don't have affected addressing modes
 // .         STZ probably doesn't add a cycle since otherwise it would be slower than STA which doesn't make sense.
 //
 // NB. 'Zero-page indexed' opcodes wrap back to zero-page.
@@ -103,6 +103,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Z80VICE\z80mem.h"
 
 #include "Debugger\Debug.h"
+#include "YamlHelper.h"
 
 // 6502 Accumulator Bit Flags
 	#define	 AF_SIGN       0x80
@@ -147,6 +148,53 @@ static CRITICAL_SECTION g_CriticalSection;	// To guard /g_bmIRQ/ & /g_bmNMI/
 static volatile UINT32 g_bmIRQ = 0;
 static volatile UINT32 g_bmNMI = 0;
 static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
+
+//
+
+static eCpuType g_MainCPU = CPU_65C02;
+static eCpuType g_ActiveCPU = CPU_65C02;
+
+eCpuType GetMainCpu(void)
+{
+	return g_MainCPU;
+}
+
+void SetMainCpu(eCpuType cpu)
+{
+	_ASSERT(cpu != CPU_Z80);
+	if (cpu == CPU_Z80)
+		return;
+
+	g_MainCPU = cpu;
+}
+
+static bool IsCpu65C02(eApple2Type apple2Type)
+{
+	// NB. All Pravets clones are 6502 (GH#307)
+	return (apple2Type == A2TYPE_APPLE2EENHANCED) || (apple2Type & A2TYPE_APPLE2C); 
+}
+
+eCpuType ProbeMainCpuDefault(eApple2Type apple2Type)
+{
+	return IsCpu65C02(apple2Type) ? CPU_65C02 : CPU_6502;
+}
+
+void SetMainCpuDefault(eApple2Type apple2Type)
+{
+	SetMainCpu( ProbeMainCpuDefault(apple2Type) );
+}
+
+eCpuType GetActiveCpu(void)
+{
+	return g_ActiveCPU;
+}
+
+void SetActiveCpu(eCpuType cpu)
+{
+	g_ActiveCPU = cpu;
+}
+
+//
 
 #include "cpu/cpu_general.inl"
 
@@ -409,8 +457,8 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles)
 
 static DWORD InternalCpuExecute (DWORD uTotalCycles)
 {
-	if (IS_APPLE2 || (g_Apple2Type == A2TYPE_APPLE2E))
-		return Cpu6502(uTotalCycles);	// Apple ][, ][+, //e
+	if (GetMainCpu() == CPU_6502)
+		return Cpu6502(uTotalCycles);	// Apple ][, ][+, //e, Clones
 	else
 		return Cpu65C02(uTotalCycles);	// Enhanced Apple //e
 }
@@ -639,36 +687,83 @@ void CpuReset()
 
 	regs.bJammed = 0;
 
-	g_ActiveCPU = CPU_6502;
+	SetActiveCpu( GetMainCpu() );
 	z80_reset();
 }
 
 //===========================================================================
 
-DWORD CpuGetSnapshot(SS_CPU6502* pSS)
+void CpuSetSnapshot_v1(const BYTE A, const BYTE X, const BYTE Y, const BYTE P, const BYTE SP, const USHORT PC, const unsigned __int64 CumulativeCycles)
 {
-	pSS->A = regs.a;
-	pSS->X = regs.x;
-	pSS->Y = regs.y;
-	pSS->P = regs.ps | AF_RESERVED | AF_BREAK;
-	pSS->S = (BYTE) (regs.sp & 0xff);
-	pSS->PC = regs.pc;
-	pSS->g_nCumulativeCycles = g_nCumulativeCycles;
+	regs.a  = A;
+	regs.x  = X;
+	regs.y  = Y;
+	regs.ps = P | (AF_RESERVED | AF_BREAK);
+	regs.sp = ((USHORT)SP) | 0x100;
+	regs.pc = PC;
 
-	return 0;
-}
-
-DWORD CpuSetSnapshot(SS_CPU6502* pSS)
-{
-	regs.a = pSS->A;
-	regs.x = pSS->X;
-	regs.y = pSS->Y;
-	regs.ps = pSS->P | AF_RESERVED | AF_BREAK;
-	regs.sp = (USHORT)pSS->S | 0x100;
-	regs.pc = pSS->PC;
 	CpuIrqReset();
 	CpuNmiReset();
-	g_nCumulativeCycles = pSS->g_nCumulativeCycles;
+	g_nCumulativeCycles = CumulativeCycles;
+}
 
-	return 0;
+//
+
+#define SS_YAML_KEY_CPU_TYPE "Type"
+#define SS_YAML_KEY_REGA "A"
+#define SS_YAML_KEY_REGX "X"
+#define SS_YAML_KEY_REGY "Y"
+#define SS_YAML_KEY_REGP "P"
+#define SS_YAML_KEY_REGS "S"
+#define SS_YAML_KEY_REGPC "PC"
+#define SS_YAML_KEY_CUMULATIVECYCLES "Cumulative Cycles"
+
+#define SS_YAML_VALUE_6502 "6502"
+#define SS_YAML_VALUE_65C02 "65C02"
+
+static std::string CpuGetSnapshotStructName(void)
+{
+	static const std::string name("CPU");
+	return name;
+}
+
+void CpuSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	regs.ps |= (AF_RESERVED | AF_BREAK);
+
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", CpuGetSnapshotStructName().c_str());	
+	yamlSaveHelper.SaveString(SS_YAML_KEY_CPU_TYPE, GetMainCpu() == CPU_6502 ? SS_YAML_VALUE_6502 : SS_YAML_VALUE_65C02);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGA, regs.a);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGX, regs.x);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGY, regs.y);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGP, regs.ps);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGS, (BYTE) regs.sp);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REGPC, regs.pc);
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_CUMULATIVECYCLES, g_nCumulativeCycles);
+}
+
+void CpuLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(CpuGetSnapshotStructName()))
+		return;
+
+	std::string cpuType = yamlLoadHelper.LoadString(SS_YAML_KEY_CPU_TYPE);
+	eCpuType cpu;
+	if (cpuType == SS_YAML_VALUE_6502) cpu = CPU_6502;
+	else if (cpuType == SS_YAML_VALUE_65C02) cpu = CPU_65C02;
+	else throw std::string("Load: Unknown main CPU type");
+	SetMainCpu(cpu);
+
+	regs.a  = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGA);
+	regs.x  = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGX);
+	regs.y  = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGY);
+	regs.ps = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGP) | (AF_RESERVED | AF_BREAK);
+	regs.sp = (USHORT) ((yamlLoadHelper.LoadUint(SS_YAML_KEY_REGS) & 0xff) | 0x100);
+	regs.pc = (USHORT)   yamlLoadHelper.LoadUint(SS_YAML_KEY_REGPC);
+
+	CpuIrqReset();
+	CpuNmiReset();
+	g_nCumulativeCycles = yamlLoadHelper.LoadUint64(SS_YAML_KEY_CUMULATIVECYCLES);
+
+	yamlLoadHelper.PopMap();
 }

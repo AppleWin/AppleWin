@@ -99,7 +99,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Globals (Public) ___________________________________________________
 	uint16_t g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
-	uint16_t g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible
+	uint16_t g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible (NB. final hpos is 2 cycles long, so a line is 65 cycles)
 
 // Globals (Private) __________________________________________________
 	static int g_nVideoCharSet = 0;
@@ -1449,7 +1449,7 @@ void NTSC_SetVideoMode( int bVideoModeFlags )
 	g_aHorzClockVideoMode[ h ] = bVideoModeFlags;
 
 	g_nVideoMixed   = bVideoModeFlags & VF_MIXED;
-	g_nVideoCharSet = g_nAltCharSetOffset != 0;
+	g_nVideoCharSet = VideoGetSWAltCharSet() ? 1 : 0;
 
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
@@ -1654,19 +1654,21 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 }
 
 //===========================================================================
-void NTSC_VideoInitAppleType ()
+void NTSC_VideoInitAppleType ( DWORD cyclesThisFrame )
 {
 	int model = g_Apple2Type;
 
-	// anything other than low bit set means not II/II+
+	// anything other than low bit set means not II/II+ (TC: include Pravets machines too?)
 	if (model & 0xFFFE)
 		g_pHorzClockOffset = APPLE_IIE_HORZ_CLOCK_OFFSET;
 	else
 		g_pHorzClockOffset = APPLE_IIP_HORZ_CLOCK_OFFSET;
 
-	g_nVideoClockVert = 0;
-	g_nVideoClockHorz = 0;
-
+	// TC: Move these to a better place (as init'ing these 2 vars is nothing to do with g_Apple2Type)
+	_ASSERT(cyclesThisFrame < VIDEO_SCANNER_6502_CYCLES);
+	if (cyclesThisFrame >= VIDEO_SCANNER_6502_CYCLES) cyclesThisFrame = 0;	// error
+	g_nVideoClockVert = (uint16_t) (cyclesThisFrame / VIDEO_SCANNER_MAX_HORZ);
+	g_nVideoClockHorz = cyclesThisFrame % VIDEO_SCANNER_MAX_HORZ;
 }
 
 //===========================================================================

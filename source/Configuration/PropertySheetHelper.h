@@ -18,7 +18,6 @@ public:
 	void SetSlot5(SS_CARDTYPE NewCardType);
 	std::string BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE,TCHAR* FILEMASKS);
 	void SaveStateUpdate();
-	void GetDiskBaseNameWithAWS(TCHAR* pszFilename);
 	int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave);
 	void PostMsgAfterClose(HWND hWnd, PAGETYPE page);
 
@@ -37,17 +36,20 @@ public:
 	CConfigNeedingRestart& GetConfigNew(void) { return m_ConfigNew; }
 	bool IsConfigChanged(void) { return m_ConfigNew != m_ConfigOld; }
 	void SetDoBenchmark(void) { m_bDoBenchmark = true; }
+	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld);
 
 private:
 	bool IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged);
 	bool IsOkToRestart(HWND hWnd);
 	void SaveComputerType(eApple2Type NewApple2Type);
+	void SaveCpuType(eCpuType NewCpuType);
 	bool HardwareConfigChanged(HWND hWnd);
 	bool CheckChangesForRestart(HWND hWnd);
 	void ApplyNewConfig(void);
 	void RestoreCurrentConfig(void);
 	std::string GetSlot(const UINT uSlot);
 	std::string GetCardName(const SS_CARDTYPE CardType);
+	void GetDiskBaseNameWithAWS(TCHAR* pszFilename);
 
 	PAGETYPE m_LastPage;
 	UINT32 m_bmPages;
