@@ -130,5 +130,5 @@
 	extern int g_aColorIndex[ NUM_DEBUG_COLORS ];
 
 // Color
-	inline COLORREF DebuggerGetColor( int iColor );
+	COLORREF DebuggerGetColor( int iColor );
 	bool DebuggerSetColor ( const int iScheme, const int iColor, const COLORREF nColor );
