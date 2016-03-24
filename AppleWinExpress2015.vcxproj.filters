@@ -169,9 +169,6 @@
     <ClCompile Include="source\Debugger\Util_MemoryTextFile.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
-    <ClCompile Include="source\NTSC.cpp">
-      <Filter>Source Files\Video</Filter>
-    </ClCompile>
     <ClCompile Include="source\Pravets.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
@@ -425,9 +422,6 @@
     </ClInclude>
     <ClInclude Include="source\DiskDefs.h">
       <Filter>Source Files\Disk</Filter>
-    </ClInclude>
-    <ClInclude Include="source\NTSC.h">
-      <Filter>Source Files\Video</Filter>
     </ClInclude>
     <ClInclude Include="source\Pravets.h">
       <Filter>Source Files\Model</Filter>
