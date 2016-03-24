@@ -1095,6 +1095,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			g_bSaveStateOnExit = true;
 			bShutdown = true;
 #endif
+			szSnapshotName = NULL;
 		}
 		else
 		{
