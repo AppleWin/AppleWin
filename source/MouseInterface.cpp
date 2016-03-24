@@ -731,7 +731,7 @@ bool CMouseInterface::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT sl
 	m_by6821A = yamlLoadHelper.LoadUint(SS_YAML_KEY_6821A);
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_BUFF))
-		throw std::string("Card: Expected key: "SS_YAML_KEY_BUFF);
+		throw std::string("Card: Expected key: " SS_YAML_KEY_BUFF);
 	yamlLoadHelper.LoadMemory(m_byBuff, sizeof(m_byBuff));
 	yamlLoadHelper.PopMap();
 
