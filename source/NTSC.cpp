@@ -575,13 +575,14 @@ inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTa
 	const uint32_t color2 = *pLine2Address;
 //	const uint32_t color1 = color0 - ((color2 & 0x00fcfcfc) >> 2); // BUG? color0 - color0? not color0-color2?
 	// TC: The above operation "color0 - ((color2 & 0x00fcfcfc) >> 2)" causes underflow, so I've recoded to clamp on underflow:
+	uint32_t color1;
 	{
 		int r=(color0>>16)&0xff, g=(color0>>8)&0xff, b=color0&0xff;
 		uint32_t color2_prime = (color2 & 0x00fcfcfc) >> 2;
 		r -= (color2_prime>>16)&0xff; if (r<0) r=0;	// clamp to 0 on underflow
 		g -= (color2_prime>>8)&0xff;  if (g<0) g=0;	// clamp to 0 on underflow
 		b -= (color2_prime)&0xff;     if (b<0) b=0;	// clamp to 0 on underflow
-		const uint32_t color1 = (r<<16)|(g<<8)|(b);
+		color1 = (r<<16)|(g<<8)|(b);
 	}
 
 	/* */  *pLine1Address = color1 | ALPHA32_MASK;
