@@ -170,8 +170,8 @@ void    VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, 
 void    VideoDisplayLogo ();
 void    VideoInitialize ();
 void    VideoRealizePalette (HDC);
-void    VideoRedrawScreen ();
-void    VideoRefreshScreen (int bVideoFlags );
+void    VideoRedrawScreen (UINT uDelayRefresh = 0);
+void    VideoRefreshScreen (int bVideoFlags, UINT uDelayRefresh =0 );
 void    VideoReinitialize ();
 void    VideoResetState ();
 WORD    VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles);

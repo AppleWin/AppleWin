@@ -11,14 +11,22 @@
 	#define  VIEWPORTY   5
 
 	// 560 = Double Hi-Res
-	// 384 = Doule Scan Line
+	// 384 = Double Scan Line
+	#define  FRAMEBUFFER_BORDERLESS_W 560
+	#define  FRAMEBUFFER_BORDERLESS_H 384
 // NTSC_BEGIN
 #if 0
-	#define  FRAMEBUFFER_W  560
-	#define  FRAMEBUFFER_H  384
+	// TC: No good as NTSC render code writes to border area:
+	// . NTSC.cpp: updateVideoScannerHorzEOL(): "NOTE: This writes out-of-bounds for a 560x384 framebuffer"
+	#define  BORDER_W       0
+	#define  BORDER_H       0
+	#define  FRAMEBUFFER_W  FRAMEBUFFER_BORDERLESS_W
+	#define  FRAMEBUFFER_H  FRAMEBUFFER_BORDERLESS_H
 #else
-	#define  FRAMEBUFFER_W  600
-	#define  FRAMEBUFFER_H  420
+	#define  BORDER_W       20
+	#define  BORDER_H       18
+	#define  FRAMEBUFFER_W  (FRAMEBUFFER_BORDERLESS_W + BORDER_W*2)
+	#define  FRAMEBUFFER_H  (FRAMEBUFFER_BORDERLESS_H + BORDER_H*2)
 #endif
 // NTSC_END
 

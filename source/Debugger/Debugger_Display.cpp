@@ -568,7 +568,7 @@ void StretchBltMemToFrameDC(void)
 		nViewportCX, nViewportCY,							// int nWidthDest,   int nHeightDest,
 		GetDebuggerMemDC(),									// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		FRAMEBUFFER_W, FRAMEBUFFER_H,						// int nWidthSrc,    int nHeightSrc,
+		FRAMEBUFFER_BORDERLESS_W, FRAMEBUFFER_BORDERLESS_H,	// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
 }

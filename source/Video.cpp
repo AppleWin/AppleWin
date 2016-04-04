@@ -996,7 +996,7 @@ void VideoDisplayLogo ()
 			// Draw Logo at top of screen so when the Apple display is refreshed it will automagically clear it
 			if( g_bIsFullScreen )
 			{
-				g_nLogoX = 10;
+				g_nLogoX = 0;
 				g_nLogoY = 0;
 			}
 			VideoDrawLogoBitmap( hFrameDC, g_nLogoX, g_nLogoY, bm.bmWidth, bm.bmHeight, scale );
@@ -1094,11 +1094,11 @@ void VideoDisplayLogo ()
 
 //===========================================================================
 
-void VideoRedrawScreen ()
+void VideoRedrawScreen (UINT uDelayRefresh /* =0 */)
 {
 	g_VideoForceFullRedraw = 1;
 
-	VideoRefreshScreen( g_uVideoMode );
+	VideoRefreshScreen( g_uVideoMode, uDelayRefresh );
 }
 
 //===========================================================================
@@ -1136,8 +1136,11 @@ static void DebugRefresh(char uDebugFlag)
 }
 #endif
 
-void VideoRefreshScreen ( int bVideoModeFlags )
+void VideoRefreshScreen ( int bVideoModeFlags, UINT uDelayRefresh /* =0 */ )
 {
+	static UINT uDelayRefreshCount = 0;
+	if (uDelayRefresh) uDelayRefreshCount = uDelayRefresh;
+
 #if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
 	DebugRefresh(0);
 #endif
@@ -1165,30 +1168,39 @@ void VideoRefreshScreen ( int bVideoModeFlags )
 
 	if (hFrameDC)
 	{
-		// Display the logo for a second so that any full screen screen-caps will have it
-		static int nLogo = 30; // HACK 
-		if ((nLogo > 0) && nLogo-- )
+		if (uDelayRefreshCount)
 		{
-			int nScale = g_bIsFullScreen ? 1 : GetViewportScale();
-			VideoDrawLogoBitmap( hFrameDC, g_nLogoX, g_nLogoY, 560, 384, nScale );
+			// Delay the refresh in full-screen mode (to allow screen-capabilities to take effect) - required for Win7 (and others?)
+			--uDelayRefreshCount;
 		}
 		else
+		{
+			int xDst = 0;
+			int yDst = 0;
+
+			if (g_bIsFullScreen)
+			{
+				// Why the need to set the mid-position here, but not for (full-screen) LOGO or DEBUG modes?
+				xDst = (g_nDDFullScreenW-W)/2 - VIEWPORTX*2;
+				yDst = (g_nDDFullScreenH-H)/2;
+			}
+
 			StretchBlt(
 				hFrameDC,
-				0, 0,
-				W, // dst
-				H, // dst
+				xDst, yDst,				// xDst, yDst
+				W, H,					// wDst, hDst
 				g_hDeviceDC,
-				0, 0, 
-				FRAMEBUFFER_W, FRAMEBUFFER_H, // src // NOT 560, 384
+				BORDER_W, BORDER_H,		// xSrc, ySrc
+				FRAMEBUFFER_BORDERLESS_W, FRAMEBUFFER_BORDERLESS_H, // wSrc, hSrc
 				SRCCOPY );
+		}
 	}
+
 	GdiFlush();
 
 	FrameReleaseVideoDC();
 
-	if (g_VideoForceFullRedraw)
-		--g_VideoForceFullRedraw;
+	g_VideoForceFullRedraw = 0;
 // NTSC_END
 }
 
@@ -1665,8 +1677,8 @@ void Video_MakeScreenShot(FILE *pFile)
 
 	Video_SetBitmapHeader(
 		pBmp,
-		g_iScreenshotType ? FRAMEBUFFER_W/2 :FRAMEBUFFER_W,
-		g_iScreenshotType ?  FRAMEBUFFER_H/2 : FRAMEBUFFER_H,
+		g_iScreenshotType ? FRAMEBUFFER_BORDERLESS_W/2 : FRAMEBUFFER_BORDERLESS_W,
+		g_iScreenshotType ? FRAMEBUFFER_BORDERLESS_H/2 : FRAMEBUFFER_BORDERLESS_H,
 		32
 	);
 
@@ -1680,14 +1692,13 @@ void Video_MakeScreenShot(FILE *pFile)
 	/**/ sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[0]=0;
 
 	// Write Header
-	int nLen;
 	fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
 
 	uint32_t *pSrc;
 #if VIDEO_SCREENSHOT_PALETTE
 	// Write Palette Data
 	pSrc = ((uint8_t*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
-	nLen = g_tBmpHeader.nPaletteColors * sizeof(bgra_t); // RGBQUAD
+	int nLen = g_tBmpHeader.nPaletteColors * sizeof(bgra_t); // RGBQUAD
 	fwrite( pSrc, nLen, 1, pFile );
 	pSrc += nLen;
 #endif
@@ -1696,7 +1707,8 @@ void Video_MakeScreenShot(FILE *pFile)
 	// No need to use GetDibBits() since we already have http://msdn.microsoft.com/en-us/library/ms532334.aspx
 	// @reference: "Storing an Image" http://msdn.microsoft.com/en-us/library/ms532340(VS.85).aspx
 	pSrc = (uint32_t*) g_pFramebufferbits;
-	nLen = (g_tBmpHeader.nWidthPixels * g_tBmpHeader.nHeightPixels * g_tBmpHeader.nBitsPerPixel) / 8;
+	pSrc += BORDER_H * FRAMEBUFFER_W;	// Skip top border
+	pSrc += BORDER_W;					// Skip left border
 
 	if( g_iScreenshotType == SCREENSHOT_280x192 )
 	{
@@ -1708,21 +1720,26 @@ void Video_MakeScreenShot(FILE *pFile)
 		// 50% Half Scan Line clears every odd scanline.
 		// SHIFT+PrintScreen saves only the even rows.
 		// NOTE: Keep in sync with _Video_RedrawScreen() & Video_MakeScreenShot()
-		for( int y = 0; y < FRAMEBUFFER_H/2; y++ )
+		for( int y = 0; y < FRAMEBUFFER_BORDERLESS_H/2; y++ )
 		{
 			pDst = aScanLine;
-			for( int x = 0; x < FRAMEBUFFER_W/2; x++ )
+			for( int x = 0; x < FRAMEBUFFER_BORDERLESS_W/2; x++ )
 			{
 				*pDst++ = pSrc[1]; // correction for left edge loss of scaled scanline [Bill Buckel, B#18928]
 				pSrc += 2; // skip odd pixels
 			}
-			fwrite( aScanLine, FRAMEBUFFER_W/2, 1, pFile );
+			fwrite( aScanLine, sizeof(uint32_t), FRAMEBUFFER_BORDERLESS_W/2, pFile );
 			pSrc += FRAMEBUFFER_W; // scan lines doubled - skip odd ones
+			pSrc += BORDER_W*2;	// Skip right border & next line's left border
 		}
 	}
 	else
 	{
-		fwrite( pSrc, nLen, 1, pFile );
+		for( int y = 0; y < FRAMEBUFFER_BORDERLESS_H; y++ )
+		{
+			fwrite( pSrc, sizeof(uint32_t), FRAMEBUFFER_BORDERLESS_W, pFile );
+			pSrc += FRAMEBUFFER_W;
+		}
 	}
 #endif // SCREENSHOT_BMP
 

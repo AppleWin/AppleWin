@@ -65,8 +65,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAGICY 5	// 3D border between Apple window & Title bar
 
 static const int kDEFAULT_VIEWPORT_SCALE = 2;
-       int g_nViewportCX = FRAMEBUFFER_W * kDEFAULT_VIEWPORT_SCALE;
-       int g_nViewportCY = FRAMEBUFFER_H * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCX = FRAMEBUFFER_BORDERLESS_W * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCY = FRAMEBUFFER_BORDERLESS_H * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
 static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
 
@@ -568,11 +568,7 @@ static void DrawFrameWindow ()
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay(1);
 	else
-		// Win7: In fullscreen mode with 1 redraw the screen doesn't get redrawn.
-		// TC: 07/01/2015: Tryed with MP's double-buffered DX full-screen code, but still the same.	
-		//VideoRedrawScreen(g_bIsFullScreen ? 2 : 1);	// TC: 22/06/2014: Why 2 redraws in full-screen mode (32-bit only)? (8-bit doesn't need this nor does Win8, just Win7 or older OS's)
-		//VideoRefreshScreen(0);
-		VideoRedrawScreen();
+		VideoRedrawScreen(g_bIsFullScreen ? 1 : 0);	// On WM_PAINT: delay 1 refresh before rendering full-screen
 
 	if (g_bPaintingWindow)
 		EndPaint(g_hFrameWindow,&ps);
@@ -2167,8 +2163,8 @@ int SetViewportScale(int nNewScale)
 		nNewScale = g_nMaxViewportScale;
 
 	g_nViewportScale = nNewScale;
-	g_nViewportCX = g_nViewportScale * FRAMEBUFFER_W;
-	g_nViewportCY = g_nViewportScale * FRAMEBUFFER_H;
+	g_nViewportCX = g_nViewportScale * FRAMEBUFFER_BORDERLESS_W;
+	g_nViewportCY = g_nViewportScale * FRAMEBUFFER_BORDERLESS_H;
 
 	return nNewScale;
 }
@@ -2267,8 +2263,8 @@ void FrameCreateWindow(void)
 		int nOldViewportCX = g_nViewportCX;
 		int nOldViewportCY = g_nViewportCY;
 
-		g_nViewportCX = FRAMEBUFFER_W * 2;
-		g_nViewportCY = FRAMEBUFFER_H * 2;
+		g_nViewportCX = FRAMEBUFFER_BORDERLESS_W * 2;
+		g_nViewportCY = FRAMEBUFFER_BORDERLESS_H * 2;
 		GetWidthHeight(nWidth, nHeight);	// Probe with 2x dimensions
 
 		g_nViewportCX = nOldViewportCX;
