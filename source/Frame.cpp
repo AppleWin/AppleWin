@@ -1719,7 +1719,6 @@ static void ScreenWindowResize(const bool bCtrlKey)
 		nOldViewportScale = g_nViewportScale;
 		FrameResizeWindow(1);	// reset to 1x
 		SetFullScreenMode();
-		//VideoRedrawScreen(1);	// [TC-10/06/2014] Remove this once checked it's not needed by Win8
 	}
 }
 
