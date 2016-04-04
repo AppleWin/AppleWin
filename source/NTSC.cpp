@@ -1509,6 +1509,10 @@ void NTSC_SetVideoStyle() // (int v, int s)
 	switch ( g_eVideoType )
 	{
 		case VT_COLOR_TVEMU: // VT_COLOR_TV: // 0:
+			r = 0xFF;
+			g = 0xFF;
+			b = 0xFF;
+			updateMonochromeTables( r, g, b );
 			if (half)
 			{
 				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVSingleScanline;
@@ -1522,6 +1526,10 @@ void NTSC_SetVideoStyle() // (int v, int s)
 
 		case VT_COLOR_STANDARD: // VT_COLOR_MONITOR: //1:
 		default:
+			r = 0xFF;
+			g = 0xFF;
+			b = 0xFF;
+			updateMonochromeTables( r, g, b );
 			if (half)
 			{
 				g_pFuncUpdateBnWPixel = updatePixelBnWMonitorSingleScanline;
