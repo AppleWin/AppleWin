@@ -2930,7 +2930,7 @@ bool VideoGetSWTEXT(void)
 
 bool VideoGetSWAltCharSet(void)
 {
-	return g_nAltCharSetOffset == 0;
+	return g_nAltCharSetOffset != 0;
 }
 
 //===========================================================================
