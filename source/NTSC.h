@@ -13,8 +13,8 @@
 	extern uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeColorTV );
 	extern uint16_t NTSC_VideoGetScannerAddress( unsigned long cycles6502 );
 	extern void     NTSC_VideoInit( uint8_t *pFramebuffer );
-	extern void     NTSC_VideoInitAppleType ( DWORD cyclesThisFrame );
+	extern void     NTSC_VideoReinitialize( DWORD cyclesThisFrame );
+	extern void     NTSC_VideoInitAppleType();
 	extern void     NTSC_VideoInitChroma();
 	extern bool     NTSC_VideoIsVbl();
 	extern void     NTSC_VideoUpdateCycles( long cycles6502 );
-

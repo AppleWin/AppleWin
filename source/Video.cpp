@@ -1207,8 +1207,10 @@ void VideoRefreshScreen ( int bVideoModeFlags, UINT uDelayRefresh /* =0 */ )
 //===========================================================================
 void VideoReinitialize ()
 {
-	NTSC_VideoInitAppleType(g_dwCyclesThisFrame);
+	NTSC_VideoReinitialize( g_dwCyclesThisFrame );
+	NTSC_VideoInitAppleType();
 	NTSC_SetVideoStyle();
+	NTSC_SetVideoMode( g_uVideoMode );	// Pre-condition: g_nVideoClockHorz (derived from g_dwCyclesThisFrame)
 }
 
 //===========================================================================
@@ -1338,10 +1340,7 @@ void VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode)
 {
 	g_nAltCharSetOffset = !AltCharSet ? 0 : 256;
 	g_uVideoMode = VideoMode;
-
-// NTSC_BEGIN
-	NTSC_SetVideoMode( g_uVideoMode );
-// NTSC_END
+	g_dwCyclesThisFrame = 0;
 }
 
 //
@@ -1372,10 +1371,6 @@ void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALTCHARSET) ? 256 : 0;
 	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEOMODE);
 	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLESTHISFRAME);
-
-// NTSC_BEGIN
-	NTSC_SetVideoMode( g_uVideoMode );
-// NTSC_END
 
 	yamlLoadHelper.PopMap();
 }

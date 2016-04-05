@@ -208,6 +208,8 @@ static void Snapshot_LoadState_v1()	// .aws v1.0.0.1, up to (and including) Appl
 		SetLoadedSaveStateFlag(true);
 
 		MemUpdatePaging(TRUE);
+
+		VideoReinitialize();	// g_CharsetType changed
 	}
 	catch(std::string szMessage)
 	{

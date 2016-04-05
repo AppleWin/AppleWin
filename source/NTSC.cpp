@@ -1672,7 +1672,18 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 }
 
 //===========================================================================
-void NTSC_VideoInitAppleType ( DWORD cyclesThisFrame )
+void NTSC_VideoReinitialize( DWORD cyclesThisFrame )
+{
+	_ASSERT(cyclesThisFrame < VIDEO_SCANNER_6502_CYCLES);
+	if (cyclesThisFrame >= VIDEO_SCANNER_6502_CYCLES) cyclesThisFrame = 0;	// error
+	g_nVideoClockVert = (uint16_t) (cyclesThisFrame / VIDEO_SCANNER_MAX_HORZ);
+	g_nVideoClockHorz = cyclesThisFrame % VIDEO_SCANNER_MAX_HORZ;
+
+	updateVideoScannerAddress();	// Pre-condition: g_nVideoClockVert
+}
+
+//===========================================================================
+void NTSC_VideoInitAppleType ()
 {
 	int model = g_Apple2Type;
 
@@ -1681,12 +1692,6 @@ void NTSC_VideoInitAppleType ( DWORD cyclesThisFrame )
 		g_pHorzClockOffset = APPLE_IIE_HORZ_CLOCK_OFFSET;
 	else
 		g_pHorzClockOffset = APPLE_IIP_HORZ_CLOCK_OFFSET;
-
-	// TC: Move these to a better place (as init'ing these 2 vars is nothing to do with g_Apple2Type)
-	_ASSERT(cyclesThisFrame < VIDEO_SCANNER_6502_CYCLES);
-	if (cyclesThisFrame >= VIDEO_SCANNER_6502_CYCLES) cyclesThisFrame = 0;	// error
-	g_nVideoClockVert = (uint16_t) (cyclesThisFrame / VIDEO_SCANNER_MAX_HORZ);
-	g_nVideoClockHorz = cyclesThisFrame % VIDEO_SCANNER_MAX_HORZ;
 }
 
 //===========================================================================
