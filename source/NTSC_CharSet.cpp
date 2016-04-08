@@ -23,6 +23,86 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 unsigned char csbits[2][256][8];
 
+#if 1
+
+static const UINT bitmapWidth = 256;
+static const UINT bitmapWidthBytes = bitmapWidth/8;
+static const UINT bitmapHeight = 768;
+
+static const UINT charWidth = 16;
+static const UINT charWidthBytes = 16/8;
+static const UINT charHeight = 16;
+
+void get_csbits_xy (UINT charset, UINT ch, UINT cx, UINT cy, const BYTE* pBitmap)
+{
+	_ASSERT(charset < 2);
+	_ASSERT(ch < 256);
+	_ASSERT((cx < bitmapWidth/charWidth) && (cy < bitmapHeight/charHeight));
+
+	pBitmap += cy*charHeight*bitmapWidthBytes + cx*charWidthBytes;
+
+	for (UINT y=0; y<8; y++)
+	{
+		BYTE n = 0;
+		for (int x=0; x<14; x+=2)
+		{
+			UINT xp = x/8;
+			BYTE d = pBitmap[xp];
+			UINT b = 7 - x%8;
+			if (d & (1<<b)) n |= 0x80;
+			n >>= 1;
+		}
+
+		csbits[charset][ch][y] = n;
+		pBitmap += bitmapWidthBytes*2;
+	}
+}
+
+void make_csbits (void)
+{
+	HBITMAP hCharBitmap = LoadBitmap(g_hInstance, TEXT("CHARSET40"));
+
+	const UINT bufferSize = bitmapWidthBytes*bitmapHeight;
+	BYTE* pBuffer = new BYTE [bufferSize];
+	GetBitmapBits(hCharBitmap, bufferSize, pBuffer);
+
+	// Enhanced //e: Alt char set off
+	for (UINT cy=0, ch=0; cy<16; cy++)
+	{
+		for (UINT cx=0; cx<16; cx++)
+		{
+			get_csbits_xy(0, ch++, cx, cy, pBuffer);
+		}
+	}
+
+	// Enhanced //e: Alt char set on (mouse-text)
+	for (UINT cy=16, ch=0; cy<32; cy++)
+	{
+		for (UINT cx=0; cx<16; cx++)
+		{
+			get_csbits_xy(1, ch++, cx, cy, pBuffer);
+		}
+	}
+
+  #if 0
+	// Apple ][, ][+
+	// . TODO: Original //e - which had no mouse-text
+	// . TODO: Pravets
+	for (UINT cy=32, ch=0; cy<48; cy++)
+	{
+		for (UINT cx=0; cx<16; cx++)
+		{
+			get_csbits_xy(2, ch++, cx, cy, pBuffer);
+		}
+	}
+  #endif
+
+	delete [] pBuffer;
+	DeleteObject(hCharBitmap);
+}
+
+#else
+
 static const char *csstrs[] = {
 	"   ###  ","    #   ","  ####  ","   ###  ","  ####  ","  ##### ","  ##### ","   #### ",
 	"  #   # ","   # #  ","  #   # ","  #   # ","  #   # ","  #     ","  #     ","  #     ",
@@ -213,3 +293,5 @@ void make_csbits (void) {
 				csbits[1][i][j] ^= 0xFF;
 		}
 }
+
+#endif
