@@ -166,7 +166,7 @@ enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 #define IS_APPLE2C		(g_Apple2Type & APPLE2C_MASK)
 #define IS_CLONE()		(g_Apple2Type & APPLECLONE_MASK)
 
-// NB. These get persisted to the Registry & save-state file, so don't change the values for these enums!
+// NB. These get persisted to the Registry, so don't change the values for these enums!
 enum eApple2Type {
 					A2TYPE_APPLE2=0,
 					A2TYPE_APPLE2PLUS,
@@ -178,10 +178,12 @@ enum eApple2Type {
 					//
 					// Clones start here:
 					A2TYPE_CLONE=APPLECLONE_MASK,
-					A2TYPE_PRAVETS=APPLECLONE_MASK|APPLE2E_MASK,
-					A2TYPE_PRAVETS82=A2TYPE_PRAVETS,
-					A2TYPE_PRAVETS8M,
-					A2TYPE_PRAVETS8A,
+					A2TYPE_PRAVETS=APPLECLONE_MASK,
+					A2TYPE_PRAVETS82=A2TYPE_PRAVETS,				// Apple ][ clone
+					A2TYPE_PRAVETS8M,								// Apple ][ clone
+					A2TYPE_BAD_PRAVETS82=A2TYPE_PRAVETS|APPLE2E_MASK,	// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
+					A2TYPE_BAD_PRAVETS8M,								// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
+					A2TYPE_PRAVETS8A,								// Apple //e clone
 					A2TYPE_MAX
 				};
 

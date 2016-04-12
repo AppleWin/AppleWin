@@ -1079,6 +1079,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\resource\ApplewinLogo.bmp"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\CAPSOFF.BMP"
 				>
 			</File>
@@ -1104,6 +1108,10 @@
 			</File>
 			<File
 				RelativePath=".\resource\CHARSET8C.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\CHARSET8M.BMP"
 				>
 			</File>
 			<File

@@ -21,7 +21,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #include "NTSC_CharSet.h"
 
-unsigned char csbits[2][256][8];
+unsigned char csbits_enhanced2e[2][256][8];	// Enhanced //e
+unsigned char csbits_2e[2][256][8];			// Original //e (no mousetext)
+unsigned char csbits_a2[1][256][8];			// ][ and ][+
+unsigned char csbits_pravets82[1][256][8];	// Pravets 82
+unsigned char csbits_pravets8M[1][256][8];	// Pravets 8M
+unsigned char csbits_pravets8C[2][256][8];	// Pravets 8A & 8C
 
 #if 1
 
@@ -33,9 +38,8 @@ static const UINT charWidth = 16;
 static const UINT charWidthBytes = 16/8;
 static const UINT charHeight = 16;
 
-void get_csbits_xy (UINT charset, UINT ch, UINT cx, UINT cy, const BYTE* pBitmap)
+void get_csbits_xy (csbits_t csbits, UINT ch, UINT cx, UINT cy, const BYTE* pBitmap)
 {
-	_ASSERT(charset < 2);
 	_ASSERT(ch < 256);
 	_ASSERT((cx < bitmapWidth/charWidth) && (cy < bitmapHeight/charHeight));
 
@@ -53,56 +57,50 @@ void get_csbits_xy (UINT charset, UINT ch, UINT cx, UINT cy, const BYTE* pBitmap
 			n >>= 1;
 		}
 
-		csbits[charset][ch][y] = n;
+		csbits[0][ch][y] = n;
 		pBitmap += bitmapWidthBytes*2;
 	}
 }
 
-void make_csbits (void)
+void get_csbits (csbits_t csbits, const char* resourceName, const UINT cy0)
 {
-	HBITMAP hCharBitmap = LoadBitmap(g_hInstance, TEXT("CHARSET40"));
-
 	const UINT bufferSize = bitmapWidthBytes*bitmapHeight;
 	BYTE* pBuffer = new BYTE [bufferSize];
+
+	HBITMAP hCharBitmap = LoadBitmap(g_hInstance, resourceName);
 	GetBitmapBits(hCharBitmap, bufferSize, pBuffer);
 
-	// Enhanced //e: Alt char set off
-	for (UINT cy=0, ch=0; cy<16; cy++)
+	for (UINT cy=cy0, ch=0; cy<cy0+16; cy++)
 	{
 		for (UINT cx=0; cx<16; cx++)
 		{
-			get_csbits_xy(0, ch++, cx, cy, pBuffer);
+			get_csbits_xy(csbits, ch++, cx, cy, pBuffer);
 		}
 	}
 
-	// Enhanced //e: Alt char set on (mouse-text)
-	for (UINT cy=16, ch=0; cy<32; cy++)
-	{
-		for (UINT cx=0; cx<16; cx++)
-		{
-			get_csbits_xy(1, ch++, cx, cy, pBuffer);
-		}
-	}
-
-  #if 0
-	// Apple ][, ][+
-	// . TODO: Original //e - which had no mouse-text
-	// . TODO: Pravets
-	for (UINT cy=32, ch=0; cy<48; cy++)
-	{
-		for (UINT cx=0; cx<16; cx++)
-		{
-			get_csbits_xy(2, ch++, cx, cy, pBuffer);
-		}
-	}
-  #endif
+	DeleteObject(hCharBitmap);
 
 	delete [] pBuffer;
-	DeleteObject(hCharBitmap);
+}
+
+void make_csbits (void)
+{
+	get_csbits(&csbits_enhanced2e[0], TEXT("CHARSET40"), 0);	// Enhanced //e: Alt char set off
+	get_csbits(&csbits_enhanced2e[1], TEXT("CHARSET40"), 16);	// Enhanced //e: Alt char set on (mousetext)
+	get_csbits(&csbits_a2[0],         TEXT("CHARSET40"), 32);	// Apple ][, ][+
+	get_csbits(&csbits_pravets82[0],  TEXT("CHARSET82"), 0);	// Pravets 82
+	get_csbits(&csbits_pravets8M[0],  TEXT("CHARSET8M"), 0);	// Pravets 8M
+	get_csbits(&csbits_pravets8C[0],  TEXT("CHARSET8C"), 0);	// Pravets 8A / 8C: Alt char set off
+	get_csbits(&csbits_pravets8C[1],  TEXT("CHARSET8C"), 16);	// Pravets 8A / 8C: Alt char set on
+
+	// Original //e is just Enhanced //e with the 32 mousetext chars [0x40..0x5F] replaced by the non-alt charset chars [0x40..0x5F]
+	memcpy(csbits_2e, csbits_enhanced2e, sizeof(csbits_enhanced2e));
+	memcpy(&csbits_2e[1][64], &csbits_2e[0][64], 32*8);
 }
 
 #else
 
+// NB. '(', ')' are 1 bit out of alignment
 static const char *csstrs[] = {
 	"   ###  ","    #   ","  ####  ","   ###  ","  ####  ","  ##### ","  ##### ","   #### ",
 	"  #   # ","   # #  ","  #   # ","  #   # ","  #   # ","  #     ","  #     ","  #     ",

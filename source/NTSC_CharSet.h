@@ -21,7 +21,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef INCLUDED_CS_H
 #define INCLUDED_CS_H
 
-extern unsigned char csbits[2][256][8];
+typedef unsigned char (*csbits_t)[256][8];
+
+extern unsigned char csbits_enhanced2e[2][256][8];	// Enhanced //e
+extern unsigned char csbits_2e[2][256][8];			// Original //e (no mousetext)
+extern unsigned char csbits_a2[1][256][8];			// ][ and ][+
+extern unsigned char csbits_pravets82[1][256][8];	// Pravets 82
+extern unsigned char csbits_pravets8M[1][256][8];	// Pravets 8M
+extern unsigned char csbits_pravets8C[2][256][8];	// Pravets 8A & 8C
+
 void make_csbits (void);
 
 #endif

@@ -379,6 +379,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		,{ 255, 255, 255 } // 15
 	};
 
+	static csbits_t csbits;		// charset, optionally followed by alt charset
 
 // Prototypes
 	// prototype from CPU.h
@@ -433,6 +434,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void updateScreenText40       ( long cycles6502 );
 	static void updateScreenText80       ( long cycles6502 );
 
+//===========================================================================
+static void set_csbits()
+{
+	// NB. For models that don't have an alt charset then set /g_nVideoCharSet/ to zero
+	switch ( GetApple2Type() )
+	{
+	case A2TYPE_APPLE2:			csbits = &csbits_a2[0];         g_nVideoCharSet = 0; break;
+	case A2TYPE_APPLE2PLUS:		csbits = &csbits_a2[0];         g_nVideoCharSet = 0; break;
+	case A2TYPE_APPLE2E:		csbits = &csbits_2e[0];			break;
+	case A2TYPE_APPLE2EENHANCED:csbits = &csbits_enhanced2e[0]; break;
+	case A2TYPE_PRAVETS82:	    csbits = &csbits_pravets82[0];  g_nVideoCharSet = 0; break;	// Apple ][ clone
+	case A2TYPE_PRAVETS8M:	    csbits = &csbits_pravets8M[0];  g_nVideoCharSet = 0; break;	// Apple ][ clone
+	case A2TYPE_PRAVETS8A:	    csbits = &csbits_pravets8C[0];  break;	// Apple //e clone
+	default:					csbits = &csbits_enhanced2e[0]; break;
+	}
+}
 
 //===========================================================================
 inline float clampZeroOne( const float & x )
@@ -1685,13 +1702,15 @@ void NTSC_VideoReinitialize( DWORD cyclesThisFrame )
 //===========================================================================
 void NTSC_VideoInitAppleType ()
 {
-	int model = g_Apple2Type;
+	int model = GetApple2Type();
 
 	// anything other than low bit set means not II/II+ (TC: include Pravets machines too?)
 	if (model & 0xFFFE)
 		g_pHorzClockOffset = APPLE_IIE_HORZ_CLOCK_OFFSET;
 	else
 		g_pHorzClockOffset = APPLE_IIP_HORZ_CLOCK_OFFSET;
+
+	set_csbits();
 }
 
 //===========================================================================

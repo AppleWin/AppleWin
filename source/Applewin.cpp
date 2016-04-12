@@ -391,13 +391,13 @@ void SetCharsetType(void)
 {
 	switch ( GetApple2Type() )
 	{
-	case A2TYPE_APPLE2:			g_nCharsetType = 0; break; 
-	case A2TYPE_APPLE2PLUS:		g_nCharsetType = 0; break; 
-	case A2TYPE_APPLE2E:		g_nCharsetType = 0; break; 
-	case A2TYPE_APPLE2EENHANCED:g_nCharsetType = 0; break; 
-	case A2TYPE_PRAVETS82:	    g_nCharsetType = 1; break; 
-	case A2TYPE_PRAVETS8A:	    g_nCharsetType = 2; break; 
-	case A2TYPE_PRAVETS8M:	    g_nCharsetType = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because setting charset to 3 results in some problems.
+	case A2TYPE_APPLE2:			g_nCharsetType = 0; break;
+	case A2TYPE_APPLE2PLUS:		g_nCharsetType = 0; break;
+	case A2TYPE_APPLE2E:		g_nCharsetType = 0; break;
+	case A2TYPE_APPLE2EENHANCED:g_nCharsetType = 0; break;
+	case A2TYPE_PRAVETS82:	    g_nCharsetType = 1; break;
+	case A2TYPE_PRAVETS8M:	    g_nCharsetType = 2; break; //This charset has a very small difference with the PRAVETS82 one, and probably has some misplaced characters.
+	case A2TYPE_PRAVETS8A:	    g_nCharsetType = 3; break;
 	default:
 		_ASSERT(0);
 		g_nCharsetType = 0;
@@ -414,6 +414,10 @@ void LoadConfiguration(void)
 	{
 		if ((dwComputerType >= A2TYPE_MAX) || (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE))
 			dwComputerType = A2TYPE_APPLE2EENHANCED;
+
+		// Remap the bad Pravets models (before AppleWin v1.26)
+		if (dwComputerType == A2TYPE_BAD_PRAVETS82) dwComputerType = A2TYPE_PRAVETS82;
+		if (dwComputerType == A2TYPE_BAD_PRAVETS8M) dwComputerType = A2TYPE_PRAVETS8M;
 
 		apple2Type = (eApple2Type) dwComputerType;
 	}

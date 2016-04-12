@@ -567,9 +567,9 @@ static void CreateLookup_TextCommon(HDC hDstDC, DWORD rop)
 	HDC     hSrcDC = CreateCompatibleDC(hDstDC);
 
 	hCharBitmap[0] = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
-	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));
-	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C")); // FIXME: Pravets 8M probably has the same charset as Pravets 8C
-	hCharBitmap[3] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
+	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));	//82
+	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));	//8M
+	hCharBitmap[3] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));	//8A
 	SelectObject(hSrcDC, hCharBitmap[g_nCharsetType]);
 
 	// TODO: Update with APPLE_FONT_Y_ values
@@ -1251,7 +1251,7 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
 
-	// Apple IIe, Techical Notes, #3: Double High-Resolution Graphics
+	// Apple IIe, Technical Notes, #3: Double High-Resolution Graphics
 	// 80STORE must be OFF to display page 2
 	if (SW_80STORE)
 		g_uVideoMode &= ~VF_PAGE2;
@@ -1796,7 +1796,7 @@ void Config_Save_Video()
 // ____________________________________________________________________
 
 //===========================================================================
-void videoCreateDIBSection()
+static void videoCreateDIBSection()
 {
 	// CREATE THE DEVICE CONTEXT
 	HWND window  = GetDesktopWindow();
