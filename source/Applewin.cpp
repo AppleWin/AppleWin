@@ -1084,6 +1084,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if (szSnapshotName)
 		{
+			std::string strPathname(szSnapshotName);
+			int nIdx = strPathname.find_last_of('\\');
+			if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())
+			{
+				std::string strPath = strPathname.substr(0, nIdx+1);
+				SetCurrentImageDir(strPath.c_str());
+			}
+
 			// Override value just loaded from Registry by LoadConfiguration()
 			// . NB. Registry value is not updated with this cmd-line value
 			Snapshot_SetFilename(szSnapshotName);
