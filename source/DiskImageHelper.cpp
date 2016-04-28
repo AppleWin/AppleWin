@@ -1041,7 +1041,9 @@ eDetectResult C2IMGHelper::DetectHdr(LPBYTE& pImage, DWORD& dwImageSize, DWORD& 
 	if (dwImageSize < sizeof(Header2IMG) || pHdr->FormatID != FormatID_2IMG || pHdr->HeaderSize != sizeof(Header2IMG))
 		return eMismatch;
 
-	if (pHdr->Version != 1)
+	// https://github.com/AppleWin/AppleWin/issues/317
+	// Work around some lazy implementations of the spec that set this value to 0 instead of the correct 1.
+	if (pHdr->Version > 1)
 		return eMismatch;
 
 	if (dwImageSize < sizeof(Header2IMG)+pHdr->DiskDataLength)
