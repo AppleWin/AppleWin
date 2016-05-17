@@ -4,6 +4,7 @@
 #include "../../source/CPU.h"
 
 // From Applewin.cpp
+bool g_bFullSpeed = false;
 enum AppMode_e g_nAppMode = MODE_RUNNING;
 
 // From Memory.cpp

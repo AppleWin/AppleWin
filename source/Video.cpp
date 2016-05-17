@@ -258,7 +258,7 @@ static LPBYTE    vidlastmem          = NULL;
 
 	uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
 
-	DWORD     g_eVideoType     = VT_COLOR_TVEMU;
+	DWORD     g_eVideoType     = VT_COLOR_TV;
 	DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
 
 static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
@@ -267,27 +267,26 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	TCHAR g_aVideoChoices[] =
-		TEXT("Monochrome (Custom Luminance)\0")
-		TEXT("Color (Standard)\0")
-		TEXT("Color (Text Optimized)\0")
-		TEXT("Color (TV emulation)\0")
+		TEXT("Monochrome (Custom)\0")
+		TEXT("Color Monitor\0")
+		TEXT("B&W TV\0")
+		TEXT("Color TV\0")
 		TEXT("Monochrome (Amber)\0")
 		TEXT("Monochrome (Green)\0")
 		TEXT("Monochrome (White)\0")
 		;
 
-	// AppleWin 1.19.4 VT_COLOR_AUTHENTIC -> VT_COLOR_HALFPIXEL -> VT_COLOR_STANDARD "Color Half-Pixel Authentic
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	// The window title will be set to this.
 	char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
-		  "Monochrome (Custom)"
-		, "Standard"        
-		, "Text Optimized"
-		, "TV"
-		, "Amber"
-		, "Green"
-		, "White"
+		  "Monochrome Monitor (Custom)"
+		, "Color Monitor"
+		, "B&W TV"
+		, "Color TV"
+		, "Amber Monitor"
+		, "Green Monitor"
+		, "White Monitor"
 	};
 
 // Prototypes (Private) _____________________________________________
@@ -1094,6 +1093,18 @@ void VideoDisplayLogo ()
 
 //===========================================================================
 
+void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
+{
+	const int nScanLines = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+
+	g_nVideoClockVert = (uint16_t) (dwCyclesThisFrame / kHClocks) % nScanLines;
+	g_nVideoClockHorz = (uint16_t) (dwCyclesThisFrame % kHClocks);
+
+	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
+}
+
+//===========================================================================
+
 void VideoRedrawScreen (UINT uDelayRefresh /* =0 */)
 {
 	g_VideoForceFullRedraw = 1;
@@ -1185,12 +1196,22 @@ void VideoRefreshScreen ( int bVideoModeFlags, UINT uDelayRefresh /* =0 */ )
 				yDst = (g_nDDFullScreenH-H)/2;
 			}
 
+			int xSrc = BORDER_W;
+			int ySrc = BORDER_H;
+
+			if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
+			{
+				// Adjust the src locations for the NTSC video modes
+				xSrc += 2;
+				ySrc -= 1;
+			}
+
 			StretchBlt(
 				hFrameDC,
 				xDst, yDst,				// xDst, yDst
 				W, H,					// wDst, hDst
 				g_hDeviceDC,
-				BORDER_W, BORDER_H,		// xSrc, ySrc
+				xSrc, ySrc,				// xSrc, ySrc
 				FRAMEBUFFER_BORDERLESS_W, FRAMEBUFFER_BORDERLESS_H, // wSrc, hSrc
 				SRCCOPY );
 		}
@@ -1397,6 +1418,7 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
     int nScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
     int nVSyncLine  = bVideoScannerNTSC ? kNTSCVSyncLine : kPALVSyncLine;
     int nScanCycles = nScanLines * kHClocks;
+    nCycles %= nScanCycles;
 
     // calculate horizontal scanning state
     //
@@ -1502,6 +1524,8 @@ bool VideoGetVbl(const DWORD uExecutedCycles)
     // calculate video parameters according to display standard
     //
     int nScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+    int nScanCycles = nScanLines * kHClocks;
+    nCycles %= nScanCycles;
 
     // calculate vertical scanning state
     //
@@ -1783,7 +1807,7 @@ void Config_Load_Video()
 	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&g_nMonochromeRGB);
 
 	if (g_eVideoType >= NUM_VIDEO_MODES)
-		g_eVideoType = VT_COLOR_STANDARD; // Old default: VT_COLOR_TVEMU
+		g_eVideoType = VT_COLOR_MONITOR;
 }
 
 void Config_Save_Video()

@@ -5095,7 +5095,7 @@ Update_t CmdNTSC (int nArgs)
 			}
 	};
 
-	bool bColorTV = (g_eVideoType == VT_COLOR_TVEMU);
+	bool bColorTV = (g_eVideoType == VT_COLOR_TV);
 
 	uint32_t* pChromaTable = NTSC_VideoGetChromaTable( false, bColorTV );
 	char aStatusText[64] = "Loaded";
@@ -7730,6 +7730,9 @@ bool InternalSingleStep ()
 
 
 //===========================================================================
+
+#define TRACELINE_WITH_VIDEO_SCANNER_POS 0
+
 void OutputTraceLine ()
 {
 	DisasmLine_t line;
@@ -7747,8 +7750,13 @@ void OutputTraceLine ()
 			g_bTraceHeader = false;
 
 			fprintf( g_hTraceFile,
+#if TRACELINE_WITH_VIDEO_SCANNER_POS
+//				"0000 0000 00 00 00 0000 --------  0000:90 90 90  NOP"
+				"Vert Horz A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n"
+#else
 //				"00 00 00 0000 --------  0000:90 90 90  NOP"
 				"A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n"
+#endif
 			);
 		}
 
@@ -7761,6 +7769,21 @@ void OutputTraceLine ()
 			);
 		}
 
+#if TRACELINE_WITH_VIDEO_SCANNER_POS
+		fprintf( g_hTraceFile,
+//			"a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n",
+			"%04X %04X %02X %02X %02X %04X %s  %s\n",
+			g_nVideoClockVert,
+			g_nVideoClockHorz,
+			(unsigned)regs.a,
+			(unsigned)regs.x,
+			(unsigned)regs.y,
+			(unsigned)regs.sp,
+			(char*) sFlags
+			, sDisassembly
+			//, sTarget // TODO: Show target?
+		);
+#else
 		fprintf( g_hTraceFile,
 //			"a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n",
 			"%02X %02X %02X %04X %s  %s\n",
@@ -7772,6 +7795,7 @@ void OutputTraceLine ()
 			, sDisassembly
 			//, sTarget // TODO: Show target?
 		);
+#endif
 	}
 }
 

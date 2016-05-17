@@ -6,13 +6,13 @@
 	// NOTE: Used/Serialized by: g_eVideoType
 	enum VideoType_e
 	{
-		  VT_MONO_HALFPIXEL_REAL // uses custom monochrome
-		, VT_COLOR_STANDARD
-		, VT_COLOR_TEXT_OPTIMIZED
-		, VT_COLOR_TVEMU
-		, VT_MONO_AMBER // now half pixel
-		, VT_MONO_GREEN // now half pixel
-		, VT_MONO_WHITE // now half pixel
+		  VT_MONO_CUSTOM
+		, VT_COLOR_MONITOR
+		, VT_MONO_TV
+		, VT_COLOR_TV
+		, VT_MONO_AMBER
+		, VT_MONO_GREEN
+		, VT_MONO_WHITE
 		, NUM_VIDEO_MODES
 	};
 
@@ -170,6 +170,7 @@ void    VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, 
 void    VideoDisplayLogo ();
 void    VideoInitialize ();
 void    VideoRealizePalette (HDC);
+void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 void    VideoRedrawScreen (UINT uDelayRefresh = 0);
 void    VideoRefreshScreen (int bVideoFlags, UINT uDelayRefresh =0 );
 void    VideoReinitialize ();

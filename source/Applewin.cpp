@@ -192,6 +192,7 @@ void ContinueExecution(void)
 									? g_bScrollLock_FullSpeed
 									: (GetKeyState(VK_SCROLL) < 0);
 
+	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed = ( (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
 					 (DiskIsSpinning() && enhancedisk && !Spkr_IsActive() && !MB_IsActive()) );
@@ -213,6 +214,9 @@ void ContinueExecution(void)
 	}
 	else
 	{
+		if (bWasFullSpeed)
+			VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
+
 		// Don't call Spkr_Demute()
 		MB_Demute();
 		SysClk_StartTimerUsec(nExecutionPeriodUsec);

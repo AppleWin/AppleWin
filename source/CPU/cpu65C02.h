@@ -47,7 +47,6 @@ static DWORD Cpu65C02 (DWORD uTotalCycles)
 		BYTE iOpcode;
 
 // NTSC_BEGIN
-		ULONG uElapsedCycles;
 		ULONG uPreviousCycles = uExecutedCycles;
 // NTSC_END
 
@@ -324,8 +323,11 @@ static DWORD Cpu65C02 (DWORD uTotalCycles)
 		}
 
 // NTSC_BEGIN
-		uElapsedCycles = uExecutedCycles - uPreviousCycles;
-		NTSC_VideoUpdateCycles( uElapsedCycles );
+		if (!g_bFullSpeed)
+		{
+			ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
+			NTSC_VideoUpdateCycles( uElapsedCycles );
+		}
 // NTSC_END
 
 		CheckInterruptSources(uExecutedCycles);

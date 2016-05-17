@@ -1525,7 +1525,7 @@ void NTSC_SetVideoStyle() // (int v, int s)
 
 	switch ( g_eVideoType )
 	{
-		case VT_COLOR_TVEMU: // VT_COLOR_TV: // 0:
+		case VT_COLOR_TV:
 			r = 0xFF;
 			g = 0xFF;
 			b = 0xFF;
@@ -1541,7 +1541,7 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			}
 			break;
 
-		case VT_COLOR_STANDARD: // VT_COLOR_MONITOR: //1:
+		case VT_COLOR_MONITOR:
 		default:
 			r = 0xFF;
 			g = 0xFF;
@@ -1558,7 +1558,7 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			}
 			break;
 
-		case VT_COLOR_TEXT_OPTIMIZED: // VT_MONO_TV: //2:
+		case VT_MONO_TV:
 			r = 0xFF;
 			g = 0xFF;
 			b = 0xFF;
@@ -1591,7 +1591,7 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			b = 0xFF;
 			goto _mono;
 
-		case VT_MONO_HALFPIXEL_REAL:
+		case VT_MONO_CUSTOM:
 			// From WinGDI.h
 			// #define RGB(r,g,b)         ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
 			//#define GetRValue(rgb)      (LOBYTE(rgb))
