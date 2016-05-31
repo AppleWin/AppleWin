@@ -44,10 +44,16 @@ eCpuType GetActiveCpu(void)
 	return g_ActiveCPU;
 }
 
+bool g_bStopOnBRK = false;
+
 static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 {
 	iOpcode = *(mem+regs.pc);
 	regs.pc++;
+
+	if (iOpcode == 0x00 && g_bStopOnBRK)
+		return 0;
+
 	return 1;
 }
 
@@ -1097,11 +1103,162 @@ int GH292_test(void)
 
 //-------------------------------------
 
+const BYTE g_GH321_code[] =
+{
+// org $f156
+0xA9, 0x00,			//   lda #0
+0x8D, 0x7E, 0xF7,	//   sta $f77e
+0xA9, 0x7F,			//   lda #$7f
+0x85, 0x0B,			//   sta $0b
+
+// f15f:
+0xA9, 0x00,			//   lda #0
+0x85, 0x0C,			//   sta $0c
+0xA5, 0x0B,			//   lda $0b	; 0x7F
+0xCD, 0x19, 0xC0,	// l1: cmp $c019
+0x10, 0xFB,			//     bpl l1
+0xA5, 0x0B,			//   lda $0b
+0xCD, 0x19, 0xC0,	// l2: cmp $c019
+0x30, 0xFB,			//     bmi l2
+0xEE, 0x7E, 0xF7,	// l3: inc $f77e
+0xA2, 0x09,			//     ldx #9
+0xCA,				// l4:   dex
+0xD0, 0xFD,			//       bne l4
+0xA5, 0x0B,			//     lda $0b
+0xA5, 0x0B,			//     lda $0b
+0xCD, 0x19, 0xC0,	//     cmp $c019
+0x10, 0xEF,			//     bpl l3
+0xAD, 0x7E, 0xF7,	//   lda $f77e
+0xC9, 0x47,			//   cmp #$47	; 262-191 = 71 = 0x47
+0xB0, 0x07,			//   bcs l5
+0xA9, 0x01,			//     lda #1		; NTSC
+0x85, 0x0A,			//     sta $0a
+0x4C, 0x94, 0xF1,	//   jmp $f194
+0xA9, 0x00,			// l5: lda #0		; PAL
+0x85, 0x0A,			//     sta $0a
+
+// f194:
+0x00
+};
+
+DWORD g_dwCyclesThisFrame = 0;	// # cycles executed in frame before Cpu65C02() was called
+
+ULONG CpuGetCyclesThisVideoFrame(ULONG nExecutedCycles)
+{
+	return g_dwCyclesThisFrame + nExecutedCycles;
+}
+
+// video scanner constants
+int const kHBurstClock      =    53; // clock when Color Burst starts
+int const kHBurstClocks     =     4; // clocks per Color Burst duration
+int const kHClock0State     =  0x18; // H[543210] = 011000
+int const kHClocks          =    65; // clocks per horizontal scan (including HBL)
+int const kHPEClock         =    40; // clock when HPE (horizontal preset enable) goes low
+int const kHPresetClock     =    41; // clock when H state presets
+int const kHSyncClock       =    49; // clock when HSync starts
+int const kHSyncClocks      =     4; // clocks per HSync duration
+int const kNTSCScanLines    =   262; // total scan lines including VBL (NTSC)
+int const kNTSCVSyncLine    =   224; // line when VSync starts (NTSC)
+int const kPALScanLines     =   312; // total scan lines including VBL (PAL)
+int const kPALVSyncLine     =   264; // line when VSync starts (PAL)
+int const kVLine0State      = 0x100; // V[543210CBA] = 100000000
+int const kVPresetLine      =   256; // line when V state presets
+int const kVSyncLines       =     4; // lines per VSync duration
+
+bool bVideoScannerNTSC = true;
+
+// Derived from VideoGetScannerAddress()
+bool VideoGetVbl(const DWORD uExecutedCycles)
+{
+    // get video scanner position
+    //
+    int nCycles = CpuGetCyclesThisVideoFrame(uExecutedCycles);
+
+    // calculate video parameters according to display standard
+    //
+    int nScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+    int nScanCycles = nScanLines * kHClocks;
+    nCycles %= nScanCycles;
+
+    // calculate vertical scanning state
+    //
+    int nVLine  = nCycles / kHClocks; // which vertical scanning line
+    int nVState = kVLine0State + nVLine; // V state bits
+    if ((nVLine >= kVPresetLine)) // check for previous vertical state preset
+    {
+        nVState -= nScanLines; // compensate for preset
+    }
+    int v_3 = (nVState >> 6) & 1;
+    int v_4 = (nVState >> 7) & 1;
+
+    // update VBL' state
+    //
+	if (v_4 & v_3) // VBL?
+	{
+		return false; // Y: VBL' is false
+	}
+	else
+	{
+		return true; // N: VBL' is true
+	}
+}
+
+BYTE __stdcall fn_C010(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG uExecutedCycles)
+{
+	if (nAddr != 0xC019)
+		return 0;
+
+	if (nWriteFlag)
+		return 0;
+
+	return VideoGetVbl(uExecutedCycles) ? 0x80 : 0;
+}
+
+int GH321_test()
+{
+	const UINT org = 0xf156;
+	memcpy(mem+org, g_GH321_code, sizeof(g_GH321_code));
+	reset();
+
+	IORead[1] = fn_C010;
+	g_bStopOnBRK = true;
+
+	// 65C02 - CMP; CYC(4)         : Fails every 7th cycle, ie: 6, 13, 20, ...
+	// 65C02 - CYC(4); CMP         : Fails every 7th cycle, ie: 2,  9, 16, ...
+	// 65C02 - CYC(3); CMP; CYC(1) : Fails every 7th cycle, ie: 3, 10, 17, ...
+	BYTE res[kHClocks] = {0xFF};
+
+	UINT startCycle = 0;
+	for (; startCycle < kHClocks; startCycle++)
+	{
+		g_dwCyclesThisFrame = startCycle;
+
+		regs.pc = org;
+		ULONG uExecutedCycles = Cpu65C02(2 * kNTSCScanLines * kHClocks);
+
+		res[startCycle] = mem[0x000a];
+		//if (mem[0x000a] == 0)
+		//	break;
+	}
+
+	//
+
+	IORead[1] = NULL;
+	g_bStopOnBRK = false;
+
+	return mem[0x000a] == 0 ? 1 : 0;
+}
+
+//-------------------------------------
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	int res = 1;
 	init();
 	reset();
+
+//	res = GH321_test();
+//	if (res) return res;
 
 	res = GH264_test();
 	if (res) return res;
