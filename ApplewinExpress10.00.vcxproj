@@ -85,8 +85,8 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>source\cpu;source\emulator;source\debugger;zlib;zip_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>source\cpu;source\emulator;source\debugger;zlib;zip_lib;libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -352,6 +352,7 @@
     <ClCompile Include="source\MouseInterface.cpp" />
     <ClCompile Include="source\NoSlotClock.cpp" />
     <ClCompile Include="source\ParallelPrinter.cpp" />
+    <ClCompile Include="source\Pravets.cpp" />
     <ClCompile Include="source\Registry.cpp" />
     <ClCompile Include="source\Riff.cpp" />
     <ClCompile Include="source\SaveState.cpp" />
@@ -369,6 +370,7 @@
     <ClCompile Include="source\Harddisk.cpp" />
     <ClCompile Include="source\Frame.cpp" />
     <ClCompile Include="source\Video.cpp" />
+    <ClCompile Include="source\YamlHelper.cpp" />
     <ClCompile Include="source\Configuration\About.cpp" />
     <ClCompile Include="source\Configuration\PageAdvanced.cpp" />
     <ClCompile Include="source\Configuration\PageConfig.cpp" />
@@ -421,6 +423,7 @@
     <ClInclude Include="source\MouseInterface.h" />
     <ClInclude Include="source\NoSlotClock.h" />
     <ClInclude Include="source\ParallelPrinter.h" />
+    <ClInclude Include="source\Pravets.h" />
     <ClInclude Include="source\Registry.h" />
     <ClInclude Include="source\Riff.h" />
     <ClInclude Include="source\SaveState.h" />
@@ -445,6 +448,7 @@
     <ClInclude Include="source\Harddisk.h" />
     <ClInclude Include="source\Frame.h" />
     <ClInclude Include="source\Video.h" />
+    <ClInclude Include="source\YamlHelper.h" />
     <ClInclude Include="source\Configuration\About.h" />
     <ClInclude Include="source\Configuration\Config.h" />
     <ClInclude Include="source\Configuration\IPropertySheet.h" />
@@ -534,6 +538,12 @@
       <Project>{7935b998-c713-42ae-8f6d-9ff9080a1b1b}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="libyaml\win32\yaml2010.vcxproj">
+      <Project>{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="AppleWin\Release\Applewin.exe.intermediate.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
