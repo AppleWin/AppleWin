@@ -236,13 +236,13 @@
     <None Include="source\CPU\cpu_instructions.inl" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="zip_lib\zip_lib2013.vcxproj">
+    <ProjectReference Include="zip_lib\zip_lib2015.vcxproj">
       <Project>{509739e7-0af3-4c09-a1a9-f0b1bc31b39d}</Project>
     </ProjectReference>
-    <ProjectReference Include="zlib\zlib-Express2013.vcxproj">
+    <ProjectReference Include="zlib\zlib-Express2015.vcxproj">
       <Project>{9b32a6e7-1237-4f36-8903-a3fd51df9c4e}</Project>
     </ProjectReference>
-    <ProjectReference Include="libyaml\win32\yaml2013.vcxproj">
+    <ProjectReference Include="libyaml\win32\yaml2015.vcxproj">
       <Project>{0212e0df-06da-4080-bd1d-f3b01599f70f}</Project>
     </ProjectReference>
   </ItemGroup>
