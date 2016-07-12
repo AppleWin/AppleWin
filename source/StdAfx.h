@@ -4,6 +4,7 @@
 // . See: http://support.embarcadero.com/article/35754
 // . "GetOpenFileName() fails under Windows 95/98/NT/ME due to incorrect OPENFILENAME structure size"
 #define _WIN32_WINNT 0x0400
+#define WINVER 0x500
 
 // Mouse Wheel is not supported on Win95.
 // If we didn't care about supporting Win95 (compile/run-time errors)

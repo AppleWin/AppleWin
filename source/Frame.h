@@ -51,6 +51,17 @@
 	extern bool   g_bScrollLock_FullSpeed;
 	extern int    g_nCharsetType;
 
+
+#if 0 // enable non-integral full-screen scaling
+#define FULLSCREEN_SCALE_TYPE float
+#else
+#define FULLSCREEN_SCALE_TYPE int
+#endif
+extern FULLSCREEN_SCALE_TYPE	g_win_fullscreen_scale;
+extern int		g_win_fullscreen_offsetx;
+extern int		g_win_fullscreen_offsety;
+
+
 // Prototypes
 	void CtrlReset();
 

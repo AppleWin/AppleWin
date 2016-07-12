@@ -166,7 +166,6 @@ BOOL    VideoApparentlyDirty ();
 void    VideoBenchmark ();
 void    VideoChooseMonochromeColor (); // FIXME: Should be moved to PageConfig and call VideoSetMonochromeColor()
 void    VideoDestroy ();
-void    VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
 void    VideoDisplayLogo ();
 void    VideoInitialize ();
 void    VideoRealizePalette (HDC);
