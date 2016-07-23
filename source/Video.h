@@ -169,6 +169,7 @@ void    VideoDestroy ();
 void    VideoDisplayLogo ();
 void    VideoInitialize ();
 void    VideoRealizePalette (HDC);
+void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInvalidate = false);
 void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 void    VideoRedrawScreen (UINT uDelayRefresh = 0);
 void    VideoRefreshScreen (int bVideoFlags, UINT uDelayRefresh =0 );

@@ -31,6 +31,7 @@ extern TCHAR      g_sProgramDir[MAX_PATH];
 extern TCHAR      g_sCurrentDir[MAX_PATH];
 
 extern BOOL       restart;
+extern bool       g_bRestartFullScreen;
 
 extern DWORD      g_dwSpeed;
 extern double     g_fCurrentCLK6502;

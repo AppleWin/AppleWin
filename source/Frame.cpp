@@ -978,6 +978,8 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_CLOSE:
       LogFileOutput("WM_CLOSE\n");
+      if (g_bIsFullScreen && restart)
+		  g_bRestartFullScreen = true;
       if (g_bIsFullScreen)
         SetNormalMode();
       if (!IsIconic(window))
@@ -1224,10 +1226,9 @@ LRESULT CALLBACK FrameWndProc (
 			DrawStatusArea( (HDC)0, DRAW_TITLE );
 
 			VideoReinitialize();
-			if ((g_nAppMode != MODE_LOGO) || ((g_nAppMode == MODE_DEBUG) && (g_bDebuggerViewingAppleOutput)))
+			if (g_nAppMode != MODE_LOGO)
 			{
-				//VideoRedrawScreen();
-				VideoRefreshScreen( g_bDebuggerViewingAppleOutput );
+				VideoRefreshScreen( g_nAppMode == MODE_DEBUG ? g_bDebuggerViewingAppleOutput  : 0);
 			}
 
 			Config_Save_Video();

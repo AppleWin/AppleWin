@@ -79,6 +79,7 @@ TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
 BOOL      restart           = 0;
+bool      g_bRestartFullScreen = false;
 
 DWORD		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar
 double		g_fCurrentCLK6502 = CLK_6502;	// Affected by Config dialog's speed slider bar
@@ -215,7 +216,10 @@ void ContinueExecution(void)
 	else
 	{
 		if (bWasFullSpeed)
+		{
+			VideoRedrawScreenDuringFullSpeed(0, true);	// Invalidate the copies of video memory
 			VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
+		}
 
 		// Don't call Spkr_Demute()
 		MB_Demute();
@@ -246,6 +250,12 @@ void ContinueExecution(void)
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
+
+		if (g_bFullSpeed)
+		{
+			// For IBIZA.DSK
+			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
+		}
 
 		VideoRefreshScreen(0); // Just copy the output of our Apple framebuffer to the system Back Buffer
 		MB_EndOfVideoFrame();
@@ -1145,6 +1155,12 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: EnterMessageLoop()\n");
 		EnterMessageLoop();
 		LogFileOutput("Main: LeaveMessageLoop()\n");
+
+		if (restart)
+		{
+			bSetFullScreen = g_bRestartFullScreen;
+			g_bRestartFullScreen = false;
+		}
 
 		MB_Reset();
 		LogFileOutput("Main: MB_Reset()\n");

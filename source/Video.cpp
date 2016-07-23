@@ -1094,6 +1094,62 @@ void VideoDisplayLogo ()
 
 //===========================================================================
 
+// AZTEC.DSK: From boot to 'Press any key' (Release build)
+// . 66s always update every frame
+// . 15s only update if any video memory (main/aux, text/hgr, pages1&2) has changed
+// . 10s only update if HIRES changes (17s for Debug build)
+// . ~9s no update during full-speed (but IBIZA.DSK doesn't show anything!)
+
+void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInvalidate /*=false*/)
+{
+	static bool bValid = false;
+	static BYTE text_main[1024*2] = {0};	// page1 & 2
+	static BYTE text_aux[1024*2] = {0};		// page1 & 2
+	static BYTE hgr_main[8192*2] = {0};		// page1 & 2
+	static BYTE hgr_aux[8192*2] = {0};		// page1 & 2
+
+	if (bInvalidate)
+	{
+		bValid = false;
+		return;
+	}
+
+	bool bRedraw = true;	// Always redraw for bValid==false (ie. just entered full-speed mode)
+
+	if (bValid)
+	{
+		if ((g_uVideoMode&(VF_DHIRES|VF_HIRES|VF_TEXT|VF_MIXED)) == VF_HIRES)
+		{
+			// HIRES (not MIXED) - eg. AZTEC.DSK
+			if ((g_uVideoMode&VF_PAGE2) == 0)
+				bRedraw = memcmp(&hgr_main[0x0000],  MemGetMainPtr(0x2000), 8192) != 0;
+			else
+				bRedraw = memcmp(&hgr_main[0x2000],  MemGetMainPtr(0x4000), 8192) != 0;
+		}
+		else
+		{
+			bRedraw =
+				(memcmp(text_main, MemGetMainPtr(0x400),  sizeof(text_main)) != 0) ||
+				(memcmp(text_aux,  MemGetAuxPtr(0x400),   sizeof(text_aux))  != 0) ||
+				(memcmp(hgr_main,  MemGetMainPtr(0x2000), sizeof(hgr_main))  != 0) ||
+				(memcmp(hgr_aux,   MemGetAuxPtr(0x2000),  sizeof(hgr_aux))   != 0);
+		}
+	}
+
+	if (bRedraw)
+		VideoRedrawScreenAfterFullSpeed(dwCyclesThisFrame);
+
+	// Copy all video memory (+ screen holes)
+	memcpy(text_main, MemGetMainPtr(0x400),  sizeof(text_main));
+	memcpy(text_aux,  MemGetAuxPtr(0x400),   sizeof(text_aux));
+	memcpy(hgr_main,  MemGetMainPtr(0x2000), sizeof(hgr_main));
+	memcpy(hgr_aux,   MemGetAuxPtr(0x2000),  sizeof(hgr_aux));
+
+	bValid = true;
+}
+
+//===========================================================================
+
 void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
 	const int nScanLines = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
