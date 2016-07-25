@@ -68,7 +68,7 @@ static const int kDEFAULT_VIEWPORT_SCALE = 2;
        int g_nViewportCX = FRAMEBUFFER_BORDERLESS_W * kDEFAULT_VIEWPORT_SCALE;
        int g_nViewportCY = FRAMEBUFFER_BORDERLESS_H * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
-static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
+static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
 
 #define  BUTTONX     (g_nViewportCX + VIEWPORTX*2)
 #define  BUTTONY     0
@@ -2106,9 +2106,10 @@ void SetFullScreenMode ()
 
 	MONITORINFO monitor_info;
 	FULLSCREEN_SCALE_TYPE width, height, scalex, scaley;
-	int top, left, A2_WINDOW_WIDTH, A2_WINDOW_HEIGHT;
+	int top, left;
 
-	GetWidthHeight(A2_WINDOW_WIDTH, A2_WINDOW_HEIGHT);
+	const int A2_WINDOW_WIDTH  = FRAMEBUFFER_BORDERLESS_W;
+	const int A2_WINDOW_HEIGHT = FRAMEBUFFER_BORDERLESS_H;
 
 	buttonover = -1;
 #if 0
@@ -2141,7 +2142,7 @@ void SetFullScreenMode ()
 
 #if 1
 	// FS: desktop
-	SetViewportScale(g_win_fullscreen_scale);
+	SetViewportScale(g_win_fullscreen_scale, true);
 
 	buttonx    = g_win_fullscreen_offsetx + g_nViewportCX + VIEWPORTX*2;
 	buttony    = g_win_fullscreen_offsety;
@@ -2261,9 +2262,9 @@ int GetViewportScale(void)
 	return g_nViewportScale;
 }
 
-int SetViewportScale(int nNewScale)
+int SetViewportScale(int nNewScale, bool bForce /*=false*/)
 {
-	if (nNewScale > g_nMaxViewportScale)
+	if (!bForce && nNewScale > g_nMaxViewportScale)
 		nNewScale = g_nMaxViewportScale;
 
 	g_nViewportScale = nNewScale;

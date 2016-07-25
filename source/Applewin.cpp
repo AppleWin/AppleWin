@@ -253,7 +253,6 @@ void ContinueExecution(void)
 
 		if (g_bFullSpeed)
 		{
-			// For IBIZA.DSK
 			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		}
 

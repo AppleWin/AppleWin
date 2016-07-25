@@ -74,7 +74,7 @@ extern int		g_win_fullscreen_offsety;
 	void    FrameReleaseVideoDC ();
 	void	FrameSetCursorPosByMousePos();
 	int		GetViewportScale(void);
-	int     SetViewportScale(int nNewScale);
+	int     SetViewportScale(int nNewScale, bool bForce = false);
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);
 	bool	GetFullScreen32Bit(void);
 	void	SetFullScreen32Bit(bool b32Bit);

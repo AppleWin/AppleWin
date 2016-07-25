@@ -1103,16 +1103,19 @@ void VideoDisplayLogo ()
 void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInvalidate /*=false*/)
 {
 	static bool bValid = false;
-	static BYTE text_main[1024*2] = {0};	// page1 & 2
-	static BYTE text_aux[1024*2] = {0};		// page1 & 2
-	static BYTE hgr_main[8192*2] = {0};		// page1 & 2
-	static BYTE hgr_aux[8192*2] = {0};		// page1 & 2
 
 	if (bInvalidate)
 	{
 		bValid = false;
 		return;
 	}
+
+	//
+
+	static BYTE text_main[1024*2] = {0};	// page1 & 2
+	static BYTE text_aux[1024*2] = {0};		// page1 & 2
+	static BYTE hgr_main[8192*2] = {0};		// page1 & 2
+	static BYTE hgr_aux[8192*2] = {0};		// page1 & 2
 
 	bool bRedraw = true;	// Always redraw for bValid==false (ie. just entered full-speed mode)
 
