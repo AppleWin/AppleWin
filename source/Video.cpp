@@ -994,8 +994,8 @@ void VideoDisplayLogo ()
 				nLogoX = 0;
 				nLogoY = 0;
 #else
-				nLogoX += g_win_fullscreen_offsetx;
-				nLogoY += g_win_fullscreen_offsety;
+				nLogoX += GetFullScreenOffsetX();
+				nLogoY += GetFullScreenOffsetY();
 #endif
 			}
 			VideoDrawLogoBitmap( hFrameDC, nLogoX, nLogoY, bm.bmWidth, bm.bmHeight, scale );
@@ -1014,7 +1014,7 @@ void VideoDisplayLogo ()
 
 	char szVersion[ 64 ] = "";
 	sprintf( szVersion, "Version %s", VERSIONSTRING );
-	int xoff = g_win_fullscreen_offsetx, yoff = g_win_fullscreen_offsety;
+	int xoff = GetFullScreenOffsetX(), yoff = GetFullScreenOffsetY();
 
 #define  DRAWVERSION(x,y,c)                 \
 	SetTextColor(hFrameDC,c);               \
@@ -1068,15 +1068,15 @@ void VideoDisplayLogo ()
 //	sprintf( szVersion, "NTSC Alpha v17 BMP Palette" );
 	sprintf( szVersion, "NTSC Alpha v18" );
 
-	xoff = -g_nViewportCX + g_nViewportCX/6 + g_win_fullscreen_offsetx;
-	yoff = -g_nViewportCY/16 + g_win_fullscreen_offsety;
+	xoff = -g_nViewportCX + g_nViewportCX/6 + GetFullScreenOffsetX();
+	yoff = -g_nViewportCY/16 + GetFullScreenOffsetY();
 	DRAWVERSION( 0, 0,RGB(0x00,0x00,0x00));
 	DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
 	DRAWVERSION( 2, 2,RGB(0xFF,0x00,0xFF));
 
  	sprintf( szVersion, "Blurry 80-col Text" );
-	xoff = -g_nViewportCX + g_nViewportCX/6 + g_win_fullscreen_offsetx;
-	yoff = +g_nViewportCY/16 + g_win_fullscreen_offsety;
+	xoff = -g_nViewportCX + g_nViewportCX/6 + GetFullScreenOffsetX();
+	yoff = +g_nViewportCY/16 + GetFullScreenOffsetY();
 	DRAWVERSION( 0, 0,RGB(0x00,0x00,0x00));
 	DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
 	DRAWVERSION( 2, 2,RGB(0xFF,0x00,0xFF));
@@ -1266,16 +1266,16 @@ void VideoRefreshScreen ( int bVideoModeFlags, UINT uDelayRefresh /* =0 */ )
 				ySrc -= 1;
 			}
 
-			FULLSCREEN_SCALE_TYPE xdest = g_win_fullscreen_offsetx;
-			FULLSCREEN_SCALE_TYPE ydest = g_win_fullscreen_offsety;
-			FULLSCREEN_SCALE_TYPE wdest = g_nViewportCX /** g_win_fullscreen_scale*/;
-			FULLSCREEN_SCALE_TYPE hdest = g_nViewportCY /** g_win_fullscreen_scale*/;
+			int xdest = GetFullScreenOffsetX();
+			int ydest = GetFullScreenOffsetY();
+			int wdest = g_nViewportCX;
+			int hdest = g_nViewportCY;
 
 			SetStretchBltMode(hFrameDC, COLORONCOLOR);
 			StretchBlt(
 				hFrameDC, 
-				(int)xdest, (int)ydest,
-				(int)wdest, (int)hdest,
+				xdest, ydest,
+				wdest, hdest,
 				g_hDeviceDC,
 				xSrc, ySrc,
 				FRAMEBUFFER_BORDERLESS_W, FRAMEBUFFER_BORDERLESS_H,

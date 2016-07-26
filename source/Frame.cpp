@@ -170,6 +170,19 @@ bool	g_bScrollLock_FullSpeed = false;
 bool	g_bFreshReset = false;
 static bool g_bFullScreen32Bit = true;
 
+#if 0 // enable non-integral full-screen scaling
+#define FULLSCREEN_SCALE_TYPE float
+#else
+#define FULLSCREEN_SCALE_TYPE int
+#endif
+
+static RECT						g_main_window_saved_rect;
+static int						g_main_window_saved_style;
+static int						g_main_window_saved_exstyle;
+static FULLSCREEN_SCALE_TYPE	g_win_fullscreen_scale = 1;
+static int						g_win_fullscreen_offsetx = 0;
+static int						g_win_fullscreen_offsety = 0;
+
 // __ Prototypes __________________________________________________________________________________
 	static void DrawCrosshairs (int x, int y);
 	static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen);
@@ -478,10 +491,10 @@ static void DrawCrosshairs (int x, int y) {
       while (loop--) {
         RECT rect = {0,0,5,5};
         switch (loop) {
-          case 0: OffsetRect(&rect, g_win_fullscreen_offsetx+lastx-2,                 g_win_fullscreen_offsety+viewporty-5);             break;
-          case 1: OffsetRect(&rect, g_win_fullscreen_offsetx+lastx-2,                 g_win_fullscreen_offsety+viewporty+g_nViewportCY); break;
-          case 2: OffsetRect(&rect, g_win_fullscreen_offsetx+viewportx-5,             g_win_fullscreen_offsety+lasty-2);                 break;
-          case 3: OffsetRect(&rect, g_win_fullscreen_offsetx+viewportx+g_nViewportCX, g_win_fullscreen_offsety+lasty-2);                 break;
+          case 0: OffsetRect(&rect, GetFullScreenOffsetX()+lastx-2,                 GetFullScreenOffsetY()+viewporty-5);             break;
+          case 1: OffsetRect(&rect, GetFullScreenOffsetX()+lastx-2,                 GetFullScreenOffsetY()+viewporty+g_nViewportCY); break;
+          case 2: OffsetRect(&rect, GetFullScreenOffsetX()+viewportx-5,             GetFullScreenOffsetY()+lasty-2);                 break;
+          case 3: OffsetRect(&rect, GetFullScreenOffsetX()+viewportx+g_nViewportCX, GetFullScreenOffsetY()+lasty-2);                 break;
         }
         FillRect(dc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
       }
@@ -521,14 +534,14 @@ static void DrawCrosshairs (int x, int y) {
 			SelectObject(dc,GetStockObject(WHITE_PEN));
 		  else
 			SelectObject(dc,GetStockObject(BLACK_PEN));
-		  LINE(g_win_fullscreen_offsetx+x+loop-2,                  g_win_fullscreen_offsety+viewporty-5,
-			   g_win_fullscreen_offsetx+x+loop-2,                  g_win_fullscreen_offsety+viewporty);
-		  LINE(g_win_fullscreen_offsetx+x+loop-2,                  g_win_fullscreen_offsety+viewporty+g_nViewportCY+4,
-			   g_win_fullscreen_offsetx+x+loop-2,                  g_win_fullscreen_offsety+viewporty+g_nViewportCY-1);
-		  LINE(g_win_fullscreen_offsetx+viewportx-5,               g_win_fullscreen_offsety+y+loop-2,
-			   g_win_fullscreen_offsetx+viewportx,                 g_win_fullscreen_offsety+y+loop-2);
-		  LINE(g_win_fullscreen_offsetx+viewportx+g_nViewportCX+4, g_win_fullscreen_offsety+y+loop-2,
-			   g_win_fullscreen_offsetx+viewportx+g_nViewportCX-1, g_win_fullscreen_offsety+y+loop-2);
+		  LINE(GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty-5,
+			   GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty);
+		  LINE(GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty+g_nViewportCY+4,
+			   GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty+g_nViewportCY-1);
+		  LINE(GetFullScreenOffsetX()+viewportx-5,               GetFullScreenOffsetY()+y+loop-2,
+			   GetFullScreenOffsetX()+viewportx,                 GetFullScreenOffsetY()+y+loop-2);
+		  LINE(GetFullScreenOffsetX()+viewportx+g_nViewportCX+4, GetFullScreenOffsetY()+y+loop-2,
+			   GetFullScreenOffsetX()+viewportx+g_nViewportCX-1, GetFullScreenOffsetY()+y+loop-2);
 		}
 	}
 	else
@@ -2088,13 +2101,15 @@ void SetFullScreen32Bit(bool b32Bit)
 	g_bFullScreen32Bit = b32Bit;
 }
 
-// TODO: Put this stuff in a header / somewhere sensible
-RECT	g_main_window_saved_rect;
-int		g_main_window_saved_style;
-int		g_main_window_saved_exstyle;
-FULLSCREEN_SCALE_TYPE	g_win_fullscreen_scale = 1;
-int		g_win_fullscreen_offsetx = 0;
-int		g_win_fullscreen_offsety = 0;
+int GetFullScreenOffsetX(void)
+{
+	return g_win_fullscreen_offsetx;
+}
+
+int GetFullScreenOffsetY(void)
+{
+	return g_win_fullscreen_offsety;
+}
 
 void SetFullScreenMode ()
 {
@@ -2144,8 +2159,8 @@ void SetFullScreenMode ()
 	// FS: desktop
 	SetViewportScale(g_win_fullscreen_scale, true);
 
-	buttonx    = g_win_fullscreen_offsetx + g_nViewportCX + VIEWPORTX*2;
-	buttony    = g_win_fullscreen_offsety;
+	buttonx    = GetFullScreenOffsetX() + g_nViewportCX + VIEWPORTX*2;
+	buttony    = GetFullScreenOffsetY();
 	viewportx  = VIEWPORTX;
 	viewporty  = VIEWPORTY;
 #endif
