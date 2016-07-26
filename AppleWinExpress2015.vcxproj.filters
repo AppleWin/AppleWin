@@ -181,6 +181,9 @@
     <ClCompile Include="source\YamlHelper.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\NTSC_CharSet.cpp">
+      <Filter>Source Files\Video</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -443,6 +446,9 @@
     </ClInclude>
     <ClInclude Include="source\SaveState_Structs_v1.h">
       <Filter>Source Files\_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\NTSC_CharSet.h">
+      <Filter>Source Files\Video</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

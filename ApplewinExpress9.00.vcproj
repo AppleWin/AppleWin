@@ -879,6 +879,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\NTSC_CharSet.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\source\NTSC_CharSet.h"
 					>
 				</File>

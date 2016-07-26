@@ -2,7 +2,7 @@
 AppleWin : An Apple //e emulator for Windows
 
 Copyright (C) 2010-2011, William S Simms
-Copyright (C) 2014-2015 Michael Pohoreski
+Copyright (C) 2014-2016, Michael Pohoreski, Tom Charlesworth
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "Video.h"  // g_pFramebufferbits
 
 	#include "NTSC.h"
-	#include "NTSC_CharSet.cpp"
+	#include "NTSC_CharSet.h"
 
 #define NTSC_REMOVE_WHITE_RINGING  1 // 0 = theoritical dimmed white has chroma, 1 = pure white without chroma tinting
 #define NTSC_REMOVE_BLACK_GHOSTING 1 // 1 = remove black smear/smudges carrying over
