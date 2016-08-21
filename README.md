@@ -13,3 +13,6 @@ Building
 To compile from source see:
 
    docs/compiling.txt
+
+Tom Ewers messing around
+========================
