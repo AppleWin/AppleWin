@@ -178,14 +178,15 @@ char* DiskGetCurrentState(void)
 
 void Disk_LoadLastDiskImage(const int iDrive)
 {
-	_ASSERT(iDrive == DRIVE_1 || iDrive == DRIVE_2);
+	_ASSERT(iDrive == DRIVE_1 || iDrive == DRIVE_2 || iDrive == DRIVE_3 || iDrive == DRIVE_4);
 
 	char sFilePath[ MAX_PATH + 1];
 	sFilePath[0] = 0;
 
-	char *pRegKey = (iDrive == DRIVE_1)
-		? REGVALUE_PREF_LAST_DISK_1
-		: REGVALUE_PREF_LAST_DISK_2;
+	char *pRegKey = (iDrive == DRIVE_1) ? REGVALUE_PREF_LAST_DISK_1 :
+					(iDrive == DRIVE_2) ? REGVALUE_PREF_LAST_DISK_2 :
+					(iDrive == DRIVE_3) ? REGVALUE_PREF_LAST_DISK_3 :
+					                      REGVALUE_PREF_LAST_DISK_4;
 
 	if (RegLoadString(TEXT(REG_PREFS), pRegKey, 1, sFilePath, MAX_PATH))
 	{
@@ -202,7 +203,7 @@ void Disk_LoadLastDiskImage(const int iDrive)
 
 void Disk_SaveLastDiskImage(const int iDrive)
 {
-	_ASSERT(iDrive == DRIVE_1 || iDrive == DRIVE_2);
+	_ASSERT(iDrive == DRIVE_1 || iDrive == DRIVE_2 || iDrive == DRIVE_3 || iDrive == DRIVE_4);
 
 	if (!g_bSaveDiskImage)
 		return;
@@ -211,8 +212,12 @@ void Disk_SaveLastDiskImage(const int iDrive)
 
 	if (iDrive == DRIVE_1)
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_1, TRUE, pFileName);
-	else
+	else if (iDrive == DRIVE_2)
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_2, TRUE, pFileName);
+	else if (iDrive == DRIVE_3)
+		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_3, TRUE, pFileName);
+	else if (iDrive == DRIVE_4)
+		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_4, TRUE, pFileName);
 
 	//
 
@@ -478,6 +483,12 @@ void DiskDestroy(void)
 	g_bSaveDiskImage = false;
 	RemoveDisk(DRIVE_2);
 
+	g_bSaveDiskImage = false;
+	RemoveDisk(DRIVE_3);
+
+	g_bSaveDiskImage = false;
+	RemoveDisk(DRIVE_4);
+
 	g_bSaveDiskImage = true;
 }
 
@@ -485,9 +496,26 @@ void DiskDestroy(void)
 
 static void __stdcall DiskEnable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
-	currdrive = address & 1;
-	g_aFloppyDisk[!currdrive].spinning   = 0;
-	g_aFloppyDisk[!currdrive].writelight = 0;
+	LOG_DISK("floppymotoron=%02d, currdrive=%02d, address=$C0%2X, new currdrive=%02d\r",
+		     floppymotoron, currdrive, address, 2 * ((address >> 4) & 1) + (address & 1));
+
+	currdrive = 2 * ((address >> 4) & 1) + (address & 1);	
+		// Works for slot 6 drive 1 & 2 and slot 5 drive 3 & 4.
+		// Broken for other slots trying to "enable".
+		// Something like (6-(address>>4)&7)<<1 might work. Provided slot 4 is 5 & 6.
+
+	int loop = NUM_DRIVES;
+	while (loop--)
+	{
+		if (loop != currdrive)
+		{
+			// Stop other disks
+			LOG_DISK("drive=%02d, spinning=%08d\r",
+					 loop, address, g_aFloppyDisk[loop].spinning);
+			g_aFloppyDisk[loop].spinning = 0;
+			g_aFloppyDisk[loop].writelight = 0;
+		}
+	}
 	CheckSpinning();
 }
 
@@ -533,13 +561,20 @@ LPCTSTR DiskGetBaseName(const int iDrive)
 }
 //===========================================================================
 
-void DiskGetLightStatus(Disk_Status_e *pDisk1Status_, Disk_Status_e *pDisk2Status_)
+void DiskGetLightStatus(Disk_Status_e *pDisk1Status_, Disk_Status_e *pDisk2Status_,
+						Disk_Status_e *pDisk3Status_, Disk_Status_e *pDisk4Status_)
 {
 	if (pDisk1Status_)
 		*pDisk1Status_ = GetDriveLightStatus( 0 );
 
 	if (pDisk2Status_)
 		*pDisk2Status_ = GetDriveLightStatus( 1 );
+
+	if (pDisk3Status_)
+		*pDisk3Status_ = GetDriveLightStatus( 2 );
+	
+	if (pDisk4Status_)
+		*pDisk4Status_ = GetDriveLightStatus( 3 );
 }
 
 //===========================================================================
@@ -578,19 +613,25 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 	else
 		fptr->bWriteProtected = bForceWriteProtected ? true : (dwAttributes & FILE_ATTRIBUTE_READONLY);
 
-	// Check if image is being used by the other drive, and if so remove it in order so it can be swapped
+	// Check if image is being used by one of the other three drives, and if so remove it in order so it can be swapped
 	{
-		const char* pszOtherPathname = DiskGetFullPathName(!iDrive);
+		for (int iDriveX = DRIVE_1; iDriveX <= DRIVE_4; iDriveX++) {
+			if (iDriveX != iDrive)
+			{
+				const char* pszOtherPathname = DiskGetFullPathName( iDriveX);
 
-		char szCurrentPathname[MAX_PATH]; 
-		DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, szCurrentPathname, NULL);
-		if (uNameLen == 0 || uNameLen >= MAX_PATH)
-			strcpy_s(szCurrentPathname, MAX_PATH, pszImageFilename);
+				char szCurrentPathname[MAX_PATH]; 
+				DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, szCurrentPathname, NULL);
+				if (uNameLen == 0 || uNameLen >= MAX_PATH)
+					strcpy_s(szCurrentPathname, MAX_PATH, pszImageFilename);
 
- 		if (!strcmp(pszOtherPathname, szCurrentPathname))
-		{
-			DiskEject(!iDrive);
-			FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+				if (!strcmp(pszOtherPathname, szCurrentPathname))
+				{
+					DiskEject( iDriveX);
+					FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+					// break; // Should never be in more than one other
+				}
+			}
 		}
 	}
 
@@ -802,8 +843,11 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		fptr->trackimagedirty = 1;
 	}
 
-	if (++fptr->byte >= fptr->nibbles)
-		fptr->byte = 0;
+	if (floppymotoron || fptr->spinning)
+		// If the drive is not spinning, don't increment fptr!
+
+		if (++fptr->byte >= fptr->nibbles)
+			fptr->byte = 0;
 
 	// Feature Request #201 Show track status
 	// https://github.com/AppleWin/AppleWin/issues/201
@@ -832,7 +876,11 @@ static bool DiskSelectImage(const int iDrive, LPCSTR pszFilename)
 
 	RegLoadString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1, directory, MAX_PATH);
 	_tcscpy(title, TEXT("Select Disk Image For Drive "));
-	_tcscat(title, iDrive ? TEXT("2") : TEXT("1"));
+	_tcscat(title, iDrive == DRIVE_1 ? TEXT("1") : 
+		           iDrive == DRIVE_2 ? TEXT("2") :
+	               iDrive == DRIVE_3 ? TEXT("3") :
+		           iDrive == DRIVE_4 ? TEXT("4") :
+	                                   TEXT("?"));
 
 	_ASSERT(sizeof(OPENFILENAME) == sizeof(OPENFILENAME_NT4));	// Required for Win98/ME support (selected by _WIN32_WINNT=0x0400 in stdafx.h)
 
@@ -1096,7 +1144,7 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 	floppymotoron	= pSS->floppymotoron;
 	floppywritemode	= pSS->floppywritemode;
 
-	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
+	// Eject all disks first in case Drive-2 (or 3 or 4) contains disk to be inserted into Drive-1
 	for(UINT i=0; i<NUM_DRIVES; i++)
 	{
 		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
@@ -1235,12 +1283,17 @@ void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_1);
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_2);
+
+	// Changes needed for "4 disks"
+	// DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_3);
+	// DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_4);
 }
 
 static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 {
-	std::string disk2UnitName = std::string(SS_YAML_KEY_DISK2UNIT) + (unit == DRIVE_1 ? std::string("0") : std::string("1"));
-	if (!yamlLoadHelper.GetSubMap(disk2UnitName))
+	// Changes needed for "4 disks"
+
+	std::string disk2UnitName = std::string(SS_YAML_KEY_DISK2UNIT) + (unit == DRIVE_1 ? std::string("0") : std::string("1"));	if (!yamlLoadHelper.GetSubMap(disk2UnitName))
 		throw std::string("Card: Expected key: ") + disk2UnitName;
 
 	bool bImageError = false;
@@ -1317,6 +1370,8 @@ static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 
 bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
+	// Changes needed for "4 disk"
+
 	if (slot != 6)	// fixme
 		throw std::string("Card: wrong slot");
 
@@ -1331,7 +1386,7 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 	floppymotoron	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_MOTOR_ON);
 	floppywritemode	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_WRITE_MODE);
 
-	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
+	// Eject all disks first in case Drive-2 (or 3 or 4) contains disk to be inserted into Drive-1
 	for(UINT i=0; i<NUM_DRIVES; i++)
 	{
 		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
@@ -1340,6 +1395,8 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 
 	DiskLoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_1);
 	DiskLoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_2);
+	// DiskLoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_3);
+	// DiskLoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_4);
 
 	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 

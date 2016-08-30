@@ -536,7 +536,7 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
 		g_Slot4 = (SS_CARDTYPE) dwTmp;
 	if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
-		g_Slot5 = (SS_CARDTYPE) dwTmp;
+		g_Slot5 = (SS_CARDTYPE) dwTmp; // change for "4 disk" needed (?)
 
 	//
 
@@ -560,6 +560,8 @@ void LoadConfiguration(void)
 
 	Disk_LoadLastDiskImage(DRIVE_1);
 	Disk_LoadLastDiskImage(DRIVE_2);
+	Disk_LoadLastDiskImage(DRIVE_3);
+	Disk_LoadLastDiskImage(DRIVE_4);
 
 	//
 
@@ -784,6 +786,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bBoot = false;
 	LPSTR szImageName_drive1 = NULL;
 	LPSTR szImageName_drive2 = NULL;
+	LPSTR szImageName_drive3 = NULL;
+	LPSTR szImageName_drive4 = NULL;
 	LPSTR szSnapshotName = NULL;
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
 
@@ -815,6 +819,18 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			szImageName_drive2 = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-d3") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			szImageName_drive3 = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-d4") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			szImageName_drive4 = lpCmdLine;
 		}
 		else if (strcmp(lpCmdLine, "-load-state") == 0)
 		{
@@ -1018,6 +1034,16 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	{
 		nError |= DoDiskInsert(DRIVE_2, szImageName_drive2);
 		LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", nError);
+	}
+	if (szImageName_drive3)
+	{
+		nError |= DoDiskInsert(DRIVE_3, szImageName_drive3);
+		LogFileOutput("Init: DoDiskInsert(D3), res=%d\n", nError);
+	}
+	if (szImageName_drive4)
+	{
+		nError |= DoDiskInsert(DRIVE_4, szImageName_drive4);
+		LogFileOutput("Init: DoDiskInsert(D4), res=%d\n", nError);
 	}
 
 	//

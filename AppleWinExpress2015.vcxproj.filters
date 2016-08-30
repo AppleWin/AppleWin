@@ -542,6 +542,11 @@
     <Image Include="resource\SETUP.BMP">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="resource\Copy of DRIVE1.BMP" />
+    <Image Include="resource\Copy of DRIVE2.BMP" />
+    <Image Include="resource\DRIVE3.BMP" />
+    <Image Include="resource\DRIVE4.BMP" />
+    <Image Include="resource\Copy of DISKPROT.BMP" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\Apple2.rom">

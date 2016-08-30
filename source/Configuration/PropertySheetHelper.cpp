@@ -373,7 +373,7 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		SetSlot4(ConfigNew.m_Slot[4]);
 
 	if (CONFIG_CHANGED_LOCAL(m_Slot[5]))
-		SetSlot5(ConfigNew.m_Slot[5]);
+		SetSlot5(ConfigNew.m_Slot[5]); // Change needed for "4 disk" (?)
 
 	if (CONFIG_CHANGED_LOCAL(m_bEnhanceDisk))
 		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), ConfigNew.m_bEnhanceDisk);
@@ -400,7 +400,7 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	m_ConfigOld.m_Apple2Type = GetApple2Type();
 	m_ConfigOld.m_CpuType = GetMainCpu();
 	m_ConfigOld.m_Slot[4] = g_Slot4;
-	m_ConfigOld.m_Slot[5] = g_Slot5;
+	m_ConfigOld.m_Slot[5] = g_Slot5; // Changes needed for "4 disk" (?)
 	m_ConfigOld.m_bEnhanceDisk = enhancedisk;
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = sg_PropertySheet.GetTheFreezesF8Rom();
@@ -419,7 +419,7 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	SetApple2Type(m_ConfigOld.m_Apple2Type);
 	SetMainCpu(m_ConfigOld.m_CpuType);
 	g_Slot4 = m_ConfigOld.m_Slot[4];
-	g_Slot5 = m_ConfigOld.m_Slot[5];
+	g_Slot5 = m_ConfigOld.m_Slot[5]; // Change needed for "4 disk" (?)
 	enhancedisk = m_ConfigOld.m_bEnhanceDisk;
 	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
 	sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);

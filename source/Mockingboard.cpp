@@ -1596,6 +1596,7 @@ void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 	else	// Phasor
 		RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
 
+	// More code needed (4 disks)
 	if (g_Slot5 == CT_MockingboardC)
 		RegisterIoHandler(uSlot5, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
 

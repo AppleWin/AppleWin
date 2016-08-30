@@ -45,7 +45,7 @@ extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't i
 extern int        g_nMemoryClearType;					// Cmd line switch: use specific MIP (Memory Initialization Pattern)
 
 extern SS_CARDTYPE g_Slot4;	// Mockingboard, Z80, Mouse in slot4
-extern SS_CARDTYPE g_Slot5;	// Mockingboard, Z80,       in slot5
+extern SS_CARDTYPE g_Slot5;	// Mockingboard, Z80,       in slot5  // change for "4 disk" needed(?)
 
 extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom
 

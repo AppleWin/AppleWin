@@ -77,7 +77,7 @@ static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
 #define  FSVIEWPORTY ((480-g_nViewportCY)/2)
 #define  FSBUTTONX   (640-BUTTONCX)
 #define  FSBUTTONY   (((480-g_nViewportCY)/2)-1)
-#define  BUTTONS     8
+#define  BUTTONS     10
 
 	static HBITMAP g_hCapsLockBitmap[2];
 	static HBITMAP g_hHardDiskBitmap[2];
@@ -100,6 +100,8 @@ static TCHAR  g_sSectorDrive1[8] = TEXT("??");
 static TCHAR  g_sSectorDrive2[8] = TEXT("??");
 Disk_Status_e g_eStatusDrive1 = DISK_STATUS_OFF;
 Disk_Status_e g_eStatusDrive2 = DISK_STATUS_OFF;
+Disk_Status_e g_eStatusDrive3 = DISK_STATUS_OFF;
+Disk_Status_e g_eStatusDrive4 = DISK_STATUS_OFF;
 
 // Must keep in sync with Disk_Status_e g_aDiskFullScreenColors
 static DWORD g_aDiskFullScreenColorsLED[ NUM_DISK_STATUS ] =
@@ -300,6 +302,8 @@ static void CreateGdiObjects(void)
 
 	buttonbitmap[BTN_DRIVE1   ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVE1_BUTTON"));
 	buttonbitmap[BTN_DRIVE2   ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVE2_BUTTON"));
+	buttonbitmap[BTN_DRIVE3   ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVE3_BUTTON"));
+	buttonbitmap[BTN_DRIVE4   ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVE4_BUTTON"));
 	buttonbitmap[BTN_DRIVESWAP] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVESWAP_BUTTON"));
 	buttonbitmap[BTN_FULLSCR  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("FULLSCR_BUTTON"));
 	buttonbitmap[BTN_DEBUG    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DEBUG_BUTTON"));
@@ -405,37 +409,65 @@ static void DrawButton (HDC passdc, int number) {
   HDC dc = (passdc ? passdc : GetDC(g_hFrameWindow));
   int x  = buttonx;
   int y  = buttony+number*BUTTONCY;
+  int x2 = x + BUTTONCX;
+  int y2 = y + BUTTONCY;
+
+  if (number < 2) {
+  }
+  else if (number < 6) {
+	  y = buttony + 2 * BUTTONCY + ((number - 2)*(BUTTONCY / 2)) + ((number - 1) / 2);
+	  y2 = y + BUTTONCY / 2 + ((number - 1) % 2);
+  }
+  else if (number < 10) {
+	  y = buttony + (number - 2)*BUTTONCY;
+	  y2 = y + BUTTONCY;
+  }
+
   if (number == buttondown) {
-    int loop = 0;
-    while (loop++ < 3)
-      Draw3dRect(dc,x+loop,y+loop,x+BUTTONCX,y+BUTTONCY,0);
-    RECT rect = {0,0,39,39};
-    DrawBitmapRect(dc,x+4,y+4,&rect,buttonbitmap[number]);
+	  int loop = 0;
+	  while (loop++ < 3)
+		  Draw3dRect(dc, x + loop, y + loop, x2, y2, 0);
+
+	  if ((number < 2) || (number > 5)) {
+		  RECT rect = { 0,0,39,39 };
+		  DrawBitmapRect(dc, x + 4, y + 4, &rect, buttonbitmap[number]);
+	  }
+	  else {
+		  RECT rect = { 0,0,39,17 + (number + 1) % 2 };
+		  DrawBitmapRect(dc, x + 4, y + 4, &rect, buttonbitmap[number]);
+	  }
   }
   else {
-    Draw3dRect(dc,x+1,y+1,x+BUTTONCX,y+BUTTONCY,1);
-    Draw3dRect(dc,x+2,y+2,x+BUTTONCX-1,y+BUTTONCY-1,1);
-    RECT rect = {1,1,40,40};
-    DrawBitmapRect(dc,x+3,y+3,&rect,buttonbitmap[number]);
+	  Draw3dRect(dc, x + 1, y + 1, x2, y2, 1);
+	  Draw3dRect(dc, x + 2, y + 2, x2 - 1, y2 - 1, 1);
+	  if ((number < 2) || (number > 5)) {
+		  RECT rect = { 1,1,40,40 };
+		  DrawBitmapRect(dc, x + 3, y + 3, &rect, buttonbitmap[number]);
+	  }
+	  else {
+		  RECT rect = { 1,1,40,17 + (number + 1) % 2 };
+		  DrawBitmapRect(dc, x + 3, y + 3, &rect, buttonbitmap[number]);
+	  }
   }
-  if ((number == BTN_DRIVE1) || (number == BTN_DRIVE2)) {
-    int  offset = (number == buttondown) << 1;
-    RECT rect = {x+offset+3,
-                 y+offset+31,
-                 x+offset+42,
-                 y+offset+42};
-    SelectObject(dc,smallfont);
-    SetTextColor(dc,RGB(0,0,0));
-    SetTextAlign(dc,TA_CENTER | TA_TOP);
-    SetBkMode(dc,TRANSPARENT);
-	LPCTSTR pszBaseName = DiskGetBaseName(number-BTN_DRIVE1);
-    ExtTextOut(dc,x+offset+22,rect.top,ETO_CLIPPED,&rect,
-               pszBaseName,
-               MIN(8,_tcslen(pszBaseName)),
-               NULL);
+  if ((number == BTN_DRIVE1) || (number == BTN_DRIVE2) ||
+	  (number == BTN_DRIVE3) || (number == BTN_DRIVE4)) {
+	  int  offset = (number == buttondown) << 1;
+	  RECT rect = {x+offset+1,
+		  y+offset+11,
+		  x+offset+42,
+		  y+offset+22};
+	  SelectObject(dc,smallfont);
+	  SetTextColor(dc,RGB(0,0,0));
+	  SetTextAlign(dc, TA_LEFT | TA_TOP);
+	  SetBkMode(dc,TRANSPARENT);
+	  LPCTSTR pszBaseName = DiskGetBaseName(number-BTN_DRIVE1);
+	  ExtTextOut(dc,x+offset+2,rect.top,ETO_CLIPPED,&rect,
+		  pszBaseName,
+		  MIN(8,_tcslen(pszBaseName)),
+		  NULL);
   }
   if (!passdc)
-    ReleaseDC(g_hFrameWindow,dc);
+	  ReleaseDC(g_hFrameWindow,dc);
 }
 
 //===========================================================================
@@ -548,8 +580,8 @@ static void DrawFrameWindow ()
 		if (g_nViewportScale == 2)
 		{
 			int x  = buttonx + 1;
-			int y  = buttony + BUTTONS*BUTTONCY + 36;	// 36 = height of StatusArea
-			RECT rect = {x, y, x+45, y+BUTTONS*BUTTONCY+22};
+			int y  = buttony + (BUTTONS-2)*BUTTONCY + 36;	// 36 = height of StatusArea
+			RECT rect = {x, y, x+45, y+(BUTTONS-2)*BUTTONCY+22};
 			HBRUSH hbr = (HBRUSH) GetStockObject(WHITE_BRUSH);
 			int res = FillRect(dc, &rect, hbr);
 		}
@@ -581,17 +613,24 @@ void FrameDrawDiskLEDS( HDC passdc )
 {
 	static Disk_Status_e eDrive1Status = DISK_STATUS_OFF;
 	static Disk_Status_e eDrive2Status = DISK_STATUS_OFF;
-	DiskGetLightStatus(&eDrive1Status, &eDrive2Status);
+	static Disk_Status_e eDrive3Status = DISK_STATUS_OFF;
+	static Disk_Status_e eDrive4Status = DISK_STATUS_OFF;
+	DiskGetLightStatus(&eDrive1Status, &eDrive2Status, &eDrive3Status, &eDrive4Status);
 
 	g_eStatusDrive1 = eDrive1Status;
 	g_eStatusDrive2 = eDrive2Status;
+	g_eStatusDrive3 = eDrive3Status;
+	g_eStatusDrive4 = eDrive4Status;
 
 	// Draw Track/Sector
+
+	// Future enhancement:  T/S for Slot 5, Drive 3 and 4
+
 	FrameReleaseDC();
 	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
 
 	int  x      = buttonx;
-	int  y      = buttony+BUTTONS*BUTTONCY+1;
+	int  y      = buttony+(BUTTONS-2)*BUTTONCY+1;
 
 	if (g_bIsFullScreen)
 	{
@@ -611,6 +650,11 @@ void FrameDrawDiskLEDS( HDC passdc )
 		RECT rDiskLed = {0,0,8,8};
 		DrawBitmapRect(dc,x+12,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive1Status]);
 		DrawBitmapRect(dc,x+31,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive2Status]);
+
+		DrawBitmapRect(dc, x + 36, 2 * BUTTONCY + 12, &rDiskLed, g_hDiskWindowedLED[eDrive1Status]);
+		DrawBitmapRect(dc, x + 36, 2 * BUTTONCY + BUTTONCY / 2 + 12, &rDiskLed, g_hDiskWindowedLED[eDrive2Status]);
+		DrawBitmapRect(dc, x + 36, 3 * BUTTONCY + 12, &rDiskLed, g_hDiskWindowedLED[eDrive3Status]);
+		DrawBitmapRect(dc, x + 36, 3 * BUTTONCY + BUTTONCY / 2 + 12, &rDiskLed, g_hDiskWindowedLED[eDrive4Status]);
 	}
 }
 
@@ -702,7 +746,7 @@ void FrameDrawDiskStatus( HDC passdc )
 	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
 
 	int  x      = buttonx;
-	int  y      = buttony+BUTTONS*BUTTONCY+1;
+	int  y      = buttony+(BUTTONS-2)*BUTTONCY+1;
 
 	SelectObject(dc,smallfont);
 	SetBkMode(dc,OPAQUE);
@@ -758,6 +802,8 @@ void FrameDrawDiskStatus( HDC passdc )
 		TextOut(dc,x+26,y+32,text, strlen(text) );
 		sprintf( text, "S%s", g_sSectorDrive2 );
 		TextOut(dc,x+26,y+42, text, strlen(text) );
+
+		// Enhance for T/S of Drive 3 and 4
 	}
 }
 
@@ -775,7 +821,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 	FrameReleaseDC();
 	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
 	int  x      = buttonx;
-	int  y      = buttony+BUTTONS*BUTTONCY+1;
+	int  y = buttony + (BUTTONS - 2)*BUTTONCY + 1;
 	const bool bCaps = KeybGetCapsStatus();
 	//const bool bP8Caps = KeybGetP8CapsStatus(); // TODO: FIXME: Not used ?!  Should show the LED status ...
 
@@ -892,6 +938,10 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		{
 			DrawButton(dc, BTN_DRIVE1);
 			DrawButton(dc, BTN_DRIVE2);
+			DrawButton(dc, BTN_DRIVE3);
+			DrawButton(dc, BTN_DRIVE4);
+
+			FrameDrawDiskLEDS(dc);
 		}
 	}
 
@@ -1060,20 +1110,54 @@ LRESULT CALLBACK FrameWndProc (
       DragQueryFile((HDROP)wparam,0,filename,sizeof(filename));
       POINT point;
       DragQueryPoint((HDROP)wparam,&point);
-      RECT rect;
-      rect.left   = buttonx;
-      rect.right  = rect.left+BUTTONCX+1;
-      rect.top    = buttony+BTN_DRIVE2*BUTTONCY+1;
-      rect.bottom = rect.top+BUTTONCY;
-	  const int iDrive = PtInRect(&rect,point) ? DRIVE_2 : DRIVE_1;
+      
+	  RECT rect1;
+      rect1.left   = buttonx;
+      rect1.right  = rect1.left + BUTTONCX + 1;
+      rect1.top    = buttony + 2 * BUTTONCY;
+	  rect1.bottom = rect1.top + BUTTONCY / 2 - 1 + (BUTTONCY % 2);
+
+	  RECT rect2;
+	  rect2.left   = buttonx;
+	  rect2.right  = rect2.left + BUTTONCX + 1;
+	  rect2.top    = rect1.bottom + 1;
+	  rect2.bottom = rect2.top + BUTTONCY / 2 - 1;
+
+	  RECT rect3;
+	  rect3.left   = buttonx;
+	  rect3.right  = rect3.left + BUTTONCX + 1;
+	  rect3.top    = rect2.bottom + 1;
+	  rect3.bottom = rect3.top + BUTTONCY / 2 - 1 + (BUTTONCY % 2);
+
+	  RECT rect4;
+	  rect4.left   = buttonx;
+	  rect4.right  = rect4.left + BUTTONCX + 1;
+	  rect4.top    = rect3.bottom + 1;
+	  rect4.bottom = rect4.top + BUTTONCY / 2 - 1;
+
+	  int iDrive = DRIVE_1;
+	  if (PtInRect(&rect1, point)) iDrive = DRIVE_1;
+	  else if (PtInRect(&rect2, point)) iDrive = DRIVE_2;
+	  else if (PtInRect(&rect3, point)) iDrive = DRIVE_3;
+	  else if (PtInRect(&rect4, point)) iDrive = DRIVE_4;
+
       ImageError_e Error = DiskInsert(iDrive, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
       if (Error == eIMAGE_ERROR_NONE)
 	  {
-        if (!g_bIsFullScreen)
-          DrawButton((HDC)0,PtInRect(&rect,point) ? BTN_DRIVE2 : BTN_DRIVE1);
-        rect.top = buttony+BTN_DRIVE1*BUTTONCY+1;
-        if (!PtInRect(&rect,point))
+		  if (!g_bIsFullScreen)
+		  {
+			  DrawButton((HDC)0, iDrive == DRIVE_1 ? BTN_DRIVE1 : 
+				                 iDrive == DRIVE_2 ? BTN_DRIVE2 :
+			                     iDrive == DRIVE_3 ? BTN_DRIVE3 :
+			                                         BTN_DRIVE4);
+			  FrameDrawDiskLEDS((HDC)0);
+
+		  }
+
+        rect4.top = rect1.top;
+        if ( ! PtInRect(&rect4,point))
 		{
+		  // Not dropped on a DRIVEx button
           SetForegroundWindow(window);
           ProcessButtonClick(BTN_RUN);
         }
@@ -1133,13 +1217,18 @@ LRESULT CALLBACK FrameWndProc (
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
 		{
 			SetUsingCursor(0);
-			buttondown = wparam-VK_F1;
+			if ((int)wparam >= VK_F5)
+				buttondown = (int)wparam-VK_F1+2;
+			else
+	 			buttondown = (int)wparam-VK_F1;
+
 			if (g_bIsFullScreen && (buttonover != -1)) {
 				if (buttonover != buttondown)
 				EraseButton(buttonover);
 				buttonover = -1;
 			}
 			DrawButton((HDC)0,buttondown);
+			FrameDrawDiskLEDS((HDC)0);
 		}
 		else if (wparam == VK_F9)
 		{			
@@ -1273,14 +1362,17 @@ LRESULT CALLBACK FrameWndProc (
 
 	case WM_KEYUP:
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
-		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == (int)wparam-VK_F1))
+		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == ( (int)wparam-VK_F1)+(int(wparam) >= VK_F5 ? 2 : 0 )))
 		{
 			buttondown = -1;
 			if (g_bIsFullScreen)
-				EraseButton(wparam-VK_F1);
+				EraseButton(wparam-VK_F1+(int(wparam) >= VK_F5 ? 2 : 0));
 			else
-				DrawButton((HDC)0,wparam-VK_F1);
-			ProcessButtonClick(wparam-VK_F1, true);
+			{
+				DrawButton((HDC)0, wparam - VK_F1 + (int(wparam) >= VK_F5 ? 2 : 0));
+				FrameDrawDiskLEDS((HDC)0);
+			}
+			ProcessButtonClick(wparam-VK_F1 + (int(wparam) >= VK_F5 ? 2 : 0), true);
 		}
 		else
 		{
@@ -1298,10 +1390,33 @@ LRESULT CALLBACK FrameWndProc (
         int y = HIWORD(lparam);
         if ((x >= buttonx) &&
             (y >= buttony) &&
-            (y <= buttony+BUTTONS*BUTTONCY))
+            (y <= buttony+(BUTTONS-2)*BUTTONCY))
 		{
           buttonactive = buttondown = (y-buttony-1)/BUTTONCY;
+		  if (buttonactive >= 4)
+		  {
+			  // Swap, FullScreen, Debug, Configuration
+			  buttonactive = buttondown = buttondown+2;
+		  }
+		  else if (buttonactive > 1)
+		  {
+			  // One of the 4 half height buttons
+			  if (buttonactive == 2)
+			  {
+				  // Disk1 or Disk2
+				  buttonactive = buttondown = 2+((y-buttony-1)-2*BUTTONCY)/(BUTTONCY/2+1);
+			  }
+			  else
+			  {
+				  // Disk3 or Disk4
+				  buttonactive = buttondown = 4+((y-buttony-1)-3*BUTTONCY)/(BUTTONCY/2+1);
+			  }
+		  }
+		  // else (buttonactive == 0) || (buttonactive == 1)
+		  //   Help, Run
+
           DrawButton((HDC)0,buttonactive);
+		  FrameDrawDiskLEDS((HDC)0);
           SetCapture(window);
         }
         else if (g_bUsingCursor && !sg_Mouse.IsActive())
@@ -1357,8 +1472,11 @@ LRESULT CALLBACK FrameWndProc (
           buttondown = -1;
           if (g_bIsFullScreen)
             EraseButton(buttonactive);
-          else
-            DrawButton((HDC)0,buttonactive);
+		  else
+		  {
+			  DrawButton((HDC)0, buttonactive);
+			  FrameDrawDiskLEDS((HDC)0);
+		  }
           ProcessButtonClick(buttonactive, true);
         }
         buttonactive = -1;
@@ -1381,13 +1499,32 @@ LRESULT CALLBACK FrameWndProc (
       int newover = (((x >= buttonx) &&
                       (x <= buttonx+BUTTONCX) &&
                       (y >= buttony) &&
-                      (y <= buttony+BUTTONS*BUTTONCY))
+                      (y <= buttony+(BUTTONS-2)*BUTTONCY))
                      ? (y-buttony-1)/BUTTONCY : -1);
+	  if (newover >= 0)
+	  {
+		  if (newover >= 4)
+		  {
+			  newover = newover + 2;
+		  }
+		  else if (newover > 1)
+		  {
+			  if (newover == 2)
+			  {
+				  newover = 2+((y-buttony-1)-2*BUTTONCY)/(BUTTONCY/2+1);
+			  }
+			  else
+			  {
+				  newover = 4+((y-buttony-1)-3*BUTTONCY)/(BUTTONCY/2+1);
+			  }
+		  }
+	  }
       if (buttonactive != -1) {
         int newdown = (newover == buttonactive) ? buttonactive : -1;
         if (newdown != buttondown) {
           buttondown = newdown;
           DrawButton((HDC)0,buttonactive);
+		  FrameDrawDiskLEDS((HDC)0);
         }
       }
       else if (g_bIsFullScreen && (newover != buttonover) && (buttondown == -1)) {
@@ -1523,11 +1660,27 @@ LRESULT CALLBACK FrameWndProc (
 
 			if ((x >= buttonx) &&
 				(y >= buttony) &&
-				(y <= buttony+BUTTONS*BUTTONCY))
+				(y <= buttony+(BUTTONS-2)*BUTTONCY))
 			{
 				int iButton = (y-buttony-1)/BUTTONCY;
+				if (iButton >= 4)
+				{
+					iButton = iButton + 2;
+				}
+				else if (iButton > 1)
+				{
+					if (iButton == 2)
+					{
+						iButton = 2+((y-buttony-1)-2*BUTTONCY)/(BUTTONCY/2+1);
+					}
+					else
+					{
+						iButton = 4+((y-buttony-1)-3*BUTTONCY)/(BUTTONCY/2+1);
+					}
+				}
 				int iDrive = iButton - BTN_DRIVE1;
-				if ((iButton == BTN_DRIVE1) || (iButton == BTN_DRIVE2))
+				if ((iButton == BTN_DRIVE1) || (iButton == BTN_DRIVE2) ||
+					(iButton == BTN_DRIVE3) || (iButton == BTN_DRIVE4))
 				{
 /*
 					if (KeybGetShiftStatus())
@@ -1557,6 +1710,7 @@ LRESULT CALLBACK FrameWndProc (
 
 					FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 					DrawButton((HDC)0,iButton);
+					FrameDrawDiskLEDS((HDC)0);
 				}			
 			}
 		}
@@ -1820,10 +1974,15 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
       break;
 
     case BTN_DRIVE1:
-    case BTN_DRIVE2:
-      DiskSelect(button-BTN_DRIVE1);
-      if (!g_bIsFullScreen)
-        DrawButton((HDC)0,button);
+	case BTN_DRIVE2:
+	case BTN_DRIVE3:
+	case BTN_DRIVE4:
+		DiskSelect(button-BTN_DRIVE1);
+		if (!g_bIsFullScreen)
+		{
+			DrawButton((HDC)0, button);
+			FrameDrawDiskLEDS((HDC)0);
+		}
       break;
 
     case BTN_DRIVESWAP:
@@ -2201,12 +2360,20 @@ static void SetupTooltipControls(void)
 	toolinfo.rect.left  = BUTTONX;
 	toolinfo.rect.right = toolinfo.rect.left+BUTTONCX+1;
 	toolinfo.uId = 0;
-	toolinfo.rect.top    = BUTTONY+BTN_DRIVE1*BUTTONCY+1;
-	toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
+	toolinfo.rect.top = BUTTONY + 2 * BUTTONCY + (BTN_DRIVE1 - 2)*BUTTONCY / 2 + 1;
+	toolinfo.rect.bottom = toolinfo.rect.top + BUTTONCY / 2;
 	SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
 	toolinfo.uId = 1;
-	toolinfo.rect.top    = BUTTONY+BTN_DRIVE2*BUTTONCY+1;
-	toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
+	toolinfo.rect.top = BUTTONY + 2 * BUTTONCY + (BTN_DRIVE2 - 2)*BUTTONCY / 2 + 1;
+	toolinfo.rect.bottom = toolinfo.rect.top + BUTTONCY / 2;
+	SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
+	toolinfo.uId = 2;
+	toolinfo.rect.top = BUTTONY + 3 * BUTTONCY + (BTN_DRIVE3 - 4)*BUTTONCY / 2 + 1;
+	toolinfo.rect.bottom = toolinfo.rect.top + BUTTONCY / 2;
+	SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
+	toolinfo.uId = 3;
+	toolinfo.rect.top = BUTTONY + 3 * BUTTONCY + (BTN_DRIVE4 - 4)*BUTTONCY / 2 + 1;
+	toolinfo.rect.bottom = toolinfo.rect.top + BUTTONCY / 2;
 	SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
 }
 
