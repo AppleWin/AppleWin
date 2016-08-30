@@ -89,5 +89,6 @@ static BYTE __stdcall IOWrite_SAM(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 
 void ConfigureSAM(LPBYTE pCxRomPeripheral, UINT uSlot)
 {
+	// More changes required (4 disks)
 	RegisterIoHandler(uSlot, IO_Null, IOWrite_SAM, IO_Null, IO_Null, NULL, NULL);
 }

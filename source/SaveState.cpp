@@ -201,6 +201,8 @@ static void Snapshot_LoadState_v1()	// .aws v1.0.0.1, up to (and including) Appl
 		// Slot5: Mockingboard
 		MB_SetSnapshot_v1(&pSS->Mockingboard2, 5);
 
+		// More changes needed (4 disks)
+
 		//
 		// Slot6: Disk][
 		DiskSetSnapshot_v1(&pSS->Disk2);

@@ -15,7 +15,7 @@ public:
 
 	void FillComboBox(HWND window, int controlid, LPCTSTR choices, int currentchoice);
 	void SetSlot4(SS_CARDTYPE NewCardType);
-	void SetSlot5(SS_CARDTYPE NewCardType);
+	void SetSlot5(SS_CARDTYPE NewCardType); // Changes needed for "4 disk" (?)
 	std::string BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE,TCHAR* FILEMASKS);
 	void SaveStateUpdate();
 	int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave);

@@ -31,6 +31,8 @@ enum Drive_e
 {
 	DRIVE_1 = 0,
 	DRIVE_2,
+	DRIVE_3,
+	DRIVE_4,
 	NUM_DRIVES
 };
 
@@ -52,7 +54,8 @@ LPCTSTR DiskGetFullName(const int iDrive);
 LPCTSTR DiskGetFullDiskFilename(const int iDrive);
 LPCTSTR DiskGetBaseName(const int iDrive);
 
-void    DiskGetLightStatus (Disk_Status_e *pDisk1Status_, Disk_Status_e *pDisk2Status_);
+void    DiskGetLightStatus (Disk_Status_e *pDisk1Status_, Disk_Status_e *pDisk2Status_,
+							Disk_Status_e *pDisk3Status_, Disk_Status_e *pDisk4Status_);
 
 ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
 BOOL    DiskIsSpinning(void);

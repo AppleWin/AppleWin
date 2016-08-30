@@ -47,10 +47,12 @@ enum AppMode_e
 #define  BTN_RUN           1
 #define  BTN_DRIVE1        2
 #define  BTN_DRIVE2        3
-#define  BTN_DRIVESWAP     4
-#define  BTN_FULLSCR       5
-#define  BTN_DEBUG         6
-#define  BTN_SETUP         7
+#define  BTN_DRIVE3        4
+#define  BTN_DRIVE4        5
+#define  BTN_DRIVESWAP     6
+#define  BTN_FULLSCR       7
+#define  BTN_DEBUG         8
+#define  BTN_SETUP         9
 
 // TODO: Move to StringTable.h
 #define	TITLE_APPLE_2			TEXT("Apple ][ Emulator")
@@ -121,6 +123,8 @@ enum AppMode_e
 #define REGVALUE_PREF_START_DIR      "Starting Directory"
 #define REGVALUE_PREF_LAST_DISK_1	 "Last Disk Image 1"
 #define REGVALUE_PREF_LAST_DISK_2	 "Last Disk Image 2"
+#define REGVALUE_PREF_LAST_DISK_3	 "Last Disk Image 3"
+#define REGVALUE_PREF_LAST_DISK_4	 "Last Disk Image 4"
 #define REGVALUE_PREF_WINDOW_X_POS   "Window X-Position"
 #define REGVALUE_PREF_WINDOW_Y_POS   "Window Y-Position"
 #define REGVALUE_PREF_HDV_START_DIR  "HDV Starting Directory"

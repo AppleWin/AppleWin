@@ -258,6 +258,9 @@
     <Image Include="resource\CHARSET8C.bmp" />
     <Image Include="resource\CHARSET8M.bmp" />
     <Image Include="resource\COLOR.BMP" />
+    <Image Include="resource\Copy of DISKPROT.BMP" />
+    <Image Include="resource\Copy of DRIVE1.BMP" />
+    <Image Include="resource\Copy of DRIVE2.BMP" />
     <Image Include="resource\DEBUG.BMP" />
     <Image Include="resource\Debug_Font.bmp" />
     <Image Include="resource\DISK.ICO" />
@@ -267,6 +270,8 @@
     <Image Include="resource\DISKWRIT.BMP" />
     <Image Include="resource\DRIVE1.BMP" />
     <Image Include="resource\DRIVE2.BMP" />
+    <Image Include="resource\DRIVE3.BMP" />
+    <Image Include="resource\DRIVE4.BMP" />
     <Image Include="resource\DriveSwap.bmp" />
     <Image Include="resource\FULLSCR.BMP" />
     <Image Include="resource\HELP.BMP" />

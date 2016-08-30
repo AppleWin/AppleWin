@@ -56,10 +56,7 @@
 #define IDC_MONOCOLOR                   1012
 #define IDC_HDD1                        1013
 #define IDC_HDD2                        1014
-#define IDC_DISK1                       1015
-#define IDC_DISK2                       1016
-#define IDC_EDIT_DISK1                  1017
-#define IDC_EDIT_DISK2                  1018
+
 #define IDC_PASTE_FROM_CLIPBOARD        1018
 #define IDC_EDIT_HDD1                   1019
 #define IDC_EDIT_HDD2                   1020
@@ -111,6 +108,8 @@
 #define IDC_COMBO_HDD2                  1079
 #define IDC_COMBO_DISK1                 1080
 #define IDC_COMBO_DISK2                 1081
+#define IDC_COMBO_DISK3                 1082
+#define IDC_COMBO_DISK4                 1083
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
@@ -126,7 +125,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        147
 #define _APS_NEXT_COMMAND_VALUE         40012
-#define _APS_NEXT_CONTROL_VALUE         1082
+#define _APS_NEXT_CONTROL_VALUE         1084
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
