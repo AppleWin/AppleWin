@@ -4,6 +4,7 @@
 #include "../../source/CPU.h"
 
 // From Applewin.cpp
+bool g_bFullSpeed = false;
 enum AppMode_e g_nAppMode = MODE_RUNNING;
 
 // From Memory.cpp
@@ -96,6 +97,11 @@ int g_bDebugBreakpointHit = 0;
 DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
 {
 	return 0;
+}
+
+// From NTSC.cpp
+void NTSC_VideoUpdateCycles( long cycles6502 )
+{
 }
 
 //-------------------------------------

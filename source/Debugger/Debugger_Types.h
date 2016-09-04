@@ -442,6 +442,7 @@
 //		, CMD_MEMORY_SEARCH_APPLE   // Flashing Chars, Hi-Bit Set
 		, CMD_MEMORY_SEARCH_HEX
 		, CMD_MEMORY_FILL
+		, CMD_NTSC
 		, CMD_TEXT_SAVE
 // Output
 		, CMD_OUTPUT_CALC
@@ -555,7 +556,7 @@
 	};
 
 // Assembler
-	Update_t CmdAssemble       (int nArgs);
+	Update_t CmdAssemble              (int nArgs);
 
 // Disassembler Data
 	Update_t CmdDisasmDataDefCode     (int nArgs);
@@ -577,89 +578,89 @@
 	Update_t CmdDisasmDataDefAddress16(int nArgs);
 
 // CPU
-	Update_t CmdCursorJumpPC(int nArgs);
-	Update_t CmdCursorSetPC (int nArgs);
-	Update_t CmdBreakInvalid(int nArgs); // Breakpoint IFF Full-speed!
-	Update_t CmdBreakOpcode (int nArgs); // Breakpoint IFF Full-speed!
-	Update_t CmdGo          (int nArgs);
-	Update_t CmdIn          (int nArgs);
-	Update_t CmdKey         (int nArgs);
-	Update_t CmdJSR         (int nArgs);
-	Update_t CmdNOP         (int nArgs);
-	Update_t CmdOut         (int nArgs);
-	Update_t CmdStepOver    (int nArgs);
-	Update_t CmdStepOut     (int nArgs);
-	Update_t CmdTrace       (int nArgs);  // alias for CmdStepIn
-	Update_t CmdTraceFile   (int nArgs);
-	Update_t CmdTraceLine   (int nArgs);
-	Update_t CmdUnassemble  (int nArgs); // code dump, aka, Unassemble
+	Update_t CmdCursorJumpPC       (int nArgs);
+	Update_t CmdCursorSetPC        (int nArgs);
+	Update_t CmdBreakInvalid       (int nArgs); // Breakpoint IFF Full-speed!
+	Update_t CmdBreakOpcode        (int nArgs); // Breakpoint IFF Full-speed!
+	Update_t CmdGo                 (int nArgs);
+	Update_t CmdIn                 (int nArgs);
+	Update_t CmdKey                (int nArgs);
+	Update_t CmdJSR                (int nArgs);
+	Update_t CmdNOP                (int nArgs);
+	Update_t CmdOut                (int nArgs);
+	Update_t CmdStepOver           (int nArgs);
+	Update_t CmdStepOut            (int nArgs);
+	Update_t CmdTrace              (int nArgs);  // alias for CmdStepIn
+	Update_t CmdTraceFile          (int nArgs);
+	Update_t CmdTraceLine          (int nArgs);
+	Update_t CmdUnassemble         (int nArgs); // code dump, aka, Unassemble
 // Bookmarks
-	Update_t CmdBookmark       (int nArgs);
-	Update_t CmdBookmarkAdd    (int nArgs);
-	Update_t CmdBookmarkClear  (int nArgs);
-	Update_t CmdBookmarkList   (int nArgs);
-	Update_t CmdBookmarkGoto   (int nArgs);
-//	Update_t CmdBookmarkLoad   (int nArgs);
-	Update_t CmdBookmarkSave   (int nArgs);
+	Update_t CmdBookmark           (int nArgs);
+	Update_t CmdBookmarkAdd        (int nArgs);
+	Update_t CmdBookmarkClear      (int nArgs);
+	Update_t CmdBookmarkList       (int nArgs);
+	Update_t CmdBookmarkGoto       (int nArgs);
+//	Update_t CmdBookmarkLoad       (int nArgs);
+	Update_t CmdBookmarkSave       (int nArgs);
 // Breakpoints
-	Update_t CmdBreakpoint        (int nArgs);
-	Update_t CmdBreakpointAddSmart(int nArgs);
-	Update_t CmdBreakpointAddReg  (int nArgs);
-	Update_t CmdBreakpointAddPC   (int nArgs);
-	Update_t CmdBreakpointAddIO   (int nArgs);
-	Update_t CmdBreakpointAddMem  (int nArgs);
-	Update_t CmdBreakpointClear   (int nArgs);
-	Update_t CmdBreakpointDisable (int nArgs);
-	Update_t CmdBreakpointEdit    (int nArgs);
-	Update_t CmdBreakpointEnable  (int nArgs);
-	Update_t CmdBreakpointList    (int nArgs);
-//	Update_t CmdBreakpointLoad    (int nArgs);
-	Update_t CmdBreakpointSave    (int nArgs);
+	Update_t CmdBreakpoint         (int nArgs);
+	Update_t CmdBreakpointAddSmart (int nArgs);
+	Update_t CmdBreakpointAddReg   (int nArgs);
+	Update_t CmdBreakpointAddPC    (int nArgs);
+	Update_t CmdBreakpointAddIO    (int nArgs);
+	Update_t CmdBreakpointAddMem   (int nArgs);
+	Update_t CmdBreakpointClear    (int nArgs);
+	Update_t CmdBreakpointDisable  (int nArgs);
+	Update_t CmdBreakpointEdit     (int nArgs);
+	Update_t CmdBreakpointEnable   (int nArgs);
+	Update_t CmdBreakpointList     (int nArgs);
+//	Update_t CmdBreakpointLoad     (int nArgs);
+	Update_t CmdBreakpointSave     (int nArgs);
 // Benchmark
-	Update_t CmdBenchmark      (int nArgs);
-	Update_t CmdBenchmarkStart (int nArgs); //Update_t CmdSetupBenchmark (int nArgs);
-	Update_t CmdBenchmarkStop  (int nArgs); //Update_t CmdExtBenchmark (int nArgs);
-	Update_t CmdProfile        (int nArgs);
-	Update_t CmdProfileStart   (int nArgs);
-	Update_t CmdProfileStop    (int nArgs);
+	Update_t CmdBenchmark          (int nArgs);
+	Update_t CmdBenchmarkStart     (int nArgs); //Update_t CmdSetupBenchmark (int nArgs);
+	Update_t CmdBenchmarkStop      (int nArgs); //Update_t CmdExtBenchmark (int nArgs);
+	Update_t CmdProfile            (int nArgs);
+	Update_t CmdProfileStart       (int nArgs);
+	Update_t CmdProfileStop        (int nArgs);
 // Config
-//	Update_t CmdConfigMenu        (int nArgs);
-//	Update_t CmdConfigBase        (int nArgs);
-//	Update_t CmdConfigBaseHex     (int nArgs);
-//	Update_t CmdConfigBaseDec     (int nArgs);
-	Update_t CmdConfigColorMono   (int nArgs);
-	Update_t CmdConfigDisasm      (int nArgs);
-	Update_t CmdConfigFont        (int nArgs);
-	Update_t CmdConfigHColor      (int nArgs);
-	Update_t CmdConfigLoad        (int nArgs);
-	Update_t CmdConfigSave        (int nArgs);
-	Update_t CmdConfigSetFont     (int nArgs);
-	Update_t CmdConfigGetFont     (int nArgs);
-	Update_t CmdConfigGetDebugDir (int nArgs);
-	Update_t CmdConfigSetDebugDir (int nArgs);
+//	Update_t CmdConfigMenu         (int nArgs);
+//	Update_t CmdConfigBase         (int nArgs);
+//	Update_t CmdConfigBaseHex      (int nArgs);
+//	Update_t CmdConfigBaseDec      (int nArgs);
+	Update_t CmdConfigColorMono    (int nArgs);
+	Update_t CmdConfigDisasm       (int nArgs);
+	Update_t CmdConfigFont         (int nArgs);
+	Update_t CmdConfigHColor       (int nArgs);
+	Update_t CmdConfigLoad         (int nArgs);
+	Update_t CmdConfigSave         (int nArgs);
+	Update_t CmdConfigSetFont      (int nArgs);
+	Update_t CmdConfigGetFont      (int nArgs);
+	Update_t CmdConfigGetDebugDir  (int nArgs);
+	Update_t CmdConfigSetDebugDir  (int nArgs);
 // Cursor
-	Update_t CmdCursorFollowTarget(int nArgs);
-	Update_t CmdCursorLineDown    (int nArgs);
-	Update_t CmdCursorLineUp      (int nArgs);
-	Update_t CmdCursorJumpRetAddr (int nArgs);
-	Update_t CmdCursorRunUntil    (int nArgs);
-	Update_t CmdCursorPageDown    (int nArgs);
-	Update_t CmdCursorPageDown256 (int nArgs);
-	Update_t CmdCursorPageDown4K  (int nArgs);
-	Update_t CmdCursorPageUp      (int nArgs);
-	Update_t CmdCursorPageUp256   (int nArgs);
-	Update_t CmdCursorPageUp4K    (int nArgs);
+	Update_t CmdCursorFollowTarget (int nArgs);
+	Update_t CmdCursorLineDown     (int nArgs);
+	Update_t CmdCursorLineUp       (int nArgs);
+	Update_t CmdCursorJumpRetAddr  (int nArgs);
+	Update_t CmdCursorRunUntil     (int nArgs);
+	Update_t CmdCursorPageDown     (int nArgs);
+	Update_t CmdCursorPageDown256  (int nArgs);
+	Update_t CmdCursorPageDown4K   (int nArgs);
+	Update_t CmdCursorPageUp       (int nArgs);
+	Update_t CmdCursorPageUp256    (int nArgs);
+	Update_t CmdCursorPageUp4K     (int nArgs);
 // Disk
-	Update_t CmdDisk              (int nArgs);
+	Update_t CmdDisk               (int nArgs);
 // Help
-	Update_t CmdHelpList          (int nArgs);
-	Update_t CmdHelpSpecific      (int Argss);
-	Update_t CmdVersion           (int nArgs);
-	Update_t CmdMOTD              (int nArgs);
+	Update_t CmdHelpList           (int nArgs);
+	Update_t CmdHelpSpecific       (int Argss);
+	Update_t CmdVersion            (int nArgs);
+	Update_t CmdMOTD               (int nArgs);
 // Flags
-	Update_t CmdFlag      (int nArgs);
-	Update_t CmdFlagClear (int nArgs);
-	Update_t CmdFlagSet   (int nArgs);
+	Update_t CmdFlag               (int nArgs);
+	Update_t CmdFlagClear          (int nArgs);
+	Update_t CmdFlagSet            (int nArgs);
 // Memory (Data)
 	Update_t CmdMemoryCompare      (int nArgs);
 	Update_t CmdMemoryMiniDumpHex  (int nArgs);
@@ -672,13 +673,14 @@
 	Update_t CmdMemoryEnterByte    (int nArgs);
 	Update_t CmdMemoryEnterWord    (int nArgs);
 	Update_t CmdMemoryFill         (int nArgs);
+	Update_t CmdNTSC               (int nArgs);
 	Update_t CmdTextSave           (int nArgs);
 
 	Update_t CmdMemoryLoad         (int nArgs);
 	Update_t CmdMemoryMove         (int nArgs);
 	Update_t CmdMemorySave         (int nArgs);
 	Update_t CmdMemorySearch       (int nArgs);
-	Update_t _SearchMemoryDisplay  (int nArgs=0);
+	Update_t _SearchMemoryDisplay  (int nArgs=0); // TODO: CLEANUP
 //	Update_t CmdMemorySearchLowBit (int nArgs);
 //	Update_t CmdMemorySearchHiBit  (int nArgs);
 	Update_t CmdMemorySearchAscii  (int nArgs);
@@ -691,101 +693,100 @@
 	Update_t CmdOutputPrintf       (int nArgs);
 	Update_t CmdOutputRun          (int nArgs);
 // Registers
-	Update_t CmdRegisterSet     (int nArgs);
+	Update_t CmdRegisterSet        (int nArgs);
 // Source Level Debugging
-	Update_t CmdSource          (int nArgs);
-	Update_t CmdSync            (int nArgs);
+	Update_t CmdSource             (int nArgs);
+	Update_t CmdSync               (int nArgs);
 // Stack
-	Update_t CmdStackPush       (int nArgs);
-	Update_t CmdStackPop        (int nArgs);
-	Update_t CmdStackPopPseudo  (int nArgs);
-	Update_t CmdStackReturn     (int nArgs);
+	Update_t CmdStackPush          (int nArgs);
+	Update_t CmdStackPop           (int nArgs);
+	Update_t CmdStackPopPseudo     (int nArgs);
+	Update_t CmdStackReturn        (int nArgs);
 // Symbols
-	Update_t CmdSymbols         (int nArgs);
-	Update_t CmdSymbolsClear    (int nArgs);
-	Update_t CmdSymbolsList     (int nArgs);
-	Update_t CmdSymbolsLoad     (int nArgs);
-	Update_t CmdSymbolsInfo     (int nArgs);
-	Update_t CmdSymbolsSave     (int nArgs);
+	Update_t CmdSymbols            (int nArgs);
+	Update_t CmdSymbolsClear       (int nArgs);
+	Update_t CmdSymbolsList        (int nArgs);
+	Update_t CmdSymbolsLoad        (int nArgs);
+	Update_t CmdSymbolsInfo        (int nArgs);
+	Update_t CmdSymbolsSave        (int nArgs);
 
-	Update_t CmdSymbolsCommand  (int nArgs);
-//	Update_t CmdSymbolsMain     (int nArgs);
-//	Update_t CmdSymbolsBasic    (int nArgs);
-//	Update_t CmdSymbolsUser     (int nArgs);
-//	Update_t CmdSymbolsAssembly (int nArgs);
-//	Update_t CmdSymbolsSource   (int nArgs);
+	Update_t CmdSymbolsCommand     (int nArgs);
+//	Update_t CmdSymbolsMain        (int nArgs);
+//	Update_t CmdSymbolsBasic       (int nArgs);
+//	Update_t CmdSymbolsUser        (int nArgs);
+//	Update_t CmdSymbolsAssembly    (int nArgs);
+//	Update_t CmdSymbolsSource      (int nArgs);
 
-	// View
-	Update_t CmdViewOutput_Text4X (int nArgs);
-	Update_t CmdViewOutput_Text41 (int nArgs);
-	Update_t CmdViewOutput_Text42 (int nArgs);
-	Update_t CmdViewOutput_Text8X (int nArgs);
-	Update_t CmdViewOutput_Text81 (int nArgs);
-	Update_t CmdViewOutput_Text82 (int nArgs);
+// View
+	Update_t CmdViewOutput_Text4X  (int nArgs);
+	Update_t CmdViewOutput_Text41  (int nArgs);
+	Update_t CmdViewOutput_Text42  (int nArgs);
+	Update_t CmdViewOutput_Text8X  (int nArgs);
+	Update_t CmdViewOutput_Text81  (int nArgs);
+	Update_t CmdViewOutput_Text82  (int nArgs);
 
-	Update_t CmdViewOutput_GRX (int nArgs);
-	Update_t CmdViewOutput_GR1 (int nArgs);
-	Update_t CmdViewOutput_GR2 (int nArgs);
-	Update_t CmdViewOutput_DGRX (int nArgs);
-	Update_t CmdViewOutput_DGR1 (int nArgs);
-	Update_t CmdViewOutput_DGR2 (int nArgs);
+	Update_t CmdViewOutput_GRX     (int nArgs);
+	Update_t CmdViewOutput_GR1     (int nArgs);
+	Update_t CmdViewOutput_GR2     (int nArgs);
+	Update_t CmdViewOutput_DGRX    (int nArgs);
+	Update_t CmdViewOutput_DGR1    (int nArgs);
+	Update_t CmdViewOutput_DGR2    (int nArgs);
 
-	Update_t CmdViewOutput_HGRX (int nArgs);
-	Update_t CmdViewOutput_HGR1 (int nArgs);
-	Update_t CmdViewOutput_HGR2 (int nArgs);
-	Update_t CmdViewOutput_DHGRX (int nArgs);
-	Update_t CmdViewOutput_DHGR1 (int nArgs);
-	Update_t CmdViewOutput_DHGR2 (int nArgs);
+	Update_t CmdViewOutput_HGRX    (int nArgs);
+	Update_t CmdViewOutput_HGR1    (int nArgs);
+	Update_t CmdViewOutput_HGR2    (int nArgs);
+	Update_t CmdViewOutput_DHGRX   (int nArgs);
+	Update_t CmdViewOutput_DHGR1   (int nArgs);
+	Update_t CmdViewOutput_DHGR2   (int nArgs);
 // Watch
-	Update_t CmdWatch        (int nArgs);
-	Update_t CmdWatchAdd     (int nArgs);
-	Update_t CmdWatchClear   (int nArgs);
-	Update_t CmdWatchDisable (int nArgs);
-	Update_t CmdWatchEnable  (int nArgs);
-	Update_t CmdWatchList    (int nArgs);
-//	Update_t CmdWatchLoad    (int nArgs);
-	Update_t CmdWatchSave    (int nArgs);
+	Update_t CmdWatch              (int nArgs);
+	Update_t CmdWatchAdd           (int nArgs);
+	Update_t CmdWatchClear         (int nArgs);
+	Update_t CmdWatchDisable       (int nArgs);
+	Update_t CmdWatchEnable        (int nArgs);
+	Update_t CmdWatchList          (int nArgs);
+//	Update_t CmdWatchLoad          (int nArgs);
+	Update_t CmdWatchSave          (int nArgs);
 // Window
-	Update_t CmdWindow            (int nArgs);
-	Update_t CmdWindowCycleNext   (int nArgs);
-	Update_t CmdWindowCyclePrev   (int nArgs);
-	Update_t CmdWindowLast        (int nArgs);
+	Update_t CmdWindow             (int nArgs);
+	Update_t CmdWindowCycleNext    (int nArgs);
+	Update_t CmdWindowCyclePrev    (int nArgs);
+	Update_t CmdWindowLast         (int nArgs);
 
-	Update_t CmdWindowShowCode    (int nArgs);
-	Update_t CmdWindowShowCode1   (int nArgs);
-	Update_t CmdWindowShowCode2   (int nArgs);
-	Update_t CmdWindowShowData    (int nArgs);
-	Update_t CmdWindowShowData1   (int nArgs);
-	Update_t CmdWindowShowData2   (int nArgs);
-	Update_t CmdWindowShowSymbols1(int nArgs);
-	Update_t CmdWindowShowSymbols2(int nArgs);
-	Update_t CmdWindowShowSource  (int nArgs);
-	Update_t CmdWindowShowSource1 (int nArgs);
-	Update_t CmdWindowShowSource2 (int nArgs);
+	Update_t CmdWindowShowCode     (int nArgs);
+	Update_t CmdWindowShowCode1    (int nArgs);
+	Update_t CmdWindowShowCode2    (int nArgs);
+	Update_t CmdWindowShowData     (int nArgs);
+	Update_t CmdWindowShowData1    (int nArgs);
+	Update_t CmdWindowShowData2    (int nArgs);
+	Update_t CmdWindowShowSymbols1 (int nArgs);
+	Update_t CmdWindowShowSymbols2 (int nArgs);
+	Update_t CmdWindowShowSource   (int nArgs);
+	Update_t CmdWindowShowSource1  (int nArgs);
+	Update_t CmdWindowShowSource2  (int nArgs);
 
-	Update_t CmdWindowViewCode    (int nArgs);
-	Update_t CmdWindowViewConsole (int nArgs);
-	Update_t CmdWindowViewData    (int nArgs);
-	Update_t CmdWindowViewOutput  (int nArgs);
-	Update_t CmdWindowViewSource  (int nArgs);
-	Update_t CmdWindowViewSymbols (int nArgs);
+	Update_t CmdWindowViewCode     (int nArgs);
+	Update_t CmdWindowViewConsole  (int nArgs);
+	Update_t CmdWindowViewData     (int nArgs);
+	Update_t CmdWindowViewOutput   (int nArgs);
+	Update_t CmdWindowViewSource   (int nArgs);
+	Update_t CmdWindowViewSymbols  (int nArgs);
 
-	Update_t CmdWindowWidthToggle (int nArgs);
-
-//	Update_t CmdZeroPageShow      (int nArgs);
-//	Update_t CmdZeroPageHide      (int nArgs);
-//	Update_t CmdZeroPageToggle    (int nArgs);
+	Update_t CmdWindowWidthToggle  (int nArgs);
 
 // ZeroPage
-	Update_t CmdZeroPage        (int nArgs);
-	Update_t CmdZeroPageAdd     (int nArgs);
-	Update_t CmdZeroPageClear   (int nArgs);
-	Update_t CmdZeroPageDisable (int nArgs);
-	Update_t CmdZeroPageEnable  (int nArgs);
-	Update_t CmdZeroPageList    (int nArgs);
-//	Update_t CmdZeroPageLoad    (int nArgs);
-	Update_t CmdZeroPageSave    (int nArgs);
-	Update_t CmdZeroPagePointer (int nArgs);
+//	Update_t CmdZeroPageShow       (int nArgs);
+//	Update_t CmdZeroPageHide       (int nArgs);
+//	Update_t CmdZeroPageToggle     (int nArgs);
+	Update_t CmdZeroPage           (int nArgs);
+	Update_t CmdZeroPageAdd        (int nArgs);
+	Update_t CmdZeroPageClear      (int nArgs);
+	Update_t CmdZeroPageDisable    (int nArgs);
+	Update_t CmdZeroPageEnable     (int nArgs);
+	Update_t CmdZeroPageList       (int nArgs);
+//	Update_t CmdZeroPageLoad       (int nArgs);
+	Update_t CmdZeroPageSave       (int nArgs);
+	Update_t CmdZeroPagePointer    (int nArgs);
 
 
 // Cursor _________________________________________________________________________________________

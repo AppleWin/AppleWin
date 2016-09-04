@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
+#include "NTSC.h"
 #include "NoSlotClock.h"
 #include "ParallelPrinter.h"
 #include "Registry.h"
@@ -234,7 +235,7 @@ static BYTE __stdcall IORead_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0x6:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
 	case 0x7:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
 	case 0x8:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x9:	return VideoCheckVbl(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x9:	return VideoCheckVbl(nCyclesLeft);
 	case 0xA:	return VideoCheckMode(pc, addr, bWrite, d, nCyclesLeft);
 	case 0xB:	return VideoCheckMode(pc, addr, bWrite, d, nCyclesLeft);
 	case 0xC:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
@@ -1495,13 +1496,35 @@ void MemReset()
 
 BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
-	return*(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
+#if 0
+	// NTSC: It is tempting to replace with
+	//     return NTSC_VideoGetScannerAddress( uExecutedCycles );
+	// But that breaks "Rainbow" Bug #254 if NTSC_VideoGetScannerAddress() is not correct.
+	// This is out of sync with VideoGetScannerAddress() due to two reasons:
+	// a) returning a cached copy of g_aHorzClockMemAddress
+	//    Fixed by calling: updateVideoScannerAddressTXT or updateVideoScannerAddressHGR()
+	// b) A bug? in APPLE_IIE_HORZ_CLOCK_OFFSET[0][8] containing the incorrect value of 0x006F
+	uint16_t addr1 = NTSC_VideoGetScannerAddress( uExecutedCycles );
+	uint16_t addr2 = VideoGetScannerAddress(NULL, uExecutedCycles);
+	uint8_t  byte1 = mem[ addr1 ];
+	uint8_t  byte2 = mem[ addr2 ];
+
+	if( byte1 != byte2 )
+		mem[ 0x2000 ] ^= 0xFF;
+#endif
+	// return mem[ VideoGetScannerAddress(NULL, uExecutedCycles) ];
+	uint16_t addr = NTSC_VideoGetScannerAddress( uExecutedCycles );
+	return mem[ addr ] ; // cycles is ignored
 }
 
 //===========================================================================
 
 BYTE MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles)
 {
+	// NTSC: It is tempting to replace with
+	//     return NTSC_VideoGetScannerAddress( uExecutedCycles );
+	// But that breaks "Rainbow" Bug #254
+	// BYTE r= NTSC_VideoGetByte( uExecutedCycles );
 	BYTE r = *(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
 	return (r & ~0x80) | ((highbit) ? 0x80 : 0);
 }

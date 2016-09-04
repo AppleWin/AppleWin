@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 #include "Video.h"
+#include "NTSC.h"
 
 #include "Configuration\About.h"
 #include "Configuration\PropertySheet.h"
@@ -78,6 +79,7 @@ TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
 BOOL      restart           = 0;
+bool      g_bRestartFullScreen = false;
 
 DWORD		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar
 double		g_fCurrentCLK6502 = CLK_6502;	// Affected by Config dialog's speed slider bar
@@ -191,6 +193,7 @@ void ContinueExecution(void)
 									? g_bScrollLock_FullSpeed
 									: (GetKeyState(VK_SCROLL) < 0);
 
+	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed = ( (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
 					 (DiskIsSpinning() && enhancedisk && !Spkr_IsActive() && !MB_IsActive()) );
@@ -212,6 +215,12 @@ void ContinueExecution(void)
 	}
 	else
 	{
+		if (bWasFullSpeed)
+		{
+			VideoRedrawScreenDuringFullSpeed(0, true);	// Invalidate the copies of video memory
+			VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
+		}
+
 		// Don't call Spkr_Demute()
 		MB_Demute();
 		SysClk_StartTimerUsec(nExecutionPeriodUsec);
@@ -241,7 +250,13 @@ void ContinueExecution(void)
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
-		VideoEndOfVideoFrame();
+
+		if (g_bFullSpeed)
+		{
+			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
+		}
+
+		VideoRefreshScreen(0); // Just copy the output of our Apple framebuffer to the system Back Buffer
 		MB_EndOfVideoFrame();
 	}
 
@@ -389,13 +404,13 @@ void SetCharsetType(void)
 {
 	switch ( GetApple2Type() )
 	{
-	case A2TYPE_APPLE2:			g_nCharsetType = 0; break; 
-	case A2TYPE_APPLE2PLUS:		g_nCharsetType = 0; break; 
-	case A2TYPE_APPLE2E:		g_nCharsetType = 0; break; 
-	case A2TYPE_APPLE2EENHANCED:g_nCharsetType = 0; break; 
-	case A2TYPE_PRAVETS82:	    g_nCharsetType = 1; break; 
-	case A2TYPE_PRAVETS8A:	    g_nCharsetType = 2; break; 
-	case A2TYPE_PRAVETS8M:	    g_nCharsetType = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because setting charset to 3 results in some problems.
+	case A2TYPE_APPLE2:			g_nCharsetType = 0; break;
+	case A2TYPE_APPLE2PLUS:		g_nCharsetType = 0; break;
+	case A2TYPE_APPLE2E:		g_nCharsetType = 0; break;
+	case A2TYPE_APPLE2EENHANCED:g_nCharsetType = 0; break;
+	case A2TYPE_PRAVETS82:	    g_nCharsetType = 1; break;
+	case A2TYPE_PRAVETS8M:	    g_nCharsetType = 2; break; //This charset has a very small difference with the PRAVETS82 one, and probably has some misplaced characters.
+	case A2TYPE_PRAVETS8A:	    g_nCharsetType = 3; break;
 	default:
 		_ASSERT(0);
 		g_nCharsetType = 0;
@@ -412,6 +427,10 @@ void LoadConfiguration(void)
 	{
 		if ((dwComputerType >= A2TYPE_MAX) || (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE))
 			dwComputerType = A2TYPE_APPLE2EENHANCED;
+
+		// Remap the bad Pravets models (before AppleWin v1.26)
+		if (dwComputerType == A2TYPE_BAD_PRAVETS82) dwComputerType = A2TYPE_PRAVETS82;
+		if (dwComputerType == A2TYPE_BAD_PRAVETS8M) dwComputerType = A2TYPE_PRAVETS8M;
 
 		apple2Type = (eApple2Type) dwComputerType;
 	}
@@ -588,7 +607,7 @@ void LoadConfiguration(void)
 
 //===========================================================================
 
-void SetCurrentImageDir(const char* pszImageDir)
+bool SetCurrentImageDir(const char* pszImageDir)
 {
 	strcpy(g_sCurrentDir, pszImageDir);
 
@@ -599,7 +618,10 @@ void SetCurrentImageDir(const char* pszImageDir)
 		g_sCurrentDir[ nLen + 1 ] = 0;
 	}
 
-	SetCurrentDirectory(g_sCurrentDir);
+	if( SetCurrentDirectory(g_sCurrentDir) )
+		return true;
+
+	return false;
 }
 
 //===========================================================================
@@ -1003,9 +1025,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	DiskInitialize();
 	LogFileOutput("Init: DiskInitialize()\n");
 
-	CreateColorMixMap();	// For tv emulation mode
-	LogFileOutput("Init: CreateColorMixMap()\n");
-
 	int nError = 0;	// TODO: Show error MsgBox if we get a DiskInsert error
 	if (szImageName_drive1)
 	{
@@ -1135,6 +1154,12 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: EnterMessageLoop()\n");
 		EnterMessageLoop();
 		LogFileOutput("Main: LeaveMessageLoop()\n");
+
+		if (restart)
+		{
+			bSetFullScreen = g_bRestartFullScreen;
+			g_bRestartFullScreen = false;
+		}
 
 		MB_Reset();
 		LogFileOutput("Main: MB_Reset()\n");

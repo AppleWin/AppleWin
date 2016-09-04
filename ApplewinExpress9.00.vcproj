@@ -871,6 +871,22 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\NTSC.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\NTSC.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\NTSC_CharSet.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\NTSC_CharSet.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Video.cpp"
 					>
 				</File>
@@ -1067,6 +1083,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\resource\ApplewinLogo.bmp"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\CAPSOFF.BMP"
 				>
 			</File>
@@ -1092,6 +1112,10 @@
 			</File>
 			<File
 				RelativePath=".\resource\CHARSET8C.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\CHARSET8M.BMP"
 				>
 			</File>
 			<File

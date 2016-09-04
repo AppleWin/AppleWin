@@ -4,7 +4,7 @@
 #include "Common.h"
 
 void SetCurrentCLK6502();
-void SetCurrentImageDir(const char* pszImageDir);
+bool SetCurrentImageDir(const char* pszImageDir);
 void SetCharsetType(void);
 
 extern const UINT16* GetAppleWinVersion(void);
@@ -31,6 +31,7 @@ extern TCHAR      g_sProgramDir[MAX_PATH];
 extern TCHAR      g_sCurrentDir[MAX_PATH];
 
 extern BOOL       restart;
+extern bool       g_bRestartFullScreen;
 
 extern DWORD      g_dwSpeed;
 extern double     g_fCurrentCLK6502;

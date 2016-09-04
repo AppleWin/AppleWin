@@ -1,4 +1,10 @@
 /*
+.1 Fixed: Implemented missing debugger "CD" command
+2.9.0.0 Added: ntsc save [filename], ntsc load [filename], to save/load the NTSC palette.
+  Default filename is "AppleWinNTSC4096x4@32.data"
+  To load this file in GIMP: Open, Select File Type: "Raw image data", Raw image data (*.data), RGB Alpha, Width: 4096, Height: 4
+  to save this file in GIMP: Open, Export To, Select File Type (By Extension) Raw image data, RGB Type: Standard (R,G,B)
+
 .12 Fixed: [PVS-Studio] Fixed false positive of buffer overflow with MIP_RANDOM
 .11 Fixed: [PVS-Studio] Fixed missing call to sprintf() in ConfigSave_PrepareHeader()
 .10 Fixed: [PVS-Studio] Fixed no-op in _6502_GetStackReturnAddress()
@@ -337,7 +343,6 @@
 
 2.6.0.8 Released with AppleWin 1.16.1
 
->>>>>>> .r619
 2.6.0.6 Released with AppleWin 1.15
 .6 Added new command '@' to display the search results
 .5 Fixed display results of Searching to be colorized

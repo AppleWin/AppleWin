@@ -212,6 +212,9 @@
     <ClCompile Include="source\StdAfx.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="source\NTSC.cpp">
+      <Filter>Source\Video</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -451,6 +454,9 @@
     <ClInclude Include="source\StdAfx.h">
       <Filter>Source</Filter>
     </ClInclude>
+    <ClInclude Include="source\NTSC.h">
+      <Filter>Source\Video</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="source\CPU\cpu_general.inl">
@@ -606,6 +612,16 @@
     <None Include="resource\ThunderClockPlus.rom">
       <Filter>Resources</Filter>
     </None>
+    <None Include="resource\ApplewinLogo.bmp">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="RESOURCE\LED_CAPS_OFF.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON.BMP" />
+    <None Include="RESOURCE\LED_CAPS_OFF_P8.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON_P8.BMP" />
+    <None Include="RESOURCE\LED_CAPS_OFF_LAT.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON_LAT.BMP" />
+    <None Include="RESOURCE\Pravets8M.rom" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RESOURCE\APPLEWIN.RC">

@@ -11,26 +11,46 @@
 	#define  VIEWPORTY   5
 
 	// 560 = Double Hi-Res
-	// 384 = Doule Scan Line
-	#define  FRAMEBUFFER_W  560
-	#define  FRAMEBUFFER_H  384
+	// 384 = Double Scan Line
+	#define  FRAMEBUFFER_BORDERLESS_W 560
+	#define  FRAMEBUFFER_BORDERLESS_H 384
+// NTSC_BEGIN
+#if 0
+	// TC: No good as NTSC render code writes to border area:
+	// . NTSC.cpp: updateVideoScannerHorzEOL(): "NOTE: This writes out-of-bounds for a 560x384 framebuffer"
+	#define  BORDER_W       0
+	#define  BORDER_H       0
+	#define  FRAMEBUFFER_W  FRAMEBUFFER_BORDERLESS_W
+	#define  FRAMEBUFFER_H  FRAMEBUFFER_BORDERLESS_H
+#else
+	#define  BORDER_W       20
+	#define  BORDER_H       18
+	#define  FRAMEBUFFER_W  (FRAMEBUFFER_BORDERLESS_W + BORDER_W*2)
+	#define  FRAMEBUFFER_H  (FRAMEBUFFER_BORDERLESS_H + BORDER_H*2)
+#endif
+// NTSC_END
 
 // Direct Draw -- For Full Screen
 	extern	LPDIRECTDRAW        g_pDD;
 	extern	LPDIRECTDRAWSURFACE g_pDDPrimarySurface;
-	extern	IDirectDrawPalette* g_pDDPal;
+	extern  int                 g_nDDFullScreenW;
+	extern  int                 g_nDDFullScreenH;
 
 // Win32
 	extern HWND       g_hFrameWindow;
 	extern BOOL       g_bIsFullScreen;
+	extern int        g_nViewportCX;
+	extern int        g_nViewportCY;
 	extern BOOL       g_bConfirmReboot; // saved PageConfig REGSAVE
 	extern BOOL       g_bMultiMon;
+
 
 // Emulator
 	extern bool   g_bFreshReset;
 	extern std::string PathFilename[2];
 	extern bool   g_bScrollLock_FullSpeed;
 	extern int    g_nCharsetType;
+
 
 // Prototypes
 	void CtrlReset();
@@ -44,7 +64,7 @@
 	void    FrameReleaseVideoDC ();
 	void	FrameSetCursorPosByMousePos();
 	int		GetViewportScale(void);
-	int     SetViewportScale(int nNewScale);
+	int     SetViewportScale(int nNewScale, bool bForce = false);
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);
 	bool	GetFullScreen32Bit(void);
 	void	SetFullScreen32Bit(bool b32Bit);
@@ -59,3 +79,5 @@
 		WPARAM wparam,
 		LPARAM lparam );
 
+	int GetFullScreenOffsetX(void);
+	int GetFullScreenOffsetY(void);

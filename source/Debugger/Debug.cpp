@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\Frame.h"
 #include "..\Keyboard.h"
 #include "..\Memory.h"
+#include "..\NTSC.h"
 #include "..\Video.h"
 
 //	#define DEBUG_COMMAND_HELP  1
@@ -47,7 +48,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,8,0,12);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,1);
 
 
 // Public _________________________________________________________________________________________
@@ -310,7 +311,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool      g_bTraceHeader     = false; // semaphore, flag header to be printed
 
 	DWORD     extbench      = 0;
-	bool      g_bDebuggerViewingAppleOutput = false;
+	int       g_bDebuggerViewingAppleOutput = false; // NOTE: alias for bVideoModeFlags!
 
 	bool      g_bIgnoreNextKey = false;
 
@@ -377,6 +378,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void DisasmCalcBotFromTopAddress();
 	void DisasmCalcTopBotAddress ();
 	WORD DisasmCalcAddressFromLines( WORD iAddress, int nLines );
+
+
+// File _______________________________________________________________________
+
+int _GetFileSize( FILE *hFile )
+{
+	fseek( hFile, 0, SEEK_END );
+	int nFileBytes = ftell( hFile );
+	fseek( hFile, 0, SEEK_SET );
+
+	return nFileBytes;
+}
+
 
 
 // Bookmarks __________________________________________________________________
@@ -3999,6 +4013,7 @@ Update_t CmdMemoryFill (int nArgs)
 static TCHAR g_sMemoryLoadSaveFileName[ MAX_PATH ] = TEXT("");
 
 
+// "PWD"
 //===========================================================================
 Update_t CmdConfigGetDebugDir (int nArgs)
 {
@@ -4009,9 +4024,30 @@ Update_t CmdConfigGetDebugDir (int nArgs)
 	return ConsoleUpdate();
 }
 
+// "CD"
 //===========================================================================
 Update_t CmdConfigSetDebugDir (int nArgs)
 {
+	//if( nArgs > 2 )
+	//	return;
+
+	// PWD directory
+#if _WIN32
+	// http://msdn.microsoft.com/en-us/library/aa365530(VS.85).aspx
+	TCHAR sPath[ MAX_PATH + 1 ];
+	_tcscpy( sPath, g_sCurrentDir ); // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
+	_tcscat( sPath, g_aArgs[ 1 ].sArg );
+
+	if( SetCurrentImageDir( sPath ) )
+		nArgs = 0; // intentional fall into
+#else
+	#error "Need chdir() implemented"
+#endif
+
+	// PWD
+	if( nArgs == 0 )
+		return CmdConfigGetDebugDir(0);
+
 	return ConsoleUpdate();
 }
 
@@ -4095,9 +4131,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
 		if (hFile)
 		{
-			fseek( hFile, 0, SEEK_END );
-			int nFileBytes = ftell( hFile );
-			fseek( hFile, 0, SEEK_SET );
+			int nFileBytes = _GetFileSize( hFile );
 
 			if (nFileBytes > _6502_MEM_END)
 				nFileBytes = _6502_MEM_END + 1; // Bank-switched RAMR/ROM is only 16-bit
@@ -4217,12 +4251,12 @@ Update_t CmdMemoryLoad (int nArgs)
 		,{ ".hgr2", 0x4000, 0x2000 }
 		// TODO: extension ".dhgr", ".dhgr2"
 	};
-	const int        nFileTypes = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
+	const int              nFileTypes = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
 	const KnownFileType_t *pFileType = NULL;
 
 	char *pFileName = g_aArgs[ 1 ].sArg;
 	int   nLen = strlen( pFileName );
-	char *pEnd = pFileName + + nLen - 1;
+	char *pEnd = pFileName + nLen - 1;
 	while( pEnd > pFileName )
 	{
 		if( *pEnd == '.' )
@@ -4297,9 +4331,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
 	if (hFile)
 	{
-		fseek( hFile, 0, SEEK_END );
-		int nFileBytes = ftell( hFile );
-		fseek( hFile, 0, SEEK_SET );
+		int nFileBytes = _GetFileSize( hFile );
 
 		if (nFileBytes > _6502_MEM_END)
 			nFileBytes = _6502_MEM_END + 1; // Bank-switched RAM/ROM is only 16-bit
@@ -4400,7 +4432,6 @@ Update_t CmdMemoryMove (int nArgs)
 
 	return UPDATE_CONSOLE_DISPLAY;
 }
-
 
 //===========================================================================
 #if 0	// Original
@@ -4652,6 +4683,7 @@ Update_t CmdMemorySave (int nArgs)
 			{
 				ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
 				fclose( hFile );
+				// TODO: BUG: Is this a bug/feature that we can over-write files and the user has no control over that?
 			}
 
 			hFile = fopen( sLoadSaveFilePath, "wb" );
@@ -4840,6 +4872,359 @@ void Util_CopyTextToClipboard ( const size_t nSize, const char *pText )
 	CloseClipboard();
 
 	// GlobalFree() ??
+}
+
+//===========================================================================
+Update_t CmdNTSC (int nArgs)
+{
+	int iParam;
+	int nFound = FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_GENERAL_BEGIN, _PARAM_GENERAL_END );
+
+	struct KnownFileType_t
+	{
+		char *pExtension;
+	};
+
+	enum KnownFileType_e
+	{
+		 TYPE_UNKNOWN
+		,TYPE_BMP
+		,TYPE_RAW
+		,NUM_FILE_TYPES
+	};
+
+	const KnownFileType_t aFileTypes[ NUM_FILE_TYPES ] = 
+	{
+		 { ""      } // n/a
+		,{ ".bmp"  }
+		,{ ".data" }
+//		,{ ".raw"  }
+//		,{ ".ntsc" }
+	};
+	const int              nFileType = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
+	const KnownFileType_t *pFileType = NULL;
+	/* */ KnownFileType_e  iFileType = TYPE_UNKNOWN;
+
+#if _DEBUG
+	assert( (nFileType == NUM_FILE_TYPES) );
+#endif
+
+	char *pFileName = (nArgs > 1) ? g_aArgs[ 2 ].sArg : "";
+	int   nLen = strlen( pFileName );
+	char *pEnd = pFileName + nLen - 1;
+	while( pEnd > pFileName )
+	{
+		if( *pEnd == '.' )
+		{
+			for( int i = TYPE_BMP; i < NUM_FILE_TYPES; i++ )
+			{
+				if( strcmp( pEnd, aFileTypes[i].pExtension ) == 0 )
+				{
+					pFileType = &aFileTypes[i];
+					iFileType = (KnownFileType_e) i;
+					break;
+				}
+			}
+		}
+
+		if( pFileType )
+			break;
+
+		pEnd--;
+	}
+
+	if( nLen == 0 )
+		pFileName = "AppleWinNTSC4096x4@32.data";
+
+	static TCHAR sPaletteFilePath[ MAX_PATH ];
+	_tcscpy( sPaletteFilePath, g_sCurrentDir );
+	_tcscat( sPaletteFilePath, pFileName );
+
+	class ConsoleFilename
+	{
+		public:
+			static void update( const char *pPrefixText )
+			{
+					TCHAR text[ CONSOLE_WIDTH ] = TEXT("");
+					sprintf( text, "%s: %s", pPrefixText, sPaletteFilePath );
+					ConsoleBufferPush( text ); // "Saved."
+			}
+	};
+
+	class Swizzle32
+	{
+		public:
+			static void RGBAswapBGRA( size_t nSize, const uint8_t *pSrc, uint8_t *pDst ) // Note: pSrc and pDst _may_ alias; code handles this properly
+			{
+				const uint8_t* pEnd = pSrc + nSize;
+				while ( pSrc < pEnd )
+				{
+					const uint8_t r = pSrc[2];
+					const uint8_t g = pSrc[1];
+					const uint8_t b = pSrc[0];
+					const uint8_t a = 255; // Force A=1, 100% opacity; as pSrc[3] might not be 255
+
+					*pDst++ = r;
+					*pDst++ = g;
+					*pDst++ = b;
+					*pDst++ = a;
+					 pSrc  += 4;
+				}
+			}
+
+			static void ABGRswizzleBGRA( size_t nSize, const uint8_t *pSrc, uint8_t *pDst ) // Note: pSrc and pDst _may_ alias; code handles this properly
+			{
+				const uint8_t* pEnd = pSrc + nSize;
+				while ( pSrc < pEnd )
+				{
+					const uint8_t r = pSrc[3];
+					const uint8_t g = pSrc[2];
+					const uint8_t b = pSrc[1];
+					const uint8_t a = 255; // Force A=1, 100% opacity; as pSrc[3] might not be 255
+
+					*pDst++ = b;
+					*pDst++ = g;
+					*pDst++ = r;
+					*pDst++ = a;
+					 pSrc  += 4;
+				}
+			}
+#if 0
+			static void ABGRswizzleRGBA( size_t nSize, const uint8_t *pSrc, uint8_t *pDst ) // Note: pSrc and pDst _may_ alias; code handles this properly
+			{
+				const uint8_t* pEnd = pSrc + nSize;
+				while ( pSrc < pEnd )
+				{
+					const uint8_t r = pSrc[3];
+					const uint8_t g = pSrc[2];
+					const uint8_t b = pSrc[1];
+					const uint8_t a = 255; // Force A=1, 100% opacity; as pSrc[3] might not be 255
+
+					*pDst++ = r;
+					*pDst++ = g;
+					*pDst++ = b;
+					*pDst++ = a;
+					 pSrc  += 4;
+				}
+			}
+#endif
+	};
+
+	class Transpose4096x4
+	{
+		/*
+		.   Source layout = 4096x4 @ 32-bit
+		.   +----+----+----+----+----+
+		.   |BGRA|BGRA|BGRA|... |BGRA| phase 0
+		.   +----+----+----+----+----+
+		.   |BGRA|BGRA|BGRA|... |BGRA| phase 1
+		.   +----+----+----+----+----|
+		.   |BGRA|BGRA|BGRA|... |BGRA| phase 2
+		.   +----+----+----+----+----+
+		.   |BGRA|BGRA|BGRA|... |BGRA| phase 3
+		.   +----+----+----+----+----+
+		.    0    1    2         4095  column
+		.
+		.   Destination layout = 64x256 @ 32-bit
+		.   | phase 0 | phase 1 | phase 2 | phase 3 |
+		.   +----+----+----+----+----+----+----+----+
+		.   |BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 0
+		.   +----+----+----+----+----+----+----+----+
+		.   |BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 1
+		.   +----+----+----+----+----+----+----+----+
+		.   |... |... |... |... |... |... |... |... |
+		.   +----+----+----+----+----+----+----+----+
+		.   |BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 255
+		.   +----+----+----+----+----+----+----+----+
+		.    \ 16 px / \ 16 px / \ 16 px / \ 16 px  / = 64 pixels
+		.     64 byte   64 byte   64 byte   64 byte
+		*/
+
+		public:
+			static void transposeTo64x256( size_t nSize, const uint8_t *pSrc, uint8_t *pDst )
+			{
+				/* */ uint8_t *pTmp = pDst;
+				const uint32_t nBPP = 4; // bytes per pixel
+
+				for( int iPhase = 0; iPhase < 4; iPhase++ )
+				{
+					pDst = pTmp + (iPhase * 16 * nBPP); // dst is 16-px column
+
+					for( int x = 0; x < 4096/16; x++ ) // 4096px/16 px = 256 columns
+					{
+						for( int i = 0; i < 16*nBPP; i++ ) // 16 px, 32-bit
+							*pDst++ = *pSrc++;
+
+						pDst -= (16*nBPP);
+						pDst += (64*nBPP); // move to next scan line
+					}
+				}
+			}
+
+			static void transposeFrom64x256( size_t nSize, const uint8_t *pSrc, uint8_t *pDst )
+			{
+				const uint8_t *pTmp = pSrc;
+				const uint32_t nBPP = 4; // bytes per pixel
+
+				for( int iPhase = 0; iPhase < 4; iPhase++ )
+				{
+					pSrc = pTmp + (iPhase * 16 * nBPP); // src is 16-px column
+					for( int y = 0; y < 256; y++ )
+					{
+						for( int i = 0; i < 16*nBPP; i++ ) // 16 px, 32-bit
+							*pDst++ = *pSrc++;
+
+						pSrc -= (16*nBPP);
+						pSrc += (64*nBPP); // move to next scan line
+					}
+				}
+			}
+	};
+
+	bool bColorTV = (g_eVideoType == VT_COLOR_TV);
+
+	uint32_t* pChromaTable = NTSC_VideoGetChromaTable( false, bColorTV );
+	char aStatusText[64] = "Loaded";
+
+//uint8_t* pTmp = (uint8_t*) pChromaTable; 
+//*pTmp++  = 0xFF; // b
+//*pTmp++ = 0x00; // g
+//*pTmp++ = 0x00; // r
+//*pTmp++ = 0xFF; // a
+
+	if (nFound)
+	{
+		if (iParam == PARAM_RESET)
+		{
+			NTSC_VideoInitChroma();
+			ConsoleBufferPush( TEXT(" Resetting NTSC palette." ) );
+		}
+		else
+		if (iParam == PARAM_SAVE)
+		{
+			FILE *pFile = fopen( sPaletteFilePath, "w+b" );
+			if( pFile )
+			{
+				size_t nWrote = 0;
+				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
+
+				if( iFileType == TYPE_BMP )
+				{
+					// need to save 32-bit bpp as 24-bit bpp
+					// VideoSaveScreenShot()
+					Transpose4096x4::transposeTo64x256( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
+
+					// Write BMP header
+					WinBmpHeader_t bmp, *pBmp = &bmp;
+					Video_SetBitmapHeader( pBmp, 64, 256, 32 );
+					fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
+				}
+				else
+				{
+					// RAW has no header
+					Swizzle32::RGBAswapBGRA( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
+				}
+
+				nWrote = fwrite( pSwizzled, g_nChromaSize, 1, pFile );
+				fclose( pFile );
+				delete [] pSwizzled;
+
+				if (nWrote == 1)
+				{
+					ConsoleFilename::update( "Saved" );
+				}
+				else
+					ConsoleBufferPush( TEXT( "Error saving." ) );
+			}
+			else
+			{
+					ConsoleFilename::update( "File" );
+					ConsoleBufferPush( TEXT( "Error couldn't open file for writing." ) );
+			}
+		}
+		else
+		if (iParam == PARAM_LOAD)
+		{
+			FILE *pFile = fopen( sPaletteFilePath, "rb" );
+			if( pFile )
+			{
+				strcpy( aStatusText, "Loaded" );
+
+				// Get File Size
+				size_t  nFileSize  = _GetFileSize( pFile );
+				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
+				bool     bSwizzle  = true;
+
+				if( iFileType == TYPE_BMP )
+				{
+					WinBmpHeader4_t bmp, *pBmp = &bmp;
+					fread( pBmp, sizeof( WinBmpHeader4_t ), 1, pFile );
+					fseek( pFile, pBmp->nOffsetData, SEEK_SET );
+
+					if( 0
+					|| (pBmp->nWidthPixels  != 64 )
+					|| (pBmp->nHeightPixels != 256)
+					|| (pBmp->nBitsPerPixel != 32 )
+					|| (pBmp->nOffsetData > nFileSize)
+					)
+					{
+						strcpy( aStatusText, "Bitmap not 64x256@32" );
+						goto _error;
+					}
+
+					if(pBmp->nStructSize == 0x28)
+					{
+						if( pBmp->nCompression == 0) // BI_RGB mode
+							bSwizzle = false;
+					}
+					else // 0x7C version4 bitmap
+					{
+						if( pBmp->nCompression == 3 ) // BI_BITFIELDS
+						{
+							if((pBmp->nRedMask   == 0xFF000000 ) // Gimp writes in ABGR order
+							&& (pBmp->nGreenMask == 0x00FF0000 )
+							&& (pBmp->nBlueMask  == 0x0000FF00 ))
+								bSwizzle = true;
+						}
+					}
+				}
+				else
+					if( nFileSize != g_nChromaSize )
+					{
+						sprintf( aStatusText, "Raw size != %d", 64*256*4 );
+						goto _error;
+					}
+
+
+				size_t nRead = fread( pSwizzled, g_nChromaSize, 1, pFile );
+
+				if( iFileType == TYPE_BMP )
+				{
+					Transpose4096x4::transposeFrom64x256( g_nChromaSize, pSwizzled, (uint8_t*) pChromaTable );
+					if( bSwizzle )
+						Swizzle32::ABGRswizzleBGRA( g_nChromaSize, (uint8_t*) pChromaTable, (uint8_t*) pChromaTable );
+				}
+				else
+					Swizzle32::RGBAswapBGRA( g_nChromaSize, pSwizzled, (uint8_t*) pChromaTable );
+
+_error:
+				fclose( pFile );
+				delete [] pSwizzled;
+			}
+			else
+			{
+				strcpy( aStatusText, "File: " );
+				ConsoleBufferPush( TEXT( "Error couldn't open file for reading." ) );
+			}
+
+			ConsoleFilename::update( aStatusText );
+		}
+		else
+			return HelpLastCommand();
+	}
+//	else
+
+	return ConsoleUpdate();
 }
 
 
@@ -6072,100 +6457,104 @@ enum ViewVideoPage_t
 
 Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate );
 
-Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate )
+Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 {
 	VideoSetForceFullRedraw();
-	_Video_Dirty();
+
 	switch( iPage ) 
 	{
-		case VIEW_PAGE_X: _Video_SetupBanks( VideoGetSWPAGE2() ); break; // Page Current
-		case VIEW_PAGE_1: _Video_SetupBanks( false ); break; // Page 1
-		case VIEW_PAGE_2: _Video_SetupBanks( true ); break; // Page 2 !
+		case VIEW_PAGE_X: bVideoModeFlags |= _Video_SetupBanks( VideoGetSWPAGE2() ); break; // Page Current
+		case VIEW_PAGE_1: bVideoModeFlags |= _Video_SetupBanks( false ); break; // Page 1
+		case VIEW_PAGE_2: bVideoModeFlags |= _Video_SetupBanks( true ); break; // Page 2 !
 		default:
 			break;
 	}
-	_Video_RedrawScreen( pfUpdate );
-	g_bDebuggerViewingAppleOutput = true;
+#if _DEBUG
+	if (bVideoModeFlags == 0)
+		MessageBoxA( NULL, "bVideoModeFlags = ZERO !?", "Information", MB_OK );
+#endif
+	g_bDebuggerViewingAppleOutput = bVideoModeFlags;
+	VideoRefreshScreen( bVideoModeFlags );
 	return UPDATE_NOTHING; // intentional
 }
 
 // Text 40
 	Update_t CmdViewOutput_Text4X (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, Update40ColCell );
+		return _ViewOutput( VIEW_PAGE_X, VF_TEXT );
 	}
 	Update_t CmdViewOutput_Text41 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, Update40ColCell );
+		return _ViewOutput( VIEW_PAGE_1, VF_TEXT );
 	}
 	Update_t CmdViewOutput_Text42 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, Update40ColCell );
+		return _ViewOutput( VIEW_PAGE_2, VF_TEXT );
 	}
 // Text 80
 	Update_t CmdViewOutput_Text8X (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, Update80ColCell );
+		return _ViewOutput( VIEW_PAGE_X, VF_TEXT | VF_80COL );
 	}
 	Update_t CmdViewOutput_Text81 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, Update80ColCell );
+		return _ViewOutput( VIEW_PAGE_1, VF_TEXT | VF_80COL );
 	}
 	Update_t CmdViewOutput_Text82 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, Update80ColCell );
+		return _ViewOutput( VIEW_PAGE_2, VF_TEXT | VF_80COL );
 	}
 // Lo-Res
 	Update_t CmdViewOutput_GRX (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, UpdateLoResCell );
+		return _ViewOutput( VIEW_PAGE_X, VF_80STORE ); // NTSC VideoRefresh() Hack: flags != 0
 	}
 	Update_t CmdViewOutput_GR1 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, UpdateLoResCell );
+		return _ViewOutput( VIEW_PAGE_1, VF_80STORE ); // NTSC VideoRefresh() Hack: flags != 0
 	}
 	Update_t CmdViewOutput_GR2 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, UpdateLoResCell );
+		return _ViewOutput( VIEW_PAGE_2, VF_80STORE ); // NTSC VideoRefresh() Hack: flags != 0
 	}
 // Double Lo-Res
 	Update_t CmdViewOutput_DGRX (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, UpdateDLoResCell );
+		return _ViewOutput( VIEW_PAGE_X, VF_DHIRES | VF_80COL );
 	}
 	Update_t CmdViewOutput_DGR1 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, UpdateDLoResCell );
+		return _ViewOutput( VIEW_PAGE_1, VF_DHIRES | VF_80COL );
 	}
 	Update_t CmdViewOutput_DGR2 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, UpdateDLoResCell );
+		return _ViewOutput( VIEW_PAGE_2, VF_DHIRES | VF_80COL );
 	}
 // Hi-Res
 	Update_t CmdViewOutput_HGRX (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, UpdateHiResCell );
+		return _ViewOutput( VIEW_PAGE_X, VF_HIRES );
 	}
 	Update_t CmdViewOutput_HGR1 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, UpdateHiResCell );
+		return _ViewOutput( VIEW_PAGE_1, VF_HIRES );
 	}
 	Update_t CmdViewOutput_HGR2 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, UpdateHiResCell );
+		return _ViewOutput( VIEW_PAGE_2, VF_HIRES );
 	}
 // Double Hi-Res
 	Update_t CmdViewOutput_DHGRX (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, UpdateDHiResCell );
+		return _ViewOutput( VIEW_PAGE_X, VF_HIRES | VF_DHIRES | VF_80COL );
 	}
 	Update_t CmdViewOutput_DHGR1 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, UpdateDHiResCell );
+		return _ViewOutput( VIEW_PAGE_1, VF_HIRES | VF_DHIRES | VF_80COL);
 	}
 	Update_t CmdViewOutput_DHGR2 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, UpdateDHiResCell );
+		return _ViewOutput( VIEW_PAGE_2, VF_HIRES | VF_DHIRES | VF_80COL );
 	}
 
 // Watches ________________________________________________________________________________________
@@ -7327,6 +7716,9 @@ bool InternalSingleStep ()
 
 
 //===========================================================================
+
+#define TRACELINE_WITH_VIDEO_SCANNER_POS 0
+
 void OutputTraceLine ()
 {
 	DisasmLine_t line;
@@ -7344,8 +7736,13 @@ void OutputTraceLine ()
 			g_bTraceHeader = false;
 
 			fprintf( g_hTraceFile,
+#if TRACELINE_WITH_VIDEO_SCANNER_POS
+//				"0000 0000 00 00 00 0000 --------  0000:90 90 90  NOP"
+				"Vert Horz A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n"
+#else
 //				"00 00 00 0000 --------  0000:90 90 90  NOP"
 				"A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n"
+#endif
 			);
 		}
 
@@ -7358,6 +7755,21 @@ void OutputTraceLine ()
 			);
 		}
 
+#if TRACELINE_WITH_VIDEO_SCANNER_POS
+		fprintf( g_hTraceFile,
+//			"a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n",
+			"%04X %04X %02X %02X %02X %04X %s  %s\n",
+			g_nVideoClockVert,
+			g_nVideoClockHorz,
+			(unsigned)regs.a,
+			(unsigned)regs.x,
+			(unsigned)regs.y,
+			(unsigned)regs.sp,
+			(char*) sFlags
+			, sDisassembly
+			//, sTarget // TODO: Show target?
+		);
+#else
 		fprintf( g_hTraceFile,
 //			"a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n",
 			"%02X %02X %02X %04X %s  %s\n",
@@ -7369,6 +7781,7 @@ void OutputTraceLine ()
 			, sDisassembly
 			//, sTarget // TODO: Show target?
 		);
+#endif
 	}
 }
 
@@ -7821,8 +8234,8 @@ void DebugContinueStepping ()
 		{
 			if (nStepsTaken == 0x10000) // HACK_MAGIC_NUM
 				VideoRedrawScreen();
-			else
-				VideoRefreshScreen();
+//			else
+//				VideoRefreshScreen();
 		}
 	}
 	else

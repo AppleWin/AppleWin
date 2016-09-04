@@ -56,6 +56,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration\PropertySheet.h"
 #include "Debugger\Debug.h"
 
+#define DIRECTX_PAGE_FLIP 1
+
 //#define ENABLE_MENU 0
 
 // Magic numbers (used by FrameCreateWindow to calc width/height):
@@ -63,10 +65,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAGICY 5	// 3D border between Apple window & Title bar
 
 static const int kDEFAULT_VIEWPORT_SCALE = 2;
-static int g_nViewportCX = FRAMEBUFFER_W * kDEFAULT_VIEWPORT_SCALE;
-static int g_nViewportCY = FRAMEBUFFER_H * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCX = FRAMEBUFFER_BORDERLESS_W * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCY = FRAMEBUFFER_BORDERLESS_H * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
-static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
+static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
 
 #define  BUTTONX     (g_nViewportCX + VIEWPORTX*2)
 #define  BUTTONY     0
@@ -142,10 +144,14 @@ static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen
 int g_nCharsetType = 0;
 
 // Direct Draw -- For Full Screen
-		LPDIRECTDRAW        g_pDD = (LPDIRECTDRAW)0;
-		LPDIRECTDRAWSURFACE g_pDDPrimarySurface    = (LPDIRECTDRAWSURFACE)0;
-		IDirectDrawPalette* g_pDDPal = (IDirectDrawPalette*)0;
-
+		LPDIRECTDRAW        g_pDD               = (LPDIRECTDRAW)0;
+		LPDIRECTDRAWSURFACE g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
+#if DIRECTX_PAGE_FLIP
+		LPDIRECTDRAWSURFACE g_pDDBackSurface    = (LPDIRECTDRAWSURFACE)0;
+#endif
+		HDC                 g_hDDdc             = 0;
+		int                 g_nDDFullScreenW    = 640;
+		int                 g_nDDFullScreenH    = 480;
 
 static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
@@ -163,6 +169,19 @@ static bool FileExists(std::string strFilename);
 bool	g_bScrollLock_FullSpeed = false;
 bool	g_bFreshReset = false;
 static bool g_bFullScreen32Bit = true;
+
+#if 0 // enable non-integral full-screen scaling
+#define FULLSCREEN_SCALE_TYPE float
+#else
+#define FULLSCREEN_SCALE_TYPE int
+#endif
+
+static RECT						g_main_window_saved_rect;
+static int						g_main_window_saved_style;
+static int						g_main_window_saved_exstyle;
+static FULLSCREEN_SCALE_TYPE	g_win_fullscreen_scale = 1;
+static int						g_win_fullscreen_offsetx = 0;
+static int						g_win_fullscreen_offsety = 0;
 
 // __ Prototypes __________________________________________________________________________________
 	static void DrawCrosshairs (int x, int y);
@@ -439,6 +458,8 @@ static void DrawButton (HDC passdc, int number) {
 }
 
 //===========================================================================
+
+// NB. x=y=0 means erase only
 static void DrawCrosshairs (int x, int y) {
   static int lastx = 0;
   static int lasty = 0;
@@ -448,6 +469,7 @@ static void DrawCrosshairs (int x, int y) {
 
   // ERASE THE OLD CROSSHAIRS
   if (lastx && lasty)
+#if 0
     if (g_bIsFullScreen) {
       int loop = 4;
       while (loop--) {
@@ -461,7 +483,25 @@ static void DrawCrosshairs (int x, int y) {
         FillRect(dc,&rect,(HBRUSH)GetStockObject(BLACK_BRUSH));
       }
     }
-    else {
+    else
+#else
+    if (g_bIsFullScreen)
+	{
+      int loop = 4;
+      while (loop--) {
+        RECT rect = {0,0,5,5};
+        switch (loop) {
+          case 0: OffsetRect(&rect, GetFullScreenOffsetX()+lastx-2,                 GetFullScreenOffsetY()+viewporty-5);             break;
+          case 1: OffsetRect(&rect, GetFullScreenOffsetX()+lastx-2,                 GetFullScreenOffsetY()+viewporty+g_nViewportCY); break;
+          case 2: OffsetRect(&rect, GetFullScreenOffsetX()+viewportx-5,             GetFullScreenOffsetY()+lasty-2);                 break;
+          case 3: OffsetRect(&rect, GetFullScreenOffsetX()+viewportx+g_nViewportCX, GetFullScreenOffsetY()+lasty-2);                 break;
+        }
+        FillRect(dc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
+      }
+	}
+	else
+#endif
+	{
       int loop = 5;
       while (loop--) {
         switch (loop) {
@@ -486,21 +526,42 @@ static void DrawCrosshairs (int x, int y) {
 
   // DRAW THE NEW CROSSHAIRS
   if (x && y) {
-    int loop = 4;
-    while (loop--) {
-      if ((loop == 1) || (loop == 2))
-        SelectObject(dc,GetStockObject(WHITE_PEN));
-      else
-        SelectObject(dc,GetStockObject(BLACK_PEN));
-      LINE(x+loop-2,viewporty-5,
-           x+loop-2,viewporty);
-      LINE(x+loop-2,viewporty+g_nViewportCY+4,
-           x+loop-2,viewporty+g_nViewportCY-1);
-      LINE(viewportx-5,           y+loop-2,
-           viewportx,             y+loop-2);
-      LINE(viewportx+g_nViewportCX+4,y+loop-2,
-           viewportx+g_nViewportCX-1,y+loop-2);
-    }
+    if (g_bIsFullScreen)
+	{
+		int loop = 4;
+		while (loop--) {
+		  if ((loop == 1) || (loop == 2))
+			SelectObject(dc,GetStockObject(WHITE_PEN));
+		  else
+			SelectObject(dc,GetStockObject(BLACK_PEN));
+		  LINE(GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty-5,
+			   GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty);
+		  LINE(GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty+g_nViewportCY+4,
+			   GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty+g_nViewportCY-1);
+		  LINE(GetFullScreenOffsetX()+viewportx-5,               GetFullScreenOffsetY()+y+loop-2,
+			   GetFullScreenOffsetX()+viewportx,                 GetFullScreenOffsetY()+y+loop-2);
+		  LINE(GetFullScreenOffsetX()+viewportx+g_nViewportCX+4, GetFullScreenOffsetY()+y+loop-2,
+			   GetFullScreenOffsetX()+viewportx+g_nViewportCX-1, GetFullScreenOffsetY()+y+loop-2);
+		}
+	}
+	else
+	{
+		int loop = 4;
+		while (loop--) {
+		  if ((loop == 1) || (loop == 2))
+			SelectObject(dc,GetStockObject(WHITE_PEN));
+		  else
+			SelectObject(dc,GetStockObject(BLACK_PEN));
+		  LINE(x+loop-2,viewporty-5,
+			   x+loop-2,viewporty);
+		  LINE(x+loop-2,viewporty+g_nViewportCY+4,
+			   x+loop-2,viewporty+g_nViewportCY-1);
+		  LINE(viewportx-5,           y+loop-2,
+			   viewportx,             y+loop-2);
+		  LINE(viewportx+g_nViewportCX+4,y+loop-2,
+			   viewportx+g_nViewportCX-1,y+loop-2);
+		}
+	}
   }
 #undef LINE
   lastx = x;
@@ -516,8 +577,6 @@ static void DrawFrameWindow ()
 	HDC         dc = (g_bPaintingWindow
 		? BeginPaint(g_hFrameWindow,&ps)
 		: GetDC(g_hFrameWindow));
-
-	VideoRealizePalette(dc);
 
 	if (!g_bIsFullScreen)
 	{
@@ -564,11 +623,9 @@ static void DrawFrameWindow ()
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay(1);
 	else
-		// Win7: In fullscreen mode with 1 redraw, the screen doesn't get redraw.
-		// TC: 07/01/2015: Tryed with MP's double-buffered DX full-screen code, but still the same.
-		VideoRedrawScreen(g_bIsFullScreen ? 2 : 1);	// TC: 22/06/2014: Why 2 redraws in full-screen mode (32-bit only)? (8-bit doesn't need this nor does Win8, just Win7 or older OS's)
+		VideoRedrawScreen(0);	// TODO: Presume this is correct with new fullscreen window mode
+		//VideoRedrawScreen(g_bIsFullScreen ? 1 : 0);	// On WM_PAINT: delay 1 refresh before rendering full-screen
 
-	// DD Full-Screen Palette: BUGFIX: needs to come _after_ all drawing...
 	if (g_bPaintingWindow)
 		EndPaint(g_hFrameWindow,&ps);
 	else
@@ -907,9 +964,6 @@ static void EraseButton (int number) {
   rect.top    = buttony+number*BUTTONCY;
   rect.bottom = rect.top+BUTTONCY;
 
-	// TODO: DD Full-Screen Palette
-	//	if( !g_bIsFullScreen )
-
 	InvalidateRect(g_hFrameWindow,&rect,1);
 }
 
@@ -937,6 +991,8 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_CLOSE:
       LogFileOutput("WM_CLOSE\n");
+      if (g_bIsFullScreen && restart)
+		  g_bRestartFullScreen = true;
       if (g_bIsFullScreen)
         SetNormalMode();
       if (!IsIconic(window))
@@ -1183,10 +1239,9 @@ LRESULT CALLBACK FrameWndProc (
 			DrawStatusArea( (HDC)0, DRAW_TITLE );
 
 			VideoReinitialize();
-			if ((g_nAppMode != MODE_LOGO) || ((g_nAppMode == MODE_DEBUG) && (g_bDebuggerViewingAppleOutput)))
+			if (g_nAppMode != MODE_LOGO)
 			{
-				VideoRedrawScreen();
-				g_bDebuggerViewingAppleOutput = true;
+				VideoRefreshScreen( g_nAppMode == MODE_DEBUG ? g_bDebuggerViewingAppleOutput  : 0);
 			}
 
 			Config_Save_Video();
@@ -1490,26 +1545,10 @@ LRESULT CALLBACK FrameWndProc (
 		// message must not realize its palette, unless it determines that
 		// wParam does not contain its own window handle.
 		if ((HWND)wparam == window)
-	  {
-#if DEBUG_DD_PALETTE
-		if( g_bIsFullScreen )
-			OutputDebugString( "WM_PALETTECHANGED: Full Screen\n" );
-		else
-			OutputDebugString( "WM_PALETTECHANGED: Windowed\n" );
-#endif
-		break;
-	  } 
+			break;
 	  // else fall through
 
     case WM_QUERYNEWPALETTE:
-#if DEBUG_DD_PALETTE
-		if( g_bIsFullScreen )
-			OutputDebugString( "WM_QUERYNEWPALETTE: Full Screen\n" );
-		else
-			OutputDebugString( "WM_QUERYNEWPALETTE: Windowed\n" );
-#endif
-
-		// TODO: DD Full-Screen Palette
       DrawFrameWindow();
       break;
 
@@ -1578,7 +1617,6 @@ LRESULT CALLBACK FrameWndProc (
 			OutputDebugString( "WM_SYSCOLORCHANGE: Windowed\n" );
 #endif
 
-		// TODO: DD Full-Screen Palette
 		DeleteGdiObjects();
 		CreateGdiObjects();
 		break;
@@ -1738,7 +1776,6 @@ static void ScreenWindowResize(const bool bCtrlKey)
 		nOldViewportScale = g_nViewportScale;
 		FrameResizeWindow(1);	// reset to 1x
 		SetFullScreenMode();
-		//VideoRedrawScreen(1);	// [TC-10/06/2014] Remove this once checked it's not needed by Win8
 	}
 }
 
@@ -2064,6 +2101,16 @@ void SetFullScreen32Bit(bool b32Bit)
 	g_bFullScreen32Bit = b32Bit;
 }
 
+int GetFullScreenOffsetX(void)
+{
+	return g_win_fullscreen_offsetx;
+}
+
+int GetFullScreenOffsetY(void)
+{
+	return g_win_fullscreen_offsety;
+}
+
 void SetFullScreenMode ()
 {
 #ifdef NO_DIRECT_X
@@ -2072,31 +2119,78 @@ void SetFullScreenMode ()
 
 #else // NO_DIRECT_X
 
-	g_bIsFullScreen = true;
+	MONITORINFO monitor_info;
+	FULLSCREEN_SCALE_TYPE width, height, scalex, scaley;
+	int top, left;
+
+	const int A2_WINDOW_WIDTH  = FRAMEBUFFER_BORDERLESS_W;
+	const int A2_WINDOW_HEIGHT = FRAMEBUFFER_BORDERLESS_H;
+
 	buttonover = -1;
+#if 0
+	// FS: 640x480
 	buttonx    = FSBUTTONX;
 	buttony    = FSBUTTONY;
 	viewportx  = FSVIEWPORTX;
 	viewporty  = FSVIEWPORTY;
-	GetWindowRect(g_hFrameWindow,&framerect);
-	SetWindowLong(g_hFrameWindow,GWL_STYLE,WS_POPUP | WS_SYSMENU | WS_VISIBLE);
+#endif
 
-	DDSURFACEDESC ddsd;
-	ddsd.dwSize = sizeof(ddsd);
-	ddsd.dwFlags = DDSD_CAPS;
-	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
-	if (DirectDrawCreate(NULL,&g_pDD,NULL) != DD_OK ||
-		g_pDD->SetCooperativeLevel(g_hFrameWindow,DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN) != DD_OK ||
-		g_pDD->SetDisplayMode(640,480,g_bFullScreen32Bit ? 32 : 8) != DD_OK ||
-		g_pDD->CreateSurface(&ddsd,&g_pDDPrimarySurface,NULL) != DD_OK)
-	{
-		g_pDDPrimarySurface = NULL;
-		SetNormalMode();
-		return;
-	}
+	g_main_window_saved_style = GetWindowLong(g_hFrameWindow, GWL_STYLE);
+	g_main_window_saved_exstyle = GetWindowLong(g_hFrameWindow, GWL_EXSTYLE);
+	GetWindowRect(g_hFrameWindow, &g_main_window_saved_rect);
+	SetWindowLong(g_hFrameWindow, GWL_STYLE, g_main_window_saved_style & ~(WS_CAPTION | WS_THICKFRAME));
+	SetWindowLong(g_hFrameWindow, GWL_EXSTYLE, g_main_window_saved_exstyle & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
+	
+	monitor_info.cbSize = sizeof(monitor_info);
+	GetMonitorInfo(MonitorFromWindow(g_hFrameWindow, MONITOR_DEFAULTTONEAREST), &monitor_info);
+	left = monitor_info.rcMonitor.left;
+	top = monitor_info.rcMonitor.top;
+	width = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.right - monitor_info.rcMonitor.left);
+	height = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top);
+	scalex = width / A2_WINDOW_WIDTH;
+	scaley = height / A2_WINDOW_HEIGHT;
+	g_win_fullscreen_scale = (scalex <= scaley) ? scalex : scaley;
+	g_win_fullscreen_offsetx = ((int)width - (int)(g_win_fullscreen_scale * A2_WINDOW_WIDTH)) / 2;
+	g_win_fullscreen_offsety = ((int)height - (int)(g_win_fullscreen_scale * A2_WINDOW_HEIGHT)) / 2;
+	SetWindowPos(g_hFrameWindow, NULL, left, top, (int)width, (int)height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+	g_bIsFullScreen = true;
 
-	// TODO: DD Full-Screen Palette
-	//	if( !g_bIsFullScreen )
+#if 1
+	// FS: desktop
+	SetViewportScale(g_win_fullscreen_scale, true);
+
+	buttonx    = GetFullScreenOffsetX() + g_nViewportCX + VIEWPORTX*2;
+	buttony    = GetFullScreenOffsetY();
+	viewportx  = VIEWPORTX;
+	viewporty  = VIEWPORTY;
+#endif
+
+	//	GetWindowRect(g_hFrameWindow,&framerect);
+//	SetWindowLong(g_hFrameWindow,GWL_STYLE,WS_POPUP | WS_SYSMENU | WS_VISIBLE);
+//
+//	DDSURFACEDESC ddsd;
+//	ddsd.dwSize = sizeof(ddsd);
+//	ddsd.dwFlags = DDSD_CAPS | DDSD_BACKBUFFERCOUNT;
+//	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE | DDSCAPS_FLIP | DDSCAPS_COMPLEX;
+//	ddsd.dwBackBufferCount = 1;
+//
+//	DDSCAPS ddscaps;
+//	ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
+//
+//	if ( 0
+//		|| DD_OK != DirectDrawCreate(NULL,&g_pDD,NULL)
+//		|| DD_OK != g_pDD->SetCooperativeLevel(g_hFrameWindow,DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN)
+//		|| DD_OK != g_pDD->SetDisplayMode(g_nDDFullScreenW,g_nDDFullScreenH,32)
+//		|| DD_OK != g_pDD->CreateSurface(&ddsd,&g_pDDPrimarySurface,NULL)
+//#if DIRECTX_PAGE_FLIP
+//		|| DD_OK != g_pDDPrimarySurface->GetAttachedSurface( &ddscaps, &g_pDDBackSurface)
+//#endif
+//	)
+//	{
+//		g_pDDPrimarySurface = NULL;
+//		SetNormalMode();
+//		return;
+//	}
 
 	InvalidateRect(g_hFrameWindow,NULL,1);
 
@@ -2106,39 +2200,44 @@ void SetFullScreenMode ()
 //===========================================================================
 void SetNormalMode ()
 {
-	g_bIsFullScreen = false;
+//	g_bIsFullScreen = false;
 	buttonover = -1;
 	buttonx    = BUTTONX;
 	buttony    = BUTTONY;
 	viewportx  = VIEWPORTX;
 	viewporty  = VIEWPORTY;
-	g_pDD->RestoreDisplayMode();
-	g_pDD->SetCooperativeLevel(NULL,DDSCL_NORMAL);
-	SetWindowLong(g_hFrameWindow,GWL_STYLE,
-                WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
-                WS_VISIBLE);
-	SetWindowPos(g_hFrameWindow,0,framerect.left,
-                             framerect.top,
-                             framerect.right - framerect.left,
-                             framerect.bottom - framerect.top,
-                             SWP_NOZORDER | SWP_FRAMECHANGED);
 
-	// DD Full-Screen Palette: BUGFIX: Re-attach new palette on next new surface
-	// Delete Palette
-	if (g_pDDPal)
-	{
-		g_pDDPal->Release();
-		g_pDDPal = (LPDIRECTDRAWPALETTE)0;
-	}
+	g_win_fullscreen_offsetx = 0;
+	g_win_fullscreen_offsety = 0;
+	g_win_fullscreen_scale = 1;
+	SetWindowLong(g_hFrameWindow, GWL_STYLE, g_main_window_saved_style);
+	SetWindowLong(g_hFrameWindow, GWL_EXSTYLE, g_main_window_saved_exstyle);
+	SetWindowPos(g_hFrameWindow, NULL,
+		g_main_window_saved_rect.left,
+		g_main_window_saved_rect.top,
+		g_main_window_saved_rect.right - g_main_window_saved_rect.left,
+		g_main_window_saved_rect.bottom - g_main_window_saved_rect.top,
+		SWP_SHOWWINDOW);
+	g_bIsFullScreen = false;
 
-	if (g_pDDPrimarySurface)
-	{
-		g_pDDPrimarySurface->Release();
-		g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
-	}
+	//g_pDD->RestoreDisplayMode();
+	//g_pDD->SetCooperativeLevel(NULL,DDSCL_NORMAL);
+	//SetWindowLong(g_hFrameWindow,GWL_STYLE,
+ //               WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
+ //               WS_VISIBLE);
+	//SetWindowPos(g_hFrameWindow,0,framerect.left,
+ //                            framerect.top,
+ //                            framerect.right - framerect.left,
+ //                            framerect.bottom - framerect.top,
+ //                            SWP_NOZORDER | SWP_FRAMECHANGED);
+	//if (g_pDDPrimarySurface)
+	//{
+	//	g_pDDPrimarySurface->Release();
+	//	g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
+	//}
 
-	g_pDD->Release();
-	g_pDD = (LPDIRECTDRAW)0;
+	//g_pDD->Release();
+	//g_pDD = (LPDIRECTDRAW)0;
 }
 
 //===========================================================================
@@ -2178,14 +2277,14 @@ int GetViewportScale(void)
 	return g_nViewportScale;
 }
 
-int SetViewportScale(int nNewScale)
+int SetViewportScale(int nNewScale, bool bForce /*=false*/)
 {
-	if (nNewScale > g_nMaxViewportScale)
+	if (!bForce && nNewScale > g_nMaxViewportScale)
 		nNewScale = g_nMaxViewportScale;
 
 	g_nViewportScale = nNewScale;
-	g_nViewportCX = g_nViewportScale * FRAMEBUFFER_W;
-	g_nViewportCY = g_nViewportScale * FRAMEBUFFER_H;
+	g_nViewportCX = g_nViewportScale * FRAMEBUFFER_BORDERLESS_W;
+	g_nViewportCY = g_nViewportScale * FRAMEBUFFER_BORDERLESS_H;
 
 	return nNewScale;
 }
@@ -2284,8 +2383,8 @@ void FrameCreateWindow(void)
 		int nOldViewportCX = g_nViewportCX;
 		int nOldViewportCY = g_nViewportCY;
 
-		g_nViewportCX = FRAMEBUFFER_W * 2;
-		g_nViewportCY = FRAMEBUFFER_H * 2;
+		g_nViewportCX = FRAMEBUFFER_BORDERLESS_W * 2;
+		g_nViewportCY = FRAMEBUFFER_BORDERLESS_H * 2;
 		GetWidthHeight(nWidth, nHeight);	// Probe with 2x dimensions
 
 		g_nViewportCX = nOldViewportCX;
@@ -2376,14 +2475,22 @@ HDC FrameGetDC () {
 //===========================================================================
 HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 {
+	HDC hDC = 0;
+
 	// ASSERT( pAddr_ );
 	// ASSERT( pPitch_ );
-	if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
+	if (false) // TODO: ...
+	//if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
 	{
-		RECT rect = {	FSVIEWPORTX,
-						FSVIEWPORTY,
-						FSVIEWPORTX+g_nViewportCX,
-						FSVIEWPORTY+g_nViewportCY};
+		// Reference: http://archive.gamedev.net/archive/reference/articles/article608.html
+		// NTSC TODO: Are these coordinates correct?? Coordinates don't seem to matter on Win7 fullscreen!?
+		// g_nViewportCX = FRAMEBUFFER_W * kDEFAULT_VIEWPORT_SCALE;
+		RECT rect = {
+			FSVIEWPORTX,
+			FSVIEWPORTY,
+			FSVIEWPORTX+g_nViewportCX,
+			FSVIEWPORTY+g_nViewportCY
+		};
 		DDSURFACEDESC surfacedesc;
 		surfacedesc.dwSize = sizeof(surfacedesc);
 		// TC: Use DDLOCK_WAIT - see Bug #13425
@@ -2391,23 +2498,23 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 		{
 			g_pDDPrimarySurface->Restore();
 			g_pDDPrimarySurface->Lock(&rect,&surfacedesc,DDLOCK_WAIT,NULL);
-
-			// DD Full Screen Palette
-//			if (g_pDDPal)
-//			{
-//				g_pDDPrimarySurface->SetPalette(g_pDDPal); // this sets the palette for the primary surface
-//			}
 		}
 		*pAddr_  = (LPBYTE)surfacedesc.lpSurface + (g_nViewportCY-1) * surfacedesc.lPitch;
 		*pPitch_ = -surfacedesc.lPitch;
-		return (HDC)0;
+
+		if( g_pDDPrimarySurface->GetDC( &hDC ) == DD_OK )
+			g_hDDdc = hDC; // intentional "null" copy
+		else
+			hDC = 0;
 	}
 	else
 	{
 		*pAddr_ = g_pFramebufferbits;
 		*pPitch_ = FRAMEBUFFER_W;
-		return FrameGetDC();
+		hDC = FrameGetDC();
 	}
+
+	return hDC;
 }
 
 //===========================================================================
@@ -2449,7 +2556,8 @@ void FrameReleaseDC () {
 //===========================================================================
 void FrameReleaseVideoDC ()
 {
-	if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
+	if (false) // TODO: ...
+	//if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
 	{
 		// THIS IS CORRECT ACCORDING TO THE DIRECTDRAW DOCS
 		RECT rect = {
@@ -2458,10 +2566,19 @@ void FrameReleaseVideoDC ()
 			FSVIEWPORTX+g_nViewportCX,
 			FSVIEWPORTY+g_nViewportCY
 		};
+
+		//g_pDDBackSurface->BltFast( 0, 0, g_pDDPrimarySurface, &rcRect,DDBLTFAST_NOCOLORKEY | DDBLTFAST_WAIT);
+#if DIRECTX_PAGE_FLIP
+		g_pDDBackSurface->Flip( g_pDDPrimarySurface, 0 );
+#endif
+
 		g_pDDPrimarySurface->Unlock(&rect);
 
 		// BUT THIS SEEMS TO BE WORKING
 		g_pDDPrimarySurface->Unlock(NULL);
+
+		g_pDDPrimarySurface->ReleaseDC( g_hDDdc ); // NTSC Full Screen
+		g_hDDdc = 0;
 	}
 }
 

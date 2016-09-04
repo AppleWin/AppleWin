@@ -69,11 +69,11 @@ LED_CAPSON_P8_BITMAP    BITMAP                  "LED_CAPS_ON_P8.BMP"
 LED_LATOFF_BITMAP       BITMAP                  "LED_CAPS_OFF_LAT.BMP"
 LED_LATON_BITMAP        BITMAP                  "LED_CAPS_ON_LAT.BMP"
 CHARSET82               BITMAP                  "CHARSET82.BMP"
-CHARSET8M               BITMAP                  "CHARSET8C.BMP"
+CHARSET8M               BITMAP                  "CHARSET8M.BMP"
 CHARSET8C               BITMAP                  "CHARSET8C.BMP"
 HELP_BUTTON             BITMAP                  "HELP.BMP"
 DRIVESWAP_BUTTON        BITMAP                  "DRIVESWAP.BMP"
-IDB_APPLEWIN            BITMAP                  "Applewin.bmp"
+IDB_APPLEWIN            BITMAP                  "ApplewinLogo.bmp"
 IDB_DEBUG_FONT_7X8      BITMAP                  "Debug_Font.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -250,8 +250,8 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,25,0,4
- PRODUCTVERSION 1,25,0,4
+ FILEVERSION 1,26,0,1
+ PRODUCTVERSION 1,26,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -269,12 +269,12 @@ BEGIN
             VALUE "Comments", "https://github.com/AppleWin"
             VALUE "CompanyName", "AppleWin"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1, 25, 0, 4"
+            VALUE "FileVersion", "1, 26, 0, 1"
             VALUE "InternalName", "APPLEWIN"
             VALUE "LegalCopyright", " 1994-2015 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1, 25, 0, 4"
+            VALUE "ProductVersion", "1, 26, 0, 1"
         END
     END
     BLOCK "VarFileInfo"

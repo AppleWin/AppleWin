@@ -741,7 +741,7 @@ static void Votrax_Write(BYTE nDevice, BYTE nValue)
 
 static void MB_Update()
 {
-	char szDbg[200];
+	//char szDbg[200];
 
 	if (!MockingboardVoice.bActive)
 		return;
@@ -828,9 +828,9 @@ static void MB_Update()
 			if((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
 			{
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				sprintf(szDbg, "%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
-				OutputDebugString(szDbg);
-				if (g_fh) fprintf(g_fh, "%s", szDbg);
+				//sprintf(szDbg, "%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
+				//OutputDebugString(szDbg);
+				//if (g_fh) fprintf(g_fh, "%s", szDbg);
 
 				dwByteOffset = dwCurrentWriteCursor;
 			}
@@ -841,9 +841,9 @@ static void MB_Update()
 			if((dwByteOffset > dwCurrentPlayCursor) || (dwByteOffset < dwCurrentWriteCursor))
 			{
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				sprintf(szDbg, "%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
-				OutputDebugString(szDbg);
-				if (g_fh) fprintf(g_fh, "%s", szDbg);
+				//sprintf(szDbg, "%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
+				//OutputDebugString(szDbg);
+				//if (g_fh) fprintf(g_fh, "%s", szDbg);
 
 				dwByteOffset = dwCurrentWriteCursor;
 			}

@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Registry.h"
 #include "Video.h"
+#include "NTSC.h"
 
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
@@ -119,22 +120,12 @@ enum Color_Palette_Index_e
 	, HGR_PINK         
 
 // MONOCHROME
-	// NOTE: 50% is assumed to come after 100% luminance !!!  See: V_CreateLookup_MonoHiRes()
-	// User customizable
 	, MONOCHROME_CUSTOM     // 100% luminance
 	, MONOCHROME_CUSTOM_50  //  50% luminance
-	// Pre-set "Monochromes"
 	, MONOCHROME_AMBER
-//	, MONOCHROME_AMBER_50 // BUG - something trashing our palette entry !!!
 	, MONOCHROME_GREEN
-//	, MONOCHROME_GREEN_50 // BUG - something trashing our palette entry !!!
-
 	, DEBUG_COLORS_START
 	, DEBUG_COLORS_END = DEBUG_COLORS_START + NUM_DEBUG_COLORS
-
-// DD Full Screen Palette ?!?!
-//	, LOGO_COLORS_START
-//	, LOGO_COLORS_END = LOGO_COLORS_START + 128
 
 	, NUM_COLOR_PALETTE
 
@@ -196,17 +187,6 @@ const BYTE DoubleHiresPalIndex[16] = {
 	const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512); // 1168
 	const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3278
 
-	enum VideoFlag_e
-	{
-		VF_80COL  = 0x00000001,
-		VF_DHIRES = 0x00000002,
-		VF_HIRES  = 0x00000004,
-		VF_80STORE= 0x00000008,
-		VF_MIXED  = 0x00000010,
-		VF_PAGE2  = 0x00000020,
-		VF_TEXT   = 0x00000040
-	};
-
 	#define  SW_80COL         (g_uVideoMode & VF_80COL)
 	#define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
 	#define  SW_HIRES         (g_uVideoMode & VF_HIRES)
@@ -223,6 +203,13 @@ const BYTE DoubleHiresPalIndex[16] = {
 								 g_pFramebufferinfo->bmiColors[i].rgbReserved = PC_NOCOLLAPSE;
 
 #define  HGR_MATRIX_YOFFSET 2	// For tv emulation HGR Video Mode
+
+// Globals (Public)
+
+    uint8_t      *g_pFramebufferbits = NULL; // last drawn frame
+	int           g_nAltCharSetOffset  = 0; // alternate character set
+
+// Globals (Private)
 
 // video scanner constants
 int const kHBurstClock      =    53; // clock when Color Burst starts
@@ -241,13 +228,10 @@ int const kVLine0State      = 0x100; // V[543210CBA] = 100000000
 int const kVPresetLine      =   256; // line when V state presets
 int const kVSyncLines       =     4; // lines per VSync duration
 
-static BYTE          celldirty[40][32];	// [TC: 27/06/2014] NB. No longer used!
-// NUM_COLOR_PALETTE
 static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
 static HBITMAP       g_hDeviceBitmap;
 static HDC           g_hDeviceDC;
-       LPBYTE        g_pFramebufferbits = NULL; // last drawn frame
 static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
 static LPBYTE        g_aFrameBufferOffset[FRAMEBUFFER_H]; // array of pointers to start of each scanline
@@ -264,32 +248,18 @@ static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 static LPBYTE        g_pTextBank1; // Aux
 static LPBYTE        g_pTextBank0; // Main
 
-// For tv emulation HGR Video Mode
-// 2 extra scan lines on bottom?
-static BYTE          hgrpixelmatrix[FRAMEBUFFER_W/2][FRAMEBUFFER_H/2 + 2 * HGR_MATRIX_YOFFSET];
-static BYTE          colormixbuffer[6];
-static WORD          colormixmap[6][6][6];
-//
-
-static int           g_nAltCharSetOffset  = 0; // alternate character set
-
 static /*bool*/ UINT g_VideoForceFullRedraw = 1;
-static bool g_bVideoUpdatedThisFrame = false;
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      g_nFrameBufferPitch = 0;
-COLORREF         monochrome       = RGB(0xC0,0xC0,0xC0);
-static BOOL      rebuiltsource    = 0;
-static LPBYTE    vidlastmem       = NULL;
+COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
+static BOOL      rebuiltsource       = 0;
+static LPBYTE    vidlastmem          = NULL;
 
-static UINT      g_uVideoMode     = VF_TEXT;
+	uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
 
-	DWORD     g_eVideoType     = VT_COLOR_TVEMU;
+	DWORD     g_eVideoType     = VT_COLOR_TV;
 	DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
-
-
-static bool g_bTextFlashState = false;
-static bool g_bTextFlashFlag = false;
 
 static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
@@ -297,42 +267,30 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	TCHAR g_aVideoChoices[] =
-		TEXT("Monochrome (Custom Luminance)\0")
-		TEXT("Color (Standard)\0")
-		TEXT("Color (Text Optimized)\0")
-		TEXT("Color (TV emulation)\0")
+		TEXT("Monochrome (Custom)\0")
+		TEXT("Color Monitor\0")
+		TEXT("B&W TV\0")
+		TEXT("Color TV\0")
 		TEXT("Monochrome (Amber)\0")
 		TEXT("Monochrome (Green)\0")
 		TEXT("Monochrome (White)\0")
 		;
 
-	// AppleWin 1.19.4 VT_COLOR_AUTHENTIC -> VT_COLOR_HALFPIXEL -> VT_COLOR_STANDARD "Color Half-Pixel Authentic
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	// The window title will be set to this.
 	char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
-		  "Monochrome (Custom)"
-		, "Standard"        
-		, "Text Optimized"
-		, "TV"
-		, "Amber"
-		, "Green"
-		, "White"
+		  "Monochrome Monitor (Custom)"
+		, "Color Monitor"
+		, "B&W TV"
+		, "Color TV"
+		, "Amber Monitor"
+		, "Green Monitor"
+		, "White Monitor"
 	};
 
 // Prototypes (Private) _____________________________________________
 
-	void V_CreateLookup_DoubleHires ();
-	void V_CreateLookup_Hires (); // Old "Full-Pixel" support only: STANDARD, TEXT_OPTIMIZED, TVEMU
-	void V_CreateLookup_HiResHalfPixel_Authentic (); // New "Half_Pixel" support: STANDARD, TEXT_OPTIMIZED
-	void V_CreateLookup_HiresHalfShiftDim();
-	void V_CreateLookup_Lores ();
-	void V_CreateLookup_Text (HDC dc);
-// Monochrome Full-Pixel Support
-	void V_CreateLookup_MonoDoubleHiRes ();
-	void V_CreateLookup_MonoHiRes ();
-	void V_CreateLookup_MonoLoRes ();
-	void V_CreateLookup_MonoText (HDC dc);
 // Monochrome Half-Pixel Support
 	void V_CreateLookup_MonoHiResHalfPixel_Real ();
 
@@ -348,88 +306,7 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	int GetMonochromeIndex();
 
 	void V_CreateIdentityPalette ();
-	void V_CreateDIBSections ();
-	HBRUSH V_CreateCustomBrush (COLORREF nColor);
-
-/** Our BitBlit() / VRAM_Copy()
-	@param dx Dst X
-	@param dy Dst Y
-	@param w  Width (same for src & dst)
-	@param h  Height (same for src & dst)
-	@param sx Src X
-	@param sy Src Y
-// =========================================================================== */
-
-static inline void CopySource8(int dx, int dy, int w, int h, int sx, int sy)
-{
-	LPBYTE pDst = g_aFrameBufferOffset[ dy ] + dx;
-	LPBYTE pSrc = g_aSourceStartofLine[ sy ] + sx;
-	int nBytes;
-
-	while (h--)
-	{
-		nBytes = w;
-
-		// If not multiple of 3 bytes, copy first 3 bytes, so the next copy is 4-byte aligned.
-		while (nBytes & 3)
-		{
-			--nBytes;
-			if (g_uHalfScanLines && !(h & 1))
-				*(pDst+nBytes) = 0;				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-			else
-				*(pDst+nBytes) = *(pSrc+nBytes);
-		}
-
-		// Copy 4 bytes at a time
-		while (nBytes)
-		{
-			nBytes -= 4;
-			if (g_uHalfScanLines && !(h & 1))
-				*(LPDWORD)(pDst+nBytes) = 0;	// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-			else
-				*(LPDWORD)(pDst+nBytes) = *(LPDWORD)(pSrc+nBytes);
-		}
-
-		pDst -= g_nFrameBufferPitch;
-		pSrc -= SRCOFFS_TOTAL;
-	}
-}
-
-static void CopySource(int dx, int dy, int w, int h, int sx, int sy)
-{
-	if (!g_bIsFullScreen || !GetFullScreen32Bit())
-	{
-		CopySource8(dx,dy,w,h,sx,sy);
-		return;
-	}
-
-	UINT32* pDst = (UINT32*) (g_aFrameBufferOffset[ dy ] + dx*sizeof(UINT32));
-	LPBYTE pSrc = g_aSourceStartofLine[ sy ] + sx;
-	int nBytes;
-
-	while (h--)
-	{
-		nBytes = w;
-		while (nBytes)
-		{
-			--nBytes;
-			if (g_uHalfScanLines && !(h & 1))
-			{
-				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-				*(pDst+nBytes) = 0;
-			}
-			else
-			{
-				const RGBQUAD& rRGB = g_pFramebufferinfo->bmiColors[ *(pSrc+nBytes) ];
-				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
-				*(pDst+nBytes) = rgb;
-			}
-		}
-
-		pDst -= g_nFrameBufferPitch / sizeof(UINT32);
-		pSrc -= SRCOFFS_TOTAL;
-	}
-}
+	void  videoCreateDIBSection();
 
 //===========================================================================
 void CreateFrameOffsetTable (LPBYTE addr, LONG pitch)
@@ -448,12 +325,16 @@ void CreateFrameOffsetTable (LPBYTE addr, LONG pitch)
 //===========================================================================
 void VideoInitialize ()
 {
+	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
+	VideoResetState();
+
 	// CREATE A BUFFER FOR AN IMAGE OF THE LAST DRAWN MEMORY
 	vidlastmem = (LPBYTE)VirtualAlloc(NULL,0x10000,MEM_COMMIT,PAGE_READWRITE);
 	ZeroMemory(vidlastmem,0x10000);
 
 	// LOAD THE LOGO
-	g_hLogoBitmap = (HBITMAP)LoadImage(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+//	g_hLogoBitmap = (HBITMAP)LoadImage(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN), IMAGE_BITMAP, 560, 384, LR_CREATEDIBSECTION);
+	g_hLogoBitmap = LoadBitmap( g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN) );
 
 	// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
 	g_pFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
@@ -463,74 +344,20 @@ void VideoInitialize ()
 		PAGE_READWRITE);
 
 	ZeroMemory(g_pFramebufferinfo,sizeof(BITMAPINFOHEADER)+256*sizeof(RGBQUAD));
-	g_pFramebufferinfo->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
-	g_pFramebufferinfo->bmiHeader.biWidth    = FRAMEBUFFER_W;
-	g_pFramebufferinfo->bmiHeader.biHeight   = FRAMEBUFFER_H;
-	g_pFramebufferinfo->bmiHeader.biPlanes   = 1;
-	g_pFramebufferinfo->bmiHeader.biBitCount = 8;
-	g_pFramebufferinfo->bmiHeader.biClrUsed  = 256;
+	g_pFramebufferinfo->bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
+	g_pFramebufferinfo->bmiHeader.biWidth       = FRAMEBUFFER_W;
+	g_pFramebufferinfo->bmiHeader.biHeight      = FRAMEBUFFER_H;
+	g_pFramebufferinfo->bmiHeader.biPlanes      = 1;
+	g_pFramebufferinfo->bmiHeader.biBitCount    = 32;
+	g_pFramebufferinfo->bmiHeader.biCompression = BI_RGB;
+	g_pFramebufferinfo->bmiHeader.biClrUsed     = 0;
 
-	// CREATE A BITMAPINFO STRUCTURE FOR THE SOURCE IMAGE
-	g_pSourceHeader = (LPBITMAPINFO)VirtualAlloc(
-		NULL,
-		sizeof(BITMAPINFOHEADER) + 256*sizeof(RGBQUAD),
-		MEM_COMMIT,
-		PAGE_READWRITE);
-
-	ZeroMemory(g_pSourceHeader,sizeof(BITMAPINFOHEADER));
-	g_pSourceHeader->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
-	g_pSourceHeader->bmiHeader.biWidth    = SRCOFFS_TOTAL;
-	g_pSourceHeader->bmiHeader.biHeight   = 512;
-	g_pSourceHeader->bmiHeader.biPlanes   = 1;
-	g_pSourceHeader->bmiHeader.biBitCount = 8;
-	g_pSourceHeader->bmiHeader.biClrUsed  = 256;
-
-	// VideoReinitialize() ... except we set the frame buffer palette....
-		V_CreateIdentityPalette();
-
-		//RGB() -> none
-		//PALETTERGB() -> PC_EXPLICIT
-		//??? RGB() -> PC_NOCOLLAPSE
-		for( int iColor = 0; iColor < NUM_COLOR_PALETTE; iColor++ )
-			customcolors[ iColor ] = ((DWORD)PC_EXPLICIT << 24) | RGB(
-			g_pFramebufferinfo->bmiColors[iColor].rgbRed,
-			g_pFramebufferinfo->bmiColors[iColor].rgbGreen,
-			g_pFramebufferinfo->bmiColors[iColor].rgbBlue
-		);
-
-		// CREATE THE FRAME BUFFER DIB SECTION AND DEVICE CONTEXT,
-		// CREATE THE SOURCE IMAGE DIB SECTION AND DRAW INTO THE SOURCE BIT BUFFER
-		V_CreateDIBSections();
-
-	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
-	VideoResetState();
-}
-
-//===========================================================================
-int GetMonochromeIndex()
-{
-	int iMonochrome;
-	
-	switch (g_eVideoType)
-	{
-		case VT_MONO_AMBER : iMonochrome = MONOCHROME_AMBER ; break;
-		case VT_MONO_GREEN : iMonochrome = MONOCHROME_GREEN ; break;
-		case VT_MONO_WHITE : iMonochrome = HGR_WHITE        ; break;
-		default            : iMonochrome = MONOCHROME_CUSTOM; break; // caller will use MONOCHROME_CUSTOM MONOCHROME_CUSTOM_50 !
-	}
-
-	return iMonochrome;
+	videoCreateDIBSection();
 }
 
 //===========================================================================
 void V_CreateIdentityPalette ()
 {
-	if (g_hPalette)
-	{
-		DeleteObject(g_hPalette);
-	}
-	g_hPalette = (HPALETTE)0;
-
 	SETFRAMECOLOR(BLACK,       0x00,0x00,0x00); // 0
 	SETFRAMECOLOR(DARK_RED,    0x80,0x00,0x00); // 1 // not used
 	SETFRAMECOLOR(DARK_GREEN,  0x00,0x80,0x00); // 2 // not used
@@ -570,18 +397,17 @@ void V_CreateIdentityPalette ()
 	SETFRAMECOLOR(HGR_PINK,   0xFF,0x32,0xB5); // 0xD0,0x40,0xA0 -> 0xFF,0x32,0xB5
 
 	SETFRAMECOLOR( MONOCHROME_CUSTOM
-		, GetRValue(monochrome)
-		, GetGValue(monochrome)
-		, GetBValue(monochrome)
+		, GetRValue(g_nMonochromeRGB)
+		, GetGValue(g_nMonochromeRGB)
+		, GetBValue(g_nMonochromeRGB)
 	);
 
 	SETFRAMECOLOR( MONOCHROME_CUSTOM_50
-		, ((GetRValue(monochrome)/2) & 0xFF)
-		, ((GetGValue(monochrome)/2) & 0xFF)
-		, ((GetBValue(monochrome)/2) & 0xFF)
+		, ((GetRValue(g_nMonochromeRGB)/2) & 0xFF)
+		, ((GetGValue(g_nMonochromeRGB)/2) & 0xFF)
+		, ((GetBValue(g_nMonochromeRGB)/2) & 0xFF)
 	);
 
-	// SEE: V_CreateLookup_MonoText
 	SETFRAMECOLOR( MONOCHROME_AMBER   , 0xFF,0x80,0x01); // Used for Monochrome Hi-Res graphics not text!
 	SETFRAMECOLOR( MONOCHROME_GREEN   , 0x00,0xC0,0x01); // Used for Monochrome Hi-Res graphics not text!
 	// BUG PALETTE COLLAPSE: WTF?? Soon as we set 0xFF,0xFF,0xFF we lose text colors?!?!
@@ -598,434 +424,9 @@ void V_CreateIdentityPalette ()
 	SETFRAMECOLOR(MAGENTA,     0xC7,0x34,0xFF); // FD Linards Tweaked 0xFF,0x00,0xFF -> 0xC7,0x34,0xFF
 	SETFRAMECOLOR(CYAN,        0x00,0xFF,0xFF); // FE
 	SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF); // FF
-
-	// IF WE ARE IN A PALETTIZED VIDEO MODE, CREATE AN IDENTITY PALETTE
-	HWND window = GetDesktopWindow();
-	HDC  dc     = GetDC(window);
-
-	// int GetDeviceCaps( HDC, nIndex );
-	int  colors = GetDeviceCaps(dc,SIZEPALETTE); // 16/24/32bpp = 0
-	int  system = GetDeviceCaps(dc,NUMCOLORS);   // 16/24/32bpp = -1
+}
 
 #if 0
-	// DD Full Screen Palette
-	// Full Screen Debug Colors
-	BYTE *pTmp;
-		
-	pTmp = ((BYTE*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
-	pTmp += (DEBUG_COLORS_START * 4);
-	Debug_UpdatePalette( pTmp );
-
-	// GET THE PALETTE ENTRIES OF THE LOGO
-	RGBQUAD aLogoPalette[256];
-	ZeroMemory(aLogoPalette,sizeof(aLogoPalette));
-	if (g_hLogoBitmap)
-	{
-		BYTE *pSrc = NULL;
-		BITMAP bmp; 
-		PBITMAPINFO pbmi; 
-//			WORD    cClrBits; 
-		// Retrieve the bitmap color format, width, and height.  
-		if (GetObject(g_hLogoBitmap, sizeof(BITMAP), (LPSTR)&bmp))
-		{
-			pSrc = (BYTE*) pbmi->bmiColors;
-
-			// Logo uses 128 colors
-			pTmp = ((BYTE*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
-			pTmp += (LOGO_COLORS_START * 4);
-			int iPal = 0;
-			for( iPal = 0; iPal < 128; iPal++ )
-			{
-				*pTmp++ = *pSrc++;
-				*pTmp++ = *pSrc++;
-				*pTmp++ = *pSrc++;
-				*pTmp++ = *pSrc++;
-			}
-		}
-	}
-#endif
-
-	int bRasterPalette = (GetDeviceCaps(dc,RASTERCAPS) & RC_PALETTE);
-	if (bRasterPalette && (colors <= 256))
-	{
-		// GET THE PALETTE ENTRIES OF THE LOGO
-		RGBQUAD aLogoPalette[256];
-		ZeroMemory(aLogoPalette,sizeof(aLogoPalette));
-		if (g_hLogoBitmap) {
-			HDC memdc = CreateCompatibleDC(dc);
-			SelectObject(memdc,g_hLogoBitmap);
-			GetDIBColorTable(memdc,0,colors,aLogoPalette);
-			DeleteDC(memdc);
-		}
-
-		// CREATE A PALETTE ENTRY ARRAY
-		LOGPALETTE *paldata = (LOGPALETTE *)VirtualAlloc(
-			NULL,
-			sizeof(LOGPALETTE) + 256*sizeof(PALETTEENTRY),
-			MEM_COMMIT,
-			PAGE_READWRITE
-		);
-
-		paldata->palVersion    = 0x300;
-		paldata->palNumEntries = colors;
-		GetSystemPaletteEntries(dc,0,colors,paldata->palPalEntry);
-
-		// FILL IN THE PALETTE ENTRIES
-		int paletteindex  = 0;
-		int logoindex     = 0;
-		int halftoneindex = 0;
-
-		// COPY THE SYSTEM PALETTE ENTRIES AT THE BEGINNING OF THE PALETTE
-		for (; paletteindex < system/2; paletteindex++)
-			paldata->palPalEntry[paletteindex].peFlags = 0;
-
-		// FILL IN THE MIDDLE PORTION OF THE PALETTE WITH OUR OWN COLORS
-		for (int ourindex = DEEP_RED; ourindex <= NUM_COLOR_PALETTE; ourindex++) {
-			paldata->palPalEntry[paletteindex].peRed   = g_pFramebufferinfo->bmiColors[ourindex].rgbRed;
-			paldata->palPalEntry[paletteindex].peGreen = g_pFramebufferinfo->bmiColors[ourindex].rgbGreen;
-			paldata->palPalEntry[paletteindex].peBlue  = g_pFramebufferinfo->bmiColors[ourindex].rgbBlue;
-			paldata->palPalEntry[paletteindex].peFlags = PC_NOCOLLAPSE;
-			paletteindex++;
-		}
-
-		for (; paletteindex < colors-system/2; paletteindex++) {
-
-			// IF THIS PALETTE ENTRY IS NEEDED FOR THE LOGO, COPY IN THE LOGO COLOR
-			if (aLogoPalette[logoindex].rgbRed &&
-				aLogoPalette[logoindex].rgbGreen &&
-				aLogoPalette[logoindex].rgbBlue)
-			{
-				paldata->palPalEntry[paletteindex].peRed   = aLogoPalette[logoindex].rgbRed;
-				paldata->palPalEntry[paletteindex].peGreen = aLogoPalette[logoindex].rgbGreen;
-				paldata->palPalEntry[paletteindex].peBlue  = aLogoPalette[logoindex].rgbBlue;
-			}
-
-			// OTHERWISE, ADD A HALFTONING COLOR, SO THAT OTHER APPLICATIONS
-			// RUNNING IN THE BACKGROUND WILL HAVE SOME REASONABLE COLORS TO USE
-			else
-			{
-				static BYTE halftonetable[6] = {32,64,96,160,192,224};
-				paldata->palPalEntry[paletteindex].peRed   = halftonetable[halftoneindex    % 6];
-				paldata->palPalEntry[paletteindex].peGreen = halftonetable[halftoneindex/6  % 6];
-				paldata->palPalEntry[paletteindex].peBlue  = halftonetable[halftoneindex/36 % 6];
-				++halftoneindex;
-			}
-
-			++logoindex;
-			paldata->palPalEntry[paletteindex].peFlags = PC_NOCOLLAPSE;
-		}
-
-		// COPY THE SYSTEM PALETTE ENTRIES AT THE END OF THE PALETTE
-		for (; paletteindex < colors; paletteindex++)
-			paldata->palPalEntry[paletteindex].peFlags = 0;
-
-		// FILL THE FRAME BUFFER TABLE WITH COLORS FROM OUR PALETTE
-		for (int iPal = 0; iPal < colors; iPal++) {
-			g_pFramebufferinfo->bmiColors[ iPal ].rgbRed   = paldata->palPalEntry[ iPal ].peRed;
-			g_pFramebufferinfo->bmiColors[ iPal ].rgbGreen = paldata->palPalEntry[ iPal ].peGreen;
-			g_pFramebufferinfo->bmiColors[ iPal ].rgbBlue  = paldata->palPalEntry[ iPal ].peBlue;
-		}
-
-		// CREATE THE PALETTE
-		g_hPalette = CreatePalette(paldata);
-		VirtualFree(paldata,0,MEM_RELEASE);
-	}
-
-	ReleaseDC(window,dc);
-}
-
-//===========================================================================
-void V_CreateDIBSections () 
-{
-	CopyMemory(g_pSourceHeader->bmiColors,g_pFramebufferinfo->bmiColors,256*sizeof(RGBQUAD));
-  
-	// CREATE THE DEVICE CONTEXT
-	HWND window  = GetDesktopWindow();
-	HDC dc       = GetDC(window);
-	if (g_hDeviceDC)
-	{
-		DeleteDC(g_hDeviceDC);
-	}
-	g_hDeviceDC = CreateCompatibleDC(dc);
-
-	// CREATE THE FRAME BUFFER DIB SECTION
-	if (g_hDeviceBitmap)
-		DeleteObject(g_hDeviceBitmap);
-		g_hDeviceBitmap = CreateDIBSection(
-			dc,
-			g_pFramebufferinfo,
-			DIB_RGB_COLORS,
-			(LPVOID *)&g_pFramebufferbits,0,0
-		);
-	SelectObject(g_hDeviceDC,g_hDeviceBitmap);
-
-	// CREATE THE SOURCE IMAGE DIB SECTION
-	HDC sourcedc = CreateCompatibleDC(dc);
-	ReleaseDC(window,dc);
-	if (g_hSourceBitmap)
-		DeleteObject(g_hSourceBitmap);
-
-	g_hSourceBitmap = CreateDIBSection(
-		sourcedc,
-		g_pSourceHeader,
-		DIB_RGB_COLORS,
-		(LPVOID *)&g_pSourcePixels,0,0
-	);
-	SelectObject(sourcedc,g_hSourceBitmap);
-
-	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE SOURCE IMAGE
-	for (int y = 0; y < MAX_SOURCE_Y; y++)
-		g_aSourceStartofLine[ y ] = g_pSourcePixels + SRCOFFS_TOTAL*((MAX_SOURCE_Y-1) - y);
-
-	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory(g_pSourcePixels,SRCOFFS_TOTAL*512); // 32 bytes/pixel * 16 colors = 512 bytes/row
-
-	// First monochrome mode is seperate from others
-	if ((g_eVideoType >= VT_COLOR_STANDARD)	&& (g_eVideoType <  VT_MONO_AMBER))
-	{
-		V_CreateLookup_Text(sourcedc);
-		V_CreateLookup_Lores();
-
-		if ( g_eVideoType == VT_COLOR_TVEMU )
-			V_CreateLookup_Hires();
-		else
-#if HALF_DIM_SUPPORT
-			V_CreateLookup_HiresHalfShiftDim();
-#else
-			V_CreateLookup_HiResHalfPixel_Authentic();
-#endif
-		V_CreateLookup_DoubleHires();
-	}
-	else
-	{
-		V_CreateLookup_MonoText(sourcedc);
-		V_CreateLookup_MonoLoRes();
-
-		switch (g_eVideoType)
-		{
-			case VT_MONO_AMBER             : /* intentional fall-thru */
-			case VT_MONO_GREEN             : /* intentional fall-thru */
-			case VT_MONO_WHITE             : /* intentional fall-thru */                    
-			case VT_MONO_HALFPIXEL_REAL    : V_CreateLookup_MonoHiResHalfPixel_Real()    ; break;
-			default: V_CreateLookup_MonoHiRes(); break;
-		}
-		V_CreateLookup_MonoDoubleHiRes();
-	}
-	DeleteDC(sourcedc);
-}
-
-//===========================================================================
-void V_CreateLookup_DoubleHires ()
-{
-#define OFFSET  3
-#define SIZE    10
-
-  for (int column = 0; column < 256; column++) {
-    int coloffs = SIZE * column;
-    for (unsigned byteval = 0; byteval < 256; byteval++) {
-      int color[SIZE];
-      ZeroMemory(color,sizeof(color));
-      unsigned pattern = MAKEWORD(byteval,column);
-      int pixel;
-      for (pixel = 1; pixel < 15; pixel++) {
-        if (pattern & (1 << pixel)) {
-          int pixelcolor = 1 << ((pixel-OFFSET) & 3);
-          if ((pixel >=  OFFSET+2) && (pixel < SIZE+OFFSET+2) && (pattern & (0x7 << (pixel-4))))
-            color[pixel-(OFFSET+2)] |= pixelcolor;
-          if ((pixel >=  OFFSET+1) && (pixel < SIZE+OFFSET+1) && (pattern & (0xF << (pixel-4))))
-            color[pixel-(OFFSET+1)] |= pixelcolor;
-          if ((pixel >=  OFFSET+0) && (pixel < SIZE+OFFSET+0))
-            color[pixel-(OFFSET+0)] |= pixelcolor;
-          if ((pixel >=  OFFSET-1) && (pixel < SIZE+OFFSET-1) && (pattern & (0xF << (pixel+1))))
-            color[pixel-(OFFSET-1)] |= pixelcolor;
-          if ((pixel >=  OFFSET-2) && (pixel < SIZE+OFFSET-2) && (pattern & (0x7 << (pixel+2))))
-            color[pixel-(OFFSET-2)] |= pixelcolor;
-        }
-      }
-
-	  if (g_eVideoType == VT_COLOR_TEXT_OPTIMIZED)
-	  {
-	    // Activate for fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR Video Mode.
-		for (pixel = 0; pixel < 13; pixel++)
-		{
-		  if ((pattern & (0xF << pixel)) == (unsigned)(0xF << pixel))
-			for (int pos = pixel; pos < pixel + 4; pos++)
-			  if (pos >= OFFSET && pos < SIZE+OFFSET)
-				color[pos-OFFSET] = 15;
-		}
-	  }
-
-      int y = byteval << 1;
-      for (int x = 0; x < SIZE; x++) {
-        SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,DoubleHiresPalIndex[ color[x] ]);
-        SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,DoubleHiresPalIndex[ color[x] ]);
-      }
-    }
-  }
-#undef SIZE
-#undef OFFSET
-}
-
-//===========================================================================
-void V_CreateLookup_Hires ()
-{
-	int iMonochrome = GetMonochromeIndex();
-
-	// BYTE colorval[6] = {MAGENTA,BLUE,GREEN,ORANGE,BLACK,WHITE};
-	// BYTE colorval[6] = {HGR_VIOLET,HGR_BLUE,HGR_GREEN,HGR_ORANGE,HGR_BLACK,HGR_WHITE};
-	for (int iColumn = 0; iColumn < 16; iColumn++)
-	{
-		int coloffs = iColumn << 5;
-
-		for (unsigned iByte = 0; iByte < 256; iByte++)
-		{
-			int aPixels[11];
-
-			aPixels[ 0] = iColumn & 4;
-			aPixels[ 1] = iColumn & 8;
-			aPixels[ 9] = iColumn & 1;
-			aPixels[10] = iColumn & 2;
-
-			int nBitMask = 1;
-			int iPixel;
-			for (iPixel  = 2; iPixel < 9; iPixel++) {
-				aPixels[iPixel] = ((iByte & nBitMask) != 0);
-				nBitMask <<= 1;
-			}
-
-			int hibit = ((iByte & 0x80) != 0);
-			int x     = 0;
-			int y     = iByte << 1;
-
-			while (x < 28)
-			{
-				int adj = (x >= 14) << 1;
-				int odd = (x >= 14);
-
-				for (iPixel = 2; iPixel < 9; iPixel++)
-				{
-					int color = CM_Black;
-					if (aPixels[iPixel])
-					{
-						if (aPixels[iPixel-1] || aPixels[iPixel+1])
-							color = CM_White;
-						else
-							color = ((odd ^ (iPixel&1)) << 1) | hibit;
-					}
-					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
-					{
-						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
-						// VT_COLOR_STANDARD = Fill in colors in between white pixels
-						// VT_COLOR_TVEMU    = Fill in colors in between white pixels  (Post Processing will mix/merge colors)
-						// VT_COLOR_TEXT_OPTIMIZED --> !(aPixels[iPixel-2] && aPixels[iPixel+2]) = Don't fill in colors in between white
-						if ((g_eVideoType == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
-							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
-					}
-
-					//if (g_eVideoType == VT_MONO_AUTHENTIC) {
-					//	int nMonoColor = (color != CM_Black) ? iMonochrome : BLACK;
-					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , nMonoColor); // buggy
-					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , nMonoColor); // buggy
-					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,BLACK); // BL
-					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,BLACK); // BR
-					//} else
-					{
-						// Colors - Top/Bottom Left/Right
-						// cTL cTR
-						// cBL cBR
-						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,HiresToPalIndex[color]); // cTL
-						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
-						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
-						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
-					}
-					x += 2;
-				}
-			}
-		}
-	}
-}
-
-
-//===========================================================================
-void V_CreateLookup_Lores ()
-{
-	for (int color = 0; color < 16; color++)
-		for (int x = 0; x < 16; x++)
-			for (int y = 0; y < 16; y++)
-				SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,LoresResColors[color]);
-}
-
-
-//===========================================================================
-void V_CreateLookup_MonoDoubleHiRes ()
-{
-	int iMonochrome = GetMonochromeIndex();
-	
-	for (int column = 0; column < 256; column++)
-	{
-		int coloffs = 10 * column;
-		for (unsigned byteval = 0; byteval < 256; byteval++)
-		{
-			unsigned pattern = MAKEWORD(byteval,column);
-			int      y       = byteval << 1;
-			for (int x = 0; x < 10; x++)
-			{
-				BYTE colorval = pattern & (1 << (x+3)) ? iMonochrome : BLACK;
-
-#if 0
-				if (g_eVideoType == VT_MONO_AUTHENTIC)
-				{
-					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,colorval);
-					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,BLACK);
-				}
-				else
-#endif
-				{
-					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,colorval);
-					SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,colorval);
-				}
-			}
-		}
-	}
-}
-
-//===========================================================================
-void V_CreateLookup_MonoHiRes ()
-{
-	const int iMonochrome = GetMonochromeIndex();
-	
-	for (int column = 0; column < 512; column += 16)
-	{
-		for (int y = 0; y < 512; y += 2) // optimization: Byte=0..FF, Row=Byte*2
-		{
-			unsigned val = (y >> 1); // iByte = (y / 2)
-			for (int x = 0; x < 16; x += 2) // 8 pixels
-			{
-				BYTE colorval = (val & 1) ? iMonochrome : BLACK;
-				val >>= 1;
-				SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y  ,colorval);
-				SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y  ,colorval);
-				{
-					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x  ,y+1,colorval);
-					SETSOURCEPIXEL(SRCOFFS_HIRES+column+x+1,y+1,colorval);
-				}
-			}
-		}
-	}
-}
-
-//===========================================================================
-void V_CreateLookup_HiResHalfPixel_Authentic () // Colors are solid (100% coverage)
-{
-	// 2-bits from previous byte, 2-bits from next byte = 2^4 = 16 total permutations
-	for (int iColumn = 0; iColumn < 16; iColumn++)
-	{
-		int offsetx = iColumn << 5; // every column is 32 bytes wide -- 7 apple pixels = 14 pixels + 2 pad + 14 pixels + 2 pad
-
-		for (unsigned iByte = 0; iByte < 256; iByte++)
-		{
-			int aPixels[11]; // c2 c1 b7 b6 b5 b4 b3 b2 b1 b0 c8 c4
-
 /*
 aPixel[i]
  A 9|8 7 6 5 4 3 2|1 0
@@ -1057,7 +458,19 @@ Legend:
 			int x     = 0;
 			int y     = iByte << 1;
 
-/* Test cases
+/*
+Color Reference Tests:
+
+2000:D5 AA D5 AA D5 AA //  blue blue  blue
+2400:AA D5 2A 55 55 2A //+ red  green violet
+//                     //= grey aqua  violet
+
+2C00:AA D5 AA D5 2A 55 //  red    red     green
+3000:2A 55 55 2A 55 2A //+ green  violet  violet
+//                     //= yellow pink    grey
+
+Test cases
+==========
  81 blue
    2000:D5 AA D5 AA
  82 orange
@@ -1073,31 +486,7 @@ Legend:
  Edge Case for Color Bleed !
    2000:40 00
    2400:40 80
-*/
 
-			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but cross 14-pixel boundaries.
-			if( hibit )
-			{
-				if ( aPixels[1] ) // preceeding pixel on?
-#if 0 // Optimization: Doesn't seem to matter if we ignore the 2 pixels of the next byte
-					for (iPixel = 0; iPixel < 9; iPixel++) // NOTE: You MUST start with the preceding 2 pixels !!!
-						if (aPixels[iPixel]) // pixel on
-#endif
-						{
-							if (aPixels[2] || aPixels[0]) // White if pixel from previous byte and first pixel of this byte is on
-							{
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_WHITE );
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_WHITE );
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_WHITE );
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_WHITE );
-							} else {   // Optimization:   odd = (iPixel & 1); if (!odd) case is same as if(odd) !!! // Reference: Gumball - Gumball Machine
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_ORANGE ); // left half of orange pixels 
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_ORANGE );
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_BLUE ); // right half of blue pixels 4, 11, 18, ...
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_BLUE );
-							}
-						}
-#if HALF_PIXEL_SOLID
 // Test Patterns 
 // 81 blue
 //   2000:D5 AA D5 AA -> 2001:AA D5  should not have black gap, should be blue
@@ -1111,8 +500,6 @@ Legend:
 //   29D0:C0 90 88 -> Blue black orange
 // Game: Ultima 4 -- Ultima 4 Logo - bottom half of screen has a "mini-game" / demo -- far right has tree and blue border
 //   2176:2A AB green black_gap white blue_border // Should have black gap between green and white
-				else if ( aPixels[0] ) // prev prev pixel on
-				{
 // Game: Gumball
 //   218E:AA 97    => 2000: A9 87          orange_white            // Should have no gap between orange and white
 //   229A:AB A9 87 -> 2000: 00 A9 87 white orange black blue_white // Should have no gap between blue and white
@@ -1124,138 +511,13 @@ Legend:
 //  or
 //   2000:A0 83 orange should "bleed" thru
 //   2400:B0 83 should have black gap
-
-					if ( aPixels[2] )
-#if HALF_PIXEL_BLEED // No Half-Pixel Bleed
-						if ( aPixels[3] ) {
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , DARK_BLUE ); // Gumball: 229A: AB A9 87
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, DARK_BLUE );
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , BROWN ); // half luminance red Elite: 2444: BB F7
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, BROWN ); // half luminance red Gumball: 218E: AA 97
-						} else {
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_ORANGE );
-						}
-#else
-						if ((g_eVideoType == VT_COLOR_STANDARD) || ( !aPixels[3] ))
-						{ // "Text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_ORANGE );
-						}
-#endif // HALF_PIXEL_BLEED
-				}
-#endif // HALF_PIXEL_SOLID
-			}
-			x += hibit;
-
-			while (x < 28)
-			{
-				int adj = (x >= 14) << 1; // Adjust start of 7 last pixels to be 16-byte aligned!
-				int odd = (x >= 14);
-				for (iPixel = 2; iPixel < 9; iPixel++)
-				{
-					int color = CM_Black;
-					if (aPixels[iPixel]) // pixel on
-					{
-						color = CM_White; 
-						if (aPixels[iPixel-1] || aPixels[iPixel+1]) // adjacent pixels are always white
-							color = CM_White; 
-						else
-							color = ((odd ^ (iPixel&1)) << 1) | hibit; // map raw color to our hi-res colors
-					}
-#if HALF_PIXEL_SOLID
-					else if (aPixels[iPixel-1] && aPixels[iPixel+1]) // IF prev_pixel && next_pixel THEN
-					{
-						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
-						if (
-							(g_eVideoType == VT_COLOR_STANDARD) // Fill in colors in between white pixels
-						||	(g_eVideoType == VT_COLOR_TVEMU)    // Fill in colors in between white pixels (Post Processing will mix/merge colors)
-						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
-						{
 							// Test Pattern: Ultima 4 Logo - Castle
 							// 3AC8: 36 5B 6D 36
-							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
-						}
-					}
-#endif
-					// Colors - Top/Bottom Left/Right
-					// cTL cTR
-					// cBL cBR
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y  ,HiresToPalIndex[color]); // cTL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
-					x += 2;
-				}
-			}
-		}
-	}
-}
-
-//===========================================================================
-void V_CreateLookup_HiresHalfShiftDim ()
-{
-	// BYTE colorval[6] = {HGR_MAGENTA,HGR_BLUE,HGR_GREEN,HGR_RED,HGR_BLACK,HGR_WHITE};
-	for (int iColumn = 0; iColumn < 16; iColumn++)
-	{
-		int coloffs = iColumn << 5;
-
-		for (unsigned iByte = 0; iByte < 256; iByte++)
-		{
-			int aPixels[11];
-
-			aPixels[ 0] = iColumn & 4;
-			aPixels[ 1] = iColumn & 8;
-			aPixels[ 9] = iColumn & 1;
-			aPixels[10] = iColumn & 2;
-
-			int nBitMask = 1;
-			int iPixel;
-			for (iPixel  = 2; iPixel < 9; iPixel++) {
-				aPixels[iPixel] = ((iByte & nBitMask) != 0);
-				nBitMask <<= 1;
-			}
-
-			int hibit = ((iByte & 0x80) != 0);
-			int x     = 0;
-			int y     = iByte << 1;
-
-			while (x < 28)
-			{
-				int adj = (x >= 14) << 1;
-				int odd = (x >= 14);
-
-				for (iPixel = 2; iPixel < 9; iPixel++)
-				{
-					int color = CM_Black;
-					if (aPixels[iPixel])
-					{
-						if (aPixels[iPixel-1] || aPixels[iPixel+1])
-						{
-							color = CM_White;
-						}
-						else
-							color = ((odd ^ (iPixel&1)) << 1) | hibit;
-					}
-					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
-					{
-						/*
-						activate for fringe reduction on white hgr text - 
-						drawback: loss of color mix patterns in HGR mode.
-						select g_eVideoType by index exclusion
-						*/
-						if (
-							(g_eVideoType == VT_COLOR_STANDARD) // Fill in colors in between white pixels
-						||	(g_eVideoType == VT_COLOR_TVEMU)    // Fill in colors in between white pixels (Post Processing will mix/merge colors)
-						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
-							color = ((odd ^ !(iPixel&1)) << 1) | hibit;
-					}
-
-					/*
 						Address Binary   -> Displayed
 						2000:01 0---0001 -> 1 0 0 0  column 1
 						2400:81 1---0001 ->  1 0 0 0 half-pixel shift right
@@ -1271,122 +533,6 @@ void V_CreateLookup_HiresHalfShiftDim ()
 
 						@reference: see Beagle Bro's Disk: "Silicon Salad", File: DOUBLE HI-RES
 						Fortunately double-hires is supported via pixel doubling, so we can do half-pixel shifts ;-)
-					*/
-					switch (color)
-					{
-						case CM_Violet:
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_VIOLET   ); // HiresToPalIndex
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , DARK_MAGENTA ); // HiresDimmedIndex
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_VIOLET   ); // HiresToPalIndex
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, DARK_MAGENTA ); // HiresDimmedIndex
-							break;
-
-						case CM_Blue   :
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_BLUE  );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y  , DARK_BLUE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_BLUE  );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y+1, DARK_BLUE );
-							// Prevent column gaps
-							if (hibit)
-							{
-								if (iPixel <= 2)
-								{
-									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , DARK_BLUE );
-									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, DARK_BLUE );
-								}
-							}
-							break;
-
-						case CM_Green :
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_GREEN  );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , DARK_GREEN );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_GREEN  );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, DARK_GREEN );
-							break;
-
-						case CM_Orange:
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_ORANGE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y  , BROWN      ); // DARK_RED is a bit "too" red
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_ORANGE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+2,y+1, BROWN      ); // DARK_RED is a bit "too" red
-							// Prevent column gaps
-							if (hibit)
-							{
-								if (iPixel <= 2)
-								{
-									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , BROWN ); // DARK_RED is a bit "too" red
-									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, BROWN ); // DARK_RED is a bit "too" red
-								}
-							}
-							break;
-
-						case CM_Black :
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_BLACK );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_BLACK );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_BLACK );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_BLACK );
-							break;
-
-						case CM_White :
-							// Don't dither / half-shift white, since DROL cutscene looks bad :(
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_WHITE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , HGR_WHITE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_WHITE ); // LIGHT_GRAY <- for that half scan-line look
-							SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1, HGR_WHITE ); // LIGHT_GRAY <- for that half scan-line look
-							// Prevent column gaps
-							if (hibit)
-							{
-								if (iPixel <= 2)
-								{
-									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , HGR_WHITE ); // LIGHT_GRAY HGR_GREY1
-									SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1, HGR_WHITE ); // LIGHT_GRAY HGR_GREY1
-								}
-							}
-							break;
-						default:
-							break;
-					}
-					x += 2;
-				}
-			}
-		}
-	}
-}
-
-//===========================================================================
-void V_CreateLookup_MonoHiResHalfPixel_Real ()
-{
-	int iMono = GetMonochromeIndex();
-	
-	for (int iColumn = 0; iColumn < 16; iColumn++)
-	{
-		int offset = iColumn << 5; // every column is 32 bytes wide
-
-		for (unsigned iByte = 0; iByte < 256; iByte++)
-		{
-			int aPixels[11]; // c2 c1 b7 b6 b5 b4 b3 b2 b1 b0 c8 c4
-
-			aPixels[ 0] = iColumn & 4;
-			aPixels[ 1] = iColumn & 8;
-			aPixels[ 9] = iColumn & 1;
-			aPixels[10] = iColumn & 2;
-
-			int nBitMask = 1;
-			int iPixel;
-			for (iPixel  = 2; iPixel < 9; iPixel++)
-			{
-				aPixels[iPixel] = ((iByte & nBitMask) != 0);
-				nBitMask <<= 1;
-			}
-
-			int hibit = (iByte >> 7) & 1; // ((iByte & 0x80) != 0);
-			int x     = 0;
-			int y     = iByte << 1;
-
-			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but cross 14-pixel boundaries.
-			if( hibit )
-			{
-				/* Test Cases
 					// Games
 						Archon Logo
 						Gumball (at Machine)
@@ -1399,67 +545,8 @@ void V_CreateLookup_MonoHiResHalfPixel_Real ()
 						C050 C052 C057
 						2000:D0 80 00
 						2800:80 D0 00
-				*/
-				if ( aPixels[1] ) // preceeding pixel on?
-				{
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x   ,y  ,iMono); // first 7 HGR_BLUE
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x   ,y+1,iMono); // first 7
-
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y  ,iMono); // second 7 HGR_ORANGE
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+16,y+1,iMono); // second 7
-				}
-			}
-
-			while (x < 28)
-			{
-				int adj = (x >= 14) << 1; // Adjust start of 7 last pixels to be 16-byte aligned!
-				int odd = (x >= 14);
-
-				for (iPixel = 2; iPixel < 9; iPixel++)
-				{
-					int color = aPixels[iPixel] ? iMono : HGR_BLACK;
-
-					// Colors - Top/Bottom Left/Right
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj  +hibit,y  ,color); // TL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj+1+hibit,y  ,color); // BL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj  +hibit,y+1,color); // BL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offset+x+adj+1+hibit,y+1,color); // BR
-					x += 2;
-				}
-			}
-		}
-	}
-}
-
-//===========================================================================
-void V_CreateLookup_MonoLoRes () {
-	int iMonochrome = GetMonochromeIndex();
-
-	for (int color = 0; color < 16; color++)
-	{
-		for (int x = 0; x < 16; x++)
-		{
-			for (int y = 0; y < 16; y++)
-			{
-				BYTE colorval = (color >> (x & 3) & 1) ? iMonochrome : BLACK;
-#if 0
-				if (g_eVideoType == VT_MONO_AUTHENTIC)
-				{
-					if (y & 1)
-						SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,BLACK);
-					else
-						SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,colorval);
-				}
-				else 						
+*/
 #endif
-				{
-					SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,colorval);
-				}
-			}
-		}
-	}
-}
-
 
 // google: CreateDIBPatternBrushPt
 // http://209.85.141.104/search?q=cache:mB3htrQGW8kJ:bookfire.net/wince/wince-programming-ms-press2/source/prowice/ch02e.htm
@@ -1471,57 +558,6 @@ struct BRUSHBMP
     BYTE bBits[64];
 };
 
-HBRUSH V_CreateCustomBrush(COLORREF nColor)
-{
-	BRUSHBMP brbmp;
-	BYTE *pBytes;
-	int i;
-	//DWORD dwBits[6][2] =
-	//{
-	//    {0x000000ff,0x00000000}, // HS_HORIZONTAL       0       /* ----- */
-	//    {0x10101010,0x10101010}, // HS_VERTICAL         1       /* ||||| */
-	//    {0x01020408,0x10204080}, // HS_FDIAGONAL        2       /* \\\\\ */
-	//    {0x80402010,0x08040201}, // HS_BDIAGONAL        3       /* ///// */
-	//    {0x101010ff,0x10101010}, // HS_CROSS            4       /* +++++ */
-	//    {0x81422418,0x18244281}, // HS_DIAGCROSS        5       /* xxxxx */
-	//};
-	//    if ((HatchStyle < 0) || (HatchStyle > 6))
-	//        return 0;
-
-	int HatchStyle = 0;
-	DWORD dwBits[1][2] = 
-	{
-//		{0xff00ff00,0xff00ff00} // every other scan line
-		{0xFFFFFFFF,0xFFFFFFFF}
-	};
-
-	memset (&brbmp, 0, sizeof (brbmp));
-
-    brbmp.bmi.biSize = sizeof (BITMAPINFOHEADER);
-    brbmp.bmi.biWidth = 8;
-    brbmp.bmi.biHeight = 8;
-    brbmp.bmi.biPlanes = 1;
-    brbmp.bmi.biBitCount = 1;
-    brbmp.bmi.biClrUsed = 2;
-    brbmp.bmi.biClrImportant = 2;
-
-    // Initialize the palette of the bitmap.
-    brbmp.dwPal[0] = PALETTERGB(0x00,0x00,0x00);
-    brbmp.dwPal[1] = PALETTERGB(
-		(BYTE)((nColor >> 16) & 0xff),
-		(BYTE)((nColor >>  8) & 0xff),
-		(BYTE)((nColor >>  0) & 0xff));
-
-    // Write the hatch data to the bitmap.  
-    pBytes = (BYTE *)&dwBits[HatchStyle];
-    for (i = 0; i < 8; i++)
-        brbmp.bBits[i*4] = *pBytes++;
-
-    // Return the handle of the brush created.
-    return CreateDIBPatternBrushPt (&brbmp, DIB_RGB_COLORS);
-}
-
-
 //===========================================================================
 
 static void CreateLookup_TextCommon(HDC hDstDC, DWORD rop)
@@ -1530,9 +566,9 @@ static void CreateLookup_TextCommon(HDC hDstDC, DWORD rop)
 	HDC     hSrcDC = CreateCompatibleDC(hDstDC);
 
 	hCharBitmap[0] = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
-	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));
-	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET8C")); // FIXME: Pravets 8M probably has the same charset as Pravets 8C
-	hCharBitmap[3] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));
+	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));	//82
+	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));	//8M
+	hCharBitmap[3] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));	//8A
 	SelectObject(hSrcDC, hCharBitmap[g_nCharsetType]);
 
 	// TODO: Update with APPLE_FONT_Y_ values
@@ -1545,51 +581,6 @@ static void CreateLookup_TextCommon(HDC hDstDC, DWORD rop)
 		DeleteObject(hCharBitmap[i]); 
 }
 
-static void V_CreateLookup_Text(HDC hDstDC)
-{
-	CreateLookup_TextCommon(hDstDC, SRCCOPY);
-}
-
-static void V_CreateLookup_MonoText(HDC hDstDC)
-{
-	HBRUSH hBrush;
-	switch (g_eVideoType)
-	{
-		case VT_MONO_AMBER: hBrush = CreateSolidBrush(RGB(0xFF,0x80,0x00)); break;
-		case VT_MONO_GREEN: hBrush = CreateSolidBrush(RGB(0x00,0xC0,0x00)); break;
-		case VT_MONO_WHITE: hBrush = CreateSolidBrush(RGB(0xFF,0xFF,0xFF)); break;
-		default           : hBrush = CreateSolidBrush(monochrome); break;
-	}
-
-	SelectObject(hDstDC, hBrush);
-
-	// NB. MERGECOPY (not SRCCOPY) to merge the src with the colour of the dst's selected brush
-	CreateLookup_TextCommon(hDstDC, MERGECOPY);
-
-	SelectObject(hDstDC,GetStockObject(NULL_BRUSH));
-	DeleteObject(hBrush);
-}
-
-
-//===========================================================================
-void SetLastDrawnImage ()
-{
-	memcpy(vidlastmem+0x400,g_pTextBank0,0x400);
-
-	if (SW_HIRES)
-		memcpy(vidlastmem+0x2000,g_pHiresBank0,0x2000);
-	if (SW_DHIRES && SW_HIRES)
-		memcpy(vidlastmem,g_pHiresBank1,0x2000);
-	else if (SW_80COL)	// Don't test for !SW_HIRES, as some 80-col text routines have SW_HIRES set (Bug #8300)
-		memcpy(vidlastmem,g_pTextBank1,0x400);
-
-	int loop;
-	for (loop = 0; loop < 256; loop++)
-	{
-		*(memdirty+loop) &= ~2;
-	}
-}
-
 //===========================================================================
 
 static inline int GetOriginal2EOffset(BYTE ch)
@@ -1598,435 +589,7 @@ static inline int GetOriginal2EOffset(BYTE ch)
 	return !IsOriginal2E() || !g_nAltCharSetOffset || (ch<0x40) || (ch>0x5F) ? 0 : -g_nAltCharSetOffset;
 }
 
-bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
-{
-	BYTE ch = *(g_pTextBank0+offset);
-	bool bCharChanged = (ch != *(vidlastmem+offset+0x400) || g_VideoForceFullRedraw);
-
-	// FLASHing chars:
-	// - FLASHing if:Alt Char Set is OFF && 0x40<=char<=0x7F
-	// - The inverse of this char is located at: char+0x40
-	bool bCharFlashing = (g_nAltCharSetOffset == 0) && (ch >= 0x40) && (ch <= 0x7F);
-
-	if(bCharChanged || (bCharFlashing && g_bTextFlashFlag))
-	{
-		bool bInvert = bCharFlashing ? g_bTextFlashState : false;
-
-		CopySource(xpixel,ypixel,
-			APPLE_FONT_WIDTH, APPLE_FONT_HEIGHT,
-			(IS_APPLE2 ? SRCOFFS_IIPLUS : SRCOFFS_40COL) + ((ch & 0x0F) << 4),
-			(ch & 0xF0) + g_nAltCharSetOffset + GetOriginal2EOffset(ch) + (bInvert ? 0x40 : 0x00));
-
-		return true;
-	}
-
-	return false;
-}
-
-inline bool _Update80ColumnCell( BYTE c, const int xPixel, const int yPixel, bool bCharFlashing )
-{
-	bool bInvert = bCharFlashing ? g_bTextFlashState : false;
-
-	CopySource(
-		xPixel, yPixel,
-		(APPLE_FONT_WIDTH / 2), APPLE_FONT_HEIGHT,
-		SRCOFFS_80COL + ((c & 0x0F) << 3),
-		(c & 0xF0) + g_nAltCharSetOffset + GetOriginal2EOffset(c) + (bInvert ? 0x40 : 0x00));
-
-	return true;
-}
-
 //===========================================================================
-bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset)
-{
-	bool bDirty = false;
-
-#if FLASH_80_COL
-	BYTE c1 = *(g_pTextBank1 + offset); // aux
-	BYTE c0 = *(g_pTextBank0 + offset); // main
-
-	bool bC1Changed = (c1 != *(vidlastmem + offset +     0) || g_VideoForceFullRedraw);
-	bool bC0Changed = (c0 != *(vidlastmem + offset + 0x400) || g_VideoForceFullRedraw);
-
-	bool bC1Flashing = (g_nAltCharSetOffset == 0) && (c1 >= 0x40) && (c1 <= 0x7F);
-	bool bC0Flashing = (g_nAltCharSetOffset == 0) && (c0 >= 0x40) && (c0 <= 0x7F);
-
-	if (bC1Changed || (bC1Flashing && g_bTextFlashFlag))
-		bDirty = _Update80ColumnCell( c1, xpixel, ypixel, bC1Flashing );
-
-	if (bC0Changed || (bC0Flashing && g_bTextFlashFlag))
-		bDirty |= _Update80ColumnCell( c0, xpixel + 7, ypixel, bC0Flashing );
-
-#else
-	BYTE auxval = *(g_pTextBank1 + offset); // aux
-	BYTE mainval = *(g_pTextBank0 + offset); // main
-
-	if ((auxval  != *(vidlastmem+offset)) ||
-		(mainval != *(vidlastmem+offset+0x400)) ||
-		g_VideoForceFullRedraw)
-	{
-		CopySource(xpixel,ypixel,
-			(APPLE_FONT_WIDTH / 2), APPLE_FONT_HEIGHT,
-			SRCOFFS_80COL + ((auxval & 15)<<3),
-			((auxval>>4)<<4) + g_nAltCharSetOffset);
-
-		CopySource(xpixel+7,ypixel,
-			(APPLE_FONT_WIDTH / 2), APPLE_FONT_HEIGHT,
-			SRCOFFS_80COL + ((mainval & 15)<<3),
-			((mainval>>4)<<4) + g_nAltCharSetOffset );
-
-		bDirty = true;
-	}
-#endif
-
-	return bDirty;
-}
-
-//===========================================================================
-bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset)
-{
-	bool bDirty = false;
-	int  yoffset = 0;
-  while (yoffset < 0x2000) {
-    BYTE byteval1 = (x >  0) ? *(g_pHiresBank0+offset+yoffset-1) : 0;
-    BYTE byteval2 = *(g_pHiresBank1 +offset+yoffset);
-    BYTE byteval3 = *(g_pHiresBank0+offset+yoffset);
-    BYTE byteval4 = (x < 39) ? *(g_pHiresBank1 +offset+yoffset+1) : 0;
-    if ((byteval2 != *(vidlastmem+offset+yoffset)) ||
-        (byteval3 != *(vidlastmem+offset+yoffset+0x2000)) ||
-        ((x >  0) && ((byteval1 & 0x70) != (*(vidlastmem+offset+yoffset+0x1FFF) & 0x70))) ||
-        ((x < 39) && ((byteval4 & 0x07) != (*(vidlastmem+offset+yoffset+     1) & 0x07))) ||
-        g_VideoForceFullRedraw) {
-      DWORD dwordval = (byteval1 & 0x70)        | ((byteval2 & 0x7F) << 7) |
-                      ((byteval3 & 0x7F) << 14) | ((byteval4 & 0x07) << 21);
-#define PIXEL  0
-#define COLOR  ((xpixel + PIXEL) & 3)
-#define VALUE  (dwordval >> (4 + PIXEL - COLOR))
-      CopySource(xpixel+PIXEL,ypixel+(yoffset >> 9),7,2,
-                 SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR,LOBYTE(VALUE)<<1);
-#undef PIXEL
-#define PIXEL  7
-      CopySource(xpixel+PIXEL,ypixel+(yoffset >> 9),7,2,
-                 SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR,LOBYTE(VALUE)<<1);
-#undef PIXEL
-#undef COLOR
-#undef VALUE
-      bDirty = true;
-    }
-    yoffset += 0x400;
-  }
-  
-	return bDirty;
-}
-
-/*
-
-Color Reference Tests:
-
-2000:D5 AA D5 AA D5 AA //  blue blue  blue
-2400:AA D5 2A 55 55 2A //+ red  green violet
-//                     //= grey aqua  violet
-
-2C00:AA D5 AA D5 2A 55 //  red    red     green
-3000:2A 55 55 2A 55 2A //+ green  violet  violet
-//                     //= yellow pink    grey
-
-*/
-
-//===========================================================================
-BYTE MixColors(BYTE c1, BYTE c2)
-{	
-	// For tv emulation HGR Video Mode
-	#define COMBINATION(c1,c2,ref1,ref2) (((c1)==(ref1)&&(c2)==(ref2)) || ((c1)==(ref2)&&(c2)==(ref1)))
-
-	if (c1 == c2)
-		return c1;
-	if (COMBINATION(c1,c2,HGR_BLUE,HGR_ORANGE))
-		return HGR_GREY1;
-	else if (COMBINATION(c1,c2,HGR_GREEN,HGR_VIOLET))
-		return HGR_GREY2;
-	else if (COMBINATION(c1,c2,HGR_ORANGE,HGR_GREEN))
-		return HGR_YELLOW;
-	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_GREEN))
-		return HGR_AQUA;
-	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_VIOLET))
-		return HGR_PURPLE;
-	else if (COMBINATION(c1,c2,HGR_ORANGE,HGR_VIOLET))
-		return HGR_PINK;
-	else
-		return MONOCHROME_CUSTOM; // visible failure indicator
-
-#undef COMBINATION
-}
-
-
-//===========================================================================
-void CreateColorMixMap()
-{	
-	// For tv emulation HGR Video Mode
-	#define FROM_NEIGHBOUR 0x00
-
-  int t,m,b;
-  BYTE cTop, cMid, cBot;
-  WORD mixTop, mixBot;
-
-#define MIX_THRESHOLD 0x12 // bottom 2 HGR colors
-
-  for (t=0; t<6; t++)
-    for (m=0; m<6; m++)
-	  for (b=0; b<6; b++) {
-        cTop = t | 0x10;
-		cMid = m | 0x10;
-		cBot = b | 0x10;
-        if (cMid < MIX_THRESHOLD) {
-		  mixTop = mixBot = cMid;
-		} else {
-			if (cTop < MIX_THRESHOLD) {
-		      mixTop = FROM_NEIGHBOUR;
-			} else { 
-			  mixTop = MixColors(cMid,cTop);
-			}
-			if (cBot < MIX_THRESHOLD)  {
-			  mixBot = FROM_NEIGHBOUR;
-			} else { 
-			  mixBot = MixColors(cMid,cBot);
-			}
-			if (mixTop == FROM_NEIGHBOUR && mixBot != FROM_NEIGHBOUR) {
-			  mixTop = mixBot;
-			} else if (mixBot == FROM_NEIGHBOUR && mixTop != FROM_NEIGHBOUR) {
-			  mixBot = mixTop;
-			} else if (mixBot == FROM_NEIGHBOUR && mixTop == FROM_NEIGHBOUR) {
-			  mixBot = mixTop = cMid;
-			}
-		}
-		colormixmap[t][m][b] = (mixTop << 8) | mixBot;
-	  }
-#undef FROM_NEIGHBOUR
-}
-
-//===========================================================================
-void __stdcall MixColorsVertical(int matx, int maty)
-{
-	// For tv emulation HGR Video Mode
-
-  WORD twoHalfPixel;
-  int bot1idx, bot2idx;
-
-  if (SW_MIXED && maty > 159) {
-	  if (maty < 161) {
-        bot1idx = hgrpixelmatrix[matx][maty+1] & 0x0F;
-        bot2idx = 0;
-	  } else {
-        bot1idx = bot2idx = 0;
-	  }
-  } else {
-    bot1idx = hgrpixelmatrix[matx][maty+1] & 0x0F;
-    bot2idx = hgrpixelmatrix[matx][maty+2] & 0x0F;
-  }
-
-  twoHalfPixel = colormixmap[hgrpixelmatrix[matx][maty-2] & 0x0F]
-	                        [hgrpixelmatrix[matx][maty-1] & 0x0F]
-                            [hgrpixelmatrix[matx][maty  ] & 0x0F];
-  colormixbuffer[0] = (twoHalfPixel & 0xFF00) >> 8;
-  colormixbuffer[1] = twoHalfPixel & 0x00FF;
-
-  twoHalfPixel = colormixmap[hgrpixelmatrix[matx][maty-1] & 0x0F]
-	                        [hgrpixelmatrix[matx][maty  ] & 0x0F]
-                            [bot1idx];
-  colormixbuffer[2] = (twoHalfPixel & 0xFF00) >> 8;
-  colormixbuffer[3] = twoHalfPixel & 0x00FF;
-
-  twoHalfPixel = colormixmap[hgrpixelmatrix[matx][maty  ] & 0x0F]
-	                        [bot1idx]
-                            [bot2idx];
-  colormixbuffer[4] = (twoHalfPixel & 0xFF00) >> 8;
-  colormixbuffer[5] = twoHalfPixel & 0x00FF;
-}
-
-//===========================================================================
-
-static inline void __stdcall CopyMixedSource8(int x, int y, int sourcex, int sourcey)
-{
-	// For tv emulation HGR Video Mode
-
-	const BYTE* const currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
-	      BYTE* const currdestptr   = g_aFrameBufferOffset[y*2] + (x*2);
-
-	const int matx = x;
-	const int maty = HGR_MATRIX_YOFFSET + y;
-	const int hgrlinesabove = (y > 0) ? 1 : 0;
-	const int hgrlinesbelow = SW_MIXED ? ((y < 159)? 1:0) : ((y < 191)? 1:0);
-	const int istart        = 2 - (hgrlinesabove*2);
-	const int iend          = 3 + (hgrlinesbelow*2);
-
-	// transfer 7 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
-	for (int count = 0, bufxoffset = 0; count < 7; count++, bufxoffset += 2)
-	{
-		hgrpixelmatrix[matx+count][maty] = *(currsourceptr+bufxoffset);
-
-		// color mixing between adjacent scanlines at current x position
-		MixColorsVertical(matx+count, maty);
-
-		// transfer up to 6 mixed (half-)pixels of current column to framebuffer
-		BYTE* currptr = currdestptr+bufxoffset;
-		if (hgrlinesabove)
-			currptr += g_nFrameBufferPitch * 2;
-
-		for (int i = istart; i <= iend; currptr -= g_nFrameBufferPitch, i++)
-		{
-			if (g_uHalfScanLines && (i & 1))
-				*currptr = *(currptr+1) = 0;	// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-			else
-				*currptr = *(currptr+1) = colormixbuffer[i];
-		}
-	}
-}
-
-// For tv emulation HGR Video Mode
-static void __stdcall CopyMixedSource(int x, int y, int sourcex, int sourcey)
-{
-	if (!g_bIsFullScreen || !GetFullScreen32Bit())
-	{
-		CopyMixedSource8(x,y,sourcex,sourcey);
-		return;
-	}
-
-	const BYTE* const currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
-	    UINT32* const currdestptr   = (UINT32*) (g_aFrameBufferOffset[ y*2 ] + (x*2)*sizeof(UINT32));
-
-	const int matx = x;
-	const int maty = HGR_MATRIX_YOFFSET + y;
-	const int hgrlinesabove = (y > 0) ? 1 : 0;
-	const int hgrlinesbelow = SW_MIXED ? ((y < 159)? 1:0) : ((y < 191)? 1:0);
-	const int istart        = 2 - (hgrlinesabove*2);
-	const int iend          = 3 + (hgrlinesbelow*2);
-
-	// transfer 7 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
-	for (int count = 0, bufxoffset = 0; count < 7; count++, bufxoffset += 2)
-	{
-		hgrpixelmatrix[matx+count][maty] = *(currsourceptr+bufxoffset);
-
-		// color mixing between adjacent scanlines at current x position
-		MixColorsVertical(matx+count, maty);
-
-		// transfer up to 6 mixed (half-)pixels of current column to framebuffer
-		UINT32* currptr = currdestptr+bufxoffset;
-		if (hgrlinesabove)
-			currptr += (g_nFrameBufferPitch / sizeof(UINT32)) * 2;
-
-		for (int i = istart; i <= iend; currptr -= g_nFrameBufferPitch/sizeof(UINT32), i++)
-		{
-			if (g_uHalfScanLines && (i & 1))
-			{
-				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-				*currptr = *(currptr+1) = 0;
-			}
-			else
-			{
-				const RGBQUAD& rRGB = g_pFramebufferinfo->bmiColors[ colormixbuffer[i] ];
-				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
-				*currptr = *(currptr+1) = rgb;
-			}
-		}
-	}
-}
-
-//===========================================================================
-bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
-{
-	bool bDirty  = false;
-	int  yoffset = 0;
-	while (yoffset < 0x2000)
-	{
-#if 0 // TRACE_VIDEO
-		static char sText[ 256 ];
-		sprintf(sText, "x: %3d   y: %3d  xpix: %3d  ypix: %3d   offset: %04X   \n"
-			, x, y, xpixel, ypixel, offset, yoffset
-		);
-		OutputDebugString("sText");
-#endif
-
-		BYTE byteval1 = (x >  0) ? *(g_pHiresBank0+offset+yoffset-1) : 0;
-		BYTE byteval2 =            *(g_pHiresBank0+offset+yoffset  );
-		BYTE byteval3 = (x < 39) ? *(g_pHiresBank0+offset+yoffset+1) : 0;
-		if ((byteval2 != *(vidlastmem+offset+yoffset+0x2000)) ||
-			((x >  0) && ((byteval1 & 0x60) != (*(vidlastmem+offset+yoffset+0x1FFF) & 0x60))) ||
-			((x < 39) && ((byteval3 & 0x03) != (*(vidlastmem+offset+yoffset+0x2001) & 0x03))) ||
-			g_VideoForceFullRedraw)
-		{
-#define COLOFFS  (((byteval1 & 0x60) << 2) | \
-                   ((byteval3 & 0x03) << 5))
-			if (g_eVideoType == VT_COLOR_TVEMU)
-			{
-				CopyMixedSource(
-					xpixel >> 1, (ypixel+(yoffset >> 9)) >> 1,
-					SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1)
-				);
-			}
-			else
-			{
-				CopySource(
-					xpixel,ypixel+(yoffset >> 9),
-					14,2, // 2x upscale: 280x192 -> 560x384
-					SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1)
-				);
-			}
-#undef COLOFFS
-		  bDirty = true;
-		}
-		yoffset += 0x400;
-	}
-
-	return bDirty;
-}
-
-//===========================================================================
-bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
-{
-	BYTE val = *(g_pTextBank0+offset);
-	if ((val != *(vidlastmem+offset+0x400)) || g_VideoForceFullRedraw)
-	{
-		CopySource(xpixel,ypixel,
-			14,8,
-			SRCOFFS_LORES+((x & 1) << 1),((val & 0xF) << 4));
-		CopySource(xpixel,ypixel+8,
-			14,8,
-			SRCOFFS_LORES+((x & 1) << 1),(val & 0xF0));
-		return true;
-	}
-
-	return false;
-}
-
-//===========================================================================
-
-#define ROL_NIB(x) ( (((x)<<1)&0xF) | (((x)>>3)&1) )
-
-bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
-{
-	BYTE auxval  = *(g_pTextBank1 + offset);
-	BYTE mainval = *(g_pTextBank0 + offset);
-
-	if	(	(auxval != *(vidlastmem+offset)) ||
-			(mainval != *(vidlastmem+offset+0x400)) ||
-			g_VideoForceFullRedraw
-		)
-	{
-		const BYTE auxval_h = auxval >> 4;
-		const BYTE auxval_l = auxval & 0xF;
-		auxval = (ROL_NIB(auxval_h)<<4) | ROL_NIB(auxval_l);	// Fix Bug #14879
-
-		CopySource(	xpixel,ypixel  ,	7,8,SRCOFFS_LORES+((x & 1) << 1),((auxval & 0xF) << 4));
-		CopySource(	xpixel,ypixel+8,	7,8,SRCOFFS_LORES+((x & 1) << 1),(auxval & 0xF0));
-		//
-		CopySource(	xpixel+7,ypixel  , 7,8, SRCOFFS_LORES+((x & 1) << 1),((mainval & 0xF) << 4));
-		CopySource(	xpixel+7,ypixel+8, 7,8,	SRCOFFS_LORES+((x & 1) << 1),(mainval & 0xF0));
-		return true;
-	}
-
-	return false;
-}
-
 
 //
 // ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
@@ -2097,6 +660,7 @@ void VideoBenchmark () {
   // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totaltextfps = 0;
+
   g_uVideoMode            = VF_TEXT;
   FillMemory(mem+0x400,0x400,0x14);
   VideoRedrawScreen();
@@ -2109,7 +673,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x400,0x400,0x14);
     else
       CopyMemory(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
-    VideoRefreshScreen();
+    VideoRefreshScreen(0);
     if (cycle++ >= 3)
       cycle = 0;
     totaltextfps++;
@@ -2131,7 +695,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x2000,0x2000,0x14);
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRefreshScreen();
+    VideoRefreshScreen(0);
     if (cycle++ >= 3)
       cycle = 0;
     totalhiresfps++;
@@ -2222,7 +786,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x2000,0x2000,0xAA);
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRefreshScreen();
+    VideoRedrawScreen(); // VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
     realisticfps++;
@@ -2317,27 +881,31 @@ BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 
 */
 
-BYTE VideoCheckVbl (WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
+BYTE VideoCheckVbl ( ULONG uExecutedCycles )
 {
 	bool bVblBar = VideoGetVbl(uExecutedCycles);
+	// NTSC: It is tempting to replace with
+	//     bool bVblBar = NTSC_VideoIsVbl();
+	// But this breaks "ANSI STORY" intro center fade
 
 	BYTE r = KeybGetKeycode();
 	return (r & ~0x80) | (bVblBar ? 0x80 : 0);
  }
 
+// This is called from PageConfig
 //===========================================================================
-void VideoChooseColor ()
+void VideoChooseMonochromeColor ()
 {
 	CHOOSECOLOR cc;
 	ZeroMemory(&cc,sizeof(CHOOSECOLOR));
 	cc.lStructSize     = sizeof(CHOOSECOLOR);
 	cc.hwndOwner       = g_hFrameWindow;
-	cc.rgbResult       = monochrome;
+	cc.rgbResult       = g_nMonochromeRGB;
 	cc.lpCustColors    = customcolors + 1;
 	cc.Flags           = CC_RGBINIT | CC_SOLIDCOLOR;
 	if (ChooseColor(&cc))
 	{
-		monochrome = cc.rgbResult;
+		g_nMonochromeRGB = cc.rgbResult;
 		VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
@@ -2383,7 +951,7 @@ void VideoDestroy () {
 
 //===========================================================================
 
-void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale)
+static void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale)
 {
 	HDC hSrcDC = CreateCompatibleDC( hDstDC );
 	SelectObject( hSrcDC, g_hLogoBitmap );
@@ -2403,51 +971,50 @@ void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int
 //===========================================================================
 void VideoDisplayLogo () 
 {
-	int xoff = 0, yoff = 0, scale = 0;
+	int nLogoX = 0, nLogoY = 0;
+	int scale = GetViewportScale();
+
 	HDC hFrameDC = FrameGetDC();
 
 	// DRAW THE LOGO
-	HBRUSH brush = CreateSolidBrush(PALETTERGB(0x70,0x30,0xE0));
-	
-	SelectObject(hFrameDC, brush);
 	SelectObject(hFrameDC, GetStockObject(NULL_PEN));
-
-	int nViewportCX, nViewportCY;
-	GetViewportCXCY(nViewportCX, nViewportCY);
-	Rectangle(hFrameDC, 0, 0, nViewportCX+1, nViewportCY+1);
 
 	if (g_hLogoBitmap)
 	{
 		BITMAP bm;
 		if (GetObject(g_hLogoBitmap, sizeof(bm), &bm))
 		{
-			scale = nViewportCX / bm.bmWidth;
-			if (nViewportCY / bm.bmHeight < scale)
-				scale = nViewportCY / bm.bmHeight;
+			nLogoX = (g_nViewportCX - scale*bm.bmWidth )/2;
+			nLogoY = (g_nViewportCY - scale*bm.bmHeight)/2;
 
-			if (scale > 0)
+			if( g_bIsFullScreen )
 			{
-				if (nViewportCX > bm.bmWidth)
-					xoff = (nViewportCX - (scale * bm.bmWidth)) / 2;
-				if (nViewportCY > bm.bmHeight)
-					yoff = (nViewportCY - (scale * bm.bmHeight)) / 2;
-
-				VideoDrawLogoBitmap( hFrameDC, xoff, yoff, bm.bmWidth, bm.bmHeight, scale );
+#if 0
+				// Draw Logo at top of screen so when the Apple display is refreshed it will automagically clear it
+				nLogoX = 0;
+				nLogoY = 0;
+#else
+				nLogoX += GetFullScreenOffsetX();
+				nLogoY += GetFullScreenOffsetY();
+#endif
 			}
+			VideoDrawLogoBitmap( hFrameDC, nLogoX, nLogoY, bm.bmWidth, bm.bmHeight, scale );
 		}
 	}
 
 	// DRAW THE VERSION NUMBER
+	TCHAR sFontName[] = TEXT("Arial");
 	HFONT font = CreateFont(-20,0,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
 							OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,
 							VARIABLE_PITCH | 4 | FF_SWISS,
-							TEXT("Arial"));
+							sFontName );
 	SelectObject(hFrameDC,font);
 	SetTextAlign(hFrameDC,TA_RIGHT | TA_TOP);
 	SetBkMode(hFrameDC,TRANSPARENT);
 
 	char szVersion[ 64 ] = "";
 	sprintf( szVersion, "Version %s", VERSIONSTRING );
+	int xoff = GetFullScreenOffsetX(), yoff = GetFullScreenOffsetY();
 
 #define  DRAWVERSION(x,y,c)                 \
 	SetTextColor(hFrameDC,c);               \
@@ -2473,92 +1040,147 @@ void VideoDisplayLogo ()
 	DRAWVERSION( 0, -356*scale,RGB(0xFF,0x00,0xFF));
 #endif
 
+// NTSC Alpha Version
+	DeleteObject(font);
+/*
+	font = CreateFontA(
+		-48,0,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
+		OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,
+		VARIABLE_PITCH | 4 | FF_SWISS,
+		sFontName)
+	);
+*/
+	PLOGFONT pLogFont = (PLOGFONT) LocalAlloc(LPTR, sizeof(LOGFONT));
+	int angle = (int)(7.5 * 10); // 3600 = 360 degrees
+	pLogFont->lfHeight = -48;
+	pLogFont->lfWeight = FW_NORMAL;
+	pLogFont->lfEscapement  = angle;
+	pLogFont->lfOrientation = angle;
+	SetTextAlign(hFrameDC,TA_BASELINE);
+
+	font = CreateFontIndirect( pLogFont );
+	HGDIOBJ  hFontPrev = SelectObject(hFrameDC, font);
+
+	SelectObject(hFrameDC,font);
+//	sprintf( szVersion, "NTSC Alpha v14 HorzClock" );
+//	sprintf( szVersion, "NTSC Alpha v15 Fraps" );
+//	sprintf( szVersion, "NTSC Alpha v16 Palette" );
+//	sprintf( szVersion, "NTSC Alpha v17 BMP Palette" );
+	sprintf( szVersion, "NTSC Alpha v18" );
+
+	xoff = -g_nViewportCX + g_nViewportCX/6 + GetFullScreenOffsetX();
+	yoff = -g_nViewportCY/16 + GetFullScreenOffsetY();
+	DRAWVERSION( 0, 0,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 2, 2,RGB(0xFF,0x00,0xFF));
+
+ 	sprintf( szVersion, "Blurry 80-col Text" );
+	xoff = -g_nViewportCX + g_nViewportCX/6 + GetFullScreenOffsetX();
+	yoff = +g_nViewportCY/16 + GetFullScreenOffsetY();
+	DRAWVERSION( 0, 0,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
+	DRAWVERSION( 2, 2,RGB(0xFF,0x00,0xFF));
+
+	LocalFree((LOCALHANDLE)pLogFont);
+	SelectObject(hFrameDC,hFontPrev);
+// NTSC END
+
 #undef  DRAWVERSION
 
-	FrameReleaseDC();
-	DeleteObject(brush);
+	FrameReleaseVideoDC();
+
 	DeleteObject(font);
 }
 
 //===========================================================================
-void VideoRealizePalette(HDC dc)
+
+// AZTEC.DSK: From boot to 'Press any key' (Release build)
+// . 66s always update every frame
+// . 15s only update if any video memory (main/aux, text/hgr, pages1&2) has changed
+// . 10s only update if HIRES changes (17s for Debug build)
+// . ~9s no update during full-speed (but IBIZA.DSK doesn't show anything!)
+
+void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInvalidate /*=false*/)
 {
-#if 0
-	if( g_bIsFullScreen )	
+	static bool bValid = false;
+
+	if (bInvalidate)
 	{
-		if( !g_pDDPal )
-		{
-			PALETTEENTRY aPal[256];
-
-			BYTE *pSrc = ((BYTE*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
-			BYTE *pDst = ((BYTE*)aPal);
-
-			int iPal;
-			for(iPal = 0; iPal < 256; iPal++ )
-			{
-				*(pDst + 0) = *(pSrc + 2); // BGR -> RGB
-				*(pDst + 1) = *(pSrc + 1);
-				*(pDst + 2) = *(pSrc + 0);
-				*(pDst + 3) = 0;
-				pDst += 4;
-				pSrc += 4;
-			}
-			if (g_pDD->CreatePalette(DDPCAPS_8BIT, aPal, &g_pDDPal, NULL) != DD_OK)
-			{
-				g_pDDPal = NULL;
-			}
-		}
-
-		if (g_pDDPal)
-		{
-			g_pDDPrimarySurface->SetPalette(g_pDDPal); // this sets the palette for the primary surface
-		}
+		bValid = false;
+		return;
 	}
-	else
+
+	//
+
+	static BYTE text_main[1024*2] = {0};	// page1 & 2
+	static BYTE text_aux[1024*2] = {0};		// page1 & 2
+	static BYTE hgr_main[8192*2] = {0};		// page1 & 2
+	static BYTE hgr_aux[8192*2] = {0};		// page1 & 2
+
+	bool bRedraw = true;	// Always redraw for bValid==false (ie. just entered full-speed mode)
+
+	if (bValid)
 	{
-		if (g_hPalette)
+		if ((g_uVideoMode&(VF_DHIRES|VF_HIRES|VF_TEXT|VF_MIXED)) == VF_HIRES)
 		{
-			SelectPalette(dc,g_hPalette,0);
-			RealizePalette(dc);
+			// HIRES (not MIXED) - eg. AZTEC.DSK
+			if ((g_uVideoMode&VF_PAGE2) == 0)
+				bRedraw = memcmp(&hgr_main[0x0000],  MemGetMainPtr(0x2000), 8192) != 0;
+			else
+				bRedraw = memcmp(&hgr_main[0x2000],  MemGetMainPtr(0x4000), 8192) != 0;
+		}
+		else
+		{
+			bRedraw =
+				(memcmp(text_main, MemGetMainPtr(0x400),  sizeof(text_main)) != 0) ||
+				(memcmp(text_aux,  MemGetAuxPtr(0x400),   sizeof(text_aux))  != 0) ||
+				(memcmp(hgr_main,  MemGetMainPtr(0x2000), sizeof(hgr_main))  != 0) ||
+				(memcmp(hgr_aux,   MemGetAuxPtr(0x2000),  sizeof(hgr_aux))   != 0);
 		}
 	}
-#endif
 
-	if (g_hPalette)
-	{
-		SelectPalette(dc,g_hPalette,0);
-		RealizePalette(dc);
-	}
+	if (bRedraw)
+		VideoRedrawScreenAfterFullSpeed(dwCyclesThisFrame);
+
+	// Copy all video memory (+ screen holes)
+	memcpy(text_main, MemGetMainPtr(0x400),  sizeof(text_main));
+	memcpy(text_aux,  MemGetAuxPtr(0x400),   sizeof(text_aux));
+	memcpy(hgr_main,  MemGetMainPtr(0x2000), sizeof(hgr_main));
+	memcpy(hgr_aux,   MemGetAuxPtr(0x2000),  sizeof(hgr_aux));
+
+	bValid = true;
 }
 
 //===========================================================================
 
-// Called by DrawFrameWindow() when in fullscreen mode (eg. after WM_PAINT msg)
-VideoUpdateFuncPtr_t VideoRedrawScreen (UINT n)
+void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
-	g_VideoForceFullRedraw = n;
-	return VideoRefreshScreen();
+	const int nScanLines = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+
+	g_nVideoClockVert = (uint16_t) (dwCyclesThisFrame / kHClocks) % nScanLines;
+	g_nVideoClockHorz = (uint16_t) (dwCyclesThisFrame % kHClocks);
+
+	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
 }
 
-VideoUpdateFuncPtr_t VideoRedrawScreen ()
+//===========================================================================
+
+void VideoRedrawScreen (UINT uDelayRefresh /* =0 */)
 {
 	g_VideoForceFullRedraw = 1;
-	return VideoRefreshScreen();
+
+	VideoRefreshScreen( g_uVideoMode, uDelayRefresh );
 }
 
 //===========================================================================
-void _Video_Dirty()
-{
-	ZeroMemory(celldirty,40*32);
-}
-
-//===========================================================================
-void _Video_SetupBanks( bool bBank2 )
+int _Video_SetupBanks( bool bBank2 )
 {
 	g_pHiresBank1 = MemGetAuxPtr (0x2000 << (int)bBank2);
 	g_pHiresBank0 = MemGetMainPtr(0x2000 << (int)bBank2);
 	g_pTextBank1  = MemGetAuxPtr (0x400  << (int)bBank2);
 	g_pTextBank0  = MemGetMainPtr(0x400  << (int)bBank2);
+
+	return bBank2 ? VF_PAGE2 : 0;
 }
 
 //===========================================================================
@@ -2585,200 +1207,98 @@ static void DebugRefresh(char uDebugFlag)
 }
 #endif
 
-VideoUpdateFuncPtr_t VideoRefreshScreen ()
+void VideoRefreshScreen ( int bVideoModeFlags, UINT uDelayRefresh /* =0 */ )
 {
+	static UINT uDelayRefreshCount = 0;
+	if (uDelayRefresh) uDelayRefreshCount = uDelayRefresh;
+
 #if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
 	DebugRefresh(0);
 #endif
 
-	// CHECK EACH CELL FOR CHANGED BYTES.  REDRAW PIXELS FOR THE CHANGED BYTES
-	// IN THE FRAME BUFFER.  MARK CELLS IN WHICH REDRAWING HAS TAKEN PLACE AS
-	// DIRTY.
-	_Video_Dirty();
-	_Video_SetupBanks( SW_PAGE2 != 0 );
-
-	VideoUpdateFuncPtr_t pfUpdate = SW_TEXT
-		? SW_80COL
-			? Update80ColCell
-			: Update40ColCell
-		: SW_HIRES
-			? (SW_DHIRES && SW_80COL)
-				? UpdateDHiResCell
-				: UpdateHiResCell
-			: (SW_DHIRES && SW_80COL)
-				? UpdateDLoResCell
-				: UpdateLoResCell;
-
-	bool bMixed = (SW_MIXED) ? true : false;
-	_Video_RedrawScreen( pfUpdate, bMixed );
-
-	//g_VideoForceFullRedraw = 0;
-	if (g_VideoForceFullRedraw) --g_VideoForceFullRedraw;
-	return pfUpdate;
-}
-
-//===========================================================================
-void _Video_RedrawScreen( VideoUpdateFuncPtr_t pfUpdate, bool bMixed )
-{
-  LPBYTE pDstFrameBufferBits = 0;
-  LONG   pitch = 0;
-  HDC    hFrameDC = FrameGetVideoDC(&pDstFrameBufferBits,&pitch);
-  CreateFrameOffsetTable(pDstFrameBufferBits,pitch); // ptr to start of each scanline
-
-  BOOL anydirty = 0;
-  int  y        = 0;
-  int  ypixel   = 0;
-
-  while (y < 20) {
-    int offset = ((y & 7) << 7) + ((y >> 3) * 40);
-    int x      = 0;
-    int xpixel = 0;
-    while (x < 40) {
-      anydirty |= celldirty[x][y] = pfUpdate(x,y,xpixel,ypixel,offset+x);
-      ++x;
-      xpixel += 14;
-    }
-    ++y;
-    ypixel += 16;
-  }
-
-	if( bMixed ) {
-		pfUpdate = SW_80COL
-			? Update80ColCell
-			: Update40ColCell;
-	}
-
-  while (y < 24) {
-    int offset = ((y & 7) << 7) + ((y >> 3) * 40);
-    int x      = 0;
-    int xpixel = 0;
-    while (x < 40) {
-      anydirty |= celldirty[x][y] = pfUpdate(x,y,xpixel,ypixel,offset+x);
-      ++x;
-      xpixel += 14;
-    }
-    ++y;
-    ypixel += 16;
-  }
-
-  // Clear this flag after TEXT screen has been updated
-  g_bTextFlashFlag = false;
-
-#if 1
-	// New simpified code:
-	// . Oliver Schmidt gets a flickering mouse cursor with this code
-	if (hFrameDC && anydirty)
+	if( bVideoModeFlags )
 	{
-		int nViewportCX, nViewportCY;
-		GetViewportCXCY(nViewportCX, nViewportCY);
-	    StretchBlt(hFrameDC, 0 ,0, nViewportCX, nViewportCY, g_hDeviceDC, 0, 0, FRAMEBUFFER_W, FRAMEBUFFER_H, SRCCOPY);
-		GdiFlush();
-	}
-#else
-	// Original code:
-	if (!hFrameDC || !anydirty)
-	{
-		FrameReleaseVideoDC();
-		SetLastDrawnImage();
-		g_VideoForceFullRedraw = 0;
-		return;
+		NTSC_SetVideoMode( bVideoModeFlags );
+		NTSC_VideoUpdateCycles( VIDEO_SCANNER_6502_CYCLES );
 	}
 
-  // COPY DIRTY CELLS FROM THE DEVICE DEPENDENT BITMAP ONTO THE SCREEN
-  // IN LONG HORIZONTAL RECTANGLES
-  BOOL remainingdirty = 0;
-  y                   = 0;
-  ypixel              = 0;
-  while (y < 24) {
-	int start  = -1;
-	int startx = 0;
-	int x      = 0;
-	int xpixel = 0;
-	while (x < 40) {
-	  if ((x == 39) && celldirty[x][y])
-		if (start >= 0) {
-		  xpixel += 14;
-		  celldirty[x][y] = 0;
-		}
-		else
-		  remainingdirty = 1;
-	  if ((start >= 0) && !celldirty[x][y]) {
-		if ((x - startx > 1) || ((x == 39) && (xpixel == FRAMEBUFFER_W))) {
-		  int height = 1;
-		  while ((y+height < 24)
-				   && celldirty[startx][y+height]
-				   && celldirty[x-1][y+height]
-				   && celldirty[(startx+x-1) >> 1][y+height])
-			height++;
-		  BitBlt(hFrameDC,start,ypixel,xpixel-start,height << 4,
-				 g_hDeviceDC,start,ypixel,SRCCOPY);
-		  while (height--) {
-			int loop = startx;
-			while (loop < x+(xpixel == FRAMEBUFFER_W))
-			  celldirty[loop++][y+height] = 0;
-		  }
-		  start = -1;
-		}
-		else
-		  remainingdirty = 1;
-		start = -1;
-	  }
-	  else if ((start == -1) && celldirty[x][y] && (x < 39)) {
-		start  = xpixel;
-		startx = x;
-	  }
-	  x++;
-	  xpixel += 14;
-	}
-	y++;
-	ypixel += 16;
-  }
+// NTSC_BEGIN
+	LPBYTE pDstFrameBufferBits = 0;
+	LONG   pitch = 0;
+	HDC    hFrameDC = FrameGetVideoDC(&pDstFrameBufferBits,&pitch);
 
-  // COPY ANY REMAINING DIRTY CELLS FROM THE DEVICE DEPENDENT BITMAP
-  // ONTO THE SCREEN IN VERTICAL RECTANGLES
-  if (remainingdirty) {
-	int x      = 0;
-	int xpixel = 0;
-	while (x < 40) {
-	  int start  = -1;
-	  int y      = 0;
-	  int ypixel = 0;
-	  while (y < 24) {
-		if ((y == 23) && celldirty[x][y]) {
-		  if (start == -1)
-			start = ypixel;
-		  ypixel += 16;
-		  celldirty[x][y] = 0;
-		}
-		if ((start >= 0) && !celldirty[x][y]) {
-		  BitBlt(hFrameDC,xpixel,start,14,ypixel-start,
-				 g_hDeviceDC,xpixel,start,SRCCOPY);
-		  start = -1;
-		}
-		else if ((start == -1) && celldirty[x][y])
-		  start = ypixel;
-		y++;
-		ypixel += 16;
-	  }
-	  x++;
-	  xpixel += 14;
-	}
-  }
-
-  GdiFlush();
+#if 1 // Keep Aspect Ratio
+	// Need to clear full screen logo to black
+	#define W g_nViewportCX
+	#define H g_nViewportCY
+#else // Stretch
+	// Stretch - doesn't preserve 1:1 aspect ratio
+	#define W g_bIsFullScreen ? g_nDDFullScreenW : g_nViewportCX
+	#define H g_bIsFullScreen ? g_nDDFullScreenH : g_nViewportCY
 #endif
 
+	if (hFrameDC)
+	{
+		if (uDelayRefreshCount)
+		{
+			// Delay the refresh in full-screen mode (to allow screen-capabilities to take effect) - required for Win7 (and others?)
+			--uDelayRefreshCount;
+		}
+		else
+		{
+			int xDst = 0;
+			int yDst = 0;
+
+			if (g_bIsFullScreen)
+			{
+				// Why the need to set the mid-position here, but not for (full-screen) LOGO or DEBUG modes?
+				xDst = (g_nDDFullScreenW-W)/2 - VIEWPORTX*2;
+				yDst = (g_nDDFullScreenH-H)/2;
+			}
+
+			int xSrc = BORDER_W;
+			int ySrc = BORDER_H;
+
+			if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
+			{
+				// Adjust the src locations for the NTSC video modes
+				xSrc += 2;
+				ySrc -= 1;
+			}
+
+			int xdest = GetFullScreenOffsetX();
+			int ydest = GetFullScreenOffsetY();
+			int wdest = g_nViewportCX;
+			int hdest = g_nViewportCY;
+
+			SetStretchBltMode(hFrameDC, COLORONCOLOR);
+			StretchBlt(
+				hFrameDC, 
+				xdest, ydest,
+				wdest, hdest,
+				g_hDeviceDC,
+				xSrc, ySrc,
+				FRAMEBUFFER_BORDERLESS_W, FRAMEBUFFER_BORDERLESS_H,
+				SRCCOPY);
+		}
+	}
+
+	GdiFlush();
+
 	FrameReleaseVideoDC();
-	SetLastDrawnImage();
+
+	g_VideoForceFullRedraw = 0;
+// NTSC_END
 }
 
 //===========================================================================
 void VideoReinitialize ()
 {
-	V_CreateIdentityPalette();
-	V_CreateDIBSections();
+	NTSC_VideoReinitialize( g_dwCyclesThisFrame );
+	NTSC_VideoInitAppleType();
+	NTSC_SetVideoStyle();
+	NTSC_SetVideoMode( g_uVideoMode );	// Pre-condition: g_nVideoClockHorz (derived from g_dwCyclesThisFrame)
 }
-
 
 //===========================================================================
 void VideoResetState ()
@@ -2786,7 +1306,6 @@ void VideoResetState ()
 	g_nAltCharSetOffset    = 0;
 	g_uVideoMode           = VF_TEXT;
 	g_VideoForceFullRedraw = 1;
-	g_bVideoUpdatedThisFrame = false;
 }
 
 
@@ -2795,15 +1314,16 @@ void VideoResetState ()
 BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
-	DWORD oldpage2 = SW_PAGE2;
-	int   oldvalue = g_nAltCharSetOffset+(int)(g_uVideoMode & ~(VF_80STORE | VF_PAGE2));
+
+//	DWORD oldpage2 = SW_PAGE2;
+//	int   oldvalue = g_nAltCharSetOffset+(int)(g_uVideoMode & ~(VF_80STORE | VF_PAGE2));
 
 	switch (address)
 	{
-		case 0x00: g_uVideoMode &= ~VF_80STORE;   break;
-		case 0x01: g_uVideoMode |=  VF_80STORE;   break;
-		case 0x0C: if (!IS_APPLE2) g_uVideoMode &= ~VF_80COL;   break;
-		case 0x0D: if (!IS_APPLE2) g_uVideoMode |=  VF_80COL;   break;
+		case 0x00:                 g_uVideoMode &= ~VF_80STORE;                            break;
+		case 0x01:                 g_uVideoMode |=  VF_80STORE;                            break;
+		case 0x0C: if (!IS_APPLE2){g_uVideoMode &= ~VF_80COL; NTSC_SetVideoTextMode(40);}; break;
+		case 0x0D: if (!IS_APPLE2){g_uVideoMode |=  VF_80COL; NTSC_SetVideoTextMode(80);}; break;
 		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
 		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
 		case 0x50: g_uVideoMode &= ~VF_TEXT;    break;
@@ -2818,8 +1338,16 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
 
+	// Apple IIe, Technical Notes, #3: Double High-Resolution Graphics
+	// 80STORE must be OFF to display page 2
 	if (SW_80STORE)
 		g_uVideoMode &= ~VF_PAGE2;
+
+// NTSC_BEGIN
+	NTSC_SetVideoMode( g_uVideoMode );
+// NTSC_END
+
+#if 0 // NTSC_CLEANUP: Is this still needed??
 
 	if (oldvalue != g_nAltCharSetOffset+(int)(g_uVideoMode & ~(VF_80STORE | VF_PAGE2)))
 		g_VideoForceFullRedraw = 1;	// Defer video redraw until VideoEndOfVideoFrame()
@@ -2832,63 +1360,16 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		// NB. Deferring the update by just setting /g_VideoForceFullRedraw/ is not an option, since this doesn't provide "flip-immediate"
 		//
 		// Ultimately this isn't the correct solution, and proper cycle-accurate video rendering should be done, but this is a much bigger job!
-		//
+		// TODO-Michael: Is MemReadFloatingBus() still accurate now that we have proper per cycle video rendering??
 
 		if (!g_bVideoUpdatedThisFrame)
 		{
-			VideoRefreshScreen();
+			VideoRedrawScreen(); // VideoRefreshScreen();
 			g_bVideoUpdatedThisFrame = true;
 		}
 	}
-
+#endif // NTSC_CLEANUP
 	return MemReadFloatingBus(uExecutedCycles);
-}
-
-//===========================================================================
-
-// Called at 60Hz (every 16.666ms)
-static void VideoUpdateFlash()
-{
-	static UINT nTextFlashCnt = 0;
-
-	// Flash rate:
-	// . NTSC : 60/16 ~= 4Hz
-	// . PAL  : 50/16 ~= 3Hz
-	nTextFlashCnt = (nTextFlashCnt+1) & 0xf;
-
-	// BUG: In unthrottled CPU mode, flash rate should not be affected
-	if(nTextFlashCnt == 0)
-	{
-		g_bTextFlashState = !g_bTextFlashState;
-		
-		// Redraw any FLASHing chars if any text showing. NB. No FLASH g_nAppMode for 80 cols
-		if ((SW_TEXT || SW_MIXED) ) // && !SW_80COL) // FIX: FLASH 80-Column
-			g_bTextFlashFlag = true;
-	}
-}
-
-//===========================================================================
-
-// Called from main-loop every 17030 cycles (ie. 60Hz when CPU = 1MHz)
-void VideoEndOfVideoFrame(void)
-{
-	g_bVideoUpdatedThisFrame = false;		// Allow page1/2 toggle to result in an immediate video redraw
-
-	VideoUpdateFlash();						// TODO: Flash rate should be constant (regardless of CPU speed)
-
-	if (!VideoApparentlyDirty())
-		return;
-
-	// Apple II is not page flipping...
-
-	static DWORD dwLastTime = 0;
-	DWORD dwCurrTime = GetTickCount();
-	if (!g_bFullSpeed ||
-		(dwCurrTime-dwLastTime >= 100))		// FullSpeed: update every 100ms
-	{
-		VideoRefreshScreen();
-		dwLastTime = dwCurrTime;
-	}
 }
 
 //===========================================================================
@@ -2946,6 +1427,7 @@ void VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode)
 {
 	g_nAltCharSetOffset = !AltCharSet ? 0 : 256;
 	g_uVideoMode = VideoMode;
+	g_dwCyclesThisFrame = 0;
 }
 
 //
@@ -3002,6 +1484,7 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
     int nScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
     int nVSyncLine  = bVideoScannerNTSC ? kNTSCVSyncLine : kPALVSyncLine;
     int nScanCycles = nScanLines * kHClocks;
+    nCycles %= nScanCycles;
 
     // calculate horizontal scanning state
     //
@@ -3107,6 +1590,8 @@ bool VideoGetVbl(const DWORD uExecutedCycles)
     // calculate video parameters according to display standard
     //
     int nScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+    int nScanCycles = nScanLines * kHClocks;
+    nCycles %= nScanCycles;
 
     // calculate vertical scanning state
     //
@@ -3212,53 +1697,6 @@ void Video_TakeScreenShot( int iScreenShotType )
 	g_nLastScreenShot++;
 }
 
-
-typedef char	int8;
-typedef short	int16;
-typedef int		int32;
-typedef unsigned	char	u8;
-typedef signed		short	s16;
-
-/// turn of MSVC struct member padding
-#pragma pack(push,1)
-
-struct bgra_t
-{
-	u8 b;
-	u8 g;
-	u8 r;
-	u8 a; // reserved on Win32
-};
-
-struct WinBmpHeader_t
-{
-	// BITMAPFILEHEADER     // Addr Size
-	char  nCookie[2]      ; // 0x00 0x02 BM
-	int32 nSizeFile       ; // 0x02 0x04 0 = ignore
-	int16 nReserved1      ; // 0x06 0x02
-	int16 nReserved2      ; // 0x08 0x02
-	int32 nOffsetData     ; // 0x0A 0x04
-	//                      ==      0x0D (14)
-
-	// BITMAPINFOHEADER
-	int32 nStructSize     ; // 0x0E 0x04 biSize
-	int32 nWidthPixels    ; // 0x12 0x04 biWidth
-	int32 nHeightPixels   ; // 0x16 0x04 biHeight
-	int16 nPlanes         ; // 0x1A 0x02 biPlanes
-	int16 nBitsPerPixel   ; // 0x1C 0x02 biBitCount
-	int32 nCompression    ; // 0x1E 0x04 biCompression 0 = BI_RGB
-	int32 nSizeImage      ; // 0x22 0x04 0 = ignore
-	int32 nXPelsPerMeter  ; // 0x26 0x04
-	int32 nYPelsPerMeter  ; // 0x2A 0x04
-	int32 nPaletteColors  ; // 0x2E 0x04
-	int32 nImportantColors; // 0x32 0x04
-	//                      ==      0x28 (40)
-
-	// RGBQUAD
-	// pixelmap
-};
-#pragma pack(pop)
-
 WinBmpHeader_t g_tBmpHeader;
 
 #if SCREENSHOT_TGA
@@ -3291,27 +1729,51 @@ WinBmpHeader_t g_tBmpHeader;
 	TargaHeader_t g_tTargaHeader;
 #endif // SCREENSHOT_TGA
 
+void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel )
+{
+#if SCREENSHOT_BMP
+	pBmp->nCookie[ 0 ]     = 'B'; // 0x42
+	pBmp->nCookie[ 1 ]     = 'M'; // 0x4d
+	pBmp->nSizeFile        = 0;
+	pBmp->nReserved1       = 0;
+	pBmp->nReserved2       = 0;
+#if VIDEO_SCREENSHOT_PALETTE
+	pBmp->nOffsetData      = sizeof(WinBmpHeader_t) + (256 * sizeof(bgra_t));
+#else
+	pBmp->nOffsetData      = sizeof(WinBmpHeader_t);
+#endif
+	pBmp->nStructSize      = 0x28; // sizeof( WinBmpHeader_t );
+	pBmp->nWidthPixels     = nWidth;
+	pBmp->nHeightPixels    = nHeight;
+	pBmp->nPlanes          = 1;
+#if VIDEO_SCREENSHOT_PALETTE
+	pBmp->nBitsPerPixel    = 8;
+#else
+	pBmp->nBitsPerPixel    = nBitsPerPixel;
+#endif
+	pBmp->nCompression     = BI_RGB; // none
+	pBmp->nSizeImage       = 0;
+	pBmp->nXPelsPerMeter   = 0;
+	pBmp->nYPelsPerMeter   = 0;
+#if VIDEO_SCREENSHOT_PALETTE
+	pBmp->nPaletteColors   = 256;
+#else
+	pBmp->nPaletteColors   = 0;
+#endif
+	pBmp->nImportantColors = 0;
+}
+
 //===========================================================================
 void Video_MakeScreenShot(FILE *pFile)
 {
-#if SCREENSHOT_BMP
-	g_tBmpHeader.nCookie[ 0 ] = 'B'; // 0x42
-	g_tBmpHeader.nCookie[ 1 ] = 'M'; // 0x4d
-	g_tBmpHeader.nSizeFile  = 0;
-	g_tBmpHeader.nReserved1 = 0;
-	g_tBmpHeader.nReserved2 = 0;
-	g_tBmpHeader.nOffsetData = sizeof(WinBmpHeader_t) + (256 * sizeof(bgra_t));
-	g_tBmpHeader.nStructSize = 0x28; // sizeof( WinBmpHeader_t );
-	g_tBmpHeader.nWidthPixels = g_iScreenshotType ? FRAMEBUFFER_W/2 :FRAMEBUFFER_W;
-	g_tBmpHeader.nHeightPixels = g_iScreenshotType ?  FRAMEBUFFER_H/2 : FRAMEBUFFER_H;
-	g_tBmpHeader.nPlanes = 1;
-	g_tBmpHeader.nBitsPerPixel = 8;
-	g_tBmpHeader.nCompression = BI_RGB;
-	g_tBmpHeader.nSizeImage = 0;
-	g_tBmpHeader.nXPelsPerMeter = 0;
-	g_tBmpHeader.nYPelsPerMeter = 0;
-	g_tBmpHeader.nPaletteColors = 256;
-	g_tBmpHeader.nImportantColors = 0;
+	WinBmpHeader_t *pBmp = &g_tBmpHeader;
+
+	Video_SetBitmapHeader(
+		pBmp,
+		g_iScreenshotType ? FRAMEBUFFER_BORDERLESS_W/2 : FRAMEBUFFER_BORDERLESS_W,
+		g_iScreenshotType ? FRAMEBUFFER_BORDERLESS_H/2 : FRAMEBUFFER_BORDERLESS_H,
+		32
+	);
 
 //	char sText[256];
 //	sprintf( sText, "sizeof: BITMAPFILEHEADER = %d\n", sizeof(BITMAPFILEHEADER) ); // = 14
@@ -3319,50 +1781,58 @@ void Video_MakeScreenShot(FILE *pFile)
 //	sprintf( sText, "sizeof: BITMAPINFOHEADER = %d\n", sizeof(BITMAPINFOHEADER) ); // = 40
 //	MessageBox( g_hFrameWindow, sText, "Info 2", MB_OK );
 
-	char sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize[ sizeof( WinBmpHeader_t ) == (14 + 40) ];
-	sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize;
+	char sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[ sizeof( WinBmpHeader_t ) == (14 + 40) ];
+	/**/ sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[0]=0;
 
 	// Write Header
-	int nLen;
-	fwrite( &g_tBmpHeader, sizeof( g_tBmpHeader ), 1, pFile );
+	fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
 
+	uint32_t *pSrc;
+#if VIDEO_SCREENSHOT_PALETTE
 	// Write Palette Data
-	u8 *pSrc = ((u8*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
-	nLen = g_tBmpHeader.nPaletteColors * sizeof(bgra_t); // RGBQUAD
+	pSrc = ((uint8_t*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
+	int nLen = g_tBmpHeader.nPaletteColors * sizeof(bgra_t); // RGBQUAD
 	fwrite( pSrc, nLen, 1, pFile );
 	pSrc += nLen;
+#endif
 
 	// Write Pixel Data
 	// No need to use GetDibBits() since we already have http://msdn.microsoft.com/en-us/library/ms532334.aspx
 	// @reference: "Storing an Image" http://msdn.microsoft.com/en-us/library/ms532340(VS.85).aspx
-	pSrc = ((u8*)g_pFramebufferbits);
-	nLen = g_tBmpHeader.nWidthPixels * g_tBmpHeader.nHeightPixels * g_tBmpHeader.nBitsPerPixel / 8;
+	pSrc = (uint32_t*) g_pFramebufferbits;
+	pSrc += BORDER_H * FRAMEBUFFER_W;	// Skip top border
+	pSrc += BORDER_W;					// Skip left border
 
 	if( g_iScreenshotType == SCREENSHOT_280x192 )
 	{
 		pSrc += FRAMEBUFFER_W;	// Start on odd scanline (otherwise for 50% scanline mode get an all black image!)
 
-		u8 aScanLine[ 280 ];
-		u8 *pDst;
+		uint32_t  aScanLine[ 280 ];
+		uint32_t *pDst;
 
 		// 50% Half Scan Line clears every odd scanline.
 		// SHIFT+PrintScreen saves only the even rows.
 		// NOTE: Keep in sync with _Video_RedrawScreen() & Video_MakeScreenShot()
-		for( int y = 0; y < FRAMEBUFFER_H/2; y++ )
+		for( int y = 0; y < FRAMEBUFFER_BORDERLESS_H/2; y++ )
 		{
 			pDst = aScanLine;
-			for( int x = 0; x < FRAMEBUFFER_W/2; x++ )
+			for( int x = 0; x < FRAMEBUFFER_BORDERLESS_W/2; x++ )
 			{
 				*pDst++ = pSrc[1]; // correction for left edge loss of scaled scanline [Bill Buckel, B#18928]
 				pSrc += 2; // skip odd pixels
 			}
-			fwrite( aScanLine, FRAMEBUFFER_W/2, 1, pFile );
+			fwrite( aScanLine, sizeof(uint32_t), FRAMEBUFFER_BORDERLESS_W/2, pFile );
 			pSrc += FRAMEBUFFER_W; // scan lines doubled - skip odd ones
+			pSrc += BORDER_W*2;	// Skip right border & next line's left border
 		}
 	}
 	else
 	{
-		fwrite( pSrc, nLen, 1, pFile );
+		for( int y = 0; y < FRAMEBUFFER_BORDERLESS_H; y++ )
+		{
+			fwrite( pSrc, sizeof(uint32_t), FRAMEBUFFER_BORDERLESS_W, pFile );
+			pSrc += FRAMEBUFFER_W;
+		}
 	}
 #endif // SCREENSHOT_BMP
 
@@ -3370,10 +1840,10 @@ void Video_MakeScreenShot(FILE *pFile)
 	TargaHeader_t *pHeader = &g_tTargaHeader;
 	memset( (void*)pHeader, 0, sizeof( TargaHeader_t ) );
 
-	pHeader->iImageType = TARGA_RGB;
+	pHeader->iImageType    = TARGA_RGB;
 	pHeader->nWidthPixels  = FRAMEBUFFER_W;
 	pHeader->nHeightPixels = FRAMEBUFFER_H;
-	pHeader->nBitsPerPixel =  24;
+	pHeader->nBitsPerPixel = 24;
 #endif // SCREENSHOT_TGA
 
 }
@@ -3400,15 +1870,47 @@ void Config_Load_Video()
 {
 	REGLOAD(TEXT(REGVALUE_VIDEO_MODE           ),&g_eVideoType);
 	REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&g_uHalfScanLines);
-	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&monochrome);
+	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&g_nMonochromeRGB);
 
 	if (g_eVideoType >= NUM_VIDEO_MODES)
-		g_eVideoType = VT_COLOR_STANDARD; // Old default: VT_COLOR_TVEMU
+		g_eVideoType = VT_COLOR_MONITOR;
 }
 
 void Config_Save_Video()
 {
 	REGSAVE(TEXT(REGVALUE_VIDEO_MODE           ),g_eVideoType);
 	REGSAVE(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),g_uHalfScanLines);
-	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),monochrome);
+	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),g_nMonochromeRGB);
+}
+
+// ____________________________________________________________________
+
+//===========================================================================
+static void videoCreateDIBSection()
+{
+	// CREATE THE DEVICE CONTEXT
+	HWND window  = GetDesktopWindow();
+	HDC dc       = GetDC(window);
+	if (g_hDeviceDC)
+	{
+		DeleteDC(g_hDeviceDC);
+	}
+	g_hDeviceDC = CreateCompatibleDC(dc);
+
+	// CREATE THE FRAME BUFFER DIB SECTION
+	if (g_hDeviceBitmap)
+		DeleteObject(g_hDeviceBitmap);
+		g_hDeviceBitmap = CreateDIBSection(
+			dc,
+			g_pFramebufferinfo,
+			DIB_RGB_COLORS,
+			(LPVOID *)&g_pFramebufferbits,0,0
+		);
+	SelectObject(g_hDeviceDC,g_hDeviceBitmap);
+
+	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
+	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
+	ZeroMemory( g_pFramebufferbits, FRAMEBUFFER_W*FRAMEBUFFER_H*4 );
+
+	NTSC_VideoInit( g_pFramebufferbits );
 }

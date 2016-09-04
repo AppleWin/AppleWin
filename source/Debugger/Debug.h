@@ -105,7 +105,7 @@
 	extern int g_aDisasmTargets[ MAX_DISPLAY_LINES ];
 
 // Display
-	extern bool g_bDebuggerViewingAppleOutput;
+	extern int g_bDebuggerViewingAppleOutput;
 
 // Font
 	extern int g_nFontHeight;

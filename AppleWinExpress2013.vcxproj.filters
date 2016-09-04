@@ -169,6 +169,12 @@
     <ClCompile Include="source\Debugger\Util_MemoryTextFile.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
+    <ClCompile Include="source\NTSC.cpp">
+      <Filter>Source Files\Video</Filter>
+    </ClCompile>
+    <ClCompile Include="source\NTSC_CharSet.cpp">
+      <Filter>Source Files\Video</Filter>
+    </ClCompile>
     <ClCompile Include="source\Pravets.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
@@ -423,6 +429,12 @@
     <ClInclude Include="source\DiskDefs.h">
       <Filter>Source Files\Disk</Filter>
     </ClInclude>
+<<<<<<< HEAD
+=======
+    <ClInclude Include="source\NTSC.h">
+      <Filter>Source Files\Video</Filter>
+    </ClInclude>
+>>>>>>> NTSC_PreMerge
     <ClInclude Include="source\Pravets.h">
       <Filter>Source Files\Model</Filter>
     </ClInclude>
@@ -438,6 +450,12 @@
     <ClInclude Include="source\SaveState_Structs_v1.h">
       <Filter>Source Files\_Headers</Filter>
     </ClInclude>
+<<<<<<< HEAD
+=======
+    <ClInclude Include="source\NTSC_CharSet.h">
+      <Filter>Source Files\Video</Filter>
+    </ClInclude>
+>>>>>>> NTSC_PreMerge
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\Applewin.bmp">

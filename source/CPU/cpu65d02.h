@@ -120,6 +120,10 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 		UINT uExtraCycles = 0;
 		BYTE iOpcode;
 
+// NTSC_BEGIN
+		ULONG uPreviousCycles = uExecutedCycles;
+// NTSC_END
+
 		if (GetActiveCpu() == CPU_Z80)
 		{
 			const UINT uZ80Cycles = z80_mainloop(uTotalCycles, uExecutedCycles); CYC(uZ80Cycles)
@@ -402,6 +406,14 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 			case 0xFF: $            NOP  CYC(2)  break;
 		}
 #undef $
+
+// NTSC_BEGIN
+		if (!g_bFullSpeed)
+		{
+			ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
+			NTSC_VideoUpdateCycles( uElapsedCycles );
+		}
+// NTSC_END
 
 		CheckInterruptSources(uExecutedCycles);
 		NMI(uExecutedCycles, uExtraCycles, flagc, flagn, flagv, flagz);
