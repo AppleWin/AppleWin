@@ -1040,51 +1040,6 @@ void VideoDisplayLogo ()
 	DRAWVERSION( 0, -356*scale,RGB(0xFF,0x00,0xFF));
 #endif
 
-// NTSC Alpha Version
-	DeleteObject(font);
-/*
-	font = CreateFontA(
-		-48,0,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
-		OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,
-		VARIABLE_PITCH | 4 | FF_SWISS,
-		sFontName)
-	);
-*/
-	PLOGFONT pLogFont = (PLOGFONT) LocalAlloc(LPTR, sizeof(LOGFONT));
-	int angle = (int)(7.5 * 10); // 3600 = 360 degrees
-	pLogFont->lfHeight = -48;
-	pLogFont->lfWeight = FW_NORMAL;
-	pLogFont->lfEscapement  = angle;
-	pLogFont->lfOrientation = angle;
-	SetTextAlign(hFrameDC,TA_BASELINE);
-
-	font = CreateFontIndirect( pLogFont );
-	HGDIOBJ  hFontPrev = SelectObject(hFrameDC, font);
-
-	SelectObject(hFrameDC,font);
-//	sprintf( szVersion, "NTSC Alpha v14 HorzClock" );
-//	sprintf( szVersion, "NTSC Alpha v15 Fraps" );
-//	sprintf( szVersion, "NTSC Alpha v16 Palette" );
-//	sprintf( szVersion, "NTSC Alpha v17 BMP Palette" );
-	sprintf( szVersion, "NTSC Alpha v18" );
-
-	xoff = -g_nViewportCX + g_nViewportCX/6 + GetFullScreenOffsetX();
-	yoff = -g_nViewportCY/16 + GetFullScreenOffsetY();
-	DRAWVERSION( 0, 0,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 2, 2,RGB(0xFF,0x00,0xFF));
-
- 	sprintf( szVersion, "Blurry 80-col Text" );
-	xoff = -g_nViewportCX + g_nViewportCX/6 + GetFullScreenOffsetX();
-	yoff = +g_nViewportCY/16 + GetFullScreenOffsetY();
-	DRAWVERSION( 0, 0,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 2, 2,RGB(0xFF,0x00,0xFF));
-
-	LocalFree((LOCALHANDLE)pLogFont);
-	SelectObject(hFrameDC,hFontPrev);
-// NTSC END
-
 #undef  DRAWVERSION
 
 	FrameReleaseVideoDC();

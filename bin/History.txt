@@ -9,10 +9,49 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.26.0.1 (beta) - 5 Sept 2016
+---------------------------
+Changes:
+. Beta NTSC support
+	TV Color, TV B&W, Monitor Color, Monitor B&W
+. Full-screen native resolution (no longer 640x480 resolution)
+. [Bug #260] Save-state file v2: human readable (Yaml-based format)
+	All hardware configurations save/restored:
+	. Apple model, sub-systems, memory, cards (except Uthernet and SAM cards)
+	Old v1 .aws file format still loaded
+. [Bug #270] Added SAM/DAC sound card support
+. AppleWin built with VS2008 Express (supports Windows 2000 or later)
+. Unit tests added for 6502 and 65C02 opcodes
+. Added -load-state <savestate.yaml> command line option
+. New repo created with test save-state images: https://github.com/AppleWin/AppleWin-Test
+
+Fixes:
+. [Bug #317] [Disk] Only mounts version 1 .2mg not version 0
+. [Bug #296] VS2015 unresolved external in Release
+. [Bug #255] CyclesThisFrame not saved to save-state file
+. [Bug #282] Timing test for undocumented AXA (zp),Y
+. [Bug #288] Timing issue with DEC (abs)
+. [Bug #278] 6502 emulation: bSlowerOnPagecross setup too late in CPP macros
+. [Bug #271] Timing problems with ASL, INC and DEC (abs,X)
+. [Bug #264] JMP (IND) is 5 cycles only - not 6 - on 6502
+. [Bug #287] CPU emulation timing fixes
+. [Bug #286] -d1 command line argument & declining GPL causes crash
+. [Bug #277] SSI263 speech data-race leading to crash
+. [Bug #267] Mousecard movement & button events not working in MODE_STEPPING
+. [Bug #227] (Debugger)[1.25] AppleSoft symbol: COPY.FAC.TO.ARG.ROUNDED overflows into registers
+. [Bug #246] (Debugger) Memory (Changing Memory) command in CHM help files
+
+
+1.26.0.0 (alpha) - Jan 2016
+---------------------------
+Changes:
+. Alpha NTSC support
+
+
 1.25.0.4 - 23 Apr 2015
 ----------------------
 Fixes:
-. [Bug #276] -d1 command line argument caused AppleWin to quickly exit. 
+. [Bug #276] -d1 command line argument caused AppleWin to crash.
 
 
 1.25.0.3 - 8 Sep 2014
