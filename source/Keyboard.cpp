@@ -418,6 +418,8 @@ static char ClipboardCurrChar(bool bIncPtr)
 
 BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
 {
+	LogFileTimeUntilFirstKeyRead();
+
 	if(g_bPasteFromClipboard)
 		ClipboardInit();
 

@@ -2061,6 +2061,7 @@ void ResetMachineState ()
 #endif
 
   SoundCore_SetFade(FADE_NONE);
+  LogFileTimeUntilFirstKeyReadReset();
 }
 
 

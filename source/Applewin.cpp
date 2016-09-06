@@ -111,6 +111,38 @@ CSpeech		g_Speech;
 
 //===========================================================================
 
+static DWORD dwLogKeyReadTickStart;
+static bool bLogKeyReadDone = false;
+
+void LogFileTimeUntilFirstKeyReadReset(void)
+{
+	if (!g_fh)
+		return;
+
+	dwLogKeyReadTickStart = GetTickCount();
+
+	bLogKeyReadDone = false;
+}
+
+// Log the time from emulation restart/reboot until the first key read: BIT $C000
+// . NB. AZTEC.DSK does prior LDY $C000 reads, but the BIT $C000 is at the "Press any key" message
+void LogFileTimeUntilFirstKeyRead(void)
+{
+	if (!g_fh || bLogKeyReadDone)
+		return;
+
+	if (mem[regs.pc-3] != 0x2C)	// bit $c0000
+		return;
+
+	DWORD dwTime = GetTickCount() - dwLogKeyReadTickStart;
+
+	LogFileOutput("Time from emulation reboot until first $C000 access: %d msec\n", dwTime);
+
+	bLogKeyReadDone = true;
+}
+
+//---------------------------------------------------------------------------
+
 eApple2Type GetApple2Type(void)
 {
 	return g_Apple2Type;
@@ -1152,6 +1184,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		// ENTER THE MAIN MESSAGE LOOP
 		LogFileOutput("Main: EnterMessageLoop()\n");
+		LogFileTimeUntilFirstKeyReadReset();
 		EnterMessageLoop();
 		LogFileOutput("Main: LeaveMessageLoop()\n");
 

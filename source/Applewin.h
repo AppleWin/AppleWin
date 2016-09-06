@@ -3,6 +3,9 @@
 #include "SaveState_Structs_common.h"
 #include "Common.h"
 
+void LogFileTimeUntilFirstKeyReadReset(void);
+void LogFileTimeUntilFirstKeyRead(void);
+
 void SetCurrentCLK6502();
 bool SetCurrentImageDir(const char* pszImageDir);
 void SetCharsetType(void);

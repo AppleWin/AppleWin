@@ -242,7 +242,6 @@ static HPALETTE      g_hPalette;
 
 static HBITMAP       g_hSourceBitmap;
 static LPBYTE        g_pSourcePixels;
-static LPBITMAPINFO  g_pSourceHeader;
 const int MAX_SOURCE_Y = 512;
 static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 static LPBYTE        g_pTextBank1; // Aux
@@ -920,10 +919,8 @@ void VideoDestroy () {
 
   // DESTROY BUFFERS
   VirtualFree(g_pFramebufferinfo,0,MEM_RELEASE);
-  VirtualFree(g_pSourceHeader     ,0,MEM_RELEASE);
   VirtualFree(vidlastmem     ,0,MEM_RELEASE);
   g_pFramebufferinfo = NULL;
-  g_pSourceHeader      = NULL;
   vidlastmem      = NULL;
 
   // DESTROY FRAME BUFFER
