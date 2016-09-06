@@ -12,7 +12,7 @@ Tom Charlesworth
 1.26.0.1 (beta) - 5 Sept 2016
 ---------------------------
 Changes:
-. Beta NTSC support
+. [Bug #126,#157,#194] Beta NTSC support
 	TV Color, TV B&W, Monitor Color, Monitor B&W
 . Full-screen native resolution (no longer 640x480 resolution)
 . [Bug #260] Save-state file v2: human readable (Yaml-based format)
@@ -26,6 +26,8 @@ Changes:
 . New repo created with test save-state images: https://github.com/AppleWin/AppleWin-Test
 
 Fixes:
+. [Bug #129] Tight loop page-flipping causing heavy CPU load (fixed by NTSC / cycle-accurate video emulation)
+. [Bug #204] Problem running Wrath Of Denethenor (fixed by NTSC / cycle-accurate video emulation)
 . [Bug #317] [Disk] Only mounts version 1 .2mg not version 0
 . [Bug #296] VS2015 unresolved external in Release
 . [Bug #255] CyclesThisFrame not saved to save-state file
