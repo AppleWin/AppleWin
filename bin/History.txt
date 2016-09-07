@@ -24,6 +24,7 @@ Changes:
 . Unit tests added for 6502 and 65C02 opcodes
 . Added -load-state <savestate.yaml> command line option
 . New repo created with test save-state images: https://github.com/AppleWin/AppleWin-Test
+. Remove unsupported PC speaker sound types
 
 Fixes:
 . [Bug #129] Tight loop page-flipping causing heavy CPU load (fixed by NTSC / cycle-accurate video emulation)

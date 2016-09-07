@@ -510,7 +510,20 @@ void LoadConfiguration(void)
 	else
 		LoadConfigOldJoystick(JN_JOYSTICK1);
 
-	REGLOAD(TEXT("Sound Emulation")     ,&soundtype);
+	DWORD dwSoundType;
+	REGLOAD(TEXT("Sound Emulation"), &dwSoundType);
+	switch (dwSoundType)
+	{
+	case REG_SOUNDTYPE_NONE:
+	case REG_SOUNDTYPE_DIRECT:	// Not supported from 1.26
+	case REG_SOUNDTYPE_SMART:	// Not supported from 1.26
+	default:
+		soundtype = SOUND_NONE;
+		break;
+	case REG_SOUNDTYPE_WAVE:
+		soundtype = SOUND_WAVE;
+		break;
+	}
 
 	char aySerialPortName[ CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM ];
 	if (RegLoadString(	TEXT("Configuration"),

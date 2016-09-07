@@ -1,11 +1,18 @@
 #pragma once
 
-#define  SOUND_NONE    0
-#define  SOUND_DIRECT  1
-#define  SOUND_SMART   2
-#define  SOUND_WAVE    3
+// Registry soundtype:
+#define  REG_SOUNDTYPE_NONE    0
+#define  REG_SOUNDTYPE_DIRECT  1	// Not supported from 1.26
+#define  REG_SOUNDTYPE_SMART   2	// Not supported from 1.26
+#define  REG_SOUNDTYPE_WAVE    3
 
-extern DWORD      soundtype;
+enum SoundType_e
+{
+	SOUND_NONE = 0,
+	SOUND_WAVE
+};
+
+extern SoundType_e soundtype;
 extern double     g_fClksPerSpkrSample;
 extern bool       g_bQuieterSpeaker;
 extern short      g_nSpeakerData;
@@ -14,7 +21,7 @@ void    SpkrDestroy ();
 void    SpkrInitialize ();
 void    SpkrReinitialize ();
 void    SpkrReset();
-BOOL    SpkrSetEmulationType (HWND,DWORD);
+BOOL    SpkrSetEmulationType (HWND window, SoundType_e newSoundType);
 void    SpkrUpdate (DWORD);
 void    SpkrUpdate_Timer();
 void    Spkr_SetErrorInc(const int nErrorInc);
