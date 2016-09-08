@@ -515,6 +515,8 @@ static void Snapshot_LoadState_v2(void)
 		MemInitializeCustomF8ROM();
 		MemInitializeIO();
 
+		MemLoadSnapshot_SetSlotCxRom();	// Remove the cards' ROMs at $Csnn if internal ROM is enabled
+
 		MemUpdatePaging(TRUE);
 
 		// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)

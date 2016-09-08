@@ -221,8 +221,8 @@ static void Votrax_Write(BYTE nDevice, BYTE nValue);
 
 static void StartTimer(SY6522_AY8910* pMB)
 {
-	if((pMB->nAY8910Number & 1) != SY6522_DEVICE_A)
-		return;
+//	if((pMB->nAY8910Number & 1) != SY6522_DEVICE_A)
+//		return;
 
 	if((pMB->sy6522.IER & IxR_TIMER1) == 0x00)
 		return;

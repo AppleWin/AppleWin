@@ -1685,6 +1685,14 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 
 //===========================================================================
 
+void MemLoadSnapshot_SetSlotCxRom(void)
+{
+	if (!SW_SLOTCXROM)
+		IoHandlerCardsOut();
+}
+
+//===========================================================================
+
 // NB. Don't need to save 'modechanging', as this is just an optimisation to save calling UpdatePaging() twice.
 // . If we were to save the state when 'modechanging' is set, then on restoring the state, the 6502 code will immediately update the read memory mode.
 // . This will work correctly.
