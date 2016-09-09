@@ -1329,7 +1329,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( "  The string may contain c-style printf formatting flags: %d %x %z %c" );
 			ConsoleBufferPush( "  Where: %d decimal, %x hex, %z binary, %c char, %% percent"           );
 			Help_Examples();
-			sprintf( sText, "%s   %s \"Dec: %%d  Hex: %%x  Bin: %%z  Char: %c\",A,A,A,A", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			sprintf( sText, "%s   %s \"Dec: %%d  Hex: %%x  Bin: %%z  Char: %%c\",A,A,A,A", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
 			sprintf( sText, "%s   %s \"%%x %%x %%x\",A,X,Y"                             , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
 
 			break;
