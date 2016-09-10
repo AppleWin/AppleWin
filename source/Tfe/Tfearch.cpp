@@ -520,7 +520,7 @@ int tfe_arch_receive(BYTE *pbuffer  ,    /* where to store a frame */
 {
     int len;
 
-    TFE_PCAP_INTERNAL internal = { *plen, pbuffer };
+    TFE_PCAP_INTERNAL internal = { static_cast<unsigned int>(*plen), pbuffer };
 
 
 #ifdef TFE_DEBUG_ARCH
