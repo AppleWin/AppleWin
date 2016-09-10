@@ -2053,7 +2053,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 
 	for(UINT i=0; i<NUM_MB_UNITS; i++)
 	{
-		char szNum[2] = {'0'+i,0};
+		char szNum[2] = {'0'+char(i),0};
 		std::string unit = std::string(SS_YAML_KEY_MB_UNIT) + std::string(szNum);
 		if (!yamlLoadHelper.GetSubMap(unit))
 			throw std::string("Card: Expected key: ") + std::string(unit);
@@ -2157,7 +2157,7 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 
 	for(UINT i=0; i<NUM_PHASOR_UNITS; i++)
 	{
-		char szNum[2] = {'0'+i,0};
+		char szNum[2] = {'0'+char(i),0};
 		std::string unit = std::string(SS_YAML_KEY_MB_UNIT) + std::string(szNum);
 		if (!yamlLoadHelper.GetSubMap(unit))
 			throw std::string("Card: Expected key: ") + std::string(unit);
