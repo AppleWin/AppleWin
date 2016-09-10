@@ -1260,11 +1260,11 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( "    '...' designate Apple High-Bit text" );
 			Help_Examples();
 			sprintf( sText, "%s  %s F000,1000 'Apple'   // search High-Bit", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  MT1 @2"                                   , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			sprintf( sText, "%s  MT1 @2"                                   , CHC_EXAMPLE                    ); ConsolePrint( sText );
 			sprintf( sText, "%s  %s D000:FFFF \"FLAS\"    // search ASCII ", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  MA1 @1"                                   , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			sprintf( sText, "%s  MA1 @1"                                   , CHC_EXAMPLE                    ); ConsolePrint( sText );
 			sprintf( sText, "%s  %s D000,4000 \"EN\" 'D'  // Mixed text"   , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  MT1 @1"                                   , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			sprintf( sText, "%s  MT1 @1"                                   , CHC_EXAMPLE                    ); ConsolePrint( sText );
 			sprintf( sText, "%s  %s D000,4000 'Apple' ? ']'"               , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
 			break;
 		case CMD_MEMORY_SEARCH_HEX:
@@ -1279,13 +1279,13 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( "    #?   match specific high nibble, match any low nibble"           );
 			Help_Examples();
 			sprintf( sText, "%s   %s F000,1000 AD ? C0", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   U @1"                , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			sprintf( sText, "%s   U @1"                , CHC_EXAMPLE                    ); ConsolePrint( sText );
 			sprintf( sText, "%s   %s F000,1000 ?1 C0"  , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
 			sprintf( sText, "%s   %s F000,1000 5? C0"  , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
 			sprintf( sText, "%s   %s F000,1000 10 C?"  , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   U @2 - 1"            , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			sprintf( sText, "%s   U @2 - 1"            , CHC_EXAMPLE                    ); ConsolePrint( sText );
 			sprintf( sText, "%s   %s F000:FFFF C030"   , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   U @1 - 1"            , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			sprintf( sText, "%s   U @1 - 1"            , CHC_EXAMPLE                    ); ConsolePrint( sText );
 			break;
 //		case CMD_MEMORY_SEARCH_APPLE:
 //			wsprintf( sText,   TEXT("Deprecated.  Use: %s" ), g_aCommands[ CMD_MEMORY_SEARCH ].m_sName ); ConsoleBufferPush( sText );
