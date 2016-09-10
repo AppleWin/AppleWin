@@ -78,7 +78,7 @@ TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin exe
 TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
-BOOL      restart           = 0;
+bool      g_restart = false;
 bool      g_bRestartFullScreen = false;
 
 DWORD		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar
@@ -1091,7 +1091,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	do
 	{
 		// DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
-		restart = 0;
+		g_restart = false;
 		ResetToLogoMode();
 
 		LoadConfiguration();
@@ -1202,7 +1202,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		EnterMessageLoop();
 		LogFileOutput("Main: LeaveMessageLoop()\n");
 
-		if (restart)
+		if (g_restart)
 		{
 			bSetFullScreen = g_bRestartFullScreen;
 			g_bRestartFullScreen = false;
@@ -1214,7 +1214,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		sg_Mouse.Uninitialize();	// Maybe restarting due to switching slot-4 card from MouseCard to Mockingboard
 		LogFileOutput("Main: sg_Mouse.Uninitialize()\n");
 	}
-	while (restart);
+	while (g_restart);
 
 	// Release COM
 	DSUninit();
