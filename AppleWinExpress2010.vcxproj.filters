@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source">
@@ -215,6 +215,9 @@
     <ClCompile Include="source\NTSC.cpp">
       <Filter>Source\Video</Filter>
     </ClCompile>
+    <ClCompile Include="source\Pravets.cpp" />
+    <ClCompile Include="source\SAM.cpp" />
+    <ClCompile Include="source\YamlHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -457,6 +460,8 @@
     <ClInclude Include="source\NTSC.h">
       <Filter>Source\Video</Filter>
     </ClInclude>
+    <ClInclude Include="source\Pravets.h" />
+    <ClInclude Include="source\YamlHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="source\CPU\cpu_general.inl">
@@ -627,5 +632,8 @@
     <ResourceCompile Include="RESOURCE\APPLEWIN.RC">
       <Filter>Resources</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="AppleWin\Release\Applewin.exe.intermediate.manifest" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug NoDX|Win32">
@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>Applewin</ProjectName>
+    <ProjectName>AppleWin</ProjectName>
     <ProjectGuid>{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}</ProjectGuid>
-    <RootNamespace>Applewin</RootNamespace>
+    <RootNamespace>AppleWin</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -73,7 +73,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Release/Applewin.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Release/AppleWin.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -122,7 +122,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Release/Applewin.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Release/AppleWin.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -171,7 +171,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Debug/Applewin.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Debug/AppleWin.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -212,7 +212,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Debug/Applewin.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Debug/AppleWin.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -540,11 +540,11 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="zip_lib\zip_lib.vcxproj">
+    <ProjectReference Include="zip_lib\zip_lib2010.vcxproj">
       <Project>{709278b8-c583-4bd8-90de-4e4f35a3bd8b}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="zlib\zlib-Express10.00.vcxproj">
+    <ProjectReference Include="zlib\zlib-Express2010.vcxproj">
       <Project>{7935b998-c713-42ae-8f6d-9ff9080a1b1b}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
@@ -553,7 +553,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Manifest Include="AppleWin\Release\Applewin.exe.intermediate.manifest" />
+    <Manifest Include="AppleWin\Release\AppleWin.exe.intermediate.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
