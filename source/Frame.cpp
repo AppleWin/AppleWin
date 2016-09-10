@@ -991,7 +991,7 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_CLOSE:
       LogFileOutput("WM_CLOSE\n");
-      if (g_bIsFullScreen && restart)
+      if (g_bIsFullScreen && g_restart)
 		  g_bRestartFullScreen = true;
       if (g_bIsFullScreen)
         SetNormalMode();
@@ -1089,7 +1089,7 @@ LRESULT CALLBACK FrameWndProc (
       DragAcceptFiles(window,0);
 	  Snapshot_Shutdown();
       DebugDestroy();
-      if (!restart) {
+      if (!g_restart) {
         DiskDestroy();
         ImageDestroy();
         HD_Destroy();
@@ -1674,7 +1674,7 @@ LRESULT CALLBACK FrameWndProc (
 	  // . Changed slot configuration
 	  // . Changed disk speed (normal or enhanced)
 	  // . Changed Freeze F8 rom setting
-      restart = 1;
+      g_restart = true;
       PostMessage(window,WM_CLOSE,0,0);
       break;
 

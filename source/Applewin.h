@@ -33,7 +33,7 @@ void SetLoadedSaveStateFlag(const bool bFlag);
 extern TCHAR      g_sProgramDir[MAX_PATH];
 extern TCHAR      g_sCurrentDir[MAX_PATH];
 
-extern BOOL       restart;
+extern bool       g_restart;
 extern bool       g_bRestartFullScreen;
 
 extern DWORD      g_dwSpeed;
