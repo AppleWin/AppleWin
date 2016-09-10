@@ -263,6 +263,18 @@ bool ConsolePrint ( const char * pText )
 	return true;
 }
 
+bool ConsolePrintVa ( char* buf, size_t bufsz, const char * pFormat, va_list va )
+{
+	vsnprintf_s(buf, bufsz, _TRUNCATE, pFormat, va);
+	return ConsolePrint(buf);
+}
+
+bool ConsoleBufferPushVa ( char* buf, size_t bufsz, const char * pFormat, va_list va )
+{
+	vsnprintf_s(buf, bufsz, _TRUNCATE, pFormat, va);
+	return ConsoleBufferPush(buf);
+}
+
 // Add string to buffered output
 // Shifts the buffered console output lines "Up"
 //===========================================================================

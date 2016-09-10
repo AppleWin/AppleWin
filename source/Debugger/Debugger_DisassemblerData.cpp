@@ -191,7 +191,6 @@ Update_t CmdDisasmDataList (int nArgs)
 
 	// Need to iterate through all blocks
 	DisasmData_t* pData = NULL;
-	char sText[ CONSOLE_WIDTH * 2 ];
 
 	while( pData = Disassembly_Enumerate( pData ) )
 	{
@@ -199,9 +198,10 @@ Update_t CmdDisasmDataList (int nArgs)
 		{
 			int nLen = strlen( pData->sSymbol );
 
+			char sText[CONSOLE_WIDTH * 2];
 			// <smbol> <type> <start>:<end>
 			// `TEST `300`:`320
-			sprintf( sText, "%s%s %s%*s %s%04X%s:%s%04X"
+			ConsolePrintFormat( sText, "%s%s %s%*s %s%04X%s:%s%04X"
 				, CHC_CATEGORY
 				, g_aNopcodeTypes[ pData->eElementType ] 
 				, (nLen > 0) ? CHC_SYMBOL     : CHC_DEFAULT
@@ -213,7 +213,6 @@ Update_t CmdDisasmDataList (int nArgs)
 				, CHC_ADDRESS
 				, pData->nEndAddress // Disassembly_IsDataAddress() is *inclusive* // KEEP IN SYNC:  _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 			);
-			ConsolePrint( sText );
 		}
 	}
 

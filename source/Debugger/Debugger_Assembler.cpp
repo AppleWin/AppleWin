@@ -826,12 +826,11 @@ int AssemblerHashMnemonic ( const TCHAR * pMnemonic )
 	int nLen = strlen( pMnemonic );
 
 #if DEBUG_ASSEMBLER
-	static char sText[ CONSOLE_WIDTH * 3 ];
 	static int nMaxLen = 0;
 	if (nMaxLen < nLen) {
 		nMaxLen = nLen;
-		sprintf( sText, "New Max Len: %d  %s", nMaxLen, pMnemonic );
-		ConsolePrint( sText );
+		char sText[CONSOLE_WIDTH * 3];
+		ConsolePrintFormat( sText, "New Max Len: %d  %s", nMaxLen, pMnemonic );
 	}
 #endif
 
@@ -856,8 +855,6 @@ int AssemblerHashMnemonic ( const TCHAR * pMnemonic )
 //===========================================================================
 void AssemblerHashOpcodes ()
 {
-static char sText[ 128 ];
-
 	Hash_t nMnemonicHash;
 	int    iOpcode;
 
@@ -867,10 +864,10 @@ static char sText[ 128 ];
 		nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 		g_aOpcodesHash[ iOpcode ] = nMnemonicHash;
 #if DEBUG_ASSEMBLER
-	//OutputDebugString( "" );
-	sprintf( sText, "%s : %08X  ", pMnemonic, nMnemonicHash );
-	ConsolePrint( sText );
-	// CLC: 002B864
+	   //OutputDebugString( "" );
+      char sText[ 128 ];
+      ConsolePrintFormat( sText, "%s : %08X  ", pMnemonic, nMnemonicHash );
+	   // CLC: 002B864
 #endif
 	}
 	ConsoleUpdate();
@@ -928,19 +925,17 @@ void _CmdAssembleHashDump ()
 		int    nOpcode   = tHash.m_iOpcode;
 		int    nOpmode   = g_aOpcodes[ nOpcode ].nAddressMode;
 
-		wsprintf( sText, "%08X %02X %s %s"
+		ConsoleBufferPushFormat( sText, "%08X %02X %s %s"
 			, iThisHash
 			, nOpcode
 			, g_aOpcodes65C02[ nOpcode ].sMnemonic
 			, g_aOpmodes[ nOpmode  ].m_sName
 		);
-		ConsoleBufferPush( sText );
 		nThisHash++;
 		
 //		if (nPrevHash != iThisHash)
 //		{
-//			wsprintf( sText, "Total: %d", nThisHash );
-//			ConsoleBufferPush( sText );
+//			ConsoleBufferPushFormat( sText, "Total: %d", nThisHash );
 //			nThisHash = 0;
 //		}
 	}
@@ -1435,14 +1430,13 @@ bool Assemble( int iArg, int nArgs, WORD nAddress )
 	int nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 
 #if DEBUG_ASSEMBLER
-	static char sText[ CONSOLE_WIDTH * 2 ];
-	sprintf( sText, "%s%04X%s: %s%s%s -> %s%08X", 
+	char sText[ CONSOLE_WIDTH * 2 ];
+	ConsolePrintFormat( sText, "%s%04X%s: %s%s%s -> %s%08X", 
 		CHC_ADDRESS, nAddress,
 		CHC_DEFAULT,
 		CHC_STRING, pMnemonic,
 		CHC_DEFAULT,
-		CHC_NUM_HEX, nMnemonicHash ); 
-	ConsolePrint( sText );
+		CHC_NUM_HEX, nMnemonicHash );
 #endif
 
 	m_vAsmOpcodes.clear(); // Candiate opcodes

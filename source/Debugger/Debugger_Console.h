@@ -1,6 +1,8 @@
 #ifndef DEBUGGER_CONSOLE_H
 #define DEBUGGER_CONSOLE_H
 
+#include <cstdarg>
+
 	enum
 	{
 		// Basic Symbol table has > 600 symbols
@@ -253,11 +255,59 @@
 // Console
 
 	// Buffered
-	bool        ConsolePrint( const char * pText );
-	void        ConsoleBufferToDisplay ();
+	bool ConsolePrint( const char * pText );
+	bool ConsolePrintVa( char* buf, size_t bufsz, const char* pFormat, va_list va );
+	template<size_t _BufSz>
+	inline bool ConsolePrintVa( char (&buf)[_BufSz], const char* pFormat, va_list va )
+	{
+		return ConsolePrintVa(buf, _BufSz, pFormat, va);
+	}
+	inline bool ConsolePrintFormat( char* buf, size_t bufsz, const char* pFormat, ... )
+	{
+		va_list va;
+		va_start(va, pFormat);
+		bool const r = ConsolePrintVa(buf, bufsz, pFormat, va);
+		va_end(va);
+		return r;
+	}
+	template<size_t _BufSz>
+	inline bool ConsolePrintFormat( char(&buf)[_BufSz], const char* pFormat, ... )
+	{
+		va_list va;
+		va_start(va, pFormat);
+		bool const r = ConsolePrintVa(buf, pFormat, va);
+		va_end(va);
+		return r;
+	}
+
+	void     ConsoleBufferToDisplay ();
 	const conchar_t* ConsoleBufferPeek ();
-	void        ConsoleBufferPop  ();
-	bool        ConsoleBufferPush ( const char * pString );
+	void     ConsoleBufferPop ();
+
+	bool ConsoleBufferPush( const char * pString );
+	bool ConsoleBufferPushVa( char* buf, size_t bufsz, const char* pFormat, va_list va );
+	template<size_t _BufSz>
+	inline bool ConsoleBufferPushVa( char (&buf)[_BufSz], const char* pFormat, va_list va )
+	{
+		return ConsoleBufferPushVa(buf, _BufSz, pFormat, va);
+	}
+	inline bool ConsoleBufferPushFormat( char* buf, size_t bufsz, const char* pFormat, ... )
+	{
+		va_list va;
+		va_start(va, pFormat);
+		bool const r = ConsoleBufferPushVa(buf, bufsz, pFormat, va);
+		va_end(va);
+		return r;
+	}
+	template<size_t _BufSz>
+	inline bool ConsoleBufferPushFormat( char(&buf)[_BufSz], const char* pFormat, ... )
+	{
+		va_list va;
+		va_start(va, pFormat);
+		bool const r = ConsoleBufferPushVa(buf, pFormat, va);
+		va_end(va);
+		return r;
+	}
 
 	void ConsoleConvertFromText( conchar_t * sText, const char * pText );
 
