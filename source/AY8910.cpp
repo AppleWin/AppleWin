@@ -1114,18 +1114,18 @@ bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, std::string& suffix)
 			if (!bFound)
 				break;	// done
 
-         int _tstates = 0;
-         int _ofs = 0;
-         unsigned int _reg = 0;
-         unsigned int _val = 0;
+			int _tstates = 0;
+			int _ofs = 0;
+			unsigned int _reg = 0;
+			unsigned int _val = 0;
 			if(4 != sscanf_s(value.c_str(), SS_YAML_VALUE_CHANGE_FORMAT,
 				&_tstates, &_ofs, &_reg, &_val))
 				throw std::string("Card: AY8910: Failed to scanf change list");
 
-         ay_change[ay_change_count].tstates = _tstates;
-         ay_change[ay_change_count].ofs = _ofs;
-         ay_change[ay_change_count].reg = _reg;
-         ay_change[ay_change_count].val = _val;
+			ay_change[ay_change_count].tstates = _tstates;
+			ay_change[ay_change_count].ofs = _ofs;
+			ay_change[ay_change_count].reg = _reg;
+			ay_change[ay_change_count].val = _val;
 
 			ay_change_count++;
 			if (ay_change_count > AY_CHANGE_MAX)
