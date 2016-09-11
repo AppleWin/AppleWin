@@ -16,7 +16,7 @@ How To Compile/Build AppleWin
 
    Windows SDK 7.0A that comes with Visual Studio 2010 can
    also be used but the "Windows SDK Configuration Tool"
-   is only available throught the separate Windows SDK 7.1
+   is only available through the separate Windows SDK 7.1
    installation.
 
 3. Visual Studio 2008/2010/2013/2015
