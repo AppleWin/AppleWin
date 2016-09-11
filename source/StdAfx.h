@@ -36,7 +36,6 @@ typedef UINT32 uint32_t;
 #include <windows.h>
 #include <winuser.h> // WM_MOUSEWHEEL
 #include <commctrl.h>
-#include <ddraw.h>
 #include <htmlhelp.h>
 #include <assert.h>
 
