@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
@@ -86,7 +86,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib user32.lib gdi32.lib Advapi32.lib shell32.lib Comdlg32.lib ole32.lib wsock32.lib"
+				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib user32.lib gdi32.lib advapi32.lib shell32.lib comdlg32.lib ole32.lib wsock32.lib"
 				OutputFile=".\Release\Applewin.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -185,7 +185,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib user32.lib gdi32.lib Advapi32.lib shell32.lib Comdlg32.lib ole32.lib wsock32.lib"
+				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib user32.lib gdi32.lib advapi32.lib shell32.lib comdlg32.lib ole32.lib wsock32.lib"
 				OutputFile=".\Debug\Applewin.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
