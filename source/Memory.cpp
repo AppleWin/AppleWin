@@ -1326,6 +1326,13 @@ void MemInitializeIO(void)
 
 	DiskLoadRom(pCxRomPeripheral, 6);				// $C600 : Disk][ f/w
 	HD_Load_Rom(pCxRomPeripheral, 7);				// $C700 : HDD f/w
+
+	//
+
+	// Finally remove the cards' ROMs at $Csnn if internal ROM is enabled
+	// . required when restoring saved-state
+	if (!SW_SLOTCXROM)
+		IoHandlerCardsOut();
 }
 
 inline DWORD getRandomTime()
