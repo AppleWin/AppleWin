@@ -1168,9 +1168,10 @@ void VideoRefreshScreen ( int bVideoModeFlags, UINT uDelayRefresh /* =0 */ )
 	DebugRefresh(0);
 #endif
 
-	if( bVideoModeFlags )
+	if (g_nAppMode == MODE_DEBUG || g_nAppMode == MODE_PAUSED)
 	{
-		NTSC_SetVideoMode( bVideoModeFlags );
+		if (g_nAppMode == MODE_DEBUG)
+			NTSC_SetVideoMode( bVideoModeFlags );
 		NTSC_VideoUpdateCycles( VIDEO_SCANNER_6502_CYCLES );
 	}
 

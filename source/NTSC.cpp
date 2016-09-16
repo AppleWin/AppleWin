@@ -1481,7 +1481,7 @@ void NTSC_SetVideoMode( int bVideoModeFlags )
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
 	if (bVideoModeFlags & VF_PAGE2) {
-		// Apple IIe, Techical Nodtes, #3: Double High-Resolution Graphics
+		// Apple IIe, Technical Notes, #3: Double High-Resolution Graphics
 		// 80STORE must be OFF to display page 2
 		if (0 == (bVideoModeFlags & VF_80STORE)) {
 			g_nTextPage  = 2;
