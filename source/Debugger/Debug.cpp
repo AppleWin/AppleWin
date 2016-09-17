@@ -6515,7 +6515,7 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 	}
 	Update_t CmdViewOutput_GR2 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, VF_80STORE ); // NTSC VideoRefresh() Hack: flags != 0
+		return _ViewOutput( VIEW_PAGE_2, 0 );
 	}
 // Double Lo-Res
 	Update_t CmdViewOutput_DGRX (int nArgs)
