@@ -43,6 +43,7 @@ Fixes:
 . [Bug #267] Mousecard movement & button events not working in MODE_STEPPING
 . [Bug #227] (Debugger)[1.25] AppleSoft symbol: COPY.FAC.TO.ARG.ROUNDED overflows into registers
 . [Bug #246] (Debugger) Memory (Changing Memory) command in CHM help files
+. [Bug #309] Silent Service hangs during Mockingboard use
 
 
 1.26.0.0 (alpha) - Jan 2016
