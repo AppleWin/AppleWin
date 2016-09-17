@@ -25,6 +25,8 @@ Changes:
 . Added -load-state <savestate.yaml> command line option
 . New repo created with test save-state images: https://github.com/AppleWin/AppleWin-Test
 . Remove unsupported PC speaker sound types
+. [PR #235] New start-up title screen by Paulo Gracia
+. [PR #233] Configuration Dialog->Disk tab: Buttons replaced with drop-down menu for select/eject by Paulo Gracia
 
 Fixes:
 . [Bug #129] Tight loop page-flipping causing heavy CPU load (fixed by NTSC / cycle-accurate video emulation)
