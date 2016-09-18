@@ -9,7 +9,7 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.0.1 (beta) - 17 Sept 2016
+1.26.0.2 (beta) - 18 Sept 2016
 ------------------------------
 Changes:
 . [Bug #126,#157,#194] Beta NTSC support
