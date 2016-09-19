@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 static CDiskImageHelper sg_DiskImageHelper;
+static CHardDiskImageHelper sg_HardDiskImageHelper;
 
 //===========================================================================
 
@@ -43,7 +44,8 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 						bool* pWriteProtected,
 						const bool bCreateIfNecessary,
 						std::string& strFilenameInZip,
-						const bool bExpectFloppy /*=true*/)
+						const bool bExpectFloppy /*=true*/,
+						const bool bIsHarddisk /*=false*/)
 {
 	if (! (pszImageFilename && hDiskImage && pWriteProtected && sg_DiskImageHelper.GetWorkBuffer()))
 		return eIMAGE_ERROR_BAD_POINTER;
@@ -57,7 +59,8 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 	ImageInfo* pImageInfo = (ImageInfo*) *hDiskImage;
 	pImageInfo->bWriteProtected = *pWriteProtected;
 
-	ImageError_e Err = sg_DiskImageHelper.Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip);
+	ImageError_e Err = (!bIsHarddisk) ?     sg_DiskImageHelper.Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip)
+									  : sg_HardDiskImageHelper.Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip);
 
 	if (Err != eIMAGE_ERROR_NONE)
 	{

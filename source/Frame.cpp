@@ -1831,6 +1831,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		if (g_nAppMode == MODE_LOGO)
 		{
 			DiskBoot();
+			LogFileTimeUntilFirstKeyReadReset();
 			g_nAppMode = MODE_RUNNING;
 		}
 		else if (g_nAppMode == MODE_RUNNING)

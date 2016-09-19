@@ -1196,7 +1196,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		// ENTER THE MAIN MESSAGE LOOP
 		LogFileOutput("Main: EnterMessageLoop()\n");
-		LogFileTimeUntilFirstKeyReadReset();
 		EnterMessageLoop();
 		LogFileOutput("Main: LeaveMessageLoop()\n");
 
