@@ -59,8 +59,9 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 	ImageInfo* pImageInfo = (ImageInfo*) *hDiskImage;
 	pImageInfo->bWriteProtected = *pWriteProtected;
 
-	ImageError_e Err = (!bIsHarddisk) ?     sg_DiskImageHelper.Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip)
-									  : sg_HardDiskImageHelper.Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip);
+	ImageError_e Err = (!bIsHarddisk)
+		?     sg_DiskImageHelper.Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip)
+		: sg_HardDiskImageHelper.Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip);
 
 	if (Err != eIMAGE_ERROR_NONE)
 	{
