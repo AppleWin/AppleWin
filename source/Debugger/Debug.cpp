@@ -48,7 +48,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,1);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,2);
 
 
 // Public _________________________________________________________________________________________
@@ -4945,8 +4945,29 @@ Update_t CmdNTSC (int nArgs)
 		public:
 			static void update( const char *pPrefixText )
 			{
-					TCHAR text[ CONSOLE_WIDTH ] = TEXT("");
-					sprintf( text, "%s: %s", pPrefixText, sPaletteFilePath );
+					TCHAR text[ CONSOLE_WIDTH*2 ] = TEXT("");
+
+					size_t len1 = strlen( pPrefixText      );
+					size_t len2 = strlen( sPaletteFilePath );
+					size_t len  = len1 + len2;
+
+					if (len >= CONSOLE_WIDTH)
+					{
+						ConsoleBufferPush( pPrefixText );
+
+#if _DEBUG
+						sprintf( text, "Filename.length.1: %d\n", len1 );
+						OutputDebugString( text );
+						sprintf( text, "Filename.length.2: %d\n", len2 );
+						OutputDebugString( text );
+						OutputDebugString( sPaletteFilePath );
+#endif
+						// File path is too long
+						// TODO: Need to split very long path names
+						strncpy( text, sPaletteFilePath, CONSOLE_WIDTH );
+					}
+					else
+						sprintf( text, "%s: %s", pPrefixText, sPaletteFilePath );
 					ConsoleBufferPush( text ); // "Saved."
 			}
 	};
@@ -5084,7 +5105,7 @@ Update_t CmdNTSC (int nArgs)
 	bool bColorTV = (g_eVideoType == VT_COLOR_TV);
 
 	uint32_t* pChromaTable = NTSC_VideoGetChromaTable( false, bColorTV );
-	char aStatusText[64] = "Loaded";
+	char aStatusText[ CONSOLE_WIDTH*2 ] = "Loaded";
 
 //uint8_t* pTmp = (uint8_t*) pChromaTable; 
 //*pTmp++  = 0xFF; // b
