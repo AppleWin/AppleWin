@@ -1052,15 +1052,24 @@ void VideoDisplayLogo ()
 // . 10s only update if HIRES changes (17s for Debug build)
 // . ~9s no update during full-speed (but IBIZA.DSK doesn't show anything!)
 
-void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInvalidate /*=false*/)
+void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=false*/)
 {
+	static DWORD dwFullSpeedStartTime = 0;
 	static bool bValid = false;
 
-	if (bInvalidate)
+	if (bInit)
 	{
+		// Just entered full-speed mode
 		bValid = false;
+		dwFullSpeedStartTime = GetTickCount();
 		return;
 	}
+
+	DWORD dwFullSpeedDuration = GetTickCount() - dwFullSpeedStartTime;
+	if (dwFullSpeedDuration <= 16)	// Only update after every realtime ~17ms of *continuous* full-speed
+		return;
+
+	dwFullSpeedStartTime += dwFullSpeedDuration;
 
 	//
 

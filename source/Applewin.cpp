@@ -232,6 +232,9 @@ void ContinueExecution(void)
 
 	if (g_bFullSpeed)
 	{
+		if (!bWasFullSpeed)
+			VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
+
 		// Don't call Spkr_Mute() - will get speaker clicks
 		MB_Mute();
 		SysClk_StopTimer();
@@ -249,7 +252,6 @@ void ContinueExecution(void)
 	{
 		if (bWasFullSpeed)
 		{
-			VideoRedrawScreenDuringFullSpeed(0, true);	// Invalidate the copies of video memory
 			VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
 		}
 
