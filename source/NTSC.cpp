@@ -1780,9 +1780,7 @@ if(true)
 //===========================================================================
 void NTSC_VideoRedrawWholeScreen( void )
 {
-	// Save/restore current V/H positions - maybe not strictly necessary, but should be harmless
-	uint16_t currVideoClockVert = g_nVideoClockVert;
-	uint16_t currVideoClockHorz = g_nVideoClockHorz;
+	// NB. Don't save/restore current V/H positions, otherwise (during disk loading) get random data being drawn on line 0
 
 	// Need to reset V/H positions so that redraw occurs from the start of the frame & mixed-mode is rendered correctly
 	g_nVideoClockVert = 0;
@@ -1797,7 +1795,4 @@ void NTSC_VideoRedrawWholeScreen( void )
 	{
 		g_pFuncUpdateGraphicsScreen(VIDEO_SCANNER_6502_CYCLES);														// lines [0..261]
 	}
-
-	g_nVideoClockVert = currVideoClockVert;
-	g_nVideoClockHorz = currVideoClockHorz;
 }
