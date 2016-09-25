@@ -1729,6 +1729,8 @@ bool NTSC_VideoIsVbl ()
 //===========================================================================
 void NTSC_VideoUpdateCycles( long cycles6502 )
 {
+	_ASSERT(cycles6502 < VIDEO_SCANNER_6502_CYCLES);	// Use NTSC_VideoRedrawWholeScreen() instead
+
 	bool bRedraw = cycles6502 >= VIDEO_SCANNER_6502_CYCLES;
 
 //	if( !g_bFullSpeed )
@@ -1773,4 +1775,29 @@ if(true)
 		VideoRefreshScreen(0);
 	}
 }
+}
+
+//===========================================================================
+void NTSC_VideoRedrawWholeScreen( void )
+{
+	// Save/restore current V/H positions - maybe not strictly necessary, but should be harmless
+	uint16_t currVideoClockVert = g_nVideoClockVert;
+	uint16_t currVideoClockHorz = g_nVideoClockHorz;
+
+	// Need to reset V/H positions so that redraw occurs from the start of the frame & mixed-mode is rendered correctly
+	g_nVideoClockVert = 0;
+	g_nVideoClockHorz = 0;
+
+	if (g_nVideoMixed)
+	{
+		g_pFuncUpdateGraphicsScreen(VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED);								// lines [0..159]
+		g_pFuncUpdateGraphicsScreen(VIDEO_SCANNER_6502_CYCLES - (VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED));	// lines [160..191..261]
+	}
+	else
+	{
+		g_pFuncUpdateGraphicsScreen(VIDEO_SCANNER_6502_CYCLES);														// lines [0..261]
+	}
+
+	g_nVideoClockVert = currVideoClockVert;
+	g_nVideoClockHorz = currVideoClockHorz;
 }

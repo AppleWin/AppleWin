@@ -247,6 +247,7 @@ static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 static LPBYTE        g_pTextBank1; // Aux
 static LPBYTE        g_pTextBank0; // Main
 
+// TC (25/8/2016): TODO: Need to investigate the use of this global flag for 1.27
 static /*bool*/ UINT g_VideoForceFullRedraw = 1;
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
@@ -1126,11 +1127,10 @@ void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 
 //===========================================================================
 
-void VideoRedrawScreen (UINT uDelayRefresh /* =0 */)
+void VideoRedrawScreen (void)
 {
-	g_VideoForceFullRedraw = 1;
-
-	VideoRefreshScreen( g_uVideoMode, uDelayRefresh );
+	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'non-mixed GR' mode == 0x00.
+	VideoRefreshScreen( g_uVideoMode, true );
 }
 
 //===========================================================================
@@ -1168,23 +1168,20 @@ static void DebugRefresh(char uDebugFlag)
 }
 #endif
 
-void VideoRefreshScreen ( int bVideoModeFlags, UINT uDelayRefresh /* =0 */ )
+void VideoRefreshScreen ( int bVideoModeFlags, bool bRedrawWholeScreen /* =false*/ )
 {
-	static UINT uDelayRefreshCount = 0;
-	if (uDelayRefresh) uDelayRefreshCount = uDelayRefresh;
-
 #if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
 	DebugRefresh(0);
 #endif
 
-	if (bVideoModeFlags || g_nAppMode == MODE_PAUSED)
+	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
 	{
 		// bVideoModeFlags set if:
 		// . MODE_DEBUG   : always
 		// . MODE_RUNNING : called from VideoRedrawScreen(), eg. during full-speed
-		if (bVideoModeFlags)
+		if (bRedrawWholeScreen)
 			NTSC_SetVideoMode( bVideoModeFlags );
-		NTSC_VideoUpdateCycles( VIDEO_SCANNER_6502_CYCLES );
+		NTSC_VideoRedrawWholeScreen();
 	}
 
 // NTSC_BEGIN
@@ -1204,12 +1201,6 @@ void VideoRefreshScreen ( int bVideoModeFlags, UINT uDelayRefresh /* =0 */ )
 
 	if (hFrameDC)
 	{
-		if (uDelayRefreshCount)
-		{
-			// Delay the refresh in full-screen mode (to allow screen-capabilities to take effect) - required for Win7 (and others?)
-			--uDelayRefreshCount;
-		}
-		else
 		{
 			int xDst = 0;
 			int yDst = 0;
@@ -1377,13 +1368,6 @@ bool VideoGetSWTEXT(void)
 bool VideoGetSWAltCharSet(void)
 {
 	return g_nAltCharSetOffset != 0;
-}
-
-//===========================================================================
-
-void VideoSetForceFullRedraw(void)
-{
-	g_VideoForceFullRedraw = 1;
 }
 
 //===========================================================================

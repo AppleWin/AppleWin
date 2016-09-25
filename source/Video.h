@@ -171,8 +171,8 @@ void    VideoInitialize ();
 void    VideoRealizePalette (HDC);
 void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
 void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
-void    VideoRedrawScreen (UINT uDelayRefresh = 0);
-void    VideoRefreshScreen (int bVideoFlags, UINT uDelayRefresh =0 );
+void    VideoRedrawScreen (void);
+void    VideoRefreshScreen (int bVideoFlags, bool bRedrawWholeScreen = false);
 void    VideoReinitialize ();
 void    VideoResetState ();
 WORD    VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles);
@@ -186,8 +186,6 @@ bool    VideoGetSWMIXED(void);
 bool    VideoGetSWPAGE2(void);
 bool    VideoGetSWTEXT(void);
 bool    VideoGetSWAltCharSet(void);
-
-void    VideoSetForceFullRedraw(void);
 
 void    VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode);
 void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);

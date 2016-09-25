@@ -623,8 +623,7 @@ static void DrawFrameWindow ()
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay(1);
 	else
-		VideoRedrawScreen(0);	// TODO: Presume this is correct with new fullscreen window mode
-		//VideoRedrawScreen(g_bIsFullScreen ? 1 : 0);	// On WM_PAINT: delay 1 refresh before rendering full-screen
+		VideoRedrawScreen();
 
 	if (g_bPaintingWindow)
 		EndPaint(g_hFrameWindow,&ps);

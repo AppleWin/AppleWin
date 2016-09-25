@@ -18,3 +18,4 @@
 	extern void     NTSC_VideoInitChroma();
 	extern bool     NTSC_VideoIsVbl();
 	extern void     NTSC_VideoUpdateCycles( long cycles6502 );
+	extern void     NTSC_VideoRedrawWholeScreen( void );

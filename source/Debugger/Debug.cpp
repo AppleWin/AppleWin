@@ -6459,8 +6459,6 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate );
 
 Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 {
-	VideoSetForceFullRedraw();
-
 	switch( iPage ) 
 	{
 		case VIEW_PAGE_X: bVideoModeFlags |= _Video_SetupBanks( VideoGetSWPAGE2() ); break; // Page Current
@@ -6474,7 +6472,7 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 		MessageBoxA( NULL, "bVideoModeFlags = ZERO !?", "Information", MB_OK );
 #endif
 	g_bDebuggerViewingAppleOutput = bVideoModeFlags;
-	VideoRefreshScreen( bVideoModeFlags );
+	VideoRefreshScreen( bVideoModeFlags, true );
 	return UPDATE_NOTHING; // intentional
 }
 
@@ -8234,8 +8232,6 @@ void DebugContinueStepping ()
 		{
 			if (nStepsTaken == 0x10000) // HACK_MAGIC_NUM
 				VideoRedrawScreen();
-//			else
-//				VideoRefreshScreen();
 		}
 	}
 	else
