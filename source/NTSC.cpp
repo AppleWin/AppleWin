@@ -1780,19 +1780,44 @@ if(true)
 //===========================================================================
 void NTSC_VideoRedrawWholeScreen( void )
 {
-	// NB. Don't save/restore current V/H positions, otherwise (during disk loading) get random data being drawn on line 0
+#ifdef _DEBUG
+	const uint16_t currVideoClockVert = g_nVideoClockVert;
+	const uint16_t currVideoClockHorz = g_nVideoClockHorz;
+#endif
 
-	// Need to reset V/H positions so that redraw occurs from the start of the frame & mixed-mode is rendered correctly
-	g_nVideoClockVert = 0;
-	g_nVideoClockHorz = 0;
+	int cyclesLeftToUpdate = VIDEO_SCANNER_6502_CYCLES;
+	const int cyclesToEndOfLine = VIDEO_SCANNER_MAX_HORZ - g_nVideoClockHorz;
 
-	if (g_nVideoMixed)
+	if (g_nVideoClockVert < VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFuncUpdateGraphicsScreen(VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED);								// lines [0..159]
-		g_pFuncUpdateGraphicsScreen(VIDEO_SCANNER_6502_CYCLES - (VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED));	// lines [160..191..261]
+		const int cyclesToLine160 = VIDEO_SCANNER_MAX_HORZ * (VIDEO_SCANNER_Y_MIXED - g_nVideoClockVert - 1) + cyclesToEndOfLine;
+		g_pFuncUpdateGraphicsScreen(cyclesToLine160);				// lines [currV...159]
+		cyclesLeftToUpdate -= cyclesToLine160;
+
+		const int cyclesFromLine160ToLine261 = VIDEO_SCANNER_6502_CYCLES - (VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED);
+		g_pFuncUpdateGraphicsScreen(cyclesFromLine160ToLine261);	// lines [160..191..261]
+		cyclesLeftToUpdate -= cyclesFromLine160ToLine261;
+
+		// Any remaining cyclesLeftToUpdate: lines [0...currV)
 	}
 	else
 	{
-		g_pFuncUpdateGraphicsScreen(VIDEO_SCANNER_6502_CYCLES);														// lines [0..261]
+		const int cyclesToLine262 = VIDEO_SCANNER_MAX_HORZ * (VIDEO_SCANNER_MAX_VERT - g_nVideoClockVert - 1) + cyclesToEndOfLine;
+		g_pFuncUpdateGraphicsScreen(cyclesToLine262);				// lines [currV...261]
+		cyclesLeftToUpdate -= cyclesToLine262;
+
+		const int cyclesFromLine0ToLine159 = VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED;
+		g_pFuncUpdateGraphicsScreen(cyclesFromLine0ToLine159);		// lines [0..159]
+		cyclesLeftToUpdate -= cyclesFromLine0ToLine159;
+
+		// Any remaining cyclesLeftToUpdate: lines [160...currV)
 	}
+
+	if (cyclesLeftToUpdate)
+		g_pFuncUpdateGraphicsScreen(cyclesLeftToUpdate);
+
+#ifdef _DEBUG
+	_ASSERT(currVideoClockVert == g_nVideoClockVert);
+	_ASSERT(currVideoClockHorz == g_nVideoClockHorz);
+#endif
 }
