@@ -1215,12 +1215,18 @@ void VideoRefreshScreen ( int bVideoModeFlags, bool bRedrawWholeScreen /* =false
 			int xSrc = BORDER_W;
 			int ySrc = BORDER_H;
 
+#if 1	// TC: Hacky-fix for GH#341 - better to draw to the correct position in the framebuffer to start with! (in NTSC.cpp)
 			if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
 			{
 				// Adjust the src locations for the NTSC video modes
 				xSrc += 2;
-				ySrc -= 1;
 			}
+			else if (g_eVideoType == VT_COLOR_MONITOR)
+			{
+				if ((g_uVideoMode & VF_TEXT) == 0)
+					xSrc += 2;
+			}
+#endif
 
 			int xdest = GetFullScreenOffsetX();
 			int ydest = GetFullScreenOffsetY();
