@@ -9,8 +9,8 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.0.4 (beta) - 20 Sept 2016
-------------------------------
+1.26.0.4 (beta) - 2 Oct 2016
+----------------------------
 Changes:
 . [Bug #126,#157,#194] Beta NTSC and cycle-accurate video support
 	TV Color, TV B&W, Monitor Color, Monitor B&W
@@ -46,6 +46,13 @@ Fixes:
 . [Bug #227] (Debugger)[1.25] AppleSoft symbol: COPY.FAC.TO.ARG.ROUNDED overflows into registers
 . [Bug #246] (Debugger) Memory (Changing Memory) command in CHM help files
 . [Bug #309] Silent Service hangs during Mockingboard use
+
+Fixes since 1.26.0.3 (19 Sept 2016):
+. [Bug #341] Color Monitor mode (showing graphics) is shifted one HGR pixel to the right (losing the rightmost pixel)
+. [Bug #353] Pravets 8M has a superfluous dot lit on the ']' character
+. [Bug #352] Full-speed in mixed mode results in flickery video
+. [Bug #351] In full-speed mode, listing a long BASIC program is barely faster than 1MHz mode 
+. [Bug #350] Config -> '50% Scan lines' checkbox not working
 
 
 1.26.0.0 (alpha) - Jan 2016
