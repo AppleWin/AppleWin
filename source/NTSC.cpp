@@ -1821,3 +1821,9 @@ void NTSC_VideoRedrawWholeScreen( void )
 	_ASSERT(currVideoClockHorz == g_nVideoClockHorz);
 #endif
 }
+
+//===========================================================================
+bool NTSC_GetColorBurst( void )
+{
+	return (g_nColorBurstPixels < 2) ? false : true;
+}

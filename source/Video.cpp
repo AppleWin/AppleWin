@@ -1223,7 +1223,8 @@ void VideoRefreshScreen ( int bVideoModeFlags, bool bRedrawWholeScreen /* =false
 			}
 			else if (g_eVideoType == VT_COLOR_MONITOR)
 			{
-				if ((g_uVideoMode & VF_TEXT) == 0)
+				//if ((g_uVideoMode & VF_TEXT) == 0)
+				if ( NTSC_GetColorBurst() == true )	// ANSI STORY (end credits): split DGR/TEXT80/DGR on scanline
 					xSrc += 2;
 			}
 #endif
