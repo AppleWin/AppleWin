@@ -1220,6 +1220,7 @@ void VideoRefreshScreen ( int bVideoModeFlags, bool bRedrawWholeScreen /* =false
 			{
 				// Adjust the src locations for the NTSC video modes
 				xSrc += 2;
+				ySrc -= 1;
 			}
 			else if (g_eVideoType == VT_COLOR_MONITOR)
 			{
