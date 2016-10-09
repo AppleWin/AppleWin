@@ -433,7 +433,11 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& 
 		PUSH(regs.ps & ~AF_BREAK)
 		regs.ps = regs.ps | AF_INTERRUPT & ~AF_DECIMAL;
 		regs.pc = * (WORD*) (mem+0xFFFE);
-		CYC(7)
+
+		UINT extraCycles = uExtraCycles;
+		uExtraCycles = 0;
+		CYC(7);
+		uExtraCycles = extraCycles;
 	}
 }
 
