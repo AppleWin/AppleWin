@@ -1623,7 +1623,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	updateMonochromeTables( 0xFF, 0xFF, 0xFF );
 
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
-		g_pScanLines[y] = (bgra_t*)(g_pFramebufferbits + 4 * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - 18) + 80);
+		g_pScanLines[y] = (bgra_t*)(g_pFramebufferbits + sizeof(bgra_t) * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - BORDER_H) + (sizeof(bgra_t) * BORDER_W));
 
 	g_pVideoAddress = g_pScanLines[0];
 

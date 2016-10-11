@@ -1168,6 +1168,31 @@ static void DebugRefresh(char uDebugFlag)
 }
 #endif
 
+// TC: Hacky-fix for GH#341 - better to draw to the correct position in the framebuffer to start with! (in NTSC.cpp)
+static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
+{
+	int dx=0, dy=0;
+
+	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
+	{
+		// Adjust the src locations for the NTSC video modes
+		dx = 2;
+		dy = -1;
+	}
+	else if (g_eVideoType == VT_COLOR_MONITOR)
+	{
+		//if ((g_uVideoMode & VF_TEXT) == 0)	// NB. Not sufficient, eg. ANSI STORY...
+		if ( NTSC_GetColorBurst() == true )	// ANSI STORY (end credits): split DGR/TEXT80/DGR on scanline
+			dx = 2;
+	}
+
+	if (bInvertY)
+		dy -= dy;
+
+	xSrc += dx;
+	ySrc += dy;
+}
+
 void VideoRefreshScreen ( int bVideoModeFlags, bool bRedrawWholeScreen /* =false*/ )
 {
 #if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
@@ -1214,21 +1239,7 @@ void VideoRefreshScreen ( int bVideoModeFlags, bool bRedrawWholeScreen /* =false
 
 			int xSrc = BORDER_W;
 			int ySrc = BORDER_H;
-
-#if 1	// TC: Hacky-fix for GH#341 - better to draw to the correct position in the framebuffer to start with! (in NTSC.cpp)
-			if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
-			{
-				// Adjust the src locations for the NTSC video modes
-				xSrc += 2;
-				ySrc -= 1;
-			}
-			else if (g_eVideoType == VT_COLOR_MONITOR)
-			{
-				//if ((g_uVideoMode & VF_TEXT) == 0)
-				if ( NTSC_GetColorBurst() == true )	// ANSI STORY (end credits): split DGR/TEXT80/DGR on scanline
-					xSrc += 2;
-			}
-#endif
+			VideoFrameBufferAdjust(xSrc, ySrc);	// TC: Hacky-fix for GH#341
 
 			int xdest = GetFullScreenOffsetX();
 			int ydest = GetFullScreenOffsetY();
@@ -1757,8 +1768,14 @@ void Video_MakeScreenShot(FILE *pFile)
 	// No need to use GetDibBits() since we already have http://msdn.microsoft.com/en-us/library/ms532334.aspx
 	// @reference: "Storing an Image" http://msdn.microsoft.com/en-us/library/ms532340(VS.85).aspx
 	pSrc = (uint32_t*) g_pFramebufferbits;
-	pSrc += BORDER_H * FRAMEBUFFER_W;	// Skip top border
-	pSrc += BORDER_W;					// Skip left border
+
+	int xSrc = BORDER_W;
+	int ySrc = BORDER_H;
+	VideoFrameBufferAdjust(xSrc, ySrc, true);	// TC: Hacky-fix for GH#341 & GH#356
+												// Lines stored in reverse, so invert the y-adjust value
+
+	pSrc += xSrc;					// Skip left border
+	pSrc += ySrc * FRAMEBUFFER_W;	// Skip top border
 
 	if( g_iScreenshotType == SCREENSHOT_280x192 )
 	{
