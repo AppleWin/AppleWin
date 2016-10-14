@@ -5031,6 +5031,190 @@ Update_t CmdNTSC (int nArgs)
 #endif
 	};
 
+	class Transpose64x1
+	{
+		public:
+			static void transposeTo64x256( const uint8_t *pSrc, uint8_t *pDst )
+			{
+				const uint32_t nBPP = 4; // bytes per pixel
+
+				// Expand y from 1 to 256 rows
+				const size_t nBytesPerScanLine = 16 * 4 * nBPP; // 16 colors * 4 phases
+				for( int y = 0; y < 256; y++ )
+					memcpy( pDst + y*nBytesPerScanLine, pSrc, nBytesPerScanLine );
+			}
+	};
+
+	// Transpose from 16x1 to 4096x16
+	class Transpose16x1
+	{
+		public:
+
+/*
+		.Column
+		.   Phases 0..3
+		. X P0 P1 P2 P3
+		. 0  0  0  0  0
+		. 1  1  8  4  2
+		. 2  2  1  8  4
+		. 3  3  9  C  6
+		. 4  4  2  1  8
+		. 5  5  A  5  A
+		. 6  6  3  9  C
+		. 7  7  B  D  E
+		. 8  8  4  2  1
+		. 9  9  C  6  3
+		. A  A  5  A  5
+		. B  B  D  E  7
+		. C  C  6  3  9
+		. D  D  E  7  B
+		. E  E  7  B  D
+		. F  F  F  F  F
+		.
+		.    1  2  4  8  Delta
+*/
+			static void transposeTo64x1( const uint8_t *pSrc, uint8_t *pDst )
+			{
+				const uint32_t *pPhase0 = (uint32_t*) pSrc;
+				/* */ uint32_t *pTmp    = (uint32_t*) pDst;
+
+#if 1 // Loop
+				// Expand x from 16 colors (single phase) to 64 colors (16 * 4 phases)
+				for( int iPhase = 0; iPhase < 4; iPhase++ )
+				{
+					int phase = iPhase;
+					if (iPhase == 1) phase = 3;
+					if (iPhase == 3) phase = 1;
+					int mul = (1 << phase); // Mul: *1 *8 *4 *2
+
+					for( int iDstX = 0; iDstX < 16; iDstX++ )
+					{
+						int iSrcX = (iDstX * mul) % 15; // Delta: +1 +2 +4 +8
+
+						if (iDstX == 15)
+							iSrcX = 15;
+#if 0 // _DEBUG
+	char text[ 128 ];
+	sprintf( text, "[ %X ] = [ %X ]\n", iDstX, iSrcX );
+	OutputDebugStringA( text );
+#endif
+						pTmp[ iDstX + 16*iPhase ] = pPhase0[ iSrcX ];
+					}
+				}
+#else // Manual Loop unrolled
+				const uint32_t nBPP = 4; // bytes per pixel
+
+				const size_t nBytesPerScanLine = 16 * 4 * nBPP; // 16 colors * 4 phases
+				memcpy( pDst, pSrc, nBytesPerScanLine );
+
+				int iPhase = 1;
+				int iDstX  = iPhase * 16;
+				pTmp[ iDstX + 0x0 ] = pPhase0[ 0x0 ];
+				pTmp[ iDstX + 0x1 ] = pPhase0[ 0x8 ];
+				pTmp[ iDstX + 0x2 ] = pPhase0[ 0x1 ];
+				pTmp[ iDstX + 0x3 ] = pPhase0[ 0x9 ];
+				pTmp[ iDstX + 0x4 ] = pPhase0[ 0x2 ];
+				pTmp[ iDstX + 0x5 ] = pPhase0[ 0xA ];
+				pTmp[ iDstX + 0x6 ] = pPhase0[ 0x3 ];
+				pTmp[ iDstX + 0x7 ] = pPhase0[ 0xB ];
+				pTmp[ iDstX + 0x8 ] = pPhase0[ 0x4 ];
+				pTmp[ iDstX + 0x9 ] = pPhase0[ 0xC ];
+				pTmp[ iDstX + 0xA ] = pPhase0[ 0x5 ];
+				pTmp[ iDstX + 0xB ] = pPhase0[ 0xD ];
+				pTmp[ iDstX + 0xC ] = pPhase0[ 0x6 ];
+				pTmp[ iDstX + 0xD ] = pPhase0[ 0xE ];
+				pTmp[ iDstX + 0xE ] = pPhase0[ 0x7 ];
+				pTmp[ iDstX + 0xF ] = pPhase0[ 0xF ];
+
+				iPhase = 2;
+				iDstX  = iPhase * 16;
+				pTmp[ iDstX + 0x0 ] = pPhase0[ 0x0 ];
+				pTmp[ iDstX + 0x1 ] = pPhase0[ 0x4 ];
+				pTmp[ iDstX + 0x2 ] = pPhase0[ 0x8 ];
+				pTmp[ iDstX + 0x3 ] = pPhase0[ 0xC ];
+				pTmp[ iDstX + 0x4 ] = pPhase0[ 0x1 ];
+				pTmp[ iDstX + 0x5 ] = pPhase0[ 0x5 ];
+				pTmp[ iDstX + 0x6 ] = pPhase0[ 0x9 ];
+				pTmp[ iDstX + 0x7 ] = pPhase0[ 0xD ];
+				pTmp[ iDstX + 0x8 ] = pPhase0[ 0x2 ];
+				pTmp[ iDstX + 0x9 ] = pPhase0[ 0x6 ];
+				pTmp[ iDstX + 0xA ] = pPhase0[ 0xA ];
+				pTmp[ iDstX + 0xB ] = pPhase0[ 0xE ];
+				pTmp[ iDstX + 0xC ] = pPhase0[ 0x3 ];
+				pTmp[ iDstX + 0xD ] = pPhase0[ 0x7 ];
+				pTmp[ iDstX + 0xE ] = pPhase0[ 0xB ];
+				pTmp[ iDstX + 0xF ] = pPhase0[ 0xF ];
+
+				iPhase = 3;
+				iDstX  = iPhase * 16;
+				pTmp[ iDstX + 0x0 ] = pPhase0[ 0x0 ];
+				pTmp[ iDstX + 0x1 ] = pPhase0[ 0x2 ];
+				pTmp[ iDstX + 0x2 ] = pPhase0[ 0x4 ];
+				pTmp[ iDstX + 0x3 ] = pPhase0[ 0x6 ];
+				pTmp[ iDstX + 0x4 ] = pPhase0[ 0x8 ];
+				pTmp[ iDstX + 0x5 ] = pPhase0[ 0xA ];
+				pTmp[ iDstX + 0x6 ] = pPhase0[ 0xC ];
+				pTmp[ iDstX + 0x7 ] = pPhase0[ 0xE ];
+				pTmp[ iDstX + 0x8 ] = pPhase0[ 0x1 ];
+				pTmp[ iDstX + 0x9 ] = pPhase0[ 0x3 ];
+				pTmp[ iDstX + 0xA ] = pPhase0[ 0x5 ];
+				pTmp[ iDstX + 0xB ] = pPhase0[ 0x7 ];
+				pTmp[ iDstX + 0xC ] = pPhase0[ 0x9 ];
+				pTmp[ iDstX + 0xD ] = pPhase0[ 0xB ];
+				pTmp[ iDstX + 0xE ] = pPhase0[ 0xD ];
+				pTmp[ iDstX + 0xF ] = pPhase0[ 0xF ];
+#endif
+			}
+
+		/*
+		.   Source layout = 16x1 @ 32-bit
+		.   |                                    phase 0                                    |
+		.   +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+		.   |BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 0
+		.   +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+		.    \ 0/ \ 1/ \ 2/ \ 3/ \ 4/ \ 5/ \ 6/ \ 7/ \ 8/ \ 9/ \ A/ \ B/ \ C/ \ D/ \ E/ \ F/
+		.
+		.   |<----------------------------------- 16 px ----------------------------------->|
+		.     64 byte
+		.
+		.   Destination layout = 4096x4 @ 32-bit
+		.   +----+----+----+----+----+
+		.   |BGRA|BGRA|BGRA|... |BGRA| phase 0
+		.   +----+----+----+----+----+
+		.   |BGRA|BGRA|BGRA|... |BGRA| phase 1
+		.   +----+----+----+----+----|
+		.   |BGRA|BGRA|BGRA|... |BGRA| phase 2
+		.   +----+----+----+----+----+
+		.   |BGRA|BGRA|BGRA|... |BGRA| phase 3
+		.   +----+----+----+----+----+
+		.    0    1    2         4095  column
+		*/
+/*
+			static void transposeFrom16x1( const uint8_t *pSrc, uint8_t *pDst )
+			{
+				const uint8_t *pTmp = pSrc;
+				const uint32_t nBPP = 4; // bytes per pixel
+
+				for( int x = 0; x < 16; x++ )
+				{
+					pTmp = pSrc + (x * nBPP); // dst is 16-px column
+					for( int y = 0; y < 256; y++ )
+					{
+							*pDst++ = pTmp[0];
+							*pDst++ = pTmp[1];
+							*pDst++ = pTmp[2];
+							*pDst++ = pTmp[3];
+					}
+				}
+/*
+				// we duplicate phase 0 a total of 4 times
+				const size_t nBytesPerScanLine = 4096 * nBPP;
+				for( int iPhase = 1; iPhase < 4; iPhase++ )
+					memcpy( pDst + iPhase*nBytesPerScanLine, pDst, nBytesPerScanLine );
+			}
+*/
+	};
+
 	class Transpose4096x4
 	{
 		/*
@@ -5059,10 +5243,32 @@ Update_t CmdNTSC (int nArgs)
 		.   +----+----+----+----+----+----+----+----+
 		.    \ 16 px / \ 16 px / \ 16 px / \ 16 px  / = 64 pixels
 		.     64 byte   64 byte   64 byte   64 byte
+		.
+		.Column
+		.   Phases 0..3
+		. X P0 P1 P2 P3
+		. 0  0  0  0  0
+		. 1  1  8  4  2
+		. 2  2  1  8  4
+		. 3  3  9  C  6
+		. 4  4  2  1  8
+		. 5  5  A  5  A
+		. 6  6  3  9  C
+		. 7  7  B  D  E
+		. 8  8  4  2  1
+		. 9  9  C  6  3
+		. A  A  5  A  5
+		. B  B  D  E  7
+		. C  C  6  3  9
+		. D  D  E  7  B
+		. E  E  7  B  D
+		. F  F  F  F  F
+		.
+		.    1  2  4  8  Delta
 		*/
 
 		public:
-			static void transposeTo64x256( size_t nSize, const uint8_t *pSrc, uint8_t *pDst )
+			static void transposeTo64x256( const uint8_t *pSrc, uint8_t *pDst )
 			{
 				/* */ uint8_t *pTmp = pDst;
 				const uint32_t nBPP = 4; // bytes per pixel
@@ -5082,7 +5288,7 @@ Update_t CmdNTSC (int nArgs)
 				}
 			}
 
-			static void transposeFrom64x256( size_t nSize, const uint8_t *pSrc, uint8_t *pDst )
+			static void transposeFrom64x256( const uint8_t *pSrc, uint8_t *pDst )
 			{
 				const uint8_t *pTmp = pSrc;
 				const uint32_t nBPP = 4; // bytes per pixel
@@ -5133,7 +5339,7 @@ Update_t CmdNTSC (int nArgs)
 				{
 					// need to save 32-bit bpp as 24-bit bpp
 					// VideoSaveScreenShot()
-					Transpose4096x4::transposeTo64x256( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
+					Transpose4096x4::transposeTo64x256( (uint8_t*) pChromaTable, pSwizzled );
 
 					// Write BMP header
 					WinBmpHeader_t bmp, *pBmp = &bmp;
@@ -5176,20 +5382,31 @@ Update_t CmdNTSC (int nArgs)
 				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
 				bool     bSwizzle  = true;
 
+				WinBmpHeader4_t bmp, *pBmp = &bmp;
 				if( iFileType == TYPE_BMP )
 				{
-					WinBmpHeader4_t bmp, *pBmp = &bmp;
 					fread( pBmp, sizeof( WinBmpHeader4_t ), 1, pFile );
 					fseek( pFile, pBmp->nOffsetData, SEEK_SET );
 
-					if( 0
-					|| (pBmp->nWidthPixels  != 64 )
-					|| (pBmp->nHeightPixels != 256)
-					|| (pBmp->nBitsPerPixel != 32 )
-					|| (pBmp->nOffsetData > nFileSize)
-					)
+					if (pBmp->nBitsPerPixel != 32)
 					{
-						strcpy( aStatusText, "Bitmap not 64x256@32" );
+						strcpy( aStatusText, "Bitmap not 32-bit RGBA" );
+						goto _error;
+					}
+
+					if (pBmp->nOffsetData > nFileSize)
+					{
+						strcpy( aStatusText, "Bad BITMAP: Data > file size !?" );
+						goto _error;
+					}
+
+					if( !
+					(  ((pBmp->nWidthPixels  == 64 ) && (pBmp->nHeightPixels == 256))
+					|| ((pBmp->nWidthPixels  == 64 ) && (pBmp->nHeightPixels == 1))
+					|| ((pBmp->nWidthPixels  == 16 ) && (pBmp->nHeightPixels == 1))
+					))
+					{
+						strcpy( aStatusText, "Bitmap not 64x256, 64x1, or 16x1" );
 						goto _error;
 					}
 
@@ -5221,7 +5438,30 @@ Update_t CmdNTSC (int nArgs)
 
 				if( iFileType == TYPE_BMP )
 				{
-					Transpose4096x4::transposeFrom64x256( g_nChromaSize, pSwizzled, (uint8_t*) pChromaTable );
+
+					if (pBmp->nHeightPixels == 1)
+					{
+						uint8_t *pTemp64x256 = new uint8_t[ 64 * 256 * 4 ];
+						memset( pTemp64x256, 0, g_nChromaSize );
+
+//Transpose16x1::transposeFrom16x1( pSwizzled, (uint8_t*) pChromaTable );
+
+						if (pBmp->nWidthPixels == 16)
+						{
+							Transpose16x1::transposeTo64x1( pSwizzled, pTemp64x256 );
+							Transpose64x1::transposeTo64x256( pTemp64x256, pTemp64x256 );
+						}
+						else
+						if (pBmp->nWidthPixels == 64)
+							Transpose64x1::transposeTo64x256( pSwizzled, pTemp64x256 );
+
+						Transpose4096x4::transposeFrom64x256( pTemp64x256, (uint8_t*) pChromaTable );
+
+						delete [] pTemp64x256;
+					}
+					else
+						Transpose4096x4::transposeFrom64x256( pSwizzled, (uint8_t*) pChromaTable );
+
 					if( bSwizzle )
 						Swizzle32::ABGRswizzleBGRA( g_nChromaSize, (uint8_t*) pChromaTable, (uint8_t*) pChromaTable );
 				}
