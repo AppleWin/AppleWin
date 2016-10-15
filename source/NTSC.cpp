@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define NTSC_REMOVE_WHITE_RINGING  1 // 0 = theoritical dimmed white has chroma, 1 = pure white without chroma tinting
 #define NTSC_REMOVE_BLACK_GHOSTING 1 // 1 = remove black smear/smudges carrying over
+#define NTSC_REMOVE_GRAY_CHROMA    1 // 1 = remove all chroma in gray1 and gray2
 
 #define DEBUG_PHASE_ZERO       0
 
@@ -86,6 +87,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		uint8_t a;
 	};
 
+	struct abgr_t
+	{
+		uint8_t a;
+		uint8_t b;
+		uint8_t g;
+		uint8_t r;
+	};
+
 	struct ColorSpace_BGRA_t
 	{
 		union
@@ -93,6 +102,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			uint32_t n;
 			bgra_t   bgra;
 			rgba_t   rgba;
+			abgr_t   abgr;
 		};
 	};
 
@@ -880,8 +890,10 @@ static void initChromaPhaseTables (void)
 			g32 = clampZeroOne( (float)g64);
 			r32 = clampZeroOne( (float)r64);
 
+			int color = s & 15;
+
 #if NTSC_REMOVE_WHITE_RINGING
-			if( (s & 15) == 15 )
+			if( color == 15 ) // white
 			{
 				r32 = 1;
 				g32 = 1;
@@ -890,7 +902,7 @@ static void initChromaPhaseTables (void)
 #endif			
 
 #if NTSC_REMOVE_BLACK_GHOSTING
-			if( (s & 15) == 0 )
+			if( color == 0 ) // Black
 			{
 				r32 = 0;
 				g32 = 0;
@@ -898,11 +910,29 @@ static void initChromaPhaseTables (void)
 			}
 #endif
 
+#if NTSC_REMOVE_GRAY_CHROMA
+			if( color == 5 ) // Gray1 & Gray2
+			{
+				const float g = (float) 0x83 / (float) 0xFF;
+				r32 = g;
+				g32 = g;
+				b32 = g;
+			}
+
+			if( color == 10 ) // Gray2 & Gray1
+			{
+				const float g = (float) 0x78 / (float) 0xFF;
+				r32 = g;
+				g32 = g;
+				b32 = g;
+			}
+#endif
+
 			g_aHueMonitor[phase][s].b = (uint8_t)(b32 * 255);
 			g_aHueMonitor[phase][s].g = (uint8_t)(g32 * 255);
 			g_aHueMonitor[phase][s].r = (uint8_t)(r32 * 255);
 			g_aHueMonitor[phase][s].a = 255;
-			
+
 			r64 = y1 + (I_TO_R * i) + (Q_TO_R * q);
 			g64 = y1 + (I_TO_G * i) + (Q_TO_G * q);
 			b64 = y1 + (I_TO_B * i) + (Q_TO_B * q);
@@ -912,7 +942,7 @@ static void initChromaPhaseTables (void)
 			r32 = clampZeroOne( (float)r64 );
 
 #if NTSC_REMOVE_WHITE_RINGING
-			if( (s & 15) == 15 )
+			if( color == 15 ) // white
 			{
 				r32 = 1;
 				g32 = 1;
@@ -921,7 +951,7 @@ static void initChromaPhaseTables (void)
 #endif			
 
 #if NTSC_REMOVE_BLACK_GHOSTING
-			if( (s & 15) == 0 )
+			if( color == 0 ) // Black
 			{
 				r32 = 0;
 				g32 = 0;
