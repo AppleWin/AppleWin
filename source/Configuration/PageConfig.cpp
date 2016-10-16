@@ -119,9 +119,11 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 		case IDC_CHECK_CONFIRM_REBOOT:
 			g_bConfirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? 1 : 0;
+			break;
 
 		case IDC_CHECK_HALF_SCAN_LINES:
-			g_uHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
+			// Checked in DlgOK()
+			break;
 
 		case IDC_COMPUTER:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
@@ -231,10 +233,26 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 void CPageConfig::DlgOK(HWND hWnd)
 {
+	bool bVideoReinit = false;
+
 	const DWORD newvidtype = (DWORD) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
 	if (g_eVideoType != newvidtype)
 	{
 		g_eVideoType = newvidtype;
+		bVideoReinit = true;
+	}
+
+	const DWORD newHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
+	if (g_uHalfScanLines != newHalfScanLines)
+	{
+		g_uHalfScanLines = newHalfScanLines;
+		bVideoReinit = true;
+	}
+
+	if (bVideoReinit)
+	{
+		FrameRefreshStatus(DRAW_TITLE, false);
+
 		VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{

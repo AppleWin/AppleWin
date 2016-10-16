@@ -9,22 +9,26 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.0.1 (beta) - 5 Sept 2016
----------------------------
+1.26.0.6 - 16 Oct 2016
+----------------------
 Changes:
-. [Bug #126,#157,#194] Beta NTSC support
-	TV Color, TV B&W, Monitor Color, Monitor B&W
+. [Bug #126,#157,#194] Beta NTSC and cycle-accurate video support
+	The new supported video modes are now only: TV Color, TV B&W, Monitor Color, Monitor B&W
+	NB. The old 1.25 modes have been removed eg. "Color (TV Emulation)".
 . Full-screen native resolution (no longer 640x480 resolution)
+	NB. If your screen resolution is smaller than 1120x768, then you will get no scaling in full-screen.
 . [Bug #260] Save-state file v2: human readable (Yaml-based format)
 	All hardware configurations save/restored:
 	. Apple model, sub-systems, memory, cards (except Uthernet and SAM cards)
-	Old v1 .aws file format still loaded
+	NB. Old v1 .aws file format are still loaded
 . [Bug #270] Added SAM/DAC sound card support
 . AppleWin built with VS2008 Express (supports Windows 2000 or later)
 . Unit tests added for 6502 and 65C02 opcodes
 . Added -load-state <savestate.yaml> command line option
 . New repo created with test save-state images: https://github.com/AppleWin/AppleWin-Test
 . Remove unsupported PC speaker sound types
+. [PR #235] New start-up title screen by Paulo Garcia
+. [PR #233] Configuration Dialog->Disk tab: Buttons replaced with drop-down menu for select/eject by Paulo Garcia
 
 Fixes:
 . [Bug #129] Tight loop page-flipping causing heavy CPU load (fixed by NTSC / cycle-accurate video emulation)
@@ -44,6 +48,16 @@ Fixes:
 . [Bug #227] (Debugger)[1.25] AppleSoft symbol: COPY.FAC.TO.ARG.ROUNDED overflows into registers
 . [Bug #246] (Debugger) Memory (Changing Memory) command in CHM help files
 . [Bug #309] Silent Service hangs during Mockingboard use
+
+Fixes since 1.26.0.5 (6 Oct 2016):
+. [Bug #356] PrintScreen from Color TV or B&W TV video modes is missing top line
+
+Fixes since 1.26.0.3 (19 Sept 2016):
+. [Bug #341] Color Monitor mode (showing graphics) is shifted one HGR pixel to the right (losing the rightmost pixel)
+. [Bug #353] Pravets 8M has a superfluous dot lit on the ']' character
+. [Bug #352] Full-speed in mixed mode results in flickery video
+. [Bug #351] In full-speed mode, listing a long BASIC program is barely faster than 1MHz mode 
+. [Bug #350] Config -> '50% Scan lines' checkbox not working
 
 
 1.26.0.0 (alpha) - Jan 2016

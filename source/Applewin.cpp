@@ -232,6 +232,9 @@ void ContinueExecution(void)
 
 	if (g_bFullSpeed)
 	{
+		if (!bWasFullSpeed)
+			VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
+
 		// Don't call Spkr_Mute() - will get speaker clicks
 		MB_Mute();
 		SysClk_StopTimer();
@@ -249,7 +252,6 @@ void ContinueExecution(void)
 	{
 		if (bWasFullSpeed)
 		{
-			VideoRedrawScreenDuringFullSpeed(0, true);	// Invalidate the copies of video memory
 			VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
 		}
 
@@ -284,11 +286,10 @@ void ContinueExecution(void)
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
 		if (g_bFullSpeed)
-		{
 			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
-		}
+		else
+			VideoRefreshScreen(0); // Just copy the output of our Apple framebuffer to the system Back Buffer
 
-		VideoRefreshScreen(0); // Just copy the output of our Apple framebuffer to the system Back Buffer
 		MB_EndOfVideoFrame();
 	}
 
@@ -1197,7 +1198,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		// ENTER THE MAIN MESSAGE LOOP
 		LogFileOutput("Main: EnterMessageLoop()\n");
-		LogFileTimeUntilFirstKeyReadReset();
 		EnterMessageLoop();
 		LogFileOutput("Main: LeaveMessageLoop()\n");
 
