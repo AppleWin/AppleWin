@@ -8489,10 +8489,9 @@ void DebugContinueStepping ()
 
 	if (g_nDebugSteps)
 	{
-		if (!((++nStepsTaken) & 0xFFFF))
+		if (!((++nStepsTaken) & 0xFFFF)) // Arbitrary: redraw screen every 0x10000 steps
 		{
-			if (nStepsTaken == 0x10000) // HACK_MAGIC_NUM
-				VideoRedrawScreen();
+			VideoRedrawScreen();
 		}
 	}
 	else
