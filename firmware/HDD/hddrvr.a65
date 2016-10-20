@@ -56,8 +56,6 @@ slot6   = $c600
 OS      = $0801
 BUTTON0 = $C061
 
-sh_oatimeout = $07FF
-
 ; The Autoboot rom will call this.
 ; This is also the entry point for such things as IN#7 and PR#7
 
