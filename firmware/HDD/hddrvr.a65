@@ -197,15 +197,8 @@ hdboot
  bcs BootSlot6 ;no jmp, -3 bytes
  
 goload
- lda #$00 ; $100 countdown     
- sta sh_oatimeout
-openapplecheck
  bit BUTTON0   ; button 0 pressed?, 4 cyc
- beq BootSlot6  ; 2 cyc not taken
- dec sh_oatimeout  ; absolute, 7 cyc
- bne openapplecheck ; 3 cyc taken, 16 cyc * 256 = 4096 cycle wait
- ;15 bytes
-continuegoload 
+ bmi BootSlot6  ; 2 cyc not taken
 
 ; X=device
  ldx #$70	; Slot# << 4
