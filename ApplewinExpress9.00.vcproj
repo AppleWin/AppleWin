@@ -1243,6 +1243,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\RUN3000E.BMP"
+				>
+			</File>
+			<File
 				RelativePath=".\resource\RUNP.BMP"
 				>
 			</File>
@@ -1256,6 +1260,14 @@
 			</File>
 			<File
 				RelativePath=".\resource\ThunderClockPlus.rom"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\TK3000e.rom"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\TKClock.rom"
 				>
 			</File>
 			<File

@@ -131,7 +131,16 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				const DWORD NewComputerMenuItem = (DWORD) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
 				const eApple2Type NewApple2Type = GetApple2Type(NewComputerMenuItem);
 				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewApple2Type;
-				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewApple2Type);
+				if (NewApple2Type != A2TYPE_CLONE)
+				{
+					m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewApple2Type);
+				}
+				else // A2TYPE_CLONE
+				{
+					// NB. A2TYPE_CLONE could be either 6502(Pravets) or 65C02(TK3000 //e)
+					// - Set correctly in PageAdvanced.cpp for IDC_CLONETYPE
+					m_PropertySheetHelper.GetConfigNew().m_CpuType = CPU_UNKNOWN;
+				}
 			}
 			break;
 
@@ -170,6 +179,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				case A2TYPE_PRAVETS82:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_PRAVETS8M:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_PRAVETS8A:		nCurrentChoice = MENUITEM_CLONE; break;
+				case A2TYPE_TK30002E:		nCurrentChoice = MENUITEM_CLONE; break;
 				}
 
 				m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMPUTER, m_ComputerChoices, nCurrentChoice);

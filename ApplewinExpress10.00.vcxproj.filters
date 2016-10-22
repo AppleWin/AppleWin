@@ -215,6 +215,9 @@
     <ClCompile Include="source\NTSC.cpp">
       <Filter>Source\Video</Filter>
     </ClCompile>
+    <ClCompile Include="source\SAM.cpp">
+      <Filter>Source\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -501,6 +504,9 @@
     <None Include="resource\Applewin.bmp">
       <Filter>Resources</Filter>
     </None>
+    <None Include="resource\ApplewinLogo.bmp">
+      <Filter>Resources</Filter>
+    </None>
     <None Include="RESOURCE\APPLEWIN.ICO">
       <Filter>Resources</Filter>
     </None>
@@ -582,6 +588,24 @@
     <None Include="resource\LATON.BMP">
       <Filter>Resources</Filter>
     </None>
+    <None Include="RESOURCE\LED_CAPS_OFF.BMP">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="RESOURCE\LED_CAPS_ON.BMP">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="RESOURCE\LED_CAPS_OFF_P8.BMP">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="RESOURCE\LED_CAPS_ON_P8.BMP">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="RESOURCE\LED_CAPS_OFF_LAT.BMP">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="RESOURCE\LED_CAPS_ON_LAT.BMP">
+      <Filter>Resources</Filter>
+    </None>
     <None Include="resource\Mockingboard-D.rom">
       <Filter>Resources</Filter>
     </None>
@@ -597,7 +621,13 @@
     <None Include="resource\Pravets8C.rom">
       <Filter>Resources</Filter>
     </None>
+    <None Include="RESOURCE\Pravets8M.rom">
+      <Filter>Resources</Filter>
+    </None>
     <None Include="RESOURCE\RUN.BMP">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="resource\RUN3000E.bmp">
       <Filter>Resources</Filter>
     </None>
     <None Include="resource\RUNP.BMP">
@@ -612,16 +642,12 @@
     <None Include="resource\ThunderClockPlus.rom">
       <Filter>Resources</Filter>
     </None>
-    <None Include="resource\ApplewinLogo.bmp">
+    <None Include="resource\TK3000e.rom">
       <Filter>Resources</Filter>
     </None>
-    <None Include="RESOURCE\LED_CAPS_OFF.BMP" />
-    <None Include="RESOURCE\LED_CAPS_ON.BMP" />
-    <None Include="RESOURCE\LED_CAPS_OFF_P8.BMP" />
-    <None Include="RESOURCE\LED_CAPS_ON_P8.BMP" />
-    <None Include="RESOURCE\LED_CAPS_OFF_LAT.BMP" />
-    <None Include="RESOURCE\LED_CAPS_ON_LAT.BMP" />
-    <None Include="RESOURCE\Pravets8M.rom" />
+    <None Include="resource\TKClock.rom">
+      <Filter>Resources</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RESOURCE\APPLEWIN.RC">

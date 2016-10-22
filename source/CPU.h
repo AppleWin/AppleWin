@@ -36,7 +36,7 @@ void	CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles);
 
 DWORD   CpuGetEmulationTime_ms(void);
 
-enum eCpuType {CPU_6502=1, CPU_65C02, CPU_Z80};	// Don't change! Persisted to Registry
+enum eCpuType {CPU_UNKNOWN=0, CPU_6502=1, CPU_65C02, CPU_Z80};	// Don't change! Persisted to Registry
 
 eCpuType GetMainCpu(void);
 void     SetMainCpu(eCpuType cpu);

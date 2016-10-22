@@ -267,6 +267,7 @@
     <ClCompile Include="source\Debugger\Debugger_Symbols.cpp" />
     <ClCompile Include="source\NTSC.cpp" />
     <ClCompile Include="source\NTSC_CharSet.cpp" />
+    <ClCompile Include="source\SAM.cpp" />
     <ClCompile Include="source\StdAfx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|Win32'">Create</PrecompiledHeader>
@@ -469,14 +470,6 @@
     <ClInclude Include="resource\winres.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="resource\ApplewinLogo.bmp" />
-    <None Include="RESOURCE\LED_CAPS_OFF.BMP" />
-    <None Include="RESOURCE\LED_CAPS_OFF_LAT.BMP" />
-    <None Include="RESOURCE\LED_CAPS_OFF_P8.BMP" />
-    <None Include="RESOURCE\LED_CAPS_ON.BMP" />
-    <None Include="RESOURCE\LED_CAPS_ON_LAT.BMP" />
-    <None Include="RESOURCE\LED_CAPS_ON_P8.BMP" />
-    <None Include="RESOURCE\Pravets8M.rom" />
     <None Include="source\CPU\cpu_general.inl" />
     <None Include="source\CPU\cpu_instructions.inl" />
     <None Include="docs\CodingConventions.txt" />
@@ -491,6 +484,7 @@
     <None Include="resource\Apple2e.rom" />
     <None Include="resource\Apple2e_Enhanced.rom" />
     <None Include="resource\Applewin.bmp" />
+    <None Include="resource\ApplewinLogo.bmp" />
     <None Include="RESOURCE\APPLEWIN.ICO" />
     <None Include="RESOURCE\CAPSOFF.BMP" />
     <None Include="resource\CAPSOFF_P8.BMP" />
@@ -518,16 +512,26 @@
     <None Include="RESOURCE\HELP.BMP" />
     <None Include="resource\LATOFF.BMP" />
     <None Include="resource\LATON.BMP" />
+    <None Include="RESOURCE\LED_CAPS_OFF.BMP" />
+    <None Include="RESOURCE\LED_CAPS_OFF_LAT.BMP" />
+    <None Include="RESOURCE\LED_CAPS_OFF_P8.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON_LAT.BMP" />
+    <None Include="RESOURCE\LED_CAPS_ON_P8.BMP" />
     <None Include="resource\Mockingboard-D.rom" />
     <None Include="resource\MouseInterface.rom" />
     <None Include="resource\Parallel.rom" />
     <None Include="resource\PRAVETS82.ROM" />
     <None Include="resource\Pravets8C.rom" />
+    <None Include="RESOURCE\Pravets8M.rom" />
     <None Include="RESOURCE\RUN.BMP" />
+    <None Include="resource\RUN3000E.bmp" />
     <None Include="resource\RUNP.BMP" />
     <None Include="RESOURCE\SETUP.BMP" />
     <None Include="resource\SSC.rom" />
     <None Include="resource\ThunderClockPlus.rom" />
+    <None Include="resource\TK3000e.rom" />
+    <None Include="resource\TKClock.rom" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RESOURCE\APPLEWIN.RC">
