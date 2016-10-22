@@ -398,7 +398,7 @@ static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 }
 
 //#define ENABLE_NMI_SUPPORT	// Not used - so don't enable
-static __forceinline void NMI(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
+static __forceinline void NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
 #ifdef ENABLE_NMI_SUPPORT
 	if(g_bNmiFlank)
@@ -414,12 +414,13 @@ static __forceinline void NMI(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& 
 		PUSH(regs.ps & ~AF_BREAK)
 		regs.ps = regs.ps | AF_INTERRUPT & ~AF_DECIMAL;
 		regs.pc = * (WORD*) (mem+0xFFFA);
+		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7)
 	}
 #endif
 }
 
-static __forceinline void IRQ(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
+static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
 	if(g_bmIRQ && !(regs.ps & AF_INTERRUPT))
 	{
@@ -433,6 +434,7 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& 
 		PUSH(regs.ps & ~AF_BREAK)
 		regs.ps = regs.ps | AF_INTERRUPT & ~AF_DECIMAL;
 		regs.pc = * (WORD*) (mem+0xFFFE);
+		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7)
 	}
 }
