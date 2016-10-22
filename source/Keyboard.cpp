@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Pravets.h"
 #include "Tape.h"
 #include "YamlHelper.h"
+#include "Video.h" // Needed by TK3000 //e, to refresh the frame at each |Mode| change
 
 static bool g_bKeybBufferEnable = false;
 
@@ -47,6 +48,8 @@ static BYTE asciicode[2][10] = {
 bool  g_bShiftKey = false;
 bool  g_bCtrlKey  = false;
 bool  g_bAltKey   = false;
+
+static bool  g_bTK3KModeKey   = false; //TK3000 //e |Mode| key
 
 static bool  g_bCapsLock = true; //Caps lock key for Apple2 and Lat/Cyr lock for Pravets8
 static bool  g_bP8CapsLock = true; //Caps lock key of Pravets 8A/C
@@ -173,7 +176,7 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 		}
 
 		g_bFreshReset = false;
-		if (key > 0x7F)
+		if ((key > 0x7F) && !g_bTK3KModeKey) // When in TK3000 mode, we have special keys which need remapping
 			return;
 
 		if (!IS_APPLE2) 
@@ -279,6 +282,32 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 					}
 				}
 			}
+			// Remap for the TK3000 //e, which had a special |Mode| key for displaying accented chars on screen
+			// Borrowed from Fábio Belavenuto's TK3000e emulator (Copyright (C) 2004) - http://code.google.com/p/tk3000e/
+			if (g_bTK3KModeKey)	// We already switch this on only if the the TK3000 is currently being emulated
+			{
+				if ((key >= 0xC0) && (key <= 0xDA)) key += 0x20; // Convert uppercase to lowercase
+				switch (key)
+				{
+					case 0xE0: key = '_';  break; // à
+					case 0xE1: key = '@';  break; // á
+					case 0xE2: key = '\\'; break; // â
+					case 0xE3: key = '[';  break; // ã
+					case 0xE7: key = ']';  break; // ç
+					case 0xE9: key = '`';  break; // é
+					case 0xEA: key = '&';  break; // ê
+					case 0xED: key = '{';  break; // í
+					case 0xF3: key = '~';  break; // ó
+					case 0xF4: key = '}';  break; // ô
+					case 0xF5: key = '#';  break; // õ
+					case 0xFA: key = '|';  break; // ú
+				}
+				if (key > 0x7F) return;	// Get out
+				if ((key >= 'a') && (key <= 'z') && (g_bCapsLock))
+					keycode = key - ('a'-'A');
+				else
+					keycode = key;
+			}
 		}
 		else
 		{
@@ -313,6 +342,16 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			// Shift+Insert
 			ClipboardInitiatePaste();
 			return;
+		}
+
+		if (key == VK_SCROLL)
+		{	// For the TK3000 //e we use Scroll Lock to switch between Apple ][ and accented chars modes
+			if (g_Apple2Type == A2TYPE_TK30002E)
+			{
+				g_bTK3KModeKey = (GetKeyState(VK_SCROLL) & 1) ? true : false;	// Sync with the Scroll Lock status
+				FrameRefreshStatus(DRAW_LEDS);	// TODO: Implement |Mode| LED in the UI; make it appear only when in TK3000 mode
+				VideoRedrawScreen();	// TODO: Still need to implement page mode switching and 'whatnot'
+			}
 		}
 
 		if (!((key >= VK_LEFT) && (key <= VK_DELETE) && asciicode[IS_APPLE2 ? 0 : 1][key - VK_LEFT]))

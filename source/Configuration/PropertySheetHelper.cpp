@@ -324,6 +324,18 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 
 	UINT uAfterClose = 0;
 
+	if (m_ConfigNew.m_Apple2Type == A2TYPE_CLONE)
+	{
+		MessageBox(hWnd, "Error - Unable to change configuration\n\nReason: A specific clone wasn't selected from the Advanced tab", g_pAppTitle, MB_ICONSTOP | MB_SETFOREGROUND);
+		return;
+	}
+
+	_ASSERT(m_ConfigNew.m_CpuType != CPU_UNKNOWN);	// NB. Could only ever be CPU_UNKNOWN for a clone (and only if a mistake was made when adding a new clone)
+	if (m_ConfigNew.m_CpuType == CPU_UNKNOWN)
+	{
+		m_ConfigNew.m_CpuType = ProbeMainCpuDefault(m_ConfigNew.m_Apple2Type);
+	}
+
 	if (IsConfigChanged())
 	{
 		if (!CheckChangesForRestart(hWnd))
