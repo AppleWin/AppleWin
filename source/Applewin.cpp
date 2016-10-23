@@ -441,7 +441,7 @@ void SetCharsetType(void)
 	case A2TYPE_APPLE2PLUS:		g_nCharsetType = 0; break;
 	case A2TYPE_APPLE2E:		g_nCharsetType = 0; break;
 	case A2TYPE_APPLE2EENHANCED:g_nCharsetType = 0; break;
-    case A2TYPE_TK30002E:       g_nCharsetType = 0; break;
+	case A2TYPE_TK30002E:       g_nCharsetType = 0; break;
 	case A2TYPE_PRAVETS82:	    g_nCharsetType = 1; break;
 	case A2TYPE_PRAVETS8M:	    g_nCharsetType = 2; break; //This charset has a very small difference with the PRAVETS82 one, and probably has some misplaced characters.
 	case A2TYPE_PRAVETS8A:	    g_nCharsetType = 3; break;
