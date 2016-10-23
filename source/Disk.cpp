@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "AppleWin.h"
 #include "Disk.h"
 #include "DiskImage.h"
+#include "DiskImageHelper.h"
 #include "Frame.h"
 #include "Log.h"
 #include "Memory.h"
@@ -119,6 +120,7 @@ static BOOL		floppywritemode = 0;
 static WORD		phases = 0;						// state bits for stepper magnet phases 0 - 3
 static bool		g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT		g_uSlot = 0;
+static CDiskImageHelper sg_DiskImageHelper;
 
 static void CheckSpinning();
 static Disk_Status_e GetDriveLightStatus( const int iDrive );
@@ -326,7 +328,7 @@ static void RemoveDisk(const int iDrive)
 		if (pFloppy->trackimage && pFloppy->trackimagedirty)
 			WriteTrack( iDrive);
 
-		ImageClose(pFloppy->imagehandle);
+		ImageClose(&sg_DiskImageHelper, pFloppy->imagehandle);
 		pFloppy->imagehandle = (HIMAGE)0;
 	}
 
@@ -479,6 +481,9 @@ void DiskDestroy(void)
 	RemoveDisk(DRIVE_2);
 
 	g_bSaveDiskImage = true;
+
+	VirtualFree(sg_DiskImageHelper.GetWorkBuffer(), 0, MEM_RELEASE);
+	sg_DiskImageHelper.SetWorkBuffer(NULL);
 }
 
 //===========================================================================
@@ -552,6 +557,9 @@ void DiskInitialize(void)
 
 	TCHAR imagefilename[MAX_PATH];
 	_tcscpy(imagefilename,g_sProgramDir);
+
+	LPBYTE pBuffer = (LPBYTE)VirtualAlloc(NULL, TRACK_DENIBBLIZED_SIZE * 2, MEM_COMMIT, PAGE_READWRITE);
+	sg_DiskImageHelper.SetWorkBuffer(pBuffer);
 }
 
 //===========================================================================
@@ -594,7 +602,9 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 		}
 	}
 
-	ImageError_e Error = ImageOpen(pszImageFilename,
+	ImageError_e Error = ImageOpen(
+		&sg_DiskImageHelper,
+		pszImageFilename,
 		&fptr->imagehandle,
 		&fptr->bWriteProtected,
 		bCreateIfNecessary,
