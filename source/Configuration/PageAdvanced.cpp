@@ -234,9 +234,16 @@ int CPageAdvanced::GetCloneMenuItem(void)
 	if (!bIsClone)
 		return MENUITEM_CLONEMIN;
 
-	int nMenuItem = type - A2TYPE_PRAVETS;
-	if (nMenuItem < 0 || nMenuItem >= MENUITEM_CLONEMAX)
-		return MENUITEM_CLONEMIN;
+	int nMenuItem = MENUITEM_CLONEMIN;
+	switch (type)
+	{
+		case A2TYPE_PRAVETS82:	nMenuItem = MENUITEM_PRAVETS82; break;
+		case A2TYPE_PRAVETS8M:	nMenuItem = MENUITEM_PRAVETS8M; break;
+		case A2TYPE_PRAVETS8A:	nMenuItem = MENUITEM_PRAVETS8A; break;
+		case A2TYPE_TK30002E:	nMenuItem = MENUITEM_TK30002E;  break;
+		default:	// New clone needs adding here?
+			_ASSERT(0);
+	}
 
 	return nMenuItem;
 }
