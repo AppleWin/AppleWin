@@ -33,19 +33,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskImageHelper.h"
 
 
-static CDiskImageHelper sg_DiskImageHelper;
 
 //===========================================================================
 
 // Pre: *pWriteProtected_ already set to file's r/w status - see DiskInsert()
-ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
+ImageError_e ImageOpen(CDiskImageHelper* diskImageHelper,
+	                    LPCTSTR pszImageFilename,
 						HIMAGE* hDiskImage,
 						bool* pWriteProtected,
 						const bool bCreateIfNecessary,
 						std::string& strFilenameInZip,
 						const bool bExpectFloppy /*=true*/)
 {
-	if (! (pszImageFilename && hDiskImage && pWriteProtected && sg_DiskImageHelper.GetWorkBuffer()))
+	if (! (pszImageFilename && hDiskImage && pWriteProtected && diskImageHelper->GetWorkBuffer()))
 		return eIMAGE_ERROR_BAD_POINTER;
 
 	// CREATE A RECORD FOR THE FILE, AND RETURN AN IMAGE HANDLE
@@ -57,11 +57,11 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 	ImageInfo* pImageInfo = (ImageInfo*) *hDiskImage;
 	pImageInfo->bWriteProtected = *pWriteProtected;
 
-	ImageError_e Err = sg_DiskImageHelper.Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip);
+	ImageError_e Err = diskImageHelper->Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip);
 
 	if (Err != eIMAGE_ERROR_NONE)
 	{
-		ImageClose(*hDiskImage, true);
+		ImageClose(diskImageHelper, *hDiskImage, true);
 		*hDiskImage = (HIMAGE)0;
 		return Err;
 	}
@@ -75,7 +75,7 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 
 	// THE FILE MATCHES A KNOWN FORMAT
 
-	pImageInfo->uNumTracks = sg_DiskImageHelper.GetNumTracksInImage(pImageInfo->pImageType);
+	pImageInfo->uNumTracks = diskImageHelper->GetNumTracksInImage(pImageInfo->pImageType);
 
 	for (UINT uTrack = 0; uTrack < pImageInfo->uNumTracks; uTrack++)
 		pImageInfo->ValidTrack[uTrack] = (pImageInfo->uImageSize > 0) ? 1 : 0;
@@ -87,7 +87,7 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 
 //===========================================================================
 
-void ImageClose(const HIMAGE hDiskImage, const bool bOpenError /*=false*/)
+void ImageClose(CDiskImageHelper* diskImageHelper, const HIMAGE hDiskImage, const bool bOpenError /*=false*/)
 {
 	ImageInfo* ptr = (ImageInfo*) hDiskImage;
 	bool bDeleteFile = false;
@@ -106,7 +106,7 @@ void ImageClose(const HIMAGE hDiskImage, const bool bOpenError /*=false*/)
 		}
 	}
 
-	sg_DiskImageHelper.Close(ptr, bDeleteFile);
+	diskImageHelper->Close(ptr, bDeleteFile);
 
 	VirtualFree(ptr, 0, MEM_RELEASE);
 }
@@ -131,16 +131,12 @@ BOOL ImageBoot(const HIMAGE hDiskImage)
 
 void ImageDestroy(void)
 {
-	VirtualFree(sg_DiskImageHelper.GetWorkBuffer(), 0, MEM_RELEASE);
-	sg_DiskImageHelper.SetWorkBuffer(NULL);
 }
 
 //===========================================================================
 
 void ImageInitialize(void)
 {
-	LPBYTE pBuffer = (LPBYTE) VirtualAlloc(NULL, TRACK_DENIBBLIZED_SIZE*2, MEM_COMMIT, PAGE_READWRITE);
-	sg_DiskImageHelper.SetWorkBuffer(pBuffer);
 }
 
 //===========================================================================

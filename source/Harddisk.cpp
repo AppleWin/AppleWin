@@ -158,7 +158,7 @@ static void HD_CleanupDrive(const int iDrive)
 {
 	if (g_HardDisk[iDrive].imagehandle)
 	{
-		ImageClose(g_HardDisk[iDrive].imagehandle);
+		ImageClose((CDiskImageHelper *) &sg_HardDiskImageHelper, g_HardDisk[iDrive].imagehandle);
 		g_HardDisk[iDrive].imagehandle = (HIMAGE)0;
 	}
 
@@ -359,7 +359,8 @@ static BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
 
 	const bool bCreateIfNecessary = false;		// NB. Don't allow creation of HDV files
 	const bool bExpectFloppy = false;
-	ImageError_e Error = ImageOpen(pszImageFilename,
+	ImageError_e Error = ImageOpen((CDiskImageHelper *)&sg_HardDiskImageHelper,
+		pszImageFilename,
 		&g_HardDisk[iDrive].imagehandle,
 		&g_HardDisk[iDrive].bWriteProtected,
 		bCreateIfNecessary,

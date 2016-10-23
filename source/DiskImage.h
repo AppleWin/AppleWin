@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "DiskDefs.h"
 
+
 	#define TRACK_DENIBBLIZED_SIZE (16 * 256)	// #Sectors x Sector-size
 
 	#define	TRACKS_STANDARD	35
@@ -61,9 +62,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	const int MAX_DISK_IMAGE_NAME = 15;
 	const int MAX_DISK_FULL_NAME  = 127;
 
+#include "DiskImageHelper.h"
 
-ImageError_e ImageOpen(LPCTSTR pszImageFilename, HIMAGE* hDiskImage, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true);
-void ImageClose(const HIMAGE hDiskImage, const bool bOpenError=false);
+ImageError_e ImageOpen(CDiskImageHelper* diskImageHelper, LPCTSTR pszImageFilename, HIMAGE* hDiskImage, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true);
+void ImageClose(CDiskImageHelper* diskImageHelper, const HIMAGE hDiskImage, const bool bOpenError=false);
 BOOL ImageBoot(const HIMAGE hDiskImage);
 void ImageDestroy(void);
 void ImageInitialize(void);
