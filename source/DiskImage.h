@@ -62,7 +62,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	const int MAX_DISK_FULL_NAME  = 127;
 
 
-ImageError_e ImageOpen(LPCTSTR pszImageFilename, HIMAGE* hDiskImage, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true);
+ImageError_e ImageOpen(LPCTSTR pszImageFilename, HIMAGE* hDiskImage, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true, const bool bIsHarddisk=false);
 void ImageClose(const HIMAGE hDiskImage, const bool bOpenError=false);
 BOOL ImageBoot(const HIMAGE hDiskImage);
 void ImageDestroy(void);

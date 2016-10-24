@@ -119,9 +119,11 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 		case IDC_CHECK_CONFIRM_REBOOT:
 			g_bConfirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? 1 : 0;
+			break;
 
 		case IDC_CHECK_HALF_SCAN_LINES:
-			g_uHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
+			// Checked in DlgOK()
+			break;
 
 		case IDC_COMPUTER:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
@@ -129,7 +131,16 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				const DWORD NewComputerMenuItem = (DWORD) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
 				const eApple2Type NewApple2Type = GetApple2Type(NewComputerMenuItem);
 				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewApple2Type;
-				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewApple2Type);
+				if (NewApple2Type != A2TYPE_CLONE)
+				{
+					m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewApple2Type);
+				}
+				else // A2TYPE_CLONE
+				{
+					// NB. A2TYPE_CLONE could be either 6502(Pravets) or 65C02(TK3000 //e)
+					// - Set correctly in PageAdvanced.cpp for IDC_CLONETYPE
+					m_PropertySheetHelper.GetConfigNew().m_CpuType = CPU_UNKNOWN;
+				}
 			}
 			break;
 
@@ -168,6 +179,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				case A2TYPE_PRAVETS82:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_PRAVETS8M:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_PRAVETS8A:		nCurrentChoice = MENUITEM_CLONE; break;
+				case A2TYPE_TK30002E:		nCurrentChoice = MENUITEM_CLONE; break;
 				}
 
 				m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMPUTER, m_ComputerChoices, nCurrentChoice);
@@ -231,10 +243,26 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 void CPageConfig::DlgOK(HWND hWnd)
 {
+	bool bVideoReinit = false;
+
 	const DWORD newvidtype = (DWORD) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
 	if (g_eVideoType != newvidtype)
 	{
 		g_eVideoType = newvidtype;
+		bVideoReinit = true;
+	}
+
+	const DWORD newHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
+	if (g_uHalfScanLines != newHalfScanLines)
+	{
+		g_uHalfScanLines = newHalfScanLines;
+		bVideoReinit = true;
+	}
+
+	if (bVideoReinit)
+	{
+		FrameRefreshStatus(DRAW_TITLE, false);
+
 		VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{

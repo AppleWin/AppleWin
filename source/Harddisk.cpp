@@ -148,8 +148,6 @@ static HDD g_HardDisk[NUM_HARDDISKS] = {0};
 static bool g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT g_uSlot = 7;
 
-static CHardDiskImageHelper sg_HardDiskImageHelper;
-
 //===========================================================================
 
 static void HD_SaveLastDiskImage(const int iDrive);
@@ -359,12 +357,14 @@ static BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
 
 	const bool bCreateIfNecessary = false;		// NB. Don't allow creation of HDV files
 	const bool bExpectFloppy = false;
+	const bool bIsHarddisk = true;
 	ImageError_e Error = ImageOpen(pszImageFilename,
 		&g_HardDisk[iDrive].imagehandle,
 		&g_HardDisk[iDrive].bWriteProtected,
 		bCreateIfNecessary,
 		g_HardDisk[iDrive].strFilenameInZip,	// TODO: Use this
-		bExpectFloppy);
+		bExpectFloppy,
+		bIsHarddisk);
 
 	g_HardDisk[iDrive].hd_imageloaded = (Error == eIMAGE_ERROR_NONE);
 

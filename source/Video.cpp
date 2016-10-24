@@ -247,6 +247,7 @@ static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 static LPBYTE        g_pTextBank1; // Aux
 static LPBYTE        g_pTextBank0; // Main
 
+// TC (25/8/2016): TODO: Need to investigate the use of this global flag for 1.27
 static /*bool*/ UINT g_VideoForceFullRedraw = 1;
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
@@ -1052,15 +1053,24 @@ void VideoDisplayLogo ()
 // . 10s only update if HIRES changes (17s for Debug build)
 // . ~9s no update during full-speed (but IBIZA.DSK doesn't show anything!)
 
-void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInvalidate /*=false*/)
+void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=false*/)
 {
+	static DWORD dwFullSpeedStartTime = 0;
 	static bool bValid = false;
 
-	if (bInvalidate)
+	if (bInit)
 	{
+		// Just entered full-speed mode
 		bValid = false;
+		dwFullSpeedStartTime = GetTickCount();
 		return;
 	}
+
+	DWORD dwFullSpeedDuration = GetTickCount() - dwFullSpeedStartTime;
+	if (dwFullSpeedDuration <= 16)	// Only update after every realtime ~17ms of *continuous* full-speed
+		return;
+
+	dwFullSpeedStartTime += dwFullSpeedDuration;
 
 	//
 
@@ -1117,11 +1127,10 @@ void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 
 //===========================================================================
 
-void VideoRedrawScreen (UINT uDelayRefresh /* =0 */)
+void VideoRedrawScreen (void)
 {
-	g_VideoForceFullRedraw = 1;
-
-	VideoRefreshScreen( g_uVideoMode, uDelayRefresh );
+	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'non-mixed GR' mode == 0x00.
+	VideoRefreshScreen( g_uVideoMode, true );
 }
 
 //===========================================================================
@@ -1159,19 +1168,45 @@ static void DebugRefresh(char uDebugFlag)
 }
 #endif
 
-void VideoRefreshScreen ( int bVideoModeFlags, UINT uDelayRefresh /* =0 */ )
+// TC: Hacky-fix for GH#341 - better to draw to the correct position in the framebuffer to start with! (in NTSC.cpp)
+static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 {
-	static UINT uDelayRefreshCount = 0;
-	if (uDelayRefresh) uDelayRefreshCount = uDelayRefresh;
+	int dx=0, dy=0;
 
+	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
+	{
+		// Adjust the src locations for the NTSC video modes
+		dx = 2;
+		dy = -1;
+	}
+	else if (g_eVideoType == VT_COLOR_MONITOR)
+	{
+		//if ((g_uVideoMode & VF_TEXT) == 0)	// NB. Not sufficient, eg. ANSI STORY...
+		if ( NTSC_GetColorBurst() == true )	// ANSI STORY (end credits): split DGR/TEXT80/DGR on scanline
+			dx = 2;
+	}
+
+	if (bInvertY)
+		dy -= dy;
+
+	xSrc += dx;
+	ySrc += dy;
+}
+
+void VideoRefreshScreen ( int bVideoModeFlags, bool bRedrawWholeScreen /* =false*/ )
+{
 #if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
 	DebugRefresh(0);
 #endif
 
-	if( bVideoModeFlags )
+	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
 	{
-		NTSC_SetVideoMode( bVideoModeFlags );
-		NTSC_VideoUpdateCycles( VIDEO_SCANNER_6502_CYCLES );
+		// bVideoModeFlags set if:
+		// . MODE_DEBUG   : always
+		// . MODE_RUNNING : called from VideoRedrawScreen(), eg. during full-speed
+		if (bRedrawWholeScreen)
+			NTSC_SetVideoMode( bVideoModeFlags );
+		NTSC_VideoRedrawWholeScreen();
 	}
 
 // NTSC_BEGIN
@@ -1191,12 +1226,6 @@ void VideoRefreshScreen ( int bVideoModeFlags, UINT uDelayRefresh /* =0 */ )
 
 	if (hFrameDC)
 	{
-		if (uDelayRefreshCount)
-		{
-			// Delay the refresh in full-screen mode (to allow screen-capabilities to take effect) - required for Win7 (and others?)
-			--uDelayRefreshCount;
-		}
-		else
 		{
 			int xDst = 0;
 			int yDst = 0;
@@ -1210,13 +1239,7 @@ void VideoRefreshScreen ( int bVideoModeFlags, UINT uDelayRefresh /* =0 */ )
 
 			int xSrc = BORDER_W;
 			int ySrc = BORDER_H;
-
-			if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
-			{
-				// Adjust the src locations for the NTSC video modes
-				xSrc += 2;
-				ySrc -= 1;
-			}
+			VideoFrameBufferAdjust(xSrc, ySrc);	// TC: Hacky-fix for GH#341
 
 			int xdest = GetFullScreenOffsetX();
 			int ydest = GetFullScreenOffsetY();
@@ -1364,13 +1387,6 @@ bool VideoGetSWTEXT(void)
 bool VideoGetSWAltCharSet(void)
 {
 	return g_nAltCharSetOffset != 0;
-}
-
-//===========================================================================
-
-void VideoSetForceFullRedraw(void)
-{
-	g_VideoForceFullRedraw = 1;
 }
 
 //===========================================================================
@@ -1752,8 +1768,14 @@ void Video_MakeScreenShot(FILE *pFile)
 	// No need to use GetDibBits() since we already have http://msdn.microsoft.com/en-us/library/ms532334.aspx
 	// @reference: "Storing an Image" http://msdn.microsoft.com/en-us/library/ms532340(VS.85).aspx
 	pSrc = (uint32_t*) g_pFramebufferbits;
-	pSrc += BORDER_H * FRAMEBUFFER_W;	// Skip top border
-	pSrc += BORDER_W;					// Skip left border
+
+	int xSrc = BORDER_W;
+	int ySrc = BORDER_H;
+	VideoFrameBufferAdjust(xSrc, ySrc, true);	// TC: Hacky-fix for GH#341 & GH#356
+												// Lines stored in reverse, so invert the y-adjust value
+
+	pSrc += xSrc;					// Skip left border
+	pSrc += ySrc * FRAMEBUFFER_W;	// Skip top border
 
 	if( g_iScreenshotType == SCREENSHOT_280x192 )
 	{

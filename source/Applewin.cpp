@@ -232,6 +232,9 @@ void ContinueExecution(void)
 
 	if (g_bFullSpeed)
 	{
+		if (!bWasFullSpeed)
+			VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
+
 		// Don't call Spkr_Mute() - will get speaker clicks
 		MB_Mute();
 		SysClk_StopTimer();
@@ -249,7 +252,6 @@ void ContinueExecution(void)
 	{
 		if (bWasFullSpeed)
 		{
-			VideoRedrawScreenDuringFullSpeed(0, true);	// Invalidate the copies of video memory
 			VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
 		}
 
@@ -284,11 +286,10 @@ void ContinueExecution(void)
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
 		if (g_bFullSpeed)
-		{
 			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
-		}
+		else
+			VideoRefreshScreen(0); // Just copy the output of our Apple framebuffer to the system Back Buffer
 
-		VideoRefreshScreen(0); // Just copy the output of our Apple framebuffer to the system Back Buffer
 		MB_EndOfVideoFrame();
 	}
 
@@ -440,6 +441,7 @@ void SetCharsetType(void)
 	case A2TYPE_APPLE2PLUS:		g_nCharsetType = 0; break;
 	case A2TYPE_APPLE2E:		g_nCharsetType = 0; break;
 	case A2TYPE_APPLE2EENHANCED:g_nCharsetType = 0; break;
+	case A2TYPE_TK30002E:       g_nCharsetType = 0; break;
 	case A2TYPE_PRAVETS82:	    g_nCharsetType = 1; break;
 	case A2TYPE_PRAVETS8M:	    g_nCharsetType = 2; break; //This charset has a very small difference with the PRAVETS82 one, and probably has some misplaced characters.
 	case A2TYPE_PRAVETS8A:	    g_nCharsetType = 3; break;
@@ -1197,7 +1199,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		// ENTER THE MAIN MESSAGE LOOP
 		LogFileOutput("Main: EnterMessageLoop()\n");
-		LogFileTimeUntilFirstKeyReadReset();
 		EnterMessageLoop();
 		LogFileOutput("Main: LeaveMessageLoop()\n");
 

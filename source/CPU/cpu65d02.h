@@ -416,8 +416,8 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 // NTSC_END
 
 		CheckInterruptSources(uExecutedCycles);
-		NMI(uExecutedCycles, uExtraCycles, flagc, flagn, flagv, flagz);
-		IRQ(uExecutedCycles, uExtraCycles, flagc, flagn, flagv, flagz);
+		NMI(uExecutedCycles, flagc, flagn, flagv, flagz);
+		IRQ(uExecutedCycles, flagc, flagn, flagv, flagz);
 
 		if( IsDebugBreakpointHit() )
 			break;

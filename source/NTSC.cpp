@@ -1511,7 +1511,7 @@ void NTSC_SetVideoMode( int bVideoModeFlags )
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
 	if (bVideoModeFlags & VF_PAGE2) {
-		// Apple IIe, Techical Nodtes, #3: Double High-Resolution Graphics
+		// Apple IIe, Technical Notes, #3: Double High-Resolution Graphics
 		// 80STORE must be OFF to display page 2
 		if (0 == (bVideoModeFlags & VF_80STORE)) {
 			g_nTextPage  = 2;
@@ -1653,7 +1653,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	updateMonochromeTables( 0xFF, 0xFF, 0xFF );
 
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
-		g_pScanLines[y] = (bgra_t*)(g_pFramebufferbits + 4 * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - 18) + 80);
+		g_pScanLines[y] = (bgra_t*)(g_pFramebufferbits + sizeof(bgra_t) * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - BORDER_H) + (sizeof(bgra_t) * BORDER_W));
 
 	g_pVideoAddress = g_pScanLines[0];
 
@@ -1759,6 +1759,8 @@ bool NTSC_VideoIsVbl ()
 //===========================================================================
 void NTSC_VideoUpdateCycles( long cycles6502 )
 {
+	_ASSERT(cycles6502 < VIDEO_SCANNER_6502_CYCLES);	// Use NTSC_VideoRedrawWholeScreen() instead
+
 	bool bRedraw = cycles6502 >= VIDEO_SCANNER_6502_CYCLES;
 
 //	if( !g_bFullSpeed )
@@ -1803,4 +1805,55 @@ if(true)
 		VideoRefreshScreen(0);
 	}
 }
+}
+
+//===========================================================================
+void NTSC_VideoRedrawWholeScreen( void )
+{
+#ifdef _DEBUG
+	const uint16_t currVideoClockVert = g_nVideoClockVert;
+	const uint16_t currVideoClockHorz = g_nVideoClockHorz;
+#endif
+
+	int cyclesLeftToUpdate = VIDEO_SCANNER_6502_CYCLES;
+	const int cyclesToEndOfLine = VIDEO_SCANNER_MAX_HORZ - g_nVideoClockHorz;
+
+	if (g_nVideoClockVert < VIDEO_SCANNER_Y_MIXED)
+	{
+		const int cyclesToLine160 = VIDEO_SCANNER_MAX_HORZ * (VIDEO_SCANNER_Y_MIXED - g_nVideoClockVert - 1) + cyclesToEndOfLine;
+		g_pFuncUpdateGraphicsScreen(cyclesToLine160);				// lines [currV...159]
+		cyclesLeftToUpdate -= cyclesToLine160;
+
+		const int cyclesFromLine160ToLine261 = VIDEO_SCANNER_6502_CYCLES - (VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED);
+		g_pFuncUpdateGraphicsScreen(cyclesFromLine160ToLine261);	// lines [160..191..261]
+		cyclesLeftToUpdate -= cyclesFromLine160ToLine261;
+
+		// Any remaining cyclesLeftToUpdate: lines [0...currV)
+	}
+	else
+	{
+		const int cyclesToLine262 = VIDEO_SCANNER_MAX_HORZ * (VIDEO_SCANNER_MAX_VERT - g_nVideoClockVert - 1) + cyclesToEndOfLine;
+		g_pFuncUpdateGraphicsScreen(cyclesToLine262);				// lines [currV...261]
+		cyclesLeftToUpdate -= cyclesToLine262;
+
+		const int cyclesFromLine0ToLine159 = VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED;
+		g_pFuncUpdateGraphicsScreen(cyclesFromLine0ToLine159);		// lines [0..159]
+		cyclesLeftToUpdate -= cyclesFromLine0ToLine159;
+
+		// Any remaining cyclesLeftToUpdate: lines [160...currV)
+	}
+
+	if (cyclesLeftToUpdate)
+		g_pFuncUpdateGraphicsScreen(cyclesLeftToUpdate);
+
+#ifdef _DEBUG
+	_ASSERT(currVideoClockVert == g_nVideoClockVert);
+	_ASSERT(currVideoClockHorz == g_nVideoClockHorz);
+#endif
+}
+
+//===========================================================================
+bool NTSC_GetColorBurst( void )
+{
+	return (g_nColorBurstPixels < 2) ? false : true;
 }

@@ -204,13 +204,14 @@ static void GetAppleWindowTitle()
 	switch (g_Apple2Type)
 	{
 		default:
-		case A2TYPE_APPLE2:			_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2          ); break; 
-		case A2TYPE_APPLE2PLUS:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2_PLUS     ); break; 
-		case A2TYPE_APPLE2E:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E         ); break; 
-		case A2TYPE_APPLE2EENHANCED:_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E_ENHANCED); break; 
-		case A2TYPE_PRAVETS82:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_82       ); break; 
-		case A2TYPE_PRAVETS8M:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8M       ); break; 
-		case A2TYPE_PRAVETS8A:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8A       ); break; 
+		case A2TYPE_APPLE2:			_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2          ); break;
+		case A2TYPE_APPLE2PLUS:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2_PLUS     ); break;
+		case A2TYPE_APPLE2E:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E         ); break;
+		case A2TYPE_APPLE2EENHANCED:_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E_ENHANCED); break;
+		case A2TYPE_PRAVETS82:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_82       ); break;
+		case A2TYPE_PRAVETS8M:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8M       ); break;
+		case A2TYPE_PRAVETS8A:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8A       ); break;
+		case A2TYPE_TK30002E:		_tcscpy(g_pAppleWindowTitle, TITLE_TK3000_2E        ); break;
 	}
 
 #if _DEBUG
@@ -311,6 +312,9 @@ static void CreateGdiObjects(void)
 	case A2TYPE_PRAVETS8M:
 	case A2TYPE_PRAVETS8A:
 		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON"));
+		break;
+	case A2TYPE_TK30002E:
+		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN3000E_BUTTON"));
 		break;
 	default:
 		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON"));
@@ -623,8 +627,7 @@ static void DrawFrameWindow ()
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay(1);
 	else
-		VideoRedrawScreen(0);	// TODO: Presume this is correct with new fullscreen window mode
-		//VideoRedrawScreen(g_bIsFullScreen ? 1 : 0);	// On WM_PAINT: delay 1 refresh before rendering full-screen
+		VideoRedrawScreen();
 
 	if (g_bPaintingWindow)
 		EndPaint(g_hFrameWindow,&ps);
@@ -1831,6 +1834,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		if (g_nAppMode == MODE_LOGO)
 		{
 			DiskBoot();
+			LogFileTimeUntilFirstKeyReadReset();
 			g_nAppMode = MODE_RUNNING;
 		}
 		else if (g_nAppMode == MODE_RUNNING)
