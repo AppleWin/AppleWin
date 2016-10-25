@@ -76,7 +76,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		TCHAR  imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
 		TCHAR  fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
 		std::string strFilenameInZip;					// ""             or <FILENAME.EXT>
-		HIMAGE imagehandle;					// Init'd by DiskInsert() -> ImageOpen()
+		ImageInfo* imagehandle;							// Init'd by DiskInsert() -> ImageOpen()
 		bool   bWriteProtected;
 		//
 		int    track;
@@ -327,7 +327,7 @@ static void RemoveDisk(const int iDrive)
 			WriteTrack( iDrive);
 
 		ImageClose(pFloppy->imagehandle);
-		pFloppy->imagehandle = (HIMAGE)0;
+		pFloppy->imagehandle = NULL;
 	}
 
 	if (pFloppy->trackimage)

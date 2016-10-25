@@ -143,8 +143,6 @@ enum AppMode_e
 // TODO-TC: Refactor codebase by renaming /nCyclesLeft/ to /uExecutedCycles/
 typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
 
-typedef struct _IMAGE__ { int unused; } *HIMAGE;	// DiskImage's /ImageInfo/ is hidden behind HIMAGE
-
 enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 
 //

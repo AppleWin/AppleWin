@@ -118,7 +118,7 @@ struct HDD
 	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)    [not used]
 	TCHAR	fullname[ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>
 	std::string strFilenameInZip;					// ""             or <FILENAME.EXT> [not used]
-	HIMAGE	imagehandle;				// Init'd by HD_Insert() -> ImageOpen()
+	ImageInfo*	imagehandle;			// Init'd by HD_Insert() -> ImageOpen()
 	bool	bWriteProtected;			// Needed for ImageOpen() [otherwise not used]
 	//
 	BYTE	hd_error;
@@ -157,7 +157,7 @@ static void HD_CleanupDrive(const int iDrive)
 	if (g_HardDisk[iDrive].imagehandle)
 	{
 		ImageClose(g_HardDisk[iDrive].imagehandle);
-		g_HardDisk[iDrive].imagehandle = (HIMAGE)0;
+		g_HardDisk[iDrive].imagehandle = NULL;
 	}
 
 	g_HardDisk[iDrive].hd_imageloaded = false;

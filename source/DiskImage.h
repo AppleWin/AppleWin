@@ -61,22 +61,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	const int MAX_DISK_IMAGE_NAME = 15;
 	const int MAX_DISK_FULL_NAME  = 127;
 
+struct ImageInfo;
 
-ImageError_e ImageOpen(LPCTSTR pszImageFilename, HIMAGE* hDiskImage, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true, const bool bIsHarddisk=false);
-void ImageClose(const HIMAGE hDiskImage, const bool bOpenError=false);
-BOOL ImageBoot(const HIMAGE hDiskImage);
+ImageError_e ImageOpen(LPCTSTR pszImageFilename, ImageInfo** ppImageInfo, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true, const bool bIsHarddisk=false);
+void ImageClose(ImageInfo* const pImageInfo, const bool bOpenError=false);
+BOOL ImageBoot(ImageInfo* const pImageInfo);
 void ImageDestroy(void);
 void ImageInitialize(void);
 
-void ImageReadTrack(const HIMAGE hDiskImage, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles);
-void ImageWriteTrack(const HIMAGE hDiskImage, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles);
-bool ImageReadBlock(const HIMAGE hDiskImage, UINT nBlock, LPBYTE pBlockBuffer);
-bool ImageWriteBlock(const HIMAGE hDiskImage, UINT nBlock, LPBYTE pBlockBuffer);
+void ImageReadTrack(ImageInfo* const pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles);
+void ImageWriteTrack(ImageInfo* const pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles);
+bool ImageReadBlock(ImageInfo* const pImageInfo, UINT nBlock, LPBYTE pBlockBuffer);
+bool ImageWriteBlock(ImageInfo* const pImageInfo, UINT nBlock, LPBYTE pBlockBuffer);
 
-int ImageGetNumTracks(const HIMAGE hDiskImage);
-bool ImageIsWriteProtected(const HIMAGE hDiskImage);
-bool ImageIsMultiFileZip(const HIMAGE hDiskImage);
-const char* ImageGetPathname(const HIMAGE hDiskImage);
-UINT ImageGetImageSize(const HIMAGE hDiskImage);
+int ImageGetNumTracks(ImageInfo* const pImageInfo);
+bool ImageIsWriteProtected(ImageInfo* const pImageInfo);
+bool ImageIsMultiFileZip(ImageInfo* const pImageInfo);
+const char* ImageGetPathname(ImageInfo* const pImageInfo);
+UINT ImageGetImageSize(ImageInfo* const pImageInfo);
 
 void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName);
