@@ -363,8 +363,7 @@ static BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
 		&g_HardDisk[iDrive].bWriteProtected,
 		bCreateIfNecessary,
 		g_HardDisk[iDrive].strFilenameInZip,	// TODO: Use this
-		bExpectFloppy,
-		bIsHarddisk);
+		bExpectFloppy);
 
 	g_HardDisk[iDrive].hd_imageloaded = (Error == eIMAGE_ERROR_NONE);
 

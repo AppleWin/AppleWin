@@ -63,7 +63,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 struct ImageInfo;
 
-ImageError_e ImageOpen(LPCTSTR pszImageFilename, ImageInfo** ppImageInfo, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true, const bool bIsHarddisk=false);
+ImageError_e ImageOpen(LPCTSTR pszImageFilename, ImageInfo** ppImageInfo, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true);
 void ImageClose(ImageInfo* const pImageInfo, const bool bOpenError=false);
 BOOL ImageBoot(ImageInfo* const pImageInfo);
 void ImageDestroy(void);

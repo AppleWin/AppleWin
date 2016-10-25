@@ -43,10 +43,12 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 						bool* pWriteProtected,
 						const bool bCreateIfNecessary,
 						std::string& strFilenameInZip,
-						const bool bExpectFloppy /*=true*/,
-						const bool bIsHarddisk /*=false*/)
+						const bool bExpectFloppy /*=true*/)
 {
-	if (! (pszImageFilename && ppImageInfo && pWriteProtected && sg_DiskImageHelper.GetWorkBuffer()))
+	if (bExpectFloppy && sg_DiskImageHelper.GetWorkBuffer() == NULL)
+		return eIMAGE_ERROR_BAD_POINTER;
+
+	if (! (pszImageFilename && ppImageInfo && pWriteProtected))
 		return eIMAGE_ERROR_BAD_POINTER;
 
 	// CREATE A RECORD FOR THE FILE
@@ -57,11 +59,10 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 	ZeroMemory(*ppImageInfo, sizeof(ImageInfo));
 	ImageInfo* pImageInfo = *ppImageInfo;
 	pImageInfo->bWriteProtected = *pWriteProtected;
+	if (bExpectFloppy)	pImageInfo->pImageHelper = &sg_DiskImageHelper;
+	else				pImageInfo->pImageHelper = &sg_HardDiskImageHelper;
 
-	ImageError_e Err = (!bIsHarddisk)
-		?     sg_DiskImageHelper.Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip)
-		: sg_HardDiskImageHelper.Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip);
-
+	ImageError_e Err = pImageInfo->pImageHelper->Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip);
 	if (Err != eIMAGE_ERROR_NONE)
 	{
 		ImageClose(*ppImageInfo, true);
@@ -77,6 +78,10 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 	}
 
 	// THE FILE MATCHES A KNOWN FORMAT
+
+	_ASSERT(bExpectFloppy);
+	if (!bExpectFloppy)
+		return eIMAGE_ERROR_UNSUPPORTED;
 
 	pImageInfo->uNumTracks = sg_DiskImageHelper.GetNumTracksInImage(pImageInfo->pImageType);
 
@@ -108,7 +113,7 @@ void ImageClose(ImageInfo* const pImageInfo, const bool bOpenError /*=false*/)
 		}
 	}
 
-	sg_DiskImageHelper.Close(pImageInfo, bDeleteFile);
+	pImageInfo->pImageHelper->Close(pImageInfo, bDeleteFile);
 
 	VirtualFree(pImageInfo, 0, MEM_RELEASE);
 }
