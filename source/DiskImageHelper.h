@@ -13,12 +13,15 @@ enum eImageType {eImageUNKNOWN, eImageDO, eImagePO, eImageNIB1, eImageNIB2, eIma
 enum eDetectResult {eMismatch, ePossibleMatch, eMatch};
 
 class CImageBase;
+class CImageHelperBase;
+
 enum FileType_e {eFileNormal, eFileGZip, eFileZip};
 
 struct ImageInfo
 {
 	TCHAR			szFilename[MAX_PATH];
 	CImageBase*		pImageType;
+	CImageHelperBase* pImageHelper;
 	FileType_e		FileType;
 	HANDLE			hFile;
 	DWORD			uOffset;
