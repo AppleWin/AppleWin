@@ -1755,56 +1755,55 @@ bool NTSC_VideoIsVbl ()
 	return (g_nVideoClockVert >= VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockVert < VIDEO_SCANNER_MAX_VERT);
 }
 
-// Light-weight Video Clock Update
+//===========================================================================
+
+// Pre: cyclesLeftToUpdate = [0...VIDEO_SCANNER_6502_CYCLES]
+// .  2-14: After one emulated 6502/65C02 opcode (optionally with IRQ)
+// . ~1000: After 1ms of Z80 emulation
+// . 17030: From NTSC_VideoRedrawWholeScreen()
+static void VideoUpdateCycles( int cyclesLeftToUpdate )
+{
+	const int cyclesToEndOfLine = VIDEO_SCANNER_MAX_HORZ - g_nVideoClockHorz;
+
+	if (g_nVideoClockVert < VIDEO_SCANNER_Y_MIXED)
+	{
+		const int cyclesToLine160 = VIDEO_SCANNER_MAX_HORZ * (VIDEO_SCANNER_Y_MIXED - g_nVideoClockVert - 1) + cyclesToEndOfLine;
+		int cycles = cyclesLeftToUpdate < cyclesToLine160 ? cyclesLeftToUpdate : cyclesToLine160;
+		g_pFuncUpdateGraphicsScreen(cycles);						// lines [currV...159]
+		cyclesLeftToUpdate -= cycles;
+
+		const int cyclesFromLine160ToLine261 = VIDEO_SCANNER_6502_CYCLES - (VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED);
+		cycles = cyclesLeftToUpdate < cyclesFromLine160ToLine261 ? cyclesLeftToUpdate : cyclesFromLine160ToLine261;
+		g_pFuncUpdateGraphicsScreen(cycles);						// lines [160..191..261]
+		cyclesLeftToUpdate -= cycles;
+
+		// Any remaining cyclesLeftToUpdate: lines [0...currV)
+	}
+	else
+	{
+		const int cyclesToLine262 = VIDEO_SCANNER_MAX_HORZ * (VIDEO_SCANNER_MAX_VERT - g_nVideoClockVert - 1) + cyclesToEndOfLine;
+		int cycles = cyclesLeftToUpdate < cyclesToLine262 ? cyclesLeftToUpdate : cyclesToLine262;
+		g_pFuncUpdateGraphicsScreen(cycles);						// lines [currV...261]
+		cyclesLeftToUpdate -= cycles;
+
+		const int cyclesFromLine0ToLine159 = VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED;
+		cycles = cyclesLeftToUpdate < cyclesFromLine0ToLine159 ? cyclesLeftToUpdate : cyclesFromLine0ToLine159;
+		g_pFuncUpdateGraphicsScreen(cycles);					// lines [0..159]
+		cyclesLeftToUpdate -= cycles;
+
+		// Any remaining cyclesLeftToUpdate: lines [160...currV)
+	}
+
+	if (cyclesLeftToUpdate)
+		g_pFuncUpdateGraphicsScreen(cyclesLeftToUpdate);
+}
+
 //===========================================================================
 void NTSC_VideoUpdateCycles( long cycles6502 )
 {
 	_ASSERT(cycles6502 < VIDEO_SCANNER_6502_CYCLES);	// Use NTSC_VideoRedrawWholeScreen() instead
 
-	bool bRedraw = cycles6502 >= VIDEO_SCANNER_6502_CYCLES;
-
-//	if( !g_bFullSpeed )
-if(true)
-		g_pFuncUpdateGraphicsScreen( cycles6502 );
-	else
-{
-	while( cycles6502 >  VIDEO_SCANNER_6502_CYCLES )
-	/* */  cycles6502 -= VIDEO_SCANNER_6502_CYCLES ;
-
-	for( ; cycles6502 > 0; cycles6502-- )
-	{
-		if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
-		{
-			g_nVideoClockHorz = 0;
-
-			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-				g_apFuncVideoUpdateScanline[ g_nVideoClockVert ] = g_pFuncUpdateGraphicsScreen;
-
-			if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
-			{
-				g_nVideoClockVert = 0;
-
-				updateFlashRate();
-
-				bRedraw = true;
-			}
-
-			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
-				updateVideoScannerAddress();
-		}
-	}
-
-	if( bRedraw ) // Force full refresh
-	{
-		for( int y = 0; y < VIDEO_SCANNER_Y_DISPLAY; y++ )
-			g_apFuncVideoUpdateScanline[ y ]( VIDEO_SCANNER_MAX_HORZ );
-
-		int nCyclesVBlank = (VIDEO_SCANNER_MAX_VERT - VIDEO_SCANNER_Y_DISPLAY) * VIDEO_SCANNER_MAX_HORZ;
-		g_pFuncUpdateGraphicsScreen( nCyclesVBlank );
-
-		VideoRefreshScreen(0);
-	}
-}
+	VideoUpdateCycles(cycles6502);
 }
 
 //===========================================================================
@@ -1815,36 +1814,7 @@ void NTSC_VideoRedrawWholeScreen( void )
 	const uint16_t currVideoClockHorz = g_nVideoClockHorz;
 #endif
 
-	int cyclesLeftToUpdate = VIDEO_SCANNER_6502_CYCLES;
-	const int cyclesToEndOfLine = VIDEO_SCANNER_MAX_HORZ - g_nVideoClockHorz;
-
-	if (g_nVideoClockVert < VIDEO_SCANNER_Y_MIXED)
-	{
-		const int cyclesToLine160 = VIDEO_SCANNER_MAX_HORZ * (VIDEO_SCANNER_Y_MIXED - g_nVideoClockVert - 1) + cyclesToEndOfLine;
-		g_pFuncUpdateGraphicsScreen(cyclesToLine160);				// lines [currV...159]
-		cyclesLeftToUpdate -= cyclesToLine160;
-
-		const int cyclesFromLine160ToLine261 = VIDEO_SCANNER_6502_CYCLES - (VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED);
-		g_pFuncUpdateGraphicsScreen(cyclesFromLine160ToLine261);	// lines [160..191..261]
-		cyclesLeftToUpdate -= cyclesFromLine160ToLine261;
-
-		// Any remaining cyclesLeftToUpdate: lines [0...currV)
-	}
-	else
-	{
-		const int cyclesToLine262 = VIDEO_SCANNER_MAX_HORZ * (VIDEO_SCANNER_MAX_VERT - g_nVideoClockVert - 1) + cyclesToEndOfLine;
-		g_pFuncUpdateGraphicsScreen(cyclesToLine262);				// lines [currV...261]
-		cyclesLeftToUpdate -= cyclesToLine262;
-
-		const int cyclesFromLine0ToLine159 = VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED;
-		g_pFuncUpdateGraphicsScreen(cyclesFromLine0ToLine159);		// lines [0..159]
-		cyclesLeftToUpdate -= cyclesFromLine0ToLine159;
-
-		// Any remaining cyclesLeftToUpdate: lines [160...currV)
-	}
-
-	if (cyclesLeftToUpdate)
-		g_pFuncUpdateGraphicsScreen(cyclesLeftToUpdate);
+	VideoUpdateCycles(VIDEO_SCANNER_6502_CYCLES);
 
 #ifdef _DEBUG
 	_ASSERT(currVideoClockVert == g_nVideoClockVert);
