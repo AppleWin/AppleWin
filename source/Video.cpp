@@ -1272,6 +1272,7 @@ void VideoReinitialize ()
 	NTSC_VideoReinitialize( g_dwCyclesThisFrame );
 	NTSC_VideoInitAppleType();
 	NTSC_SetVideoStyle();
+	NTSC_SetVideoTextMode( g_uVideoMode &  VF_80COL ? 80 : 40 );
 	NTSC_SetVideoMode( g_uVideoMode );	// Pre-condition: g_nVideoClockHorz (derived from g_dwCyclesThisFrame)
 }
 
