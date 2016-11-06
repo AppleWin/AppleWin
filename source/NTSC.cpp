@@ -1500,35 +1500,35 @@ void NTSC_SetVideoTextMode( int cols )
 }
 
 //===========================================================================
-void NTSC_SetVideoMode( int bVideoModeFlags )
+void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 {
 	int h = g_nVideoClockHorz;
 
-	g_aHorzClockVideoMode[ h ] = bVideoModeFlags;
+	g_aHorzClockVideoMode[ h ] = uVideoModeFlags;
 
-	g_nVideoMixed   = bVideoModeFlags & VF_MIXED;
+	g_nVideoMixed   = uVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = VideoGetSWAltCharSet() ? 1 : 0;
 
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
-	if (bVideoModeFlags & VF_PAGE2) {
+	if (uVideoModeFlags & VF_PAGE2) {
 		// Apple IIe, Technical Notes, #3: Double High-Resolution Graphics
 		// 80STORE must be OFF to display page 2
-		if (0 == (bVideoModeFlags & VF_80STORE)) {
+		if (0 == (uVideoModeFlags & VF_80STORE)) {
 			g_nTextPage  = 2;
 			g_nHiresPage = 2;
 		}
 	}
 
-	if (bVideoModeFlags & VF_TEXT) {
-		if (bVideoModeFlags & VF_80COL)
+	if (uVideoModeFlags & VF_TEXT) {
+		if (uVideoModeFlags & VF_80COL)
 			g_pFuncUpdateGraphicsScreen = updateScreenText80;
 		else
 			g_pFuncUpdateGraphicsScreen = updateScreenText40;
 	}
-	else if (bVideoModeFlags & VF_HIRES) {
-		if (bVideoModeFlags & VF_DHIRES)
-			if (bVideoModeFlags & VF_80COL)
+	else if (uVideoModeFlags & VF_HIRES) {
+		if (uVideoModeFlags & VF_DHIRES)
+			if (uVideoModeFlags & VF_80COL)
 				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires40;
@@ -1536,8 +1536,8 @@ void NTSC_SetVideoMode( int bVideoModeFlags )
 			g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
 	}
 	else {
-		if (bVideoModeFlags & VF_DHIRES)
-			if (bVideoModeFlags & VF_80COL)
+		if (uVideoModeFlags & VF_DHIRES)
+			if (uVideoModeFlags & VF_80COL)
 				g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores40;

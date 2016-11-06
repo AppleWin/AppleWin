@@ -1193,7 +1193,7 @@ static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 	ySrc += dy;
 }
 
-void VideoRefreshScreen ( int uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
+void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
 {
 #if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
 	DebugRefresh(0);
