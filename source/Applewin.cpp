@@ -288,7 +288,7 @@ void ContinueExecution(void)
 		if (g_bFullSpeed)
 			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		else
-			VideoRefreshScreen(0); // Just copy the output of our Apple framebuffer to the system Back Buffer
+			VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
 
 		MB_EndOfVideoFrame();
 	}

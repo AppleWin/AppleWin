@@ -768,7 +768,7 @@ inline void updateVideoScannerHorzEOL()
 			g_nVideoClockVert = 0;
 
 			updateFlashRate();
-			//VideoRefreshScreen(0); // ContinueExecution() calls VideoRefreshScreen(0) every dwClksPerFrame (17030)
+			//VideoRefreshScreen(); // ContinueExecution() calls VideoRefreshScreen() every dwClksPerFrame (17030)
 		}
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)

@@ -1247,12 +1247,14 @@ LRESULT CALLBACK FrameWndProc (
 				if (g_nAppMode == MODE_DEBUG)
 				{
 					UINT debugVideoMode;
-					bool bIsVideoModeValid = DebugGetVideoMode(&debugVideoMode);
-					VideoRefreshScreen( bIsVideoModeValid ? debugVideoMode : 0, bIsVideoModeValid );
+					if ( DebugGetVideoMode(&debugVideoMode) )
+						VideoRefreshScreen(debugVideoMode, true);
+					else
+						VideoRefreshScreen();
 				}
 				else
 				{
-					VideoRefreshScreen(0);
+					VideoRefreshScreen();
 				}
 			}
 

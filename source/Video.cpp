@@ -673,7 +673,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x400,0x400,0x14);
     else
       CopyMemory(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
-    VideoRefreshScreen(0);
+    VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
     totaltextfps++;
@@ -695,7 +695,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x2000,0x2000,0x14);
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRefreshScreen(0);
+    VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
     totalhiresfps++;
@@ -786,7 +786,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x2000,0x2000,0xAA);
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRedrawScreen(); // VideoRefreshScreen();
+    VideoRedrawScreen();
     if (cycle++ >= 3)
       cycle = 0;
     realisticfps++;
