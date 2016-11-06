@@ -311,7 +311,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool      g_bTraceHeader     = false; // semaphore, flag header to be printed
 
 	DWORD     extbench      = 0;
-	int       g_bDebuggerViewingAppleOutput = false; // NOTE: alias for bVideoModeFlags!
 
 	bool      g_bIgnoreNextKey = false;
 
@@ -378,6 +377,67 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void DisasmCalcBotFromTopAddress();
 	void DisasmCalcTopBotAddress ();
 	WORD DisasmCalcAddressFromLines( WORD iAddress, int nLines );
+
+
+// DebugVideoMode _____________________________________________________________
+
+// Fix for GH#345
+// Wrap & protect the debugger's video mode in its own class:
+// . This may seem like overkill but it stops the video mode being (erroneously) additionally used as a flag.
+// . VideoMode is a bitmap of video flags and a VideoMode value of zero is a valid video mode (GR,PAGE1,non-mixed).
+class DebugVideoMode	// NB. Implemented as a singleton
+{
+protected:
+	DebugVideoMode()
+	{
+		Reset();
+	}
+
+public:
+	~DebugVideoMode(){}
+
+	static DebugVideoMode& Instance()
+	{
+		return m_Instance;
+	}
+
+	void Reset(void)
+	{
+		m_bIsVideoModeValid = false;
+		m_uVideoMode = 0;
+	}
+
+	bool IsSet(void)
+	{
+		return m_bIsVideoModeValid;
+	}
+
+	bool Get(UINT* pVideoMode)
+	{
+		if (pVideoMode)
+			*pVideoMode = m_bIsVideoModeValid ? m_uVideoMode : 0;
+		return m_bIsVideoModeValid;
+	}
+
+	void Set(UINT videoMode)
+	{
+		m_bIsVideoModeValid = true;
+		m_uVideoMode = videoMode;
+	}
+
+private:
+	bool m_bIsVideoModeValid;
+	UINT m_uVideoMode;
+
+	static DebugVideoMode m_Instance;
+};
+
+DebugVideoMode DebugVideoMode::m_Instance;
+
+bool DebugGetVideoMode(UINT* pVideoMode)
+{
+	return DebugVideoMode::Instance().Get(pVideoMode);
+}
 
 
 // File _______________________________________________________________________
@@ -6728,11 +6788,8 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 		default:
 			break;
 	}
-#if _DEBUG
-	if (bVideoModeFlags == 0)
-		MessageBoxA( NULL, "bVideoModeFlags = ZERO !?", "Information", MB_OK );
-#endif
-	g_bDebuggerViewingAppleOutput = bVideoModeFlags;
+
+	DebugVideoMode::Instance().Set(bVideoModeFlags);
 	VideoRefreshScreen( bVideoModeFlags, true );
 	return UPDATE_NOTHING; // intentional
 }
@@ -6766,11 +6823,11 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 // Lo-Res
 	Update_t CmdViewOutput_GRX (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_80STORE ); // NTSC VideoRefresh() Hack: flags != 0
+		return _ViewOutput( VIEW_PAGE_X, 0 );
 	}
 	Update_t CmdViewOutput_GR1 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_80STORE ); // NTSC VideoRefresh() Hack: flags != 0
+		return _ViewOutput( VIEW_PAGE_1, 0 );
 	}
 	Update_t CmdViewOutput_GR2 (int nArgs)
 	{
@@ -7286,7 +7343,8 @@ Update_t CmdWindowViewData (int nArgs)
 Update_t CmdWindowViewOutput (int nArgs)
 {
 	VideoRedrawScreen();
-	g_bDebuggerViewingAppleOutput = true;
+
+	DebugVideoMode::Instance().Set(g_uVideoMode);
 
 	return UPDATE_NOTHING; // intentional
 }
@@ -8421,7 +8479,7 @@ void DebugBegin ()
 	g_nDisasmCurAddress = regs.pc;
 	DisasmCalcTopBotAddress();
 
-	g_bDebuggerViewingAppleOutput = false;
+	DebugVideoMode::Instance().Reset();
 
 	UpdateDisplay( UPDATE_ALL );
 
@@ -9106,7 +9164,7 @@ void DebuggerProcessKey( int keycode )
 	if (g_nAppMode != MODE_DEBUG)
 		return;
 
-	if (g_bDebuggerViewingAppleOutput)
+	if (DebugVideoMode::Instance().IsSet())
 	{
 		if ((VK_SHIFT == keycode) || (VK_CONTROL == keycode) || (VK_MENU == keycode))
 		{
@@ -9116,7 +9174,7 @@ void DebuggerProcessKey( int keycode )
 		// Normally any key press takes us out of "Viewing Apple Output" g_nAppMode
 		// VK_F# are already processed, so we can't use them to cycle next video g_nAppMode
 //		    if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
-		g_bDebuggerViewingAppleOutput = false;
+		DebugVideoMode::Instance().Reset();
 		UpdateDisplay( UPDATE_ALL ); // 1
 		return;
 	}
@@ -9475,7 +9533,7 @@ void DebuggerProcessKey( int keycode )
 		} // switch
 	}
 
-	if (bUpdateDisplay && !g_bDebuggerViewingAppleOutput) //  & UPDATE_BACKGROUND)
+	if (bUpdateDisplay && !DebugVideoMode::Instance().IsSet()) //  & UPDATE_BACKGROUND)
 		UpdateDisplay( bUpdateDisplay );
 }
 
@@ -9509,7 +9567,7 @@ void DebuggerCursorUpdate()
 	static DWORD nBeg = GetTickCount(); // timeGetTime();
 	       DWORD nNow = GetTickCount(); // timeGetTime();
 
-	if (((nNow - nBeg) >= nUpdateInternal_ms) && !g_bDebuggerViewingAppleOutput)
+	if (((nNow - nBeg) >= nUpdateInternal_ms) && !DebugVideoMode::Instance().IsSet())
 	{
 		nBeg = nNow;
 		

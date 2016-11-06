@@ -1177,7 +1177,7 @@ LRESULT CALLBACK FrameWndProc (
 			size_t nSize = 0;
 
 			// if viewing the debugger, get the last virtual debugger screen
-			if ((g_nAppMode == MODE_DEBUG) && !g_bDebuggerViewingAppleOutput)
+			if ((g_nAppMode == MODE_DEBUG) && !DebugGetVideoMode(NULL))
 				nSize = Util_GetDebuggerText( pText );
 			else
 				nSize = Util_GetTextScreen( pText );
@@ -1244,7 +1244,16 @@ LRESULT CALLBACK FrameWndProc (
 			VideoReinitialize();
 			if (g_nAppMode != MODE_LOGO)
 			{
-				VideoRefreshScreen( g_nAppMode == MODE_DEBUG ? g_bDebuggerViewingAppleOutput  : 0);
+				if (g_nAppMode == MODE_DEBUG)
+				{
+					UINT debugVideoMode;
+					bool bIsVideoModeValid = DebugGetVideoMode(&debugVideoMode);
+					VideoRefreshScreen( bIsVideoModeValid ? debugVideoMode : 0, bIsVideoModeValid );
+				}
+				else
+				{
+					VideoRefreshScreen(0);
+				}
 			}
 
 			Config_Save_Video();

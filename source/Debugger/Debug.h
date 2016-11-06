@@ -104,9 +104,6 @@
 // Disassembly
 	extern int g_aDisasmTargets[ MAX_DISPLAY_LINES ];
 
-// Display
-	extern int g_bDebuggerViewingAppleOutput;
-
 // Font
 	extern int g_nFontHeight;
 	extern int g_iFontSpacing;
@@ -237,6 +234,8 @@
 		DEBUG_EXIT_KEY   = 0x1B, // Escape
 		DEBUG_TOGGLE_KEY = VK_F1 + BTN_DEBUG
 	};
+
+	bool	DebugGetVideoMode(UINT* pVideoMode);
 
 	void	DebugBegin ();
 	void	DebugContinueStepping ();
