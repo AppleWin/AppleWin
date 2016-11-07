@@ -309,6 +309,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	FILE     *g_hTraceFile       = NULL;
 	bool      g_bTraceHeader     = false; // semaphore, flag header to be printed
+	bool      g_bTraceFileWithVideoScanner = false;
 
 	DWORD     extbench      = 0;
 
@@ -2012,6 +2013,7 @@ Update_t CmdTraceFile (int nArgs)
 		else
 			strcpy( sFileName, g_sFileNameTrace );
 
+		g_bTraceFileWithVideoScanner = (nArgs >= 2);
 
 		char sFilePath[ MAX_PATH ];
 		strcpy(sFilePath, g_sCurrentDir); // TODO: g_sDebugDir
@@ -2021,7 +2023,9 @@ Update_t CmdTraceFile (int nArgs)
 
 		if (g_hTraceFile)
 		{
-			_snprintf( sText, sizeof(sText), "Trace started: %s", sFilePath );
+			char* pTextHdr = g_bTraceFileWithVideoScanner ? "Trace (with video info) started: %s"
+														  : "Trace started: %s";
+			_snprintf( sText, sizeof(sText), pTextHdr, sFilePath );
 
 			g_bTraceHeader = true;
 		}
@@ -8034,8 +8038,6 @@ bool InternalSingleStep ()
 
 //===========================================================================
 
-#define TRACELINE_WITH_VIDEO_SCANNER_POS 0
-
 void OutputTraceLine ()
 {
 	DisasmLine_t line;
@@ -8046,33 +8048,38 @@ void OutputTraceLine ()
 
 	char sFlags[ _6502_NUM_FLAGS + 1 ]; DrawFlags( 0, regs.ps, sFlags ); // Get Flags String
 
-	if (g_hTraceFile)
+	if (!g_hTraceFile)
+		return;
+
+	if (g_bTraceHeader)
 	{
-		if (g_bTraceHeader)
-		{
-			g_bTraceHeader = false;
+		g_bTraceHeader = false;
 
+		if (g_bTraceFileWithVideoScanner)
+		{
 			fprintf( g_hTraceFile,
-#if TRACELINE_WITH_VIDEO_SCANNER_POS
 //				"0000 0000 0000 00   00 00 00 0000 --------  0000:90 90 90  NOP"
-				"Vert Horz Addr Data A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n"
-#else
-//				"00 00 00 0000 --------  0000:90 90 90  NOP"
-				"A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n"
-#endif
-			);
+				"Vert Horz Addr Data A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n");
 		}
-
-		char sTarget[ 16 ];
-		if (line.bTargetValue)
+		else
 		{
-			sprintf( sTarget, "%s:%s"
-				, line.sTargetPointer
-				, line.sTargetValue
-			);
+			fprintf( g_hTraceFile,
+//				"00 00 00 0000 --------  0000:90 90 90  NOP"
+				"A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n");
 		}
+	}
 
-#if TRACELINE_WITH_VIDEO_SCANNER_POS
+	char sTarget[ 16 ];
+	if (line.bTargetValue)
+	{
+		sprintf( sTarget, "%s:%s"
+			, line.sTargetPointer
+			, line.sTargetValue
+		);
+	}
+
+	if (g_bTraceFileWithVideoScanner)
+	{
 		uint16_t addr = NTSC_VideoGetScannerAddress(0);
 		BYTE data = mem[addr];
 
@@ -8090,7 +8097,9 @@ void OutputTraceLine ()
 			, sDisassembly
 			//, sTarget // TODO: Show target?
 		);
-#else
+	}
+	else
+	{
 		fprintf( g_hTraceFile,
 			"%02X %02X %02X %04X %s  %s\n",
 			(unsigned)regs.a,
@@ -8101,7 +8110,6 @@ void OutputTraceLine ()
 			, sDisassembly
 			//, sTarget // TODO: Show target?
 		);
-#endif
 	}
 }
 
