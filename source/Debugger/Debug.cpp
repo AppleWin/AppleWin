@@ -8054,8 +8054,8 @@ void OutputTraceLine ()
 
 			fprintf( g_hTraceFile,
 #if TRACELINE_WITH_VIDEO_SCANNER_POS
-//				"0000 0000 00 00 00 0000 --------  0000:90 90 90  NOP"
-				"Vert Horz A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n"
+//				"0000 0000 0000 00   00 00 00 0000 --------  0000:90 90 90  NOP"
+				"Vert Horz Addr Data A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n"
 #else
 //				"00 00 00 0000 --------  0000:90 90 90  NOP"
 				"A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n"
@@ -8073,11 +8073,15 @@ void OutputTraceLine ()
 		}
 
 #if TRACELINE_WITH_VIDEO_SCANNER_POS
+		uint16_t addr = NTSC_VideoGetScannerAddress(0);
+		BYTE data = mem[addr];
+
 		fprintf( g_hTraceFile,
-//			"a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n",
-			"%04X %04X %02X %02X %02X %04X %s  %s\n",
+			"%04X %04X %04X   %02X %02X %02X %02X %04X %s  %s\n",
 			g_nVideoClockVert,
 			g_nVideoClockHorz,
+			addr,
+			data,
 			(unsigned)regs.a,
 			(unsigned)regs.x,
 			(unsigned)regs.y,
@@ -8088,7 +8092,6 @@ void OutputTraceLine ()
 		);
 #else
 		fprintf( g_hTraceFile,
-//			"a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n",
 			"%02X %02X %02X %04X %s  %s\n",
 			(unsigned)regs.a,
 			(unsigned)regs.x,
