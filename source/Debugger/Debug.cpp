@@ -309,9 +309,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	FILE     *g_hTraceFile       = NULL;
 	bool      g_bTraceHeader     = false; // semaphore, flag header to be printed
+	bool      g_bTraceFileWithVideoScanner = false;
 
 	DWORD     extbench      = 0;
-	int       g_bDebuggerViewingAppleOutput = false; // NOTE: alias for bVideoModeFlags!
 
 	bool      g_bIgnoreNextKey = false;
 
@@ -378,6 +378,67 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void DisasmCalcBotFromTopAddress();
 	void DisasmCalcTopBotAddress ();
 	WORD DisasmCalcAddressFromLines( WORD iAddress, int nLines );
+
+
+// DebugVideoMode _____________________________________________________________
+
+// Fix for GH#345
+// Wrap & protect the debugger's video mode in its own class:
+// . This may seem like overkill but it stops the video mode being (erroneously) additionally used as a flag.
+// . VideoMode is a bitmap of video flags and a VideoMode value of zero is a valid video mode (GR,PAGE1,non-mixed).
+class DebugVideoMode	// NB. Implemented as a singleton
+{
+protected:
+	DebugVideoMode()
+	{
+		Reset();
+	}
+
+public:
+	~DebugVideoMode(){}
+
+	static DebugVideoMode& Instance()
+	{
+		return m_Instance;
+	}
+
+	void Reset(void)
+	{
+		m_bIsVideoModeValid = false;
+		m_uVideoMode = 0;
+	}
+
+	bool IsSet(void)
+	{
+		return m_bIsVideoModeValid;
+	}
+
+	bool Get(UINT* pVideoMode)
+	{
+		if (pVideoMode)
+			*pVideoMode = m_bIsVideoModeValid ? m_uVideoMode : 0;
+		return m_bIsVideoModeValid;
+	}
+
+	void Set(UINT videoMode)
+	{
+		m_bIsVideoModeValid = true;
+		m_uVideoMode = videoMode;
+	}
+
+private:
+	bool m_bIsVideoModeValid;
+	uint32_t m_uVideoMode;
+
+	static DebugVideoMode m_Instance;
+};
+
+DebugVideoMode DebugVideoMode::m_Instance;
+
+bool DebugGetVideoMode(UINT* pVideoMode)
+{
+	return DebugVideoMode::Instance().Get(pVideoMode);
+}
 
 
 // File _______________________________________________________________________
@@ -1943,6 +2004,7 @@ Update_t CmdTraceFile (int nArgs)
 		else
 			strcpy( sFileName, g_sFileNameTrace );
 
+		g_bTraceFileWithVideoScanner = (nArgs >= 2);
 
 		char sFilePath[ MAX_PATH ];
 		strcpy(sFilePath, g_sCurrentDir); // TODO: g_sDebugDir
@@ -1952,7 +2014,9 @@ Update_t CmdTraceFile (int nArgs)
 
 		if (g_hTraceFile)
 		{
-			ConsoleBufferPushFormat( sText, "Trace started: %s", sFilePath );
+			const char* pTextHdr = g_bTraceFileWithVideoScanner ? "Trace (with video info) started: %s"
+									    : "Trace started: %s";
+			ConsoleBufferPushFormat( sText, pTextHdr, sFilePath );
 
 			g_bTraceHeader = true;
 		}
@@ -6698,11 +6762,8 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 		default:
 			break;
 	}
-#if _DEBUG
-	if (bVideoModeFlags == 0)
-		MessageBoxA( NULL, "bVideoModeFlags = ZERO !?", "Information", MB_OK );
-#endif
-	g_bDebuggerViewingAppleOutput = bVideoModeFlags;
+
+	DebugVideoMode::Instance().Set(bVideoModeFlags);
 	VideoRefreshScreen( bVideoModeFlags, true );
 	return UPDATE_NOTHING; // intentional
 }
@@ -6736,11 +6797,11 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 // Lo-Res
 	Update_t CmdViewOutput_GRX (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_80STORE ); // NTSC VideoRefresh() Hack: flags != 0
+		return _ViewOutput( VIEW_PAGE_X, 0 );
 	}
 	Update_t CmdViewOutput_GR1 (int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_80STORE ); // NTSC VideoRefresh() Hack: flags != 0
+		return _ViewOutput( VIEW_PAGE_1, 0 );
 	}
 	Update_t CmdViewOutput_GR2 (int nArgs)
 	{
@@ -7255,7 +7316,8 @@ Update_t CmdWindowViewData (int nArgs)
 Update_t CmdWindowViewOutput (int nArgs)
 {
 	VideoRedrawScreen();
-	g_bDebuggerViewingAppleOutput = true;
+
+	DebugVideoMode::Instance().Set(g_uVideoMode);
 
 	return UPDATE_NOTHING; // intentional
 }
@@ -7943,8 +8005,6 @@ bool InternalSingleStep ()
 
 //===========================================================================
 
-#define TRACELINE_WITH_VIDEO_SCANNER_POS 0
-
 void OutputTraceLine ()
 {
 	DisasmLine_t line;
@@ -7955,38 +8015,47 @@ void OutputTraceLine ()
 
 	char sFlags[ _6502_NUM_FLAGS + 1 ]; DrawFlags( 0, regs.ps, sFlags ); // Get Flags String
 
-	if (g_hTraceFile)
+	if (!g_hTraceFile)
+		return;
+
+	if (g_bTraceHeader)
 	{
-		if (g_bTraceHeader)
-		{
-			g_bTraceHeader = false;
+		g_bTraceHeader = false;
 
+		if (g_bTraceFileWithVideoScanner)
+		{
 			fprintf( g_hTraceFile,
-#if TRACELINE_WITH_VIDEO_SCANNER_POS
-//				"0000 0000 00 00 00 0000 --------  0000:90 90 90  NOP"
-				"Vert Horz A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n"
-#else
-//				"00 00 00 0000 --------  0000:90 90 90  NOP"
-				"A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n"
-#endif
-			);
+//				"0000 0000 0000 00   00 00 00 0000 --------  0000:90 90 90  NOP"
+				"Vert Horz Addr Data A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n");
 		}
-
-		char sTarget[ 16 ];
-		if (line.bTargetValue)
+		else
 		{
-			sprintf( sTarget, "%s:%s"
-				, line.sTargetPointer
-				, line.sTargetValue
-			);
+			fprintf( g_hTraceFile,
+//				"00 00 00 0000 --------  0000:90 90 90  NOP"
+				"A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n");
 		}
+	}
 
-#if TRACELINE_WITH_VIDEO_SCANNER_POS
+	char sTarget[ 16 ];
+	if (line.bTargetValue)
+	{
+		sprintf( sTarget, "%s:%s"
+			, line.sTargetPointer
+			, line.sTargetValue
+		);
+	}
+
+	if (g_bTraceFileWithVideoScanner)
+	{
+		uint16_t addr = NTSC_VideoGetScannerAddress(0);
+		BYTE data = mem[addr];
+
 		fprintf( g_hTraceFile,
-//			"a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n",
-			"%04X %04X %02X %02X %02X %04X %s  %s\n",
+			"%04X %04X %04X   %02X %02X %02X %02X %04X %s  %s\n",
 			g_nVideoClockVert,
 			g_nVideoClockHorz,
+			addr,
+			data,
 			(unsigned)regs.a,
 			(unsigned)regs.x,
 			(unsigned)regs.y,
@@ -7995,9 +8064,10 @@ void OutputTraceLine ()
 			, sDisassembly
 			//, sTarget // TODO: Show target?
 		);
-#else
+	}
+	else
+	{
 		fprintf( g_hTraceFile,
-//			"a=%02x x=%02x y=%02x sp=%03x ps=%s   %s\n",
 			"%02X %02X %02X %04X %s  %s\n",
 			(unsigned)regs.a,
 			(unsigned)regs.x,
@@ -8007,7 +8077,6 @@ void OutputTraceLine ()
 			, sDisassembly
 			//, sTarget // TODO: Show target?
 		);
-#endif
 	}
 }
 
@@ -8388,7 +8457,7 @@ void DebugBegin ()
 	g_nDisasmCurAddress = regs.pc;
 	DisasmCalcTopBotAddress();
 
-	g_bDebuggerViewingAppleOutput = false;
+	DebugVideoMode::Instance().Reset();
 
 	UpdateDisplay( UPDATE_ALL );
 
@@ -9072,7 +9141,7 @@ void DebuggerProcessKey( int keycode )
 	if (g_nAppMode != MODE_DEBUG)
 		return;
 
-	if (g_bDebuggerViewingAppleOutput)
+	if (DebugVideoMode::Instance().IsSet())
 	{
 		if ((VK_SHIFT == keycode) || (VK_CONTROL == keycode) || (VK_MENU == keycode))
 		{
@@ -9082,7 +9151,7 @@ void DebuggerProcessKey( int keycode )
 		// Normally any key press takes us out of "Viewing Apple Output" g_nAppMode
 		// VK_F# are already processed, so we can't use them to cycle next video g_nAppMode
 //		    if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
-		g_bDebuggerViewingAppleOutput = false;
+		DebugVideoMode::Instance().Reset();
 		UpdateDisplay( UPDATE_ALL ); // 1
 		return;
 	}
@@ -9441,7 +9510,7 @@ void DebuggerProcessKey( int keycode )
 		} // switch
 	}
 
-	if (bUpdateDisplay && !g_bDebuggerViewingAppleOutput) //  & UPDATE_BACKGROUND)
+	if (bUpdateDisplay && !DebugVideoMode::Instance().IsSet()) //  & UPDATE_BACKGROUND)
 		UpdateDisplay( bUpdateDisplay );
 }
 
@@ -9475,7 +9544,7 @@ void DebuggerCursorUpdate()
 	static DWORD nBeg = GetTickCount(); // timeGetTime();
 	       DWORD nNow = GetTickCount(); // timeGetTime();
 
-	if (((nNow - nBeg) >= nUpdateInternal_ms) && !g_bDebuggerViewingAppleOutput)
+	if (((nNow - nBeg) >= nUpdateInternal_ms) && !DebugVideoMode::Instance().IsSet())
 	{
 		nBeg = nNow;
 		

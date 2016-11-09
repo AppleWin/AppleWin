@@ -789,7 +789,7 @@ void DebuggerPrintColor( int x, int y, const conchar_t * pText )
 //===========================================================================
 bool CanDrawDebugger()
 {
-	if (g_bDebuggerViewingAppleOutput)
+	if (DebugGetVideoMode(NULL))
 		return false;
 
 	if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))

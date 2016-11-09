@@ -673,7 +673,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x400,0x400,0x14);
     else
       CopyMemory(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
-    VideoRefreshScreen(0);
+    VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
     totaltextfps++;
@@ -695,7 +695,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x2000,0x2000,0x14);
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRefreshScreen(0);
+    VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
     totalhiresfps++;
@@ -786,7 +786,7 @@ void VideoBenchmark () {
       FillMemory(mem+0x2000,0x2000,0xAA);
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRedrawScreen(); // VideoRefreshScreen();
+    VideoRedrawScreen();
     if (cycle++ >= 3)
       cycle = 0;
     realisticfps++;
@@ -1129,7 +1129,7 @@ void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 
 void VideoRedrawScreen (void)
 {
-	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'non-mixed GR' mode == 0x00.
+	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
 	VideoRefreshScreen( g_uVideoMode, true );
 }
 
@@ -1193,7 +1193,7 @@ static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 	ySrc += dy;
 }
 
-void VideoRefreshScreen ( int bVideoModeFlags, bool bRedrawWholeScreen /* =false*/ )
+void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
 {
 #if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
 	DebugRefresh(0);
@@ -1201,11 +1201,11 @@ void VideoRefreshScreen ( int bVideoModeFlags, bool bRedrawWholeScreen /* =false
 
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
 	{
-		// bVideoModeFlags set if:
+		// uVideoModeForWholeScreen set if:
 		// . MODE_DEBUG   : always
 		// . MODE_RUNNING : called from VideoRedrawScreen(), eg. during full-speed
 		if (bRedrawWholeScreen)
-			NTSC_SetVideoMode( bVideoModeFlags );
+			NTSC_SetVideoMode( uRedrawWholeScreenVideoMode );
 		NTSC_VideoRedrawWholeScreen();
 	}
 
