@@ -322,6 +322,10 @@ static DWORD Cpu65C02 (DWORD uTotalCycles)
 #undef $
 		}
 
+		CheckInterruptSources(uExecutedCycles);
+		NMI(uExecutedCycles, flagc, flagn, flagv, flagz);
+		IRQ(uExecutedCycles, flagc, flagn, flagv, flagz);
+
 // NTSC_BEGIN
 		if (!g_bFullSpeed)
 		{
@@ -329,10 +333,6 @@ static DWORD Cpu65C02 (DWORD uTotalCycles)
 			NTSC_VideoUpdateCycles( uElapsedCycles );
 		}
 // NTSC_END
-
-		CheckInterruptSources(uExecutedCycles);
-		NMI(uExecutedCycles, flagc, flagn, flagv, flagz);
-		IRQ(uExecutedCycles, flagc, flagn, flagv, flagz);
 
 		if( IsDebugBreakpointHit() )
 			break;
