@@ -1751,10 +1751,12 @@ void NTSC_VideoInitChroma()
 }
 
 //===========================================================================
-bool NTSC_VideoIsVbl ()
-{
-	return (g_nVideoClockVert >= VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockVert < VIDEO_SCANNER_MAX_VERT);
-}
+
+// NB. NTSC video-scanner doesn't get updated during full-speed, so video-dependent code can hang
+//bool NTSC_VideoIsVbl ()
+//{
+//	return (g_nVideoClockVert >= VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockVert < VIDEO_SCANNER_MAX_VERT);
+//}
 
 //===========================================================================
 
