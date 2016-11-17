@@ -11,7 +11,7 @@
 	extern void     NTSC_SetVideoStyle();
 	extern void     NTSC_SetVideoTextMode( int cols );
 	extern uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeColorTV );
-	extern uint16_t NTSC_VideoGetScannerAddress( unsigned long cycles6502 );
+	extern uint16_t NTSC_VideoGetScannerAddress( void );
 	extern void     NTSC_VideoInit( uint8_t *pFramebuffer );
 	extern void     NTSC_VideoReinitialize( DWORD cyclesThisFrame );
 	extern void     NTSC_VideoInitAppleType();

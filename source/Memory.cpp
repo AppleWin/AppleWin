@@ -1507,34 +1507,24 @@ BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
 #if 0
 	// NTSC: It is tempting to replace with
-	//     return NTSC_VideoGetScannerAddress( uExecutedCycles );
+	//     return NTSC_VideoGetScannerAddress( );
 	// But that breaks "Rainbow" Bug #254 if NTSC_VideoGetScannerAddress() is not correct.
 	// This is out of sync with VideoGetScannerAddress() due to two reasons:
 	// a) returning a cached copy of g_aHorzClockMemAddress
 	//    Fixed by calling: updateVideoScannerAddressTXT or updateVideoScannerAddressHGR()
 	// b) A bug? in APPLE_IIE_HORZ_CLOCK_OFFSET[0][8] containing the incorrect value of 0x006F
-	uint16_t addr1 = NTSC_VideoGetScannerAddress( uExecutedCycles );
+	uint16_t addr1 = NTSC_VideoGetScannerAddress();
 	uint16_t addr2 = VideoGetScannerAddress(NULL, uExecutedCycles);
-	uint8_t  byte1 = mem[ addr1 ];
-	uint8_t  byte2 = mem[ addr2 ];
-
-	if( byte1 != byte2 )
-		mem[ 0x2000 ] ^= 0xFF;
+	_ASSERT(addr1 == addr2);
 #endif
-	// return mem[ VideoGetScannerAddress(NULL, uExecutedCycles) ];
-	uint16_t addr = NTSC_VideoGetScannerAddress( uExecutedCycles );
-	return mem[ addr ] ; // cycles is ignored
+	return mem[ VideoGetScannerAddress(NULL, uExecutedCycles) ];
 }
 
 //===========================================================================
 
 BYTE MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles)
 {
-	// NTSC: It is tempting to replace with
-	//     return NTSC_VideoGetScannerAddress( uExecutedCycles );
-	// But that breaks "Rainbow" Bug #254
-	// BYTE r= NTSC_VideoGetByte( uExecutedCycles );
-	BYTE r = *(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
+	BYTE r = MemReadFloatingBus(uExecutedCycles);
 	return (r & ~0x80) | ((highbit) ? 0x80 : 0);
 }
 

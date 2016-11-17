@@ -886,7 +886,7 @@ BYTE VideoCheckVbl ( ULONG uExecutedCycles )
 	bool bVblBar = VideoGetVblBar(uExecutedCycles);
 	// NTSC: It is tempting to replace with
 	//     bool bVblBar = !NTSC_VideoIsVbl();
-	// But during full-speed, the NTSC video-scanner is not updated, so video-dependent code can hang
+	// But during full-speed, the NTSC video-scanner is not updated, so video-dependent Apple II code can hang
 
 	BYTE r = KeybGetKeycode();
 	return (r & ~0x80) | (bVblBar ? 0x80 : 0);

@@ -287,7 +287,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static unsigned APPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ] =
 	{
-		{0x0068,0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F, // bug? 0x106F
+		{0x0068,0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F, // bug? 0x106F - see comment in Memory.cpp, MemReadFloatingBus(const ULONG)
 		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077,
 		 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
 		 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
@@ -1475,12 +1475,12 @@ uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeCol
 }
 
 //===========================================================================
-uint16_t NTSC_VideoGetScannerAddress ( unsigned long cycles6502 )
-{
-	(void)cycles6502;
 
-	int nHires   = (g_uVideoMode & VF_HIRES) && !(g_uVideoMode & VF_TEXT); // (SW_HIRES && !SW_TEXT) ? 1 : 0;
-	if( nHires )
+// NB. NTSC video-scanner doesn't get updated during full-speed, so video-dependent Apple II code can hang
+uint16_t NTSC_VideoGetScannerAddress ( void )
+{
+	bool bHires = (g_uVideoMode & VF_HIRES) && !(g_uVideoMode & VF_TEXT); // SW_HIRES && !SW_TEXT
+	if( bHires )
 		updateVideoScannerAddressHGR();
 	else
 		updateVideoScannerAddressTXT();
@@ -1752,7 +1752,7 @@ void NTSC_VideoInitChroma()
 
 //===========================================================================
 
-// NB. NTSC video-scanner doesn't get updated during full-speed, so video-dependent code can hang
+// NB. NTSC video-scanner doesn't get updated during full-speed, so video-dependent Apple II code can hang
 //bool NTSC_VideoIsVbl ()
 //{
 //	return (g_nVideoClockVert >= VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockVert < VIDEO_SCANNER_MAX_VERT);

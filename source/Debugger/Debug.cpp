@@ -8080,7 +8080,7 @@ void OutputTraceLine ()
 
 	if (g_bTraceFileWithVideoScanner)
 	{
-		uint16_t addr = NTSC_VideoGetScannerAddress(0);
+		uint16_t addr = NTSC_VideoGetScannerAddress();
 		BYTE data = mem[addr];
 
 		fprintf( g_hTraceFile,
