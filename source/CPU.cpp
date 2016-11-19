@@ -444,7 +444,7 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles)
 	if (g_nIrqCheckTimeout < 0)
 	{
 		MB_UpdateCycles(uExecutedCycles);
-		sg_Mouse.SetVBlank(VideoGetVbl(uExecutedCycles));
+		sg_Mouse.SetVBlank( !VideoGetVblBar(uExecutedCycles) );
 		g_nIrqCheckTimeout = IRQ_CHECK_TIMEOUT;
 	}
 }

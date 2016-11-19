@@ -176,7 +176,7 @@ void    VideoRefreshScreen (uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedr
 void    VideoReinitialize ();
 void    VideoResetState ();
 WORD    VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles);
-bool    VideoGetVbl(DWORD uExecutedCycles);
+bool    VideoGetVblBar(DWORD uExecutedCycles);
 
 bool    VideoGetSW80COL(void);
 bool    VideoGetSWDHIRES(void);

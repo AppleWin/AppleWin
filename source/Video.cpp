@@ -883,10 +883,10 @@ BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 
 BYTE VideoCheckVbl ( ULONG uExecutedCycles )
 {
-	bool bVblBar = VideoGetVbl(uExecutedCycles);
+	bool bVblBar = VideoGetVblBar(uExecutedCycles);
 	// NTSC: It is tempting to replace with
-	//     bool bVblBar = NTSC_VideoIsVbl();
-	// But this breaks "ANSI STORY" intro center fade
+	//     bool bVblBar = !NTSC_VideoIsVbl();
+	// But during full-speed, the NTSC video-scanner is not updated, so video-dependent Apple II code can hang
 
 	BYTE r = KeybGetKeycode();
 	return (r & ~0x80) | (bVblBar ? 0x80 : 0);
@@ -1550,7 +1550,7 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
 //===========================================================================
 
 // Derived from VideoGetScannerAddress()
-bool VideoGetVbl(const DWORD uExecutedCycles)
+bool VideoGetVblBar(const DWORD uExecutedCycles)
 {
     // get video scanner position
     //
