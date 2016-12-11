@@ -227,6 +227,7 @@ int const kPALVSyncLine     =   264; // line when VSync starts (PAL)
 int const kVLine0State      = 0x100; // V[543210CBA] = 100000000
 int const kVPresetLine      =   256; // line when V state presets
 int const kVSyncLines       =     4; // lines per VSync duration
+int const kVDisplayableScanLines = 192; // max displayable scanlines
 
 static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
@@ -884,10 +885,6 @@ BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 BYTE VideoCheckVbl ( ULONG uExecutedCycles )
 {
 	bool bVblBar = VideoGetVblBar(uExecutedCycles);
-	// NTSC: It is tempting to replace with
-	//     bool bVblBar = !NTSC_VideoIsVbl();
-	// But during full-speed, the NTSC video-scanner is not updated, so video-dependent Apple II code can hang
-
 	BYTE r = KeybGetKeycode();
 	return (r & ~0x80) | (bVblBar ? 0x80 : 0);
  }
@@ -1549,40 +1546,18 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
 
 //===========================================================================
 
-// Derived from VideoGetScannerAddress()
 bool VideoGetVblBar(const DWORD uExecutedCycles)
 {
-    // get video scanner position
-    //
-    int nCycles = CpuGetCyclesThisVideoFrame(uExecutedCycles);
+	// get video scanner position
+	int nCycles = CpuGetCyclesThisVideoFrame(uExecutedCycles);
 
-    // calculate video parameters according to display standard
-    //
-    int nScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
-    int nScanCycles = nScanLines * kHClocks;
-    nCycles %= nScanCycles;
+	// calculate video parameters according to display standard
+	const int kScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+	const int kScanCycles = kScanLines * kHClocks;
+	nCycles %= kScanCycles;
 
-    // calculate vertical scanning state
-    //
-    int nVLine  = nCycles / kHClocks; // which vertical scanning line
-    int nVState = kVLine0State + nVLine; // V state bits
-    if ((nVLine >= kVPresetLine)) // check for previous vertical state preset
-    {
-        nVState -= nScanLines; // compensate for preset
-    }
-    int v_3 = (nVState >> 6) & 1;
-    int v_4 = (nVState >> 7) & 1;
-
-    // update VBL' state
-    //
-	if (v_4 & v_3) // VBL?
-	{
-		return false; // Y: VBL' is false
-	}
-	else
-	{
-		return true; // N: VBL' is true
-	}
+	// VBL'
+	return nCycles < kVDisplayableScanLines * kHClocks;
 }
 
 //===========================================================================
