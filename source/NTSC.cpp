@@ -131,8 +131,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#define VIDEO_SCANNER_Y_MIXED   160 // num scanlins for mixed graphics + text
 	#define VIDEO_SCANNER_Y_DISPLAY 192 // max displayable scanlines
 
-	static uint16_t g_aHorzClockMemAddress[VIDEO_SCANNER_MAX_HORZ];
-
 	static bgra_t *g_pVideoAddress = 0;
 	static bgra_t *g_pScanLines[VIDEO_SCANNER_Y_DISPLAY*2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
 
@@ -796,7 +794,7 @@ inline void updateVideoScannerAddress()
 //===========================================================================
 INLINE uint16_t updateVideoScannerAddressTXT()
 {
-	return g_aHorzClockMemAddress[ g_nVideoClockHorz ] = (g_aClockVertOffsetsTXT[g_nVideoClockVert/8] + 
+	return (g_aClockVertOffsetsTXT[g_nVideoClockVert/8] + 
 		g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nTextPage  *  0x400));
 }
 
@@ -804,7 +802,7 @@ INLINE uint16_t updateVideoScannerAddressTXT()
 INLINE uint16_t updateVideoScannerAddressHGR()
 {
 	// BUG? g_pHorzClockOffset
-	return g_aHorzClockMemAddress[ g_nVideoClockHorz ] = (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + 
+	return (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + 
 		APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nHiresPage * 0x2000));
 }
 
@@ -1479,15 +1477,30 @@ uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeCol
 // NB. NTSC video-scanner doesn't get updated during full-speed, so video-dependent Apple II code can hang
 uint16_t NTSC_VideoGetScannerAddress ( void )
 {
+	const uint16_t currVideoClockVert = g_nVideoClockVert;
+	const uint16_t currVideoClockHorz = g_nVideoClockHorz;
+
+	// Required for ANSI STORY (end credits) vert scrolling mid-scanline mixed mode: DGR80, TEXT80, DGR80
+	g_nVideoClockHorz -= 2;
+	if ((SHORT)g_nVideoClockHorz < 0)
+	{
+		g_nVideoClockHorz += VIDEO_SCANNER_MAX_HORZ;
+		g_nVideoClockVert -= 1;
+		if ((SHORT)g_nVideoClockVert < 0)
+			g_nVideoClockVert = VIDEO_SCANNER_MAX_VERT-1;
+	}
+
+	uint16_t addr;
 	bool bHires = (g_uVideoMode & VF_HIRES) && !(g_uVideoMode & VF_TEXT); // SW_HIRES && !SW_TEXT
 	if( bHires )
-		updateVideoScannerAddressHGR();
+		addr = updateVideoScannerAddressHGR();
 	else
-		updateVideoScannerAddressTXT();
+		addr = updateVideoScannerAddressTXT();
 
-	// Required for ANSI STORY vert scrolling mid-scanline mixed mode: DGR80, TEXT80, DGR80
-	uint8_t hclock = (g_nVideoClockHorz + VIDEO_SCANNER_MAX_HORZ - 2) % VIDEO_SCANNER_MAX_HORZ; // Optimization: (h-2)
-	return g_aHorzClockMemAddress[ hclock ]; 
+	g_nVideoClockVert = currVideoClockVert;
+	g_nVideoClockHorz = currVideoClockHorz;
+
+	return addr;
 }
 
 //===========================================================================
