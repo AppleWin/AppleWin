@@ -14,7 +14,7 @@ How To Compile/Build AppleWin
 
 3. Add ddraw.lib to the linker include path:
 
-   AppleWin projec,, Rigth-Click Properties, Linker, General, Additional Libary Directories
+   AppleWin projec,, Right-Click Properties, Linker, General, Additional Library Directories
 
    The default path is:
     C:\Program Files (x86)\Microsoft DirectX SDK (February 2010)\Lib\x86
