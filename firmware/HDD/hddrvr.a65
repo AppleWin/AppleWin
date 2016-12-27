@@ -31,6 +31,9 @@
 ; . Modified to support Apple Oasis' entrypoint: $c761 (8 Sept 2012) (Feature #5557)
 ; . Added support for SmartPort entrypoint (20 Oct 2012)
 ;   - EG. "Prince of Persia (Original 3.5 floppy for IIc+).2mg"
+; . GH#370 (Robert Hoem, 27 Oct 2016):
+    . Added a check against open-apple during boot to route boot to slot 6
+    . This happens after the first two blocks are loaded from the HD.
 ; TODO:
 ; . Make code relocatable (so HDD controller card can go into any slot)
 ; . Remove support for Entrypoint_C746 (old AppleWin) & Entrypoint_C761 (Apple Oasis)
@@ -192,11 +195,11 @@ hdboot
  lda #$1
  sta command
  jsr cmdproc
- bcs BootSlot6 ;no jmp, -3 bytes
- 
+ bcs BootSlot6
+
 goload
- bit BUTTON0   ; button 0 pressed?, 4 cyc
- bmi BootSlot6  ; 2 cyc not taken
+ bit BUTTON0   ; button 0 pressed?
+ bmi BootSlot6
 
 ; X=device
  ldx #$70	; Slot# << 4
@@ -290,7 +293,7 @@ SmartPort3
  bne cmdproc
 
 ;======================================
-; 3 unused bytes
+; 12 unused bytes
 
 ; $CsFE = status bits (BAP p7-14)
 ;  7 = medium is removable
