@@ -1,14 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Applewin", "ApplewinExpress10.00.vcxproj", "{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AppleWin", "AppleWinExpress2010.vcxproj", "{1DA0C491-B5F4-4EC8-B1D2-CF6BE635DADC}"
 	ProjectSection(ProjectDependencies) = postProject
 		{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F} = {5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "zlib\zlib-Express10.00.vcxproj", "{7935B998-C713-42AE-8F6D-9FF9080A1B1B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "zlib\zlib-Express2010.vcxproj", "{7935B998-C713-42AE-8F6D-9FF9080A1B1B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zip_lib", "zip_lib\zip_lib.vcxproj", "{709278B8-C583-4BD8-90DE-4E4F35A3BD8B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zip_lib", "zip_lib\zip_lib2010.vcxproj", "{709278B8-C583-4BD8-90DE-4E4F35A3BD8B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yaml", "libyaml\win32\yaml2010.vcxproj", "{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}"
 EndProject
