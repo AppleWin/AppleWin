@@ -2015,9 +2015,8 @@ Update_t CmdTraceFile (int nArgs)
 		if (g_hTraceFile)
 		{
 			const char* pTextHdr = g_bTraceFileWithVideoScanner ? "Trace (with video info) started: %s"
-									    : "Trace started: %s";
+																: "Trace started: %s";
 			ConsoleBufferPushFormat( sText, pTextHdr, sFilePath );
-
 			g_bTraceHeader = true;
 		}
 		else
@@ -4991,7 +4990,7 @@ Update_t CmdNTSC (int nArgs)
 
 					if (len >= CONSOLE_WIDTH)
 					{
-						ConsoleBufferPush( pPrefixText );
+						ConsoleBufferPush( pPrefixText );	// TODO: Add a ": " separator
 
 #if _DEBUG
 						sprintf( text, "Filename.length.1: %d\n", len1 );
@@ -5003,10 +5002,12 @@ Update_t CmdNTSC (int nArgs)
 						// File path is too long
 						// TODO: Need to split very long path names
 						strncpy( text, sPaletteFilePath, CONSOLE_WIDTH );
+						ConsoleBufferPush( text );	// TODO: Switch ConsoleBufferPush() to ConsoleBufferPushFormat()
 					}
 					else
-						sprintf( text, "%s: %s", pPrefixText, sPaletteFilePath );
-					ConsoleBufferPush( text ); // "Saved."
+					{
+						ConsoleBufferPushFormat( text, "%s: %s", pPrefixText, sPaletteFilePath );
+					}
 			}
 	};
 

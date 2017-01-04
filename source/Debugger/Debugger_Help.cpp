@@ -900,6 +900,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( "  Traces, # times, current instruction(s)" );
 			ConsoleBufferPush( "  JSR will be stepped into" );
 			ConsoleBufferPush( "  Hotkey: Shift-Space" );
+			break;
 		case CMD_TRACE_FILE:
 			ConsoleColorizePrint( sText, " Usage: \"[filename]\" [v]" );
 			break;
