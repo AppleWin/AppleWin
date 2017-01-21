@@ -46,6 +46,7 @@ typedef UINT32 uint32_t;
 #include <stack>
 #include <string>
 #include <vector>
+#include <memory>
 
 // SM_CXPADDEDBORDER is not supported on 2000 & XP:
 // http://msdn.microsoft.com/en-nz/library/windows/desktop/ms724385(v=vs.85).aspx
