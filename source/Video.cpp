@@ -248,9 +248,6 @@ static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 static LPBYTE        g_pTextBank1; // Aux
 static LPBYTE        g_pTextBank0; // Main
 
-// TC (25/8/2016): TODO: Need to investigate the use of this global flag for 1.27
-static /*bool*/ UINT g_VideoForceFullRedraw = 1;
-
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      g_nFrameBufferPitch = 0;
 COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
@@ -584,63 +581,9 @@ static void CreateLookup_TextCommon(HDC hDstDC, DWORD rop)
 
 //===========================================================================
 
-static inline int GetOriginal2EOffset(BYTE ch)
-{
-	// No mousetext for original IIe
-	return !IsOriginal2E() || !g_nAltCharSetOffset || (ch<0x40) || (ch>0x5F) ? 0 : -g_nAltCharSetOffset;
-}
-
-//===========================================================================
-
 //
 // ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
 //
-
-//===========================================================================
-BOOL VideoApparentlyDirty ()
-{
-	if (SW_MIXED || g_VideoForceFullRedraw)
-		return 1;
-
-	DWORD address = (SW_HIRES && !SW_TEXT)
-		? (0x20 << (SW_PAGE2 ? 1 : 0))
-		: (0x04 << (SW_PAGE2 ? 1 : 0));
-	DWORD length  = (SW_HIRES && !SW_TEXT) ? 0x20 : 0x4;
-	while (length--)
-		if (*(memdirty+(address++)) & 2)
-			return 1;
-
-	//
-
-	// Scan visible text page for any flashing chars
-	if((SW_TEXT || SW_MIXED) && (g_nAltCharSetOffset == 0))
-	{
-		BYTE* pTextBank0  = MemGetMainPtr(0x400 << (SW_PAGE2 ? 1 : 0));
-		BYTE* pTextBank1  = MemGetAuxPtr (0x400 << (SW_PAGE2 ? 1 : 0));
-		const bool b80Col = SW_80COL;
-
-		// Scan 8 long-lines of 120 chars (at 128 char offsets):
-		// . Skip 8-char holes in TEXT
-		for(UINT y=0; y<8; y++)
-		{
-			for(UINT x=0; x<40*3; x++)
-			{
-				BYTE ch = pTextBank0[y*128+x];
-				if((ch >= 0x40) && (ch <= 0x7F))
-					return 1;
-
-				if (b80Col)
-				{
-					ch = pTextBank1[y*128+x];
-					if((ch >= 0x40) && (ch <= 0x7F))
-						return 1;
-				}
-			}
-		}
-	}
-
-	return 0;
-}
 
 //===========================================================================
 void VideoBenchmark () {
@@ -1258,8 +1201,6 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 	GdiFlush();
 
 	FrameReleaseVideoDC();
-
-	g_VideoForceFullRedraw = 0;
 // NTSC_END
 }
 
@@ -1281,8 +1222,6 @@ void VideoResetState ()
 
 	NTSC_SetVideoTextMode( 40 );
 	NTSC_SetVideoMode( g_uVideoMode );
-
-	g_VideoForceFullRedraw = 1;
 }
 
 
@@ -1291,9 +1230,6 @@ void VideoResetState ()
 BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
-
-//	DWORD oldpage2 = SW_PAGE2;
-//	int   oldvalue = g_nAltCharSetOffset+(int)(g_uVideoMode & ~(VF_80STORE | VF_PAGE2));
 
 	switch (address)
 	{
@@ -1324,28 +1260,6 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 	NTSC_SetVideoMode( g_uVideoMode );
 // NTSC_END
 
-#if 0 // NTSC_CLEANUP: Is this still needed??
-
-	if (oldvalue != g_nAltCharSetOffset+(int)(g_uVideoMode & ~(VF_80STORE | VF_PAGE2)))
-		g_VideoForceFullRedraw = 1;	// Defer video redraw until VideoEndOfVideoFrame()
-
-	if (oldpage2 != SW_PAGE2)
-	{
-		// /g_bVideoUpdatedThisFrame/ is used to limit the video update to once per 60Hz frame (CPU clk=1MHz):
-		// . this easily supports the common double-buffered "flip-immediate" case (eg. Airheart flips at a max of ~15Hz, Skyfox/Boulderdash at a max of ~11Hz)
-		// . crucially this prevents tight-loop page flipping (GH#129,GH#204) from max'ing out an x86 CPU core (and not providing realtime emulation)
-		// NB. Deferring the update by just setting /g_VideoForceFullRedraw/ is not an option, since this doesn't provide "flip-immediate"
-		//
-		// Ultimately this isn't the correct solution, and proper cycle-accurate video rendering should be done, but this is a much bigger job!
-		// TODO-Michael: Is MemReadFloatingBus() still accurate now that we have proper per cycle video rendering??
-
-		if (!g_bVideoUpdatedThisFrame)
-		{
-			VideoRedrawScreen(); // VideoRefreshScreen();
-			g_bVideoUpdatedThisFrame = true;
-		}
-	}
-#endif // NTSC_CLEANUP
 	return MemReadFloatingBus(uExecutedCycles);
 }
 
