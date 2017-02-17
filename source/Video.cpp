@@ -1278,6 +1278,10 @@ void VideoResetState ()
 {
 	g_nAltCharSetOffset    = 0;
 	g_uVideoMode           = VF_TEXT;
+
+	NTSC_SetVideoTextMode( 40 );
+	NTSC_SetVideoMode( g_uVideoMode );
+
 	g_VideoForceFullRedraw = 1;
 }
 
