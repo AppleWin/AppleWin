@@ -190,7 +190,6 @@ void    VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode);
 void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
-int _Video_SetupBanks( bool bBank2 );
 bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset);
 bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset);
 bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset);

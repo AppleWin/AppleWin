@@ -236,8 +236,6 @@ static HDC           g_hDeviceDC;
 static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
 static LPBYTE        g_aFrameBufferOffset[FRAMEBUFFER_H]; // array of pointers to start of each scanline
-static LPBYTE        g_pHiresBank1;
-static LPBYTE        g_pHiresBank0;
        HBITMAP       g_hLogoBitmap;
 static HPALETTE      g_hPalette;
 
@@ -245,8 +243,6 @@ static HBITMAP       g_hSourceBitmap;
 static LPBYTE        g_pSourcePixels;
 const int MAX_SOURCE_Y = 512;
 static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
-static LPBYTE        g_pTextBank1; // Aux
-static LPBYTE        g_pTextBank0; // Main
 
 static LPBYTE    framebufferaddr  = (LPBYTE)0;
 static LONG      g_nFrameBufferPitch = 0;
@@ -1071,17 +1067,6 @@ void VideoRedrawScreen (void)
 {
 	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
 	VideoRefreshScreen( g_uVideoMode, true );
-}
-
-//===========================================================================
-int _Video_SetupBanks( bool bBank2 )
-{
-	g_pHiresBank1 = MemGetAuxPtr (0x2000 << (int)bBank2);
-	g_pHiresBank0 = MemGetMainPtr(0x2000 << (int)bBank2);
-	g_pTextBank1  = MemGetAuxPtr (0x400  << (int)bBank2);
-	g_pTextBank0  = MemGetMainPtr(0x400  << (int)bBank2);
-
-	return bBank2 ? VF_PAGE2 : 0;
 }
 
 //===========================================================================
