@@ -9,12 +9,15 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.1.0 - 11 Feb 2017
+1.26.1.1 - 17 Feb 2017
 ----------------------
 Fixes:
 . [Bug #371] Flickery video when using GR from CP/M. (A regression at 1.26.0.x)
 . [Bug #363] Debugger: Screen not updating when running in single-stepping debugger mode. (A regression at 1.26.0.x)
-. Save-state: Fix for loading state when TEXT40 changes to TEXT80 or v.v.
+. Save-state: Fix for loading state when TEXT40 changes to TEXT80 or vice versa
+
+Fixes since 1.26.1.0 (11 Feb 2017):
+. [Bug #382] Reset not resetting the 40/80-col text mode for mixed-mode NTSC rendering
 
 
 1.26.0.6 - 16 Oct 2016

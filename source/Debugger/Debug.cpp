@@ -6757,9 +6757,9 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 {
 	switch( iPage ) 
 	{
-		case VIEW_PAGE_X: bVideoModeFlags |= _Video_SetupBanks( VideoGetSWPAGE2() ); break; // Page Current
-		case VIEW_PAGE_1: bVideoModeFlags |= _Video_SetupBanks( false ); break; // Page 1
-		case VIEW_PAGE_2: bVideoModeFlags |= _Video_SetupBanks( true ); break; // Page 2 !
+		case VIEW_PAGE_X: bVideoModeFlags |= !VideoGetSWPAGE2() ? 0 : VF_PAGE2; break; // Page Current
+		case VIEW_PAGE_1: bVideoModeFlags |= 0; break; // Page 1
+		case VIEW_PAGE_2: bVideoModeFlags |= VF_PAGE2; break; // Page 2
 		default:
 			break;
 	}

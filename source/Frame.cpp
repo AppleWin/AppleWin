@@ -2086,13 +2086,13 @@ void ResetMachineState ()
 void CtrlReset()
 {
 	// Ctrl+Reset - TODO: This is a terrible place for this code!
-	if (!IS_APPLE2)
+	if (!IS_APPLE2)			// TODO: Why not for A][ & A][+ too?
 		MemResetPaging();
 
 	PravetsReset();
 	DiskReset();
 	KeybReset();
-	if (!IS_APPLE2)
+	if (!IS_APPLE2)			// TODO: Why not for A][ & A][+ too?
 		VideoResetState();	// Switch Alternate char set off
 	sg_SSC.CommReset();
 	MB_Reset();
