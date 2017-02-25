@@ -1860,11 +1860,8 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		{
 			if (ConfirmReboot(bFromButtonUI))
 			{
-				// If any breakpoints active and we are not running at normal speed
-				if (g_nBreakpoints && !g_bDebugNormalSpeedBreakpoints)
-					CmdGo(0);	// 6502 runs at full speed, switch to MODE_STEPPING
-				else
-					DebugEnd();	// 6502 runs at normal speed, switch to MODE_RUNNING
+				DebugExitDebugger();
+				// Post: g_nAppMode = MODE_RUNNING or MODE_STEPPING
 			}
 		}
       DrawStatusArea((HDC)0,DRAW_TITLE);
@@ -1901,11 +1898,6 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		else
 		if (g_nAppMode == MODE_DEBUG)
 		{
-			if (KeybGetShiftStatus())
-				g_bDebugNormalSpeedBreakpoints = true; // MODE_RUNNING // Normal Speed Breakpoints: Shift-F7 exit debugger, keep breakpoints active, enter run state at NORMAL speed
-			else
-				g_bDebugNormalSpeedBreakpoints = false; // MODE_STEPPING // Full Speed Breakpoints
-
 			g_bDebugBreakDelayCheck = true;
 			ProcessButtonClick(BTN_RUN); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
 		}

@@ -42,11 +42,6 @@
 	extern const char  *g_aBreakpointSource [ NUM_BREAKPOINT_SOURCES   ];
 	extern const TCHAR *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ];
 
-	// MODE_RUNNING // Normal Speed Breakpoints
-	extern bool g_bDebugNormalSpeedBreakpoints;
-
-	// MODE_STEPPING // Full Speed Breakpoints
-
 	// Any Speed Breakpoints
 	extern int  g_nDebugBreakOnInvalid ;
 	extern int  g_iDebugBreakOnOpcode  ;
@@ -149,12 +144,6 @@
 
 	bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakpointEnable_ );
 
-	inline int _IsDebugBreakpointHit()
-	{
-		g_bDebugBreakpointHit |= CheckBreakpointsIO() || CheckBreakpointsReg();
-		return g_bDebugBreakpointHit;
-	}
-
 	inline int _IsDebugBreakOnOpcode( int iOpcode )
 	{
 		if (g_iDebugBreakOnOpcode == iOpcode)
@@ -200,13 +189,6 @@
 
 		return g_bDebugBreakpointHit;
 	}
-	//
-	inline int IsDebugBreakpointHit()
-	{
-		if ( !g_bDebugNormalSpeedBreakpoints )
-			return false;
-		return _IsDebugBreakpointHit();
-	}
 	
 // Source Level Debugging
 	int FindSourceLine( WORD nAddress );
@@ -238,10 +220,10 @@
 	bool	DebugGetVideoMode(UINT* pVideoMode);
 
 	void	DebugBegin ();
+	void	DebugExitDebugger ();
 	void	DebugContinueStepping ();
 	void	DebugDestroy ();
 	void	DebugDisplay (BOOL);
-	void	DebugEnd ();
 	void	DebugInitialize ();
 //	void	DebugProcessChar (TCHAR);
 	void	DebuggerInputConsoleChar( TCHAR ch );
@@ -252,4 +234,5 @@
 	void	DebuggerCursorNext();
 
 	void	DebuggerMouseClick( int x, int y );
-	
+
+	bool	IsDebugSteppingAtFullSpeed(void);

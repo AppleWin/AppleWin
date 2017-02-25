@@ -457,12 +457,12 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles)
 
 //===========================================================================
 
-static DWORD InternalCpuExecute (DWORD uTotalCycles)
+static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdate)
 {
 	if (GetMainCpu() == CPU_6502)
-		return Cpu6502(uTotalCycles);	// Apple ][, ][+, //e, Clones
+		return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
 	else
-		return Cpu65C02(uTotalCycles);	// Enhanced Apple //e
+		return Cpu65C02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
 }
 
 //
@@ -549,7 +549,7 @@ DWORD CpuGetEmulationTime_ms(void)
 
 //===========================================================================
 
-DWORD CpuExecute(const DWORD uCycles)
+DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 {
 	g_nCyclesExecuted =	0;
 
@@ -558,7 +558,7 @@ DWORD CpuExecute(const DWORD uCycles)
 	// uCycles:
 	//  =0  : Do single step
 	//  >0  : Do multi-opcode emulation
-	const DWORD uExecutedCycles = InternalCpuExecute(uCycles);
+	const DWORD uExecutedCycles = InternalCpuExecute(uCycles, bVideoUpdate);
 
 	MB_UpdateCycles(uExecutedCycles);	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
 	UpdateEmulationTime(uExecutedCycles);

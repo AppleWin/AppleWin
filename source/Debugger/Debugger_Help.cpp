@@ -567,7 +567,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			{
 				case PARAM_CAT_BOOKMARKS  : iCmdBegin = CMD_BOOKMARK        ; iCmdEnd = CMD_BOOKMARK_SAVE        ; break;
 				case PARAM_CAT_BREAKPOINTS: iCmdBegin = CMD_BREAK_INVALID   ; iCmdEnd = CMD_BREAKPOINT_SAVE      ; break;
-				case PARAM_CAT_CONFIG     : iCmdBegin = CMD_BENCHMARK       ; iCmdEnd = CMD_CONFIG_SAVE          ; break;
+				case PARAM_CAT_CONFIG     : iCmdBegin = CMD_BENCHMARK       ; iCmdEnd = CMD_CONFIG_SET_DEBUG_DIR; break;
 				case PARAM_CAT_CPU        : iCmdBegin = CMD_ASSEMBLE        ; iCmdEnd = CMD_UNASSEMBLE           ; break;
 				case PARAM_CAT_FLAGS      :
 					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand ); // check if we have an exact command match first
@@ -727,7 +727,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			if (iCmd <= CMD_BREAKPOINT_SAVE)
 				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_BREAKPOINTS ].m_sName );
 			else
-			if (iCmd <= CMD_CONFIG_SAVE)
+			if (iCmd <= CMD_CONFIG_SET_DEBUG_DIR)
 				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_CONFIG ].m_sName );
 			else
 			if (iCmd <= CMD_CURSOR_PAGE_DOWN_4K)
@@ -833,7 +833,8 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleColorizePrint( sText, " Usage: [address | symbol]" );
 			ConsoleBufferPush( "  Disassembles memory." );
 			break;
-		case CMD_GO:
+		case CMD_GO_NORMAL_SPEED:
+		case CMD_GO_FULL_SPEED:
 			ConsoleColorizePrint( sText, " Usage: address | symbol [Skip,Length]" );
 			ConsoleColorizePrint( sText, " Usage: address | symbol [Start:End]" );
 			ConsoleBufferPush( " Skip  : Start address to skip stepping"                     );
@@ -842,8 +843,8 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( "  If the Program Counter is outside the skip range, resumes single-stepping." );
 			ConsoleBufferPush( "  Can be used to skip ROM/OS/user code." );
 			Help_Examples();
-			ConsolePrintFormat( sText, "%s  G C600 FA00,600" , CHC_EXAMPLE );
-			ConsolePrintFormat( sText, "%s  G C600 F000:FFFF", CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s  G[G] C600 FA00,600" , CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s  G[G] C600 F000:FFFF", CHC_EXAMPLE );
 			break;
 		case CMD_JSR:
 			ConsoleColorizePrint( sText, " %sUsage%s: %s[symbol | address]" );
@@ -854,7 +855,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 		case CMD_OUT:
 			ConsoleColorizePrint( sText, " Usage: [address8 | address16 | symbol] ## [##]" );
-			ConsoleBufferPush( TEXT("  Ouput a byte or word to the IO address $C0xx" ) );
+			ConsoleBufferPush( TEXT("  Output a byte or word to the IO address $C0xx" ) );
 			break;
 		case CMD_PROFILE:
 			ConsoleColorizePrintFormat( sTemp, sText, " Usage: [%s | %s | %s]"

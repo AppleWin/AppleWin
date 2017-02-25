@@ -207,8 +207,12 @@ void SetPriorityNormal(void)
 
 //---------------------------------------------------------------------------
 
-void ContinueExecution(void)
+static UINT g_uModeStepping_Cycles = 0;
+
+static void ContinueExecution(void)
 {
+	_ASSERT(g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING);
+
 	const double fUsecPerSec        = 1.e6;
 #if 1
 	const UINT nExecutionPeriodUsec = 1000;		// 1.0ms
@@ -226,9 +230,10 @@ void ContinueExecution(void)
 									: (GetKeyState(VK_SCROLL) < 0);
 
 	const bool bWasFullSpeed = g_bFullSpeed;
-	g_bFullSpeed = ( (g_dwSpeed == SPEED_MAX) || 
+	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (DiskIsSpinning() && enhancedisk && !Spkr_IsActive() && !MB_IsActive()) );
+					 (DiskIsSpinning() && enhancedisk && !Spkr_IsActive() && !MB_IsActive()) ||
+					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
 	{
@@ -269,15 +274,40 @@ void ContinueExecution(void)
 	if (nCyclesToExecute < 0)
 		nCyclesToExecute = 0;
 
-	const DWORD uActualCyclesExecuted = CpuExecute(nCyclesToExecute);
+	if (g_nAppMode == MODE_STEPPING)
+		nCyclesToExecute = 0;
+
+	const bool bVideoUpdate = !g_bFullSpeed;
+	const DWORD uActualCyclesExecuted = CpuExecute(nCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
 	DiskUpdatePosition(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 
-	SpkrUpdate(uActualCyclesExecuted);
 	sg_SSC.CommUpdate(uActualCyclesExecuted);
 	PrintUpdate(uActualCyclesExecuted);
+
+	//
+
+	DWORD uSpkrActualCyclesExecuted = uActualCyclesExecuted;
+
+	bool bModeStepping_WaitTimer = false;
+	if (g_nAppMode == MODE_STEPPING && !IsDebugSteppingAtFullSpeed())
+	{
+		g_uModeStepping_Cycles += uActualCyclesExecuted;
+		if (g_uModeStepping_Cycles >= fExecutionPeriodClks)
+		{
+			uSpkrActualCyclesExecuted = g_uModeStepping_Cycles;
+
+			g_uModeStepping_Cycles -= (UINT)fExecutionPeriodClks;
+			bModeStepping_WaitTimer = true;
+		}
+	}
+
+	// For MODE_STEPPING: do this speaker update periodically
+	// - Otherwise kills performance due to sound-buffer lock/unlock for every 6502 opcode!
+	if (g_nAppMode == MODE_RUNNING || bModeStepping_WaitTimer)
+		SpkrUpdate(uSpkrActualCyclesExecuted);
 
 	//
 
@@ -293,10 +323,15 @@ void ContinueExecution(void)
 		MB_EndOfVideoFrame();
 	}
 
-	if (!g_bFullSpeed)
+	if ((g_nAppMode == MODE_RUNNING && !g_bFullSpeed) || bModeStepping_WaitTimer)
 	{
 		SysClk_WaitTimer();
 	}
+}
+
+void SingleStep(void)
+{
+	ContinueExecution();
 }
 
 //===========================================================================

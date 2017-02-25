@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\Keyboard.h"
 #include "..\Memory.h"
 #include "..\NTSC.h"
+#include "..\SoundCore.h"	// SoundCore_SetFade()
 #include "..\Video.h"
 
 //	#define DEBUG_COMMAND_HELP  1
@@ -62,12 +63,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Breakpoints ________________________________________________________________
 
-
-	// MODE_RUNNING // Normal Speed Breakpoints: Shift-F7 exit debugger, keep breakpoints active, enter run state at NORMAL speed
-	bool g_bDebugNormalSpeedBreakpoints = 0;
-
-	// MODE_STEPPING // Full Speed Breakpoints
-
 	// Any Speed Breakpoints
 	int  g_nDebugBreakOnInvalid  = 0; // Bit Flags of Invalid Opcode to break on: // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
 	int  g_iDebugBreakOnOpcode   = 0;
@@ -75,7 +70,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool g_bDebugBreakDelayCheck = false; // If exiting the debugger, allow at least one instruction to execute so we don't trigger on the same invalid opcode
 	int  g_bDebugBreakpointHit   = 0; // See: BreakpointHit_t
 
-	int          g_nBreakpoints = 0;
+	int  g_nBreakpoints          = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
 	// NOTE: Breakpoint_Source_t and g_aBreakpointSource must match!
@@ -205,6 +200,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	MemoryTextFile_t g_ConfigState;
 
+	static bool g_bDebugFullSpeed      = false;
+	static bool g_bLastGoCmdWasFullSpeed = false;
+
 // Display ____________________________________________________________________
 
 	void UpdateDisplay( Update_t bUpdate );
@@ -296,7 +294,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool      g_bBenchmarking = false;
 
 	BOOL      fulldisp      = 0;
-	WORD      lastpc        = 0;
 
 	BOOL      g_bProfiling       = 0;
 	int       g_nDebugSteps      = 0;
@@ -319,6 +316,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 // Prototypes _______________________________________________________________
+	static void DebugEnd ();
 
 	static	int ParseInput ( LPTSTR pConsoleInput, bool bCook = true );
 	static	Update_t ExecuteCommand ( int nArgs );
@@ -372,8 +370,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void _CursorMoveUpAligned( int nDelta );
 
 	void DisasmCalcTopFromCurAddress( bool bUpdateTop = true );
-	bool InternalSingleStep ();
-
 	void DisasmCalcCurFromTopAddress();
 	void DisasmCalcBotFromTopAddress();
 	void DisasmCalcTopBotAddress ();
@@ -745,17 +741,6 @@ Update_t CmdBookmarkSave (int nArgs)
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
-
-
-//===========================================================================
-BOOL CheckJump (WORD targetaddress)
-{
-	WORD savedpc = regs.pc;
-	InternalSingleStep();
-	BOOL result = (regs.pc == targetaddress);
-	regs.pc = savedpc;
-	return result;
-}
 
 
 // Benchmark ______________________________________________________________________________________
@@ -1836,13 +1821,15 @@ Update_t CmdAssemble (int nArgs)
 // CPU Step, Trace ________________________________________________________________________________
 
 //===========================================================================
-Update_t CmdGo (int nArgs)
+static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 {
 	// G StopAddress [SkipAddress,Length]
 	// Example:
 	//	G C600 FA00,FFFF 
 	// TODO: G addr1,len   addr3,len
 	// TODO: G addr1:addr2 addr3:addr4
+
+	const int kCmdGo = !bFullSpeed ? CMD_GO_NORMAL_SPEED : CMD_GO_FULL_SPEED;
 
 	g_nDebugSteps = -1;
 	g_nDebugStepCycles  = 0;
@@ -1852,7 +1839,7 @@ Update_t CmdGo (int nArgs)
 	g_nDebugSkipLen   = -1;
 
 	if (nArgs > 4)
-		return Help_Arg_1( CMD_GO );
+		return Help_Arg_1( kCmdGo );
 
 	//     G StopAddress [SkipAddress,Len]
 	// Old   1            2           2   
@@ -1882,7 +1869,7 @@ Update_t CmdGo (int nArgs)
 				}
 				else
 				{
-					return Help_Arg_1( CMD_GO );
+					return Help_Arg_1( kCmdGo );
 				}
 			}
 			else
@@ -1891,10 +1878,10 @@ Update_t CmdGo (int nArgs)
 				nEnd = g_aArgs[ iArg + 2 ].nValue + 1;
 			}
 			else
-				return Help_Arg_1( CMD_GO );
+				return Help_Arg_1( kCmdGo );
 		}
 		else
-			return Help_Arg_1( CMD_GO );
+			return Help_Arg_1( kCmdGo );
 		
 		nLen = nEnd - g_nDebugSkipStart;
 		if (nLen < 0)
@@ -1919,10 +1906,26 @@ Update_t CmdGo (int nArgs)
 //    g_nDebugStepUntil = GetAddress(g_aArgs[1].sArg);
 
 	g_bDebuggerEatKey = true;
+
+	g_bDebugFullSpeed = bFullSpeed;
+	g_bLastGoCmdWasFullSpeed = bFullSpeed;
+
 	g_nAppMode = MODE_STEPPING;
 	FrameRefreshStatus(DRAW_TITLE);
 
-	return UPDATE_CONSOLE_DISPLAY; // TODO: Verify // 0;
+	SoundCore_SetFade(FADE_IN);
+
+	return UPDATE_CONSOLE_DISPLAY;
+}
+
+Update_t CmdGoNormalSpeed (int nArgs)
+{
+	return CmdGo(nArgs, false);
+}
+
+Update_t CmdGoFullSpeed (int nArgs)
+{
+	return CmdGo(nArgs, true);
 }
 
 //===========================================================================
@@ -1963,7 +1966,7 @@ Update_t CmdStepOut (int nArgs)
 	{
 		nArgs = _Arg_1( nAddress );
 		g_aArgs[1].sArg[0] = 0;
-		CmdGo( 1 );
+		CmdGo( 1, true );
 	}
 
 	return UPDATE_ALL;
@@ -3396,7 +3399,7 @@ Update_t CmdCursorJumpRetAddr (int nArgs)
 Update_t CmdCursorRunUntil (int nArgs)
 {
 	nArgs = _Arg_1( g_nDisasmCurAddress );
-	return CmdGo( nArgs );
+	return CmdGo( nArgs, true );
 }
 
 
@@ -4092,6 +4095,7 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 
 	return ConsoleUpdate();
 }
+
 
 //===========================================================================
 #if 0	// Original
@@ -6005,12 +6009,6 @@ Update_t CmdMemorySearchHex (int nArgs)
 //===========================================================================
 Update_t CmdRegisterSet (int nArgs)
 {
-  if ((nArgs == 2) &&
-		(g_aArgs[1].sArg[0] == TEXT('P')) && (g_aArgs[2].sArg[0] == TEXT('L'))) //HACK: TODO/FIXME: undocumented hard-coded command?!?!
-	{
-		regs.pc = lastpc;
-	}
-	else
 	if (nArgs < 2) // || ((g_aArgs[2].sArg[0] != TEXT('0')) && !g_aArgs[2].nValue))
 	{
 		return Help_Arg_1( CMD_REGISTER_SET );
@@ -7970,42 +7968,6 @@ Update_t ExecuteCommand (int nArgs)
 
 
 //===========================================================================
-
-bool InternalSingleStep ()
-{
-	bool bResult = false;
-	_try
-	{
-		BYTE nOpcode = *(mem+regs.pc);
-		int  nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
-
-		g_aProfileOpcodes[ nOpcode ].m_nCount++;
-		g_aProfileOpmodes[ nOpmode ].m_nCount++;
-
-		// Like ContinueExecution()
-		{
-			DWORD dwExecutedCycles = CpuExecute(g_nDebugStepCycles);
-			g_dwCyclesThisFrame += dwExecutedCycles;
-
-			if (g_dwCyclesThisFrame >= dwClksPerFrame)
-			{
-				g_dwCyclesThisFrame -= dwClksPerFrame;
-			}
-		}
-
-		bResult = true;
-	}
-	_except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		bResult = false;
-	}
-
-	return bResult;
-}
-
-
-//===========================================================================
-
 void OutputTraceLine ()
 {
 	DisasmLine_t line;
@@ -8488,6 +8450,23 @@ void DebugBegin ()
 }
 
 //===========================================================================
+void DebugExitDebugger ()
+{
+	if (g_nBreakpoints == 0)
+	{
+		DebugEnd();
+		return;
+	}
+
+	// Still have some BPs set, so continue single-stepping
+
+	if (!g_bLastGoCmdWasFullSpeed)
+		CmdGoNormalSpeed(0);
+	else
+		CmdGoFullSpeed(0);
+}
+
+//===========================================================================
 void DebugContinueStepping ()
 {
 	static unsigned nStepsTaken = 0;
@@ -8512,11 +8491,19 @@ void DebugContinueStepping ()
 	{
 		if (g_hTraceFile)
 			OutputTraceLine();
-		lastpc = regs.pc;
 
-		InternalSingleStep();
+		// Update profiling stats
+		{
+			BYTE nOpcode = *(mem+regs.pc);
+			int  nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
 
-		_IsDebugBreakpointHit(); // Updates g_bDebugBreakpointHit
+			g_aProfileOpcodes[ nOpcode ].m_nCount++;
+			g_aProfileOpmodes[ nOpmode ].m_nCount++;
+		}
+
+		SingleStep();
+
+		g_bDebugBreakpointHit |= CheckBreakpointsIO() || CheckBreakpointsReg();
 
 		if ((regs.pc == g_nDebugStepUntil) || g_bDebugBreakpointHit)
 			g_nDebugSteps = 0;
@@ -8524,14 +8511,7 @@ void DebugContinueStepping ()
 			g_nDebugSteps--;
 	}
 
-	if (g_nDebugSteps)
-	{
-		if (!((++nStepsTaken) & 0xFFFF)) // Arbitrary: redraw screen every 0x10000 steps
-		{
-			VideoRedrawScreen();
-		}
-	}
-	else
+	if (!g_nDebugSteps)
 	{
 		g_nAppMode = MODE_DEBUG;
 		FrameRefreshStatus(DRAW_TITLE);
@@ -8577,7 +8557,7 @@ void DebugDestroy ()
 
 
 //===========================================================================
-void DebugEnd ()
+static void DebugEnd ()
 {
 	// Stepping ... calls us when key hit?!  FrameWndProc() ProcessButtonClick() DebugEnd()
 	if (g_bProfiling)
@@ -9661,4 +9641,10 @@ void DebuggerMouseClick( int x, int y )
 			}
 		}
 	}
+}
+
+//===========================================================================
+bool IsDebugSteppingAtFullSpeed(void)
+{
+	return (g_nAppMode == MODE_STEPPING) && g_bDebugFullSpeed;
 }

@@ -711,7 +711,7 @@ void VideoBenchmark () {
   milliseconds = GetTickCount();
   cycle = 0;
   do {
-    CpuExecute(100000);
+    CpuExecute(100000, true);
     totalmhz10++;
   } while (GetTickCount() - milliseconds < 1000);
 
@@ -729,7 +729,7 @@ void VideoBenchmark () {
       int  loop   = 0;
       while ((loop < 10000) && !error) {
         CpuSetupBenchmark();
-        CpuExecute(loop);
+        CpuExecute(loop, true);
         if ((regs.pc < 0x300) || (regs.pc > 0x400))
           error = 1;
         else {
@@ -777,7 +777,7 @@ void VideoBenchmark () {
     if (realisticfps < 10) {
       int cycles = 100000;
       while (cycles > 0) {
-        DWORD executedcycles = CpuExecute(103);
+        DWORD executedcycles = CpuExecute(103, true);
         cycles -= executedcycles;
         DiskUpdatePosition(executedcycles);
         JoyUpdateButtonLatch(executedcycles);

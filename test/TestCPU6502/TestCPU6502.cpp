@@ -134,6 +134,18 @@ void reset(void)
 
 //-------------------------------------
 
+DWORD TestCpu6502(DWORD uTotalCycles)
+{
+	return Cpu6502(uTotalCycles, true);
+}
+
+DWORD TestCpu65C02(DWORD uTotalCycles)
+{
+	return Cpu65C02(uTotalCycles, true);
+}
+
+//-------------------------------------
+
 int GH264_test(void)
 {
 	// No page-cross
@@ -147,12 +159,12 @@ int GH264_test(void)
 	mem[regs.pc+3] = dst&0xff;
 	mem[regs.pc+4] = dst>>8;
 
-	DWORD cycles = Cpu6502(0);
+	DWORD cycles = TestCpu6502(0);
 	if (cycles != 5) return 1;
 	if (regs.pc != dst) return 1;
 
 	reset();
-	cycles = Cpu65C02(0);
+	cycles = TestCpu65C02(0);
 	if (cycles != 6) return 1;
 	if (regs.pc != dst) return 1;
 
@@ -167,14 +179,14 @@ int GH264_test(void)
 	mem[regs.pc+3] = dst&0xff;
 	mem[regs.pc+4] = mem[regs.pc & ~0xff] = dst>>8;	// Allow for bug in 6502
 
-	cycles = Cpu6502(0);
+	cycles = TestCpu6502(0);
 	if (cycles != 5) return 1;
 	if (regs.pc != dst) return 1;
 
 	reset();
 	regs.pc = 0x3fc;
 	mem[regs.pc & ~0xff] = 0;	// Test that 65C02 fixes the bug in the 6502
-	cycles = Cpu65C02(0);
+	cycles = TestCpu65C02(0);
 	if (cycles != 7) return 1;	// todo: is this 6 or 7?
 	if (regs.pc != dst) return 1;
 
@@ -231,11 +243,11 @@ int GH271_test(void)
 			const BYTE x = 0;
 
 			ASL_ABSX(x, base, d);
-			if (Cpu6502(0) != 7) return 1;
+			if (TestCpu6502(0) != 7) return 1;
 			if (mem[base+x] != ((d<<1)&0xff)) return 1;
 
 			ASL_ABSX(x, base, d);
-			if (Cpu65C02(0) != 6) return 1;	// Non-PX case is optimised on 65C02
+			if (TestCpu65C02(0) != 6) return 1;	// Non-PX case is optimised on 65C02
 			if (mem[base+x] != ((d<<1)&0xff)) return 1;
 		}
 
@@ -244,11 +256,11 @@ int GH271_test(void)
 			const BYTE x = 1;
 
 			ASL_ABSX(x, base, d);
-			if (Cpu6502(0) != 7) return 1;
+			if (TestCpu6502(0) != 7) return 1;
 			if (mem[base+x] != ((d<<1)&0xff)) return 1;
 
 			ASL_ABSX(x, base, d);
-			if (Cpu65C02(0) != 7) return 1;
+			if (TestCpu65C02(0) != 7) return 1;
 			if (mem[base+x] != ((d<<1)&0xff)) return 1;
 		}
 	}
@@ -263,11 +275,11 @@ int GH271_test(void)
 			const BYTE x = 0;
 
 			DEC_ABSX(x, base, d);
-			if (Cpu6502(0) != 7) return 1;
+			if (TestCpu6502(0) != 7) return 1;
 			if (mem[base+x] != ((d-1)&0xff)) return 1;
 
 			DEC_ABSX(x, base, d);
-			if (Cpu65C02(0) != 7) return 1;	// NB. Not optimised for 65C02
+			if (TestCpu65C02(0) != 7) return 1;	// NB. Not optimised for 65C02
 			if (mem[base+x] != ((d-1)&0xff)) return 1;
 		}
 
@@ -276,11 +288,11 @@ int GH271_test(void)
 			const BYTE x = 1;
 
 			DEC_ABSX(x, base, d);
-			if (Cpu6502(0) != 7) return 1;
+			if (TestCpu6502(0) != 7) return 1;
 			if (mem[base+x] != ((d-1)&0xff)) return 1;
 
 			DEC_ABSX(x, base, d);
-			if (Cpu65C02(0) != 7) return 1;
+			if (TestCpu65C02(0) != 7) return 1;
 			if (mem[base+x] != ((d-1)&0xff)) return 1;
 		}
 	}
@@ -295,11 +307,11 @@ int GH271_test(void)
 			const BYTE x = 0;
 
 			INC_ABSX(x, base, d);
-			if (Cpu6502(0) != 7) return 1;
+			if (TestCpu6502(0) != 7) return 1;
 			if (mem[base+x] != ((d+1)&0xff)) return 1;
 
 			INC_ABSX(x, base, d);
-			if (Cpu65C02(0) != 7) return 1;	// NB. Not optimised for 65C02
+			if (TestCpu65C02(0) != 7) return 1;	// NB. Not optimised for 65C02
 			if (mem[base+x] != ((d+1)&0xff)) return 1;
 		}
 
@@ -308,11 +320,11 @@ int GH271_test(void)
 			const BYTE x = 1;
 
 			INC_ABSX(x, base, d);
-			if (Cpu6502(0) != 7) return 1;
+			if (TestCpu6502(0) != 7) return 1;
 			if (mem[base+x] != ((d+1)&0xff)) return 1;
 
 			INC_ABSX(x, base, d);
-			if (Cpu65C02(0) != 7) return 1;
+			if (TestCpu65C02(0) != 7) return 1;
 			if (mem[base+x] != ((d+1)&0xff)) return 1;
 		}
 	}
@@ -599,13 +611,13 @@ int GH278_Bcc_Sub(BYTE op, BYTE ps_not_taken, BYTE ps_taken, WORD pc)
 	reset();
 	regs.pc = pc;
 	regs.ps = ps_not_taken;
-	if (Cpu6502(0) != 2) return 1;
+	if (TestCpu6502(0) != 2) return 1;
 	if (regs.pc != dst_not_taken) return 1;
 
 	reset();
 	regs.pc = pc;
 	regs.ps = ps_taken;
-	if (Cpu6502(0) != 3+pagecross) return 1;
+	if (TestCpu6502(0) != 3+pagecross) return 1;
 	if (regs.pc != dst_taken) return 1;
 
 	// 65C02
@@ -613,13 +625,13 @@ int GH278_Bcc_Sub(BYTE op, BYTE ps_not_taken, BYTE ps_taken, WORD pc)
 	reset();
 	regs.pc = pc;
 	regs.ps = ps_not_taken;
-	if (Cpu65C02(0) != 2) return 1;
+	if (TestCpu65C02(0) != 2) return 1;
 	if (regs.pc != dst_not_taken) return 1;
 
 	reset();
 	regs.pc = pc;
 	regs.ps = ps_taken;
-	if (Cpu65C02(0) != 3+pagecross) return 1;
+	if (TestCpu65C02(0) != 3+pagecross) return 1;
 	if (regs.pc != dst_taken) return 1;
 
 	return 0;
@@ -644,7 +656,7 @@ int GH278_BRA(void)
 
 		reset();
 		regs.pc = pc;
-		if (Cpu65C02(0) != 3) return 1;
+		if (TestCpu65C02(0) != 3) return 1;
 		if (regs.pc != dst_taken) return 1;
 	}
 
@@ -657,7 +669,7 @@ int GH278_BRA(void)
 
 		reset();
 		regs.pc = pc;
-		if (Cpu65C02(0) != 4) return 1;
+		if (TestCpu65C02(0) != 4) return 1;
 		if (regs.pc != dst_taken) return 1;
 	}
 
@@ -677,7 +689,7 @@ int GH278_JMP_INDX(void)
 	mem[regs.pc+3] = dst&0xff;
 	mem[regs.pc+4] = dst>>8;
 
-	DWORD cycles = Cpu65C02(0);
+	DWORD cycles = TestCpu65C02(0);
 	if (cycles != 6) return 1;
 	if (regs.pc != dst) return 1;
 
@@ -692,7 +704,7 @@ int GH278_JMP_INDX(void)
 	mem[regs.pc+3] = dst&0xff;
 	mem[regs.pc+4] = dst>>8;
 
-	cycles = Cpu65C02(0);
+	cycles = TestCpu65C02(0);
 	if (cycles != 6) return 1;	// todo: is this 6 or 7?
 	if (regs.pc != dst) return 1;
 
@@ -709,7 +721,7 @@ int GH278_JMP_INDX(void)
 	mem[regs.pc+4] = dst&0xff;
 	mem[regs.pc+5] = dst>>8;
 
-	cycles = Cpu65C02(0);
+	cycles = TestCpu65C02(0);
 	if (cycles != 6) return 1;	// todo: is this 6 or 7?
 	if (regs.pc != dst) return 1;
 
@@ -728,12 +740,12 @@ int GH278_ADC_SBC(UINT op)
 	// No page-cross
 	reset();
 	regs.ps = AF_DECIMAL;
-	DWORD cycles = Cpu6502(0);
+	DWORD cycles = TestCpu6502(0);
 	if (g_OpcodeTimings[op][CYC_6502] != cycles) return 1;
 
 	reset();
 	regs.ps = AF_DECIMAL;
-	cycles = Cpu65C02(0);
+	cycles = TestCpu65C02(0);
 	if (g_OpcodeTimings[op][CYC_65C02]+1 != cycles) return 1;	// CMOS is +1 cycles in decimal mode
 
 	// Page-cross
@@ -741,14 +753,14 @@ int GH278_ADC_SBC(UINT op)
 	regs.ps = AF_DECIMAL;
 	regs.x = 1;
 	regs.y = 1;
-	cycles = Cpu6502(0);
+	cycles = TestCpu6502(0);
 	if (g_OpcodeTimings[op][CYC_6502_PX] != cycles) return 1;
 
 	reset();
 	regs.ps = AF_DECIMAL;
 	regs.x = 1;
 	regs.y = 1;
-	cycles = Cpu65C02(0);
+	cycles = TestCpu65C02(0);
 	if (g_OpcodeTimings[op][CYC_65C02_PX]+1 != cycles) return 1;	// CMOS is +1 cycles in decimal mode
 
 	return 0;
@@ -794,7 +806,7 @@ int GH278_test(void)
 		mem[regs.pc+0] = op;
 		mem[regs.pc+1] = base&0xff;
 		mem[regs.pc+2] = base>>8;
-		DWORD cycles = Cpu6502(0);
+		DWORD cycles = TestCpu6502(0);
 		if (g_OpcodeTimings[op][variant] != cycles) return 1;
 	}
 
@@ -811,7 +823,7 @@ int GH278_test(void)
 		mem[regs.pc+1] = base&0xff;
 		mem[regs.pc+2] = base>>8;
 		mem[0xff] = 0xff; mem[0x00] = 0x00;	// For: OPCODE (zp),Y
-		DWORD cycles = Cpu6502(0);
+		DWORD cycles = TestCpu6502(0);
 		if (g_OpcodeTimings[op][variant] != cycles) return 1;
 	}
 
@@ -829,7 +841,7 @@ int GH278_test(void)
 		mem[regs.pc+0] = op;
 		mem[regs.pc+1] = base&0xff;
 		mem[regs.pc+2] = base>>8;
-		DWORD cycles = Cpu65C02(0);
+		DWORD cycles = TestCpu65C02(0);
 		if (g_OpcodeTimings[op][variant] != cycles) return 1;
 	}
 
@@ -846,7 +858,7 @@ int GH278_test(void)
 		mem[regs.pc+1] = base&0xff;
 		mem[regs.pc+2] = base>>8;
 		mem[0xff] = 0xff; mem[0x00] = 0x00;	// For: OPCODE (zp),Y
-		DWORD cycles = Cpu65C02(0);
+		DWORD cycles = TestCpu65C02(0);
 		if (g_OpcodeTimings[op][variant] != cycles) return 1;
 	}
 
@@ -893,7 +905,7 @@ DWORD AXA_ZPY(BYTE a, BYTE x, BYTE y, WORD base)
 	regs.y = y;
 	mem[regs.pc+0] = 0x93;
 	mem[regs.pc+1] = 0xfe;
-	return Cpu6502(0);
+	return TestCpu6502(0);
 }
 
 DWORD AXA_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
@@ -905,7 +917,7 @@ DWORD AXA_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
 	mem[regs.pc+0] = 0x9f;
 	mem[regs.pc+1] = base&0xff;
 	mem[regs.pc+2] = base>>8;
-	return Cpu6502(0);
+	return TestCpu6502(0);
 }
 
 DWORD SAY_ABSX(BYTE a, BYTE x, BYTE y, WORD base)
@@ -917,7 +929,7 @@ DWORD SAY_ABSX(BYTE a, BYTE x, BYTE y, WORD base)
 	mem[regs.pc+0] = 0x9c;
 	mem[regs.pc+1] = base&0xff;
 	mem[regs.pc+2] = base>>8;
-	return Cpu6502(0);
+	return TestCpu6502(0);
 }
 
 DWORD TAS_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
@@ -929,7 +941,7 @@ DWORD TAS_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
 	mem[regs.pc+0] = 0x9b;
 	mem[regs.pc+1] = base&0xff;
 	mem[regs.pc+2] = base>>8;
-	return Cpu6502(0);
+	return TestCpu6502(0);
 }
 
 DWORD XAS_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
@@ -941,7 +953,7 @@ DWORD XAS_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
 	mem[regs.pc+0] = 0x9e;
 	mem[regs.pc+1] = base&0xff;
 	mem[regs.pc+2] = base>>8;
-	return Cpu6502(0);
+	return TestCpu6502(0);
 }
 
 int GH282_test(void)
@@ -1077,10 +1089,10 @@ int GH292_test(void)
 		reset();
 		WORD base=regs.pc;
 
-		mem[regs.pc] = op+0x03; if (Cpu65C02(0) != 1 || regs.pc != base+1) return 1;
-		mem[regs.pc] = op+0x07; if (Cpu65C02(0) != 1 || regs.pc != base+2) return 1;
-		mem[regs.pc] = op+0x0B; if (Cpu65C02(0) != 1 || regs.pc != base+3) return 1;
-		mem[regs.pc] = op+0x0F; if (Cpu65C02(0) != 1 || regs.pc != base+4) return 1;
+		mem[regs.pc] = op+0x03; if (TestCpu65C02(0) != 1 || regs.pc != base+1) return 1;
+		mem[regs.pc] = op+0x07; if (TestCpu65C02(0) != 1 || regs.pc != base+2) return 1;
+		mem[regs.pc] = op+0x0B; if (TestCpu65C02(0) != 1 || regs.pc != base+3) return 1;
+		mem[regs.pc] = op+0x0F; if (TestCpu65C02(0) != 1 || regs.pc != base+4) return 1;
 	}
 
 	//
@@ -1093,14 +1105,14 @@ int GH292_test(void)
 	mem[regs.pc+0] = 0xDC;
 	mem[regs.pc+1] = 0x00;
 	mem[regs.pc+2] = 0xC0;
-	if (Cpu65C02(0) != 4 || regs.pc != base+3 || g_fn_C000_count != 1 || regs.a != 0) return 1;
+	if (TestCpu65C02(0) != 4 || regs.pc != base+3 || g_fn_C000_count != 1 || regs.a != 0) return 1;
 
 	reset();
 	base = regs.pc;
 	mem[regs.pc+0] = 0xFC;
 	mem[regs.pc+1] = 0x00;
 	mem[regs.pc+2] = 0xC0;
-	if (Cpu65C02(0) != 4 || regs.pc != base+3 || g_fn_C000_count != 2 || regs.a != 0) return 1;
+	if (TestCpu65C02(0) != 4 || regs.pc != base+3 || g_fn_C000_count != 2 || regs.a != 0) return 1;
 
 	IORead[0] = NULL;
 
@@ -1240,7 +1252,7 @@ int GH321_test()
 		g_dwCyclesThisFrame = startCycle;
 
 		regs.pc = org;
-		ULONG uExecutedCycles = Cpu65C02(2 * kNTSCScanLines * kHClocks);
+		ULONG uExecutedCycles = TestCpu65C02(2 * kNTSCScanLines * kHClocks);
 
 		res[startCycle] = mem[0x000a];
 		//if (mem[0x000a] == 0)
