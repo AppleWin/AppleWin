@@ -131,7 +131,7 @@ void LogFileTimeUntilFirstKeyRead(void)
 	if (!g_fh || bLogKeyReadDone)
 		return;
 
-	if (mem[regs.pc-3] != 0x2C)	// bit $c0000
+	if (mem[regs.pc-3] != 0x2C)	// bit $c000
 		return;
 
 	DWORD dwTime = GetTickCount() - dwLogKeyReadTickStart;
@@ -208,6 +208,7 @@ void SetPriorityNormal(void)
 //---------------------------------------------------------------------------
 
 static UINT g_uModeStepping_Cycles = 0;
+static bool g_uModeStepping_LastGetKey_ScrollLock = false;
 
 static void ContinueExecution(void)
 {
@@ -225,9 +226,27 @@ static void ContinueExecution(void)
 
 	//
 
-	bool bScrollLock_FullSpeed = sg_PropertySheet.GetScrollLockToggle()
-									? g_bScrollLock_FullSpeed
-									: (GetKeyState(VK_SCROLL) < 0);
+	bool bScrollLock_FullSpeed = false;
+	if (sg_PropertySheet.GetScrollLockToggle())
+	{
+		bScrollLock_FullSpeed = g_bScrollLock_FullSpeed;
+	}
+	else
+	{
+		if (g_nAppMode == MODE_RUNNING)
+		{
+			bScrollLock_FullSpeed = GetKeyState(VK_SCROLL) < 0;
+		}
+		else if (!IsDebugSteppingAtFullSpeed()) // Implicitly: MODE_STEPPING
+		{
+			// NB. For MODE_STEPPING: GetKeyState() is slow, so only call periodically
+			// . 0x3FFF is roughly the number of cycles in a video frame, which seems a reasonable rate to call GetKeyState()
+			if ((g_uModeStepping_Cycles & 0x3FFF) == 0)
+				g_uModeStepping_LastGetKey_ScrollLock = GetKeyState(VK_SCROLL) < 0;
+
+			bScrollLock_FullSpeed = g_uModeStepping_LastGetKey_ScrollLock;
+		}
+	}
 
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
@@ -256,9 +275,7 @@ static void ContinueExecution(void)
 	else
 	{
 		if (bWasFullSpeed)
-		{
 			VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
-		}
 
 		// Don't call Spkr_Demute()
 		MB_Demute();
@@ -270,15 +287,15 @@ static void ContinueExecution(void)
 
 	//
 
-	int nCyclesToExecute = (int) fExecutionPeriodClks + g_nCpuCyclesFeedback;
-	if (nCyclesToExecute < 0)
-		nCyclesToExecute = 0;
+	int nCyclesWithFeedback = (int) fExecutionPeriodClks + g_nCpuCyclesFeedback;
+	const UINT uCyclesToExecuteWithFeedback = (nCyclesWithFeedback >= 0) ? nCyclesWithFeedback
+																		 : 0;
 
-	if (g_nAppMode == MODE_STEPPING)
-		nCyclesToExecute = 0;
+	const DWORD uCyclesToExecute = (g_nAppMode == MODE_RUNNING)		? uCyclesToExecuteWithFeedback
+												/* MODE_STEPPING */ : 0;
 
 	const bool bVideoUpdate = !g_bFullSpeed;
-	const DWORD uActualCyclesExecuted = CpuExecute(nCyclesToExecute, bVideoUpdate);
+	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
 	DiskUpdatePosition(uActualCyclesExecuted);
@@ -295,11 +312,11 @@ static void ContinueExecution(void)
 	if (g_nAppMode == MODE_STEPPING && !IsDebugSteppingAtFullSpeed())
 	{
 		g_uModeStepping_Cycles += uActualCyclesExecuted;
-		if (g_uModeStepping_Cycles >= fExecutionPeriodClks)
+		if (g_uModeStepping_Cycles >= uCyclesToExecuteWithFeedback)
 		{
 			uSpkrActualCyclesExecuted = g_uModeStepping_Cycles;
 
-			g_uModeStepping_Cycles -= (UINT)fExecutionPeriodClks;
+			g_uModeStepping_Cycles -= uCyclesToExecuteWithFeedback;
 			bModeStepping_WaitTimer = true;
 		}
 	}
@@ -329,8 +346,14 @@ static void ContinueExecution(void)
 	}
 }
 
-void SingleStep(void)
+void SingleStep(bool bReinit)
 {
+	if (bReinit)
+	{
+		g_uModeStepping_Cycles = 0;
+		g_uModeStepping_LastGetKey_ScrollLock = false;
+	}
+
 	ContinueExecution();
 }
 

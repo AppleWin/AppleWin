@@ -202,6 +202,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static bool g_bDebugFullSpeed      = false;
 	static bool g_bLastGoCmdWasFullSpeed = false;
+	static bool g_bGoCmd_ReinitFlag = false;
 
 // Display ____________________________________________________________________
 
@@ -1909,6 +1910,7 @@ static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 
 	g_bDebugFullSpeed = bFullSpeed;
 	g_bLastGoCmdWasFullSpeed = bFullSpeed;
+	g_bGoCmd_ReinitFlag = true;
 
 	g_nAppMode = MODE_STEPPING;
 	FrameRefreshStatus(DRAW_TITLE);
@@ -8501,7 +8503,8 @@ void DebugContinueStepping ()
 			g_aProfileOpmodes[ nOpmode ].m_nCount++;
 		}
 
-		SingleStep();
+		SingleStep(g_bGoCmd_ReinitFlag);
+		g_bGoCmd_ReinitFlag = false;
 
 		g_bDebugBreakpointHit |= CheckBreakpointsIO() || CheckBreakpointsReg();
 

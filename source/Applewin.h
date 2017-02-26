@@ -19,7 +19,7 @@ extern eApple2Type g_Apple2Type;
 eApple2Type GetApple2Type(void);
 void SetApple2Type(eApple2Type type);
 
-void SingleStep(void);
+void SingleStep(bool bReinit);
 
 extern bool       g_bFullSpeed;
 
