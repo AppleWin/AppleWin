@@ -97,7 +97,7 @@ inline u8 ReadByte( u16 addr, int uExecutedCycles )
 
 // Michael's Real-Time Debugger/Visualizer CPU
 // Based on Modified 65C02
-static DWORD Cpu65D02 (DWORD uTotalCycles)
+static DWORD Cpu65D02(DWORD uTotalCycles, const bool bVideoUpdate)
 {
 	// Optimisation:
 	// . Copy the global /regs/ vars to stack-based local vars
@@ -412,15 +412,12 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 		IRQ(uExecutedCycles, flagc, flagn, flagv, flagz);
 
 // NTSC_BEGIN
-		if (!g_bFullSpeed)
+		if (bVideoUpdate)
 		{
 			ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
 			NTSC_VideoUpdateCycles( uElapsedCycles );
 		}
 // NTSC_END
-
-		if( IsDebugBreakpointHit() )
-			break;
 
 	} while (uExecutedCycles < uTotalCycles);
 

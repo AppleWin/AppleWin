@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //===========================================================================
 
-static DWORD Cpu65C02 (DWORD uTotalCycles)
+static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 {
 	// Optimisation:
 	// . Copy the global /regs/ vars to stack-based local vars
@@ -327,15 +327,12 @@ static DWORD Cpu65C02 (DWORD uTotalCycles)
 		IRQ(uExecutedCycles, flagc, flagn, flagv, flagz);
 
 // NTSC_BEGIN
-		if (!g_bFullSpeed)
+		if ( bVideoUpdate )
 		{
 			ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
 			NTSC_VideoUpdateCycles( uElapsedCycles );
 		}
 // NTSC_END
-
-		if( IsDebugBreakpointHit() )
-			break;
 
 	} while (uExecutedCycles < uTotalCycles);
 

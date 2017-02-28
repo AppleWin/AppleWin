@@ -1405,7 +1405,6 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 			sprintf( line_.sTargetValue, "%04X", nTarget & 0xFFFF );
 
 			// Always show branch indicators
-			//	if ((nBaseAddress == regs.pc) && CheckJump(nAddress))
 			bDisasmFormatFlags |= DISASM_FORMAT_BRANCH;
 
 			if (nTarget < nBaseAddress)

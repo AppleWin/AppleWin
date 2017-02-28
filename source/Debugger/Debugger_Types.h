@@ -280,7 +280,8 @@
 // CPU
 		, CMD_CURSOR_JUMP_PC // Shift
 		, CMD_CURSOR_SET_PC  // Ctrl
-		, CMD_GO
+		, CMD_GO_NORMAL_SPEED
+		, CMD_GO_FULL_SPEED
 		, CMD_IN
 		, CMD_INPUT_KEY
 		, CMD_JSR
@@ -582,7 +583,8 @@
 	Update_t CmdCursorSetPC        (int nArgs);
 	Update_t CmdBreakInvalid       (int nArgs); // Breakpoint IFF Full-speed!
 	Update_t CmdBreakOpcode        (int nArgs); // Breakpoint IFF Full-speed!
-	Update_t CmdGo                 (int nArgs);
+	Update_t CmdGoNormalSpeed      (int nArgs);
+	Update_t CmdGoFullSpeed        (int nArgs);
 	Update_t CmdIn                 (int nArgs);
 	Update_t CmdKey                (int nArgs);
 	Update_t CmdJSR                (int nArgs);
