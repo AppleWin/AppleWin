@@ -39,7 +39,6 @@ static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 	AF_TO_EF
 	ULONG uExecutedCycles = 0;
 	WORD base;
-	g_bDebugBreakpointHit = 0;
 
 	do
 	{
@@ -56,10 +55,10 @@ static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 		}
 		else
 		{
-			if (!Fetch(iOpcode, uExecutedCycles))
-				break;
+			Fetch(iOpcode, uExecutedCycles);
 
-#define $ INV // INV = Invalid -> Debugger Break
+//#define $ INV // INV = Invalid -> Debugger Break
+#define $
 			switch (iOpcode)
 			{
 			case 0x00:              BRK  CYC(7)  break;
@@ -337,10 +336,6 @@ static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 	} while (uExecutedCycles < uTotalCycles);
 
 	EF_TO_AF // Emulator Flags to Apple Flags
-
-	if( g_bDebugBreakpointHit )
-		if ((g_nAppMode != MODE_DEBUG) && (g_nAppMode != MODE_STEPPING)) // Running at full speed? (debugger not running)
-			RequestDebugger();
 
 	return uExecutedCycles;
 }

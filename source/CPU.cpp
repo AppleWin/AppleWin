@@ -102,7 +102,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Z80VICE\z80.h"
 #include "Z80VICE\z80mem.h"
 
-#include "Debugger\Debug.h"
 #include "YamlHelper.h"
 
 // 6502 Accumulator Bit Flags
@@ -200,26 +199,9 @@ void SetActiveCpu(eCpuType cpu)
 
 #include "cpu/cpu_instructions.inl"
 
-void RequestDebugger()
-{
-	// BUG: This causes DebugBegin to constantly be called.
-	// It's as if the WM_KEYUP are auto-repeating?
-	//   FrameWndProc()
-	//      ProcessButtonClick()
-	//         DebugBegin()
-	//	PostMessage( g_hFrameWindow, WM_KEYDOWN, DEBUG_TOGGLE_KEY, 0 );
-	//	PostMessage( g_hFrameWindow, WM_KEYUP  , DEBUG_TOGGLE_KEY, 0 );
-
-	// Not a valid solution, since hitting F7 (to exit) debugger gets the debugger out of sync
-	// due to EnterMessageLoop() calling ContinueExecution() after the mode has changed to DEBUG.
-	//	DebugBegin();
-
-	FrameWndProc( g_hFrameWindow, WM_KEYDOWN, DEBUG_TOGGLE_KEY, 0 );
-	FrameWndProc( g_hFrameWindow, WM_KEYUP  , DEBUG_TOGGLE_KEY, 0 );
-}
-
 // Break into debugger on invalid opcodes
-#define INV IsDebugBreakOnInvalid(AM_1);
+//#define INV IsDebugBreakOnInvalid(AM_1);
+#define INV
 
 /****************************************************************************
 *
@@ -373,7 +355,7 @@ static void DebugHddEntrypoint(const USHORT PC)
 }
 #endif
 
-static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
+static __forceinline void Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 {
 	const USHORT PC = regs.pc;
 
@@ -385,16 +367,12 @@ static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 	    ? IORead[(PC>>4) & 0xFF](PC,PC,0,0,uExecutedCycles)	// Fetch opcode from I/O memory, but params are still from mem[]
 		: *(mem+PC);
 
-	if (IsDebugBreakOpcode( iOpcode ))
-		return 0;
-
 #ifdef USE_SPEECH_API
 	if (PC == COUT && g_Speech.IsEnabled() && !g_bFullSpeed)
 		CaptureCOUT();
 #endif
 
 	regs.pc++;
-	return 1;
 }
 
 //#define ENABLE_NMI_SUPPORT	// Not used - so don't enable

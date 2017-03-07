@@ -34,6 +34,7 @@
 		,BP_HIT_OPCODE  = (1 << 1)
 		,BP_HIT_REG     = (1 << 2)
 		,BP_HIT_MEM     = (1 << 3)
+		,BP_HIT_PC_READ_FLOATING_BUS_OR_IO_REG = (1 << 4)
 	};
 
 	extern int          g_nBreakpoints;
@@ -42,13 +43,8 @@
 	extern const char  *g_aBreakpointSource [ NUM_BREAKPOINT_SOURCES   ];
 	extern const TCHAR *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ];
 
-	// Any Speed Breakpoints
 	extern int  g_nDebugBreakOnInvalid ;
 	extern int  g_iDebugBreakOnOpcode  ;
-
-	// Breakpoint Status
-	extern bool g_bDebugBreakDelayCheck;
-	extern int  g_bDebugBreakpointHit  ;
 
 // Commands
 	void VerifyDebuggerCommandTable();
@@ -144,52 +140,6 @@
 
 	bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakpointEnable_ );
 
-	inline int _IsDebugBreakOnOpcode( int iOpcode )
-	{
-		if (g_iDebugBreakOnOpcode == iOpcode)
-			g_bDebugBreakpointHit |= BP_HIT_OPCODE;
-		return g_bDebugBreakpointHit;
-	}
-
-	// iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
-	inline int IsDebugBreakOnInvalid( int iOpcodeType )
-	{
-		g_bDebugBreakpointHit |= ((g_nDebugBreakOnInvalid >> iOpcodeType) & 1) ? BP_HIT_INVALID : 0;
-		return g_bDebugBreakpointHit;
-	}
-
-	// iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
-	inline void SetDebugBreakOnInvalid( int iOpcodeType, int nValue )
-	{
-		if (iOpcodeType <= AM_3)
-		{
-			g_nDebugBreakOnInvalid &= ~ (          1  << iOpcodeType);
-			g_nDebugBreakOnInvalid |=   ((nValue & 1) << iOpcodeType);
-		}
-	}
-
-	//
-	// CPU checks the Debugger breakpoints
-	//   a) at opcode fetch
-	//   b) after opcode execution
-	//
-	inline int IsDebugBreakOpcode( int iOpcode )
-	{
-		if (g_bDebugBreakDelayCheck)
-		{
-			g_bDebugBreakDelayCheck = false;
-			return false;
-		}
-
-		if (! iOpcode )
-			IsDebugBreakOnInvalid( AM_IMPLIED );
-
-		if (g_iDebugBreakOnOpcode ) // User wants to enter debugger on specific opcode?
-			_IsDebugBreakOnOpcode(iOpcode);
-
-		return g_bDebugBreakpointHit;
-	}
-	
 // Source Level Debugging
 	int FindSourceLine( WORD nAddress );
 	const char* FormatAddress( WORD nAddress, int nBytes );
