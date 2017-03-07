@@ -714,7 +714,7 @@ public:
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const DWORD dwImageSize, const TCHAR* pszExt)
 	{
-		if (dwImageSize < NIB1_TRACK_SIZETRACKS_STANDARD || dwImageSize % NIB1_TRACK_SIZE != 0 || dwImageSize > NIB1_TRACK_SIZE*TRACKS_MAX)
+		if (dwImageSize < NIB1_TRACK_SIZE*TRACKS_STANDARD || dwImageSize % NIB1_TRACK_SIZE != 0 || dwImageSize > NIB1_TRACK_SIZE*TRACKS_MAX)
 			return eMismatch;
 
 		m_uNumTracksInImage = dwImageSize / NIB1_TRACK_SIZE;
