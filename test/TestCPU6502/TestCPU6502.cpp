@@ -14,15 +14,6 @@ LPBYTE         memdirty     = NULL;	// TODO: Init
 iofunction		IORead[256] = {0};	// TODO: Init
 iofunction		IOWrite[256] = {0};	// TODO: Init
 
-// From Debugger_Types.h
-	enum AddressingMode_e // ADDRESSING_MODES_e
-	{
-		  AM_IMPLIED // Note: SetDebugBreakOnInvalid() assumes this order of first 4 entries
-		, AM_1    //    Invalid 1 Byte
-		, AM_2    //    Invalid 2 Bytes
-		, AM_3    //    Invalid 3 Bytes
-	};
-
 // From CPU.cpp
 #define	 AF_SIGN       0x80
 #define	 AF_OVERFLOW   0x40
@@ -58,12 +49,6 @@ static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 	return 1;
 }
 
-#define INV IsDebugBreakOnInvalid(AM_1);
-inline int IsDebugBreakOnInvalid( int iOpcodeType )
-{
-	return 0;
-}
-
 static __forceinline void DoIrqProfiling(DWORD uCycles)
 {
 }
@@ -79,19 +64,6 @@ static __forceinline void NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
 }
-
-void RequestDebugger()
-{
-}
-
-// From Debug.h
-inline int IsDebugBreakpointHit()
-{
-	return 0;
-}
-
-// From Debug.cpp
-int g_bDebugBreakpointHit = 0;
 
 // From z80.cpp
 DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)

@@ -116,7 +116,7 @@ static BYTE		floppylatch     = 0;
 static BOOL		floppymotoron   = 0;
 static BOOL		floppyloadmode  = 0; // for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)
 static BOOL		floppywritemode = 0;
-static WORD		phases = 0;						// state bits for stepper magnet phases 0 - 3
+static WORD		phases = 0;					// state bits for stepper magnet phases 0 - 3
 static bool		g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT		g_uSlot = 0;
 
@@ -789,6 +789,8 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		return;
 	}
 
+	// Should really test for drive off - after 1 second drive off delay (UTA2E page 9-13)
+	// but Sherwood Forest sets shift mode and reads with the drive off, so don't check for now
 	if (!floppywritemode)
 	{
 		floppylatch = *(fptr->trackimage + fptr->byte);
@@ -796,7 +798,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		LOG_DISK("read %4X = %2X\r\n", fptr->byte, floppylatch);
 #endif
 	}
-	else if ((floppylatch & 0x80) && !fptr->bWriteProtected) // && floppywritemode
+	else if (!fptr->bWriteProtected) // && floppywritemode
 	{
 		*(fptr->trackimage + fptr->byte) = floppylatch;
 		fptr->trackimagedirty = 1;
@@ -816,7 +818,11 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 
 void DiskReset(void)
 {
+	// RESET forces all switches off (UTA2E Table 9.1)
+	currdrive = 0;
 	floppymotoron = 0;
+	floppyloadmode = 0;
+	floppywritemode = 0;
 	phases = 0;
 }
 
@@ -884,9 +890,11 @@ static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, U
 	/* floppyloadmode = 1; */
 	if (!write)
 	{
-		if (floppymotoron && !floppywritemode)
+		// Should really test for drive off - after 1 second drive off delay (UTA2E page 9-13)
+		// but Gemstone Warrior sets load mode with the drive off, so don't check for now
+		if (!floppywritemode)
 		{
-			// phase 1 on also forces write protect in the Disk II drive (UTA2E page 9-7) but we don't implement that
+			// Phase 1 on also forces write protect in the Disk II drive (UTA2E page 9-7) but we don't implement that
 			if (g_aFloppyDisk[currdrive].bWriteProtected)
 				floppylatch |= 0x80;
 			else

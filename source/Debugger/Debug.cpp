@@ -67,8 +67,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int  g_nDebugBreakOnInvalid  = 0; // Bit Flags of Invalid Opcode to break on: // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
 	int  g_iDebugBreakOnOpcode   = 0;
 
-	bool g_bDebugBreakDelayCheck = false; // If exiting the debugger, allow at least one instruction to execute so we don't trigger on the same invalid opcode
-	int  g_bDebugBreakpointHit   = 0; // See: BreakpointHit_t
+	static int  g_bDebugBreakpointHit = 0;	// See: BreakpointHit_t
 
 	int  g_nBreakpoints          = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
@@ -868,6 +867,24 @@ _Help:
 
 
 //===========================================================================
+
+// iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
+static int IsDebugBreakOnInvalid( int iOpcodeType )
+{
+	g_bDebugBreakpointHit |= ((g_nDebugBreakOnInvalid >> iOpcodeType) & 1) ? BP_HIT_INVALID : 0;
+	return g_bDebugBreakpointHit;
+}
+
+// iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
+static void SetDebugBreakOnInvalid( int iOpcodeType, int nValue )
+{
+	if (iOpcodeType <= AM_3)
+	{
+		g_nDebugBreakOnInvalid &= ~ (          1  << iOpcodeType);
+		g_nDebugBreakOnInvalid |=   ((nValue & 1) << iOpcodeType);
+	}
+}
+
 Update_t CmdBreakInvalid (int nArgs) // Breakpoint IFF Full-speed!
 {
 	if (nArgs > 2) // || (nArgs == 0))
@@ -8469,9 +8486,27 @@ void DebugExitDebugger ()
 }
 
 //===========================================================================
+
+static void CheckBreakOpcode( int iOpcode )
+{
+	if (iOpcode == 0x00)	// BRK
+		IsDebugBreakOnInvalid( AM_IMPLIED );
+
+	if (g_aOpcodes[iOpcode].sMnemonic[0] >= 'a')	// All 6502/65C02 undocumented opcodes mnemonics are lowercase strings!
+	{
+		// TODO: Translate g_aOpcodes[iOpcode].nAddressMode into {AM_1, AM_2, AM_3}
+		IsDebugBreakOnInvalid( AM_1 );
+	}
+
+	// User wants to enter debugger on specific opcode? (NB. Can't be BRK)
+	if (g_iDebugBreakOnOpcode && g_iDebugBreakOnOpcode == iOpcode)
+		g_bDebugBreakpointHit |= BP_HIT_OPCODE;
+}
+
 void DebugContinueStepping ()
 {
 	static unsigned nStepsTaken = 0;
+	static bool bForceSingleStepNext = false; // Allow at least one instruction to execute so we don't trigger on the same invalid opcode
 
 	if (g_nDebugSkipLen > 0)
 	{
@@ -8491,26 +8526,80 @@ void DebugContinueStepping ()
 
 	if (g_nDebugSteps)
 	{
-		if (g_hTraceFile)
-			OutputTraceLine();
+		bool bDoSingleStep = true;
 
-		// Update profiling stats
+		if (bForceSingleStepNext)
 		{
-			BYTE nOpcode = *(mem+regs.pc);
-			int  nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
+			bForceSingleStepNext = false;
+			g_bDebugBreakpointHit = BP_HIT_NONE;	// Don't show 'Stop Reason' msg a 2nd time
+		}
+		else if (GetActiveCpu() != CPU_Z80)
+		{
+			if (g_hTraceFile)
+				OutputTraceLine();
 
-			g_aProfileOpcodes[ nOpcode ].m_nCount++;
-			g_aProfileOpmodes[ nOpmode ].m_nCount++;
+			g_bDebugBreakpointHit = BP_HIT_NONE;
+
+			bool bPCIsFloatBusOrIO = (regs.pc >= 0xC000 && regs.pc <= 0xC0FF);	// TODO: Determine $C100..CFFF - assume executable
+
+			if (!bPCIsFloatBusOrIO)
+			{
+				BYTE nOpcode = *(mem+regs.pc);
+
+				// Update profiling stats
+				int  nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
+				g_aProfileOpcodes[ nOpcode ].m_nCount++;
+				g_aProfileOpmodes[ nOpmode ].m_nCount++;
+
+				CheckBreakOpcode( nOpcode );	// Can set g_bDebugBreakpointHit
+			}
+			else
+			{
+				g_bDebugBreakpointHit = BP_HIT_PC_READ_FLOATING_BUS_OR_IO_REG;
+			}
+
+			if (g_bDebugBreakpointHit)
+			{
+				bDoSingleStep = false;
+				bForceSingleStepNext = true;	// Allow next single-step (after this) to execute
+			}
 		}
 
-		SingleStep(g_bGoCmd_ReinitFlag);
-		g_bGoCmd_ReinitFlag = false;
+		if (bDoSingleStep)
+		{
+			SingleStep(g_bGoCmd_ReinitFlag);
+			g_bGoCmd_ReinitFlag = false;
 
-		g_bDebugBreakpointHit |= CheckBreakpointsIO() || CheckBreakpointsReg();
+			g_bDebugBreakpointHit |= CheckBreakpointsIO() || CheckBreakpointsReg();
+		}
 
-		if ((regs.pc == g_nDebugStepUntil) || g_bDebugBreakpointHit)
+		if (regs.pc == g_nDebugStepUntil || g_bDebugBreakpointHit)
+		{
+			TCHAR sText[ CONSOLE_WIDTH ];
+			char* pszStopReason = NULL;
+
+			if (regs.pc == g_nDebugStepUntil)
+				pszStopReason = TEXT("PC matches 'Go until' address");
+			else if (g_bDebugBreakpointHit & BP_HIT_INVALID)
+				pszStopReason = TEXT("Invalid opcode");
+			else if (g_bDebugBreakpointHit & BP_HIT_OPCODE)
+				pszStopReason = TEXT("Opcode match");
+			else if (g_bDebugBreakpointHit & BP_HIT_REG)
+				pszStopReason = TEXT("Register matches value");
+			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
+				pszStopReason = TEXT("Memory accessed");
+			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_REG)
+				pszStopReason = TEXT("PC reads from floating bus or I/O register");
+			else
+				pszStopReason = TEXT("Unknown!");
+
+			ConsoleBufferPushFormat( sText, TEXT("Stop reason: %s"), pszStopReason );
+			ConsoleUpdate();
+
 			g_nDebugSteps = 0;
-		else if (g_nDebugSteps > 0)
+		}
+
+		if (g_nDebugSteps > 0)
 			g_nDebugSteps--;
 	}
 
@@ -8525,7 +8614,7 @@ void DebugContinueStepping ()
 		DisasmCalcTopBotAddress();
 
 		Update_t bUpdate = UPDATE_ALL;
-		UpdateDisplay( bUpdate ); // nStepsTaken >= 0x10000);
+		UpdateDisplay( bUpdate );
 		nStepsTaken = 0;
 	}
 }

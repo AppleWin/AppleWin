@@ -113,7 +113,6 @@ static DWORD Cpu65D02(DWORD uTotalCycles, const bool bVideoUpdate)
 	AF_TO_EF
 	ULONG uExecutedCycles = 0;
 	WORD base;
-	g_bDebugBreakpointHit = 0;
 
 	do
 	{
@@ -132,15 +131,15 @@ static DWORD Cpu65D02(DWORD uTotalCycles, const bool bVideoUpdate)
 
         HEATMAP_X( regs.pc );
 
-		if (!Fetch(iOpcode, uExecutedCycles))
-			break;
+		Fetch(iOpcode, uExecutedCycles);
 
 // INV = Invalid -> Debugger Break
 // MSVC C PreProcessor is BROKEN... #define @ INV
 //#define #    INV
 //#define @    Read()
 //#define $    Store()
-#define $ INV
+//#define $ INV // INV = Invalid -> Debugger Break
+#define $
 
 		switch (iOpcode)
 		{
@@ -422,10 +421,6 @@ static DWORD Cpu65D02(DWORD uTotalCycles, const bool bVideoUpdate)
 	} while (uExecutedCycles < uTotalCycles);
 
 	EF_TO_AF // Emulator Flags to Apple Flags
-
-	if( g_bDebugBreakpointHit )
-		if ((g_nAppMode != MODE_DEBUG) && (g_nAppMode != MODE_STEPPING)) // // Running at full speed? (debugger not running)
-			RequestDebugger();
 
 	return uExecutedCycles;
 }

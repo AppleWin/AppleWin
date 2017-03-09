@@ -1898,7 +1898,6 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		else
 		if (g_nAppMode == MODE_DEBUG)
 		{
-			g_bDebugBreakDelayCheck = true;
 			ProcessButtonClick(BTN_RUN); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
 		}
 		else
