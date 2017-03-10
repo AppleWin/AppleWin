@@ -8540,9 +8540,7 @@ void DebugContinueStepping ()
 
 			g_bDebugBreakpointHit = BP_HIT_NONE;
 
-			bool bPCIsFloatBusOrIO = (regs.pc >= 0xC000 && regs.pc <= 0xC0FF);	// TODO: Determine $C100..CFFF - assume executable
-
-			if (!bPCIsFloatBusOrIO)
+			if ( MemIsAddrCodeMemory(regs.pc) )
 			{
 				BYTE nOpcode = *(mem+regs.pc);
 
@@ -8555,7 +8553,7 @@ void DebugContinueStepping ()
 			}
 			else
 			{
-				g_bDebugBreakpointHit = BP_HIT_PC_READ_FLOATING_BUS_OR_IO_REG;
+				g_bDebugBreakpointHit = BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM;
 			}
 
 			if (g_bDebugBreakpointHit)
@@ -8588,8 +8586,8 @@ void DebugContinueStepping ()
 				pszStopReason = TEXT("Register matches value");
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
 				pszStopReason = TEXT("Memory accessed");
-			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_REG)
-				pszStopReason = TEXT("PC reads from floating bus or I/O register");
+			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
+				pszStopReason = TEXT("PC reads from floating bus or I/O memory");
 			else
 				pszStopReason = TEXT("Unknown!");
 

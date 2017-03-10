@@ -628,11 +628,14 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 
 	if (address >= APPLE_SLOT_BEGIN && address <= APPLE_SLOT_END)
 	{
-		// Fix for bug 18643 and bug 18886
 		const UINT uSlot = (address>>8)&0x7;
-		if ( (SW_SLOTCXROM) &&						// Peripheral (card) ROMs enabled in $C100..$C7FF
-		     !(!SW_SLOTC3ROM && uSlot == 3) &&		// Internal C3 ROM disabled in $C300 when slot == 3
-			 !IsCardInSlot(uSlot) )					// Slot is empty
+		const bool bPeripheralSlotRomEnabled = IS_APPLE2 ? true	// A][
+													     :		// A//e or above
+			  ( (SW_SLOTCXROM) &&					// Peripheral (card) ROMs enabled in $C100..$C7FF
+		      !(!SW_SLOTC3ROM  && uSlot == 3) );	// Internal C3 ROM disabled in $C300 when slot == 3
+
+		// Fix for bug 18643 and bug 18886
+		if (bPeripheralSlotRomEnabled && !IsCardInSlot(uSlot))	// Slot is empty
 		{
 			return IO_Null(programcounter, address, write, value, nCyclesLeft);
 		}
@@ -1102,6 +1105,40 @@ LPBYTE MemGetBankPtr(const UINT nBank)
 LPBYTE MemGetCxRomPeripheral()
 {
 	return pCxRomPeripheral;
+}
+
+//===========================================================================
+
+// Post:
+// . true:  code memory
+// . false: I/O memory or floating bus
+bool MemIsAddrCodeMemory(const USHORT addr)
+{
+	if (addr < 0xC000 || addr > FIRMWARE_EXPANSION_END)	// Assume all A][ types have at least 48K
+		return true;
+
+	if (addr < APPLE_SLOT_BEGIN)		// [$C000..C0FF]
+		return false;
+
+	if (!IS_APPLE2 && !SW_SLOTCXROM)	// [$C100..CFFF] //e or Enhanced //e internal ROM
+		return true;
+
+	if (!IS_APPLE2 && !SW_SLOTC3ROM && (addr >> 8) == 0xC3)	// [$C300..C3FF] //e or Enhanced //e internal ROM
+		return true;
+
+	if (addr <= APPLE_SLOT_END)			// [$C100..C7FF]
+	{
+		const UINT uSlot = (addr >> 8) & 0x7;
+		if (!IsCardInSlot(uSlot))
+			return false;
+	}
+
+	// [$C800..CFFF]
+
+	if (g_eExpansionRomType == eExpRomNull)
+		return false;
+
+	return true;
 }
 
 //===========================================================================
