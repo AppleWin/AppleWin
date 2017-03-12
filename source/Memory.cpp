@@ -524,6 +524,12 @@ static bool IsCardInSlot(const UINT uSlot);
 //   - Reset when 6502 accesses $CFFF
 // . Enable2 = I/O STROBE' (6502 accesses [$C800..$CFFF])
 
+// TODO:
+// . IO_SELECT and IO_SELECT_InternalROM are sticky - they only getting reset by $CFFF and MemReset()
+// . Check Sather UAIIe, but I assume that a 6502 access to a non-$Csxx (and non-expansion ROM) location will clear IO_SELECT
+
+// NB. ProDOS boot sets IO_SELECT=0x04 (its scan for boot devices?), as slot2 contains a card (ie. SSC) with an expansion ROM.
+
 BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
 {
 	if (address == 0xCFFF)
@@ -553,13 +559,19 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 	{
 		if ((address >= APPLE_SLOT_BEGIN) && (address <= APPLE_SLOT_END))
 		{
-			const UINT uSlot = (address >> 8) & 0xF;
-			if ((uSlot != 3) && ExpansionRom[uSlot])
-				IO_SELECT |= 1<<uSlot;
-			else if ((SW_SLOTC3ROM) && ExpansionRom[uSlot])
-				IO_SELECT |= 1<<uSlot;		// Slot3 & Peripheral ROM
-			else if (!SW_SLOTC3ROM)
-				IO_SELECT_InternalROM = 1;	// Slot3 & Internal ROM
+			const UINT uSlot = (address>>8)&0x7;
+			if (uSlot != 3)
+			{
+				if (ExpansionRom[uSlot])
+					IO_SELECT |= 1<<uSlot;
+			}
+			else	// slot3
+			{
+				if ((SW_SLOTC3ROM) && ExpansionRom[uSlot])
+					IO_SELECT |= 1<<uSlot;		// Slot3 & Peripheral ROM
+				else if (!SW_SLOTC3ROM)
+					IO_SELECT_InternalROM = 1;	// Slot3 & Internal ROM
+			}
 		}
 		else if ((address >= FIRMWARE_EXPANSION_BEGIN) && (address <= FIRMWARE_EXPANSION_END))
 		{
@@ -634,7 +646,7 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 			  ( (SW_SLOTCXROM) &&					// Peripheral (card) ROMs enabled in $C100..$C7FF
 		      !(!SW_SLOTC3ROM  && uSlot == 3) );	// Internal C3 ROM disabled in $C300 when slot == 3
 
-		// Fix for bug 18643 and bug 18886
+		// Fix for GH#149 and GH#164
 		if (bPeripheralSlotRomEnabled && !IsCardInSlot(uSlot))	// Slot is empty
 		{
 			return IO_Null(programcounter, address, write, value, nCyclesLeft);
@@ -1120,7 +1132,7 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 	if (addr < APPLE_SLOT_BEGIN)		// [$C000..C0FF]
 		return false;
 
-	if (!IS_APPLE2 && !SW_SLOTCXROM)	// [$C100..CFFF] //e or Enhanced //e internal ROM
+	if (!IS_APPLE2 && !SW_SLOTCXROM)	// [$C100..C7FF] //e or Enhanced //e internal ROM
 		return true;
 
 	if (!IS_APPLE2 && !SW_SLOTC3ROM && (addr >> 8) == 0xC3)	// [$C300..C3FF] //e or Enhanced //e internal ROM
@@ -1136,7 +1148,12 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 	// [$C800..CFFF]
 
 	if (g_eExpansionRomType == eExpRomNull)
+	{
+		if (IO_SELECT || IO_SELECT_InternalROM)	// Was at $Csxx and now in [$C800..$CFFF]
+			return true;
+
 		return false;
+	}
 
 	return true;
 }

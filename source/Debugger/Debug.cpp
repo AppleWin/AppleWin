@@ -289,28 +289,28 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"AppleWinDebugger.cfg";
 #endif
 
-	char      g_sFileNameTrace      [] = "Trace.txt";
+	static char      g_sFileNameTrace      [] = "Trace.txt";
 
-	bool      g_bBenchmarking = false;
+	static bool      g_bBenchmarking = false;
 
-	BOOL      fulldisp      = 0;
+	static BOOL      fulldisp      = 0;
 
-	BOOL      g_bProfiling       = 0;
-	int       g_nDebugSteps      = 0;
-	DWORD     g_nDebugStepCycles = 0;
-	int       g_nDebugStepStart  = 0;
-	int       g_nDebugStepUntil  = -1; // HACK: MAGIC #
+	static BOOL      g_bProfiling       = 0;
+	static int       g_nDebugSteps      = 0;
+	static DWORD     g_nDebugStepCycles = 0;
+	static int       g_nDebugStepStart  = 0;
+	static int       g_nDebugStepUntil  = -1; // HACK: MAGIC #
 
-	int       g_nDebugSkipStart = 0;
-	int       g_nDebugSkipLen   = 0;
+	static int       g_nDebugSkipStart = 0;
+	static int       g_nDebugSkipLen   = 0;
 
-	FILE     *g_hTraceFile       = NULL;
-	bool      g_bTraceHeader     = false; // semaphore, flag header to be printed
-	bool      g_bTraceFileWithVideoScanner = false;
+	static FILE     *g_hTraceFile       = NULL;
+	static bool      g_bTraceHeader     = false; // semaphore, flag header to be printed
+	static bool      g_bTraceFileWithVideoScanner = false;
 
 	DWORD     extbench      = 0;
 
-	bool      g_bIgnoreNextKey = false;
+	static bool      g_bIgnoreNextKey = false;
 
 // Private ________________________________________________________________________________________
 
@@ -1007,12 +1007,12 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 
 	if (g_iDebugBreakOnOpcode == 0)
 		// Show what the current break opcode is
-		ConsoleBufferPushFormat( sText, TEXT("%s full speed Break on Opcode: None")
+		ConsoleBufferPushFormat( sText, TEXT("%s Break on Opcode: None")
 			, sAction
 		);
 	else
 		// Show what the current break opcode is
-		ConsoleBufferPushFormat( sText, TEXT("%s full speed Break on Opcode: %02X %s")
+		ConsoleBufferPushFormat( sText, TEXT("%s Break on Opcode: %02X %s")
 			, sAction
 			, g_iDebugBreakOnOpcode
 			, g_aOpcodes65C02[ g_iDebugBreakOnOpcode ].sMnemonic
@@ -8423,7 +8423,7 @@ void DebugBegin ()
 	g_nAppMode = MODE_DEBUG;
 	FrameRefreshStatus(DRAW_TITLE);
 
-	if (IS_APPLE2 || (g_Apple2Type == A2TYPE_APPLE2E))
+	if (GetMainCpu() == CPU_6502)
 	{
 		g_aOpcodes = & g_aOpcodes6502[ 0 ];		// Apple ][, ][+, //e
 		g_aOpmodes[ AM_2 ].m_nBytes = 1;
@@ -8505,7 +8505,7 @@ static void CheckBreakOpcode( int iOpcode )
 
 void DebugContinueStepping ()
 {
-	static unsigned nStepsTaken = 0;
+	static UINT nStepsTaken = 0;
 	static bool bForceSingleStepNext = false; // Allow at least one instruction to execute so we don't trigger on the same invalid opcode
 
 	if (g_nDebugSkipLen > 0)
@@ -8568,7 +8568,7 @@ void DebugContinueStepping ()
 			SingleStep(g_bGoCmd_ReinitFlag);
 			g_bGoCmd_ReinitFlag = false;
 
-			g_bDebugBreakpointHit |= CheckBreakpointsIO() || CheckBreakpointsReg();
+			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg();
 		}
 
 		if (regs.pc == g_nDebugStepUntil || g_bDebugBreakpointHit)
@@ -8603,6 +8603,8 @@ void DebugContinueStepping ()
 
 	if (!g_nDebugSteps)
 	{
+		SoundCore_SetFade(FADE_OUT);	// NB. Call when MODE_STEPPING (not MODE_DEBUG) - see function
+
 		g_nAppMode = MODE_DEBUG;
 		FrameRefreshStatus(DRAW_TITLE);
 // BUG: PageUp, Trace - doesn't center cursor
@@ -9011,9 +9013,9 @@ void DebugInitialize ()
 //===========================================================================
 void DebuggerInputConsoleChar( TCHAR ch )
 {
-	if ((g_nAppMode == MODE_STEPPING) && (ch == DEBUG_EXIT_KEY))
+	if ((g_nAppMode == MODE_STEPPING) && (ch == DEBUG_STEPPING_EXIT_KEY))
 	{
-		g_nDebugSteps = 0; // Exit Debugger
+		g_nDebugSteps = 0; // On next DebugContinueStepping(), stop single-stepping and transition to MODE_DEBUG
 		ClearTempBreakpoints();
 	}
 

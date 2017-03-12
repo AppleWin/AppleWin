@@ -163,7 +163,7 @@
 
 	enum
 	{
-		DEBUG_EXIT_KEY   = 0x1B, // Escape
+		DEBUG_STEPPING_EXIT_KEY   = 0x1B, // Escape
 		DEBUG_TOGGLE_KEY = VK_F1 + BTN_DEBUG
 	};
 
