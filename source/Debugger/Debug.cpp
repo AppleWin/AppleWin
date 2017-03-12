@@ -8505,7 +8505,6 @@ static void CheckBreakOpcode( int iOpcode )
 
 void DebugContinueStepping ()
 {
-	static UINT nStepsTaken = 0;
 	static bool bForceSingleStepNext = false; // Allow at least one instruction to execute so we don't trigger on the same invalid opcode
 
 	if (g_nDebugSkipLen > 0)
@@ -8615,7 +8614,6 @@ void DebugContinueStepping ()
 
 		Update_t bUpdate = UPDATE_ALL;
 		UpdateDisplay( bUpdate );
-		nStepsTaken = 0;
 	}
 }
 
