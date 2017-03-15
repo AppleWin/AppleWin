@@ -174,7 +174,7 @@ iofunction		IORead[256];
 iofunction		IOWrite[256];
 static LPVOID	SlotParameters[NUM_SLOTS];
 
-static BOOL    lastwriteram = 0;	// NB. redundant - only used in MemSetPaging(), where it's forced to 1
+static BOOL    g_bLastWriteRam = 0;
 
 LPBYTE         mem          = NULL;
 
@@ -833,7 +833,7 @@ void MemResetPaging()
 
 static void ResetPaging(BOOL initialize)
 {
-	lastwriteram = 0;
+	g_bLastWriteRam = 0;
 	SetMemMode(MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM);
 	UpdatePaging(initialize);
 }
@@ -1630,16 +1630,26 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	// DETERMINE THE NEW MEMORY PAGING MODE.
 	if ((address >= 0x80) && (address <= 0x8F))
 	{
-		BOOL writeram = (address & 1);
 		SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM | MF_WRITERAM));
-		lastwriteram = 1; // note: because diags.do doesn't set switches twice!
-		if (lastwriteram && writeram)
-			SetMemMode(memmode | MF_WRITERAM);
+
 		if (!(address & 8))
 			SetMemMode(memmode | MF_BANK2);
+
 		if (((address & 2) >> 1) == (address & 1))
 			SetMemMode(memmode | MF_HIGHRAM);
-		lastwriteram = writeram;
+
+		if (!write)	// GH#392
+		{
+			BOOL bWriteRam = (address & 1);
+//			g_bLastWriteRam = 1; // note: because diags.do doesn't set switches twice!
+			if (g_bLastWriteRam && bWriteRam)
+				SetMemMode(memmode | MF_WRITERAM);
+			g_bLastWriteRam = bWriteRam;
+		}
+		else
+		{
+			g_bLastWriteRam = 0;
+		}
 	}
 	else if (!IS_APPLE2)
 	{
@@ -1748,7 +1758,7 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE* const pMemMain, const BYTE* const pMemAux)
 {
 	SetMemMode(MemMode);
-	lastwriteram = LastWriteRam;
+	g_bLastWriteRam = LastWriteRam;
 
 	memcpy(memmain, pMemMain, nMemMainSize);
 	memcpy(memaux, pMemAux, nMemAuxSize);
@@ -1825,7 +1835,7 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotStructName().c_str());
 		yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, memmode);
-		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, lastwriteram ? 1 : 0);
+		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, g_bLastWriteRam ? 1 : 0);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT, IO_SELECT);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, IO_SELECT_InternalROM);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
@@ -1841,7 +1851,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 		return false;
 
 	SetMemMode( yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) );
-	lastwriteram = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
+	g_bLastWriteRam = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
 	IO_SELECT = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT);
 	IO_SELECT_InternalROM = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT_INT);
 	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.LoadUint(SS_YAML_KEY_EXPANSIONROMTYPE);
