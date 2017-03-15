@@ -44,6 +44,7 @@ LPBYTE  MemGetAuxPtr(const WORD);
 LPBYTE  MemGetMainPtr(const WORD);
 LPBYTE  MemGetBankPtr(const UINT nBank);
 LPBYTE  MemGetCxRomPeripheral();
+bool    MemIsAddrCodeMemory(const USHORT addr);
 void    MemInitialize ();
 void    MemInitializeROM(void);
 void    MemInitializeCustomF8ROM(void);

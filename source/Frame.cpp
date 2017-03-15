@@ -1025,6 +1025,9 @@ LRESULT CALLBACK FrameWndProc (
 			else
 			if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
 			{
+				if (g_nAppMode == MODE_STEPPING && (TCHAR)wparam == DEBUG_STEPPING_EXIT_KEY)
+					SoundCore_SetFade(FADE_OUT);
+
 				DebuggerInputConsoleChar((TCHAR)wparam);
 			}
 			break;
@@ -1299,7 +1302,8 @@ LRESULT CALLBACK FrameWndProc (
 					// Don't call FrameShowCursor(FALSE) else ClipCursor() won't be called
 					break;
 				case MODE_STEPPING:
-					DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
+					SoundCore_SetFade(FADE_OUT);
+					DebuggerInputConsoleChar( DEBUG_STEPPING_EXIT_KEY );
 					break;
 			}
 			DrawStatusArea((HDC)0,DRAW_TITLE);
@@ -1815,6 +1819,7 @@ static bool ConfirmReboot(bool bFromButtonUI)
 static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 {
 	SoundCore_SetFade(FADE_OUT);
+	bool bAllowFadeIn = true;
 
 #if DEBUG_DD_PALETTE
 	char _text[ 80 ];
@@ -1890,10 +1895,11 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 			ResetMachineState();
 		}
 
-		// Allow F7 to enter debugger even though emulator isn't "running"
 		if (g_nAppMode == MODE_STEPPING)
 		{
-			DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
+			// Allow F7 to enter debugger even when not MODE_RUNNING
+			DebuggerInputConsoleChar( DEBUG_STEPPING_EXIT_KEY );
+			bAllowFadeIn = false;
 		}
 		else
 		if (g_nAppMode == MODE_DEBUG)
@@ -1914,7 +1920,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
   }
 
-  if((g_nAppMode != MODE_DEBUG) && (g_nAppMode != MODE_PAUSED))
+  if((g_nAppMode != MODE_DEBUG) && (g_nAppMode != MODE_PAUSED) && bAllowFadeIn)
   {
 	  SoundCore_SetFade(FADE_IN);
   }

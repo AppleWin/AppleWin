@@ -174,7 +174,7 @@ iofunction		IORead[256];
 iofunction		IOWrite[256];
 static LPVOID	SlotParameters[NUM_SLOTS];
 
-static BOOL    lastwriteram = 0;	// NB. redundant - only used in MemSetPaging(), where it's forced to 1
+static BOOL    g_bLastWriteRam = 0;
 
 LPBYTE         mem          = NULL;
 
@@ -524,6 +524,12 @@ static bool IsCardInSlot(const UINT uSlot);
 //   - Reset when 6502 accesses $CFFF
 // . Enable2 = I/O STROBE' (6502 accesses [$C800..$CFFF])
 
+// TODO:
+// . IO_SELECT and IO_SELECT_InternalROM are sticky - they only getting reset by $CFFF and MemReset()
+// . Check Sather UAIIe, but I assume that a 6502 access to a non-$Csxx (and non-expansion ROM) location will clear IO_SELECT
+
+// NB. ProDOS boot sets IO_SELECT=0x04 (its scan for boot devices?), as slot2 contains a card (ie. SSC) with an expansion ROM.
+
 BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
 {
 	if (address == 0xCFFF)
@@ -553,13 +559,19 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 	{
 		if ((address >= APPLE_SLOT_BEGIN) && (address <= APPLE_SLOT_END))
 		{
-			const UINT uSlot = (address >> 8) & 0xF;
-			if ((uSlot != 3) && ExpansionRom[uSlot])
-				IO_SELECT |= 1<<uSlot;
-			else if ((SW_SLOTC3ROM) && ExpansionRom[uSlot])
-				IO_SELECT |= 1<<uSlot;		// Slot3 & Peripheral ROM
-			else if (!SW_SLOTC3ROM)
-				IO_SELECT_InternalROM = 1;	// Slot3 & Internal ROM
+			const UINT uSlot = (address>>8)&0x7;
+			if (uSlot != 3)
+			{
+				if (ExpansionRom[uSlot])
+					IO_SELECT |= 1<<uSlot;
+			}
+			else	// slot3
+			{
+				if ((SW_SLOTC3ROM) && ExpansionRom[uSlot])
+					IO_SELECT |= 1<<uSlot;		// Slot3 & Peripheral ROM
+				else if (!SW_SLOTC3ROM)
+					IO_SELECT_InternalROM = 1;	// Slot3 & Internal ROM
+			}
 		}
 		else if ((address >= FIRMWARE_EXPANSION_BEGIN) && (address <= FIRMWARE_EXPANSION_END))
 		{
@@ -628,11 +640,14 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 
 	if (address >= APPLE_SLOT_BEGIN && address <= APPLE_SLOT_END)
 	{
-		// Fix for bug 18643 and bug 18886
 		const UINT uSlot = (address>>8)&0x7;
-		if ( (SW_SLOTCXROM) &&						// Peripheral (card) ROMs enabled in $C100..$C7FF
-		     !(!SW_SLOTC3ROM && uSlot == 3) &&		// Internal C3 ROM disabled in $C300 when slot == 3
-			 !IsCardInSlot(uSlot) )					// Slot is empty
+		const bool bPeripheralSlotRomEnabled = IS_APPLE2 ? true	// A][
+													     :		// A//e or above
+			  ( (SW_SLOTCXROM) &&					// Peripheral (card) ROMs enabled in $C100..$C7FF
+		      !(!SW_SLOTC3ROM  && uSlot == 3) );	// Internal C3 ROM disabled in $C300 when slot == 3
+
+		// Fix for GH#149 and GH#164
+		if (bPeripheralSlotRomEnabled && !IsCardInSlot(uSlot))	// Slot is empty
 		{
 			return IO_Null(programcounter, address, write, value, nCyclesLeft);
 		}
@@ -818,7 +833,7 @@ void MemResetPaging()
 
 static void ResetPaging(BOOL initialize)
 {
-	lastwriteram = 0;
+	g_bLastWriteRam = 0;
 	SetMemMode(MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM);
 	UpdatePaging(initialize);
 }
@@ -1102,6 +1117,45 @@ LPBYTE MemGetBankPtr(const UINT nBank)
 LPBYTE MemGetCxRomPeripheral()
 {
 	return pCxRomPeripheral;
+}
+
+//===========================================================================
+
+// Post:
+// . true:  code memory
+// . false: I/O memory or floating bus
+bool MemIsAddrCodeMemory(const USHORT addr)
+{
+	if (addr < 0xC000 || addr > FIRMWARE_EXPANSION_END)	// Assume all A][ types have at least 48K
+		return true;
+
+	if (addr < APPLE_SLOT_BEGIN)		// [$C000..C0FF]
+		return false;
+
+	if (!IS_APPLE2 && !SW_SLOTCXROM)	// [$C100..C7FF] //e or Enhanced //e internal ROM
+		return true;
+
+	if (!IS_APPLE2 && !SW_SLOTC3ROM && (addr >> 8) == 0xC3)	// [$C300..C3FF] //e or Enhanced //e internal ROM
+		return true;
+
+	if (addr <= APPLE_SLOT_END)			// [$C100..C7FF]
+	{
+		const UINT uSlot = (addr >> 8) & 0x7;
+		if (!IsCardInSlot(uSlot))
+			return false;
+	}
+
+	// [$C800..CFFF]
+
+	if (g_eExpansionRomType == eExpRomNull)
+	{
+		if (IO_SELECT || IO_SELECT_InternalROM)	// Was at $Csxx and now in [$C800..$CFFF]
+			return true;
+
+		return false;
+	}
+
+	return true;
 }
 
 //===========================================================================
@@ -1576,16 +1630,26 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	// DETERMINE THE NEW MEMORY PAGING MODE.
 	if ((address >= 0x80) && (address <= 0x8F))
 	{
-		BOOL writeram = (address & 1);
 		SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM | MF_WRITERAM));
-		lastwriteram = 1; // note: because diags.do doesn't set switches twice!
-		if (lastwriteram && writeram)
-			SetMemMode(memmode | MF_WRITERAM);
+
 		if (!(address & 8))
 			SetMemMode(memmode | MF_BANK2);
+
 		if (((address & 2) >> 1) == (address & 1))
 			SetMemMode(memmode | MF_HIGHRAM);
-		lastwriteram = writeram;
+
+		if (!write)	// GH#392
+		{
+			BOOL bWriteRam = (address & 1);
+//			g_bLastWriteRam = 1; // note: because diags.do doesn't set switches twice!
+			if (g_bLastWriteRam && bWriteRam)
+				SetMemMode(memmode | MF_WRITERAM);
+			g_bLastWriteRam = bWriteRam;
+		}
+		else
+		{
+			g_bLastWriteRam = 0;
+		}
 	}
 	else if (!IS_APPLE2)
 	{
@@ -1694,7 +1758,7 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE* const pMemMain, const BYTE* const pMemAux)
 {
 	SetMemMode(MemMode);
-	lastwriteram = LastWriteRam;
+	g_bLastWriteRam = LastWriteRam;
 
 	memcpy(memmain, pMemMain, nMemMainSize);
 	memcpy(memaux, pMemAux, nMemAuxSize);
@@ -1771,7 +1835,7 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotStructName().c_str());
 		yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, memmode);
-		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, lastwriteram ? 1 : 0);
+		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, g_bLastWriteRam ? 1 : 0);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT, IO_SELECT);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, IO_SELECT_InternalROM);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
@@ -1787,7 +1851,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 		return false;
 
 	SetMemMode( yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) );
-	lastwriteram = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
+	g_bLastWriteRam = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
 	IO_SELECT = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT);
 	IO_SELECT_InternalROM = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT_INT);
 	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.LoadUint(SS_YAML_KEY_EXPANSIONROMTYPE);

@@ -34,7 +34,7 @@
 		,BP_HIT_OPCODE  = (1 << 1)
 		,BP_HIT_REG     = (1 << 2)
 		,BP_HIT_MEM     = (1 << 3)
-		,BP_HIT_PC_READ_FLOATING_BUS_OR_IO_REG = (1 << 4)
+		,BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM = (1 << 4)
 	};
 
 	extern int          g_nBreakpoints;
@@ -163,7 +163,7 @@
 
 	enum
 	{
-		DEBUG_EXIT_KEY   = 0x1B, // Escape
+		DEBUG_STEPPING_EXIT_KEY   = 0x1B, // Escape
 		DEBUG_TOGGLE_KEY = VK_F1 + BTN_DEBUG
 	};
 
