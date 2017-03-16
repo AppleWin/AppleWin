@@ -535,7 +535,7 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 	if (address == 0xCFFF)
 	{
 		// Disable expansion ROM at [$C800..$CFFF]
-		// . SSC will disable on an access to $CFxx - but ROM only writes to $CFFF, so it doesn't matter
+		// . SSC will disable on an access to $CFxx - but ROM only access $CFFF, so it doesn't matter
 		IO_SELECT = 0;
 		IO_SELECT_InternalROM = 0;
 		g_uPeripheralRomSlot = 0;
@@ -659,15 +659,9 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 	return mem[address];
 }
 
-// TODO: Check if a write to [C800..CFFF] can set IO_STROBE=1 (like the IORead_Cxxx case does)
 BYTE __stdcall IOWrite_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
 {
-	if (IsPotentialNoSlotClockAccess(address))
-	{
-		g_NoSlotClock.Write(address);
-	}
-
-	return 0;
+	return IORead_Cxxx(programcounter, address, write, value, nCyclesLeft);	// GH#392
 }
 
 //===========================================================================
@@ -1641,7 +1635,6 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 		if (!write)	// GH#392
 		{
 			BOOL bWriteRam = (address & 1);
-//			g_bLastWriteRam = 1; // note: because diags.do doesn't set switches twice!
 			if (g_bLastWriteRam && bWriteRam)
 				SetMemMode(memmode | MF_WRITERAM);
 			g_bLastWriteRam = bWriteRam;
@@ -1716,6 +1709,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 				// Disable Internal ROM
 				// . Similar to $CFFF access
 				// . None of the peripheral cards can be driving the bus - so use the null ROM
+				IO_SELECT_InternalROM = 0;	// GH#392
 				memset(pCxRomPeripheral+0x800, 0, FIRMWARE_EXPANSION_SIZE);
 				memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
 				g_eExpansionRomType = eExpRomNull;
