@@ -9,6 +9,21 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.26.2.0 (Experimental) - 18 Mar 2017
+-------------------------------------
+. [Bug #392] Fixes for a2audit.dsk
+. [Bug #389] write-protect detection misreporting
+. [Bug #386] SSC: Experimental support for 6551's DTR via -dtr or -dtr-invert args
+. [Bug #383] "Enhanced disk speed" is very slow when debugger is active
+. [Bug #217] Debugger G(o) command should use normal speed
+. Debugger: Added new gg command:
+
+     command | run at normal speed? | run at full speed?       | video quality | sound quality
+    -------------------------------------------------------------------------------------------
+       g     |         yes          | only if disk active, etc | precise       | precise
+       gg    |         no           | always                   | periodic      | muted
+
+
 1.26.1.1 - 17 Feb 2017
 ----------------------
 Fixes:
