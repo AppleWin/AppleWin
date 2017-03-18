@@ -1135,8 +1135,7 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 	if (addr <= APPLE_SLOT_END)			// [$C100..C7FF]
 	{
 		const UINT uSlot = (addr >> 8) & 0x7;
-		if (!IsCardInSlot(uSlot))
-			return false;
+		return IsCardInSlot(uSlot);
 	}
 
 	// [$C800..CFFF]
