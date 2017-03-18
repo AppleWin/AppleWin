@@ -1623,7 +1623,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	// DETERMINE THE NEW MEMORY PAGING MODE.
 	if ((address >= 0x80) && (address <= 0x8F))
 	{
-		SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM | MF_WRITERAM));
+		SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM));
 
 		if (!(address & 8))
 			SetMemMode(memmode | MF_BANK2);
@@ -1633,6 +1633,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 
 		if (!write)	// GH#392
 		{
+			SetMemMode(memmode & ~(MF_WRITERAM));
 			BOOL bWriteRam = (address & 1);
 			if (g_bLastWriteRam && bWriteRam)
 				SetMemMode(memmode | MF_WRITERAM);
