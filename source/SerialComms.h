@@ -43,6 +43,7 @@ public:
 	char*	GetSerialPortName() { return m_ayCurrentSerialPortName; }
 	void	SetSerialPortName(const char* pSerialPortName);
 	bool	IsActive() { return (m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET); }
+	void	SupportDTR(bool bEnable, bool bInvert) { m_bCfgSupportDTR = bEnable; m_bCfgInvertDTR = bInvert; }
 
 	void	CommTcpSerialAccept();
 	void	CommTcpSerialReceive();
@@ -139,4 +140,9 @@ private:
 
 	BYTE* m_pExpansionRom;
 	UINT m_uSlot;
+
+	// DTR
+	UINT	m_uDTR;
+	bool m_bCfgSupportDTR;
+	bool m_bCfgInvertDTR;
 };
