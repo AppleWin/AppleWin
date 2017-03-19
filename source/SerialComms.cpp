@@ -721,10 +721,12 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	if (!CheckComm())
 		return ST_DSR | ST_DCD | ST_TX_EMPTY;
 
-#ifdef SUPPORT_MODEM
-	DWORD modemstatus = 0;
-	GetCommModemStatus(m_hCommHandle,&modemstatus);				// Returns 0x30 = MS_DSR_ON|MS_CTS_ON
-#endif
+	DWORD modemStatus = 0;
+	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))
+	{
+		// Do this outside of the critical section (don't know how long it takes)
+		GetCommModemStatus(m_hCommHandle, &modemStatus);	// Returns 0x30 = MS_DSR_ON|MS_CTS_ON
+	}
 
 	//
 
@@ -757,13 +759,29 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 
 	//
 
+	BYTE DCD = 0;
+	BYTE DSR = 0;
+
+	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))
+	{
+		if (m_bCfgSupportDCD)
+		{
+			DCD = (modemStatus & MS_RLSD_ON) ? 0x00 : ST_DCD;
+			if (m_bCfgInvertDCD) DCD = (DCD == 0) ? ST_DCD : 0;
+		}
+
+		if (m_bCfgSupportDSR)
+		{
+			DSR = (modemStatus & MS_DSR_ON)	 ? 0x00 : ST_DSR;
+			if (m_bCfgInvertDSR) DSR = (DSR == 0) ? ST_DSR : 0;
+		}
+	}
+
 	BYTE uStatus = ST_TX_EMPTY 
 				| ((!bComSerialBufferEmpty || !m_qTcpSerialBuffer.empty()) ? ST_RX_FULL : 0x00)
-#ifdef SUPPORT_MODEM
-				| ((modemstatus & MS_RLSD_ON)	? 0x00 : ST_DCD)	// Need 0x00 to allow ZLink to start up
-				| ((modemstatus & MS_DSR_ON)	? 0x00 : ST_DSR)
-#endif
-				| (bIRQ							? ST_IRQ : 0x00);
+				| DCD										// Need 0x00 to allow ZLink to start up
+				| DSR
+				| (bIRQ	? ST_IRQ : 0x00);
 
 	if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
