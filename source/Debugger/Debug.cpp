@@ -7781,7 +7781,7 @@ Update_t ExecuteCommand (int nArgs)
 		if ( nLen > 0 )
 		{
 			// verify pCommand[ 0 .. (nLen-1) ] are hex digits
-			bool bIsHex = true;
+			bool bIsHex = false;
 			char *pChar = pCommand;
 			for (int iChar = 0; iChar < (nLen - 1); iChar++, pChar++ )
 			{
@@ -7794,32 +7794,19 @@ Update_t ExecuteCommand (int nArgs)
 			
 			if (bIsHex)
 			{
+				// Support Apple Monitor commands
+
 				WORD nAddress = 0;
 
-				// Support old AppleWin GO commands:
-				// . G      -> GO
-				// . G #### -> GO until $address
-				// Support Apple Monitor commands:
-				// . ####G  -> JMP $address (exit debugger)
+				// ####G -> JMP $address (exit debugger)
+				// NB. AppleWin 'g','gg' commands handled via pFunction below
 				if ((pCommand[nLen-1] == 'G') ||
 					(pCommand[nLen-1] == 'g'))
 				{
-					if (nLen == 1)
-					{
-						if (nArgs)
-						{
-							const int iArg = 1;
-							ArgsGetValue( &g_aArgs[iArg], &g_aArgs[iArg].nValue );
-							_CmdBreakpointAddCommonArg(iArg, nArgs, BP_SRC_REG_PC, BP_OP_EQUAL, true);
-						}
-					}
-					else if (nLen > 1)
-					{
-						pCommand[nLen-1] = 0;
-						ArgsGetValue( pArg, & nAddress );
+					pCommand[nLen-1] = 0;
+					ArgsGetValue( pArg, & nAddress );
 
-						regs.pc = nAddress;
-					}
+					regs.pc = nAddress;
 
 					g_nAppMode = MODE_RUNNING; // exit the debugger
 
