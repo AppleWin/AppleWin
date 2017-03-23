@@ -75,8 +75,9 @@ CSuperSerialCard::CSuperSerialCard() :
 	m_aySerialPortChoices(NULL),
 	m_uTCPChoiceItemIdx(0),
 	m_uSlot(0),
-	m_bCfgSupportDTR(false),	// GH#386 - don't support by default until we have confirmed it works
-	m_bCfgInvertDTR(false)
+	m_bCfgSupportDCD(false),
+	m_bCfgSupportDSR(false),
+	m_bCfgSupportDTR(false)
 {
 	memset(m_ayCurrentSerialPortName, 0, sizeof(m_ayCurrentSerialPortName));
 	m_dwSerialPortItem = 0;
@@ -518,16 +519,8 @@ BYTE __stdcall CSuperSerialCard::CommCommand(WORD, WORD, BYTE write, BYTE value,
 
 		if (m_bCfgSupportDTR)	// GH#386
 		{
-			// Legacy comment - inaccurate? (see docs\SSC Memory Locations for Programmers.txt)
-			// . Note that, although the DTR is generally not used in the SSC (it may actually not be connected!),
-			//   it must be set to 'low' in order for the 6551 to function correctly.
-
 			// Data Terminal Ready (DTR) setting [0=set DTR high (indicates 'not ready')]
-			const bool bDTR_Ready = (m_uCommandByte & 0x01) ? true : false;
-			if (bDTR_Ready)
-				m_uDTR = !m_bCfgInvertDTR ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
-			else
-				m_uDTR = !m_bCfgInvertDTR ? DTR_CONTROL_DISABLE : DTR_CONTROL_ENABLE;
+			m_uDTR = (m_uCommandByte & 0x01) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
 		}
 
 		UpdateCommState();
@@ -762,19 +755,13 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	BYTE DCD = 0;
 	BYTE DSR = 0;
 
-	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))
+	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))	// GH#386
 	{
 		if (m_bCfgSupportDCD)
-		{
 			DCD = (modemStatus & MS_RLSD_ON) ? 0x00 : ST_DCD;
-			if (m_bCfgInvertDCD) DCD = (DCD == 0) ? ST_DCD : 0;
-		}
 
 		if (m_bCfgSupportDSR)
-		{
 			DSR = (modemStatus & MS_DSR_ON)	 ? 0x00 : ST_DSR;
-			if (m_bCfgInvertDSR) DSR = (DSR == 0) ? ST_DSR : 0;
-		}
 	}
 
 	BYTE uStatus = ST_TX_EMPTY 
