@@ -74,7 +74,9 @@ SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 CSuperSerialCard::CSuperSerialCard() :
 	m_aySerialPortChoices(NULL),
 	m_uTCPChoiceItemIdx(0),
-	m_uSlot(0)
+	m_uSlot(0),
+	m_bCfgSupportDTR(false),	// GH#386 - don't support by default until we have confirmed it works
+	m_bCfgInvertDTR(false)
 {
 	memset(m_ayCurrentSerialPortName, 0, sizeof(m_ayCurrentSerialPortName));
 	m_dwSerialPortItem = 0;
@@ -111,6 +113,8 @@ void CSuperSerialCard::InternalReset()
 	m_qComSerialBuffer[0].clear();
 	m_qComSerialBuffer[1].clear();
 	m_qTcpSerialBuffer.clear();
+
+	m_uDTR = DTR_CONTROL_DISABLE;
 }
 
 CSuperSerialCard::~CSuperSerialCard()
@@ -212,6 +216,7 @@ void CSuperSerialCard::UpdateCommState()
 	dcb.ByteSize = m_uByteSize;
 	dcb.Parity   = m_uParity;
 	dcb.StopBits = m_uStopBits;
+	dcb.fDtrControl = m_uDTR;
 
 	SetCommState(m_hCommHandle,&dcb);
 }
@@ -511,10 +516,18 @@ BYTE __stdcall CSuperSerialCard::CommCommand(WORD, WORD, BYTE write, BYTE value,
 		// interrupt request disable [0=enable receiver interrupts] - NOTE: SSC docs get this wrong!
 		m_bRxIrqEnabled = ((m_uCommandByte & 0x02) == 0);
 
-		if (m_uCommandByte	& 0x01)	// Data Terminal Ready (DTR) setting [0=set DTR high (indicates 'not ready')]
+		if (m_bCfgSupportDTR)	// GH#386
 		{
-			// Note that, although the DTR is generally not used in the SSC (it may actually not
-			// be connected!), it must be set to 'low' in order for the 6551 to function correctly.
+			// Legacy comment - inaccurate? (see docs\SSC Memory Locations for Programmers.txt)
+			// . Note that, although the DTR is generally not used in the SSC (it may actually not be connected!),
+			//   it must be set to 'low' in order for the 6551 to function correctly.
+
+			// Data Terminal Ready (DTR) setting [0=set DTR high (indicates 'not ready')]
+			const bool bDTR_Ready = (m_uCommandByte & 0x01) ? true : false;
+			if (bDTR_Ready)
+				m_uDTR = !m_bCfgInvertDTR ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
+			else
+				m_uDTR = !m_bCfgInvertDTR ? DTR_CONTROL_DISABLE : DTR_CONTROL_ENABLE;
 		}
 
 		UpdateCommState();
@@ -708,10 +721,12 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	if (!CheckComm())
 		return ST_DSR | ST_DCD | ST_TX_EMPTY;
 
-#ifdef SUPPORT_MODEM
-	DWORD modemstatus = 0;
-	GetCommModemStatus(m_hCommHandle,&modemstatus);				// Returns 0x30 = MS_DSR_ON|MS_CTS_ON
-#endif
+	DWORD modemStatus = 0;
+	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))
+	{
+		// Do this outside of the critical section (don't know how long it takes)
+		GetCommModemStatus(m_hCommHandle, &modemStatus);	// Returns 0x30 = MS_DSR_ON|MS_CTS_ON
+	}
 
 	//
 
@@ -744,13 +759,29 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 
 	//
 
+	BYTE DCD = 0;
+	BYTE DSR = 0;
+
+	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))
+	{
+		if (m_bCfgSupportDCD)
+		{
+			DCD = (modemStatus & MS_RLSD_ON) ? 0x00 : ST_DCD;
+			if (m_bCfgInvertDCD) DCD = (DCD == 0) ? ST_DCD : 0;
+		}
+
+		if (m_bCfgSupportDSR)
+		{
+			DSR = (modemStatus & MS_DSR_ON)	 ? 0x00 : ST_DSR;
+			if (m_bCfgInvertDSR) DSR = (DSR == 0) ? ST_DSR : 0;
+		}
+	}
+
 	BYTE uStatus = ST_TX_EMPTY 
 				| ((!bComSerialBufferEmpty || !m_qTcpSerialBuffer.empty()) ? ST_RX_FULL : 0x00)
-#ifdef SUPPORT_MODEM
-				| ((modemstatus & MS_RLSD_ON)	? 0x00 : ST_DCD)	// Need 0x00 to allow ZLink to start up
-				| ((modemstatus & MS_DSR_ON)	? 0x00 : ST_DSR)
-#endif
-				| (bIRQ							? ST_IRQ : 0x00);
+				| DCD										// Need 0x00 to allow ZLink to start up
+				| DSR
+				| (bIRQ	? ST_IRQ : 0x00);
 
 	if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
@@ -1314,6 +1345,8 @@ void CSuperSerialCard::SetSnapshot_v1(	const DWORD  baudrate,
 //	memcpy(m_RecvBuffer, pSS->recvbuffer, uRecvBufferSize);
 //	m_vRecvBytes		= recvbytes;
 	m_uStopBits			= stopbits;
+
+	//m_uDTR = (m_uCommandByte & 0x01) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE; // TODO: Once GH#386 is resolved
 }
 
 //===========================================================================
@@ -1419,6 +1452,8 @@ bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, U
 	m_vbTxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQPENDING);
 	m_vbRxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQPENDING);
 	m_bWrittenTx		= yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITTENTX);
+
+	//m_uDTR = (m_uCommandByte & 0x01) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE; // TODO: Once GH#386 is resolved
 
 	std::string serialPortName = yamlLoadHelper.LoadString(SS_YAML_KEY_SERIALPORTNAME);
 	SetSerialPortName(serialPortName.c_str());

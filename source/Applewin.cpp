@@ -1034,6 +1034,30 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			g_bMultiMon = true;
 		}
+		else if (strcmp(lpCmdLine, "-dcd") == 0)	// GH#386
+		{
+			sg_SSC.SupportDCD(true, false);
+		}
+		else if (strcmp(lpCmdLine, "-dcd-invert") == 0)	// GH#386
+		{
+			sg_SSC.SupportDCD(true, true);
+		}
+		else if (strcmp(lpCmdLine, "-dsr") == 0)	// GH#386
+		{
+			sg_SSC.SupportDSR(true, false);
+		}
+		else if (strcmp(lpCmdLine, "-dsr-invert") == 0)	// GH#386
+		{
+			sg_SSC.SupportDSR(true, true);
+		}
+		else if (strcmp(lpCmdLine, "-dtr") == 0)	// GH#386
+		{
+			sg_SSC.SupportDTR(true, false);
+		}
+		else if (strcmp(lpCmdLine, "-dtr-invert") == 0)	// GH#386
+		{
+			sg_SSC.SupportDTR(true, true);
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
