@@ -1552,20 +1552,6 @@ void MemReset()
 
 BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
-#if 0
-	// TC (11/12/2016) This comment is out of date.
-	// - TODO: Check "Rainbow" Bug #254, then remove this comment
-
-	// NTSC: It is tempting to replace with
-	//     return NTSC_VideoGetScannerAddress( );
-	// But that breaks "Rainbow" Bug #254 if NTSC_VideoGetScannerAddress() is not correct.
-	// This is out of sync with VideoGetScannerAddress() due to this reason:
-	// a) returning a cached copy of g_aHorzClockMemAddress
-	//    Fixed by calling: updateVideoScannerAddressTXT or updateVideoScannerAddressHGR()
-	uint16_t addr1 = NTSC_VideoGetScannerAddress();
-	uint16_t addr2 = VideoGetScannerAddress(NULL, uExecutedCycles);
-	_ASSERT(addr1 == addr2);
-#endif
 //	return mem[ VideoGetScannerAddress(NULL, uExecutedCycles) ];	// NG: ANSI STORY (End Credits) - repro by running from "Turn the disk over"
 	return mem[ NTSC_VideoGetScannerAddress() ];					// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
 }
