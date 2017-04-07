@@ -1631,18 +1631,18 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 		if (((address & 2) >> 1) == (address & 1))
 			SetMemMode(memmode | MF_HIGHRAM);
 
-		if (!write)	// GH#392
+		if (address & 1)	// GH#392
 		{
-			SetMemMode(memmode & ~(MF_WRITERAM));
-			BOOL bWriteRam = (address & 1);
-			if (g_bLastWriteRam && bWriteRam)
-				SetMemMode(memmode | MF_WRITERAM);
-			g_bLastWriteRam = bWriteRam;
+			if (!write && g_bLastWriteRam)
+			{
+				SetMemMode(memmode | MF_WRITERAM); // UTAIIe:5-23
+			}
 		}
 		else
 		{
-			g_bLastWriteRam = 0;
+			SetMemMode(memmode & ~(MF_WRITERAM)); // UTAIIe:5-23
 		}
+		g_bLastWriteRam = (address & 1) && (!write); // UTAIIe:5-23
 	}
 	else if (!IS_APPLE2)
 	{
