@@ -215,6 +215,9 @@
     <ClCompile Include="source\NTSC.cpp">
       <Filter>Source\Video</Filter>
     </ClCompile>
+    <ClCompile Include="source\NTSC_CharSet.cpp">
+      <Filter>Source\Video</Filter>
+    </ClCompile>
     <ClCompile Include="source\SAM.cpp">
       <Filter>Source\Emulator</Filter>
     </ClCompile>
