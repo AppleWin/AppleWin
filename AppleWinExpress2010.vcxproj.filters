@@ -221,6 +221,8 @@
     <ClCompile Include="source\SAM.cpp">
       <Filter>Source\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\Pravets.cpp" />
+    <ClCompile Include="source\YamlHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -461,6 +463,11 @@
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="source\NTSC.h">
+      <Filter>Source\Video</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Pravets.h" />
+    <ClInclude Include="source\YamlHelper.h" />
+    <ClInclude Include="source\NTSC_CharSet.h">
       <Filter>Source\Video</Filter>
     </ClInclude>
   </ItemGroup>
