@@ -137,10 +137,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static unsigned (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
 
 	typedef void (*UpdateScreenFunc_t)(long);
-	static UpdateScreenFunc_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
 	static UpdateScreenFunc_t g_pFuncUpdateTextScreen     = 0; // updateScreenText40;
 	static UpdateScreenFunc_t g_pFuncUpdateGraphicsScreen = 0; // updateScreenText40;
-	static UpdateScreenFunc_t g_pFuncModeSwitchDelayed = 0;
+	typedef void (*UpdateScreenFunc2_t)(UINT, BYTE*);
+	static UpdateScreenFunc2_t g_pFuncUpdateTextScreen2     = 0; // updateScreenText40;
+	static UpdateScreenFunc2_t g_pFuncUpdateGraphicsScreen2 = 0; // updateScreenText40;
 
 	typedef void (*UpdatePixelFunc_t)(uint16_t);
 	static UpdatePixelFunc_t g_pFuncUpdateBnWPixel = 0; //updatePixelBnWMonitorSingleScanline;
@@ -408,6 +409,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	INLINE void      updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable );
 	INLINE void      updatePixels( uint16_t bits );
 	INLINE void      updateVideoScannerHorzEOL();
+	INLINE void      updateVideoScannerHorzEOL2();
 	INLINE void      updateVideoScannerAddress();
 	INLINE uint16_t  updateVideoScannerAddressTXT();
 	INLINE uint16_t  updateVideoScannerAddressHGR();
@@ -437,6 +439,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void updateScreenSingleLores40( long cycles6502 );
 	static void updateScreenText40       ( long cycles6502 );
 	static void updateScreenText80       ( long cycles6502 );
+
+	static void InitVideoLineItem(void);
 
 //===========================================================================
 static void set_csbits()
@@ -750,6 +754,43 @@ inline void updateVideoScannerHorzEOL()
 		{
 			updateVideoScannerAddress();
 		}
+	}
+}
+
+inline void updateVideoScannerHorzEOL2()
+{
+	if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+	{
+		if (g_nColorBurstPixels < 2)
+		{
+			// NOTE: This writes out-of-bounds for a 560x384 framebuffer
+			g_pFuncUpdateBnWPixel(0);
+			g_pFuncUpdateBnWPixel(0);
+			g_pFuncUpdateBnWPixel(0);
+			g_pFuncUpdateBnWPixel(0);
+		}
+		else
+		{
+			// NOTE: This writes out-of-bounds for a 560x384 framebuffer
+			g_pFuncUpdateHuePixel(0);
+			g_pFuncUpdateHuePixel(0);
+			g_pFuncUpdateHuePixel(0);
+			g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC); // BUGFIX: ARCHON: green fringe on end of line
+		}
+	}
+
+	g_nVideoClockHorz = 0;
+
+	if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
+	{
+		g_nVideoClockVert = 0;
+
+		updateFlashRate();
+	}
+
+	if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+	{
+		updateVideoScannerAddress();
 	}
 }
 
@@ -1361,6 +1402,22 @@ void updateScreenText40 (long cycles6502)
 	}
 }
 
+void updateScreenText40_2(UINT cycles6502, BYTE* pVideoData)
+{
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		uint8_t  m     = *pVideoData;
+		pVideoData += 2;
+		uint8_t  c     = getCharSetBits(m);
+		uint16_t bits  = g_aPixelDoubleMaskHGR[c & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
+
+		if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
+			bits ^= g_nTextFlashMask;
+
+		updatePixels( bits );
+	}
+}
+
 //===========================================================================
 void updateScreenText80 (long cycles6502)
 {
@@ -1470,8 +1527,6 @@ void NTSC_SetVideoTextMode( int cols )
 //===========================================================================
 void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 {
-	int h = g_nVideoClockHorz;
-
 	g_nVideoMixed   = uVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = VideoGetSWAltCharSet() ? 1 : 0;
 
@@ -1510,6 +1565,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 		else
 			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
 	}
+
+	g_pFuncUpdateGraphicsScreen2 = updateScreenText40_2;
 }
 
 //===========================================================================
@@ -1610,6 +1667,9 @@ _mono:
 }
 
 //===========================================================================
+
+void NTSC_SpeedTest(void);
+
 void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 {
 	make_csbits();
@@ -1626,6 +1686,8 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	g_pFuncUpdateGraphicsScreen = updateScreenText40;
 
 	VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
+
+	NTSC_SpeedTest();
 
 #if HGR_TEST_PATTERN
 // Init HGR to almost all-possible-combinations
@@ -1692,6 +1754,8 @@ void NTSC_VideoReinitialize( DWORD cyclesThisFrame )
 	g_nVideoClockHorz = cyclesThisFrame % VIDEO_SCANNER_MAX_HORZ;
 
 	updateVideoScannerAddress();	// Pre-condition: g_nVideoClockVert
+
+	InitVideoLineItem();
 }
 
 //===========================================================================
@@ -1766,11 +1830,174 @@ static void VideoUpdateCycles( int cyclesLeftToUpdate )
 }
 
 //===========================================================================
+
+//const UINT kVideoMode_Invalid = (UINT)-1;
+
+struct VideoLineData
+{
+	BYTE dataMain;
+	BYTE dataAux;
+};
+
+struct VideoLineItem
+{
+	UINT videoMode;
+	int  videoCharSet;
+	UINT numCycles;
+	UpdateScreenFunc2_t func;
+	VideoLineData data[1];	// variable length
+};
+
+static BYTE g_videoLine[sizeof(VideoLineItem)*40] = {0xff};	// 40 display bytes (NB. Init to 0xff so that videoMode is invalid)
+static VideoLineItem* g_pVideoLineItem = NULL;
+static VideoLineData* g_pVideoLineNextData = NULL;
+static bool g_bDontRenderVideoLine = false;
+
+// FullSpeed start/end causes problems. Two cases:
+// 1) FullSpeed starts after VIDEO_SCANNER_HORZ_START, so we have a partial g_videoLine, eg. cycles [0..20], then FS starts at cycle-21
+//		-> When FS starts, then just reset g_videoLine
+// 2) FullSpeed ends   after VIDEO_SCANNER_HORZ_START, so InitVideoLineItem() won't have been called, eg. FS ends at cycle-14, then cycles [15..39]
+//		-> When FS ends  , then set a flag not VideoRenderLine() for this partial scanline
+void NTSC_SetFullSpeedEvent(bool bStartFullSpeed)
+{
+	if (bStartFullSpeed)				// Just started full-speed mode
+		InitVideoLineItem();			// - so ditch any partial items for this scanline
+	else								// Just ended full-speed mode
+		g_bDontRenderVideoLine = true;	// - so signal not to VideoRenderLine() at end of this current scanline
+}
+
+static void SetVideoLineItem(void)
+{
+	g_pVideoLineItem->videoMode = g_uVideoMode;
+	g_pVideoLineItem->videoCharSet = g_nVideoCharSet;
+	g_pVideoLineItem->numCycles = 0;
+	g_pVideoLineItem->func = g_pFuncUpdateGraphicsScreen2;
+}
+
+static void InitVideoLineItem(void)
+{
+	g_pVideoLineItem = (VideoLineItem*) g_videoLine;
+	g_pVideoLineNextData = &g_pVideoLineItem->data[0];
+	SetVideoLineItem();
+
+	g_bDontRenderVideoLine = false;
+}
+
+static void NextVideoLineItem(void)
+{
+	g_pVideoLineItem = (VideoLineItem*) g_pVideoLineNextData;
+	g_pVideoLineNextData = &g_pVideoLineItem->data[0];
+	SetVideoLineItem();
+}
+
+static void VideoRenderLine( void )
+{
+	int currCharSet = g_nVideoCharSet;
+
+	VideoLineItem* pItem = (VideoLineItem*) &g_videoLine;
+	UINT cycles = 0;
+	int v190 = 0;
+
+	while (cycles < 40)
+	{
+//		if (pItem->videoMode == kVideoMode_Invalid)	// Eg. FullSpeed off
+//			break;
+		if (g_nVideoClockVert == 190)
+			v190++;
+
+		g_nVideoCharSet = pItem->videoCharSet;
+
+		pItem->func( pItem->numCycles, (BYTE*)&pItem->data[0] );
+
+		cycles += pItem->numCycles;
+		pItem = (VideoLineItem*) ((BYTE*)&pItem->data[0] + sizeof(VideoLineData) * pItem->numCycles);
+	}
+
+	g_nVideoCharSet = currCharSet;
+}
+
+static void VideoBuildLine( int cycles )
+{
+	bool bHires = (g_uVideoMode & VF_HIRES) && !(g_uVideoMode & VF_TEXT); // SW_HIRES && !SW_TEXT
+	if (g_nVideoClockVert > VIDEO_SCANNER_Y_MIXED && g_uVideoMode & VF_MIXED)
+		bHires = false;
+
+	if (g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_BEG && (g_nVideoClockHorz + cycles) > VIDEO_SCANNER_HORZ_COLORBURST_BEG)
+	{
+		// TODO: Need better logic for cases when cycles =~1000 (multi-line) and cycles = 17030 (whole screen)
+		if (bHires)
+		{
+			g_nColorBurstPixels = 1024;
+		}
+		else
+		{
+			const UINT attentuateMaxCycles = VIDEO_SCANNER_HORZ_COLORBURST_END-VIDEO_SCANNER_HORZ_COLORBURST_BEG;
+			UINT attentuateCycles = (g_nVideoClockHorz + cycles) - VIDEO_SCANNER_HORZ_COLORBURST_BEG;
+			if (attentuateCycles > attentuateMaxCycles)
+				attentuateCycles = attentuateMaxCycles;
+
+			g_nColorBurstPixels -= attentuateCycles;
+			if (g_nColorBurstPixels < 0)
+				g_nColorBurstPixels = 0;
+		}
+	}
+
+	//
+
+	if (g_nVideoClockHorz > VIDEO_SCANNER_HORZ_START)
+	{
+		if (g_pVideoLineItem->videoMode != g_uVideoMode || g_pVideoLineItem->videoCharSet != g_nVideoCharSet)
+			NextVideoLineItem();
+	}
+
+	BYTE *pMain = NULL, *pAux = NULL;
+	while (cycles--)
+	{
+		if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START && g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if (g_nVideoClockHorz == VIDEO_SCANNER_HORZ_START || pMain == NULL)
+			{
+				if (g_nVideoClockHorz == VIDEO_SCANNER_HORZ_START)
+					InitVideoLineItem();
+
+				uint16_t addr = bHires ? updateVideoScannerAddressHGR() : updateVideoScannerAddressTXT();
+				pMain = MemGetMainPtr(addr);
+				pAux  = MemGetAuxPtr(addr);		// TODO: Support APPLE2 types with no aux mem
+			}
+
+			g_pVideoLineItem->numCycles++;
+			g_pVideoLineNextData->dataMain = *pMain++;
+			g_pVideoLineNextData->dataAux  = *pAux++;
+			g_pVideoLineNextData++;
+		}
+
+		g_nVideoClockHorz++;
+
+		if (g_nVideoClockHorz == VIDEO_SCANNER_MAX_HORZ)
+		{
+			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+			{
+//				*(UINT*)g_pVideoLineNextData = kVideoMode_Invalid;	// End of data
+				if (!g_bDontRenderVideoLine)
+					VideoRenderLine();
+			}
+
+			updateVideoScannerHorzEOL2();
+
+			if (g_nVideoClockVert > VIDEO_SCANNER_Y_MIXED && g_uVideoMode & VF_MIXED)
+				bHires = false;
+		}
+	}
+}
+
+//===========================================================================
 void NTSC_VideoUpdateCycles( long cycles6502 )
 {
 	_ASSERT(cycles6502 < VIDEO_SCANNER_6502_CYCLES);	// Use NTSC_VideoRedrawWholeScreen() instead
 
-	VideoUpdateCycles(cycles6502);
+	VideoBuildLine(cycles6502);
+
+//	VideoUpdateCycles(cycles6502);
 }
 
 //===========================================================================
@@ -1781,7 +2008,7 @@ void NTSC_VideoRedrawWholeScreen( void )
 	const uint16_t currVideoClockHorz = g_nVideoClockHorz;
 #endif
 
-	VideoUpdateCycles(VIDEO_SCANNER_6502_CYCLES);
+//	VideoUpdateCycles(VIDEO_SCANNER_6502_CYCLES);
 
 #ifdef _DEBUG
 	_ASSERT(currVideoClockVert == g_nVideoClockVert);
@@ -1793,4 +2020,68 @@ void NTSC_VideoRedrawWholeScreen( void )
 bool NTSC_GetColorBurst( void )
 {
 	return (g_nColorBurstPixels < 2) ? false : true;
+}
+
+//===========================================================================
+
+void SpeedTest_Reset(void)
+{
+	g_nVideoClockHorz = 0;
+	g_nVideoClockVert = 0;
+
+	NTSC_SetVideoMode( VF_TEXT );
+
+	LPBYTE pMain = MemGetMainPtr(0x400);
+	for (UINT i=0; i<0x3ff; i++)
+		pMain[i] = i&0xff;
+}
+
+void NTSC_SpeedTest(void)
+{
+	const UINT kNumRepeats = 1000;
+	char szDbg[100];
+
+	// Test1
+	SpeedTest_Reset();
+	DWORD tStart1 = GetTickCount();
+	for (UINT n=0; n<kNumRepeats; n++)
+	{
+		int cyclesLeft = VIDEO_SCANNER_6502_CYCLES;
+		UINT cycles = 2;
+		while (cyclesLeft > 0)
+		{
+			VideoBuildLine(cycles);
+			cyclesLeft -= cycles;
+			cycles++;
+			if (cycles == 8)
+				cycles = 2;
+		}
+	}
+
+	DWORD tDuration1 = GetTickCount() - tStart1;
+	sprintf(szDbg, "Test1 time = %d ms\n", tDuration1);
+	OutputDebugString(szDbg);
+
+	//
+
+	// Test2
+	SpeedTest_Reset();
+	DWORD tStart2 = GetTickCount();
+	for (UINT n=0; n<kNumRepeats; n++)
+	{
+		int cyclesLeft = VIDEO_SCANNER_6502_CYCLES;
+		UINT cycles = 2;
+		while (cyclesLeft > 0)
+		{
+			VideoUpdateCycles(cycles);
+			cyclesLeft -= cycles;
+			cycles++;
+			if (cycles == 8)
+				cycles = 2;
+		}
+	}
+
+	DWORD tDuration2 = GetTickCount() - tStart2;
+	sprintf(szDbg, "Test2 time = %d ms\n", tDuration2);
+	OutputDebugString(szDbg);
 }

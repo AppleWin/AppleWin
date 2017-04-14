@@ -257,7 +257,10 @@ static void ContinueExecution(void)
 	if (g_bFullSpeed)
 	{
 		if (!bWasFullSpeed)
+		{
 			VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
+			NTSC_SetFullSpeedEvent(true);
+		}
 
 		// Don't call Spkr_Mute() - will get speaker clicks
 		MB_Mute();
@@ -275,7 +278,10 @@ static void ContinueExecution(void)
 	else
 	{
 		if (bWasFullSpeed)
+		{
 			VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
+			NTSC_SetFullSpeedEvent(false);
+		}
 
 		// Don't call Spkr_Demute()
 		MB_Demute();

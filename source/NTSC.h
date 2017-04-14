@@ -16,6 +16,7 @@
 	extern void     NTSC_VideoReinitialize( DWORD cyclesThisFrame );
 	extern void     NTSC_VideoInitAppleType();
 	extern void     NTSC_VideoInitChroma();
+	extern void     NTSC_SetFullSpeedEvent( bool bStartFullSpeed );
 	extern void     NTSC_VideoUpdateCycles( long cycles6502 );
 	extern void     NTSC_VideoRedrawWholeScreen( void );
 	extern bool     NTSC_GetColorBurst( void );
