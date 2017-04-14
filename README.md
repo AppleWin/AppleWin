@@ -12,7 +12,7 @@ Building
 ========
 To compile from source see:
 
-   docs/compiling.txt
+* [docs/compiling.txt](https://github.com/AppleWin/AppleWin/blob/master/docs/compiling.txt)
 
 
 Next Version
