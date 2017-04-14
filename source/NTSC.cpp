@@ -1896,14 +1896,11 @@ static void VideoRenderLine( void )
 
 	VideoLineItem* pItem = (VideoLineItem*) &g_videoLine;
 	UINT cycles = 0;
-	int v190 = 0;
 
 	while (cycles < 40)
 	{
 //		if (pItem->videoMode == kVideoMode_Invalid)	// Eg. FullSpeed off
 //			break;
-		if (g_nVideoClockVert == 190)
-			v190++;
 
 		g_nVideoCharSet = pItem->videoCharSet;
 
