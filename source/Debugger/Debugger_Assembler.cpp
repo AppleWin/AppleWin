@@ -177,24 +177,25 @@ const Opcodes_t g_aOpcodes6502[ NUM_OPCODES ] =
 	CPU.cpp
 	
 	x0     x1         x2       x3   x4       x5       x6       x7   x8   x9       xA      xB   xC        xD       xE      	xF
-0x	BRK    ORA (d,X)  ---      ---  tsb d    ORA d    ASL d    ---  PHP  ORA #    ASL A  ---  tsb a      ORA a    ASL a   	---
-1x	BPL r  ORA (d),Y  ora (d)  ---  trb d    ORA d,X  ASL d,X  ---  CLC  ORA a,Y  ina A  ---  trb a      ORA a,X  ASL a,X 	---
-2x	JSR a  AND (d,X)  ---      ---  BIT d    AND d    ROL d    ---  PLP  AND #    ROL A  ---  BIT a      AND a    ROL a   	---
-3x	BMI r  AND (d),Y  and (d)  ---  bit d,X  AND d,X  ROL d,X  ---  SEC  AND a,Y  dea A  ---  bit a,X    AND a,X  ROL a,X 	---
-4x	RTI    EOR (d,X)  ---      ---  ---      EOR d    LSR d    ---  PHA  EOR #    LSR A  ---  JMP a      EOR a    LSR a   	---
-5x	BVC r  EOR (d),Y  eor (d)  ---  ---      EOR d,X  LSR d,X  ---  CLI  EOR a,Y  phy    ---  ---        EOR a,X  LSR a,X 	---
-6x	RTS    ADC (d,X)  ---      ---  stz d    ADC d    ROR d    ---  PLA  ADC #    ROR A  ---  JMP (a)    ADC a    ROR a   	---
-7x	BVS r  ADC (d),Y  adc (d)  ---  stz d,X  ADC d,X  ROR d,X  ---  SEI  ADC a,Y  ply    ---  jmp (a,X)  ADC a,X  ROR a,X 	---
-8x	bra r  STA (d,X)  ---      ---  STY d    STA d    STX d    ---  DEY  bit #    TXA    ---  STY a      STA a    STX a   	---
-9x	BCC r  STA (d),Y  sta (d)  ---  STY d,X  STA d,X  STX d,Y  ---  TYA  STA a,Y  TXS    ---  Stz a      STA a,X  stz a,X 	---
-Ax	LDY #  LDA (d,X)  LDX #    ---  LDY d    LDA d    LDX d    ---  TAY  LDA #    TAX    ---  LDY a      LDA a    LDX a   	---
-Bx	BCS r  LDA (d),Y  lda (d)  ---  LDY d,X  LDA d,X  LDX d,Y  ---  CLV  LDA a,Y  TSX    ---  LDY a,X    LDA a,X  LDX a,Y 	---
-Cx	CPY #  CMP (d,X)  ---      ---  CPY d    CMP d    DEC d    ---  INY  CMP #    DEX    ---  CPY a      CMP a    DEC a   	---
-Dx	BNE r  CMP (d),Y  cmp (d)  ---  ---      CMP d,X  DEC d,X  ---  CLD  CMP a,Y  phx    ---  ---        CMP a,X  DEC a,X 	---
-Ex	CPX #  SBC (d,X)  ---      ---  CPX d    SBC d    INC d    ---  INX  SBC #    NOP    ---  CPX a      SBC a    INC a   	---
-Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y  plx    ---  ---        SBC a,X  INC a,X 	---
+0x	BRK    ORA (d,X)  ---      ---  tsb z    ORA d    ASL z    ---  PHP  ORA #    ASL A  ---  tsb a      ORA a    ASL a   	---
+1x	BPL r  ORA (d),Y  ora (z)  ---  trb d    ORA d,X  ASL z,X  ---  CLC  ORA a,Y  ina A  ---  trb a      ORA a,X  ASL a,X 	---
+2x	JSR a  AND (d,X)  ---      ---  BIT d    AND d    ROL z    ---  PLP  AND #    ROL A  ---  BIT a      AND a    ROL a   	---
+3x	BMI r  AND (d),Y  and (z)  ---  bit d,X  AND d,X  ROL z,X  ---  SEC  AND a,Y  dea A  ---  bit a,X    AND a,X  ROL a,X 	---
+4x	RTI    EOR (d,X)  ---      ---  ---      EOR d    LSR z    ---  PHA  EOR #    LSR A  ---  JMP a      EOR a    LSR a   	---
+5x	BVC r  EOR (d),Y  eor (z)  ---  ---      EOR d,X  LSR z,X  ---  CLI  EOR a,Y  phy    ---  ---        EOR a,X  LSR a,X 	---
+6x	RTS    ADC (d,X)  ---      ---  stz d    ADC d    ROR z    ---  PLA  ADC #    ROR A  ---  JMP (a)    ADC a    ROR a   	---
+7x	BVS r  ADC (d),Y  adc (z)  ---  stz d,X  ADC d,X  ROR z,X  ---  SEI  ADC a,Y  ply    ---  jmp (a,X)  ADC a,X  ROR a,X 	---
+8x	bra r  STA (d,X)  ---      ---  STY d    STA d    STX z    ---  DEY  bit #    TXA    ---  STY a      STA a    STX a   	---
+9x	BCC r  STA (d),Y  sta (z)  ---  STY d,X  STA d,X  STX z,Y  ---  TYA  STA a,Y  TXS    ---  Stz a      STA a,X  stz a,X 	---
+Ax	LDY #  LDA (d,X)  LDX #    ---  LDY d    LDA d    LDX z    ---  TAY  LDA #    TAX    ---  LDY a      LDA a    LDX a   	---
+Bx	BCS r  LDA (d),Y  lda (z)  ---  LDY d,X  LDA d,X  LDX z,Y  ---  CLV  LDA a,Y  TSX    ---  LDY a,X    LDA a,X  LDX a,Y 	---
+Cx	CPY #  CMP (d,X)  ---      ---  CPY d    CMP d    DEC z    ---  INY  CMP #    DEX    ---  CPY a      CMP a    DEC a   	---
+Dx	BNE r  CMP (d),Y  cmp (z)  ---  ---      CMP d,X  DEC z,X  ---  CLD  CMP a,Y  phx    ---  ---        CMP a,X  DEC a,X 	---
+Ex	CPX #  SBC (d,X)  ---      ---  CPX d    SBC d    INC z    ---  INX  SBC #    NOP    ---  CPX a      SBC a    INC a   	---
+Fx	BEQ r  SBC (d),Y  sbc (z)  ---  ---      SBC d,X  INC z,X  ---  SED  SBC a,Y  plx    ---  ---        SBC a,X  INC a,X 	---
 
 	Legend:
+        --- illegal instruction
 		UPPERCASE 6502
 		lowercase 65C02
 			80
@@ -207,8 +208,9 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 		A Accumulator (implicit for mnemonic)
 		a absolute
 		r Relative
-		d Destination
-		z Zero Page
+		d Destination 16-bit Address
+		z Destination Zero Page Address
+		z,x Base=Zero-Page, Offset=X
 		d,x
 		(d,X)
 		(d),Y

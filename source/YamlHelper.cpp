@@ -39,6 +39,7 @@ int YamlHelper::InitParser(const char* pPathname)
 		return 0;
 	}
 
+	// Note: C/C++ > Pre-Processor: YAML_DECLARE_STATIC;
 	yaml_parser_set_input_file(&m_parser, m_hFile);
 
 	return 1;

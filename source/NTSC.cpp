@@ -142,9 +142,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static UpdateScreenFunc_t g_pFuncUpdateGraphicsScreen = 0; // updateScreenText40;
 	static UpdateScreenFunc_t g_pFuncModeSwitchDelayed = 0;
 
-	static UpdateScreenFunc_t g_aFuncUpdateHorz     [VIDEO_SCANNER_MAX_HORZ]; // ANSI STORY:  DGR80/TEXT80 vert/horz scrolll switches video mode mid-scan line!
-	static uint32_t           g_aHorzClockVideoMode [VIDEO_SCANNER_MAX_HORZ]; // ANSI STORY:  DGR80/TEXT80 vert/horz scrolll switches video mode mid-scan line!
-
 	typedef void (*UpdatePixelFunc_t)(uint16_t);
 	static UpdatePixelFunc_t g_pFuncUpdateBnWPixel = 0; //updatePixelBnWMonitorSingleScanline;
 	static UpdatePixelFunc_t g_pFuncUpdateHuePixel = 0; //updatePixelHueMonitorSingleScanline;
@@ -410,7 +407,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	INLINE void      updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable );
 	INLINE void      updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable );
 	INLINE void      updatePixels( uint16_t bits );
-	INLINE bool      updateScanLineModeSwitch( long cycles6502, UpdateScreenFunc_t self );
 	INLINE void      updateVideoScannerHorzEOL();
 	INLINE void      updateVideoScannerAddress();
 	INLINE uint16_t  updateVideoScannerAddressTXT();
@@ -715,25 +711,6 @@ inline void updatePixels( uint16_t bits )
 }
 
 //===========================================================================
-inline bool updateScanLineModeSwitch( long cycles6502, UpdateScreenFunc_t self )
-{
-	bool bBail = false;
-	if( g_aHorzClockVideoMode[ g_nVideoClockHorz ] != g_aHorzClockVideoMode[ g_nVideoClockHorz+1 ] && !g_nVideoMixed ) // !g_nVideoMixed for "Rainbow"
-	{
-		UpdateScreenFunc_t pFunc = g_aFuncUpdateHorz[ g_nVideoClockHorz ];
-		if( pFunc && pFunc != self ) 
-		{
-			g_pFuncUpdateGraphicsScreen = pFunc;
-//			g_pFuncUpdateTextScreen     = pFunc; // No, as we can't break mixed mode for "Rainbow"
-			pFunc( cycles6502 );
-			bBail = true;
-		}
-	}
-
-	return bBail;
-}
- 
-//===========================================================================
 inline void updateVideoScannerHorzEOL()
 {
 	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
@@ -783,12 +760,6 @@ inline void updateVideoScannerAddress()
 	g_nColorPhaseNTSC      = INITIAL_COLOR_PHASE;
 	g_nLastColumnPixelNTSC = 0;
 	g_nSignalBitsNTSC      = 0;
-
-	// ANSI STORY: clear mode and pointer to draw func
-	memset( g_aFuncUpdateHorz    , 0, sizeof( g_aFuncUpdateHorz     ) );
-	memset( g_aHorzClockVideoMode, 0, sizeof( g_aHorzClockVideoMode ) );
-
-	g_aFuncUpdateHorz[0] = g_pFuncUpdateGraphicsScreen;
 }
 
 //===========================================================================
@@ -1169,8 +1140,6 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				if ( updateScanLineModeSwitch( cycles6502, updateScreenDoubleHires40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
-
 				uint8_t *pMain = MemGetMainPtr(addr);
 				uint8_t  m     = pMain[0];
 				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
@@ -1204,8 +1173,6 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				if ( updateScanLineModeSwitch( cycles6502, updateScreenDoubleHires80 ) ) return; // ANSI STORY: vide mode switch mid scan line!
-
 				uint8_t  *pMain = MemGetMainPtr(addr);
 				uint8_t  *pAux  = MemGetAuxPtr (addr);
 
@@ -1243,8 +1210,6 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				if ( updateScanLineModeSwitch( cycles6502, updateScreenDoubleLores40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
-
 				uint8_t *pMain = MemGetMainPtr(addr);
 				uint8_t  m     = pMain[0];
 				uint16_t lo    = getLoResBits( m ); 
@@ -1277,8 +1242,6 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				if( updateScanLineModeSwitch( cycles6502, updateScreenDoubleLores80 ) ) return; // ANSI STORY: vide mode switch mid scan line!
-
 				uint8_t *pMain = MemGetMainPtr(addr);
 				uint8_t *pAux  = MemGetAuxPtr (addr);
 
@@ -1322,8 +1285,6 @@ void updateScreenSingleHires40 (long cycles6502)
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				if ( updateScanLineModeSwitch( cycles6502, updateScreenSingleHires40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
-
 				uint8_t *pMain = MemGetMainPtr(addr);
 				uint8_t  m     = pMain[0];
 				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
@@ -1357,8 +1318,6 @@ void updateScreenSingleLores40 (long cycles6502)
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				if( updateScanLineModeSwitch( cycles6502, updateScreenSingleLores40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
-
 				uint8_t *pMain = MemGetMainPtr(addr);
 				uint8_t  m     = pMain[0];
 				uint16_t lo    = getLoResBits( m ); 
@@ -1386,8 +1345,6 @@ void updateScreenText40 (long cycles6502)
 		{
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				if ( updateScanLineModeSwitch( cycles6502, updateScreenText40 ) ) return; // ANSI STORY: vide mode switch mid scan line!
-
 				uint8_t *pMain = MemGetMainPtr(addr);
 				uint8_t  m     = pMain[0];
 				uint8_t  c     = getCharSetBits(m);
@@ -1420,8 +1377,6 @@ void updateScreenText80 (long cycles6502)
 		{
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				if ( updateScanLineModeSwitch( cycles6502, updateScreenText80 ) ) return; // ANSI STORY: vide mode switch mid scan line!
-
 				uint8_t *pMain = MemGetMainPtr(addr);
 				uint8_t *pAux  = MemGetAuxPtr (addr);
 
@@ -1517,8 +1472,6 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 {
 	int h = g_nVideoClockHorz;
 
-	g_aHorzClockVideoMode[ h ] = uVideoModeFlags;
-
 	g_nVideoMixed   = uVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = VideoGetSWAltCharSet() ? 1 : 0;
 
@@ -1557,8 +1510,6 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 		else
 			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
 	}
-
-	g_aFuncUpdateHorz[ h ] = g_pFuncUpdateGraphicsScreen; // NTSC: ANSI STORY
 }
 
 //===========================================================================

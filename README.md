@@ -3,13 +3,29 @@ AppleWin
 
 Apple II emulator for Windows
 
-Download latest release: [AppleWin v1.25.0.3](https://github.com/AppleWin/AppleWin/releases/download/v1.25.0.3/AppleWin1.25.0.3.zip)
+Download latest (stable) release: [AppleWin v1.26.1.1](https://github.com/AppleWin/AppleWin/releases/download/v1.26.1.1/AppleWin1.26.1.1.zip)
 
-Releast Notes: [v1.25.0.3](https://github.com/AppleWin/AppleWin/releases/tag/v1.25.0.3)
+Release Notes: [v1.26.1.1](https://github.com/AppleWin/AppleWin/releases/tag/v1.26.1.1)
 
 
 Building
 ========
 To compile from source see:
 
-   docs/compiling.txt
+* [docs/compiling.txt](https://github.com/AppleWin/AppleWin/blob/master/docs/compiling.txt)
+
+
+Next Version
+============
+Experimental build [1.26.2.2](https://github.com/AppleWin/AppleWin/releases/tag/v1.26.2.2)
+
+Please report [new issues](https://github.com/AppleWin/AppleWin/issues/new)
+
+
+Previous Versions
+=================
+
+Last pre-NTSC change:
+
+* [AppleWin v1.25.0.3](https://github.com/AppleWin/AppleWin/releases/download/v1.25.0.3/AppleWin1.25.0.3.zip)
+
