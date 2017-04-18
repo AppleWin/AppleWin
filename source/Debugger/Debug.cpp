@@ -103,7 +103,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Note: BreakpointOperator_t, _PARAM_BREAKPOINT_, and g_aBreakpointSymbols must match!
 	const char *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ] =
 	{	// Output: Must be 2 chars!
-		"<=", // LESS_EQAUL
+		"<=", // LESS_EQUAL
 		"< ", // LESS_THAN
 		"= ", // EQUAL
 		"!=", // NOT_EQUAL
