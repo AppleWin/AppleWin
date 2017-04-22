@@ -625,7 +625,7 @@ static void DrawFrameWindow ()
 	if (g_nAppMode == MODE_LOGO)
 		VideoDisplayLogo();
 	else if (g_nAppMode == MODE_DEBUG)
-		DebugDisplay(TRUE);
+		DebugDisplay();
 	else
 		VideoRedrawScreen();
 
@@ -1842,7 +1842,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		{
 			CtrlReset();
 			if (g_nAppMode == MODE_DEBUG)
-				DebugDisplay(TRUE, TRUE);
+				DebugDisplay(TRUE);
 			return;
 		}
 
@@ -1861,7 +1861,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 				// NB. Don't exit debugger or stepping
 
 				if (g_nAppMode == MODE_DEBUG)
-					DebugDisplay(TRUE, TRUE);
+					DebugDisplay(TRUE);
 			}
 		}
 

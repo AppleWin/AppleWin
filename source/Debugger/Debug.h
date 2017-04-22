@@ -168,7 +168,7 @@
 	void	DebugContinueStepping ();
 	void    DebugStopStepping(void);
 	void	DebugDestroy ();
-	void	DebugDisplay (BOOL bDrawBackground, BOOL bInitDisasm = FALSE );
+	void	DebugDisplay ( BOOL bInitDisasm = FALSE );
 	void	DebugInitialize ();
 
 	void	DebuggerInputConsoleChar( TCHAR ch );

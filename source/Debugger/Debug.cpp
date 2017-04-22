@@ -4845,7 +4845,7 @@ size_t Util_GetDebuggerText( char* &pText_ )
 	memset( pBeg, 0, sizeof( g_aTextScreen ) );
 
 	memset( g_aDebuggerVirtualTextScreen, 0, sizeof( g_aDebuggerVirtualTextScreen ) );
-	DebugDisplay(TRUE);
+	DebugDisplay();
 
 	for( int y = 0; y < DEBUG_VIRTUAL_TEXT_HEIGHT; y++ )
 	{
@@ -9578,18 +9578,12 @@ void DebuggerProcessKey( int keycode )
 		UpdateDisplay( bUpdateDisplay );
 }
 
-// Still called from external file
-void DebugDisplay( BOOL bDrawBackground, BOOL bInitDisasm/*=FALSE*/ )
+void DebugDisplay( BOOL bInitDisasm/*=FALSE*/ )
 {
-	Update_t bUpdateFlags = UPDATE_ALL;
-
-//	if (! bDrawBackground)
-//		bUpdateFlags &= ~UPDATE_BACKGROUND;
-
 	if (bInitDisasm)
 		InitDisasm();
 
-	UpdateDisplay( bUpdateFlags );
+	UpdateDisplay( UPDATE_ALL );
 }
 
 
@@ -9663,7 +9657,7 @@ void DebuggerMouseClick( int x, int y )
 	char sText[ CONSOLE_WIDTH ];
 	sprintf( sText, "x:%d y:%d  cx:%d cy:%d", x, y, cx, cy );
 	ConsoleDisplayPush( sText );
-	DebugDisplay( UPDATE_CONSOLE_DISPLAY );
+	DebugDisplay();
 #endif
 
 	if (g_iWindowThis == WINDOW_CODE)
@@ -9676,19 +9670,19 @@ void DebuggerMouseClick( int x, int y )
 			if( cx < 4) // #### 
 			{
 				g_bConfigDisasmAddressView ^= true;
-				DebugDisplay( UPDATE_DISASM );
+				DebugDisplay();
 			}
 			else
 			if (cx == 4) //    :
 			{
 				g_bConfigDisasmAddressColon ^= true;
-				DebugDisplay( UPDATE_DISASM );
+				DebugDisplay();
 			}
 			else         //      AD 00 00
 			if ((cx > 4) && (cx <= 13))
 			{
 				g_bConfigDisasmOpcodesView ^= true;
-				DebugDisplay( UPDATE_DISASM );
+				DebugDisplay();
 			}
 			
 		} else
@@ -9704,13 +9698,13 @@ void DebuggerMouseClick( int x, int y )
 				{
 					g_bConfigDisasmAddressView ^= true;
 				}
-				DebugDisplay( UPDATE_DISASM );
+				DebugDisplay();
 			}
 			else
 			if ((cx > 0) & (cx <= 13))
 			{
 				g_bConfigDisasmOpcodesView ^= true;
-				DebugDisplay( UPDATE_DISASM );
+				DebugDisplay();
 			}
 		}
 		// Click on PC inside reg window?
@@ -9719,7 +9713,7 @@ void DebuggerMouseClick( int x, int y )
 			if (cy == 3)
 			{
 				CmdCursorJumpPC( CURSOR_ALIGN_CENTER );
-				DebugDisplay( UPDATE_DISASM );
+				DebugDisplay();
 			}
 			else // Click on stack
 			if( cy > 3)
