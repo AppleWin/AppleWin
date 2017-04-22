@@ -4845,7 +4845,7 @@ size_t Util_GetDebuggerText( char* &pText_ )
 	memset( pBeg, 0, sizeof( g_aTextScreen ) );
 
 	memset( g_aDebuggerVirtualTextScreen, 0, sizeof( g_aDebuggerVirtualTextScreen ) );
-	DebugDisplay(1);
+	DebugDisplay(TRUE);
 
 	for( int y = 0; y < DEBUG_VIRTUAL_TEXT_HEIGHT; y++ )
 	{
@@ -8393,6 +8393,11 @@ bool ProfileSave()
 }
 
 
+static void InitDisasm(void)
+{
+	g_nDisasmCurAddress = regs.pc;
+	DisasmCalcTopBotAddress();
+}
 
 //  _____________________________________________________________________________________
 // |                                                                                     |
@@ -8423,11 +8428,9 @@ void DebugBegin ()
 		g_aOpmodes[ AM_3 ].m_nBytes = 3;
 	}
 
-	g_nDisasmCurAddress = regs.pc;
-	DisasmCalcTopBotAddress();
+	InitDisasm();
 
 	DebugVideoMode::Instance().Reset();
-
 	UpdateDisplay( UPDATE_ALL );
 
 #if DEBUG_APPLE_FONT
@@ -9576,12 +9579,15 @@ void DebuggerProcessKey( int keycode )
 }
 
 // Still called from external file
-void DebugDisplay( BOOL bDrawBackground )
+void DebugDisplay( BOOL bDrawBackground, BOOL bInitDisasm/*=FALSE*/ )
 {
 	Update_t bUpdateFlags = UPDATE_ALL;
 
 //	if (! bDrawBackground)
 //		bUpdateFlags &= ~UPDATE_BACKGROUND;
+
+	if (bInitDisasm)
+		InitDisasm();
 
 	UpdateDisplay( bUpdateFlags );
 }

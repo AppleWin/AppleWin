@@ -432,7 +432,9 @@ void EnterMessageLoop(void)
 		{
 			if (g_nAppMode == MODE_DEBUG)
 				DebuggerUpdate();
-			else if ((g_nAppMode == MODE_LOGO) || (g_nAppMode == MODE_PAUSED))
+			else if (g_nAppMode == MODE_PAUSED)
+				Sleep(1);		// Stop process hogging CPU - 1ms, as need to fade-out speaker sound buffer
+			else if (g_nAppMode == MODE_LOGO)
 				Sleep(100);		// Stop process hogging CPU
 		}
 	}

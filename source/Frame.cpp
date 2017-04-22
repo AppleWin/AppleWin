@@ -625,7 +625,7 @@ static void DrawFrameWindow ()
 	if (g_nAppMode == MODE_LOGO)
 		VideoDisplayLogo();
 	else if (g_nAppMode == MODE_DEBUG)
-		DebugDisplay(1);
+		DebugDisplay(TRUE);
 	else
 		VideoRedrawScreen();
 
@@ -1841,6 +1841,8 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		if( g_bCtrlKey )
 		{
 			CtrlReset();
+			if (g_nAppMode == MODE_DEBUG)
+				DebugDisplay(TRUE, TRUE);
 			return;
 		}
 
@@ -1850,22 +1852,19 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 			LogFileTimeUntilFirstKeyReadReset();
 			g_nAppMode = MODE_RUNNING;
 		}
-		else if (g_nAppMode == MODE_RUNNING)
+		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_PAUSED))
 		{
 			if (ConfirmReboot(bFromButtonUI))
 			{
 				ResetMachineState();
-				g_nAppMode = MODE_RUNNING;
+
+				// NB. Don't exit debugger or stepping
+
+				if (g_nAppMode == MODE_DEBUG)
+					DebugDisplay(TRUE, TRUE);
 			}
 		}
-		else if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING)) // exit debugger
-		{
-			if (ConfirmReboot(bFromButtonUI))
-			{
-				DebugExitDebugger();
-				// Post: g_nAppMode = MODE_RUNNING or MODE_STEPPING
-			}
-		}
+
       DrawStatusArea((HDC)0,DRAW_TITLE);
       VideoRedrawScreen();
       break;
@@ -1902,9 +1901,9 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		}
 		else if (g_nAppMode == MODE_DEBUG)
 		{
-			ProcessButtonClick(BTN_RUN); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
+			DebugExitDebugger(); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
 		}
-		else
+		else	// MODE_RUNNING, MODE_LOGO, MODE_PAUSED
 		{
 			DebugBegin();
 		}
