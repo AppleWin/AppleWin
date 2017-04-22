@@ -8605,6 +8605,18 @@ void DebugContinueStepping ()
 }
 
 //===========================================================================
+void DebugStopStepping(void)
+{
+	_ASSERT(g_nAppMode == MODE_STEPPING);
+
+	if (g_nAppMode != MODE_STEPPING)
+		return;
+
+	g_nDebugSteps = 0; // On next DebugContinueStepping(), stop single-stepping and transition to MODE_DEBUG
+	ClearTempBreakpoints();
+}
+
+//===========================================================================
 void DebugDestroy ()
 {
 	DebugEnd();
@@ -8990,19 +9002,11 @@ void DebugInitialize ()
 	CmdMOTD(0);
 }
 
-// wparam = 0x16
-// lparam = 0x002f 0x0001
-// insert = VK_INSERT
-
 // Add character to the input line
 //===========================================================================
 void DebuggerInputConsoleChar( TCHAR ch )
 {
-	if ((g_nAppMode == MODE_STEPPING) && (ch == DEBUG_STEPPING_EXIT_KEY))
-	{
-		g_nDebugSteps = 0; // On next DebugContinueStepping(), stop single-stepping and transition to MODE_DEBUG
-		ClearTempBreakpoints();
-	}
+	_ASSERT(g_nAppMode == MODE_DEBUG);
 
 	if (g_nAppMode != MODE_DEBUG)
 		return;
@@ -9194,7 +9198,6 @@ void ToggleFullScreenConsole()
 
 //===========================================================================
 void DebuggerProcessKey( int keycode )
-//void DebugProcessCommand (int keycode)
 {
 	if (g_nAppMode != MODE_DEBUG)
 		return;
@@ -9293,10 +9296,10 @@ void DebuggerProcessKey( int keycode )
 		}
 		else
 		{
-			g_nConsoleInputSkip = 0; // VK_OEM_3; // don't pass to DebugProcessChar()
+			g_nConsoleInputSkip = 0; // VK_OEM_3;
 			DebuggerInputConsoleChar( '~' );
 		}
-		g_nConsoleInputSkip = '~'; // VK_OEM_3; // don't pass to DebugProcessChar()
+		g_nConsoleInputSkip = '~'; // VK_OEM_3;
 	}
 	else
 	{	

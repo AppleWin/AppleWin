@@ -1012,22 +1012,19 @@ LRESULT CALLBACK FrameWndProc (
       break;
 
 		case WM_CHAR:
-			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) ||
-				((g_nAppMode == MODE_STEPPING) && (wparam != TEXT('\x1B'))))
+			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_LOGO))
 			{
 				if( !g_bDebuggerEatKey )
 				{
-					KeybQueueKeypress((int)wparam,ASCII);
-				} else {
+					KeybQueueKeypress((int)wparam, ASCII);
+				}
+				else
+				{
 					g_bDebuggerEatKey = false;
 				}
 			}
-			else
-			if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
+			else if (g_nAppMode == MODE_DEBUG)
 			{
-				if (g_nAppMode == MODE_STEPPING && (TCHAR)wparam == DEBUG_STEPPING_EXIT_KEY)
-					SoundCore_SetFade(FADE_OUT);
-
 				DebuggerInputConsoleChar((TCHAR)wparam);
 			}
 			break;
@@ -1303,7 +1300,7 @@ LRESULT CALLBACK FrameWndProc (
 					break;
 				case MODE_STEPPING:
 					SoundCore_SetFade(FADE_OUT);
-					DebuggerInputConsoleChar( DEBUG_STEPPING_EXIT_KEY );
+					DebugStopStepping();
 					break;
 			}
 			DrawStatusArea((HDC)0,DRAW_TITLE);
@@ -1892,17 +1889,18 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
     case BTN_DEBUG:
 		if (g_nAppMode == MODE_LOGO && !GetLoadedSaveStateFlag())
 		{
+			// FIXME: Why is this needed? Surely when state is MODE_LOGO, then AppleII system will have been reset!
+			// - Transition to MODE_LOGO when: (a) AppleWin starts, (b) there's a Config change to the AppleII h/w
 			ResetMachineState();
 		}
 
 		if (g_nAppMode == MODE_STEPPING)
 		{
 			// Allow F7 to enter debugger even when not MODE_RUNNING
-			DebuggerInputConsoleChar( DEBUG_STEPPING_EXIT_KEY );
+			DebugStopStepping();
 			bAllowFadeIn = false;
 		}
-		else
-		if (g_nAppMode == MODE_DEBUG)
+		else if (g_nAppMode == MODE_DEBUG)
 		{
 			ProcessButtonClick(BTN_RUN); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
 		}

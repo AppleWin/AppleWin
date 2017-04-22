@@ -161,23 +161,17 @@
 
 // Prototypes _______________________________________________________________
 
-	enum
-	{
-		DEBUG_STEPPING_EXIT_KEY   = 0x1B, // Escape
-		DEBUG_TOGGLE_KEY = VK_F1 + BTN_DEBUG
-	};
-
 	bool	DebugGetVideoMode(UINT* pVideoMode);
 
 	void	DebugBegin ();
 	void	DebugExitDebugger ();
 	void	DebugContinueStepping ();
+	void    DebugStopStepping(void);
 	void	DebugDestroy ();
 	void	DebugDisplay (BOOL);
 	void	DebugInitialize ();
-//	void	DebugProcessChar (TCHAR);
+
 	void	DebuggerInputConsoleChar( TCHAR ch );
-//	void	DebugProcessCommand (int);
 	void	DebuggerProcessKey( int keycode );
 
 	void	DebuggerUpdate();
