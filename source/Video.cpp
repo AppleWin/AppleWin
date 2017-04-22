@@ -1112,7 +1112,7 @@ static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 	}
 
 	if (bInvertY)
-		dy -= dy;
+		dy =- dy;
 
 	xSrc += dx;
 	ySrc += dy;
