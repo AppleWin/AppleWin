@@ -983,21 +983,15 @@ void VideoDisplayLogo ()
 
 //===========================================================================
 
-// AZTEC.DSK: From boot to 'Press any key' (Release build)
-// . 66s always update every frame
-// . 15s only update if any video memory (main/aux, text/hgr, pages1&2) has changed
-// . 10s only update if HIRES changes (17s for Debug build)
-// . ~9s no update during full-speed (but IBIZA.DSK doesn't show anything!)
-
 void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=false*/)
 {
 	static DWORD dwFullSpeedStartTime = 0;
-	static bool bValid = false;
+//	static bool bValid = false;
 
 	if (bInit)
 	{
 		// Just entered full-speed mode
-		bValid = false;
+//		bValid = false;
 		dwFullSpeedStartTime = GetTickCount();
 		return;
 	}
@@ -1010,6 +1004,7 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 
 	//
 
+#if 0
 	static BYTE text_main[1024*2] = {0};	// page1 & 2
 	static BYTE text_aux[1024*2] = {0};		// page1 & 2
 	static BYTE hgr_main[8192*2] = {0};		// page1 & 2
@@ -1047,6 +1042,9 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 	memcpy(hgr_aux,   MemGetAuxPtr(0x2000),  sizeof(hgr_aux));
 
 	bValid = true;
+#else
+	VideoRedrawScreenAfterFullSpeed(dwCyclesThisFrame);
+#endif
 }
 
 //===========================================================================
