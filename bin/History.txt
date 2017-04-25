@@ -64,6 +64,7 @@ Changes:
 . Remove unsupported PC speaker sound types
 . [PR #235] New start-up title screen by Paulo Garcia
 . [PR #233] Configuration Dialog->Disk tab: Buttons replaced with drop-down menu for select/eject by Paulo Garcia
+. Removed CTRL+F9 functionality to cycle through AppleWin's character sets (ie. original Apple II charsets and clones' char-sets)
 
 Fixes:
 . [Bug #129] Tight loop page-flipping causing heavy CPU load (fixed by NTSC / cycle-accurate video emulation)
