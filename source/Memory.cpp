@@ -1198,9 +1198,8 @@ void MemInitialize()
 #endif
 
 #ifdef SATURN
-	g_uMaxExPages = 8;
-	for( int iPage = 0; iPage < 8; iPage++ )
-		SaturnPages[ iPage ] = (LPBYTE) VirtualAlloc( NULL, 1024 * 16,MEM_COMMIT,PAGE_READWRITE);
+	for( int iPage = 0; iPage < g_uSaturnTotalBanks; iPage++ )
+		g_aSaturnPages[ iPage ] = (LPBYTE) VirtualAlloc( NULL, 1024 * 16,MEM_COMMIT,PAGE_READWRITE); // Saturn Pages are 16K / bank, Max 8 Banks/Card
 #endif // SATURN
 
 	MemInitializeROM();
