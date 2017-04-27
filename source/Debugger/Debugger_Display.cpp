@@ -2862,6 +2862,56 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0 
 }
 
 
+/*
+	$C002 W RAMRDOFF  Read enable  main memory from $0200-$BFFF
+	$C003 W RAMDRON   Read enable  aux  memory from $0200-$BFFF
+	$C004 W RAMWRTOFF Write enable main memory from $0200-$BFFF
+	$C005 W RAMWRTON  Write enable aux  memory from $0200-$BFFF
+*/
+// 2.9.0.6
+// GH#406 https://github.com/AppleWin/AppleWin/issues/406
+//===========================================================================
+void _DrawSoftSwitchMainAuxBanks( RECT & rect )
+{
+	RECT temp = rect;
+	rect.top    += g_nFontHeight;
+	rect.bottom += g_nFontHeight;
+
+
+	/*
+		Ideally, we'd show Read/Write for Main/Aux
+			02:RM/X
+			04:WM/X
+		But we only have 1 line:
+			02:Rm/x Wm/x
+			00:ASC/MOUS
+		Which is one character too much.
+			02:Rm/x Wm/a
+		But we abbreaviate it without the space and color code the Read and Write:
+			02:Rm/xWm/x
+	*/
+
+	int w  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
+	int dx = 7 * w;
+
+	int  nAddress  = 0xC002;
+	bool bMainRead = (memmode & MF_AUXREAD)  ? true : false;
+	bool bAuxWrite = (memmode & MF_AUXWRITE) ? true : false;
+
+	temp.right = rect.left + dx;
+	_DrawSoftSwitch( temp, nAddress, !bMainRead, "R", "m", "x", NULL, BG_DATA_2 );
+
+	temp.top    -= g_nFontHeight;
+	temp.bottom -= g_nFontHeight;
+	temp.left   += dx;
+	temp.right  += 3*w;
+
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_BP_S_X )); // FG_INFO_OPCODE )); Yellow
+	PrintTextCursorX( "W", temp );
+	_DrawSoftSwitchHighlight( temp, !bAuxWrite, "m", "x", BG_DATA_2 );
+}
+
+
 // 2.7.0.1 Display state of soft switches
 //===========================================================================
 void DrawSoftSwitches( int iSoftSwitch )
@@ -2952,12 +3002,13 @@ void DrawSoftSwitches( int iSoftSwitch )
 
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
-		PrintTextCursorY( "", rect ); // force print blank line
 
 		// 280/560 HGR
 		// C05E = ON, C05F = OFF
 		bSet = VideoGetSWDHIRES();
 		_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
+
+		_DrawSoftSwitchMainAuxBanks( rect );
 
 		// Extended soft switches
 		// C00C = off, C00D = on
@@ -2973,6 +3024,7 @@ void DrawSoftSwitches( int iSoftSwitch )
 		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1" );
 
 #if SOFTSWITCH_LANGCARD
+		// GH#406 https://github.com/AppleWin/AppleWin/issues/406
 		// 2.9.0.4
 		// Language Card Bank 1/2
 		// See: MemSetPaging()
