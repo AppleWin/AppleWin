@@ -2791,8 +2791,9 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char 
 */
 // 2.9.0.4 Draw Language Card Bank Usage
 // @param iBank Either 1 or 2
+// @param extraBank 0 if none, else 1..127 = RAMWORKS, 1..7 + (MEM_TYPE_SATURN << 8) if SATURN
 //===========================================================================
-void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank )
+void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0 )
 {
 	int w  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
 	int dx = 8 * w; // "80:L#/M R/W"
