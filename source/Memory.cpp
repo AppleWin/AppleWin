@@ -189,6 +189,13 @@ UINT			g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //
 static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
 
+#ifdef SATURN
+UINT				g_uSaturnActiveBank = 0;		// Saturn 128K Language Card Bank 0 .. 7
+static LPBYTE	SaturnPages[8];
+#endif // SATURN
+
+MemoryType_e	g_eMemType = MEM_TYPE_NATIVE;		// 0 = Native memory, 1=RAMWORKS, 2 = SATURN
+
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
 //=============================================================================
@@ -1188,6 +1195,12 @@ void MemInitialize()
 	while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE)))
 		i++;
 #endif
+
+#ifdef SATURN
+	g_uMaxExPages = 8;
+	for( int iPage = 0; iPage < 8; iPage++ )
+		SaturnPages[ iPage ] = (LPBYTE) VirtualAlloc( NULL, 1024 * 16,MEM_COMMIT,PAGE_READWRITE);
+#endif // SATURN
 
 	MemInitializeROM();
 	MemInitializeCustomF8ROM();
