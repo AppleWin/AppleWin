@@ -11,7 +11,7 @@
 #define  MF_PAGE2      0x00000080
 #define  MF_SLOTC3ROM  0x00000100
 #define  MF_SLOTCXROM  0x00000200
-#define  MF_WRITERAM   0x00000400   // Language Card RAMis Write Enabled
+#define  MF_WRITERAM   0x00000400   // Language Card RAM is Write Enabled
 #define  MF_IMAGEMASK  0x000003F7
 
 enum
