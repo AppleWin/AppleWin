@@ -5,13 +5,13 @@
 #define  MF_ALTZP      0x00000002
 #define  MF_AUXREAD    0x00000004	// RAMRD
 #define  MF_AUXWRITE   0x00000008	// RAMWRT
-#define  MF_BANK2      0x00000010   // LanguageCard Bank 2 $D000.$DFFF
-#define  MF_HIGHRAM    0x00000020
+#define  MF_BANK2      0x00000010   // Language Card Bank 2 $D000..$DFFF
+#define  MF_HIGHRAM    0x00000020   // Language Card RAM is active $D000..$DFFF
 #define  MF_HIRES      0x00000040
 #define  MF_PAGE2      0x00000080
 #define  MF_SLOTC3ROM  0x00000100
 #define  MF_SLOTCXROM  0x00000200
-#define  MF_WRITERAM   0x00000400
+#define  MF_WRITERAM   0x00000400   // Language Card RAMis Write Enabled
 #define  MF_IMAGEMASK  0x000003F7
 
 enum
