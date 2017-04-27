@@ -2720,9 +2720,28 @@ void DrawRegisters ( int line )
 	DrawRegister( line++, sReg[ BP_SRC_REG_S ] , 2, regs.sp, PARAM_REG_SP );
 }
 
+
+// 2.9.0.3
+//===========================================================================
+void _DrawSoftSwitchHighlight( RECT & temp, bool bSet, const char *sOn, const char *sOff, int bg = BG_INFO )
+{
+//	DebuggerSetColorBG( DebuggerGetColor( bg                 ) ); // BG_INFO
+
+	ColorizeFlags( bSet, bg );
+	PrintTextCursorX( sOn, temp );
+
+	DebuggerSetColorBG( DebuggerGetColor( bg                 ) ); // BG_INFO
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
+	PrintTextCursorX( "/", temp );
+
+	ColorizeFlags( !bSet, bg );
+	PrintTextCursorX( sOff, temp );
+}
+
+
 // 2.7.0.7 Cleaned up display of soft-switches to show address.
 //===========================================================================
-void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char *sOn, char *sOff, const char *sSuffix = NULL )
+void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char *sOn, char *sOff, const char *sSuffix = NULL, int bg_default = BG_INFO )
 {
 	RECT temp = rect;
 	char sText[ 4 ] = "";
@@ -2739,17 +2758,10 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char 
 	if( sPrefix )
 		PrintTextCursorX( sPrefix, temp );
 
-	ColorizeFlags( bSet );
-	PrintTextCursorX( sOn, temp );
+	// 2.9.0.3
+	_DrawSoftSwitchHighlight( temp, bSet, sOn, sOff, bg_default );
 
-	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
-	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
-	PrintTextCursorX( "/", temp );
-
-	ColorizeFlags( !bSet );
-	PrintTextCursorX( sOff, temp );
-
-	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+	DebuggerSetColorBG( DebuggerGetColor( bg_default    ));
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 	if ( sSuffix )
 		PrintTextCursorX( sSuffix, temp );
