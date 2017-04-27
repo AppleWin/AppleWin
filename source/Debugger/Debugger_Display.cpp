@@ -2982,8 +2982,26 @@ void DrawSoftSwitches( int iSoftSwitch )
 		_DrawSoftSwitchLanguageCardBank( rect, 2 );
 
 // LC1
+
+		int extraBank = 0;
+
+#ifdef RAMWORKS
+		// We could show the RAMWORKS active bank only when main isn't active via
+		//      if (g_uActiveBank > 0)
+		// We want to always show that RAMWORKS card is installed even if on page 0 aka "r00"
+		if (g_eMemType == MEM_TYPE_RAMWORKS)
+			extraBank = g_uActiveBank;
+#endif //RAMWORKS
+
+#ifdef SATURN
+		if (g_eMemType == MEM_TYPE_SATURN)
+			extraBank = g_uSaturnActiveBank;
+#endif // SATURN
+
+		extraBank |= (int)(g_eMemType) << 8;
+
 		rect.left = DISPLAY_SOFTSWITCH_COLUMN; // INFO_COL_2;
-		_DrawSoftSwitchLanguageCardBank( rect, 1 );
+		_DrawSoftSwitchLanguageCardBank( rect, 1, extraBank );
 #endif
 
 #endif // SOFTSWITCH_OLD
