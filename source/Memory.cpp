@@ -177,7 +177,7 @@ static LPBYTE  memimage     = NULL;
 static LPBYTE	pCxRomInternal		= NULL;
 static LPBYTE	pCxRomPeripheral	= NULL;
 
-static DWORD   memmode      = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM;
+       DWORD   memmode      = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM; // 2.9.0.4 now global as Debugger needs access for LC status info in DrawSoftSwitches()
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 static BOOL    Pravets8charmode = 0;
 
