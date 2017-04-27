@@ -2823,8 +2823,9 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0 
 
 	rect.top    -= g_nFontHeight;
 	rect.bottom -= g_nFontHeight;
+
 	rect.left   += dx;
-	rect.right  += dx;
+	rect.right  += 3*w;
 
 	// [2]/M  R/[W]
 	// [2]/M  [R]/W
