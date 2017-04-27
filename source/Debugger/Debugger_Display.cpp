@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define DEBUG_FORCE_DISPLAY 0
 
 #define SOFTSWITCH_OLD 0
+#define SOFTSWITCH_LANGCARD
 
 #if _DEBUG
 	#define DEBUG_FONT_NO_BACKGROUND_CHAR      0
@@ -2770,6 +2771,72 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char 
 	rect.bottom += g_nFontHeight;
 }
 
+/*
+	Debugger: Support LC status and memory
+	https://github.com/AppleWin/AppleWin/issues/406
+
+	Bank2       Bank1       First Access, Second Access
+	-----------------------------------------------
+	C080        C088        Read RAM,     Write protect    MF_HIGHRAM   ~MF_WRITERAM
+	C081        C089        Read ROM,     Write enable    ~MF_HIGHRAM    MF_WRITERAM
+	C082        C08A        Read ROM,     Write protect   ~MF_HIGHRAM   ~MF_WRITERAM
+	C083        C08B        Read RAM,     Write enable     MF_HIGHRAM    MF_WRITERAM
+	c084        C08C        same as C080/C088
+	c085        C08D        same as C081/C089
+	c086        C08E        same as C082/C08A
+	c087        C08F        same as C083/C08B
+	MF_BANNK2   ~MF_BANK2
+
+	NOTE: Saturn 128K uses C084 .. C087 and C08C .. C08F to select Banks 0 .. 7 !
+*/
+// 2.9.0.4 Draw Language Card Bank Usage
+// @param iBank Either 1 or 2
+//===========================================================================
+void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank )
+{
+	int w  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
+	int dx = 8 * w; // "80:L#/M R/W"
+	//                  ^-------^
+
+	rect.right = rect.left + dx;
+
+	// 0 = RAM
+	// 1 = Bank 1
+	// 2 = Bank 2
+	bool bBankWritable = (memmode & MF_WRITERAM) ? 1 : 0;
+	int iBankActive    = (memmode & MF_HIGHRAM)
+		? (memmode & MF_BANK2)
+			? 2
+			: 1
+		: 0
+		;
+	bool bBankOn = (iBankActive == iBank);
+
+	char sOn[ 4 ] = "L#"; // LC# but one char too wide :-/
+	// C080 LC2
+	// C088 LC1
+	int nAddress = 0xC080 + (8 * (2 - iBank));
+	sOn[1] = '0' + iBank;
+
+	_DrawSoftSwitch( rect, nAddress, bBankOn, NULL, sOn, "M", " ", BG_DATA_2 ); // BG_INFO_2 -> BG_DATA_2 make alias?
+
+	rect.top    -= g_nFontHeight;
+	rect.bottom -= g_nFontHeight;
+	rect.left   += dx;
+	rect.right  += dx;
+
+	// [2]/M  R/[W]
+	// [2]/M  [R]/W
+	const char *pOn  = "R";
+	const char *pOff = "W";
+
+	rect.right = rect.left + 3*w;
+	_DrawSoftSwitchHighlight( rect, !bBankWritable, pOn, pOff, BG_DATA_2 ); // BG_INFO_2 -> BG_DATA_2 make alias?
+
+	rect.top    += g_nFontHeight;
+	rect.bottom += g_nFontHeight;
+}
+
 
 // 2.7.0.1 Display state of soft switches
 //===========================================================================
@@ -2880,6 +2947,21 @@ void DrawSoftSwitches( int iSoftSwitch )
 		// C000 = 80STOREOFF, C001 = 80STOREON
 		bSet = !VideoGetSW80STORE();
 		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1" );
+
+#if SOFTSWITCH_LANGCARD
+		// 2.9.0.4
+		// Language Card Bank 1/2
+		// See: MemSetPaging()
+
+// LC2
+		DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 )); // BG_INFO_2 -> BG_DATA_2
+		_DrawSoftSwitchLanguageCardBank( rect, 2 );
+
+// LC1
+		rect.left = DISPLAY_SOFTSWITCH_COLUMN; // INFO_COL_2;
+		_DrawSoftSwitchLanguageCardBank( rect, 1 );
+#endif
+
 #endif // SOFTSWITCH_OLD
 }
 
@@ -3446,7 +3528,7 @@ void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 		int yStack    = yRegs  + MAX_DISPLAY_REGS_LINES  + 0; // 0
 		int yTarget   = yStack + MAX_DISPLAY_STACK_LINES - 1; // 9
 		int yZeroPage = 16; // yTarget 
-		int ySoft = yZeroPage + (2 * MAX_DISPLAY_ZEROPAGE_LINES) + 1;
+		int ySoft = yZeroPage + (2 * MAX_DISPLAY_ZEROPAGE_LINES) + !SOFTSWITCH_LANGCARD;
 
 		if ((bUpdate & UPDATE_REGS) || (bUpdate & UPDATE_FLAGS))
 			DrawRegisters( yRegs );

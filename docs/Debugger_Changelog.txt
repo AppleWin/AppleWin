@@ -1,4 +1,5 @@
 /*
+.4 Addded: Language Card Status now displayed
 .3 Cleanup drawing of soft switches
 .2 Fix crash when NTSC save/load total path length is > console width (80 chars)
 .1 Fixed: Implemented missing debugger "CD" command
