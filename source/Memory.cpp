@@ -1610,24 +1610,60 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	{
 		SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM));
 
-		if (!(address & 8))
-			SetMemMode(memmode | MF_BANK2);
-
-		// C081    C089    Read ROM,     Write enable
-		// C082    C08A    Read ROM,     Write protect
-		if (((address & 2) >> 1) == (address & 1))
-			SetMemMode(memmode | MF_HIGHRAM);
-
-		if (address & 1)	// GH#392
+#ifdef SATURN
+/*
+		Bin   Addr.
+		      $C0N0 4K Bank A, RAM read, Write protect
+		      $C0N1 4K Bank A, ROM read, Write enabled
+		      $C0N2 4K Bank A, ROM read, Write protect
+		      $C0N3 4K Bank A, RAM read, Write enabled
+		0100  $C0N4 select 16K Bank 1
+		0101  $C0N5 select 16K Bank 2
+		0110  $C0N6 select 16K Bank 3
+		0111  $C0N7 select 16K Bank 4
+		      $C0N8 4K Bank B, RAM read, Write protect
+		      $C0N9 4K Bank B, ROM read, Write enabled
+		      $C0NA 4K Bank B, ROM read, Write protect
+		      $C0NB 4K Bank B, RAM read, Write enabled
+		1100  $C0NC select 16K Bank 5
+		1101  $C0ND select 16K Bank 6
+		1110  $C0NE select 16K Bank 7
+		1111  $C0NF select 16K Bank 8
+*/
+		if (g_uSaturnTotalBanks)
 		{
-			if (!write && g_bLastWriteRam)
+			if ((address & 7) > 3)
 			{
-				SetMemMode(memmode | MF_WRITERAM); // UTAIIe:5-23
+				g_uSaturnActiveBank = 0 // Saturn 128K Language Card Bank 0 .. 7
+					| (address >> 1) & 4
+					| (address >> 0) & 3
+					;
+				// TODO: Update paging()
 			}
 		}
 		else
+#endif // SATURN
 		{
-			SetMemMode(memmode & ~(MF_WRITERAM)); // UTAIIe:5-23
+			// Apple 16K Language Card
+			if (!(address & 8))
+				SetMemMode(memmode | MF_BANK2);
+
+			// C081    C089    Read ROM,     Write enable
+			// C082    C08A    Read ROM,     Write protect
+			if (((address & 2) >> 1) == (address & 1))
+				SetMemMode(memmode | MF_HIGHRAM);
+
+			if (address & 1)	// GH#392
+			{
+				if (!write && g_bLastWriteRam)
+				{
+					SetMemMode(memmode | MF_WRITERAM); // UTAIIe:5-23
+				}
+			}
+			else
+			{
+				SetMemMode(memmode & ~(MF_WRITERAM)); // UTAIIe:5-23
+			}
 		}
 		g_bLastWriteRam = (address & 1) && (!write); // UTAIIe:5-23
 	}
