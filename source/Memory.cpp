@@ -185,7 +185,7 @@ static CNoSlotClock g_NoSlotClock;
 
 #ifdef RAMWORKS
 UINT			g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
-UINT			g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c
+UINT			g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c -- ALSO RAMWORKS
 static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
 
