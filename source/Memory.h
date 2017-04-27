@@ -39,6 +39,15 @@ enum MemoryInitPattern_e
 	, NUM_MIP
 };
 
+enum MemoryType_e
+{
+	MEM_TYPE_NATIVE   = 0,
+	MEM_TYPE_RAMWORKS = 1,
+	MEM_TYPE_SATURN   = 2,
+	NUM_MEM_TYPE      = 3
+};
+extern MemoryType_e	g_eMemType;
+
 extern iofunction IORead[256];
 extern iofunction IOWrite[256];
 extern LPBYTE     memwrite[0x100];
@@ -49,7 +58,12 @@ extern DWORD      memmode;
 #ifdef RAMWORKS
 const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB
 extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)
+extern UINT       g_uActiveBank;
 #endif
+
+#ifdef SATURN
+extern UINT g_uSaturnActiveBank;		// Saturn 128K Language Card Bank 0 .. 7
+#endif // SATURN
 
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
 
