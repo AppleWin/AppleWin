@@ -1027,7 +1027,7 @@ char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
 	return nChar;
 }
 
-void ColorizeFlags( bool bSet )
+void ColorizeFlags( bool bSet, int bg_default = BG_INFO )
 {
 	if (bSet)
 	{
@@ -1036,7 +1036,7 @@ void ColorizeFlags( bool bSet )
 	}
 	else
 	{
-		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+		DebuggerSetColorBG( DebuggerGetColor( bg_default    ));
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 	}
 }
