@@ -1,4 +1,5 @@
 /*
+.3 Cleanup drawing of soft switches
 .2 Fix crash when NTSC save/load total path length is > console width (80 chars)
 .1 Fixed: Implemented missing debugger "CD" command
 2.9.0.0 Added: ntsc save [filename], ntsc load [filename], to save/load the NTSC palette.
