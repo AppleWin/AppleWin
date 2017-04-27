@@ -2747,7 +2747,7 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char 
 	RECT temp = rect;
 	char sText[ 4 ] = "";
 
-	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+	DebuggerSetColorBG( DebuggerGetColor( bg_default ));
 //	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_TARGET ));
 	sprintf( sText, "%02X", (nAddress & 0xFF) );
@@ -2836,12 +2836,10 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0 
 		if (extraBank & (MEM_TYPE_RAMWORKS << 8)) sText[0] = 'r'; // RAMWORKS
 		if (extraBank & (MEM_TYPE_SATURN   << 8)) sText[0] = 's'; // SATURN 64K 128K
 
-		DebuggerSetColorBG( DebuggerGetColor( BG_INFO        ));
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // FG_INFO_TITLE
 		PrintTextCursorX( sText, rect );
 
 		sprintf( sText, "%02X", (extraBank & 0x7F) );
-		DebuggerSetColorBG( DebuggerGetColor( BG_INFO         ));
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
 		PrintTextCursorX( sText, rect );
 
