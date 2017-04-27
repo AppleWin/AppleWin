@@ -2827,6 +2827,25 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0 
 	rect.left   += dx;
 	rect.right  += 3*w;
 
+#if defined(RAMWORKS) || defined(SATURN)
+	if (extraBank > 0 ) // assumes: iBank==1
+	{
+		char sText[ 4 ] = "?"; // Default to RAMWORKS
+		if (extraBank & (MEM_TYPE_RAMWORKS << 8)) sText[0] = 'r'; // RAMWORKS
+		if (extraBank & (MEM_TYPE_SATURN   << 8)) sText[0] = 's'; // SATURN 64K 128K
+
+		DebuggerSetColorBG( DebuggerGetColor( BG_INFO        ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // FG_INFO_TITLE
+		PrintTextCursorX( sText, rect );
+
+		sprintf( sText, "%02X", (extraBank & 0x7F) );
+		DebuggerSetColorBG( DebuggerGetColor( BG_INFO         ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
+		PrintTextCursorX( sText, rect );
+
+	}
+	else
+#endif // SATURN
 	if (iBank == 2)
 	{
 
