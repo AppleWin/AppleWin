@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define DEBUG_FORCE_DISPLAY 0
 
 #define SOFTSWITCH_OLD 0
-#define SOFTSWITCH_LANGCARD
+#define SOFTSWITCH_LANGCARD 1
 
 #if _DEBUG
 	#define DEBUG_FONT_NO_BACKGROUND_CHAR      0
