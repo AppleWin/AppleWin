@@ -1600,6 +1600,8 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 		if (!(address & 8))
 			SetMemMode(memmode | MF_BANK2);
 
+		// C081    C089    Read ROM,     Write enable
+		// C082    C08A    Read ROM,     Write protect
 		if (((address & 2) >> 1) == (address & 1))
 			SetMemMode(memmode | MF_HIGHRAM);
 
