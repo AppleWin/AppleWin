@@ -2755,9 +2755,11 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char 
 	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 	PrintTextCursorX( ":", temp );
 
-	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 	if( sPrefix )
+	{
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG )); // light blue
 		PrintTextCursorX( sPrefix, temp );
+	}
 
 	// 2.9.0.3
 	_DrawSoftSwitchHighlight( temp, bSet, sOn, sOff, bg_default );
