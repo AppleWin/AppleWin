@@ -190,8 +190,9 @@ static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
 
 #ifdef SATURN
-UINT				g_uSaturnActiveBank = 0;		// Saturn 128K Language Card Bank 0 .. 7
-static LPBYTE	SaturnPages[8];
+UINT			g_uSaturnTotalBanks = 0;		// Will be > 0 if Saturn card is "installed"
+UINT			g_uSaturnActiveBank = 0;		// Saturn 128K Language Card Bank 0 .. 7
+static LPBYTE	g_aSaturnPages[8];
 #endif // SATURN
 
 MemoryType_e	g_eMemType = MEM_TYPE_NATIVE;		// 0 = Native memory, 1=RAMWORKS, 2 = SATURN

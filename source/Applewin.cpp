@@ -996,6 +996,24 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				g_uMaxExPages = 1;
 		}
 #endif
+#ifdef SATURN
+		else if (strcmp(lpCmdLine, "-saturn") == 0)		// 64 = Saturn 64K (4 banks), 128 = Saturn 128K (8 banks)
+		{
+			g_eMemType = MEM_TYPE_SATURN;
+
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			// " The  boards  consist  of 16K  banks  of  memory
+			//  (4  banks  for  the  64K  board,
+			//  8  banks  for  the  128K),  accessed  one  at  a  time"
+			    g_uSaturnTotalBanks = atoi(lpCmdLine) / 16; // number of 16K Banks [1..8]
+			if (g_uSaturnTotalBanks > 8)
+				g_uSaturnTotalBanks = 8;
+			else
+			if (g_uSaturnTotalBanks < 1)
+				g_uSaturnTotalBanks = 1;
+#endif
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);

@@ -62,6 +62,7 @@ extern UINT       g_uActiveBank;
 #endif
 
 #ifdef SATURN
+extern UINT g_uSaturnTotalBanks;
 extern UINT g_uSaturnActiveBank;		// Saturn 128K Language Card Bank 0 .. 7
 #endif // SATURN
 
