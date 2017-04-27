@@ -2827,13 +2827,16 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0 
 	rect.left   += dx;
 	rect.right  += 3*w;
 
-	// [2]/M  R/[W]
-	// [2]/M  [R]/W
-	const char *pOn  = "R";
-	const char *pOff = "W";
+	if (iBank == 2)
+	{
 
-	rect.right = rect.left + 3*w;
-	_DrawSoftSwitchHighlight( rect, !bBankWritable, pOn, pOff, BG_DATA_2 ); // BG_INFO_2 -> BG_DATA_2 make alias?
+		// [2]/M  R/[W]
+		// [2]/M  [R]/W
+		const char *pOn  = "R";
+		const char *pOff = "W";
+
+		_DrawSoftSwitchHighlight( rect, !bBankWritable, pOn, pOff, BG_DATA_2 ); // BG_INFO_2 -> BG_DATA_2 make alias?
+	}
 
 	rect.top    += g_nFontHeight;
 	rect.bottom += g_nFontHeight;
