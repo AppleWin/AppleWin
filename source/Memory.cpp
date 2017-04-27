@@ -1638,10 +1638,15 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 					| (address >> 1) & 4
 					| (address >> 0) & 3
 					;
+
 				// TODO: Update paging()
+
+				goto _done_saturn;
 			}
+
+			// Fall into 16K IO switches
 		}
-		else
+
 #endif // SATURN
 		{
 			// Apple 16K Language Card
@@ -1700,6 +1705,8 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 #endif
 		}
 	}
+
+_done_saturn:
 
 	// IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
 	// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
