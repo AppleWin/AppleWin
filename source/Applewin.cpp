@@ -1013,6 +1013,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			else
 			if (g_uSaturnTotalBanks < 1)
 				g_uSaturnTotalBanks = 1;
+		}
 #endif
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
 		{
