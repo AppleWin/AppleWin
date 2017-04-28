@@ -2795,7 +2795,7 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char 
 // @param iBank Either 1 or 2
 // @param extraBank 0 if none, else 1..127 = RAMWORKS, 1..7 + (MEM_TYPE_SATURN << 8) if SATURN
 //===========================================================================
-void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0 )
+void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0, int bg_default = BG_INFO )
 {
 	int w  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
 	int dx = 8 * w; // "80:L#/M R/W"
@@ -2821,7 +2821,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0 
 	int nAddress = 0xC080 + (8 * (2 - iBank));
 	sOn[1] = '0' + iBank;
 
-	_DrawSoftSwitch( rect, nAddress, bBankOn, NULL, sOn, "M", " ", BG_DATA_2 ); // BG_INFO_2 -> BG_DATA_2 make alias?
+	_DrawSoftSwitch( rect, nAddress, bBankOn, NULL, sOn, "M", " ", bg_default );
 
 	rect.top    -= g_nFontHeight;
 	rect.bottom -= g_nFontHeight;
@@ -2836,7 +2836,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0 
 		if (extraBank & (MEM_TYPE_RAMWORKS << 8)) sText[0] = 'r'; // RAMWORKS
 		if (extraBank & (MEM_TYPE_SATURN   << 8)) sText[0] = 's'; // SATURN 64K 128K
 
-		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // FG_INFO_TITLE
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG )); // light blue
 		PrintTextCursorX( sText, rect );
 
 		sprintf( sText, "%02X", (extraBank & 0x7F) );
@@ -2854,7 +2854,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0 
 		const char *pOn  = "R";
 		const char *pOff = "W";
 
-		_DrawSoftSwitchHighlight( rect, !bBankWritable, pOn, pOff, BG_DATA_2 ); // BG_INFO_2 -> BG_DATA_2 make alias?
+		_DrawSoftSwitchHighlight( rect, !bBankWritable, pOn, pOff, bg_default );
 	}
 
 	rect.top    += g_nFontHeight;
@@ -2871,7 +2871,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0 
 // 2.9.0.6
 // GH#406 https://github.com/AppleWin/AppleWin/issues/406
 //===========================================================================
-void _DrawSoftSwitchMainAuxBanks( RECT & rect )
+void _DrawSoftSwitchMainAuxBanks( RECT & rect, int bg_default = BG_INFO )
 {
 	RECT temp = rect;
 	rect.top    += g_nFontHeight;
@@ -2907,6 +2907,7 @@ void _DrawSoftSwitchMainAuxBanks( RECT & rect )
 	temp.right  += 3*w;
 
 	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_BP_S_X )); // FG_INFO_OPCODE )); Yellow
+	DebuggerSetColorBG( DebuggerGetColor( bg_default       ));
 	PrintTextCursorX( "W", temp );
 	_DrawSoftSwitchHighlight( temp, !bAuxWrite, "m", "x", BG_DATA_2 );
 }
@@ -3008,20 +3009,24 @@ void DrawSoftSwitches( int iSoftSwitch )
 		bSet = VideoGetSWDHIRES();
 		_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
 
-		_DrawSoftSwitchMainAuxBanks( rect );
 
 		// Extended soft switches
-		// C00C = off, C00D = on
-		bSet = !VideoGetSW80COL();
-		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80" );
-
-		// C00E = off, C00F = on
-		bSet = VideoGetSWAltCharSet();
-		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS" ); // ASCII/MouseText
+		int bgMemory = BG_DATA_2;
 
 		// C000 = 80STOREOFF, C001 = 80STOREON
 		bSet = !VideoGetSW80STORE();
-		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1" );
+		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1", NULL, bgMemory );
+
+		// C002 .. C005
+		_DrawSoftSwitchMainAuxBanks( rect, bgMemory );
+
+		// C00C = off, C00D = on
+		bSet = !VideoGetSW80COL();
+		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80", NULL, bgMemory );
+
+		// C00E = off, C00F = on
+		bSet = VideoGetSWAltCharSet();
+		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS", NULL, bgMemory ); // ASCII/MouseText
 
 #if SOFTSWITCH_LANGCARD
 		// GH#406 https://github.com/AppleWin/AppleWin/issues/406
@@ -3030,8 +3035,8 @@ void DrawSoftSwitches( int iSoftSwitch )
 		// See: MemSetPaging()
 
 // LC2
-		DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 )); // BG_INFO_2 -> BG_DATA_2
-		_DrawSoftSwitchLanguageCardBank( rect, 2 );
+		DebuggerSetColorBG( DebuggerGetColor( bgMemory )); // BG_INFO_2 -> BG_DATA_2
+		_DrawSoftSwitchLanguageCardBank( rect, 2, 0, bgMemory );
 
 // LC1
 
@@ -3053,7 +3058,7 @@ void DrawSoftSwitches( int iSoftSwitch )
 		extraBank |= (int)(g_eMemType) << 8;
 
 		rect.left = DISPLAY_SOFTSWITCH_COLUMN; // INFO_COL_2;
-		_DrawSoftSwitchLanguageCardBank( rect, 1, extraBank );
+		_DrawSoftSwitchLanguageCardBank( rect, 1, extraBank, bgMemory );
 #endif
 
 #endif // SOFTSWITCH_OLD

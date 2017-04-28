@@ -1,4 +1,6 @@
 /*
+.7 Fixed: Memory softswitches are now in chronological order, and their background is a dark grey
+.6 Added: Read/Write for Main/Aux memory now shown
 .5 Added: Support for RAMWORKS in the Debugger Language Card Status
 .4 Added: Language Card Status now displayed
 .3 Cleanup drawing of soft switches
