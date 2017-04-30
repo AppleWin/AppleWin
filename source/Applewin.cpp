@@ -492,25 +492,6 @@ static void LoadConfigOldJoystick(const UINT uJoyNum)
 	JoySetJoyType(uJoyNum, uNewJoyType);
 }
 
-//Sets the character set for the Apple model/clone
-void SetCharsetType(void)
-{
-	switch ( GetApple2Type() )
-	{
-	case A2TYPE_APPLE2:			g_nCharsetType = 0; break;
-	case A2TYPE_APPLE2PLUS:		g_nCharsetType = 0; break;
-	case A2TYPE_APPLE2E:		g_nCharsetType = 0; break;
-	case A2TYPE_APPLE2EENHANCED:g_nCharsetType = 0; break;
-	case A2TYPE_TK30002E:       g_nCharsetType = 0; break;
-	case A2TYPE_PRAVETS82:	    g_nCharsetType = 1; break;
-	case A2TYPE_PRAVETS8M:	    g_nCharsetType = 2; break; //This charset has a very small difference with the PRAVETS82 one, and probably has some misplaced characters.
-	case A2TYPE_PRAVETS8A:	    g_nCharsetType = 3; break;
-	default:
-		_ASSERT(0);
-		g_nCharsetType = 0;
-	}
-}
-
 //Reads configuration from the registry entries
 void LoadConfiguration(void)
 {
@@ -542,7 +523,6 @@ void LoadConfiguration(void)
 	}
 
 	SetApple2Type(apple2Type);
-	SetCharsetType();
 
 	//
 

@@ -141,7 +141,6 @@ static HWND    tooltipwindow   = (HWND)0;
 static BOOL    g_bUsingCursor	= 0;		// 1=AppleWin is using (hiding) the mouse-cursor
 static int     viewportx       = VIEWPORTX;	// Default to Normal (non-FullScreen) mode
 static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
-int g_nCharsetType = 0;
 
 // Direct Draw -- For Full Screen
 		LPDIRECTDRAW        g_pDD               = (LPDIRECTDRAW)0;
@@ -1201,41 +1200,27 @@ LRESULT CALLBACK FrameWndProc (
 			DrawButton((HDC)0,buttondown);
 		}
 		else if (wparam == VK_F9)
-		{			
-			//bool bCtrlDown  = (GetKeyState(VK_CONTROL) < 0) ? true : false;
-			//bool bShiftDown = (GetKeyState(VK_SHIFT  ) < 0) ? true : false;
+		{
+			// F9            Next Video Mode
+			// SHIFT+F9      Prev Video Mode
+			// CTRL+SHIFT+F9 Toggle 50% Scan Lines
+			// ALT+F9        Can't use Alt-F9 as Alt is Open-Apple = Joystick Button #1
 
-// F9 Next Video Mode
-// ^F9 Next Char Set
-// #F9 Prev Video Mode
-// ^#F9 Toggle 50% Scan Lines
-// @F9 -Can't use Alt-F9 as Alt is Open-Apple = Joystick Button #1
-
-			if ( g_bCtrlKey && !g_bShiftKey ) //CTRL+F9
-			{
-				g_nCharsetType++; // Cycle through available charsets (Ctrl + F9)
-				if (g_nCharsetType >= 3)
-				{				
-					g_nCharsetType = 0;
-				}
-			}
-			else	// Cycle through available video modes
-			if ( g_bCtrlKey && g_bShiftKey ) // ALT+F9
-			{
-				g_uHalfScanLines = !g_uHalfScanLines;
-			}
-			else
-			if ( !g_bShiftKey )	// Drop Down Combo Box is in correct order
+			if ( !g_bCtrlKey && !g_bShiftKey )		// F9
 			{
 				g_eVideoType++;
 				if (g_eVideoType >= NUM_VIDEO_MODES)
 					g_eVideoType = 0;
 			}
-			else	// Forwards
+			else if ( !g_bCtrlKey && g_bShiftKey )	// SHIFT+F9
 			{
 				if (g_eVideoType <= 0)
 					g_eVideoType = NUM_VIDEO_MODES;
 				g_eVideoType--;
+			}
+			else if ( g_bCtrlKey && g_bShiftKey )	// CTRL+SHIFT+F9
+			{
+				g_uHalfScanLines = !g_uHalfScanLines;
 			}
 
 			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)
@@ -1260,7 +1245,6 @@ LRESULT CALLBACK FrameWndProc (
 
 			Config_Save_Video();
 		}
-
 		else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)
 		{
 			SoundCore_SetFade(FADE_OUT);

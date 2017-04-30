@@ -210,7 +210,6 @@ static void Snapshot_LoadState_v1()	// .aws v1.0.0.1, up to (and including) Appl
 		MemUpdatePaging(TRUE);
 
 		// NB. g_Apple2Type doesn't change for v1, but replicate this (like v2)
-		SetCharsetType();
 		VideoReinitialize();	// g_CharsetType changed
 		FrameUpdateApple2Type();
 	}
@@ -339,7 +338,6 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	MemLoadSnapshot(yamlLoadHelper);
 
 	// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
-	SetCharsetType();
 	VideoReinitialize();	// g_CharsetType changed
 	FrameUpdateApple2Type();
 }
