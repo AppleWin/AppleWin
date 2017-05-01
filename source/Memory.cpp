@@ -57,20 +57,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debugger\DebugDefs.h"
 #include "YamlHelper.h"
 
-// Memory Flag
-#define  MF_80STORE    0x00000001
-#define  MF_ALTZP      0x00000002
-#define  MF_AUXREAD    0x00000004	// RAMRD
-#define  MF_AUXWRITE   0x00000008	// RAMWRT
-#define  MF_BANK2      0x00000010
-#define  MF_HIGHRAM    0x00000020
-#define  MF_HIRES      0x00000040
-#define  MF_PAGE2      0x00000080
-#define  MF_SLOTC3ROM  0x00000100
-#define  MF_SLOTCXROM  0x00000200
-#define  MF_WRITERAM   0x00000400
-#define  MF_IMAGEMASK  0x000003F7
-
 #define  SW_80STORE    (memmode & MF_80STORE)
 #define  SW_ALTZP      (memmode & MF_ALTZP)
 #define  SW_AUXREAD    (memmode & MF_AUXREAD)
@@ -191,7 +177,7 @@ static LPBYTE  memimage     = NULL;
 static LPBYTE	pCxRomInternal		= NULL;
 static LPBYTE	pCxRomPeripheral	= NULL;
 
-static DWORD   memmode      = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM;
+       DWORD   memmode      = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM; // 2.9.0.4 now global as Debugger needs access for LC status info in DrawSoftSwitches()
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 static BOOL    Pravets8charmode = 0;
 
@@ -199,9 +185,17 @@ static CNoSlotClock g_NoSlotClock;
 
 #ifdef RAMWORKS
 UINT			g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
-UINT			g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c
+UINT			g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c -- ALSO RAMWORKS
 static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
+
+#ifdef SATURN
+UINT			g_uSaturnTotalBanks = 0;		// Will be > 0 if Saturn card is "installed"
+UINT			g_uSaturnActiveBank = 0;		// Saturn 128K Language Card Bank 0 .. 7
+static LPBYTE	g_aSaturnPages[8];
+#endif // SATURN
+
+MemoryType_e	g_eMemType = MEM_TYPE_NATIVE;		// 0 = Native memory, 1=RAMWORKS, 2 = SATURN
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
@@ -1203,6 +1197,11 @@ void MemInitialize()
 		i++;
 #endif
 
+#ifdef SATURN
+	for( UINT iPage = 0; iPage < g_uSaturnTotalBanks; iPage++ )
+		g_aSaturnPages[ iPage ] = (LPBYTE) VirtualAlloc( NULL, 1024 * 16,MEM_COMMIT,PAGE_READWRITE); // Saturn Pages are 16K / bank, Max 8 Banks/Card
+#endif // SATURN
+
 	MemInitializeROM();
 	MemInitializeCustomF8ROM();
 	MemInitializeIO();
@@ -1611,22 +1610,65 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	{
 		SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM));
 
-		if (!(address & 8))
-			SetMemMode(memmode | MF_BANK2);
-
-		if (((address & 2) >> 1) == (address & 1))
-			SetMemMode(memmode | MF_HIGHRAM);
-
-		if (address & 1)	// GH#392
+#ifdef SATURN
+/*
+		Bin   Addr.
+		      $C0N0 4K Bank A, RAM read, Write protect
+		      $C0N1 4K Bank A, ROM read, Write enabled
+		      $C0N2 4K Bank A, ROM read, Write protect
+		      $C0N3 4K Bank A, RAM read, Write enabled
+		0100  $C0N4 select 16K Bank 1
+		0101  $C0N5 select 16K Bank 2
+		0110  $C0N6 select 16K Bank 3
+		0111  $C0N7 select 16K Bank 4
+		      $C0N8 4K Bank B, RAM read, Write protect
+		      $C0N9 4K Bank B, ROM read, Write enabled
+		      $C0NA 4K Bank B, ROM read, Write protect
+		      $C0NB 4K Bank B, RAM read, Write enabled
+		1100  $C0NC select 16K Bank 5
+		1101  $C0ND select 16K Bank 6
+		1110  $C0NE select 16K Bank 7
+		1111  $C0NF select 16K Bank 8
+*/
+		if (g_uSaturnTotalBanks)
 		{
-			if (!write && g_bLastWriteRam)
+			if ((address & 7) > 3)
 			{
-				SetMemMode(memmode | MF_WRITERAM); // UTAIIe:5-23
+				g_uSaturnActiveBank = 0 // Saturn 128K Language Card Bank 0 .. 7
+					| (address >> 1) & 4
+					| (address >> 0) & 3
+					;
+
+				// TODO: Update paging()
+
+				goto _done_saturn;
 			}
+
+			// Fall into 16K IO switches
 		}
-		else
+
+#endif // SATURN
 		{
-			SetMemMode(memmode & ~(MF_WRITERAM)); // UTAIIe:5-23
+			// Apple 16K Language Card
+			if (!(address & 8))
+				SetMemMode(memmode | MF_BANK2);
+
+			// C081    C089    Read ROM,     Write enable
+			// C082    C08A    Read ROM,     Write protect
+			if (((address & 2) >> 1) == (address & 1))
+				SetMemMode(memmode | MF_HIGHRAM);
+
+			if (address & 1)	// GH#392
+			{
+				if (!write && g_bLastWriteRam)
+				{
+					SetMemMode(memmode | MF_WRITERAM); // UTAIIe:5-23
+				}
+			}
+			else
+			{
+				SetMemMode(memmode & ~(MF_WRITERAM)); // UTAIIe:5-23
+			}
 		}
 		g_bLastWriteRam = (address & 1) && (!write); // UTAIIe:5-23
 	}
@@ -1663,6 +1705,8 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 #endif
 		}
 	}
+
+_done_saturn:
 
 	// IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
 	// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL

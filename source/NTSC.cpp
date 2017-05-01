@@ -1470,8 +1470,6 @@ void NTSC_SetVideoTextMode( int cols )
 //===========================================================================
 void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 {
-	int h = g_nVideoClockHorz;
-
 	g_nVideoMixed   = uVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = VideoGetSWAltCharSet() ? 1 : 0;
 
@@ -1781,7 +1779,16 @@ void NTSC_VideoRedrawWholeScreen( void )
 	const uint16_t currVideoClockHorz = g_nVideoClockHorz;
 #endif
 
+	// (GH#405) For full-speed: whole screen updates will occur periodically
+	// . The V/H pos will have been recalc'ed, so won't be continuous from previous (whole screen) update
+	// . So the redraw must start at H-pos=0 & with the usual reinit for the start of a new line
+	const uint16_t horz = g_nVideoClockHorz;
+	g_nVideoClockHorz = 0;
+	updateVideoScannerAddress();
+
 	VideoUpdateCycles(VIDEO_SCANNER_6502_CYCLES);
+
+	VideoUpdateCycles(horz);	// Finally update to get to correct H-pos
 
 #ifdef _DEBUG
 	_ASSERT(currVideoClockVert == g_nVideoClockVert);

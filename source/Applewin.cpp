@@ -432,7 +432,9 @@ void EnterMessageLoop(void)
 		{
 			if (g_nAppMode == MODE_DEBUG)
 				DebuggerUpdate();
-			else if ((g_nAppMode == MODE_LOGO) || (g_nAppMode == MODE_PAUSED))
+			else if (g_nAppMode == MODE_PAUSED)
+				Sleep(1);		// Stop process hogging CPU - 1ms, as need to fade-out speaker sound buffer
+			else if (g_nAppMode == MODE_LOGO)
 				Sleep(100);		// Stop process hogging CPU
 		}
 	}
@@ -490,25 +492,6 @@ static void LoadConfigOldJoystick(const UINT uJoyNum)
 	JoySetJoyType(uJoyNum, uNewJoyType);
 }
 
-//Sets the character set for the Apple model/clone
-void SetCharsetType(void)
-{
-	switch ( GetApple2Type() )
-	{
-	case A2TYPE_APPLE2:			g_nCharsetType = 0; break;
-	case A2TYPE_APPLE2PLUS:		g_nCharsetType = 0; break;
-	case A2TYPE_APPLE2E:		g_nCharsetType = 0; break;
-	case A2TYPE_APPLE2EENHANCED:g_nCharsetType = 0; break;
-	case A2TYPE_TK30002E:       g_nCharsetType = 0; break;
-	case A2TYPE_PRAVETS82:	    g_nCharsetType = 1; break;
-	case A2TYPE_PRAVETS8M:	    g_nCharsetType = 2; break; //This charset has a very small difference with the PRAVETS82 one, and probably has some misplaced characters.
-	case A2TYPE_PRAVETS8A:	    g_nCharsetType = 3; break;
-	default:
-		_ASSERT(0);
-		g_nCharsetType = 0;
-	}
-}
-
 //Reads configuration from the registry entries
 void LoadConfiguration(void)
 {
@@ -540,7 +523,6 @@ void LoadConfiguration(void)
 	}
 
 	SetApple2Type(apple2Type);
-	SetCharsetType();
 
 	//
 
@@ -983,13 +965,35 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 #ifdef RAMWORKS
 		else if (strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..127]
 		{
+			g_eMemType = MEM_TYPE_RAMWORKS;
+
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
-			g_uMaxExPages = atoi(lpCmdLine);
+			    g_uMaxExPages = atoi(lpCmdLine);
 			if (g_uMaxExPages > kMaxExMemoryBanks)
 				g_uMaxExPages = kMaxExMemoryBanks;
-			else if (g_uMaxExPages < 1)
+			else
+			if (g_uMaxExPages < 1)
 				g_uMaxExPages = 1;
+		}
+#endif
+#ifdef SATURN
+		else if (strcmp(lpCmdLine, "-saturn") == 0)		// 64 = Saturn 64K (4 banks), 128 = Saturn 128K (8 banks)
+		{
+			g_eMemType = MEM_TYPE_SATURN;
+
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			// " The  boards  consist  of 16K  banks  of  memory
+			//  (4  banks  for  the  64K  board,
+			//  8  banks  for  the  128K),  accessed  one  at  a  time"
+			    g_uSaturnTotalBanks = atoi(lpCmdLine) / 16; // number of 16K Banks [1..8]
+			if (g_uSaturnTotalBanks > 8)
+				g_uSaturnTotalBanks = 8;
+			else
+			if (g_uSaturnTotalBanks < 1)
+				g_uSaturnTotalBanks = 1;
 		}
 #endif
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]

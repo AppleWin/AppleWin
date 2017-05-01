@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,2);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,7);
 
 
 // Public _________________________________________________________________________________________
@@ -103,7 +103,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Note: BreakpointOperator_t, _PARAM_BREAKPOINT_, and g_aBreakpointSymbols must match!
 	const char *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ] =
 	{	// Output: Must be 2 chars!
-		"<=", // LESS_EQAUL
+		"<=", // LESS_EQUAL
 		"< ", // LESS_THAN
 		"= ", // EQUAL
 		"!=", // NOT_EQUAL
@@ -4845,7 +4845,7 @@ size_t Util_GetDebuggerText( char* &pText_ )
 	memset( pBeg, 0, sizeof( g_aTextScreen ) );
 
 	memset( g_aDebuggerVirtualTextScreen, 0, sizeof( g_aDebuggerVirtualTextScreen ) );
-	DebugDisplay(1);
+	DebugDisplay();
 
 	for( int y = 0; y < DEBUG_VIRTUAL_TEXT_HEIGHT; y++ )
 	{
@@ -8393,6 +8393,11 @@ bool ProfileSave()
 }
 
 
+static void InitDisasm(void)
+{
+	g_nDisasmCurAddress = regs.pc;
+	DisasmCalcTopBotAddress();
+}
 
 //  _____________________________________________________________________________________
 // |                                                                                     |
@@ -8423,11 +8428,9 @@ void DebugBegin ()
 		g_aOpmodes[ AM_3 ].m_nBytes = 3;
 	}
 
-	g_nDisasmCurAddress = regs.pc;
-	DisasmCalcTopBotAddress();
+	InitDisasm();
 
 	DebugVideoMode::Instance().Reset();
-
 	UpdateDisplay( UPDATE_ALL );
 
 #if DEBUG_APPLE_FONT
@@ -8602,6 +8605,18 @@ void DebugContinueStepping ()
 		Update_t bUpdate = UPDATE_ALL;
 		UpdateDisplay( bUpdate );
 	}
+}
+
+//===========================================================================
+void DebugStopStepping(void)
+{
+	_ASSERT(g_nAppMode == MODE_STEPPING);
+
+	if (g_nAppMode != MODE_STEPPING)
+		return;
+
+	g_nDebugSteps = 0; // On next DebugContinueStepping(), stop single-stepping and transition to MODE_DEBUG
+	ClearTempBreakpoints();
 }
 
 //===========================================================================
@@ -8990,19 +9005,11 @@ void DebugInitialize ()
 	CmdMOTD(0);
 }
 
-// wparam = 0x16
-// lparam = 0x002f 0x0001
-// insert = VK_INSERT
-
 // Add character to the input line
 //===========================================================================
 void DebuggerInputConsoleChar( TCHAR ch )
 {
-	if ((g_nAppMode == MODE_STEPPING) && (ch == DEBUG_STEPPING_EXIT_KEY))
-	{
-		g_nDebugSteps = 0; // On next DebugContinueStepping(), stop single-stepping and transition to MODE_DEBUG
-		ClearTempBreakpoints();
-	}
+	_ASSERT(g_nAppMode == MODE_DEBUG);
 
 	if (g_nAppMode != MODE_DEBUG)
 		return;
@@ -9194,7 +9201,6 @@ void ToggleFullScreenConsole()
 
 //===========================================================================
 void DebuggerProcessKey( int keycode )
-//void DebugProcessCommand (int keycode)
 {
 	if (g_nAppMode != MODE_DEBUG)
 		return;
@@ -9293,10 +9299,10 @@ void DebuggerProcessKey( int keycode )
 		}
 		else
 		{
-			g_nConsoleInputSkip = 0; // VK_OEM_3; // don't pass to DebugProcessChar()
+			g_nConsoleInputSkip = 0; // VK_OEM_3;
 			DebuggerInputConsoleChar( '~' );
 		}
-		g_nConsoleInputSkip = '~'; // VK_OEM_3; // don't pass to DebugProcessChar()
+		g_nConsoleInputSkip = '~'; // VK_OEM_3;
 	}
 	else
 	{	
@@ -9572,15 +9578,12 @@ void DebuggerProcessKey( int keycode )
 		UpdateDisplay( bUpdateDisplay );
 }
 
-// Still called from external file
-void DebugDisplay( BOOL bDrawBackground )
+void DebugDisplay( BOOL bInitDisasm/*=FALSE*/ )
 {
-	Update_t bUpdateFlags = UPDATE_ALL;
+	if (bInitDisasm)
+		InitDisasm();
 
-//	if (! bDrawBackground)
-//		bUpdateFlags &= ~UPDATE_BACKGROUND;
-
-	UpdateDisplay( bUpdateFlags );
+	UpdateDisplay( UPDATE_ALL );
 }
 
 
@@ -9654,7 +9657,7 @@ void DebuggerMouseClick( int x, int y )
 	char sText[ CONSOLE_WIDTH ];
 	sprintf( sText, "x:%d y:%d  cx:%d cy:%d", x, y, cx, cy );
 	ConsoleDisplayPush( sText );
-	DebugDisplay( UPDATE_CONSOLE_DISPLAY );
+	DebugDisplay();
 #endif
 
 	if (g_iWindowThis == WINDOW_CODE)
@@ -9667,19 +9670,19 @@ void DebuggerMouseClick( int x, int y )
 			if( cx < 4) // #### 
 			{
 				g_bConfigDisasmAddressView ^= true;
-				DebugDisplay( UPDATE_DISASM );
+				DebugDisplay();
 			}
 			else
 			if (cx == 4) //    :
 			{
 				g_bConfigDisasmAddressColon ^= true;
-				DebugDisplay( UPDATE_DISASM );
+				DebugDisplay();
 			}
 			else         //      AD 00 00
 			if ((cx > 4) && (cx <= 13))
 			{
 				g_bConfigDisasmOpcodesView ^= true;
-				DebugDisplay( UPDATE_DISASM );
+				DebugDisplay();
 			}
 			
 		} else
@@ -9695,13 +9698,13 @@ void DebuggerMouseClick( int x, int y )
 				{
 					g_bConfigDisasmAddressView ^= true;
 				}
-				DebugDisplay( UPDATE_DISASM );
+				DebugDisplay();
 			}
 			else
 			if ((cx > 0) & (cx <= 13))
 			{
 				g_bConfigDisasmOpcodesView ^= true;
-				DebugDisplay( UPDATE_DISASM );
+				DebugDisplay();
 			}
 		}
 		// Click on PC inside reg window?
@@ -9710,7 +9713,7 @@ void DebuggerMouseClick( int x, int y )
 			if (cy == 3)
 			{
 				CmdCursorJumpPC( CURSOR_ALIGN_CENTER );
-				DebugDisplay( UPDATE_DISASM );
+				DebugDisplay();
 			}
 			else // Click on stack
 			if( cy > 3)

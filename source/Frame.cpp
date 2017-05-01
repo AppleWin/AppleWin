@@ -141,7 +141,6 @@ static HWND    tooltipwindow   = (HWND)0;
 static BOOL    g_bUsingCursor	= 0;		// 1=AppleWin is using (hiding) the mouse-cursor
 static int     viewportx       = VIEWPORTX;	// Default to Normal (non-FullScreen) mode
 static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
-int g_nCharsetType = 0;
 
 // Direct Draw -- For Full Screen
 		LPDIRECTDRAW        g_pDD               = (LPDIRECTDRAW)0;
@@ -625,7 +624,7 @@ static void DrawFrameWindow ()
 	if (g_nAppMode == MODE_LOGO)
 		VideoDisplayLogo();
 	else if (g_nAppMode == MODE_DEBUG)
-		DebugDisplay(1);
+		DebugDisplay();
 	else
 		VideoRedrawScreen();
 
@@ -1012,22 +1011,19 @@ LRESULT CALLBACK FrameWndProc (
       break;
 
 		case WM_CHAR:
-			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) ||
-				((g_nAppMode == MODE_STEPPING) && (wparam != TEXT('\x1B'))))
+			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_LOGO))
 			{
 				if( !g_bDebuggerEatKey )
 				{
-					KeybQueueKeypress((int)wparam,ASCII);
-				} else {
+					KeybQueueKeypress((int)wparam, ASCII);
+				}
+				else
+				{
 					g_bDebuggerEatKey = false;
 				}
 			}
-			else
-			if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
+			else if (g_nAppMode == MODE_DEBUG)
 			{
-				if (g_nAppMode == MODE_STEPPING && (TCHAR)wparam == DEBUG_STEPPING_EXIT_KEY)
-					SoundCore_SetFade(FADE_OUT);
-
 				DebuggerInputConsoleChar((TCHAR)wparam);
 			}
 			break;
@@ -1204,41 +1200,27 @@ LRESULT CALLBACK FrameWndProc (
 			DrawButton((HDC)0,buttondown);
 		}
 		else if (wparam == VK_F9)
-		{			
-			//bool bCtrlDown  = (GetKeyState(VK_CONTROL) < 0) ? true : false;
-			//bool bShiftDown = (GetKeyState(VK_SHIFT  ) < 0) ? true : false;
+		{
+			// F9            Next Video Mode
+			// SHIFT+F9      Prev Video Mode
+			// CTRL+SHIFT+F9 Toggle 50% Scan Lines
+			// ALT+F9        Can't use Alt-F9 as Alt is Open-Apple = Joystick Button #1
 
-// F9 Next Video Mode
-// ^F9 Next Char Set
-// #F9 Prev Video Mode
-// ^#F9 Toggle 50% Scan Lines
-// @F9 -Can't use Alt-F9 as Alt is Open-Apple = Joystick Button #1
-
-			if ( g_bCtrlKey && !g_bShiftKey ) //CTRL+F9
-			{
-				g_nCharsetType++; // Cycle through available charsets (Ctrl + F9)
-				if (g_nCharsetType >= 3)
-				{				
-					g_nCharsetType = 0;
-				}
-			}
-			else	// Cycle through available video modes
-			if ( g_bCtrlKey && g_bShiftKey ) // ALT+F9
-			{
-				g_uHalfScanLines = !g_uHalfScanLines;
-			}
-			else
-			if ( !g_bShiftKey )	// Drop Down Combo Box is in correct order
+			if ( !g_bCtrlKey && !g_bShiftKey )		// F9
 			{
 				g_eVideoType++;
 				if (g_eVideoType >= NUM_VIDEO_MODES)
 					g_eVideoType = 0;
 			}
-			else	// Forwards
+			else if ( !g_bCtrlKey && g_bShiftKey )	// SHIFT+F9
 			{
 				if (g_eVideoType <= 0)
 					g_eVideoType = NUM_VIDEO_MODES;
 				g_eVideoType--;
+			}
+			else if ( g_bCtrlKey && g_bShiftKey )	// CTRL+SHIFT+F9
+			{
+				g_uHalfScanLines = !g_uHalfScanLines;
 			}
 
 			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)
@@ -1263,7 +1245,6 @@ LRESULT CALLBACK FrameWndProc (
 
 			Config_Save_Video();
 		}
-
 		else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)
 		{
 			SoundCore_SetFade(FADE_OUT);
@@ -1303,7 +1284,7 @@ LRESULT CALLBACK FrameWndProc (
 					break;
 				case MODE_STEPPING:
 					SoundCore_SetFade(FADE_OUT);
-					DebuggerInputConsoleChar( DEBUG_STEPPING_EXIT_KEY );
+					DebugStopStepping();
 					break;
 			}
 			DrawStatusArea((HDC)0,DRAW_TITLE);
@@ -1844,6 +1825,8 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		if( g_bCtrlKey )
 		{
 			CtrlReset();
+			if (g_nAppMode == MODE_DEBUG)
+				DebugDisplay(TRUE);
 			return;
 		}
 
@@ -1853,22 +1836,19 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 			LogFileTimeUntilFirstKeyReadReset();
 			g_nAppMode = MODE_RUNNING;
 		}
-		else if (g_nAppMode == MODE_RUNNING)
+		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_PAUSED))
 		{
 			if (ConfirmReboot(bFromButtonUI))
 			{
 				ResetMachineState();
-				g_nAppMode = MODE_RUNNING;
+
+				// NB. Don't exit debugger or stepping
+
+				if (g_nAppMode == MODE_DEBUG)
+					DebugDisplay(TRUE);
 			}
 		}
-		else if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING)) // exit debugger
-		{
-			if (ConfirmReboot(bFromButtonUI))
-			{
-				DebugExitDebugger();
-				// Post: g_nAppMode = MODE_RUNNING or MODE_STEPPING
-			}
-		}
+
       DrawStatusArea((HDC)0,DRAW_TITLE);
       VideoRedrawScreen();
       break;
@@ -1892,21 +1872,22 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
     case BTN_DEBUG:
 		if (g_nAppMode == MODE_LOGO && !GetLoadedSaveStateFlag())
 		{
+			// FIXME: Why is this needed? Surely when state is MODE_LOGO, then AppleII system will have been reset!
+			// - Transition to MODE_LOGO when: (a) AppleWin starts, (b) there's a Config change to the AppleII h/w
 			ResetMachineState();
 		}
 
 		if (g_nAppMode == MODE_STEPPING)
 		{
 			// Allow F7 to enter debugger even when not MODE_RUNNING
-			DebuggerInputConsoleChar( DEBUG_STEPPING_EXIT_KEY );
+			DebugStopStepping();
 			bAllowFadeIn = false;
 		}
-		else
-		if (g_nAppMode == MODE_DEBUG)
+		else if (g_nAppMode == MODE_DEBUG)
 		{
-			ProcessButtonClick(BTN_RUN); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
+			DebugExitDebugger(); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
 		}
-		else
+		else	// MODE_RUNNING, MODE_LOGO, MODE_PAUSED
 		{
 			DebugBegin();
 		}

@@ -20,6 +20,7 @@ const DWORD dwClksPerFrame			= uCyclesPerLine * uLinesPerFrame;	// 17030
 #define  MIN(a,b)          (((a) < (b)) ? (a) : (b))
 
 #define  RAMWORKS			// 8MB RamWorks III support
+//#define  SATURN				// SATURN 128K
 
 // Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 // Assume base freqs are 44.1KHz & 48KHz

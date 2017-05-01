@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define DEBUG_FORCE_DISPLAY 0
 
 #define SOFTSWITCH_OLD 0
+#define SOFTSWITCH_LANGCARD 1
 
 #if _DEBUG
 	#define DEBUG_FONT_NO_BACKGROUND_CHAR      0
@@ -1027,7 +1028,7 @@ char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
 	return nChar;
 }
 
-void ColorizeFlags( bool bSet )
+void ColorizeFlags( bool bSet, int bg_default = BG_INFO )
 {
 	if (bSet)
 	{
@@ -1036,7 +1037,7 @@ void ColorizeFlags( bool bSet )
 	}
 	else
 	{
-		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+		DebuggerSetColorBG( DebuggerGetColor( bg_default    ));
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 	}
 }
@@ -2720,14 +2721,33 @@ void DrawRegisters ( int line )
 	DrawRegister( line++, sReg[ BP_SRC_REG_S ] , 2, regs.sp, PARAM_REG_SP );
 }
 
+
+// 2.9.0.3
+//===========================================================================
+void _DrawSoftSwitchHighlight( RECT & temp, bool bSet, const char *sOn, const char *sOff, int bg = BG_INFO )
+{
+//	DebuggerSetColorBG( DebuggerGetColor( bg                 ) ); // BG_INFO
+
+	ColorizeFlags( bSet, bg );
+	PrintTextCursorX( sOn, temp );
+
+	DebuggerSetColorBG( DebuggerGetColor( bg                 ) ); // BG_INFO
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
+	PrintTextCursorX( "/", temp );
+
+	ColorizeFlags( !bSet, bg );
+	PrintTextCursorX( sOff, temp );
+}
+
+
 // 2.7.0.7 Cleaned up display of soft-switches to show address.
 //===========================================================================
-void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char *sOn, char *sOff, const char *sSuffix = NULL )
+void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char *sOn, char *sOff, const char *sSuffix = NULL, int bg_default = BG_INFO )
 {
 	RECT temp = rect;
 	char sText[ 4 ] = "";
 
-	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+	DebuggerSetColorBG( DebuggerGetColor( bg_default ));
 //	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_TARGET ));
 	sprintf( sText, "%02X", (nAddress & 0xFF) );
@@ -2735,27 +2755,161 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char 
 	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 	PrintTextCursorX( ":", temp );
 
-	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 	if( sPrefix )
+	{
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG )); // light blue
 		PrintTextCursorX( sPrefix, temp );
+	}
 
-	ColorizeFlags( bSet );
-	PrintTextCursorX( sOn, temp );
+	// 2.9.0.3
+	_DrawSoftSwitchHighlight( temp, bSet, sOn, sOff, bg_default );
 
-	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
-	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
-	PrintTextCursorX( "/", temp );
-
-	ColorizeFlags( !bSet );
-	PrintTextCursorX( sOff, temp );
-
-	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+	DebuggerSetColorBG( DebuggerGetColor( bg_default    ));
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 	if ( sSuffix )
 		PrintTextCursorX( sSuffix, temp );
 
 	rect.top    += g_nFontHeight;
 	rect.bottom += g_nFontHeight;
+}
+
+/*
+	Debugger: Support LC status and memory
+	https://github.com/AppleWin/AppleWin/issues/406
+
+	Bank2       Bank1       First Access, Second Access
+	-----------------------------------------------
+	C080        C088        Read RAM,     Write protect    MF_HIGHRAM   ~MF_WRITERAM
+	C081        C089        Read ROM,     Write enable    ~MF_HIGHRAM    MF_WRITERAM
+	C082        C08A        Read ROM,     Write protect   ~MF_HIGHRAM   ~MF_WRITERAM
+	C083        C08B        Read RAM,     Write enable     MF_HIGHRAM    MF_WRITERAM
+	c084        C08C        same as C080/C088
+	c085        C08D        same as C081/C089
+	c086        C08E        same as C082/C08A
+	c087        C08F        same as C083/C08B
+	MF_BANNK2   ~MF_BANK2
+
+	NOTE: Saturn 128K uses C084 .. C087 and C08C .. C08F to select Banks 0 .. 7 !
+*/
+// 2.9.0.4 Draw Language Card Bank Usage
+// @param iBank Either 1 or 2
+// @param extraBank 0 if none, else 1..127 = RAMWORKS, 1..7 + (MEM_TYPE_SATURN << 8) if SATURN
+//===========================================================================
+void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0, int bg_default = BG_INFO )
+{
+	int w  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
+	int dx = 8 * w; // "80:L#/M R/W"
+	//                  ^-------^
+
+	rect.right = rect.left + dx;
+
+	// 0 = RAM
+	// 1 = Bank 1
+	// 2 = Bank 2
+	bool bBankWritable = (memmode & MF_WRITERAM) ? 1 : 0;
+	int iBankActive    = (memmode & MF_HIGHRAM)
+		? (memmode & MF_BANK2)
+			? 2
+			: 1
+		: 0
+		;
+	bool bBankOn = (iBankActive == iBank);
+
+	char sOn[ 4 ] = "L#"; // LC# but one char too wide :-/
+	// C080 LC2
+	// C088 LC1
+	int nAddress = 0xC080 + (8 * (2 - iBank));
+	sOn[1] = '0' + iBank;
+
+	_DrawSoftSwitch( rect, nAddress, bBankOn, NULL, sOn, "M", " ", bg_default );
+
+	rect.top    -= g_nFontHeight;
+	rect.bottom -= g_nFontHeight;
+
+	rect.left   += dx;
+	rect.right  += 3*w;
+
+#if defined(RAMWORKS) || defined(SATURN)
+	if (extraBank > 0 ) // assumes: iBank==1
+	{
+		char sText[ 4 ] = "?"; // Default to RAMWORKS
+		if (extraBank & (MEM_TYPE_RAMWORKS << 8)) sText[0] = 'r'; // RAMWORKS
+		if (extraBank & (MEM_TYPE_SATURN   << 8)) sText[0] = 's'; // SATURN 64K 128K
+
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG )); // light blue
+		PrintTextCursorX( sText, rect );
+
+		sprintf( sText, "%02X", (extraBank & 0x7F) );
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
+		PrintTextCursorX( sText, rect );
+
+	}
+	else
+#endif // SATURN
+	if (iBank == 2)
+	{
+
+		// [2]/M  R/[W]
+		// [2]/M  [R]/W
+		const char *pOn  = "R";
+		const char *pOff = "W";
+
+		_DrawSoftSwitchHighlight( rect, !bBankWritable, pOn, pOff, bg_default );
+	}
+
+	rect.top    += g_nFontHeight;
+	rect.bottom += g_nFontHeight;
+}
+
+
+/*
+	$C002 W RAMRDOFF  Read enable  main memory from $0200-$BFFF
+	$C003 W RAMDRON   Read enable  aux  memory from $0200-$BFFF
+	$C004 W RAMWRTOFF Write enable main memory from $0200-$BFFF
+	$C005 W RAMWRTON  Write enable aux  memory from $0200-$BFFF
+*/
+// 2.9.0.6
+// GH#406 https://github.com/AppleWin/AppleWin/issues/406
+//===========================================================================
+void _DrawSoftSwitchMainAuxBanks( RECT & rect, int bg_default = BG_INFO )
+{
+	RECT temp = rect;
+	rect.top    += g_nFontHeight;
+	rect.bottom += g_nFontHeight;
+
+
+	/*
+		Ideally, we'd show Read/Write for Main/Aux
+			02:RM/X
+			04:WM/X
+		But we only have 1 line:
+			02:Rm/x Wm/x
+			00:ASC/MOUS
+		Which is one character too much.
+			02:Rm/x Wm/a
+		But we abbreaviate it without the space and color code the Read and Write:
+			02:Rm/xWm/x
+	*/
+
+	int w  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
+	int dx = 7 * w;
+
+	int  nAddress  = 0xC002;
+	bool bMainRead = (memmode & MF_AUXREAD)  ? true : false;
+	bool bAuxWrite = (memmode & MF_AUXWRITE) ? true : false;
+
+	temp.right = rect.left + dx;
+	_DrawSoftSwitch( temp, nAddress, !bMainRead, "R", "m", "x", NULL, BG_DATA_2 );
+
+	temp.top    -= g_nFontHeight;
+	temp.bottom -= g_nFontHeight;
+	temp.left   += dx;
+	temp.right  += 3*w;
+
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_BP_S_X )); // FG_INFO_OPCODE )); Yellow
+	DebuggerSetColorBG( DebuggerGetColor( bg_default       ));
+	PrintTextCursorX( "W", temp );
+	_DrawSoftSwitchHighlight( temp, !bAuxWrite, "m", "x", BG_DATA_2 );
 }
 
 
@@ -2849,25 +3003,64 @@ void DrawSoftSwitches( int iSoftSwitch )
 
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
-		PrintTextCursorY( "", rect ); // force print blank line
 
 		// 280/560 HGR
 		// C05E = ON, C05F = OFF
 		bSet = VideoGetSWDHIRES();
 		_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
 
-		// Extended soft switches
-		// C00C = off, C00D = on
-		bSet = !VideoGetSW80COL();
-		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80" );
 
-		// C00E = off, C00F = on
-		bSet = VideoGetSWAltCharSet();
-		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS" ); // ASCII/MouseText
+		// Extended soft switches
+		int bgMemory = BG_DATA_2;
 
 		// C000 = 80STOREOFF, C001 = 80STOREON
 		bSet = !VideoGetSW80STORE();
-		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1" );
+		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1", NULL, bgMemory );
+
+		// C002 .. C005
+		_DrawSoftSwitchMainAuxBanks( rect, bgMemory );
+
+		// C00C = off, C00D = on
+		bSet = !VideoGetSW80COL();
+		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80", NULL, bgMemory );
+
+		// C00E = off, C00F = on
+		bSet = VideoGetSWAltCharSet();
+		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS", NULL, bgMemory ); // ASCII/MouseText
+
+#if SOFTSWITCH_LANGCARD
+		// GH#406 https://github.com/AppleWin/AppleWin/issues/406
+		// 2.9.0.4
+		// Language Card Bank 1/2
+		// See: MemSetPaging()
+
+// LC2
+		DebuggerSetColorBG( DebuggerGetColor( bgMemory )); // BG_INFO_2 -> BG_DATA_2
+		_DrawSoftSwitchLanguageCardBank( rect, 2, 0, bgMemory );
+
+// LC1
+
+		int extraBank = 0;
+
+#ifdef RAMWORKS
+		// We could show the RAMWORKS active bank only when main isn't active via
+		//      if (g_uActiveBank > 0)
+		// We want to always show that RAMWORKS card is installed even if on page 0 aka "r00"
+		if (g_eMemType == MEM_TYPE_RAMWORKS)
+			extraBank = g_uActiveBank;
+#endif //RAMWORKS
+
+#ifdef SATURN
+		if (g_eMemType == MEM_TYPE_SATURN)
+			extraBank = g_uSaturnActiveBank;
+#endif // SATURN
+
+		extraBank |= (int)(g_eMemType) << 8;
+
+		rect.left = DISPLAY_SOFTSWITCH_COLUMN; // INFO_COL_2;
+		_DrawSoftSwitchLanguageCardBank( rect, 1, extraBank, bgMemory );
+#endif
+
 #endif // SOFTSWITCH_OLD
 }
 
@@ -3434,7 +3627,7 @@ void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 		int yStack    = yRegs  + MAX_DISPLAY_REGS_LINES  + 0; // 0
 		int yTarget   = yStack + MAX_DISPLAY_STACK_LINES - 1; // 9
 		int yZeroPage = 16; // yTarget 
-		int ySoft = yZeroPage + (2 * MAX_DISPLAY_ZEROPAGE_LINES) + 1;
+		int ySoft = yZeroPage + (2 * MAX_DISPLAY_ZEROPAGE_LINES) + !SOFTSWITCH_LANGCARD;
 
 		if ((bUpdate & UPDATE_REGS) || (bUpdate & UPDATE_FLAGS))
 			DrawRegisters( yRegs );

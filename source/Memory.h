@@ -1,5 +1,19 @@
 #pragma once
 
+// Memory Flag
+#define  MF_80STORE    0x00000001
+#define  MF_ALTZP      0x00000002
+#define  MF_AUXREAD    0x00000004	// RAMRD
+#define  MF_AUXWRITE   0x00000008	// RAMWRT
+#define  MF_BANK2      0x00000010   // Language Card Bank 2 $D000..$DFFF
+#define  MF_HIGHRAM    0x00000020   // Language Card RAM is active $D000..$DFFF
+#define  MF_HIRES      0x00000040
+#define  MF_PAGE2      0x00000080
+#define  MF_SLOTC3ROM  0x00000100
+#define  MF_SLOTCXROM  0x00000200
+#define  MF_WRITERAM   0x00000400   // Language Card RAM is Write Enabled
+#define  MF_IMAGEMASK  0x000003F7
+
 enum
 {
 	// Note: All are in bytes!
@@ -25,16 +39,32 @@ enum MemoryInitPattern_e
 	, NUM_MIP
 };
 
+enum MemoryType_e
+{
+	MEM_TYPE_NATIVE   = 0,
+	MEM_TYPE_RAMWORKS = 1,
+	MEM_TYPE_SATURN   = 2,
+	NUM_MEM_TYPE      = 3
+};
+extern MemoryType_e	g_eMemType;
+
 extern iofunction IORead[256];
 extern iofunction IOWrite[256];
 extern LPBYTE     memwrite[0x100];
 extern LPBYTE     mem;
 extern LPBYTE     memdirty;
+extern DWORD      memmode;
 
 #ifdef RAMWORKS
 const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB
 extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)
+extern UINT       g_uActiveBank;
 #endif
+
+#ifdef SATURN
+extern UINT g_uSaturnTotalBanks;
+extern UINT g_uSaturnActiveBank;		// Saturn 128K Language Card Bank 0 .. 7
+#endif // SATURN
 
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
 

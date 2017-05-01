@@ -9,18 +9,22 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.2.2 (Experimental) - 15 Apr 2017
+1.26.2.3 (Experimental) - 24 Apr 2017
 -------------------------------------
+. [Bug #405] Screen flicker in full-speed mode
+. [Bug #403] PrintScreen from Color TV or B&W TV video modes is missing top line
 . [Bug #392] Fixes for a2audit.dsk
   - Resulting in regressions in LC support for Gemstone Warriors (#395), Quark Catalyst V3 and BeagleWrite (#400).
 . [Bug #389] Disk's write-protect detection mis-reporting when motor off
 . [Bug #387] Support for 40-track .nib files
 . [Bug #386] SSC: Experimental support for 6551's DTR, DCD and DSR bits via -modem switch
-                  . ie. -modem is shorthand for passing -dtr -dcd -dsr
-                  Experimental support for 6551's control bit: DTR via -dtr switch
-                  Experimental support for 6551's status bits: DCD and DSR via -dcd and -dsr switches
+  - ie. -modem is shorthand for passing -dtr -dcd -dsr
+  - Experimental support for 6551's control bit: DTR via -dtr switch
+  - Experimental support for 6551's status bits: DCD and DSR via -dcd and -dsr switches
 . [Bug #383] "Enhanced disk speed" is very slow when debugger is active
 . [Bug #217] Debugger G(o) command should use normal speed
+  - When stepping, ESC no longer exits back to debugger (use F7, Pause keys or Debugger button instead).
+  - Persist F2 (reset machine state) across debug & stepping states
 . Debugger: Added new gg command:
 
      command | run at normal speed? | run at full speed?       | video quality | sound quality
@@ -60,6 +64,7 @@ Changes:
 . Remove unsupported PC speaker sound types
 . [PR #235] New start-up title screen by Paulo Garcia
 . [PR #233] Configuration Dialog->Disk tab: Buttons replaced with drop-down menu for select/eject by Paulo Garcia
+. Removed CTRL+F9 functionality to cycle through AppleWin's character sets (ie. original Apple II charsets and clones' char-sets)
 
 Fixes:
 . [Bug #129] Tight loop page-flipping causing heavy CPU load (fixed by NTSC / cycle-accurate video emulation)
