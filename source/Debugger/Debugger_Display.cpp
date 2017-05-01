@@ -2793,9 +2793,8 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char 
 */
 // 2.9.0.4 Draw Language Card Bank Usage
 // @param iBank Either 1 or 2
-// @param extraBank 0 if none, else 1..127 = RAMWORKS, 1..7 + (MEM_TYPE_SATURN << 8) if SATURN
 //===========================================================================
-void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0, int bg_default = BG_INFO )
+void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int bg_default = BG_INFO )
 {
 	int w  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
 	int dx = 8 * w; // "80:L#/M R/W"
@@ -2830,25 +2829,33 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int extraBank = 0,
 	rect.right  += 3*w;
 
 #if defined(RAMWORKS) || defined(SATURN)
-	if (extraBank > 0 ) // assumes: iBank==1
+	if (iBank == 1)
 	{
+		int iActiveBank = -1;
 		char sText[ 4 ] = "?"; // Default to RAMWORKS
-		if (extraBank & (MEM_TYPE_RAMWORKS << 8)) sText[0] = 'r'; // RAMWORKS
-		if (extraBank & (MEM_TYPE_SATURN   << 8)) sText[0] = 's'; // SATURN 64K 128K
-
-		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG )); // light blue
-		PrintTextCursorX( sText, rect );
-
-		sprintf( sText, "%02X", (extraBank & 0x7F) );
-		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
-		PrintTextCursorX( sText, rect );
-
-	}
-	else
+#ifdef RAMWORKS
+		if (g_eMemType == MEM_TYPE_RAMWORKS) { sText[0] = 'r'; iActiveBank = g_uActiveBank; } // RAMWORKS
+#endif
+#ifdef SATURN
+		if (g_eMemType == MEM_TYPE_SATURN  ) { sText[0] = 's'; iActiveBank = g_uSaturnActiveBank; } // SATURN 64K 128K
 #endif // SATURN
+
+		if (iActiveBank >= 0)
+		{
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG )); // light blue
+			PrintTextCursorX( sText, rect );
+
+			sprintf( sText, "%02X", (iActiveBank & 0x7F) );
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
+			PrintTextCursorX( sText, rect );
+		}
+		else
+			PrintTextCursorX( "   ", rect );
+	}
+#endif // SATURN
+
 	if (iBank == 2)
 	{
-
 		// [2]/M  R/[W]
 		// [2]/M  [R]/W
 		const char *pOn  = "R";
@@ -3036,29 +3043,11 @@ void DrawSoftSwitches( int iSoftSwitch )
 
 // LC2
 		DebuggerSetColorBG( DebuggerGetColor( bgMemory )); // BG_INFO_2 -> BG_DATA_2
-		_DrawSoftSwitchLanguageCardBank( rect, 2, 0, bgMemory );
+		_DrawSoftSwitchLanguageCardBank( rect, 2, bgMemory );
 
 // LC1
-
-		int extraBank = 0;
-
-#ifdef RAMWORKS
-		// We could show the RAMWORKS active bank only when main isn't active via
-		//      if (g_uActiveBank > 0)
-		// We want to always show that RAMWORKS card is installed even if on page 0 aka "r00"
-		if (g_eMemType == MEM_TYPE_RAMWORKS)
-			extraBank = g_uActiveBank;
-#endif //RAMWORKS
-
-#ifdef SATURN
-		if (g_eMemType == MEM_TYPE_SATURN)
-			extraBank = g_uSaturnActiveBank;
-#endif // SATURN
-
-		extraBank |= (int)(g_eMemType) << 8;
-
 		rect.left = DISPLAY_SOFTSWITCH_COLUMN; // INFO_COL_2;
-		_DrawSoftSwitchLanguageCardBank( rect, 1, extraBank, bgMemory );
+		_DrawSoftSwitchLanguageCardBank( rect, 1, bgMemory );
 #endif
 
 #endif // SOFTSWITCH_OLD
