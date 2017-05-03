@@ -142,51 +142,6 @@ enum Color_Palette_Index_e
 	, WHITE       = 0xFF
 };
 
-// __ Map HGR color index to Palette index
-	enum ColorMapping
-	{
-		  CM_Violet
-		, CM_Blue
-		, CM_Green
-		, CM_Orange
-		, CM_Black // Used
-		, CM_White // Used
-		, NUM_COLOR_MAPPING
-	};
-
-const BYTE HiresToPalIndex[ NUM_COLOR_MAPPING ] =
-	{
-		  HGR_VIOLET
-		, HGR_BLUE
-		, HGR_GREEN
-		, HGR_ORANGE
-		, HGR_BLACK
-		, HGR_WHITE
-	};
-
-const BYTE LoresResColors[16] = {
-		BLACK,     DEEP_RED, DARK_BLUE, MAGENTA,
-		DARK_GREEN,DARK_GRAY,BLUE,      LIGHT_BLUE,
-		BROWN,     ORANGE,   LIGHT_GRAY,PINK,
-		GREEN,     YELLOW,   AQUA,      HGR_WHITE
-	};
-
-
-const BYTE DoubleHiresPalIndex[16] = {
-		BLACK,   DARK_BLUE, DARK_GREEN,BLUE,
-		BROWN,   LIGHT_GRAY, GREEN,     AQUA,
-		DEEP_RED,MAGENTA,   DARK_GRAY, LIGHT_BLUE,
-		ORANGE,  PINK,      YELLOW,    HGR_WHITE
-	};
-
-	const int SRCOFFS_40COL   = 0;                       //    0
-	const int SRCOFFS_IIPLUS  = (SRCOFFS_40COL  +  256); //  256
-	const int SRCOFFS_80COL   = (SRCOFFS_IIPLUS +  256); //  512
-	const int SRCOFFS_LORES   = (SRCOFFS_80COL  +  128); //  640
-	const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //  656
-	const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512); // 1168
-	const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3278
-
 	#define  SW_80COL         (g_uVideoMode & VF_80COL)
 	#define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
 	#define  SW_HIRES         (g_uVideoMode & VF_HIRES)
@@ -201,8 +156,6 @@ const BYTE DoubleHiresPalIndex[16] = {
                                  g_pFramebufferinfo->bmiColors[i].rgbGreen    = g; \
                                  g_pFramebufferinfo->bmiColors[i].rgbBlue     = b; \
 								 g_pFramebufferinfo->bmiColors[i].rgbReserved = PC_NOCOLLAPSE;
-
-#define  HGR_MATRIX_YOFFSET 2	// For tv emulation HGR Video Mode
 
 // Globals (Public)
 
@@ -235,19 +188,14 @@ static HBITMAP       g_hDeviceBitmap;
 static HDC           g_hDeviceDC;
 static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
-static LPBYTE        g_aFrameBufferOffset[FRAMEBUFFER_H]; // array of pointers to start of each scanline
        HBITMAP       g_hLogoBitmap;
 static HPALETTE      g_hPalette;
 
 static HBITMAP       g_hSourceBitmap;
-static LPBYTE        g_pSourcePixels;
 const int MAX_SOURCE_Y = 512;
 static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 
-static LPBYTE    framebufferaddr  = (LPBYTE)0;
-static LONG      g_nFrameBufferPitch = 0;
 COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
-static BOOL      rebuiltsource       = 0;
 static LPBYTE    vidlastmem          = NULL;
 
 	uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
@@ -285,9 +233,6 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 // Prototypes (Private) _____________________________________________
 
-// Monochrome Half-Pixel Support
-	void V_CreateLookup_MonoHiResHalfPixel_Real ();
-
 	bool g_bDisplayPrintScreenFileName = false;
 	bool g_bShowPrintScreenWarningDialog = true;
 	void Util_MakeScreenShotFileName( char *pFinalFileName_ );
@@ -297,24 +242,8 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	void Video_SaveScreenShot( const char *pScreenShotFileName );
 	void Video_MakeScreenShot( FILE *pFile );
 
-	int GetMonochromeIndex();
-
 	void V_CreateIdentityPalette ();
 	void  videoCreateDIBSection();
-
-//===========================================================================
-void CreateFrameOffsetTable (LPBYTE addr, LONG pitch)
-{
-	if ((framebufferaddr  == addr) && (g_nFrameBufferPitch == pitch))
-		return;
-
-	framebufferaddr  = addr;
-	g_nFrameBufferPitch = pitch;
-
-	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
-	for (int y = 0; y < FRAMEBUFFER_H; y++)
-		g_aFrameBufferOffset[y] = framebufferaddr + g_nFrameBufferPitch*((FRAMEBUFFER_H-1)-y);
-}
 
 //===========================================================================
 void VideoInitialize ()
@@ -544,36 +473,6 @@ Test cases
 
 // google: CreateDIBPatternBrushPt
 // http://209.85.141.104/search?q=cache:mB3htrQGW8kJ:bookfire.net/wince/wince-programming-ms-press2/source/prowice/ch02e.htm
-
-struct BRUSHBMP
-{
-    BITMAPINFOHEADER bmi;
-    COLORREF dwPal[2];
-    BYTE bBits[64];
-};
-
-//===========================================================================
-
-static void CreateLookup_TextCommon(HDC hDstDC, DWORD rop)
-{
-	HBITMAP hCharBitmap[4];
-	HDC     hSrcDC = CreateCompatibleDC(hDstDC);
-
-	hCharBitmap[0] = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
-	hCharBitmap[1] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));	//82
-	hCharBitmap[2] = LoadBitmap(g_hInstance,TEXT("CHARSET82"));	//8M
-	hCharBitmap[3] = LoadBitmap(g_hInstance,TEXT("CHARSET8C"));	//8A
-	SelectObject(hSrcDC, hCharBitmap[g_nCharsetType]);
-
-	// TODO: Update with APPLE_FONT_Y_ values
-	BitBlt(    hDstDC, SRCOFFS_40COL ,0,256,512,hSrcDC,0,  0,rop);
-	BitBlt(    hDstDC, SRCOFFS_IIPLUS,0,256,256,hSrcDC,0,512,rop);			// Chars for Apple ][
-	StretchBlt(hDstDC, SRCOFFS_80COL ,0,128,512,hSrcDC,0,  0,256,512,rop);	// Chars for 80 col mode
-
-	DeleteDC(hSrcDC);
-	for (UINT i=0; i<4; i++)
-		DeleteObject(hCharBitmap[i]); 
-}
 
 //===========================================================================
 
