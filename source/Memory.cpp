@@ -1923,8 +1923,8 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 						g_uMaxExPages == 1 ?	SS_YAML_VALUE_CARD_EXTENDED80COL :
 												SS_YAML_VALUE_CARD_RAMWORKSIII;
 	yamlSaveHelper.SaveString(SS_YAML_KEY_CARD, card.c_str());
-	yamlSaveHelper.Save("%s: %02X   # [0,1..7F] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
-	yamlSaveHelper.Save("%s: %02X # [  0..7E] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
+	yamlSaveHelper.Save("%s: 0x%02X   # [0,1..7F] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
+	yamlSaveHelper.Save("%s: 0x%02X # [  0..7E] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
 
 	for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
 	{
