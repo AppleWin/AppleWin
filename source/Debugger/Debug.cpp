@@ -2727,6 +2727,8 @@ bool _CmdConfigFont ( int iFont, LPCSTR pFontName, int iPitchFamily, int nFontHe
 
 	if (iFont < NUM_FONTS)
 		pFont = & g_aFontConfig[ iFont ];
+	else
+		return bStatus;
 
 	if (pFontName)
 	{	
@@ -6621,7 +6623,7 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 					int nLen = pLabelEnd - pLabelStart;
 					nLen = MIN( nLen, MAX_SYMBOLS_LEN );
 					strncpy( sName, pLabelStart, nLen );
-					sName[ nLen ] = 0;
+					sName[ nLen - 1 ] = 0;
 
 					char *pAddressEQU = strstr( pLabel, "$" );
 					char *pAddressDFB = strstr( sLine, ":" ); // Get address from start of line

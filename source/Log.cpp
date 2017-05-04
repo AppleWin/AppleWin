@@ -39,6 +39,7 @@ void LogOutput(LPCTSTR format, ...)
 	va_start(args, format);
 
 	_vsntprintf(output, sizeof(output) - 1, format, args);
+	output[255] = 0;
 	OutputDebugString(output);
 }
 

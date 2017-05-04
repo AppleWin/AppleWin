@@ -3711,7 +3711,9 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 	char sTitle[ CONSOLE_WIDTH ];
 	char sText [ CONSOLE_WIDTH ];
 	strcpy ( sTitle, "   Source: " );
-	strncpy( sText , g_aSourceFileName, g_nConsoleDisplayWidth - strlen( sTitle ) - 1 );
+	int maxSizeToCopy = g_nConsoleDisplayWidth - strlen(sTitle) - 1;
+	strncpy( sText , g_aSourceFileName, maxSizeToCopy );
+	sText[ maxSizeToCopy - 1 ] = 0;
 	strcat ( sTitle, sText );
 
 	DebuggerSetColorBG( DebuggerGetColor( BG_SOURCE_TITLE ));

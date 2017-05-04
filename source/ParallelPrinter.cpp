@@ -239,6 +239,7 @@ void Printer_SetFilename(char* prtFilename)
 	else  //No registry entry is available
 	{
 		_tcsncpy(g_szPrintFilename, g_sProgramDir, MAX_PATH);
+		g_szPrintFilename[MAX_PATH - 1] = 0;
         _tcsncat(g_szPrintFilename, _T(DEFAULT_PRINT_FILENAME), MAX_PATH);		
 		RegSaveString(TEXT("Configuration"),REGVALUE_PRINTER_FILENAME,1,g_szPrintFilename);
 	}
