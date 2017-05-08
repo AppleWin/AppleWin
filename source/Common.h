@@ -175,16 +175,21 @@ enum eApple2Type {
 					A2TYPE_UNDEFINED,
 					A2TYPE_APPLE2C=APPLE2C_MASK,
 					A2TYPE_APPLE2D=APPLE2D_MASK,
-					//
-					// Clones start here:
+
+					// ][ clones start here:
 					A2TYPE_CLONE=APPLECLONE_MASK,
-					A2TYPE_PRAVETS=APPLECLONE_MASK,
-					A2TYPE_PRAVETS82=A2TYPE_PRAVETS,				// Apple ][ clone
 					A2TYPE_PRAVETS8M,								// Apple ][ clone
-					A2TYPE_BAD_PRAVETS82=A2TYPE_PRAVETS|APPLE2E_MASK,	// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
-					A2TYPE_BAD_PRAVETS8M,								// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
+					A2TYPE_PRAVETS82,								// Apple ][ clone
+					// (Gap for more Apple ][ clones)
+					A2TYPE_CLONE_A2_MAX,
+
+					// //e clones start here:
+					A2TYPE_CLONE_A2E=A2TYPE_CLONE|APPLE2E_MASK,
+					A2TYPE_BAD_PRAVETS82=A2TYPE_CLONE|APPLE2E_MASK,	// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
+					A2TYPE_BAD_PRAVETS8M,							// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
 					A2TYPE_PRAVETS8A,								// Apple //e clone
 					A2TYPE_TK30002E,								// Apple //e enhanced clone
+					// (Gap for more Apple //e clones)
 					A2TYPE_MAX
 				};
 

@@ -237,6 +237,15 @@ int CPageAdvanced::GetCloneMenuItem(void)
 	int nMenuItem = MENUITEM_CLONEMIN;
 	switch (type)
 	{
+		case A2TYPE_CLONE:	// Set as generic clone type from Config page
+			{
+				// Need to set a real clone type & CPU in case the user never touches the clone menu
+				nMenuItem = MENUITEM_CLONEMIN;
+				const eApple2Type NewCloneType = GetCloneType(MENUITEM_CLONEMIN);
+				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = GetCloneType(NewCloneType);
+				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewCloneType);
+			}
+			break;
 		case A2TYPE_PRAVETS82:	nMenuItem = MENUITEM_PRAVETS82; break;
 		case A2TYPE_PRAVETS8M:	nMenuItem = MENUITEM_PRAVETS8M; break;
 		case A2TYPE_PRAVETS8A:	nMenuItem = MENUITEM_PRAVETS8A; break;
