@@ -2787,7 +2787,7 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char 
 	c085        C08D        same as C081/C089
 	c086        C08E        same as C082/C08A
 	c087        C08F        same as C083/C08B
-	MF_BANNK2   ~MF_BANK2
+	MF_BANK2   ~MF_BANK2
 
 	NOTE: Saturn 128K uses C084 .. C087 and C08C .. C08F to select Banks 0 .. 7 !
 */
