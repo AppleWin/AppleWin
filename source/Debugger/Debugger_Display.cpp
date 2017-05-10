@@ -2740,6 +2740,21 @@ void _DrawSoftSwitchHighlight( RECT & temp, bool bSet, const char *sOn, const ch
 }
 
 
+// 2.9.0.8
+//===========================================================================
+void _DrawSoftSwitchAddress( RECT & rect, int nAddress, int bg_default = BG_INFO )
+{
+	char sText[ 4 ] = "";
+
+	DebuggerSetColorBG( DebuggerGetColor( bg_default ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_TARGET ));
+	sprintf( sText, "%02X", (nAddress & 0xFF) );
+	PrintTextCursorX( sText, rect );
+
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
+	PrintTextCursorX( ":", rect );
+}
+
 // 2.7.0.7 Cleaned up display of soft-switches to show address.
 //===========================================================================
 void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char *sOn, char *sOff, const char *sSuffix = NULL, int bg_default = BG_INFO )
@@ -2747,13 +2762,7 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char 
 	RECT temp = rect;
 	char sText[ 4 ] = "";
 
-	DebuggerSetColorBG( DebuggerGetColor( bg_default ));
-//	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
-	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_TARGET ));
-	sprintf( sText, "%02X", (nAddress & 0xFF) );
-	PrintTextCursorX( sText, temp );
-	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
-	PrintTextCursorX( ":", temp );
+	_DrawSoftSwitchAddress( temp, nAddress, bg_default );
 
 	if( sPrefix )
 	{
@@ -2771,6 +2780,50 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char 
 
 	rect.top    += g_nFontHeight;
 	rect.bottom += g_nFontHeight;
+}
+
+// 2.9.0.8
+//===========================================================================
+void _DrawTriStateSoftSwitch( RECT & rect, int nAddress, int iDisplay, int iActive, char *sPrefix, char *sOn, char *sOff, const char *sSuffix = NULL, int bg_default = BG_INFO )
+{
+//	if ((iActive == 0) || (iDisplay == iActive))
+	bool bSet = (iDisplay == iActive);
+
+	if ( bSet )
+		_DrawSoftSwitch( rect, nAddress, bSet, NULL, sOn, sOff, " ", bg_default );
+	else // Main Memory is active, or Bank # is not active
+	{
+		RECT temp = rect;
+		int iBank = (memmode & MF_BANK2)
+			? 2
+			: 1
+			;
+		bool bDisabled = ((iActive == 0) && (iBank == iDisplay));
+
+
+		_DrawSoftSwitchAddress( temp, nAddress, bg_default );
+
+		// TODO: Q. Show which bank we are writing to in red?
+		//       A. No, since we highlight bank 2 or 1, along with R/W
+		DebuggerSetColorBG( DebuggerGetColor( bg_default    ));
+		if( bDisabled )
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE  ) );
+		else
+			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
+
+		PrintTextCursorX( sOn , temp );
+		PrintTextCursorX( "/" , temp );
+
+		ColorizeFlags( bDisabled, bg_default, FG_DISASM_OPERATOR );
+		PrintTextCursorX( sOff, temp );
+
+		DebuggerSetColorBG( DebuggerGetColor( bg_default    ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+		PrintTextCursorX( " " , temp );
+
+		rect.top    += g_nFontHeight;
+		rect.bottom += g_nFontHeight;
+	}
 }
 
 /*
@@ -2792,9 +2845,9 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char 
 	NOTE: Saturn 128K uses C084 .. C087 and C08C .. C08F to select Banks 0 .. 7 !
 */
 // 2.9.0.4 Draw Language Card Bank Usage
-// @param iBank Either 1 or 2
+// @param iBankDisplay Either 1 or 2
 //===========================================================================
-void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int bg_default = BG_INFO )
+void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBankDisplay, int bg_default = BG_INFO )
 {
 	int w  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
 	int dx = 8 * w; // "80:L#/M R/W"
@@ -2812,15 +2865,19 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int bg_default = B
 			: 1
 		: 0
 		;
-	bool bBankOn = (iBankActive == iBank);
+	bool bBankOn = (iBankActive == iBankDisplay);
 
-	char sOn[ 4 ] = "L#"; // LC# but one char too wide :-/
+	char sOff[ 4 ] = "M";
+	char sOn [ 4 ] = "B#"; // LC# but one char too wide :-/
 	// C080 LC2
 	// C088 LC1
-	int nAddress = 0xC080 + (8 * (2 - iBank));
-	sOn[1] = '0' + iBank;
+	int nAddress = 0xC080 + (8 * (2 - iBankDisplay));
+	sOn[1] = '0' + iBankDisplay;
 
-	_DrawSoftSwitch( rect, nAddress, bBankOn, NULL, sOn, "M", " ", bg_default );
+	// if off then ONLY highlight 'M' but only for the appropiate bank
+	// if on  then do NOT highlight 'M'
+	// if on  then also only highly the ACTIVE bank
+	_DrawTriStateSoftSwitch( rect, nAddress, iBankDisplay, iBankActive, NULL, sOn, sOff, " ", bg_default );
 
 	rect.top    -= g_nFontHeight;
 	rect.bottom -= g_nFontHeight;
@@ -2829,7 +2886,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int bg_default = B
 	rect.right  += 3*w;
 
 #if defined(RAMWORKS) || defined(SATURN)
-	if (iBank == 1)
+	if (iBankDisplay == 1)
 	{
 		int iActiveBank = -1;
 		char sText[ 4 ] = "?"; // Default to RAMWORKS
@@ -2854,7 +2911,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBank, int bg_default = B
 	}
 #endif // SATURN
 
-	if (iBank == 2)
+	if (iBankDisplay == 2)
 	{
 		// [2]/M  R/[W]
 		// [2]/M  [R]/W
