@@ -9,6 +9,12 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.26.2.4 (Experimental) - TBD
+-----------------------------
+Fixes:
+. Quality of Life: Swapping disks while a drive is on now warns and prompts if you still wish to do this instead of silently failing with no feedback.
+
+
 1.26.2.3 (Experimental) - 24 Apr 2017
 -------------------------------------
 . [Bug #405] Screen flicker in full-speed mode

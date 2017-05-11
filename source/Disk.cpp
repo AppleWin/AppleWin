@@ -972,8 +972,36 @@ void DiskUpdatePosition(DWORD cycles)
 bool DiskDriveSwap(void)
 {
 	// Refuse to swap if either Disk][ is active
+	// TODO: if Shift-Click then FORCE drive swap to bypass message
 	if(g_aFloppyDisk[0].spinning || g_aFloppyDisk[1].spinning)
-		return false;
+	{
+		// 1.26.2.4 Prompt when trying to swap disks while drive is on instead of silently failing
+		int status = MessageBox(
+			g_hFrameWindow,
+			"WARNING:\n"
+				"\n"
+				"\tAttempting to swap a disk while a drive is on\n"
+				"\t\t--> is NOT recommended <--\n"
+				"\tas this will most likely read/write incorrect data!\n"
+				"\n"
+				"If the other drive is empty then swapping is harmless. The"
+				" computer will appear to 'hang' trying to read non-existant data but"
+				" you can safely swap disks once more to restore the original disk.\n"
+				"\n"
+				"Do you still wish to swap disks?",
+			"Trying to swap a disk while a drive is on ...",
+			MB_ICONWARNING | MB_YESNOCANCEL
+		);
+
+		switch( status )
+		{
+			case IDNO:
+			case IDCANCEL:
+				return false;
+			default:
+				break; // User is OK with swapping disks so let them proceed at their own risk
+		}
+	}
 
 	// Swap disks between drives
 	// . NB. We swap trackimage ptrs (so don't need to swap the buffers' data)
