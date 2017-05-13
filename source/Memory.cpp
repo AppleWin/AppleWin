@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Various
  *
- * In comments, UTA2E is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
+ * In comments, UTAIIe is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
  */
 
 #include "StdAfx.h"
@@ -340,7 +340,7 @@ static BYTE __stdcall IORead_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 {	
 	static byte CurrentKestroke = 0;
 	CurrentKestroke = KeybGetKeycode();
-	switch (addr & 0x7) // address bit 4 is ignored (UTA2E page 7-5)
+	switch (addr & 0x7) // address bit 4 is ignored (UTAIIe page 7-5)
 	{
 	//In Pravets8A/C if SETMODE (8bit character encoding) is enabled, bit6 in $C060 is 0; Else it is 1
 	//If (CAPS lOCK of Pravets8A/C is on or Shift is pressed) and (MODE is enabled), bit7 in $C000 is 1; Else it is 0
@@ -523,6 +523,20 @@ static bool IsCardInSlot(const UINT uSlot);
 // . Check Sather UAIIe, but I assume that a 6502 access to a non-$Csxx (and non-expansion ROM) location will clear IO_SELECT
 
 // NB. ProDOS boot sets IO_SELECT=0x04 (its scan for boot devices?), as slot2 contains a card (ie. SSC) with an expansion ROM.
+
+//
+// -----------
+// UTAIIe:5-28
+//                       $C100-C2FF
+// INTCXROM(*) SLOTC3ROM $C400-CFFF $C300-C3FF
+//    0           0         slot     internal
+//    0           1         slot       slot
+//    1           0       internal   internal
+//    1           1       internal   internal
+//
+// (*) SLOTCXROM'
+// -----------
+//
 
 BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
 {
@@ -731,9 +745,11 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 	ExpansionRom[uSlot] = pExpansionRom;
 }
 
-// TODO: Support SW_SLOTC3ROM?
+// From UTAIIe:5-28: Since INTCXROM==1 (SLOTCXROM==0) then state of SLOTC3ROM is not important
 static void IoHandlerCardsOut(void)
 {
+	_ASSERT( !SW_SLOTCXROM );	// INTCXROM==1
+
 	for (UINT uSlot=1; uSlot<NUM_SLOTS; uSlot++)
 	{
 		for (UINT i=0; i<16; i++)
@@ -744,15 +760,26 @@ static void IoHandlerCardsOut(void)
 	}
 }
 
-// TODO: Support SW_SLOTC3ROM?
 static void IoHandlerCardsIn(void)
 {
+	_ASSERT( SW_SLOTCXROM );	// INTCXROM==0
+
 	for (UINT uSlot=1; uSlot<NUM_SLOTS; uSlot++)
 	{
+		iofunction ioreadcx  = g_SlotInfo[uSlot].IOReadCx;
+		iofunction iowritecx = g_SlotInfo[uSlot].IOWriteCx;
+
+		if (uSlot == 3 && !SW_SLOTC3ROM)
+		{
+			// From UTAIIe:5-28: If INTCXROM==0 (SLOTCXROM==1) && SLOTC3ROM==0 Then $C300-C3FF is internal ROM
+			ioreadcx  = IORead_Cxxx;
+			iowritecx = IOWrite_Cxxx;
+		}
+
 		for (UINT i=0; i<16; i++)
 		{
-			IORead[uSlot*16+i]	= g_SlotInfo[uSlot].IOReadCx;
-			IOWrite[uSlot*16+i]	= g_SlotInfo[uSlot].IOWriteCx;
+			IORead[uSlot*16+i]	= ioreadcx;
+			IOWrite[uSlot*16+i]	= iowritecx;
 		}
 	}
 }
@@ -1019,6 +1046,11 @@ void MemDestroy()
 }
 
 //===========================================================================
+
+bool MemCheckSLOTC3ROM()
+{
+	return SW_SLOTC3ROM ? true : false;
+}
 
 bool MemCheckSLOTCXROM()
 {
@@ -1734,7 +1766,8 @@ _done_saturn:
 	{
 		modechanging = 0;
 
-		if ((lastmemmode & MF_SLOTCXROM) != (memmode & MF_SLOTCXROM))
+		// NB. Must check MF_SLOTC3ROM too, as IoHandlerCardsIn() depends on both MF_SLOTCXROM|MF_SLOTC3ROM
+		if ((lastmemmode & MF_SLOTCXROM|MF_SLOTC3ROM) != (memmode & MF_SLOTCXROM|MF_SLOTC3ROM))
 		{
 			if (SW_SLOTCXROM)
 			{

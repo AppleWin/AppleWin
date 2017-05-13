@@ -141,9 +141,6 @@ enum AppMode_e
 #define WM_USER_FULLSCREEN	WM_USER+9
 #define VK_SNAPSHOT_TEXT	WM_USER+10 // PrintScreen+Ctrl
 
-// TODO-TC: Refactor codebase by renaming /nCyclesLeft/ to /uExecutedCycles/
-typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
-
 enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 
 //
