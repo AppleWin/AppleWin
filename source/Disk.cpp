@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Various
  *
- * In comments, UTA2E is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
+ * In comments, UTAIIe is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
  */
 
 #include "StdAfx.h"
@@ -789,7 +789,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		return;
 	}
 
-	// Should really test for drive off - after 1 second drive off delay (UTA2E page 9-13)
+	// Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
 	// but Sherwood Forest sets shift mode and reads with the drive off, so don't check for now
 	if (!floppywritemode)
 	{
@@ -818,7 +818,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 
 void DiskReset(void)
 {
-	// RESET forces all switches off (UTA2E Table 9.1)
+	// RESET forces all switches off (UTAIIe Table 9.1)
 	currdrive = 0;
 	floppymotoron = 0;
 	floppyloadmode = 0;
@@ -890,11 +890,11 @@ static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, U
 	/* floppyloadmode = 1; */
 	if (!write)
 	{
-		// Should really test for drive off - after 1 second drive off delay (UTA2E page 9-13)
+		// Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
 		// but Gemstone Warrior sets load mode with the drive off, so don't check for now
 		if (!floppywritemode)
 		{
-			// Phase 1 on also forces write protect in the Disk II drive (UTA2E page 9-7) but we don't implement that
+			// Phase 1 on also forces write protect in the Disk II drive (UTAIIe page 9-7) but we don't implement that
 			if (g_aFloppyDisk[currdrive].bWriteProtected)
 				floppylatch |= 0x80;
 			else
@@ -1080,7 +1080,7 @@ static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft); break;
 	}
 
-	// only even addresses return the latch (UTA2E Table 9.1)
+	// only even addresses return the latch (UTAIIe Table 9.1)
 	if (!(addr & 1))
 		return floppylatch;
 	else
