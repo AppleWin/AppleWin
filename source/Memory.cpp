@@ -1767,7 +1767,7 @@ _done_saturn:
 		modechanging = 0;
 
 		// NB. Must check MF_SLOTC3ROM too, as IoHandlerCardsIn() depends on both MF_SLOTCXROM|MF_SLOTC3ROM
-		if ((lastmemmode & MF_SLOTCXROM|MF_SLOTC3ROM) != (memmode & MF_SLOTCXROM|MF_SLOTC3ROM))
+		if ((lastmemmode & (MF_SLOTCXROM|MF_SLOTC3ROM)) != (memmode & (MF_SLOTCXROM|MF_SLOTC3ROM)))
 		{
 			if (SW_SLOTCXROM)
 			{
