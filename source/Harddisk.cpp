@@ -28,16 +28,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "DiskImage.h"	// ImageError_e, Disk_Status_e
 #include "DiskImageHelper.h"
 #include "Frame.h"
-#include "HardDisk.h"
+#include "Harddisk.h"
 #include "Memory.h"
 #include "Registry.h"
 #include "YamlHelper.h"
 
-#include "..\resource\resource.h"
+#include "../resource/resource.h"
 
 /*
 Memory map:
@@ -187,7 +187,7 @@ void HD_LoadLastDiskImage(const int iDrive)
 	char sFilePath[ MAX_PATH + 1];
 	sFilePath[0] = 0;
 
-	char *pRegKey = (iDrive == HARDDISK_1)
+	const char *pRegKey = (iDrive == HARDDISK_1)
 		? REGVALUE_PREF_LAST_HARDDISK_1
 		: REGVALUE_PREF_LAST_HARDDISK_2;
 
@@ -331,7 +331,7 @@ void HD_Destroy(void)
 }
 
 // pszImageFilename is qualified with path
-static BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
+BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
 {
 	if (*pszImageFilename == 0x00)
 		return FALSE;

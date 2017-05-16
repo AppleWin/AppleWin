@@ -29,7 +29,7 @@
 #ifndef _MEM_H_
 #define _MEM_H_
 
-#include "..\CommonVICE\types.h"
+#include "CommonVICE/types.h"
 
 typedef BYTE REGPARM1 read_func_t(WORD addr);
 typedef read_func_t *read_func_ptr_t;

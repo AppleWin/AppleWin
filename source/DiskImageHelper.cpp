@@ -27,12 +27,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "Common.h"
 
 #include "zlib.h"
-#include "unzip.h"
-#include "iowin32.h"
+#include "minizip/unzip.h"
 
 #include "CPU.h"
 #include "Disk.h"
@@ -633,8 +632,8 @@ public:
 	virtual UINT GetImageSizeForCreate(void) { return TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD; }
 
 	virtual eImageType GetType(void) { return eImageDO; }
-	virtual char* GetCreateExtensions(void) { return ".do;.dsk"; }
-	virtual char* GetRejectExtensions(void) { return ".nib;.iie;.po;.prg"; }
+	virtual const char* GetCreateExtensions(void) { return ".do;.dsk"; }
+	virtual const char* GetRejectExtensions(void) { return ".nib;.iie;.po;.prg"; }
 };
 
 //-------------------------------------
@@ -697,8 +696,8 @@ public:
 	}
 
 	virtual eImageType GetType(void) { return eImagePO; }
-	virtual char* GetCreateExtensions(void) { return ".po"; }
-	virtual char* GetRejectExtensions(void) { return ".do;.iie;.nib;.prg"; }
+	virtual const char* GetCreateExtensions(void) { return ".po"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.nib;.prg"; }
 };
 
 //-------------------------------------
@@ -737,8 +736,8 @@ public:
 	virtual UINT GetImageSizeForCreate(void) { return NIB1_TRACK_SIZE * TRACKS_STANDARD; }
 
 	virtual eImageType GetType(void) { return eImageNIB1; }
-	virtual char* GetCreateExtensions(void) { return ".nib"; }
-	virtual char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg"; }
+	virtual const char* GetCreateExtensions(void) { return ".nib"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg"; }
 };
 
 //-------------------------------------
@@ -774,8 +773,8 @@ public:
 	}
 
 	virtual eImageType GetType(void) { return eImageNIB2; }
-	virtual char* GetCreateExtensions(void) { return ".nb2"; }
-	virtual char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg;.2mg;.2img"; }
+	virtual const char* GetCreateExtensions(void) { return ".nb2"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg;.2mg;.2img"; }
 };
 
 //-------------------------------------
@@ -815,8 +814,8 @@ public:
 	}
 
 	virtual eImageType GetType(void) { return eImageHDV; }
-	virtual char* GetCreateExtensions(void) { return ".hdv"; }
-	virtual char* GetRejectExtensions(void) { return ".do;.iie;.prg"; }
+	virtual const char* GetCreateExtensions(void) { return ".hdv"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.prg"; }
 };
 
 //-------------------------------------
@@ -884,8 +883,8 @@ public:
 	}
 
 	virtual eImageType GetType(void) { return eImageIIE; }
-	virtual char* GetCreateExtensions(void) { return ".iie"; }
-	virtual char* GetRejectExtensions(void) { return ".do.;.nib;.po;.prg;.2mg;.2img"; }
+	virtual const char* GetCreateExtensions(void) { return ".iie"; }
+	virtual const char* GetRejectExtensions(void) { return ".do.;.nib;.po;.prg;.2mg;.2img"; }
 
 private:
 	void ConvertSectorOrder(LPBYTE sourceorder)
@@ -958,8 +957,8 @@ public:
 	virtual bool AllowRW(void) { return false; }
 
 	virtual eImageType GetType(void) { return eImageAPL; }
-	virtual char* GetCreateExtensions(void) { return ".apl"; }
-	virtual char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.2mg;.2img"; }
+	virtual const char* GetCreateExtensions(void) { return ".apl"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.2mg;.2img"; }
 };
 
 //-------------------------------------
@@ -1009,8 +1008,8 @@ public:
 	virtual bool AllowRW(void) { return false; }
 
 	virtual eImageType GetType(void) { return eImagePRG; }
-	virtual char* GetCreateExtensions(void) { return ".prg"; }
-	virtual char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.2mg;.2img"; }
+	virtual const char* GetCreateExtensions(void) { return ".prg"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.2mg;.2img"; }
 };
 
 //-----------------------------------------------------------------------------
@@ -1194,10 +1193,7 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 
 ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, std::string& strFilenameInZip)
 {
-	zlib_filefunc_def ffunc;
-	fill_win32_filefunc(&ffunc);		// TODO: Ditch this and use unzOpen() instead?
-
-	unzFile hZipFile = unzOpen2(pszImageFilename, &ffunc);
+	unzFile hZipFile = unzOpen(pszImageFilename);
 	if (hZipFile == NULL)
 		return eIMAGE_ERROR_UNABLE_TO_OPEN_ZIP;
 

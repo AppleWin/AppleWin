@@ -24,12 +24,12 @@
  *
  */
 
-#include "..\StdAfx.h"
+#include "StdAfx.h"
 
-#include "..\AppleWin.h"
-#include "..\CPU.h"
-#include "..\Memory.h"
-#include "..\YamlHelper.h"
+#include "Applewin.h"
+#include "CPU.h"
+#include "Memory.h"
+#include "YamlHelper.h"
 
 
 #undef IN							// Defined in windef.h
@@ -39,15 +39,15 @@
 
 #include <stdlib.h>
 
-#include "..\CommonVICE\6510core.h"	// [AppleWin-TC]
-#include "..\CommonVICE\alarm.h"
+#include "CommonVICE/6510core.h"	// [AppleWin-TC]
+#include "CommonVICE/alarm.h"
 #include "daa.h"
 //#include "debug.h"				// [AppleWin-TC]
-#include "..\CommonVICE\interrupt.h"
+#include "CommonVICE/interrupt.h"
 //#include "log.h"					// [AppleWin-TC]
 //#include "maincpu.h"				// [AppleWin-TC]
 //#include "monitor.h"				// [AppleWin-TC]
-#include "..\CommonVICE\types.h"
+#include "CommonVICE/types.h"
 #include "z80.h"
 #include "z80mem.h"
 #include "z80regs.h"
@@ -55,7 +55,7 @@
 
 /*#define DEBUG_Z80*/
 
-static CLOCK maincpu_clk = 0;		// [AppleWin-TC]
+CLOCK maincpu_clk = 0;		// [AppleWin-TC]
 
 static BYTE reg_a = 0;
 static BYTE reg_b = 0;

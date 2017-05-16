@@ -65,7 +65,7 @@ int     DiskGetCurrentTrack();
 int     DiskGetTrack( int drive );
 int     DiskGetCurrentPhase();
 int     DiskGetCurrentOffset();
-char*   DiskGetCurrentState();
+const char*   DiskGetCurrentState();
 bool    DiskSelect(const int iDrive);
 void    DiskUpdatePosition(DWORD);
 bool    DiskDriveSwap(void);

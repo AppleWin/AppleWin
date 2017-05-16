@@ -1,6 +1,6 @@
 #pragma once
 
-#include "zip.h"
+#include "minizip/zip.h"
 
 #define GZ_SUFFIX ".gz"
 #define GZ_SUFFIX_LEN (sizeof(GZ_SUFFIX)-1)
@@ -64,8 +64,8 @@ public:
 	virtual UINT GetImageSizeForCreate(void) { _ASSERT(0); return (UINT)-1; }
 
 	virtual eImageType GetType(void) = 0;
-	virtual char* GetCreateExtensions(void) = 0;
-	virtual char* GetRejectExtensions(void) = 0;
+	virtual const char* GetCreateExtensions(void) = 0;
+	virtual const char* GetRejectExtensions(void) = 0;
 
 	void SetVolumeNumber(const BYTE uVolumeNumber) { m_uVolumeNumber = uVolumeNumber; }
 	bool IsValidImageSize(const DWORD uImageSize);

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "..\AppleWin.h"
-#include "..\CPU.h"
-#include "..\Disk.h"		// BOOL enhancedisk
-#include "..\HardDisk.h"	// HD_CardIsEnabled()
+#include "Applewin.h"
+#include "CPU.h"
+#include "Disk.h"		// BOOL enhancedisk
+#include "Harddisk.h"	// HD_CardIsEnabled()
 
 class CConfigNeedingRestart
 {

@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
 #include "Disk.h"
 #include "Frame.h"
@@ -51,10 +51,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Video.h"
 
 #include "z80emu.h"
-#include "Z80VICE\z80.h"
-#include "..\resource\resource.h"
-#include "Configuration\PropertySheet.h"
-#include "Debugger\DebugDefs.h"
+#include "Z80VICE/z80.h"
+#include "../resource/resource.h"
+#include "Configuration/IPropertySheet.h"
+#include "Debugger/DebugDefs.h"
 #include "YamlHelper.h"
 
 #define  SW_80STORE    (memmode & MF_80STORE)
@@ -1238,6 +1238,8 @@ void MemInitialize()
 			TEXT("location."),
 			g_pAppTitle,
 			MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+
+	memimage = (LPBYTE)newloc;
 
 #ifdef RAMWORKS
 	// allocate memory for RAMWorks III - up to 8MB
