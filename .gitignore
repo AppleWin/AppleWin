@@ -182,3 +182,12 @@ UpgradeLog*.htm
 
 # Microsoft Fakes
 FakesAssemblies/
+
+# Linux
+CMakeFiles/**
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+*.so
+*.a
+applen
