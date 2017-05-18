@@ -46,6 +46,10 @@ enum MemoryType_e
 	MEM_TYPE_SATURN   = 2,
 	NUM_MEM_TYPE      = 3
 };
+
+// TODO-TC: Refactor codebase by renaming /nCyclesLeft/ to /uExecutedCycles/
+typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
+
 extern MemoryType_e	g_eMemType;
 
 extern iofunction IORead[256];
@@ -69,6 +73,7 @@ extern UINT g_uSaturnActiveBank;		// Saturn 128K Language Card Bank 0 .. 7
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
 
 void    MemDestroy ();
+bool	MemCheckSLOTC3ROM();
 bool	MemCheckSLOTCXROM();
 LPBYTE  MemGetAuxPtr(const WORD);
 LPBYTE  MemGetMainPtr(const WORD);

@@ -1,4 +1,5 @@
 /*
+.8 Fixed: Inactive Language Card bank now grayed out, main memory no longer double inverse.
 .7 Fixed: Memory softswitches are now in chronological order, and their background is a dark grey
 .6 Added: Read/Write for Main/Aux memory now shown
 .5 Added: Support for RAMWORKS in the Debugger Language Card Status

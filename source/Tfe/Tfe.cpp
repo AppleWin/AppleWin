@@ -42,9 +42,9 @@
 #define NULL 0
 #endif
 typedef unsigned int UINT;
-#include "..\common.h"
-// Define here, so we don't drag in the whole of stdafx.h:
-void RegisterIoHandler(UINT uSlot, iofunction IORead16, iofunction IOWrite16, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
+
+#include "..\Common.h"	// For: IS_APPLE2
+#include "..\Memory.h"
 
 /**/
 /** #define TFE_DEBUG_DUMP 1 **/
@@ -392,6 +392,7 @@ void tfe_debug_output_pp( void )
 /* ------------------------------------------------------------------------- */
 /*    initialization and deinitialization functions                          */
 
+BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
 void tfe_reset(void)
@@ -454,7 +455,7 @@ void tfe_reset(void)
     }
 
 	const UINT uSlot = 3;
-	RegisterIoHandler(uSlot, TfeIo, TfeIo, NULL, NULL, NULL, NULL);
+	RegisterIoHandler(uSlot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, NULL, NULL);
 }
 
 #ifdef DOS_TFE
@@ -1501,6 +1502,28 @@ int tfe_enumadapter_close(void)
     return tfe_arch_enumadapter_close();
 }
 
+// Go via TfeIoCxxx() instead of directly calling IO_Null() to include this specific (slot-3) _DEBUG check
+static BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
+{
+#ifdef _DEBUG
+	if (!IS_APPLE2)
+	{
+		// Derived from UTAIIe:5-28
+		//
+		// SLOTCXROM SLOTC3ROM TFE floating bus?
+		//   1         0         N (internal ROM)
+		//   1         1         Y
+		//   0         0         N (internal ROM)
+		//   0         1         N (internal ROM)
+		if (! (MemCheckSLOTCXROM() && MemCheckSLOTC3ROM()) )
+		{
+			_ASSERT(0);	// Card ROM disabled, so IORead_Cxxx() returns the internal ROM
+		}
+	}
+#endif
+
+	return IO_Null(programcounter, address, write, value,nCycles);
+}
 
 static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
 {

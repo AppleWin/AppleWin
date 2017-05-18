@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Various
  *
- * In comments, UTA2E is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
+ * In comments, UTAIIe is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
  */
 
 #include "StdAfx.h"
@@ -789,7 +789,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		return;
 	}
 
-	// Should really test for drive off - after 1 second drive off delay (UTA2E page 9-13)
+	// Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
 	// but Sherwood Forest sets shift mode and reads with the drive off, so don't check for now
 	if (!floppywritemode)
 	{
@@ -818,7 +818,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 
 void DiskReset(void)
 {
-	// RESET forces all switches off (UTA2E Table 9.1)
+	// RESET forces all switches off (UTAIIe Table 9.1)
 	currdrive = 0;
 	floppymotoron = 0;
 	floppyloadmode = 0;
@@ -890,11 +890,11 @@ static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, U
 	/* floppyloadmode = 1; */
 	if (!write)
 	{
-		// Should really test for drive off - after 1 second drive off delay (UTA2E page 9-13)
+		// Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
 		// but Gemstone Warrior sets load mode with the drive off, so don't check for now
 		if (!floppywritemode)
 		{
-			// Phase 1 on also forces write protect in the Disk II drive (UTA2E page 9-7) but we don't implement that
+			// Phase 1 on also forces write protect in the Disk II drive (UTAIIe page 9-7) but we don't implement that
 			if (g_aFloppyDisk[currdrive].bWriteProtected)
 				floppylatch |= 0x80;
 			else
@@ -972,8 +972,36 @@ void DiskUpdatePosition(DWORD cycles)
 bool DiskDriveSwap(void)
 {
 	// Refuse to swap if either Disk][ is active
+	// TODO: if Shift-Click then FORCE drive swap to bypass message
 	if(g_aFloppyDisk[0].spinning || g_aFloppyDisk[1].spinning)
-		return false;
+	{
+		// 1.26.2.4 Prompt when trying to swap disks while drive is on instead of silently failing
+		int status = MessageBox(
+			g_hFrameWindow,
+			"WARNING:\n"
+				"\n"
+				"\tAttempting to swap a disk while a drive is on\n"
+				"\t\t--> is NOT recommended <--\n"
+				"\tas this will most likely read/write incorrect data!\n"
+				"\n"
+				"If the other drive is empty then swapping is harmless. The"
+				" computer will appear to 'hang' trying to read non-existant data but"
+				" you can safely swap disks once more to restore the original disk.\n"
+				"\n"
+				"Do you still wish to swap disks?",
+			"Trying to swap a disk while a drive is on ...",
+			MB_ICONWARNING | MB_YESNOCANCEL
+		);
+
+		switch( status )
+		{
+			case IDNO:
+			case IDCANCEL:
+				return false;
+			default:
+				break; // User is OK with swapping disks so let them proceed at their own risk
+		}
+	}
 
 	// Swap disks between drives
 	// . NB. We swap trackimage ptrs (so don't need to swap the buffers' data)
@@ -1052,7 +1080,7 @@ static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft); break;
 	}
 
-	// only even addresses return the latch (UTA2E Table 9.1)
+	// only even addresses return the latch (UTAIIe Table 9.1)
 	if (!(addr & 1))
 		return floppylatch;
 	else
