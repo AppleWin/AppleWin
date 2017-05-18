@@ -12,11 +12,16 @@
 
 #include "linux/interface.h"
 
+#include "frontends/ncurses/colors.h"
+
 namespace
 {
   std::shared_ptr<WINDOW> frame;
   std::shared_ptr<WINDOW> buffer;
   std::shared_ptr<WINDOW> borders;
+
+  std::shared_ptr<GRColors> grColors;
+
 
   int    g_nTrackDrive1  = -1;
   int    g_nTrackDrive2  = -1;
@@ -111,6 +116,14 @@ bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset)
 
 bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
 {
+  BYTE val = *(g_pTextBank0+offset);
+
+  const int pair = grColors->getPair(val);
+
+  wattron(frame.get(), COLOR_PAIR(pair));
+  mvwaddstr(frame.get(), 1 + y, 1 + x, "\u2580");
+  wattroff(frame.get(), COLOR_PAIR(pair));
+
   return true;
 }
 
@@ -223,10 +236,13 @@ void FrameRefreshStatus(int x, bool)
   // std::cerr << "Status: " << x << std::endl;
 }
 
-
 void VideoInitialize()
 {
+  setlocale(LC_ALL, "");
   initscr();
+
+  grColors.reset(new GRColors(20, 20));
+
   curs_set(0);
   signal(SIGINT, sig_handler);
 
