@@ -50,6 +50,8 @@ namespace
   BYTE nextKey = 0;
   bool keyReady = false;
 
+  bool g_bTextFlashState = false;
+
   void sig_handler(int signo)
   {
     endwin();
@@ -58,28 +60,53 @@ namespace
 
   chtype mapCharacter(BYTE ch)
   {
-    const bool normal = ch & 0x80;
-    char low = ch & 0x7f;
+    const char low = ch & 0x7f;
+    const char high = ch & 0x80;
 
-    // just in case the following logic misses something
-    chtype result = ACS_DIAMOND;
+    chtype result = low;
 
-    if (low == 0x7f)
+    const int code = low >> 5;
+    switch (code)
+    {
+    case 0:           // 00 - 1F
+      result += 0x40; // UPPERCASE
+      break;
+    case 1:           // 20 - 3F
+      // SPECIAL CHARACTER
+      break;
+    case 2:           // 40 - 5F
+      // UPPERCASE
+      break;
+    case 3:           // 60 - 7F
+      // LOWERCASE
+      if (high == 0 && g_nAltCharSetOffset == 0)
+      {
+	result -= 0x40;
+      }
+      break;
+    }
+
+    if (result == 0x7f)
     {
       result = ACS_CKBOARD;
     }
-    else
-    {
-      result = low;
-      if (low >= 0x00 && low < 0x20)
-      {
-	result += 0x40;
-      }
-    }
 
-    if (!normal)
+    result != A_BLINK;
+
+    if (!high)
     {
-      result |= A_REVERSE;
+      if ((g_nAltCharSetOffset == 0) && (low >= 0x40))
+      {
+	// result |= A_BLINK; // does not work on my terminal
+	if (g_bTextFlashState)
+	{
+	  result |= A_REVERSE;
+	}
+      }
+      else
+      {
+	result |= A_REVERSE;
+      }
     }
 
     return result;
@@ -94,17 +121,27 @@ namespace
     wrefresh(buffer.get());
   }
 
+  void VideoUpdateFlash()
+  {
+    static UINT nTextFlashCnt = 0;
+
+    ++nTextFlashCnt;
+
+    if (nTextFlashCnt == 16) // Flash rate = 0.5 * 60 / 16 Hz (as we need 2 changes for a period)
+    {
+      nTextFlashCnt = 0;
+      g_bTextFlashState = !g_bTextFlashState;
+    }
+  }
+
 }
 
 bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 {
   BYTE ch = *(g_pTextBank0+offset);
 
-  if (ch)
-  {
-    const chtype ch2 = mapCharacter(ch);
-    mvwaddch(frame.get(), 1 + y, 1 + x, ch2);
-  }
+  const chtype ch2 = mapCharacter(ch);
+  mvwaddch(frame.get(), 1 + y, 1 + x, ch2);
 
   return true;
 }
@@ -265,8 +302,12 @@ void VideoInitialize()
   wrefresh(buffer.get());
 }
 
+
+
 void VideoRedrawScreen()
 {
+  VideoUpdateFlash();
+
   const int displaypage2 = (SW_PAGE2) == 0 ? 0 : 1;
 
   g_pHiresBank1 = MemGetAuxPtr (0x2000 << displaypage2);

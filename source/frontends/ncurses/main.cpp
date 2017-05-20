@@ -33,12 +33,16 @@ static void ContinueExecution()
 
   const bool bVideoUpdate = false;
   const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
+  g_dwCyclesThisFrame += uActualCyclesExecuted;
 
   DiskUpdatePosition(uActualCyclesExecuted);
 
   ProcessKeyboard();
-
-  VideoRedrawScreen();
+  if (g_dwCyclesThisFrame >= dwClksPerFrame)
+  {
+    g_dwCyclesThisFrame -= dwClksPerFrame;
+    VideoRedrawScreen();
+  }
 
   if (!DiskIsSpinning())
   {
