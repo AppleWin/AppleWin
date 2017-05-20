@@ -38,6 +38,7 @@ add_executable(applen
   source/frontends/ncurses/main.cpp
   source/frontends/ncurses/world.cpp
   source/frontends/ncurses/colors.cpp
+  source/frontends/ncurses/frame.cpp
   )
 
 target_link_libraries(applen

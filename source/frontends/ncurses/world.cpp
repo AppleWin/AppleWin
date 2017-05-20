@@ -12,16 +12,14 @@
 
 #include "linux/interface.h"
 
+#include "frontends/ncurses/frame.h"
 #include "frontends/ncurses/colors.h"
 
 namespace
 {
-  std::shared_ptr<WINDOW> frame;
-  std::shared_ptr<WINDOW> buffer;
-  std::shared_ptr<WINDOW> borders;
 
+  std::shared_ptr<Frame> frame;
   std::shared_ptr<GRColors> grColors;
-
 
   int    g_nTrackDrive1  = -1;
   int    g_nTrackDrive2  = -1;
@@ -117,8 +115,10 @@ namespace
     va_list args;
     va_start(args, fmt);
 
-    vwprintw(buffer.get(), fmt, args);
-    wrefresh(buffer.get());
+    WINDOW * win = frame->getBuffer();
+
+    vwprintw(win, fmt, args);
+    wrefresh(win);
   }
 
   void VideoUpdateFlash()
@@ -138,16 +138,33 @@ namespace
 
 bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 {
+  frame->init(40);
+
   BYTE ch = *(g_pTextBank0+offset);
 
+  WINDOW * win = frame->getWindow();
+
   const chtype ch2 = mapCharacter(ch);
-  mvwaddch(frame.get(), 1 + y, 1 + x, ch2);
+  mvwaddch(win, 1 + y, 1 + x, ch2);
 
   return true;
 }
 
 bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset)
 {
+  frame->init(80);
+
+  BYTE ch1 = *(g_pTextBank1+offset);
+  BYTE ch2 = *(g_pTextBank0+offset);
+
+  WINDOW * win = frame->getWindow();
+
+  const chtype ch12 = mapCharacter(ch1);
+  mvwaddch(win, 1 + y, 1 + 2 * x, ch12);
+
+  const chtype ch22 = mapCharacter(ch2);
+  mvwaddch(win, 1 + y, 1 + 2 * x + 1, ch22);
+
   return true;
 }
 
@@ -157,9 +174,18 @@ bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
 
   const int pair = grColors->getPair(val);
 
-  wattron(frame.get(), COLOR_PAIR(pair));
-  mvwaddstr(frame.get(), 1 + y, 1 + x, "\u2580");
-  wattroff(frame.get(), COLOR_PAIR(pair));
+  WINDOW * win = frame->getWindow();
+
+  wattron(win, COLOR_PAIR(pair));
+  if (frame->getColumns() == 40)
+  {
+    mvwaddstr(win, 1 + y, 1 + x, "\u2580");
+  }
+  else
+  {
+    mvwaddstr(win, 1 + y, 1 + 2 * x, "\u2580\u2580");
+  }
+  wattroff(win, COLOR_PAIR(pair));
 
   return true;
 }
@@ -281,25 +307,14 @@ void VideoInitialize()
   grColors.reset(new GRColors(20, 20));
 
   curs_set(0);
-  signal(SIGINT, sig_handler);
 
   noecho();
   cbreak();
   set_escdelay(0);
 
-  frame.reset(newwin(1 + 24 + 1, 1 + 40 + 1, 0, 0), delwin);
-  box(frame.get(), 0 , 0);
-  wtimeout(frame.get(), 0);
-  keypad(frame.get(), true);
-  wrefresh(frame.get());
+  frame.reset(new Frame());
 
-  borders.reset(newwin(1 + 24 + 1, 1 + 40 + 1, 0, 43), delwin);
-  box(borders.get(), 0 , 0);
-  wrefresh(borders.get());
-
-  buffer.reset(newwin(24, 40, 1, 44), delwin);
-  scrollok(buffer.get(), true);
-  wrefresh(buffer.get());
+  signal(SIGINT, sig_handler);
 }
 
 
@@ -359,12 +374,12 @@ void VideoRedrawScreen()
     ypixel += 16;
   }
 
-  wrefresh(frame.get());
+  wrefresh(frame->getWindow());
 }
 
 void ProcessKeyboard()
 {
-  int ch = wgetch(frame.get());
+  int ch = wgetch(frame->getWindow());
   if (ch != ERR)
   {
     switch (ch)
