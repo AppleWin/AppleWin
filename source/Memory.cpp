@@ -542,7 +542,7 @@ static bool IsCardInSlot(const UINT uSlot);
 // . Reset: Access to $CFFF or an MMU reset
 //
 
-BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
+static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
 {
 	if (address == 0xCFFF)
 	{
@@ -628,9 +628,17 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 
 	if (IsPotentialNoSlotClockAccess(address))
 	{
-		int data = 0;
-		if (g_NoSlotClock.Read(address, data))
-			return (BYTE) data;
+		if (!write)
+		{
+			int data = 0;
+			if (g_NoSlotClock.Read(address, data))
+				return (BYTE) data;
+		}
+		else
+		{
+			g_NoSlotClock.Write(address);
+			return 0;
+		}
 	}
 
 	if (!IS_APPLE2 && !SW_SLOTCXROM)
@@ -679,11 +687,6 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 	return mem[address];
 }
 
-BYTE __stdcall IOWrite_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
-{
-	return IORead_Cxxx(programcounter, address, write, value, nCyclesLeft);	// GH#392
-}
-
 //===========================================================================
 
 static struct SlotInfo
@@ -713,8 +716,8 @@ static void InitIoHandlers()
 
 	for (; i<256; i++)	// C10x..CFFx
 	{
-		IORead[i]	= IORead_Cxxx;
-		IOWrite[i]	= IOWrite_Cxxx;
+		IORead[i]	= IO_Cxxx;
+		IOWrite[i]	= IO_Cxxx;
 	}
 
 	//
@@ -722,8 +725,8 @@ static void InitIoHandlers()
 	for (i=0; i<NUM_SLOTS; i++)
 	{
 		g_SlotInfo[i].bHasCard = false;
-		g_SlotInfo[i].IOReadCx = IORead_Cxxx;
-		g_SlotInfo[i].IOWriteCx = IOWrite_Cxxx;
+		g_SlotInfo[i].IOReadCx = IO_Cxxx;
+		g_SlotInfo[i].IOWriteCx = IO_Cxxx;
 		ExpansionRom[i] = NULL;
 	}
 }
@@ -740,8 +743,8 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 	if (uSlot == 0)		// Don't trash C0xx handlers
 		return;
 
-	if (IOReadCx == NULL)	IOReadCx = IORead_Cxxx;
-	if (IOWriteCx == NULL)	IOWriteCx = IOWrite_Cxxx;
+	if (IOReadCx == NULL)	IOReadCx = IO_Cxxx;
+	if (IOWriteCx == NULL)	IOWriteCx = IO_Cxxx;
 
 	for (UINT i=0; i<16; i++)
 	{
@@ -766,8 +769,8 @@ static void IoHandlerCardsOut(void)
 	{
 		for (UINT i=0; i<16; i++)
 		{
-			IORead[uSlot*16+i]	= IORead_Cxxx;
-			IOWrite[uSlot*16+i]	= IOWrite_Cxxx;
+			IORead[uSlot*16+i]	= IO_Cxxx;
+			IOWrite[uSlot*16+i]	= IO_Cxxx;
 		}
 	}
 }
@@ -784,8 +787,8 @@ static void IoHandlerCardsIn(void)
 		if (uSlot == 3 && !SW_SLOTC3ROM)
 		{
 			// From UTAIIe:5-28: If INTCXROM==0 (SLOTCXROM==1) && SLOTC3ROM==0 Then $C300-C3FF is internal ROM
-			ioreadcx  = IORead_Cxxx;
-			iowritecx = IOWrite_Cxxx;
+			ioreadcx  = IO_Cxxx;
+			iowritecx = IO_Cxxx;
 		}
 
 		for (UINT i=0; i<16; i++)

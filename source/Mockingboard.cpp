@@ -1449,13 +1449,13 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 #ifdef _DEBUG
 	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
 	{
-		_ASSERT(0);	// Card ROM disabled, so IORead_Cxxx() returns the internal ROM
+		_ASSERT(0);	// Card ROM disabled, so IO_Cxxx() returns the internal ROM
 		return mem[nAddr];
 	}
 
 	if(g_SoundcardType == CT_Empty)
 	{
-		_ASSERT(0);	// Card unplugged, so IORead_Cxxx() returns the floating bus
+		_ASSERT(0);	// Card unplugged, so IO_Cxxx() returns the floating bus
 		return MemReadFloatingBus(nCyclesLeft);
 	}
 #endif
@@ -1512,13 +1512,13 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 #ifdef _DEBUG
 	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
 	{
-		_ASSERT(0);	// Card ROM disabled, so IORead_Cxxx() returns the internal ROM
+		_ASSERT(0);	// Card ROM disabled, so IO_Cxxx() returns the internal ROM
 		return 0;
 	}
 
 	if(g_SoundcardType == CT_Empty)
 	{
-		_ASSERT(0);	// Card unplugged, so IORead_Cxxx() returns the floating bus
+		_ASSERT(0);	// Card unplugged, so IO_Cxxx() returns the floating bus
 		return 0;
 	}
 #endif
