@@ -99,6 +99,8 @@ void foo(int argc, const char * argv [])
   g_fh = fopen("/tmp/applewin.txt", "w");
   setbuf(g_fh, NULL);
 
+  LogFileOutput("Initialisation\n");
+
   ImageInitialize();
   DiskInitialize();
   int nError = 0;	// TODO: Show error MsgBox if we get a DiskInsert error

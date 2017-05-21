@@ -203,7 +203,6 @@ HRSRC FindResource(void *, const std::string & filename, const char *)
   if (result.data.empty())
   {
     LogFileOutput("FindResource: could not load resource %s\n", filename.c_str());
-    printf("pippo\n");
   }
 
   return result;
@@ -233,8 +232,16 @@ DWORD timeGetTime()
 
 DWORD GetCurrentDirectory(DWORD length, char * buffer)
 {
-  getcwd(buffer, length);
-  return 0;
+  const char * cwd = getcwd(buffer, length);
+
+  if (cwd)
+  {
+    return strlen(buffer);
+  }
+  else
+  {
+    return 0;
+  }
 }
 
 UINT64 _strtoui64(const char * str, void *, int)
