@@ -115,21 +115,6 @@ void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value)
 
 // Joystick
 
-BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
-{
-  return 0;
-}
-
-BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
-{
-  return 0;
-}
-
-BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
-{
-  return 0;
-}
-
 void JoyportControl(const UINT uControl)
 {
 }

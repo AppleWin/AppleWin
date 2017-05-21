@@ -48,6 +48,9 @@ namespace
   BYTE nextKey = 0;
   bool keyReady = false;
 
+  bool openApple = false;
+  bool solidApple = false;
+
   bool g_bTextFlashState = false;
 
   void sig_handler(int signo)
@@ -379,54 +382,59 @@ void VideoRedrawScreen()
 
 void ProcessKeyboard()
 {
-  int ch = wgetch(frame->getWindow());
+  const int inch = wgetch(frame->getWindow());
+
+  int ch = ERR;
+
+  switch (inch)
+  {
+  case ERR:
+    break;
+  case KEY_PPAGE: // Page Up
+    openApple = true;
+    break;
+  case KEY_NPAGE: // Page Down
+    solidApple = true;
+    break;
+  case '\n':
+    ch = 0x0d; // ENTER
+    break;
+  case KEY_BACKSPACE:
+  case KEY_LEFT:
+    ch = 0x08;
+    break;
+  case KEY_RIGHT:
+    ch = 0x15;
+    break;
+  case KEY_UP:
+    ch = 0x0b;
+    break;
+  case KEY_DOWN:
+    ch = 0x0a;
+    break;
+  case 0x14a: // DEL
+    ch = 0x7f;
+    break;
+  default:
+    if (inch < 0x80)
+    {
+      ch = inch;
+      // Standard for Apple II is Upper case
+      if (ch >= 'A' && ch <= 'Z')
+      {
+	ch += 'a' - 'A';
+      }
+      else if (ch >= 'a' && ch <= 'z')
+      {
+	ch -= 'a' - 'A';
+      }
+    }
+  }
+
   if (ch != ERR)
   {
-    switch (ch)
-    {
-    case '\n':
-      ch = 0x0d; // ENTER
-      break;
-    case KEY_BACKSPACE:
-    case KEY_LEFT:
-      ch = 0x08;
-      break;
-    case KEY_RIGHT:
-      ch = 0x15;
-      break;
-    case KEY_UP:
-      ch = 0x0b;
-      break;
-    case KEY_DOWN:
-      ch = 0x0a;
-      break;
-    case 0x14a: // DEL
-      ch = 0x7f;
-      break;
-    default:
-      if (ch >= 0x80)
-      {
-	ch = ERR;
-      }
-      else
-      {
-	// Standard for Apple II is Upper case
-	if (ch >= 'A' && ch <= 'Z')
-	{
-	  ch += 'a' - 'A';
-	}
-	else if (ch >= 'a' && ch <= 'z')
-	{
-	  ch -= 'a' - 'A';
-	}
-      }
-    }
-
-    if (ch != ERR)
-    {
-      nextKey = ch | 0x80;
-      keyReady = true;
-    }
+    nextKey = ch | 0x80;
+    keyReady = true;
   }
 }
 
@@ -445,4 +453,43 @@ BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyc
   BYTE result = keyReady ? nextKey : 0;
   nextKey = 0;
   return result;
+}
+
+BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+  addr &= 0xFF;
+  BOOL pressed = 0;
+
+  /* In ncurses it is not possible to detect key UP or DOWN, just characters.
+     So when do we stop advertising button pressed?
+     We read it once and then reset.
+     We should probably have a timer, like x ms after a press.
+   */
+
+  switch (addr)
+  {
+    case 0x61:
+      pressed = openApple;
+      openApple = false;
+      break;
+    case 0x62:
+      pressed = solidApple;
+      solidApple = false;
+      break;
+    case 0x63:
+      break;
+  }
+  return MemReadFloatingBus(pressed, nCyclesLeft);
+}
+
+BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+  int nJoyNum = (addr & 2) ? 1 : 0;	// $C064..$C067
+  BOOL nPdlCntrActive = 0;
+  return MemReadFloatingBus(nPdlCntrActive, nCyclesLeft);
+}
+
+BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+  return MemReadFloatingBus(nCyclesLeft);
 }
