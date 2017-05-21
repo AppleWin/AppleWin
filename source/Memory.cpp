@@ -463,8 +463,8 @@ static iofunction IOWrite_C0xx[8] =
 	IOWrite_C07x,		// Joystick/Ramworks
 };
 
-static BYTE IO_SELECT;
-static BYTE IO_SELECT_InternalROM;
+static BYTE IO_SELECT = 0;
+static bool INTC8ROM = false;	// UTAIIe:5-28
 
 static BYTE* ExpansionRom[NUM_SLOTS];
 
@@ -519,7 +519,7 @@ static bool IsCardInSlot(const UINT uSlot);
 // . Enable2 = I/O STROBE' (6502 accesses [$C800..$CFFF])
 
 // TODO:
-// . IO_SELECT and IO_SELECT_InternalROM are sticky - they only getting reset by $CFFF and MemReset()
+// . IO_SELECT and INTC8ROM are sticky - they only getting reset by $CFFF and MemReset()
 // . Check Sather UAIIe, but I assume that a 6502 access to a non-$Csxx (and non-expansion ROM) location will clear IO_SELECT
 
 // NB. ProDOS boot sets IO_SELECT=0x04 (its scan for boot devices?), as slot2 contains a card (ie. SSC) with an expansion ROM.
@@ -537,15 +537,19 @@ static bool IsCardInSlot(const UINT uSlot);
 // (*) SLOTCXROM'
 // -----------
 //
+// INTC8ROM: Unreadable soft switch (UTAIIe:5-28)
+// . Set:   Access to $C3XX with SLOTC3ROM reset
+// . Reset: Access to $CFFF or an MMU reset
+//
 
 BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
 {
 	if (address == 0xCFFF)
 	{
 		// Disable expansion ROM at [$C800..$CFFF]
-		// . SSC will disable on an access to $CFxx - but ROM only access $CFFF, so it doesn't matter
+		// . SSC will disable on an access to $CFxx - but ROM only accesses $CFFF, so it doesn't matter
 		IO_SELECT = 0;
-		IO_SELECT_InternalROM = 0;
+		INTC8ROM = false;
 		g_uPeripheralRomSlot = 0;
 
 		if (SW_SLOTCXROM)
@@ -578,12 +582,14 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 				if ((SW_SLOTC3ROM) && ExpansionRom[uSlot])
 					IO_SELECT |= 1<<uSlot;		// Slot3 & Peripheral ROM
 				else if (!SW_SLOTC3ROM)
-					IO_SELECT_InternalROM = 1;	// Slot3 & Internal ROM
+					INTC8ROM = true;			// Slot3 & Internal ROM
 			}
 		}
 		else if ((address >= FIRMWARE_EXPANSION_BEGIN) && (address <= FIRMWARE_EXPANSION_END))
 		{
-			IO_STROBE = 1;
+			if (!INTC8ROM)	// [GH#423] UTAIIe:5-28: if INTCXROM or INTC8ROM is configured for internal response,
+							// then access to $C800-$CFFF results in ROMEN1' low (active) and I/O STROBE' high (inactive)
+				IO_STROBE = 1;
 		}
 
 		//
@@ -610,7 +616,7 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 				g_uPeripheralRomSlot = uSlot;
 			}
 		}
-		else if (IO_SELECT_InternalROM && IO_STROBE && (g_eExpansionRomType != eExpRomInternal))
+		else if (INTC8ROM && (g_eExpansionRomType != eExpRomInternal))
 		{
 			// Enable Internal ROM
 			// . Get this for PR#3
@@ -632,12 +638,18 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 		// !SW_SLOTC3ROM = Internal ROM: $C300-C3FF
 		// !SW_SLOTCXROM = Internal ROM: $C100-CFFF
 
-		if ((address >= APPLE_SLOT_BEGIN) && (address <= APPLE_SLOT_END))	// Don't care about state of SW_SLOTC3ROM
-			IO_SELECT_InternalROM = 1;
+		if ((address >= 0xC300) && (address <= 0xC3FF))
+		{
+			if (!SW_SLOTC3ROM)	// GH#423
+				INTC8ROM = true;
+		}
 		else if ((address >= FIRMWARE_EXPANSION_BEGIN) && (address <= FIRMWARE_EXPANSION_END))
-			IO_STROBE = 1;
+		{
+			if (!INTC8ROM)		// GH#423
+				IO_STROBE = 1;
+		}
 
-		if (!SW_SLOTCXROM && IO_SELECT_InternalROM && IO_STROBE && (g_eExpansionRomType != eExpRomInternal))
+		if (INTC8ROM && (g_eExpansionRomType != eExpRomInternal))
 		{
 			// Enable Internal ROM
 			memcpy(mem+FIRMWARE_EXPANSION_BEGIN, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
@@ -1168,7 +1180,7 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 
 	if (g_eExpansionRomType == eExpRomNull)
 	{
-		if (IO_SELECT || IO_SELECT_InternalROM)	// Was at $Csxx and now in [$C800..$CFFF]
+		if (IO_SELECT || INTC8ROM)	// Was at $Csxx and now in [$C800..$CFFF]
 			return true;
 
 		return false;
@@ -1439,7 +1451,7 @@ void MemReset()
 
 	// Init the I/O ROM vars
 	IO_SELECT = 0;
-	IO_SELECT_InternalROM = 0;
+	INTC8ROM = false;
 	g_eExpansionRomType = eExpRomNull;
 	g_uPeripheralRomSlot = 0;
 
@@ -1771,14 +1783,16 @@ _done_saturn:
 		{
 			if (SW_SLOTCXROM)
 			{
-				// Disable Internal ROM
-				// . Similar to $CFFF access
-				// . None of the peripheral cards can be driving the bus - so use the null ROM
-				IO_SELECT_InternalROM = 0;	// GH#392
-				memset(pCxRomPeripheral+0x800, 0, FIRMWARE_EXPANSION_SIZE);
-				memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
-				g_eExpansionRomType = eExpRomNull;
-				g_uPeripheralRomSlot = 0;
+				if (!INTC8ROM)	// GH#423
+				{
+					// Disable Internal ROM
+					// . Similar to $CFFF access
+					// . None of the peripheral cards can be driving the bus - so use the null ROM
+					memset(pCxRomPeripheral+0x800, 0, FIRMWARE_EXPANSION_SIZE);
+					memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
+					g_eExpansionRomType = eExpRomNull;
+					g_uPeripheralRomSlot = 0;
+				}
 				IoHandlerCardsIn();
 			}
 			else
@@ -1837,7 +1851,7 @@ void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE*
 #define SS_YAML_KEY_MEMORYMODE "Memory Mode"
 #define SS_YAML_KEY_LASTRAMWRITE "Last RAM Write"
 #define SS_YAML_KEY_IOSELECT "IO_SELECT"
-#define SS_YAML_KEY_IOSELECT_INT "IO_SELECT_InternalROM"
+#define SS_YAML_KEY_IOSELECT_INT "IO_SELECT_InternalROM"	// INTC8ROM
 #define SS_YAML_KEY_EXPANSIONROMTYPE "Expansion ROM Type"
 #define SS_YAML_KEY_PERIPHERALROMSLOT "Peripheral ROM Slot"
 
@@ -1896,7 +1910,7 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, memmode);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, g_bLastWriteRam ? 1 : 0);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT, IO_SELECT);
-		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, IO_SELECT_InternalROM);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, INTC8ROM ? 1 : 0);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_PERIPHERALROMSLOT, g_uPeripheralRomSlot);
 	}
@@ -1912,7 +1926,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	SetMemMode( yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) );
 	g_bLastWriteRam = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
 	IO_SELECT = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT);
-	IO_SELECT_InternalROM = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT_INT);
+	INTC8ROM = yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT_INT) ? true : false;
 	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.LoadUint(SS_YAML_KEY_EXPANSIONROMTYPE);
 	g_uPeripheralRomSlot = yamlLoadHelper.LoadUint(SS_YAML_KEY_PERIPHERALROMSLOT);
 
