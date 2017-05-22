@@ -77,7 +77,7 @@ MEMORY MANAGEMENT SOFT SWITCHES
  $C003   W       RAMDRON         Read enable aux memory from $0200-$BFFF
  $C004   W       RAMWRTOFF       Write enable main memory from $0200-$BFFF
  $C005   W       RAMWRTON        Write enable aux memory from $0200-$BFFF
- $C006   W       INTCXROMOFF     Enable slot ROM from $C100-$CFFF
+ $C006   W       INTCXROMOFF     Enable slot ROM from $C100-$C7FF (but $C800-$CFFF depends on INTC8ROM)
  $C007   W       INTCXROMON      Enable main ROM from $C100-$CFFF
  $C008   W       ALTZPOFF        Enable main memory from $0000-$01FF & avl BSR
  $C009   W       ALTZPON         Enable aux memory from $0000-$01FF & avl BSR
