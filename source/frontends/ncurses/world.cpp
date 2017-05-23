@@ -7,6 +7,8 @@
 #include "Common.h"
 #include "Disk.h"
 #include "Video.h"
+#include "CPU.h"
+#include "Log.h"
 #include "DiskImageHelper.h"
 #include "Memory.h"
 
@@ -52,6 +54,9 @@ namespace
   bool solidApple = false;
 
   bool g_bTextFlashState = false;
+
+  double alpha = 10.0;
+  double F = 0;
 
   void sig_handler(int signo)
   {
@@ -137,6 +142,17 @@ namespace
     }
   }
 
+  ULONG lastUpdate = 0;
+
+  void updateSpeaker()
+  {
+    const ULONG dCycles = g_nCumulativeCycles - lastUpdate;
+    const double dt = dCycles / CLK_6502;
+    const double coeff = exp(- alpha * dt);
+    F = F * coeff;
+    lastUpdate = g_nCumulativeCycles;
+  }
+
 }
 
 bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
@@ -211,14 +227,21 @@ bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset)
 
 void FrameRefresh()
 {
-  // std::cout << "Status Drive 1: " << g_eStatusDrive1 << ", Track: " << g_sTrackDrive1 << ", Sector: " << g_sSectorDrive1 << " ";
-  // std::cout << "Status Drive 2: " << g_eStatusDrive2 << ", Track: " << g_sTrackDrive2 << ", Sector: " << g_sSectorDrive2 << " ";
-  // std::cout << "\r" << std::flush;
+  WINDOW * status = frame->getStatus();
+
+  mvwprintw(status, 1, 2, "D1: %d, %s, %s", g_eStatusDrive1, g_sTrackDrive1, g_sSectorDrive1);
+  mvwprintw(status, 2, 2, "D2: %d, %s, %s", g_eStatusDrive2, g_sTrackDrive2, g_sSectorDrive2);
+
+  // approximate
+  const double frequency = 0.5 * alpha * F;
+  mvwprintw(status, 1, 20, "%5.fHz", frequency);
+
+  wrefresh(status);
 }
 
 void FrameDrawDiskLEDS(HDC x)
 {
-  DiskGetLightStatus(&g_eStatusDrive1, &g_eStatusDrive1);
+  DiskGetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
   FrameRefresh();
 }
 
@@ -325,6 +348,8 @@ void VideoInitialize()
 void VideoRedrawScreen()
 {
   VideoUpdateFlash();
+  updateSpeaker();
+  FrameRefresh();
 
   const int displaypage2 = (SW_PAGE2) == 0 ? 0 : 1;
 
@@ -491,5 +516,17 @@ BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nC
 
 BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
 {
+  return MemReadFloatingBus(nCyclesLeft);
+}
+
+// Speaker
+
+BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+  CpuCalcCycles(nCyclesLeft);
+
+  updateSpeaker();
+  F += 1;
+
   return MemReadFloatingBus(nCyclesLeft);
 }

@@ -11,6 +11,7 @@ class Frame
 
   WINDOW * getWindow();
   WINDOW * getBuffer();
+  WINDOW * getStatus();
 
   void init(int columns);
   int getColumns() const;
@@ -20,6 +21,7 @@ class Frame
   int myColumns;
 
   std::shared_ptr<WINDOW> myFrame;
+  std::shared_ptr<WINDOW> myStatus;
   std::shared_ptr<WINDOW> myBuffer;
   std::shared_ptr<WINDOW> myBorders;
 

@@ -133,13 +133,6 @@ void    MB_StartOfCpuExecute()
 {
 }
 
-// Speaker
-
-BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
-{
-  return MemReadFloatingBus(nCyclesLeft);
-}
-
 // Video
 
 int           g_nAltCharSetOffset  = 0; // alternate character set
