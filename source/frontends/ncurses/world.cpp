@@ -14,7 +14,7 @@
 
 #include "linux/interface.h"
 
-#include "frontends/ncurses/frame.h"
+#include "frontends/ncurses/nframe.h"
 #include "frontends/ncurses/colors.h"
 
 namespace

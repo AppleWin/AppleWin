@@ -1,4 +1,4 @@
-#include "frontends/ncurses/frame.h"
+#include "frontends/ncurses/nframe.h"
 
 Frame::Frame() : myColumns(-1)
 {
