@@ -1517,7 +1517,7 @@ static BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, 
 		//   0         1         N (internal ROM)
 		if (! (MemCheckSLOTCXROM() && MemCheckSLOTC3ROM()) )
 		{
-			_ASSERT(0);	// Card ROM disabled, so IORead_Cxxx() returns the internal ROM
+			_ASSERT(0);	// Card ROM disabled, so IO_Cxxx() returns the internal ROM
 		}
 	}
 #endif

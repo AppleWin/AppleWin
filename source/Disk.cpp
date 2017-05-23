@@ -985,7 +985,7 @@ bool DiskDriveSwap(void)
 				"\tas this will most likely read/write incorrect data!\n"
 				"\n"
 				"If the other drive is empty then swapping is harmless. The"
-				" computer will appear to 'hang' trying to read non-existant data but"
+				" computer will appear to 'hang' trying to read non-existent data but"
 				" you can safely swap disks once more to restore the original disk.\n"
 				"\n"
 				"Do you still wish to swap disks?",

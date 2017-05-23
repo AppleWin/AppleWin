@@ -11,8 +11,16 @@ Tom Charlesworth
 
 1.26.2.4 (Experimental) - TBD
 -----------------------------
+Changes:
+. Swapping disks while a drive is on now warns and prompts if you still wish to do this instead of silently failing with no feedback.
+
 Fixes:
-. Quality of Life: Swapping disks while a drive is on now warns and prompts if you still wish to do this instead of silently failing with no feedback.
+. [Bug #423] Full support for INTC8ROM soft switch (fixes transient a2audit.dsk & Bejeweled failures)
+. [Bug #418] Fix for slot-3 ROM not returning floating bus when Uthernet card is enabled
+. [Bug #417] Typos in Uthernet documentation
+. [Bug #415] Fix for not being able to select Pravets 82
+. [Bug #413] Save-state: bug when saving >9 RAMWorks III 64K banks
+. [Bug #409] Fix for AppleWorks 5.1 flickering when booting (latent bug from 2006!)
 
 
 1.26.2.3 (Experimental) - 24 Apr 2017
