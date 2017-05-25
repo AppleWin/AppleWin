@@ -9,8 +9,8 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.2.4 (Experimental) - TBD
------------------------------
+1.26.2.4 (Experimental) - 25 May 2017
+-------------------------------------
 Changes:
 . Swapping disks while a drive is on now warns and prompts if you still wish to do this instead of silently failing with no feedback.
 
@@ -21,10 +21,6 @@ Fixes:
 . [Bug #415] Fix for not being able to select Pravets 82
 . [Bug #413] Save-state: bug when saving >9 RAMWorks III 64K banks
 . [Bug #409] Fix for AppleWorks 5.1 flickering when booting (latent bug from 2006!)
-
-
-1.26.2.3 (Experimental) - 24 Apr 2017
--------------------------------------
 . [Bug #405] Screen flicker in full-speed mode
 . [Bug #403] PrintScreen from Color TV or B&W TV video modes is missing top line
 . [Bug #392] Fixes for a2audit.dsk
