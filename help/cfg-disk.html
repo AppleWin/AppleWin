@@ -36,58 +36,22 @@ These menus allow you to select floppy disk images (.dsk files) to
 emulated floppy drives 1 and 2. This can also be done during emulation by <a href="toolbar.html">using the toolbar</a> or using the F3/F4 keys. Diskettes can be swapped by pressing F5 during emulation. You can also eject images from this menu.</p>
 
 
-<h3>Harddisk Controller Settings:</h3>
-<p><strong>Enable harddisk in slot 7:</strong><br>
-A harddisk interface card can be plugged in to slot-7 by checking this
-box. You can connect two harddisks to this card by selecting .hdv files
-on your PC. Each harddisk can have a maximum capacity of 32MB.
+<h3>Hard disk Controller Settings:</h3>
+<p><strong>Enable hard disk controller in slot 7:</strong><br>
+A hard disk controller (or interface) card can be plugged in to slot 7 by checking this box.
+See <a href="ddi-harddisk.html">Hard disk Images</a> for more details.
 </p>
-<p>On booting, the Apple will <span style="text-decoration: underline;">always</span> attempt to autoboot from slot-7 
-first. If the harddisk card is unplugged (not enabled)&nbsp;the Apple will then 
-attempt to boot from slot-6 (this has the Disk][ floppy interface card in it). To boot a 
-floppy disk with the harddisk card enabled, you can issue PR#6 from an AppleSoft 
-prompt.</p>
-
-<p>You can download sample .hdv images from Asimov (eg. <a href="ftp://public.asimov.net/pub/apple_II/" target="_blank">ftp://public.asimov.net/pub/apple_II/images/utility/misc/hardpc.zip</a>).</p>
 
 <p><strong>HDD 1/2 drop-down menus:</strong><br>
 
-These menus allow you to select harddisk images (.hdv files) to
-connect to the emulated hard drive controller. You can also unplug images from this menu.</p>
-
-<strong>Harddisk warnings:</strong>
-<ul>
-
-
-  <li>Unchecking <em>enable
-harddisk in slot 7</em> while the emulator is running would be
-like physically unplugging the harddisk card on an Apple that is
-powered on.
-This can lead to a corrupt .hdv image if the Apple is writing to the
-harddisk when it is unplugged! </li>
-
-
-  <li>Also, exiting AppleWin while writing to the harddisk can
-have the same effect. </li>
-
-
-  <li>The harddisk state is currently <span style="text-decoration: underline;">not</span> saved
-in the save-state
-image. </li>
-
-
-  <li>Copy][+ v7.1 locks up when trying to calculate how many
-free blocks are available when running a catalog. This is a bug in
-Copy][+ which is fixed in later versions.</li>
-
-
-</ul>
+These menus allow you to select harddisk images (eg. .hdv files) to
+connect to the emulated harddisk controller card. You can also unplug images from this menu.</p>
 
 
 <strong>Path to CiderPress:</strong><br>
 
 Use this to specify where CiderPress is installed.<br>
-The right button context menu on either of the drive icons allows you to open CiderPress with the image in the drive.
+The right mouse button context menu on either of the drive icons allows you to open CiderPress with the image in the drive.
 
 </body>
 </html>
