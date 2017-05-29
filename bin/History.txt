@@ -13,6 +13,7 @@ Tom Charlesworth
 -------------------------------------
 Changes:
 . Swapping disks while a drive is on now warns and prompts if you still wish to do this instead of silently failing with no feedback.
+. [Bug #323] Skip hard disk boot by holding down the Open-Apple key during an Apple II restart
 
 Fixes:
 . [Bug #423] Full support for INTC8ROM soft switch (fixes transient a2audit.dsk & Bejeweled failures)
