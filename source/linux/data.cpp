@@ -20,6 +20,7 @@ SS_CARDTYPE	g_Slot5 = CT_Empty;
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin executable resides
+TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
 const TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 bool      g_bRestart = false;
 FILE*		g_fh			= NULL;

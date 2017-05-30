@@ -31,6 +31,17 @@ int const kVPresetLine      =   256; // line when V state presets
 int const kVSyncLines       =     4; // lines per VSync duration
 int const kVDisplayableScanLines = 192; // max displayable scanlines
 
+eApple2Type GetApple2Type(void)
+{
+	return g_Apple2Type;
+}
+
+void SetApple2Type(eApple2Type type)
+{
+	g_Apple2Type = type;
+	SetMainCpuDefault(type);
+}
+
 void DeleteCriticalSection(CRITICAL_SECTION * criticalSection)
 {
 }

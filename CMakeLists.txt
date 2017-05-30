@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.3)
 project(applewin)
 
 add_library(appleii SHARED
+  source/SaveState.cpp
   source/Pravets.cpp
   source/Tape.cpp
   source/YamlHelper.cpp
@@ -22,6 +23,7 @@ add_library(appleii SHARED
   source/linux/data.cpp
   source/linux/dummies.cpp
   source/linux/wwrapper.cpp
+  source/linux/state.cpp
 
   source/Z80VICE/z80.cpp
   source/Z80VICE/z80mem.cpp

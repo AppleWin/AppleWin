@@ -232,6 +232,8 @@ typedef struct tagPOINT
 
 #define CALLBACK
 
+#define WM_USER 0x0400
+
 #define _tcscat     strcat
 #define _tcscpy     strcpy
 #define _tcsdup     strdup
