@@ -8461,13 +8461,13 @@ void DebugBegin ()
 //===========================================================================
 void DebugExitDebugger ()
 {
-	if (g_nBreakpoints == 0)
+	if (g_nBreakpoints == 0 && g_hTraceFile == NULL)
 	{
 		DebugEnd();
 		return;
 	}
 
-	// Still have some BPs set, so continue single-stepping
+	// Still have some BPs set or tracing to file, so continue single-stepping
 
 	if (!g_bLastGoCmdWasFullSpeed)
 		CmdGoNormalSpeed(0);

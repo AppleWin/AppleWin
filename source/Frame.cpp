@@ -1886,6 +1886,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		else if (g_nAppMode == MODE_DEBUG)
 		{
 			DebugExitDebugger(); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
+			g_bDebuggerEatKey = false;	// Don't "eat" the next keypress when leaving the debugger via F7 (or clicking the Debugger button)
 		}
 		else	// MODE_RUNNING, MODE_LOGO, MODE_PAUSED
 		{
