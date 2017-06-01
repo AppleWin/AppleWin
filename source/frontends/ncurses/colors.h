@@ -1,9 +1,9 @@
 #pragma once
 
-class GRColors
+class GraphicsColors
 {
  public:
-  GRColors(const int firstColor, const int firstPair);
+  GraphicsColors(const int firstColor, const int firstPair);
 
   int getPair(int color) const;
 

@@ -4,7 +4,7 @@
 
 namespace
 {
-  enum Colors {
+  enum Color {
     BLACK,
     DEEP_RED,
     DARK_BLUE,
@@ -31,9 +31,9 @@ namespace
   }
 }
 
-#define SETFRAMECOLOR(c, r, g, b) init_color(firstColor + Colors::c, scaleRGB(r), scaleRGB(g), scaleRGB(b));
+#define SETFRAMECOLOR(c, r, g, b) init_color(firstColor + Color::c, scaleRGB(r), scaleRGB(g), scaleRGB(b));
 
-GRColors::GRColors(const int firstColor, const int firstPair)
+GraphicsColors::GraphicsColors(const int firstColor, const int firstPair)
 : myFirstPair(firstPair)
 {
   has_colors();
@@ -63,7 +63,7 @@ GRColors::GRColors(const int firstColor, const int firstPair)
   for (size_t i = 0; i < 16; ++i)
   {
     const int bg = firstColor + i;
-    for (size_t j = BLACK; j < 16; ++j)
+    for (size_t j = 0; j < 16; ++j)
     {
       const int fg = firstColor + j;
       const int pair = myFirstPair + i * 16 + j;
@@ -73,7 +73,7 @@ GRColors::GRColors(const int firstColor, const int firstPair)
   }
 }
 
-int GRColors::getPair(int color) const
+int GraphicsColors::getPair(int color) const
 {
   const int bg = color & 0x0f;
   const int fg = color >> 4;

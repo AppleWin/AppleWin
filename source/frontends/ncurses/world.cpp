@@ -21,7 +21,7 @@ namespace
 {
 
   std::shared_ptr<Frame> frame;
-  std::shared_ptr<GRColors> grColors;
+  std::shared_ptr<GraphicsColors> colors;
 
   int    g_nTrackDrive1  = -1;
   int    g_nTrackDrive2  = -1;
@@ -191,11 +191,11 @@ bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
 {
   BYTE val = *(g_pTextBank0+offset);
 
-  const int pair = grColors->getPair(val);
+  const int pair = colors->getPair(val);
 
   WINDOW * win = frame->getWindow();
 
-  wattron(win, COLOR_PAIR(pair));
+  wcolor_set(win, pair, NULL);
   if (frame->getColumns() == 40)
   {
     mvwaddstr(win, 1 + y, 1 + x, "\u2580");
@@ -204,7 +204,7 @@ bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
   {
     mvwaddstr(win, 1 + y, 1 + 2 * x, "\u2580\u2580");
   }
-  wattroff(win, COLOR_PAIR(pair));
+  wcolor_set(win, 0, NULL);
 
   return true;
 }
@@ -330,7 +330,7 @@ void VideoInitialize()
   setlocale(LC_ALL, "");
   initscr();
 
-  grColors.reset(new GRColors(20, 20));
+  colors.reset(new GraphicsColors(20, 20));
 
   curs_set(0);
 
