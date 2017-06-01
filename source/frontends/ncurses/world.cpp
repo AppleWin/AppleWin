@@ -16,12 +16,14 @@
 
 #include "frontends/ncurses/nframe.h"
 #include "frontends/ncurses/colors.h"
+#include "frontends/ncurses/asciiart.h"
 
 namespace
 {
 
   std::shared_ptr<Frame> frame;
   std::shared_ptr<GraphicsColors> colors;
+  std::shared_ptr<ASCIIArt> asciiArt;
 
   int    g_nTrackDrive1  = -1;
   int    g_nTrackDrive2  = -1;
@@ -216,6 +218,18 @@ bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
 
 bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
 {
+  const BYTE * base = g_pHiresBank0 + offset;
+
+  WINDOW * win = frame->getWindow();
+
+  const ASCIIArt::Character & ch = asciiArt->getCharacter(base);
+
+  const int pair = colors->getGrey(ch.foreground, ch.background);
+
+  wcolor_set(win, pair, NULL);
+  mvwaddstr(win, 1 + y, 1 + x, ch.c);
+  wcolor_set(win, 0, NULL);
+
   return true;
 }
 
@@ -330,7 +344,7 @@ void VideoInitialize()
   setlocale(LC_ALL, "");
   initscr();
 
-  colors.reset(new GraphicsColors(20, 20));
+  colors.reset(new GraphicsColors(20, 20, 32));
 
   curs_set(0);
 
@@ -339,10 +353,10 @@ void VideoInitialize()
   set_escdelay(0);
 
   frame.reset(new Frame());
+  asciiArt.reset(new ASCIIArt());
 
   signal(SIGINT, sig_handler);
 }
-
 
 
 void VideoRedrawScreen()

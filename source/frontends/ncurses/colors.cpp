@@ -1,6 +1,7 @@
 #include "frontends/ncurses/colors.h"
 
 #include <ncurses.h>
+#include <cmath>
 
 namespace
 {
@@ -33,8 +34,8 @@ namespace
 
 #define SETFRAMECOLOR(c, r, g, b) init_color(firstColor + Color::c, scaleRGB(r), scaleRGB(g), scaleRGB(b));
 
-GraphicsColors::GraphicsColors(const int firstColor, const int firstPair)
-: myFirstPair(firstPair)
+GraphicsColors::GraphicsColors(const int firstColor, const int firstPair, const int numberOfGreys)
+  : myNumberOfGRColors(16), myNumberOfGreys(numberOfGreys)
 {
   has_colors();
   start_color();
@@ -60,15 +61,42 @@ GraphicsColors::GraphicsColors(const int firstColor, const int firstPair)
   SETFRAMECOLOR(AQUA,      0x62,0xF6,0x99); // 0x40,0xFF,0x90 -> Linards Tweaked 0x62,0xF6,0x99
   SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF); // FF
 
-  for (size_t i = 0; i < 16; ++i)
-  {
-    const int bg = firstColor + i;
-    for (size_t j = 0; j < 16; ++j)
-    {
-      const int fg = firstColor + j;
-      const int pair = myFirstPair + i * 16 + j;
+  int baseColor = firstColor;
+  int basePair = firstPair;
+  myFirstGRPair = basePair;
 
-      init_pair(pair, bg, fg);
+  for (size_t i = 0; i < myNumberOfGRColors; ++i)
+  {
+    const int fg = firstColor + i;
+    for (size_t j = 0; j < myNumberOfGRColors; ++j)
+    {
+      const int bg = firstColor + j;
+      const int pair = myFirstGRPair + i * myNumberOfGRColors + j;
+
+      init_pair(pair, fg, bg);
+    }
+  }
+
+  baseColor += myNumberOfGRColors;
+  basePair += myNumberOfGRColors * myNumberOfGRColors;
+  myFirstHGRPair = basePair;
+
+  for (size_t i = 0; i < myNumberOfGreys; ++i)
+  {
+    const int color = baseColor + i;
+    const int grey = 1000 * i / (myNumberOfGreys - 1);
+    init_color(color, grey, grey, grey);
+  }
+
+  for (size_t i = 0; i < myNumberOfGreys; ++i)
+  {
+    const int fg = baseColor + i;
+    for (size_t j = 0; j < myNumberOfGreys; ++j)
+    {
+      const int bg = baseColor + j;
+      const int pair = basePair + i * myNumberOfGreys + j;
+
+      init_pair(pair, fg, bg);
     }
   }
 }
@@ -78,7 +106,19 @@ int GraphicsColors::getPair(int color) const
   const int bg = color & 0x0f;
   const int fg = color >> 4;
 
-  const int pair = myFirstPair + bg * 16 + fg;
+  const int pair = myFirstGRPair + fg * myNumberOfGRColors + bg;
+
+  return pair;
+}
+
+int GraphicsColors::getGrey(double foreground, double background) const
+{
+  const int fg = std::nearbyint((myNumberOfGreys - 1) * foreground);
+  const int bg = std::nearbyint((myNumberOfGreys - 1) * background);
+
+  const int basePair = myFirstHGRPair;
+
+  const int pair = basePair + fg * myNumberOfGreys + bg;
 
   return pair;
 }
