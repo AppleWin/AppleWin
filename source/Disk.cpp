@@ -879,9 +879,9 @@ static bool DiskSelectImage(const int iDrive, LPCSTR pszFilename)
 
 //===========================================================================
 
-void DiskSelect(const int iDrive)
+bool DiskSelect(const int iDrive)
 {
-	DiskSelectImage(iDrive, TEXT(""));
+	return DiskSelectImage(iDrive, TEXT(""));
 }
 
 //===========================================================================
