@@ -429,9 +429,9 @@ static bool HD_SelectImage(const int iDrive, LPCSTR pszFilename)
 	return bRes;
 }
 
-void HD_Select(const int iDrive)
+bool HD_Select(const int iDrive)
 {
-	HD_SelectImage(iDrive, TEXT(""));
+	return HD_SelectImage(iDrive, TEXT(""));
 }
 
 void HD_Unplug(const int iDrive)
