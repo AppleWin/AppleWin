@@ -14,6 +14,7 @@
 #include "Frame.h"
 #include "Memory.h"
 #include "Video.h"
+#include "SaveState.h"
 
 #include "frontends/ncurses/world.h"
 #include "ncurses.h"
@@ -103,7 +104,18 @@ namespace
     switch (key)
     {
     case KEY_F(2):
-      return false;
+      {
+	return false;
+      }
+    case KEY_F(12):
+      {
+	// F12: as F11 is already Fullscreen in the terminal
+	// To load an image, use command line options
+	Snapshot_SetFilename("");
+	Snapshot_SaveState();
+	break;
+      }
+
     }
 
     if (g_dwCyclesThisFrame >= dwClksPerFrame)
