@@ -40,7 +40,6 @@ const TCHAR CPageInput::m_szJoyChoice2[] = TEXT("PC Joystick #2\0");
 const TCHAR CPageInput::m_szJoyChoice3[] = TEXT("Keyboard (cursors)\0");
 const TCHAR CPageInput::m_szJoyChoice4[] = TEXT("Keyboard (numpad)\0");
 const TCHAR CPageInput::m_szJoyChoice5[] = TEXT("Mouse\0");
-const TCHAR CPageInput::m_szJoyChoice6[] = TEXT("PC Joystick #1 Thumbstick 2\0");
 
 const TCHAR* const CPageInput::m_pszJoy0Choices[J0C_MAX] = {
 									CPageInput::m_szJoyChoice0,
@@ -54,8 +53,7 @@ const TCHAR* const CPageInput::m_pszJoy1Choices[J1C_MAX] = {
 									CPageInput::m_szJoyChoice2,	// PC Joystick #2
 									CPageInput::m_szJoyChoice3,
 									CPageInput::m_szJoyChoice4,
-									CPageInput::m_szJoyChoice5,
-									CPageInput::m_szJoyChoice6 };
+									CPageInput::m_szJoyChoice5 };
 
 const TCHAR CPageInput::m_szCPMSlotChoice_Slot4[] = TEXT("Slot 4\0");
 const TCHAR CPageInput::m_szCPMSlotChoice_Slot5[] = TEXT("Slot 5\0");

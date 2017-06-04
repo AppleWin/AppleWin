@@ -60,7 +60,6 @@ private:
 	static const TCHAR m_szJoyChoice3[];
 	static const TCHAR m_szJoyChoice4[];
 	static const TCHAR m_szJoyChoice5[];
-	static const TCHAR m_szJoyChoice6[];
 	static const TCHAR* const m_pszJoy0Choices[J0C_MAX];
 	static const TCHAR* const m_pszJoy1Choices[J1C_MAX];
 
