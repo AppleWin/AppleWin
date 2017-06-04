@@ -45,6 +45,7 @@ add_executable(applen
   )
 
 target_link_libraries(applen
+  boost_program_options
   appleii
   ncursesw
   )

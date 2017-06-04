@@ -4,6 +4,8 @@
 #include <iostream>
 #include <unistd.h>
 
+#include <boost/program_options.hpp>
+
 #include "Common.h"
 #include "Applewin.h"
 #include "Disk.h"
@@ -18,6 +20,61 @@
 
 namespace
 {
+  namespace po = boost::program_options;
+
+  struct EmulatorOptions
+  {
+    std::string disk1;
+    std::string disk2;
+    bool run;
+  };
+
+  bool getEmulatorOptions(int argc, const char * argv [], EmulatorOptions & options)
+  {
+    po::options_description desc("AppleWin ncurses");
+    desc.add_options()
+      ("help,h", "Print this help message");
+
+    po::options_description diskDesc("Disk");
+    diskDesc.add_options()
+      ("d1,1", po::value<std::string>(), "Mount disk image in first drive")
+      ("d2,2", po::value<std::string>(), "Mount disk image in second drive");
+    desc.add(diskDesc);
+
+    po::variables_map vm;
+    try
+    {
+      po::store(po::parse_command_line(argc, argv, desc), vm);
+
+      if (vm.count("help"))
+      {
+	std::cout << "AppleWin ncurses edition" << std::endl << std::endl << desc << std::endl;
+	return false;
+      }
+
+      if (vm.count("d1"))
+      {
+	options.disk1 = vm["d1"].as<std::string>();
+      }
+
+      if (vm.count("d2"))
+      {
+	options.disk2 = vm["d2"].as<std::string>();
+      }
+
+      return true;
+    }
+    catch (const po::error& e)
+    {
+      std::cerr << "ERROR: " << e.what() << std::endl << desc << std::endl;
+      return false;
+    }
+    catch (const std::exception & e)
+    {
+      std::cerr << "ERROR: " << e.what() << std::endl;
+      return false;
+    }
+  }
 
   bool ContinueExecution()
   {
@@ -77,14 +134,19 @@ namespace
     }
   }
 
-  int DoDiskInsert(const int nDrive, LPCSTR szFileName)
+  bool DoDiskInsert(const int nDrive, const std::string & fileName)
   {
     std::string strPathName;
 
-    if (szFileName[0] == '/')
+    if (fileName.empty())
+    {
+      return false;
+    }
+
+    if (fileName[0] == '/')
     {
       // Abs pathname
-      strPathName = szFileName;
+      strPathName = fileName;
     }
     else
     {
@@ -95,18 +157,20 @@ namespace
 
       strPathName = szCWD;
       strPathName.append("/");
-      strPathName.append(szFileName);
+      strPathName.append(fileName);
     }
 
     ImageError_e Error = DiskInsert(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
     return Error == eIMAGE_ERROR_NONE;
   }
 
-  void foo(int argc, const char * argv [])
+  int foo(int argc, const char * argv [])
   {
-    bool bShutdown = false;
-    bool bSetFullScreen = false;
-    bool bBoot = false;
+    EmulatorOptions options;
+    const bool run = getEmulatorOptions(argc, argv, options);
+
+    if (!run)
+      return 1;
 
     g_fh = fopen("/tmp/applewin.txt", "w");
     setbuf(g_fh, NULL);
@@ -115,37 +179,46 @@ namespace
 
     ImageInitialize();
     DiskInitialize();
-    int nError = 0;	// TODO: Show error MsgBox if we get a DiskInsert error
-    if (argc >= 2)
+
+    bool boot = false;
+
+    if (!options.disk1.empty())
     {
-      nError = DoDiskInsert(DRIVE_1, argv[1]);
-      LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", nError);
+      const bool ok = DoDiskInsert(DRIVE_1, options.disk1);
+      LogOutput("Init: DoDiskInsert(D1), res=%d\n", ok);
+      boot = ok;
+    }
+
+    if (!options.disk2.empty())
+    {
+      const bool ok = DoDiskInsert(DRIVE_2, options.disk2);
+      LogOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
+      if (!ok)
+      {
+	boot = false;
+      }
+    }
+
+    if (boot)
+    {
       FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
-      bBoot = true;
-    }
 
-    if (argc >= 3)
-    {
-      nError |= DoDiskInsert(DRIVE_2, argv[2]);
-      LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", nError);
-    }
+      do
+      {
+	MemInitialize();
+	VideoInitialize();
+	DiskReset();
+	EnterMessageLoop();
+      }
+      while (g_bRestart);
 
-    do
-    {
-      MemInitialize();
-      VideoInitialize();
-      DiskReset();
-      EnterMessageLoop();
+      VideoUninitialize();
     }
-    while (g_bRestart);
-
-    VideoUninitialize();
   }
 
 }
 
 int main(int argc, const char * argv [])
 {
-  foo(argc, argv);
-  return 0;
+  return foo(argc, argv);
 }
