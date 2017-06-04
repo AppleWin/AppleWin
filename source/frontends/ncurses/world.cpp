@@ -62,8 +62,11 @@ namespace
 
   void sig_handler(int signo)
   {
-    endwin();
-    exit(1);
+    // Ctrl-C
+    // is there a race condition here?
+    // is it a problem?
+    nextKey = 0x83;
+    keyReady = true;
   }
 
   chtype mapCharacter(BYTE ch)
@@ -358,6 +361,11 @@ void VideoInitialize()
   signal(SIGINT, sig_handler);
 }
 
+void VideoUninitialize()
+{
+  endwin();
+}
+
 
 void VideoRedrawScreen()
 {
@@ -419,7 +427,7 @@ void VideoRedrawScreen()
   wrefresh(frame->getWindow());
 }
 
-void ProcessKeyboard()
+int ProcessKeyboard()
 {
   const int inch = wgetch(frame->getWindow());
 
@@ -474,6 +482,12 @@ void ProcessKeyboard()
   {
     nextKey = ch | 0x80;
     keyReady = true;
+    return ERR;
+  }
+  else
+  {
+    // pass it back
+    return inch;
   }
 }
 

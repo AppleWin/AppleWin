@@ -1,5 +1,6 @@
 #pragma once
 
-void ProcessKeyboard();
+int ProcessKeyboard();
 void VideoInitialize();
+void VideoUninitialize();
 void VideoRedrawScreen();

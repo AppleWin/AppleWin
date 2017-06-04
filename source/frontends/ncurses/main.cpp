@@ -14,8 +14,9 @@
 #include "Video.h"
 
 #include "frontends/ncurses/world.h"
+#include "ncurses.h"
 
-static void ContinueExecution()
+static bool ContinueExecution()
 {
   const auto start = std::chrono::steady_clock::now();
 
@@ -37,7 +38,14 @@ static void ContinueExecution()
 
   DiskUpdatePosition(uActualCyclesExecuted);
 
-  ProcessKeyboard();
+  const int key = ProcessKeyboard();
+
+  switch (key)
+  {
+  case KEY_F(2):
+    return false;
+  }
+
   if (g_dwCyclesThisFrame >= dwClksPerFrame)
   {
     g_dwCyclesThisFrame -= dwClksPerFrame;
@@ -55,13 +63,14 @@ static void ContinueExecution()
       usleep(nExecutionPeriodUsec - ms);
     }
   }
+
+  return true;
 }
 
 void EnterMessageLoop()
 {
-  while (true)
+  while (ContinueExecution())
   {
-    ContinueExecution();
   }
 }
 
@@ -126,6 +135,9 @@ void foo(int argc, const char * argv [])
     EnterMessageLoop();
   }
   while (g_bRestart);
+
+  VideoUninitialize();
+
 }
 
 int main(int argc, const char * argv [])
