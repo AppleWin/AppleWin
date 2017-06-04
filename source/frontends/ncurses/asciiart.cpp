@@ -15,6 +15,7 @@ ASCIIArt::ASCIIArt()
   myGlyphs.push_back(Unicode("\u2596", { 0,  0, 14,  0}));  // lower left
   myGlyphs.push_back(Unicode("\u2597", { 0,  0,  0, 14}));  // lower right
   myGlyphs.push_back(Unicode("\u2598", {14,  0,  0,  0}));  // top left
+  myGlyphs.push_back(Unicode("\u259A", {14,  0,  0, 14}));  // diagonal
   myGlyphs.push_back(Unicode("\u259D", { 0, 14,  0,  0}));  // top right
 }
 
