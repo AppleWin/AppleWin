@@ -9,7 +9,7 @@
 
 void VideoReinitialize() { }
 void KeybLoadSnapshot(YamlLoadHelper&) { }
-std::string GetSnapshotCardName() { }
+std::string GetSnapshotCardName() { return ""; }
 bool CMouseInterface::LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { return true; }
 void SpkrLoadSnapshot(YamlLoadHelper&) { }
 void KeybReset() { }
@@ -18,7 +18,7 @@ void JoySaveSnapshot(YamlSaveHelper&) { }
 void VideoResetState() { }
 void JoyLoadSnapshot(YamlLoadHelper&) { }
 void MB_LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { }
-std::string CMouseInterface::GetSnapshotCardName() { }
+std::string CMouseInterface::GetSnapshotCardName() { return ""; }
 void SetLoadedSaveStateFlag(bool) { }
 void KeybSaveSnapshot(YamlSaveHelper&) { }
 void CMouseInterface::Reset() { }

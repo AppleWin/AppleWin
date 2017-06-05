@@ -120,8 +120,6 @@ BYTE * LockResource(HGLOBAL);
 DWORD timeGetTime();
 DWORD GetCurrentDirectory(DWORD, char *);
 
-UINT64 _strtoui64(const char *, void *, int);
-
 void GetLocalTime(SYSTEMTIME *t);
 
 BOOL GetOpenFileName(LPOPENFILENAME lpofn);

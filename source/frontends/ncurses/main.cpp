@@ -27,6 +27,7 @@ namespace
   {
     std::string disk1;
     std::string disk2;
+    std::string snapshot;
     bool run;
   };
 
@@ -41,6 +42,11 @@ namespace
       ("d1,1", po::value<std::string>(), "Mount disk image in first drive")
       ("d2,2", po::value<std::string>(), "Mount disk image in second drive");
     desc.add(diskDesc);
+
+    po::options_description snapshotDesc("Snapshot");
+    snapshotDesc.add_options()
+      ("load-state,ls", po::value<std::string>(), "Load snapshot from file");
+    desc.add(snapshotDesc);
 
     po::variables_map vm;
     try
@@ -61,6 +67,11 @@ namespace
       if (vm.count("d2"))
       {
 	options.disk2 = vm["d2"].as<std::string>();
+      }
+
+      if (vm.count("load-state"))
+      {
+	options.snapshot = vm["load-state"].as<std::string>();
       }
 
       return true;
@@ -211,6 +222,11 @@ namespace
       }
     }
 
+    if (!options.snapshot.empty())
+    {
+      boot = true;
+    }
+
     if (boot)
     {
       FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
@@ -220,6 +236,13 @@ namespace
 	MemInitialize();
 	VideoInitialize();
 	DiskReset();
+
+	if (!options.snapshot.empty())
+	{
+	  Snapshot_SetFilename(options.snapshot.c_str());
+	  Snapshot_LoadState();
+	}
+
 	EnterMessageLoop();
       }
       while (g_bRestart);

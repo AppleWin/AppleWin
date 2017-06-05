@@ -244,11 +244,6 @@ DWORD GetCurrentDirectory(DWORD length, char * buffer)
   }
 }
 
-UINT64 _strtoui64(const char * str, void *, int)
-{
-  return boost::lexical_cast<UINT64>(str);
-}
-
 void GetLocalTime(SYSTEMTIME *t)
 {
   timespec ts;

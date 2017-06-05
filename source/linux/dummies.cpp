@@ -10,6 +10,7 @@
 #include "Memory.h"
 #include "Keyboard.h"
 #include "NTSC.h"
+#include "Log.h"
 
 static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
@@ -125,24 +126,24 @@ void CMouseInterface::SetVBlank(bool bVBL)
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser,
                     LPTSTR buffer, DWORD chars)
 {
-  std::cerr << "RegLoadString: " << section << " - " << key << std::endl;
+  LogFileOutput("RegLoadString: %s - %s\n", section, key);
   return FALSE;
 }
 
 BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD *value)
 {
-  std::cerr << "RegLoadValue: " << section << " - " << key << std::endl;
+  LogFileOutput("RegLoadValue: %s - %s\n", section, key);
   return FALSE;
 }
 
 void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPCTSTR buffer)
 {
-  std::cerr << "RegSaveString: " << section << " - " << key << " = " << buffer << std::endl;
+  LogFileOutput("RegSaveString: %s - %s = %s\n", section, key, buffer);
 }
 
 void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value)
 {
-  std::cerr << "RegSaveValue: " << section << " - " << key << " = " << value << std::endl;
+  LogFileOutput("RegSaveValue: %s - %s = %d\n", section, key, value);
 }
 
 // Joystick
