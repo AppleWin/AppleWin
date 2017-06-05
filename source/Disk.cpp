@@ -89,6 +89,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		DWORD  writelight;
 		int    nibbles;						// Init'd by ReadTrack() -> ImageReadTrack()
 
+		Disk_t()
+		{
+			clear();
+		}
+
 		const Disk_t& operator= (const Disk_t& other)
 		{
 			memcpy(imagename, other.imagename, sizeof(imagename));
@@ -107,11 +112,29 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			nibbles             = other.nibbles;
 			return *this;
 		}
+
+		void clear()
+		{
+			ZeroMemory(imagename, sizeof(imagename));
+			ZeroMemory(fullname, sizeof(imagename));
+			strFilenameInZip.clear();
+			imagehandle = NULL;
+			bWriteProtected = false;
+			track = 0;
+			trackimage = NULL;
+			phase = 0;
+			byte = 0;
+			trackimagedata = FALSE;
+			trackimagedirty = 0;
+			spinning = 0;
+			writelight = 0;
+			nibbles = 0;
+		}
 	};
 
 static WORD		currdrive       = 0;
 static BOOL		diskaccessed    = 0;
-static Disk_t	g_aFloppyDisk[NUM_DRIVES];
+static std::vector<Disk_t> g_aFloppyDisk(NUM_DRIVES);
 static BYTE		floppylatch     = 0;
 static BOOL		floppymotoron   = 0;
 static BOOL		floppyloadmode  = 0; // for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)
@@ -551,7 +574,7 @@ void DiskInitialize(void)
 {
 	int loop = NUM_DRIVES;
 	while (loop--)
-		ZeroMemory(&g_aFloppyDisk[loop], sizeof(Disk_t));
+		g_aFloppyDisk[loop].clear();
 
 	TCHAR imagefilename[MAX_PATH];
 	_tcscpy(imagefilename,g_sProgramDir);
@@ -570,7 +593,7 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 	{
 		int track = fptr->track;
 		int phase = fptr->phase;
-		ZeroMemory(fptr, sizeof(Disk_t));
+		fptr->clear();
 		fptr->track = track;
 		fptr->phase = phase;
 	}
@@ -1149,7 +1172,7 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 	for(UINT i=0; i<NUM_DRIVES; i++)
 	{
 		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
-		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t));
+		g_aFloppyDisk[i].clear();
 	}
 
 	for(UINT i=0; i<NUM_DRIVES; i++)
@@ -1384,7 +1407,7 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 	for(UINT i=0; i<NUM_DRIVES; i++)
 	{
 		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
-		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t));
+		g_aFloppyDisk[i].clear();
 	}
 
 	DiskLoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_1);
