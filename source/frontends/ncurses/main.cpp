@@ -28,6 +28,7 @@ namespace
     std::string disk1;
     std::string disk2;
     std::string snapshot;
+    int memclear;
     bool run;
   };
 
@@ -47,6 +48,11 @@ namespace
     snapshotDesc.add_options()
       ("load-state,ls", po::value<std::string>(), "Load snapshot from file");
     desc.add(snapshotDesc);
+
+    po::options_description memoryDesc("Memory");
+    memoryDesc.add_options()
+      ("memclear,m", po::value<int>(), "Memory initialization pattern [0..7]");
+    desc.add(memoryDesc);
 
     po::variables_map vm;
     try
@@ -72,6 +78,13 @@ namespace
       if (vm.count("load-state"))
       {
 	options.snapshot = vm["load-state"].as<std::string>();
+      }
+
+      if (vm.count("memclear"))
+      {
+	const int memclear = vm["memclear"].as<int>();
+	if (memclear >=0 && memclear < NUM_MIP)
+	  options.memclear = memclear;
       }
 
       return true;
@@ -190,10 +203,13 @@ namespace
   int foo(int argc, const char * argv [])
   {
     EmulatorOptions options;
+    options.memclear = g_nMemoryClearType;
     const bool run = getEmulatorOptions(argc, argv, options);
 
     if (!run)
       return 1;
+
+    g_nMemoryClearType = options.memclear;
 
     g_fh = fopen("/tmp/applewin.txt", "w");
     setbuf(g_fh, NULL);
