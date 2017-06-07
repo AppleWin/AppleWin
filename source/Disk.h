@@ -66,7 +66,7 @@ int     DiskGetTrack( int drive );
 int     DiskGetCurrentPhase();
 int     DiskGetCurrentOffset();
 char*   DiskGetCurrentState();
-void    DiskSelect(const int iDrive);
+bool    DiskSelect(const int iDrive);
 void    DiskUpdatePosition(DWORD);
 bool    DiskDriveSwap(void);
 void    DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot);
