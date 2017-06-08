@@ -16,6 +16,8 @@
 #include "Video.h"
 #include "SaveState.h"
 
+#include "linux/configuration.h"
+#include "linux/data.h"
 #include "frontends/ncurses/world.h"
 #include "ncurses.h"
 
@@ -202,6 +204,9 @@ namespace
 
   int foo(int argc, const char * argv [])
   {
+    g_fh = fopen("/tmp/applewin.txt", "w");
+    setbuf(g_fh, NULL);
+
     EmulatorOptions options;
     options.memclear = g_nMemoryClearType;
     const bool run = getEmulatorOptions(argc, argv, options);
@@ -209,62 +214,50 @@ namespace
     if (!run)
       return 1;
 
-    g_nMemoryClearType = options.memclear;
+    InitializeRegistry("applen.conf");
 
-    g_fh = fopen("/tmp/applewin.txt", "w");
-    setbuf(g_fh, NULL);
+    g_nMemoryClearType = options.memclear;
 
     LogFileOutput("Initialisation\n");
 
     ImageInitialize();
     DiskInitialize();
 
-    bool boot = false;
-
     if (!options.disk1.empty())
     {
       const bool ok = DoDiskInsert(DRIVE_1, options.disk1);
-      LogOutput("Init: DoDiskInsert(D1), res=%d\n", ok);
-      boot = ok;
+      LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", ok);
     }
 
     if (!options.disk2.empty())
     {
       const bool ok = DoDiskInsert(DRIVE_2, options.disk2);
-      LogOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
-      if (!ok)
-      {
-	boot = false;
-      }
+      LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
     }
 
-    if (!options.snapshot.empty())
+    // AFTER a restart
+    do
     {
-      boot = true;
-    }
+      LoadConfiguration();
 
-    if (boot)
-    {
       FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
-      do
+      MemInitialize();
+      VideoInitialize();
+      DiskReset();
+
+      if (!options.snapshot.empty())
       {
-	MemInitialize();
-	VideoInitialize();
-	DiskReset();
-
-	if (!options.snapshot.empty())
-	{
-	  Snapshot_SetFilename(options.snapshot.c_str());
-	  Snapshot_LoadState();
-	}
-
-	EnterMessageLoop();
+	Snapshot_SetFilename(options.snapshot.c_str());
+	Snapshot_LoadState();
       }
-      while (g_bRestart);
 
-      VideoUninitialize();
+      EnterMessageLoop();
     }
+    while (g_bRestart);
+
+    VideoUninitialize();
+
   }
 
 }

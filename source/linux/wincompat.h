@@ -245,6 +245,7 @@ typedef struct tagPOINT
 #define __interface struct
 #define __forceinline inline
 #define _vsntprintf vsnprintf
+#define _snprintf snprintf
 #define wsprintf sprintf
 #define _strdup strdup
 #define _strtoui64 strtoull

@@ -20,6 +20,7 @@ add_library(appleii SHARED
   source/z80emu.cpp
   source/ParallelPrinter.cpp
 
+  source/linux/configuration.cpp
   source/linux/data.cpp
   source/linux/dummies.cpp
   source/linux/wwrapper.cpp
