@@ -94,6 +94,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			clear();
 		}
 
+		~Disk_t()
+		{
+			if (imagehandle)
+				ImageClose(imagehandle);
+			if (trackimage)
+				VirtualFree(trackimage, 0, MEM_RELEASE);
+		}
+
 		const Disk_t& operator= (const Disk_t& other)
 		{
 			memcpy(imagename, other.imagename, sizeof(imagename));
