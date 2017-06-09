@@ -9,10 +9,12 @@
 #include "Common.h"
 #include "Applewin.h"
 #include "Disk.h"
+#include "Harddisk.h"
 #include "Log.h"
 #include "CPU.h"
 #include "Frame.h"
 #include "Memory.h"
+#include "ParallelPrinter.h"
 #include "Video.h"
 #include "SaveState.h"
 
@@ -257,6 +259,13 @@ namespace
     while (g_bRestart);
 
     VideoUninitialize();
+
+    DiskDestroy();
+    ImageDestroy();
+    HD_Destroy();
+    PrintDestroy();
+    CpuDestroy();
+    MemDestroy();
 
     return 0;
   }
