@@ -33,7 +33,7 @@ std::string Phasor_GetSnapshotCardName() { return ""; }
 void CMouseInterface::SaveSnapshot(YamlSaveHelper&) { }
 void IPropertySheet::ApplyNewConfig(CConfigNeedingRestart const&, CConfigNeedingRestart const&) { }
 void FrameUpdateApple2Type() { }
-bool SetCurrentImageDir(char const*) { }
+bool SetCurrentImageDir(char const*) { return true; }
 void CMouseInterface::Uninitialize() { }
 void CSuperSerialCard::SaveSnapshot(YamlSaveHelper&) { }
 

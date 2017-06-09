@@ -53,7 +53,7 @@ target_link_libraries(applen
 
 include_directories(source)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar -Werror=return-type")
 
 MESSAGE("CMAKE_BUILD_TYPE:                ${CMAKE_BUILD_TYPE}")
 MESSAGE("CMAKE_CXX_FLAGS:                 ${CMAKE_CXX_FLAGS}")

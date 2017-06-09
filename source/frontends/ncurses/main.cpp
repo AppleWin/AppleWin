@@ -258,6 +258,7 @@ namespace
 
     VideoUninitialize();
 
+    return 0;
   }
 
 }
