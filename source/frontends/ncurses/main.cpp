@@ -157,11 +157,13 @@ namespace
     {
       const auto end = std::chrono::steady_clock::now();
       const auto diff = end - start;
-      const long ms = std::chrono::duration_cast<std::chrono::microseconds>(diff).count();
+      const long us = std::chrono::duration_cast<std::chrono::microseconds>(diff).count();
 
-      if (ms < nExecutionPeriodUsec)
+      g_relativeSpeed = double(us) / double(nExecutionPeriodUsec);
+
+      if (us < nExecutionPeriodUsec)
       {
-	usleep(nExecutionPeriodUsec - ms);
+	usleep(nExecutionPeriodUsec - us);
       }
     }
 

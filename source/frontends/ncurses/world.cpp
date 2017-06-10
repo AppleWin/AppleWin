@@ -124,17 +124,6 @@ namespace
     return result;
   }
 
-  void output(const char *fmt, ...)
-  {
-    va_list args;
-    va_start(args, fmt);
-
-    WINDOW * win = frame->getBuffer();
-
-    vwprintw(win, fmt, args);
-    wrefresh(win);
-  }
-
   void VideoUpdateFlash()
   {
     static UINT nTextFlashCnt = 0;
@@ -159,6 +148,19 @@ namespace
     lastUpdate = g_nCumulativeCycles;
   }
 
+}
+
+double g_relativeSpeed = 0;
+
+void output(const char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+
+  WINDOW * win = frame->getBuffer();
+
+  vwprintw(win, fmt, args);
+  wrefresh(win);
 }
 
 bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
@@ -253,6 +255,7 @@ void FrameRefresh()
   // approximate
   const double frequency = 0.5 * alpha * F;
   mvwprintw(status, 1, 20, "%5.fHz", frequency);
+  mvwprintw(status, 2, 20, "%5.1f%%", 100 * g_relativeSpeed);
 
   wrefresh(status);
 }
