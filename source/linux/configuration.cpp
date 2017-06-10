@@ -71,7 +71,6 @@ BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser,
   }
   catch (const std::exception & e)
   {
-    buffer[0] = 0;
     result = FALSE;
   }
 
@@ -89,7 +88,6 @@ BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD *value)
   }
   catch (const std::exception & e)
   {
-    *value = 0;
     result = FALSE;
   }
 
