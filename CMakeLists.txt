@@ -43,15 +43,17 @@ add_executable(applen
   source/frontends/ncurses/colors.cpp
   source/frontends/ncurses/nframe.cpp
   source/frontends/ncurses/asciiart.cpp
+  source/frontends/ncurses/input.cpp
   )
 
 target_link_libraries(applen
   boost_program_options
   appleii
   ncursesw
+  evdev
   )
 
-include_directories(source)
+include_directories(source /usr/include/libevdev-1.0)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar -Werror=return-type")
 

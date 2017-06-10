@@ -3,6 +3,7 @@
 #include <chrono>
 #include <iostream>
 #include <unistd.h>
+#include <ncurses.h>
 
 #include <boost/program_options.hpp>
 
@@ -21,7 +22,6 @@
 #include "linux/configuration.h"
 #include "linux/data.h"
 #include "frontends/ncurses/world.h"
-#include "ncurses.h"
 
 namespace
 {
@@ -143,8 +143,9 @@ namespace
 	Snapshot_SaveState();
 	break;
       }
-
     }
+
+    ProcessInput();
 
     if (g_dwCyclesThisFrame >= dwClksPerFrame)
     {
