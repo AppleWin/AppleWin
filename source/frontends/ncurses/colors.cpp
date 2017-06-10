@@ -103,8 +103,8 @@ GraphicsColors::GraphicsColors(const int firstColor, const int firstPair, const 
 
 int GraphicsColors::getPair(int color) const
 {
-  const int bg = color & 0x0f;
-  const int fg = color >> 4;
+  const int fg = color & 0x0f;
+  const int bg = color >> 4;
 
   const int pair = myFirstGRPair + fg * myNumberOfGRColors + bg;
 
