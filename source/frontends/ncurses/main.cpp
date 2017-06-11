@@ -33,7 +33,9 @@ namespace
     std::string disk2;
     std::string snapshot;
     int memclear;
-    bool run;
+    bool benchmark;
+
+    bool run;  // false if options include "-h"
   };
 
   bool getEmulatorOptions(int argc, const char * argv [], EmulatorOptions & options)
@@ -57,6 +59,11 @@ namespace
     memoryDesc.add_options()
       ("memclear,m", po::value<int>(), "Memory initialization pattern [0..7]");
     desc.add(memoryDesc);
+
+    po::options_description emulatorDesc("Emulator");
+    emulatorDesc.add_options()
+      ("benchmark,b", "Benchmark emulator");
+    desc.add(emulatorDesc);
 
     po::variables_map vm;
     try
@@ -90,6 +97,8 @@ namespace
 	if (memclear >=0 && memclear < NUM_MIP)
 	  options.memclear = memclear;
       }
+
+      options.benchmark = vm.count("benchmark") > 0;
 
       return true;
     }
@@ -257,7 +266,15 @@ namespace
 	Snapshot_LoadState();
       }
 
-      EnterMessageLoop();
+      if (options.benchmark)
+      {
+	VideoBenchmark();
+	g_bRestart = false;
+      }
+      else
+      {
+	EnterMessageLoop();
+      }
     }
     while (g_bRestart);
 

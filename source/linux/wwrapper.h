@@ -26,6 +26,8 @@
 #define MB_SETFOREGROUND 0
 #define MB_ICONWARNING 0
 #define MB_ICONEXCLAMATION 0
+#define MB_ICONQUESTION 0
+#define MB_ICONINFORMATION 0
 
 #define MB_OK 0
 #define MB_YESNO 4
@@ -33,6 +35,7 @@
 
 #define IDOK 1
 #define IDCANCEL 2
+#define IDYES 6
 #define IDNO 7
 
 #define _MAX_EXT MAX_PATH

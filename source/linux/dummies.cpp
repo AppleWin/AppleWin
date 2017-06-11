@@ -10,6 +10,7 @@
 #include "Memory.h"
 #include "Keyboard.h"
 #include "NTSC.h"
+#include "Log.h"
 
 static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
@@ -70,7 +71,7 @@ UINT IPropertySheet::GetTheFreezesF8Rom(void)
 
 int MessageBox(HWND, const char * text, const char * caption, UINT)
 {
-  std::cerr << caption << " - " << text << std::endl;
+  LogFileOutput("MessageBox:\n%s\n%s\n\n", caption, text);
   return IDOK;
 }
 
