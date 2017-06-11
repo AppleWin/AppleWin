@@ -8,15 +8,17 @@ ASCIIArt::Unicode::Unicode(const char * aC, std::vector<int> aValues)
 {
 }
 
+const int ASCIIArt::PPQ = 8 * (2 * 7) / 4;
+
 ASCIIArt::ASCIIArt()
 {
-  myGlyphs.push_back(Unicode("\u2580", {14, 14,  0,  0}));  // top half
-  myGlyphs.push_back(Unicode("\u258C", {14,  0, 14,  0}));  // left half
-  myGlyphs.push_back(Unicode("\u2596", { 0,  0, 14,  0}));  // lower left
-  myGlyphs.push_back(Unicode("\u2597", { 0,  0,  0, 14}));  // lower right
-  myGlyphs.push_back(Unicode("\u2598", {14,  0,  0,  0}));  // top left
-  myGlyphs.push_back(Unicode("\u259A", {14,  0,  0, 14}));  // diagonal
-  myGlyphs.push_back(Unicode("\u259D", { 0, 14,  0,  0}));  // top right
+  myGlyphs.push_back(Unicode("\u2580", {PPQ, PPQ,   0,   0}));  // top half
+  myGlyphs.push_back(Unicode("\u258C", {PPQ,   0, PPQ,   0}));  // left half
+  myGlyphs.push_back(Unicode("\u2596", {  0,   0, PPQ,   0}));  // lower left
+  myGlyphs.push_back(Unicode("\u2597", {  0,   0,   0, PPQ}));  // lower right
+  myGlyphs.push_back(Unicode("\u2598", {PPQ,   0,   0,   0}));  // top left
+  myGlyphs.push_back(Unicode("\u259A", {PPQ,   0,   0, PPQ}));  // diagonal
+  myGlyphs.push_back(Unicode("\u259D", {  0, PPQ,   0,   0}));  // top right
 }
 
 const ASCIIArt::Character & ASCIIArt::getCharacter(const unsigned char * address)
@@ -31,17 +33,15 @@ const ASCIIArt::Character & ASCIIArt::getCharacter(const unsigned char * address
 
     const int base = (i / 4) * 2;
 
-    // as there are 7 pixels per character
-    // alternate where the middle one goes (left <-> right)
-    if (i & 1)
+    //                                               76543210
+    values[base]     += __builtin_popcount(value & 0b00000111) * 2;
+    values[base + 1] += __builtin_popcount(value & 0b01110000) * 2;
+
+    // allocate the middle pixels to each quadrant (with half the weight)
+    if (value & 0b00001000)
     {
-      values[base]     += __builtin_popcount(value & 0b0001111); // middle left
-      values[base + 1] += __builtin_popcount(value & 0b1110000);
-    }
-    else
-    {
-      values[base]     += __builtin_popcount(value & 0b0000111);
-      values[base + 1] += __builtin_popcount(value & 0b1111000); // middle right
+      ++values[base];
+      ++values[base + 1];
     }
   }
 
@@ -94,12 +94,10 @@ void ASCIIArt::fit(const std::vector<int> & art, const Unicode & glyph,
   int den_fg = 0;
   int den_bg = 0;
 
-  const int numberOfPixelsPerQuadrant = 8 * 7 / 4;
-
   for (size_t i = 0; i < art.size(); ++i)
   {
     const double f = glyph.values[i];
-    const double b = numberOfPixelsPerQuadrant - f;
+    const double b = PPQ - f;
 
     num_fg += art[i] * f;
     den_fg += f * f;
@@ -117,7 +115,7 @@ void ASCIIArt::fit(const std::vector<int> & art, const Unicode & glyph,
   for (size_t i = 0; i < art.size(); ++i)
   {
     const double f = glyph.values[i];
-    const double b = numberOfPixelsPerQuadrant - f;
+    const double b = PPQ - f;
 
     const double g = foreground * f + background * b;
     const double e = art[i] - g;

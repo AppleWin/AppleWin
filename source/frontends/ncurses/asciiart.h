@@ -20,6 +20,8 @@ public:
   const Character & getCharacter(const std::vector<int> & values);
 
 private:
+  static const int PPQ; // Pixels per Quadrant
+
   std::unordered_map<int, Character> myAsciiPixels;
 
   struct Unicode
