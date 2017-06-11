@@ -68,13 +68,13 @@ BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser,
     strncpy(buffer, s.c_str(), chars);
     buffer[chars - 1] = 0;
     result = TRUE;
+    LogFileOutput("RegLoadString: %s - %s = %s\n", section, key, buffer);
   }
   catch (const std::exception & e)
   {
     result = FALSE;
+    LogFileOutput("RegLoadString: %s - %s = ??\n", section, key);
   }
-
-  LogFileOutput("RegLoadString: %s - %s = %s\n", section, key, buffer);
   return result;
 }
 
@@ -85,13 +85,30 @@ BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD *value)
   {
     *value = Configuration::instance->getValue<DWORD>(section, key);
     result = TRUE;
+    LogFileOutput("RegLoadValue: %s - %s = %d\n", section, key, *value);
   }
   catch (const std::exception & e)
   {
     result = FALSE;
+    LogFileOutput("RegLoadValue: %s - %s = ??\n", section, key);
   }
+  return result;
+}
 
-  LogFileOutput("RegLoadValue: %s - %s = %d\n", section, key, *value);
+BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, BOOL *value)
+{
+  BOOL result;
+  try
+  {
+    *value = Configuration::instance->getValue<BOOL>(section, key);
+    result = TRUE;
+    LogFileOutput("RegLoadValue: %s - %s = %d\n", section, key, *value);
+  }
+  catch (const std::exception & e)
+  {
+    result = FALSE;
+    LogFileOutput("RegLoadValue: %s - %s = ??\n", section, key);
+  }
   return result;
 }
 

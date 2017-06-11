@@ -182,18 +182,17 @@ void LoadConfiguration(void)
 #endif
   REGLOAD(TEXT(REGVALUE_EMULATION_SPEED)   ,&g_dwSpeed);
 
-  DWORD dwTmp;
-  REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwTmp);
-  enhancedisk = dwTmp;
+  REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &enhancedisk);
 
 #if 0
   Config_Load_Video();
-  REGLOAD(TEXT("Uthernet Active"), &dwTmp);
-  tfe_enabled = dwTmp;
+  REGLOAD(TEXT("Uthernet Active"), &tfe_enabled);
 #endif
   SetCurrentCLK6502();
 
   //
+
+  DWORD dwTmp;
 
 #if 0
   if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
