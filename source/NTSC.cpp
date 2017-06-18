@@ -440,7 +440,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void updateScreenText40       ( long cycles6502 );
 	static void updateScreenText80       ( long cycles6502 );
 
-	static void InitVideoLineItem(void);
+	static void InitVideoLineItem1(void);
+	static void InitVideoLineItem2(void);
 
 //===========================================================================
 static void set_csbits()
@@ -1668,6 +1669,8 @@ _mono:
 
 //===========================================================================
 
+//#define DO_SPEED_TEST
+
 void NTSC_SpeedTest(void);
 
 void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
@@ -1687,7 +1690,9 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 
 	VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
 
+#if DO_SPEED_TEST
 	NTSC_SpeedTest();
+#endif
 
 #if HGR_TEST_PATTERN
 // Init HGR to almost all-possible-combinations
@@ -1755,7 +1760,8 @@ void NTSC_VideoReinitialize( DWORD cyclesThisFrame )
 
 	updateVideoScannerAddress();	// Pre-condition: g_nVideoClockVert
 
-	InitVideoLineItem();
+	InitVideoLineItem1();
+	InitVideoLineItem2();
 }
 
 //===========================================================================
@@ -1831,26 +1837,6 @@ static void VideoUpdateCycles( int cyclesLeftToUpdate )
 
 //===========================================================================
 
-//const UINT kVideoMode_Invalid = (UINT)-1;
-
-struct VideoLineData
-{
-	BYTE dataMain;
-	BYTE dataAux;
-};
-
-struct VideoLineItem
-{
-	UINT videoMode;
-	int  videoCharSet;
-	UINT numCycles;
-	UpdateScreenFunc2_t func;
-	VideoLineData data[1];	// variable length
-};
-
-static BYTE g_videoLine[sizeof(VideoLineItem)*40] = {0xff};	// 40 display bytes (NB. Init to 0xff so that videoMode is invalid)
-static VideoLineItem* g_pVideoLineItem = NULL;
-static VideoLineData* g_pVideoLineNextData = NULL;
 static bool g_bDontRenderVideoLine = false;
 
 // FullSpeed start/end causes problems. Two cases:
@@ -1861,40 +1847,68 @@ static bool g_bDontRenderVideoLine = false;
 void NTSC_SetFullSpeedEvent(bool bStartFullSpeed)
 {
 	if (bStartFullSpeed)				// Just started full-speed mode
-		InitVideoLineItem();			// - so ditch any partial items for this scanline
+	{
+		InitVideoLineItem1();			// - so ditch any partial items for this scanline
+		InitVideoLineItem2();
+	}
 	else								// Just ended full-speed mode
+	{
 		g_bDontRenderVideoLine = true;	// - so signal not to VideoRenderLine() at end of this current scanline
+	}
 }
 
-static void SetVideoLineItem(void)
+//-------------------------------------
+
+//const UINT kVideoMode_Invalid = (UINT)-1;
+
+struct VideoLineData
 {
-	g_pVideoLineItem->videoMode = g_uVideoMode;
-	g_pVideoLineItem->videoCharSet = g_nVideoCharSet;
-	g_pVideoLineItem->numCycles = 0;
-	g_pVideoLineItem->func = g_pFuncUpdateGraphicsScreen2;
+	BYTE dataMain;
+	BYTE dataAux;
+};
+
+struct VideoLineItem1
+{
+	UINT videoMode;
+	int  videoCharSet;
+	UINT numCycles;
+	UpdateScreenFunc2_t func;
+	VideoLineData data[1];	// variable length
+};
+
+static BYTE g_videoLine[sizeof(VideoLineItem1)*40] = {0xff};	// 40 display bytes (NB. Init to 0xff so that videoMode is invalid)
+static VideoLineItem1* g_pVideoLineItem1 = NULL;
+static VideoLineData* g_pVideoLineNextData1 = NULL;
+
+static void SetVideoLineItem1(void)
+{
+	g_pVideoLineItem1->videoMode = g_uVideoMode;
+	g_pVideoLineItem1->videoCharSet = g_nVideoCharSet;
+	g_pVideoLineItem1->numCycles = 0;
+	g_pVideoLineItem1->func = g_pFuncUpdateGraphicsScreen2;
 }
 
-static void InitVideoLineItem(void)
+static void InitVideoLineItem1(void)
 {
-	g_pVideoLineItem = (VideoLineItem*) g_videoLine;
-	g_pVideoLineNextData = &g_pVideoLineItem->data[0];
-	SetVideoLineItem();
+	g_pVideoLineItem1 = (VideoLineItem1*) g_videoLine;
+	g_pVideoLineNextData1 = &g_pVideoLineItem1->data[0];
+	SetVideoLineItem1();
 
 	g_bDontRenderVideoLine = false;
 }
 
-static void NextVideoLineItem(void)
+static void NextVideoLineItem1(void)
 {
-	g_pVideoLineItem = (VideoLineItem*) g_pVideoLineNextData;
-	g_pVideoLineNextData = &g_pVideoLineItem->data[0];
-	SetVideoLineItem();
+	g_pVideoLineItem1 = (VideoLineItem1*) g_pVideoLineNextData1;
+	g_pVideoLineNextData1 = &g_pVideoLineItem1->data[0];
+	SetVideoLineItem1();
 }
 
-static void VideoRenderLine( void )
+static void VideoRenderLine1( void )
 {
 	int currCharSet = g_nVideoCharSet;
 
-	VideoLineItem* pItem = (VideoLineItem*) &g_videoLine;
+	VideoLineItem1* pItem = (VideoLineItem1*) &g_videoLine;
 	UINT cycles = 0;
 
 	while (cycles < 40)
@@ -1907,13 +1921,13 @@ static void VideoRenderLine( void )
 		pItem->func( pItem->numCycles, (BYTE*)&pItem->data[0] );
 
 		cycles += pItem->numCycles;
-		pItem = (VideoLineItem*) ((BYTE*)&pItem->data[0] + sizeof(VideoLineData) * pItem->numCycles);
+		pItem = (VideoLineItem1*) ((BYTE*)&pItem->data[0] + sizeof(VideoLineData) * pItem->numCycles);
 	}
 
 	g_nVideoCharSet = currCharSet;
 }
 
-static void VideoBuildLine( int cycles )
+static void VideoBuildLine1( int cycles )
 {
 	bool bHires = (g_uVideoMode & VF_HIRES) && !(g_uVideoMode & VF_TEXT); // SW_HIRES && !SW_TEXT
 	if (g_nVideoClockVert > VIDEO_SCANNER_Y_MIXED && g_uVideoMode & VF_MIXED)
@@ -1943,8 +1957,8 @@ static void VideoBuildLine( int cycles )
 
 	if (g_nVideoClockHorz > VIDEO_SCANNER_HORZ_START)
 	{
-		if (g_pVideoLineItem->videoMode != g_uVideoMode || g_pVideoLineItem->videoCharSet != g_nVideoCharSet)
-			NextVideoLineItem();
+		if (g_pVideoLineItem1->videoMode != g_uVideoMode || g_pVideoLineItem1->videoCharSet != g_nVideoCharSet)
+			NextVideoLineItem1();
 	}
 
 	BYTE *pMain = NULL, *pAux = NULL;
@@ -1955,17 +1969,17 @@ static void VideoBuildLine( int cycles )
 			if (g_nVideoClockHorz == VIDEO_SCANNER_HORZ_START || pMain == NULL)
 			{
 				if (g_nVideoClockHorz == VIDEO_SCANNER_HORZ_START)
-					InitVideoLineItem();
+					InitVideoLineItem1();
 
 				uint16_t addr = bHires ? updateVideoScannerAddressHGR() : updateVideoScannerAddressTXT();
 				pMain = MemGetMainPtr(addr);
 				pAux  = MemGetAuxPtr(addr);		// TODO: Support APPLE2 types with no aux mem
 			}
 
-			g_pVideoLineItem->numCycles++;
-			g_pVideoLineNextData->dataMain = *pMain++;
-			g_pVideoLineNextData->dataAux  = *pAux++;
-			g_pVideoLineNextData++;
+			g_pVideoLineItem1->numCycles++;
+			g_pVideoLineNextData1->dataMain = *pMain++;
+			g_pVideoLineNextData1->dataAux  = *pAux++;
+			g_pVideoLineNextData1++;
 		}
 
 		g_nVideoClockHorz++;
@@ -1974,9 +1988,122 @@ static void VideoBuildLine( int cycles )
 		{
 			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 			{
-//				*(UINT*)g_pVideoLineNextData = kVideoMode_Invalid;	// End of data
+//				*(UINT*)g_pVideoLineNextData1 = kVideoMode_Invalid;	// End of data
 				if (!g_bDontRenderVideoLine)
-					VideoRenderLine();
+					VideoRenderLine1();
+			}
+
+			updateVideoScannerHorzEOL2();
+
+			if (g_nVideoClockVert > VIDEO_SCANNER_Y_MIXED && g_uVideoMode & VF_MIXED)
+				bHires = false;
+		}
+	}
+}
+
+//===========================================================================
+
+struct VideoLineItem2
+{
+	UINT videoMode;
+	int  videoCharSet;
+	UpdateScreenFunc2_t func;
+	BYTE data[2];
+};
+
+static VideoLineItem2 g_videoLine2[40] = {0xff};	// 40 display bytes (NB. Init to 0xff so that videoMode is invalid)
+static VideoLineItem2* g_pVideoLineItem2 = NULL;
+
+static void InitVideoLineItem2(void)
+{
+	g_pVideoLineItem2 = &g_videoLine2[0];
+	g_bDontRenderVideoLine = false;
+//	g_pVideoLineItem2->videoMode = g_uVideoMode;
+//	g_pVideoLineItem2->videoCharSet = g_nVideoCharSet;
+//	g_pVideoLineItem2->func = g_pFuncUpdateGraphicsScreen2;
+}
+
+static void VideoRenderLine2( void )
+{
+	int currCharSet = g_nVideoCharSet;
+
+	VideoLineItem2* pItem = &g_videoLine2[0];
+
+	for (UINT i=0; i<40; i++)
+	{
+//		if (pItem->videoMode == kVideoMode_Invalid)	// Eg. FullSpeed off
+//			break;
+
+		// TODO: Accumulate for same videomode/charset
+
+		g_nVideoCharSet = pItem->videoCharSet;
+		pItem->func( 1, &pItem->data[0] );
+		pItem++;
+	}
+
+	g_nVideoCharSet = currCharSet;
+}
+
+static void VideoBuildLine2( int cycles )
+{
+	bool bHires = (g_uVideoMode & VF_HIRES) && !(g_uVideoMode & VF_TEXT); // SW_HIRES && !SW_TEXT
+	if (g_nVideoClockVert > VIDEO_SCANNER_Y_MIXED && g_uVideoMode & VF_MIXED)
+		bHires = false;
+
+	if (g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_BEG && (g_nVideoClockHorz + cycles) > VIDEO_SCANNER_HORZ_COLORBURST_BEG)
+	{
+		// TODO: Need better logic for cases when cycles =~1000 (multi-line) and cycles = 17030 (whole screen)
+		if (bHires)
+		{
+			g_nColorBurstPixels = 1024;
+		}
+		else
+		{
+			const UINT attentuateMaxCycles = VIDEO_SCANNER_HORZ_COLORBURST_END-VIDEO_SCANNER_HORZ_COLORBURST_BEG;
+			UINT attentuateCycles = (g_nVideoClockHorz + cycles) - VIDEO_SCANNER_HORZ_COLORBURST_BEG;
+			if (attentuateCycles > attentuateMaxCycles)
+				attentuateCycles = attentuateMaxCycles;
+
+			g_nColorBurstPixels -= attentuateCycles;
+			if (g_nColorBurstPixels < 0)
+				g_nColorBurstPixels = 0;
+		}
+	}
+
+	//
+
+	BYTE *pMain = NULL, *pAux = NULL;
+	while (cycles--)
+	{
+		if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START && g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if (pMain == NULL || g_nVideoClockHorz == VIDEO_SCANNER_HORZ_START)
+			{
+				if (g_nVideoClockHorz == VIDEO_SCANNER_HORZ_START)
+					InitVideoLineItem2();
+
+				uint16_t addr = bHires ? updateVideoScannerAddressHGR() : updateVideoScannerAddressTXT();
+				pMain = MemGetMainPtr(addr);
+				pAux  = MemGetAuxPtr(addr);		// TODO: Support APPLE2 types with no aux mem
+			}
+
+			g_pVideoLineItem2->videoMode = g_uVideoMode;
+			g_pVideoLineItem2->videoCharSet = g_nVideoCharSet;
+			g_pVideoLineItem2->func = g_pFuncUpdateGraphicsScreen2;
+
+			g_pVideoLineItem2->data[0] = *pMain++;
+			g_pVideoLineItem2->data[1] = *pAux++;
+			g_pVideoLineItem2++;
+		}
+
+		g_nVideoClockHorz++;
+
+		if (g_nVideoClockHorz == VIDEO_SCANNER_MAX_HORZ)
+		{
+			if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+			{
+				if (!g_bDontRenderVideoLine)
+					VideoRenderLine2();
 			}
 
 			updateVideoScannerHorzEOL2();
@@ -1992,9 +2119,9 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 {
 	_ASSERT(cycles6502 < VIDEO_SCANNER_6502_CYCLES);	// Use NTSC_VideoRedrawWholeScreen() instead
 
-	VideoBuildLine(cycles6502);
-
 //	VideoUpdateCycles(cycles6502);
+//	VideoBuildLine1(cycles6502);
+	VideoBuildLine2(cycles6502);
 }
 
 //===========================================================================
@@ -2021,6 +2148,7 @@ bool NTSC_GetColorBurst( void )
 
 //===========================================================================
 
+#if DO_SPEED_TEST
 void SpeedTest_Reset(void)
 {
 	g_nVideoClockHorz = 0;
@@ -2047,7 +2175,7 @@ void NTSC_SpeedTest(void)
 		UINT cycles = 2;
 		while (cyclesLeft > 0)
 		{
-			VideoBuildLine(cycles);
+			VideoBuildLine1(cycles);
 			cyclesLeft -= cycles;
 			cycles++;
 			if (cycles == 8)
@@ -2082,3 +2210,4 @@ void NTSC_SpeedTest(void)
 	sprintf(szDbg, "Test2 time = %d ms\n", tDuration2);
 	OutputDebugString(szDbg);
 }
+#endif
