@@ -1690,7 +1690,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 
 	VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
 
-#if DO_SPEED_TEST
+#ifdef DO_SPEED_TEST
 	NTSC_SpeedTest();
 #endif
 
@@ -2148,7 +2148,7 @@ bool NTSC_GetColorBurst( void )
 
 //===========================================================================
 
-#if DO_SPEED_TEST
+#ifdef DO_SPEED_TEST
 void SpeedTest_Reset(void)
 {
 	g_nVideoClockHorz = 0;
@@ -2166,48 +2166,77 @@ void NTSC_SpeedTest(void)
 	const UINT kNumRepeats = 1000;
 	char szDbg[100];
 
-	// Test1
-	SpeedTest_Reset();
-	DWORD tStart1 = GetTickCount();
-	for (UINT n=0; n<kNumRepeats; n++)
+	// Test0
 	{
-		int cyclesLeft = VIDEO_SCANNER_6502_CYCLES;
-		UINT cycles = 2;
-		while (cyclesLeft > 0)
+		SpeedTest_Reset();
+		DWORD tStart = GetTickCount();
+		for (UINT n=0; n<kNumRepeats; n++)
 		{
-			VideoBuildLine1(cycles);
-			cyclesLeft -= cycles;
-			cycles++;
-			if (cycles == 8)
-				cycles = 2;
+			int cyclesLeft = VIDEO_SCANNER_6502_CYCLES;
+			UINT cycles = 2;
+			while (cyclesLeft > 0)
+			{
+				VideoUpdateCycles(cycles);
+				cyclesLeft -= cycles;
+				cycles++;
+				if (cycles == 8)
+					cycles = 2;
+			}
 		}
+
+		DWORD tDuration = GetTickCount() - tStart;
+		sprintf(szDbg, "Test0 time = %d ms\n", tDuration);
+		OutputDebugString(szDbg);
 	}
 
-	DWORD tDuration1 = GetTickCount() - tStart1;
-	sprintf(szDbg, "Test1 time = %d ms\n", tDuration1);
-	OutputDebugString(szDbg);
+	//
+
+	// Test1
+	{
+		SpeedTest_Reset();
+		DWORD tStart = GetTickCount();
+		for (UINT n=0; n<kNumRepeats; n++)
+		{
+			int cyclesLeft = VIDEO_SCANNER_6502_CYCLES;
+			UINT cycles = 2;
+			while (cyclesLeft > 0)
+			{
+				VideoBuildLine1(cycles);
+				cyclesLeft -= cycles;
+				cycles++;
+				if (cycles == 8)
+					cycles = 2;
+			}
+		}
+
+		DWORD tDuration = GetTickCount() - tStart;
+		sprintf(szDbg, "Test1 time = %d ms\n", tDuration);
+		OutputDebugString(szDbg);
+	}
 
 	//
 
 	// Test2
-	SpeedTest_Reset();
-	DWORD tStart2 = GetTickCount();
-	for (UINT n=0; n<kNumRepeats; n++)
 	{
-		int cyclesLeft = VIDEO_SCANNER_6502_CYCLES;
-		UINT cycles = 2;
-		while (cyclesLeft > 0)
+		SpeedTest_Reset();
+		DWORD tStart = GetTickCount();
+		for (UINT n=0; n<kNumRepeats; n++)
 		{
-			VideoUpdateCycles(cycles);
-			cyclesLeft -= cycles;
-			cycles++;
-			if (cycles == 8)
-				cycles = 2;
+			int cyclesLeft = VIDEO_SCANNER_6502_CYCLES;
+			UINT cycles = 2;
+			while (cyclesLeft > 0)
+			{
+				VideoBuildLine2(cycles);
+				cyclesLeft -= cycles;
+				cycles++;
+				if (cycles == 8)
+					cycles = 2;
+			}
 		}
-	}
 
-	DWORD tDuration2 = GetTickCount() - tStart2;
-	sprintf(szDbg, "Test2 time = %d ms\n", tDuration2);
-	OutputDebugString(szDbg);
+		DWORD tDuration = GetTickCount() - tStart;
+		sprintf(szDbg, "Test2 time = %d ms\n", tDuration);
+		OutputDebugString(szDbg);
+	}
 }
 #endif
