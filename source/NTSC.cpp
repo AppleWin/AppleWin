@@ -139,7 +139,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	typedef void (*UpdateScreenFunc_t)(long);
 	static UpdateScreenFunc_t g_pFuncUpdateTextScreen     = 0; // updateScreenText40;
 	static UpdateScreenFunc_t g_pFuncUpdateGraphicsScreen = 0; // updateScreenText40;
-	typedef void (*UpdateScreenFunc2_t)(UINT, BYTE*);
+
+	typedef void (*UpdateScreenFunc1_t)(UINT, BYTE*);
+	static UpdateScreenFunc1_t g_pFuncUpdateTextScreen1     = 0; // updateScreenText40;
+	static UpdateScreenFunc1_t g_pFuncUpdateGraphicsScreen1 = 0; // updateScreenText40;
+
+	struct VideoLineItem2;
+	typedef void (*UpdateScreenFunc2_t)(VideoLineItem2*&);
 	static UpdateScreenFunc2_t g_pFuncUpdateTextScreen2     = 0; // updateScreenText40;
 	static UpdateScreenFunc2_t g_pFuncUpdateGraphicsScreen2 = 0; // updateScreenText40;
 
@@ -441,6 +447,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void updateScreenText80       ( long cycles6502 );
 
 	static void InitVideoLineItem1(void);
+	static void PreInitVideoLineItem2(void);
 	static void InitVideoLineItem2(void);
 
 //===========================================================================
@@ -1403,7 +1410,7 @@ void updateScreenText40 (long cycles6502)
 	}
 }
 
-void updateScreenText40_2(UINT cycles6502, BYTE* pVideoData)
+void updateScreenText40_1(UINT cycles6502, BYTE* pVideoData)
 {
 	for (; cycles6502 > 0; --cycles6502)
 	{
@@ -1417,6 +1424,33 @@ void updateScreenText40_2(UINT cycles6502, BYTE* pVideoData)
 
 		updatePixels( bits );
 	}
+}
+
+struct VideoLineItem2
+{
+	UINT videoMode;
+	UpdateScreenFunc2_t func;
+	BYTE data[2];
+};
+
+void updateScreenText40_2(VideoLineItem2*& pVideoData)
+{
+	const UINT videoMode = pVideoData->videoMode;
+
+	do
+	{
+		uint8_t  m     = pVideoData->data[0];
+		uint8_t  c     = getCharSetBits(m);
+		uint16_t bits  = g_aPixelDoubleMaskHGR[c & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
+
+		if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
+			bits ^= g_nTextFlashMask;
+
+		updatePixels( bits );
+
+		pVideoData++;
+	}
+	while (videoMode == pVideoData->videoMode);
 }
 
 //===========================================================================
@@ -1567,6 +1601,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
 	}
 
+	g_pFuncUpdateGraphicsScreen1 = updateScreenText40_1;
 	g_pFuncUpdateGraphicsScreen2 = updateScreenText40_2;
 }
 
@@ -1761,6 +1796,7 @@ void NTSC_VideoReinitialize( DWORD cyclesThisFrame )
 	updateVideoScannerAddress();	// Pre-condition: g_nVideoClockVert
 
 	InitVideoLineItem1();
+	PreInitVideoLineItem2();
 	InitVideoLineItem2();
 }
 
@@ -1859,7 +1895,7 @@ void NTSC_SetFullSpeedEvent(bool bStartFullSpeed)
 
 //-------------------------------------
 
-//const UINT kVideoMode_Invalid = (UINT)-1;
+const UINT kVideoMode_Invalid = (UINT)-1;
 
 struct VideoLineData
 {
@@ -1870,9 +1906,8 @@ struct VideoLineData
 struct VideoLineItem1
 {
 	UINT videoMode;
-	int  videoCharSet;
 	UINT numCycles;
-	UpdateScreenFunc2_t func;
+	UpdateScreenFunc1_t func;
 	VideoLineData data[1];	// variable length
 };
 
@@ -1883,9 +1918,8 @@ static VideoLineData* g_pVideoLineNextData1 = NULL;
 static void SetVideoLineItem1(void)
 {
 	g_pVideoLineItem1->videoMode = g_uVideoMode;
-	g_pVideoLineItem1->videoCharSet = g_nVideoCharSet;
 	g_pVideoLineItem1->numCycles = 0;
-	g_pVideoLineItem1->func = g_pFuncUpdateGraphicsScreen2;
+	g_pVideoLineItem1->func = g_pFuncUpdateGraphicsScreen1;
 }
 
 static void InitVideoLineItem1(void)
@@ -1916,7 +1950,7 @@ static void VideoRenderLine1( void )
 //		if (pItem->videoMode == kVideoMode_Invalid)	// Eg. FullSpeed off
 //			break;
 
-		g_nVideoCharSet = pItem->videoCharSet;
+		g_nVideoCharSet = (pItem->videoMode & VF_ALTCHARSET) ? 1 : 0;
 
 		pItem->func( pItem->numCycles, (BYTE*)&pItem->data[0] );
 
@@ -1957,7 +1991,7 @@ static void VideoBuildLine1( int cycles )
 
 	if (g_nVideoClockHorz > VIDEO_SCANNER_HORZ_START)
 	{
-		if (g_pVideoLineItem1->videoMode != g_uVideoMode || g_pVideoLineItem1->videoCharSet != g_nVideoCharSet)
+		if (g_pVideoLineItem1->videoMode != g_uVideoMode)
 			NextVideoLineItem1();
 	}
 
@@ -2003,24 +2037,18 @@ static void VideoBuildLine1( int cycles )
 
 //===========================================================================
 
-struct VideoLineItem2
-{
-	UINT videoMode;
-	int  videoCharSet;
-	UpdateScreenFunc2_t func;
-	BYTE data[2];
-};
-
-static VideoLineItem2 g_videoLine2[40] = {0xff};	// 40 display bytes (NB. Init to 0xff so that videoMode is invalid)
+static VideoLineItem2 g_videoLine2[41];
 static VideoLineItem2* g_pVideoLineItem2 = NULL;
+
+static void PreInitVideoLineItem2(void)
+{
+	g_videoLine2[40].videoMode = kVideoMode_Invalid;	// 41st item has videoMode == kVideoMode_Invalid
+}
 
 static void InitVideoLineItem2(void)
 {
 	g_pVideoLineItem2 = &g_videoLine2[0];
 	g_bDontRenderVideoLine = false;
-//	g_pVideoLineItem2->videoMode = g_uVideoMode;
-//	g_pVideoLineItem2->videoCharSet = g_nVideoCharSet;
-//	g_pVideoLineItem2->func = g_pFuncUpdateGraphicsScreen2;
 }
 
 static void VideoRenderLine2( void )
@@ -2029,17 +2057,13 @@ static void VideoRenderLine2( void )
 
 	VideoLineItem2* pItem = &g_videoLine2[0];
 
-	for (UINT i=0; i<40; i++)
+	do
 	{
-//		if (pItem->videoMode == kVideoMode_Invalid)	// Eg. FullSpeed off
-//			break;
+		g_nVideoCharSet = (pItem->videoMode & VF_ALTCHARSET) ? 1 : 0;
 
-		// TODO: Accumulate for same videomode/charset
-
-		g_nVideoCharSet = pItem->videoCharSet;
-		pItem->func( 1, &pItem->data[0] );
-		pItem++;
+		pItem->func(pItem);
 	}
+	while (pItem->videoMode != kVideoMode_Invalid);
 
 	g_nVideoCharSet = currCharSet;
 }
@@ -2088,7 +2112,6 @@ static void VideoBuildLine2( int cycles )
 			}
 
 			g_pVideoLineItem2->videoMode = g_uVideoMode;
-			g_pVideoLineItem2->videoCharSet = g_nVideoCharSet;
 			g_pVideoLineItem2->func = g_pFuncUpdateGraphicsScreen2;
 
 			g_pVideoLineItem2->data[0] = *pMain++;

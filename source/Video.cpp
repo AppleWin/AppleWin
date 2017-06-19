@@ -194,6 +194,7 @@ const BYTE DoubleHiresPalIndex[16] = {
 	#define  SW_MIXED         (g_uVideoMode & VF_MIXED)
 	#define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
 	#define  SW_TEXT          (g_uVideoMode & VF_TEXT)
+	#define  SW_ALTCHARSET    (g_uVideoMode & VF_ALTCHARSET)
 
 #define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
 
@@ -207,7 +208,6 @@ const BYTE DoubleHiresPalIndex[16] = {
 // Globals (Public)
 
     uint8_t      *g_pFramebufferbits = NULL; // last drawn frame
-	int           g_nAltCharSetOffset  = 0; // alternate character set
 
 // Globals (Private)
 
@@ -761,12 +761,12 @@ BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
   else {
     BOOL result = 0;
     switch (address) {
-      case 0x1A: result = SW_TEXT;    break;
-      case 0x1B: result = SW_MIXED;   break;
-      case 0x1D: result = SW_HIRES;   break;
-      case 0x1E: result = g_nAltCharSetOffset;   break;
-      case 0x1F: result = SW_80COL;   break;
-      case 0x7F: result = SW_DHIRES;  break;
+      case 0x1A: result = SW_TEXT;       break;
+      case 0x1B: result = SW_MIXED;      break;
+      case 0x1D: result = SW_HIRES;      break;
+      case 0x1E: result = SW_ALTCHARSET; break;
+      case 0x1F: result = SW_80COL;      break;
+      case 0x7F: result = SW_DHIRES;     break;
     }
     return KeybGetKeycode() | (result ? 0x80 : 0);
   }
@@ -1202,7 +1202,6 @@ void VideoReinitialize ()
 //===========================================================================
 void VideoResetState ()
 {
-	g_nAltCharSetOffset    = 0;
 	g_uVideoMode           = VF_TEXT;
 
 	NTSC_SetVideoTextMode( 40 );
@@ -1222,8 +1221,8 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x01:                 g_uVideoMode |=  VF_80STORE;                            break;
 		case 0x0C: if (!IS_APPLE2){g_uVideoMode &= ~VF_80COL; NTSC_SetVideoTextMode(40);}; break;
 		case 0x0D: if (!IS_APPLE2){g_uVideoMode |=  VF_80COL; NTSC_SetVideoTextMode(80);}; break;
-		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
-		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
+		case 0x0E: if (!IS_APPLE2) g_uVideoMode &= ~VF_ALTCHARSET;                         break;
+		case 0x0F: if (!IS_APPLE2) g_uVideoMode |=  VF_ALTCHARSET;                         break;
 		case 0x50: g_uVideoMode &= ~VF_TEXT;    break;
 		case 0x51: g_uVideoMode |=  VF_TEXT;    break;
 		case 0x52: g_uVideoMode &= ~VF_MIXED;   break;
@@ -1287,15 +1286,15 @@ bool VideoGetSWTEXT(void)
 
 bool VideoGetSWAltCharSet(void)
 {
-	return g_nAltCharSetOffset != 0;
+	return SW_ALTCHARSET ? true : false;
 }
 
 //===========================================================================
 
 void VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode)
 {
-	g_nAltCharSetOffset = !AltCharSet ? 0 : 256;
 	g_uVideoMode = VideoMode;
+	g_uVideoMode |= AltCharSet ? VF_ALTCHARSET : 0;
 	g_dwCyclesThisFrame = 0;
 }
 
@@ -1314,7 +1313,7 @@ static std::string VideoGetSnapshotStructName(void)
 void VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALTCHARSET, g_nAltCharSetOffset ? true : false);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALTCHARSET, VideoGetSWAltCharSet());
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEOMODE, g_uVideoMode);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLESTHISFRAME, g_dwCyclesThisFrame);
 }
@@ -1324,8 +1323,8 @@ void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap(VideoGetSnapshotStructName()))
 		return;
 
-	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALTCHARSET) ? 256 : 0;
 	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEOMODE);
+	g_uVideoMode |= yamlLoadHelper.LoadBool(SS_YAML_KEY_ALTCHARSET) ? VF_ALTCHARSET : 0;
 	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLESTHISFRAME);
 
 	yamlLoadHelper.PopMap();
