@@ -150,7 +150,7 @@ namespace
 
 }
 
-double g_relativeSpeed = 0;
+double g_relativeSpeed = 1.0;
 
 void output(const char *fmt, ...)
 {

@@ -162,14 +162,16 @@ namespace
       VideoRedrawScreen();
     }
 
+    const auto end = std::chrono::steady_clock::now();
+    const auto diff = end - start;
+    const long us = std::chrono::duration_cast<std::chrono::microseconds>(diff).count();
+
+    const double coeff = exp(-0.000001 * nExecutionPeriodUsec);  // 0.36 after 1 second
+
+    g_relativeSpeed = g_relativeSpeed * coeff + double(us) / double(nExecutionPeriodUsec) * (1.0 - coeff);
+
     if (!DiskIsSpinning())
     {
-      const auto end = std::chrono::steady_clock::now();
-      const auto diff = end - start;
-      const long us = std::chrono::duration_cast<std::chrono::microseconds>(diff).count();
-
-      g_relativeSpeed = double(us) / double(nExecutionPeriodUsec);
-
       if (us < nExecutionPeriodUsec)
       {
 	usleep(nExecutionPeriodUsec - us);
