@@ -165,7 +165,8 @@ void output(const char *fmt, ...)
 
 bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 {
-  frame->init(40);
+  frame->init(24, 40);
+  asciiArt->init(1, 1);
 
   BYTE ch = *(g_pTextBank0+offset);
 
@@ -179,7 +180,8 @@ bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
 
 bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset)
 {
-  frame->init(80);
+  frame->init(24, 80);
+  asciiArt->init(1, 2);
 
   BYTE ch1 = *(g_pTextBank1+offset);
   BYTE ch2 = *(g_pTextBank0+offset);
@@ -226,14 +228,25 @@ bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
 {
   const BYTE * base = g_pHiresBank0 + offset;
 
+  const ASCIIArt::array_char_t & chs = asciiArt->getCharacters(base);
+
+  const auto shape = chs.shape();
+  const size_t rows = shape[0];
+  const size_t cols = shape[1];
+
+  frame->init(24 * rows, 40 * cols);
   WINDOW * win = frame->getWindow();
 
-  const ASCIIArt::Character & ch = asciiArt->getCharacter(base);
+  for (size_t i = 0; i < rows; ++i)
+  {
+    for (size_t j = 0; j < cols; ++j)
+    {
+      const int pair = colors->getGrey(chs[i][j].foreground, chs[i][j].background);
 
-  const int pair = colors->getGrey(ch.foreground, ch.background);
-
-  wcolor_set(win, pair, NULL);
-  mvwaddstr(win, 1 + y, 1 + x, ch.c);
+      wcolor_set(win, pair, NULL);
+      mvwaddstr(win, 1 + rows * y + i, 1 + cols * x + j, chs[i][j].c);
+    }
+  }
   wcolor_set(win, 0, NULL);
 
   return true;
@@ -460,6 +473,18 @@ int ProcessKeyboard()
     break;
   case 0x14a: // DEL
     ch = 0x7f;
+    break;
+  case 0x221: // ALT - LEFT
+    asciiArt->changeColumns(-1);
+    break;
+  case 0x230: // ALT - RIGHT
+    asciiArt->changeColumns(+1);
+    break;
+  case 0x236:
+    asciiArt->changeRows(-1);
+    break;
+  case 0x20D:
+    asciiArt->changeRows(+1);
     break;
   default:
     if (inch < 0x80)

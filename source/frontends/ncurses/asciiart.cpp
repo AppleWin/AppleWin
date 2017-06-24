@@ -3,14 +3,14 @@
 #include <cfloat>
 #include <memory>
 
-ASCIIArt::Unicode::Unicode(const char * aC, std::vector<int> aValues)
+ASCIIArt::Unicode::Unicode(const char * aC, Blocks aValues)
   : c(aC), values(aValues)
 {
 }
 
 const int ASCIIArt::PPQ = 8 * (2 * 7) / 4;
 
-ASCIIArt::ASCIIArt()
+ASCIIArt::ASCIIArt() : myRows(0), myColumns(0)
 {
   myGlyphs.push_back(Unicode("\u2580", {PPQ, PPQ,   0,   0}));  // top half
   myGlyphs.push_back(Unicode("\u258C", {PPQ,   0, PPQ,   0}));  // left half
@@ -19,42 +19,144 @@ ASCIIArt::ASCIIArt()
   myGlyphs.push_back(Unicode("\u2598", {PPQ,   0,   0,   0}));  // top left
   myGlyphs.push_back(Unicode("\u259A", {PPQ,   0,   0, PPQ}));  // diagonal
   myGlyphs.push_back(Unicode("\u259D", {  0, PPQ,   0,   0}));  // top right
+
+  myBlocks.resize(128);
+
+  init(1, 1); // normal size
 }
 
-const ASCIIArt::Character & ASCIIArt::getCharacter(const unsigned char * address)
+void ASCIIArt::init(const int rows, const int columns)
 {
-  std::vector<int> values(4, 0);
+  if (myRows != rows || myColumns != columns)
+  {
+    if (myColumns != columns)
+    {
+      myColumns = columns;
+      for (size_t i = 0; i < myBlocks.size(); ++i)
+      {
+	myBlocks[i] = decodeByte(i);
+      }
+    }
+
+    myRows = rows;
+
+    myValues.resize(boost::extents[myRows][myColumns]);
+    myChars.resize(boost::extents[rows][columns]);
+  }
+}
+
+void ASCIIArt::changeColumns(const int x)
+{
+  int newColumns = myColumns + x;
+  newColumns = std::max(1, std::min(7, newColumns));
+  init(myRows, newColumns);
+}
+
+void ASCIIArt::changeRows(const int x)
+{
+  int newRows = x > 0 ? myRows * 2 : myRows / 2;
+  newRows = std::max(1, std::min(4, newRows));
+  init(newRows, myColumns);
+}
+
+const ASCIIArt::array_char_t & ASCIIArt::getCharacters(const unsigned char * address)
+{
+  const array_val_t & values = getQuadrantValues(address);
+  return getCharacters(values);
+}
+
+const ASCIIArt::array_val_t & ASCIIArt::getQuadrantValues(const unsigned char * address) const
+{
+  std::fill(myValues.origin(), myValues.origin() + myValues.num_elements(), 0);
+
+  const int linesPerRow = 8 / myRows;
+  const int linesPerQuadrant = linesPerRow / 2;
 
   // 8 lines per text character
   for (size_t i = 0; i < 8; ++i)
   {
     const int offset = 0x0400 * i;
-    const unsigned char value = *(address + offset);
+    // group color bit is ignored
+    const unsigned char value = (*(address + offset)) & 0x7f;
 
-    const int base = (i / 4) * 2;
+    const int row = i / linesPerRow;
+    const int lineInRow = i % linesPerRow;
+    const int quadrant = lineInRow / linesPerQuadrant;
+    const int base = quadrant * 2;
 
-    //                                               76543210
-    values[base]     += __builtin_popcount(value & 0b00000111) * 2;
-    values[base + 1] += __builtin_popcount(value & 0b01110000) * 2;
+    const std::vector<Blocks> & decoded = myBlocks[value];
 
-    // allocate the middle pixels to each quadrant (with half the weight)
-    if (value & 0b00001000)
+    for (size_t col = 0; col < myColumns; ++col)
     {
-      ++values[base];
-      ++values[base + 1];
+      Blocks & blocks = myValues[row][col];
+      blocks.add(base + 0, decoded[col][0] * myRows);
+      blocks.add(base + 1, decoded[col][1] * myRows);
     }
   }
 
-  return getCharacter(values);
+  return myValues;
 }
 
-const ASCIIArt::Character & ASCIIArt::getCharacter(const std::vector<int> & values)
+std::vector<Blocks> ASCIIArt::decodeByte(const unsigned char value) const
 {
-  int zip = 0;
-  for (const int v: values)
+  const int each = myColumns * 4 * PPQ / (8 * 7);
+
+  int available = 7;
+  int col = 0;
+  int pos = 0; // left right
+
+  std::vector<Blocks> decoded(myColumns);
+
+  for (size_t j = 0; j < 7; ++j)
   {
-    zip = (zip << 4) + v;
+    int to_allocate = each;
+    do
+    {
+      const int here = std::min(available, to_allocate);
+      if (value & (1 << j))
+      {
+	decoded[col].add(pos, here);
+      }
+      to_allocate -= here;
+      available -= here;
+      if (available == 0)
+      {
+	// new quadrant
+	available = 7;
+	++pos;
+	if (pos == 2)
+	{
+	  pos = 0;
+	  ++col;
+	}
+      }
+    }
+    while (to_allocate > 0);
   }
+
+  return decoded;
+}
+
+const ASCIIArt::array_char_t & ASCIIArt::getCharacters(const array_val_t & values)
+{
+  const int rows = values.shape()[0];
+  const int columns = values.shape()[1];
+
+  for (size_t i = 0; i < rows; ++i)
+  {
+    for (size_t j = 0; j < columns; ++j)
+    {
+      myChars[i][j] = getCharacter(values[i][j]);
+    }
+  }
+
+  return myChars;
+}
+
+
+const ASCIIArt::Character & ASCIIArt::getCharacter(const Blocks & values)
+{
+  const int zip = values.value;
 
   const std::unordered_map<int, Character>::const_iterator it = myAsciiPixels.find(zip);
   if (it == myAsciiPixels.end())
@@ -86,7 +188,7 @@ const ASCIIArt::Character & ASCIIArt::getCharacter(const std::vector<int> & valu
 
 }
 
-void ASCIIArt::fit(const std::vector<int> & art, const Unicode & glyph,
+void ASCIIArt::fit(const Blocks & art, const Unicode & glyph,
 		   double & foreground, double & background, double & error)
 {
   int num_fg = 0;

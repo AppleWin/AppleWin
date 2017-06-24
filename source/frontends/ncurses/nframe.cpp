@@ -1,8 +1,8 @@
 #include "frontends/ncurses/nframe.h"
 
-Frame::Frame() : myColumns(-1)
+Frame::Frame() : myColumns(-1), myRows(-1)
 {
-  init(40);
+  init(24, 40);
 
   const int rows = 28;
   const int cols = 30;
@@ -19,11 +19,11 @@ Frame::Frame() : myColumns(-1)
   wrefresh(myBorders.get());
 }
 
-void Frame::init(int columns)
+void Frame::init(int rows, int columns)
 {
-  if (myColumns != columns)
+  if (myRows != rows || myColumns != columns)
   {
-    if (columns < myColumns)
+    if (columns < myColumns || rows < myRows)
     {
       werase(myStatus.get());
       wrefresh(myStatus.get());
@@ -31,18 +31,19 @@ void Frame::init(int columns)
       wrefresh(myFrame.get());
     }
 
+    myRows = rows;
     myColumns = columns;
 
     const int width = 1 + myColumns + 1;
     const int left = (COLS - width) / 2;
 
-    myFrame.reset(newwin(1 + 24 + 1, width, 0, left), delwin);
+    myFrame.reset(newwin(1 + myRows + 1, width, 0, left), delwin);
     box(myFrame.get(), 0 , 0);
     wtimeout(myFrame.get(), 0);
     keypad(myFrame.get(), true);
     wrefresh(myFrame.get());
 
-    myStatus.reset(newwin(4, width, 1 + 24 + 1, left), delwin);
+    myStatus.reset(newwin(4, width, 1 + myRows + 1, left), delwin);
     box(myStatus.get(), 0 , 0);
     wrefresh(myStatus.get());
   }

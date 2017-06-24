@@ -13,11 +13,12 @@ class Frame
   WINDOW * getBuffer();
   WINDOW * getStatus();
 
-  void init(int columns);
+  void init(int rows, int columns);
   int getColumns() const;
 
  private:
 
+  int myRows;
   int myColumns;
 
   std::shared_ptr<WINDOW> myFrame;
