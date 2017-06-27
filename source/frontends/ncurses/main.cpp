@@ -31,6 +31,7 @@ namespace
   {
     std::string disk1;
     std::string disk2;
+    bool createMissingDisks;
     std::string snapshot;
     int memclear;
     bool benchmark;
@@ -47,7 +48,8 @@ namespace
     po::options_description diskDesc("Disk");
     diskDesc.add_options()
       ("d1,1", po::value<std::string>(), "Mount disk image in first drive")
-      ("d2,2", po::value<std::string>(), "Mount disk image in second drive");
+      ("d2,2", po::value<std::string>(), "Mount disk image in second drive")
+      ("create,c", "Create missing disks");
     desc.add(diskDesc);
 
     po::options_description snapshotDesc("Snapshot");
@@ -85,6 +87,8 @@ namespace
       {
 	options.disk2 = vm["d2"].as<std::string>();
       }
+
+      options.createMissingDisks = vm.count("create") > 0;
 
       if (vm.count("load-state"))
       {
@@ -188,7 +192,7 @@ namespace
     }
   }
 
-  bool DoDiskInsert(const int nDrive, const std::string & fileName)
+  bool DoDiskInsert(const int nDrive, const std::string & fileName, const bool createMissingDisk)
   {
     std::string strPathName;
 
@@ -214,7 +218,7 @@ namespace
       strPathName.append(fileName);
     }
 
-    ImageError_e Error = DiskInsert(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+    ImageError_e Error = DiskInsert(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
     return Error == eIMAGE_ERROR_NONE;
   }
 
@@ -239,55 +243,66 @@ namespace
     ImageInitialize();
     DiskInitialize();
 
+    bool disksOk = true;
     if (!options.disk1.empty())
     {
-      const bool ok = DoDiskInsert(DRIVE_1, options.disk1);
+      const bool ok = DoDiskInsert(DRIVE_1, options.disk1, options.createMissingDisks);
+      disksOk = disksOk && ok;
       LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", ok);
     }
 
     if (!options.disk2.empty())
     {
-      const bool ok = DoDiskInsert(DRIVE_2, options.disk2);
+      const bool ok = DoDiskInsert(DRIVE_2, options.disk2, options.createMissingDisks);
+      disksOk = disksOk && ok;
       LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
     }
 
-    // AFTER a restart
-    do
+    if (disksOk)
     {
-      LoadConfiguration();
-
-      FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
-
-      MemInitialize();
-      VideoInitialize();
-      DiskReset();
-
-      if (!options.snapshot.empty())
+      // AFTER a restart
+      do
       {
-	Snapshot_SetFilename(options.snapshot.c_str());
-	Snapshot_LoadState();
-      }
+	LoadConfiguration();
 
-      if (options.benchmark)
-      {
-	VideoBenchmark();
-	g_bRestart = false;
+	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+
+	MemInitialize();
+	VideoInitialize();
+	DiskReset();
+
+	if (!options.snapshot.empty())
+	{
+	  Snapshot_SetFilename(options.snapshot.c_str());
+	  Snapshot_LoadState();
+	}
+
+	if (options.benchmark)
+	{
+	  VideoBenchmark();
+	  g_bRestart = false;
+	}
+	else
+	{
+	  EnterMessageLoop();
+	}
       }
-      else
-      {
-	EnterMessageLoop();
-      }
+      while (g_bRestart);
+
+      VideoUninitialize();
     }
-    while (g_bRestart);
+    else
+    {
+      LogOutput("Disk error.");
+    }
 
-    VideoUninitialize();
-
-    DiskDestroy();
-    ImageDestroy();
     HD_Destroy();
     PrintDestroy();
     CpuDestroy();
     MemDestroy();
+
+    DiskDestroy();
+    ImageDestroy();
 
     return 0;
   }
