@@ -269,6 +269,8 @@ namespace
       {
 	LoadConfiguration();
 
+	CheckCpu();
+
 	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
 	MemInitialize();
