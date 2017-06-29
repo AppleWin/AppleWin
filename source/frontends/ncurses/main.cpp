@@ -35,6 +35,7 @@ namespace
     std::string snapshot;
     int memclear;
     bool benchmark;
+    bool saveConfigurationOnExit;
 
     bool run;  // false if options include "-h"
   };
@@ -43,7 +44,8 @@ namespace
   {
     po::options_description desc("AppleWin ncurses");
     desc.add_options()
-      ("help,h", "Print this help message");
+      ("help,h", "Print this help message")
+      ("conf", "Save configuration on exit");
 
     po::options_description diskDesc("Disk");
     diskDesc.add_options()
@@ -77,6 +79,8 @@ namespace
 	std::cout << "AppleWin ncurses edition" << std::endl << std::endl << desc << std::endl;
 	return false;
       }
+
+      options.saveConfigurationOnExit = vm.count("conf");
 
       if (vm.count("d1"))
       {
