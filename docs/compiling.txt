@@ -19,3 +19,42 @@ How To Compile/Build AppleWin
    The default path is:
     C:\Program Files (x86)\Microsoft DirectX SDK (February 2010)\Lib\x86
 
+
+
+
+How to do a Coverity Scan of AppleWin
+=====================================
+
+1. Download Coverity Scan Self-Build:
+   https://scan.coverity.com/download?tab=cxx
+
+   Unzip and add the bin directory to your path
+
+2. Launch VS2008 Express / Professional
+
+3. Tools -> Visual Studio 2008 Command Prompt
+
+VS 2008 Express:
+----------------
+
+4. Set env vars:
+set include=%include%;<DirectX SDK 9.0 SDK include path>
+set lib=%lib%;<DirectX SDK 9.0 SDK lib path>
+
+EG:
+   set include=%include%;C:\Program Files (x86)\Microsoft DirectX SDK (February 2010)\Include
+   set lib=%lib%;C:\Program Files (x86)\Microsoft DirectX SDK (February 2010)\Lib\x86
+
+5. Clean & build:
+vcbuild /clean AppleWinExpress2008.sln "Release|Win32"
+cov-build --dir cov-int vcbuild /u AppleWinExpress2008.sln "Release|Win32"
+
+VS 2008 Professional:
+---------------------
+
+4. Set env vars:
+N/A
+
+5. Clean & build:
+devenv AppleWinExpress2008.sln /clean
+cov-build --dir cov-int devenv AppleWinExpress2008.sln /build release
