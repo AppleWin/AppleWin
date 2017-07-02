@@ -45,6 +45,7 @@ add_executable(applen
   source/frontends/ncurses/asciiart.cpp
   source/frontends/ncurses/input.cpp
   source/frontends/ncurses/benchmark.cpp
+  source/frontends/ncurses/resources.cpp
   )
 
 target_link_libraries(applen

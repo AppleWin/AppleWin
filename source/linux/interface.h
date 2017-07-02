@@ -1,5 +1,9 @@
 #pragma once
 
+// Resources
+
+HRSRC FindResource(void *, const std::string & filename, const char *);
+
 // Frame
 
 void FrameDrawDiskLEDS(HDC x);

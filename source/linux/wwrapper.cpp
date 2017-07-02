@@ -177,37 +177,6 @@ std::string MAKEINTRESOURCE(int x)
   return std::string();
 }
 
-HRSRC FindResource(void *, const std::string & filename, const char *)
-{
-  HRSRC result;
-
-  if (!filename.empty())
-  {
-    const std::string path = "resource/" + filename;
-
-    int fd = open(path.c_str(), O_RDONLY);
-
-    if (fd != -1)
-    {
-      struct stat stdbuf;
-      if ((fstat(fd, &stdbuf) == 0) && S_ISREG(stdbuf.st_mode))
-      {
-	const off_t size = stdbuf.st_size;
-	result.data.resize(size);
-	ssize_t rd = read(fd, result.data.data(), size);
-      }
-      close(fd);
-    }
-  }
-
-  if (result.data.empty())
-  {
-    LogFileOutput("FindResource: could not load resource %s\n", filename.c_str());
-  }
-
-  return result;
-}
-
 DWORD SizeofResource(void *, const HRSRC & res)
 {
   return res.data.size();
