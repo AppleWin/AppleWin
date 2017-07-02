@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/Apple2.rom</file>
+        <file>resources/Apple2e.rom</file>
+        <file>resources/Apple2e_Enhanced.rom</file>
+        <file>resources/CHARSET4.BMP</file>
+        <file>resources/DISK2.rom</file>
+        <file>resources/Hddrvr.bin</file>
+        <file>resources/Parallel.rom</file>
+    </qresource>
+</RCC>
