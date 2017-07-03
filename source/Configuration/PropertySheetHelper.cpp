@@ -91,7 +91,12 @@ void CPropertySheetHelper::FillComboBox(HWND window, int controlid, LPCTSTR choi
 		SendMessage(combowindow, CB_ADDSTRING, 0, (LPARAM)(LPCTSTR)choices);
 		choices += _tcslen(choices)+1;
 	}
-	SendMessage(combowindow, CB_SETCURSEL, currentchoice, 0);
+
+	if (SendMessage(combowindow, CB_SETCURSEL, currentchoice, 0) == (LRESULT)-1 && currentchoice != -1)
+	{
+		_ASSERT(0);
+		SendMessage(combowindow, CB_SETCURSEL, 0, 0);	// GH#434: Failed to set currentchoice, so select item-0
+	}
 }
 
 void CPropertySheetHelper::SaveComputerType(eApple2Type NewApple2Type)

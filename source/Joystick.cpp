@@ -817,6 +817,19 @@ void JoySetJoyType(UINT num, DWORD type)
 	if (num > JN_JOYSTICK1)
 		return;
 
+	if (num == JN_JOYSTICK0)	// GH#434
+	{
+		_ASSERT(type < J0C_MAX);
+		if (type >= J0C_MAX)
+			return;
+	}
+	else
+	{
+		_ASSERT(type < J1C_MAX);
+		if (type >= J1C_MAX)
+			return;
+	}
+
 	joytype[num] = type;
 
 	// Refresh centre positions whenever 'joytype' changes
