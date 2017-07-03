@@ -3,7 +3,7 @@
 
 #include "ui_qapple.h"
 
-#include "video.h"
+class Emulator;
 
 class QApple : public QMainWindow, private Ui::QApple
 {
@@ -21,7 +21,7 @@ private slots:
     void on_actionPause_triggered();
 
 private:
-    Video * myVideo;
+    Emulator * myEmulator;
 
     int myMSGap;
     int myTimerID;

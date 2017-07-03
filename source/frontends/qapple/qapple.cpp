@@ -16,6 +16,8 @@
 #include "linux/data.h"
 #include "linux/configuration.h"
 
+#include "emulator.h"
+
 namespace
 {
 
@@ -24,7 +26,7 @@ namespace
         g_fh = fopen("/tmp/applewin.txt", "w");
         setbuf(g_fh, NULL);
 
-        InitializeRegistry("/home/andrea/projects/cvs/A2E/applen.conf");
+        InitializeRegistry("../qapple/applen.conf");
 
         LogFileOutput("Initialisation\n");
 
@@ -83,8 +85,8 @@ QApple::QApple(QWidget *parent) :
 {
     setupUi(this);
 
-    myVideo = new Video(mdiArea);
-    mdiArea->addSubWindow(myVideo, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
+    myEmulator = new Emulator(mdiArea);
+    mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
 
     myMSGap = 5;
 
@@ -107,7 +109,7 @@ void QApple::timerEvent(QTimerEvent *event)
     if (g_dwCyclesThisFrame >= dwClksPerFrame)
     {
         g_dwCyclesThisFrame -= dwClksPerFrame;
-        myVideo->redrawScreen();
+        myEmulator->redrawScreen();
     }
 }
 

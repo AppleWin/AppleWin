@@ -1,18 +1,22 @@
 #ifndef VIDEO_H
 #define VIDEO_H
 
-#include "ui_video.h"
+#include <QWidget>
 
 #include <memory>
 
-class Video : public QFrame, private Ui::Video
+class Video : public QWidget
 {
     Q_OBJECT
-
 public:
     explicit Video(QWidget *parent = 0);
 
-    void redrawScreen();
+signals:
+
+public slots:
+
+protected:
+    void paintEvent(QPaintEvent *event);
 
 private:
     bool Update40ColCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset);
@@ -23,7 +27,6 @@ private:
     bool UpdateDHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset);
 
     std::shared_ptr<QPixmap> myCharset;
-    std::shared_ptr<QPixmap> myVideo;
 };
 
-#endif // FRAME_H
+#endif // VIDEO_H

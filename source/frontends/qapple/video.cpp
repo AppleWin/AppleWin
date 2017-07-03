@@ -1,7 +1,6 @@
 #include "video.h"
 
-#include <qpainter.h>
-#include <string>
+#include <QPainter>
 
 #include "StdAfx.h"
 #include "Video.h"
@@ -72,18 +71,21 @@ bool Video::UpdateDHiResCell(QPainter & painter, int x, int y, int xpixel, int y
     return true;
 }
 
-Video::Video(QWidget *parent) :
-    QFrame(parent)
+Video::Video(QWidget *parent) : QWidget(parent)
 {
-    setupUi(this);
-
     myCharset.reset(new QPixmap(":/resources/CHARSET4.BMP"));
-    myVideo.reset(new QPixmap(14 * 40, 16 * 24));
 }
 
-void Video::redrawScreen()
+void Video::paintEvent(QPaintEvent *event)
 {
-    QPainter painter(myVideo.get());
+    QPainter painter(this);
+
+    const QSize min = minimumSize();
+    const QSize actual = size();
+    const double sx = double(actual.width()) / double(min.width());
+    const double sy = double(actual.height()) / double(min.height());
+
+    painter.scale(sx, sy);
 
     const int displaypage2 = (SW_PAGE2) == 0 ? 0 : 1;
 
@@ -140,7 +142,4 @@ void Video::redrawScreen()
         ++y;
         ypixel += 16;
     }
-    painter.end();
-
-    label->setPixmap(*myVideo);
 }

@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 
-#include <qfile.h>
+#include <QFile>
 
 #include "Log.h"
 

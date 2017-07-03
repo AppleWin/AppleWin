@@ -14,14 +14,16 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         qapple.cpp \
-    video.cpp \
-    qresources.cpp
+    qresources.cpp \
+    emulator.cpp \
+    video.cpp
 
 HEADERS  += qapple.h \
+    emulator.h \
     video.h
 
 FORMS    += qapple.ui \
-    video.ui
+    emulator.ui
 
 RESOURCES += \
     qapple.qrc
