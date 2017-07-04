@@ -58,25 +58,63 @@ namespace
 
 }
 
-void FrameDrawDiskLEDS(HDC x) {}
-void FrameDrawDiskStatus(HDC x) {}
-void FrameRefreshStatus(int x, bool) {}
+void FrameDrawDiskLEDS(HDC)
+{
+}
 
-// Keyboard
+void FrameDrawDiskStatus(HDC)
+{
 
-BYTE    KeybGetKeycode () {}
-BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) {}
-BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) {}
+}
+
+void FrameRefreshStatus(int, bool)
+{
+
+}
 
 // Joystick
 
-BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) {}
-BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) {}
-BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) {}
+BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+    Q_UNUSED(pc)
+    Q_UNUSED(addr)
+    Q_UNUSED(bWrite)
+    Q_UNUSED(d)
+    Q_UNUSED(nCyclesLeft)
+    return 0;
+}
+
+BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+    Q_UNUSED(pc)
+    Q_UNUSED(addr)
+    Q_UNUSED(bWrite)
+    Q_UNUSED(d)
+    Q_UNUSED(nCyclesLeft)
+    return 0;
+}
+
+BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+    Q_UNUSED(pc)
+    Q_UNUSED(addr)
+    Q_UNUSED(bWrite)
+    Q_UNUSED(d)
+    Q_UNUSED(nCyclesLeft)
+    return 0;
+}
 
 // Speaker
 
-BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) {}
+BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+    Q_UNUSED(pc)
+    Q_UNUSED(addr)
+    Q_UNUSED(bWrite)
+    Q_UNUSED(d)
+    Q_UNUSED(nCyclesLeft)
+    return 0;
+}
 
 void VideoInitialize() {}
 
@@ -86,7 +124,7 @@ QApple::QApple(QWidget *parent) :
     setupUi(this);
 
     myEmulator = new Emulator(mdiArea);
-    mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
+    myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
 
     myMSGap = 5;
 
@@ -94,7 +132,7 @@ QApple::QApple(QWidget *parent) :
     startEmulator();
 }
 
-void QApple::timerEvent(QTimerEvent *event)
+void QApple::timerEvent(QTimerEvent *)
 {
     const double fUsecPerSec        = 1.e6;
     const UINT nExecutionPeriodUsec = 1000 * myMSGap;
@@ -115,7 +153,7 @@ void QApple::timerEvent(QTimerEvent *event)
 
 void QApple::on_actionStart_triggered()
 {
-    myTimerID = startTimer(myMSGap);
+    myTimerID = startTimer(0);
     actionPause->setEnabled(true);
     actionStart->setEnabled(false);
 }
@@ -125,4 +163,19 @@ void QApple::on_actionPause_triggered()
     killTimer(myTimerID);
     actionPause->setEnabled(false);
     actionStart->setEnabled(true);
+}
+
+void QApple::on_actionX1_triggered()
+{
+    myEmulator->setZoom(myEmulatorWindow, 1);
+}
+
+void QApple::on_actionX2_triggered()
+{
+    myEmulator->setZoom(myEmulatorWindow, 2);
+}
+
+void QApple::on_action4_3_triggered()
+{
+    myEmulator->set43AspectRatio(myEmulatorWindow);
 }

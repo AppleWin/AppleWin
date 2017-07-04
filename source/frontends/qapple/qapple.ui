@@ -45,6 +45,10 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="action4_3"/>
+   <addaction name="separator"/>
+   <addaction name="actionX1"/>
+   <addaction name="actionX2"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionStart">
@@ -55,6 +59,21 @@
   <action name="actionPause">
    <property name="text">
     <string>Pause</string>
+   </property>
+  </action>
+  <action name="action4_3">
+   <property name="text">
+    <string>4:3</string>
+   </property>
+  </action>
+  <action name="actionX1">
+   <property name="text">
+    <string>x1</string>
+   </property>
+  </action>
+  <action name="actionX2">
+   <property name="text">
+    <string>x2</string>
    </property>
   </action>
  </widget>

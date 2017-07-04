@@ -1,6 +1,7 @@
 #include "video.h"
 
 #include <QPainter>
+#include <QKeyEvent>
 
 #include "StdAfx.h"
 #include "Video.h"
@@ -21,12 +22,34 @@ namespace
     #define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
     #define  SW_TEXT          (g_uVideoMode & VF_TEXT)
 
-    bool g_bTextFlashState = false;
+//    bool g_bTextFlashState = false;
+
+    void halfScanLines(QPixmap & charset)
+    {
+        const int height = charset.height();
+        const int width = charset.width();
+
+        const QColor background = charset.toImage().pixelColor(0, height - 1);
+
+        QPainter paint(&charset);
+        paint.setPen(background);
+
+        for (int i = 0; i < height; i += 2)
+        {
+            paint.drawLine(0, i, width - 1, i);
+        }
+    }
+
+    BYTE nextKey = 0;
+    bool keyReady = false;
 
 }
 
 bool Video::Update40ColCell (QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
+    Q_UNUSED(xpixel)
+    Q_UNUSED(ypixel)
+
     BYTE ch = *(g_pTextBank0+offset);
 
     const int row = ch / 16;
@@ -34,49 +57,105 @@ bool Video::Update40ColCell (QPainter & painter, int x, int y, int xpixel, int y
 
     const int sx = 16 * column;
     const int sy = 16 * row;
-    painter.drawPixmap(x * 14, y * 16, *myCharset, sx, sy, 14, 16);
+    painter.drawPixmap(x * 14, y * 16, myCharset40, sx, sy, 14, 16);
 
     return true;
 }
 
 bool Video::Update80ColCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
-    BYTE ch1 = *(g_pTextBank1+offset);
-    BYTE ch2 = *(g_pTextBank0+offset);
+    Q_UNUSED(xpixel)
+    Q_UNUSED(ypixel)
+
+    {
+        BYTE ch1 = *(g_pTextBank1+offset);
+
+        const int row = ch1 / 16;
+        const int column = ch1 % 16;
+
+        const int sx = 8 * column;
+        const int sy = 16 * row;
+        painter.drawPixmap(x * 14, y * 16, myCharset80, sx, sy, 7, 16);
+    }
+
+    {
+        BYTE ch2 = *(g_pTextBank0+offset);
+
+        const int row = ch2 / 16;
+        const int column = ch2 % 16;
+
+        const int sx = 8 * column;
+        const int sy = 16 * row;
+        painter.drawPixmap(x * 14 + 7, y * 16, myCharset80, sx, sy, 7, 16);
+    }
 
     return true;
 }
 
 bool Video::UpdateLoResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
+    Q_UNUSED(painter)
+    Q_UNUSED(x)
+    Q_UNUSED(y)
+    Q_UNUSED(xpixel)
+    Q_UNUSED(ypixel)
+
     BYTE val = *(g_pTextBank0+offset);
+
+    Q_UNUSED(val)
 
     return true;
 }
 
 bool Video::UpdateDLoResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
+    Q_UNUSED(painter)
+    Q_UNUSED(x)
+    Q_UNUSED(y)
+    Q_UNUSED(xpixel)
+    Q_UNUSED(ypixel)
+    Q_UNUSED(offset)
+
     return true;
 }
 
 bool Video::UpdateHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
+    Q_UNUSED(painter)
+    Q_UNUSED(x)
+    Q_UNUSED(y)
+    Q_UNUSED(xpixel)
+    Q_UNUSED(ypixel)
+
     const BYTE * base = g_pHiresBank0 + offset;
+
+    Q_UNUSED(base)
 
     return true;
 }
 
 bool Video::UpdateDHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
+    Q_UNUSED(painter)
+    Q_UNUSED(x)
+    Q_UNUSED(y)
+    Q_UNUSED(xpixel)
+    Q_UNUSED(ypixel)
+    Q_UNUSED(offset)
+
     return true;
 }
 
-Video::Video(QWidget *parent) : QWidget(parent)
+Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
 {
-    myCharset.reset(new QPixmap(":/resources/CHARSET4.BMP"));
+    myCharset40.load(":/resources/CHARSET4.BMP");
+    halfScanLines(myCharset40);
+    setFocusPolicy(Qt::ClickFocus);
+
+    myCharset80 = myCharset40.scaled(myCharset40.width() / 2, myCharset40.height());
 }
 
-void Video::paintEvent(QPaintEvent *event)
+void Video::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
 
@@ -142,4 +221,66 @@ void Video::paintEvent(QPaintEvent *event)
         ++y;
         ypixel += 16;
     }
+}
+
+void Video::keyPressEvent(QKeyEvent *event)
+{
+    const int key = event->key();
+
+    BYTE ch = 0;
+
+    switch (key)
+    {
+    case Qt::Key_Return:
+    case Qt::Key_Enter:
+        ch = 0x0d;
+        break;
+    default:
+        if (key < 0x80)
+        {
+            ch = key;
+        }
+    }
+
+    if (ch)
+    {
+        nextKey = ch | 0x80;
+        keyReady = true;
+    }
+}
+
+void Video::keyReleaseEvent(QKeyEvent *event)
+{
+    Q_UNUSED(event)
+}
+
+// Keyboard
+
+BYTE    KeybGetKeycode ()
+{
+  return 0;
+}
+
+BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+    Q_UNUSED(pc)
+    Q_UNUSED(addr)
+    Q_UNUSED(bWrite)
+    Q_UNUSED(d)
+    Q_UNUSED(nCyclesLeft)
+
+    return nextKey;
+}
+
+BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+    Q_UNUSED(pc)
+    Q_UNUSED(addr)
+    Q_UNUSED(bWrite)
+    Q_UNUSED(d)
+    Q_UNUSED(nCyclesLeft)
+
+    BYTE result = keyReady ? nextKey : 0;
+    nextKey = 0;
+    return result;
 }

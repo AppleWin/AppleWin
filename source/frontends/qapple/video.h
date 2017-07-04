@@ -1,11 +1,12 @@
 #ifndef VIDEO_H
 #define VIDEO_H
 
-#include <QWidget>
+#include <QOpenGLWidget>
 
-#include <memory>
+//#define VIDEO_BASECLASS QOpenGLWidget
+#define VIDEO_BASECLASS QWidget
 
-class Video : public QWidget
+class Video : public VIDEO_BASECLASS
 {
     Q_OBJECT
 public:
@@ -16,7 +17,9 @@ signals:
 public slots:
 
 protected:
-    void paintEvent(QPaintEvent *event);
+    virtual void paintEvent(QPaintEvent *event);
+    virtual void keyPressEvent(QKeyEvent *event);
+    virtual void keyReleaseEvent(QKeyEvent *event);
 
 private:
     bool Update40ColCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset);
@@ -26,7 +29,8 @@ private:
     bool UpdateHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset);
     bool UpdateDHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset);
 
-    std::shared_ptr<QPixmap> myCharset;
+    QPixmap myCharset40;
+    QPixmap myCharset80;
 };
 
 #endif // VIDEO_H

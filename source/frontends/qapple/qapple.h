@@ -20,7 +20,14 @@ private slots:
 
     void on_actionPause_triggered();
 
+    void on_actionX1_triggered();
+
+    void on_actionX2_triggered();
+
+    void on_action4_3_triggered();
+
 private:
+    QMdiSubWindow * myEmulatorWindow;
     Emulator * myEmulator;
 
     int myMSGap;
