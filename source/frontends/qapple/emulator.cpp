@@ -24,7 +24,7 @@ void Emulator::setVideoSize(QMdiSubWindow * window, const QSize & size)
     window->resize(size + gap);
 }
 
-void Emulator::setZoom(QMdiSubWindow * window, int x)
+void Emulator::setZoom(QMdiSubWindow * window, const int x)
 {
     const QSize target = video->minimumSize() * x;
     setVideoSize(window, target);

@@ -29,7 +29,7 @@ private slots:
 
 private:
 
-    void setNextTimer(int ms);
+    void setNextTimer(const int ms);
 
     QMdiSubWindow * myEmulatorWindow;
     Emulator * myEmulator;

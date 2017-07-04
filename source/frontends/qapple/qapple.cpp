@@ -167,7 +167,7 @@ void QApple::timerEvent(QTimerEvent *)
     setNextTimer(nextGap);
 }
 
-void QApple::setNextTimer(int ms)
+void QApple::setNextTimer(const int ms)
 {
     if (ms != myCurrentGap)
     {

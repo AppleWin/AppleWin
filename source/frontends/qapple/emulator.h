@@ -14,7 +14,7 @@ public:
 
     void redrawScreen();
 
-    void setZoom(QMdiSubWindow * window, int x);
+    void setZoom(QMdiSubWindow * window, const int x);
     void set43AspectRatio(QMdiSubWindow * window);
 
 private:
