@@ -40,8 +40,8 @@ namespace
         }
     }
 
-    BYTE nextKey = 0;
-    bool keyReady = false;
+    BYTE keyCode = 0;
+    bool keyWaiting = false;
 
 }
 
@@ -150,7 +150,6 @@ Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
 {
     myCharset40.load(":/resources/CHARSET4.BMP");
     halfScanLines(myCharset40);
-    setFocusPolicy(Qt::ClickFocus);
 
     myCharset80 = myCharset40.scaled(myCharset40.width() / 2, myCharset40.height());
 }
@@ -235,30 +234,58 @@ void Video::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Enter:
         ch = 0x0d;
         break;
+    case Qt::Key_Left:
+        ch = 0x08;
+        break;
+    case Qt::Key_Right:
+        ch = 0x15;
+        break;
+    case Qt::Key_Up:
+        ch = 0x0b;
+        break;
+    case Qt::Key_Down:
+        ch = 0x0a;
+        break;
+    case Qt::Key_Delete:
+        ch = 0x7f;
+        break;
     default:
         if (key < 0x80)
         {
             ch = key;
+            if (ch >= 'A' && ch <= 'Z')
+            {
+                const Qt::KeyboardModifiers modifiers = event->modifiers();
+                if (modifiers & Qt::ShiftModifier)
+                {
+                    ch += 'a' - 'A';
+                }
+            }
         }
+        break;
     }
 
     if (ch)
     {
-        nextKey = ch | 0x80;
-        keyReady = true;
+        keyCode = ch;
+        keyWaiting = true;
+    }
+    else
+    {
+        VIDEO_BASECLASS::keyPressEvent(event);
     }
 }
 
 void Video::keyReleaseEvent(QKeyEvent *event)
 {
-    Q_UNUSED(event)
+    VIDEO_BASECLASS::keyReleaseEvent(event);
 }
 
 // Keyboard
 
 BYTE    KeybGetKeycode ()
 {
-  return 0;
+  return keyCode;
 }
 
 BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
@@ -269,7 +296,7 @@ BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyc
     Q_UNUSED(d)
     Q_UNUSED(nCyclesLeft)
 
-    return nextKey;
+    return keyCode | (keyWaiting ? 0x80 : 0x00);
 }
 
 BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
@@ -280,7 +307,6 @@ BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyc
     Q_UNUSED(d)
     Q_UNUSED(nCyclesLeft)
 
-    BYTE result = keyReady ? nextKey : 0;
-    nextKey = 0;
-    return result;
+    keyWaiting = false;
+    return keyCode;
 }
