@@ -3,6 +3,8 @@
 
 #include "ui_qapple.h"
 
+#include <QFileDialog>
+
 class Emulator;
 
 class QApple : public QMainWindow, private Ui::QApple
@@ -27,9 +29,16 @@ private slots:
 
     void on_action4_3_triggered();
 
+    void on_actionDisk_1_triggered();
+
+    void on_actionDisk_2_triggered();
+
 private:
 
     void setNextTimer(const int ms);
+    void insertDisk(const int disk);
+
+    QFileDialog myDiskFileDialog;
 
     QMdiSubWindow * myEmulatorWindow;
     Emulator * myEmulator;

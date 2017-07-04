@@ -123,9 +123,11 @@ BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCycle
 void VideoInitialize() {}
 
 QApple::QApple(QWidget *parent) :
-    QMainWindow(parent)
+    QMainWindow(parent), myDiskFileDialog(this)
 {
     setupUi(this);
+
+    myDiskFileDialog.setFileMode(QFileDialog::AnyFile);
 
     myEmulator = new Emulator(mdiArea);
     myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
@@ -205,4 +207,28 @@ void QApple::on_actionX2_triggered()
 void QApple::on_action4_3_triggered()
 {
     myEmulator->set43AspectRatio(myEmulatorWindow);
+}
+
+void QApple::insertDisk(const int disk)
+{
+    if (myDiskFileDialog.exec())
+    {
+        QStringList files = myDiskFileDialog.selectedFiles();
+        if (files.size() == 1)
+        {
+            const std::string filename = files[0].toStdString();
+            const bool createMissingDisk = true;
+            DiskInsert(disk, filename.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
+        }
+    }
+}
+
+void QApple::on_actionDisk_1_triggered()
+{
+    insertDisk(DRIVE_1);
+}
+
+void QApple::on_actionDisk_2_triggered()
+{
+    insertDisk(DRIVE_2);
 }
