@@ -131,14 +131,14 @@ QApple::QApple(QWidget *parent) :
 
     myEmulator = new Emulator(mdiArea);
     myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
+    myEmulatorWindow->setWindowTitle(g_pAppTitle);
 
     myMSGap = 5;
-    myCurrentGap = myMSGap;
 
     initialiseEmulator();
-    startEmulator();
 
-    myEmulatorWindow->setWindowTitle(g_pAppTitle);
+    myCurrentGap = myMSGap;
+    startEmulator();
 }
 
 void QApple::closeEvent(QCloseEvent *)
@@ -231,4 +231,10 @@ void QApple::on_actionDisk_1_triggered()
 void QApple::on_actionDisk_2_triggered()
 {
     insertDisk(DRIVE_2);
+}
+
+void QApple::on_actionReboot_triggered()
+{
+    startEmulator();
+    setNextTimer(myMSGap);
 }

@@ -33,6 +33,8 @@ private slots:
 
     void on_actionDisk_2_triggered();
 
+    void on_actionReboot_triggered();
+
 private:
 
     void setNextTimer(const int ms);

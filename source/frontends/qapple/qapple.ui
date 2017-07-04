@@ -42,6 +42,7 @@
     </property>
     <addaction name="actionStart"/>
     <addaction name="actionPause"/>
+    <addaction name="actionReboot"/>
    </widget>
    <widget class="QMenu" name="menuDisks">
     <property name="title">
@@ -101,6 +102,11 @@
   <action name="actionDisk_2">
    <property name="text">
     <string>Disk 2...</string>
+   </property>
+  </action>
+  <action name="actionReboot">
+   <property name="text">
+    <string>Reboot</string>
    </property>
   </action>
  </widget>
