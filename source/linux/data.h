@@ -2,3 +2,4 @@
 
 void LoadConfiguration(void);
 void CheckCpu();
+void SetWindowTitle();

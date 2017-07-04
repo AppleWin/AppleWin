@@ -16,7 +16,14 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
-     <widget class="QMdiArea" name="mdiArea"/>
+     <widget class="QMdiArea" name="mdiArea">
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAsNeeded</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAsNeeded</enum>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -46,7 +53,6 @@
     <bool>false</bool>
    </attribute>
    <addaction name="action4_3"/>
-   <addaction name="separator"/>
    <addaction name="actionX1"/>
    <addaction name="actionX2"/>
   </widget>
@@ -57,6 +63,9 @@
    </property>
   </action>
   <action name="actionPause">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Pause</string>
    </property>

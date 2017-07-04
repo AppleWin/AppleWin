@@ -18,6 +18,8 @@
 
 #include "emulator.h"
 
+#include <QMdiSubWindow>
+
 namespace
 {
 
@@ -39,6 +41,8 @@ namespace
         LoadConfiguration();
 
         CheckCpu();
+
+        SetWindowTitle();
 
         FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
@@ -127,9 +131,17 @@ QApple::QApple(QWidget *parent) :
     myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
 
     myMSGap = 5;
+    myCurrentGap = myMSGap;
 
     initialiseEmulator();
     startEmulator();
+
+    myEmulatorWindow->setWindowTitle(g_pAppTitle);
+}
+
+void QApple::closeEvent(QCloseEvent *)
+{
+    uninitialiseEmulator();
 }
 
 void QApple::timerEvent(QTimerEvent *)
@@ -149,11 +161,26 @@ void QApple::timerEvent(QTimerEvent *)
         g_dwCyclesThisFrame -= dwClksPerFrame;
         myEmulator->redrawScreen();
     }
+
+    // 0 means run as soon as possible (i.e. no pending events)
+    const int nextGap = DiskIsSpinning() ? 0 : myMSGap;
+    setNextTimer(nextGap);
+}
+
+void QApple::setNextTimer(int ms)
+{
+    if (ms != myCurrentGap)
+    {
+        killTimer(myTimerID);
+        myCurrentGap = ms;
+        myTimerID = startTimer(myCurrentGap);
+    }
 }
 
 void QApple::on_actionStart_triggered()
 {
-    myTimerID = startTimer(0);
+    // always restart with the same timer gap that was last used
+    myTimerID = startTimer(myCurrentGap);
     actionPause->setEnabled(true);
     actionStart->setEnabled(false);
 }

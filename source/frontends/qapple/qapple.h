@@ -13,6 +13,7 @@ public:
     explicit QApple(QWidget *parent = 0);
 
 protected:
+    virtual void closeEvent(QCloseEvent * event);
     virtual void timerEvent(QTimerEvent *event);
 
 private slots:
@@ -27,10 +28,15 @@ private slots:
     void on_action4_3_triggered();
 
 private:
+
+    void setNextTimer(int ms);
+
     QMdiSubWindow * myEmulatorWindow;
     Emulator * myEmulator;
 
     int myMSGap;
+    int myCurrentGap;
+
     int myTimerID;
 };
 
