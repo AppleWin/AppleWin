@@ -39,108 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "..\resource\resource.h"
 #include "Configuration\PropertySheet.h"
-#include "Debugger\Debugger_Color.h"	// For NUM_DEBUG_COLORS
 #include "YamlHelper.h"
-
-#define HALF_PIXEL_SOLID 1
-#define HALF_PIXEL_BLEED 0
-
-#define HALF_DIM_SUPPORT 0
-
-/*
-   Reference: Technote TN-IIGS-063 "Master Color Values"
-   Note:The IIGS colors do NOT map correctly to _accurate_ //e colors.
-
-          Color       LO HI  DHR Master Color R,G,B                         HGR
-          Name        #  #   #      Value                                   Bytes
-          -----------------------------------------------------------------------
-          Black       0  0,4 0      $0000    (0,0,0) -> (00,00,00) Windows 
-(Magenta) Deep Red    1      1      $0D03    (D,0,3) -> (D0,00,30) Custom
-          Dark Blue   2      8      $0009    (0,0,9) -> (00,00,80) Windows
- (Violet) Purple      3  2   9      $0D2D    (D,2,D) -> (FF,00,FF) Windows  55 2A
-          Dark Green  4      4      $0072    (0,7,2) -> (00,80,00) Windows
- (Gray 1) Dark Gray   5      5      $0555    (5,5,5) -> (80,80,80) Windows
-   (Blue) Medium Blue 6  6   C      $022F    (2,2,F) -> (00,00,FF) Windows  D5 AA
-   (Cyan) Light Blue  7      D      $06AF    (6,A,F) -> (60,A0,FF) Custom
-          Brown       8      2      $0850    (8,5,0) -> (80,50,00) Custom
-          Orange      9  5   3      $0F60    (F,6,0) -> (FF,80,00) Custom   AA D5 (modified to match better with the other Hi-Res Colors)
- (Gray 2) Light Gray  A      A      $0AAA    (A,A,A) -> (C0,C0,C0) Windows
-          Pink        B      B      $0F98    (F,9,8) -> (FF,90,80) Custom
-  (Green) Light Green C  1   6      $01D0    (1,D,0) -> (00,FF,00) Windows  2A 55
-          Yellow      D      7      $0FF0    (F,F,0) -> (FF,FF,00) Windows
-   (Aqua) Aquamarine  E      E      $04F9    (4,F,9) -> (40,FF,90) Custom
-          White       F  3,7 F      $0FFF    (F,F,F) -> (FF,FF,FF) Windows
-
-   Legend:
-       LO: Lo-Res
-       HI: Hi-Res
-      DHR: Double Hi-Res
-*/
-
-#define FLASH_80_COL 1	// Bug #7238
-
-#define HALF_SHIFT_DITHER 0
-
-enum Color_Palette_Index_e
-{
-	// The first 10 are the DEFAULT Windows colors (as it reserves 20 colors)
-	  BLACK        = 0x00 // 0x00,0x00,0x00 
-	, DARK_RED     = 0x01 // 0x80,0x00,0x00 
-	, DARK_GREEN   = 0x02 // 0x00,0x80,0x00 (Half Green)
-	, DARK_YELLOW  = 0x03 // 0x80,0x80,0x00
-	, DARK_BLUE    = 0x04 // 0x00,0x00,0x80 (Half Blue)
-	, DARK_MAGENTA = 0x05 // 0x80,0x00,0x80
-	, DARK_CYAN    = 0x06 // 0x00,0x80,0x80
-	, LIGHT_GRAY   = 0x07 // 0xC0,0xC0,0xC0
-	, MONEY_GREEN  = 0x08 // 0xC0,0xDC,0xC0 // not used
-	, SKY_BLUE     = 0x09 // 0xA6,0xCA,0xF0 // not used
-
-// Really need to have Quarter Green and Quarter Blue for Hi-Res
-// OUR CUSTOM COLORS -- the extra colors HGR mode can display
-//	, DEEP_BLUE // Breaks TV Emulation Reference Test !?!?   // Breaks the dam palette -- black monochrome TEXT output bug *sigh*
-	, DEEP_RED         
-	, LIGHT_BLUE       
-	, BROWN            
-	, ORANGE           
-	, PINK             
-	, AQUA             
-
-// CUSTOM HGR COLORS (don't change order) - For tv emulation HGR Video Mode
-	, HGR_BLACK        
-	, HGR_WHITE        
-	, HGR_BLUE         // HCOLOR=6 BLUE   , 3000: 81 00 D5 AA
-	, HGR_ORANGE       // HCOLOR=5 ORANGE , 2C00: 82 00 AA D5
-	, HGR_GREEN        // HCOLOR=1 GREEN  , 2400: 02 00 2A 55
-	, HGR_VIOLET       // HCOLOR=2 VIOLET , 2800: 01 00 55 2A
-	, HGR_GREY1        
-	, HGR_GREY2        
-	, HGR_YELLOW       
-	, HGR_AQUA         
-	, HGR_PURPLE       
-	, HGR_PINK         
-
-// MONOCHROME
-	, MONOCHROME_CUSTOM     // 100% luminance
-	, MONOCHROME_CUSTOM_50  //  50% luminance
-	, MONOCHROME_AMBER
-	, MONOCHROME_GREEN
-	, DEBUG_COLORS_START
-	, DEBUG_COLORS_END = DEBUG_COLORS_START + NUM_DEBUG_COLORS
-
-	, NUM_COLOR_PALETTE
-
-	// The last 10 are the DEFAULT Windows colors (as it reserves 20 colors)
-	, CREAM       = 0xF6
-	, MEDIUM_GRAY = 0xF7
-	, DARK_GRAY   = 0xF8
-	, RED         = 0xF9
-	, GREEN       = 0xFA
-	, YELLOW      = 0xFB
-	, BLUE        = 0xFC
-	, MAGENTA     = 0xFD
-	, CYAN        = 0xFE
-	, WHITE       = 0xFF
-};
 
 	#define  SW_80COL         (g_uVideoMode & VF_80COL)
 	#define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
@@ -149,13 +48,6 @@ enum Color_Palette_Index_e
 	#define  SW_MIXED         (g_uVideoMode & VF_MIXED)
 	#define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
 	#define  SW_TEXT          (g_uVideoMode & VF_TEXT)
-
-#define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
-
-#define  SETFRAMECOLOR(i,r,g,b)  g_pFramebufferinfo->bmiColors[i].rgbRed      = r; \
-                                 g_pFramebufferinfo->bmiColors[i].rgbGreen    = g; \
-                                 g_pFramebufferinfo->bmiColors[i].rgbBlue     = b; \
-								 g_pFramebufferinfo->bmiColors[i].rgbReserved = PC_NOCOLLAPSE;
 
 // Globals (Public)
 
@@ -189,21 +81,18 @@ static HDC           g_hDeviceDC;
 static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
        HBITMAP       g_hLogoBitmap;
-static HPALETTE      g_hPalette;
 
-static HBITMAP       g_hSourceBitmap;
 const int MAX_SOURCE_Y = 512;
 static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 
 COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
-static LPBYTE    vidlastmem          = NULL;
 
-	uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
+uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
 
-	DWORD     g_eVideoType     = VT_COLOR_TV;
-	DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
+DWORD     g_eVideoType     = VT_COLOR_TV;
+DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
 
-static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
+static const bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 //-------------------------------------
 
@@ -237,13 +126,9 @@ static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	bool g_bShowPrintScreenWarningDialog = true;
 	void Util_MakeScreenShotFileName( char *pFinalFileName_ );
 	bool Util_TestScreenShotFileName( const char *pFileName );
-	// true  = 280x192
-	// false = 560x384
-	void Video_SaveScreenShot( const char *pScreenShotFileName );
-	void Video_MakeScreenShot( FILE *pFile );
-
-	void V_CreateIdentityPalette ();
-	void  videoCreateDIBSection();
+	void Video_SaveScreenShot( const char *pScreenShotFileName, const VideoScreenShot_e ScreenShotType );
+	void Video_MakeScreenShot( FILE *pFile, const VideoScreenShot_e ScreenShotType );
+	void videoCreateDIBSection();
 
 //===========================================================================
 void VideoInitialize ()
@@ -251,12 +136,7 @@ void VideoInitialize ()
 	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
 	VideoResetState();
 
-	// CREATE A BUFFER FOR AN IMAGE OF THE LAST DRAWN MEMORY
-	vidlastmem = (LPBYTE)VirtualAlloc(NULL,0x10000,MEM_COMMIT,PAGE_READWRITE);
-	ZeroMemory(vidlastmem,0x10000);
-
 	// LOAD THE LOGO
-//	g_hLogoBitmap = (HBITMAP)LoadImage(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN), IMAGE_BITMAP, 560, 384, LR_CREATEDIBSECTION);
 	g_hLogoBitmap = LoadBitmap( g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN) );
 
 	// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
@@ -277,202 +157,6 @@ void VideoInitialize ()
 
 	videoCreateDIBSection();
 }
-
-//===========================================================================
-void V_CreateIdentityPalette ()
-{
-	SETFRAMECOLOR(BLACK,       0x00,0x00,0x00); // 0
-	SETFRAMECOLOR(DARK_RED,    0x80,0x00,0x00); // 1 // not used
-	SETFRAMECOLOR(DARK_GREEN,  0x00,0x80,0x00); // 2 // not used
-	SETFRAMECOLOR(DARK_YELLOW, 0x80,0x80,0x00); // 3
-	SETFRAMECOLOR(DARK_BLUE,   0x00,0x00,0x80); // 4 // not used
-	SETFRAMECOLOR(DARK_MAGENTA,0x80,0x00,0x80); // 5
-	SETFRAMECOLOR(DARK_CYAN,   0x00,0x80,0x80); // 6
-	SETFRAMECOLOR(LIGHT_GRAY,  0xC0,0xC0,0xC0); // 7 // GR: COLOR=10
-	SETFRAMECOLOR(MONEY_GREEN, 0xC0,0xDC,0xC0); // 8 // not used
-	SETFRAMECOLOR(SKY_BLUE,    0xA6,0xCA,0xF0); // 9 // not used
-
-	// SET FRAME BUFFER TABLE ENTRIES TO CUSTOM COLORS
-//	SETFRAMECOLOR(DARK_RED,    0x9D,0x09,0x66); // 1 // Linards Tweaked 0x80,0x00,0x00 -> 0x9D,0x09,0x66
-//	SETFRAMECOLOR(DARK_GREEN,  0x00,0x76,0x1A); // 2 // Linards Tweaked 0x00,0x80,0x00 -> 0x00,0x76,0x1A
-//	SETFRAMECOLOR(DARK_BLUE,   0x2A,0x2A,0xE5); // 4 // Linards Tweaked 0x00,0x00,0x80 -> 0x2A,0x2A,0xE5
-
-	SETFRAMECOLOR(DEEP_RED,  0x9D,0x09,0x66); // 0xD0,0x00,0x30 -> Linards Tweaked 0x9D,0x09,0x66
-	SETFRAMECOLOR(LIGHT_BLUE,0xAA,0xAA,0xFF); // 0x60,0xA0,0xFF -> Linards Tweaked 0xAA,0xAA,0xFF
-	SETFRAMECOLOR(BROWN,     0x55,0x55,0x00); // 0x80,0x50,0x00 -> Linards Tweaked 0x55,0x55,0x00
-	SETFRAMECOLOR(ORANGE,    0xF2,0x5E,0x00); // 0xFF,0x80,0x00 -> Linards Tweaked 0xF2,0x5E,0x00
-	SETFRAMECOLOR(PINK,      0xFF,0x89,0xE5); // 0xFF,0x90,0x80 -> Linards Tweaked 0xFF,0x89,0xE5
-	SETFRAMECOLOR(AQUA,      0x62,0xF6,0x99); // 0x40,0xFF,0x90 -> Linards Tweaked 0x62,0xF6,0x99
-
-	SETFRAMECOLOR(HGR_BLACK,  0x00,0x00,0x00); // For TV emulation HGR Video Mode
-	SETFRAMECOLOR(HGR_WHITE,  0xFF,0xFF,0xFE); // BUG: PALETTE COLLAPSE!  NOT white!? Win32 collapses the palette if you have duplicate colors!
-// 20 207 253 = 0x14 0xCF 0xFD
-	SETFRAMECOLOR(HGR_BLUE,     24, 115, 229); // HCOLOR=6 BLUE    3000: 81 00 D5 AA // 0x00,0x80,0xFF -> Linards Tweaked 0x0D,0xA1,0xFF
-	SETFRAMECOLOR(HGR_ORANGE,  247,  64,  30); // HCOLOR=5 ORANGE  2C00: 82 00 AA D5 // 0xF0,0x50,0x00 -> Linards Tweaked 0xF2,0x5E,0x00 
-	SETFRAMECOLOR(HGR_GREEN,    27, 211,  79); // HCOLOR=1 GREEN   2400: 02 00 2A 55 // 0x20,0xC0,0x00 -> Linards Tweaked 0x38,0xCB,0x00
-	SETFRAMECOLOR(HGR_VIOLET,  227,  20, 255); // HCOLOR=2 VIOLET  2800: 01 00 55 2A // 0xA0,0x00,0xFF -> Linards Tweaked 0xC7,0x34,0xFF
-
-	SETFRAMECOLOR(HGR_GREY1,  0x80,0x80,0x80);
-	SETFRAMECOLOR(HGR_GREY2,  0x80,0x80,0x80);
-	SETFRAMECOLOR(HGR_YELLOW, 0x9E,0x9E,0x00); // 0xD0,0xB0,0x10 -> 0x9E,0x9E,0x00
-	SETFRAMECOLOR(HGR_AQUA,   0x00,0xCD,0x4A); // 0x20,0xB0,0xB0 -> 0x00,0xCD,0x4A
-	SETFRAMECOLOR(HGR_PURPLE, 0x61,0x61,0xFF); // 0x60,0x50,0xE0 -> 0x61,0x61,0xFF
-	SETFRAMECOLOR(HGR_PINK,   0xFF,0x32,0xB5); // 0xD0,0x40,0xA0 -> 0xFF,0x32,0xB5
-
-	SETFRAMECOLOR( MONOCHROME_CUSTOM
-		, GetRValue(g_nMonochromeRGB)
-		, GetGValue(g_nMonochromeRGB)
-		, GetBValue(g_nMonochromeRGB)
-	);
-
-	SETFRAMECOLOR( MONOCHROME_CUSTOM_50
-		, ((GetRValue(g_nMonochromeRGB)/2) & 0xFF)
-		, ((GetGValue(g_nMonochromeRGB)/2) & 0xFF)
-		, ((GetBValue(g_nMonochromeRGB)/2) & 0xFF)
-	);
-
-	SETFRAMECOLOR( MONOCHROME_AMBER   , 0xFF,0x80,0x01); // Used for Monochrome Hi-Res graphics not text!
-	SETFRAMECOLOR( MONOCHROME_GREEN   , 0x00,0xC0,0x01); // Used for Monochrome Hi-Res graphics not text!
-	// BUG PALETTE COLLAPSE: WTF?? Soon as we set 0xFF,0xFF,0xFF we lose text colors?!?!
-	// Windows is collapsing the palette!!!
-	//SETFRAMECOLOR( MONOCHROME_WHITE   , 0xFE,0xFE,0xFE); // Used for Monochrome Hi-Res graphics not text!
-
-	SETFRAMECOLOR(CREAM,       0xFF,0xFB,0xF0); // F6
-	SETFRAMECOLOR(MEDIUM_GRAY, 0xA0,0xA0,0xA4); // F7
-	SETFRAMECOLOR(DARK_GRAY,   0x80,0x80,0x80); // F8
-	SETFRAMECOLOR(RED,         0xFF,0x00,0x00); // F9
-	SETFRAMECOLOR(GREEN,       0x38,0xCB,0x00); // FA Linards Tweaked 0x00,0xFF,0x00 -> 0x38,0xCB,0x00
-	SETFRAMECOLOR(YELLOW,      0xD5,0xD5,0x1A); // FB Linards Tweaked 0xFF,0xFF,0x00 -> 0xD5,0xD5,0x1A
-	SETFRAMECOLOR(BLUE,        0x0D,0xA1,0xFF); // FC Linards Tweaked 0x00,0x00,0xFF -> 0x0D,0xA1,0xFF
-	SETFRAMECOLOR(MAGENTA,     0xC7,0x34,0xFF); // FD Linards Tweaked 0xFF,0x00,0xFF -> 0xC7,0x34,0xFF
-	SETFRAMECOLOR(CYAN,        0x00,0xFF,0xFF); // FE
-	SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF); // FF
-}
-
-#if 0
-/*
-aPixel[i]
- A 9|8 7 6 5 4 3 2|1 0
- Z W|b b b b b b b|X Y
-----+-------------+----
-prev|  existing   |next
-bits| hi-res byte |bits
-
-Legend:
- XYZW = iColumn in binary
- b = Bytes in binary
-*/
-			// aPixel[] = 48bbbbbbbb12, where b = iByte in binary, # is bit-n of column
-			aPixels[ 0] = iColumn & 4; // previous byte, 2nd last pixel
-			aPixels[ 1] = iColumn & 8; // previous byte, last pixel
-			aPixels[ 9] = iColumn & 1; // next byte, first pixel
-			aPixels[10] = iColumn & 2; // next byte, second pixel
-
-			// Convert raw pixel Byte value to binary and stuff into bit array of pixels on off
-			int nBitMask = 1;
-			int iPixel;
-			for (iPixel  = 2; iPixel < 9; iPixel++)
-			{
-				aPixels[iPixel] = ((iByte & nBitMask) != 0);
-				nBitMask <<= 1;
-			}
-
-			int hibit = (iByte >> 7) & 1; // ((iByte & 0x80) != 0);
-			int x     = 0;
-			int y     = iByte << 1;
-
-/*
-Color Reference Tests:
-
-2000:D5 AA D5 AA D5 AA //  blue blue  blue
-2400:AA D5 2A 55 55 2A //+ red  green violet
-//                     //= grey aqua  violet
-
-2C00:AA D5 AA D5 2A 55 //  red    red     green
-3000:2A 55 55 2A 55 2A //+ green  violet  violet
-//                     //= yellow pink    grey
-
-Test cases
-==========
- 81 blue
-   2000:D5 AA D5 AA
- 82 orange
-   2800:AA D5 AA D5
- FF white bleed "thru"
-   3000:7F 80 7F 80
-   3800:FF 80 FF 80
-   2028:80 7F 80 7F
-   2828:80 FF 80 FF
- Edge Case for Half Luminance !
-   2000:C4 00  // Green  HalfLumBlue
-   2400:C4 80  // Green  Green
- Edge Case for Color Bleed !
-   2000:40 00
-   2400:40 80
-
-// Test Patterns 
-// 81 blue
-//   2000:D5 AA D5 AA -> 2001:AA D5  should not have black gap, should be blue
-// 82 orange
-//   2800:AA D5 AA D5
-// Game: Elite -- Loading Logo 
-//   2444:BB F7 -> 2000:BB F7    // Should not have orange in-between gap -- Elite "Firebird" Logo
-//              -> 2400:00 BB F7 // Should not have blue in-between gap )
-//   21D0:C0 00    -> HalfLumBlue
-//   25D0:C0 D0 88 -> Blue black orange black orange
-//   29D0:C0 90 88 -> Blue black orange
-// Game: Ultima 4 -- Ultima 4 Logo - bottom half of screen has a "mini-game" / demo -- far right has tree and blue border
-//   2176:2A AB green black_gap white blue_border // Should have black gap between green and white
-// Game: Gumball
-//   218E:AA 97    => 2000: A9 87          orange_white            // Should have no gap between orange and white
-//   229A:AB A9 87 -> 2000: 00 A9 87 white orange black blue_white // Should have no gap between blue and white
-//   2001:BB F7                            white blue white  (Gumball Intermission)
-// Torture Half-Pixel HGR Tests:  This is a real bitch to solve -- we really need to check:
-//     if (hibit_prev_byte && !aPixels[iPixel-3] && aPixels[iPixel-2] && !aPixels[iPixel] && hibit_this_byte) then set first half-pixel of this byte to either blue or orange
-//   2000:A9 87 halfblack blue black black orange black orange black
-//   2400:BB F7 halfblack white white black white white white halfblack
-//  or
-//   2000:A0 83 orange should "bleed" thru
-//   2400:B0 83 should have black gap
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , DARK_BLUE ); // Gumball: 229A: AB A9 87
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , BROWN ); // half luminance red Elite: 2444: BB F7
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, BROWN ); // half luminance red Gumball: 218E: AA 97
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
-							// Test Pattern: Ultima 4 Logo - Castle
-							// 3AC8: 36 5B 6D 36
-						Address Binary   -> Displayed
-						2000:01 0---0001 -> 1 0 0 0  column 1
-						2400:81 1---0001 ->  1 0 0 0 half-pixel shift right
-						2800:02 1---0010 -> 0 1 0 0  column 2
-
-						2000:02 column 2
-						2400:82 half-pixel shift right
-						2800:04 column 3
-
-						2000:03 0---0011 -> 1 1 0 0  column 1 & 2
-						2400:83 1---0011 ->  1 1 0 0 half-pixel shift right
-						2800:06 1---0110 -> 0 1 1 0  column 2 & 3
-
-						@reference: see Beagle Bro's Disk: "Silicon Salad", File: DOUBLE HI-RES
-						Fortunately double-hires is supported via pixel doubling, so we can do half-pixel shifts ;-)
-					// Games
-						Archon Logo
-						Gumball (at Machine)
-					// Applesoft
-						HGR:HCOLOR=5:HPLOT 0,0 TO 279,0
-
-					// Blue
-					// Orange
-						CALL-151
-						C050 C052 C057
-						2000:D0 80 00
-						2800:80 D0 00
-*/
-#endif
-
-// google: CreateDIBPatternBrushPt
-// http://209.85.141.104/search?q=cache:mB3htrQGW8kJ:bookfire.net/wince/wince-programming-ms-press2/source/prowice/ch02e.htm
 
 //===========================================================================
 
@@ -672,54 +356,6 @@ BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 }
 
 //===========================================================================
-
-/*
-	// Drol expects = 80
-	68DE A5 02    LDX #02
-	68E0 AD 50 C0 LDA TXTCLR
-	68E3 C9 80    CMP #80
-	68E5 D0 F7    BNE $68DE
-
-	6957 A5 02    LDX #02
-	6959 AD 50 C0 LDA TXTCLR
-	695C C9 80    CMP #80
-	695E D0 F7    BNE $68DE
-
-	69D3 A5 02    LDX #02
-	69D5 AD 50 C0 LDA TXTCLR
-	69D8 C9 80    CMP #80
-	69DA D0 F7    BNE $68DE
-
-	// Karateka expects < 80
-	07DE AD 19 C0 LDA RDVBLBAR
-	07E1 30 FB    BMI $7DE
-
-	77A1 AD 19 C0 LDA RDVBLBAR
-	77A4 30 FB    BMI $7DE
-
-	// Gumball expects non-zero low-nibble on VBL
-	BBB5 A5 60    LDA $60
-	BBB7 4D 50 C0 EOR TXTCLR
-	BBBA 85 60    STA $60
-	BBBC 29 0F    AND #$0F
-	BBBE F0 F5    BEQ $BBB5
-	BBC0 C9 0F    CMP #$0F
-	BBC2 F0 F1    BEQ $BBB5
-
-	// Diversi-Dial (DD4.DSK or DIAL.DSK)
-	F822          LDA RDVBLBAR
-	F825          EOR #$3C
-	              BMI $F82A
-	              RTS
-	F82A          LDA $F825+1
-	              EOR #$80
-	              STA $F825+1
-	              BMI $F86A
-				  ...
-	F86A          RTS
-
-*/
-
 BYTE VideoCheckVbl ( ULONG uExecutedCycles )
 {
 	bool bVblBar = VideoGetVblBar(uExecutedCycles);
@@ -755,9 +391,7 @@ void VideoDestroy () {
 
   // DESTROY BUFFERS
   VirtualFree(g_pFramebufferinfo,0,MEM_RELEASE);
-  VirtualFree(vidlastmem     ,0,MEM_RELEASE);
   g_pFramebufferinfo = NULL;
-  vidlastmem      = NULL;
 
   // DESTROY FRAME BUFFER
   DeleteDC(g_hDeviceDC);
@@ -765,20 +399,10 @@ void VideoDestroy () {
   g_hDeviceDC     = (HDC)0;
   g_hDeviceBitmap = (HBITMAP)0;
 
-  // DESTROY SOURCE IMAGE
-  DeleteObject(g_hSourceBitmap);
-  g_hSourceBitmap = (HBITMAP)0;
-
   // DESTROY LOGO
   if (g_hLogoBitmap) {
     DeleteObject(g_hLogoBitmap);
     g_hLogoBitmap = (HBITMAP)0;
-  }
-
-  // DESTROY PALETTE
-  if (g_hPalette) {
-    DeleteObject(g_hPalette);
-    g_hPalette = (HPALETTE)0;
   }
 }
 
@@ -1365,14 +989,9 @@ bool VideoGetVblBar(const DWORD uExecutedCycles)
 #define SCREENSHOT_BMP 1
 #define SCREENSHOT_TGA 0
 	
-// alias for nSuffixScreenShotFileName
 static int  g_nLastScreenShot = 0;
 const  int nMaxScreenShot = 999999999;
-
-static int   g_iScreenshotType;
 static char *g_pLastDiskImageName = NULL;
-
-//const  int nMaxScreenShot = 2;
 
 //===========================================================================
 void Video_ResetScreenshotCounter( char *pImageName )
@@ -1410,11 +1029,9 @@ bool Util_TestScreenShotFileName( const char *pFileName )
 }
 
 //===========================================================================
-void Video_TakeScreenShot( int iScreenShotType )
+void Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 {
 	char sScreenShotFileName[ MAX_PATH ];
-
-	g_iScreenshotType = iScreenShotType;
 
 	// find last screenshot filename so we don't overwrite the existing user ones
 	bool bExists = true;
@@ -1437,7 +1054,7 @@ void Video_TakeScreenShot( int iScreenShotType )
 		g_nLastScreenShot++;
 	}
 
-	Video_SaveScreenShot( sScreenShotFileName );
+	Video_SaveScreenShot( sScreenShotFileName, ScreenShotType );
 	g_nLastScreenShot++;
 }
 
@@ -1508,14 +1125,14 @@ void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int n
 }
 
 //===========================================================================
-void Video_MakeScreenShot(FILE *pFile)
+static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShotType)
 {
 	WinBmpHeader_t *pBmp = &g_tBmpHeader;
 
 	Video_SetBitmapHeader(
 		pBmp,
-		g_iScreenshotType ? FRAMEBUFFER_BORDERLESS_W/2 : FRAMEBUFFER_BORDERLESS_W,
-		g_iScreenshotType ? FRAMEBUFFER_BORDERLESS_H/2 : FRAMEBUFFER_BORDERLESS_H,
+		ScreenShotType == SCREENSHOT_280x192 ? FRAMEBUFFER_BORDERLESS_W/2 : FRAMEBUFFER_BORDERLESS_W,
+		ScreenShotType == SCREENSHOT_280x192 ? FRAMEBUFFER_BORDERLESS_H/2 : FRAMEBUFFER_BORDERLESS_H,
 		32
 	);
 
@@ -1553,7 +1170,7 @@ void Video_MakeScreenShot(FILE *pFile)
 	pSrc += xSrc;					// Skip left border
 	pSrc += ySrc * FRAMEBUFFER_W;	// Skip top border
 
-	if( g_iScreenshotType == SCREENSHOT_280x192 )
+	if( ScreenShotType == SCREENSHOT_280x192 )
 	{
 		pSrc += FRAMEBUFFER_W;	// Start on odd scanline (otherwise for 50% scanline mode get an all black image!)
 
@@ -1599,12 +1216,12 @@ void Video_MakeScreenShot(FILE *pFile)
 }
 
 //===========================================================================
-void Video_SaveScreenShot( const char *pScreenShotFileName )
+static void Video_SaveScreenShot( const char *pScreenShotFileName, const VideoScreenShot_e ScreenShotType )
 {
 	FILE *pFile = fopen( pScreenShotFileName, "wb" );
 	if( pFile )
 	{
-		Video_MakeScreenShot( pFile );
+		Video_MakeScreenShot( pFile, ScreenShotType );
 		fclose( pFile );
 	}
 
