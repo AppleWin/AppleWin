@@ -9,7 +9,7 @@
 #include "Disk.h"
 #include "CPU.h"
 
-void VideoBenchmark ()
+void VideoBenchmark(void (*VideoRedrawScreen)())
 {
   // PREPARE TWO DIFFERENT FRAME BUFFERS, EACH OF WHICH HAVE HALF OF THE
   // BYTES SET TO 0x14 AND THE OTHER HALF SET TO 0xAA

@@ -21,6 +21,7 @@
 
 #include "linux/configuration.h"
 #include "linux/data.h"
+#include "linux/benchmark.h"
 #include "frontends/ncurses/world.h"
 
 namespace
@@ -285,7 +286,7 @@ namespace
 
 	if (options.benchmark)
 	{
-	  VideoBenchmark();
+	  VideoBenchmark(&VideoRedrawScreen);
 	  g_bRestart = false;
 	}
 	else

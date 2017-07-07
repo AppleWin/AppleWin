@@ -25,6 +25,7 @@ add_library(appleii SHARED
   source/linux/dummies.cpp
   source/linux/wwrapper.cpp
   source/linux/state.cpp
+  source/linux/benchmark.cpp
 
   source/Z80VICE/z80.cpp
   source/Z80VICE/z80mem.cpp
@@ -44,7 +45,6 @@ add_executable(applen
   source/frontends/ncurses/nframe.cpp
   source/frontends/ncurses/asciiart.cpp
   source/frontends/ncurses/input.cpp
-  source/frontends/ncurses/benchmark.cpp
   source/frontends/ncurses/resources.cpp
   )
 
