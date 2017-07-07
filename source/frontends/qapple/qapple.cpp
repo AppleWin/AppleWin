@@ -20,6 +20,7 @@
 #include "emulator.h"
 
 #include <QMdiSubWindow>
+#include <QMessageBox>
 
 namespace
 {
@@ -229,7 +230,12 @@ void QApple::insertDisk(const int disk)
         {
             const std::string filename = files[0].toStdString();
             const bool createMissingDisk = true;
-            DiskInsert(disk, filename.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
+            const ImageError_e result = DiskInsert(disk, filename.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
+            if (result != eIMAGE_ERROR_NONE)
+            {
+                const QString message = QString("Error [%1] inserting '%2'").arg(QString::number(result), files[0]);
+                QMessageBox::warning(NULL, "Disk error", message);
+            }
         }
     }
 }
