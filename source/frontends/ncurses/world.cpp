@@ -148,6 +148,102 @@ namespace
     lastUpdate = g_nCumulativeCycles;
   }
 
+  typedef bool (*VideoUpdateFuncPtr_t)(int, int, int, int, int);
+
+  bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
+  {
+    frame->init(24, 40);
+    asciiArt->init(1, 1);
+
+    BYTE ch = *(g_pTextBank0+offset);
+
+    WINDOW * win = frame->getWindow();
+
+    const chtype ch2 = mapCharacter(ch);
+    mvwaddch(win, 1 + y, 1 + x, ch2);
+
+    return true;
+  }
+
+  bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset)
+  {
+    frame->init(24, 80);
+    asciiArt->init(1, 2);
+
+    BYTE ch1 = *(g_pTextBank1+offset);
+    BYTE ch2 = *(g_pTextBank0+offset);
+
+    WINDOW * win = frame->getWindow();
+
+    const chtype ch12 = mapCharacter(ch1);
+    mvwaddch(win, 1 + y, 1 + 2 * x, ch12);
+
+    const chtype ch22 = mapCharacter(ch2);
+    mvwaddch(win, 1 + y, 1 + 2 * x + 1, ch22);
+
+    return true;
+  }
+
+  bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
+  {
+    BYTE val = *(g_pTextBank0+offset);
+
+    const int pair = colors->getPair(val);
+
+    WINDOW * win = frame->getWindow();
+
+    wcolor_set(win, pair, NULL);
+    if (frame->getColumns() == 40)
+    {
+      mvwaddstr(win, 1 + y, 1 + x, "\u2580");
+    }
+    else
+    {
+      mvwaddstr(win, 1 + y, 1 + 2 * x, "\u2580\u2580");
+    }
+    wcolor_set(win, 0, NULL);
+
+    return true;
+  }
+
+  bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
+  {
+    return true;
+  }
+
+  bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
+  {
+    const BYTE * base = g_pHiresBank0 + offset;
+
+    const ASCIIArt::array_char_t & chs = asciiArt->getCharacters(base);
+
+    const auto shape = chs.shape();
+    const size_t rows = shape[0];
+    const size_t cols = shape[1];
+
+    frame->init(24 * rows, 40 * cols);
+    WINDOW * win = frame->getWindow();
+
+    for (size_t i = 0; i < rows; ++i)
+    {
+      for (size_t j = 0; j < cols; ++j)
+      {
+	const int pair = colors->getGrey(chs[i][j].foreground, chs[i][j].background);
+
+	wcolor_set(win, pair, NULL);
+	mvwaddstr(win, 1 + rows * y + i, 1 + cols * x + j, chs[i][j].c);
+      }
+    }
+    wcolor_set(win, 0, NULL);
+
+    return true;
+  }
+
+  bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset)
+  {
+    return true;
+  }
+
 }
 
 double g_relativeSpeed = 1.0;
@@ -162,101 +258,6 @@ void output(const char *fmt, ...)
   vwprintw(win, fmt, args);
   wrefresh(win);
 }
-
-bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
-{
-  frame->init(24, 40);
-  asciiArt->init(1, 1);
-
-  BYTE ch = *(g_pTextBank0+offset);
-
-  WINDOW * win = frame->getWindow();
-
-  const chtype ch2 = mapCharacter(ch);
-  mvwaddch(win, 1 + y, 1 + x, ch2);
-
-  return true;
-}
-
-bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset)
-{
-  frame->init(24, 80);
-  asciiArt->init(1, 2);
-
-  BYTE ch1 = *(g_pTextBank1+offset);
-  BYTE ch2 = *(g_pTextBank0+offset);
-
-  WINDOW * win = frame->getWindow();
-
-  const chtype ch12 = mapCharacter(ch1);
-  mvwaddch(win, 1 + y, 1 + 2 * x, ch12);
-
-  const chtype ch22 = mapCharacter(ch2);
-  mvwaddch(win, 1 + y, 1 + 2 * x + 1, ch22);
-
-  return true;
-}
-
-bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
-{
-  BYTE val = *(g_pTextBank0+offset);
-
-  const int pair = colors->getPair(val);
-
-  WINDOW * win = frame->getWindow();
-
-  wcolor_set(win, pair, NULL);
-  if (frame->getColumns() == 40)
-  {
-    mvwaddstr(win, 1 + y, 1 + x, "\u2580");
-  }
-  else
-  {
-    mvwaddstr(win, 1 + y, 1 + 2 * x, "\u2580\u2580");
-  }
-  wcolor_set(win, 0, NULL);
-
-  return true;
-}
-
-bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
-{
-  return true;
-}
-
-bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
-{
-  const BYTE * base = g_pHiresBank0 + offset;
-
-  const ASCIIArt::array_char_t & chs = asciiArt->getCharacters(base);
-
-  const auto shape = chs.shape();
-  const size_t rows = shape[0];
-  const size_t cols = shape[1];
-
-  frame->init(24 * rows, 40 * cols);
-  WINDOW * win = frame->getWindow();
-
-  for (size_t i = 0; i < rows; ++i)
-  {
-    for (size_t j = 0; j < cols; ++j)
-    {
-      const int pair = colors->getGrey(chs[i][j].foreground, chs[i][j].background);
-
-      wcolor_set(win, pair, NULL);
-      mvwaddstr(win, 1 + rows * y + i, 1 + cols * x + j, chs[i][j].c);
-    }
-  }
-  wcolor_set(win, 0, NULL);
-
-  return true;
-}
-
-bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset)
-{
-  return true;
-}
-
 
 void FrameRefresh()
 {
