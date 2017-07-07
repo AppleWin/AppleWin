@@ -35,9 +35,12 @@ private slots:
 
     void on_actionReboot_triggered();
 
+    void on_actionBenchmark_triggered();
+
 private:
 
     void setNextTimer(const int ms);
+    void stopTimer();
     void insertDisk(const int disk);
 
     QFileDialog myDiskFileDialog;

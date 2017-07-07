@@ -15,6 +15,7 @@
 
 #include "linux/data.h"
 #include "linux/configuration.h"
+#include "linux/benchmark.h"
 
 #include "emulator.h"
 
@@ -123,7 +124,7 @@ BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCycle
 void VideoInitialize() {}
 
 QApple::QApple(QWidget *parent) :
-    QMainWindow(parent), myDiskFileDialog(this)
+    QMainWindow(parent), myDiskFileDialog(this), myTimerID(0)
 {
     setupUi(this);
 
@@ -133,7 +134,7 @@ QApple::QApple(QWidget *parent) :
     myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
     myEmulatorWindow->setWindowTitle(g_pAppTitle);
 
-    myMSGap = 5;
+    myMSGap = 10;
 
     initialiseEmulator();
 
@@ -143,6 +144,7 @@ QApple::QApple(QWidget *parent) :
 
 void QApple::closeEvent(QCloseEvent *)
 {
+    stopTimer();
     uninitialiseEmulator();
 }
 
@@ -169,27 +171,36 @@ void QApple::timerEvent(QTimerEvent *)
     setNextTimer(nextGap);
 }
 
+void QApple::stopTimer()
+{
+    if (myTimerID)
+    {
+        killTimer(myTimerID);
+        myTimerID = 0;
+    }
+}
+
 void QApple::setNextTimer(const int ms)
 {
     if (ms != myCurrentGap)
     {
-        killTimer(myTimerID);
+        stopTimer();
         myCurrentGap = ms;
-        myTimerID = startTimer(myCurrentGap);
+        myTimerID = startTimer(myCurrentGap, Qt::PreciseTimer);
     }
 }
 
 void QApple::on_actionStart_triggered()
 {
     // always restart with the same timer gap that was last used
-    myTimerID = startTimer(myCurrentGap);
+    myTimerID = startTimer(myCurrentGap, Qt::PreciseTimer);
     actionPause->setEnabled(true);
     actionStart->setEnabled(false);
 }
 
 void QApple::on_actionPause_triggered()
 {
-    killTimer(myTimerID);
+    stopTimer();
     actionPause->setEnabled(false);
     actionStart->setEnabled(true);
 }
@@ -237,4 +248,10 @@ void QApple::on_actionReboot_triggered()
 {
     startEmulator();
     setNextTimer(myMSGap);
+}
+
+void QApple::on_actionBenchmark_triggered()
+{
+    VideoBenchmark([this]() { myEmulator->redrawScreen(); });
+    on_actionReboot_triggered();
 }

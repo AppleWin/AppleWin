@@ -1,3 +1,5 @@
 #pragma once
 
-void VideoBenchmark(void (*VideoRedrawScreen)());
+#include <functional>
+
+void VideoBenchmark(std::function<void()> VideoRedrawScreen);

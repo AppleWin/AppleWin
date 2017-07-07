@@ -51,8 +51,15 @@
     <addaction name="actionDisk_1"/>
     <addaction name="actionDisk_2"/>
    </widget>
+   <widget class="QMenu" name="menuVideo">
+    <property name="title">
+     <string>Video</string>
+    </property>
+    <addaction name="actionBenchmark"/>
+   </widget>
    <addaction name="menuSystem"/>
    <addaction name="menuDisks"/>
+   <addaction name="menuVideo"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -107,6 +114,11 @@
   <action name="actionReboot">
    <property name="text">
     <string>Reboot</string>
+   </property>
+  </action>
+  <action name="actionBenchmark">
+   <property name="text">
+    <string>Benchmark</string>
    </property>
   </action>
  </widget>
