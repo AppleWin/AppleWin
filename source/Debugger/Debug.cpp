@@ -6768,8 +6768,6 @@ enum ViewVideoPage_t
 	VIEW_PAGE_2
 };
 
-Update_t _ViewOutput( ViewVideoPage_t iPage, VideoUpdateFuncPtr_t pfUpdate );
-
 Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 {
 	switch( iPage ) 

@@ -460,10 +460,10 @@ void GetProgramDirectory(void)
 //===========================================================================
 
 // Backwards compatibility with AppleWin <1.24.0
-static void LoadConfigOldJoystick(const UINT uJoyNum)
+static void LoadConfigOldJoystick_v1(const UINT uJoyNum)
 {
 	DWORD dwOldJoyType;
-	if (!REGLOAD(TEXT(uJoyNum==0 ? REGVALUE_OLD_JOYSTICK0_EMU_TYPE : REGVALUE_OLD_JOYSTICK1_EMU_TYPE), &dwOldJoyType))
+	if (!REGLOAD(TEXT(uJoyNum==0 ? REGVALUE_OLD_JOYSTICK0_EMU_TYPE1 : REGVALUE_OLD_JOYSTICK1_EMU_TYPE1), &dwOldJoyType))
 		return;	// EG. Old AppleWin never installed
 
 	UINT uNewJoyType;
@@ -567,13 +567,17 @@ void LoadConfiguration(void)
 	DWORD dwJoyType;
 	if (REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &dwJoyType))
 		JoySetJoyType(JN_JOYSTICK0, dwJoyType);
+	else if (REGLOAD(TEXT(REGVALUE_OLD_JOYSTICK0_EMU_TYPE2), &dwJoyType))	// GH#434
+		JoySetJoyType(JN_JOYSTICK0, dwJoyType);
 	else
-		LoadConfigOldJoystick(JN_JOYSTICK0);
+		LoadConfigOldJoystick_v1(JN_JOYSTICK0);
 
 	if (REGLOAD(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), &dwJoyType))
 		JoySetJoyType(JN_JOYSTICK1, dwJoyType);
+	else if (REGLOAD(TEXT(REGVALUE_OLD_JOYSTICK1_EMU_TYPE2), &dwJoyType))	// GH#434
+		JoySetJoyType(JN_JOYSTICK1, dwJoyType);
 	else
-		LoadConfigOldJoystick(JN_JOYSTICK1);
+		LoadConfigOldJoystick_v1(JN_JOYSTICK1);
 
 	DWORD dwSoundType;
 	REGLOAD(TEXT("Sound Emulation"), &dwSoundType);
