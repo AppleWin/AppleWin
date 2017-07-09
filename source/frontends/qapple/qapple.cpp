@@ -135,11 +135,10 @@ QApple::QApple(QWidget *parent) :
     myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
     myEmulatorWindow->setWindowTitle(g_pAppTitle);
 
-    myMSGap = 10;
+    myMSGap = 5;
 
     initialiseEmulator();
 
-    myCurrentGap = myMSGap;
     startEmulator();
 }
 
@@ -149,27 +148,28 @@ void QApple::closeEvent(QCloseEvent *)
     uninitialiseEmulator();
 }
 
-void QApple::timerEvent(QTimerEvent *)
+void QApple::on_timer()
 {
+    const qint64 elapsed = myElapsedTimer.restart();
     const double fUsecPerSec        = 1.e6;
-    const UINT nExecutionPeriodUsec = 1000 * myMSGap;
+    const UINT nExecutionPeriodUsec = 1000 * elapsed;
 
     const double fExecutionPeriodClks = g_fCurrentCLK6502 * ((double)nExecutionPeriodUsec / fUsecPerSec);
     const DWORD uCyclesToExecute = fExecutionPeriodClks;
 
     const bool bVideoUpdate = false;
-    const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
-    g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-    if (g_dwCyclesThisFrame >= dwClksPerFrame)
+    do
     {
-        g_dwCyclesThisFrame -= dwClksPerFrame;
-        myEmulator->redrawScreen();
+        const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
+        g_dwCyclesThisFrame += uActualCyclesExecuted;
+        if (g_dwCyclesThisFrame >= dwClksPerFrame)
+        {
+            g_dwCyclesThisFrame -= dwClksPerFrame;
+            myEmulator->redrawScreen();
+        }
     }
-
-    // 0 means run as soon as possible (i.e. no pending events)
-    const int nextGap = DiskIsSpinning() ? 0 : myMSGap;
-    setNextTimer(nextGap);
+    while (DiskIsSpinning());
 }
 
 void QApple::stopTimer()
@@ -181,20 +181,11 @@ void QApple::stopTimer()
     }
 }
 
-void QApple::setNextTimer(const int ms)
-{
-    if (ms != myCurrentGap)
-    {
-        stopTimer();
-        myCurrentGap = ms;
-        myTimerID = startTimer(myCurrentGap, Qt::PreciseTimer);
-    }
-}
-
 void QApple::on_actionStart_triggered()
 {
     // always restart with the same timer gap that was last used
-    myTimerID = startTimer(myCurrentGap, Qt::PreciseTimer);
+    myTimerID = startTimer(myMSGap, Qt::PreciseTimer);
+    myElapsedTimer.start();
     actionPause->setEnabled(true);
     actionStart->setEnabled(false);
 }
@@ -253,11 +244,15 @@ void QApple::on_actionDisk_2_triggered()
 void QApple::on_actionReboot_triggered()
 {
     startEmulator();
-    setNextTimer(myMSGap);
 }
 
 void QApple::on_actionBenchmark_triggered()
 {
     VideoBenchmark([this]() { myEmulator->redrawScreen(); });
     on_actionReboot_triggered();
+}
+
+void QApple::timerEvent(QTimerEvent *)
+{
+    on_timer();
 }
