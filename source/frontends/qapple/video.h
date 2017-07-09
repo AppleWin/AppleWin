@@ -2,9 +2,12 @@
 #define VIDEO_H
 
 #include <QOpenGLWidget>
+#include <memory>
 
 //#define VIDEO_BASECLASS QOpenGLWidget
 #define VIDEO_BASECLASS QWidget
+
+class GraphicsCache;
 
 class Video : public VIDEO_BASECLASS
 {
@@ -29,8 +32,7 @@ private:
     bool UpdateHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset);
     bool UpdateDHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset);
 
-    QPixmap myCharset40;
-    QPixmap myCharset80;
+    std::shared_ptr<const GraphicsCache> myGraphicsCache;
 };
 
 #endif // VIDEO_H

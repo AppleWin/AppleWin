@@ -16,11 +16,13 @@ SOURCES += main.cpp\
         qapple.cpp \
     qresources.cpp \
     emulator.cpp \
-    video.cpp
+    video.cpp \
+    graphicscache.cpp
 
 HEADERS  += qapple.h \
     emulator.h \
-    video.h
+    video.h \
+    graphicscache.h
 
 FORMS    += qapple.ui \
     emulator.ui

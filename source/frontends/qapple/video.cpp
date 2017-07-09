@@ -3,6 +3,8 @@
 #include <QPainter>
 #include <QKeyEvent>
 
+#include "graphicscache.h"
+
 #include "StdAfx.h"
 #include "Video.h"
 #include "Memory.h"
@@ -24,22 +26,6 @@ namespace
 
 //    bool g_bTextFlashState = false;
 
-    void halfScanLines(QPixmap & charset)
-    {
-        const int height = charset.height();
-        const int width = charset.width();
-
-        const QColor background = charset.toImage().pixelColor(0, height - 1);
-
-        QPainter paint(&charset);
-        paint.setPen(background);
-
-        for (int i = 0; i < height; i += 2)
-        {
-            paint.drawLine(0, i, width - 1, i);
-        }
-    }
-
     BYTE keyCode = 0;
     bool keyWaiting = false;
 
@@ -47,46 +33,52 @@ namespace
 
 bool Video::Update40ColCell (QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
-    Q_UNUSED(xpixel)
-    Q_UNUSED(ypixel)
+    Q_UNUSED(x)
+    Q_UNUSED(y)
 
-    BYTE ch = *(g_pTextBank0+offset);
+    const BYTE ch = *(g_pTextBank0+offset);
+
+    const int base = g_nAltCharSetOffset ? 16 : 0;
 
     const int row = ch / 16;
     const int column = ch % 16;
 
     const int sx = 16 * column;
-    const int sy = 16 * row;
-    painter.drawPixmap(x * 14, y * 16, myCharset40, sx, sy, 14, 16);
+    const int sy = 16 * (base + row);
+    const QPixmap & text40Col = myGraphicsCache->text40Col();
+
+    painter.drawPixmap(xpixel, ypixel, text40Col, sx, sy, 14, 16);
 
     return true;
 }
 
 bool Video::Update80ColCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
-    Q_UNUSED(xpixel)
-    Q_UNUSED(ypixel)
+    Q_UNUSED(x)
+    Q_UNUSED(y)
+
+    const QPixmap & text80Col = myGraphicsCache->text80Col();
 
     {
-        BYTE ch1 = *(g_pTextBank1+offset);
+        const BYTE ch1 = *(g_pTextBank1+offset);
 
         const int row = ch1 / 16;
         const int column = ch1 % 16;
 
         const int sx = 8 * column;
         const int sy = 16 * row;
-        painter.drawPixmap(x * 14, y * 16, myCharset80, sx, sy, 7, 16);
+        painter.drawPixmap(xpixel, ypixel, text80Col, sx, sy, 7, 16);
     }
 
     {
-        BYTE ch2 = *(g_pTextBank0+offset);
+        const BYTE ch2 = *(g_pTextBank0+offset);
 
         const int row = ch2 / 16;
         const int column = ch2 % 16;
 
         const int sx = 8 * column;
         const int sy = 16 * row;
-        painter.drawPixmap(x * 14 + 7, y * 16, myCharset80, sx, sy, 7, 16);
+        painter.drawPixmap(xpixel + 7, ypixel, text80Col, sx, sy, 7, 16);
     }
 
     return true;
@@ -100,7 +92,7 @@ bool Video::UpdateLoResCell(QPainter & painter, int x, int y, int xpixel, int yp
     Q_UNUSED(xpixel)
     Q_UNUSED(ypixel)
 
-    BYTE val = *(g_pTextBank0+offset);
+    const BYTE val = *(g_pTextBank0+offset);
 
     Q_UNUSED(val)
 
@@ -121,15 +113,21 @@ bool Video::UpdateDLoResCell(QPainter & painter, int x, int y, int xpixel, int y
 
 bool Video::UpdateHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
-    Q_UNUSED(painter)
     Q_UNUSED(x)
     Q_UNUSED(y)
-    Q_UNUSED(xpixel)
-    Q_UNUSED(ypixel)
 
     const BYTE * base = g_pHiresBank0 + offset;
+    const QPixmap & hires = myGraphicsCache->hires();
 
-    Q_UNUSED(base)
+    for (size_t i = 0; i < 8; ++i)
+    {
+        const int line = 0x0400 * i;
+        const BYTE value = *(base + line);
+
+        const int row = value & 0x7f;
+
+        painter.drawPixmap(xpixel, ypixel + i * 2, hires, 0, row * 2, 14, 2);
+    }
 
     return true;
 }
@@ -148,10 +146,7 @@ bool Video::UpdateDHiResCell(QPainter & painter, int x, int y, int xpixel, int y
 
 Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
 {
-    myCharset40.load(":/resources/CHARSET4.BMP");
-    halfScanLines(myCharset40);
-
-    myCharset80 = myCharset40.scaled(myCharset40.width() / 2, myCharset40.height());
+    myGraphicsCache.reset(new GraphicsCache());
 }
 
 void Video::paintEvent(QPaintEvent *)
