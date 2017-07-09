@@ -36,8 +36,8 @@ void Emulator::set43AspectRatio(QMdiSubWindow * window)
     const QSize & size = video->size();
     const double area = size.height() * size.width();
 
-    const int numerator = 35;
-    const int denominator = 24;
+    const int numerator = 35;       // 7 * 40
+    const int denominator = 24;     // 8 * 24
 
     const int x = sqrt(area / (numerator * denominator));
     const QSize target(numerator * x, denominator * x);
