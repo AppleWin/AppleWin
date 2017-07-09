@@ -24,11 +24,17 @@ public:
         return myHiResMono;
     }
 
+    const QPixmap & lores() const
+    {
+        return myLoResColor;
+    }
+
 private:
     QPixmap myCharset40;
     QPixmap myCharset80;
 
     QPixmap myHiResMono;
+    QPixmap myLoResColor;
 };
 
 #endif // GRAPHICSCACHE_H

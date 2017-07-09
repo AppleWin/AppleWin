@@ -86,15 +86,16 @@ bool Video::Update80ColCell(QPainter & painter, int x, int y, int xpixel, int yp
 
 bool Video::UpdateLoResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
-    Q_UNUSED(painter)
     Q_UNUSED(x)
     Q_UNUSED(y)
-    Q_UNUSED(xpixel)
-    Q_UNUSED(ypixel)
 
-    const BYTE val = *(g_pTextBank0+offset);
+    const BYTE ch = *(g_pTextBank0+offset);
 
-    Q_UNUSED(val)
+    const int sx = 0;
+    const int sy = ch * 16;
+    const QPixmap & lores = myGraphicsCache->lores();
+
+    painter.drawPixmap(xpixel, ypixel, lores, sx, sy, 14, 16);
 
     return true;
 }
