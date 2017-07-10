@@ -34,3 +34,5 @@ unix: LIBS += -L$$PWD/../../../ -lappleii
 
 INCLUDEPATH += $$PWD/../../../source
 DEPENDPATH += $$PWD/../../../source
+
+unix: LIBS += -levdev

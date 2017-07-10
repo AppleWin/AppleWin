@@ -13,11 +13,11 @@
 #include "Memory.h"
 
 #include "linux/interface.h"
+#include "linux/joy_input.h"
 
 #include "frontends/ncurses/nframe.h"
 #include "frontends/ncurses/colors.h"
 #include "frontends/ncurses/asciiart.h"
-#include "frontends/ncurses/input.h"
 
 namespace
 {

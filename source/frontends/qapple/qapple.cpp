@@ -16,6 +16,7 @@
 #include "linux/data.h"
 #include "linux/configuration.h"
 #include "linux/benchmark.h"
+#include "linux/joy_input.h"
 
 #include "emulator.h"
 
@@ -31,6 +32,7 @@ namespace
         setbuf(g_fh, NULL);
 
         InitializeRegistry("../qapple/applen.conf");
+        Input::initialise("/dev/input/by-id/usb-©Microsoft_Corporation_Controller_1BBE3DB-event-joystick");
 
         LogFileOutput("Initialisation\n");
 
@@ -76,38 +78,6 @@ void FrameDrawDiskStatus(HDC)
 void FrameRefreshStatus(int, bool)
 {
 
-}
-
-// Joystick
-
-BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
-{
-    Q_UNUSED(pc)
-    Q_UNUSED(addr)
-    Q_UNUSED(bWrite)
-    Q_UNUSED(d)
-    Q_UNUSED(nCyclesLeft)
-    return 0;
-}
-
-BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
-{
-    Q_UNUSED(pc)
-    Q_UNUSED(addr)
-    Q_UNUSED(bWrite)
-    Q_UNUSED(d)
-    Q_UNUSED(nCyclesLeft)
-    return 0;
-}
-
-BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
-{
-    Q_UNUSED(pc)
-    Q_UNUSED(addr)
-    Q_UNUSED(bWrite)
-    Q_UNUSED(d)
-    Q_UNUSED(nCyclesLeft)
-    return 0;
 }
 
 // Speaker
@@ -168,6 +138,7 @@ void QApple::on_timer()
             g_dwCyclesThisFrame -= dwClksPerFrame;
             myEmulator->redrawScreen();
         }
+        Input::instance().poll();
     }
     while (DiskIsSpinning());
 }

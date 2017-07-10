@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 
-#include "frontends/ncurses/input.h"
+#include "linux/joy_input.h"
 
 #include <cstring>
 #include <fcntl.h>
