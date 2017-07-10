@@ -2,7 +2,6 @@
 
 #include "Applewin.h"
 #include "SerialComms.h"
-#include "MouseInterface.h"
 #include "Configuration/IPropertySheet.h"
 #include "YamlHelper.h"
 #include "Video.h"
@@ -10,7 +9,6 @@
 void VideoReinitialize() { }
 void KeybLoadSnapshot(YamlLoadHelper&) { }
 std::string GetSnapshotCardName() { return ""; }
-bool CMouseInterface::LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { return true; }
 void SpkrLoadSnapshot(YamlLoadHelper&) { }
 void KeybReset() { }
 void MB_SaveSnapshot(YamlSaveHelper&, unsigned int) { }
@@ -18,10 +16,8 @@ void JoySaveSnapshot(YamlSaveHelper&) { }
 void VideoResetState() { }
 void JoyLoadSnapshot(YamlLoadHelper&) { }
 void MB_LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { }
-std::string CMouseInterface::GetSnapshotCardName() { return ""; }
 void SetLoadedSaveStateFlag(bool) { }
 void KeybSaveSnapshot(YamlSaveHelper&) { }
-void CMouseInterface::Reset() { }
 void SpkrSaveSnapshot(YamlSaveHelper&) { }
 bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { return true; }
 std::string CSuperSerialCard::GetSnapshotCardName() { return ""; }
@@ -30,11 +26,9 @@ void MB_Reset() { }
 void Phasor_LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { }
 void Phasor_SaveSnapshot(YamlSaveHelper&, unsigned int) { }
 std::string Phasor_GetSnapshotCardName() { return ""; }
-void CMouseInterface::SaveSnapshot(YamlSaveHelper&) { }
 void IPropertySheet::ApplyNewConfig(CConfigNeedingRestart const&, CConfigNeedingRestart const&) { }
 void FrameUpdateApple2Type() { }
 bool SetCurrentImageDir(char const*) { return true; }
-void CMouseInterface::Uninitialize() { }
 void CSuperSerialCard::SaveSnapshot(YamlSaveHelper&) { }
 
 // Copied from Video.cpp as it is too complicated to compile and use Video.cpp

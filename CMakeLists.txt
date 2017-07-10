@@ -19,6 +19,7 @@ add_library(appleii SHARED
   source/SAM.cpp
   source/z80emu.cpp
   source/ParallelPrinter.cpp
+  source/MouseInterface.cpp
 
   source/linux/configuration.cpp
   source/linux/data.cpp

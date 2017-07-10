@@ -103,21 +103,9 @@ void CSuperSerialCard::CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 {
 }
 
-// Mouse
+// Frame
 
-CMouseInterface::CMouseInterface()
-{
-}
-
-CMouseInterface::~CMouseInterface()
-{
-}
-
-void CMouseInterface::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
-{
-}
-
-void CMouseInterface::SetVBlank(bool bVBL)
+void FrameSetCursorPosByMousePos()
 {
 }
 

@@ -7,5 +7,6 @@
         <file>resources/DISK2.rom</file>
         <file>resources/Hddrvr.bin</file>
         <file>resources/Parallel.rom</file>
+        <file>resources/MouseInterface.rom</file>
     </qresource>
 </RCC>
