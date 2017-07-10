@@ -40,7 +40,7 @@ Etc.
 */
 
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "SaveState_Structs_common.h"
 #include "Common.h"
 
@@ -49,10 +49,9 @@ Etc.
 #include "Log.h"
 #include "Memory.h"
 #include "MouseInterface.h"
-#include "SoundCore.h"	// SAFE_RELEASE()
 #include "YamlHelper.h"
 
-#include "..\resource\resource.h"
+#include "../resource/resource.h"
 
 #ifdef _DEBUG
 	#define _DEBUG_SPURIOUS_IRQ
@@ -755,6 +754,8 @@ bool CMouseInterface::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT sl
 	return true;
 }
 
+#ifdef WIN32
+
 //=============================================================================
 // DirectInput interface
 //=============================================================================
@@ -762,6 +763,7 @@ bool CMouseInterface::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT sl
 //#define STRICT
 #define DIRECTINPUT_VERSION 0x0800
 
+#include "SoundCore.h"	// SAFE_RELEASE()
 #include <dinput.h>
 
 extern bool g_bDisableDirectInput;	// currently in AppleWin.h
@@ -977,3 +979,5 @@ namespace DIMouse
 	}
 
 };	// namespace DIMouse
+
+#endif
