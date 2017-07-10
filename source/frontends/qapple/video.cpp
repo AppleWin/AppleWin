@@ -58,6 +58,7 @@ bool Video::Update80ColCell(QPainter & painter, int x, int y, int xpixel, int yp
     Q_UNUSED(y)
 
     const QPixmap & text80Col = myGraphicsCache->text80Col();
+    const int base = g_nAltCharSetOffset ? 16 : 0;
 
     {
         const BYTE ch1 = *(g_pTextBank1+offset);
@@ -66,7 +67,7 @@ bool Video::Update80ColCell(QPainter & painter, int x, int y, int xpixel, int yp
         const int column = ch1 % 16;
 
         const int sx = 8 * column;
-        const int sy = 16 * row;
+        const int sy = 16 * (row + base);
         painter.drawPixmap(xpixel, ypixel, text80Col, sx, sy, 7, 16);
     }
 
@@ -77,7 +78,7 @@ bool Video::Update80ColCell(QPainter & painter, int x, int y, int xpixel, int yp
         const int column = ch2 % 16;
 
         const int sx = 8 * column;
-        const int sy = 16 * row;
+        const int sy = 16 * (row + base);
         painter.drawPixmap(xpixel + 7, ypixel, text80Col, sx, sy, 7, 16);
     }
 
