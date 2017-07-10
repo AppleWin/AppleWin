@@ -9,6 +9,24 @@
 #include <libevdev/libevdev.h>
 
 #include "Log.h"
+#include "Memory.h"
+#include "Common.h"
+#include "CPU.h"
+
+unsigned __int64 g_nJoyCntrResetCycle = 0;	// Abs cycle that joystick counters were reset
+const double PDL_CNTR_INTERVAL = 2816.0 / 255.0;	// 11.04 (From KEGS)
+
+std::shared_ptr<Input> Input::ourSingleton;
+
+void Input::initialise(const std::string & device)
+{
+  ourSingleton.reset(new Input(device));
+}
+
+Input & Input::instance()
+{
+  return *ourSingleton;
+}
 
 Input::Input(const std::string & device)
   : myButtonCodes(2), myAxisCodes(2), myAxisMins(2), myAxisMaxs(2)
@@ -97,4 +115,52 @@ int Input::getAxis(int i) const
     return 0;
   }
 
+}
+
+BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+  addr &= 0xFF;
+  BOOL pressed = 0;
+
+  switch (addr)
+  {
+    case 0x61:
+      pressed = Input::instance().getButton(0);
+      break;
+    case 0x62:
+      pressed = Input::instance().getButton(1);
+      break;
+    case 0x63:
+      break;
+  }
+  return MemReadFloatingBus(pressed, nCyclesLeft);
+}
+
+BYTE __stdcall JoyReadPosition(WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+  const int nJoyNum = (address & 2) ? 1 : 0;	// $C064..$C067
+
+  CpuCalcCycles(nCyclesLeft);
+  BOOL nPdlCntrActive = 0;
+
+  if (nJoyNum == 0)
+  {
+    int axis = address & 1;
+    int pdl = Input::instance().getAxis(axis);
+    // This is from KEGS. It helps games like Championship Lode Runner & Boulderdash
+    if (pdl >= 255)
+      pdl = 280;
+
+    nPdlCntrActive  = g_nCumulativeCycles <= (g_nJoyCntrResetCycle + (unsigned __int64) ((double)pdl * PDL_CNTR_INTERVAL));
+  }
+
+  return MemReadFloatingBus(nPdlCntrActive, nCyclesLeft);
+}
+
+BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+{
+  CpuCalcCycles(nCyclesLeft);
+  g_nJoyCntrResetCycle = g_nCumulativeCycles;
+
+  return MemReadFloatingBus(nCyclesLeft);
 }

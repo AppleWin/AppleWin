@@ -16,6 +16,10 @@ public:
   bool getButton(int i) const;
   int getAxis(int i) const;
 
+  static void initialise(const std::string & device);
+
+  static Input & instance();
+
 private:
   int myFD;
   std::shared_ptr<libevdev> myDev;
@@ -26,4 +30,6 @@ private:
   std::vector<unsigned int> myAxisCodes;
   std::vector<int> myAxisMins;
   std::vector<int> myAxisMaxs;
+
+  static std::shared_ptr<Input> ourSingleton;
 };

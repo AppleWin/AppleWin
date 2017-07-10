@@ -25,7 +25,6 @@ namespace
   std::shared_ptr<Frame> frame;
   std::shared_ptr<GraphicsColors> colors;
   std::shared_ptr<ASCIIArt> asciiArt;
-  std::shared_ptr<Input> input;
 
   int    g_nTrackDrive1  = -1;
   int    g_nTrackDrive2  = -1;
@@ -55,8 +54,6 @@ namespace
   bool keyReady = false;
 
   bool g_bTextFlashState = false;
-  unsigned __int64 g_nJoyCntrResetCycle = 0;	// Abs cycle that joystick counters were reset
-  const double PDL_CNTR_INTERVAL = 2816.0 / 255.0;	// 11.04 (From KEGS)
 
   double alpha = 10.0;
   double F = 0;
@@ -375,7 +372,7 @@ void VideoInitialize()
 
   frame.reset(new Frame());
   asciiArt.reset(new ASCIIArt());
-  input.reset(new Input("/dev/input/by-id/usb-©Microsoft_Corporation_Controller_1BBE3DB-event-joystick"));
+  Input::initialise("/dev/input/by-id/usb-©Microsoft_Corporation_Controller_1BBE3DB-event-joystick");
 
   signal(SIGINT, sig_handler);
 }
@@ -518,7 +515,7 @@ int ProcessKeyboard()
 
 void ProcessInput()
 {
-  input->poll();
+  Input::instance().poll();
 }
 
 BYTE    KeybGetKeycode ()
@@ -536,54 +533,6 @@ BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyc
   BYTE result = keyReady ? nextKey : 0;
   nextKey = 0;
   return result;
-}
-
-BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
-{
-  addr &= 0xFF;
-  BOOL pressed = 0;
-
-  switch (addr)
-  {
-    case 0x61:
-      pressed = input->getButton(0);
-      break;
-    case 0x62:
-      pressed = input->getButton(1);
-      break;
-    case 0x63:
-      break;
-  }
-  return MemReadFloatingBus(pressed, nCyclesLeft);
-}
-
-BYTE __stdcall JoyReadPosition(WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
-{
-  const int nJoyNum = (address & 2) ? 1 : 0;	// $C064..$C067
-
-  CpuCalcCycles(nCyclesLeft);
-  BOOL nPdlCntrActive = 0;
-
-  if (nJoyNum == 0)
-  {
-    int axis = address & 1;
-    int pdl = input->getAxis(axis);
-    // This is from KEGS. It helps games like Championship Lode Runner & Boulderdash
-    if (pdl >= 255)
-      pdl = 280;
-
-    nPdlCntrActive  = g_nCumulativeCycles <= (g_nJoyCntrResetCycle + (unsigned __int64) ((double)pdl * PDL_CNTR_INTERVAL));
-  }
-
-  return MemReadFloatingBus(nPdlCntrActive, nCyclesLeft);
-}
-
-BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
-{
-  CpuCalcCycles(nCyclesLeft);
-  g_nJoyCntrResetCycle = g_nCumulativeCycles;
-
-  return MemReadFloatingBus(nCyclesLeft);
 }
 
 // Speaker
