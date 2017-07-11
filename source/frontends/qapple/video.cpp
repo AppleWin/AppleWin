@@ -153,15 +153,41 @@ Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
 
 void Video::paintEvent(QPaintEvent *)
 {
-    QPainter painter(this);
-
     const QSize min = minimumSize();
     const QSize actual = size();
     const double sx = double(actual.width()) / double(min.width());
     const double sy = double(actual.height()) / double(min.height());
 
-    painter.scale(sx, sy);
+    QPixmap offscreen(min);
 
+    /* How to make this faster
+     * 1) Do not call Video::paint() with a scale != 1:1
+     * 2) For this reason we need to draw elsewhere
+     * 3) and finally scale the whole thing just once to the widget
+     * 4) QPixmap vs QImage: cant see the difference
+     * 5) QOpenGLWidget is 2x faster than QWidget but it has some flickering when resizing
+     *
+     * On my i5-4460  CPU @ 3.20GHz with x2 zoom
+     * TEXT: 4-5% CPU usage
+     * HGR: 6-7% CPU usage
+     */
+
+    // first draw the image offscreen 1:1
+    {
+        QPainter painter(&offscreen);
+        paint(painter);
+    }
+
+    // then paint it on the widget with scale
+    {
+        QPainter painter(this);
+        painter.scale(sx, sy);
+        painter.drawPixmap(0, 0, offscreen);
+    }
+}
+
+void Video::paint(QPainter & painter)
+{
     const int displaypage2 = (SW_PAGE2) == 0 ? 0 : 1;
 
     g_pHiresBank1 = MemGetAuxPtr (0x2000 << displaypage2);

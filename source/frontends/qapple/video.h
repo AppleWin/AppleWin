@@ -4,8 +4,8 @@
 #include <QOpenGLWidget>
 #include <memory>
 
-//#define VIDEO_BASECLASS QOpenGLWidget
-#define VIDEO_BASECLASS QWidget
+#define VIDEO_BASECLASS QOpenGLWidget
+//#define VIDEO_BASECLASS QWidget
 
 class GraphicsCache;
 
@@ -31,6 +31,10 @@ private:
     bool UpdateDLoResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset);
     bool UpdateHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset);
     bool UpdateDHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset);
+
+    // paint the whole screen
+    // no scale applied
+    void paint(QPainter & painter);
 
     std::shared_ptr<const GraphicsCache> myGraphicsCache;
 };
