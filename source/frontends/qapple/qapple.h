@@ -15,6 +15,9 @@ class QApple : public QMainWindow, private Ui::QApple
 public:
     explicit QApple(QWidget *parent = 0);
 
+signals:
+    void endEmulator();
+
 protected:
     virtual void closeEvent(QCloseEvent * event);
     virtual void timerEvent(QTimerEvent *event);
@@ -39,6 +42,8 @@ private slots:
     void on_actionBenchmark_triggered();
 
     void on_timer();
+
+    void on_actionMemory_triggered();
 
 private:
 

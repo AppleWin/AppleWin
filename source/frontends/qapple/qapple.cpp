@@ -19,6 +19,7 @@
 #include "linux/joy_input.h"
 
 #include "emulator.h"
+#include "memorycontainer.h"
 
 #include <QMdiSubWindow>
 #include <QMessageBox>
@@ -52,6 +53,11 @@ namespace
 
         MemInitialize();
         VideoInitialize();
+    }
+
+    void stopEmulator()
+    {
+        MemDestroy();
     }
 
     void uninitialiseEmulator()
@@ -214,6 +220,8 @@ void QApple::on_actionDisk_2_triggered()
 
 void QApple::on_actionReboot_triggered()
 {
+    emit endEmulator();
+    stopEmulator();
     startEmulator();
 }
 
@@ -226,4 +234,16 @@ void QApple::on_actionBenchmark_triggered()
 void QApple::timerEvent(QTimerEvent *)
 {
     on_timer();
+}
+
+void QApple::on_actionMemory_triggered()
+{
+    MemoryContainer * container = new MemoryContainer(mdiArea);
+    QMdiSubWindow * window = mdiArea->addSubWindow(container);
+
+    // need to close as it points to old memory
+    connect(this, SIGNAL(endEmulator()), window, SLOT(close()));
+
+    window->setWindowTitle("Memory viewer");
+    window->show();
 }

@@ -17,15 +17,24 @@ SOURCES += main.cpp\
     qresources.cpp \
     emulator.cpp \
     video.cpp \
-    graphicscache.cpp
+    graphicscache.cpp \
+    chunks.cpp \
+    commands.cpp \
+    qhexedit.cpp \
+    memorycontainer.cpp
 
 HEADERS  += qapple.h \
     emulator.h \
     video.h \
-    graphicscache.h
+    graphicscache.h \
+    chunks.h \
+    commands.h \
+    qhexedit.h \
+    memorycontainer.h
 
 FORMS    += qapple.ui \
-    emulator.ui
+    emulator.ui \
+    memorycontainer.ui
 
 RESOURCES += \
     qapple.qrc

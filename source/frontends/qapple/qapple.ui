@@ -33,12 +33,12 @@
      <x>0</x>
      <y>0</y>
      <width>1032</width>
-     <height>25</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSystem">
     <property name="title">
-     <string>System</string>
+     <string>S&amp;ystem</string>
     </property>
     <addaction name="actionStart"/>
     <addaction name="actionPause"/>
@@ -46,20 +46,27 @@
    </widget>
    <widget class="QMenu" name="menuDisks">
     <property name="title">
-     <string>Disks</string>
+     <string>Dis&amp;ks</string>
     </property>
     <addaction name="actionDisk_1"/>
     <addaction name="actionDisk_2"/>
    </widget>
    <widget class="QMenu" name="menuVideo">
     <property name="title">
-     <string>Video</string>
+     <string>&amp;Video</string>
     </property>
     <addaction name="actionBenchmark"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>Wi&amp;ndow</string>
+    </property>
+    <addaction name="actionMemory"/>
    </widget>
    <addaction name="menuSystem"/>
    <addaction name="menuDisks"/>
    <addaction name="menuVideo"/>
+   <addaction name="menuView"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -75,7 +82,7 @@
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionStart">
    <property name="text">
-    <string>Start</string>
+    <string>&amp;Start</string>
    </property>
   </action>
   <action name="actionPause">
@@ -83,7 +90,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Pause</string>
+    <string>&amp;Pause</string>
    </property>
   </action>
   <action name="action4_3">
@@ -103,22 +110,27 @@
   </action>
   <action name="actionDisk_1">
    <property name="text">
-    <string>Disk 1...</string>
+    <string>&amp;Disk 1...</string>
    </property>
   </action>
   <action name="actionDisk_2">
    <property name="text">
-    <string>Disk 2...</string>
+    <string>Disk &amp;2...</string>
    </property>
   </action>
   <action name="actionReboot">
    <property name="text">
-    <string>Reboot</string>
+    <string>&amp;Reboot</string>
    </property>
   </action>
   <action name="actionBenchmark">
    <property name="text">
-    <string>Benchmark</string>
+    <string>&amp;Benchmark</string>
+   </property>
+  </action>
+  <action name="actionMemory">
+   <property name="text">
+    <string>&amp;Memory</string>
    </property>
   </action>
  </widget>
