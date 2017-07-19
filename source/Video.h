@@ -150,15 +150,11 @@ struct WinBmpHeader4_t
 
 // Globals __________________________________________________________
 
-extern HBITMAP g_hLogoBitmap;
-
 extern COLORREF   g_nMonochromeRGB;	// saved to Registry
 extern uint32_t   g_uVideoMode;
 extern DWORD      g_eVideoType;		// saved to Registry
 extern DWORD      g_uHalfScanLines;	// saved to Registry
 extern uint8_t   *g_pFramebufferbits;
-
-typedef bool (*VideoUpdateFuncPtr_t)(int,int,int,int,int);
 
 // Prototypes _______________________________________________________
 
@@ -167,7 +163,6 @@ void    VideoChooseMonochromeColor (); // FIXME: Should be moved to PageConfig a
 void    VideoDestroy ();
 void    VideoDisplayLogo ();
 void    VideoInitialize ();
-void    VideoRealizePalette (HDC);
 void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
 void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 void    VideoRedrawScreen (void);
@@ -190,13 +185,6 @@ void    VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode);
 void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
-bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset);
-bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset);
-bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset);
-bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset);
-bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset);
-bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset);
-
 extern bool g_bDisplayPrintScreenFileName;
 extern bool g_bShowPrintScreenWarningDialog;
 
@@ -206,7 +194,7 @@ enum VideoScreenShot_e
 	SCREENSHOT_560x384 = 0,
 	SCREENSHOT_280x192
 };
-void Video_TakeScreenShot( int iScreenShotType );
+void Video_TakeScreenShot( VideoScreenShot_e iScreenShotType );
 void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel );
 
 

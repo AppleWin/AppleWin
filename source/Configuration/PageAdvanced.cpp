@@ -84,7 +84,7 @@ BOOL CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_SAVESTATE_FILENAME:
 			break;
 		case IDC_SAVESTATE_BROWSE:
-			if(m_PropertySheetHelper.SaveStateSelectImage(hWnd, TEXT("Select Save State file"), false))
+			if(m_PropertySheetHelper.SaveStateSelectImage(hWnd, TEXT("Select Save State file"), true))
 				SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)m_PropertySheetHelper.GetSSNewFilename());
 			break;
 		case IDC_PRINTER_DUMP_FILENAME_BROWSE:

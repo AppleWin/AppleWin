@@ -211,8 +211,12 @@ BOOL CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM 
 
 void CPageInput::DlgOK(HWND hWnd)
 {
-	const UINT uNewJoyType0 = SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
-	const UINT uNewJoyType1 = SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
+	UINT uNewJoyType0 = SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
+	if (uNewJoyType0 >= J0C_MAX) uNewJoyType0 = 0;	// GH#434
+
+	UINT uNewJoyType1 = SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
+	if (uNewJoyType1 >= J1C_MAX) uNewJoyType1 = 0;	// GH#434
+
 	const bool bIsSlot4Mouse = m_PropertySheetHelper.GetConfigNew().m_Slot[4] == CT_MouseInterface;
 
 	if (JoySetEmulationType(hWnd, m_nJoy0ChoiceTranlationTbl[uNewJoyType0], JN_JOYSTICK0, bIsSlot4Mouse))
@@ -306,9 +310,9 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 	// . the other Joystick type (if it exists) from this new list
 	// . the mouse if the mousecard is plugged in
 	int removedItemCompensation = 0;
-	for(UINT i=nJC_KEYBD_CURSORS; i<nJC_MAX; i++)
+	for (UINT i=nJC_KEYBD_CURSORS; i<nJC_MAX; i++)
 	{
-		if( ( (i == nJC_KEYBD_CURSORS) || (i == nJC_KEYBD_NUMPAD) ) &&
+		if ( ( (i == nJC_KEYBD_CURSORS) || (i == nJC_KEYBD_NUMPAD) ) &&
 			( (JoyGetJoyType(nOtherJoyNum) == nJC_KEYBD_CURSORS) || (JoyGetJoyType(nOtherJoyNum) == nJC_KEYBD_NUMPAD) )
 		  )
 		{
