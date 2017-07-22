@@ -554,9 +554,6 @@
     <Image Include="resource\SETUP.BMP">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="resource\RUN3000E.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\Apple2.rom">
@@ -608,12 +605,6 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="resource\ThunderClockPlus.rom">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="resource\TK3000e.rom">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="resource\TKClock.rom">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
