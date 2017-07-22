@@ -3,23 +3,32 @@ How To Compile/Build AppleWin
 
 0. Install git
 
+   See https://git-scm.com
+
 1. Clone the repository
 
    git clone https://github.com/AppleWin/AppleWin.git
 
-2. Download the Feb 2010 DirectX SDK
-   (It is the last version to have DirectDraw)
- 
-   http://www.microsoft.com/en-us/download/details.aspx?id=10084
+2. Visual Studio 2008 specific
 
-3. Add ddraw.lib to the linker include path:
+   Windows SDK 7.1 is required and must be enabled through
+   "Windows SDK Configuration Tool".
 
-   AppleWin project, Right-Click Properties, Linker, General, Additional Library Directories
+   Windows SDK 7.0A that comes with Visual Studio 2010 can
+   also be used but the "Windows SDK Configuration Tool"
+   is only available through the separate Windows SDK 7.1
+   installation.
 
-   The default path is:
-    C:\Program Files (x86)\Microsoft DirectX SDK (February 2010)\Lib\x86
+3. Visual Studio 2008/2010/2013/2015
 
+   Open the corresponding solution and build.
 
+   Note that the set of solutions create output and
+   intermediate files into same directores.
+
+   So before switching to a different Visual Studio version,
+   make sure doing a full clean up with the previous
+   Visual Studio used. 
 
 
 How to do a Coverity Scan of AppleWin
