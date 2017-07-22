@@ -173,7 +173,23 @@
 				>
 			</File>
 			<File
-				RelativePath=".\gzio.c"
+				RelativePath=".\gzclose.c"
+				>
+			</File>
+			<File
+				RelativePath=".\gzguts.h"
+				>
+			</File>
+			<File
+				RelativePath=".\gzlib.c"
+				>
+			</File>
+			<File
+				RelativePath=".\gzread.c"
+				>
+			</File>
+			<File
+				RelativePath=".\gzwrite.c"
 				>
 			</File>
 			<File
@@ -222,10 +238,6 @@
 			</File>
 			<File
 				RelativePath=".\zconf.h"
-				>
-			</File>
-			<File
-				RelativePath=".\zconf.in.h"
 				>
 			</File>
 			<File
