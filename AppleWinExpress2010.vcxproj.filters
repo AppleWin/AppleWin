@@ -391,9 +391,6 @@
     <ClInclude Include="source\SSI263Phonemes.h">
       <Filter>Source Files\_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="source\Structs.h">
-      <Filter>Source Files\_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="source\CPU.h">
       <Filter>Source Files\CPU</Filter>
     </ClInclude>
@@ -479,6 +476,24 @@
       <Filter>Source Files\Model</Filter>
     </ClInclude>
     <ClInclude Include="source\YamlHelper.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\SaveState_Structs_common.h">
+      <Filter>Source Files\_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\SaveState_Structs_v1.h">
+      <Filter>Source Files\_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\DiskDefs.h">
+      <Filter>Source Files\Disk</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Debugger\DebugDefs.h">
+      <Filter>Source Files\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Debugger\Util_Text.h">
+      <Filter>Source Files\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="source\SAM.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
   </ItemGroup>

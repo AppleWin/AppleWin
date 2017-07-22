@@ -386,6 +386,7 @@
   <ItemGroup>
     <ClInclude Include="source\Applewin.h" />
     <ClInclude Include="source\Debugger\Debug.h" />
+    <ClInclude Include="source\Debugger\DebugDefs.h" />
     <ClInclude Include="source\Debugger\Debugger_Assembler.h" />
     <ClInclude Include="source\Debugger\Debugger_Color.h" />
     <ClInclude Include="source\Debugger\Debugger_Console.h" />
@@ -397,8 +398,13 @@
     <ClInclude Include="source\Debugger\Debugger_Symbols.h" />
     <ClInclude Include="source\Debugger\Debugger_Types.h" />
     <ClInclude Include="source\Debugger\Util_MemoryTextFile.h" />
+    <ClInclude Include="source\Debugger\Util_Text.h" />
+    <ClInclude Include="source\DiskDefs.h" />
     <ClInclude Include="source\NTSC.h" />
     <ClInclude Include="source\NTSC_CharSet.h" />
+    <ClInclude Include="source\SAM.h" />
+    <ClInclude Include="source\SaveState_Structs_common.h" />
+    <ClInclude Include="source\SaveState_Structs_v1.h" />
     <ClInclude Include="source\Tfe\Bittypes.h" />
     <ClInclude Include="source\Tfe\Bpf.h" />
     <ClInclude Include="source\Tfe\Ip6_misc.h" />
@@ -441,7 +447,6 @@
     <ClInclude Include="resource\resource.h" />
     <ClInclude Include="source\SSI263Phonemes.h" />
     <ClInclude Include="source\StdAfx.h" />
-    <ClInclude Include="source\Structs.h" />
     <ClInclude Include="source\CPU.h" />
     <ClInclude Include="source\CPU\cpu6502.h" />
     <ClInclude Include="source\CPU\cpu65C02.h" />
