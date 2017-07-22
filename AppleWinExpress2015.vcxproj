@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug NoDX|Win32">
@@ -236,6 +236,8 @@
     <None Include="resource\PRAVETS8M.ROM" />
     <None Include="resource\SSC.rom" />
     <None Include="resource\ThunderClockPlus.rom" />
+    <None Include="resource\TK3000e.rom" />
+    <None Include="resource\TKClock.rom" />
     <None Include="source\CPU\cpu_general.inl" />
     <None Include="source\CPU\cpu_instructions.inl" />
   </ItemGroup>
@@ -283,6 +285,7 @@
     <Image Include="resource\LED_CAPS_ON_LAT.BMP" />
     <Image Include="resource\LED_CAPS_ON_P8.BMP" />
     <Image Include="resource\RUN.BMP" />
+    <Image Include="resource\RUN3000E.bmp" />
     <Image Include="resource\RUNP.BMP" />
     <Image Include="resource\SETUP.BMP" />
   </ItemGroup>
