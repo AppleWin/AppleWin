@@ -366,7 +366,6 @@
     <ClCompile Include="source\Tape.cpp" />
     <ClCompile Include="source\z80emu.cpp" />
     <ClCompile Include="source\CPU.cpp" />
-    <ClCompile Include="source\SAM.cpp" />
     <ClCompile Include="source\Disk.cpp" />
     <ClCompile Include="source\DiskImage.cpp" />
     <ClCompile Include="source\DiskImageHelper.cpp" />
@@ -557,9 +556,6 @@
     <ProjectReference Include="libyaml\win32\yaml2010.vcxproj">
       <Project>{5CE8051A-3F0C-4C39-B1C0-3338E48BA60F}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Manifest Include="AppleWin\Release\AppleWin.exe.intermediate.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
