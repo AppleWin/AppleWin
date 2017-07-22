@@ -684,7 +684,7 @@
     <None Include="bin\History.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="RESOURCE\APPLEWIN.RC">
+    <ResourceCompile Include="resource\Applewin.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
