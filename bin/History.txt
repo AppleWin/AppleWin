@@ -9,13 +9,16 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.2.4 (Experimental) - 25 May 2017
--------------------------------------
+1.26.3.0 (Experimental) - 4 Aug 2017
+------------------------------------
 Changes:
+. [Bug #428] Input option to use PC Joystick 1 Thumbstick 2 for emulated Joystick 2 
 . Swapping disks while a drive is on now warns and prompts if you still wish to do this instead of silently failing with no feedback.
 . [Bug #323] Skip hard disk boot by holding down the Open-Apple key during an Apple II restart
 
 Fixes:
+. [Bug #452] Fix for unmounted HD now gives "NO DEVICE CONNECTED" (before gave "I/O ERROR")
+. [Bug #445] Debugger: BPM cmd: Support trigger on stack access for BRK,JSR,PLn,PHn,RTI,RTS
 . [Bug #423] Full support for INTC8ROM soft switch (fixes transient a2audit.dsk & Bejeweled failures)
 . [Bug #418] Fix for slot-3 ROM not returning floating bus when Uthernet card is enabled
 . [Bug #417] Typos in Uthernet documentation
