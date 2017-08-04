@@ -94,7 +94,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define SR MEM_S | MEM_RI
 const Opcodes_t g_aOpcodes65C02[ NUM_OPCODES ] =
 {
-	{"BRK", 0     ,  0}, {"ORA", AM_IZX, R_}, {"nop", AM_M  , im}, {"nop", 0  , 0 }, // 00 .. 03
+	{"BRK", 0     , SW}, {"ORA", AM_IZX, R_}, {"nop", AM_M  , im}, {"nop", 0  , 0 }, // 00 .. 03
 	{"TSB", AM_Z  , _W}, {"ORA", AM_Z  , R_}, {"ASL", AM_Z  , RW}, {"nop", 0  , 0 }, // 04 .. 07
 	{"PHP", 0     , SW}, {"ORA", AM_M  , im}, {"ASL", 0     ,  0}, {"nop", 0  , 0 }, // 08 .. 0B
 	{"TSB", AM_A  , _W}, {"ORA", AM_A  , R_}, {"ASL", AM_A  , RW}, {"nop", 0  , 0 }, // 0C .. 0F
@@ -154,7 +154,7 @@ const Opcodes_t g_aOpcodes65C02[ NUM_OPCODES ] =
 	{"CPY", AM_A  , R_}, {"CMP", AM_A  , R_}, {"DEC", AM_A  , RW}, {"nop", 0  , 0 }, // CC .. CF
 	{"BNE", AM_R  ,  0}, {"CMP", AM_NZY, R_}, {"CMP", AM_NZ ,  0}, {"nop", 0  , 0 }, // D0 .. D3
 	{"nop", AM_ZX ,  0}, {"CMP", AM_ZX , R_}, {"DEC", AM_ZX , RW}, {"nop", 0  , 0 }, // D4 .. D7
-	{"CLD", 0     ,  0}, {"CMP", AM_AY , R_}, {"PHX", 0     ,  0}, {"nop", 0  , 0 }, // D8 .. DB
+	{"CLD", 0     ,  0}, {"CMP", AM_AY , R_}, {"PHX", 0     , SW}, {"nop", 0  , 0 }, // D8 .. DB
 	{"nop", AM_AX ,  0}, {"CMP", AM_AX , R_}, {"DEC", AM_AX , RW}, {"nop", 0  , 0 }, // DC .. DF
 
 	{"CPX", AM_M  , im}, {"SBC", AM_IZX, R_}, {"nop", AM_M  , im}, {"nop", 0  , 0 }, // E0 .. E3
@@ -163,7 +163,7 @@ const Opcodes_t g_aOpcodes65C02[ NUM_OPCODES ] =
 	{"CPX", AM_A  , R_}, {"SBC", AM_A  , R_}, {"INC", AM_A  , RW}, {"nop", 0  , 0 }, // EC .. EF
 	{"BEQ", AM_R  ,  0}, {"SBC", AM_NZY, R_}, {"SBC", AM_NZ ,  0}, {"nop", 0  , 0 }, // F0 .. F3
 	{"nop", AM_ZX ,  0}, {"SBC", AM_ZX , R_}, {"INC", AM_ZX , RW}, {"nop", 0  , 0 }, // F4 .. F7
-	{"SED", 0     ,  0}, {"SBC", AM_AY , R_}, {"PLX", 0     ,  0}, {"nop", 0  , 0 }, // F8 .. FB
+	{"SED", 0     ,  0}, {"SBC", AM_AY , R_}, {"PLX", 0     , SR}, {"nop", 0  , 0 }, // F8 .. FB
 	{"nop", AM_AX ,  0}, {"SBC", AM_AX , R_}, {"INC", AM_AX , RW}, {"nop", 0  , 0 }  // FF .. FF
 };
 
@@ -216,7 +216,7 @@ Fx	BEQ r  SBC (d),Y  sbc (z)  ---  ---      SBC d,X  INC z,X  ---  SED  SBC a,Y 
 		(d),Y
 
 */
-	{"BRK", 0     ,  0}, {"ORA", AM_IZX, R_}, {"hlt", 0     , 0 }, {"aso", AM_IZX, RW}, // 00 .. 03
+	{"BRK", 0     , SW}, {"ORA", AM_IZX, R_}, {"hlt", 0     , 0 }, {"aso", AM_IZX, RW}, // 00 .. 03
 	{"nop", AM_Z  , R_}, {"ORA", AM_Z  , R_}, {"ASL", AM_Z  , RW}, {"aso", AM_Z  , RW}, // 04 .. 07
 	{"PHP", 0     , SW}, {"ORA", AM_M  , im}, {"ASL", 0     ,  0}, {"anc", AM_M  , im}, // 08 .. 0B
 	{"nop", AM_AX ,  0}, {"ORA", AM_A  , R_}, {"ASL", AM_A  , RW}, {"aso", AM_A  , RW}, // 0C .. 0F
@@ -583,11 +583,14 @@ bool _6502_GetStackReturnAddress ( WORD & nAddress_ )
 
 
 //===========================================================================
-bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPointer_, int * pTargetBytes_, bool bIgnoreJSRJMP, bool bIgnoreBranch )
+bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int * pTargetBytes_, bool bIgnoreJSRJMP, bool bIgnoreBranch )
 {
 	bool bStatus = false;
 
 	if (! pTargetPartial_)
+		return bStatus;
+
+	if (! pTargetPartial2_)
 		return bStatus;
 
 	if (! pTargetPointer_)
@@ -597,6 +600,7 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPointer
 //		return bStatus;
 
 	*pTargetPartial_  = NO_6502_TARGET;
+	*pTargetPartial2_ = NO_6502_TARGET;
 	*pTargetPointer_  = NO_6502_TARGET;
 
 	if (pTargetBytes_)
@@ -615,7 +619,57 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPointer
 
 	switch (eMode)
 	{
+		case AM_IMPLIED:
+			if (g_aOpcodes[ nOpcode ].nMemoryAccess & MEM_S)	// Stack R/W?
+			{
+				if (nOpcode == OPCODE_RTI || nOpcode == OPCODE_RTS)	// RTI or RTS?
+				{
+					WORD sp = regs.sp;
+
+					if (nOpcode == OPCODE_RTI)
+					{
+						//*pTargetPartial3_ = _6502_STACK_BEGIN + ((sp+1) & 0xFF);	// TODO: PLP
+						++sp;
+					}
+
+					*pTargetPartial_  = _6502_STACK_BEGIN + ((sp+1) & 0xFF);
+					*pTargetPartial2_ = _6502_STACK_BEGIN + ((sp+2) & 0xFF);
+					nTarget16 = mem[*pTargetPartial_] + (mem[*pTargetPartial2_]<<8);
+
+					if (nOpcode == OPCODE_RTS)
+						++nTarget16;
+				}
+				else if (nOpcode == OPCODE_BRK)	// BRK?
+				{
+					*pTargetPartial_  = _6502_STACK_BEGIN + ((regs.sp+0) & 0xFF);
+					*pTargetPartial2_ = _6502_STACK_BEGIN + ((regs.sp-1) & 0xFF);
+					//*pTargetPartial3_ = _6502_STACK_BEGIN + ((regs.sp-2) & 0xFF);	// TODO: PHP
+					//*pTargetPartial4_ = _6502_BRK_VECTOR + 0;	// TODO
+					//*pTargetPartial5_ = _6502_BRK_VECTOR + 1;	// TODO
+					nTarget16 = *(LPWORD)(mem + _6502_BRK_VECTOR);
+				}
+				else	// PHn/PLn
+				{
+					if (g_aOpcodes[ nOpcode ].nMemoryAccess & MEM_WI)
+						nTarget16 = _6502_STACK_BEGIN + ((regs.sp+0) & 0xFF);
+					else
+						nTarget16 = _6502_STACK_BEGIN + ((regs.sp+1) & 0xFF);
+				}
+
+				*pTargetPointer_ = nTarget16;
+
+				if (pTargetBytes_)
+					*pTargetBytes_ = 1;
+			}
+			break;
+
 		case AM_A: // $Absolute
+			if (nOpcode == OPCODE_JSR)	// JSR?
+			{
+				*pTargetPartial_  = _6502_STACK_BEGIN + ((regs.sp+0) & 0xFF);
+				*pTargetPartial2_ = _6502_STACK_BEGIN + ((regs.sp-1) & 0xFF);
+			}
+
 			*pTargetPointer_ = nTarget16;
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;

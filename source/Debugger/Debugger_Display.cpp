@@ -1506,10 +1506,11 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 
 		// Indirect / Indexed
 			int nTargetPartial;
+			int nTargetPartial2;
 			int nTargetPointer;
 			WORD nTargetValue = 0; // de-ref
 			int nTargetBytes;
-			_6502_GetTargets( nBaseAddress, &nTargetPartial, &nTargetPointer, &nTargetBytes );
+			_6502_GetTargets( nBaseAddress, &nTargetPartial, &nTargetPartial2, &nTargetPointer, &nTargetBytes );
 
 			if (nTargetPointer != NO_6502_TARGET)
 			{
@@ -3192,8 +3193,10 @@ void DrawTargets ( int line)
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
 
-	int aTarget[2];
-	_6502_GetTargets( regs.pc, &aTarget[0],&aTarget[1], NULL );
+	int aTarget[3];
+	_6502_GetTargets( regs.pc, &aTarget[0],&aTarget[1],&aTarget[2], NULL );
+
+	aTarget[1] = aTarget[2];	// Move down as we only have 2 lines
 
 	RECT rect;
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;

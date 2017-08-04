@@ -115,6 +115,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"* ", // Read/Write
 	};
 
+	static WORD g_uBreakMemoryAddress = 0;
 
 // Commands _______________________________________________________________________________________
 
@@ -1113,10 +1114,11 @@ bool _CheckBreakpointValue( Breakpoint_t *pBP, int nVal )
 //===========================================================================
 int CheckBreakpointsIO ()
 {
-	const int NUM_TARGETS = 2;
+	const int NUM_TARGETS = 3;
 
 	int aTarget[ NUM_TARGETS ] =
 	{
+		NO_6502_TARGET,
 		NO_6502_TARGET,
 		NO_6502_TARGET
 	};
@@ -1126,7 +1128,7 @@ int CheckBreakpointsIO ()
 	int  iTarget;
 	int  nAddress;
 
-	_6502_GetTargets( regs.pc, &aTarget[0], &aTarget[1], &nBytes );
+	_6502_GetTargets( regs.pc, &aTarget[0], &aTarget[1], &aTarget[2], &nBytes, false );
 	
 	if (nBytes)
 	{
@@ -1144,6 +1146,7 @@ int CheckBreakpointsIO ()
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
+								g_uBreakMemoryAddress = (WORD) nAddress;
 								return BP_HIT_MEM;
 							}
 						}
@@ -8561,7 +8564,8 @@ void DebugContinueStepping ()
 		if (regs.pc == g_nDebugStepUntil || g_bDebugBreakpointHit)
 		{
 			TCHAR sText[ CONSOLE_WIDTH ];
-			char* pszStopReason = NULL;
+			char szStopMessage[CONSOLE_WIDTH];
+			char* pszStopReason = szStopMessage;
 
 			if (regs.pc == g_nDebugStepUntil)
 				pszStopReason = TEXT("PC matches 'Go until' address");
@@ -8572,7 +8576,7 @@ void DebugContinueStepping ()
 			else if (g_bDebugBreakpointHit & BP_HIT_REG)
 				pszStopReason = TEXT("Register matches value");
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
-				pszStopReason = TEXT("Memory accessed");
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "Memory accessed at $%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				pszStopReason = TEXT("PC reads from floating bus or I/O memory");
 			else

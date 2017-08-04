@@ -1049,8 +1049,11 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 	{
 		OPCODE_BRA     = 0x80,
 
+		OPCODE_BRK     = 0x00,
 		OPCODE_JSR     = 0x20,
+		OPCODE_RTI     = 0x40,
 		OPCODE_JMP_A   = 0x4C, // Absolute
+		OPCODE_RTS     = 0x60,
 		OPCODE_JMP_NA  = 0x6C, // Indirect Absolute
 		OPCODE_JMP_IAX = 0x7C, // Indexed (Absolute Indirect, X)
 
@@ -1101,9 +1104,11 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 	extern const          int _6502_BRANCH_POS      ;//= +127
 	extern const          int _6502_BRANCH_NEG      ;//= -128
 	extern const unsigned int _6502_ZEROPAGE_END    ;//= 0x00FF;
+	extern const unsigned int _6502_STACK_BEGIN     ;//= 0x0100;
 	extern const unsigned int _6502_STACK_END       ;//= 0x01FF;
 	extern const unsigned int _6502_IO_BEGIN        ;//= 0xC000;
 	extern const unsigned int _6502_IO_END          ;//= 0xC0FF;
+	extern const unsigned int _6502_BRK_VECTOR      ;//= 0xFFFE;
 	extern const unsigned int _6502_MEM_BEGIN       ;//= 0x0000;
 	extern const unsigned int _6502_MEM_END         ;//= 0xFFFF;
 
