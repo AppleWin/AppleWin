@@ -128,6 +128,9 @@ static void RemoveDisk (int drive);
 static void WriteTrack (int drive);
 static LPCTSTR DiskGetFullPathName(const int iDrive);
 
+#define SPINNING_CYCLES (20000*64)		// 1280000 cycles = 1.25s
+#define WRITELIGHT_CYCLES (20000*64)	// 1280000 cycles = 1.25s
+
 //===========================================================================
 
 int DiskGetCurrentDrive(void)  { return currdrive; }
@@ -233,7 +236,7 @@ static void CheckSpinning(void)
 	DWORD modechange = (floppymotoron && !g_aFloppyDisk[currdrive].spinning);
 
 	if (floppymotoron)
-		g_aFloppyDisk[currdrive].spinning = 20000;
+		g_aFloppyDisk[currdrive].spinning = SPINNING_CYCLES;
 
 	if (modechange)
 		//FrameRefreshStatus(DRAW_LEDS);
@@ -926,7 +929,7 @@ static void __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCy
 {
 	floppywritemode = 1;
 	BOOL modechange = !g_aFloppyDisk[currdrive].writelight;
-	g_aFloppyDisk[currdrive].writelight = 20000;
+	g_aFloppyDisk[currdrive].writelight = WRITELIGHT_CYCLES;
 	if (modechange)
 	{
 		//FrameRefreshStatus(DRAW_LEDS);
@@ -944,7 +947,7 @@ void DiskUpdatePosition(DWORD cycles)
 		Disk_t * fptr = &g_aFloppyDisk[loop];
 
 		if (fptr->spinning && !floppymotoron) {
-			if (!(fptr->spinning -= MIN(fptr->spinning, (cycles >> 6))))
+			if (!(fptr->spinning -= MIN(fptr->spinning, cycles)))
 			{
 				// FrameRefreshStatus(DRAW_LEDS);
 				FrameDrawDiskLEDS( (HDC)0 );
@@ -954,11 +957,11 @@ void DiskUpdatePosition(DWORD cycles)
 
 		if (floppywritemode && (currdrive == loop) && fptr->spinning)
 		{
-			fptr->writelight = 20000;
+			fptr->writelight = WRITELIGHT_CYCLES;
 		}
 		else if (fptr->writelight)
 		{
-			if (!(fptr->writelight -= MIN(fptr->writelight, (cycles >> 6))))
+			if (!(fptr->writelight -= MIN(fptr->writelight, cycles)))
 			{
 				//FrameRefreshStatus(DRAW_LEDS);
 				FrameDrawDiskLEDS( (HDC)0 );
