@@ -811,12 +811,12 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	// https://github.com/AppleWin/AppleWin/issues/201
 	// NB. Prevent flooding of forcing UI to redraw!!!
 	if( ((fptr->byte) & 0xFF) == 0 )
-		FrameDrawDiskStatus( (HDC)0 ); 
+		FrameDrawDiskStatus( (HDC)0 );
 }
 
 //===========================================================================
 
-void DiskReset(void)
+void DiskReset(const bool bIsPowerCycle/*=false*/)
 {
 	// RESET forces all switches off (UTAIIe Table 9.1)
 	currdrive = 0;
@@ -824,6 +824,16 @@ void DiskReset(void)
 	floppyloadmode = 0;
 	floppywritemode = 0;
 	phases = 0;
+
+	if (bIsPowerCycle)	// GH#460 - Ctrl+Reset whilst debugging acts like a power-cycle
+	{
+		g_aFloppyDisk[DRIVE_1].spinning   = 0;
+		g_aFloppyDisk[DRIVE_1].writelight = 0;
+		g_aFloppyDisk[DRIVE_2].spinning   = 0;
+		g_aFloppyDisk[DRIVE_2].writelight = 0;
+
+		FrameRefreshStatus(DRAW_LEDS,false);
+	}
 }
 
 //===========================================================================

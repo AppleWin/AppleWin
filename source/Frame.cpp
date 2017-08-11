@@ -2036,7 +2036,7 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 // todo: consolidate CtrlReset() and ResetMachineState()
 void ResetMachineState ()
 {
-  DiskReset();		// Set floppymotoron=0
+  DiskReset(true);	// Set floppymotoron=0
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
   MemReset();
@@ -2069,7 +2069,7 @@ void CtrlReset()
 		MemResetPaging();
 
 	PravetsReset();
-	DiskReset();
+	DiskReset(g_nAppMode == MODE_DEBUG);	// For MODE_DEBUG act like a power-cycle (GH#460)
 	KeybReset();
 	if (!IS_APPLE2)			// TODO: Why not for A][ & A][+ too?
 		VideoResetState();	// Switch Alternate char set off
