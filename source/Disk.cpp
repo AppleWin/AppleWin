@@ -828,7 +828,7 @@ void DiskReset(const bool bIsPowerCycle/*=false*/)
 	floppywritemode = 0;
 	phases = 0;
 
-	if (bIsPowerCycle)	// GH#460 - Ctrl+Reset whilst debugging acts like a power-cycle
+	if (bIsPowerCycle)	// GH#460
 	{
 		g_aFloppyDisk[DRIVE_1].spinning   = 0;
 		g_aFloppyDisk[DRIVE_1].writelight = 0;
