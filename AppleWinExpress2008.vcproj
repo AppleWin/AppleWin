@@ -26,8 +26,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Performing unit-test: TestCPU6502"
-				CommandLine=".\Release\TestCPU6502.exe"
+				Description=""
+				CommandLine=".\test\UnitTests.bat Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -132,8 +132,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Performing unit-test: TestCPU6502"
-				CommandLine=".\Debug\TestCPU6502.exe"
+				Description=""
+				CommandLine=".\test\UnitTests.bat Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
