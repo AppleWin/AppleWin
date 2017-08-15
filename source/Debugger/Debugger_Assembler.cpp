@@ -608,9 +608,9 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 
 	bStatus   = true;
 
-	BYTE nOpcode   = *(LPBYTE)(mem + nAddress    );
-	BYTE nTarget8  = *(LPBYTE)(mem + nAddress + 1);
-	WORD nTarget16 = *(LPWORD)(mem + nAddress + 1);
+	BYTE nOpcode   = mem[nAddress];
+	BYTE nTarget8  = mem[(nAddress+1)&0xFFFF];
+	WORD nTarget16 = (mem[(nAddress+2)&0xFFFF]<<8) | nTarget8;
 
 	int eMode = g_aOpcodes[ nOpcode ].nAddressMode;
 
