@@ -641,7 +641,7 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 
 			// 2.9.0.11 Bug #479
 			int nLen = strlen( sName );
-			if (nLen >= nMaxLen)
+			if (nLen > nMaxLen)
 			{
 				ConsolePrintFormat( sText, " %sWarn.: %s%s (%d > %d)"
 					, CHC_WARNING
