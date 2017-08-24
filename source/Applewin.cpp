@@ -77,6 +77,7 @@ static bool g_bLoadedSaveState = false;
 TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin executable resides
 TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
+bool      g_bCapturePrintScreenKey = true;
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
 bool      g_bRestart = false;
 bool      g_bRestartFullScreen = false;
@@ -1035,6 +1036,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			g_bDisplayPrintScreenFileName = true;
 		}
+		else if (strcmp(lpCmdLine, "-no-printscreen-key") == 0)		// Don't try to capture PrintScreen key
+		{
+			g_bCapturePrintScreenKey = false;
+		}
 		else if (strcmp(lpCmdLine, "-no-printscreen-dlg") == 0)		// Turn off the PrintScreen warning message dialog (if PrintScreen key can't be grabbed)
 		{
 			g_bShowPrintScreenWarningDialog = false;
@@ -1233,7 +1238,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 
 		// PrintScrn support
-		AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
+		if (g_bCapturePrintScreenKey)
+			AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
 		LogFileOutput("Main: AppleWin_RegisterHotKeys()\n");
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
