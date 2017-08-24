@@ -210,8 +210,9 @@ void Help_Categories()
 void Help_Examples()
 {
 	char sText[ CONSOLE_WIDTH ];
-	ConsolePrintFormat( sText, " %sExamples%s:"
+	ConsolePrintFormat( sText, " %sExamples%s:%s"
 		, CHC_USAGE
+		, CHC_ARG_SEP
 		, CHC_DEFAULT
 	);
 }
@@ -322,6 +323,17 @@ void _ColorizeHeader(
 	pDst += nLen;
 }
 
+
+void _ColorizeString(
+	char * & pDst,
+	const char *pSrc, const size_t nLen )
+{
+	strcpy( pDst, pSrc );
+	pDst += nLen;
+}
+
+
+// pOperator is one of CHC_*
 void _ColorizeOperator(
 	char * & pDst, const char * & pSrc,
 	char * pOperator )
@@ -340,6 +352,18 @@ void _ColorizeOperator(
 	pDst += nLen;
 
 	pSrc++;
+}
+
+
+
+
+bool isHexDigit( char c )
+{
+	if ((c >= '0') &&  (c <= '9')) return true;
+	if ((c >= 'A') &&  (c <= 'F')) return true;
+	if ((c >= 'a') &&  (c <= 'f')) return true;
+
+	return false;
 }
 
 
@@ -363,6 +387,9 @@ bool Colorize( char * pDst, const char * pSrc )
 	const char sTotal[] = "Total:";
 	const int  nTotal = sizeof( sTotal ) - 1;
 
+	const char sExamples[] = "Examples:";
+	const int  nExamples = sizeof( sExamples ) - 1;
+
 	int nLen = 0;
 	while (*pSrc)
 	{
@@ -384,6 +411,11 @@ bool Colorize( char * pDst, const char * pSrc )
 		if (strncmp( sTotal, pSrc, nNote) == 0)
 		{
 			_ColorizeHeader( pDst, pSrc, sTotal, nTotal );
+		}
+		else
+		if (strncmp( sExamples, pSrc, nExamples) == 0)
+		{
+			_ColorizeHeader( pDst, pSrc, sExamples, nExamples );
 		}
 		else
 		if (*pSrc == '[')
@@ -416,6 +448,25 @@ bool Colorize( char * pDst, const char * pSrc )
 			_ColorizeOperator( pDst, pSrc, CHC_ARG_SEP );
 		}
 		else
+		if ((*pSrc == '$') && isHexDigit(pSrc[1])) // Hex Number
+		{
+			_ColorizeOperator( pDst, pSrc, CHC_ARG_SEP );
+
+			const char *start = pSrc;
+			const char *end   = pSrc;
+
+			while( isHexDigit( *end ) )
+				end++;
+
+			size_t nDigits = end - start;
+
+			_ColorizeString( pDst, CHC_NUM_HEX, strlen( CHC_NUM_HEX ) );
+			_ColorizeString( pDst, start      , nDigits               );
+			_ColorizeString( pDst, CHC_DEFAULT, strlen( CHC_DEFAULT ) );
+
+			pSrc += nDigits;
+		}
+		else
 		{
 			*pDst = *pSrc;
 			pDst++;
@@ -426,6 +477,7 @@ bool Colorize( char * pDst, const char * pSrc )
 	return true;
 }
 
+// NOTE: This appends a new line
 inline bool ConsoleColorizePrint( char* colorizeBuf, size_t /*colorizeBufSz*/,
                                   const char* pText )
 {
@@ -1281,10 +1333,23 @@ Update_t CmdHelpSpecific (int nArgs)
 	// Symbols
 		case CMD_SYMBOLS_LOOKUP:
 			ConsoleColorizePrint( sText, " Usage: symbol [= <address>]" );
+			ConsolePrintFormat( sText, "       %s\"%ssymbol%s\" = %saddress"
+				, CHC_ARG_MAND
+				, CHC_SYMBOL
+				, CHC_ARG_MAND
+				, CHC_ADDRESS
+			);
+			ConsoleColorizePrint( sText, " Note: Valid characters are any characters above ASCII space ($20)." );
+			ConsolePrintFormat( sText, " You %sMUST%s double-quote names containing special characters to be recognized."
+				, CHC_WARNING
+				, CHC_DEFAULT
+			);
 			Help_Examples();
-			ConsolePrintFormat( sText, "%s   %s HOME"       , CHC_EXAMPLE, pCommand->m_sName );
-			ConsolePrintFormat( sText, "%s   %s LIFE = 2000", CHC_EXAMPLE, pCommand->m_sName );
-			ConsolePrintFormat( sText, "%s   %s LIFE"       , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s HOME"          , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s LIFE = 2000"   , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s LIFE"          , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s \"PR#\" = FE95", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s \"PR#\""       , CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_SYMBOLS_ROM:
 		case CMD_SYMBOLS_APPLESOFT:
