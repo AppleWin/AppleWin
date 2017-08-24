@@ -652,8 +652,8 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 					);
 				}
 
-				ConsolePrintFormat( sText, " %sWarning: %s%-16s %saliases %s$%s%04X %s%-12s%s (%s%s%s)"
-					, CHC_WARNING
+				ConsolePrintFormat( sText, " %sInfo.: %s%-16s %saliases %s$%s%04X %s%-12s%s (%s%s%s)" // MAGIC NUMBER: -MAX_SYMBOLS_LEN
+					, CHC_INFO // 2.9.0.10 was CHC_WARNING, see #479
 					, CHC_SYMBOL
 					, sName
 					, CHC_INFO
