@@ -111,7 +111,7 @@ int _Arg_1( LPTSTR pName )
 	}
 	else
 	{
-		_tcsncpy( g_aArgs[1].sArg, pName, MAX_ARG_LEN - 1 );
+		_tcsncpy( g_aArgs[1].sArg, pName, MAX_ARG_LEN );
 	}
 	return 1;
 }
@@ -304,7 +304,11 @@ int	ArgsGet ( TCHAR * pInput )
 
 			if (nBuf > 0)
 			{
-				nLen = MIN( nBuf, MAX_ARG_LEN-1 );
+				// Does anyone actually "need" > 132 character output???
+				// Technically, we are capped via ParseInput(), g_aArgs[ iArg ] = g_aArgRaw[ iArg ];
+				//if (iTokenSrc == TOKEN_QUOTE_DOUBLE)
+				//	nLen = nBuf;
+				nLen = MIN( nBuf, MAX_ARG_LEN ); // NOTE: see Arg_t.sArg[] // GH#481
 				_tcsncpy( pArg->sArg, pSrc, nLen );
 				pArg->sArg[ nLen ] = 0;
 				pArg->nArgLen      = nLen;
