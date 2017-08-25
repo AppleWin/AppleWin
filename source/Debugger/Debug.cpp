@@ -188,6 +188,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Config - Disassembly
 	bool  g_bConfigDisasmAddressView   = true;
+	int   g_bConfigDisasmClick         = 0; // GH#462 alt=1, ctrl=2, shift=4 bitmask
 	bool  g_bConfigDisasmAddressColon  = true;
 	bool  g_bConfigDisasmOpcodesView   = true;
 	bool  g_bConfigDisasmOpcodeSpaces  = true;
@@ -2489,7 +2490,7 @@ Update_t CmdConfigDisasm( int nArgs )
 			{
 				case PARAM_CONFIG_BRANCH:
 					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
-					{					
+					{
 						iArg++;
 						g_iConfigDisasmBranchType = g_aArgs[ iArg ].nValue;
 						if (g_iConfigDisasmBranchType < 0)
@@ -2501,6 +2502,30 @@ Update_t CmdConfigDisasm( int nArgs )
 					else // show current setting
 					{
 						ConsoleBufferPushFormat( sText, TEXT( "Branch Type: %d" ), g_iConfigDisasmBranchType );
+						ConsoleBufferToDisplay();
+					}
+					break;
+
+				case PARAM_CONFIG_CLICK: // GH#462
+					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
+					{
+						iArg++;
+						g_bConfigDisasmClick = (g_aArgs[ iArg ].nValue) & 7; // MAGIC NUMBER
+					}
+//					else // Always show current setting -- TODO: Fix remaining disasm to show current setting when set
+					{
+						const char *aClickKey[8] =
+						{
+							 ""                 // 0
+							,"Alt "             // 1
+							,"Ctrl "            // 2
+							,"Alt+Ctrl "        // 3
+							,"Shift "           // 4
+							,"Shift+Alt "       // 5
+							,"Shift+Ctrl "      // 6
+							,"Shift+Ctarl+Alt " // 7
+						};
+						ConsoleBufferPushFormat( sText, TEXT( "Click: %d = %sLeft click" ), g_bConfigDisasmClick, aClickKey[ g_bConfigDisasmClick & 7 ] );
 						ConsoleBufferToDisplay();
 					}
 					break;
@@ -9645,6 +9670,16 @@ void DebuggerCursorNext()
 void DebuggerMouseClick( int x, int y )
 {
 	if (g_nAppMode != MODE_DEBUG)
+		return;
+
+	// NOTE: KeybUpdateCtrlShiftStatus() should be called before
+	int iAltCtrlShift  = 0;
+	iAltCtrlShift |= (g_bAltKey   & 1) << 0;
+	iAltCtrlShift |= (g_bCtrlKey  & 1) << 1;
+	iAltCtrlShift |= (g_bShiftKey & 1) << 2;
+
+	// GH#462 disasm click #
+	if (iAltCtrlShift != g_bConfigDisasmClick)
 		return;
 
 	int nFontWidth  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg * GetViewportScale();

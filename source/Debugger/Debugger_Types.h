@@ -1319,6 +1319,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 // Disasm
 	, _PARAM_CONFIG_BEGIN = _PARAM_REGS_END // Daisy Chain
 		, PARAM_CONFIG_BRANCH = _PARAM_CONFIG_BEGIN // g_iConfigDisasmBranchType   [0|1|2]
+		, PARAM_CONFIG_CLICK   // g_bConfigDisasmClick        [0..7] // GH#462
 		, PARAM_CONFIG_COLON   // g_bConfigDisasmAddressColon [0|1]
 		, PARAM_CONFIG_OPCODE  // g_bConfigDisasmOpcodesView  [0|1]
 		, PARAM_CONFIG_POINTER // g_bConfigInfoTargetPointer  [0|1]

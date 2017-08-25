@@ -1346,6 +1346,8 @@ LRESULT CALLBACK FrameWndProc (
 		break;
 
     case WM_LBUTTONDOWN:
+		KeybUpdateCtrlShiftStatus();
+
       if (buttondown == -1)
 	  {
         int x = LOWORD(lparam);
@@ -1399,6 +1401,7 @@ LRESULT CALLBACK FrameWndProc (
 				}
 			}
 		}
+
 		DebuggerMouseClick( x, y );
       }
       RelayEvent(WM_LBUTTONDOWN,wparam,lparam);

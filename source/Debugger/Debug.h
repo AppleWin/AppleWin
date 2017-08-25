@@ -83,6 +83,7 @@
 
 // Config - Disassembly
 	extern bool  g_bConfigDisasmAddressView  ;
+	extern int   g_bConfigDisasmClick        ; // GH#462
 	extern bool  g_bConfigDisasmAddressColon ;
 	extern bool  g_bConfigDisasmOpcodesView  ;
 	extern bool  g_bConfigDisasmOpcodeSpaces ;
