@@ -9752,6 +9752,31 @@ void DebuggerMouseClick( int x, int y )
 				CmdCursorJumpPC( CURSOR_ALIGN_CENTER );
 				DebugDisplay();
 			}
+			else
+			if (cy == 4 || cy == 5)
+			{
+				int iFlag = -1;
+				int nFlag = _6502_NUM_FLAGS;
+
+				while( nFlag --> 0 )
+				{
+					// TODO: magic number instead of DrawFlags() DISPLAY_FLAG_COLUMN, rect.left += ((2 + _6502_NUM_FLAGS) * nSpacerWidth);
+					// BP_SRC_FLAG_C is 6,  cx 60 --> 0
+					// ...
+					// BP_SRC_FLAG_N is 13, cx 53 --> 7
+					if (cx == (53 + nFlag))
+					{
+						iFlag = 7 - nFlag;
+						break;
+					}
+				}
+
+				if (iFlag >= 0)
+				{
+					regs.ps ^= (1 << iFlag);
+					DebugDisplay();
+				}
+			}
 			else // Click on stack
 			if( cy > 3)
 			{
