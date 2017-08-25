@@ -34,7 +34,7 @@ const int EOL_NULL = 0;
 bool MemoryTextFile_t::Read( char *pFileName )
 {
 	bool bStatus = false;
-	FILE *hFile = fopen( pFileName, "rt" );
+	FILE *hFile = fopen( pFileName, "rb" );
 
 	if (hFile)
 	{
@@ -47,9 +47,6 @@ bool MemoryTextFile_t::Read( char *pFileName )
 
 		char *pBuffer = & m_vBuffer.at(0);
 		fread( (void*)pBuffer, nSize, 1, hFile );
-
-		m_vBuffer.push_back( EOL_NULL );
-
 		fclose(hFile);
 
 		m_bDirty = true;
