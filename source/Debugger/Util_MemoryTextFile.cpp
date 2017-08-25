@@ -43,7 +43,7 @@ bool MemoryTextFile_t::Read( char *pFileName )
 		fseek( hFile, 0, SEEK_SET );
 
 		m_vBuffer.reserve( nSize + 1 );
-		m_vBuffer.insert( m_vBuffer.begin(), nSize+1, 0 );
+		m_vBuffer.insert( m_vBuffer.begin(), nSize+1, 0 ); // NOTE: Can NOT m_vBuffer.clear(); MUST insert() _before_ using at()
 
 		char *pBuffer = & m_vBuffer.at(0);
 		fread( (void*)pBuffer, nSize, 1, hFile );
