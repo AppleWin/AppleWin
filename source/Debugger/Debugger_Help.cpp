@@ -1085,9 +1085,11 @@ Update_t CmdHelpSpecific (int nArgs)
 		{
 			ConsoleColorizePrint( sText, " Note: All arguments effect the disassembly view" );
 
-			ConsoleColorizePrintFormat( sTemp, sText, " Usage: [%s%s | %s%s | %s%s | %s%s | %s%s]"
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: [%s%s | %s | %s%s | %s%s | %s%s | %s%s]"
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_CONFIG_BRANCH ].m_sName
+				, CHC_COMMAND
+				, g_aParameters[ PARAM_CONFIG_CLICK ].m_sName
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_CONFIG_COLON  ].m_sName
 				, CHC_COMMAND
@@ -1104,6 +1106,23 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPushFormat( sText, "  %d off, %d plain, %d fancy",
 				 DISASM_BRANCH_OFF, DISASM_BRANCH_PLAIN, DISASM_BRANCH_FANCY );
 			ConsolePrintFormat( sText, "  i.e. %s%s %s 1", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
+
+			iParam = PARAM_CONFIG_CLICK;
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: %s [#]", g_aParameters[ iParam ].m_sName );
+			ConsoleBufferPush( "  Set required key combo. (Alt, Control, or Shift) when left clicking" );
+			ConsoleBufferPushFormat( sText, "    0  Left-Click (no Alt, Ctrl, Shift)" );
+			ConsoleBufferPushFormat( sText, "    1  Alt Left-click"                   );
+			ConsoleBufferPushFormat( sText, "    2  Ctrl Left-click"                  );
+			ConsoleBufferPushFormat( sText, "    3  Alt+Ctrl Left-click"              );
+			ConsoleBufferPushFormat( sText, "    4  Shift Left-click"                 );
+			ConsoleBufferPushFormat( sText, "    5  Shift+Alt Left-click"             );
+			ConsoleBufferPushFormat( sText, "    6  Shift+Ctrl Left-click"            );
+			ConsoleBufferPushFormat( sText, "    7  Shift+Ctrl+Alt Left-click"        );
+			Help_Examples();
+			ConsolePrintFormat( sText, "    %s%s %s 0  // Plain Left-click"           , CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
+			ConsolePrintFormat( sText, "    %s%s %s 1  // Require Alt Left-click"     , CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
+			ConsolePrintFormat( sText, "    %s%s %s 2  // Require Ctrl Left-click"    , CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
+			ConsolePrintFormat( sText, "    %s%s %s 3  // Require Alt+Ctrl Left-click", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
 
 			iParam = PARAM_CONFIG_COLON;
 			ConsoleColorizePrintFormat( sTemp, sText, " Usage: %s [0|1]", g_aParameters[ iParam ].m_sName );
