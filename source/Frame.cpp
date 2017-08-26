@@ -2154,19 +2154,23 @@ void SetFullScreenMode ()
 	g_main_window_saved_style = GetWindowLong(g_hFrameWindow, GWL_STYLE);
 	g_main_window_saved_exstyle = GetWindowLong(g_hFrameWindow, GWL_EXSTYLE);
 	GetWindowRect(g_hFrameWindow, &g_main_window_saved_rect);
-	SetWindowLong(g_hFrameWindow, GWL_STYLE, g_main_window_saved_style & ~(WS_CAPTION | WS_THICKFRAME));
+	SetWindowLong(g_hFrameWindow, GWL_STYLE  , g_main_window_saved_style   & ~(WS_CAPTION | WS_THICKFRAME));
 	SetWindowLong(g_hFrameWindow, GWL_EXSTYLE, g_main_window_saved_exstyle & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
 	
 	monitor_info.cbSize = sizeof(monitor_info);
 	GetMonitorInfo(MonitorFromWindow(g_hFrameWindow, MONITOR_DEFAULTTONEAREST), &monitor_info);
+
 	left = monitor_info.rcMonitor.left;
-	top = monitor_info.rcMonitor.top;
-	width = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.right - monitor_info.rcMonitor.left);
-	height = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top);
-	scalex = width / A2_WINDOW_WIDTH;
+	top  = monitor_info.rcMonitor.top;
+
+	width  = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.right  - monitor_info.rcMonitor.left);
+	height = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top );
+
+	scalex = width  / A2_WINDOW_WIDTH;
 	scaley = height / A2_WINDOW_HEIGHT;
+
 	g_win_fullscreen_scale = (scalex <= scaley) ? scalex : scaley;
-	g_win_fullscreen_offsetx = ((int)width - (int)(g_win_fullscreen_scale * A2_WINDOW_WIDTH)) / 2;
+	g_win_fullscreen_offsetx = ((int)width  - (int)(g_win_fullscreen_scale * A2_WINDOW_WIDTH )) / 2;
 	g_win_fullscreen_offsety = ((int)height - (int)(g_win_fullscreen_scale * A2_WINDOW_HEIGHT)) / 2;
 	SetWindowPos(g_hFrameWindow, NULL, left, top, (int)width, (int)height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 	g_bIsFullScreen = true;
