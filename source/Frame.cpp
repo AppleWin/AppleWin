@@ -2178,7 +2178,7 @@ void SetFullScreenMode ()
 	buttonx    = GetFullScreenOffsetX() + g_nViewportCX + VIEWPORTX*2;
 	buttony    = GetFullScreenOffsetY();
 	viewportx  = VIEWPORTX;
-	viewporty  = VIEWPORTY;
+	viewporty  = g_bIsFullScreen ? 0 : VIEWPORTY; // GH#464
 #endif
 
 	//	GetWindowRect(g_hFrameWindow,&framerect);
