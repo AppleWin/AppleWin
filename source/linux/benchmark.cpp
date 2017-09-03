@@ -9,6 +9,8 @@
 #include "Disk.h"
 #include "CPU.h"
 
+#include "linux/benchmark.h"
+
 void VideoBenchmark(std::function<void()> VideoRedrawScreen)
 {
   // PREPARE TWO DIFFERENT FRAME BUFFERS, EACH OF WHICH HAVE HALF OF THE

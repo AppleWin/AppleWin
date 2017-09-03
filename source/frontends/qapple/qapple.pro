@@ -45,3 +45,6 @@ INCLUDEPATH += $$PWD/../../../source
 DEPENDPATH += $$PWD/../../../source
 
 unix: LIBS += -levdev
+
+unix:QMAKE_RPATHDIR += $ORIGIN/../../..
+
