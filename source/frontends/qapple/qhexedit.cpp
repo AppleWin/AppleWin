@@ -6,7 +6,6 @@
 
 #include "qhexedit.h"
 #include <algorithm>
-#include <iostream>
 
 
 // ********************************************************************** Constructor, destructor
@@ -44,7 +43,7 @@ QHexEdit::QHexEdit(QWidget *parent) : QAbstractScrollArea(parent)
     connect(_undoStack, SIGNAL(indexChanged(int)), this, SLOT(dataChangedPrivate(int)));
 
     _cursorTimer.setInterval(500);
-    _cursorTimer.start();
+    // the timer is started inside setReadOnly() if necessary
 
     setAddressWidth(4);
     setAddressArea(true);
@@ -286,6 +285,10 @@ bool QHexEdit::isReadOnly()
 void QHexEdit::setReadOnly(bool readOnly)
 {
     _readOnly = readOnly;
+    if (_readOnly)
+        _cursorTimer.stop();
+    else
+        _cursorTimer.start();
 }
 
 void QHexEdit::setHexCaps(const bool isCaps)
@@ -918,9 +921,7 @@ void QHexEdit::paintEvent(QPaintEvent *event)
     if ((hexPositionInShowData >= 0) && (hexPositionInShowData < _hexDataShown.size()))
     {
         // paint cursor
-        if (_blink && !_readOnly && hasFocus())
-            painter.fillRect(_cursorRect, this->palette().color(QPalette::WindowText));
-        else
+        if (_readOnly)
         {
             // make the background stick out
             QColor color = viewport()->palette().dark().color();
@@ -938,6 +939,11 @@ void QHexEdit::paintEvent(QPaintEvent *event)
             {
                 painter.drawText(_pxCursorX - pxOfsX, _pxCursorY, _hexDataShown.mid(hexPositionInShowData, 1));
             }
+        }
+        else
+        {
+            if (_blink && hasFocus())
+                painter.fillRect(_cursorRect, this->palette().color(QPalette::WindowText));
         }
     }
 
