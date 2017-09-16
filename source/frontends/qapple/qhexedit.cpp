@@ -154,10 +154,6 @@ int QHexEdit::bytesPerLine()
 
 void QHexEdit::setCursorPosition(qint64 position)
 {
-    // 1. delete old cursor
-    _blink = false;
-    viewport()->update(_cursorRect);
-
     // 2. Check, if cursor in range?
     if (position > (_chunks->size() * 2 - 1))
         position = _chunks->size() * 2  - (_overwriteMode ? 1 : 0);
@@ -179,13 +175,13 @@ void QHexEdit::setCursorPosition(qint64 position)
     }
 
     if (_overwriteMode)
-        _cursorRect = QRect(_pxCursorX - horizontalScrollBar()->value(), _pxCursorY + _pxCursorWidth, _pxCharWidth, _pxCursorWidth);
+        _cursorRect = QRect(_pxCursorX - horizontalScrollBar()->value(), _pxCursorY - _pxCursorWidth + _pxSelectionSub, _pxCharWidth, _pxCursorWidth);
     else
-        _cursorRect = QRect(_pxCursorX - horizontalScrollBar()->value(), _pxCursorY - _pxCharHeight + 4, _pxCursorWidth, _pxCharHeight);
+        _cursorRect = QRect(_pxCursorX - horizontalScrollBar()->value(), _pxCursorY - _pxCharHeight + _pxSelectionSub, _pxCursorWidth, _pxCharHeight);
 
-    // 4. Immediately draw new cursor
+    // 4. Immediately redraw everything
     _blink = true;
-    viewport()->update(_cursorRect);
+    viewport()->update();
     emit currentAddressChanged(_bPosCurrent);
 }
 
@@ -926,24 +922,25 @@ void QHexEdit::paintEvent(QPaintEvent *event)
             // make the background stick out
             QColor color = viewport()->palette().dark().color();
             painter.fillRect(QRect(_pxCursorX - pxOfsX, _pxCursorY - _pxCharHeight + _pxSelectionSub, _pxCharWidth, _pxCharHeight), color);
-            if (_editAreaIsAscii)
-            {
-                // every 2 hex there is 1 ascii
-                int asciiPositionInShowData = hexPositionInShowData / 2;
-                int ch = (uchar)_dataShown.at(asciiPositionInShowData);
-                if ( ch < 0x20 )
-                    ch = '.';
-                painter.drawText(_pxCursorX - pxOfsX, _pxCursorY, QChar(ch));
-            }
-            else
-            {
-                painter.drawText(_pxCursorX - pxOfsX, _pxCursorY, _hexDataShown.mid(hexPositionInShowData, 1));
-            }
         }
         else
         {
             if (_blink && hasFocus())
                 painter.fillRect(_cursorRect, this->palette().color(QPalette::WindowText));
+        }
+
+        if (_editAreaIsAscii)
+        {
+            // every 2 hex there is 1 ascii
+            int asciiPositionInShowData = hexPositionInShowData / 2;
+            int ch = (uchar)_dataShown.at(asciiPositionInShowData);
+            if ( ch < 0x20 )
+                ch = '.';
+            painter.drawText(_pxCursorX - pxOfsX, _pxCursorY, QChar(ch));
+        }
+        else
+        {
+            painter.drawText(_pxCursorX - pxOfsX, _pxCursorY, _hexDataShown.mid(hexPositionInShowData, 1));
         }
     }
 
