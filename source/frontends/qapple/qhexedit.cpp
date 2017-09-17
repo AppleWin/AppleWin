@@ -843,7 +843,8 @@ void QHexEdit::paintEvent(QPaintEvent *event)
         if (_addressArea)
         {
             QString address;
-            for (int row=0, pxPosY = _pxCharHeight; row <= (_dataShown.size()/_bytesPerLine); row++, pxPosY +=_pxCharHeight)
+            int numberOfRows = (_dataShown.size() - 1) / _bytesPerLine + 1;
+            for (int row=0, pxPosY = _pxCharHeight; row < numberOfRows; row++, pxPosY +=_pxCharHeight)
             {
                 address = QString("%1").arg(_bPosFirst + row*_bytesPerLine + _addressOffset, _addrDigits, 16, QChar('0'));
                 painter.drawText(_pxPosAdrX - pxOfsX, pxPosY, address);
@@ -1071,7 +1072,7 @@ void QHexEdit::adjust()
 
     // set verticalScrollbar()
     _rowsShown = ((viewport()->height()-4)/_pxCharHeight);
-    int lineCount = (int)(_chunks->size() / (qint64)_bytesPerLine) + 1;
+    int lineCount = (int)((_chunks->size() - 1) / (qint64)_bytesPerLine) + 1;
     verticalScrollBar()->setRange(0, lineCount - _rowsShown);
     verticalScrollBar()->setPageStep(_rowsShown);
 
