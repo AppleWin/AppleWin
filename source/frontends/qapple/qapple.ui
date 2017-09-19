@@ -33,7 +33,7 @@
      <x>0</x>
      <y>0</y>
      <width>1032</width>
-     <height>20</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSystem">
@@ -43,13 +43,6 @@
     <addaction name="actionStart"/>
     <addaction name="actionPause"/>
     <addaction name="actionReboot"/>
-   </widget>
-   <widget class="QMenu" name="menuDisks">
-    <property name="title">
-     <string>Dis&amp;ks</string>
-    </property>
-    <addaction name="actionDisk_1"/>
-    <addaction name="actionDisk_2"/>
    </widget>
    <widget class="QMenu" name="menuVideo">
     <property name="title">
@@ -63,9 +56,15 @@
     </property>
     <addaction name="actionMemory"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Too&amp;ls</string>
+    </property>
+    <addaction name="actionOptions"/>
+   </widget>
    <addaction name="menuSystem"/>
-   <addaction name="menuDisks"/>
    <addaction name="menuVideo"/>
+   <addaction name="menuTools"/>
    <addaction name="menuView"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -108,16 +107,6 @@
     <string>x2</string>
    </property>
   </action>
-  <action name="actionDisk_1">
-   <property name="text">
-    <string>&amp;Disk 1...</string>
-   </property>
-  </action>
-  <action name="actionDisk_2">
-   <property name="text">
-    <string>Disk &amp;2...</string>
-   </property>
-  </action>
   <action name="actionReboot">
    <property name="text">
     <string>&amp;Reboot</string>
@@ -131,6 +120,11 @@
   <action name="actionMemory">
    <property name="text">
     <string>&amp;Memory</string>
+   </property>
+  </action>
+  <action name="actionOptions">
+   <property name="text">
+    <string>&amp;Options...</string>
    </property>
   </action>
  </widget>

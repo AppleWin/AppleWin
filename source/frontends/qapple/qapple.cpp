@@ -20,6 +20,7 @@
 
 #include "emulator.h"
 #include "memorycontainer.h"
+#include "preferences.h"
 
 #include <QMdiSubWindow>
 #include <QMessageBox>
@@ -70,6 +71,17 @@ namespace
         DiskDestroy();
     }
 
+    void insertDisk(const QString & filename, const int disk)
+    {
+        const bool createMissingDisk = true;
+        const ImageError_e result = DiskInsert(disk, filename.toStdString().c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
+        if (result != eIMAGE_ERROR_NONE)
+        {
+            const QString message = QString("Error [%1] inserting '%2'").arg(QString::number(result), filename);
+            QMessageBox::warning(NULL, "Disk error", message);
+        }
+    }
+
 }
 
 void FrameDrawDiskLEDS(HDC)
@@ -101,11 +113,9 @@ BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCycle
 void VideoInitialize() {}
 
 QApple::QApple(QWidget *parent) :
-    QMainWindow(parent), myDiskFileDialog(this), myTimerID(0)
+    QMainWindow(parent), myTimerID(0)
 {
     setupUi(this);
-
-    myDiskFileDialog.setFileMode(QFileDialog::AnyFile);
 
     myEmulator = new Emulator(mdiArea);
     myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
@@ -189,35 +199,6 @@ void QApple::on_action4_3_triggered()
     myEmulator->set43AspectRatio(myEmulatorWindow);
 }
 
-void QApple::insertDisk(const int disk)
-{
-    if (myDiskFileDialog.exec())
-    {
-        QStringList files = myDiskFileDialog.selectedFiles();
-        if (files.size() == 1)
-        {
-            const std::string filename = files[0].toStdString();
-            const bool createMissingDisk = true;
-            const ImageError_e result = DiskInsert(disk, filename.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
-            if (result != eIMAGE_ERROR_NONE)
-            {
-                const QString message = QString("Error [%1] inserting '%2'").arg(QString::number(result), files[0]);
-                QMessageBox::warning(NULL, "Disk error", message);
-            }
-        }
-    }
-}
-
-void QApple::on_actionDisk_1_triggered()
-{
-    insertDisk(DRIVE_1);
-}
-
-void QApple::on_actionDisk_2_triggered()
-{
-    insertDisk(DRIVE_2);
-}
-
 void QApple::on_actionReboot_triggered()
 {
     emit endEmulator();
@@ -246,4 +227,47 @@ void QApple::on_actionMemory_triggered()
 
     window->setWindowTitle("Memory viewer");
     window->show();
+}
+
+void QApple::on_actionOptions_triggered()
+{
+    Preferences::Data currentOptions;
+
+    const std::vector<size_t> diskIDs = {DRIVE_1, DRIVE_2};
+    currentOptions.disks.resize(diskIDs.size());
+    for (size_t i = 0; i < diskIDs.size(); ++i)
+    {
+        const char * diskName = DiskGetFullName(diskIDs[i]);
+        if (diskName)
+        {
+            currentOptions.disks[i] = diskName;
+        }
+    }
+
+    const std::vector<size_t> hdIDs = {HARDDISK_1, HARDDISK_2};
+    currentOptions.hds.resize(hdIDs.size());
+    for (size_t i = 0; i < hdIDs.size(); ++i)
+    {
+        const char * diskName = HD_GetFullName(hdIDs[i]);
+        if (diskName)
+        {
+            currentOptions.hds[i] = diskName;
+        }
+    }
+
+    Preferences preferences(this, currentOptions);
+
+    if (preferences.exec())
+    {
+        const Preferences::Data newOptions = preferences.getData();
+
+        for (size_t i = 0; i < diskIDs.size(); ++i)
+        {
+            if (currentOptions.disks[i] != newOptions.disks[i])
+            {
+                insertDisk(newOptions.disks[i], diskIDs[i]);
+            }
+        }
+    }
+
 }

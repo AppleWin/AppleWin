@@ -3,7 +3,6 @@
 
 #include "ui_qapple.h"
 
-#include <QFileDialog>
 #include <QElapsedTimer>
 
 class Emulator;
@@ -33,10 +32,6 @@ private slots:
 
     void on_action4_3_triggered();
 
-    void on_actionDisk_1_triggered();
-
-    void on_actionDisk_2_triggered();
-
     void on_actionReboot_triggered();
 
     void on_actionBenchmark_triggered();
@@ -45,12 +40,11 @@ private slots:
 
     void on_actionMemory_triggered();
 
+    void on_actionOptions_triggered();
+
 private:
 
     void stopTimer();
-    void insertDisk(const int disk);
-
-    QFileDialog myDiskFileDialog;
 
     QElapsedTimer myElapsedTimer;
     QMdiSubWindow * myEmulatorWindow;

@@ -21,7 +21,8 @@ SOURCES += main.cpp\
     chunks.cpp \
     commands.cpp \
     qhexedit.cpp \
-    memorycontainer.cpp
+    memorycontainer.cpp \
+    preferences.cpp
 
 HEADERS  += qapple.h \
     emulator.h \
@@ -30,11 +31,13 @@ HEADERS  += qapple.h \
     chunks.h \
     commands.h \
     qhexedit.h \
-    memorycontainer.h
+    memorycontainer.h \
+    preferences.h
 
 FORMS    += qapple.ui \
     emulator.ui \
-    memorycontainer.ui
+    memorycontainer.ui \
+    preferences.ui
 
 RESOURCES += \
     qapple.qrc
