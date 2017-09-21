@@ -4,6 +4,7 @@
 #include "ui_qapple.h"
 
 #include <QElapsedTimer>
+#include "preferences.h"
 
 class Emulator;
 
@@ -46,13 +47,14 @@ private:
 
     void stopTimer();
 
+    int myTimerID;
+    Preferences myPreferences;
+
     QElapsedTimer myElapsedTimer;
     QMdiSubWindow * myEmulatorWindow;
     Emulator * myEmulator;
 
     int myMSGap;
-
-    int myTimerID;
 };
 
 #endif // QAPPLE_H

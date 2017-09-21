@@ -1,6 +1,5 @@
 #include "preferences.h"
 #include <QFileDialog>
-#include <iostream>
 
 namespace
 {
@@ -75,7 +74,7 @@ namespace
 
 }
 
-Preferences::Preferences(QWidget *parent, const Data & data) :
+Preferences::Preferences(QWidget *parent) :
     QDialog(parent)
 {
     setupUi(this);
@@ -85,7 +84,10 @@ Preferences::Preferences(QWidget *parent, const Data & data) :
     myDisks.push_back(disk2);
     myHDs.push_back(hd1);
     myHDs.push_back(hd2);
+}
 
+void Preferences::setData(const Data & data)
+{
     initialiseDisks(myDisks, data.disks);
     initialiseDisks(myHDs, data.hds);
 }
@@ -107,7 +109,6 @@ void Preferences::browseDisk(const std::vector<QComboBox *> & disks, const size_
 
     if (disks[id]->currentIndex() >= 1)
     {
-        std::cout << "Set path = " << disks[id]->currentText().toStdString() << std::endl;
         diskFileDialog.selectFile(disks[id]->currentText());
     }
 

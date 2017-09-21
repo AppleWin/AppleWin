@@ -17,8 +17,9 @@ public:
         std::vector<QString> hds;
     };
 
-    explicit Preferences(QWidget *parent, const Data & data);
+    explicit Preferences(QWidget *parent);
 
+    void setData(const Data & data);
     Data getData() const;
 
 private slots:

@@ -20,7 +20,6 @@
 
 #include "emulator.h"
 #include "memorycontainer.h"
-#include "preferences.h"
 
 #include <QMdiSubWindow>
 #include <QMessageBox>
@@ -113,7 +112,7 @@ BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCycle
 void VideoInitialize() {}
 
 QApple::QApple(QWidget *parent) :
-    QMainWindow(parent), myTimerID(0)
+    QMainWindow(parent), myTimerID(0), myPreferences(this)
 {
     setupUi(this);
 
@@ -255,11 +254,11 @@ void QApple::on_actionOptions_triggered()
         }
     }
 
-    Preferences preferences(this, currentOptions);
+    myPreferences.setData(currentOptions);
 
-    if (preferences.exec())
+    if (myPreferences.exec())
     {
-        const Preferences::Data newOptions = preferences.getData();
+        const Preferences::Data newOptions = myPreferences.getData();
 
         for (size_t i = 0; i < diskIDs.size(); ++i)
         {
