@@ -72,12 +72,35 @@ namespace
 
     void insertDisk(const QString & filename, const int disk)
     {
-        const bool createMissingDisk = true;
-        const ImageError_e result = DiskInsert(disk, filename.toStdString().c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
-        if (result != eIMAGE_ERROR_NONE)
+        if (filename.isEmpty())
         {
-            const QString message = QString("Error [%1] inserting '%2'").arg(QString::number(result), filename);
-            QMessageBox::warning(NULL, "Disk error", message);
+            DiskEject(disk);
+        }
+        else
+        {
+            const bool createMissingDisk = true;
+            const ImageError_e result = DiskInsert(disk, filename.toStdString().c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
+            if (result != eIMAGE_ERROR_NONE)
+            {
+                const QString message = QString("Error [%1] inserting '%2'").arg(QString::number(result), filename);
+                QMessageBox::warning(NULL, "Disk error", message);
+            }
+        }
+    }
+
+    void insertHD(const QString & filename, const int disk)
+    {
+        if (filename.isEmpty())
+        {
+            HD_Unplug(disk);
+        }
+        else
+        {
+            if (!HD_Insert(disk, filename.toStdString().c_str()))
+            {
+                const QString message = QString("Error inserting '%1'").arg(filename);
+                QMessageBox::warning(NULL, "Hard Disk error", message);
+            }
         }
     }
 
@@ -265,6 +288,14 @@ void QApple::on_actionOptions_triggered()
             if (currentOptions.disks[i] != newOptions.disks[i])
             {
                 insertDisk(newOptions.disks[i], diskIDs[i]);
+            }
+        }
+
+        for (size_t i = 0; i < hdIDs.size(); ++i)
+        {
+            if (currentOptions.hds[i] != newOptions.hds[i])
+            {
+                insertHD(newOptions.hds[i], hdIDs[i]);
             }
         }
     }
