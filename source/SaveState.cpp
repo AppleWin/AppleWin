@@ -523,6 +523,7 @@ static void Snapshot_LoadState_v2(void)
 		MemInitializeROM();
 		MemInitializeCustomF8ROM();
 		MemInitializeIO();
+		MemInitializeCardExpansionRomFromSnapshot();
 
 		MemUpdatePaging(TRUE);
 	}

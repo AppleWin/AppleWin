@@ -921,7 +921,8 @@ static void UpdatePaging(BOOL initialize)
 	for (loop = 0xC8; loop < 0xD0; loop++)
 	{
 		const UINT uRomOffset = (loop & 0x0f) * 0x100;
-		memshadow[loop] = pCxRomInternal+uRomOffset;											// C800..CFFF - Internal ROM
+		memshadow[loop] = (SW_SLOTCXROM && !INTC8ROM)	? pCxRomPeripheral+uRomOffset			// C800..CFFF - Peripheral ROM (GH#486)
+														: pCxRomInternal+uRomOffset;			// C800..CFFF - Internal ROM
 	}
 
 	for (loop = 0xD0; loop < 0xE0; loop++)
@@ -1428,6 +1429,21 @@ void MemInitializeIO(void)
 	// . required when restoring saved-state
 	if (!SW_SLOTCXROM)
 		IoHandlerCardsOut();
+}
+
+// Called by:
+// . Snapshot_LoadState_v2()
+void MemInitializeCardExpansionRomFromSnapshot(void)
+{
+	const UINT uSlot = g_uPeripheralRomSlot;
+
+	if (ExpansionRom[uSlot] == NULL)
+		return;
+
+	_ASSERT(g_eExpansionRomType == eExpRomPeripheral);
+
+	memcpy(pCxRomPeripheral+0x800, ExpansionRom[uSlot], FIRMWARE_EXPANSION_SIZE);
+	// NB. Copied to /mem/ by UpdatePaging(TRUE)
 }
 
 inline DWORD getRandomTime()
@@ -1950,6 +1966,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	modechanging = 0;
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
 	UpdatePaging(1);	// Initialize=1 (Still needed, even with call to MemUpdatePaging() - why?)
+						// TC-TODO: At this point, the cards haven't been loaded, so the card's expansion ROM is unknown - so pointless(?) calling this now
 
 	return true;
 }
