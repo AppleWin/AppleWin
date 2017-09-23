@@ -534,12 +534,16 @@ static bool IsCardInSlot(const UINT uSlot);
 //    1           0       internal   internal
 //    1           1       internal   internal
 //
+// NB. if (INTCXROM || INTC8ROM) == true then internal ROM
+//
 // (*) SLOTCXROM'
 // -----------
 //
 // INTC8ROM: Unreadable soft switch (UTAIIe:5-28)
-// . Set:   Access to $C3XX with SLOTC3ROM reset
-// . Reset: Access to $CFFF or an MMU reset
+// . Set:   On access to $C3XX with SLOTC3ROM reset
+//			- "From this point, $C800-$CFFF will stay assigned to motherboard ROM until
+//			   an access is made to $CFFF or until the MMU detects a system reset."
+// . Reset: On access to $CFFF or an MMU reset
 //
 
 static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
