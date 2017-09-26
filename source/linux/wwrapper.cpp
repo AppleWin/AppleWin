@@ -150,7 +150,11 @@ DWORD GetFileAttributes(const char * filename)
 
 DWORD GetFullPathName(const char* filename, DWORD length, char * buffer, char ** filePart)
 {
-  realpath(filename, buffer);
+  const char * result = realpath(filename, buffer);
+  if (!result)
+  {
+    *buffer = 0;
+  }
   return strlen(buffer);
 }
 
