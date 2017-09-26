@@ -90,6 +90,14 @@ void Preferences::setData(const Data & data)
 {
     initialiseDisks(myDisks, data.disks);
     initialiseDisks(myHDs, data.hds);
+
+    apple2Type->setCurrentIndex(data.apple2Type);
+    mouse_4->setChecked(data.mouseInSlot4);
+    cpm_5->setChecked(data.cpmInSlot5);
+    hd_7->setChecked(data.hdInSlot7);
+
+    // synchronise
+    on_hd_7_clicked(data.hdInSlot7);
 }
 
 Preferences::Data Preferences::getData() const
@@ -98,6 +106,11 @@ Preferences::Data Preferences::getData() const
 
     fillData(myDisks, data.disks);
     fillData(myHDs, data.hds);
+
+    data.apple2Type = apple2Type->currentIndex();
+    data.mouseInSlot4 = mouse_4->isChecked();
+    data.cpmInSlot5 = cpm_5->isChecked();
+    data.hdInSlot7 = hd_7->isChecked();
 
     return data;
 }
@@ -145,22 +158,30 @@ void Preferences::on_hd2_activated(int index)
     checkDuplicates(myHDs, 1, index);
 }
 
-void Preferences::on_pushButton_clicked()
+void Preferences::on_browse_disk1_clicked()
 {
     browseDisk(myDisks, 0);
 }
 
-void Preferences::on_pushButton_2_clicked()
+void Preferences::on_browse_disk2_clicked()
 {
     browseDisk(myDisks, 1);
 }
 
-void Preferences::on_pushButton_3_clicked()
+void Preferences::on_browse_hd1_clicked()
 {
     browseDisk(myHDs, 0);
 }
 
-void Preferences::on_pushButton_4_clicked()
+void Preferences::on_browse_hd2_clicked()
 {
     browseDisk(myHDs, 1);
+}
+
+void Preferences::on_hd_7_clicked(bool checked)
+{
+    hd1->setEnabled(checked);
+    hd2->setEnabled(checked);
+    browse_hd1->setEnabled(checked);
+    browse_hd2->setEnabled(checked);
 }

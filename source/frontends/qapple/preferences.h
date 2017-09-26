@@ -13,6 +13,10 @@ public:
 
     struct Data
     {
+        int apple2Type;
+        bool mouseInSlot4;
+        bool cpmInSlot5;
+        bool hdInSlot7;
         std::vector<QString> disks;
         std::vector<QString> hds;
     };
@@ -28,13 +32,12 @@ private slots:
     void on_hd1_activated(int index);
     void on_hd2_activated(int index);
 
-    void on_pushButton_clicked();
+    void on_browse_disk1_clicked();
+    void on_browse_disk2_clicked();
+    void on_browse_hd1_clicked();
+    void on_browse_hd2_clicked();
 
-    void on_pushButton_2_clicked();
-
-    void on_pushButton_3_clicked();
-
-    void on_pushButton_4_clicked();
+    void on_hd_7_clicked(bool checked);
 
 private:
     std::vector<QComboBox *> myDisks;

@@ -12,6 +12,7 @@
 #include "ParallelPrinter.h"
 #include "Video.h"
 #include "SaveState.h"
+#include "Registry.h"
 
 #include "linux/data.h"
 #include "linux/configuration.h"
@@ -41,13 +42,14 @@ namespace
         DiskInitialize();
     }
 
-    void startEmulator()
+    void startEmulator(QWidget * window)
     {
         LoadConfiguration();
 
         CheckCpu();
 
         SetWindowTitle();
+        window->setWindowTitle(g_pAppTitle);
 
         FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
@@ -104,6 +106,34 @@ namespace
         }
     }
 
+    void setSlot4(const SS_CARDTYPE newCardType)
+    {
+        g_Slot4 = newCardType;
+        REGSAVE(TEXT(REGVALUE_SLOT4), (DWORD)g_Slot4);
+    }
+
+    void setSlot5(const SS_CARDTYPE newCardType)
+    {
+        g_Slot5 = newCardType;
+        REGSAVE(TEXT(REGVALUE_SLOT5), (DWORD)g_Slot5);
+    }
+
+    const std::vector<eApple2Type> computerTypes = {A2TYPE_APPLE2, A2TYPE_APPLE2PLUS, A2TYPE_APPLE2E, A2TYPE_APPLE2EENHANCED};
+
+    int getApple2ComputerType()
+    {
+        const eApple2Type type = GetApple2Type();
+        const auto it = std::find(computerTypes.begin(), computerTypes.end(), type);
+        if (it != computerTypes.end())
+        {
+            return std::distance(computerTypes.begin(), it);
+        }
+        else
+        {
+            // default to A2E
+            return 2;
+        }
+    }
 }
 
 void FrameDrawDiskLEDS(HDC)
@@ -141,13 +171,12 @@ QApple::QApple(QWidget *parent) :
 
     myEmulator = new Emulator(mdiArea);
     myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
-    myEmulatorWindow->setWindowTitle(g_pAppTitle);
 
     myMSGap = 5;
 
     initialiseEmulator();
 
-    startEmulator();
+    startEmulator(myEmulatorWindow);
 }
 
 void QApple::closeEvent(QCloseEvent *)
@@ -225,7 +254,8 @@ void QApple::on_actionReboot_triggered()
 {
     emit endEmulator();
     stopEmulator();
-    startEmulator();
+    startEmulator(myEmulatorWindow);
+    myEmulatorWindow->setWindowTitle(g_pAppTitle);
 }
 
 void QApple::on_actionBenchmark_triggered()
@@ -277,11 +307,43 @@ void QApple::on_actionOptions_triggered()
         }
     }
 
+    currentOptions.mouseInSlot4 = g_Slot4 == CT_MouseInterface;
+    currentOptions.cpmInSlot5 = g_Slot5 == CT_Z80;
+    currentOptions.hdInSlot7 = HD_CardIsEnabled();
+
+    currentOptions.apple2Type = getApple2ComputerType();
+
     myPreferences.setData(currentOptions);
 
     if (myPreferences.exec())
     {
         const Preferences::Data newOptions = myPreferences.getData();
+
+        if (currentOptions.apple2Type != newOptions.apple2Type)
+        {
+            const eApple2Type type = computerTypes[newOptions.apple2Type];
+            SetApple2Type(type);
+            REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), type);
+            const eCpuType cpu = ProbeMainCpuDefault(type);
+            SetMainCpu(cpu);
+            REGSAVE(TEXT(REGVALUE_CPU_TYPE), cpu);
+        }
+
+        if (currentOptions.mouseInSlot4 != newOptions.mouseInSlot4)
+        {
+            const SS_CARDTYPE card = newOptions.mouseInSlot4 ? CT_MouseInterface : CT_Empty;
+            setSlot4(card);
+        }
+        if (currentOptions.cpmInSlot5 != newOptions.cpmInSlot5)
+        {
+            const SS_CARDTYPE card = newOptions.cpmInSlot5 ? CT_Z80 : CT_Empty;
+            setSlot5(card);
+        }
+        if (currentOptions.hdInSlot7 != newOptions.hdInSlot7)
+        {
+            REGSAVE(TEXT(REGVALUE_HDD_ENABLED), newOptions.hdInSlot7 ? 1 : 0);
+            HD_SetEnabled(newOptions.hdInSlot7);
+        }
 
         for (size_t i = 0; i < diskIDs.size(); ++i)
         {
