@@ -1,5 +1,8 @@
 #pragma once
 
+#include "linux/wincompat.h"
+#include <string>
+
 // Resources
 
 HRSRC FindResource(void *, const std::string & filename, const char *);

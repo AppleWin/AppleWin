@@ -315,6 +315,7 @@ void QApple::on_actionOptions_triggered()
     currentOptions.apple2Type = getApple2ComputerType();
 
     myPreferences.setData(currentOptions);
+    myPreferences.setRegistry(getProperties());
 
     if (myPreferences.exec())
     {

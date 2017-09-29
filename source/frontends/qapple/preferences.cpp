@@ -72,6 +72,25 @@ namespace
         }
     }
 
+    void processPropertyTree(const boost::property_tree::ptree & registry, QTreeWidgetItem * item)
+    {
+        QList<QTreeWidgetItem *> items;
+        for (const auto & it : registry)
+        {
+            const boost::property_tree::ptree::data_type & key = it.first;
+            const boost::property_tree::ptree & subTree = it.second;
+
+            QStringList columns;
+            columns.append(QString::fromStdString(key));
+            columns.append(QString::fromStdString(subTree.data()));
+
+            QTreeWidgetItem * newItem = new QTreeWidgetItem(item, columns);
+            processPropertyTree(subTree, newItem);
+            items.append(newItem);
+        }
+        item->addChildren(items);
+    }
+
 }
 
 Preferences::Preferences(QWidget *parent) :
@@ -84,6 +103,15 @@ Preferences::Preferences(QWidget *parent) :
     myDisks.push_back(disk2);
     myHDs.push_back(hd1);
     myHDs.push_back(hd2);
+}
+
+void Preferences::setRegistry(const boost::property_tree::ptree & registry)
+{
+    registryTree->clear();
+    QTreeWidgetItem * newItem = new QTreeWidgetItem(registryTree, QStringList(QString("Registry")));
+    processPropertyTree(registry, newItem);
+    registryTree->addTopLevelItem(newItem);
+    registryTree->expandAll();
 }
 
 void Preferences::setData(const Data & data)

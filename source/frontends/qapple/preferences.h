@@ -4,6 +4,7 @@
 #include "ui_preferences.h"
 
 #include <vector>
+#include <boost/property_tree/ptree.hpp>
 
 class Preferences : public QDialog, private Ui::Preferences
 {
@@ -23,6 +24,7 @@ public:
 
     explicit Preferences(QWidget *parent);
 
+    void setRegistry(const boost::property_tree::ptree & registry);
     void setData(const Data & data);
     Data getData() const;
 

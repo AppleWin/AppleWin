@@ -4,7 +4,6 @@
 #include "Log.h"
 
 #include <boost/property_tree/ini_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 
 class Configuration
 {
@@ -19,6 +18,8 @@ class Configuration
 
   template<typename T>
   void putValue(const std::string & section, const std::string & key, const T & value);
+
+  const boost::property_tree::ptree & getProperties() const;
 
  private:
   const std::string myFilename;
@@ -36,6 +37,11 @@ Configuration::Configuration(const std::string & filename) : myFilename(filename
 Configuration::~Configuration()
 {
   boost::property_tree::ini_parser::write_ini(myFilename, myINI);
+}
+
+const boost::property_tree::ptree & Configuration::getProperties() const
+{
+  return myINI;
 }
 
 template <typename T>
@@ -122,4 +128,9 @@ void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value)
 {
   Configuration::instance->putValue(section, key, value);
   LogFileOutput("RegSaveValue: %s - %s = %d\n", section, key, value);
+}
+
+const boost::property_tree::ptree & getProperties()
+{
+  return Configuration::instance->getProperties();
 }

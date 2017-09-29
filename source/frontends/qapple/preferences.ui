@@ -266,6 +266,27 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="registry">
+      <attribute name="title">
+       <string>Registry</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="0" column="0">
+        <widget class="QTreeWidget" name="registryTree">
+         <column>
+          <property name="text">
+           <string>Key</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Value</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>
