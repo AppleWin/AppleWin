@@ -165,7 +165,11 @@ std::string MAKEINTRESOURCE(int x)
   case IDR_APPLE2_ROM: return "Apple2.rom";
   case IDR_APPLE2_PLUS_ROM: return "Apple2_Plus.rom";
   case IDR_APPLE2E_ROM: return "Apple2e.rom";
-  case IDR_APPLE2E_ENHANCED_ROM: return	"Apple2e_Enhanced.rom";
+  case IDR_APPLE2E_ENHANCED_ROM: return "Apple2e_Enhanced.rom";
+  case IDR_PRAVETS_82_ROM: return "PRAVETS82.ROM";
+  case IDR_PRAVETS_8C_ROM: return "PRAVETS8C.ROM";
+  case IDR_PRAVETS_8M_ROM: return "PRAVETS8M.ROM";
+  case IDR_TK3000_2E_ROM: return "TK3000e.rom";
 
   case IDR_DISK2_FW: return "DISK2.rom";
   case IDR_SSC_FW: return "SSC.rom";

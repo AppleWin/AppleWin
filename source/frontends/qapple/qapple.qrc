@@ -8,5 +8,10 @@
         <file>resources/Hddrvr.bin</file>
         <file>resources/Parallel.rom</file>
         <file>resources/MouseInterface.rom</file>
+        <file>resources/Apple2_Plus.rom</file>
+        <file>resources/PRAVETS8C.ROM</file>
+        <file>resources/PRAVETS8M.ROM</file>
+        <file>resources/PRAVETS82.ROM</file>
+        <file>resources/TK3000e.rom</file>
     </qresource>
 </RCC>
