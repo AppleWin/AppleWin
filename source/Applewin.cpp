@@ -919,6 +919,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bShutdown = false;
 	bool bSetFullScreen = false;
 	bool bBoot = false;
+	bool bChangedDisplayResolution = false;
+	UINT bestWidth = 0, bestHeight = 0;
 	LPSTR szImageName_drive1 = NULL;
 	LPSTR szImageName_drive2 = NULL;
 	LPSTR szSnapshotName = NULL;
@@ -962,6 +964,30 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if (strcmp(lpCmdLine, "-f") == 0)
 		{
 			bSetFullScreen = true;
+		}
+#define CMD_FS_HEIGHT "-fs-height="
+		else if (strncmp(lpCmdLine, CMD_FS_HEIGHT, sizeof(CMD_FS_HEIGHT)-1) == 0)
+		{
+			bSetFullScreen = true;	// Implied
+
+			LPSTR lpTmp = lpCmdLine + sizeof(CMD_FS_HEIGHT)-1;
+			bool bRes = false;
+			if (strcmp(lpTmp, "best") == 0)
+			{
+				bRes = GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight);
+			}
+			else
+			{
+				UINT userSpecifiedHeight = atoi(lpTmp);
+				if (userSpecifiedHeight)
+					bRes = GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight, userSpecifiedHeight);
+				else
+					LogFileOutput("Invalid cmd-line parameter for -fs-height=x switch\n");
+			}
+			if (bRes)
+				LogFileOutput("Best resolution for -fs-height=x switch: Width=%d, Height=%d\n", bestWidth, bestHeight);
+			else
+				LogFileOutput("Failed to set parameter for -fs-height=x switch\n");
 		}
 		else if (strcmp(lpCmdLine, "-fs8bit") == 0)
 		{
@@ -1299,6 +1325,21 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			if (bSetFullScreen)
 			{
+				if (bestWidth && bestHeight)
+				{
+					DEVMODE devMode;
+					memset(&devMode, 0, sizeof(devMode));
+					devMode.dmSize = sizeof(devMode);
+					devMode.dmPelsWidth = bestWidth;
+					devMode.dmPelsHeight = bestHeight;
+					devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
+
+					DWORD dwFlags = 0;
+					LONG res = ChangeDisplaySettings(&devMode, dwFlags);
+					if (res == 0)
+						bChangedDisplayResolution = true;
+				}
+
 				PostMessage(g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
 				bSetFullScreen = false;
 			}
@@ -1331,6 +1372,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: DSUninit()\n");
 	}
 	while (g_bRestart);
+
+	if (bChangedDisplayResolution)
+		ChangeDisplaySettings(NULL, 0);	// restore default
 
 	// Release COM
 	SysClk_UninitTimer();

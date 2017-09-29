@@ -2793,3 +2793,89 @@ void FrameUpdateApple2Type(void)
 	// Draw buttons & call DrawStatusArea(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS)
 	DrawFrameWindow();
 }
+
+bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight /*= 0*/)
+{
+	typedef std::vector< std::pair<UINT,UINT> > VEC_PAIR;
+	VEC_PAIR vecDisplayResolutions;
+
+	for (UINT iModeNum = 0; ; iModeNum++)
+	{
+		DEVMODE devMode;
+		devMode.dmSize = sizeof(DEVMODE);
+		devMode.dmDriverExtra = 0;
+		BOOL bValid = EnumDisplaySettings(NULL, iModeNum, &devMode);
+		if (!bValid)
+			break;
+		if (iModeNum == 0)	// 0 is the initial "cache info about display device" operation
+			continue;
+
+		if (devMode.dmBitsPerPel != 32)
+			continue;
+
+		if (userSpecifiedHeight == 0 || userSpecifiedHeight == devMode.dmPelsHeight)
+		{
+			if (vecDisplayResolutions.size() == 0 || vecDisplayResolutions.back() != std::pair<UINT,UINT>(devMode.dmPelsWidth, devMode.dmPelsHeight)	)	// Skip duplicate resolutions
+			{
+				vecDisplayResolutions.push_back( std::pair<UINT,UINT>(devMode.dmPelsWidth, devMode.dmPelsHeight) );
+				LogFileOutput("EnumDisplaySettings(%d) - %d x %d\n", iModeNum, devMode.dmPelsWidth, devMode.dmPelsHeight);
+			}
+		}
+	}
+
+	const int A2_WINDOW_WIDTH  = FRAMEBUFFER_BORDERLESS_W;
+	const int A2_WINDOW_HEIGHT = FRAMEBUFFER_BORDERLESS_H;
+
+	if (userSpecifiedHeight)
+	{
+		if (vecDisplayResolutions.size() == 0)
+			return false;
+
+		// Pick least width (such that it's wide enough to scale)
+		UINT width = (UINT)-1;
+		for (VEC_PAIR::iterator it = vecDisplayResolutions.begin(); it!= vecDisplayResolutions.end(); ++it)
+		{
+			if (width > it->first)
+			{
+				UINT scaleFactor = it->second / A2_WINDOW_HEIGHT;
+				if (it->first >= (A2_WINDOW_WIDTH * scaleFactor))
+				{
+					width = it->first;
+				}
+			}
+		}
+
+		if (width == (UINT)-1)
+			return false;
+
+		bestWidth = width;
+		bestHeight = userSpecifiedHeight;
+		return true;
+	}
+
+	// Pick max height that's an exact multiple of A2_WINDOW_HEIGHT
+	UINT tmpBestWidth = 0;
+	UINT tmpBestHeight = 0;
+	for (VEC_PAIR::iterator it = vecDisplayResolutions.begin(); it!= vecDisplayResolutions.end(); ++it)
+	{
+		if ((it->second % A2_WINDOW_HEIGHT) == 0)
+		{
+			if (it->second > tmpBestHeight)
+			{
+				UINT scaleFactor = it->second / A2_WINDOW_HEIGHT;
+				if (it->first >= (A2_WINDOW_WIDTH * scaleFactor))
+				{
+					tmpBestWidth = it->first;
+					tmpBestHeight = it->second;
+				}
+			}
+		}
+	}
+
+	if (tmpBestWidth == 0)
+		return false;
+
+	bestWidth = tmpBestWidth;
+	bestHeight = tmpBestHeight;
+	return true;
+}
