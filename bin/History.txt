@@ -9,16 +9,27 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.3.0 (Experimental) - 4 Aug 2017
+1.26.3.1 (Experimental) - 29 Sep 2017
 ------------------------------------
 Changes:
+. [Bug #488] New -fs-height=<best|nnnn> switch.
+    - best: picks the highest resolution where the height is an integer multiple of (192*2)
+    - nnnn: select a specific resolution with height=nnnn pixels
+    Use to select a better resolution for full-screen mode.
+    NB. This changes the display resolution (and restores on exit).
 . [Bug #428] Input option to use PC Joystick 1 Thumbstick 2 for emulated Joystick 2 
 . Swapping disks while a drive is on now warns and prompts if you still wish to do this instead of silently failing with no feedback.
 . [Bug #323] Skip hard disk boot by holding down the Open-Apple key during an Apple II restart
+. [PR #441] Update zlib to latest version 1.2.11
 
 Fixes:
+. [Bug #486] Peripheral card's expansion ROM ($C800-CFFF, eg. SSC) wasn't being correctly restored from a save-state
+. [Bug #460] Debugger: F2 whilst debugger active will immediately stop the drive spinning (allowing disk swap)
+. [Bug #456] Fix strange speaker clicks when changing configuration - DirectSound wasn't being uninitialised on a restart
 . [Bug #452] Fix for unmounted HD now gives "NO DEVICE CONNECTED" (before gave "I/O ERROR")
+. [Bug #450] Persist debugger state across an F2 (reset machine state)
 . [Bug #445] Debugger: BPM cmd: Support trigger on stack access for BRK,JSR,PLn,PHn,RTI,RTS
+. [Bug #437] AppleWin.chm blocked from opening - delete the AppleWin.chm:Zone.Identifier ADS
 . [Bug #423] Full support for INTC8ROM soft switch (fixes transient a2audit.dsk & Bejeweled failures)
 . [Bug #418] Fix for slot-3 ROM not returning floating bus when Uthernet card is enabled
 . [Bug #417] Typos in Uthernet documentation
@@ -36,15 +47,17 @@ Fixes:
   - Experimental support for 6551's control bit: DTR via -dtr switch
   - Experimental support for 6551's status bits: DCD and DSR via -dcd and -dsr switches
 . [Bug #383] "Enhanced disk speed" is very slow when debugger is active
+. [Bug #269] When stepping, ESC no longer exits back to debugger (use F7, Pause keys or Debugger button instead).
+. [Bug #250] Debugger: When MODE_STEPPING, fix issue with disk LEDs staying on
 . [Bug #217] Debugger G(o) command should use normal speed
-  - When stepping, ESC no longer exits back to debugger (use F7, Pause keys or Debugger button instead).
-  - Persist F2 (reset machine state) across debug & stepping states
 . Debugger: Added new gg command:
 
      command | run at normal speed? | run at full speed?       | video quality | sound quality
     -------------------------------------------------------------------------------------------
        g     |         yes          | only if disk active, etc | precise       | precise
        gg    |         no           | always                   | periodic      | muted
+
+. [Bug #213] Pause not setting volume to zero
 
 
 1.26.1.1 - 17 Feb 2017
