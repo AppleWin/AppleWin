@@ -989,10 +989,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			else
 				LogFileOutput("Failed to set parameter for -fs-height=x switch\n");
 		}
-		else if (strcmp(lpCmdLine, "-fs8bit") == 0)
-		{
-			SetFullScreen32Bit(false);				// Support old v1.24 fullscreen 8-bit palette mode
-		}
 		else if (strcmp(lpCmdLine, "-no-di") == 0)
 		{
 			g_bDisableDirectInput = true;

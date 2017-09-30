@@ -66,8 +66,6 @@
 	int		GetViewportScale(void);
 	int     SetViewportScale(int nNewScale, bool bForce = false);
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);
-	bool	GetFullScreen32Bit(void);
-	void	SetFullScreen32Bit(bool b32Bit);
 	void    FrameUpdateApple2Type(void);
 	bool	GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight=0);
 

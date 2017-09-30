@@ -2107,16 +2107,6 @@ void CtrlReset()
 
 //===========================================================================
 
-bool GetFullScreen32Bit(void)
-{
-	return g_bFullScreen32Bit;
-}
-
-void SetFullScreen32Bit(bool b32Bit)
-{
-	g_bFullScreen32Bit = b32Bit;
-}
-
 int GetFullScreenOffsetX(void)
 {
 	return g_win_fullscreen_offsetx;
