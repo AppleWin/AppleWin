@@ -444,7 +444,7 @@ void VideoDisplayLogo ()
 			nLogoX = (g_nViewportCX - scale*bm.bmWidth )/2;
 			nLogoY = (g_nViewportCY - scale*bm.bmHeight)/2;
 
-			if( g_bIsFullScreen )
+			if( IsFullScreen() )
 			{
 #if 0
 				// Draw Logo at top of screen so when the Apple display is refreshed it will automagically clear it
@@ -455,6 +455,7 @@ void VideoDisplayLogo ()
 				nLogoY += GetFullScreenOffsetY();
 #endif
 			}
+
 			VideoDrawLogoBitmap( hFrameDC, nLogoX, nLogoY, bm.bmWidth, bm.bmHeight, scale );
 		}
 	}
@@ -666,8 +667,8 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 	#define H g_nViewportCY
 #else // Stretch
 	// Stretch - doesn't preserve 1:1 aspect ratio
-	#define W g_bIsFullScreen ? g_nDDFullScreenW : g_nViewportCX
-	#define H g_bIsFullScreen ? g_nDDFullScreenH : g_nViewportCY
+	#define W IsFullScreen() ? g_nDDFullScreenW : g_nViewportCX
+	#define H IsFullScreen() ? g_nDDFullScreenH : g_nViewportCY
 #endif
 
 	if (hFrameDC)
@@ -676,7 +677,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			int xDst = 0;
 			int yDst = 0;
 
-			if (g_bIsFullScreen)
+			if ( IsFullScreen() )
 			{
 				// Why the need to set the mid-position here, but not for (full-screen) LOGO or DEBUG modes?
 				xDst = (g_nDDFullScreenW-W)/2 - VIEWPORTX*2;

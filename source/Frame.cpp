@@ -130,7 +130,7 @@ static HDC     g_hFrameDC      = (HDC)0;
 static RECT    framerect       = {0,0,0,0};
 
 		HWND   g_hFrameWindow   = (HWND)0;
-		BOOL   g_bIsFullScreen  = 0;
+static BOOL    g_bIsFullScreen  = 0;
 		BOOL   g_bConfirmReboot = 1; // saved PageConfig REGSAVE
 		BOOL   g_bMultiMon      = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
 
@@ -636,10 +636,28 @@ static void DrawFrameWindow ()
 }
 
 //===========================================================================
+static bool g_bFullScreen_ShowSubunitStatus = true;
+
+bool IsFullScreen(void)
+{
+	return g_bIsFullScreen ? true : false;
+}
+
+bool GetFullScreenShowSubunitStatus(void)
+{
+	return g_bFullScreen_ShowSubunitStatus;
+}
+
+void SetFullScreenShowSubunitStatus(bool bShow)
+{
+	g_bFullScreen_ShowSubunitStatus = bShow;
+}
+
+//===========================================================================
 void FrameDrawDiskLEDS( HDC passdc )
 {
-	static Disk_Status_e eDrive1Status = DISK_STATUS_OFF;
-	static Disk_Status_e eDrive2Status = DISK_STATUS_OFF;
+	Disk_Status_e eDrive1Status;
+	Disk_Status_e eDrive2Status;
 	DiskGetLightStatus(&eDrive1Status, &eDrive2Status);
 
 	g_eStatusDrive1 = eDrive1Status;
@@ -654,6 +672,9 @@ void FrameDrawDiskLEDS( HDC passdc )
 
 	if (g_bIsFullScreen)
 	{
+		if (!g_bFullScreen_ShowSubunitStatus)
+			return;
+
 		SelectObject(dc,smallfont);
 		SetBkMode(dc,OPAQUE);
 		SetBkColor(dc,RGB(0,0,0));
@@ -772,6 +793,9 @@ void FrameDrawDiskStatus( HDC passdc )
 
 	if (g_bIsFullScreen)
 	{
+		if (!g_bFullScreen_ShowSubunitStatus)
+			return;
+
 #if _DEBUG && 0
 		SetBkColor(dc,RGB(255,0,255));
 #endif
@@ -846,52 +870,61 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 	if (g_bIsFullScreen)
 	{
-		SelectObject(dc,smallfont);
+		if (!g_bFullScreen_ShowSubunitStatus)
+		{
+			// Erase Config button icon too, as trk/sec is written here - see FrameDrawDiskStatus()
+			RECT rect = {x,y-BUTTONCY,x+BUTTONCX,y+BUTTONCY};
+			FillRect(dc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
+		}
+		else
+		{
+			SelectObject(dc,smallfont);
 
-		if (drawflags & DRAW_DISK_STATUS)
-			FrameDrawDiskStatus( dc );
+			if (drawflags & DRAW_DISK_STATUS)
+				FrameDrawDiskStatus( dc );
 
 #if HD_LED
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
-		TextOut(dc,x+23,y+2,TEXT("H"),1);
+			SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
+			TextOut(dc,x+23,y+2,TEXT("H"),1);
 #endif
 
-		// Feature Request #3581 ] drive lights in full screen mode
-		// This has been in for a while, at least since 1.12.7.1
+			// Feature Request #3581 ] drive lights in full screen mode
+			// This has been in for a while, at least since 1.12.7.1
 
-		// Full Screen Drive LED
-		// Note: Made redundant with above code
-		//		RECT rect = {0,0,8,8};
-		//		CONST int DriveLedY = 12; // 8 in windowed mode
-		//		DrawBitmapRect(dc,x+12,y+DriveLedY,&rect,g_hDiskFullScreenLED[ eDrive1Status ]);
-		//		DrawBitmapRect(dc,x+30,y+DriveLedY,&rect,g_hDiskFullScreenLED[ eDrive2Status ]);
-		//		SetTextColor(dc, g_aDiskFullScreenColors[ eDrive1Status ] );
-		//		TextOut(dc,x+ 10,y+2,TEXT("*"),1);
-		//		SetTextColor(dc, g_aDiskFullScreenColors[ eDrive2Status ] );
-		//		TextOut(dc,x+ 20,y+2,TEXT("*"),1);
+			// Full Screen Drive LED
+			// Note: Made redundant with above code
+			//		RECT rect = {0,0,8,8};
+			//		CONST int DriveLedY = 12; // 8 in windowed mode
+			//		DrawBitmapRect(dc,x+12,y+DriveLedY,&rect,g_hDiskFullScreenLED[ eDrive1Status ]);
+			//		DrawBitmapRect(dc,x+30,y+DriveLedY,&rect,g_hDiskFullScreenLED[ eDrive2Status ]);
+			//		SetTextColor(dc, g_aDiskFullScreenColors[ eDrive1Status ] );
+			//		TextOut(dc,x+ 10,y+2,TEXT("*"),1);
+			//		SetTextColor(dc, g_aDiskFullScreenColors[ eDrive2Status ] );
+			//		TextOut(dc,x+ 20,y+2,TEXT("*"),1);
 
-		if (!IS_APPLE2)
-		{
-			SetTextAlign(dc,TA_RIGHT | TA_TOP);
-			SetTextColor(dc,(bCaps
-				? RGB(128,128,128)
-				: RGB(  0,  0,  0) ));
+			if (!IS_APPLE2)
+			{
+				SetTextAlign(dc,TA_RIGHT | TA_TOP);
+				SetTextColor(dc,(bCaps
+					? RGB(128,128,128)
+					: RGB(  0,  0,  0) ));
 
-//			const TCHAR sCapsStatus[] = TEXT("Caps"); // Caps or A
-//			const int   nCapsLen = sizeof(sCapsStatus) / sizeof(TCHAR);
-//			TextOut(dc,x+BUTTONCX,y+2,"Caps",4); // sCapsStatus,nCapsLen - 1);
+//				const TCHAR sCapsStatus[] = TEXT("Caps"); // Caps or A
+//				const int   nCapsLen = sizeof(sCapsStatus) / sizeof(TCHAR);
+//				TextOut(dc,x+BUTTONCX,y+2,"Caps",4); // sCapsStatus,nCapsLen - 1);
 
-			TextOut(dc,x+BUTTONCX,y+2,TEXT("A"),1); // NB. Caps Lock indicator is already flush right!
+				TextOut(dc,x+BUTTONCX,y+2,TEXT("A"),1); // NB. Caps Lock indicator is already flush right!
+			}
+			SetTextAlign(dc,TA_CENTER | TA_TOP);
+			SetTextColor(dc,(g_nAppMode == MODE_PAUSED || g_nAppMode == MODE_STEPPING
+				? RGB(255,255,255)
+				: RGB(  0,  0,  0)));
+			TextOut(dc,x+BUTTONCX/2,y+13,(g_nAppMode == MODE_PAUSED
+				? TITLE_PAUSED
+				: TITLE_STEPPING) ,8);
 		}
-		SetTextAlign(dc,TA_CENTER | TA_TOP);
-		SetTextColor(dc,(g_nAppMode == MODE_PAUSED || g_nAppMode == MODE_STEPPING
-			? RGB(255,255,255)
-			: RGB(  0,  0,  0)));
-		TextOut(dc,x+BUTTONCX/2,y+13,(g_nAppMode == MODE_PAUSED
-			? TITLE_PAUSED
-			: TITLE_STEPPING) ,8);
 	}
-	else // g_bIsFullScreen
+	else // !g_bIsFullScreen
 	{
 		if (drawflags & DRAW_BACKGROUND)
 		{

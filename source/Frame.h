@@ -38,7 +38,6 @@
 
 // Win32
 	extern HWND       g_hFrameWindow;
-	extern BOOL       g_bIsFullScreen;
 	extern int        g_nViewportCX;
 	extern int        g_nViewportCY;
 	extern BOOL       g_bConfirmReboot; // saved PageConfig REGSAVE
@@ -68,6 +67,10 @@
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);
 	void    FrameUpdateApple2Type(void);
 	bool	GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight=0);
+
+	bool	IsFullScreen(void);
+	bool	GetFullScreenShowSubunitStatus(void);
+	void	SetFullScreenShowSubunitStatus(bool bShow);
 
 	void	FrameDrawDiskLEDS( HDC hdc );
 	void	FrameDrawDiskStatus( HDC hdc );

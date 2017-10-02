@@ -596,7 +596,7 @@ void LoadConfiguration(void)
 	}
 
 	char aySerialPortName[ CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM ];
-	if (RegLoadString(	TEXT("Configuration"),
+	if (RegLoadString(	TEXT(REG_CONFIG),
 		TEXT(REGVALUE_SERIAL_PORT_NAME),
 		TRUE,
 		aySerialPortName,
@@ -617,6 +617,9 @@ void LoadConfiguration(void)
 	//
 
 	DWORD dwTmp;
+
+	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
+		SetFullScreenShowSubunitStatus(dwTmp ? true : false);
 
 	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
 		sg_PropertySheet.SetTheFreezesF8Rom(dwTmp);
