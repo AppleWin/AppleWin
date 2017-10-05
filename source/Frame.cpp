@@ -612,8 +612,7 @@ static void DrawFrameWindow ()
 			int x  = buttonx + 1;
 			int y  = buttony + BUTTONS*BUTTONCY + 36;	// 36 = height of StatusArea
 			RECT rect = {x, y, x+45, y+BUTTONS*BUTTONCY+22};
-			HBRUSH hbr = (HBRUSH) CreateSolidBrush(RGB(240,240,240));
-			int res = FillRect(dc, &rect, hbr);
+			int res = FillRect(dc, &rect, btnfacebrush);
 		}
 	}
 
@@ -930,8 +929,8 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		{
 			SelectObject(dc,GetStockObject(NULL_PEN));
 			SelectObject(dc,btnfacebrush);
-			Rectangle(dc,x,y,x+BUTTONCX+2,y+60); // y+35 --> 48  --> 60
-			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+56,0); // y+31 --> 44 --> 56
+			Rectangle(dc,x,y,x+BUTTONCX+2,y+34);
+			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+30,0);
 
 			SelectObject(dc,smallfont);
 			SetTextAlign(dc,TA_CENTER | TA_TOP);
