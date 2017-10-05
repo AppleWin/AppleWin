@@ -612,8 +612,7 @@ static void DrawFrameWindow ()
 			int x  = buttonx + 1;
 			int y  = buttony + BUTTONS*BUTTONCY + 36;	// 36 = height of StatusArea
 			RECT rect = {x, y, x+45, y+BUTTONS*BUTTONCY+22};
-			HBRUSH hbr = (HBRUSH) GetStockObject(WHITE_BRUSH);
-			int res = FillRect(dc, &rect, hbr);
+			int res = FillRect(dc, &rect, btnfacebrush);
 		}
 	}
 
@@ -700,6 +699,9 @@ void FrameDrawDiskLEDS( HDC passdc )
 void FrameDrawDiskStatus( HDC passdc )
 {
 	if (mem == NULL)
+		return;
+
+	if (g_nAppMode == MODE_LOGO)
 		return;
 
 	// We use the actual drive since probing from memory doesn't tell us anything we don't already know.
@@ -793,12 +795,11 @@ void FrameDrawDiskStatus( HDC passdc )
 
 	if (g_bIsFullScreen)
 	{
+		// GH#57 - drive lights in full screen mode
+
 		if (!g_bFullScreen_ShowSubunitStatus)
 			return;
 
-#if _DEBUG && 0
-		SetBkColor(dc,RGB(255,0,255));
-#endif
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive1 ] );
 		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
 
@@ -822,11 +823,7 @@ void FrameDrawDiskStatus( HDC passdc )
 
 		// Erase background
 		SelectObject(dc,GetStockObject(NULL_PEN));
-#if _DEBUG && 0
-		SelectObject( dc, CreateSolidBrush( RGB(255,0,255) ) );
-#else
 		SelectObject(dc,btnfacebrush);
-#endif
 		Rectangle(dc,x+4,y+32,x+BUTTONCX+1,y+56); // y+35 -> 44 -> 56
 
 		SetTextColor(dc,RGB(0,0,0));
@@ -873,7 +870,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		if (!g_bFullScreen_ShowSubunitStatus)
 		{
 			// Erase Config button icon too, as trk/sec is written here - see FrameDrawDiskStatus()
-			RECT rect = {x,y-BUTTONCY,x+BUTTONCX,y+BUTTONCY};
+			RECT rect = {x-2,y-BUTTONCY,x+BUTTONCX+2,y+BUTTONCY};	// Extend rect's width by +/-2 as the TITLE_PAUSED text is wider than an icon button
 			FillRect(dc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
 		}
 		else
@@ -884,23 +881,10 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 				FrameDrawDiskStatus( dc );
 
 #if HD_LED
+			SetTextAlign(dc, TA_RIGHT | TA_TOP);
 			SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
 			TextOut(dc,x+23,y+2,TEXT("H"),1);
 #endif
-
-			// Feature Request #3581 ] drive lights in full screen mode
-			// This has been in for a while, at least since 1.12.7.1
-
-			// Full Screen Drive LED
-			// Note: Made redundant with above code
-			//		RECT rect = {0,0,8,8};
-			//		CONST int DriveLedY = 12; // 8 in windowed mode
-			//		DrawBitmapRect(dc,x+12,y+DriveLedY,&rect,g_hDiskFullScreenLED[ eDrive1Status ]);
-			//		DrawBitmapRect(dc,x+30,y+DriveLedY,&rect,g_hDiskFullScreenLED[ eDrive2Status ]);
-			//		SetTextColor(dc, g_aDiskFullScreenColors[ eDrive1Status ] );
-			//		TextOut(dc,x+ 10,y+2,TEXT("*"),1);
-			//		SetTextColor(dc, g_aDiskFullScreenColors[ eDrive2Status ] );
-			//		TextOut(dc,x+ 20,y+2,TEXT("*"),1);
 
 			if (!IS_APPLE2)
 			{
@@ -909,19 +893,34 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 					? RGB(128,128,128)
 					: RGB(  0,  0,  0) ));
 
-//				const TCHAR sCapsStatus[] = TEXT("Caps"); // Caps or A
-//				const int   nCapsLen = sizeof(sCapsStatus) / sizeof(TCHAR);
-//				TextOut(dc,x+BUTTONCX,y+2,"Caps",4); // sCapsStatus,nCapsLen - 1);
-
 				TextOut(dc,x+BUTTONCX,y+2,TEXT("A"),1); // NB. Caps Lock indicator is already flush right!
 			}
-			SetTextAlign(dc,TA_CENTER | TA_TOP);
-			SetTextColor(dc,(g_nAppMode == MODE_PAUSED || g_nAppMode == MODE_STEPPING
-				? RGB(255,255,255)
-				: RGB(  0,  0,  0)));
-			TextOut(dc,x+BUTTONCX/2,y+13,(g_nAppMode == MODE_PAUSED
+
+			//
+
+			static const char* pCurrentAppModeText = NULL;
+
+			const char* const pNewAppModeText = (g_nAppMode == MODE_PAUSED)
 				? TITLE_PAUSED
-				: TITLE_STEPPING) ,8);
+				: (g_nAppMode == MODE_STEPPING)
+					? TITLE_STEPPING
+					: NULL;
+
+			SetTextAlign(dc, TA_CENTER | TA_TOP);
+
+			if (pCurrentAppModeText && pNewAppModeText != pCurrentAppModeText)
+			{
+				SetTextColor(dc, RGB(0,0,0));
+				TextOut(dc, x+BUTTONCX/2, y+13, pCurrentAppModeText, strlen(pCurrentAppModeText));
+				pCurrentAppModeText = NULL;
+			}
+
+			if (pNewAppModeText)
+			{
+				SetTextColor(dc, RGB(255,255,255));
+				TextOut(dc, x+BUTTONCX/2, y+13, pNewAppModeText, strlen(pNewAppModeText));
+				pCurrentAppModeText = pNewAppModeText;
+			}
 		}
 	}
 	else // !g_bIsFullScreen
@@ -930,8 +929,8 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		{
 			SelectObject(dc,GetStockObject(NULL_PEN));
 			SelectObject(dc,btnfacebrush);
-			Rectangle(dc,x,y,x+BUTTONCX+2,y+60); // y+35 --> 48  --> 60
-			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+56,0); // y+31 --> 44 --> 56
+			Rectangle(dc,x,y,x+BUTTONCX+2,y+34);
+			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+30,0);
 
 			SelectObject(dc,smallfont);
 			SetTextAlign(dc,TA_CENTER | TA_TOP);
