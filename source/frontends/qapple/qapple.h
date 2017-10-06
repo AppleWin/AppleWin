@@ -4,6 +4,7 @@
 #include "ui_qapple.h"
 
 #include <QElapsedTimer>
+#include <QGamepad>
 #include "preferences.h"
 
 class Emulator;
@@ -52,6 +53,7 @@ private:
 
     QElapsedTimer myElapsedTimer;
     QMdiSubWindow * myEmulatorWindow;
+    std::shared_ptr<QGamepad> myGamepad;
     Emulator * myEmulator;
 
     int myMSGap;

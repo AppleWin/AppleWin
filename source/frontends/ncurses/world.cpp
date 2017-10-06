@@ -13,11 +13,12 @@
 #include "Memory.h"
 
 #include "linux/interface.h"
-#include "linux/joy_input.h"
+#include "linux/paddle.h"
 
 #include "frontends/ncurses/nframe.h"
 #include "frontends/ncurses/colors.h"
 #include "frontends/ncurses/asciiart.h"
+#include "frontends/ncurses/evdevpaddle.h"
 
 namespace
 {
@@ -25,6 +26,7 @@ namespace
   std::shared_ptr<Frame> frame;
   std::shared_ptr<GraphicsColors> colors;
   std::shared_ptr<ASCIIArt> asciiArt;
+  std::shared_ptr<EvDevPaddle> paddle;
 
   int    g_nTrackDrive1  = -1;
   int    g_nTrackDrive2  = -1;
@@ -372,7 +374,10 @@ void VideoInitialize()
 
   frame.reset(new Frame());
   asciiArt.reset(new ASCIIArt());
-  Input::initialise("/dev/input/by-id/usb-©Microsoft_Corporation_Controller_1BBE3DB-event-joystick");
+
+  paddle.reset(new EvDevPaddle("/dev/input/by-id/usb-©Microsoft_Corporation_Controller_1BBE3DB-event-joystick"));
+
+  Paddle::instance() = paddle;
 
   signal(SIGINT, sig_handler);
 }
@@ -515,7 +520,7 @@ int ProcessKeyboard()
 
 void ProcessInput()
 {
-  Input::instance().poll();
+  paddle->poll();
 }
 
 BYTE    KeybGetKeycode ()

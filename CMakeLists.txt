@@ -27,7 +27,7 @@ add_library(appleii SHARED
   source/linux/wwrapper.cpp
   source/linux/state.cpp
   source/linux/benchmark.cpp
-  source/linux/joy_input.cpp
+  source/linux/paddle.cpp
 
   source/Z80VICE/z80.cpp
   source/Z80VICE/z80mem.cpp
@@ -44,6 +44,7 @@ add_executable(applen
   source/frontends/ncurses/main.cpp
   source/frontends/ncurses/world.cpp
   source/frontends/ncurses/colors.cpp
+  source/frontends/ncurses/evdevpaddle.cpp
   source/frontends/ncurses/nframe.cpp
   source/frontends/ncurses/asciiart.cpp
   source/frontends/ncurses/resources.cpp

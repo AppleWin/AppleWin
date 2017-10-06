@@ -18,14 +18,17 @@ public:
         bool mouseInSlot4;
         bool cpmInSlot5;
         bool hdInSlot7;
+
+        QString joystick;
+        int joystickId;   // only putput
+
         std::vector<QString> disks;
         std::vector<QString> hds;
     };
 
     explicit Preferences(QWidget *parent);
 
-    void setRegistry(const boost::property_tree::ptree & registry);
-    void setData(const Data & data);
+    void setup(const Data & data, const boost::property_tree::ptree & registry);
     Data getData() const;
 
 private slots:
@@ -45,6 +48,9 @@ private:
     std::vector<QComboBox *> myDisks;
     std::vector<QComboBox *> myHDs;
 
+    void setRegistry(const boost::property_tree::ptree & registry);
+    void setData(const Data & data);
+    void populateJoysticks();
     void browseDisk(const std::vector<QComboBox *> & disks, const size_t id);
 
 };

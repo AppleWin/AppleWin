@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets gamepad
 
 TARGET = qapple
 TEMPLATE = app
@@ -22,7 +22,8 @@ SOURCES += main.cpp\
     commands.cpp \
     qhexedit.cpp \
     memorycontainer.cpp \
-    preferences.cpp
+    preferences.cpp \
+    gamepadpaddle.cpp
 
 HEADERS  += qapple.h \
     emulator.h \
@@ -32,7 +33,8 @@ HEADERS  += qapple.h \
     commands.h \
     qhexedit.h \
     memorycontainer.h \
-    preferences.h
+    preferences.h \
+    gamepadpaddle.h
 
 FORMS    += qapple.ui \
     emulator.ui \

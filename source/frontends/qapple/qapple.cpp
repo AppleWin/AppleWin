@@ -17,10 +17,11 @@
 #include "linux/data.h"
 #include "linux/configuration.h"
 #include "linux/benchmark.h"
-#include "linux/joy_input.h"
+#include "linux/paddle.h"
 
 #include "emulator.h"
 #include "memorycontainer.h"
+#include "gamepadpaddle.h"
 
 #include <QMdiSubWindow>
 #include <QMessageBox>
@@ -34,7 +35,6 @@ namespace
         setbuf(g_fh, NULL);
 
         InitializeRegistry("../qapple/applen.conf");
-        Input::initialise("/dev/input/by-id/usb-©Microsoft_Corporation_Controller_1BBE3DB-event-joystick");
 
         LogFileOutput("Initialisation\n");
 
@@ -206,7 +206,7 @@ void QApple::on_timer()
             g_dwCyclesThisFrame -= dwClksPerFrame;
             myEmulator->redrawScreen();
         }
-        Input::instance().poll();
+        //Input::instance().poll();
     }
     while (DiskIsSpinning());
 }
@@ -314,8 +314,13 @@ void QApple::on_actionOptions_triggered()
 
     currentOptions.apple2Type = getApple2ComputerType();
 
-    myPreferences.setData(currentOptions);
-    myPreferences.setRegistry(getProperties());
+    if (myGamepad)
+    {
+        currentOptions.joystick = myGamepad->name();
+        currentOptions.joystickId = myGamepad->deviceId();
+    }
+
+    myPreferences.setup(currentOptions, getProperties());
 
     if (myPreferences.exec())
     {
@@ -347,6 +352,20 @@ void QApple::on_actionOptions_triggered()
             HD_SetEnabled(newOptions.hdInSlot7);
         }
 
+        if (newOptions.joystick.isEmpty())
+        {
+            myGamepad.reset();
+            Paddle::instance() = std::make_shared<Paddle>();
+        }
+        else
+        {
+            if (newOptions.joystickId != currentOptions.joystickId)
+            {
+                myGamepad.reset(new QGamepad(newOptions.joystickId));
+                Paddle::instance() = std::make_shared<GamepadPaddle>(myGamepad);
+            }
+        }
+
         for (size_t i = 0; i < diskIDs.size(); ++i)
         {
             if (currentOptions.disks[i] != newOptions.disks[i])
@@ -362,6 +381,7 @@ void QApple::on_actionOptions_triggered()
                 insertHD(newOptions.hds[i], hdIDs[i]);
             }
         }
+
     }
 
 }

@@ -1,5 +1,6 @@
 #include "preferences.h"
 #include <QFileDialog>
+#include <QtGamepad/QGamepad>
 
 namespace
 {
@@ -105,6 +106,32 @@ Preferences::Preferences(QWidget *parent) :
     myHDs.push_back(hd2);
 }
 
+void Preferences::setup(const Data & data, const boost::property_tree::ptree & registry)
+{
+    populateJoysticks();
+    setData(data);
+    setRegistry(registry);
+}
+
+void Preferences::populateJoysticks()
+{
+    joystick->clear();
+    const QList<int> gamepads = QGamepadManager::instance()->connectedGamepads();
+
+    joystick->addItem("None");
+
+    for (int id : gamepads)
+    {
+        QGamepad gp(id);
+        QString name = gp.name();
+        if (name.isEmpty())
+        {
+            name = QString::number(id);
+        }
+        joystick->addItem(name, QVariant::fromValue(id));
+    }
+}
+
 void Preferences::setRegistry(const boost::property_tree::ptree & registry)
 {
     registryTree->clear();
@@ -126,6 +153,8 @@ void Preferences::setData(const Data & data)
 
     // synchronise
     on_hd_7_clicked(data.hdInSlot7);
+
+    joystick->setCurrentText(data.joystick);
 }
 
 Preferences::Data Preferences::getData() const
@@ -139,6 +168,13 @@ Preferences::Data Preferences::getData() const
     data.mouseInSlot4 = mouse_4->isChecked();
     data.cpmInSlot5 = cpm_5->isChecked();
     data.hdInSlot7 = hd_7->isChecked();
+    data.joystick = joystick->currentText();
+
+    if (joystick->currentIndex() >= 1)
+    {
+        const QVariant & device = joystick->itemData(joystick->currentIndex());
+        data.joystickId = device.toInt();
+    }
 
     return data;
 }

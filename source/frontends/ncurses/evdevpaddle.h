@@ -1,26 +1,24 @@
 #pragma once
 
+#include "linux/paddle.h"
+
 #include <string>
-#include <memory>
 #include <vector>
 
 struct libevdev;
 struct input_event;
 
-class Input
+class EvDevPaddle : public Paddle
 {
 public:
-  Input(const std::string & device);
-  ~Input();
+  EvDevPaddle(const std::string & device);
+  ~EvDevPaddle();
 
   int poll();
 
-  bool getButton(int i) const;
-  int getAxis(int i) const;
-
-  static void initialise(const std::string & device);
-
-  static Input & instance();
+  const std::string & getName() const;
+  virtual bool getButton(int i) const;
+  virtual int getAxis(int i) const;
 
 private:
   int myFD;
@@ -28,10 +26,10 @@ private:
 
   void process(const input_event & ev);
 
+  std::string myName;
+
   std::vector<unsigned int> myButtonCodes;
   std::vector<unsigned int> myAxisCodes;
   std::vector<int> myAxisMins;
   std::vector<int> myAxisMaxs;
-
-  static std::shared_ptr<Input> ourSingleton;
 };
