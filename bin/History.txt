@@ -12,6 +12,7 @@ Tom Charlesworth
 1.26.3.1 (Experimental) - 29 Sep 2017
 ------------------------------------
 Changes:
+. [Bug #469] New -no-printscreen-key switch to prevent the PrintScreen key from being registered.
 . [Bug #488] New -fs-height=<best|nnnn> switch.
     - best: picks the highest resolution where the height is an integer multiple of (192*2)
     - nnnn: select a specific resolution with height=nnnn pixels

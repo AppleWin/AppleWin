@@ -17,12 +17,21 @@
 		Start with a disk in drive-2<br><br>
 		-f<br>
 		Start in full-screen mode<br><br>
+		-fs-height=&lt;best|nnnn&gt;<br>
+		Use to select a better resolution for full-screen mode.<br>
+		<ul>
+			<li>best: picks the highest resolution where the height is an integer multiple of (192*2)</li>
+			<li>nnnn: select a specific resolution with height=nnnn pixels</li>
+		</ul>
+		NB. This changes the display resolution (and restores on exit).<br><br>
 		-r &lt;number of pages&gt;<br>
 		Emulate a RAMworks III card with 1 to 127 pages (each page is 64K, giving a max of 8MB)<br><br>
 		-f8rom &lt;rom-file&gt;<br>
 		Use custom 2K ROM at [$F800..$FFFF]. &lt;rom-file&gt; must be 2048 bytes long<br><br>
 		-printscreen<br>
 		Enable the dialog box to display the last file saved to<br><br>
+		-no-printscreen-key<br>
+		Prevent the PrintScreen key from being registered<br><br>
 		-use-real-printer<br>
 		Enables Advanced configuration control to allow dumping to a real printer<br><br>
 		-noreg<br>
