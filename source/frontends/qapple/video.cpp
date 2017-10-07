@@ -8,6 +8,7 @@
 #include "StdAfx.h"
 #include "Video.h"
 #include "Memory.h"
+#include "MouseInterface.h"
 
 namespace
 {
@@ -149,6 +150,7 @@ bool Video::UpdateDHiResCell(QPainter & painter, int x, int y, int xpixel, int y
 Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
 {
     myGraphicsCache.reset(new GraphicsCache());
+    setMouseTracking(true);
 }
 
 void Video::paintEvent(QPaintEvent *)
@@ -295,16 +297,73 @@ void Video::keyPressEvent(QKeyEvent *event)
     {
         keyCode = ch;
         keyWaiting = true;
-    }
-    else
-    {
-        VIDEO_BASECLASS::keyPressEvent(event);
+        event->accept();
     }
 }
 
-void Video::keyReleaseEvent(QKeyEvent *event)
+void Video::mouseMoveEvent(QMouseEvent *event)
 {
-    VIDEO_BASECLASS::keyReleaseEvent(event);
+    if (sg_Mouse.IsActiveAndEnabled())
+    {
+        int iX, iMinX, iMaxX;
+        int iY, iMinY, iMaxY;
+        sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
+
+        const QPointF p = event->localPos();
+        const QSize s = size();
+
+        const int newX = lround((p.x() / s.width()) * (iMaxX - iMinX) + iMinX);
+        const int newY = lround((p.y() / s.height()) * (iMaxY - iMinY) + iMinY);
+
+        const int dx = newX - iX;
+        const int dy = newY - iY;
+
+        int outOfBoundsX;
+        int outOfBoundsY;
+        sg_Mouse.SetPositionRel(dx, dy, &outOfBoundsX, &outOfBoundsY);
+
+        event->accept();
+    }
+}
+
+void Video::mousePressEvent(QMouseEvent *event)
+{
+    if (sg_Mouse.IsActiveAndEnabled())
+    {
+        Qt::MouseButton button = event->button();
+        switch (button)
+        {
+        case Qt::LeftButton:
+            sg_Mouse.SetButton(BUTTON0, BUTTON_DOWN);
+            break;
+        case Qt::RightButton:
+            sg_Mouse.SetButton(BUTTON1, BUTTON_DOWN);
+            break;
+        default:
+            break;
+        }
+        event->accept();
+    }
+}
+
+void Video::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (sg_Mouse.IsActiveAndEnabled())
+    {
+        Qt::MouseButton button = event->button();
+        switch (button)
+        {
+        case Qt::LeftButton:
+            sg_Mouse.SetButton(BUTTON0, BUTTON_UP);
+            break;
+        case Qt::RightButton:
+            sg_Mouse.SetButton(BUTTON1, BUTTON_UP);
+            break;
+        default:
+            break;
+        }
+        event->accept();
+    }
 }
 
 // Keyboard
