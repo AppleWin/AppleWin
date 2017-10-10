@@ -2699,8 +2699,11 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 	else	// Mouse entering Apple screen area
 	{
 //		sprintf(szDbg, "[MOUSE_ENTERING] x=%d, y=%d\n", x, y); OutputDebugString(szDbg);
-		x -= (viewportx+2-MAGICX); if (x < 0) x = 0;
-		y -= (viewporty+2-MAGICY); if (y < 0) y = 0;
+		if (!g_bIsFullScreen)	// GH#464
+		{
+			x -= (viewportx+2-MAGICX); if (x < 0) x = 0;
+			y -= (viewporty+2-MAGICY); if (y < 0) y = 0;
+		}
 
 		_ASSERT(x <= g_nViewportCX);
 		_ASSERT(y <= g_nViewportCY);
