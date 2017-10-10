@@ -19,22 +19,35 @@ public:
         return myCharset80;
     }
 
-    const QPixmap & hires() const
+    const QPixmap & hires40() const
     {
-        return myHiResMono;
+        return myHiResMono40;
     }
 
-    const QPixmap & lores() const
+    const QPixmap & hires80() const
     {
-        return myLoResColor;
+        return myHiResMono80;
+    }
+
+    const QPixmap & lores40() const
+    {
+        return myLoResColor40;
+    }
+
+    const QPixmap & lores80() const
+    {
+        return myLoResColor80;
     }
 
 private:
     QPixmap myCharset40;
     QPixmap myCharset80;
 
-    QPixmap myHiResMono;
-    QPixmap myLoResColor;
+    QPixmap myHiResMono40;
+    QPixmap myHiResMono80;
+
+    QPixmap myLoResColor40;
+    QPixmap myLoResColor80;
 };
 
 #endif // GRAPHICSCACHE_H

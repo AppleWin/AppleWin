@@ -19,12 +19,12 @@ namespace
         }
     }
 
-    QPixmap buildHiResMono()
+    QPixmap buildHiResMono80()
     {
         const QColor black(Qt::black);
         const QColor white(Qt::white);
 
-        QPixmap hires(14, 128 * 2); // 128 values 2 lines each
+        QPixmap hires(7, 128 * 2); // 128 values 2 lines each
 
         QPainter painter(&hires);
 
@@ -33,7 +33,7 @@ namespace
             for (int j = 0; j < 7; ++j)
             {
                 const QColor & color = (i & (1 << j)) ? white : black;
-                painter.fillRect(j * 2, i * 2, 2, 2, color);
+                painter.fillRect(j, i * 2, 1, 2, color);
             }
         }
 
@@ -61,7 +61,7 @@ namespace
 
 #define SETFRAMECOLOR(c, r, g, b) colors[c].setRgb(r, g, b);
 
-    QPixmap buildLoResColor()
+    QPixmap buildLoResColor80()
     {
         std::vector<QColor> colors(16);
 
@@ -86,7 +86,7 @@ namespace
         SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF); // FF
 
 
-        QPixmap lores(14, 256 * 16);  // 256 values 16 lines each
+        QPixmap lores(7, 256 * 16);  // 256 values 16 lines each
 
         QPainter painter(&lores);
 
@@ -95,8 +95,8 @@ namespace
             const int top = i & 0b1111;
             const int bottom = (i >> 4) & 0b1111;
 
-            painter.fillRect(0, i * 16,     14, 8, colors[top]);
-            painter.fillRect(0, i * 16 + 8, 14, 8, colors[bottom]);
+            painter.fillRect(0, i * 16,     7, 8, colors[top]);
+            painter.fillRect(0, i * 16 + 8, 7, 8, colors[bottom]);
         }
 
         return lores;
@@ -115,9 +115,15 @@ GraphicsCache::GraphicsCache()
     myCharset80 = myCharset40.scaled(myCharset40.width() / 2, myCharset40.height());
     // it was already half scan
 
-    myHiResMono = buildHiResMono();
-    halfScanLines(myHiResMono, black);
+    myHiResMono80 = buildHiResMono80();
+    halfScanLines(myHiResMono80, black);
 
-    myLoResColor = buildLoResColor();
-    halfScanLines(myLoResColor, black);
+    myHiResMono40 = myHiResMono80.scaled(myHiResMono80.width() * 2, myHiResMono80.height());
+    // it was already half scan
+
+    myLoResColor80 = buildLoResColor80();
+    halfScanLines(myLoResColor80, black);
+
+    myLoResColor40 = myLoResColor80.scaled(myLoResColor80.width() * 2, myLoResColor80.height());
+    // it was already half scan
 }

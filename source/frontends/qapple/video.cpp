@@ -37,7 +37,9 @@ bool Video::Update40ColCell (QPainter & painter, int x, int y, int xpixel, int y
     Q_UNUSED(x)
     Q_UNUSED(y)
 
-    const BYTE ch = *(g_pTextBank0+offset);
+    const QPixmap & text40Col = myGraphicsCache->text40Col();
+
+    const BYTE ch = *(g_pTextBank0 + offset);
 
     const int base = g_nAltCharSetOffset ? 16 : 0;
 
@@ -46,7 +48,6 @@ bool Video::Update40ColCell (QPainter & painter, int x, int y, int xpixel, int y
 
     const int sx = 16 * column;
     const int sy = 16 * (base + row);
-    const QPixmap & text40Col = myGraphicsCache->text40Col();
 
     painter.drawPixmap(xpixel, ypixel, text40Col, sx, sy, 14, 16);
 
@@ -59,10 +60,11 @@ bool Video::Update80ColCell(QPainter & painter, int x, int y, int xpixel, int yp
     Q_UNUSED(y)
 
     const QPixmap & text80Col = myGraphicsCache->text80Col();
+
     const int base = g_nAltCharSetOffset ? 16 : 0;
 
     {
-        const BYTE ch1 = *(g_pTextBank1+offset);
+        const BYTE ch1 = *(g_pTextBank1 + offset);
 
         const int row = ch1 / 16;
         const int column = ch1 % 16;
@@ -73,7 +75,7 @@ bool Video::Update80ColCell(QPainter & painter, int x, int y, int xpixel, int yp
     }
 
     {
-        const BYTE ch2 = *(g_pTextBank0+offset);
+        const BYTE ch2 = *(g_pTextBank0 + offset);
 
         const int row = ch2 / 16;
         const int column = ch2 % 16;
@@ -91,11 +93,12 @@ bool Video::UpdateLoResCell(QPainter & painter, int x, int y, int xpixel, int yp
     Q_UNUSED(x)
     Q_UNUSED(y)
 
-    const BYTE ch = *(g_pTextBank0+offset);
+    const QPixmap & lores = myGraphicsCache->lores40();
+
+    const BYTE ch = *(g_pTextBank0 + offset);
 
     const int sx = 0;
     const int sy = ch * 16;
-    const QPixmap & lores = myGraphicsCache->lores();
 
     painter.drawPixmap(xpixel, ypixel, lores, sx, sy, 14, 16);
 
@@ -104,12 +107,28 @@ bool Video::UpdateLoResCell(QPainter & painter, int x, int y, int xpixel, int yp
 
 bool Video::UpdateDLoResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
-    Q_UNUSED(painter)
     Q_UNUSED(x)
     Q_UNUSED(y)
-    Q_UNUSED(xpixel)
-    Q_UNUSED(ypixel)
-    Q_UNUSED(offset)
+
+    const QPixmap & lores = myGraphicsCache->lores80();
+
+    {
+        const BYTE ch = *(g_pTextBank1 + offset);
+
+        const int sx = 0;
+        const int sy = ch * 16;
+
+        painter.drawPixmap(xpixel, ypixel, lores, sx, sy, 7, 16);
+    }
+
+    {
+        const BYTE ch = *(g_pTextBank0 + offset);
+
+        const int sx = 0;
+        const int sy = ch * 16;
+
+        painter.drawPixmap(xpixel + 7, ypixel, lores, sx, sy, 7, 16);
+    }
 
     return true;
 }
@@ -120,7 +139,7 @@ bool Video::UpdateHiResCell(QPainter & painter, int x, int y, int xpixel, int yp
     Q_UNUSED(y)
 
     const BYTE * base = g_pHiresBank0 + offset;
-    const QPixmap & hires = myGraphicsCache->hires();
+    const QPixmap & hires = myGraphicsCache->hires40();
 
     for (size_t i = 0; i < 8; ++i)
     {
@@ -137,12 +156,38 @@ bool Video::UpdateHiResCell(QPainter & painter, int x, int y, int xpixel, int yp
 
 bool Video::UpdateDHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
-    Q_UNUSED(painter)
     Q_UNUSED(x)
     Q_UNUSED(y)
-    Q_UNUSED(xpixel)
-    Q_UNUSED(ypixel)
-    Q_UNUSED(offset)
+
+    const QPixmap & dhires = myGraphicsCache->hires80();
+
+    {
+        const BYTE * base = g_pHiresBank1 + offset;
+
+        for (size_t i = 0; i < 8; ++i)
+        {
+            const int line = 0x0400 * i;
+            const BYTE value = *(base + line);
+
+            const int row = value & 0x7f;
+
+            painter.drawPixmap(xpixel, ypixel + i * 2, dhires, 0, row * 2, 7, 2);
+        }
+    }
+
+    {
+        const BYTE * base = g_pHiresBank0 + offset;
+
+        for (size_t i = 0; i < 8; ++i)
+        {
+            const int line = 0x0400 * i;
+            const BYTE value = *(base + line);
+
+            const int row = value & 0x7f;
+
+            painter.drawPixmap(xpixel + 7, ypixel + i * 2, dhires, 0, row * 2, 7, 2);
+        }
+    }
 
     return true;
 }
