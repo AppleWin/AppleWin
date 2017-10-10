@@ -190,12 +190,16 @@ Preferences::Data Preferences::getData() const
     data.mouseInSlot4 = mouse_4->isChecked();
     data.cpmInSlot5 = cpm_5->isChecked();
     data.hdInSlot7 = hd_7->isChecked();
-    data.joystick = joystick->currentText();
 
     if (joystick->currentIndex() >= 1)
     {
         const QVariant & device = joystick->itemData(joystick->currentIndex());
+        data.joystick = joystick->currentText();
         data.joystickId = device.toInt();
+    }
+    else
+    {
+        data.joystickId = 0;
     }
 
     return data;

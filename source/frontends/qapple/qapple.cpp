@@ -317,6 +317,10 @@ void QApple::on_actionOptions_triggered()
         currentOptions.joystick = myGamepad->name();
         currentOptions.joystickId = myGamepad->deviceId();
     }
+    else
+    {
+        currentOptions.joystickId = 0;
+    }
 
     QSettings settings; // the function will "modify" it
     myPreferences.setup(currentOptions, settings);
