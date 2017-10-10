@@ -17,7 +17,6 @@ add_library(appleii SHARED
   ParallelPrinter.cpp
   MouseInterface.cpp
 
-  linux/configuration.cpp
   linux/data.cpp
   linux/dummies.cpp
   linux/wwrapper.cpp

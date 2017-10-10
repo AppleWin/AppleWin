@@ -18,6 +18,7 @@ add_executable(qapple
   graphicscache.cpp
   gamepadpaddle.cpp
   video.cpp
+  settings.cpp
 
   commands.cpp
   chunks.cpp

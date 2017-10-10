@@ -15,13 +15,13 @@
 #include "Registry.h"
 
 #include "linux/data.h"
-#include "linux/configuration.h"
 #include "linux/benchmark.h"
 #include "linux/paddle.h"
 
 #include "emulator.h"
 #include "memorycontainer.h"
 #include "gamepadpaddle.h"
+#include "settings.h"
 
 #include <QMdiSubWindow>
 #include <QMessageBox>
@@ -33,8 +33,6 @@ namespace
     {
         g_fh = fopen("/tmp/applewin.txt", "w");
         setbuf(g_fh, NULL);
-
-        InitializeRegistry("../qapple/applen.conf");
 
         LogFileOutput("Initialisation\n");
 
@@ -320,7 +318,8 @@ void QApple::on_actionOptions_triggered()
         currentOptions.joystickId = myGamepad->deviceId();
     }
 
-    myPreferences.setup(currentOptions, getProperties());
+    QSettings settings; // the function will "modify" it
+    myPreferences.setup(currentOptions, settings);
 
     if (myPreferences.exec())
     {

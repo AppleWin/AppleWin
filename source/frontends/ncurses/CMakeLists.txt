@@ -8,6 +8,7 @@ add_executable(applen
   nframe.cpp
   asciiart.cpp
   resources.cpp
+  configuration.cpp
   )
 
 target_link_libraries(applen

@@ -195,8 +195,6 @@ compile_commands.json
 CTestTestfile.cmake
 *.so
 *.a
-applen
-qapple
 
 # Qt
 # C++ objects and libs

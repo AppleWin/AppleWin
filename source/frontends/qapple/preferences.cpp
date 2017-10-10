@@ -73,22 +73,38 @@ namespace
         }
     }
 
-    void processPropertyTree(const boost::property_tree::ptree & registry, QTreeWidgetItem * item)
+    void processSettingsGroup(QSettings & settings, QTreeWidgetItem * item)
     {
         QList<QTreeWidgetItem *> items;
-        for (const auto & it : registry)
-        {
-            const boost::property_tree::ptree::data_type & key = it.first;
-            const boost::property_tree::ptree & subTree = it.second;
 
+        // first the leaves
+        const QStringList children = settings.childKeys();
+        for (const auto & child : children)
+        {
             QStringList columns;
-            columns.append(QString::fromStdString(key));
-            columns.append(QString::fromStdString(subTree.data()));
+            columns.append(child); // the name
+            columns.append(settings.value(child).toString()); // the value
 
             QTreeWidgetItem * newItem = new QTreeWidgetItem(item, columns);
-            processPropertyTree(subTree, newItem);
             items.append(newItem);
         }
+
+        // then the subtrees
+        const QStringList groups = settings.childGroups();
+        for (const auto & group : groups)
+        {
+            settings.beginGroup(group);
+
+            QStringList columns;
+            columns.append(group); // the name
+
+            QTreeWidgetItem * newItem = new QTreeWidgetItem(item, columns);
+            processSettingsGroup(settings, newItem); // process subtree
+            items.append(newItem);
+
+            settings.endGroup();
+        }
+
         item->addChildren(items);
     }
 
@@ -106,11 +122,11 @@ Preferences::Preferences(QWidget *parent) :
     myHDs.push_back(hd2);
 }
 
-void Preferences::setup(const Data & data, const boost::property_tree::ptree & registry)
+void Preferences::setup(const Data & data, QSettings & settings)
 {
     populateJoysticks();
     setData(data);
-    setRegistry(registry);
+    setSettings(settings);
 }
 
 void Preferences::populateJoysticks()
@@ -132,11 +148,17 @@ void Preferences::populateJoysticks()
     }
 }
 
-void Preferences::setRegistry(const boost::property_tree::ptree & registry)
+void Preferences::setSettings(QSettings & settings)
 {
     registryTree->clear();
-    QTreeWidgetItem * newItem = new QTreeWidgetItem(registryTree, QStringList(QString("Registry")));
-    processPropertyTree(registry, newItem);
+
+    QStringList columns;
+    columns.append(QString::fromUtf8("Registry")); // the name
+    columns.append(settings.fileName()); // the value
+
+    QTreeWidgetItem * newItem = new QTreeWidgetItem(registryTree, columns);
+    processSettingsGroup(settings, newItem);
+
     registryTree->addTopLevelItem(newItem);
     registryTree->expandAll();
 }

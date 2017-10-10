@@ -19,9 +19,9 @@
 #include "Video.h"
 #include "SaveState.h"
 
-#include "linux/configuration.h"
 #include "linux/data.h"
 #include "linux/benchmark.h"
+#include "frontends/ncurses/configuration.h"
 #include "frontends/ncurses/world.h"
 
 namespace

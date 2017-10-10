@@ -1,11 +1,14 @@
 #pragma once
 
-#include "linux/interface.h"
+#include "linux/wincompat.h"
 #include <boost/property_tree/ptree.hpp>
 
 void InitializeRegistry(const std::string & filename);
 
 const boost::property_tree::ptree & getProperties();
 
+BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, DWORD chars);
+BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD *value);
+BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, BOOL *value);
 void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPCTSTR buffer);
 void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value);

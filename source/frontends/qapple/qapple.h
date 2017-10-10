@@ -5,6 +5,7 @@
 
 #include <QElapsedTimer>
 #include <QGamepad>
+#include <memory>
 #include "preferences.h"
 
 class Emulator;

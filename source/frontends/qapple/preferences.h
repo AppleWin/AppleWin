@@ -4,7 +4,7 @@
 #include "ui_preferences.h"
 
 #include <vector>
-#include <boost/property_tree/ptree.hpp>
+#include <QSettings>
 
 class Preferences : public QDialog, private Ui::Preferences
 {
@@ -28,7 +28,7 @@ public:
 
     explicit Preferences(QWidget *parent);
 
-    void setup(const Data & data, const boost::property_tree::ptree & registry);
+    void setup(const Data & data, QSettings & settings);
     Data getData() const;
 
 private slots:
@@ -48,7 +48,7 @@ private:
     std::vector<QComboBox *> myDisks;
     std::vector<QComboBox *> myHDs;
 
-    void setRegistry(const boost::property_tree::ptree & registry);
+    void setSettings(QSettings & settings);
     void setData(const Data & data);
     void populateJoysticks();
     void browseDisk(const std::vector<QComboBox *> & disks, const size_t id);

@@ -23,7 +23,8 @@ SOURCES += main.cpp\
     qhexedit.cpp \
     memorycontainer.cpp \
     preferences.cpp \
-    gamepadpaddle.cpp
+    gamepadpaddle.cpp \
+    settings.cpp
 
 HEADERS  += qapple.h \
     emulator.h \
@@ -34,7 +35,8 @@ HEADERS  += qapple.h \
     qhexedit.h \
     memorycontainer.h \
     preferences.h \
-    gamepadpaddle.h
+    gamepadpaddle.h \
+    settings.h
 
 FORMS    += qapple.ui \
     emulator.ui \
@@ -44,12 +46,12 @@ FORMS    += qapple.ui \
 RESOURCES += \
     qapple.qrc
 
-unix: LIBS += -L$$PWD/../../../ -lappleii
+unix: LIBS += -L$$PWD/../../ -lappleii
 
 INCLUDEPATH += $$PWD/../../../source
 DEPENDPATH += $$PWD/../../../source
 
 unix: LIBS += -levdev
 
-unix:QMAKE_RPATHDIR += $ORIGIN/../../..
+unix:QMAKE_RPATHDIR += $ORIGIN/../..
 
