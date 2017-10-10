@@ -674,16 +674,6 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 	if (hFrameDC)
 	{
 		{
-			int xDst = 0;
-			int yDst = 0;
-
-			if ( IsFullScreen() )
-			{
-				// Why the need to set the mid-position here, but not for (full-screen) LOGO or DEBUG modes?
-				xDst = (g_nDDFullScreenW-W)/2 - VIEWPORTX*2;
-				yDst = (g_nDDFullScreenH-H)/2;
-			}
-
 			int xSrc = BORDER_W;
 			int ySrc = BORDER_H;
 			VideoFrameBufferAdjust(xSrc, ySrc);	// TC: Hacky-fix for GH#341

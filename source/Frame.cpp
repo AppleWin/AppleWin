@@ -143,14 +143,14 @@ static int     viewportx       = VIEWPORTX;	// Default to Normal (non-FullScreen
 static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
 
 // Direct Draw -- For Full Screen
-		LPDIRECTDRAW        g_pDD               = (LPDIRECTDRAW)0;
+//		LPDIRECTDRAW        g_pDD               = (LPDIRECTDRAW)0;
 		LPDIRECTDRAWSURFACE g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
 #if DIRECTX_PAGE_FLIP
 		LPDIRECTDRAWSURFACE g_pDDBackSurface    = (LPDIRECTDRAWSURFACE)0;
 #endif
 		HDC                 g_hDDdc             = 0;
-		int                 g_nDDFullScreenW    = 640;
-		int                 g_nDDFullScreenH    = 480;
+//		int                 g_nDDFullScreenW    = 640;
+//		int                 g_nDDFullScreenH    = 480;
 
 static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
@@ -184,12 +184,9 @@ static int						g_win_fullscreen_offsety = 0;
 
 // __ Prototypes __________________________________________________________________________________
 	static void DrawCrosshairs (int x, int y);
-	static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen);
-	static void DrawCrosshairsMouse();
 	static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
 	static void ScreenWindowResize(const bool bCtrlKey);
 	static void FrameResizeWindow(int nNewScale);
-	static void GetWidthHeight(int& nWidth, int& nHeight);
 
 
 	TCHAR g_pAppleWindowTitle[ 128 ] = "";
@@ -2161,9 +2158,6 @@ void SetFullScreenMode ()
 	FULLSCREEN_SCALE_TYPE width, height, scalex, scaley;
 	int top, left;
 
-	const int A2_WINDOW_WIDTH  = FRAMEBUFFER_BORDERLESS_W;
-	const int A2_WINDOW_HEIGHT = FRAMEBUFFER_BORDERLESS_H;
-
 	buttonover = -1;
 #if 0
 	// FS: 640x480
@@ -2188,12 +2182,12 @@ void SetFullScreenMode ()
 	width  = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.right  - monitor_info.rcMonitor.left);
 	height = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top );
 
-	scalex = width  / A2_WINDOW_WIDTH;
-	scaley = height / A2_WINDOW_HEIGHT;
+	scalex = width  / FRAMEBUFFER_BORDERLESS_W;
+	scaley = height / FRAMEBUFFER_BORDERLESS_H;
 
 	g_win_fullscreen_scale = (scalex <= scaley) ? scalex : scaley;
-	g_win_fullscreen_offsetx = ((int)width  - (int)(g_win_fullscreen_scale * A2_WINDOW_WIDTH )) / 2;
-	g_win_fullscreen_offsety = ((int)height - (int)(g_win_fullscreen_scale * A2_WINDOW_HEIGHT)) / 2;
+	g_win_fullscreen_offsetx = ((int)width  - (int)(g_win_fullscreen_scale * FRAMEBUFFER_BORDERLESS_W)) / 2;
+	g_win_fullscreen_offsety = ((int)height - (int)(g_win_fullscreen_scale * FRAMEBUFFER_BORDERLESS_H)) / 2;
 	SetWindowPos(g_hFrameWindow, NULL, left, top, (int)width, (int)height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 	g_bIsFullScreen = true;
 
@@ -2845,9 +2839,6 @@ bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UI
 		}
 	}
 
-	const int A2_WINDOW_WIDTH  = FRAMEBUFFER_BORDERLESS_W;
-	const int A2_WINDOW_HEIGHT = FRAMEBUFFER_BORDERLESS_H;
-
 	if (userSpecifiedHeight)
 	{
 		if (vecDisplayResolutions.size() == 0)
@@ -2859,8 +2850,8 @@ bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UI
 		{
 			if (width > it->first)
 			{
-				UINT scaleFactor = it->second / A2_WINDOW_HEIGHT;
-				if (it->first >= (A2_WINDOW_WIDTH * scaleFactor))
+				UINT scaleFactor = it->second / FRAMEBUFFER_BORDERLESS_H;
+				if (it->first >= (FRAMEBUFFER_BORDERLESS_W * scaleFactor))
 				{
 					width = it->first;
 				}
@@ -2875,17 +2866,17 @@ bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UI
 		return true;
 	}
 
-	// Pick max height that's an exact multiple of A2_WINDOW_HEIGHT
+	// Pick max height that's an exact multiple of FRAMEBUFFER_BORDERLESS_H
 	UINT tmpBestWidth = 0;
 	UINT tmpBestHeight = 0;
 	for (VEC_PAIR::iterator it = vecDisplayResolutions.begin(); it!= vecDisplayResolutions.end(); ++it)
 	{
-		if ((it->second % A2_WINDOW_HEIGHT) == 0)
+		if ((it->second % FRAMEBUFFER_BORDERLESS_H) == 0)
 		{
 			if (it->second > tmpBestHeight)
 			{
-				UINT scaleFactor = it->second / A2_WINDOW_HEIGHT;
-				if (it->first >= (A2_WINDOW_WIDTH * scaleFactor))
+				UINT scaleFactor = it->second / FRAMEBUFFER_BORDERLESS_H;
+				if (it->first >= (FRAMEBUFFER_BORDERLESS_W * scaleFactor))
 				{
 					tmpBestWidth = it->first;
 					tmpBestHeight = it->second;

@@ -30,12 +30,6 @@
 #endif
 // NTSC_END
 
-// Direct Draw -- For Full Screen
-	extern	LPDIRECTDRAW        g_pDD;
-	extern	LPDIRECTDRAWSURFACE g_pDDPrimarySurface;
-	extern  int                 g_nDDFullScreenW;
-	extern  int                 g_nDDFullScreenH;
-
 // Win32
 	extern HWND       g_hFrameWindow;
 	extern int        g_nViewportCX;
