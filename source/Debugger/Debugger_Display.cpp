@@ -539,7 +539,7 @@ HDC GetDebuggerMemDC(void)
 	{
 		HDC hFrameDC = FrameGetDC();
 		g_hDebuggerMemDC = CreateCompatibleDC(hFrameDC);
-		g_hDebuggerMemBM = CreateCompatibleBitmap(hFrameDC, FRAMEBUFFER_W, FRAMEBUFFER_H);
+		g_hDebuggerMemBM = CreateCompatibleBitmap(hFrameDC, GetFrameBufferWidth(), GetFrameBufferHeight());
 		SelectObject(g_hDebuggerMemDC, g_hDebuggerMemBM);
 	}
 
@@ -563,8 +563,8 @@ void StretchBltMemToFrameDC(void)
 	int nViewportCX, nViewportCY;
 	GetViewportCXCY(nViewportCX, nViewportCY);
 
-	int xdest = GetFullScreenOffsetX();
-	int ydest = GetFullScreenOffsetY();
+	int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
+	int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
 	int wdest = nViewportCX;
 	int hdest = nViewportCY;
 
@@ -574,7 +574,7 @@ void StretchBltMemToFrameDC(void)
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerMemDC(),									// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		FRAMEBUFFER_BORDERLESS_W, FRAMEBUFFER_BORDERLESS_H,	// int nWidthSrc,    int nHeightSrc,
+		GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),	// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
 }

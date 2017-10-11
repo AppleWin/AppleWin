@@ -60,7 +60,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static UINT16 g_AppleWinVersion[4] = {0};
 char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
-TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
+TCHAR *g_pAppTitle = NULL;
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 

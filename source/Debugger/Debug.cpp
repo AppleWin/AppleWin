@@ -9687,9 +9687,18 @@ void DebuggerMouseClick( int x, int y )
 
 	// do picking
 
-	int cx = (x - VIEWPORTX) / nFontWidth;
-	int cy = (y - VIEWPORTY) / nFontHeight;
-	
+	const int nOffsetX = IsFullScreen() ? GetFullScreenOffsetX() : Get3DBorderWidth();
+	const int nOffsetY = IsFullScreen() ? GetFullScreenOffsetY() : Get3DBorderHeight();
+
+	const int nOffsetInScreenX = x - nOffsetX;
+	const int nOffsetInScreenY = y - nOffsetY;
+
+	if (nOffsetInScreenX < 0 || nOffsetInScreenY < 0)
+		return;
+
+	int cx = nOffsetInScreenX / nFontWidth;
+	int cy = nOffsetInScreenY / nFontHeight;
+
 #if _DEBUG
 	char sText[ CONSOLE_WIDTH ];
 	sprintf( sText, "x:%d y:%d  cx:%d cy:%d", x, y, cx, cy );

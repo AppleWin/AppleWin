@@ -56,17 +56,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration\PropertySheet.h"
 #include "Debugger\Debug.h"
 
-#define DIRECTX_PAGE_FLIP 1
-
 //#define ENABLE_MENU 0
 
 // Magic numbers (used by FrameCreateWindow to calc width/height):
 #define MAGICX 5	// 3D border between Apple window & Emulator's RHS buttons
 #define MAGICY 5	// 3D border between Apple window & Title bar
 
+// 3D border around the 560x384 Apple II display
+#define  VIEWPORTX   5
+#define  VIEWPORTY   5
+
 static const int kDEFAULT_VIEWPORT_SCALE = 2;
-       int g_nViewportCX = FRAMEBUFFER_BORDERLESS_W * kDEFAULT_VIEWPORT_SCALE;
-       int g_nViewportCY = FRAMEBUFFER_BORDERLESS_H * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCX = GetFrameBufferBorderlessWidth()  * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCY = GetFrameBufferBorderlessHeight() * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
 static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
 
@@ -75,10 +77,10 @@ static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Window
 #define  BUTTONCX    45
 #define  BUTTONCY    45
 // NB. FSxxx = FullScreen xxx
-#define  FSVIEWPORTX (640-BUTTONCX-MAGICX-g_nViewportCX)
-#define  FSVIEWPORTY ((480-g_nViewportCY)/2)
-#define  FSBUTTONX   (640-BUTTONCX)
-#define  FSBUTTONY   (((480-g_nViewportCY)/2)-1)
+//#define  FSVIEWPORTX (640-BUTTONCX-MAGICX-g_nViewportCX)
+//#define  FSVIEWPORTY ((480-g_nViewportCY)/2)
+//#define  FSBUTTONX   (640-BUTTONCX)
+//#define  FSBUTTONY   (((480-g_nViewportCY)/2)-1)
 #define  BUTTONS     8
 
 	static HBITMAP g_hCapsLockBitmap[2];
@@ -130,7 +132,7 @@ static HDC     g_hFrameDC      = (HDC)0;
 static RECT    framerect       = {0,0,0,0};
 
 		HWND   g_hFrameWindow   = (HWND)0;
-static BOOL    g_bIsFullScreen  = 0;
+static bool    g_bIsFullScreen  = false;
 		BOOL   g_bConfirmReboot = 1; // saved PageConfig REGSAVE
 		BOOL   g_bMultiMon      = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
 
@@ -142,15 +144,18 @@ static BOOL    g_bUsingCursor	= 0;		// 1=AppleWin is using (hiding) the mouse-cu
 static int     viewportx       = VIEWPORTX;	// Default to Normal (non-FullScreen) mode
 static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
 
+#if 0	// TC: Redundant
 // Direct Draw -- For Full Screen
 //		LPDIRECTDRAW        g_pDD               = (LPDIRECTDRAW)0;
-		LPDIRECTDRAWSURFACE g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
+//		LPDIRECTDRAWSURFACE g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
+#define DIRECTX_PAGE_FLIP 1
 #if DIRECTX_PAGE_FLIP
-		LPDIRECTDRAWSURFACE g_pDDBackSurface    = (LPDIRECTDRAWSURFACE)0;
+//		LPDIRECTDRAWSURFACE g_pDDBackSurface    = (LPDIRECTDRAWSURFACE)0;
 #endif
-		HDC                 g_hDDdc             = 0;
+//		HDC                 g_hDDdc             = 0;
 //		int                 g_nDDFullScreenW    = 640;
 //		int                 g_nDDFullScreenH    = 480;
+#endif
 
 static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
@@ -189,12 +194,72 @@ static int						g_win_fullscreen_offsety = 0;
 	static void FrameResizeWindow(int nNewScale);
 
 
-	TCHAR g_pAppleWindowTitle[ 128 ] = "";
+// ==========================================================================
 
-// Updates g_pAppTitle
-// ====================================================================
+// Display construction:
+// . Apple II video gets rendered to the framebuffer (maybe with some preliminary/final NTSC data in the border areas)
+// . The *borderless* framebuffer is stretchblt() copied to the frame DC, in VideoRefreshScreen()
+// . Draw cross-hairs (if using mouse as either a mouse or joystick) to frame DC
+// . In Windowed mode:
+//	 - Draw 3D border, 8x buttons, status area (disk LEDs, caps) to frame DC
+// . In Fullscreen mode:
+//   - Optional: Draw status area to frame DC
+//
+
+#define  FRAMEBUFFER_BORDERLESS_W 560	// 560 = Double Hi-Res
+#define  FRAMEBUFFER_BORDERLESS_H 384	// 384 = Double Scan Line
+
+// NB. This border area is not visible (... and this border area is unrelated to the 3D border below)
+#define  BORDER_W       20
+#define  BORDER_H       18
+
+UINT GetFrameBufferBorderlessWidth(void)
+{
+	return FRAMEBUFFER_BORDERLESS_W;
+}
+
+UINT GetFrameBufferBorderlessHeight(void)
+{
+	return FRAMEBUFFER_BORDERLESS_H;
+}
+
+UINT GetFrameBufferBorderWidth(void)
+{
+	return BORDER_W;
+}
+
+UINT GetFrameBufferBorderHeight(void)
+{
+	return BORDER_H;
+}
+
+UINT GetFrameBufferWidth(void)
+{
+	return GetFrameBufferBorderlessWidth() + 2*GetFrameBufferBorderWidth();
+}
+
+UINT GetFrameBufferHeight(void)
+{
+	return GetFrameBufferBorderlessHeight() + 2*GetFrameBufferBorderHeight();
+}
+
+//
+
+UINT Get3DBorderWidth(void)
+{
+	return IsFullScreen() ? 0 : VIEWPORTX;
+}
+
+UINT Get3DBorderHeight(void)
+{
+	return IsFullScreen() ? 0 : VIEWPORTY;
+}
+
+// ==========================================================================
 static void GetAppleWindowTitle()
 {
+	static TCHAR g_pAppleWindowTitle[ 128 ] = "";
+
 	g_pAppTitle = g_pAppleWindowTitle;
 
 	switch (g_Apple2Type)
@@ -236,8 +301,6 @@ static void GetAppleWindowTitle()
 		case MODE_PAUSED  : _tcscat(g_pAppleWindowTitle,TEXT(" [")); _tcscat(g_pAppleWindowTitle,TITLE_PAUSED  ); _tcscat(g_pAppleWindowTitle,TEXT("]")); break;
 		case MODE_STEPPING: _tcscat(g_pAppleWindowTitle,TEXT(" [")); _tcscat(g_pAppleWindowTitle,TITLE_STEPPING); _tcscat(g_pAppleWindowTitle,TEXT("]")); break;
 	}
-
-	g_pAppTitle = g_pAppleWindowTitle;
 }
 
 //===========================================================================
@@ -636,7 +699,7 @@ static bool g_bFullScreen_ShowSubunitStatus = true;
 
 bool IsFullScreen(void)
 {
-	return g_bIsFullScreen ? true : false;
+	return g_bIsFullScreen;
 }
 
 bool GetFullScreenShowSubunitStatus(void)
@@ -2197,8 +2260,8 @@ void SetFullScreenMode ()
 
 	buttonx    = GetFullScreenOffsetX() + g_nViewportCX + VIEWPORTX*2;
 	buttony    = GetFullScreenOffsetY();
-	viewportx  = VIEWPORTX;
-	viewporty  = g_bIsFullScreen ? 0 : VIEWPORTY; // GH#464
+	viewportx  = VIEWPORTX;		// TC-TODO: Should be zero too? (Since there's no 3D border in full-screen)
+	viewporty  = 0; // GH#464
 #endif
 
 	//	GetWindowRect(g_hFrameWindow,&framerect);
@@ -2236,7 +2299,6 @@ void SetFullScreenMode ()
 //===========================================================================
 void SetNormalMode ()
 {
-//	g_bIsFullScreen = false;
 	buttonover = -1;
 	buttonx    = BUTTONX;
 	buttony    = BUTTONY;
@@ -2513,6 +2575,7 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 {
 	HDC hDC = 0;
 
+#if 0	// TC: just wrapping existing "if (false)" code in "#if 0" to make it clear that it's dead code
 	// ASSERT( pAddr_ );
 	// ASSERT( pPitch_ );
 	if (false) // TODO: ...
@@ -2544,9 +2607,10 @@ HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
 			hDC = 0;
 	}
 	else
+#endif
 	{
 		*pAddr_ = g_pFramebufferbits;
-		*pPitch_ = FRAMEBUFFER_W;
+		*pPitch_ = GetFrameBufferWidth();
 		hDC = FrameGetDC();
 	}
 
@@ -2592,6 +2656,7 @@ void FrameReleaseDC () {
 //===========================================================================
 void FrameReleaseVideoDC ()
 {
+#if 0	// TC: just wrapping existing "if (false)" code in "#if 0" to make it clear that it's dead code
 	if (false) // TODO: ...
 	//if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
 	{
@@ -2616,6 +2681,7 @@ void FrameReleaseVideoDC ()
 		g_pDDPrimarySurface->ReleaseDC( g_hDDdc ); // NTSC Full Screen
 		g_hDDdc = 0;
 	}
+#endif
 }
 
 //===========================================================================
