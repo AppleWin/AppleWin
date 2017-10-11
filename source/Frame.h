@@ -27,11 +27,9 @@
 
 	void    FrameCreateWindow(void);
 	HDC     FrameGetDC ();
-	HDC     FrameGetVideoDC (LPBYTE *,LONG *);
+	void    FrameReleaseDC ();
 	void    FrameRefreshStatus (int, bool bUpdateDiskStatus = true );
 	void    FrameRegisterClass ();
-	void    FrameReleaseDC ();
-	void    FrameReleaseVideoDC ();
 	void	FrameSetCursorPosByMousePos();
 	int		GetViewportScale(void);
 	int     SetViewportScale(int nNewScale, bool bForce = false);

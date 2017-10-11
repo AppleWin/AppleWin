@@ -446,14 +446,8 @@ void VideoDisplayLogo ()
 
 			if( IsFullScreen() )
 			{
-#if 0
-				// Draw Logo at top of screen so when the Apple display is refreshed it will automagically clear it
-				nLogoX = 0;
-				nLogoY = 0;
-#else
 				nLogoX += GetFullScreenOffsetX();
 				nLogoY += GetFullScreenOffsetY();
-#endif
 			}
 
 			VideoDrawLogoBitmap( hFrameDC, nLogoX, nLogoY, bm.bmWidth, bm.bmHeight, scale );
@@ -499,8 +493,6 @@ void VideoDisplayLogo ()
 #endif
 
 #undef  DRAWVERSION
-
-	FrameReleaseVideoDC();
 
 	DeleteObject(font);
 }
@@ -656,49 +648,31 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 		NTSC_VideoRedrawWholeScreen();
 	}
 
-// NTSC_BEGIN
-	LPBYTE pDstFrameBufferBits = 0;
-	LONG   pitch = 0;
-	HDC    hFrameDC = FrameGetVideoDC(&pDstFrameBufferBits,&pitch);
-
-#if 1 // Keep Aspect Ratio
-	// Need to clear full screen logo to black
-	#define W g_nViewportCX
-	#define H g_nViewportCY
-#else // Stretch
-	// Stretch - doesn't preserve 1:1 aspect ratio
-	#define W IsFullScreen() ? g_nDDFullScreenW : g_nViewportCX
-	#define H IsFullScreen() ? g_nDDFullScreenH : g_nViewportCY
-#endif
+	HDC hFrameDC = FrameGetDC();
 
 	if (hFrameDC)
 	{
-		{
-			int xSrc = GetFrameBufferBorderWidth();
-			int ySrc = GetFrameBufferBorderHeight();
-			VideoFrameBufferAdjust(xSrc, ySrc);	// TC: Hacky-fix for GH#341
+		int xSrc = GetFrameBufferBorderWidth();
+		int ySrc = GetFrameBufferBorderHeight();
+		VideoFrameBufferAdjust(xSrc, ySrc);	// TC: Hacky-fix for GH#341
 
-			int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
-			int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
-			int wdest = g_nViewportCX;
-			int hdest = g_nViewportCY;
+		int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
+		int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
+		int wdest = g_nViewportCX;
+		int hdest = g_nViewportCY;
 
-			SetStretchBltMode(hFrameDC, COLORONCOLOR);
-			StretchBlt(
-				hFrameDC, 
-				xdest, ydest,
-				wdest, hdest,
-				g_hDeviceDC,
-				xSrc, ySrc,
-				GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),
-				SRCCOPY);
-		}
+		SetStretchBltMode(hFrameDC, COLORONCOLOR);
+		StretchBlt(
+			hFrameDC, 
+			xdest, ydest,
+			wdest, hdest,
+			g_hDeviceDC,
+			xSrc, ySrc,
+			GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),
+			SRCCOPY);
 	}
 
 	GdiFlush();
-
-	FrameReleaseVideoDC();
-// NTSC_END
 }
 
 //===========================================================================

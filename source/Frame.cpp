@@ -76,11 +76,6 @@ static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Window
 #define  BUTTONY     0
 #define  BUTTONCX    45
 #define  BUTTONCY    45
-// NB. FSxxx = FullScreen xxx
-//#define  FSVIEWPORTX (640-BUTTONCX-MAGICX-g_nViewportCX)
-//#define  FSVIEWPORTY ((480-g_nViewportCY)/2)
-//#define  FSBUTTONX   (640-BUTTONCX)
-//#define  FSBUTTONY   (((480-g_nViewportCY)/2)-1)
 #define  BUTTONS     8
 
 	static HBITMAP g_hCapsLockBitmap[2];
@@ -144,19 +139,6 @@ static BOOL    g_bUsingCursor	= 0;		// 1=AppleWin is using (hiding) the mouse-cu
 static int     viewportx       = VIEWPORTX;	// Default to Normal (non-FullScreen) mode
 static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
 
-#if 0	// TC: Redundant
-// Direct Draw -- For Full Screen
-//		LPDIRECTDRAW        g_pDD               = (LPDIRECTDRAW)0;
-//		LPDIRECTDRAWSURFACE g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
-#define DIRECTX_PAGE_FLIP 1
-#if DIRECTX_PAGE_FLIP
-//		LPDIRECTDRAWSURFACE g_pDDBackSurface    = (LPDIRECTDRAWSURFACE)0;
-#endif
-//		HDC                 g_hDDdc             = 0;
-//		int                 g_nDDFullScreenW    = 640;
-//		int                 g_nDDFullScreenH    = 480;
-#endif
-
 static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
 
@@ -208,26 +190,26 @@ static int						g_win_fullscreen_offsety = 0;
 
 UINT GetFrameBufferBorderlessWidth(void)
 {
-	static UINT uFrameBufferBorderlessW = 560;	// 560 = Double Hi-Res
+	static const UINT uFrameBufferBorderlessW = 560;	// 560 = Double Hi-Res
 	return uFrameBufferBorderlessW;
 }
 
 UINT GetFrameBufferBorderlessHeight(void)
 {
-	static UINT uFrameBufferBorderlessH = 384;	// 384 = Double Scan Line
+	static const UINT uFrameBufferBorderlessH = 384;	// 384 = Double Scan Line
 	return uFrameBufferBorderlessH;
 }
 
 // NB. These border areas are not visible (... and these border areas are unrelated to the 3D border below)
 UINT GetFrameBufferBorderWidth(void)
 {
-	static UINT uBorderW = 20;
+	static const UINT uBorderW = 20;
 	return uBorderW;
 }
 
 UINT GetFrameBufferBorderHeight(void)
 {
-	static UINT uBorderH = 18;
+	static const UINT uBorderH = 18;
 	return uBorderH;
 }
 
@@ -530,22 +512,6 @@ static void DrawCrosshairs (int x, int y) {
 
   // ERASE THE OLD CROSSHAIRS
   if (lastx && lasty)
-#if 0
-    if (g_bIsFullScreen) {
-      int loop = 4;
-      while (loop--) {
-        RECT rect = {0,0,5,5};
-        switch (loop) {
-          case 0: OffsetRect(&rect,lastx-2,FSVIEWPORTY-5);              break;
-          case 1: OffsetRect(&rect,lastx-2,FSVIEWPORTY+g_nViewportCY);  break;
-          case 2: OffsetRect(&rect,FSVIEWPORTX-5,lasty-2);              break;
-          case 3: OffsetRect(&rect,FSVIEWPORTX+g_nViewportCX,lasty-2);  break;
-        }
-        FillRect(dc,&rect,(HBRUSH)GetStockObject(BLACK_BRUSH));
-      }
-    }
-    else
-#else
     if (g_bIsFullScreen)
 	{
       int loop = 4;
@@ -561,7 +527,6 @@ static void DrawCrosshairs (int x, int y) {
       }
 	}
 	else
-#endif
 	{
       int loop = 5;
       while (loop--) {
@@ -2220,13 +2185,6 @@ void SetFullScreenMode ()
 	int top, left;
 
 	buttonover = -1;
-#if 0
-	// FS: 640x480
-	buttonx    = FSBUTTONX;
-	buttony    = FSBUTTONY;
-	viewportx  = FSVIEWPORTX;
-	viewporty  = FSVIEWPORTY;
-#endif
 
 	g_main_window_saved_style = GetWindowLong(g_hFrameWindow, GWL_STYLE);
 	g_main_window_saved_exstyle = GetWindowLong(g_hFrameWindow, GWL_EXSTYLE);
@@ -2252,42 +2210,12 @@ void SetFullScreenMode ()
 	SetWindowPos(g_hFrameWindow, NULL, left, top, (int)width, (int)height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 	g_bIsFullScreen = true;
 
-#if 1
-	// FS: desktop
 	SetViewportScale(g_win_fullscreen_scale, true);
 
 	buttonx    = GetFullScreenOffsetX() + g_nViewportCX + VIEWPORTX*2;
 	buttony    = GetFullScreenOffsetY();
 	viewportx  = VIEWPORTX;		// TC-TODO: Should be zero too? (Since there's no 3D border in full-screen)
 	viewporty  = 0; // GH#464
-#endif
-
-	//	GetWindowRect(g_hFrameWindow,&framerect);
-//	SetWindowLong(g_hFrameWindow,GWL_STYLE,WS_POPUP | WS_SYSMENU | WS_VISIBLE);
-//
-//	DDSURFACEDESC ddsd;
-//	ddsd.dwSize = sizeof(ddsd);
-//	ddsd.dwFlags = DDSD_CAPS | DDSD_BACKBUFFERCOUNT;
-//	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE | DDSCAPS_FLIP | DDSCAPS_COMPLEX;
-//	ddsd.dwBackBufferCount = 1;
-//
-//	DDSCAPS ddscaps;
-//	ddscaps.dwCaps = DDSCAPS_BACKBUFFER;
-//
-//	if ( 0
-//		|| DD_OK != DirectDrawCreate(NULL,&g_pDD,NULL)
-//		|| DD_OK != g_pDD->SetCooperativeLevel(g_hFrameWindow,DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN)
-//		|| DD_OK != g_pDD->SetDisplayMode(g_nDDFullScreenW,g_nDDFullScreenH,32)
-//		|| DD_OK != g_pDD->CreateSurface(&ddsd,&g_pDDPrimarySurface,NULL)
-//#if DIRECTX_PAGE_FLIP
-//		|| DD_OK != g_pDDPrimarySurface->GetAttachedSurface( &ddscaps, &g_pDDBackSurface)
-//#endif
-//	)
-//	{
-//		g_pDDPrimarySurface = NULL;
-//		SetNormalMode();
-//		return;
-//	}
 
 	InvalidateRect(g_hFrameWindow,NULL,1);
 
@@ -2315,25 +2243,6 @@ void SetNormalMode ()
 		g_main_window_saved_rect.bottom - g_main_window_saved_rect.top,
 		SWP_SHOWWINDOW);
 	g_bIsFullScreen = false;
-
-	//g_pDD->RestoreDisplayMode();
-	//g_pDD->SetCooperativeLevel(NULL,DDSCL_NORMAL);
-	//SetWindowLong(g_hFrameWindow,GWL_STYLE,
- //               WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
- //               WS_VISIBLE);
-	//SetWindowPos(g_hFrameWindow,0,framerect.left,
- //                            framerect.top,
- //                            framerect.right - framerect.left,
- //                            framerect.bottom - framerect.top,
- //                            SWP_NOZORDER | SWP_FRAMECHANGED);
-	//if (g_pDDPrimarySurface)
-	//{
-	//	g_pDDPrimarySurface->Release();
-	//	g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
-	//}
-
-	//g_pDD->Release();
-	//g_pDD = (LPDIRECTDRAW)0;
 }
 
 //===========================================================================
@@ -2569,50 +2478,12 @@ HDC FrameGetDC () {
 }
 
 //===========================================================================
-HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
-{
-	HDC hDC = 0;
-
-#if 0	// TC: just wrapping existing "if (false)" code in "#if 0" to make it clear that it's dead code
-	// ASSERT( pAddr_ );
-	// ASSERT( pPitch_ );
-	if (false) // TODO: ...
-	//if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
-	{
-		// Reference: http://archive.gamedev.net/archive/reference/articles/article608.html
-		// NTSC TODO: Are these coordinates correct?? Coordinates don't seem to matter on Win7 fullscreen!?
-		// g_nViewportCX = FRAMEBUFFER_W * kDEFAULT_VIEWPORT_SCALE;
-		RECT rect = {
-			FSVIEWPORTX,
-			FSVIEWPORTY,
-			FSVIEWPORTX+g_nViewportCX,
-			FSVIEWPORTY+g_nViewportCY
-		};
-		DDSURFACEDESC surfacedesc;
-		surfacedesc.dwSize = sizeof(surfacedesc);
-		// TC: Use DDLOCK_WAIT - see Bug #13425
-		if (g_pDDPrimarySurface->Lock(&rect,&surfacedesc,DDLOCK_WAIT,NULL) == DDERR_SURFACELOST)
-		{
-			g_pDDPrimarySurface->Restore();
-			g_pDDPrimarySurface->Lock(&rect,&surfacedesc,DDLOCK_WAIT,NULL);
-		}
-		*pAddr_  = (LPBYTE)surfacedesc.lpSurface + (g_nViewportCY-1) * surfacedesc.lPitch;
-		*pPitch_ = -surfacedesc.lPitch;
-
-		if( g_pDDPrimarySurface->GetDC( &hDC ) == DD_OK )
-			g_hDDdc = hDC; // intentional "null" copy
-		else
-			hDC = 0;
-	}
-	else
-#endif
-	{
-		*pAddr_ = g_pFramebufferbits;
-		*pPitch_ = GetFrameBufferWidth();
-		hDC = FrameGetDC();
-	}
-
-	return hDC;
+void FrameReleaseDC () {
+  if (g_hFrameDC) {
+    SetViewportOrgEx(g_hFrameDC,0,0,NULL);
+    ReleaseDC(g_hFrameWindow,g_hFrameDC);
+    g_hFrameDC = (HDC)0;
+  }
 }
 
 //===========================================================================
@@ -2640,46 +2511,6 @@ void FrameRegisterClass () {
   wndclass.hIconSm       = (HICON)LoadImage(g_hInstance,TEXT("APPLEWIN_ICON"),
                                             IMAGE_ICON,16,16,LR_DEFAULTCOLOR);
   RegisterClassEx(&wndclass);
-}
-
-//===========================================================================
-void FrameReleaseDC () {
-  if (g_hFrameDC) {
-    SetViewportOrgEx(g_hFrameDC,0,0,NULL);
-    ReleaseDC(g_hFrameWindow,g_hFrameDC);
-    g_hFrameDC = (HDC)0;
-  }
-}
-
-//===========================================================================
-void FrameReleaseVideoDC ()
-{
-#if 0	// TC: just wrapping existing "if (false)" code in "#if 0" to make it clear that it's dead code
-	if (false) // TODO: ...
-	//if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
-	{
-		// THIS IS CORRECT ACCORDING TO THE DIRECTDRAW DOCS
-		RECT rect = {
-			FSVIEWPORTX,
-			FSVIEWPORTY,
-			FSVIEWPORTX+g_nViewportCX,
-			FSVIEWPORTY+g_nViewportCY
-		};
-
-		//g_pDDBackSurface->BltFast( 0, 0, g_pDDPrimarySurface, &rcRect,DDBLTFAST_NOCOLORKEY | DDBLTFAST_WAIT);
-#if DIRECTX_PAGE_FLIP
-		g_pDDBackSurface->Flip( g_pDDPrimarySurface, 0 );
-#endif
-
-		g_pDDPrimarySurface->Unlock(&rect);
-
-		// BUT THIS SEEMS TO BE WORKING
-		g_pDDPrimarySurface->Unlock(NULL);
-
-		g_pDDPrimarySurface->ReleaseDC( g_hDDdc ); // NTSC Full Screen
-		g_hDDdc = 0;
-	}
-#endif
 }
 
 //===========================================================================
