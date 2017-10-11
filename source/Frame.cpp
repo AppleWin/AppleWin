@@ -206,31 +206,29 @@ static int						g_win_fullscreen_offsety = 0;
 //   - Optional: Draw status area to frame DC
 //
 
-#define  FRAMEBUFFER_BORDERLESS_W 560	// 560 = Double Hi-Res
-#define  FRAMEBUFFER_BORDERLESS_H 384	// 384 = Double Scan Line
-
-// NB. This border area is not visible (... and this border area is unrelated to the 3D border below)
-#define  BORDER_W       20
-#define  BORDER_H       18
-
 UINT GetFrameBufferBorderlessWidth(void)
 {
-	return FRAMEBUFFER_BORDERLESS_W;
+	static UINT uFrameBufferBorderlessW = 560;	// 560 = Double Hi-Res
+	return uFrameBufferBorderlessW;
 }
 
 UINT GetFrameBufferBorderlessHeight(void)
 {
-	return FRAMEBUFFER_BORDERLESS_H;
+	static UINT uFrameBufferBorderlessH = 384;	// 384 = Double Scan Line
+	return uFrameBufferBorderlessH;
 }
 
+// NB. These border areas are not visible (... and these border areas are unrelated to the 3D border below)
 UINT GetFrameBufferBorderWidth(void)
 {
-	return BORDER_W;
+	static UINT uBorderW = 20;
+	return uBorderW;
 }
 
 UINT GetFrameBufferBorderHeight(void)
 {
-	return BORDER_H;
+	static UINT uBorderH = 18;
+	return uBorderH;
 }
 
 UINT GetFrameBufferWidth(void)
@@ -2245,12 +2243,12 @@ void SetFullScreenMode ()
 	width  = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.right  - monitor_info.rcMonitor.left);
 	height = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top );
 
-	scalex = width  / FRAMEBUFFER_BORDERLESS_W;
-	scaley = height / FRAMEBUFFER_BORDERLESS_H;
+	scalex = width  / GetFrameBufferBorderlessWidth();
+	scaley = height / GetFrameBufferBorderlessHeight();
 
 	g_win_fullscreen_scale = (scalex <= scaley) ? scalex : scaley;
-	g_win_fullscreen_offsetx = ((int)width  - (int)(g_win_fullscreen_scale * FRAMEBUFFER_BORDERLESS_W)) / 2;
-	g_win_fullscreen_offsety = ((int)height - (int)(g_win_fullscreen_scale * FRAMEBUFFER_BORDERLESS_H)) / 2;
+	g_win_fullscreen_offsetx = ((int)width  - (int)(g_win_fullscreen_scale * GetFrameBufferBorderlessWidth())) / 2;
+	g_win_fullscreen_offsety = ((int)height - (int)(g_win_fullscreen_scale * GetFrameBufferBorderlessHeight())) / 2;
 	SetWindowPos(g_hFrameWindow, NULL, left, top, (int)width, (int)height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 	g_bIsFullScreen = true;
 
@@ -2381,8 +2379,8 @@ int SetViewportScale(int nNewScale, bool bForce /*=false*/)
 		nNewScale = g_nMaxViewportScale;
 
 	g_nViewportScale = nNewScale;
-	g_nViewportCX = g_nViewportScale * FRAMEBUFFER_BORDERLESS_W;
-	g_nViewportCY = g_nViewportScale * FRAMEBUFFER_BORDERLESS_H;
+	g_nViewportCX = g_nViewportScale * GetFrameBufferBorderlessWidth();
+	g_nViewportCY = g_nViewportScale * GetFrameBufferBorderlessHeight();
 
 	return nNewScale;
 }
@@ -2481,8 +2479,8 @@ void FrameCreateWindow(void)
 		int nOldViewportCX = g_nViewportCX;
 		int nOldViewportCY = g_nViewportCY;
 
-		g_nViewportCX = FRAMEBUFFER_BORDERLESS_W * 2;
-		g_nViewportCY = FRAMEBUFFER_BORDERLESS_H * 2;
+		g_nViewportCX = GetFrameBufferBorderlessWidth() * 2;
+		g_nViewportCY = GetFrameBufferBorderlessHeight() * 2;
 		GetWidthHeight(nWidth, nHeight);	// Probe with 2x dimensions
 
 		g_nViewportCX = nOldViewportCX;
@@ -2919,8 +2917,8 @@ bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UI
 		{
 			if (width > it->first)
 			{
-				UINT scaleFactor = it->second / FRAMEBUFFER_BORDERLESS_H;
-				if (it->first >= (FRAMEBUFFER_BORDERLESS_W * scaleFactor))
+				UINT scaleFactor = it->second / GetFrameBufferBorderlessHeight();
+				if (it->first >= (GetFrameBufferBorderlessWidth() * scaleFactor))
 				{
 					width = it->first;
 				}
@@ -2935,17 +2933,17 @@ bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UI
 		return true;
 	}
 
-	// Pick max height that's an exact multiple of FRAMEBUFFER_BORDERLESS_H
+	// Pick max height that's an exact multiple of GetFrameBufferBorderlessHeight()
 	UINT tmpBestWidth = 0;
 	UINT tmpBestHeight = 0;
 	for (VEC_PAIR::iterator it = vecDisplayResolutions.begin(); it!= vecDisplayResolutions.end(); ++it)
 	{
-		if ((it->second % FRAMEBUFFER_BORDERLESS_H) == 0)
+		if ((it->second % GetFrameBufferBorderlessHeight()) == 0)
 		{
 			if (it->second > tmpBestHeight)
 			{
-				UINT scaleFactor = it->second / FRAMEBUFFER_BORDERLESS_H;
-				if (it->first >= (FRAMEBUFFER_BORDERLESS_W * scaleFactor))
+				UINT scaleFactor = it->second / GetFrameBufferBorderlessHeight();
+				if (it->first >= (GetFrameBufferBorderlessWidth() * scaleFactor))
 				{
 					tmpBestWidth = it->first;
 					tmpBestHeight = it->second;
