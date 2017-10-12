@@ -58,10 +58,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //#define ENABLE_MENU 0
 
-// Magic numbers (used by FrameCreateWindow to calc width/height):
-#define MAGICX 5	// 3D border between Apple window & Emulator's RHS buttons
-#define MAGICY 5	// 3D border between Apple window & Title bar
-
 // 3D border around the 560x384 Apple II display
 #define  VIEWPORTX   5
 #define  VIEWPORTY   5
@@ -88,7 +84,6 @@ static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Window
 	//===========================
 	static HBITMAP g_hDiskWindowedLED[ NUM_DISK_STATUS ];
 
-//static HBITMAP g_hDiskFullScreenLED[ NUM_DISK_STATUS ];
 static int    g_nTrackDrive1  = -1;
 static int    g_nTrackDrive2  = -1;
 static int    g_nSectorDrive1 = -1;
@@ -388,12 +383,6 @@ static void CreateGdiObjects(void)
 	g_hDiskWindowedLED[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKWRITE_BITMAP"));
 	g_hDiskWindowedLED[ DISK_STATUS_PROT ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKPROT_BITMAP"));
 
-	// Full Screen Drive LED
-	//	g_hDiskFullScreenLED[ DISK_STATUS_OFF  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_O")); // Full Screen Off
-	//	g_hDiskFullScreenLED[ DISK_STATUS_READ ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_R")); // Full Screen Read Only
-	//	g_hDiskFullScreenLED[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_W")); // Full Screen Write
-	//	g_hDiskFullScreenLED[ DISK_STATUS_PROT ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_P")); // Full Screen Write Protected
-
 	btnfacebrush    = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 	btnfacepen      = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNFACE));
 	btnhighlightpen = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNHIGHLIGHT));
@@ -420,7 +409,6 @@ static void DeleteGdiObjects(void)
 	for (int loop = 0; loop < NUM_DISK_STATUS; loop++)
 	{
 		_ASSERT(DeleteObject(g_hDiskWindowedLED[loop]));
-		//_ASSERT(DeleteObject(g_hDiskFullScreenLED[loop]));
 	}
 
 	_ASSERT(DeleteObject(btnfacebrush));
@@ -2319,13 +2307,11 @@ static void SetupTooltipControls(void)
 static void GetWidthHeight(int& nWidth, int& nHeight)
 {
 	nWidth  = g_nViewportCX + VIEWPORTX*2
-						   + BUTTONCX
-						   + (GetSystemMetrics(SM_CXBORDER) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2
-						   + MAGICX;
+						    + BUTTONCX
+						    + (GetSystemMetrics(SM_CYFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2;
 	nHeight = g_nViewportCY + VIEWPORTY*2
-						   + (GetSystemMetrics(SM_CYBORDER) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2
-						   + GetSystemMetrics(SM_CYCAPTION)
-						   + MAGICY;
+						    + (GetSystemMetrics(SM_CYFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2	// NB. No SM_CYPADDEDBORDER
+						    + GetSystemMetrics(SM_CYCAPTION);
 }
 
 static void FrameResizeWindow(int nNewScale)
@@ -2449,7 +2435,7 @@ void FrameCreateWindow(void)
 	// NB. g_hFrameWindow also set by WM_CREATE - NB. CreateWindow() must synchronously send WM_CREATE
 	g_hFrameWindow = CreateWindow(
 		TEXT("APPLE2FRAME"),
-		g_pAppTitle, // SetWindowText() // WindowTitle
+		g_pAppTitle,
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 		WS_MINIMIZEBOX | WS_VISIBLE,
 		nXPos, nYPos, nWidth, nHeight,
@@ -2544,13 +2530,13 @@ void FrameSetCursorPosByMousePos()
 
 	POINT Point = {viewportx+2, viewporty+2};	// top-left
 	ClientToScreen(g_hFrameWindow, &Point);
-	SetCursorPos(Point.x+iWindowX-MAGICX, Point.y+iWindowY-MAGICY);
+	SetCursorPos(Point.x+iWindowX-VIEWPORTX, Point.y+iWindowY-VIEWPORTY);
 
-#if defined(_DEBUG) && 0
+#if defined(_DEBUG) && 0	// OutputDebugString() when cursor position changes since last time
 	static int OldX=0, OldY=0;
 	char szDbg[200];
-	int X=Point.x+iWindowX-MAGICX;
-	int Y=Point.y+iWindowY-MAGICY;
+	int X=Point.x+iWindowX-VIEWPORTX;
+	int Y=Point.y+iWindowY-VIEWPORTY;
 	if (X != OldX || Y != OldY)
 	{
 		sprintf(szDbg, "[FrameSetCursorPosByMousePos] x,y=%d,%d (MaxX,Y=%d,%d)\n", X,Y, iMaxX,iMaxY); OutputDebugString(szDbg);
@@ -2588,7 +2574,7 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 
 		POINT Point = {viewportx+2, viewporty+2};	// top-left
 		ClientToScreen(g_hFrameWindow, &Point);
-		SetCursorPos(Point.x+iWindowX-MAGICX, Point.y+iWindowY-MAGICY);
+		SetCursorPos(Point.x+iWindowX-VIEWPORTX, Point.y+iWindowY-VIEWPORTY);
 //		sprintf(szDbg, "[MOUSE_LEAVING ] x=%d, y=%d (Scale: x,y=%f,%f; iX,iY=%d,%d)\n", iWindowX, iWindowY, fScaleX, fScaleY, iX, iY); OutputDebugString(szDbg);
 	}
 	else	// Mouse entering Apple screen area
@@ -2596,8 +2582,8 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 //		sprintf(szDbg, "[MOUSE_ENTERING] x=%d, y=%d\n", x, y); OutputDebugString(szDbg);
 		if (!g_bIsFullScreen)	// GH#464
 		{
-			x -= (viewportx+2-MAGICX); if (x < 0) x = 0;
-			y -= (viewporty+2-MAGICY); if (y < 0) y = 0;
+			x -= (viewportx+2-VIEWPORTX); if (x < 0) x = 0;
+			y -= (viewporty+2-VIEWPORTY); if (y < 0) y = 0;
 		}
 
 		_ASSERT(x <= g_nViewportCX);
