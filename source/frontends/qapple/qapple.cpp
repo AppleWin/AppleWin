@@ -168,13 +168,17 @@ QApple::QApple(QWidget *parent) :
 {
     setupUi(this);
 
+    actionStart->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    actionPause->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
+    actionReboot->setIcon(style()->standardIcon(QStyle::SP_MediaSkipForward));
+
     myEmulator = new Emulator(mdiArea);
     myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
 
     myMSGap = 5;
 
+    on_actionPause_triggered();
     initialiseEmulator();
-
     startEmulator(myEmulatorWindow);
 }
 
@@ -225,6 +229,10 @@ void QApple::on_actionStart_triggered()
     myElapsedTimer.start();
     actionPause->setEnabled(true);
     actionStart->setEnabled(false);
+
+    actionChange->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
+    actionChange->disconnect(SIGNAL(triggered(bool)));
+    connect(actionChange, SIGNAL(triggered(bool)), this, SLOT(on_actionPause_triggered()));
 }
 
 void QApple::on_actionPause_triggered()
@@ -232,6 +240,10 @@ void QApple::on_actionPause_triggered()
     stopTimer();
     actionPause->setEnabled(false);
     actionStart->setEnabled(true);
+
+    actionChange->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    actionChange->disconnect(SIGNAL(triggered(bool)));
+    connect(actionChange, SIGNAL(triggered(bool)), this, SLOT(on_actionStart_triggered()));
 }
 
 void QApple::on_actionX1_triggered()
