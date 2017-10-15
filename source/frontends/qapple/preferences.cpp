@@ -177,6 +177,8 @@ void Preferences::setData(const Data & data)
     on_hd_7_clicked(data.hdInSlot7);
 
     joystick->setCurrentText(data.joystick);
+
+    save_state->setText(data.saveState);
 }
 
 Preferences::Data Preferences::getData() const
@@ -201,6 +203,8 @@ Preferences::Data Preferences::getData() const
     {
         data.joystickId = 0;
     }
+
+    data.saveState = save_state->text();
 
     return data;
 }
@@ -274,4 +278,13 @@ void Preferences::on_hd_7_clicked(bool checked)
     hd2->setEnabled(checked);
     browse_hd1->setEnabled(checked);
     browse_hd2->setEnabled(checked);
+}
+
+void Preferences::on_browse_ss_clicked()
+{
+    const QString name = QFileDialog::getSaveFileName(this, QString(), save_state->text());
+    if (!name.isEmpty())
+    {
+        save_state->setText(name);
+    }
 }

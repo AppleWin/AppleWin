@@ -24,6 +24,8 @@ public:
 
         std::vector<QString> disks;
         std::vector<QString> hds;
+
+        QString saveState;
     };
 
     explicit Preferences(QWidget *parent);
@@ -43,6 +45,8 @@ private slots:
     void on_browse_hd2_clicked();
 
     void on_hd_7_clicked(bool checked);
+
+    void on_browse_ss_clicked();
 
 private:
     std::vector<QComboBox *> myDisks;

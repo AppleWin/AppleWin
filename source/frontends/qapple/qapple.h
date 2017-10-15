@@ -45,6 +45,10 @@ private slots:
 
     void on_actionOptions_triggered();
 
+    void on_actionSave_state_triggered();
+
+    void on_actionLoad_state_triggered();
+
 private:
 
     void stopTimer();

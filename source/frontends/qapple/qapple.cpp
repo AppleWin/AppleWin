@@ -25,6 +25,7 @@
 
 #include <QMdiSubWindow>
 #include <QMessageBox>
+#include <QFileDialog>
 
 namespace
 {
@@ -170,7 +171,10 @@ QApple::QApple(QWidget *parent) :
 
     actionStart->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
     actionPause->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
-    actionReboot->setIcon(style()->standardIcon(QStyle::SP_MediaSkipForward));
+    actionReboot->setIcon(style()->standardIcon(QStyle::SP_MediaSkipBackward));
+
+    actionSave_state->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
+    actionLoad_state->setIcon(style()->standardIcon(QStyle::SP_DialogOpenButton));
 
     myEmulator = new Emulator(mdiArea);
     myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
@@ -334,6 +338,13 @@ void QApple::on_actionOptions_triggered()
         currentOptions.joystickId = 0;
     }
 
+    const char* saveState = Snapshot_GetFilename();
+    if (saveState)
+    {
+        currentOptions.saveState = QString::fromUtf8(saveState);;
+    }
+
+
     QSettings settings; // the function will "modify" it
     myPreferences.setup(currentOptions, settings);
 
@@ -397,6 +408,26 @@ void QApple::on_actionOptions_triggered()
             }
         }
 
+        if (currentOptions.saveState != newOptions.saveState)
+        {
+            const std::string name = newOptions.saveState.toStdString();
+            Snapshot_SetFilename(name);
+            RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, name.c_str());
+        }
+
     }
 
+}
+
+void QApple::on_actionSave_state_triggered()
+{
+    Snapshot_SaveState();
+}
+
+void QApple::on_actionLoad_state_triggered()
+{
+    emit endEmulator();
+    Snapshot_LoadState();
+    myEmulatorWindow->setWindowTitle(g_pAppTitle);
+    myEmulator->redrawScreen();
 }
