@@ -97,7 +97,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionChange"/>
+   <addaction name="actionStart"/>
+   <addaction name="actionPause"/>
    <addaction name="actionReboot"/>
   </widget>
   <action name="actionStart">
@@ -148,19 +149,14 @@
     <string>&amp;Options...</string>
    </property>
   </action>
-  <action name="actionChange">
-   <property name="text">
-    <string>Change</string>
-   </property>
-  </action>
   <action name="actionLoad_state">
    <property name="text">
-    <string>Load state</string>
+    <string>&amp;Load state</string>
    </property>
   </action>
   <action name="actionSave_state">
    <property name="text">
-    <string>Save state</string>
+    <string>&amp;Save state</string>
    </property>
   </action>
  </widget>

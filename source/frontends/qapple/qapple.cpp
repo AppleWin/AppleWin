@@ -233,10 +233,6 @@ void QApple::on_actionStart_triggered()
     myElapsedTimer.start();
     actionPause->setEnabled(true);
     actionStart->setEnabled(false);
-
-    actionChange->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
-    actionChange->disconnect(SIGNAL(triggered(bool)));
-    connect(actionChange, SIGNAL(triggered(bool)), this, SLOT(on_actionPause_triggered()));
 }
 
 void QApple::on_actionPause_triggered()
@@ -244,10 +240,6 @@ void QApple::on_actionPause_triggered()
     stopTimer();
     actionPause->setEnabled(false);
     actionStart->setEnabled(true);
-
-    actionChange->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
-    actionChange->disconnect(SIGNAL(triggered(bool)));
-    connect(actionChange, SIGNAL(triggered(bool)), this, SLOT(on_actionStart_triggered()));
 }
 
 void QApple::on_actionX1_triggered()
