@@ -114,6 +114,38 @@ Overview
 
 struct HDD
 {
+	HDD()
+	{
+		clear();
+	}
+
+	~HDD()
+	{
+		if (imagehandle)
+			ImageClose(imagehandle);
+	}
+
+	void clear()
+	{
+		// This is not a POD (there is a std::string)
+		// ZeroMemory does not work
+		ZeroMemory(imagename, sizeof(imagename));
+		ZeroMemory(fullname, sizeof(fullname));
+		strFilenameInZip.clear();
+		imagehandle = NULL;
+		bWriteProtected = false;
+		hd_error = 0;
+		hd_memblock = 0;
+		hd_diskblock = 0;
+		hd_buf_ptr = 0;
+		hd_imageloaded = 0;
+		ZeroMemory(hd_buf, sizeof(hd_buf));
+#if HD_LED
+		hd_status_next = Disk_Status_e(0);
+		hd_status_prev = Disk_Status_e(0);
+#endif
+	}
+
 	// From Disk_t
 	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)    [not used]
 	TCHAR	fullname[ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>
@@ -143,7 +175,7 @@ static BYTE	g_nHD_UnitNum = HARDDISK_1<<7;	// b7=unit
 // . ProDOS will write to Command before switching drives
 static BYTE	g_nHD_Command;
 
-static HDD g_HardDisk[NUM_HARDDISKS] = {0};
+static std::vector<HDD> g_HardDisk(NUM_HARDDISKS);
 
 static bool g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT g_uSlot = 7;
@@ -797,7 +829,7 @@ bool HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, co
 	for (UINT i=0; i<NUM_HARDDISKS; i++)
 	{
 		HD_Unplug(i);
-		ZeroMemory(&g_HardDisk[i], sizeof(HDD));
+		g_HardDisk[i].clear();
 	}
 
 	bool bResSelectImage1 = HD_LoadSnapshotHDDUnit(yamlLoadHelper, HARDDISK_1);
