@@ -10,9 +10,14 @@ Emulator::Emulator(QWidget *parent) :
     setupUi(this);
 }
 
-void Emulator::redrawScreen()
+void Emulator::updateVideo()
 {
     video->update();
+}
+
+void Emulator::repaintVideo()
+{
+    video->repaint();
 }
 
 void Emulator::setVideoSize(QMdiSubWindow * window, const QSize & size)

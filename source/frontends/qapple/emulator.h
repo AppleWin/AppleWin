@@ -12,7 +12,8 @@ class Emulator : public QFrame, private Ui::Emulator
 public:
     explicit Emulator(QWidget *parent = 0);
 
-    void redrawScreen();
+    void updateVideo();
+    void repaintVideo();
 
     void setZoom(QMdiSubWindow * window, const int x);
     void set43AspectRatio(QMdiSubWindow * window);

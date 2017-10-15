@@ -241,9 +241,8 @@ void QApple::on_timer()
         if (g_dwCyclesThisFrame >= dwClksPerFrame)
         {
             g_dwCyclesThisFrame -= dwClksPerFrame;
-            myEmulator->redrawScreen();
+            myEmulator->updateVideo();
         }
-        //Input::instance().poll();
     }
     while (DiskIsSpinning());
 }
@@ -298,7 +297,10 @@ void QApple::on_actionReboot_triggered()
 
 void QApple::on_actionBenchmark_triggered()
 {
-    VideoBenchmark([this]() { myEmulator->redrawScreen(); });
+    // call repaint as we really want to for a paintEvent() so we can time it properly
+    // if video is based on OpenGLWidget, this is not enough though,
+    // and benchmark results are bad.
+    VideoBenchmark([this]() { myEmulator->repaintVideo(); });
     on_actionReboot_triggered();
 }
 
@@ -452,7 +454,7 @@ void QApple::on_actionLoad_state_triggered()
     emit endEmulator();
     Snapshot_LoadState();
     myEmulatorWindow->setWindowTitle(g_pAppTitle);
-    myEmulator->redrawScreen();
+    myEmulator->updateVideo();
 }
 
 void QApple::on_actionAbout_Qt_triggered()
