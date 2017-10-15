@@ -128,3 +128,6 @@ void GetLocalTime(SYSTEMTIME *t);
 BOOL GetOpenFileName(LPOPENFILENAME lpofn);
 
 BOOL WINAPI PostMessage(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+
+// must be provided
+int MessageBox(HWND, const char *, const char *, UINT);

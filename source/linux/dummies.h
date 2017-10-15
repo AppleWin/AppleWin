@@ -9,7 +9,6 @@ void InitializeCriticalSection(CRITICAL_SECTION * criticalSection);
 void EnterCriticalSection(CRITICAL_SECTION * criticalSection);
 void LeaveCriticalSection(CRITICAL_SECTION * criticalSection);
 void OutputDebugString(const char * str);
-int MessageBox(HWND, const char *, const char *, UINT);
 
 extern int g_nAltCharSetOffset; // alternate character set
 

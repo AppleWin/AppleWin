@@ -164,6 +164,37 @@ BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCycle
 
 void VideoInitialize() {}
 
+// MessageBox
+
+int MessageBox(HWND, const char * text, const char * caption, UINT type)
+{
+    QMessageBox::StandardButtons buttons = QMessageBox::Ok;
+    if (type & MB_YESNO)
+    {
+        buttons = QMessageBox::Yes | QMessageBox::No;
+    }
+    else if (type & MB_YESNOCANCEL)
+    {
+        buttons = QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel;
+    }
+
+    QMessageBox::StandardButton result = QMessageBox::information(nullptr, caption, text, buttons);
+
+    switch (result)
+    {
+    case QMessageBox::Ok:
+        return IDOK;
+    case QMessageBox::Yes:
+        return IDYES;
+    case QMessageBox::No:
+        return IDNO;
+    case QMessageBox::Cancel:
+        return IDCANCEL;
+    default:
+        return IDOK;
+    }
+}
+
 QApple::QApple(QWidget *parent) :
     QMainWindow(parent), myTimerID(0), myPreferences(this)
 {

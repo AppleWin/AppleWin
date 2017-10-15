@@ -354,6 +354,12 @@ void FrameDrawDiskStatus(HDC x)
   FrameRefresh();
 }
 
+int MessageBox(HWND, const char * text, const char * caption, UINT)
+{
+  LogFileOutput("MessageBox:\n%s\n%s\n\n", caption, text);
+  return IDOK;
+}
+
 void FrameRefreshStatus(int x, bool)
 {
   // std::cerr << "Status: " << x << std::endl;

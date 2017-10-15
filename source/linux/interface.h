@@ -36,3 +36,7 @@ BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD *value);
 BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, BOOL *value);
 void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPCTSTR buffer);
 void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value);
+
+// MessageBox
+
+int MessageBox(HWND, const char * text, const char * caption, UINT type);
