@@ -454,3 +454,13 @@ void QApple::on_actionLoad_state_triggered()
     myEmulatorWindow->setWindowTitle(g_pAppTitle);
     myEmulator->redrawScreen();
 }
+
+void QApple::on_actionAbout_Qt_triggered()
+{
+    QMessageBox::aboutQt(this);
+}
+
+void QApple::on_actionAbout_triggered()
+{
+    QMessageBox::about(this, QApplication::applicationName(), "Apple ][ emulator\n\nBased on AppleWin\n");
+}

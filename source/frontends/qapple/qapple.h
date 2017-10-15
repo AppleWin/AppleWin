@@ -49,6 +49,10 @@ private slots:
 
     void on_actionLoad_state_triggered();
 
+    void on_actionAbout_Qt_triggered();
+
+    void on_actionAbout_triggered();
+
 private:
 
     void stopTimer();

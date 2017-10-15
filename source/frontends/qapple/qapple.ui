@@ -55,6 +55,8 @@
      <string>Wi&amp;ndow</string>
     </property>
     <addaction name="actionMemory"/>
+    <addaction name="actionAbout_Qt"/>
+    <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -157,6 +159,16 @@
   <action name="actionSave_state">
    <property name="text">
     <string>&amp;Save state</string>
+   </property>
+  </action>
+  <action name="actionAbout_Qt">
+   <property name="text">
+    <string>About Qt...</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About...</string>
    </property>
   </action>
  </widget>
