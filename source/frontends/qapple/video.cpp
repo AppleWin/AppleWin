@@ -30,6 +30,11 @@ namespace
     BYTE keyCode = 0;
     bool keyWaiting = false;
 
+    BYTE ROL_NIB(BYTE x)
+    {
+        return ((x << 1) & 0x0F) | ((x >> 3) & 0x01);
+    }
+
 }
 
 bool Video::Update40ColCell (QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
@@ -113,7 +118,11 @@ bool Video::UpdateDLoResCell(QPainter & painter, int x, int y, int xpixel, int y
     const QPixmap & lores = myGraphicsCache->lores80();
 
     {
-        const BYTE ch = *(g_pTextBank1 + offset);
+        BYTE ch = *(g_pTextBank1 + offset);
+
+        const BYTE ch_high = ch >> 4;
+        const BYTE ch_low = ch & 0x0F;
+        ch = (ROL_NIB(ch_high) << 4) | ROL_NIB(ch_low);
 
         const int sx = 0;
         const int sy = ch * 16;
