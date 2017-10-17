@@ -48,6 +48,7 @@
     <property name="title">
      <string>&amp;Video</string>
     </property>
+    <addaction name="actionScreenshot"/>
     <addaction name="actionBenchmark"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -78,6 +79,9 @@
    <addaction name="menuView"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
+   <property name="windowTitle">
+    <string>size</string>
+   </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
    </attribute>
@@ -91,7 +95,7 @@
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string>controls</string>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -163,12 +167,17 @@
   </action>
   <action name="actionAbout_Qt">
    <property name="text">
-    <string>About Qt...</string>
+    <string>&amp;About Qt...</string>
    </property>
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>About...</string>
+    <string>A&amp;bout...</string>
+   </property>
+  </action>
+  <action name="actionScreenshot">
+   <property name="text">
+    <string>Screenshot</string>
    </property>
   </action>
  </widget>

@@ -205,6 +205,9 @@ Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
 {
     myGraphicsCache.reset(new GraphicsCache());
     setMouseTracking(true);
+
+    const QSize standard(40 * 7 * 2, 24 * 8 * 2);
+    myOffscreen = QPixmap(standard);
 }
 
 void Video::paintEvent(QPaintEvent *)
@@ -213,8 +216,6 @@ void Video::paintEvent(QPaintEvent *)
     const QSize actual = size();
     const double sx = double(actual.width()) / double(min.width());
     const double sy = double(actual.height()) / double(min.height());
-
-    QPixmap offscreen(min);
 
     /* How to make this faster
      * 1) Do not call Video::paint() with a scale != 1:1
@@ -230,7 +231,7 @@ void Video::paintEvent(QPaintEvent *)
 
     // first draw the image offscreen 1:1
     {
-        QPainter painter(&offscreen);
+        QPainter painter(&myOffscreen);
         paint(painter);
     }
 
@@ -238,8 +239,13 @@ void Video::paintEvent(QPaintEvent *)
     {
         QPainter painter(this);
         painter.scale(sx, sy);
-        painter.drawPixmap(0, 0, offscreen);
+        painter.drawPixmap(0, 0, myOffscreen);
     }
+}
+
+const QPixmap & Video::getScreen() const
+{
+    return myOffscreen;
 }
 
 void Video::paint(QPainter & painter)

@@ -134,6 +134,17 @@ namespace
             return 2;
         }
     }
+
+    QString getScreenshotTemplate()
+    {
+        const QString filenameTemplate = QSettings().value("QApple/Screenshot Template", "/tmp/qapple_%1.png").toString();
+        return filenameTemplate;
+    }
+
+    void setScreenshotTemplate(const QString & filenameTemplate)
+    {
+        QSettings().setValue("QApple/Screenshot Template", filenameTemplate);
+    }
 }
 
 void FrameDrawDiskLEDS(HDC)
@@ -369,6 +380,7 @@ void QApple::on_actionOptions_triggered()
         currentOptions.saveState = QString::fromUtf8(saveState);;
     }
 
+    currentOptions.screenshotTemplate = getScreenshotTemplate();
 
     QSettings settings; // the function will "modify" it
     myPreferences.setup(currentOptions, settings);
@@ -440,6 +452,10 @@ void QApple::on_actionOptions_triggered()
             RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, name.c_str());
         }
 
+        if (currentOptions.screenshotTemplate != newOptions.screenshotTemplate)
+        {
+            setScreenshotTemplate(newOptions.screenshotTemplate);
+        }
     }
 
 }
@@ -465,4 +481,41 @@ void QApple::on_actionAbout_Qt_triggered()
 void QApple::on_actionAbout_triggered()
 {
     QMessageBox::about(this, QApplication::applicationName(), "Apple ][ emulator\n\nBased on AppleWin\n");
+}
+
+QString getImageFilename()
+{
+    QString filenameTemplate = getScreenshotTemplate();
+    static size_t counter = 0;
+
+    const size_t maximum = 10000;
+    while (counter < maximum)
+    {
+        const QString filename = filenameTemplate.arg(counter, 5, 10, QChar('0'));
+        if (!QFile(filename).exists())
+        {
+            return filename;
+        }
+        ++counter;
+    }
+
+    return QString();
+}
+
+void QApple::on_actionScreenshot_triggered()
+{
+    const QString filename = getImageFilename();
+    if (filename.isEmpty())
+    {
+        QMessageBox::warning(this, "Screenshot", "Cannot determine the screenshot filename.");
+    }
+    else
+    {
+        const bool ok = myEmulator->getScreen().save(filename);
+        if (!ok)
+        {
+            const QString message = QString::fromUtf8("Cannot save screenshot to %1").arg(filename);
+            QMessageBox::warning(this, "Screenshot", message);
+        }
+    }
 }

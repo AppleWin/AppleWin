@@ -179,6 +179,7 @@ void Preferences::setData(const Data & data)
     joystick->setCurrentText(data.joystick);
 
     save_state->setText(data.saveState);
+    screenshot->setText(data.screenshotTemplate);
 }
 
 Preferences::Data Preferences::getData() const
@@ -205,6 +206,7 @@ Preferences::Data Preferences::getData() const
     }
 
     data.saveState = save_state->text();
+    data.screenshotTemplate = screenshot->text();
 
     return data;
 }

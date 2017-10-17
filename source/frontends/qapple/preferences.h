@@ -26,6 +26,7 @@ public:
         std::vector<QString> hds;
 
         QString saveState;
+        QString screenshotTemplate;
     };
 
     explicit Preferences(QWidget *parent);

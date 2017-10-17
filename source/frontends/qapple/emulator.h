@@ -15,6 +15,8 @@ public:
     void updateVideo();
     void repaintVideo();
 
+    const QPixmap & getScreen() const;
+
     void setZoom(QMdiSubWindow * window, const int x);
     void set43AspectRatio(QMdiSubWindow * window);
 

@@ -20,6 +20,11 @@ void Emulator::repaintVideo()
     video->repaint();
 }
 
+const QPixmap & Emulator::getScreen() const
+{
+    return video->getScreen();
+}
+
 void Emulator::setVideoSize(QMdiSubWindow * window, const QSize & size)
 {
     window->showNormal();

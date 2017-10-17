@@ -15,6 +15,8 @@ class Video : public VIDEO_BASECLASS
 public:
     explicit Video(QWidget *parent = 0);
 
+    const QPixmap & getScreen() const;
+
 signals:
 
 public slots:
@@ -39,6 +41,7 @@ private:
     void paint(QPainter & painter);
 
     std::shared_ptr<const GraphicsCache> myGraphicsCache;
+    QPixmap myOffscreen;
 };
 
 #endif // VIDEO_H

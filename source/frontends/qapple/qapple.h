@@ -53,6 +53,8 @@ private slots:
 
     void on_actionAbout_triggered();
 
+    void on_actionScreenshot_triggered();
+
 private:
 
     void stopTimer();
