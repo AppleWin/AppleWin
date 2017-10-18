@@ -913,6 +913,7 @@ static void UpdatePaging(BOOL initialize)
 
 	for (loop = 0xC0; loop < 0xC8; loop++)
 	{
+		memdirty[loop] = 0;	// ROM can't be dirty
 		const UINT uSlotOffset = (loop & 0x0f) * 0x100;
 		if (loop == 0xC3)
 			memshadow[loop] = (SW_SLOTC3ROM && SW_SLOTCXROM)	? pCxRomPeripheral+uSlotOffset	// C300..C3FF - Slot 3 ROM (all 0x00's)
@@ -924,6 +925,7 @@ static void UpdatePaging(BOOL initialize)
 
 	for (loop = 0xC8; loop < 0xD0; loop++)
 	{
+		memdirty[loop] = 0;	// ROM can't be dirty (but STA $CFFF will set the dirty flag)
 		const UINT uRomOffset = (loop & 0x0f) * 0x100;
 		memshadow[loop] = (SW_SLOTCXROM && !INTC8ROM)	? pCxRomPeripheral+uRomOffset			// C800..CFFF - Peripheral ROM (GH#486)
 														: pCxRomInternal+uRomOffset;			// C800..CFFF - Internal ROM
