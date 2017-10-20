@@ -320,14 +320,23 @@ static void ReadTrack(const int iDrive)
 
 //===========================================================================
 
+void DiskFlushCurrentTrack(const int iDrive)
+{
+	Disk_t *pFloppy = &g_aFloppyDisk[iDrive];
+
+	if (pFloppy->trackimage && pFloppy->trackimagedirty)
+		WriteTrack(iDrive);
+}
+
+//===========================================================================
+
 static void RemoveDisk(const int iDrive)
 {
 	Disk_t *pFloppy = &g_aFloppyDisk[iDrive];
 
 	if (pFloppy->imagehandle)
 	{
-		if (pFloppy->trackimage && pFloppy->trackimagedirty)
-			WriteTrack( iDrive);
+		DiskFlushCurrentTrack(iDrive);
 
 		ImageClose(pFloppy->imagehandle);
 		pFloppy->imagehandle = NULL;
@@ -442,10 +451,7 @@ static void __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG u
 														: MIN(nNumTracksInImage-1, fptr->phase >> 1); // (round half tracks down)
 		if (newtrack != fptr->track)
 		{
-			if (fptr->trackimage && fptr->trackimagedirty)
-			{
-				WriteTrack(currdrive);
-			}
+			DiskFlushCurrentTrack(currdrive);
 			fptr->track          = newtrack;
 			fptr->trackimagedata = 0;
 		}
