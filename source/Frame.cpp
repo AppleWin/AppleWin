@@ -795,7 +795,7 @@ void FrameDrawDiskStatus( HDC passdc )
 	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
 
 	int  x      = buttonx;
-	int  y      = buttony+BUTTONS*BUTTONCY+1;
+	int  y      = buttony+BUTTONS*BUTTONCY+4;
 
 	SelectObject(dc,smallfont);
 	SetBkMode(dc,OPAQUE);
@@ -841,12 +841,12 @@ void FrameDrawDiskStatus( HDC passdc )
 		SetBkMode(dc,TRANSPARENT);
 
 		sprintf( text, "T%s", g_sTrackDrive1 );
-		TextOut(dc,x+6 ,y+32,text, strlen(text) );
+		TextOut(dc,x+6, y+32, text, strlen(text) );
 		sprintf( text, "S%s", g_sSectorDrive1 );
-		TextOut(dc,x+ 6,y+42, text, strlen(text) );
+		TextOut(dc,x+6, y+42, text, strlen(text) );
 
 		sprintf( text, "T%s", g_sTrackDrive2 );
-		TextOut(dc,x+26,y+32,text, strlen(text) );
+		TextOut(dc,x+26,y+32, text, strlen(text) );
 		sprintf( text, "S%s", g_sSectorDrive2 );
 		TextOut(dc,x+26,y+42, text, strlen(text) );
 	}
