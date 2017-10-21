@@ -539,6 +539,7 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 	const DWORD uExecutedCycles = InternalCpuExecute(uCycles, bVideoUpdate);
 
 	MB_UpdateCycles(uExecutedCycles);	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
+										// NB. Ensures that 6522 regs are up-to-date for any potential save-state
 	UpdateEmulationTime(uExecutedCycles);
 
 	//

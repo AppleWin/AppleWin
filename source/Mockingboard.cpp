@@ -122,7 +122,8 @@ struct SY6522_AY8910
 	SY6522 sy6522;
 	BYTE nAY8910Number;
 	BYTE nAYCurrentRegister;
-	BYTE nTimerStatus;
+	bool bTimer1Active;
+	bool bTimer2Active;
 	SSI263A SpeechChip;
 };
 
@@ -203,13 +204,7 @@ static DWORD g_dwMaxPhonemeLen = 0;
 // When 6522 IRQ is *not* active use 60Hz update freq for MB voices
 static const double g_f6522TimerPeriod_NoIRQ = CLK_6502 / 60.0;		// Constant whatever the CLK is set to
 
-//---------------------------------------------------------------------------
-
-// External global vars:
-bool g_bMBTimerIrqActive = false;
-#ifdef _DEBUG
-UINT32 g_uTimer1IrqCount = 0;	// DEBUG
-#endif
+static bool g_bMBTimerIrqActive = false;
 
 //---------------------------------------------------------------------------
 
@@ -219,33 +214,41 @@ static void Votrax_Write(BYTE nDevice, BYTE nValue);
 
 //---------------------------------------------------------------------------
 
-static void StartTimer(SY6522_AY8910* pMB)
+static void StartTimer1(SY6522_AY8910* pMB)
 {
-//	if((pMB->nAY8910Number & 1) != SY6522_DEVICE_A)
-//		return;
-
-	if((pMB->sy6522.IER & IxR_TIMER1) == 0x00)
-		return;
-
-	USHORT nPeriod = pMB->sy6522.TIMER1_LATCH.w;
-
-//	if(nPeriod <= 0xff)		// Timer1L value has been written (but TIMER1H hasn't)
-//		return;
-
-	pMB->nTimerStatus = 1;
+	pMB->bTimer1Active = true;
 
 	// 6522 CLK runs at same speed as 6502 CLK
-	g_n6522TimerPeriod = nPeriod;
+	g_n6522TimerPeriod = pMB->sy6522.TIMER1_LATCH.w;
+
+	if (pMB->sy6522.IER & IxR_TIMER1)
+		g_bMBTimerIrqActive = true;
+
+	g_nMBTimerDevice = pMB->nAY8910Number;
+}
+
+// The assumption was that timer1 was only active if IER.TIMER1=1
+// . Not true, since IFR can be polled (with IER.TIMER1=0)
+static void StartTimer1_LoadStateV1(SY6522_AY8910* pMB)
+{
+	if ((pMB->sy6522.IER & IxR_TIMER1) == 0x00)
+		return;
+
+	pMB->bTimer1Active = true;
+
+	// 6522 CLK runs at same speed as 6502 CLK
+	g_n6522TimerPeriod = pMB->sy6522.TIMER1_LATCH.w;
 
 	g_bMBTimerIrqActive = true;
+
 	g_nMBTimerDevice = pMB->nAY8910Number;
 }
 
 //-----------------------------------------------------------------------------
 
-static void StopTimer(SY6522_AY8910* pMB)
+static void StopTimer1(SY6522_AY8910* pMB)
 {
-	pMB->nTimerStatus = 0;
+	pMB->bTimer1Active = false;
 	g_bMBTimerIrqActive = false;
 	g_nMBTimerDevice = TIMERDEVICE_INVALID;
 }
@@ -256,8 +259,8 @@ static void ResetSY6522(SY6522_AY8910* pMB)
 {
 	memset(&pMB->sy6522,0,sizeof(SY6522));
 
-	if(pMB->nTimerStatus)
-		StopTimer(pMB);
+	if (pMB->bTimer1Active)
+		StopTimer1(pMB);
 
 	pMB->nAYCurrentRegister = 0;
 }
@@ -398,7 +401,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			pMB->sy6522.TIMER1_LATCH.h = nValue;
 			pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
 
-			StartTimer(pMB);
+			StartTimer1(pMB);
 			break;
 		case 0x07:	// TIMER1H_LATCH
 			// Clear Timer1 Interrupt Flag.
@@ -445,11 +448,11 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				if(pMB->sy6522.IER & IxR_TIMER1)
 					break;
 
-				if(pMB->nTimerStatus == 0)
+				if (pMB->bTimer1Active == false)
 					break;
 				
 				// Stop timer
-				StopTimer(pMB);
+				StopTimer1(pMB);
 			}
 			else
 			{
@@ -457,7 +460,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				nValue &= 0x7F;
 				pMB->sy6522.IER |= nValue;
 				UpdateIFR(pMB);
-				StartTimer(pMB);
+				StartTimer1(pMB);
 			}
 			break;
 		case 0x0f:	// ORA_NO_HS
@@ -1656,7 +1659,10 @@ void MB_EndOfVideoFrame()
 
 //-----------------------------------------------------------------------------
 
-// Called by CpuExecute() after every N opcodes (N = ~1000 @ 1MHz)
+// Called by:
+// . CpuExecute() every ~1000 @ 1MHz
+// . CheckInterruptSources() every 128 cycles
+// . MB_Read() / MB_Write()
 void MB_UpdateCycles(ULONG uExecutedCycles)
 {
 	if(g_SoundcardType == CT_Empty)
@@ -1682,12 +1688,8 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 		bool bTimer1Underflow = (!(OldTimer1 & 0x8000) && (pMB->sy6522.TIMER1_COUNTER.w & 0x8000));
 		bool bTimer2Underflow = (!(OldTimer2 & 0x8000) && (pMB->sy6522.TIMER2_COUNTER.w & 0x8000));
 
-		if( bTimer1Underflow && (g_nMBTimerDevice == i) && g_bMBTimerIrqActive )
+		if ( bTimer1Underflow && (g_nMBTimerDevice == i) )
 		{
-#ifdef _DEBUG
-			g_uTimer1IrqCount++;	// DEBUG
-#endif
-
 			pMB->sy6522.IFR |= IxR_TIMER1;
 			UpdateIFR(pMB);
 
@@ -1696,20 +1698,20 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 				// One-shot mode
 				// - Phasor's playback code uses one-shot mode
 				// - Willy Byte sets to one-shot to stop the timer IRQ
-				StopTimer(pMB);
+				StopTimer1(pMB);
 			}
 			else
 			{
 				// Free-running mode
 				// - Ultima4/5 change ACCESS_TIMER1 after a couple of IRQs into tune
 				pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
-				StartTimer(pMB);
+				StartTimer1(pMB);
 			}
 
 			MB_Update();
 		}
 		else if ( bTimer1Underflow
-					&& !g_bMBTimerIrqActive								// StopTimer() has been called
+					&& !g_bMBTimerIrqActive								// StopTimer1() has been called
 					&& (pMB->sy6522.IFR & IxR_TIMER1)					// IRQ
 					&& ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT) )	// One-shot mode
 		{
@@ -1826,7 +1828,7 @@ int MB_SetSnapshot_v1(const SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD /*dw
 		memcpy(&pMB->SpeechChip, &pSS->Unit[i].RegsSSI263, sizeof(SSI263A));
 		pMB->nAYCurrentRegister = pSS->Unit[i].nAYCurrentRegister;
 
-		StartTimer(pMB);	// Attempt to start timer
+		StartTimer1_LoadStateV1(pMB);	// Attempt to start timer
 
 		//
 
@@ -1919,6 +1921,8 @@ const UINT NUM_PHASOR_UNITS = 2;
 #define SS_YAML_KEY_TIMER1_IRQ "Timer1 IRQ Pending"
 #define SS_YAML_KEY_TIMER2_IRQ "Timer2 IRQ Pending"
 #define SS_YAML_KEY_SPEECH_IRQ "Speech IRQ Pending"
+#define SS_YAML_KEY_TIMER1_ACTIVE "Timer1 Active"
+#define SS_YAML_KEY_TIMER2_ACTIVE "Timer2 Active"
 
 #define SS_YAML_KEY_PHASOR_UNIT "Unit"
 #define SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR "Clock Scale Factor"
@@ -1974,7 +1978,8 @@ void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 	UINT nDeviceNum = nMbCardNum*2;
 	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
 
-	YamlSaveHelper::Slot slot(yamlSaveHelper, MB_GetSnapshotCardName(), uSlot, 1);	// fixme: object should be just 1 Mockingboard card & it will know its slot
+	const UINT version = 2;
+	YamlSaveHelper::Slot slot(yamlSaveHelper, MB_GetSnapshotCardName(), uSlot, version);	// fixme: object should be just 1 Mockingboard card & it will know its slot
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
@@ -1990,6 +1995,8 @@ void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, "false");
 		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, "false");
 		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_SPEECH_IRQ, "false");
+		yamlSaveHelper.SaveBool(SS_YAML_KEY_TIMER1_ACTIVE, pMB->bTimer1Active);
+		yamlSaveHelper.SaveBool(SS_YAML_KEY_TIMER2_ACTIVE, pMB->bTimer2Active);
 
 		nDeviceNum++;
 		pMB++;
@@ -2039,7 +2046,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 	if (slot != 4 && slot != 5)	// fixme
 		throw std::string("Card: wrong slot");
 
-	if (version != 1)
+	if (version < 1 || version > 2)
 		throw std::string("Card: wrong version");
 
 	AY8910UpdateSetCycles();
@@ -2067,11 +2074,25 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER2_IRQ);	// Consume
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_SPEECH_IRQ);	// Consume
 
+		if (version >= 2)
+		{
+			pMB->bTimer1Active = yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER1_ACTIVE);
+			pMB->bTimer2Active = yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER2_ACTIVE);
+		}
+
 		yamlLoadHelper.PopMap();
 
 		//
 
-		StartTimer(pMB);	// Attempt to start timer
+		if (version == 1)
+		{
+			StartTimer1_LoadStateV1(pMB);	// Attempt to start timer
+		}
+		else	// version >= 2
+		{
+			if (pMB->bTimer1Active)
+				StartTimer1(pMB);			// Attempt to start timer
+		}
 
 		// Crude - currently only support a single speech chip
 		// FIX THIS:
@@ -2110,7 +2131,8 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 	UINT nDeviceNum = 0;
 	SY6522_AY8910* pMB = &g_MB[0];	// fixme: Phasor uses MB's slot4(2x6522), slot4(2xSSI263), but slot4+5(4xAY8910)
 
-	YamlSaveHelper::Slot slot(yamlSaveHelper, Phasor_GetSnapshotCardName(), uSlot, 1);	// fixme: object should be just 1 Mockingboard card & it will know its slot
+	const UINT version = 2;
+	YamlSaveHelper::Slot slot(yamlSaveHelper, Phasor_GetSnapshotCardName(), uSlot, version);	// fixme: object should be just 1 Mockingboard card & it will know its slot
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
@@ -2130,6 +2152,8 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, "false");
 		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, "false");
 		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_SPEECH_IRQ, "false");
+		yamlSaveHelper.SaveBool(SS_YAML_KEY_TIMER1_ACTIVE, pMB->bTimer1Active);
+		yamlSaveHelper.SaveBool(SS_YAML_KEY_TIMER2_ACTIVE, pMB->bTimer2Active);
 
 		nDeviceNum += 2;
 		pMB++;
@@ -2141,7 +2165,7 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 	if (slot != 4)	// fixme
 		throw std::string("Card: wrong slot");
 
-	if (version != 1)
+	if (version < 1 || version > 2)
 		throw std::string("Card: wrong version");
 
 	g_PhasorClockScaleFactor = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);
@@ -2172,11 +2196,25 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER2_IRQ);	// Consume
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_SPEECH_IRQ);	// Consume
 
+		if (version >= 2)
+		{
+			pMB->bTimer1Active = yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER1_ACTIVE);
+			pMB->bTimer2Active = yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER2_ACTIVE);
+		}
+
 		yamlLoadHelper.PopMap();
 
 		//
 
-		StartTimer(pMB);	// Attempt to start timer
+		if (version == 1)
+		{
+			StartTimer1_LoadStateV1(pMB);	// Attempt to start timer
+		}
+		else	// version >= 2
+		{
+			if (pMB->bTimer1Active)
+				StartTimer1(pMB);			// Attempt to start timer
+		}
 
 		// Crude - currently only support a single speech chip
 		// FIX THIS:

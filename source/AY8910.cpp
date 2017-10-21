@@ -32,7 +32,6 @@
 #include "AY8910.h"
 
 #include "Applewin.h"		// For g_fh
-#include "Mockingboard.h"	// For g_uTimer1IrqCount
 #include "YamlHelper.h"
 
 /* The AY white noise RNG algorithm is based on info from MAME's ay8910.c -
