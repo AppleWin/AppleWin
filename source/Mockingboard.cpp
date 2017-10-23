@@ -155,6 +155,7 @@ static SY6522_AY8910 g_MB[NUM_AY8910];
 static ULONG g_n6522TimerPeriod = 0;
 static const UINT kTIMERDEVICE_INVALID = -1;
 static UINT g_nMBTimerDeviceForIRQ = kTIMERDEVICE_INVALID;	// SY6522 device# which is generating timer IRQ
+static UINT g_nMBTimerDeviceForPolling = kTIMERDEVICE_INVALID;
 static UINT64 g_uLastCumulativeCycles = 0;
 
 // SSI263 vars:
@@ -222,6 +223,8 @@ static void StartTimer1(SY6522_AY8910* pMB)
 
 	if (pMB->sy6522.IER & IxR_TIMER1)
 		g_nMBTimerDeviceForIRQ = pMB->nAY8910Number;
+	else if (pMB->sy6522.ACR & RM_FREERUNNING)
+		g_nMBTimerDeviceForPolling = pMB->nAY8910Number;
 }
 
 // The assumption was that timer1 was only active if IER.TIMER1=1
@@ -243,6 +246,7 @@ static void StopTimer1(SY6522_AY8910* pMB)
 {
 	pMB->bTimer1Active = false;
 	g_nMBTimerDeviceForIRQ = kTIMERDEVICE_INVALID;
+	g_nMBTimerDeviceForPolling = kTIMERDEVICE_INVALID;
 }
 
 //-----------------------------------------------------------------------------
@@ -1427,6 +1431,7 @@ static void ResetState()
 {
 	g_n6522TimerPeriod = 0;
 	g_nMBTimerDeviceForIRQ = kTIMERDEVICE_INVALID;
+	g_nMBTimerDeviceForPolling = kTIMERDEVICE_INVALID;
 	g_uLastCumulativeCycles = 0;
 
 	g_nSSI263Device = 0;
@@ -1671,7 +1676,7 @@ void MB_EndOfVideoFrame()
 	if (g_SoundcardType == CT_Empty)
 		return;
 
-	if (g_nMBTimerDeviceForIRQ == kTIMERDEVICE_INVALID)
+	if ((g_nMBTimerDeviceForIRQ == kTIMERDEVICE_INVALID) && (g_nMBTimerDeviceForPolling == kTIMERDEVICE_INVALID))
 		MB_Update();
 }
 
@@ -1724,8 +1729,9 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 			pMB->sy6522.IFR |= IxR_TIMER1;
 			UpdateIFR(pMB);
 
-			// TODO: Do MB_Update() first before stopping Timer1
-			const bool bDoMockingboardUpdate = (g_nMBTimerDeviceForIRQ == i);	// NB. StopTimer1() re-inits g_nMBTimerDeviceForIRQ
+			// Do MB_Update() before StopTimer1()
+			if ((g_nMBTimerDeviceForIRQ == i) || (g_nMBTimerDeviceForPolling == i))
+				MB_Update();
 
 			if((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
 			{
@@ -1741,9 +1747,6 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 				pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
 				StartTimer1(pMB);
 			}
-
-			if (bDoMockingboardUpdate)
-				MB_Update();
 		}
 		else if (pMB->bTimer2Active && bTimer2Underflow)
 		{
@@ -1787,13 +1790,25 @@ void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType)
 
 static double MB_GetFramePeriod(void)
 {
-	// TODO: Remove this (slot-4) MB/Phasor IFR check:
-	// . it's for Phasor music player, which runs in one-shot mode:
+	// TODO: Ideally remove this (slot-4) Phasor-IFR check: [*1]
+	// . It's for Phasor music player, which runs in one-shot mode:
 	// . MB_UpdateCycles()
 	//   -> Timer1 underflows & StopTimer1() is called, which sets g_nMBTimerDeviceForIRQ == kTIMERDEVICE_INVALID
+	// . MB_EndOfVideoFrame(), and g_nMBTimerDeviceForIRQ == kTIMERDEVICE_INVALID
 	//   -> MB_Update()
 	//      -> MB_GetFramePeriod()
-	return ((g_nMBTimerDeviceForIRQ != kTIMERDEVICE_INVALID) || (g_MB[0].sy6522.IFR & IxR_TIMER1)) ? (double)g_n6522TimerPeriod : g_f6522TimerPeriod_NoIRQ;
+	// NB. Removing this Phasor-IFR check means the occasional 'g_f6522TimerPeriod_NoIRQ' gets returned.
+
+	if ((g_nMBTimerDeviceForIRQ != kTIMERDEVICE_INVALID) ||
+		(g_nMBTimerDeviceForPolling != kTIMERDEVICE_INVALID) ||
+		(g_bPhasorEnable && (g_MB[0].sy6522.IFR & IxR_TIMER1)))	// [*1]
+	{
+		return (double)g_n6522TimerPeriod;
+	}
+	else
+	{
+		return g_f6522TimerPeriod_NoIRQ;
+	}
 }
 
 bool MB_IsActive()
