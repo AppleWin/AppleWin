@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SaveState_Structs_v1.h"
 
 #include "AppleWin.h"
+#include "CPU.h"
 #include "Disk.h"
 #include "DiskImage.h"
 #include "Frame.h"
@@ -46,9 +47,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define LOG_DISK_ENABLED 0
 #define LOG_DISK_TRACKS 1
-#define LOG_DISK_MOTOR 0
+#define LOG_DISK_MOTOR 1
 #define LOG_DISK_PHASES 0
-#define LOG_DISK_NIBBLES 0
+#define LOG_DISK_RW_MODE 0
+#define LOG_DISK_ENABLE_DRIVE 0
+#define LOG_DISK_NIBBLES_READ 0
+#define LOG_DISK_NIBBLES_WRITE 0
+#define LOG_DISK_NIBBLES_USE_RUNTIME_VAR 0
+#if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
+static bool g_bLogDisk_NibblesRW = false;	// From VS Debugger, change this to true/false during runtime for precise nibble logging
+#endif
 
 // __VA_ARGS__ not supported on MSVC++ .NET 7.x
 #if (LOG_DISK_ENABLED)
@@ -110,7 +118,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	};
 
 static WORD		currdrive       = 0;
-static BOOL		diskaccessed    = 0;
 static Disk_t	g_aFloppyDisk[NUM_DRIVES];
 static BYTE		floppylatch     = 0;
 static BOOL		floppymotoron   = 0;
@@ -119,8 +126,9 @@ static BOOL		floppywritemode = 0;
 static WORD		phases = 0;					// state bits for stepper magnet phases 0 - 3
 static bool		g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT		g_uSlot = 0;
+static unsigned __int64 g_uDiskLastCycle = 0;
 
-static void CheckSpinning();
+static void CheckSpinning(const ULONG nCyclesLeft);
 static Disk_Status_e GetDriveLightStatus( const int iDrive );
 static bool IsDriveValid( const int iDrive );
 static void ReadTrack (int drive);
@@ -231,7 +239,7 @@ void Disk_SaveLastDiskImage(const int iDrive)
 
 //===========================================================================
 
-static void CheckSpinning(void)
+static void CheckSpinning(const ULONG nCyclesLeft)
 {
 	DWORD modechange = (floppymotoron && !g_aFloppyDisk[currdrive].spinning);
 
@@ -241,6 +249,12 @@ static void CheckSpinning(void)
 	if (modechange)
 		//FrameRefreshStatus(DRAW_LEDS);
 		FrameDrawDiskLEDS( (HDC)0 );
+
+	if (modechange)
+	{
+		CpuCalcCycles(nCyclesLeft);
+		g_uDiskLastCycle = g_nCumulativeCycles;
+	}
 }
 
 //===========================================================================
@@ -407,7 +421,7 @@ static void __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uEx
 #if LOG_DISK_MOTOR
 	LOG_DISK("motor %s\r\n", (floppymotoron) ? "on" : "off");
 #endif
-	CheckSpinning();
+	CheckSpinning(uExecutedCycles);
 }
 
 //===========================================================================
@@ -495,9 +509,12 @@ void DiskDestroy(void)
 static void __stdcall DiskEnable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	currdrive = address & 1;
+#if LOG_DISK_ENABLE_DRIVE
+	LOG_DISK("enable drive: %d\r\n", currdrive);
+#endif
 	g_aFloppyDisk[!currdrive].spinning   = 0;
 	g_aFloppyDisk[!currdrive].writelight = 0;
-	CheckSpinning();
+	CheckSpinning(uExecutedCycles);
 }
 
 //===========================================================================
@@ -787,8 +804,6 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	/* floppyloadmode = 0; */
 	Disk_t * fptr = &g_aFloppyDisk[currdrive];
 
-	diskaccessed = 1;
-
 	if (!fptr->trackimagedata && fptr->imagehandle)
 		ReadTrack(currdrive);
 
@@ -798,12 +813,34 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		return;
 	}
 
+	// Improve precision of "authentic" drive mode - GH#125
+	if (!enhancedisk && fptr->spinning)
+	{
+		CpuCalcCycles(nCyclesLeft);
+		const ULONG nCycleDiff = (ULONG) (g_nCumulativeCycles - g_uDiskLastCycle);
+		g_uDiskLastCycle = g_nCumulativeCycles;
+
+		if (nCycleDiff > 40)
+		{
+			// 40 cycles for a write of a 10-bit 0xFF sync byte
+			ULONG uNumDiskBytes = nCycleDiff >> 5;	// ...but divide by 32 (not 40)
+
+			ULONG uWrapOffset = uNumDiskBytes % fptr->nibbles;
+			fptr->byte += uWrapOffset;
+			if (fptr->byte >= fptr->nibbles)
+				fptr->byte -= fptr->nibbles;
+		}
+	}
+
 	// Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
 	// but Sherwood Forest sets shift mode and reads with the drive off, so don't check for now
 	if (!floppywritemode)
 	{
 		floppylatch = *(fptr->trackimage + fptr->byte);
-#if LOG_DISK_NIBBLES
+#if LOG_DISK_NIBBLES_READ
+  #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
+	if (g_bLogDisk_NibblesRW)
+  #endif
 		LOG_DISK("read %4X = %2X\r\n", fptr->byte, floppylatch);
 #endif
 	}
@@ -811,6 +848,12 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	{
 		*(fptr->trackimage + fptr->byte) = floppylatch;
 		fptr->trackimagedirty = 1;
+#if LOG_DISK_NIBBLES_WRITE
+  #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
+	if (g_bLogDisk_NibblesRW)
+  #endif
+		LOG_DISK("write %4X = %2X\r\n", fptr->byte, floppylatch);
+#endif
 	}
 
 	if (++fptr->byte >= fptr->nibbles)
@@ -927,6 +970,9 @@ static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, U
 static void __stdcall DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG)
 {
 	floppywritemode = 0;
+#if LOG_DISK_RW_MODE
+	LOG_DISK("rw mode: read\r\n");
+#endif
 }
 
 //===========================================================================
@@ -935,6 +981,9 @@ static void __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCy
 {
 	floppywritemode = 1;
 	BOOL modechange = !g_aFloppyDisk[currdrive].writelight;
+#if LOG_DISK_RW_MODE
+	LOG_DISK("rw mode: write (mode changed=%d)\r\n", modechange ? 1 : 0);
+#endif
 	g_aFloppyDisk[currdrive].writelight = WRITELIGHT_CYCLES;
 	if (modechange)
 	{
@@ -945,17 +994,17 @@ static void __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCy
 
 //===========================================================================
 
-void DiskUpdatePosition(DWORD cycles)
+void DiskUpdateDriveState(DWORD cycles)
 {
 	int loop = NUM_DRIVES;
 	while (loop--)
 	{
 		Disk_t * fptr = &g_aFloppyDisk[loop];
 
-		if (fptr->spinning && !floppymotoron) {
+		if (fptr->spinning && !floppymotoron)
+		{
 			if (!(fptr->spinning -= MIN(fptr->spinning, cycles)))
 			{
-				// FrameRefreshStatus(DRAW_LEDS);
 				FrameDrawDiskLEDS( (HDC)0 );
 				FrameDrawDiskStatus( (HDC)0 );
 			}
@@ -969,21 +1018,11 @@ void DiskUpdatePosition(DWORD cycles)
 		{
 			if (!(fptr->writelight -= MIN(fptr->writelight, cycles)))
 			{
-				//FrameRefreshStatus(DRAW_LEDS);
 				FrameDrawDiskLEDS( (HDC)0 );
 				FrameDrawDiskStatus( (HDC)0 );
 			}
 		}
-
-		if ((!enhancedisk) && (!diskaccessed) && fptr->spinning)
-		{
-			fptr->byte += (cycles >> 5);
-			if (fptr->byte >= fptr->nibbles)
-				fptr->byte -= fptr->nibbles;
-		}
 	}
-
-	diskaccessed = 0;
 }
 
 //===========================================================================
@@ -1145,7 +1184,7 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 
 	phases  		= pSS->phases;
 	currdrive		= pSS->currdrive;
-	diskaccessed	= pSS->diskaccessed;
+	//diskaccessed	= pSS->diskaccessed;	// deprecated
 	enhancedisk		= pSS->enhancedisk;
 	floppylatch		= pSS->floppylatch;
 	floppymotoron	= pSS->floppymotoron;
@@ -1282,7 +1321,7 @@ void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_PHASES, phases);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_CURRENT_DRIVE, currdrive);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_DISK_ACCESSED, diskaccessed == TRUE);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_DISK_ACCESSED, false);	// deprecated
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_ENHANCE_DISK, enhancedisk == TRUE);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_FLOPPY_LATCH, floppylatch);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_MOTOR_ON, floppymotoron == TRUE);
@@ -1380,7 +1419,7 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 
 	phases  		= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASES);
 	currdrive		= yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_DRIVE);
-	diskaccessed	= yamlLoadHelper.LoadBool(SS_YAML_KEY_DISK_ACCESSED);
+	(void)			  yamlLoadHelper.LoadBool(SS_YAML_KEY_DISK_ACCESSED);	// deprecated - but retrieve the value to avoid the "State: Unknown key (Disk Accessed)" warning
 	enhancedisk		= yamlLoadHelper.LoadBool(SS_YAML_KEY_ENHANCE_DISK);
 	floppylatch		= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_LATCH);
 	floppymotoron	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_MOTOR_ON);
