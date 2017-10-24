@@ -154,8 +154,7 @@ static SY6522_AY8910 g_MB[NUM_AY8910];
 // Timer vars
 static ULONG g_n6522TimerPeriod = 0;
 static const UINT kTIMERDEVICE_INVALID = -1;
-static UINT g_nMBTimerDeviceForIRQ = kTIMERDEVICE_INVALID;	// SY6522 device# which is generating timer IRQ
-static UINT g_nMBTimerDeviceForPolling = kTIMERDEVICE_INVALID;
+static UINT g_nMBTimerDevice = kTIMERDEVICE_INVALID;	// SY6522 device# which is generating timer IRQ
 static UINT64 g_uLastCumulativeCycles = 0;
 
 // SSI263 vars:
@@ -221,10 +220,10 @@ static void StartTimer1(SY6522_AY8910* pMB)
 	// 6522 CLK runs at same speed as 6502 CLK
 	g_n6522TimerPeriod = pMB->sy6522.TIMER1_LATCH.w;
 
-	if (pMB->sy6522.IER & IxR_TIMER1)
-		g_nMBTimerDeviceForIRQ = pMB->nAY8910Number;
-	else if (pMB->sy6522.ACR & RM_FREERUNNING)
-		g_nMBTimerDeviceForPolling = pMB->nAY8910Number;
+	if (pMB->sy6522.IER & IxR_TIMER1)			// Using 6522 interrupt
+		g_nMBTimerDevice = pMB->nAY8910Number;
+	else if (pMB->sy6522.ACR & RM_FREERUNNING)	// Polling 6522 IFR
+		g_nMBTimerDevice = pMB->nAY8910Number;
 }
 
 // The assumption was that timer1 was only active if IER.TIMER1=1
@@ -239,14 +238,13 @@ static void StartTimer1_LoadStateV1(SY6522_AY8910* pMB)
 	// 6522 CLK runs at same speed as 6502 CLK
 	g_n6522TimerPeriod = pMB->sy6522.TIMER1_LATCH.w;
 
-	g_nMBTimerDeviceForIRQ = pMB->nAY8910Number;
+	g_nMBTimerDevice = pMB->nAY8910Number;
 }
 
 static void StopTimer1(SY6522_AY8910* pMB)
 {
 	pMB->bTimer1Active = false;
-	g_nMBTimerDeviceForIRQ = kTIMERDEVICE_INVALID;
-	g_nMBTimerDeviceForPolling = kTIMERDEVICE_INVALID;
+	g_nMBTimerDevice = kTIMERDEVICE_INVALID;
 }
 
 //-----------------------------------------------------------------------------
@@ -762,8 +760,8 @@ static void Votrax_Write(BYTE nDevice, BYTE nValue)
 //===========================================================================
 
 // Called by:
-// . MB_UpdateCycles()    - when g_nMBTimerDeviceForIRQ == {0,1,2,3}
-// . MB_EndOfVideoFrame() - when g_nMBTimerDeviceForIRQ == kTIMERDEVICE_INVALID
+// . MB_UpdateCycles()    - when g_nMBTimerDevice == {0,1,2,3}
+// . MB_EndOfVideoFrame() - when g_nMBTimerDevice == kTIMERDEVICE_INVALID
 static void MB_Update()
 {
 	//char szDbg[200];
@@ -1430,8 +1428,7 @@ void MB_Destroy()
 static void ResetState()
 {
 	g_n6522TimerPeriod = 0;
-	g_nMBTimerDeviceForIRQ = kTIMERDEVICE_INVALID;
-	g_nMBTimerDeviceForPolling = kTIMERDEVICE_INVALID;
+	g_nMBTimerDevice = kTIMERDEVICE_INVALID;
 	g_uLastCumulativeCycles = 0;
 
 	g_nSSI263Device = 0;
@@ -1676,7 +1673,7 @@ void MB_EndOfVideoFrame()
 	if (g_SoundcardType == CT_Empty)
 		return;
 
-	if ((g_nMBTimerDeviceForIRQ == kTIMERDEVICE_INVALID) && (g_nMBTimerDeviceForPolling == kTIMERDEVICE_INVALID))
+	if (g_nMBTimerDevice == kTIMERDEVICE_INVALID)
 		MB_Update();
 }
 
@@ -1713,7 +1710,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 
 		if (!pMB->bTimer1Active && bTimer1Underflow)
 		{
-			if ( (g_nMBTimerDeviceForIRQ == kTIMERDEVICE_INVALID)	// StopTimer1() has been called
+			if ( (g_nMBTimerDevice == kTIMERDEVICE_INVALID)			// StopTimer1() has been called
 				&& (pMB->sy6522.IFR & IxR_TIMER1)					// Counter underflowed
 				&& ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT) )	// One-shot mode
 			{
@@ -1730,7 +1727,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 			UpdateIFR(pMB);
 
 			// Do MB_Update() before StopTimer1()
-			if ((g_nMBTimerDeviceForIRQ == i) || (g_nMBTimerDeviceForPolling == i))
+			if (g_nMBTimerDevice == i)
 				MB_Update();
 
 			if((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
@@ -1793,14 +1790,13 @@ static double MB_GetFramePeriod(void)
 	// TODO: Ideally remove this (slot-4) Phasor-IFR check: [*1]
 	// . It's for Phasor music player, which runs in one-shot mode:
 	// . MB_UpdateCycles()
-	//   -> Timer1 underflows & StopTimer1() is called, which sets g_nMBTimerDeviceForIRQ == kTIMERDEVICE_INVALID
-	// . MB_EndOfVideoFrame(), and g_nMBTimerDeviceForIRQ == kTIMERDEVICE_INVALID
+	//   -> Timer1 underflows & StopTimer1() is called, which sets g_nMBTimerDevice == kTIMERDEVICE_INVALID
+	// . MB_EndOfVideoFrame(), and g_nMBTimerDevice == kTIMERDEVICE_INVALID
 	//   -> MB_Update()
 	//      -> MB_GetFramePeriod()
 	// NB. Removing this Phasor-IFR check means the occasional 'g_f6522TimerPeriod_NoIRQ' gets returned.
 
-	if ((g_nMBTimerDeviceForIRQ != kTIMERDEVICE_INVALID) ||
-		(g_nMBTimerDeviceForPolling != kTIMERDEVICE_INVALID) ||
+	if ((g_nMBTimerDevice != kTIMERDEVICE_INVALID) ||
 		(g_bPhasorEnable && (g_MB[0].sy6522.IFR & IxR_TIMER1)))	// [*1]
 	{
 		return (double)g_n6522TimerPeriod;
