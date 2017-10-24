@@ -153,8 +153,8 @@ static SY6522_AY8910 g_MB[NUM_AY8910];
 
 // Timer vars
 static ULONG g_n6522TimerPeriod = 0;
-static const UINT TIMERDEVICE_INVALID = -1;
-static UINT g_nMBTimerDevice = TIMERDEVICE_INVALID;	// SY6522 device# which is generating timer IRQ
+static const UINT kTIMERDEVICE_INVALID = -1;
+static UINT g_nMBTimerDevice = kTIMERDEVICE_INVALID;	// SY6522 device# which is generating timer IRQ
 static UINT64 g_uLastCumulativeCycles = 0;
 
 // SSI263 vars:
@@ -204,13 +204,12 @@ static DWORD g_dwMaxPhonemeLen = 0;
 // When 6522 IRQ is *not* active use 60Hz update freq for MB voices
 static const double g_f6522TimerPeriod_NoIRQ = CLK_6502 / 60.0;		// Constant whatever the CLK is set to
 
-static bool g_bMBTimerIrqActive = false;
-
 //---------------------------------------------------------------------------
 
 // Forward refs:
 static DWORD WINAPI SSI263Thread(LPVOID);
 static void Votrax_Write(BYTE nDevice, BYTE nValue);
+static double MB_GetFramePeriod(void);
 
 //---------------------------------------------------------------------------
 
@@ -221,10 +220,10 @@ static void StartTimer1(SY6522_AY8910* pMB)
 	// 6522 CLK runs at same speed as 6502 CLK
 	g_n6522TimerPeriod = pMB->sy6522.TIMER1_LATCH.w;
 
-	if (pMB->sy6522.IER & IxR_TIMER1)
-		g_bMBTimerIrqActive = true;
-
-	g_nMBTimerDevice = pMB->nAY8910Number;
+	if (pMB->sy6522.IER & IxR_TIMER1)			// Using 6522 interrupt
+		g_nMBTimerDevice = pMB->nAY8910Number;
+	else if (pMB->sy6522.ACR & RM_FREERUNNING)	// Polling 6522 IFR
+		g_nMBTimerDevice = pMB->nAY8910Number;
 }
 
 // The assumption was that timer1 was only active if IER.TIMER1=1
@@ -239,18 +238,28 @@ static void StartTimer1_LoadStateV1(SY6522_AY8910* pMB)
 	// 6522 CLK runs at same speed as 6502 CLK
 	g_n6522TimerPeriod = pMB->sy6522.TIMER1_LATCH.w;
 
-	g_bMBTimerIrqActive = true;
-
 	g_nMBTimerDevice = pMB->nAY8910Number;
 }
-
-//-----------------------------------------------------------------------------
 
 static void StopTimer1(SY6522_AY8910* pMB)
 {
 	pMB->bTimer1Active = false;
-	g_bMBTimerIrqActive = false;
-	g_nMBTimerDevice = TIMERDEVICE_INVALID;
+	g_nMBTimerDevice = kTIMERDEVICE_INVALID;
+}
+
+//-----------------------------------------------------------------------------
+
+static void StartTimer2(SY6522_AY8910* pMB)
+{
+	pMB->bTimer2Active = true;
+
+	// NB. Can't mimic StartTimer1() as that would stomp on global state
+	// TODO: Switch to per-device state
+}
+
+static void StopTimer2(SY6522_AY8910* pMB)
+{
+	pMB->bTimer2Active = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -259,8 +268,8 @@ static void ResetSY6522(SY6522_AY8910* pMB)
 {
 	memset(&pMB->sy6522,0,sizeof(SY6522));
 
-	if (pMB->bTimer1Active)
-		StopTimer1(pMB);
+	StopTimer1(pMB);
+	StopTimer2(pMB);
 
 	pMB->nAYCurrentRegister = 0;
 }
@@ -272,7 +281,7 @@ static void AY8910_Write(BYTE nDevice, BYTE nReg, BYTE nValue, BYTE nAYDevice)
 	g_bMB_RegAccessedFlag = true;
 	SY6522_AY8910* pMB = &g_MB[nDevice];
 
-	if((nValue & 4) == 0)
+	if ((nValue & 4) == 0)
 	{
 		// RESET: Reset AY8910 only
 		AY8910_reset(nDevice+2*nAYDevice);
@@ -287,7 +296,7 @@ static void AY8910_Write(BYTE nDevice, BYTE nReg, BYTE nValue, BYTE nAYDevice)
 		int nAYFunc = (nBDIR<<2) | (nBC2<<1) | nBC1;
 		enum {AY_NOP0, AY_NOP1, AY_INACTIVE, AY_READ, AY_NOP4, AY_NOP5, AY_WRITE, AY_LATCH};
 
-		switch(nAYFunc)
+		switch (nAYFunc)
 		{
 			case AY_INACTIVE:	// 4: INACTIVE
 				break;
@@ -312,17 +321,20 @@ static void AY8910_Write(BYTE nDevice, BYTE nReg, BYTE nValue, BYTE nAYDevice)
 	}
 }
 
+// TODO: Fix data-race: main thread & SSI263Thread accessing IFR
+// . extend this func to take an or_mask & and_mask
+// . then do the mods inside a critical section
 static void UpdateIFR(SY6522_AY8910* pMB)
 {
 	pMB->sy6522.IFR &= 0x7F;
 
-	if(pMB->sy6522.IFR & pMB->sy6522.IER & 0x7F)
+	if (pMB->sy6522.IFR & pMB->sy6522.IER & 0x7F)
 		pMB->sy6522.IFR |= 0x80;
 
 	// Now update the IRQ signal from all 6522s
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
 	UINT bIRQ = 0;
-	for(UINT i=0; i<NUM_SY6522; i++)
+	for (UINT i=0; i<NUM_SY6522; i++)
 		bIRQ |= g_MB[i].sy6522.IFR & 0x80;
 
 	// NB. Mockingboard generates IRQ on both 6522s:
@@ -419,6 +431,8 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 
 			pMB->sy6522.TIMER2_LATCH.h = nValue;
 			pMB->sy6522.TIMER2_COUNTER.w = pMB->sy6522.TIMER2_LATCH.w;
+
+			StartTimer2(pMB);
 			break;
 		case 0x0a:	// SERIAL_SHIFT
 			break;
@@ -444,15 +458,12 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				pMB->sy6522.IER &= nValue;
 				UpdateIFR(pMB);
 				
-				// Check if timer has been disabled.
-				if(pMB->sy6522.IER & IxR_TIMER1)
-					break;
+				// Check if active timer has been disabled:
+				if (((pMB->sy6522.IER & IxR_TIMER1) == 0) && pMB->bTimer1Active)
+					StopTimer1(pMB);
 
-				if (pMB->bTimer1Active == false)
-					break;
-				
-				// Stop timer
-				StopTimer1(pMB);
+				if (((pMB->sy6522.IER & IxR_TIMER2) == 0) && pMB->bTimer2Active)
+					StopTimer2(pMB);
 			}
 			else
 			{
@@ -460,7 +471,13 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				nValue &= 0x7F;
 				pMB->sy6522.IER |= nValue;
 				UpdateIFR(pMB);
-				StartTimer1(pMB);
+
+				// Check if active timer changed from non-interrupt (polling IFR) to interrupt:
+				if ((pMB->sy6522.IER & IxR_TIMER1) && pMB->bTimer1Active)
+					StartTimer1(pMB);
+
+				if ((pMB->sy6522.IER & IxR_TIMER2) && pMB->bTimer2Active)
+					StartTimer2(pMB);
 			}
 			break;
 		case 0x0f:	// ORA_NO_HS
@@ -742,6 +759,9 @@ static void Votrax_Write(BYTE nDevice, BYTE nValue)
 
 //===========================================================================
 
+// Called by:
+// . MB_UpdateCycles()    - when g_nMBTimerDevice == {0,1,2,3}
+// . MB_EndOfVideoFrame() - when g_nMBTimerDevice == kTIMERDEVICE_INVALID
 static void MB_Update()
 {
 	//char szDbg[200];
@@ -1408,7 +1428,7 @@ void MB_Destroy()
 static void ResetState()
 {
 	g_n6522TimerPeriod = 0;
-	g_nMBTimerDevice = TIMERDEVICE_INVALID;
+	g_nMBTimerDevice = kTIMERDEVICE_INVALID;
 	g_uLastCumulativeCycles = 0;
 
 	g_nSSI263Device = 0;
@@ -1650,10 +1670,10 @@ void MB_StartOfCpuExecute()
 // Called by ContinueExecution() at the end of every video frame
 void MB_EndOfVideoFrame()
 {
-	if(g_SoundcardType == CT_Empty)
+	if (g_SoundcardType == CT_Empty)
 		return;
 
-	if(!g_bMBTimerIrqActive)
+	if (g_nMBTimerDevice == kTIMERDEVICE_INVALID)
 		MB_Update();
 }
 
@@ -1688,10 +1708,27 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 		bool bTimer1Underflow = (!(OldTimer1 & 0x8000) && (pMB->sy6522.TIMER1_COUNTER.w & 0x8000));
 		bool bTimer2Underflow = (!(OldTimer2 & 0x8000) && (pMB->sy6522.TIMER2_COUNTER.w & 0x8000));
 
-		if ( bTimer1Underflow && (g_nMBTimerDevice == i) )
+		if (!pMB->bTimer1Active && bTimer1Underflow)
+		{
+			if ( (g_nMBTimerDevice == kTIMERDEVICE_INVALID)			// StopTimer1() has been called
+				&& (pMB->sy6522.IFR & IxR_TIMER1)					// Counter underflowed
+				&& ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT) )	// One-shot mode
+			{
+				// Fix for Willy Byte - need to confirm that 6522 really does this!
+				// . It never accesses IER/IFR/TIMER1 regs to clear IRQ
+				pMB->sy6522.IFR &= ~IxR_TIMER1;		// Deassert the TIMER IRQ
+				UpdateIFR(pMB);
+			}
+		}
+
+		if (pMB->bTimer1Active && bTimer1Underflow)
 		{
 			pMB->sy6522.IFR |= IxR_TIMER1;
 			UpdateIFR(pMB);
+
+			// Do MB_Update() before StopTimer1()
+			if (g_nMBTimerDevice == i)
+				MB_Update();
 
 			if((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
 			{
@@ -1707,18 +1744,21 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 				pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
 				StartTimer1(pMB);
 			}
-
-			MB_Update();
 		}
-		else if ( bTimer1Underflow
-					&& !g_bMBTimerIrqActive								// StopTimer1() has been called
-					&& (pMB->sy6522.IFR & IxR_TIMER1)					// IRQ
-					&& ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT) )	// One-shot mode
+		else if (pMB->bTimer2Active && bTimer2Underflow)
 		{
-			// Fix for Willy Byte - need to confirm that 6522 really does this!
-			// . It never accesses IER/IFR/TIMER1 regs to clear IRQ
-			pMB->sy6522.IFR &= ~IxR_TIMER1;		// Deassert the TIMER IRQ
+			pMB->sy6522.IFR |= IxR_TIMER2;
 			UpdateIFR(pMB);
+
+			if((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
+			{
+				StopTimer2(pMB);
+			}
+			else
+			{
+				pMB->sy6522.TIMER2_COUNTER.w = pMB->sy6522.TIMER2_LATCH.w;
+				StartTimer2(pMB);
+			}
 		}
 	}
 }
@@ -1732,7 +1772,6 @@ SS_CARDTYPE MB_GetSoundcardType()
 
 void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType)
 {
-//	if ((NewSoundcardType == SC_UNINIT) || (g_SoundcardType == NewSoundcardType))
 	if (g_SoundcardType == NewSoundcardType)
 		return;
 
@@ -1746,17 +1785,32 @@ void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType)
 
 //-----------------------------------------------------------------------------
 
-double MB_GetFramePeriod()
+static double MB_GetFramePeriod(void)
 {
-	return (g_bMBTimerIrqActive||(g_MB[0].sy6522.IFR & IxR_TIMER1)) ? (double)g_n6522TimerPeriod : g_f6522TimerPeriod_NoIRQ;
+	// TODO: Ideally remove this (slot-4) Phasor-IFR check: [*1]
+	// . It's for Phasor music player, which runs in one-shot mode:
+	// . MB_UpdateCycles()
+	//   -> Timer1 underflows & StopTimer1() is called, which sets g_nMBTimerDevice == kTIMERDEVICE_INVALID
+	// . MB_EndOfVideoFrame(), and g_nMBTimerDevice == kTIMERDEVICE_INVALID
+	//   -> MB_Update()
+	//      -> MB_GetFramePeriod()
+	// NB. Removing this Phasor-IFR check means the occasional 'g_f6522TimerPeriod_NoIRQ' gets returned.
+
+	if ((g_nMBTimerDevice != kTIMERDEVICE_INVALID) ||
+		(g_bPhasorEnable && (g_MB[0].sy6522.IFR & IxR_TIMER1)))	// [*1]
+	{
+		return (double)g_n6522TimerPeriod;
+	}
+	else
+	{
+		return g_f6522TimerPeriod_NoIRQ;
+	}
 }
 
 bool MB_IsActive()
 {
-	if(!MockingboardVoice.bActive)
+	if (!MockingboardVoice.bActive)
 		return false;
-
-	// Ignore /g_bMBTimerIrqActive/ as timer's irq handler will access 6522 regs affecting /g_bMB_Active/
 
 	return g_bMB_Active;
 }

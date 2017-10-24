@@ -13,7 +13,6 @@ void    MB_CheckIRQ();
 void    MB_UpdateCycles(ULONG uExecutedCycles);
 SS_CARDTYPE MB_GetSoundcardType();
 void    MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType);
-double  MB_GetFramePeriod();
 bool    MB_IsActive();
 DWORD   MB_GetVolume();
 void    MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
