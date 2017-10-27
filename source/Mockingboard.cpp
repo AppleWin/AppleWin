@@ -117,6 +117,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define Phasor_SY6522A_Offset	(1<<Phasor_SY6522A_CS)
 #define Phasor_SY6522B_Offset	(1<<Phasor_SY6522B_CS)
 
+enum MockingboardUnitState_e {AY_NOP0, AY_NOP1, AY_INACTIVE, AY_READ, AY_NOP4, AY_NOP5, AY_WRITE, AY_LATCH};
+
 struct SY6522_AY8910
 {
 	SY6522 sy6522;
@@ -125,6 +127,7 @@ struct SY6522_AY8910
 	bool bTimer1Active;
 	bool bTimer2Active;
 	SSI263A SpeechChip;
+	MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair (or for Phasor: 6522+2xAY8910)
 };
 
 
@@ -272,6 +275,7 @@ static void ResetSY6522(SY6522_AY8910* pMB)
 	StopTimer2(pMB);
 
 	pMB->nAYCurrentRegister = 0;
+	pMB->state = AY_INACTIVE;
 }
 
 //-----------------------------------------------------------------------------
@@ -293,31 +297,35 @@ static void AY8910_Write(BYTE nDevice, BYTE nReg, BYTE nValue, BYTE nAYDevice)
 		const int nBC2 = 1;		// Hardwired to +5V
 		int nBC1 = nValue & 1;
 
-		int nAYFunc = (nBDIR<<2) | (nBC2<<1) | nBC1;
-		enum {AY_NOP0, AY_NOP1, AY_INACTIVE, AY_READ, AY_NOP4, AY_NOP5, AY_WRITE, AY_LATCH};
+		MockingboardUnitState_e nAYFunc = (MockingboardUnitState_e) ((nBDIR<<2) | (nBC2<<1) | nBC1);
 
-		switch (nAYFunc)
+		if (pMB->state == AY_INACTIVE)	// GH#320: functions only work from inactive state
 		{
-			case AY_INACTIVE:	// 4: INACTIVE
-				break;
+			switch (nAYFunc)
+			{
+				case AY_INACTIVE:	// 4: INACTIVE
+					break;
 
-			case AY_READ:		// 5: READ FROM PSG (need to set DDRA to input)
-				break;
+				case AY_READ:		// 5: READ FROM PSG (need to set DDRA to input)
+					break;
 
-			case AY_WRITE:		// 6: WRITE TO PSG
-				_AYWriteReg(nDevice+2*nAYDevice, pMB->nAYCurrentRegister, pMB->sy6522.ORA);
-				break;
+				case AY_WRITE:		// 6: WRITE TO PSG
+					_AYWriteReg(nDevice+2*nAYDevice, pMB->nAYCurrentRegister, pMB->sy6522.ORA);
+					break;
 
-			case AY_LATCH:		// 7: LATCH ADDRESS
-				// http://www.worldofspectrum.org/forums/showthread.php?t=23327
-				// Selecting an unused register number above 0x0f puts the AY into a state where
-				// any values written to the data/address bus are ignored, but can be read back
-				// within a few tens of thousands of cycles before they decay to zero.
-				if(pMB->sy6522.ORA <= 0x0F)
-					pMB->nAYCurrentRegister = pMB->sy6522.ORA & 0x0F;
-				// else Pro-Mockingboard (clone from HK)
-				break;
+				case AY_LATCH:		// 7: LATCH ADDRESS
+					// http://www.worldofspectrum.org/forums/showthread.php?t=23327
+					// Selecting an unused register number above 0x0f puts the AY into a state where
+					// any values written to the data/address bus are ignored, but can be read back
+					// within a few tens of thousands of cycles before they decay to zero.
+					if(pMB->sy6522.ORA <= 0x0F)
+						pMB->nAYCurrentRegister = pMB->sy6522.ORA & 0x0F;
+					// else Pro-Mockingboard (clone from HK)
+					break;
+			}
 		}
+
+		pMB->state = nAYFunc;
 	}
 }
 
@@ -1881,6 +1889,7 @@ int MB_SetSnapshot_v1(const SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD /*dw
 		memcpy(AY8910_GetRegsPtr(nDeviceNum), &pSS->Unit[i].RegsAY8910, 16);
 		memcpy(&pMB->SpeechChip, &pSS->Unit[i].RegsSSI263, sizeof(SSI263A));
 		pMB->nAYCurrentRegister = pSS->Unit[i].nAYCurrentRegister;
+		pMB->state = AY_INACTIVE;
 
 		StartTimer1_LoadStateV1(pMB);	// Attempt to start timer
 
@@ -1946,6 +1955,11 @@ static UINT DoReadFile(const HANDLE hFile, void* const pData, const UINT Length)
 
 //===========================================================================
 
+// Unit version history:
+// 2: Added: Timer1 & Timer2 active
+// 3: Added: Unit state
+const UINT kUNIT_VERSION = 3;
+
 const UINT NUM_MB_UNITS = 2;
 const UINT NUM_PHASOR_UNITS = 2;
 
@@ -1972,6 +1986,7 @@ const UINT NUM_PHASOR_UNITS = 2;
 #define SS_YAML_KEY_SSI263_REG_FILTER_FREQ "Filter Frequency"
 #define SS_YAML_KEY_SSI263_REG_CURRENT_MODE "Current Mode"
 #define SS_YAML_KEY_AY_CURR_REG "AY Current Register"
+#define SS_YAML_KEY_MB_UNIT_STATE "Unit State"
 #define SS_YAML_KEY_TIMER1_IRQ "Timer1 IRQ Pending"
 #define SS_YAML_KEY_TIMER2_IRQ "Timer2 IRQ Pending"
 #define SS_YAML_KEY_SPEECH_IRQ "Speech IRQ Pending"
@@ -2032,8 +2047,7 @@ void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 	UINT nDeviceNum = nMbCardNum*2;
 	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
 
-	const UINT version = 2;
-	YamlSaveHelper::Slot slot(yamlSaveHelper, MB_GetSnapshotCardName(), uSlot, version);	// fixme: object should be just 1 Mockingboard card & it will know its slot
+	YamlSaveHelper::Slot slot(yamlSaveHelper, MB_GetSnapshotCardName(), uSlot, kUNIT_VERSION);	// fixme: object should be just 1 Mockingboard card & it will know its slot
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
@@ -2045,6 +2059,7 @@ void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 		AY8910_SaveSnapshot(yamlSaveHelper, nDeviceNum, std::string(""));
 		SaveSnapshotSSI263(yamlSaveHelper, pMB->SpeechChip);
 
+		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state);
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
 		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, "false");
 		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, "false");
@@ -2100,7 +2115,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 	if (slot != 4 && slot != 5)	// fixme
 		throw std::string("Card: wrong slot");
 
-	if (version < 1 || version > 2)
+	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
 	AY8910UpdateSetCycles();
@@ -2133,6 +2148,10 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 			pMB->bTimer1Active = yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER1_ACTIVE);
 			pMB->bTimer2Active = yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER2_ACTIVE);
 		}
+
+		pMB->state = AY_INACTIVE;
+		if (version >= 3)
+			pMB->state = (MockingboardUnitState_e) (yamlLoadHelper.LoadUint(SS_YAML_KEY_MB_UNIT_STATE) & 7);
 
 		yamlLoadHelper.PopMap();
 
@@ -2185,8 +2204,7 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 	UINT nDeviceNum = 0;
 	SY6522_AY8910* pMB = &g_MB[0];	// fixme: Phasor uses MB's slot4(2x6522), slot4(2xSSI263), but slot4+5(4xAY8910)
 
-	const UINT version = 2;
-	YamlSaveHelper::Slot slot(yamlSaveHelper, Phasor_GetSnapshotCardName(), uSlot, version);	// fixme: object should be just 1 Mockingboard card & it will know its slot
+	YamlSaveHelper::Slot slot(yamlSaveHelper, Phasor_GetSnapshotCardName(), uSlot, kUNIT_VERSION);	// fixme: object should be just 1 Mockingboard card & it will know its slot
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
@@ -2202,6 +2220,7 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 		AY8910_SaveSnapshot(yamlSaveHelper, nDeviceNum+1, std::string("-B"));
 		SaveSnapshotSSI263(yamlSaveHelper, pMB->SpeechChip);
 
+		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state);
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
 		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, "false");
 		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, "false");
@@ -2219,7 +2238,7 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 	if (slot != 4)	// fixme
 		throw std::string("Card: wrong slot");
 
-	if (version < 1 || version > 2)
+	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
 	g_PhasorClockScaleFactor = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);
@@ -2255,6 +2274,10 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 			pMB->bTimer1Active = yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER1_ACTIVE);
 			pMB->bTimer2Active = yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER2_ACTIVE);
 		}
+
+		pMB->state = AY_INACTIVE;
+		if (version >= 3)
+			pMB->state = (MockingboardUnitState_e) (yamlLoadHelper.LoadUint(SS_YAML_KEY_MB_UNIT_STATE) & 7);
 
 		yamlLoadHelper.PopMap();
 
