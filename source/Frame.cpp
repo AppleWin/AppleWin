@@ -166,7 +166,7 @@ static FULLSCREEN_SCALE_TYPE	g_win_fullscreen_scale = 1;
 static int						g_win_fullscreen_offsetx = 0;
 static int						g_win_fullscreen_offsety = 0;
 
-static bool g_bShowingConfigDlg = false;
+static bool g_bFrameActive = false;
 
 // __ Prototypes __________________________________________________________________________________
 void DrawCrosshairs (int x, int y);
@@ -311,7 +311,7 @@ static void FrameShowCursor(BOOL bShow)
 // Called when:
 // . Ctrl-Left mouse button
 // . PAUSE pressed (when MODE_RUNNING)
-// . AppleWin's main window is deactivated
+// . AppleWin's main window is activated/deactivated
 static void RevealCursor()
 {
 	if (!sg_Mouse.IsActiveAndEnabled())
@@ -333,7 +333,7 @@ static void RevealCursor()
 // Called when:
 // . WM_MOUSEMOVE event
 // . Switch from full-screen to normal (windowed) mode
-// . AppleWin's main window is deactivated
+// . AppleWin's main window is activated/deactivated
 static void FullScreenRevealCursor(void)
 {
 	if (!g_bIsFullScreen)
@@ -1051,6 +1051,7 @@ LRESULT CALLBACK FrameWndProc (
       SetUsingCursor(FALSE);
 	  RevealCursor();
 	  FullScreenRevealCursor();
+	  g_bFrameActive = (wparam != WA_INACTIVE);
       break;
 
     case WM_ACTIVATEAPP:	// Sent when different app's window is activated/deactivated.
@@ -1586,7 +1587,7 @@ LRESULT CALLBACK FrameWndProc (
 				&& !sg_Mouse.IsActive()		// Don't interfere if there's a mousecard present!
 				&& !g_bUsingCursor			// Using mouse for joystick emulation (or mousecard restricted to window)
 				&& g_bShowingCursor
-				&& !g_bShowingConfigDlg)
+				&& g_bFrameActive)			// Frame inactive when eg. Config or 'Select Disk Image' dialogs are opened
 			{
 				g_uCount100msec++;
 				if (g_uCount100msec > 20)	// Hide every 2sec of mouse inactivity
@@ -1997,9 +1998,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_SETUP:
       {
-		  g_bShowingConfigDlg = true;
 		  sg_PropertySheet.Init();
-		  g_bShowingConfigDlg = false;
       }
       break;
 
