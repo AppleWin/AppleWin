@@ -207,6 +207,9 @@ static DWORD g_dwMaxPhonemeLen = 0;
 // When 6522 IRQ is *not* active use 60Hz update freq for MB voices
 static const double g_f6522TimerPeriod_NoIRQ = CLK_6502 / 60.0;		// Constant whatever the CLK is set to
 
+static bool g_bCritSectionValid = false;	// Deleting CritialSection when not valid causes crash on Win98
+static CRITICAL_SECTION g_CriticalSection;	// To guard 6522's IFR
+
 //---------------------------------------------------------------------------
 
 // Forward refs:
@@ -329,15 +332,22 @@ static void AY8910_Write(BYTE nDevice, BYTE nReg, BYTE nValue, BYTE nAYDevice)
 	}
 }
 
-// TODO: Fix data-race: main thread & SSI263Thread accessing IFR
-// . extend this func to take an or_mask & and_mask
-// . then do the mods inside a critical section
-static void UpdateIFR(SY6522_AY8910* pMB)
+static void UpdateIFR(SY6522_AY8910* pMB, BYTE clr_ifr, BYTE set_ifr=0)
 {
-	pMB->sy6522.IFR &= 0x7F;
+	// Need critical section to avoid data-race: main thread & SSI263Thread can both access IFR
+	// . NB. Loading a save-state just directly writes into 6522.IFR (which is fine)
+	_ASSERT(g_bCritSectionValid);
+	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
+	{
+		pMB->sy6522.IFR &= ~clr_ifr;
+		pMB->sy6522.IFR |= set_ifr;
 
-	if (pMB->sy6522.IFR & pMB->sy6522.IER & 0x7F)
-		pMB->sy6522.IFR |= 0x80;
+		if (pMB->sy6522.IFR & pMB->sy6522.IER & 0x7F)
+			pMB->sy6522.IFR |= 0x80;
+		else
+			pMB->sy6522.IFR &= 0x7F;
+	}
+	if (g_bCritSectionValid) LeaveCriticalSection(&g_CriticalSection);
 
 	// Now update the IRQ signal from all 6522s
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
@@ -352,13 +362,9 @@ static void UpdateIFR(SY6522_AY8910* pMB)
 	// . I assume Phasor's 6522s just generate 6502 IRQs (not NMIs)
 
 	if (bIRQ)
-	{
 	    CpuIrqAssert(IS_6522);
-	}
 	else
-	{
 	    CpuIrqDeassert(IS_6522);
-	}
 }
 
 static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
@@ -415,8 +421,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			/* Initiates timer1 & clears time-out of timer1 */
 
 			// Clear Timer Interrupt Flag.
-			pMB->sy6522.IFR &= ~IxR_TIMER1;
-			UpdateIFR(pMB);
+			UpdateIFR(pMB, IxR_TIMER1);
 
 			pMB->sy6522.TIMER1_LATCH.h = nValue;
 			pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
@@ -425,17 +430,15 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			break;
 		case 0x07:	// TIMER1H_LATCH
 			// Clear Timer1 Interrupt Flag.
+			UpdateIFR(pMB, IxR_TIMER1);
 			pMB->sy6522.TIMER1_LATCH.h = nValue;
-			pMB->sy6522.IFR &= ~IxR_TIMER1;
-			UpdateIFR(pMB);
 			break;
 		case 0x08:	// TIMER2L
 			pMB->sy6522.TIMER2_LATCH.l = nValue;
 			break;
 		case 0x09:	// TIMER2H
 			// Clear Timer2 Interrupt Flag.
-			pMB->sy6522.IFR &= ~IxR_TIMER2;
-			UpdateIFR(pMB);
+			UpdateIFR(pMB, IxR_TIMER2);
 
 			pMB->sy6522.TIMER2_LATCH.h = nValue;
 			pMB->sy6522.TIMER2_COUNTER.w = pMB->sy6522.TIMER2_LATCH.w;
@@ -453,10 +456,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 		case 0x0d:	// IFR
 			// - Clear those bits which are set in the lower 7 bits.
 			// - Can't clear bit 7 directly.
-			nValue |= 0x80;	// Set high bit
-			nValue ^= 0x7F;	// Make mask
-			pMB->sy6522.IFR &= nValue;
-			UpdateIFR(pMB);
+			UpdateIFR(pMB, nValue);
 			break;
 		case 0x0e:	// IER
 			if(!(nValue & 0x80))
@@ -464,7 +464,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				// Clear those bits which are set in the lower 7 bits.
 				nValue ^= 0x7F;
 				pMB->sy6522.IER &= nValue;
-				UpdateIFR(pMB);
+				UpdateIFR(pMB, 0);
 				
 				// Check if active timer has been disabled:
 				if (((pMB->sy6522.IER & IxR_TIMER1) == 0) && pMB->bTimer1Active)
@@ -478,7 +478,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				// Set those bits which are set in the lower 7 bits.
 				nValue &= 0x7F;
 				pMB->sy6522.IER |= nValue;
-				UpdateIFR(pMB);
+				UpdateIFR(pMB, 0);
 
 				// Check if active timer changed from non-interrupt (polling IFR) to interrupt:
 				if ((pMB->sy6522.IER & IxR_TIMER1) && pMB->bTimer1Active)
@@ -519,8 +519,7 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 			break;
 		case 0x04:	// TIMER1L_COUNTER
 			nValue = pMB->sy6522.TIMER1_COUNTER.l;
-			pMB->sy6522.IFR &= ~IxR_TIMER1;		// Also clears Timer1 Interrupt Flag
-			UpdateIFR(pMB);
+			UpdateIFR(pMB, IxR_TIMER1);
 			break;
 		case 0x05:	// TIMER1H_COUNTER
 			nValue = pMB->sy6522.TIMER1_COUNTER.h;
@@ -533,8 +532,7 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 			break;
 		case 0x08:	// TIMER2L
 			nValue = pMB->sy6522.TIMER2_COUNTER.l;
-			pMB->sy6522.IFR &= ~IxR_TIMER2;		// Also clears Timer2 Interrupt Flag
-			UpdateIFR(pMB);
+			UpdateIFR(pMB, IxR_TIMER2);
 			break;
 		case 0x09:	// TIMER2H
 			nValue = pMB->sy6522.TIMER2_COUNTER.h;
@@ -627,8 +625,7 @@ static void SSI263_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 		}
 		else
 		{
-			pMB->sy6522.IFR &= ~IxR_PERIPHERAL;
-			UpdateIFR(pMB);
+			UpdateIFR(pMB, IxR_PERIPHERAL);
 		}
 		pMB->SpeechChip.CurrentMode &= ~1;	// Clear SSI263's D7 pin
 
@@ -757,8 +754,7 @@ static void Votrax_Write(BYTE nDevice, BYTE nValue)
 
 	// !A/R: Acknowledge receipt of phoneme data (signal goes from high to low)
 	SY6522_AY8910* pMB = &g_MB[nDevice];
-	pMB->sy6522.IFR &= ~IxR_VOTRAX;
-	UpdateIFR(pMB);
+	UpdateIFR(pMB, IxR_VOTRAX);
 
 	g_nSSI263Device = nDevice;
 
@@ -1008,8 +1004,7 @@ static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
 		{
 			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C))
 			{
-				pMB->sy6522.IFR |= IxR_PERIPHERAL;
-				UpdateIFR(pMB);
+				UpdateIFR(pMB, 0, IxR_PERIPHERAL);
 				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
 			}
 		}
@@ -1020,8 +1015,7 @@ static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
 		{
 			// !A/R: Time-out of old phoneme (signal goes from low to high)
 
-			pMB->sy6522.IFR |= IxR_VOTRAX;
-			UpdateIFR(pMB);
+			UpdateIFR(pMB, 0, IxR_VOTRAX);
 
 			g_bVotraxPhoneme = false;
 		}
@@ -1410,6 +1404,9 @@ void MB_Initialize()
 		MB_Reset();
 		LogFileOutput("MB_Initialize: MB_Reset()\n");
 	}
+
+	InitializeCriticalSection(&g_CriticalSection);
+	g_bCritSectionValid = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -1427,8 +1424,14 @@ void MB_Destroy()
 {
 	MB_DSUninit();
 
-	for(int i=0; i<NUM_VOICES; i++)
+	for (int i=0; i<NUM_VOICES; i++)
 		delete [] ppAYVoiceBuffer[i];
+
+	if (g_bCritSectionValid)
+	{
+		DeleteCriticalSection(&g_CriticalSection);
+		g_bCritSectionValid = false;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -1724,15 +1727,13 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 			{
 				// Fix for Willy Byte - need to confirm that 6522 really does this!
 				// . It never accesses IER/IFR/TIMER1 regs to clear IRQ
-				pMB->sy6522.IFR &= ~IxR_TIMER1;		// Deassert the TIMER IRQ
-				UpdateIFR(pMB);
+				UpdateIFR(pMB, IxR_TIMER1);		// Deassert the TIMER IRQ
 			}
 		}
 
 		if (pMB->bTimer1Active && bTimer1Underflow)
 		{
-			pMB->sy6522.IFR |= IxR_TIMER1;
-			UpdateIFR(pMB);
+			UpdateIFR(pMB, 0, IxR_TIMER1);
 
 			// Do MB_Update() before StopTimer1()
 			if (g_nMBTimerDevice == i)
@@ -1755,8 +1756,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 		}
 		else if (pMB->bTimer2Active && bTimer2Underflow)
 		{
-			pMB->sy6522.IFR |= IxR_TIMER2;
-			UpdateIFR(pMB);
+			UpdateIFR(pMB, 0, IxR_TIMER2);
 
 			if((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
 			{
@@ -1905,8 +1905,7 @@ int MB_SetSnapshot_v1(const SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD /*dw
 
 			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
 			{
-				pMB->sy6522.IFR |= IxR_PERIPHERAL;
-				UpdateIFR(pMB);
+				UpdateIFR(pMB, 0, IxR_PERIPHERAL);
 				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
 			}
 		}
@@ -1916,41 +1915,6 @@ int MB_SetSnapshot_v1(const SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD /*dw
 	}
 
 	return 0;
-}
-
-//===========================================================================
-
-static UINT DoWriteFile(const HANDLE hFile, const void* const pData, const UINT Length)
-{
-	DWORD dwBytesWritten;
-	BOOL bRes = WriteFile(	hFile,
-							pData,
-							Length,
-							&dwBytesWritten,
-							NULL);
-
-	if(!bRes || (dwBytesWritten != Length))
-	{
-		//dwError = GetLastError();
-		throw std::string("Card: save error");
-	}
-
-	return dwBytesWritten;
-}
-
-static UINT DoReadFile(const HANDLE hFile, void* const pData, const UINT Length)
-{
-	DWORD dwBytesRead;
-	BOOL bRes = ReadFile(	hFile,
-							pData,
-							Length,
-							&dwBytesRead,
-							NULL);
-
-	if (dwBytesRead != Length)
-		throw std::string("Card: file corrupt");
-
-	return dwBytesRead;
 }
 
 //===========================================================================
@@ -2177,8 +2141,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 
 			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
 			{
-				pMB->sy6522.IFR |= IxR_PERIPHERAL;
-				UpdateIFR(pMB);
+				UpdateIFR(pMB, 0, IxR_PERIPHERAL);
 				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
 			}
 		}
@@ -2303,8 +2266,7 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 
 			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
 			{
-				pMB->sy6522.IFR |= IxR_PERIPHERAL;
-				UpdateIFR(pMB);
+				UpdateIFR(pMB, 0, IxR_PERIPHERAL);
 				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
 			}
 		}
