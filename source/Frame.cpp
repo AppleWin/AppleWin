@@ -117,7 +117,6 @@ static int     buttondown      = -1;
 static int     buttonover      = -1;
 static int     buttonx         = BUTTONX;
 static int     buttony         = BUTTONY;
-static HRGN    clipregion      = (HRGN)0;
 static HDC     g_hFrameDC      = (HDC)0;
 static RECT    framerect       = {0,0,0,0};
 
@@ -130,9 +129,12 @@ static BOOL    helpquit        = 0;
 static BOOL    g_bPaintingWindow        = 0;
 static HFONT   smallfont       = (HFONT)0;
 static HWND    tooltipwindow   = (HWND)0;
-static BOOL    g_bUsingCursor	= 0;		// 1=AppleWin is using (hiding) the mouse-cursor
+static BOOL    g_bUsingCursor	= FALSE;	// TRUE = AppleWin is using (hiding) the mouse-cursor && restricting cursor to window - see SetUsingCursor()
 static int     viewportx       = VIEWPORTX;	// Default to Normal (non-FullScreen) mode
 static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
+
+static UINT_PTR	g_TimerIDEvent_100msec = 0;
+static UINT		g_uCount100msec = 0;
 
 static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
@@ -144,7 +146,7 @@ void    RelayEvent (UINT message, WPARAM wparam, LPARAM lparam);
 void    ResetMachineState ();
 void    SetFullScreenMode ();
 void    SetNormalMode ();
-void    SetUsingCursor (BOOL);
+static void SetUsingCursor(BOOL);
 static bool FileExists(std::string strFilename);
 
 bool	g_bScrollLock_FullSpeed = false;
@@ -164,11 +166,13 @@ static FULLSCREEN_SCALE_TYPE	g_win_fullscreen_scale = 1;
 static int						g_win_fullscreen_offsetx = 0;
 static int						g_win_fullscreen_offsety = 0;
 
+static bool g_bShowingConfigDlg = false;
+
 // __ Prototypes __________________________________________________________________________________
-	static void DrawCrosshairs (int x, int y);
-	static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
-	static void ScreenWindowResize(const bool bCtrlKey);
-	static void FrameResizeWindow(int nNewScale);
+void DrawCrosshairs (int x, int y);
+void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
+void ScreenWindowResize(const bool bCtrlKey);
+void FrameResizeWindow(int nNewScale);
 
 
 // ==========================================================================
@@ -324,6 +328,25 @@ static void RevealCursor()
 		SetUsingCursor(FALSE);
 
 	g_bLastCursorInAppleViewport = false;
+}
+
+// Called when:
+// . WM_MOUSEMOVE event
+// . Switch from full-screen to normal (windowed) mode
+// . AppleWin's main window is deactivated
+static void FullScreenRevealCursor(void)
+{
+	if (!g_bIsFullScreen)
+		return;
+
+	if (sg_Mouse.IsActive())
+		return;
+
+	if (!g_bUsingCursor && !g_bShowingCursor)
+	{
+		FrameShowCursor(TRUE);
+		g_uCount100msec = 0;
+	}
 }
 
 //===========================================================================
@@ -1025,8 +1048,9 @@ LRESULT CALLBACK FrameWndProc (
     case WM_ACTIVATE:		// Sent when window is activated/deactivated. wParam indicates WA_ACTIVE, WA_INACTIVE, etc
 							// Eg. Deactivate when Config dialog is active, AppleWin app loses focus, etc
       JoyReset();
-      SetUsingCursor(0);
+      SetUsingCursor(FALSE);
 	  RevealCursor();
+	  FullScreenRevealCursor();
       break;
 
     case WM_ACTIVATEAPP:	// Sent when different app's window is activated/deactivated.
@@ -1045,10 +1069,16 @@ LRESULT CALLBACK FrameWndProc (
       RegSaveValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_X_POS), 1, framerect.left);
       RegSaveValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_Y_POS), 1, framerect.top);
       FrameReleaseDC();
-      SetUsingCursor(0);
+      SetUsingCursor(FALSE);
       if (helpquit) {
         helpquit = 0;
         HtmlHelp(NULL,NULL,HH_CLOSE_ALL,0);
+      }
+      if (g_TimerIDEvent_100msec)
+      {
+        BOOL bRes = KillTimer(g_hFrameWindow, g_TimerIDEvent_100msec);
+        LogFileOutput("KillTimer(g_TimerIDEvent_100msec), res=%d\n", bRes ? 1 : 0);
+        g_TimerIDEvent_100msec = 0;
       }
       LogFileOutput("WM_CLOSE (done)\n");
       break;
@@ -1233,7 +1263,7 @@ LRESULT CALLBACK FrameWndProc (
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
 		{
-			SetUsingCursor(0);
+			SetUsingCursor(FALSE);
 			buttondown = wparam-VK_F1;
 			if (g_bIsFullScreen && (buttonover != -1)) {
 				if (buttonover != buttondown)
@@ -1312,7 +1342,7 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if (wparam == VK_PAUSE)
 		{
-			SetUsingCursor(0);
+			SetUsingCursor(FALSE);
 			switch (g_nAppMode)
 			{
 				case MODE_RUNNING:
@@ -1362,8 +1392,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			else 
 			{
-				SetUsingCursor(0);
-				return 0;	// TC: Why return early?
+				SetUsingCursor(FALSE);
 			}
 		}
 		break;
@@ -1407,7 +1436,7 @@ LRESULT CALLBACK FrameWndProc (
 		{
           if (wparam & (MK_CONTROL | MK_SHIFT))
 		  {
-            SetUsingCursor(0);
+            SetUsingCursor(FALSE);
 		  }
           else
 		  {
@@ -1416,7 +1445,7 @@ LRESULT CALLBACK FrameWndProc (
 		}
         else if ( ((x < buttonx) && JoyUsingMouse() && ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING))) )
 		{
-          SetUsingCursor(1);
+          SetUsingCursor(TRUE);
 		}
 		else if (sg_Mouse.IsActive())
 		{
@@ -1525,6 +1554,8 @@ LRESULT CALLBACK FrameWndProc (
 			UpdateMouseInAppleViewport(iOutOfBoundsX, iOutOfBoundsY, x, y);
 	  }
 
+      FullScreenRevealCursor();
+
       RelayEvent(WM_MOUSEMOVE,wparam,lparam);
       break;
     }
@@ -1547,6 +1578,21 @@ LRESULT CALLBACK FrameWndProc (
 					sg_Mouse.SetPositionRel(dX, dY, &iOutOfBoundsX, &iOutOfBoundsY);
 
 				UpdateMouseInAppleViewport(iOutOfBoundsX, iOutOfBoundsY);
+			}
+		}
+		else if (wparam == IDEVENT_TIMER_100MSEC)	// GH#504
+		{
+			if (g_bIsFullScreen
+				&& !sg_Mouse.IsActive()		// Don't interfere if there's a mousecard present!
+				&& !g_bUsingCursor			// Using mouse for joystick emulation (or mousecard restricted to window)
+				&& g_bShowingCursor
+				&& !g_bShowingConfigDlg)
+			{
+				g_uCount100msec++;
+				if (g_uCount100msec > 20)	// Hide every 2sec of mouse inactivity
+				{
+					FrameShowCursor(FALSE);
+				}
 			}
 		}
 		break;
@@ -1644,13 +1690,12 @@ LRESULT CALLBACK FrameWndProc (
 				}			
 			}
 		}
-		if (g_bUsingCursor)
-		{
-			if (sg_Mouse.IsActive())
-				sg_Mouse.SetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
-			else
-				JoySetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
-		}
+
+		if (g_bUsingCursor && !sg_Mouse.IsActive())
+			JoySetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
+		else if (sg_Mouse.IsActive())
+			sg_Mouse.SetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
+
 		RelayEvent(message,wparam,lparam);
 		break;
 
@@ -1952,7 +1997,9 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_SETUP:
       {
+		  g_bShowingConfigDlg = true;
 		  sg_PropertySheet.Init();
+		  g_bShowingConfigDlg = false;
       }
       break;
 
@@ -2215,6 +2262,8 @@ void SetFullScreenMode ()
 //===========================================================================
 void SetNormalMode ()
 {
+	FullScreenRevealCursor();	// Do before clearing g_bIsFullScreen flag
+
 	buttonover = -1;
 	buttonx    = BUTTONX;
 	buttony    = BUTTONY;
@@ -2242,8 +2291,12 @@ void SetUsingCursor (BOOL bNewValue)
 		return;
 
 	g_bUsingCursor = bNewValue;
+
 	if (g_bUsingCursor)
 	{
+		// Set TRUE when:
+		// . Using mouse for joystick emulation
+		// . Using mousecard and mouse is restricted to window
 		SetCapture(g_hFrameWindow);
 		RECT rect =	{	viewportx+2,				// left
 						viewporty+2,				// top
@@ -2454,6 +2507,10 @@ void FrameCreateWindow(void)
 		g_hInstance,NULL ); 
 
 	SetupTooltipControls();
+
+	_ASSERT(g_TimerIDEvent_100msec == 0);
+	g_TimerIDEvent_100msec = SetTimer(g_hFrameWindow, IDEVENT_TIMER_100MSEC, 100, NULL);
+	LogFileOutput("FrameCreateWindow: SetTimer(), id=0x%08X\n", g_TimerIDEvent_100msec);
 }
 
 //===========================================================================
