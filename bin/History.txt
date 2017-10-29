@@ -12,6 +12,7 @@ Tom Charlesworth
 1.26.3.2 (Experimental) - 21 Oct 2017
 -------------------------------------
 Changes:
+. [Bug #504] Full-screen: hide mouse pointer after 2 seconds of inactivity (and show again if mouse is moved)
 . [Bug #469] New -no-printscreen-key switch to prevent the PrintScreen key from being registered.
 . [Bug #488] New -fs-height=<best|nnnn> switch.
     - best: picks the highest resolution where the height is an integer multiple of (192*2)
@@ -21,6 +22,7 @@ Changes:
 . [Bug #428] Input option to use PC Joystick 1 Thumbstick 2 for emulated Joystick 2 
 . Swapping disks while a drive is on now warns and prompts if you still wish to do this instead of silently failing with no feedback.
 . [Bug #323] Skip hard disk boot by holding down the Open-Apple key during an Apple II restart
+. [Bug #224] Added Config checkbox for 'Full-Screen: Show drive/keyboard status'
 . [PR #441] Update zlib to latest version 1.2.11
 
 Fixes:
@@ -28,6 +30,7 @@ Fixes:
 . [Bug #496] Support polling of Mockingboard's & Phasor's 6522 IFR.Timer1
 . [Bug #492] UI fixes for full-screen & 2x windowed-mode
 . [Bug #486] Peripheral card's expansion ROM ($C800-CFFF, eg. SSC) wasn't being correctly restored from a save-state
+  - Resulting in regression: Mousecard crash to monitor (#495).
 . [Bug #464] Fix for full-screen: bottom line missing when vertical resolution is 768
 . [Bug #460] Debugger: F2 whilst debugger active will immediately stop the drive spinning (allowing disk swap)
 . [Bug #456] Fix strange speaker clicks when changing configuration - DirectSound wasn't being uninitialised on a restart
@@ -52,6 +55,7 @@ Fixes:
   - Experimental support for 6551's control bit: DTR via -dtr switch
   - Experimental support for 6551's status bits: DCD and DSR via -dcd and -dsr switches
 . [Bug #383] "Enhanced disk speed" is very slow when debugger is active
+. [Bug #320] Mockingboard/Phasor: support 'inactive' function like real hardware
 . [Bug #269] When stepping, ESC no longer exits back to debugger (use F7, Pause keys or Debugger button instead).
 . [Bug #250] Debugger: When MODE_STEPPING, fix issue with disk LEDs staying on
 . [Bug #217] Debugger G(o) command should use normal speed
