@@ -9,8 +9,8 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.3.1 (Experimental) - 29 Sep 2017
-------------------------------------
+1.26.3.2 (Experimental) - 21 Oct 2017
+-------------------------------------
 Changes:
 . [Bug #469] New -no-printscreen-key switch to prevent the PrintScreen key from being registered.
 . [Bug #488] New -fs-height=<best|nnnn> switch.
@@ -24,7 +24,11 @@ Changes:
 . [PR #441] Update zlib to latest version 1.2.11
 
 Fixes:
+. [Bug #499] Flush current track (if dirty) before 'Send to CiderPress'
+. [Bug #496] Support polling of Mockingboard's & Phasor's 6522 IFR.Timer1
+. [Bug #492] UI fixes for full-screen & 2x windowed-mode
 . [Bug #486] Peripheral card's expansion ROM ($C800-CFFF, eg. SSC) wasn't being correctly restored from a save-state
+. [Bug #464] Fix for full-screen: bottom line missing when vertical resolution is 768
 . [Bug #460] Debugger: F2 whilst debugger active will immediately stop the drive spinning (allowing disk swap)
 . [Bug #456] Fix strange speaker clicks when changing configuration - DirectSound wasn't being uninitialised on a restart
 . [Bug #452] Fix for unmounted HD now gives "NO DEVICE CONNECTED" (before gave "I/O ERROR")

@@ -891,6 +891,7 @@ namespace DIMouse
 			return hr;
 
 		// Setup timer to read mouse position
+		_ASSERT(g_TimerIDEvent == 0);
 		g_TimerIDEvent = SetTimer(hDlg, IDEVENT_TIMER_MOUSE, 8, NULL);	// 120Hz timer
 		LogFileOutput("DirectInputInit: SetTimer(), id=0x%08X\n", g_TimerIDEvent);
 		if (g_TimerIDEvent == 0)
