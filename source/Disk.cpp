@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "..\resource\resource.h"
 
-#define LOG_DISK_ENABLED 1
+#define LOG_DISK_ENABLED 0
 #define LOG_DISK_TRACKS 1
 #define LOG_DISK_MOTOR 1
 #define LOG_DISK_PHASES 0
@@ -884,7 +884,7 @@ static void UpdateOnWriteLatch(bool bIsVTSCValid, UINT uSpinNibbleCount, const D
 	{
 		if (g_WriteTrackStartIndex == uTrackIndex)	// disk has completed a revolution
 		{
-			// Occurs for: .dsk & enhance=0|1 & ProDOS FORMAT with big gap3 size (as trackimage is only 0x18F0 in size)
+			// Occurs for: .dsk & enhance=0|1 & ProDOS-FORMAT/DOS3.3-INIT with big gap3 size (as trackimage is only 0x18F0 in size)
 			g_WriteTrackHasWrapped = true;
 
 			// Now wait until drive switched from write to read mode
