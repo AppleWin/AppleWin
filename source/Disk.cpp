@@ -818,7 +818,6 @@ static UINT16 g_bmWrittenSectorAddrFields = 0x0000;
 static UINT g_WriteTrackStartIndex = 0;
 static bool g_WriteTrackHasWrapped = false;
 static UINT g_WriteDataFieldPrologueCount = 0;
-//static UINT g_ConsecutiveReadCount = 0;
 
 #if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
 static UINT g_DbgGap1Size = 0;
@@ -837,24 +836,11 @@ static void DriveNotWritingTrack(void)
 	g_WriteTrackStartIndex = 0;
 	g_WriteTrackHasWrapped = false;
 	g_WriteDataFieldPrologueCount = 0;
-//	g_ConsecutiveReadCount = 0;
+
 #if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
 	g_DbgGap1Size = 0;
 	g_DbgGap3Size = -1;	// Data Field's epilogue has an extra 0xFF, which isn't part of the Gap3 sync-FF field
 #endif
-}
-
-static void UpdateOnReadLatch(void)
-{
-//	g_ConsecutiveReadCount++;
-
-	if (g_bmWrittenSectorAddrFields == 0x0000)
-		return;
-
-	// Written at least 1 sector
-
-//	if (g_ConsecutiveReadCount > 2)
-//		DriveNotWritingTrack();
 }
 
 static void UpdateOnWriteLatch(bool bIsVTSCValid, UINT uSpinNibbleCount, const Disk_t* const fptr)
@@ -873,7 +859,7 @@ static void UpdateOnWriteLatch(bool bIsVTSCValid, UINT uSpinNibbleCount, const D
 
 	if (g_bmWrittenSectorAddrFields == 0x0000)
 	{
-		if (uSpinNibbleCount)	// Account for any spinning before sector-0 is started to be written
+		if (g_WriteTrackStartIndex == (UINT)-1)		// waiting for 1st write?
 			g_WriteTrackStartIndex = fptr->byte;
 		return;
 	}
@@ -914,11 +900,9 @@ static void DriveSwitchedToWriteMode(UINT uTrackIndex)
 {
 	DecodeLatchNibble(0, FALSE, true);	// reset internal state (eg. TrackState = TS_GAP1)
 
-//	g_ConsecutiveReadCount = 0;
-
-	if (g_bmWrittenSectorAddrFields == 0x0000)			// written no sectors
+	if (g_bmWrittenSectorAddrFields == 0x0000)	// written no sectors
 	{
-		g_WriteTrackStartIndex = uTrackIndex;
+		g_WriteTrackStartIndex = (UINT)-1;		// wait for 1st write 
 	}
 }
 
@@ -1135,7 +1119,6 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	if (!floppywritemode)
 	{
 		floppylatch = *(fptr->trackimage + fptr->byte);
-		UpdateOnReadLatch();
 
 #if LOG_DISK_NIBBLES_READ
   #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
