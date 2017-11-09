@@ -128,7 +128,7 @@ static BOOL		floppywritemode = 0;
 static WORD		phases = 0;					// state bits for stepper magnet phases 0 - 3
 static bool		g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT		g_uSlot = 0;
-static unsigned __int64 g_uDiskLastCycle = 0;
+static unsigned __int64 g_uDiskLastCycle = 0;	// TODO: save-state
 
 static void CheckSpinning(const ULONG nCyclesLeft);
 static Disk_Status_e GetDriveLightStatus( const int iDrive );
@@ -138,6 +138,7 @@ static void RemoveDisk (int drive);
 static void WriteTrack (int drive);
 static LPCTSTR DiskGetFullPathName(const int iDrive);
 static void DriveNotWritingTrack(void);
+static bool DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite, bool bReset=false);
 
 #define SPINNING_CYCLES (20000*64)		// 1280000 cycles = 1.25s
 #define WRITELIGHT_CYCLES (20000*64)	// 1280000 cycles = 1.25s
@@ -242,6 +243,7 @@ void Disk_SaveLastDiskImage(const int iDrive)
 
 //===========================================================================
 
+// Called by DiskControlMotor() & DiskEnable()
 static void CheckSpinning(const ULONG nCyclesLeft)
 {
 	DWORD modechange = (floppymotoron && !g_aFloppyDisk[currdrive].spinning);
@@ -250,11 +252,11 @@ static void CheckSpinning(const ULONG nCyclesLeft)
 		g_aFloppyDisk[currdrive].spinning = SPINNING_CYCLES;
 
 	if (modechange)
-		//FrameRefreshStatus(DRAW_LEDS);
 		FrameDrawDiskLEDS( (HDC)0 );
 
 	if (modechange)
 	{
+		// Set g_uDiskLastCycle when motor changes: not spinning (ie. off for 1 sec) -> on
 		CpuCalcCycles(nCyclesLeft);
 		g_uDiskLastCycle = g_nCumulativeCycles;
 	}
@@ -810,10 +812,8 @@ bool Disk_IsDriveEmpty(const int iDrive)
 
 //===========================================================================
 
-static bool DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite, bool bReset=false);	// Fwd ref
-
+// TODO: save-state (all non-debug below)
 static BYTE g_uVTSC[4] = {0,0,0,0};
-
 static UINT16 g_bmWrittenSectorAddrFields = 0x0000;
 static UINT g_WriteTrackStartIndex = 0;
 static bool g_WriteTrackHasWrapped = false;
@@ -821,15 +821,16 @@ static UINT g_WriteDataFieldPrologueCount = 0;
 
 #if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
 static UINT g_DbgGap1Size = 0;
+static UINT g_DbgGap2Size = 0;
 static int g_DbgGap3Size = -1;
 #endif
 
 // Occurs on these conditions:
-// . read > 2 bytes (empirical from inspecting DOS3.3-INIT/ProDOS-FORMAT operations)
+// . reset
 // . spin > 2 bytes (empirical from inspecting DOS3.3-INIT/ProDOS-FORMAT operations)
 // . drive stepper track change
 // . drive motor state change
-// . disk write protected
+// . switch to read mode after having written a complete track
 static void DriveNotWritingTrack(void)
 {
 	g_bmWrittenSectorAddrFields = 0x0000;
@@ -839,6 +840,7 @@ static void DriveNotWritingTrack(void)
 
 #if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
 	g_DbgGap1Size = 0;
+	g_DbgGap2Size = 0;
 	g_DbgGap3Size = -1;	// Data Field's epilogue has an extra 0xFF, which isn't part of the Gap3 sync-FF field
 #endif
 }
@@ -852,6 +854,8 @@ static void UpdateOnWriteLatch(bool bIsVTSCValid, UINT uSpinNibbleCount, const D
 	{
 		BYTE sector = g_uVTSC[2];
 		_ASSERT( sector <= 15 );
+		if (sector > 15)	// Ignore exotic formats with >16 sectors!
+			return;
 		_ASSERT( (g_bmWrittenSectorAddrFields & (1<<sector)) == 0 );
 		g_bmWrittenSectorAddrFields |= (1<<sector);
 		return;
@@ -914,8 +918,7 @@ static void DriveSwitchedToReadMode(Disk_t* const fptr)
 	// Zero-fill the remainder of the track buffer:
 	// . Up to 0x18F0 (if less than 0x18F0), and then (for .nib) up to 0x1A00.
 
-//	const UINT kShortTrackLen = 0x18F0;		// for authentic
-	const UINT kShortTrackLen = 0x18B0;		// for enhanced (no spin)
+	const UINT kShortTrackLen = 0x18B0;		// for enhanced (no spin), as 0x18F0 is too big
 	LPBYTE TrackBuffer = fptr->trackimage;
 	const UINT kLongTrackLen = fptr->nibbles;
 
@@ -928,7 +931,7 @@ static void DriveSwitchedToReadMode(Disk_t* const fptr)
 		uWrittenTrackSize += (kLongTrackLen - g_WriteTrackStartIndex) + uWriteTrackEndIndex;
 
 #if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	LOG_DISK("Gap1 = 0x%02X, Gap3 = 0x%02X (%02d), TrackSize = 0x%04X\n", g_DbgGap1Size, g_DbgGap3Size, g_DbgGap3Size, uWrittenTrackSize);
+	LOG_DISK("Gap1 = 0x%02X, Gap2 = 0x%02X, Gap3 = 0x%02X (%02d), TrackSize = 0x%04X\n", g_DbgGap1Size, g_DbgGap2Size, g_DbgGap3Size, g_DbgGap3Size, uWrittenTrackSize);
 #endif
 
 	if (uWrittenTrackSize > kShortTrackLen)
@@ -958,7 +961,7 @@ static void DriveSwitchedToReadMode(Disk_t* const fptr)
 
 static bool DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite, bool bReset/*=false*/)
 {
-	enum TRACKSTATE_e {TS_GAP1, TS_ADDRFIELD, TS_GAP2, TS_DATAFIELD, TS_GAP3};
+	enum TRACKSTATE_e {TS_GAP1, TS_ADDRFIELD, TS_GAP2_START, TS_GAP2, TS_DATAFIELD, TS_GAP3};
 	static TRACKSTATE_e TrackState = TS_GAP1;
 	static UINT32 uLast3Bytes = 0;
 	static BYTE uVTSC4and4[8] = {0,0,0,0, 0,0,0,0};
@@ -966,7 +969,10 @@ static bool DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite, bool bReset/*=fal
 
 	if (bReset)
 	{
-		TrackState = (g_bmWrittenSectorAddrFields == 0x0000) ? TS_GAP1 : TS_GAP3;
+		// ProDOS: switches to write mode between Address Field & Gap2; and between Data Field & Gap3
+		// . so if at TS_GAP2_START then stay at TS_GAP2_START
+		if (TrackState != TS_GAP2_START)
+			TrackState = (g_bmWrittenSectorAddrFields == 0x0000) ? TS_GAP1 : TS_GAP3;
 		uLast3Bytes = 0;
 		uVTSC4and4idx = 0;
 		return false;
@@ -976,11 +982,16 @@ static bool DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite, bool bReset/*=fal
 	uLast3Bytes |= floppylatch;
 	uLast3Bytes &= 0xFFFFFF;
 
+	if (TrackState == TS_GAP2_START && bIsWrite)	// NB. bIsWrite, as there's a read between writing Addr Field & Gap2
+		TrackState = TS_GAP2;
+
 #if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	if (floppylatch == 0xFF && bIsWrite && (TrackState == TS_GAP1 || TrackState == TS_GAP3))
+	if (floppylatch == 0xFF && bIsWrite && (TrackState == TS_GAP1 || TrackState == TS_GAP2 || TrackState == TS_GAP3))
 	{
 		if (g_bmWrittenSectorAddrFields == 0x0000 && TrackState == TS_GAP1)
 			g_DbgGap1Size++;
+		else if (g_bmWrittenSectorAddrFields == 0x0001 && TrackState == TS_GAP2)
+			g_DbgGap2Size++;	// Only count Gap2 after sector0 Addr Field (assume other inter-sectors gap2's have same count)
 		else if (g_bmWrittenSectorAddrFields == 0x0001 && TrackState == TS_GAP3)
 			g_DbgGap3Size++;	// Only count Gap3 between sector0 & 1 (assume other inter-sectors gap3's have same count)
 		return false;
@@ -1010,11 +1021,11 @@ static bool DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite, bool bReset/*=fal
 	}
 
 #if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	if (uLast3Bytes == 0xDEAAEB && bIsWrite)	// NB. bWrite, as reads could start reading any anywhere
+	if (uLast3Bytes == 0xDEAAEB && bIsWrite)	// NB. bIsWrite, as reads could start reading any anywhere
 	{
 		if (TrackState == TS_ADDRFIELD)
 		{
-			TrackState = TS_GAP2;
+			TrackState = TS_GAP2_START;
 		}
 		else // TrackState == TS_DATAFIELD
 		{
@@ -1045,35 +1056,33 @@ static UINT g_uSyncFFCount = 0;
 
 static bool LogWriteCheckSyncFF(BYTE floppylatch, DWORD spinning, ULONG& uCycleDelta)
 {
-	uCycleDelta = 0;
 	bool bIsSyncFF = false;
 
-	if (!enhancedisk && spinning)
+	if (g_uWriteLastCycle == 0)	// Reset to 0 when write mode is enabled
 	{
-		if (g_uWriteLastCycle == 0)	// Reset to 0 when write mode is enabled
+		uCycleDelta = 0;
+		if (floppylatch == 0xFF)
 		{
-			// NB. uCycleDelta == 0
-			if (floppylatch == 0xFF)
-			{
-				g_uSyncFFCount = 0;
-				bIsSyncFF = true;
-			}
+			g_uSyncFFCount = 0;
+			bIsSyncFF = true;
 		}
-		else
+	}
+	else
+	{
+		uCycleDelta = (ULONG) (g_nCumulativeCycles - g_uWriteLastCycle);
+		if (floppylatch == 0xFF && uCycleDelta > 32)
 		{
-			uCycleDelta = (ULONG) (g_nCumulativeCycles - g_uWriteLastCycle);
-			if (floppylatch == 0xFF && uCycleDelta > 32)
-			{
-				g_uSyncFFCount++;
-				bIsSyncFF = true;
-			}
+			g_uSyncFFCount++;
+			bIsSyncFF = true;
 		}
-		g_uWriteLastCycle = g_nCumulativeCycles;
 	}
 
+	g_uWriteLastCycle = g_nCumulativeCycles;
 	return bIsSyncFF;
 }
 #endif
+
+//===========================================================================
 
 static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
 {
@@ -1091,9 +1100,10 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 
 	// Improve precision of "authentic" drive mode - GH#125
 	UINT uSpinNibbleCount = 0;
+	CpuCalcCycles(nCyclesLeft);	// g_nCumulativeCycles required for uSpinNibbleCount & LogWriteCheckSyncFF()
+
 	if (!enhancedisk && fptr->spinning)
 	{
-		CpuCalcCycles(nCyclesLeft);
 		const ULONG nCycleDiff = (ULONG) (g_nCumulativeCycles - g_uDiskLastCycle);
 		g_uDiskLastCycle = g_nCumulativeCycles;
 
@@ -1191,7 +1201,7 @@ void DiskReset(const bool bIsPowerCycle/*=false*/)
 		g_aFloppyDisk[DRIVE_2].spinning   = 0;
 		g_aFloppyDisk[DRIVE_2].writelight = 0;
 
-		FrameRefreshStatus(DRAW_LEDS,false);
+		FrameRefreshStatus(DRAW_LEDS, false);
 	}
 }
 
@@ -1300,12 +1310,11 @@ static void __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCy
 #if LOG_DISK_NIBBLES_WRITE
 	g_uWriteLastCycle = 0;
 #endif
+
 	g_aFloppyDisk[currdrive].writelight = WRITELIGHT_CYCLES;
+
 	if (modechange)
-	{
-		//FrameRefreshStatus(DRAW_LEDS);
 		FrameDrawDiskLEDS( (HDC)0 );
-	}
 }
 
 //===========================================================================
@@ -1385,7 +1394,7 @@ bool DiskDriveSwap(void)
 	Disk_SaveLastDiskImage(DRIVE_1);
 	Disk_SaveLastDiskImage(DRIVE_2);
 
-	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, false );
+	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, false);
 
 	return true;
 }
