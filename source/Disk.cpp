@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Various
  *
- * In comments, UTA2E is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
+ * In comments, UTAIIe is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
  */
 
 #include "StdAfx.h"
@@ -127,6 +127,9 @@ static void ReadTrack (int drive);
 static void RemoveDisk (int drive);
 static void WriteTrack (int drive);
 static LPCTSTR DiskGetFullPathName(const int iDrive);
+
+#define SPINNING_CYCLES (20000*64)		// 1280000 cycles = 1.25s
+#define WRITELIGHT_CYCLES (20000*64)	// 1280000 cycles = 1.25s
 
 //===========================================================================
 
@@ -233,7 +236,7 @@ static void CheckSpinning(void)
 	DWORD modechange = (floppymotoron && !g_aFloppyDisk[currdrive].spinning);
 
 	if (floppymotoron)
-		g_aFloppyDisk[currdrive].spinning = 20000;
+		g_aFloppyDisk[currdrive].spinning = SPINNING_CYCLES;
 
 	if (modechange)
 		//FrameRefreshStatus(DRAW_LEDS);
@@ -317,14 +320,23 @@ static void ReadTrack(const int iDrive)
 
 //===========================================================================
 
+void DiskFlushCurrentTrack(const int iDrive)
+{
+	Disk_t *pFloppy = &g_aFloppyDisk[iDrive];
+
+	if (pFloppy->trackimage && pFloppy->trackimagedirty)
+		WriteTrack(iDrive);
+}
+
+//===========================================================================
+
 static void RemoveDisk(const int iDrive)
 {
 	Disk_t *pFloppy = &g_aFloppyDisk[iDrive];
 
 	if (pFloppy->imagehandle)
 	{
-		if (pFloppy->trackimage && pFloppy->trackimagedirty)
-			WriteTrack( iDrive);
+		DiskFlushCurrentTrack(iDrive);
 
 		ImageClose(pFloppy->imagehandle);
 		pFloppy->imagehandle = NULL;
@@ -439,10 +451,7 @@ static void __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG u
 														: MIN(nNumTracksInImage-1, fptr->phase >> 1); // (round half tracks down)
 		if (newtrack != fptr->track)
 		{
-			if (fptr->trackimage && fptr->trackimagedirty)
-			{
-				WriteTrack(currdrive);
-			}
+			DiskFlushCurrentTrack(currdrive);
 			fptr->track          = newtrack;
 			fptr->trackimagedata = 0;
 		}
@@ -789,7 +798,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		return;
 	}
 
-	// Should really test for drive off - after 1 second drive off delay (UTA2E page 9-13)
+	// Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
 	// but Sherwood Forest sets shift mode and reads with the drive off, so don't check for now
 	if (!floppywritemode)
 	{
@@ -811,19 +820,29 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	// https://github.com/AppleWin/AppleWin/issues/201
 	// NB. Prevent flooding of forcing UI to redraw!!!
 	if( ((fptr->byte) & 0xFF) == 0 )
-		FrameDrawDiskStatus( (HDC)0 ); 
+		FrameDrawDiskStatus( (HDC)0 );
 }
 
 //===========================================================================
 
-void DiskReset(void)
+void DiskReset(const bool bIsPowerCycle/*=false*/)
 {
-	// RESET forces all switches off (UTA2E Table 9.1)
+	// RESET forces all switches off (UTAIIe Table 9.1)
 	currdrive = 0;
 	floppymotoron = 0;
 	floppyloadmode = 0;
 	floppywritemode = 0;
 	phases = 0;
+
+	if (bIsPowerCycle)	// GH#460
+	{
+		g_aFloppyDisk[DRIVE_1].spinning   = 0;
+		g_aFloppyDisk[DRIVE_1].writelight = 0;
+		g_aFloppyDisk[DRIVE_2].spinning   = 0;
+		g_aFloppyDisk[DRIVE_2].writelight = 0;
+
+		FrameRefreshStatus(DRAW_LEDS,false);
+	}
 }
 
 //===========================================================================
@@ -879,9 +898,9 @@ static bool DiskSelectImage(const int iDrive, LPCSTR pszFilename)
 
 //===========================================================================
 
-void DiskSelect(const int iDrive)
+bool DiskSelect(const int iDrive)
 {
-	DiskSelectImage(iDrive, TEXT(""));
+	return DiskSelectImage(iDrive, TEXT(""));
 }
 
 //===========================================================================
@@ -890,11 +909,11 @@ static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, U
 	/* floppyloadmode = 1; */
 	if (!write)
 	{
-		// Should really test for drive off - after 1 second drive off delay (UTA2E page 9-13)
+		// Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
 		// but Gemstone Warrior sets load mode with the drive off, so don't check for now
 		if (!floppywritemode)
 		{
-			// Phase 1 on also forces write protect in the Disk II drive (UTA2E page 9-7) but we don't implement that
+			// Phase 1 on also forces write protect in the Disk II drive (UTAIIe page 9-7) but we don't implement that
 			if (g_aFloppyDisk[currdrive].bWriteProtected)
 				floppylatch |= 0x80;
 			else
@@ -916,7 +935,7 @@ static void __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCy
 {
 	floppywritemode = 1;
 	BOOL modechange = !g_aFloppyDisk[currdrive].writelight;
-	g_aFloppyDisk[currdrive].writelight = 20000;
+	g_aFloppyDisk[currdrive].writelight = WRITELIGHT_CYCLES;
 	if (modechange)
 	{
 		//FrameRefreshStatus(DRAW_LEDS);
@@ -934,7 +953,7 @@ void DiskUpdatePosition(DWORD cycles)
 		Disk_t * fptr = &g_aFloppyDisk[loop];
 
 		if (fptr->spinning && !floppymotoron) {
-			if (!(fptr->spinning -= MIN(fptr->spinning, (cycles >> 6))))
+			if (!(fptr->spinning -= MIN(fptr->spinning, cycles)))
 			{
 				// FrameRefreshStatus(DRAW_LEDS);
 				FrameDrawDiskLEDS( (HDC)0 );
@@ -944,11 +963,11 @@ void DiskUpdatePosition(DWORD cycles)
 
 		if (floppywritemode && (currdrive == loop) && fptr->spinning)
 		{
-			fptr->writelight = 20000;
+			fptr->writelight = WRITELIGHT_CYCLES;
 		}
 		else if (fptr->writelight)
 		{
-			if (!(fptr->writelight -= MIN(fptr->writelight, (cycles >> 6))))
+			if (!(fptr->writelight -= MIN(fptr->writelight, cycles)))
 			{
 				//FrameRefreshStatus(DRAW_LEDS);
 				FrameDrawDiskLEDS( (HDC)0 );
@@ -972,8 +991,36 @@ void DiskUpdatePosition(DWORD cycles)
 bool DiskDriveSwap(void)
 {
 	// Refuse to swap if either Disk][ is active
+	// TODO: if Shift-Click then FORCE drive swap to bypass message
 	if(g_aFloppyDisk[0].spinning || g_aFloppyDisk[1].spinning)
-		return false;
+	{
+		// 1.26.2.4 Prompt when trying to swap disks while drive is on instead of silently failing
+		int status = MessageBox(
+			g_hFrameWindow,
+			"WARNING:\n"
+				"\n"
+				"\tAttempting to swap a disk while a drive is on\n"
+				"\t\t--> is NOT recommended <--\n"
+				"\tas this will most likely read/write incorrect data!\n"
+				"\n"
+				"If the other drive is empty then swapping is harmless. The"
+				" computer will appear to 'hang' trying to read non-existent data but"
+				" you can safely swap disks once more to restore the original disk.\n"
+				"\n"
+				"Do you still wish to swap disks?",
+			"Trying to swap a disk while a drive is on ...",
+			MB_ICONWARNING | MB_YESNOCANCEL
+		);
+
+		switch( status )
+		{
+			case IDNO:
+			case IDCANCEL:
+				return false;
+			default:
+				break; // User is OK with swapping disks so let them proceed at their own risk
+		}
+	}
 
 	// Swap disks between drives
 	// . NB. We swap trackimage ptrs (so don't need to swap the buffers' data)
@@ -1052,7 +1099,7 @@ static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft); break;
 	}
 
-	// only even addresses return the latch (UTA2E Table 9.1)
+	// only even addresses return the latch (UTAIIe Table 9.1)
 	if (!(addr & 1))
 		return floppylatch;
 	else

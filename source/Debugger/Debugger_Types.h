@@ -256,7 +256,7 @@
 
 		MAX_ARGS        = 32, // was 40
 		ARG_SYNTAX_ERROR= -1,
-		MAX_ARG_LEN     = 56, // was 12, extended to allow font names
+		MAX_ARG_LEN     = 127, // extended to allow font names, GH#481, any value is good > CONSOLE_WIDTH=80
 	};
 
 	// NOTE: All Commands return flags of what needs to be redrawn
@@ -1049,8 +1049,11 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 	{
 		OPCODE_BRA     = 0x80,
 
+		OPCODE_BRK     = 0x00,
 		OPCODE_JSR     = 0x20,
+		OPCODE_RTI     = 0x40,
 		OPCODE_JMP_A   = 0x4C, // Absolute
+		OPCODE_RTS     = 0x60,
 		OPCODE_JMP_NA  = 0x6C, // Indirect Absolute
 		OPCODE_JMP_IAX = 0x7C, // Indexed (Absolute Indirect, X)
 
@@ -1101,9 +1104,11 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 	extern const          int _6502_BRANCH_POS      ;//= +127
 	extern const          int _6502_BRANCH_NEG      ;//= -128
 	extern const unsigned int _6502_ZEROPAGE_END    ;//= 0x00FF;
+	extern const unsigned int _6502_STACK_BEGIN     ;//= 0x0100;
 	extern const unsigned int _6502_STACK_END       ;//= 0x01FF;
 	extern const unsigned int _6502_IO_BEGIN        ;//= 0xC000;
 	extern const unsigned int _6502_IO_END          ;//= 0xC0FF;
+	extern const unsigned int _6502_BRK_VECTOR      ;//= 0xFFFE;
 	extern const unsigned int _6502_MEM_BEGIN       ;//= 0x0000;
 	extern const unsigned int _6502_MEM_END         ;//= 0xFFFF;
 
@@ -1254,7 +1259,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 	struct Arg_t
 	{	
-		char       sArg[ MAX_ARG_LEN ]; // Array chars comes first, for alignment
+		char       sArg[ MAX_ARG_LEN+1 ]; // Array chars comes first, for alignment, GH#481 echo 55 char limit
 		int        nArgLen; // Needed for TextSearch "ABC\x00"
 		WORD       nValue ; // 2
 //		WORD       nVal1  ; // 2
@@ -1314,6 +1319,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 // Disasm
 	, _PARAM_CONFIG_BEGIN = _PARAM_REGS_END // Daisy Chain
 		, PARAM_CONFIG_BRANCH = _PARAM_CONFIG_BEGIN // g_iConfigDisasmBranchType   [0|1|2]
+		, PARAM_CONFIG_CLICK   // g_bConfigDisasmClick        [0..7] // GH#462
 		, PARAM_CONFIG_COLON   // g_bConfigDisasmAddressColon [0|1]
 		, PARAM_CONFIG_OPCODE  // g_bConfigDisasmOpcodesView  [0|1]
 		, PARAM_CONFIG_POINTER // g_bConfigInfoTargetPointer  [0|1]

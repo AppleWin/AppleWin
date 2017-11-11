@@ -2,6 +2,7 @@
 
 #include "../../source/Applewin.h"
 #include "../../source/CPU.h"
+#include "../../source/Memory.h"
 
 // From Applewin.cpp
 bool g_bFullSpeed = false;

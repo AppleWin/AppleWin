@@ -420,6 +420,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("N")          , NULL, PARAM_FLAG_N         }, // 1--- ---- Sign
 // Disasm
 		{TEXT("BRANCH")     , NULL, PARAM_CONFIG_BRANCH  },
+		{TEXT("CLICK")      , NULL, PARAM_CONFIG_CLICK   }, // GH#462
 		{TEXT("COLON")      , NULL, PARAM_CONFIG_COLON   },
 		{TEXT("OPCODE")     , NULL, PARAM_CONFIG_OPCODE  },
 		{TEXT("POINTER")    , NULL, PARAM_CONFIG_POINTER },

@@ -429,9 +429,9 @@ static bool HD_SelectImage(const int iDrive, LPCSTR pszFilename)
 	return bRes;
 }
 
-void HD_Select(const int iDrive)
+bool HD_Select(const int iDrive)
 {
-	HD_SelectImage(iDrive, TEXT(""));
+	return HD_SelectImage(iDrive, TEXT(""));
 }
 
 void HD_Unplug(const int iDrive)
@@ -448,8 +448,8 @@ bool HD_IsDriveUnplugged(const int iDrive)
 //-----------------------------------------------------------------------------
 
 #define DEVICE_OK				0x00
-#define DEVICE_UNKNOWN_ERROR	0x03
-#define DEVICE_IO_ERROR			0x08
+#define DEVICE_UNKNOWN_ERROR	0x28
+#define DEVICE_IO_ERROR			0x27
 
 static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
 {

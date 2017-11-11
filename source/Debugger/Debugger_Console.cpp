@@ -147,7 +147,6 @@ bool ConsolePrint ( const char * pText )
 			{
 				g_nConsoleBuffer++;
 			}							
-			pSrc++;
 			pDst = & g_aConsoleBuffer[ g_nConsoleBuffer ][ 0 ];
 		}
 		else

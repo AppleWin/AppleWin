@@ -134,6 +134,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static bgra_t *g_pVideoAddress = 0;
 	static bgra_t *g_pScanLines[VIDEO_SCANNER_Y_DISPLAY*2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
 
+	static const UINT g_kFrameBufferWidth = GetFrameBufferWidth();
+
 	static unsigned (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
 
 	typedef void (*UpdateScreenFunc_t)(long);
@@ -486,19 +488,19 @@ inline uint32_t getScanlineColor( const uint16_t signal, const bgra_t *pTable )
 //===========================================================================
 inline uint32_t* getScanlineNext1Address()
 {
-	return (uint32_t*) (g_pVideoAddress - 1*FRAMEBUFFER_W);
+	return (uint32_t*) (g_pVideoAddress - 1*g_kFrameBufferWidth);
 }
 
 //===========================================================================
 inline uint32_t* getScanlinePrev1Address()
 {
-	return (uint32_t*) (g_pVideoAddress + 1*FRAMEBUFFER_W);
+	return (uint32_t*) (g_pVideoAddress + 1*g_kFrameBufferWidth);
 }
 
 //===========================================================================
 inline uint32_t* getScanlinePrev2Address()
 {
-	return (uint32_t*) (g_pVideoAddress + 2*FRAMEBUFFER_W);
+	return (uint32_t*) (g_pVideoAddress + 2*g_kFrameBufferWidth);
 }
 
 //===========================================================================
@@ -1470,8 +1472,6 @@ void NTSC_SetVideoTextMode( int cols )
 //===========================================================================
 void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 {
-	int h = g_nVideoClockHorz;
-
 	g_nVideoMixed   = uVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = VideoGetSWAltCharSet() ? 1 : 0;
 
@@ -1618,7 +1618,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	updateMonochromeTables( 0xFF, 0xFF, 0xFF );
 
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
-		g_pScanLines[y] = (bgra_t*)(g_pFramebufferbits + sizeof(bgra_t) * FRAMEBUFFER_W * ((FRAMEBUFFER_H - 1) - y - BORDER_H) + (sizeof(bgra_t) * BORDER_W));
+		g_pScanLines[y] = (bgra_t*)(g_pFramebufferbits + sizeof(bgra_t) * GetFrameBufferWidth() * ((GetFrameBufferHeight() - 1) - y - GetFrameBufferBorderHeight()) + (sizeof(bgra_t) * GetFrameBufferBorderWidth()));
 
 	g_pVideoAddress = g_pScanLines[0];
 
@@ -1781,7 +1781,16 @@ void NTSC_VideoRedrawWholeScreen( void )
 	const uint16_t currVideoClockHorz = g_nVideoClockHorz;
 #endif
 
+	// (GH#405) For full-speed: whole screen updates will occur periodically
+	// . The V/H pos will have been recalc'ed, so won't be continuous from previous (whole screen) update
+	// . So the redraw must start at H-pos=0 & with the usual reinit for the start of a new line
+	const uint16_t horz = g_nVideoClockHorz;
+	g_nVideoClockHorz = 0;
+	updateVideoScannerAddress();
+
 	VideoUpdateCycles(VIDEO_SCANNER_6502_CYCLES);
+
+	VideoUpdateCycles(horz);	// Finally update to get to correct H-pos
 
 #ifdef _DEBUG
 	_ASSERT(currVideoClockVert == g_nVideoClockVert);

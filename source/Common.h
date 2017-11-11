@@ -20,6 +20,7 @@ const DWORD dwClksPerFrame			= uCyclesPerLine * uLinesPerFrame;	// 17030
 #define  MIN(a,b)          (((a) < (b)) ? (a) : (b))
 
 #define  RAMWORKS			// 8MB RamWorks III support
+//#define  SATURN				// SATURN 128K
 
 // Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 // Assume base freqs are 44.1KHz & 48KHz
@@ -74,15 +75,18 @@ enum AppMode_e
 #define  REGVALUE_CPU_TYPE           "CPU Type"
 #define  REGVALUE_OLD_APPLE2_TYPE    "Computer Emulation"	// Deprecated
 #define  REGVALUE_CONFIRM_REBOOT     "Confirm Reboot" // Added at 1.24.1 PageConfig
+#define  REGVALUE_FS_SHOW_SUBUNIT_STATUS "Full-screen show subunit status"
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
 #define  REGVALUE_HDD_ENABLED        "Harddisk Enable"
-#define  REGVALUE_JOYSTICK0_EMU_TYPE	"Joystick0 Emu Type"	// Added at 1.24.0 (previously was "Joystick 0 Emulation")
-#define  REGVALUE_JOYSTICK1_EMU_TYPE	"Joystick1 Emu Type"	// Added at 1.24.0 (previously was "Joystick 1 Emulation")
-#define  REGVALUE_OLD_JOYSTICK0_EMU_TYPE	"Joystick 0 Emulation"	// Deprecated from 1.24.0
-#define  REGVALUE_OLD_JOYSTICK1_EMU_TYPE	"Joystick 1 Emulation"	// Deprecated from 1.24.0
+#define  REGVALUE_JOYSTICK0_EMU_TYPE		"Joystick0 Emu Type v3"	// GH#434: Added at 1.26.3.0 (previously was "Joystick0 Emu Type")
+#define  REGVALUE_JOYSTICK1_EMU_TYPE		"Joystick1 Emu Type v3"	// GH#434: Added at 1.26.3.0 (previously was "Joystick1 Emu Type")
+#define  REGVALUE_OLD_JOYSTICK0_EMU_TYPE2	"Joystick0 Emu Type"	// GH#434: Deprecated from 1.26.3.0 (previously was "Joystick 0 Emulation")
+#define  REGVALUE_OLD_JOYSTICK1_EMU_TYPE2	"Joystick1 Emu Type"	// GH#434: Deprecated from 1.26.3.0 (previously was "Joystick 1 Emulation")
+#define  REGVALUE_OLD_JOYSTICK0_EMU_TYPE1	"Joystick 0 Emulation"	// Deprecated from 1.24.0
+#define  REGVALUE_OLD_JOYSTICK1_EMU_TYPE1	"Joystick 1 Emulation"	// Deprecated from 1.24.0
 #define  REGVALUE_PDL_XTRIM          "PDL X-Trim"
 #define  REGVALUE_PDL_YTRIM          "PDL Y-Trim"
 #define  REGVALUE_SCROLLLOCK_TOGGLE  "ScrollLock Toggle"
@@ -140,9 +144,6 @@ enum AppMode_e
 #define WM_USER_FULLSCREEN	WM_USER+9
 #define VK_SNAPSHOT_TEXT	WM_USER+10 // PrintScreen+Ctrl
 
-// TODO-TC: Refactor codebase by renaming /nCyclesLeft/ to /uExecutedCycles/
-typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
-
 enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 
 //
@@ -174,16 +175,21 @@ enum eApple2Type {
 					A2TYPE_UNDEFINED,
 					A2TYPE_APPLE2C=APPLE2C_MASK,
 					A2TYPE_APPLE2D=APPLE2D_MASK,
-					//
-					// Clones start here:
+
+					// ][ clones start here:
 					A2TYPE_CLONE=APPLECLONE_MASK,
-					A2TYPE_PRAVETS=APPLECLONE_MASK,
-					A2TYPE_PRAVETS82=A2TYPE_PRAVETS,				// Apple ][ clone
 					A2TYPE_PRAVETS8M,								// Apple ][ clone
-					A2TYPE_BAD_PRAVETS82=A2TYPE_PRAVETS|APPLE2E_MASK,	// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
-					A2TYPE_BAD_PRAVETS8M,								// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
+					A2TYPE_PRAVETS82,								// Apple ][ clone
+					// (Gap for more Apple ][ clones)
+					A2TYPE_CLONE_A2_MAX,
+
+					// //e clones start here:
+					A2TYPE_CLONE_A2E=A2TYPE_CLONE|APPLE2E_MASK,
+					A2TYPE_BAD_PRAVETS82=A2TYPE_CLONE|APPLE2E_MASK,	// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
+					A2TYPE_BAD_PRAVETS8M,							// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
 					A2TYPE_PRAVETS8A,								// Apple //e clone
 					A2TYPE_TK30002E,								// Apple //e enhanced clone
+					// (Gap for more Apple //e clones)
 					A2TYPE_MAX
 				};
 
@@ -206,3 +212,5 @@ inline bool IsOriginal2E(void)
 enum eBUTTON {BUTTON0=0, BUTTON1};
 
 enum eBUTTONSTATE {BUTTON_UP=0, BUTTON_DOWN};
+
+enum {IDEVENT_TIMER_MOUSE=1, IDEVENT_TIMER_100MSEC};

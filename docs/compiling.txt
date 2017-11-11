@@ -1,6 +1,45 @@
 How To Compile/Build AppleWin
 =============================
 
+MSVC 2017 Community
+===================
+
+1. Install [.NET Framework 4.6](https://www.microsoft.com/en-us/download/details.aspx?id=48137)
+
+  NOTE: The installer _will still_ complain about 4.6 even if [4.6.2](http://www.microsoft.com/en-us/download/details.aspx?id=53344) is installed.
+)
+
+2. MSVC 2017 Community Edition
+
+  a. Install [MSVC 2017 Community](https://www.visualstudio.com/thank-you-downloading-visual-studio/?sku=Community&rel=15)
+  b. Run `vs_Community.exe`
+  c. `Individual Components`
+
+  NOTE: Not all of these may be required but they are recommended:
+
+
+  * [x] .NET Framework 4.6.1 SDK
+  * [x] .NET Framework 4.6.1 targeting pack
+  * [x] C++ profiling tools
+  * [x] C++/CLI support
+  * [x] Git for Windows
+  * [x] Graphics Tools Windows 8.1 SDK
+  * [x] Graphics debugger and GPU profiler for DirectX
+  * [x] Static analysis tools
+  * [x] VC++ 2017 v141 toolset (x86,x64)
+  * [x] Visual Studio C++ core features
+  * [x] Windows 8.1 SDK
+  * [x] Windows 10 SDK (10.0.15063.0) for Desktop C++ x86 and x64
+  * [x] Windows 10 SDK (10.0.15063.0) for UWP: C#, VB, JS
+  * [x] Windows 10 SDK (10.0.15063.0) for UWP: C++
+
+3. Clone the repository
+
+   git clone https://github.com/AppleWin/AppleWin.git
+
+Older MSVC instructions
+=======================
+
 0. Install git
 
 1. Clone the repository
@@ -19,3 +58,42 @@ How To Compile/Build AppleWin
    The default path is:
     C:\Program Files (x86)\Microsoft DirectX SDK (February 2010)\Lib\x86
 
+
+
+
+How to do a Coverity Scan of AppleWin
+=====================================
+
+1. Download Coverity Scan Self-Build:
+   https://scan.coverity.com/download?tab=cxx
+
+   Unzip and add the bin directory to your path
+
+2. Launch VS2008 Express / Professional
+
+3. Tools -> Visual Studio 2008 Command Prompt
+
+VS 2008 Express:
+----------------
+
+4. Set env vars:
+set include=%include%;<DirectX SDK 9.0 SDK include path>
+set lib=%lib%;<DirectX SDK 9.0 SDK lib path>
+
+EG:
+   set include=%include%;C:\Program Files (x86)\Microsoft DirectX SDK (February 2010)\Include
+   set lib=%lib%;C:\Program Files (x86)\Microsoft DirectX SDK (February 2010)\Lib\x86
+
+5. Clean & build:
+vcbuild /clean AppleWinExpress2008.sln "Release|Win32"
+cov-build --dir cov-int vcbuild /u AppleWinExpress2008.sln "Release|Win32"
+
+VS 2008 Professional:
+---------------------
+
+4. Set env vars:
+N/A
+
+5. Clean & build:
+devenv AppleWinExpress2008.sln /clean
+cov-build --dir cov-int devenv AppleWinExpress2008.sln /build release

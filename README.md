@@ -17,7 +17,7 @@ To compile from source see:
 
 Next Version
 ============
-Experimental build [1.26.2.2](https://github.com/AppleWin/AppleWin/releases/tag/v1.26.2.2)
+Experimental build [1.26.3.1](https://github.com/AppleWin/AppleWin/releases/tag/v1.26.3.1)
 
 Please report [new issues](https://github.com/AppleWin/AppleWin/issues/new)
 

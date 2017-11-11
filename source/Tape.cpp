@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Various
  *
- * In comments, UTA2E is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
+ * In comments, UTAIIe is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
  */
 
 #include "StdAfx.h"
@@ -78,7 +78,7 @@ BYTE __stdcall TapeRead(WORD, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
 		return C060;
 	}
 	
-	return MemReadFloatingBus(1, nCyclesLeft); // TAPEIN has high bit 1 when input is low or not connected (UTA2E page 7-5, 7-6)
+	return MemReadFloatingBus(1, nCyclesLeft); // TAPEIN has high bit 1 when input is low or not connected (UTAIIe page 7-5, 7-6)
 }
 
 /*

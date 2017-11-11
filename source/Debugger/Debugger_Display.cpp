@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define DEBUG_FORCE_DISPLAY 0
 
 #define SOFTSWITCH_OLD 0
+#define SOFTSWITCH_LANGCARD 1
 
 #if _DEBUG
 	#define DEBUG_FONT_NO_BACKGROUND_CHAR      0
@@ -538,7 +539,7 @@ HDC GetDebuggerMemDC(void)
 	{
 		HDC hFrameDC = FrameGetDC();
 		g_hDebuggerMemDC = CreateCompatibleDC(hFrameDC);
-		g_hDebuggerMemBM = CreateCompatibleBitmap(hFrameDC, FRAMEBUFFER_W, FRAMEBUFFER_H);
+		g_hDebuggerMemBM = CreateCompatibleBitmap(hFrameDC, GetFrameBufferWidth(), GetFrameBufferHeight());
 		SelectObject(g_hDebuggerMemDC, g_hDebuggerMemBM);
 	}
 
@@ -562,8 +563,8 @@ void StretchBltMemToFrameDC(void)
 	int nViewportCX, nViewportCY;
 	GetViewportCXCY(nViewportCX, nViewportCY);
 
-	int xdest = GetFullScreenOffsetX();
-	int ydest = GetFullScreenOffsetY();
+	int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
+	int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
 	int wdest = nViewportCX;
 	int hdest = nViewportCY;
 
@@ -573,7 +574,7 @@ void StretchBltMemToFrameDC(void)
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerMemDC(),									// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		FRAMEBUFFER_BORDERLESS_W, FRAMEBUFFER_BORDERLESS_H,	// int nWidthSrc,    int nHeightSrc,
+		GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),	// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
 }
@@ -1027,7 +1028,7 @@ char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
 	return nChar;
 }
 
-void ColorizeFlags( bool bSet )
+void ColorizeFlags( bool bSet, int bg_default = BG_INFO, int fg_default = FG_INFO_TITLE )
 {
 	if (bSet)
 	{
@@ -1036,8 +1037,8 @@ void ColorizeFlags( bool bSet )
 	}
 	else
 	{
-		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
-		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+		DebuggerSetColorBG( DebuggerGetColor( bg_default ));
+		DebuggerSetColorFG( DebuggerGetColor( fg_default ));
 	}
 }
 
@@ -1505,10 +1506,11 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 
 		// Indirect / Indexed
 			int nTargetPartial;
+			int nTargetPartial2;
 			int nTargetPointer;
 			WORD nTargetValue = 0; // de-ref
 			int nTargetBytes;
-			_6502_GetTargets( nBaseAddress, &nTargetPartial, &nTargetPointer, &nTargetBytes );
+			_6502_GetTargets( nBaseAddress, &nTargetPartial, &nTargetPartial2, &nTargetPointer, &nTargetBytes );
 
 			if (nTargetPointer != NO_6502_TARGET)
 			{
@@ -2720,42 +2722,259 @@ void DrawRegisters ( int line )
 	DrawRegister( line++, sReg[ BP_SRC_REG_S ] , 2, regs.sp, PARAM_REG_SP );
 }
 
+
+// 2.9.0.3
+//===========================================================================
+void _DrawSoftSwitchHighlight( RECT & temp, bool bSet, const char *sOn, const char *sOff, int bg = BG_INFO )
+{
+//	DebuggerSetColorBG( DebuggerGetColor( bg                 ) ); // BG_INFO
+
+	ColorizeFlags( bSet, bg );
+	PrintTextCursorX( sOn, temp );
+
+	DebuggerSetColorBG( DebuggerGetColor( bg                 ) ); // BG_INFO
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
+	PrintTextCursorX( "/", temp );
+
+	ColorizeFlags( !bSet, bg );
+	PrintTextCursorX( sOff, temp );
+}
+
+
+// 2.9.0.8
+//===========================================================================
+void _DrawSoftSwitchAddress( RECT & rect, int nAddress, int bg_default = BG_INFO )
+{
+	char sText[ 4 ] = "";
+
+	DebuggerSetColorBG( DebuggerGetColor( bg_default ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_TARGET ));
+	sprintf( sText, "%02X", (nAddress & 0xFF) );
+	PrintTextCursorX( sText, rect );
+
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
+	PrintTextCursorX( ":", rect );
+}
+
 // 2.7.0.7 Cleaned up display of soft-switches to show address.
 //===========================================================================
-void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char *sOn, char *sOff, const char *sSuffix = NULL )
+void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char *sOn, char *sOff, const char *sSuffix = NULL, int bg_default = BG_INFO )
 {
 	RECT temp = rect;
 	char sText[ 4 ] = "";
 
-	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
-//	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
-	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_TARGET ));
-	sprintf( sText, "%02X", (nAddress & 0xFF) );
-	PrintTextCursorX( sText, temp );
-	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
-	PrintTextCursorX( ":", temp );
+	_DrawSoftSwitchAddress( temp, nAddress, bg_default );
 
-	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 	if( sPrefix )
+	{
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG )); // light blue
 		PrintTextCursorX( sPrefix, temp );
+	}
 
-	ColorizeFlags( bSet );
-	PrintTextCursorX( sOn, temp );
+	// 2.9.0.3
+	_DrawSoftSwitchHighlight( temp, bSet, sOn, sOff, bg_default );
 
-	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
-	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
-	PrintTextCursorX( "/", temp );
-
-	ColorizeFlags( !bSet );
-	PrintTextCursorX( sOff, temp );
-
-	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+	DebuggerSetColorBG( DebuggerGetColor( bg_default    ));
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 	if ( sSuffix )
 		PrintTextCursorX( sSuffix, temp );
 
 	rect.top    += g_nFontHeight;
 	rect.bottom += g_nFontHeight;
+}
+
+// 2.9.0.8
+//===========================================================================
+void _DrawTriStateSoftSwitch( RECT & rect, int nAddress, int iDisplay, int iActive, char *sPrefix, char *sOn, char *sOff, const char *sSuffix = NULL, int bg_default = BG_INFO )
+{
+//	if ((iActive == 0) || (iDisplay == iActive))
+	bool bSet = (iDisplay == iActive);
+
+	if ( bSet )
+		_DrawSoftSwitch( rect, nAddress, bSet, NULL, sOn, sOff, " ", bg_default );
+	else // Main Memory is active, or Bank # is not active
+	{
+		RECT temp = rect;
+		int iBank = (memmode & MF_BANK2)
+			? 2
+			: 1
+			;
+		bool bDisabled = ((iActive == 0) && (iBank == iDisplay));
+
+
+		_DrawSoftSwitchAddress( temp, nAddress, bg_default );
+
+		// TODO: Q. Show which bank we are writing to in red?
+		//       A. No, since we highlight bank 2 or 1, along with R/W
+		DebuggerSetColorBG( DebuggerGetColor( bg_default    ));
+		if( bDisabled )
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE  ) );
+		else
+			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
+
+		PrintTextCursorX( sOn , temp );
+		PrintTextCursorX( "/" , temp );
+
+		ColorizeFlags( bDisabled, bg_default, FG_DISASM_OPERATOR );
+		PrintTextCursorX( sOff, temp );
+
+		DebuggerSetColorBG( DebuggerGetColor( bg_default    ));
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+		PrintTextCursorX( " " , temp );
+
+		rect.top    += g_nFontHeight;
+		rect.bottom += g_nFontHeight;
+	}
+}
+
+/*
+	Debugger: Support LC status and memory
+	https://github.com/AppleWin/AppleWin/issues/406
+
+	Bank2       Bank1       First Access, Second Access
+	-----------------------------------------------
+	C080        C088        Read RAM,     Write protect    MF_HIGHRAM   ~MF_WRITERAM
+	C081        C089        Read ROM,     Write enable    ~MF_HIGHRAM    MF_WRITERAM
+	C082        C08A        Read ROM,     Write protect   ~MF_HIGHRAM   ~MF_WRITERAM
+	C083        C08B        Read RAM,     Write enable     MF_HIGHRAM    MF_WRITERAM
+	c084        C08C        same as C080/C088
+	c085        C08D        same as C081/C089
+	c086        C08E        same as C082/C08A
+	c087        C08F        same as C083/C08B
+	MF_BANK2   ~MF_BANK2
+
+	NOTE: Saturn 128K uses C084 .. C087 and C08C .. C08F to select Banks 0 .. 7 !
+*/
+// 2.9.0.4 Draw Language Card Bank Usage
+// @param iBankDisplay Either 1 or 2
+//===========================================================================
+void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBankDisplay, int bg_default = BG_INFO )
+{
+	int w  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
+	int dx = 8 * w; // "80:L#/M R/W"
+	//                  ^-------^
+
+	rect.right = rect.left + dx;
+
+	// 0 = RAM
+	// 1 = Bank 1
+	// 2 = Bank 2
+	bool bBankWritable = (memmode & MF_WRITERAM) ? 1 : 0;
+	int iBankActive    = (memmode & MF_HIGHRAM)
+		? (memmode & MF_BANK2)
+			? 2
+			: 1
+		: 0
+		;
+	bool bBankOn = (iBankActive == iBankDisplay);
+
+	char sOff[ 4 ] = "M";
+	char sOn [ 4 ] = "B#"; // LC# but one char too wide :-/
+	// C080 LC2
+	// C088 LC1
+	int nAddress = 0xC080 + (8 * (2 - iBankDisplay));
+	sOn[1] = '0' + iBankDisplay;
+
+	// if off then ONLY highlight 'M' but only for the appropiate bank
+	// if on  then do NOT highlight 'M'
+	// if on  then also only highly the ACTIVE bank
+	_DrawTriStateSoftSwitch( rect, nAddress, iBankDisplay, iBankActive, NULL, sOn, sOff, " ", bg_default );
+
+	rect.top    -= g_nFontHeight;
+	rect.bottom -= g_nFontHeight;
+
+	rect.left   += dx;
+	rect.right  += 3*w;
+
+#if defined(RAMWORKS) || defined(SATURN)
+	if (iBankDisplay == 1)
+	{
+		int iActiveBank = -1;
+		char sText[ 4 ] = "?"; // Default to RAMWORKS
+#ifdef RAMWORKS
+		if (g_eMemType == MEM_TYPE_RAMWORKS) { sText[0] = 'r'; iActiveBank = g_uActiveBank; } // RAMWORKS
+#endif
+#ifdef SATURN
+		if (g_eMemType == MEM_TYPE_SATURN  ) { sText[0] = 's'; iActiveBank = g_uSaturnActiveBank; } // SATURN 64K 128K
+#endif // SATURN
+
+		if (iActiveBank >= 0)
+		{
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG )); // light blue
+			PrintTextCursorX( sText, rect );
+
+			sprintf( sText, "%02X", (iActiveBank & 0x7F) );
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
+			PrintTextCursorX( sText, rect );
+		}
+		else
+			PrintTextCursorX( "   ", rect );
+	}
+#endif // SATURN
+
+	if (iBankDisplay == 2)
+	{
+		// [2]/M  R/[W]
+		// [2]/M  [R]/W
+		const char *pOn  = "R";
+		const char *pOff = "W";
+
+		_DrawSoftSwitchHighlight( rect, !bBankWritable, pOn, pOff, bg_default );
+	}
+
+	rect.top    += g_nFontHeight;
+	rect.bottom += g_nFontHeight;
+}
+
+
+/*
+	$C002 W RAMRDOFF  Read enable  main memory from $0200-$BFFF
+	$C003 W RAMDRON   Read enable  aux  memory from $0200-$BFFF
+	$C004 W RAMWRTOFF Write enable main memory from $0200-$BFFF
+	$C005 W RAMWRTON  Write enable aux  memory from $0200-$BFFF
+*/
+// 2.9.0.6
+// GH#406 https://github.com/AppleWin/AppleWin/issues/406
+//===========================================================================
+void _DrawSoftSwitchMainAuxBanks( RECT & rect, int bg_default = BG_INFO )
+{
+	RECT temp = rect;
+	rect.top    += g_nFontHeight;
+	rect.bottom += g_nFontHeight;
+
+
+	/*
+		Ideally, we'd show Read/Write for Main/Aux
+			02:RM/X
+			04:WM/X
+		But we only have 1 line:
+			02:Rm/x Wm/x
+			00:ASC/MOUS
+		Which is one character too much.
+			02:Rm/x Wm/a
+		But we abbreaviate it without the space and color code the Read and Write:
+			02:Rm/xWm/x
+	*/
+
+	int w  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
+	int dx = 7 * w;
+
+	int  nAddress  = 0xC002;
+	bool bMainRead = (memmode & MF_AUXREAD)  ? true : false;
+	bool bAuxWrite = (memmode & MF_AUXWRITE) ? true : false;
+
+	temp.right = rect.left + dx;
+	_DrawSoftSwitch( temp, nAddress, !bMainRead, "R", "m", "x", NULL, BG_DATA_2 );
+
+	temp.top    -= g_nFontHeight;
+	temp.bottom -= g_nFontHeight;
+	temp.left   += dx;
+	temp.right  += 3*w;
+
+	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_BP_S_X )); // FG_INFO_OPCODE )); Yellow
+	DebuggerSetColorBG( DebuggerGetColor( bg_default       ));
+	PrintTextCursorX( "W", temp );
+	_DrawSoftSwitchHighlight( temp, !bAuxWrite, "m", "x", BG_DATA_2 );
 }
 
 
@@ -2849,25 +3068,46 @@ void DrawSoftSwitches( int iSoftSwitch )
 
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
-		PrintTextCursorY( "", rect ); // force print blank line
 
 		// 280/560 HGR
 		// C05E = ON, C05F = OFF
 		bSet = VideoGetSWDHIRES();
 		_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
 
-		// Extended soft switches
-		// C00C = off, C00D = on
-		bSet = !VideoGetSW80COL();
-		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80" );
 
-		// C00E = off, C00F = on
-		bSet = VideoGetSWAltCharSet();
-		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS" ); // ASCII/MouseText
+		// Extended soft switches
+		int bgMemory = BG_DATA_2;
 
 		// C000 = 80STOREOFF, C001 = 80STOREON
 		bSet = !VideoGetSW80STORE();
-		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1" );
+		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1", NULL, bgMemory );
+
+		// C002 .. C005
+		_DrawSoftSwitchMainAuxBanks( rect, bgMemory );
+
+		// C00C = off, C00D = on
+		bSet = !VideoGetSW80COL();
+		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80", NULL, bgMemory );
+
+		// C00E = off, C00F = on
+		bSet = VideoGetSWAltCharSet();
+		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS", NULL, bgMemory ); // ASCII/MouseText
+
+#if SOFTSWITCH_LANGCARD
+		// GH#406 https://github.com/AppleWin/AppleWin/issues/406
+		// 2.9.0.4
+		// Language Card Bank 1/2
+		// See: MemSetPaging()
+
+// LC2
+		DebuggerSetColorBG( DebuggerGetColor( bgMemory )); // BG_INFO_2 -> BG_DATA_2
+		_DrawSoftSwitchLanguageCardBank( rect, 2, bgMemory );
+
+// LC1
+		rect.left = DISPLAY_SOFTSWITCH_COLUMN; // INFO_COL_2;
+		_DrawSoftSwitchLanguageCardBank( rect, 1, bgMemory );
+#endif
+
 #endif // SOFTSWITCH_OLD
 }
 
@@ -2953,8 +3193,10 @@ void DrawTargets ( int line)
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
 
-	int aTarget[2];
-	_6502_GetTargets( regs.pc, &aTarget[0],&aTarget[1], NULL );
+	int aTarget[3];
+	_6502_GetTargets( regs.pc, &aTarget[0],&aTarget[1],&aTarget[2], NULL );
+
+	aTarget[1] = aTarget[2];	// Move down as we only have 2 lines
 
 	RECT rect;
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
@@ -3434,7 +3676,7 @@ void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 		int yStack    = yRegs  + MAX_DISPLAY_REGS_LINES  + 0; // 0
 		int yTarget   = yStack + MAX_DISPLAY_STACK_LINES - 1; // 9
 		int yZeroPage = 16; // yTarget 
-		int ySoft = yZeroPage + (2 * MAX_DISPLAY_ZEROPAGE_LINES) + 1;
+		int ySoft = yZeroPage + (2 * MAX_DISPLAY_ZEROPAGE_LINES) + !SOFTSWITCH_LANGCARD;
 
 		if ((bUpdate & UPDATE_REGS) || (bUpdate & UPDATE_FLAGS))
 			DrawRegisters( yRegs );

@@ -118,10 +118,8 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 			break;
 
 		case IDC_CHECK_CONFIRM_REBOOT:
-			g_bConfirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? 1 : 0;
-			break;
-
 		case IDC_CHECK_HALF_SCAN_LINES:
+		case IDC_CHECK_FS_SHOW_SUBUNIT_STATUS:
 			// Checked in DlgOK()
 			break;
 
@@ -189,6 +187,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE,g_aVideoChoices,g_eVideoType);
 			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, g_uHalfScanLines ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, GetFullScreenShowSubunitStatus() ? BST_CHECKED : BST_UNCHECKED);
 
 			m_PropertySheetHelper.FillComboBox(hWnd,IDC_SERIALPORT, sg_SSC.GetSerialPortChoices(), sg_SSC.GetSerialPort());
 			EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !sg_SSC.IsActive() ? TRUE : FALSE);
@@ -245,22 +244,24 @@ void CPageConfig::DlgOK(HWND hWnd)
 {
 	bool bVideoReinit = false;
 
-	const DWORD newvidtype = (DWORD) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
-	if (g_eVideoType != newvidtype)
+	const DWORD uNewVideoType = (DWORD) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
+	if (g_eVideoType != uNewVideoType)
 	{
-		g_eVideoType = newvidtype;
+		g_eVideoType = uNewVideoType;
 		bVideoReinit = true;
 	}
 
-	const DWORD newHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
-	if (g_uHalfScanLines != newHalfScanLines)
+	const DWORD uNewHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
+	if (g_uHalfScanLines != uNewHalfScanLines)
 	{
-		g_uHalfScanLines = newHalfScanLines;
+		g_uHalfScanLines = uNewHalfScanLines;
 		bVideoReinit = true;
 	}
 
 	if (bVideoReinit)
 	{
+		Config_Save_Video();
+
 		FrameRefreshStatus(DRAW_TITLE, false);
 
 		VideoReinitialize();
@@ -270,15 +271,38 @@ void CPageConfig::DlgOK(HWND hWnd)
 		}
 	}
 
-	REGSAVE(TEXT(REGVALUE_CONFIRM_REBOOT), g_bConfirmReboot);
+	//
 
-	const DWORD newserialport = (DWORD) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
-	sg_SSC.CommSetSerialPort(hWnd, newserialport);
+	const bool bNewFSSubunitStatus = IsDlgButtonChecked(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS) ? true : false;
+	if (GetFullScreenShowSubunitStatus() != bNewFSSubunitStatus)
+	{
+		REGSAVE(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), bNewFSSubunitStatus ? 1 : 0);
+		SetFullScreenShowSubunitStatus(bNewFSSubunitStatus);
+
+		if (IsFullScreen())
+			FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
+	}
+
+	//
+
+	const BOOL bNewConfirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? 1 : 0;
+	if (g_bConfirmReboot != bNewConfirmReboot)
+	{
+		REGSAVE(TEXT(REGVALUE_CONFIRM_REBOOT), bNewConfirmReboot);
+		g_bConfirmReboot = bNewConfirmReboot;
+	}
+
+	//
+
+	const DWORD uNewSerialPort = (DWORD) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
+	sg_SSC.CommSetSerialPort(hWnd, uNewSerialPort);
 	RegSaveString(	TEXT(REG_CONFIG),
 					TEXT(REGVALUE_SERIAL_PORT_NAME),
 					TRUE,
 					sg_SSC.GetSerialPortName() );
-	
+
+	//
+
 	if (IsDlgButtonChecked(hWnd, IDC_AUTHENTIC_SPEED))
 		g_dwSpeed = SPEED_NORMAL;
 	else
@@ -288,8 +312,6 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	REGSAVE(TEXT(REGVALUE_CUSTOM_SPEED), IsDlgButtonChecked(hWnd, IDC_CUSTOM_SPEED));
 	REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
-
-	Config_Save_Video();
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }

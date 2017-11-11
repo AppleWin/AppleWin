@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Various
  *
- * In comments, UTA2E is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
+ * In comments, UTAIIe is an abbreviation for a reference to "Understanding the Apple //e" by James Sather
  */
 
 #include "StdAfx.h"
@@ -57,20 +57,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debugger\DebugDefs.h"
 #include "YamlHelper.h"
 
-// Memory Flag
-#define  MF_80STORE    0x00000001
-#define  MF_ALTZP      0x00000002
-#define  MF_AUXREAD    0x00000004	// RAMRD
-#define  MF_AUXWRITE   0x00000008	// RAMWRT
-#define  MF_BANK2      0x00000010
-#define  MF_HIGHRAM    0x00000020
-#define  MF_HIRES      0x00000040
-#define  MF_PAGE2      0x00000080
-#define  MF_SLOTC3ROM  0x00000100
-#define  MF_SLOTCXROM  0x00000200
-#define  MF_WRITERAM   0x00000400
-#define  MF_IMAGEMASK  0x000003F7
-
 #define  SW_80STORE    (memmode & MF_80STORE)
 #define  SW_ALTZP      (memmode & MF_ALTZP)
 #define  SW_AUXREAD    (memmode & MF_AUXREAD)
@@ -91,7 +77,7 @@ MEMORY MANAGEMENT SOFT SWITCHES
  $C003   W       RAMDRON         Read enable aux memory from $0200-$BFFF
  $C004   W       RAMWRTOFF       Write enable main memory from $0200-$BFFF
  $C005   W       RAMWRTON        Write enable aux memory from $0200-$BFFF
- $C006   W       INTCXROMOFF     Enable slot ROM from $C100-$CFFF
+ $C006   W       INTCXROMOFF     Enable slot ROM from $C100-$C7FF (but $C800-$CFFF depends on INTC8ROM)
  $C007   W       INTCXROMON      Enable main ROM from $C100-$CFFF
  $C008   W       ALTZPOFF        Enable main memory from $0000-$01FF & avl BSR
  $C009   W       ALTZPON         Enable aux memory from $0000-$01FF & avl BSR
@@ -191,7 +177,7 @@ static LPBYTE  memimage     = NULL;
 static LPBYTE	pCxRomInternal		= NULL;
 static LPBYTE	pCxRomPeripheral	= NULL;
 
-static DWORD   memmode      = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM;
+       DWORD   memmode      = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM; // 2.9.0.4 now global as Debugger needs access for LC status info in DrawSoftSwitches()
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 static BOOL    Pravets8charmode = 0;
 
@@ -199,9 +185,17 @@ static CNoSlotClock g_NoSlotClock;
 
 #ifdef RAMWORKS
 UINT			g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
-UINT			g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c
+UINT			g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c -- ALSO RAMWORKS
 static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
+
+#ifdef SATURN
+UINT			g_uSaturnTotalBanks = 0;		// Will be > 0 if Saturn card is "installed"
+UINT			g_uSaturnActiveBank = 0;		// Saturn 128K Language Card Bank 0 .. 7
+static LPBYTE	g_aSaturnPages[8];
+#endif // SATURN
+
+MemoryType_e	g_eMemType = MEM_TYPE_NATIVE;		// 0 = Native memory, 1=RAMWORKS, 2 = SATURN
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
@@ -346,7 +340,7 @@ static BYTE __stdcall IORead_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 {	
 	static byte CurrentKestroke = 0;
 	CurrentKestroke = KeybGetKeycode();
-	switch (addr & 0x7) // address bit 4 is ignored (UTA2E page 7-5)
+	switch (addr & 0x7) // address bit 4 is ignored (UTAIIe page 7-5)
 	{
 	//In Pravets8A/C if SETMODE (8bit character encoding) is enabled, bit6 in $C060 is 0; Else it is 1
 	//If (CAPS lOCK of Pravets8A/C is on or Shift is pressed) and (MODE is enabled), bit7 in $C000 is 1; Else it is 0
@@ -469,8 +463,8 @@ static iofunction IOWrite_C0xx[8] =
 	IOWrite_C07x,		// Joystick/Ramworks
 };
 
-static BYTE IO_SELECT;
-static BYTE IO_SELECT_InternalROM;
+static BYTE IO_SELECT = 0;
+static bool INTC8ROM = false;	// UTAIIe:5-28
 
 static BYTE* ExpansionRom[NUM_SLOTS];
 
@@ -525,19 +519,41 @@ static bool IsCardInSlot(const UINT uSlot);
 // . Enable2 = I/O STROBE' (6502 accesses [$C800..$CFFF])
 
 // TODO:
-// . IO_SELECT and IO_SELECT_InternalROM are sticky - they only getting reset by $CFFF and MemReset()
+// . IO_SELECT and INTC8ROM are sticky - they only getting reset by $CFFF and MemReset()
 // . Check Sather UAIIe, but I assume that a 6502 access to a non-$Csxx (and non-expansion ROM) location will clear IO_SELECT
 
 // NB. ProDOS boot sets IO_SELECT=0x04 (its scan for boot devices?), as slot2 contains a card (ie. SSC) with an expansion ROM.
 
-BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
+//
+// -----------
+// UTAIIe:5-28
+//                       $C100-C2FF
+// INTCXROM(*) SLOTC3ROM $C400-CFFF $C300-C3FF
+//    0           0         slot     internal
+//    0           1         slot       slot
+//    1           0       internal   internal
+//    1           1       internal   internal
+//
+// NB. if (INTCXROM || INTC8ROM) == true then internal ROM
+//
+// (*) SLOTCXROM'
+// -----------
+//
+// INTC8ROM: Unreadable soft switch (UTAIIe:5-28)
+// . Set:   On access to $C3XX with SLOTC3ROM reset
+//			- "From this point, $C800-$CFFF will stay assigned to motherboard ROM until
+//			   an access is made to $CFFF or until the MMU detects a system reset."
+// . Reset: On access to $CFFF or an MMU reset
+//
+
+static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
 {
 	if (address == 0xCFFF)
 	{
 		// Disable expansion ROM at [$C800..$CFFF]
-		// . SSC will disable on an access to $CFxx - but ROM only access $CFFF, so it doesn't matter
+		// . SSC will disable on an access to $CFxx - but ROM only accesses $CFFF, so it doesn't matter
 		IO_SELECT = 0;
-		IO_SELECT_InternalROM = 0;
+		INTC8ROM = false;
 		g_uPeripheralRomSlot = 0;
 
 		if (SW_SLOTCXROM)
@@ -570,12 +586,14 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 				if ((SW_SLOTC3ROM) && ExpansionRom[uSlot])
 					IO_SELECT |= 1<<uSlot;		// Slot3 & Peripheral ROM
 				else if (!SW_SLOTC3ROM)
-					IO_SELECT_InternalROM = 1;	// Slot3 & Internal ROM
+					INTC8ROM = true;			// Slot3 & Internal ROM
 			}
 		}
 		else if ((address >= FIRMWARE_EXPANSION_BEGIN) && (address <= FIRMWARE_EXPANSION_END))
 		{
-			IO_STROBE = 1;
+			if (!INTC8ROM)	// [GH#423] UTAIIe:5-28: if INTCXROM or INTC8ROM is configured for internal response,
+							// then access to $C800-$CFFF results in ROMEN1' low (active) and I/O STROBE' high (inactive)
+				IO_STROBE = 1;
 		}
 
 		//
@@ -602,7 +620,7 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 				g_uPeripheralRomSlot = uSlot;
 			}
 		}
-		else if (IO_SELECT_InternalROM && IO_STROBE && (g_eExpansionRomType != eExpRomInternal))
+		else if (INTC8ROM && (g_eExpansionRomType != eExpRomInternal))
 		{
 			// Enable Internal ROM
 			// . Get this for PR#3
@@ -614,9 +632,17 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 
 	if (IsPotentialNoSlotClockAccess(address))
 	{
-		int data = 0;
-		if (g_NoSlotClock.Read(address, data))
-			return (BYTE) data;
+		if (!write)
+		{
+			int data = 0;
+			if (g_NoSlotClock.Read(address, data))
+				return (BYTE) data;
+		}
+		else
+		{
+			g_NoSlotClock.Write(address);
+			return 0;
+		}
 	}
 
 	if (!IS_APPLE2 && !SW_SLOTCXROM)
@@ -624,12 +650,18 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 		// !SW_SLOTC3ROM = Internal ROM: $C300-C3FF
 		// !SW_SLOTCXROM = Internal ROM: $C100-CFFF
 
-		if ((address >= APPLE_SLOT_BEGIN) && (address <= APPLE_SLOT_END))	// Don't care about state of SW_SLOTC3ROM
-			IO_SELECT_InternalROM = 1;
+		if ((address >= 0xC300) && (address <= 0xC3FF))
+		{
+			if (!SW_SLOTC3ROM)	// GH#423
+				INTC8ROM = true;
+		}
 		else if ((address >= FIRMWARE_EXPANSION_BEGIN) && (address <= FIRMWARE_EXPANSION_END))
-			IO_STROBE = 1;
+		{
+			if (!INTC8ROM)		// GH#423
+				IO_STROBE = 1;
+		}
 
-		if (!SW_SLOTCXROM && IO_SELECT_InternalROM && IO_STROBE && (g_eExpansionRomType != eExpRomInternal))
+		if (INTC8ROM && (g_eExpansionRomType != eExpRomInternal))
 		{
 			// Enable Internal ROM
 			memcpy(mem+FIRMWARE_EXPANSION_BEGIN, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
@@ -657,11 +689,6 @@ BYTE __stdcall IORead_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE v
 		return IO_Null(programcounter, address, write, value, nCyclesLeft);
 
 	return mem[address];
-}
-
-BYTE __stdcall IOWrite_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
-{
-	return IORead_Cxxx(programcounter, address, write, value, nCyclesLeft);	// GH#392
 }
 
 //===========================================================================
@@ -693,8 +720,8 @@ static void InitIoHandlers()
 
 	for (; i<256; i++)	// C10x..CFFx
 	{
-		IORead[i]	= IORead_Cxxx;
-		IOWrite[i]	= IOWrite_Cxxx;
+		IORead[i]	= IO_Cxxx;
+		IOWrite[i]	= IO_Cxxx;
 	}
 
 	//
@@ -702,8 +729,8 @@ static void InitIoHandlers()
 	for (i=0; i<NUM_SLOTS; i++)
 	{
 		g_SlotInfo[i].bHasCard = false;
-		g_SlotInfo[i].IOReadCx = IORead_Cxxx;
-		g_SlotInfo[i].IOWriteCx = IOWrite_Cxxx;
+		g_SlotInfo[i].IOReadCx = IO_Cxxx;
+		g_SlotInfo[i].IOWriteCx = IO_Cxxx;
 		ExpansionRom[i] = NULL;
 	}
 }
@@ -720,8 +747,8 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 	if (uSlot == 0)		// Don't trash C0xx handlers
 		return;
 
-	if (IOReadCx == NULL)	IOReadCx = IORead_Cxxx;
-	if (IOWriteCx == NULL)	IOWriteCx = IOWrite_Cxxx;
+	if (IOReadCx == NULL)	IOReadCx = IO_Cxxx;
+	if (IOWriteCx == NULL)	IOWriteCx = IO_Cxxx;
 
 	for (UINT i=0; i<16; i++)
 	{
@@ -737,28 +764,41 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 	ExpansionRom[uSlot] = pExpansionRom;
 }
 
-// TODO: Support SW_SLOTC3ROM?
+// From UTAIIe:5-28: Since INTCXROM==1 (SLOTCXROM==0) then state of SLOTC3ROM is not important
 static void IoHandlerCardsOut(void)
 {
+	_ASSERT( !SW_SLOTCXROM );	// INTCXROM==1
+
 	for (UINT uSlot=1; uSlot<NUM_SLOTS; uSlot++)
 	{
 		for (UINT i=0; i<16; i++)
 		{
-			IORead[uSlot*16+i]	= IORead_Cxxx;
-			IOWrite[uSlot*16+i]	= IOWrite_Cxxx;
+			IORead[uSlot*16+i]	= IO_Cxxx;
+			IOWrite[uSlot*16+i]	= IO_Cxxx;
 		}
 	}
 }
 
-// TODO: Support SW_SLOTC3ROM?
 static void IoHandlerCardsIn(void)
 {
+	_ASSERT( SW_SLOTCXROM );	// INTCXROM==0
+
 	for (UINT uSlot=1; uSlot<NUM_SLOTS; uSlot++)
 	{
+		iofunction ioreadcx  = g_SlotInfo[uSlot].IOReadCx;
+		iofunction iowritecx = g_SlotInfo[uSlot].IOWriteCx;
+
+		if (uSlot == 3 && !SW_SLOTC3ROM)
+		{
+			// From UTAIIe:5-28: If INTCXROM==0 (SLOTCXROM==1) && SLOTC3ROM==0 Then $C300-C3FF is internal ROM
+			ioreadcx  = IO_Cxxx;
+			iowritecx = IO_Cxxx;
+		}
+
 		for (UINT i=0; i<16; i++)
 		{
-			IORead[uSlot*16+i]	= g_SlotInfo[uSlot].IOReadCx;
-			IOWrite[uSlot*16+i]	= g_SlotInfo[uSlot].IOWriteCx;
+			IORead[uSlot*16+i]	= ioreadcx;
+			IOWrite[uSlot*16+i]	= iowritecx;
 		}
 	}
 }
@@ -873,6 +913,7 @@ static void UpdatePaging(BOOL initialize)
 
 	for (loop = 0xC0; loop < 0xC8; loop++)
 	{
+		memdirty[loop] = 0;	// ROM can't be dirty
 		const UINT uSlotOffset = (loop & 0x0f) * 0x100;
 		if (loop == 0xC3)
 			memshadow[loop] = (SW_SLOTC3ROM && SW_SLOTCXROM)	? pCxRomPeripheral+uSlotOffset	// C300..C3FF - Slot 3 ROM (all 0x00's)
@@ -884,8 +925,10 @@ static void UpdatePaging(BOOL initialize)
 
 	for (loop = 0xC8; loop < 0xD0; loop++)
 	{
+		memdirty[loop] = 0;	// ROM can't be dirty (but STA $CFFF will set the dirty flag)
 		const UINT uRomOffset = (loop & 0x0f) * 0x100;
-		memshadow[loop] = pCxRomInternal+uRomOffset;											// C800..CFFF - Internal ROM
+		memshadow[loop] = (SW_SLOTCXROM && !INTC8ROM)	? pCxRomPeripheral+uRomOffset			// C800..CFFF - Peripheral ROM (GH#486)
+														: pCxRomInternal+uRomOffset;			// C800..CFFF - Internal ROM
 	}
 
 	for (loop = 0xD0; loop < 0xE0; loop++)
@@ -1026,6 +1069,11 @@ void MemDestroy()
 
 //===========================================================================
 
+bool MemCheckSLOTC3ROM()
+{
+	return SW_SLOTC3ROM ? true : false;
+}
+
 bool MemCheckSLOTCXROM()
 {
 	return SW_SLOTCXROM ? true : false;
@@ -1060,7 +1108,7 @@ LPBYTE MemGetAuxPtr(const WORD offset)
 #ifdef RAMWORKS
 	if ( ((SW_PAGE2 && SW_80STORE) || VideoGetSW80COL()) &&
 		( ( ((offset & 0xFF00)>=0x0400) &&
-		((offset & 0xFF00)<=0700) ) ||
+		((offset & 0xFF00)<=0x0700) ) ||
 		( SW_HIRES && ((offset & 0xFF00)>=0x2000) &&
 		((offset & 0xFF00)<=0x3F00) ) ) ) {
 		lpMem = (memshadow[(offset >> 8)] == (RWpages[0]+(offset & 0xFF00)))
@@ -1142,7 +1190,7 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 
 	if (g_eExpansionRomType == eExpRomNull)
 	{
-		if (IO_SELECT || IO_SELECT_InternalROM)	// Was at $Csxx and now in [$C800..$CFFF]
+		if (IO_SELECT || INTC8ROM)	// Was at $Csxx and now in [$C800..$CFFF]
 			return true;
 
 		return false;
@@ -1202,6 +1250,11 @@ void MemInitialize()
 	while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE)))
 		i++;
 #endif
+
+#ifdef SATURN
+	for( UINT iPage = 0; iPage < g_uSaturnTotalBanks; iPage++ )
+		g_aSaturnPages[ iPage ] = (LPBYTE) VirtualAlloc( NULL, 1024 * 16,MEM_COMMIT,PAGE_READWRITE); // Saturn Pages are 16K / bank, Max 8 Banks/Card
+#endif // SATURN
 
 	MemInitializeROM();
 	MemInitializeCustomF8ROM();
@@ -1384,6 +1437,21 @@ void MemInitializeIO(void)
 		IoHandlerCardsOut();
 }
 
+// Called by:
+// . Snapshot_LoadState_v2()
+void MemInitializeCardExpansionRomFromSnapshot(void)
+{
+	const UINT uSlot = g_uPeripheralRomSlot;
+
+	if (ExpansionRom[uSlot] == NULL)
+		return;
+
+	_ASSERT(g_eExpansionRomType == eExpRomPeripheral);
+
+	memcpy(pCxRomPeripheral+0x800, ExpansionRom[uSlot], FIRMWARE_EXPANSION_SIZE);
+	// NB. Copied to /mem/ by UpdatePaging(TRUE)
+}
+
 inline DWORD getRandomTime()
 {
 	return rand() ^ timeGetTime(); // We can't use g_nCumulativeCycles as it will be zero on a fresh execution.
@@ -1408,7 +1476,7 @@ void MemReset()
 
 	// Init the I/O ROM vars
 	IO_SELECT = 0;
-	IO_SELECT_InternalROM = 0;
+	INTC8ROM = false;
 	g_eExpansionRomType = eExpRomNull;
 	g_uPeripheralRomSlot = 0;
 
@@ -1611,22 +1679,65 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	{
 		SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM));
 
-		if (!(address & 8))
-			SetMemMode(memmode | MF_BANK2);
-
-		if (((address & 2) >> 1) == (address & 1))
-			SetMemMode(memmode | MF_HIGHRAM);
-
-		if (address & 1)	// GH#392
+#ifdef SATURN
+/*
+		Bin   Addr.
+		      $C0N0 4K Bank A, RAM read, Write protect
+		      $C0N1 4K Bank A, ROM read, Write enabled
+		      $C0N2 4K Bank A, ROM read, Write protect
+		      $C0N3 4K Bank A, RAM read, Write enabled
+		0100  $C0N4 select 16K Bank 1
+		0101  $C0N5 select 16K Bank 2
+		0110  $C0N6 select 16K Bank 3
+		0111  $C0N7 select 16K Bank 4
+		      $C0N8 4K Bank B, RAM read, Write protect
+		      $C0N9 4K Bank B, ROM read, Write enabled
+		      $C0NA 4K Bank B, ROM read, Write protect
+		      $C0NB 4K Bank B, RAM read, Write enabled
+		1100  $C0NC select 16K Bank 5
+		1101  $C0ND select 16K Bank 6
+		1110  $C0NE select 16K Bank 7
+		1111  $C0NF select 16K Bank 8
+*/
+		if (g_uSaturnTotalBanks)
 		{
-			if (!write && g_bLastWriteRam)
+			if ((address & 7) > 3)
 			{
-				SetMemMode(memmode | MF_WRITERAM); // UTAIIe:5-23
+				g_uSaturnActiveBank = 0 // Saturn 128K Language Card Bank 0 .. 7
+					| (address >> 1) & 4
+					| (address >> 0) & 3
+					;
+
+				// TODO: Update paging()
+
+				goto _done_saturn;
 			}
+
+			// Fall into 16K IO switches
 		}
-		else
+
+#endif // SATURN
 		{
-			SetMemMode(memmode & ~(MF_WRITERAM)); // UTAIIe:5-23
+			// Apple 16K Language Card
+			if (!(address & 8))
+				SetMemMode(memmode | MF_BANK2);
+
+			// C081    C089    Read ROM,     Write enable
+			// C082    C08A    Read ROM,     Write protect
+			if (((address & 2) >> 1) == (address & 1))
+				SetMemMode(memmode | MF_HIGHRAM);
+
+			if (address & 1)	// GH#392
+			{
+				if (!write && g_bLastWriteRam)
+				{
+					SetMemMode(memmode | MF_WRITERAM); // UTAIIe:5-23
+				}
+			}
+			else
+			{
+				SetMemMode(memmode & ~(MF_WRITERAM)); // UTAIIe:5-23
+			}
 		}
 		g_bLastWriteRam = (address & 1) && (!write); // UTAIIe:5-23
 	}
@@ -1664,6 +1775,10 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 		}
 	}
 
+#ifdef SATURN
+_done_saturn:
+#endif // SATURN
+
 	// IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
 	// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
 	// IT DOES SO.
@@ -1688,18 +1803,21 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	{
 		modechanging = 0;
 
-		if ((lastmemmode & MF_SLOTCXROM) != (memmode & MF_SLOTCXROM))
+		// NB. Must check MF_SLOTC3ROM too, as IoHandlerCardsIn() depends on both MF_SLOTCXROM|MF_SLOTC3ROM
+		if ((lastmemmode & (MF_SLOTCXROM|MF_SLOTC3ROM)) != (memmode & (MF_SLOTCXROM|MF_SLOTC3ROM)))
 		{
 			if (SW_SLOTCXROM)
 			{
-				// Disable Internal ROM
-				// . Similar to $CFFF access
-				// . None of the peripheral cards can be driving the bus - so use the null ROM
-				IO_SELECT_InternalROM = 0;	// GH#392
-				memset(pCxRomPeripheral+0x800, 0, FIRMWARE_EXPANSION_SIZE);
-				memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
-				g_eExpansionRomType = eExpRomNull;
-				g_uPeripheralRomSlot = 0;
+				if (!INTC8ROM)	// GH#423
+				{
+					// Disable Internal ROM
+					// . Similar to $CFFF access
+					// . None of the peripheral cards can be driving the bus - so use the null ROM
+					memset(pCxRomPeripheral+0x800, 0, FIRMWARE_EXPANSION_SIZE);
+					memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
+					g_eExpansionRomType = eExpRomNull;
+					g_uPeripheralRomSlot = 0;
+				}
 				IoHandlerCardsIn();
 			}
 			else
@@ -1758,7 +1876,7 @@ void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE*
 #define SS_YAML_KEY_MEMORYMODE "Memory Mode"
 #define SS_YAML_KEY_LASTRAMWRITE "Last RAM Write"
 #define SS_YAML_KEY_IOSELECT "IO_SELECT"
-#define SS_YAML_KEY_IOSELECT_INT "IO_SELECT_InternalROM"
+#define SS_YAML_KEY_IOSELECT_INT "IO_SELECT_InternalROM"	// INTC8ROM
 #define SS_YAML_KEY_EXPANSIONROMTYPE "Expansion ROM Type"
 #define SS_YAML_KEY_PERIPHERALROMSLOT "Peripheral ROM Slot"
 
@@ -1817,7 +1935,7 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, memmode);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, g_bLastWriteRam ? 1 : 0);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT, IO_SELECT);
-		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, IO_SELECT_InternalROM);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, INTC8ROM ? 1 : 0);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_PERIPHERALROMSLOT, g_uPeripheralRomSlot);
 	}
@@ -1833,7 +1951,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	SetMemMode( yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) );
 	g_bLastWriteRam = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
 	IO_SELECT = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT);
-	IO_SELECT_InternalROM = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT_INT);
+	INTC8ROM = yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT_INT) ? true : false;
 	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.LoadUint(SS_YAML_KEY_EXPANSIONROMTYPE);
 	g_uPeripheralRomSlot = yamlLoadHelper.LoadUint(SS_YAML_KEY_PERIPHERALROMSLOT);
 
@@ -1854,6 +1972,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	modechanging = 0;
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
 	UpdatePaging(1);	// Initialize=1 (Still needed, even with call to MemUpdatePaging() - why?)
+						// TC-TODO: At this point, the cards haven't been loaded, so the card's expansion ROM is unknown - so pointless(?) calling this now
 
 	return true;
 }
@@ -1877,8 +1996,8 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 						g_uMaxExPages == 1 ?	SS_YAML_VALUE_CARD_EXTENDED80COL :
 												SS_YAML_VALUE_CARD_RAMWORKSIII;
 	yamlSaveHelper.SaveString(SS_YAML_KEY_CARD, card.c_str());
-	yamlSaveHelper.Save("%s: %02X   # [0,1..7F] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
-	yamlSaveHelper.Save("%s: %02X # [  0..7E] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
+	yamlSaveHelper.Save("%s: 0x%02X   # [0,1..7F] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
+	yamlSaveHelper.Save("%s: 0x%02X # [  0..7E] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
 
 	for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
 	{
