@@ -9,7 +9,7 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.3.2 (Experimental) - 21 Oct 2017
+1.26.3.4 (Experimental) - 12 Nov 2017
 -------------------------------------
 Changes:
 . [Bug #504] Full-screen: hide mouse pointer after 2 seconds of inactivity (and show again if mouse is moved)
