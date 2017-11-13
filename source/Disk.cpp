@@ -1148,8 +1148,8 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	{
 		*(fptr->trackimage + fptr->byte) = floppylatch;
 		fptr->trackimagedirty = 1;
-		bool bIsVTSCValid = DecodeLatchNibble(floppylatch, floppywritemode);
-		UpdateOnWriteLatch(bIsVTSCValid, uSpinNibbleCount, fptr);
+		bool bIsVTSCValid = DecodeLatchNibble(floppylatch, floppywritemode);	// GH#125
+		UpdateOnWriteLatch(bIsVTSCValid, uSpinNibbleCount, fptr);				// GH#125
 
 #if LOG_DISK_NIBBLES_WRITE
   #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR

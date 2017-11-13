@@ -1381,6 +1381,16 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 				return eIMAGE_ERROR_BAD_POINTER;
 
 			ZeroMemory(pImageInfo->pImageBuffer, dwSize);
+
+			if (pImageType->GetType() == eImageNIB1)
+			{
+				// Fill zero-length image buffer with alternating high-bit-set nibbles (GH#196, GH#338)
+				for (UINT i=0; i<dwSize; i+=2)
+				{
+					pImageInfo->pImageBuffer[i+0] = 0x80;	// bit7 set, but 0x80 is an invalid nibble
+					pImageInfo->pImageBuffer[i+1] = 0x81;	// bit7 set, but 0x81 is an invalid nibble
+				}
+			}
 		}
 	}
 
