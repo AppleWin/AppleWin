@@ -110,6 +110,65 @@ static void DisplayBenchmarkResults ()
 }
 
 //=============================================================================
+//
+// DC filtering V2  (Riccardo Macri May 2015)
+//
+// To prevent loud clicks on Window's sound buffer underruns and constant DC
+// being sent out to amplifiers (some soundcards are DC coupled) which is
+// not good for them, an attenuator slowly drops the speaker output
+// to 0 after the speaker (or 8 bit DAC) has been idle for a couple hundred
+// milliseconds.
+//
+// The approach works as follows:
+// - SpkrToggle is called when the speaker state is flipped by reading $C030
+// - This brings audio up to date then calls ResetDCFilter()
+// - ResetDCFilter() sets a counter to a high value
+// - every audio sample is processed by DCFilter() as follows:
+//   - if the counter is >= 32768, the speaker has been recently toggled
+//     and the samples are unaffected
+//   - if the counter is < 32768 but > 0, it is used to scale the
+//     sample to reduce +ve or -ve speaker states towards zero
+//   - In the two cases above, the counter is decremented 
+//   - if the counter is zero, the speaker has been silent for a while
+//     and the output is 0 regardless of the speaker state.
+//
+// - the initial "high value" is chosen so 10000/44100 = about a 
+//   quarter of a second of speaker inactivity is needed before attenuation
+//   begins.
+//
+//   NOTE: The attenuation is not ever reducing the level of audio, just
+//         the DC offset at which the speaker has been left.  
+//
+//  This approach has zero impact on any speaker tones including PWM
+//  due to the samples being unchanged for at least 0.25 seconds after
+//  any speaker activity.
+// 
+
+static int s_dcfilterstate = 0;
+
+inline void  ResetDCFilter()
+{
+ // reset the attenuator with an additional 250ms of full gain
+ // (10000 samples) before it starts attenuating
+
+ s_dcfilterstate = 32768 + 10000;
+}
+
+inline short DCFilter(short sample_in)
+{
+ if (!s_dcfilterstate)             // no sound for a while, stay 0
+  return 0;
+ else
+  if (s_dcfilterstate >= 32768)  // full gain after recent sound
+   {
+    s_dcfilterstate--;
+    return sample_in;
+   }
+  else
+   return (((int)sample_in) * (s_dcfilterstate--)) >> 15;  // scale & divide by 32768
+}
+
+//=============================================================================
 
 static void SetClksPerSpkrSample()
 {
@@ -283,7 +342,7 @@ static void UpdateRemainderBuffer(ULONG* pnCycleDiff)
 			nSampleMean /= (signed long) g_nRemainderBufferSize;
 
 			if(g_nBufferIdx < SPKR_SAMPLE_RATE-1)
-				g_pSpeakerBuffer[g_nBufferIdx++] = (short) nSampleMean;
+                         g_pSpeakerBuffer[g_nBufferIdx++] = DCFilter((short) nSampleMean);
 		}
 	}
 }
@@ -301,7 +360,7 @@ static void UpdateSpkr()
 	  ULONG nCyclesRemaining = (ULONG) ((double)nCycleDiff - (double)nNumSamples * g_fClksPerSpkrSample);
 
 	  while((nNumSamples--) && (g_nBufferIdx < SPKR_SAMPLE_RATE-1))
-		  g_pSpeakerBuffer[g_nBufferIdx++] = g_nSpeakerData;
+           g_pSpeakerBuffer[g_nBufferIdx++] = DCFilter(g_nSpeakerData);
 
 	  ReinitRemainderBuffer(nCyclesRemaining);	// Partially fill 1Mhz sample buffer
   }
@@ -336,21 +395,16 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 
 	  UpdateSpkr();
 
+      short speakerDriveLevel = SPKR_DATA_INIT;
       if (g_bQuieterSpeaker)
-      {
-       // quieten the speaker if 8 bit DAC in use
-       if (g_nSpeakerData == (SPKR_DATA_INIT >> 2))
-        g_nSpeakerData = ~g_nSpeakerData;
+        speakerDriveLevel >>= 2;
+
+      ResetDCFilter();
+
+      if (g_nSpeakerData == speakerDriveLevel)
+        g_nSpeakerData = ~speakerDriveLevel;
        else
-        g_nSpeakerData = SPKR_DATA_INIT>>2;
-      }
-      else
-      {
-       if (g_nSpeakerData == SPKR_DATA_INIT)
-        g_nSpeakerData = ~g_nSpeakerData;
-       else
-        g_nSpeakerData = SPKR_DATA_INIT;
-      }
+        g_nSpeakerData = speakerDriveLevel;
   }
 
   return MemReadFloatingBus(nCyclesLeft);
@@ -558,7 +612,7 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 
 			if(pDSLockedBuffer1 && dwBufferSize1)
 			{
-				memcpy(pDSLockedBuffer1, &pSpeakerBuffer[dwDSLockedBufferSize0/sizeof(short)], dwBufferSize1);
+ 				memcpy(pDSLockedBuffer1, &pSpeakerBuffer[dwDSLockedBufferSize0/sizeof(short)], dwBufferSize1);
 #ifdef RIFF_SPKR
 				RiffPutSamples(pDSLockedBuffer1, dwBufferSize1/sizeof(short));
 #endif
@@ -575,7 +629,7 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 
 			if(dwBufferSize0)
 			{
-				wmemset((wchar_t*)pDSLockedBuffer0, (wchar_t)g_nSpeakerData, dwBufferSize0/sizeof(wchar_t));
+                         wmemset((wchar_t*)pDSLockedBuffer0, (wchar_t)DCFilter(g_nSpeakerData), dwBufferSize0/sizeof(wchar_t));
 #ifdef RIFF_SPKR
 				RiffPutSamples(pDSLockedBuffer0, dwBufferSize0/sizeof(short));
 #endif
@@ -583,7 +637,7 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 
 			if(pDSLockedBuffer1)
 			{
-				wmemset((wchar_t*)pDSLockedBuffer1, (wchar_t)g_nSpeakerData, dwBufferSize1/sizeof(wchar_t));
+                         wmemset((wchar_t*)pDSLockedBuffer1, (wchar_t)DCFilter(g_nSpeakerData), dwBufferSize1/sizeof(wchar_t));
 #ifdef RIFF_SPKR
 				RiffPutSamples(pDSLockedBuffer1, dwBufferSize1/sizeof(short));
 #endif
