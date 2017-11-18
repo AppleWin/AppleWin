@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "..\resource\resource.h"
 
-#define LOG_DISK_ENABLED 0
+#define LOG_DISK_ENABLED 1
 #define LOG_DISK_TRACKS 1
 #define LOG_DISK_MOTOR 1
 #define LOG_DISK_PHASES 0
@@ -137,11 +137,287 @@ static void ReadTrack (int drive);
 static void RemoveDisk (int drive);
 static void WriteTrack (int drive);
 static LPCTSTR DiskGetFullPathName(const int iDrive);
-static void DriveNotWritingTrack(void);
-static bool DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite, bool bReset=false);
 
 #define SPINNING_CYCLES (20000*64)		// 1280000 cycles = 1.25s
 #define WRITELIGHT_CYCLES (20000*64)	// 1280000 cycles = 1.25s
+
+//===========================================================================
+
+class FormatTrack	// Monitor for formatting of track
+{
+public:
+	FormatTrack(void)
+	{
+		memset(m_VolTrkSecChk, 0, sizeof(m_VolTrkSecChk));
+		Init();
+		DriveNotWritingTrack();
+	};
+
+	~FormatTrack(void) {};
+
+	void Init(void)	// DecodeLatchNibble() initial state of static vars
+	{
+		m_trackState = TS_GAP1;
+		m_uLast3Bytes = 0;
+		memset(m_VolTrkSecChk4and4, 0, sizeof(m_VolTrkSecChk4and4));
+		m_4and4idx = 0;
+	}
+
+	void DriveNotWritingTrack(void);
+	void UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const fptr);
+	void DriveSwitchedToWriteMode(UINT uTrackIndex);
+	void DriveSwitchedToReadMode(Disk_t* const fptr);
+	void DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite);
+
+	void DecodeLatchNibbleReset(void)
+	{
+		// ProDOS: switches to write mode between Address Field & Gap2; and between Data Field & Gap3
+		// . so if at TS_GAP2_START then stay at TS_GAP2_START
+		if (m_trackState != TS_GAP2_START)
+			m_trackState = (m_bmWrittenSectorAddrFields == 0x0000) ? TS_GAP1 : TS_GAP3;
+		m_uLast3Bytes = 0;
+		m_4and4idx = 0;
+	}
+
+private:
+	BYTE m_VolTrkSecChk[4];
+
+	// TODO: save-state (all non-debug below)
+	UINT16 m_bmWrittenSectorAddrFields;
+	UINT m_WriteTrackStartIndex;
+	bool m_WriteTrackHasWrapped;
+	BYTE m_WriteDataFieldPrologueCount;
+
+#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
+	UINT m_DbgGap1Size;
+	UINT m_DbgGap2Size;
+	int m_DbgGap3Size;
+#endif
+
+	// DecodeLatchNibble()
+	enum TRACKSTATE_e {TS_GAP1, TS_ADDRFIELD, TS_GAP2_START, TS_GAP2, TS_DATAFIELD, TS_GAP3};
+	TRACKSTATE_e m_trackState;
+	UINT32 m_uLast3Bytes;
+	BYTE m_VolTrkSecChk4and4[8];
+	UINT m_4and4idx;
+};
+
+// Occurs on these conditions:
+// . disk][ reset
+// . spin > 2 bytes (empirical from inspecting DOS3.3-INIT/ProDOS-FORMAT operations)
+// . drive stepper track change
+// . drive motor state change
+// . switch to read mode after having written a complete track
+void FormatTrack::DriveNotWritingTrack(void)
+{
+	m_bmWrittenSectorAddrFields = 0x0000;
+	m_WriteTrackStartIndex = 0;
+	m_WriteTrackHasWrapped = false;
+	m_WriteDataFieldPrologueCount = 0;
+
+#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
+	m_DbgGap1Size = 0;
+	m_DbgGap2Size = 0;
+	m_DbgGap3Size = -1;	// Data Field's epilogue has an extra 0xFF, which isn't part of the Gap3 sync-FF field
+#endif
+}
+
+void FormatTrack::UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const fptr)
+{
+	if (fptr->bWriteProtected)
+		return;
+
+	if (m_bmWrittenSectorAddrFields == 0x0000)
+	{
+		if (m_WriteTrackStartIndex == (UINT)-1)		// waiting for 1st write?
+			m_WriteTrackStartIndex = fptr->byte;
+		return;
+	}
+
+	// Written at least 1 sector
+
+	if (m_WriteTrackHasWrapped)
+		return;
+
+	if (uSpinNibbleCount > 2)
+	{
+		_ASSERT(0);	// Not seen this case yet
+		DriveNotWritingTrack();
+		return;
+	}
+
+	UINT uTrackIndex = fptr->byte;
+	const UINT& kTrackMaxNibbles = fptr->nibbles;
+
+	// NB. spin in write mode is only max 1-2 bytes
+	do
+	{
+		if (m_WriteTrackStartIndex == uTrackIndex)	// disk has completed a revolution
+		{
+			// Occurs for: .dsk & enhance=0|1 & ProDOS-FORMAT/DOS3.3-INIT with big gap3 size (as trackimage is only 0x18F0 in size)
+			m_WriteTrackHasWrapped = true;
+
+			// Now wait until drive switched from write to read mode
+			return;
+		}
+
+		uTrackIndex = (uTrackIndex+1) % kTrackMaxNibbles;
+	}
+	while (uSpinNibbleCount--);
+}
+
+void FormatTrack::DriveSwitchedToWriteMode(UINT uTrackIndex)
+{
+	DecodeLatchNibbleReset();
+
+	if (m_bmWrittenSectorAddrFields == 0x0000)	// written no sectors
+	{
+		m_WriteTrackStartIndex = (UINT)-1;		// wait for 1st write 
+	}
+}
+
+void FormatTrack::DriveSwitchedToReadMode(Disk_t* const fptr)
+{
+	if (m_bmWrittenSectorAddrFields != 0xFFFF || m_WriteDataFieldPrologueCount != 16)			// written all 16 sectors?
+		return;
+
+	// Zero-fill the remainder of the track buffer:
+	// . Up to 0x18F0 (if less than 0x18F0), and then (for .nib) up to 0x1A00.
+
+	const UINT kShortTrackLen = 0x18B0;		// for enhanced (no spin), as 0x18F0 is too big
+	LPBYTE TrackBuffer = fptr->trackimage;
+	const UINT kLongTrackLen = fptr->nibbles;
+
+	UINT uWriteTrackEndIndex = fptr->byte;
+	UINT uWrittenTrackSize = m_WriteTrackHasWrapped ? kLongTrackLen : 0;
+
+	if (m_WriteTrackStartIndex <= uWriteTrackEndIndex)
+		uWrittenTrackSize += uWriteTrackEndIndex - m_WriteTrackStartIndex;
+	else
+		uWrittenTrackSize += (kLongTrackLen - m_WriteTrackStartIndex) + uWriteTrackEndIndex;
+
+#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
+	LOG_DISK("Gap1 = 0x%02X, Gap2 = 0x%02X, Gap3 = 0x%02X (%02d), TrackSize = 0x%04X\n", m_DbgGap1Size, m_DbgGap2Size, m_DbgGap3Size, m_DbgGap3Size, uWrittenTrackSize);
+#endif
+
+	if (uWrittenTrackSize > kShortTrackLen)
+		uWrittenTrackSize = kShortTrackLen;
+
+	int iSrc = uWriteTrackEndIndex - uWrittenTrackSize;	// Rewind to start of non-overwritten part of short track
+	if (iSrc < 0)
+		iSrc += kLongTrackLen;
+
+	// S < E: |  S-------E         |
+	// S > E: |----E           S---|
+	if ((UINT)iSrc < uWriteTrackEndIndex)
+	{
+		memset(&TrackBuffer[0], 0, iSrc);
+		memset(&TrackBuffer[uWriteTrackEndIndex], 0, kLongTrackLen - uWriteTrackEndIndex);
+	}
+	else
+	{
+		// NB. For the iSrc == uWriteTrackEndIndex case: memset() size=0
+		memset(&TrackBuffer[uWriteTrackEndIndex], 0, iSrc - uWriteTrackEndIndex);
+	}
+
+	// NB. No need to skip the zero nibbles, as INIT/FORMAT's 'read latch until high bit' loop will just consume these
+
+	DriveNotWritingTrack();
+}
+
+void FormatTrack::DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite)
+{
+	m_uLast3Bytes <<= 8;
+	m_uLast3Bytes |= floppylatch;
+	m_uLast3Bytes &= 0xFFFFFF;
+
+	if (m_trackState == TS_GAP2_START && bIsWrite)	// NB. bIsWrite, as there's a read between writing Addr Field & Gap2
+		m_trackState = TS_GAP2;
+
+#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
+	if (floppylatch == 0xFF && bIsWrite && (m_trackState == TS_GAP1 || m_trackState == TS_GAP2 || m_trackState == TS_GAP3))
+	{
+		if (m_bmWrittenSectorAddrFields == 0x0000 && m_trackState == TS_GAP1)
+			m_DbgGap1Size++;
+		else if (m_bmWrittenSectorAddrFields == 0x0001 && m_trackState == TS_GAP2)
+			m_DbgGap2Size++;	// Only count Gap2 after sector0 Addr Field (assume other inter-sectors gap2's have same count)
+		else if (m_bmWrittenSectorAddrFields == 0x0001 && m_trackState == TS_GAP3)
+			m_DbgGap3Size++;	// Only count Gap3 between sector0 & 1 (assume other inter-sectors gap3's have same count)
+		return;
+	}
+#endif
+
+	// Beneath Apple ProDOS 3-14: NB. $D5 and $AA are reserved (never written as data)
+	if (m_uLast3Bytes == 0xD5AA96)
+	{
+		m_trackState = TS_ADDRFIELD;
+		m_4and4idx = 0;
+		return;
+	}
+
+	// NB. If TS_ADDRFIELD && m_4and4idx == 8, then writing Address Field's epilogue
+	if (m_trackState == TS_ADDRFIELD && m_4and4idx < 8)
+	{
+		m_VolTrkSecChk4and4[m_4and4idx++] = floppylatch;
+
+		if (m_4and4idx == 8)
+		{
+			for (UINT i=0; i<4; i++)
+				m_VolTrkSecChk[i] = ((m_VolTrkSecChk4and4[i*2] & 0x55) << 1) | (m_VolTrkSecChk4and4[i*2+1] & 0x55);
+
+#if LOG_DISK_NIBBLES_READ
+			if (!bIsWrite)
+			{
+				LOG_DISK("read D5AA96 detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X\r\n", m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3]);
+			}
+#endif
+#if LOG_DISK_NIBBLES_WRITE
+			if (bIsWrite)
+			{
+				LOG_DISK("write D5AA96 detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X\r\n", m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3]);
+			}
+#endif
+
+			if (bIsWrite)
+			{
+				BYTE sector = m_VolTrkSecChk[2];
+				_ASSERT( sector <= 15 );
+				if (sector > 15)	// Ignore exotic formats with >16 sectors!
+					return;
+				_ASSERT( (m_bmWrittenSectorAddrFields & (1<<sector)) == 0 );
+				m_bmWrittenSectorAddrFields |= (1<<sector);
+			}
+		}
+
+		return;
+	}
+
+#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
+	if (m_uLast3Bytes == 0xDEAAEB && bIsWrite)	// NB. bIsWrite, as reads could start reading any anywhere
+	{
+		if (m_trackState == TS_ADDRFIELD)
+		{
+			m_trackState = TS_GAP2_START;
+		}
+		else // m_trackState == TS_DATAFIELD
+		{
+			_ASSERT(m_trackState == TS_DATAFIELD);
+			m_trackState = TS_GAP3;
+		}
+		return;
+	}
+#endif
+
+	if (m_uLast3Bytes == 0xD5AAAD)
+	{
+		m_trackState = TS_DATAFIELD;
+		if (bIsWrite)
+			m_WriteDataFieldPrologueCount++;
+		_ASSERT(m_WriteDataFieldPrologueCount <= 16);
+	}
+}
+
+static FormatTrack g_formatTrack;
 
 //===========================================================================
 
@@ -425,7 +701,7 @@ static void __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uEx
 	BOOL newState = address & 1;
 
 	if (newState != floppymotoron)	// motor changed state
-		DriveNotWritingTrack();
+		g_formatTrack.DriveNotWritingTrack();
 
 	floppymotoron = newState;
 #if LOG_DISK_MOTOR
@@ -479,7 +755,7 @@ static void __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG u
 			fptr->track          = newtrack;
 			fptr->trackimagedata = 0;
 
-			DriveNotWritingTrack();
+			g_formatTrack.DriveNotWritingTrack();
 		}
 
 		// Feature Request #201 Show track status
@@ -642,7 +918,8 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 	if (Error == eIMAGE_ERROR_NONE && ImageIsMultiFileZip(fptr->imagehandle))
 	{
 		TCHAR szText[100+MAX_PATH];
-		wsprintf(szText, "Only the first file in a multi-file zip is supported\nUse disk image '%s' ?", fptr->strFilenameInZip.c_str());
+		szText[sizeof(szText)-1] = 0;
+		_snprintf(szText, sizeof(szText)-1, "Only the first file in a multi-file zip is supported\nUse disk image '%s' ?", fptr->strFilenameInZip.c_str());
 		int nRes = MessageBox(g_hFrameWindow, szText, TEXT("Multi-Zip Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 		{
@@ -678,45 +955,51 @@ BOOL DiskIsSpinning(void)
 void DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const ImageError_e Error)
 {
 	TCHAR szBuffer[MAX_PATH+128];
+	szBuffer[sizeof(szBuffer)-1] = 0;
 
 	switch (Error)
 	{
 	case eIMAGE_ERROR_UNABLE_TO_OPEN:
 	case eIMAGE_ERROR_UNABLE_TO_OPEN_GZ:
 	case eIMAGE_ERROR_UNABLE_TO_OPEN_ZIP:
-		wsprintf(
+		_snprintf(
 			szBuffer,
+			sizeof(szBuffer)-1,
 			TEXT("Unable to open the file %s."),
 			pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_BAD_SIZE:
-		wsprintf(
+		_snprintf(
 			szBuffer,
+			sizeof(szBuffer)-1,
 			TEXT("Unable to use the file %s\nbecause the ")
 			TEXT("disk image is an unsupported size."),
 			pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_BAD_FILE:
-		wsprintf(
+		_snprintf(
 			szBuffer,
+			sizeof(szBuffer)-1,
 			TEXT("Unable to use the file %s\nbecause the ")
 			TEXT("OS can't access it."),
 			pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_UNSUPPORTED:
-		wsprintf(
+		_snprintf(
 			szBuffer,
+			sizeof(szBuffer)-1,
 			TEXT("Unable to use the file %s\nbecause the ")
 			TEXT("disk image format is not recognized."),
 			pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_UNSUPPORTED_HDV:
-		wsprintf(
+		_snprintf(
 			szBuffer,
+			sizeof(szBuffer)-1,
 			TEXT("Unable to use the file %s\n")
 			TEXT("because this UniDisk 3.5/Apple IIGS/hard-disk image is not supported.\n")
 			TEXT("Try inserting as a hard-disk image instead."),
@@ -724,8 +1007,9 @@ void DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const Im
 		break;
 
 	case eIMAGE_ERROR_UNSUPPORTED_MULTI_ZIP:
-		wsprintf(
+		_snprintf(
 			szBuffer,
+			sizeof(szBuffer)-1,
 			TEXT("Unable to use the file %s\nbecause the ")
 			TEXT("first file (%s) in this multi-zip archive is not recognized.\n")
 			TEXT("Try unzipping and using the disk images directly.\n"),
@@ -735,20 +1019,38 @@ void DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const Im
 
 	case eIMAGE_ERROR_GZ:
 	case eIMAGE_ERROR_ZIP:
-		wsprintf(
+		_snprintf(
 			szBuffer,
+			sizeof(szBuffer)-1,
 			TEXT("Unable to use the compressed file %s\nbecause the ")
 			TEXT("compressed disk image is corrupt/unsupported."),
 			pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_FAILED_TO_GET_PATHNAME:
-		wsprintf(
+		_snprintf(
 			szBuffer,
+			sizeof(szBuffer)-1,
 			TEXT("Unable to GetFullPathName() for the file: %s."),
 			pszImageFilename);
 		break;
-		
+
+	case eIMAGE_ERROR_ZEROLENGTH_WRITEPROTECTED:
+		_snprintf(
+			szBuffer,
+			sizeof(szBuffer)-1,
+			TEXT("Unsupported zero-length write-protected file: %s."),
+			pszImageFilename);
+		break;
+
+	case eIMAGE_ERROR_FAILED_TO_INIT_ZEROLENGTH:
+		_snprintf(
+			szBuffer,
+			sizeof(szBuffer)-1,
+			TEXT("Failed to resize the zero-length file: %s."),
+			pszImageFilename);
+		break;
+
 	default:
 		// IGNORE OTHER ERRORS SILENTLY
 		return;
@@ -808,244 +1110,6 @@ bool Disk_IsDriveEmpty(const int iDrive)
 
 	Disk_t *pFloppy = &g_aFloppyDisk[iDrive];
 	return pFloppy->imagehandle == NULL;
-}
-
-//===========================================================================
-
-// TODO: save-state (all non-debug below)
-static BYTE g_uVTSC[4] = {0,0,0,0};
-static UINT16 g_bmWrittenSectorAddrFields = 0x0000;
-static UINT g_WriteTrackStartIndex = 0;
-static bool g_WriteTrackHasWrapped = false;
-static UINT g_WriteDataFieldPrologueCount = 0;
-
-#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-static UINT g_DbgGap1Size = 0;
-static UINT g_DbgGap2Size = 0;
-static int g_DbgGap3Size = -1;
-#endif
-
-// Occurs on these conditions:
-// . reset
-// . spin > 2 bytes (empirical from inspecting DOS3.3-INIT/ProDOS-FORMAT operations)
-// . drive stepper track change
-// . drive motor state change
-// . switch to read mode after having written a complete track
-static void DriveNotWritingTrack(void)
-{
-	g_bmWrittenSectorAddrFields = 0x0000;
-	g_WriteTrackStartIndex = 0;
-	g_WriteTrackHasWrapped = false;
-	g_WriteDataFieldPrologueCount = 0;
-
-#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	g_DbgGap1Size = 0;
-	g_DbgGap2Size = 0;
-	g_DbgGap3Size = -1;	// Data Field's epilogue has an extra 0xFF, which isn't part of the Gap3 sync-FF field
-#endif
-}
-
-static void UpdateOnWriteLatch(bool bIsVTSCValid, UINT uSpinNibbleCount, const Disk_t* const fptr)
-{
-	if (fptr->bWriteProtected)
-		return;
-
-	if (bIsVTSCValid)
-	{
-		BYTE sector = g_uVTSC[2];
-		_ASSERT( sector <= 15 );
-		if (sector > 15)	// Ignore exotic formats with >16 sectors!
-			return;
-		_ASSERT( (g_bmWrittenSectorAddrFields & (1<<sector)) == 0 );
-		g_bmWrittenSectorAddrFields |= (1<<sector);
-		return;
-	}
-
-	if (g_bmWrittenSectorAddrFields == 0x0000)
-	{
-		if (g_WriteTrackStartIndex == (UINT)-1)		// waiting for 1st write?
-			g_WriteTrackStartIndex = fptr->byte;
-		return;
-	}
-
-	// Written at least 1 sector
-
-	if (g_WriteTrackHasWrapped)
-		return;
-
-	if (uSpinNibbleCount > 2)
-	{
-		_ASSERT(0);	// Not seen this case yet
-		DriveNotWritingTrack();
-		return;
-	}
-
-	UINT uTrackIndex = fptr->byte;
-	const UINT& kTrackMaxNibbles = fptr->nibbles;
-
-	// NB. spin in write mode is only max 1-2 bytes
-	do
-	{
-		if (g_WriteTrackStartIndex == uTrackIndex)	// disk has completed a revolution
-		{
-			// Occurs for: .dsk & enhance=0|1 & ProDOS-FORMAT/DOS3.3-INIT with big gap3 size (as trackimage is only 0x18F0 in size)
-			g_WriteTrackHasWrapped = true;
-
-			// Now wait until drive switched from write to read mode
-			return;
-		}
-
-		uTrackIndex = (uTrackIndex+1) % kTrackMaxNibbles;
-	}
-	while (uSpinNibbleCount--);
-}
-
-static void DriveSwitchedToWriteMode(UINT uTrackIndex)
-{
-	DecodeLatchNibble(0, FALSE, true);	// reset internal state (eg. TrackState = TS_GAP1)
-
-	if (g_bmWrittenSectorAddrFields == 0x0000)	// written no sectors
-	{
-		g_WriteTrackStartIndex = (UINT)-1;		// wait for 1st write 
-	}
-}
-
-static void DriveSwitchedToReadMode(Disk_t* const fptr)
-{
-	if (g_bmWrittenSectorAddrFields != 0xFFFF || g_WriteDataFieldPrologueCount != 16)			// written all 16 sectors?
-		return;
-
-	// Zero-fill the remainder of the track buffer:
-	// . Up to 0x18F0 (if less than 0x18F0), and then (for .nib) up to 0x1A00.
-
-	const UINT kShortTrackLen = 0x18B0;		// for enhanced (no spin), as 0x18F0 is too big
-	LPBYTE TrackBuffer = fptr->trackimage;
-	const UINT kLongTrackLen = fptr->nibbles;
-
-	UINT uWriteTrackEndIndex = fptr->byte;
-	UINT uWrittenTrackSize = g_WriteTrackHasWrapped ? kLongTrackLen : 0;
-
-	if (g_WriteTrackStartIndex <= uWriteTrackEndIndex)
-		uWrittenTrackSize += uWriteTrackEndIndex - g_WriteTrackStartIndex;
-	else
-		uWrittenTrackSize += (kLongTrackLen - g_WriteTrackStartIndex) + uWriteTrackEndIndex;
-
-#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	LOG_DISK("Gap1 = 0x%02X, Gap2 = 0x%02X, Gap3 = 0x%02X (%02d), TrackSize = 0x%04X\n", g_DbgGap1Size, g_DbgGap2Size, g_DbgGap3Size, g_DbgGap3Size, uWrittenTrackSize);
-#endif
-
-	if (uWrittenTrackSize > kShortTrackLen)
-		uWrittenTrackSize = kShortTrackLen;
-
-	int iSrc = uWriteTrackEndIndex - uWrittenTrackSize;	// Rewind to start of non-overwritten part of short track
-	if (iSrc < 0)
-		iSrc += kLongTrackLen;
-
-	// S < E: |  S-------E         |
-	// S > E: |----E           S---|
-	if ((UINT)iSrc < uWriteTrackEndIndex)
-	{
-		memset(&TrackBuffer[0], 0, iSrc);
-		memset(&TrackBuffer[uWriteTrackEndIndex], 0, kLongTrackLen - uWriteTrackEndIndex);
-	}
-	else
-	{
-		// NB. For the iSrc == uWriteTrackEndIndex case: memset() size=0
-		memset(&TrackBuffer[uWriteTrackEndIndex], 0, iSrc - uWriteTrackEndIndex);
-	}
-
-	// NB. No need to skip the zero nibbles, as INIT/FORMAT's 'read latch until high bit' loop will just consume these
-
-	DriveNotWritingTrack();
-}
-
-static bool DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite, bool bReset/*=false*/)
-{
-	enum TRACKSTATE_e {TS_GAP1, TS_ADDRFIELD, TS_GAP2_START, TS_GAP2, TS_DATAFIELD, TS_GAP3};
-	static TRACKSTATE_e TrackState = TS_GAP1;
-	static UINT32 uLast3Bytes = 0;
-	static BYTE uVTSC4and4[8] = {0,0,0,0, 0,0,0,0};
-	static UINT uVTSC4and4idx = 0;
-
-	if (bReset)
-	{
-		// ProDOS: switches to write mode between Address Field & Gap2; and between Data Field & Gap3
-		// . so if at TS_GAP2_START then stay at TS_GAP2_START
-		if (TrackState != TS_GAP2_START)
-			TrackState = (g_bmWrittenSectorAddrFields == 0x0000) ? TS_GAP1 : TS_GAP3;
-		uLast3Bytes = 0;
-		uVTSC4and4idx = 0;
-		return false;
-	}
-
-	uLast3Bytes <<= 8;
-	uLast3Bytes |= floppylatch;
-	uLast3Bytes &= 0xFFFFFF;
-
-	if (TrackState == TS_GAP2_START && bIsWrite)	// NB. bIsWrite, as there's a read between writing Addr Field & Gap2
-		TrackState = TS_GAP2;
-
-#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	if (floppylatch == 0xFF && bIsWrite && (TrackState == TS_GAP1 || TrackState == TS_GAP2 || TrackState == TS_GAP3))
-	{
-		if (g_bmWrittenSectorAddrFields == 0x0000 && TrackState == TS_GAP1)
-			g_DbgGap1Size++;
-		else if (g_bmWrittenSectorAddrFields == 0x0001 && TrackState == TS_GAP2)
-			g_DbgGap2Size++;	// Only count Gap2 after sector0 Addr Field (assume other inter-sectors gap2's have same count)
-		else if (g_bmWrittenSectorAddrFields == 0x0001 && TrackState == TS_GAP3)
-			g_DbgGap3Size++;	// Only count Gap3 between sector0 & 1 (assume other inter-sectors gap3's have same count)
-		return false;
-	}
-#endif
-
-	// Beneath Apple ProDOS 3-14: NB. $D5 and $AA are reserved (never written as data)
-	if (uLast3Bytes == 0xD5AA96)
-	{
-		TrackState = TS_ADDRFIELD;
-		uVTSC4and4idx = 0;
-		return false;
-	}
-
-	// NB. If TS_ADDRFIELD && uVTSC4and4idx == 8, then writing Address Field's epilogue
-	if (TrackState == TS_ADDRFIELD && uVTSC4and4idx < 8)
-	{
-		uVTSC4and4[uVTSC4and4idx++] = floppylatch;
-
-		if (uVTSC4and4idx == 8)
-		{
-			for (UINT i=0; i<4; i++)
-				g_uVTSC[i] = ((uVTSC4and4[i*2] & 0x55) << 1) | (uVTSC4and4[i*2+1] & 0x55);
-
-			return true;	// VTSC is valid
-		}
-	}
-
-#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	if (uLast3Bytes == 0xDEAAEB && bIsWrite)	// NB. bIsWrite, as reads could start reading any anywhere
-	{
-		if (TrackState == TS_ADDRFIELD)
-		{
-			TrackState = TS_GAP2_START;
-		}
-		else // TrackState == TS_DATAFIELD
-		{
-			_ASSERT(TrackState == TS_DATAFIELD);
-			TrackState = TS_GAP3;
-		}
-		return false;
-	}
-#endif
-
-	if (uLast3Bytes == 0xD5AAAD)
-	{
-		TrackState = TS_DATAFIELD;
-		if (bIsWrite)
-			g_WriteDataFieldPrologueCount++;
-		_ASSERT(g_WriteDataFieldPrologueCount <= 16);
-		return false;
-	}
-
-	return false;
 }
 
 //===========================================================================
@@ -1138,18 +1202,16 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 			LOG_DISK("read %04X = %02X\r\n", fptr->byte, floppylatch);
 		}
 
-		if (DecodeLatchNibble(floppylatch, floppywritemode))
-		{
-			LOG_DISK("read D5AA96 detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X\r\n", g_uVTSC[0], g_uVTSC[1], g_uVTSC[2], g_uVTSC[3]);
-		}
+		g_formatTrack.DecodeLatchNibble(floppylatch, floppywritemode);
 #endif
 	}
 	else if (!fptr->bWriteProtected) // && floppywritemode
 	{
 		*(fptr->trackimage + fptr->byte) = floppylatch;
 		fptr->trackimagedirty = 1;
-		bool bIsVTSCValid = DecodeLatchNibble(floppylatch, floppywritemode);	// GH#125
-		UpdateOnWriteLatch(bIsVTSCValid, uSpinNibbleCount, fptr);				// GH#125
+
+		g_formatTrack.DecodeLatchNibble(floppylatch, floppywritemode);	// GH#125
+		g_formatTrack.UpdateOnWriteLatch(uSpinNibbleCount, fptr);		// GH#125
 
 #if LOG_DISK_NIBBLES_WRITE
   #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
@@ -1157,16 +1219,10 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
   #endif
 		{
 			ULONG uCycleDelta = 0;
-			bool bIsSyncFF = LogWriteCheckSyncFF(floppylatch, fptr->spinning, uCycleDelta);
-			if (!bIsSyncFF)
+			if (!LogWriteCheckSyncFF(floppylatch, fptr->spinning, uCycleDelta))
 				LOG_DISK("write %04X = %02X (cy=+%d)\r\n", fptr->byte, floppylatch, uCycleDelta);
 			else
 				LOG_DISK("write %04X = %02X (cy=+%d) sync #%d\r\n", fptr->byte, floppylatch, uCycleDelta, g_uSyncFFCount);
-		}
-
-		if (bIsVTSCValid)
-		{
-			LOG_DISK("write D5AA96 detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X\r\n", g_uVTSC[0], g_uVTSC[1], g_uVTSC[2], g_uVTSC[3]);
 		}
 #endif
 	}
@@ -1192,7 +1248,7 @@ void DiskReset(const bool bIsPowerCycle/*=false*/)
 	floppywritemode = 0;
 	phases = 0;
 
-	DriveNotWritingTrack();
+	g_formatTrack.DriveNotWritingTrack();
 
 	if (bIsPowerCycle)	// GH#460
 	{
@@ -1288,7 +1344,7 @@ static void __stdcall DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG)
 {
 	floppywritemode = 0;
 
-	DriveSwitchedToReadMode(&g_aFloppyDisk[currdrive]);
+	g_formatTrack.DriveSwitchedToReadMode(&g_aFloppyDisk[currdrive]);
 
 #if LOG_DISK_RW_MODE
 	LOG_DISK("rw mode: read\r\n");
@@ -1301,7 +1357,7 @@ static void __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCy
 {
 	floppywritemode = 1;
 
-	DriveSwitchedToWriteMode(g_aFloppyDisk[currdrive].byte);
+	g_formatTrack.DriveSwitchedToWriteMode(g_aFloppyDisk[currdrive].byte);
 
 	BOOL modechange = !g_aFloppyDisk[currdrive].writelight;
 #if LOG_DISK_RW_MODE
@@ -1589,6 +1645,8 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 
 //===========================================================================
 
+static const UINT kUNIT_VERSION = 2;
+
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
 
 #define SS_YAML_KEY_PHASES "Phases"
@@ -1598,6 +1656,11 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 #define SS_YAML_KEY_FLOPPY_LATCH "Floppy Latch"
 #define SS_YAML_KEY_FLOPPY_MOTOR_ON "Floppy Motor On"
 #define SS_YAML_KEY_FLOPPY_WRITE_MODE "Floppy Write Mode"
+//#define SS_YAML_KEY_WRITTEN_VTSC "Written Vol,Trk,Sec,Chk"	// -- NOT NEEDED
+#define SS_YAML_KEY_WRITTEN_SECTOR_ADDR_FIELDS "Written Sector Address-Fields"
+#define SS_YAML_KEY_WRITE_TRACK_START_IDX "Write Track Start Index"
+#define SS_YAML_KEY_WRITE_TRACK_HAS_WRAPPED "Write Track Wrapped"
+#define SS_YAML_KEY_WRITE_DATA_FIELD_PROLOGUE_COUNT "Write Data-Field Prologue Count"
 
 #define SS_YAML_KEY_DISK2UNIT "Unit"
 #define SS_YAML_KEY_FILENAME "Filename"
@@ -1641,7 +1704,7 @@ static void DiskSaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 
 void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 {
-	YamlSaveHelper::Slot slot(yamlSaveHelper, DiskGetSnapshotCardName(), g_uSlot, 1);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, DiskGetSnapshotCardName(), g_uSlot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_PHASES, phases);
@@ -1651,6 +1714,14 @@ void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_FLOPPY_LATCH, floppylatch);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_MOTOR_ON, floppymotoron == TRUE);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_WRITE_MODE, floppywritemode == TRUE);
+	// v2
+#if 0
+//	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_WRITTEN_VTSC, *(UINT32*)m_VolTrkSecChk);	// -- NOT NEEDED
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_WRITTEN_SECTOR_ADDR_FIELDS, m_bmWrittenSectorAddrFields);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_WRITE_TRACK_START_IDX, m_WriteTrackStartIndex);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITE_TRACK_HAS_WRAPPED, m_WriteTrackHasWrapped);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_WRITE_DATA_FIELD_PROLOGUE_COUNT, m_WriteDataFieldPrologueCount);
+#endif
 
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_1);
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_2);
@@ -1739,7 +1810,7 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 	if (slot != 6)	// fixme
 		throw std::string("Card: wrong slot");
 
-	if (version != 1)
+	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
 	phases  		= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASES);
@@ -1749,6 +1820,17 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 	floppylatch		= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_LATCH);
 	floppymotoron	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_MOTOR_ON);
 	floppywritemode	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_WRITE_MODE);
+
+	if (version == kUNIT_VERSION)
+	{
+#if 0
+//		*(UINT32*)m_VolTrkSecChk             = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITTEN_VTSC);	// -- NOT NEEDED
+		m_bmWrittenSectorAddrFields   = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITTEN_SECTOR_ADDR_FIELDS);
+		m_WriteTrackStartIndex        = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_TRACK_START_IDX);
+		m_WriteTrackHasWrapped        = yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITE_TRACK_HAS_WRAPPED);
+		m_WriteDataFieldPrologueCount = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_DATA_FIELD_PROLOGUE_COUNT);
+#endif
+	}
 
 	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
 	for(UINT i=0; i<NUM_DRIVES; i++)

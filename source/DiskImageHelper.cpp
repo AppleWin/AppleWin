@@ -1318,7 +1318,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			NULL );
 		
 		if (hFile != INVALID_HANDLE_VALUE)
-			pImageInfo->bWriteProtected = 1;
+			pImageInfo->bWriteProtected = true;
 	}
 
 	if ((hFile == INVALID_HANDLE_VALUE) && bCreateIfNecessary)
@@ -1373,6 +1373,9 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 	}
 	else	// Create (or pre-existing zero-length file)
 	{
+		if (pImageInfo->bWriteProtected)
+			return eIMAGE_ERROR_ZEROLENGTH_WRITEPROTECTED;	// Can't be formatted, so return error
+
 		pImageType = GetImageForCreation(szExt, &dwSize);
 		if (pImageType && dwSize)
 		{
@@ -1380,9 +1383,11 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			if (!pImageInfo->pImageBuffer)
 				return eIMAGE_ERROR_BAD_POINTER;
 
-			ZeroMemory(pImageInfo->pImageBuffer, dwSize);
-
-			if (pImageType->GetType() == eImageNIB1)
+			if (pImageType->GetType() != eImageNIB1)
+			{
+				ZeroMemory(pImageInfo->pImageBuffer, dwSize);
+			}
+			else
 			{
 				// Fill zero-length image buffer with alternating high-bit-set nibbles (GH#196, GH#338)
 				for (UINT i=0; i<dwSize; i+=2)
@@ -1391,6 +1396,13 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 					pImageInfo->pImageBuffer[i+1] = 0x81;	// bit7 set, but 0x81 is an invalid nibble
 				}
 			}
+
+			// As a convenience, resize the file to the complete size (GH#506)
+			// - this also means that a save-state done mid-way through a format won't reference an image file with a partial size (GH#494)
+			DWORD dwBytesWritten = 0;
+			BOOL res = WriteFile(hFile, pImageInfo->pImageBuffer, dwSize, &dwBytesWritten, NULL); 
+			if (!res || dwBytesWritten != dwSize)
+				return eIMAGE_ERROR_FAILED_TO_INIT_ZEROLENGTH;
 		}
 	}
 
