@@ -82,3 +82,44 @@ void Disk_SaveLastDiskImage(const int iDrive);
 
 bool Disk_ImageIsWriteProtected(const int iDrive);
 bool Disk_IsDriveEmpty(const int iDrive);
+
+//
+
+// For sharing with class FormatTrack
+struct Disk_t
+{
+	TCHAR  imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
+	TCHAR  fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
+	std::string strFilenameInZip;					// ""             or <FILENAME.EXT>
+	ImageInfo* imagehandle;							// Init'd by DiskInsert() -> ImageOpen()
+	bool   bWriteProtected;
+	//
+	int    track;
+	LPBYTE trackimage;
+	int    phase;
+	int    byte;
+	BOOL   trackimagedata;
+	BOOL   trackimagedirty;
+	DWORD  spinning;
+	DWORD  writelight;
+	int    nibbles;						// Init'd by ReadTrack() -> ImageReadTrack()
+
+	const Disk_t& operator= (const Disk_t& other)
+	{
+		memcpy(imagename, other.imagename, sizeof(imagename));
+		memcpy(fullname , other.fullname,  sizeof(fullname));
+		strFilenameInZip    = other.strFilenameInZip;
+		imagehandle         = other.imagehandle;
+		bWriteProtected     = other.bWriteProtected;
+		track               = other.track;
+		trackimage          = other.trackimage;
+		phase               = other.phase;
+		byte                = other.byte;
+		trackimagedata      = other.trackimagedata;
+		trackimagedirty     = other.trackimagedirty;
+		spinning            = other.spinning;
+		writelight          = other.writelight;
+		nibbles             = other.nibbles;
+		return *this;
+	}
+};

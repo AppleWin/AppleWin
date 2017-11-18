@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "AppleWin.h"
 #include "CPU.h"
 #include "Disk.h"
+#include "DiskLog.h"
+#include "DiskFormatTrack.h"
 #include "DiskImage.h"
 #include "Frame.h"
 #include "Log.h"
@@ -45,79 +47,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "..\resource\resource.h"
 
-#define LOG_DISK_ENABLED 1
-#define LOG_DISK_TRACKS 1
-#define LOG_DISK_MOTOR 1
-#define LOG_DISK_PHASES 0
-#define LOG_DISK_RW_MODE 1
-#define LOG_DISK_ENABLE_DRIVE 1
-#define LOG_DISK_NIBBLES_SPIN 1
-#define LOG_DISK_NIBBLES_READ 1
-#define LOG_DISK_NIBBLES_WRITE 1
-#define LOG_DISK_NIBBLES_WRITE_TRACK_GAPS 1	// Gap1 & Gap3 info when writing a track
-#define LOG_DISK_NIBBLES_USE_RUNTIME_VAR 1
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
 static bool g_bLogDisk_NibblesRW = false;	// From VS Debugger, change this to true/false during runtime for precise nibble logging
 #endif
 
-// __VA_ARGS__ not supported on MSVC++ .NET 7.x
-#if (LOG_DISK_ENABLED)
-	#if !defined(_VC71)
-		#define LOG_DISK(format, ...) LOG(format, __VA_ARGS__)
-	#else
-		#define LOG_DISK	 LogOutput
-	#endif
-#else
-	#if !defined(_VC71)
-		#define LOG_DISK(...)
-	#else
-		#define LOG_DISK(x)
-	#endif
-#endif
-
 // Public _________________________________________________________________________________________
 
-	BOOL enhancedisk = 1;					// TODO: Make static & add accessor funcs
+BOOL enhancedisk = 1;					// TODO: Make static & add accessor funcs
 
 // Private ________________________________________________________________________________________
-
-	struct Disk_t
-	{
-		TCHAR  imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
-		TCHAR  fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
-		std::string strFilenameInZip;					// ""             or <FILENAME.EXT>
-		ImageInfo* imagehandle;							// Init'd by DiskInsert() -> ImageOpen()
-		bool   bWriteProtected;
-		//
-		int    track;
-		LPBYTE trackimage;
-		int    phase;
-		int    byte;
-		BOOL   trackimagedata;
-		BOOL   trackimagedirty;
-		DWORD  spinning;
-		DWORD  writelight;
-		int    nibbles;						// Init'd by ReadTrack() -> ImageReadTrack()
-
-		const Disk_t& operator= (const Disk_t& other)
-		{
-			memcpy(imagename, other.imagename, sizeof(imagename));
-			memcpy(fullname , other.fullname,  sizeof(fullname));
-			strFilenameInZip    = other.strFilenameInZip;
-			imagehandle         = other.imagehandle;
-			bWriteProtected     = other.bWriteProtected;
-			track               = other.track;
-			trackimage          = other.trackimage;
-			phase               = other.phase;
-			byte                = other.byte;
-			trackimagedata      = other.trackimagedata;
-			trackimagedirty     = other.trackimagedirty;
-			spinning            = other.spinning;
-			writelight          = other.writelight;
-			nibbles             = other.nibbles;
-			return *this;
-		}
-	};
 
 static WORD		currdrive       = 0;
 static Disk_t	g_aFloppyDisk[NUM_DRIVES];
@@ -130,6 +68,8 @@ static bool		g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT		g_uSlot = 0;
 static unsigned __int64 g_uDiskLastCycle = 0;	// TODO: save-state
 
+static FormatTrack g_formatTrack;
+
 static void CheckSpinning(const ULONG nCyclesLeft);
 static Disk_Status_e GetDriveLightStatus( const int iDrive );
 static bool IsDriveValid( const int iDrive );
@@ -140,284 +80,6 @@ static LPCTSTR DiskGetFullPathName(const int iDrive);
 
 #define SPINNING_CYCLES (20000*64)		// 1280000 cycles = 1.25s
 #define WRITELIGHT_CYCLES (20000*64)	// 1280000 cycles = 1.25s
-
-//===========================================================================
-
-class FormatTrack	// Monitor for formatting of track
-{
-public:
-	FormatTrack(void)
-	{
-		memset(m_VolTrkSecChk, 0, sizeof(m_VolTrkSecChk));
-		Init();
-		DriveNotWritingTrack();
-	};
-
-	~FormatTrack(void) {};
-
-	void Init(void)	// DecodeLatchNibble() initial state of static vars
-	{
-		m_trackState = TS_GAP1;
-		m_uLast3Bytes = 0;
-		memset(m_VolTrkSecChk4and4, 0, sizeof(m_VolTrkSecChk4and4));
-		m_4and4idx = 0;
-	}
-
-	void DriveNotWritingTrack(void);
-	void UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const fptr);
-	void DriveSwitchedToWriteMode(UINT uTrackIndex);
-	void DriveSwitchedToReadMode(Disk_t* const fptr);
-	void DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite);
-
-	void DecodeLatchNibbleReset(void)
-	{
-		// ProDOS: switches to write mode between Address Field & Gap2; and between Data Field & Gap3
-		// . so if at TS_GAP2_START then stay at TS_GAP2_START
-		if (m_trackState != TS_GAP2_START)
-			m_trackState = (m_bmWrittenSectorAddrFields == 0x0000) ? TS_GAP1 : TS_GAP3;
-		m_uLast3Bytes = 0;
-		m_4and4idx = 0;
-	}
-
-private:
-	BYTE m_VolTrkSecChk[4];
-
-	// TODO: save-state (all non-debug below)
-	UINT16 m_bmWrittenSectorAddrFields;
-	UINT m_WriteTrackStartIndex;
-	bool m_WriteTrackHasWrapped;
-	BYTE m_WriteDataFieldPrologueCount;
-
-#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	UINT m_DbgGap1Size;
-	UINT m_DbgGap2Size;
-	int m_DbgGap3Size;
-#endif
-
-	// DecodeLatchNibble()
-	enum TRACKSTATE_e {TS_GAP1, TS_ADDRFIELD, TS_GAP2_START, TS_GAP2, TS_DATAFIELD, TS_GAP3};
-	TRACKSTATE_e m_trackState;
-	UINT32 m_uLast3Bytes;
-	BYTE m_VolTrkSecChk4and4[8];
-	UINT m_4and4idx;
-};
-
-// Occurs on these conditions:
-// . disk][ reset
-// . spin > 2 bytes (empirical from inspecting DOS3.3-INIT/ProDOS-FORMAT operations)
-// . drive stepper track change
-// . drive motor state change
-// . switch to read mode after having written a complete track
-void FormatTrack::DriveNotWritingTrack(void)
-{
-	m_bmWrittenSectorAddrFields = 0x0000;
-	m_WriteTrackStartIndex = 0;
-	m_WriteTrackHasWrapped = false;
-	m_WriteDataFieldPrologueCount = 0;
-
-#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	m_DbgGap1Size = 0;
-	m_DbgGap2Size = 0;
-	m_DbgGap3Size = -1;	// Data Field's epilogue has an extra 0xFF, which isn't part of the Gap3 sync-FF field
-#endif
-}
-
-void FormatTrack::UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const fptr)
-{
-	if (fptr->bWriteProtected)
-		return;
-
-	if (m_bmWrittenSectorAddrFields == 0x0000)
-	{
-		if (m_WriteTrackStartIndex == (UINT)-1)		// waiting for 1st write?
-			m_WriteTrackStartIndex = fptr->byte;
-		return;
-	}
-
-	// Written at least 1 sector
-
-	if (m_WriteTrackHasWrapped)
-		return;
-
-	if (uSpinNibbleCount > 2)
-	{
-		_ASSERT(0);	// Not seen this case yet
-		DriveNotWritingTrack();
-		return;
-	}
-
-	UINT uTrackIndex = fptr->byte;
-	const UINT& kTrackMaxNibbles = fptr->nibbles;
-
-	// NB. spin in write mode is only max 1-2 bytes
-	do
-	{
-		if (m_WriteTrackStartIndex == uTrackIndex)	// disk has completed a revolution
-		{
-			// Occurs for: .dsk & enhance=0|1 & ProDOS-FORMAT/DOS3.3-INIT with big gap3 size (as trackimage is only 0x18F0 in size)
-			m_WriteTrackHasWrapped = true;
-
-			// Now wait until drive switched from write to read mode
-			return;
-		}
-
-		uTrackIndex = (uTrackIndex+1) % kTrackMaxNibbles;
-	}
-	while (uSpinNibbleCount--);
-}
-
-void FormatTrack::DriveSwitchedToWriteMode(UINT uTrackIndex)
-{
-	DecodeLatchNibbleReset();
-
-	if (m_bmWrittenSectorAddrFields == 0x0000)	// written no sectors
-	{
-		m_WriteTrackStartIndex = (UINT)-1;		// wait for 1st write 
-	}
-}
-
-void FormatTrack::DriveSwitchedToReadMode(Disk_t* const fptr)
-{
-	if (m_bmWrittenSectorAddrFields != 0xFFFF || m_WriteDataFieldPrologueCount != 16)			// written all 16 sectors?
-		return;
-
-	// Zero-fill the remainder of the track buffer:
-	// . Up to 0x18F0 (if less than 0x18F0), and then (for .nib) up to 0x1A00.
-
-	const UINT kShortTrackLen = 0x18B0;		// for enhanced (no spin), as 0x18F0 is too big
-	LPBYTE TrackBuffer = fptr->trackimage;
-	const UINT kLongTrackLen = fptr->nibbles;
-
-	UINT uWriteTrackEndIndex = fptr->byte;
-	UINT uWrittenTrackSize = m_WriteTrackHasWrapped ? kLongTrackLen : 0;
-
-	if (m_WriteTrackStartIndex <= uWriteTrackEndIndex)
-		uWrittenTrackSize += uWriteTrackEndIndex - m_WriteTrackStartIndex;
-	else
-		uWrittenTrackSize += (kLongTrackLen - m_WriteTrackStartIndex) + uWriteTrackEndIndex;
-
-#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	LOG_DISK("Gap1 = 0x%02X, Gap2 = 0x%02X, Gap3 = 0x%02X (%02d), TrackSize = 0x%04X\n", m_DbgGap1Size, m_DbgGap2Size, m_DbgGap3Size, m_DbgGap3Size, uWrittenTrackSize);
-#endif
-
-	if (uWrittenTrackSize > kShortTrackLen)
-		uWrittenTrackSize = kShortTrackLen;
-
-	int iSrc = uWriteTrackEndIndex - uWrittenTrackSize;	// Rewind to start of non-overwritten part of short track
-	if (iSrc < 0)
-		iSrc += kLongTrackLen;
-
-	// S < E: |  S-------E         |
-	// S > E: |----E           S---|
-	if ((UINT)iSrc < uWriteTrackEndIndex)
-	{
-		memset(&TrackBuffer[0], 0, iSrc);
-		memset(&TrackBuffer[uWriteTrackEndIndex], 0, kLongTrackLen - uWriteTrackEndIndex);
-	}
-	else
-	{
-		// NB. For the iSrc == uWriteTrackEndIndex case: memset() size=0
-		memset(&TrackBuffer[uWriteTrackEndIndex], 0, iSrc - uWriteTrackEndIndex);
-	}
-
-	// NB. No need to skip the zero nibbles, as INIT/FORMAT's 'read latch until high bit' loop will just consume these
-
-	DriveNotWritingTrack();
-}
-
-void FormatTrack::DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite)
-{
-	m_uLast3Bytes <<= 8;
-	m_uLast3Bytes |= floppylatch;
-	m_uLast3Bytes &= 0xFFFFFF;
-
-	if (m_trackState == TS_GAP2_START && bIsWrite)	// NB. bIsWrite, as there's a read between writing Addr Field & Gap2
-		m_trackState = TS_GAP2;
-
-#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	if (floppylatch == 0xFF && bIsWrite && (m_trackState == TS_GAP1 || m_trackState == TS_GAP2 || m_trackState == TS_GAP3))
-	{
-		if (m_bmWrittenSectorAddrFields == 0x0000 && m_trackState == TS_GAP1)
-			m_DbgGap1Size++;
-		else if (m_bmWrittenSectorAddrFields == 0x0001 && m_trackState == TS_GAP2)
-			m_DbgGap2Size++;	// Only count Gap2 after sector0 Addr Field (assume other inter-sectors gap2's have same count)
-		else if (m_bmWrittenSectorAddrFields == 0x0001 && m_trackState == TS_GAP3)
-			m_DbgGap3Size++;	// Only count Gap3 between sector0 & 1 (assume other inter-sectors gap3's have same count)
-		return;
-	}
-#endif
-
-	// Beneath Apple ProDOS 3-14: NB. $D5 and $AA are reserved (never written as data)
-	if (m_uLast3Bytes == 0xD5AA96)
-	{
-		m_trackState = TS_ADDRFIELD;
-		m_4and4idx = 0;
-		return;
-	}
-
-	// NB. If TS_ADDRFIELD && m_4and4idx == 8, then writing Address Field's epilogue
-	if (m_trackState == TS_ADDRFIELD && m_4and4idx < 8)
-	{
-		m_VolTrkSecChk4and4[m_4and4idx++] = floppylatch;
-
-		if (m_4and4idx == 8)
-		{
-			for (UINT i=0; i<4; i++)
-				m_VolTrkSecChk[i] = ((m_VolTrkSecChk4and4[i*2] & 0x55) << 1) | (m_VolTrkSecChk4and4[i*2+1] & 0x55);
-
-#if LOG_DISK_NIBBLES_READ
-			if (!bIsWrite)
-			{
-				LOG_DISK("read D5AA96 detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X\r\n", m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3]);
-			}
-#endif
-#if LOG_DISK_NIBBLES_WRITE
-			if (bIsWrite)
-			{
-				LOG_DISK("write D5AA96 detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X\r\n", m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3]);
-			}
-#endif
-
-			if (bIsWrite)
-			{
-				BYTE sector = m_VolTrkSecChk[2];
-				_ASSERT( sector <= 15 );
-				if (sector > 15)	// Ignore exotic formats with >16 sectors!
-					return;
-				_ASSERT( (m_bmWrittenSectorAddrFields & (1<<sector)) == 0 );
-				m_bmWrittenSectorAddrFields |= (1<<sector);
-			}
-		}
-
-		return;
-	}
-
-#if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	if (m_uLast3Bytes == 0xDEAAEB && bIsWrite)	// NB. bIsWrite, as reads could start reading any anywhere
-	{
-		if (m_trackState == TS_ADDRFIELD)
-		{
-			m_trackState = TS_GAP2_START;
-		}
-		else // m_trackState == TS_DATAFIELD
-		{
-			_ASSERT(m_trackState == TS_DATAFIELD);
-			m_trackState = TS_GAP3;
-		}
-		return;
-	}
-#endif
-
-	if (m_uLast3Bytes == 0xD5AAAD)
-	{
-		m_trackState = TS_DATAFIELD;
-		if (bIsWrite)
-			m_WriteDataFieldPrologueCount++;
-		_ASSERT(m_WriteDataFieldPrologueCount <= 16);
-	}
-}
-
-static FormatTrack g_formatTrack;
 
 //===========================================================================
 
