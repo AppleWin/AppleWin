@@ -180,6 +180,7 @@ void FormatTrack::DecodeLatchNibbleReset(void)
 	m_4and4idx = 0;
 }
 
+// This is just for debug/logging: used to output when a new Address Field has been read
 void FormatTrack::DecodeLatchNibbleRead(BYTE floppylatch)
 {
 	DecodeLatchNibble(floppylatch, false);
@@ -259,7 +260,7 @@ void FormatTrack::DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite)
 	}
 
 #if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
-	if (m_uLast3Bytes == 0xDEAAEB && bIsWrite)	// NB. bIsWrite, as reads could start reading any anywhere
+	if (m_uLast3Bytes == 0xDEAAEB && bIsWrite)	// NB. bIsWrite, as reads could start reading anywhere
 	{
 		if (m_trackState == TS_ADDRFIELD)
 		{
