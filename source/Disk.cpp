@@ -910,7 +910,7 @@ void DiskReset(const bool bIsPowerCycle/*=false*/)
 	floppywritemode = 0;
 	phases = 0;
 
-	g_formatTrack.DriveNotWritingTrack();
+	g_formatTrack.Reset();
 
 	if (bIsPowerCycle)	// GH#460
 	{
@@ -1307,6 +1307,8 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 
 //===========================================================================
 
+// Unit version history:  
+// 2: Added: Format Track state
 static const UINT kUNIT_VERSION = 2;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
@@ -1318,11 +1320,6 @@ static const UINT kUNIT_VERSION = 2;
 #define SS_YAML_KEY_FLOPPY_LATCH "Floppy Latch"
 #define SS_YAML_KEY_FLOPPY_MOTOR_ON "Floppy Motor On"
 #define SS_YAML_KEY_FLOPPY_WRITE_MODE "Floppy Write Mode"
-//#define SS_YAML_KEY_WRITTEN_VTSC "Written Vol,Trk,Sec,Chk"	// -- NOT NEEDED
-#define SS_YAML_KEY_WRITTEN_SECTOR_ADDR_FIELDS "Written Sector Address-Fields"
-#define SS_YAML_KEY_WRITE_TRACK_START_IDX "Write Track Start Index"
-#define SS_YAML_KEY_WRITE_TRACK_HAS_WRAPPED "Write Track Wrapped"
-#define SS_YAML_KEY_WRITE_DATA_FIELD_PROLOGUE_COUNT "Write Data-Field Prologue Count"
 
 #define SS_YAML_KEY_DISK2UNIT "Unit"
 #define SS_YAML_KEY_FILENAME "Filename"
@@ -1376,14 +1373,7 @@ void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_FLOPPY_LATCH, floppylatch);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_MOTOR_ON, floppymotoron == TRUE);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_WRITE_MODE, floppywritemode == TRUE);
-	// v2
-#if 0
-//	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_WRITTEN_VTSC, *(UINT32*)m_VolTrkSecChk);	// -- NOT NEEDED
-	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_WRITTEN_SECTOR_ADDR_FIELDS, m_bmWrittenSectorAddrFields);
-	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_WRITE_TRACK_START_IDX, m_WriteTrackStartIndex);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITE_TRACK_HAS_WRAPPED, m_WriteTrackHasWrapped);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_WRITE_DATA_FIELD_PROLOGUE_COUNT, m_WriteDataFieldPrologueCount);
-#endif
+	g_formatTrack.SaveSnapshot(yamlSaveHelper);	// v2
 
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_1);
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_2);
@@ -1483,16 +1473,8 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 	floppymotoron	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_MOTOR_ON);
 	floppywritemode	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_WRITE_MODE);
 
-	if (version == kUNIT_VERSION)
-	{
-#if 0
-//		*(UINT32*)m_VolTrkSecChk             = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITTEN_VTSC);	// -- NOT NEEDED
-		m_bmWrittenSectorAddrFields   = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITTEN_SECTOR_ADDR_FIELDS);
-		m_WriteTrackStartIndex        = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_TRACK_START_IDX);
-		m_WriteTrackHasWrapped        = yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITE_TRACK_HAS_WRAPPED);
-		m_WriteDataFieldPrologueCount = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_DATA_FIELD_PROLOGUE_COUNT);
-#endif
-	}
+	if (version >= 2)
+		g_formatTrack.LoadSnapshot(yamlLoadHelper);
 
 	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
 	for(UINT i=0; i<NUM_DRIVES; i++)
