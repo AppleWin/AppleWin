@@ -864,7 +864,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 			LOG_DISK("read %04X = %02X\r\n", fptr->byte, floppylatch);
 		}
 
-		g_formatTrack.DecodeLatchNibble(floppylatch, floppywritemode);
+		g_formatTrack.DecodeLatchNibbleRead(floppylatch);
 #endif
 	}
 	else if (!fptr->bWriteProtected) // && floppywritemode
@@ -872,8 +872,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		*(fptr->trackimage + fptr->byte) = floppylatch;
 		fptr->trackimagedirty = 1;
 
-		g_formatTrack.DecodeLatchNibble(floppylatch, floppywritemode);	// GH#125
-		g_formatTrack.UpdateOnWriteLatch(uSpinNibbleCount, fptr);		// GH#125
+		g_formatTrack.DecodeLatchNibbleWrite(floppylatch, uSpinNibbleCount, fptr);	// GH#125
 
 #if LOG_DISK_NIBBLES_WRITE
   #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR

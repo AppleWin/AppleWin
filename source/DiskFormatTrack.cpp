@@ -111,16 +111,6 @@ void FormatTrack::UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const 
 	while (uSpinNibbleCount--);
 }
 
-void FormatTrack::DriveSwitchedToWriteMode(UINT uTrackIndex)
-{
-	DecodeLatchNibbleReset();
-
-	if (m_bmWrittenSectorAddrFields == 0x0000)	// written no sectors
-	{
-		m_WriteTrackStartIndex = (UINT)-1;		// wait for 1st write 
-	}
-}
-
 void FormatTrack::DriveSwitchedToReadMode(Disk_t* const fptr)
 {
 	if (m_bmWrittenSectorAddrFields != 0xFFFF || m_WriteDataFieldPrologueCount != 16)			// written all 16 sectors?
@@ -170,6 +160,16 @@ void FormatTrack::DriveSwitchedToReadMode(Disk_t* const fptr)
 	DriveNotWritingTrack();
 }
 
+void FormatTrack::DriveSwitchedToWriteMode(UINT uTrackIndex)
+{
+	DecodeLatchNibbleReset();
+
+	if (m_bmWrittenSectorAddrFields == 0x0000)	// written no sectors
+	{
+		m_WriteTrackStartIndex = (UINT)-1;		// wait for 1st write 
+	}
+}
+
 void FormatTrack::DecodeLatchNibbleReset(void)
 {
 	// ProDOS: switches to write mode between Address Field & Gap2; and between Data Field & Gap3
@@ -178,6 +178,17 @@ void FormatTrack::DecodeLatchNibbleReset(void)
 		m_trackState = (m_bmWrittenSectorAddrFields == 0x0000) ? TS_GAP1 : TS_GAP3;
 	m_uLast3Bytes = 0;
 	m_4and4idx = 0;
+}
+
+void FormatTrack::DecodeLatchNibbleRead(BYTE floppylatch)
+{
+	DecodeLatchNibble(floppylatch, false);
+}
+
+void FormatTrack::DecodeLatchNibbleWrite(BYTE floppylatch, UINT uSpinNibbleCount, const Disk_t* const fptr)
+{
+	DecodeLatchNibble(floppylatch, true);
+	UpdateOnWriteLatch(uSpinNibbleCount, fptr);
 }
 
 void FormatTrack::DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite)

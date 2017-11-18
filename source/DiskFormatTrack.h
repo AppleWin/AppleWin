@@ -35,15 +35,18 @@ public:
 
 	void Reset(void);
 	void DriveNotWritingTrack(void);
-	void UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const fptr);
-	void DriveSwitchedToWriteMode(UINT uTrackIndex);
 	void DriveSwitchedToReadMode(Disk_t* const fptr);
-	void DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite);
-	void DecodeLatchNibbleReset(void);
+	void DriveSwitchedToWriteMode(UINT uTrackIndex);
+	void DecodeLatchNibbleRead(BYTE floppylatch);
+	void DecodeLatchNibbleWrite(BYTE floppylatch, UINT uSpinNibbleCount, const Disk_t* const fptr);
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
 private:
+	void DecodeLatchNibbleReset(void);
+	void UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const fptr);
+	void DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite);
+
 	BYTE m_VolTrkSecChk[4];
 
 	UINT16 m_bmWrittenSectorAddrFields;
