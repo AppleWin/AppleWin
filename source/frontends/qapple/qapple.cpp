@@ -227,6 +227,7 @@ void QApple::on_actionReboot_triggered()
     stopEmulator();
     startEmulator(myEmulatorWindow);
     myEmulatorWindow->setWindowTitle(g_pAppTitle);
+    myEmulator->updateVideo();
 }
 
 void QApple::on_actionBenchmark_triggered()
