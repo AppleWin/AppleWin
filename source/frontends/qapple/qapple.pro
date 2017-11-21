@@ -24,7 +24,8 @@ SOURCES += main.cpp\
     memorycontainer.cpp \
     preferences.cpp \
     gamepadpaddle.cpp \
-    settings.cpp
+    settings.cpp \
+    configuration.cpp
 
 HEADERS  += qapple.h \
     emulator.h \
@@ -36,7 +37,8 @@ HEADERS  += qapple.h \
     memorycontainer.h \
     preferences.h \
     gamepadpaddle.h \
-    settings.h
+    settings.h \
+    configuration.h
 
 FORMS    += qapple.ui \
     emulator.ui \

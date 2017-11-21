@@ -132,9 +132,9 @@ void Preferences::setup(const Data & data, QSettings & settings)
 void Preferences::populateJoysticks()
 {
     joystick->clear();
-    const QList<int> gamepads = QGamepadManager::instance()->connectedGamepads();
+    joystick->addItem("None"); // index = 0
 
-    joystick->addItem("None");
+    const QList<int> gamepads = QGamepadManager::instance()->connectedGamepads();
 
     for (int id : gamepads)
     {
@@ -194,6 +194,7 @@ Preferences::Data Preferences::getData() const
     data.cpmInSlot5 = cpm_5->isChecked();
     data.hdInSlot7 = hd_7->isChecked();
 
+    // because index = 0 is None
     if (joystick->currentIndex() >= 1)
     {
         const QVariant & device = joystick->itemData(joystick->currentIndex());
@@ -216,6 +217,7 @@ void Preferences::browseDisk(const std::vector<QComboBox *> & disks, const size_
     QFileDialog diskFileDialog(this);
     diskFileDialog.setFileMode(QFileDialog::AnyFile);
 
+    // because index = 0 is None
     if (disks[id]->currentIndex() >= 1)
     {
         diskFileDialog.selectFile(disks[id]->currentText());
