@@ -643,7 +643,6 @@ public:
 
 	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
 	{
-		ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		DenibblizeTrack(pTrackImage, eDOSOrder, nNibbles);
 		WriteTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
@@ -710,7 +709,6 @@ public:
 
 	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
 	{
-		ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		DenibblizeTrack(pTrackImage, eProDOSOrder, nNibbles);
 		WriteTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
