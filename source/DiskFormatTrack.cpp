@@ -247,6 +247,7 @@ void FormatTrack::DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite)
 
 			if (bIsWrite)
 			{
+				// NB. Address Field only written when formatting track
 				BYTE sector = m_VolTrkSecChk[2];
 				_ASSERT( sector <= 15 );
 				if (sector > 15)	// Ignore exotic formats with >16 sectors!
@@ -278,7 +279,7 @@ void FormatTrack::DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite)
 	if (m_uLast3Bytes == 0xD5AAAD)
 	{
 		m_trackState = TS_DATAFIELD;
-		if (bIsWrite)
+		if (bIsWrite)	// NB. Data Field written every time a sector is written
 			m_WriteDataFieldPrologueCount++;
 		_ASSERT(m_WriteDataFieldPrologueCount <= 16);
 	}
