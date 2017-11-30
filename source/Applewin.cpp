@@ -1365,6 +1365,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: MB_Reset()\n");
 
 		sg_Mouse.Uninitialize();	// Maybe restarting due to switching slot-4 card from MouseCard to Mockingboard
+		sg_Mouse.Reset();
 		LogFileOutput("Main: sg_Mouse.Uninitialize()\n");
 
 		DSUninit();
