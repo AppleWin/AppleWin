@@ -2139,8 +2139,8 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 
 // CtrlReset() vs ResetMachineState():
 // . CPU: 
-//		Ctrl+Reset : sp=-3 / CpuReset()
-//		Power cycle: sp=0x1ff / CpuInitialize()
+//		Ctrl+Reset : 6502.sp=-3    / CpuReset()
+//		Power cycle: 6502.sp=0x1ff / CpuInitialize()
 // . Disk][:
 //		Ctrl+Reset : if motor-on, then motor-off but continue to spin for 1s
 //		Power cycle: motor-off & immediately stop spinning
@@ -2149,6 +2149,7 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 void ResetMachineState ()
 {
   DiskReset(true);
+  HD_Reset();
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
   MemReset();	// calls CpuInitialize()
@@ -2182,11 +2183,13 @@ void CtrlReset()
 
 	PravetsReset();
 	DiskReset();
+	HD_Reset();
 	KeybReset();
 	if (!IS_APPLE2)			// TODO: Why not for A][ & A][+ too?
 		VideoResetState();	// Switch Alternate char set off
 	sg_SSC.CommReset();
 	MB_Reset();
+	sg_Mouse.Reset();		// Deassert any pending IRQs - GH#514
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
 #endif

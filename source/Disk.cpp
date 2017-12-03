@@ -558,9 +558,6 @@ void DiskInitialize(void)
 	int loop = NUM_DRIVES;
 	while (loop--)
 		ZeroMemory(&g_aFloppyDisk[loop], sizeof(Disk_t));
-
-	TCHAR imagefilename[MAX_PATH];
-	_tcscpy(imagefilename,g_sProgramDir);
 }
 
 //===========================================================================

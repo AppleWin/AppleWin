@@ -289,6 +289,15 @@ static LPCTSTR HD_DiskGetBaseName(const int iDrive)	// Not used
 	return g_HardDisk[iDrive].imagename;
 }
 
+
+//-------------------------------------
+
+void HD_Reset(void)
+{
+	g_HardDisk[HARDDISK_1].hd_error = 0;
+	g_HardDisk[HARDDISK_2].hd_error = 0;
+}
+
 //-------------------------------------
 
 void HD_Load_Rom(const LPBYTE pCxRomPeripheral, const UINT uSlot)

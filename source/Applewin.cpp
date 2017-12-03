@@ -1270,6 +1270,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
 		DiskReset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
+		HD_Reset();		// GH#515
+		LogFileOutput("Main: HDDReset()\n");
 
 		if (!bSysClkOK)
 		{
@@ -1365,7 +1367,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: MB_Reset()\n");
 
 		sg_Mouse.Uninitialize();	// Maybe restarting due to switching slot-4 card from MouseCard to Mockingboard
-		sg_Mouse.Reset();
+		sg_Mouse.Reset();			// Deassert any pending IRQs - GH#514
 		LogFileOutput("Main: sg_Mouse.Uninitialize()\n");
 
 		DSUninit();
