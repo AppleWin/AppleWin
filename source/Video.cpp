@@ -722,14 +722,7 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
 
-	// Apple IIe, Technical Notes, #3: Double High-Resolution Graphics
-	// 80STORE must be OFF to display page 2
-	if (SW_80STORE)
-		g_uVideoMode &= ~VF_PAGE2;
-
-// NTSC_BEGIN
 	NTSC_SetVideoMode( g_uVideoMode );
-// NTSC_END
 
 	return MemReadFloatingBus(uExecutedCycles);
 }
