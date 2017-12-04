@@ -9,8 +9,8 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.3.4 (Experimental) - 12 Nov 2017
--------------------------------------
+1.26.3.5 (Experimental) - 4 Dec 2017
+------------------------------------
 Changes:
 . [Bug #504] Full-screen: hide mouse pointer after 2 seconds of inactivity (and show again if mouse is moved)
 . [Bug #469] New -no-printscreen-key switch to prevent the PrintScreen key from being registered.
@@ -26,6 +26,8 @@ Changes:
 . [PR #441] Update zlib to latest version 1.2.11
 
 Fixes:
+. [Bug #516] Internal video-mode was having PAGE2 permanently cleared (instead of just masked) when 80STORE was set.
+. [Bug #514] Emulator restart (or reset) wasn't clearing any pending Mousecard interrupt
 . [Bug #499] Flush current track (if dirty) before 'Send to CiderPress'
 . [Bug #496] Support polling of Mockingboard's & Phasor's 6522 IFR.Timer1
 . [Bug #492] UI fixes for full-screen & 2x windowed-mode
