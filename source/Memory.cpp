@@ -1260,6 +1260,7 @@ void MemInitialize()
 	MemInitializeCustomF8ROM();
 	MemInitializeIO();
 	MemReset();
+	//The function was exited without releasing the pointer / handle  'newloc'.A memory / resource leak is possible.
 }
 
 void MemInitializeROM(void)

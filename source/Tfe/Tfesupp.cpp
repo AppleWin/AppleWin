@@ -106,7 +106,7 @@ char *lib_stralloc(const char *str)
 
     size = strlen(str) + 1;
     ptr = (char *)lib_malloc(size);
-
+	//The potential null pointer is passed into 'memcpy' function.Inspect the first argument.
     memcpy(ptr, str, size);
     return ptr;
 }

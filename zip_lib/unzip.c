@@ -492,6 +492,7 @@ extern unzFile ZEXPORT unzOpen2 (path, pzlib_filefunc_def)
 
     s=(unz_s*)ALLOC(sizeof(unz_s));
     *s=us;
+	// There might be dereferencing of a potential null pointer 's'. Check lines: 494, 493. 
     unzGoToFirstFile((unzFile)s);
     return (unzFile)s;
 }

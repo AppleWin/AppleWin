@@ -597,7 +597,7 @@ void tfe_init(void)
 
 void tfe_shutdown(void)
 {
-    assert( (tfe && tfe_packetpage) || (!tfe && !tfe_packetpage));
+    assert( (tfe && tfe_packetpage) || (!tfe && !tfe_packetpage)); // An excessive check can be simplified. The '(A && B) || (!A && !B)' expression is equivalent to the 'bool(A) == bool(B)' expression. 
 
     if (tfe)
         tfe_deactivate();

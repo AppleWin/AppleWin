@@ -2366,8 +2366,8 @@ void DrawFlags ( int line, WORD nRegFlags, LPTSTR pFlagNames_)
 				DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 			}
-			rect.left  -= nSpacerWidth;
-			rect.right -= nSpacerWidth;
+			rect.left  -= nSpacerWidth; // Potentially uninitialized variable 'rect.left' used.
+			rect.right -= nSpacerWidth; // Potentially uninitialized variable 'rect.right' used.
 			PrintText( sText, rect );
 
 			// Print Binary value
@@ -3991,17 +3991,17 @@ void UpdateDisplay (Update_t bUpdate)
 
 		case WINDOW_IO:
 			DrawWindow_IO( bUpdate );
-
+			// It is possible that 'break' statement is missing 
 		case WINDOW_SOURCE:
 			DrawWindow_Source( bUpdate );
-
+			// It is possible that 'break' statement is missing 
 		case WINDOW_SYMBOLS:
 			DrawWindow_Symbols( bUpdate );
 			break;
 
 		case WINDOW_ZEROPAGE:
 			DrawWindow_ZeroPage( bUpdate );
-
+			// It is possible that 'break' statement is missing 
 		default:
 			break;
 	}

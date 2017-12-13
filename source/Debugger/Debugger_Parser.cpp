@@ -201,7 +201,7 @@ void ArgsClear ()
 //===========================================================================
 bool ArgsGetValue ( Arg_t *pArg, WORD * pAddressValue_, const int nBase )
 {
-	TCHAR *pSrc = & (pArg->sArg[ 0 ]);
+	TCHAR *pSrc = & (pArg->sArg[ 0 ]); //The 'pArg' pointer was utilized before it was verified against nullptr.
 	TCHAR *pEnd = NULL;
 
 	if (pArg && pAddressValue_)
