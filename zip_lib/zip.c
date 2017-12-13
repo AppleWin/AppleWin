@@ -778,7 +778,7 @@ extern int ZEXPORT zipOpenNewFileInZip3 (file, filename, zipfi,
 
     ziplocal_putValue_inmemory(zi->ci.central_header,(uLong)CENTRALHEADERMAGIC,4);
     /* version info */
-    ziplocal_putValue_inmemory(zi->ci.central_header+4,(uLong)VERSIONMADEBY,2);
+    ziplocal_putValue_inmemory(zi->ci.central_header+4,(uLong)VERSIONMADEBY,2); //The 'zi->ci.central_header' pointer in the 'zi->ci.central_header + 4' expression could be nullptr. In such case, resulting value will be senseless and it should not be used. Check lines: 781, 777. 
     ziplocal_putValue_inmemory(zi->ci.central_header+6,(uLong)20,2);
     ziplocal_putValue_inmemory(zi->ci.central_header+8,(uLong)zi->ci.flag,2);
     ziplocal_putValue_inmemory(zi->ci.central_header+10,(uLong)zi->ci.method,2);

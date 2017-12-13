@@ -6429,7 +6429,8 @@ void z80_WRMEM(WORD Addr, BYTE Value)
 		case 0xE000: addr = laddr+0xC000; break;
 		case 0xF000: addr = laddr+0x0000; break;
 	}
-	CpuWrite( addr, Value, ConvertZ80TStatesTo6502Cycles(maincpu_clk) );
+	//Potentially uninitialized variable 'addr' used.Consider checking the first actual argument of the 'CpuWrite' function.
+	CpuWrite(addr, Value, ConvertZ80TStatesTo6502Cycles(maincpu_clk)); 
 }
 
 //===========================================================================

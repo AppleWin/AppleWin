@@ -59,6 +59,7 @@ void uilib_get_general_window_extents(HWND hwnd, int *xsize, int *ysize)
 	/* RGJ added cast for AppleWin */
     buffer = (char *) malloc(strlen + 1);
     GetWindowText(hwnd, buffer, strlen + 1);
+	//The potential null pointer is passed into 'GetWindowTextA' function. Inspect the second argument. Check lines: 61, 60.
 
     hdc = GetDC(hwnd);
     hOldFont = (HFONT)SelectObject(hdc, hFont);

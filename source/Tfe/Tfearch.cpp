@@ -267,8 +267,8 @@ BOOL TfePcapOpenAdapter(const char *interface_name)
             TfePcapDevice = TfePcapAlldevs;
         }
     }
-
-    TfePcapFP = (*p_pcap_open_live)(TfePcapDevice->name, 1700, 1, 20, TfePcapErrbuf);
+	
+    TfePcapFP = (*p_pcap_open_live)(TfePcapDevice->name, 1700, 1, 20, TfePcapErrbuf); // There might be dereferencing of a potential null pointer 'TfePcapDevice'.
     if ( TfePcapFP == NULL)
     {
         if(g_fh) fprintf(g_fh, "ERROR opening adapter: '%s'", TfePcapErrbuf);

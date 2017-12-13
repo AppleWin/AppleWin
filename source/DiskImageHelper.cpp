@@ -193,6 +193,9 @@ bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlo
 			const UINT uNewImageSize = Offset+HD_BLOCK_SIZE;
 			BYTE* pNewImageBuffer = new BYTE [uNewImageSize];
 			_ASSERT(pNewImageBuffer);
+
+			//There is no sense in testing the pointer against null, as the memory was allocated using 
+			//the 'new' operator. The exception will be generated in the case of memory allocation error.
 			if (!pNewImageBuffer)
 				return false;
 
@@ -1153,6 +1156,8 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 
 	const UINT MAX_UNCOMPRESSED_SIZE = GetMaxImageSize() + 1;	// +1 to detect images that are too big
 	pImageInfo->pImageBuffer = new BYTE[MAX_UNCOMPRESSED_SIZE];
+	//There is no sense in testing the pointer against null, as the memory was allocated using
+	//the 'new' operator. The exception will be generated in the case of memory allocation error.
 	if (!pImageInfo->pImageBuffer)
 		return eIMAGE_ERROR_BAD_POINTER;
 
