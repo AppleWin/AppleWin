@@ -201,17 +201,21 @@ void ArgsClear ()
 //===========================================================================
 bool ArgsGetValue ( Arg_t *pArg, WORD * pAddressValue_, const int nBase )
 {
+	_ASSERT(pArg);
+	if (pArg == NULL)
+		return false;
+
 	TCHAR *pSrc = & (pArg->sArg[ 0 ]);
 	TCHAR *pEnd = NULL;
 
-	if (pArg && pAddressValue_)
+	if (pAddressValue_)
 	{
 		*pAddressValue_ = (WORD)(_tcstoul( pSrc, &pEnd, nBase) & _6502_MEM_END);
 		return true;
 	}
+
 	return false;
 }
-
 
 //===========================================================================
 bool ArgsGetImmediateValue ( Arg_t *pArg, WORD * pAddressValue_ )
