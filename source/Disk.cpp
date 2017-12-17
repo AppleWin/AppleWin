@@ -1336,11 +1336,12 @@ static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 	g_aFloppyDisk[unit].trackimagedata	= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DATA);
 	g_aFloppyDisk[unit].trackimagedirty	= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY);
 
-	std::auto_ptr<BYTE> pTrack( new BYTE [NIBBLES_PER_TRACK] );
-	memset(pTrack.get(), 0, NIBBLES_PER_TRACK);
+	std::vector<BYTE> track;
+	track.resize(NIBBLES_PER_TRACK);
+	memset(&track[0], 0, track.size());
 	if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
 	{
-		yamlLoadHelper.LoadMemory(pTrack.get(), NIBBLES_PER_TRACK);
+		yamlLoadHelper.LoadMemory(&track[0], NIBBLES_PER_TRACK);
 		yamlLoadHelper.PopMap();
 	}
 
@@ -1356,7 +1357,7 @@ static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 		if (g_aFloppyDisk[unit].trackimage == NULL)
 			bImageError = true;
 		else
-			memcpy(g_aFloppyDisk[unit].trackimage, pTrack.get(), NIBBLES_PER_TRACK);
+			memcpy(g_aFloppyDisk[unit].trackimage, &track[0], NIBBLES_PER_TRACK);
 	}
 
 	if (bImageError)

@@ -32,8 +32,6 @@
 #include <windows.h>
 #include <tchar.h>
 
-extern void uilib_get_general_window_extents(HWND hwnd, int *xsize, int *ysize);
-
 typedef struct {
     unsigned int idc;
     int element_type;
