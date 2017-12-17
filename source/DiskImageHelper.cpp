@@ -416,8 +416,13 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 	// IN THE BUFFER AND WRITE IT INTO THE FIRST PART OF THE WORK BUFFER
 	// OFFSET BY THE SECTOR NUMBER.
 
+#ifdef _DEBUG
+	UINT16 bmWrittenSectorAddrFields = 0x0000;
+	BYTE uWriteDataFieldPrologueCount = 0;
+#endif
+
 	int offset    = 0;
-	int partsleft = 33;
+	int partsleft = 33;		// TODO-TC: 32 = 16*2 prologues
 	int sector    = 0;
 	while (partsleft--)
 	{
@@ -439,7 +444,7 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 		{
 			int loop       = 0;
 			int tempoffset = offset;
-			while (loop < 384)
+			while (loop < 384)	// TODO-TC: Why 384? Only need 343 for Decode62()
 			{
 				*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+loop++) = *(trackimage+tempoffset++);
 				if (tempoffset >= nibbles)
@@ -450,9 +455,23 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 			{
 				sector = ((*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+4) & 0x55) << 1)
 						| (*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+5) & 0x55);
+
+#ifdef _DEBUG
+				_ASSERT( sector <= 15 );
+				if (partsleft != 0)	// Don't need this if partsleft is initialised to 32 (not 33)
+				{
+					_ASSERT( (bmWrittenSectorAddrFields & (1<<sector)) == 0 );
+					bmWrittenSectorAddrFields |= (1<<sector);
+				}
+#endif
 			}
 			else if (byteval[2] == 0xAD)
 			{
+#ifdef _DEBUG
+				uWriteDataFieldPrologueCount++;
+				_ASSERT(uWriteDataFieldPrologueCount <= 16);
+#endif
+
 				Decode62(ms_pWorkBuffer+(ms_SectorNumber[SectorOrder][sector] << 8));
 				sector = 0;
 			}
@@ -624,7 +643,6 @@ public:
 
 	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
 	{
-		ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		DenibblizeTrack(pTrackImage, eDOSOrder, nNibbles);
 		WriteTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
@@ -691,7 +709,6 @@ public:
 
 	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
 	{
-		ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		DenibblizeTrack(pTrackImage, eProDOSOrder, nNibbles);
 		WriteTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
@@ -1318,7 +1335,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			NULL );
 		
 		if (hFile != INVALID_HANDLE_VALUE)
-			pImageInfo->bWriteProtected = 1;
+			pImageInfo->bWriteProtected = true;
 	}
 
 	if ((hFile == INVALID_HANDLE_VALUE) && bCreateIfNecessary)
@@ -1373,6 +1390,9 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 	}
 	else	// Create (or pre-existing zero-length file)
 	{
+		if (pImageInfo->bWriteProtected)
+			return eIMAGE_ERROR_ZEROLENGTH_WRITEPROTECTED;	// Can't be formatted, so return error
+
 		pImageType = GetImageForCreation(szExt, &dwSize);
 		if (pImageType && dwSize)
 		{
@@ -1380,7 +1400,26 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			if (!pImageInfo->pImageBuffer)
 				return eIMAGE_ERROR_BAD_POINTER;
 
-			ZeroMemory(pImageInfo->pImageBuffer, dwSize);
+			if (pImageType->GetType() != eImageNIB1)
+			{
+				ZeroMemory(pImageInfo->pImageBuffer, dwSize);
+			}
+			else
+			{
+				// Fill zero-length image buffer with alternating high-bit-set nibbles (GH#196, GH#338)
+				for (UINT i=0; i<dwSize; i+=2)
+				{
+					pImageInfo->pImageBuffer[i+0] = 0x80;	// bit7 set, but 0x80 is an invalid nibble
+					pImageInfo->pImageBuffer[i+1] = 0x81;	// bit7 set, but 0x81 is an invalid nibble
+				}
+			}
+
+			// As a convenience, resize the file to the complete size (GH#506)
+			// - this also means that a save-state done mid-way through a format won't reference an image file with a partial size (GH#494)
+			DWORD dwBytesWritten = 0;
+			BOOL res = WriteFile(hFile, pImageInfo->pImageBuffer, dwSize, &dwBytesWritten, NULL); 
+			if (!res || dwBytesWritten != dwSize)
+				return eIMAGE_ERROR_FAILED_TO_INIT_ZEROLENGTH;
 		}
 	}
 

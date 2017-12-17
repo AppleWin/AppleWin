@@ -301,7 +301,7 @@ void VideoBenchmark () {
       while (cycles > 0) {
         DWORD executedcycles = CpuExecute(103, true);
         cycles -= executedcycles;
-        DiskUpdatePosition(executedcycles);
+        DiskUpdateDriveState(executedcycles);
         JoyUpdateButtonLatch(executedcycles);
 	  }
     }

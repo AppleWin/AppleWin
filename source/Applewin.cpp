@@ -299,7 +299,7 @@ static void ContinueExecution(void)
 	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-	DiskUpdatePosition(uActualCyclesExecuted);
+	DiskUpdateDriveState(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 
 	sg_SSC.CommUpdate(uActualCyclesExecuted);
