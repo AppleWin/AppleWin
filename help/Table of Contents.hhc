@@ -141,7 +141,7 @@
 			</OBJECT>
 		<UL>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Entering the debugger">
+				<param name="Name" value="Entering & exiting the debugger">
 				<param name="Local" value="dbg-entering-debugger.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
@@ -206,6 +206,17 @@
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Contacting the Developers">
 				<param name="Local" value="contact.html">
+				</OBJECT>
+		</UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Appendix">
+			<param name="Local" value="appendix.html">
+			<param name="ImageNumber" value="2">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Full-speed mode">
+				<param name="Local" value="fullspeed.html">
 				</OBJECT>
 		</UL>
 	</UL>

@@ -1,0 +1,51 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+	<head>
+		<title>Full-speed mode</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+	</head>
+	<body style="FONT-FAMILY: verdana; BACKGROUND-COLOR: rgb(255,255,255)" alink="#008000"
+		link="#008000" vlink="#008000">
+		<h2 style="COLOR: rgb(0,128,0)">Full-speed mode</h2>
+		<hr size="4">
+
+		<p style="FONT-WEIGHT: bold">Overview:</p>
+		<p>Emulation can be run in full-speed (aka unthrottled) mode.</p>
+
+		<p style="FONT-WEIGHT: bold">Details:</p>
+		<p>This can be enabled manually or automatically in a variety of ways:</p>
+		
+		<ul>
+			<li>Permanently enable by the AppleWin <a href="cfg-config.html">Configuration</a> tab's 'Emulation Speed Control', and setting 'Custom Speed (in MHz)' to 'Fastest'.
+			<li>Scroll Lock key: can be configured to toggle normal/full-speed mode, or only enable full-speed when pressed.
+			<ul>
+				<li>See <a href="cfg-input.html">Input</a> for configuring how Scroll Lock behaves.
+			</ul>
+			<li>When 'Disk access speed' is set to 'Enhanced Speed' (the default), then whenever the Disk][ drive motor is on, the emulator will automatically switch to full-speed (and when the motor is switched off, then the emulator will automatically revert to what the 'Emulation Speed Control' has been set to).
+			<ul>
+				<li>See <a href="cfg-disk.html">Disk</a> for configuring 'Disk access speed'.
+			</ul>
+			<li>From the built-in debugger, single-stepping via the 'gg' command.
+		</ul>
+
+		<p style="FONT-WEIGHT: bold">Limitations and things to bear in mind:</p>
+		<ul>
+			<li>Full speed mode favours speed over video accuracy:
+			<ul>
+				<li>The Apple II's video is only updated periodically (once a wall-clock 60Hz frame) instead of each opcode.
+			</ul>
+			<li>All sound (speaker, Mockingboard, etc) is muted.
+			<li>Video-based timing/synchronisation loops won't work correctly.
+			<ul>
+				<li>The video-scanner won't advance its h/v position, so it will always returns the last value.
+				<li>Specifically code that does Apple II+ VBlank detection (using the floating bus) will hang, until full-speed mode is disabled. (But Apple //e soft-switch VBlank detection does work.)
+			</ul>
+			<li>Card detection routines (that rely on floating bus) won't work correctly.
+			<li>One of your PC's CPU cores will run at 100%.
+			<ul>
+				<li>EG. Simply boot the Apple II (or //e) without a disk in drive-1.
+			</ul>
+		</ul>
+	
+	</body>
+</html>
