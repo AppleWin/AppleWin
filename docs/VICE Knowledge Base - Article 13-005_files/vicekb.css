@@ -1,0 +1,78 @@
+BODY {
+	FONT-FAMILY: Helvetica, Arial, Tahoma, sans-serif
+}
+DIV.top {
+	MARGIN-TOP: 0pt; MARGIN-BOTTOM: 6pt
+}
+DIV.top.title {
+	center; FLOAT: right; MARGIN-LEFT: 20%
+}
+DIV.top.title P {
+	text-align: center; color: red
+}
+DIV.top.logo {
+	FLOAT: left; WIDTH: 20%; MARGIN-RIGHT: 80%
+}
+
+DIV.main {
+}
+
+DIV.sidebar {
+	MARGIN-TOP: 0pt; FLOAT: right; MARGIN-BOTTOM: 6pt; WIDTH: 30%
+}
+
+DIV.sidebar P {
+	FONT-SIZE: 8pt; MARGIN: 0pt 2pt 6pt 36pt
+}
+
+DIV.main.content {
+	MARGIN-RIGHT: 30%
+	PADDING-RIGHT: 2pt; PADDING-LEFT: 2pt; PADDING-BOTTOM: 2pt; PADDING-TOP: 2pt
+}
+DIV.main.content P {
+	FONT-SIZE: 12pt; MARGIN: 0pt 2pt 6pt 36pt
+}
+DIV.main.content P.centered {
+	FONT-SIZE: 12pt; MARGIN: 0pt 2pt 6pt; TEXT-ALIGN: center
+}
+DIV.main.content ui {
+	MARGIN: 0pt 0pt 6pt
+}
+DIV.main.content li {
+	FONT-SIZE: 12pt
+}
+DIV.main.content h1 {
+	FONT-SIZE: 20pt
+}
+DIV.content h2 {
+	FONT-SIZE: 15pt
+}
+DIV.content hr {
+	MARGIN-RIGHT: 30%; HEIGHT: 3pt
+}
+
+DIV.main.content P {
+}
+
+DIV.footer {
+	PADDING-RIGHT: 2pt; MARGIN-TOP: 6pt; PADDING-LEFT: 2pt; FLOAT: left; MARGIN-BOTTOM: 0pt; PADDING-BOTTOM: 2pt; VERTICAL-ALIGN: baseline; WIDTH: 100%; PADDING-TOP: 2pt
+}
+
+DIV.copyright {
+	FONT-SIZE: 60%; FLOAT: left
+}
+DIV.review {
+	text-align: center; FONT-SIZE: 8pt
+}
+DIV.fileinfo {
+	FONT-SIZE: 60%; FLOAT: right
+}
+
+/*
+     FILE ARCHIVED ON 03:57:53 Jul 19, 2013 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 21:23:25 Dec 18, 2017.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+*/
