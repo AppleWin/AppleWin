@@ -1,6 +1,45 @@
 How To Compile/Build AppleWin
 =============================
 
+MSVC 2017 Community
+===================
+
+1. Install [.NET Framework 4.6](https://www.microsoft.com/en-us/download/details.aspx?id=48137)
+
+  NOTE: The installer _will still_ complain about 4.6 even if [4.6.2](http://www.microsoft.com/en-us/download/details.aspx?id=53344) is installed.
+)
+
+2. MSVC 2017 Community Edition
+
+  a. Install [MSVC 2017 Community](https://www.visualstudio.com/thank-you-downloading-visual-studio/?sku=Community&rel=15)
+  b. Run `vs_Community.exe`
+  c. `Individual Components`
+
+  NOTE: Not all of these may be required but they are recommended:
+
+
+  * [x] .NET Framework 4.6.1 SDK
+  * [x] .NET Framework 4.6.1 targeting pack
+  * [x] C++ profiling tools
+  * [x] C++/CLI support
+  * [x] Git for Windows
+  * [x] Graphics Tools Windows 8.1 SDK
+  * [x] Graphics debugger and GPU profiler for DirectX
+  * [x] Static analysis tools
+  * [x] VC++ 2017 v141 toolset (x86,x64)
+  * [x] Visual Studio C++ core features
+  * [x] Windows 8.1 SDK
+  * [x] Windows 10 SDK (10.0.15063.0) for Desktop C++ x86 and x64
+  * [x] Windows 10 SDK (10.0.15063.0) for UWP: C#, VB, JS
+  * [x] Windows 10 SDK (10.0.15063.0) for UWP: C++
+
+3. Clone the repository
+
+   git clone https://github.com/AppleWin/AppleWin.git
+
+Older MSVC instructions
+=======================
+
 0. Install git
 
 1. Clone the repository

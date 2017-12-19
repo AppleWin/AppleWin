@@ -148,8 +148,8 @@ void VideoInitialize ()
 
 	ZeroMemory(g_pFramebufferinfo,sizeof(BITMAPINFOHEADER)+256*sizeof(RGBQUAD));
 	g_pFramebufferinfo->bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
-	g_pFramebufferinfo->bmiHeader.biWidth       = FRAMEBUFFER_W;
-	g_pFramebufferinfo->bmiHeader.biHeight      = FRAMEBUFFER_H;
+	g_pFramebufferinfo->bmiHeader.biWidth       = GetFrameBufferWidth();
+	g_pFramebufferinfo->bmiHeader.biHeight      = GetFrameBufferHeight();
 	g_pFramebufferinfo->bmiHeader.biPlanes      = 1;
 	g_pFramebufferinfo->bmiHeader.biBitCount    = 32;
 	g_pFramebufferinfo->bmiHeader.biCompression = BI_RGB;
@@ -444,17 +444,12 @@ void VideoDisplayLogo ()
 			nLogoX = (g_nViewportCX - scale*bm.bmWidth )/2;
 			nLogoY = (g_nViewportCY - scale*bm.bmHeight)/2;
 
-			if( g_bIsFullScreen )
+			if( IsFullScreen() )
 			{
-#if 0
-				// Draw Logo at top of screen so when the Apple display is refreshed it will automagically clear it
-				nLogoX = 0;
-				nLogoY = 0;
-#else
 				nLogoX += GetFullScreenOffsetX();
 				nLogoY += GetFullScreenOffsetY();
-#endif
 			}
+
 			VideoDrawLogoBitmap( hFrameDC, nLogoX, nLogoY, bm.bmWidth, bm.bmHeight, scale );
 		}
 	}
@@ -498,8 +493,6 @@ void VideoDisplayLogo ()
 #endif
 
 #undef  DRAWVERSION
-
-	FrameReleaseVideoDC();
 
 	DeleteObject(font);
 }
@@ -655,59 +648,31 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 		NTSC_VideoRedrawWholeScreen();
 	}
 
-// NTSC_BEGIN
-	LPBYTE pDstFrameBufferBits = 0;
-	LONG   pitch = 0;
-	HDC    hFrameDC = FrameGetVideoDC(&pDstFrameBufferBits,&pitch);
-
-#if 1 // Keep Aspect Ratio
-	// Need to clear full screen logo to black
-	#define W g_nViewportCX
-	#define H g_nViewportCY
-#else // Stretch
-	// Stretch - doesn't preserve 1:1 aspect ratio
-	#define W g_bIsFullScreen ? g_nDDFullScreenW : g_nViewportCX
-	#define H g_bIsFullScreen ? g_nDDFullScreenH : g_nViewportCY
-#endif
+	HDC hFrameDC = FrameGetDC();
 
 	if (hFrameDC)
 	{
-		{
-			int xDst = 0;
-			int yDst = 0;
+		int xSrc = GetFrameBufferBorderWidth();
+		int ySrc = GetFrameBufferBorderHeight();
+		VideoFrameBufferAdjust(xSrc, ySrc);	// TC: Hacky-fix for GH#341
 
-			if (g_bIsFullScreen)
-			{
-				// Why the need to set the mid-position here, but not for (full-screen) LOGO or DEBUG modes?
-				xDst = (g_nDDFullScreenW-W)/2 - VIEWPORTX*2;
-				yDst = (g_nDDFullScreenH-H)/2;
-			}
+		int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
+		int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
+		int wdest = g_nViewportCX;
+		int hdest = g_nViewportCY;
 
-			int xSrc = BORDER_W;
-			int ySrc = BORDER_H;
-			VideoFrameBufferAdjust(xSrc, ySrc);	// TC: Hacky-fix for GH#341
-
-			int xdest = GetFullScreenOffsetX();
-			int ydest = GetFullScreenOffsetY();
-			int wdest = g_nViewportCX;
-			int hdest = g_nViewportCY;
-
-			SetStretchBltMode(hFrameDC, COLORONCOLOR);
-			StretchBlt(
-				hFrameDC, 
-				xdest, ydest,
-				wdest, hdest,
-				g_hDeviceDC,
-				xSrc, ySrc,
-				FRAMEBUFFER_BORDERLESS_W, FRAMEBUFFER_BORDERLESS_H,
-				SRCCOPY);
-		}
+		SetStretchBltMode(hFrameDC, COLORONCOLOR);
+		StretchBlt(
+			hFrameDC, 
+			xdest, ydest,
+			wdest, hdest,
+			g_hDeviceDC,
+			xSrc, ySrc,
+			GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),
+			SRCCOPY);
 	}
 
 	GdiFlush();
-
-	FrameReleaseVideoDC();
-// NTSC_END
 }
 
 //===========================================================================
@@ -757,14 +722,7 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
 
-	// Apple IIe, Technical Notes, #3: Double High-Resolution Graphics
-	// 80STORE must be OFF to display page 2
-	if (SW_80STORE)
-		g_uVideoMode &= ~VF_PAGE2;
-
-// NTSC_BEGIN
 	NTSC_SetVideoMode( g_uVideoMode );
-// NTSC_END
 
 	return MemReadFloatingBus(uExecutedCycles);
 }
@@ -1131,8 +1089,8 @@ static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 
 	Video_SetBitmapHeader(
 		pBmp,
-		ScreenShotType == SCREENSHOT_280x192 ? FRAMEBUFFER_BORDERLESS_W/2 : FRAMEBUFFER_BORDERLESS_W,
-		ScreenShotType == SCREENSHOT_280x192 ? FRAMEBUFFER_BORDERLESS_H/2 : FRAMEBUFFER_BORDERLESS_H,
+		ScreenShotType == SCREENSHOT_280x192 ? GetFrameBufferBorderlessWidth()/2 : GetFrameBufferBorderlessWidth(),
+		ScreenShotType == SCREENSHOT_280x192 ? GetFrameBufferBorderlessHeight()/2 : GetFrameBufferBorderlessHeight(),
 		32
 	);
 
@@ -1162,17 +1120,17 @@ static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 	// @reference: "Storing an Image" http://msdn.microsoft.com/en-us/library/ms532340(VS.85).aspx
 	pSrc = (uint32_t*) g_pFramebufferbits;
 
-	int xSrc = BORDER_W;
-	int ySrc = BORDER_H;
+	int xSrc = GetFrameBufferBorderWidth();
+	int ySrc = GetFrameBufferBorderHeight();
 	VideoFrameBufferAdjust(xSrc, ySrc, true);	// TC: Hacky-fix for GH#341 & GH#356
 												// Lines stored in reverse, so invert the y-adjust value
 
-	pSrc += xSrc;					// Skip left border
-	pSrc += ySrc * FRAMEBUFFER_W;	// Skip top border
+	pSrc += xSrc;								// Skip left border
+	pSrc += ySrc * GetFrameBufferWidth();		// Skip top border
 
 	if( ScreenShotType == SCREENSHOT_280x192 )
 	{
-		pSrc += FRAMEBUFFER_W;	// Start on odd scanline (otherwise for 50% scanline mode get an all black image!)
+		pSrc += GetFrameBufferWidth();	// Start on odd scanline (otherwise for 50% scanline mode get an all black image!)
 
 		uint32_t  aScanLine[ 280 ];
 		uint32_t *pDst;
@@ -1180,25 +1138,25 @@ static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 		// 50% Half Scan Line clears every odd scanline.
 		// SHIFT+PrintScreen saves only the even rows.
 		// NOTE: Keep in sync with _Video_RedrawScreen() & Video_MakeScreenShot()
-		for( int y = 0; y < FRAMEBUFFER_BORDERLESS_H/2; y++ )
+		for( UINT y = 0; y < GetFrameBufferBorderlessHeight()/2; y++ )
 		{
 			pDst = aScanLine;
-			for( int x = 0; x < FRAMEBUFFER_BORDERLESS_W/2; x++ )
+			for( UINT x = 0; x < GetFrameBufferBorderlessWidth()/2; x++ )
 			{
 				*pDst++ = pSrc[1]; // correction for left edge loss of scaled scanline [Bill Buckel, B#18928]
 				pSrc += 2; // skip odd pixels
 			}
-			fwrite( aScanLine, sizeof(uint32_t), FRAMEBUFFER_BORDERLESS_W/2, pFile );
-			pSrc += FRAMEBUFFER_W; // scan lines doubled - skip odd ones
-			pSrc += BORDER_W*2;	// Skip right border & next line's left border
+			fwrite( aScanLine, sizeof(uint32_t), GetFrameBufferBorderlessWidth()/2, pFile );
+			pSrc += GetFrameBufferWidth();			// scan lines doubled - skip odd ones
+			pSrc += GetFrameBufferBorderWidth()*2;	// Skip right border & next line's left border
 		}
 	}
 	else
 	{
-		for( int y = 0; y < FRAMEBUFFER_BORDERLESS_H; y++ )
+		for( UINT y = 0; y < GetFrameBufferBorderlessHeight(); y++ )
 		{
-			fwrite( pSrc, sizeof(uint32_t), FRAMEBUFFER_BORDERLESS_W, pFile );
-			pSrc += FRAMEBUFFER_W;
+			fwrite( pSrc, sizeof(uint32_t), GetFrameBufferBorderlessWidth(), pFile );
+			pSrc += GetFrameBufferWidth();
 		}
 	}
 #endif // SCREENSHOT_BMP
@@ -1277,7 +1235,7 @@ static void videoCreateDIBSection()
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory( g_pFramebufferbits, FRAMEBUFFER_W*FRAMEBUFFER_H*4 );
+	ZeroMemory( g_pFramebufferbits, GetFrameBufferWidth()*GetFrameBufferHeight()*sizeof(bgra_t) );
 
 	NTSC_VideoInit( g_pFramebufferbits );
 }

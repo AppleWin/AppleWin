@@ -75,6 +75,7 @@ enum AppMode_e
 #define  REGVALUE_CPU_TYPE           "CPU Type"
 #define  REGVALUE_OLD_APPLE2_TYPE    "Computer Emulation"	// Deprecated
 #define  REGVALUE_CONFIRM_REBOOT     "Confirm Reboot" // Added at 1.24.1 PageConfig
+#define  REGVALUE_FS_SHOW_SUBUNIT_STATUS "Full-screen show subunit status"
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
@@ -211,3 +212,5 @@ inline bool IsOriginal2E(void)
 enum eBUTTON {BUTTON0=0, BUTTON1};
 
 enum eBUTTONSTATE {BUTTON_UP=0, BUTTON_DOWN};
+
+enum {IDEVENT_TIMER_MOUSE=1, IDEVENT_TIMER_100MSEC};

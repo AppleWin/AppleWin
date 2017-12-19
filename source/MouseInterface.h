@@ -101,8 +101,6 @@ protected:
 	UINT	m_uSlot;
 };
 
-#define IDEVENT_TIMER_MOUSE 1
-
 namespace DIMouse
 {
 	HRESULT DirectInputInit( HWND hDlg );

@@ -89,25 +89,26 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     LTEXT           "&Model:",IDC_STATIC,5,7,40,8
     COMBOBOX        IDC_COMPUTER,45,5,95,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "&Confirm reboot",IDC_CHECK_CONFIRM_REBOOT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,8,62,10
-    GROUPBOX        "Video",IDC_STATIC,5,22,200,43
+    CONTROL         "Confirm reboot",IDC_CHECK_CONFIRM_REBOOT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,8,62,10
+    GROUPBOX        "Video",IDC_STATIC,5,22,200,56
     LTEXT           "Mo&de:",IDC_STATIC,12,33,33,8
     COMBOBOX        IDC_VIDEOTYPE,45,30,95,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Monochrome &Color...",IDC_MONOCOLOR,12,46,80,14
-    CONTROL         "&50% Scan lines",IDC_CHECK_HALF_SCAN_LINES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,103,48,62,10
-    LTEXT           "&Serial Port:",IDC_STATIC,5,74,40,8
-    COMBOBOX        IDC_SERIALPORT,45,72,95,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "&Ethernet Settings...",IDC_ETHERNET,4,90,80,14
-    GROUPBOX        "Emulation Speed Control",IDC_STATIC,5,115,200,85
+    CONTROL         "50% Scan lines",IDC_CHECK_HALF_SCAN_LINES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,103,48,62,10
+    CONTROL         "Full-Screen: Show drive/keyboard status",IDC_CHECK_FS_SHOW_SUBUNIT_STATUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,64,140,10
+    LTEXT           "&Serial Port:",IDC_STATIC,5,89,40,8
+    COMBOBOX        IDC_SERIALPORT,45,87,95,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "&Ethernet Settings...",IDC_ETHERNET,4,105,80,14
+    GROUPBOX        "Emulation Speed Control",IDC_STATIC,5,130,200,85
     CONTROL         "Use &Authentic Machine Speed",IDC_AUTHENTIC_SPEED,
-                    "Button",BS_AUTORADIOBUTTON,15,126,115,10
-    CONTROL         "Select C&ustom Speed (in MHz)",IDC_CUSTOM_SPEED,"Button",BS_AUTORADIOBUTTON,15,138,115,10
-    CONTROL         "Generic2",IDC_SLIDER_CPU_SPEED,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,25,149,160,15
-    CTEXT           "0.5",IDC_0_5_MHz,23,165,20,10
-    CTEXT           "1.0",IDC_1_0_MHz,59,165,20,10
-    CTEXT           "2.0",IDC_2_0_MHz,96,165,20,10
-    RTEXT           "Fastest",IDC_MAX_MHz,150,165,29,10
-    PUSHBUTTON      "&Benchmark Emulator",IDC_BENCHMARK,15,179,85,15
+                    "Button",BS_AUTORADIOBUTTON,15,141,115,10
+    CONTROL         "Select C&ustom Speed (in MHz)",IDC_CUSTOM_SPEED,"Button",BS_AUTORADIOBUTTON,15,153,115,10
+    CONTROL         "Generic2",IDC_SLIDER_CPU_SPEED,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,25,164,160,15
+    CTEXT           "0.5",IDC_0_5_MHz,23,180,20,10
+    CTEXT           "1.0",IDC_1_0_MHz,59,180,20,10
+    CTEXT           "2.0",IDC_2_0_MHz,96,180,20,10
+    RTEXT           "Fastest",IDC_MAX_MHz,150,180,29,10
+    PUSHBUTTON      "&Benchmark Emulator",IDC_BENCHMARK,15,194,85,15
 END
 
 IDD_PROPPAGE_INPUT DIALOGEX 0, 0, 210, 215
@@ -251,8 +252,8 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,26,3,0
- PRODUCTVERSION 1,26,3,0
+ FILEVERSION 1,26,3,5
+ PRODUCTVERSION 1,26,3,5
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -270,12 +271,12 @@ BEGIN
             VALUE "Comments", "https://github.com/AppleWin"
             VALUE "CompanyName", "AppleWin"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1, 26, 3, 0"
+            VALUE "FileVersion", "1, 26, 3, 5"
             VALUE "InternalName", "APPLEWIN"
             VALUE "LegalCopyright", " 1994-2017 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1, 26, 3, 0"
+            VALUE "ProductVersion", "1, 26, 3, 5"
         END
     END
     BLOCK "VarFileInfo"

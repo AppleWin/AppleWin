@@ -188,6 +188,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Config - Disassembly
 	bool  g_bConfigDisasmAddressView   = true;
+	int   g_bConfigDisasmClick         = 0; // GH#462 alt=1, ctrl=2, shift=4 bitmask
 	bool  g_bConfigDisasmAddressColon  = true;
 	bool  g_bConfigDisasmOpcodesView   = true;
 	bool  g_bConfigDisasmOpcodeSpaces  = true;
@@ -2489,7 +2490,7 @@ Update_t CmdConfigDisasm( int nArgs )
 			{
 				case PARAM_CONFIG_BRANCH:
 					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
-					{					
+					{
 						iArg++;
 						g_iConfigDisasmBranchType = g_aArgs[ iArg ].nValue;
 						if (g_iConfigDisasmBranchType < 0)
@@ -2501,6 +2502,30 @@ Update_t CmdConfigDisasm( int nArgs )
 					else // show current setting
 					{
 						ConsoleBufferPushFormat( sText, TEXT( "Branch Type: %d" ), g_iConfigDisasmBranchType );
+						ConsoleBufferToDisplay();
+					}
+					break;
+
+				case PARAM_CONFIG_CLICK: // GH#462
+					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
+					{
+						iArg++;
+						g_bConfigDisasmClick = (g_aArgs[ iArg ].nValue) & 7; // MAGIC NUMBER
+					}
+//					else // Always show current setting -- TODO: Fix remaining disasm to show current setting when set
+					{
+						const char *aClickKey[8] =
+						{
+							 ""                 // 0
+							,"Alt "             // 1
+							,"Ctrl "            // 2
+							,"Alt+Ctrl "        // 3
+							,"Shift "           // 4
+							,"Shift+Alt "       // 5
+							,"Shift+Ctrl "      // 6
+							,"Shift+Ctarl+Alt " // 7
+						};
+						ConsoleBufferPushFormat( sText, TEXT( "Click: %d = %sLeft click" ), g_bConfigDisasmClick, aClickKey[ g_bConfigDisasmClick & 7 ] );
 						ConsoleBufferToDisplay();
 					}
 					break;
@@ -9647,14 +9672,33 @@ void DebuggerMouseClick( int x, int y )
 	if (g_nAppMode != MODE_DEBUG)
 		return;
 
+	// NOTE: KeybUpdateCtrlShiftStatus() should be called before
+	int iAltCtrlShift  = 0;
+	iAltCtrlShift |= (g_bAltKey   & 1) << 0;
+	iAltCtrlShift |= (g_bCtrlKey  & 1) << 1;
+	iAltCtrlShift |= (g_bShiftKey & 1) << 2;
+
+	// GH#462 disasm click #
+	if (iAltCtrlShift != g_bConfigDisasmClick)
+		return;
+
 	int nFontWidth  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg * GetViewportScale();
 	int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight * GetViewportScale();
 
 	// do picking
 
-	int cx = (x - VIEWPORTX) / nFontWidth;
-	int cy = (y - VIEWPORTY) / nFontHeight;
-	
+	const int nOffsetX = IsFullScreen() ? GetFullScreenOffsetX() : Get3DBorderWidth();
+	const int nOffsetY = IsFullScreen() ? GetFullScreenOffsetY() : Get3DBorderHeight();
+
+	const int nOffsetInScreenX = x - nOffsetX;
+	const int nOffsetInScreenY = y - nOffsetY;
+
+	if (nOffsetInScreenX < 0 || nOffsetInScreenY < 0)
+		return;
+
+	int cx = nOffsetInScreenX / nFontWidth;
+	int cy = nOffsetInScreenY / nFontHeight;
+
 #if _DEBUG
 	char sText[ CONSOLE_WIDTH ];
 	sprintf( sText, "x:%d y:%d  cx:%d cy:%d", x, y, cx, cy );
@@ -9716,6 +9760,31 @@ void DebuggerMouseClick( int x, int y )
 			{
 				CmdCursorJumpPC( CURSOR_ALIGN_CENTER );
 				DebugDisplay();
+			}
+			else
+			if (cy == 4 || cy == 5)
+			{
+				int iFlag = -1;
+				int nFlag = _6502_NUM_FLAGS;
+
+				while( nFlag --> 0 )
+				{
+					// TODO: magic number instead of DrawFlags() DISPLAY_FLAG_COLUMN, rect.left += ((2 + _6502_NUM_FLAGS) * nSpacerWidth);
+					// BP_SRC_FLAG_C is 6,  cx 60 --> 0
+					// ...
+					// BP_SRC_FLAG_N is 13, cx 53 --> 7
+					if (cx == (53 + nFlag))
+					{
+						iFlag = 7 - nFlag;
+						break;
+					}
+				}
+
+				if (iFlag >= 0)
+				{
+					regs.ps ^= (1 << iFlag);
+					DebugDisplay();
+				}
 			}
 			else // Click on stack
 			if( cy > 3)

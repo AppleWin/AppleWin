@@ -47,6 +47,7 @@ void    DiskDestroy(void); // no, doesn't "destroy" the disk image.  DiskIIManag
 
 void    DiskBoot(void);
 void    DiskEject(const int iDrive);
+void	DiskFlushCurrentTrack(const int iDrive);
 
 LPCTSTR DiskGetFullName(const int iDrive);
 LPCTSTR DiskGetFullDiskFilename(const int iDrive);

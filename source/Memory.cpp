@@ -534,12 +534,16 @@ static bool IsCardInSlot(const UINT uSlot);
 //    1           0       internal   internal
 //    1           1       internal   internal
 //
+// NB. if (INTCXROM || INTC8ROM) == true then internal ROM
+//
 // (*) SLOTCXROM'
 // -----------
 //
 // INTC8ROM: Unreadable soft switch (UTAIIe:5-28)
-// . Set:   Access to $C3XX with SLOTC3ROM reset
-// . Reset: Access to $CFFF or an MMU reset
+// . Set:   On access to $C3XX with SLOTC3ROM reset
+//			- "From this point, $C800-$CFFF will stay assigned to motherboard ROM until
+//			   an access is made to $CFFF or until the MMU detects a system reset."
+// . Reset: On access to $CFFF or an MMU reset
 //
 
 static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
@@ -909,6 +913,7 @@ static void UpdatePaging(BOOL initialize)
 
 	for (loop = 0xC0; loop < 0xC8; loop++)
 	{
+		memdirty[loop] = 0;	// ROM can't be dirty
 		const UINT uSlotOffset = (loop & 0x0f) * 0x100;
 		if (loop == 0xC3)
 			memshadow[loop] = (SW_SLOTC3ROM && SW_SLOTCXROM)	? pCxRomPeripheral+uSlotOffset	// C300..C3FF - Slot 3 ROM (all 0x00's)
@@ -920,8 +925,10 @@ static void UpdatePaging(BOOL initialize)
 
 	for (loop = 0xC8; loop < 0xD0; loop++)
 	{
+		memdirty[loop] = 0;	// ROM can't be dirty (but STA $CFFF will set the dirty flag)
 		const UINT uRomOffset = (loop & 0x0f) * 0x100;
-		memshadow[loop] = pCxRomInternal+uRomOffset;											// C800..CFFF - Internal ROM
+		memshadow[loop] = (SW_SLOTCXROM && !INTC8ROM)	? pCxRomPeripheral+uRomOffset			// C800..CFFF - Peripheral ROM (GH#486)
+														: pCxRomInternal+uRomOffset;			// C800..CFFF - Internal ROM
 	}
 
 	for (loop = 0xD0; loop < 0xE0; loop++)
@@ -1428,6 +1435,21 @@ void MemInitializeIO(void)
 	// . required when restoring saved-state
 	if (!SW_SLOTCXROM)
 		IoHandlerCardsOut();
+}
+
+// Called by:
+// . Snapshot_LoadState_v2()
+void MemInitializeCardExpansionRomFromSnapshot(void)
+{
+	const UINT uSlot = g_uPeripheralRomSlot;
+
+	if (ExpansionRom[uSlot] == NULL)
+		return;
+
+	_ASSERT(g_eExpansionRomType == eExpRomPeripheral);
+
+	memcpy(pCxRomPeripheral+0x800, ExpansionRom[uSlot], FIRMWARE_EXPANSION_SIZE);
+	// NB. Copied to /mem/ by UpdatePaging(TRUE)
 }
 
 inline DWORD getRandomTime()
@@ -1950,6 +1972,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	modechanging = 0;
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
 	UpdatePaging(1);	// Initialize=1 (Still needed, even with call to MemUpdatePaging() - why?)
+						// TC-TODO: At this point, the cards haven't been loaded, so the card's expansion ROM is unknown - so pointless(?) calling this now
 
 	return true;
 }

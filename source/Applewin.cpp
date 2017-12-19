@@ -60,7 +60,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static UINT16 g_AppleWinVersion[4] = {0};
 char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
-TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
+TCHAR *g_pAppTitle = NULL;
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
@@ -77,6 +77,7 @@ static bool g_bLoadedSaveState = false;
 TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin executable resides
 TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
+bool      g_bCapturePrintScreenKey = true;
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
 bool      g_bRestart = false;
 bool      g_bRestartFullScreen = false;
@@ -595,7 +596,7 @@ void LoadConfiguration(void)
 	}
 
 	char aySerialPortName[ CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM ];
-	if (RegLoadString(	TEXT("Configuration"),
+	if (RegLoadString(	TEXT(REG_CONFIG),
 		TEXT(REGVALUE_SERIAL_PORT_NAME),
 		TRUE,
 		aySerialPortName,
@@ -616,6 +617,9 @@ void LoadConfiguration(void)
 	//
 
 	DWORD dwTmp;
+
+	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
+		SetFullScreenShowSubunitStatus(dwTmp ? true : false);
 
 	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
 		sg_PropertySheet.SetTheFreezesF8Rom(dwTmp);
@@ -918,6 +922,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bShutdown = false;
 	bool bSetFullScreen = false;
 	bool bBoot = false;
+	bool bChangedDisplayResolution = false;
+	UINT bestWidth = 0, bestHeight = 0;
 	LPSTR szImageName_drive1 = NULL;
 	LPSTR szImageName_drive2 = NULL;
 	LPSTR szSnapshotName = NULL;
@@ -962,9 +968,29 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			bSetFullScreen = true;
 		}
-		else if (strcmp(lpCmdLine, "-fs8bit") == 0)
+#define CMD_FS_HEIGHT "-fs-height="
+		else if (strncmp(lpCmdLine, CMD_FS_HEIGHT, sizeof(CMD_FS_HEIGHT)-1) == 0)
 		{
-			SetFullScreen32Bit(false);				// Support old v1.24 fullscreen 8-bit palette mode
+			bSetFullScreen = true;	// Implied
+
+			LPSTR lpTmp = lpCmdLine + sizeof(CMD_FS_HEIGHT)-1;
+			bool bRes = false;
+			if (strcmp(lpTmp, "best") == 0)
+			{
+				bRes = GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight);
+			}
+			else
+			{
+				UINT userSpecifiedHeight = atoi(lpTmp);
+				if (userSpecifiedHeight)
+					bRes = GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight, userSpecifiedHeight);
+				else
+					LogFileOutput("Invalid cmd-line parameter for -fs-height=x switch\n");
+			}
+			if (bRes)
+				LogFileOutput("Best resolution for -fs-height=x switch: Width=%d, Height=%d\n", bestWidth, bestHeight);
+			else
+				LogFileOutput("Failed to set parameter for -fs-height=x switch\n");
 		}
 		else if (strcmp(lpCmdLine, "-no-di") == 0)
 		{
@@ -1034,6 +1060,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if (strcmp(lpCmdLine, "-printscreen") == 0)		// Turn on display of the last filename print screen was saved to
 		{
 			g_bDisplayPrintScreenFileName = true;
+		}
+		else if (strcmp(lpCmdLine, "-no-printscreen-key") == 0)		// Don't try to capture PrintScreen key GH#469
+		{
+			g_bCapturePrintScreenKey = false;
 		}
 		else if (strcmp(lpCmdLine, "-no-printscreen-dlg") == 0)		// Turn off the PrintScreen warning message dialog (if PrintScreen key can't be grabbed)
 		{
@@ -1233,12 +1263,15 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 
 		// PrintScrn support
-		AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
+		if (g_bCapturePrintScreenKey)
+			AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
 		LogFileOutput("Main: AppleWin_RegisterHotKeys()\n");
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
 		DiskReset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
+		HD_Reset();		// GH#515
+		LogFileOutput("Main: HDDReset()\n");
 
 		if (!bSysClkOK)
 		{
@@ -1293,6 +1326,21 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			if (bSetFullScreen)
 			{
+				if (bestWidth && bestHeight)
+				{
+					DEVMODE devMode;
+					memset(&devMode, 0, sizeof(devMode));
+					devMode.dmSize = sizeof(devMode);
+					devMode.dmPelsWidth = bestWidth;
+					devMode.dmPelsHeight = bestHeight;
+					devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
+
+					DWORD dwFlags = 0;
+					LONG res = ChangeDisplaySettings(&devMode, dwFlags);
+					if (res == 0)
+						bChangedDisplayResolution = true;
+				}
+
 				PostMessage(g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
 				bSetFullScreen = false;
 			}
@@ -1319,12 +1367,16 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: MB_Reset()\n");
 
 		sg_Mouse.Uninitialize();	// Maybe restarting due to switching slot-4 card from MouseCard to Mockingboard
+		sg_Mouse.Reset();			// Deassert any pending IRQs - GH#514
 		LogFileOutput("Main: sg_Mouse.Uninitialize()\n");
 
 		DSUninit();
 		LogFileOutput("Main: DSUninit()\n");
 	}
 	while (g_bRestart);
+
+	if (bChangedDisplayResolution)
+		ChangeDisplaySettings(NULL, 0);	// restore default
 
 	// Release COM
 	SysClk_UninitTimer();

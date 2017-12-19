@@ -256,7 +256,7 @@
 
 		MAX_ARGS        = 32, // was 40
 		ARG_SYNTAX_ERROR= -1,
-		MAX_ARG_LEN     = 56, // was 12, extended to allow font names
+		MAX_ARG_LEN     = 127, // extended to allow font names, GH#481, any value is good > CONSOLE_WIDTH=80
 	};
 
 	// NOTE: All Commands return flags of what needs to be redrawn
@@ -1259,7 +1259,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 	struct Arg_t
 	{	
-		char       sArg[ MAX_ARG_LEN ]; // Array chars comes first, for alignment
+		char       sArg[ MAX_ARG_LEN+1 ]; // Array chars comes first, for alignment, GH#481 echo 55 char limit
 		int        nArgLen; // Needed for TextSearch "ABC\x00"
 		WORD       nValue ; // 2
 //		WORD       nVal1  ; // 2
@@ -1319,6 +1319,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 // Disasm
 	, _PARAM_CONFIG_BEGIN = _PARAM_REGS_END // Daisy Chain
 		, PARAM_CONFIG_BRANCH = _PARAM_CONFIG_BEGIN // g_iConfigDisasmBranchType   [0|1|2]
+		, PARAM_CONFIG_CLICK   // g_bConfigDisasmClick        [0..7] // GH#462
 		, PARAM_CONFIG_COLON   // g_bConfigDisasmAddressColon [0|1]
 		, PARAM_CONFIG_OPCODE  // g_bConfigDisasmOpcodesView  [0|1]
 		, PARAM_CONFIG_POINTER // g_bConfigInfoTargetPointer  [0|1]

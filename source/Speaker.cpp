@@ -130,7 +130,7 @@ static void InitRemainderBuffer()
 	SetClksPerSpkrSample();
 
 	g_nRemainderBufferSize = (UINT) g_fClksPerSpkrSample;
-	if ((double)g_nRemainderBufferSize != g_fClksPerSpkrSample)
+	if ((double)g_nRemainderBufferSize < g_fClksPerSpkrSample)
 		g_nRemainderBufferSize++;
 
 	g_pRemainderBuffer = new short [g_nRemainderBufferSize];
@@ -339,10 +339,10 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
       if (g_bQuieterSpeaker)
       {
        // quieten the speaker if 8 bit DAC in use
-       if (g_nSpeakerData == (SPKR_DATA_INIT >> 2))
+       if (g_nSpeakerData == (SPKR_DATA_INIT/4))	// NB. Don't shift -ve number right: undefined behaviour (MSDN says: implementation-dependent)
         g_nSpeakerData = ~g_nSpeakerData;
        else
-        g_nSpeakerData = SPKR_DATA_INIT>>2;
+        g_nSpeakerData = SPKR_DATA_INIT/4;	// NB. Don't shift -ve number right: undefined behaviour (MSDN says: implementation-dependent)
       }
       else
       {

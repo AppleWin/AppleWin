@@ -192,9 +192,6 @@ bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlo
 			// Horribly inefficient! (Unzip to a normal file if you want better performance!)
 			const UINT uNewImageSize = Offset+HD_BLOCK_SIZE;
 			BYTE* pNewImageBuffer = new BYTE [uNewImageSize];
-			_ASSERT(pNewImageBuffer);
-			if (!pNewImageBuffer)
-				return false;
 
 			memcpy(pNewImageBuffer, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
 			memset(&pNewImageBuffer[pImageInfo->uImageSize], 0, uNewImageSize-pImageInfo->uImageSize);	// Should always be HD_BLOCK_SIZE (so this is redundant)
@@ -1153,8 +1150,6 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 
 	const UINT MAX_UNCOMPRESSED_SIZE = GetMaxImageSize() + 1;	// +1 to detect images that are too big
 	pImageInfo->pImageBuffer = new BYTE[MAX_UNCOMPRESSED_SIZE];
-	if (!pImageInfo->pImageBuffer)
-		return eIMAGE_ERROR_BAD_POINTER;
 
 	int nLen = gzread(hGZFile, pImageInfo->pImageBuffer, MAX_UNCOMPRESSED_SIZE);
 	if (nLen < 0 || nLen == MAX_UNCOMPRESSED_SIZE)
@@ -1222,8 +1217,6 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 		return eIMAGE_ERROR_BAD_SIZE;
 
 	pImageInfo->pImageBuffer = new BYTE[uFileSize];
-	if (!pImageInfo->pImageBuffer)
-		return eIMAGE_ERROR_BAD_POINTER;
 
 	nRes = unzOpenCurrentFile(hZipFile);
 	if (nRes != UNZ_OK)
@@ -1352,8 +1345,6 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 		const UINT uDetectSize = GetMinDetectSize(dwSize, &bTempDetectBuffer);
 
 		pImageInfo->pImageBuffer = new BYTE [dwSize];
-		if (!pImageInfo->pImageBuffer)
-			return eIMAGE_ERROR_BAD_POINTER;
 
 		DWORD dwBytesRead;
 		BOOL bRes = ReadFile(hFile, pImageInfo->pImageBuffer, dwSize, &dwBytesRead, NULL);
@@ -1377,9 +1368,6 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 		if (pImageType && dwSize)
 		{
 			pImageInfo->pImageBuffer = new BYTE [dwSize];
-			if (!pImageInfo->pImageBuffer)
-				return eIMAGE_ERROR_BAD_POINTER;
-
 			ZeroMemory(pImageInfo->pImageBuffer, dwSize);
 		}
 	}

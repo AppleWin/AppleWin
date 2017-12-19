@@ -1,4 +1,5 @@
 ; Apple 2 Rom Symbol Table
+; Version 4 GH#484
 ; Version 3 Cross-referenced/Sync'd with APPLE2E.SYM & A2_BASIC.SYM
             Added Text Holes
 ; Version 2 by Michael Pohoreski - AppleWin Debugger Dev
@@ -15,18 +16,24 @@
 0026 GBASL
 0027 GBASH
 0028 BASL
-0029 BAS2L
+0029 BASH
+002A BAS2L
 002B BAS2H
 002C H2/LMNEM
 002D V2/RMNEM
-002E MASK/TEMPOP
+;$2E aliases 3 symbols 
+;36   MASK     EQU   $2E
+;37   CHKSUM   EQU   $2E
+;38   FORMAT   EQU   $2E
+002E F8.MASK
 002F LENGTH/LASTIN
 ; Applesoft   COLOR F24F
 ; ROM/Monitor COLOR 30
 ; Reference: Apple ][ Reference Manual
 0030 COLOR
 0031 MODE
-0032 INVFLG/PROMPT
+0032 INVFLG
+0033 PROMPT
 0034 YSAV
 0035 SAVY1
 0036 CSWL
@@ -281,7 +288,7 @@ C4FA AMOD6
 C567 XHEADER
 C5AA WRITE2
 C5D1 XREAD
-; Disk Drive
+; IIe Technical Reference Manual (1987), Page 317, $C3XX ROM
 C603 TSTZPG
 C607 ZP1
 C610 ZP2

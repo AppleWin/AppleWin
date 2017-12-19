@@ -171,6 +171,7 @@ static void Snapshot_LoadState_v1()	// .aws v1.0.0.1, up to (and including) Appl
 		// Reset all sub-systems
 		MemReset();
 		DiskReset();
+		HD_Reset();
 		KeybReset();
 		VideoResetState();
 		MB_Reset();
@@ -492,6 +493,7 @@ static void Snapshot_LoadState_v2(void)
 		MemReset();
 		PravetsReset();
 		DiskReset();
+		HD_Reset();
 		KeybReset();
 		VideoResetState();
 		MB_Reset();
@@ -523,6 +525,7 @@ static void Snapshot_LoadState_v2(void)
 		MemInitializeROM();
 		MemInitializeCustomF8ROM();
 		MemInitializeIO();
+		MemInitializeCardExpansionRomFromSnapshot();
 
 		MemUpdatePaging(TRUE);
 	}

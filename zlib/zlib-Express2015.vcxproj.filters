@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="adler32.c">
@@ -11,9 +11,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="deflate.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="gzio.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="infback.c">
@@ -35,6 +32,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="zutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gzclose.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gzlib.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gzread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gzwrite.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -63,13 +72,13 @@
     <ClInclude Include="zconf.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="zconf.in.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="zlib.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="zutil.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gzguts.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
