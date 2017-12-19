@@ -555,6 +555,8 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 	char sText[ CONSOLE_WIDTH * 3 ];
 	bool bFileDisplayed = false;
 
+	const int nMaxLen = min(MAX_TARGET_LEN,MAX_SYMBOLS_LEN);
+
 	int nSymbolsLoaded = 0;
 
 	if (! pPathFileName)
@@ -637,6 +639,20 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 			WORD nAddressPrev;
 			int  iTable;
 
+			// 2.9.0.11 Bug #479
+			int nLen = strlen( sName );
+			if (nLen > nMaxLen)
+			{
+				ConsolePrintFormat( sText, " %sWarn.: %s%s (%d > %d)"
+					, CHC_WARNING
+					, CHC_SYMBOL
+					, sName
+					, nLen
+					, nMaxLen
+				);
+				ConsoleUpdate(); // Flush buffered output so we don't ask the user to pause
+			}
+
 			// 2.8.0.5 Bug #244 (Debugger) Duplicate symbols for identical memory addresses in APPLE2E.SYM
 			const char *pSymbolPrev = FindSymbolFromAddress( (WORD)nAddress, &iTable ); // don't care which table it is in
 			if( pSymbolPrev )
@@ -652,8 +668,8 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 					);
 				}
 
-				ConsolePrintFormat( sText, " %sWarning: %s%-16s %saliases %s$%s%04X %s%-12s%s (%s%s%s)"
-					, CHC_WARNING
+				ConsolePrintFormat( sText, " %sInfo.: %s%-16s %saliases %s$%s%04X %s%-12s%s (%s%s%s)" // MAGIC NUMBER: -MAX_SYMBOLS_LEN
+					, CHC_INFO // 2.9.0.10 was CHC_WARNING, see #479
 					, CHC_SYMBOL
 					, sName
 					, CHC_INFO

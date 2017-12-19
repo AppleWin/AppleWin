@@ -2121,12 +2121,53 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	if ( !g_bConfigDisasmOpcodesView )
 	    nMaxLen += (MAX_OPCODES*3);
 
-	if( nLen >=  nMaxLen )
+	// 2.9.0.9 Continuation of 2.8.0.8: Fix overflowing disassembly pane for long symbols
+	int nOverflow = 0;
+	if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
+	{
+		if (line.nTargetOffset != 0)
+			nOverflow++;
+
+		nOverflow += strlen( line.sTargetOffset );
+	}
+
+	if (line.bTargetIndirect || line.bTargetX || line.bTargetY)
+	{
+		if (line.bTargetX)
+				nOverflow += 2;
+		else
+		if ((line.bTargetY) && (! line.bTargetIndirect))
+				nOverflow += 2;
+	}
+
+	if (line.bTargetIndexed || line.bTargetIndirect)
+		nOverflow++;
+
+	if (line.bTargetIndexed)
+	{
+		if (line.bTargetY)
+			nOverflow += 2;
+	}
+
+	if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER)
+	{
+		nOverflow += strlen( line.sTargetPointer ); // '####'
+		nOverflow ++  ;                             //     ':'
+		nOverflow += 2;                             //      '##'
+		nOverflow ++  ;                             //         ' '
+	}
+
+	if (bDisasmFormatFlags & DISASM_FORMAT_CHAR)
+	{
+		nOverflow += strlen( line.sImmediate );
+	}
+
+	if (nLen >=  (nMaxLen - nOverflow))
 	{
 #if _DEBUG
 		// TODO: Warn on import about long symbol/target names
 #endif
-		pTarget[ nMaxLen ] = 0;
+		pTarget[ nMaxLen - nOverflow ] = 0;
 	}
 
 	// TODO: FIXME: 2.8.0.7: Allow ctrl characters to show as inverse; i.e. ASC 400:40F
