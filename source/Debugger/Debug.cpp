@@ -188,7 +188,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Config - Disassembly
 	bool  g_bConfigDisasmAddressView   = true;
-	int   g_bConfigDisasmClick         = 0; // GH#462 alt=1, ctrl=2, shift=4 bitmask
+	int   g_bConfigDisasmClick         = 4; // GH#462 alt=1, ctrl=2, shift=4 bitmask (default to Shift-Click)
 	bool  g_bConfigDisasmAddressColon  = true;
 	bool  g_bConfigDisasmOpcodesView   = true;
 	bool  g_bConfigDisasmOpcodeSpaces  = true;
