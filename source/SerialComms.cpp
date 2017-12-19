@@ -1334,7 +1334,7 @@ void CSuperSerialCard::SetSnapshot_v1(	const DWORD  baudrate,
 //	m_vRecvBytes		= recvbytes;
 	m_uStopBits			= stopbits;
 
-	//m_uDTR = (m_uCommandByte & 0x01) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE; // TODO: Once GH#386 is resolved
+	m_uDTR = (m_uCommandByte & 0x01) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
 }
 
 //===========================================================================
@@ -1441,7 +1441,7 @@ bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, U
 	m_vbRxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQPENDING);
 	m_bWrittenTx		= yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITTENTX);
 
-	//m_uDTR = (m_uCommandByte & 0x01) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE; // TODO: Once GH#386 is resolved
+	m_uDTR = (m_uCommandByte & 0x01) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
 
 	std::string serialPortName = yamlLoadHelper.LoadString(SS_YAML_KEY_SERIALPORTNAME);
 	SetSerialPortName(serialPortName.c_str());
