@@ -37,7 +37,7 @@
 			<li>All sound (speaker, Mockingboard, etc) is muted.
 			<li>Video-based timing/synchronisation loops won't work correctly.
 			<ul>
-				<li>The video-scanner won't advance its h/v position, so it will always returns the last value.
+				<li>The video-scanner won't advance its h/v position, so the floating bus will always return the same value.
 				<li>Specifically code that does Apple II+ VBlank detection (using the floating bus) will hang, until full-speed mode is disabled. (But Apple //e soft-switch VBlank detection does work.)
 			</ul>
 			<li>Card detection routines (that rely on floating bus) won't work correctly.
