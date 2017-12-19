@@ -401,6 +401,7 @@ void CSuperSerialCard::CommTcpSerialReceive()
 		if (m_bRxIrqEnabled && !m_qTcpSerialBuffer.empty())
 		{
 			CpuIrqAssert(IS_SSC);
+			m_vbRxIrqPending = true;
 		}
 	}
 }
