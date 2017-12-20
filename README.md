@@ -17,7 +17,7 @@ To compile from source see:
 
 Next Version
 ============
-Experimental build [1.26.3.1](https://github.com/AppleWin/AppleWin/releases/tag/v1.26.3.1)
+Experimental build [1.26.3.6](https://github.com/AppleWin/AppleWin/releases/tag/v1.26.3.6)
 
 Please report [new issues](https://github.com/AppleWin/AppleWin/issues/new)
 
@@ -27,5 +27,5 @@ Previous Versions
 
 Last pre-NTSC change:
 
-* [AppleWin v1.25.0.3](https://github.com/AppleWin/AppleWin/releases/download/v1.25.0.3/AppleWin1.25.0.3.zip)
+* [AppleWin v1.25.0.4](https://github.com/AppleWin/AppleWin/releases/download/v1.25.0.4/AppleWin1.25.0.4.zip)
 
