@@ -152,6 +152,10 @@
 				<param name="Local" value="dbg-entering-debugger.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Debugger Screen Layout">
+				<param name="Local" value="dbg-screen-layout.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Scrolling">
 				<param name="Local" value="dbg-scrolling.html">
 				</OBJECT>

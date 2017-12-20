@@ -202,8 +202,8 @@
 							</tr>
 							<tr bgcolor="#cccccc">
 								<td width="35%">
-									<p>G&nbsp;[StopAddress]
-									</p>
+									<p>G&nbsp;[StopAddress]<br>
+									GG&nbsp;[StopAddress]</p>
 								</td>
 								<td width="65%">
 									<p><i>Resume execution until PC = StopAddress.</i></p>
@@ -211,7 +211,8 @@
 							</tr>
 							<tr bgcolor="#999999">
 								<td width="35%">
-									<p>G&nbsp;[StopAddress]&nbsp;[SkipAddress,Length]</p>
+									<p>G&nbsp;[StopAddress]&nbsp;[SkipAddress,Length]<br>
+									GG&nbsp;[StopAddress]&nbsp;[SkipAddress,Length]</p>
 								</td>
 								<td width="65%">
 									<p><i>Resume execution until PC = StopAddress.<br>
@@ -224,11 +225,13 @@
 									<p>####G</p>
 								</td>
 								<td width="65%">
-									<p><i>Alias for: R PC [=] address.</i></p>
+									<p><i>Alias for: R PC [=] address and then G.</i></p>
 								</td>
 							</tr>
 						</tbody>
 		</table>
+		<p><br>NB. The GG command resumes execution in full-speed. See <a href="dbg-entering-debugger.html#Exiting-Debugger">Exiting the Debugger</a>.
+		</p>
 		<p><br>
 			<br>
 		</p>
