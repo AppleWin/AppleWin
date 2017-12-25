@@ -114,14 +114,14 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 			break;
 
 		case IDC_MONOCOLOR:
-			VideoChooseColor();
+			VideoChooseMonochromeColor();
 			break;
 
 		case IDC_CHECK_CONFIRM_REBOOT:
-			g_bConfirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? 1 : 0;
-
 		case IDC_CHECK_HALF_SCAN_LINES:
-			g_uHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
+		case IDC_CHECK_FS_SHOW_SUBUNIT_STATUS:
+			// Checked in DlgOK()
+			break;
 
 		case IDC_COMPUTER:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
@@ -129,6 +129,16 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				const DWORD NewComputerMenuItem = (DWORD) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
 				const eApple2Type NewApple2Type = GetApple2Type(NewComputerMenuItem);
 				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewApple2Type;
+				if (NewApple2Type != A2TYPE_CLONE)
+				{
+					m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewApple2Type);
+				}
+				else // A2TYPE_CLONE
+				{
+					// NB. A2TYPE_CLONE could be either 6502(Pravets) or 65C02(TK3000 //e)
+					// - Set correctly in PageAdvanced.cpp for IDC_CLONETYPE
+					m_PropertySheetHelper.GetConfigNew().m_CpuType = CPU_UNKNOWN;
+				}
 			}
 			break;
 
@@ -167,6 +177,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				case A2TYPE_PRAVETS82:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_PRAVETS8M:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_PRAVETS8A:		nCurrentChoice = MENUITEM_CLONE; break;
+				case A2TYPE_TK30002E:		nCurrentChoice = MENUITEM_CLONE; break;
 				}
 
 				m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMPUTER, m_ComputerChoices, nCurrentChoice);
@@ -176,6 +187,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE,g_aVideoChoices,g_eVideoType);
 			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, g_uHalfScanLines ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, GetFullScreenShowSubunitStatus() ? BST_CHECKED : BST_UNCHECKED);
 
 			m_PropertySheetHelper.FillComboBox(hWnd,IDC_SERIALPORT, sg_SSC.GetSerialPortChoices(), sg_SSC.GetSerialPort());
 			EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !sg_SSC.IsActive() ? TRUE : FALSE);
@@ -230,10 +242,28 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 void CPageConfig::DlgOK(HWND hWnd)
 {
-	const DWORD newvidtype = (DWORD) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
-	if (g_eVideoType != newvidtype)
+	bool bVideoReinit = false;
+
+	const DWORD uNewVideoType = (DWORD) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
+	if (g_eVideoType != uNewVideoType)
 	{
-		g_eVideoType = newvidtype;
+		g_eVideoType = uNewVideoType;
+		bVideoReinit = true;
+	}
+
+	const DWORD uNewHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
+	if (g_uHalfScanLines != uNewHalfScanLines)
+	{
+		g_uHalfScanLines = uNewHalfScanLines;
+		bVideoReinit = true;
+	}
+
+	if (bVideoReinit)
+	{
+		Config_Save_Video();
+
+		FrameRefreshStatus(DRAW_TITLE, false);
+
 		VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
@@ -241,15 +271,38 @@ void CPageConfig::DlgOK(HWND hWnd)
 		}
 	}
 
-	REGSAVE(TEXT(REGVALUE_CONFIRM_REBOOT), g_bConfirmReboot);
+	//
 
-	const DWORD newserialport = (DWORD) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
-	sg_SSC.CommSetSerialPort(hWnd, newserialport);
+	const bool bNewFSSubunitStatus = IsDlgButtonChecked(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS) ? true : false;
+	if (GetFullScreenShowSubunitStatus() != bNewFSSubunitStatus)
+	{
+		REGSAVE(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), bNewFSSubunitStatus ? 1 : 0);
+		SetFullScreenShowSubunitStatus(bNewFSSubunitStatus);
+
+		if (IsFullScreen())
+			FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
+	}
+
+	//
+
+	const BOOL bNewConfirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? 1 : 0;
+	if (g_bConfirmReboot != bNewConfirmReboot)
+	{
+		REGSAVE(TEXT(REGVALUE_CONFIRM_REBOOT), bNewConfirmReboot);
+		g_bConfirmReboot = bNewConfirmReboot;
+	}
+
+	//
+
+	const DWORD uNewSerialPort = (DWORD) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
+	sg_SSC.CommSetSerialPort(hWnd, uNewSerialPort);
 	RegSaveString(	TEXT(REG_CONFIG),
 					TEXT(REGVALUE_SERIAL_PORT_NAME),
 					TRUE,
 					sg_SSC.GetSerialPortName() );
-	
+
+	//
+
 	if (IsDlgButtonChecked(hWnd, IDC_AUTHENTIC_SPEED))
 		g_dwSpeed = SPEED_NORMAL;
 	else
@@ -259,8 +312,6 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	REGSAVE(TEXT(REGVALUE_CUSTOM_SPEED), IsDlgButtonChecked(hWnd, IDC_CUSTOM_SPEED));
 	REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
-
-	Config_Save_Video();
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }

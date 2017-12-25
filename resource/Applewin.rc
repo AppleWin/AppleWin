@@ -53,6 +53,7 @@ END
 FULLSCR_BUTTON          BITMAP                  "FULLSCR.BMP"
 RUN_BUTTON              BITMAP                  "RUN.BMP"
 RUNP_BUTTON             BITMAP                  "RUNP.BMP"
+RUN3000E_BUTTON         BITMAP                  "RUN3000E.BMP"
 DEBUG_BUTTON            BITMAP                  "DEBUG.BMP"
 DRIVE1_BUTTON           BITMAP                  "DRIVE1.BMP"
 DRIVE2_BUTTON           BITMAP                  "DRIVE2.BMP"
@@ -69,11 +70,11 @@ LED_CAPSON_P8_BITMAP    BITMAP                  "LED_CAPS_ON_P8.BMP"
 LED_LATOFF_BITMAP       BITMAP                  "LED_CAPS_OFF_LAT.BMP"
 LED_LATON_BITMAP        BITMAP                  "LED_CAPS_ON_LAT.BMP"
 CHARSET82               BITMAP                  "CHARSET82.BMP"
-CHARSET8M               BITMAP                  "CHARSET8C.BMP"
+CHARSET8M               BITMAP                  "CHARSET8M.BMP"
 CHARSET8C               BITMAP                  "CHARSET8C.BMP"
 HELP_BUTTON             BITMAP                  "HELP.BMP"
 DRIVESWAP_BUTTON        BITMAP                  "DRIVESWAP.BMP"
-IDB_APPLEWIN            BITMAP                  "Applewin.bmp"
+IDB_APPLEWIN            BITMAP                  "ApplewinLogo.bmp"
 IDB_DEBUG_FONT_7X8      BITMAP                  "Debug_Font.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -88,25 +89,26 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     LTEXT           "&Model:",IDC_STATIC,5,7,40,8
     COMBOBOX        IDC_COMPUTER,45,5,95,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "&Confirm reboot",IDC_CHECK_CONFIRM_REBOOT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,8,62,10
-    GROUPBOX        "Video",IDC_STATIC,5,22,200,43
+    CONTROL         "Confirm reboot",IDC_CHECK_CONFIRM_REBOOT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,8,62,10
+    GROUPBOX        "Video",IDC_STATIC,5,22,200,56
     LTEXT           "Mo&de:",IDC_STATIC,12,33,33,8
     COMBOBOX        IDC_VIDEOTYPE,45,30,95,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Monochrome &Color...",IDC_MONOCOLOR,12,46,80,14
-    CONTROL         "&50% Scan lines",IDC_CHECK_HALF_SCAN_LINES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,103,48,62,10
-    LTEXT           "&Serial Port:",IDC_STATIC,5,74,40,8
-    COMBOBOX        IDC_SERIALPORT,45,72,95,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "&Ethernet Settings...",IDC_ETHERNET,4,90,80,14
-    GROUPBOX        "Emulation Speed Control",IDC_STATIC,5,115,200,85
+    CONTROL         "50% Scan lines",IDC_CHECK_HALF_SCAN_LINES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,103,48,62,10
+    CONTROL         "Full-Screen: Show drive/keyboard status",IDC_CHECK_FS_SHOW_SUBUNIT_STATUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,64,140,10
+    LTEXT           "&Serial Port:",IDC_STATIC,5,89,40,8
+    COMBOBOX        IDC_SERIALPORT,45,87,95,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "&Ethernet Settings...",IDC_ETHERNET,4,105,80,14
+    GROUPBOX        "Emulation Speed Control",IDC_STATIC,5,130,200,85
     CONTROL         "Use &Authentic Machine Speed",IDC_AUTHENTIC_SPEED,
-                    "Button",BS_AUTORADIOBUTTON,15,126,115,10
-    CONTROL         "Select C&ustom Speed (in MHz)",IDC_CUSTOM_SPEED,"Button",BS_AUTORADIOBUTTON,15,138,115,10
-    CONTROL         "Generic2",IDC_SLIDER_CPU_SPEED,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,25,149,160,15
-    CTEXT           "0.5",IDC_0_5_MHz,23,165,20,10
-    CTEXT           "1.0",IDC_1_0_MHz,59,165,20,10
-    CTEXT           "2.0",IDC_2_0_MHz,96,165,20,10
-    RTEXT           "Fastest",IDC_MAX_MHz,150,165,29,10
-    PUSHBUTTON      "&Benchmark Emulator",IDC_BENCHMARK,15,179,85,15
+                    "Button",BS_AUTORADIOBUTTON,15,141,115,10
+    CONTROL         "Select C&ustom Speed (in MHz)",IDC_CUSTOM_SPEED,"Button",BS_AUTORADIOBUTTON,15,153,115,10
+    CONTROL         "Generic2",IDC_SLIDER_CPU_SPEED,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,25,164,160,15
+    CTEXT           "0.5",IDC_0_5_MHz,23,180,20,10
+    CTEXT           "1.0",IDC_1_0_MHz,59,180,20,10
+    CTEXT           "2.0",IDC_2_0_MHz,96,180,20,10
+    RTEXT           "Fastest",IDC_MAX_MHz,150,180,29,10
+    PUSHBUTTON      "&Benchmark Emulator",IDC_BENCHMARK,15,194,85,15
 END
 
 IDD_PROPPAGE_INPUT DIALOGEX 0, 0, 210, 215
@@ -116,9 +118,9 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     GROUPBOX        "Joystick Control",IDC_STATIC,5,7,200,101
     LTEXT           "Joystick &1:",IDC_STATIC,12,20,40,8
-    COMBOBOX        IDC_JOYSTICK0,52,18,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_JOYSTICK0,52,18,110,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Joystick &2:",IDC_STATIC,12,35,40,8
-    COMBOBOX        IDC_JOYSTICK1,52,33,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_JOYSTICK1,52,33,110,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "&X-trim:",IDC_STATIC,13,56,28,8
     CTEXT           "0",IDC_STATIC,36,50,24,20,SS_CENTERIMAGE
     CONTROL         "Spin1",IDC_SPIN_XTRIM,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY,59,53,10,14
@@ -250,8 +252,8 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,25,0,4
- PRODUCTVERSION 1,25,0,4
+ FILEVERSION 1,26,3,6
+ PRODUCTVERSION 1,26,3,6
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -269,12 +271,12 @@ BEGIN
             VALUE "Comments", "https://github.com/AppleWin"
             VALUE "CompanyName", "AppleWin"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1, 25, 0, 4"
+            VALUE "FileVersion", "1, 26, 3, 6"
             VALUE "InternalName", "APPLEWIN"
-            VALUE "LegalCopyright", " 1994-2015 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
+            VALUE "LegalCopyright", " 1994-2017 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1, 25, 0, 4"
+            VALUE "ProductVersion", "1, 26, 3, 6"
         END
     END
     BLOCK "VarFileInfo"
@@ -308,6 +310,7 @@ IDR_PRINTDRVR_FW        FIRMWARE                "Parallel.rom"
 IDR_MOCKINGBOARD_D_FW   FIRMWARE                "Mockingboard-D.rom"
 IDR_MOUSEINTERFACE_FW   FIRMWARE                "MouseInterface.rom"
 IDR_THUNDERCLOCKPLUS_FW FIRMWARE                "ThunderClockPlus.rom"
+IDR_TKCLOCK_FW          FIRMWARE                "TKClock.rom"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -321,6 +324,7 @@ IDR_APPLE2E_ENHANCED_ROM ROM                     "Apple2e_Enhanced.rom"
 IDR_PRAVETS_82_ROM      ROM                     "Pravets82.rom"
 IDR_PRAVETS_8M_ROM      ROM                     "Pravets8M.rom"
 IDR_PRAVETS_8C_ROM      ROM                     "Pravets8C.rom"
+IDR_TK3000_2E_ROM       ROM                     "TK3000e.rom"
 IDR_FREEZES_F8_ROM      ROM                     "FREEZES_NON-AUTOSTART_F8_ROM.rom"
 
 /////////////////////////////////////////////////////////////////////////////

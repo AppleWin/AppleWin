@@ -58,6 +58,12 @@ void uilib_get_general_window_extents(HWND hwnd, int *xsize, int *ysize)
     strlen = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
 	/* RGJ added cast for AppleWin */
     buffer = (char *) malloc(strlen + 1);
+	if (buffer == NULL)	// TC: add null check for AppleWin
+	{
+		*xsize = 0;
+		*ysize = 0;
+		return;
+	}
     GetWindowText(hwnd, buffer, strlen + 1);
 
     hdc = GetDC(hwnd);

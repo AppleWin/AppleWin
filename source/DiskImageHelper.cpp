@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 #include "stdafx.h"
-#include "Structs.h"
 #include "Common.h"
 
 #include "zlib.h"
@@ -193,9 +192,6 @@ bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlo
 			// Horribly inefficient! (Unzip to a normal file if you want better performance!)
 			const UINT uNewImageSize = Offset+HD_BLOCK_SIZE;
 			BYTE* pNewImageBuffer = new BYTE [uNewImageSize];
-			_ASSERT(pNewImageBuffer);
-			if (!pNewImageBuffer)
-				return false;
 
 			memcpy(pNewImageBuffer, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
 			memset(&pNewImageBuffer[pImageInfo->uImageSize], 0, uNewImageSize-pImageInfo->uImageSize);	// Should always be HD_BLOCK_SIZE (so this is redundant)
@@ -436,7 +432,7 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 				offset = 0;
 		}
 
-		if ((bytenum == 3) && (byteval[1] = 0xAA))
+		if ((bytenum == 3) && (byteval[1] == 0xAA))
 		{
 			int loop       = 0;
 			int tempoffset = offset;
@@ -715,10 +711,10 @@ public:
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const DWORD dwImageSize, const TCHAR* pszExt)
 	{
-		if (dwImageSize != NIB1_TRACK_SIZE*TRACKS_STANDARD)
+		if (dwImageSize < NIB1_TRACK_SIZE*TRACKS_STANDARD || dwImageSize % NIB1_TRACK_SIZE != 0 || dwImageSize > NIB1_TRACK_SIZE*TRACKS_MAX)
 			return eMismatch;
 
-		m_uNumTracksInImage = TRACKS_STANDARD;
+		m_uNumTracksInImage = dwImageSize / NIB1_TRACK_SIZE;
 		return eMatch;
 	}
 
@@ -1042,7 +1038,9 @@ eDetectResult C2IMGHelper::DetectHdr(LPBYTE& pImage, DWORD& dwImageSize, DWORD& 
 	if (dwImageSize < sizeof(Header2IMG) || pHdr->FormatID != FormatID_2IMG || pHdr->HeaderSize != sizeof(Header2IMG))
 		return eMismatch;
 
-	if (pHdr->Version != 1)
+	// https://github.com/AppleWin/AppleWin/issues/317
+	// Work around some lazy implementations of the spec that set this value to 0 instead of the correct 1.
+	if (pHdr->Version > 1)
 		return eMismatch;
 
 	if (dwImageSize < sizeof(Header2IMG)+pHdr->DiskDataLength)
@@ -1152,8 +1150,6 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 
 	const UINT MAX_UNCOMPRESSED_SIZE = GetMaxImageSize() + 1;	// +1 to detect images that are too big
 	pImageInfo->pImageBuffer = new BYTE[MAX_UNCOMPRESSED_SIZE];
-	if (!pImageInfo->pImageBuffer)
-		return eIMAGE_ERROR_BAD_POINTER;
 
 	int nLen = gzread(hGZFile, pImageInfo->pImageBuffer, MAX_UNCOMPRESSED_SIZE);
 	if (nLen < 0 || nLen == MAX_UNCOMPRESSED_SIZE)
@@ -1221,8 +1217,6 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 		return eIMAGE_ERROR_BAD_SIZE;
 
 	pImageInfo->pImageBuffer = new BYTE[uFileSize];
-	if (!pImageInfo->pImageBuffer)
-		return eIMAGE_ERROR_BAD_POINTER;
 
 	nRes = unzOpenCurrentFile(hZipFile);
 	if (nRes != UNZ_OK)
@@ -1351,8 +1345,6 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 		const UINT uDetectSize = GetMinDetectSize(dwSize, &bTempDetectBuffer);
 
 		pImageInfo->pImageBuffer = new BYTE [dwSize];
-		if (!pImageInfo->pImageBuffer)
-			return eIMAGE_ERROR_BAD_POINTER;
 
 		DWORD dwBytesRead;
 		BOOL bRes = ReadFile(hFile, pImageInfo->pImageBuffer, dwSize, &dwBytesRead, NULL);
@@ -1376,9 +1368,6 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 		if (pImageType && dwSize)
 		{
 			pImageInfo->pImageBuffer = new BYTE [dwSize];
-			if (!pImageInfo->pImageBuffer)
-				return eIMAGE_ERROR_BAD_POINTER;
-
 			ZeroMemory(pImageInfo->pImageBuffer, dwSize);
 		}
 	}
@@ -1435,7 +1424,9 @@ ImageError_e CImageHelperBase::Open(	LPCTSTR pszImageFilename,
 	if (Err != eIMAGE_ERROR_NONE)
 		return Err;
 
-	_tcsncpy(pImageInfo->szFilename, pszImageFilename, MAX_PATH);
+	DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, pImageInfo->szFilename, NULL);
+	if (uNameLen == 0 || uNameLen >= MAX_PATH)
+		Err = eIMAGE_ERROR_FAILED_TO_GET_PATHNAME;
 
 	return eIMAGE_ERROR_NONE;
 }
@@ -1453,8 +1444,9 @@ void CImageHelperBase::Close(ImageInfo* pImageInfo, const bool bDeleteFile)
 	if (bDeleteFile)
 	{
 		DeleteFile(pImageInfo->szFilename);
-		pImageInfo->szFilename[0] = 0;
 	}
+
+	pImageInfo->szFilename[0] = 0;
 
 	delete [] pImageInfo->pImageBuffer;
 	pImageInfo->pImageBuffer = NULL;

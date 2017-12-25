@@ -95,11 +95,10 @@ Update_t _PrintSymbolInvalidTable()
 	// TODO: display the user specified file name
 	ConsoleBufferPush( "Invalid symbol table." );
 
-	sprintf( sText, "Only %s%d%s symbol tables are supported:"
+	ConsolePrintFormat( sText, "Only %s%d%s symbol tables are supported:"
 		, CHC_NUM_DEC, NUM_SYMBOL_TABLES
 		, CHC_DEFAULT
 	);
-	ConsolePrint( sText );
 
 	// Similar to _CmdSymbolsInfoHeader()
 	sText[0] = 0;
@@ -359,14 +358,13 @@ void _CmdPrintSymbol( LPCTSTR pSymbol, WORD nAddress, int iTable )
 	// CHC_STRING and CHC_NUM_DEC are both cyan, using CHC_USAGE instead of CHC_STRING
 
 	// 2.6.2.20 Changed: Output of found symbol more table friendly.  Symbol table name displayed first.
-	sprintf( sText, "  %s%s%s: $%s%04X %s%s"
+	ConsolePrintFormat( sText, "  %s%s%s: $%s%04X %s%s"
 		, CHC_USAGE, g_aSymbolTableNames[ iTable ]
 		, CHC_ARG_SEP
 		, CHC_ADDRESS, nAddress
 		, CHC_SYMBOL, pSymbol );
 
 	// ConsoleBufferPush( sText );
-	ConsolePrint( sText );
 }
 
 
@@ -516,11 +514,10 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 				// nope, ok, try as address
 				if (! _CmdSymbolList_Address2Symbol( nAddress, bSymbolTables))
 				{
-					wsprintf( sText
+					ConsolePrintFormat( sText
 						, TEXT(" Address not found: %s$%s%04X%s" )
 						, CHC_ARG_SEP
 						, CHC_ADDRESS, nAddress, CHC_DEFAULT );
-					ConsolePrint( sText );
 				}
 			}
 		}
@@ -532,20 +529,18 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 				{
 					if (! _CmdSymbolList_Address2Symbol( nAddress, bSymbolTables ))
 					{
-						sprintf( sText
+						ConsolePrintFormat( sText
 							, TEXT(" %sSymbol not found: %s%s%s")
 							, CHC_ERROR, CHC_SYMBOL, pSymbol, CHC_DEFAULT
 						);
-						ConsolePrint( sText );
 					}
 				}
 				else
 				{
-					sprintf( sText
+					ConsolePrintFormat( sText
 						, TEXT(" %sSymbol not found: %s%s%s")
 						, CHC_ERROR, CHC_SYMBOL, pSymbol, CHC_DEFAULT
 					);
-					ConsolePrint( sText );
 				}
 			}
 		}
@@ -559,6 +554,8 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 {
 	char sText[ CONSOLE_WIDTH * 3 ];
 	bool bFileDisplayed = false;
+
+	const int nMaxLen = min(MAX_TARGET_LEN,MAX_SYMBOLS_LEN);
 
 	int nSymbolsLoaded = 0;
 
@@ -642,6 +639,20 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 			WORD nAddressPrev;
 			int  iTable;
 
+			// 2.9.0.11 Bug #479
+			int nLen = strlen( sName );
+			if (nLen > nMaxLen)
+			{
+				ConsolePrintFormat( sText, " %sWarn.: %s%s (%d > %d)"
+					, CHC_WARNING
+					, CHC_SYMBOL
+					, sName
+					, nLen
+					, nMaxLen
+				);
+				ConsoleUpdate(); // Flush buffered output so we don't ask the user to pause
+			}
+
 			// 2.8.0.5 Bug #244 (Debugger) Duplicate symbols for identical memory addresses in APPLE2E.SYM
 			const char *pSymbolPrev = FindSymbolFromAddress( (WORD)nAddress, &iTable ); // don't care which table it is in
 			if( pSymbolPrev )
@@ -651,15 +662,14 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 					bFileDisplayed = true;
 
 					// TODO: Must check for buffer overflow !
-					sprintf( sText, "%s%s"
+					ConsolePrintFormat( sText, "%s%s"
 						, CHC_PATH
 						, pPathFileName
 					);
-					ConsolePrint( sText );
 				}
 
-				sprintf( sText, " %sWarning: %s%-16s %saliases %s$%s%04X %s%-12s%s (%s%s%s)"
-					, CHC_WARNING
+				ConsolePrintFormat( sText, " %sInfo.: %s%-16s %saliases %s$%s%04X %s%-12s%s (%s%s%s)" // MAGIC NUMBER: -MAX_SYMBOLS_LEN
+					, CHC_INFO // 2.9.0.10 was CHC_WARNING, see #479
 					, CHC_SYMBOL
 					, sName
 					, CHC_INFO
@@ -673,11 +683,10 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 					, g_aSymbolTableNames[ iTable ]
 					, CHC_DEFAULT
 				);
-				ConsolePrint( sText );
 
 				ConsoleUpdate(); // Flush buffered output so we don't ask the user to pause
 /*
-				sprintf( sText, " %sWarning: %sAddress already has symbol Name%s (%s%s%s): %s%s"
+				ConsolePrintFormat( sText, " %sWarning: %sAddress already has symbol Name%s (%s%s%s): %s%s"
 					, CHC_WARNING
 					, CHC_INFO
 					, CHC_ARG_SEP
@@ -687,9 +696,8 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 					, CHC_SYMBOL
 					, pSymbolPrev
 				);
-				ConsolePrint( sText );
 
-				sprintf( sText, "  %s$%s%04X %s%-31s%s"
+				ConsolePrintFormat( sText, "  %s$%s%04X %s%-31s%s"
 					, CHC_ARG_SEP
 					, CHC_ADDRESS
 					, nAddress
@@ -697,7 +705,6 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 					, sName
 					, CHC_DEFAULT
 				);
-				ConsolePrint( sText );
 */
 			}
 
@@ -707,7 +714,7 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 				if( !bDupSymbolHeader )
 				{
 					bDupSymbolHeader = true;
-					sprintf( sText, " %sDup Symbol Name%s (%s%s%s) %s"
+					ConsolePrintFormat( sText, " %sDup Symbol Name%s (%s%s%s) %s"
 						, CHC_ERROR
 						, CHC_DEFAULT
 						, CHC_STRING
@@ -715,10 +722,9 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 						, CHC_DEFAULT
 						, pPathFileName
 					);
-					ConsolePrint( sText );
 				}
 
-				sprintf( sText, "  %s$%s%04X %s%-31s%s"
+				ConsolePrintFormat( sText, "  %s$%s%04X %s%-31s%s"
 					, CHC_ARG_SEP
 					, CHC_ADDRESS
 					, nAddress
@@ -726,7 +732,6 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 					, sName
 					, CHC_DEFAULT
 				);
-				ConsolePrint( sText );
 			}
 	
 			// else // It is not a bug to have duplicate addresses by different names
@@ -850,14 +855,13 @@ void SymbolUpdate( SymbolTable_Index_e eSymbolTable, char *pSymbolName, WORD nAd
 				if (bUpdateSymbol)
 				{
 					char sText[ CONSOLE_WIDTH * 2 ];
-					sprintf( sText, " Updating %s%s%s from %s$%s%04X%s to %s$%s%04X%s"
+					ConsolePrintFormat( sText, " Updating %s%s%s from %s$%s%04X%s to %s$%s%04X%s"
 						, CHC_SYMBOL, pSymbolName, CHC_DEFAULT
 						, CHC_ARG_SEP					
 						, CHC_ADDRESS, nAddressPrev, CHC_DEFAULT
 						, CHC_ARG_SEP					
 						, CHC_ADDRESS, nAddress, CHC_DEFAULT
 					);
-					ConsolePrint( sText );
 				}
 			}
 		}					
@@ -882,12 +886,11 @@ void SymbolUpdate( SymbolTable_Index_e eSymbolTable, char *pSymbolName, WORD nAd
 
 			// Tell user symbol was added
 			char sText[ CONSOLE_WIDTH * 2 ];
-			sprintf( sText, " Added symbol: %s%s%s %s$%s%04X%s"
+			ConsolePrintFormat( sText, " Added symbol: %s%s%s %s$%s%04X%s"
 				, CHC_SYMBOL, pSymbolName, CHC_DEFAULT
 				, CHC_ARG_SEP					
 				, CHC_ADDRESS, nAddress, CHC_DEFAULT
 			);
-			ConsolePrint( sText );
 		}
 	}
 }
@@ -947,10 +950,9 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				if (iTable != NUM_SYMBOL_TABLES)
 				{
 					Update_t iUpdate = _CmdSymbolsClear( (SymbolTable_Index_e) iTable );
-					sprintf( sText, TEXT(" Cleared symbol table: %s%s")
+					ConsolePrintFormat( sText, TEXT(" Cleared symbol table: %s%s")
 						, CHC_STRING, g_aSymbolTableNames[ iTable ]
 					 );
-					ConsolePrint( sText );
 					iUpdate |= ConsoleUpdate();
 					return iUpdate;
 				}

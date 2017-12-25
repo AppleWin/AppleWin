@@ -9,92 +9,83 @@
 		<h2 style="COLOR: rgb(0,128,0)">Configuration Settings</h2>
 		<hr size="4">
 		<img style="FLOAT: right; WIDTH: 344px; HEIGHT: 460px" src="img/config.png" alt="Configuration settings"
-			hspace="5" vspace="5"><strong>Model:</strong><br>
+			hspace="5" vspace="5">
+	
+		<strong>Model:</strong><br>
 		This describes the mode of emulation. &nbsp;You have the option of emulating 
 		the predecessors of the Apple //e: the Apple ][ and Apple ][+. Besides running 
 		with a different Apple system ROM, some differences are discussed below.<br>
 		<ul>
-			<li>
-			Apple ][ : Non-autobooting, 64K machine, no lower-case, no 80-column, 6502 CPU
-			<li>
-			Apple ][+ : Autobooting version of the Apple ][
-			<li>
-			Apple //e : 128K machine, lower-case, 80-column, 6502 CPU</li>
-			<li>
-			Enhanced Apple //e : 128K machine, lower-case, 80-column, 65C02 CPU</li>
-			<li>
-			Clone (specific model selectable from Advanced page)</li>
+			<li>Apple ][ : Non-autobooting, 64K machine, no lower-case, no 80-column, 6502 CPU
+			<li>Apple ][+ : Autobooting version of the Apple ][
+			<li>Apple //e : 128K machine, lower-case, 80-column, 6502 CPU</li>
+			<li>Enhanced Apple //e : 128K machine, lower-case, 80-column, 65C02 CPU</li>
+			<li>Clone (specific model selectable from Advanced page)</li>
 		</ul>
+
+		<strong>Confirm reboot:</strong><br>
+		Show "Confirm reboot" message box when F2 is pressed.<br>
+		<br>
+
 		<strong>Video:</strong><br>
 		AppleWin can display Apple video in a variety of modes. The display can also be 
 		run in a standard window or full-screen. This option describes the type of 
-		video emulation to be used for the emulator. Some differences might be 
+		video emulation to be used for the emulator. The differences are 
 		discussed below.<br>
 		<ul>
-			<li>
-				<strong>Monochrome (custom) :</strong>&nbsp;This mode emulates a monochrome 
+			<li><strong>Monochrome (custom) :</strong>&nbsp;This mode emulates a monochrome 
 				monitor. You can choose your monochrome color from the <em>Monochrome Color</em>
 			button described below.
-			<LI>
-				<STRONG>Monochrome (amber/green/white) :</STRONG>&nbsp;Monochrome with 
-			specified color.
-			<li>
-				<strong>Color (standard) :</strong>&nbsp;This mode emulates a standard 
-			color monitor.
-			<li>
-				<strong>Color (text optimized) :</strong>&nbsp;This mode does a bit of 
-			image processing to make text more readable on the hires screen.
-			<li>
-				<strong>Color (TV emulation) :</strong>&nbsp;This mode emulates how colors 
-				would bleed into one another on a TV. On the hires screen, alternating 
-				horizontal lines of color are bled together to form new colors like grey, 
-				purple, pink, yellow and aquamarine. This effect was used in commercial games 
-				like Karateka and many hires adventures (eg. Mindshadow).
-			</li>
-                <li><strong>50% Scan line :</strong> Only draw alternate scanline (for better monitor
-                    authenticity).</li>
+			<li><strong>Color Monitor :</strong>&nbsp;This mode emulates a standard color monitor.
+			<li><strong>B&W TV :</strong>&nbsp;This mode emulates an NTSC black and white TV.
+			<li><strong>Color TV :</strong>&nbsp;This mode emulates an NTSC color TV.
+			<li><strong>Monochrome (Amber/Green/White) :</strong>&nbsp;Monochrome with specified color.
 		</ul>
-		<P>
-			<strong>Serial Port:<br>
-			</strong>This option will remap the emulated Apple's serial port to your PC's 
-			serial port (or TCP port 1977). The Apple Super Serial Card (SSC) is emulated in slot-2.<br>
-            The TCP interface to the Apple SSC can be used by the <a href="http://sourceforge.net/projects/a2gameserver">Apple // Game Server</a>.
-            For details see the notes that comes with AGS:<br>
-            <li>Boot the Apple II to AppleSoft (ie. power on and hit Ctrl-Reset) and type IN#2.
-            </li>
-            <li>From a Windows DOS box, start AGS with "localhost 1977 apple2e". This will boot the emulated Apple II from AGS.</li>
-            <li>Nb. Only Enhanced Apple //e is working at the moment.
-            <br>
-			<STRONG>
-				<BR>
-				Ethernet Settings...:</STRONG>
-			<br>
-			This allows to choose which network interface card (NIC) you want to 
-			use&nbsp;with the Uthernet card.<P><STRONG>Monochrome Color:</STRONG><br>
-			This is the color to use when you choose a monochrome video mode.<br>
-			<br>
-			<strong>Emulation Speed Control:</strong><br>
-			This option let's you control the processor speed of the emulated system. You 
-			may choose to use an authentic speed (matching the speed of the original 
-			processor from the system) or you can underclock or overclock the emulated 
-			processor speed from half-speed to as fast as your PC can emulate.<br>
-			<br>
-			<strong>Confirm reboot:</strong><br>
-			Show "Confirm reboot" message box when F2 is pressed.<br>
-			<br>
-			<strong>Benchmark Emulator:</strong><br>
-			This will run a benchmark test that will show how fast your PC can emulate an 
-			Apple //e system with this emulator. &nbsp;In order to run the benchmark, the 
-			emulated machine must be reset and you will lose any unsaved work. You will be 
-			prompted before you continue this action. The results given are:<br>
-		</P>
+
+		<strong>Monochrome Color:</strong><br>
+		This is the color to use when you choose a monochrome video mode.<br>
+		<br>
+
+		<strong>50% Scan line:</strong><br>
+		Only draw alternate scanline (for better monitor authenticity).<br>
+		<br>
+
+		<strong>Full-Screen: Show drive/keyboard status:</strong><br>
+		When in full-screen mode, show floppy (activity and track) and harddisk status (activity); keyboard caps-lock status and if emulation is paused.<br>
+		<br>
+
+		<strong>Serial Port:</strong><br>
+		This option will remap the emulated Apple's serial port to your PC's 
+		serial port (or TCP port 1977). The Apple Super Serial Card (SSC) is emulated in slot-2.<br>
+		The TCP interface to the Apple SSC can be used by the <a href="http://sourceforge.net/projects/a2gameserver">Apple // Game Server</a>.
+		For details see the notes that comes with AGS:<br>
+		<li>Boot the Apple II to AppleSoft (ie. power on and hit Ctrl-Reset) and type IN#2.
+		<li>From a Windows DOS box, start AGS with "localhost 1977 apple2e". This will boot the emulated Apple II from AGS.
+		<li>Nb. Only Enhanced Apple //e is working at the moment.
+		<br>
+		<br>
+
+		<strong>Ethernet Settings...:</strong><br>
+		This allows to choose which network interface card (NIC) you want to 
+		use with the Uthernet card.<br>
+		<br>
+
+		<strong>Emulation Speed Control:</strong><br>
+		This option let's you control the processor speed of the emulated system. You 
+		may choose to use an authentic speed (matching the speed of the original 
+		processor from the system) or you can underclock or overclock the emulated 
+		processor speed from half-speed to as fast as your PC can emulate.<br>
+		<br>
+
+		<strong>Benchmark Emulator:</strong><br>
+		This will run a benchmark test that will show how fast your PC can emulate an 
+		Apple //e system with this emulator. In order to run the benchmark, the 
+		emulated machine must be reset and you will lose any unsaved work. You will be 
+		prompted before you continue this action. The results given are:<br>
 		<ul>
-			<li>
-			Pure Video FPS
-			<li>
-			Pure CPU MHz
-			<li>
-				Expected average video game performance (in FPS)</li>
+			<li> Pure Video FPS
+			<li> Pure CPU MHz
+			<li> Expected average video game performance (in FPS)
 		</ul>
 	</li>
 	</body>

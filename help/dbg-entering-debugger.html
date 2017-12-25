@@ -5,12 +5,12 @@
 		<meta http-equiv="CONTENT-TYPE" content="text/html; charset=windows-1252">
 	</head>
 	<body style="DIRECTION: ltr" lang="en-US">
-		<h2><a name="Debugger"></a>Entering the Debugger</h2>
+		<h2><a name="Entering-Debugger"></a>Entering the Debugger</h2>
 		<p>Start AppleWin, and press <b><font face="Courier, monospace">F7</font></b> to 
 			enter the debugger.</p>
 		<p>The first thing you'll probably notice is the new syntax coloring in the 
 			disassembly view, and info panel.&nbsp; All the colors can be customized to 
-			your liking.&nbsp; See the <a href="#Colors">Colors</a> section for details.</p>
+			your liking.&nbsp; See the <a href="dbg-configuration.html#Colors">Colors</a> section for details.</p>
 		<p>Since the mini-console isn't the full width of the screen, you can toggle 
 			between the full-screen console with the tilde '~' key. This style of table 
 			will be used to designate which keys the debugger will recognize.</p>
@@ -120,6 +120,74 @@
 				documenting a new bug, submitting an already existing bug, or re-submitting a 
 				bug that has already been fixed. </i>
 			<br>
+		</p>
+
+		<h2><a name="Exiting-Debugger"></a>Exiting the Debugger</h2>
+		<p>In general, press <b><font face="Courier, monospace">F7</font></b> to exit the debugger.<br>
+		NB. If you have breakpoints set then you will exit the debugger in 'stepping' mode.<br><br>
+		Other ways to exit the debugger and force 'stepping' mode are:
+		</p>
+		<table border="1" cellpadding="2" cellspacing="0" width="75%">
+			<COLGROUP>
+				<col width="26">
+					<col width="64">
+						<col width="166">
+							<tbody>
+								<tr bgcolor="#000000">
+									<td width="14%">
+										<p><font color="#ffffff"><b>Command</b></font></p>
+									</td>
+									<td width="25%">
+										<p><font color="#ffffff"><b>Run at normal speed?</b></font></p>
+									</td>
+									<td width="25%">
+										<p><font color="#ffffff"><b>Run at full speed?</b></font></p>
+									</td>
+									<td width="18%">
+										<p><font color="#ffffff"><b>Video quality</b></font></p>
+									</td>
+									<td width="18%">
+										<p><font color="#ffffff"><b>Sound quality</b></font></p>
+									</td>
+								</tr>
+								<tr>
+									<td width="14%">
+										<p>G</p>
+									</td>
+									<td width="25%">
+										<p>yes</p>
+									</td>
+									<td width="25%">
+										<p>only if disk active, etc</p>
+									</td>
+									<td width="18%">
+										<p>precise</p>
+									</td>
+									<td width="18%">
+										<p>precise</p>
+									</td>
+								</tr>
+								<tr>
+									<td width="14%">
+										<p>GG</p>
+									</td>
+									<td width="25%">
+										<p>no</p>
+									</td>
+									<td width="25%">
+										<p>always</p>
+									</td>
+									<td width="18%">
+										<p>periodic</p>
+									</td>
+									<td width="18%">
+										<p>muted</p>
+									</td>
+								</tr>
+							</tbody>
+		</table>
+		<br>
+		<p>Finally to exit 'stepping' and return to the debugger, use F7, the Pause key or the Debugger toolbar button.
 		</p>
 	</body>
 </html>

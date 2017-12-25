@@ -40,11 +40,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	Command_t g_aCommands[] =
 	{
 	// Assembler
+//		{TEXT("!")           , CmdAssemberMini      , CMD_ASSEMBLER_MINI       , "Mini assembler"             },
 		{TEXT("A")           , CmdAssemble          , CMD_ASSEMBLE             , "Assemble instructions"      },
 	// CPU (Main)
 		{TEXT(".")           , CmdCursorJumpPC      , CMD_CURSOR_JUMP_PC       , "Locate the cursor in the disasm window" }, // centered
 		{TEXT("=")           , CmdCursorSetPC       , CMD_CURSOR_SET_PC        , "Sets the PC to the current instruction" },
-		{TEXT("G")           , CmdGo                , CMD_GO                   , "Run [until PC = address]"   },
+		{TEXT("G")           , CmdGoNormalSpeed     , CMD_GO_NORMAL_SPEED      , "Run at normal speed [until PC == address]"   },
+		{TEXT("GG")          , CmdGoFullSpeed       , CMD_GO_FULL_SPEED        , "Run at full speed [until PC == address]"   },
 		{TEXT("IN")          , CmdIn                , CMD_IN                   , "Input byte from IO $C0xx"   },
 		{TEXT("KEY")         , CmdKey               , CMD_INPUT_KEY            , "Feed key into emulator"     },
 		{TEXT("JSR")         , CmdJSR               , CMD_JSR                  , "Call sub-routine"           },
@@ -62,7 +64,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("RTS")         , CmdStepOut           , CMD_STEP_OUT             , "Step out of subroutine"     }, 
 	// CPU - Meta Info
 		{TEXT("T")           , CmdTrace             , CMD_TRACE                , "Trace current instruction"  },
-		{TEXT("TF")          , CmdTraceFile         , CMD_TRACE_FILE           , "Save trace to filename" },
+		{TEXT("TF")          , CmdTraceFile         , CMD_TRACE_FILE           , "Save trace to filename [with video scanner info]" },
 		{TEXT("TL")          , CmdTraceLine         , CMD_TRACE_LINE           , "Trace (with cycle counting)" },
 		{TEXT("U")           , CmdUnassemble        , CMD_UNASSEMBLE           , "Disassemble instructions"   },
 //		{TEXT("WAIT")        , CmdWait              , CMD_WAIT                 , "Run until
@@ -201,6 +203,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SH")          , CmdMemorySearchHex   , CMD_MEMORY_SEARCH_HEX    , "Search memory for hex values" },
 		{TEXT("F")           , CmdMemoryFill        , CMD_MEMORY_FILL          , "Memory fill"                  },
 
+		{TEXT("NTSC")        , CmdNTSC              , CMD_NTSC                 , "Save/Load the NTSC palette"   },
 		{TEXT("TSAVE")       , CmdTextSave          , CMD_TEXT_SAVE            , "Save text screen"             },
 	// Output / Scripts
 		{TEXT("CALC")        , CmdOutputCalc        , CMD_OUTPUT_CALC          , "Display mini calc result"               },
@@ -417,6 +420,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("N")          , NULL, PARAM_FLAG_N         }, // 1--- ---- Sign
 // Disasm
 		{TEXT("BRANCH")     , NULL, PARAM_CONFIG_BRANCH  },
+		{TEXT("CLICK")      , NULL, PARAM_CONFIG_CLICK   }, // GH#462
 		{TEXT("COLON")      , NULL, PARAM_CONFIG_COLON   },
 		{TEXT("OPCODE")     , NULL, PARAM_CONFIG_OPCODE  },
 		{TEXT("POINTER")    , NULL, PARAM_CONFIG_POINTER },

@@ -4,6 +4,7 @@
 // . See: http://support.embarcadero.com/article/35754
 // . "GetOpenFileName() fails under Windows 95/98/NT/ME due to incorrect OPENFILENAME structure size"
 #define _WIN32_WINNT 0x0400
+#define WINVER 0x500
 
 // Mouse Wheel is not supported on Win95.
 // If we didn't care about supporting Win95 (compile/run-time errors)
@@ -14,7 +15,7 @@
 #endif
 
 // Not needed in VC7.1, but needed in VC Express
-#include <tchar.h> 
+#include <tchar.h>
 
 #include <crtdbg.h>
 #include <dsound.h>
@@ -23,9 +24,14 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
+#if _MSC_VER >= 1600	// <stdint.h> supported from VS2010 (cl.exe v16.00)
 #include <stdint.h> // cleanup WORD DWORD -> uint16_t uint32_t
+#else
+typedef UINT8 uint8_t;
+typedef UINT16 uint16_t;
+typedef UINT32 uint32_t;
+#endif
 
 #include <windows.h>
 #include <winuser.h> // WM_MOUSEWHEEL
@@ -37,7 +43,10 @@
 #include <algorithm>
 #include <map>
 #include <queue>
+#include <stack>
+#include <string>
 #include <vector>
+#include <memory>
 
 // SM_CXPADDEDBORDER is not supported on 2000 & XP:
 // http://msdn.microsoft.com/en-nz/library/windows/desktop/ms724385(v=vs.85).aspx

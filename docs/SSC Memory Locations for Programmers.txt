@@ -1,0 +1,104 @@
+Key Super Serial Card (SSC) Memory Locations for Programmers
+------------------------------------------------------------
+
+All addresses are of the form '$C0sx', where 's' is the Slot number
+of the SSC plus $8 and 'x' is the final digit ($0 - $F) of the
+address.
+
+Control Register
+
+The 6551 Control Register is mapped to $C0sB
+($C09B for Slot 1, $C0AB
+for Slot 2, etc.).
+Its format is ...
+bit 7 : stop bit number [0= 1 stop bit, 1= 2 stop bits for most
+settings, except: 1.5 stop bits for word length 5 and no parity,
+and 1 for word length 8 and parity]
+bits 6 and 5 : word length
+[00= 8 bits, 01= 7 bits, 10= 6 bits, 11= 5 bits]
+
+bit 4 : receiver clock source [0= external, 1= internal]
+
+bits 3, 2, 1, 0 : baud rate, as follows:
+0000= 16x external clock
+0001= 50 bps
+0010= 75 bps
+0011= 109.92 bps
+0100= 134.58 bps
+0101= 150 bps
+0110= 300 bps
+0111= 600 bps
+1000= 1200 bps
+1001= 1800 bps
+1010= 2400 bps
+1011= 3600 bps
+1100= 4800 bps
+1101= 7200 bps
+1110= 9600 bps
+1111= 19200 bps
+
+Note that 1 MHz Apples (everything other than the Apple IIgs and //c
+Plus running in "fast" mode) cannot handle 19.2 kbps, and even 9600
+bps on these machines requires either some highly optimised code or
+a decent buffer in the device being accessed. The faster Apples
+have no difficulty with this speed, however.
+
+Command Register
+
+The 6551 Command Register is mapped to $C0sA, and is essentially an
+extension of the Control Register.
+
+Its format is ...
+bits 7 and 6 : parity mode control [00= odd parity, 01= even parity,
+10= mark parity (parity bit always set),
+11= space parity
+(parity bit always cleared)]
+
+bit 5 : parity mode enable [0=no parity used, 1=parity used]
+bit 4 : receiver mode echo [0=no echo, 1=echo]
+bits 3 and 2 : transmitter interrupt control
+[00= set RTS high and transmit no interrupts,
+01= set RTS low and transmit interrupts,
+10= set RTS low and transmit no interrupts,
+11= set RTS low and
+transmit break signals instead of interrupts]
+
+bit 1 : interrupt request disable
+[0=enable receiver interrupts,
+1=disable receiver interrupts]
+bit 0 : Data Terminal Ready (DTR) setting
+[0=set DTR high (indicates 'not ready'),
+1=set DTR low (indicates 'ready')]
+
+Note that, although the DTR is generally not used in the SSC
+(it may actually not be connected!), it must be set to 'low' in order for the
+6551 to function correctly. Also, the RTS signal must be set 'low'
+in order to receive any incoming data from the serial device.
+
+Note also that both the Command and Control registers are write-only,
+which means that reading them will not necessarily yield valid data
+on the device's settings. If there is any doubt as to the current
+settings of the 6551, you should (re)initialise them.
+
+Status register
+
+The 6551 Status register is mapped to $C0s9. It is a read-only register
+and its format is ...
+
+bit 7 : interrupt [0=no interrupt, 1=interrupt]
+bit 6 : Data Set Ready (DSR) [0=DSR low (ready), 1=DSR high (not ready)]
+bit 5 : Data Carrier Detect (DCD) [0=DCD low (detected), 1=DCD high (not detected)]
+bit 4 : transmitter data register empty [0=not empty, 1=empty]
+bit 3 : receiver data register full [0=not full, 1=full]
+bit 2 : overrun error [0=no error, 1=error]
+bit 1 : framing error [0=no error, 1=error]
+bit 0 : parity error [0=no error, 1=error]
+
+Data Register
+The Data Register at $C0s8 is used both for outgoing and incoming data.
+Whether the data has been sent or received can be determined by checking
+bits 4 and 3 (respectively) of the Status register.
+
+I hope that this is the SSC programming information that you are looking for. 
+
+Aaron Heiss

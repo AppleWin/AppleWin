@@ -1,4 +1,23 @@
 /*
+.11 Added:"Warning" for long symbols when symbol table is loaded
+.10 Changed: "Warning" of symbols that alias to "Info."
+.9 Continuation of 2.8.0.8: Fix overflowing disassembly pane for long symbols
+.8 Fixed: Inactive Language Card bank now grayed out, main memory no longer double inverse.
+.7 Fixed: Memory softswitches are now in chronological order, and their background is a dark grey
+.6 Added: Read/Write for Main/Aux memory now shown
+.5 Added: Support for RAMWORKS in the Debugger Language Card Status
+.4 Added: Language Card Status now displayed
+.3 Cleanup drawing of soft switches
+.2 Fix crash when NTSC save/load total path length is > console width (80 chars)
+.1 Fixed: Implemented missing debugger "CD" command
+2.9.0.0 Added: ntsc save [filename], ntsc load [filename], to save/load the NTSC palette.
+  Default filename is "AppleWinNTSC4096x4@32.data"
+  To load this file in GIMP: Open, Select File Type: "Raw image data", Raw image data (*.data), RGB Alpha, Width: 4096, Height: 4
+  to save this file in GIMP: Open, Export To, Select File Type (By Extension) Raw image data, RGB Type: Standard (R,G,B)
+
+.12 Fixed: [PVS-Studio] Fixed false positive of buffer overflow with MIP_RANDOM
+.11 Fixed: [PVS-Studio] Fixed missing call to sprintf() in ConfigSave_PrepareHeader()
+.10 Fixed: [PVS-Studio] Fixed no-op in _6502_GetStackReturnAddress()
  .9 Added: BLOAD now recognizes the extensions .hgr or .hgr2 to load to $2000, or $4000 respectfully
  .8 Fixed: Showing/hiding the address and/or opcodes will show long symbolic targets without overflowing into the register info pane Bug #227
  .7 Fixed: ASC #:# with string containing null byte wouldn't show rest of string
@@ -334,7 +353,6 @@
 
 2.6.0.8 Released with AppleWin 1.16.1
 
->>>>>>> .r619
 2.6.0.6 Released with AppleWin 1.15
 .6 Added new command '@' to display the search results
 .5 Fixed display results of Searching to be colorized

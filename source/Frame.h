@@ -6,25 +6,14 @@
 	// Keyboard -- keystroke type
 	enum {NOT_ASCII=0, ASCII};
 
-// 3D Border
-	#define  VIEWPORTX   5
-	#define  VIEWPORTY   5
-
-	// 560 = Double Hi-Res
-	// 384 = Doule Scan Line
-	#define  FRAMEBUFFER_W  560
-	#define  FRAMEBUFFER_H  384
-
-// Direct Draw -- For Full Screen
-	extern	LPDIRECTDRAW        g_pDD;
-	extern	LPDIRECTDRAWSURFACE g_pDDPrimarySurface;
-	extern	IDirectDrawPalette* g_pDDPal;
 
 // Win32
 	extern HWND       g_hFrameWindow;
-	extern BOOL       g_bIsFullScreen;
+	extern int        g_nViewportCX;
+	extern int        g_nViewportCY;
 	extern BOOL       g_bConfirmReboot; // saved PageConfig REGSAVE
 	extern BOOL       g_bMultiMon;
+
 
 // Emulator
 	extern bool   g_bFreshReset;
@@ -32,22 +21,25 @@
 	extern bool   g_bScrollLock_FullSpeed;
 	extern int    g_nCharsetType;
 
+
 // Prototypes
 	void CtrlReset();
 
 	void    FrameCreateWindow(void);
 	HDC     FrameGetDC ();
-	HDC     FrameGetVideoDC (LPBYTE *,LONG *);
+	void    FrameReleaseDC ();
 	void    FrameRefreshStatus (int, bool bUpdateDiskStatus = true );
 	void    FrameRegisterClass ();
-	void    FrameReleaseDC ();
-	void    FrameReleaseVideoDC ();
 	void	FrameSetCursorPosByMousePos();
 	int		GetViewportScale(void);
-	int     SetViewportScale(int nNewScale);
+	int     SetViewportScale(int nNewScale, bool bForce = false);
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);
-	bool	GetFullScreen32Bit(void);
-	void	SetFullScreen32Bit(bool b32Bit);
+	void    FrameUpdateApple2Type(void);
+	bool	GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight=0);
+
+	bool	IsFullScreen(void);
+	bool	GetFullScreenShowSubunitStatus(void);
+	void	SetFullScreenShowSubunitStatus(bool bShow);
 
 	void	FrameDrawDiskLEDS( HDC hdc );
 	void	FrameDrawDiskStatus( HDC hdc );
@@ -58,3 +50,14 @@
 		WPARAM wparam,
 		LPARAM lparam );
 
+	int GetFullScreenOffsetX(void);
+	int GetFullScreenOffsetY(void);
+
+	UINT GetFrameBufferBorderlessWidth(void);
+	UINT GetFrameBufferBorderlessHeight(void);
+	UINT GetFrameBufferBorderWidth(void);
+	UINT GetFrameBufferBorderHeight(void);
+	UINT GetFrameBufferWidth(void);
+	UINT GetFrameBufferHeight(void);
+	UINT Get3DBorderWidth(void);
+	UINT Get3DBorderHeight(void);

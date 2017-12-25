@@ -9,10 +9,149 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.26.3.6 (Experimental) - 20 Dec 2017
+-------------------------------------
+Changes:
+. [Bug #504] Full-screen: hide mouse pointer after 2 seconds of inactivity (and show again if mouse is moved)
+. [Bug #469] New -no-printscreen-key switch to prevent the PrintScreen key from being registered.
+. [Bug #488] New -fs-height=<best|nnnn> switch.
+    - best: picks the highest resolution where the height is an integer multiple of (192*2)
+    - nnnn: select a specific resolution with height=nnnn pixels
+    Use to select a better resolution for full-screen mode.
+    NB. This changes the display resolution (and restores on exit).
+. [Bug #477] Help doc: Document behaviour full-speed mode
+. [Bug #428] Input option to use PC Joystick 1 Thumbstick 2 for emulated Joystick 2 
+. Swapping disks while a drive is on now warns and prompts if you still wish to do this instead of silently failing with no feedback.
+. [Bug #323] Skip hard disk boot by holding down the Open-Apple key during an Apple II restart
+. [Bug #224] Added Config checkbox for 'Full-Screen: Show drive/keyboard status'
+. [PR #441] Update zlib to latest version 1.2.11
+. [PR #275] Attenuate speaker (and 8-bit DAC) output sample after 0.25s of inactivity
+. [Bug #483] Debugger: Shift+Left mouse button to toggle 6502 Status flag bits
+. [Bug #479, #476, #473] Debugger: Various UI and other fixes
+. [Bug #462] Debugger: Changed Left mouse button (LMB) to Shift+LMB to toggle display items
+. [Bug #406] Debugger: Support LC and MMU status & updated Help doc
+
+Fixes:
+. [Bug #516] Internal video-mode was having PAGE2 permanently cleared (instead of just masked) when 80STORE was set.
+. [Bug #514] Emulator restart (or reset) wasn't clearing any pending Mousecard interrupt
+. [Bug #499] Flush current track (if dirty) before 'Send to CiderPress'
+. [Bug #496] Support polling of Mockingboard's & Phasor's 6522 IFR.Timer1
+. [Bug #492] UI fixes for full-screen & 2x windowed-mode
+. [Bug #486] Peripheral card's expansion ROM ($C800-CFFF, eg. SSC) wasn't being correctly restored from a save-state
+  - Resulting in regression: Mousecard crash to monitor (#495).
+. [Bug #484] Debugger: Some corrections to APPLE2E.SYM
+. [Bug #464] Fix for full-screen: bottom line missing when vertical resolution is 768
+. [Bug #460] Debugger: F2 whilst debugger active will immediately stop the drive spinning (allowing disk swap)
+. [Bug #456] Fix strange speaker clicks when changing configuration - DirectSound wasn't being uninitialised on a restart
+. [Bug #452] Fix for unmounted HD now gives "NO DEVICE CONNECTED" (before gave "I/O ERROR")
+. [Bug #450] Persist debugger state across an F2 (reset machine state)
+. [Bug #445] Debugger: BPM cmd: Support trigger on stack access for BRK,JSR,PLn,PHn,RTI,RTS
+. [Bug #437] AppleWin.chm blocked from opening - delete the AppleWin.chm:Zone.Identifier ADS
+. [Bug #423] Full support for INTC8ROM soft switch (fixes transient a2audit.dsk & Bejeweled failures)
+. [Bug #418] Fix for slot-3 ROM not returning floating bus when Uthernet card is enabled
+. [Bug #417] Typos in Uthernet documentation
+. [Bug #415] Fix for not being able to select Pravets 82
+. [Bug #413] Save-state: bug when saving >9 RAMWorks III 64K banks
+. [Bug #409] Fix for AppleWorks 5.1 flickering when booting (latent bug from 2006!)
+. [Bug #405] Screen flicker in full-speed mode
+. [Bug #403] PrintScreen from Color TV or B&W TV video modes is missing top line
+. [Bug #392] Fixes for a2audit.dsk
+  - Resulting in regressions in LC support for Gemstone Warriors (#395), Quark Catalyst V3 and BeagleWrite (#400).
+. [Bug #389] Disk's write-protect detection mis-reporting when motor off
+. [Bug #387] Support for 40-track .nib files
+. [Bug #386] SSC: Experimental support for 6551's DTR, DCD and DSR bits via -modem switch
+  - ie. -modem is shorthand for passing -dtr -dcd -dsr
+  - Experimental support for 6551's control bit: DTR via -dtr switch
+  - Experimental support for 6551's status bits: DCD and DSR via -dcd and -dsr switches
+. [Bug #383] "Enhanced disk speed" is very slow when debugger is active
+. [Bug #320] Mockingboard/Phasor: support 'inactive' function like real hardware
+. [Bug #308] SSC ACIA Status register's interrupt bit not set when IRQ enabled and using TCP Port 1977
+. [Bug #269] When stepping, ESC no longer exits back to debugger (use F7, Pause keys or Debugger button instead).
+. [Bug #250] Debugger: When MODE_STEPPING, fix issue with disk LEDs staying on
+. [Bug #217] Debugger G(o) command should use normal speed
+. Debugger: Added new gg command:
+
+     command | run at normal speed? | run at full speed?       | video quality | sound quality
+    -------------------------------------------------------------------------------------------
+       g     |         yes          | only if disk active, etc | precise       | precise
+       gg    |         no           | always                   | periodic      | muted
+
+. [Bug #213] Pause not setting volume to zero
+
+
+1.26.1.1 - 17 Feb 2017
+----------------------
+Fixes:
+. [Bug #371] Flickery video when using GR from CP/M. (A regression at 1.26.0.x)
+. [Bug #363] Debugger: Screen not updating when running in single-stepping debugger mode. (A regression at 1.26.0.x)
+. Save-state: Fix for loading state when TEXT40 changes to TEXT80 or vice versa
+
+Fixes since 1.26.1.0 (11 Feb 2017):
+. [Bug #382] Reset not resetting the 40/80-col text mode for mixed-mode NTSC rendering
+
+
+1.26.0.6 - 16 Oct 2016
+----------------------
+Changes:
+. [Bug #126,#157,#194] Beta NTSC and cycle-accurate video support
+	The new supported video modes are now only: TV Color, TV B&W, Monitor Color, Monitor B&W
+	NB. The old 1.25 modes have been removed eg. "Color (TV Emulation)".
+. Full-screen native resolution (no longer 640x480 resolution)
+	NB. If your screen resolution is smaller than 1120x768, then you will get no scaling in full-screen.
+. [Bug #260] Save-state file v2: human readable (Yaml-based format)
+	All hardware configurations save/restored:
+	. Apple model, sub-systems, memory, cards (except Uthernet and SAM cards)
+	NB. Old v1 .aws file format are still loaded
+. [Bug #270] Added SAM/DAC sound card support
+. AppleWin built with VS2008 Express (supports Windows 2000 or later)
+. Unit tests added for 6502 and 65C02 opcodes
+. Added -load-state <savestate.yaml> command line option
+. New repo created with test save-state images: https://github.com/AppleWin/AppleWin-Test
+. Remove unsupported PC speaker sound types
+. [PR #235] New start-up title screen by Paulo Garcia
+. [PR #233] Configuration Dialog->Disk tab: Buttons replaced with drop-down menu for select/eject by Paulo Garcia
+. Removed CTRL+F9 functionality to cycle through AppleWin's character sets (ie. original Apple II charsets and clones' char-sets)
+
+Fixes:
+. [Bug #129] Tight loop page-flipping causing heavy CPU load (fixed by NTSC / cycle-accurate video emulation)
+. [Bug #204] Problem running Wrath Of Denethenor (fixed by NTSC / cycle-accurate video emulation)
+. [Bug #317] [Disk] Only mounts version 1 .2mg not version 0
+. [Bug #296] VS2015 unresolved external in Release
+. [Bug #255] CyclesThisFrame not saved to save-state file
+. [Bug #282] Timing test for undocumented AXA (zp),Y
+. [Bug #288] Timing issue with DEC (abs)
+. [Bug #278] 6502 emulation: bSlowerOnPagecross setup too late in CPP macros
+. [Bug #271] Timing problems with ASL, INC and DEC (abs,X)
+. [Bug #264] JMP (IND) is 5 cycles only - not 6 - on 6502
+. [Bug #287] CPU emulation timing fixes
+. [Bug #286] -d1 command line argument & declining GPL causes crash
+. [Bug #277] SSI263 speech data-race leading to crash
+. [Bug #267] Mousecard movement & button events not working in MODE_STEPPING
+. [Bug #227] (Debugger)[1.25] AppleSoft symbol: COPY.FAC.TO.ARG.ROUNDED overflows into registers
+. [Bug #246] (Debugger) Memory (Changing Memory) command in CHM help files
+. [Bug #309] Silent Service hangs during Mockingboard use
+
+Fixes since 1.26.0.5 (6 Oct 2016):
+. [Bug #356] PrintScreen from Color TV or B&W TV video modes is missing top line
+
+Fixes since 1.26.0.3 (19 Sept 2016):
+. [Bug #341] Color Monitor mode (showing graphics) is shifted one HGR pixel to the right (losing the rightmost pixel)
+. [Bug #353] Pravets 8M has a superfluous dot lit on the ']' character
+. [Bug #352] Full-speed in mixed mode results in flickery video
+. [Bug #351] In full-speed mode, listing a long BASIC program is barely faster than 1MHz mode 
+. [Bug #350] Config -> '50% Scan lines' checkbox not working
+
+
+1.26.0.0 (alpha) - Jan 2016
+---------------------------
+Changes:
+. Alpha NTSC support
+
+
 1.25.0.4 - 23 Apr 2015
 ----------------------
 Fixes:
-. [Bug #276] -d1 command line argument caused AppleWin to quickly exit. 
+. [Bug #276] -d1 command line argument caused AppleWin to crash.
 
 
 1.25.0.3 - 8 Sep 2014

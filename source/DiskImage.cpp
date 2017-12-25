@@ -27,72 +27,83 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
-#include "Structs.h"
-#include "Common.h"
 
 #include "DiskImage.h"
 #include "DiskImageHelper.h"
 
 
 static CDiskImageHelper sg_DiskImageHelper;
+static CHardDiskImageHelper sg_HardDiskImageHelper;
 
 //===========================================================================
 
 // Pre: *pWriteProtected_ already set to file's r/w status - see DiskInsert()
 ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
-						HIMAGE* hDiskImage_,
-						bool* pWriteProtected_,
+						ImageInfo** ppImageInfo,
+						bool* pWriteProtected,
 						const bool bCreateIfNecessary,
-						std::string& strFilenameInZip)
+						std::string& strFilenameInZip,
+						const bool bExpectFloppy /*=true*/)
 {
-	if (! (pszImageFilename && hDiskImage_ && pWriteProtected_ && sg_DiskImageHelper.GetWorkBuffer()))
+	if (bExpectFloppy && sg_DiskImageHelper.GetWorkBuffer() == NULL)
 		return eIMAGE_ERROR_BAD_POINTER;
 
-	// CREATE A RECORD FOR THE FILE, AND RETURN AN IMAGE HANDLE
-	*hDiskImage_ = (HIMAGE) VirtualAlloc(NULL, sizeof(ImageInfo), MEM_COMMIT, PAGE_READWRITE);
-	if (*hDiskImage_ == NULL)
+	if (! (pszImageFilename && ppImageInfo && pWriteProtected))
 		return eIMAGE_ERROR_BAD_POINTER;
 
-	ZeroMemory(*hDiskImage_, sizeof(ImageInfo));
-	ImageInfo* pImageInfo = (ImageInfo*) *hDiskImage_;
-	pImageInfo->bWriteProtected = *pWriteProtected_;
+	// CREATE A RECORD FOR THE FILE
+	*ppImageInfo = (ImageInfo*) VirtualAlloc(NULL, sizeof(ImageInfo), MEM_COMMIT, PAGE_READWRITE);
+	if (*ppImageInfo == NULL)
+		return eIMAGE_ERROR_BAD_POINTER;
 
-	ImageError_e Err = sg_DiskImageHelper.Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip);
+	ZeroMemory(*ppImageInfo, sizeof(ImageInfo));
+	ImageInfo* pImageInfo = *ppImageInfo;
+	pImageInfo->bWriteProtected = *pWriteProtected;
+	if (bExpectFloppy)	pImageInfo->pImageHelper = &sg_DiskImageHelper;
+	else				pImageInfo->pImageHelper = &sg_HardDiskImageHelper;
 
-	if (pImageInfo->pImageType != NULL && Err == eIMAGE_ERROR_NONE && pImageInfo->pImageType->GetType() == eImageHDV)
-		Err = eIMAGE_ERROR_UNSUPPORTED_HDV;
-
+	ImageError_e Err = pImageInfo->pImageHelper->Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip);
 	if (Err != eIMAGE_ERROR_NONE)
 	{
-		ImageClose(*hDiskImage_, true);
-		*hDiskImage_ = (HIMAGE)0;
+		ImageClose(*ppImageInfo, true);
+		*ppImageInfo = NULL;
+		return Err;
+	}
+
+	if (pImageInfo->pImageType && pImageInfo->pImageType->GetType() == eImageHDV)
+	{
+		if (bExpectFloppy)
+			Err = eIMAGE_ERROR_UNSUPPORTED_HDV;
 		return Err;
 	}
 
 	// THE FILE MATCHES A KNOWN FORMAT
+
+	_ASSERT(bExpectFloppy);
+	if (!bExpectFloppy)
+		return eIMAGE_ERROR_UNSUPPORTED;
 
 	pImageInfo->uNumTracks = sg_DiskImageHelper.GetNumTracksInImage(pImageInfo->pImageType);
 
 	for (UINT uTrack = 0; uTrack < pImageInfo->uNumTracks; uTrack++)
 		pImageInfo->ValidTrack[uTrack] = (pImageInfo->uImageSize > 0) ? 1 : 0;
 
-	*pWriteProtected_ = pImageInfo->bWriteProtected;
+	*pWriteProtected = pImageInfo->bWriteProtected;
 
 	return eIMAGE_ERROR_NONE;
 }
 
 //===========================================================================
 
-void ImageClose(const HIMAGE hDiskImage, const bool bOpenError /*=false*/)
+void ImageClose(ImageInfo* const pImageInfo, const bool bOpenError /*=false*/)
 {
-	ImageInfo* ptr = (ImageInfo*) hDiskImage;
 	bool bDeleteFile = false;
 
 	if (!bOpenError)
 	{
-		for (UINT uTrack = 0; uTrack < ptr->uNumTracks; uTrack++)
+		for (UINT uTrack = 0; uTrack < pImageInfo->uNumTracks; uTrack++)
 		{
-			if (!ptr->ValidTrack[uTrack])
+			if (!pImageInfo->ValidTrack[uTrack])
 			{
 				// TODO: Comment using info from this URL:
 				// http://groups.google.de/group/comp.emulators.apple2/msg/7a1b9317e7905152
@@ -102,23 +113,22 @@ void ImageClose(const HIMAGE hDiskImage, const bool bOpenError /*=false*/)
 		}
 	}
 
-	sg_DiskImageHelper.Close(ptr, bDeleteFile);
+	pImageInfo->pImageHelper->Close(pImageInfo, bDeleteFile);
 
-	VirtualFree(ptr, 0, MEM_RELEASE);
+	VirtualFree(pImageInfo, 0, MEM_RELEASE);
 }
 
 //===========================================================================
 
-BOOL ImageBoot(const HIMAGE hDiskImage)
+BOOL ImageBoot(ImageInfo* const pImageInfo)
 {
-	ImageInfo* ptr = (ImageInfo*) hDiskImage;
 	BOOL result = 0;
 
-	if (ptr->pImageType->AllowBoot())
-		result = ptr->pImageType->Boot(ptr);
+	if (pImageInfo->pImageType->AllowBoot())
+		result = pImageInfo->pImageType->Boot(pImageInfo);
 
 	if (result)
-		ptr->bWriteProtected = 1;
+		pImageInfo->bWriteProtected = 1;
 
 	return result;
 }
@@ -141,7 +151,7 @@ void ImageInitialize(void)
 
 //===========================================================================
 
-void ImageReadTrack(	const HIMAGE hDiskImage,
+void ImageReadTrack(	ImageInfo* const pImageInfo,
 						const int nTrack,
 						const int nQuarterTrack,
 						LPBYTE pTrackImageBuffer,
@@ -151,10 +161,9 @@ void ImageReadTrack(	const HIMAGE hDiskImage,
 	if (nTrack < 0)
 		return;
 
-	ImageInfo* ptr = (ImageInfo*) hDiskImage;
-	if (ptr->pImageType->AllowRW() && ptr->ValidTrack[nTrack])
+	if (pImageInfo->pImageType->AllowRW() && pImageInfo->ValidTrack[nTrack])
 	{
-		ptr->pImageType->Read(ptr, nTrack, nQuarterTrack, pTrackImageBuffer, pNibbles);
+		pImageInfo->pImageType->Read(pImageInfo, nTrack, nQuarterTrack, pTrackImageBuffer, pNibbles);
 	}
 	else
 	{
@@ -165,7 +174,7 @@ void ImageReadTrack(	const HIMAGE hDiskImage,
 
 //===========================================================================
 
-void ImageWriteTrack(	const HIMAGE hDiskImage,
+void ImageWriteTrack(	ImageInfo* const pImageInfo,
 						const int nTrack,
 						const int nQuarterTrack,
 						LPBYTE pTrackImage,
@@ -175,30 +184,107 @@ void ImageWriteTrack(	const HIMAGE hDiskImage,
 	if (nTrack < 0)
 		return;
 
-	ImageInfo* ptr = (ImageInfo*) hDiskImage;
-	if (ptr->pImageType->AllowRW() && !ptr->bWriteProtected)
+	if (pImageInfo->pImageType->AllowRW() && !pImageInfo->bWriteProtected)
 	{
-		ptr->pImageType->Write(ptr, nTrack, nQuarterTrack, pTrackImage, nNibbles);
-		ptr->ValidTrack[nTrack] = 1;
+		pImageInfo->pImageType->Write(pImageInfo, nTrack, nQuarterTrack, pTrackImage, nNibbles);
+		pImageInfo->ValidTrack[nTrack] = 1;
 	}
 }
 
 //===========================================================================
 
-int ImageGetNumTracks(const HIMAGE hDiskImage)
+bool ImageReadBlock(	ImageInfo* const pImageInfo,
+						UINT nBlock,
+						LPBYTE pBlockBuffer)
 {
-	ImageInfo* ptr = (ImageInfo*) hDiskImage;
-	return ptr ? ptr->uNumTracks : 0;
+	bool bRes = false;
+	if (pImageInfo->pImageType->AllowRW())
+		bRes = pImageInfo->pImageType->Read(pImageInfo, nBlock, pBlockBuffer);
+
+	return bRes;
 }
 
-bool ImageIsWriteProtected(const HIMAGE hDiskImage)
+//===========================================================================
+
+bool ImageWriteBlock(	ImageInfo* const pImageInfo,
+						UINT nBlock,
+						LPBYTE pBlockBuffer)
 {
-	ImageInfo* ptr = (ImageInfo*) hDiskImage;
-	return ptr ? ptr->bWriteProtected : true;
+	bool bRes = false;
+	if (pImageInfo->pImageType->AllowRW() && !pImageInfo->bWriteProtected)
+		bRes = pImageInfo->pImageType->Write(pImageInfo, nBlock, pBlockBuffer);
+
+	return bRes;
 }
 
-bool ImageIsMultiFileZip(const HIMAGE hDiskImage)
+//===========================================================================
+
+int ImageGetNumTracks(ImageInfo* const pImageInfo)
 {
-	ImageInfo* ptr = (ImageInfo*) hDiskImage;
-	return ptr ? (ptr->uNumEntriesInZip > 1) : false;
+	return pImageInfo ? pImageInfo->uNumTracks : 0;
+}
+
+bool ImageIsWriteProtected(ImageInfo* const pImageInfo)
+{
+	return pImageInfo ? pImageInfo->bWriteProtected : true;
+}
+
+bool ImageIsMultiFileZip(ImageInfo* const pImageInfo)
+{
+	return pImageInfo ? (pImageInfo->uNumEntriesInZip > 1) : false;
+}
+
+const char* ImageGetPathname(ImageInfo* const pImageInfo)
+{
+	static char* szEmpty = "";
+	return pImageInfo ? pImageInfo->szFilename : szEmpty;
+}
+
+UINT ImageGetImageSize(ImageInfo* const pImageInfo)
+{
+	return pImageInfo ? pImageInfo->uImageSize : 0;
+}
+
+void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName)
+{
+	TCHAR   imagetitle[ MAX_DISK_FULL_NAME+1 ];
+	LPCTSTR startpos = pPathname;
+
+	// imagetitle = <FILENAME.EXT>
+	if (_tcsrchr(startpos, TEXT('\\')))
+		startpos = _tcsrchr(startpos, TEXT('\\'))+1;
+
+	_tcsncpy(imagetitle, startpos, MAX_DISK_FULL_NAME);
+	imagetitle[MAX_DISK_FULL_NAME] = 0;
+
+	// if imagetitle contains a lowercase char, then found=1 (why?)
+	BOOL found = 0;
+	int  loop  = 0;
+	while (imagetitle[loop] && !found)
+	{
+		if (IsCharLower(imagetitle[loop]))
+			found = 1;
+		else
+			loop++;
+	}
+
+	if ((!found) && (loop > 2))
+		CharLowerBuff(imagetitle+1, _tcslen(imagetitle+1));
+
+	// pFullName = <FILENAME.EXT>
+	_tcsncpy( pFullName, imagetitle, MAX_DISK_FULL_NAME );
+	pFullName[ MAX_DISK_FULL_NAME ] = 0;
+
+	if (imagetitle[0])
+	{
+		LPTSTR dot = imagetitle;
+		if (_tcsrchr(dot, TEXT('.')))
+			dot = _tcsrchr(dot, TEXT('.'));
+		if (dot > imagetitle)
+			*dot = 0;
+	}
+
+	// pImageName = <FILENAME> (ie. no extension)
+	_tcsncpy( pImageName, imagetitle, MAX_DISK_IMAGE_NAME );
+	pImageName[ MAX_DISK_IMAGE_NAME ] = 0;
 }

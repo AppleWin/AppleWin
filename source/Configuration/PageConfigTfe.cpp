@@ -255,6 +255,8 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 	if (gray_ungray_items(hwnd))
 	{
 		/* we have a problem: TFE is disabled. Give a message to the user */
+		// TC (18 Dec 2017) this vicekb URL is a broken link now, so I copied it to the AppleWin repo, here:
+		// . https://github.com/AppleWin/AppleWin/blob/master/docs/VICE%20Knowledge%20Base%20-%20Article%2013-005.htm
 		MessageBox( hwnd,
 			"TFE support is not available on your system,\n"
 			"there is some important part missing. Please have a\n"

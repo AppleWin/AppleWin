@@ -1,11 +1,18 @@
 #pragma once
 
-#define  SOUND_NONE    0
-#define  SOUND_DIRECT  1
-#define  SOUND_SMART   2
-#define  SOUND_WAVE    3
+// Registry soundtype:
+#define  REG_SOUNDTYPE_NONE    0
+#define  REG_SOUNDTYPE_DIRECT  1	// Not supported from 1.26
+#define  REG_SOUNDTYPE_SMART   2	// Not supported from 1.26
+#define  REG_SOUNDTYPE_WAVE    3
 
-extern DWORD      soundtype;
+enum SoundType_e
+{
+	SOUND_NONE = 0,
+	SOUND_WAVE
+};
+
+extern SoundType_e soundtype;
 extern double     g_fClksPerSpkrSample;
 extern bool       g_bQuieterSpeaker;
 extern short      g_nSpeakerData;
@@ -14,7 +21,7 @@ void    SpkrDestroy ();
 void    SpkrInitialize ();
 void    SpkrReinitialize ();
 void    SpkrReset();
-BOOL    SpkrSetEmulationType (HWND,DWORD);
+BOOL    SpkrSetEmulationType (HWND window, SoundType_e newSoundType);
 void    SpkrUpdate (DWORD);
 void    SpkrUpdate_Timer();
 void    Spkr_SetErrorInc(const int nErrorInc);
@@ -26,7 +33,8 @@ void    Spkr_Demute();
 bool    Spkr_IsActive();
 bool    Spkr_DSInit();
 void    Spkr_DSUninit();
-DWORD   SpkrGetSnapshot(SS_IO_Speaker* pSS);
-DWORD   SpkrSetSnapshot(SS_IO_Speaker* pSS);
+void    SpkrSetSnapshot_v1(const unsigned __int64 SpkrLastCycle);
+void    SpkrSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+void    SpkrLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
 BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);

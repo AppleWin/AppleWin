@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include "StdAfx.h"
-#include "..\Structs.h"
+#include "..\SaveState_Structs_common.h"
 #include "..\Common.h"
 
 #include "..\Mockingboard.h"
@@ -35,8 +35,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 CPageSound* CPageSound::ms_this = 0;	// reinit'd in ctor
 
 const TCHAR CPageSound::m_soundchoices[] =	TEXT("Disabled\0")
-											TEXT("PC Speaker (direct)\0")
-											TEXT("PC Speaker (translated)\0")
 											TEXT("Sound Card\0");
 
 
@@ -106,7 +104,7 @@ BOOL CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM 
 
 	case WM_INITDIALOG:
 		{
-			m_PropertySheetHelper.FillComboBox(hWnd,IDC_SOUNDTYPE,m_soundchoices,soundtype);
+			m_PropertySheetHelper.FillComboBox(hWnd,IDC_SOUNDTYPE, m_soundchoices, (int)soundtype);
 
 			SendDlgItemMessage(hWnd,IDC_SPKR_VOLUME,TBM_SETRANGE,1,MAKELONG(VOLUME_MIN,VOLUME_MAX));
 			SendDlgItemMessage(hWnd,IDC_SPKR_VOLUME,TBM_SETPAGESIZE,0,10);
@@ -134,14 +132,15 @@ BOOL CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM 
 
 void CPageSound::DlgOK(HWND hWnd)
 {
-	const DWORD dwNewSoundType = (DWORD) SendDlgItemMessage(hWnd, IDC_SOUNDTYPE, CB_GETCURSEL, 0, 0);
+	const SoundType_e newSoundType = (SoundType_e) SendDlgItemMessage(hWnd, IDC_SOUNDTYPE, CB_GETCURSEL, 0, 0);
 
 	const DWORD dwSpkrVolume = SendDlgItemMessage(hWnd, IDC_SPKR_VOLUME, TBM_GETPOS, 0, 0);
 	const DWORD dwMBVolume = SendDlgItemMessage(hWnd, IDC_MB_VOLUME, TBM_GETPOS, 0, 0);
 
-	if (SpkrSetEmulationType(hWnd, dwNewSoundType))
+	if (SpkrSetEmulationType(hWnd, newSoundType))
 	{
-		REGSAVE(TEXT("Sound Emulation"), soundtype);
+		DWORD dwSoundType = (soundtype == SOUND_NONE) ? REG_SOUNDTYPE_NONE : REG_SOUNDTYPE_WAVE;
+		REGSAVE(TEXT("Sound Emulation"), dwSoundType);
 	}
 
 	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence

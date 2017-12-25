@@ -97,7 +97,7 @@ inline u8 ReadByte( u16 addr, int uExecutedCycles )
 
 // Michael's Real-Time Debugger/Visualizer CPU
 // Based on Modified 65C02
-static DWORD Cpu65D02 (DWORD uTotalCycles)
+static DWORD Cpu65D02(DWORD uTotalCycles, const bool bVideoUpdate)
 {
 	// Optimisation:
 	// . Copy the global /regs/ vars to stack-based local vars
@@ -113,14 +113,17 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 	AF_TO_EF
 	ULONG uExecutedCycles = 0;
 	WORD base;
-	g_bDebugBreakpointHit = 0;
 
 	do
 	{
 		UINT uExtraCycles = 0;
 		BYTE iOpcode;
 
-		if (g_ActiveCPU == CPU_Z80)
+// NTSC_BEGIN
+		ULONG uPreviousCycles = uExecutedCycles;
+// NTSC_END
+
+		if (GetActiveCpu() == CPU_Z80)
 		{
 			const UINT uZ80Cycles = z80_mainloop(uTotalCycles, uExecutedCycles); CYC(uZ80Cycles)
 		}
@@ -128,15 +131,15 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 
         HEATMAP_X( regs.pc );
 
-		if (!Fetch(iOpcode, uExecutedCycles))
-			break;
+		Fetch(iOpcode, uExecutedCycles);
 
 // INV = Invalid -> Debugger Break
 // MSVC C PreProcessor is BROKEN... #define @ INV
 //#define #    INV
 //#define @    Read()
 //#define $    Store()
-#define $ INV
+//#define $ INV // INV = Invalid -> Debugger Break
+#define $
 
 		switch (iOpcode)
 		{
@@ -404,19 +407,20 @@ static DWORD Cpu65D02 (DWORD uTotalCycles)
 #undef $
 
 		CheckInterruptSources(uExecutedCycles);
-		NMI(uExecutedCycles, uExtraCycles, flagc, flagn, flagv, flagz);
-		IRQ(uExecutedCycles, uExtraCycles, flagc, flagn, flagv, flagz);
+		NMI(uExecutedCycles, flagc, flagn, flagv, flagz);
+		IRQ(uExecutedCycles, flagc, flagn, flagv, flagz);
 
-		if( IsDebugBreakpointHit() )
-			break;
+// NTSC_BEGIN
+		if (bVideoUpdate)
+		{
+			ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
+			NTSC_VideoUpdateCycles( uElapsedCycles );
+		}
+// NTSC_END
 
 	} while (uExecutedCycles < uTotalCycles);
 
 	EF_TO_AF // Emulator Flags to Apple Flags
-
-	if( g_bDebugBreakpointHit )
-		if ((g_nAppMode != MODE_DEBUG) && (g_nAppMode != MODE_STEPPING)) // // Running at full speed? (debugger not running)
-			RequestDebugger();
 
 	return uExecutedCycles;
 }

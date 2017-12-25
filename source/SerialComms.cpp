@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Frame.h"
 #include "Memory.h"
 #include "SerialComms.h"
+#include "YamlHelper.h"
 
 #include "..\resource\resource.h"
 
@@ -72,7 +73,11 @@ SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 
 CSuperSerialCard::CSuperSerialCard() :
 	m_aySerialPortChoices(NULL),
-	m_uTCPChoiceItemIdx(0)
+	m_uTCPChoiceItemIdx(0),
+	m_uSlot(0),
+	m_bCfgSupportDCD(false),
+	m_bCfgSupportDSR(false),
+	m_bCfgSupportDTR(false)
 {
 	memset(m_ayCurrentSerialPortName, 0, sizeof(m_ayCurrentSerialPortName));
 	m_dwSerialPortItem = 0;
@@ -109,6 +114,8 @@ void CSuperSerialCard::InternalReset()
 	m_qComSerialBuffer[0].clear();
 	m_qComSerialBuffer[1].clear();
 	m_qTcpSerialBuffer.clear();
+
+	m_uDTR = DTR_CONTROL_DISABLE;
 }
 
 CSuperSerialCard::~CSuperSerialCard()
@@ -210,6 +217,7 @@ void CSuperSerialCard::UpdateCommState()
 	dcb.ByteSize = m_uByteSize;
 	dcb.Parity   = m_uParity;
 	dcb.StopBits = m_uStopBits;
+	dcb.fDtrControl = m_uDTR;
 
 	SetCommState(m_hCommHandle,&dcb);
 }
@@ -393,6 +401,7 @@ void CSuperSerialCard::CommTcpSerialReceive()
 		if (m_bRxIrqEnabled && !m_qTcpSerialBuffer.empty())
 		{
 			CpuIrqAssert(IS_SSC);
+			m_vbRxIrqPending = true;
 		}
 	}
 }
@@ -509,10 +518,10 @@ BYTE __stdcall CSuperSerialCard::CommCommand(WORD, WORD, BYTE write, BYTE value,
 		// interrupt request disable [0=enable receiver interrupts] - NOTE: SSC docs get this wrong!
 		m_bRxIrqEnabled = ((m_uCommandByte & 0x02) == 0);
 
-		if (m_uCommandByte	& 0x01)	// Data Terminal Ready (DTR) setting [0=set DTR high (indicates 'not ready')]
+		if (m_bCfgSupportDTR)	// GH#386
 		{
-			// Note that, although the DTR is generally not used in the SSC (it may actually not
-			// be connected!), it must be set to 'low' in order for the 6551 to function correctly.
+			// Data Terminal Ready (DTR) setting [0=set DTR high (indicates 'not ready')]
+			m_uDTR = (m_uCommandByte & 0x01) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
 		}
 
 		UpdateCommState();
@@ -706,10 +715,12 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	if (!CheckComm())
 		return ST_DSR | ST_DCD | ST_TX_EMPTY;
 
-#ifdef SUPPORT_MODEM
-	DWORD modemstatus = 0;
-	GetCommModemStatus(m_hCommHandle,&modemstatus);				// Returns 0x30 = MS_DSR_ON|MS_CTS_ON
-#endif
+	DWORD modemStatus = 0;
+	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))
+	{
+		// Do this outside of the critical section (don't know how long it takes)
+		GetCommModemStatus(m_hCommHandle, &modemStatus);	// Returns 0x30 = MS_DSR_ON|MS_CTS_ON
+	}
 
 	//
 
@@ -742,13 +753,23 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 
 	//
 
+	BYTE DCD = 0;
+	BYTE DSR = 0;
+
+	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))	// GH#386
+	{
+		if (m_bCfgSupportDCD)
+			DCD = (modemStatus & MS_RLSD_ON) ? 0x00 : ST_DCD;
+
+		if (m_bCfgSupportDSR)
+			DSR = (modemStatus & MS_DSR_ON)	 ? 0x00 : ST_DSR;
+	}
+
 	BYTE uStatus = ST_TX_EMPTY 
 				| ((!bComSerialBufferEmpty || !m_qTcpSerialBuffer.empty()) ? ST_RX_FULL : 0x00)
-#ifdef SUPPORT_MODEM
-				| ((modemstatus & MS_RLSD_ON)	? 0x00 : ST_DCD)	// Need 0x00 to allow ZLink to start up
-				| ((modemstatus & MS_DSR_ON)	? 0x00 : ST_DSR)
-#endif
-				| (bIRQ							? ST_IRQ : 0x00);
+				| DCD										// Need 0x00 to allow ZLink to start up
+				| DSR
+				| (bIRQ	? ST_IRQ : 0x00);
 
 	if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
@@ -830,6 +851,8 @@ void CSuperSerialCard::CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 		return;
 
 	memcpy(pCxRomPeripheral + uSlot*256, pData+SSC_SLOT_FW_OFFSET, SSC_SLOT_FW_SIZE);
+
+	m_uSlot = uSlot;
 
 	// Expansion ROM
 	if (m_pExpansionRom == NULL)
@@ -1045,7 +1068,7 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 						sprintf(szDbg, "CommThread: Err=Other (0x%08X): InQueue=0x%08X, OutQueue=0x%08X\n", dwErrors, Stat.cbInQue, Stat.cbOutQue);
 					OutputDebugString(szDbg);
 					if (g_fh)
-						fprintf(g_fh, szDbg);
+						fprintf(g_fh, "%s", szDbg);
 				}
 				return -1;
 			}
@@ -1293,30 +1316,135 @@ void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 
 //===========================================================================
 
-DWORD CSuperSerialCard::CommGetSnapshot(SS_IO_Comms* pSS)
+void CSuperSerialCard::SetSnapshot_v1(	const DWORD  baudrate,
+										const BYTE   bytesize,
+										const BYTE   commandbyte,
+										const DWORD  comminactivity,
+										const BYTE   controlbyte,
+										const BYTE   parity,
+										const BYTE   stopbits)
 {
-	pSS->baudrate		= m_uBaudRate;
-	pSS->bytesize		= m_uByteSize;
-	pSS->commandbyte	= m_uCommandByte;
-	pSS->comminactivity	= m_dwCommInactivity;
-	pSS->controlbyte	= m_uControlByte;
-	pSS->parity			= m_uParity;
-//	memcpy(pSS->recvbuffer, m_RecvBuffer, uRecvBufferSize);
-	pSS->recvbytes		= 0;
-	pSS->stopbits		= m_uStopBits;
-	return 0;
+	m_uBaudRate			= baudrate;
+	m_uByteSize			= bytesize;
+	m_uCommandByte		= commandbyte;
+	m_dwCommInactivity	= comminactivity;
+	m_uControlByte		= controlbyte;
+	m_uParity			= parity;
+//	memcpy(m_RecvBuffer, pSS->recvbuffer, uRecvBufferSize);
+//	m_vRecvBytes		= recvbytes;
+	m_uStopBits			= stopbits;
+
+	m_uDTR = (m_uCommandByte & 0x01) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
 }
 
-DWORD CSuperSerialCard::CommSetSnapshot(SS_IO_Comms* pSS)
+//===========================================================================
+
+#define SS_YAML_VALUE_CARD_SSC "Super Serial Card"
+
+#define SS_YAML_KEY_DIPSWDEFAULT "DIPSW Default"
+#define SS_YAML_KEY_DIPSWCURRENT "DIPSW Current"
+
+#define SS_YAML_KEY_BAUDRATE "Baud Rate"
+#define SS_YAML_KEY_FWMODE "Firmware mode"
+#define SS_YAML_KEY_STOPBITS "Stop Bits"
+#define SS_YAML_KEY_BYTESIZE "Byte Size"
+#define SS_YAML_KEY_PARITY "Parity"
+#define SS_YAML_KEY_LINEFEED "Linefeed"
+#define SS_YAML_KEY_INTERRUPTS "Interrupts"
+#define SS_YAML_KEY_CONTROL "Control Byte"
+#define SS_YAML_KEY_COMMAND "Command Byte"
+#define SS_YAML_KEY_INACTIVITY "Comm Inactivity"
+#define SS_YAML_KEY_TXIRQENABLED "TX IRQ Enabled"
+#define SS_YAML_KEY_RXIRQENABLED "RX IRQ Enabled"
+#define SS_YAML_KEY_TXIRQPENDING "TX IRQ Pending"
+#define SS_YAML_KEY_RXIRQPENDING "RX IRQ Pending"
+#define SS_YAML_KEY_WRITTENTX "Written TX"
+#define SS_YAML_KEY_SERIALPORTNAME "Serial Port Name"
+
+std::string CSuperSerialCard::GetSnapshotCardName(void)
 {
-	m_uBaudRate		= pSS->baudrate;
-	m_uByteSize		= pSS->bytesize;
-	m_uCommandByte		= pSS->commandbyte;
-	m_dwCommInactivity	= pSS->comminactivity;
-	m_uControlByte		= pSS->controlbyte;
-	m_uParity			= pSS->parity;
-//	memcpy(m_RecvBuffer, pSS->recvbuffer, uRecvBufferSize);
-//	m_vRecvBytes	= pSS->recvbytes;
-	m_uStopBits		= pSS->stopbits;
-	return 0;
+	static const std::string name(SS_YAML_VALUE_CARD_SSC);
+	return name;
+}
+
+void CSuperSerialCard::SaveSnapshotDIPSW(YamlSaveHelper& yamlSaveHelper, std::string key, SSC_DIPSW& dipsw)
+{
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", key.c_str());
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_BAUDRATE, dipsw.uBaudRate);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_FWMODE, dipsw.eFirmwareMode);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_STOPBITS, dipsw.uStopBits);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_BYTESIZE, dipsw.uByteSize);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PARITY, dipsw.uParity);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_LINEFEED, dipsw.bLinefeed);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_INTERRUPTS, dipsw.bInterrupts);
+}
+
+void CSuperSerialCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_uSlot, 1);
+
+	YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+	SaveSnapshotDIPSW(yamlSaveHelper, SS_YAML_KEY_DIPSWDEFAULT, m_DIPSWDefault);
+	SaveSnapshotDIPSW(yamlSaveHelper, SS_YAML_KEY_DIPSWCURRENT, m_DIPSWCurrent);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_BAUDRATE, m_uBaudRate);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_STOPBITS, m_uStopBits);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_BYTESIZE, m_uByteSize);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PARITY, m_uParity);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_CONTROL, m_uControlByte);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_COMMAND, m_uCommandByte);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, m_dwCommInactivity);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_TXIRQENABLED, m_bTxIrqEnabled);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_RXIRQENABLED, m_bRxIrqEnabled);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_TXIRQPENDING, m_vbTxIrqPending);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_RXIRQPENDING, m_vbRxIrqPending);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITTENTX, m_bWrittenTx);
+	yamlSaveHelper.SaveString(SS_YAML_KEY_SERIALPORTNAME, GetSerialPortName());
+}
+
+void CSuperSerialCard::LoadSnapshotDIPSW(YamlLoadHelper& yamlLoadHelper, std::string key, SSC_DIPSW& dipsw)
+{
+	if (!yamlLoadHelper.GetSubMap(key))
+		throw std::string("Card: Expected key: " + key);
+
+	dipsw.uBaudRate		= yamlLoadHelper.LoadUint(SS_YAML_KEY_BAUDRATE);
+	dipsw.eFirmwareMode = (eFWMODE) yamlLoadHelper.LoadUint(SS_YAML_KEY_FWMODE);
+	dipsw.uStopBits		= yamlLoadHelper.LoadUint(SS_YAML_KEY_STOPBITS);
+	dipsw.uByteSize		= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTESIZE);
+	dipsw.uParity		= yamlLoadHelper.LoadUint(SS_YAML_KEY_PARITY);
+	dipsw.bLinefeed		= yamlLoadHelper.LoadBool(SS_YAML_KEY_LINEFEED);
+	dipsw.bInterrupts	= yamlLoadHelper.LoadBool(SS_YAML_KEY_INTERRUPTS);
+
+	yamlLoadHelper.PopMap();
+}
+
+bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+{
+	if (slot != 2)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (version != 1)
+		throw std::string("Card: wrong version");
+
+	LoadSnapshotDIPSW(yamlLoadHelper, SS_YAML_KEY_DIPSWDEFAULT, m_DIPSWDefault);
+	LoadSnapshotDIPSW(yamlLoadHelper, SS_YAML_KEY_DIPSWCURRENT, m_DIPSWCurrent);
+
+	m_uBaudRate			= yamlLoadHelper.LoadUint(SS_YAML_KEY_BAUDRATE);
+	m_uStopBits			= yamlLoadHelper.LoadUint(SS_YAML_KEY_STOPBITS); 
+	m_uByteSize			= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTESIZE);
+	m_uParity			= yamlLoadHelper.LoadUint(SS_YAML_KEY_PARITY);
+	m_uControlByte		= yamlLoadHelper.LoadUint(SS_YAML_KEY_CONTROL);
+	m_uCommandByte		= yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
+	m_dwCommInactivity	= yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);
+	m_bTxIrqEnabled		= yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQENABLED);
+	m_bRxIrqEnabled		= yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQENABLED);
+	m_vbTxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQPENDING);
+	m_vbRxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQPENDING);
+	m_bWrittenTx		= yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITTENTX);
+
+	m_uDTR = (m_uCommandByte & 0x01) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
+
+	std::string serialPortName = yamlLoadHelper.LoadString(SS_YAML_KEY_SERIALPORTNAME);
+	SetSerialPortName(serialPortName.c_str());
+
+	return true;
 }

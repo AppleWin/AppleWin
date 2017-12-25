@@ -89,7 +89,14 @@
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Uthernet network card">
 			<param name="Local" value="uthernet.html">
+			<param name="ImageNumber" value="2">
 			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="WiFi workaround">
+				<param name="Local" value="uthernet-wifi-workaround.html">
+				</OBJECT>
+		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Command line">
 			<param name="Local" value="CommandLine.html">
@@ -141,8 +148,12 @@
 			</OBJECT>
 		<UL>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Entering the debugger">
+				<param name="Name" value="Entering & exiting the debugger">
 				<param name="Local" value="dbg-entering-debugger.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Debugger Screen Layout">
+				<param name="Local" value="dbg-screen-layout.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Scrolling">
@@ -186,10 +197,6 @@
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Troubleshooting">
-			<param name="Local" value="Troubleshooting.html">
-			</OBJECT>
-		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Resources">
 			<param name="Local" value="resources.html">
 			<param name="ImageNumber" value="2">
@@ -206,6 +213,21 @@
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Contacting the Developers">
 				<param name="Local" value="contact.html">
+				</OBJECT>
+		</UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Appendix">
+			<param name="Local" value="appendix.html">
+			<param name="ImageNumber" value="2">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Full-speed mode">
+				<param name="Local" value="fullspeed.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Troubleshooting">
+				<param name="Local" value="Troubleshooting.html">
 				</OBJECT>
 		</UL>
 	</UL>

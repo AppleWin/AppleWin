@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include <cstdarg>
+
 #include "Debug.h"
 
 #include "..\AppleWin.h"
@@ -126,7 +128,7 @@ Update_t Help_Arg_1( int iCommandHelp )
 {
 	_Arg_1( iCommandHelp );
 
-	wsprintf( g_aArgs[ 1 ].sArg, g_aCommands[ iCommandHelp ].m_sName ); // .3 Fixed: Help_Arg_1() now copies command name into arg.name
+	wsprintf( g_aArgs[ 1 ].sArg, "%s", g_aCommands[ iCommandHelp ].m_sName ); // .3 Fixed: Help_Arg_1() now copies command name into arg.name
 
 	return CmdHelpSpecific( 1 );
 }
@@ -192,7 +194,7 @@ void Help_Categories()
 //		ConsoleBufferPush( sText );
 		ConsolePrint( sText );  // Transcode colored text to native console color text
 		
-		sprintf( sText, "%sNotes%s: %s<>%s = mandatory, %s[]%s = optional, %s|%s argument option"
+		ConsolePrintFormat( sText, "%sNotes%s: %s<>%s = mandatory, %s[]%s = optional, %s|%s argument option"
 			, CHC_USAGE
 			, CHC_DEFAULT
 			, CHC_ARG_MAND
@@ -202,18 +204,17 @@ void Help_Categories()
 			, CHC_ARG_SEP
 			, CHC_DEFAULT
 		);
-		ConsolePrint( sText );  // Transcode colored text to native console color text
 //		ConsoleBufferPush( sText );
 }
 
 void Help_Examples()
 {
 	char sText[ CONSOLE_WIDTH ];
-	sprintf( sText, " %sExamples%s:"
+	ConsolePrintFormat( sText, " %sExamples%s:%s"
 		, CHC_USAGE
+		, CHC_ARG_SEP
 		, CHC_DEFAULT
 	);
-	ConsolePrint( sText );
 }
 
 //===========================================================================
@@ -229,36 +230,36 @@ void Help_Operators()
 {
 	char sText[ CONSOLE_WIDTH ];
 	
-//	sprintf( sText," %sOperators%s:"                                 , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-//	sprintf( sText,"  Operators: (Math)"                             );
-	sprintf( sText,"  Operators: (%sMath%s)"                         , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s+%s   Addition"                            , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s-%s   Subtraction"                         , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s*%s   Multiplication"                      , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s/%s   Division"                            , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s%%%s   Modulas or Remainder"               , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
+//	ConsolePrintFormat( sText," %sOperators%s:"                                 , CHC_USAGE, CHC_DEFAULT );
+//	ConsolePrintFormat( sText,"  Operators: (Math)"                             );
+	ConsolePrintFormat( sText,"  Operators: (%sMath%s)"                         , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s+%s   Addition"                            , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s-%s   Subtraction"                         , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s*%s   Multiplication"                      , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s/%s   Division"                            , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s%%%s   Modulas or Remainder"               , CHC_USAGE, CHC_DEFAULT );
 //ConsoleBufferPush( "  Operators: (Bit Wise)"                         );
-	sprintf( sText,"  Operators: (%sBit Wise%s)"                     , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s&%s   Bit-wise and (AND)"                  , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s|%s   Bit-wise or  (OR )"                  , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s^%s   Bit-wise exclusive-or (EOR/XOR)"     , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s!%s   Bit-wise negation (NOT)"             , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
+	ConsolePrintFormat( sText,"  Operators: (%sBit Wise%s)"                     , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s&%s   Bit-wise and (AND)"                  , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s|%s   Bit-wise or  (OR )"                  , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s^%s   Bit-wise exclusive-or (EOR/XOR)"     , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s!%s   Bit-wise negation (NOT)"             , CHC_USAGE, CHC_DEFAULT );
 //ConsoleBufferPush( "  Operators: (Input)"                            );
-	sprintf( sText,"  Operators: (%sInput%s)"                        , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s@%s   next number refers to search results", CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s\"%s   Designate string in ASCII format"   , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s\'%s   Desginate string in High-Bit apple format", CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s$%s   Designate number/symbol"             , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s#%s   Designate number in hex"             , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
+	ConsolePrintFormat( sText,"  Operators: (%sInput%s)"                        , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s@%s   next number refers to search results", CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s\"%s   Designate string in ASCII format"   , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s\'%s   Desginate string in High-Bit apple format", CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s$%s   Designate number/symbol"             , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s#%s   Designate number in hex"             , CHC_USAGE, CHC_DEFAULT );
 //ConsoleBufferPush( "  Operators: (Range)"                            );
-	sprintf( sText,"  Operators: (%sRange%s)"                        , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s,%s   range seperator (2nd address is relative)", CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s:%s   range seperator (2nd address is absolute)", CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-//	sprintf( sText,"  Operators: (Misc)"                             );
-	sprintf( sText,"  Operators: (%sMisc%s)"                         , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
-	sprintf( sText,"    %s//%s  comment until end of line"           , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
+	ConsolePrintFormat( sText,"  Operators: (%sRange%s)"                        , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s,%s   range seperator (2nd address is relative)", CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s:%s   range seperator (2nd address is absolute)", CHC_USAGE, CHC_DEFAULT );
+//	ConsolePrintFormat( sText,"  Operators: (Misc)"                             );
+	ConsolePrintFormat( sText,"  Operators: (%sMisc%s)"                         , CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( sText,"    %s//%s  comment until end of line"           , CHC_USAGE, CHC_DEFAULT );
 //ConsoleBufferPush( "  Operators: (Breakpoint)"                       );
-	sprintf( sText,"  Operators: (%sBreakpoint%s)"                   , CHC_USAGE, CHC_DEFAULT ); ConsolePrint( sText );
+	ConsolePrintFormat( sText,"  Operators: (%sBreakpoint%s)"                   , CHC_USAGE, CHC_DEFAULT );
 
 	_tcscpy( sText, "    " );
 	_tcscat( sText, CHC_USAGE );
@@ -322,6 +323,17 @@ void _ColorizeHeader(
 	pDst += nLen;
 }
 
+
+void _ColorizeString(
+	char * & pDst,
+	const char *pSrc, const size_t nLen )
+{
+	strcpy( pDst, pSrc );
+	pDst += nLen;
+}
+
+
+// pOperator is one of CHC_*
 void _ColorizeOperator(
 	char * & pDst, const char * & pSrc,
 	char * pOperator )
@@ -340,6 +352,18 @@ void _ColorizeOperator(
 	pDst += nLen;
 
 	pSrc++;
+}
+
+
+
+
+bool isHexDigit( char c )
+{
+	if ((c >= '0') &&  (c <= '9')) return true;
+	if ((c >= 'A') &&  (c <= 'F')) return true;
+	if ((c >= 'a') &&  (c <= 'f')) return true;
+
+	return false;
 }
 
 
@@ -363,6 +387,9 @@ bool Colorize( char * pDst, const char * pSrc )
 	const char sTotal[] = "Total:";
 	const int  nTotal = sizeof( sTotal ) - 1;
 
+	const char sExamples[] = "Examples:";
+	const int  nExamples = sizeof( sExamples ) - 1;
+
 	int nLen = 0;
 	while (*pSrc)
 	{
@@ -384,6 +411,11 @@ bool Colorize( char * pDst, const char * pSrc )
 		if (strncmp( sTotal, pSrc, nNote) == 0)
 		{
 			_ColorizeHeader( pDst, pSrc, sTotal, nTotal );
+		}
+		else
+		if (strncmp( sExamples, pSrc, nExamples) == 0)
+		{
+			_ColorizeHeader( pDst, pSrc, sExamples, nExamples );
 		}
 		else
 		if (*pSrc == '[')
@@ -416,6 +448,25 @@ bool Colorize( char * pDst, const char * pSrc )
 			_ColorizeOperator( pDst, pSrc, CHC_ARG_SEP );
 		}
 		else
+		if ((*pSrc == '$') && isHexDigit(pSrc[1])) // Hex Number
+		{
+			_ColorizeOperator( pDst, pSrc, CHC_ARG_SEP );
+
+			const char *start = pSrc;
+			const char *end   = pSrc;
+
+			while( isHexDigit( *end ) )
+				end++;
+
+			size_t nDigits = end - start;
+
+			_ColorizeString( pDst, CHC_NUM_HEX, strlen( CHC_NUM_HEX ) );
+			_ColorizeString( pDst, start      , nDigits               );
+			_ColorizeString( pDst, CHC_DEFAULT, strlen( CHC_DEFAULT ) );
+
+			pSrc += nDigits;
+		}
+		else
 		{
 			*pDst = *pSrc;
 			pDst++;
@@ -424,6 +475,60 @@ bool Colorize( char * pDst, const char * pSrc )
 	}
 	*pDst = 0;
 	return true;
+}
+
+// NOTE: This appends a new line
+inline bool ConsoleColorizePrint( char* colorizeBuf, size_t /*colorizeBufSz*/,
+                                  const char* pText )
+{
+   if (!Colorize(colorizeBuf, pText)) return false;
+   return ConsolePrint(colorizeBuf);
+}
+
+template<size_t _ColorizeBufSz>
+inline bool ConsoleColorizePrint( char (&colorizeBuf)[_ColorizeBufSz],
+                                  const char* pText )
+{
+   return ConsoleColorizePrint(colorizeBuf, _ColorizeBufSz, pText);
+}
+
+inline bool ConsoleColorizePrintVa( char* colorizeBuf, size_t colorizeBufSz,
+                                    char* buf, size_t bufsz,
+                                    const char* format, va_list va )
+{
+   vsnprintf_s(buf, bufsz, _TRUNCATE, format, va);
+   return ConsoleColorizePrint(colorizeBuf, colorizeBufSz, buf);
+}
+
+template<size_t _ColorizeBufSz, size_t _BufSz>
+inline bool ConsoleColorizePrintVa( char (&colorizeBuf)[_ColorizeBufSz],
+                                    char (&buf)[_BufSz],
+                                    const char* format, va_list va )
+{
+   return ConsoleColorizePrintVa(colorizeBuf, _ColorizeBufSz, buf, _BufSz, format, va);
+}
+
+inline bool ConsoleColorizePrintFormat( char* colorizeBuf, size_t colorizeBufSz,
+                                        char* buf, size_t bufsz,
+                                        const char* format, ... )
+{
+   va_list va;
+   va_start(va, format);
+   bool const r = ConsoleColorizePrintVa(colorizeBuf, colorizeBufSz, buf, bufsz, format, va);
+   va_end(va);
+   return r;
+}
+
+template<size_t _ColorizeBufSz, size_t _BufSz>
+inline bool ConsoleColorizePrintFormat( char (&colorizeBuf)[_ColorizeBufSz],
+                                        char (&buf)[_BufSz],
+                                        const char* format, ... )
+{
+   va_list va;
+   va_start(va, format);
+   bool const r = ConsoleColorizePrintVa(colorizeBuf, buf, format, va);
+   va_end(va);
+   return r;
 }
 
 //===========================================================================
@@ -438,12 +543,11 @@ Update_t CmdMOTD( int nArgs )	// Message Of The Day
 	ConsolePrint( "`2`A" );
 #endif
 
-	sprintf( sText, "`9`A`7 Apple `9][ ][+ //e `7Emulator for Windows (TM) `9`@" );
-	ConsolePrint( sText );
+	ConsolePrintFormat( sText, "`9`A`7 Apple `9][ ][+ //e `7Emulator for Windows (TM) `9`@" );
 
 	CmdVersion(0);
 	CmdSymbols(0);
-	sprintf( sTemp, "  '%sCtrl ~'%s console, '%s%s'%s (specific), '%s%s'%s (all)"
+	ConsoleColorizePrintFormat( sTemp, sText, "  '%sCtrl ~'%s console, '%s%s'%s (specific), '%s%s'%s (all)"
 		, CHC_KEY
 		, CHC_DEFAULT
 		, CHC_COMMAND
@@ -455,8 +559,6 @@ Update_t CmdMOTD( int nArgs )	// Message Of The Day
 		, CHC_DEFAULT
 //		, g_aCommands[ CMD_HELP_LIST     ].pHelpSummary
 	);
-	Colorize( sText, sTemp );
-	ConsolePrint( sText );
 
 	ConsoleUpdate();
 
@@ -517,7 +619,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			{
 				case PARAM_CAT_BOOKMARKS  : iCmdBegin = CMD_BOOKMARK        ; iCmdEnd = CMD_BOOKMARK_SAVE        ; break;
 				case PARAM_CAT_BREAKPOINTS: iCmdBegin = CMD_BREAK_INVALID   ; iCmdEnd = CMD_BREAKPOINT_SAVE      ; break;
-				case PARAM_CAT_CONFIG     : iCmdBegin = CMD_BENCHMARK       ; iCmdEnd = CMD_CONFIG_SAVE          ; break;
+				case PARAM_CAT_CONFIG     : iCmdBegin = CMD_BENCHMARK       ; iCmdEnd = CMD_CONFIG_SET_DEBUG_DIR; break;
 				case PARAM_CAT_CPU        : iCmdBegin = CMD_ASSEMBLE        ; iCmdEnd = CMD_UNASSEMBLE           ; break;
 				case PARAM_CAT_FLAGS      :
 					nFound = FindCommand( g_aArgs[iArg].sArg, pFunction, & iCommand ); // check if we have an exact command match first
@@ -669,58 +771,57 @@ Update_t CmdHelpSpecific (int nArgs)
 
 			// HACK: Major kludge to display category!!!
 			if (iCmd <= CMD_UNASSEMBLE)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_CPU ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_CPU ].m_sName );
 			else
 			if (iCmd <= CMD_BOOKMARK_SAVE)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_BOOKMARKS ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_BOOKMARKS ].m_sName );
 			else
 			if (iCmd <= CMD_BREAKPOINT_SAVE)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_BREAKPOINTS ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_BREAKPOINTS ].m_sName );
 			else
-			if (iCmd <= CMD_CONFIG_SAVE)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_CONFIG ].m_sName );
+			if (iCmd <= CMD_CONFIG_SET_DEBUG_DIR)
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_CONFIG ].m_sName );
 			else
 			if (iCmd <= CMD_CURSOR_PAGE_DOWN_4K)
 				wsprintf( sCategory, "Scrolling" );
 			else
 			if (iCmd <= CMD_FLAG_SET_N)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_FLAGS ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_FLAGS ].m_sName );
 			else
 			if (iCmd <= CMD_MOTD)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_HELP ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_HELP ].m_sName );
 			else
 			if (iCmd <= CMD_MEMORY_FILL)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_MEMORY ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_MEMORY ].m_sName );
 			else
 			if (iCmd <= CMD_OUTPUT_RUN)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_OUTPUT ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_OUTPUT ].m_sName );
 			else
 			if (iCmd <= CMD_SYNC)
 				wsprintf( sCategory, "Source" );
 			else
 			if (iCmd <= CMD_SYMBOLS_LIST)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_SYMBOLS ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_SYMBOLS ].m_sName );
 			else
 			if (iCmd <= CMD_VIEW_DHGR2)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_VIEW ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_VIEW ].m_sName );
 			else
 			if (iCmd <= CMD_WATCH_SAVE)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_WATCHES ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_WATCHES ].m_sName );
 			else
 			if (iCmd <= CMD_WINDOW_OUTPUT)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_WINDOW ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_WINDOW ].m_sName );
 			else
 			if (iCmd <= CMD_ZEROPAGE_POINTER_SAVE)
-				wsprintf( sCategory, g_aParameters[ PARAM_CAT_ZEROPAGE ].m_sName );
+				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_ZEROPAGE ].m_sName );
 			else
 				wsprintf( sCategory, "Unknown!" );
 
-			sprintf( sText, "%sCategory%s: %s%s"
+			ConsolePrintFormat( sText, "%sCategory%s: %s%s"
 				, CHC_USAGE
 				, CHC_DEFAULT
 				, CHC_CATEGORY
 				, sCategory );
-			ConsolePrint( sText );
 
 			if (bCategory)
 				if (bDisplayCategory)
@@ -759,13 +860,11 @@ Update_t CmdHelpSpecific (int nArgs)
 			else
 			{
 #if _DEBUG
-				wsprintf( sText, "%s  <-- Missing", pCommand->m_sName );
-				ConsoleBufferPush( sText );
+				ConsoleBufferPushFormat( sText, "%s  <-- Missing", pCommand->m_sName );
 	#if DEBUG_COMMAND_HELP
 				if (! bAllCommands) // Release version doesn't display message
 				{			
-					wsprintf( sText, "Missing Summary Help: %s", g_aCommands[ iCommand ].aName );
-					ConsoleBufferPush( sText );
+					ConsoleBufferPushFormat( sText, "Missing Summary Help: %s", g_aCommands[ iCommand ].aName );
 				}
 	#endif
 #endif
@@ -783,116 +882,102 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( " Built-in assember isn't functional yet." );
 			break;
 		case CMD_UNASSEMBLE:
-			Colorize( sText, " Usage: [address | symbol]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [address | symbol]" );
 			ConsoleBufferPush( "  Disassembles memory." );
 			break;
-		case CMD_GO:
-			Colorize( sText, " Usage: address | symbol [Skip,Length]" );
-			ConsolePrint( sText );
-			Colorize( sText, " Usage: address | symbol [Start:End]" );
-			ConsolePrint( sText );
+		case CMD_GO_NORMAL_SPEED:
+		case CMD_GO_FULL_SPEED:
+			ConsoleColorizePrint( sText, " Usage: address | symbol [Skip,Length]" );
+			ConsoleColorizePrint( sText, " Usage: address | symbol [Start:End]" );
 			ConsoleBufferPush( " Skip  : Start address to skip stepping"                     );
 			ConsoleBufferPush( " Length: Range of bytes past start address to skip stepping" );
 			ConsoleBufferPush( " End   : Inclusive end address to skip stepping"             );
 			ConsoleBufferPush( "  If the Program Counter is outside the skip range, resumes single-stepping." );
 			ConsoleBufferPush( "  Can be used to skip ROM/OS/user code." );
 			Help_Examples();
-			sprintf( sText, "%s  G C600 FA00,600" , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s  G C600 F000:FFFF", CHC_EXAMPLE ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s  G[G] C600 FA00,600" , CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s  G[G] C600 F000:FFFF", CHC_EXAMPLE );
 			break;
 		case CMD_JSR:
-			Colorize( sText, " %sUsage%s: %s[symbol | address]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " %sUsage%s: %s[symbol | address]" );
 			ConsoleBufferPush( "  Pushes PC on stack; calls the named subroutine." );
 			break;
 		case CMD_NOP:
 			ConsoleBufferPush( TEXT("  Puts a NOP opcode at current instruction") );
 			break;
 		case CMD_OUT:
-			Colorize( sText, " Usage: [address8 | address16 | symbol] ## [##]" );
-			ConsolePrint( sText );
-			ConsoleBufferPush( TEXT("  Ouput a byte or word to the IO address $C0xx" ) );
+			ConsoleColorizePrint( sText, " Usage: [address8 | address16 | symbol] ## [##]" );
+			ConsoleBufferPush( TEXT("  Output a byte or word to the IO address $C0xx" ) );
 			break;
 		case CMD_PROFILE:
-			sprintf( sTemp, " Usage: [%s | %s | %s]"
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: [%s | %s | %s]"
 				, g_aParameters[ PARAM_RESET ].m_sName
 				, g_aParameters[ PARAM_SAVE  ].m_sName
 				, g_aParameters[ PARAM_LIST  ].m_sName
 			);
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
 			ConsoleBufferPush( " No arguments resets the profile." );
 			break;
 	// Registers
 		case CMD_REGISTER_SET:
-			Colorize( sText,    " Usage: <reg> <value | expression | symbol>" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText,    " Usage: <reg> <value | expression | symbol>" );
 			ConsoleBufferPush( "  Where <reg> is one of: A X Y PC SP " );
-			sprintf( sTemp,    " See also: %s%s"
+			ConsoleColorizePrintFormat( sTemp, sText, " See also: %s%s"
 				, CHC_CATEGORY
 				, g_aParameters[ PARAM_CAT_OPERATORS ].m_sName );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
 			Help_Examples();
-			sprintf( sText, "%s  R PC RESET + 1", CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s  R PC $FC58"    , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s  R A  A1"       , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s  R A  $A1"      , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s  R A  #A1"      , CHC_EXAMPLE ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s  R PC RESET + 1", CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s  R PC $FC58"    , CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s  R A  A1"       , CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s  R A  $A1"      , CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s  R A  #A1"      , CHC_EXAMPLE );
 			break;
 		case CMD_SOURCE:
 //			ConsoleBufferPush( TEXT(" Reads assembler source file." ) );
-			sprintf( sTemp, " Usage: [ %s | %s ] \"filename\""             , g_aParameters[ PARAM_SRC_MEMORY  ].m_sName, g_aParameters[ PARAM_SRC_SYMBOLS ].m_sName );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
-			sprintf( sText, "   %s: read source bytes into memory."        , g_aParameters[ PARAM_SRC_MEMORY  ].m_sName ); ConsoleBufferPush( sText );
-			sprintf( sText, "   %s: read symbols into Source symbol table.", g_aParameters[ PARAM_SRC_SYMBOLS ].m_sName ); ConsoleBufferPush( sText );
-			sprintf( sText, " Supports: %s."                               , g_aParameters[ PARAM_SRC_MERLIN  ].m_sName ); ConsoleBufferPush( sText );
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: [ %s | %s ] \"filename\""             , g_aParameters[ PARAM_SRC_MEMORY  ].m_sName, g_aParameters[ PARAM_SRC_SYMBOLS ].m_sName );
+			ConsoleBufferPushFormat( sText, "   %s: read source bytes into memory."        , g_aParameters[ PARAM_SRC_MEMORY  ].m_sName );
+			ConsoleBufferPushFormat( sText, "   %s: read symbols into Source symbol table.", g_aParameters[ PARAM_SRC_SYMBOLS ].m_sName );
+			ConsoleBufferPushFormat( sText, " Supports: %s."                               , g_aParameters[ PARAM_SRC_MERLIN  ].m_sName );
 			break;
 		case CMD_STEP_OUT: 
 			ConsoleBufferPush( "  Steps out of current subroutine" );
 			ConsoleBufferPush( "  Hotkey: Ctrl-Space" ); // TODO: FIXME
 			break;
 		case CMD_STEP_OVER: // Bad name? FIXME/TODO: do we need to rename?
-			Colorize( sText, " Usage: [#]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [#]" );
 			ConsoleBufferPush( "  Steps, # times, thru current instruction" );
 			ConsoleBufferPush( "  JSR will be stepped into AND out of." );
 			ConsoleBufferPush( "  Hotkey: Ctrl-Space" ); // TODO: FIXME
 			break;
 		case CMD_TRACE:
-			Colorize( sText, " Usage: [#]" ); ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [#]" );
 			ConsoleBufferPush( "  Traces, # times, current instruction(s)" );
 			ConsoleBufferPush( "  JSR will be stepped into" );
 			ConsoleBufferPush( "  Hotkey: Shift-Space" );
+			break;
 		case CMD_TRACE_FILE:
-			Colorize( sText, " Usage: \"[filename]\"" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: \"[filename]\" [v]" );
 			break;
 		case CMD_TRACE_LINE:
-			Colorize( sText, " Usage: [#]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [#]" );
 			ConsoleBufferPush( "  Traces into current instruction" );
 			ConsoleBufferPush( "  with cycle counting." );
 			break;
 	// Bookmarks
 		case CMD_BOOKMARK:
 		case CMD_BOOKMARK_ADD:
-			Colorize( sText, " Usage: [address | symbol]"   ); ConsolePrint( sText );
-			Colorize( sText, " Usage: # <address | symbol>" ); ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [address | symbol]"   );
+			ConsoleColorizePrint( sText, " Usage: # <address | symbol>" );
 			ConsoleBufferPush("  If no address or symbol is specified, lists the current bookmarks." );
 			ConsoleBufferPush("  Updates the specified bookmark (#)" );
 			Help_Examples();
-			sprintf( sText,  "%s   %s RESET ", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText,  "%s   %s 1 HOME", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			ConsolePrintFormat( sText,  "%s   %s RESET ", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText,  "%s   %s 1 HOME", CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_BOOKMARK_CLEAR:
-			Colorize( sText, " Usage: [# | *]" ); ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [# | *]" );
 			ConsoleBufferPush( "  Clears specified bookmark, or all." );
 			Help_Examples();
-			sprintf( sText,  "%s   %s 1", CHC_EXAMPLE, pCommand->m_sName );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText,  "%s   %s 1", CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_BOOKMARK_LIST:
 //		case CMD_BOOKMARK_LOAD:
@@ -900,7 +985,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 	// Breakpoints
 		case CMD_BREAK_INVALID:
-			sprintf( sTemp, TEXT(" Usage: [%s%s | %s%s] | [ # | # %s%s | # %s%s ]")
+			ConsoleColorizePrintFormat( sTemp, sText, TEXT(" Usage: [%s%s | %s%s] | [ # | # %s%s | # %s%s ]")
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_ON  ].m_sName
 				, CHC_COMMAND
@@ -910,49 +995,38 @@ Update_t CmdHelpSpecific (int nArgs)
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_OFF  ].m_sName
 			);
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
-			sprintf( sTemp, TEXT("Where: # is 0=BRK, 1=Invalid Opcode_1, 2=Invalid Opcode_2, 3=Invalid Opcode_3"));
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sTemp, TEXT("Where: # is 0=BRK, 1=Invalid Opcode_1, 2=Invalid Opcode_2, 3=Invalid Opcode_3"));
 			break;
 //		case CMD_BREAK_OPCODE:
 		case CMD_BREAKPOINT:
-			sprintf( sTemp, TEXT(" Usage: [%s%s | %s%s | %s%s]")
+			ConsoleColorizePrintFormat( sTemp, sText, TEXT(" Usage: [%s%s | %s%s | %s%s]")
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_LOAD  ].m_sName
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_SAVE  ].m_sName
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_RESET ].m_sName );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
-			sprintf( sText, " Maximum breakpoints: %s%d", CHC_NUM_DEC, MAX_BREAKPOINTS );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText, " Maximum breakpoints: %s%d", CHC_NUM_DEC, MAX_BREAKPOINTS );
 			ConsoleBufferPush( "  Set breakpoint at PC if no args."    );
 			ConsoleBufferPush( "  Loading/Saving not yet implemented." );
 			break;
 		case CMD_BREAKPOINT_ADD_REG:
-			Colorize( sText, " Usage: [A|X|Y|PC|S] [op] <range | value>" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [A|X|Y|PC|S] [op] <range | value>" );
 			ConsoleBufferPush( "  Set breakpoint when reg is [op] value"   );
 			ConsoleBufferPush( "  Default operator is '='"                 );
-			sprintf(  sTemp, " See also: %s%s"
+			ConsoleColorizePrintFormat( sTemp, sText, " See also: %s%s"
 				, CHC_CATEGORY
 				, g_aParameters[ PARAM_CAT_OPERATORS ].m_sName );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
 			// ConsoleBufferPush( " Examples:"     );
 			Help_Examples();
-			sprintf( sText, "%s   %s PC < D000"                    , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s PC = F000:FFFF PC < D000,1000", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s A <= D5"                      , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s A != 01:FF"                   , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s X  = A5"                      , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s   %s PC < D000"                    , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s PC = F000:FFFF PC < D000,1000", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s A <= D5"                      , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s A != 01:FF"                   , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s X  = A5"                      , CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_BREAKPOINT_ADD_SMART:
-			Colorize( sText, " Usage: [address | register]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [address | register]" );
 			ConsoleBufferPush( "  If address, sets two breakpoints" );
 			ConsoleBufferPush( "    1. one memory access at address" );
 			ConsoleBufferPush( "    2. if PC reaches address" );
@@ -961,46 +1035,37 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( "  If register, sets a breakpoint on memory access at address of register." );
 			break;
 		case CMD_BREAKPOINT_ADD_PC:
-			Colorize( sText, " Usage: [address]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [address]" );
 			ConsoleBufferPush( "  Sets a breakpoint at the current PC or at the specified address." );
 			break;
 		case CMD_BREAKPOINT_CLEAR:
-			Colorize( sText, " Usage: [# | *]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [# | *]" );
 			ConsoleBufferPush( "  Clears specified breakpoint, or all." );
 			Help_Examples();
-			sprintf( sText, "%s   %s 1", CHC_EXAMPLE, pCommand->m_sName );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s   %s 1", CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_BREAKPOINT_DISABLE:
-			Colorize( sText, " Usage: [# [,#] | *]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [# [,#] | *]" );
 			ConsoleBufferPush( "  Disable breakpoint previously set, or all." );
 			Help_Examples();
-			sprintf( sText,  "%s   %s 1", CHC_EXAMPLE, pCommand->m_sName );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText,  "%s   %s 1", CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_BREAKPOINT_ENABLE:
-			Colorize( sText, " Usage: [# [,#] | *]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [# [,#] | *]" );
 			ConsoleBufferPush( "  Re-enables breakpoint previously set, or all." );
 			Help_Examples();
-			sprintf( sText,  "%s   %s 1", CHC_EXAMPLE, pCommand->m_sName );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText,  "%s   %s 1", CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_BREAKPOINT_LIST:
 			break;
 	// Config - Load / Save
 		case CMD_CONFIG_LOAD:
-			Colorize( sText, " Usage: [\"filename\"]" );
-			ConsolePrint( sText );
-			sprintf( sText, "  Load debugger configuration from '%s', or the specificed file.", g_sFileNameConfig ); ConsoleBufferPush( sText );
+			ConsoleColorizePrint( sText, " Usage: [\"filename\"]" );
+			ConsoleBufferPushFormat( sText, "  Load debugger configuration from '%s', or the specificed file.", g_sFileNameConfig );
 			break;
 		case CMD_CONFIG_SAVE:
-			Colorize( sText, " Usage: [\"filename\"]" );
-			ConsolePrint( sText );
-			sprintf( sText, "  Save debugger configuration to '%s', or the specificed file.", g_sFileNameConfig ); ConsoleBufferPush( sText );
+			ConsoleColorizePrint( sText, " Usage: [\"filename\"]" );
+			ConsoleBufferPushFormat( sText, "  Save debugger configuration to '%s', or the specificed file.", g_sFileNameConfig );
 			break;
 	// Config - Color
 		case CMD_CONFIG_COLOR:
@@ -1018,12 +1083,13 @@ Update_t CmdHelpSpecific (int nArgs)
 	// Config - Diasm
 		case CMD_CONFIG_DISASM:
 		{
-			Colorize( sText, " Note: All arguments effect the disassembly view" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Note: All arguments effect the disassembly view" );
 
-			sprintf( sTemp, " Usage: [%s%s | %s%s | %s%s | %s%s | %s%s]"
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: [%s%s | %s | %s%s | %s%s | %s%s | %s%s]"
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_CONFIG_BRANCH ].m_sName
+				, CHC_COMMAND
+				, g_aParameters[ PARAM_CONFIG_CLICK ].m_sName
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_CONFIG_COLON  ].m_sName
 				, CHC_COMMAND
@@ -1032,91 +1098,79 @@ Update_t CmdHelpSpecific (int nArgs)
 				, g_aParameters[ PARAM_CONFIG_SPACES ].m_sName
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_CONFIG_TARGET ].m_sName );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
 			ConsoleBufferPush( "  Display current settings if no args." );
 
 			iParam = PARAM_CONFIG_BRANCH;
-			sprintf( sTemp, " Usage: %s [#]", g_aParameters[ iParam ].m_sName );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: %s [#]", g_aParameters[ iParam ].m_sName );
 			ConsoleBufferPush( "  Set the type of branch character:" );
-			sprintf( sText, "  %d off, %d plain, %d fancy",
+			ConsoleBufferPushFormat( sText, "  %d off, %d plain, %d fancy",
 				 DISASM_BRANCH_OFF, DISASM_BRANCH_PLAIN, DISASM_BRANCH_FANCY );
-			ConsoleBufferPush( sText );
-			sprintf( sText, "  i.e. %s%s %s 1", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText, "  i.e. %s%s %s 1", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
+
+			iParam = PARAM_CONFIG_CLICK;
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: %s [#]", g_aParameters[ iParam ].m_sName );
+			ConsoleBufferPush( "  Set required key combo. (Alt, Control, or Shift) when left clicking" );
+			ConsoleBufferPushFormat( sText, "    0  Left-Click (no Alt, Ctrl, Shift)" );
+			ConsoleBufferPushFormat( sText, "    1  Alt Left-click"                   );
+			ConsoleBufferPushFormat( sText, "    2  Ctrl Left-click"                  );
+			ConsoleBufferPushFormat( sText, "    3  Alt+Ctrl Left-click"              );
+			ConsoleBufferPushFormat( sText, "    4  Shift Left-click"                 );
+			ConsoleBufferPushFormat( sText, "    5  Shift+Alt Left-click"             );
+			ConsoleBufferPushFormat( sText, "    6  Shift+Ctrl Left-click"            );
+			ConsoleBufferPushFormat( sText, "    7  Shift+Ctrl+Alt Left-click"        );
+			Help_Examples();
+			ConsolePrintFormat( sText, "    %s%s %s 0  // Plain Left-click"           , CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
+			ConsolePrintFormat( sText, "    %s%s %s 1  // Require Alt Left-click"     , CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
+			ConsolePrintFormat( sText, "    %s%s %s 2  // Require Ctrl Left-click"    , CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
+			ConsolePrintFormat( sText, "    %s%s %s 3  // Require Alt+Ctrl Left-click", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
 
 			iParam = PARAM_CONFIG_COLON;
-			sprintf( sTemp,   " Usage: %s [0|1]", g_aParameters[ iParam ].m_sName );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: %s [0|1]", g_aParameters[ iParam ].m_sName );
 			ConsoleBufferPush( "  Display a colon after the address" );
-			sprintf( sText,   "  i.e. %s%s %s 0", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText,   "  i.e. %s%s %s 0", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
 
 			iParam = PARAM_CONFIG_OPCODE;
-			sprintf( sTemp, " Usage: %s [0|1]", g_aParameters[ iParam ].m_sName );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: %s [0|1]", g_aParameters[ iParam ].m_sName );
 			ConsoleBufferPush( "  Display opcode(s) after colon" );
-			sprintf( sText,   "  i.e. %s%s %s 1", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText,   "  i.e. %s%s %s 1", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
 
 			iParam = PARAM_CONFIG_SPACES;
-			sprintf( sTemp, " Usage: %s [0|1]", g_aParameters[ iParam ].m_sName );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: %s [0|1]", g_aParameters[ iParam ].m_sName );
 			ConsoleBufferPush( "  Display spaces between opcodes" );
-			sprintf( sText, "  i.e. %s%s %s 0", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText, "  i.e. %s%s %s 0", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName );
 
 			iParam = PARAM_CONFIG_TARGET;
-			sprintf( sTemp, " Usage: %s [#]", g_aParameters[ iParam ].m_sName );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: %s [#]", g_aParameters[ iParam ].m_sName );
 			ConsoleBufferPush( "  Set the type of target address/value displayed:" );
-			sprintf( sText, "  %d off, %d value only, %d address only, %d both",
+			ConsoleBufferPushFormat( sText, "  %d off, %d value only, %d address only, %d both",
 				DISASM_TARGET_OFF, DISASM_TARGET_VAL, DISASM_TARGET_ADDR, DISASM_TARGET_BOTH );
-			ConsoleBufferPush( sText );
-			sprintf( sText, "  i.e. %s%s %s %d", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName, DISASM_TARGET_VAL );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText, "  i.e. %s%s %s %d", CHC_EXAMPLE, pCommand->m_sName, g_aParameters[ iParam ].m_sName, DISASM_TARGET_VAL );
 			break;
 		}
 	// Config - Font
 		case CMD_CONFIG_FONT:
-			sprintf( sText, " No longer applicable with new debugger font" );
-			ConsolePrint( sText );
+			ConsolePrint( " No longer applicable with new debugger font" );
 /*
-			sprintf( sText, TEXT(" Usage: [%s | %s] \"FontName\" [Height]" ),
+			ConsoleBufferPushFormat( sText, TEXT(" Usage: [%s | %s] \"FontName\" [Height]" ),
 				g_aParameters[ PARAM_FONT_MODE ].m_sName, g_aParameters[ PARAM_DISASM ].m_sName );
-			ConsoleBufferPush( sText );
 			ConsoleBufferPush( TEXT(" i.e. FONT \"Courier\" 12" ) );
 			ConsoleBufferPush( TEXT(" i.e. FONT \"Lucida Console\" 12" ) );
-			wsprintf( sText, TEXT(" %s Controls line spacing."), g_aParameters[ PARAM_FONT_MODE ].m_sName );
-			ConsoleBufferPush( sText );
-			wsprintf( sText, TEXT(" Valid values are: %d, %d, %d." ),
+			ConsoleBufferPushFormat( sText, TEXT(" %s Controls line spacing."), g_aParameters[ PARAM_FONT_MODE ].m_sName );
+			ConsoleBufferPushFormat( sText, TEXT(" Valid values are: %d, %d, %d." ),
 				FONT_SPACING_CLASSIC, FONT_SPACING_CLEAN, FONT_SPACING_COMPRESSED );
-			ConsoleBufferPush( sText );
 */
 			break;
 	// Disasm
 		case CMD_DEFINE_DATA_BYTE1:
-			sprintf( sTemp, " Usage: %s <address> | <symbol address> | <symbol range>", pCommand->m_sName );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: %s <address> | <symbol address> | <symbol range>", pCommand->m_sName );
 
 			ConsoleBufferPush( TEXT("  Tell the diassembler to treat the BYTES as data instead of code." ) );
 
 			Help_Examples();
-			sprintf( sText,  "%s   %s WNDTOP 22", CHC_EXAMPLE, pCommand->m_sName );
-			ConsolePrint( sText );
-			sprintf( sText,  "%s   %s WNDBTM 23", CHC_EXAMPLE, pCommand->m_sName );
-			ConsolePrint( sText );
-			sprintf( sText,  "%s   %s WNDTOP       // treat as code again", CHC_EXAMPLE, g_aCommands[ CMD_DISASM_CODE ].m_sName );
-			ConsolePrint( sText );
-			sprintf( sText,  "%s   %s              // list all addresses viewed as data", CHC_EXAMPLE, g_aCommands[ CMD_DISASM_LIST ].m_sName  );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText,  "%s   %s WNDTOP 22", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText,  "%s   %s WNDBTM 23", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText,  "%s   %s WNDTOP       // treat as code again", CHC_EXAMPLE, g_aCommands[ CMD_DISASM_CODE ].m_sName );
+			ConsolePrintFormat( sText,  "%s   %s              // list all addresses viewed as data", CHC_EXAMPLE, g_aCommands[ CMD_DISASM_LIST ].m_sName  );
 			break;
 
 		case CMD_DEFINE_DATA_WORD1:
@@ -1125,73 +1179,53 @@ Update_t CmdHelpSpecific (int nArgs)
 			// DW symbol address
 			// DW symbol range:range
 			// DW address
-			sprintf( sTemp, " Usage: %s <address> | <symbol address> | <symbol range>", pCommand->m_sName );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrintFormat( sTemp, sText, " Usage: %s <address> | <symbol address> | <symbol range>", pCommand->m_sName );
 
 			ConsoleBufferPush( TEXT("  Tell the diassembler to treat the WORDS as data instead of code." ) );
 
-			sprintf( sTemp, "  The data is a range of 2-byte pointer data.");
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sTemp, "  The data is a range of 2-byte pointer data.");
 
 			Help_Examples();
-			sprintf( sText,  "%s   %s NEXT1 801   // AppleSoft Basic Line#1 Pointer to Next line", CHC_EXAMPLE, pCommand->m_sName );
-			ConsolePrint( sText );
-			sprintf( sText,  "%s   %s LINE1 803   // Applesoft Basic Line#1 Line Number", CHC_EXAMPLE, pCommand->m_sName );
-			ConsolePrint( sText );
-			sprintf( sText,  "%s   %s NEXT1        // treat as code again", CHC_EXAMPLE, g_aCommands[ CMD_DISASM_CODE ].m_sName );
-			ConsolePrint( sText );
-			sprintf( sText,  "%s   %s              // list all addresses viewed as data", CHC_EXAMPLE, g_aCommands[ CMD_DISASM_LIST ].m_sName  );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText,  "%s   %s NEXT1 801   // AppleSoft Basic Line#1 Pointer to Next line", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText,  "%s   %s LINE1 803   // Applesoft Basic Line#1 Line Number", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText,  "%s   %s NEXT1        // treat as code again", CHC_EXAMPLE, g_aCommands[ CMD_DISASM_CODE ].m_sName );
+			ConsolePrintFormat( sText,  "%s   %s              // list all addresses viewed as data", CHC_EXAMPLE, g_aCommands[ CMD_DISASM_LIST ].m_sName  );
 			break;
 
 	// Memory
 		case CMD_MEMORY_ENTER_BYTE:
-			sprintf( sTemp, " Usage: <address | symbol> ## [## ... ##]" );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sTemp, " Usage: <address | symbol> ## [## ... ##]" );
 			ConsoleBufferPush( TEXT("  Sets memory to the specified 8-Bit Values (bytes)" ) );
 			Help_Examples();
-			sprintf( sText, "%s  %s 00 4C FF69", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  00:4C FF69", CHC_EXAMPLE ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s  %s 00 4C FF69", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s  00:4C FF69", CHC_EXAMPLE );
 			break;
 		case CMD_MEMORY_ENTER_WORD:
-			sprintf( sTemp, " Usage: <address | symbol> #### [#### ... ####]" );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sTemp, " Usage: <address | symbol> #### [#### ... ####]" );
 			ConsoleBufferPush( TEXT("  Sets memory to the specified 16-Bit Values (words)" ) );
 			break;
 		case CMD_MEMORY_FILL:
-			sprintf( sTemp, " Usage: <address | symbol> <address | symbol> ##" ); 
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sTemp, " Usage: <address | symbol> <address | symbol> ##" );
 			ConsoleBufferPush( TEXT("  Fills the memory range with the specified byte" ) );
-			sprintf( sTemp, " Note: Can't fill IO addresses %s$%sC0xx", CHC_ARG_SEP, CHC_ADDRESS );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrintFormat( sTemp, sText, " Note: Can't fill IO addresses %s$%sC0xx", CHC_ARG_SEP, CHC_ADDRESS );
 			Help_Examples();
-			sprintf( sText, "%s  %s 2000:3FFF 00   // Clear HGR page 1", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  %s 4000,2000 00   // Clear HGR page 2", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  %s 2000 3FFF 00   // Clear HGR page 1", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s  %s 2000:3FFF 00   // Clear HGR page 1", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s  %s 4000,2000 00   // Clear HGR page 2", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s  %s 2000 3FFF 00   // Clear HGR page 1", CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_MEMORY_MOVE:
-			sprintf( sTemp, " Usage: destination range" );
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sTemp, " Usage: destination range" );
 			ConsoleBufferPush( TEXT("  Copies bytes specified by the range to the destination starting address." ) );
 			Help_Examples();
-			sprintf( sText, "%s  %s 4000 2000:3FFF   // move HGR page 1 to page 2", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  %s 2001 2000:3FFF   // clear $2000-$3FFF with the byte at $2000", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  2001<2000:3FFFM", CHC_EXAMPLE ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s  %s 4000 2000:3FFF   // move HGR page 1 to page 2", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s  %s 2001 2000:3FFF   // clear $2000-$3FFF with the byte at $2000", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s  2001<2000:3FFFM", CHC_EXAMPLE );
 			break;
 //		case CMD_MEM_MINI_DUMP_ASC_1:
 //		case CMD_MEM_MINI_DUMP_ASC_2:
 		case CMD_MEM_MINI_DUMP_ASCII_1:
 		case CMD_MEM_MINI_DUMP_ASCII_2:
-			sprintf( sTemp, " Usage: <address | symbol>" ); 
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sTemp, " Usage: <address | symbol>" );
 			ConsoleBufferPush( TEXT("  Displays ASCII text in the Mini-Memory area") ); 
 			ConsoleBufferPush( TEXT("  ASCII control chars are hilighted") );
 			ConsoleBufferPush( TEXT("  ASCII hi-bit chars are normal") ); 
@@ -1200,9 +1234,7 @@ Update_t CmdHelpSpecific (int nArgs)
 //		case CMD_MEM_MINI_DUMP_TXT_LO_2:
 		case CMD_MEM_MINI_DUMP_APPLE_1:
 		case CMD_MEM_MINI_DUMP_APPLE_2:
-			sprintf( sTemp, " Usage: <address | symbol>" ); 
-			Colorize( sText, sTemp );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sTemp, " Usage: <address | symbol>" );
 			ConsoleBufferPush( "  Displays APPLE text in the Mini-Memory area" ); 
 			ConsoleBufferPush( "  APPLE control chars are inverse" );
 			ConsoleBufferPush( "  APPLE hi-bit chars are normal"   ); 
@@ -1218,23 +1250,15 @@ Update_t CmdHelpSpecific (int nArgs)
 		case CMD_MEMORY_SAVE:
 			if (iCommand == CMD_MEMORY_LOAD)
 			{
-				sprintf( sTemp, " Usage: [\"Filename\"],[bank:]address[,length]" );
-				Colorize( sText, sTemp );
-				ConsolePrint( sText );
-				sprintf( sTemp, " Usage: [\"Filename\"],[bank:]range"            );
-				Colorize( sText, sTemp );
-				ConsolePrint( sText );
+				ConsoleColorizePrint( sTemp, " Usage: [\"Filename\"],[bank:]address[,length]" );
+				ConsoleColorizePrint( sTemp, " Usage: [\"Filename\"],[bank:]range"            );
 				Help_Range();
 				ConsoleBufferPush( "  Notes: If no filename specified, defaults to the last filename (if possible)" );
 			}
 			if (iCommand == CMD_MEMORY_SAVE)
 			{			
-				sprintf( sTemp, " Usage: [\"Filename\"],[bank:]address,length" );
-				Colorize( sText, sTemp );
-				ConsolePrint( sText );
-				sprintf( sTemp, " Usage: [\"Filename\"],[bank:]range"          );
-				Colorize( sText, sTemp );
-				ConsolePrint( sText );
+				ConsoleColorizePrint( sTemp, " Usage: [\"Filename\"],[bank:]address,length" );
+				ConsoleColorizePrint( sTemp, " Usage: [\"Filename\"],[bank:]range"          );
 				Help_Range();
 				ConsoleBufferPush( "  Notes: If no filename specified, defaults to: '####.####.[bank##].bin'" );
 				ConsoleBufferPush( "    Where the form is <address>.<length>.bin"                    );
@@ -1242,34 +1266,32 @@ Update_t CmdHelpSpecific (int nArgs)
 			
 //			ConsoleBufferPush( TEXT(" Examples:" ) );
 			Help_Examples();
-			sprintf( sText, "%s   BSAVE \"test\",FF00,100"  , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s   BLOAD \"test\",2000:2010" , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s   BSAVE \"test\",F000:FFFF" , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s   BLOAD \"test\",4000"      , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s   BLOAD \"main.bin\",0:2000" , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s   BSAVE \"aux2.bin\",1:2000" , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s   BSAVE \"main.bin\",0:2000,2000" , CHC_EXAMPLE ); ConsolePrint( sText );
-			sprintf( sText, "%s   BSAVE \"aux2.bin\",1:2000:3FFF" , CHC_EXAMPLE ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s   BSAVE \"test\",FF00,100"  , CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s   BLOAD \"test\",2000:2010" , CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s   BSAVE \"test\",F000:FFFF" , CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s   BLOAD \"test\",4000"      , CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s   BLOAD \"main.bin\",0:2000" , CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s   BSAVE \"aux2.bin\",1:2000" , CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s   BSAVE \"main.bin\",0:2000,2000" , CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s   BSAVE \"aux2.bin\",1:2000:3FFF" , CHC_EXAMPLE );
 			break;
 		case CMD_MEMORY_SEARCH:
-			Colorize( sText, " Usage: range <\"ASCII text\" | 'apple text' | hex>" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: range <\"ASCII text\" | 'apple text' | hex>" );
 			Help_Range();
 			ConsoleBufferPush( "  Where text is of the form:"            );
 			ConsoleBufferPush( "    \"...\" designate ASCII text"        );
 			ConsoleBufferPush( "    '...' designate Apple High-Bit text" );
 			Help_Examples();
-			sprintf( sText, "%s  %s F000,1000 'Apple'   // search High-Bit", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  MT1 @2"                                   , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  %s D000:FFFF \"FLAS\"    // search ASCII ", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  MA1 @1"                                   , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  %s D000,4000 \"EN\" 'D'  // Mixed text"   , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  MT1 @1"                                   , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s  %s D000,4000 'Apple' ? ']'"               , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s  %s F000,1000 'Apple'   // search High-Bit", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s  MT1 @2"                                   , CHC_EXAMPLE                    );
+			ConsolePrintFormat( sText, "%s  %s D000:FFFF \"FLAS\"    // search ASCII ", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s  MA1 @1"                                   , CHC_EXAMPLE                    );
+			ConsolePrintFormat( sText, "%s  %s D000,4000 \"EN\" 'D'  // Mixed text"   , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s  MT1 @1"                                   , CHC_EXAMPLE                    );
+			ConsolePrintFormat( sText, "%s  %s D000,4000 'Apple' ? ']'"               , CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_MEMORY_SEARCH_HEX:
-			Colorize( sText, " Usage: range [text | byte1 [byte2 ...]]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: range [text | byte1 [byte2 ...]]" );
 			Help_Range();
 			ConsoleBufferPush( "  Where <byte> is of the form:" );
 			ConsoleBufferPush( "    ##   match specific byte"   );
@@ -1278,25 +1300,24 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( "    ?#   match any high nibble, match low nibble to specific number" );
 			ConsoleBufferPush( "    #?   match specific high nibble, match any low nibble"           );
 			Help_Examples();
-			sprintf( sText, "%s   %s F000,1000 AD ? C0", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   U @1"                , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s F000,1000 ?1 C0"  , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s F000,1000 5? C0"  , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s F000,1000 10 C?"  , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   U @2 - 1"            , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s F000:FFFF C030"   , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   U @1 - 1"            , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s   %s F000,1000 AD ? C0", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   U @1"                , CHC_EXAMPLE                    );
+			ConsolePrintFormat( sText, "%s   %s F000,1000 ?1 C0"  , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s F000,1000 5? C0"  , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s F000,1000 10 C?"  , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   U @2 - 1"            , CHC_EXAMPLE                    );
+			ConsolePrintFormat( sText, "%s   %s F000:FFFF C030"   , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   U @1 - 1"            , CHC_EXAMPLE                    );
 			break;
 //		case CMD_MEMORY_SEARCH_APPLE:
-//			wsprintf( sText,   TEXT("Deprecated.  Use: %s" ), g_aCommands[ CMD_MEMORY_SEARCH ].m_sName ); ConsoleBufferPush( sText );
+//			ConsoleBufferPushFormat( sText,   TEXT("Deprecated.  Use: %s" ), g_aCommands[ CMD_MEMORY_SEARCH ].m_sName );
 //			break;
 //		case CMD_MEMORY_SEARCH_ASCII:
-//			wsprintf( sText,   TEXT("Deprecated.  Use: %s" ), g_aCommands[ CMD_MEMORY_SEARCH ].m_sName ); ConsoleBufferPush( sText );
+//			ConsoleBufferPushFormat( sText,   TEXT("Deprecated.  Use: %s" ), g_aCommands[ CMD_MEMORY_SEARCH ].m_sName );
 //			break;
 	// Output
 		case CMD_OUTPUT_CALC:
-			Colorize( sText, " Usage: <address | symbol | expression >" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: <address | symbol | expression >" );
 			ConsoleBufferPush( "  Expression is one of: + - * / % ^ ~"  );
 			ConsoleBufferPush( " Output order is: Hex Bin Dec Char"     );
 			ConsoleBufferPush( "  Note: symbols take piority."          );
@@ -1305,42 +1326,49 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( "Note: #F (if you don't want the flags value)"  );
 			break;
 		case CMD_OUTPUT_ECHO:
-			Colorize( sText, " Usage: string"    );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: string"    );
 //			ConsoleBufferPush( TEXT(" Examples:"        ) );
 			Help_Examples();
-			sprintf( sText,   "%s   %s Checkpoint", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText,   "%s   %s PC"        , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			ConsolePrintFormat( sText,   "%s   %s Checkpoint", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText,   "%s   %s PC"        , CHC_EXAMPLE, pCommand->m_sName );
 //			ConsoleBufferPush( TEXT("  Echo the string to the console" ) );
 			break;
 		case CMD_OUTPUT_PRINT: 
-			Colorize( sText, " Usage: <string | expression> [, string | expression]*"       );
-			ConsolePrint( sText );
-			Colorize( sText, "  Note: To print Register values, they must be in upper case" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: <string | expression> [, string | expression]*"       );
+			ConsoleColorizePrint( sText, "  Note: To print Register values, they must be in upper case" );
 			Help_Examples();
-			sprintf( sText, "%s   %s \"A:\",A,\" X:\",X", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s A,\" \",X,\" \",Y" , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s PC"                , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s   %s \"A:\",A,\" X:\",X", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s A,\" \",X,\" \",Y" , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s PC"                , CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_OUTPUT_PRINTF:
-			Colorize( sText,   " Usage: <string> [, expression, ...]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText,   " Usage: <string> [, expression, ...]" );
 			ConsoleBufferPush( "  The string may contain c-style printf formatting flags: %d %x %z %c" );
 			ConsoleBufferPush( "  Where: %d decimal, %x hex, %z binary, %c char, %% percent"           );
 			Help_Examples();
-			sprintf( sText, "%s   %s \"Dec: %%d  Hex: %%x  Bin: %%z  Char: %c\",A,A,A,A", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s \"%%x %%x %%x\",A,X,Y"                             , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-
+			ConsolePrintFormat( sText, "%s   %s \"Dec: %%d  Hex: %%x  Bin: %%z  Char: %%c\",A,A,A,A", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s \"%%x %%x %%x\",A,X,Y"                             , CHC_EXAMPLE, pCommand->m_sName );
 			break;
 	// Symbols
 		case CMD_SYMBOLS_LOOKUP:
-			Colorize( sText, " Usage: symbol [= <address>]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: symbol [= <address>]" );
+			ConsolePrintFormat( sText, "       %s\"%ssymbol%s\" = %saddress"
+				, CHC_ARG_MAND
+				, CHC_SYMBOL
+				, CHC_ARG_MAND
+				, CHC_ADDRESS
+			);
+			ConsoleColorizePrint( sText, " Note: Valid characters are any characters above ASCII space ($20)." );
+			ConsolePrintFormat( sText, " You %sMUST%s double-quote names containing special characters to be recognized."
+				, CHC_WARNING
+				, CHC_DEFAULT
+			);
 			Help_Examples();
-			wsprintf( sText, "%s   %s HOME"       , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			wsprintf( sText, "%s   %s LIFE = 2000", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			wsprintf( sText, "%s   %s LIFE"       , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s   %s HOME"          , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s LIFE = 2000"   , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s LIFE"          , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s \"PR#\" = FE95", CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s \"PR#\""       , CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_SYMBOLS_ROM:
 		case CMD_SYMBOLS_APPLESOFT:
@@ -1356,19 +1384,17 @@ Update_t CmdHelpSpecific (int nArgs)
 //			ConsoleBufferPush( TEXT("  LOAD: Loads symbols from last/default filename" ) );
 //			ConsoleBufferPush( TEXT("  SAVE: Saves symbol table to file" ) );
 //			ConsoleBufferPush( TEXT(" CLEAR: Clears the symbol table" ) );
-			Colorize( sText, " Usage: [ <cmd> | symbol | address ]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [ <cmd> | symbol | address ]" );
 			ConsoleBufferPush( "  Where <cmd> is one of:" );
-			sprintf( sText, "%s%-5s%s: Turns symbols on in the disasm window"       , CHC_STRING, g_aParameters[ PARAM_ON    ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
-			sprintf( sText, "%s%-5s%s: Turns symbols off in the disasm window"      , CHC_STRING, g_aParameters[ PARAM_OFF   ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
-			sprintf( sText, "%s%-5s%s: Loads symbols from last/default \"filename\"", CHC_STRING, g_aParameters[ PARAM_LOAD  ].m_sName, CHC_DEFAULT ); ConsolePrint( sText ); // 2.6.2.14 Fixed: Save/Load Param help was swapped.
-			sprintf( sText, "%s%-5s%s: Saves symbol table to \"filename\""          , CHC_STRING, g_aParameters[ PARAM_SAVE  ].m_sName, CHC_DEFAULT ); ConsolePrint( sText ); // 2.6.2.14 Fixed: Save/Load Param help was swapped.
-			sprintf( sText, "%s%-5s%s: Clears the symbol table"                     , CHC_STRING, g_aParameters[ PARAM_CLEAR ].m_sName, CHC_DEFAULT ); ConsolePrint( sText );
-			sprintf( sText, "%s%-5s%s: Remove symbol"                               , CHC_STRING, g_aTokens[ TOKEN_EXCLAMATION ].sToken, CHC_DEFAULT ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s%-5s%s: Turns symbols on in the disasm window"       , CHC_STRING, g_aParameters[ PARAM_ON    ].m_sName, CHC_DEFAULT );
+			ConsolePrintFormat( sText, "%s%-5s%s: Turns symbols off in the disasm window"      , CHC_STRING, g_aParameters[ PARAM_OFF   ].m_sName, CHC_DEFAULT );
+			ConsolePrintFormat( sText, "%s%-5s%s: Loads symbols from last/default \"filename\"", CHC_STRING, g_aParameters[ PARAM_LOAD  ].m_sName, CHC_DEFAULT ); // 2.6.2.14 Fixed: Save/Load Param help was swapped.
+			ConsolePrintFormat( sText, "%s%-5s%s: Saves symbol table to \"filename\""          , CHC_STRING, g_aParameters[ PARAM_SAVE  ].m_sName, CHC_DEFAULT ); // 2.6.2.14 Fixed: Save/Load Param help was swapped.
+			ConsolePrintFormat( sText, "%s%-5s%s: Clears the symbol table"                     , CHC_STRING, g_aParameters[ PARAM_CLEAR ].m_sName, CHC_DEFAULT );
+			ConsolePrintFormat( sText, "%s%-5s%s: Remove symbol"                               , CHC_STRING, g_aTokens[ TOKEN_EXCLAMATION ].sToken, CHC_DEFAULT );
 			break;
 		case CMD_SYMBOLS_LIST :
-			Colorize( sText, " Usage: symbol" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: symbol" );
 			ConsoleBufferPush( "  Looks up symbol in all 3 symbol tables: main, user, source" );
 			break;
 	// View
@@ -1390,12 +1416,11 @@ Update_t CmdHelpSpecific (int nArgs)
 		case CMD_VIEW_DHGRX :
 		case CMD_VIEW_DHGR1 :
 		case CMD_VIEW_DHGR2 :
-			ConsolePrint("Show the video output in the specified format.");
+			ConsolePrint( "Show the video output in the specified format." );
 			break;
 	// Watches
 		case CMD_WATCH_ADD:
-			Colorize( sText, " Usage: <address | symbol>" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: <address | symbol>" );
 			ConsoleBufferPush( "  Adds the specified memory location to the watch window." );
 			break;
 	// Window
@@ -1406,23 +1431,20 @@ Update_t CmdHelpSpecific (int nArgs)
 	// Zero Page pointers
 		case CMD_ZEROPAGE_POINTER:
 		case CMD_ZEROPAGE_POINTER_ADD:
-			Colorize( sText, " Usage: <address | symbol>" );
-			ConsolePrint( sText );
-			Colorize( sText, " Usage: # <address | symbol> [address...]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: <address | symbol>" );
+			ConsoleColorizePrint( sText, " Usage: # <address | symbol> [address...]" );
 			ConsoleBufferPush("  Adds the specified memory location to the zero page pointer window." );
 			ConsoleBufferPush("  Update the specified zero page pointer (#) with the address." );
 			ConsoleBufferPush(" Note: Displayed as symbol name (if possible) and the 16-bit target pointer" );
 			Help_Examples();
-			sprintf( sText, "%s   %s CH"     , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s 0 CV"   , CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
-			sprintf( sText, "%s   %s 0 CV CH", CHC_EXAMPLE, pCommand->m_sName ); ConsolePrint( sText );
+			ConsolePrintFormat( sText, "%s   %s CH"     , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s 0 CV"   , CHC_EXAMPLE, pCommand->m_sName );
+			ConsolePrintFormat( sText, "%s   %s 0 CV CH", CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_ZEROPAGE_POINTER_CLEAR:
-			Colorize( sText, " Usage: [# | *]" );
+			ConsoleColorizePrint( sText, " Usage: [# | *]" );
 			ConsoleBufferPush( "  Clears specified zero page pointer, or all." );
-			sprintf( sText,  "  i.e. %s%s 1", CHC_EXAMPLE, pCommand->m_sName );
-			ConsolePrint( sText );
+			ConsolePrintFormat( sText,  "  i.e. %s%s 1", CHC_EXAMPLE, pCommand->m_sName );
 			break;
 		case CMD_ZEROPAGE_POINTER_0:
 		case CMD_ZEROPAGE_POINTER_1:
@@ -1432,15 +1454,13 @@ Update_t CmdHelpSpecific (int nArgs)
 		case CMD_ZEROPAGE_POINTER_5:
 		case CMD_ZEROPAGE_POINTER_6:
 		case CMD_ZEROPAGE_POINTER_7:
-			Colorize( sText, " Usage: [<address | symbol>]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [<address | symbol>]" );
 			ConsoleBufferPush( "  If no address specified, will remove watching the zero page pointer." );
 			break;
 
 	// Misc
 		case CMD_VERSION:
-			Colorize( sText, " Usage: [*]" );
-			ConsolePrint( sText );
+			ConsoleColorizePrint( sText, " Usage: [*]" );
 			ConsoleBufferPush( "  * Display extra internal stats" );
 			break;
 
@@ -1450,15 +1470,13 @@ Update_t CmdHelpSpecific (int nArgs)
 
 			if ((! nFound) || (! pCommand))
 			{
-				wsprintf( sText, " Invalid command." );
-				ConsoleBufferPush( sText );
+				ConsoleBufferPush( " Invalid command." );
 			}
 			else
 			{
 //#if DEBUG_COMMAND_HELP
 #if _DEBUG
-			wsprintf( sText, "Command help not done yet!: %s", g_aCommands[ iCommand ].m_sName );
-			ConsoleBufferPush( sText );
+			ConsoleBufferPushFormat( sText, "Command help not done yet!: %s", g_aCommands[ iCommand ].m_sName );
 #endif
 			}
 
@@ -1552,7 +1570,7 @@ Update_t CmdVersion (int nArgs)
 	int nFixMinor;
 	UnpackVersion( nVersion, nMajor, nMinor, nFixMajor, nFixMinor );
 
-	sprintf( sText, "  Emulator:  %s%s%s    Debugger: %s%d.%d.%d.%d%s"
+	ConsolePrintFormat( sText, "  Emulator:  %s%s%s    Debugger: %s%d.%d.%d.%d%s"
 		, CHC_SYMBOL
 		, VERSIONSTRING
 		, CHC_DEFAULT
@@ -1560,7 +1578,6 @@ Update_t CmdVersion (int nArgs)
 		, nMajor, nMinor, nFixMajor, nFixMinor
 		, CHC_DEFAULT
 	);
-	ConsolePrint( sText );
 
 	if (nArgs)
 	{
@@ -1570,24 +1587,20 @@ Update_t CmdVersion (int nArgs)
 			if ((! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
 				(! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
 			{
-				wsprintf( sText, "  Arg: %d bytes * %d = %d bytes",
+				ConsoleBufferPushFormat( sText, "  Arg: %d bytes * %d = %d bytes",
 					sizeof(Arg_t), MAX_ARGS, sizeof(g_aArgs) );
-				ConsoleBufferPush( sText );
 
-				wsprintf( sText, "  Console: %d bytes * %d height = %d bytes",
+				ConsoleBufferPushFormat( sText, "  Console: %d bytes * %d height = %d bytes",
 					sizeof( g_aConsoleDisplay[0] ), CONSOLE_HEIGHT, sizeof(g_aConsoleDisplay) );
-				ConsoleBufferPush( sText );
 
-				wsprintf( sText, "  Commands: %d   (Aliased: %d)   Params: %d",
+				ConsoleBufferPushFormat( sText, "  Commands: %d   (Aliased: %d)   Params: %d",
 					NUM_COMMANDS, NUM_COMMANDS_WITH_ALIASES, NUM_PARAMS );
-				ConsoleBufferPush( sText );
 
-				wsprintf( sText, "  Cursor(%d)  T: %04X  C: %04X  B: %04X %c D: %02X", // Top, Cur, Bot, Delta
+				ConsoleBufferPushFormat( sText, "  Cursor(%d)  T: %04X  C: %04X  B: %04X %c D: %02X", // Top, Cur, Bot, Delta
 					g_nDisasmCurLine, g_nDisasmTopAddress, g_nDisasmCurAddress, g_nDisasmBotAddress,
 					g_bDisasmCurBad ? TEXT('*') : TEXT(' ')
 					, g_nDisasmBotAddress - g_nDisasmTopAddress
 				);
-				ConsoleBufferPush( sText );
 
 				CmdConfigGetFont( 0 );
 

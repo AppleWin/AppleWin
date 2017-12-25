@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 	<head>
-		<title>Save-State Files</title>
+		<title>Uthernet network card</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 	</head>
 	<body style="FONT-FAMILY: verdana; BACKGROUND-COLOR: rgb(255,255,255)" alink="#008000"
@@ -15,25 +15,23 @@
 		<P style="FONT-WEIGHT: bold">Acknowledgment:
 		</P>
 		<P>Uthernet (TFE) support in Applewin was made possible by implementing the GPL 
-			source written by Spiro Trikaliotis for the Vice emulator - <A href="http://www.viceteam.org/">
-				http://www.viceteam.org/</A></P>
+			source written by Spiro Trikaliotis for the Vice emulator - <A href="http://vice-emu.sourceforge.net/index.html#developers">
+				http://vice-emu.sourceforge.net/index.html#developers</A></P>
 		<P style="FONT-WEIGHT: bold">Details:
 		</P>
-		<P>To enable Ethernet support in AppleWin you must first download and install 
+		<P>To enable ethernet support in AppleWin you must first download and install 
 			WinPcap.
 		</P>
-		<P>An Alternative to downloading WinPcap is to get the Ethereal package which 
-			includes WinPcap along with Ethereal network analyzer code. To use Ethereal to 
-			capture traffic (other then your own) you must be plugged into a shared hub vs 
-			a switch. If you plan on doing any network programming ethereal is a definite 
+		<P>An alternative to downloading WinPcap is to get the Wireshark package which 
+			includes WinPcap along with Wireshark network analyzer code. To use Wireshark to 
+			capture traffic (other than your own) you must be plugged into a shared hub vs 
+			a switch. If you plan on doing any network programming Wireshark is a definite 
 			must have.
 		</P>
-		<P>WinPcap: <A href="http://www.WinPcap.org/install/default.htm">http://www.WinPcap.org/install/default.htm</A>
-			or Ethereal:
+		<P>WinPcap: <A href="http://www.WinPcap.org/install/default.htm">http://www.WinPcap.org/install/default.htm</A> 
+			or Wireshark: <A href="https://www.wireshark.org">https://www.wireshark.org</A>
 		</P>
-		<P><A href="http://www.ethereal.com/download.html">http://www.ethereal.com/download.html</A>
-		</P>
-		<P>After AppleWin starts, select the settings ICON and then select the Ethernet 
+		<P>After AppleWin starts, select the settings icon and then select the ethernet 
 			settings button.
 		</P>
 		<P>Uthernet will be disabled. Select Uthernet from the list of available ethernet 
@@ -42,15 +40,17 @@
 		<P>Select the ethernet interface you want to work with. This must be a physical 
 			ethernet interface.
 		</P>
-		<P>If you have more then one interface you may need to select them in turn in order 
+		<P>If you have more than one interface you may need to select them in turn in order 
 			to get the text description for each interface vs what WinPcap likes to use for 
-			a reference. Select Ok. and then close AppleWin. *Note:* Wireless does not work 
-			with WinPcap.
+			a reference. Select Ok. and then close AppleWin.
 		</P>
-		<P>NOTE: Due to a current limitation you must exit AppleWin and re-run AppleWin for 
-			'a' ethernet interface change to take effect.
+		<P><span style="font-weight: bold;">Note:</span> Wireless does not work 
+			with WinPcap (but see <A href="uthernet-wifi-workaround.html">WiFi Workaround</A>).
 		</P>
-		<P>In order to test the Ethernet emulation out you should grab a copy of Contiki 
+		<P><span style="font-weight: bold;">Note:</span> Due to a current limitation you must exit AppleWin and
+		re-run AppleWin for an ethernet interface change to take effect.
+		</P>
+		<P>In order to test the ethernet emulation out you should grab a copy of Contiki 
 			for the Apple II here - <A href="http://www.a2retrosystems.com/downloads.htm">http://www.a2retrosystems.com/downloads.htm</A>
 		</P>
 		<P>Grab the 80 Col. Primary Disk and Supplementary Disk images if using Apple //e 
@@ -88,6 +88,6 @@
 		<P>If you have ZoneAlarm running then try disabling it inorder to access the web. 
 			if you are still having difficulty then you should refer to the VICE network 
 			support page for additional information - <A href="http://vicekb.trikaliotis.net/13-005.shtml">
-				http://vicekb.trikaliotis.net/13-005.shtml</A></P>
+			http://vicekb.trikaliotis.net/13-005.shtml</A></P>
 	</body>
 </html>

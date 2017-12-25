@@ -94,7 +94,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define SR MEM_S | MEM_RI
 const Opcodes_t g_aOpcodes65C02[ NUM_OPCODES ] =
 {
-	{"BRK", 0     ,  0}, {"ORA", AM_IZX, R_}, {"nop", AM_M  , im}, {"nop", 0  , 0 }, // 00 .. 03
+	{"BRK", 0     , SW}, {"ORA", AM_IZX, R_}, {"nop", AM_M  , im}, {"nop", 0  , 0 }, // 00 .. 03
 	{"TSB", AM_Z  , _W}, {"ORA", AM_Z  , R_}, {"ASL", AM_Z  , RW}, {"nop", 0  , 0 }, // 04 .. 07
 	{"PHP", 0     , SW}, {"ORA", AM_M  , im}, {"ASL", 0     ,  0}, {"nop", 0  , 0 }, // 08 .. 0B
 	{"TSB", AM_A  , _W}, {"ORA", AM_A  , R_}, {"ASL", AM_A  , RW}, {"nop", 0  , 0 }, // 0C .. 0F
@@ -154,7 +154,7 @@ const Opcodes_t g_aOpcodes65C02[ NUM_OPCODES ] =
 	{"CPY", AM_A  , R_}, {"CMP", AM_A  , R_}, {"DEC", AM_A  , RW}, {"nop", 0  , 0 }, // CC .. CF
 	{"BNE", AM_R  ,  0}, {"CMP", AM_NZY, R_}, {"CMP", AM_NZ ,  0}, {"nop", 0  , 0 }, // D0 .. D3
 	{"nop", AM_ZX ,  0}, {"CMP", AM_ZX , R_}, {"DEC", AM_ZX , RW}, {"nop", 0  , 0 }, // D4 .. D7
-	{"CLD", 0     ,  0}, {"CMP", AM_AY , R_}, {"PHX", 0     ,  0}, {"nop", 0  , 0 }, // D8 .. DB
+	{"CLD", 0     ,  0}, {"CMP", AM_AY , R_}, {"PHX", 0     , SW}, {"nop", 0  , 0 }, // D8 .. DB
 	{"nop", AM_AX ,  0}, {"CMP", AM_AX , R_}, {"DEC", AM_AX , RW}, {"nop", 0  , 0 }, // DC .. DF
 
 	{"CPX", AM_M  , im}, {"SBC", AM_IZX, R_}, {"nop", AM_M  , im}, {"nop", 0  , 0 }, // E0 .. E3
@@ -163,7 +163,7 @@ const Opcodes_t g_aOpcodes65C02[ NUM_OPCODES ] =
 	{"CPX", AM_A  , R_}, {"SBC", AM_A  , R_}, {"INC", AM_A  , RW}, {"nop", 0  , 0 }, // EC .. EF
 	{"BEQ", AM_R  ,  0}, {"SBC", AM_NZY, R_}, {"SBC", AM_NZ ,  0}, {"nop", 0  , 0 }, // F0 .. F3
 	{"nop", AM_ZX ,  0}, {"SBC", AM_ZX , R_}, {"INC", AM_ZX , RW}, {"nop", 0  , 0 }, // F4 .. F7
-	{"SED", 0     ,  0}, {"SBC", AM_AY , R_}, {"PLX", 0     ,  0}, {"nop", 0  , 0 }, // F8 .. FB
+	{"SED", 0     ,  0}, {"SBC", AM_AY , R_}, {"PLX", 0     , SR}, {"nop", 0  , 0 }, // F8 .. FB
 	{"nop", AM_AX ,  0}, {"SBC", AM_AX , R_}, {"INC", AM_AX , RW}, {"nop", 0  , 0 }  // FF .. FF
 };
 
@@ -177,24 +177,25 @@ const Opcodes_t g_aOpcodes6502[ NUM_OPCODES ] =
 	CPU.cpp
 	
 	x0     x1         x2       x3   x4       x5       x6       x7   x8   x9       xA      xB   xC        xD       xE      	xF
-0x	BRK    ORA (d,X)  ---      ---  tsb d    ORA d    ASL d    ---  PHP  ORA #    ASL A  ---  tsb a      ORA a    ASL a   	---
-1x	BPL r  ORA (d),Y  ora (d)  ---  trb d    ORA d,X  ASL d,X  ---  CLC  ORA a,Y  ina A  ---  trb a      ORA a,X  ASL a,X 	---
-2x	JSR a  AND (d,X)  ---      ---  BIT d    AND d    ROL d    ---  PLP  AND #    ROL A  ---  BIT a      AND a    ROL a   	---
-3x	BMI r  AND (d),Y  and (d)  ---  bit d,X  AND d,X  ROL d,X  ---  SEC  AND a,Y  dea A  ---  bit a,X    AND a,X  ROL a,X 	---
-4x	RTI    EOR (d,X)  ---      ---  ---      EOR d    LSR d    ---  PHA  EOR #    LSR A  ---  JMP a      EOR a    LSR a   	---
-5x	BVC r  EOR (d),Y  eor (d)  ---  ---      EOR d,X  LSR d,X  ---  CLI  EOR a,Y  phy    ---  ---        EOR a,X  LSR a,X 	---
-6x	RTS    ADC (d,X)  ---      ---  stz d    ADC d    ROR d    ---  PLA  ADC #    ROR A  ---  JMP (a)    ADC a    ROR a   	---
-7x	BVS r  ADC (d),Y  adc (d)  ---  stz d,X  ADC d,X  ROR d,X  ---  SEI  ADC a,Y  ply    ---  jmp (a,X)  ADC a,X  ROR a,X 	---
-8x	bra r  STA (d,X)  ---      ---  STY d    STA d    STX d    ---  DEY  bit #    TXA    ---  STY a      STA a    STX a   	---
-9x	BCC r  STA (d),Y  sta (d)  ---  STY d,X  STA d,X  STX d,Y  ---  TYA  STA a,Y  TXS    ---  Stz a      STA a,X  stz a,X 	---
-Ax	LDY #  LDA (d,X)  LDX #    ---  LDY d    LDA d    LDX d    ---  TAY  LDA #    TAX    ---  LDY a      LDA a    LDX a   	---
-Bx	BCS r  LDA (d),Y  lda (d)  ---  LDY d,X  LDA d,X  LDX d,Y  ---  CLV  LDA a,Y  TSX    ---  LDY a,X    LDA a,X  LDX a,Y 	---
-Cx	CPY #  CMP (d,X)  ---      ---  CPY d    CMP d    DEC d    ---  INY  CMP #    DEX    ---  CPY a      CMP a    DEC a   	---
-Dx	BNE r  CMP (d),Y  cmp (d)  ---  ---      CMP d,X  DEC d,X  ---  CLD  CMP a,Y  phx    ---  ---        CMP a,X  DEC a,X 	---
-Ex	CPX #  SBC (d,X)  ---      ---  CPX d    SBC d    INC d    ---  INX  SBC #    NOP    ---  CPX a      SBC a    INC a   	---
-Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y  plx    ---  ---        SBC a,X  INC a,X 	---
+0x	BRK    ORA (d,X)  ---      ---  tsb z    ORA d    ASL z    ---  PHP  ORA #    ASL A  ---  tsb a      ORA a    ASL a   	---
+1x	BPL r  ORA (d),Y  ora (z)  ---  trb d    ORA d,X  ASL z,X  ---  CLC  ORA a,Y  ina A  ---  trb a      ORA a,X  ASL a,X 	---
+2x	JSR a  AND (d,X)  ---      ---  BIT d    AND d    ROL z    ---  PLP  AND #    ROL A  ---  BIT a      AND a    ROL a   	---
+3x	BMI r  AND (d),Y  and (z)  ---  bit d,X  AND d,X  ROL z,X  ---  SEC  AND a,Y  dea A  ---  bit a,X    AND a,X  ROL a,X 	---
+4x	RTI    EOR (d,X)  ---      ---  ---      EOR d    LSR z    ---  PHA  EOR #    LSR A  ---  JMP a      EOR a    LSR a   	---
+5x	BVC r  EOR (d),Y  eor (z)  ---  ---      EOR d,X  LSR z,X  ---  CLI  EOR a,Y  phy    ---  ---        EOR a,X  LSR a,X 	---
+6x	RTS    ADC (d,X)  ---      ---  stz d    ADC d    ROR z    ---  PLA  ADC #    ROR A  ---  JMP (a)    ADC a    ROR a   	---
+7x	BVS r  ADC (d),Y  adc (z)  ---  stz d,X  ADC d,X  ROR z,X  ---  SEI  ADC a,Y  ply    ---  jmp (a,X)  ADC a,X  ROR a,X 	---
+8x	bra r  STA (d,X)  ---      ---  STY d    STA d    STX z    ---  DEY  bit #    TXA    ---  STY a      STA a    STX a   	---
+9x	BCC r  STA (d),Y  sta (z)  ---  STY d,X  STA d,X  STX z,Y  ---  TYA  STA a,Y  TXS    ---  Stz a      STA a,X  stz a,X 	---
+Ax	LDY #  LDA (d,X)  LDX #    ---  LDY d    LDA d    LDX z    ---  TAY  LDA #    TAX    ---  LDY a      LDA a    LDX a   	---
+Bx	BCS r  LDA (d),Y  lda (z)  ---  LDY d,X  LDA d,X  LDX z,Y  ---  CLV  LDA a,Y  TSX    ---  LDY a,X    LDA a,X  LDX a,Y 	---
+Cx	CPY #  CMP (d,X)  ---      ---  CPY d    CMP d    DEC z    ---  INY  CMP #    DEX    ---  CPY a      CMP a    DEC a   	---
+Dx	BNE r  CMP (d),Y  cmp (z)  ---  ---      CMP d,X  DEC z,X  ---  CLD  CMP a,Y  phx    ---  ---        CMP a,X  DEC a,X 	---
+Ex	CPX #  SBC (d,X)  ---      ---  CPX d    SBC d    INC z    ---  INX  SBC #    NOP    ---  CPX a      SBC a    INC a   	---
+Fx	BEQ r  SBC (d),Y  sbc (z)  ---  ---      SBC d,X  INC z,X  ---  SED  SBC a,Y  plx    ---  ---        SBC a,X  INC a,X 	---
 
 	Legend:
+        --- illegal instruction
 		UPPERCASE 6502
 		lowercase 65C02
 			80
@@ -207,14 +208,15 @@ Fx	BEQ r  SBC (d),Y  sbc (d)  ---  ---      SBC d,X  INC d,X  ---  SED  SBC a,Y 
 		A Accumulator (implicit for mnemonic)
 		a absolute
 		r Relative
-		d Destination
-		z Zero Page
+		d Destination 16-bit Address
+		z Destination Zero Page Address
+		z,x Base=Zero-Page, Offset=X
 		d,x
 		(d,X)
 		(d),Y
 
 */
-	{"BRK", 0     ,  0}, {"ORA", AM_IZX, R_}, {"hlt", 0     , 0 }, {"aso", AM_IZX, RW}, // 00 .. 03
+	{"BRK", 0     , SW}, {"ORA", AM_IZX, R_}, {"hlt", 0     , 0 }, {"aso", AM_IZX, RW}, // 00 .. 03
 	{"nop", AM_Z  , R_}, {"ORA", AM_Z  , R_}, {"ASL", AM_Z  , RW}, {"aso", AM_Z  , RW}, // 04 .. 07
 	{"PHP", 0     , SW}, {"ORA", AM_M  , im}, {"ASL", 0     ,  0}, {"anc", AM_M  , im}, // 08 .. 0B
 	{"nop", AM_AX ,  0}, {"ORA", AM_A  , R_}, {"ASL", AM_A  , RW}, {"aso", AM_A  , RW}, // 0C .. 0F
@@ -470,6 +472,10 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 	if (! g_aOpcodes)
 	{
 		MessageBox( g_hFrameWindow, "Debugger not properly initialized", "ERROR", MB_OK );
+
+		g_aOpcodes = & g_aOpcodes65C02[ 0 ];	// Enhanced Apple //e
+		g_aOpmodes[ AM_2 ].m_nBytes = 2;
+		g_aOpmodes[ AM_3 ].m_nBytes = 3;
 	}
 #endif
 
@@ -565,7 +571,6 @@ bool _6502_GetStackReturnAddress ( WORD & nAddress_ )
 
 	if (nStack <= (_6502_STACK_END - 1))
 	{
-		nAddress_ = 0;
 		nAddress_ = (unsigned)*(LPBYTE)(mem + nStack);
 		nStack++;
 		
@@ -578,11 +583,14 @@ bool _6502_GetStackReturnAddress ( WORD & nAddress_ )
 
 
 //===========================================================================
-bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPointer_, int * pTargetBytes_, bool bIgnoreJSRJMP, bool bIgnoreBranch )
+bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int * pTargetBytes_, bool bIgnoreJSRJMP, bool bIgnoreBranch )
 {
 	bool bStatus = false;
 
 	if (! pTargetPartial_)
+		return bStatus;
+
+	if (! pTargetPartial2_)
 		return bStatus;
 
 	if (! pTargetPointer_)
@@ -592,6 +600,7 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPointer
 //		return bStatus;
 
 	*pTargetPartial_  = NO_6502_TARGET;
+	*pTargetPartial2_ = NO_6502_TARGET;
 	*pTargetPointer_  = NO_6502_TARGET;
 
 	if (pTargetBytes_)
@@ -599,9 +608,9 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPointer
 
 	bStatus   = true;
 
-	BYTE nOpcode   = *(LPBYTE)(mem + nAddress    );
-	BYTE nTarget8  = *(LPBYTE)(mem + nAddress + 1);
-	WORD nTarget16 = *(LPWORD)(mem + nAddress + 1);
+	BYTE nOpcode   = mem[nAddress];
+	BYTE nTarget8  = mem[(nAddress+1)&0xFFFF];
+	WORD nTarget16 = (mem[(nAddress+2)&0xFFFF]<<8) | nTarget8;
 
 	int eMode = g_aOpcodes[ nOpcode ].nAddressMode;
 
@@ -610,7 +619,57 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPointer
 
 	switch (eMode)
 	{
+		case AM_IMPLIED:
+			if (g_aOpcodes[ nOpcode ].nMemoryAccess & MEM_S)	// Stack R/W?
+			{
+				if (nOpcode == OPCODE_RTI || nOpcode == OPCODE_RTS)	// RTI or RTS?
+				{
+					WORD sp = regs.sp;
+
+					if (nOpcode == OPCODE_RTI)
+					{
+						//*pTargetPartial3_ = _6502_STACK_BEGIN + ((sp+1) & 0xFF);	// TODO: PLP
+						++sp;
+					}
+
+					*pTargetPartial_  = _6502_STACK_BEGIN + ((sp+1) & 0xFF);
+					*pTargetPartial2_ = _6502_STACK_BEGIN + ((sp+2) & 0xFF);
+					nTarget16 = mem[*pTargetPartial_] + (mem[*pTargetPartial2_]<<8);
+
+					if (nOpcode == OPCODE_RTS)
+						++nTarget16;
+				}
+				else if (nOpcode == OPCODE_BRK)	// BRK?
+				{
+					*pTargetPartial_  = _6502_STACK_BEGIN + ((regs.sp+0) & 0xFF);
+					*pTargetPartial2_ = _6502_STACK_BEGIN + ((regs.sp-1) & 0xFF);
+					//*pTargetPartial3_ = _6502_STACK_BEGIN + ((regs.sp-2) & 0xFF);	// TODO: PHP
+					//*pTargetPartial4_ = _6502_BRK_VECTOR + 0;	// TODO
+					//*pTargetPartial5_ = _6502_BRK_VECTOR + 1;	// TODO
+					nTarget16 = *(LPWORD)(mem + _6502_BRK_VECTOR);
+				}
+				else	// PHn/PLn
+				{
+					if (g_aOpcodes[ nOpcode ].nMemoryAccess & MEM_WI)
+						nTarget16 = _6502_STACK_BEGIN + ((regs.sp+0) & 0xFF);
+					else
+						nTarget16 = _6502_STACK_BEGIN + ((regs.sp+1) & 0xFF);
+				}
+
+				*pTargetPointer_ = nTarget16;
+
+				if (pTargetBytes_)
+					*pTargetBytes_ = 1;
+			}
+			break;
+
 		case AM_A: // $Absolute
+			if (nOpcode == OPCODE_JSR)	// JSR?
+			{
+				*pTargetPartial_  = _6502_STACK_BEGIN + ((regs.sp+0) & 0xFF);
+				*pTargetPartial2_ = _6502_STACK_BEGIN + ((regs.sp-1) & 0xFF);
+			}
+
 			*pTargetPointer_ = nTarget16;
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
@@ -823,12 +882,11 @@ int AssemblerHashMnemonic ( const TCHAR * pMnemonic )
 	int nLen = strlen( pMnemonic );
 
 #if DEBUG_ASSEMBLER
-	static char sText[ CONSOLE_WIDTH * 3 ];
 	static int nMaxLen = 0;
 	if (nMaxLen < nLen) {
 		nMaxLen = nLen;
-		sprintf( sText, "New Max Len: %d  %s", nMaxLen, pMnemonic );
-		ConsolePrint( sText );
+		char sText[CONSOLE_WIDTH * 3];
+		ConsolePrintFormat( sText, "New Max Len: %d  %s", nMaxLen, pMnemonic );
 	}
 #endif
 
@@ -853,8 +911,6 @@ int AssemblerHashMnemonic ( const TCHAR * pMnemonic )
 //===========================================================================
 void AssemblerHashOpcodes ()
 {
-static char sText[ 128 ];
-
 	Hash_t nMnemonicHash;
 	int    iOpcode;
 
@@ -864,10 +920,10 @@ static char sText[ 128 ];
 		nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 		g_aOpcodesHash[ iOpcode ] = nMnemonicHash;
 #if DEBUG_ASSEMBLER
-	//OutputDebugString( "" );
-	sprintf( sText, "%s : %08X  ", pMnemonic, nMnemonicHash );
-	ConsolePrint( sText );
-	// CLC: 002B864
+	   //OutputDebugString( "" );
+      char sText[ 128 ];
+      ConsolePrintFormat( sText, "%s : %08X  ", pMnemonic, nMnemonicHash );
+	   // CLC: 002B864
 #endif
 	}
 	ConsoleUpdate();
@@ -925,19 +981,17 @@ void _CmdAssembleHashDump ()
 		int    nOpcode   = tHash.m_iOpcode;
 		int    nOpmode   = g_aOpcodes[ nOpcode ].nAddressMode;
 
-		wsprintf( sText, "%08X %02X %s %s"
+		ConsoleBufferPushFormat( sText, "%08X %02X %s %s"
 			, iThisHash
 			, nOpcode
 			, g_aOpcodes65C02[ nOpcode ].sMnemonic
 			, g_aOpmodes[ nOpmode  ].m_sName
 		);
-		ConsoleBufferPush( sText );
 		nThisHash++;
 		
 //		if (nPrevHash != iThisHash)
 //		{
-//			wsprintf( sText, "Total: %d", nThisHash );
-//			ConsoleBufferPush( sText );
+//			ConsoleBufferPushFormat( sText, "Total: %d", nThisHash );
 //			nThisHash = 0;
 //		}
 	}
@@ -1432,14 +1486,13 @@ bool Assemble( int iArg, int nArgs, WORD nAddress )
 	int nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 
 #if DEBUG_ASSEMBLER
-	static char sText[ CONSOLE_WIDTH * 2 ];
-	sprintf( sText, "%s%04X%s: %s%s%s -> %s%08X", 
+	char sText[ CONSOLE_WIDTH * 2 ];
+	ConsolePrintFormat( sText, "%s%04X%s: %s%s%s -> %s%08X", 
 		CHC_ADDRESS, nAddress,
 		CHC_DEFAULT,
 		CHC_STRING, pMnemonic,
 		CHC_DEFAULT,
-		CHC_NUM_HEX, nMnemonicHash ); 
-	ConsolePrint( sText );
+		CHC_NUM_HEX, nMnemonicHash );
 #endif
 
 	m_vAsmOpcodes.clear(); // Candiate opcodes

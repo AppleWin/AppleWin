@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html><head>
+
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="author" content="Spiro Trikaliotis">
+<meta name="copyright" content="© 2003-2007 Spiro Trikaliotis and the VICE team">
+<link rel="stylesheet" href="VICE%20Knowledge%20Base%20-%20Article%2013-005_files/vicekb.css" title="My own stylesheet">
+<meta name="keywords" content="vice knowledge base,vkb,x64,x128,xplus4,xcbm,xvic">
+<title>VICE Knowledge Base - Article 13-005</title>
+</head>
+<body>
+<!--#config timefmt="%d.%b.%Y %H:%M" -->
+<div class="top">
+  <div class="title">
+    <h1>
+<a href="http://web.archive.org/web/20130517193701/http://www.viceteam.org/">
+<img alt="VICE home" src="VICE%20Knowledge%20Base%20-%20Article%2013-005_files/vice-logo.png" width="120" height="45" border="0"></a>
+ Knowledge Base - Article 13-005</h1>
+  </div> <!-- title -->
+  <hr>
+</div> <!-- top -->
+<div class="main">
+  <div class="sidebar">
+    <p>Article ID: 13-005</p>
+    <p><b>Last Reviewed:</b><br>August 25, 2004</p>
+    <p><a title="Send this article to a friend" href="http://web.archive.org/web/20130517193701/mailto:/?subject=VICE%20Knowledge%20Base%20Article%20-%2013-005&amp;body=This%20article%20pointer%20was%20forwarded%20to%20you%20from%20the%20VICE%20Knowledge%20Base%20site.%20http://vicekb.trikaliotis.net/13-005">
+    <img src="VICE%20Knowledge%20Base%20-%20Article%2013-005_files/icoEmail.gif" width="18" height="10" border="0" align="absMiddle">Send to a friend</a></p>
+    <p>Provided by<br><a target="_top" href="http://web.archive.org/web/20130517193701/http://www.viceteam.org/">The VICE team</a></p>
+    <p>If you want to bookmark this page or refer to it, use the following URL only, please:<br>
+      <a href="http://web.archive.org/web/20130517193701/http://vicekb.trikaliotis.net/13-005">http://vicekb.trikaliotis.net/13-005</a>
+    </p><hr>
+  </div> <!-- sidebar -->
+  <div class="content">
+    <h1>[Howto] Enable networking with WinVICE</h1>
+    <hr>
+    The information in this article applies to the following versions of VICE:    <ul><li>all Windows versions starting from 1.13</li></ul>
+  <hr><h2>PROBLEMEXPOSITION</h2>
+<p>Starting with WinVICE 1.13, there is support for two ethernet cartridges             allowing network access: The "<a href="http://web.archive.org/web/20130517193701/http://www.dunkels.com/adam/tfe/">The Final 
+             Ethernet</a>" (TFE) and the "Retroreplay-Net" (RR-Net) cartridges. If you
+             want to enable support for these, you have to follow the instructions below.</p><h2>!WARNING!</h2>
+<p>Installing support for networking with VICE requires you to install 
+3rd party             products on your machine. The VICE team cannot be 
+made responsible for any problems
+             and/or damage which arises from this! The rejection of any 
+warranty for VICE
+             applies, too.<br>
+             The product which has to be installed, <a href="http://web.archive.org/web/20130517193701/http://winpcap.polito.it/">WinPCAP</a>,
+             is a capture library. That is, it captures <b>every</b> packet which is available
+             on the network, regardless if it was destined for your machine or not. From this, it
+             follows that it is a real security flaw using WinPCAP in a network. Using WinPCAP
+             can result in disclosure of any information that is available on your network which is
+             not secured by other means! Installing WinPCAP, you acknowledge that you're well aware 
+             of this security flaw and that the VICE team cannot be made responsible for any problems
+             and/or damage which may arise from the use of WinPCAP!</p><h2>PREREQUISITES</h2>
+<p>At that moment, The ethernet emulation for WinVICE only works if you 
+have a real             ethernet card on your machine and you are 
+connected to the net via it, that is, you must have
+             direct access to any station you want to access. Ethernet 
+is emulated as if the VICE emulator was
+             connected to your ethernet card via a hub. Every protocol, 
+in particular PPPOE or other protocols,
+             are only supported if the corresponding emulated program 
+supports these!</p><h2>SOLUTION</h2>
+<p></p><p>For networking support, you need administrative rights 
+(administrator account or             similar) on your windows machine. 
+Without this, there's no chance to have networking work!</p>
+             <p>If you have administrative rights, follow the following instructions to install networking
+             with VICE:</p>
+             <ul><li>First, read the above warning!</li><li>Get <a href="http://web.archive.org/web/20130517193701/http://winpcap.polito.it/">WinPCAP</a>
+             from their site. There's only need for the WinPCAP auto-installer in order to let VICE run.</li>
+             <li>Install the WinPCAP package you just downloaded. For this, you need to have the right to install
+             new drivers to your system. In general, the administrator account does have this right.</li>
+             <li>Now, start WinVICE as you do always. Do this with the user account you have used in the previous 
+             step to install WinPCAP! Choosing the VICE menu entry Settings/Ethernet, a dialog box
+             shows up, allowing you to select Ethernet as NONE, TFE ("The final ethernet") or RR-Net. If this
+             is possible, WinPCAP has be installed successfully to your system. If not, check the <a href="http://web.archive.org/web/20130517193701/http://winpcap.polito.it/misc/faq.htm">WinPCAP FAQ</a> to find a solution.</li>
+             <li>The only program using ethernet we know to date is <a href="http://web.archive.org/web/20130517193701/http://dunkels.com/adam/contiki/index.html">Contiki</a>. To use Contiki, get a version of it
+             from <a href="http://web.archive.org/web/20130517193701/http://dunkels.com/adam/contiki/index.html">the website</a>. Make sure that it is 
+             a version which is enabled for ethernet (TFE or RR-Net)!</li>
+             <li>Run this version of Contiki inside x64. Now, enable ethernet with TFE or RR-Net settings, depending
+             on which type you want to use. Since these two are almost identical, only some addresses are changed,
+             it's more of a matter of taste which one to use. Select the ethernet device you want to use with
+             ethernet if you have more than one.
+             </li><li>You need an IP address in order to let Contiki run on your network. The virtual ethernet device
+             of VICE runs as if it were connected to your host computer's device with a hub. No network address
+             translation (NAT) or the like is performed! Get an IP from your network administrator as if you had
+             a new machine to connect to your network. In fact, you have one, although it is only emulated.</li>
+             <li> Now, run Contiki, enter your IP configuration using the IP from above, and everything should
+             work.</li></ul>
+             <p>Enjoy the new surfing experience.</p>
+             <p>It's not necessary to log on as administrator in order to run the ethernet emulation. Anyway,
+             this <b>is</b> necessary the first time you start VICE after you've booted. After you've done
+             this, you can log off and log in with another account to run VICE. To circumvent this, see
+             the FAQ section below.</p><h2>FAQ</h2>
+<p></p><ul><li><p><b>Why do I have to log in as administrator in order to start VICE with network             support?</b></p><p>This is because the WinPCAP driver is not loaded at system startup, but rather 
+             on-demand when someone like VICE needs it. Not every user is allowed to start services, thus, you 
+             have to log in as a user with these rights in order to start it. The administrator is a person having
+             this right. On many machines, an account belonging to the "main user" group is allowed,
+             too. On these machines, you don't need administrator rights in order to start VICE with networking
+             support.</p><p>If you don't like this solution, you have another option. See <a href="http://web.archive.org/web/20130517193701/http://winpcap.polito.it/misc/faq.htm#Q-18">Q-18</a> at the WinPCAP FAQ.</p></li>
+             <li><p><b>I have problems with networking support; furthermore, there's a firewall on my machine</b></p>
+             <p>This is a know problem with WinPCAP, it does not work well with all firewalls, see <a href="http://web.archive.org/web/20130517193701/http://winpcap.polito.it/misc/faq.htm#Q-10">Q-10</a> at the WinPCAP FAQ. Unfortunately, we don't
+             have a solution for this. Disabling the firewall, as suggested in Q-10, might not be an option for
+             you, but we cannot do anything about it.</p></li>
+             <li><p><b>I have another problem not covered here.</b></p><p>Have a look at the <a href="http://web.archive.org/web/20130517193701/http://winpcap.polito.it/misc/faq.htm">WinPCAP FAQ</a>, there might be a solution for your problem.
+             </p></li></ul><p></p><h2>STATUS</h2>
+<p>This document is for information purpose only. The behaviour reported
+ is             intentional in the VICE versions listed at the beginning
+ of this article.</p><h2>LINKS</h2>
+<p></p><ul><li><a href="http://web.archive.org/web/20130517193701/http://vicekb.trikaliotis.net/11-002">11-002 [Howto] Enable networking on VICE/Unix</a>.</li> 	    <li>The Final Ethernet Homepage: <a href="http://web.archive.org/web/20130517193701/http://www.dunkels.com/adam/tfe/">http://www.dunkels.com/adam/tfe/</a>.</li><li>
+             Contiki Homepage: 
+             <a href="http://web.archive.org/web/20130517193701/http://dunkels.com/adam/contiki/index.html">http://dunkels.com/adam/contiki/index.html</a>.
+             </li><li>WinPCAP: <a href="http://web.archive.org/web/20130517193701/http://winpcap.polito.it/">http://winpcap.polito.it/</a>.
+             </li><li><a href="http://web.archive.org/web/20130517193701/http://winpcap.polito.it/misc/faq.htm">WinPCAP FAQ</a>, especially
+             <a href="http://web.archive.org/web/20130517193701/http://winpcap.polito.it/misc/faq.htm#Q-10">Q-10</a> and <a href="http://web.archive.org/web/20130517193701/http://winpcap.polito.it/misc/faq.htm#Q-18">Q-18</a>.</li></ul><p></p><h2>REVISION</h2>
+<p></p><ul><li>August 25,2004: Added reference to the same information for Unix based systems</li>             <li>October 14, 2003: Before, it was mistakenly said that you find ethernet on
+             Options/Ethernet. This is not true, it is Settings/Ethernet.</li>
+             <li>October 8, 2003: Added section PREREQUISITES.</li>
+             <li>September 15, 2003: Original release of this document</li></ul><p></p>  </div> <!-- content -->
+  <div class="review">
+      <p>Last Reviewed: August 25, 2004</p>
+  </div> <!-- review -->
+</div> <!-- main -->
+<div class="footer">
+  <hr>
+  <div class="copyright">  © 2003-2007 <a href="http://web.archive.org/web/20130517193701/mailto:www@@trikaliotis.net">Spiro Trikaliotis</a> and <a href="http://web.archive.org/web/20130517193701/http://www.viceteam.org/">The VICE team</a><br>
+  <a href="http://web.archive.org/web/20130517193701/http://vicekb.trikaliotis.net/13-005">http://vicekb.trikaliotis.net/13-005</a>
+  Last modified: August 25, 2004
+  </div> <!-- copyright -->
+  <div class="fileinfo">
+      <a href="http://web.archive.org/web/20130517193701/http://www.anybrowser.org/campaign/"><img src="VICE%20Knowledge%20Base%20-%20Article%2013-005_files/ab-ms-star-en.gif" alt="Viewable With Any Browser" width="88" height="31"></a><a href="http://web.archive.org/web/20130517193701/http://jigsaw.w3.org/css-validator/validator?uri=http://www.trikaliotis.net/vicekb/common/vicekb.css">
+      <img style="border:0;width:88px;height:31px" src="VICE%20Knowledge%20Base%20-%20Article%2013-005_files/vcss.gif" alt="Valid CSS!"></a>
+  </div> <!-- fileinfo -->
+</div> <!-- footer -->
+
+</body></html>

@@ -31,11 +31,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "AppleWin.h"
 #include "Frame.h"
 #include "Keyboard.h"
+#include "Pravets.h"
 #include "Tape.h"
-
-static bool g_bKeybBufferEnable = false;
-
-#define KEY_OLD
+#include "YamlHelper.h"
+#include "Video.h" // Needed by TK3000 //e, to refresh the frame at each |Mode| change
 
 static BYTE asciicode[2][10] = {
 	{0x08,0x0D,0x15,0x2F,0x00,0x00,0x00,0x00,0x00,0x00},
@@ -46,32 +45,14 @@ bool  g_bShiftKey = false;
 bool  g_bCtrlKey  = false;
 bool  g_bAltKey   = false;
 
+static bool  g_bTK3KModeKey   = false; //TK3000 //e |Mode| key
+
 static bool  g_bCapsLock = true; //Caps lock key for Apple2 and Lat/Cyr lock for Pravets8
 static bool  g_bP8CapsLock = true; //Caps lock key of Pravets 8A/C
 static int   lastvirtkey     = 0;	// Current PC keycode
 static BYTE  keycode         = 0;	// Current Apple keycode
-static DWORD keyboardqueries = 0;
 
-#ifdef KEY_OLD
-// Original
 static BOOL  keywaiting      = 0;
-#else
-// Buffered key input:
-// - Needed on faster PCs where aliasing occurs during short/fast bursts of 6502 code.
-// - Keyboard only sampled during 6502 execution, so if it's run too fast then key presses will be missed.
-const int KEY_BUFFER_MIN_SIZE = 1;
-const int KEY_BUFFER_MAX_SIZE = 2;
-static int g_nKeyBufferSize = KEY_BUFFER_MAX_SIZE;	// Circ key buffer size
-static int g_nNextInIdx = 0;
-static int g_nNextOutIdx = 0;
-static int g_nKeyBufferCnt = 0;
-
-static struct
-{
-	int nVirtKey;
-	BYTE nAppleKey;
-} g_nKeyBuffer[KEY_BUFFER_MAX_SIZE];
-#endif
 
 static BYTE g_nLastKey = 0x00;
 
@@ -83,33 +64,8 @@ static BYTE g_nLastKey = 0x00;
 
 void KeybReset()
 {
-#ifdef KEY_OLD
 	keywaiting = 0;
-#else
-	g_nNextInIdx = 0;
-	g_nNextOutIdx = 0;
-	g_nKeyBufferCnt = 0;
-	g_nLastKey = 0x00;
-
-	g_nKeyBufferSize = g_bKeybBufferEnable ? KEY_BUFFER_MAX_SIZE : KEY_BUFFER_MIN_SIZE;
-#endif
 }
-
-//===========================================================================
-
-//void KeybSetBufferMode(bool bNewKeybBufferEnable)
-//{
-//	if(g_bKeybBufferEnable == bNewKeybBufferEnable)
-//		return;
-//
-//	g_bKeybBufferEnable = bNewKeybBufferEnable;
-//	KeybReset();
-//}
-//
-//bool KeybGetBufferMode()
-//{
-//	return g_bKeybBufferEnable;
-//}
 
 //===========================================================================
 bool KeybGetAltStatus ()
@@ -161,14 +117,6 @@ BYTE KeybGetKeycode ()		// Used by MemCheckPaging() & VideoCheckMode()
 }
 
 //===========================================================================
-DWORD KeybGetNumQueries ()	// Used in determining 'idleness' of Apple system
-{
-	DWORD result = keyboardqueries;
-	keyboardqueries = 0;
-	return result;
-}
-
-//===========================================================================
 void KeybQueueKeypress (int key, BOOL bASCII)
 {
 	if (bASCII == ASCII)
@@ -180,7 +128,7 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 		}
 
 		g_bFreshReset = false;
-		if (key > 0x7F)
+		if ((key > 0x7F) && !g_bTK3KModeKey) // When in TK3000 mode, we have special keys which need remapping
 			return;
 
 		if (!IS_APPLE2) 
@@ -286,6 +234,32 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 					}
 				}
 			}
+			// Remap for the TK3000 //e, which had a special |Mode| key for displaying accented chars on screen
+			// Borrowed from Fábio Belavenuto's TK3000e emulator (Copyright (C) 2004) - http://code.google.com/p/tk3000e/
+			if (g_bTK3KModeKey)	// We already switch this on only if the the TK3000 is currently being emulated
+			{
+				if ((key >= 0xC0) && (key <= 0xDA)) key += 0x20; // Convert uppercase to lowercase
+				switch (key)
+				{
+					case 0xE0: key = '_';  break; // à
+					case 0xE1: key = '@';  break; // á
+					case 0xE2: key = '\\'; break; // â
+					case 0xE3: key = '[';  break; // ã
+					case 0xE7: key = ']';  break; // ç
+					case 0xE9: key = '`';  break; // é
+					case 0xEA: key = '&';  break; // ê
+					case 0xED: key = '{';  break; // í
+					case 0xF3: key = '~';  break; // ó
+					case 0xF4: key = '}';  break; // ô
+					case 0xF5: key = '#';  break; // õ
+					case 0xFA: key = '|';  break; // ú
+				}
+				if (key > 0x7F) return;	// Get out
+				if ((key >= 'a') && (key <= 'z') && (g_bCapsLock))
+					keycode = key - ('a'-'A');
+				else
+					keycode = key;
+			}
 		}
 		else
 		{
@@ -307,9 +281,6 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 		// Note: VK_CANCEL is Control-Break
 		if ((key == VK_CANCEL) && (GetKeyState(VK_CONTROL) < 0))
 		{
-#ifndef KEY_OLD
-			g_nNextInIdx = g_nNextOutIdx = g_nKeyBufferCnt = 0;
-#endif
 			g_bFreshReset = true;
 			CtrlReset();
 			return;
@@ -322,29 +293,24 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 			return;
 		}
 
+		if (key == VK_SCROLL)
+		{	// For the TK3000 //e we use Scroll Lock to switch between Apple ][ and accented chars modes
+			if (g_Apple2Type == A2TYPE_TK30002E)
+			{
+				g_bTK3KModeKey = (GetKeyState(VK_SCROLL) & 1) ? true : false;	// Sync with the Scroll Lock status
+				FrameRefreshStatus(DRAW_LEDS);	// TODO: Implement |Mode| LED in the UI; make it appear only when in TK3000 mode
+				VideoRedrawScreen();	// TODO: Still need to implement page mode switching and 'whatnot'
+			}
+		}
+
 		if (!((key >= VK_LEFT) && (key <= VK_DELETE) && asciicode[IS_APPLE2 ? 0 : 1][key - VK_LEFT]))
 			return;
 
 		keycode = asciicode[IS_APPLE2 ? 0 : 1][key - VK_LEFT];		// Convert to Apple arrow keycode
 		lastvirtkey = key;
 	}
-#ifdef KEY_OLD
+
 	keywaiting = 1;
-#else
-	bool bOverflow = false;
-
-	if(g_nKeyBufferCnt < g_nKeyBufferSize)
-		g_nKeyBufferCnt++;
-	else
-		bOverflow = true;
-
-	g_nKeyBuffer[g_nNextInIdx].nVirtKey = lastvirtkey;
-	g_nKeyBuffer[g_nNextInIdx].nAppleKey = keycode;
-	g_nNextInIdx = (g_nNextInIdx + 1) % g_nKeyBufferSize;
-
-	if(bOverflow)
-		g_nNextOutIdx = (g_nNextOutIdx + 1) % g_nKeyBufferSize;
-#endif
 }
 
 //===========================================================================
@@ -425,9 +391,7 @@ static char ClipboardCurrChar(bool bIncPtr)
 
 BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
 {
-	keyboardqueries++;
-
-	//
+	LogFileTimeUntilFirstKeyRead();
 
 	if(g_bPasteFromClipboard)
 		ClipboardInit();
@@ -442,31 +406,13 @@ BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
 
 	//
 
-#ifdef KEY_OLD
 	return keycode | (keywaiting ? 0x80 : 0);
-#else
-	BYTE nKey = g_nKeyBufferCnt ? 0x80 : 0;
-	if(g_nKeyBufferCnt)
-	{
-		nKey |= g_nKeyBuffer[g_nNextOutIdx].nAppleKey;
-		g_nLastKey = g_nKeyBuffer[g_nNextOutIdx].nAppleKey;
-	}
-	else
-	{
-		nKey |= g_nLastKey;
-	}
-	return nKey;
-#endif
 }
 
 //===========================================================================
 
 BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
 {
-	keyboardqueries++;
-
-	//
-
 	if(g_bPasteFromClipboard)
 		ClipboardInit();
 
@@ -480,19 +426,9 @@ BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
 
 	//
 
-#ifdef KEY_OLD
 	keywaiting = 0;
+
 	return keycode | ((GetKeyState(lastvirtkey) < 0) ? 0x80 : 0);
-#else
-	BYTE nKey = (GetKeyState(g_nKeyBuffer[g_nNextOutIdx].nVirtKey) < 0) ? 0x80 : 0;
-	nKey |= g_nKeyBuffer[g_nNextOutIdx].nAppleKey;
-	if(g_nKeyBufferCnt)
-	{
-		g_nKeyBufferCnt--;
-		g_nNextOutIdx = (g_nNextOutIdx + 1) % g_nKeyBufferSize;
-	}
-	return nKey;
-#endif
 }
 
 //===========================================================================
@@ -516,16 +452,33 @@ void KeybToggleP8ACapsLock ()
 
 //===========================================================================
 
-DWORD KeybGetSnapshot(SS_IO_Keyboard* pSS)
+void KeybSetSnapshot_v1(const BYTE LastKey)
 {
-	pSS->keyboardqueries	= keyboardqueries;
-	pSS->nLastKey			= g_nLastKey;
-	return 0;
+	g_nLastKey = LastKey;
 }
 
-DWORD KeybSetSnapshot(SS_IO_Keyboard* pSS)
+//
+
+#define SS_YAML_KEY_LASTKEY "Last Key"
+
+static std::string KeybGetSnapshotStructName(void)
 {
-	keyboardqueries	= pSS->keyboardqueries;
-	g_nLastKey		= pSS->nLastKey;
-	return 0;
+	static const std::string name("Keyboard");
+	return name;
+}
+
+void KeybSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", KeybGetSnapshotStructName().c_str());
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LASTKEY, g_nLastKey);
+}
+
+void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(KeybGetSnapshotStructName()))
+		return;
+
+	g_nLastKey = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTKEY);
+
+	yamlLoadHelper.PopMap();
 }

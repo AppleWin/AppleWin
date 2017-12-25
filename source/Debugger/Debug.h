@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..\Structs.h"
+#include "..\SaveState_Structs_v1.h"	// For SS_CARD_MOCKINGBOARD
 #include "..\Common.h"
 
 #include "Debugger_Types.h"
@@ -34,6 +34,7 @@
 		,BP_HIT_OPCODE  = (1 << 1)
 		,BP_HIT_REG     = (1 << 2)
 		,BP_HIT_MEM     = (1 << 3)
+		,BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM = (1 << 4)
 	};
 
 	extern int          g_nBreakpoints;
@@ -42,18 +43,8 @@
 	extern const char  *g_aBreakpointSource [ NUM_BREAKPOINT_SOURCES   ];
 	extern const TCHAR *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ];
 
-	// MODE_RUNNING // Normal Speed Breakpoints
-	extern bool g_bDebugNormalSpeedBreakpoints;
-
-	// MODE_STEPPING // Full Speed Breakpoints
-
-	// Any Speed Breakpoints
 	extern int  g_nDebugBreakOnInvalid ;
 	extern int  g_iDebugBreakOnOpcode  ;
-
-	// Breakpoint Status
-	extern bool g_bDebugBreakDelayCheck;
-	extern int  g_bDebugBreakpointHit  ;
 
 // Commands
 	void VerifyDebuggerCommandTable();
@@ -92,6 +83,7 @@
 
 // Config - Disassembly
 	extern bool  g_bConfigDisasmAddressView  ;
+	extern int   g_bConfigDisasmClick        ; // GH#462
 	extern bool  g_bConfigDisasmAddressColon ;
 	extern bool  g_bConfigDisasmOpcodesView  ;
 	extern bool  g_bConfigDisasmOpcodeSpaces ;
@@ -103,9 +95,6 @@
 
 // Disassembly
 	extern int g_aDisasmTargets[ MAX_DISPLAY_LINES ];
-
-// Display
-	extern bool g_bDebuggerViewingAppleOutput;
 
 // Font
 	extern int g_nFontHeight;
@@ -152,65 +141,6 @@
 
 	bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakpointEnable_ );
 
-	inline int _IsDebugBreakpointHit()
-	{
-		g_bDebugBreakpointHit |= CheckBreakpointsIO() || CheckBreakpointsReg();
-		return g_bDebugBreakpointHit;
-	}
-
-	inline int _IsDebugBreakOnOpcode( int iOpcode )
-	{
-		if (g_iDebugBreakOnOpcode == iOpcode)
-			g_bDebugBreakpointHit |= BP_HIT_OPCODE;
-		return g_bDebugBreakpointHit;
-	}
-
-	// iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
-	inline int IsDebugBreakOnInvalid( int iOpcodeType )
-	{
-		g_bDebugBreakpointHit |= ((g_nDebugBreakOnInvalid >> iOpcodeType) & 1) ? BP_HIT_INVALID : 0;
-		return g_bDebugBreakpointHit;
-	}
-
-	// iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
-	inline void SetDebugBreakOnInvalid( int iOpcodeType, int nValue )
-	{
-		if (iOpcodeType <= AM_3)
-		{
-			g_nDebugBreakOnInvalid &= ~ (          1  << iOpcodeType);
-			g_nDebugBreakOnInvalid |=   ((nValue & 1) << iOpcodeType);
-		}
-	}
-
-	//
-	// CPU checks the Debugger breakpoints
-	//   a) at opcode fetch
-	//   b) after opcode execution
-	//
-	inline int IsDebugBreakOpcode( int iOpcode )
-	{
-		if (g_bDebugBreakDelayCheck)
-		{
-			g_bDebugBreakDelayCheck = false;
-			return false;
-		}
-
-		if (! iOpcode )
-			IsDebugBreakOnInvalid( AM_IMPLIED );
-
-		if (g_iDebugBreakOnOpcode ) // User wants to enter debugger on specific opcode?
-			_IsDebugBreakOnOpcode(iOpcode);
-
-		return g_bDebugBreakpointHit;
-	}
-	//
-	inline int IsDebugBreakpointHit()
-	{
-		if ( !g_bDebugNormalSpeedBreakpoints )
-			return false;
-		return _IsDebugBreakpointHit();
-	}
-	
 // Source Level Debugging
 	int FindSourceLine( WORD nAddress );
 	const char* FormatAddress( WORD nAddress, int nBytes );
@@ -232,25 +162,22 @@
 
 // Prototypes _______________________________________________________________
 
-	enum
-	{
-		DEBUG_EXIT_KEY   = 0x1B, // Escape
-		DEBUG_TOGGLE_KEY = VK_F1 + BTN_DEBUG
-	};
+	bool	DebugGetVideoMode(UINT* pVideoMode);
 
 	void	DebugBegin ();
+	void	DebugExitDebugger ();
 	void	DebugContinueStepping ();
+	void    DebugStopStepping(void);
 	void	DebugDestroy ();
-	void	DebugDisplay (BOOL);
-	void	DebugEnd ();
+	void	DebugDisplay ( BOOL bInitDisasm = FALSE );
 	void	DebugInitialize ();
-//	void	DebugProcessChar (TCHAR);
+
 	void	DebuggerInputConsoleChar( TCHAR ch );
-//	void	DebugProcessCommand (int);
 	void	DebuggerProcessKey( int keycode );
 
 	void	DebuggerUpdate();
 	void	DebuggerCursorNext();
 
 	void	DebuggerMouseClick( int x, int y );
-	
+
+	bool	IsDebugSteppingAtFullSpeed(void);

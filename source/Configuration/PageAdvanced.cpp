@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include "StdAfx.h"
-#include "..\Structs.h"
 #include "..\Common.h"
 
 #include "..\ParallelPrinter.h"
@@ -34,12 +33,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 CPageAdvanced* CPageAdvanced::ms_this = 0;	// reinit'd in ctor
 
-enum CLONECHOICE {MENUITEM_CLONEMIN, MENUITEM_PRAVETS82=MENUITEM_CLONEMIN, MENUITEM_PRAVETS8M, MENUITEM_PRAVETS8A, MENUITEM_CLONEMAX};
+enum CLONECHOICE {MENUITEM_CLONEMIN, MENUITEM_PRAVETS82=MENUITEM_CLONEMIN, MENUITEM_PRAVETS8M, MENUITEM_PRAVETS8A, MENUITEM_TK30002E, MENUITEM_CLONEMAX};
 const TCHAR CPageAdvanced::m_CloneChoices[] =
 				TEXT("Pravets 82\0")	// Bulgarian
-				TEXT("Pravets 8M\0")    // Bulgarian
-				TEXT("Pravets 8A\0");	// Bulgarian
-
+				TEXT("Pravets 8M\0")	// Bulgarian
+				TEXT("Pravets 8A\0")	// Bulgarian
+				TEXT("TK3000 //e");		// Brazilian
 
 BOOL CALLBACK CPageAdvanced::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
@@ -85,7 +84,7 @@ BOOL CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_SAVESTATE_FILENAME:
 			break;
 		case IDC_SAVESTATE_BROWSE:
-			if(m_PropertySheetHelper.SaveStateSelectImage(hWnd, TEXT("Select Save State file"), false))
+			if(m_PropertySheetHelper.SaveStateSelectImage(hWnd, TEXT("Select Save State file"), true))
 				SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)m_PropertySheetHelper.GetSSNewFilename());
 			break;
 		case IDC_PRINTER_DUMP_FILENAME_BROWSE:
@@ -118,6 +117,7 @@ BOOL CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				const DWORD NewCloneMenuItem = (DWORD) SendDlgItemMessage(hWnd, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
 				const eApple2Type NewCloneType = GetCloneType(NewCloneMenuItem);
 				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewCloneType;
+				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewCloneType);
 			}
 			break;
 		}
@@ -222,6 +222,7 @@ eApple2Type CPageAdvanced::GetCloneType(DWORD NewMenuItem)
 		case MENUITEM_PRAVETS82:	return A2TYPE_PRAVETS82;
 		case MENUITEM_PRAVETS8M:	return A2TYPE_PRAVETS8M;
 		case MENUITEM_PRAVETS8A:	return A2TYPE_PRAVETS8A;
+		case MENUITEM_TK30002E:		return A2TYPE_TK30002E;
 		default:					return A2TYPE_PRAVETS82;
 	}
 }
@@ -233,9 +234,25 @@ int CPageAdvanced::GetCloneMenuItem(void)
 	if (!bIsClone)
 		return MENUITEM_CLONEMIN;
 
-	int nMenuItem = type - A2TYPE_PRAVETS;
-	if (nMenuItem < 0 || nMenuItem >= MENUITEM_CLONEMAX)
-		return MENUITEM_CLONEMIN;
+	int nMenuItem = MENUITEM_CLONEMIN;
+	switch (type)
+	{
+		case A2TYPE_CLONE:	// Set as generic clone type from Config page
+			{
+				// Need to set a real clone type & CPU in case the user never touches the clone menu
+				nMenuItem = MENUITEM_CLONEMIN;
+				const eApple2Type NewCloneType = GetCloneType(MENUITEM_CLONEMIN);
+				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = GetCloneType(NewCloneType);
+				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewCloneType);
+			}
+			break;
+		case A2TYPE_PRAVETS82:	nMenuItem = MENUITEM_PRAVETS82; break;
+		case A2TYPE_PRAVETS8M:	nMenuItem = MENUITEM_PRAVETS8M; break;
+		case A2TYPE_PRAVETS8A:	nMenuItem = MENUITEM_PRAVETS8A; break;
+		case A2TYPE_TK30002E:	nMenuItem = MENUITEM_TK30002E;  break;
+		default:	// New clone needs adding here?
+			_ASSERT(0);
+	}
 
 	return nMenuItem;
 }

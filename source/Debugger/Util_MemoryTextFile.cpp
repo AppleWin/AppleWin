@@ -34,7 +34,7 @@ const int EOL_NULL = 0;
 bool MemoryTextFile_t::Read( char *pFileName )
 {
 	bool bStatus = false;
-	FILE *hFile = fopen( pFileName, "rt" );
+	FILE *hFile = fopen( pFileName, "rb" );
 
 	if (hFile)
 	{
@@ -43,13 +43,10 @@ bool MemoryTextFile_t::Read( char *pFileName )
 		fseek( hFile, 0, SEEK_SET );
 
 		m_vBuffer.reserve( nSize + 1 );
-		m_vBuffer.insert( m_vBuffer.begin(), nSize+1, 0 );
+		m_vBuffer.insert( m_vBuffer.begin(), nSize+1, 0 ); // NOTE: Can NOT m_vBuffer.clear(); MUST insert() _before_ using at()
 
 		char *pBuffer = & m_vBuffer.at(0);
 		fread( (void*)pBuffer, nSize, 1, hFile );
-
-		m_vBuffer.push_back( EOL_NULL );
-
 		fclose(hFile);
 
 		m_bDirty = true;

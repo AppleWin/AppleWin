@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //===========================================================================
 
-static DWORD Cpu6502 (DWORD uTotalCycles)
+static DWORD Cpu6502(DWORD uTotalCycles, const bool bVideoUpdate)
 {
 	WORD addr;
 	BOOL flagc; // must always be 0 or 1, no other values allowed
@@ -36,23 +36,26 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 	AF_TO_EF
 	ULONG uExecutedCycles = 0;
 	WORD base;
-	g_bDebugBreakpointHit = 0;
 
 	do
 	{
 		UINT uExtraCycles = 0;
 		BYTE iOpcode;
 
-		if (g_ActiveCPU == CPU_Z80)
+// NTSC_BEGIN
+		ULONG uPreviousCycles = uExecutedCycles;
+// NTSC_END
+
+		if (GetActiveCpu() == CPU_Z80)
 		{
 			const UINT uZ80Cycles = z80_mainloop(uTotalCycles, uExecutedCycles); CYC(uZ80Cycles)
 		}
 		else
 		{
-			if (!Fetch(iOpcode, uExecutedCycles))
-				break;
+			Fetch(iOpcode, uExecutedCycles);
 
-#define $ INV // INV = Invalid -> Debugger Break
+//#define $ INV // INV = Invalid -> Debugger Break
+#define $
 			switch (iOpcode)
 			{
 			case 0x00:              BRK  CYC(7)  break;
@@ -100,7 +103,7 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 			case 0x2A:              rol  CYC(2)  break;
 			case 0x2B: $ IMM        ANC  CYC(2)  break;
 			case 0x2C:   ABS        BIT  CYC(4)  break;
-			case 0x2D:   ABS        AND  CYC(2)  break;
+			case 0x2D:   ABS        AND  CYC(4)  break;
 			case 0x2E:   ABS        ROLn CYC(6)  break;
 			case 0x2F: $ ABS        RLA  CYC(6)  break;
 			case 0x30:   REL        BMI  CYC(2)  break;
@@ -316,18 +319,20 @@ static DWORD Cpu6502 (DWORD uTotalCycles)
 		}
 
 		CheckInterruptSources(uExecutedCycles);
-		NMI(uExecutedCycles, uExtraCycles, flagc, flagn, flagv, flagz);
-		IRQ(uExecutedCycles, uExtraCycles, flagc, flagn, flagv, flagz);
+		NMI(uExecutedCycles, flagc, flagn, flagv, flagz);
+		IRQ(uExecutedCycles, flagc, flagn, flagv, flagz);
 
-		if ( IsDebugBreakpointHit() )
-			break;
+// NTSC_BEGIN
+		if (bVideoUpdate)
+		{
+			ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
+			NTSC_VideoUpdateCycles( uElapsedCycles );
+		}
+// NTSC_END
+
 	} while (uExecutedCycles < uTotalCycles);
 
 	EF_TO_AF
-
-	if( g_bDebugBreakpointHit )
-		if ((g_nAppMode != MODE_DEBUG) && (g_nAppMode != MODE_STEPPING)) // Running at full speed? (debugger not running)
-			RequestDebugger();
 
 	return uExecutedCycles;
 }

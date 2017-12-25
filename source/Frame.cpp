@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
+#include "Pravets.h"
 #include "Registry.h"
 #include "SaveState.h"
 #include "SerialComms.h"
@@ -57,25 +58,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //#define ENABLE_MENU 0
 
-// Magic numbers (used by FrameCreateWindow to calc width/height):
-#define MAGICX 5	// 3D border between Apple window & Emulator's RHS buttons
-#define MAGICY 5	// 3D border between Apple window & Title bar
+// 3D border around the 560x384 Apple II display
+#define  VIEWPORTX   5
+#define  VIEWPORTY   5
 
 static const int kDEFAULT_VIEWPORT_SCALE = 2;
-static int g_nViewportCX = FRAMEBUFFER_W * kDEFAULT_VIEWPORT_SCALE;
-static int g_nViewportCY = FRAMEBUFFER_H * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCX = GetFrameBufferBorderlessWidth()  * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCY = GetFrameBufferBorderlessHeight() * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
-static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
+static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
 
 #define  BUTTONX     (g_nViewportCX + VIEWPORTX*2)
 #define  BUTTONY     0
 #define  BUTTONCX    45
 #define  BUTTONCY    45
-// NB. FSxxx = FullScreen xxx
-#define  FSVIEWPORTX (640-BUTTONCX-MAGICX-g_nViewportCX)
-#define  FSVIEWPORTY ((480-g_nViewportCY)/2)
-#define  FSBUTTONX   (640-BUTTONCX)
-#define  FSBUTTONY   (((480-g_nViewportCY)/2)-1)
 #define  BUTTONS     8
 
 	static HBITMAP g_hCapsLockBitmap[2];
@@ -88,7 +84,6 @@ static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;
 	//===========================
 	static HBITMAP g_hDiskWindowedLED[ NUM_DISK_STATUS ];
 
-//static HBITMAP g_hDiskFullScreenLED[ NUM_DISK_STATUS ];
 static int    g_nTrackDrive1  = -1;
 static int    g_nTrackDrive2  = -1;
 static int    g_nSectorDrive1 = -1;
@@ -122,12 +117,11 @@ static int     buttondown      = -1;
 static int     buttonover      = -1;
 static int     buttonx         = BUTTONX;
 static int     buttony         = BUTTONY;
-static HRGN    clipregion      = (HRGN)0;
 static HDC     g_hFrameDC      = (HDC)0;
 static RECT    framerect       = {0,0,0,0};
 
 		HWND   g_hFrameWindow   = (HWND)0;
-		BOOL   g_bIsFullScreen  = 0;
+static bool    g_bIsFullScreen  = false;
 		BOOL   g_bConfirmReboot = 1; // saved PageConfig REGSAVE
 		BOOL   g_bMultiMon      = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
 
@@ -135,16 +129,12 @@ static BOOL    helpquit        = 0;
 static BOOL    g_bPaintingWindow        = 0;
 static HFONT   smallfont       = (HFONT)0;
 static HWND    tooltipwindow   = (HWND)0;
-static BOOL    g_bUsingCursor	= 0;		// 1=AppleWin is using (hiding) the mouse-cursor
+static BOOL    g_bUsingCursor	= FALSE;	// TRUE = AppleWin is using (hiding) the mouse-cursor && restricting cursor to window - see SetUsingCursor()
 static int     viewportx       = VIEWPORTX;	// Default to Normal (non-FullScreen) mode
 static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
-int g_nCharsetType = 0;
 
-// Direct Draw -- For Full Screen
-		LPDIRECTDRAW        g_pDD = (LPDIRECTDRAW)0;
-		LPDIRECTDRAWSURFACE g_pDDPrimarySurface    = (LPDIRECTDRAWSURFACE)0;
-		IDirectDrawPalette* g_pDDPal = (IDirectDrawPalette*)0;
-
+static UINT_PTR	g_TimerIDEvent_100msec = 0;
+static UINT		g_uCount100msec = 0;
 
 static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
@@ -156,41 +146,112 @@ void    RelayEvent (UINT message, WPARAM wparam, LPARAM lparam);
 void    ResetMachineState ();
 void    SetFullScreenMode ();
 void    SetNormalMode ();
-void    SetUsingCursor (BOOL);
+static void SetUsingCursor(BOOL);
 static bool FileExists(std::string strFilename);
 
 bool	g_bScrollLock_FullSpeed = false;
 bool	g_bFreshReset = false;
 static bool g_bFullScreen32Bit = true;
 
+#if 0 // enable non-integral full-screen scaling
+#define FULLSCREEN_SCALE_TYPE float
+#else
+#define FULLSCREEN_SCALE_TYPE int
+#endif
+
+static RECT						g_main_window_saved_rect;
+static int						g_main_window_saved_style;
+static int						g_main_window_saved_exstyle;
+static FULLSCREEN_SCALE_TYPE	g_win_fullscreen_scale = 1;
+static int						g_win_fullscreen_offsetx = 0;
+static int						g_win_fullscreen_offsety = 0;
+
+static bool g_bFrameActive = false;
+
 // __ Prototypes __________________________________________________________________________________
-	static void DrawCrosshairs (int x, int y);
-	static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen);
-	static void DrawCrosshairsMouse();
-	static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
-	static void ScreenWindowResize(const bool bCtrlKey);
-	static void FrameResizeWindow(int nNewScale);
-	static void GetWidthHeight(int& nWidth, int& nHeight);
+void DrawCrosshairs (int x, int y);
+void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
+void ScreenWindowResize(const bool bCtrlKey);
+void FrameResizeWindow(int nNewScale);
 
 
-	TCHAR g_pAppleWindowTitle[ 128 ] = "";
+// ==========================================================================
 
-// Updates g_pAppTitle
-// ====================================================================
-void GetAppleWindowTitle()
+// Display construction:
+// . Apple II video gets rendered to the framebuffer (maybe with some preliminary/final NTSC data in the border areas)
+// . The *borderless* framebuffer is stretchblt() copied to the frame DC, in VideoRefreshScreen()
+// . Draw cross-hairs (if using mouse as either a mouse or joystick) to frame DC
+// . In Windowed mode:
+//	 - Draw 3D border, 8x buttons, status area (disk LEDs, caps) to frame DC
+// . In Fullscreen mode:
+//   - Optional: Draw status area to frame DC
+//
+
+UINT GetFrameBufferBorderlessWidth(void)
 {
+	static const UINT uFrameBufferBorderlessW = 560;	// 560 = Double Hi-Res
+	return uFrameBufferBorderlessW;
+}
+
+UINT GetFrameBufferBorderlessHeight(void)
+{
+	static const UINT uFrameBufferBorderlessH = 384;	// 384 = Double Scan Line
+	return uFrameBufferBorderlessH;
+}
+
+// NB. These border areas are not visible (... and these border areas are unrelated to the 3D border below)
+UINT GetFrameBufferBorderWidth(void)
+{
+	static const UINT uBorderW = 20;
+	return uBorderW;
+}
+
+UINT GetFrameBufferBorderHeight(void)
+{
+	static const UINT uBorderH = 18;
+	return uBorderH;
+}
+
+UINT GetFrameBufferWidth(void)
+{
+	return GetFrameBufferBorderlessWidth() + 2*GetFrameBufferBorderWidth();
+}
+
+UINT GetFrameBufferHeight(void)
+{
+	return GetFrameBufferBorderlessHeight() + 2*GetFrameBufferBorderHeight();
+}
+
+//
+
+UINT Get3DBorderWidth(void)
+{
+	return IsFullScreen() ? 0 : VIEWPORTX;
+}
+
+UINT Get3DBorderHeight(void)
+{
+	return IsFullScreen() ? 0 : VIEWPORTY;
+}
+
+// ==========================================================================
+static void GetAppleWindowTitle()
+{
+	static TCHAR g_pAppleWindowTitle[ 128 ] = "";
+
 	g_pAppTitle = g_pAppleWindowTitle;
 
 	switch (g_Apple2Type)
 	{
 		default:
-		case A2TYPE_APPLE2:			_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2          ); break; 
-		case A2TYPE_APPLE2PLUS:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2_PLUS     ); break; 
-		case A2TYPE_APPLE2E:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E         ); break; 
-		case A2TYPE_APPLE2EENHANCED:_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E_ENHANCED); break; 
-		case A2TYPE_PRAVETS82:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_82       ); break; 
-		case A2TYPE_PRAVETS8M:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8M       ); break; 
-		case A2TYPE_PRAVETS8A:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8A       ); break; 
+		case A2TYPE_APPLE2:			_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2          ); break;
+		case A2TYPE_APPLE2PLUS:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2_PLUS     ); break;
+		case A2TYPE_APPLE2E:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E         ); break;
+		case A2TYPE_APPLE2EENHANCED:_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E_ENHANCED); break;
+		case A2TYPE_PRAVETS82:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_82       ); break;
+		case A2TYPE_PRAVETS8M:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8M       ); break;
+		case A2TYPE_PRAVETS8A:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8A       ); break;
+		case A2TYPE_TK30002E:		_tcscpy(g_pAppleWindowTitle, TITLE_TK3000_2E        ); break;
 	}
 
 #if _DEBUG
@@ -219,8 +280,6 @@ void GetAppleWindowTitle()
 		case MODE_PAUSED  : _tcscat(g_pAppleWindowTitle,TEXT(" [")); _tcscat(g_pAppleWindowTitle,TITLE_PAUSED  ); _tcscat(g_pAppleWindowTitle,TEXT("]")); break;
 		case MODE_STEPPING: _tcscat(g_pAppleWindowTitle,TEXT(" [")); _tcscat(g_pAppleWindowTitle,TITLE_STEPPING); _tcscat(g_pAppleWindowTitle,TEXT("]")); break;
 	}
-
-	g_pAppTitle = g_pAppleWindowTitle;
 }
 
 //===========================================================================
@@ -252,7 +311,7 @@ static void FrameShowCursor(BOOL bShow)
 // Called when:
 // . Ctrl-Left mouse button
 // . PAUSE pressed (when MODE_RUNNING)
-// . AppleWin's main window is deactivated
+// . AppleWin's main window is activated/deactivated
 static void RevealCursor()
 {
 	if (!sg_Mouse.IsActiveAndEnabled())
@@ -269,6 +328,25 @@ static void RevealCursor()
 		SetUsingCursor(FALSE);
 
 	g_bLastCursorInAppleViewport = false;
+}
+
+// Called when:
+// . WM_MOUSEMOVE event
+// . Switch from full-screen to normal (windowed) mode
+// . AppleWin's main window is activated/deactivated
+static void FullScreenRevealCursor(void)
+{
+	if (!g_bIsFullScreen)
+		return;
+
+	if (sg_Mouse.IsActive())
+		return;
+
+	if (!g_bUsingCursor && !g_bShowingCursor)
+	{
+		FrameShowCursor(TRUE);
+		g_uCount100msec = 0;
+	}
 }
 
 //===========================================================================
@@ -291,6 +369,9 @@ static void CreateGdiObjects(void)
 	case A2TYPE_PRAVETS8M:
 	case A2TYPE_PRAVETS8A:
 		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON"));
+		break;
+	case A2TYPE_TK30002E:
+		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN3000E_BUTTON"));
 		break;
 	default:
 		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON"));
@@ -325,12 +406,6 @@ static void CreateGdiObjects(void)
 	g_hDiskWindowedLED[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKWRITE_BITMAP"));
 	g_hDiskWindowedLED[ DISK_STATUS_PROT ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKPROT_BITMAP"));
 
-	// Full Screen Drive LED
-	//	g_hDiskFullScreenLED[ DISK_STATUS_OFF  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_O")); // Full Screen Off
-	//	g_hDiskFullScreenLED[ DISK_STATUS_READ ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_R")); // Full Screen Read Only
-	//	g_hDiskFullScreenLED[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_W")); // Full Screen Write
-	//	g_hDiskFullScreenLED[ DISK_STATUS_PROT ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISK_FULLSCREEN_P")); // Full Screen Write Protected
-
 	btnfacebrush    = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 	btnfacepen      = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNFACE));
 	btnhighlightpen = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNHIGHLIGHT));
@@ -357,7 +432,6 @@ static void DeleteGdiObjects(void)
 	for (int loop = 0; loop < NUM_DISK_STATUS; loop++)
 	{
 		_ASSERT(DeleteObject(g_hDiskWindowedLED[loop]));
-		//_ASSERT(DeleteObject(g_hDiskFullScreenLED[loop]));
 	}
 
 	_ASSERT(DeleteObject(btnfacebrush));
@@ -438,6 +512,8 @@ static void DrawButton (HDC passdc, int number) {
 }
 
 //===========================================================================
+
+// NB. x=y=0 means erase only
 static void DrawCrosshairs (int x, int y) {
   static int lastx = 0;
   static int lasty = 0;
@@ -447,20 +523,22 @@ static void DrawCrosshairs (int x, int y) {
 
   // ERASE THE OLD CROSSHAIRS
   if (lastx && lasty)
-    if (g_bIsFullScreen) {
+    if (g_bIsFullScreen)
+	{
       int loop = 4;
       while (loop--) {
         RECT rect = {0,0,5,5};
         switch (loop) {
-          case 0: OffsetRect(&rect,lastx-2,FSVIEWPORTY-5);              break;
-          case 1: OffsetRect(&rect,lastx-2,FSVIEWPORTY+g_nViewportCY);  break;
-          case 2: OffsetRect(&rect,FSVIEWPORTX-5,lasty-2);              break;
-          case 3: OffsetRect(&rect,FSVIEWPORTX+g_nViewportCX,lasty-2);  break;
+          case 0: OffsetRect(&rect, GetFullScreenOffsetX()+lastx-2,                 GetFullScreenOffsetY()+viewporty-5);             break;
+          case 1: OffsetRect(&rect, GetFullScreenOffsetX()+lastx-2,                 GetFullScreenOffsetY()+viewporty+g_nViewportCY); break;
+          case 2: OffsetRect(&rect, GetFullScreenOffsetX()+viewportx-5,             GetFullScreenOffsetY()+lasty-2);                 break;
+          case 3: OffsetRect(&rect, GetFullScreenOffsetX()+viewportx+g_nViewportCX, GetFullScreenOffsetY()+lasty-2);                 break;
         }
-        FillRect(dc,&rect,(HBRUSH)GetStockObject(BLACK_BRUSH));
+        FillRect(dc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
       }
-    }
-    else {
+	}
+	else
+	{
       int loop = 5;
       while (loop--) {
         switch (loop) {
@@ -485,21 +563,42 @@ static void DrawCrosshairs (int x, int y) {
 
   // DRAW THE NEW CROSSHAIRS
   if (x && y) {
-    int loop = 4;
-    while (loop--) {
-      if ((loop == 1) || (loop == 2))
-        SelectObject(dc,GetStockObject(WHITE_PEN));
-      else
-        SelectObject(dc,GetStockObject(BLACK_PEN));
-      LINE(x+loop-2,viewporty-5,
-           x+loop-2,viewporty);
-      LINE(x+loop-2,viewporty+g_nViewportCY+4,
-           x+loop-2,viewporty+g_nViewportCY-1);
-      LINE(viewportx-5,           y+loop-2,
-           viewportx,             y+loop-2);
-      LINE(viewportx+g_nViewportCX+4,y+loop-2,
-           viewportx+g_nViewportCX-1,y+loop-2);
-    }
+    if (g_bIsFullScreen)
+	{
+		int loop = 4;
+		while (loop--) {
+		  if ((loop == 1) || (loop == 2))
+			SelectObject(dc,GetStockObject(WHITE_PEN));
+		  else
+			SelectObject(dc,GetStockObject(BLACK_PEN));
+		  LINE(GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty-5,
+			   GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty);
+		  LINE(GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty+g_nViewportCY+4,
+			   GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty+g_nViewportCY-1);
+		  LINE(GetFullScreenOffsetX()+viewportx-5,               GetFullScreenOffsetY()+y+loop-2,
+			   GetFullScreenOffsetX()+viewportx,                 GetFullScreenOffsetY()+y+loop-2);
+		  LINE(GetFullScreenOffsetX()+viewportx+g_nViewportCX+4, GetFullScreenOffsetY()+y+loop-2,
+			   GetFullScreenOffsetX()+viewportx+g_nViewportCX-1, GetFullScreenOffsetY()+y+loop-2);
+		}
+	}
+	else
+	{
+		int loop = 4;
+		while (loop--) {
+		  if ((loop == 1) || (loop == 2))
+			SelectObject(dc,GetStockObject(WHITE_PEN));
+		  else
+			SelectObject(dc,GetStockObject(BLACK_PEN));
+		  LINE(x+loop-2,viewporty-5,
+			   x+loop-2,viewporty);
+		  LINE(x+loop-2,viewporty+g_nViewportCY+4,
+			   x+loop-2,viewporty+g_nViewportCY-1);
+		  LINE(viewportx-5,           y+loop-2,
+			   viewportx,             y+loop-2);
+		  LINE(viewportx+g_nViewportCX+4,y+loop-2,
+			   viewportx+g_nViewportCX-1,y+loop-2);
+		}
+	}
   }
 #undef LINE
   lastx = x;
@@ -515,8 +614,6 @@ static void DrawFrameWindow ()
 	HDC         dc = (g_bPaintingWindow
 		? BeginPaint(g_hFrameWindow,&ps)
 		: GetDC(g_hFrameWindow));
-
-	VideoRealizePalette(dc);
 
 	if (!g_bIsFullScreen)
 	{
@@ -549,8 +646,7 @@ static void DrawFrameWindow ()
 			int x  = buttonx + 1;
 			int y  = buttony + BUTTONS*BUTTONCY + 36;	// 36 = height of StatusArea
 			RECT rect = {x, y, x+45, y+BUTTONS*BUTTONCY+22};
-			HBRUSH hbr = (HBRUSH) GetStockObject(WHITE_BRUSH);
-			int res = FillRect(dc, &rect, hbr);
+			int res = FillRect(dc, &rect, btnfacebrush);
 		}
 	}
 
@@ -561,12 +657,10 @@ static void DrawFrameWindow ()
 	if (g_nAppMode == MODE_LOGO)
 		VideoDisplayLogo();
 	else if (g_nAppMode == MODE_DEBUG)
-		DebugDisplay(1);
+		DebugDisplay();
 	else
-		// Win7: In fullscreen mode with 1 redraw, the the screen doesn't get redraw.
-		VideoRedrawScreen(g_bIsFullScreen ? 2 : 1);	// TC: 22/06/2014: Why 2 redraws in full-screen mode (32-bit only)? (8-bit doesn't need this nor does Win8, just Win7 or older OS's)
+		VideoRedrawScreen();
 
-	// DD Full-Screen Palette: BUGFIX: needs to come _after_ all drawing...
 	if (g_bPaintingWindow)
 		EndPaint(g_hFrameWindow,&ps);
 	else
@@ -575,10 +669,28 @@ static void DrawFrameWindow ()
 }
 
 //===========================================================================
+static bool g_bFullScreen_ShowSubunitStatus = true;
+
+bool IsFullScreen(void)
+{
+	return g_bIsFullScreen;
+}
+
+bool GetFullScreenShowSubunitStatus(void)
+{
+	return g_bFullScreen_ShowSubunitStatus;
+}
+
+void SetFullScreenShowSubunitStatus(bool bShow)
+{
+	g_bFullScreen_ShowSubunitStatus = bShow;
+}
+
+//===========================================================================
 void FrameDrawDiskLEDS( HDC passdc )
 {
-	static Disk_Status_e eDrive1Status = DISK_STATUS_OFF;
-	static Disk_Status_e eDrive2Status = DISK_STATUS_OFF;
+	Disk_Status_e eDrive1Status;
+	Disk_Status_e eDrive2Status;
 	DiskGetLightStatus(&eDrive1Status, &eDrive2Status);
 
 	g_eStatusDrive1 = eDrive1Status;
@@ -593,6 +705,9 @@ void FrameDrawDiskLEDS( HDC passdc )
 
 	if (g_bIsFullScreen)
 	{
+		if (!g_bFullScreen_ShowSubunitStatus)
+			return;
+
 		SelectObject(dc,smallfont);
 		SetBkMode(dc,OPAQUE);
 		SetBkColor(dc,RGB(0,0,0));
@@ -618,6 +733,9 @@ void FrameDrawDiskLEDS( HDC passdc )
 void FrameDrawDiskStatus( HDC passdc )
 {
 	if (mem == NULL)
+		return;
+
+	if (g_nAppMode == MODE_LOGO)
 		return;
 
 	// We use the actual drive since probing from memory doesn't tell us anything we don't already know.
@@ -688,11 +806,11 @@ void FrameDrawDiskStatus( HDC passdc )
 	}
 
 	sprintf_s( g_sTrackDrive1 , sizeof(g_sTrackDrive1 ), "%2d", g_nTrackDrive1 );
-	if (g_nSectorDrive1 < 0) sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" , g_nSectorDrive1 );
+	if (g_nSectorDrive1 < 0) sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" );
 	else                     sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%2d", g_nSectorDrive1 ); 
 
 	sprintf_s( g_sTrackDrive2 , sizeof(g_sTrackDrive2),  "%2d", g_nTrackDrive2 );
-	if (g_nSectorDrive2 < 0) sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" , g_nSectorDrive2 );
+	if (g_nSectorDrive2 < 0) sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" );
 	else                     sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%2d", g_nSectorDrive2 );
 
 	// Draw Track/Sector
@@ -700,7 +818,7 @@ void FrameDrawDiskStatus( HDC passdc )
 	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
 
 	int  x      = buttonx;
-	int  y      = buttony+BUTTONS*BUTTONCY+1;
+	int  y      = buttony+BUTTONS*BUTTONCY+4;
 
 	SelectObject(dc,smallfont);
 	SetBkMode(dc,OPAQUE);
@@ -711,9 +829,11 @@ void FrameDrawDiskStatus( HDC passdc )
 
 	if (g_bIsFullScreen)
 	{
-#if _DEBUG && 0
-		SetBkColor(dc,RGB(255,0,255));
-#endif
+		// GH#57 - drive lights in full screen mode
+
+		if (!g_bFullScreen_ShowSubunitStatus)
+			return;
+
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive1 ] );
 		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
 
@@ -737,23 +857,19 @@ void FrameDrawDiskStatus( HDC passdc )
 
 		// Erase background
 		SelectObject(dc,GetStockObject(NULL_PEN));
-#if _DEBUG && 0
-		SelectObject( dc, CreateSolidBrush( RGB(255,0,255) ) );
-#else
 		SelectObject(dc,btnfacebrush);
-#endif
 		Rectangle(dc,x+4,y+32,x+BUTTONCX+1,y+56); // y+35 -> 44 -> 56
 
 		SetTextColor(dc,RGB(0,0,0));
 		SetBkMode(dc,TRANSPARENT);
 
 		sprintf( text, "T%s", g_sTrackDrive1 );
-		TextOut(dc,x+6 ,y+32,text, strlen(text) );
+		TextOut(dc,x+6, y+32, text, strlen(text) );
 		sprintf( text, "S%s", g_sSectorDrive1 );
-		TextOut(dc,x+ 6,y+42, text, strlen(text) );
+		TextOut(dc,x+6, y+42, text, strlen(text) );
 
 		sprintf( text, "T%s", g_sTrackDrive2 );
-		TextOut(dc,x+26,y+32,text, strlen(text) );
+		TextOut(dc,x+26,y+32, text, strlen(text) );
 		sprintf( text, "S%s", g_sSectorDrive2 );
 		TextOut(dc,x+26,y+42, text, strlen(text) );
 	}
@@ -762,6 +878,14 @@ void FrameDrawDiskStatus( HDC passdc )
 //===========================================================================
 static void DrawStatusArea (HDC passdc, int drawflags)
 {
+	if (g_hFrameWindow == NULL)
+	{
+		// TC: Fix drawing of drive buttons before frame created:
+		// . Main init loop: LoadConfiguration() called before FrameCreateWindow(), eg:
+		//   LoadConfiguration() -> Disk_LoadLastDiskImage() -> DiskInsert() -> FrameRefreshStatus()
+		return;
+	}
+
 	FrameReleaseDC();
 	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
 	int  x      = buttonx;
@@ -777,59 +901,70 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 	if (g_bIsFullScreen)
 	{
-		SelectObject(dc,smallfont);
+		if (!g_bFullScreen_ShowSubunitStatus)
+		{
+			// Erase Config button icon too, as trk/sec is written here - see FrameDrawDiskStatus()
+			RECT rect = {x-2,y-BUTTONCY,x+BUTTONCX+2,y+BUTTONCY};	// Extend rect's width by +/-2 as the TITLE_PAUSED text is wider than an icon button
+			FillRect(dc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
+		}
+		else
+		{
+			SelectObject(dc,smallfont);
 
-		if (drawflags & DRAW_DISK_STATUS)
-			FrameDrawDiskStatus( dc );
+			if (drawflags & DRAW_DISK_STATUS)
+				FrameDrawDiskStatus( dc );
 
 #if HD_LED
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
-		TextOut(dc,x+23,y+2,TEXT("H"),1);
+			SetTextAlign(dc, TA_RIGHT | TA_TOP);
+			SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
+			TextOut(dc,x+23,y+2,TEXT("H"),1);
 #endif
 
-		// Feature Request #3581 ] drive lights in full screen mode
-		// This has been in for a while, at least since 1.12.7.1
+			if (!IS_APPLE2)
+			{
+				SetTextAlign(dc,TA_RIGHT | TA_TOP);
+				SetTextColor(dc,(bCaps
+					? RGB(128,128,128)
+					: RGB(  0,  0,  0) ));
 
-		// Full Screen Drive LED
-		// Note: Made redundant with above code
-		//		RECT rect = {0,0,8,8};
-		//		CONST int DriveLedY = 12; // 8 in windowed mode
-		//		DrawBitmapRect(dc,x+12,y+DriveLedY,&rect,g_hDiskFullScreenLED[ eDrive1Status ]);
-		//		DrawBitmapRect(dc,x+30,y+DriveLedY,&rect,g_hDiskFullScreenLED[ eDrive2Status ]);
-		//		SetTextColor(dc, g_aDiskFullScreenColors[ eDrive1Status ] );
-		//		TextOut(dc,x+ 10,y+2,TEXT("*"),1);
-		//		SetTextColor(dc, g_aDiskFullScreenColors[ eDrive2Status ] );
-		//		TextOut(dc,x+ 20,y+2,TEXT("*"),1);
+				TextOut(dc,x+BUTTONCX,y+2,TEXT("A"),1); // NB. Caps Lock indicator is already flush right!
+			}
 
-		if (!IS_APPLE2)
-		{
-			SetTextAlign(dc,TA_RIGHT | TA_TOP);
-			SetTextColor(dc,(bCaps
-				? RGB(128,128,128)
-				: RGB(  0,  0,  0) ));
+			//
 
-//			const TCHAR sCapsStatus[] = TEXT("Caps"); // Caps or A
-//			const int   nCapsLen = sizeof(sCapsStatus) / sizeof(TCHAR);
-//			TextOut(dc,x+BUTTONCX,y+2,"Caps",4); // sCapsStatus,nCapsLen - 1);
+			static const char* pCurrentAppModeText = NULL;
 
-			TextOut(dc,x+BUTTONCX,y+2,TEXT("A"),1); // NB. Caps Lock indicator is already flush right!
+			const char* const pNewAppModeText = (g_nAppMode == MODE_PAUSED)
+				? TITLE_PAUSED
+				: (g_nAppMode == MODE_STEPPING)
+					? TITLE_STEPPING
+					: NULL;
+
+			SetTextAlign(dc, TA_CENTER | TA_TOP);
+
+			if (pCurrentAppModeText && pNewAppModeText != pCurrentAppModeText)
+			{
+				SetTextColor(dc, RGB(0,0,0));
+				TextOut(dc, x+BUTTONCX/2, y+13, pCurrentAppModeText, strlen(pCurrentAppModeText));
+				pCurrentAppModeText = NULL;
+			}
+
+			if (pNewAppModeText)
+			{
+				SetTextColor(dc, RGB(255,255,255));
+				TextOut(dc, x+BUTTONCX/2, y+13, pNewAppModeText, strlen(pNewAppModeText));
+				pCurrentAppModeText = pNewAppModeText;
+			}
 		}
-		SetTextAlign(dc,TA_CENTER | TA_TOP);
-		SetTextColor(dc,(g_nAppMode == MODE_PAUSED || g_nAppMode == MODE_STEPPING
-			? RGB(255,255,255)
-			: RGB(  0,  0,  0)));
-		TextOut(dc,x+BUTTONCX/2,y+13,(g_nAppMode == MODE_PAUSED
-			? TITLE_PAUSED
-			: TITLE_STEPPING) ,8);
 	}
-	else // g_bIsFullScreen
+	else // !g_bIsFullScreen
 	{
 		if (drawflags & DRAW_BACKGROUND)
 		{
 			SelectObject(dc,GetStockObject(NULL_PEN));
 			SelectObject(dc,btnfacebrush);
-			Rectangle(dc,x,y,x+BUTTONCX+2,y+60); // y+35 --> 48  --> 60
-			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+56,0); // y+31 --> 44 --> 56
+			Rectangle(dc,x,y,x+BUTTONCX+2,y+34);
+			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+30,0);
 
 			SelectObject(dc,smallfont);
 			SetTextAlign(dc,TA_CENTER | TA_TOP);
@@ -897,9 +1032,6 @@ static void EraseButton (int number) {
   rect.top    = buttony+number*BUTTONCY;
   rect.bottom = rect.top+BUTTONCY;
 
-	// TODO: DD Full-Screen Palette
-	//	if( !g_bIsFullScreen )
-
 	InvalidateRect(g_hFrameWindow,&rect,1);
 }
 
@@ -916,8 +1048,10 @@ LRESULT CALLBACK FrameWndProc (
     case WM_ACTIVATE:		// Sent when window is activated/deactivated. wParam indicates WA_ACTIVE, WA_INACTIVE, etc
 							// Eg. Deactivate when Config dialog is active, AppleWin app loses focus, etc
       JoyReset();
-      SetUsingCursor(0);
+      SetUsingCursor(FALSE);
 	  RevealCursor();
+	  FullScreenRevealCursor();
+	  g_bFrameActive = (wparam != WA_INACTIVE);
       break;
 
     case WM_ACTIVATEAPP:	// Sent when different app's window is activated/deactivated.
@@ -927,6 +1061,8 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_CLOSE:
       LogFileOutput("WM_CLOSE\n");
+      if (g_bIsFullScreen && g_bRestart)
+		  g_bRestartFullScreen = true;
       if (g_bIsFullScreen)
         SetNormalMode();
       if (!IsIconic(window))
@@ -934,27 +1070,33 @@ LRESULT CALLBACK FrameWndProc (
       RegSaveValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_X_POS), 1, framerect.left);
       RegSaveValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_Y_POS), 1, framerect.top);
       FrameReleaseDC();
-      SetUsingCursor(0);
+      SetUsingCursor(FALSE);
       if (helpquit) {
         helpquit = 0;
         HtmlHelp(NULL,NULL,HH_CLOSE_ALL,0);
+      }
+      if (g_TimerIDEvent_100msec)
+      {
+        BOOL bRes = KillTimer(g_hFrameWindow, g_TimerIDEvent_100msec);
+        LogFileOutput("KillTimer(g_TimerIDEvent_100msec), res=%d\n", bRes ? 1 : 0);
+        g_TimerIDEvent_100msec = 0;
       }
       LogFileOutput("WM_CLOSE (done)\n");
       break;
 
 		case WM_CHAR:
-			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) ||
-				((g_nAppMode == MODE_STEPPING) && (wparam != TEXT('\x1B'))))
+			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_LOGO))
 			{
 				if( !g_bDebuggerEatKey )
 				{
-					KeybQueueKeypress((int)wparam,ASCII);
-				} else {
+					KeybQueueKeypress((int)wparam, ASCII);
+				}
+				else
+				{
 					g_bDebuggerEatKey = false;
 				}
 			}
-			else
-			if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
+			else if (g_nAppMode == MODE_DEBUG)
 			{
 				DebuggerInputConsoleChar((TCHAR)wparam);
 			}
@@ -1023,10 +1165,10 @@ LRESULT CALLBACK FrameWndProc (
       DragAcceptFiles(window,0);
 	  Snapshot_Shutdown();
       DebugDestroy();
-      if (!restart) {
+      if (!g_bRestart) {
         DiskDestroy();
         ImageDestroy();
-        HD_Cleanup();
+        HD_Destroy();
       }
       PrintDestroy();
       sg_SSC.CommDestroy();
@@ -1108,7 +1250,7 @@ LRESULT CALLBACK FrameWndProc (
 			size_t nSize = 0;
 
 			// if viewing the debugger, get the last virtual debugger screen
-			if ((g_nAppMode == MODE_DEBUG) && !g_bDebuggerViewingAppleOutput)
+			if ((g_nAppMode == MODE_DEBUG) && !DebugGetVideoMode(NULL))
 				nSize = Util_GetDebuggerText( pText );
 			else
 				nSize = Util_GetTextScreen( pText );
@@ -1122,7 +1264,7 @@ LRESULT CALLBACK FrameWndProc (
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
 		{
-			SetUsingCursor(0);
+			SetUsingCursor(FALSE);
 			buttondown = wparam-VK_F1;
 			if (g_bIsFullScreen && (buttonover != -1)) {
 				if (buttonover != buttondown)
@@ -1132,56 +1274,51 @@ LRESULT CALLBACK FrameWndProc (
 			DrawButton((HDC)0,buttondown);
 		}
 		else if (wparam == VK_F9)
-		{			
-			//bool bCtrlDown  = (GetKeyState(VK_CONTROL) < 0) ? true : false;
-			//bool bShiftDown = (GetKeyState(VK_SHIFT  ) < 0) ? true : false;
+		{
+			// F9            Next Video Mode
+			// SHIFT+F9      Prev Video Mode
+			// CTRL+SHIFT+F9 Toggle 50% Scan Lines
+			// ALT+F9        Can't use Alt-F9 as Alt is Open-Apple = Joystick Button #1
 
-// F9 Next Video Mode
-// ^F9 Next Char Set
-// #F9 Prev Video Mode
-// ^#F9 Toggle 50% Scan Lines
-// @F9 -Can't use Alt-F9 as Alt is Open-Apple = Joystick Button #1
-
-			if ( g_bCtrlKey && !g_bShiftKey ) //CTRL+F9
-			{
-				g_nCharsetType++; // Cycle through available charsets (Ctrl + F9)
-				if (g_nCharsetType >= 3)
-				{				
-					g_nCharsetType = 0;
-				}
-			}
-			else	// Cycle through available video modes
-			if ( g_bCtrlKey && g_bShiftKey ) // ALT+F9
-			{
-				g_uHalfScanLines = !g_uHalfScanLines;
-			}
-			else
-			if ( !g_bShiftKey )	// Drop Down Combo Box is in correct order
+			if ( !g_bCtrlKey && !g_bShiftKey )		// F9
 			{
 				g_eVideoType++;
 				if (g_eVideoType >= NUM_VIDEO_MODES)
 					g_eVideoType = 0;
 			}
-			else	// Forwards
+			else if ( !g_bCtrlKey && g_bShiftKey )	// SHIFT+F9
 			{
 				if (g_eVideoType <= 0)
 					g_eVideoType = NUM_VIDEO_MODES;
 				g_eVideoType--;
+			}
+			else if ( g_bCtrlKey && g_bShiftKey )	// CTRL+SHIFT+F9
+			{
+				g_uHalfScanLines = !g_uHalfScanLines;
 			}
 
 			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)
 			DrawStatusArea( (HDC)0, DRAW_TITLE );
 
 			VideoReinitialize();
-			if ((g_nAppMode != MODE_LOGO) || ((g_nAppMode == MODE_DEBUG) && (g_bDebuggerViewingAppleOutput)))
+			if (g_nAppMode != MODE_LOGO)
 			{
-				VideoRedrawScreen();
-				g_bDebuggerViewingAppleOutput = true;
+				if (g_nAppMode == MODE_DEBUG)
+				{
+					UINT debugVideoMode;
+					if ( DebugGetVideoMode(&debugVideoMode) )
+						VideoRefreshScreen(debugVideoMode, true);
+					else
+						VideoRefreshScreen();
+				}
+				else
+				{
+					VideoRefreshScreen();
+				}
 			}
 
 			Config_Save_Video();
 		}
-
 		else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)
 		{
 			SoundCore_SetFade(FADE_OUT);
@@ -1206,7 +1343,7 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if (wparam == VK_PAUSE)
 		{
-			SetUsingCursor(0);
+			SetUsingCursor(FALSE);
 			switch (g_nAppMode)
 			{
 				case MODE_RUNNING:
@@ -1220,7 +1357,8 @@ LRESULT CALLBACK FrameWndProc (
 					// Don't call FrameShowCursor(FALSE) else ClipCursor() won't be called
 					break;
 				case MODE_STEPPING:
-					DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
+					SoundCore_SetFade(FADE_OUT);
+					DebugStopStepping();
 					break;
 			}
 			DrawStatusArea((HDC)0,DRAW_TITLE);
@@ -1255,8 +1393,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			else 
 			{
-				SetUsingCursor(0);
-				return 0;	// TC: Why return early?
+				SetUsingCursor(FALSE);
 			}
 		}
 		break;
@@ -1282,6 +1419,8 @@ LRESULT CALLBACK FrameWndProc (
 		break;
 
     case WM_LBUTTONDOWN:
+		KeybUpdateCtrlShiftStatus();
+
       if (buttondown == -1)
 	  {
         int x = LOWORD(lparam);
@@ -1298,7 +1437,7 @@ LRESULT CALLBACK FrameWndProc (
 		{
           if (wparam & (MK_CONTROL | MK_SHIFT))
 		  {
-            SetUsingCursor(0);
+            SetUsingCursor(FALSE);
 		  }
           else
 		  {
@@ -1307,7 +1446,7 @@ LRESULT CALLBACK FrameWndProc (
 		}
         else if ( ((x < buttonx) && JoyUsingMouse() && ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING))) )
 		{
-          SetUsingCursor(1);
+          SetUsingCursor(TRUE);
 		}
 		else if (sg_Mouse.IsActive())
 		{
@@ -1335,6 +1474,7 @@ LRESULT CALLBACK FrameWndProc (
 				}
 			}
 		}
+
 		DebuggerMouseClick( x, y );
       }
       RelayEvent(WM_LBUTTONDOWN,wparam,lparam);
@@ -1415,6 +1555,8 @@ LRESULT CALLBACK FrameWndProc (
 			UpdateMouseInAppleViewport(iOutOfBoundsX, iOutOfBoundsY, x, y);
 	  }
 
+      FullScreenRevealCursor();
+
       RelayEvent(WM_MOUSEMOVE,wparam,lparam);
       break;
     }
@@ -1437,6 +1579,21 @@ LRESULT CALLBACK FrameWndProc (
 					sg_Mouse.SetPositionRel(dX, dY, &iOutOfBoundsX, &iOutOfBoundsY);
 
 				UpdateMouseInAppleViewport(iOutOfBoundsX, iOutOfBoundsY);
+			}
+		}
+		else if (wparam == IDEVENT_TIMER_100MSEC)	// GH#504
+		{
+			if (g_bIsFullScreen
+				&& !sg_Mouse.IsActive()		// Don't interfere if there's a mousecard present!
+				&& !g_bUsingCursor			// Using mouse for joystick emulation (or mousecard restricted to window)
+				&& g_bShowingCursor
+				&& g_bFrameActive)			// Frame inactive when eg. Config or 'Select Disk Image' dialogs are opened
+			{
+				g_uCount100msec++;
+				if (g_uCount100msec > 20)	// Hide every 2sec of mouse inactivity
+				{
+					FrameShowCursor(FALSE);
+				}
 			}
 		}
 		break;
@@ -1480,26 +1637,10 @@ LRESULT CALLBACK FrameWndProc (
 		// message must not realize its palette, unless it determines that
 		// wParam does not contain its own window handle.
 		if ((HWND)wparam == window)
-	  {
-#if DEBUG_DD_PALETTE
-		if( g_bIsFullScreen )
-			OutputDebugString( "WM_PALETTECHANGED: Full Screen\n" );
-		else
-			OutputDebugString( "WM_PALETTECHANGED: Windowed\n" );
-#endif
-		break;
-	  } 
+			break;
 	  // else fall through
 
     case WM_QUERYNEWPALETTE:
-#if DEBUG_DD_PALETTE
-		if( g_bIsFullScreen )
-			OutputDebugString( "WM_QUERYNEWPALETTE: Full Screen\n" );
-		else
-			OutputDebugString( "WM_QUERYNEWPALETTE: Windowed\n" );
-#endif
-
-		// TODO: DD Full-Screen Palette
       DrawFrameWindow();
       break;
 
@@ -1550,13 +1691,12 @@ LRESULT CALLBACK FrameWndProc (
 				}			
 			}
 		}
-		if (g_bUsingCursor)
-		{
-			if (sg_Mouse.IsActive())
-				sg_Mouse.SetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
-			else
-				JoySetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
-		}
+
+		if (g_bUsingCursor && !sg_Mouse.IsActive())
+			JoySetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
+		else if (sg_Mouse.IsActive())
+			sg_Mouse.SetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
+
 		RelayEvent(message,wparam,lparam);
 		break;
 
@@ -1568,7 +1708,6 @@ LRESULT CALLBACK FrameWndProc (
 			OutputDebugString( "WM_SYSCOLORCHANGE: Windowed\n" );
 #endif
 
-		// TODO: DD Full-Screen Palette
 		DeleteGdiObjects();
 		CreateGdiObjects();
 		break;
@@ -1626,7 +1765,7 @@ LRESULT CALLBACK FrameWndProc (
 	  // . Changed slot configuration
 	  // . Changed disk speed (normal or enhanced)
 	  // . Changed Freeze F8 rom setting
-      restart = 1;
+      g_bRestart = true;
       PostMessage(window,WM_CLOSE,0,0);
       break;
 
@@ -1728,7 +1867,6 @@ static void ScreenWindowResize(const bool bCtrlKey)
 		nOldViewportScale = g_nViewportScale;
 		FrameResizeWindow(1);	// reset to 1x
 		SetFullScreenMode();
-		//VideoRedrawScreen(1);	// [TC-10/06/2014] Remove this once checked it's not needed by Win8
 	}
 }
 
@@ -1754,6 +1892,7 @@ static bool ConfirmReboot(bool bFromButtonUI)
 static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 {
 	SoundCore_SetFade(FADE_OUT);
+	bool bAllowFadeIn = true;
 
 #if DEBUG_DD_PALETTE
 	char _text[ 80 ];
@@ -1768,6 +1907,16 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
         TCHAR filename[MAX_PATH];
         _tcscpy(filename,g_sProgramDir);
         _tcscat(filename,TEXT("APPLEWIN.CHM"));
+
+		// (GH#437) For any internet downloaded AppleWin.chm files (stored on an NTFS drive) there may be an Alt Data Stream containing a Zone Identifier
+		// - try to delete it, otherwise the content won't be displayed unless it's unblock (via File Properties)
+		{
+			TCHAR filename_with_zone_identifier[MAX_PATH];
+			_tcscpy(filename_with_zone_identifier,filename);
+			_tcscat(filename_with_zone_identifier,TEXT(":Zone.Identifier"));
+			DeleteFile(filename_with_zone_identifier);
+		}
+
         HtmlHelp(g_hFrameWindow,filename,HH_DISPLAY_TOC,0);
         helpquit = 1;
       }
@@ -1778,33 +1927,30 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		if( g_bCtrlKey )
 		{
 			CtrlReset();
+			if (g_nAppMode == MODE_DEBUG)
+				DebugDisplay(TRUE);
 			return;
 		}
 
 		if (g_nAppMode == MODE_LOGO)
 		{
 			DiskBoot();
+			LogFileTimeUntilFirstKeyReadReset();
 			g_nAppMode = MODE_RUNNING;
 		}
-		else if (g_nAppMode == MODE_RUNNING)
+		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_PAUSED))
 		{
 			if (ConfirmReboot(bFromButtonUI))
 			{
 				ResetMachineState();
-				g_nAppMode = MODE_RUNNING;
+
+				// NB. Don't exit debugger or stepping
+
+				if (g_nAppMode == MODE_DEBUG)
+					DebugDisplay(TRUE);
 			}
 		}
-		else if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING)) // exit debugger
-		{
-			if (ConfirmReboot(bFromButtonUI))
-			{
-				// If any breakpoints active and we are not running at normal speed
-				if (g_nBreakpoints && !g_bDebugNormalSpeedBreakpoints)
-					CmdGo(0);	// 6502 runs at full speed, switch to MODE_STEPPING
-				else
-					DebugEnd();	// 6502 runs at normal speed, switch to MODE_RUNNING
-			}
-		}
+
       DrawStatusArea((HDC)0,DRAW_TITLE);
       VideoRedrawScreen();
       break;
@@ -1828,26 +1974,23 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
     case BTN_DEBUG:
 		if (g_nAppMode == MODE_LOGO && !GetLoadedSaveStateFlag())
 		{
+			// FIXME: Why is this needed? Surely when state is MODE_LOGO, then AppleII system will have been reset!
+			// - Transition to MODE_LOGO when: (a) AppleWin starts, (b) there's a Config change to the AppleII h/w
 			ResetMachineState();
 		}
 
-		// Allow F7 to enter debugger even though emulator isn't "running"
 		if (g_nAppMode == MODE_STEPPING)
 		{
-			DebuggerInputConsoleChar( DEBUG_EXIT_KEY );
+			// Allow F7 to enter debugger even when not MODE_RUNNING
+			DebugStopStepping();
+			bAllowFadeIn = false;
 		}
-		else
-		if (g_nAppMode == MODE_DEBUG)
+		else if (g_nAppMode == MODE_DEBUG)
 		{
-			if (KeybGetShiftStatus())
-				g_bDebugNormalSpeedBreakpoints = true; // MODE_RUNNING // Normal Speed Breakpoints: Shift-F7 exit debugger, keep breakpoints active, enter run state at NORMAL speed
-			else
-				g_bDebugNormalSpeedBreakpoints = false; // MODE_STEPPING // Full Speed Breakpoints
-
-			g_bDebugBreakDelayCheck = true;
-			ProcessButtonClick(BTN_RUN); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
+			DebugExitDebugger(); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
+			g_bDebuggerEatKey = false;	// Don't "eat" the next keypress when leaving the debugger via F7 (or clicking the Debugger button)
 		}
-		else
+		else	// MODE_RUNNING, MODE_LOGO, MODE_PAUSED
 		{
 			DebugBegin();
 		}
@@ -1861,7 +2004,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
   }
 
-  if((g_nAppMode != MODE_DEBUG) && (g_nAppMode != MODE_PAUSED))
+  if((g_nAppMode != MODE_DEBUG) && (g_nAppMode != MODE_PAUSED) && bAllowFadeIn)
   {
 	  SoundCore_SetFade(FADE_IN);
   }
@@ -1943,6 +2086,8 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 													"Please install CiderPress.\n"
 													"Otherwise set the path to CiderPress from Configuration->Disk.";
 
+		DiskFlushCurrentTrack(iDrive);
+
 		//if(!filename1.compare("\"\"") == false) //Do not use this, for some reason it does not work!!!
 		if(!filename1.compare(sFileNameEmpty) )
 		{
@@ -1991,12 +2136,24 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 }
 
 //===========================================================================
+
+// CtrlReset() vs ResetMachineState():
+// . CPU: 
+//		Ctrl+Reset : 6502.sp=-3    / CpuReset()
+//		Power cycle: 6502.sp=0x1ff / CpuInitialize()
+// . Disk][:
+//		Ctrl+Reset : if motor-on, then motor-off but continue to spin for 1s
+//		Power cycle: motor-off & immediately stop spinning
+
+// todo: consolidate CtrlReset() and ResetMachineState()
 void ResetMachineState ()
 {
-  DiskReset();		// Set floppymotoron=0
+  DiskReset(true);
+  HD_Reset();
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
-  MemReset();
+  MemReset();	// calls CpuInitialize()
+  PravetsReset();
   DiskBoot();
   VideoResetState();
   sg_SSC.CommReset();
@@ -2005,28 +2162,34 @@ void ResetMachineState ()
   MB_Reset();
   SpkrReset();
   sg_Mouse.Reset();
-  g_ActiveCPU = CPU_6502;
+  SetActiveCpu( GetMainCpu() );
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
 #endif
 
   SoundCore_SetFade(FADE_NONE);
+  LogFileTimeUntilFirstKeyReadReset();
 }
 
 
 //===========================================================================
+
+// todo: consolidate CtrlReset() and ResetMachineState()
 void CtrlReset()
 {
 	// Ctrl+Reset - TODO: This is a terrible place for this code!
-	if (!IS_APPLE2)
+	if (!IS_APPLE2)			// TODO: Why not for A][ & A][+ too?
 		MemResetPaging();
 
+	PravetsReset();
 	DiskReset();
+	HD_Reset();
 	KeybReset();
-	if (!IS_APPLE2)
+	if (!IS_APPLE2)			// TODO: Why not for A][ & A][+ too?
 		VideoResetState();	// Switch Alternate char set off
 	sg_SSC.CommReset();
 	MB_Reset();
+	sg_Mouse.Reset();		// Deassert any pending IRQs - GH#514
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
 #endif
@@ -2038,14 +2201,14 @@ void CtrlReset()
 
 //===========================================================================
 
-bool GetFullScreen32Bit(void)
+int GetFullScreenOffsetX(void)
 {
-	return g_bFullScreen32Bit;
+	return g_win_fullscreen_offsetx;
 }
 
-void SetFullScreen32Bit(bool b32Bit)
+int GetFullScreenOffsetY(void)
 {
-	g_bFullScreen32Bit = b32Bit;
+	return g_win_fullscreen_offsety;
 }
 
 void SetFullScreenMode ()
@@ -2056,31 +2219,42 @@ void SetFullScreenMode ()
 
 #else // NO_DIRECT_X
 
-	g_bIsFullScreen = true;
+	MONITORINFO monitor_info;
+	FULLSCREEN_SCALE_TYPE width, height, scalex, scaley;
+	int top, left;
+
 	buttonover = -1;
-	buttonx    = FSBUTTONX;
-	buttony    = FSBUTTONY;
-	viewportx  = FSVIEWPORTX;
-	viewporty  = FSVIEWPORTY;
-	GetWindowRect(g_hFrameWindow,&framerect);
-	SetWindowLong(g_hFrameWindow,GWL_STYLE,WS_POPUP | WS_SYSMENU | WS_VISIBLE);
 
-	DDSURFACEDESC ddsd;
-	ddsd.dwSize = sizeof(ddsd);
-	ddsd.dwFlags = DDSD_CAPS;
-	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
-	if (DirectDrawCreate(NULL,&g_pDD,NULL) != DD_OK ||
-		g_pDD->SetCooperativeLevel(g_hFrameWindow,DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN) != DD_OK ||
-		g_pDD->SetDisplayMode(640,480,g_bFullScreen32Bit ? 32 : 8) != DD_OK ||
-		g_pDD->CreateSurface(&ddsd,&g_pDDPrimarySurface,NULL) != DD_OK)
-	{
-		g_pDDPrimarySurface = NULL;
-		SetNormalMode();
-		return;
-	}
+	g_main_window_saved_style = GetWindowLong(g_hFrameWindow, GWL_STYLE);
+	g_main_window_saved_exstyle = GetWindowLong(g_hFrameWindow, GWL_EXSTYLE);
+	GetWindowRect(g_hFrameWindow, &g_main_window_saved_rect);
+	SetWindowLong(g_hFrameWindow, GWL_STYLE  , g_main_window_saved_style   & ~(WS_CAPTION | WS_THICKFRAME));
+	SetWindowLong(g_hFrameWindow, GWL_EXSTYLE, g_main_window_saved_exstyle & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
+	
+	monitor_info.cbSize = sizeof(monitor_info);
+	GetMonitorInfo(MonitorFromWindow(g_hFrameWindow, MONITOR_DEFAULTTONEAREST), &monitor_info);
 
-	// TODO: DD Full-Screen Palette
-	//	if( !g_bIsFullScreen )
+	left = monitor_info.rcMonitor.left;
+	top  = monitor_info.rcMonitor.top;
+
+	width  = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.right  - monitor_info.rcMonitor.left);
+	height = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top );
+
+	scalex = width  / GetFrameBufferBorderlessWidth();
+	scaley = height / GetFrameBufferBorderlessHeight();
+
+	g_win_fullscreen_scale = (scalex <= scaley) ? scalex : scaley;
+	g_win_fullscreen_offsetx = ((int)width  - (int)(g_win_fullscreen_scale * GetFrameBufferBorderlessWidth())) / 2;
+	g_win_fullscreen_offsety = ((int)height - (int)(g_win_fullscreen_scale * GetFrameBufferBorderlessHeight())) / 2;
+	SetWindowPos(g_hFrameWindow, NULL, left, top, (int)width, (int)height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+	g_bIsFullScreen = true;
+
+	SetViewportScale(g_win_fullscreen_scale, true);
+
+	buttonx    = GetFullScreenOffsetX() + g_nViewportCX + VIEWPORTX*2;
+	buttony    = GetFullScreenOffsetY();
+	viewportx  = VIEWPORTX;		// TC-TODO: Should be zero too? (Since there's no 3D border in full-screen)
+	viewporty  = 0; // GH#464
 
 	InvalidateRect(g_hFrameWindow,NULL,1);
 
@@ -2090,39 +2264,26 @@ void SetFullScreenMode ()
 //===========================================================================
 void SetNormalMode ()
 {
-	g_bIsFullScreen = false;
+	FullScreenRevealCursor();	// Do before clearing g_bIsFullScreen flag
+
 	buttonover = -1;
 	buttonx    = BUTTONX;
 	buttony    = BUTTONY;
 	viewportx  = VIEWPORTX;
 	viewporty  = VIEWPORTY;
-	g_pDD->RestoreDisplayMode();
-	g_pDD->SetCooperativeLevel(NULL,DDSCL_NORMAL);
-	SetWindowLong(g_hFrameWindow,GWL_STYLE,
-                WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
-                WS_VISIBLE);
-	SetWindowPos(g_hFrameWindow,0,framerect.left,
-                             framerect.top,
-                             framerect.right - framerect.left,
-                             framerect.bottom - framerect.top,
-                             SWP_NOZORDER | SWP_FRAMECHANGED);
 
-	// DD Full-Screen Palette: BUGFIX: Re-attach new palette on next new surface
-	// Delete Palette
-	if (g_pDDPal)
-	{
-		g_pDDPal->Release();
-		g_pDDPal = (LPDIRECTDRAWPALETTE)0;
-	}
-
-	if (g_pDDPrimarySurface)
-	{
-		g_pDDPrimarySurface->Release();
-		g_pDDPrimarySurface = (LPDIRECTDRAWSURFACE)0;
-	}
-
-	g_pDD->Release();
-	g_pDD = (LPDIRECTDRAW)0;
+	g_win_fullscreen_offsetx = 0;
+	g_win_fullscreen_offsety = 0;
+	g_win_fullscreen_scale = 1;
+	SetWindowLong(g_hFrameWindow, GWL_STYLE, g_main_window_saved_style);
+	SetWindowLong(g_hFrameWindow, GWL_EXSTYLE, g_main_window_saved_exstyle);
+	SetWindowPos(g_hFrameWindow, NULL,
+		g_main_window_saved_rect.left,
+		g_main_window_saved_rect.top,
+		g_main_window_saved_rect.right - g_main_window_saved_rect.left,
+		g_main_window_saved_rect.bottom - g_main_window_saved_rect.top,
+		SWP_SHOWWINDOW);
+	g_bIsFullScreen = false;
 }
 
 //===========================================================================
@@ -2132,8 +2293,12 @@ void SetUsingCursor (BOOL bNewValue)
 		return;
 
 	g_bUsingCursor = bNewValue;
+
 	if (g_bUsingCursor)
 	{
+		// Set TRUE when:
+		// . Using mouse for joystick emulation
+		// . Using mousecard and mouse is restricted to window
 		SetCapture(g_hFrameWindow);
 		RECT rect =	{	viewportx+2,				// left
 						viewporty+2,				// top
@@ -2162,14 +2327,14 @@ int GetViewportScale(void)
 	return g_nViewportScale;
 }
 
-int SetViewportScale(int nNewScale)
+int SetViewportScale(int nNewScale, bool bForce /*=false*/)
 {
-	if (nNewScale > g_nMaxViewportScale)
+	if (!bForce && nNewScale > g_nMaxViewportScale)
 		nNewScale = g_nMaxViewportScale;
 
 	g_nViewportScale = nNewScale;
-	g_nViewportCX = g_nViewportScale * FRAMEBUFFER_W;
-	g_nViewportCY = g_nViewportScale * FRAMEBUFFER_H;
+	g_nViewportCX = g_nViewportScale * GetFrameBufferBorderlessWidth();
+	g_nViewportCY = g_nViewportScale * GetFrameBufferBorderlessHeight();
 
 	return nNewScale;
 }
@@ -2199,13 +2364,11 @@ static void SetupTooltipControls(void)
 static void GetWidthHeight(int& nWidth, int& nHeight)
 {
 	nWidth  = g_nViewportCX + VIEWPORTX*2
-						   + BUTTONCX
-						   + (GetSystemMetrics(SM_CXBORDER) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2
-						   + MAGICX;
+						    + BUTTONCX
+						    + (GetSystemMetrics(SM_CYFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2;
 	nHeight = g_nViewportCY + VIEWPORTY*2
-						   + (GetSystemMetrics(SM_CYBORDER) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2
-						   + GetSystemMetrics(SM_CYCAPTION)
-						   + MAGICY;
+						    + (GetSystemMetrics(SM_CYFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2	// NB. No SM_CYPADDEDBORDER
+						    + GetSystemMetrics(SM_CYCAPTION);
 }
 
 static void FrameResizeWindow(int nNewScale)
@@ -2268,8 +2431,8 @@ void FrameCreateWindow(void)
 		int nOldViewportCX = g_nViewportCX;
 		int nOldViewportCY = g_nViewportCY;
 
-		g_nViewportCX = FRAMEBUFFER_W * 2;
-		g_nViewportCY = FRAMEBUFFER_H * 2;
+		g_nViewportCX = GetFrameBufferBorderlessWidth() * 2;
+		g_nViewportCY = GetFrameBufferBorderlessHeight() * 2;
 		GetWidthHeight(nWidth, nHeight);	// Probe with 2x dimensions
 
 		g_nViewportCX = nOldViewportCX;
@@ -2329,7 +2492,7 @@ void FrameCreateWindow(void)
 	// NB. g_hFrameWindow also set by WM_CREATE - NB. CreateWindow() must synchronously send WM_CREATE
 	g_hFrameWindow = CreateWindow(
 		TEXT("APPLE2FRAME"),
-		g_pAppTitle, // SetWindowText() // WindowTitle
+		g_pAppTitle,
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 		WS_MINIMIZEBOX | WS_VISIBLE,
 		nXPos, nYPos, nWidth, nHeight,
@@ -2346,6 +2509,10 @@ void FrameCreateWindow(void)
 		g_hInstance,NULL ); 
 
 	SetupTooltipControls();
+
+	_ASSERT(g_TimerIDEvent_100msec == 0);
+	g_TimerIDEvent_100msec = SetTimer(g_hFrameWindow, IDEVENT_TIMER_100MSEC, 100, NULL);
+	LogFileOutput("FrameCreateWindow: SetTimer(), id=0x%08X\n", g_TimerIDEvent_100msec);
 }
 
 //===========================================================================
@@ -2358,40 +2525,12 @@ HDC FrameGetDC () {
 }
 
 //===========================================================================
-HDC FrameGetVideoDC (LPBYTE *pAddr_, LONG *pPitch_)
-{
-	// ASSERT( pAddr_ );
-	// ASSERT( pPitch_ );
-	if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
-	{
-		RECT rect = {	FSVIEWPORTX,
-						FSVIEWPORTY,
-						FSVIEWPORTX+g_nViewportCX,
-						FSVIEWPORTY+g_nViewportCY};
-		DDSURFACEDESC surfacedesc;
-		surfacedesc.dwSize = sizeof(surfacedesc);
-		// TC: Use DDLOCK_WAIT - see Bug #13425
-		if (g_pDDPrimarySurface->Lock(&rect,&surfacedesc,DDLOCK_WAIT,NULL) == DDERR_SURFACELOST)
-		{
-			g_pDDPrimarySurface->Restore();
-			g_pDDPrimarySurface->Lock(&rect,&surfacedesc,DDLOCK_WAIT,NULL);
-
-			// DD Full Screen Palette
-//			if (g_pDDPal)
-//			{
-//				g_pDDPrimarySurface->SetPalette(g_pDDPal); // this sets the palette for the primary surface
-//			}
-		}
-		*pAddr_  = (LPBYTE)surfacedesc.lpSurface + (g_nViewportCY-1) * surfacedesc.lPitch;
-		*pPitch_ = -surfacedesc.lPitch;
-		return (HDC)0;
-	}
-	else
-	{
-		*pAddr_ = g_pFramebufferbits;
-		*pPitch_ = FRAMEBUFFER_W;
-		return FrameGetDC();
-	}
+void FrameReleaseDC () {
+  if (g_hFrameDC) {
+    SetViewportOrgEx(g_hFrameDC,0,0,NULL);
+    ReleaseDC(g_hFrameWindow,g_hFrameDC);
+    g_hFrameDC = (HDC)0;
+  }
 }
 
 //===========================================================================
@@ -2419,34 +2558,6 @@ void FrameRegisterClass () {
   wndclass.hIconSm       = (HICON)LoadImage(g_hInstance,TEXT("APPLEWIN_ICON"),
                                             IMAGE_ICON,16,16,LR_DEFAULTCOLOR);
   RegisterClassEx(&wndclass);
-}
-
-//===========================================================================
-void FrameReleaseDC () {
-  if (g_hFrameDC) {
-    SetViewportOrgEx(g_hFrameDC,0,0,NULL);
-    ReleaseDC(g_hFrameWindow,g_hFrameDC);
-    g_hFrameDC = (HDC)0;
-  }
-}
-
-//===========================================================================
-void FrameReleaseVideoDC ()
-{
-	if (g_bIsFullScreen && g_bAppActive && !g_bPaintingWindow)
-	{
-		// THIS IS CORRECT ACCORDING TO THE DIRECTDRAW DOCS
-		RECT rect = {
-			FSVIEWPORTX,
-			FSVIEWPORTY,
-			FSVIEWPORTX+g_nViewportCX,
-			FSVIEWPORTY+g_nViewportCY
-		};
-		g_pDDPrimarySurface->Unlock(&rect);
-
-		// BUT THIS SEEMS TO BE WORKING
-		g_pDDPrimarySurface->Unlock(NULL);
-	}
 }
 
 //===========================================================================
@@ -2480,13 +2591,13 @@ void FrameSetCursorPosByMousePos()
 
 	POINT Point = {viewportx+2, viewporty+2};	// top-left
 	ClientToScreen(g_hFrameWindow, &Point);
-	SetCursorPos(Point.x+iWindowX-MAGICX, Point.y+iWindowY-MAGICY);
+	SetCursorPos(Point.x+iWindowX-VIEWPORTX, Point.y+iWindowY-VIEWPORTY);
 
-#if defined(_DEBUG) && 0
+#if defined(_DEBUG) && 0	// OutputDebugString() when cursor position changes since last time
 	static int OldX=0, OldY=0;
 	char szDbg[200];
-	int X=Point.x+iWindowX-MAGICX;
-	int Y=Point.y+iWindowY-MAGICY;
+	int X=Point.x+iWindowX-VIEWPORTX;
+	int Y=Point.y+iWindowY-VIEWPORTY;
 	if (X != OldX || Y != OldY)
 	{
 		sprintf(szDbg, "[FrameSetCursorPosByMousePos] x,y=%d,%d (MaxX,Y=%d,%d)\n", X,Y, iMaxX,iMaxY); OutputDebugString(szDbg);
@@ -2524,14 +2635,17 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 
 		POINT Point = {viewportx+2, viewporty+2};	// top-left
 		ClientToScreen(g_hFrameWindow, &Point);
-		SetCursorPos(Point.x+iWindowX-MAGICX, Point.y+iWindowY-MAGICY);
+		SetCursorPos(Point.x+iWindowX-VIEWPORTX, Point.y+iWindowY-VIEWPORTY);
 //		sprintf(szDbg, "[MOUSE_LEAVING ] x=%d, y=%d (Scale: x,y=%f,%f; iX,iY=%d,%d)\n", iWindowX, iWindowY, fScaleX, fScaleY, iX, iY); OutputDebugString(szDbg);
 	}
 	else	// Mouse entering Apple screen area
 	{
 //		sprintf(szDbg, "[MOUSE_ENTERING] x=%d, y=%d\n", x, y); OutputDebugString(szDbg);
-		x -= (viewportx+2-MAGICX); if (x < 0) x = 0;
-		y -= (viewporty+2-MAGICY); if (y < 0) y = 0;
+		if (!g_bIsFullScreen)	// GH#464
+		{
+			x -= (viewportx+2-VIEWPORTX); if (x < 0) x = 0;
+			y -= (viewporty+2-VIEWPORTY); if (y < 0) y = 0;
+		}
 
 		_ASSERT(x <= g_nViewportCX);
 		_ASSERT(y <= g_nViewportCY);
@@ -2625,4 +2739,101 @@ void GetViewportCXCY(int& nViewportCX, int& nViewportCY)
 {
 	nViewportCX = g_nViewportCX;
 	nViewportCY = g_nViewportCY;
+}
+
+// Call all funcs with dependency on g_Apple2Type
+void FrameUpdateApple2Type(void)
+{
+	DeleteGdiObjects();
+	CreateGdiObjects();
+
+	// DRAW_TITLE : calls GetAppleWindowTitle()
+	// DRAW_LEDS  : update LEDs (eg. CapsLock varies on Apple2 type)
+	DrawStatusArea( (HDC)0, DRAW_TITLE|DRAW_LEDS );
+
+	// Draw buttons & call DrawStatusArea(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS)
+	DrawFrameWindow();
+}
+
+bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight /*= 0*/)
+{
+	typedef std::vector< std::pair<UINT,UINT> > VEC_PAIR;
+	VEC_PAIR vecDisplayResolutions;
+
+	for (UINT iModeNum = 0; ; iModeNum++)
+	{
+		DEVMODE devMode;
+		devMode.dmSize = sizeof(DEVMODE);
+		devMode.dmDriverExtra = 0;
+		BOOL bValid = EnumDisplaySettings(NULL, iModeNum, &devMode);
+		if (!bValid)
+			break;
+		if (iModeNum == 0)	// 0 is the initial "cache info about display device" operation
+			continue;
+
+		if (devMode.dmBitsPerPel != 32)
+			continue;
+
+		if (userSpecifiedHeight == 0 || userSpecifiedHeight == devMode.dmPelsHeight)
+		{
+			if (vecDisplayResolutions.size() == 0 || vecDisplayResolutions.back() != std::pair<UINT,UINT>(devMode.dmPelsWidth, devMode.dmPelsHeight)	)	// Skip duplicate resolutions
+			{
+				vecDisplayResolutions.push_back( std::pair<UINT,UINT>(devMode.dmPelsWidth, devMode.dmPelsHeight) );
+				LogFileOutput("EnumDisplaySettings(%d) - %d x %d\n", iModeNum, devMode.dmPelsWidth, devMode.dmPelsHeight);
+			}
+		}
+	}
+
+	if (userSpecifiedHeight)
+	{
+		if (vecDisplayResolutions.size() == 0)
+			return false;
+
+		// Pick least width (such that it's wide enough to scale)
+		UINT width = (UINT)-1;
+		for (VEC_PAIR::iterator it = vecDisplayResolutions.begin(); it!= vecDisplayResolutions.end(); ++it)
+		{
+			if (width > it->first)
+			{
+				UINT scaleFactor = it->second / GetFrameBufferBorderlessHeight();
+				if (it->first >= (GetFrameBufferBorderlessWidth() * scaleFactor))
+				{
+					width = it->first;
+				}
+			}
+		}
+
+		if (width == (UINT)-1)
+			return false;
+
+		bestWidth = width;
+		bestHeight = userSpecifiedHeight;
+		return true;
+	}
+
+	// Pick max height that's an exact multiple of GetFrameBufferBorderlessHeight()
+	UINT tmpBestWidth = 0;
+	UINT tmpBestHeight = 0;
+	for (VEC_PAIR::iterator it = vecDisplayResolutions.begin(); it!= vecDisplayResolutions.end(); ++it)
+	{
+		if ((it->second % GetFrameBufferBorderlessHeight()) == 0)
+		{
+			if (it->second > tmpBestHeight)
+			{
+				UINT scaleFactor = it->second / GetFrameBufferBorderlessHeight();
+				if (it->first >= (GetFrameBufferBorderlessWidth() * scaleFactor))
+				{
+					tmpBestWidth = it->first;
+					tmpBestHeight = it->second;
+				}
+			}
+		}
+	}
+
+	if (tmpBestWidth == 0)
+		return false;
+
+	bestWidth = tmpBestWidth;
+	bestHeight = tmpBestHeight;
+	return true;
 }

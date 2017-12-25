@@ -8,6 +8,7 @@ const double CLK_6502 = ((_M14 * 65.0) / 912.0); // 65 cycles per 912 14M clocks
 // See: http://www.apple2info.net/hardware/softcard/SC-SWHW_a2in.pdf
 const double CLK_Z80 = (CLK_6502 * 2);
 
+// TODO: Clean up from Common.h, Video.cpp, and NTSC.h !!!
 const UINT uCyclesPerLine			= 65;	// 25 cycles of HBL & 40 cycles of HBL'
 const UINT uVisibleLinesPerFrame	= 64*3;	// 192
 const UINT uLinesPerFrame			= 262;	// 64 in each third of the screen & 70 in VBL
@@ -19,6 +20,7 @@ const DWORD dwClksPerFrame			= uCyclesPerLine * uLinesPerFrame;	// 17030
 #define  MIN(a,b)          (((a) < (b)) ? (a) : (b))
 
 #define  RAMWORKS			// 8MB RamWorks III support
+//#define  SATURN				// SATURN 128K
 
 // Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 // Assume base freqs are 44.1KHz & 48KHz
@@ -28,9 +30,9 @@ enum AppMode_e
 {
 	MODE_LOGO = 0
 	, MODE_PAUSED
-	, MODE_RUNNING  // 6502 is running at normal speed (Debugger breakpoints may or may not be active)
+	, MODE_RUNNING  // 6502 is running at normal/full speed (Debugger breakpoints may or may not be active)
 	, MODE_DEBUG    // 6502 is paused
-	, MODE_STEPPING // 6502 is running at full speed (Debugger breakpoints always active)
+	, MODE_STEPPING // 6502 is running at normal/full speed (Debugger breakpoints always active)
 };
 
 #define  SPEED_MIN         0
@@ -62,6 +64,7 @@ enum AppMode_e
 #define	TITLE_PRAVETS_82        TEXT("Pravets 82 Emulator")
 #define	TITLE_PRAVETS_8M        TEXT("Pravets 8M Emulator")
 #define	TITLE_PRAVETS_8A        TEXT("Pravets 8A Emulator")
+#define	TITLE_TK3000_2E         TEXT("TK3000 //e Emulator")
 
 #define TITLE_PAUSED       TEXT("* PAUSED *")
 #define TITLE_STEPPING     TEXT("Stepping")
@@ -69,17 +72,21 @@ enum AppMode_e
 // Configuration
 #define REG_CONFIG						"Configuration"
 #define  REGVALUE_APPLE2_TYPE        "Apple2 Type"
+#define  REGVALUE_CPU_TYPE           "CPU Type"
 #define  REGVALUE_OLD_APPLE2_TYPE    "Computer Emulation"	// Deprecated
 #define  REGVALUE_CONFIRM_REBOOT     "Confirm Reboot" // Added at 1.24.1 PageConfig
+#define  REGVALUE_FS_SHOW_SUBUNIT_STATUS "Full-screen show subunit status"
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
 #define  REGVALUE_HDD_ENABLED        "Harddisk Enable"
-#define  REGVALUE_JOYSTICK0_EMU_TYPE	"Joystick0 Emu Type"	// Added at 1.24.0 (previously was "Joystick 0 Emulation")
-#define  REGVALUE_JOYSTICK1_EMU_TYPE	"Joystick1 Emu Type"	// Added at 1.24.0 (previously was "Joystick 1 Emulation")
-#define  REGVALUE_OLD_JOYSTICK0_EMU_TYPE	"Joystick 0 Emulation"	// Deprecated from 1.24.0
-#define  REGVALUE_OLD_JOYSTICK1_EMU_TYPE	"Joystick 1 Emulation"	// Deprecated from 1.24.0
+#define  REGVALUE_JOYSTICK0_EMU_TYPE		"Joystick0 Emu Type v3"	// GH#434: Added at 1.26.3.0 (previously was "Joystick0 Emu Type")
+#define  REGVALUE_JOYSTICK1_EMU_TYPE		"Joystick1 Emu Type v3"	// GH#434: Added at 1.26.3.0 (previously was "Joystick1 Emu Type")
+#define  REGVALUE_OLD_JOYSTICK0_EMU_TYPE2	"Joystick0 Emu Type"	// GH#434: Deprecated from 1.26.3.0 (previously was "Joystick 0 Emulation")
+#define  REGVALUE_OLD_JOYSTICK1_EMU_TYPE2	"Joystick1 Emu Type"	// GH#434: Deprecated from 1.26.3.0 (previously was "Joystick 1 Emulation")
+#define  REGVALUE_OLD_JOYSTICK0_EMU_TYPE1	"Joystick 0 Emulation"	// Deprecated from 1.24.0
+#define  REGVALUE_OLD_JOYSTICK1_EMU_TYPE1	"Joystick 1 Emulation"	// Deprecated from 1.24.0
 #define  REGVALUE_PDL_XTRIM          "PDL X-Trim"
 #define  REGVALUE_PDL_YTRIM          "PDL Y-Trim"
 #define  REGVALUE_SCROLLLOCK_TOGGLE  "ScrollLock Toggle"
@@ -137,11 +144,6 @@ enum AppMode_e
 #define WM_USER_FULLSCREEN	WM_USER+9
 #define VK_SNAPSHOT_TEXT	WM_USER+10 // PrintScreen+Ctrl
 
-// TODO-TC: Refactor codebase by renaming /nCyclesLeft/ to /uExecutedCycles/
-typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
-
-typedef struct _IMAGE__ { int unused; } *HIMAGE;	// DiskImage's /ImageInfo/ is hidden behind HIMAGE
-
 enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 
 //
@@ -164,7 +166,7 @@ enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 #define IS_APPLE2C		(g_Apple2Type & APPLE2C_MASK)
 #define IS_CLONE()		(g_Apple2Type & APPLECLONE_MASK)
 
-// NB. These get persisted to the Registry, so don't change the values for these enums!
+// NB. These get persisted to the Registry & save-state file, so don't change the values for these enums!
 enum eApple2Type {
 					A2TYPE_APPLE2=0,
 					A2TYPE_APPLE2PLUS,
@@ -173,13 +175,21 @@ enum eApple2Type {
 					A2TYPE_UNDEFINED,
 					A2TYPE_APPLE2C=APPLE2C_MASK,
 					A2TYPE_APPLE2D=APPLE2D_MASK,
-					//
-					// Clones start here:
+
+					// ][ clones start here:
 					A2TYPE_CLONE=APPLECLONE_MASK,
-					A2TYPE_PRAVETS=APPLECLONE_MASK|APPLE2E_MASK,
-					A2TYPE_PRAVETS82=A2TYPE_PRAVETS,
-					A2TYPE_PRAVETS8M,
-					A2TYPE_PRAVETS8A,
+					A2TYPE_PRAVETS8M,								// Apple ][ clone
+					A2TYPE_PRAVETS82,								// Apple ][ clone
+					// (Gap for more Apple ][ clones)
+					A2TYPE_CLONE_A2_MAX,
+
+					// //e clones start here:
+					A2TYPE_CLONE_A2E=A2TYPE_CLONE|APPLE2E_MASK,
+					A2TYPE_BAD_PRAVETS82=A2TYPE_CLONE|APPLE2E_MASK,	// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
+					A2TYPE_BAD_PRAVETS8M,							// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
+					A2TYPE_PRAVETS8A,								// Apple //e clone
+					A2TYPE_TK30002E,								// Apple //e enhanced clone
+					// (Gap for more Apple //e clones)
 					A2TYPE_MAX
 				};
 
@@ -202,3 +212,5 @@ inline bool IsOriginal2E(void)
 enum eBUTTON {BUTTON0=0, BUTTON1};
 
 enum eBUTTONSTATE {BUTTON_UP=0, BUTTON_DOWN};
+
+enum {IDEVENT_TIMER_MOUSE=1, IDEVENT_TIMER_100MSEC};

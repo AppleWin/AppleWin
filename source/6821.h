@@ -32,6 +32,21 @@ typedef struct
 	mem_write_handler func;
 } STWriteHandler;
 
+struct mc6821_s {
+	/* MC6821 register.  */
+	BYTE pra;
+	BYTE ddra;
+	BYTE cra;
+	BYTE prb;
+	BYTE ddrb;
+	BYTE crb;
+
+	/* Drive structure */
+//    struct drive_s *drive;
+};
+typedef struct mc6821_s mc6821_t;
+
+
 class C6821
 {
 public:
@@ -64,6 +79,18 @@ public:
 		m_stOutB.objTo = objTo;
 		m_stOutB.func = func;
 	}
+	void Get6821(mc6821_t& r6821, BYTE& byIA, BYTE& byIB)
+	{
+		r6821 = mc6821[0];
+		byIA = m_byIA;
+		byIB = m_byIB;
+	}
+	void Set6821(const mc6821_t& r6821, const BYTE byIA, const BYTE byIB)
+	{
+		mc6821[0] = r6821;
+		m_byIA = byIA;
+		m_byIB = byIB;
+	}
 	// AppleWin:TC END
 
 private:
@@ -74,20 +101,6 @@ private:
 	#define MC6821_SIG_CB2 3
 
 	//struct drive_s;
-
-	struct mc6821_s {
-		/* MC6821 register.  */
-		BYTE pra;
-		BYTE ddra;
-		BYTE cra;
-		BYTE prb;
-		BYTE ddrb;
-		BYTE crb;
-
-		/* Drive structure */
-	//    struct drive_s *drive;
-	};
-	typedef struct mc6821_s mc6821_t;
 
 	//struct drive_context_s;
 	void mc6821_init(/*struct drive_context_s *drv*/);

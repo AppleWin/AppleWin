@@ -40,13 +40,14 @@ const bool IMAGE_DONT_CREATE = false;
 const bool IMAGE_CREATE = true;
 
 extern BOOL enhancedisk;
-const std::string& DiskGetDiskPathFilename(const int iDrive);
+const char* DiskGetDiskPathFilename(const int iDrive);
 
 void    DiskInitialize(void); // DiskIIManagerStartup()
 void    DiskDestroy(void); // no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
 
 void    DiskBoot(void);
 void    DiskEject(const int iDrive);
+void	DiskFlushCurrentTrack(const int iDrive);
 
 LPCTSTR DiskGetFullName(const int iDrive);
 LPCTSTR DiskGetFullDiskFilename(const int iDrive);
@@ -57,7 +58,7 @@ void    DiskGetLightStatus (Disk_Status_e *pDisk1Status_, Disk_Status_e *pDisk2S
 ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
 BOOL    DiskIsSpinning(void);
 void    DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const ImageError_e Error);
-void    DiskReset(void);
+void    DiskReset(const bool bIsPowerCycle=false);
 bool    DiskGetProtect(const int iDrive);
 void    DiskSetProtect(const int iDrive, const bool bWriteProtect);
 int     DiskGetCurrentDrive();
@@ -66,12 +67,15 @@ int     DiskGetTrack( int drive );
 int     DiskGetCurrentPhase();
 int     DiskGetCurrentOffset();
 char*   DiskGetCurrentState();
-void    DiskSelect(const int iDrive);
+bool    DiskSelect(const int iDrive);
 void    DiskUpdatePosition(DWORD);
 bool    DiskDriveSwap(void);
 void    DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot);
-DWORD   DiskGetSnapshot(SS_CARD_DISK2* pSS, DWORD dwSlot);
-DWORD   DiskSetSnapshot(SS_CARD_DISK2* pSS, DWORD dwSlot);
+
+int     DiskSetSnapshot_v1(const struct SS_CARD_DISK2* const pSS);
+std::string DiskGetSnapshotCardName(void);
+void    DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+bool    DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 void Disk_LoadLastDiskImage(const int iDrive);
 void Disk_SaveLastDiskImage(const int iDrive);

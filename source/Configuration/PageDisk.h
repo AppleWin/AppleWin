@@ -26,6 +26,7 @@ protected:
 private:
 	void InitOptions(HWND hWnd);
 	void EnableHDD(HWND hWnd, BOOL bEnable);
+	void EnableDisk(HWND hWnd, BOOL bEnable);
 	void HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected);
 	void HandleDiskCombo(HWND hWnd, UINT driveSelected, UINT comboSelected);
 	UINT RemovalConfirmation(UINT uCommand);

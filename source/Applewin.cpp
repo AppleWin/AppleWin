@@ -51,22 +51,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 #include "Video.h"
+#include "NTSC.h"
 
 #include "Configuration\About.h"
 #include "Configuration\PropertySheet.h"
 #include "Tfe\Tfe.h"
 
+static UINT16 g_AppleWinVersion[4] = {0};
 char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
-TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
+TCHAR *g_pAppTitle = NULL;
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
 bool      g_bFullSpeed      = false;
 
-//Pravets 8A/C variables
-bool P8CAPS_ON = false;
-bool P8Shift = false;
 //=================================================
 
 // Win32
@@ -78,8 +77,10 @@ static bool g_bLoadedSaveState = false;
 TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin executable resides
 TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
+bool      g_bCapturePrintScreenKey = true;
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
-BOOL      restart           = 0;
+bool      g_bRestart = false;
+bool      g_bRestartFullScreen = false;
 
 DWORD		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar
 double		g_fCurrentCLK6502 = CLK_6502;	// Affected by Config dialog's speed slider bar
@@ -101,8 +102,6 @@ CMouseInterface		sg_Mouse;
 SS_CARDTYPE	g_Slot4 = CT_Empty;
 SS_CARDTYPE	g_Slot5 = CT_Empty;
 
-eCPU		g_ActiveCPU = CPU_6502;
-
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
 
@@ -112,6 +111,54 @@ CSpeech		g_Speech;
 #endif
 
 //===========================================================================
+
+static DWORD dwLogKeyReadTickStart;
+static bool bLogKeyReadDone = false;
+
+void LogFileTimeUntilFirstKeyReadReset(void)
+{
+	if (!g_fh)
+		return;
+
+	dwLogKeyReadTickStart = GetTickCount();
+
+	bLogKeyReadDone = false;
+}
+
+// Log the time from emulation restart/reboot until the first key read: BIT $C000
+// . NB. AZTEC.DSK does prior LDY $C000 reads, but the BIT $C000 is at the "Press any key" message
+void LogFileTimeUntilFirstKeyRead(void)
+{
+	if (!g_fh || bLogKeyReadDone)
+		return;
+
+	if (mem[regs.pc-3] != 0x2C)	// bit $c000
+		return;
+
+	DWORD dwTime = GetTickCount() - dwLogKeyReadTickStart;
+
+	LogFileOutput("Time from emulation reboot until first $C000 access: %d msec\n", dwTime);
+
+	bLogKeyReadDone = true;
+}
+
+//---------------------------------------------------------------------------
+
+eApple2Type GetApple2Type(void)
+{
+	return g_Apple2Type;
+}
+
+void SetApple2Type(eApple2Type type)
+{
+	g_Apple2Type = type;
+	SetMainCpuDefault(type);
+}
+
+const UINT16* GetAppleWinVersion(void)
+{
+	return &g_AppleWinVersion[0];
+}
 
 bool GetLoadedSaveStateFlag(void)
 {
@@ -161,8 +208,13 @@ void SetPriorityNormal(void)
 
 //---------------------------------------------------------------------------
 
-void ContinueExecution(void)
+static UINT g_uModeStepping_Cycles = 0;
+static bool g_uModeStepping_LastGetKey_ScrollLock = false;
+
+static void ContinueExecution(void)
 {
+	_ASSERT(g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING);
+
 	const double fUsecPerSec        = 1.e6;
 #if 1
 	const UINT nExecutionPeriodUsec = 1000;		// 1.0ms
@@ -175,16 +227,39 @@ void ContinueExecution(void)
 
 	//
 
-	bool bScrollLock_FullSpeed = sg_PropertySheet.GetScrollLockToggle()
-									? g_bScrollLock_FullSpeed
-									: (GetKeyState(VK_SCROLL) < 0);
+	bool bScrollLock_FullSpeed = false;
+	if (sg_PropertySheet.GetScrollLockToggle())
+	{
+		bScrollLock_FullSpeed = g_bScrollLock_FullSpeed;
+	}
+	else
+	{
+		if (g_nAppMode == MODE_RUNNING)
+		{
+			bScrollLock_FullSpeed = GetKeyState(VK_SCROLL) < 0;
+		}
+		else if (!IsDebugSteppingAtFullSpeed()) // Implicitly: MODE_STEPPING
+		{
+			// NB. For MODE_STEPPING: GetKeyState() is slow, so only call periodically
+			// . 0x3FFF is roughly the number of cycles in a video frame, which seems a reasonable rate to call GetKeyState()
+			if ((g_uModeStepping_Cycles & 0x3FFF) == 0)
+				g_uModeStepping_LastGetKey_ScrollLock = GetKeyState(VK_SCROLL) < 0;
 
-	g_bFullSpeed = ( (g_dwSpeed == SPEED_MAX) || 
+			bScrollLock_FullSpeed = g_uModeStepping_LastGetKey_ScrollLock;
+		}
+	}
+
+	const bool bWasFullSpeed = g_bFullSpeed;
+	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (DiskIsSpinning() && enhancedisk && !Spkr_IsActive() && !MB_IsActive()) );
+					 (DiskIsSpinning() && enhancedisk && !Spkr_IsActive() && !MB_IsActive()) ||
+					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
 	{
+		if (!bWasFullSpeed)
+			VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
+
 		// Don't call Spkr_Mute() - will get speaker clicks
 		MB_Mute();
 		SysClk_StopTimer();
@@ -200,6 +275,9 @@ void ContinueExecution(void)
 	}
 	else
 	{
+		if (bWasFullSpeed)
+			VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
+
 		// Don't call Spkr_Demute()
 		MB_Demute();
 		SysClk_StartTimerUsec(nExecutionPeriodUsec);
@@ -210,33 +288,74 @@ void ContinueExecution(void)
 
 	//
 
-	int nCyclesToExecute = (int) fExecutionPeriodClks + g_nCpuCyclesFeedback;
-	if (nCyclesToExecute < 0)
-		nCyclesToExecute = 0;
+	int nCyclesWithFeedback = (int) fExecutionPeriodClks + g_nCpuCyclesFeedback;
+	const UINT uCyclesToExecuteWithFeedback = (nCyclesWithFeedback >= 0) ? nCyclesWithFeedback
+																		 : 0;
 
-	const DWORD uActualCyclesExecuted = CpuExecute(nCyclesToExecute);
+	const DWORD uCyclesToExecute = (g_nAppMode == MODE_RUNNING)		? uCyclesToExecuteWithFeedback
+												/* MODE_STEPPING */ : 0;
+
+	const bool bVideoUpdate = !g_bFullSpeed;
+	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
 	DiskUpdatePosition(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 
-	SpkrUpdate(uActualCyclesExecuted);
 	sg_SSC.CommUpdate(uActualCyclesExecuted);
 	PrintUpdate(uActualCyclesExecuted);
+
+	//
+
+	DWORD uSpkrActualCyclesExecuted = uActualCyclesExecuted;
+
+	bool bModeStepping_WaitTimer = false;
+	if (g_nAppMode == MODE_STEPPING && !IsDebugSteppingAtFullSpeed())
+	{
+		g_uModeStepping_Cycles += uActualCyclesExecuted;
+		if (g_uModeStepping_Cycles >= uCyclesToExecuteWithFeedback)
+		{
+			uSpkrActualCyclesExecuted = g_uModeStepping_Cycles;
+
+			g_uModeStepping_Cycles -= uCyclesToExecuteWithFeedback;
+			bModeStepping_WaitTimer = true;
+		}
+	}
+
+	// For MODE_STEPPING: do this speaker update periodically
+	// - Otherwise kills performance due to sound-buffer lock/unlock for every 6502 opcode!
+	if (g_nAppMode == MODE_RUNNING || bModeStepping_WaitTimer)
+		SpkrUpdate(uSpkrActualCyclesExecuted);
 
 	//
 
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
-		VideoEndOfVideoFrame();
+
+		if (g_bFullSpeed)
+			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
+		else
+			VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
+
 		MB_EndOfVideoFrame();
 	}
 
-	if (!g_bFullSpeed)
+	if ((g_nAppMode == MODE_RUNNING && !g_bFullSpeed) || bModeStepping_WaitTimer)
 	{
 		SysClk_WaitTimer();
 	}
+}
+
+void SingleStep(bool bReinit)
+{
+	if (bReinit)
+	{
+		g_uModeStepping_Cycles = 0;
+		g_uModeStepping_LastGetKey_ScrollLock = false;
+	}
+
+	ContinueExecution();
 }
 
 //===========================================================================
@@ -314,7 +433,9 @@ void EnterMessageLoop(void)
 		{
 			if (g_nAppMode == MODE_DEBUG)
 				DebuggerUpdate();
-			else if ((g_nAppMode == MODE_LOGO) || (g_nAppMode == MODE_PAUSED))
+			else if (g_nAppMode == MODE_PAUSED)
+				Sleep(1);		// Stop process hogging CPU - 1ms, as need to fade-out speaker sound buffer
+			else if (g_nAppMode == MODE_LOGO)
 				Sleep(100);		// Stop process hogging CPU
 		}
 	}
@@ -340,10 +461,10 @@ void GetProgramDirectory(void)
 //===========================================================================
 
 // Backwards compatibility with AppleWin <1.24.0
-static void LoadConfigOldJoystick(const UINT uJoyNum)
+static void LoadConfigOldJoystick_v1(const UINT uJoyNum)
 {
 	DWORD dwOldJoyType;
-	if (!REGLOAD(TEXT(uJoyNum==0 ? REGVALUE_OLD_JOYSTICK0_EMU_TYPE : REGVALUE_OLD_JOYSTICK1_EMU_TYPE), &dwOldJoyType))
+	if (!REGLOAD(TEXT(uJoyNum==0 ? REGVALUE_OLD_JOYSTICK0_EMU_TYPE1 : REGVALUE_OLD_JOYSTICK1_EMU_TYPE1), &dwOldJoyType))
 		return;	// EG. Old AppleWin never installed
 
 	UINT uNewJoyType;
@@ -369,20 +490,48 @@ static void LoadConfigOldJoystick(const UINT uJoyNum)
 		break;
 	}
 
-	joytype[uJoyNum] = uNewJoyType;
+	JoySetJoyType(uJoyNum, uNewJoyType);
 }
 
 //Reads configuration from the registry entries
 void LoadConfiguration(void)
 {
 	DWORD dwComputerType;
+	eApple2Type apple2Type = A2TYPE_APPLE2EENHANCED;
 
 	if (REGLOAD(TEXT(REGVALUE_APPLE2_TYPE), &dwComputerType))
 	{
-		if ((dwComputerType >= A2TYPE_MAX) || (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE))
+		const DWORD dwLoadedComputerType = dwComputerType;
+
+		if ( (dwComputerType >= A2TYPE_MAX) ||
+			 (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE) ||
+			 (dwComputerType >= A2TYPE_CLONE_A2_MAX && dwComputerType < A2TYPE_CLONE_A2E) )
 			dwComputerType = A2TYPE_APPLE2EENHANCED;
 
-		g_Apple2Type = (eApple2Type) dwComputerType;
+		// Remap the bad Pravets models (before AppleWin v1.26)
+		if (dwComputerType == A2TYPE_BAD_PRAVETS82) dwComputerType = A2TYPE_PRAVETS82;
+		if (dwComputerType == A2TYPE_BAD_PRAVETS8M) dwComputerType = A2TYPE_PRAVETS8M;
+
+		// Remap the bad Pravets models (at AppleWin v1.26) - GH#415
+		if (dwComputerType == A2TYPE_CLONE) dwComputerType = A2TYPE_PRAVETS82;
+
+		if (dwLoadedComputerType != dwComputerType)
+		{
+			char sText[ 100 ];
+			_snprintf( sText, sizeof(sText)-1, "Unsupported Apple2Type(%d). Changing to %d", dwLoadedComputerType, dwComputerType);
+
+			MessageBox(
+				GetDesktopWindow(),		// NB. g_hFrameWindow is not yet valid
+				sText,
+				"Load Configuration",
+				MB_ICONSTOP | MB_SETFOREGROUND);
+
+			LogFileOutput("%s\n", sText);
+
+			REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), dwComputerType);
+		}
+
+		apple2Type = (eApple2Type) dwComputerType;
 	}
 	else	// Support older AppleWin registry entries
 	{
@@ -390,35 +539,64 @@ void LoadConfiguration(void)
 		switch (dwComputerType)
 		{
 			// NB. No A2TYPE_APPLE2E (this is correct)
-		case 0:	g_Apple2Type = A2TYPE_APPLE2;
-		case 1:	g_Apple2Type = A2TYPE_APPLE2PLUS;
-		case 2:	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
-		default:	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
+		case 0:		apple2Type = A2TYPE_APPLE2; break;
+		case 1:		apple2Type = A2TYPE_APPLE2PLUS; break;
+		case 2:		apple2Type = A2TYPE_APPLE2EENHANCED; break;
+		default:	apple2Type = A2TYPE_APPLE2EENHANCED;
 		}
 	}
 
-	switch (g_Apple2Type) //Sets the character set for the Apple model/clone
-	{
-	case A2TYPE_APPLE2:			g_nCharsetType  = 0; break; 
-	case A2TYPE_APPLE2PLUS:		g_nCharsetType  = 0; break; 
-	case A2TYPE_APPLE2E:		g_nCharsetType  = 0; break; 
-	case A2TYPE_APPLE2EENHANCED:g_nCharsetType  = 0; break; 
-	case A2TYPE_PRAVETS82:	    g_nCharsetType  = 1; break; 
-	case A2TYPE_PRAVETS8A:	    g_nCharsetType  = 2; break; 
-	case A2TYPE_PRAVETS8M:	    g_nCharsetType  = 3; break; //This charset has a very small difference with the PRAVETS82 one an probably has some misplaced characters. Still the Pravets82 charset is used, because setting charset to 3 results in some problems.
-	}
+	SetApple2Type(apple2Type);
 
 	//
 
-	if (!REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &joytype[JN_JOYSTICK0]))
-		LoadConfigOldJoystick(JN_JOYSTICK0);
-	if (!REGLOAD(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), &joytype[JN_JOYSTICK1]))
-		LoadConfigOldJoystick(JN_JOYSTICK1);
+	DWORD dwCpuType;
+	eCpuType cpu = CPU_65C02;
 
-	REGLOAD(TEXT("Sound Emulation")     ,&soundtype);
+	if (REGLOAD(TEXT(REGVALUE_CPU_TYPE), &dwCpuType))
+	{
+		if (dwCpuType != CPU_6502 && dwCpuType != CPU_65C02)
+			dwCpuType = CPU_65C02;
+
+		cpu = (eCpuType) dwCpuType;
+	}
+
+	SetMainCpu(cpu);
+
+	//
+
+	DWORD dwJoyType;
+	if (REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &dwJoyType))
+		JoySetJoyType(JN_JOYSTICK0, dwJoyType);
+	else if (REGLOAD(TEXT(REGVALUE_OLD_JOYSTICK0_EMU_TYPE2), &dwJoyType))	// GH#434
+		JoySetJoyType(JN_JOYSTICK0, dwJoyType);
+	else
+		LoadConfigOldJoystick_v1(JN_JOYSTICK0);
+
+	if (REGLOAD(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), &dwJoyType))
+		JoySetJoyType(JN_JOYSTICK1, dwJoyType);
+	else if (REGLOAD(TEXT(REGVALUE_OLD_JOYSTICK1_EMU_TYPE2), &dwJoyType))	// GH#434
+		JoySetJoyType(JN_JOYSTICK1, dwJoyType);
+	else
+		LoadConfigOldJoystick_v1(JN_JOYSTICK1);
+
+	DWORD dwSoundType;
+	REGLOAD(TEXT("Sound Emulation"), &dwSoundType);
+	switch (dwSoundType)
+	{
+	case REG_SOUNDTYPE_NONE:
+	case REG_SOUNDTYPE_DIRECT:	// Not supported from 1.26
+	case REG_SOUNDTYPE_SMART:	// Not supported from 1.26
+	default:
+		soundtype = SOUND_NONE;
+		break;
+	case REG_SOUNDTYPE_WAVE:
+		soundtype = SOUND_WAVE;
+		break;
+	}
 
 	char aySerialPortName[ CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM ];
-	if (RegLoadString(	TEXT("Configuration"),
+	if (RegLoadString(	TEXT(REG_CONFIG),
 		TEXT(REGVALUE_SERIAL_PORT_NAME),
 		TRUE,
 		aySerialPortName,
@@ -439,6 +617,9 @@ void LoadConfiguration(void)
 	//
 
 	DWORD dwTmp;
+
+	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
+		SetFullScreenShowSubunitStatus(dwTmp ? true : false);
 
 	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
 		sg_PropertySheet.SetTheFreezesF8Rom(dwTmp);
@@ -469,12 +650,6 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
 		HD_SetEnabled(dwTmp ? true : false);
 
-	char szHDVPathname[MAX_PATH] = {0};
-	if(RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_1), 1, szHDVPathname, sizeof(szHDVPathname)))
-		HD_InsertDisk(HARDDISK_1, szHDVPathname);
-	if(RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_2), 1, szHDVPathname, sizeof(szHDVPathname)))
-		HD_InsertDisk(HARDDISK_2, szHDVPathname);
-
 	if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
 		JoySetTrim((short)dwTmp, true);
 	if(REGLOAD(TEXT(REGVALUE_PDL_YTRIM), &dwTmp))
@@ -500,14 +675,19 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
 		g_Slot5 = (SS_CARDTYPE) dwTmp;
 
-	if (g_Slot4 == CT_MockingboardC || g_Slot4 == CT_Phasor)
-		MB_SetSoundcardType(g_Slot4);
-	else
-		MB_SetSoundcardType(CT_Empty);
-
 	//
 
 	char szFilename[MAX_PATH] = {0};
+
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH);
+	if (szFilename[0] == 0)
+		GetCurrentDirectory(sizeof(szFilename), szFilename);
+	SetCurrentImageDir(szFilename);
+
+	HD_LoadLastDiskImage(HARDDISK_1);
+	HD_LoadLastDiskImage(HARDDISK_2);
+
+	//
 
 	// Current/Starting Dir is the "root" of where the user keeps his disk images
 	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH);
@@ -545,18 +725,21 @@ void LoadConfiguration(void)
 
 //===========================================================================
 
-void SetCurrentImageDir(const char* pszImageDir)
+bool SetCurrentImageDir(const char* pszImageDir)
 {
 	strcpy(g_sCurrentDir, pszImageDir);
 
 	int nLen = strlen( g_sCurrentDir );
-	if( g_sCurrentDir[ nLen - 1 ] != '\\' )
+	if ((nLen > 0) && (g_sCurrentDir[ nLen - 1 ] != '\\'))
 	{
 		g_sCurrentDir[ nLen + 0 ] = '\\';
 		g_sCurrentDir[ nLen + 1 ] = 0;
 	}
 
-	SetCurrentDirectory(g_sCurrentDir);
+	if( SetCurrentDirectory(g_sCurrentDir) )
+		return true;
+
+	return false;
 }
 
 //===========================================================================
@@ -739,8 +922,11 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bShutdown = false;
 	bool bSetFullScreen = false;
 	bool bBoot = false;
+	bool bChangedDisplayResolution = false;
+	UINT bestWidth = 0, bestHeight = 0;
 	LPSTR szImageName_drive1 = NULL;
 	LPSTR szImageName_drive2 = NULL;
+	LPSTR szSnapshotName = NULL;
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
 
 	while (*lpCmdLine)
@@ -772,13 +958,39 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpNextArg = GetNextArg(lpNextArg);
 			szImageName_drive2 = lpCmdLine;
 		}
+		else if (strcmp(lpCmdLine, "-load-state") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			szSnapshotName = lpCmdLine;
+		}
 		else if (strcmp(lpCmdLine, "-f") == 0)
 		{
 			bSetFullScreen = true;
 		}
-		else if (strcmp(lpCmdLine, "-fs8bit") == 0)
+#define CMD_FS_HEIGHT "-fs-height="
+		else if (strncmp(lpCmdLine, CMD_FS_HEIGHT, sizeof(CMD_FS_HEIGHT)-1) == 0)
 		{
-			SetFullScreen32Bit(false);				// Support old v1.24 fullscreen 8-bit palette mode
+			bSetFullScreen = true;	// Implied
+
+			LPSTR lpTmp = lpCmdLine + sizeof(CMD_FS_HEIGHT)-1;
+			bool bRes = false;
+			if (strcmp(lpTmp, "best") == 0)
+			{
+				bRes = GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight);
+			}
+			else
+			{
+				UINT userSpecifiedHeight = atoi(lpTmp);
+				if (userSpecifiedHeight)
+					bRes = GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight, userSpecifiedHeight);
+				else
+					LogFileOutput("Invalid cmd-line parameter for -fs-height=x switch\n");
+			}
+			if (bRes)
+				LogFileOutput("Best resolution for -fs-height=x switch: Width=%d, Height=%d\n", bestWidth, bestHeight);
+			else
+				LogFileOutput("Failed to set parameter for -fs-height=x switch\n");
 		}
 		else if (strcmp(lpCmdLine, "-no-di") == 0)
 		{
@@ -806,13 +1018,35 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 #ifdef RAMWORKS
 		else if (strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..127]
 		{
+			g_eMemType = MEM_TYPE_RAMWORKS;
+
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
-			g_uMaxExPages = atoi(lpCmdLine);
-			if (g_uMaxExPages > 127)
-				g_uMaxExPages = 128;
-			else if (g_uMaxExPages < 1)
+			    g_uMaxExPages = atoi(lpCmdLine);
+			if (g_uMaxExPages > kMaxExMemoryBanks)
+				g_uMaxExPages = kMaxExMemoryBanks;
+			else
+			if (g_uMaxExPages < 1)
 				g_uMaxExPages = 1;
+		}
+#endif
+#ifdef SATURN
+		else if (strcmp(lpCmdLine, "-saturn") == 0)		// 64 = Saturn 64K (4 banks), 128 = Saturn 128K (8 banks)
+		{
+			g_eMemType = MEM_TYPE_SATURN;
+
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			// " The  boards  consist  of 16K  banks  of  memory
+			//  (4  banks  for  the  64K  board,
+			//  8  banks  for  the  128K),  accessed  one  at  a  time"
+			    g_uSaturnTotalBanks = atoi(lpCmdLine) / 16; // number of 16K Banks [1..8]
+			if (g_uSaturnTotalBanks > 8)
+				g_uSaturnTotalBanks = 8;
+			else
+			if (g_uSaturnTotalBanks < 1)
+				g_uSaturnTotalBanks = 1;
 		}
 #endif
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
@@ -826,6 +1060,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if (strcmp(lpCmdLine, "-printscreen") == 0)		// Turn on display of the last filename print screen was saved to
 		{
 			g_bDisplayPrintScreenFileName = true;
+		}
+		else if (strcmp(lpCmdLine, "-no-printscreen-key") == 0)		// Don't try to capture PrintScreen key GH#469
+		{
+			g_bCapturePrintScreenKey = false;
 		}
 		else if (strcmp(lpCmdLine, "-no-printscreen-dlg") == 0)		// Turn off the PrintScreen warning message dialog (if PrintScreen key can't be grabbed)
 		{
@@ -856,6 +1094,24 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if (strcmp(lpCmdLine, "-multimon") == 0)
 		{
 			g_bMultiMon = true;
+		}
+		else if (strcmp(lpCmdLine, "-dcd") == 0)	// GH#386
+		{
+			sg_SSC.SupportDCD(true);
+		}
+		else if (strcmp(lpCmdLine, "-dsr") == 0)	// GH#386
+		{
+			sg_SSC.SupportDSR(true);
+		}
+		else if (strcmp(lpCmdLine, "-dtr") == 0)	// GH#386
+		{
+			sg_SSC.SupportDTR(true);
+		}
+		else if (strcmp(lpCmdLine, "-modem") == 0)	// GH#386
+		{
+			sg_SSC.SupportDCD(true);
+			sg_SSC.SupportDSR(true);
+			sg_SSC.SupportDTR(true);
 		}
 		else	// unsupported
 		{
@@ -903,11 +1159,11 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
             // Construct version string from fixed file info block
 
-            unsigned long major     = pFixedFileInfo->dwFileVersionMS >> 16;
-            unsigned long minor     = pFixedFileInfo->dwFileVersionMS & 0xffff;
-            unsigned long fix       = pFixedFileInfo->dwFileVersionLS >> 16;
-			unsigned long fix_minor = pFixedFileInfo->dwFileVersionLS & 0xffff;
-            sprintf(VERSIONSTRING, "%d.%d.%d.%d", major, minor, fix, fix_minor); // potential buffer overflow
+            unsigned long major     = g_AppleWinVersion[0] = pFixedFileInfo->dwFileVersionMS >> 16;
+            unsigned long minor     = g_AppleWinVersion[1] = pFixedFileInfo->dwFileVersionMS & 0xffff;
+            unsigned long fix       = g_AppleWinVersion[2] = pFixedFileInfo->dwFileVersionLS >> 16;
+			unsigned long fix_minor = g_AppleWinVersion[3] = pFixedFileInfo->dwFileVersionLS & 0xffff;
+			sprintf(VERSIONSTRING, "%d.%d.%d.%d", major, minor, fix, fix_minor); // potential buffer overflow
 		}
     }
 
@@ -953,9 +1209,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	DiskInitialize();
 	LogFileOutput("Init: DiskInitialize()\n");
 
-	CreateColorMixMap();	// For tv emulation mode
-	LogFileOutput("Init: CreateColorMixMap()\n");
-
 	int nError = 0;	// TODO: Show error MsgBox if we get a DiskInsert error
 	if (szImageName_drive1)
 	{
@@ -975,7 +1228,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	do
 	{
 		// DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
-		restart = 0;
+		g_bRestart = false;
 		ResetToLogoMode();
 
 		LoadConfiguration();
@@ -1010,12 +1263,15 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 
 		// PrintScrn support
-		AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
+		if (g_bCapturePrintScreenKey)
+			AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
 		LogFileOutput("Main: AppleWin_RegisterHotKeys()\n");
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
 		DiskReset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
+		HD_Reset();		// GH#515
+		LogFileOutput("Main: HDDReset()\n");
 
 		if (!bSysClkOK)
 		{
@@ -1032,8 +1288,34 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		tfe_init();
 		LogFileOutput("Main: tfe_init()\n");
 
-		Snapshot_Startup();		// Do this after everything has been init'ed
-		LogFileOutput("Main: Snapshot_Startup()\n");
+		if (szSnapshotName)
+		{
+			std::string strPathname(szSnapshotName);
+			int nIdx = strPathname.find_last_of('\\');
+			if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())
+			{
+				std::string strPath = strPathname.substr(0, nIdx+1);
+				SetCurrentImageDir(strPath.c_str());
+			}
+
+			// Override value just loaded from Registry by LoadConfiguration()
+			// . NB. Registry value is not updated with this cmd-line value
+			Snapshot_SetFilename(szSnapshotName);
+			Snapshot_LoadState();
+			bBoot = true;
+#if _DEBUG && 0	// Debug/test: Save a duplicate of the save-state file in tmp folder
+			std::string saveName = std::string("tmp\\") + std::string(szSnapshotName); 
+			Snapshot_SetFilename(saveName);
+			g_bSaveStateOnExit = true;
+			bShutdown = true;
+#endif
+			szSnapshotName = NULL;
+		}
+		else
+		{
+			Snapshot_Startup();		// Do this after everything has been init'ed
+			LogFileOutput("Main: Snapshot_Startup()\n");
+		}
 
 		if (bShutdown)
 		{
@@ -1044,6 +1326,21 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			if (bSetFullScreen)
 			{
+				if (bestWidth && bestHeight)
+				{
+					DEVMODE devMode;
+					memset(&devMode, 0, sizeof(devMode));
+					devMode.dmSize = sizeof(devMode);
+					devMode.dmPelsWidth = bestWidth;
+					devMode.dmPelsHeight = bestHeight;
+					devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
+
+					DWORD dwFlags = 0;
+					LONG res = ChangeDisplaySettings(&devMode, dwFlags);
+					if (res == 0)
+						bChangedDisplayResolution = true;
+				}
+
 				PostMessage(g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
 				bSetFullScreen = false;
 			}
@@ -1060,18 +1357,28 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		EnterMessageLoop();
 		LogFileOutput("Main: LeaveMessageLoop()\n");
 
+		if (g_bRestart)
+		{
+			bSetFullScreen = g_bRestartFullScreen;
+			g_bRestartFullScreen = false;
+		}
+
 		MB_Reset();
 		LogFileOutput("Main: MB_Reset()\n");
 
 		sg_Mouse.Uninitialize();	// Maybe restarting due to switching slot-4 card from MouseCard to Mockingboard
+		sg_Mouse.Reset();			// Deassert any pending IRQs - GH#514
 		LogFileOutput("Main: sg_Mouse.Uninitialize()\n");
+
+		DSUninit();
+		LogFileOutput("Main: DSUninit()\n");
 	}
-	while (restart);
+	while (g_bRestart);
+
+	if (bChangedDisplayResolution)
+		ChangeDisplaySettings(NULL, 0);	// restore default
 
 	// Release COM
-	DSUninit();
-	LogFileOutput("Exit: DSUninit()\n");
-
 	SysClk_UninitTimer();
 	LogFileOutput("Exit: SysClk_UninitTimer()\n");
 

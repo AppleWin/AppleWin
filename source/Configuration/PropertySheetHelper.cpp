@@ -91,7 +91,12 @@ void CPropertySheetHelper::FillComboBox(HWND window, int controlid, LPCTSTR choi
 		SendMessage(combowindow, CB_ADDSTRING, 0, (LPARAM)(LPCTSTR)choices);
 		choices += _tcslen(choices)+1;
 	}
-	SendMessage(combowindow, CB_SETCURSEL, currentchoice, 0);
+
+	if (SendMessage(combowindow, CB_SETCURSEL, currentchoice, 0) == CB_ERR && currentchoice != -1)
+	{
+		_ASSERT(0);
+		SendMessage(combowindow, CB_SETCURSEL, 0, 0);	// GH#434: Failed to set currentchoice, so select item-0
+	}
 }
 
 void CPropertySheetHelper::SaveComputerType(eApple2Type NewApple2Type)
@@ -100,6 +105,11 @@ void CPropertySheetHelper::SaveComputerType(eApple2Type NewApple2Type)
 		NewApple2Type = A2TYPE_PRAVETS82;
 
 	REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), NewApple2Type);
+}
+
+void CPropertySheetHelper::SaveCpuType(eCpuType NewCpuType)
+{
+	REGSAVE(TEXT(REGVALUE_CPU_TYPE), NewCpuType);
 }
 
 void CPropertySheetHelper::SetSlot4(SS_CARDTYPE NewCardType)
@@ -186,7 +196,7 @@ void CPropertySheetHelper::GetDiskBaseNameWithAWS(TCHAR* pszFilename)
 	if (pDiskName && pDiskName[0])
 	{
 		strcpy(pszFilename, pDiskName);
-		strcpy(&pszFilename[strlen(pDiskName)], ".aws");
+		strcpy(&pszFilename[strlen(pDiskName)], ".aws.yaml");
 	}
 }
 
@@ -230,9 +240,17 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
 	ofn.hInstance       = g_hInstance;
-	ofn.lpstrFilter     =	TEXT("Save State files (*.aws)\0*.aws\0")
-							TEXT("All Files\0*.*\0");
-	ofn.lpstrFile       = szFilename;
+	if (bSave)
+	{
+		ofn.lpstrFilter = TEXT("Save State files (*.aws.yaml)\0*.aws.yaml\0");
+						  TEXT("All Files\0*.*\0");
+	}
+	else
+	{
+		ofn.lpstrFilter = TEXT("Save State files (*.aws,*.aws.yaml)\0*.aws;*.aws.yaml\0");
+						  TEXT("All Files\0*.*\0");
+	}
+	ofn.lpstrFile       = szFilename;	// Dialog strips the last .EXT from this string (eg. file.aws.yaml is displayed as: file.aws
 	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrInitialDir = szDirectory;
 	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
@@ -242,18 +260,39 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 
 	if(nRes)
 	{
-		strcpy(m_szSSNewFilename, &szFilename[ofn.nFileOffset]);
-
 		if (bSave)	// Only for saving (allow loading of any file for backwards compatibility)
 		{
-			// Append .aws if it's not there
-			const char szAWS_EXT[] = ".aws";
-			const UINT uStrLenFile = strlen(m_szSSNewFilename);
-			const UINT uStrLenExt  = strlen(szAWS_EXT);
-			if ((uStrLenFile <= uStrLenExt) || (strcmp(&m_szSSNewFilename[uStrLenFile-uStrLenExt], szAWS_EXT) != 0))
-				strcpy(&m_szSSNewFilename[uStrLenFile], szAWS_EXT);
+			// Append .aws.yaml if it's not there
+			const char szAWS_EXT1[] = ".aws";
+			const char szAWS_EXT2[] = ".yaml";
+			const char szAWS_EXT3[] = ".aws.yaml";
+			const UINT uStrLenFile  = strlen(&szFilename[ofn.nFileOffset]);
+			const UINT uStrLenExt1  = strlen(szAWS_EXT1);
+			const UINT uStrLenExt2  = strlen(szAWS_EXT2);
+			const UINT uStrLenExt3  = strlen(szAWS_EXT3);
+			if (uStrLenFile <= uStrLenExt1)
+			{
+				strcpy(&szFilename[ofn.nFileOffset+uStrLenFile], szAWS_EXT3);					// "file" += ".aws.yaml"
+			}
+			else if (uStrLenFile <= uStrLenExt2)
+			{
+				if (strcmp(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt1], szAWS_EXT1) == 0)
+					strcpy(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt1], szAWS_EXT3);	// "file.aws" -> "file" + ".aws.yaml"
+				else
+					strcpy(&szFilename[ofn.nFileOffset+uStrLenFile], szAWS_EXT3);				// "file" += ".aws.yaml"
+			}
+			else if ((uStrLenFile <= uStrLenExt3) || (strcmp(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt3], szAWS_EXT3) != 0))
+			{
+				if (strcmp(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt1], szAWS_EXT1) == 0)
+					strcpy(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt1], szAWS_EXT3);	// "file.aws" -> "file" + ".aws.yaml"
+				else if (strcmp(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt2], szAWS_EXT2) == 0)
+					strcpy(&szFilename[ofn.nFileOffset+uStrLenFile-uStrLenExt2], szAWS_EXT3);	// "file.yaml" -> "file" + ".aws.yaml"
+				else
+					strcpy(&szFilename[ofn.nFileOffset+uStrLenFile], szAWS_EXT3);				// "file" += ".aws.yaml"
+			}
 		}
 
+		strcpy(m_szSSNewFilename, &szFilename[ofn.nFileOffset]);
 		strcpy(m_szSSNewPathname, szFilename);
 
 		szFilename[ofn.nFileOffset] = 0;
@@ -290,6 +329,18 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 
 	UINT uAfterClose = 0;
 
+	if (m_ConfigNew.m_Apple2Type == A2TYPE_CLONE)
+	{
+		MessageBox(hWnd, "Error - Unable to change configuration\n\nReason: A specific clone wasn't selected from the Advanced tab", g_pAppTitle, MB_ICONSTOP | MB_SETFOREGROUND);
+		return;
+	}
+
+	_ASSERT(m_ConfigNew.m_CpuType != CPU_UNKNOWN);	// NB. Could only ever be CPU_UNKNOWN for a clone (and only if a mistake was made when adding a new clone)
+	if (m_ConfigNew.m_CpuType == CPU_UNKNOWN)
+	{
+		m_ConfigNew.m_CpuType = ProbeMainCpuDefault(m_ConfigNew.m_Apple2Type);
+	}
+
 	if (IsConfigChanged())
 	{
 		if (!CheckChangesForRestart(hWnd))
@@ -319,41 +370,52 @@ bool CPropertySheetHelper::CheckChangesForRestart(HWND hWnd)
 	return true;		// OK
 }
 
-#define CONFIG_CHANGED(var) \
-	(m_ConfigOld.var != m_ConfigNew.var)
+#define CONFIG_CHANGED_LOCAL(var) \
+	(ConfigOld.var != ConfigNew.var)
 
 // Apply changes to Registry
+void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
+{
+	if (CONFIG_CHANGED_LOCAL(m_Apple2Type))
+	{
+		SaveComputerType(ConfigNew.m_Apple2Type);
+	}
+
+	if (CONFIG_CHANGED_LOCAL(m_CpuType))
+	{
+		SaveCpuType(ConfigNew.m_CpuType);
+	}
+
+	if (CONFIG_CHANGED_LOCAL(m_Slot[4]))
+		SetSlot4(ConfigNew.m_Slot[4]);
+
+	if (CONFIG_CHANGED_LOCAL(m_Slot[5]))
+		SetSlot5(ConfigNew.m_Slot[5]);
+
+	if (CONFIG_CHANGED_LOCAL(m_bEnhanceDisk))
+		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), ConfigNew.m_bEnhanceDisk);
+
+	if (CONFIG_CHANGED_LOCAL(m_bEnableHDD))
+	{
+		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), ConfigNew.m_bEnableHDD ? 1 : 0);
+	}
+
+	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
+	{
+		REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), ConfigNew.m_bEnableTheFreezesF8Rom);
+	}
+}
+
 void CPropertySheetHelper::ApplyNewConfig(void)
 {
-	if (CONFIG_CHANGED(m_Apple2Type))
-	{
-		SaveComputerType(m_ConfigNew.m_Apple2Type);
-	}
-
-	if (CONFIG_CHANGED(m_Slot[4]))
-		SetSlot4(m_ConfigNew.m_Slot[4]);
-
-	if (CONFIG_CHANGED(m_Slot[5]))
-		SetSlot5(m_ConfigNew.m_Slot[5]);
-
-	if (CONFIG_CHANGED(m_bEnhanceDisk))
-		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), m_ConfigNew.m_bEnhanceDisk);
-
-	if (CONFIG_CHANGED(m_bEnableHDD))
-	{
-		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), m_ConfigNew.m_bEnableHDD ? 1 : 0);
-	}
-
-	if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
-	{
-		REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), m_ConfigNew.m_bEnableTheFreezesF8Rom);
-	}
+	ApplyNewConfig(m_ConfigNew, m_ConfigOld);
 }
 
 void CPropertySheetHelper::SaveCurrentConfig(void)
 {
 	// NB. clone-type is encoded in g_Apple2Type
-	m_ConfigOld.m_Apple2Type = g_Apple2Type;
+	m_ConfigOld.m_Apple2Type = GetApple2Type();
+	m_ConfigOld.m_CpuType = GetMainCpu();
 	m_ConfigOld.m_Slot[4] = g_Slot4;
 	m_ConfigOld.m_Slot[5] = g_Slot5;
 	m_ConfigOld.m_bEnhanceDisk = enhancedisk;
@@ -371,7 +433,8 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 void CPropertySheetHelper::RestoreCurrentConfig(void)
 {
 	// NB. clone-type is encoded in g_Apple2Type
-	g_Apple2Type = m_ConfigOld.m_Apple2Type;
+	SetApple2Type(m_ConfigOld.m_Apple2Type);
+	SetMainCpu(m_ConfigOld.m_CpuType);
 	g_Slot4 = m_ConfigOld.m_Slot[4];
 	g_Slot5 = m_ConfigOld.m_Slot[5];
 	enhancedisk = m_ConfigOld.m_bEnhanceDisk;
@@ -411,6 +474,9 @@ bool CPropertySheetHelper::IsOkToRestart(HWND hWnd)
 	return true;
 }
 
+#define CONFIG_CHANGED(var) \
+	(m_ConfigOld.var != m_ConfigNew.var)
+
 bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 {
 	std::string strMsg("The emulator needs to restart as the hardware configuration has changed:\n");
@@ -420,6 +486,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 	{
 		if (CONFIG_CHANGED(m_Apple2Type))
 			strMsgMain += ". Emulated computer has changed\n";
+
+		if (CONFIG_CHANGED(m_CpuType))
+			strMsgMain += ". Emulated main CPU has changed\n";
 
 		if (CONFIG_CHANGED(m_Slot[4]))
 			strMsgMain += GetSlot(4);

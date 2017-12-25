@@ -96,32 +96,35 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 #include "Video.h"
+#include "NTSC.h"
 
 #include "z80emu.h"
 #include "Z80VICE\z80.h"
 #include "Z80VICE\z80mem.h"
 
-#include "Debugger\Debug.h"
+#include "YamlHelper.h"
 
-
-#define	 AF_SIGN       0x80
-#define	 AF_OVERFLOW   0x40
-#define	 AF_RESERVED   0x20
-#define	 AF_BREAK      0x10
-#define	 AF_DECIMAL    0x08
-#define	 AF_INTERRUPT  0x04
-#define	 AF_ZERO       0x02
-#define	 AF_CARRY      0x01
+// 6502 Accumulator Bit Flags
+	#define	 AF_SIGN       0x80
+	#define	 AF_OVERFLOW   0x40
+	#define	 AF_RESERVED   0x20
+	#define	 AF_BREAK      0x10
+	#define	 AF_DECIMAL    0x08
+	#define	 AF_INTERRUPT  0x04
+	#define	 AF_ZERO       0x02
+	#define	 AF_CARRY      0x01
 
 #define	 SHORTOPCODES  22
 #define	 BENCHOPCODES  33
 
-// What is this 6502 code?
-static BYTE benchopcode[BENCHOPCODES] = {0x06,0x16,0x24,0x45,0x48,0x65,0x68,0x76,
-				  0x84,0x85,0x86,0x91,0x94,0xA4,0xA5,0xA6,
-				  0xB1,0xB4,0xC0,0xC4,0xC5,0xE6,
-				  0x19,0x6D,0x8D,0x99,0x9D,0xAD,0xB9,0xBD,
-				  0xDD,0xED,0xEE};
+// What is this 6502 code? Compressed 6502 code -- see: CpuSetupBenchmark()
+static BYTE benchopcode[BENCHOPCODES] = {
+	0x06,0x16,0x24,0x45,0x48,0x65,0x68,0x76,
+	0x84,0x85,0x86,0x91,0x94,0xA4,0xA5,0xA6,
+	0xB1,0xB4,0xC0,0xC4,0xC5,0xE6,
+	0x19,0x6D,0x8D,0x99,0x9D,0xAD,0xB9,0xBD,
+	0xDD,0xED,0xEE
+};
 
 regsrec regs;
 unsigned __int64 g_nCumulativeCycles = 0;
@@ -145,30 +148,60 @@ static volatile UINT32 g_bmIRQ = 0;
 static volatile UINT32 g_bmNMI = 0;
 static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
 
+//
+
+static eCpuType g_MainCPU = CPU_65C02;
+static eCpuType g_ActiveCPU = CPU_65C02;
+
+eCpuType GetMainCpu(void)
+{
+	return g_MainCPU;
+}
+
+void SetMainCpu(eCpuType cpu)
+{
+	_ASSERT(cpu != CPU_Z80);
+	if (cpu == CPU_Z80)
+		return;
+
+	g_MainCPU = cpu;
+}
+
+static bool IsCpu65C02(eApple2Type apple2Type)
+{
+	// NB. All Pravets clones are 6502 (GH#307)
+	return (apple2Type == A2TYPE_APPLE2EENHANCED) || (apple2Type == A2TYPE_TK30002E) || (apple2Type & A2TYPE_APPLE2C); 
+}
+
+eCpuType ProbeMainCpuDefault(eApple2Type apple2Type)
+{
+	return IsCpu65C02(apple2Type) ? CPU_65C02 : CPU_6502;
+}
+
+void SetMainCpuDefault(eApple2Type apple2Type)
+{
+	SetMainCpu( ProbeMainCpuDefault(apple2Type) );
+}
+
+eCpuType GetActiveCpu(void)
+{
+	return g_ActiveCPU;
+}
+
+void SetActiveCpu(eCpuType cpu)
+{
+	g_ActiveCPU = cpu;
+}
+
+//
+
 #include "cpu/cpu_general.inl"
 
 #include "cpu/cpu_instructions.inl"
 
-void RequestDebugger()
-{
-	// BUG: This causes DebugBegin to constantly be called.
-	// It's as if the WM_KEYUP are auto-repeating?
-	//   FrameWndProc()
-	//      ProcessButtonClick()
-	//         DebugBegin()
-	//	PostMessage( g_hFrameWindow, WM_KEYDOWN, DEBUG_TOGGLE_KEY, 0 );
-	//	PostMessage( g_hFrameWindow, WM_KEYUP  , DEBUG_TOGGLE_KEY, 0 );
-
-	// Not a valid solution, since hitting F7 (to exit) debugger gets the debugger out of sync
-	// due to EnterMessageLoop() calling ContinueExecution() after the mode has changed to DEBUG.
-	//	DebugBegin();
-
-	FrameWndProc( g_hFrameWindow, WM_KEYDOWN, DEBUG_TOGGLE_KEY, 0 );
-	FrameWndProc( g_hFrameWindow, WM_KEYUP  , DEBUG_TOGGLE_KEY, 0 );
-}
-
 // Break into debugger on invalid opcodes
-#define INV IsDebugBreakOnInvalid(AM_1);
+//#define INV IsDebugBreakOnInvalid(AM_1);
+#define INV
 
 /****************************************************************************
 *
@@ -322,7 +355,7 @@ static void DebugHddEntrypoint(const USHORT PC)
 }
 #endif
 
-static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
+static __forceinline void Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 {
 	const USHORT PC = regs.pc;
 
@@ -334,20 +367,16 @@ static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 	    ? IORead[(PC>>4) & 0xFF](PC,PC,0,0,uExecutedCycles)	// Fetch opcode from I/O memory, but params are still from mem[]
 		: *(mem+PC);
 
-	if (IsDebugBreakOpcode( iOpcode ))
-		return 0;
-
 #ifdef USE_SPEECH_API
 	if (PC == COUT && g_Speech.IsEnabled() && !g_bFullSpeed)
 		CaptureCOUT();
 #endif
 
 	regs.pc++;
-	return 1;
 }
 
 //#define ENABLE_NMI_SUPPORT	// Not used - so don't enable
-static __forceinline void NMI(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
+static __forceinline void NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
 #ifdef ENABLE_NMI_SUPPORT
 	if(g_bNmiFlank)
@@ -363,12 +392,13 @@ static __forceinline void NMI(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& 
 		PUSH(regs.ps & ~AF_BREAK)
 		regs.ps = regs.ps | AF_INTERRUPT & ~AF_DECIMAL;
 		regs.pc = * (WORD*) (mem+0xFFFA);
+		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7)
 	}
 #endif
 }
 
-static __forceinline void IRQ(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
+static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
 	if(g_bmIRQ && !(regs.ps & AF_INTERRUPT))
 	{
@@ -382,6 +412,7 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, UINT& uExtraCycles, BOOL& 
 		PUSH(regs.ps & ~AF_BREAK)
 		regs.ps = regs.ps | AF_INTERRUPT & ~AF_DECIMAL;
 		regs.pc = * (WORD*) (mem+0xFFFE);
+		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7)
 	}
 }
@@ -391,7 +422,7 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles)
 	if (g_nIrqCheckTimeout < 0)
 	{
 		MB_UpdateCycles(uExecutedCycles);
-		sg_Mouse.SetVBlank(VideoGetVbl(uExecutedCycles));
+		sg_Mouse.SetVBlank( !VideoGetVblBar(uExecutedCycles) );
 		g_nIrqCheckTimeout = IRQ_CHECK_TIMEOUT;
 	}
 }
@@ -404,12 +435,12 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles)
 
 //===========================================================================
 
-static DWORD InternalCpuExecute (DWORD uTotalCycles)
+static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdate)
 {
-	if (IS_APPLE2 || (g_Apple2Type == A2TYPE_APPLE2E))
-		return Cpu6502(uTotalCycles);	// Apple ][, ][+, //e
+	if (GetMainCpu() == CPU_6502)
+		return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
 	else
-		return Cpu65C02(uTotalCycles);	// Enhanced Apple //e
+		return Cpu65C02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
 }
 
 //
@@ -496,7 +527,7 @@ DWORD CpuGetEmulationTime_ms(void)
 
 //===========================================================================
 
-DWORD CpuExecute(const DWORD uCycles)
+DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 {
 	g_nCyclesExecuted =	0;
 
@@ -505,9 +536,10 @@ DWORD CpuExecute(const DWORD uCycles)
 	// uCycles:
 	//  =0  : Do single step
 	//  >0  : Do multi-opcode emulation
-	const DWORD uExecutedCycles = InternalCpuExecute(uCycles);
+	const DWORD uExecutedCycles = InternalCpuExecute(uCycles, bVideoUpdate);
 
 	MB_UpdateCycles(uExecutedCycles);	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
+										// NB. Ensures that 6522 regs are up-to-date for any potential save-state
 	UpdateEmulationTime(uExecutedCycles);
 
 	//
@@ -636,36 +668,83 @@ void CpuReset()
 
 	regs.bJammed = 0;
 
-	g_ActiveCPU = CPU_6502;
+	SetActiveCpu( GetMainCpu() );
 	z80_reset();
 }
 
 //===========================================================================
 
-DWORD CpuGetSnapshot(SS_CPU6502* pSS)
+void CpuSetSnapshot_v1(const BYTE A, const BYTE X, const BYTE Y, const BYTE P, const BYTE SP, const USHORT PC, const unsigned __int64 CumulativeCycles)
 {
-	pSS->A = regs.a;
-	pSS->X = regs.x;
-	pSS->Y = regs.y;
-	pSS->P = regs.ps | AF_RESERVED | AF_BREAK;
-	pSS->S = (BYTE) (regs.sp & 0xff);
-	pSS->PC = regs.pc;
-	pSS->g_nCumulativeCycles = g_nCumulativeCycles;
+	regs.a  = A;
+	regs.x  = X;
+	regs.y  = Y;
+	regs.ps = P | (AF_RESERVED | AF_BREAK);
+	regs.sp = ((USHORT)SP) | 0x100;
+	regs.pc = PC;
 
-	return 0;
-}
-
-DWORD CpuSetSnapshot(SS_CPU6502* pSS)
-{
-	regs.a = pSS->A;
-	regs.x = pSS->X;
-	regs.y = pSS->Y;
-	regs.ps = pSS->P | AF_RESERVED | AF_BREAK;
-	regs.sp = (USHORT)pSS->S | 0x100;
-	regs.pc = pSS->PC;
 	CpuIrqReset();
 	CpuNmiReset();
-	g_nCumulativeCycles = pSS->g_nCumulativeCycles;
+	g_nCumulativeCycles = CumulativeCycles;
+}
 
-	return 0;
+//
+
+#define SS_YAML_KEY_CPU_TYPE "Type"
+#define SS_YAML_KEY_REGA "A"
+#define SS_YAML_KEY_REGX "X"
+#define SS_YAML_KEY_REGY "Y"
+#define SS_YAML_KEY_REGP "P"
+#define SS_YAML_KEY_REGS "S"
+#define SS_YAML_KEY_REGPC "PC"
+#define SS_YAML_KEY_CUMULATIVECYCLES "Cumulative Cycles"
+
+#define SS_YAML_VALUE_6502 "6502"
+#define SS_YAML_VALUE_65C02 "65C02"
+
+static std::string CpuGetSnapshotStructName(void)
+{
+	static const std::string name("CPU");
+	return name;
+}
+
+void CpuSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	regs.ps |= (AF_RESERVED | AF_BREAK);
+
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", CpuGetSnapshotStructName().c_str());	
+	yamlSaveHelper.SaveString(SS_YAML_KEY_CPU_TYPE, GetMainCpu() == CPU_6502 ? SS_YAML_VALUE_6502 : SS_YAML_VALUE_65C02);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGA, regs.a);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGX, regs.x);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGY, regs.y);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGP, regs.ps);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGS, (BYTE) regs.sp);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REGPC, regs.pc);
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_CUMULATIVECYCLES, g_nCumulativeCycles);
+}
+
+void CpuLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(CpuGetSnapshotStructName()))
+		return;
+
+	std::string cpuType = yamlLoadHelper.LoadString(SS_YAML_KEY_CPU_TYPE);
+	eCpuType cpu;
+	if (cpuType == SS_YAML_VALUE_6502) cpu = CPU_6502;
+	else if (cpuType == SS_YAML_VALUE_65C02) cpu = CPU_65C02;
+	else throw std::string("Load: Unknown main CPU type");
+	SetMainCpu(cpu);
+
+	regs.a  = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGA);
+	regs.x  = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGX);
+	regs.y  = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGY);
+	regs.ps = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGP) | (AF_RESERVED | AF_BREAK);
+	regs.sp = (USHORT) ((yamlLoadHelper.LoadUint(SS_YAML_KEY_REGS) & 0xff) | 0x100);
+	regs.pc = (USHORT)   yamlLoadHelper.LoadUint(SS_YAML_KEY_REGPC);
+
+	CpuIrqReset();
+	CpuNmiReset();
+	g_nCumulativeCycles = yamlLoadHelper.LoadUint64(SS_YAML_KEY_CUMULATIVECYCLES);
+
+	yamlLoadHelper.PopMap();
 }

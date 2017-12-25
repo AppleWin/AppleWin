@@ -1,23 +1,27 @@
 #pragma once
 
-#include "Structs.h"
+#include "SaveState_Structs_common.h"
 #include "Common.h"
 
+void LogFileTimeUntilFirstKeyReadReset(void);
+void LogFileTimeUntilFirstKeyRead(void);
+
 void SetCurrentCLK6502();
-void SetCurrentImageDir(const char* pszImageDir);
+bool SetCurrentImageDir(const char* pszImageDir);
 
-
+extern const UINT16* GetAppleWinVersion(void);
 extern char VERSIONSTRING[];	// Constructed in WinMain()
 
 extern TCHAR     *g_pAppTitle;
 
 extern eApple2Type g_Apple2Type;
+eApple2Type GetApple2Type(void);
+void SetApple2Type(eApple2Type type);
+
+void SingleStep(bool bReinit);
 
 extern bool       g_bFullSpeed;
 
-//Pravets 8A/C only variables
-extern bool     P8CAPS_ON;
-extern bool		P8Shift; 
 //===========================================
 
 // Win32
@@ -30,7 +34,8 @@ void SetLoadedSaveStateFlag(const bool bFlag);
 extern TCHAR      g_sProgramDir[MAX_PATH];
 extern TCHAR      g_sCurrentDir[MAX_PATH];
 
-extern BOOL       restart;
+extern bool       g_bRestart;
+extern bool       g_bRestartFullScreen;
 
 extern DWORD      g_dwSpeed;
 extern double     g_fCurrentCLK6502;
@@ -48,9 +53,6 @@ extern SS_CARDTYPE g_Slot4;	// Mockingboard, Z80, Mouse in slot4
 extern SS_CARDTYPE g_Slot5;	// Mockingboard, Z80,       in slot5
 
 extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom
-
-enum eCPU {CPU_6502=1, CPU_Z80};
-extern eCPU		g_ActiveCPU;
 
 #ifdef USE_SPEECH_API
 class CSpeech;

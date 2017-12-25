@@ -41,7 +41,7 @@ Etc.
 
 
 #include "stdafx.h"
-#include "Structs.h"
+#include "SaveState_Structs_common.h"
 #include "Common.h"
 
 #include "CPU.h"
@@ -50,6 +50,7 @@ Etc.
 #include "Memory.h"
 #include "MouseInterface.h"
 #include "SoundCore.h"	// SAFE_RELEASE()
+#include "YamlHelper.h"
 
 #include "..\resource\resource.h"
 
@@ -210,7 +211,7 @@ void CMouseInterface::Reset()
 	m_iMinY = 0;
 	m_iMaxY = 1023;
 
-	m_bButtons[0] = m_bButtons[1] = FALSE;
+	m_bButtons[0] = m_bButtons[1] = false;
 
 	//
 
@@ -447,15 +448,13 @@ void CMouseInterface::OnMouseEvent(bool bEventVBL)
 	if ( !( m_byMode & MODE_MOUSE_ON ) )		// Mouse Off
 		return;
 
-	BOOL bBtn0 = m_bButtons[0];
-	BOOL bBtn1 = m_bButtons[1];
 	if ( m_nX != m_iX || m_nY != m_iY )
 	{
 		byState |= STAT_INT_MOVEMENT|STAT_MOVEMENT_SINCE_READMOUSE;	// X/Y moved since last READMOUSE | Movement interrupt
 		m_byState |= STAT_MOVEMENT_SINCE_READMOUSE;							// [TC] Used by CopyII+9.1 and ProTERM3.1
 	}
 
-	if ( m_bBtn0 != bBtn0 || m_bBtn1 != bBtn1 )
+	if ( m_bBtn0 != m_bButtons[0] || m_bBtn1 != m_bButtons[1] )
 		byState |= STAT_INT_BUTTON;		// Button 0/1 interrupt
 	if ( bEventVBL )
 		byState |= STAT_INT_VBL;
@@ -495,8 +494,8 @@ void CMouseInterface::Clear()
 	m_byState = 0;
 	m_nX = 0;
 	m_nY = 0;
-	m_bBtn0 = 0;
-	m_bBtn1 = 0;
+	m_bBtn0 = false;
+	m_bBtn1 = false;
 	SetPositionAbs( 0, 0 );
 
 //	CpuIrqDeassert(IS_MOUSE);
@@ -594,8 +593,166 @@ void CMouseInterface::SetPositionRel(long dX, long dY, int* pOutOfBoundsX, int* 
 
 void CMouseInterface::SetButton(eBUTTON Button, eBUTTONSTATE State)
 {
-	m_bButtons[Button]= (State == BUTTON_DOWN) ? TRUE : FALSE;
+	m_bButtons[Button] = (State == BUTTON_DOWN);
 	OnMouseEvent();
+}
+
+#define SS_YAML_VALUE_CARD_MOUSE "Mouse Card"
+
+#define SS_YAML_KEY_MC6821 "MC6821"
+#define SS_YAML_KEY_PRA "PRA"
+#define SS_YAML_KEY_DDRA "DDRA"
+#define SS_YAML_KEY_CRA "CRA"
+#define SS_YAML_KEY_PRB "PRB"
+#define SS_YAML_KEY_DDRB "DDRB"
+#define SS_YAML_KEY_CRB "CRB"
+#define SS_YAML_KEY_IA "IA"
+#define SS_YAML_KEY_IB "IB"
+
+#define SS_YAML_KEY_DATALEN "DataLen"
+#define SS_YAML_KEY_MODE "Mode"
+#define SS_YAML_KEY_6821B "6821B"
+#define SS_YAML_KEY_6821A "6821A"
+#define SS_YAML_KEY_BUFF "Buffer"
+#define SS_YAML_KEY_BUFFPOS "Buffer Position"
+#define SS_YAML_KEY_MOUSESTATE "State"
+#define SS_YAML_KEY_X "X"
+#define SS_YAML_KEY_Y "Y"
+#define SS_YAML_KEY_BTN0 "Btn0"
+#define SS_YAML_KEY_BTN1 "Btn1"
+#define SS_YAML_KEY_VBL "VBL"
+#define SS_YAML_KEY_IX "iX"
+#define SS_YAML_KEY_IMINX "iMinX"
+#define SS_YAML_KEY_IMAXX "iMaxX"
+#define SS_YAML_KEY_IY "iY"
+#define SS_YAML_KEY_IMINY "iMinY"
+#define SS_YAML_KEY_IMAXY "iMaxY"
+#define SS_YAML_KEY_BUTTON0 "Button0"
+#define SS_YAML_KEY_BUTTON1 "Button1"
+#define SS_YAML_KEY_ENABLED "Enabled"
+
+std::string CMouseInterface::GetSnapshotCardName(void)
+{
+	static const std::string name(SS_YAML_VALUE_CARD_MOUSE);
+	return name;
+}
+
+void CMouseInterface::SaveSnapshotMC6821(YamlSaveHelper& yamlSaveHelper, std::string key)
+{
+	mc6821_t mc6821;
+	BYTE byIA;
+	BYTE byIB;
+
+	m_6821.Get6821(mc6821, byIA, byIB);
+
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", key.c_str());
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PRA, mc6821.pra);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_DDRA, mc6821.ddra);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_CRA, mc6821.cra);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PRB, mc6821.prb);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_DDRB, mc6821.ddrb);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_CRB, mc6821.crb);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IA, byIA);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IB, byIB);
+}
+
+void CMouseInterface::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
+{
+	if (!m_bActive)
+		return;
+
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_uSlot, 1);
+
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+	SaveSnapshotMC6821(yamlSaveHelper, SS_YAML_KEY_MC6821);
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_DATALEN, m_nDataLen);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_MODE, m_byMode);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_6821B, m_by6821B);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_6821A, m_by6821A);
+
+	// New label
+	{
+		YamlSaveHelper::Label buffer(yamlSaveHelper, "%s:\n", SS_YAML_KEY_BUFF);
+		yamlSaveHelper.SaveMemory(m_byBuff, sizeof(m_byBuff));
+	}
+
+	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_BUFFPOS, m_nBuffPos);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_MOUSESTATE, m_byState);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_X, m_nX);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_Y, m_nY);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_BTN0, m_bBtn0);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_BTN1, m_bBtn1);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_VBL, m_bVBL);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IX, m_iX);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IMINX, m_iMinX);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IMAXX, m_iMaxX);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IY, m_iY);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IMINY, m_iMinY);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IMAXY, m_iMaxY);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_BUTTON0, m_bButtons[0]);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_BUTTON1, m_bButtons[1]);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ENABLED, m_bEnabled);
+}
+
+void CMouseInterface::LoadSnapshotMC6821(YamlLoadHelper& yamlLoadHelper, std::string key)
+{
+	if (!yamlLoadHelper.GetSubMap(key))
+		throw std::string("Card: Expected key: ") + key;
+
+	mc6821_t mc6821;
+	mc6821.pra  = yamlLoadHelper.LoadUint(SS_YAML_KEY_PRA);
+	mc6821.ddra = yamlLoadHelper.LoadUint(SS_YAML_KEY_DDRA);
+	mc6821.cra  = yamlLoadHelper.LoadUint(SS_YAML_KEY_CRA);
+	mc6821.prb  = yamlLoadHelper.LoadUint(SS_YAML_KEY_PRB);
+	mc6821.ddrb = yamlLoadHelper.LoadUint(SS_YAML_KEY_DDRB);
+	mc6821.crb  = yamlLoadHelper.LoadUint(SS_YAML_KEY_CRB);
+
+	BYTE byIA   = yamlLoadHelper.LoadUint(SS_YAML_KEY_IA);
+	BYTE byIB   = yamlLoadHelper.LoadUint(SS_YAML_KEY_IB);
+
+	m_6821.Set6821(mc6821, byIA, byIB);
+
+	yamlLoadHelper.PopMap();
+}
+
+bool CMouseInterface::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+{
+	if (slot != 4)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (version != 1)
+		throw std::string("Card: wrong version");
+
+	LoadSnapshotMC6821(yamlLoadHelper, SS_YAML_KEY_MC6821);
+
+	m_nDataLen = yamlLoadHelper.LoadUint(SS_YAML_KEY_DATALEN);
+	m_byMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_MODE);
+	m_by6821B = yamlLoadHelper.LoadUint(SS_YAML_KEY_6821B);
+	m_by6821A = yamlLoadHelper.LoadUint(SS_YAML_KEY_6821A);
+
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_BUFF))
+		throw std::string("Card: Expected key: " SS_YAML_KEY_BUFF);
+	yamlLoadHelper.LoadMemory(m_byBuff, sizeof(m_byBuff));
+	yamlLoadHelper.PopMap();
+
+	m_nBuffPos = yamlLoadHelper.LoadUint(SS_YAML_KEY_BUFFPOS);
+	m_byState = yamlLoadHelper.LoadUint(SS_YAML_KEY_MOUSESTATE);
+	m_nX = yamlLoadHelper.LoadInt(SS_YAML_KEY_X);
+	m_nY = yamlLoadHelper.LoadInt(SS_YAML_KEY_Y);
+	m_bBtn0 = yamlLoadHelper.LoadBool(SS_YAML_KEY_BTN0);
+	m_bBtn1 = yamlLoadHelper.LoadBool(SS_YAML_KEY_BTN1);
+	m_bVBL = yamlLoadHelper.LoadBool(SS_YAML_KEY_VBL);
+	m_iX = yamlLoadHelper.LoadInt(SS_YAML_KEY_IX);
+	m_iMinX = yamlLoadHelper.LoadInt(SS_YAML_KEY_IMINX);
+	m_iMaxX = yamlLoadHelper.LoadInt(SS_YAML_KEY_IMAXX);
+	m_iY = yamlLoadHelper.LoadInt(SS_YAML_KEY_IY);
+	m_iMinY = yamlLoadHelper.LoadInt(SS_YAML_KEY_IMINY);
+	m_iMaxY = yamlLoadHelper.LoadInt(SS_YAML_KEY_IMAXY);
+	m_bButtons[0] = yamlLoadHelper.LoadBool(SS_YAML_KEY_BUTTON0);
+	m_bButtons[1] = yamlLoadHelper.LoadBool(SS_YAML_KEY_BUTTON1);
+	m_bEnabled = yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED);	// MemInitializeIO() calls Initialize() which sets true
+
+	return true;
 }
 
 //=============================================================================
@@ -732,6 +889,7 @@ namespace DIMouse
 			return hr;
 
 		// Setup timer to read mouse position
+		_ASSERT(g_TimerIDEvent == 0);
 		g_TimerIDEvent = SetTimer(hDlg, IDEVENT_TIMER_MOUSE, 8, NULL);	// 120Hz timer
 		LogFileOutput("DirectInputInit: SetTimer(), id=0x%08X\n", g_TimerIDEvent);
 		if (g_TimerIDEvent == 0)
