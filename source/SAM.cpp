@@ -37,6 +37,11 @@
 #include "SAM.h"
 #include "Speaker.h"
 
+// set to emulate MEGAAudio 4 DAC card
+// TODO: Make this an option in the UI otherwise regular SAM
+// usage appears on one channel and is softer.
+#define SAM_4DAC
+
 //
 // Write 8 bit data to speaker. Emulates a "SAM" speech card DAC
 //
@@ -76,10 +81,20 @@ static BYTE __stdcall IOWrite_SAM(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	//  0x7f 127     0xFF   -1         \_/
 	//  0x00   0     0x80 -128             00  80
 	//                                                        
+
+#ifdef SAM_4DAC
+        // 4 8-bit DACs mapped to L/R/L/R
+        static unsigned int samdata[4] = {0x80,0x80,0x80,0x80};
+        samdata[addr & 0x3] = d;
+
+        unsigned samsumL = samdata[0] + samdata[2];
+        unsigned samsumR = samdata[1] + samdata[3];
+        g_nSpeakerData[0] = (samsumL ^ 0x100) << 7;
+        g_nSpeakerData[1] = (samsumR ^ 0x100) << 7;
+#else
 	// SAM is 8 bit, PC WAV is 16 so shift audio to the MSB (<< 8)
-
-	g_nSpeakerData = (d ^ 0x80) << 8;
-
+        g_nSpeakerData[0] = g_nSpeakerData[1] = (d ^ 0x80) << 8;
+#endif
 	// make speaker quieter so eg: a metronome click through the
 	// Apple speaker is softer vs. the analogue SAM output.
 	g_bQuieterSpeaker = true;

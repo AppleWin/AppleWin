@@ -15,7 +15,7 @@ enum SoundType_e
 extern SoundType_e soundtype;
 extern double     g_fClksPerSpkrSample;
 extern bool       g_bQuieterSpeaker;
-extern short      g_nSpeakerData;
+extern short      g_nSpeakerData[2];
 
 void    SpkrDestroy ();
 void    SpkrInitialize ();
