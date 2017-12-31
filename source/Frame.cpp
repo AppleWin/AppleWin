@@ -1814,9 +1814,6 @@ LRESULT CALLBACK FrameWndProc (
 				case FD_READ:
 					sg_SSC.CommTcpSerialReceive();
 					break;
-
-				case FD_WRITE:
-					break;
 			}
 		}
 		break;

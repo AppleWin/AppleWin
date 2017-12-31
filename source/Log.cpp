@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+FILE* g_fh = NULL;
 
 //---------------------------------------------------------------------------
 
@@ -43,8 +44,6 @@ void LogOutput(LPCTSTR format, ...)
 }
 
 //---------------------------------------------------------------------------
-
-extern FILE* g_fh;	// Filehandle for log file
 
 void LogFileOutput(LPCTSTR format, ...)
 {
