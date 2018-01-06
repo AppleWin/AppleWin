@@ -1,4 +1,11 @@
 /*
+.12 GH-PR#480:
+    GH#462: Default to Shift+Left Click to toggle diasm columns
+            Use 'disasm click <n>' to reconfigure this
+    GH#473: Fixed bug caused by Util_MemoryTextFile, Line 51 not zero-terminating buffer by invalidating it.
+    GH#476: Fixed off-by-one bug wrapping in debugger console
+    GH#483: Shift+Left mouse button to toggle 6502 Status flag bits
+    GH#484: Some corrections to APPLE2E.SYM
 .11 Added:"Warning" for long symbols when symbol table is loaded
 .10 Changed: "Warning" of symbols that alias to "Info."
 .9 Continuation of 2.8.0.8: Fix overflowing disassembly pane for long symbols
