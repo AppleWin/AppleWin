@@ -1397,8 +1397,6 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 		if (pImageType && dwSize)
 		{
 			pImageInfo->pImageBuffer = new BYTE [dwSize];
-			if (!pImageInfo->pImageBuffer)
-				return eIMAGE_ERROR_BAD_POINTER;
 
 			if (pImageType->GetType() != eImageNIB1)
 			{
