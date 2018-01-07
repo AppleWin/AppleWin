@@ -9,7 +9,7 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.3.4 (Experimental) - 12 Nov 2017
+1.26.3.6 (Experimental) - 20 Dec 2017
 -------------------------------------
 Changes:
 . [Bug #504] Full-screen: hide mouse pointer after 2 seconds of inactivity (and show again if mouse is moved)
@@ -19,18 +19,27 @@ Changes:
     - nnnn: select a specific resolution with height=nnnn pixels
     Use to select a better resolution for full-screen mode.
     NB. This changes the display resolution (and restores on exit).
+. [Bug #477] Help doc: Document behaviour full-speed mode
 . [Bug #428] Input option to use PC Joystick 1 Thumbstick 2 for emulated Joystick 2 
 . Swapping disks while a drive is on now warns and prompts if you still wish to do this instead of silently failing with no feedback.
 . [Bug #323] Skip hard disk boot by holding down the Open-Apple key during an Apple II restart
 . [Bug #224] Added Config checkbox for 'Full-Screen: Show drive/keyboard status'
 . [PR #441] Update zlib to latest version 1.2.11
+. [PR #275] Attenuate speaker (and 8-bit DAC) output sample after 0.25s of inactivity
+. [Bug #483] Debugger: Shift+Left mouse button to toggle 6502 Status flag bits
+. [Bug #479, #476, #473] Debugger: Various UI and other fixes
+. [Bug #462] Debugger: Changed Left mouse button (LMB) to Shift+LMB to toggle display items
+. [Bug #406] Debugger: Support LC and MMU status & updated Help doc
 
 Fixes:
+. [Bug #516] Internal video-mode was having PAGE2 permanently cleared (instead of just masked) when 80STORE was set.
+. [Bug #514] Emulator restart (or reset) wasn't clearing any pending Mousecard interrupt
 . [Bug #499] Flush current track (if dirty) before 'Send to CiderPress'
 . [Bug #496] Support polling of Mockingboard's & Phasor's 6522 IFR.Timer1
 . [Bug #492] UI fixes for full-screen & 2x windowed-mode
 . [Bug #486] Peripheral card's expansion ROM ($C800-CFFF, eg. SSC) wasn't being correctly restored from a save-state
   - Resulting in regression: Mousecard crash to monitor (#495).
+. [Bug #484] Debugger: Some corrections to APPLE2E.SYM
 . [Bug #464] Fix for full-screen: bottom line missing when vertical resolution is 768
 . [Bug #460] Debugger: F2 whilst debugger active will immediately stop the drive spinning (allowing disk swap)
 . [Bug #456] Fix strange speaker clicks when changing configuration - DirectSound wasn't being uninitialised on a restart
@@ -56,6 +65,7 @@ Fixes:
   - Experimental support for 6551's status bits: DCD and DSR via -dcd and -dsr switches
 . [Bug #383] "Enhanced disk speed" is very slow when debugger is active
 . [Bug #320] Mockingboard/Phasor: support 'inactive' function like real hardware
+. [Bug #308] SSC ACIA Status register's interrupt bit not set when IRQ enabled and using TCP Port 1977
 . [Bug #269] When stepping, ESC no longer exits back to debugger (use F7, Pause keys or Debugger button instead).
 . [Bug #250] Debugger: When MODE_STEPPING, fix issue with disk LEDs staying on
 . [Bug #217] Debugger G(o) command should use normal speed

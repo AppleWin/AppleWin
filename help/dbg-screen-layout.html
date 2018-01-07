@@ -1,0 +1,56 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+	<head>
+		<title>AppleWin Debugger Tutorial</title>
+		<meta http-equiv="CONTENT-TYPE" content="text/html; charset=windows-1252">
+	</head>
+	<body style="DIRECTION: ltr" lang="en-US">
+		<h2></a><a name="Debugger Screen Layout"></a>Debugger Screen Layout</h2>
+		<p>This section gives an overview of the debugger's screen layout.</p>
+
+		<p>Here's a typical debugger view (with annotations describing the parts):</p>
+		
+		<img src="img/debugger-layout-annotated.png" hspace="5" vspace="5">
+
+		<h3><a name="Soft-switches"></a>Soft-switches</h3>
+		<p>This encodes information about the video and MMU soft-switches.</p>
+		
+		<p>The first 5 rows describe the current <b>video</b> settings and can be interpreted as follows:
+		<ul>
+			<li>50: $C050 - GR /TEXT (inverse indicates which is active)
+			<li>52: $C052 - FULL/MIX (inverse indicates which is active)
+			<li>54: $C054 - PAGE 1/2 (inverse indicates which is active)
+			<li>56: $C056 - LO/HIRES (inverse indicates which is active)
+			<li>5E: $C05E - DHGR/HGR (inverse indicates which is active)
+		</ul>
+		</p>
+
+		<p>The next 6 rows describe the current <b>MMU</b> settings and can be interpreted as follows:
+		<ul>
+			<li>00: $C000 - 80Sto0/1 (inverse indicates state of 80STORE)
+			<li>02: $C002-C005: Rm/xWm/x (NB. 'R' is blue and 'W' is red for readability)
+			<ul>
+				<li>Rm Read from main mem for $0200-$BFFF; Use OUT C002 to enable
+				<li>Rx Read from aux  mem for $0200-$BFFF; Use OUT C003 to enable
+				<li>Wm Write to main  mem for $0200-$BFFF; Use OUT C004 to enable
+				<li>Wx Write to aux   mem for $0200-$BFFF; Use OUT C005 to enable
+			</ul>
+			<li>0C: $C00C - Col40/80 (inverse indicates state of 80COL)
+			<li>0E: $C00E - ASC/MOUS (inverse indicates state of ALTCHARSET)
+			<li>80: $C080-C087: B2/M R/W (Language Card Bank2)
+			<li>88: $C088-C08F: B1/M rNN (Language Card Bank1 and RAMworks 64K bank number)
+			<ul>
+				<li>'B2' or 'B1' is inverse when that LC bank is enabled.
+				<li>If 'M' is inverse: ROM is active for reading.
+				<li>If 'M' is not inverse: LC2 or LC1 RAM is active.
+				<li>If 'W' is inverse: RAM is write enabled.
+				<li>If 'W' is not inverse: RAM is write protected.
+				<li>'rNN' will appear if a RAMworks 64K bank is active.
+			</ul>
+		</ul>
+		</p>
+
+		<p style="MARGIN-BOTTOM: 0in"><br>
+		</p>
+	</body>
+</html>

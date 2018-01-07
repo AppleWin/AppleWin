@@ -589,9 +589,6 @@ void DiskInitialize(void)
 	int loop = NUM_DRIVES;
 	while (loop--)
 		g_aFloppyDisk[loop].clear();
-
-	TCHAR imagefilename[MAX_PATH];
-	_tcscpy(imagefilename,g_sProgramDir);
 }
 
 //===========================================================================
