@@ -63,8 +63,10 @@
     <ClInclude Include="source\Debugger\Util_Text.h" />
     <ClInclude Include="source\Disk.h" />
     <ClInclude Include="source\DiskDefs.h" />
+    <ClInclude Include="source\DiskFormatTrack.h" />
     <ClInclude Include="source\DiskImage.h" />
     <ClInclude Include="source\DiskImageHelper.h" />
+    <ClInclude Include="source\DiskLog.h" />
     <ClInclude Include="source\Frame.h" />
     <ClInclude Include="source\Harddisk.h" />
     <ClInclude Include="source\Joystick.h" />
@@ -145,6 +147,7 @@
     <ClCompile Include="source\Debugger\Debugger_Symbols.cpp" />
     <ClCompile Include="source\Debugger\Util_MemoryTextFile.cpp" />
     <ClCompile Include="source\Disk.cpp" />
+    <ClCompile Include="source\DiskFormatTrack.cpp" />
     <ClCompile Include="source\DiskImage.cpp" />
     <ClCompile Include="source\DiskImageHelper.cpp" />
     <ClCompile Include="source\Frame.cpp" />
