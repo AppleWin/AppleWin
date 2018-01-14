@@ -4109,6 +4109,9 @@ static TCHAR g_sMemoryLoadSaveFileName[ MAX_PATH ] = TEXT("");
 //===========================================================================
 Update_t CmdConfigGetDebugDir (int nArgs)
 {
+	if( nArgs != 0 )
+		return Help_Arg_1( CMD_CONFIG_GET_DEBUG_DIR );
+
 	TCHAR sPath[ MAX_PATH + 8 ];
 	// TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
 	ConsoleBufferPushFormat( sPath, "Path: %s", g_sCurrentDir );
@@ -4120,27 +4123,48 @@ Update_t CmdConfigGetDebugDir (int nArgs)
 //===========================================================================
 Update_t CmdConfigSetDebugDir (int nArgs)
 {
-	//if( nArgs > 2 )
-	//	return;
+	if ( nArgs > 1 )
+		return Help_Arg_1( CMD_CONFIG_SET_DEBUG_DIR );
 
-	// PWD directory
+	if ( nArgs == 0 )
+		return CmdConfigGetDebugDir(0);
+
 #if _WIN32
 	// http://msdn.microsoft.com/en-us/library/aa365530(VS.85).aspx
-	TCHAR sPath[ MAX_PATH + 1 ];
-	_tcscpy( sPath, g_sCurrentDir ); // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
-	_tcscat( sPath, g_aArgs[ 1 ].sArg );
 
-	if( SetCurrentImageDir( sPath ) )
+	// TODO: Support paths prefixed with "\\?\" (for long/unicode pathnames)
+	if (strncmp("\\\\?\\", g_aArgs[1].sArg, 4) == 0)
+		return Help_Arg_1( CMD_CONFIG_SET_DEBUG_DIR );
+
+	TCHAR sPath[ MAX_PATH + 1 ];
+
+	if (g_aArgs[1].sArg[1] == ':')			// Absolute
+	{
+		_tcscpy( sPath, g_aArgs[1].sArg );
+	}
+	else if (g_aArgs[1].sArg[0] == '\\')	// Absolute
+	{
+		if (g_sCurrentDir[1] == ':')
+		{
+			_tcsncpy( sPath, g_sCurrentDir, 2 );	// Prefix with drive letter & colon
+			sPath[2] = 0;
+		}
+		_tcscat( sPath, g_aArgs[1].sArg );
+	}
+	else									// Relative
+	{
+		// TODO: Support ".." - currently just appends (which still works)
+		_tcscpy( sPath, g_sCurrentDir ); // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
+		_tcscat( sPath, g_aArgs[1].sArg );
+	}
+
+	if ( SetCurrentImageDir( sPath ) )
 		nArgs = 0; // intentional fall into
 #else
 	#error "Need chdir() implemented"
 #endif
 
-	// PWD
-	if( nArgs == 0 )
-		return CmdConfigGetDebugDir(0);
-
-	return ConsoleUpdate();
+	return CmdConfigGetDebugDir(0);		// Show the new PWD
 }
 
 
