@@ -120,13 +120,13 @@ void FormatTrack::DriveSwitchedToReadMode(Disk_t* const fptr)
 	// Either up to 0x18F0 (if less than 0x18F0) or up to 0x1A00 (for .nib).
 
 	// When there's no spin (enhanced=1), then 0x18F0 is still too long, eg: (see GH#125)
-	//  Gap1 = 0x81, Gap3 = 0x1D (29), TrackSize = 0x1963
-	//  Gap1 = 0x81, Gap3 = 0x1C (28), TrackSize = 0x1954
-	//  Gap1 = 0x81, Gap3 = 0x1B (27), TrackSize = 0x1945
-	//  Gap1 = 0x81, Gap3 = 0x1A (26), TrackSize = 0x1936
+	//  Gap1 = 0x81, Gap2 = 0x05, Gap3 = 0x1D (29), TrackSize = 0x1963
+	//  Gap1 = 0x81, Gap2 = 0x05, Gap3 = 0x1C (28), TrackSize = 0x1954
+	//  Gap1 = 0x81, Gap2 = 0x05, Gap3 = 0x1B (27), TrackSize = 0x1945
+	//  Gap1 = 0x81, Gap2 = 0x05, Gap3 = 0x1A (26), TrackSize = 0x1936
 	//
-	// 0x1936 - 0x81(gap1) = 0x18B5
-	// So need a track size of 0x18B0 (rounding down)
+	// And 0x1936 - 0x81(gap1) = 0x18B5
+	// So need a track size between 0x18B0 (rounding down) and 0x182F
 	const UINT kShortTrackLen = 0x18B0;
 
 	LPBYTE TrackBuffer = fptr->trackimage;
@@ -171,22 +171,18 @@ void FormatTrack::DriveSwitchedToReadMode(Disk_t* const fptr)
 
 void FormatTrack::DriveSwitchedToWriteMode(UINT uTrackIndex)
 {
-	DecodeLatchNibbleReset();
-
-	if (m_bmWrittenSectorAddrFields == 0x0000)	// written no sectors
-	{
-		m_WriteTrackStartIndex = (UINT)-1;		// wait for 1st write 
-	}
-}
-
-void FormatTrack::DecodeLatchNibbleReset(void)
-{
-	// ProDOS: switches to write mode between Address Field & Gap2; and between Data Field & Gap3
+	// ProDOS/DOS3.3: during track write, switches to read mode then back to write mode:
+	// . between Address Field & Gap2; and between Data Field & Gap3
 	// . so if at TS_GAP2_START then stay at TS_GAP2_START
 	if (m_trackState != TS_GAP2_START)
 		m_trackState = (m_bmWrittenSectorAddrFields == 0x0000) ? TS_GAP1 : TS_GAP3;
 	m_uLast3Bytes = 0;
 	m_4and4idx = 0;
+
+	if (m_bmWrittenSectorAddrFields == 0x0000)	// written no sectors
+	{
+		m_WriteTrackStartIndex = (UINT)-1;		// wait for 1st write 
+	}
 }
 
 // This is just for debug/logging: used to output when a new Address Field has been read

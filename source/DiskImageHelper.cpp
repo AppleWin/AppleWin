@@ -419,8 +419,8 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 #endif
 
 	int offset    = 0;
-	int partsleft = 33;		// TODO-TC: 32 = 16*2 prologues
-	int sector    = 0;
+	int partsleft = NUM_SECTORS*2+1;	// TC: 32+1 prologues - need 1 extra if trackimage starts between Addr Field & Data Field
+	int sector    = -1;
 	while (partsleft--)
 	{
 		BYTE byteval[3] = {0,0,0};
@@ -454,8 +454,8 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 						| (*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+5) & 0x55);
 
 #ifdef _DEBUG
-				_ASSERT( sector <= 15 );
-				if (partsleft != 0)	// Don't need this if partsleft is initialised to 32 (not 33)
+				_ASSERT( sector < NUM_SECTORS );
+				if (partsleft != 0)
 				{
 					_ASSERT( (bmWrittenSectorAddrFields & (1<<sector)) == 0 );
 					bmWrittenSectorAddrFields |= (1<<sector);
@@ -464,12 +464,14 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 			}
 			else if (byteval[2] == 0xAD)
 			{
+				if (sector >= 0 && sector < NUM_SECTORS)
+				{
 #ifdef _DEBUG
-				uWriteDataFieldPrologueCount++;
-				_ASSERT(uWriteDataFieldPrologueCount <= 16);
+					uWriteDataFieldPrologueCount++;
+					_ASSERT(uWriteDataFieldPrologueCount <= NUM_SECTORS);
 #endif
-
-				Decode62(ms_pWorkBuffer+(ms_SectorNumber[SectorOrder][sector] << 8));
+					Decode62(ms_pWorkBuffer+(ms_SectorNumber[SectorOrder][sector] << 8));
+				}
 				sector = 0;
 			}
 		}

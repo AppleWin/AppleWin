@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DiskDefs.h"
 #include "zip.h"
 
 #define GZ_SUFFIX ".gz"
@@ -90,7 +91,7 @@ public:
 
 protected:
 	static BYTE ms_DiskByte[0x40];
-	static BYTE ms_SectorNumber[NUM_SECTOR_ORDERS][0x10];
+	static BYTE ms_SectorNumber[NUM_SECTOR_ORDERS][NUM_SECTORS];
 	BYTE m_uVolumeNumber;
 };
 

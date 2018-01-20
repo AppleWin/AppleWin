@@ -43,7 +43,6 @@ public:
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
 private:
-	void DecodeLatchNibbleReset(void);
 	void UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const fptr);
 	void DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite);
 
