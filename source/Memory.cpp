@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Harddisk.h"
 #include "Joystick.h"
 #include "Keyboard.h"
+#include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
@@ -1279,7 +1280,7 @@ void MemInitializeROM(void)
 	case A2TYPE_TK30002E:       hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_TK3000_2E_ROM       ), "ROM"); ROM_SIZE = Apple2eRomSize; break;
 	}
 
-	if(hResInfo == NULL)
+	if (hResInfo == NULL)
 	{
 		TCHAR sRomFileName[ MAX_PATH ];
 		switch (g_Apple2Type)
@@ -1295,18 +1296,21 @@ void MemInitializeROM(void)
 		default:
 			{
 				_tcscpy(sRomFileName, TEXT("Unknown type!"));
-				REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), A2TYPE_APPLE2EENHANCED);
+				sg_PropertySheet.ConfigSaveApple2Type(A2TYPE_APPLE2EENHANCED);
 			}
 		}
 
-		TCHAR sText[ MAX_PATH ];
-		wsprintf( sText, TEXT("Unable to open the required firmware ROM data file.\n\nFile: %s"), sRomFileName );
+		TCHAR sText[MAX_PATH];
+		_snprintf(sText, sizeof(sText)-1, TEXT("Unable to open the required firmware ROM data file.\n\nFile: %s"), sRomFileName);
+
+		LogFileOutput("%s\n", sText);
 
 		MessageBox(
 			GetDesktopWindow(),
 			sText,
 			g_pAppTitle,
 			MB_ICONSTOP | MB_SETFOREGROUND);
+
 		ExitProcess(1);
 	}
 

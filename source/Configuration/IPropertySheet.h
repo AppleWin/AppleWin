@@ -8,6 +8,7 @@ __interface IPropertySheet
 	DWORD GetVolumeMax(void);								// TODO:TC: Move out of here
 	bool SaveStateSelectImage(HWND hWindow, bool bSave);	// TODO:TC: Move out of here
 	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld);
+	void ConfigSaveApple2Type(eApple2Type apple2Type);
 
 	UINT GetScrollLockToggle(void);
 	void SetScrollLockToggle(UINT uValue);

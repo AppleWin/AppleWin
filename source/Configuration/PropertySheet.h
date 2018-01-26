@@ -28,6 +28,10 @@ public:
 	{
 		m_PropertySheetHelper.ApplyNewConfig(ConfigNew, ConfigOld);
 	}
+	void ConfigSaveApple2Type(eApple2Type apple2Type)
+	{
+		m_PropertySheetHelper.ConfigSaveApple2Type(apple2Type);
+	}
 
 	virtual UINT GetScrollLockToggle(void){ return m_PageInput.GetScrollLockToggle(); }
 	virtual void SetScrollLockToggle(UINT uValue){ m_PageInput.SetScrollLockToggle(uValue); }

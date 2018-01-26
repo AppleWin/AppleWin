@@ -520,15 +520,15 @@ void LoadConfiguration(void)
 			char sText[ 100 ];
 			_snprintf( sText, sizeof(sText)-1, "Unsupported Apple2Type(%d). Changing to %d", dwLoadedComputerType, dwComputerType);
 
+			LogFileOutput("%s\n", sText);
+
 			MessageBox(
 				GetDesktopWindow(),		// NB. g_hFrameWindow is not yet valid
 				sText,
 				"Load Configuration",
 				MB_ICONSTOP | MB_SETFOREGROUND);
 
-			LogFileOutput("%s\n", sText);
-
-			REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), dwComputerType);
+			sg_PropertySheet.ConfigSaveApple2Type((eApple2Type)dwComputerType);
 		}
 
 		apple2Type = (eApple2Type) dwComputerType;

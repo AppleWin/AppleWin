@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "..\AppleWin.h"	// g_nAppMode, g_uScrollLockToggle, sg_PropertySheet
 #include "..\Disk.h"
 #include "..\Frame.h"
+#include "..\Log.h"
 #include "..\Registry.h"
 #include "..\SaveState.h"
 #include "IPropertySheet.h"
@@ -104,7 +105,13 @@ void CPropertySheetHelper::SaveComputerType(eApple2Type NewApple2Type)
 	if (NewApple2Type == A2TYPE_CLONE)	// Clone picked from Config tab, but no specific one picked from Advanced tab
 		NewApple2Type = A2TYPE_PRAVETS82;
 
-	REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), NewApple2Type);
+	ConfigSaveApple2Type(NewApple2Type);
+}
+
+void CPropertySheetHelper::ConfigSaveApple2Type(eApple2Type apple2Type)
+{
+	REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), apple2Type);
+	LogFileOutput("Config: Apple2 Type changed to %d\n", apple2Type);
 }
 
 void CPropertySheetHelper::SaveCpuType(eCpuType NewCpuType)
