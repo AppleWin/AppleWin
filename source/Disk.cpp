@@ -365,6 +365,7 @@ static void __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uEx
 		g_formatTrack.DriveNotWritingTrack();
 
 	floppymotoron = newState;
+	// TODO: should turning the motor off reset the state: floppyloadmode, floppywritemode, phases? Like DiskReset()
 #if LOG_DISK_MOTOR
 	LOG_DISK("motor %s\r\n", (floppymotoron) ? "on" : "off");
 #endif
@@ -375,6 +376,14 @@ static void __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uEx
 
 static void __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
+	if (!floppymotoron)	// GH#525
+	{
+#if LOG_DISK_PHASES
+		LOG_DISK("stepper accessed whilst motor is off\r\n");
+#endif
+		return;
+	}
+
 	Disk_t * fptr = &g_aFloppyDisk[currdrive];
 	int phase = (address >> 1) & 3;
 	int phase_bit = (1 << phase);
