@@ -93,6 +93,7 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Release\Applewin.pdb"
 				SubSystem="2"
+				OptimizeReferences="2"
 				LinkTimeCodeGeneration="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -1060,10 +1061,6 @@
 			</File>
 			<File
 				RelativePath=".\resource\Apple2e_Enhanced.rom"
-				>
-			</File>
-			<File
-				RelativePath=".\resource\Applewin.bmp"
 				>
 			</File>
 			<File
