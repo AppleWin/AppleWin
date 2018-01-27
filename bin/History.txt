@@ -9,73 +9,84 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.26.3.6 (Experimental) - 20 Dec 2017
--------------------------------------
-Changes:
-. [Bug #504] Full-screen: hide mouse pointer after 2 seconds of inactivity (and show again if mouse is moved)
-. [Bug #469] New -no-printscreen-key switch to prevent the PrintScreen key from being registered.
-. [Bug #488] New -fs-height=<best|nnnn> switch.
+1.27.0.0 - 28 Jan 2018
+----------------------
+Full release that rolls-up all the changes and fixes from the 1.26.2 & 1.26.3 experiment builds.
+
+Changes (misc):
+. [Change #428] Added Config Input option to use PC Joystick 1 Thumbstick 2 for emulated Joystick 2
+	- play Nick Westgate's updated Robotron using gamepads with two analog thumbsticks, eg. Logitech F310, PS4 DualShock 4, Xbox controller
+. [Change #528] Improved logging to log when Apple2 type changes
+. [Change #469] New -no-printscreen-key switch to prevent the PrintScreen key from being registered.
+. Swapping disks while a drive is on now warns and prompts if you still wish to do this instead of silently failing with no feedback.
+. [PR #441] Update zlib to latest version 1.2.11
+. [PR #275] Attenuate speaker (and 8-bit DAC) output sample after 0.25s of inactivity
+Full-screen:
+. [Change #504] Full-screen: hide mouse pointer after 2 seconds of inactivity (and show again if mouse is moved)
+. [Change #488] New -fs-height=<best|nnnn> switch.
     - best: picks the highest resolution where the height is an integer multiple of (192*2)
     - nnnn: select a specific resolution with height=nnnn pixels
     Use to select a better resolution for full-screen mode.
     NB. This changes the display resolution (and restores on exit).
-. [Bug #477] Help doc: Document behaviour full-speed mode
-. [Bug #428] Input option to use PC Joystick 1 Thumbstick 2 for emulated Joystick 2 
-. Swapping disks while a drive is on now warns and prompts if you still wish to do this instead of silently failing with no feedback.
-. [Bug #323] Skip hard disk boot by holding down the Open-Apple key during an Apple II restart
-. [Bug #224] Added Config checkbox for 'Full-Screen: Show drive/keyboard status'
-. [PR #441] Update zlib to latest version 1.2.11
-. [PR #275] Attenuate speaker (and 8-bit DAC) output sample after 0.25s of inactivity
-. [Bug #483] Debugger: Shift+Left mouse button to toggle 6502 Status flag bits
-. [Bug #479, #476, #473] Debugger: Various UI and other fixes
-. [Bug #462] Debugger: Changed Left mouse button (LMB) to Shift+LMB to toggle display items
-. [Bug #406] Debugger: Support LC and MMU status & updated Help doc
-
-Fixes:
-. [Bug #516] Internal video-mode was having PAGE2 permanently cleared (instead of just masked) when 80STORE was set.
-. [Bug #514] Emulator restart (or reset) wasn't clearing any pending Mousecard interrupt
+. [Change #224] Added Config checkbox for 'Full-Screen: Show drive/keyboard status'
+. [Change #492] UI fixes for full-screen & 2x windowed-mode
+. [Bug #464] Fix for full-screen: bottom line missing when vertical resolution is 768
+DiskII/Hard disk:
+. [Change #323] Skip hard disk boot by holding down the Open-Apple key during an Apple II restart
+. {Bug #525] Fix to prevent stepper motor changing track when drive if off
+. [Bug #125] Support formatting of DOS3.3/ProDOS for .dsk/.nib in authentic/enhanced disk modes
+	-  includes support for Pascal formatting (#196) and Ultima I formatting (#338)
 . [Bug #499] Flush current track (if dirty) before 'Send to CiderPress'
+. [Bug #452] Fix for unmounted HD now gives "NO DEVICE CONNECTED" (before gave "I/O ERROR")
+. [Bug #389] Disk's write-protect detection mis-reporting when motor off
+. [Bug #387] Support for 40-track .nib files
+Peripheral cards:
+. [Bug #514] Emulator restart (or reset) wasn't clearing any pending Mousecard interrupt
 . [Bug #496] Support polling of Mockingboard's & Phasor's 6522 IFR.Timer1
-. [Bug #492] UI fixes for full-screen & 2x windowed-mode
 . [Bug #486] Peripheral card's expansion ROM ($C800-CFFF, eg. SSC) wasn't being correctly restored from a save-state
   - Resulting in regression: Mousecard crash to monitor (#495).
-. [Bug #484] Debugger: Some corrections to APPLE2E.SYM
-. [Bug #464] Fix for full-screen: bottom line missing when vertical resolution is 768
-. [Bug #460] Debugger: F2 whilst debugger active will immediately stop the drive spinning (allowing disk swap)
-. [Bug #456] Fix strange speaker clicks when changing configuration - DirectSound wasn't being uninitialised on a restart
-. [Bug #452] Fix for unmounted HD now gives "NO DEVICE CONNECTED" (before gave "I/O ERROR")
-. [Bug #450] Persist debugger state across an F2 (reset machine state)
-. [Bug #445] Debugger: BPM cmd: Support trigger on stack access for BRK,JSR,PLn,PHn,RTI,RTS
-. [Bug #437] AppleWin.chm blocked from opening - delete the AppleWin.chm:Zone.Identifier ADS
 . [Bug #423] Full support for INTC8ROM soft switch (fixes transient a2audit.dsk & Bejeweled failures)
 . [Bug #418] Fix for slot-3 ROM not returning floating bus when Uthernet card is enabled
-. [Bug #417] Typos in Uthernet documentation
-. [Bug #415] Fix for not being able to select Pravets 82
 . [Bug #413] Save-state: bug when saving >9 RAMWorks III 64K banks
+. [Bug #386] SSC: Experimental support for 6551's DTR, DCD and DSR bits via -modem switch
+  - ie. -modem is shorthand for passing -dtr -dcd -dsr
+  - Experimental support for 6551's control bit: DTR via -dtr switch
+  - Experimental support for 6551's status bits: DCD and DSR via -dcd and -dsr switches
+. [Bug #320] Mockingboard/Phasor: support 'inactive' function like real hardware
+. [Bug #308] SSC ACIA Status register's interrupt bit not set when IRQ enabled and using TCP Port 1977
+Debugger:
+. [Change #483] Debugger: Shift+Left mouse button to toggle 6502 Status flag bits
+. [Change #462] Debugger: Changed Left mouse button (LMB) to Shift+LMB to toggle display items
+. [Change #406] Debugger: Support LC and MMU status & updated Help doc
+. [Change #269] When stepping, ESC no longer exits back to debugger (use F7, Pause keys or Debugger button instead).
+. [Change #217] Debugger G(o) command should use normal speed
+. Debugger: Added new gg command:
+
+	 command | run at normal speed? | run at full speed?       | video quality | sound quality
+	-------------------------------------------------------------------------------------------
+	   g     |         yes          | only if disk active, etc | precise       | precise
+	   gg    |         no           | always                   | periodic      | muted
+
+. [Bug #484] Debugger: Some corrections to APPLE2E.SYM
+. [Bug #479, #476, #473] Debugger: Various UI and other fixes
+. [Bug #460] Debugger: F2 whilst debugger active will immediately stop the drive spinning (allowing disk swap)
+. [Bug #450] Persist debugger state across an F2 (reset machine state)
+. [Bug #445] Debugger: BPM cmd: Support trigger on stack access for BRK,JSR,PLn,PHn,RTI,RTS
+. [Bug #383] "Enhanced disk speed" is very slow when debugger is active
+. [Bug #250] Debugger: When MODE_STEPPING, fix issue with disk LEDs staying on
+Docs:
+. [Change #477] Help doc: Document behaviour full-speed mode
+. [Change #437] AppleWin.chm blocked from opening - delete the AppleWin.chm:Zone.Identifier ADS
+. [Bug #417] Typos in Uthernet documentation
+Fixes (other):
+. [Bug #516] Internal video-mode was having PAGE2 permanently cleared (instead of just masked) when 80STORE was set.
+. [Bug #456] Fix strange speaker clicks when changing configuration - DirectSound wasn't being uninitialised on a restart
+. [Bug #415] Fix for not being able to select Pravets 82
 . [Bug #409] Fix for AppleWorks 5.1 flickering when booting (latent bug from 2006!)
 . [Bug #405] Screen flicker in full-speed mode
 . [Bug #403] PrintScreen from Color TV or B&W TV video modes is missing top line
 . [Bug #392] Fixes for a2audit.dsk
   - Resulting in regressions in LC support for Gemstone Warriors (#395), Quark Catalyst V3 and BeagleWrite (#400).
-. [Bug #389] Disk's write-protect detection mis-reporting when motor off
-. [Bug #387] Support for 40-track .nib files
-. [Bug #386] SSC: Experimental support for 6551's DTR, DCD and DSR bits via -modem switch
-  - ie. -modem is shorthand for passing -dtr -dcd -dsr
-  - Experimental support for 6551's control bit: DTR via -dtr switch
-  - Experimental support for 6551's status bits: DCD and DSR via -dcd and -dsr switches
-. [Bug #383] "Enhanced disk speed" is very slow when debugger is active
-. [Bug #320] Mockingboard/Phasor: support 'inactive' function like real hardware
-. [Bug #308] SSC ACIA Status register's interrupt bit not set when IRQ enabled and using TCP Port 1977
-. [Bug #269] When stepping, ESC no longer exits back to debugger (use F7, Pause keys or Debugger button instead).
-. [Bug #250] Debugger: When MODE_STEPPING, fix issue with disk LEDs staying on
-. [Bug #217] Debugger G(o) command should use normal speed
-. Debugger: Added new gg command:
-
-     command | run at normal speed? | run at full speed?       | video quality | sound quality
-    -------------------------------------------------------------------------------------------
-       g     |         yes          | only if disk active, etc | precise       | precise
-       gg    |         no           | always                   | periodic      | muted
-
 . [Bug #213] Pause not setting volume to zero
 
 
