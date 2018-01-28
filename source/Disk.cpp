@@ -365,7 +365,8 @@ static void __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uEx
 		g_formatTrack.DriveNotWritingTrack();
 
 	floppymotoron = newState;
-	// TODO: should turning the motor off reset the state: floppyloadmode, floppywritemode, phases? Like DiskReset()
+	// NB. Motor off doesn't reset the Command Decoder like reset. (UTAIIe figures 9.7 & 9.8 chip C2)
+	// - so it doesn't reset this state: floppyloadmode, floppywritemode, phases
 #if LOG_DISK_MOTOR
 	LOG_DISK("motor %s\r\n", (floppymotoron) ? "on" : "off");
 #endif
