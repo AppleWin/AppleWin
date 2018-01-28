@@ -376,15 +376,23 @@ static void __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uEx
 
 static void __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
+	Disk_t * fptr = &g_aFloppyDisk[currdrive];
+
 	if (!floppymotoron)	// GH#525
 	{
+		if (!fptr->spinning)
+		{
 #if LOG_DISK_PHASES
-		LOG_DISK("stepper accessed whilst motor is off\r\n");
+			LOG_DISK("stepper accessed whilst motor is off and not spinning\r\n");
 #endif
-		return;
+			return;
+		}
+
+#if LOG_DISK_PHASES
+		LOG_DISK("stepper accessed whilst motor is off, but still spinning\r\n");
+#endif
 	}
 
-	Disk_t * fptr = &g_aFloppyDisk[currdrive];
 	int phase = (address >> 1) & 3;
 	int phase_bit = (1 << phase);
 
