@@ -1430,10 +1430,21 @@ uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeCol
 }
 
 //===========================================================================
-
-// NB. NTSC video-scanner doesn't get updated during full-speed, so video-dependent Apple II code can hang
-uint16_t NTSC_VideoGetScannerAddress ( void )
+void NTSC_VideoClockResync(const DWORD dwCyclesThisFrame)
 {
+	g_nVideoClockVert = (uint16_t) (dwCyclesThisFrame / VIDEO_SCANNER_MAX_HORZ) % VIDEO_SCANNER_MAX_VERT;
+	g_nVideoClockHorz = (uint16_t) (dwCyclesThisFrame % VIDEO_SCANNER_MAX_HORZ);
+}
+
+//===========================================================================
+uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
+{
+	if (g_bFullSpeed)
+	{
+		// Ensure that NTSC video-scanner gets updated during full-speed, so video-dependent Apple II code doesn't hang
+		NTSC_VideoClockResync( CpuGetCyclesThisVideoFrame(uExecutedCycles) );
+	}
+
 	const uint16_t currVideoClockVert = g_nVideoClockVert;
 	const uint16_t currVideoClockHorz = g_nVideoClockHorz;
 
