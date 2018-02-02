@@ -9,8 +9,8 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.27.0.0 - 28 Jan 2018
-----------------------
+1.27.0.0 - 4 Feb 2018
+---------------------
 Full release that rolls-up all the changes and fixes from the 1.26.2 & 1.26.3 experiment builds.
 
 Changes (misc):
@@ -79,6 +79,7 @@ Docs:
 . [Change #437] AppleWin.chm blocked from opening - delete the AppleWin.chm:Zone.Identifier ADS
 . [Bug #417] Typos in Uthernet documentation
 Fixes (other):
+. [Bug #519] Support floating-bus in full-speed mode. Fixes Canyon Climber (#508), Oo-Topos (#532).
 . [Bug #516] Internal video-mode was having PAGE2 permanently cleared (instead of just masked) when 80STORE was set.
 . [Bug #456] Fix strange speaker clicks when changing configuration - DirectSound wasn't being uninitialised on a restart
 . [Bug #415] Fix for not being able to select Pravets 82
