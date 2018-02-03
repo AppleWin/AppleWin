@@ -143,7 +143,7 @@ namespace
     const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
     g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-    DiskUpdatePosition(uActualCyclesExecuted);
+    DiskUpdateDriveState(uActualCyclesExecuted);
 
     const int key = ProcessKeyboard();
 

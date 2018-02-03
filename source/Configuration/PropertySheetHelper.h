@@ -37,6 +37,7 @@ public:
 	bool IsConfigChanged(void) { return m_ConfigNew != m_ConfigOld; }
 	void SetDoBenchmark(void) { m_bDoBenchmark = true; }
 	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld);
+	void ConfigSaveApple2Type(eApple2Type apple2Type);
 
 private:
 	bool IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged);

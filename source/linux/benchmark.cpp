@@ -152,7 +152,7 @@ void VideoBenchmark(std::function<void()> VideoRedrawScreen)
       while (cycles > 0) {
         DWORD executedcycles = CpuExecute(103, true);
         cycles -= executedcycles;
-        DiskUpdatePosition(executedcycles);
+        DiskUpdateDriveState(executedcycles);
 #if 0
         JoyUpdateButtonLatch(executedcycles);
 #endif

@@ -412,9 +412,14 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 	// IN THE BUFFER AND WRITE IT INTO THE FIRST PART OF THE WORK BUFFER
 	// OFFSET BY THE SECTOR NUMBER.
 
+#ifdef _DEBUG
+	UINT16 bmWrittenSectorAddrFields = 0x0000;
+	BYTE uWriteDataFieldPrologueCount = 0;
+#endif
+
 	int offset    = 0;
-	int partsleft = 33;
-	int sector    = 0;
+	int partsleft = NUM_SECTORS*2+1;	// TC: 32+1 prologues - need 1 extra if trackimage starts between Addr Field & Data Field
+	int sector    = -1;
 	while (partsleft--)
 	{
 		BYTE byteval[3] = {0,0,0};
@@ -435,21 +440,37 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 		{
 			int loop       = 0;
 			int tempoffset = offset;
-			while (loop < 384)
+			while (loop < 384)	// TODO-TC: Why 384? Only need 343 for Decode62()
 			{
 				*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+loop++) = *(trackimage+tempoffset++);
 				if (tempoffset >= nibbles)
 					tempoffset = 0;
 			}
-			
+
 			if (byteval[2] == 0x96)
 			{
 				sector = ((*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+4) & 0x55) << 1)
 						| (*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+5) & 0x55);
+
+#ifdef _DEBUG
+				_ASSERT( sector < NUM_SECTORS );
+				if (partsleft != 0)
+				{
+					_ASSERT( (bmWrittenSectorAddrFields & (1<<sector)) == 0 );
+					bmWrittenSectorAddrFields |= (1<<sector);
+				}
+#endif
 			}
 			else if (byteval[2] == 0xAD)
 			{
-				Decode62(ms_pWorkBuffer+(ms_SectorNumber[SectorOrder][sector] << 8));
+				if (sector >= 0 && sector < NUM_SECTORS)
+				{
+#ifdef _DEBUG
+					uWriteDataFieldPrologueCount++;
+					_ASSERT(uWriteDataFieldPrologueCount <= NUM_SECTORS);
+#endif
+					Decode62(ms_pWorkBuffer+(ms_SectorNumber[SectorOrder][sector] << 8));
+				}
 				sector = 0;
 			}
 		}
@@ -620,7 +641,6 @@ public:
 
 	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
 	{
-		ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		DenibblizeTrack(pTrackImage, eDOSOrder, nNibbles);
 		WriteTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
@@ -687,7 +707,6 @@ public:
 
 	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
 	{
-		ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		DenibblizeTrack(pTrackImage, eProDOSOrder, nNibbles);
 		WriteTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
@@ -1307,7 +1326,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			NULL );
 		
 		if (hFile != INVALID_HANDLE_VALUE)
-			pImageInfo->bWriteProtected = 1;
+			pImageInfo->bWriteProtected = true;
 	}
 
 	if ((hFile == INVALID_HANDLE_VALUE) && bCreateIfNecessary)
@@ -1360,11 +1379,34 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 	}
 	else	// Create (or pre-existing zero-length file)
 	{
+		if (pImageInfo->bWriteProtected)
+			return eIMAGE_ERROR_ZEROLENGTH_WRITEPROTECTED;	// Can't be formatted, so return error
+
 		pImageType = GetImageForCreation(szExt, &dwSize);
 		if (pImageType && dwSize)
 		{
 			pImageInfo->pImageBuffer = new BYTE [dwSize];
-			ZeroMemory(pImageInfo->pImageBuffer, dwSize);
+
+			if (pImageType->GetType() != eImageNIB1)
+			{
+				ZeroMemory(pImageInfo->pImageBuffer, dwSize);
+			}
+			else
+			{
+				// Fill zero-length image buffer with alternating high-bit-set nibbles (GH#196, GH#338)
+				for (UINT i=0; i<dwSize; i+=2)
+				{
+					pImageInfo->pImageBuffer[i+0] = 0x80;	// bit7 set, but 0x80 is an invalid nibble
+					pImageInfo->pImageBuffer[i+1] = 0x81;	// bit7 set, but 0x81 is an invalid nibble
+				}
+			}
+
+			// As a convenience, resize the file to the complete size (GH#506)
+			// - this also means that a save-state done mid-way through a format won't reference an image file with a partial size (GH#494)
+			DWORD dwBytesWritten = 0;
+			BOOL res = WriteFile(hFile, pImageInfo->pImageBuffer, dwSize, &dwBytesWritten, NULL); 
+			if (!res || dwBytesWritten != dwSize)
+				return eIMAGE_ERROR_FAILED_TO_INIT_ZEROLENGTH;
 		}
 	}
 

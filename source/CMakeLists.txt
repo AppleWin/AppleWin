@@ -5,6 +5,7 @@ add_library(appleii SHARED
   YamlHelper.cpp
   Log.cpp
   Disk.cpp
+  DiskFormatTrack.cpp
   DiskImage.cpp
   DiskImageHelper.cpp
   Harddisk.cpp

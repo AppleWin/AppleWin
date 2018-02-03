@@ -389,6 +389,11 @@ void YamlSaveHelper::SaveHexUint16(const char* key, UINT value)
 	Save("%s: 0x%04X\n", key, value);
 }
 
+void YamlSaveHelper::SaveHexUint24(const char* key, UINT value)
+{
+	Save("%s: 0x%06X\n", key, value);
+}
+
 void YamlSaveHelper::SaveHexUint32(const char* key, UINT value)
 {
 	Save("%s: 0x%08X\n", key, value);

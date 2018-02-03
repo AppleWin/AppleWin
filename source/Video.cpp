@@ -301,7 +301,7 @@ void VideoBenchmark () {
       while (cycles > 0) {
         DWORD executedcycles = CpuExecute(103, true);
         cycles -= executedcycles;
-        DiskUpdatePosition(executedcycles);
+        DiskUpdateDriveState(executedcycles);
         JoyUpdateButtonLatch(executedcycles);
 	  }
     }
@@ -567,10 +567,16 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 
 void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
-	const int nScanLines = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
-
-	g_nVideoClockVert = (uint16_t) (dwCyclesThisFrame / kHClocks) % nScanLines;
-	g_nVideoClockHorz = (uint16_t) (dwCyclesThisFrame % kHClocks);
+	if (bVideoScannerNTSC)
+	{
+		NTSC_VideoClockResync(dwCyclesThisFrame);
+	}
+	else	// PAL
+	{
+		_ASSERT(0);
+		g_nVideoClockVert = (uint16_t) (dwCyclesThisFrame / kHClocks) % kPALScanLines;
+		g_nVideoClockHorz = (uint16_t) (dwCyclesThisFrame % kHClocks);
+	}
 
 	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
 }

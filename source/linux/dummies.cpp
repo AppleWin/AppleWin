@@ -68,6 +68,10 @@ UINT IPropertySheet::GetTheFreezesF8Rom(void)
   return 0;
 }
 
+void IPropertySheet::ConfigSaveApple2Type(eApple2Type apple2Type)
+{
+}
+
 HWND GetDesktopWindow()
 {
   return NULL;
@@ -344,13 +348,10 @@ void NTSC_VideoUpdateCycles( long cyclesLeftToUpdate )
 {
 }
 
-/*
-// Not used now
-uint16_t NTSC_VideoGetScannerAddress()
+uint16_t NTSC_VideoGetScannerAddress( const ULONG uExecutedCycles )
 {
-  return 0;
+  return VideoGetScannerAddress(NULL, uExecutedCycles);
 }
-*/
 
 void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 {
