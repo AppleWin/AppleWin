@@ -9,7 +9,7 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.27.0.0 - 4 Feb 2018
+1.27.0.0 - 3 Feb 2018
 ---------------------
 Full release that rolls-up all the changes and fixes from the 1.26.2 & 1.26.3 experiment builds.
 
