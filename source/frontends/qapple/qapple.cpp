@@ -16,6 +16,7 @@
 
 #include "linux/data.h"
 #include "linux/benchmark.h"
+#include "linux/version.h"
 
 #include "emulator.h"
 #include "memorycontainer.h"
@@ -305,7 +306,9 @@ void QApple::on_actionAbout_Qt_triggered()
 
 void QApple::on_actionAbout_triggered()
 {
-    QMessageBox::about(this, QApplication::applicationName(), "Apple ][ emulator\n\nBased on AppleWin\n");
+    QString qversion = QString::fromStdString(getVersion());
+    QString message = QString("Apple ][ emulator\n\nBased on AppleWin %1\n").arg(qversion);
+    QMessageBox::about(this, QApplication::applicationName(), message);
 }
 
 QString getImageFilename()
