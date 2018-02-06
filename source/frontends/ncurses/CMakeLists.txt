@@ -11,21 +11,22 @@ add_executable(applen
   configuration.cpp
   )
 
-pkg_search_module(NCURSES REQUIRED ncursesw)
+pkg_search_module(NCURSESW REQUIRED ncursesw)
+pkg_search_module(LIBEVDEV REQUIRED libevdev)
 
 target_include_directories(applen PRIVATE
-  /usr/include/libevdev-1.0
   ${NCURSESW_INCLUDE_DIRS}
+  ${LIBEVDEV_INCLUDE_DIRS}
   )
 
 target_link_libraries(applen
   boost_program_options
   appleii
-  ncursesw
-  evdev
   ${NCURSESW_LIBRARIES}
+  ${LIBEVDEV_LIBRARIES}
   )
 
 target_compile_options(applen PRIVATE
   ${NCURSESW_CFLAGS_OTHER}
+  ${LIBEVDEV_CFLAGS_OTHER}
   )
