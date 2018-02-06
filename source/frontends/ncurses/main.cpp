@@ -18,6 +18,7 @@
 #include "ParallelPrinter.h"
 #include "Video.h"
 #include "SaveState.h"
+#include "MouseInterface.h"
 
 #include "linux/data.h"
 #include "linux/benchmark.h"
@@ -277,6 +278,7 @@ namespace
 	MemInitialize();
 	VideoInitialize();
 	DiskReset();
+	HD_Reset();
 
 	if (!options.snapshot.empty())
 	{
@@ -293,6 +295,9 @@ namespace
 	{
 	  EnterMessageLoop();
 	}
+	sg_Mouse.Uninitialize();
+	sg_Mouse.Reset();
+	MemDestroy();
       }
       while (g_bRestart);
 
@@ -306,7 +311,6 @@ namespace
     HD_Destroy();
     PrintDestroy();
     CpuDestroy();
-    MemDestroy();
 
     DiskDestroy();
     ImageDestroy();

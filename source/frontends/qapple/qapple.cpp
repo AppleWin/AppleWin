@@ -9,6 +9,7 @@
 #include "CPU.h"
 #include "Frame.h"
 #include "Memory.h"
+#include "MouseInterface.h"
 #include "ParallelPrinter.h"
 #include "Video.h"
 #include "SaveState.h"
@@ -38,6 +39,16 @@ namespace
         DiskInitialize();
     }
 
+    /* In AppleWin there are 3 ways to reset the emulator
+     *
+     * 1) Hardware Change: it leaves the EnterMessageLoop() function
+     * 2) ResetMachineState()
+     * 3) CtrlReset()
+     *
+     * Here we implement something similar to 1)
+     *
+     */
+
     void startEmulator(QWidget * window)
     {
         LoadConfiguration();
@@ -51,10 +62,14 @@ namespace
 
         MemInitialize();
         VideoInitialize();
+        DiskReset();
+        HD_Reset();
     }
 
     void stopEmulator()
     {
+        sg_Mouse.Uninitialize();
+        sg_Mouse.Reset();
         MemDestroy();
     }
 
@@ -63,9 +78,9 @@ namespace
         HD_Destroy();
         PrintDestroy();
         CpuDestroy();
-        MemDestroy();
 
         DiskDestroy();
+        ImageDestroy();
     }
 
 }
