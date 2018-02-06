@@ -119,6 +119,9 @@
    <property name="text">
     <string>&amp;Pause</string>
    </property>
+   <property name="shortcut">
+    <string>Pause</string>
+   </property>
   </action>
   <action name="action4_3">
    <property name="text">
@@ -138,6 +141,9 @@
   <action name="actionReboot">
    <property name="text">
     <string>&amp;Reboot</string>
+   </property>
+   <property name="shortcut">
+    <string>F2</string>
    </property>
   </action>
   <action name="actionBenchmark">
@@ -159,10 +165,16 @@
    <property name="text">
     <string>&amp;Load state</string>
    </property>
+   <property name="shortcut">
+    <string>F12</string>
+   </property>
   </action>
   <action name="actionSave_state">
    <property name="text">
     <string>&amp;Save state</string>
+   </property>
+   <property name="shortcut">
+    <string>F11</string>
    </property>
   </action>
   <action name="actionAbout_Qt">
@@ -177,7 +189,10 @@
   </action>
   <action name="actionScreenshot">
    <property name="text">
-    <string>Screenshot</string>
+    <string>&amp;Screenshot</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+F12</string>
    </property>
   </action>
  </widget>
