@@ -175,7 +175,15 @@ void QApple::closeEvent(QCloseEvent *)
 
 void QApple::on_timer()
 {
-    const qint64 elapsed = myElapsedTimer.restart();
+    const qint64 target = myElapsedTimer.elapsed();
+    const qint64 current = CpuGetEmulationTime_ms() - myCpuTimeReference;
+    const qint64 elapsed = target - current;
+    if (elapsed <= 0)
+    {
+        return;
+    }
+
+    const qint64 full_speed_ms      = 5;
     const double fUsecPerSec        = 1.e6;
     const UINT nExecutionPeriodUsec = 1000 * elapsed;
 
@@ -184,6 +192,7 @@ void QApple::on_timer()
 
     const bool bVideoUpdate = false;
 
+    int count = 0;
     do
     {
         const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
@@ -193,8 +202,14 @@ void QApple::on_timer()
             g_dwCyclesThisFrame -= dwClksPerFrame;
             myEmulator->updateVideo();
         }
+        ++count;
     }
-    while (DiskIsSpinning());
+    while (DiskIsSpinning() && (myElapsedTimer.elapsed() < target + full_speed_ms));
+
+    if (count > 0)
+    {
+        restartTimeCounters();
+    }
 }
 
 void QApple::stopTimer()
@@ -206,13 +221,19 @@ void QApple::stopTimer()
     }
 }
 
+void QApple::restartTimeCounters()
+{
+    myElapsedTimer.start();
+    myCpuTimeReference = CpuGetEmulationTime_ms();
+}
+
 void QApple::on_actionStart_triggered()
 {
     // always restart with the same timer gap that was last used
     myTimerID = startTimer(myMSGap, Qt::PreciseTimer);
-    myElapsedTimer.start();
     actionPause->setEnabled(true);
     actionStart->setEnabled(false);
+    restartTimeCounters();
 }
 
 void QApple::on_actionPause_triggered()
@@ -244,6 +265,7 @@ void QApple::on_actionReboot_triggered()
     startEmulator(myEmulatorWindow);
     myEmulatorWindow->setWindowTitle(g_pAppTitle);
     myEmulator->updateVideo();
+    restartTimeCounters();
 }
 
 void QApple::on_actionBenchmark_triggered()
@@ -296,6 +318,7 @@ void QApple::on_actionOptions_triggered()
 
     if (running)
     {
+        // otherwise we would slow down later
         actionStart->trigger();
     }
 }

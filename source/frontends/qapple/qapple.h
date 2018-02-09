@@ -58,6 +58,7 @@ private slots:
 private:
 
     void stopTimer();
+    void restartTimeCounters();
 
     int myTimerID;
     Preferences myPreferences;
@@ -66,6 +67,7 @@ private:
     QMdiSubWindow * myEmulatorWindow;
     std::shared_ptr<QGamepad> myGamepad;
     Emulator * myEmulator;
+    qint64 myCpuTimeReference;
 
     int myMSGap;
 };
