@@ -274,6 +274,15 @@ void QApple::on_actionMemory_triggered()
 
 void QApple::on_actionOptions_triggered()
 {
+    const bool running = actionPause->isEnabled();
+    if (running)
+    {
+        // this is to overcome an issue in GNOME where the open file dialog gets lost
+        // if the emulator is running
+        // at times it can be found in a separate desktop, or it magically reappears
+        // but often it forces to terminate the emulator
+        actionPause->trigger();
+    }
     const Preferences::Data currentOptions = getCurrentOptions(myGamepad);
 
     QSettings settings; // the function will "modify" it
@@ -283,6 +292,11 @@ void QApple::on_actionOptions_triggered()
     {
         const Preferences::Data newOptions = myPreferences.getData();
         setNewOptions(currentOptions, newOptions, myGamepad);
+    }
+
+    if (running)
+    {
+        actionStart->trigger();
     }
 }
 
