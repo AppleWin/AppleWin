@@ -8,7 +8,7 @@ There are 3 projects
 * applen: a frontend based on ncurses
 * qapple: Qt frontend
 
-The libapple interface is a *link time* interface: some functions are not defined and must be provided in order to properly link 
+The libapple interface is a *link time* interface: some functions are not defined and must be provided in order to properly link
 the application. These functions are listed in [interface.h](source/linux/interface.h).
 
 The main goal is to reuse the AppleWin source files without changes: only where really necessary the AppleWin source files have
@@ -47,12 +47,14 @@ Keyboard shortcuts
 
 * F2: terminate emulator
 * F12: Load Snapshot
-* ALT-LEFT: 2x narrower hi res graphics
-* ALT-RIGHT: 2x wider hi res graphis
-* ALT-UP: 2x vertical
-* ALT-DOWN: 2x vertical
+* ALT-RIGHT: wider hi res graphis
+* ALT-LEFT: narrower hi res graphics
+* ALT-UP: vertical hi res (smaller)
+* ALT-DOWN: vertical hires (bigger)
 
-The joystick uses evdev.
+In order to properly appreciate the wider hi res graphics, open a big terminal window and choose a small font size.
+
+The joystick uses evdev (currently the device name is hardcoded).
 
 ### qapple
 

@@ -483,16 +483,16 @@ int ProcessKeyboard()
   case 0x14a: // DEL
     ch = 0x7f;
     break;
-  case 0x221: // ALT - LEFT
+  case 0x222: // ALT - LEFT
     asciiArt->changeColumns(-1);
     break;
-  case 0x230: // ALT - RIGHT
+  case 0x231: // ALT - RIGHT
     asciiArt->changeColumns(+1);
     break;
-  case 0x236:
+  case 0x237: // ALT - UP
     asciiArt->changeRows(-1);
     break;
-  case 0x20D:
+  case 0x20E: // ALT - DOWN
     asciiArt->changeRows(+1);
     break;
   default:
