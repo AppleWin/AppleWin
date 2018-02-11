@@ -996,20 +996,22 @@ bool DiskSelect(const int iDrive)
 
 //===========================================================================
 
-static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG) {
+static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG)
+{
 	/* floppyloadmode = 1; */
 	if (!write)
 	{
-		// Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
-		// but Gemstone Warrior sets load mode with the drive off, so don't check for now
-		if (!floppywritemode)
-		{
-			// Phase 1 on also forces write protect in the Disk II drive (UTAIIe page 9-7) but we don't implement that
-			if (g_aFloppyDisk[currdrive].bWriteProtected)
-				floppylatch |= 0x80;
-			else
-				floppylatch &= 0x7F;
-		}
+		// Notes:
+		// . Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
+		//   but Gemstone Warrior sets load mode with the drive off, so don't check for now
+		// . Phase 1 on also forces write protect in the Disk II drive (UTAIIe page 9-7) but we don't implement that
+		// . write mode doesn't prevent reading write protect (GH#537):
+		//   "If for some reason the above write protect check were entered with the READ/WRITE switch in WRITE, 
+		//    the write protect switch would still be read correctly" (UTAIIe page 9-21)
+		if (g_aFloppyDisk[currdrive].bWriteProtected)
+			floppylatch |= 0x80;
+		else
+			floppylatch &= 0x7F;
 	}
 }
 
