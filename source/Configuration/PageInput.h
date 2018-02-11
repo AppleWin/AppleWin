@@ -2,7 +2,7 @@
 
 #include "IPropertySheetPage.h"
 #include "PropertySheetDefs.h"
-#include "Joystick.h"
+#include "../Joystick.h"
 class CPropertySheetHelper;
 class CConfigNeedingRestart;
 
