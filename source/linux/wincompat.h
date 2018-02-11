@@ -176,6 +176,7 @@ typedef LPWSTR LP;
 #ifndef _TCHAR_DEFINED
 typedef char TCHAR, *PTCHAR;
 typedef unsigned char TBYTE , *PTBYTE ;
+typedef TCHAR _TCHAR;
 #define _TCHAR_DEFINED
 #endif /* !_TCHAR_DEFINED */
 

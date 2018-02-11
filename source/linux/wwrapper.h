@@ -131,3 +131,6 @@ BOOL WINAPI PostMessage(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
 // must be provided
 int MessageBox(HWND, const char *, const char *, UINT);
+
+// used in TestCPU6502
+#define _tmain main
