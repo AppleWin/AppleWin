@@ -25,6 +25,7 @@ protected:
     virtual void timerEvent(QTimerEvent *event);
 
 private slots:
+
     void on_actionStart_triggered();
 
     void on_actionPause_triggered();
@@ -58,6 +59,19 @@ private slots:
     void on_actionSwap_disks_triggered();
 
 private:
+
+    // helper class to pause the emulator and restart at the end of the block
+    class PauseEmulator
+    {
+    public:
+        PauseEmulator(QApple * qapple);
+
+        ~PauseEmulator();
+
+    private:
+        bool myWasRunning;
+        QApple * myQApple;
+    };
 
     void stopTimer();
     void restartTimeCounters();

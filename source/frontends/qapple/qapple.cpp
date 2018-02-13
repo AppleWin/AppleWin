@@ -147,6 +147,24 @@ int MessageBox(HWND, const char * text, const char * caption, UINT type)
     }
 }
 
+
+QApple::PauseEmulator::PauseEmulator(QApple * qapple) : myQApple(qapple)
+{
+    myWasRunning = myQApple->actionPause->isEnabled();
+    if (myWasRunning)
+    {
+        myQApple->actionPause->trigger();
+    }
+}
+
+QApple::PauseEmulator::~PauseEmulator()
+{
+    if (myWasRunning)
+    {
+        myQApple->actionStart->trigger();
+    }
+}
+
 QApple::QApple(QWidget *parent) :
     QMainWindow(parent), myTimerID(0), myPreferences(this)
 {
@@ -299,15 +317,12 @@ void QApple::on_actionMemory_triggered()
 
 void QApple::on_actionOptions_triggered()
 {
-    const bool running = actionPause->isEnabled();
-    if (running)
-    {
-        // this is to overcome an issue in GNOME where the open file dialog gets lost
-        // if the emulator is running
-        // at times it can be found in a separate desktop, or it magically reappears
-        // but often it forces to terminate the emulator
-        actionPause->trigger();
-    }
+    // this is to overcome an issue in GNOME where the open file dialog gets lost
+    // if the emulator is running
+    // at times it can be found in a separate desktop, or it magically reappears
+    // but often it forces to terminate the emulator
+    PauseEmulator pause(this);
+
     const Preferences::Data currentOptions = getCurrentOptions(myGamepad);
 
     QSettings settings; // the function will "modify" it
@@ -319,11 +334,6 @@ void QApple::on_actionOptions_triggered()
         setNewOptions(currentOptions, newOptions, myGamepad);
     }
 
-    if (running)
-    {
-        // otherwise we would slow down later
-        actionStart->trigger();
-    }
 }
 
 void QApple::on_actionSave_state_triggered()
@@ -390,5 +400,8 @@ void QApple::on_actionScreenshot_triggered()
 
 void QApple::on_actionSwap_disks_triggered()
 {
+    PauseEmulator pause(this);
+
+    // this might open a file dialog
     DiskDriveSwap();
 }
