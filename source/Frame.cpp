@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #include <sys/stat.h>
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
 #include "Disk.h"
 #include "DiskImage.h"
@@ -52,9 +52,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #endif
 #include "Video.h"
 
-#include "..\resource\resource.h"
-#include "Configuration\PropertySheet.h"
-#include "Debugger\Debug.h"
+#include "../resource/resource.h"
+#include "Configuration/PropertySheet.h"
+#include "Debugger/Debug.h"
 
 //#define ENABLE_MENU 0
 

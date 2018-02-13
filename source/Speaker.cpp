@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
 #include "Frame.h"
 #include "Memory.h"
@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Video.h"	// VideoRedrawScreen()
 #include "YamlHelper.h"
 
-#include "Debugger\Debug.h"	// For DWORD extbench
+#include "Debugger/Debug.h"	// For DWORD extbench
 
 // Notes:
 //

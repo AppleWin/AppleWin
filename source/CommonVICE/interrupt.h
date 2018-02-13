@@ -31,7 +31,7 @@
 
 #include <stdio.h>
 
-#include "..\CommonVICE\types.h"
+#include "../CommonVICE/types.h"
 
 /* Define the number of cycles needed by the CPU to detect the NMI or IRQ.  */
 #define INTERRUPT_DELAY 2

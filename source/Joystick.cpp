@@ -39,12 +39,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
 #include "Memory.h"
 #include "YamlHelper.h"
 
-#include "Configuration\PropertySheet.h"
+#include "Configuration/PropertySheet.h"
 
 #define BUTTONTIME	5000	// This is the latch (debounce) time in usecs for the joystick buttons
 

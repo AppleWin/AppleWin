@@ -27,7 +27,7 @@
 #ifndef _DAA_H
 #define _DAA_H
 
-#include "..\CommonVICE\types.h"	// [AppleWin-TC]
+#include "../CommonVICE/types.h"	// [AppleWin-TC]
 
 extern const BYTE daa_reg_a[];
 extern const BYTE daa_reg_f[];

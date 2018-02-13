@@ -65,8 +65,8 @@ public:
 	virtual UINT GetImageSizeForCreate(void) { _ASSERT(0); return (UINT)-1; }
 
 	virtual eImageType GetType(void) = 0;
-	virtual char* GetCreateExtensions(void) = 0;
-	virtual char* GetRejectExtensions(void) = 0;
+	virtual const char* GetCreateExtensions(void) = 0;
+	virtual const char* GetRejectExtensions(void) = 0;
 
 	void SetVolumeNumber(const BYTE uVolumeNumber) { m_uVolumeNumber = uVolumeNumber; }
 	bool IsValidImageSize(const DWORD uImageSize);
