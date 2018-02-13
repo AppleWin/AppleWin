@@ -55,6 +55,8 @@ private slots:
 
     void on_actionScreenshot_triggered();
 
+    void on_actionSwap_disks_triggered();
+
 private:
 
     void stopTimer();

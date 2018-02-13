@@ -387,3 +387,8 @@ void QApple::on_actionScreenshot_triggered()
         }
     }
 }
+
+void QApple::on_actionSwap_disks_triggered()
+{
+    DiskDriveSwap();
+}

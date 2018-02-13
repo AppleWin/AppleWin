@@ -71,6 +71,7 @@
     </property>
     <addaction name="actionLoad_state"/>
     <addaction name="actionSave_state"/>
+    <addaction name="actionSwap_disks"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSystem"/>
@@ -193,6 +194,14 @@
    </property>
    <property name="shortcut">
     <string>Shift+F12</string>
+   </property>
+  </action>
+  <action name="actionSwap_disks">
+   <property name="text">
+    <string>Swap &amp;disks</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
    </property>
   </action>
  </widget>
