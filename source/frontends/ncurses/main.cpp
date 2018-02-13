@@ -315,6 +315,9 @@ namespace
     DiskDestroy();
     ImageDestroy();
 
+    fclose(g_fh);
+    g_fh = NULL;
+
     return 0;
   }
 

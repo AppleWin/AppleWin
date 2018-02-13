@@ -82,6 +82,8 @@ namespace
 
         DiskDestroy();
         ImageDestroy();
+	fclose(g_fh);
+	g_fh = NULL;
     }
 
 }
@@ -170,6 +172,7 @@ QApple::QApple(QWidget *parent) :
 void QApple::closeEvent(QCloseEvent *)
 {
     stopTimer();
+    stopEmulator();
     uninitialiseEmulator();
 }
 
