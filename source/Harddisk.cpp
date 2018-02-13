@@ -119,12 +119,6 @@ struct HDD
 		clear();
 	}
 
-	~HDD()
-	{
-		if (imagehandle)
-			ImageClose(imagehandle);
-	}
-
 	void clear()
 	{
 		// This is not a POD (there is a std::string)

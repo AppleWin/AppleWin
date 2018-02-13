@@ -109,33 +109,6 @@ struct Disk_t
 		clear();
 	}
 
-	~Disk_t()
-	{
-		if (imagehandle)
-			ImageClose(imagehandle);
-		if (trackimage)
-			VirtualFree(trackimage, 0, MEM_RELEASE);
-	}
-
-	const Disk_t& operator= (const Disk_t& other)
-	{
-		memcpy(imagename, other.imagename, sizeof(imagename));
-		memcpy(fullname , other.fullname,  sizeof(fullname));
-		strFilenameInZip    = other.strFilenameInZip;
-		imagehandle         = other.imagehandle;
-		bWriteProtected     = other.bWriteProtected;
-		track               = other.track;
-		trackimage          = other.trackimage;
-		phase               = other.phase;
-		byte                = other.byte;
-		trackimagedata      = other.trackimagedata;
-		trackimagedirty     = other.trackimagedirty;
-		spinning            = other.spinning;
-		writelight          = other.writelight;
-		nibbles             = other.nibbles;
-		return *this;
-	}
-
 	void clear()
 	{
 		ZeroMemory(imagename, sizeof(imagename));
