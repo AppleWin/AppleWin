@@ -70,7 +70,6 @@ static unsigned __int64 g_uDiskLastCycle = 0;
 static FormatTrack g_formatTrack;
 
 static void CheckSpinning(const ULONG nCyclesLeft);
-static Disk_Status_e GetDriveLightStatus( const int iDrive );
 static bool IsDriveValid( const int iDrive );
 static void ReadTrack (int drive);
 static void RemoveDisk (int drive);
@@ -886,7 +885,13 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		*(fptr->trackimage + fptr->byte) = floppylatch;
 		fptr->trackimagedirty = 1;
 
-		g_formatTrack.DecodeLatchNibbleWrite(floppylatch, uSpinNibbleCount, fptr);	// GH#125
+		bool bIsSyncFF = false;
+#if LOG_DISK_NIBBLES_WRITE
+		ULONG uCycleDelta = 0;
+		bIsSyncFF = LogWriteCheckSyncFF(floppylatch, uCycleDelta);
+#endif
+
+		g_formatTrack.DecodeLatchNibbleWrite(floppylatch, uSpinNibbleCount, fptr, bIsSyncFF);	// GH#125
 
 #if LOG_DISK_NIBBLES_WRITE
   #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
@@ -894,7 +899,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
   #endif
 		{
 			ULONG uCycleDelta = 0;
-			if (!LogWriteCheckSyncFF(floppylatch, uCycleDelta))
+			if (!bIsSyncFF)
 				LOG_DISK("write %04X = %02X (cy=+%d)\r\n", fptr->byte, floppylatch, uCycleDelta);
 			else
 				LOG_DISK("write %04X = %02X (cy=+%d) sync #%d\r\n", fptr->byte, floppylatch, uCycleDelta, g_uSyncFFCount);

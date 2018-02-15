@@ -38,13 +38,13 @@ public:
 	void DriveSwitchedToReadMode(Disk_t* const fptr);
 	void DriveSwitchedToWriteMode(UINT uTrackIndex);
 	void DecodeLatchNibbleRead(BYTE floppylatch);
-	void DecodeLatchNibbleWrite(BYTE floppylatch, UINT uSpinNibbleCount, const Disk_t* const fptr);
+	void DecodeLatchNibbleWrite(BYTE floppylatch, UINT uSpinNibbleCount, const Disk_t* const fptr, bool bIsSyncFF);
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
 private:
 	void UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const fptr);
-	void DecodeLatchNibble(BYTE floppylatch, BOOL bIsWrite);
+	void DecodeLatchNibble(BYTE floppylatch, bool bIsWrite, bool bIsSyncFF);
 
 	BYTE m_VolTrkSecChk[4];
 
@@ -52,6 +52,7 @@ private:
 	UINT m_WriteTrackStartIndex;
 	bool m_WriteTrackHasWrapped;
 	BYTE m_WriteDataFieldPrologueCount;
+	bool m_bAddressPrologueIsDOS3_2;
 
 	enum TRACKSTATE_e {TS_GAP1, TS_ADDRFIELD, TS_GAP2_START, TS_GAP2, TS_DATAFIELD, TS_GAP3};	// Take care: value written to save-state
 	TRACKSTATE_e m_trackState;
