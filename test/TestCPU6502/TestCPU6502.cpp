@@ -79,10 +79,10 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 
 //-------------------------------------
 
-#include "../../source/cpu/cpu_general.inl"
-#include "../../source/cpu/cpu_instructions.inl"
-#include "../../source/cpu/cpu6502.h"  // MOS 6502
-#include "../../source/cpu/cpu65C02.h"  // WDC 65C02
+#include "../../source/CPU/cpu_general.inl"
+#include "../../source/CPU/cpu_instructions.inl"
+#include "../../source/CPU/cpu6502.h"  // MOS 6502
+#include "../../source/CPU/cpu65C02.h"  // WDC 65C02
 
 void init(void)
 {

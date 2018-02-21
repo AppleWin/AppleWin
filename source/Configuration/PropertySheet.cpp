@@ -29,9 +29,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "..\AppleWin.h"
-#include "..\Frame.h"
-#include "..\resource\resource.h"
+#include "../Applewin.h"
+#include "../Frame.h"
+#include "../resource/resource.h"
 #include "PropertySheet.h"
 
 void CPropertySheet::Init(void)

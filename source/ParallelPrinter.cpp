@@ -28,13 +28,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "Memory.h"
 #include "ParallelPrinter.h"
 #include "Registry.h"
 #include "YamlHelper.h"
 
-#include "..\resource\resource.h"
+#include "../resource/resource.h"
 
 static DWORD inactivity = 0;
 static unsigned int g_PrinterIdleLimit = 10;
@@ -169,7 +169,7 @@ static BYTE __stdcall PrintTransmit(WORD, WORD, BYTE, BYTE value, ULONG)
         return 0;
     }
 	
-	char c = NULL;
+	char c = 0;
 	if ((g_Apple2Type == A2TYPE_PRAVETS8A) &&  g_bConvertEncoding)  //This is print conversion for Pravets 8A/C. Print conversion for Pravets82/M is still to be done.
 		{
 			if ((value > 90) && (value < 128)) //This range shall be set more precisely

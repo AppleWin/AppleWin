@@ -154,7 +154,7 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 				mapValue.value = pValue;
 				mapValue.subMap = NULL;
 				mapYaml[std::string(pKey)] = mapValue;
-				delete [] pKey; pKey = NULL;
+				free(pKey); pKey = NULL;
 			}
 
 			bKey = bKey ? false : true;
@@ -166,7 +166,7 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 	}
 
 	if (pKey)
-		delete [] pKey;
+		free(pKey);
 
 	return res;
 }
