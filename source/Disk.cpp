@@ -898,7 +898,6 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		if (g_bLogDisk_NibblesRW)
   #endif
 		{
-			ULONG uCycleDelta = 0;
 			if (!bIsSyncFF)
 				LOG_DISK("write %04X = %02X (cy=+%d)\r\n", fptr->byte, floppylatch, uCycleDelta);
 			else

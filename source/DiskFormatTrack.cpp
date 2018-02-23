@@ -27,8 +27,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 /*
-DOS 3.2 notes
--------------
+DOS 3.2 INIT notes
+------------------
 Writes the following: (in 1 continuous write operation)
 . 0x26A0 x 36-cycle (9-bit) sync FFs - wraps track
 . Address Field (Prologue=D5AAB5, Epilogue=DEAAEB)
