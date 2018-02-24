@@ -121,7 +121,7 @@ struct Disk_t
 		phase = 0;
 		byte = 0;
 		trackimagedata = FALSE;
-		trackimagedirty = 0;
+		trackimagedirty = FALSE;
 		spinning = 0;
 		writelight = 0;
 		nibbles = 0;

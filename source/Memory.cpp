@@ -1242,6 +1242,10 @@ void MemInitialize()
 			g_pAppTitle,
 			MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
+	// memimage has been freed
+	// if we have come here we should use newloc
+	//
+	// this happens when running under valgrind
 	memimage = (LPBYTE)newloc;
 
 #ifdef RAMWORKS

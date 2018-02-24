@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void HD_Reset(void);
 	void HD_Load_Rom(const LPBYTE pCxRomPeripheral, const UINT uSlot);
 	bool HD_Select(const int iDrive);
-        BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename);
+	BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename);
 	void HD_Unplug(const int iDrive);
 	bool HD_IsDriveUnplugged(const int iDrive);
 	void HD_LoadLastDiskImage(const int iDrive);

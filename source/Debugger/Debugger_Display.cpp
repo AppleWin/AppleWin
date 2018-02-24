@@ -31,12 +31,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debug.h"
 #include "Debugger_Display.h"
 
-#include "..\AppleWin.h"
-#include "..\CPU.h"
-#include "..\Frame.h"
-#include "..\Memory.h"
-#include "..\Mockingboard.h"
-#include "..\Video.h"
+#include "../Applewin.h"
+#include "../CPU.h"
+#include "../Frame.h"
+#include "../Memory.h"
+#include "../Mockingboard.h"
+#include "../Video.h"
 
 // NEW UI debugging - force display ALL meta-info (regs, stack, bp, watches, zp) for debugging purposes
 #define DEBUG_FORCE_DISPLAY 0
@@ -3770,7 +3770,9 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 	char sTitle[ CONSOLE_WIDTH ];
 	char sText [ CONSOLE_WIDTH ];
 	strcpy ( sTitle, "   Source: " );
-	strncpy( sText , g_aSourceFileName, g_nConsoleDisplayWidth - strlen( sTitle ) - 1 );
+	int maxSizeToCopy = g_nConsoleDisplayWidth - strlen(sTitle) - 1;
+	strncpy( sText , g_aSourceFileName, maxSizeToCopy );
+	sText[ maxSizeToCopy - 1 ] = 0;
 	strcat ( sTitle, sText );
 
 	DebuggerSetColorBG( DebuggerGetColor( BG_SOURCE_TITLE ));

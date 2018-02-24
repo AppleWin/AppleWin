@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
 #include "Frame.h"
 #include "Keyboard.h"
@@ -37,8 +37,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Video.h"
 #include "NTSC.h"
 
-#include "..\resource\resource.h"
-#include "Configuration\PropertySheet.h"
+#include "../resource/resource.h"
+#include "Configuration/PropertySheet.h"
 #include "YamlHelper.h"
 
 	#define  SW_80COL         (g_uVideoMode & VF_80COL)

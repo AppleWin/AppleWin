@@ -1142,6 +1142,7 @@ void GetCharLowerExt(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSiz
 		pImageFileExt = _tcsrchr(pImageFileExt, TEXT('.'));
 
 	_tcsncpy(pszExt, pImageFileExt, uExtSize);
+	pszExt[uExtSize - 1] = 0;
 
 	CharLowerBuff(pszExt, _tcslen(pszExt));
 }
@@ -1150,6 +1151,7 @@ void GetCharLowerExt2(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSi
 {
 	TCHAR szFilename[MAX_PATH];
 	_tcsncpy(szFilename, pszImageFilename, MAX_PATH);
+	szFilename[MAX_PATH - 1] = 0;
 
 	TCHAR* pLastDot = _tcsrchr(szFilename, TEXT('.'));
 	if (pLastDot)

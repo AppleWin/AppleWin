@@ -132,11 +132,11 @@ struct HDD
 		hd_memblock = 0;
 		hd_diskblock = 0;
 		hd_buf_ptr = 0;
-		hd_imageloaded = 0;
+		hd_imageloaded = false;
 		ZeroMemory(hd_buf, sizeof(hd_buf));
 #if HD_LED
-		hd_status_next = Disk_Status_e(0);
-		hd_status_prev = Disk_Status_e(0);
+		hd_status_next = DISK_STATUS_OFF;
+		hd_status_prev = DISK_STATUS_OFF;
 #endif
 	}
 
@@ -169,7 +169,7 @@ static BYTE	g_nHD_UnitNum = HARDDISK_1<<7;	// b7=unit
 // . ProDOS will write to Command before switching drives
 static BYTE	g_nHD_Command;
 
-static std::vector<HDD> g_HardDisk(NUM_HARDDISKS);
+static HDD g_HardDisk[NUM_HARDDISKS];
 
 static bool g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT g_uSlot = 7;

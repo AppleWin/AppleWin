@@ -34,15 +34,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debug.h"
 #include "DebugDefs.h"
 
-#include "..\AppleWin.h"
-#include "..\CPU.h"
-#include "..\Disk.h"
-#include "..\Frame.h"
-#include "..\Keyboard.h"
-#include "..\Memory.h"
-#include "..\NTSC.h"
-#include "..\SoundCore.h"	// SoundCore_SetFade()
-#include "..\Video.h"
+#include "../Applewin.h"
+#include "../CPU.h"
+#include "../Disk.h"
+#include "../Frame.h"
+#include "../Keyboard.h"
+#include "../Memory.h"
+#include "../NTSC.h"
+#include "../SoundCore.h"	// SoundCore_SetFade()
+#include "../Video.h"
 
 //	#define DEBUG_COMMAND_HELP  1
 //	#define DEBUG_ASM_HASH 1
@@ -2755,6 +2755,8 @@ bool _CmdConfigFont ( int iFont, LPCSTR pFontName, int iPitchFamily, int nFontHe
 
 	if (iFont < NUM_FONTS)
 		pFont = & g_aFontConfig[ iFont ];
+	else
+		return bStatus;
 
 	if (pFontName)
 	{	
@@ -6673,7 +6675,7 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 					int nLen = pLabelEnd - pLabelStart;
 					nLen = MIN( nLen, MAX_SYMBOLS_LEN );
 					strncpy( sName, pLabelStart, nLen );
-					sName[ nLen ] = 0;
+					sName[ nLen - 1 ] = 0;
 
 					char *pAddressEQU = strstr( pLabel, "$" );
 					char *pAddressDFB = strstr( sLine, ":" ); // Get address from start of line
