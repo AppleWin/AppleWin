@@ -58,7 +58,7 @@ BOOL enhancedisk = 1;					// TODO: Make static & add accessor funcs
 // Private ________________________________________________________________________________________
 
 static WORD		currdrive       = 0;
-static std::vector<Disk_t> g_aFloppyDisk(NUM_DRIVES);
+static Disk_t	g_aFloppyDisk[NUM_DRIVES];
 static BYTE		floppylatch     = 0;
 static BOOL		floppymotoron   = 0;
 static BOOL		floppyloadmode  = 0; // for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)

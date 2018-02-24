@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DiskDefs.h"
 #include "minizip/zip.h"
 
 #define GZ_SUFFIX ".gz"
