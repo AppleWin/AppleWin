@@ -228,6 +228,7 @@ bool String2Address( LPCTSTR pText, WORD & nAddress_ )
 
 		_tcscpy( sHexApple, "0x" );
 		_tcsncpy( sHexApple+2, pText+1, MAX_SYMBOLS_LEN - 3 );
+		sHexApple[2 + (MAX_SYMBOLS_LEN - 3) - 1] = 0;
 		pText = sHexApple;
 	}
 
