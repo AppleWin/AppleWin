@@ -793,7 +793,7 @@ bool Disk_IsDriveEmpty(const int iDrive)
 static UINT64 g_uWriteLastCycle = 0;
 static UINT g_uSyncFFCount = 0;
 
-static bool LogWriteCheckSyncFF(BYTE floppylatch, ULONG& uCycleDelta)
+static bool LogWriteCheckSyncFF(ULONG& uCycleDelta)
 {
 	bool bIsSyncFF = false;
 
@@ -888,7 +888,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		bool bIsSyncFF = false;
 #if LOG_DISK_NIBBLES_WRITE
 		ULONG uCycleDelta = 0;
-		bIsSyncFF = LogWriteCheckSyncFF(floppylatch, uCycleDelta);
+		bIsSyncFF = LogWriteCheckSyncFF(uCycleDelta);
 #endif
 
 		g_formatTrack.DecodeLatchNibbleWrite(floppylatch, uSpinNibbleCount, fptr, bIsSyncFF);	// GH#125
