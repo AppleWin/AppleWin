@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * Author: Various
  */
 
-#include "Stdafx.h"
+#include "StdAfx.h"
 #include "Riff.h"
 
 static HANDLE g_hRiffFile = INVALID_HANDLE_VALUE;

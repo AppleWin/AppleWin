@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
 #include "Debug.h"
 #include "Disk.h"
@@ -53,14 +53,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Video.h"
 #include "NTSC.h"
 
-#include "Configuration\About.h"
-#include "Configuration\PropertySheet.h"
-#include "Tfe\Tfe.h"
+#include "Configuration/About.h"
+#include "Configuration/PropertySheet.h"
+#include "Tfe/Tfe.h"
 
 static UINT16 g_AppleWinVersion[4] = {0};
 char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
-TCHAR *g_pAppTitle = NULL;
+const TCHAR *g_pAppTitle = NULL;
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 

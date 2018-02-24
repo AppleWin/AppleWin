@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SaveState_Structs_v1.h"
 #include "YamlHelper.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
 #include "Disk.h"
 #include "Frame.h"
@@ -48,8 +48,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Video.h"
 #include "z80emu.h"
 
-#include "Configuration\Config.h"
-#include "Configuration\IPropertySheet.h"
+#include "Configuration/Config.h"
+#include "Configuration/IPropertySheet.h"
 
 
 #define DEFAULT_SNAPSHOT_NAME "SaveState.aws.yaml"
@@ -138,10 +138,10 @@ static void Snapshot_LoadState_v1()	// .aws v1.0.0.1, up to (and including) Appl
 		HANDLE hFile = CreateFile(	g_strSaveStatePathname.c_str(),
 									GENERIC_READ,
 									0,
-									NULL,
+									0,
 									OPEN_EXISTING,
 									FILE_ATTRIBUTE_NORMAL,
-									NULL);
+									0);
 
 		if(hFile == INVALID_HANDLE_VALUE)
 			throw std::string("File not found: ") + g_strSaveStatePathname;

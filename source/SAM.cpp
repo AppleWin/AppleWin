@@ -32,7 +32,7 @@
 */
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "Memory.h"
 #include "SAM.h"
 #include "Speaker.h"

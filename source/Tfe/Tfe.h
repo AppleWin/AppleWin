@@ -27,7 +27,7 @@
 #ifndef _TFE_H
 #define _TFE_H
 
-#include "..\CommonVICE\types.h"
+#include "../CommonVICE/types.h"
 #include <stdio.h>
 
 /* define this only if VICE should write each and every frame received

@@ -91,7 +91,7 @@ inline u8 ReadByte( u16 addr, int uExecutedCycles )
 			IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles); \
 	 }
 
-#include "cpu/cpu_instructions.inl"
+#include "CPU/cpu_instructions.inl"
 
 //===========================================================================
 
