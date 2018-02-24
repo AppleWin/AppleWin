@@ -27,7 +27,7 @@
 #ifndef _Z80REGS_H
 #define _Z80REGS_H
 
-#include "..\CommonVICE\types.h"	// [AppleWin-TC]
+#include "../CommonVICE/types.h"	// [AppleWin-TC]
 
 typedef struct z80_regs_s {
     WORD reg_af;

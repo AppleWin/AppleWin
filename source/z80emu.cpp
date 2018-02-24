@@ -15,7 +15,7 @@
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
 #include "Memory.h"
 #include "z80emu.h"

@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "SaveState_Structs_v1.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
 #include "Disk.h"
 #include "DiskLog.h"
@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Video.h"
 #include "YamlHelper.h"
 
-#include "..\resource\resource.h"
+#include "../resource/resource.h"
 
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
 static bool g_bLogDisk_NibblesRW = false;	// From VS Debugger, change this to true/false during runtime for precise nibble logging
@@ -92,7 +92,7 @@ const char* DiskGetDiskPathFilename(const int iDrive)
 	return g_aFloppyDisk[iDrive].fullname;
 }
 
-char* DiskGetCurrentState(void)
+const char* DiskGetCurrentState(void)
 {
 	if (g_aFloppyDisk[currdrive].imagehandle == NULL)
 		return "Empty";
@@ -134,7 +134,7 @@ void Disk_LoadLastDiskImage(const int iDrive)
 	char sFilePath[ MAX_PATH + 1];
 	sFilePath[0] = 0;
 
-	char *pRegKey = (iDrive == DRIVE_1)
+	const char *pRegKey = (iDrive == DRIVE_1)
 		? REGVALUE_PREF_LAST_DISK_1
 		: REGVALUE_PREF_LAST_DISK_2;
 
@@ -541,7 +541,7 @@ void DiskInitialize(void)
 {
 	int loop = NUM_DRIVES;
 	while (loop--)
-		ZeroMemory(&g_aFloppyDisk[loop], sizeof(Disk_t));
+		g_aFloppyDisk[loop].clear();
 }
 
 //===========================================================================
@@ -557,7 +557,7 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 	{
 		int track = fptr->track;
 		int phase = fptr->phase;
-		ZeroMemory(fptr, sizeof(Disk_t));
+		fptr->clear();
 		fptr->track = track;
 		fptr->phase = phase;
 	}
@@ -1256,7 +1256,7 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 	for(UINT i=0; i<NUM_DRIVES; i++)
 	{
 		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
-		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t));
+		g_aFloppyDisk[i].clear();
 	}
 
 	for(UINT i=0; i<NUM_DRIVES; i++)
@@ -1447,9 +1447,7 @@ static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 	g_aFloppyDisk[unit].trackimagedata	= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DATA);
 	g_aFloppyDisk[unit].trackimagedirty	= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY);
 
-	std::vector<BYTE> track;
-	track.resize(NIBBLES_PER_TRACK);
-	memset(&track[0], 0, track.size());
+	std::vector<BYTE> track(NIBBLES_PER_TRACK);
 	if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
 	{
 		yamlLoadHelper.LoadMemory(&track[0], NIBBLES_PER_TRACK);
@@ -1505,7 +1503,7 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 	for(UINT i=0; i<NUM_DRIVES; i++)
 	{
 		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
-		ZeroMemory(&g_aFloppyDisk[i], sizeof(Disk_t));
+		g_aFloppyDisk[i].clear();
 	}
 
 	DiskLoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_1);

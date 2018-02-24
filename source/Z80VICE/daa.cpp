@@ -25,7 +25,7 @@
  */
 
 #include "daa.h"
-#include "..\CommonVICE\types.h"	// [AppleWin-TC]
+#include "../CommonVICE/types.h"	// [AppleWin-TC]
 
 
 const BYTE daa_reg_a[2048] = {

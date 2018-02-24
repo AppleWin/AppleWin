@@ -12,7 +12,7 @@ bool SetCurrentImageDir(const char* pszImageDir);
 extern const UINT16* GetAppleWinVersion(void);
 extern char VERSIONSTRING[];	// Constructed in WinMain()
 
-extern TCHAR     *g_pAppTitle;
+extern const TCHAR     *g_pAppTitle;
 
 extern eApple2Type g_Apple2Type;
 eApple2Type GetApple2Type(void);

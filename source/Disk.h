@@ -66,7 +66,7 @@ int     DiskGetCurrentTrack();
 int     DiskGetTrack( int drive );
 int     DiskGetCurrentPhase();
 int     DiskGetCurrentOffset();
-char*   DiskGetCurrentState();
+const char*   DiskGetCurrentState();
 bool    DiskSelect(const int iDrive);
 void    DiskUpdateDriveState(DWORD);
 bool    DiskDriveSwap(void);
@@ -104,22 +104,26 @@ struct Disk_t
 	DWORD  writelight;
 	int    nibbles;						// Init'd by ReadTrack() -> ImageReadTrack()
 
-	const Disk_t& operator= (const Disk_t& other)
+	Disk_t()
 	{
-		memcpy(imagename, other.imagename, sizeof(imagename));
-		memcpy(fullname , other.fullname,  sizeof(fullname));
-		strFilenameInZip    = other.strFilenameInZip;
-		imagehandle         = other.imagehandle;
-		bWriteProtected     = other.bWriteProtected;
-		track               = other.track;
-		trackimage          = other.trackimage;
-		phase               = other.phase;
-		byte                = other.byte;
-		trackimagedata      = other.trackimagedata;
-		trackimagedirty     = other.trackimagedirty;
-		spinning            = other.spinning;
-		writelight          = other.writelight;
-		nibbles             = other.nibbles;
-		return *this;
+		clear();
+	}
+
+	void clear()
+	{
+		ZeroMemory(imagename, sizeof(imagename));
+		ZeroMemory(fullname, sizeof(fullname));
+		strFilenameInZip.clear();
+		imagehandle = NULL;
+		bWriteProtected = false;
+		track = 0;
+		trackimage = NULL;
+		phase = 0;
+		byte = 0;
+		trackimagedata = FALSE;
+		trackimagedirty = FALSE;
+		spinning = 0;
+		writelight = 0;
+		nibbles = 0;
 	}
 };

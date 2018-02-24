@@ -236,7 +236,7 @@ bool ImageIsMultiFileZip(ImageInfo* const pImageInfo)
 
 const char* ImageGetPathname(ImageInfo* const pImageInfo)
 {
-	static char* szEmpty = "";
+	static const char* szEmpty = "";
 	return pImageInfo ? pImageInfo->szFilename : szEmpty;
 }
 

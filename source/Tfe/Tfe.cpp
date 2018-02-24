@@ -24,7 +24,7 @@
  *
  */
 
-#include "..\StdAfx.h"
+#include "../StdAfx.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -43,8 +43,8 @@
 #endif
 typedef unsigned int UINT;
 
-#include "..\Common.h"	// For: IS_APPLE2
-#include "..\Memory.h"
+#include "../Common.h"	// For: IS_APPLE2
+#include "../Memory.h"
 
 /**/
 /** #define TFE_DEBUG_DUMP 1 **/
