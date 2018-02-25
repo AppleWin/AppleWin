@@ -53,7 +53,7 @@ LPCTSTR DiskGetFullName(const int iDrive);
 LPCTSTR DiskGetFullDiskFilename(const int iDrive);
 LPCTSTR DiskGetBaseName(const int iDrive);
 
-void    DiskGetLightStatus (Disk_Status_e *pDisk1Status_, Disk_Status_e *pDisk2Status_);
+void    DiskGetLightStatus (Disk_Status_e* pDisk1Status, Disk_Status_e* pDisk2Status);
 
 ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
 BOOL    DiskIsSpinning(void);
@@ -88,21 +88,17 @@ bool Disk_IsDriveEmpty(const int iDrive);
 // For sharing with class FormatTrack
 struct Disk_t
 {
-	TCHAR  imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
-	TCHAR  fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
+	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
+	TCHAR	fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
 	std::string strFilenameInZip;					// ""             or <FILENAME.EXT>
 	ImageInfo* imagehandle;							// Init'd by DiskInsert() -> ImageOpen()
-	bool   bWriteProtected;
+	bool	bWriteProtected;
 	//
-	int    track;
-	LPBYTE trackimage;
-	int    phase;
-	int    byte;
-	BOOL   trackimagedata;
-	BOOL   trackimagedirty;
-	DWORD  spinning;
-	DWORD  writelight;
-	int    nibbles;						// Init'd by ReadTrack() -> ImageReadTrack()
+	int		byte;
+	int		nibbles;								// Init'd by ReadTrack() -> ImageReadTrack()
+	LPBYTE	trackimage;
+	bool	trackimagedata;
+	bool	trackimagedirty;
 
 	Disk_t()
 	{
@@ -116,14 +112,11 @@ struct Disk_t
 		strFilenameInZip.clear();
 		imagehandle = NULL;
 		bWriteProtected = false;
-		track = 0;
-		trackimage = NULL;
-		phase = 0;
+		//
 		byte = 0;
-		trackimagedata = FALSE;
-		trackimagedirty = FALSE;
-		spinning = 0;
-		writelight = 0;
 		nibbles = 0;
+		trackimage = NULL;
+		trackimagedata = false;
+		trackimagedirty = false;
 	}
 };

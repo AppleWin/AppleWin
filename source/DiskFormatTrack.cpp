@@ -84,15 +84,15 @@ void FormatTrack::DriveNotWritingTrack(void)
 #endif
 }
 
-void FormatTrack::UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const fptr)
+void FormatTrack::UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const pFloppy)
 {
-	if (fptr->bWriteProtected)
+	if (pFloppy->bWriteProtected)
 		return;
 
 	if (m_bmWrittenSectorAddrFields == 0x0000)
 	{
 		if (m_WriteTrackStartIndex == (UINT)-1)		// waiting for 1st write?
-			m_WriteTrackStartIndex = fptr->byte;
+			m_WriteTrackStartIndex = pFloppy->byte;
 		return;
 	}
 
@@ -108,8 +108,8 @@ void FormatTrack::UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const 
 		return;
 	}
 
-	UINT uTrackIndex = fptr->byte;
-	const UINT& kTrackMaxNibbles = fptr->nibbles;
+	UINT uTrackIndex = pFloppy->byte;
+	const UINT& kTrackMaxNibbles = pFloppy->nibbles;
 
 	// NB. spin in write mode is only max 1-2 bytes
 	do
@@ -128,7 +128,7 @@ void FormatTrack::UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const 
 	while (uSpinNibbleCount--);
 }
 
-void FormatTrack::DriveSwitchedToReadMode(Disk_t* const fptr)
+void FormatTrack::DriveSwitchedToReadMode(Disk_t* const pFloppy)
 {
 	if (m_bAddressPrologueIsDOS3_2)
 	{
@@ -154,10 +154,10 @@ void FormatTrack::DriveSwitchedToReadMode(Disk_t* const fptr)
 	// So need a track size between 0x18B0 (rounding down) and 0x182F
 	const UINT kShortTrackLen = 0x18B0;
 
-	LPBYTE TrackBuffer = fptr->trackimage;
-	const UINT kLongTrackLen = fptr->nibbles;
+	LPBYTE TrackBuffer = pFloppy->trackimage;
+	const UINT kLongTrackLen = pFloppy->nibbles;
 
-	UINT uWriteTrackEndIndex = fptr->byte;
+	UINT uWriteTrackEndIndex = pFloppy->byte;
 	UINT uWrittenTrackSize = m_WriteTrackHasWrapped ? kLongTrackLen : 0;
 
 	if (m_WriteTrackStartIndex <= uWriteTrackEndIndex)
@@ -216,10 +216,10 @@ void FormatTrack::DecodeLatchNibbleRead(BYTE floppylatch)
 	DecodeLatchNibble(floppylatch, false, false);
 }
 
-void FormatTrack::DecodeLatchNibbleWrite(BYTE floppylatch, UINT uSpinNibbleCount, const Disk_t* const fptr, bool bIsSyncFF)
+void FormatTrack::DecodeLatchNibbleWrite(BYTE floppylatch, UINT uSpinNibbleCount, const Disk_t* const pFloppy, bool bIsSyncFF)
 {
 	DecodeLatchNibble(floppylatch, true, bIsSyncFF);
-	UpdateOnWriteLatch(uSpinNibbleCount, fptr);
+	UpdateOnWriteLatch(uSpinNibbleCount, pFloppy);
 }
 
 void FormatTrack::DecodeLatchNibble(BYTE floppylatch, bool bIsWrite, bool bIsSyncFF)
