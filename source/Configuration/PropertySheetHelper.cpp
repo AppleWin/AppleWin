@@ -45,9 +45,8 @@ Input
 . Mouse					WM_USER_RESTART
 . CP/M					WM_USER_RESTART
 Sound
-. MB/Phasor/SAM/None		WM_USER_RESTART
+. MB/Phasor/SAM/None	WM_USER_RESTART
 Disk
-. Enhanced disk speed	WM_USER_RESTART					Why? (used to patch Disk][ f/w - but not anymore)
 . HDD enable			WM_USER_RESTART
 Advanced
 . Save State			WM_USER_SAVESTATE
@@ -399,9 +398,6 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 	if (CONFIG_CHANGED_LOCAL(m_Slot[5]))
 		SetSlot5(ConfigNew.m_Slot[5]);
 
-	if (CONFIG_CHANGED_LOCAL(m_bEnhanceDisk))
-		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), ConfigNew.m_bEnhanceDisk);
-
 	if (CONFIG_CHANGED_LOCAL(m_bEnableHDD))
 	{
 		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), ConfigNew.m_bEnableHDD ? 1 : 0);
@@ -425,7 +421,6 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	m_ConfigOld.m_CpuType = GetMainCpu();
 	m_ConfigOld.m_Slot[4] = g_Slot4;
 	m_ConfigOld.m_Slot[5] = g_Slot5;
-	m_ConfigOld.m_bEnhanceDisk = enhancedisk;
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = sg_PropertySheet.GetTheFreezesF8Rom();
 
@@ -444,7 +439,6 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	SetMainCpu(m_ConfigOld.m_CpuType);
 	g_Slot4 = m_ConfigOld.m_Slot[4];
 	g_Slot5 = m_ConfigOld.m_Slot[5];
-	enhancedisk = m_ConfigOld.m_bEnhanceDisk;
 	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
 	sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
 }
@@ -502,9 +496,6 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_Slot[5]))
 			strMsgMain += GetSlot(5);
-
-		if (CONFIG_CHANGED(m_bEnhanceDisk))
-			strMsgMain += ". Floppy disk speed setting has changed\n";
 
 		if (CONFIG_CHANGED(m_bEnableHDD))
 			strMsgMain += ". Harddisk(s) have been plugged/unplugged\n";

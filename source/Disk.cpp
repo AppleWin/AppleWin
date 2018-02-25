@@ -51,10 +51,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static bool g_bLogDisk_NibblesRW = false;	// From VS Debugger, change this to true/false during runtime for precise nibble logging
 #endif
 
-// Public _________________________________________________________________________________________
-
-BOOL enhancedisk = 1;					// TODO: Make static & add accessor funcs
-
 // Private ________________________________________________________________________________________
 
 struct Drive_t
@@ -102,7 +98,12 @@ static LPCTSTR DiskGetFullPathName(const int iDrive);
 #define SPINNING_CYCLES (20000*64)		// 1280000 cycles = 1.25s
 #define WRITELIGHT_CYCLES (20000*64)	// 1280000 cycles = 1.25s
 
+static bool enhancedisk = true;
+
 //===========================================================================
+
+bool Disk_GetEnhanceDisk(void) { return enhancedisk; }
+void Disk_SetEnhanceDisk(bool bEnhanceDisk) { enhancedisk = bEnhanceDisk; }
 
 int DiskGetCurrentDrive(void)  { return currdrive; }
 int DiskGetCurrentTrack(void)  { return g_aFloppyDrive[currdrive].track; }
@@ -1274,7 +1275,7 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 	phases  		= pSS->phases;
 	currdrive		= pSS->currdrive;
 	//diskaccessed	= pSS->diskaccessed;	// deprecated
-	enhancedisk		= pSS->enhancedisk;
+	enhancedisk		= pSS->enhancedisk ? true : false;
 	floppylatch		= pSS->floppylatch;
 	floppymotoron	= pSS->floppymotoron;
 	floppywritemode	= pSS->floppywritemode;
@@ -1417,7 +1418,7 @@ void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_PHASES, phases);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_CURRENT_DRIVE, currdrive);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_DISK_ACCESSED, false);	// deprecated
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_ENHANCE_DISK, enhancedisk == TRUE);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ENHANCE_DISK, enhancedisk);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_FLOPPY_LATCH, floppylatch);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_MOTOR_ON, floppymotoron == TRUE);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_WRITE_MODE, floppywritemode == TRUE);

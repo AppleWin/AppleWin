@@ -39,7 +39,6 @@ const bool IMAGE_FORCE_WRITE_PROTECTED = true;
 const bool IMAGE_DONT_CREATE = false;
 const bool IMAGE_CREATE = true;
 
-extern BOOL enhancedisk;
 const char* DiskGetDiskPathFilename(const int iDrive);
 
 void    DiskInitialize(void); // DiskIIManagerStartup()
@@ -82,6 +81,9 @@ void Disk_SaveLastDiskImage(const int iDrive);
 
 bool Disk_ImageIsWriteProtected(const int iDrive);
 bool Disk_IsDriveEmpty(const int iDrive);
+
+bool Disk_GetEnhanceDisk(void);
+void Disk_SetEnhanceDisk(bool bEnhanceDisk);
 
 //
 

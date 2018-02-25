@@ -252,7 +252,7 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (DiskIsSpinning() && enhancedisk && !Spkr_IsActive() && !MB_IsActive()) ||
+					 (DiskIsSpinning() && Disk_GetEnhanceDisk() && !Spkr_IsActive() && !MB_IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -606,7 +606,10 @@ void LoadConfiguration(void)
 	}
 
 	REGLOAD(TEXT(REGVALUE_EMULATION_SPEED)   ,&g_dwSpeed);
-	REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED),(DWORD *)&enhancedisk);
+
+	DWORD dwEnhanceDisk;
+	REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk);
+	Disk_SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	Config_Load_Video();
 

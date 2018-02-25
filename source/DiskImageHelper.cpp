@@ -635,7 +635,7 @@ public:
 	{
 		ReadTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		*pNibbles = NibblizeTrack(pTrackImageBuffer, eDOSOrder, nTrack);
-		if (!enhancedisk)
+		if (!Disk_GetEnhanceDisk())
 			SkewTrack(nTrack, *pNibbles, pTrackImageBuffer);
 	}
 
@@ -701,7 +701,7 @@ public:
 	{
 		ReadTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		*pNibbles = NibblizeTrack(pTrackImageBuffer, eProDOSOrder, nTrack);
-		if (!enhancedisk)
+		if (!Disk_GetEnhanceDisk())
 			SkewTrack(nTrack, *pNibbles, pTrackImageBuffer);
 	}
 
