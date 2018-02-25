@@ -138,7 +138,7 @@ const char* DiskGetCurrentState(void)
 	{
 		/*if (floppyloadmode)
 		{
-			if (g_aFloppyDrive[currdrive].bWriteProtected)
+			if (g_aFloppyDrive[currdrive].disk.bWriteProtected)
 				return "Reading write protect state (write protected)";
 			else
 				return "Reading write protect state (not write protected)";
@@ -259,8 +259,8 @@ static bool IsDriveValid(const int iDrive)
 
 static void AllocTrack(const int iDrive)
 {
-	Drive_t* pDrive = &g_aFloppyDrive[iDrive];
-	pDrive->disk.trackimage = (LPBYTE)VirtualAlloc(NULL, NIBBLES_PER_TRACK, MEM_COMMIT, PAGE_READWRITE);
+	Disk_t* pFloppy = &g_aFloppyDrive[iDrive].disk;
+	pFloppy->trackimage = (LPBYTE)VirtualAlloc(NULL, NIBBLES_PER_TRACK, MEM_COMMIT, PAGE_READWRITE);
 }
 
 //===========================================================================
@@ -1153,8 +1153,7 @@ bool DiskDriveSwap(void)
 
 	// Swap disks between drives
 	// . NB. We swap trackimage ptrs (so don't need to swap the buffers' data)
-	// . TODO: Consider array of Pointers: Disk_t* g_aDrive[]
-	std::swap(g_aFloppyDrive[0], g_aFloppyDrive[1]);
+	std::swap(g_aFloppyDrive[0].disk, g_aFloppyDrive[1].disk);
 
 	Disk_SaveLastDiskImage(DRIVE_1);
 	Disk_SaveLastDiskImage(DRIVE_2);
