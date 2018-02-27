@@ -651,6 +651,11 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 
 //===========================================================================
 
+bool Disk_IsConditionForFullSpeed(void)
+{
+	return floppymotoron && enhancedisk;
+}
+
 BOOL DiskIsSpinning(void)
 {
 	return floppymotoron;
