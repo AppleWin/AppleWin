@@ -847,7 +847,7 @@ void AppleWin_RegisterHotKeys(void)
 		VK_SNAPSHOT       // UINT vk = PrintScreen
 	);
 
-	if ((!bStatus[0] || !bStatus[1] || !bStatus[2]) && g_bShowPrintScreenWarningDialog)
+	if ((!bStatus[0] || !bStatus[1] || !bStatus[2]))
 	{
 		std::string msg("Unable to register for PrintScreen key(s):\n");
 
@@ -858,7 +858,8 @@ void AppleWin_RegisterHotKeys(void)
 		if (!bStatus[2])
 			msg += "\n. Ctrl+PrintScreen";
 
-		MessageBox( g_hFrameWindow, msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK );
+		if (g_bShowPrintScreenWarningDialog)
+			MessageBox( g_hFrameWindow, msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK );
 
 		msg += "\n";
 		LogFileOutput(msg.c_str());
