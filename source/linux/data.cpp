@@ -198,7 +198,9 @@ void LoadConfiguration(void)
 #endif
   REGLOAD(TEXT(REGVALUE_EMULATION_SPEED)   ,&g_dwSpeed);
 
-  REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &enhancedisk);
+  DWORD dwEnhanceDisk;
+  REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk);
+  Disk_SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 #if 0
   Config_Load_Video();

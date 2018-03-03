@@ -86,6 +86,13 @@ namespace
         g_fh = NULL;
     }
 
+    qint64 emulatorTimeInMS()
+    {
+        const double timeInSeconds = g_nCumulativeCycles / g_fCurrentCLK6502;
+        const qint64 timeInMS = timeInSeconds * 1000;
+        return timeInMS;
+    }
+
 }
 
 void FrameDrawDiskLEDS(HDC)
@@ -197,7 +204,7 @@ void QApple::closeEvent(QCloseEvent *)
 void QApple::on_timer()
 {
     const qint64 target = myElapsedTimer.elapsed();
-    const qint64 current = CpuGetEmulationTime_ms() - myCpuTimeReference;
+    const qint64 current = emulatorTimeInMS() - myCpuTimeReference;
     const qint64 elapsed = target - current;
     if (elapsed <= 0)
     {
@@ -245,7 +252,7 @@ void QApple::stopTimer()
 void QApple::restartTimeCounters()
 {
     myElapsedTimer.start();
-    myCpuTimeReference = CpuGetEmulationTime_ms();
+    myCpuTimeReference = emulatorTimeInMS();
 }
 
 void QApple::on_actionStart_triggered()
