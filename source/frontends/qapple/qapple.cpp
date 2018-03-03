@@ -82,8 +82,8 @@ namespace
 
         DiskDestroy();
         ImageDestroy();
-	fclose(g_fh);
-	g_fh = NULL;
+        fclose(g_fh);
+        g_fh = NULL;
     }
 
 }
