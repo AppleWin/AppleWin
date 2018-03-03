@@ -252,7 +252,7 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (DiskIsSpinning() && enhancedisk && !Spkr_IsActive() && !MB_IsActive()) ||
+					 (Disk_IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -606,7 +606,10 @@ void LoadConfiguration(void)
 	}
 
 	REGLOAD(TEXT(REGVALUE_EMULATION_SPEED)   ,&g_dwSpeed);
-	REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED),(DWORD *)&enhancedisk);
+
+	DWORD dwEnhanceDisk;
+	REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk);
+	Disk_SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	Config_Load_Video();
 
@@ -821,32 +824,45 @@ void RegisterExtensions(void)
 //===========================================================================
 void AppleWin_RegisterHotKeys(void)
 {
-	BOOL bStatus = true;
-	
-	bStatus &= RegisterHotKey( 
+	BOOL bStatus[3] = {0,0,0};
+
+	bStatus[0] = RegisterHotKey( 
 		g_hFrameWindow , // HWND hWnd
 		VK_SNAPSHOT_560, // int id (user/custom id)
 		0              , // UINT fsModifiers
 		VK_SNAPSHOT      // UINT vk = PrintScreen
 	);
 
-	bStatus &= RegisterHotKey( 
+	bStatus[1] = RegisterHotKey( 
 		g_hFrameWindow , // HWND hWnd
 		VK_SNAPSHOT_280, // int id (user/custom id)
 		MOD_SHIFT      , // UINT fsModifiers
 		VK_SNAPSHOT      // UINT vk = PrintScreen
 	);
 
-	bStatus &= RegisterHotKey( 
+	bStatus[2] = RegisterHotKey( 
 		g_hFrameWindow  , // HWND hWnd
 		VK_SNAPSHOT_TEXT, // int id (user/custom id)
 		MOD_CONTROL     , // UINT fsModifiers
 		VK_SNAPSHOT       // UINT vk = PrintScreen
 	);
 
-	if (!bStatus && g_bShowPrintScreenWarningDialog)
+	if ((!bStatus[0] || !bStatus[1] || !bStatus[2]))
 	{
-		MessageBox( g_hFrameWindow, "Unable to capture PrintScreen key", "Warning", MB_OK );
+		std::string msg("Unable to register for PrintScreen key(s):\n");
+
+		if (!bStatus[0])
+			msg += "\n. PrintScreen";
+		if (!bStatus[1])
+			msg += "\n. Shift+PrintScreen";
+		if (!bStatus[2])
+			msg += "\n. Ctrl+PrintScreen";
+
+		if (g_bShowPrintScreenWarningDialog)
+			MessageBox( g_hFrameWindow, msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK );
+
+		msg += "\n";
+		LogFileOutput(msg.c_str());
 	}
 }
 

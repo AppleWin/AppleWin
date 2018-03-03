@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Applewin.h"
 #include "CPU.h"
+#include "Disk.h"		// DiskUpdateDriveState()
 #include "Frame.h"
 #include "Keyboard.h"
 #include "Memory.h"
@@ -591,28 +592,6 @@ void VideoRedrawScreen (void)
 
 //===========================================================================
 
-// NB. Can get "big" 1000+ms times: these occur during disk loading when the emulator is at full-speed.
-
-//#define DEBUG_REFRESH_TIMINGS
-
-#if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
-static void DebugRefresh(char uDebugFlag)
-{
-	static DWORD uLastRefreshTime = 0;
-
-	const DWORD dwEmuTime_ms = CpuGetEmulationTime_ms();
-	const DWORD uTimeBetweenRefreshes = uLastRefreshTime ? dwEmuTime_ms - uLastRefreshTime : 0;
-	uLastRefreshTime = dwEmuTime_ms;
-
-	if (!uTimeBetweenRefreshes)
-		return;					// 1st time in func
-
-	char szStr[100];
-	sprintf(szStr, "Time between refreshes = %d ms %c\n", uTimeBetweenRefreshes, (uDebugFlag==0)?' ':uDebugFlag);
-	OutputDebugString(szStr);
-}
-#endif
-
 // TC: Hacky-fix for GH#341 - better to draw to the correct position in the framebuffer to start with! (in NTSC.cpp)
 static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 {
@@ -640,10 +619,6 @@ static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 
 void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
 {
-#if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
-	DebugRefresh(0);
-#endif
-
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
 	{
 		// uVideoModeForWholeScreen set if:

@@ -35,15 +35,15 @@ public:
 
 	void Reset(void);
 	void DriveNotWritingTrack(void);
-	void DriveSwitchedToReadMode(Disk_t* const fptr);
+	void DriveSwitchedToReadMode(Disk_t* const pFloppy);
 	void DriveSwitchedToWriteMode(UINT uTrackIndex);
 	void DecodeLatchNibbleRead(BYTE floppylatch);
-	void DecodeLatchNibbleWrite(BYTE floppylatch, UINT uSpinNibbleCount, const Disk_t* const fptr, bool bIsSyncFF);
+	void DecodeLatchNibbleWrite(BYTE floppylatch, UINT uSpinNibbleCount, const Disk_t* const pFloppy, bool bIsSyncFF);
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
 private:
-	void UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const fptr);
+	void UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const pFloppy);
 	void DecodeLatchNibble(BYTE floppylatch, bool bIsWrite, bool bIsSyncFF);
 
 	BYTE m_VolTrkSecChk[4];

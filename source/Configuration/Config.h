@@ -2,7 +2,7 @@
 
 #include "../Applewin.h"
 #include "../CPU.h"
-#include "../Disk.h"		// BOOL enhancedisk
+#include "../DiskImage.h"	// Disk_Status_e
 #include "../Harddisk.h"	// HD_CardIsEnabled()
 
 class CConfigNeedingRestart
@@ -11,7 +11,6 @@ public:
 	CConfigNeedingRestart(UINT bEnableTheFreezesF8Rom = false) :
 		m_Apple2Type( GetApple2Type() ),
 		m_CpuType( GetMainCpu() ),
-		m_bEnhanceDisk(enhancedisk),
 		m_uSaveLoadStateMsg(0)
 	{
 		m_bEnableHDD = HD_CardIsEnabled();
@@ -27,7 +26,6 @@ public:
 		m_Apple2Type = other.m_Apple2Type;
 		m_CpuType = other.m_CpuType;
 		memcpy(m_Slot, other.m_Slot, sizeof(m_Slot));
-		m_bEnhanceDisk = other.m_bEnhanceDisk;
 		m_bEnableHDD = other.m_bEnableHDD;
 		m_bEnableTheFreezesF8Rom = other.m_bEnableTheFreezesF8Rom;
 		m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
@@ -39,7 +37,6 @@ public:
 		return	m_Apple2Type == other.m_Apple2Type &&
 				m_CpuType == other.m_CpuType &&
 				memcmp(m_Slot, other.m_Slot, sizeof(m_Slot)) == 0 &&
-				m_bEnhanceDisk == other.m_bEnhanceDisk &&
 				m_bEnableHDD == other.m_bEnableHDD &&
 				m_bEnableTheFreezesF8Rom == other.m_bEnableTheFreezesF8Rom &&
 				m_uSaveLoadStateMsg == other.m_uSaveLoadStateMsg;
@@ -54,7 +51,6 @@ public:
 	eCpuType m_CpuType;
 	SS_CARDTYPE m_Slot[NUM_SLOTS];	// 0..7
 	SS_CARDTYPE m_SlotAux;
-	BOOL m_bEnhanceDisk;
 	bool m_bEnableHDD;
 	UINT m_bEnableTheFreezesF8Rom;
 	UINT m_uSaveLoadStateMsg;

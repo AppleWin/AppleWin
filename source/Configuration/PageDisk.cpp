@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "../Applewin.h"
+#include "../Disk.h"	// Drive_e, Disk_Status_e
 #include "../Frame.h"
 #include "../Registry.h"
 #include "../resource/resource.h"
@@ -127,7 +128,7 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 
 	case WM_INITDIALOG:
 		{
-			m_PropertySheetHelper.FillComboBox(hWnd, IDC_DISKTYPE, m_discchoices, enhancedisk);
+			m_PropertySheetHelper.FillComboBox(hWnd, IDC_DISKTYPE, m_discchoices, Disk_GetEnhanceDisk() ? 1 : 0);
 			m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_DISK1, m_defaultDiskOptions, -1);
 			m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_DISK2, m_defaultDiskOptions, -1);
 			m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_HDD1, m_defaultHDDOptions, -1);
@@ -177,10 +178,11 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 
 void CPageDisk::DlgOK(HWND hWnd)
 {
-	const BOOL bNewEnhanceDisk = (BOOL) SendDlgItemMessage(hWnd, IDC_DISKTYPE,CB_GETCURSEL, 0, 0);
-	if (bNewEnhanceDisk != enhancedisk)
+	const bool bNewEnhanceDisk = SendDlgItemMessage(hWnd, IDC_DISKTYPE,CB_GETCURSEL, 0, 0) ? true : false;
+	if (bNewEnhanceDisk != Disk_GetEnhanceDisk())
 	{
-		m_PropertySheetHelper.GetConfigNew().m_bEnhanceDisk = bNewEnhanceDisk;
+		Disk_SetEnhanceDisk(bNewEnhanceDisk);
+		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (DWORD)bNewEnhanceDisk);
 	}
 
 	const bool bNewHDDIsEnabled = IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE) ? true : false;

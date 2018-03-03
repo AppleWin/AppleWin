@@ -502,29 +502,6 @@ ULONG CpuGetCyclesThisVideoFrame(const ULONG nExecutedCycles)
 }
 #endif
 
-//---------------------------------------------------------------------------
-
-static DWORD g_dwEmulationTime_ms = 0;
-
-static void UpdateEmulationTime(const DWORD dwExecutedCycles)
-{
-	static DWORD dwEmulationTimeFrac_clks  = 0;
-
-	const DWORD CLKS_PER_MS = (DWORD)g_fCurrentCLK6502 / 1000;
-
-	dwEmulationTimeFrac_clks += dwExecutedCycles;
-	if (dwEmulationTimeFrac_clks > CLKS_PER_MS)
-	{
-		g_dwEmulationTime_ms += dwEmulationTimeFrac_clks / CLKS_PER_MS;
-		dwEmulationTimeFrac_clks %= CLKS_PER_MS;
-	}
-}
-
-DWORD CpuGetEmulationTime_ms(void)
-{
-	return g_dwEmulationTime_ms;
-}
-
 //===========================================================================
 
 DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
@@ -540,7 +517,6 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 
 	MB_UpdateCycles(uExecutedCycles);	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
 										// NB. Ensures that 6522 regs are up-to-date for any potential save-state
-	UpdateEmulationTime(uExecutedCycles);
 
 	//
 
