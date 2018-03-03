@@ -47,8 +47,7 @@ enum MemoryType_e
 	NUM_MEM_TYPE      = 3
 };
 
-// TODO-TC: Refactor codebase by renaming /nCyclesLeft/ to /uExecutedCycles/
-typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
+typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nExecutedCycles);
 
 extern MemoryType_e	g_eMemType;
 
@@ -100,5 +99,5 @@ bool    MemLoadSnapshotAux(class YamlLoadHelper& yamlLoadHelper, UINT version);
 
 BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
-BYTE __stdcall MemCheckPaging (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+BYTE __stdcall MemCheckPaging (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);

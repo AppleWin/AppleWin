@@ -260,7 +260,7 @@ static void HD_SaveLastDiskImage(const int iDrive)
 
 // (Nearly) everything below is global
 
-static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 static const DWORD HDDRVR_SIZE = APPLE_SLOT_SIZE;
 
@@ -486,7 +486,7 @@ bool HD_IsDriveUnplugged(const int iDrive)
 #define DEVICE_UNKNOWN_ERROR	0x28
 #define DEVICE_IO_ERROR			0x27
 
-static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	BYTE r = DEVICE_OK;
 	addr &= 0xFF;
@@ -629,7 +629,7 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 #if HD_LED
 			pHDD->hd_status_next = DISK_STATUS_OFF;
 #endif
-			return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+			return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 		}
 	}
 	else // write to registers
@@ -664,7 +664,7 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 #if HD_LED
 			pHDD->hd_status_next = DISK_STATUS_OFF;
 #endif
-			return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+			return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 		}
 	}
 

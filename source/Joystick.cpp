@@ -481,7 +481,7 @@ static void DoAutofire(UINT uButton, BOOL& pressed)
 	lastPressed[uButton] = nowPressed;
 }
 
-BYTE __stdcall JoyportReadButton(WORD address, ULONG nCyclesLeft)
+BYTE __stdcall JoyportReadButton(WORD address, ULONG nExecutedCycles)
 {
 	BOOL pressed = 0;
 
@@ -529,10 +529,10 @@ BYTE __stdcall JoyportReadButton(WORD address, ULONG nCyclesLeft)
 
 	pressed = pressed ? 0 : 1;	// Invert as Joyport signals are active low
 
-	return MemReadFloatingBus(pressed, nCyclesLeft);
+	return MemReadFloatingBus(pressed, nExecutedCycles);
 }
 
-BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
+BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedCycles)
 {
 	address &= 0xFF;
 
@@ -545,7 +545,7 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nCyclesLef
 	{
 		// Some extra logic to stop the Joyport forcing a self-test at CTRL+RESET
 		if ((address != 0x62) || (address == 0x62 && pc != 0xC242 && pc != 0xC2BE))	// Original //e ($C242), Enhanced //e ($C2BE) 
-			return JoyportReadButton(address, nCyclesLeft);
+			return JoyportReadButton(address, nExecutedCycles);
 	}
 
 	BOOL pressed = 0;
@@ -583,7 +583,7 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nCyclesLef
 			break;
 	}
 
-	return MemReadFloatingBus(pressed, nCyclesLeft);
+	return MemReadFloatingBus(pressed, nExecutedCycles);
 }
 
 //===========================================================================
@@ -605,11 +605,11 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nCyclesLef
 
 static const double PDL_CNTR_INTERVAL = 2816.0 / 255.0;	// 11.04 (From KEGS)
 
-BYTE __stdcall JoyReadPosition(WORD programcounter, WORD address, BYTE, BYTE, ULONG nCyclesLeft)
+BYTE __stdcall JoyReadPosition(WORD programcounter, WORD address, BYTE, BYTE, ULONG nExecutedCycles)
 {
 	int nJoyNum = (address & 2) ? 1 : 0;	// $C064..$C067
 
-	CpuCalcCycles(nCyclesLeft);
+	CpuCalcCycles(nExecutedCycles);
 
 	ULONG nPdlPos = (address & 1) ? ypos[nJoyNum] : xpos[nJoyNum];
 
@@ -619,7 +619,7 @@ BYTE __stdcall JoyReadPosition(WORD programcounter, WORD address, BYTE, BYTE, UL
 
 	BOOL nPdlCntrActive = g_nCumulativeCycles <= (g_nJoyCntrResetCycle + (unsigned __int64) ((double)nPdlPos * PDL_CNTR_INTERVAL));
 
-	return MemReadFloatingBus(nPdlCntrActive, nCyclesLeft);
+	return MemReadFloatingBus(nPdlCntrActive, nExecutedCycles);
 }
 
 //===========================================================================
@@ -631,9 +631,9 @@ void JoyReset()
 }
 
 //===========================================================================
-BYTE __stdcall JoyResetPosition(WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
+BYTE __stdcall JoyResetPosition(WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
 {
-	CpuCalcCycles(nCyclesLeft);
+	CpuCalcCycles(nExecutedCycles);
 	g_nJoyCntrResetCycle = g_nCumulativeCycles;
 
 	if(joyinfo[joytype[0]] == DEVICE_JOYSTICK)
@@ -641,7 +641,7 @@ BYTE __stdcall JoyResetPosition(WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 	if((joyinfo[joytype[1]] == DEVICE_JOYSTICK) || (joyinfo[joytype[1]] == DEVICE_JOYSTICK_THUMBSTICK2))
 		CheckJoystick1();
 
-	return MemReadFloatingBus(nCyclesLeft);
+	return MemReadFloatingBus(nExecutedCycles);
 }
 
 //===========================================================================

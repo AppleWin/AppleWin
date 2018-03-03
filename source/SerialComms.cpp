@@ -408,57 +408,57 @@ void CSuperSerialCard::CommTcpSerialReceive()
 
 //===========================================================================
 
-BYTE __stdcall CSuperSerialCard::SSC_IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft)
+BYTE __stdcall CSuperSerialCard::SSC_IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
 {
 	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
 	CSuperSerialCard* pSSC = (CSuperSerialCard*) MemGetSlotParameters(uSlot);
 
 	switch (uAddr & 0xf)
 	{
-	case 0x0:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x1:	return pSSC->CommDipSw(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x2:	return pSSC->CommDipSw(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x3:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x4:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x5:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x6:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x7:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x8:	return pSSC->CommReceive(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x9:	return pSSC->CommStatus(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0xA:	return pSSC->CommCommand(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0xB:	return pSSC->CommControl(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0xC:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0xD:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0xE:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0xF:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
+	case 0x0:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x1:	return pSSC->CommDipSw(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x2:	return pSSC->CommDipSw(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x3:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x4:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x5:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x6:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x7:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x8:	return pSSC->CommReceive(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x9:	return pSSC->CommStatus(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0xA:	return pSSC->CommCommand(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0xB:	return pSSC->CommControl(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0xC:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0xD:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0xE:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0xF:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
 	}
 
 	return 0;
 }
 
-BYTE __stdcall CSuperSerialCard::SSC_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft)
+BYTE __stdcall CSuperSerialCard::SSC_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
 {
 	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
 	CSuperSerialCard* pSSC = (CSuperSerialCard*) MemGetSlotParameters(uSlot);
 
 	switch (uAddr & 0xf)
 	{
-	case 0x0:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x1:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x2:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x3:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x4:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x5:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x6:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x7:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x8:	return pSSC->CommTransmit(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0x9:	return pSSC->CommStatus(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0xA:	return pSSC->CommCommand(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0xB:	return pSSC->CommControl(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0xC:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0xD:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0xE:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
-	case 0xF:	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
+	case 0x0:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x1:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x2:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x3:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x4:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x5:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x6:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x7:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x8:	return pSSC->CommTransmit(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0x9:	return pSSC->CommStatus(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0xA:	return pSSC->CommCommand(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0xB:	return pSSC->CommControl(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0xC:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0xD:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0xE:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	case 0xF:	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
 	}
 
 	return 0;

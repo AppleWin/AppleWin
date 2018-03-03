@@ -88,7 +88,6 @@ static UINT		g_uSlot = 0;
 static unsigned __int64 g_uDiskLastCycle = 0;
 static FormatTrack g_formatTrack;
 
-static void CheckSpinning(const ULONG nCyclesLeft);
 static bool IsDriveValid( const int iDrive );
 static void ReadTrack (int drive);
 static void RemoveDisk (int drive);
@@ -204,7 +203,7 @@ void Disk_SaveLastDiskImage(const int iDrive)
 //===========================================================================
 
 // Called by DiskControlMotor() & DiskEnable()
-static void CheckSpinning(const ULONG nCyclesLeft)
+static void CheckSpinning(const ULONG nExecutedCycles)
 {
 	DWORD modechange = (floppymotoron && !g_aFloppyDrive[currdrive].spinning);
 
@@ -217,7 +216,7 @@ static void CheckSpinning(const ULONG nCyclesLeft)
 	if (modechange)
 	{
 		// Set g_uDiskLastCycle when motor changes: not spinning (ie. off for 1 sec) -> on
-		CpuCalcCycles(nCyclesLeft);
+		CpuCalcCycles(nExecutedCycles);
 		g_uDiskLastCycle = g_nCumulativeCycles;
 	}
 }
@@ -856,7 +855,7 @@ static bool LogWriteCheckSyncFF(ULONG& uCycleDelta)
 
 //===========================================================================
 
-static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	/* floppyloadmode = 0; */
 	Drive_t* pDrive = &g_aFloppyDrive[currdrive];
@@ -873,7 +872,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 
 	// Improve precision of "authentic" drive mode - GH#125
 	UINT uSpinNibbleCount = 0;
-	CpuCalcCycles(nCyclesLeft);	// g_nCumulativeCycles required for uSpinNibbleCount & LogWriteCheckSyncFF()
+	CpuCalcCycles(nExecutedCycles);	// g_nCumulativeCycles required for uSpinNibbleCount & LogWriteCheckSyncFF()
 
 	if (!enhancedisk && pDrive->spinning)
 	{
@@ -1171,8 +1170,8 @@ bool DiskDriveSwap(void)
 
 //===========================================================================
 
-static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 // TODO: LoadRom_Disk_Floppy()
 void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
@@ -1211,55 +1210,55 @@ void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
 
 //===========================================================================
 
-static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	switch (addr & 0xF)
 	{
-	case 0x0:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x1:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x2:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x3:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x4:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x5:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x6:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x7:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x8:	DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x9:	DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xA:	DiskEnable(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xB:	DiskEnable(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xC:	DiskReadWrite(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xD:	DiskLoadWriteProtect(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xE:	DiskSetReadMode(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x0:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x1:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x2:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x3:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x4:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x5:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x6:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x7:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x8:	DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x9:	DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xA:	DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xB:	DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xC:	DiskReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xD:	DiskLoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xE:	DiskSetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
 	}
 
 	// only even addresses return the latch (UTAIIe Table 9.1)
 	if (!(addr & 1))
 		return floppylatch;
 	else
-		return MemReadFloatingBus(nCyclesLeft);
+		return MemReadFloatingBus(nExecutedCycles);
 }
 
-static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	switch (addr & 0xF)
 	{
-	case 0x0:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x1:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x2:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x3:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x4:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x5:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x6:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x7:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x8:	DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x9:	DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xA:	DiskEnable(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xB:	DiskEnable(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xC:	DiskReadWrite(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xD:	DiskLoadWriteProtect(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xE:	DiskSetReadMode(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x0:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x1:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x2:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x3:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x4:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x5:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x6:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x7:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x8:	DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x9:	DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xA:	DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xB:	DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xC:	DiskReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xD:	DiskLoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xE:	DiskSetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
 	}
 
 	// any address writes the latch via sequencer LD command (74LS323 datasheet)

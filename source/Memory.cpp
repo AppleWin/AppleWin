@@ -202,134 +202,134 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 
 //=============================================================================
 
-static BYTE __stdcall IORead_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IORead_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	return KeybReadData(pc, addr, bWrite, d, nCyclesLeft);
+	return KeybReadData(pc, addr, bWrite, d, nExecutedCycles);
 }
 
-static BYTE __stdcall IOWrite_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IOWrite_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	if ((addr & 0xf) <= 0xB)
-		return MemSetPaging(pc, addr, bWrite, d, nCyclesLeft);
+		return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	else
-		return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
+		return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
 }
 
 //-------------------------------------
 
-static BYTE __stdcall IORead_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IORead_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	switch (addr & 0xf)
 	{
-	case 0x0:	return KeybReadFlag(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x1:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x2:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x3:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x4:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x5:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x6:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x7:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x8:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x9:	return VideoCheckVbl(nCyclesLeft);
-	case 0xA:	return VideoCheckMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xB:	return VideoCheckMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xC:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xD:	return MemCheckPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xE:	return VideoCheckMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xF:	return VideoCheckMode(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x0:	return KeybReadFlag(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x1:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x2:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x3:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x4:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x5:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x6:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x7:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x8:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x9:	return VideoCheckVbl(nExecutedCycles);
+	case 0xA:	return VideoCheckMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xB:	return VideoCheckMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xC:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xD:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xE:	return VideoCheckMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xF:	return VideoCheckMode(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	return 0;
 }
 
-static BYTE __stdcall IOWrite_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IOWrite_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	return KeybReadFlag(pc, addr, bWrite, d, nCyclesLeft);
+	return KeybReadFlag(pc, addr, bWrite, d, nExecutedCycles);
 }
 
 //-------------------------------------
 
-static BYTE __stdcall IORead_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IORead_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 }
 
-static BYTE __stdcall IOWrite_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IOWrite_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);	// $C020 TAPEOUT
-}
-
-//-------------------------------------
-
-static BYTE __stdcall IORead_C03x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
-{
-	return SpkrToggle(pc, addr, bWrite, d, nCyclesLeft);
-}
-
-static BYTE __stdcall IOWrite_C03x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
-{
-	return SpkrToggle(pc, addr, bWrite, d, nCyclesLeft);
+	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);	// $C020 TAPEOUT
 }
 
 //-------------------------------------
 
-static BYTE __stdcall IORead_C04x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IORead_C03x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+	return SpkrToggle(pc, addr, bWrite, d, nExecutedCycles);
 }
 
-static BYTE __stdcall IOWrite_C04x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IOWrite_C03x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+	return SpkrToggle(pc, addr, bWrite, d, nExecutedCycles);
 }
 
 //-------------------------------------
 
-static BYTE __stdcall IORead_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IORead_C04x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+{
+	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+}
+
+static BYTE __stdcall IOWrite_C04x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+{
+	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+}
+
+//-------------------------------------
+
+static BYTE __stdcall IORead_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	switch (addr & 0xf)
 	{
-	case 0x0:	return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x1:	return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x2:	return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x3:	return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x4:	return MemSetPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x5:	return MemSetPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x6:	return MemSetPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x7:	return MemSetPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x8:	return IO_Annunciator(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x9:	return IO_Annunciator(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xA:	return IO_Annunciator(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xB:	return IO_Annunciator(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xC:	return IO_Annunciator(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xD:	return IO_Annunciator(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xE:	return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xF:	return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x0:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x1:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x2:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x3:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x4:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x5:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x6:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x7:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x8:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x9:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xA:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xB:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xC:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xD:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xE:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xF:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	return 0;
 }
 
-static BYTE __stdcall IOWrite_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IOWrite_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	switch (addr & 0xf)
 	{
-	case 0x0:	return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x1:	return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x2:	return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x3:	return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x4:	return MemSetPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x5:	return MemSetPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x6:	return MemSetPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x7:	return MemSetPaging(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x8:	return IO_Annunciator(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x9:	return IO_Annunciator(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xA:	return IO_Annunciator(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xB:	return IO_Annunciator(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xC:	return IO_Annunciator(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xD:	return IO_Annunciator(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xE:	return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xF:	return VideoSetMode(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x0:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x1:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x2:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x3:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x4:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x5:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x6:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x7:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x8:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x9:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xA:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xB:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xC:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xD:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xE:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xF:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	return 0;
@@ -337,7 +337,7 @@ static BYTE __stdcall IOWrite_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 
 //-------------------------------------
 
-static BYTE __stdcall IORead_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IORead_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {	
 	static byte CurrentKestroke = 0;
 	CurrentKestroke = KeybGetKeycode();
@@ -347,83 +347,83 @@ static BYTE __stdcall IORead_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	//If (CAPS lOCK of Pravets8A/C is on or Shift is pressed) and (MODE is enabled), bit7 in $C000 is 1; Else it is 0
 	//Writing into $C060 sets MODE on and off. If bit 0 is 0 the the MODE is set 0, if bit 0 is 1 then MODE is set to 1 (8-bit)
 
-	case 0x0:	return TapeRead(pc, addr, bWrite, d, nCyclesLeft);		// $C060 TAPEIN
-	case 0x1:	return JoyReadButton(pc, addr, bWrite, d, nCyclesLeft);  //$C061 Digital input 0 (If bit 7=1 then JoyButton 0 or OpenApple is pressed)
-	case 0x2:	return JoyReadButton(pc, addr, bWrite, d, nCyclesLeft);  //$C062 Digital input 1 (If bit 7=1 then JoyButton 1 or ClosedApple is pressed)
-	case 0x3:	return JoyReadButton(pc, addr, bWrite, d, nCyclesLeft);  //$C063 Digital input 2
-	case 0x4:	return JoyReadPosition(pc, addr, bWrite, d, nCyclesLeft); //$C064 Analog input 0
-	case 0x5:	return JoyReadPosition(pc, addr, bWrite, d, nCyclesLeft); //$C065 Analog input 1
-	case 0x6:	return JoyReadPosition(pc, addr, bWrite, d, nCyclesLeft); //$C066 Analog input 2
-	case 0x7:	return JoyReadPosition(pc, addr, bWrite, d, nCyclesLeft); //$C067 Analog input 3
+	case 0x0:	return TapeRead(pc, addr, bWrite, d, nExecutedCycles);			// $C060 TAPEIN
+	case 0x1:	return JoyReadButton(pc, addr, bWrite, d, nExecutedCycles);		//$C061 Digital input 0 (If bit 7=1 then JoyButton 0 or OpenApple is pressed)
+	case 0x2:	return JoyReadButton(pc, addr, bWrite, d, nExecutedCycles);		//$C062 Digital input 1 (If bit 7=1 then JoyButton 1 or ClosedApple is pressed)
+	case 0x3:	return JoyReadButton(pc, addr, bWrite, d, nExecutedCycles);		//$C063 Digital input 2
+	case 0x4:	return JoyReadPosition(pc, addr, bWrite, d, nExecutedCycles);	//$C064 Analog input 0
+	case 0x5:	return JoyReadPosition(pc, addr, bWrite, d, nExecutedCycles);	//$C065 Analog input 1
+	case 0x6:	return JoyReadPosition(pc, addr, bWrite, d, nExecutedCycles);	//$C066 Analog input 2
+	case 0x7:	return JoyReadPosition(pc, addr, bWrite, d, nExecutedCycles);	//$C067 Analog input 3
 	}
 
 	return 0;
 }
 
-static BYTE __stdcall IOWrite_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IOWrite_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	switch (addr & 0xf)
 	{
 	case 0x0:	
-		if (g_Apple2Type == A2TYPE_PRAVETS8A )
-			return TapeWrite (pc, addr, bWrite, d, nCyclesLeft);			
+		if (g_Apple2Type == A2TYPE_PRAVETS8A)
+			return TapeWrite (pc, addr, bWrite, d, nExecutedCycles);
 		else
-			return IO_Null(pc, addr, bWrite, d, nCyclesLeft); //Apple2 value
+			return IO_Null(pc, addr, bWrite, d, nExecutedCycles); //Apple2 value
 	}
-	return IO_Null(pc, addr, bWrite, d, nCyclesLeft); //Apple2 value
+	return IO_Null(pc, addr, bWrite, d, nExecutedCycles); //Apple2 value
 }
 
 //-------------------------------------
 
-static BYTE __stdcall IORead_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IORead_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	switch (addr & 0xf)
 	{
-	case 0x0:	return JoyResetPosition(pc, addr, bWrite, d, nCyclesLeft);  //$C070 Analog input reset
-	case 0x1:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x2:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x3:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x4:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x5:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x6:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x7:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x8:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x9:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xA:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xB:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xC:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xD:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xE:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xF:	return VideoCheckMode(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x0:	return JoyResetPosition(pc, addr, bWrite, d, nExecutedCycles);  //$C070 Analog input reset
+	case 0x1:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x2:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x3:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x4:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x5:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x6:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x7:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x8:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x9:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xA:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xB:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xC:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xD:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xE:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xF:	return VideoCheckMode(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	return 0;
 }
 
-static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	switch (addr & 0xf)
 	{
-	case 0x0:	return JoyResetPosition(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x0:	return JoyResetPosition(pc, addr, bWrite, d, nExecutedCycles);
 #ifdef RAMWORKS
-	case 0x1:	return MemSetPaging(pc, addr, bWrite, d, nCyclesLeft);	// extended memory card set page
-	case 0x2:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x3:	return MemSetPaging(pc, addr, bWrite, d, nCyclesLeft);	// Ramworks III set page
+	case 0x1:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);	// extended memory card set page
+	case 0x2:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x3:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);	// Ramworks III set page
 #else
-	case 0x1:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x2:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x3:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x1:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x2:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x3:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 #endif
-	case 0x4:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x5:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x6:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x7:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x8:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0x9:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xA:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xB:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xC:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
-	case 0xD:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+	case 0x4:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x5:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x6:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x7:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x8:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x9:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xA:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xB:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xC:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xD:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 
 	//http://www.kreativekorp.com/miscpages/a2info/iomemory.shtml
 	//- Apparently Apple//e & //c (but maybe enhanced//e not //e?)
@@ -431,8 +431,8 @@ static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	//IOUDISOFF (W): $C07F  Enable IOU
 	//RDIOUDIS (R7): $C07E  Status of IOU Disabling
 	//RDDHIRES (R7): $C07F  Status of Double HiRes
-	case 0xE:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft); // TODO: IOUDIS
-	case 0xF:	return IO_Null(pc, addr, bWrite, d, nCyclesLeft); // TODO: IOUDIS
+	case 0xE:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles); // TODO: IOUDIS
+	case 0xF:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles); // TODO: IOUDIS
 	}
 
 	return 0;
@@ -475,15 +475,15 @@ static UINT	g_uPeripheralRomSlot = 0;
 
 //=============================================================================
 
-BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
+BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nExecutedCycles)
 {
 	if (!write)
-		return MemReadFloatingBus(nCyclesLeft);
+		return MemReadFloatingBus(nExecutedCycles);
 	else
 		return 0;
 }
 
-BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
+BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nExecutedCycles)
 {
 	// Apple//e ROM:
 	// . PC=FA6F: LDA $C058 (SETAN0)
@@ -498,7 +498,7 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 	}
 
 	if (!write)
-		return MemReadFloatingBus(nCyclesLeft);
+		return MemReadFloatingBus(nExecutedCycles);
 	else
 		return 0;
 }
@@ -547,7 +547,7 @@ static bool IsCardInSlot(const UINT uSlot);
 // . Reset: On access to $CFFF or an MMU reset
 //
 
-static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
+static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nExecutedCycles)
 {
 	if (address == 0xCFFF)
 	{
@@ -682,12 +682,12 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 		// Fix for GH#149 and GH#164
 		if (bPeripheralSlotRomEnabled && !IsCardInSlot(uSlot))	// Slot is empty
 		{
-			return IO_Null(programcounter, address, write, value, nCyclesLeft);
+			return IO_Null(programcounter, address, write, value, nExecutedCycles);
 		}
 	}
 
 	if ((g_eExpansionRomType == eExpRomNull) && (address >= FIRMWARE_EXPANSION_BEGIN))
-		return IO_Null(programcounter, address, write, value, nCyclesLeft);
+		return IO_Null(programcounter, address, write, value, nExecutedCycles);
 
 	return mem[address];
 }
@@ -1647,7 +1647,7 @@ BYTE MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles)
 //#define DEBUG_FLIP_TIMINGS
 
 #if defined(_DEBUG) && defined(DEBUG_FLIP_TIMINGS)
-static void DebugFlip(WORD address, ULONG nCyclesLeft)
+static void DebugFlip(WORD address, ULONG nExecutedCycles)
 {
 	static unsigned __int64 uLastFlipCycle = 0;
 	static unsigned int uLastPage = -1;
@@ -1660,7 +1660,7 @@ static void DebugFlip(WORD address, ULONG nCyclesLeft)
 		return;
 	uLastPage = uNewPage;
 
-	CpuCalcCycles(nCyclesLeft);	// Update g_nCumulativeCycles
+	CpuCalcCycles(nExecutedCycles);	// Update g_nCumulativeCycles
 
 	const unsigned int uCyclesBetweenFlips = (unsigned int) (uLastFlipCycle ? g_nCumulativeCycles - uLastFlipCycle : 0);
 	uLastFlipCycle = g_nCumulativeCycles;
@@ -1676,12 +1676,12 @@ static void DebugFlip(WORD address, ULONG nCyclesLeft)
 }
 #endif
 
-BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCyclesLeft)
+BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nExecutedCycles)
 {
 	address &= 0xFF;
 	DWORD lastmemmode = memmode;
 #if defined(_DEBUG) && defined(DEBUG_FLIP_TIMINGS)
-	DebugFlip(address, nCyclesLeft);
+	DebugFlip(address, nExecutedCycles);
 #endif
 
 	// DETERMINE THE NEW MEMORY PAGING MODE.
@@ -1798,13 +1798,13 @@ _done_saturn:
 	if ((address >= 4) && (address <= 5) &&
 		((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
 			modechanging = 1;
-			return write ? 0 : MemReadFloatingBus(1, nCyclesLeft);
+			return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
 	}
 	if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&
 		(((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||
 		 ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))) {
 			modechanging = 1;
-			return write ? 0 : MemReadFloatingBus(1, nCyclesLeft);
+			return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
 	}
 
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
@@ -1844,9 +1844,9 @@ _done_saturn:
 	}
 
 	if ((address <= 1) || ((address >= 0x54) && (address <= 0x57)))
-		return VideoSetMode(programcounter,address,write,value,nCyclesLeft);
+		return VideoSetMode(programcounter,address,write,value,nExecutedCycles);
 
-	return write ? 0 : MemReadFloatingBus(nCyclesLeft);
+	return write ? 0 : MemReadFloatingBus(nExecutedCycles);
 }
 
 //===========================================================================

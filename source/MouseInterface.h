@@ -12,8 +12,8 @@ public:
 	void Initialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void Uninitialize();
 	void Reset();
-	static BYTE __stdcall IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
-	static BYTE __stdcall IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft);
+	static BYTE __stdcall IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
+	static BYTE __stdcall IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 
 	void SetPositionRel(long dx, long dy, int* pOutOfBoundsX, int* pOutOfBoundsY);
 	void SetButton(eBUTTON Button, eBUTTONSTATE State);
