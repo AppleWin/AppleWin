@@ -366,6 +366,8 @@ void HD_Destroy(void)
 }
 
 // pszImageFilename is qualified with path
+// GH#541: global as HD_Insert() is needed by the Qt frontend
+// - there is no way, other than calling HD_Select() to insert an image.
 BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
 {
 	if (*pszImageFilename == 0x00)
