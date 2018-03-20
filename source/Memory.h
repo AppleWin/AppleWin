@@ -56,7 +56,6 @@ extern iofunction IOWrite[256];
 extern LPBYTE     memwrite[0x100];
 extern LPBYTE     mem;
 extern LPBYTE     memdirty;
-extern DWORD      memmode;
 
 #ifdef RAMWORKS
 const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB
@@ -78,6 +77,7 @@ LPBYTE  MemGetAuxPtr(const WORD);
 LPBYTE  MemGetMainPtr(const WORD);
 LPBYTE  MemGetBankPtr(const UINT nBank);
 LPBYTE  MemGetCxRomPeripheral();
+DWORD   GetMemMode(void);
 bool    MemIsAddrCodeMemory(const USHORT addr);
 void    MemInitialize ();
 void    MemInitializeROM(void);

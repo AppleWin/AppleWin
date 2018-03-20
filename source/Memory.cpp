@@ -178,7 +178,8 @@ static LPBYTE  memimage     = NULL;
 static LPBYTE	pCxRomInternal		= NULL;
 static LPBYTE	pCxRomPeripheral	= NULL;
 
-       DWORD   memmode      = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM; // 2.9.0.4 now global as Debugger needs access for LC status info in DrawSoftSwitches()
+static const DWORD kMemModeInitialState = MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM;
+static DWORD   memmode      = kMemModeInitialState;
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 static BOOL    Pravets8charmode = 0;
 
@@ -824,6 +825,11 @@ static void BackMainImage(void)
 
 //===========================================================================
 
+DWORD GetMemMode(void)
+{
+	return memmode;
+}
+
 static void SetMemMode(const DWORD uNewMemMode)
 {
 #if defined(_DEBUG) && 0
@@ -860,7 +866,7 @@ static void ResetPaging(BOOL initialize);
 static void UpdatePaging(BOOL initialize);
 
 // Call by:
-// . CtrlReset() Soft-reset (Ctrl+Reset)
+// . CtrlReset() Soft-reset (Ctrl+Reset) for //e
 void MemResetPaging()
 {
 	ResetPaging(0);		// Initialize=0
@@ -869,7 +875,7 @@ void MemResetPaging()
 static void ResetPaging(BOOL initialize)
 {
 	g_bLastWriteRam = 0;
-	SetMemMode(MF_BANK2 | MF_SLOTCXROM | MF_WRITERAM);
+	SetMemMode(kMemModeInitialState);
 	UpdatePaging(initialize);
 }
 
