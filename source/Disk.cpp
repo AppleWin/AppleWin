@@ -89,9 +89,6 @@ static unsigned __int64 g_uDiskLastCycle = 0;
 static FormatTrack g_formatTrack;
 
 static bool IsDriveValid( const int iDrive );
-static void ReadTrack (int drive);
-static void RemoveDisk (int drive);
-static void WriteTrack (int drive);
 static LPCTSTR DiskGetFullPathName(const int iDrive);
 
 #define SPINNING_CYCLES (20000*64)		// 1280000 cycles = 1.25s
@@ -275,7 +272,7 @@ static void ReadTrack(const int iDrive)
 
 	if (pDrive->track >= ImageGetNumTracks(pFloppy->imagehandle))
 	{
-		pFloppy->trackimagedata = 0;
+		pFloppy->trackimagedata = false;
 		return;
 	}
 
@@ -301,16 +298,6 @@ static void ReadTrack(const int iDrive)
 
 //===========================================================================
 
-void DiskFlushCurrentTrack(const int iDrive)
-{
-	Disk_t* pFloppy = &g_aFloppyDrive[iDrive].disk;
-
-	if (pFloppy->trackimage && pFloppy->trackimagedirty)
-		WriteTrack(iDrive);
-}
-
-//===========================================================================
-
 static void RemoveDisk(const int iDrive)
 {
 	Disk_t* pFloppy = &g_aFloppyDrive[iDrive].disk;
@@ -327,7 +314,7 @@ static void RemoveDisk(const int iDrive)
 	{
 		VirtualFree(pFloppy->trackimage, 0, MEM_RELEASE);
 		pFloppy->trackimage     = NULL;
-		pFloppy->trackimagedata = 0;
+		pFloppy->trackimagedata = false;
 	}
 
 	memset( pFloppy->imagename, 0, MAX_DISK_IMAGE_NAME+1 );
@@ -364,7 +351,15 @@ static void WriteTrack(const int iDrive)
 			pFloppy->nibbles);
 	}
 
-	pFloppy->trackimagedirty = 0;
+	pFloppy->trackimagedirty = false;
+}
+
+void DiskFlushCurrentTrack(const int iDrive)
+{
+	Disk_t* pFloppy = &g_aFloppyDrive[iDrive].disk;
+
+	if (pFloppy->trackimage && pFloppy->trackimagedirty)
+		WriteTrack(iDrive);
 }
 
 //
@@ -459,7 +454,7 @@ static void __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG u
 		{
 			DiskFlushCurrentTrack(currdrive);
 			pDrive->track = newtrack;
-			pFloppy->trackimagedata = 0;
+			pFloppy->trackimagedata = false;
 
 			g_formatTrack.DriveNotWritingTrack();
 		}
@@ -916,7 +911,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	else if (!pFloppy->bWriteProtected) // && floppywritemode
 	{
 		*(pFloppy->trackimage + pFloppy->byte) = floppylatch;
-		pFloppy->trackimagedirty = 1;
+		pFloppy->trackimagedirty = true;
 
 		bool bIsSyncFF = false;
 #if LOG_DISK_NIBBLES_WRITE
@@ -1126,7 +1121,7 @@ bool DiskDriveSwap(void)
 {
 	// Refuse to swap if either Disk][ is active
 	// TODO: if Shift-Click then FORCE drive swap to bypass message
-	if (g_aFloppyDrive[0].spinning || g_aFloppyDrive[1].spinning)
+	if (g_aFloppyDrive[DRIVE_1].spinning || g_aFloppyDrive[DRIVE_2].spinning)
 	{
 		// 1.26.2.4 Prompt when trying to swap disks while drive is on instead of silently failing
 		int status = MessageBox(
@@ -1156,9 +1151,16 @@ bool DiskDriveSwap(void)
 		}
 	}
 
+	DiskFlushCurrentTrack(DRIVE_1);
+	DiskFlushCurrentTrack(DRIVE_2);
+
 	// Swap disks between drives
 	// . NB. We swap trackimage ptrs (so don't need to swap the buffers' data)
-	std::swap(g_aFloppyDrive[0].disk, g_aFloppyDrive[1].disk);
+	std::swap(g_aFloppyDrive[DRIVE_1].disk, g_aFloppyDrive[DRIVE_2].disk);
+
+	// Invalidate the trackimage so that a read latch will re-read the track for the new floppy (GH#543)
+	g_aFloppyDrive[DRIVE_1].disk.trackimagedata = false;
+	g_aFloppyDrive[DRIVE_2].disk.trackimagedata = false;
 
 	Disk_SaveLastDiskImage(DRIVE_1);
 	Disk_SaveLastDiskImage(DRIVE_2);
@@ -1346,8 +1348,8 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 
 		if(bImageError)
 		{
-			g_aFloppyDrive[i].disk.trackimagedata	= 0;
-			g_aFloppyDrive[i].disk.trackimagedirty	= 0;
+			g_aFloppyDrive[i].disk.trackimagedata	= false;
+			g_aFloppyDrive[i].disk.trackimagedirty	= false;
 			g_aFloppyDrive[i].disk.nibbles			= 0;
 		}
 	}
@@ -1504,8 +1506,8 @@ static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 
 	if (bImageError)
 	{
-		g_aFloppyDrive[unit].disk.trackimagedata	= 0;
-		g_aFloppyDrive[unit].disk.trackimagedirty	= 0;
+		g_aFloppyDrive[unit].disk.trackimagedata	= false;
+		g_aFloppyDrive[unit].disk.trackimagedirty	= false;
 		g_aFloppyDrive[unit].disk.nibbles			= 0;
 	}
 }
