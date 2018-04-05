@@ -9,6 +9,20 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.27.1.0 - 5 Apr 2018
+---------------------
+. [Change #547] Improve UI and logging when PrintScreen key fails to register.
+. [Change #546] Changing Config's 'Disk access speed' now doesn't trigger a restart.
+. [Change #540] Config's Benchmark now reports "Pure CPU MHz" for both video update (as before) & full-speed (new).
+. [Change #535] Help doc: added a description of Caps Lock behaviour.
+. [Change #398] Added new command line switches:
+    -h1 <hdd> : Start with hard disk 1 plugged-in (and auto power-on the Apple II). NB. Hard disk controller card gets enabled.
+    -h2 <hdd> : Start with hard disk 2 plugged-in. NB. Hard disk controller card gets enabled.
+    -s7 empty : Remove the hard disk controller card from slot 7.
+. [Bug #543] Swapping disks now doesn't swap drive's motor/spinning state.
+. [Bug #537] Fix for failing DOS 3.2 INIT.
+
+
 1.27.0.0 - 3 Feb 2018
 ---------------------
 Full release that rolls-up all the changes and fixes from the 1.26.2 & 1.26.3 experiment builds.
@@ -33,7 +47,7 @@ Full-screen:
 . [Bug #464] Fix for full-screen: bottom line missing when vertical resolution is 768
 DiskII/Hard disk:
 . [Change #323] Skip hard disk boot by holding down the Open-Apple key during an Apple II restart
-. {Bug #525] Fix to prevent stepper motor changing track when drive if off
+. [Bug #525] Fix to prevent stepper motor changing track when drive is off
 . [Bug #125] Support formatting of DOS3.3/ProDOS for .dsk/.nib in authentic/enhanced disk modes
 	-  includes support for Pascal formatting (#196) and Ultima I formatting (#338)
 . [Bug #499] Flush current track (if dirty) before 'Send to CiderPress'
