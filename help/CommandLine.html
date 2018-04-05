@@ -12,13 +12,21 @@
 			follows:
 		</p>
 		-d1 &lt;pathname&gt;<br>
-		Start with a disk in drive-1 (and auto power-on the Apple II)<br><br>
+		Start with a floppy disk in drive-1 (and auto power-on the Apple II)<br><br>
 		-d2 &lt;pathname&gt;<br>
-		Start with a disk in drive-2<br><br>
+		Start with a floppy disk in drive-2<br><br>
 		-h1 &lt;pathname&gt;<br>
 		Start with hard disk 1 plugged-in (and auto power-on the Apple II). NB. Hard disk controller card gets enabled.<br><br>
 		-h2 &lt;pathname&gt;<br>
 		Start with hard disk 2 plugged-in. NB. Hard disk controller card gets enabled.<br><br>
+		-s7 empty<br>
+		Remove the hard disk controller card from slot 7.<br>
+		Useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br><br>
+		-r &lt;number of pages&gt;<br>
+		Emulate a RAMworks III card with 1 to 127 pages (each page is 64K, giving a max of 8MB)<br><br>
+		-load-state &lt;savestate&gt;<br>
+		Load a save-state file<br>
+		NB. This takes precedent over the -d1,d2,h1,h2,s7 and -r switches.<br><br>
 		-f<br>
 		Start in full-screen mode<br><br>
 		-fs-height=&lt;best|nnnn&gt;<br>
@@ -28,8 +36,6 @@
 			<li>nnnn: select a specific resolution with height=nnnn pixels</li>
 		</ul>
 		NB. This changes the display resolution (and restores on exit).<br><br>
-		-r &lt;number of pages&gt;<br>
-		Emulate a RAMworks III card with 1 to 127 pages (each page is 64K, giving a max of 8MB)<br><br>
 		-f8rom &lt;rom-file&gt;<br>
 		Use custom 2K ROM at [$F800..$FFFF]. &lt;rom-file&gt; must be 2048 bytes long<br><br>
 		-printscreen<br>
@@ -56,8 +62,6 @@
 						(current memory address high byte)
 						i.e. 00:20 20 20 20 ... for page $20</li>
 		</ul>
-		-load-state &lt;savestate&gt;<br>
-		Load a save-state file<br><br>
 		-modem<br>
 		Shorthand for passing -dtr -dcd -dsr<br>
 		Use with GBBS Pro (or any other BBS package). See the <a href="http://www.callapple.org/documentation/books/gbbs-pro-2-2/">GBBS Pro 2.2</a> book from Call-A.P.P.L.E.
