@@ -1481,7 +1481,7 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 	MB_UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
-	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
+	if(!IS_APPLE2 && MemCheckINTCXROM())
 	{
 		_ASSERT(0);	// Card ROM disabled, so IO_Cxxx() returns the internal ROM
 		return mem[nAddr];
@@ -1544,7 +1544,7 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 	MB_UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
-	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
+	if(!IS_APPLE2 && MemCheckINTCXROM())
 	{
 		_ASSERT(0);	// Card ROM disabled, so IO_Cxxx() returns the internal ROM
 		return 0;

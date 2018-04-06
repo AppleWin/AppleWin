@@ -10,7 +10,7 @@
 #define  MF_HIRES      0x00000040
 #define  MF_PAGE2      0x00000080
 #define  MF_SLOTC3ROM  0x00000100
-#define  MF_SLOTCXROM  0x00000200
+#define  MF_INTCXROM   0x00000200
 #define  MF_WRITERAM   0x00000400   // Language Card RAM is Write Enabled
 #define  MF_IMAGEMASK  0x000003F7
 
@@ -72,7 +72,7 @@ void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 
 void    MemDestroy ();
 bool	MemCheckSLOTC3ROM();
-bool	MemCheckSLOTCXROM();
+bool	MemCheckINTCXROM();
 LPBYTE  MemGetAuxPtr(const WORD);
 LPBYTE  MemGetMainPtr(const WORD);
 LPBYTE  MemGetBankPtr(const UINT nBank);
