@@ -16,7 +16,7 @@ typedef struct
 	UINT	uByteSize;
 	UINT	uParity;
 	bool	bLinefeed;
-	bool	bInterrupts;
+	bool	bInterrupts;	// NB. Can't be read from s/w
 } SSC_DIPSW;
 
 #define TEXT_SERIAL_COM TEXT("COM")
@@ -32,7 +32,6 @@ public:
 	void    CommReset();
 	void    CommDestroy();
 	void    CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem);
-	void    CommUpdate(DWORD);
 	void    SetSnapshot_v1(const DWORD baudrate, const BYTE bytesize, const BYTE commandbyte, const DWORD comminactivity, const BYTE controlbyte, const BYTE parity, const BYTE stopbits);
 	std::string GetSnapshotCardName(void);
 	void	SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
@@ -62,14 +61,16 @@ private:
 	BYTE __stdcall CommReceive(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	BYTE __stdcall CommStatus(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	BYTE __stdcall CommTransmit(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+	BYTE __stdcall CommProgramReset(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 	void	InternalReset();
+	void	UpdateCommandReg(BYTE command);
 	void	GetDIPSW();
 	void	SetDIPSWDefaults();
-	BYTE	GenerateControl();
 	UINT	BaudRateToIndex(UINT uBaudRate);
 	void	UpdateCommState();
-	BOOL	CheckComm();
+	void	TransmitDone(void);
+	bool	CheckComm();
 	void	CloseComm();
 	void	CheckCommEvent(DWORD dwEvtMask);
 	static DWORD WINAPI	CommThread(LPVOID lpParameter);
@@ -97,10 +98,7 @@ private:
 	static SSC_DIPSW	m_DIPSWDefault;
 	SSC_DIPSW			m_DIPSWCurrent;
 
-	// Derived from DIPSW1
 	UINT	m_uBaudRate;
-
-	// Derived from DIPSW2
 	UINT	m_uStopBits;
 	UINT	m_uByteSize;
 	UINT	m_uParity;
@@ -114,24 +112,22 @@ private:
 	HANDLE m_hCommHandle;
 	SOCKET m_hCommListenSocket;
 	SOCKET m_hCommAcceptSocket;
-	DWORD  m_dwCommInactivity;
 
 	//
 
 	CRITICAL_SECTION	m_CriticalSection;	// To guard /g_vRecvBytes/
-	std::deque<BYTE>			m_qComSerialBuffer[2];
+	std::deque<BYTE>	m_qComSerialBuffer[2];
 	volatile UINT		m_vuRxCurrBuffer;	// Written to on COM recv. SSC reads from other one
-	std::deque<BYTE>			m_qTcpSerialBuffer;
+	std::deque<BYTE>	m_qTcpSerialBuffer;
 
 	//
 
 	bool m_bTxIrqEnabled;
 	bool m_bRxIrqEnabled;
 
-	volatile bool		m_vbTxIrqPending;
-	volatile bool		m_vbRxIrqPending;
-
-	bool m_bWrittenTx;
+	volatile bool m_vbTxIrqPending;
+	volatile bool m_vbRxIrqPending;
+	volatile bool m_vbTxEmpty;
 
 	//
 
@@ -146,6 +142,9 @@ private:
 	// Modem
 	bool m_bCfgSupportDCD;
 	bool m_bCfgSupportDSR;
-	UINT m_uDTR;
 	bool m_bCfgSupportDTR;
+	UINT m_uDTR;
+	// Modem (end)
+
+	UINT m_uRTS;
 };

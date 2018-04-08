@@ -89,7 +89,6 @@ static double g_fMHz		= 1.0;			// Affected by Config dialog's speed slider bar
 int			g_nCpuCyclesFeedback = 0;
 DWORD       g_dwCyclesThisFrame = 0;
 
-FILE*		g_fh			= NULL;
 bool		g_bDisableDirectInput = false;
 bool		g_bDisableDirectSound = false;
 bool		g_bDisableDirectSoundMockingboard = false;
@@ -301,8 +300,6 @@ static void ContinueExecution(void)
 
 	DiskUpdateDriveState(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
-
-	sg_SSC.CommUpdate(uActualCyclesExecuted);
 	PrintUpdate(uActualCyclesExecuted);
 
 	//
