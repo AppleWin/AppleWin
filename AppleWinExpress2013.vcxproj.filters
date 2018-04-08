@@ -58,6 +58,9 @@
     <ClCompile Include="source\Disk.cpp">
       <Filter>Source Files\Disk</Filter>
     </ClCompile>
+    <ClCompile Include="source\DiskFormatTrack.cpp">
+      <Filter>Source Files\Disk</Filter>
+    </ClCompile>
     <ClCompile Include="source\DiskImage.cpp">
       <Filter>Source Files\Disk</Filter>
     </ClCompile>
@@ -270,10 +273,16 @@
     <ClInclude Include="source\Disk.h">
       <Filter>Source Files\Disk</Filter>
     </ClInclude>
+    <ClInclude Include="source\DiskFormatTrack.h">
+      <Filter>Source Files\Disk</Filter>
+    </ClInclude>
     <ClInclude Include="source\DiskImage.h">
       <Filter>Source Files\Disk</Filter>
     </ClInclude>
     <ClInclude Include="source\DiskImageHelper.h">
+      <Filter>Source Files\Disk</Filter>
+    </ClInclude>
+    <ClInclude Include="source\DiskLog.h">
       <Filter>Source Files\Disk</Filter>
     </ClInclude>
     <ClInclude Include="source\Harddisk.h">

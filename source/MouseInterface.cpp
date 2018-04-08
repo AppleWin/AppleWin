@@ -40,7 +40,7 @@ Etc.
 */
 
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "SaveState_Structs_common.h"
 #include "Common.h"
 
@@ -49,10 +49,9 @@ Etc.
 #include "Log.h"
 #include "Memory.h"
 #include "MouseInterface.h"
-#include "SoundCore.h"	// SAFE_RELEASE()
 #include "YamlHelper.h"
 
-#include "..\resource\resource.h"
+#include "../resource/resource.h"
 
 #ifdef _DEBUG
 	#define _DEBUG_SPURIOUS_IRQ
@@ -237,7 +236,7 @@ void CMouseInterface::SetSlotRom()
 
 //===========================================================================
 
-BYTE __stdcall CMouseInterface::IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft)
+BYTE __stdcall CMouseInterface::IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
 {
 	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
 	CMouseInterface* pMouseIF = (CMouseInterface*) MemGetSlotParameters(uSlot);
@@ -247,7 +246,7 @@ BYTE __stdcall CMouseInterface::IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uV
 	return pMouseIF->m_6821.Read( byRS );
 }
 
-BYTE __stdcall CMouseInterface::IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft)
+BYTE __stdcall CMouseInterface::IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
 {
 	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
 	CMouseInterface* pMouseIF = (CMouseInterface*) MemGetSlotParameters(uSlot);
@@ -762,6 +761,7 @@ bool CMouseInterface::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT sl
 //#define STRICT
 #define DIRECTINPUT_VERSION 0x0800
 
+#include "SoundCore.h"	// SAFE_RELEASE()
 #include <dinput.h>
 
 extern bool g_bDisableDirectInput;	// currently in AppleWin.h

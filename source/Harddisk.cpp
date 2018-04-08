@@ -28,16 +28,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "DiskImage.h"	// ImageError_e, Disk_Status_e
 #include "DiskImageHelper.h"
 #include "Frame.h"
-#include "HardDisk.h"
+#include "Harddisk.h"
 #include "Memory.h"
 #include "Registry.h"
 #include "YamlHelper.h"
 
-#include "..\resource\resource.h"
+#include "../resource/resource.h"
 
 /*
 Memory map:
@@ -114,6 +114,32 @@ Overview
 
 struct HDD
 {
+	HDD()
+	{
+		clear();
+	}
+
+	void clear()
+	{
+		// This is not a POD (there is a std::string)
+		// ZeroMemory does not work
+		ZeroMemory(imagename, sizeof(imagename));
+		ZeroMemory(fullname, sizeof(fullname));
+		strFilenameInZip.clear();
+		imagehandle = NULL;
+		bWriteProtected = false;
+		hd_error = 0;
+		hd_memblock = 0;
+		hd_diskblock = 0;
+		hd_buf_ptr = 0;
+		hd_imageloaded = false;
+		ZeroMemory(hd_buf, sizeof(hd_buf));
+#if HD_LED
+		hd_status_next = DISK_STATUS_OFF;
+		hd_status_prev = DISK_STATUS_OFF;
+#endif
+	}
+
 	// From Disk_t
 	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)    [not used]
 	TCHAR	fullname[ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>
@@ -143,7 +169,7 @@ static BYTE	g_nHD_UnitNum = HARDDISK_1<<7;	// b7=unit
 // . ProDOS will write to Command before switching drives
 static BYTE	g_nHD_Command;
 
-static HDD g_HardDisk[NUM_HARDDISKS] = {0};
+static HDD g_HardDisk[NUM_HARDDISKS];
 
 static bool g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT g_uSlot = 7;
@@ -187,7 +213,7 @@ void HD_LoadLastDiskImage(const int iDrive)
 	char sFilePath[ MAX_PATH + 1];
 	sFilePath[0] = 0;
 
-	char *pRegKey = (iDrive == HARDDISK_1)
+	const char *pRegKey = (iDrive == HARDDISK_1)
 		? REGVALUE_PREF_LAST_HARDDISK_1
 		: REGVALUE_PREF_LAST_HARDDISK_2;
 
@@ -234,7 +260,7 @@ static void HD_SaveLastDiskImage(const int iDrive)
 
 // (Nearly) everything below is global
 
-static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 static const DWORD HDDRVR_SIZE = APPLE_SLOT_SIZE;
 
@@ -339,8 +365,8 @@ void HD_Destroy(void)
 	g_bSaveDiskImage = true;
 }
 
-// pszImageFilename is qualified with path
-static BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
+// Pre: pszImageFilename is qualified with path
+BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
 {
 	if (*pszImageFilename == 0x00)
 		return FALSE;
@@ -460,7 +486,7 @@ bool HD_IsDriveUnplugged(const int iDrive)
 #define DEVICE_UNKNOWN_ERROR	0x28
 #define DEVICE_IO_ERROR			0x27
 
-static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	BYTE r = DEVICE_OK;
 	addr &= 0xFF;
@@ -603,7 +629,7 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 #if HD_LED
 			pHDD->hd_status_next = DISK_STATUS_OFF;
 #endif
-			return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+			return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 		}
 	}
 	else // write to registers
@@ -638,7 +664,7 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 #if HD_LED
 			pHDD->hd_status_next = DISK_STATUS_OFF;
 #endif
-			return IO_Null(pc, addr, bWrite, d, nCyclesLeft);
+			return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 		}
 	}
 
@@ -806,7 +832,7 @@ bool HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, co
 	for (UINT i=0; i<NUM_HARDDISKS; i++)
 	{
 		HD_Unplug(i);
-		ZeroMemory(&g_HardDisk[i], sizeof(HDD));
+		g_HardDisk[i].clear();
 	}
 
 	bool bResSelectImage1 = HD_LoadSnapshotHDDUnit(yamlLoadHelper, HARDDISK_1);

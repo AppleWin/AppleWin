@@ -209,6 +209,7 @@ public:
 	void SaveHexUint8(const char* key, UINT value);
 	void SaveHexUint12(const char* key, UINT value);
 	void SaveHexUint16(const char* key, UINT value);
+	void SaveHexUint24(const char* key, UINT value);
 	void SaveHexUint32(const char* key, UINT value);
 	void SaveHexUint64(const char* key, UINT64 value);
 	void SaveBool(const char* key, bool value);

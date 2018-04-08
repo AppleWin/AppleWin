@@ -15,7 +15,7 @@
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
 #include "Memory.h"
 #include "z80emu.h"
@@ -23,17 +23,17 @@
 // Variaveis
 static int g_uCPMZ80Slot = 0;
 
-BYTE __stdcall CPMZ80_IONull(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft)
+BYTE __stdcall CPMZ80_IONull(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
 {
-	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
+	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
 }
 
-BYTE __stdcall CPMZ80_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nCyclesLeft)
+BYTE __stdcall CPMZ80_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
 {
 	if ((uAddr & 0xFF00) == (0xC000 + (g_uCPMZ80Slot << 8)))
 		SetActiveCpu( GetActiveCpu() == CPU_Z80 ? GetMainCpu() : CPU_Z80 );
 
-	return IO_Null(PC, uAddr, bWrite, uValue, nCyclesLeft);
+	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
 }
 
 //===========================================================================

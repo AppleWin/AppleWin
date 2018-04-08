@@ -28,8 +28,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
+#include "Disk.h"		// DiskUpdateDriveState()
 #include "Frame.h"
 #include "Keyboard.h"
 #include "Memory.h"
@@ -37,8 +38,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Video.h"
 #include "NTSC.h"
 
-#include "..\resource\resource.h"
-#include "Configuration\PropertySheet.h"
+#include "../resource/resource.h"
+#include "Configuration/PropertySheet.h"
 #include "YamlHelper.h"
 
 	#define  SW_80COL         (g_uVideoMode & VF_80COL)
@@ -226,16 +227,18 @@ void VideoBenchmark () {
 
   // DETERMINE HOW MANY 65C02 CLOCK CYCLES WE CAN EMULATE PER SECOND WITH
   // NOTHING ELSE GOING ON
-  CpuSetupBenchmark();
-  DWORD totalmhz10 = 0;
-  milliseconds     = GetTickCount();
-  while (GetTickCount() == milliseconds) ;
-  milliseconds = GetTickCount();
-  cycle = 0;
-  do {
-    CpuExecute(100000, true);
-    totalmhz10++;
-  } while (GetTickCount() - milliseconds < 1000);
+  DWORD totalmhz10[2] = {0,0};	// bVideoUpdate & !bVideoUpdate
+  for (UINT i=0; i<2; i++)
+  {
+	  CpuSetupBenchmark();
+	  milliseconds = GetTickCount();
+	  while (GetTickCount() == milliseconds) ;
+	  milliseconds = GetTickCount();
+	  do {
+		  CpuExecute(100000, i==0 ? true : false);
+		totalmhz10[i]++;
+	  } while (GetTickCount() - milliseconds < 1000);
+  }
 
   // IF THE PROGRAM COUNTER IS NOT IN THE EXPECTED RANGE AT THE END OF THE
   // CPU BENCHMARK, REPORT AN ERROR AND OPTIONALLY TRACK IT DOWN
@@ -301,7 +304,7 @@ void VideoBenchmark () {
       while (cycles > 0) {
         DWORD executedcycles = CpuExecute(103, true);
         cycles -= executedcycles;
-        DiskUpdatePosition(executedcycles);
+        DiskUpdateDriveState(executedcycles);
         JoyUpdateButtonLatch(executedcycles);
 	  }
     }
@@ -320,14 +323,14 @@ void VideoBenchmark () {
   TCHAR outstr[256];
   wsprintf(outstr,
            TEXT("Pure Video FPS:\t%u hires, %u text\n")
-           TEXT("Pure CPU MHz:\t%u.%u%s\n\n")
+           TEXT("Pure CPU MHz:\t%u.%u%s (video update)\n")
+           TEXT("Pure CPU MHz:\t%u.%u%s (full-speed)\n\n")
            TEXT("EXPECTED AVERAGE VIDEO GAME\n")
            TEXT("PERFORMANCE: %u FPS"),
            (unsigned)totalhiresfps,
            (unsigned)totaltextfps,
-           (unsigned)(totalmhz10/10),
-           (unsigned)(totalmhz10 % 10),
-           (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
+           (unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
+           (unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
            (unsigned)realisticfps);
   MessageBox(g_hFrameWindow,
              outstr,
@@ -567,10 +570,16 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 
 void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
-	const int nScanLines = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
-
-	g_nVideoClockVert = (uint16_t) (dwCyclesThisFrame / kHClocks) % nScanLines;
-	g_nVideoClockHorz = (uint16_t) (dwCyclesThisFrame % kHClocks);
+	if (bVideoScannerNTSC)
+	{
+		NTSC_VideoClockResync(dwCyclesThisFrame);
+	}
+	else	// PAL
+	{
+		_ASSERT(0);
+		g_nVideoClockVert = (uint16_t) (dwCyclesThisFrame / kHClocks) % kPALScanLines;
+		g_nVideoClockHorz = (uint16_t) (dwCyclesThisFrame % kHClocks);
+	}
 
 	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
 }
@@ -584,28 +593,6 @@ void VideoRedrawScreen (void)
 }
 
 //===========================================================================
-
-// NB. Can get "big" 1000+ms times: these occur during disk loading when the emulator is at full-speed.
-
-//#define DEBUG_REFRESH_TIMINGS
-
-#if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
-static void DebugRefresh(char uDebugFlag)
-{
-	static DWORD uLastRefreshTime = 0;
-
-	const DWORD dwEmuTime_ms = CpuGetEmulationTime_ms();
-	const DWORD uTimeBetweenRefreshes = uLastRefreshTime ? dwEmuTime_ms - uLastRefreshTime : 0;
-	uLastRefreshTime = dwEmuTime_ms;
-
-	if (!uTimeBetweenRefreshes)
-		return;					// 1st time in func
-
-	char szStr[100];
-	sprintf(szStr, "Time between refreshes = %d ms %c\n", uTimeBetweenRefreshes, (uDebugFlag==0)?' ':uDebugFlag);
-	OutputDebugString(szStr);
-}
-#endif
 
 // TC: Hacky-fix for GH#341 - better to draw to the correct position in the framebuffer to start with! (in NTSC.cpp)
 static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
@@ -634,10 +621,6 @@ static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 
 void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
 {
-#if defined(_DEBUG) && defined(DEBUG_REFRESH_TIMINGS)
-	DebugRefresh(0);
-#endif
-
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
 	{
 		// uVideoModeForWholeScreen set if:

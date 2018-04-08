@@ -27,12 +27,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "Common.h"
 
 #include "zlib.h"
 #include "unzip.h"
-#include "iowin32.h"
 
 #include "CPU.h"
 #include "Disk.h"
@@ -413,9 +412,14 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 	// IN THE BUFFER AND WRITE IT INTO THE FIRST PART OF THE WORK BUFFER
 	// OFFSET BY THE SECTOR NUMBER.
 
+#ifdef _DEBUG
+	UINT16 bmWrittenSectorAddrFields = 0x0000;
+	BYTE uWriteDataFieldPrologueCount = 0;
+#endif
+
 	int offset    = 0;
-	int partsleft = 33;
-	int sector    = 0;
+	int partsleft = NUM_SECTORS*2+1;	// TC: 32+1 prologues - need 1 extra if trackimage starts between Addr Field & Data Field
+	int sector    = -1;
 	while (partsleft--)
 	{
 		BYTE byteval[3] = {0,0,0};
@@ -436,21 +440,37 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 		{
 			int loop       = 0;
 			int tempoffset = offset;
-			while (loop < 384)
+			while (loop < 384)	// TODO-TC: Why 384? Only need 343 for Decode62()
 			{
 				*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+loop++) = *(trackimage+tempoffset++);
 				if (tempoffset >= nibbles)
 					tempoffset = 0;
 			}
-			
+
 			if (byteval[2] == 0x96)
 			{
 				sector = ((*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+4) & 0x55) << 1)
 						| (*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+5) & 0x55);
+
+#ifdef _DEBUG
+				_ASSERT( sector < NUM_SECTORS );
+				if (partsleft != 0)
+				{
+					_ASSERT( (bmWrittenSectorAddrFields & (1<<sector)) == 0 );
+					bmWrittenSectorAddrFields |= (1<<sector);
+				}
+#endif
 			}
 			else if (byteval[2] == 0xAD)
 			{
-				Decode62(ms_pWorkBuffer+(ms_SectorNumber[SectorOrder][sector] << 8));
+				if (sector >= 0 && sector < NUM_SECTORS)
+				{
+#ifdef _DEBUG
+					uWriteDataFieldPrologueCount++;
+					_ASSERT(uWriteDataFieldPrologueCount <= NUM_SECTORS);
+#endif
+					Decode62(ms_pWorkBuffer+(ms_SectorNumber[SectorOrder][sector] << 8));
+				}
 				sector = 0;
 			}
 		}
@@ -615,13 +635,12 @@ public:
 	{
 		ReadTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		*pNibbles = NibblizeTrack(pTrackImageBuffer, eDOSOrder, nTrack);
-		if (!enhancedisk)
+		if (!Disk_GetEnhanceDisk())
 			SkewTrack(nTrack, *pNibbles, pTrackImageBuffer);
 	}
 
 	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
 	{
-		ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		DenibblizeTrack(pTrackImage, eDOSOrder, nNibbles);
 		WriteTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
@@ -630,8 +649,8 @@ public:
 	virtual UINT GetImageSizeForCreate(void) { return TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD; }
 
 	virtual eImageType GetType(void) { return eImageDO; }
-	virtual char* GetCreateExtensions(void) { return ".do;.dsk"; }
-	virtual char* GetRejectExtensions(void) { return ".nib;.iie;.po;.prg"; }
+	virtual const char* GetCreateExtensions(void) { return ".do;.dsk"; }
+	virtual const char* GetRejectExtensions(void) { return ".nib;.iie;.po;.prg"; }
 };
 
 //-------------------------------------
@@ -682,20 +701,19 @@ public:
 	{
 		ReadTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		*pNibbles = NibblizeTrack(pTrackImageBuffer, eProDOSOrder, nTrack);
-		if (!enhancedisk)
+		if (!Disk_GetEnhanceDisk())
 			SkewTrack(nTrack, *pNibbles, pTrackImageBuffer);
 	}
 
 	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
 	{
-		ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		DenibblizeTrack(pTrackImage, eProDOSOrder, nNibbles);
 		WriteTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
 
 	virtual eImageType GetType(void) { return eImagePO; }
-	virtual char* GetCreateExtensions(void) { return ".po"; }
-	virtual char* GetRejectExtensions(void) { return ".do;.iie;.nib;.prg"; }
+	virtual const char* GetCreateExtensions(void) { return ".po"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.nib;.prg"; }
 };
 
 //-------------------------------------
@@ -734,8 +752,8 @@ public:
 	virtual UINT GetImageSizeForCreate(void) { return NIB1_TRACK_SIZE * TRACKS_STANDARD; }
 
 	virtual eImageType GetType(void) { return eImageNIB1; }
-	virtual char* GetCreateExtensions(void) { return ".nib"; }
-	virtual char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg"; }
+	virtual const char* GetCreateExtensions(void) { return ".nib"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg"; }
 };
 
 //-------------------------------------
@@ -771,8 +789,8 @@ public:
 	}
 
 	virtual eImageType GetType(void) { return eImageNIB2; }
-	virtual char* GetCreateExtensions(void) { return ".nb2"; }
-	virtual char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg;.2mg;.2img"; }
+	virtual const char* GetCreateExtensions(void) { return ".nb2"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg;.2mg;.2img"; }
 };
 
 //-------------------------------------
@@ -812,8 +830,8 @@ public:
 	}
 
 	virtual eImageType GetType(void) { return eImageHDV; }
-	virtual char* GetCreateExtensions(void) { return ".hdv"; }
-	virtual char* GetRejectExtensions(void) { return ".do;.iie;.prg"; }
+	virtual const char* GetCreateExtensions(void) { return ".hdv"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.prg"; }
 };
 
 //-------------------------------------
@@ -881,8 +899,8 @@ public:
 	}
 
 	virtual eImageType GetType(void) { return eImageIIE; }
-	virtual char* GetCreateExtensions(void) { return ".iie"; }
-	virtual char* GetRejectExtensions(void) { return ".do.;.nib;.po;.prg;.2mg;.2img"; }
+	virtual const char* GetCreateExtensions(void) { return ".iie"; }
+	virtual const char* GetRejectExtensions(void) { return ".do.;.nib;.po;.prg;.2mg;.2img"; }
 
 private:
 	void ConvertSectorOrder(LPBYTE sourceorder)
@@ -955,8 +973,8 @@ public:
 	virtual bool AllowRW(void) { return false; }
 
 	virtual eImageType GetType(void) { return eImageAPL; }
-	virtual char* GetCreateExtensions(void) { return ".apl"; }
-	virtual char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.2mg;.2img"; }
+	virtual const char* GetCreateExtensions(void) { return ".apl"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.2mg;.2img"; }
 };
 
 //-------------------------------------
@@ -1006,8 +1024,8 @@ public:
 	virtual bool AllowRW(void) { return false; }
 
 	virtual eImageType GetType(void) { return eImagePRG; }
-	virtual char* GetCreateExtensions(void) { return ".prg"; }
-	virtual char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.2mg;.2img"; }
+	virtual const char* GetCreateExtensions(void) { return ".prg"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.2mg;.2img"; }
 };
 
 //-----------------------------------------------------------------------------
@@ -1124,6 +1142,7 @@ void GetCharLowerExt(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSiz
 		pImageFileExt = _tcsrchr(pImageFileExt, TEXT('.'));
 
 	_tcsncpy(pszExt, pImageFileExt, uExtSize);
+	pszExt[uExtSize - 1] = 0;
 
 	CharLowerBuff(pszExt, _tcslen(pszExt));
 }
@@ -1132,6 +1151,7 @@ void GetCharLowerExt2(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSi
 {
 	TCHAR szFilename[MAX_PATH];
 	_tcsncpy(szFilename, pszImageFilename, MAX_PATH);
+	szFilename[MAX_PATH - 1] = 0;
 
 	TCHAR* pLastDot = _tcsrchr(szFilename, TEXT('.'));
 	if (pLastDot)
@@ -1189,10 +1209,7 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 
 ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, std::string& strFilenameInZip)
 {
-	zlib_filefunc_def ffunc;
-	fill_win32_filefunc(&ffunc);		// TODO: Ditch this and use unzOpen() instead?
-
-	unzFile hZipFile = unzOpen2(pszImageFilename, &ffunc);
+	unzFile hZipFile = unzOpen(pszImageFilename);
 	if (hZipFile == NULL)
 		return eIMAGE_ERROR_UNABLE_TO_OPEN_ZIP;
 
@@ -1311,7 +1328,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			NULL );
 		
 		if (hFile != INVALID_HANDLE_VALUE)
-			pImageInfo->bWriteProtected = 1;
+			pImageInfo->bWriteProtected = true;
 	}
 
 	if ((hFile == INVALID_HANDLE_VALUE) && bCreateIfNecessary)
@@ -1364,11 +1381,34 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 	}
 	else	// Create (or pre-existing zero-length file)
 	{
+		if (pImageInfo->bWriteProtected)
+			return eIMAGE_ERROR_ZEROLENGTH_WRITEPROTECTED;	// Can't be formatted, so return error
+
 		pImageType = GetImageForCreation(szExt, &dwSize);
 		if (pImageType && dwSize)
 		{
 			pImageInfo->pImageBuffer = new BYTE [dwSize];
-			ZeroMemory(pImageInfo->pImageBuffer, dwSize);
+
+			if (pImageType->GetType() != eImageNIB1)
+			{
+				ZeroMemory(pImageInfo->pImageBuffer, dwSize);
+			}
+			else
+			{
+				// Fill zero-length image buffer with alternating high-bit-set nibbles (GH#196, GH#338)
+				for (UINT i=0; i<dwSize; i+=2)
+				{
+					pImageInfo->pImageBuffer[i+0] = 0x80;	// bit7 set, but 0x80 is an invalid nibble
+					pImageInfo->pImageBuffer[i+1] = 0x81;	// bit7 set, but 0x81 is an invalid nibble
+				}
+			}
+
+			// As a convenience, resize the file to the complete size (GH#506)
+			// - this also means that a save-state done mid-way through a format won't reference an image file with a partial size (GH#494)
+			DWORD dwBytesWritten = 0;
+			BOOL res = WriteFile(hFile, pImageInfo->pImageBuffer, dwSize, &dwBytesWritten, NULL); 
+			if (!res || dwBytesWritten != dwSize)
+				return eIMAGE_ERROR_FAILED_TO_INIT_ZEROLENGTH;
 		}
 	}
 

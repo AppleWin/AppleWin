@@ -23,12 +23,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "..\AppleWin.h"
-#include "..\Frame.h"
-#include "..\Registry.h"
-#include "..\SerialComms.h"
-#include "..\Video.h"
-#include "..\resource\resource.h"
+#include "../Applewin.h"
+#include "../Frame.h"
+#include "../Registry.h"
+#include "../SerialComms.h"
+#include "../Video.h"
+#include "../resource/resource.h"
 #include "PageConfig.h"
 #include "PropertySheetHelper.h"
 
@@ -178,6 +178,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				case A2TYPE_PRAVETS8M:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_PRAVETS8A:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_TK30002E:		nCurrentChoice = MENUITEM_CLONE; break;
+				default: _ASSERT(0); break;
 				}
 
 				m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMPUTER, m_ComputerChoices, nCurrentChoice);

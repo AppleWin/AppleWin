@@ -44,7 +44,7 @@
 //#include "vdc.h"
 //#include "vicii-mem.h"
 //#include "vicii.h"
-#include "..\CommonVICE\types.h"		// [AppleWin-TC]
+#include "../CommonVICE/types.h"		// [AppleWin-TC]
 #include "z80mem.h"
 #include "z80.h"						// [AppleWin-TC] Added for z80_RDMEM() & z80_WRMEM
 

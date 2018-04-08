@@ -32,7 +32,7 @@
 */
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "Memory.h"
 #include "SAM.h"
 #include "Speaker.h"
@@ -42,7 +42,7 @@
 //
 
 
-static BYTE __stdcall IOWrite_SAM(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall IOWrite_SAM(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	// Emulate audio from a SAM / 8 bit DAC card
 	// Only supportable if AppleWin is using WAVE output
@@ -59,10 +59,10 @@ static BYTE __stdcall IOWrite_SAM(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	// silence.
 
 	if (soundtype != SOUND_WAVE)
-		return MemReadFloatingBus(nCyclesLeft);
+		return MemReadFloatingBus(nExecutedCycles);
 
 	// use existing speaker code to bring timing up to date
-	BYTE res = SpkrToggle(pc, addr, bWrite, d, nCyclesLeft);
+	BYTE res = SpkrToggle(pc, addr, bWrite, d, nExecutedCycles);
 
 	// The DAC in the SAM uses unsigned 8 bit samples
 	// The WAV data that g_nSpeakerData is loaded into is a signed short

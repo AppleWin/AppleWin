@@ -86,7 +86,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
 #include "Frame.h"
 #include "Memory.h"
@@ -99,8 +99,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "NTSC.h"
 
 #include "z80emu.h"
-#include "Z80VICE\z80.h"
-#include "Z80VICE\z80mem.h"
+#include "Z80VICE/z80.h"
+#include "Z80VICE/z80mem.h"
 
 #include "YamlHelper.h"
 
@@ -195,9 +195,9 @@ void SetActiveCpu(eCpuType cpu)
 
 //
 
-#include "cpu/cpu_general.inl"
+#include "CPU/cpu_general.inl"
 
-#include "cpu/cpu_instructions.inl"
+#include "CPU/cpu_instructions.inl"
 
 // Break into debugger on invalid opcodes
 //#define INV IsDebugBreakOnInvalid(AM_1);
@@ -429,9 +429,9 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles)
 
 //===========================================================================
 
-#include "cpu/cpu6502.h"  // MOS 6502
-#include "cpu/cpu65C02.h" // WDC 65C02
-#include "cpu/cpu65d02.h" // Debug CPU Memory Visualizer
+#include "CPU/cpu6502.h"  // MOS 6502
+#include "CPU/cpu65C02.h" // WDC 65C02
+#include "CPU/cpu65d02.h" // Debug CPU Memory Visualizer
 
 //===========================================================================
 
@@ -502,29 +502,6 @@ ULONG CpuGetCyclesThisVideoFrame(const ULONG nExecutedCycles)
 }
 #endif
 
-//---------------------------------------------------------------------------
-
-static DWORD g_dwEmulationTime_ms = 0;
-
-static void UpdateEmulationTime(const DWORD dwExecutedCycles)
-{
-	static DWORD dwEmulationTimeFrac_clks  = 0;
-
-	const DWORD CLKS_PER_MS = (DWORD)g_fCurrentCLK6502 / 1000;
-
-	dwEmulationTimeFrac_clks += dwExecutedCycles;
-	if (dwEmulationTimeFrac_clks > CLKS_PER_MS)
-	{
-		g_dwEmulationTime_ms += dwEmulationTimeFrac_clks / CLKS_PER_MS;
-		dwEmulationTimeFrac_clks %= CLKS_PER_MS;
-	}
-}
-
-DWORD CpuGetEmulationTime_ms(void)
-{
-	return g_dwEmulationTime_ms;
-}
-
 //===========================================================================
 
 DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
@@ -540,7 +517,6 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 
 	MB_UpdateCycles(uExecutedCycles);	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
 										// NB. Ensures that 6522 regs are up-to-date for any potential save-state
-	UpdateEmulationTime(uExecutedCycles);
 
 	//
 

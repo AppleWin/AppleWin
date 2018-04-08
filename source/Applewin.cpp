@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CPU.h"
 #include "Debug.h"
 #include "Disk.h"
@@ -53,14 +53,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Video.h"
 #include "NTSC.h"
 
-#include "Configuration\About.h"
-#include "Configuration\PropertySheet.h"
-#include "Tfe\Tfe.h"
+#include "Configuration/About.h"
+#include "Configuration/PropertySheet.h"
+#include "Tfe/Tfe.h"
 
 static UINT16 g_AppleWinVersion[4] = {0};
 char VERSIONSTRING[16] = "xx.yy.zz.ww";
 
-TCHAR *g_pAppTitle = NULL;
+const TCHAR *g_pAppTitle = NULL;
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
@@ -251,7 +251,7 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (DiskIsSpinning() && enhancedisk && !Spkr_IsActive() && !MB_IsActive()) ||
+					 (Disk_IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -298,7 +298,7 @@ static void ContinueExecution(void)
 	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-	DiskUpdatePosition(uActualCyclesExecuted);
+	DiskUpdateDriveState(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 	PrintUpdate(uActualCyclesExecuted);
 
@@ -517,15 +517,15 @@ void LoadConfiguration(void)
 			char sText[ 100 ];
 			_snprintf( sText, sizeof(sText)-1, "Unsupported Apple2Type(%d). Changing to %d", dwLoadedComputerType, dwComputerType);
 
+			LogFileOutput("%s\n", sText);
+
 			MessageBox(
 				GetDesktopWindow(),		// NB. g_hFrameWindow is not yet valid
 				sText,
 				"Load Configuration",
 				MB_ICONSTOP | MB_SETFOREGROUND);
 
-			LogFileOutput("%s\n", sText);
-
-			REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), dwComputerType);
+			sg_PropertySheet.ConfigSaveApple2Type((eApple2Type)dwComputerType);
 		}
 
 		apple2Type = (eApple2Type) dwComputerType;
@@ -603,7 +603,10 @@ void LoadConfiguration(void)
 	}
 
 	REGLOAD(TEXT(REGVALUE_EMULATION_SPEED)   ,&g_dwSpeed);
-	REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED),(DWORD *)&enhancedisk);
+
+	DWORD dwEnhanceDisk;
+	REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk);
+	Disk_SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	Config_Load_Video();
 
@@ -774,25 +777,25 @@ void RegisterExtensions(void)
 //	sprintf(command, "\"%s\" \"-d1 %%1\"", szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
 
 	// NB. Reflect extensions in DELREG.INF
-//	RegSetValue(HKEY_CLASSES_ROOT,".bin",REG_SZ,"DiskImage",10);	// Removed as .bin is too generic
+//	RegSetValue(HKEY_CLASSES_ROOT,".bin",REG_SZ,"DiskImage",0);	// Removed as .bin is too generic
 	long Res = RegDeleteValue(HKEY_CLASSES_ROOT, ".bin");			// TODO: This isn't working :-/
 
-	RegSetValue(HKEY_CLASSES_ROOT,".do"	,REG_SZ,"DiskImage",10);
-	RegSetValue(HKEY_CLASSES_ROOT,".dsk",REG_SZ,"DiskImage",10);
-	RegSetValue(HKEY_CLASSES_ROOT,".nib",REG_SZ,"DiskImage",10);
-	RegSetValue(HKEY_CLASSES_ROOT,".po"	,REG_SZ,"DiskImage",10);
-//	RegSetValue(HKEY_CLASSES_ROOT,".2mg",REG_SZ,"DiskImage",10);	// Don't grab this, as not all .2mg images are supported (so defer to CiderPress)
-//	RegSetValue(HKEY_CLASSES_ROOT,".2img",REG_SZ,"DiskImage",10);	// Don't grab this, as not all .2mg images are supported (so defer to CiderPress)
-//	RegSetValue(HKEY_CLASSES_ROOT,".aws",REG_SZ,"DiskImage",10);	// TO DO
-//	RegSetValue(HKEY_CLASSES_ROOT,".hdv",REG_SZ,"DiskImage",10);	// TO DO
+	RegSetValue(HKEY_CLASSES_ROOT,".do"	,REG_SZ,"DiskImage",0);
+	RegSetValue(HKEY_CLASSES_ROOT,".dsk",REG_SZ,"DiskImage",0);
+	RegSetValue(HKEY_CLASSES_ROOT,".nib",REG_SZ,"DiskImage",0);
+	RegSetValue(HKEY_CLASSES_ROOT,".po"	,REG_SZ,"DiskImage",0);
+//	RegSetValue(HKEY_CLASSES_ROOT,".2mg",REG_SZ,"DiskImage",0);	// Don't grab this, as not all .2mg images are supported (so defer to CiderPress)
+//	RegSetValue(HKEY_CLASSES_ROOT,".2img",REG_SZ,"DiskImage",0);	// Don't grab this, as not all .2mg images are supported (so defer to CiderPress)
+//	RegSetValue(HKEY_CLASSES_ROOT,".aws",REG_SZ,"DiskImage",0);	// TO DO
+//	RegSetValue(HKEY_CLASSES_ROOT,".hdv",REG_SZ,"DiskImage",0);	// TO DO
 
 	RegSetValue(HKEY_CLASSES_ROOT,
 				"DiskImage",
-				REG_SZ,"Disk Image",21);
+				REG_SZ,"Disk Image",0);
 
 	RegSetValue(HKEY_CLASSES_ROOT,
 				"DiskImage\\DefaultIcon",
-				REG_SZ,icon,_tcslen(icon)+1);
+				REG_SZ,icon,0);
 
 // This key can interfere....
 // HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExt\.dsk
@@ -816,34 +819,49 @@ void RegisterExtensions(void)
 }
 
 //===========================================================================
-void AppleWin_RegisterHotKeys(void)
+
+// NB. On a restart, it's OK to call RegisterHotKey() again since the old g_hFrameWindow has been destroyed
+static void AppleWin_RegisterHotKeys(void)
 {
-	BOOL bStatus = true;
-	
-	bStatus &= RegisterHotKey( 
+	BOOL bStatus[3] = {0,0,0};
+
+	bStatus[0] = RegisterHotKey( 
 		g_hFrameWindow , // HWND hWnd
 		VK_SNAPSHOT_560, // int id (user/custom id)
 		0              , // UINT fsModifiers
 		VK_SNAPSHOT      // UINT vk = PrintScreen
 	);
 
-	bStatus &= RegisterHotKey( 
+	bStatus[1] = RegisterHotKey( 
 		g_hFrameWindow , // HWND hWnd
 		VK_SNAPSHOT_280, // int id (user/custom id)
 		MOD_SHIFT      , // UINT fsModifiers
 		VK_SNAPSHOT      // UINT vk = PrintScreen
 	);
 
-	bStatus &= RegisterHotKey( 
+	bStatus[2] = RegisterHotKey( 
 		g_hFrameWindow  , // HWND hWnd
 		VK_SNAPSHOT_TEXT, // int id (user/custom id)
 		MOD_CONTROL     , // UINT fsModifiers
 		VK_SNAPSHOT       // UINT vk = PrintScreen
 	);
 
-	if (!bStatus && g_bShowPrintScreenWarningDialog)
+	if ((!bStatus[0] || !bStatus[1] || !bStatus[2]))
 	{
-		MessageBox( g_hFrameWindow, "Unable to capture PrintScreen key", "Warning", MB_OK );
+		std::string msg("Unable to register for PrintScreen key(s):\n");
+
+		if (!bStatus[0])
+			msg += "\n. PrintScreen";
+		if (!bStatus[1])
+			msg += "\n. Shift+PrintScreen";
+		if (!bStatus[2])
+			msg += "\n. Ctrl+PrintScreen";
+
+		if (g_bShowPrintScreenWarningDialog)
+			MessageBox( g_hFrameWindow, msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK );
+
+		msg += "\n";
+		LogFileOutput(msg.c_str());
 	}
 }
 
@@ -887,7 +905,7 @@ LPSTR GetNextArg(LPSTR lpCmdLine)
 
 //---------------------------------------------------------------------------
 
-static int DoDiskInsert(const int nDrive, LPCSTR szFileName)
+static std::string GetFullPath(LPCSTR szFileName)
 {
 	std::string strPathName;
 
@@ -901,15 +919,95 @@ static int DoDiskInsert(const int nDrive, LPCSTR szFileName)
 		// Rel pathname
 		char szCWD[_MAX_PATH] = {0};
 		if (!GetCurrentDirectory(sizeof(szCWD), szCWD))
-			return false;
+			return "";
 
 		strPathName = szCWD;
 		strPathName.append("\\");
 		strPathName.append(szFileName);
 	}
 
+	return strPathName;
+}
+
+static bool DoDiskInsert(const int nDrive, LPCSTR szFileName)
+{
+	std::string strPathName = GetFullPath(szFileName);
+	if (strPathName.empty()) return false;
+
 	ImageError_e Error = DiskInsert(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 	return Error == eIMAGE_ERROR_NONE;
+}
+
+static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
+{
+	std::string strPathName = GetFullPath(szFileName);
+	if (strPathName.empty()) return false;
+
+	BOOL bRes = HD_Insert(nDrive, strPathName.c_str());
+	return bRes ? true : false;
+}
+
+static void InsertFloppyDisks(LPSTR szImageName_drive[NUM_DRIVES], bool& bBoot)
+{
+	if (!szImageName_drive[DRIVE_1] && !szImageName_drive[DRIVE_2])
+		return;
+
+	bool bRes = true;
+
+	if (szImageName_drive[DRIVE_1])
+	{
+		bRes = DoDiskInsert(DRIVE_1, szImageName_drive[DRIVE_1]);
+		LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", bRes);
+		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);	// floppy activity LEDs and floppy buttons
+		bBoot = true;
+	}
+
+	if (szImageName_drive[DRIVE_2])
+	{
+		bRes |= DoDiskInsert(DRIVE_2, szImageName_drive[DRIVE_2]);
+		LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", bRes);
+	}
+
+	if (!bRes)
+		MessageBox(g_hFrameWindow, "Failed to insert floppy disk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
+}
+
+static void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
+{
+	if (!szImageName_harddisk[HARDDISK_1] && !szImageName_harddisk[HARDDISK_2])
+		return;
+
+	// Enable the Harddisk controller card
+
+	HD_SetEnabled(true);
+
+	DWORD dwTmp;
+	if (REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
+	{
+		if (!dwTmp)
+			REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 1);	// Config: HDD Enabled
+	}
+
+	//
+
+	bool bRes = true;
+
+	if (szImageName_harddisk[HARDDISK_1])
+	{
+		bRes = DoHardDiskInsert(HARDDISK_1, szImageName_harddisk[HARDDISK_1]);
+		LogFileOutput("Init: DoHardDiskInsert(HDD1), res=%d\n", bRes);
+		FrameRefreshStatus(DRAW_LEDS);	// harddisk activity LED
+		bBoot = true;
+	}
+
+	if (szImageName_harddisk[HARDDISK_2])
+	{
+		bRes |= DoHardDiskInsert(HARDDISK_2, szImageName_harddisk[HARDDISK_2]);
+		LogFileOutput("Init: DoHardDiskInsert(HDD2), res=%d\n", bRes);
+	}
+
+	if (!bRes)
+		MessageBox(g_hFrameWindow, "Failed to insert harddisk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
 //---------------------------------------------------------------------------
@@ -920,9 +1018,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bSetFullScreen = false;
 	bool bBoot = false;
 	bool bChangedDisplayResolution = false;
+	bool bSlot7Empty = false;
 	UINT bestWidth = 0, bestHeight = 0;
-	LPSTR szImageName_drive1 = NULL;
-	LPSTR szImageName_drive2 = NULL;
+	LPSTR szImageName_drive[NUM_DRIVES] = {NULL,NULL};
+	LPSTR szImageName_harddisk[NUM_HARDDISKS] = {NULL,NULL};
 	LPSTR szSnapshotName = NULL;
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
 
@@ -947,13 +1046,32 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
-			szImageName_drive1 = lpCmdLine;
+			szImageName_drive[DRIVE_1] = lpCmdLine;
 		}
 		else if (strcmp(lpCmdLine, "-d2") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
-			szImageName_drive2 = lpCmdLine;
+			szImageName_drive[DRIVE_2] = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-h1") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			szImageName_harddisk[HARDDISK_1] = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-h2") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			szImageName_harddisk[HARDDISK_2] = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-s7") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			if (strcmp(lpCmdLine, "empty") == 0)
+				bSlot7Empty = true;
 		}
 		else if (strcmp(lpCmdLine, "-load-state") == 0)
 		{
@@ -1206,20 +1324,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	DiskInitialize();
 	LogFileOutput("Init: DiskInitialize()\n");
 
-	int nError = 0;	// TODO: Show error MsgBox if we get a DiskInsert error
-	if (szImageName_drive1)
-	{
-		nError = DoDiskInsert(DRIVE_1, szImageName_drive1);
-		LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", nError);
-		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
-		bBoot = true;
-	}
-	if (szImageName_drive2)
-	{
-		nError |= DoDiskInsert(DRIVE_2, szImageName_drive2);
-		LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", nError);
-	}
-
 	//
 
 	do
@@ -1237,15 +1341,28 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
-		MemInitialize();
-		LogFileOutput("Main: MemInitialize()\n");
-
 		VideoInitialize(); // g_pFramebufferinfo been created now
 		LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
 		FrameCreateWindow();	// g_hFrameWindow is now valid
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
+
+		// Pre: may need g_hFrameWindow for MessageBox errors
+		// Post: may enable HDD, required for MemInitialize()->MemInitializeIO()
+		{
+			InsertFloppyDisks(szImageName_drive, bBoot);
+			szImageName_drive[DRIVE_1] = szImageName_drive[DRIVE_2] = NULL;	// Don't insert on a restart
+
+			InsertHardDisks(szImageName_harddisk, bBoot);
+			szImageName_harddisk[HARDDISK_1] = szImageName_harddisk[HARDDISK_2] = NULL;	// Don't insert on a restart
+
+			if (bSlot7Empty)
+				HD_SetEnabled(false);
+		}
+
+		MemInitialize();
+		LogFileOutput("Main: MemInitialize()\n");
 
 		char szOldAppleWinVersion[sizeof(VERSIONSTRING)] = {0};
 		RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, szOldAppleWinVersion, sizeof(szOldAppleWinVersion));

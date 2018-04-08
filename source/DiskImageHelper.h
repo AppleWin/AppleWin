@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DiskDefs.h"
 #include "zip.h"
 
 #define GZ_SUFFIX ".gz"
@@ -64,8 +65,8 @@ public:
 	virtual UINT GetImageSizeForCreate(void) { _ASSERT(0); return (UINT)-1; }
 
 	virtual eImageType GetType(void) = 0;
-	virtual char* GetCreateExtensions(void) = 0;
-	virtual char* GetRejectExtensions(void) = 0;
+	virtual const char* GetCreateExtensions(void) = 0;
+	virtual const char* GetRejectExtensions(void) = 0;
 
 	void SetVolumeNumber(const BYTE uVolumeNumber) { m_uVolumeNumber = uVolumeNumber; }
 	bool IsValidImageSize(const DWORD uImageSize);
@@ -90,7 +91,7 @@ public:
 
 protected:
 	static BYTE ms_DiskByte[0x40];
-	static BYTE ms_SectorNumber[NUM_SECTOR_ORDERS][0x10];
+	static BYTE ms_SectorNumber[NUM_SECTOR_ORDERS][NUM_SECTORS];
 	BYTE m_uVolumeNumber;
 };
 

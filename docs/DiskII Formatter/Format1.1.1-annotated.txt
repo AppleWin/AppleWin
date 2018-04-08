@@ -1,0 +1,806 @@
+;*
+;*
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;* *                                                 * *
+;* * M U S T   B E   O N   P A G E   B O U N D A R Y * *
+;* *                                                 * *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                                                     *
+;*  ProDOS DISK ][ Formatter Device Driver             *  
+;*                                                     *
+;*  Copyright Apple Computer, Inc., 1982-1984          *
+;*                                                     *
+;*  Enter with ProDOS device number in A-register:     *
+;*         Zero    = bits 0, 1, 2, 3                   *
+;*         Slot No.= bits 4, 5, 6                      * 
+;*         Drive 1 = bit 7 off                         * 
+;*         Drive 2 = bit 7 on                          * 
+;*                                                     *
+;*  Error codes returned in A-register:                *
+;*         $00 : Good completion                       * 
+;*         $27 : Unable to format                      * 
+;*         $2B : Write-Protected                       * 
+;*         $33 : Drive too SLOW                        * 
+;*         $34 : Drive too FAST                        * 
+;*         NOTE: Carry flag is set if error occured.   *
+;*                                                     *
+;*  Uses zero page locations $D0 thru $DD              *
+;*                                                     *
+;* - - - - - - - - - - - - - - - - - - - - - - - - - - *
+;* Modified 15 December 1983 to disable interrupts     *
+;* Modified 20 December 1983 to increase tolerance     *
+;*    of disk speed check                              *
+;* Modified 30 March 1983 to increase tolerance of     *
+;*    disk speed                                       *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+;
+; Disassembly and annotations by TC (Nov. 2017)
+; . disassembly from prodos_utility.dsk (ProDOS 1.1.1)
+;
+
+;
+; Entrypoint
+; Pre: A=slot*16, ($DE)=#$01=volume#
+;
+7900-   08          PHP
+7901-   78          SEI   			; interrupt disable
+7902-   20 3A 79    JSR   $793A
+7905-   28          PLP				; restore interrupt ena/dis state   
+7906-   C9 00       CMP   #$00
+7908-   D0 02       BNE   $790C
+790A-   18          CLC   			; res=OK
+790B-   60          RTS   
+
+; error:
+790C-   C9 02       CMP   #$02
+790E-   D0 05       BNE   $7915
+7910-   A9 2B       LDA   #$2B		; MLI error: write protected
+7912-   4C 21 79    JMP   $7921
+;
+7915-   C9 01       CMP   #$01
+7917-   D0 05       BNE   $791E
+7919-   A9 27       LDA   #$27		; MLI error: I/O error
+791B-   4C 21 79    JMP   $7921
+;
+791E-   18          CLC   
+791F-   69 30       ADC   #$30		; =>$33 or $34
+7921-   38          SEC   			; res=ERROR
+7922-   60          RTS   
+; end
+
+; Seek to track
+; Pre: A=trk#, X=slot*16
+7923-   0A          ASL   			; A=half track
+7924-   0E 24 7D    ASL   $7D24
+7927-   8D 36 7D    STA   $7D36
+792A-   8A          TXA   
+792B-   4A          LSR   
+792C-   4A          LSR   
+792D-   4A          LSR   
+792E-   4A          LSR				; A=slot   
+792F-   A8          TAY   			; Y=slot
+7930-   AD 36 7D    LDA   $7D36
+7933-   20 C6 7A    JSR   $7AC6
+7936-   4E 24 7D    LSR   $7D24
+7939-   60          RTS   
+; ??? (end)
+
+; FormatDisk (called from Entrypoint)
+; Pre: A=slot*16, A.b7=drive#
+793A-   AA          TAX   
+793B-   29 70       AND   #$70
+793D-   8D 23 7D    STA   $7D23		; set slot*16
+7940-   8A          TXA   
+7941-   AE 23 7D    LDX   $7D23
+7944-   2A          ROL  			; C=drive# 
+7945-   A9 00       LDA   #$00
+7947-   2A          ROL   
+7948-   D0 06       BNE   $7950
+794A-   BD 8A C0    LDA   $C08A,X	; select drive-1
+794D-   4C 53 79    JMP   $7953
+7950-   BD 8B C0    LDA   $C08B,X	; select drive-2
+;
+7953-   BD 89 C0    LDA   $C089,X	; motor on
+7956-   A9 D7       LDA   #$D7
+7958-   85 DA       STA   $DA		; ($DA) = #$D7
+795A-   A9 50       LDA   #$50
+795C-   8D 24 7D    STA   $7D24		; ($7D24) = 80
+
+; Seek to track 0
+795F-   A9 00       LDA   #$00
+7961-   20 23 79    JSR   $7923
+
+; Wait (until motor up to speed?)
+7964-   A5 DA       LDA   $DA		; read_vol
+7966-   F0 06       BEQ   $796E
+7968-   20 3A 7C    JSR   $7C3A		; Wait incs read_vol
+796B-   4C 64 79    JMP   $7964
+
+; Init vars/consts
+796E-   A5 DE       LDA   $DE
+7970-   85 D3       STA   $D3		; ($D3) = write_vol = 1 (constant)
+7972-   A9 AA       LDA   #$AA
+7974-   85 D0       STA   $D0		; ($D0) = #$AA (constant)
+7976-   AD 20 7D    LDA   $7D20		; max_gap3
+7979-   18          CLC   
+797A-   69 02       ADC   #$02
+797C-   85 D4       STA   $D4		; ($D4) = max_gap3 + 2
+797E-   A9 00       LDA   #$00
+7980-   85 D1       STA   $D1		; ($D1) = write_trk = 0
+
+; Write next track
+7982-   A5 D1       LDA   $D1
+7984-   AE 23 7D    LDX   $7D23
+7987-   20 23 79    JSR   $7923
+798A-   AE 23 7D    LDX   $7D23
+798D-   BD 8D C0    LDA   $C08D,X	; load disk write prot to latch(b7=1 => write protected)
+7990-   BD 8E C0    LDA   $C08E,X	; set read mode & read latch
+7993-   A8          TAY   
+7994-   BD 8E C0    LDA   $C08E,X	; set read mode
+7997-   BD 8C C0    LDA   $C08C,X	; read nib to latch & read latch
+799A-   98          TYA   
+799B-   10 05       BPL   $79A2
+799D-   A9 02       LDA   #$02		; Error = write protected
+799F-   4C F9 79    JMP   $79F9
+
+; Write track
+79A2-   20 63 7C    JSR   $7C63
+79A5-   90 0E       BCC   $79B5
+; Error...
+79A7-   A9 01       LDA   #$01
+79A9-   A4 D4       LDY   $D4
+79AB-   CC 1F 7D    CPY   $7D1F
+79AE-   B0 02       BCS   $79B2
+79B0-   A9 04       LDA   #$04
+79B2-   4C F9 79    JMP   $79F9		; error code = 4 (Drive too FAST)
+
+; Succeeded writing track, now check gap3_count tolerance
+79B5-   A4 D4       LDY   $D4
+79B7-   CC 1F 7D    CPY   $7D1F
+79BA-   B0 05       BCS   $79C1
+79BC-   A9 04       LDA   #$04
+79BE-   4C F9 79    JMP   $79F9		; error code = 4 (Drive too FAST)
+;
+79C1-   CC 20 7D    CPY   $7D20
+79C4-   90 05       BCC   $79CB
+79C6-   A9 03       LDA   #$03
+79C8-   4C F9 79    JMP   $79F9		; error code = 3 (Drive too SLOW)
+
+; Read a max of 15 (not 16) address fields, looking for sector 0
+79CB-   AD 22 7D    LDA   $7D22		; A = #$10 (constant)
+79CE-   8D 25 7D    STA   $7D25
+;
+79D1-   CE 25 7D    DEC   $7D25
+79D4-   D0 05       BNE   $79DB
+79D6-   A9 01       LDA   #$01
+79D8-   4C F9 79    JMP   $79F9		; error code = 1 (I/O error)
+79DB-   AE 23 7D    LDX   $7D23
+79DE-   20 6A 7A    JSR   $7A6A		; Read address field
+79E1-   B0 EE       BCS   $79D1
+79E3-   A5 D8       LDA   $D8		; sector 0?
+79E5-   D0 EA       BNE   $79D1		; ... no, so keep reading
+
+; Got address field for sector 0:
+
+; Verify sector
+79E7-   AE 23 7D    LDX   $7D23
+79EA-   20 07 7A    JSR   $7A07		; ???
+79ED-   B0 E2       BCS   $79D1
+
+; Prep for formatting next track
+79EF-   E6 D1       INC   $D1		; inc write_trk
+79F1-   A5 D1       LDA   $D1
+79F3-   C9 23       CMP   #$23		; done 35 tracks?
+79F5-   90 8B       BCC   $7982		; ... no, so write next track
+79F7-   A9 00       LDA   #$00		; res = OK
+
+79F9-   48          PHA   			; push error code
+79FA-   AE 23 7D    LDX   $7D23
+79FD-   BD 88 C0    LDA   $C088,X
+7A00-   A9 00       LDA   #$00
+7A02-   20 23 79    JSR   $7923
+7A05-   68          PLA   			; pop error code
+7A06-   60          RTS   
+; end
+
+;
+; Verify sector
+;
+
+; Read data prologue (D5 AA AD) within 32 nibbles
+7A07-   A0 20       LDY   #$20
+7A09-   88          DEY   
+7A0A-   F0 5C       BEQ   $7A68
+7A0C-   BD 8C C0    LDA   $C08C,X
+7A0F-   10 FB       BPL   $7A0C
+7A11-   49 D5       EOR   #$D5
+7A13-   D0 F4       BNE   $7A09
+7A15-   EA          NOP   
+7A16-   BD 8C C0    LDA   $C08C,X
+7A19-   10 FB       BPL   $7A16
+7A1B-   C9 AA       CMP   #$AA
+7A1D-   D0 F2       BNE   $7A11
+7A1F-   A0 56       LDY   #$56		; Y=#$56
+7A21-   BD 8C C0    LDA   $C08C,X
+7A24-   10 FB       BPL   $7A21
+7A26-   C9 AD       CMP   #$AD
+7A28-   D0 E7       BNE   $7A11
+; Read data
+7A2A-   A9 00       LDA   #$00		; ($D5) = #$FF = Number of #$96 nibbles to read
+7A2C-   88          DEY   
+7A2D-   84 D5       STY   $D5
+7A2F-   BD 8C C0    LDA   $C08C,X
+7A32-   10 FB       BPL   $7A2F
+7A34-   C9 96       CMP   #$96
+7A36-   D0 30       BNE   $7A68
+7A38-   A4 D5       LDY   $D5
+7A3A-   D0 F0       BNE   $7A2C
+;
+7A3C-   84 D5       STY   $D5
+7A3E-   BD 8C C0    LDA   $C08C,X
+7A41-   10 FB       BPL   $7A3E
+7A43-   C9 96       CMP   #$96
+7A45-   D0 21       BNE   $7A68
+7A47-   A4 D5       LDY   $D5
+7A49-   C8          INY   
+7A4A-   D0 F0       BNE   $7A3C
+;
+7A4C-   BD 8C C0    LDA   $C08C,X
+7A4F-   10 FB       BPL   $7A4C
+7A51-   C9 96       CMP   #$96
+7A53-   D0 13       BNE   $7A68
+; Read data epilogue (DE AA)
+7A55-   BD 8C C0    LDA   $C08C,X
+7A58-   10 FB       BPL   $7A55
+7A5A-   C9 DE       CMP   #$DE
+7A5C-   D0 0A       BNE   $7A68		; error
+7A5E-   EA          NOP   
+7A5F-   BD 8C C0    LDA   $C08C,X
+7A62-   10 FB       BPL   $7A5F
+7A64-   C9 AA       CMP   #$AA
+7A66-   F0 5C       BEQ   $7AC4		; CLC & RTS
+7A68-   38          SEC   			; error
+7A69-   60          RTS   
+; end
+
+;
+; Read address field
+;
+; Post:
+; ($D7) = Chksum
+; ($D8) = Sec
+; ($D9) = Trk
+; ($DA) = Vol
+;
+; Carry set => error:
+; . max nibble count read before addr prologue
+; . chksum error
+; . addr epilogue not correct
+;
+
+; Init: nibble count until error: 3+3*256 = 3+768 = 771
+7A6A-   A0 FC       LDY   #$FC
+7A6C-   84 DC       STY   $DC
+
+; Read until address prologue (D5 AA 96)
+7A6E-   C8          INY   
+7A6F-   D0 04       BNE   $7A75
+7A71-   E6 DC       INC   $DC
+7A73-   F0 F3       BEQ   $7A68		; error
+7A75-   BD 8C C0    LDA   $C08C,X
+7A78-   10 FB       BPL   $7A75
+7A7A-   C9 D5       CMP   #$D5
+7A7C-   D0 F0       BNE   $7A6E
+7A7E-   EA          NOP   
+7A7F-   BD 8C C0    LDA   $C08C,X
+7A82-   10 FB       BPL   $7A7F
+7A84-   C9 AA       CMP   #$AA
+7A86-   D0 F2       BNE   $7A7A
+7A88-   A0 03       LDY   #$03		; Y=3
+7A8A-   BD 8C C0    LDA   $C08C,X
+7A8D-   10 FB       BPL   $7A8A
+7A8F-   C9 96       CMP   #$96
+7A91-   D0 E7       BNE   $7A7A
+
+; Read 4&4
+; ($D7) = Chksum
+; ($D8) = Sec
+; ($D9) = Trk
+; ($DA) = Vol
+7A93-   A9 00       LDA   #$00
+7A95-   85 DB       STA   $DB		; update chksum
+7A97-   BD 8C C0    LDA   $C08C,X
+7A9A-   10 FB       BPL   $7A97
+7A9C-   2A          ROL   
+7A9D-   85 DD       STA   $DD
+7A9F-   BD 8C C0    LDA   $C08C,X
+7AA2-   10 FB       BPL   $7A9F
+7AA4-   25 DD       AND   $DD
+7AA6-   99 D7 00    STA   $00D7,Y
+7AA9-   45 DB       EOR   $DB
+7AAB-   88          DEY   
+7AAC-   10 E7       BPL   $7A95
+;
+7AAE-   A8          TAY   
+7AAF-   D0 B7       BNE   $7A68		; chksum error
+; Read epilogue (DE AA)
+7AB1-   BD 8C C0    LDA   $C08C,X
+7AB4-   10 FB       BPL   $7AB1
+7AB6-   C9 DE       CMP   #$DE
+7AB8-   D0 AE       BNE   $7A68		; error
+7ABA-   EA          NOP   
+7ABB-   BD 8C C0    LDA   $C08C,X
+7ABE-   10 FB       BPL   $7ABB
+7AC0-   C9 AA       CMP   #$AA
+7AC2-   D0 A4       BNE   $7A68		; error
+7AC4-   18          CLC   			; res = OK
+7AC5-   60          RTS   
+; end
+
+; Seek to half track
+; Pre: A=half track#, X=slot*16, Y=slot
+7AC6-   8E 37 7D    STX   $7D37
+7AC9-   8D 36 7D    STA   $7D36
+7ACC-   CD 24 7D    CMP   $7D24
+7ACF-   F0 5C       BEQ   $7B2D
+7AD1-   A9 00       LDA   #$00
+7AD3-   8D 38 7D    STA   $7D38
+7AD6-   AD 24 7D    LDA   $7D24
+7AD9-   8D 39 7D    STA   $7D39
+7ADC-   38          SEC   
+7ADD-   ED 36 7D    SBC   $7D36
+7AE0-   F0 37       BEQ   $7B19
+7AE2-   B0 07       BCS   $7AEB
+7AE4-   49 FF       EOR   #$FF
+7AE6-   EE 24 7D    INC   $7D24
+7AE9-   90 05       BCC   $7AF0
+7AEB-   69 FE       ADC   #$FE
+7AED-   CE 24 7D    DEC   $7D24
+7AF0-   CD 38 7D    CMP   $7D38
+7AF3-   90 03       BCC   $7AF8
+7AF5-   AD 38 7D    LDA   $7D38
+7AF8-   C9 0C       CMP   #$0C
+7AFA-   B0 01       BCS   $7AFD
+7AFC-   A8          TAY   
+7AFD-   38          SEC   
+7AFE-   20 1D 7B    JSR   $7B1D
+7B01-   B9 4B 7C    LDA   $7C4B,Y
+7B04-   20 3A 7C    JSR   $7C3A
+7B07-   AD 39 7D    LDA   $7D39
+7B0A-   18          CLC   
+7B0B-   20 20 7B    JSR   $7B20
+7B0E-   B9 57 7C    LDA   $7C57,Y
+7B11-   20 3A 7C    JSR   $7C3A
+7B14-   EE 38 7D    INC   $7D38
+7B17-   D0 BD       BNE   $7AD6
+7B19-   20 3A 7C    JSR   $7C3A
+7B1C-   18          CLC   
+7B1D-   AD 24 7D    LDA   $7D24
+7B20-   29 03       AND   #$03
+7B22-   2A          ROL   
+7B23-   0D 37 7D    ORA   $7D37
+7B26-   AA          TAX   
+7B27-   BD 80 C0    LDA   $C080,X
+7B2A-   AE 37 7D    LDX   $7D37
+7B2D-   60          RTS   
+; end
+
+;
+; Write gap2, Data field, data
+;
+
+7B2E-   20 0E 7D    JSR   $7D0E
+7B31-   BD 8D C0    LDA   $C08D,X
+7B34-   BD 8E C0    LDA   $C08E,X
+
+; Write gap2 (5x 10-bit FF)
+7B37-   A9 FF       LDA   #$FF
+7B39-   9D 8F C0    STA   $C08F,X
+7B3C-   DD 8C C0    CMP   $C08C,X
+7B3F-   48          PHA   
+7B40-   68          PLA   
+7B41-   EA          NOP   
+7B42-   A0 04       LDY   #$04
+7B44-   48          PHA   
+7B45-   68          PLA   
+7B46-   20 A5 7B    JSR   $7BA5
+7B49-   88          DEY   
+7B4A-   D0 F8       BNE   $7B44
+
+; Write Data prologue (D5 AA AD)
+7B4C-   A9 D5       LDA   #$D5
+7B4E-   20 A4 7B    JSR   $7BA4
+7B51-   A9 AA       LDA   #$AA
+7B53-   20 A4 7B    JSR   $7BA4
+7B56-   A9 AD       LDA   #$AD
+7B58-   20 A4 7B    JSR   $7BA4
+
+; Write 86 x #$96
+7B5B-   A0 56       LDY   #$56
+7B5D-   EA          NOP   
+7B5E-   EA          NOP   
+7B5F-   EA          NOP   
+7B60-   D0 03       BNE   $7B65
+7B62-   20 0E 7D    JSR   $7D0E		; RTS
+7B65-   EA          NOP   
+7B66-   EA          NOP   
+7B67-   A9 96       LDA   #$96
+7B69-   9D 8D C0    STA   $C08D,X
+7B6C-   DD 8C C0    CMP   $C08C,X
+7B6F-   88          DEY   
+7B70-   D0 F0       BNE   $7B62
+
+; Write 256 x #$96
+7B72-   24 00       BIT   $00
+7B74-   EA          NOP   
+7B75-   20 0E 7D    JSR   $7D0E		; RTS
+7B78-   A9 96       LDA   #$96
+7B7A-   9D 8D C0    STA   $C08D,X
+7B7D-   DD 8C C0    CMP   $C08C,X
+7B80-   A9 96       LDA   #$96
+7B82-   EA          NOP   
+7B83-   C8          INY   
+7B84-   D0 EF       BNE   $7B75
+
+; Write Data epilogue (DE AA EB FF)
+7B86-   20 A4 7B    JSR   $7BA4
+7B89-   A9 DE       LDA   #$DE
+7B8B-   20 A4 7B    JSR   $7BA4
+7B8E-   A9 AA       LDA   #$AA
+7B90-   20 A4 7B    JSR   $7BA4
+7B93-   A9 EB       LDA   #$EB
+7B95-   20 A4 7B    JSR   $7BA4
+7B98-   A9 FF       LDA   #$FF
+7B9A-   20 A4 7B    JSR   $7BA4
+;
+7B9D-   BD 8E C0    LDA   $C08E,X	; read latch (and set read mode)
+7BA0-   BD 8C C0    LDA   $C08C,X	; read latch
+7BA3-   60          RTS   
+
+; Write nibble
+7BA4-   EA          NOP   
+; Write nibble
+7BA5-   48          PHA   
+7BA6-   68          PLA   
+7BA7-   9D 8D C0    STA   $C08D,X
+7BAA-   DD 8C C0    CMP   $C08C,X
+7BAD-   60          RTS   
+
+;
+; Write gap1(sector-0) or gap3 & address field
+; Pre: X=slot*16, Y=gap count
+;
+
+; Check if disk is write enabled
+7BAE-   38          SEC   			; ? (2 cycles)
+7BAF-   BD 8D C0    LDA   $C08D,X	; load write protect to latch (b7)
+7BB2-   BD 8E C0    LDA   $C08E,X	; read latch (and set read mode)
+7BB5-   30 5E       BMI   $7C15		; branch if write protected
+
+; Gap1 or Gap3: Initial 10-bit FF sync byte
+7BB7-   A9 FF       LDA   #$FF
+7BB9-   9D 8F C0    STA   $C08F,X	; set write mode & write data to latch
+7BBC-   DD 8C C0    CMP   $C08C,X	; start writing latch (start shifting)
+7BBF-   48          PHA   
+7BC0-   68          PLA   
+
+; Gap1 or Gap3: 10-bit FF sync byte (40 cycle loop)
+; Pre: A=#$FF, Y=gap count
+7BC1-   20 1B 7C    JSR   $7C1B		; RTS
+7BC4-   20 1B 7C    JSR   $7C1B		; RTS
+7BC7-   9D 8D C0    STA   $C08D,X	; write data to latch
+7BCA-   DD 8C C0    CMP   $C08C,X	; start writing latch (start shifting)
+7BCD-   EA          NOP   
+7BCE-   88          DEY   
+7BCF-   D0 F0       BNE   $7BC1	; NB. branch taken cross pages
+
+; Write address prologue (D5 AA 96)
+7BD1-   A9 D5       LDA   #$D5
+7BD3-   20 2D 7C    JSR   $7C2D
+7BD6-   A9 AA       LDA   #$AA
+7BD8-   20 2D 7C    JSR   $7C2D
+7BDB-   A9 96       LDA   #$96
+7BDD-   20 2D 7C    JSR   $7C2D
+
+; Write address field
+7BE0-   A5 D3       LDA   $D3		; Vol=01
+7BE2-   20 1C 7C    JSR   $7C1C
+7BE5-   A5 D1       LDA   $D1		; Trk
+7BE7-   20 1C 7C    JSR   $7C1C
+7BEA-   A5 D2       LDA   $D2		; Sec
+7BEC-   20 1C 7C    JSR   $7C1C
+7BEF-   A5 D3       LDA   $D3
+7BF1-   45 D1       EOR   $D1
+7BF3-   45 D2       EOR   $D2
+7BF5-   48          PHA   			; Chksum
+7BF6-   4A          LSR   
+7BF7-   05 D0       ORA   $D0		; OR with #$AA
+; write 4&4 chksum in A
+7BF9-   9D 8D C0    STA   $C08D,X
+7BFC-   BD 8C C0    LDA   $C08C,X
+7BFF-   68          PLA   
+7C00-   09 AA       ORA   #$AA
+7C02-   20 2C 7C    JSR   $7C2C
+
+; write address epilogue (DE AA EB)
+7C05-   A9 DE       LDA   #$DE
+7C07-   20 2D 7C    JSR   $7C2D
+7C0A-   A9 AA       LDA   #$AA
+7C0C-   20 2D 7C    JSR   $7C2D
+7C0F-   A9 EB       LDA   #$EB
+7C11-   20 2D 7C    JSR   $7C2D
+7C14-   18          CLC   
+7C15-   BD 8E C0    LDA   $C08E,X
+7C18-   BD 8C C0    LDA   $C08C,X
+7C1B-   60          RTS   
+
+; write 4&4 byte in A
+7C1C-   48          PHA   
+7C1D-   4A          LSR   
+7C1E-   05 D0       ORA   $D0
+7C20-   9D 8D C0    STA   $C08D,X
+7C23-   DD 8C C0    CMP   $C08C,X
+7C26-   68          PLA   
+7C27-   EA          NOP   
+7C28-   EA          NOP   
+7C29-   EA          NOP   
+7C2A-   09 AA       ORA   #$AA
+7C2C-   EA          NOP   
+; fall through...
+
+; 32 cycle write
+7C2D-   EA          NOP   
+7C2E-   48          PHA   
+7C2F-   68          PLA   
+7C30-   9D 8D C0    STA   $C08D,X
+7C33-   DD 8C C0    CMP   $C08C,X
+7C36-   60          RTS   
+; end
+
+; ??? (unused)
+7C37-   C8          INY   
+7C38-   A0 C3       LDY   #$C3
+; ??? (end)
+
+; Wait: A * (2 + (5*16) + 5+3+5+2+2+3) = A * 102 cycles (roughly)
+; Pre: A = wait value
+7C3A-   A2 11       LDX   #$11		; 2cy
+7C3C-   CA          DEX   			;   2cy
+7C3D-   D0 FD       BNE   $7C3C		;   2+1 (branch taken)
+7C3F-   E6 D9       INC   $D9		; 5cy / read_trk++
+7C41-   D0 02       BNE   $7C45		; 2+1 (branch taken)
+7C43-   E6 DA       INC   $DA		; 5cy / read_vol++
+7C45-   38          SEC   			; 2cy
+7C46-   E9 01       SBC   #$01		; 2cy
+7C48-   D0 F0       BNE   $7C3A		; 2+1 (branch taken)
+7C4A-   60          RTS   
+; end
+
+.data
+7C4B:	; 12 bytes
+ !byte $01,$30,$28
+ !byte $24,$20,$1E
+ !byte $1D,$1C,$1C
+ !byte $1C,$1C,$1C
+7C57:	; 12 bytes
+ !byte $70,$2C,$26
+ !byte $22,$1F,$1E
+ !byte $1D,$1C,$1C
+ !byte $1C,$1C,$1C
+
+.code
+
+;
+; Write track and verify track
+;
+
+; write gap1 & address field
+7C63-   AD 21 7D    LDA   $7D21
+7C66-   85 D6       STA   $D6		; ($D6) = 3 = timeout * 256?
+;
+7C68-   A0 80       LDY   #$80		; gap1 has gap count = 128
+7C6A-   A9 00       LDA   #$00
+7C6C-   85 D2       STA   $D2		; sector = 0
+7C6E-   4C 73 7C    JMP   $7C73
+
+; write gap3 & address field
+7C71-   A4 D4       LDY   $D4		; gap3_count
+;
+7C73-   AE 23 7D    LDX   $7D23		; slot*16
+7C76-   20 AE 7B    JSR   $7BAE		; write gap1|3 & address field
+7C79-   90 03       BCC   $7C7E
+; error:
+7C7B-   4C 0E 7D    JMP   $7D0E
+; success:
+; write gap2, data field, data
+7C7E-   AE 23 7D    LDX   $7D23
+7C81-   20 2E 7B    JSR   $7B2E
+7C84-   E6 D2       INC   $D2		; inc write_sector
+7C86-   A5 D2       LDA   $D2
+7C88-   C9 10       CMP   #$10		; done 16 sectors?
+7C8A-   90 E5       BCC   $7C71		; ... no, write next gap3 & sector
+
+;
+; verify track
+;
+
+7C8C-   A0 0F       LDY   #$0F
+7C8E-   84 D2       STY   $D2		; write_sector = 15 (used as sector loop counter)
+7C90-   AD 22 7D    LDA   $7D22		; A = #$10 (constant)
+7C93-   8D 25 7D    STA   $7D25		; Set retry count = #$10
+
+; Fill sector_flag struct with #$10
+7C96-   99 26 7D    STA   $7D26,Y
+7C99-   88          DEY   
+7C9A-   10 FA       BPL   $7C96
+
+7C9C-   A5 D4       LDA   $D4		; gap3_count
+7C9E-   38          SEC   
+7C9F-   E9 05       SBC   #$05
+7CA1-   A8          TAY   
+
+; Delay for: (gap3_count-5) * 40 cycles
+7CA2-   20 0E 7D    JSR   $7D0E		; 12cy / RTS
+7CA5-   20 0E 7D    JSR   $7D0E		; 12cy / RTS
+7CA8-   48          PHA   			;  3
+7CA9-   68          PLA   			;  4
+7CAA-   EA          NOP   			;  2
+7CAB-   EA          NOP   			;  2
+7CAC-   88          DEY   			;  2
+7CAD-   D0 F3       BNE   $7CA2		;  3 (taken)
+									;  = 40 cycles
+
+7CAF-   AE 23 7D    LDX   $7D23
+7CB2-   20 6A 7A    JSR   $7A6A		; Read address field
+7CB5-   B0 3C       BCS   $7CF3
+7CB7-   A5 D8       LDA   $D8
+7CB9-   F0 13       BEQ   $7CCE		; read sector 0?
+									; ... No:
+7CBB-   C6 D4       DEC   $D4		; gap3_count--
+7CBD-   A5 D4       LDA   $D4
+7CBF-   CD 1F 7D    CMP   $7D1F
+7CC2-   B0 2F       BCS   $7CF3		; rewrite track
+7CC4-   38          SEC   			; error: gap3_count too small
+7CC5-   60          RTS
+
+; Verify next sector
+7CC6-   AE 23 7D    LDX   $7D23
+7CC9-   20 6A 7A    JSR   $7A6A		; Read address field
+7CCC-   B0 1A       BCS   $7CE8
+;
+7CCE-   AE 23 7D    LDX   $7D23
+7CD1-   20 07 7A    JSR   $7A07		; Read sector data
+7CD4-   B0 12       BCS   $7CE8
+7CD6-   A4 D8       LDY   $D8		; Y=read sector#
+7CD8-   B9 26 7D    LDA   $7D26,Y
+7CDB-   30 0B       BMI   $7CE8		; -ve if already read this sector
+7CDD-   A9 FF       LDA   #$FF
+7CDF-   99 26 7D    STA   $7D26,Y	; sector_flag[Y] := #$FF
+7CE2-   C6 D2       DEC   $D2		; write_sector--
+7CE4-   10 E0       BPL   $7CC6
+7CE6-   18          CLC   			; res = OK
+7CE7-   60          RTS   
+;
+7CE8-   CE 25 7D    DEC   $7D25		; retry_count--
+7CEB-   D0 D9       BNE   $7CC6
+7CED-   C6 D6       DEC   $D6
+7CEF-   D0 02       BNE   $7CF3
+7CF1-   38          SEC   			; error (timeout)
+7CF2-   60          RTS   
+
+; Retry 32 times to read sector #$0F
+; On success: rewrite track
+7CF3-   AD 22 7D    LDA   $7D22		; A = #$10 (constant)
+7CF6-   0A          ASL   			; A = #$20
+7CF7-   8D 25 7D    STA   $7D25		; Set retry count = #$20
+; 
+7CFA-   AE 23 7D    LDX   $7D23
+7CFD-   20 6A 7A    JSR   $7A6A		; Read address field
+7D00-   B0 06       BCS   $7D08
+7D02-   A5 D8       LDA   $D8
+7D04-   C9 0F       CMP   #$0F		; read sector == #$0F? (ie. last sector on track)
+7D06-   F0 07       BEQ   $7D0F		; ... yes: wait & rewrite track
+7D08-   CE 25 7D    DEC   $7D25
+7D0B-   D0 ED       BNE   $7CFA
+7D0D-   38          SEC   			; error
+7D0E-   60          RTS   
+;
+
+; wait for 214 x 32-cycle nibbles
+7D0F-   A2 D6       LDX   #$D6		; = 214
+7D11-   20 0E 7D    JSR   $7D0E		; 12cy / RTS
+7D14-   20 0E 7D    JSR   $7D0E		; 12cy / RTS
+7D17-   24 00       BIT   $00		;  3cy
+7D19-   CA          DEX   			;  2cy
+7D1A-   D0 F5       BNE   $7D11		;  3cy (2+1taken)
+									;  = 32
+; JMP to Write track and verify track
+7D1C-   4C 68 7C    JMP   $7C68
+; end
+
+.data
+7D1F:   0E	; min gap3
+7D20:   1B	; max gap3 (gap3 >= 0x1B means DRIVE TOO SLOW)
+7D21:   03	; timeout * 256
+7D22:   10 	; a constant
+7D23:   80	; slot*10
+7D24:   A0	; gets init'd to #$50 (80)
+7D25:	A0	; retry count
+
+; sector_flag[16]:
+7D26:   A0 B1 C5 A0
+7D2A:   A0 C4 A0 B0
+7D2E:   80 A0 A0 C3   
+7D32:   A0 A0 A0 A0
+
+7D36:   A0
+7D37:   A0
+7D38:   A0
+7D39:   A0
+
+; Symbol table:
+  D0 kAA
+  D1 w_Track
+  D2 w_Sector
+  D3 w_Volume
+  D4 w_Gap3Count
+  D5 r_Nib96Count
+  D6 r_NibCount1Hi
+  D7 r_Chksum
+  D8 r_Sector
+  D9 r_Track
+  DA r_Volume
+  DB r_TmpChksum
+  DC r_NibCount2Hi
+  DD r_Tmp4and4
+  DE kVolNum01
+7900 FormatterDiskII
+7923 SeekTrack
+793A FormatDisk
+7982 WriteNextTrack
+79A2 WriteTrack
+79B5 CheckGap3Count
+79CB FindSector00Init
+79D1 FindSector00Cont
+79E7 VerifySector
+79EF NextTrack
+79F9 Done
+7A07 ReadSectorData
+7A6A ReadAddressField
+7AC6 SeekHalfTrack
+7B2E WriteGap2AndData
+7BA4 WriteNibble1a
+7BA5 WriteNibble1b
+7BAE CheckWriteProt
+7BB7 WriteGap0Or3AndAddress
+7C2C WriteNibble2a
+7C2D WriteNibble2b
+7C37 Unused3
+7C3A WaitA
+7C4B Data12_1
+7C57 Data12_2
+7C63 WriteAndVerifyTrack
+7C68 WriteGap1AndAddress2
+7C71 WriteGap3AndAddress
+7C8C VerifyTrack
+7C96 ResetSectorFlags
+7CA2 WaitGap3Count
+7CBB DecGap3Count
+7CC6 VerifyNextSector
+7CCE VerifyNextSector2
+7CE8 Retry
+7CF3 Retry2
+7CFA FindSector0FCont
+7D0E RTS
+7D0F RetryWait
+7D1F kMinGap3
+7D20 kMaxGap3
+7D21 kNibCountHi
+7D22 k10
+7D23 Slotx16
+7D24 HalfTrack
+7D25 RetryCount
+7D26 SectorFlags

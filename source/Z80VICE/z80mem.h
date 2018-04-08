@@ -30,10 +30,10 @@
 #ifdef WATCOM_COMPILE
 #include "../mem.h"
 #else
-#include "..\CommonVICE\mem.h"		// [AppleWin-TC]
+#include "../CommonVICE/mem.h"		// [AppleWin-TC]
 #endif
 
-#include "..\CommonVICE\types.h"	// [AppleWin-TC]
+#include "../CommonVICE/types.h"	// [AppleWin-TC]
 
 extern int z80mem_resources_init(void);
 extern int z80mem_cmdline_options_init(void);

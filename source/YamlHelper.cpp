@@ -154,7 +154,7 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 				mapValue.value = pValue;
 				mapValue.subMap = NULL;
 				mapYaml[std::string(pKey)] = mapValue;
-				delete [] pKey; pKey = NULL;
+				free(pKey); pKey = NULL;
 			}
 
 			bKey = bKey ? false : true;
@@ -166,7 +166,7 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 	}
 
 	if (pKey)
-		delete [] pKey;
+		free(pKey);
 
 	return res;
 }
@@ -387,6 +387,11 @@ void YamlSaveHelper::SaveHexUint12(const char* key, UINT value)
 void YamlSaveHelper::SaveHexUint16(const char* key, UINT value)
 {
 	Save("%s: 0x%04X\n", key, value);
+}
+
+void YamlSaveHelper::SaveHexUint24(const char* key, UINT value)
+{
+	Save("%s: 0x%06X\n", key, value);
 }
 
 void YamlSaveHelper::SaveHexUint32(const char* key, UINT value)

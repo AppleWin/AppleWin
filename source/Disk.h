@@ -39,7 +39,6 @@ const bool IMAGE_FORCE_WRITE_PROTECTED = true;
 const bool IMAGE_DONT_CREATE = false;
 const bool IMAGE_CREATE = true;
 
-extern BOOL enhancedisk;
 const char* DiskGetDiskPathFilename(const int iDrive);
 
 void    DiskInitialize(void); // DiskIIManagerStartup()
@@ -53,9 +52,10 @@ LPCTSTR DiskGetFullName(const int iDrive);
 LPCTSTR DiskGetFullDiskFilename(const int iDrive);
 LPCTSTR DiskGetBaseName(const int iDrive);
 
-void    DiskGetLightStatus (Disk_Status_e *pDisk1Status_, Disk_Status_e *pDisk2Status_);
+void    DiskGetLightStatus (Disk_Status_e* pDisk1Status, Disk_Status_e* pDisk2Status);
 
 ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
+bool    Disk_IsConditionForFullSpeed(void);
 BOOL    DiskIsSpinning(void);
 void    DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const ImageError_e Error);
 void    DiskReset(const bool bIsPowerCycle=false);
@@ -66,9 +66,9 @@ int     DiskGetCurrentTrack();
 int     DiskGetTrack( int drive );
 int     DiskGetCurrentPhase();
 int     DiskGetCurrentOffset();
-char*   DiskGetCurrentState();
+const char*   DiskGetCurrentState();
 bool    DiskSelect(const int iDrive);
-void    DiskUpdatePosition(DWORD);
+void    DiskUpdateDriveState(DWORD);
 bool    DiskDriveSwap(void);
 void    DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot);
 
@@ -82,3 +82,44 @@ void Disk_SaveLastDiskImage(const int iDrive);
 
 bool Disk_ImageIsWriteProtected(const int iDrive);
 bool Disk_IsDriveEmpty(const int iDrive);
+
+bool Disk_GetEnhanceDisk(void);
+void Disk_SetEnhanceDisk(bool bEnhanceDisk);
+
+//
+
+// For sharing with class FormatTrack
+struct Disk_t
+{
+	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
+	TCHAR	fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
+	std::string strFilenameInZip;					// ""             or <FILENAME.EXT>
+	ImageInfo* imagehandle;							// Init'd by DiskInsert() -> ImageOpen()
+	bool	bWriteProtected;
+	//
+	int		byte;
+	int		nibbles;								// Init'd by ReadTrack() -> ImageReadTrack()
+	LPBYTE	trackimage;
+	bool	trackimagedata;
+	bool	trackimagedirty;
+
+	Disk_t()
+	{
+		clear();
+	}
+
+	void clear()
+	{
+		ZeroMemory(imagename, sizeof(imagename));
+		ZeroMemory(fullname, sizeof(fullname));
+		strFilenameInZip.clear();
+		imagehandle = NULL;
+		bWriteProtected = false;
+		//
+		byte = 0;
+		nibbles = 0;
+		trackimage = NULL;
+		trackimagedata = false;
+		trackimagedirty = false;
+	}
+};

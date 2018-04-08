@@ -34,22 +34,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debug.h"
 #include "DebugDefs.h"
 
-#include "..\AppleWin.h"
-#include "..\CPU.h"
-#include "..\Disk.h"
-#include "..\Frame.h"
-#include "..\Keyboard.h"
-#include "..\Memory.h"
-#include "..\NTSC.h"
-#include "..\SoundCore.h"	// SoundCore_SetFade()
-#include "..\Video.h"
+#include "../Applewin.h"
+#include "../CPU.h"
+#include "../Disk.h"
+#include "../Frame.h"
+#include "../Keyboard.h"
+#include "../Memory.h"
+#include "../NTSC.h"
+#include "../SoundCore.h"	// SoundCore_SetFade()
+#include "../Video.h"
 
 //	#define DEBUG_COMMAND_HELP  1
 //	#define DEBUG_ASM_HASH 1
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,9);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,12);
 
 
 // Public _________________________________________________________________________________________
@@ -2755,6 +2755,8 @@ bool _CmdConfigFont ( int iFont, LPCSTR pFontName, int iPitchFamily, int nFontHe
 
 	if (iFont < NUM_FONTS)
 		pFont = & g_aFontConfig[ iFont ];
+	else
+		return bStatus;
 
 	if (pFontName)
 	{	
@@ -4109,6 +4111,9 @@ static TCHAR g_sMemoryLoadSaveFileName[ MAX_PATH ] = TEXT("");
 //===========================================================================
 Update_t CmdConfigGetDebugDir (int nArgs)
 {
+	if( nArgs != 0 )
+		return Help_Arg_1( CMD_CONFIG_GET_DEBUG_DIR );
+
 	TCHAR sPath[ MAX_PATH + 8 ];
 	// TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
 	ConsoleBufferPushFormat( sPath, "Path: %s", g_sCurrentDir );
@@ -4120,27 +4125,48 @@ Update_t CmdConfigGetDebugDir (int nArgs)
 //===========================================================================
 Update_t CmdConfigSetDebugDir (int nArgs)
 {
-	//if( nArgs > 2 )
-	//	return;
+	if ( nArgs > 1 )
+		return Help_Arg_1( CMD_CONFIG_SET_DEBUG_DIR );
 
-	// PWD directory
+	if ( nArgs == 0 )
+		return CmdConfigGetDebugDir(0);
+
 #if _WIN32
 	// http://msdn.microsoft.com/en-us/library/aa365530(VS.85).aspx
-	TCHAR sPath[ MAX_PATH + 1 ];
-	_tcscpy( sPath, g_sCurrentDir ); // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
-	_tcscat( sPath, g_aArgs[ 1 ].sArg );
 
-	if( SetCurrentImageDir( sPath ) )
+	// TODO: Support paths prefixed with "\\?\" (for long/unicode pathnames)
+	if (strncmp("\\\\?\\", g_aArgs[1].sArg, 4) == 0)
+		return Help_Arg_1( CMD_CONFIG_SET_DEBUG_DIR );
+
+	TCHAR sPath[ MAX_PATH + 1 ];
+
+	if (g_aArgs[1].sArg[1] == ':')			// Absolute
+	{
+		_tcscpy( sPath, g_aArgs[1].sArg );
+	}
+	else if (g_aArgs[1].sArg[0] == '\\')	// Absolute
+	{
+		if (g_sCurrentDir[1] == ':')
+		{
+			_tcsncpy( sPath, g_sCurrentDir, 2 );	// Prefix with drive letter & colon
+			sPath[2] = 0;
+		}
+		_tcscat( sPath, g_aArgs[1].sArg );
+	}
+	else									// Relative
+	{
+		// TODO: Support ".." - currently just appends (which still works)
+		_tcscpy( sPath, g_sCurrentDir ); // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
+		_tcscat( sPath, g_aArgs[1].sArg );
+	}
+
+	if ( SetCurrentImageDir( sPath ) )
 		nArgs = 0; // intentional fall into
 #else
 	#error "Need chdir() implemented"
 #endif
 
-	// PWD
-	if( nArgs == 0 )
-		return CmdConfigGetDebugDir(0);
-
-	return ConsoleUpdate();
+	return CmdConfigGetDebugDir(0);		// Show the new PWD
 }
 
 
@@ -6649,7 +6675,7 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 					int nLen = pLabelEnd - pLabelStart;
 					nLen = MIN( nLen, MAX_SYMBOLS_LEN );
 					strncpy( sName, pLabelStart, nLen );
-					sName[ nLen ] = 0;
+					sName[ nLen - 1 ] = 0;
 
 					char *pAddressEQU = strstr( pLabel, "$" );
 					char *pAddressDFB = strstr( sLine, ":" ); // Get address from start of line
@@ -8042,7 +8068,7 @@ void OutputTraceLine ()
 
 	if (g_bTraceFileWithVideoScanner)
 	{
-		uint16_t addr = NTSC_VideoGetScannerAddress();
+		uint16_t addr = NTSC_VideoGetScannerAddress(0);	// NB. uExecutedCycles==0 as SingleStep() called afterwards
 		BYTE data = mem[addr];
 
 		fprintf( g_hTraceFile,

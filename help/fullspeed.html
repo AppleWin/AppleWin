@@ -30,17 +30,12 @@
 
 		<p style="FONT-WEIGHT: bold">Limitations and things to bear in mind:</p>
 		<ul>
-			<li>Full speed mode favours speed over video accuracy:
+			<li>Full-speed mode favours speed over video accuracy:
 			<ul>
 				<li>The Apple II's video is only updated periodically (once a wall-clock 60Hz frame) instead of each opcode.
+				<li>Split-mode video (eg. French Touch demos) won't render correctly.
 			</ul>
 			<li>All sound (speaker, Mockingboard, etc) is muted.
-			<li>Video-based timing/synchronisation loops won't work correctly.
-			<ul>
-				<li>The video-scanner won't advance its h/v position, so the floating bus will always return the same value.
-				<li>Specifically code that does Apple II+ VBlank detection (using the floating bus) will hang, until full-speed mode is disabled. (But Apple //e soft-switch VBlank detection does work.)
-			</ul>
-			<li>Card detection routines (that rely on floating bus) won't work correctly.
 			<li>One of your PC's CPU cores will run at 100%.
 			<ul>
 				<li>EG. Simply boot the Apple II (or //e) without a disk in drive-1.
