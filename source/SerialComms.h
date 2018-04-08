@@ -64,6 +64,7 @@ private:
 	BYTE __stdcall CommProgramReset(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
 
 	void	InternalReset();
+	void	UpdateCommandReg(BYTE command);
 	void	GetDIPSW();
 	void	SetDIPSWDefaults();
 	UINT	BaudRateToIndex(UINT uBaudRate);

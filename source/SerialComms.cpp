@@ -26,16 +26,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * Author: Various
  */
 
-// TO DO:
-// . Enable & test Tx IRQ
-// . DIP switch read values
-//
-
 // Refs:
-// [Ref.1] "Super Serial Card (SSC) Memory Locations for Programmers" - Aaron Heiss
-// [Ref.2] SSC recv IRQ example: http://www.wright.edu/~john.matthews/ssc.html#lst - John B. Matthews, 5/13/87
-// [Ref.3] WaitCommEvent, etc: http://mail.python.org/pipermail/python-list/2002-November/131437.html
-// [Ref.4] SY6551 info: http://www.axess.com/twilight/sock/rs232pak.html
+// [Ref.1] AppleWin\docs\SSC Memory Locations for Programmers.txt
+// [Ref.2] SSC recv IRQ example: https://sites.google.com/site/drjohnbmatthews/apple2/ssc - John B. Matthews, 5/13/87
+// [Ref.3] SY6551 info: http://users.axess.com/twilight/sock/rs232pak.html
 //
 // SSC-pg is an abbreviation for pages references to "Super Serial Card, Installation and Operating Manual" by Apple
 
@@ -54,7 +48,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define TCP_SERIAL_PORT 1977
 
 // Default: 19200-8-N-1
-// Maybe a better default is: 9600-7-N-1 (for HyperTrm)
 SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 {
 	// DIPSW1:
@@ -105,7 +98,7 @@ void CSuperSerialCard::InternalReset()
 
 	// SY6551 datasheet: Hardware reset sets Command register to 0
 	// . NB. MOS6551 datasheet: Hardware reset: b#00000010 (so ACIA not init'd on IN#2!)
-	m_uCommandByte = 0;
+	UpdateCommandReg(0);
 
 	m_uBaudRate	= CBR_19200;	// Undefined, as CONTROL.CLK_SOURCE=0=External clock is not supported for SSC - so nominally use 19200
 	m_uStopBits	= ONESTOPBIT;
@@ -113,9 +106,6 @@ void CSuperSerialCard::InternalReset()
 	m_uParity	= NOPARITY;
 
 	//
-
-	m_bTxIrqEnabled = false;
-	m_bRxIrqEnabled = false;
 
 	m_vuRxCurrBuffer = 0;
 
@@ -364,6 +354,8 @@ void CSuperSerialCard::CommTcpSerialAccept()
 
 //===========================================================================
 
+// Called when there's a TCP event via the message pump
+// . Because it's via the message pump, then this call is synchronous to CommReceive(), so there's no need for a critical section
 void CSuperSerialCard::CommTcpSerialReceive()
 {
 	if (m_hCommAcceptSocket != INVALID_SOCKET)
@@ -378,7 +370,7 @@ void CSuperSerialCard::CommTcpSerialReceive()
 			}
 		}
 
-		if (m_bRxIrqEnabled && !m_qTcpSerialBuffer.empty() && m_DIPSWCurrent.bInterrupts)
+		if (m_bRxIrqEnabled && !m_qTcpSerialBuffer.empty())
 		{
 			CpuIrqAssert(IS_SSC);
 			m_vbRxIrqPending = true;
@@ -447,6 +439,7 @@ BYTE __stdcall CSuperSerialCard::SSC_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, B
 //===========================================================================
 
 // 6551 ACIA Command Register ($C08A+s0)
+// . EG. 0x09 = "no parity, enable IRQ" - b7:5(No parity), b4 (No echo), b3:1(Enable TX,RX IRQs), b0(DTR: Enable Rx/Tx) [Ref.2]
 enum {	CMD_PARITY_MASK				= 3<<6,
 		CMD_PARITY_ODD				= 0<<6,		// Odd parity
 		CMD_PARITY_EVEN				= 1<<6,		// Even parity
@@ -459,14 +452,14 @@ enum {	CMD_PARITY_MASK				= 3<<6,
 		CMD_TX_IRQ_ENA_RTS_LOW		= 1<<2,
 		CMD_TX_IRQ_DIS_RTS_LOW		= 2<<2,
 		CMD_TX_IRQ_DIS_RTS_LOW_BRK	= 3<<2,		// Transmit BRK
-		CMD_RX_IRQ_DIS				= 1<<1,		// 1=!IRQ interrupt disabled
+		CMD_RX_IRQ_DIS				= 1<<1,		// 1=IRQ interrupt disabled
 		CMD_DTR						= 1<<0,		// Data Terminal Ready: 1=Enable Rx/Tx (!DTR low)
 };
 
 BYTE __stdcall CSuperSerialCard::CommProgramReset(WORD, WORD, BYTE, BYTE, ULONG)
 {
 	// Command: top-3 parity bits unaffected
-	m_uCommandByte &= (CMD_PARITY_MASK|CMD_PARITY_ENA);
+	UpdateCommandReg( m_uCommandByte & (CMD_PARITY_MASK|CMD_PARITY_ENA) );
 
 	// Control: all bits unaffected
 	// Status: all bits unaffects, except Overrun(bit2) is cleared
@@ -476,7 +469,67 @@ BYTE __stdcall CSuperSerialCard::CommProgramReset(WORD, WORD, BYTE, BYTE, ULONG)
 
 //===========================================================================
 
-// EG. 0x09 = Enable TX IRQ, No parity [Ref.2]
+void CSuperSerialCard::UpdateCommandReg(BYTE command)
+{
+	m_uCommandByte = command;
+
+	if (m_uCommandByte & CMD_PARITY_ENA)
+	{
+		switch (m_uCommandByte & CMD_PARITY_MASK)
+		{
+		case CMD_PARITY_ODD:	m_uParity = ODDPARITY; break;
+		case CMD_PARITY_EVEN:	m_uParity = EVENPARITY; break;
+		case CMD_PARITY_MARK:	m_uParity = MARKPARITY; break;
+		case CMD_PARITY_SPACE:	m_uParity = SPACEPARITY; break;
+		}
+	}
+	else
+	{
+		m_uParity = NOPARITY;
+	}
+
+	if (m_uCommandByte & CMD_ECHO_MODE)		// Receiver mode echo (0=no echo, 1=echo)
+	{
+		_ASSERT(0);
+		LogFileOutput("SSC: CommCommand(): unsupported Echo mode. Command=0x%02X\n", m_uCommandByte);
+	}
+
+	switch (m_uCommandByte & CMD_TX_MASK)	// transmitter interrupt control
+	{
+		// Note: the RTS signal must be set 'low' in order to receive any incoming data from the serial device [Ref.1]
+		case CMD_TX_IRQ_DIS_RTS_HIGH:		// set RTS high and transmit no interrupts (transmitter is off [Ref.3])
+			m_uRTS = RTS_CONTROL_DISABLE;
+			break;
+		case CMD_TX_IRQ_ENA_RTS_LOW:		// set RTS low and transmit interrupts
+			m_uRTS = RTS_CONTROL_ENABLE;
+			break;
+		case CMD_TX_IRQ_DIS_RTS_LOW:		// set RTS low and transmit no interrupts
+			m_uRTS = RTS_CONTROL_ENABLE;
+			break;
+		case CMD_TX_IRQ_DIS_RTS_LOW_BRK:	// set RTS low and transmit break signals instead of interrupts
+			m_uRTS = RTS_CONTROL_ENABLE;
+			_ASSERT(0);
+			LogFileOutput("SSC: CommCommand(): unsupported TX mode. Command=0x%02X\n", m_uCommandByte);
+			break;
+	}
+
+	if (m_DIPSWCurrent.bInterrupts)
+	{
+		m_bTxIrqEnabled = (m_uCommandByte & CMD_TX_MASK) == CMD_TX_IRQ_ENA_RTS_LOW;
+		m_bRxIrqEnabled = (m_uCommandByte & CMD_RX_IRQ_DIS) == 0;
+	}
+	else
+	{
+		m_bTxIrqEnabled = false;
+		m_bRxIrqEnabled = false;
+	}
+
+	if (m_bCfgSupportDTR)	// GH#386
+	{
+		// Data Terminal Ready (DTR) setting (0=set DTR high (indicates 'not ready'))
+		m_uDTR = (m_uCommandByte & CMD_DTR) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
+	}
+}
 
 BYTE __stdcall CSuperSerialCard::CommCommand(WORD, WORD, BYTE write, BYTE value, ULONG)
 {
@@ -485,61 +538,7 @@ BYTE __stdcall CSuperSerialCard::CommCommand(WORD, WORD, BYTE write, BYTE value,
 
 	if (write && (value	!= m_uCommandByte))
 	{
-		m_uCommandByte	= value;
-
-		// UPDATE THE PARITY
-		if (m_uCommandByte & CMD_PARITY_ENA)
-		{
-			switch (m_uCommandByte & CMD_PARITY_MASK)
-			{
-			case CMD_PARITY_ODD:	m_uParity = ODDPARITY; break;
-			case CMD_PARITY_EVEN:	m_uParity = EVENPARITY; break;
-			case CMD_PARITY_MARK:	m_uParity = MARKPARITY; break;
-			case CMD_PARITY_SPACE:	m_uParity = SPACEPARITY; break;
-			}
-		}
-		else
-		{
-			m_uParity = NOPARITY;
-		}
-
-		if (m_uCommandByte & CMD_ECHO_MODE)		// Receiver mode echo (0=no echo, 1=echo)
-		{
-		}
-
-		switch (m_uCommandByte & CMD_TX_MASK)	// transmitter interrupt control
-		{
-			// Note: the !RTS signal must be set 'low' in order to receive any
-			// incoming data from the serial device [Ref.1]
-			case CMD_TX_IRQ_DIS_RTS_HIGH:		// set RTS high and transmit no interrupts
-				m_bTxIrqEnabled = false;
-				m_uRTS = RTS_CONTROL_DISABLE;
-				break;
-			case CMD_TX_IRQ_ENA_RTS_LOW:		// set RTS low and transmit interrupts
-				m_bTxIrqEnabled = true;
-				m_uRTS = RTS_CONTROL_ENABLE;
-				break;
-			case CMD_TX_IRQ_DIS_RTS_LOW:		// set RTS low and transmit no interrupts
-				m_bTxIrqEnabled = false;
-				m_uRTS = RTS_CONTROL_ENABLE;
-				break;
-			case CMD_TX_IRQ_DIS_RTS_LOW_BRK:	// set RTS low and transmit break signals instead of interrupts
-				m_bTxIrqEnabled = false;
-				m_uRTS = RTS_CONTROL_ENABLE;
-				_ASSERT(0);
-				LogFileOutput("SSC: CommCommand(): unsupported TX mode. Command=0x%02X\n", m_uCommandByte);
-				break;
-		}
-
-		// interrupt request disable (0=enable receiver interrupts)
-		m_bRxIrqEnabled = (m_uCommandByte & CMD_RX_IRQ_DIS) == 0;
-
-		if (m_bCfgSupportDTR)	// GH#386
-		{
-			// Data Terminal Ready (DTR) setting (0=set DTR high (indicates 'not ready'))
-			m_uDTR = (m_uCommandByte & CMD_DTR) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
-		}
-
+		UpdateCommandReg(value);
 		UpdateCommState();
 	}
 
@@ -630,8 +629,15 @@ BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 
 	if (!m_qTcpSerialBuffer.empty())
 	{
+		// NB. See CommTcpSerialReceive() above, for a note explaining why there's no need for a critical section here
 		result = m_qTcpSerialBuffer.front();
 		m_qTcpSerialBuffer.pop_front();
+
+		if (m_bRxIrqEnabled && !m_qTcpSerialBuffer.empty())
+		{
+			CpuIrqAssert(IS_SSC);
+			m_vbRxIrqPending = true;
+		}
 	}
 	else if (m_hCommHandle != INVALID_HANDLE_VALUE)	// COM
 	{
@@ -652,7 +658,7 @@ BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 					uNewSSCIdx = uCOMIdx;
 				}
 
-				if (m_bRxIrqEnabled && !m_qComSerialBuffer[uNewSSCIdx].empty() && m_DIPSWCurrent.bInterrupts)
+				if (m_bRxIrqEnabled && !m_qComSerialBuffer[uNewSSCIdx].empty())
 				{
 					CpuIrqAssert(IS_SSC);
 					m_vbRxIrqPending = true;
@@ -671,7 +677,7 @@ void CSuperSerialCard::TransmitDone(void)
 {
 	m_vbTxEmpty = true;	// Transmit done
 
-	if (m_bTxIrqEnabled && m_DIPSWCurrent.bInterrupts)
+	if (m_bTxIrqEnabled)	// GH#522
 	{
 		CpuIrqAssert(IS_SSC);
 		m_vbTxIrqPending = true;
@@ -714,7 +720,7 @@ BYTE __stdcall CSuperSerialCard::CommTransmit(WORD, WORD, BYTE, BYTE value, ULON
 // 6551 ACIA Status Register ($C089+s0)
 // ------------------------------------
 // Bit 	Value 	Meaning
-// 7    1       Interrupt (IRQ) true (cleared by reading status reg [Ref.4])
+// 7    1       Interrupt (IRQ) true (cleared by reading status reg [Ref.3])
 // 6    0       Data Set Ready (DSR) true [0=DSR low (ready), 1=DSR high (not ready)]
 // 5    0       Data Carrier Detect (DCD) true [0=DCD low (detected), 1=DCD high (not detected)]
 // 4    1       Transmit register empty
@@ -1023,7 +1029,7 @@ void CSuperSerialCard::CheckCommEvent(DWORD dwEvtMask)
 				{
 					m_vuRxCurrBuffer = uSSCIdx;				// Flip buffers
 
-					if (m_bRxIrqEnabled && m_DIPSWCurrent.bInterrupts)
+					if (m_bRxIrqEnabled)
 					{
 						CpuIrqAssert(IS_SSC);
 						m_vbRxIrqPending = true;
@@ -1338,17 +1344,15 @@ void CSuperSerialCard::SetSnapshot_v1(	const DWORD  baudrate,
 										const BYTE   stopbits)
 {
 	m_uBaudRate			= baudrate;
+	m_uStopBits			= stopbits;
 	m_uByteSize			= bytesize;
-	m_uCommandByte		= commandbyte;
 //	m_dwCommInactivity	= comminactivity;	// Obsolete
 	m_uControlByte		= controlbyte;
-	m_uParity			= parity;
+//	m_uParity			= parity;			// Redundant: derived from commandbyte in UpdateCommandReg()
 //	memcpy(m_RecvBuffer, pSS->recvbuffer, uRecvBufferSize);
 //	m_vRecvBytes		= recvbytes;
-	m_uStopBits			= stopbits;
 
-	m_uDTR = (m_uCommandByte & CMD_DTR) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
-	m_uRTS = ((m_uCommandByte & CMD_TX_MASK) != CMD_TX_IRQ_DIS_RTS_HIGH) ? RTS_CONTROL_ENABLE : RTS_CONTROL_DISABLE;
+	UpdateCommandReg(commandbyte);
 }
 
 //===========================================================================
@@ -1403,12 +1407,12 @@ void CSuperSerialCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_BAUDRATE, m_uBaudRate);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_STOPBITS, m_uStopBits);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_BYTESIZE, m_uByteSize);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_PARITY, m_uParity);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PARITY, m_uParity);				// Redundant
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_CONTROL, m_uControlByte);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_COMMAND, m_uCommandByte);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, 0);	// Obsolete
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_TXIRQENABLED, m_bTxIrqEnabled);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_RXIRQENABLED, m_bRxIrqEnabled);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, 0);					// Obsolete
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_TXIRQENABLED, m_bTxIrqEnabled);	// Redundant
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_RXIRQENABLED, m_bRxIrqEnabled);	// Redundant
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_TXIRQPENDING, m_vbTxIrqPending);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_RXIRQPENDING, m_vbRxIrqPending);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITTENTX, m_vbTxEmpty);
@@ -1445,26 +1449,17 @@ bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, U
 	m_uBaudRate			= yamlLoadHelper.LoadUint(SS_YAML_KEY_BAUDRATE);
 	m_uStopBits			= yamlLoadHelper.LoadUint(SS_YAML_KEY_STOPBITS); 
 	m_uByteSize			= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTESIZE);
-	m_uParity			= yamlLoadHelper.LoadUint(SS_YAML_KEY_PARITY);
+						  yamlLoadHelper.LoadUint(SS_YAML_KEY_PARITY);			// Redundant: derived from uCommandByte in UpdateCommandReg()
 	m_uControlByte		= yamlLoadHelper.LoadUint(SS_YAML_KEY_CONTROL);
-	m_uCommandByte		= yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
+	UINT uCommandByte	= yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
 						  yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);		// Obsolete (so just consume)
-	m_bTxIrqEnabled		= yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQENABLED);	// Redundant: derived from m_uCommandByte below
-	m_bRxIrqEnabled		= yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQENABLED);	// Redundant: derived from m_uCommandByte below
+						  yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQENABLED);	// Redundant: derived from uCommandByte in UpdateCommandReg()
+						  yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQENABLED);	// Redundant: derived from uCommandByte in UpdateCommandReg()
 	m_vbTxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQPENDING);
 	m_vbRxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQPENDING);
 	m_vbTxEmpty			= yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITTENTX);
 
-	m_uDTR = (m_uCommandByte & CMD_DTR) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
-	m_uRTS = ((m_uCommandByte & CMD_TX_MASK) != CMD_TX_IRQ_DIS_RTS_HIGH) ? RTS_CONTROL_ENABLE : RTS_CONTROL_DISABLE;
-
-	const bool bTxIrq = (m_uCommandByte & CMD_TX_MASK) == CMD_TX_IRQ_ENA_RTS_LOW;
-	_ASSERT(m_bTxIrqEnabled == bTxIrq);
-	m_bTxIrqEnabled = bTxIrq;
-
-	const bool bRxIrq = (m_uCommandByte & CMD_RX_IRQ_DIS) == 0;
-	_ASSERT(m_bRxIrqEnabled == bRxIrq);
-	m_bRxIrqEnabled = bRxIrq;
+	UpdateCommandReg(uCommandByte);
 
 	std::string serialPortName = yamlLoadHelper.LoadString(SS_YAML_KEY_SERIALPORTNAME);
 	SetSerialPortName(serialPortName.c_str());
