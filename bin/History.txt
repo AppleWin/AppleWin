@@ -9,6 +9,16 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.27.2.0 - 12 Apr 2018
+----------------------
+. [Change #522] SSC: Support ACIA's TX Empty interrupt for both COM and TCP modes.
+. [Change #311] SSC: Support ACIA's CTS/RTS.
+. [Bug #308] Fixed TCP mode which was only generating an IRQ for first byte received.
+. SSC: Fixed reading DIPSW registers.
+. SSC: Support ACIA's Program Reset (write to register 9).
+. SSC: Improved logging for unsupported modes (Echo, Tx break signal).
+
+
 1.27.1.0 - 5 Apr 2018
 ---------------------
 . [Change #547] Improve UI and logging when PrintScreen key fails to register.
