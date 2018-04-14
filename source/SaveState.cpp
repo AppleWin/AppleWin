@@ -177,6 +177,7 @@ static void Snapshot_LoadState_v1()	// .aws v1.0.0.1, up to (and including) Appl
 		KeybReset();
 		VideoResetState();
 		MB_Reset();
+		sg_SSC.CommReset();
 
 		//
 		// Apple2 unit
@@ -499,6 +500,7 @@ static void Snapshot_LoadState_v2(void)
 		KeybReset();
 		VideoResetState();
 		MB_Reset();
+		sg_SSC.CommReset();
 #ifdef USE_SPEECH_API
 		g_Speech.Reset();
 #endif

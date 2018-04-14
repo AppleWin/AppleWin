@@ -28,6 +28,6 @@ void    JoySetSnapshot_v1(const unsigned __int64 JoyCntrResetCycle);
 void    JoySaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    JoyLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
-BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);

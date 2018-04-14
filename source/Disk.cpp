@@ -88,11 +88,7 @@ static UINT		g_uSlot = 0;
 static unsigned __int64 g_uDiskLastCycle = 0;
 static FormatTrack g_formatTrack;
 
-static void CheckSpinning(const ULONG nCyclesLeft);
 static bool IsDriveValid( const int iDrive );
-static void ReadTrack (int drive);
-static void RemoveDisk (int drive);
-static void WriteTrack (int drive);
 static LPCTSTR DiskGetFullPathName(const int iDrive);
 
 #define SPINNING_CYCLES (20000*64)		// 1280000 cycles = 1.25s
@@ -204,7 +200,7 @@ void Disk_SaveLastDiskImage(const int iDrive)
 //===========================================================================
 
 // Called by DiskControlMotor() & DiskEnable()
-static void CheckSpinning(const ULONG nCyclesLeft)
+static void CheckSpinning(const ULONG nExecutedCycles)
 {
 	DWORD modechange = (floppymotoron && !g_aFloppyDrive[currdrive].spinning);
 
@@ -217,7 +213,7 @@ static void CheckSpinning(const ULONG nCyclesLeft)
 	if (modechange)
 	{
 		// Set g_uDiskLastCycle when motor changes: not spinning (ie. off for 1 sec) -> on
-		CpuCalcCycles(nCyclesLeft);
+		CpuCalcCycles(nExecutedCycles);
 		g_uDiskLastCycle = g_nCumulativeCycles;
 	}
 }
@@ -276,7 +272,7 @@ static void ReadTrack(const int iDrive)
 
 	if (pDrive->track >= ImageGetNumTracks(pFloppy->imagehandle))
 	{
-		pFloppy->trackimagedata = 0;
+		pFloppy->trackimagedata = false;
 		return;
 	}
 
@@ -302,16 +298,6 @@ static void ReadTrack(const int iDrive)
 
 //===========================================================================
 
-void DiskFlushCurrentTrack(const int iDrive)
-{
-	Disk_t* pFloppy = &g_aFloppyDrive[iDrive].disk;
-
-	if (pFloppy->trackimage && pFloppy->trackimagedirty)
-		WriteTrack(iDrive);
-}
-
-//===========================================================================
-
 static void RemoveDisk(const int iDrive)
 {
 	Disk_t* pFloppy = &g_aFloppyDrive[iDrive].disk;
@@ -328,7 +314,7 @@ static void RemoveDisk(const int iDrive)
 	{
 		VirtualFree(pFloppy->trackimage, 0, MEM_RELEASE);
 		pFloppy->trackimage     = NULL;
-		pFloppy->trackimagedata = 0;
+		pFloppy->trackimagedata = false;
 	}
 
 	memset( pFloppy->imagename, 0, MAX_DISK_IMAGE_NAME+1 );
@@ -365,7 +351,15 @@ static void WriteTrack(const int iDrive)
 			pFloppy->nibbles);
 	}
 
-	pFloppy->trackimagedirty = 0;
+	pFloppy->trackimagedirty = false;
+}
+
+void DiskFlushCurrentTrack(const int iDrive)
+{
+	Disk_t* pFloppy = &g_aFloppyDrive[iDrive].disk;
+
+	if (pFloppy->trackimage && pFloppy->trackimagedirty)
+		WriteTrack(iDrive);
 }
 
 //
@@ -460,7 +454,7 @@ static void __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG u
 		{
 			DiskFlushCurrentTrack(currdrive);
 			pDrive->track = newtrack;
-			pFloppy->trackimagedata = 0;
+			pFloppy->trackimagedata = false;
 
 			g_formatTrack.DriveNotWritingTrack();
 		}
@@ -856,7 +850,7 @@ static bool LogWriteCheckSyncFF(ULONG& uCycleDelta)
 
 //===========================================================================
 
-static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	/* floppyloadmode = 0; */
 	Drive_t* pDrive = &g_aFloppyDrive[currdrive];
@@ -873,7 +867,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 
 	// Improve precision of "authentic" drive mode - GH#125
 	UINT uSpinNibbleCount = 0;
-	CpuCalcCycles(nCyclesLeft);	// g_nCumulativeCycles required for uSpinNibbleCount & LogWriteCheckSyncFF()
+	CpuCalcCycles(nExecutedCycles);	// g_nCumulativeCycles required for uSpinNibbleCount & LogWriteCheckSyncFF()
 
 	if (!enhancedisk && pDrive->spinning)
 	{
@@ -917,7 +911,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	else if (!pFloppy->bWriteProtected) // && floppywritemode
 	{
 		*(pFloppy->trackimage + pFloppy->byte) = floppylatch;
-		pFloppy->trackimagedirty = 1;
+		pFloppy->trackimagedirty = true;
 
 		bool bIsSyncFF = false;
 #if LOG_DISK_NIBBLES_WRITE
@@ -1127,7 +1121,7 @@ bool DiskDriveSwap(void)
 {
 	// Refuse to swap if either Disk][ is active
 	// TODO: if Shift-Click then FORCE drive swap to bypass message
-	if (g_aFloppyDrive[0].spinning || g_aFloppyDrive[1].spinning)
+	if (g_aFloppyDrive[DRIVE_1].spinning || g_aFloppyDrive[DRIVE_2].spinning)
 	{
 		// 1.26.2.4 Prompt when trying to swap disks while drive is on instead of silently failing
 		int status = MessageBox(
@@ -1157,9 +1151,16 @@ bool DiskDriveSwap(void)
 		}
 	}
 
+	DiskFlushCurrentTrack(DRIVE_1);
+	DiskFlushCurrentTrack(DRIVE_2);
+
 	// Swap disks between drives
 	// . NB. We swap trackimage ptrs (so don't need to swap the buffers' data)
-	std::swap(g_aFloppyDrive[0].disk, g_aFloppyDrive[1].disk);
+	std::swap(g_aFloppyDrive[DRIVE_1].disk, g_aFloppyDrive[DRIVE_2].disk);
+
+	// Invalidate the trackimage so that a read latch will re-read the track for the new floppy (GH#543)
+	g_aFloppyDrive[DRIVE_1].disk.trackimagedata = false;
+	g_aFloppyDrive[DRIVE_2].disk.trackimagedata = false;
 
 	Disk_SaveLastDiskImage(DRIVE_1);
 	Disk_SaveLastDiskImage(DRIVE_2);
@@ -1171,8 +1172,8 @@ bool DiskDriveSwap(void)
 
 //===========================================================================
 
-static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 // TODO: LoadRom_Disk_Floppy()
 void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
@@ -1211,55 +1212,55 @@ void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
 
 //===========================================================================
 
-static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	switch (addr & 0xF)
 	{
-	case 0x0:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x1:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x2:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x3:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x4:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x5:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x6:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x7:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x8:	DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x9:	DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xA:	DiskEnable(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xB:	DiskEnable(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xC:	DiskReadWrite(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xD:	DiskLoadWriteProtect(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xE:	DiskSetReadMode(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x0:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x1:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x2:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x3:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x4:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x5:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x6:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x7:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x8:	DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x9:	DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xA:	DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xB:	DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xC:	DiskReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xD:	DiskLoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xE:	DiskSetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
 	}
 
 	// only even addresses return the latch (UTAIIe Table 9.1)
 	if (!(addr & 1))
 		return floppylatch;
 	else
-		return MemReadFloatingBus(nCyclesLeft);
+		return MemReadFloatingBus(nExecutedCycles);
 }
 
-static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	switch (addr & 0xF)
 	{
-	case 0x0:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x1:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x2:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x3:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x4:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x5:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x6:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x7:	DiskControlStepper(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x8:	DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0x9:	DiskControlMotor(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xA:	DiskEnable(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xB:	DiskEnable(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xC:	DiskReadWrite(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xD:	DiskLoadWriteProtect(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xE:	DiskSetReadMode(pc, addr, bWrite, d, nCyclesLeft); break;
-	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nCyclesLeft); break;
+	case 0x0:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x1:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x2:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x3:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x4:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x5:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x6:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x7:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x8:	DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x9:	DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xA:	DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xB:	DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xC:	DiskReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xD:	DiskLoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xE:	DiskSetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
 	}
 
 	// any address writes the latch via sequencer LD command (74LS323 datasheet)
@@ -1347,8 +1348,8 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 
 		if(bImageError)
 		{
-			g_aFloppyDrive[i].disk.trackimagedata	= 0;
-			g_aFloppyDrive[i].disk.trackimagedirty	= 0;
+			g_aFloppyDrive[i].disk.trackimagedata	= false;
+			g_aFloppyDrive[i].disk.trackimagedirty	= false;
 			g_aFloppyDrive[i].disk.nibbles			= 0;
 		}
 	}
@@ -1505,8 +1506,8 @@ static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 
 	if (bImageError)
 	{
-		g_aFloppyDrive[unit].disk.trackimagedata	= 0;
-		g_aFloppyDrive[unit].disk.trackimagedirty	= 0;
+		g_aFloppyDrive[unit].disk.trackimagedata	= false;
+		g_aFloppyDrive[unit].disk.trackimagedirty	= false;
 		g_aFloppyDrive[unit].disk.nibbles			= 0;
 	}
 }

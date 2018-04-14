@@ -43,7 +43,6 @@ extern double     g_fCurrentCLK6502;
 extern int        g_nCpuCyclesFeedback;
 extern DWORD      g_dwCyclesThisFrame;
 
-extern FILE*      g_fh;				// Filehandle for log file
 extern bool       g_bDisableDirectInput;				// Cmd line switch: don't init DI (so no DIMouse support)
 extern bool       g_bDisableDirectSound;				// Cmd line switch: don't init DS (so no MB/Speaker support)
 extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't init MB support

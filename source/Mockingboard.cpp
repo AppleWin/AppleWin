@@ -1476,12 +1476,12 @@ void MB_Reset()
 
 //-----------------------------------------------------------------------------
 
-static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft)
+static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	MB_UpdateCycles(nCyclesLeft);
+	MB_UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
-	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
+	if(!IS_APPLE2 && MemCheckINTCXROM())
 	{
 		_ASSERT(0);	// Card ROM disabled, so IO_Cxxx() returns the internal ROM
 		return mem[nAddr];
@@ -1490,7 +1490,7 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 	if(g_SoundcardType == CT_Empty)
 	{
 		_ASSERT(0);	// Card unplugged, so IO_Cxxx() returns the floating bus
-		return MemReadFloatingBus(nCyclesLeft);
+		return MemReadFloatingBus(nExecutedCycles);
 	}
 #endif
 
@@ -1500,7 +1500,7 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 	if(g_bPhasorEnable)
 	{
 		if(nMB != 0)	// Slot4 only
-			return MemReadFloatingBus(nCyclesLeft);
+			return MemReadFloatingBus(nExecutedCycles);
 
 		int CS;
 		if(g_nPhasorMode & 1)
@@ -1524,7 +1524,7 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 			bAccessedDevice = true;
 		}
 
-		return bAccessedDevice ? nRes : MemReadFloatingBus(nCyclesLeft);
+		return bAccessedDevice ? nRes : MemReadFloatingBus(nExecutedCycles);
 	}
 
 	if(nOffset <= (SY6522A_Offset+0x0F))
@@ -1534,17 +1534,17 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 	else if((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x05)))
 		return SSI263_Read(nMB, nAddr&0xf);
 	else
-		return MemReadFloatingBus(nCyclesLeft);
+		return MemReadFloatingBus(nExecutedCycles);
 }
 
 //-----------------------------------------------------------------------------
 
-static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft)
+static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	MB_UpdateCycles(nCyclesLeft);
+	MB_UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
-	if(!IS_APPLE2 && !MemCheckSLOTCXROM())
+	if(!IS_APPLE2 && MemCheckINTCXROM())
 	{
 		_ASSERT(0);	// Card ROM disabled, so IO_Cxxx() returns the internal ROM
 		return 0;
@@ -1596,10 +1596,10 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 
 //-----------------------------------------------------------------------------
 
-static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nCyclesLeft)
+static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
 	if(!g_bPhasorEnable)
-		return MemReadFloatingBus(nCyclesLeft);
+		return MemReadFloatingBus(nExecutedCycles);
 
 	if(g_nPhasorMode < 2)
 		g_nPhasorMode = nAddr & 1;
@@ -1608,7 +1608,7 @@ static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 
 	AY8910_InitClock((int)(CLK_6502 * g_PhasorClockScaleFactor));
 
-	return MemReadFloatingBus(nCyclesLeft);
+	return MemReadFloatingBus(nExecutedCycles);
 }
 
 //-----------------------------------------------------------------------------

@@ -227,16 +227,18 @@ void VideoBenchmark () {
 
   // DETERMINE HOW MANY 65C02 CLOCK CYCLES WE CAN EMULATE PER SECOND WITH
   // NOTHING ELSE GOING ON
-  CpuSetupBenchmark();
-  DWORD totalmhz10 = 0;
-  milliseconds     = GetTickCount();
-  while (GetTickCount() == milliseconds) ;
-  milliseconds = GetTickCount();
-  cycle = 0;
-  do {
-    CpuExecute(100000, true);
-    totalmhz10++;
-  } while (GetTickCount() - milliseconds < 1000);
+  DWORD totalmhz10[2] = {0,0};	// bVideoUpdate & !bVideoUpdate
+  for (UINT i=0; i<2; i++)
+  {
+	  CpuSetupBenchmark();
+	  milliseconds = GetTickCount();
+	  while (GetTickCount() == milliseconds) ;
+	  milliseconds = GetTickCount();
+	  do {
+		  CpuExecute(100000, i==0 ? true : false);
+		totalmhz10[i]++;
+	  } while (GetTickCount() - milliseconds < 1000);
+  }
 
   // IF THE PROGRAM COUNTER IS NOT IN THE EXPECTED RANGE AT THE END OF THE
   // CPU BENCHMARK, REPORT AN ERROR AND OPTIONALLY TRACK IT DOWN
@@ -321,14 +323,14 @@ void VideoBenchmark () {
   TCHAR outstr[256];
   wsprintf(outstr,
            TEXT("Pure Video FPS:\t%u hires, %u text\n")
-           TEXT("Pure CPU MHz:\t%u.%u%s\n\n")
+           TEXT("Pure CPU MHz:\t%u.%u%s (video update)\n")
+           TEXT("Pure CPU MHz:\t%u.%u%s (full-speed)\n\n")
            TEXT("EXPECTED AVERAGE VIDEO GAME\n")
            TEXT("PERFORMANCE: %u FPS"),
            (unsigned)totalhiresfps,
            (unsigned)totaltextfps,
-           (unsigned)(totalmhz10/10),
-           (unsigned)(totalmhz10 % 10),
-           (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
+           (unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
+           (unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
            (unsigned)realisticfps);
   MessageBox(g_hFrameWindow,
              outstr,

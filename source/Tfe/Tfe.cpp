@@ -1510,12 +1510,12 @@ static BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, 
 	{
 		// Derived from UTAIIe:5-28
 		//
-		// SLOTCXROM SLOTC3ROM TFE floating bus?
-		//   1         0         N (internal ROM)
-		//   1         1         Y
+		// INTCXROM SLOTC3ROM TFE floating bus?
 		//   0         0         N (internal ROM)
-		//   0         1         N (internal ROM)
-		if (! (MemCheckSLOTCXROM() && MemCheckSLOTC3ROM()) )
+		//   0         1         Y
+		//   1         0         N (internal ROM)
+		//   1         1         N (internal ROM)
+		if (! (!MemCheckINTCXROM() && MemCheckSLOTC3ROM()) )
 		{
 			_ASSERT(0);	// Card ROM disabled, so IO_Cxxx() returns the internal ROM
 		}

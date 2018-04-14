@@ -1814,9 +1814,6 @@ LRESULT CALLBACK FrameWndProc (
 				case FD_READ:
 					sg_SSC.CommTcpSerialReceive();
 					break;
-
-				case FD_WRITE:
-					break;
 			}
 		}
 		break;
@@ -2174,19 +2171,27 @@ void ResetMachineState ()
 
 //===========================================================================
 
+/*
+ * In comments, UTAII is an abbreviation for a reference to "Understanding the Apple II" by James Sather
+ */
+
 // todo: consolidate CtrlReset() and ResetMachineState()
+// Ctrl+Reset - TODO: This is a terrible place for this code! Should be in AppleWin.cpp
 void CtrlReset()
 {
-	// Ctrl+Reset - TODO: This is a terrible place for this code!
-	if (!IS_APPLE2)			// TODO: Why not for A][ & A][+ too?
+	if (!IS_APPLE2)
+	{
+		// For A][ & A][+, reset doesn't reset the LC switches (UTAII:5-29) 
 		MemResetPaging();
+
+		// For A][ & A][+, reset doesn't reset the video mode (UTAII:4-4)
+		VideoResetState();	// Switch Alternate char set off
+	}
 
 	PravetsReset();
 	DiskReset();
 	HD_Reset();
 	KeybReset();
-	if (!IS_APPLE2)			// TODO: Why not for A][ & A][+ too?
-		VideoResetState();	// Switch Alternate char set off
 	sg_SSC.CommReset();
 	MB_Reset();
 	sg_Mouse.Reset();		// Deassert any pending IRQs - GH#514

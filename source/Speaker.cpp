@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Applewin.h"
 #include "CPU.h"
 #include "Frame.h"
+#include "Log.h"
 #include "Memory.h"
 #include "SoundCore.h"
 #include "Speaker.h"
@@ -372,7 +373,7 @@ static void UpdateSpkr()
 // Called by emulation code when Speaker I/O reg is accessed
 //
 
-BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
+BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
 {
   g_bSpkrToggleFlag = true;
 
@@ -390,7 +391,7 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
 
   if (soundtype == SOUND_WAVE)
   {
-	  CpuCalcCycles(nCyclesLeft);
+	  CpuCalcCycles(nExecutedCycles);
 
 	  UpdateSpkr();
 
@@ -406,7 +407,7 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nCyclesLeft)
         g_nSpeakerData = speakerDriveLevel;
   }
 
-  return MemReadFloatingBus(nCyclesLeft);
+  return MemReadFloatingBus(nExecutedCycles);
 }
 
 //=============================================================================

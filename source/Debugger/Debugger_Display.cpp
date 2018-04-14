@@ -2794,7 +2794,7 @@ void _DrawTriStateSoftSwitch( RECT & rect, int nAddress, int iDisplay, int iActi
 	else // Main Memory is active, or Bank # is not active
 	{
 		RECT temp = rect;
-		int iBank = (memmode & MF_BANK2)
+		int iBank = (GetMemMode() & MF_BANK2)
 			? 2
 			: 1
 			;
@@ -2858,9 +2858,9 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBankDisplay, int bg_defa
 	// 0 = RAM
 	// 1 = Bank 1
 	// 2 = Bank 2
-	bool bBankWritable = (memmode & MF_WRITERAM) ? 1 : 0;
-	int iBankActive    = (memmode & MF_HIGHRAM)
-		? (memmode & MF_BANK2)
+	bool bBankWritable = (GetMemMode() & MF_WRITERAM) ? 1 : 0;
+	int iBankActive    = (GetMemMode() & MF_HIGHRAM)
+		? (GetMemMode() & MF_BANK2)
 			? 2
 			: 1
 		: 0
@@ -2959,8 +2959,8 @@ void _DrawSoftSwitchMainAuxBanks( RECT & rect, int bg_default = BG_INFO )
 	int dx = 7 * w;
 
 	int  nAddress  = 0xC002;
-	bool bMainRead = (memmode & MF_AUXREAD)  ? true : false;
-	bool bAuxWrite = (memmode & MF_AUXWRITE) ? true : false;
+	bool bMainRead = (GetMemMode() & MF_AUXREAD)  ? true : false;
+	bool bAuxWrite = (GetMemMode() & MF_AUXWRITE) ? true : false;
 
 	temp.right = rect.left + dx;
 	_DrawSoftSwitch( temp, nAddress, !bMainRead, "R", "m", "x", NULL, BG_DATA_2 );

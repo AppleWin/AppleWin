@@ -10,7 +10,7 @@
 #define  MF_HIRES      0x00000040
 #define  MF_PAGE2      0x00000080
 #define  MF_SLOTC3ROM  0x00000100
-#define  MF_SLOTCXROM  0x00000200
+#define  MF_INTCXROM   0x00000200
 #define  MF_WRITERAM   0x00000400   // Language Card RAM is Write Enabled
 #define  MF_IMAGEMASK  0x000003F7
 
@@ -47,8 +47,7 @@ enum MemoryType_e
 	NUM_MEM_TYPE      = 3
 };
 
-// TODO-TC: Refactor codebase by renaming /nCyclesLeft/ to /uExecutedCycles/
-typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nCyclesLeft);
+typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nExecutedCycles);
 
 extern MemoryType_e	g_eMemType;
 
@@ -57,7 +56,6 @@ extern iofunction IOWrite[256];
 extern LPBYTE     memwrite[0x100];
 extern LPBYTE     mem;
 extern LPBYTE     memdirty;
-extern DWORD      memmode;
 
 #ifdef RAMWORKS
 const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB
@@ -74,11 +72,12 @@ void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 
 void    MemDestroy ();
 bool	MemCheckSLOTC3ROM();
-bool	MemCheckSLOTCXROM();
+bool	MemCheckINTCXROM();
 LPBYTE  MemGetAuxPtr(const WORD);
 LPBYTE  MemGetMainPtr(const WORD);
 LPBYTE  MemGetBankPtr(const UINT nBank);
 LPBYTE  MemGetCxRomPeripheral();
+DWORD   GetMemMode(void);
 bool    MemIsAddrCodeMemory(const USHORT addr);
 void    MemInitialize ();
 void    MemInitializeROM(void);
@@ -100,5 +99,5 @@ bool    MemLoadSnapshotAux(class YamlLoadHelper& yamlLoadHelper, UINT version);
 
 BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
-BYTE __stdcall MemCheckPaging (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
-BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft);
+BYTE __stdcall MemCheckPaging (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
