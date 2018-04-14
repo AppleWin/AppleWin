@@ -439,7 +439,7 @@ BYTE __stdcall CSuperSerialCard::SSC_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, B
 //===========================================================================
 
 // 6551 ACIA Command Register ($C08A+s0)
-// . EG. 0x09 = "no parity, enable IRQ" - b7:5(No parity), b4 (No echo), b3:1(Enable TX,RX IRQs), b0(DTR: Enable Rx/Tx) [Ref.2]
+// . EG. 0x09 = "no parity, enable IRQ" [Ref.2] - b7:5(No parity), b4 (No echo), b3:1(Enable TX,RX IRQs), b0(DTR: Enable receiver and all interrupts)
 enum {	CMD_PARITY_MASK				= 3<<6,
 		CMD_PARITY_ODD				= 0<<6,		// Odd parity
 		CMD_PARITY_EVEN				= 1<<6,		// Even parity
@@ -453,7 +453,7 @@ enum {	CMD_PARITY_MASK				= 3<<6,
 		CMD_TX_IRQ_DIS_RTS_LOW		= 2<<2,
 		CMD_TX_IRQ_DIS_RTS_LOW_BRK	= 3<<2,		// Transmit BRK
 		CMD_RX_IRQ_DIS				= 1<<1,		// 1=IRQ interrupt disabled
-		CMD_DTR						= 1<<0,		// Data Terminal Ready: 1=Enable Rx/Tx (!DTR low)
+		CMD_DTR						= 1<<0,		// Data Terminal Ready: Enable(1) or disable(0) receiver and all interrupts (!DTR low)
 };
 
 BYTE __stdcall CSuperSerialCard::CommProgramReset(WORD, WORD, BYTE, BYTE, ULONG)
@@ -513,7 +513,7 @@ void CSuperSerialCard::UpdateCommandReg(BYTE command)
 			break;
 	}
 
-	if (m_DIPSWCurrent.bInterrupts)
+	if (m_DIPSWCurrent.bInterrupts && m_uCommandByte & CMD_DTR)
 	{
 		m_bTxIrqEnabled = (m_uCommandByte & CMD_TX_MASK) == CMD_TX_IRQ_ENA_RTS_LOW;
 		m_bRxIrqEnabled = (m_uCommandByte & CMD_RX_IRQ_DIS) == 0;
@@ -630,6 +630,12 @@ BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 	if (!m_qTcpSerialBuffer.empty())
 	{
 		// NB. See CommTcpSerialReceive() above, for a note explaining why there's no need for a critical section here
+
+		// If receiver is disabled then transmitting device should not send data
+		// . For COM serial connection this is handled by DTR/DTS flow-control (which enables the receiver)
+		if ((m_uCommandByte & CMD_DTR) == 0)	// Receiver disable, so prevent receiving data
+			return 0;
+
 		result = m_qTcpSerialBuffer.front();
 		m_qTcpSerialBuffer.pop_front();
 
@@ -639,7 +645,7 @@ BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 			m_vbRxIrqPending = true;
 		}
 	}
-	else if (m_hCommHandle != INVALID_HANDLE_VALUE)	// COM
+	else if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
 		EnterCriticalSection(&m_CriticalSection);
 		{
@@ -687,6 +693,10 @@ void CSuperSerialCard::TransmitDone(void)
 BYTE __stdcall CSuperSerialCard::CommTransmit(WORD, WORD, BYTE, BYTE value, ULONG)
 {
 	if (!CheckComm())
+		return 0;
+
+	// If transmitter is disabled then: Is data just discarded or does it get transmitted if transmitter is later enabled?
+	if ((m_uCommandByte & CMD_TX_MASK) == CMD_TX_IRQ_DIS_RTS_HIGH)	// Transmitter disable, so just discard for now
 		return 0;
 
 	if (m_hCommAcceptSocket != INVALID_SOCKET)
@@ -744,11 +754,28 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	if (!CheckComm())
 		return ST_DSR | ST_DCD | ST_TX_EMPTY;
 
-	DWORD modemStatus = 0;
-	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))
+	static DWORD modemStatus = 0;
+	if (m_bCfgSupportDCD || m_bCfgSupportDSR)
 	{
-		// Do this outside of the critical section (don't know how long it takes)
-		GetCommModemStatus(m_hCommHandle, &modemStatus);	// Returns 0x30 = MS_DSR_ON|MS_CTS_ON
+		if (m_hCommHandle != INVALID_HANDLE_VALUE)
+		{
+			// Call GetCommModemStatus() outside of the critical section. For Win7-64: takes 1-2msecs!
+			static DWORD dwLastTimeGettingModemStatus = 0;
+			DWORD dwCurrTime = GetTickCount();
+			if (dwCurrTime - dwLastTimeGettingModemStatus > 8)		// Limit reading status to twice a 16.6ms video frame (arbitrary throttle limit)
+			{
+				// Only permit periodic reading, otherwise a tight 6502 polling loop can kill emulator performance!
+				GetCommModemStatus(m_hCommHandle, &modemStatus);	// Returns 0x30 = MS_DSR_ON|MS_CTS_ON
+				dwLastTimeGettingModemStatus = dwCurrTime;
+			}
+		}
+		else if (m_hCommListenSocket != INVALID_SOCKET)
+		{
+			if (m_hCommAcceptSocket != INVALID_SOCKET)
+				modemStatus = MS_RLSD_ON | MS_DSR_ON | MS_CTS_ON;
+			else
+				modemStatus = 0;
+		}
 	}
 
 	//
@@ -798,7 +825,7 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	BYTE uStatus =
 		  IRQ
 		| DSR
-		| DCD	// Need 0x00 to allow ZLink to start up
+		| DCD	// Need 0x00 (ie. DCD is active) to allow ZLink to start up
 		| TX_EMPTY
 		| RX_FULL;
 
@@ -861,6 +888,10 @@ BYTE __stdcall CSuperSerialCard::CommDipSw(WORD, WORD addr, BYTE, BYTE, ULONG)
 			DWORD modemStatus = 0;
 			if (GetCommModemStatus(m_hCommHandle, &modemStatus))
 				CTS = (modemStatus & MS_CTS_ON) ? 0 : 1;	// CTS is true when 0
+		}
+		else if (m_hCommListenSocket != INVALID_SOCKET)
+		{
+			CTS = (m_hCommAcceptSocket != INVALID_SOCKET) ? 0 : 1;
 		}
 
 		// SSC-54:

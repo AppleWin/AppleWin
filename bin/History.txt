@@ -9,6 +9,13 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.27.3.0 - 14 Apr 2018
+----------------------
+. [Bug #308] SSC: For TCP mode, support DSR, DCD & CTS status bits.
+. SSC: Now DTR must also be set to enable interrupts (in addition to the respective Tx/Rx interrupt bit).
+. SSC: When reading the Status register, throttle calls to GetCommModemStatus() to a maximum of once every 8ms.
+
+
 1.27.2.0 - 12 Apr 2018
 ----------------------
 . [Change #522] SSC: Support ACIA's TX Empty interrupt for both COM and TCP modes.
