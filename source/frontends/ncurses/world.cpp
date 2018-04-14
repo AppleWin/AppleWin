@@ -534,12 +534,12 @@ BYTE    KeybGetKeycode ()
   return 0;
 }
 
-BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
   return nextKey;
 }
 
-BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
   BYTE result = keyReady ? nextKey : 0;
   nextKey = 0;
@@ -548,12 +548,12 @@ BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyc
 
 // Speaker
 
-BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
-  CpuCalcCycles(nCyclesLeft);
+  CpuCalcCycles(uExecutedCycles);
 
   updateSpeaker();
   F += 1;
 
-  return MemReadFloatingBus(nCyclesLeft);
+  return MemReadFloatingBus(uExecutedCycles);
 }

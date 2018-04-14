@@ -111,13 +111,13 @@ void FrameRefreshStatus(int, bool)
 
 // Speaker
 
-BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
     Q_UNUSED(pc)
     Q_UNUSED(addr)
     Q_UNUSED(bWrite)
     Q_UNUSED(d)
-    Q_UNUSED(nCyclesLeft)
+    Q_UNUSED(uExecutedCycles)
     return 0;
 }
 

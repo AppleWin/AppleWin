@@ -433,24 +433,24 @@ BYTE    KeybGetKeycode ()
   return keyCode;
 }
 
-BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
     Q_UNUSED(pc)
     Q_UNUSED(addr)
     Q_UNUSED(bWrite)
     Q_UNUSED(d)
-    Q_UNUSED(nCyclesLeft)
+    Q_UNUSED(uExecutedCycles)
 
     return keyCode | (keyWaiting ? 0x80 : 0x00);
 }
 
-BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
     Q_UNUSED(pc)
     Q_UNUSED(addr)
     Q_UNUSED(bWrite)
     Q_UNUSED(d)
-    Q_UNUSED(nCyclesLeft)
+    Q_UNUSED(uExecutedCycles)
 
     keyWaiting = false;
     return keyCode;

@@ -34,7 +34,7 @@ Paddle::~Paddle()
 {
 }
 
-BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
   addr &= 0xFF;
   BOOL pressed = 0;
@@ -56,14 +56,14 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyc
     }
   }
 
-  return MemReadFloatingBus(pressed, nCyclesLeft);
+  return MemReadFloatingBus(pressed, uExecutedCycles);
 }
 
-BYTE __stdcall JoyReadPosition(WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+BYTE __stdcall JoyReadPosition(WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
   const int nJoyNum = (address & 2) ? 1 : 0;	// $C064..$C067
 
-  CpuCalcCycles(nCyclesLeft);
+  CpuCalcCycles(uExecutedCycles);
   BOOL nPdlCntrActive = 0;
 
   const std::shared_ptr<const Paddle> & paddle = Paddle::instance();
@@ -82,13 +82,13 @@ BYTE __stdcall JoyReadPosition(WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG
     }
   }
 
-  return MemReadFloatingBus(nPdlCntrActive, nCyclesLeft);
+  return MemReadFloatingBus(nPdlCntrActive, uExecutedCycles);
 }
 
-BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft)
+BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
-  CpuCalcCycles(nCyclesLeft);
+  CpuCalcCycles(uExecutedCycles);
   g_nJoyCntrResetCycle = g_nCumulativeCycles;
 
-  return MemReadFloatingBus(nCyclesLeft);
+  return MemReadFloatingBus(uExecutedCycles);
 }
