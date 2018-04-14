@@ -33,7 +33,6 @@ TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin exe
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
 const TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 bool      g_bRestart = false;
-FILE*		g_fh			= NULL;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 const short		SPKR_DATA_INIT = (short)0x8000;

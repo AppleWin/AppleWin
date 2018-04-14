@@ -96,6 +96,10 @@ CSuperSerialCard::~CSuperSerialCard()
 {
 }
 
+void CSuperSerialCard::CommReset()
+{
+}
+
 void CSuperSerialCard::CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 {
 }
