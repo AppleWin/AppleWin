@@ -1,6 +1,7 @@
 /*
+.13 Added: PROFILE LIST now shows how many clock cycles were executed.
 .12 GH-PR#480:
-    GH#462: Default to Shift+Left Click to toggle diasm columns
+    GH#462: Default to Shift+Left Click to toggle disasm columns
             Use 'disasm click <n>' to reconfigure this
     GH#473: Fixed bug caused by Util_MemoryTextFile, Line 51 not zero-terminating buffer by invalidating it.
     GH#476: Fixed off-by-one bug wrapping in debugger console
