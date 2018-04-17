@@ -1320,7 +1320,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleColorizePrint( sText, " Usage: <address | symbol | expression >" );
 			ConsoleBufferPush( "  Expression is one of: + - * / % ^ ~"  );
 			ConsoleBufferPush( " Output order is: Hex Bin Dec Char"     );
-			ConsoleBufferPush( "  Note: symbols take piority."          );
+			ConsoleBufferPush( "  Note: symbols take priority."         );
 			Help_Examples();
 			ConsoleBufferPush( "Note: #A (if you don't want the accumulator value)" );
 			ConsoleBufferPush( "Note: #F (if you don't want the flags value)"  );
