@@ -1326,6 +1326,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			Help_Examples();
 			ConsolePrintFormat( sText, "%s   CALC 5 + #A", CHC_EXAMPLE );
 			ConsolePrintFormat( sText, "%s   CALC 80 * 2", CHC_EXAMPLE );
+			ConsoleColorizePrint( sText, " See also: " CHC_COMMAND "HELP OP"          );
 			break;
 		case CMD_OUTPUT_ECHO:
 			ConsoleColorizePrint( sText, " Usage: string"    );
