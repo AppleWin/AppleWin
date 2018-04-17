@@ -899,7 +899,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsolePrintFormat( sText, "%s  G[G] C600 F000:FFFF", CHC_EXAMPLE );
 			break;
 		case CMD_JSR:
-			ConsoleColorizePrint( sText, " %sUsage%s: %s[symbol | address]" );
+			ConsoleColorizePrint( sText, " Usage: [symbol | address]" );
 			ConsoleBufferPush( "  Pushes PC on stack; calls the named subroutine." );
 			break;
 		case CMD_NOP:
