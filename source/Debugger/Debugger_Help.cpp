@@ -1321,9 +1321,9 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( "  Expression is one of: + - * / % ^ ~"  );
 			ConsoleBufferPush( " Output order is: Hex Bin Dec Char"     );
 			ConsoleBufferPush( "  Note: symbols take priority."         );
+			ConsoleBufferPush( "  Note: #A (if you don't want the accumulator value)" );
+			ConsoleBufferPush( "  Note: #F (if you don't want the flags value)"  );
 			Help_Examples();
-			ConsoleBufferPush( "Note: #A (if you don't want the accumulator value)" );
-			ConsoleBufferPush( "Note: #F (if you don't want the flags value)"  );
 			break;
 		case CMD_OUTPUT_ECHO:
 			ConsoleColorizePrint( sText, " Usage: string"    );
