@@ -1324,6 +1324,8 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush( "  Note: #A (if you don't want the accumulator value)" );
 			ConsoleBufferPush( "  Note: #F (if you don't want the flags value)"  );
 			Help_Examples();
+			ConsolePrintFormat( sText, "%s   CALC 5 + #A", CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s   CALC 80 * 2", CHC_EXAMPLE );
 			break;
 		case CMD_OUTPUT_ECHO:
 			ConsoleColorizePrint( sText, " Usage: string"    );
