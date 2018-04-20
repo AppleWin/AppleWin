@@ -1,6 +1,10 @@
 Requests (Wishlist):
 ====================
 
+- HELP CD: Document examples
+  Helps needs to list:
+     SEE: HELP PWD
+
 - Allow EQUs to be directly entered in
 
     Foo EQU $1234
@@ -134,6 +138,8 @@ Requests (Wishlist):
 
 Implemented:
 ============
+
+* [x] Debugger V2.9.0.14: Cycle Profiling, use PROFILE RESET, and PROFILE LIST.
 
 . DONE: v16.0.0.0 DEBUGGER: (use F7): RESET button to break into the Monitor (preserving memory).
 
