@@ -1,12 +1,31 @@
 Requests (Wishlist):
 ====================
 
-- 0:1 Doesn't work
+- Allow EQUs to be directly entered in
+
+    Foo EQU $1234
+
+   Need to check if we have 3 params, 2nd param is EQU, 3rd param is address
+
+- Fix BUG: 0:1 Doesn't work
   Work-around, use two hex digits for the address:
      00:1
 
 - Debugger: wildcard search support for symbols
    SYMBASIC MICRO*
+
+- Debugger:Ability to turn on/off alternative odd/even background coloring in disasm
+   DISASM ROWCOLOR 0
+   DISASM ROWCOLOR 0
+   Why? Default to a custom (black?) background, and then have ANALYSE color-code
+   the background line color to make it easier to visualize sections.
+   i.e. See BrkDown reverse engineering PDF -- TODO: Need link
+
+- Debugger: FUNC address:address
+   Markup function block, with alternating background colors
+
+      FUNC 300:31F
+      FUNC 320:33F
 
 - Debugger: Ability to hide Regs panel
    DISASM REGS 0 // Hide Regs and Breakpoints
