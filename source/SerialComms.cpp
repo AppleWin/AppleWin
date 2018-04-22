@@ -68,9 +68,7 @@ CSuperSerialCard::CSuperSerialCard() :
 	m_aySerialPortChoices(NULL),
 	m_uTCPChoiceItemIdx(0),
 	m_uSlot(0),
-	m_bCfgSupportDCD(false),
-	m_bCfgSupportDSR(false),
-	m_bCfgSupportDTR(false)
+	m_bCfgSupportDCD(false)
 {
 	memset(m_ayCurrentSerialPortName, 0, sizeof(m_ayCurrentSerialPortName));
 	m_dwSerialPortItem = 0;
@@ -119,6 +117,7 @@ void CSuperSerialCard::InternalReset()
 
 	m_uDTR = DTR_CONTROL_DISABLE;
 	m_uRTS = RTS_CONTROL_DISABLE;
+	m_dwModemStatus = m_kDefaultModemStatus;
 }
 
 CSuperSerialCard::~CSuperSerialCard()
@@ -524,11 +523,8 @@ void CSuperSerialCard::UpdateCommandReg(BYTE command)
 		m_bRxIrqEnabled = false;
 	}
 
-	if (m_bCfgSupportDTR)	// GH#386
-	{
-		// Data Terminal Ready (DTR) setting (0=set DTR high (indicates 'not ready'))
-		m_uDTR = (m_uCommandByte & CMD_DTR) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
-	}
+	// Data Terminal Ready (DTR) setting (0=set DTR high (indicates 'not ready')) (GH#386)
+	m_uDTR = (m_uCommandByte & CMD_DTR) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
 }
 
 BYTE __stdcall CSuperSerialCard::CommCommand(WORD, WORD, BYTE write, BYTE value, ULONG)
@@ -754,28 +750,20 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	if (!CheckComm())
 		return ST_DSR | ST_DCD | ST_TX_EMPTY;
 
-	static DWORD modemStatus = 0;
-	if (m_bCfgSupportDCD || m_bCfgSupportDSR)
+	DWORD modemStatus = m_kDefaultModemStatus;
+	if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
-		if (m_hCommHandle != INVALID_HANDLE_VALUE)
+		modemStatus = m_dwModemStatus;	// Take a copy of this volatile variable
+		if (!m_bCfgSupportDCD)			// Default: DSR state is mirrored to DCD (GH#553)
 		{
-			// Call GetCommModemStatus() outside of the critical section. For Win7-64: takes 1-2msecs!
-			static DWORD dwLastTimeGettingModemStatus = 0;
-			DWORD dwCurrTime = GetTickCount();
-			if (dwCurrTime - dwLastTimeGettingModemStatus > 8)		// Limit reading status to twice a 16.6ms video frame (arbitrary throttle limit)
-			{
-				// Only permit periodic reading, otherwise a tight 6502 polling loop can kill emulator performance!
-				GetCommModemStatus(m_hCommHandle, &modemStatus);	// Returns 0x30 = MS_DSR_ON|MS_CTS_ON
-				dwLastTimeGettingModemStatus = dwCurrTime;
-			}
+			modemStatus &= ~MS_RLSD_ON;
+			if (modemStatus & MS_DSR_ON)
+				modemStatus |= MS_RLSD_ON;
 		}
-		else if (m_hCommListenSocket != INVALID_SOCKET)
-		{
-			if (m_hCommAcceptSocket != INVALID_SOCKET)
-				modemStatus = MS_RLSD_ON | MS_DSR_ON | MS_CTS_ON;
-			else
-				modemStatus = 0;
-		}
+	}
+	else if (m_hCommListenSocket != INVALID_SOCKET && m_hCommAcceptSocket != INVALID_SOCKET)
+	{
+		modemStatus = MS_RLSD_ON | MS_DSR_ON | MS_CTS_ON;
 	}
 
 	//
@@ -803,17 +791,8 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 
 	//
 
-	BYTE DSR = 0;
-	BYTE DCD = 0;
-
-	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))	// GH#386
-	{
-		if (m_bCfgSupportDSR)
-			DSR = (modemStatus & MS_DSR_ON)	 ? 0x00 : ST_DSR;
-
-		if (m_bCfgSupportDCD)
-			DCD = (modemStatus & MS_RLSD_ON) ? 0x00 : ST_DCD;
-	}
+	BYTE DSR = (modemStatus & MS_DSR_ON)  ? 0x00 : ST_DSR;	// DSR is active low (see SY6551 datasheet) (GH#386)
+	BYTE DCD = (modemStatus & MS_RLSD_ON) ? 0x00 : ST_DCD;	// DCD is active low (see SY6551 datasheet) (GH#386)
 
 	//
 
@@ -825,7 +804,7 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	BYTE uStatus =
 		  IRQ
 		| DSR
-		| DCD	// Need 0x00 (ie. DCD is active) to allow ZLink to start up
+		| DCD
 		| TX_EMPTY
 		| RX_FULL;
 
@@ -882,17 +861,11 @@ BYTE __stdcall CSuperSerialCard::CommDipSw(WORD, WORD addr, BYTE, BYTE, ULONG)
 
 		BYTE SW2_5 = m_DIPSWCurrent.bLinefeed ? 0 : 1;					// SW2-5 (LF: yes-ON(0); no-OFF(1))
 
-		BYTE CTS = 0;	// GH#311
+		BYTE CTS = 1;	// Default to CTS being false. (Support CTS in DIPSW: GH#311)
 		if (CheckComm() && m_hCommHandle != INVALID_HANDLE_VALUE)
-		{
-			DWORD modemStatus = 0;
-			if (GetCommModemStatus(m_hCommHandle, &modemStatus))
-				CTS = (modemStatus & MS_CTS_ON) ? 0 : 1;	// CTS is true when 0
-		}
+			CTS = (m_dwModemStatus & MS_CTS_ON) ? 0 : 1;	// CTS active low (see SY6551 datasheet)
 		else if (m_hCommListenSocket != INVALID_SOCKET)
-		{
 			CTS = (m_hCommAcceptSocket != INVALID_SOCKET) ? 0 : 1;
-		}
 
 		// SSC-54:
 		sw =	SW2_1<<7 |	// b7 : SW2-1
@@ -1070,9 +1043,17 @@ void CSuperSerialCard::CheckCommEvent(DWORD dwEvtMask)
 			LeaveCriticalSection(&m_CriticalSection);
 		}
 	}
-	else if (dwEvtMask & EV_TXEMPTY)
+
+	if (dwEvtMask & EV_TXEMPTY)
 	{
 		TransmitDone();
+	}
+
+	if (dwEvtMask & (EV_RLSD|EV_DSR|EV_CTS))
+	{
+		// For Win7-64: takes 1-2msecs!
+		// Don't read from main emulation thread, otherwise a tight 6502 polling loop can kill emulator performance!
+		GetCommModemStatus(m_hCommHandle, const_cast<DWORD*>(&m_dwModemStatus));
 	}
 }
 
@@ -1081,8 +1062,7 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 	CSuperSerialCard* pSSC = (CSuperSerialCard*) lpParameter;
 	char szDbg[100];
 
-	BOOL bRes = SetCommMask(pSSC->m_hCommHandle, EV_TXEMPTY | EV_RXCHAR);
-//	BOOL bRes = SetCommMask(pSSC->m_hCommHandle, EV_RXCHAR);		// Just RX
+	BOOL bRes = SetCommMask(pSSC->m_hCommHandle, EV_RLSD | EV_DSR | EV_CTS | EV_TXEMPTY | EV_RXCHAR);
 	if (!bRes)
 	{
 		sprintf(szDbg, "SSC: CommThread(): SetCommMask() failed\n");
