@@ -63,15 +63,11 @@
 						i.e. 00:20 20 20 20 ... for page $20</li>
 		</ul>
 		-modem<br>
-		Shorthand for passing -dtr -dcd -dsr<br>
+		Shorthand for passing -dcd<br>
 		Use with GBBS Pro (or any other BBS package). See the <a href="http://www.callapple.org/documentation/books/gbbs-pro-2-2/">GBBS Pro 2.2</a> book from Call-A.P.P.L.E.
 		<br><br>
-		-dtr<br>
-		Support SSC's DTR (Data Terminal Ready) control bit<br><br>
 		-dcd<br>
-		Support SSC's DCD (Data Carrier Detect) status bit<br><br>
-		-dtr<br>
-		Support SSC's DSR (Data Set Ready) status bit<br><br>
+		For the SSC's 6551's Status register's DCD bit, use this switch to force AppleWin to use the state of the MS_RLSD_ON bit from GetCommModemStatus().<br><br>
 
 		<br>
 		<br>
