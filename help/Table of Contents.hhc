@@ -84,7 +84,11 @@
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Clock">
-			<param name="Local" value="Clock.html">
+			<param name="Local" value="clock.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Super Serial Card">
+			<param name="Local" value="card-ssc.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Uthernet network card">
