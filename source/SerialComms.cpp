@@ -47,11 +47,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define TCP_SERIAL_PORT 1977
 
-// Default: 19200-8-N-1
+// Default: 9600-8-N-1
 SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 {
 	// DIPSW1:
-	CBR_19200,
+	CBR_9600,		// Use 9600, as a 1MHz Apple II can only handle up to 9600 bps [Ref.1]
 	FWMODE_CIC,
 
 	// DIPSW2:
@@ -559,7 +559,7 @@ BYTE __stdcall CSuperSerialCard::CommControl(WORD, WORD, BYTE write, BYTE value,
 			// Plus running in "fast" mode) cannot handle 19.2 kbps, and even 9600
 			// bps on these machines requires either some highly optimised code or
 			// a decent buffer in the device being accessed.  The faster Apples
-			// have no difficulty with this speed, however.
+			// have no difficulty with this speed, however. [Ref.1]
 
 			case 0x00: m_uBaudRate = CBR_115200;	break;	// Internal clk: undoc'd 115.2K (or 16x external clock)
 			case 0x01: // fall through [50 bps]
