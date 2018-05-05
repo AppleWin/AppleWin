@@ -56,6 +56,8 @@
 #define OPEN_EXISTING 3
 #define CREATE_NEW 1
 
+#define CBR_9600 9600
+
 #define _T(x) x
 
 #define MoveMemory(Destination,Source,Length) memmove((Destination),(Source),(Length))
