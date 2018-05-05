@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,12);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,15);
 
 
 // Public _________________________________________________________________________________________
@@ -223,6 +223,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	ProfileOpcode_t g_aProfileOpcodes[ NUM_OPCODES ];
 	ProfileOpmode_t g_aProfileOpmodes[ NUM_OPMODES ];
+	unsigned __int64 g_nProfileBeginCycles = 0; // g_nCumulativeCycles // PROFILE RESET
 
 	TCHAR g_FileNameProfile[] = TEXT("Profile.txt"); // changed from .csv to .txt since Excel doesn't give import options.
 	int   g_nProfileLine = 0;
@@ -8386,7 +8387,15 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		, static_cast<unsigned int>(nOpmodeTotal) );
 	pText = ProfileLinePush();
 
-	sprintf( pText, "\n" );
+	sprintf( pText, "===================\n" );
+	pText = ProfileLinePush();
+
+	unsigned int cycles = static_cast<unsigned int>(g_nCumulativeCycles - g_nProfileBeginCycles);
+	sprintf( pText
+		, "Cycles: " DELIM "%s%9u\n"
+		, sSeperator2
+		, pColorNumber
+		, cycles );
 	pText = ProfileLinePush();
 }
 #undef DELIM
@@ -8409,6 +8418,8 @@ void ProfileReset()
 		g_aProfileOpmodes[ iOpmode ].m_iOpmode = iOpmode;
 		g_aProfileOpmodes[ iOpmode ].m_nCount = 0;
 	}
+
+	g_nProfileBeginCycles = g_nCumulativeCycles;
 }
 
 

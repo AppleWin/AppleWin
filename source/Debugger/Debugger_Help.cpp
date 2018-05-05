@@ -899,7 +899,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsolePrintFormat( sText, "%s  G[G] C600 F000:FFFF", CHC_EXAMPLE );
 			break;
 		case CMD_JSR:
-			ConsoleColorizePrint( sText, " %sUsage%s: %s[symbol | address]" );
+			ConsoleColorizePrint( sText, " Usage: [symbol | address]" );
 			ConsoleBufferPush( "  Pushes PC on stack; calls the named subroutine." );
 			break;
 		case CMD_NOP:
@@ -1318,12 +1318,15 @@ Update_t CmdHelpSpecific (int nArgs)
 	// Output
 		case CMD_OUTPUT_CALC:
 			ConsoleColorizePrint( sText, " Usage: <address | symbol | expression >" );
-			ConsoleBufferPush( "  Expression is one of: + - * / % ^ ~"  );
+			ConsoleBufferPush( "  Operator is one of: + - * / % ^ ~"    );
 			ConsoleBufferPush( " Output order is: Hex Bin Dec Char"     );
-			ConsoleBufferPush( "  Note: symbols take piority."          );
+			ConsoleBufferPush( "  Note: symbols take priority."         );
+			ConsoleBufferPush( "  Note: #A (if you don't want the accumulator value)" );
+			ConsoleBufferPush( "  Note: #F (if you don't want the flags value)"  );
 			Help_Examples();
-			ConsoleBufferPush( "Note: #A (if you don't want the accumulator value)" );
-			ConsoleBufferPush( "Note: #F (if you don't want the flags value)"  );
+			ConsolePrintFormat( sText, "%s   CALC 5 + #A", CHC_EXAMPLE );
+			ConsolePrintFormat( sText, "%s   CALC 80 * 2", CHC_EXAMPLE );
+			ConsoleColorizePrint( sText, " See also: " CHC_COMMAND "HELP OP"          );
 			break;
 		case CMD_OUTPUT_ECHO:
 			ConsoleColorizePrint( sText, " Usage: string"    );

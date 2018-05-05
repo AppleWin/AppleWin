@@ -1,0 +1,195 @@
+Requests (Wishlist):
+====================
+
+- HELP CD: Document examples
+  Helps needs to list:
+     SEE: HELP PWD
+
+- Allow EQUs to be directly entered in
+
+    Foo EQU $1234
+
+   Need to check if we have 3 params, 2nd param is EQU, 3rd param is address
+
+- Fix BUG: 0:1 Doesn't work
+  Work-around, use two hex digits for the address:
+     00:1
+
+- Debugger: wildcard search support for symbols
+   SYMBASIC MICRO*
+
+- Debugger:Ability to turn on/off alternative odd/even background coloring in disasm
+   DISASM ROWCOLOR 0
+   DISASM ROWCOLOR 0
+   Why? Default to a custom (black?) background, and then have ANALYSE color-code
+   the background line color to make it easier to visualize sections.
+   i.e. See BrkDown reverse engineering PDF -- TODO: Need link
+
+- Debugger: FUNC address:address
+   Markup function block, with alternating background colors
+
+      FUNC 300:31F
+      FUNC 320:33F
+
+- Debugger: Ability to hide Regs panel
+   DISASM REGS 0 // Hide Regs and Breakpoints
+   DISASM REGS 1 // Show Regs only
+   DISASM REGS 2 // Show Breakpoints only
+   DISASM REGS 3 // Show Regs and Breakpoints (DEFAULT)
+
+- Debugger: SPRITE <ADDR> <WIDTH> <HEIGHT> [SPAN]
+
+- Debugger: HGRX <addr> 
+    view address as HGR
+    i.e. HGRX 6000
+    i.e. HGRX 8000
+
+- Debugger: Color code commands in light blue
+  Currently, everything is in white, making it hard to see input and output
+
+- Debugger: Command history
+   Once any non-whitespace character has been entered, Up arrow and Down arrow
+   should scroll through prev and next command history respectively
+
+- Debugger: Command line editing
+   Left Arrow   Move Cursor Left
+   Right Arrow  Move Cursor Right
+   Ctrl-A       Beginning of Line
+   Ctrl-D       Delete Character
+   Ctrl-E       End of Line
+
+- Debugger: List symbol table
+   SYMASM   LIST
+   SYMUSER1 LIST
+
+- Debugger: Document: Add help example to list all symbol tables
+    HELP SYMMAIN
+        SYMMAIN *
+
+- Debugger: Markup Byte with C_ prefix instead of B_
+        DB 123
+    Will auto-generate symbol in SYMASM
+        B_123
+    This should be:
+        G_123
+
+- Debugger: ANALYSE <range>
+   Utility to help in automatic disassembly.
+   Like "Sourcer" or "BrkDown"
+   Automatically markup labels for 
+      * JSR
+      * JMP
+      * RTS
+      * Branches
+      * LD? abs
+      * LD? abs,X
+      * LD? abs,Y
+      * etc.
+   Should respect existing `X <range>` as data
+
+   Auto-generated labels:
+
+         B_#### = Branch target address
+         F_#### = Function (or F_, or J_, or L_), new command: DF
+         G_#### = Global Byte
+         P_#### = Pointer
+         R_#### = Function return
+	 Z_##   = Zero Page
+
+   Don't know how to generate:
+         A_#### = Data Address
+         W_#### = Data Word
+
+- Debugger: Document: SYMASM and SYMUSER differences
+    SYMASM   data symbols placed here via DB Foo = 100
+    SYMUSER  func symbols placed here via SYM Bar = 200
+
+- Debugger: Symbol tables for DOS 3.3 and ProDOS
+   SYMUSER2 -> SYMDOS33
+   SYMSOURCE2 -> SYMPRODOS
+
+- Debugger: Autoexec !
+   .AWD = Microsoft Fax
+   .A2D = Apple 2 Debug
+   .AW2 = AppleWin Disk = icon of app, disk image(s)
+
+   RUN AppleWin.a2d // Official AppleWin Supplied Debug Config
+   RUN Debugger.a2d // User supplied AppleWin Debug Config
+
+- Debugger: Custom Soft switches
+
+   SOFT CLEAR
+   SOFT ADD C050
+   SOFT ADD 50
+   SOFT LIST
+   SOFT LOAD
+   SOFT SAVE
+
+- New Debugger features:
+  > 1 SCR shows what the Apple monitor should look like at the current point
+  > 2 MDS same as ME but shows strings (ie "ABC" instead of "c1 c2 c3"
+  > 3 TS    text search (and may be a hex search function too ?"
+
+- Incorporate Laine Houghton's modifications to debugger (?)
+
+- Source level debugging using WordPad & Merlin asm output (tell WordPad to FIND / GOTO line).
+
+
+
+Implemented:
+============
+
+* [x] Debugger V2.9.0.14: Cycle Profiling, use PROFILE RESET, and PROFILE LIST.
+
+. DONE: v16.0.0.0 DEBUGGER: (use F7): RESET button to break into the Monitor (preserving memory).
+
+. DONE: v16.0.0.0: DEBUGGER: Ability to search and modify for a value in memory in order to cheat in some games.
+
+. DONE: v16.0.0.0: DEBUGGER: Hex search in debugger
+
+* [x] Version: ?
+  Debugger: Turn off target columns in dis-assembly
+  Use:
+    DISASM TARGET 0 // off
+    DISASM TARGET 1 // show target byte
+    DISASM TARGET 2 // show target address
+    DISASM TARGET 3 // Show target address and byte (DEFAULT)
+
+. Debugger: BLOAD with no arguments should print current save path
+. Debugger: FIX BLOAD with bad path!! (should use path of last disk load!)
+. Debugger: FIX BSAVE with bad path!! (should use path of last disk load!)
+. Debugger: merlin "filename",S6,D1
+. Debugger: COLOR RESET
+. Debugger: COLOR SAVE ["filename"]
+. Debugger: COLOR LOAD ["filename"]
+
+. DONE: help f
+. DONE: help m
+. DONE: BC:##
+. DONE: BD:##
+. DONE: BE:##
+. DONE: help f
+. DONE: help m
+. DONE: EA:##
+. DONE: E8:##
+. DONE: a:##
+. DONE: d:##
+. DONE: Debugger 2.6.1.19: ADD: AppleSoft symbols to Symbol Table
+
+. DONE: v16.0.0.0: Video: PrintScreen (save to disk with auto file numbering.)
+. DONE: v16.0.0.0: Debugger: TEXT show current 40-col text page
+. DONE: v16.0.0.0: Debugger: TEXT80 show current 80-col text page
+. DONE: v16.0.0.0: Debugger: GR show current lo-res graphics page
+. DONE: v16.0.0.0: Debugger: HGR show current hi-res graphis page
+. DONE: v16.0.0.0: Debugger: DGR show current double hi-res graphics page
+. DONE: v16.0.0.0: Debugger: TEXT1 Show 40 Column Text Page 1
+. DONE: v16.0.0.0: Debugger: TEXT2 Show 40 Column Text Page 2
+. DONE: v16.0.0.0: Debugger: TEXT81 1 Show 40 Column Text Page 1
+. DONE: v16.0.0.0: Debugger: TEXT82 2 Show 40 Column Text Page 1
+. DONE: v16.0.0.0: Debugger: HGR1 show Hi-Res Page 1
+. DONE: v16.0.0.0: Debugger: HGR2 show Hi-Res Page 2 
+. DONE: v16.0.0.0: Debugger: DHGR1 show Double Hi-Res Page 1
+. DONE: v16.0.0.0: Debugger: DHGR2 show Double Hi-Res Page 2 
+. DONE: Debugger: shift+ins to paste from clipboard (use Ctrl-V to paste.)
+
+

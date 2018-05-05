@@ -47,11 +47,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define TCP_SERIAL_PORT 1977
 
-// Default: 19200-8-N-1
+// Default: 9600-8-N-1
 SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 {
 	// DIPSW1:
-	CBR_19200,
+	CBR_9600,		// Use 9600, as a 1MHz Apple II can only handle up to 9600 bps [Ref.1]
 	FWMODE_CIC,
 
 	// DIPSW2:
@@ -68,9 +68,7 @@ CSuperSerialCard::CSuperSerialCard() :
 	m_aySerialPortChoices(NULL),
 	m_uTCPChoiceItemIdx(0),
 	m_uSlot(0),
-	m_bCfgSupportDCD(false),
-	m_bCfgSupportDSR(false),
-	m_bCfgSupportDTR(false)
+	m_bCfgSupportDCD(false)
 {
 	memset(m_ayCurrentSerialPortName, 0, sizeof(m_ayCurrentSerialPortName));
 	m_dwSerialPortItem = 0;
@@ -100,7 +98,7 @@ void CSuperSerialCard::InternalReset()
 	// . NB. MOS6551 datasheet: Hardware reset: b#00000010 (so ACIA not init'd on IN#2!)
 	UpdateCommandReg(0);
 
-	m_uBaudRate	= CBR_19200;	// Undefined, as CONTROL.CLK_SOURCE=0=External clock is not supported for SSC - so nominally use 19200
+	m_uBaudRate	= m_kDefaultBaudRate;	// Undefined, as CONTROL.CLK_SOURCE=0=External clock is not supported for SSC - so nominally AppleWin default
 	m_uStopBits	= ONESTOPBIT;
 	m_uByteSize	= 8;
 	m_uParity	= NOPARITY;
@@ -119,6 +117,7 @@ void CSuperSerialCard::InternalReset()
 
 	m_uDTR = DTR_CONTROL_DISABLE;
 	m_uRTS = RTS_CONTROL_DISABLE;
+	m_dwModemStatus = m_kDefaultModemStatus;
 }
 
 CSuperSerialCard::~CSuperSerialCard()
@@ -172,7 +171,7 @@ UINT CSuperSerialCard::BaudRateToIndex(UINT uBaudRate)
 
 	_ASSERT(0);
 	LogFileOutput("SSC: BaudRateToIndex(): unsupported rate: %d\n", uBaudRate);
-	return BaudRateToIndex(CBR_19200);	// nominally use 19200
+	return BaudRateToIndex(m_kDefaultBaudRate);	// nominally use AppleWin default
 }
 
 //===========================================================================
@@ -439,7 +438,7 @@ BYTE __stdcall CSuperSerialCard::SSC_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, B
 //===========================================================================
 
 // 6551 ACIA Command Register ($C08A+s0)
-// . EG. 0x09 = "no parity, enable IRQ" - b7:5(No parity), b4 (No echo), b3:1(Enable TX,RX IRQs), b0(DTR: Enable Rx/Tx) [Ref.2]
+// . EG. 0x09 = "no parity, enable IRQ" [Ref.2] - b7:5(No parity), b4 (No echo), b3:1(Enable TX,RX IRQs), b0(DTR: Enable receiver and all interrupts)
 enum {	CMD_PARITY_MASK				= 3<<6,
 		CMD_PARITY_ODD				= 0<<6,		// Odd parity
 		CMD_PARITY_EVEN				= 1<<6,		// Even parity
@@ -453,7 +452,7 @@ enum {	CMD_PARITY_MASK				= 3<<6,
 		CMD_TX_IRQ_DIS_RTS_LOW		= 2<<2,
 		CMD_TX_IRQ_DIS_RTS_LOW_BRK	= 3<<2,		// Transmit BRK
 		CMD_RX_IRQ_DIS				= 1<<1,		// 1=IRQ interrupt disabled
-		CMD_DTR						= 1<<0,		// Data Terminal Ready: 1=Enable Rx/Tx (!DTR low)
+		CMD_DTR						= 1<<0,		// Data Terminal Ready: Enable(1) or disable(0) receiver and all interrupts (!DTR low)
 };
 
 BYTE __stdcall CSuperSerialCard::CommProgramReset(WORD, WORD, BYTE, BYTE, ULONG)
@@ -513,7 +512,7 @@ void CSuperSerialCard::UpdateCommandReg(BYTE command)
 			break;
 	}
 
-	if (m_DIPSWCurrent.bInterrupts)
+	if (m_DIPSWCurrent.bInterrupts && m_uCommandByte & CMD_DTR)
 	{
 		m_bTxIrqEnabled = (m_uCommandByte & CMD_TX_MASK) == CMD_TX_IRQ_ENA_RTS_LOW;
 		m_bRxIrqEnabled = (m_uCommandByte & CMD_RX_IRQ_DIS) == 0;
@@ -524,11 +523,8 @@ void CSuperSerialCard::UpdateCommandReg(BYTE command)
 		m_bRxIrqEnabled = false;
 	}
 
-	if (m_bCfgSupportDTR)	// GH#386
-	{
-		// Data Terminal Ready (DTR) setting (0=set DTR high (indicates 'not ready'))
-		m_uDTR = (m_uCommandByte & CMD_DTR) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
-	}
+	// Data Terminal Ready (DTR) setting (0=set DTR high (indicates 'not ready')) (GH#386)
+	m_uDTR = (m_uCommandByte & CMD_DTR) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
 }
 
 BYTE __stdcall CSuperSerialCard::CommCommand(WORD, WORD, BYTE write, BYTE value, ULONG)
@@ -563,7 +559,7 @@ BYTE __stdcall CSuperSerialCard::CommControl(WORD, WORD, BYTE write, BYTE value,
 			// Plus running in "fast" mode) cannot handle 19.2 kbps, and even 9600
 			// bps on these machines requires either some highly optimised code or
 			// a decent buffer in the device being accessed.  The faster Apples
-			// have no difficulty with this speed, however.
+			// have no difficulty with this speed, however. [Ref.1]
 
 			case 0x00: m_uBaudRate = CBR_115200;	break;	// Internal clk: undoc'd 115.2K (or 16x external clock)
 			case 0x01: // fall through [50 bps]
@@ -630,6 +626,12 @@ BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 	if (!m_qTcpSerialBuffer.empty())
 	{
 		// NB. See CommTcpSerialReceive() above, for a note explaining why there's no need for a critical section here
+
+		// If receiver is disabled then transmitting device should not send data
+		// . For COM serial connection this is handled by DTR/DTS flow-control (which enables the receiver)
+		if ((m_uCommandByte & CMD_DTR) == 0)	// Receiver disable, so prevent receiving data
+			return 0;
+
 		result = m_qTcpSerialBuffer.front();
 		m_qTcpSerialBuffer.pop_front();
 
@@ -639,7 +641,7 @@ BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 			m_vbRxIrqPending = true;
 		}
 	}
-	else if (m_hCommHandle != INVALID_HANDLE_VALUE)	// COM
+	else if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
 		EnterCriticalSection(&m_CriticalSection);
 		{
@@ -687,6 +689,10 @@ void CSuperSerialCard::TransmitDone(void)
 BYTE __stdcall CSuperSerialCard::CommTransmit(WORD, WORD, BYTE, BYTE value, ULONG)
 {
 	if (!CheckComm())
+		return 0;
+
+	// If transmitter is disabled then: Is data just discarded or does it get transmitted if transmitter is later enabled?
+	if ((m_uCommandByte & CMD_TX_MASK) == CMD_TX_IRQ_DIS_RTS_HIGH)	// Transmitter disable, so just discard for now
 		return 0;
 
 	if (m_hCommAcceptSocket != INVALID_SOCKET)
@@ -744,11 +750,20 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	if (!CheckComm())
 		return ST_DSR | ST_DCD | ST_TX_EMPTY;
 
-	DWORD modemStatus = 0;
-	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))
+	DWORD modemStatus = m_kDefaultModemStatus;
+	if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
-		// Do this outside of the critical section (don't know how long it takes)
-		GetCommModemStatus(m_hCommHandle, &modemStatus);	// Returns 0x30 = MS_DSR_ON|MS_CTS_ON
+		modemStatus = m_dwModemStatus;	// Take a copy of this volatile variable
+		if (!m_bCfgSupportDCD)			// Default: DSR state is mirrored to DCD (GH#553)
+		{
+			modemStatus &= ~MS_RLSD_ON;
+			if (modemStatus & MS_DSR_ON)
+				modemStatus |= MS_RLSD_ON;
+		}
+	}
+	else if (m_hCommListenSocket != INVALID_SOCKET && m_hCommAcceptSocket != INVALID_SOCKET)
+	{
+		modemStatus = MS_RLSD_ON | MS_DSR_ON | MS_CTS_ON;
 	}
 
 	//
@@ -776,17 +791,8 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 
 	//
 
-	BYTE DSR = 0;
-	BYTE DCD = 0;
-
-	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))	// GH#386
-	{
-		if (m_bCfgSupportDSR)
-			DSR = (modemStatus & MS_DSR_ON)	 ? 0x00 : ST_DSR;
-
-		if (m_bCfgSupportDCD)
-			DCD = (modemStatus & MS_RLSD_ON) ? 0x00 : ST_DCD;
-	}
+	BYTE DSR = (modemStatus & MS_DSR_ON)  ? 0x00 : ST_DSR;	// DSR is active low (see SY6551 datasheet) (GH#386)
+	BYTE DCD = (modemStatus & MS_RLSD_ON) ? 0x00 : ST_DCD;	// DCD is active low (see SY6551 datasheet) (GH#386)
 
 	//
 
@@ -798,7 +804,7 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	BYTE uStatus =
 		  IRQ
 		| DSR
-		| DCD	// Need 0x00 to allow ZLink to start up
+		| DCD
 		| TX_EMPTY
 		| RX_FULL;
 
@@ -855,13 +861,11 @@ BYTE __stdcall CSuperSerialCard::CommDipSw(WORD, WORD addr, BYTE, BYTE, ULONG)
 
 		BYTE SW2_5 = m_DIPSWCurrent.bLinefeed ? 0 : 1;					// SW2-5 (LF: yes-ON(0); no-OFF(1))
 
-		BYTE CTS = 0;	// GH#311
+		BYTE CTS = 1;	// Default to CTS being false. (Support CTS in DIPSW: GH#311)
 		if (CheckComm() && m_hCommHandle != INVALID_HANDLE_VALUE)
-		{
-			DWORD modemStatus = 0;
-			if (GetCommModemStatus(m_hCommHandle, &modemStatus))
-				CTS = (modemStatus & MS_CTS_ON) ? 0 : 1;	// CTS is true when 0
-		}
+			CTS = (m_dwModemStatus & MS_CTS_ON) ? 0 : 1;	// CTS active low (see SY6551 datasheet)
+		else if (m_hCommListenSocket != INVALID_SOCKET)
+			CTS = (m_hCommAcceptSocket != INVALID_SOCKET) ? 0 : 1;
 
 		// SSC-54:
 		sw =	SW2_1<<7 |	// b7 : SW2-1
@@ -1039,9 +1043,17 @@ void CSuperSerialCard::CheckCommEvent(DWORD dwEvtMask)
 			LeaveCriticalSection(&m_CriticalSection);
 		}
 	}
-	else if (dwEvtMask & EV_TXEMPTY)
+
+	if (dwEvtMask & EV_TXEMPTY)
 	{
 		TransmitDone();
+	}
+
+	if (dwEvtMask & (EV_RLSD|EV_DSR|EV_CTS))
+	{
+		// For Win7-64: takes 1-2msecs!
+		// Don't read from main emulation thread, otherwise a tight 6502 polling loop can kill emulator performance!
+		GetCommModemStatus(m_hCommHandle, const_cast<DWORD*>(&m_dwModemStatus));
 	}
 }
 
@@ -1050,8 +1062,7 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 	CSuperSerialCard* pSSC = (CSuperSerialCard*) lpParameter;
 	char szDbg[100];
 
-	BOOL bRes = SetCommMask(pSSC->m_hCommHandle, EV_TXEMPTY | EV_RXCHAR);
-//	BOOL bRes = SetCommMask(pSSC->m_hCommHandle, EV_RXCHAR);		// Just RX
+	BOOL bRes = SetCommMask(pSSC->m_hCommHandle, EV_RLSD | EV_DSR | EV_CTS | EV_TXEMPTY | EV_RXCHAR);
 	if (!bRes)
 	{
 		sprintf(szDbg, "SSC: CommThread(): SetCommMask() failed\n");

@@ -1210,23 +1210,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			g_bMultiMon = true;
 		}
-		else if (strcmp(lpCmdLine, "-dcd") == 0)	// GH#386
+		else if ((strcmp(lpCmdLine, "-dcd") == 0) || (strcmp(lpCmdLine, "-modem") == 0))	// GH#386
 		{
 			sg_SSC.SupportDCD(true);
-		}
-		else if (strcmp(lpCmdLine, "-dsr") == 0)	// GH#386
-		{
-			sg_SSC.SupportDSR(true);
-		}
-		else if (strcmp(lpCmdLine, "-dtr") == 0)	// GH#386
-		{
-			sg_SSC.SupportDTR(true);
-		}
-		else if (strcmp(lpCmdLine, "-modem") == 0)	// GH#386
-		{
-			sg_SSC.SupportDCD(true);
-			sg_SSC.SupportDSR(true);
-			sg_SSC.SupportDTR(true);
 		}
 		else	// unsupported
 		{

@@ -1,36 +1,12 @@
 Requests (Wishlist):
 ====================
 
-- Debugger: Symbol tables for DOS 3.3 and ProDOS
-   SYMUSER2 -> SYMDOS33
-   SYMSOURCE2 -> SYMPRODOS
-
-- Debugger: Autoexec !
-   .AWD = Microsoft Fax
-   .A2D = Apple 2 Debug
-   .AW2 = AppleWin Disk = icon of app, disk image(s)
-
-   RUN AppleWin.a2d // Official AppleWin Supplied Debug Config
-   RUN Debugger.a2d // User supplied AppleWin Debug Config
-
-- Debugger: Custom Soft switches
-
-   SOFT CLEAR
-   SOFT ADD C050
-   SOFT ADD 50
-   SOFT LIST
-   SOFT LOAD
-   SOFT SAVE
-
 . DONE
   Hard Disk light/indicator
   Right now the  "- Caps" in the bottom right wastes too much space.
   It should be replace with [A] and [a]
   This would free up room to add a hard drive light indicator to the right.
  https://groups.google.com/d/msg/comp.emulators.apple2/grpSWHii8Ak/IorwTvbLxtgJ
-
-. Debugger: wildcard search support for symbols
-   SYMBASIC MICRO*
 
 . Video: Full Screen Debugger Colors
   Amber, F7, F7 - wrong palette?
@@ -40,43 +16,6 @@ Requests (Wishlist):
 
 - Disk map!!!
  http://www.lazilong.com/apple_II/adfs/screenshots/beagle_block.html
-
-. Debugger: BLOAD with no arguments should print current save path
-. Debugger: FIX BLOAD with bad path!! (should use path of last disk load!)
-. Debugger: FIX BSAVE with bad path!! (should use path of last disk load!)
-. Debugger: merlin "filename",S6,D1
-. Debugger: COLOR RESET
-. Debugger: COLOR SAVE ["filename"]
-. Debugger: COLOR LOAD ["filename"]
-
-. DONE: help f
-. DONE: help m
-. DONE: BC:##
-. DONE: BD:##
-. DONE: BE:##
-. DONE: help f
-. DONE: help m
-. DONE: EA:##
-. DONE: E8:##
-. DONE: a:##
-. DONE: d:##
-. DONE: Debugger 2.6.1.19: ADD: AppleSoft symbols to Symbol Table
-
-. DONE: v16.0.0.0: Video: PrintScreen (save to disk with auto file numbering.)
-. DONE: v16.0.0.0: Debugger: TEXT show current 40-col text page
-. DONE: v16.0.0.0: Debugger: TEXT80 show current 80-col text page
-. DONE: v16.0.0.0: Debugger: GR show current lo-res graphics page
-. DONE: v16.0.0.0: Debugger: HGR show current hi-res graphis page
-. DONE: v16.0.0.0: Debugger: DGR show current double hi-res graphics page
-. DONE: v16.0.0.0: Debugger: TEXT1 Show 40 Column Text Page 1
-. DONE: v16.0.0.0: Debugger: TEXT2 Show 40 Column Text Page 2
-. DONE: v16.0.0.0: Debugger: TEXT81 1 Show 40 Column Text Page 1
-. DONE: v16.0.0.0: Debugger: TEXT82 2 Show 40 Column Text Page 1
-. DONE: v16.0.0.0: Debugger: HGR1 show Hi-Res Page 1
-. DONE: v16.0.0.0: Debugger: HGR2 show Hi-Res Page 2 
-. DONE: v16.0.0.0: Debugger: DHGR1 show Double Hi-Res Page 1
-. DONE: v16.0.0.0: Debugger: DHGR2 show Double Hi-Res Page 2 
-. DONE: Debugger: shift+ins to paste from clipboard (use Ctrl-V to paste.)
 
 Priority:
 . Shift keys map to button#2
@@ -108,10 +47,7 @@ Post 1.12.6.0:
 Post 1.12.5.0:
 - Option to associate (or not) file types with AW.
 - Option for the emulator to not lock the disks while they are in the (virtual) drives.
-- New Debugger features:
-  > 1 SCR shows what the Apple monitor should look like at the current point
-  > 2 MDS same as ME but shows strings (ie "ABC" instead of "c1 c2 c3"
-  > 3 TS    text search (and may be a hex search function too ?"
+
 - Default monochrome mode to green
 - Associate .aws with AppleWin.
 
@@ -125,25 +61,20 @@ Post 1.12.4.2:
 
 Post 1.12.4.1:
 - Option to make any pc joystick button working as the 'Turbo' (i.e. Scroll Lock).
-. DONE: v16.0.0.0: DEBUGGER: Ability to search and modify for a value in memory in order to cheat in some games.
 - FastMath card support.
 - Ability to view page1/2 & switch mode (Text/GR/HGR/DHGR)
 - Add an 80 X 80 or 40X40 text mode
 - Send data back and forth between emu apple 2 and VisualBasic
 - Resizeable , scalable window
-- Incorporate Laine Houghton's modifications to debugger (?)
 - Make a documented interface so others can program Apple II peripheral card Emu plugins.
-- Source level debugging using WordPad & Merlin asm output (tell WordPad to FIND / GOTO line).
 - Emulate a video capture card: get an image from a webcam, de-rez it to HGR, and display it on the HGR screen.
 - AppleCrate emulation between several open AppleWin emulators.
 - Access PC files from PRODOS or DOS instead of DSK images? : Not doing (user CiderPress instead)
-. DONE: v16.0.0.0: DEBUGGER: Hex search in debugger
 
 Post 1.12.4.0:
 - Ability to send files to the PC from a disk image in AppleWin : Not doing (user CiderPress instead)
 - Ability to load files from the PC to a disk image in AppleWin : Not doing (user CiderPress instead)
 - When you are using the mouse as a cursor / joystick, as well as the markers on the screen border, enable the user to also add a dot (or cross hair) to the screen wherever the mouse pointer is.
-. DONE: v16.0.0.0 DEBUGGER: (use F7): RESET button to break into the Monitor (preserving memory).
 - Ability to send Apple's stdout to clipboard or file (and vice versa).
 
 Initial:

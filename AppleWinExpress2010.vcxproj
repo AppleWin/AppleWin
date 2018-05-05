@@ -265,6 +265,7 @@
     <ClCompile Include="source\Debugger\Debugger_Parser.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Range.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Symbols.cpp" />
+    <ClCompile Include="source\DiskFormatTrack.cpp" />
     <ClCompile Include="source\NTSC.cpp" />
     <ClCompile Include="source\NTSC_CharSet.cpp" />
     <ClCompile Include="source\SAM.cpp" />

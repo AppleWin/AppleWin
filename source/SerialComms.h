@@ -43,8 +43,6 @@ public:
 	void	SetSerialPortName(const char* pSerialPortName);
 	bool	IsActive() { return (m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET); }
 	void	SupportDCD(bool bEnable) { m_bCfgSupportDCD = bEnable; }	// Status
-	void	SupportDSR(bool bEnable) { m_bCfgSupportDSR = bEnable; }	// Status
-	void	SupportDTR(bool bEnable) { m_bCfgSupportDTR = bEnable; }	// Control
 
 	void	CommTcpSerialAccept();
 	void	CommTcpSerialReceive();
@@ -98,6 +96,7 @@ private:
 	static SSC_DIPSW	m_DIPSWDefault;
 	SSC_DIPSW			m_DIPSWCurrent;
 
+	static const UINT m_kDefaultBaudRate = CBR_9600;
 	UINT	m_uBaudRate;
 	UINT	m_uStopBits;
 	UINT	m_uByteSize;
@@ -139,12 +138,11 @@ private:
 	BYTE* m_pExpansionRom;
 	UINT m_uSlot;
 
-	// Modem
 	bool m_bCfgSupportDCD;
-	bool m_bCfgSupportDSR;
-	bool m_bCfgSupportDTR;
 	UINT m_uDTR;
-	// Modem (end)
+
+	static const DWORD m_kDefaultModemStatus = 0;	// MS_RLSD_OFF(=DCD_OFF), MS_DSR_OFF, MS_CTS_OFF
+	volatile DWORD m_dwModemStatus;	// Updated by CommThread when any of RLSD|DSR|CTS changes / Read by main thread - CommStatus()& CommDipSw()
 
 	UINT m_uRTS;
 };
