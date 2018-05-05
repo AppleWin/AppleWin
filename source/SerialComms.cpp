@@ -98,7 +98,7 @@ void CSuperSerialCard::InternalReset()
 	// . NB. MOS6551 datasheet: Hardware reset: b#00000010 (so ACIA not init'd on IN#2!)
 	UpdateCommandReg(0);
 
-	m_uBaudRate	= CBR_19200;	// Undefined, as CONTROL.CLK_SOURCE=0=External clock is not supported for SSC - so nominally use 19200
+	m_uBaudRate	= m_kDefaultBaudRate;	// Undefined, as CONTROL.CLK_SOURCE=0=External clock is not supported for SSC - so nominally AppleWin default
 	m_uStopBits	= ONESTOPBIT;
 	m_uByteSize	= 8;
 	m_uParity	= NOPARITY;
@@ -171,7 +171,7 @@ UINT CSuperSerialCard::BaudRateToIndex(UINT uBaudRate)
 
 	_ASSERT(0);
 	LogFileOutput("SSC: BaudRateToIndex(): unsupported rate: %d\n", uBaudRate);
-	return BaudRateToIndex(CBR_19200);	// nominally use 19200
+	return BaudRateToIndex(m_kDefaultBaudRate);	// nominally use AppleWin default
 }
 
 //===========================================================================

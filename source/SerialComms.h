@@ -96,6 +96,7 @@ private:
 	static SSC_DIPSW	m_DIPSWDefault;
 	SSC_DIPSW			m_DIPSWCurrent;
 
+	static const UINT m_kDefaultBaudRate = CBR_9600;
 	UINT	m_uBaudRate;
 	UINT	m_uStopBits;
 	UINT	m_uByteSize;
