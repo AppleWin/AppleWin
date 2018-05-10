@@ -91,26 +91,18 @@ void CSuperSerialCard::InternalReset()
 {
 	GetDIPSW();
 
-	// SY6551 datasheet: Hardware reset sets Control register to 0 - the DIPSW settings are not used by h/w to setup this register
-	m_uControlByte = 0;
-
 	// SY6551 datasheet: Hardware reset sets Command register to 0
 	// . NB. MOS6551 datasheet: Hardware reset: b#00000010 (so ACIA not init'd on IN#2!)
-	UpdateCommandReg(0);
-
-	m_uBaudRate	= m_kDefaultBaudRate;	// Undefined, as CONTROL.CLK_SOURCE=0=External clock is not supported for SSC - so nominally AppleWin default
-	m_uStopBits	= ONESTOPBIT;
-	m_uByteSize	= 8;
-	m_uParity	= NOPARITY;
+	// SY6551 datasheet: Hardware reset sets Control register to 0 - the DIPSW settings are not used by h/w to setup this register
+	UpdateCommandAndControlRegs(0, 0);	// Baud=External clock! 8-N-1
 
 	//
-
-	m_vuRxCurrBuffer = 0;
 
 	m_vbTxIrqPending = false;
 	m_vbRxIrqPending = false;
 	m_vbTxEmpty = true;
 
+	m_vuRxCurrBuffer = 0;
 	m_qComSerialBuffer[0].clear();
 	m_qComSerialBuffer[1].clear();
 	m_qTcpSerialBuffer.clear();
@@ -468,6 +460,13 @@ BYTE __stdcall CSuperSerialCard::CommProgramReset(WORD, WORD, BYTE, BYTE, ULONG)
 
 //===========================================================================
 
+void CSuperSerialCard::UpdateCommandAndControlRegs(BYTE uCommandByte, BYTE uControlByte)
+{
+	// UpdateCommandReg() first to initialise m_uParity, before calling UpdateControlReg()
+	UpdateCommandReg(uCommandByte);
+	UpdateControlReg(uControlByte);
+}
+
 void CSuperSerialCard::UpdateCommandReg(BYTE command)
 {
 	m_uCommandByte = command;
@@ -514,6 +513,10 @@ void CSuperSerialCard::UpdateCommandReg(BYTE command)
 
 	if (m_DIPSWCurrent.bInterrupts && m_uCommandByte & CMD_DTR)
 	{
+		// Assume enabling Rx IRQ if STATUS.ST_RX_FULL *does not* trigger an IRQ
+		// . EG. Disable Rx IRQ, receive a byte (don't read STATUS or RX_DATA register), enable Rx IRQ
+		// Assume enabling Tx IRQ if STATUS.ST_TX_EMPTY *does not* trigger an IRQ
+		// . otherwise there'd be a "false" TX Empty IRQ even if nothing had ever been transferred!
 		m_bTxIrqEnabled = (m_uCommandByte & CMD_TX_MASK) == CMD_TX_IRQ_ENA_RTS_LOW;
 		m_bRxIrqEnabled = (m_uCommandByte & CMD_RX_IRQ_DIS) == 0;
 	}
@@ -543,6 +546,67 @@ BYTE __stdcall CSuperSerialCard::CommCommand(WORD, WORD, BYTE write, BYTE value,
 
 //===========================================================================
 
+void CSuperSerialCard::UpdateControlReg(BYTE control)
+{
+	m_uControlByte = control;
+
+	// UPDATE THE BAUD RATE
+	switch (m_uControlByte & 0x0F)
+	{
+		// Note that 1 MHz Apples (everything other than the Apple IIgs and //c
+		// Plus running in "fast" mode) cannot handle 19.2 kbps, and even 9600
+		// bps on these machines requires either some highly optimised code or
+		// a decent buffer in the device being accessed.  The faster Apples
+		// have no difficulty with this speed, however. [Ref.1]
+
+		case 0x00: m_uBaudRate = CBR_115200;	break;	// Internal clk: undoc'd 115.2K (or 16x external clock)
+		case 0x01: // fall through [50 bps]
+		case 0x02: // fall through [75 bps]
+		case 0x03: // fall through [109.92 bps]
+		case 0x04: // fall through [134.58 bps]
+		case 0x05: m_uBaudRate = CBR_110;		break;	// [150 bps]
+		case 0x06: m_uBaudRate = CBR_300;		break;
+		case 0x07: m_uBaudRate = CBR_600;		break;
+		case 0x08: m_uBaudRate = CBR_1200;		break;
+		case 0x09: // fall through [1800 bps]
+		case 0x0A: m_uBaudRate = CBR_2400;		break;
+		case 0x0B: // fall through [3600 bps]
+		case 0x0C: m_uBaudRate = CBR_4800;		break;
+		case 0x0D: // fall through [7200 bps]
+		case 0x0E: m_uBaudRate = CBR_9600;		break;
+		case 0x0F: m_uBaudRate = CBR_19200;		break;
+	}
+
+	if (m_uControlByte & 0x10)
+	{
+		// receiver clock source [0= external, 1= internal]
+	}
+
+	// UPDATE THE BYTE SIZE
+	switch (m_uControlByte & 0x60)
+	{
+		case 0x00: m_uByteSize = 8; break;
+		case 0x20: m_uByteSize = 7; break;
+		case 0x40: m_uByteSize = 6; break;
+		case 0x60: m_uByteSize = 5; break;
+	}
+
+	// UPDATE THE NUMBER OF STOP BITS
+	if (m_uControlByte & 0x80)
+	{
+		if ((m_uByteSize == 8) && (m_uParity != NOPARITY))
+			m_uStopBits = ONESTOPBIT;
+		else if ((m_uByteSize == 5) && (m_uParity == NOPARITY))
+			m_uStopBits = ONE5STOPBITS;
+		else
+			m_uStopBits = TWOSTOPBITS;
+	}
+	else
+	{
+		m_uStopBits = ONESTOPBIT;
+	}
+}
+
 BYTE __stdcall CSuperSerialCard::CommControl(WORD, WORD, BYTE write, BYTE value, ULONG)
 {
 	if (!CheckComm())
@@ -550,64 +614,7 @@ BYTE __stdcall CSuperSerialCard::CommControl(WORD, WORD, BYTE write, BYTE value,
 
 	if (write && (value != m_uControlByte))
 	{
-		m_uControlByte = value;
-
-		// UPDATE THE BAUD RATE
-		switch (m_uControlByte & 0x0F)
-		{
-			// Note that 1 MHz Apples (everything other than the Apple IIgs and //c
-			// Plus running in "fast" mode) cannot handle 19.2 kbps, and even 9600
-			// bps on these machines requires either some highly optimised code or
-			// a decent buffer in the device being accessed.  The faster Apples
-			// have no difficulty with this speed, however. [Ref.1]
-
-			case 0x00: m_uBaudRate = CBR_115200;	break;	// Internal clk: undoc'd 115.2K (or 16x external clock)
-			case 0x01: // fall through [50 bps]
-			case 0x02: // fall through [75 bps]
-			case 0x03: // fall through [109.92 bps]
-			case 0x04: // fall through [134.58 bps]
-			case 0x05: m_uBaudRate = CBR_110;		break;	// [150 bps]
-			case 0x06: m_uBaudRate = CBR_300;		break;
-			case 0x07: m_uBaudRate = CBR_600;		break;
-			case 0x08: m_uBaudRate = CBR_1200;		break;
-			case 0x09: // fall through [1800 bps]
-			case 0x0A: m_uBaudRate = CBR_2400;		break;
-			case 0x0B: // fall through [3600 bps]
-			case 0x0C: m_uBaudRate = CBR_4800;		break;
-			case 0x0D: // fall through [7200 bps]
-			case 0x0E: m_uBaudRate = CBR_9600;		break;
-			case 0x0F: m_uBaudRate = CBR_19200;		break;
-		}
-
-		if (m_uControlByte & 0x10)
-		{
-			// receiver clock source [0= external, 1= internal]
-		}
-
-		// UPDATE THE BYTE SIZE
-		switch (m_uControlByte & 0x60)
-		{
-			case 0x00: m_uByteSize = 8; break;
-			case 0x20: m_uByteSize = 7; break;
-			case 0x40: m_uByteSize = 6; break;
-			case 0x60: m_uByteSize = 5; break;
-		}
-
-		// UPDATE THE NUMBER OF STOP BITS
-		if (m_uControlByte & 0x80)
-		{
-			if ((m_uByteSize == 8) && (m_uParity != NOPARITY))
-				m_uStopBits = ONESTOPBIT;
-			else if ((m_uByteSize == 5) && (m_uParity == NOPARITY))
-				m_uStopBits = ONE5STOPBITS;
-			else
-				m_uStopBits = TWOSTOPBITS;
-		}
-		else
-		{
-			m_uStopBits = ONESTOPBIT;
-		}
-
+		UpdateControlReg(value);
 		UpdateCommState();
 	}
 
@@ -1354,19 +1361,21 @@ void CSuperSerialCard::SetSnapshot_v1(	const DWORD  baudrate,
 										const BYTE   parity,
 										const BYTE   stopbits)
 {
-	m_uBaudRate			= baudrate;
-	m_uStopBits			= stopbits;
-	m_uByteSize			= bytesize;
-//	m_dwCommInactivity	= comminactivity;	// Obsolete
-	m_uControlByte		= controlbyte;
-//	m_uParity			= parity;			// Redundant: derived from commandbyte in UpdateCommandReg()
-//	memcpy(m_RecvBuffer, pSS->recvbuffer, uRecvBufferSize);
-//	m_vRecvBytes		= recvbytes;
+	// Redundant:
+	// . baudrate, stopbits, bytesize (encapsulated in controlbyte)
+	// . parity (encapsulated in commandbyte)
+	// Obsolete:
+	// . comminactivity
 
-	UpdateCommandReg(commandbyte);
+	UpdateCommandAndControlRegs(commandbyte, controlbyte);
 }
 
 //===========================================================================
+
+// Unit version history:
+// 2: Added: Support DCD flag
+//    Removed: redundant data (encapsulated in Command & Control bytes)
+static const UINT kUNIT_VERSION = 2;
 
 #define SS_YAML_VALUE_CARD_SSC "Super Serial Card"
 
@@ -1389,6 +1398,7 @@ void CSuperSerialCard::SetSnapshot_v1(	const DWORD  baudrate,
 #define SS_YAML_KEY_RXIRQPENDING "RX IRQ Pending"
 #define SS_YAML_KEY_WRITTENTX "Written TX"
 #define SS_YAML_KEY_SERIALPORTNAME "Serial Port Name"
+#define SS_YAML_KEY_SUPPORT_DCD "Support DCD"
 
 std::string CSuperSerialCard::GetSnapshotCardName(void)
 {
@@ -1410,23 +1420,17 @@ void CSuperSerialCard::SaveSnapshotDIPSW(YamlSaveHelper& yamlSaveHelper, std::st
 
 void CSuperSerialCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_uSlot, 1);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_uSlot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	SaveSnapshotDIPSW(yamlSaveHelper, SS_YAML_KEY_DIPSWDEFAULT, m_DIPSWDefault);
 	SaveSnapshotDIPSW(yamlSaveHelper, SS_YAML_KEY_DIPSWCURRENT, m_DIPSWCurrent);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_BAUDRATE, m_uBaudRate);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_STOPBITS, m_uStopBits);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_BYTESIZE, m_uByteSize);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_PARITY, m_uParity);				// Redundant
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_CONTROL, m_uControlByte);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_COMMAND, m_uCommandByte);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, 0);					// Obsolete
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_TXIRQENABLED, m_bTxIrqEnabled);	// Redundant
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_RXIRQENABLED, m_bRxIrqEnabled);	// Redundant
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_TXIRQPENDING, m_vbTxIrqPending);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_RXIRQPENDING, m_vbRxIrqPending);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITTENTX, m_vbTxEmpty);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SUPPORT_DCD, m_bCfgSupportDCD);
 	yamlSaveHelper.SaveString(SS_YAML_KEY_SERIALPORTNAME, GetSerialPortName());
 }
 
@@ -1451,26 +1455,36 @@ bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, U
 	if (slot != 2)	// fixme
 		throw std::string("Card: wrong slot");
 
-	if (version != 1)
+	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
 	LoadSnapshotDIPSW(yamlLoadHelper, SS_YAML_KEY_DIPSWDEFAULT, m_DIPSWDefault);
 	LoadSnapshotDIPSW(yamlLoadHelper, SS_YAML_KEY_DIPSWCURRENT, m_DIPSWCurrent);
 
-	m_uBaudRate			= yamlLoadHelper.LoadUint(SS_YAML_KEY_BAUDRATE);
-	m_uStopBits			= yamlLoadHelper.LoadUint(SS_YAML_KEY_STOPBITS); 
-	m_uByteSize			= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTESIZE);
-						  yamlLoadHelper.LoadUint(SS_YAML_KEY_PARITY);			// Redundant: derived from uCommandByte in UpdateCommandReg()
-	m_uControlByte		= yamlLoadHelper.LoadUint(SS_YAML_KEY_CONTROL);
+	if (version == 1)	// Consume redundant/obsolete data
+	{
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_PARITY);		// Redundant: derived from uCommandByte in UpdateCommandReg()
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQENABLED);	// Redundant: derived from uCommandByte in UpdateCommandReg()
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQENABLED);	// Redundant: derived from uCommandByte in UpdateCommandReg()
+
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_BAUDRATE);		// Redundant: derived from uControlByte in UpdateControlReg()
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_STOPBITS);		// Redundant: derived from uControlByte in UpdateControlReg()
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTESIZE);		// Redundant: derived from uControlByte in UpdateControlReg()
+
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);	// Obsolete (so just consume)
+	}
+	else if (version >= 2)
+	{
+		SupportDCD( yamlLoadHelper.LoadBool(SS_YAML_KEY_SUPPORT_DCD) );
+	}
+
 	UINT uCommandByte	= yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
-						  yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);		// Obsolete (so just consume)
-						  yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQENABLED);	// Redundant: derived from uCommandByte in UpdateCommandReg()
-						  yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQENABLED);	// Redundant: derived from uCommandByte in UpdateCommandReg()
+	UINT uControlByte	= yamlLoadHelper.LoadUint(SS_YAML_KEY_CONTROL);
+	UpdateCommandAndControlRegs(uCommandByte, uControlByte);
+
 	m_vbTxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQPENDING);
 	m_vbRxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQPENDING);
 	m_vbTxEmpty			= yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITTENTX);
-
-	UpdateCommandReg(uCommandByte);
 
 	std::string serialPortName = yamlLoadHelper.LoadString(SS_YAML_KEY_SERIALPORTNAME);
 	SetSerialPortName(serialPortName.c_str());
