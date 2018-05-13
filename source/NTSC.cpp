@@ -481,7 +481,7 @@ inline uint16_t getLoResBits( uint8_t iByte )
 //===========================================================================
 inline uint32_t getScanlineColor( const uint16_t signal, const bgra_t *pTable )
 {
-	g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; // 14-bit
+	g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; // 12-bit
 	return *(uint32_t*) &pTable[ g_nSignalBitsNTSC ];
 }
 
@@ -731,10 +731,10 @@ inline void updateVideoScannerHorzEOL()
 			else
 			{
 				// NOTE: This writes out-of-bounds for a 560x384 framebuffer
-				g_pFuncUpdateHuePixel(0);
-				g_pFuncUpdateHuePixel(0);
-				g_pFuncUpdateHuePixel(0);
 				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC); // BUGFIX: ARCHON: green fringe on end of line
+				g_pFuncUpdateHuePixel(0);
+				g_pFuncUpdateHuePixel(0);
+				g_pFuncUpdateHuePixel(0);
 			}
 		}
 
@@ -745,7 +745,6 @@ inline void updateVideoScannerHorzEOL()
 			g_nVideoClockVert = 0;
 
 			updateFlashRate();
-			//VideoRefreshScreen(); // ContinueExecution() calls VideoRefreshScreen() every dwClksPerFrame (17030)
 		}
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
@@ -1182,7 +1181,7 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 				uint8_t a = pAux [0];
 
 				bits = ((m & 0x7f) << 7) | (a & 0x7f);
-				bits = (bits << 1) | g_nLastColumnPixelNTSC;
+				bits = (bits << 1) | g_nLastColumnPixelNTSC;	// TC: needed else colours are wrong phase
 				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 3;
 			}
