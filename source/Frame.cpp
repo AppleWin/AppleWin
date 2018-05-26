@@ -1736,6 +1736,7 @@ LRESULT CALLBACK FrameWndProc (
 
 		if ((wparam == VK_F10) || (wparam == VK_MENU))	// VK_MENU == ALT Key
 			return 0;
+
 		break;
 
 	case WM_SYSKEYUP:
@@ -1747,6 +1748,9 @@ LRESULT CALLBACK FrameWndProc (
 		else
 			PostMessage(window,WM_KEYUP,wparam,lparam);
 		break;
+
+	case WM_MENUCHAR:	// GH#556 - Suppress the Windows Default Beep (ie. Ding) whenever ALT+<key> is pressed
+		return (MNC_CLOSE << 16) | (wparam & 0xffff);
 
     case WM_USER_BENCHMARK: {
       UpdateWindow(window);
