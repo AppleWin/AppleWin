@@ -9,11 +9,19 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.27.3.0 - 14 Apr 2018
+1.27.4.0 - 26 May 2018
 ----------------------
+. [Bug #555] Fix for showing 559th DHGR vertical column.
+	- But now an HGR HCOLOR=2 vertical line at column 0 is only 1 DHGR pixel wide.
+	- Fix TEXT80 to be aligned with DHGR.
+	- Fix FLASH in TEXT80 (the inverse aux-memory char would overwrite the main-memory char).
+. [Change #554] Help: Added a new help page about AppleWin's SSC emulation.
+. [Change #522] SSC: ZLINK not starting unless DCD is set.
+	- DCD state is now a mirror of DSR unless -dcd switch is used.
+	- Removed -dsr,-dtr switches, so -modem is now an alias for -dcd.
 . [Bug #308] SSC: For TCP mode, support DSR, DCD & CTS status bits.
 . SSC: Now DTR must also be set to enable interrupts (in addition to the respective Tx/Rx interrupt bit).
-. SSC: When reading the Status register, throttle calls to GetCommModemStatus() to a maximum of once every 8ms.
+. SSC: Change DIPSW1's baud rate to 9600 (was 19200).
 
 
 1.27.2.0 - 12 Apr 2018
