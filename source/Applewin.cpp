@@ -1012,6 +1012,40 @@ static void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBo
 
 //---------------------------------------------------------------------------
 
+static HINSTANCE g_hinstDLL = 0;
+static HHOOK g_hhook = 0;
+
+void HookFilterForKeyboard()
+{
+	g_hinstDLL = LoadLibrary(TEXT("AppleWinHookFilter.dll"));
+	HOOKPROC hkprcLowLevelKeyboardProc = (HOOKPROC) GetProcAddress(g_hinstDLL, "LowLevelKeyboardProc");
+
+	g_hhook = SetWindowsHookEx(
+						WH_KEYBOARD_LL,
+						hkprcLowLevelKeyboardProc,
+						g_hinstDLL,
+						0);
+
+	if (g_hhook == NULL)
+	{
+		std::string msg("Failed to install hook filter for system keys");
+
+		DWORD dwErr = GetLastError();
+		MessageBox(GetDesktopWindow(), msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK);	// NB. g_hFrameWindow is not yet valid
+
+		msg += "\n";
+		LogFileOutput(msg.c_str());
+	}
+}
+
+void UnhookFilterForKeyboard()
+{
+	UnhookWindowsHookEx(g_hhook);
+	FreeLibrary(g_hinstDLL);
+}
+
+//---------------------------------------------------------------------------
+
 int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 {
 	bool bShutdown = false;
@@ -1310,6 +1344,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	DiskInitialize();
 	LogFileOutput("Init: DiskInitialize()\n");
 
+	HookFilterForKeyboard();
+
 	//
 
 	do
@@ -1474,6 +1510,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: DSUninit()\n");
 	}
 	while (g_bRestart);
+
+	UnhookFilterForKeyboard();
 
 	if (bChangedDisplayResolution)
 		ChangeDisplaySettings(NULL, 0);	// restore default

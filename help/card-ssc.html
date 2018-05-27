@@ -37,7 +37,7 @@
 			<li>For the TCP mode it doesn't matter what baud rate, stop-bit, byte size and parity are set to.
 			<ul>
 				<li>It always uses an unthrottled data-rate of 8-bit bytes (no stop-bit, no parity).
-				<li>When there's an active TCP connection, then the 6551's Status register has DCD,DSR bits clear  (active low), and DIPSW2 has CTS bit clear (active low). When there's no TCP connection, then all these bits are set (inactive).
+				<li>When there's an active TCP connection, then the 6551's Status register has DCD,DSR bits clear (active low), and DIPSW2 has CTS bit clear (active low). When there's no TCP connection, then all these bits are set (inactive).
 			</ul>
 			<li>The TCP mode can expose buggy Rx interrupt handling code where the 6551's Status register is read more than once in the Interrupt Service Routine (ISR).
 			<ul>
@@ -58,7 +58,7 @@
 			<li>6551 ACIA Status register's error bits: overrun, framing and parity (these are all hardcoded to 0).
 			<li>6551 ACIA Status register's DCD bit (Data Carrier Detect). This is just set the same as DSR.
 			<ul>
-				<li>NB. Use command line -dcd to force AppleWin to use the state of the MS_RLSD_ON bit from GetCommModemStatus().
+				<li>NB. For COM mode, use command line -dcd to force AppleWin to use the state of the MS_RLSD_ON bit from GetCommModemStatus().
 			</ul>
 			<li>NMOS 6551 ACIA CTS bug: transmission of an already-started frame will stop immediately when CTS is taken false, the byte will be lost, and the TxD line will go to marking.
 			<ul>
