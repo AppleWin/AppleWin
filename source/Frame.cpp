@@ -1260,7 +1260,7 @@ LRESULT CALLBACK FrameWndProc (
 
 	case WM_KEYDOWN:
 		KeybUpdateCtrlShiftStatus();
-		KeybSpecialKeydown(wparam);
+		KeybSpecialKeyTransition(WM_KEYDOWN, wparam);
 
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
@@ -1400,7 +1400,14 @@ LRESULT CALLBACK FrameWndProc (
 		break;
 
 	case WM_KEYUP:
-		KeybSpecialKeyup(wparam);
+		KeybSpecialKeyTransition(WM_KEYUP, wparam);
+
+		if (wparam == VK_ESCAPE || wparam == VK_SPACE || wparam == VK_TAB)
+		{
+			char str[40];
+			sprintf(str, "WM_KEYUP: %d\n", wparam);
+			OutputDebugString(str);
+		}
 
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == (int)wparam-VK_F1))

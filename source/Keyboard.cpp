@@ -390,53 +390,39 @@ static char ClipboardCurrChar(bool bIncPtr)
 //===========================================================================
 
 // For AKD (Any Key Down), need special handling for the hooked key combos(*), as GetKeyState() doesn't detect the keys as being down.
+// . And equally GetKeyState() doesn't detect the keys as being up: eg. Whilst pressing TAB, press LEFT ALT, then release TAB.
 // (*) ALT+TAB, ALT+ESCAPE, ALT+SPACE
 
 static enum {AKD_TAB=0, AKD_ESCAPE, AKD_SPACE};
 static bool g_specialAKD[3] = {false,false,false};
 
-void KeybSpecialKeydown(DWORD wparam)
+void KeybSpecialKeyTransition(UINT message, WPARAM wparam)
 {
+	_ASSERT(message == WM_KEYUP || message == WM_KEYDOWN);
+	bool bState = message == WM_KEYDOWN;
+
 	switch (wparam)
 	{
 	case VK_TAB:
-		g_specialAKD[AKD_TAB] = true;
+		g_specialAKD[AKD_TAB] = bState;
 		break;
 	case VK_ESCAPE:
-		g_specialAKD[AKD_ESCAPE] = true;
+		g_specialAKD[AKD_ESCAPE] = bState;
 		break;
 	case VK_SPACE:
-		g_specialAKD[AKD_SPACE] = true;
+		g_specialAKD[AKD_SPACE] = bState;
 		break;
 	};
 }
 
-void KeybSpecialKeyup(DWORD wparam)
-{
-	switch (wparam)
-	{
-	case VK_TAB:
-		g_specialAKD[AKD_TAB] = false;
-		break;
-	case VK_ESCAPE:
-		g_specialAKD[AKD_ESCAPE] = false;
-		break;
-	case VK_SPACE:
-		g_specialAKD[AKD_SPACE] = false;
-		break;
-	};
-}
-
-static bool IsSpecialAKD(int lastvirtkey)
+static void GetKeyStateOfSpecialAKD(int lastvirtkey, bool& bState)
 {
 	if (VK_TAB == lastvirtkey)
-		return g_specialAKD[AKD_TAB];
+		bState = g_specialAKD[AKD_TAB];
 	else if (VK_ESCAPE == lastvirtkey)
-		return g_specialAKD[AKD_ESCAPE];
+		bState = g_specialAKD[AKD_ESCAPE];
 	else if (VK_SPACE == lastvirtkey)
-		return g_specialAKD[AKD_SPACE];
-
-	return false;
+		bState = g_specialAKD[AKD_SPACE];
 }
 
 //===========================================================================
@@ -480,10 +466,10 @@ BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
 
 	keywaiting = 0;
 
-	if (IsSpecialAKD(lastvirtkey))
-		return keycode | 0x80;
+	bool bState = GetKeyState(lastvirtkey) < 0;
+	GetKeyStateOfSpecialAKD(lastvirtkey, bState);
 
-	return keycode | ((GetKeyState(lastvirtkey) < 0) ? 0x80 : 0);
+	return keycode | (bState ? 0x80 : 0);
 }
 
 //===========================================================================
