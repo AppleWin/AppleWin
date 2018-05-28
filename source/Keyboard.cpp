@@ -466,6 +466,11 @@ BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
 
 	keywaiting = 0;
 
+	if (IS_APPLE2)	// Include Pravets machines too?
+		return keycode;
+
+	// AKD
+
 	bool bState = GetKeyState(lastvirtkey) < 0;
 	GetKeyStateOfSpecialAKD(lastvirtkey, bState);
 
