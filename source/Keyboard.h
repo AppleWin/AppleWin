@@ -14,6 +14,8 @@ BYTE    KeybGetKeycode ();
 void    KeybQueueKeypress (int,BOOL);
 void    KeybToggleCapsLock ();
 void    KeybToggleP8ACapsLock ();
+void    KeybSpecialKeydown(DWORD wparam);
+void    KeybSpecialKeyup(DWORD wparam);
 void    KeybSetSnapshot_v1(const BYTE LastKey);
 void    KeybSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    KeybLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);

@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="AppleWinHookFilter"
+	Name="HookFilter"
 	ProjectGUID="{AA5854AD-2BC7-4EFD-9790-349ADB35E35A}"
 	RootNamespace="HookFilter"
 	Keyword="Win32Proj"

@@ -1260,6 +1260,7 @@ LRESULT CALLBACK FrameWndProc (
 
 	case WM_KEYDOWN:
 		KeybUpdateCtrlShiftStatus();
+		KeybSpecialKeydown(wparam);
 
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
@@ -1399,6 +1400,8 @@ LRESULT CALLBACK FrameWndProc (
 		break;
 
 	case WM_KEYUP:
+		KeybSpecialKeyup(wparam);
+
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == (int)wparam-VK_F1))
 		{

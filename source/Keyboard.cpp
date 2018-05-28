@@ -389,6 +389,58 @@ static char ClipboardCurrChar(bool bIncPtr)
 
 //===========================================================================
 
+// For AKD (Any Key Down), need special handling for the hooked key combos(*), as GetKeyState() doesn't detect the keys as being down.
+// (*) ALT+TAB, ALT+ESCAPE, ALT+SPACE
+
+static enum {AKD_TAB=0, AKD_ESCAPE, AKD_SPACE};
+static bool g_specialAKD[3] = {false,false,false};
+
+void KeybSpecialKeydown(DWORD wparam)
+{
+	switch (wparam)
+	{
+	case VK_TAB:
+		g_specialAKD[AKD_TAB] = true;
+		break;
+	case VK_ESCAPE:
+		g_specialAKD[AKD_ESCAPE] = true;
+		break;
+	case VK_SPACE:
+		g_specialAKD[AKD_SPACE] = true;
+		break;
+	};
+}
+
+void KeybSpecialKeyup(DWORD wparam)
+{
+	switch (wparam)
+	{
+	case VK_TAB:
+		g_specialAKD[AKD_TAB] = false;
+		break;
+	case VK_ESCAPE:
+		g_specialAKD[AKD_ESCAPE] = false;
+		break;
+	case VK_SPACE:
+		g_specialAKD[AKD_SPACE] = false;
+		break;
+	};
+}
+
+static bool IsSpecialAKD(int lastvirtkey)
+{
+	if (VK_TAB == lastvirtkey)
+		return g_specialAKD[AKD_TAB];
+	else if (VK_ESCAPE == lastvirtkey)
+		return g_specialAKD[AKD_ESCAPE];
+	else if (VK_SPACE == lastvirtkey)
+		return g_specialAKD[AKD_SPACE];
+
+	return false;
+}
+
+//===========================================================================
+
 BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
 {
 	LogFileTimeUntilFirstKeyRead();
@@ -427,6 +479,9 @@ BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
 	//
 
 	keywaiting = 0;
+
+	if (IsSpecialAKD(lastvirtkey))
+		return keycode | 0x80;
 
 	return keycode | ((GetKeyState(lastvirtkey) < 0) ? 0x80 : 0);
 }
