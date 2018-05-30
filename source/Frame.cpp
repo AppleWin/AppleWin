@@ -1262,6 +1262,9 @@ LRESULT CALLBACK FrameWndProc (
 		KeybUpdateCtrlShiftStatus();
 		KeybSpecialKeyTransition(WM_KEYDOWN, wparam);
 
+		if ((HIWORD(lparam) & KF_REPEAT) == 0)
+			KeybAnyKeyDown(WM_KEYDOWN, wparam);
+
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
 		{
@@ -1320,7 +1323,18 @@ LRESULT CALLBACK FrameWndProc (
 
 			Config_Save_Video();
 		}
-		else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)
+		else if (wparam == VK_F10)
+		{
+			if (g_Apple2Type == A2TYPE_PRAVETS8A && !g_bCtrlKey)
+			{
+				KeybToggleP8ACapsLock ();	// F10: Toggles P8 Capslock
+			}
+			else
+			{
+				SetUsingCursor(FALSE);		// Ctrl+F10
+			}
+		}
+		else if (wparam == VK_F11 && !g_bCtrlKey)	// Save state (F11)
 		{
 			SoundCore_SetFade(FADE_OUT);
 			if(sg_PropertySheet.SaveStateSelectImage(window, true))
@@ -1329,7 +1343,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			SoundCore_SetFade(FADE_IN);
 		}
-		else if (wparam == VK_F12)										// Load state (F12 or Ctrl+F12)
+		else if (wparam == VK_F12)					// Load state (F12 or Ctrl+F12)
 		{
 			SoundCore_SetFade(FADE_OUT);
 			if(sg_PropertySheet.SaveStateSelectImage(window, false))
@@ -1385,22 +1399,11 @@ LRESULT CALLBACK FrameWndProc (
 		{		
 			DebuggerProcessKey(wparam); // Debugger already active, re-direct key to debugger
 		}
-
-		if (wparam == VK_F10)
-		{
-			if ((g_Apple2Type == A2TYPE_PRAVETS8A) && (GetKeyState(VK_CONTROL) >= 0))
-			{
-				KeybToggleP8ACapsLock ();//Toggles P8 Capslock
-			}
-			else 
-			{
-				SetUsingCursor(FALSE);
-			}
-		}
 		break;
 
 	case WM_KEYUP:
 		KeybSpecialKeyTransition(WM_KEYUP, wparam);
+		KeybAnyKeyDown(WM_KEYUP, wparam);
 
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == (int)wparam-VK_F1))

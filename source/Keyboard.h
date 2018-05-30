@@ -15,6 +15,7 @@ void    KeybQueueKeypress (int,BOOL);
 void    KeybToggleCapsLock ();
 void    KeybToggleP8ACapsLock ();
 void    KeybSpecialKeyTransition(UINT message, WPARAM wparam);
+void    KeybAnyKeyDown(UINT message, WPARAM wparam);
 void    KeybSetSnapshot_v1(const BYTE LastKey);
 void    KeybSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    KeybLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);

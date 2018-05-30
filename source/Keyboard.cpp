@@ -119,7 +119,7 @@ BYTE KeybGetKeycode ()		// Used by MemCheckPaging() & VideoCheckMode()
 //===========================================================================
 void KeybQueueKeypress (int key, BOOL bASCII)
 {
-	if (bASCII == ASCII)
+	if (bASCII == ASCII)	// WM_CHAR
 	{
 		if (g_bFreshReset && key == VK_CANCEL) // OLD HACK: 0x03
 		{
@@ -274,9 +274,10 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 					keycode = key;
 			}
 		}
+
 		lastvirtkey = LOBYTE(VkKeyScan(key));
 	} 
-	else //(bASCII != ASCII)
+	else //(bASCII != ASCII)	// WM_KEYDOWN
 	{
 		// Note: VK_CANCEL is Control-Break
 		if ((key == VK_CANCEL) && (GetKeyState(VK_CONTROL) < 0))
@@ -389,12 +390,12 @@ static char ClipboardCurrChar(bool bIncPtr)
 
 //===========================================================================
 
-// For AKD (Any Key Down), need special handling for the hooked key combos(*), as GetKeyState() doesn't detect the keys as being down.
-// . And equally GetKeyState() doesn't detect the keys as being up: eg. Whilst pressing TAB, press LEFT ALT, then release TAB.
+// For AKD (Any Key Down), need special handling for the hooked key combos(*), as GetKeyState() doesn't detect the keys as being up/down.
+// . EG. Whilst pressing TAB, press LEFT ALT, then release TAB.
 // (*) ALT+TAB, ALT+ESCAPE, ALT+SPACE
 
-static enum {AKD_TAB=0, AKD_ESCAPE, AKD_SPACE};
-static bool g_specialAKD[3] = {false,false,false};
+static enum {AKD_TAB=0, AKD_ESCAPE, AKD_SPACE, AKD_RETURN};
+static bool g_specialAKD[4] = {false,false,false,false};
 
 void KeybSpecialKeyTransition(UINT message, WPARAM wparam)
 {
@@ -412,17 +413,75 @@ void KeybSpecialKeyTransition(UINT message, WPARAM wparam)
 	case VK_SPACE:
 		g_specialAKD[AKD_SPACE] = bState;
 		break;
+	case VK_RETURN:	// Treat as special too, as get a WM_KEYUP after using RETURN to OK the Config/Load-State dialogs!
+		g_specialAKD[AKD_RETURN] = bState;
+		break;
 	};
 }
 
-static void GetKeyStateOfSpecialAKD(int lastvirtkey, bool& bState)
+static void GetKeyStateOfSpecialAKD(bool& bState)
 {
-	if (VK_TAB == lastvirtkey)
-		bState = g_specialAKD[AKD_TAB];
-	else if (VK_ESCAPE == lastvirtkey)
-		bState = g_specialAKD[AKD_ESCAPE];
-	else if (VK_SPACE == lastvirtkey)
-		bState = g_specialAKD[AKD_SPACE];
+	if ( g_specialAKD[AKD_TAB] || g_specialAKD[AKD_ESCAPE] || g_specialAKD[AKD_SPACE] || g_specialAKD[AKD_RETURN] )
+		bState = true;
+}
+
+//===========================================================================
+
+static int g_AKDRefCount = 0;
+
+void KeybAnyKeyDown(UINT message, WPARAM wparam)
+{
+	if (IS_APPLE2)	// Include Pravets machines too?
+		return;	// No AKD support
+
+	if (wparam == VK_TAB || wparam == VK_ESCAPE || wparam == VK_SPACE || wparam == VK_RETURN)
+		return;	// Could be from hook-filter, so ignore and handle via KeybSpecialKeyTransition()
+
+	const int value = message == WM_KEYDOWN ? 1 : -1;
+	bool bDoRefCount = false;
+
+	if (wparam == VK_BACK ||
+		wparam == VK_TAB ||
+		wparam == VK_RETURN ||
+		wparam == VK_ESCAPE ||
+		wparam == VK_SPACE ||
+		(wparam >= VK_LEFT && wparam <= VK_DOWN) ||
+		wparam == VK_DELETE ||
+		(wparam >= '0' && wparam <= '9') ||
+		(wparam >= 'A' && wparam <= 'Z'))
+	{
+		bDoRefCount = true;
+	}
+	else if (wparam >= VK_NUMPAD0 && wparam <= VK_NUMPAD9)
+	{
+		bDoRefCount = true;
+	}
+	else if (wparam >= VK_MULTIPLY && wparam <= VK_DIVIDE)
+	{
+		bDoRefCount = true;
+	}
+	else if (wparam >= VK_OEM_1 && wparam <= VK_OEM_3)	// 7 in total
+	{
+		bDoRefCount = true;
+	}
+	else if (wparam >= VK_OEM_4 && wparam <= VK_OEM_8)	// 5 in total
+	{
+		bDoRefCount = true;
+	}
+	else if (wparam == VK_OEM_102)
+	{
+		bDoRefCount = true;
+	}
+
+	if (bDoRefCount)
+	{
+		g_AKDRefCount += value;
+		if (g_AKDRefCount < 0)
+		{
+			_ASSERT(0);
+			g_AKDRefCount = 0;
+		}
+	}
 }
 
 //===========================================================================
@@ -471,9 +530,8 @@ BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
 
 	// AKD
 
-	bool bState = GetKeyState(lastvirtkey) < 0;
-	GetKeyStateOfSpecialAKD(lastvirtkey, bState);
-
+	bool bState = g_AKDRefCount > 0;
+	GetKeyStateOfSpecialAKD(bState);
 	return keycode | (bState ? 0x80 : 0);
 }
 
