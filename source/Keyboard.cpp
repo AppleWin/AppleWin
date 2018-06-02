@@ -390,55 +390,17 @@ static char ClipboardCurrChar(bool bIncPtr)
 
 //===========================================================================
 
-// For AKD (Any Key Down), need special handling for the hooked key combos(*), as GetKeyState() doesn't detect the keys as being up/down.
-// . EG. Whilst pressing TAB, press LEFT ALT, then release TAB.
-// (*) ALT+TAB, ALT+ESCAPE, ALT+SPACE
+static uint64_t g_AKDFlags[4] = {0,0,0,0};
 
-static enum {AKD_TAB=0, AKD_ESCAPE, AKD_SPACE, AKD_RETURN};
-static bool g_specialAKD[4] = {false,false,false,false};
-
-void KeybSpecialKeyTransition(UINT message, WPARAM wparam)
-{
-	_ASSERT(message == WM_KEYUP || message == WM_KEYDOWN);
-	bool bState = message == WM_KEYDOWN;
-
-	switch (wparam)
-	{
-	case VK_TAB:
-		g_specialAKD[AKD_TAB] = bState;
-		break;
-	case VK_ESCAPE:
-		g_specialAKD[AKD_ESCAPE] = bState;
-		break;
-	case VK_SPACE:
-		g_specialAKD[AKD_SPACE] = bState;
-		break;
-	case VK_RETURN:	// Treat as special too, as get a WM_KEYUP after using RETURN to OK the Config/Load-State dialogs!
-		g_specialAKD[AKD_RETURN] = bState;
-		break;
-	};
-}
-
-static void GetKeyStateOfSpecialAKD(bool& bState)
-{
-	if ( g_specialAKD[AKD_TAB] || g_specialAKD[AKD_ESCAPE] || g_specialAKD[AKD_SPACE] || g_specialAKD[AKD_RETURN] )
-		bState = true;
-}
-
-//===========================================================================
-
-static int g_AKDRefCount = 0;
-
+// NB. Don't need to be concerned about if numpad/cursors are used for joystick,
+// since parent calls JoyProcessKey() just before this.
 void KeybAnyKeyDown(UINT message, WPARAM wparam)
 {
-	if (IS_APPLE2)	// Include Pravets machines too?
-		return;	// No AKD support
-
-	if (wparam == VK_TAB || wparam == VK_ESCAPE || wparam == VK_SPACE || wparam == VK_RETURN)
-		return;	// Could be from hook-filter, so ignore and handle via KeybSpecialKeyTransition()
-
-	const int value = message == WM_KEYDOWN ? 1 : -1;
-	bool bDoRefCount = false;
+	if (wparam > 255)
+	{
+		_ASSERT(0);
+		return;
+	}
 
 	if (wparam == VK_BACK ||
 		wparam == VK_TAB ||
@@ -448,40 +410,26 @@ void KeybAnyKeyDown(UINT message, WPARAM wparam)
 		(wparam >= VK_LEFT && wparam <= VK_DOWN) ||
 		wparam == VK_DELETE ||
 		(wparam >= '0' && wparam <= '9') ||
-		(wparam >= 'A' && wparam <= 'Z'))
+		(wparam >= 'A' && wparam <= 'Z') ||
+		(wparam >= VK_NUMPAD0 && wparam <= VK_NUMPAD9) ||
+		(wparam >= VK_MULTIPLY && wparam <= VK_DIVIDE) ||
+		(wparam >= VK_OEM_1 && wparam <= VK_OEM_3) ||	// 7 in total
+		(wparam >= VK_OEM_4 && wparam <= VK_OEM_8) ||	// 5 in total
+		(wparam == VK_OEM_102))
 	{
-		bDoRefCount = true;
-	}
-	else if (wparam >= VK_NUMPAD0 && wparam <= VK_NUMPAD9)
-	{
-		bDoRefCount = true;
-	}
-	else if (wparam >= VK_MULTIPLY && wparam <= VK_DIVIDE)
-	{
-		bDoRefCount = true;
-	}
-	else if (wparam >= VK_OEM_1 && wparam <= VK_OEM_3)	// 7 in total
-	{
-		bDoRefCount = true;
-	}
-	else if (wparam >= VK_OEM_4 && wparam <= VK_OEM_8)	// 5 in total
-	{
-		bDoRefCount = true;
-	}
-	else if (wparam == VK_OEM_102)
-	{
-		bDoRefCount = true;
-	}
+		UINT offset = wparam >> 6;
+		UINT bit    = wparam & 0x3f;
 
-	if (bDoRefCount)
-	{
-		g_AKDRefCount += value;
-		if (g_AKDRefCount < 0)
-		{
-			_ASSERT(0);
-			g_AKDRefCount = 0;
-		}
+		if (message == WM_KEYDOWN)
+			g_AKDFlags[offset] |= (1LL<<bit);
+		else
+			g_AKDFlags[offset] &= ~(1LL<<bit);
 	}
+}
+
+static bool IsAKD(void)
+{
+	return g_AKDFlags[0] || g_AKDFlags[1] || g_AKDFlags[2] || g_AKDFlags[3];
 }
 
 //===========================================================================
@@ -490,10 +438,10 @@ BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
 {
 	LogFileTimeUntilFirstKeyRead();
 
-	if(g_bPasteFromClipboard)
+	if (g_bPasteFromClipboard)
 		ClipboardInit();
 
-	if(g_bClipboardActive)
+	if (g_bClipboardActive)
 	{
 		if(*lptstr == 0)
 			ClipboardDone();
@@ -510,10 +458,10 @@ BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
 
 BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
 {
-	if(g_bPasteFromClipboard)
+	if (g_bPasteFromClipboard)
 		ClipboardInit();
 
-	if(g_bClipboardActive)
+	if (g_bClipboardActive)
 	{
 		if(*lptstr == 0)
 			ClipboardDone();
@@ -530,9 +478,7 @@ BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
 
 	// AKD
 
-	bool bState = g_AKDRefCount > 0;
-	GetKeyStateOfSpecialAKD(bState);
-	return keycode | (bState ? 0x80 : 0);
+	return keycode | (IsAKD() ? 0x80 : 0);
 }
 
 //===========================================================================

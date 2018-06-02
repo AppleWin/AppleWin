@@ -1260,10 +1260,6 @@ LRESULT CALLBACK FrameWndProc (
 
 	case WM_KEYDOWN:
 		KeybUpdateCtrlShiftStatus();
-		KeybSpecialKeyTransition(WM_KEYDOWN, wparam);
-
-		if ((HIWORD(lparam) & KF_REPEAT) == 0)
-			KeybAnyKeyDown(WM_KEYDOWN, wparam);
 
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
@@ -1389,11 +1385,18 @@ LRESULT CALLBACK FrameWndProc (
 			// Note about Alt Gr (Right-Alt):
 			// . WM_KEYDOWN[Left-Control], then:
 			// . WM_KEYDOWN[Right-Alt]
-			BOOL extended = ((lparam & 0x01000000) != 0);
+			BOOL extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
 			BOOL down     = 1;
-			BOOL autorep  = ((lparam & 0x40000000) != 0);
-			if ((!JoyProcessKey((int)wparam,extended,down,autorep)) && (g_nAppMode != MODE_LOGO))
-				KeybQueueKeypress((int)wparam,NOT_ASCII);
+			BOOL autorep  = (HIWORD(lparam) & KF_REPEAT) != 0;
+			BOOL IsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
+
+			if (!IsJoyKey && (g_nAppMode != MODE_LOGO))
+			{
+				KeybQueueKeypress((int)wparam, NOT_ASCII);
+
+				if ((HIWORD(lparam) & KF_REPEAT) == 0)
+					KeybAnyKeyDown(WM_KEYDOWN, wparam);
+			}
 		}
 		else if (g_nAppMode == MODE_DEBUG)
 		{		
@@ -1402,9 +1405,6 @@ LRESULT CALLBACK FrameWndProc (
 		break;
 
 	case WM_KEYUP:
-		KeybSpecialKeyTransition(WM_KEYUP, wparam);
-		KeybAnyKeyDown(WM_KEYUP, wparam);
-
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == (int)wparam-VK_F1))
 		{
@@ -1417,10 +1417,13 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else
 		{
-			BOOL extended = ((lparam & 0x01000000) != 0);
+			BOOL extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
 			BOOL down     = 0;
 			BOOL autorep  = 0;
-			JoyProcessKey((int)wparam,extended,down,autorep);
+			BOOL bIsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
+
+			if (!bIsJoyKey)
+				KeybAnyKeyDown(WM_KEYUP, wparam);
 		}
 		break;
 
