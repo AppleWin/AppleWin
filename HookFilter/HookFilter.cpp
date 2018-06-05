@@ -1,7 +1,5 @@
 #include <windows.h>
 
-// https://stackoverflow.com/questions/2490577/suppress-task-switch-keys-winkey-alt-tab-alt-esc-ctrl-esc-using-low-level-k
-
 static HWND g_hFrameWindow = (HWND)0;
 
 // NB. __stdcall (or WINAPI) and extern "C":
