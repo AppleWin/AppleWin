@@ -1,10 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio Express 2013 for Windows Desktop
+VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AppleWin", "AppleWinExpress2013.vcxproj", "{0A960136-A00A-4D4B-805F-664D9950D2CA}"
 	ProjectSection(ProjectDependencies) = postProject
+		{AA5854AD-2BC7-4EFD-9790-349ADB35E35A} = {AA5854AD-2BC7-4EFD-9790-349ADB35E35A}
 		{CF5A49BF-62A5-41BB-B10C-F34D556A7A45} = {CF5A49BF-62A5-41BB-B10C-F34D556A7A45}
 		{0212E0DF-06DA-4080-BD1D-F3B01599F70F} = {0212E0DF-06DA-4080-BD1D-F3B01599F70F}
 		{509739E7-0AF3-4C09-A1A9-F0B1BC31B39D} = {509739E7-0AF3-4C09-A1A9-F0B1BC31B39D}
@@ -18,6 +19,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yaml", "libyaml\win32\yaml2013.vcxproj", "{0212E0DF-06DA-4080-BD1D-F3B01599F70F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestCPU6502", "test\TestCPU6502\TestCPU6502-vs2013.vcxproj", "{CF5A49BF-62A5-41BB-B10C-F34D556A7A45}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HookFilter", "HookFilter\HookFilter-vs2013.vcxproj", "{AA5854AD-2BC7-4EFD-9790-349ADB35E35A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -67,6 +70,14 @@ Global
 		{CF5A49BF-62A5-41BB-B10C-F34D556A7A45}.Release NoDX|Win32.Build.0 = Release|Win32
 		{CF5A49BF-62A5-41BB-B10C-F34D556A7A45}.Release|Win32.ActiveCfg = Release|Win32
 		{CF5A49BF-62A5-41BB-B10C-F34D556A7A45}.Release|Win32.Build.0 = Release|Win32
+		{AA5854AD-2BC7-4EFD-9790-349ADB35E35A}.Debug NoDX|Win32.ActiveCfg = Debug|Win32
+		{AA5854AD-2BC7-4EFD-9790-349ADB35E35A}.Debug NoDX|Win32.Build.0 = Debug|Win32
+		{AA5854AD-2BC7-4EFD-9790-349ADB35E35A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AA5854AD-2BC7-4EFD-9790-349ADB35E35A}.Debug|Win32.Build.0 = Debug|Win32
+		{AA5854AD-2BC7-4EFD-9790-349ADB35E35A}.Release NoDX|Win32.ActiveCfg = Release|Win32
+		{AA5854AD-2BC7-4EFD-9790-349ADB35E35A}.Release NoDX|Win32.Build.0 = Release|Win32
+		{AA5854AD-2BC7-4EFD-9790-349ADB35E35A}.Release|Win32.ActiveCfg = Release|Win32
+		{AA5854AD-2BC7-4EFD-9790-349ADB35E35A}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

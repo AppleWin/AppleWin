@@ -481,7 +481,7 @@ inline uint16_t getLoResBits( uint8_t iByte )
 //===========================================================================
 inline uint32_t getScanlineColor( const uint16_t signal, const bgra_t *pTable )
 {
-	g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; // 14-bit
+	g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; // 12-bit
 	return *(uint32_t*) &pTable[ g_nSignalBitsNTSC ];
 }
 
@@ -658,6 +658,9 @@ inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTa
 #endif
 
 //===========================================================================
+
+// NB. g_nLastColumnPixelNTSC = bits.b13 will be superseded by these parent funcs which use bits.b14:
+// . updateScreenDoubleHires80(), updateScreenDoubleLores80(), updateScreenText80()
 inline void updatePixels( uint16_t bits )
 {
 	if (g_nColorBurstPixels < 2)
@@ -683,7 +686,7 @@ inline void updatePixels( uint16_t bits )
 		/* #7 of 7 */
 		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		g_pFuncUpdateBnWPixel(bits & 1);
-        g_nLastColumnPixelNTSC=bits& 1 ; bits >>= 1;
+        g_nLastColumnPixelNTSC = bits & 1;
 	}
 	else
 	{
@@ -708,7 +711,7 @@ inline void updatePixels( uint16_t bits )
 		/* #7 of 7 */
 		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 0000 0abc
 		g_pFuncUpdateHuePixel(bits & 1);           
-        g_nLastColumnPixelNTSC=bits& 1 ; bits >>= 1; // 0000 0000 0000 00ab
+        g_nLastColumnPixelNTSC = bits & 1;
 	}
 }
 
@@ -723,7 +726,7 @@ inline void updateVideoScannerHorzEOL()
 			if (g_nColorBurstPixels < 2)
 			{
 				// NOTE: This writes out-of-bounds for a 560x384 framebuffer
-				g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
 				g_pFuncUpdateBnWPixel(0);
 				g_pFuncUpdateBnWPixel(0);
 				g_pFuncUpdateBnWPixel(0);
@@ -731,10 +734,10 @@ inline void updateVideoScannerHorzEOL()
 			else
 			{
 				// NOTE: This writes out-of-bounds for a 560x384 framebuffer
+				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
 				g_pFuncUpdateHuePixel(0);
 				g_pFuncUpdateHuePixel(0);
 				g_pFuncUpdateHuePixel(0);
-				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC); // BUGFIX: ARCHON: green fringe on end of line
 			}
 		}
 
@@ -745,7 +748,6 @@ inline void updateVideoScannerHorzEOL()
 			g_nVideoClockVert = 0;
 
 			updateFlashRate();
-			//VideoRefreshScreen(); // ContinueExecution() calls VideoRefreshScreen() every dwClksPerFrame (17030)
 		}
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
@@ -1155,8 +1157,6 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 //===========================================================================
 void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 {
-	uint16_t bits;
-	
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
 		g_pFuncUpdateTextScreen( cycles6502 );
@@ -1181,10 +1181,10 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 				uint8_t m = pMain[0];
 				uint8_t a = pAux [0];
 
-				bits = ((m & 0x7f) << 7) | (a & 0x7f);
+				uint16_t bits = ((m & 0x7f) << 7) | (a & 0x7f);
 				bits = (bits << 1) | g_nLastColumnPixelNTSC;
 				updatePixels( bits );
-				g_nLastColumnPixelNTSC = (bits >> 14) & 3;
+				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1257,12 +1257,10 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 				uint16_t aux  = hi >> (((1 - (g_nVideoClockHorz & 1)) * 2) + 3);
 				uint16_t bits = (main << 7) | (aux & 0x7f);
 				updatePixels( bits );
-				g_nLastColumnPixelNTSC = (bits >> 14) & 3;
-
+				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
 			}
 		}
 		updateVideoScannerHorzEOL();
-
 	}
 }
 
@@ -1274,7 +1272,7 @@ void updateScreenSingleHires40 (long cycles6502)
 		g_pFuncUpdateTextScreen( cycles6502 );
 		return;
 	}
-	
+
 	for (; cycles6502 > 0; --cycles6502)
 	{
 		uint16_t addr = updateVideoScannerAddressHGR();
@@ -1394,8 +1392,10 @@ void updateScreenText80 (long cycles6502)
 				if ((0 == g_nVideoCharSet) && 0x40 == (a & 0xC0)) // Flash only if mousetext not active
 					aux ^= g_nTextFlashMask;
 
-				uint16_t bits = (main << 7) | aux;
+				uint16_t bits = (main << 7) | (aux & 0x7f);
+				bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
 				updatePixels( bits );
+				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1629,7 +1629,11 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	updateMonochromeTables( 0xFF, 0xFF, 0xFF );
 
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
-		g_pScanLines[y] = (bgra_t*)(g_pFramebufferbits + sizeof(bgra_t) * GetFrameBufferWidth() * ((GetFrameBufferHeight() - 1) - y - GetFrameBufferBorderHeight()) + (sizeof(bgra_t) * GetFrameBufferBorderWidth()));
+	{
+		uint32_t offset = sizeof(bgra_t) * GetFrameBufferWidth() * ((GetFrameBufferHeight() - 1) - y - GetFrameBufferBorderHeight()) + (sizeof(bgra_t) * GetFrameBufferBorderWidth());
+		offset -= sizeof(bgra_t);	// GH#555: Start 1 RGBA pixel before frame to account for g_nLastColumnPixelNTSC
+		g_pScanLines[y] = (bgra_t*) (g_pFramebufferbits + offset);
+	}
 
 	g_pVideoAddress = g_pScanLines[0];
 

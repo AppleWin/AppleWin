@@ -821,7 +821,7 @@ void RegisterExtensions(void)
 //===========================================================================
 
 // NB. On a restart, it's OK to call RegisterHotKey() again since the old g_hFrameWindow has been destroyed
-static void AppleWin_RegisterHotKeys(void)
+static void RegisterHotKeys(void)
 {
 	BOOL bStatus[3] = {0,0,0};
 
@@ -863,6 +863,49 @@ static void AppleWin_RegisterHotKeys(void)
 		msg += "\n";
 		LogFileOutput(msg.c_str());
 	}
+}
+
+//---------------------------------------------------------------------------
+
+static HINSTANCE g_hinstDLL = 0;
+static HHOOK g_hhook = 0;
+
+// Pre: g_hFrameWindow must be valid
+void HookFilterForKeyboard()
+{
+	g_hinstDLL = LoadLibrary(TEXT("HookFilter.dll"));
+
+	_ASSERT(g_hFrameWindow);
+
+	typedef void (*RegisterHWNDProc)(HWND);
+	RegisterHWNDProc RegisterHWND = (RegisterHWNDProc) GetProcAddress(g_hinstDLL, "RegisterHWND");
+	if (RegisterHWND)
+		RegisterHWND(g_hFrameWindow);
+
+	HOOKPROC hkprcLowLevelKeyboardProc = (HOOKPROC) GetProcAddress(g_hinstDLL, "LowLevelKeyboardProc");
+
+	g_hhook = SetWindowsHookEx(
+						WH_KEYBOARD_LL,
+						hkprcLowLevelKeyboardProc,
+						g_hinstDLL,
+						0);
+
+	if (g_hhook == 0 || g_hFrameWindow == 0)
+	{
+		std::string msg("Failed to install hook filter for system keys");
+
+		DWORD dwErr = GetLastError();
+		MessageBox(GetDesktopWindow(), msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK);
+
+		msg += "\n";
+		LogFileOutput(msg.c_str());
+	}
+}
+
+void UnhookFilterForKeyboard()
+{
+	UnhookWindowsHookEx(g_hhook);
+	FreeLibrary(g_hinstDLL);
 }
 
 //===========================================================================
@@ -1362,10 +1405,13 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, VERSIONSTRING);	// Only save version after user accepts license
 		}
 
-		// PrintScrn support
 		if (g_bCapturePrintScreenKey)
-			AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
-		LogFileOutput("Main: AppleWin_RegisterHotKeys()\n");
+		{
+			RegisterHotKeys();		// needs valid g_hFrameWindow
+			LogFileOutput("Main: RegisterHotKeys()\n");
+		}
+
+		HookFilterForKeyboard();	// needs valid g_hFrameWindow (for message pump)
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
 		DiskReset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
@@ -1472,6 +1518,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		DSUninit();
 		LogFileOutput("Main: DSUninit()\n");
+
+		UnhookFilterForKeyboard();
 	}
 	while (g_bRestart);
 

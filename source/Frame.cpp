@@ -1319,7 +1319,18 @@ LRESULT CALLBACK FrameWndProc (
 
 			Config_Save_Video();
 		}
-		else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)
+		else if (wparam == VK_F10)
+		{
+			if (g_Apple2Type == A2TYPE_PRAVETS8A && !g_bCtrlKey)
+			{
+				KeybToggleP8ACapsLock ();	// F10: Toggles P8 Capslock
+			}
+			else
+			{
+				SetUsingCursor(FALSE);		// Ctrl+F10
+			}
+		}
+		else if (wparam == VK_F11 && !g_bCtrlKey)	// Save state (F11)
 		{
 			SoundCore_SetFade(FADE_OUT);
 			if(sg_PropertySheet.SaveStateSelectImage(window, true))
@@ -1328,7 +1339,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			SoundCore_SetFade(FADE_IN);
 		}
-		else if (wparam == VK_F12)										// Load state (F12 or Ctrl+F12)
+		else if (wparam == VK_F12)					// Load state (F12 or Ctrl+F12)
 		{
 			SoundCore_SetFade(FADE_OUT);
 			if(sg_PropertySheet.SaveStateSelectImage(window, false))
@@ -1374,27 +1385,22 @@ LRESULT CALLBACK FrameWndProc (
 			// Note about Alt Gr (Right-Alt):
 			// . WM_KEYDOWN[Left-Control], then:
 			// . WM_KEYDOWN[Right-Alt]
-			BOOL extended = ((lparam & 0x01000000) != 0);
+			BOOL extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
 			BOOL down     = 1;
-			BOOL autorep  = ((lparam & 0x40000000) != 0);
-			if ((!JoyProcessKey((int)wparam,extended,down,autorep)) && (g_nAppMode != MODE_LOGO))
-				KeybQueueKeypress((int)wparam,NOT_ASCII);
+			BOOL autorep  = (HIWORD(lparam) & KF_REPEAT) != 0;
+			BOOL IsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
+
+			if (!IsJoyKey && (g_nAppMode != MODE_LOGO))
+			{
+				KeybQueueKeypress((int)wparam, NOT_ASCII);
+
+				if ((HIWORD(lparam) & KF_REPEAT) == 0)
+					KeybAnyKeyDown(WM_KEYDOWN, wparam);
+			}
 		}
 		else if (g_nAppMode == MODE_DEBUG)
 		{		
 			DebuggerProcessKey(wparam); // Debugger already active, re-direct key to debugger
-		}
-
-		if (wparam == VK_F10)
-		{
-			if ((g_Apple2Type == A2TYPE_PRAVETS8A) && (GetKeyState(VK_CONTROL) >= 0))
-			{
-				KeybToggleP8ACapsLock ();//Toggles P8 Capslock
-			}
-			else 
-			{
-				SetUsingCursor(FALSE);
-			}
 		}
 		break;
 
@@ -1411,10 +1417,13 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else
 		{
-			BOOL extended = ((lparam & 0x01000000) != 0);
+			BOOL extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
 			BOOL down     = 0;
 			BOOL autorep  = 0;
-			JoyProcessKey((int)wparam,extended,down,autorep);
+			BOOL bIsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
+
+			if (!bIsJoyKey)
+				KeybAnyKeyDown(WM_KEYUP, wparam);
 		}
 		break;
 
@@ -1736,6 +1745,7 @@ LRESULT CALLBACK FrameWndProc (
 
 		if ((wparam == VK_F10) || (wparam == VK_MENU))	// VK_MENU == ALT Key
 			return 0;
+
 		break;
 
 	case WM_SYSKEYUP:
@@ -1747,6 +1757,9 @@ LRESULT CALLBACK FrameWndProc (
 		else
 			PostMessage(window,WM_KEYUP,wparam,lparam);
 		break;
+
+	case WM_MENUCHAR:	// GH#556 - Suppress the Windows Default Beep (ie. Ding) whenever ALT+<key> is pressed
+		return (MNC_CLOSE << 16) | (wparam & 0xffff);
 
     case WM_USER_BENCHMARK: {
       UpdateWindow(window);

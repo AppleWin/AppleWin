@@ -119,7 +119,7 @@ BYTE KeybGetKeycode ()		// Used by MemCheckPaging() & VideoCheckMode()
 //===========================================================================
 void KeybQueueKeypress (int key, BOOL bASCII)
 {
-	if (bASCII == ASCII)
+	if (bASCII == ASCII)	// WM_CHAR
 	{
 		if (g_bFreshReset && key == VK_CANCEL) // OLD HACK: 0x03
 		{
@@ -274,9 +274,10 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 					keycode = key;
 			}
 		}
+
 		lastvirtkey = LOBYTE(VkKeyScan(key));
 	} 
-	else //(bASCII != ASCII)
+	else //(bASCII != ASCII)	// WM_KEYDOWN
 	{
 		// Note: VK_CANCEL is Control-Break
 		if ((key == VK_CANCEL) && (GetKeyState(VK_CONTROL) < 0))
@@ -389,14 +390,58 @@ static char ClipboardCurrChar(bool bIncPtr)
 
 //===========================================================================
 
+static uint64_t g_AKDFlags[4] = {0,0,0,0};
+
+// NB. Don't need to be concerned about if numpad/cursors are used for joystick,
+// since parent calls JoyProcessKey() just before this.
+void KeybAnyKeyDown(UINT message, WPARAM wparam)
+{
+	if (wparam > 255)
+	{
+		_ASSERT(0);
+		return;
+	}
+
+	if (wparam == VK_BACK ||
+		wparam == VK_TAB ||
+		wparam == VK_RETURN ||
+		wparam == VK_ESCAPE ||
+		wparam == VK_SPACE ||
+		(wparam >= VK_LEFT && wparam <= VK_DOWN) ||
+		wparam == VK_DELETE ||
+		(wparam >= '0' && wparam <= '9') ||
+		(wparam >= 'A' && wparam <= 'Z') ||
+		(wparam >= VK_NUMPAD0 && wparam <= VK_NUMPAD9) ||
+		(wparam >= VK_MULTIPLY && wparam <= VK_DIVIDE) ||
+		(wparam >= VK_OEM_1 && wparam <= VK_OEM_3) ||	// 7 in total
+		(wparam >= VK_OEM_4 && wparam <= VK_OEM_8) ||	// 5 in total
+		(wparam == VK_OEM_102))
+	{
+		UINT offset = wparam >> 6;
+		UINT bit    = wparam & 0x3f;
+
+		if (message == WM_KEYDOWN)
+			g_AKDFlags[offset] |= (1LL<<bit);
+		else
+			g_AKDFlags[offset] &= ~(1LL<<bit);
+	}
+}
+
+static bool IsAKD(void)
+{
+	return g_AKDFlags[0] || g_AKDFlags[1] || g_AKDFlags[2] || g_AKDFlags[3];
+}
+
+//===========================================================================
+
 BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
 {
 	LogFileTimeUntilFirstKeyRead();
 
-	if(g_bPasteFromClipboard)
+	if (g_bPasteFromClipboard)
 		ClipboardInit();
 
-	if(g_bClipboardActive)
+	if (g_bClipboardActive)
 	{
 		if(*lptstr == 0)
 			ClipboardDone();
@@ -413,10 +458,10 @@ BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
 
 BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
 {
-	if(g_bPasteFromClipboard)
+	if (g_bPasteFromClipboard)
 		ClipboardInit();
 
-	if(g_bClipboardActive)
+	if (g_bClipboardActive)
 	{
 		if(*lptstr == 0)
 			ClipboardDone();
@@ -428,7 +473,12 @@ BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
 
 	keywaiting = 0;
 
-	return keycode | ((GetKeyState(lastvirtkey) < 0) ? 0x80 : 0);
+	if (IS_APPLE2)	// Include Pravets machines too?
+		return keycode;
+
+	// AKD
+
+	return keycode | (IsAKD() ? 0x80 : 0);
 }
 
 //===========================================================================
