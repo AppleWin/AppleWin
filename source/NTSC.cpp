@@ -1631,7 +1631,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
 	{
 		uint32_t offset = sizeof(bgra_t) * GetFrameBufferWidth() * ((GetFrameBufferHeight() - 1) - y - GetFrameBufferBorderHeight()) + (sizeof(bgra_t) * GetFrameBufferBorderWidth());
-		offset -= sizeof(bgra_t);	// GH#555: Start 1 RGBA pixel before frame to account for g_nLastColumnPixelNTSC
+//		offset -= sizeof(bgra_t);	// GH#555: Start 1 RGBA pixel before frame to account for g_nLastColumnPixelNTSC
 		g_pScanLines[y] = (bgra_t*) (g_pFramebufferbits + offset);
 	}
 
