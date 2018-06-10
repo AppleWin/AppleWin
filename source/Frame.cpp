@@ -177,6 +177,15 @@ void FrameResizeWindow(int nNewScale);
 
 // ==========================================================================
 
+static bool g_bAltEnter_ToggleFullScreen = true; // Default for ALT+ENTER is to toggle between windowed and full-screen modes
+
+void SetAltEnterToggleFullScreen(bool mode)
+{
+	g_bAltEnter_ToggleFullScreen = mode;
+}
+
+// ==========================================================================
+
 // Display construction:
 // . Apple II video gets rendered to the framebuffer (maybe with some preliminary/final NTSC data in the border areas)
 // . The *borderless* framebuffer is stretchblt() copied to the frame DC, in VideoRefreshScreen()
@@ -1733,15 +1742,15 @@ LRESULT CALLBACK FrameWndProc (
       }
       break;
 
-	case WM_SYSKEYDOWN:
+	case WM_SYSKEYDOWN:	// ALT + any key; or F10
 		KeybUpdateCtrlShiftStatus();
 
 		// http://msdn.microsoft.com/en-us/library/windows/desktop/gg153546(v=vs.85).aspx
 		// v1.25.0: Alt-Return Alt-Enter toggle fullscreen
-		if (g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
+		if (g_bAltEnter_ToggleFullScreen && g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
 			return 0; // NOP -- eat key
-		else
-			PostMessage(window,WM_KEYDOWN,wparam,lparam);
+
+		PostMessage(window,WM_KEYDOWN,wparam,lparam);
 
 		if ((wparam == VK_F10) || (wparam == VK_MENU))	// VK_MENU == ALT Key
 			return 0;
@@ -1752,10 +1761,11 @@ LRESULT CALLBACK FrameWndProc (
 		KeybUpdateCtrlShiftStatus();
 
 		// v1.25.0: Alt-Return Alt-Enter toggle fullscreen
-		if (g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
+		if (g_bAltEnter_ToggleFullScreen && g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
 			ScreenWindowResize(false);
 		else
 			PostMessage(window,WM_KEYUP,wparam,lparam);
+
 		break;
 
 	case WM_MENUCHAR:	// GH#556 - Suppress the Windows Default Beep (ie. Ding) whenever ALT+<key> is pressed

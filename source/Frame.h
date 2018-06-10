@@ -61,3 +61,5 @@
 	UINT GetFrameBufferHeight(void);
 	UINT Get3DBorderWidth(void);
 	UINT Get3DBorderHeight(void);
+
+	void SetAltEnterToggleFullScreen(bool mode);

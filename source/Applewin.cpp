@@ -1257,6 +1257,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			sg_SSC.SupportDCD(true);
 		}
+		else if (strcmp(lpCmdLine, "-alt-enter=toggle-full-screen") == 0)	// GH#556
+		{
+			SetAltEnterToggleFullScreen(true);
+		}
+		else if (strcmp(lpCmdLine, "-alt-enter=open-apple-enter") == 0)		// GH#556
+		{
+			SetAltEnterToggleFullScreen(false);
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
