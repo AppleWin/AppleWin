@@ -1394,7 +1394,7 @@ LRESULT CALLBACK FrameWndProc (
 			// Note about Alt Gr (Right-Alt):
 			// . WM_KEYDOWN[Left-Control], then:
 			// . WM_KEYDOWN[Right-Alt]
-			BOOL extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
+			bool extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
 			BOOL down     = 1;
 			BOOL autorep  = (HIWORD(lparam) & KF_REPEAT) != 0;
 			BOOL IsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
@@ -1403,8 +1403,8 @@ LRESULT CALLBACK FrameWndProc (
 			{
 				KeybQueueKeypress((int)wparam, NOT_ASCII);
 
-				if ((HIWORD(lparam) & KF_REPEAT) == 0)
-					KeybAnyKeyDown(WM_KEYDOWN, wparam);
+				if (!autorep)
+					KeybAnyKeyDown(WM_KEYDOWN, wparam, extended);
 			}
 		}
 		else if (g_nAppMode == MODE_DEBUG)
@@ -1426,13 +1426,13 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else
 		{
-			BOOL extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
+			bool extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
 			BOOL down     = 0;
 			BOOL autorep  = 0;
 			BOOL bIsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
 
 			if (!bIsJoyKey)
-				KeybAnyKeyDown(WM_KEYUP, wparam);
+				KeybAnyKeyDown(WM_KEYUP, wparam, extended);
 		}
 		break;
 

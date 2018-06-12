@@ -390,11 +390,13 @@ static char ClipboardCurrChar(bool bIncPtr)
 
 //===========================================================================
 
-static uint64_t g_AKDFlags[4] = {0,0,0,0};
+const UINT kAKDNumElements = 256/64;
+static uint64_t g_AKDFlags[2][kAKDNumElements] = { {0,0,0,0},	// normal
+												   {0,0,0,0}};	// extended
 
 // NB. Don't need to be concerned about if numpad/cursors are used for joystick,
 // since parent calls JoyProcessKey() just before this.
-void KeybAnyKeyDown(UINT message, WPARAM wparam)
+void KeybAnyKeyDown(UINT message, WPARAM wparam, bool bIsExtended)
 {
 	if (wparam > 255)
 	{
@@ -419,17 +421,24 @@ void KeybAnyKeyDown(UINT message, WPARAM wparam)
 	{
 		UINT offset = wparam >> 6;
 		UINT bit    = wparam & 0x3f;
+		UINT idx    = !bIsExtended ? 0 : 1;
 
 		if (message == WM_KEYDOWN)
-			g_AKDFlags[offset] |= (1LL<<bit);
+			g_AKDFlags[idx][offset] |= (1LL<<bit);
 		else
-			g_AKDFlags[offset] &= ~(1LL<<bit);
+			g_AKDFlags[idx][offset] &= ~(1LL<<bit);
 	}
 }
 
 static bool IsAKD(void)
 {
-	return g_AKDFlags[0] || g_AKDFlags[1] || g_AKDFlags[2] || g_AKDFlags[3];
+	uint64_t* p = &g_AKDFlags[0][0];
+
+	for (UINT i=0; i<sizeof(g_AKDFlags)/sizeof(g_AKDFlags[0][0]); i++)
+		if (p[i])
+			return true;
+
+	return false;
 }
 
 //===========================================================================
