@@ -9,6 +9,15 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.27.5.0 - dd mmm 2018
+----------------------
+. [Bug #556] Allow system key combinations to be read: Open Apple (left ALT) + ESC/SPACE/TAB.
+	- Also fixes #145, #198, #448.
+	- Support new command line switches: -no-hook-system-key, -alt-enter=<open-apple-enter|toggle-full-screen>
+	- Fix for save-state which wasn't correctly saving last key.
+. [Bug #330] Any Key Down (AKD) wasn't working for the multi-key case.
+
+
 1.27.4.0 - 26 May 2018
 ----------------------
 . [Bug #555] Fix for showing 559th DHGR vertical column.
