@@ -549,7 +549,7 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 			nValue = pMB->sy6522.IFR;
 			break;
 		case 0x0e:	// IER
-			nValue = 0x80;	// Datasheet says this is 0x80|IER
+			nValue = 0x80 | pMB->sy6522.IER;	// GH#567
 			break;
 		case 0x0f:	// ORA_NO_HS
 			nValue = pMB->sy6522.ORA;
