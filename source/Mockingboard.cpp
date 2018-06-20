@@ -480,11 +480,11 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				pMB->sy6522.IER |= nValue;
 				UpdateIFR(pMB, 0);
 
-				// Check if active timer changed from non-interrupt (polling IFR) to interrupt:
-				if ((pMB->sy6522.IER & IxR_TIMER1) && pMB->bTimer1Active)
+				// Check if a timer interrupt has been enabled (regardless of if there's an active timer or not): GH#567
+				if (pMB->sy6522.IER & IxR_TIMER1)
 					StartTimer1(pMB);
 
-				if ((pMB->sy6522.IER & IxR_TIMER2) && pMB->bTimer2Active)
+				if (pMB->sy6522.IER & IxR_TIMER2)
 					StartTimer2(pMB);
 			}
 			break;
