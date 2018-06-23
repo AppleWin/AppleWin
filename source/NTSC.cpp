@@ -1291,6 +1291,14 @@ void updateScreenSingleHires40 (long cycles6502)
 				if (m & 0x80)
 					bits = (bits << 1) | g_nLastColumnPixelNTSC;
 				updatePixels( bits );
+
+				// For last hpos && bit6=1: (GH#555)
+				// * if bit7=0 (no shift) then clear g_nLastColumnPixelNTSC to prevent a 3rd 14M (aka DHGR) pixel being drawn
+				//   . even though this is off-screen, it still has an on-screen affect (making the green dot more white on the screen edge).
+				// * if bit7=1 (half-dot shift) then also clear g_nLastColumnPixelNTSC
+				//   . not sure if this is correct though
+				if (g_nVideoClockHorz == (VIDEO_SCANNER_MAX_HORZ-1))
+					g_nLastColumnPixelNTSC = 0;
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1631,7 +1639,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
 	{
 		uint32_t offset = sizeof(bgra_t) * GetFrameBufferWidth() * ((GetFrameBufferHeight() - 1) - y - GetFrameBufferBorderHeight()) + (sizeof(bgra_t) * GetFrameBufferBorderWidth());
-//		offset -= sizeof(bgra_t);	// GH#555: Start 1 RGBA pixel before frame to account for g_nLastColumnPixelNTSC
+//		offset -= sizeof(bgra_t);	// GH#555: Start 1 RGBA pixel before frame to account for g_nLastColumnPixelNTSC	// TC: revert as lose half an HGR pixel on left-edge
 		g_pScanLines[y] = (bgra_t*) (g_pFramebufferbits + offset);
 	}
 
