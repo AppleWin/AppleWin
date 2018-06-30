@@ -435,7 +435,7 @@ void EnterMessageLoop(void)
 			else if (g_nAppMode == MODE_PAUSED)
 				Sleep(1);		// Stop process hogging CPU - 1ms, as need to fade-out speaker sound buffer
 			else if (g_nAppMode == MODE_LOGO)
-				Sleep(100);		// Stop process hogging CPU
+				Sleep(1);		// Stop process hogging CPU (NB. don't delay for too long otherwise key input can be slow in other apps - GH#569)
 		}
 	}
 }

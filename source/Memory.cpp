@@ -1831,6 +1831,7 @@ _done_saturn:
 		UpdatePaging(0);	// Initialize=0
 	}
 
+	// Replicate 80STORE, PAGE2 and HIRES to video sub-system
 	if ((address <= 1) || ((address >= 0x54) && (address <= 0x57)))
 		return VideoSetMode(programcounter,address,write,value,nExecutedCycles);
 
