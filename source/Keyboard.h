@@ -15,13 +15,11 @@ void    KeybQueueKeypress (int,BOOL);
 void    KeybToggleCapsLock ();
 void    KeybToggleP8ACapsLock ();
 void    KeybAnyKeyDown(UINT message, WPARAM wparam, bool bIsExtended);
+BYTE    KeybReadData (void);
+BYTE    KeybReadFlag (void);
 void    KeybSetSnapshot_v1(const BYTE LastKey);
 void    KeybSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    KeybLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
-
-BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
-BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
-BYTE __stdcall KbdAllow8Bit (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles); //For Pravets A/C only
 
 extern bool g_bShiftKey;
 extern bool g_bCtrlKey;

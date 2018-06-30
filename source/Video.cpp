@@ -338,34 +338,6 @@ void VideoBenchmark () {
              MB_ICONINFORMATION | MB_SETFOREGROUND);
 }
             
-//===========================================================================
-BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
-{
-  address &= 0xFF;
-  if (address == 0x7F)
-    return MemReadFloatingBus(SW_DHIRES != 0, uExecutedCycles);
-  else {
-    BOOL result = 0;
-    switch (address) {
-      case 0x1A: result = SW_TEXT;    break;
-      case 0x1B: result = SW_MIXED;   break;
-      case 0x1D: result = SW_HIRES;   break;
-      case 0x1E: result = g_nAltCharSetOffset;   break;
-      case 0x1F: result = SW_80COL;   break;
-      case 0x7F: result = SW_DHIRES;  break;
-    }
-    return KeybGetKeycode() | (result ? 0x80 : 0);
-  }
-}
-
-//===========================================================================
-BYTE VideoCheckVbl ( ULONG uExecutedCycles )
-{
-	bool bVblBar = VideoGetVblBar(uExecutedCycles);
-	BYTE r = KeybGetKeycode();
-	return (r & ~0x80) | (bVblBar ? 0x80 : 0);
- }
-
 // This is called from PageConfig
 //===========================================================================
 void VideoChooseMonochromeColor ()

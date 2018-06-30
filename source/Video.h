@@ -197,10 +197,6 @@ enum VideoScreenShot_e
 void Video_TakeScreenShot( VideoScreenShot_e iScreenShotType );
 void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel );
 
-
-// Win32/MSVC: __stdcall 
-BYTE VideoCheckMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
-BYTE VideoCheckVbl ( ULONG uExecutedCycles );
 BYTE VideoSetMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 
 void Config_Load_Video(void);

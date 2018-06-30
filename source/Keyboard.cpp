@@ -108,7 +108,7 @@ void KeybUpdateCtrlShiftStatus()
 }
 
 //===========================================================================
-BYTE KeybGetKeycode ()		// Used by MemCheckPaging() & VideoCheckMode()
+BYTE KeybGetKeycode ()		// Used by IORead_C01x() and TapeRead() for Pravets8A
 {
 	return keycode;
 }
@@ -440,7 +440,7 @@ static bool IsAKD(void)
 
 //===========================================================================
 
-BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
+BYTE KeybReadData (void)
 {
 	LogFileTimeUntilFirstKeyRead();
 
@@ -462,7 +462,7 @@ BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
 
 //===========================================================================
 
-BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
+BYTE KeybReadFlag (void)
 {
 	if (g_bPasteFromClipboard)
 		ClipboardInit();

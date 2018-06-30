@@ -209,7 +209,7 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 
 static BYTE __stdcall IORead_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	return KeybReadData(pc, addr, bWrite, d, nExecutedCycles);
+	return KeybReadData();
 }
 
 static BYTE __stdcall IOWrite_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
@@ -224,32 +224,36 @@ static BYTE __stdcall IOWrite_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 
 static BYTE __stdcall IORead_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
+	if (IS_APPLE2)	// Include Pravets machines too?
+		return KeybReadFlag();
+
+	bool res = false;
 	switch (addr & 0xf)
 	{
-	case 0x0:	return KeybReadFlag(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x1:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x2:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x3:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x4:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x5:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x6:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x7:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x8:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x9:	return VideoCheckVbl(nExecutedCycles);
-	case 0xA:	return VideoCheckMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xB:	return VideoCheckMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xC:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xD:	return MemCheckPaging(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xE:	return VideoCheckMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xF:	return VideoCheckMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x0: return KeybReadFlag();
+	case 0x1: res = SW_BANK2     ? true : false;		break;
+	case 0x2: res = SW_HIGHRAM   ? true : false;		break;
+	case 0x3: res = SW_AUXREAD   ? true : false;		break;
+	case 0x4: res = SW_AUXWRITE  ? true : false;		break;
+	case 0x5: res = SW_INTCXROM  ? true : false;		break;
+	case 0x6: res = SW_ALTZP     ? true : false;		break;
+	case 0x7: res = SW_SLOTC3ROM ? true : false;		break;
+	case 0x8: res = SW_80STORE   ? true : false;		break;
+	case 0x9: res = VideoGetVblBar(nExecutedCycles);	break;
+	case 0xA: res = VideoGetSWTEXT();					break;
+	case 0xB: res = VideoGetSWMIXED();					break;
+	case 0xC: res = SW_PAGE2     ? true : false;		break;
+	case 0xD: res = VideoGetSWHIRES();					break;
+	case 0xE: res = VideoGetSWAltCharSet();				break;
+	case 0xF: res = VideoGetSW80COL();					break;
 	}
 
-	return 0;
+	return KeybGetKeycode() | (res ? 0x80 : 0);
 }
 
 static BYTE __stdcall IOWrite_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	return KeybReadFlag(pc, addr, bWrite, d, nExecutedCycles);
+	return KeybReadFlag();
 }
 
 //-------------------------------------
@@ -344,8 +348,6 @@ static BYTE __stdcall IOWrite_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 
 static BYTE __stdcall IORead_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {	
-	static byte CurrentKestroke = 0;
-	CurrentKestroke = KeybGetKeycode();
 	switch (addr & 0x7) // address bit 4 is ignored (UTAIIe:7-5)
 	{
 	//In Pravets8A/C if SETMODE (8bit character encoding) is enabled, bit6 in $C060 is 0; Else it is 1
@@ -399,7 +401,7 @@ static BYTE __stdcall IORead_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xC:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xD:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xE:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xF:	return VideoCheckMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xF:	return MemReadFloatingBus(VideoGetSWDHIRES(), nExecutedCycles);
 	}
 
 	return 0;
@@ -1016,29 +1018,6 @@ static void UpdatePaging(BOOL initialize)
 
 //===========================================================================
 
-// TODO: >= Apple2e only?
-BYTE __stdcall MemCheckPaging(WORD, WORD address, BYTE, BYTE, ULONG)
-{
-	address &= 0xFF;
-	BOOL result = 0;
-	switch (address)
-	{
-	case 0x11: result = SW_BANK2;       break;
-	case 0x12: result = SW_HIGHRAM;     break;
-	case 0x13: result = SW_AUXREAD;     break;
-	case 0x14: result = SW_AUXWRITE;    break;
-	case 0x15: result = SW_INTCXROM;    break;
-	case 0x16: result = SW_ALTZP;       break;
-	case 0x17: result = SW_SLOTC3ROM;   break;
-	case 0x18: result = SW_80STORE;     break;
-	case 0x1C: result = SW_PAGE2;       break;
-	case 0x1D: result = SW_HIRES;       break;
-	}
-	return KeybGetKeycode() | (result ? 0x80 : 0);
-}
-
-//===========================================================================
-
 void MemDestroy()
 {
 	VirtualFree(memaux  ,0,MEM_RELEASE);
@@ -1648,7 +1627,7 @@ BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 BYTE MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles)
 {
 	BYTE r = MemReadFloatingBus(uExecutedCycles);
-	return (r & ~0x80) | ((highbit) ? 0x80 : 0);
+	return (r & ~0x80) | (highbit ? 0x80 : 0);
 }
 
 //===========================================================================
