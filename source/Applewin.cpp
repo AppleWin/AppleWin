@@ -78,6 +78,8 @@ TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin exe
 TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
 bool      g_bCapturePrintScreenKey = true;
+static bool g_bHookSystemKey = true;
+
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
 bool      g_bRestart = false;
 bool      g_bRestartFullScreen = false;
@@ -871,7 +873,7 @@ static HINSTANCE g_hinstDLL = 0;
 static HHOOK g_hhook = 0;
 
 // Pre: g_hFrameWindow must be valid
-void HookFilterForKeyboard()
+bool HookFilterForKeyboard()
 {
 	g_hinstDLL = LoadLibrary(TEXT("HookFilter.dll"));
 
@@ -890,16 +892,17 @@ void HookFilterForKeyboard()
 						g_hinstDLL,
 						0);
 
-	if (g_hhook == 0 || g_hFrameWindow == 0)
-	{
-		std::string msg("Failed to install hook filter for system keys");
+	if (g_hhook != 0 && g_hFrameWindow != 0)
+		return true;
 
-		DWORD dwErr = GetLastError();
-		MessageBox(GetDesktopWindow(), msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK);
+	std::string msg("Failed to install hook filter for system keys");
 
-		msg += "\n";
-		LogFileOutput(msg.c_str());
-	}
+	DWORD dwErr = GetLastError();
+	MessageBox(GetDesktopWindow(), msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK);
+
+	msg += "\n";
+	LogFileOutput(msg.c_str());
+	return false;
 }
 
 void UnhookFilterForKeyboard()
@@ -1227,6 +1230,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			g_bShowPrintScreenWarningDialog = false;
 		}
+		else if (strcmp(lpCmdLine, "-no-hook-system-key") == 0)		// Don't hook the System keys (eg. Left-ALT+ESC/SPACE/TAB) GH#556
+		{
+			g_bHookSystemKey = false;
+		}
 		else if (strcmp(lpCmdLine, "-spkr-inc") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
@@ -1256,6 +1263,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if ((strcmp(lpCmdLine, "-dcd") == 0) || (strcmp(lpCmdLine, "-modem") == 0))	// GH#386
 		{
 			sg_SSC.SupportDCD(true);
+		}
+		else if (strcmp(lpCmdLine, "-alt-enter=toggle-full-screen") == 0)	// GH#556
+		{
+			SetAltEnterToggleFullScreen(true);
+		}
+		else if (strcmp(lpCmdLine, "-alt-enter=open-apple-enter") == 0)		// GH#556
+		{
+			SetAltEnterToggleFullScreen(false);
 		}
 		else	// unsupported
 		{
@@ -1411,7 +1426,11 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			LogFileOutput("Main: RegisterHotKeys()\n");
 		}
 
-		HookFilterForKeyboard();	// needs valid g_hFrameWindow (for message pump)
+		if (g_bHookSystemKey)
+		{
+			if (HookFilterForKeyboard())	// needs valid g_hFrameWindow (for message pump)
+				LogFileOutput("Main: HookFilterForKeyboard()\n");
+		}
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
 		DiskReset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
@@ -1519,7 +1538,11 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		DSUninit();
 		LogFileOutput("Main: DSUninit()\n");
 
-		UnhookFilterForKeyboard();
+		if (g_bHookSystemKey)
+		{
+			UnhookFilterForKeyboard();
+			LogFileOutput("Main: UnhookFilterForKeyboard()\n");
+		}
 	}
 	while (g_bRestart);
 

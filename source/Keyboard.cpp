@@ -51,10 +51,7 @@ static bool  g_bCapsLock = true; //Caps lock key for Apple2 and Lat/Cyr lock for
 static bool  g_bP8CapsLock = true; //Caps lock key of Pravets 8A/C
 static int   lastvirtkey     = 0;	// Current PC keycode
 static BYTE  keycode         = 0;	// Current Apple keycode
-
 static BOOL  keywaiting      = 0;
-
-static BYTE g_nLastKey = 0x00;
 
 //
 // ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
@@ -390,11 +387,13 @@ static char ClipboardCurrChar(bool bIncPtr)
 
 //===========================================================================
 
-static uint64_t g_AKDFlags[4] = {0,0,0,0};
+const UINT kAKDNumElements = 256/64;
+static uint64_t g_AKDFlags[2][kAKDNumElements] = { {0,0,0,0},	// normal
+												   {0,0,0,0}};	// extended
 
 // NB. Don't need to be concerned about if numpad/cursors are used for joystick,
 // since parent calls JoyProcessKey() just before this.
-void KeybAnyKeyDown(UINT message, WPARAM wparam)
+void KeybAnyKeyDown(UINT message, WPARAM wparam, bool bIsExtended)
 {
 	if (wparam > 255)
 	{
@@ -419,17 +418,24 @@ void KeybAnyKeyDown(UINT message, WPARAM wparam)
 	{
 		UINT offset = wparam >> 6;
 		UINT bit    = wparam & 0x3f;
+		UINT idx    = !bIsExtended ? 0 : 1;
 
 		if (message == WM_KEYDOWN)
-			g_AKDFlags[offset] |= (1LL<<bit);
+			g_AKDFlags[idx][offset] |= (1LL<<bit);
 		else
-			g_AKDFlags[offset] &= ~(1LL<<bit);
+			g_AKDFlags[idx][offset] &= ~(1LL<<bit);
 	}
 }
 
 static bool IsAKD(void)
 {
-	return g_AKDFlags[0] || g_AKDFlags[1] || g_AKDFlags[2] || g_AKDFlags[3];
+	uint64_t* p = &g_AKDFlags[0][0];
+
+	for (UINT i=0; i<sizeof(g_AKDFlags)/sizeof(g_AKDFlags[0][0]); i++)
+		if (p[i])
+			return true;
+
+	return false;
 }
 
 //===========================================================================
@@ -504,7 +510,7 @@ void KeybToggleP8ACapsLock ()
 
 void KeybSetSnapshot_v1(const BYTE LastKey)
 {
-	g_nLastKey = LastKey;
+	keycode = LastKey;
 }
 
 //
@@ -520,7 +526,7 @@ static std::string KeybGetSnapshotStructName(void)
 void KeybSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", KeybGetSnapshotStructName().c_str());
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LASTKEY, g_nLastKey);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LASTKEY, keycode);
 }
 
 void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
@@ -528,7 +534,7 @@ void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap(KeybGetSnapshotStructName()))
 		return;
 
-	g_nLastKey = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTKEY);
+	keycode = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTKEY);
 
 	yamlLoadHelper.PopMap();
 }
