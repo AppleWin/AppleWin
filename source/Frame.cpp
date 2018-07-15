@@ -1098,7 +1098,8 @@ LRESULT CALLBACK FrameWndProc (
 			{
 				if( !g_bDebuggerEatKey )
 				{
-					KeybQueueKeypress((int)wparam, ASCII);
+					if (g_nAppMode != MODE_LOGO)	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
+						KeybQueueKeypress((int)wparam, ASCII);
 				}
 				else
 				{
@@ -1399,7 +1400,8 @@ LRESULT CALLBACK FrameWndProc (
 			BOOL autorep  = (HIWORD(lparam) & KF_REPEAT) != 0;
 			BOOL IsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
 
-			if (!IsJoyKey && (g_nAppMode != MODE_LOGO))
+			if (!IsJoyKey &&
+				(g_nAppMode != MODE_LOGO))	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
 			{
 				KeybQueueKeypress((int)wparam, NOT_ASCII);
 

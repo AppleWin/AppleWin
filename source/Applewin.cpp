@@ -1077,12 +1077,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if (((strcmp(lpCmdLine, "-l") == 0) || (strcmp(lpCmdLine, "-log") == 0)) && (g_fh == NULL))
 		{
-			g_fh = fopen("AppleWin.log", "a+t");	// Open log file (append & text mode)
-			setvbuf(g_fh, NULL, _IONBF, 0);			// No buffering (so implicit fflush after every fprintf)
-			CHAR aDateStr[80], aTimeStr[80];
-			GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aDateStr, sizeof(aDateStr));
-			GetTimeFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aTimeStr, sizeof(aTimeStr));
-			fprintf(g_fh, "*** Logging started: %s %s\n", aDateStr, aTimeStr);
+			LogInit();
 		}
 		else if (strcmp(lpCmdLine, "-noreg") == 0)
 		{
@@ -1559,12 +1554,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	tfe_shutdown();
 	LogFileOutput("Exit: tfe_shutdown()\n");
 
-	if (g_fh)
-	{
-		fprintf(g_fh,"*** Logging ended\n\n");
-		fclose(g_fh);
-		g_fh = NULL;
-	}
+	LogDone();
 
 	RiffFinishWriteFile();
 

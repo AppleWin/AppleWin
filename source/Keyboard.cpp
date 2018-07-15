@@ -37,8 +37,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Video.h" // Needed by TK3000 //e, to refresh the frame at each |Mode| change
 
 static BYTE asciicode[2][10] = {
-	{0x08,0x0D,0x15,0x2F,0x00,0x00,0x00,0x00,0x00,0x00},
-	{0x08,0x0B,0x15,0x0A,0x00,0x00,0x00,0x00,0x00,0x7F}
+	// VK_LEFT/UP/RIGHT/DOWN/SELECT, VK_PRINT/EXECUTE/SNAPSHOT/INSERT/DELETE
+	{0x08,0x0D,0x15,0x2F,0x00, 0x00,0x00,0x00,0x00,0x00},	// Apple II
+	{0x08,0x0B,0x15,0x0A,0x00, 0x00,0x00,0x00,0x00,0x7F}	// Apple //e
 };	// Convert PC arrow keys to Apple keycodes
 
 bool  g_bShiftKey = false;
@@ -49,7 +50,6 @@ static bool  g_bTK3KModeKey   = false; //TK3000 //e |Mode| key
 
 static bool  g_bCapsLock = true; //Caps lock key for Apple2 and Lat/Cyr lock for Pravets8
 static bool  g_bP8CapsLock = true; //Caps lock key of Pravets 8A/C
-static int   lastvirtkey     = 0;	// Current PC keycode
 static BYTE  keycode         = 0;	// Current Apple keycode
 static BOOL  keywaiting      = 0;
 
@@ -102,7 +102,7 @@ bool KeybGetShiftStatus ()
 //===========================================================================
 void KeybUpdateCtrlShiftStatus()
 {
-	g_bShiftKey = (GetKeyState( VK_SHIFT  ) & KF_UP) ? true : false; // 0x8000 KF_UP
+	g_bShiftKey = (GetKeyState( VK_SHIFT  ) & KF_UP) ? true : false;
 	g_bCtrlKey  = (GetKeyState( VK_CONTROL) & KF_UP) ? true : false;
 	g_bAltKey   = (GetKeyState( VK_MENU   ) & KF_UP) ? true : false;
 }
@@ -271,8 +271,6 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 					keycode = key;
 			}
 		}
-
-		lastvirtkey = LOBYTE(VkKeyScan(key));
 	} 
 	else //(bASCII != ASCII)	// WM_KEYDOWN
 	{
@@ -299,13 +297,24 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 				FrameRefreshStatus(DRAW_LEDS);	// TODO: Implement |Mode| LED in the UI; make it appear only when in TK3000 mode
 				VideoRedrawScreen();	// TODO: Still need to implement page mode switching and 'whatnot'
 			}
+			return;
 		}
 
-		if (!((key >= VK_LEFT) && (key <= VK_DELETE) && asciicode[IS_APPLE2 ? 0 : 1][key - VK_LEFT]))
+		if (key >= VK_LEFT && key <= VK_DELETE)
+		{
+			BYTE n = asciicode[IS_APPLE2 ? 0 : 1][key - VK_LEFT];		// Convert to Apple arrow keycode
+			if (!n)
+				return;
+			keycode = n;
+		}
+		else if ((GetKeyState( VK_RMENU  ) & KF_UP))	// Right ALT
+		{
+			//
+		}
+		else
+		{
 			return;
-
-		keycode = asciicode[IS_APPLE2 ? 0 : 1][key - VK_LEFT];		// Convert to Apple arrow keycode
-		lastvirtkey = key;
+		}
 	}
 
 	keywaiting = 1;
