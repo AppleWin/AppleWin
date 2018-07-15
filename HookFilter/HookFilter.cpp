@@ -42,9 +42,12 @@ extern "C" __declspec(dllexport) LRESULT CALLBACK LowLevelKeyboardProc(
 		}
 
 		// Suppress ctrl-escape
-		bool ControlDown = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-		if (pKbdLlHookStruct->vkCode == VK_ESCAPE && ControlDown)
-			suppress = true;
+		if (pKbdLlHookStruct->vkCode == VK_ESCAPE)
+		{
+			bool ControlDown = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+			if (ControlDown)
+				suppress = true;
+		}
 
 		// Suppress keys by returning 1
 		if (suppress)

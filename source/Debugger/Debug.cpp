@@ -9680,7 +9680,7 @@ void DebuggerCursorUpdate()
 	}
 	else
 	{
-		Sleep(10);		// Stop process hogging CPU
+		Sleep(1);		// Stop process hogging CPU
 	}
 }
 

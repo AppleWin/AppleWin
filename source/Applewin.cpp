@@ -872,8 +872,11 @@ static void RegisterHotKeys(void)
 static HINSTANCE g_hinstDLL = 0;
 static HHOOK g_hhook = 0;
 
+static HANDLE g_hHookThread = NULL;
+static DWORD g_HookThreadId = 0;
+
 // Pre: g_hFrameWindow must be valid
-bool HookFilterForKeyboard()
+static bool HookFilterForKeyboard()
 {
 	g_hinstDLL = LoadLibrary(TEXT("HookFilter.dll"));
 
@@ -905,10 +908,72 @@ bool HookFilterForKeyboard()
 	return false;
 }
 
-void UnhookFilterForKeyboard()
+static void UnhookFilterForKeyboard()
 {
 	UnhookWindowsHookEx(g_hhook);
 	FreeLibrary(g_hinstDLL);
+}
+
+static DWORD WINAPI HookThread(LPVOID lpParameter)
+{
+	if (!HookFilterForKeyboard())
+		return -1;
+
+	MSG msg;
+	while(GetMessage(&msg, NULL, 0, 0) > 0)
+	{
+		if (msg.message == WM_QUIT)
+			break;
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	UnhookFilterForKeyboard();
+	return 0;
+}
+
+static bool InitHookThread()
+{
+	g_hHookThread = CreateThread(NULL,			// lpThreadAttributes
+								0,				// dwStackSize
+								(LPTHREAD_START_ROUTINE) HookThread,
+								0,				// lpParameter
+								0,				// dwCreationFlags : 0 = Run immediately
+								&g_HookThreadId);	// lpThreadId
+	if (g_hHookThread == NULL)
+		return false;
+
+	return true;
+}
+
+static void UninitHookThread()
+{
+	if (g_hHookThread)
+	{
+		if (!PostThreadMessage(g_HookThreadId, WM_QUIT, 0, 0))
+		{
+			_ASSERT(0);
+			return;
+		}
+
+		do
+		{
+			DWORD dwExitCode;
+			if (GetExitCodeThread(g_hHookThread, &dwExitCode))
+			{
+				if(dwExitCode == STILL_ACTIVE)
+					Sleep(10);
+				else
+					break;
+			}
+		}
+		while(1);
+
+		CloseHandle(g_hHookThread);
+		g_hHookThread = NULL;
+		g_HookThreadId = 0;
+	}
 }
 
 //===========================================================================
@@ -1423,7 +1488,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if (g_bHookSystemKey)
 		{
-			if (HookFilterForKeyboard())	// needs valid g_hFrameWindow (for message pump)
+			if (InitHookThread())	// needs valid g_hFrameWindow (for message pump)
 				LogFileOutput("Main: HookFilterForKeyboard()\n");
 		}
 
@@ -1535,7 +1600,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if (g_bHookSystemKey)
 		{
-			UnhookFilterForKeyboard();
+			UninitHookThread();
 			LogFileOutput("Main: UnhookFilterForKeyboard()\n");
 		}
 	}
