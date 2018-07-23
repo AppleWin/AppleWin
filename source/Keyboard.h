@@ -1,5 +1,7 @@
 #pragma once
 
+enum	Keystroke_e {NOT_ASCII=0, ASCII};
+
 void    ClipboardInitiatePaste();
 
 void    KeybReset();
@@ -11,7 +13,7 @@ bool    KeybGetShiftStatus();
 bool    KeybGetCapsAllowed(); //For Pravets8A/C only
 void    KeybUpdateCtrlShiftStatus();
 BYTE    KeybGetKeycode ();
-void    KeybQueueKeypress (int,BOOL);
+void    KeybQueueKeypress(WPARAM key, Keystroke_e bASCII);
 void    KeybToggleCapsLock ();
 void    KeybToggleP8ACapsLock ();
 void    KeybAnyKeyDown(UINT message, WPARAM wparam, bool bIsExtended);

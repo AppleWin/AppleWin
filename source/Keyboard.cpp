@@ -102,9 +102,9 @@ bool KeybGetShiftStatus ()
 //===========================================================================
 void KeybUpdateCtrlShiftStatus()
 {
-	g_bShiftKey = (GetKeyState( VK_SHIFT  ) & KF_UP) ? true : false;
-	g_bCtrlKey  = (GetKeyState( VK_CONTROL) & KF_UP) ? true : false;
-	g_bAltKey   = (GetKeyState( VK_MENU   ) & KF_UP) ? true : false;
+	g_bShiftKey = (GetKeyState( VK_SHIFT  ) < 0) ? true : false;	//  L or R shift
+	g_bCtrlKey  = (GetKeyState( VK_CONTROL) < 0) ? true : false;	//  L or R ctrl
+	g_bAltKey   = (GetKeyState( VK_MENU   ) < 0) ? true : false;	//  L or R alt
 }
 
 //===========================================================================
@@ -114,7 +114,7 @@ BYTE KeybGetKeycode ()		// Used by IORead_C01x() and TapeRead() for Pravets8A
 }
 
 //===========================================================================
-void KeybQueueKeypress (int key, BOOL bASCII)
+void KeybQueueKeypress(WPARAM key, Keystroke_e bASCII)
 {
 	if (bASCII == ASCII)	// WM_CHAR
 	{
@@ -307,9 +307,10 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 				return;
 			keycode = n;
 		}
-		else if ((GetKeyState( VK_RMENU  ) & KF_UP))	// Right ALT
+		else if ((GetKeyState(VK_RMENU) < 0))	// Right Alt (aka Alt Gr)
 		{
 			//
+			return;
 		}
 		else
 		{

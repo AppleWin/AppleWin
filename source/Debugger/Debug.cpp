@@ -780,7 +780,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 	DWORD currtime = GetTickCount();
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
-	KeybQueueKeypress(TEXT(' '),1);
+	KeybQueueKeypress(TEXT(' ') ,ASCII);
 
 	return UPDATE_ALL; // 0;
 }
@@ -2096,7 +2096,7 @@ Update_t CmdUnassemble (int nArgs)
 Update_t CmdKey (int nArgs)
 {
 	KeybQueueKeypress(
-		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : TEXT(' '), 1); // FIXME!!!
+		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : TEXT(' '), ASCII); // FIXME!!!
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
