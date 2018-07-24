@@ -1096,15 +1096,14 @@ LRESULT CALLBACK FrameWndProc (
 		case WM_CHAR:
 			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_LOGO))
 			{
-				if( !g_bDebuggerEatKey )
+				if (!g_bDebuggerEatKey)
 				{
+					LogOutput("WM_CHAR: %08X\n", wparam);
 					if (g_nAppMode != MODE_LOGO)	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
-						KeybQueueKeypress((int)wparam, ASCII);
+						KeybQueueKeypress(wparam, ASCII);
 				}
-				else
-				{
-					g_bDebuggerEatKey = false;
-				}
+
+				g_bDebuggerEatKey = false;
 			}
 			else if (g_nAppMode == MODE_DEBUG)
 			{
@@ -1403,7 +1402,8 @@ LRESULT CALLBACK FrameWndProc (
 			if (!IsJoyKey &&
 				(g_nAppMode != MODE_LOGO))	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
 			{
-				KeybQueueKeypress((int)wparam, NOT_ASCII);
+				LogOutput("WM_KEYDOWN: %08X\n", wparam);
+				KeybQueueKeypress(wparam, NOT_ASCII);
 
 				if (!autorep)
 					KeybAnyKeyDown(WM_KEYDOWN, wparam, extended);
@@ -1433,6 +1433,7 @@ LRESULT CALLBACK FrameWndProc (
 			BOOL autorep  = 0;
 			BOOL bIsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
 
+			LogOutput("WM_KEYUP: %08X\n", wparam);
 			if (!bIsJoyKey)
 				KeybAnyKeyDown(WM_KEYUP, wparam, extended);
 		}
