@@ -20,6 +20,18 @@ extern "C" __declspec(dllexport) LRESULT CALLBACK LowLevelKeyboardProc(
 		UINT newMsg = pKbdLlHookStruct->flags & LLKHF_UP ? WM_KEYUP : WM_KEYDOWN;
 		LPARAM newlParam = newMsg == WM_KEYUP ? 3<<30 : 0;	// b31:transition state, b30:previous key state
 
+		//
+
+		// NB. Alt Gr (Right-Alt): this normally send 2 WM_KEYDOWN messages for: VK_LCONTROL, then VK_RMENU
+		// Keyboard scanCodes: LCONTROL=0x1D, LCONTROL_from_RMENU=0x21D
+		// . For: Microsoft PS/2/Win7-64, VAIO laptop/Win7-64, Microsoft USB/Win10-64
+		// NB. WM_KEYDOWN also includes a 9/10-bit? scanCode: LCONTROL=0x1D, RCONTROL=0x11D, RMENU=0x1D(not 0x21D)
+		// . Can't suppress in app, since scanCode is not >= 0x200
+		if (pKbdLlHookStruct->vkCode == VK_LCONTROL && pKbdLlHookStruct->scanCode >= 0x200)
+		{
+			suppress = true;
+		}
+
 		// Suppress alt-tab
 		if (pKbdLlHookStruct->vkCode == VK_TAB && (pKbdLlHookStruct->flags & LLKHF_ALTDOWN))
 		{
@@ -44,8 +56,8 @@ extern "C" __declspec(dllexport) LRESULT CALLBACK LowLevelKeyboardProc(
 		// Suppress ctrl-escape
 		if (pKbdLlHookStruct->vkCode == VK_ESCAPE)
 		{
-			bool ControlDown = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-			if (ControlDown)
+			// But don't suppress CTRL+SHIFT+ESC
+			if (GetKeyState(VK_CONTROL) < 0 && GetKeyState(VK_SHIFT) >= 0)
 				suppress = true;
 		}
 
