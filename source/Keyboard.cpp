@@ -306,7 +306,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 				return;
 			keycode = n;
 		}
-		else if ((GetKeyState(VK_RMENU) < 0))	// Right Alt (aka Alt Gr)
+		else if ((GetKeyState(VK_RMENU) < 0))	// Right Alt (aka Alt Gr) - GH#558
 		{
 			if (IsVirtualKeyAnAppleIIKey(key))
 			{
@@ -320,10 +320,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 					if ( (GetKeyState(VK_SHIFT) >= 0) && !g_bCapsLock )
 						newKey += 'a' - 'A';	// convert to lowercase key
 					else if (GetKeyState(VK_CONTROL) < 0)
-					{
-						LogOutput("L-Control=%d, R-Control=%d\n", GetKeyState(VK_LCONTROL), GetKeyState(VK_RCONTROL));
 						newKey -= 'A' - 1;		// convert to control-key
-					}
 				}
 
 				PostMessage(g_hFrameWindow, WM_CHAR, newKey, 0);
