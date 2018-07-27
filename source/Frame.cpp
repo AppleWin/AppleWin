@@ -1391,18 +1391,17 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) || (g_nAppMode == MODE_STEPPING))
 		{
-			// Note about Alt Gr (Right-Alt):
-			// . WM_KEYDOWN[Left-Control], then:
-			// . WM_KEYDOWN[Right-Alt]
+			// NB. Alt Gr (Right-Alt): this normally send 2 WM_KEYDOWN messages for: VK_LCONTROL, then VK_RMENU
+			// . NB. The keyboard hook filter now suppresses VK_LCONTROL
 			bool extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
 			BOOL down     = 1;
 			BOOL autorep  = (HIWORD(lparam) & KF_REPEAT) != 0;
 			BOOL IsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
 
+			LogOutput("WM_KEYDOWN: %08X (scanCode=%04X)\n", wparam, (lparam>>16)&0xfff);
 			if (!IsJoyKey &&
 				(g_nAppMode != MODE_LOGO))	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
 			{
-				LogOutput("WM_KEYDOWN: %08X\n", wparam);
 				KeybQueueKeypress(wparam, NOT_ASCII);
 
 				if (!autorep)

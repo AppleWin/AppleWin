@@ -317,7 +317,6 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 			{
 				// When Alt Gr is down, then WM_CHAR is not posted - so fix this.
 				// NB. Still get WM_KEYDOWN/WM_KEYUP for the virtual key, so AKD works.
-
 				WPARAM newKey = key;
 
 				// Translate if shift or ctrl is down
@@ -325,17 +324,11 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 				{
 					if ( (GetKeyState(VK_SHIFT) >= 0) && !g_bCapsLock )
 						newKey += 'a' - 'A';	// convert to lowercase key
-#if 0
-// Alt Gr also simulates VK_LCONTROL down, ie GetKeyState(VK_LCONTROL) returns < 0.
-// - To cancel this press & release Left Control.
-// Maybe: on detecting Alt Gr being pressed, then PostMessage(WM_KEYUP, VK_LCONTROL, 0)?
-
 					else if (GetKeyState(VK_CONTROL) < 0)
 					{
 						LogOutput("L-Control=%d, R-Control=%d\n", GetKeyState(VK_LCONTROL), GetKeyState(VK_RCONTROL));
 						newKey -= 'A' - 1;		// convert to control-key
 					}
-#endif
 				}
 
 				PostMessage(g_hFrameWindow, WM_CHAR, newKey, 0);
