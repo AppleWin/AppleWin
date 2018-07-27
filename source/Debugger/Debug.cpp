@@ -9709,11 +9709,11 @@ void DebuggerMouseClick( int x, int y )
 	if (g_nAppMode != MODE_DEBUG)
 		return;
 
-	// NOTE: KeybUpdateCtrlShiftStatus() should be called before
+	KeybUpdateCtrlShiftStatus();
 	int iAltCtrlShift  = 0;
-	iAltCtrlShift |= (g_bAltKey   & 1) << 0;
-	iAltCtrlShift |= (g_bCtrlKey  & 1) << 1;
-	iAltCtrlShift |= (g_bShiftKey & 1) << 2;
+	iAltCtrlShift |= KeybGetAltStatus()   ? 1<<0 : 0;
+	iAltCtrlShift |= KeybGetCtrlStatus()  ? 1<<1 : 0;
+	iAltCtrlShift |= KeybGetShiftStatus() ? 1<<2 : 0;
 
 	// GH#462 disasm click #
 	if (iAltCtrlShift != g_bConfigDisasmClick)

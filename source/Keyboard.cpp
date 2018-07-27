@@ -66,36 +66,31 @@ void KeybReset()
 }
 
 //===========================================================================
-bool KeybGetAltStatus ()
-{
-	return g_bAltKey;
-}
-
-//===========================================================================
-bool KeybGetCapsStatus ()
+bool KeybGetCapsStatus()
 {
 	return g_bCapsLock;
 }
+
 //===========================================================================
 bool KeybGetP8CapsStatus()
 {
 	return g_bP8CapsLock;
 }
+
 //===========================================================================
-/*
-bool KeybGetCapsAllowed() //For Pravets 8A/C only
+bool KeybGetAltStatus()
 {
-	return g_CapsLockAllowed;
+	return g_bAltKey;
 }
-*/
+
 //===========================================================================
-bool KeybGetCtrlStatus ()
+bool KeybGetCtrlStatus()
 {
 	return g_bCtrlKey;
 }
 
 //===========================================================================
-bool KeybGetShiftStatus ()
+bool KeybGetShiftStatus()
 {
 	return g_bShiftKey;
 }
@@ -103,9 +98,9 @@ bool KeybGetShiftStatus ()
 //===========================================================================
 void KeybUpdateCtrlShiftStatus()
 {
-	g_bShiftKey = (GetKeyState( VK_SHIFT  ) < 0) ? true : false;	//  L or R shift
-	g_bCtrlKey  = (GetKeyState( VK_CONTROL) < 0) ? true : false;	//  L or R ctrl
 	g_bAltKey   = (GetKeyState( VK_MENU   ) < 0) ? true : false;	//  L or R alt
+	g_bCtrlKey  = (GetKeyState( VK_CONTROL) < 0) ? true : false;	//  L or R ctrl
+	g_bShiftKey = (GetKeyState( VK_SHIFT  ) < 0) ? true : false;	//  L or R shift
 }
 
 //===========================================================================
@@ -209,7 +204,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 				}
 				else //i.e. latin letters
 				{
-					if (GetCapsLockAllowed()  == false)
+					if (GetCapsLockAllowed() == false)
 					{
 						if (key == '{') keycode = '[';
 						if (key == '}') keycode = ']';
