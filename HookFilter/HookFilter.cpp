@@ -1,6 +1,8 @@
 #include <windows.h>
 
 static HWND g_hFrameWindow = (HWND)0;
+static bool g_bHookAltTab = false;
+static bool g_bHookAltGrControl = false;
 
 // NB. __stdcall (or WINAPI) and extern "C":
 // . symbol is decorated as _<symbol>@bytes
@@ -27,13 +29,13 @@ extern "C" __declspec(dllexport) LRESULT CALLBACK LowLevelKeyboardProc(
 		// . For: Microsoft PS/2/Win7-64, VAIO laptop/Win7-64, Microsoft USB/Win10-64
 		// NB. WM_KEYDOWN also includes a 9/10-bit? scanCode: LCONTROL=0x1D, RCONTROL=0x11D, RMENU=0x1D(not 0x21D)
 		// . Can't suppress in app, since scanCode is not >= 0x200
-		if (pKbdLlHookStruct->vkCode == VK_LCONTROL && pKbdLlHookStruct->scanCode >= 0x200)	// GH#558
+		if (g_bHookAltGrControl && pKbdLlHookStruct->vkCode == VK_LCONTROL && pKbdLlHookStruct->scanCode >= 0x200)	// GH#558
 		{
 			suppress = true;
 		}
 
 		// Suppress alt-tab
-		if (pKbdLlHookStruct->vkCode == VK_TAB && (pKbdLlHookStruct->flags & LLKHF_ALTDOWN))
+		if (g_bHookAltTab && pKbdLlHookStruct->vkCode == VK_TAB && (pKbdLlHookStruct->flags & LLKHF_ALTDOWN))
 		{
 			PostMessage(g_hFrameWindow, newMsg, VK_TAB, newlParam);
 			suppress = true;
@@ -69,7 +71,9 @@ extern "C" __declspec(dllexport) LRESULT CALLBACK LowLevelKeyboardProc(
 	return CallNextHookEx(0/*parameter is ignored*/, nCode, wParam, lParam);
 }
 
-extern "C" __declspec(dllexport) void __cdecl RegisterHWND(HWND hWnd)
+extern "C" __declspec(dllexport) void __cdecl RegisterHWND(HWND hWnd, bool bHookAltTab, bool bHookAltGrControl)
 {
 	g_hFrameWindow = hWnd;
+	g_bHookAltTab = bHookAltTab;
+	g_bHookAltGrControl = bHookAltGrControl;
 }

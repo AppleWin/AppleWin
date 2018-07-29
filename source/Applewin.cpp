@@ -79,6 +79,8 @@ TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
 bool      g_bCapturePrintScreenKey = true;
 static bool g_bHookSystemKey = true;
+static bool g_bHookAltTab = false;
+static bool g_bHookAltGrControl = false;
 
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
 bool      g_bRestart = false;
@@ -169,6 +171,11 @@ bool GetLoadedSaveStateFlag(void)
 void SetLoadedSaveStateFlag(const bool bFlag)
 {
 	g_bLoadedSaveState = bFlag;
+}
+
+bool GetHookAltGrControl(void)
+{
+	return g_bHookAltGrControl;
 }
 
 static void ResetToLogoMode(void)
@@ -882,10 +889,10 @@ static bool HookFilterForKeyboard()
 
 	_ASSERT(g_hFrameWindow);
 
-	typedef void (*RegisterHWNDProc)(HWND);
+	typedef void (*RegisterHWNDProc)(HWND, bool, bool);
 	RegisterHWNDProc RegisterHWND = (RegisterHWNDProc) GetProcAddress(g_hinstDLL, "RegisterHWND");
 	if (RegisterHWND)
-		RegisterHWND(g_hFrameWindow);
+		RegisterHWND(g_hFrameWindow, g_bHookAltTab, g_bHookAltGrControl);
 
 	HOOKPROC hkprcLowLevelKeyboardProc = (HOOKPROC) GetProcAddress(g_hinstDLL, "LowLevelKeyboardProc");
 
@@ -1293,6 +1300,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if (strcmp(lpCmdLine, "-no-hook-system-key") == 0)		// Don't hook the System keys (eg. Left-ALT+ESC/SPACE/TAB) GH#556
 		{
 			g_bHookSystemKey = false;
+		}
+		else if (strcmp(lpCmdLine, "-hook-alt-tab") == 0)			// GH#556
+		{
+			g_bHookAltTab = true;
+		}
+		else if (strcmp(lpCmdLine, "-hook-altgr-control") == 0)		// GH#556
+		{
+			g_bHookAltGrControl = true;
 		}
 		else if (strcmp(lpCmdLine, "-spkr-inc") == 0)
 		{

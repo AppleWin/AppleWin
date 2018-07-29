@@ -30,6 +30,7 @@ extern HINSTANCE  g_hInstance;
 extern AppMode_e g_nAppMode;
 bool GetLoadedSaveStateFlag(void);
 void SetLoadedSaveStateFlag(const bool bFlag);
+bool GetHookAltGrControl(void);
 
 extern TCHAR      g_sProgramDir[MAX_PATH];
 extern TCHAR      g_sCurrentDir[MAX_PATH];
