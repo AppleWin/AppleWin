@@ -1092,6 +1092,7 @@ LRESULT CALLBACK FrameWndProc (
         g_TimerIDEvent_100msec = 0;
       }
       LogFileOutput("WM_CLOSE (done)\n");
+	  // Exit via DefWindowProc(), which does the default action for WM_CLOSE, which is to call DestroyWindow(), posting WM_DESTROY
       break;
 
 		case WM_CHAR:
@@ -1175,7 +1176,8 @@ LRESULT CALLBACK FrameWndProc (
     case WM_DESTROY:
       LogFileOutput("WM_DESTROY\n");
       DragAcceptFiles(window,0);
-	  Snapshot_Shutdown();
+	  if (!g_bRestart)	// GH#564: Only save-state on shutdown (not on a restart)
+		Snapshot_Shutdown();
       DebugDestroy();
       if (!g_bRestart) {
         DiskDestroy();
