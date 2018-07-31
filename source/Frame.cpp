@@ -1095,25 +1095,29 @@ LRESULT CALLBACK FrameWndProc (
 	  // Exit via DefWindowProc(), which does the default action for WM_CLOSE, which is to call DestroyWindow(), posting WM_DESTROY
       break;
 
-		case WM_CHAR:
-			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_LOGO))
-			{
-				if (!g_bDebuggerEatKey)
-				{
-#if DEBUG_KEY_MESSAGES
-					LogOutput("WM_CHAR: %08X\n", wparam);
-#endif
-					if (g_nAppMode != MODE_LOGO)	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
-						KeybQueueKeypress(wparam, ASCII);
-				}
-
-				g_bDebuggerEatKey = false;
-			}
-			else if (g_nAppMode == MODE_DEBUG)
-			{
-				DebuggerInputConsoleChar((TCHAR)wparam);
-			}
-			break;
+    case WM_DESTROY:
+      LogFileOutput("WM_DESTROY\n");
+      DragAcceptFiles(window,0);
+	  if (!g_bRestart)	// GH#564: Only save-state on shutdown (not on a restart)
+		Snapshot_Shutdown();
+      DebugDestroy();
+      if (!g_bRestart) {
+        DiskDestroy();
+        ImageDestroy();
+        HD_Destroy();
+      }
+      PrintDestroy();
+      sg_SSC.CommDestroy();
+      CpuDestroy();
+      MemDestroy();
+      SpkrDestroy();
+      VideoDestroy();
+      MB_Destroy();
+      DeleteGdiObjects();
+      DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
+      PostQuitMessage(0);	// Post WM_QUIT message to the thread's message queue
+      LogFileOutput("WM_DESTROY (done)\n");
+      break;
 
     case WM_CREATE:
       LogFileOutput("WM_CREATE\n");
@@ -1172,30 +1176,6 @@ LRESULT CALLBACK FrameWndProc (
       LogFileOutput("WM_DDE_EXECUTE (done)\n");
       break;
     }
-
-    case WM_DESTROY:
-      LogFileOutput("WM_DESTROY\n");
-      DragAcceptFiles(window,0);
-	  if (!g_bRestart)	// GH#564: Only save-state on shutdown (not on a restart)
-		Snapshot_Shutdown();
-      DebugDestroy();
-      if (!g_bRestart) {
-        DiskDestroy();
-        ImageDestroy();
-        HD_Destroy();
-      }
-      PrintDestroy();
-      sg_SSC.CommDestroy();
-      CpuDestroy();
-      MemDestroy();
-      SpkrDestroy();
-      VideoDestroy();
-      MB_Destroy();
-      DeleteGdiObjects();
-      DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
-      PostQuitMessage(0);	// Post WM_QUIT message to the thread's message queue
-      LogFileOutput("WM_DESTROY (done)\n");
-      break;
 
     case WM_DISPLAYCHANGE:
       VideoReinitialize();
@@ -1420,6 +1400,26 @@ LRESULT CALLBACK FrameWndProc (
 			DebuggerProcessKey(wparam); // Debugger already active, re-direct key to debugger
 		}
 		break;
+
+		case WM_CHAR:
+			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_LOGO))
+			{
+				if (!g_bDebuggerEatKey)
+				{
+#if DEBUG_KEY_MESSAGES
+					LogOutput("WM_CHAR: %08X\n", wparam);
+#endif
+					if (g_nAppMode != MODE_LOGO)	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
+						KeybQueueKeypress(wparam, ASCII);
+				}
+
+				g_bDebuggerEatKey = false;
+			}
+			else if (g_nAppMode == MODE_DEBUG)
+			{
+				DebuggerInputConsoleChar((TCHAR)wparam);
+			}
+			break;
 
 	case WM_KEYUP:
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
@@ -1795,10 +1795,7 @@ LRESULT CALLBACK FrameWndProc (
     }
 
     case WM_USER_RESTART:
-	  // . Changed Apple computer type (][+ or //e)
-	  // . Changed slot configuration
-	  // . Changed disk speed (normal or enhanced)
-	  // . Changed Freeze F8 rom setting
+	  // Changed h/w config, eg. Apple computer type (][+ or //e), slot configuration, etc.
       g_bRestart = true;
       PostMessage(window,WM_CLOSE,0,0);
       break;

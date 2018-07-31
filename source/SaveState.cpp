@@ -651,5 +651,5 @@ void Snapshot_Shutdown()
 
 	Snapshot_SaveState();
 
-	bDone = true;	// Debug flag: should only be called once, and never on a g_bRestart
+	bDone = true;	// Debug flag: this func should only be called once, and never on a g_bRestart
 }
