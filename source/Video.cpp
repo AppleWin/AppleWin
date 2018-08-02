@@ -770,12 +770,8 @@ void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 // References to Jim Sather's books are given as eg:
 // UTAIIe:5-7,P3 (Understanding the Apple IIe, chapter 5, page 7, Paragraph 3)
 //
-WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
+WORD VideoGetScannerAddress(bool* pbVblBar_OUT, DWORD nCycles)
 {
-    // get video scanner position
-    //
-    int nCycles = CpuGetCyclesThisVideoFrame(uExecutedCycles);
-
     // machine state switches
     //
     int nHires   = (SW_HIRES && !SW_TEXT) ? 1 : 0;

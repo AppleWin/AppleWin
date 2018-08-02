@@ -1618,7 +1618,6 @@ void MemReset()
 
 BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
-//	return mem[ VideoGetScannerAddress(NULL, uExecutedCycles) ];	// NG: ANSI STORY (End Credits) - repro by running from "Turn the disk over"
 	return mem[ NTSC_VideoGetScannerAddress(uExecutedCycles) ];		// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
 }
 
