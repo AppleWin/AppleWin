@@ -770,7 +770,22 @@ void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 // References to Jim Sather's books are given as eg:
 // UTAIIe:5-7,P3 (Understanding the Apple IIe, chapter 5, page 7, Paragraph 3)
 //
-WORD VideoGetScannerAddress(bool* pbVblBar_OUT, DWORD nCycles)
+
+static WORD g_PartialV=0, g_PartialH=0;
+
+WORD VideoGetScannerAddressPartialV(DWORD nCycles)
+{
+	VideoGetScannerAddress(nCycles);
+	return g_PartialV;
+}
+
+WORD VideoGetScannerAddressPartialH(DWORD nCycles)
+{
+	VideoGetScannerAddress(nCycles);
+	return g_PartialH;
+}
+
+WORD VideoGetScannerAddress(DWORD nCycles)
 {
     // machine state switches
     //
@@ -804,7 +819,7 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, DWORD nCycles)
     //
     int nVLine  = nCycles / kHClocks; // which vertical scanning line
     int nVState = kVLine0State + nVLine; // V state bits
-    if ((nVLine >= kVPresetLine)) // check for previous vertical state preset
+    if (nVLine >= kVPresetLine) // check for previous vertical state preset
     {
         nVState -= nScanLines; // compensate for preset
     }
@@ -835,6 +850,8 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, DWORD nCycles)
     nAddress |= h_1  << 1; // a1
     nAddress |= h_2  << 2; // a2
     nAddress |= nSum << 3; // a3 - a6
+    g_PartialH = nAddress;
+
     nAddress |= v_0  << 7; // a7
     nAddress |= v_1  << 8; // a8
     nAddress |= v_2  << 9; // a9
@@ -849,6 +866,8 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, DWORD nCycles)
         nAddress |= v_A << 10; // a10
         nAddress |= v_B << 11; // a11
         nAddress |= v_C << 12; // a12
+        g_PartialV = nAddress - g_PartialH;
+
         nAddress |= p2a << 13; // a13
         nAddress |= p2b << 14; // a14
     }
@@ -856,24 +875,23 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, DWORD nCycles)
     {
         // N: insert text-only address bits
         //
-        nAddress |= p2a << 10; // a10
-        nAddress |= p2b << 11; // a11
+        g_PartialV = nAddress - g_PartialH;
 
         // Apple ][ (not //e) and HBL?
 		//
 		if (IS_APPLE2 && // Apple II only (UTAIIe:I-4,#5)
 			!h_5 && (!h_4 || !h_3)) // HBL (UTAIIe:8-10,F8.5)
         {
-            nAddress |= 1 << 12; // Y: a12 (add $1000 to address!)
+            nAddress   |= 1 << 12; // Y: a12 (add $1000 to address!)
+            g_PartialH |= 1 << 12;
         }
-    }
 
-    // update VBL' state
-    //
-	if (pbVblBar_OUT != NULL)
-	{
-		*pbVblBar_OUT = !v_4 || !v_3; // VBL' = (v_4 & v_3)' (UTAIIe:5-10,#3)
+        nAddress |= p2a << 10; // a10
+        nAddress |= p2b << 11; // a11
 	}
+
+	// VBL' = v_4' | v_3' = (v_4 & v_3)' (UTAIIe:5-10,#3)
+
     return static_cast<WORD>(nAddress);
 }
 
