@@ -8,6 +8,11 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.27.6.0 - 28 Jul 2018
+----------------------
+. [Bug #570] Fixed lag when repeat-stepping in debugger.
+. [Bug #558] Fixed ClosedApple + <key> not working (when using right ALT key).
+
 
 1.27.5.0 - 24 Jun 2018
 ----------------------

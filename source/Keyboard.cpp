@@ -35,10 +35,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tape.h"
 #include "YamlHelper.h"
 #include "Video.h" // Needed by TK3000 //e, to refresh the frame at each |Mode| change
+#include "Log.h"
 
 static BYTE asciicode[2][10] = {
-	{0x08,0x0D,0x15,0x2F,0x00,0x00,0x00,0x00,0x00,0x00},
-	{0x08,0x0B,0x15,0x0A,0x00,0x00,0x00,0x00,0x00,0x7F}
+	// VK_LEFT/UP/RIGHT/DOWN/SELECT, VK_PRINT/EXECUTE/SNAPSHOT/INSERT/DELETE
+	{0x08,0x0D,0x15,0x2F,0x00, 0x00,0x00,0x00,0x00,0x00},	// Apple II
+	{0x08,0x0B,0x15,0x0A,0x00, 0x00,0x00,0x00,0x00,0x7F}	// Apple //e
 };	// Convert PC arrow keys to Apple keycodes
 
 bool  g_bShiftKey = false;
@@ -49,7 +51,6 @@ static bool  g_bTK3KModeKey   = false; //TK3000 //e |Mode| key
 
 static bool  g_bCapsLock = true; //Caps lock key for Apple2 and Lat/Cyr lock for Pravets8
 static bool  g_bP8CapsLock = true; //Caps lock key of Pravets 8A/C
-static int   lastvirtkey     = 0;	// Current PC keycode
 static BYTE  keycode         = 0;	// Current Apple keycode
 static BOOL  keywaiting      = 0;
 
@@ -65,36 +66,31 @@ void KeybReset()
 }
 
 //===========================================================================
-bool KeybGetAltStatus ()
-{
-	return g_bAltKey;
-}
-
-//===========================================================================
-bool KeybGetCapsStatus ()
+bool KeybGetCapsStatus()
 {
 	return g_bCapsLock;
 }
+
 //===========================================================================
 bool KeybGetP8CapsStatus()
 {
 	return g_bP8CapsLock;
 }
+
 //===========================================================================
-/*
-bool KeybGetCapsAllowed() //For Pravets 8A/C only
+bool KeybGetAltStatus()
 {
-	return g_CapsLockAllowed;
+	return g_bAltKey;
 }
-*/
+
 //===========================================================================
-bool KeybGetCtrlStatus ()
+bool KeybGetCtrlStatus()
 {
 	return g_bCtrlKey;
 }
 
 //===========================================================================
-bool KeybGetShiftStatus ()
+bool KeybGetShiftStatus()
 {
 	return g_bShiftKey;
 }
@@ -102,19 +98,22 @@ bool KeybGetShiftStatus ()
 //===========================================================================
 void KeybUpdateCtrlShiftStatus()
 {
-	g_bShiftKey = (GetKeyState( VK_SHIFT  ) & KF_UP) ? true : false; // 0x8000 KF_UP
-	g_bCtrlKey  = (GetKeyState( VK_CONTROL) & KF_UP) ? true : false;
-	g_bAltKey   = (GetKeyState( VK_MENU   ) & KF_UP) ? true : false;
+	g_bAltKey   = (GetKeyState( VK_MENU   ) < 0) ? true : false;	//  L or R alt
+	g_bCtrlKey  = (GetKeyState( VK_CONTROL) < 0) ? true : false;	//  L or R ctrl
+	g_bShiftKey = (GetKeyState( VK_SHIFT  ) < 0) ? true : false;	//  L or R shift
 }
 
 //===========================================================================
-BYTE KeybGetKeycode ()		// Used by MemCheckPaging() & VideoCheckMode()
+BYTE KeybGetKeycode ()		// Used by IORead_C01x() and TapeRead() for Pravets8A
 {
 	return keycode;
 }
 
 //===========================================================================
-void KeybQueueKeypress (int key, BOOL bASCII)
+
+bool IsVirtualKeyAnAppleIIKey(WPARAM wparam);
+
+void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 {
 	if (bASCII == ASCII)	// WM_CHAR
 	{
@@ -205,7 +204,7 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 				}
 				else //i.e. latin letters
 				{
-					if (GetCapsLockAllowed()  == false)
+					if (GetCapsLockAllowed() == false)
 					{
 						if (key == '{') keycode = '[';
 						if (key == '}') keycode = ']';
@@ -271,8 +270,6 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 					keycode = key;
 			}
 		}
-
-		lastvirtkey = LOBYTE(VkKeyScan(key));
 	} 
 	else //(bASCII != ASCII)	// WM_KEYDOWN
 	{
@@ -299,13 +296,42 @@ void KeybQueueKeypress (int key, BOOL bASCII)
 				FrameRefreshStatus(DRAW_LEDS);	// TODO: Implement |Mode| LED in the UI; make it appear only when in TK3000 mode
 				VideoRedrawScreen();	// TODO: Still need to implement page mode switching and 'whatnot'
 			}
+			return;
 		}
 
-		if (!((key >= VK_LEFT) && (key <= VK_DELETE) && asciicode[IS_APPLE2 ? 0 : 1][key - VK_LEFT]))
-			return;
+		if (key >= VK_LEFT && key <= VK_DELETE)
+		{
+			BYTE n = asciicode[IS_APPLE2 ? 0 : 1][key - VK_LEFT];		// Convert to Apple arrow keycode
+			if (!n)
+				return;
+			keycode = n;
+		}
+		else if ((GetKeyState(VK_RMENU) < 0))	// Right Alt (aka Alt Gr) - GH#558
+		{
+			if (IsVirtualKeyAnAppleIIKey(key))
+			{
+				// When Alt Gr is down, then WM_CHAR is not posted - so fix this.
+				// NB. Still get WM_KEYDOWN/WM_KEYUP for the virtual key, so AKD works.
+				WPARAM newKey = key;
 
-		keycode = asciicode[IS_APPLE2 ? 0 : 1][key - VK_LEFT];		// Convert to Apple arrow keycode
-		lastvirtkey = key;
+				// Translate if shift or ctrl is down
+				if (key >= 'A' && key <= 'Z')
+				{
+					if ( (GetKeyState(VK_SHIFT) >= 0) && !g_bCapsLock )
+						newKey += 'a' - 'A';	// convert to lowercase key
+					else if (GetHookAltGrControl() && GetKeyState(VK_CONTROL) < 0)
+						newKey -= 'A' - 1;		// convert to control-key
+				}
+
+				PostMessage(g_hFrameWindow, WM_CHAR, newKey, 0);
+			}
+
+			return;
+		}
+		else
+		{
+			return;
+		}
 	}
 
 	keywaiting = 1;
@@ -391,16 +417,8 @@ const UINT kAKDNumElements = 256/64;
 static uint64_t g_AKDFlags[2][kAKDNumElements] = { {0,0,0,0},	// normal
 												   {0,0,0,0}};	// extended
 
-// NB. Don't need to be concerned about if numpad/cursors are used for joystick,
-// since parent calls JoyProcessKey() just before this.
-void KeybAnyKeyDown(UINT message, WPARAM wparam, bool bIsExtended)
+static bool IsVirtualKeyAnAppleIIKey(WPARAM wparam)
 {
-	if (wparam > 255)
-	{
-		_ASSERT(0);
-		return;
-	}
-
 	if (wparam == VK_BACK ||
 		wparam == VK_TAB ||
 		wparam == VK_RETURN ||
@@ -415,6 +433,24 @@ void KeybAnyKeyDown(UINT message, WPARAM wparam, bool bIsExtended)
 		(wparam >= VK_OEM_1 && wparam <= VK_OEM_3) ||	// 7 in total
 		(wparam >= VK_OEM_4 && wparam <= VK_OEM_8) ||	// 5 in total
 		(wparam == VK_OEM_102))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+// NB. Don't need to be concerned about if numpad/cursors are used for joystick,
+// since parent calls JoyProcessKey() just before this.
+void KeybAnyKeyDown(UINT message, WPARAM wparam, bool bIsExtended)
+{
+	if (wparam > 255)
+	{
+		_ASSERT(0);
+		return;
+	}
+
+	if (IsVirtualKeyAnAppleIIKey(wparam))
 	{
 		UINT offset = wparam >> 6;
 		UINT bit    = wparam & 0x3f;
@@ -440,7 +476,7 @@ static bool IsAKD(void)
 
 //===========================================================================
 
-BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
+BYTE KeybReadData (void)
 {
 	LogFileTimeUntilFirstKeyRead();
 
@@ -462,7 +498,7 @@ BYTE __stdcall KeybReadData (WORD, WORD, BYTE, BYTE, ULONG)
 
 //===========================================================================
 
-BYTE __stdcall KeybReadFlag (WORD, WORD, BYTE, BYTE, ULONG)
+BYTE KeybReadFlag (void)
 {
 	if (g_bPasteFromClipboard)
 		ClipboardInit();

@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debugger/Debug.h"
 
 //#define ENABLE_MENU 0
+#define DEBUG_KEY_MESSAGES 0
 
 // 3D border around the 560x384 Apple II display
 #define  VIEWPORTX   5
@@ -1091,25 +1092,32 @@ LRESULT CALLBACK FrameWndProc (
         g_TimerIDEvent_100msec = 0;
       }
       LogFileOutput("WM_CLOSE (done)\n");
+	  // Exit via DefWindowProc(), which does the default action for WM_CLOSE, which is to call DestroyWindow(), posting WM_DESTROY
       break;
 
-		case WM_CHAR:
-			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_LOGO))
-			{
-				if( !g_bDebuggerEatKey )
-				{
-					KeybQueueKeypress((int)wparam, ASCII);
-				}
-				else
-				{
-					g_bDebuggerEatKey = false;
-				}
-			}
-			else if (g_nAppMode == MODE_DEBUG)
-			{
-				DebuggerInputConsoleChar((TCHAR)wparam);
-			}
-			break;
+    case WM_DESTROY:
+      LogFileOutput("WM_DESTROY\n");
+      DragAcceptFiles(window,0);
+	  if (!g_bRestart)	// GH#564: Only save-state on shutdown (not on a restart)
+		Snapshot_Shutdown();
+      DebugDestroy();
+      if (!g_bRestart) {
+        DiskDestroy();
+        ImageDestroy();
+        HD_Destroy();
+      }
+      PrintDestroy();
+      sg_SSC.CommDestroy();
+      CpuDestroy();
+      MemDestroy();
+      SpkrDestroy();
+      VideoDestroy();
+      MB_Destroy();
+      DeleteGdiObjects();
+      DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
+      PostQuitMessage(0);	// Post WM_QUIT message to the thread's message queue
+      LogFileOutput("WM_DESTROY (done)\n");
+      break;
 
     case WM_CREATE:
       LogFileOutput("WM_CREATE\n");
@@ -1168,29 +1176,6 @@ LRESULT CALLBACK FrameWndProc (
       LogFileOutput("WM_DDE_EXECUTE (done)\n");
       break;
     }
-
-    case WM_DESTROY:
-      LogFileOutput("WM_DESTROY\n");
-      DragAcceptFiles(window,0);
-	  Snapshot_Shutdown();
-      DebugDestroy();
-      if (!g_bRestart) {
-        DiskDestroy();
-        ImageDestroy();
-        HD_Destroy();
-      }
-      PrintDestroy();
-      sg_SSC.CommDestroy();
-      CpuDestroy();
-      MemDestroy();
-      SpkrDestroy();
-      VideoDestroy();
-      MB_Destroy();
-      DeleteGdiObjects();
-      DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
-      PostQuitMessage(0);	// Post WM_QUIT message to the thread's message queue
-      LogFileOutput("WM_DESTROY (done)\n");
-      break;
 
     case WM_DISPLAYCHANGE:
       VideoReinitialize();
@@ -1289,19 +1274,19 @@ LRESULT CALLBACK FrameWndProc (
 			// CTRL+SHIFT+F9 Toggle 50% Scan Lines
 			// ALT+F9        Can't use Alt-F9 as Alt is Open-Apple = Joystick Button #1
 
-			if ( !g_bCtrlKey && !g_bShiftKey )		// F9
+			if ( !KeybGetCtrlStatus() && !KeybGetShiftStatus() )		// F9
 			{
 				g_eVideoType++;
 				if (g_eVideoType >= NUM_VIDEO_MODES)
 					g_eVideoType = 0;
 			}
-			else if ( !g_bCtrlKey && g_bShiftKey )	// SHIFT+F9
+			else if ( !KeybGetCtrlStatus() && KeybGetShiftStatus() )	// SHIFT+F9
 			{
 				if (g_eVideoType <= 0)
 					g_eVideoType = NUM_VIDEO_MODES;
 				g_eVideoType--;
 			}
-			else if ( g_bCtrlKey && g_bShiftKey )	// CTRL+SHIFT+F9
+			else if ( KeybGetCtrlStatus() && KeybGetShiftStatus() )		// CTRL+SHIFT+F9
 			{
 				g_uHalfScanLines = !g_uHalfScanLines;
 			}
@@ -1330,7 +1315,7 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if (wparam == VK_F10)
 		{
-			if (g_Apple2Type == A2TYPE_PRAVETS8A && !g_bCtrlKey)
+			if (g_Apple2Type == A2TYPE_PRAVETS8A && !KeybGetCtrlStatus())
 			{
 				KeybToggleP8ACapsLock ();	// F10: Toggles P8 Capslock
 			}
@@ -1339,7 +1324,7 @@ LRESULT CALLBACK FrameWndProc (
 				SetUsingCursor(FALSE);		// Ctrl+F10
 			}
 		}
-		else if (wparam == VK_F11 && !g_bCtrlKey)	// Save state (F11)
+		else if (wparam == VK_F11 && !KeybGetCtrlStatus())	// Save state (F11)
 		{
 			SoundCore_SetFade(FADE_OUT);
 			if(sg_PropertySheet.SaveStateSelectImage(window, true))
@@ -1391,17 +1376,20 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) || (g_nAppMode == MODE_STEPPING))
 		{
-			// Note about Alt Gr (Right-Alt):
-			// . WM_KEYDOWN[Left-Control], then:
-			// . WM_KEYDOWN[Right-Alt]
+			// NB. Alt Gr (Right-Alt): this normally send 2 WM_KEYDOWN messages for: VK_LCONTROL, then VK_RMENU
+			// . NB. The keyboard hook filter now suppresses VK_LCONTROL
 			bool extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
 			BOOL down     = 1;
 			BOOL autorep  = (HIWORD(lparam) & KF_REPEAT) != 0;
 			BOOL IsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
 
-			if (!IsJoyKey && (g_nAppMode != MODE_LOGO))
+#if DEBUG_KEY_MESSAGES
+			LogOutput("WM_KEYDOWN: %08X (scanCode=%04X)\n", wparam, (lparam>>16)&0xfff);
+#endif
+			if (!IsJoyKey &&
+				(g_nAppMode != MODE_LOGO))	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
 			{
-				KeybQueueKeypress((int)wparam, NOT_ASCII);
+				KeybQueueKeypress(wparam, NOT_ASCII);
 
 				if (!autorep)
 					KeybAnyKeyDown(WM_KEYDOWN, wparam, extended);
@@ -1412,6 +1400,26 @@ LRESULT CALLBACK FrameWndProc (
 			DebuggerProcessKey(wparam); // Debugger already active, re-direct key to debugger
 		}
 		break;
+
+		case WM_CHAR:
+			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_LOGO))
+			{
+				if (!g_bDebuggerEatKey)
+				{
+#if DEBUG_KEY_MESSAGES
+					LogOutput("WM_CHAR: %08X\n", wparam);
+#endif
+					if (g_nAppMode != MODE_LOGO)	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
+						KeybQueueKeypress(wparam, ASCII);
+				}
+
+				g_bDebuggerEatKey = false;
+			}
+			else if (g_nAppMode == MODE_DEBUG)
+			{
+				DebuggerInputConsoleChar((TCHAR)wparam);
+			}
+			break;
 
 	case WM_KEYUP:
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
@@ -1431,6 +1439,9 @@ LRESULT CALLBACK FrameWndProc (
 			BOOL autorep  = 0;
 			BOOL bIsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
 
+#if DEBUG_KEY_MESSAGES
+			LogOutput("WM_KEYUP: %08X\n", wparam);
+#endif
 			if (!bIsJoyKey)
 				KeybAnyKeyDown(WM_KEYUP, wparam, extended);
 		}
@@ -1747,7 +1758,7 @@ LRESULT CALLBACK FrameWndProc (
 
 		// http://msdn.microsoft.com/en-us/library/windows/desktop/gg153546(v=vs.85).aspx
 		// v1.25.0: Alt-Return Alt-Enter toggle fullscreen
-		if (g_bAltEnter_ToggleFullScreen && g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
+		if (g_bAltEnter_ToggleFullScreen && KeybGetAltStatus() && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
 			return 0; // NOP -- eat key
 
 		PostMessage(window,WM_KEYDOWN,wparam,lparam);
@@ -1761,7 +1772,7 @@ LRESULT CALLBACK FrameWndProc (
 		KeybUpdateCtrlShiftStatus();
 
 		// v1.25.0: Alt-Return Alt-Enter toggle fullscreen
-		if (g_bAltEnter_ToggleFullScreen && g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
+		if (g_bAltEnter_ToggleFullScreen && KeybGetAltStatus() && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
 			ScreenWindowResize(false);
 		else
 			PostMessage(window,WM_KEYUP,wparam,lparam);
@@ -1784,10 +1795,7 @@ LRESULT CALLBACK FrameWndProc (
     }
 
     case WM_USER_RESTART:
-	  // . Changed Apple computer type (][+ or //e)
-	  // . Changed slot configuration
-	  // . Changed disk speed (normal or enhanced)
-	  // . Changed Freeze F8 rom setting
+	  // Changed h/w config, eg. Apple computer type (][+ or //e), slot configuration, etc.
       g_bRestart = true;
       PostMessage(window,WM_CLOSE,0,0);
       break;
@@ -1944,7 +1952,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_RUN:
 		KeybUpdateCtrlShiftStatus();
-		if( g_bCtrlKey )
+		if( KeybGetCtrlStatus() )
 		{
 			CtrlReset();
 			if (g_nAppMode == MODE_DEBUG)
@@ -1988,7 +1996,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_FULLSCR:
 		KeybUpdateCtrlShiftStatus();
-		ScreenWindowResize(g_bCtrlKey);
+		ScreenWindowResize( KeybGetCtrlStatus() );
       break;
 
     case BTN_DEBUG:

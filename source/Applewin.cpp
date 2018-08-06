@@ -79,6 +79,8 @@ TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
 bool      g_bCapturePrintScreenKey = true;
 static bool g_bHookSystemKey = true;
+static bool g_bHookAltTab = false;
+static bool g_bHookAltGrControl = false;
 
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
 bool      g_bRestart = false;
@@ -169,6 +171,11 @@ bool GetLoadedSaveStateFlag(void)
 void SetLoadedSaveStateFlag(const bool bFlag)
 {
 	g_bLoadedSaveState = bFlag;
+}
+
+bool GetHookAltGrControl(void)
+{
+	return g_bHookAltGrControl;
 }
 
 static void ResetToLogoMode(void)
@@ -435,7 +442,7 @@ void EnterMessageLoop(void)
 			else if (g_nAppMode == MODE_PAUSED)
 				Sleep(1);		// Stop process hogging CPU - 1ms, as need to fade-out speaker sound buffer
 			else if (g_nAppMode == MODE_LOGO)
-				Sleep(100);		// Stop process hogging CPU
+				Sleep(1);		// Stop process hogging CPU (NB. don't delay for too long otherwise key input can be slow in other apps - GH#569)
 		}
 	}
 }
@@ -872,17 +879,20 @@ static void RegisterHotKeys(void)
 static HINSTANCE g_hinstDLL = 0;
 static HHOOK g_hhook = 0;
 
+static HANDLE g_hHookThread = NULL;
+static DWORD g_HookThreadId = 0;
+
 // Pre: g_hFrameWindow must be valid
-bool HookFilterForKeyboard()
+static bool HookFilterForKeyboard()
 {
 	g_hinstDLL = LoadLibrary(TEXT("HookFilter.dll"));
 
 	_ASSERT(g_hFrameWindow);
 
-	typedef void (*RegisterHWNDProc)(HWND);
+	typedef void (*RegisterHWNDProc)(HWND, bool, bool);
 	RegisterHWNDProc RegisterHWND = (RegisterHWNDProc) GetProcAddress(g_hinstDLL, "RegisterHWND");
 	if (RegisterHWND)
-		RegisterHWND(g_hFrameWindow);
+		RegisterHWND(g_hFrameWindow, g_bHookAltTab, g_bHookAltGrControl);
 
 	HOOKPROC hkprcLowLevelKeyboardProc = (HOOKPROC) GetProcAddress(g_hinstDLL, "LowLevelKeyboardProc");
 
@@ -905,10 +915,72 @@ bool HookFilterForKeyboard()
 	return false;
 }
 
-void UnhookFilterForKeyboard()
+static void UnhookFilterForKeyboard()
 {
 	UnhookWindowsHookEx(g_hhook);
 	FreeLibrary(g_hinstDLL);
+}
+
+static DWORD WINAPI HookThread(LPVOID lpParameter)
+{
+	if (!HookFilterForKeyboard())
+		return -1;
+
+	MSG msg;
+	while(GetMessage(&msg, NULL, 0, 0) > 0)
+	{
+		if (msg.message == WM_QUIT)
+			break;
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	UnhookFilterForKeyboard();
+	return 0;
+}
+
+static bool InitHookThread()
+{
+	g_hHookThread = CreateThread(NULL,			// lpThreadAttributes
+								0,				// dwStackSize
+								(LPTHREAD_START_ROUTINE) HookThread,
+								0,				// lpParameter
+								0,				// dwCreationFlags : 0 = Run immediately
+								&g_HookThreadId);	// lpThreadId
+	if (g_hHookThread == NULL)
+		return false;
+
+	return true;
+}
+
+static void UninitHookThread()
+{
+	if (g_hHookThread)
+	{
+		if (!PostThreadMessage(g_HookThreadId, WM_QUIT, 0, 0))
+		{
+			_ASSERT(0);
+			return;
+		}
+
+		do
+		{
+			DWORD dwExitCode;
+			if (GetExitCodeThread(g_hHookThread, &dwExitCode))
+			{
+				if(dwExitCode == STILL_ACTIVE)
+					Sleep(10);
+				else
+					break;
+			}
+		}
+		while(1);
+
+		CloseHandle(g_hHookThread);
+		g_hHookThread = NULL;
+		g_HookThreadId = 0;
+	}
 }
 
 //===========================================================================
@@ -1077,12 +1149,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if (((strcmp(lpCmdLine, "-l") == 0) || (strcmp(lpCmdLine, "-log") == 0)) && (g_fh == NULL))
 		{
-			g_fh = fopen("AppleWin.log", "a+t");	// Open log file (append & text mode)
-			setvbuf(g_fh, NULL, _IONBF, 0);			// No buffering (so implicit fflush after every fprintf)
-			CHAR aDateStr[80], aTimeStr[80];
-			GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aDateStr, sizeof(aDateStr));
-			GetTimeFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aTimeStr, sizeof(aTimeStr));
-			fprintf(g_fh, "*** Logging started: %s %s\n", aDateStr, aTimeStr);
+			LogInit();
 		}
 		else if (strcmp(lpCmdLine, "-noreg") == 0)
 		{
@@ -1233,6 +1300,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if (strcmp(lpCmdLine, "-no-hook-system-key") == 0)		// Don't hook the System keys (eg. Left-ALT+ESC/SPACE/TAB) GH#556
 		{
 			g_bHookSystemKey = false;
+		}
+		else if (strcmp(lpCmdLine, "-hook-alt-tab") == 0)			// GH#556
+		{
+			g_bHookAltTab = true;
+		}
+		else if (strcmp(lpCmdLine, "-hook-altgr-control") == 0)		// GH#556
+		{
+			g_bHookAltGrControl = true;
 		}
 		else if (strcmp(lpCmdLine, "-spkr-inc") == 0)
 		{
@@ -1428,7 +1503,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if (g_bHookSystemKey)
 		{
-			if (HookFilterForKeyboard())	// needs valid g_hFrameWindow (for message pump)
+			if (InitHookThread())	// needs valid g_hFrameWindow (for message pump)
 				LogFileOutput("Main: HookFilterForKeyboard()\n");
 		}
 
@@ -1540,7 +1615,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if (g_bHookSystemKey)
 		{
-			UnhookFilterForKeyboard();
+			UninitHookThread();
 			LogFileOutput("Main: UnhookFilterForKeyboard()\n");
 		}
 	}
@@ -1559,12 +1634,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	tfe_shutdown();
 	LogFileOutput("Exit: tfe_shutdown()\n");
 
-	if (g_fh)
-	{
-		fprintf(g_fh,"*** Logging ended\n\n");
-		fclose(g_fh);
-		g_fh = NULL;
-	}
+	LogDone();
 
 	RiffFinishWriteFile();
 

@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Includes
 	#include "StdAfx.h"
 	#include "Applewin.h"
-	#include "CPU.h"
+	#include "CPU.h"	// CpuGetCyclesThisVideoFrame()
 	#include "Frame.h"  // FRAMEBUFFER_W FRAMEBUFFER_H
 	#include "Memory.h" // MemGetMainPtr() MemGetBankPtr()
 	#include "Video.h"  // g_pFramebufferbits
@@ -40,9 +40,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #if ALT_TABLE
 	#include "ntsc_rgb.h"
 #endif
-
-	//LPBYTE  MemGetMainPtr(const WORD);
-	//LPBYTE  MemGetBankPtr(const UINT nBank);
 
 // Defines
 	#define HGR_TEST_PATTERN 0
@@ -136,7 +133,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static const UINT g_kFrameBufferWidth = GetFrameBufferWidth();
 
-	static unsigned (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
+	static unsigned short (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
 
 	typedef void (*UpdateScreenFunc_t)(long);
 	static UpdateScreenFunc_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
@@ -199,7 +196,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#define SIGNAL_1     0.7465656072f 
 
 // Tables
-	static unsigned g_aClockVertOffsetsHGR[ VIDEO_SCANNER_MAX_VERT ] = 
+	// Video scanner tables are now runtime-generated using UTAIIe logic
+	static unsigned short g_aClockVertOffsetsHGR[VIDEO_SCANNER_MAX_VERT];
+	static unsigned short g_aClockVertOffsetsTXT[33];
+	static unsigned short APPLE_IIP_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];
+	static unsigned short APPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];
+
+#ifdef _DEBUG
+	static unsigned short g_kClockVertOffsetsHGR[ VIDEO_SCANNER_MAX_VERT ] =
 	{
 		0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
 		0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
@@ -224,7 +228,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80
 	};
 
-	static unsigned g_aClockVertOffsetsTXT[33] = 
+	static unsigned short g_kClockVertOffsetsTXT[33] =
 	{
 		0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
 		0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
@@ -234,7 +238,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		0x380
 	};
 
-	static unsigned APPLE_IIP_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ] =
+	static unsigned short kAPPLE_IIP_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ] =
 	{
 		{0x1068,0x1068,0x1069,0x106A,0x106B,0x106C,0x106D,0x106E,0x106F,
 		 0x1070,0x1071,0x1072,0x1073,0x1074,0x1075,0x1076,0x1077,
@@ -282,7 +286,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F}
 	};
 
-	static unsigned APPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ] =
+	static unsigned short kAPPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ] =
 	{
 		{0x0068,0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
 		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077,
@@ -329,6 +333,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
 		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F}
 	};
+#endif
 
 	/*
 		http://www.kreativekorp.com/miscpages/a2info/munafo.shtml
@@ -389,11 +394,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static csbits_t csbits;		// charset, optionally followed by alt charset
 
 // Prototypes
-	// prototype from CPU.h
-	//unsigned char CpuRead(unsigned short addr, unsigned long uExecutedCycles);
-	// prototypes from Memory.h
-	//unsigned char * MemGetAuxPtr (unsigned short);
-	//unsigned char * MemGetMainPtr (unsigned short);
 	INLINE float     clampZeroOne( const float & x );
 	INLINE uint8_t   getCharSetBits( const int iChar );
 	INLINE uint16_t  getLoResBits( uint8_t iByte );
@@ -411,8 +411,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	INLINE void      updatePixels( uint16_t bits );
 	INLINE void      updateVideoScannerHorzEOL();
 	INLINE void      updateVideoScannerAddress();
-	INLINE uint16_t  updateVideoScannerAddressTXT();
-	INLINE uint16_t  updateVideoScannerAddressHGR();
+	INLINE uint16_t  getVideoScannerAddressTXT();
+	INLINE uint16_t  getVideoScannerAddressHGR();
 
 	static void initChromaPhaseTables();
 	static real initFilterChroma   (real z);
@@ -767,16 +767,16 @@ inline void updateVideoScannerAddress()
 }
 
 //===========================================================================
-INLINE uint16_t updateVideoScannerAddressTXT()
+INLINE uint16_t getVideoScannerAddressTXT()
 {
 	return (g_aClockVertOffsetsTXT[g_nVideoClockVert/8] + 
 		g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nTextPage  *  0x400));
 }
 
 //===========================================================================
-INLINE uint16_t updateVideoScannerAddressHGR()
+INLINE uint16_t getVideoScannerAddressHGR()
 {
-	// BUG? g_pHorzClockOffset
+	// NB. For both A2 and //e use APPLE_IIE_HORZ_CLOCK_OFFSET - see VideoGetScannerAddress() where only TEXT mode adds $1000
 	return (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + 
 		APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nHiresPage * 0x2000));
 }
@@ -1134,7 +1134,7 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 	
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		uint16_t addr = updateVideoScannerAddressHGR();
+		uint16_t addr = getVideoScannerAddressHGR();
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -1165,7 +1165,7 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		uint16_t addr = updateVideoScannerAddressHGR();
+		uint16_t addr = getVideoScannerAddressHGR();
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -1202,7 +1202,7 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		uint16_t addr = updateVideoScannerAddressTXT();
+		uint16_t addr = getVideoScannerAddressTXT();
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -1234,7 +1234,7 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		uint16_t addr = updateVideoScannerAddressTXT();
+		uint16_t addr = getVideoScannerAddressTXT();
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -1275,7 +1275,7 @@ void updateScreenSingleHires40 (long cycles6502)
 
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		uint16_t addr = updateVideoScannerAddressHGR();
+		uint16_t addr = getVideoScannerAddressHGR();
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -1316,7 +1316,7 @@ void updateScreenSingleLores40 (long cycles6502)
 
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		uint16_t addr = updateVideoScannerAddressTXT();
+		uint16_t addr = getVideoScannerAddressTXT();
 
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
@@ -1342,7 +1342,7 @@ void updateScreenText40 (long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		uint16_t addr = updateVideoScannerAddressTXT();
+		uint16_t addr = getVideoScannerAddressTXT();
 
 		if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
 		{
@@ -1374,7 +1374,7 @@ void updateScreenText80 (long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		uint16_t addr = updateVideoScannerAddressTXT();
+		uint16_t addr = getVideoScannerAddressTXT();
 
 		if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
 		{
@@ -1469,9 +1469,9 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 	uint16_t addr;
 	bool bHires = (g_uVideoMode & VF_HIRES) && !(g_uVideoMode & VF_TEXT); // SW_HIRES && !SW_TEXT
 	if( bHires )
-		addr = updateVideoScannerAddressHGR();
+		addr = getVideoScannerAddressHGR();
 	else
-		addr = updateVideoScannerAddressTXT();
+		addr = getVideoScannerAddressTXT();
 
 	g_nVideoClockVert = currVideoClockVert;
 	g_nVideoClockHorz = currVideoClockHorz;
@@ -1629,9 +1629,12 @@ _mono:
 }
 
 //===========================================================================
+void GenerateVideoTables( void );
+
 void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 {
 	make_csbits();
+	GenerateVideoTables();
 	initPixelDoubleMasks();
 	initChromaPhaseTables();
 	updateMonochromeTables( 0xFF, 0xFF, 0xFF );
@@ -1825,4 +1828,113 @@ void NTSC_VideoRedrawWholeScreen( void )
 bool NTSC_GetColorBurst( void )
 {
 	return (g_nColorBurstPixels < 2) ? false : true;
+}
+
+//===========================================================================
+
+static bool CheckVideoTables2( eApple2Type type, uint32_t mode )
+{
+	SetApple2Type(type);
+	NTSC_VideoInitAppleType();
+
+	g_uVideoMode = mode;
+
+	g_dwCyclesThisFrame = 0;
+	g_nVideoClockHorz = g_nVideoClockVert = 0;
+
+	for (DWORD cycles=0; cycles<VIDEO_SCANNER_MAX_VERT*VIDEO_SCANNER_MAX_HORZ; cycles++)
+	{
+		WORD addr1 = VideoGetScannerAddress(cycles);
+		WORD addr2 = g_uVideoMode & VF_TEXT ? getVideoScannerAddressTXT()
+											: getVideoScannerAddressHGR();
+		_ASSERT(addr1 == addr2);
+		if (addr1 != addr2)
+		{
+			char str[80];
+			sprintf(str, "vpos=%04X, hpos=%02X, Video_adr=$%04X, NTSC_adr=$%04X\n", g_nVideoClockVert, g_nVideoClockHorz, addr1, addr2);
+			OutputDebugString(str);
+			return false;
+		}
+
+		g_nVideoClockHorz++;
+		if (g_nVideoClockHorz == VIDEO_SCANNER_MAX_HORZ)
+		{
+			g_nVideoClockHorz = 0;
+			g_nVideoClockVert++;
+		}
+	}
+
+	return true;
+}
+
+static void CheckVideoTables( void )
+{
+	CheckVideoTables2(A2TYPE_APPLE2PLUS, VF_HIRES);
+	CheckVideoTables2(A2TYPE_APPLE2PLUS, VF_TEXT);
+	CheckVideoTables2(A2TYPE_APPLE2E,    VF_HIRES);
+	CheckVideoTables2(A2TYPE_APPLE2E,    VF_TEXT);
+}
+
+static void GenerateVideoTables( void )
+{
+	eApple2Type currentApple2Type = GetApple2Type();
+
+	//
+	// g_aClockVertOffsetsHGR[]
+	//
+
+	g_uVideoMode = VF_HIRES;
+	for (UINT i=0, cycle=VIDEO_SCANNER_HORZ_START; i<VIDEO_SCANNER_MAX_VERT; i++, cycle+=VIDEO_SCANNER_MAX_HORZ)
+	{
+		g_aClockVertOffsetsHGR[i] = VideoGetScannerAddressPartialV(cycle);
+		_ASSERT(g_aClockVertOffsetsHGR[i] == g_kClockVertOffsetsHGR[i]);
+	}
+
+	//
+	// g_aClockVertOffsetsTXT[]
+	//
+
+	g_uVideoMode = VF_TEXT;
+	for (UINT i=0, cycle=VIDEO_SCANNER_HORZ_START; i<(256+8)/8; i++, cycle+=VIDEO_SCANNER_MAX_HORZ*8)
+	{
+		g_aClockVertOffsetsTXT[i] = VideoGetScannerAddressPartialV(cycle);
+		_ASSERT(g_aClockVertOffsetsTXT[i] == g_kClockVertOffsetsTXT[i]);
+	}
+
+	//
+	// APPLE_IIP_HORZ_CLOCK_OFFSET[]
+	//
+
+	g_uVideoMode = VF_TEXT;
+	SetApple2Type(A2TYPE_APPLE2PLUS);
+	for (UINT j=0; j<5; j++)
+	{
+		for (UINT i=0, cycle=j*64*VIDEO_SCANNER_MAX_HORZ; i<VIDEO_SCANNER_MAX_HORZ; i++, cycle++)
+		{
+			APPLE_IIP_HORZ_CLOCK_OFFSET[j][i] = VideoGetScannerAddressPartialH(cycle);
+			_ASSERT(APPLE_IIP_HORZ_CLOCK_OFFSET[j][i] == kAPPLE_IIP_HORZ_CLOCK_OFFSET[j][i]);
+		}
+	}
+
+	//
+	// APPLE_IIE_HORZ_CLOCK_OFFSET[]
+	//
+
+	g_uVideoMode = VF_TEXT;
+	SetApple2Type(A2TYPE_APPLE2E);
+	for (UINT j=0; j<5; j++)
+	{
+		for (UINT i=0, cycle=j*64*VIDEO_SCANNER_MAX_HORZ; i<VIDEO_SCANNER_MAX_HORZ; i++, cycle++)
+		{
+			APPLE_IIE_HORZ_CLOCK_OFFSET[j][i] = VideoGetScannerAddressPartialH(cycle);
+			_ASSERT(APPLE_IIE_HORZ_CLOCK_OFFSET[j][i] == kAPPLE_IIE_HORZ_CLOCK_OFFSET[j][i]);
+		}
+	}
+
+	//
+
+	CheckVideoTables();
+
+	VideoResetState();
+	SetApple2Type(currentApple2Type);
 }

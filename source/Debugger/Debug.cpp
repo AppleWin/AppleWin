@@ -780,7 +780,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 	DWORD currtime = GetTickCount();
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
-	KeybQueueKeypress(TEXT(' '),1);
+	KeybQueueKeypress(TEXT(' ') ,ASCII);
 
 	return UPDATE_ALL; // 0;
 }
@@ -2096,7 +2096,7 @@ Update_t CmdUnassemble (int nArgs)
 Update_t CmdKey (int nArgs)
 {
 	KeybQueueKeypress(
-		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : TEXT(' '), 1); // FIXME!!!
+		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : TEXT(' '), ASCII); // FIXME!!!
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
@@ -9680,7 +9680,7 @@ void DebuggerCursorUpdate()
 	}
 	else
 	{
-		Sleep(10);		// Stop process hogging CPU
+		Sleep(1);		// Stop process hogging CPU
 	}
 }
 
@@ -9709,11 +9709,11 @@ void DebuggerMouseClick( int x, int y )
 	if (g_nAppMode != MODE_DEBUG)
 		return;
 
-	// NOTE: KeybUpdateCtrlShiftStatus() should be called before
+	KeybUpdateCtrlShiftStatus();
 	int iAltCtrlShift  = 0;
-	iAltCtrlShift |= (g_bAltKey   & 1) << 0;
-	iAltCtrlShift |= (g_bCtrlKey  & 1) << 1;
-	iAltCtrlShift |= (g_bShiftKey & 1) << 2;
+	iAltCtrlShift |= KeybGetAltStatus()   ? 1<<0 : 0;
+	iAltCtrlShift |= KeybGetCtrlStatus()  ? 1<<1 : 0;
+	iAltCtrlShift |= KeybGetShiftStatus() ? 1<<2 : 0;
 
 	// GH#462 disasm click #
 	if (iAltCtrlShift != g_bConfigDisasmClick)

@@ -639,17 +639,19 @@ void Snapshot_Startup()
 
 	Snapshot_LoadState();
 
-	bDone = true;
+	bDone = true;	// Prevents a g_bRestart from loading an old save-state
 }
 
 void Snapshot_Shutdown()
 {
 	static bool bDone = false;
 
+	_ASSERT(!bDone);
+	_ASSERT(!g_bRestart);
 	if(!g_bSaveStateOnExit || bDone)
 		return;
 
 	Snapshot_SaveState();
 
-	bDone = true;
+	bDone = true;	// Debug flag: this func should only be called once, and never on a g_bRestart
 }
