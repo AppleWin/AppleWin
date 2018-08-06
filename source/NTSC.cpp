@@ -1886,7 +1886,7 @@ static void GenerateVideoTables( void )
 	g_uVideoMode = VF_HIRES;
 	for (UINT i=0, cycle=VIDEO_SCANNER_HORZ_START; i<VIDEO_SCANNER_MAX_VERT; i++, cycle+=VIDEO_SCANNER_MAX_HORZ)
 	{
-		g_aClockVertOffsetsHGR[i] = VideoGetScannerAddressPartialV(cycle);
+		g_aClockVertOffsetsHGR[i] = VideoGetScannerAddress(cycle, VS_PartialAddrV);
 		_ASSERT(g_aClockVertOffsetsHGR[i] == g_kClockVertOffsetsHGR[i]);
 	}
 
@@ -1897,7 +1897,7 @@ static void GenerateVideoTables( void )
 	g_uVideoMode = VF_TEXT;
 	for (UINT i=0, cycle=VIDEO_SCANNER_HORZ_START; i<(256+8)/8; i++, cycle+=VIDEO_SCANNER_MAX_HORZ*8)
 	{
-		g_aClockVertOffsetsTXT[i] = VideoGetScannerAddressPartialV(cycle);
+		g_aClockVertOffsetsTXT[i] = VideoGetScannerAddress(cycle, VS_PartialAddrV);
 		_ASSERT(g_aClockVertOffsetsTXT[i] == g_kClockVertOffsetsTXT[i]);
 	}
 
@@ -1911,7 +1911,7 @@ static void GenerateVideoTables( void )
 	{
 		for (UINT i=0, cycle=j*64*VIDEO_SCANNER_MAX_HORZ; i<VIDEO_SCANNER_MAX_HORZ; i++, cycle++)
 		{
-			APPLE_IIP_HORZ_CLOCK_OFFSET[j][i] = VideoGetScannerAddressPartialH(cycle);
+			APPLE_IIP_HORZ_CLOCK_OFFSET[j][i] = VideoGetScannerAddress(cycle, VS_PartialAddrH);
 			_ASSERT(APPLE_IIP_HORZ_CLOCK_OFFSET[j][i] == kAPPLE_IIP_HORZ_CLOCK_OFFSET[j][i]);
 		}
 	}
@@ -1926,7 +1926,7 @@ static void GenerateVideoTables( void )
 	{
 		for (UINT i=0, cycle=j*64*VIDEO_SCANNER_MAX_HORZ; i<VIDEO_SCANNER_MAX_HORZ; i++, cycle++)
 		{
-			APPLE_IIE_HORZ_CLOCK_OFFSET[j][i] = VideoGetScannerAddressPartialH(cycle);
+			APPLE_IIE_HORZ_CLOCK_OFFSET[j][i] = VideoGetScannerAddress(cycle, VS_PartialAddrH);
 			_ASSERT(APPLE_IIE_HORZ_CLOCK_OFFSET[j][i] == kAPPLE_IIE_HORZ_CLOCK_OFFSET[j][i]);
 		}
 	}
