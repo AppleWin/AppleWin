@@ -1399,6 +1399,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			unsigned long fix_minor = g_AppleWinVersion[3] = pFixedFileInfo->dwFileVersionLS & 0xffff;
 			sprintf(VERSIONSTRING, "%d.%d.%d.%d", major, minor, fix, fix_minor); // potential buffer overflow
 		}
+
+		delete [] pVerInfoBlock;
     }
 
 	LogFileOutput("AppleWin version: %s\n",  VERSIONSTRING);
