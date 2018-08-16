@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "StdAfx.h"
 	#include "Applewin.h"
 	#include "CPU.h"	// CpuGetCyclesThisVideoFrame()
-	#include "Frame.h"  // FRAMEBUFFER_W FRAMEBUFFER_H
+	#include "Frame.h"  // FRAMEBUFFER_W, EXTEND_14M_VIDEO_BY_1_PIXEL
 	#include "Memory.h" // MemGetMainPtr() MemGetBankPtr()
 	#include "Video.h"  // g_pFramebufferbits
 
@@ -722,22 +722,43 @@ inline void updateVideoScannerHorzEOL()
 	{
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
-			//VIDEO_DRAW_ENDLINE();
 			if (g_nColorBurstPixels < 2)
 			{
 				// NOTE: This writes out-of-bounds for a 560x384 framebuffer
 				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
 				g_pFuncUpdateBnWPixel(0);
+#if !EXTEND_14M_VIDEO_BY_1_PIXEL
 				g_pFuncUpdateBnWPixel(0);
-				g_pFuncUpdateBnWPixel(0);
+#else
+				if (g_uVideoMode & VF_80COL)	// 14M: Output a 561th dot
+				{
+					g_pFuncUpdateBnWPixel(0);
+				}
+				else	// 7M: Stop outputting video after 560 dots
+				{
+					*(UINT32*)&g_pVideoAddress[0] = 0;
+					*(UINT32*)&g_pVideoAddress[g_kFrameBufferWidth] = 0;
+				}
+#endif
 			}
 			else
 			{
 				// NOTE: This writes out-of-bounds for a 560x384 framebuffer
 				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
 				g_pFuncUpdateHuePixel(0);
+#if !EXTEND_14M_VIDEO_BY_1_PIXEL
 				g_pFuncUpdateHuePixel(0);
-				g_pFuncUpdateHuePixel(0);
+#else
+				if (g_uVideoMode & VF_80COL)	// 14M: Output a 561th dot
+				{
+					g_pFuncUpdateHuePixel(0);
+				}
+				else	// 7M: Stop outputting video after 560 dots
+				{
+					*(UINT32*)&g_pVideoAddress[0] = 0;
+					*(UINT32*)&g_pVideoAddress[g_kFrameBufferWidth] = 0;
+				}
+#endif
 			}
 		}
 
@@ -760,7 +781,7 @@ inline void updateVideoScannerHorzEOL()
 //===========================================================================
 inline void updateVideoScannerAddress()
 {
-	g_pVideoAddress        = g_nVideoClockVert<VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
+	g_pVideoAddress        = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
 	g_nColorPhaseNTSC      = INITIAL_COLOR_PHASE;
 	g_nLastColumnPixelNTSC = 0;
 	g_nSignalBitsNTSC      = 0;
@@ -1124,6 +1145,30 @@ static void updatePixelHueMonitorDoubleScanline (uint16_t compositeSignal)
 }
 
 //===========================================================================
+
+#if EXTEND_14M_VIDEO_BY_1_PIXEL
+// NB. Only needed for video modes that are 14M and shift the color phase, ie:
+// . updateScreenDoubleHires80(), updateScreenDoubleLores80(), updateScreenText80()
+inline void zero14MPixel0(void)	// GH#555
+{
+	if (g_nVideoClockHorz == VIDEO_SCANNER_HORZ_START)
+	{
+		UINT32* p = ((UINT32*)g_pVideoAddress) - 14;	// Point back to pixel-0
+		if (g_eVideoType == VT_COLOR_MONITOR || g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
+		{
+			p[2] = 0;
+			p[g_kFrameBufferWidth+2] = 0;	// Next scanline
+		}
+		else
+		{
+			p[0] = 0;
+			p[g_kFrameBufferWidth+0] = 0;	// Next scanline
+		}
+	}
+}
+#endif
+
+//===========================================================================
 void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
@@ -1148,6 +1193,7 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 				uint8_t  m     = pMain[0];
 				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
 				updatePixels( bits );
+				// NB. No zero14MPixel0(), since no color phase shift (or use of g_nLastColumnPixelNTSC)
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1185,6 +1231,10 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 				bits = (bits << 1) | g_nLastColumnPixelNTSC;
 				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
+
+#if EXTEND_14M_VIDEO_BY_1_PIXEL
+				zero14MPixel0();
+#endif
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1217,6 +1267,7 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 				uint16_t lo    = getLoResBits( m ); 
 				uint16_t bits  = g_aPixelDoubleMaskHGR[(0xFF & lo >> ((1 - (g_nVideoClockHorz & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
 				updatePixels( bits );
+				// NB. No zero14MPixel0(), since no color phase shift (or use of g_nLastColumnPixelNTSC)
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1258,6 +1309,10 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 				uint16_t bits = (main << 7) | (aux & 0x7f);
 				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
+
+#if EXTEND_14M_VIDEO_BY_1_PIXEL
+				zero14MPixel0();
+#endif
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1404,6 +1459,10 @@ void updateScreenText80 (long cycles6502)
 				bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
 				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
+
+#if EXTEND_14M_VIDEO_BY_1_PIXEL
+				zero14MPixel0();
+#endif
 			}
 		}
 		updateVideoScannerHorzEOL();
