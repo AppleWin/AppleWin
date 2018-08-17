@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
+#include "NTSC.h"
 #include "ParallelPrinter.h"
 #include "Pravets.h"
 #include "Registry.h"
@@ -199,7 +200,7 @@ void SetAltEnterToggleFullScreen(bool mode)
 
 UINT GetFrameBufferBorderlessWidth(void)
 {
-	static const UINT uFrameBufferBorderlessW = kFrameBufferBorderlessW;	// 560 = Double Hi-Res, +1 for GH#555
+	static const UINT uFrameBufferBorderlessW = NTSC_GetFrameBufferBorderlessWidth();	// 560 = Double Hi-Res, +1 for GH#555
 	return uFrameBufferBorderlessW;
 }
 

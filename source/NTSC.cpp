@@ -23,12 +23,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "StdAfx.h"
 	#include "Applewin.h"
 	#include "CPU.h"	// CpuGetCyclesThisVideoFrame()
-	#include "Frame.h"  // FRAMEBUFFER_W, EXTEND_14M_VIDEO_BY_1_PIXEL
+	#include "Frame.h"
 	#include "Memory.h" // MemGetMainPtr() MemGetBankPtr()
 	#include "Video.h"  // g_pFramebufferbits
 
 	#include "NTSC.h"
 	#include "NTSC_CharSet.h"
+
+
+// GH#555: Extend the 14M video modes by 1 pixel
+// . 14M (DHGR,DGR,80COL) are shifted right by 1 pixel, so zero out the left-most visible pixel.
+// .  7M (all other modes) are not shift right by 1 pixel, so zero out the right-most visible pixel.
+// NB. This 1 pixel shift is a workaround for the 14M video modes actually start 7x 14M pixels to the left on *real h/w*.
+// . 7x 14M pixels early + 1x 14M pixel shifted right = 2 complete color phase rotations.
+// . ie. the 14M colors are correct, but being 1 pixel out is the closest we can get the 7M and 14M video modes to overlap.
+// . The alternative is to render the 14M correct 7 pixels early, but have 7-pixel borders left (for 7M modes) or right (for 14M modes).
+#define EXTEND_14M_VIDEO_BY_1_PIXEL 1
 
 #define NTSC_REMOVE_WHITE_RINGING  1 // 0 = theoritical dimmed white has chroma, 1 = pure white without chroma tinting
 #define NTSC_REMOVE_BLACK_GHOSTING 1 // 1 = remove black smear/smudges carrying over
@@ -120,6 +130,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// "There are exactly 17030 (65 x 262) 6502 cycles in every television scan of an American Apple."
 	#define VIDEO_SCANNER_MAX_HORZ   65 // TODO: use Video.cpp: kHClocks
 	#define VIDEO_SCANNER_MAX_VERT  262 // TODO: use Video.cpp: kNTSCScanLines
+	static const int VIDEO_SCANNER_6502_CYCLES = VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_MAX_VERT;
 
 	#define VIDEO_SCANNER_HORZ_COLORBURST_BEG 12
 	#define VIDEO_SCANNER_HORZ_COLORBURST_END 16
@@ -439,6 +450,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void updateScreenSingleLores40( long cycles6502 );
 	static void updateScreenText40       ( long cycles6502 );
 	static void updateScreenText80       ( long cycles6502 );
+
+//===========================================================================
+// NB. This func only exists so that EXTEND_14M_VIDEO_BY_1_PIXEL only needs to exist in this cpp file!
+UINT NTSC_GetFrameBufferBorderlessWidth(void)
+{
+#if !EXTEND_14M_VIDEO_BY_1_PIXEL
+	return 560;	// 560 = Double Hi-Res
+#else
+	return 561;	// 560 = Double Hi-Res, +1 for GH#555
+#endif
+}
 
 //===========================================================================
 static void set_csbits()
