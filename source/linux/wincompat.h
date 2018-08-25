@@ -312,6 +312,8 @@ typedef struct tagOFN {
 
 typedef OPENFILENAME OPENFILENAME_NT4;
 
+typedef int LCID;
+
 #ifdef __cplusplus
 }
 #endif

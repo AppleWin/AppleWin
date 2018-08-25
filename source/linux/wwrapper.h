@@ -136,3 +136,8 @@ int MessageBox(HWND, const char *, const char *, UINT);
 
 // used in TestCPU6502
 #define _tmain main
+
+#define LOCALE_SYSTEM_DEFAULT 0x0800
+
+int GetDateFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpDate, LPCSTR lpFormat, LPSTR lpDateStr, int cchDate);
+int GetTimeFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpTime, LPCSTR lpFormat, LPSTR lpTimeStr, int cchTime);

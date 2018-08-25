@@ -8,10 +8,11 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <time.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <boost/lexical_cast.hpp>
+#include <iomanip>
+#include <ctime>
 
 #include "../resource/resource.h"
 #include "Log.h"
@@ -249,4 +250,26 @@ BOOL GetOpenFileName(LPOPENFILENAME lpofn)
 BOOL WINAPI PostMessage(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
   return TRUE;
+}
+
+int GetDateFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpDate, LPCSTR lpFormat, LPSTR lpDateStr, int cchDate)
+{
+  std::time_t t = std::time(nullptr);
+  std::tm tm = *std::localtime(&t);
+  std::ostringstream ss;
+  ss << std::put_time(&tm, "%D");
+  const std::string str = ss.str();
+  strncpy(lpDateStr, str.c_str(), cchDate);
+  return cchDate; // not 100% sure, but it is never used
+}
+
+int GetTimeFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpTime, LPCSTR lpFormat, LPSTR lpTimeStr, int cchTime)
+{
+  std::time_t t = std::time(nullptr);
+  std::tm tm = *std::localtime(&t);
+  std::ostringstream ss;
+  ss << std::put_time(&tm, "%T");
+  const std::string str = ss.str();
+  strncpy(lpTimeStr, str.c_str(), cchTime);
+  return cchTime; // not 100% sure, but it is never used
 }

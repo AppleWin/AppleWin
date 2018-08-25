@@ -16,8 +16,8 @@ void FrameRefreshStatus(int x, bool);
 // Keyboard
 
 BYTE    KeybGetKeycode ();
-BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
-BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+BYTE KeybReadData();
+BYTE KeybReadFlag();
 
 // Joystick
 

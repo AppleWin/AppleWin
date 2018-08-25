@@ -534,12 +534,12 @@ BYTE    KeybGetKeycode ()
   return 0;
 }
 
-BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
+BYTE KeybReadData()
 {
   return nextKey;
 }
 
-BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
+BYTE KeybReadFlag()
 {
   BYTE result = keyReady ? nextKey : 0;
   nextKey = 0;

@@ -142,11 +142,6 @@ int           g_nAltCharSetOffset  = 0; // alternate character set
 #define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
 #define  SW_TEXT          (g_uVideoMode & VF_TEXT)
 
-bool    VideoGetSW80COL()
-{
-  return SW_80COL ? true : false;
-}
-
 bool    VideoGetVblBar(DWORD uExecutedCycles)
 {
   // get video scanner position
@@ -344,6 +339,46 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
     *pbVblBar_OUT = !v_4 || !v_3; // VBL' = (v_4 & v_3)' (UTAIIe:5-10,#3)
   }
   return static_cast<WORD>(nAddress);
+}
+
+bool VideoGetSW80COL(void)
+{
+	return SW_80COL ? true : false;
+}
+
+bool VideoGetSWDHIRES(void)
+{
+	return SW_DHIRES ? true : false;
+}
+
+bool VideoGetSWHIRES(void)
+{
+	return SW_HIRES ? true : false;
+}
+
+bool VideoGetSW80STORE(void)
+{
+	return SW_80STORE ? true : false;
+}
+
+bool VideoGetSWMIXED(void)
+{
+	return SW_MIXED ? true : false;
+}
+
+bool VideoGetSWPAGE2(void)
+{
+	return SW_PAGE2 ? true : false;
+}
+
+bool VideoGetSWTEXT(void)
+{
+	return SW_TEXT ? true : false;
+}
+
+bool VideoGetSWAltCharSet(void)
+{
+	return g_nAltCharSetOffset != 0;
 }
 
 // NTSC
