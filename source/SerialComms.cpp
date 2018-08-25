@@ -216,6 +216,7 @@ bool CSuperSerialCard::CheckComm()
 
 			// have socket so attempt to bind it
 			SOCKADDR_IN saAddress;
+			memset(&saAddress, 0, sizeof(SOCKADDR_IN));
 			saAddress.sin_family = AF_INET;
 			saAddress.sin_port = htons(TCP_SERIAL_PORT); // TODO: get from registry / GUI
 			saAddress.sin_addr.s_addr = htonl(INADDR_ANY);

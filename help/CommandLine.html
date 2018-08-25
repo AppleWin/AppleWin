@@ -43,7 +43,14 @@
 		-no-printscreen-key<br>
 		Prevent the PrintScreen key from being registered<br><br>
 		-no-hook-system-key<br>
-		Prevent certain system key combinations from being hooked (to prevent the emulator from trapping ALT+ESC, ALT+SPACE, ALT+TAB and CTRL+ESC). This means that the equivalent Open Apple+&lt;key&gt; combinations won't work within the emulator.<br><br>
+		Prevent certain system key combinations from being hooked (to prevent the emulator from trapping ALT+ESC, ALT+SPACE, ALT+TAB and CTRL+ESC). This means that the equivalent Open Apple+&lt;key&gt; combinations won't work within the emulator.<br>
+		NB. This switch takes precedence over -hook-alt-tab and -hook-altgr-control.<br><br>
+		-hook-alt-tab<br>
+		By default the emulator doesn't hook ALT+TAB. Use this to allow Open Apple+TAB to be readable by the emulated machine.<br><br>
+		-hook-altgr-control<br>
+		By default the emulator doesn't suppress ALT GR's (Right Alt's) fake LEFT CONTROL. Use this to suppress this fake LEFT CONTROL to allow Closed Apple+CTRL+&lt;key&gt; to be readable by the emulated machine.<br>
+		NB. Suppressing this fake LEFT CONTROL seems to prevent international keyboards from being able to type certain keys.
+		<br><br>
 		-use-real-printer<br>
 		Enables Advanced configuration control to allow dumping to a real printer<br><br>
 		-noreg<br>

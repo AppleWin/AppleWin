@@ -93,7 +93,7 @@ uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last se
 DWORD     g_eVideoType     = VT_COLOR_TV;
 DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
 
-static const bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
+static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 //-------------------------------------
 
@@ -542,7 +542,7 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 
 void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
-	if (bVideoScannerNTSC)
+	if (g_bVideoScannerNTSC)
 	{
 		NTSC_VideoClockResync(dwCyclesThisFrame);
 	}
@@ -770,35 +770,20 @@ void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 // References to Jim Sather's books are given as eg:
 // UTAIIe:5-7,P3 (Understanding the Apple IIe, chapter 5, page 7, Paragraph 3)
 //
-
-static WORD g_PartialV=0, g_PartialH=0;
-
-WORD VideoGetScannerAddressPartialV(DWORD nCycles)
-{
-	VideoGetScannerAddress(nCycles);
-	return g_PartialV;
-}
-
-WORD VideoGetScannerAddressPartialH(DWORD nCycles)
-{
-	VideoGetScannerAddress(nCycles);
-	return g_PartialH;
-}
-
-WORD VideoGetScannerAddress(DWORD nCycles)
+WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= VS_FullAddr*/)
 {
     // machine state switches
     //
-    int nHires   = (SW_HIRES && !SW_TEXT) ? 1 : 0;
-    int nPage2   = SW_PAGE2 ? 1 : 0;
-    int n80Store = SW_80STORE ? 1 : 0;
+    bool bHires   = VideoGetSWHIRES() && !VideoGetSWTEXT();
+    bool bPage2   = VideoGetSWPAGE2();
+    bool b80Store = VideoGetSW80STORE();
 
     // calculate video parameters according to display standard
     //
-    int nScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
-    int nVSyncLine  = bVideoScannerNTSC ? kNTSCVSyncLine : kPALVSyncLine;
-    int nScanCycles = nScanLines * kHClocks;
-    nCycles %= nScanCycles;
+    const int kScanLines  = g_bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+    const int kScanCycles = kScanLines * kHClocks;
+    _ASSERT(nCycles < kScanCycles);
+    nCycles %= kScanCycles;
 
     // calculate horizontal scanning state
     //
@@ -821,7 +806,7 @@ WORD VideoGetScannerAddress(DWORD nCycles)
     int nVState = kVLine0State + nVLine; // V state bits
     if (nVLine >= kVPresetLine) // check for previous vertical state preset
     {
-        nVState -= nScanLines; // compensate for preset
+        nVState -= kScanLines; // compensate for preset
     }
     int v_A = (nVState >> 0) & 1; // get vertical state bits
     int v_B = (nVState >> 1) & 1;
@@ -835,9 +820,9 @@ WORD VideoGetScannerAddress(DWORD nCycles)
 
     // calculate scanning memory address
     //
-    if (nHires && SW_MIXED && v_4 && v_2) // HIRES TIME signal (UTAIIe:5-7,P3)
+    if (bHires && SW_MIXED && v_4 && v_2) // HIRES TIME signal (UTAIIe:5-7,P3)
     {
-        nHires = 0; // address is in text memory for mixed hires
+        bHires = false; // address is in text memory for mixed hires
     }
 
     int nAddend0 = 0x0D; // 1            1            0            1
@@ -845,54 +830,58 @@ WORD VideoGetScannerAddress(DWORD nCycles)
     int nAddend2 = (v_4 << 3) | (v_3 << 2) | (v_4 << 1) | (v_3 << 0);
     int nSum     = (nAddend0 + nAddend1 + nAddend2) & 0x0F; // SUM (UTAIIe:5-9)
 
-    int nAddress = 0; // build address from video scanner equations (UTAIIe:5-8,T5.1)
-    nAddress |= h_0  << 0; // a0
-    nAddress |= h_1  << 1; // a1
-    nAddress |= h_2  << 2; // a2
-    nAddress |= nSum << 3; // a3 - a6
-    g_PartialH = nAddress;
+    WORD nAddressH = 0; // build address from video scanner equations (UTAIIe:5-8,T5.1)
+    nAddressH |= h_0  << 0; // a0
+    nAddressH |= h_1  << 1; // a1
+    nAddressH |= h_2  << 2; // a2
+    nAddressH |= nSum << 3; // a3 - a6
+    if (!bHires)
+    {
+        // Apple ][ (not //e) and HBL?
+        //
+        if (IS_APPLE2 && // Apple II only (UTAIIe:I-4,#5)
+            !h_5 && (!h_4 || !h_3)) // HBL (UTAIIe:8-10,F8.5)
+        {
+            nAddressH |= 1 << 12; // Y: a12 (add $1000 to address!)
+        }
+    }
 
-    nAddress |= v_0  << 7; // a7
-    nAddress |= v_1  << 8; // a8
-    nAddress |= v_2  << 9; // a9
+    WORD nAddressV = 0;
+    nAddressV |= v_0  << 7; // a7
+    nAddressV |= v_1  << 8; // a8
+    nAddressV |= v_2  << 9; // a9
 
-    int p2a = !(nPage2 && !n80Store);
-    int p2b = nPage2 && !n80Store;
+    int p2a = !(bPage2 && !b80Store) ? 1 : 0;
+    int p2b =  (bPage2 && !b80Store) ? 1 : 0;
 
-    if (nHires) // hires?
+    WORD nAddressP = 0;	// Page bits
+    if (bHires) // hires?
     {
         // Y: insert hires-only address bits
         //
-        nAddress |= v_A << 10; // a10
-        nAddress |= v_B << 11; // a11
-        nAddress |= v_C << 12; // a12
-        g_PartialV = nAddress - g_PartialH;
-
-        nAddress |= p2a << 13; // a13
-        nAddress |= p2b << 14; // a14
+        nAddressV |= v_A << 10; // a10
+        nAddressV |= v_B << 11; // a11
+        nAddressV |= v_C << 12; // a12
+        nAddressP |= p2a << 13; // a13
+        nAddressP |= p2b << 14; // a14
     }
     else
     {
         // N: insert text-only address bits
         //
-        g_PartialV = nAddress - g_PartialH;
-
-        // Apple ][ (not //e) and HBL?
-		//
-		if (IS_APPLE2 && // Apple II only (UTAIIe:I-4,#5)
-			!h_5 && (!h_4 || !h_3)) // HBL (UTAIIe:8-10,F8.5)
-        {
-            nAddress   |= 1 << 12; // Y: a12 (add $1000 to address!)
-            g_PartialH |= 1 << 12;
-        }
-
-        nAddress |= p2a << 10; // a10
-        nAddress |= p2b << 11; // a11
+        nAddressP |= p2a << 10; // a10
+        nAddressP |= p2b << 11; // a11
 	}
 
 	// VBL' = v_4' | v_3' = (v_4 & v_3)' (UTAIIe:5-10,#3)
 
-    return static_cast<WORD>(nAddress);
+	if (videoScannerAddr == VS_PartialAddrH)
+		return nAddressH;
+
+	if (videoScannerAddr == VS_PartialAddrV)
+		return nAddressV;
+
+    return nAddressP | nAddressV | nAddressH;
 }
 
 //===========================================================================
@@ -903,7 +892,7 @@ bool VideoGetVblBar(const DWORD uExecutedCycles)
 	int nCycles = CpuGetCyclesThisVideoFrame(uExecutedCycles);
 
 	// calculate video parameters according to display standard
-	const int kScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+	const int kScanLines  = g_bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
 	const int kScanCycles = kScanLines * kHClocks;
 	nCycles %= kScanCycles;
 

@@ -169,9 +169,8 @@ void    VideoRedrawScreen (void);
 void    VideoRefreshScreen (uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false);
 void    VideoReinitialize ();
 void    VideoResetState ();
-WORD    VideoGetScannerAddressPartialV(DWORD nCycles);
-WORD    VideoGetScannerAddressPartialH(DWORD nCycles);
-WORD    VideoGetScannerAddress(DWORD nCycles);
+enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
+WORD    VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr = VS_FullAddr);
 bool    VideoGetVblBar(DWORD uExecutedCycles);
 
 bool    VideoGetSW80COL(void);
