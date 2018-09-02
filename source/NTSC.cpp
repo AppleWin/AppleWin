@@ -680,12 +680,19 @@ inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTa
 #endif
 
 //===========================================================================
+inline bool GetColorBurst( void )
+{
+	return (g_nColorBurstPixels < 2) ? false : true;
+}
+
+
+//===========================================================================
 
 // NB. g_nLastColumnPixelNTSC = bits.b13 will be superseded by these parent funcs which use bits.b14:
 // . updateScreenDoubleHires80(), updateScreenDoubleLores80(), updateScreenText80()
 inline void updatePixels( uint16_t bits )
 {
-	if (g_nColorBurstPixels < 2)
+	if (!GetColorBurst())
 	{ 
 		/* #1 of 7 */
 		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
@@ -744,7 +751,7 @@ inline void updateVideoScannerHorzEOL()
 	{
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
 		{
-			if (g_nColorBurstPixels < 2)
+			if (!GetColorBurst())
 			{
 				// NOTE: This writes out-of-bounds for a 560x384 framebuffer
 
@@ -810,6 +817,12 @@ inline void updateVideoScannerHorzEOL()
 inline void updateVideoScannerAddress()
 {
 	g_pVideoAddress        = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
+
+	// Adjust, as these video styles have 2x 14M pixels of pre-render
+	// NB. For VT_COLOR_MONITOR, also check color-burst so that TEXT and MIXED(HGR+TEXT) render the TEXT at the same offset (GH#341)
+	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV || (g_eVideoType == VT_COLOR_MONITOR && GetColorBurst()))
+		g_pVideoAddress = (bgra_t*) ((UINT32*)g_pVideoAddress - 2);
+
 	g_nColorPhaseNTSC      = INITIAL_COLOR_PHASE;
 	g_nLastColumnPixelNTSC = 0;
 	g_nSignalBitsNTSC      = 0;
@@ -1182,15 +1195,15 @@ inline void zero14MPixel0(void)	// GH#555
 	if (g_nVideoClockHorz == VIDEO_SCANNER_HORZ_START)
 	{
 		UINT32* p = ((UINT32*)g_pVideoAddress) - 14;	// Point back to pixel-0
-		if (g_eVideoType == VT_COLOR_MONITOR || g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
+		if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV || g_eVideoType == VT_COLOR_MONITOR)
 		{
 			p[2] = 0;
-			p[g_kFrameBufferWidth+2] = 0;	// Next scanline
+			p[g_kFrameBufferWidth+2] = 0;	// Next line (there are 2 lines per Apple II scanline)
 		}
 		else
 		{
 			p[0] = 0;
-			p[g_kFrameBufferWidth+0] = 0;	// Next scanline
+			p[g_kFrameBufferWidth+0] = 0;	// Next line (there are 2 lines per Apple II scanline)
 		}
 	}
 }
@@ -1909,12 +1922,6 @@ void NTSC_VideoRedrawWholeScreen( void )
 	_ASSERT(currVideoClockVert == g_nVideoClockVert);
 	_ASSERT(currVideoClockHorz == g_nVideoClockHorz);
 #endif
-}
-
-//===========================================================================
-bool NTSC_GetColorBurst( void )
-{
-	return (g_nColorBurstPixels < 2) ? false : true;
 }
 
 //===========================================================================
