@@ -747,14 +747,19 @@ inline void updateVideoScannerHorzEOL()
 			if (g_nColorBurstPixels < 2)
 			{
 				// NOTE: This writes out-of-bounds for a 560x384 framebuffer
-				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
+
+				// Test with: INVERSE ']' at RHS - get an extra pixel without this:
+				if (/*g_eVideoType == VT_COLOR_MONITOR ||*/ g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
+					g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
+
 				g_pFuncUpdateBnWPixel(0);
 #if !EXTEND_14M_VIDEO_BY_1_PIXEL
 				g_pFuncUpdateBnWPixel(0);
 #else
-				if (g_uVideoMode & VF_80COL)	// 14M: Output a 561th dot
+				if ((g_uVideoMode & VF_80COL) &&
+					!((g_uVideoMode & VF_MIXED) && (g_nVideoClockVert < VIDEO_SCANNER_Y_MIXED) && !(g_uVideoMode & VF_DHIRES)))	// && top 160 lines are not TEXT/GR/HGR
 				{
-					g_pFuncUpdateBnWPixel(0);
+					g_pFuncUpdateBnWPixel(0);	// 14M: Output a 561st dot
 				}
 				else	// 7M: Stop outputting video after 560 dots
 				{
@@ -771,9 +776,10 @@ inline void updateVideoScannerHorzEOL()
 #if !EXTEND_14M_VIDEO_BY_1_PIXEL
 				g_pFuncUpdateHuePixel(0);
 #else
-				if (g_uVideoMode & VF_80COL)	// 14M: Output a 561th dot
+				if ((g_uVideoMode & VF_80COL) &&
+					!((g_uVideoMode & VF_MIXED) && (g_nVideoClockVert < VIDEO_SCANNER_Y_MIXED) && !(g_uVideoMode & VF_DHIRES)))	// && top 160 lines are not TEXT/GR/HGR
 				{
-					g_pFuncUpdateHuePixel(0);
+					g_pFuncUpdateHuePixel(0);	// 14M: Output a 561st dot
 				}
 				else	// 7M: Stop outputting video after 560 dots
 				{
