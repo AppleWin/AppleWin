@@ -745,6 +745,8 @@ inline void updatePixels( uint16_t bits )
 }
 
 //===========================================================================
+
+// NOTE: This writes out-of-bounds for a 560x384 framebuffer
 inline void updateVideoScannerHorzEOL()
 {
 	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
@@ -753,38 +755,34 @@ inline void updateVideoScannerHorzEOL()
 		{
 			if (!GetColorBurst())
 			{
-				// NOTE: This writes out-of-bounds for a 560x384 framebuffer
-
-				// Test with: INVERSE ']' at RHS - get an extra pixel without this:
-				if (/*g_eVideoType == VT_COLOR_MONITOR ||*/ g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
-					g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
-
-				g_pFuncUpdateBnWPixel(0);
+				// For: VT_MONO_xxx, VT_COLOR_MONITOR: (!VF_TEXT && VF_MIXED && bottom 32 lines) || (VF_TEXT)
 #if !EXTEND_14M_VIDEO_BY_1_PIXEL
-				g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
+				g_pFuncUpdateHuePixel(0);
+				g_pFuncUpdateHuePixel(0);
 #else
-				if ((g_uVideoMode & VF_80COL) &&
-					!((g_uVideoMode & VF_MIXED) && (g_nVideoClockVert < VIDEO_SCANNER_Y_MIXED) && !(g_uVideoMode & VF_DHIRES)))	// && top 160 lines are not TEXT/GR/HGR
-				{
-					g_pFuncUpdateBnWPixel(0);	// 14M: Output a 561st dot
-				}
-				else	// 7M: Stop outputting video after 560 dots
-				{
-					*(UINT32*)&g_pVideoAddress[0] = 0;
-					*(UINT32*)&g_pVideoAddress[g_kFrameBufferWidth] = 0;
-				}
+				if (g_uVideoMode & VF_80COL)
+					g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);	// 14M: Output a 561st dot
+				else
+					g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateBnWPixel(0);
 #endif
 			}
 			else
 			{
-				// NOTE: This writes out-of-bounds for a 560x384 framebuffer
+				// For: VT_COLOR_TV, VT_MONO_TV, VT_COLOR_MONITOR: (!VF_TEXT && VF_MIXED && top 160 lines) || (!VF_TEXT && !VF_MIXED)
+#if !EXTEND_14M_VIDEO_BY_1_PIXEL
 				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
 				g_pFuncUpdateHuePixel(0);
-#if !EXTEND_14M_VIDEO_BY_1_PIXEL
 				g_pFuncUpdateHuePixel(0);
 #else
+				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
+				g_pFuncUpdateHuePixel(0);
 				if ((g_uVideoMode & VF_80COL) &&
-					!((g_uVideoMode & VF_MIXED) && (g_nVideoClockVert < VIDEO_SCANNER_Y_MIXED) && !(g_uVideoMode & VF_DHIRES)))	// && top 160 lines are not TEXT/GR/HGR
+					!(  (g_uVideoMode & VF_MIXED) && (g_nVideoClockVert < VIDEO_SCANNER_Y_MIXED) && !(g_uVideoMode & VF_DHIRES)) &&	// && top 160 lines are not TEXT/GR/HGR
+					!( !(g_uVideoMode & VF_MIXED) && !(g_uVideoMode & VF_DHIRES))													// && not mixed && TEXT/GR/HGR (but can't be TEXT, as ColorBurst is on)
+					)
 				{
 					g_pFuncUpdateHuePixel(0);	// 14M: Output a 561st dot
 				}
@@ -1195,7 +1193,8 @@ inline void zero14MPixel0(void)	// GH#555
 	if (g_nVideoClockHorz == VIDEO_SCANNER_HORZ_START)
 	{
 		UINT32* p = ((UINT32*)g_pVideoAddress) - 14;	// Point back to pixel-0
-		if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV || g_eVideoType == VT_COLOR_MONITOR)
+		// NB. For VT_COLOR_MONITOR, also check color-burst so that TEXT and MIXED(HGR+TEXT) render the TEXT at the same offset (GH#341)
+		if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV || (g_eVideoType == VT_COLOR_MONITOR && GetColorBurst()))
 		{
 			p[2] = 0;
 			p[g_kFrameBufferWidth+2] = 0;	// Next line (there are 2 lines per Apple II scanline)
