@@ -757,9 +757,9 @@ inline void updateVideoScannerHorzEOL()
 			{
 				// For: VT_MONO_xxx, VT_COLOR_MONITOR: (!VF_TEXT && VF_MIXED && bottom 32 lines) || (VF_TEXT)
 #if !EXTEND_14M_VIDEO_BY_1_PIXEL
-				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
-				g_pFuncUpdateHuePixel(0);
-				g_pFuncUpdateHuePixel(0);
+				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
+				g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateBnWPixel(0);
 #else
 				if (g_uVideoMode & VF_80COL)
 					g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);	// 14M: Output a 561st dot
