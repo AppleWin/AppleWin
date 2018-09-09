@@ -567,6 +567,7 @@ void VideoRedrawScreen (void)
 //===========================================================================
 
 // TC: Hacky-fix for GH#341 - better to draw to the correct position in the framebuffer to start with! (in NTSC.cpp)
+// . NB. Now the dx is corrected in NTSC.cpp, updateVideoScannerAddress()
 static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 {
 	int dx=0, dy=0;
@@ -574,14 +575,7 @@ static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
 	{
 		// Adjust the src locations for the NTSC video modes
-		dx = 2;
 		dy = -1;
-	}
-	else if (g_eVideoType == VT_COLOR_MONITOR)
-	{
-		//if ((g_uVideoMode & VF_TEXT) == 0)	// NB. Not sufficient, eg. ANSI STORY...
-		if ( NTSC_GetColorBurst() == true )	// ANSI STORY (end credits): split DGR/TEXT80/DGR on scanline
-			dx = 2;
 	}
 
 	if (bInvertY)
