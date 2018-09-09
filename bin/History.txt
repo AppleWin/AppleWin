@@ -8,6 +8,11 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.27.8.0 - 9 Sep 2018
+---------------------
+. [Bug #555] Fix for showing 559th DHGR/DGR/TEXT80 vertical column (retaining 560-pixel display width).
+
+
 1.27.7.0 - 6 Aug 2018
 ---------------------
 . [Bug #564] Fixed 'Save State on Exit' not working correctly when there's a Configuration change to the hardware.

@@ -1,6 +1,3 @@
-// Constants
-	const int VIDEO_SCANNER_6502_CYCLES = 17030;
-
 // Globals (Public)
 	extern uint16_t g_nVideoClockVert;
 	extern uint16_t g_nVideoClockHorz;
@@ -19,4 +16,4 @@
 	extern void     NTSC_VideoInitChroma();
 	extern void     NTSC_VideoUpdateCycles( long cycles6502 );
 	extern void     NTSC_VideoRedrawWholeScreen( void );
-	extern bool     NTSC_GetColorBurst( void );
+	extern UINT     NTSC_GetFrameBufferBorderlessWidth( void );
