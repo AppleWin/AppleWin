@@ -1252,7 +1252,7 @@ static void updatePixelHueMonitorDoubleScanline (uint16_t compositeSignal)
 #if EXTEND_14M_VIDEO_BY_1_PIXEL
 // NB. Only needed for video modes that are 14M and shift the color phase, ie:
 // . updateScreenDoubleHires80(), updateScreenDoubleLores80(), updateScreenText80()
-inline void zero14MPixel0(void)	// GH#555
+inline void zeroPixel0_14M(void)	// GH#555
 {
 	if (g_nVideoClockHorz == VIDEO_SCANNER_HORZ_START)
 	{
@@ -1297,7 +1297,7 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 				uint8_t  m     = pMain[0];
 				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
 				updatePixels( bits );
-				// NB. No zero14MPixel0(), since no color phase shift (or use of g_nLastColumnPixelNTSC)
+				// NB. No zeroPixel0_14M(), since no color phase shift (or use of g_nLastColumnPixelNTSC)
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1337,7 +1337,7 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
 
 #if EXTEND_14M_VIDEO_BY_1_PIXEL
-				zero14MPixel0();
+				zeroPixel0_14M();
 #endif
 			}
 		}
@@ -1375,7 +1375,7 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 				uint16_t lo    = getLoResBits( m ); 
 				uint16_t bits  = g_aPixelDoubleMaskHGR[(0xFF & lo >> ((1 - (g_nVideoClockHorz & 1)) * 2)) & 0x7F]; // Optimization: hgrbits
 				updatePixels( bits );
-				// NB. No zero14MPixel0(), since no color phase shift (or use of g_nLastColumnPixelNTSC)
+				// NB. No zeroPixel0_14M(), since no color phase shift (or use of g_nLastColumnPixelNTSC)
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1419,7 +1419,7 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
 
 #if EXTEND_14M_VIDEO_BY_1_PIXEL
-				zero14MPixel0();
+				zeroPixel0_14M();
 #endif
 			}
 		}
@@ -1574,7 +1574,7 @@ void updateScreenText80 (long cycles6502)
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
 
 #if EXTEND_14M_VIDEO_BY_1_PIXEL
-				zero14MPixel0();
+				zeroPixel0_14M();
 #endif
 			}
 		}
