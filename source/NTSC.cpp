@@ -755,14 +755,13 @@ inline void updateVideoScannerHorzEOL()
 		{
 			if (!GetColorBurst())
 			{
-				// For: VT_MONO_xxx, VT_COLOR_MONITOR: (!VF_TEXT && VF_MIXED && bottom 32 lines) || (VF_TEXT)
+				// Only for: VF_TEXT && !VF_MIXED (ie. full 24-row TEXT40 or TEXT80)
 				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
 				g_pFuncUpdateBnWPixel(0);
 				g_pFuncUpdateBnWPixel(0);
 			}
 			else
 			{
-				// For: VT_COLOR_TV, VT_MONO_TV, VT_COLOR_MONITOR: (!VF_TEXT && VF_MIXED && top 160 lines) || (!VF_TEXT && !VF_MIXED)
 				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
 				g_pFuncUpdateHuePixel(0);
 				g_pFuncUpdateHuePixel(0);
@@ -800,14 +799,13 @@ inline void updateVideoScannerHorzEOL_14M()
 		{
 			if (!GetColorBurst())
 			{
-				// For: VT_MONO_xxx, VT_COLOR_MONITOR: (!VF_TEXT && VF_MIXED && bottom 32 lines) || (VF_TEXT)
+				// Only for: VF_TEXT && !VF_MIXED (ie. full 24-row TEXT40 or TEXT80)
 				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);	// 14M: Output a 561st dot
 				g_pFuncUpdateBnWPixel(0);
 				g_pFuncUpdateBnWPixel(0);
 			}
 			else
 			{
-				// For: VT_COLOR_TV, VT_MONO_TV, VT_COLOR_MONITOR: (!VF_TEXT && VF_MIXED && top 160 lines) || (!VF_TEXT && !VF_MIXED)
 				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);	// 14M: Output a 561st dot
 				g_pFuncUpdateHuePixel(0);
 				g_pFuncUpdateHuePixel(0);
