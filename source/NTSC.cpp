@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // . 7x 14M pixels early + 1x 14M pixel shifted right = 2 complete color phase rotations.
 // . ie. the 14M colors are correct, but being 1 pixel out is the closest we can get the 7M and 14M video modes to overlap.
 // . The alternative is to render the 14M correctly 7 pixels early, but have 7-pixel borders left (for 7M modes) or right (for 14M modes).
-#define EXTEND_14M_VIDEO_BY_1_PIXEL 1
+#define EXTEND_14M_VIDEO_BY_1_PIXEL 0
 
 #define NTSC_REMOVE_WHITE_RINGING  1 // 0 = theoritical dimmed white has chroma, 1 = pure white without chroma tinting
 #define NTSC_REMOVE_BLACK_GHOSTING 1 // 1 = remove black smear/smudges carrying over
@@ -878,12 +878,25 @@ inline void updateVideoScannerHorzEOL()
 //===========================================================================
 inline void updateVideoScannerAddress()
 {
-	g_pVideoAddress        = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
+	g_pVideoAddress = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
 
 	// Adjust, as these video styles have 2x 14M pixels of pre-render
 	// NB. For VT_COLOR_MONITOR, also check color-burst so that TEXT and MIXED(HGR+TEXT) render the TEXT at the same offset (GH#341)
 	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV || (g_eVideoType == VT_COLOR_MONITOR && GetColorBurst()))
-		g_pVideoAddress = (bgra_t*) ((UINT32*)g_pVideoAddress - 2);
+		g_pVideoAddress -= 2;
+
+	// GH#555: For the 14M video modes (DHGR,DGR,80COL), start rendering 1x 14M pixel early to account for these video modes being shifted right by 1 pixel
+	// NB. This 1 pixel shift right is a workaround for the 14M video modes that actually start 7x 14M pixels to the left on *real h/w*.
+	// . 7x 14M pixels early + 1x 14M pixel shifted right = 2 complete color phase rotations.
+	// . ie. the 14M colors are correct, but being 1 pixel out is the closest we can get the 7M and 14M video modes to overlap.
+	// . The alternative is to render the 14M correctly 7 pixels early, but have 7-pixel borders left (for 7M modes) or right (for 14M modes).
+	if ((g_pFuncUpdateGraphicsScreen == updateScreenDoubleHires80) ||
+		(g_pFuncUpdateGraphicsScreen == updateScreenDoubleLores80) ||
+		(g_pFuncUpdateGraphicsScreen == updateScreenText80) ||
+		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && g_pFuncUpdateTextScreen == updateScreenText80))
+	{
+		g_pVideoAddress -= 1;
+	}
 
 	g_nColorPhaseNTSC      = INITIAL_COLOR_PHASE;
 	g_nLastColumnPixelNTSC = 0;
@@ -1819,7 +1832,6 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
 	{
 		uint32_t offset = sizeof(bgra_t) * GetFrameBufferWidth() * ((GetFrameBufferHeight() - 1) - y - GetFrameBufferBorderHeight()) + (sizeof(bgra_t) * GetFrameBufferBorderWidth());
-//		offset -= sizeof(bgra_t);	// GH#555: Start 1 RGBA pixel before frame to account for g_nLastColumnPixelNTSC	// TC: revert as lose half an HGR pixel on left-edge
 		g_pScanLines[y] = (bgra_t*) (g_pFramebufferbits + offset);
 	}
 
