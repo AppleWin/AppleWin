@@ -682,9 +682,8 @@ inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTa
 //===========================================================================
 inline bool GetColorBurst( void )
 {
-	return (g_nColorBurstPixels < 2) ? false : true;
+	return g_nColorBurstPixels >= 2;
 }
-
 
 //===========================================================================
 
@@ -746,6 +745,7 @@ inline void updatePixels( uint16_t bits )
 
 //===========================================================================
 
+#if !EXTEND_14M_VIDEO_BY_1_PIXEL
 // NOTE: This writes out-of-bounds for a 560x384 framebuffer
 inline void updateVideoScannerHorzEOL()
 {
@@ -756,42 +756,16 @@ inline void updateVideoScannerHorzEOL()
 			if (!GetColorBurst())
 			{
 				// For: VT_MONO_xxx, VT_COLOR_MONITOR: (!VF_TEXT && VF_MIXED && bottom 32 lines) || (VF_TEXT)
-#if !EXTEND_14M_VIDEO_BY_1_PIXEL
 				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
 				g_pFuncUpdateBnWPixel(0);
 				g_pFuncUpdateBnWPixel(0);
-#else
-				if (g_uVideoMode & VF_80COL)
-					g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);	// 14M: Output a 561st dot
-				else
-					g_pFuncUpdateBnWPixel(0);
-				g_pFuncUpdateBnWPixel(0);
-				g_pFuncUpdateBnWPixel(0);
-#endif
 			}
 			else
 			{
 				// For: VT_COLOR_TV, VT_MONO_TV, VT_COLOR_MONITOR: (!VF_TEXT && VF_MIXED && top 160 lines) || (!VF_TEXT && !VF_MIXED)
-#if !EXTEND_14M_VIDEO_BY_1_PIXEL
 				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
 				g_pFuncUpdateHuePixel(0);
 				g_pFuncUpdateHuePixel(0);
-#else
-				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
-				g_pFuncUpdateHuePixel(0);
-				if ((g_uVideoMode & VF_80COL) &&
-					!(  (g_uVideoMode & VF_MIXED) && (g_nVideoClockVert < VIDEO_SCANNER_Y_MIXED) && !(g_uVideoMode & VF_DHIRES)) &&	// && top 160 lines are not TEXT/GR/HGR
-					!( !(g_uVideoMode & VF_MIXED) && !(g_uVideoMode & VF_DHIRES))													// && not mixed && TEXT/GR/HGR (but can't be TEXT, as ColorBurst is on)
-					)
-				{
-					g_pFuncUpdateHuePixel(0);	// 14M: Output a 561st dot
-				}
-				else	// 7M: Stop outputting video after 560 dots
-				{
-					*(UINT32*)&g_pVideoAddress[0] = 0;
-					*(UINT32*)&g_pVideoAddress[g_kFrameBufferWidth] = 0;
-				}
-#endif
 			}
 		}
 
@@ -810,6 +784,98 @@ inline void updateVideoScannerHorzEOL()
 		}
 	}
 }
+#endif
+
+//-------------------------------------
+
+#if EXTEND_14M_VIDEO_BY_1_PIXEL
+// NB. Only needed for video modes that are 14M and shift the color phase, ie:
+// . updateScreenDoubleHires80(), updateScreenDoubleLores80(), updateScreenText80()
+// NOTE: This writes out-of-bounds for a 560x384 framebuffer
+inline void updateVideoScannerHorzEOL_14M()
+{
+	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
+	{
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if (!GetColorBurst())
+			{
+				// For: VT_MONO_xxx, VT_COLOR_MONITOR: (!VF_TEXT && VF_MIXED && bottom 32 lines) || (VF_TEXT)
+				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);	// 14M: Output a 561st dot
+				g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateBnWPixel(0);
+			}
+			else
+			{
+				// For: VT_COLOR_TV, VT_MONO_TV, VT_COLOR_MONITOR: (!VF_TEXT && VF_MIXED && top 160 lines) || (!VF_TEXT && !VF_MIXED)
+				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);	// 14M: Output a 561st dot
+				g_pFuncUpdateHuePixel(0);
+				g_pFuncUpdateHuePixel(0);
+			}
+		}
+
+		g_nVideoClockHorz = 0;
+
+		if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
+		{
+			g_nVideoClockVert = 0;
+
+			updateFlashRate();
+		}
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			updateVideoScannerAddress();
+		}
+	}
+}
+
+//-----------------
+
+// NOTE: This writes out-of-bounds for a 560x384 framebuffer
+inline void updateVideoScannerHorzEOL()
+{
+	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
+	{
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ( !GetColorBurst() ||	// Only for: VF_TEXT && !VF_MIXED (ie. full 24-row TEXT40 or TEXT80)
+				 (g_eVideoType == VT_MONO_CUSTOM) || (g_eVideoType == VT_MONO_AMBER) || (g_eVideoType == VT_MONO_GREEN) || (g_eVideoType == VT_MONO_WHITE) )
+			{
+				g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateBnWPixel(0);
+
+				// 7M: Stop outputting video after 560 dots
+				*(UINT32*)&g_pVideoAddress[0] = 0;
+				*(UINT32*)&g_pVideoAddress[g_kFrameBufferWidth] = 0;
+			}
+			else
+			{
+				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
+				g_pFuncUpdateHuePixel(0);
+
+				// 7M: Stop outputting video after 560 dots
+				*(UINT32*)&g_pVideoAddress[0] = 0;
+				*(UINT32*)&g_pVideoAddress[g_kFrameBufferWidth] = 0;
+			}
+		}
+
+		g_nVideoClockHorz = 0;
+
+		if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
+		{
+			g_nVideoClockVert = 0;
+
+			updateFlashRate();
+		}
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			updateVideoScannerAddress();
+		}
+	}
+}
+#endif
 
 //===========================================================================
 inline void updateVideoScannerAddress()
@@ -1277,7 +1343,11 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 #endif
 			}
 		}
+#if EXTEND_14M_VIDEO_BY_1_PIXEL
+		updateVideoScannerHorzEOL_14M();
+#else
 		updateVideoScannerHorzEOL();
+#endif
 	}
 }
 
@@ -1355,7 +1425,12 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 #endif
 			}
 		}
+#if EXTEND_14M_VIDEO_BY_1_PIXEL
+		updateVideoScannerHorzEOL_14M();
+#else
 		updateVideoScannerHorzEOL();
+#endif
+
 	}
 }
 
@@ -1505,7 +1580,12 @@ void updateScreenText80 (long cycles6502)
 #endif
 			}
 		}
+#if EXTEND_14M_VIDEO_BY_1_PIXEL
+		updateVideoScannerHorzEOL_14M();
+#else
 		updateVideoScannerHorzEOL();
+#endif
+
 	}
 }
 
