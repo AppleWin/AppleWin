@@ -1095,11 +1095,14 @@ LPBYTE MemGetAuxPtr(const WORD offset)
 			: memaux+offset;
 
 #ifdef RAMWORKS
-	if ( ((SW_PAGE2 && SW_80STORE) || VideoGetSW80COL()) &&
-		( ( ((offset & 0xFF00)>=0x0400) &&
-		((offset & 0xFF00)<=0x0700) ) ||
-		( SW_HIRES && ((offset & 0xFF00)>=0x2000) &&
-		((offset & 0xFF00)<=0x3F00) ) ) ) {
+	// Video scanner (for 14M video modes) always fetches from 1st 64K aux bank (UTAIIe ref?)
+	if (((SW_PAGE2 && SW_80STORE) || VideoGetSW80COL()) &&
+			(
+				(             ((offset & 0xFF00)>=0x0400) && ((offset & 0xFF00)<=0x0700) ) ||
+				( SW_HIRES && ((offset & 0xFF00)>=0x2000) && ((offset & 0xFF00)<=0x3F00) )
+			)
+		)
+	{
 		lpMem = (memshadow[(offset >> 8)] == (RWpages[0]+(offset & 0xFF00)))
 			? mem+offset
 			: RWpages[0]+offset;
