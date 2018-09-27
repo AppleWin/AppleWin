@@ -86,6 +86,7 @@ static WORD		phases = 0;					// state bits for stepper magnet phases 0 - 3
 static bool		g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT		g_uSlot = 0;
 static unsigned __int64 g_uDiskLastCycle = 0;
+static unsigned __int64 g_uDiskLastReadCycle = 0;
 static FormatTrack g_formatTrack;
 
 static bool IsDriveValid( const int iDrive );
@@ -895,7 +896,20 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	// but Sherwood Forest sets shift mode and reads with the drive off, so don't check for now
 	if (!floppywritemode)
 	{
+		const ULONG nReadCycleDiff = (ULONG) (g_nCumulativeCycles - g_uDiskLastReadCycle);
+
+		// GH582: Support partial read if disk reads are very close:
+		// . 6 cycles (1st->2nd read) for DOS 3.3 / $BD34: "read with delays to see if disk is spinning." (Beneath Apple DOS)
+		// . 6 cycles (1st->2nd read) for Curse of the Azure Bonds (loop to see if disk is spinning)
+		if (nReadCycleDiff <= 6)
+		{
+			UINT invalidBits = (32 - nReadCycleDiff) / 4;	// 32 cycles for an 8-bit nibble (and 4 cycles per bit-cell)
+			floppylatch = *(pFloppy->trackimage + pFloppy->byte) >> invalidBits;
+			return;	// Early return so don't update: g_uDiskLastReadCycle, pFloppy->byte
+		}
+
 		floppylatch = *(pFloppy->trackimage + pFloppy->byte);
+		g_uDiskLastReadCycle = g_nCumulativeCycles;
 
 #if LOG_DISK_NIBBLES_READ
   #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
