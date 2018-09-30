@@ -898,7 +898,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	{
 		const ULONG nReadCycleDiff = (ULONG) (g_nCumulativeCycles - g_uDiskLastReadLatchCycle);
 
-		// Support partial read if disk reads are very close: (GH#582)
+		// Support partial nibble read if disk reads are very close: (GH#582)
 		// . 6 cycles (1st->2nd read) for DOS 3.3 / $BD34: "read with delays to see if disk is spinning." (Beneath Apple DOS)
 		// . 6 cycles (1st->2nd read) for Curse of the Azure Bonds (loop to see if disk is spinning)
 		// . 31 cycles is the max for a partial 8-bit nibble
