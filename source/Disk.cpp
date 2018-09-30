@@ -898,14 +898,17 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	{
 		const ULONG nReadCycleDiff = (ULONG) (g_nCumulativeCycles - g_uDiskLastReadLatchCycle);
 
-		// GH582: Support partial read if disk reads are very close:
+		// Support partial read if disk reads are very close: (GH#582)
 		// . 6 cycles (1st->2nd read) for DOS 3.3 / $BD34: "read with delays to see if disk is spinning." (Beneath Apple DOS)
 		// . 6 cycles (1st->2nd read) for Curse of the Azure Bonds (loop to see if disk is spinning)
-		if (nReadCycleDiff <= 6)
+		// . 31 cycles is the max for a partial 8-bit nibble
+		const ULONG kReadAccessThreshold = enhancedisk ? 6 : 31;
+
+		if (nReadCycleDiff <= kReadAccessThreshold)
 		{
-			UINT invalidBits = (32 - nReadCycleDiff) / 4;	// 32 cycles for an 8-bit nibble (and 4 cycles per bit-cell)
+			UINT invalidBits = 8 - (nReadCycleDiff / 4);	// 4 cycles per bit-cell
 			floppylatch = *(pFloppy->trackimage + pFloppy->byte) >> invalidBits;
-			return;	// Early return so don't update: g_uDiskLastReadLatchCycle, pFloppy->byte
+			return;	// Early return so don't update: g_uDiskLastReadLatchCycle & pFloppy->byte
 		}
 
 		floppylatch = *(pFloppy->trackimage + pFloppy->byte);
