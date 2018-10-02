@@ -976,6 +976,10 @@ void DiskReset(const bool bIsPowerCycle/*=false*/)
 
 	if (bIsPowerCycle)	// GH#460
 	{
+		// NB. This doesn't affect the drive head (ie. drive's track position)
+		// . The initial machine start-up state is track=0, but after a power-cycle the track could be any value.
+		// . (For DiskII firmware, this results in a subtle extra latch read in this latter case, for the track!=0 case)
+
 		g_aFloppyDrive[DRIVE_1].spinning   = 0;
 		g_aFloppyDrive[DRIVE_1].writelight = 0;
 		g_aFloppyDrive[DRIVE_2].spinning   = 0;
