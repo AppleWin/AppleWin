@@ -86,6 +86,7 @@ static WORD		phases = 0;					// state bits for stepper magnet phases 0 - 3
 static bool		g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT		g_uSlot = 0;
 static unsigned __int64 g_uDiskLastCycle = 0;
+static unsigned __int64 g_uDiskLastReadLatchCycle = 0;
 static FormatTrack g_formatTrack;
 
 static bool IsDriveValid( const int iDrive );
@@ -895,7 +896,23 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	// but Sherwood Forest sets shift mode and reads with the drive off, so don't check for now
 	if (!floppywritemode)
 	{
+		const ULONG nReadCycleDiff = (ULONG) (g_nCumulativeCycles - g_uDiskLastReadLatchCycle);
+
+		// Support partial nibble read if disk reads are very close: (GH#582)
+		// . 6 cycles (1st->2nd read) for DOS 3.3 / $BD34: "read with delays to see if disk is spinning." (Beneath Apple DOS)
+		// . 6 cycles (1st->2nd read) for Curse of the Azure Bonds (loop to see if disk is spinning)
+		// . 31 cycles is the max for a partial 8-bit nibble
+		const ULONG kReadAccessThreshold = enhancedisk ? 6 : 31;
+
+		if (nReadCycleDiff <= kReadAccessThreshold)
+		{
+			UINT invalidBits = 8 - (nReadCycleDiff / 4);	// 4 cycles per bit-cell
+			floppylatch = *(pFloppy->trackimage + pFloppy->byte) >> invalidBits;
+			return;	// Early return so don't update: g_uDiskLastReadLatchCycle & pFloppy->byte
+		}
+
 		floppylatch = *(pFloppy->trackimage + pFloppy->byte);
+		g_uDiskLastReadLatchCycle = g_nCumulativeCycles;
 
 #if LOG_DISK_NIBBLES_READ
   #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
@@ -959,6 +976,10 @@ void DiskReset(const bool bIsPowerCycle/*=false*/)
 
 	if (bIsPowerCycle)	// GH#460
 	{
+		// NB. This doesn't affect the drive head (ie. drive's track position)
+		// . The initial machine start-up state is track=0, but after a power-cycle the track could be any value.
+		// . (For DiskII firmware, this results in a subtle extra latch read in this latter case, for the track!=0 case)
+
 		g_aFloppyDrive[DRIVE_1].spinning   = 0;
 		g_aFloppyDrive[DRIVE_1].writelight = 0;
 		g_aFloppyDrive[DRIVE_2].spinning   = 0;
@@ -1363,7 +1384,8 @@ int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
 
 // Unit version history:  
 // 2: Added: Format Track state & DiskLastCycle
-static const UINT kUNIT_VERSION = 2;
+// 3: Added: DiskLastReadLatchCycle
+static const UINT kUNIT_VERSION = 3;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
 
@@ -1375,6 +1397,7 @@ static const UINT kUNIT_VERSION = 2;
 #define SS_YAML_KEY_FLOPPY_MOTOR_ON "Floppy Motor On"
 #define SS_YAML_KEY_FLOPPY_WRITE_MODE "Floppy Write Mode"
 #define SS_YAML_KEY_LAST_CYCLE "Last Cycle"
+#define SS_YAML_KEY_LAST_READ_LATCH_CYCLE "Last Read Latch Cycle"
 
 #define SS_YAML_KEY_DISK2UNIT "Unit"
 #define SS_YAML_KEY_FILENAME "Filename"
@@ -1429,6 +1452,7 @@ void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_MOTOR_ON, floppymotoron == TRUE);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_WRITE_MODE, floppywritemode == TRUE);
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_CYCLE, g_uDiskLastCycle);	// v2
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_READ_LATCH_CYCLE, g_uDiskLastReadLatchCycle);	// v3
 	g_formatTrack.SaveSnapshot(yamlSaveHelper);	// v2
 
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_1);
@@ -1532,6 +1556,11 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 	{
 		g_uDiskLastCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LAST_CYCLE);
 		g_formatTrack.LoadSnapshot(yamlLoadHelper);
+	}
+
+	if (version >= 3)
+	{
+		g_uDiskLastReadLatchCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LAST_READ_LATCH_CYCLE);
 	}
 
 	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
