@@ -197,6 +197,8 @@ static LPBYTE  memimage     = NULL;
 static LPBYTE	pCxRomInternal		= NULL;
 static LPBYTE	pCxRomPeripheral	= NULL;
 
+static LPBYTE g_pMemMainLanguageCard = NULL;
+
 static const DWORD kMemModeInitialState = MF_BANK2 | MF_WRITERAM;	// !INTCXROM
 static DWORD   memmode      = kMemModeInitialState;
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
@@ -211,14 +213,42 @@ static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
 
 #ifdef SATURN
-UINT			g_uSaturnTotalBanks = 0;		// Will be > 0 if Saturn card is "installed"
-UINT			g_uSaturnActiveBank = 0;		// Saturn 128K Language Card Bank 0 .. 7
-static LPBYTE	g_aSaturnPages[8];
-#endif // SATURN
+static UINT		g_uSaturnTotalBanks = 0;		// Will be > 0 if Saturn card is "installed"
+static UINT		g_uSaturnActiveBank = 0;		// Saturn 128K Language Card Bank 0 .. 7
+static LPBYTE	g_aSaturnBanks[kMaxSaturnBanks];
+#endif
 
-MemoryType_e	g_eMemType = MEM_TYPE_NATIVE;		// 0 = Native memory, 1=RAMWORKS, 2 = SATURN
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
+
+//=============================================================================
+
+// TODO: support in save/load state
+static MemoryType_e	g_MemTypeAppleIIPlus = MEM_TYPE_NATIVE;	// Keep a copy so it's not lost if machine type changes, eg: A][ -> A//e -> A][
+static MemoryType_e	g_MemType = MEM_TYPE_NATIVE;
+
+void SetExpansionMemType(MemoryType_e type)
+{
+	g_MemType = type;
+
+	if (type == MEM_TYPE_SATURN)
+		g_MemTypeAppleIIPlus = type;
+}
+
+MemoryType_e GetCurrentExpansionMemType(void)
+{
+	return g_MemType;
+}
+
+void SetSaturnMemorySize(UINT banks)
+{
+	g_uSaturnTotalBanks = banks;
+}
+
+UINT GetSaturnActiveBank(void)
+{
+	return g_uSaturnActiveBank;
+}
 
 //=============================================================================
 
@@ -949,24 +979,32 @@ static void UpdatePaging(BOOL initialize)
 	{
 		int bankoffset = (SW_BANK2 ? 0 : 0x1000);
 		memshadow[loop] = SW_HIGHRAM ? SW_ALTZP	? memaux+(loop << 8)-bankoffset
-												: memmain+(loop << 8)-bankoffset
-									: memrom+((loop-0xD0) * 0x100);
+												// memmain+(loop << 8)-bankoffset
+												//: g_aSaturnBanks[g_uSaturnActiveBank]+((loop-0xC0)<<8)-bankoffset
+												: g_pMemMainLanguageCard+((loop-0xC0)<<8)-bankoffset
+									 : memrom+((loop-0xD0) * 0x100);
 
 		memwrite[loop]  = SW_WRITERAM	? SW_HIGHRAM	? mem+(loop << 8)
 														: SW_ALTZP	? memaux+(loop << 8)-bankoffset
-																	: memmain+(loop << 8)-bankoffset
+																	// memmain+(loop << 8)-bankoffset
+																	//: g_aSaturnBanks[g_uSaturnActiveBank]+((loop-0xC0)<<8)-bankoffset
+																	: g_pMemMainLanguageCard+((loop-0xC0)<<8)-bankoffset
 										: NULL;
 	}
 
 	for (loop = 0xE0; loop < 0x100; loop++)
 	{
 		memshadow[loop] = SW_HIGHRAM	? SW_ALTZP	? memaux+(loop << 8)
-													: memmain+(loop << 8)
+													// memmain+(loop << 8)
+													//: g_aSaturnBanks[g_uSaturnActiveBank]+((loop-0xC0)<<8)
+													: g_pMemMainLanguageCard+((loop-0xC0)<<8)
 										: memrom+((loop-0xD0) * 0x100);
 
 		memwrite[loop]  = SW_WRITERAM	? SW_HIGHRAM	? mem+(loop << 8)
 														: SW_ALTZP	? memaux+(loop << 8)
-																	: memmain+(loop << 8)
+																	// memmain+(loop << 8)
+																	//: g_aSaturnBanks[g_uSaturnActiveBank]+((loop-0xC0)<<8)
+																	: g_pMemMainLanguageCard+((loop-0xC0)<<8)
 										: NULL;
 	}
 
@@ -1043,6 +1081,17 @@ void MemDestroy()
 	RWpages[0]=NULL;
 #endif
 
+#ifdef SATURN
+	for(UINT i = 0; i < g_uSaturnTotalBanks; i++)
+	{
+		if (g_aSaturnBanks[i])
+		{
+			VirtualFree(g_aSaturnBanks[i], 0, MEM_RELEASE);
+			g_aSaturnBanks[i] = NULL;
+		}
+	}
+#endif
+
 	memaux   = NULL;
 	memmain  = NULL;
 	memdirty = NULL;
@@ -1053,6 +1102,8 @@ void MemDestroy()
 	pCxRomPeripheral	= NULL;
 
 	mem      = NULL;
+
+	g_pMemMainLanguageCard = NULL;
 
 	ZeroMemory(memwrite, sizeof(memwrite));
 	ZeroMemory(memshadow,sizeof(memshadow));
@@ -1295,10 +1346,33 @@ void MemInitialize()
 		i++;
 #endif
 
+	//
+
+	g_pMemMainLanguageCard = memmain+0xC000;
+
+	if (IsApple2PlusOrClone(GetApple2Type()))
+		g_MemType = g_MemTypeAppleIIPlus;
+
 #ifdef SATURN
-	for( UINT iPage = 0; iPage < g_uSaturnTotalBanks; iPage++ )
-		g_aSaturnPages[ iPage ] = (LPBYTE) VirtualAlloc( NULL, 1024 * 16,MEM_COMMIT,PAGE_READWRITE); // Saturn Pages are 16K / bank, Max 8 Banks/Card
-#endif // SATURN
+	if (g_MemType == MEM_TYPE_SATURN)
+	{
+		if (IsApple2PlusOrClone(GetApple2Type()))
+		{
+			g_uSaturnActiveBank = 0;
+
+			for(UINT i = 0; i < g_uSaturnTotalBanks; i++)
+				g_aSaturnBanks[i] = (LPBYTE) VirtualAlloc( NULL, 1024 * 16, MEM_COMMIT, PAGE_READWRITE); // Saturn banks are 16K, max 8 banks/card
+
+			g_pMemMainLanguageCard = g_aSaturnBanks[ g_uSaturnActiveBank ];
+
+			// TODO: tear this down in MemDestroy()
+		}
+		else
+		{
+			g_MemType = MEM_TYPE_NATIVE;
+		}
+	}
+#endif
 
 	MemInitializeROM();
 	MemInitializeCustomF8ROM();
@@ -1712,6 +1786,59 @@ static void DebugFlip(WORD address, ULONG nExecutedCycles)
 }
 #endif
 
+#ifdef SATURN
+void SetPaging_Saturn(WORD address)
+{
+/*
+	Bin   Addr.
+	      $C0N0 4K Bank A, RAM read, Write protect
+	      $C0N1 4K Bank A, ROM read, Write enabled
+	      $C0N2 4K Bank A, ROM read, Write protect
+	      $C0N3 4K Bank A, RAM read, Write enabled
+	0100  $C0N4 select 16K Bank 1
+	0101  $C0N5 select 16K Bank 2
+	0110  $C0N6 select 16K Bank 3
+	0111  $C0N7 select 16K Bank 4
+	      $C0N8 4K Bank B, RAM read, Write protect
+	      $C0N9 4K Bank B, ROM read, Write enabled
+	      $C0NA 4K Bank B, ROM read, Write protect
+	      $C0NB 4K Bank B, RAM read, Write enabled
+	1100  $C0NC select 16K Bank 5
+	1101  $C0ND select 16K Bank 6
+	1110  $C0NE select 16K Bank 7
+	1111  $C0NF select 16K Bank 8
+*/
+	_ASSERT(g_uSaturnTotalBanks);
+	if (!g_uSaturnTotalBanks)
+		return;
+
+	if (address & (1<<2))
+	{
+		g_uSaturnActiveBank = 0 // Saturn 128K Language Card Bank 0 .. 7
+			| (address >> 1) & 4
+			| (address >> 0) & 3;
+		g_pMemMainLanguageCard = g_aSaturnBanks[ g_uSaturnActiveBank ];
+	}
+	else
+	{
+		SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM));
+
+		if (!(address & 8))
+			SetMemMode(memmode | MF_BANK2);
+
+		if (((address & 2) >> 1) == (address & 1))
+			SetMemMode(memmode | MF_HIGHRAM);
+
+		if (address & 1 && g_bLastWriteRam)	// Saturn differs from Apple's 16K LC: any access (LC is read-only)
+			SetMemMode(memmode | MF_WRITERAM);
+		else
+			SetMemMode(memmode & ~(MF_WRITERAM));
+
+		g_bLastWriteRam = (address & 1);	// Saturn differs from Apple's 16K LC: any access (LC is read-only)
+	}
+}
+#endif
+
 BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nExecutedCycles)
 {
 	address &= 0xFF;
@@ -1723,53 +1850,21 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	// DETERMINE THE NEW MEMORY PAGING MODE.
 	if ((address >= 0x80) && (address <= 0x8F))
 	{
-		SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM));
-
 #ifdef SATURN
-/*
-		Bin   Addr.
-		      $C0N0 4K Bank A, RAM read, Write protect
-		      $C0N1 4K Bank A, ROM read, Write enabled
-		      $C0N2 4K Bank A, ROM read, Write protect
-		      $C0N3 4K Bank A, RAM read, Write enabled
-		0100  $C0N4 select 16K Bank 1
-		0101  $C0N5 select 16K Bank 2
-		0110  $C0N6 select 16K Bank 3
-		0111  $C0N7 select 16K Bank 4
-		      $C0N8 4K Bank B, RAM read, Write protect
-		      $C0N9 4K Bank B, ROM read, Write enabled
-		      $C0NA 4K Bank B, ROM read, Write protect
-		      $C0NB 4K Bank B, RAM read, Write enabled
-		1100  $C0NC select 16K Bank 5
-		1101  $C0ND select 16K Bank 6
-		1110  $C0NE select 16K Bank 7
-		1111  $C0NF select 16K Bank 8
-*/
-		if (g_uSaturnTotalBanks)
+		if (g_MemType == MEM_TYPE_SATURN)
 		{
-			if ((address & 7) > 3)
-			{
-				g_uSaturnActiveBank = 0 // Saturn 128K Language Card Bank 0 .. 7
-					| (address >> 1) & 4
-					| (address >> 0) & 3
-					;
-
-				// TODO: Update paging()
-
-				goto _done_saturn;
-			}
-
-			// Fall into 16K IO switches
+			SetPaging_Saturn(address);
+			modechanging = 1;
 		}
-
-#endif // SATURN
+		else
+#endif
 		{
 			// Apple 16K Language Card
+			SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM));
+
 			if (!(address & 8))
 				SetMemMode(memmode | MF_BANK2);
 
-			// C081    C089    Read ROM,     Write enable
-			// C082    C08A    Read ROM,     Write protect
 			if (((address & 2) >> 1) == (address & 1))
 				SetMemMode(memmode | MF_HIGHRAM);
 
@@ -1784,8 +1879,9 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 			{
 				SetMemMode(memmode & ~(MF_WRITERAM)); // UTAIIe:5-23
 			}
+
+			g_bLastWriteRam = (address & 1) && (!write); // UTAIIe:5-23
 		}
-		g_bLastWriteRam = (address & 1) && (!write); // UTAIIe:5-23
 	}
 	else if (!IS_APPLE2)
 	{
@@ -1814,33 +1910,32 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 				{
 					g_uActiveBank = value;
 					memaux = RWpages[g_uActiveBank];
-					UpdatePaging(0);	// Initialize=0
+					UpdatePaging(FALSE);	// Initialize=FALSE
 				}
 				break;
 #endif
 		}
 	}
 
-#ifdef SATURN
-_done_saturn:
-#endif // SATURN
-
-	// IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
-	// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
-	// IT DOES SO.
-	//
-	// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
-	// - although any data-race is probably a bug in the 6502 code too.
-	if ((address >= 4) && (address <= 5) &&
-		((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
-			modechanging = 1;
-			return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
-	}
-	if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&
-		(((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||
-		 ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))) {
-			modechanging = 1;
-			return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
+	if (g_MemType != MEM_TYPE_SATURN)	// TODO: Not sure this optimisation is valid for Saturn, so skip it for now
+	{
+		// IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
+		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
+		// IT DOES SO.
+		//
+		// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
+		// - although any data-race is probably a bug in the 6502 code too.
+		if ((address >= 4) && (address <= 5) &&
+			((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
+				modechanging = 1;
+				return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
+		}
+		if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&
+			(((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||
+			 ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))) {
+				modechanging = 1;
+				return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
+		}
 	}
 
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND

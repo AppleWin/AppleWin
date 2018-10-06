@@ -49,8 +49,6 @@ enum MemoryType_e
 
 typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nExecutedCycles);
 
-extern MemoryType_e	g_eMemType;
-
 extern iofunction IORead[256];
 extern iofunction IOWrite[256];
 extern LPBYTE     memwrite[0x100];
@@ -63,10 +61,7 @@ extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)
 extern UINT       g_uActiveBank;
 #endif
 
-#ifdef SATURN
-extern UINT g_uSaturnTotalBanks;
-extern UINT g_uSaturnActiveBank;		// Saturn 128K Language Card Bank 0 .. 7
-#endif // SATURN
+const UINT kMaxSaturnBanks = 8;		// 8 * 16K = 128K
 
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
 
@@ -96,6 +91,11 @@ void    MemSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 bool    MemLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 void    MemSaveSnapshotAux(class YamlSaveHelper& yamlSaveHelper);
 bool    MemLoadSnapshotAux(class YamlLoadHelper& yamlLoadHelper, UINT version);
+
+void	SetExpansionMemType(MemoryType_e type);
+MemoryType_e GetCurrentExpansionMemType(void);
+void	SetSaturnMemorySize(UINT banks);
+UINT	GetSaturnActiveBank(void);
 
 BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 

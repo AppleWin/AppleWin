@@ -20,7 +20,7 @@ const DWORD dwClksPerFrame			= uCyclesPerLine * uLinesPerFrame;	// 17030
 #define  MIN(a,b)          (((a) < (b)) ? (a) : (b))
 
 #define  RAMWORKS			// 8MB RamWorks III support
-//#define  SATURN				// SATURN 128K
+#define  SATURN				// SATURN 128K
 
 // Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 // Assume base freqs are 44.1KHz & 48KHz
@@ -201,6 +201,12 @@ inline bool IsApple2(eApple2Type type)
 inline bool IsClone(eApple2Type type)
 {
 	return (type & APPLECLONE_MASK) != 0;
+}
+
+inline bool IsApple2PlusOrClone(eApple2Type type)	// Apple ][,][+ or clone ][,][+
+{
+	return ((type & (APPLE2E_MASK|APPLE2C_MASK)) == 0)
+		||	(type & APPLECLONE_MASK) && !(type & A2TYPE_CLONE_A2E);
 }
 
 extern eApple2Type g_Apple2Type;

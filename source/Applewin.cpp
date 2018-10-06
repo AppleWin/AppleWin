@@ -1249,8 +1249,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 #ifdef RAMWORKS
 		else if (strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..127]
 		{
-			g_eMemType = MEM_TYPE_RAMWORKS;
-
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			    g_uMaxExPages = atoi(lpCmdLine);
@@ -1259,25 +1257,26 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			else
 			if (g_uMaxExPages < 1)
 				g_uMaxExPages = 1;
+
+			SetExpansionMemType(MEM_TYPE_RAMWORKS);
 		}
 #endif
 #ifdef SATURN
 		else if (strcmp(lpCmdLine, "-saturn") == 0)		// 64 = Saturn 64K (4 banks), 128 = Saturn 128K (8 banks)
 		{
-			g_eMemType = MEM_TYPE_SATURN;
-
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
-			// " The  boards  consist  of 16K  banks  of  memory
-			//  (4  banks  for  the  64K  board,
-			//  8  banks  for  the  128K),  accessed  one  at  a  time"
-			    g_uSaturnTotalBanks = atoi(lpCmdLine) / 16; // number of 16K Banks [1..8]
-			if (g_uSaturnTotalBanks > 8)
-				g_uSaturnTotalBanks = 8;
+			// "The boards consist of 16K banks of memory (4 banks for the 64K board, 8 banks for the 128K), accessed one at a time" - Ref: ?
+			UINT banks = atoi(lpCmdLine) / 16;			// number of 16K Banks [1..8]
+			if (banks > kMaxSaturnBanks)
+				banks = kMaxSaturnBanks;
 			else
-			if (g_uSaturnTotalBanks < 1)
-				g_uSaturnTotalBanks = 1;
+			if (banks < 1)
+				banks = 1;
+
+			SetSaturnMemorySize(banks);
+			SetExpansionMemType(MEM_TYPE_SATURN);
 		}
 #endif
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
