@@ -259,8 +259,8 @@ int CPageAdvanced::GetCloneMenuItem(void)
 
 void CPageAdvanced::InitFreezeDlgButton(HWND hWnd)
 {
-	const bool bIsApple2 = IsApple2( m_PropertySheetHelper.GetConfigNew().m_Apple2Type );
-	EnableWindow(GetDlgItem(hWnd, IDC_THE_FREEZES_F8_ROM_FW), bIsApple2 ? TRUE : FALSE);
+	const bool bIsApple2Plus = IsApple2Plus( m_PropertySheetHelper.GetConfigNew().m_Apple2Type );
+	EnableWindow(GetDlgItem(hWnd, IDC_THE_FREEZES_F8_ROM_FW), bIsApple2Plus ? TRUE : FALSE);
 
 	const UINT CheckTheFreezesRom = m_PropertySheetHelper.GetConfigNew().m_bEnableTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED;
 	CheckDlgButton(hWnd, IDC_THE_FREEZES_F8_ROM_FW, CheckTheFreezesRom);

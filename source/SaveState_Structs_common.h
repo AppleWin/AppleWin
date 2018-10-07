@@ -46,9 +46,6 @@ enum SS_UNIT_TYPE
 const UINT nMemMainSize = 64*1024;
 const UINT nMemAuxSize = 64*1024;
 
-const UINT kSLOT_LANG = 0;
-const UINT kSLOT_AUX = 8;
-
 struct SS_CARD_HDR
 {
 	SS_UNIT_HDR UnitHdr;
@@ -70,10 +67,12 @@ enum SS_CARDTYPE
 	CT_Phasor,			// Soundcard
 	CT_Echo,			// Soundcard
 	CT_SAM,				// Soundcard: Software Automated Mouth
-	CT_80Col,			// 80 column card (no memory)
+	CT_80Col,			// 80 column card (1K)
 	CT_Extended80Col,	// Extended 80-col card (64K)
 	CT_RamWorksIII,		// RamWorksIII (up to 8MB)
 	CT_Uthernet,
+	CT_LanguageCard,	// Apple][ or ][+ in slot-0
+	CT_Saturn128K,		// Saturn 128K (but may be populated with less RAM, in multiples of 16K)
 };
 
 /////////////////////////////////////////////////////////////////////////////////

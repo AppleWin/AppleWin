@@ -358,7 +358,8 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 			break;	// done all slots
 
 		const int slot = strtoul(scalar.c_str(), NULL, 10);	// NB. aux slot supported as a different "unit"
-		if (slot < 1 || slot > 7)
+															// NB. slot-0 only supported for Apple II or II+ (or similar clones)
+		if (slot < 0 || slot > 7)
 			throw std::string("Slots: Invalid slot #: ") + scalar;
 
 		yamlLoadHelper.GetSubMap(scalar);
@@ -413,6 +414,11 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 			bRes = HD_LoadSnapshot(yamlLoadHelper, slot, version, g_strSaveStatePath);
 			m_ConfigNew.m_bEnableHDD = true;
 			type = CT_GenericHDD;
+		}
+		else if (card == Saturn_GetSnapshotCardName())
+		{
+			bRes = Saturn_LoadSnapshot(yamlLoadHelper, slot, version);
+			type = CT_Saturn128K;
 		}
 		else
 		{
@@ -477,6 +483,7 @@ static void Snapshot_LoadState_v2(void)
 		//
 
 		CConfigNeedingRestart ConfigOld;
+		//ConfigOld.m_Slot[0] = CT_LanguageCard;	// fixme
 		ConfigOld.m_Slot[1] = CT_GenericPrinter;	// fixme
 		ConfigOld.m_Slot[2] = CT_SSC;				// fixme
 		//ConfigOld.m_Slot[3] = CT_Uthernet;		// todo
@@ -489,7 +496,6 @@ static void Snapshot_LoadState_v2(void)
 		m_ConfigNew.m_SlotAux = CT_Empty;
 		m_ConfigNew.m_bEnableHDD = false;
 		//m_ConfigNew.m_bEnableTheFreezesF8Rom = ?;	// todo: when support saving config
-		//m_ConfigNew.m_bEnhanceDisk = ?;			// todo: when support saving config
 
 		MemReset();
 		PravetsReset();
@@ -590,6 +596,9 @@ void Snapshot_SaveState(void)
 		{
 			yamlSaveHelper.UnitHdr(GetSnapshotUnitSlotsName(), UNIT_SLOTS_VER);
 			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+			if (g_Slot0 == CT_Saturn128K)
+				Saturn_SaveSnapshot(yamlSaveHelper);
 
 			Printer_SaveSnapshot(yamlSaveHelper);
 

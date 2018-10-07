@@ -92,11 +92,16 @@ bool    MemLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 void    MemSaveSnapshotAux(class YamlSaveHelper& yamlSaveHelper);
 bool    MemLoadSnapshotAux(class YamlLoadHelper& yamlLoadHelper, UINT version);
 
-void	SetExpansionMemType(MemoryType_e type);
-MemoryType_e GetCurrentExpansionMemType(void);
-void	SetSaturnMemorySize(UINT banks);
-UINT	GetSaturnActiveBank(void);
-
 BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
 BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+
+void	SetExpansionMemType(MemoryType_e type);
+MemoryType_e GetCurrentExpansionMemType(void);
+void	SetRamWorksMemorySize(UINT pages);
+UINT	GetRamWorksActiveBank(void);
+void	SetSaturnMemorySize(UINT banks);
+UINT	GetSaturnActiveBank(void);
+std::string Saturn_GetSnapshotCardName(void);
+void Saturn_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+bool Saturn_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);

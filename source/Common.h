@@ -112,6 +112,7 @@ enum AppMode_e
 #define  REGVALUE_CUSTOM_SPEED       "Custom Speed"
 #define  REGVALUE_EMULATION_SPEED    "Emulation Speed"
 #define  REGVALUE_WINDOW_SCALE       "Window Scale"
+#define  REGVALUE_SLOT0					"Slot 0"
 #define  REGVALUE_SLOT1					"Slot 1"
 #define  REGVALUE_SLOT2					"Slot 2"
 #define  REGVALUE_SLOT3					"Slot 3"
@@ -193,7 +194,7 @@ enum eApple2Type {
 					A2TYPE_MAX
 				};
 
-inline bool IsApple2(eApple2Type type)
+inline bool IsApple2Plus(eApple2Type type)			// Apple ][,][+
 {
 	return (type & (APPLE2E_MASK|APPLE2C_MASK)) == 0;
 }

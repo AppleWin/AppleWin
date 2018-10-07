@@ -207,8 +207,8 @@ static BOOL    Pravets8charmode = 0;
 static CNoSlotClock g_NoSlotClock;
 
 #ifdef RAMWORKS
-UINT			g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
-UINT			g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c -- ALSO RAMWORKS
+static UINT		g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
+static UINT		g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c -- ALSO RAMWORKS
 static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
 
@@ -223,22 +223,84 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 
 //=============================================================================
 
-// TODO: support in save/load state
 static MemoryType_e	g_MemTypeAppleIIPlus = MEM_TYPE_NATIVE;	// Keep a copy so it's not lost if machine type changes, eg: A][ -> A//e -> A][
-static MemoryType_e	g_MemType = MEM_TYPE_NATIVE;
+static MemoryType_e	g_MemTypeAppleIIe = MEM_TYPE_NATIVE;	// Keep a copy so it's not lost if machine type changes, eg: A//e -> A][ -> A//e
 
-void SetExpansionMemType(MemoryType_e type)
+// Called from MemLoadSnapshot()
+static void ResetDefaultMachineMemTypes(void)
 {
-	g_MemType = type;
+	g_MemTypeAppleIIPlus = MEM_TYPE_NATIVE;
+	g_MemTypeAppleIIe = MEM_TYPE_NATIVE;
+}
+
+// Called from MemInitialize(), MemLoadSnapshot(), cmd-line switch
+void SetExpansionMemType(const MemoryType_e type)
+{
+	SS_CARDTYPE newSlot0Card;
+	SS_CARDTYPE newSlotAuxCard;
+
+	// Set defaults for MEM_TYPE_NATIVE:
+	if (IsApple2PlusOrClone(GetApple2Type()))
+	{
+		newSlot0Card = CT_LanguageCard;
+		newSlotAuxCard = CT_Empty;
+	}
+	else
+	{
+		newSlot0Card = CT_LanguageCard;
+		newSlotAuxCard = CT_Extended80Col;
+	}
 
 	if (type == MEM_TYPE_SATURN)
+	{
 		g_MemTypeAppleIIPlus = type;
+		if (IsApple2PlusOrClone(GetApple2Type()))
+			newSlot0Card = CT_Saturn128K;
+		else
+			newSlot0Card = CT_LanguageCard;
+	}
+	else if (type == MEM_TYPE_RAMWORKS)
+	{
+		g_MemTypeAppleIIe = type;
+		if (IsApple2PlusOrClone(GetApple2Type()))
+			newSlotAuxCard = CT_Empty;
+		else
+			newSlotAuxCard = CT_RamWorksIII;
+	}
+
+	g_Slot0 = newSlot0Card;
+	g_SlotAux = newSlotAuxCard;
 }
 
 MemoryType_e GetCurrentExpansionMemType(void)
 {
-	return g_MemType;
+	if (g_Slot0 == CT_Saturn128K)
+	{
+		_ASSERT(IsApple2PlusOrClone(GetApple2Type()));
+		return MEM_TYPE_SATURN;
+	}
+	else if (g_SlotAux == CT_RamWorksIII)
+	{
+		_ASSERT(!IsApple2PlusOrClone(GetApple2Type()));
+		return MEM_TYPE_RAMWORKS;
+	}
+
+	return MEM_TYPE_NATIVE;
 }
+
+//
+
+void SetRamWorksMemorySize(UINT pages)
+{
+	g_uMaxExPages = pages;
+}
+
+UINT GetRamWorksActiveBank(void)
+{
+	return g_uActiveBank;
+}
+
+//
 
 void SetSaturnMemorySize(UINT banks)
 {
@@ -1336,43 +1398,45 @@ void MemInitialize()
 	// this happens when running under valgrind
 	memimage = (LPBYTE)newloc;
 
-#ifdef RAMWORKS
-	// allocate memory for RAMWorks III - up to 8MB
-	g_uActiveBank = 0;
-	RWpages[g_uActiveBank] = memaux;
-
-	UINT i = 1;
-	while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE)))
-		i++;
-#endif
-
 	//
+
+	if (IsApple2PlusOrClone(GetApple2Type()))
+		SetExpansionMemType(g_MemTypeAppleIIPlus);
+	else
+		SetExpansionMemType(g_MemTypeAppleIIe);
+
+#ifdef RAMWORKS
+	if (GetCurrentExpansionMemType() == MEM_TYPE_RAMWORKS)
+	{
+		_ASSERT(!IsApple2PlusOrClone(GetApple2Type()));
+
+		// allocate memory for RAMWorks III - up to 8MB
+		g_uActiveBank = 0;
+		RWpages[g_uActiveBank] = memaux;
+
+		UINT i = 1;
+		while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) VirtualAlloc(NULL, _6502_MEM_END+1, MEM_COMMIT, PAGE_READWRITE)))
+			i++;
+	}
+#endif
 
 	g_pMemMainLanguageCard = memmain+0xC000;
 
-	if (IsApple2PlusOrClone(GetApple2Type()))
-		g_MemType = g_MemTypeAppleIIPlus;
-
 #ifdef SATURN
-	if (g_MemType == MEM_TYPE_SATURN)
+	if (GetCurrentExpansionMemType() == MEM_TYPE_SATURN)
 	{
-		if (IsApple2PlusOrClone(GetApple2Type()))
-		{
-			g_uSaturnActiveBank = 0;
+		_ASSERT(IsApple2PlusOrClone(GetApple2Type()));
 
-			for(UINT i = 0; i < g_uSaturnTotalBanks; i++)
-				g_aSaturnBanks[i] = (LPBYTE) VirtualAlloc( NULL, 1024 * 16, MEM_COMMIT, PAGE_READWRITE); // Saturn banks are 16K, max 8 banks/card
+		g_uSaturnActiveBank = 0;
 
-			g_pMemMainLanguageCard = g_aSaturnBanks[ g_uSaturnActiveBank ];
+		for(UINT i = 0; i < g_uSaturnTotalBanks; i++)
+			g_aSaturnBanks[i] = (LPBYTE) VirtualAlloc( NULL, 1024 * 16, MEM_COMMIT, PAGE_READWRITE); // Saturn banks are 16K, max 8 banks/card
 
-			// TODO: tear this down in MemDestroy()
-		}
-		else
-		{
-			g_MemType = MEM_TYPE_NATIVE;
-		}
+		g_pMemMainLanguageCard = g_aSaturnBanks[ g_uSaturnActiveBank ];
 	}
 #endif
+
+	//
 
 	MemInitializeROM();
 	MemInitializeCustomF8ROM();
@@ -1817,6 +1881,16 @@ void SetPaging_Saturn(WORD address)
 		g_uSaturnActiveBank = 0 // Saturn 128K Language Card Bank 0 .. 7
 			| (address >> 1) & 4
 			| (address >> 0) & 3;
+
+		if (g_uSaturnActiveBank >= g_uSaturnTotalBanks)
+		{
+			// EG. Run RAMTEST128K tests on a Saturn 64K card
+			// TODO: Saturn::UpdatePaging() should deal with this case:
+			// . Technically read floating-bus, write to nothing
+			// . But the mem cache doesn't support floating-bus reads from non-I/O space
+			g_uSaturnActiveBank = g_uSaturnTotalBanks-1;	// FIXME: just prevent crash for now!
+		}
+
 		g_pMemMainLanguageCard = g_aSaturnBanks[ g_uSaturnActiveBank ];
 	}
 	else
@@ -1851,7 +1925,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	if ((address >= 0x80) && (address <= 0x8F))
 	{
 #ifdef SATURN
-		if (g_MemType == MEM_TYPE_SATURN)
+		if (GetCurrentExpansionMemType() == MEM_TYPE_SATURN)
 		{
 			SetPaging_Saturn(address);
 			modechanging = 1;
@@ -1917,7 +1991,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 		}
 	}
 
-	if (g_MemType != MEM_TYPE_SATURN)	// TODO: Not sure this optimisation is valid for Saturn, so skip it for now
+	if (GetCurrentExpansionMemType() != MEM_TYPE_SATURN)	// TODO: Not sure this optimisation is valid for Saturn, so skip it for now
 	{
 		// IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
 		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
@@ -2013,14 +2087,16 @@ void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE*
 
 //
 
-#define UNIT_AUXSLOT_VER 1
-
 #define SS_YAML_KEY_MEMORYMODE "Memory Mode"
 #define SS_YAML_KEY_LASTRAMWRITE "Last RAM Write"
 #define SS_YAML_KEY_IOSELECT "IO_SELECT"
 #define SS_YAML_KEY_IOSELECT_INT "IO_SELECT_InternalROM"	// INTC8ROM
 #define SS_YAML_KEY_EXPANSIONROMTYPE "Expansion ROM Type"
 #define SS_YAML_KEY_PERIPHERALROMSLOT "Peripheral ROM Slot"
+
+//
+
+static const UINT kUNIT_AUXSLOT_VER = 1;
 
 #define SS_YAML_VALUE_CARD_80COL "80 Column"
 #define SS_YAML_VALUE_CARD_EXTENDED80COL "Extended 80 Column"
@@ -2053,19 +2129,19 @@ static std::string MemGetSnapshotAuxMemStructName(void)
 	return name;
 }
 
-static void MemSaveSnapshotMemory(YamlSaveHelper& yamlSaveHelper, bool bIsMainMem, UINT bank=0)
+static void MemSaveSnapshotMemory(YamlSaveHelper& yamlSaveHelper, bool bIsMainMem, UINT bank=0, UINT size=64*1024)
 {
 	LPBYTE pMemBase = MemGetBankPtr(bank);
 
 	if (bIsMainMem)
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotMainMemStructName().c_str());
-		yamlSaveHelper.SaveMemory(pMemBase, 64*1024);
+		yamlSaveHelper.SaveMemory(pMemBase, size);
 	}
 	else
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s%02X:\n", MemGetSnapshotAuxMemStructName().c_str(), bank-1);
-		yamlSaveHelper.SaveMemory(pMemBase, 64*1024);
+		yamlSaveHelper.SaveMemory(pMemBase, size);
 	}
 }
 
@@ -2082,7 +2158,10 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_PERIPHERALROMSLOT, g_uPeripheralRomSlot);
 	}
 
-	MemSaveSnapshotMemory(yamlSaveHelper, true);
+	if (g_Slot0 == CT_Saturn128K)
+		MemSaveSnapshotMemory(yamlSaveHelper, true, 0, 48*1024);
+	else
+		MemSaveSnapshotMemory(yamlSaveHelper, true);
 }
 
 bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
@@ -2104,12 +2183,16 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap( MemGetSnapshotMainMemStructName() ))
 		throw std::string("Card: Expected key: ") + MemGetSnapshotMainMemStructName();
 
+	memset(memmain, 0, _6502_MEM_END+1);	// Clear it, as high 16K may not be in the save-state (eg. the case of Saturn replacing LC)
 	yamlLoadHelper.LoadMemory(memmain, _6502_MEM_END+1);
 	memset(memdirty, 0, 0x100);
 
 	yamlLoadHelper.PopMap();
 
 	//
+
+	ResetDefaultMachineMemTypes();
+	SetExpansionMemType(MEM_TYPE_NATIVE);
 
 	modechanging = 0;
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
@@ -2119,6 +2202,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	return true;
 }
 
+// TODO: Switch from checking 'g_uMaxExPages == n' to using g_SlotAux
 void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 {
 	if (IS_APPLE2)
@@ -2131,7 +2215,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 		_ASSERT(g_uMaxExPages == 1);
 	}
 
-	yamlSaveHelper.UnitHdr(MemGetSnapshotUnitAuxSlotName(), UNIT_AUXSLOT_VER);
+	yamlSaveHelper.UnitHdr(MemGetSnapshotUnitAuxSlotName(), kUNIT_AUXSLOT_VER);
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
 	std::string card = 	g_uMaxExPages == 0 ?	SS_YAML_VALUE_CARD_80COL :			// todo: support empty slot
@@ -2149,7 +2233,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 
 bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (version != UNIT_AUXSLOT_VER)
+	if (version != kUNIT_AUXSLOT_VER)
 		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Version mismatch");
 
 	// "State"
@@ -2188,7 +2272,7 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 		LPBYTE pBank = MemGetBankPtr(uBank);
 		if (!pBank)
 		{
-			pBank = RWpages[uBank-1] = (LPBYTE) VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
+			pBank = RWpages[uBank-1] = (LPBYTE) VirtualAlloc(NULL, _6502_MEM_END+1, MEM_COMMIT, PAGE_READWRITE);
 			if (!pBank)
 				throw std::string("Card: mem alloc failed");
 		}
@@ -2206,7 +2290,113 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 		yamlLoadHelper.PopMap();
 	}
 
+	SetExpansionMemType(MEM_TYPE_RAMWORKS);
+
 	memaux = RWpages[g_uActiveBank];
+	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
+
+	return true;
+}
+
+//
+
+static const UINT kUNIT_SATURN_VER = 1;
+static const UINT kSLOT_SATURN = 0;
+
+#define SS_YAML_VALUE_CARD_SATURN128 "Saturn 128"
+
+#define SS_YAML_KEY_NUM_SATURN_BANKS "Num Saturn Banks"
+#define SS_YAML_KEY_ACTIVE_SATURN_BANK "Active Saturn Bank"
+
+static std::string Saturn_GetSnapshotMemStructName(void)
+{
+	static const std::string name("Memory Bank");
+	return name;
+}
+
+std::string Saturn_GetSnapshotCardName(void)
+{
+	static const std::string name(SS_YAML_VALUE_CARD_SATURN128);
+	return name;
+}
+
+void Saturn_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	if (!IsApple2PlusOrClone(GetApple2Type()))
+	{
+		_ASSERT(0);
+		LogFileOutput("Warning: Save-state attempted to save Saturn card for //e or above\n");
+		return;	// No Saturn support for //e and above
+	}
+
+	YamlSaveHelper::Slot slot(yamlSaveHelper, Saturn_GetSnapshotCardName(), kSLOT_SATURN, kUNIT_SATURN_VER);
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+	yamlSaveHelper.Save("%s: 0x%02X   # [1..8] 4=64K, 8=128K card\n", SS_YAML_KEY_NUM_SATURN_BANKS, g_uSaturnTotalBanks);
+	yamlSaveHelper.Save("%s: 0x%02X # [0..7]\n", SS_YAML_KEY_ACTIVE_SATURN_BANK, g_uSaturnActiveBank);
+
+	// Technically the Saturn card has it's own state (independent of the Apple //e's internal MMU):
+	// . memmode: WRITERAM, HIGHRAM, BANK2
+	// . g_bLastWriteRam counter
+	// Just duplicate MMU state for now:
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, memmode & (MF_WRITERAM|MF_HIGHRAM|MF_BANK2));
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, g_bLastWriteRam ? 1 : 0);
+
+	for(UINT uBank = 0; uBank < g_uSaturnTotalBanks; uBank++)
+	{
+		LPBYTE pMemBase = g_aSaturnBanks[uBank];
+		YamlSaveHelper::Label state(yamlSaveHelper, "%s%02X:\n", Saturn_GetSnapshotMemStructName().c_str(), uBank);
+		yamlSaveHelper.SaveMemory(pMemBase, 16*1024);
+	}
+}
+
+bool Saturn_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+{
+	if (slot != kSLOT_SATURN)	// fixme
+		throw std::string("Card: wrong slot");
+
+	if (version != kUNIT_SATURN_VER)
+		throw std::string("Card: wrong version");
+
+	// "State"
+	UINT numBanks   = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUM_SATURN_BANKS);
+	UINT activeBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVE_SATURN_BANK);
+	(void) yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE);		// Ignore & just use Apple //e MMU's value
+	(void) yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE);	// Ignore & just use Apple //e MMU's value
+
+	if (numBanks < 1 || numBanks > kMaxSaturnBanks || activeBank >= numBanks)
+		throw std::string(SS_YAML_KEY_UNIT ": Bad Saturn card state");
+
+	g_uSaturnTotalBanks = numBanks;
+	g_uSaturnActiveBank = activeBank;
+
+	//
+
+	for(UINT uBank = 0; uBank < g_uSaturnTotalBanks; uBank++)
+	{
+		LPBYTE pBank = g_aSaturnBanks[uBank];
+		if (!pBank)
+		{
+			pBank = g_aSaturnBanks[uBank] = (LPBYTE) VirtualAlloc(NULL, 16*1024, MEM_COMMIT, PAGE_READWRITE);
+			if (!pBank)
+				throw std::string("Card: mem alloc failed");
+		}
+
+		// "Memory Bankxx"
+		char szBank[3];
+		sprintf(szBank, "%02X", uBank);
+		std::string memName = Saturn_GetSnapshotMemStructName() + szBank;
+
+		if (!yamlLoadHelper.GetSubMap(memName))
+			throw std::string("Memory: Missing map name: " + memName);
+
+		yamlLoadHelper.LoadMemory(pBank, 16*1024);
+
+		yamlLoadHelper.PopMap();
+	}
+
+	SetExpansionMemType(MEM_TYPE_SATURN);
+
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
 
 	return true;
