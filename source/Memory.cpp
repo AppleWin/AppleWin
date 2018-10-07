@@ -1400,6 +1400,9 @@ void MemInitialize()
 
 	//
 
+	RWpages[0] = memaux;
+	g_pMemMainLanguageCard = memmain+0xC000;
+
 	if (IsApple2PlusOrClone(GetApple2Type()))
 		SetExpansionMemType(g_MemTypeAppleIIPlus);
 	else
@@ -1408,19 +1411,16 @@ void MemInitialize()
 #ifdef RAMWORKS
 	if (GetCurrentExpansionMemType() == MEM_TYPE_RAMWORKS)
 	{
+		// allocate memory for RAMWorks III - up to 8MB
 		_ASSERT(!IsApple2PlusOrClone(GetApple2Type()));
 
-		// allocate memory for RAMWorks III - up to 8MB
 		g_uActiveBank = 0;
-		RWpages[g_uActiveBank] = memaux;
 
 		UINT i = 1;
 		while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) VirtualAlloc(NULL, _6502_MEM_END+1, MEM_COMMIT, PAGE_READWRITE)))
 			i++;
 	}
 #endif
-
-	g_pMemMainLanguageCard = memmain+0xC000;
 
 #ifdef SATURN
 	if (GetCurrentExpansionMemType() == MEM_TYPE_SATURN)
@@ -2193,6 +2193,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 
 	ResetDefaultMachineMemTypes();
 	SetExpansionMemType(MEM_TYPE_NATIVE);
+	g_pMemMainLanguageCard = memmain+0xC000;
 
 	modechanging = 0;
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
@@ -2396,6 +2397,7 @@ bool Saturn_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 	}
 
 	SetExpansionMemType(MEM_TYPE_SATURN);
+	g_pMemMainLanguageCard = g_aSaturnBanks[ g_uSaturnActiveBank ];
 
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
 

@@ -103,8 +103,8 @@ CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 
 SS_CARDTYPE g_Slot0 = CT_LanguageCard;	// Just for Apple II or II+ or similar clones
-SS_CARDTYPE	g_Slot4 = CT_Empty;
-SS_CARDTYPE	g_Slot5 = CT_Empty;
+SS_CARDTYPE g_Slot4 = CT_Empty;
+SS_CARDTYPE g_Slot5 = CT_Empty;
 SS_CARDTYPE g_SlotAux = CT_Extended80Col;	// For Apple //e and above
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
