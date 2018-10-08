@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Applewin.h"
 #include "../CPU.h"
 #include "../Frame.h"
+#include "../LanguageCard.h"
 #include "../Memory.h"
 #include "../Mockingboard.h"
 #include "../Video.h"
@@ -2893,9 +2894,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBankDisplay, int bg_defa
 #ifdef RAMWORKS
 		if (GetCurrentExpansionMemType() == MEM_TYPE_RAMWORKS) { sText[0] = 'r'; iActiveBank = GetRamWorksActiveBank(); } // RAMWORKS
 #endif
-#ifdef SATURN
 		if (GetCurrentExpansionMemType() == MEM_TYPE_SATURN  ) { sText[0] = 's'; iActiveBank = GetSaturnActiveBank(); } // SATURN 64K 128K
-#endif // SATURN
 
 		if (iActiveBank >= 0)
 		{

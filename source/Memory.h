@@ -61,8 +61,6 @@ extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)
 extern UINT       g_uActiveBank;
 #endif
 
-const UINT kMaxSaturnBanks = 8;		// 8 * 16K = 128K
-
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
 
 void    MemDestroy ();
@@ -98,10 +96,9 @@ BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExec
 
 void	SetExpansionMemType(MemoryType_e type);
 MemoryType_e GetCurrentExpansionMemType(void);
+
 void	SetRamWorksMemorySize(UINT pages);
 UINT	GetRamWorksActiveBank(void);
-void	SetSaturnMemorySize(UINT banks);
-UINT	GetSaturnActiveBank(void);
-std::string Saturn_GetSnapshotCardName(void);
-void Saturn_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
-bool Saturn_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+BOOL	GetLastRamWrite(void);
+void	SetLastRamWrite(BOOL count);
+void	SetMemMainLanguageCard(LPBYTE ptr);

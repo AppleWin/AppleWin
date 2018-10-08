@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Frame.h"
 #include "Harddisk.h"
 #include "Joystick.h"
+#include "LanguageCard.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
@@ -1263,7 +1264,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				uRamWorksExPages = 1;
 		}
 #endif
-#ifdef SATURN
 		else if (strcmp(lpCmdLine, "-saturn") == 0)		// 64 = Saturn 64K (4 banks), 128 = Saturn 128K (8 banks)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
@@ -1278,7 +1278,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				uSaturnBanks = 1;
 
 		}
-#endif
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
@@ -1467,14 +1466,12 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			uRamWorksExPages = 0;	// Don't reapply after a restart
 		}
 #endif
-#ifdef SATURN
 		if (uSaturnBanks)
 		{
 			SetSaturnMemorySize(uSaturnBanks);
 			SetExpansionMemType(MEM_TYPE_SATURN);
 			uSaturnBanks = 0;		// Don't reapply after a restart
 		}
-#endif
 
 		DebugInitialize();
 		LogFileOutput("Main: DebugInitialize()\n");
