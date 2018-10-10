@@ -1271,8 +1271,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 			// "The boards consist of 16K banks of memory (4 banks for the 64K board, 8 banks for the 128K), accessed one at a time" - Ref: "64K/128K RAM BOARD", Saturn Systems, Ch.1 Introduction(pg-5)
 			uSaturnBanks = atoi(lpCmdLine) / 16;			// number of 16K Banks [1..8]
-			if (uSaturnBanks > kMaxSaturnBanks)
-				uSaturnBanks = kMaxSaturnBanks;
+			if (uSaturnBanks > Saturn128K::kMaxSaturnBanks)
+				uSaturnBanks = Saturn128K::kMaxSaturnBanks;
 			else
 			if (uSaturnBanks < 1)
 				uSaturnBanks = 1;
@@ -1461,15 +1461,15 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 #ifdef RAMWORKS
 		if (uRamWorksExPages)
 		{
-			SetRamWorksMemorySize(uRamWorksExPages);
 			SetExpansionMemType(MEM_TYPE_RAMWORKS);
+			SetRamWorksMemorySize(uRamWorksExPages);
 			uRamWorksExPages = 0;	// Don't reapply after a restart
 		}
 #endif
 		if (uSaturnBanks)
 		{
-			SetSaturnMemorySize(uSaturnBanks);
 			SetExpansionMemType(MEM_TYPE_SATURN);
+			GetLanguageCard()->SetMemorySize(uSaturnBanks);
 			uSaturnBanks = 0;		// Don't reapply after a restart
 		}
 

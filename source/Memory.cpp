@@ -206,6 +206,7 @@ static BOOL    modechanging = 0;				// An Optimisation: means delay calling Upda
 static BOOL    Pravets8charmode = 0;
 
 static CNoSlotClock g_NoSlotClock;
+static LanguageCard* g_pLanguageCard = new LanguageCard;	// For Apple II or II+ (or similar clone)
 
 #ifdef RAMWORKS
 static UINT		g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
@@ -262,6 +263,17 @@ void SetExpansionMemType(const MemoryType_e type)
 			newSlotAuxCard = CT_RamWorksIII;
 	}
 
+	if (IsApple2PlusOrClone(GetApple2Type()) && g_pLanguageCard->type != type)
+	{
+		delete g_pLanguageCard;
+		g_pLanguageCard = NULL;
+
+		if (newSlot0Card == CT_Saturn128K)
+			g_pLanguageCard = new Saturn128K;
+		else if (newSlot0Card == CT_LanguageCard)
+			g_pLanguageCard = new LanguageCard;
+	}
+
 	g_Slot0 = newSlot0Card;
 	g_SlotAux = newSlotAuxCard;
 }
@@ -311,6 +323,14 @@ void SetLastRamWrite(BOOL count)
 void SetMemMainLanguageCard(LPBYTE ptr)
 {
 	g_pMemMainLanguageCard = ptr;
+}
+
+//
+
+LanguageCard* GetLanguageCard(void)
+{
+	_ASSERT(g_pLanguageCard);
+	return g_pLanguageCard;
 }
 
 //=============================================================================
@@ -1144,7 +1164,9 @@ void MemDestroy()
 	RWpages[0]=NULL;
 #endif
 
-	SaturnDestroy();
+	g_pLanguageCard->Destroy();
+	delete g_pLanguageCard;
+	g_pLanguageCard = NULL;
 
 	memaux   = NULL;
 	memmain  = NULL;
@@ -1414,7 +1436,9 @@ void MemInitialize()
 	}
 #endif
 
-	SaturnInitialize();
+	if (!g_pLanguageCard)
+		g_pLanguageCard = new LanguageCard;		// NB. deleted after a VM restart
+	g_pLanguageCard->Initialize();
 
 	//
 
@@ -1843,7 +1867,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	{
 		if (GetCurrentExpansionMemType() == MEM_TYPE_SATURN)
 		{
-			SetMemMode( SaturnSetPaging(address, memmode) );
+			SetMemMode( g_pLanguageCard->SetPaging(address, memmode) );
 			modechanging = 1;
 		}
 		else

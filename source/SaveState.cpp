@@ -416,9 +416,10 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 			m_ConfigNew.m_bEnableHDD = true;
 			type = CT_GenericHDD;
 		}
-		else if (card == Saturn_GetSnapshotCardName())
+		else if (card == Saturn128K::GetSnapshotCardNameSaturn128())
 		{
-			bRes = Saturn_LoadSnapshot(yamlLoadHelper, slot, version);
+			SetExpansionMemType(MEM_TYPE_SATURN);
+			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, version);
 			type = CT_Saturn128K;
 		}
 		else
@@ -484,7 +485,7 @@ static void Snapshot_LoadState_v2(void)
 		//
 
 		CConfigNeedingRestart ConfigOld;
-		//ConfigOld.m_Slot[0] = CT_LanguageCard;	// fixme
+		//ConfigOld.m_Slot[0] = CT_LanguageCard;	// fixme: II/II+=LC, //e=empty
 		ConfigOld.m_Slot[1] = CT_GenericPrinter;	// fixme
 		ConfigOld.m_Slot[2] = CT_SSC;				// fixme
 		//ConfigOld.m_Slot[3] = CT_Uthernet;		// todo
@@ -598,8 +599,8 @@ void Snapshot_SaveState(void)
 			yamlSaveHelper.UnitHdr(GetSnapshotUnitSlotsName(), UNIT_SLOTS_VER);
 			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-			if (g_Slot0 == CT_Saturn128K)
-				Saturn_SaveSnapshot(yamlSaveHelper);
+			if (g_Slot0 == CT_Saturn128K)	// TODO: Replace with AppleII/II+ check - but need to implement base LC save/load
+				GetLanguageCard()->SaveSnapshot(yamlSaveHelper);
 
 			Printer_SaveSnapshot(yamlSaveHelper);
 

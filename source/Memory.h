@@ -41,10 +41,11 @@ enum MemoryInitPattern_e
 
 enum MemoryType_e
 {
-	MEM_TYPE_NATIVE   = 0,
-	MEM_TYPE_RAMWORKS = 1,
-	MEM_TYPE_SATURN   = 2,
-	NUM_MEM_TYPE      = 3
+	MEM_TYPE_NATIVE,
+	MEM_TYPE_RAMWORKS,
+	MEM_TYPE_LANGUAGECARD,
+	MEM_TYPE_SATURN,
+	NUM_MEM_TYPE
 };
 
 typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nExecutedCycles);
@@ -102,3 +103,4 @@ UINT	GetRamWorksActiveBank(void);
 BOOL	GetLastRamWrite(void);
 void	SetLastRamWrite(BOOL count);
 void	SetMemMainLanguageCard(LPBYTE ptr);
+class LanguageCard* GetLanguageCard(void);
