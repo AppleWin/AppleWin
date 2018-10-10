@@ -1417,6 +1417,9 @@ void MemInitialize()
 	RWpages[0] = memaux;
 	g_pMemMainLanguageCard = memmain+0xC000;
 
+	if (!g_pLanguageCard)
+		g_pLanguageCard = new LanguageCard;		// NB. deleted after a VM restart
+
 	if (IsApple2PlusOrClone(GetApple2Type()))
 		SetExpansionMemType(g_MemTypeAppleIIPlus);
 	else
@@ -1436,8 +1439,6 @@ void MemInitialize()
 	}
 #endif
 
-	if (!g_pLanguageCard)
-		g_pLanguageCard = new LanguageCard;		// NB. deleted after a VM restart
 	g_pLanguageCard->Initialize();
 
 	//
@@ -2097,8 +2098,8 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_PERIPHERALROMSLOT, g_uPeripheralRomSlot);
 	}
 
-	if (g_Slot0 == CT_Saturn128K)
-		MemSaveSnapshotMemory(yamlSaveHelper, true, 0, 48*1024);
+	if (IsApple2PlusOrClone(GetApple2Type()))
+		MemSaveSnapshotMemory(yamlSaveHelper, true, 0, 48*1024);	// NB. Language Card/Saturn provides the remaining 16K (or multiple) bank(s)
 	else
 		MemSaveSnapshotMemory(yamlSaveHelper, true);
 }
