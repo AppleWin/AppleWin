@@ -74,24 +74,29 @@ std::string LanguageCard::GetSnapshotCardName(void)
 	return name;
 }
 
+void LanguageCard::SaveLCState(YamlSaveHelper& yamlSaveHelper)
+{
+	// Technically the Saturn card has it's own state (independent of the Apple //e's internal MMU):
+	// . memmode: WRITERAM, HIGHRAM, BANK2
+	// . g_bLastWriteRam counter
+	// Just duplicate MMU state for now:
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, GetMemMode() & (MF_WRITERAM|MF_HIGHRAM|MF_BANK2));
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite() ? 1 : 0);
+}
+
 void LanguageCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	if (!IsApple2PlusOrClone(GetApple2Type()))
 	{
 		_ASSERT(0);
-		LogFileOutput("Warning: Save-state attempted to save Language Card for //e or above\n");
+		LogFileOutput("Warning: Save-state attempted to save %s for //e or above\n", GetSnapshotCardName().c_str());
 		return;	// No Language Card support for //e and above
 	}
 
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), kSLOT_LANGUAGECARD, kUNIT_LANGUAGECARD_VER);
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-	// Technically the Language Card has it's own state (independent of the Apple //e's internal MMU):
-	// . memmode: WRITERAM, HIGHRAM, BANK2
-	// . g_bLastWriteRam counter
-	// Just duplicate MMU state for now:
-	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, GetMemMode() & (MF_WRITERAM|MF_HIGHRAM|MF_BANK2));
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite() ? 1 : 0);
+	SaveLCState(yamlSaveHelper);
 
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", GetSnapshotMemStructName().c_str());
@@ -143,7 +148,7 @@ Saturn128K::Saturn128K(void)
 {
 	type = MEM_TYPE_SATURN;
 
-	m_uSaturnTotalBanks = 0;
+	m_uSaturnTotalBanks = kMaxSaturnBanks;
 	m_uSaturnActiveBank = 0;
 	for (UINT i=0; i<kMaxSaturnBanks; i++)
 		m_aSaturnBanks[i] = NULL;
@@ -271,22 +276,17 @@ void Saturn128K::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	if (!IsApple2PlusOrClone(GetApple2Type()))
 	{
 		_ASSERT(0);
-		LogFileOutput("Warning: Save-state attempted to save Saturn card for //e or above\n");
+		LogFileOutput("Warning: Save-state attempted to save %s for //e or above\n", GetSnapshotCardName().c_str());
 		return;	// No Saturn support for //e and above
 	}
 
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), kSLOT_SATURN, kUNIT_SATURN_VER);
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
+	SaveLCState(yamlSaveHelper);
+
 	yamlSaveHelper.Save("%s: 0x%02X   # [1..8] 4=64K, 8=128K card\n", SS_YAML_KEY_NUM_SATURN_BANKS, m_uSaturnTotalBanks);
 	yamlSaveHelper.Save("%s: 0x%02X # [0..7]\n", SS_YAML_KEY_ACTIVE_SATURN_BANK, m_uSaturnActiveBank);
-
-	// Technically the Saturn card has it's own state (independent of the Apple //e's internal MMU):
-	// . memmode: WRITERAM, HIGHRAM, BANK2
-	// . g_bLastWriteRam counter
-	// Just duplicate MMU state for now:
-	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, GetMemMode() & (MF_WRITERAM|MF_HIGHRAM|MF_BANK2));
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite() ? 1 : 0);
 
 	for(UINT uBank = 0; uBank < m_uSaturnTotalBanks; uBank++)
 	{

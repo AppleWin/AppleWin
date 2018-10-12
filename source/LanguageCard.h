@@ -32,7 +32,10 @@ public:
 
 	MemoryType_e type;
 	static const UINT kMemBankSize = 16*1024;
-	static std::string LanguageCard::GetSnapshotCardName(void);
+	static std::string GetSnapshotCardName(void);
+
+protected:
+	void SaveLCState(class YamlSaveHelper& yamlSaveHelper);
 
 private:
 	std::string GetSnapshotMemStructName(void);
