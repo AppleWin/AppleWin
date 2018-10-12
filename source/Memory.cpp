@@ -1062,15 +1062,11 @@ static void UpdatePaging(BOOL initialize)
 	{
 		int bankoffset = (SW_BANK2 ? 0 : 0x1000);
 		memshadow[loop] = SW_HIGHRAM ? SW_ALTZP	? memaux+(loop << 8)-bankoffset
-												// memmain+(loop << 8)-bankoffset
-												//: g_aSaturnBanks[g_uSaturnActiveBank]+((loop-0xC0)<<8)-bankoffset
 												: g_pMemMainLanguageCard+((loop-0xC0)<<8)-bankoffset
 									 : memrom+((loop-0xD0) * 0x100);
 
 		memwrite[loop]  = SW_WRITERAM	? SW_HIGHRAM	? mem+(loop << 8)
 														: SW_ALTZP	? memaux+(loop << 8)-bankoffset
-																	// memmain+(loop << 8)-bankoffset
-																	//: g_aSaturnBanks[g_uSaturnActiveBank]+((loop-0xC0)<<8)-bankoffset
 																	: g_pMemMainLanguageCard+((loop-0xC0)<<8)-bankoffset
 										: NULL;
 	}
@@ -1078,15 +1074,11 @@ static void UpdatePaging(BOOL initialize)
 	for (loop = 0xE0; loop < 0x100; loop++)
 	{
 		memshadow[loop] = SW_HIGHRAM	? SW_ALTZP	? memaux+(loop << 8)
-													// memmain+(loop << 8)
-													//: g_aSaturnBanks[g_uSaturnActiveBank]+((loop-0xC0)<<8)
 													: g_pMemMainLanguageCard+((loop-0xC0)<<8)
 										: memrom+((loop-0xD0) * 0x100);
 
 		memwrite[loop]  = SW_WRITERAM	? SW_HIGHRAM	? mem+(loop << 8)
 														: SW_ALTZP	? memaux+(loop << 8)
-																	// memmain+(loop << 8)
-																	//: g_aSaturnBanks[g_uSaturnActiveBank]+((loop-0xC0)<<8)
 																	: g_pMemMainLanguageCard+((loop-0xC0)<<8)
 										: NULL;
 	}
