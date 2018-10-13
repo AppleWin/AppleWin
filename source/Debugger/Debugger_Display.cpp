@@ -1493,7 +1493,7 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 
 			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
 			{
-					pTarget = FormatAddress( nTarget, nOpbyte );
+				pTarget = FormatAddress( nTarget, (iOpmode != AM_R) ? nOpbyte : 3 );	// GH#587: For Bcc opcodes, pretend it's a 3-byte opcode to print a 16-bit target addr
 			}				
 
 //			sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, pTarget );
