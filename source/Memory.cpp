@@ -79,7 +79,7 @@ MEMORY MANAGEMENT SOFT SWITCHES
  $C000   W       80STOREOFF      Allow page2 to switch video page1 page2
  $C001   W       80STOREON       Allow page2 to switch main & aux video memory
  $C002   W       RAMRDOFF        Read enable main memory from $0200-$BFFF
- $C003   W       RAMDRON         Read enable aux memory from $0200-$BFFF
+ $C003   W       RAMRDON         Read enable aux memory from $0200-$BFFF
  $C004   W       RAMWRTOFF       Write enable main memory from $0200-$BFFF
  $C005   W       RAMWRTON        Write enable aux memory from $0200-$BFFF
  $C006   W       INTCXROMOFF     Enable slot ROM from $C100-$C7FF (but $C800-$CFFF depends on INTC8ROM)
@@ -129,29 +129,44 @@ SOFT SWITCH STATUS FLAGS
 // Notes
 // -----
 //
-// mem
-// - a copy of the memimage ptr
-//
 // memimage
 // - 64KB
+//
+// mem
+// (a pointer to memimage 64KB)
+// - a 64KB r/w memory cache
 // - reflects the current readable memory in the 6502's 64K address space
 //		. excludes $Cxxx I/O memory
 //		. could be a mix of RAM/ROM, main/aux, etc
+// - may also reflect the current writeable memory (on a 256-page granularity) if the write page addr == read page addr
+//		. for this case, the memdirty flag(s) are valid
+//		. when writes instead occur to backing-store, then memdirty flag(s) can be ignored
 //
 // memmain, memaux
-// - physical contiguous 64KB RAM for main & aux respectively
+// - physical contiguous 64KB "backing-store" for main & aux respectively
+// - NB. 4K bank1 BSR is at $C000-$CFFF
 //
 // memwrite
-// - 1 ptr entry per 256-byte page
+// - 1 pointer entry per 256-byte page
 // - used to write to a page
+// - if RD & WR point to the same 256-byte RAM page, then memwrite will point to the page in 'mem'
+//		. ie. when SW_AUXREAD==SW_AUXWRITE, or 4K-BSR is r/w, or 8K BSR is r/w, or SW_80STORE=1
+//		. So 'mem' remains correct for both r&w operations, but the physical 64K mem block becomes stale
+// - if RD & WR point to different 256-byte pages, then memwrite will point to the page in the physical 64K mem block
+//		. writes will still set the dirty flag (but can be ignored)
+//		. UpdatePaging() ignores this, as it only copies back to the physical 64K mem block when memshadow changes (for that 256-byte page)
 //
 // memdirty
 // - 1 byte entry per 256-byte page
 // - set when a write occurs to a 256-byte page
+// - indicates that 'mem' (ie. the cache) is out-of-sync with the "physical" 64K backing-store memory
+// - NB. a page's dirty flag is only useful(valid) when 'mem' is used for both read & write for the corresponding page
+//   When they differ, then writes go directly to the backing-store.
+//   . In this case, the dirty flag will just force a memcpy() to the same address in backing-store.
 //
 // memshadow
-// - 1 ptr entry per 256-byte page
-// - reflects how 'mem' is setup
+// - 1 pointer entry per 256-byte page
+// - reflects how 'mem' is setup for read operations (at a 256-byte granularity)
 //		. EG: if ALTZP=1, then:
 //			. mem will have copies of memaux's ZP & stack
 //			. memshadow[0] = &memaux[0x0000]
@@ -817,19 +832,6 @@ static bool IsCardInSlot(const UINT uSlot)
 
 //===========================================================================
 
-static void BackMainImage(void)
-{
-	for (UINT loop = 0; loop < 256; loop++)
-	{
-		if (memshadow[loop] && ((*(memdirty+loop) & 1) || (loop <= 1)))
-			CopyMemory(memshadow[loop], memimage+(loop << 8), 256);
-
-		*(memdirty+loop) &= ~1;
-	}
-}
-
-//===========================================================================
-
 DWORD GetMemMode(void)
 {
 	return memmode;
@@ -925,7 +927,7 @@ static void UpdatePaging(BOOL initialize)
 
 	for (loop = 0xC0; loop < 0xC8; loop++)
 	{
-		memdirty[loop] = 0;	// ROM can't be dirty
+		memdirty[loop] = 0;	// mem(cache) can't be dirty for ROM (but STA $Csnn will set the dirty flag)
 		const UINT uSlotOffset = (loop & 0x0f) * 0x100;
 		if (loop == 0xC3)
 			memshadow[loop] = (SW_SLOTC3ROM && !SW_INTCXROM)	? pCxRomPeripheral+uSlotOffset	// C300..C3FF - Slot 3 ROM (all 0x00's)
@@ -937,7 +939,7 @@ static void UpdatePaging(BOOL initialize)
 
 	for (loop = 0xC8; loop < 0xD0; loop++)
 	{
-		memdirty[loop] = 0;	// ROM can't be dirty (but STA $CFFF will set the dirty flag)
+		memdirty[loop] = 0;	// mem(cache) can't be dirty for ROM (but STA $Cnnn will set the dirty flag)
 		const UINT uRomOffset = (loop & 0x0f) * 0x100;
 		memshadow[loop] = (!SW_INTCXROM && !INTC8ROM)	? pCxRomPeripheral+uRomOffset			// C800..CFFF - Peripheral ROM (GH#486)
 														: pCxRomInternal+uRomOffset;			// C800..CFFF - Internal ROM
@@ -1070,6 +1072,19 @@ bool MemCheckINTCXROM()
 
 //===========================================================================
 
+static void BackMainImage(void)
+{
+	for (UINT loop = 0; loop < 256; loop++)
+	{
+		if (memshadow[loop] && ((*(memdirty+loop) & 1) || (loop <= 1)))
+			CopyMemory(memshadow[loop], mem+(loop << 8), 256);
+
+		*(memdirty+loop) &= ~1;
+	}
+}
+
+//===========================================================================
+
 static LPBYTE MemGetPtrBANK1(const WORD offset, const LPBYTE pMemBase)
 {
 	if ((offset & 0xF000) != 0xC000)	// Requesting RAM at physical addr $Cxxx (ie. 4K RAM BANK1)
@@ -1114,6 +1129,34 @@ LPBYTE MemGetAuxPtr(const WORD offset)
 
 //-------------------------------------
 
+// if memshadow == memmain
+//	  so RD memmain
+//	  case: RD == WR
+//		so RD(mem),WR(mem)
+//		so 64K memmain could be incorrect
+//		*therefore mem is correct
+//	  case: RD != WR
+//		so RD(mem),WR(memaux)
+//		doesn't matter since RD != WR, then it's guaranteed that memaux is correct
+//		*therefore either mem or memmain is correct
+// else ; memshadow != memmain
+//	  so RD memaux (or ROM)
+//	  case: RD == WR
+//		so RD(mem),WR(mem)
+//		so 64K memaux could be incorrect
+//		*therefore memmain is correct
+//	  case: RD != WR
+//		so RD(mem),WR(memmain)
+//		doesn't matter since RD != WR, then it's guaranteed that memmain is correct
+//		*therefore memmain is correct
+//
+// *OR*
+//
+// Is the mem(cache) setup to read (via memshadow) from memmain?
+// . if yes, then return the mem(cache) address as writes (via memwrite) may've made the mem(cache) dirty.
+// . if no, then return memmain, as the mem(cache) isn't involved in memmain (any writes will go directly to this backing-store).
+//
+
 LPBYTE MemGetMainPtr(const WORD offset)
 {
 	LPBYTE lpMem = MemGetPtrBANK1(offset, memmain);
@@ -1127,6 +1170,9 @@ LPBYTE MemGetMainPtr(const WORD offset)
 
 //===========================================================================
 
+// Used by:
+// . Savestate: MemSaveSnapshotMemory(), MemLoadSnapshotAux()
+// . Debugger : CmdMemorySave(), CmdMemoryLoad()
 LPBYTE MemGetBankPtr(const UINT nBank)
 {
 	BackMainImage();	// Flush any dirty pages to back-buffer
@@ -1784,7 +1830,7 @@ _done_saturn:
 	// IT DOES SO.
 	//
 	// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
-	// - although any date-race is probably a bug in the 6502 code too.
+	// - although any data-race is probably a bug in the 6502 code too.
 	if ((address >= 4) && (address <= 5) &&
 		((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
 			modechanging = 1;

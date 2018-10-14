@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "Applewin.h"
 	#include "CPU.h"	// CpuGetCyclesThisVideoFrame()
 	#include "Frame.h"
-	#include "Memory.h" // MemGetMainPtr() MemGetBankPtr()
+	#include "Memory.h" // MemGetMainPtr() MemGetAuxPtr()
 	#include "Video.h"  // g_pFramebufferbits
 
 	#include "NTSC.h"
