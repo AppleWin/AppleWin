@@ -1469,7 +1469,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		if (uSaturnBanks)
 		{
 			SetExpansionMemType(MEM_TYPE_SATURN);
-			GetLanguageCard()->SetMemorySize(uSaturnBanks);
+			SetSaturnMemorySize(uSaturnBanks);
 			uSaturnBanks = 0;		// Don't reapply after a restart
 		}
 

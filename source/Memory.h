@@ -13,6 +13,8 @@
 #define  MF_INTCXROM   0x00000200
 #define  MF_WRITERAM   0x00000400   // Language Card RAM is Write Enabled
 #define  MF_IMAGEMASK  0x000003F7
+#define  MF_LANGCARD_MASK	(MF_WRITERAM|MF_HIGHRAM|MF_BANK2)
+
 
 enum
 {
@@ -43,7 +45,8 @@ enum MemoryType_e
 {
 	MEM_TYPE_NATIVE,
 	MEM_TYPE_RAMWORKS,
-	MEM_TYPE_LANGUAGECARD,
+	MEM_TYPE_LANGUAGECARD_SLOT0,
+	MEM_TYPE_LANGUAGECARD_IIE,
 	MEM_TYPE_SATURN,
 	NUM_MEM_TYPE
 };
@@ -72,6 +75,7 @@ LPBYTE  MemGetMainPtr(const WORD);
 LPBYTE  MemGetBankPtr(const UINT nBank);
 LPBYTE  MemGetCxRomPeripheral();
 DWORD   GetMemMode(void);
+void    SetMemMode(DWORD memmode);
 bool    MemIsAddrCodeMemory(const USHORT addr);
 void    MemInitialize ();
 void    MemInitializeROM(void);
@@ -87,7 +91,7 @@ LPVOID	MemGetSlotParameters (UINT uSlot);
 void    MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE* const pMemMain, const BYTE* const pMemAux);
 std::string MemGetSnapshotUnitAuxSlotName(void);
 void    MemSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-bool    MemLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
+bool    MemLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
 void    MemSaveSnapshotAux(class YamlSaveHelper& yamlSaveHelper);
 bool    MemLoadSnapshotAux(class YamlLoadHelper& yamlLoadHelper, UINT version);
 
@@ -100,7 +104,6 @@ MemoryType_e GetCurrentExpansionMemType(void);
 
 void	SetRamWorksMemorySize(UINT pages);
 UINT	GetRamWorksActiveBank(void);
-BOOL	GetLastRamWrite(void);
-void	SetLastRamWrite(BOOL count);
+void	SetSaturnMemorySize(UINT banks);
 void	SetMemMainLanguageCard(LPBYTE ptr);
-class LanguageCard* GetLanguageCard(void);
+class LanguageCardUnit* GetLanguageCard(void);

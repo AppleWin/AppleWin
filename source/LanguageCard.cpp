@@ -34,19 +34,52 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "YamlHelper.h"
 
-LanguageCard::LanguageCard(void)
+
+const UINT LanguageCardUnit::kMemModeInitialState = MF_BANK2 | MF_WRITERAM;	// !INTCXROM
+
+LanguageCardUnit::LanguageCardUnit(void) :
+	m_uLastRamWrite(0),
+	m_type(MEM_TYPE_LANGUAGECARD_IIE)
 {
-	type = MEM_TYPE_LANGUAGECARD;
-	m_pMemory = NULL;
 }
 
-void LanguageCard::Initialize(void)
+DWORD LanguageCardUnit::SetPaging(WORD address, DWORD memmode, BOOL& modechanging, bool write)
 {
+	memmode &= ~(MF_BANK2 | MF_HIGHRAM);
+
+	if (!(address & 8))
+		memmode |= MF_BANK2;
+
+	if (((address & 2) >> 1) == (address & 1))
+		memmode |= MF_HIGHRAM;
+
+	if (address & 1)	// GH#392
+	{
+		if (!write && GetLastRamWrite())
+		{
+			memmode |= MF_WRITERAM; // UTAIIe:5-23
+		}
+	}
+	else
+	{
+		memmode &= ~MF_WRITERAM; // UTAIIe:5-23
+	}
+
+	SetLastRamWrite( ((address & 1) && !write) ); // UTAIIe:5-23
+
+	return memmode;
+}
+
+//-------------------------------------
+
+LanguageCardSlot0::LanguageCardSlot0(void)
+{
+	m_type = MEM_TYPE_LANGUAGECARD_SLOT0;
 	m_pMemory = (LPBYTE) VirtualAlloc(NULL, kMemBankSize, MEM_COMMIT, PAGE_READWRITE);
 	SetMemMainLanguageCard(m_pMemory);
 }
 
-void LanguageCard::Destroy(void)
+LanguageCardSlot0::~LanguageCardSlot0(void)
 {
 	VirtualFree(m_pMemory, 0, MEM_RELEASE);
 	m_pMemory = NULL;
@@ -62,29 +95,33 @@ static const UINT kSLOT_LANGUAGECARD = 0;
 #define SS_YAML_KEY_MEMORYMODE "Memory Mode"
 #define SS_YAML_KEY_LASTRAMWRITE "Last RAM Write"
 
-std::string LanguageCard::GetSnapshotMemStructName(void)
+std::string LanguageCardSlot0::GetSnapshotMemStructName(void)
 {
 	static const std::string name("Memory Bank");
 	return name;
 }
 
-std::string LanguageCard::GetSnapshotCardName(void)
+std::string LanguageCardSlot0::GetSnapshotCardName(void)
 {
 	static const std::string name(SS_YAML_VALUE_CARD_LANGUAGECARD);
 	return name;
 }
 
-void LanguageCard::SaveLCState(YamlSaveHelper& yamlSaveHelper)
+void LanguageCardSlot0::SaveLCState(YamlSaveHelper& yamlSaveHelper)
 {
-	// Technically the Saturn card has it's own state (independent of the Apple //e's internal MMU):
-	// . memmode: WRITERAM, HIGHRAM, BANK2
-	// . g_bLastWriteRam counter
-	// Just duplicate MMU state for now:
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, GetMemMode() & (MF_WRITERAM|MF_HIGHRAM|MF_BANK2));
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite() ? 1 : 0);
 }
 
-void LanguageCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+void LanguageCardSlot0::LoadLCState(YamlLoadHelper& yamlLoadHelper)
+{
+	DWORD memMode     = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) & MF_LANGCARD_MASK;
+	BOOL lastRamWrite = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
+	SetMemMode( (GetMemMode() & ~MF_LANGCARD_MASK) | memMode );
+	SetLastRamWrite(lastRamWrite);
+}
+
+void LanguageCardSlot0::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	if (!IsApple2PlusOrClone(GetApple2Type()))
 	{
@@ -104,7 +141,7 @@ void LanguageCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	}
 }
 
-bool LanguageCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
 	if (slot != kSLOT_LANGUAGECARD)
 		throw std::string("Card: wrong slot");
@@ -113,10 +150,7 @@ bool LanguageCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT 
 		throw std::string("Card: wrong version");
 
 	// "State"
-	(void) yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE);		// Ignore & just use Apple //e MMU's value
-	(void) yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE);	// Ignore & just use Apple //e MMU's value
-
-	//
+	LoadLCState(yamlLoadHelper);
 
 	if (!m_pMemory)
 	{
@@ -134,7 +168,7 @@ bool LanguageCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT 
 
 	//
 
-	SetExpansionMemType(MEM_TYPE_LANGUAGECARD);
+	SetExpansionMemType(MEM_TYPE_LANGUAGECARD_SLOT0);
 	SetMemMainLanguageCard(m_pMemory);
 
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
@@ -144,14 +178,31 @@ bool LanguageCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT 
 
 //-------------------------------------
 
-Saturn128K::Saturn128K(void)
+Saturn128K::Saturn128K(UINT banks)
 {
-	type = MEM_TYPE_SATURN;
-
-	m_uSaturnTotalBanks = kMaxSaturnBanks;
+	m_type = MEM_TYPE_SATURN;
+	m_uSaturnTotalBanks = (banks == 0) ? kMaxSaturnBanks : banks;
 	m_uSaturnActiveBank = 0;
+
 	for (UINT i=0; i<kMaxSaturnBanks; i++)
 		m_aSaturnBanks[i] = NULL;
+
+	for (UINT i = 0; i < m_uSaturnTotalBanks; i++)
+		m_aSaturnBanks[i] = (LPBYTE) VirtualAlloc(NULL, kMemBankSize, MEM_COMMIT, PAGE_READWRITE); // Saturn banks are 16K, max 8 banks/card
+
+	SetMemMainLanguageCard( m_aSaturnBanks[ m_uSaturnActiveBank ] );
+}
+
+Saturn128K::~Saturn128K(void)
+{
+	for (UINT i = 0; i < m_uSaturnTotalBanks; i++)
+	{
+		if (m_aSaturnBanks[i])
+		{
+			VirtualFree(m_aSaturnBanks[i], 0, MEM_RELEASE);
+			m_aSaturnBanks[i] = NULL;
+		}
+	}
 }
 
 void Saturn128K::SetMemorySize(UINT banks)
@@ -164,29 +215,7 @@ UINT Saturn128K::GetActiveBank(void)
 	return m_uSaturnActiveBank;
 }
 
-void Saturn128K::Initialize(void)
-{
-	m_uSaturnActiveBank = 0;
-
-	for(UINT i = 0; i < m_uSaturnTotalBanks; i++)
-		m_aSaturnBanks[i] = (LPBYTE) VirtualAlloc(NULL, kMemBankSize, MEM_COMMIT, PAGE_READWRITE); // Saturn banks are 16K, max 8 banks/card
-
-	SetMemMainLanguageCard( m_aSaturnBanks[ m_uSaturnActiveBank ] );
-}
-
-void Saturn128K::Destroy(void)
-{
-	for (UINT i = 0; i < m_uSaturnTotalBanks; i++)
-	{
-		if (m_aSaturnBanks[i])
-		{
-			VirtualFree(m_aSaturnBanks[i], 0, MEM_RELEASE);
-			m_aSaturnBanks[i] = NULL;
-		}
-	}
-}
-
-DWORD Saturn128K::SetPaging(WORD address, DWORD memmode)
+DWORD Saturn128K::SetPaging(WORD address, DWORD memmode, BOOL& modechanging, bool /*write*/)
 {
 /*
 	Bin   Addr.
@@ -227,6 +256,8 @@ DWORD Saturn128K::SetPaging(WORD address, DWORD memmode)
 		}
 
 		SetMemMainLanguageCard( m_aSaturnBanks[ m_uSaturnActiveBank ] );
+
+		modechanging = 1;
 	}
 	else
 	{
@@ -305,10 +336,10 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT ve
 		throw std::string("Card: wrong version");
 
 	// "State"
-	UINT numBanks   = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUM_SATURN_BANKS);
-	UINT activeBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVE_SATURN_BANK);
-	(void) yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE);		// Ignore & just use Apple //e MMU's value
-	(void) yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE);	// Ignore & just use Apple //e MMU's value
+	LoadLCState(yamlLoadHelper);
+
+	UINT numBanks     = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUM_SATURN_BANKS);
+	UINT activeBank   = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVE_SATURN_BANK);
 
 	if (numBanks < 1 || numBanks > kMaxSaturnBanks || activeBank >= numBanks)
 		throw std::string(SS_YAML_KEY_UNIT ": Bad Saturn card state");

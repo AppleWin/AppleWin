@@ -65,7 +65,7 @@ static YamlHelper yamlHelper;
 
 #define SS_FILE_VER 2
 
-#define UNIT_APPLE2_VER 1
+#define UNIT_APPLE2_VER 2
 #define UNIT_SLOTS_VER 1
 
 //-----------------------------------------------------------------------------
@@ -324,7 +324,7 @@ static UINT ParseFileHdr(void)
 
 static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (version != UNIT_APPLE2_VER)
+	if (version == 0 || version > UNIT_APPLE2_VER)
 		throw std::string(SS_YAML_KEY_UNIT ": Apple2: Version mismatch");
 
 	std::string model = yamlLoadHelper.LoadString(SS_YAML_KEY_MODEL);
@@ -338,7 +338,7 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	KeybLoadSnapshot(yamlLoadHelper);
 	SpkrLoadSnapshot(yamlLoadHelper);
 	VideoLoadSnapshot(yamlLoadHelper);
-	MemLoadSnapshot(yamlLoadHelper);
+	MemLoadSnapshot(yamlLoadHelper, version);
 
 	// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
 	VideoReinitialize();	// g_CharsetType changed
@@ -416,9 +416,9 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 			m_ConfigNew.m_bEnableHDD = true;
 			type = CT_GenericHDD;
 		}
-		else if (card == LanguageCard::GetSnapshotCardName())
+		else if (card == LanguageCardSlot0::GetSnapshotCardName())
 		{
-			SetExpansionMemType(MEM_TYPE_LANGUAGECARD);
+			SetExpansionMemType(MEM_TYPE_LANGUAGECARD_SLOT0);
 			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, version);
 			type = CT_LanguageCard;
 		}
