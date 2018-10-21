@@ -203,7 +203,7 @@ static BOOL    modechanging = 0;				// An Optimisation: means delay calling Upda
 static BOOL    Pravets8charmode = 0;
 
 static CNoSlotClock g_NoSlotClock;
-static LanguageCardUnit* g_pLanguageCard;		// For all Apple II, //e and above
+static LanguageCardUnit* g_pLanguageCard = NULL;	// For all Apple II, //e and above
 
 #ifdef RAMWORKS
 static UINT		g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
@@ -316,9 +316,6 @@ UINT GetRamWorksActiveBank(void)
 void SetSaturnMemorySize(UINT banks)
 {
 	g_uSaturnBanksFromCmdLine = banks;
-
-	if (g_pLanguageCard)
-		g_pLanguageCard->SetMemorySize(banks);
 }
 
 //

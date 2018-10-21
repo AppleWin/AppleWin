@@ -338,8 +338,8 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT ve
 	// "State"
 	LoadLCState(yamlLoadHelper);
 
-	UINT numBanks     = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUM_SATURN_BANKS);
-	UINT activeBank   = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVE_SATURN_BANK);
+	UINT numBanks   = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUM_SATURN_BANKS);
+	UINT activeBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVE_SATURN_BANK);
 
 	if (numBanks < 1 || numBanks > kMaxSaturnBanks || activeBank >= numBanks)
 		throw std::string(SS_YAML_KEY_UNIT ": Bad Saturn card state");
