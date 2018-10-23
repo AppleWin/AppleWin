@@ -1462,14 +1462,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		if (uRamWorksExPages)
 		{
 			SetRamWorksMemorySize(uRamWorksExPages);
-			SetExpansionMemType(MEM_TYPE_RAMWORKS);
+			SetExpansionMemType(CT_RamWorksIII);
 			uRamWorksExPages = 0;	// Don't reapply after a restart
 		}
 #endif
 		if (uSaturnBanks)
 		{
 			SetSaturnMemorySize(uSaturnBanks);	// Set number of banks before constructing Saturn card
-			SetExpansionMemType(MEM_TYPE_SATURN);
+			SetExpansionMemType(CT_Saturn128K);
 			uSaturnBanks = 0;		// Don't reapply after a restart
 		}
 

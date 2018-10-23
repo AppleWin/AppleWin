@@ -1,7 +1,5 @@
 #pragma once
 
-enum MemoryType_e;
-
 //
 // Language Card (base unit) for Apple //e and above
 //
@@ -20,12 +18,12 @@ public:
 
 	BOOL GetLastRamWrite(void) { return m_uLastRamWrite; }
 	void SetLastRamWrite(BOOL count) { m_uLastRamWrite = count; }
-	MemoryType_e GetMemoryType(void) { return m_type; }
+	SS_CARDTYPE GetMemoryType(void) { return m_type; }
 
 	static const UINT kMemModeInitialState;
 
 protected:
-	MemoryType_e m_type;
+	SS_CARDTYPE m_type;
 
 private:
 	UINT m_uLastRamWrite;

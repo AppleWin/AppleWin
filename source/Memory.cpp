@@ -200,7 +200,6 @@ static LPBYTE g_pMemMainLanguageCard = NULL;
 
 static DWORD   memmode      = LanguageCardUnit::kMemModeInitialState;
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
-static BOOL    Pravets8charmode = 0;
 
 static CNoSlotClock g_NoSlotClock;
 static LanguageCardUnit* g_pLanguageCard = NULL;	// For all Apple II, //e and above
@@ -215,24 +214,31 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 
 //=============================================================================
 
-static MemoryType_e	g_MemTypeAppleIIPlus = MEM_TYPE_NATIVE;	// Keep a copy so it's not lost if machine type changes, eg: A][ -> A//e -> A][
-static MemoryType_e	g_MemTypeAppleIIe = MEM_TYPE_NATIVE;	// Keep a copy so it's not lost if machine type changes, eg: A//e -> A][ -> A//e
+static SS_CARDTYPE g_MemTypeAppleIIPlus = CT_LanguageCard;	// Keep a copy so it's not lost if machine type changes, eg: A][ -> A//e -> A][
+static SS_CARDTYPE g_MemTypeAppleIIe = CT_Extended80Col;	// Keep a copy so it's not lost if machine type changes, eg: A//e -> A][ -> A//e
 static UINT g_uSaturnBanksFromCmdLine = 0;
 
 // Called from MemLoadSnapshot()
 static void ResetDefaultMachineMemTypes(void)
 {
-	g_MemTypeAppleIIPlus = MEM_TYPE_NATIVE;
-	g_MemTypeAppleIIe = MEM_TYPE_NATIVE;
+	g_MemTypeAppleIIPlus = CT_LanguageCard;
+	g_MemTypeAppleIIe = CT_Extended80Col;
 }
 
-// Called from MemInitialize(), MemLoadSnapshot(), cmd-line switch
-void SetExpansionMemType(const MemoryType_e type)
+// Called from MemInitialize(), MemLoadSnapshot()
+void SetExpansionMemTypeDefault(void)
+{
+	SS_CARDTYPE defaultType = IsApple2PlusOrClone(GetApple2Type()) ? g_MemTypeAppleIIPlus : g_MemTypeAppleIIe;
+	SetExpansionMemType(defaultType);
+}
+
+// Called from SetExpansionMemTypeDefault(), MemLoadSnapshotAux(), SaveState.cpp_ParseSlots(), cmd-line switch
+void SetExpansionMemType(const SS_CARDTYPE type)
 {
 	SS_CARDTYPE newSlot0Card;
 	SS_CARDTYPE newSlotAuxCard;
 
-	// Set defaults for MEM_TYPE_NATIVE:
+	// Set defaults:
 	if (IsApple2PlusOrClone(GetApple2Type()))
 	{
 		newSlot0Card = CT_LanguageCard;
@@ -244,7 +250,7 @@ void SetExpansionMemType(const MemoryType_e type)
 		newSlotAuxCard = CT_Extended80Col;
 	}
 
-	if (type == MEM_TYPE_SATURN)
+	if (type == CT_Saturn128K)
 	{
 		g_MemTypeAppleIIPlus = type;
 		if (IsApple2PlusOrClone(GetApple2Type()))
@@ -252,7 +258,7 @@ void SetExpansionMemType(const MemoryType_e type)
 		else
 			newSlot0Card = CT_Empty;	// NB. No slot0 for //e
 	}
-	else if (type == MEM_TYPE_RAMWORKS)
+	else if (type == CT_RamWorksIII)
 	{
 		g_MemTypeAppleIIe = type;
 		if (IsApple2PlusOrClone(GetApple2Type()))
@@ -263,17 +269,13 @@ void SetExpansionMemType(const MemoryType_e type)
 
 	if (IsApple2PlusOrClone(GetApple2Type()))
 	{
-		if (!g_pLanguageCard ||		// NB. deleted after a VM restart
-			g_pLanguageCard->GetMemoryType() != type)
-		{
-			delete g_pLanguageCard;
-			g_pLanguageCard = NULL;
+		delete g_pLanguageCard;
+		g_pLanguageCard = NULL;
 
-			if (newSlot0Card == CT_Saturn128K)
-				g_pLanguageCard = new Saturn128K(g_uSaturnBanksFromCmdLine);
-			else // newSlot0Card == CT_LanguageCard
-				g_pLanguageCard = new LanguageCardSlot0;
-		}
+		if (newSlot0Card == CT_Saturn128K)
+			g_pLanguageCard = new Saturn128K(g_uSaturnBanksFromCmdLine);
+		else // newSlot0Card == CT_LanguageCard
+			g_pLanguageCard = new LanguageCardSlot0;
 	}
 	else
 	{
@@ -281,24 +283,18 @@ void SetExpansionMemType(const MemoryType_e type)
 		g_pLanguageCard = new LanguageCardUnit;
 	}
 
+	_ASSERT(g_pMemMainLanguageCard);
+
 	g_Slot0 = newSlot0Card;
 	g_SlotAux = newSlotAuxCard;
 }
 
-MemoryType_e GetCurrentExpansionMemType(void)
+SS_CARDTYPE GetCurrentExpansionMemType(void)
 {
-	if (g_Slot0 == CT_Saturn128K)
-	{
-		_ASSERT(IsApple2PlusOrClone(GetApple2Type()));
-		return MEM_TYPE_SATURN;
-	}
-	else if (g_SlotAux == CT_RamWorksIII)
-	{
-		_ASSERT(!IsApple2PlusOrClone(GetApple2Type()));
-		return MEM_TYPE_RAMWORKS;
-	}
-
-	return MEM_TYPE_NATIVE;
+	if (IsApple2PlusOrClone(GetApple2Type()))
+		return g_Slot0;
+	else
+		return g_SlotAux;
 }
 
 //
@@ -332,9 +328,12 @@ static void SetLastRamWrite(BOOL count)
 
 //
 
-void SetMemMainLanguageCard(LPBYTE ptr)
+void SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain /*=false*/)
 {
-	g_pMemMainLanguageCard = ptr;
+	if (bMemMain)
+		g_pMemMainLanguageCard = memmain+0xC000;
+	else
+		g_pMemMainLanguageCard = ptr;
 }
 
 LanguageCardUnit* GetLanguageCard(void)
@@ -1415,24 +1414,20 @@ void MemInitialize()
 	//
 
 	RWpages[0] = memaux;
-	g_pMemMainLanguageCard = memmain+0xC000;
 
-	if (IsApple2PlusOrClone(GetApple2Type()))
-		SetExpansionMemType(g_MemTypeAppleIIPlus);
-	else
-		SetExpansionMemType(g_MemTypeAppleIIe);
+	SetExpansionMemTypeDefault();
 
 #ifdef RAMWORKS
-	if (GetCurrentExpansionMemType() == MEM_TYPE_RAMWORKS)
+	if (GetCurrentExpansionMemType() == CT_RamWorksIII)
 	{
 		// allocate memory for RAMWorks III - up to 8MB
-		_ASSERT(!IsApple2PlusOrClone(GetApple2Type()));
-
 		g_uActiveBank = 0;
 
 		UINT i = 1;
 		while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) VirtualAlloc(NULL, _6502_MEM_END+1, MEM_COMMIT, PAGE_READWRITE)))
 			i++;
+		while (i < kMaxExMemoryBanks)
+			RWpages[i++] = NULL;
 	}
 #endif
 
@@ -1897,7 +1892,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 		}
 	}
 
-	if (GetCurrentExpansionMemType() != MEM_TYPE_SATURN)	// TODO: Not sure this optimisation is valid for Saturn, so skip it for now
+	if (GetCurrentExpansionMemType() != CT_Saturn128K)	// TODO: Not sure this optimisation is valid for Saturn, so skip it for now
 	{
 		// IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
 		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
@@ -2116,8 +2111,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	//
 
 	ResetDefaultMachineMemTypes();
-	SetExpansionMemType(MEM_TYPE_NATIVE);
-	g_pMemMainLanguageCard = memmain+0xC000;
+	SetExpansionMemTypeDefault();
 
 	modechanging = 0;
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
@@ -2215,7 +2209,7 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 		yamlLoadHelper.PopMap();
 	}
 
-	SetExpansionMemType(MEM_TYPE_RAMWORKS);
+	SetExpansionMemType(CT_RamWorksIII);
 
 	memaux = RWpages[g_uActiveBank];
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()

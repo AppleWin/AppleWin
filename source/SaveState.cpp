@@ -418,15 +418,15 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 		}
 		else if (card == LanguageCardSlot0::GetSnapshotCardName())
 		{
-			SetExpansionMemType(MEM_TYPE_LANGUAGECARD_SLOT0);
-			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, version);
 			type = CT_LanguageCard;
+			SetExpansionMemType(type);
+			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, version);
 		}
 		else if (card == Saturn128K::GetSnapshotCardName())
 		{
-			SetExpansionMemType(MEM_TYPE_SATURN);
-			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, version);
 			type = CT_Saturn128K;
+			SetExpansionMemType(type);
+			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, version);
 		}
 		else
 		{

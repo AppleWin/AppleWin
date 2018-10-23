@@ -72,6 +72,7 @@ enum SS_CARDTYPE
 	CT_RamWorksIII,		// RamWorksIII (up to 8MB)
 	CT_Uthernet,
 	CT_LanguageCard,	// Apple][ or ][+ in slot-0
+	CT_LanguageCardIIe,	// Apple//e LC instance (not a card)
 	CT_Saturn128K,		// Saturn 128K (but may be populated with less RAM, in multiples of 16K)
 };
 

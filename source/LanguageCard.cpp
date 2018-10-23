@@ -39,8 +39,9 @@ const UINT LanguageCardUnit::kMemModeInitialState = MF_BANK2 | MF_WRITERAM;	// !
 
 LanguageCardUnit::LanguageCardUnit(void) :
 	m_uLastRamWrite(0),
-	m_type(MEM_TYPE_LANGUAGECARD_IIE)
+	m_type(CT_LanguageCardIIe)
 {
+	SetMemMainLanguageCard(NULL, true);
 }
 
 DWORD LanguageCardUnit::SetPaging(WORD address, DWORD memmode, BOOL& modechanging, bool write)
@@ -74,7 +75,7 @@ DWORD LanguageCardUnit::SetPaging(WORD address, DWORD memmode, BOOL& modechangin
 
 LanguageCardSlot0::LanguageCardSlot0(void)
 {
-	m_type = MEM_TYPE_LANGUAGECARD_SLOT0;
+	m_type = CT_LanguageCard;
 	m_pMemory = (LPBYTE) VirtualAlloc(NULL, kMemBankSize, MEM_COMMIT, PAGE_READWRITE);
 	SetMemMainLanguageCard(m_pMemory);
 }
@@ -166,11 +167,6 @@ bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, 
 
 	yamlLoadHelper.PopMap();
 
-	//
-
-	SetExpansionMemType(MEM_TYPE_LANGUAGECARD_SLOT0);
-	SetMemMainLanguageCard(m_pMemory);
-
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
 
 	return true;
@@ -180,7 +176,7 @@ bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, 
 
 Saturn128K::Saturn128K(UINT banks)
 {
-	m_type = MEM_TYPE_SATURN;
+	m_type = CT_Saturn128K;
 	m_uSaturnTotalBanks = (banks == 0) ? kMaxSaturnBanks : banks;
 	m_uSaturnActiveBank = 0;
 
@@ -372,7 +368,6 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT ve
 		yamlLoadHelper.PopMap();
 	}
 
-	SetExpansionMemType(MEM_TYPE_SATURN);
 	SetMemMainLanguageCard( m_aSaturnBanks[ m_uSaturnActiveBank ] );
 
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()

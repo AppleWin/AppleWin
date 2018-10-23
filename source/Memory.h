@@ -41,16 +41,6 @@ enum MemoryInitPattern_e
 	, NUM_MIP
 };
 
-enum MemoryType_e
-{
-	MEM_TYPE_NATIVE,
-	MEM_TYPE_RAMWORKS,
-	MEM_TYPE_LANGUAGECARD_SLOT0,
-	MEM_TYPE_LANGUAGECARD_IIE,
-	MEM_TYPE_SATURN,
-	NUM_MEM_TYPE
-};
-
 typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nExecutedCycles);
 
 extern iofunction IORead[256];
@@ -99,11 +89,12 @@ BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value
 
 BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
-void	SetExpansionMemType(MemoryType_e type);
-MemoryType_e GetCurrentExpansionMemType(void);
+enum SS_CARDTYPE;
+void	SetExpansionMemType(const SS_CARDTYPE type);
+SS_CARDTYPE GetCurrentExpansionMemType(void);
 
 void	SetRamWorksMemorySize(UINT pages);
 UINT	GetRamWorksActiveBank(void);
 void	SetSaturnMemorySize(UINT banks);
-void	SetMemMainLanguageCard(LPBYTE ptr);
+void	SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain=false);
 class LanguageCardUnit* GetLanguageCard(void);
