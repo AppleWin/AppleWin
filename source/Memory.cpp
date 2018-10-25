@@ -2074,6 +2074,12 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	if (!yamlLoadHelper.GetSubMap(MemGetSnapshotStructName()))
 		return false;
 
+	// Create default LC type for AppleII machine (do prior to loading saved LC state)
+	ResetDefaultMachineMemTypes();
+	SetExpansionMemTypeDefault();
+
+	//
+
 	IO_SELECT = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT);
 	INTC8ROM = yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT_INT) ? true : false;
 	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.LoadUint(SS_YAML_KEY_EXPANSIONROMTYPE);
@@ -2109,9 +2115,6 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	yamlLoadHelper.PopMap();
 
 	//
-
-	ResetDefaultMachineMemTypes();
-	SetExpansionMemTypeDefault();
 
 	modechanging = 0;
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
@@ -2159,25 +2162,30 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 	UINT numAuxBanks   = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUMAUXBANKS);
 	UINT activeAuxBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVEAUXBANK);
 
+	SS_CARDTYPE type = CT_Empty;
 	std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
 	if (card == SS_YAML_VALUE_CARD_80COL)
 	{
+		type = CT_80Col;
 		if (numAuxBanks != 0 || activeAuxBank != 0)
 			throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
 	}
 	else if (card == SS_YAML_VALUE_CARD_EXTENDED80COL)
 	{
+		type = CT_Extended80Col;
 		if (numAuxBanks != 1 || activeAuxBank != 0)
 			throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
 	}
 	else if (card == SS_YAML_VALUE_CARD_RAMWORKSIII)
 	{
+		type = CT_RamWorksIII;
 		if (numAuxBanks < 2 || numAuxBanks > 0x7F || (activeAuxBank+1) > numAuxBanks)
 			throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
 	}
 	else
 	{
 		// todo: support empty slot
+		type = CT_Empty;
 		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Unknown card: " + card);
 	}
 
@@ -2209,7 +2217,8 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 		yamlLoadHelper.PopMap();
 	}
 
-	SetExpansionMemType(CT_RamWorksIII);
+	g_Slot0 = CT_Empty;
+	g_SlotAux = type;
 
 	memaux = RWpages[g_uActiveBank];
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
