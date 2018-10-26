@@ -76,6 +76,9 @@
     <ClCompile Include="source\Keyboard.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\LanguageCard.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
     <ClCompile Include="source\Log.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
@@ -310,6 +313,9 @@
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\Keyboard.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\LanguageCard.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\Log.h">

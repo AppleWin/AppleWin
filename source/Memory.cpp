@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Harddisk.h"
 #include "Joystick.h"
 #include "Keyboard.h"
+#include "LanguageCard.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
@@ -180,8 +181,6 @@ iofunction		IORead[256];
 iofunction		IOWrite[256];
 static LPVOID	SlotParameters[NUM_SLOTS];
 
-static BOOL    g_bLastWriteRam = 0;
-
 LPBYTE         mem          = NULL;
 
 //
@@ -197,28 +196,150 @@ static LPBYTE  memimage     = NULL;
 static LPBYTE	pCxRomInternal		= NULL;
 static LPBYTE	pCxRomPeripheral	= NULL;
 
-static const DWORD kMemModeInitialState = MF_BANK2 | MF_WRITERAM;	// !INTCXROM
-static DWORD   memmode      = kMemModeInitialState;
+static LPBYTE g_pMemMainLanguageCard = NULL;
+
+static DWORD   memmode      = LanguageCardUnit::kMemModeInitialState;
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
-static BOOL    Pravets8charmode = 0;
 
 static CNoSlotClock g_NoSlotClock;
+static LanguageCardUnit* g_pLanguageCard = NULL;	// For all Apple II, //e and above
 
 #ifdef RAMWORKS
-UINT			g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
-UINT			g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c -- ALSO RAMWORKS
+static UINT		g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
+static UINT		g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c -- ALSO RAMWORKS
 static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
 
-#ifdef SATURN
-UINT			g_uSaturnTotalBanks = 0;		// Will be > 0 if Saturn card is "installed"
-UINT			g_uSaturnActiveBank = 0;		// Saturn 128K Language Card Bank 0 .. 7
-static LPBYTE	g_aSaturnPages[8];
-#endif // SATURN
-
-MemoryType_e	g_eMemType = MEM_TYPE_NATIVE;		// 0 = Native memory, 1=RAMWORKS, 2 = SATURN
-
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
+
+//=============================================================================
+
+static SS_CARDTYPE g_MemTypeAppleIIPlus = CT_LanguageCard;	// Keep a copy so it's not lost if machine type changes, eg: A][ -> A//e -> A][
+static SS_CARDTYPE g_MemTypeAppleIIe = CT_Extended80Col;	// Keep a copy so it's not lost if machine type changes, eg: A//e -> A][ -> A//e
+static UINT g_uSaturnBanksFromCmdLine = 0;
+
+// Called from MemLoadSnapshot()
+static void ResetDefaultMachineMemTypes(void)
+{
+	g_MemTypeAppleIIPlus = CT_LanguageCard;
+	g_MemTypeAppleIIe = CT_Extended80Col;
+}
+
+// Called from MemInitialize(), MemLoadSnapshot()
+void SetExpansionMemTypeDefault(void)
+{
+	SS_CARDTYPE defaultType = IsApple2PlusOrClone(GetApple2Type()) ? g_MemTypeAppleIIPlus : g_MemTypeAppleIIe;
+	SetExpansionMemType(defaultType);
+}
+
+// Called from SetExpansionMemTypeDefault(), MemLoadSnapshotAux(), SaveState.cpp_ParseSlots(), cmd-line switch
+void SetExpansionMemType(const SS_CARDTYPE type)
+{
+	SS_CARDTYPE newSlot0Card;
+	SS_CARDTYPE newSlotAuxCard;
+
+	// Set defaults:
+	if (IsApple2PlusOrClone(GetApple2Type()))
+	{
+		newSlot0Card = CT_LanguageCard;
+		newSlotAuxCard = CT_Empty;
+	}
+	else	// Apple //e or above
+	{
+		newSlot0Card = CT_Empty;		// NB. No slot0 for //e
+		newSlotAuxCard = CT_Extended80Col;
+	}
+
+	if (type == CT_Saturn128K)
+	{
+		g_MemTypeAppleIIPlus = type;
+		if (IsApple2PlusOrClone(GetApple2Type()))
+			newSlot0Card = CT_Saturn128K;
+		else
+			newSlot0Card = CT_Empty;	// NB. No slot0 for //e
+	}
+	else if (type == CT_RamWorksIII)
+	{
+		g_MemTypeAppleIIe = type;
+		if (IsApple2PlusOrClone(GetApple2Type()))
+			newSlotAuxCard = CT_Empty;	// NB. No aux slot for ][ or ][+
+		else
+			newSlotAuxCard = CT_RamWorksIII;
+	}
+
+	if (IsApple2PlusOrClone(GetApple2Type()))
+	{
+		delete g_pLanguageCard;
+		g_pLanguageCard = NULL;
+
+		if (newSlot0Card == CT_Saturn128K)
+			g_pLanguageCard = new Saturn128K(g_uSaturnBanksFromCmdLine);
+		else // newSlot0Card == CT_LanguageCard
+			g_pLanguageCard = new LanguageCardSlot0;
+	}
+	else
+	{
+		delete g_pLanguageCard;
+		g_pLanguageCard = new LanguageCardUnit;
+	}
+
+	_ASSERT(g_pMemMainLanguageCard);
+
+	g_Slot0 = newSlot0Card;
+	g_SlotAux = newSlotAuxCard;
+}
+
+SS_CARDTYPE GetCurrentExpansionMemType(void)
+{
+	if (IsApple2PlusOrClone(GetApple2Type()))
+		return g_Slot0;
+	else
+		return g_SlotAux;
+}
+
+//
+
+void SetRamWorksMemorySize(UINT pages)
+{
+	g_uMaxExPages = pages;
+}
+
+UINT GetRamWorksActiveBank(void)
+{
+	return g_uActiveBank;
+}
+
+void SetSaturnMemorySize(UINT banks)
+{
+	g_uSaturnBanksFromCmdLine = banks;
+}
+
+//
+
+static BOOL GetLastRamWrite(void)
+{
+	return g_pLanguageCard->GetLastRamWrite();
+}
+
+static void SetLastRamWrite(BOOL count)
+{
+	g_pLanguageCard->SetLastRamWrite(count);
+}
+
+//
+
+void SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain /*=false*/)
+{
+	if (bMemMain)
+		g_pMemMainLanguageCard = memmain+0xC000;
+	else
+		g_pMemMainLanguageCard = ptr;
+}
+
+LanguageCardUnit* GetLanguageCard(void)
+{
+	return g_pLanguageCard;
+}
 
 //=============================================================================
 
@@ -837,7 +958,7 @@ DWORD GetMemMode(void)
 	return memmode;
 }
 
-static void SetMemMode(const DWORD uNewMemMode)
+void SetMemMode(DWORD uNewMemMode)
 {
 #if defined(_DEBUG) && 0
 	static DWORD dwOldDiff = 0;
@@ -881,8 +1002,8 @@ void MemResetPaging()
 
 static void ResetPaging(BOOL initialize)
 {
-	g_bLastWriteRam = 0;
-	SetMemMode(kMemModeInitialState);
+	SetLastRamWrite(0);
+	SetMemMode(LanguageCardUnit::kMemModeInitialState);
 	UpdatePaging(initialize);
 }
 
@@ -949,24 +1070,24 @@ static void UpdatePaging(BOOL initialize)
 	{
 		int bankoffset = (SW_BANK2 ? 0 : 0x1000);
 		memshadow[loop] = SW_HIGHRAM ? SW_ALTZP	? memaux+(loop << 8)-bankoffset
-												: memmain+(loop << 8)-bankoffset
-									: memrom+((loop-0xD0) * 0x100);
+												: g_pMemMainLanguageCard+((loop-0xC0)<<8)-bankoffset
+									 : memrom+((loop-0xD0) * 0x100);
 
 		memwrite[loop]  = SW_WRITERAM	? SW_HIGHRAM	? mem+(loop << 8)
 														: SW_ALTZP	? memaux+(loop << 8)-bankoffset
-																	: memmain+(loop << 8)-bankoffset
+																	: g_pMemMainLanguageCard+((loop-0xC0)<<8)-bankoffset
 										: NULL;
 	}
 
 	for (loop = 0xE0; loop < 0x100; loop++)
 	{
 		memshadow[loop] = SW_HIGHRAM	? SW_ALTZP	? memaux+(loop << 8)
-													: memmain+(loop << 8)
+													: g_pMemMainLanguageCard+((loop-0xC0)<<8)
 										: memrom+((loop-0xD0) * 0x100);
 
 		memwrite[loop]  = SW_WRITERAM	? SW_HIGHRAM	? mem+(loop << 8)
 														: SW_ALTZP	? memaux+(loop << 8)
-																	: memmain+(loop << 8)
+																	: g_pMemMainLanguageCard+((loop-0xC0)<<8)
 										: NULL;
 	}
 
@@ -1043,6 +1164,9 @@ void MemDestroy()
 	RWpages[0]=NULL;
 #endif
 
+	delete g_pLanguageCard;
+	g_pLanguageCard = NULL;
+
 	memaux   = NULL;
 	memmain  = NULL;
 	memdirty = NULL;
@@ -1053,6 +1177,8 @@ void MemDestroy()
 	pCxRomPeripheral	= NULL;
 
 	mem      = NULL;
+
+	g_pMemMainLanguageCard = NULL;
 
 	ZeroMemory(memwrite, sizeof(memwrite));
 	ZeroMemory(memshadow,sizeof(memshadow));
@@ -1285,20 +1411,27 @@ void MemInitialize()
 	// this happens when running under valgrind
 	memimage = (LPBYTE)newloc;
 
-#ifdef RAMWORKS
-	// allocate memory for RAMWorks III - up to 8MB
-	g_uActiveBank = 0;
-	RWpages[g_uActiveBank] = memaux;
+	//
 
-	UINT i = 1;
-	while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE)))
-		i++;
+	RWpages[0] = memaux;
+
+	SetExpansionMemTypeDefault();
+
+#ifdef RAMWORKS
+	if (GetCurrentExpansionMemType() == CT_RamWorksIII)
+	{
+		// allocate memory for RAMWorks III - up to 8MB
+		g_uActiveBank = 0;
+
+		UINT i = 1;
+		while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) VirtualAlloc(NULL, _6502_MEM_END+1, MEM_COMMIT, PAGE_READWRITE)))
+			i++;
+		while (i < kMaxExMemoryBanks)
+			RWpages[i++] = NULL;
+	}
 #endif
 
-#ifdef SATURN
-	for( UINT iPage = 0; iPage < g_uSaturnTotalBanks; iPage++ )
-		g_aSaturnPages[ iPage ] = (LPBYTE) VirtualAlloc( NULL, 1024 * 16,MEM_COMMIT,PAGE_READWRITE); // Saturn Pages are 16K / bank, Max 8 Banks/Card
-#endif // SATURN
+	//
 
 	MemInitializeROM();
 	MemInitializeCustomF8ROM();
@@ -1723,69 +1856,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	// DETERMINE THE NEW MEMORY PAGING MODE.
 	if ((address >= 0x80) && (address <= 0x8F))
 	{
-		SetMemMode(memmode & ~(MF_BANK2 | MF_HIGHRAM));
-
-#ifdef SATURN
-/*
-		Bin   Addr.
-		      $C0N0 4K Bank A, RAM read, Write protect
-		      $C0N1 4K Bank A, ROM read, Write enabled
-		      $C0N2 4K Bank A, ROM read, Write protect
-		      $C0N3 4K Bank A, RAM read, Write enabled
-		0100  $C0N4 select 16K Bank 1
-		0101  $C0N5 select 16K Bank 2
-		0110  $C0N6 select 16K Bank 3
-		0111  $C0N7 select 16K Bank 4
-		      $C0N8 4K Bank B, RAM read, Write protect
-		      $C0N9 4K Bank B, ROM read, Write enabled
-		      $C0NA 4K Bank B, ROM read, Write protect
-		      $C0NB 4K Bank B, RAM read, Write enabled
-		1100  $C0NC select 16K Bank 5
-		1101  $C0ND select 16K Bank 6
-		1110  $C0NE select 16K Bank 7
-		1111  $C0NF select 16K Bank 8
-*/
-		if (g_uSaturnTotalBanks)
-		{
-			if ((address & 7) > 3)
-			{
-				g_uSaturnActiveBank = 0 // Saturn 128K Language Card Bank 0 .. 7
-					| (address >> 1) & 4
-					| (address >> 0) & 3
-					;
-
-				// TODO: Update paging()
-
-				goto _done_saturn;
-			}
-
-			// Fall into 16K IO switches
-		}
-
-#endif // SATURN
-		{
-			// Apple 16K Language Card
-			if (!(address & 8))
-				SetMemMode(memmode | MF_BANK2);
-
-			// C081    C089    Read ROM,     Write enable
-			// C082    C08A    Read ROM,     Write protect
-			if (((address & 2) >> 1) == (address & 1))
-				SetMemMode(memmode | MF_HIGHRAM);
-
-			if (address & 1)	// GH#392
-			{
-				if (!write && g_bLastWriteRam)
-				{
-					SetMemMode(memmode | MF_WRITERAM); // UTAIIe:5-23
-				}
-			}
-			else
-			{
-				SetMemMode(memmode & ~(MF_WRITERAM)); // UTAIIe:5-23
-			}
-		}
-		g_bLastWriteRam = (address & 1) && (!write); // UTAIIe:5-23
+		SetMemMode( g_pLanguageCard->SetPaging(address, memmode, modechanging, write ? true : false) );
 	}
 	else if (!IS_APPLE2)
 	{
@@ -1814,33 +1885,32 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 				{
 					g_uActiveBank = value;
 					memaux = RWpages[g_uActiveBank];
-					UpdatePaging(0);	// Initialize=0
+					UpdatePaging(FALSE);	// Initialize=FALSE
 				}
 				break;
 #endif
 		}
 	}
 
-#ifdef SATURN
-_done_saturn:
-#endif // SATURN
-
-	// IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
-	// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
-	// IT DOES SO.
-	//
-	// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
-	// - although any data-race is probably a bug in the 6502 code too.
-	if ((address >= 4) && (address <= 5) &&
-		((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
-			modechanging = 1;
-			return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
-	}
-	if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&
-		(((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||
-		 ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))) {
-			modechanging = 1;
-			return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
+	if (GetCurrentExpansionMemType() != CT_Saturn128K)	// TODO: Not sure this optimisation is valid for Saturn, so skip it for now
+	{
+		// IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
+		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
+		// IT DOES SO.
+		//
+		// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
+		// - although any data-race is probably a bug in the 6502 code too.
+		if ((address >= 4) && (address <= 5) &&
+			((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
+				modechanging = 1;
+				return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
+		}
+		if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&
+			(((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||
+			 ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))) {
+				modechanging = 1;
+				return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
+		}
 	}
 
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
@@ -1903,7 +1973,7 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE* const pMemMain, const BYTE* const pMemAux)
 {
 	SetMemMode(MemMode ^ MF_INTCXROM);	// Convert from SLOTCXROM to INTCXROM
-	g_bLastWriteRam = LastWriteRam;
+	SetLastRamWrite(LastWriteRam);
 
 	memcpy(memmain, pMemMain, nMemMainSize);
 	memcpy(memaux, pMemAux, nMemAuxSize);
@@ -1918,14 +1988,16 @@ void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE*
 
 //
 
-#define UNIT_AUXSLOT_VER 1
-
 #define SS_YAML_KEY_MEMORYMODE "Memory Mode"
 #define SS_YAML_KEY_LASTRAMWRITE "Last RAM Write"
 #define SS_YAML_KEY_IOSELECT "IO_SELECT"
 #define SS_YAML_KEY_IOSELECT_INT "IO_SELECT_InternalROM"	// INTC8ROM
 #define SS_YAML_KEY_EXPANSIONROMTYPE "Expansion ROM Type"
 #define SS_YAML_KEY_PERIPHERALROMSLOT "Peripheral ROM Slot"
+
+//
+
+static const UINT kUNIT_AUXSLOT_VER = 1;
 
 #define SS_YAML_VALUE_CARD_80COL "80 Column"
 #define SS_YAML_VALUE_CARD_EXTENDED80COL "Extended 80 Column"
@@ -1958,19 +2030,19 @@ static std::string MemGetSnapshotAuxMemStructName(void)
 	return name;
 }
 
-static void MemSaveSnapshotMemory(YamlSaveHelper& yamlSaveHelper, bool bIsMainMem, UINT bank=0)
+static void MemSaveSnapshotMemory(YamlSaveHelper& yamlSaveHelper, bool bIsMainMem, UINT bank=0, UINT size=64*1024)
 {
 	LPBYTE pMemBase = MemGetBankPtr(bank);
 
 	if (bIsMainMem)
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotMainMemStructName().c_str());
-		yamlSaveHelper.SaveMemory(pMemBase, 64*1024);
+		yamlSaveHelper.SaveMemory(pMemBase, size);
 	}
 	else
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s%02X:\n", MemGetSnapshotAuxMemStructName().c_str(), bank-1);
-		yamlSaveHelper.SaveMemory(pMemBase, 64*1024);
+		yamlSaveHelper.SaveMemory(pMemBase, size);
 	}
 }
 
@@ -1979,28 +2051,55 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	// Scope so that "Memory" & "Main Memory" are at same indent level
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotStructName().c_str());
-		yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, memmode ^ MF_INTCXROM);	// Convert from INTCXROM to SLOTCXROM
-		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, g_bLastWriteRam ? 1 : 0);
+		DWORD saveMemMode = memmode;
+		if (IsApple2PlusOrClone(GetApple2Type()))
+			saveMemMode &= ~MF_LANGCARD_MASK;		// For II,II+: clear LC bits - set later by slot-0 LC or Saturn
+		yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, saveMemMode);
+		if (!IsApple2PlusOrClone(GetApple2Type()))	// NB. This is set later for II,II+ by slot-0 LC or Saturn
+			yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite() ? 1 : 0);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT, IO_SELECT);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, INTC8ROM ? 1 : 0);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_PERIPHERALROMSLOT, g_uPeripheralRomSlot);
 	}
 
-	MemSaveSnapshotMemory(yamlSaveHelper, true);
+	if (IsApple2PlusOrClone(GetApple2Type()))
+		MemSaveSnapshotMemory(yamlSaveHelper, true, 0, 48*1024);	// NB. Language Card/Saturn provides the remaining 16K (or multiple) bank(s)
+	else
+		MemSaveSnapshotMemory(yamlSaveHelper, true);
 }
 
-bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (!yamlLoadHelper.GetSubMap(MemGetSnapshotStructName()))
 		return false;
 
-	SetMemMode( yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) ^ MF_INTCXROM );	// Convert from SLOTCXROM to INTCXROM
-	g_bLastWriteRam = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
+	// Create default LC type for AppleII machine (do prior to loading saved LC state)
+	ResetDefaultMachineMemTypes();
+	SetExpansionMemTypeDefault();
+
+	//
+
 	IO_SELECT = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT);
 	INTC8ROM = yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT_INT) ? true : false;
 	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.LoadUint(SS_YAML_KEY_EXPANSIONROMTYPE);
 	g_uPeripheralRomSlot = yamlLoadHelper.LoadUint(SS_YAML_KEY_PERIPHERALROMSLOT);
+
+	if (version == 1)
+	{
+		SetMemMode( yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) ^ MF_INTCXROM );	// Convert from SLOTCXROM to INTCXROM
+		SetLastRamWrite( yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE );
+	}
+	else
+	{
+		UINT uMemMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE);
+		if (IsApple2PlusOrClone(GetApple2Type()))
+			uMemMode &= ~MF_LANGCARD_MASK;	// For II,II+: clear LC bits - set later by slot-0 LC or Saturn
+		SetMemMode(uMemMode);
+
+		if (!IsApple2PlusOrClone(GetApple2Type()))
+			SetLastRamWrite( yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE );	// NB. This is set later for II,II+ by slot-0 LC or Saturn
+	}
 
 	yamlLoadHelper.PopMap();
 
@@ -2009,7 +2108,9 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap( MemGetSnapshotMainMemStructName() ))
 		throw std::string("Card: Expected key: ") + MemGetSnapshotMainMemStructName();
 
+	memset(memmain, 0, _6502_MEM_END+1);	// Clear it, as high 16K may not be in the save-state (eg. the case of Saturn replacing LC)
 	yamlLoadHelper.LoadMemory(memmain, _6502_MEM_END+1);
+	memcpy(g_pMemMainLanguageCard, memmain+0xC000, LanguageCardSlot0::kMemBankSize);
 	memset(memdirty, 0, 0x100);
 
 	yamlLoadHelper.PopMap();
@@ -2024,6 +2125,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	return true;
 }
 
+// TODO: Switch from checking 'g_uMaxExPages == n' to using g_SlotAux
 void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 {
 	if (IS_APPLE2)
@@ -2036,7 +2138,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 		_ASSERT(g_uMaxExPages == 1);
 	}
 
-	yamlSaveHelper.UnitHdr(MemGetSnapshotUnitAuxSlotName(), UNIT_AUXSLOT_VER);
+	yamlSaveHelper.UnitHdr(MemGetSnapshotUnitAuxSlotName(), kUNIT_AUXSLOT_VER);
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
 	std::string card = 	g_uMaxExPages == 0 ?	SS_YAML_VALUE_CARD_80COL :			// todo: support empty slot
@@ -2054,32 +2156,37 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 
 bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (version != UNIT_AUXSLOT_VER)
+	if (version != kUNIT_AUXSLOT_VER)
 		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Version mismatch");
 
 	// "State"
 	UINT numAuxBanks   = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUMAUXBANKS);
 	UINT activeAuxBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVEAUXBANK);
 
+	SS_CARDTYPE type = CT_Empty;
 	std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
 	if (card == SS_YAML_VALUE_CARD_80COL)
 	{
+		type = CT_80Col;
 		if (numAuxBanks != 0 || activeAuxBank != 0)
 			throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
 	}
 	else if (card == SS_YAML_VALUE_CARD_EXTENDED80COL)
 	{
+		type = CT_Extended80Col;
 		if (numAuxBanks != 1 || activeAuxBank != 0)
 			throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
 	}
 	else if (card == SS_YAML_VALUE_CARD_RAMWORKSIII)
 	{
+		type = CT_RamWorksIII;
 		if (numAuxBanks < 2 || numAuxBanks > 0x7F || (activeAuxBank+1) > numAuxBanks)
 			throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
 	}
 	else
 	{
 		// todo: support empty slot
+		type = CT_Empty;
 		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Unknown card: " + card);
 	}
 
@@ -2093,7 +2200,7 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 		LPBYTE pBank = MemGetBankPtr(uBank);
 		if (!pBank)
 		{
-			pBank = RWpages[uBank-1] = (LPBYTE) VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
+			pBank = RWpages[uBank-1] = (LPBYTE) VirtualAlloc(NULL, _6502_MEM_END+1, MEM_COMMIT, PAGE_READWRITE);
 			if (!pBank)
 				throw std::string("Card: mem alloc failed");
 		}
@@ -2110,6 +2217,9 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 		yamlLoadHelper.PopMap();
 	}
+
+	g_Slot0 = CT_Empty;
+	g_SlotAux = type;
 
 	memaux = RWpages[g_uActiveBank];
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
