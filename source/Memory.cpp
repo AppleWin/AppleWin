@@ -2110,6 +2110,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	memset(memmain, 0, _6502_MEM_END+1);	// Clear it, as high 16K may not be in the save-state (eg. the case of Saturn replacing LC)
 	yamlLoadHelper.LoadMemory(memmain, _6502_MEM_END+1);
+	memcpy(g_pMemMainLanguageCard, memmain+0xC000, LanguageCardSlot0::kMemBankSize);
 	memset(memdirty, 0, 0x100);
 
 	yamlLoadHelper.PopMap();
