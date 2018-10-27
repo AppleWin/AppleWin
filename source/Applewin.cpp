@@ -1264,19 +1264,16 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				uRamWorksExPages = 1;
 		}
 #endif
-		else if (strcmp(lpCmdLine, "-saturn") == 0)		// 64 = Saturn 64K (4 banks), 128 = Saturn 128K (8 banks)
+		else if (strcmp(lpCmdLine, "-s0") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
 			// "The boards consist of 16K banks of memory (4 banks for the 64K board, 8 banks for the 128K), accessed one at a time" - Ref: "64K/128K RAM BOARD", Saturn Systems, Ch.1 Introduction(pg-5)
-			uSaturnBanks = atoi(lpCmdLine) / 16;			// number of 16K Banks [1..8]
-			if (uSaturnBanks > Saturn128K::kMaxSaturnBanks)
+			if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)
 				uSaturnBanks = Saturn128K::kMaxSaturnBanks;
-			else
-			if (uSaturnBanks < 1)
-				uSaturnBanks = 1;
-
+			else if (strcmp(lpCmdLine, "saturn64") == 0)
+				uSaturnBanks = Saturn128K::kMaxSaturnBanks/2;
 		}
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
 		{
