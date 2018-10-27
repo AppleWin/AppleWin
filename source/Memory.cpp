@@ -2108,9 +2108,15 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	if (!yamlLoadHelper.GetSubMap( MemGetSnapshotMainMemStructName() ))
 		throw std::string("Card: Expected key: ") + MemGetSnapshotMainMemStructName();
 
-	memset(memmain, 0, _6502_MEM_END+1);	// Clear it, as high 16K may not be in the save-state (eg. the case of Saturn replacing LC)
+	memset(memmain+0xC000, 0, LanguageCardSlot0::kMemBankSize);	// Clear it, as high 16K may not be in the save-state's "Main Memory" (eg. the case of II+ Saturn replacing //e LC)
+
 	yamlLoadHelper.LoadMemory(memmain, _6502_MEM_END+1);
-	memcpy(g_pMemMainLanguageCard, memmain+0xC000, LanguageCardSlot0::kMemBankSize);
+	if (version == 1 && IsApple2PlusOrClone(GetApple2Type()))
+	{
+		// v1 for II/II+ doesn't have a dedicated slot-0 LC, instead the 16K is stored as the top 16K of memmain
+		memcpy(g_pMemMainLanguageCard, memmain+0xC000, LanguageCardSlot0::kMemBankSize);
+		memset(memmain+0xC000, 0, LanguageCardSlot0::kMemBankSize);
+	}
 	memset(memdirty, 0, 0x100);
 
 	yamlLoadHelper.PopMap();
