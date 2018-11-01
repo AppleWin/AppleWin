@@ -335,7 +335,7 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	m_ConfigNew.m_CpuType = GetMainCpu();
 
 	JoyLoadSnapshot(yamlLoadHelper);
-	KeybLoadSnapshot(yamlLoadHelper);
+	KeybLoadSnapshot(yamlLoadHelper, version);
 	SpkrLoadSnapshot(yamlLoadHelper);
 	VideoLoadSnapshot(yamlLoadHelper);
 	MemLoadSnapshot(yamlLoadHelper, version);
