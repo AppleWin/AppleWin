@@ -22,6 +22,7 @@ add_library(appleii SHARED
   z80emu.cpp
   ParallelPrinter.cpp
   MouseInterface.cpp
+  LanguageCard.cpp
 
   linux/data.cpp
   linux/dummies.cpp

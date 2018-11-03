@@ -25,8 +25,11 @@ eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.cpp MemReset()
 DWORD       g_dwCyclesThisFrame = 0;
 bool      g_bFullSpeed      = false;
+
+SS_CARDTYPE	g_Slot0 = CT_LanguageCard;
 SS_CARDTYPE	g_Slot4 = CT_Empty;
 SS_CARDTYPE	g_Slot5 = CT_Empty;
+SS_CARDTYPE	g_SlotAux = CT_Extended80Col;
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin executable resides

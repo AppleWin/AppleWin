@@ -7,7 +7,7 @@
 #include "Video.h"
 
 void VideoReinitialize() { }
-void KeybLoadSnapshot(YamlLoadHelper&) { }
+void KeybLoadSnapshot(YamlLoadHelper&, unsigned int) { }
 std::string GetSnapshotCardName() { return ""; }
 void SpkrLoadSnapshot(YamlLoadHelper&) { }
 void KeybReset() { }

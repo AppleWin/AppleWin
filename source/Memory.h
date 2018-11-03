@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SaveState_Structs_common.h"
+
 // Memory Flag
 #define  MF_80STORE    0x00000001
 #define  MF_ALTZP      0x00000002
@@ -51,8 +53,8 @@ extern LPBYTE     memdirty;
 
 #ifdef RAMWORKS
 const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB
-extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)
-extern UINT       g_uActiveBank;
+//extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)
+//extern UINT       g_uActiveBank;
 #endif
 
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
