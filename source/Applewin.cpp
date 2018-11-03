@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Frame.h"
 #include "Harddisk.h"
 #include "Joystick.h"
+#include "LanguageCard.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
@@ -102,8 +103,10 @@ IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 
-SS_CARDTYPE	g_Slot4 = CT_Empty;
-SS_CARDTYPE	g_Slot5 = CT_Empty;
+SS_CARDTYPE g_Slot0 = CT_LanguageCard;	// Just for Apple II or II+ or similar clones
+SS_CARDTYPE g_Slot4 = CT_Empty;
+SS_CARDTYPE g_Slot5 = CT_Empty;
+SS_CARDTYPE g_SlotAux = CT_Extended80Col;	// For Apple //e and above
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
@@ -1145,6 +1148,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	LPSTR szImageName_harddisk[NUM_HARDDISKS] = {NULL,NULL};
 	LPSTR szSnapshotName = NULL;
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
+	UINT uRamWorksExPages = 0;
+	UINT uSaturnBanks = 0;
 
 	while (*lpCmdLine)
 	{
@@ -1249,37 +1254,27 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 #ifdef RAMWORKS
 		else if (strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..127]
 		{
-			g_eMemType = MEM_TYPE_RAMWORKS;
-
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
-			    g_uMaxExPages = atoi(lpCmdLine);
-			if (g_uMaxExPages > kMaxExMemoryBanks)
-				g_uMaxExPages = kMaxExMemoryBanks;
+			uRamWorksExPages = atoi(lpCmdLine);
+			if (uRamWorksExPages > kMaxExMemoryBanks)
+				uRamWorksExPages = kMaxExMemoryBanks;
 			else
-			if (g_uMaxExPages < 1)
-				g_uMaxExPages = 1;
+			if (uRamWorksExPages < 1)
+				uRamWorksExPages = 1;
 		}
 #endif
-#ifdef SATURN
-		else if (strcmp(lpCmdLine, "-saturn") == 0)		// 64 = Saturn 64K (4 banks), 128 = Saturn 128K (8 banks)
+		else if (strcmp(lpCmdLine, "-s0") == 0)
 		{
-			g_eMemType = MEM_TYPE_SATURN;
-
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
-			// " The  boards  consist  of 16K  banks  of  memory
-			//  (4  banks  for  the  64K  board,
-			//  8  banks  for  the  128K),  accessed  one  at  a  time"
-			    g_uSaturnTotalBanks = atoi(lpCmdLine) / 16; // number of 16K Banks [1..8]
-			if (g_uSaturnTotalBanks > 8)
-				g_uSaturnTotalBanks = 8;
-			else
-			if (g_uSaturnTotalBanks < 1)
-				g_uSaturnTotalBanks = 1;
+			// "The boards consist of 16K banks of memory (4 banks for the 64K board, 8 banks for the 128K), accessed one at a time" - Ref: "64K/128K RAM BOARD", Saturn Systems, Ch.1 Introduction(pg-5)
+			if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)
+				uSaturnBanks = Saturn128K::kMaxSaturnBanks;
+			else if (strcmp(lpCmdLine, "saturn64") == 0)
+				uSaturnBanks = Saturn128K::kMaxSaturnBanks/2;
 		}
-#endif
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
@@ -1458,6 +1453,22 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		LoadConfiguration();
 		LogFileOutput("Main: LoadConfiguration()\n");
+
+		// Apply the memory expansion switches after loading the Apple II machine type
+#ifdef RAMWORKS
+		if (uRamWorksExPages)
+		{
+			SetRamWorksMemorySize(uRamWorksExPages);
+			SetExpansionMemType(CT_RamWorksIII);
+			uRamWorksExPages = 0;	// Don't reapply after a restart
+		}
+#endif
+		if (uSaturnBanks)
+		{
+			SetSaturnMemorySize(uSaturnBanks);	// Set number of banks before constructing Saturn card
+			SetExpansionMemType(CT_Saturn128K);
+			uSaturnBanks = 0;		// Don't reapply after a restart
+		}
 
 		DebugInitialize();
 		LogFileOutput("Main: DebugInitialize()\n");

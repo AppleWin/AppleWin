@@ -552,6 +552,7 @@ void KeybSetSnapshot_v1(const BYTE LastKey)
 //
 
 #define SS_YAML_KEY_LASTKEY "Last Key"
+#define SS_YAML_KEY_KEYWAITING "Key Waiting"
 
 static std::string KeybGetSnapshotStructName(void)
 {
@@ -563,14 +564,18 @@ void KeybSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", KeybGetSnapshotStructName().c_str());
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LASTKEY, keycode);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_KEYWAITING, keywaiting ? true : false);
 }
 
-void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (!yamlLoadHelper.GetSubMap(KeybGetSnapshotStructName()))
 		return;
 
 	keycode = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTKEY);
+
+	if (version == 2)
+		keywaiting = (BOOL) yamlLoadHelper.LoadBool(SS_YAML_KEY_KEYWAITING);
 
 	yamlLoadHelper.PopMap();
 }

@@ -626,6 +626,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\LanguageCard.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\LanguageCard.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Log.cpp"
 					>
 				</File>

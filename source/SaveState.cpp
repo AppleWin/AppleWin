@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Frame.h"
 #include "Joystick.h"
 #include "Keyboard.h"
+#include "LanguageCard.h"
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
@@ -64,7 +65,7 @@ static YamlHelper yamlHelper;
 
 #define SS_FILE_VER 2
 
-#define UNIT_APPLE2_VER 1
+#define UNIT_APPLE2_VER 2
 #define UNIT_SLOTS_VER 1
 
 //-----------------------------------------------------------------------------
@@ -325,7 +326,7 @@ static UINT ParseFileHdr(void)
 
 static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (version != UNIT_APPLE2_VER)
+	if (version == 0 || version > UNIT_APPLE2_VER)
 		throw std::string(SS_YAML_KEY_UNIT ": Apple2: Version mismatch");
 
 	std::string model = yamlLoadHelper.LoadString(SS_YAML_KEY_MODEL);
@@ -336,10 +337,10 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	m_ConfigNew.m_CpuType = GetMainCpu();
 
 	JoyLoadSnapshot(yamlLoadHelper);
-	KeybLoadSnapshot(yamlLoadHelper);
+	KeybLoadSnapshot(yamlLoadHelper, version);
 	SpkrLoadSnapshot(yamlLoadHelper);
 	VideoLoadSnapshot(yamlLoadHelper);
-	MemLoadSnapshot(yamlLoadHelper);
+	MemLoadSnapshot(yamlLoadHelper, version);
 
 	// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
 	VideoReinitialize();	// g_CharsetType changed
@@ -360,7 +361,8 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 			break;	// done all slots
 
 		const int slot = strtoul(scalar.c_str(), NULL, 10);	// NB. aux slot supported as a different "unit"
-		if (slot < 1 || slot > 7)
+															// NB. slot-0 only supported for Apple II or II+ (or similar clones)
+		if (slot < 0 || slot > 7)
 			throw std::string("Slots: Invalid slot #: ") + scalar;
 
 		yamlLoadHelper.GetSubMap(scalar);
@@ -415,6 +417,18 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 			bRes = HD_LoadSnapshot(yamlLoadHelper, slot, version, g_strSaveStatePath);
 			m_ConfigNew.m_bEnableHDD = true;
 			type = CT_GenericHDD;
+		}
+		else if (card == LanguageCardSlot0::GetSnapshotCardName())
+		{
+			type = CT_LanguageCard;
+			SetExpansionMemType(type);
+			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, version);
+		}
+		else if (card == Saturn128K::GetSnapshotCardName())
+		{
+			type = CT_Saturn128K;
+			SetExpansionMemType(type);
+			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, version);
 		}
 		else
 		{
@@ -479,6 +493,7 @@ static void Snapshot_LoadState_v2(void)
 		//
 
 		CConfigNeedingRestart ConfigOld;
+		//ConfigOld.m_Slot[0] = CT_LanguageCard;	// fixme: II/II+=LC, //e=empty
 		ConfigOld.m_Slot[1] = CT_GenericPrinter;	// fixme
 		ConfigOld.m_Slot[2] = CT_SSC;				// fixme
 		//ConfigOld.m_Slot[3] = CT_Uthernet;		// todo
@@ -491,7 +506,6 @@ static void Snapshot_LoadState_v2(void)
 		m_ConfigNew.m_SlotAux = CT_Empty;
 		m_ConfigNew.m_bEnableHDD = false;
 		//m_ConfigNew.m_bEnableTheFreezesF8Rom = ?;	// todo: when support saving config
-		//m_ConfigNew.m_bEnhanceDisk = ?;			// todo: when support saving config
 
 		MemReset();
 		PravetsReset();
@@ -592,6 +606,9 @@ void Snapshot_SaveState(void)
 		{
 			yamlSaveHelper.UnitHdr(GetSnapshotUnitSlotsName(), UNIT_SLOTS_VER);
 			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+			if (IsApple2PlusOrClone(GetApple2Type()))
+				GetLanguageCard()->SaveSnapshot(yamlSaveHelper);	// Language Card or Saturn 128K
 
 			Printer_SaveSnapshot(yamlSaveHelper);
 

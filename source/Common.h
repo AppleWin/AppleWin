@@ -20,7 +20,6 @@ const DWORD dwClksPerFrame			= uCyclesPerLine * uLinesPerFrame;	// 17030
 #define  MIN(a,b)          (((a) < (b)) ? (a) : (b))
 
 #define  RAMWORKS			// 8MB RamWorks III support
-//#define  SATURN				// SATURN 128K
 
 // Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 // Assume base freqs are 44.1KHz & 48KHz
@@ -112,6 +111,7 @@ enum AppMode_e
 #define  REGVALUE_CUSTOM_SPEED       "Custom Speed"
 #define  REGVALUE_EMULATION_SPEED    "Emulation Speed"
 #define  REGVALUE_WINDOW_SCALE       "Window Scale"
+#define  REGVALUE_SLOT0					"Slot 0"
 #define  REGVALUE_SLOT1					"Slot 1"
 #define  REGVALUE_SLOT2					"Slot 2"
 #define  REGVALUE_SLOT3					"Slot 3"
@@ -193,7 +193,7 @@ enum eApple2Type {
 					A2TYPE_MAX
 				};
 
-inline bool IsApple2(eApple2Type type)
+inline bool IsApple2Plus(eApple2Type type)			// Apple ][,][+
 {
 	return (type & (APPLE2E_MASK|APPLE2C_MASK)) == 0;
 }
@@ -201,6 +201,12 @@ inline bool IsApple2(eApple2Type type)
 inline bool IsClone(eApple2Type type)
 {
 	return (type & APPLECLONE_MASK) != 0;
+}
+
+inline bool IsApple2PlusOrClone(eApple2Type type)	// Apple ][,][+ or clone ][,][+
+{
+	return ((type & (APPLE2E_MASK|APPLE2C_MASK)) == 0)
+		||	(type & APPLECLONE_MASK) && !(type & A2TYPE_CLONE_A2E);
 }
 
 extern eApple2Type g_Apple2Type;
