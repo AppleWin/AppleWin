@@ -283,7 +283,6 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 	if (IsApple2PlusOrClone(GetApple2Type()))
 	{
 		delete g_pLanguageCard;
-		_ASSERT(g_pMemMainLanguageCard == NULL);	// TODO: should be set NULL by dtor
 
 		if (newSlot0Card == CT_Saturn128K)
 			g_pLanguageCard = new Saturn128K(g_uSaturnBanksFromCmdLine);
@@ -1188,7 +1187,6 @@ void MemDestroy()
 
 	delete g_pLanguageCard;
 	g_pLanguageCard = NULL;
-	g_pMemMainLanguageCard = NULL;
 
 	memaux   = NULL;
 	memmain  = NULL;
