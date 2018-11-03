@@ -214,6 +214,9 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 
 //=============================================================================
 
+// Default memory types on a VM restart
+// - can be overwritten by cmd-line or loading a save-state
+static SS_CARDTYPE g_MemTypeAppleII = CT_Empty;
 static SS_CARDTYPE g_MemTypeAppleIIPlus = CT_LanguageCard;	// Keep a copy so it's not lost if machine type changes, eg: A][ -> A//e -> A][
 static SS_CARDTYPE g_MemTypeAppleIIe = CT_Extended80Col;	// Keep a copy so it's not lost if machine type changes, eg: A//e -> A][ -> A//e
 static UINT g_uSaturnBanksFromCmdLine = 0;
@@ -221,14 +224,18 @@ static UINT g_uSaturnBanksFromCmdLine = 0;
 // Called from MemLoadSnapshot()
 static void ResetDefaultMachineMemTypes(void)
 {
+	g_MemTypeAppleII = CT_Empty;
 	g_MemTypeAppleIIPlus = CT_LanguageCard;
 	g_MemTypeAppleIIe = CT_Extended80Col;
 }
 
 // Called from MemInitialize(), MemLoadSnapshot()
-void SetExpansionMemTypeDefault(void)
+static void SetExpansionMemTypeDefault(void)
 {
-	SS_CARDTYPE defaultType = IsApple2PlusOrClone(GetApple2Type()) ? g_MemTypeAppleIIPlus : g_MemTypeAppleIIe;
+	SS_CARDTYPE defaultType = IsApple2Original(GetApple2Type()) ? g_MemTypeAppleII
+		: IsApple2PlusOrClone(GetApple2Type()) ? g_MemTypeAppleIIPlus
+		: g_MemTypeAppleIIe;
+
 	SetExpansionMemType(defaultType);
 }
 
@@ -239,7 +246,12 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 	SS_CARDTYPE newSlotAuxCard;
 
 	// Set defaults:
-	if (IsApple2PlusOrClone(GetApple2Type()))
+	if (IsApple2Original(GetApple2Type()))
+	{
+		newSlot0Card = CT_Empty;
+		newSlotAuxCard = CT_Empty;
+	}
+	else if (IsApple2PlusOrClone(GetApple2Type()))
 	{
 		newSlot0Card = CT_LanguageCard;
 		newSlotAuxCard = CT_Empty;
@@ -252,6 +264,7 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 
 	if (type == CT_Saturn128K)
 	{
+		g_MemTypeAppleII = type;
 		g_MemTypeAppleIIPlus = type;
 		if (IsApple2PlusOrClone(GetApple2Type()))
 			newSlot0Card = CT_Saturn128K;
@@ -270,20 +283,20 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 	if (IsApple2PlusOrClone(GetApple2Type()))
 	{
 		delete g_pLanguageCard;
-		g_pLanguageCard = NULL;
+		_ASSERT(g_pMemMainLanguageCard == NULL);	// TODO: should be set NULL by dtor
 
 		if (newSlot0Card == CT_Saturn128K)
 			g_pLanguageCard = new Saturn128K(g_uSaturnBanksFromCmdLine);
-		else // newSlot0Card == CT_LanguageCard
+		else if (newSlot0Card == CT_LanguageCard)
 			g_pLanguageCard = new LanguageCardSlot0;
+		else
+			g_pLanguageCard = NULL;
 	}
 	else
 	{
 		delete g_pLanguageCard;
 		g_pLanguageCard = new LanguageCardUnit;
 	}
-
-	_ASSERT(g_pMemMainLanguageCard);
 
 	g_Slot0 = newSlot0Card;
 	g_SlotAux = newSlotAuxCard;
@@ -318,12 +331,15 @@ void SetSaturnMemorySize(UINT banks)
 
 static BOOL GetLastRamWrite(void)
 {
-	return g_pLanguageCard->GetLastRamWrite();
+	if (g_pLanguageCard)
+		return g_pLanguageCard->GetLastRamWrite();
+	return 0;
 }
 
 static void SetLastRamWrite(BOOL count)
 {
-	g_pLanguageCard->SetLastRamWrite(count);
+	if (g_pLanguageCard)
+		g_pLanguageCard->SetLastRamWrite(count);
 }
 
 //
@@ -338,6 +354,7 @@ void SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain /*=false*/)
 
 LanguageCardUnit* GetLanguageCard(void)
 {
+	_ASSERT(g_pLanguageCard);
 	return g_pLanguageCard;
 }
 
@@ -1003,7 +1020,12 @@ void MemResetPaging()
 static void ResetPaging(BOOL initialize)
 {
 	SetLastRamWrite(0);
-	SetMemMode(LanguageCardUnit::kMemModeInitialState);
+
+	if (IsApple2PlusOrClone(GetApple2Type()) && g_Slot0 == CT_Empty)
+		SetMemMode(0);
+	else
+		SetMemMode(LanguageCardUnit::kMemModeInitialState);
+
 	UpdatePaging(initialize);
 }
 
@@ -1166,6 +1188,7 @@ void MemDestroy()
 
 	delete g_pLanguageCard;
 	g_pLanguageCard = NULL;
+	g_pMemMainLanguageCard = NULL;
 
 	memaux   = NULL;
 	memmain  = NULL;
@@ -1177,8 +1200,6 @@ void MemDestroy()
 	pCxRomPeripheral	= NULL;
 
 	mem      = NULL;
-
-	g_pMemMainLanguageCard = NULL;
 
 	ZeroMemory(memwrite, sizeof(memwrite));
 	ZeroMemory(memshadow,sizeof(memshadow));
@@ -1854,7 +1875,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 #endif
 
 	// DETERMINE THE NEW MEMORY PAGING MODE.
-	if ((address >= 0x80) && (address <= 0x8F))
+	if (g_Slot0 != CT_Empty && (address >= 0x80 && address <= 0x8F))
 	{
 		SetMemMode( g_pLanguageCard->SetPaging(address, memmode, modechanging, write ? true : false) );
 	}

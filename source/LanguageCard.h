@@ -8,7 +8,7 @@ class LanguageCardUnit
 {
 public:
 	LanguageCardUnit(void);
-	virtual ~LanguageCardUnit(void) {}
+	virtual ~LanguageCardUnit(void);
 
 	virtual DWORD SetPaging(WORD address, DWORD memmode, BOOL& modechanging, bool write);
 	virtual void SetMemorySize(UINT banks) {}		// No-op for //e and slot-0 16K LC

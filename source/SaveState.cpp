@@ -605,7 +605,7 @@ void Snapshot_SaveState(void)
 			yamlSaveHelper.UnitHdr(GetSnapshotUnitSlotsName(), UNIT_SLOTS_VER);
 			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-			if (IsApple2PlusOrClone(GetApple2Type()))
+			if (g_Slot0 != CT_Empty && IsApple2PlusOrClone(GetApple2Type()))
 				GetLanguageCard()->SaveSnapshot(yamlSaveHelper);	// Language Card or Saturn 128K
 
 			Printer_SaveSnapshot(yamlSaveHelper);
