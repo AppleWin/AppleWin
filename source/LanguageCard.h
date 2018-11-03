@@ -71,6 +71,7 @@ public:
 	virtual void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
+	// "The boards consist of 16K banks of memory (4 banks for the 64K board, 8 banks for the 128K), accessed one at a time" - Ref: "64K/128K RAM BOARD", Saturn Systems, Ch.1 Introduction(pg-5)
 	static const UINT kMaxSaturnBanks = 8;		// 8 * 16K = 128K
 	static std::string GetSnapshotCardName(void);
 

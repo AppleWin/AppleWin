@@ -262,12 +262,12 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 		newSlotAuxCard = CT_Extended80Col;
 	}
 
-	if (type == CT_Saturn128K)
+	if (type == CT_LanguageCard || type == CT_Saturn128K)
 	{
 		g_MemTypeAppleII = type;
 		g_MemTypeAppleIIPlus = type;
 		if (IsApple2PlusOrClone(GetApple2Type()))
-			newSlot0Card = CT_Saturn128K;
+			newSlot0Card = type;
 		else
 			newSlot0Card = CT_Empty;	// NB. No slot0 for //e
 	}
@@ -277,7 +277,7 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 		if (IsApple2PlusOrClone(GetApple2Type()))
 			newSlotAuxCard = CT_Empty;	// NB. No aux slot for ][ or ][+
 		else
-			newSlotAuxCard = CT_RamWorksIII;
+			newSlotAuxCard = type;
 	}
 
 	if (IsApple2PlusOrClone(GetApple2Type()))

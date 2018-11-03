@@ -1142,6 +1142,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bSetFullScreen = false;
 	bool bBoot = false;
 	bool bChangedDisplayResolution = false;
+	bool bSlot0LanguageCard = false;
 	bool bSlot7Empty = false;
 	UINT bestWidth = 0, bestHeight = 0;
 	LPSTR szImageName_drive[NUM_DRIVES] = {NULL,NULL};
@@ -1269,11 +1270,12 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
-			// "The boards consist of 16K banks of memory (4 banks for the 64K board, 8 banks for the 128K), accessed one at a time" - Ref: "64K/128K RAM BOARD", Saturn Systems, Ch.1 Introduction(pg-5)
 			if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)
 				uSaturnBanks = Saturn128K::kMaxSaturnBanks;
 			else if (strcmp(lpCmdLine, "saturn64") == 0)
 				uSaturnBanks = Saturn128K::kMaxSaturnBanks/2;
+			else if (strcmp(lpCmdLine, "languagecard") == 0 || strcmp(lpCmdLine, "lc") == 0)
+				bSlot0LanguageCard = true;
 		}
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
 		{
@@ -1468,6 +1470,12 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			SetSaturnMemorySize(uSaturnBanks);	// Set number of banks before constructing Saturn card
 			SetExpansionMemType(CT_Saturn128K);
 			uSaturnBanks = 0;		// Don't reapply after a restart
+		}
+
+		if (bSlot0LanguageCard)
+		{
+			SetExpansionMemType(CT_LanguageCard);
+			bSlot0LanguageCard = false;	// Don't reapply after a restart
 		}
 
 		DebugInitialize();
