@@ -1903,9 +1903,10 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 #endif
 
 	// DETERMINE THE NEW MEMORY PAGING MODE.
-	if (g_Slot0 != CT_Empty && (address >= 0x80 && address <= 0x8F))
+	if (address >= 0x80 && address <= 0x8F)
 	{
-		SetMemMode( g_pLanguageCard->SetPaging(address, memmode, modechanging, write ? true : false) );
+		if (!IS_APPLE2 || (IsApple2PlusOrClone(GetApple2Type()) && g_Slot0 != CT_Empty))
+			SetMemMode( g_pLanguageCard->SetPaging(address, memmode, modechanging, write ? true : false) );
 	}
 	else if (!IS_APPLE2)
 	{
