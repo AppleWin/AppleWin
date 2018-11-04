@@ -8,6 +8,20 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+
+1.27.10.0 - 4 Nov 2018
+----------------------
+. [Change #590] Apple II original: default to 48K (so no LC installed in slot-0).
+	- Added new command line switch: -s0 <languagecard|lc>
+	('lc' is an alias for 'languagecard')
+	- When LC is in slot-0, it now use the Apple II+'s F8 (auto-start) ROM
+. [Change #408] Support Saturn 64K and 128K cards in slot-0.
+	- Added new command line switch: -s0 <saturn|saturn64|saturn128>
+	('saturn' is an alias for 'saturn128')
+. [Bug #591] Save-state wasn't preserving the 'key-waiting' flag.
+. [Bug #587] Debugger: disassembly for branch targets < $1000 were missing the leading '0'.
+
+
 1.27.9.0 - 2 Oct 2018
 ---------------------
 . [Bug #582] Support for partial disk II latch reads when accesses are very close.

@@ -2021,6 +2021,11 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 
 void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE* const pMemMain, const BYTE* const pMemAux)
 {
+	// Create default LC type for AppleII machine (do prior to loading saved LC state)
+	ResetDefaultMachineMemTypes();
+	g_MemTypeAppleII = CT_LanguageCard;	// SSv1 doesn't save machine type - so if current machine is Apple II then give it 64K + LC
+	SetExpansionMemTypeDefault();
+
 	SetMemMode(MemMode ^ MF_INTCXROM);	// Convert from SLOTCXROM to INTCXROM
 	SetLastRamWrite(LastWriteRam);
 
