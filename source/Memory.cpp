@@ -1538,6 +1538,36 @@ void MemInitializeROM(void)
 void MemInitializeCustomF8ROM(void)
 {
 	const UINT F8RomSize = 0x800;
+	const UINT F8RomOffset = Apple2RomSize-F8RomSize;
+
+	if (IsApple2Original(GetApple2Type()) && g_Slot0 == CT_LanguageCard)
+	{
+		try
+		{
+			HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_PLUS_ROM), "ROM");
+			if (hResInfo == NULL)
+				throw false;
+
+			DWORD dwResSize = SizeofResource(NULL, hResInfo);
+			if(dwResSize != Apple2RomSize)
+				throw false;
+
+			HGLOBAL hResData = LoadResource(NULL, hResInfo);
+			if(hResData == NULL)
+				throw false;
+
+			BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
+			if (pData == NULL)
+				throw false;
+
+			memcpy(memrom+F8RomOffset, pData+F8RomOffset, F8RomSize);
+		}
+		catch (bool)
+		{
+			MessageBox( g_hFrameWindow, "Failed to read F8 (auto-start) ROM for language card in original Apple][", TEXT("AppleWin Error"), MB_OK );
+		}
+	}
+
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 	{
 		BYTE OldRom[Apple2RomSize];	// NB. 12KB on stack
@@ -1545,7 +1575,7 @@ void MemInitializeCustomF8ROM(void)
 
 		SetFilePointer(g_hCustomRomF8, 0, NULL, FILE_BEGIN);
 		DWORD uNumBytesRead;
-		BOOL bRes = ReadFile(g_hCustomRomF8, memrom+Apple2RomSize-F8RomSize, F8RomSize, &uNumBytesRead, NULL);
+		BOOL bRes = ReadFile(g_hCustomRomF8, memrom+F8RomOffset, F8RomSize, &uNumBytesRead, NULL);
 		if (uNumBytesRead != F8RomSize)
 		{
 			memcpy(memrom, OldRom, Apple2RomSize);	// ROM at $D000...$FFFF
