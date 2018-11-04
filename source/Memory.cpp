@@ -2131,6 +2131,8 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	// Create default LC type for AppleII machine (do prior to loading saved LC state)
 	ResetDefaultMachineMemTypes();
+	if (version == 1)
+		g_MemTypeAppleII = CT_LanguageCard;	// version=1: original Apple II always had a LC
 	SetExpansionMemTypeDefault();
 
 	//
