@@ -214,6 +214,9 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 
 //=============================================================================
 
+// Default memory types on a VM restart
+// - can be overwritten by cmd-line or loading a save-state
+static SS_CARDTYPE g_MemTypeAppleII = CT_Empty;
 static SS_CARDTYPE g_MemTypeAppleIIPlus = CT_LanguageCard;	// Keep a copy so it's not lost if machine type changes, eg: A][ -> A//e -> A][
 static SS_CARDTYPE g_MemTypeAppleIIe = CT_Extended80Col;	// Keep a copy so it's not lost if machine type changes, eg: A//e -> A][ -> A//e
 static UINT g_uSaturnBanksFromCmdLine = 0;
@@ -221,14 +224,18 @@ static UINT g_uSaturnBanksFromCmdLine = 0;
 // Called from MemLoadSnapshot()
 static void ResetDefaultMachineMemTypes(void)
 {
+	g_MemTypeAppleII = CT_Empty;
 	g_MemTypeAppleIIPlus = CT_LanguageCard;
 	g_MemTypeAppleIIe = CT_Extended80Col;
 }
 
 // Called from MemInitialize(), MemLoadSnapshot()
-void SetExpansionMemTypeDefault(void)
+static void SetExpansionMemTypeDefault(void)
 {
-	SS_CARDTYPE defaultType = IsApple2PlusOrClone(GetApple2Type()) ? g_MemTypeAppleIIPlus : g_MemTypeAppleIIe;
+	SS_CARDTYPE defaultType = IsApple2Original(GetApple2Type()) ? g_MemTypeAppleII
+		: IsApple2PlusOrClone(GetApple2Type()) ? g_MemTypeAppleIIPlus
+		: g_MemTypeAppleIIe;
+
 	SetExpansionMemType(defaultType);
 }
 
@@ -239,7 +246,12 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 	SS_CARDTYPE newSlotAuxCard;
 
 	// Set defaults:
-	if (IsApple2PlusOrClone(GetApple2Type()))
+	if (IsApple2Original(GetApple2Type()))
+	{
+		newSlot0Card = CT_Empty;
+		newSlotAuxCard = CT_Empty;
+	}
+	else if (IsApple2PlusOrClone(GetApple2Type()))
 	{
 		newSlot0Card = CT_LanguageCard;
 		newSlotAuxCard = CT_Empty;
@@ -250,11 +262,12 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 		newSlotAuxCard = CT_Extended80Col;
 	}
 
-	if (type == CT_Saturn128K)
+	if (type == CT_LanguageCard || type == CT_Saturn128K)
 	{
+		g_MemTypeAppleII = type;
 		g_MemTypeAppleIIPlus = type;
 		if (IsApple2PlusOrClone(GetApple2Type()))
-			newSlot0Card = CT_Saturn128K;
+			newSlot0Card = type;
 		else
 			newSlot0Card = CT_Empty;	// NB. No slot0 for //e
 	}
@@ -264,26 +277,25 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 		if (IsApple2PlusOrClone(GetApple2Type()))
 			newSlotAuxCard = CT_Empty;	// NB. No aux slot for ][ or ][+
 		else
-			newSlotAuxCard = CT_RamWorksIII;
+			newSlotAuxCard = type;
 	}
 
 	if (IsApple2PlusOrClone(GetApple2Type()))
 	{
 		delete g_pLanguageCard;
-		g_pLanguageCard = NULL;
 
 		if (newSlot0Card == CT_Saturn128K)
 			g_pLanguageCard = new Saturn128K(g_uSaturnBanksFromCmdLine);
-		else // newSlot0Card == CT_LanguageCard
+		else if (newSlot0Card == CT_LanguageCard)
 			g_pLanguageCard = new LanguageCardSlot0;
+		else
+			g_pLanguageCard = NULL;
 	}
 	else
 	{
 		delete g_pLanguageCard;
 		g_pLanguageCard = new LanguageCardUnit;
 	}
-
-	_ASSERT(g_pMemMainLanguageCard);
 
 	g_Slot0 = newSlot0Card;
 	g_SlotAux = newSlotAuxCard;
@@ -318,12 +330,15 @@ void SetSaturnMemorySize(UINT banks)
 
 static BOOL GetLastRamWrite(void)
 {
-	return g_pLanguageCard->GetLastRamWrite();
+	if (g_pLanguageCard)
+		return g_pLanguageCard->GetLastRamWrite();
+	return 0;
 }
 
 static void SetLastRamWrite(BOOL count)
 {
-	g_pLanguageCard->SetLastRamWrite(count);
+	if (g_pLanguageCard)
+		g_pLanguageCard->SetLastRamWrite(count);
 }
 
 //
@@ -338,6 +353,7 @@ void SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain /*=false*/)
 
 LanguageCardUnit* GetLanguageCard(void)
 {
+	_ASSERT(g_pLanguageCard);
 	return g_pLanguageCard;
 }
 
@@ -1003,7 +1019,12 @@ void MemResetPaging()
 static void ResetPaging(BOOL initialize)
 {
 	SetLastRamWrite(0);
-	SetMemMode(LanguageCardUnit::kMemModeInitialState);
+
+	if (IsApple2PlusOrClone(GetApple2Type()) && g_Slot0 == CT_Empty)
+		SetMemMode(0);
+	else
+		SetMemMode(LanguageCardUnit::kMemModeInitialState);
+
 	UpdatePaging(initialize);
 }
 
@@ -1177,8 +1198,6 @@ void MemDestroy()
 	pCxRomPeripheral	= NULL;
 
 	mem      = NULL;
-
-	g_pMemMainLanguageCard = NULL;
 
 	ZeroMemory(memwrite, sizeof(memwrite));
 	ZeroMemory(memshadow,sizeof(memshadow));
@@ -1519,6 +1538,36 @@ void MemInitializeROM(void)
 void MemInitializeCustomF8ROM(void)
 {
 	const UINT F8RomSize = 0x800;
+	const UINT F8RomOffset = Apple2RomSize-F8RomSize;
+
+	if (IsApple2Original(GetApple2Type()) && g_Slot0 == CT_LanguageCard)
+	{
+		try
+		{
+			HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_PLUS_ROM), "ROM");
+			if (hResInfo == NULL)
+				throw false;
+
+			DWORD dwResSize = SizeofResource(NULL, hResInfo);
+			if(dwResSize != Apple2RomSize)
+				throw false;
+
+			HGLOBAL hResData = LoadResource(NULL, hResInfo);
+			if(hResData == NULL)
+				throw false;
+
+			BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
+			if (pData == NULL)
+				throw false;
+
+			memcpy(memrom+F8RomOffset, pData+F8RomOffset, F8RomSize);
+		}
+		catch (bool)
+		{
+			MessageBox( g_hFrameWindow, "Failed to read F8 (auto-start) ROM for language card in original Apple][", TEXT("AppleWin Error"), MB_OK );
+		}
+	}
+
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 	{
 		BYTE OldRom[Apple2RomSize];	// NB. 12KB on stack
@@ -1526,7 +1575,7 @@ void MemInitializeCustomF8ROM(void)
 
 		SetFilePointer(g_hCustomRomF8, 0, NULL, FILE_BEGIN);
 		DWORD uNumBytesRead;
-		BOOL bRes = ReadFile(g_hCustomRomF8, memrom+Apple2RomSize-F8RomSize, F8RomSize, &uNumBytesRead, NULL);
+		BOOL bRes = ReadFile(g_hCustomRomF8, memrom+F8RomOffset, F8RomSize, &uNumBytesRead, NULL);
 		if (uNumBytesRead != F8RomSize)
 		{
 			memcpy(memrom, OldRom, Apple2RomSize);	// ROM at $D000...$FFFF
@@ -1854,7 +1903,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 #endif
 
 	// DETERMINE THE NEW MEMORY PAGING MODE.
-	if ((address >= 0x80) && (address <= 0x8F))
+	if (g_Slot0 != CT_Empty && (address >= 0x80 && address <= 0x8F))
 	{
 		SetMemMode( g_pLanguageCard->SetPaging(address, memmode, modechanging, write ? true : false) );
 	}

@@ -44,6 +44,11 @@ LanguageCardUnit::LanguageCardUnit(void) :
 	SetMemMainLanguageCard(NULL, true);
 }
 
+LanguageCardUnit::~LanguageCardUnit(void)
+{
+	SetMemMainLanguageCard(NULL);
+}
+
 DWORD LanguageCardUnit::SetPaging(WORD address, DWORD memmode, BOOL& modechanging, bool write)
 {
 	memmode &= ~(MF_BANK2 | MF_HIGHRAM);
