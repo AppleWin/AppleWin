@@ -1580,6 +1580,7 @@ void MemInitializeCustomF8ROM(void)
 		{
 			memcpy(memrom, OldRom, Apple2RomSize);	// ROM at $D000...$FFFF
 			bRes = FALSE;
+			// NB. Keep g_hCustomRomF8 handle open - so that any next restart can load it again
 		}
 
 		if (!bRes)

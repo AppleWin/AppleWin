@@ -1792,7 +1792,8 @@ void FormatDisassemblyLine( const DisasmLine_t & line, char * sDisassembly, cons
 		if (line.bTargetImmediate)
 		{
 			strcat( sDisassembly, "#" );
-			strcpy( sTarget, line.sTarget ); // sTarget
+			strncpy( sTarget, line.sTarget, sizeof(sTarget) );
+			sTarget[sizeof(sTarget)-1] = 0;
 		}
 		else
 			sprintf( sTarget, g_aOpmodes[ line.iOpmode ].m_sFormat, line.nTarget );
@@ -2460,7 +2461,7 @@ void DrawMemory ( int line, int iMemDump )
 	char sText[ MAX_MEM_VIEW_TXT * 2 ];
 	char sData[ MAX_MEM_VIEW_TXT * 2 ];
 
-	char sType   [ 4 ] = "Mem";
+	char sType   [ 6 ] = "Mem";
 	char sAddress[ 8 ] = "";
 
 	int iForeground = FG_INFO_OPCODE;
