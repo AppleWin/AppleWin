@@ -1045,6 +1045,8 @@ void MemUpdatePaging(BOOL initialize)
 
 static void UpdatePaging(BOOL initialize)
 {
+	modechanging = 0;
+
 	// SAVE THE CURRENT PAGING SHADOW TABLE
 	LPBYTE oldshadow[256];
 	if (!initialize)
@@ -1971,8 +1973,6 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	// WRITE TABLES.
 	if ((lastmemmode != memmode) || modechanging)
 	{
-		modechanging = 0;
-
 		// NB. Must check MF_SLOTC3ROM too, as IoHandlerCardsIn() depends on both MF_INTCXROM|MF_SLOTC3ROM
 		if ((lastmemmode & (MF_INTCXROM|MF_SLOTC3ROM)) != (memmode & (MF_INTCXROM|MF_SLOTC3ROM)))
 		{
@@ -2041,7 +2041,6 @@ void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE*
 
 	//
 
-	modechanging = 0;
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v1()
 	UpdatePaging(1);	// Initialize=1
 }
@@ -2189,7 +2188,6 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	//
 
-	modechanging = 0;
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
 	UpdatePaging(1);	// Initialize=1 (Still needed, even with call to MemUpdatePaging() - why?)
 						// TC-TODO: At this point, the cards haven't been loaded, so the card's expansion ROM is unknown - so pointless(?) calling this now

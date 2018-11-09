@@ -106,7 +106,6 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	// WRITE TABLES.
 	if (lastmemmode != memmode)
 	{
-		SetModeChanging(0);
 		MemUpdatePaging(0);	// Initialize=0
 	}
 
