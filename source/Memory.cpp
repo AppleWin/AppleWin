@@ -229,7 +229,7 @@ static void ResetDefaultMachineMemTypes(void)
 	g_MemTypeAppleIIe = CT_Extended80Col;
 }
 
-// Called from MemInitialize(), MemLoadSnapshot()
+// Called from MemInitialize(), MemLoadSnapshot(), MemSetSnapshot_v1()
 static void SetExpansionMemTypeDefault(void)
 {
 	SS_CARDTYPE defaultType = IsApple2Original(GetApple2Type()) ? g_MemTypeAppleII
@@ -280,25 +280,28 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 			newSlotAuxCard = type;
 	}
 
+	g_Slot0 = newSlot0Card;
+	g_SlotAux = newSlotAuxCard;
+}
+
+void CreateLanguageCard(void)
+{
+	delete g_pLanguageCard;
+	g_pLanguageCard = NULL;
+
 	if (IsApple2PlusOrClone(GetApple2Type()))
 	{
-		delete g_pLanguageCard;
-
-		if (newSlot0Card == CT_Saturn128K)
+		if (g_Slot0 == CT_Saturn128K)
 			g_pLanguageCard = new Saturn128K(g_uSaturnBanksFromCmdLine);
-		else if (newSlot0Card == CT_LanguageCard)
+		else if (g_Slot0 == CT_LanguageCard)
 			g_pLanguageCard = new LanguageCardSlot0;
 		else
 			g_pLanguageCard = NULL;
 	}
 	else
 	{
-		delete g_pLanguageCard;
 		g_pLanguageCard = new LanguageCardUnit;
 	}
-
-	g_Slot0 = newSlot0Card;
-	g_SlotAux = newSlotAuxCard;
 }
 
 SS_CARDTYPE GetCurrentExpansionMemType(void)
@@ -969,6 +972,11 @@ static bool IsCardInSlot(const UINT uSlot)
 
 //===========================================================================
 
+void SetModeChanging(BOOL value)
+{
+	modechanging = value;
+}
+
 DWORD GetMemMode(void)
 {
 	return memmode;
@@ -1437,7 +1445,7 @@ void MemInitialize()
 	SetExpansionMemTypeDefault();
 
 #ifdef RAMWORKS
-	if (GetCurrentExpansionMemType() == CT_RamWorksIII)
+	if (g_SlotAux == CT_RamWorksIII)
 	{
 		// allocate memory for RAMWorks III - up to 8MB
 		g_uActiveBank = 0;
@@ -1451,6 +1459,8 @@ void MemInitialize()
 #endif
 
 	//
+
+	CreateLanguageCard();
 
 	MemInitializeROM();
 	MemInitializeCustomF8ROM();
@@ -1580,8 +1590,9 @@ void MemInitializeCustomF8ROM(void)
 		{
 			memcpy(memrom, OldRom, Apple2RomSize);	// ROM at $D000...$FFFF
 			bRes = FALSE;
-			// NB. Keep g_hCustomRomF8 handle open - so that any next restart can load it again
 		}
+
+		// NB. If succeeded, then keep g_hCustomRomF8 handle open - so that any next restart can load it again
 
 		if (!bRes)
 		{
@@ -1616,8 +1627,10 @@ void MemInitializeIO(void)
 {
 	InitIoHandlers();
 
-	const UINT uSlot = 0;
-	RegisterIoHandler(uSlot, MemSetPaging, MemSetPaging, NULL, NULL, NULL, NULL);
+	if (g_pLanguageCard)
+		g_pLanguageCard->InitializeIO();
+	else
+		RegisterIoHandler(LanguageCardUnit::kSlot0, IO_Null, IO_Null, NULL, NULL, NULL, NULL);
 
 	// TODO: Cleanup peripheral setup!!!
 	PrintLoadRom(pCxRomPeripheral, 1);				// $C100 : Parallel printer f/w
@@ -1904,12 +1917,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 #endif
 
 	// DETERMINE THE NEW MEMORY PAGING MODE.
-	if (address >= 0x80 && address <= 0x8F)
-	{
-		if (!IS_APPLE2 || (IsApple2PlusOrClone(GetApple2Type()) && g_Slot0 != CT_Empty))
-			SetMemMode( g_pLanguageCard->SetPaging(address, memmode, modechanging, write ? true : false) );
-	}
-	else if (!IS_APPLE2)
+	if (!IS_APPLE2)
 	{
 		switch (address)
 		{
@@ -1943,24 +1951,19 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 		}
 	}
 
-	if (GetCurrentExpansionMemType() != CT_Saturn128K)	// TODO: Not sure this optimisation is valid for Saturn, so skip it for now
+	if (IS_APPLE2E)
 	{
-		// IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
+		// IF THE EMULATED PROGRAM HAS JUST UPDATED THE MEMORY WRITE MODE AND IS
 		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
 		// IT DOES SO.
 		//
 		// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
 		// - although any data-race is probably a bug in the 6502 code too.
 		if ((address >= 4) && (address <= 5) &&
-			((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
+			((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))		// Next: STA $C002 or STA $C003
+		{
 				modechanging = 1;
-				return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
-		}
-		if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&
-			(((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||
-			 ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))) {
-				modechanging = 1;
-				return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
+				return 0;	// For $C004 & $C005: entry to this func is always via a write to $C004 or $C005
 		}
 	}
 
@@ -2027,6 +2030,7 @@ void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE*
 	ResetDefaultMachineMemTypes();
 	g_MemTypeAppleII = CT_LanguageCard;	// SSv1 doesn't save machine type - so if current machine is Apple II then give it 64K + LC
 	SetExpansionMemTypeDefault();
+	CreateLanguageCard();				// Create LC here, as for SSv1 there is no slot-0 state
 
 	SetMemMode(MemMode ^ MF_INTCXROM);	// Convert from SLOTCXROM to INTCXROM
 	SetLastRamWrite(LastWriteRam);
@@ -2133,8 +2137,12 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	// Create default LC type for AppleII machine (do prior to loading saved LC state)
 	ResetDefaultMachineMemTypes();
 	if (version == 1)
-		g_MemTypeAppleII = CT_LanguageCard;	// version=1: original Apple II always had a LC
+		g_MemTypeAppleII = CT_LanguageCard;	// version=1: original Apple II always has a LC
+	else
+		g_MemTypeAppleIIPlus = CT_Empty;	// version=2+: Apple II/II+ initially start with slot-0 empty
 	SetExpansionMemTypeDefault();
+	CreateLanguageCard();	// Create default LC now for: (a) //e which has no slot-0 LC (so this is final)
+							//							  (b) II/II+ which get re-created later if slot-0 has a card
 
 	//
 

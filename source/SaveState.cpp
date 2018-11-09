@@ -371,7 +371,6 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
 			throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
 
-		bool bIsCardSupported = true;
 		SS_CARDTYPE type = CT_Empty;
 		bool bRes = false;
 
@@ -420,21 +419,22 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 		{
 			type = CT_LanguageCard;
 			SetExpansionMemType(type);
+			CreateLanguageCard();
 			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, version);
 		}
 		else if (card == Saturn128K::GetSnapshotCardName())
 		{
 			type = CT_Saturn128K;
 			SetExpansionMemType(type);
+			CreateLanguageCard();
 			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, version);
 		}
 		else
 		{
-			bIsCardSupported = false;
 			throw std::string("Slots: Unknown card: " + card);	// todo: don't throw - just ignore & continue
 		}
 
-		if (bRes && bIsCardSupported)
+		if (bRes)
 		{
 			m_ConfigNew.m_Slot[slot] = type;
 		}
