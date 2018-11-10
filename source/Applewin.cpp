@@ -1313,6 +1313,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			g_bHookAltGrControl = true;
 		}
+		else if (strcmp(lpCmdLine, "-no-hook-alt") == 0)			// GH#583
+		{
+			JoySetHookAltKeys(false);
+		}
 		else if (strcmp(lpCmdLine, "-spkr-inc") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);

@@ -1378,10 +1378,10 @@ LRESULT CALLBACK FrameWndProc (
 		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) || (g_nAppMode == MODE_STEPPING))
 		{
 			// NB. Alt Gr (Right-Alt): this normally send 2 WM_KEYDOWN messages for: VK_LCONTROL, then VK_RMENU
-			// . NB. The keyboard hook filter now suppresses VK_LCONTROL
+			// . NB. The keyboard hook filter will suppress VK_LCONTROL (if -hook-altgr-control is passed on the cmd-line)
 			bool extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
-			BOOL down     = 1;
-			BOOL autorep  = (HIWORD(lparam) & KF_REPEAT) != 0;
+			bool down     = true;
+			bool autorep  = (HIWORD(lparam) & KF_REPEAT) != 0;
 			BOOL IsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
 
 #if DEBUG_KEY_MESSAGES
@@ -1436,8 +1436,8 @@ LRESULT CALLBACK FrameWndProc (
 		else
 		{
 			bool extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
-			BOOL down     = 0;
-			BOOL autorep  = 0;
+			bool down     = false;
+			bool autorep  = false;
 			BOOL bIsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
 
 #if DEBUG_KEY_MESSAGES

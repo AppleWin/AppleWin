@@ -8,7 +8,7 @@ enum JOY1CHOICE {J1C_DISABLED=0, J1C_JOYSTICK2, J1C_KEYBD_CURSORS, J1C_KEYBD_NUM
 enum {JOYSTICK_MODE_FLOATING=0, JOYSTICK_MODE_CENTERING};	// Joystick centering control
 
 void    JoyInitialize();
-BOOL    JoyProcessKey(int,BOOL,BOOL,BOOL);
+BOOL    JoyProcessKey(int,bool,bool,bool);
 void    JoyReset();
 void    JoySetButton(eBUTTON,eBUTTONSTATE);
 BOOL    JoySetEmulationType(HWND,DWORD,int, const bool bMousecardActive);
@@ -24,6 +24,7 @@ DWORD   JoyGetJoyType(UINT num);
 void    JoySetTrim(short nValue, bool bAxisX);
 short   JoyGetTrim(bool bAxisX);
 void	JoyportControl(const UINT uControl);
+void	JoySetHookAltKeys(bool hook);
 void    JoySetSnapshot_v1(const unsigned __int64 JoyCntrResetCycle);
 void    JoySaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    JoyLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
