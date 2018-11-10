@@ -85,22 +85,8 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 
 	//
 
-	if (IS_APPLE2E)
-	{
-		// IF THE EMULATED PROGRAM HAS JUST UPDATED THE MEMORY WRITE MODE AND IS
-		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
-		// IT DOES SO.
-		//
-		// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
-		// - although any data-race is probably a bug in the 6502 code too.
-		if ((PC < 0xC000) &&
-			(((*(LPDWORD)(mem+PC) & 0x00FFFEFF) == 0x00C0048D) ||	// Next: STA $C004 or STA $C005
-			 ((*(LPDWORD)(mem+PC) & 0x00FFFEFF) == 0x00C0028D)))	// Next: STA $C002 or STA $C003
-		{
-				SetModeChanging(1);
-				return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
-		}
-	}
+	if (MemOptimizeForModeChanging(PC, uAddr))
+		return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
 
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
 	// WRITE TABLES.

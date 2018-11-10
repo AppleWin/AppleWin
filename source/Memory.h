@@ -66,7 +66,7 @@ LPBYTE  MemGetBankPtr(const UINT nBank);
 LPBYTE  MemGetCxRomPeripheral();
 DWORD   GetMemMode(void);
 void    SetMemMode(DWORD memmode);
-void	SetModeChanging(BOOL value);
+bool	MemOptimizeForModeChanging(WORD programcounter, WORD address);
 bool    MemIsAddrCodeMemory(const USHORT addr);
 void    MemInitialize ();
 void    MemInitializeROM(void);

@@ -972,11 +972,6 @@ static bool IsCardInSlot(const UINT uSlot)
 
 //===========================================================================
 
-void SetModeChanging(BOOL value)
-{
-	modechanging = value;
-}
-
 DWORD GetMemMode(void)
 {
 	return memmode;
@@ -1953,21 +1948,8 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 		}
 	}
 
-	if (IS_APPLE2E)
-	{
-		// IF THE EMULATED PROGRAM HAS JUST UPDATED THE MEMORY WRITE MODE AND IS
-		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
-		// IT DOES SO.
-		//
-		// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
-		// - although any data-race is probably a bug in the 6502 code too.
-		if ((address >= 4) && (address <= 5) &&
-			((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))		// Next: STA $C002 or STA $C003
-		{
-				modechanging = 1;
-				return 0;	// For $C004 & $C005: entry to this func is always via a write to $C004 or $C005
-		}
-	}
+	if (MemOptimizeForModeChanging(programcounter, address))
+		return write ? 0 : MemReadFloatingBus(nExecutedCycles);
 
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
 	// WRITE TABLES.
@@ -2008,6 +1990,37 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 		return VideoSetMode(programcounter,address,write,value,nExecutedCycles);
 
 	return write ? 0 : MemReadFloatingBus(nExecutedCycles);
+}
+
+//===========================================================================
+
+bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
+{
+	if (IS_APPLE2E)
+	{
+		// IF THE EMULATED PROGRAM HAS JUST UPDATED THE MEMORY WRITE MODE AND IS
+		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
+		// IT DOES SO.
+		//
+		// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
+		// - although any data-race is probably a bug in the 6502 code too.
+		if ((address >= 4) && (address <= 5) &&									// Now:  RAMWRTOFF or RAMWRTON
+			((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))		// Next: STA $C002(RAMRDOFF) or STA $C003(RAMRDON)
+		{
+				modechanging = 1;
+				return true;
+		}
+
+		if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&	// Now: LC
+			(((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||		// Next: STA $C004(RAMWRTOFF) or STA $C005(RAMWRTON)
+			 ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)))		//    or STA $C002(RAMRDOFF)  or STA $C003(RAMRDON)
+		{
+				modechanging = 1;
+				return true;
+		}
+	}
+
+	return false;
 }
 
 //===========================================================================
