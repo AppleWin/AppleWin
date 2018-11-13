@@ -1141,6 +1141,36 @@ static void Video_SaveScreenShot( const char *pScreenShotFileName, const VideoSc
 	}
 }
 
+
+//===========================================================================
+
+static const UINT kVideoRomSize4K = 4*1024;
+static const UINT kVideoRomSize8K = kVideoRomSize4K*2;
+static const UINT kVideoRomSize16K = kVideoRomSize8K*2;
+static const UINT kVideoRomSizeMax = kVideoRomSize16K;
+static BYTE g_videoRom[kVideoRomSizeMax];
+
+bool Video_ReadVideoRomFile(const char* pRomFile)
+{
+	HANDLE h = CreateFile(pRomFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+	if (h == INVALID_HANDLE_VALUE)
+		return false;
+
+	bool res = false;
+
+	const ULONG size = GetFileSize(h, NULL);
+	if (size == kVideoRomSize4K || size == kVideoRomSize8K || size == kVideoRomSize16K)
+	{
+		DWORD bytesRead;
+		if (ReadFile(h, g_videoRom, size, &bytesRead, NULL) && bytesRead == size)
+			res = true;
+	}
+
+	CloseHandle(h);
+
+	return res;
+}
+
 //===========================================================================
 
 void Config_Load_Video()
@@ -1159,8 +1189,6 @@ void Config_Save_Video()
 	REGSAVE(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),g_uHalfScanLines);
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),g_nMonochromeRGB);
 }
-
-// ____________________________________________________________________
 
 //===========================================================================
 static void videoCreateDIBSection()

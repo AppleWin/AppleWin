@@ -200,5 +200,7 @@ void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int n
 
 BYTE VideoSetMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 
+bool Video_ReadVideoRomFile(const char* pRomFile);
+
 void Config_Load_Video(void);
 void Config_Save_Video(void);
