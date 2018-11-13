@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 #include "Applewin.h"
+#include "Video.h"
 
 #include "NTSC_CharSet.h"
 
@@ -86,6 +87,44 @@ static void get_csbits(csbits_t csbits, const char* resourceName, const UINT cy0
 	delete [] pBuffer;
 }
 
+void userVideoRom(void)
+{
+	const BYTE* pVideoRom;
+	UINT size = Video_GetVideoRom(pVideoRom);	// 4K or 8K
+	if (!size)
+		return;
+
+	if (size == 4*1024)	// TODO
+	{
+		_ASSERT(0);
+		return;
+	}
+
+	csbits_t csbits = &csbits_enhanced2e[1];	// 1st: alt char set
+
+	int ch=0;
+	for (int i=0; i<256; i++, ch++)
+	{
+		for (int y=0; y<8; y++)
+		{
+			csbits[0][i][y] = pVideoRom[ch*8+y] ^ 0xff;
+		}
+	}
+
+	// Skip next 256 junk chars
+	ch += 256;
+
+	csbits = &csbits_enhanced2e[0];				// 2nd: regular char set
+
+	for (int i=0; i<256; i++, ch++)
+	{
+		for (int y=0; y<8; y++)
+		{
+			csbits[0][i][y] = pVideoRom[ch*8+y] ^ 0xff;
+		}
+	}
+}
+
 void make_csbits(void)
 {
 	get_csbits(&csbits_enhanced2e[0], TEXT("CHARSET40"), 0);	// Enhanced //e: Alt char set off
@@ -99,4 +138,7 @@ void make_csbits(void)
 	// Original //e is just Enhanced //e with the 32 mousetext chars [0x40..0x5F] replaced by the non-alt charset chars [0x40..0x5F]
 	memcpy(csbits_2e, csbits_enhanced2e, sizeof(csbits_enhanced2e));
 	memcpy(&csbits_2e[1][64], &csbits_2e[0][64], 32*8);
+
+	// Try to use any user-provided video ROM for Enhanced //e
+	userVideoRom();
 }

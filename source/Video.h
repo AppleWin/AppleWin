@@ -199,6 +199,7 @@ void Video_TakeScreenShot( VideoScreenShot_e iScreenShotType );
 void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel );
 
 BYTE VideoSetMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+UINT Video_GetVideoRom(const BYTE*& pVideoRom);
 
 bool Video_ReadVideoRomFile(const char* pRomFile);
 
