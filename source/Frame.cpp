@@ -1316,13 +1316,18 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if (wparam == VK_F10)
 		{
-			if (g_Apple2Type == A2TYPE_PRAVETS8A && !KeybGetCtrlStatus())
-			{
-				KeybToggleP8ACapsLock ();	// F10: Toggles P8 Capslock
-			}
-			else
+			if (KeybGetCtrlStatus())
 			{
 				SetUsingCursor(FALSE);		// Ctrl+F10
+			}
+			else if (g_Apple2Type == A2TYPE_APPLE2E || g_Apple2Type == A2TYPE_APPLE2EENHANCED)
+			{
+				SetVideoRomRockerSwitch( !GetVideoRomRockerSwitch() );	// F10: toggle rocker switch
+				NTSC_VideoInitAppleType();
+			}
+			else if (g_Apple2Type == A2TYPE_PRAVETS8A)
+			{
+				KeybToggleP8ACapsLock ();	// F10: Toggles Pravets8A Capslock
 			}
 		}
 		else if (wparam == VK_F11 && !KeybGetCtrlStatus())	// Save state (F11)
@@ -1758,7 +1763,6 @@ LRESULT CALLBACK FrameWndProc (
 		KeybUpdateCtrlShiftStatus();
 
 		// http://msdn.microsoft.com/en-us/library/windows/desktop/gg153546(v=vs.85).aspx
-		// v1.25.0: Alt-Return Alt-Enter toggle fullscreen
 		if (g_bAltEnter_ToggleFullScreen && KeybGetAltStatus() && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
 			return 0; // NOP -- eat key
 
@@ -1772,7 +1776,10 @@ LRESULT CALLBACK FrameWndProc (
 	case WM_SYSKEYUP:
 		KeybUpdateCtrlShiftStatus();
 
-		// v1.25.0: Alt-Return Alt-Enter toggle fullscreen
+		// F10: no WM_KEYUP handler for VK_F10. Don't allow WM_KEYUP to pass to default handler which will show the app window's "menu" (and lose focus)
+		if (wparam == VK_F10)
+			return 0;
+
 		if (g_bAltEnter_ToggleFullScreen && KeybGetAltStatus() && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
 			ScreenWindowResize(false);
 		else

@@ -198,10 +198,13 @@ enum VideoScreenShot_e
 void Video_TakeScreenShot( VideoScreenShot_e iScreenShotType );
 void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel );
 
-BYTE VideoSetMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
-UINT Video_GetVideoRom(const BYTE*& pVideoRom);
+BYTE VideoSetMode(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 
-bool Video_ReadVideoRomFile(const char* pRomFile);
+bool ReadVideoRomFile(const char* pRomFile);
+UINT GetVideoRom(const BYTE*& pVideoRom);
+bool GetVideoRomRockerSwitch(void);
+void SetVideoRomRockerSwitch(bool state);
+bool IsVideoRom4K(void);
 
 void Config_Load_Video(void);
 void Config_Save_Video(void);

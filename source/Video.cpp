@@ -647,7 +647,7 @@ void VideoResetState ()
 
 //===========================================================================
 
-BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
+BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
 
@@ -1150,8 +1150,9 @@ static const UINT kVideoRomSize16K = kVideoRomSize8K*2;
 static const UINT kVideoRomSizeMax = kVideoRomSize16K;
 static BYTE g_videoRom[kVideoRomSizeMax];
 static UINT g_videoRomSize = 0;
+static bool g_videoRomRockerSwitch = false;
 
-bool Video_ReadVideoRomFile(const char* pRomFile)
+bool ReadVideoRomFile(const char* pRomFile)
 {
 	g_videoRomSize = 0;
 
@@ -1179,10 +1180,25 @@ bool Video_ReadVideoRomFile(const char* pRomFile)
 	return g_videoRomSize != 0;
 }
 
-UINT Video_GetVideoRom(const BYTE*& pVideoRom)
+UINT GetVideoRom(const BYTE*& pVideoRom)
 {
 	pVideoRom = &g_videoRom[0];
 	return g_videoRomSize;
+}
+
+bool GetVideoRomRockerSwitch(void)
+{
+	return g_videoRomRockerSwitch;
+}
+
+void SetVideoRomRockerSwitch(bool state)
+{
+	g_videoRomRockerSwitch = state;
+}
+
+bool IsVideoRom4K(void)
+{
+	return g_videoRomSize == 0 || g_videoRomSize == kVideoRomSize4K;
 }
 
 //===========================================================================

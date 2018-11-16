@@ -25,7 +25,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "NTSC_CharSet.h"
 
-unsigned char csbits_enhanced2e[2][256][8];	// Enhanced //e
+unsigned char csbits_enhanced2e[2][256][8];	// Enhanced //e (2732 4K video ROM)
+static unsigned char csbits_enhanced2e_pal[2][256][8];	// PAL Enhanced //e (2764 8K video ROM - top 4K) via rocker switch under keyboard
 unsigned char csbits_2e[2][256][8];			// Original //e (no mousetext)
 unsigned char csbits_a2[1][256][8];			// ][ and ][+
 unsigned char csbits_pravets82[1][256][8];	// Pravets 82
@@ -87,43 +88,66 @@ static void get_csbits(csbits_t csbits, const char* resourceName, const UINT cy0
 	delete [] pBuffer;
 }
 
-void userVideoRom(void)
+//-------------------------------------
+
+void userVideoRom4K(csbits_t csbits, const BYTE* pVideoRom)
 {
-	const BYTE* pVideoRom;
-	UINT size = Video_GetVideoRom(pVideoRom);	// 4K or 8K
-	if (!size)
-		return;
-
-	if (size == 4*1024)	// TODO
-	{
-		_ASSERT(0);
-		return;
-	}
-
-	csbits_t csbits = &csbits_enhanced2e[1];	// 1st: alt char set
-
 	int ch=0;
-	for (int i=0; i<256; i++, ch++)
+	int i=0;
+
+	// regular char set
+
+	for (; i<64; i++, ch++)			// [00..3F] INVERSE / [40..7F] FLASH
 	{
 		for (int y=0; y<8; y++)
 		{
-			csbits[0][i][y] = pVideoRom[ch*8+y] ^ 0xff;
+			csbits[0][i][y]    = pVideoRom[ch*8+y] ^ 0xff;	// UTAIIe:8-11 "dot patterns in the video ROM are inverted..."
+			csbits[0][i+64][y] = pVideoRom[ch*8+y] ^ 0xff;
 		}
 	}
 
-	// Skip next 256 junk chars
-	ch += 256;
+	ch=128;
 
-	csbits = &csbits_enhanced2e[0];				// 2nd: regular char set
-
-	for (int i=0; i<256; i++, ch++)
+	for (i=128; i<256; i++, ch++)	// [80..FF] NORMAL
 	{
 		for (int y=0; y<8; y++)
 		{
-			csbits[0][i][y] = pVideoRom[ch*8+y] ^ 0xff;
+			csbits[0][i][y] = pVideoRom[ch*8+y] ^ 0xff;		// UTAIIe:8-11 "dot patterns in the video ROM are inverted..."
+		}
+	}
+
+	// alt char set
+
+	ch=0;
+
+	for (int i=0; i<256; i++, ch++)	// [00..3F] INVERSE / [80..FF] NORMAL
+	{
+		for (int y=0; y<8; y++)
+		{
+			csbits[1][i][y] = pVideoRom[ch*8+y] ^ 0xff;		// UTAIIe:8-11 "dot patterns in the video ROM are inverted..."
 		}
 	}
 }
+
+void userVideoRom(void)
+{
+	const BYTE* pVideoRom;
+	UINT size = GetVideoRom(pVideoRom);	// 4K or 8K
+	if (!size)
+		return;
+
+	if (size == 4*1024)
+	{
+		// TODO: test
+		userVideoRom4K(&csbits_enhanced2e[0], pVideoRom);
+		return;
+	}
+
+	userVideoRom4K(&csbits_enhanced2e_pal[0], pVideoRom);
+	userVideoRom4K(&csbits_enhanced2e[0], &pVideoRom[4*1024]);
+}
+
+//-------------------------------------
 
 void make_csbits(void)
 {
@@ -141,4 +165,12 @@ void make_csbits(void)
 
 	// Try to use any user-provided video ROM for Enhanced //e
 	userVideoRom();
+}
+
+csbits_t GetEnhanced2e_csbits(void)
+{
+	if (IsVideoRom4K())
+		return csbits_enhanced2e;
+
+	return GetVideoRomRockerSwitch() == false ? csbits_enhanced2e : csbits_enhanced2e_pal;
 }

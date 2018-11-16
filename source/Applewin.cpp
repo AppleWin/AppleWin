@@ -1294,11 +1294,15 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
-			if (!Video_ReadVideoRomFile(lpCmdLine))
+			if (!ReadVideoRomFile(lpCmdLine))
 			{
 				std::string msg = "Failed to load video rom (not found or not exactly 4/8/16KiB)";
 				LogFileOutput("%s", msg.c_str());
 				MessageBox(g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
+			}
+			else
+			{
+				SetVideoRomRockerSwitch(true);	// Use PAL char set
 			}
 		}
 		else if (strcmp(lpCmdLine, "-printscreen") == 0)		// Turn on display of the last filename print screen was saved to
