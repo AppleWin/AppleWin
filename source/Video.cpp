@@ -1144,7 +1144,6 @@ static void Video_SaveScreenShot( const char *pScreenShotFileName, const VideoSc
 
 //===========================================================================
 
-static const UINT kVideoRomSize4K = 4*1024;
 static const UINT kVideoRomSize8K = kVideoRomSize4K*2;
 static const UINT kVideoRomSize16K = kVideoRomSize8K*2;
 static const UINT kVideoRomSizeMax = kVideoRomSize16K;

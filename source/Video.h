@@ -200,6 +200,7 @@ void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int n
 
 BYTE VideoSetMode(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 
+const UINT kVideoRomSize4K = 4*1024;
 bool ReadVideoRomFile(const char* pRomFile);
 UINT GetVideoRom(const BYTE*& pVideoRom);
 bool GetVideoRomRockerSwitch(void);

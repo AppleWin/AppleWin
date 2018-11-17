@@ -161,7 +161,7 @@ void userVideoRom(void)
 	if (!size)
 		return;
 
-	if (size == 4*1024)
+	if (size == kVideoRomSize4K)
 	{
 		userVideoRom4K(&csbits_enhanced2e[0], pVideoRom);
 		return;
