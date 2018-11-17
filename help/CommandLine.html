@@ -44,6 +44,8 @@
 		NB. This changes the display resolution (and restores on exit).<br><br>
 		-f8rom &lt;rom-file&gt;<br>
 		Use custom 2K ROM at [$F800..$FFFF]. &lt;rom-file&gt; must be 2048 bytes long<br><br>
+		-videorom &lt;file&gt;<br>
+		Use an alternate European or custom 4K, 8K or 16K video ROM.<br><br>
 		-printscreen<br>
 		Enable the dialog box to display the last file saved to<br><br>
 		-no-printscreen-key<br>
@@ -51,6 +53,8 @@
 		-no-hook-system-key<br>
 		Prevent certain system key combinations from being hooked (to prevent the emulator from trapping ALT+ESC, ALT+SPACE, ALT+TAB and CTRL+ESC). This means that the equivalent Open Apple+&lt;key&gt; combinations won't work within the emulator.<br>
 		NB. This switch takes precedence over -hook-alt-tab and -hook-altgr-control.<br><br>
+		-no-hook-alt<br>
+		Prevent the left and right ALT keys from being hooked (eg. to prevent emulation of Open/Solid Apple keys via the ALT keys).<br><br>
 		-hook-alt-tab<br>
 		By default the emulator doesn't hook ALT+TAB. Use this to allow Open Apple+TAB to be readable by the emulated machine.<br><br>
 		-hook-altgr-control<br>
