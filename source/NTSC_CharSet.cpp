@@ -90,41 +90,66 @@ static void get_csbits(csbits_t csbits, const char* resourceName, const UINT cy0
 
 //-------------------------------------
 
+// ROM address (RA):
+// -----------------
+// . RA10,..,RA3;SEGC,SEGB,SEGA => [2^8][2^3] => 256 chars of 8 lines (total = 2KiB)
+// . VID7,..,VID0 is the 8-bit video character (eg. from TEXT/$400 memory)
+//
+// UTAIIe:8-13, Table 8.2:
+//
+// ALTCHRSET | RA10              | RA9
+//------------------------------------------
+//     0     | VID7 + VID6.FLASH | VID6.VID7
+//     1     | VID7              | VID6
+//
+// FLASH toggles every 16 VBLs, so alternates between selecting NORMAL control/special and INVERSE control/special
+//
+
 void userVideoRom4K(csbits_t csbits, const BYTE* pVideoRom)
 {
-	int ch=0;
-	int i=0;
+	int RA = 0;	// rom address
+	int i = 0;
 
 	// regular char set
 
-	for (; i<64; i++, ch++)			// [00..3F] INVERSE / [40..7F] FLASH
+	for (; i<64; i++, RA+=8)		// [00..3F] INVERSE / [40..7F] FLASH
 	{
 		for (int y=0; y<8; y++)
 		{
-			csbits[0][i][y]    = pVideoRom[ch*8+y] ^ 0xff;	// UTAIIe:8-11 "dot patterns in the video ROM are inverted..."
-			csbits[0][i+64][y] = pVideoRom[ch*8+y] ^ 0xff;
+			csbits[0][i][y]    = pVideoRom[RA+y] ^ 0xff;	// UTAIIe:8-11 "dot patterns in the video ROM are inverted..."
+			csbits[0][i+64][y] = pVideoRom[RA+y] ^ 0xff;	// UTAIIe:8-14 (Table 8.3) we use FLASH=0, so RA=00ccccccsss
 		}
 	}
 
-	ch=128;
+	RA = (1<<10 | 0<<9);									// UTAIIe:8-14 (Table 8.3)
 
-	for (i=128; i<256; i++, ch++)	// [80..FF] NORMAL
+	for (i=128; i<256; i++, RA+=8)	// [80..BF] NORMAL
 	{
 		for (int y=0; y<8; y++)
 		{
-			csbits[0][i][y] = pVideoRom[ch*8+y] ^ 0xff;		// UTAIIe:8-11 "dot patterns in the video ROM are inverted..."
+			csbits[0][i][y] = pVideoRom[RA+y] ^ 0xff;		// UTAIIe:8-11 "dot patterns in the video ROM are inverted..."
+		}
+	}
+
+	RA = (1<<10 | 1<<9);									// UTAIIe:8-14 (Table 8.3)
+
+	for (i=192; i<256; i++, RA+=8)	// [C0..FF] NORMAL
+	{
+		for (int y=0; y<8; y++)
+		{
+			csbits[0][i][y] = pVideoRom[RA+y] ^ 0xff;		// UTAIIe:8-11 "dot patterns in the video ROM are inverted..."
 		}
 	}
 
 	// alt char set
 
-	ch=0;
+	RA = 0;
 
-	for (int i=0; i<256; i++, ch++)	// [00..3F] INVERSE / [80..FF] NORMAL
+	for (i=0; i<256; i++, RA+=8)	// [00..7F] INVERSE / [80..FF] NORMAL
 	{
 		for (int y=0; y<8; y++)
 		{
-			csbits[1][i][y] = pVideoRom[ch*8+y] ^ 0xff;		// UTAIIe:8-11 "dot patterns in the video ROM are inverted..."
+			csbits[1][i][y] = pVideoRom[RA+y] ^ 0xff;		// UTAIIe:8-11 "dot patterns in the video ROM are inverted..."
 		}
 	}
 }
