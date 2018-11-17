@@ -163,7 +163,6 @@ void userVideoRom(void)
 
 	if (size == 4*1024)
 	{
-		// TODO: test
 		userVideoRom4K(&csbits_enhanced2e[0], pVideoRom);
 		return;
 	}
