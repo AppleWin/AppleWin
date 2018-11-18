@@ -68,6 +68,7 @@ LPBYTE  MemGetBankPtr(const UINT nBank);
 LPBYTE  MemGetCxRomPeripheral();
 DWORD   GetMemMode(void);
 void    SetMemMode(DWORD memmode);
+bool	MemOptimizeForModeChanging(WORD programcounter, WORD address);
 bool    MemIsAddrCodeMemory(const USHORT addr);
 void    MemInitialize ();
 void    MemInitializeROM(void);
@@ -94,6 +95,7 @@ BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExec
 enum SS_CARDTYPE;
 void	SetExpansionMemType(const SS_CARDTYPE type);
 SS_CARDTYPE GetCurrentExpansionMemType(void);
+void	CreateLanguageCard(void);
 
 void	SetRamWorksMemorySize(UINT pages);
 UINT	GetRamWorksActiveBank(void);

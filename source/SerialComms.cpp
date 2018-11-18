@@ -1316,6 +1316,7 @@ char* CSuperSerialCard::GetSerialPortChoices()
 void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 {
 	strncpy(m_ayCurrentSerialPortName, pSerialPortName, SIZEOF_SERIALCHOICE_ITEM);
+	m_ayCurrentSerialPortName[SIZEOF_SERIALCHOICE_ITEM-1] = 0;
 
 	// Init m_aySerialPortChoices, so that we have choices to show if serial is active when we 1st open Config dialog
 	GetSerialPortChoices();

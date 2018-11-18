@@ -8,9 +8,9 @@ class LanguageCardUnit
 {
 public:
 	LanguageCardUnit(void);
-	virtual ~LanguageCardUnit(void) {}
+	virtual ~LanguageCardUnit(void);
 
-	virtual DWORD SetPaging(WORD address, DWORD memmode, BOOL& modechanging, bool write);
+	virtual void InitializeIO(void);
 	virtual void SetMemorySize(UINT banks) {}		// No-op for //e and slot-0 16K LC
 	virtual UINT GetActiveBank(void) { return 0; }	// Always 0 as only 1x 16K bank
 	virtual void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper) { _ASSERT(0); } // Not used for //e
@@ -20,7 +20,10 @@ public:
 	void SetLastRamWrite(BOOL count) { m_uLastRamWrite = count; }
 	SS_CARDTYPE GetMemoryType(void) { return m_type; }
 
+	static BYTE __stdcall IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
+
 	static const UINT kMemModeInitialState;
+	static const UINT kSlot0 = 0;
 
 protected:
 	SS_CARDTYPE m_type;
@@ -49,10 +52,10 @@ protected:
 	void SaveLCState(class YamlSaveHelper& yamlSaveHelper);
 	void LoadLCState(class YamlLoadHelper& yamlLoadHelper);
 
+	LPBYTE m_pMemory;
+
 private:
 	std::string GetSnapshotMemStructName(void);
-
-	LPBYTE m_pMemory;
 };
 
 //
@@ -65,12 +68,15 @@ public:
 	Saturn128K(UINT banks);
 	virtual ~Saturn128K(void);
 
-	virtual DWORD SetPaging(WORD address, DWORD memmode, BOOL& modechanging, bool write);
+	virtual void InitializeIO(void);
 	virtual void SetMemorySize(UINT banks);
 	virtual UINT GetActiveBank(void);
 	virtual void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
+	static BYTE __stdcall IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
+
+	// "The boards consist of 16K banks of memory (4 banks for the 64K board, 8 banks for the 128K), accessed one at a time" - Ref: "64K/128K RAM BOARD", Saturn Systems, Ch.1 Introduction(pg-5)
 	static const UINT kMaxSaturnBanks = 8;		// 8 * 16K = 128K
 	static std::string GetSnapshotCardName(void);
 

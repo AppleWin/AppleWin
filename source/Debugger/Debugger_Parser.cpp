@@ -127,7 +127,7 @@ int _Arg_Shift( int iSrc, int iEnd, int iDst )
 {
 	if (iDst < 0)
 		return ARG_SYNTAX_ERROR;
-	if (iDst > MAX_ARGS)
+	if (iDst >= MAX_ARGS)
 		return ARG_SYNTAX_ERROR;
 
 	int nArgs = (iEnd - iSrc);
@@ -151,10 +151,10 @@ int _Args_Insert( int iSrc, int iEnd, int nLen )
 	iSrc += nLen;
 	int iDst = iEnd + nLen;
 
-	if (iDst > MAX_ARGS)
+	if (iDst >= MAX_ARGS)
 		return ARG_SYNTAX_ERROR;
 
-	if (iSrc > MAX_ARGS)
+	if (iSrc >= MAX_ARGS)
 		return ARG_SYNTAX_ERROR;
 	
 	while (nLen--)

@@ -214,6 +214,9 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 
 //=============================================================================
 
+// Default memory types on a VM restart
+// - can be overwritten by cmd-line or loading a save-state
+static SS_CARDTYPE g_MemTypeAppleII = CT_Empty;
 static SS_CARDTYPE g_MemTypeAppleIIPlus = CT_LanguageCard;	// Keep a copy so it's not lost if machine type changes, eg: A][ -> A//e -> A][
 static SS_CARDTYPE g_MemTypeAppleIIe = CT_Extended80Col;	// Keep a copy so it's not lost if machine type changes, eg: A//e -> A][ -> A//e
 static UINT g_uSaturnBanksFromCmdLine = 0;
@@ -221,14 +224,18 @@ static UINT g_uSaturnBanksFromCmdLine = 0;
 // Called from MemLoadSnapshot()
 static void ResetDefaultMachineMemTypes(void)
 {
+	g_MemTypeAppleII = CT_Empty;
 	g_MemTypeAppleIIPlus = CT_LanguageCard;
 	g_MemTypeAppleIIe = CT_Extended80Col;
 }
 
-// Called from MemInitialize(), MemLoadSnapshot()
-void SetExpansionMemTypeDefault(void)
+// Called from MemInitialize(), MemLoadSnapshot(), MemSetSnapshot_v1()
+static void SetExpansionMemTypeDefault(void)
 {
-	SS_CARDTYPE defaultType = IsApple2PlusOrClone(GetApple2Type()) ? g_MemTypeAppleIIPlus : g_MemTypeAppleIIe;
+	SS_CARDTYPE defaultType = IsApple2Original(GetApple2Type()) ? g_MemTypeAppleII
+		: IsApple2PlusOrClone(GetApple2Type()) ? g_MemTypeAppleIIPlus
+		: g_MemTypeAppleIIe;
+
 	SetExpansionMemType(defaultType);
 }
 
@@ -239,7 +246,12 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 	SS_CARDTYPE newSlotAuxCard;
 
 	// Set defaults:
-	if (IsApple2PlusOrClone(GetApple2Type()))
+	if (IsApple2Original(GetApple2Type()))
+	{
+		newSlot0Card = CT_Empty;
+		newSlotAuxCard = CT_Empty;
+	}
+	else if (IsApple2PlusOrClone(GetApple2Type()))
 	{
 		newSlot0Card = CT_LanguageCard;
 		newSlotAuxCard = CT_Empty;
@@ -250,11 +262,12 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 		newSlotAuxCard = CT_Extended80Col;
 	}
 
-	if (type == CT_Saturn128K)
+	if (type == CT_LanguageCard || type == CT_Saturn128K)
 	{
+		g_MemTypeAppleII = type;
 		g_MemTypeAppleIIPlus = type;
 		if (IsApple2PlusOrClone(GetApple2Type()))
-			newSlot0Card = CT_Saturn128K;
+			newSlot0Card = type;
 		else
 			newSlot0Card = CT_Empty;	// NB. No slot0 for //e
 	}
@@ -264,29 +277,31 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 		if (IsApple2PlusOrClone(GetApple2Type()))
 			newSlotAuxCard = CT_Empty;	// NB. No aux slot for ][ or ][+
 		else
-			newSlotAuxCard = CT_RamWorksIII;
+			newSlotAuxCard = type;
 	}
-
-	if (IsApple2PlusOrClone(GetApple2Type()))
-	{
-		delete g_pLanguageCard;
-		g_pLanguageCard = NULL;
-
-		if (newSlot0Card == CT_Saturn128K)
-			g_pLanguageCard = new Saturn128K(g_uSaturnBanksFromCmdLine);
-		else // newSlot0Card == CT_LanguageCard
-			g_pLanguageCard = new LanguageCardSlot0;
-	}
-	else
-	{
-		delete g_pLanguageCard;
-		g_pLanguageCard = new LanguageCardUnit;
-	}
-
-	_ASSERT(g_pMemMainLanguageCard);
 
 	g_Slot0 = newSlot0Card;
 	g_SlotAux = newSlotAuxCard;
+}
+
+void CreateLanguageCard(void)
+{
+	delete g_pLanguageCard;
+	g_pLanguageCard = NULL;
+
+	if (IsApple2PlusOrClone(GetApple2Type()))
+	{
+		if (g_Slot0 == CT_Saturn128K)
+			g_pLanguageCard = new Saturn128K(g_uSaturnBanksFromCmdLine);
+		else if (g_Slot0 == CT_LanguageCard)
+			g_pLanguageCard = new LanguageCardSlot0;
+		else
+			g_pLanguageCard = NULL;
+	}
+	else
+	{
+		g_pLanguageCard = new LanguageCardUnit;
+	}
 }
 
 SS_CARDTYPE GetCurrentExpansionMemType(void)
@@ -318,12 +333,15 @@ void SetSaturnMemorySize(UINT banks)
 
 static BOOL GetLastRamWrite(void)
 {
-	return g_pLanguageCard->GetLastRamWrite();
+	if (g_pLanguageCard)
+		return g_pLanguageCard->GetLastRamWrite();
+	return 0;
 }
 
 static void SetLastRamWrite(BOOL count)
 {
-	g_pLanguageCard->SetLastRamWrite(count);
+	if (g_pLanguageCard)
+		g_pLanguageCard->SetLastRamWrite(count);
 }
 
 //
@@ -338,6 +356,7 @@ void SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain /*=false*/)
 
 LanguageCardUnit* GetLanguageCard(void)
 {
+	_ASSERT(g_pLanguageCard);
 	return g_pLanguageCard;
 }
 
@@ -1003,7 +1022,12 @@ void MemResetPaging()
 static void ResetPaging(BOOL initialize)
 {
 	SetLastRamWrite(0);
-	SetMemMode(LanguageCardUnit::kMemModeInitialState);
+
+	if (IsApple2PlusOrClone(GetApple2Type()) && g_Slot0 == CT_Empty)
+		SetMemMode(0);
+	else
+		SetMemMode(LanguageCardUnit::kMemModeInitialState);
+
 	UpdatePaging(initialize);
 }
 
@@ -1016,6 +1040,8 @@ void MemUpdatePaging(BOOL initialize)
 
 static void UpdatePaging(BOOL initialize)
 {
+	modechanging = 0;
+
 	// SAVE THE CURRENT PAGING SHADOW TABLE
 	LPBYTE oldshadow[256];
 	if (!initialize)
@@ -1177,8 +1203,6 @@ void MemDestroy()
 	pCxRomPeripheral	= NULL;
 
 	mem      = NULL;
-
-	g_pMemMainLanguageCard = NULL;
 
 	ZeroMemory(memwrite, sizeof(memwrite));
 	ZeroMemory(memshadow,sizeof(memshadow));
@@ -1418,7 +1442,7 @@ void MemInitialize()
 	SetExpansionMemTypeDefault();
 
 #ifdef RAMWORKS
-	if (GetCurrentExpansionMemType() == CT_RamWorksIII)
+	if (g_SlotAux == CT_RamWorksIII)
 	{
 		// allocate memory for RAMWorks III - up to 8MB
 		g_uActiveBank = 0;
@@ -1432,6 +1456,8 @@ void MemInitialize()
 #endif
 
 	//
+
+	CreateLanguageCard();
 
 	MemInitializeROM();
 	MemInitializeCustomF8ROM();
@@ -1519,6 +1545,36 @@ void MemInitializeROM(void)
 void MemInitializeCustomF8ROM(void)
 {
 	const UINT F8RomSize = 0x800;
+	const UINT F8RomOffset = Apple2RomSize-F8RomSize;
+
+	if (IsApple2Original(GetApple2Type()) && g_Slot0 == CT_LanguageCard)
+	{
+		try
+		{
+			HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_PLUS_ROM), "ROM");
+			if (hResInfo == NULL)
+				throw false;
+
+			DWORD dwResSize = SizeofResource(NULL, hResInfo);
+			if(dwResSize != Apple2RomSize)
+				throw false;
+
+			HGLOBAL hResData = LoadResource(NULL, hResInfo);
+			if(hResData == NULL)
+				throw false;
+
+			BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
+			if (pData == NULL)
+				throw false;
+
+			memcpy(memrom+F8RomOffset, pData+F8RomOffset, F8RomSize);
+		}
+		catch (bool)
+		{
+			MessageBox( g_hFrameWindow, "Failed to read F8 (auto-start) ROM for language card in original Apple][", TEXT("AppleWin Error"), MB_OK );
+		}
+	}
+
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 	{
 		BYTE OldRom[Apple2RomSize];	// NB. 12KB on stack
@@ -1526,12 +1582,14 @@ void MemInitializeCustomF8ROM(void)
 
 		SetFilePointer(g_hCustomRomF8, 0, NULL, FILE_BEGIN);
 		DWORD uNumBytesRead;
-		BOOL bRes = ReadFile(g_hCustomRomF8, memrom+Apple2RomSize-F8RomSize, F8RomSize, &uNumBytesRead, NULL);
+		BOOL bRes = ReadFile(g_hCustomRomF8, memrom+F8RomOffset, F8RomSize, &uNumBytesRead, NULL);
 		if (uNumBytesRead != F8RomSize)
 		{
 			memcpy(memrom, OldRom, Apple2RomSize);	// ROM at $D000...$FFFF
 			bRes = FALSE;
 		}
+
+		// NB. If succeeded, then keep g_hCustomRomF8 handle open - so that any next restart can load it again
 
 		if (!bRes)
 		{
@@ -1566,8 +1624,10 @@ void MemInitializeIO(void)
 {
 	InitIoHandlers();
 
-	const UINT uSlot = 0;
-	RegisterIoHandler(uSlot, MemSetPaging, MemSetPaging, NULL, NULL, NULL, NULL);
+	if (g_pLanguageCard)
+		g_pLanguageCard->InitializeIO();
+	else
+		RegisterIoHandler(LanguageCardUnit::kSlot0, IO_Null, IO_Null, NULL, NULL, NULL, NULL);
 
 	// TODO: Cleanup peripheral setup!!!
 	PrintLoadRom(pCxRomPeripheral, 1);				// $C100 : Parallel printer f/w
@@ -1854,11 +1914,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 #endif
 
 	// DETERMINE THE NEW MEMORY PAGING MODE.
-	if ((address >= 0x80) && (address <= 0x8F))
-	{
-		SetMemMode( g_pLanguageCard->SetPaging(address, memmode, modechanging, write ? true : false) );
-	}
-	else if (!IS_APPLE2)
+	if (!IS_APPLE2)
 	{
 		switch (address)
 		{
@@ -1892,33 +1948,13 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 		}
 	}
 
-	if (GetCurrentExpansionMemType() != CT_Saturn128K)	// TODO: Not sure this optimisation is valid for Saturn, so skip it for now
-	{
-		// IF THE EMULATED PROGRAM HAS JUST UPDATE THE MEMORY WRITE MODE AND IS
-		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
-		// IT DOES SO.
-		//
-		// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
-		// - although any data-race is probably a bug in the 6502 code too.
-		if ((address >= 4) && (address <= 5) &&
-			((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
-				modechanging = 1;
-				return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
-		}
-		if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&
-			(((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||
-			 ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))) {
-				modechanging = 1;
-				return write ? 0 : MemReadFloatingBus(1, nExecutedCycles);
-		}
-	}
+	if (MemOptimizeForModeChanging(programcounter, address))
+		return write ? 0 : MemReadFloatingBus(nExecutedCycles);
 
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
 	// WRITE TABLES.
 	if ((lastmemmode != memmode) || modechanging)
 	{
-		modechanging = 0;
-
 		// NB. Must check MF_SLOTC3ROM too, as IoHandlerCardsIn() depends on both MF_INTCXROM|MF_SLOTC3ROM
 		if ((lastmemmode & (MF_INTCXROM|MF_SLOTC3ROM)) != (memmode & (MF_INTCXROM|MF_SLOTC3ROM)))
 		{
@@ -1958,6 +1994,37 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 
 //===========================================================================
 
+bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
+{
+	if (IS_APPLE2E)
+	{
+		// IF THE EMULATED PROGRAM HAS JUST UPDATED THE MEMORY WRITE MODE AND IS
+		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
+		// IT DOES SO.
+		//
+		// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
+		// - although any data-race is probably a bug in the 6502 code too.
+		if ((address >= 4) && (address <= 5) &&									// Now:  RAMWRTOFF or RAMWRTON
+			((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))		// Next: STA $C002(RAMRDOFF) or STA $C003(RAMRDON)
+		{
+				modechanging = 1;
+				return true;
+		}
+
+		if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&	// Now: LC
+			(((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||		// Next: STA $C004(RAMWRTOFF) or STA $C005(RAMWRTON)
+			 ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)))		//    or STA $C002(RAMRDOFF)  or STA $C003(RAMRDON)
+		{
+				modechanging = 1;
+				return true;
+		}
+	}
+
+	return false;
+}
+
+//===========================================================================
+
 LPVOID MemGetSlotParameters(UINT uSlot)
 {
 	_ASSERT(uSlot < NUM_SLOTS);
@@ -1972,6 +2039,12 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 
 void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE* const pMemMain, const BYTE* const pMemAux)
 {
+	// Create default LC type for AppleII machine (do prior to loading saved LC state)
+	ResetDefaultMachineMemTypes();
+	g_MemTypeAppleII = CT_LanguageCard;	// SSv1 doesn't save machine type - so if current machine is Apple II then give it 64K + LC
+	SetExpansionMemTypeDefault();
+	CreateLanguageCard();				// Create LC here, as for SSv1 there is no slot-0 state
+
 	SetMemMode(MemMode ^ MF_INTCXROM);	// Convert from SLOTCXROM to INTCXROM
 	SetLastRamWrite(LastWriteRam);
 
@@ -1981,7 +2054,6 @@ void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE*
 
 	//
 
-	modechanging = 0;
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v1()
 	UpdatePaging(1);	// Initialize=1
 }
@@ -2076,7 +2148,13 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	// Create default LC type for AppleII machine (do prior to loading saved LC state)
 	ResetDefaultMachineMemTypes();
+	if (version == 1)
+		g_MemTypeAppleII = CT_LanguageCard;	// version=1: original Apple II always has a LC
+	else
+		g_MemTypeAppleIIPlus = CT_Empty;	// version=2+: Apple II/II+ initially start with slot-0 empty
 	SetExpansionMemTypeDefault();
+	CreateLanguageCard();	// Create default LC now for: (a) //e which has no slot-0 LC (so this is final)
+							//							  (b) II/II+ which get re-created later if slot-0 has a card
 
 	//
 
@@ -2123,7 +2201,6 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	//
 
-	modechanging = 0;
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
 	UpdatePaging(1);	// Initialize=1 (Still needed, even with call to MemUpdatePaging() - why?)
 						// TC-TODO: At this point, the cards haven't been loaded, so the card's expansion ROM is unknown - so pointless(?) calling this now

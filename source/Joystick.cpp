@@ -111,6 +111,15 @@ static UINT g_bJoyportEnabled = 0;	// Set to use Joyport to drive the 3 button i
 static UINT g_uJoyportActiveStick = 0;
 static UINT g_uJoyportReadMode = JOYPORT_LEFTRIGHT;
 
+static bool g_bHookAltKeys = true;
+
+//===========================================================================
+
+void JoySetHookAltKeys(bool hook)
+{
+	g_bHookAltKeys = hook;
+}
+
 //===========================================================================
 void CheckJoystick0()
 {
@@ -296,7 +305,7 @@ void JoyInitialize()
 
 #define SUPPORT_CURSOR_KEYS
 
-BOOL JoyProcessKey(int virtkey, BOOL extended, BOOL down, BOOL autorep)
+BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 {
 	static struct
 	{
@@ -313,6 +322,9 @@ BOOL JoyProcessKey(int virtkey, BOOL extended, BOOL down, BOOL autorep)
 	{
 		return 0;
 	}
+
+	if (!g_bHookAltKeys && virtkey == VK_MENU)				// GH#583
+		return 0;
 
 	//
 

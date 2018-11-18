@@ -8,6 +8,34 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+
+1.27.12.0 - 17 Nov 2018
+-----------------------
+. [Change #574] Add support for PAL/European or custom 8K video ROMs:
+	- Added new command line switch: -videorom <file>
+		- Replaces the video ROM for the Enhanced //e.
+		- Support video ROM sizes of 4K, 8K and 16K (top 8K only).
+		- NB. The rocker switch is set to the European video ROM position.
+	- F10 (for //e or Enhanced //e models) emulates the PAL //e's rocker switch (under the keyboard).
+		- Use to toggle between European or US video ROM.
+. [Change #583] Added new switch: '-no-hook-alt':
+	- Used to prevent left/right ALT from emulating Open/Solid Apple keys.
+	- For European keyboards where AltGr is needed to type keys like '[',']'.
+
+
+1.27.10.0 - 4 Nov 2018
+----------------------
+. [Change #590] Apple II original: default to 48K (so no LC installed in slot-0).
+	- Added new command line switch: -s0 <languagecard|lc>
+	('lc' is an alias for 'languagecard')
+	- When LC is in slot-0, it now use the Apple II+'s F8 (auto-start) ROM
+. [Change #408] Support Saturn 64K and 128K cards in slot-0.
+	- Added new command line switch: -s0 <saturn|saturn64|saturn128>
+	('saturn' is an alias for 'saturn128')
+. [Bug #591] Save-state wasn't preserving the 'key-waiting' flag.
+. [Bug #587] Debugger: disassembly for branch targets < $1000 were missing the leading '0'.
+
+
 1.27.9.0 - 2 Oct 2018
 ---------------------
 . [Bug #582] Support for partial disk II latch reads when accesses are very close.

@@ -44,19 +44,33 @@ LanguageCardUnit::LanguageCardUnit(void) :
 	SetMemMainLanguageCard(NULL, true);
 }
 
-DWORD LanguageCardUnit::SetPaging(WORD address, DWORD memmode, BOOL& modechanging, bool write)
+LanguageCardUnit::~LanguageCardUnit(void)
 {
+	SetMemMainLanguageCard(NULL);
+}
+
+void LanguageCardUnit::InitializeIO(void)
+{
+	RegisterIoHandler(kSlot0, &LanguageCardUnit::IO, &LanguageCardUnit::IO, NULL, NULL, this, NULL);
+}
+
+BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
+{
+	LanguageCardUnit* pLC = (LanguageCardUnit*) MemGetSlotParameters(kSlot0);
+
+	DWORD memmode = GetMemMode();
+	DWORD lastmemmode = memmode;
 	memmode &= ~(MF_BANK2 | MF_HIGHRAM);
 
-	if (!(address & 8))
+	if (!(uAddr & 8))
 		memmode |= MF_BANK2;
 
-	if (((address & 2) >> 1) == (address & 1))
+	if (((uAddr & 2) >> 1) == (uAddr & 1))
 		memmode |= MF_HIGHRAM;
 
-	if (address & 1)	// GH#392
+	if (uAddr & 1)	// GH#392
 	{
-		if (!write && GetLastRamWrite())
+		if (!bWrite && pLC->GetLastRamWrite())
 		{
 			memmode |= MF_WRITERAM; // UTAIIe:5-23
 		}
@@ -66,9 +80,22 @@ DWORD LanguageCardUnit::SetPaging(WORD address, DWORD memmode, BOOL& modechangin
 		memmode &= ~MF_WRITERAM; // UTAIIe:5-23
 	}
 
-	SetLastRamWrite( ((address & 1) && !write) ); // UTAIIe:5-23
+	pLC->SetLastRamWrite( ((uAddr & 1) && !bWrite) ); // UTAIIe:5-23
+	SetMemMode(memmode);
 
-	return memmode;
+	//
+
+	if (MemOptimizeForModeChanging(PC, uAddr))
+		return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
+
+	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
+	// WRITE TABLES.
+	if (lastmemmode != memmode)
+	{
+		MemUpdatePaging(0);	// Initialize=0
+	}
+
+	return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
 }
 
 //-------------------------------------
@@ -89,7 +116,7 @@ LanguageCardSlot0::~LanguageCardSlot0(void)
 //
 
 static const UINT kUNIT_LANGUAGECARD_VER = 1;
-static const UINT kSLOT_LANGUAGECARD = 0;
+static const UINT kSLOT_LANGUAGECARD = LanguageCardUnit::kSlot0;
 
 #define SS_YAML_VALUE_CARD_LANGUAGECARD "Language Card"
 
@@ -183,7 +210,9 @@ Saturn128K::Saturn128K(UINT banks)
 	for (UINT i=0; i<kMaxSaturnBanks; i++)
 		m_aSaturnBanks[i] = NULL;
 
-	for (UINT i = 0; i < m_uSaturnTotalBanks; i++)
+	m_aSaturnBanks[0] = m_pMemory;	// Reuse memory allocated in base ctor
+
+	for (UINT i = 1; i < m_uSaturnTotalBanks; i++)
 		m_aSaturnBanks[i] = (LPBYTE) VirtualAlloc(NULL, kMemBankSize, MEM_COMMIT, PAGE_READWRITE); // Saturn banks are 16K, max 8 banks/card
 
 	SetMemMainLanguageCard( m_aSaturnBanks[ m_uSaturnActiveBank ] );
@@ -191,7 +220,9 @@ Saturn128K::Saturn128K(UINT banks)
 
 Saturn128K::~Saturn128K(void)
 {
-	for (UINT i = 0; i < m_uSaturnTotalBanks; i++)
+	m_aSaturnBanks[0] = NULL;	// just zero this - deallocated in base ctor
+
+	for (UINT i = 1; i < m_uSaturnTotalBanks; i++)
 	{
 		if (m_aSaturnBanks[i])
 		{
@@ -211,7 +242,12 @@ UINT Saturn128K::GetActiveBank(void)
 	return m_uSaturnActiveBank;
 }
 
-DWORD Saturn128K::SetPaging(WORD address, DWORD memmode, BOOL& modechanging, bool /*write*/)
+void Saturn128K::InitializeIO(void)
+{
+	RegisterIoHandler(kSlot0, &Saturn128K::IO, &Saturn128K::IO, NULL, NULL, this, NULL);
+}
+
+BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
 {
 /*
 	Bin   Addr.
@@ -232,54 +268,70 @@ DWORD Saturn128K::SetPaging(WORD address, DWORD memmode, BOOL& modechanging, boo
 	1110  $C0NE select 16K Bank 7
 	1111  $C0NF select 16K Bank 8
 */
-	_ASSERT(m_uSaturnTotalBanks);
-	if (!m_uSaturnTotalBanks)
-		return memmode;
+	Saturn128K* pLC = (Saturn128K*) MemGetSlotParameters(kSlot0);
 
-	if (address & (1<<2))
+	_ASSERT(pLC->m_uSaturnTotalBanks);
+	if (!pLC->m_uSaturnTotalBanks)
+		return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
+
+	bool bBankChanged = false;
+	DWORD memmode=0, lastmemmode=0;
+
+	if (uAddr & (1<<2))
 	{
-		m_uSaturnActiveBank = 0 // Saturn 128K Language Card Bank 0 .. 7
-			| (address >> 1) & 4
-			| (address >> 0) & 3;
+		pLC->m_uSaturnActiveBank = 0 // Saturn 128K Language Card Bank 0 .. 7
+			| (uAddr >> 1) & 4
+			| (uAddr >> 0) & 3;
 
-		if (m_uSaturnActiveBank >= m_uSaturnTotalBanks)
+		if (pLC->m_uSaturnActiveBank >= pLC->m_uSaturnTotalBanks)
 		{
 			// EG. Run RAMTEST128K tests on a Saturn 64K card
 			// TODO: Saturn::UpdatePaging() should deal with this case:
 			// . Technically read floating-bus, write to nothing
 			// . But the mem cache doesn't support floating-bus reads from non-I/O space
-			m_uSaturnActiveBank = m_uSaturnTotalBanks-1;	// FIXME: just prevent crash for now!
+			pLC->m_uSaturnActiveBank = pLC->m_uSaturnTotalBanks-1;	// FIXME: just prevent crash for now!
 		}
 
-		SetMemMainLanguageCard( m_aSaturnBanks[ m_uSaturnActiveBank ] );
-
-		modechanging = 1;
+		SetMemMainLanguageCard( pLC->m_aSaturnBanks[ pLC->m_uSaturnActiveBank ] );
+		bBankChanged = true;
 	}
 	else
 	{
+		memmode = GetMemMode();
+		lastmemmode = memmode;
 		memmode &= ~(MF_BANK2 | MF_HIGHRAM);
 
-		if (!(address & 8))
+		if (!(uAddr & 8))
 			memmode |= MF_BANK2;
 
-		if (((address & 2) >> 1) == (address & 1))
+		if (((uAddr & 2) >> 1) == (uAddr & 1))
 			memmode |= MF_HIGHRAM;
 
-		if (address & 1 && GetLastRamWrite())	// Saturn differs from Apple's 16K LC: any access (LC is read-only)
+		if (uAddr & 1 && pLC->GetLastRamWrite())// Saturn differs from Apple's 16K LC: any access (LC is read-only)
 			memmode |= MF_WRITERAM;
 		else
 			memmode &= ~MF_WRITERAM;
 
-		SetLastRamWrite(address & 1);	// Saturn differs from Apple's 16K LC: any access (LC is read-only)
+		pLC->SetLastRamWrite(uAddr & 1);		// Saturn differs from Apple's 16K LC: any access (LC is read-only)
+		SetMemMode(memmode);
 	}
 
-	return memmode;
+	// NB. Unlike LC, no need to check if next opcode is STA $C002-5, as Saturn is not for //e
+
+	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
+	// WRITE TABLES.
+	if ((lastmemmode != memmode) || bBankChanged)
+	{
+		MemUpdatePaging(0);	// Initialize=0
+	}
+
+	return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
 }
 
 //
 
 static const UINT kUNIT_SATURN_VER = 1;
-static const UINT kSLOT_SATURN = 0;
+static const UINT kSLOT_SATURN = LanguageCardUnit::kSlot0;
 
 #define SS_YAML_VALUE_CARD_SATURN128 "Saturn 128"
 

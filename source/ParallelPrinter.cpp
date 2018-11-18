@@ -315,6 +315,7 @@ bool Printer_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT 
 	inactivity					= yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);
 	g_PrinterIdleLimit			= yamlLoadHelper.LoadUint(SS_YAML_KEY_IDLELIMIT);
 	strncpy(g_szPrintFilename, yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME).c_str(), sizeof(g_szPrintFilename));
+	g_szPrintFilename[sizeof(g_szPrintFilename)-1] = 0;
 
 	if (yamlLoadHelper.LoadBool(SS_YAML_KEY_FILEOPEN))
 	{

@@ -22,6 +22,9 @@
 		-s0 &lt;saturn|saturn64|saturn128&gt;<br>
 		Insert a Saturn 64K or Saturn 128K card into slot 0 in Apple II or Apple II+ machines (or similar clone).<br>
 		Where -s0 saturn is an alias for -s0 saturn128.<br><br>
+		-s0 &lt;languagecard|lc&gt;<br>
+		Insert an Apple 16K Language Card into slot 0 in Apple II and use the F8 auto-start ROM.<br>
+		NB. The Apple II+ already defaults to having a Language Card, so this switch is not required.<br><br>
 		-s7 empty<br>
 		Remove the hard disk controller card from slot 7.<br>
 		Useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br><br>
@@ -41,6 +44,8 @@
 		NB. This changes the display resolution (and restores on exit).<br><br>
 		-f8rom &lt;rom-file&gt;<br>
 		Use custom 2K ROM at [$F800..$FFFF]. &lt;rom-file&gt; must be 2048 bytes long<br><br>
+		-videorom &lt;file&gt;<br>
+		Use an alternate European or custom 4K, 8K or 16K video ROM.<br><br>
 		-printscreen<br>
 		Enable the dialog box to display the last file saved to<br><br>
 		-no-printscreen-key<br>
@@ -48,6 +53,8 @@
 		-no-hook-system-key<br>
 		Prevent certain system key combinations from being hooked (to prevent the emulator from trapping ALT+ESC, ALT+SPACE, ALT+TAB and CTRL+ESC). This means that the equivalent Open Apple+&lt;key&gt; combinations won't work within the emulator.<br>
 		NB. This switch takes precedence over -hook-alt-tab and -hook-altgr-control.<br><br>
+		-no-hook-alt<br>
+		Prevent the left and right ALT keys from being hooked (eg. to prevent emulation of Open/Solid Apple keys via the ALT keys).<br><br>
 		-hook-alt-tab<br>
 		By default the emulator doesn't hook ALT+TAB. Use this to allow Open Apple+TAB to be readable by the emulated machine.<br><br>
 		-hook-altgr-control<br>

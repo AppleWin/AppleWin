@@ -1142,6 +1142,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bSetFullScreen = false;
 	bool bBoot = false;
 	bool bChangedDisplayResolution = false;
+	bool bSlot0LanguageCard = false;
 	bool bSlot7Empty = false;
 	UINT bestWidth = 0, bestHeight = 0;
 	LPSTR szImageName_drive[NUM_DRIVES] = {NULL,NULL};
@@ -1269,19 +1270,40 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
-			// "The boards consist of 16K banks of memory (4 banks for the 64K board, 8 banks for the 128K), accessed one at a time" - Ref: "64K/128K RAM BOARD", Saturn Systems, Ch.1 Introduction(pg-5)
 			if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)
 				uSaturnBanks = Saturn128K::kMaxSaturnBanks;
 			else if (strcmp(lpCmdLine, "saturn64") == 0)
 				uSaturnBanks = Saturn128K::kMaxSaturnBanks/2;
+			else if (strcmp(lpCmdLine, "languagecard") == 0 || strcmp(lpCmdLine, "lc") == 0)
+				bSlot0LanguageCard = true;
 		}
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
+
+			if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)	// Stop resource leak if -f8rom is specified twice!
+				CloseHandle(g_hCustomRomF8);
+
 			g_hCustomRomF8 = CreateFile(lpCmdLine, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 			if ((g_hCustomRomF8 == INVALID_HANDLE_VALUE) || (GetFileSize(g_hCustomRomF8, NULL) != 0x800))
 				g_bCustomRomF8Failed = true;
+		}
+		else if (strcmp(lpCmdLine, "-videorom") == 0)			// Use 4K,8K or 16K video ROM for Enhanced //e
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			if (!ReadVideoRomFile(lpCmdLine))
+			{
+				std::string msg = "Failed to load video rom (not found or not exactly 4/8/16KiB)";
+				LogFileOutput("%s", msg.c_str());
+				MessageBox(g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
+			}
+			else
+			{
+				SetVideoRomRockerSwitch(true);	// Use PAL char set
+			}
 		}
 		else if (strcmp(lpCmdLine, "-printscreen") == 0)		// Turn on display of the last filename print screen was saved to
 		{
@@ -1306,6 +1328,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if (strcmp(lpCmdLine, "-hook-altgr-control") == 0)		// GH#556
 		{
 			g_bHookAltGrControl = true;
+		}
+		else if (strcmp(lpCmdLine, "-no-hook-alt") == 0)			// GH#583
+		{
+			JoySetHookAltKeys(false);
 		}
 		else if (strcmp(lpCmdLine, "-spkr-inc") == 0)
 		{
@@ -1470,6 +1496,12 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			uSaturnBanks = 0;		// Don't reapply after a restart
 		}
 
+		if (bSlot0LanguageCard)
+		{
+			SetExpansionMemType(CT_LanguageCard);
+			bSlot0LanguageCard = false;	// Don't reapply after a restart
+		}
+
 		DebugInitialize();
 		LogFileOutput("Main: DebugInitialize()\n");
 
@@ -1537,7 +1569,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if (g_bCustomRomF8Failed)
 		{
-			MessageBox(g_hFrameWindow, "Failed to load custom F8 rom (not found or not exactly 2KB)", TEXT("AppleWin Error"), MB_OK);
+			std::string msg = "Failed to load custom F8 rom (not found or not exactly 2KiB)";
+			LogFileOutput("%s", msg.c_str());
+			MessageBox(g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			bShutdown = true;
 		}
 

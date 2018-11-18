@@ -1268,6 +1268,7 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 		return eIMAGE_ERROR_ZIP;
 
 	strncpy(pImageInfo->szFilenameInZip, szFilename, MAX_PATH);
+	pImageInfo->szFilenameInZip[MAX_PATH-1] = 0;
 	memcpy(&pImageInfo->zipFileInfo.tmz_date, &file_info.tmu_date, sizeof(file_info.tmu_date));
 	pImageInfo->zipFileInfo.dosDate     = file_info.dosDate;
 	pImageInfo->zipFileInfo.internal_fa = file_info.internal_fa;

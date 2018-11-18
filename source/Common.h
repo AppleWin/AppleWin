@@ -193,9 +193,14 @@ enum eApple2Type {
 					A2TYPE_MAX
 				};
 
+inline bool IsApple2Original(eApple2Type type)		// Apple ][
+{
+	return type == A2TYPE_APPLE2;
+}
+
 inline bool IsApple2Plus(eApple2Type type)			// Apple ][,][+
 {
-	return (type & (APPLE2E_MASK|APPLE2C_MASK)) == 0;
+	return ((type & (APPLE2E_MASK|APPLE2C_MASK)) == 0) && !(type & APPLECLONE_MASK);
 }
 
 inline bool IsClone(eApple2Type type)
@@ -205,8 +210,7 @@ inline bool IsClone(eApple2Type type)
 
 inline bool IsApple2PlusOrClone(eApple2Type type)	// Apple ][,][+ or clone ][,][+
 {
-	return ((type & (APPLE2E_MASK|APPLE2C_MASK)) == 0)
-		||	(type & APPLECLONE_MASK) && !(type & A2TYPE_CLONE_A2E);
+	return (type & (APPLE2E_MASK|APPLE2C_MASK)) == 0;
 }
 
 extern eApple2Type g_Apple2Type;

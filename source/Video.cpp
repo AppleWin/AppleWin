@@ -647,7 +647,7 @@ void VideoResetState ()
 
 //===========================================================================
 
-BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
+BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
 
@@ -1141,6 +1141,65 @@ static void Video_SaveScreenShot( const char *pScreenShotFileName, const VideoSc
 	}
 }
 
+
+//===========================================================================
+
+static const UINT kVideoRomSize8K = kVideoRomSize4K*2;
+static const UINT kVideoRomSize16K = kVideoRomSize8K*2;
+static const UINT kVideoRomSizeMax = kVideoRomSize16K;
+static BYTE g_videoRom[kVideoRomSizeMax];
+static UINT g_videoRomSize = 0;
+static bool g_videoRomRockerSwitch = false;
+
+bool ReadVideoRomFile(const char* pRomFile)
+{
+	g_videoRomSize = 0;
+
+	HANDLE h = CreateFile(pRomFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+	if (h == INVALID_HANDLE_VALUE)
+		return false;
+
+	const ULONG size = GetFileSize(h, NULL);
+	if (size == kVideoRomSize4K || size == kVideoRomSize8K || size == kVideoRomSize16K)
+	{
+		DWORD bytesRead;
+		if (ReadFile(h, g_videoRom, size, &bytesRead, NULL) && bytesRead == size)
+			g_videoRomSize = size;
+	}
+
+	if (g_videoRomSize == kVideoRomSize16K)
+	{
+		// Use top 8K (assume bottom 8K is all 0xFF's)
+		memcpy(&g_videoRom[0], &g_videoRom[kVideoRomSize8K], kVideoRomSize8K);
+		g_videoRomSize = kVideoRomSize8K;
+	}
+
+	CloseHandle(h);
+
+	return g_videoRomSize != 0;
+}
+
+UINT GetVideoRom(const BYTE*& pVideoRom)
+{
+	pVideoRom = &g_videoRom[0];
+	return g_videoRomSize;
+}
+
+bool GetVideoRomRockerSwitch(void)
+{
+	return g_videoRomRockerSwitch;
+}
+
+void SetVideoRomRockerSwitch(bool state)
+{
+	g_videoRomRockerSwitch = state;
+}
+
+bool IsVideoRom4K(void)
+{
+	return g_videoRomSize == 0 || g_videoRomSize == kVideoRomSize4K;
+}
+
 //===========================================================================
 
 void Config_Load_Video()
@@ -1159,8 +1218,6 @@ void Config_Save_Video()
 	REGSAVE(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),g_uHalfScanLines);
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),g_nMonochromeRGB);
 }
-
-// ____________________________________________________________________
 
 //===========================================================================
 static void videoCreateDIBSection()
