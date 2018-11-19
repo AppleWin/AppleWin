@@ -1289,14 +1289,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			if ((g_hCustomRomF8 == INVALID_HANDLE_VALUE) || (GetFileSize(g_hCustomRomF8, NULL) != 0x800))
 				g_bCustomRomF8Failed = true;
 		}
-		else if (strcmp(lpCmdLine, "-videorom") == 0)			// Use 4K,8K or 16K video ROM for Enhanced //e
+		else if (strcmp(lpCmdLine, "-videorom") == 0)			// Use 2K (for II/II+). Use 4K,8K or 16K video ROM (for Enhanced //e)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
 			if (!ReadVideoRomFile(lpCmdLine))
 			{
-				std::string msg = "Failed to load video rom (not found or not exactly 4/8/16KiB)";
+				std::string msg = "Failed to load video rom (not found or not exactly 2/4/8/16KiB)";
 				LogFileOutput("%s", msg.c_str());
 				MessageBox(g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			}

@@ -154,11 +154,11 @@ void userVideoRom4K(csbits_t csbits, const BYTE* pVideoRom)
 	}
 }
 
-void userVideoRom(void)
+void userVideoRomForIIe(void)
 {
 	const BYTE* pVideoRom;
-	UINT size = GetVideoRom(pVideoRom);	// 4K or 8K
-	if (!size)
+	UINT size = GetVideoRom(pVideoRom);	// 2K or 4K or 8K
+	if (size < kVideoRomSize4K)
 		return;
 
 	if (size == kVideoRomSize4K)
@@ -169,6 +169,50 @@ void userVideoRom(void)
 
 	userVideoRom4K(&csbits_enhanced2e_pal[0], pVideoRom);
 	userVideoRom4K(&csbits_enhanced2e[0], &pVideoRom[4*1024]);
+}
+
+//-------------------------------------
+
+void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom)
+{
+	int RA = 0;	// rom address
+
+	for (int i=0; i<256; i++, RA+=8)
+	{
+		for (int y=0; y<8; y++)
+		{
+			BYTE d=0;
+			BYTE n = pVideoRom[RA+y];
+
+			// UTAII:8-30 "Bit 7 of your EPROM fonts will control flashing in the lower 1024 bytes of the EPROM"
+			// UTAII:8-31 "If you leave O7 (EPROM Output7) reset in these patterns, the resulting characters will be inversions..."
+			if (!(n & 0x80) && RA < 1024)
+				n = n ^ 0x7f;
+			n &= 0x7f;
+
+			// UTAII:8-30 "TEXT ROM pattern is ... reversed"
+			for (BYTE j=0; j<7; j++)
+			{
+				if (n & 1)
+					d |= 1;
+				d <<= 1;
+				n >>= 1;
+			}
+
+			d >>= 1;	// Undo the last left shift
+			csbits[0][i][y] = d;
+		}
+	}
+}
+
+void userVideoRomForIIPlus(void)
+{
+	const BYTE* pVideoRom;
+	UINT size = GetVideoRom(pVideoRom);	// 2K or 4K or 8K
+	if (size != kVideoRomSize2K)
+		return;
+
+	userVideoRom2K(&csbits_a2[0], pVideoRom);
 }
 
 //-------------------------------------
@@ -188,7 +232,10 @@ void make_csbits(void)
 	memcpy(&csbits_2e[1][64], &csbits_2e[0][64], 32*8);
 
 	// Try to use any user-provided video ROM for Enhanced //e
-	userVideoRom();
+	userVideoRomForIIe();
+
+	// Try to use any user-provided video ROM for II/II+
+	userVideoRomForIIPlus();
 }
 
 csbits_t GetEnhanced2e_csbits(void)

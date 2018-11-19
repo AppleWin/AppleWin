@@ -1160,7 +1160,7 @@ bool ReadVideoRomFile(const char* pRomFile)
 		return false;
 
 	const ULONG size = GetFileSize(h, NULL);
-	if (size == kVideoRomSize4K || size == kVideoRomSize8K || size == kVideoRomSize16K)
+	if (size == kVideoRomSize2K || size == kVideoRomSize4K || size == kVideoRomSize8K || size == kVideoRomSize16K)
 	{
 		DWORD bytesRead;
 		if (ReadFile(h, g_videoRom, size, &bytesRead, NULL) && bytesRead == size)
@@ -1197,7 +1197,7 @@ void SetVideoRomRockerSwitch(bool state)
 
 bool IsVideoRom4K(void)
 {
-	return g_videoRomSize == 0 || g_videoRomSize == kVideoRomSize4K;
+	return g_videoRomSize <= kVideoRomSize4K;
 }
 
 //===========================================================================
