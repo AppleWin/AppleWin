@@ -181,25 +181,18 @@ void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom)
 	{
 		for (int y=0; y<8; y++)
 		{
-			BYTE d=0;
 			BYTE n = pVideoRom[RA+y];
 
 			// UTAII:8-30 "Bit 7 of your EPROM fonts will control flashing in the lower 1024 bytes of the EPROM"
 			// UTAII:8-31 "If you leave O7 (EPROM Output7) reset in these patterns, the resulting characters will be inversions..."
 			if (!(n & 0x80) && RA < 1024)
 				n = n ^ 0x7f;
-			n &= 0x7f;
 
 			// UTAII:8-30 "TEXT ROM pattern is ... reversed"
-			for (BYTE j=0; j<7; j++)
-			{
-				if (n & 1)
-					d |= 1;
-				d <<= 1;
-				n >>= 1;
-			}
+			BYTE d = 0;
+			for (BYTE j=0; j<7; j++, n >>= 1)	// Just bits [0..6]
+				d = (d << 1) | (n & 1);
 
-			d >>= 1;	// Undo the last left shift
 			csbits[0][i][y] = d;
 		}
 	}
