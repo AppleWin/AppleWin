@@ -211,5 +211,3 @@ bool IsVideoRom4K(void);
 
 void Config_Load_Video(void);
 void Config_Save_Video(void);
-
-//LPBITMAPINFO GetFrameBufferInfo(void);

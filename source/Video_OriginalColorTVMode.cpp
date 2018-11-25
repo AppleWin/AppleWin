@@ -70,12 +70,12 @@ static RGBQUAD PalIndex2RGB[] =
 	SETRGBCOLOR(/*HGR_GREEN, */   27, 211,  79), // HCOLOR=1 GREEN   2400: 02 00 2A 55 // 0x20,0xC0,0x00 -> Linards Tweaked 0x38,0xCB,0x00
 	SETRGBCOLOR(/*HGR_VIOLET,*/  227,  20, 255), // HCOLOR=2 VIOLET  2800: 01 00 55 2A // 0xA0,0x00,0xFF -> Linards Tweaked 0xC7,0x34,0xFF
 
-	SETRGBCOLOR(/*HGR_GREY1, */ 0x80,0x80,0x80),
-	SETRGBCOLOR(/*HGR_GREY2, */ 0x80,0x80,0x80),
-	SETRGBCOLOR(/*HGR_YELLOW,*/ 0x9E,0x9E,0x00), // 0xD0,0xB0,0x10 -> 0x9E,0x9E,0x00
-	SETRGBCOLOR(/*HGR_AQUA,  */ 0x00,0xCD,0x4A), // 0x20,0xB0,0xB0 -> 0x00,0xCD,0x4A
-	SETRGBCOLOR(/*HGR_PURPLE,*/ 0x61,0x61,0xFF), // 0x60,0x50,0xE0 -> 0x61,0x61,0xFF
-	SETRGBCOLOR(/*HGR_PINK,  */ 0xFF,0x32,0xB5), // 0xD0,0x40,0xA0 -> 0xFF,0x32,0xB5
+//	SETRGBCOLOR(/*HGR_GREY1, */ 0x80,0x80,0x80),
+//	SETRGBCOLOR(/*HGR_GREY2, */ 0x80,0x80,0x80),
+//	SETRGBCOLOR(/*HGR_YELLOW,*/ 0x9E,0x9E,0x00), // 0xD0,0xB0,0x10 -> 0x9E,0x9E,0x00
+//	SETRGBCOLOR(/*HGR_AQUA,  */ 0x00,0xCD,0x4A), // 0x20,0xB0,0xB0 -> 0x00,0xCD,0x4A
+//	SETRGBCOLOR(/*HGR_PURPLE,*/ 0x61,0x61,0xFF), // 0x60,0x50,0xE0 -> 0x61,0x61,0xFF
+//	SETRGBCOLOR(/*HGR_PINK,  */ 0xFF,0x32,0xB5), // 0xD0,0x40,0xA0 -> 0xFF,0x32,0xB5
 };
 
 
@@ -172,13 +172,8 @@ static void V_CreateLookup_Hires()
 	}
 }
 
-//const UINT FRAMEBUFFER_H = 192*2;
-//static LPBYTE        g_aFrameBufferOffset[FRAMEBUFFER_H]; // array of pointers to start of each scanline
-//static UINT g_nFrameBufferPitch = 0;	// TODO
-
 static void CopySource(int /*dx*/, int /*dy*/, int w, int h, int sx, int sy, bgra_t *pVideoAddress)
 {
-//	UINT32* pDst = (UINT32*) (g_aFrameBufferOffset[ dy ] + dx*sizeof(UINT32));
 	UINT32* pDst = (UINT32*) pVideoAddress;
 	LPBYTE pSrc = g_aSourceStartofLine[ sy ] + sx;
 	int nBytes;
@@ -196,7 +191,6 @@ static void CopySource(int /*dx*/, int /*dy*/, int w, int h, int sx, int sy, bgr
 			}
 			else
 			{
-//				const RGBQUAD& rRGB = GetFrameBufferInfo()->bmiColors[ *(pSrc+nBytes) ];
 				_ASSERT( *(pSrc+nBytes) < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
 				const RGBQUAD& rRGB = PalIndex2RGB[ *(pSrc+nBytes) ];
 				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
@@ -204,7 +198,6 @@ static void CopySource(int /*dx*/, int /*dy*/, int w, int h, int sx, int sy, bgr
 			}
 		}
 
-//		pDst -= g_nFrameBufferPitch / sizeof(UINT32);
 		pDst -= GetFrameBufferWidth();
 		pSrc -= SRCOFFS_TOTAL;
 	}
@@ -249,56 +242,18 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 
 //===========================================================================
 
-static HBITMAP       g_hSourceBitmap = NULL;
 static LPBYTE        g_pSourcePixels = NULL;
-static LPBITMAPINFO  g_pSourceHeader = NULL;
 
 static void V_CreateDIBSections(void) 
 {
-//	CopyMemory(g_pSourceHeader->bmiColors,GetFrameBufferInfo()->bmiColors,256*sizeof(RGBQUAD));
-
-	// CREATE THE DEVICE CONTEXT
-	HWND window  = GetDesktopWindow();
-	HDC dc       = GetDC(window);
-#if 0
-	if (g_hDeviceDC)
-	{
-		DeleteDC(g_hDeviceDC);
-	}
-	g_hDeviceDC = CreateCompatibleDC(dc);
-
-	// CREATE THE FRAME BUFFER DIB SECTION
-	if (g_hDeviceBitmap)
-		DeleteObject(g_hDeviceBitmap);
-		g_hDeviceBitmap = CreateDIBSection(
-			dc,
-			g_pFramebufferinfo,
-			DIB_RGB_COLORS,
-			(LPVOID *)&g_pFramebufferbits,0,0
-		);
-	SelectObject(g_hDeviceDC,g_hDeviceBitmap);
-#endif
-
-	// CREATE THE SOURCE IMAGE DIB SECTION
-	HDC sourcedc = CreateCompatibleDC(dc);
-	ReleaseDC(window,dc);
-	if (g_hSourceBitmap)
-		DeleteObject(g_hSourceBitmap);
-
-	g_hSourceBitmap = CreateDIBSection(
-		sourcedc,
-		g_pSourceHeader,
-		DIB_RGB_COLORS,
-		(LPVOID *)&g_pSourcePixels,0,0
-	);
-	SelectObject(sourcedc,g_hSourceBitmap);
+	g_pSourcePixels = new BYTE[SRCOFFS_TOTAL * MAX_SOURCE_Y];
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE SOURCE IMAGE
 	for (int y = 0; y < MAX_SOURCE_Y; y++)
 		g_aSourceStartofLine[ y ] = g_pSourcePixels + SRCOFFS_TOTAL*((MAX_SOURCE_Y-1) - y);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory(g_pSourcePixels,SRCOFFS_TOTAL*512); // 32 bytes/pixel * 16 colors = 512 bytes/row
+	ZeroMemory(g_pSourcePixels,SRCOFFS_TOTAL*MAX_SOURCE_Y); // 32 bytes/pixel * 16 colors = 512 bytes/row
 
 	// First monochrome mode is seperate from others
 //	if ((g_eVideoTypeOld >= VT_COLOR_STANDARD)	&& (g_eVideoTypeOld <  VT_MONO_AMBER))
@@ -308,45 +263,10 @@ static void V_CreateDIBSections(void)
 		V_CreateLookup_Hires();
 //		V_CreateLookup_DoubleHires();
 	}
-
-	DeleteDC(sourcedc);
 }
 
 void VideoInitializeOriginal(void)
 {
-//	_ASSERT(GetFrameBufferInfo());
-
-	// CREATE A BITMAPINFO STRUCTURE FOR THE SOURCE IMAGE
-	g_pSourceHeader = (LPBITMAPINFO)VirtualAlloc(
-		NULL,
-		sizeof(BITMAPINFOHEADER) + 256*sizeof(RGBQUAD),
-		MEM_COMMIT,
-		PAGE_READWRITE);
-
-	ZeroMemory(g_pSourceHeader,sizeof(BITMAPINFOHEADER));
-	g_pSourceHeader->bmiHeader.biSize     = sizeof(BITMAPINFOHEADER);
-	g_pSourceHeader->bmiHeader.biWidth    = SRCOFFS_TOTAL;
-	g_pSourceHeader->bmiHeader.biHeight   = 512;
-	g_pSourceHeader->bmiHeader.biPlanes   = 1;
-	g_pSourceHeader->bmiHeader.biBitCount = 8;
-	g_pSourceHeader->bmiHeader.biClrUsed  = 256;
-
-//	// VideoReinitialize() ... except we set the frame buffer palette....
-//	V_CreateIdentityPalette();
-
-#if 0
-	//RGB() -> none
-	//PALETTERGB() -> PC_EXPLICIT
-	//??? RGB() -> PC_NOCOLLAPSE
-	for( int iColor = 0; iColor < NUM_COLOR_PALETTE; iColor++ )
-		customcolors[ iColor ] = ((DWORD)PC_EXPLICIT << 24) | RGB(
-		GetFrameBufferInfo()->bmiColors[iColor].rgbRed,
-		GetFrameBufferInfo()->bmiColors[iColor].rgbGreen,
-		GetFrameBufferInfo()->bmiColors[iColor].rgbBlue
-	);
-#endif
-
-	// CREATE THE FRAME BUFFER DIB SECTION AND DEVICE CONTEXT,
-	// CREATE THE SOURCE IMAGE DIB SECTION AND DRAW INTO THE SOURCE BIT BUFFER
+	// CREATE THE SOURCE IMAGE AND DRAW INTO THE SOURCE BIT BUFFER
 	V_CreateDIBSections();
 }

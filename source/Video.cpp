@@ -129,13 +129,6 @@ static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	void videoCreateDIBSection();
 
 //===========================================================================
-
-//LPBITMAPINFO GetFrameBufferInfo(void)
-//{
-//	return g_pFramebufferinfo;
-//}
-
-//===========================================================================
 void VideoInitialize ()
 {
 	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
