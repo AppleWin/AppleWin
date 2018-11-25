@@ -913,6 +913,14 @@
 					RelativePath=".\source\Video.h"
 					>
 				</File>
+				<File
+					RelativePath=".\source\Video_OriginalColorTVMode.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Video_OriginalColorTVMode.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Configuration"

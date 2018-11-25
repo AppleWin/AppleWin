@@ -61,6 +61,7 @@
 	#define PACKED // TODO: FIXME: gcc/clang __attribute__
 #endif
 
+// TODO: Replace with WinGDI.h / RGBQUAD
 struct bgra_t
 {
 	uint8_t b;
@@ -210,3 +211,5 @@ bool IsVideoRom4K(void);
 
 void Config_Load_Video(void);
 void Config_Save_Video(void);
+
+//LPBITMAPINFO GetFrameBufferInfo(void);

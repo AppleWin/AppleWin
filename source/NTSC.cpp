@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "Frame.h"
 	#include "Memory.h" // MemGetMainPtr() MemGetAuxPtr()
 	#include "Video.h"  // g_pFramebufferbits
+	#include "Video_OriginalColorTVMode.h"
 
 	#include "NTSC.h"
 	#include "NTSC_CharSet.h"
@@ -745,6 +746,26 @@ inline void updatePixels( uint16_t bits )
 
 //===========================================================================
 
+inline void updateVideoScannerHorzEOLSimple()
+{
+	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
+	{
+		g_nVideoClockHorz = 0;
+
+		if (++g_nVideoClockVert == VIDEO_SCANNER_MAX_VERT)
+		{
+			g_nVideoClockVert = 0;
+
+			updateFlashRate();
+		}
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			updateVideoScannerAddress();
+		}
+	}
+}
+
 #if !EXTEND_14M_VIDEO_BY_1_PIXEL
 // NOTE: This writes out-of-bounds for a 560x384 framebuffer
 inline void updateVideoScannerHorzEOL()
@@ -1446,6 +1467,33 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 }
 
 //===========================================================================
+void updateScreenSingleHires40Simple (long cycles6502)
+{
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pFuncUpdateTextScreen( cycles6502 );
+		return;
+	}
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint16_t addr = getVideoScannerAddressHGR();
+				UpdateHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+				g_pVideoAddress += 14;
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+	}
+}
+
 void updateScreenSingleHires40 (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
@@ -1708,7 +1756,12 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires40;
 		else
-			g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
+		{
+//			if (g_eVideoType == VT_COLOR_TV_ORIGINAL)
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Simple;
+//			else
+//				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
+		}
 	}
 	else {
 		if (uVideoModeFlags & VF_DHIRES)
@@ -1841,6 +1894,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	g_pFuncUpdateGraphicsScreen = updateScreenText40;
 
 	VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
+	VideoInitializeOriginal();
 
 #if HGR_TEST_PATTERN
 // Init HGR to almost all-possible-combinations

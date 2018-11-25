@@ -83,9 +83,6 @@ static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
        HBITMAP       g_hLogoBitmap;
 
-const int MAX_SOURCE_Y = 512;
-static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
-
 COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
 
 uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
@@ -130,6 +127,13 @@ static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	void Video_SaveScreenShot( const char *pScreenShotFileName, const VideoScreenShot_e ScreenShotType );
 	void Video_MakeScreenShot( FILE *pFile, const VideoScreenShot_e ScreenShotType );
 	void videoCreateDIBSection();
+
+//===========================================================================
+
+//LPBITMAPINFO GetFrameBufferInfo(void)
+//{
+//	return g_pFramebufferinfo;
+//}
 
 //===========================================================================
 void VideoInitialize ()
@@ -1242,9 +1246,9 @@ static void videoCreateDIBSection()
 		);
 	SelectObject(g_hDeviceDC,g_hDeviceBitmap);
 
-	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
 	ZeroMemory( g_pFramebufferbits, GetFrameBufferWidth()*GetFrameBufferHeight()*sizeof(bgra_t) );
 
+	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	NTSC_VideoInit( g_pFramebufferbits );
 }
