@@ -892,10 +892,14 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		}
 	}
 
-	// Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
-	// but Sherwood Forest sets shift mode and reads with the drive off, so don't check for now
 	if (!floppywritemode)
 	{
+		// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
+		// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
+		// Note: Sherwood Forest sets shift mode and reads with the drive off.
+		if (!pDrive->spinning)	// GH#599
+			return;
+
 		const ULONG nReadCycleDiff = (ULONG) (g_nCumulativeCycles - g_uDiskLastReadLatchCycle);
 
 		// Support partial nibble read if disk reads are very close: (GH#582)
@@ -954,10 +958,8 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	if (++pFloppy->byte >= pFloppy->nibbles)
 		pFloppy->byte = 0;
 
-	// Feature Request #201 Show track status
-	// https://github.com/AppleWin/AppleWin/issues/201
-	// NB. Prevent flooding of forcing UI to redraw!!!
-	if( ((pFloppy->byte) & 0xFF) == 0 )
+	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
+	if ((pFloppy->byte & 0xFF) == 0)
 		FrameDrawDiskStatus( (HDC)0 );
 }
 
@@ -1052,11 +1054,16 @@ bool DiskSelect(const int iDrive)
 static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG)
 {
 	/* floppyloadmode = 1; */
+
+	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
+	// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
+	// Note: Gemstone Warrior sets load mode with the drive off.
+	if (g_aFloppyDrive[currdrive].spinning)	// GH#599
+		return;
+
 	if (!write)
 	{
 		// Notes:
-		// . Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
-		//   but Gemstone Warrior sets load mode with the drive off, so don't check for now
 		// . Phase 1 on also forces write protect in the Disk II drive (UTAIIe page 9-7) but we don't implement that
 		// . write mode doesn't prevent reading write protect (GH#537):
 		//   "If for some reason the above write protect check were entered with the READ/WRITE switch in WRITE, 
