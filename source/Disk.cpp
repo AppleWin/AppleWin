@@ -1058,7 +1058,7 @@ static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, U
 	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
 	// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
 	// Note: Gemstone Warrior sets load mode with the drive off.
-	if (g_aFloppyDrive[currdrive].spinning)	// GH#599
+	if (!g_aFloppyDrive[currdrive].spinning)	// GH#599
 		return;
 
 	if (!write)
