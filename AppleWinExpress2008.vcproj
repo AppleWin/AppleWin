@@ -1286,6 +1286,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\version.h"
+				>
+			</File>
+			<File
 				RelativePath=".\resource\winres.h"
 				>
 			</File>

@@ -8,10 +8,17 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.27.13.0 - 8 Dec 2018
+----------------------
+. [Bug #599] Fix for Ultima V not loading in Authentic Speed mode (regression introduced at 1.27.9.0).
+. [Change #205] Added support for Apple II/II+ custom 2K video ROMs.
+	- Extended command line switch: -videorom <file>
+		- If the ROM sizs is 2K, then it replaces the video ROM for the Apple II/II+.
+
 
 1.27.12.0 - 17 Nov 2018
 -----------------------
-. [Change #574] Add support for PAL/European or custom 8K video ROMs:
+. [Change #574] Added support for PAL/European or custom 8K video ROMs:
 	- Added new command line switch: -videorom <file>
 		- Replaces the video ROM for the Enhanced //e.
 		- Support video ROM sizes of 4K, 8K and 16K (top 8K only).

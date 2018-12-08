@@ -1296,7 +1296,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 			if (!ReadVideoRomFile(lpCmdLine))
 			{
-				std::string msg = "Failed to load video rom (not found or not exactly 2/4/8/16KiB)";
+				std::string msg = "Failed to load video rom (not found or not exactly 2/4/8/16KiB)\n";
 				LogFileOutput("%s", msg.c_str());
 				MessageBox(g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			}
@@ -1569,7 +1569,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if (g_bCustomRomF8Failed)
 		{
-			std::string msg = "Failed to load custom F8 rom (not found or not exactly 2KiB)";
+			std::string msg = "Failed to load custom F8 rom (not found or not exactly 2KiB)\n";
 			LogFileOutput("%s", msg.c_str());
 			MessageBox(g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			bShutdown = true;
