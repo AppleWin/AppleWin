@@ -695,6 +695,18 @@ void HD_GetLightStatus (Disk_Status_e *pDisk1Status_)
 	}
 }
 
+bool HD_ImageSwap(void)
+{
+	std::swap(g_HardDisk[HARDDISK_1], g_HardDisk[HARDDISK_2]);
+
+	HD_SaveLastDiskImage(HARDDISK_1);
+	HD_SaveLastDiskImage(HARDDISK_2);
+
+	FrameRefreshStatus(DRAW_LEDS, false);
+
+	return true;
+}
+
 //===========================================================================
 
 #define SS_YAML_VALUE_CARD_HDD "Generic HDD"

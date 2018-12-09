@@ -115,7 +115,9 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 		case IDC_HDD_ENABLE:
 			EnableHDD(hWnd, IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE));
 			break;
-
+		case IDC_HDD_SWAP:
+			HandleHDDSwap(hWnd);
+			break;
 		case IDC_CIDERPRESS_BROWSE:
 			{
 				std::string CiderPressLoc = m_PropertySheetHelper.BrowseToFile(hWnd, TEXT("Select path to CiderPress"), REGVALUE_CIDERPRESSLOC, TEXT("Applications (*.exe)\0*.exe\0") TEXT("All Files\0*.*\0") );
@@ -131,8 +133,6 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 			m_PropertySheetHelper.FillComboBox(hWnd, IDC_DISKTYPE, m_discchoices, Disk_GetEnhanceDisk() ? 1 : 0);
 			m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_DISK1, m_defaultDiskOptions, -1);
 			m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_DISK2, m_defaultDiskOptions, -1);
-			m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_HDD1, m_defaultHDDOptions, -1);
-			m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_HDD2, m_defaultHDDOptions, -1);
 
 			if (strlen(DiskGetFullName(DRIVE_1)) > 0)
 			{
@@ -146,17 +146,7 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 				SendDlgItemMessage(hWnd, IDC_COMBO_DISK2, CB_SETCURSEL, 0, 0);
 			}
 
-			if (strlen(HD_GetFullName(HARDDISK_1)) > 0)
-			{
-				SendDlgItemMessage(hWnd, IDC_COMBO_HDD1, CB_INSERTSTRING, 0, (LPARAM)HD_GetFullName(HARDDISK_1));
-				SendDlgItemMessage(hWnd, IDC_COMBO_HDD1, CB_SETCURSEL, 0, 0);
-			}
-
-			if (strlen(HD_GetFullName(HARDDISK_2)) > 0)
-			{
-				SendDlgItemMessage(hWnd, IDC_COMBO_HDD2, CB_INSERTSTRING, 0, (LPARAM)HD_GetFullName(HARDDISK_2));
-				SendDlgItemMessage(hWnd, IDC_COMBO_HDD2, CB_SETCURSEL, 0, 0);
-			}
+			InitComboHDD(hWnd);
 
 			TCHAR PathToCiderPress[MAX_PATH] = "";
 			RegLoadString(TEXT(REG_CONFIG), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress,MAX_PATH);
@@ -174,6 +164,24 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 	}
 
 	return FALSE;
+}
+
+void CPageDisk::InitComboHDD(HWND hWnd)
+{
+	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_HDD1, m_defaultHDDOptions, -1);
+	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_HDD2, m_defaultHDDOptions, -1);
+
+	if (strlen(HD_GetFullName(HARDDISK_1)) > 0)
+	{
+		SendDlgItemMessage(hWnd, IDC_COMBO_HDD1, CB_INSERTSTRING, 0, (LPARAM)HD_GetFullName(HARDDISK_1));
+		SendDlgItemMessage(hWnd, IDC_COMBO_HDD1, CB_SETCURSEL, 0, 0);
+	}
+
+	if (strlen(HD_GetFullName(HARDDISK_2)) > 0)
+	{
+		SendDlgItemMessage(hWnd, IDC_COMBO_HDD2, CB_INSERTSTRING, 0, (LPARAM)HD_GetFullName(HARDDISK_2));
+		SendDlgItemMessage(hWnd, IDC_COMBO_HDD2, CB_SETCURSEL, 0, 0);
+	}
 }
 
 void CPageDisk::DlgOK(HWND hWnd)
@@ -207,6 +215,7 @@ void CPageDisk::EnableHDD(HWND hWnd, BOOL bEnable)
 {
 	EnableWindow(GetDlgItem(hWnd, IDC_COMBO_HDD1), bEnable);
 	EnableWindow(GetDlgItem(hWnd, IDC_COMBO_HDD2), bEnable);
+	EnableWindow(GetDlgItem(hWnd, IDC_HDD_SWAP), bEnable);
 }
 
 void CPageDisk::EnableDisk(HWND hWnd, BOOL bEnable)
@@ -340,18 +349,33 @@ void CPageDisk::HandleDiskCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 	}
 }
 
+void CPageDisk::HandleHDDSwap(HWND hWnd)
+{
+	if (!RemovalConfirmation(IDC_HDD_SWAP))
+		return;
+
+	if (!HD_ImageSwap())
+		return;
+
+	InitComboHDD(hWnd);
+}
 
 UINT CPageDisk::RemovalConfirmation(UINT uCommand)
 {
 	TCHAR szText[100];
+	const size_t strLen = sizeof(szText)-1;
 	bool bMsgBox = true;
 
 	if (uCommand == IDC_COMBO_DISK1 || uCommand == IDC_COMBO_DISK2)
-		wsprintf(szText, "Do you really want to eject the disk in drive-%c ?", '1' + uCommand - IDC_COMBO_DISK1);
+		_snprintf(szText, strLen, "Do you really want to eject the disk in drive-%c ?", '1' + uCommand - IDC_COMBO_DISK1);
 	else if (uCommand == IDC_COMBO_HDD1 || uCommand == IDC_COMBO_HDD2)
-		wsprintf(szText, "Do you really want to unplug harddisk-%c ?", '1' + uCommand - IDC_COMBO_HDD1);
+		_snprintf(szText, strLen, "Do you really want to unplug harddisk-%c ?", '1' + uCommand - IDC_COMBO_HDD1);
+	else if (uCommand == IDC_HDD_SWAP)
+		_snprintf(szText, strLen, "Do you really want to swap the harddisk images?");
 	else
 		bMsgBox = false;
+
+	szText[strLen] = 0;
 
 	if (bMsgBox)
 	{
