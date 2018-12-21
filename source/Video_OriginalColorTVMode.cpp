@@ -6,13 +6,10 @@
 #include "Memory.h" // MemGetMainPtr() MemGetAuxPtr()
 #include "Video.h"
 
-const int SRCOFFS_40COL   = 0;                       //    0
-const int SRCOFFS_IIPLUS  = (SRCOFFS_40COL  +  256); //  256
-const int SRCOFFS_80COL   = (SRCOFFS_IIPLUS +  256); //  512
-const int SRCOFFS_LORES   = (SRCOFFS_80COL  +  128); //  640
-const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //  656
-const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512); // 1168
-const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3278
+const int SRCOFFS_LORES   = 0;                       //    0
+const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //   16
+const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512); //  528
+const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3088
 
 const int MAX_SOURCE_Y = 512;
 static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
@@ -21,20 +18,37 @@ static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 
 enum Color_Palette_Index_e
 {
-	// ...
-// CUSTOM HGR COLORS (don't change order) - For tv emulation HGR Video Mode
+// hires (don't change order) - For tv emulation HGR Video Mode
 	  HGR_BLACK        
 	, HGR_WHITE        
 	, HGR_BLUE         // HCOLOR=6 BLUE   , 3000: 81 00 D5 AA
 	, HGR_ORANGE       // HCOLOR=5 ORANGE , 2C00: 82 00 AA D5
 	, HGR_GREEN        // HCOLOR=1 GREEN  , 2400: 02 00 2A 55
 	, HGR_VIOLET       // HCOLOR=2 VIOLET , 2800: 01 00 55 2A
+// TV emu
 	, HGR_GREY1        
 	, HGR_GREY2        
 	, HGR_YELLOW       
 	, HGR_AQUA         
 	, HGR_PURPLE       
 	, HGR_PINK         
+// lores & dhires
+	, BLACK
+	, DEEP_RED
+	, DARK_BLUE
+	, MAGENTA
+	, DARK_GREEN
+	, DARK_GRAY
+	, BLUE
+	, LIGHT_BLUE
+	, BROWN
+	, ORANGE
+	, LIGHT_GRAY
+	, PINK
+	, GREEN
+	, YELLOW
+	, AQUA
+	, WHITE
 };
 
 // __ Map HGR color index to Palette index
@@ -59,30 +73,57 @@ const BYTE HiresToPalIndex[ NUM_COLOR_MAPPING ] =
 	, HGR_WHITE
 };
 
+const BYTE LoresResColors[16] = {
+		BLACK,     DEEP_RED, DARK_BLUE, MAGENTA,
+		DARK_GREEN,DARK_GRAY,BLUE,      LIGHT_BLUE,
+		BROWN,     ORANGE,   LIGHT_GRAY,PINK,
+		GREEN,     YELLOW,   AQUA,      WHITE
+	};
+
+const BYTE DoubleHiresPalIndex[16] = {
+		BLACK,   DARK_BLUE, DARK_GREEN,BLUE,
+		BROWN,   LIGHT_GRAY,GREEN,     AQUA,
+		DEEP_RED,MAGENTA,   DARK_GRAY, LIGHT_BLUE,
+		ORANGE,  PINK,      YELLOW,    WHITE
+	};
+
 #define  SETRGBCOLOR(r,g,b) {b,g,r,0}
 
 static RGBQUAD PalIndex2RGB[] =
 {
+// hires
 	SETRGBCOLOR(/*HGR_BLACK, */ 0x00,0x00,0x00), // For TV emulation HGR Video Mode
 	SETRGBCOLOR(/*HGR_WHITE, */ 0xFF,0xFF,0xFF),
-
-//	SETRGBCOLOR(/*HGR_BLUE,  */   24, 115, 229), // HCOLOR=6 BLUE    3000: 81 00 D5 AA // 0x00,0x80,0xFF -> Linards Tweaked 0x0D,0xA1,0xFF
-//	SETRGBCOLOR(/*HGR_ORANGE,*/  247,  64,  30), // HCOLOR=5 ORANGE  2C00: 82 00 AA D5 // 0xF0,0x50,0x00 -> Linards Tweaked 0xF2,0x5E,0x00 
-//	SETRGBCOLOR(/*HGR_GREEN, */   27, 211,  79), // HCOLOR=1 GREEN   2400: 02 00 2A 55 // 0x20,0xC0,0x00 -> Linards Tweaked 0x38,0xCB,0x00
-//	SETRGBCOLOR(/*HGR_VIOLET,*/  227,  20, 255), // HCOLOR=2 VIOLET  2800: 01 00 55 2A // 0xA0,0x00,0xFF -> Linards Tweaked 0xC7,0x34,0xFF
 	SETRGBCOLOR(/*BLUE,      */ 0x0D,0xA1,0xFF), // FC Linards Tweaked 0x00,0x00,0xFF -> 0x0D,0xA1,0xFF
 	SETRGBCOLOR(/*ORANGE,    */ 0xF2,0x5E,0x00), // 0xFF,0x80,0x00 -> Linards Tweaked 0xF2,0x5E,0x00
 	SETRGBCOLOR(/*GREEN,     */ 0x38,0xCB,0x00), // FA Linards Tweaked 0x00,0xFF,0x00 -> 0x38,0xCB,0x00
 	SETRGBCOLOR(/*MAGENTA,   */ 0xC7,0x34,0xFF), // FD Linards Tweaked 0xFF,0x00,0xFF -> 0xC7,0x34,0xFF
 
+// TV emu
+	SETRGBCOLOR(/*HGR_GREY1, */ 0x80,0x80,0x80),
+	SETRGBCOLOR(/*HGR_GREY2, */ 0x80,0x80,0x80),
+	SETRGBCOLOR(/*HGR_YELLOW,*/ 0x9E,0x9E,0x00), // 0xD0,0xB0,0x10 -> 0x9E,0x9E,0x00
+	SETRGBCOLOR(/*HGR_AQUA,  */ 0x00,0xCD,0x4A), // 0x20,0xB0,0xB0 -> 0x00,0xCD,0x4A
+	SETRGBCOLOR(/*HGR_PURPLE,*/ 0x61,0x61,0xFF), // 0x60,0x50,0xE0 -> 0x61,0x61,0xFF
+	SETRGBCOLOR(/*HGR_PINK,  */ 0xFF,0x32,0xB5), // 0xD0,0x40,0xA0 -> 0xFF,0x32,0xB5
 
-// For TV Emu:
-//	SETRGBCOLOR(/*HGR_GREY1, */ 0x80,0x80,0x80),
-//	SETRGBCOLOR(/*HGR_GREY2, */ 0x80,0x80,0x80),
-//	SETRGBCOLOR(/*HGR_YELLOW,*/ 0x9E,0x9E,0x00), // 0xD0,0xB0,0x10 -> 0x9E,0x9E,0x00
-//	SETRGBCOLOR(/*HGR_AQUA,  */ 0x00,0xCD,0x4A), // 0x20,0xB0,0xB0 -> 0x00,0xCD,0x4A
-//	SETRGBCOLOR(/*HGR_PURPLE,*/ 0x61,0x61,0xFF), // 0x60,0x50,0xE0 -> 0x61,0x61,0xFF
-//	SETRGBCOLOR(/*HGR_PINK,  */ 0xFF,0x32,0xB5), // 0xD0,0x40,0xA0 -> 0xFF,0x32,0xB5
+// lores & dhires
+	SETRGBCOLOR(/*BLACK,*/      0x00,0x00,0x00), // 0
+	SETRGBCOLOR(/*DEEP_RED,*/   0x9D,0x09,0x66), // 0xD0,0x00,0x30 -> Linards Tweaked 0x9D,0x09,0x66
+	SETRGBCOLOR(/*DARK_BLUE,*/  0x2A,0x2A,0xE5), // 4 // Linards Tweaked 0x00,0x00,0x80 -> 0x2A,0x2A,0xE5
+	SETRGBCOLOR(/*MAGENTA,*/    0xC7,0x34,0xFF), // FD Linards Tweaked 0xFF,0x00,0xFF -> 0xC7,0x34,0xFF
+	SETRGBCOLOR(/*DARK_GREEN,*/ 0x00,0x80,0x00), // 2 // not used
+	SETRGBCOLOR(/*DARK_GRAY,*/  0x80,0x80,0x80), // F8
+	SETRGBCOLOR(/*BLUE,*/       0x0D,0xA1,0xFF), // FC Linards Tweaked 0x00,0x00,0xFF -> 0x0D,0xA1,0xFF
+	SETRGBCOLOR(/*LIGHT_BLUE,*/ 0xAA,0xAA,0xFF), // 0x60,0xA0,0xFF -> Linards Tweaked 0xAA,0xAA,0xFF
+	SETRGBCOLOR(/*BROWN,*/      0x55,0x55,0x00), // 0x80,0x50,0x00 -> Linards Tweaked 0x55,0x55,0x00
+	SETRGBCOLOR(/*ORANGE,*/     0xF2,0x5E,0x00), // 0xFF,0x80,0x00 -> Linards Tweaked 0xF2,0x5E,0x00
+	SETRGBCOLOR(/*LIGHT_GRAY,*/ 0xC0,0xC0,0xC0), // 7 // GR: COLOR=10
+	SETRGBCOLOR(/*PINK,*/       0xFF,0x89,0xE5), // 0xFF,0x90,0x80 -> Linards Tweaked 0xFF,0x89,0xE5
+	SETRGBCOLOR(/*GREEN,*/      0x38,0xCB,0x00), // FA Linards Tweaked 0x00,0xFF,0x00 -> 0x38,0xCB,0x00
+	SETRGBCOLOR(/*YELLOW,*/     0xD5,0xD5,0x1A), // FB Linards Tweaked 0xFF,0xFF,0x00 -> 0xD5,0xD5,0x1A
+	SETRGBCOLOR(/*AQUA,*/       0x62,0xF6,0x99), // 0x40,0xFF,0x90 -> Linards Tweaked 0x62,0xF6,0x99
+	SETRGBCOLOR(/*WHITE,*/      0xFF,0xFF,0xFF),
 };
 
 
@@ -102,6 +143,62 @@ enum VideoTypeOld_e		// AppleWin 1.25.0.4
 static DWORD g_eVideoTypeOld = VT_COLOR_STANDARD;
 
 
+//===========================================================================
+
+static void V_CreateLookup_DoubleHires ()
+{
+#define OFFSET  3
+#define SIZE    10
+
+  for (int column = 0; column < 256; column++) {
+    int coloffs = SIZE * column;
+    for (unsigned byteval = 0; byteval < 256; byteval++) {
+      int color[SIZE];
+      ZeroMemory(color,sizeof(color));
+      unsigned pattern = MAKEWORD(byteval,column);
+      int pixel;
+      for (pixel = 1; pixel < 15; pixel++) {
+        if (pattern & (1 << pixel)) {
+          int pixelcolor = 1 << ((pixel-OFFSET) & 3);
+          if ((pixel >=  OFFSET+2) && (pixel < SIZE+OFFSET+2) && (pattern & (0x7 << (pixel-4))))
+            color[pixel-(OFFSET+2)] |= pixelcolor;
+          if ((pixel >=  OFFSET+1) && (pixel < SIZE+OFFSET+1) && (pattern & (0xF << (pixel-4))))
+            color[pixel-(OFFSET+1)] |= pixelcolor;
+          if ((pixel >=  OFFSET+0) && (pixel < SIZE+OFFSET+0))
+            color[pixel-(OFFSET+0)] |= pixelcolor;
+          if ((pixel >=  OFFSET-1) && (pixel < SIZE+OFFSET-1) && (pattern & (0xF << (pixel+1))))
+            color[pixel-(OFFSET-1)] |= pixelcolor;
+          if ((pixel >=  OFFSET-2) && (pixel < SIZE+OFFSET-2) && (pattern & (0x7 << (pixel+2))))
+            color[pixel-(OFFSET-2)] |= pixelcolor;
+        }
+      }
+
+	  if (g_eVideoType == VT_COLOR_TEXT_OPTIMIZED)
+	  {
+	    // Activate for fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR Video Mode.
+		for (pixel = 0; pixel < 13; pixel++)
+		{
+		  if ((pattern & (0xF << pixel)) == (unsigned)(0xF << pixel))
+			for (int pos = pixel; pos < pixel + 4; pos++)
+			  if (pos >= OFFSET && pos < SIZE+OFFSET)
+				color[pos-OFFSET] = 15;
+		}
+	  }
+
+      int y = byteval << 1;
+      for (int x = 0; x < SIZE; x++) {
+        SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,DoubleHiresPalIndex[ color[x] ]);
+        SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,DoubleHiresPalIndex[ color[x] ]);
+      }
+    }
+  }
+#undef SIZE
+#undef OFFSET
+}
+
+//===========================================================================
+
+#if 0
 static void V_CreateLookup_Hires()
 {
 //	int iMonochrome = GetMonochromeIndex();
@@ -179,6 +276,19 @@ static void V_CreateLookup_Hires()
 		}
 	}
 }
+#endif
+
+//===========================================================================
+
+void V_CreateLookup_Lores()
+{
+	for (int color = 0; color < 16; color++)
+		for (int x = 0; x < 16; x++)
+			for (int y = 0; y < 16; y++)
+				SETSOURCEPIXEL(SRCOFFS_LORES+x,(color << 4)+y,LoresResColors[color]);
+}
+
+//===========================================================================
 
 #define HALF_PIXEL_SOLID 1
 #define HALF_PIXEL_BLEED 0
@@ -364,6 +474,7 @@ Legend:
 	}
 }
 
+//===========================================================================
 
 static void CopySource(int /*dx*/, int /*dy*/, int w, int h, int sx, int sy, bgra_t *pVideoAddress)
 {
@@ -396,40 +507,113 @@ static void CopySource(int /*dx*/, int /*dy*/, int w, int h, int sx, int sy, bgr
 	}
 }
 
+//===========================================================================
+
 void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 {
-	int xpixel = x*14;
-	int ypixel = y*16;
-
-//	int offset = ((y & 7) << 7) + ((y >> 3) * 40) + x;
-//	BYTE* g_pHiresBank0 = MemGetMainPtr(0x2000);
-//	int  yoffset = 0;
-
 	uint8_t *pMain = MemGetMainPtr(addr);
 	BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
 	BYTE byteval2 =            *(pMain);
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
-	{
+
 #define COLOFFS  (((byteval1 & 0x60) << 2) | ((byteval3 & 0x03) << 5))
 #if 0
-		if (g_eVideoTypeOld == VT_COLOR_TVEMU)
-		{
-			CopyMixedSource(
-				xpixel >> 1, (ypixel+(yoffset >> 9)) >> 1,
-				SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1)
-			);
-		}
-		else
+	if (g_eVideoTypeOld == VT_COLOR_TVEMU)
+	{
+		CopyMixedSource(
+			xpixel >> 1, (ypixel+(yoffset >> 9)) >> 1,
+			SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1)
+		);
+	}
+	else
 #endif
-		{
-			CopySource(
-				0,0, /*xpixel,ypixel*/ /*+(yoffset >> 9)*/
-				14,2, // 2x upscale: 280x192 -> 560x384
-				SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
-				pVideoAddress
-			);
-		}
+	{
+		CopySource(
+			0,0,
+			14,2,
+			SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
+			pVideoAddress
+		);
+	}
 #undef COLOFFS
+}
+
+//===========================================================================
+
+void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
+{
+	const int xpixel = x*14;
+
+	uint8_t *pAux  = MemGetAuxPtr(addr);
+	uint8_t *pMain = MemGetMainPtr(addr);
+
+    BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
+    BYTE byteval2 = *pAux;
+    BYTE byteval3 = *pMain;
+    BYTE byteval4 = (x < 39) ? *(pAux+1) : 0;
+
+	DWORD dwordval = (byteval1 & 0x70)        | ((byteval2 & 0x7F) << 7) |
+					((byteval3 & 0x7F) << 14) | ((byteval4 & 0x07) << 21);
+#define PIXEL  0
+#define COLOR  ((xpixel + PIXEL) & 3)
+#define VALUE  (dwordval >> (4 + PIXEL - COLOR))
+		CopySource(0,0, 7,2,
+				SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+#undef PIXEL
+#define PIXEL  7
+		CopySource(0,0, 7,2,
+				SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress+7);
+#undef PIXEL
+#undef COLOR
+#undef VALUE
+}
+
+//===========================================================================
+
+// Tested with Deater's Cycle-Counting Megademo
+void UpdateLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
+{
+	const BYTE val = *MemGetMainPtr(addr);
+
+	if ((y & 4) == 0)
+	{
+		CopySource(0,0,
+			14,2,
+			SRCOFFS_LORES+((x & 1) << 1),((val & 0xF) << 4),
+			pVideoAddress);
+	}
+	else
+	{
+		CopySource(0,0,
+			14,2,
+			SRCOFFS_LORES+((x & 1) << 1),(val & 0xF0),
+			pVideoAddress);
+	}
+}
+
+//===========================================================================
+
+#define ROL_NIB(x) ( (((x)<<1)&0xF) | (((x)>>3)&1) )
+
+// Tested with FT's Ansi Story
+void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
+{
+	BYTE auxval  = *MemGetAuxPtr(addr);
+	const BYTE mainval = *MemGetMainPtr(addr);
+
+	const BYTE auxval_h = auxval >> 4;
+	const BYTE auxval_l = auxval & 0xF;
+	auxval = (ROL_NIB(auxval_h)<<4) | ROL_NIB(auxval_l);
+
+	if ((y & 4) == 0)
+	{
+		CopySource(0,0, 7,2, SRCOFFS_LORES+((x & 1) << 1),((auxval & 0xF) << 4), pVideoAddress);
+		CopySource(0,0, 7,2, SRCOFFS_LORES+((x & 1) << 1),((mainval & 0xF) << 4), pVideoAddress+7);
+	}
+	else
+	{
+		CopySource(0,0, 7,2, SRCOFFS_LORES+((x & 1) << 1),(auxval & 0xF0), pVideoAddress);
+		CopySource(0,0, 7,2, SRCOFFS_LORES+((x & 1) << 1),(mainval & 0xF0), pVideoAddress+7);
 	}
 }
 
@@ -448,17 +632,14 @@ static void V_CreateDIBSections(void)
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
 	ZeroMemory(g_pSourcePixels, SRCOFFS_TOTAL*MAX_SOURCE_Y); // 32 bytes/pixel * 16 colors = 512 bytes/row
 
-	// First monochrome mode is seperate from others
-//	if ((g_eVideoTypeOld >= VT_COLOR_STANDARD)	&& (g_eVideoTypeOld <  VT_MONO_AMBER))
-	{
-//		V_CreateLookup_Text(sourcedc);
-//		V_CreateLookup_Lores();
-		if ( g_eVideoType == VT_COLOR_TVEMU )
-			V_CreateLookup_Hires();
-		else
-			V_CreateLookup_HiResHalfPixel_Authentic();
-//		V_CreateLookup_DoubleHires();
-	}
+	V_CreateLookup_Lores();
+
+//	if ( g_eVideoType == VT_COLOR_TVEMU )
+//		V_CreateLookup_Hires();
+//	else
+		V_CreateLookup_HiResHalfPixel_Authentic();
+
+	V_CreateLookup_DoubleHires();
 }
 
 void VideoInitializeOriginal(void)

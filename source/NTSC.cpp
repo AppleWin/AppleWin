@@ -1339,6 +1339,36 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 }
 
 //===========================================================================
+
+void updateScreenDoubleHires80Simple (long cycles6502 ) // wsUpdateVideoDblHires
+{
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pFuncUpdateTextScreen( cycles6502 );
+		return;
+	}
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		uint16_t addr = getVideoScannerAddressHGR();
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint16_t addr = getVideoScannerAddressHGR();
+				UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+				g_pVideoAddress += 14;
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+	}
+}
+
 void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
@@ -1417,6 +1447,36 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 }
 
 //===========================================================================
+
+static void updateScreenDoubleLores80Simple (long cycles6502) // wsUpdateVideoDblLores
+{
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pFuncUpdateTextScreen( cycles6502 );
+		return;
+	}
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		uint16_t addr = getVideoScannerAddressTXT();
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint16_t addr = getVideoScannerAddressTXT();
+				UpdateDLoResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+				g_pVideoAddress += 14;
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+	}
+}
+
 void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
@@ -1467,7 +1527,7 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 }
 
 //===========================================================================
-void updateScreenSingleHires40Simple (long cycles6502)
+static void updateScreenSingleHires40Simple (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1535,6 +1595,35 @@ void updateScreenSingleHires40 (long cycles6502)
 }
 
 //===========================================================================
+static void updateScreenSingleLores40Simple (long cycles6502)
+{
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pFuncUpdateTextScreen( cycles6502 );
+		return;
+	}
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		uint16_t addr = getVideoScannerAddressTXT();
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint16_t addr = getVideoScannerAddressTXT();
+				UpdateLoResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+				g_pVideoAddress += 14;
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+	}
+}
+
 void updateScreenSingleLores40 (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
@@ -1752,7 +1841,12 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 	else if (uVideoModeFlags & VF_HIRES) {
 		if (uVideoModeFlags & VF_DHIRES)
 			if (uVideoModeFlags & VF_80COL)
-				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
+			{
+//			if (g_eVideoType == VT_COLOR_TV_ORIGINAL)
+				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80Simple;
+//			else
+//				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
+			}
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires40;
 		else
@@ -1766,11 +1860,21 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 	else {
 		if (uVideoModeFlags & VF_DHIRES)
 			if (uVideoModeFlags & VF_80COL)
-				g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
+			{
+//				if (g_eVideoType == VT_COLOR_TV_ORIGINAL)
+					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simple;
+//				else
+//					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
+			}
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores40;
 		else
-			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
+		{
+//			if (g_eVideoType == VT_COLOR_TV_ORIGINAL)
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simple;
+//			else
+//				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
+		}
 	}
 }
 
