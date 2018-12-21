@@ -15,16 +15,28 @@ const int MAX_SOURCE_Y = 512;
 static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 #define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
 
+// TC: Tried to remove HiresToPalIndex[] translation table, so get purple bars when hires data is: 0x80 0x80...
+// . V_CreateLookup_HiResHalfPixel_Authentic() uses both ColorMapping (CM_xxx) indices and Color_Palette_Index_e (HGR_xxx)!
+#define DO_OPT_PALETTE 0
 
 enum Color_Palette_Index_e
 {
 // hires (don't change order) - For tv emulation HGR Video Mode
-	  HGR_BLACK        
-	, HGR_WHITE        
+#if DO_OPT_PALETTE
+	  HGR_VIOLET       // HCOLOR=2 VIOLET , 2800: 01 00 55 2A
+	, HGR_BLUE         // HCOLOR=6 BLUE   , 3000: 81 00 D5 AA
+	, HGR_GREEN        // HCOLOR=1 GREEN  , 2400: 02 00 2A 55
+	, HGR_ORANGE       // HCOLOR=5 ORANGE , 2C00: 82 00 AA D5
+	, HGR_BLACK
+	, HGR_WHITE
+#else
+	  HGR_BLACK
+	, HGR_WHITE
 	, HGR_BLUE         // HCOLOR=6 BLUE   , 3000: 81 00 D5 AA
 	, HGR_ORANGE       // HCOLOR=5 ORANGE , 2C00: 82 00 AA D5
 	, HGR_GREEN        // HCOLOR=1 GREEN  , 2400: 02 00 2A 55
 	, HGR_VIOLET       // HCOLOR=2 VIOLET , 2800: 01 00 55 2A
+#endif
 // TV emu
 	, HGR_GREY1        
 	, HGR_GREY2        
@@ -92,12 +104,21 @@ const BYTE DoubleHiresPalIndex[16] = {
 static RGBQUAD PalIndex2RGB[] =
 {
 // hires
+#if DO_OPT_PALETTE
+	SETRGBCOLOR(/*MAGENTA,   */ 0xC7,0x34,0xFF), // FD Linards Tweaked 0xFF,0x00,0xFF -> 0xC7,0x34,0xFF
+	SETRGBCOLOR(/*BLUE,      */ 0x0D,0xA1,0xFF), // FC Linards Tweaked 0x00,0x00,0xFF -> 0x0D,0xA1,0xFF
+	SETRGBCOLOR(/*GREEN,     */ 0x38,0xCB,0x00), // FA Linards Tweaked 0x00,0xFF,0x00 -> 0x38,0xCB,0x00
+	SETRGBCOLOR(/*ORANGE,    */ 0xF2,0x5E,0x00), // 0xFF,0x80,0x00 -> Linards Tweaked 0xF2,0x5E,0x00
+	SETRGBCOLOR(/*HGR_BLACK, */ 0x00,0x00,0x00), // For TV emulation HGR Video Mode
+	SETRGBCOLOR(/*HGR_WHITE, */ 0xFF,0xFF,0xFF),
+#else
 	SETRGBCOLOR(/*HGR_BLACK, */ 0x00,0x00,0x00), // For TV emulation HGR Video Mode
 	SETRGBCOLOR(/*HGR_WHITE, */ 0xFF,0xFF,0xFF),
 	SETRGBCOLOR(/*BLUE,      */ 0x0D,0xA1,0xFF), // FC Linards Tweaked 0x00,0x00,0xFF -> 0x0D,0xA1,0xFF
 	SETRGBCOLOR(/*ORANGE,    */ 0xF2,0x5E,0x00), // 0xFF,0x80,0x00 -> Linards Tweaked 0xF2,0x5E,0x00
 	SETRGBCOLOR(/*GREEN,     */ 0x38,0xCB,0x00), // FA Linards Tweaked 0x00,0xFF,0x00 -> 0x38,0xCB,0x00
 	SETRGBCOLOR(/*MAGENTA,   */ 0xC7,0x34,0xFF), // FD Linards Tweaked 0xFF,0x00,0xFF -> 0xC7,0x34,0xFF
+#endif
 
 // TV emu
 	SETRGBCOLOR(/*HGR_GREY1, */ 0x80,0x80,0x80),
@@ -476,7 +497,7 @@ Legend:
 
 //===========================================================================
 
-static void CopySource(int /*dx*/, int /*dy*/, int w, int h, int sx, int sy, bgra_t *pVideoAddress)
+static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress)
 {
 	UINT32* pDst = (UINT32*) pVideoAddress;
 	LPBYTE pSrc = g_aSourceStartofLine[ sy ] + sx;
@@ -528,12 +549,7 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	else
 #endif
 	{
-		CopySource(
-			0,0,
-			14,2,
-			SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
-			pVideoAddress
-		);
+		CopySource(14,2, SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1), pVideoAddress);
 	}
 #undef COLOFFS
 }
@@ -557,12 +573,10 @@ void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 #define PIXEL  0
 #define COLOR  ((xpixel + PIXEL) & 3)
 #define VALUE  (dwordval >> (4 + PIXEL - COLOR))
-		CopySource(0,0, 7,2,
-				SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
 #undef PIXEL
 #define PIXEL  7
-		CopySource(0,0, 7,2,
-				SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress+7);
+		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress+7);
 #undef PIXEL
 #undef COLOR
 #undef VALUE
@@ -577,17 +591,11 @@ void UpdateLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 
 	if ((y & 4) == 0)
 	{
-		CopySource(0,0,
-			14,2,
-			SRCOFFS_LORES+((x & 1) << 1),((val & 0xF) << 4),
-			pVideoAddress);
+		CopySource(14,2, SRCOFFS_LORES+((x & 1) << 1), ((val & 0xF) << 4), pVideoAddress);
 	}
 	else
 	{
-		CopySource(0,0,
-			14,2,
-			SRCOFFS_LORES+((x & 1) << 1),(val & 0xF0),
-			pVideoAddress);
+		CopySource(14,2, SRCOFFS_LORES+((x & 1) << 1), (val & 0xF0), pVideoAddress);
 	}
 }
 
@@ -607,13 +615,13 @@ void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 
 	if ((y & 4) == 0)
 	{
-		CopySource(0,0, 7,2, SRCOFFS_LORES+((x & 1) << 1),((auxval & 0xF) << 4), pVideoAddress);
-		CopySource(0,0, 7,2, SRCOFFS_LORES+((x & 1) << 1),((mainval & 0xF) << 4), pVideoAddress+7);
+		CopySource(7,2, SRCOFFS_LORES+((x & 1) << 1), ((auxval & 0xF) << 4), pVideoAddress);
+		CopySource(7,2, SRCOFFS_LORES+((x & 1) << 1), ((mainval & 0xF) << 4), pVideoAddress+7);
 	}
 	else
 	{
-		CopySource(0,0, 7,2, SRCOFFS_LORES+((x & 1) << 1),(auxval & 0xF0), pVideoAddress);
-		CopySource(0,0, 7,2, SRCOFFS_LORES+((x & 1) << 1),(mainval & 0xF0), pVideoAddress+7);
+		CopySource(7,2, SRCOFFS_LORES+((x & 1) << 1), (auxval & 0xF0), pVideoAddress);
+		CopySource(7,2, SRCOFFS_LORES+((x & 1) << 1), (mainval & 0xF0), pVideoAddress+7);
 	}
 }
 
