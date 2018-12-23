@@ -1823,32 +1823,40 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
-	if (uVideoModeFlags & VF_PAGE2) {
+	if (uVideoModeFlags & VF_PAGE2)
+	{
 		// Apple IIe, Technical Notes, #3: Double High-Resolution Graphics
 		// 80STORE must be OFF to display page 2
-		if (0 == (uVideoModeFlags & VF_80STORE)) {
+		if (0 == (uVideoModeFlags & VF_80STORE))
+		{
 			g_nTextPage  = 2;
 			g_nHiresPage = 2;
 		}
 	}
 
-	if (uVideoModeFlags & VF_TEXT) {
+	if (uVideoModeFlags & VF_TEXT)
+	{
 		if (uVideoModeFlags & VF_80COL)
 			g_pFuncUpdateGraphicsScreen = updateScreenText80;
 		else
 			g_pFuncUpdateGraphicsScreen = updateScreenText40;
 	}
-	else if (uVideoModeFlags & VF_HIRES) {
+	else if (uVideoModeFlags & VF_HIRES)
+	{
 		if (uVideoModeFlags & VF_DHIRES)
+		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-			if (g_eVideoType == VT_COLOR_STANDARD)
-				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80Simple;
-			else
-				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
+				if (g_eVideoType == VT_COLOR_STANDARD)
+					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80Simple;
+				else
+					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
 			}
 			else
+			{
 				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires40;
+			}
+		}
 		else
 		{
 			if (g_eVideoType == VT_COLOR_STANDARD)
@@ -1857,8 +1865,10 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
 		}
 	}
-	else {
+	else
+	{
 		if (uVideoModeFlags & VF_DHIRES)
+		{
 			if (uVideoModeFlags & VF_80COL)
 			{
 				if (g_eVideoType == VT_COLOR_STANDARD)
@@ -1867,7 +1877,10 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
 			}
 			else
+			{
 				g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores40;
+			}
+		}
 		else
 		{
 			if (g_eVideoType == VT_COLOR_STANDARD)
