@@ -1842,38 +1842,38 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 		if (uVideoModeFlags & VF_DHIRES)
 			if (uVideoModeFlags & VF_80COL)
 			{
-//			if (g_eVideoType == VT_COLOR_TV_ORIGINAL)
+			if (g_eVideoType == VT_COLOR_STANDARD)
 				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80Simple;
-//			else
-//				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
+			else
+				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
 			}
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires40;
 		else
 		{
-//			if (g_eVideoType == VT_COLOR_TV_ORIGINAL)
+			if (g_eVideoType == VT_COLOR_STANDARD)
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Simple;
-//			else
-//				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
+			else
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
 		}
 	}
 	else {
 		if (uVideoModeFlags & VF_DHIRES)
 			if (uVideoModeFlags & VF_80COL)
 			{
-//				if (g_eVideoType == VT_COLOR_TV_ORIGINAL)
+				if (g_eVideoType == VT_COLOR_STANDARD)
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simple;
-//				else
-//					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
+				else
+					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
 			}
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores40;
 		else
 		{
-//			if (g_eVideoType == VT_COLOR_TV_ORIGINAL)
+			if (g_eVideoType == VT_COLOR_STANDARD)
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simple;
-//			else
-//				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
+			else
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
 		}
 	}
 }

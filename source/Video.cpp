@@ -87,7 +87,7 @@ COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
 
 uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
 
-DWORD     g_eVideoType     = VT_COLOR_TV;
+DWORD     g_eVideoType     = VT_DEFAULT;
 DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
 
 static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
@@ -100,6 +100,7 @@ static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 		TEXT("Color Monitor\0")
 		TEXT("B&W TV\0")
 		TEXT("Color TV\0")
+		TEXT("Color Simplified\0")
 		TEXT("Monochrome (Amber)\0")
 		TEXT("Monochrome (Green)\0")
 		TEXT("Monochrome (White)\0")
@@ -113,6 +114,7 @@ static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 		, "Color Monitor"
 		, "B&W TV"
 		, "Color TV"
+		, "Color Simplified"
 		, "Amber Monitor"
 		, "Green Monitor"
 		, "White Monitor"
@@ -1206,7 +1208,7 @@ void Config_Load_Video()
 	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&g_nMonochromeRGB);
 
 	if (g_eVideoType >= NUM_VIDEO_MODES)
-		g_eVideoType = VT_COLOR_MONITOR;
+		g_eVideoType = VT_DEFAULT;
 }
 
 void Config_Save_Video()

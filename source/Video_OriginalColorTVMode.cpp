@@ -147,23 +147,6 @@ static RGBQUAD PalIndex2RGB[] =
 	SETRGBCOLOR(/*WHITE,*/      0xFF,0xFF,0xFF),
 };
 
-
-enum VideoTypeOld_e		// AppleWin 1.25.0.4
-{
-	  VT_MONO_HALFPIXEL_REAL // uses custom monochrome
-	, VT_COLOR_STANDARD
-	, VT_COLOR_TEXT_OPTIMIZED 
-	, VT_COLOR_TVEMU          
-//	, VT_MONO_AMBER // now half pixel
-//	, VT_MONO_GREEN // now half pixel
-//	, VT_MONO_WHITE // now half pixel
-//	, NUM_VIDEO_MODES
-};
-
-//static DWORD g_eVideoTypeOld = VT_COLOR_TVEMU;
-static DWORD g_eVideoTypeOld = VT_COLOR_STANDARD;
-
-
 //===========================================================================
 
 static void V_CreateLookup_DoubleHires ()
@@ -194,6 +177,7 @@ static void V_CreateLookup_DoubleHires ()
         }
       }
 
+#if 0
 	  if (g_eVideoType == VT_COLOR_TEXT_OPTIMIZED)
 	  {
 	    // Activate for fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR Video Mode.
@@ -205,6 +189,7 @@ static void V_CreateLookup_DoubleHires ()
 				color[pos-OFFSET] = 15;
 		}
 	  }
+#endif
 
       int y = byteval << 1;
       for (int x = 0; x < SIZE; x++) {
@@ -271,11 +256,11 @@ static void V_CreateLookup_Hires()
 						// VT_COLOR_STANDARD = Fill in colors in between white pixels
 						// VT_COLOR_TVEMU    = Fill in colors in between white pixels  (Post Processing will mix/merge colors)
 						// VT_COLOR_TEXT_OPTIMIZED --> !(aPixels[iPixel-2] && aPixels[iPixel+2]) = Don't fill in colors in between white
-						if ((g_eVideoTypeOld == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
+						if ((g_eVideoType == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
 							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
 					}
 
-					//if (g_eVideoTypeOld == VT_MONO_AUTHENTIC) {
+					//if (g_eVideoType == VT_MONO_AUTHENTIC) {
 					//	int nMonoColor = (color != CM_Black) ? iMonochrome : BLACK;
 					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , nMonoColor); // buggy
 					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , nMonoColor); // buggy
@@ -438,7 +423,7 @@ Legend:
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_ORANGE );
 						}
 #else
-						if ((g_eVideoTypeOld == VT_COLOR_STANDARD) || ( !aPixels[3] ))
+						if ((g_eVideoType == VT_COLOR_STANDARD) || ( !aPixels[3] ))
 						{ // "Text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
@@ -471,8 +456,8 @@ Legend:
 					{
 						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
 						if (
-							(g_eVideoTypeOld == VT_COLOR_STANDARD) // Fill in colors in between white pixels
-						||	(g_eVideoTypeOld == VT_COLOR_TVEMU)    // Fill in colors in between white pixels (Post Processing will mix/merge colors)
+							(g_eVideoType == VT_COLOR_STANDARD) // Fill in colors in between white pixels
+//						||	(g_eVideoType == VT_COLOR_TVEMU)    // Fill in colors in between white pixels (Post Processing will mix/merge colors)
 						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
 						{
 							// Test Pattern: Ultima 4 Logo - Castle
@@ -539,7 +524,7 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 
 #define COLOFFS  (((byteval1 & 0x60) << 2) | ((byteval3 & 0x03) << 5))
 #if 0
-	if (g_eVideoTypeOld == VT_COLOR_TVEMU)
+	if (g_eVideoType == VT_COLOR_TVEMU)
 	{
 		CopyMixedSource(
 			xpixel >> 1, (ypixel+(yoffset >> 9)) >> 1,

@@ -10,10 +10,12 @@
 		, VT_COLOR_MONITOR
 		, VT_MONO_TV
 		, VT_COLOR_TV
+		, VT_COLOR_STANDARD		// Color rendering from AppleWin 1.25 (GH#357)
 		, VT_MONO_AMBER
 		, VT_MONO_GREEN
 		, VT_MONO_WHITE
 		, NUM_VIDEO_MODES
+		, VT_DEFAULT = VT_COLOR_TV
 	};
 
 	extern TCHAR g_aVideoChoices[];
