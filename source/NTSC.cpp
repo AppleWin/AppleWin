@@ -1946,7 +1946,6 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			}
 			break;
 
-//		case VT_MONO_WHITE: //VT_MONO_MONITOR: //3:
 		case VT_MONO_AMBER:
 			r = 0xFF;
 			g = 0x80;
@@ -1959,6 +1958,7 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			b = 0x00;
 			goto _mono;
 
+		case VT_COLOR_STANDARD:
 		case VT_MONO_WHITE:
 			r = 0xFF;
 			g = 0xFF;
