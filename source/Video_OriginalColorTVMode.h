@@ -5,4 +5,4 @@ void UpdateDLoResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
 
 const UINT kNumBaseColors = 16;
 typedef bgra_t (*baseColors_t)[kNumBaseColors];
-void VideoInitializeOriginal(baseColors_t baseColors);
+void VideoInitializeOriginal(baseColors_t pBaseNtscColors);

@@ -636,13 +636,13 @@ static void V_CreateDIBSections(void)
 	V_CreateLookup_DoubleHires();
 }
 
-void VideoInitializeOriginal(baseColors_t baseColors)
+void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 {
 	// CREATE THE SOURCE IMAGE AND DRAW INTO THE SOURCE BIT BUFFER
 	V_CreateDIBSections();
 
 #if 1
-	memcpy(&PalIndex2RGB[BLACK], *baseColors, sizeof(RGBQUAD)*kNumBaseColors);
+	memcpy(&PalIndex2RGB[BLACK], *pBaseNtscColors, sizeof(RGBQUAD)*kNumBaseColors);
 	PalIndex2RGB[HGR_BLUE]   = PalIndex2RGB[BLUE];
 	PalIndex2RGB[HGR_ORANGE] = PalIndex2RGB[ORANGE];
 	PalIndex2RGB[HGR_GREEN]  = PalIndex2RGB[GREEN];

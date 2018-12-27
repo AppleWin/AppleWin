@@ -1991,7 +1991,7 @@ _mono:
 
 //===========================================================================
 void GenerateVideoTables( void );
-void GenerateBaseColors(baseColors_t baseColors);
+void GenerateBaseColors(baseColors_t pBaseNtscColors);
 
 void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 {
@@ -2298,7 +2298,7 @@ static void GenerateVideoTables( void )
 	SetApple2Type(currentApple2Type);
 }
 
-void GenerateBaseColors(baseColors_t baseColors)
+void GenerateBaseColors(baseColors_t pBaseNtscColors)
 {
 	for (UINT i=0; i<16; i++)
 	{
@@ -2322,6 +2322,6 @@ void GenerateBaseColors(baseColors_t baseColors)
 		int b = (((colors[0]    )&0xff) + ((colors[1]    )&0xff) + ((colors[2]    )&0xff) + ((colors[3]    )&0xff)) / 4;
 		uint32_t color = ((r<<16) | (g<<8) | b) | ALPHA32_MASK;
 
-		(*baseColors)[i] = * (bgra_t*) &color;
+		(*pBaseNtscColors)[i] = * (bgra_t*) &color;
 	}
 }
