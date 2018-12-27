@@ -1,18 +1,18 @@
 /*  Emulador do computador TK3000 //e (Microdigital)
- *  por Fábio Belavenuto - Copyright (C) 2004
+ *  por FÃ¡bio Belavenuto - Copyright (C) 2004
  *
  *  Adaptado do emulador Applewin por Michael O'Brien
  *
- *  Este arquivo é distribuido pela Licença Pública Geral GNU.
+ *  Este arquivo Ã© distribuido pela LicenÃ§a PÃºblica Geral GNU.
  *  Veja o arquivo Licenca.txt distribuido com este software.
  *
- *  ESTE SOFTWARE NÃO OFERECE NENHUMA GARANTIA
+ *  ESTE SOFTWARE NÃƒO OFERECE NENHUMA GARANTIA
  *
  */
 
 // Emula a CPU Z80
 
-// Protótipos
+// ProtÃ³tipos
 void ConfigureSoftcard(LPBYTE pCxRomPeripheral, UINT uSlot);
 
 // NB. These are in z80.cpp:
