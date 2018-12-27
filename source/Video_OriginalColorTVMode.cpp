@@ -5,6 +5,7 @@
 #include "Frame.h"
 #include "Memory.h" // MemGetMainPtr() MemGetAuxPtr()
 #include "Video.h"
+#include "Video_OriginalColorTVMode.h"
 
 const int SRCOFFS_LORES   = 0;                       //    0
 const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //   16
@@ -614,7 +615,7 @@ void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 
 static LPBYTE g_pSourcePixels = NULL;
 
-static void V_CreateDIBSections(void) 
+static void V_CreateDIBSections(void)
 {
 	g_pSourcePixels = new BYTE[SRCOFFS_TOTAL * MAX_SOURCE_Y];
 
@@ -635,8 +636,16 @@ static void V_CreateDIBSections(void)
 	V_CreateLookup_DoubleHires();
 }
 
-void VideoInitializeOriginal(void)
+void VideoInitializeOriginal(baseColors_t baseColors)
 {
 	// CREATE THE SOURCE IMAGE AND DRAW INTO THE SOURCE BIT BUFFER
 	V_CreateDIBSections();
+
+#if 1
+	memcpy(&PalIndex2RGB[BLACK], *baseColors, sizeof(RGBQUAD)*kNumBaseColors);
+	PalIndex2RGB[HGR_BLUE]   = PalIndex2RGB[BLUE];
+	PalIndex2RGB[HGR_ORANGE] = PalIndex2RGB[ORANGE];
+	PalIndex2RGB[HGR_GREEN]  = PalIndex2RGB[GREEN];
+	PalIndex2RGB[HGR_VIOLET] = PalIndex2RGB[MAGENTA];
+#endif
 }

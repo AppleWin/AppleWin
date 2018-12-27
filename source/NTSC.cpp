@@ -911,10 +911,11 @@ inline void updateVideoScannerAddress()
 	// . 7x 14M pixels early + 1x 14M pixel shifted right = 2 complete color phase rotations.
 	// . ie. the 14M colors are correct, but being 1 pixel out is the closest we can get the 7M and 14M video modes to overlap.
 	// . The alternative is to render the 14M correctly 7 pixels early, but have 7-pixel borders left (for 7M modes) or right (for 14M modes).
-	if ((g_pFuncUpdateGraphicsScreen == updateScreenDoubleHires80) ||
+	if (((g_pFuncUpdateGraphicsScreen == updateScreenDoubleHires80) ||
 		(g_pFuncUpdateGraphicsScreen == updateScreenDoubleLores80) ||
 		(g_pFuncUpdateGraphicsScreen == updateScreenText80) ||
 		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && g_pFuncUpdateTextScreen == updateScreenText80))
+		&& (g_eVideoType != VT_COLOR_STANDARD))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
 	{
 		g_pVideoAddress -= 1;
 	}
@@ -1990,6 +1991,7 @@ _mono:
 
 //===========================================================================
 void GenerateVideoTables( void );
+void GenerateBaseColors(baseColors_t baseColors);
 
 void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 {
@@ -2011,7 +2013,10 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	g_pFuncUpdateGraphicsScreen = updateScreenText40;
 
 	VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
-	VideoInitializeOriginal();
+
+	bgra_t baseColors[kNumBaseColors];
+	GenerateBaseColors(&baseColors);
+	VideoInitializeOriginal(&baseColors);
 
 #if HGR_TEST_PATTERN
 // Init HGR to almost all-possible-combinations
@@ -2291,4 +2296,32 @@ static void GenerateVideoTables( void )
 
 	VideoResetState();
 	SetApple2Type(currentApple2Type);
+}
+
+void GenerateBaseColors(baseColors_t baseColors)
+{
+	for (UINT i=0; i<16; i++)
+	{
+		g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
+		g_nSignalBitsNTSC = 0;
+
+		// 12 iterations for colour to "stabilise", then 4 iterations to calc the average
+		// - after colour "stabilises" then it repeats through 4 phases (with different RGB values for each phase)
+		uint32_t bits = (i<<12) | (i<<8) | (i<<4) | i;	// 16 bits
+
+		uint32_t colors[4];
+		for (UINT j=0; j<16; j++)
+		{
+			colors[j&3] = getScanlineColor(bits & 1, g_aHueColorTV[g_nColorPhaseNTSC]);
+			bits >>= 1;
+			updateColorPhase();
+		}
+
+		int r = (((colors[0]>>16)&0xff) + ((colors[1]>>16)&0xff) + ((colors[2]>>16)&0xff) + ((colors[3]>>16)&0xff)) / 4;
+		int g = (((colors[0]>> 8)&0xff) + ((colors[1]>> 8)&0xff) + ((colors[2]>> 8)&0xff) + ((colors[3]>> 8)&0xff)) / 4;
+		int b = (((colors[0]    )&0xff) + ((colors[1]    )&0xff) + ((colors[2]    )&0xff) + ((colors[3]    )&0xff)) / 4;
+		uint32_t color = ((r<<16) | (g<<8) | b) | ALPHA32_MASK;
+
+		(*baseColors)[i] = * (bgra_t*) &color;
+	}
 }
