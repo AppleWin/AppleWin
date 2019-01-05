@@ -182,7 +182,6 @@ bool    VideoGetSWPAGE2(void);
 bool    VideoGetSWTEXT(void);
 bool    VideoGetSWAltCharSet(void);
 
-void    VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode);
 void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 

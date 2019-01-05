@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "SaveState_Structs_v1.h"
 #include "YamlHelper.h"
 
 #include "Applewin.h"
@@ -108,127 +107,6 @@ const char* Snapshot_GetFilename()
 const char* Snapshot_GetPath()
 {
 	return g_strSaveStatePath.c_str();
-}
-
-//-----------------------------------------------------------------------------
-
-static void Snapshot_LoadState_v1()	// .aws v1.0.0.1, up to (and including) AppleWin v1.25.0
-{
-	std::string strOldImageDir(g_sCurrentDir);
-
-	APPLEWIN_SNAPSHOT_v1* pSS = (APPLEWIN_SNAPSHOT_v1*) new char[sizeof(APPLEWIN_SNAPSHOT_v1)];	// throw's bad_alloc
-
-	try
-	{
-#if _MSC_VER >= 1600	// static_assert supported from VS2010 (cl.exe v16.00)
-		static_assert(kSnapshotSize_v1 == sizeof(APPLEWIN_SNAPSHOT_v1), "Save-state v1 struct size mismatch");
-#else
-		// A compile error here means sizeof(APPLEWIN_SNAPSHOT_v1) is wrong, eg. one of the constituent structs has been modified
-		typedef char VerifySizesAreEqual[kSnapshotSize_v1 == sizeof(APPLEWIN_SNAPSHOT_v1) ? 1 : -1];
-#endif
-
-		if (kSnapshotSize_v1 != sizeof(APPLEWIN_SNAPSHOT_v1))
-			throw std::string("Save-state v1 struct size mismatch");
-
-		SetCurrentImageDir(g_strSaveStatePath.c_str());	// Allow .dsk's load without prompting
-
-		memset(pSS, 0, sizeof(APPLEWIN_SNAPSHOT_v1));
-
-		//
-
-		HANDLE hFile = CreateFile(	g_strSaveStatePathname.c_str(),
-									GENERIC_READ,
-									0,
-									0,
-									OPEN_EXISTING,
-									FILE_ATTRIBUTE_NORMAL,
-									0);
-
-		if(hFile == INVALID_HANDLE_VALUE)
-			throw std::string("File not found: ") + g_strSaveStatePathname;
-
-		DWORD dwBytesRead;
-		BOOL bRes = ReadFile(	hFile,
-								pSS,
-								sizeof(APPLEWIN_SNAPSHOT_v1),
-								&dwBytesRead,
-								NULL);
-
-		CloseHandle(hFile);
-
-		if(!bRes || (dwBytesRead != sizeof(APPLEWIN_SNAPSHOT_v1)))
-			// File size wrong: probably because of version mismatch or corrupt file
-			throw std::string("File size mismatch");
-
-		if(pSS->Hdr.dwTag != AW_SS_TAG)
-			throw std::string("File corrupt");
-
-		if(pSS->Hdr.dwVersion != MAKE_VERSION(1,0,0,1))
-			throw std::string("Version mismatch");
-
-		// TO DO: Verify checksum
-
-		//
-		// Reset all sub-systems
-		MemReset();
-		DiskReset();
-		HD_Reset();
-		KeybReset();
-		VideoResetState();
-		MB_Reset();
-		sg_SSC.CommReset();
-
-		//
-		// Apple2 unit
-		//
-
-		SS_CPU6502& CPU = pSS->Apple2Unit.CPU6502;
-		CpuSetSnapshot_v1(CPU.A, CPU.X, CPU.Y, CPU.P, CPU.S, CPU.PC, CPU.nCumulativeCycles);
-
-		SS_IO_Comms& SSC = pSS->Apple2Unit.Comms;
-		sg_SSC.SetSnapshot_v1(SSC.baudrate, SSC.bytesize, SSC.commandbyte, SSC.comminactivity, SSC.controlbyte, SSC.parity, SSC.stopbits);
-
-		JoySetSnapshot_v1(pSS->Apple2Unit.Joystick.nJoyCntrResetCycle);
-		KeybSetSnapshot_v1(pSS->Apple2Unit.Keyboard.nLastKey);
-		SpkrSetSnapshot_v1(pSS->Apple2Unit.Speaker.nSpkrLastCycle);
-		VideoSetSnapshot_v1(pSS->Apple2Unit.Video.bAltCharSet, pSS->Apple2Unit.Video.dwVidMode);
-		MemSetSnapshot_v1(pSS->Apple2Unit.Memory.dwMemMode, pSS->Apple2Unit.Memory.bLastWriteRam, pSS->Apple2Unit.Memory.nMemMain, pSS->Apple2Unit.Memory.nMemAux);
-
-		//
-
-		//
-		// Slot4: Mockingboard
-		MB_SetSnapshot_v1(&pSS->Mockingboard1, 4);
-
-		//
-		// Slot5: Mockingboard
-		MB_SetSnapshot_v1(&pSS->Mockingboard2, 5);
-
-		//
-		// Slot6: Disk][
-		DiskSetSnapshot_v1(&pSS->Disk2);
-
-		SetLoadedSaveStateFlag(true);
-
-		MemUpdatePaging(TRUE);
-
-		// NB. g_Apple2Type doesn't change for v1, but replicate this (like v2)
-		VideoReinitialize();	// g_CharsetType changed
-		FrameUpdateApple2Type();
-	}
-	catch(std::string szMessage)
-	{
-		MessageBox(	g_hFrameWindow,
-					szMessage.c_str(),
-					TEXT("Load State"),
-					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
-
-		SetCurrentImageDir(strOldImageDir.c_str());
-
-		PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
-	}
-
-	delete [] pSS;
 }
 
 //-----------------------------------------------------------------------------
@@ -564,7 +442,12 @@ void Snapshot_LoadState()
 	const size_t pos = g_strSaveStatePathname.size() - ext_aws.size();
 	if (g_strSaveStatePathname.find(ext_aws, pos) != std::string::npos)	// find ".aws" at end of pathname
 	{
-		Snapshot_LoadState_v1();
+		MessageBox(	g_hFrameWindow,
+					"Save-state v1 no longer supported.\n"
+					"Please load using AppleWin 1.27, and re-save as a v2 state file.",
+					TEXT("Load State"),
+					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+
 		return;
 	}
 

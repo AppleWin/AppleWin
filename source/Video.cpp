@@ -720,15 +720,6 @@ bool VideoGetSWAltCharSet(void)
 
 //===========================================================================
 
-void VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode)
-{
-	g_nAltCharSetOffset = !AltCharSet ? 0 : 256;
-	g_uVideoMode = VideoMode;
-	g_dwCyclesThisFrame = 0;
-}
-
-//
-
 #define SS_YAML_KEY_ALTCHARSET "Alt Char Set"
 #define SS_YAML_KEY_VIDEOMODE "Video Mode"
 #define SS_YAML_KEY_CYCLESTHISFRAME "Cycles This Frame"

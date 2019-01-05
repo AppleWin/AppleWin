@@ -1871,52 +1871,6 @@ void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
 	}
 }
 
-int MB_SetSnapshot_v1(const SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD /*dwSlot*/)
-{
-	if(pSS->Hdr.UnitHdr.hdr.v1.dwVersion != MAKE_VERSION(1,0,0,0))
-		return -1;
-
-	UINT nMbCardNum = pSS->Hdr.Slot - SLOT4;
-	UINT nDeviceNum = nMbCardNum*2;
-	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
-
-	g_nSSI263Device = 0;
-	g_nCurrentActivePhoneme = -1;
-
-	for(UINT i=0; i<MB_UNITS_PER_CARD_v1; i++)
-	{
-		memcpy(&pMB->sy6522, &pSS->Unit[i].RegsSY6522, sizeof(SY6522));
-		memcpy(AY8910_GetRegsPtr(nDeviceNum), &pSS->Unit[i].RegsAY8910, 16);
-		memcpy(&pMB->SpeechChip, &pSS->Unit[i].RegsSSI263, sizeof(SSI263A));
-		pMB->nAYCurrentRegister = pSS->Unit[i].nAYCurrentRegister;
-		pMB->state = AY_INACTIVE;
-
-		StartTimer1_LoadStateV1(pMB);	// Attempt to start timer
-
-		//
-
-		// Crude - currently only support a single speech chip
-		// FIX THIS:
-		// . Speech chip could be Votrax instead
-		// . Is this IRQ compatible with Phasor?
-		if(pMB->SpeechChip.DurationPhoneme)
-		{
-			g_nSSI263Device = nDeviceNum;
-
-			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
-			{
-				UpdateIFR(pMB, 0, IxR_PERIPHERAL);
-				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
-			}
-		}
-
-		nDeviceNum++;
-		pMB++;
-	}
-
-	return 0;
-}
-
 //===========================================================================
 
 // Unit version history:

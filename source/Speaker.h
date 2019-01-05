@@ -33,7 +33,6 @@ void    Spkr_Demute();
 bool    Spkr_IsActive();
 bool    Spkr_DSInit();
 void    Spkr_DSUninit();
-void    SpkrSetSnapshot_v1(const unsigned __int64 SpkrLastCycle);
 void    SpkrSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    SpkrLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 

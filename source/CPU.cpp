@@ -650,22 +650,6 @@ void CpuReset()
 
 //===========================================================================
 
-void CpuSetSnapshot_v1(const BYTE A, const BYTE X, const BYTE Y, const BYTE P, const BYTE SP, const USHORT PC, const unsigned __int64 CumulativeCycles)
-{
-	regs.a  = A;
-	regs.x  = X;
-	regs.y  = Y;
-	regs.ps = P | (AF_RESERVED | AF_BREAK);
-	regs.sp = ((USHORT)SP) | 0x100;
-	regs.pc = PC;
-
-	CpuIrqReset();
-	CpuNmiReset();
-	g_nCumulativeCycles = CumulativeCycles;
-}
-
-//
-
 #define SS_YAML_KEY_CPU_TYPE "Type"
 #define SS_YAML_KEY_REGA "A"
 #define SS_YAML_KEY_REGX "X"
