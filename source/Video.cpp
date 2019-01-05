@@ -97,10 +97,10 @@ static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	TCHAR g_aVideoChoices[] =
 		TEXT("Monochrome (Custom)\0")
+		TEXT("Color (Simplified)\0")
 		TEXT("Color Monitor\0")
-		TEXT("B&W TV\0")
 		TEXT("Color TV\0")
-		TEXT("Color Simplified\0")
+		TEXT("B&W TV\0")
 		TEXT("Monochrome (Amber)\0")
 		TEXT("Monochrome (Green)\0")
 		TEXT("Monochrome (White)\0")
@@ -111,10 +111,10 @@ static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
 		  "Monochrome Monitor (Custom)"
+		, "Color (Simplified)"
 		, "Color Monitor"
-		, "B&W TV"
 		, "Color TV"
-		, "Color Simplified"
+		, "B&W TV"
 		, "Amber Monitor"
 		, "Green Monitor"
 		, "White Monitor"
@@ -1201,11 +1201,41 @@ bool IsVideoRom4K(void)
 
 //===========================================================================
 
+enum VideoType127_e
+{
+	  VT127_MONO_CUSTOM
+	, VT127_COLOR_MONITOR
+	, VT127_MONO_TV
+	, VT127_COLOR_TV
+	, VT127_MONO_AMBER
+	, VT127_MONO_GREEN
+	, VT127_MONO_WHITE
+	, VT127_NUM_VIDEO_MODES
+};
+
 void Config_Load_Video()
 {
 	REGLOAD(TEXT(REGVALUE_VIDEO_MODE           ),&g_eVideoType);
 	REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&g_uHalfScanLines);
 	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&g_nMonochromeRGB);
+
+#if 0	/// TODO: Enable after bumping version in master to 1.28
+	const UINT16* pOldVersion = GetOldAppleWinVersion();
+	if (pOldVersion[0] == 1 && pOldVersion[2] <= 27)
+	{
+		switch (g_eVideoType)
+		{
+		case VT127_MONO_CUSTOM:		g_eVideoType = VT_MONO_CUSTOM; break;
+		case VT127_COLOR_MONITOR:	g_eVideoType = VT_COLOR_MONITOR; break;
+		case VT127_MONO_TV:			g_eVideoType = VT_MONO_TV; break;
+		case VT127_COLOR_TV:		g_eVideoType = VT_COLOR_TV; break;
+		case VT127_MONO_AMBER:		g_eVideoType = VT_MONO_AMBER; break;
+		case VT127_MONO_GREEN:		g_eVideoType = VT_MONO_GREEN; break;
+		case VT127_MONO_WHITE:		g_eVideoType = VT_MONO_WHITE; break;
+		default:					g_eVideoType = VT_DEFAULT; break;
+		}
+	}
+#endif
 
 	if (g_eVideoType >= NUM_VIDEO_MODES)
 		g_eVideoType = VT_DEFAULT;

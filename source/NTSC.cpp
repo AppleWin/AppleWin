@@ -915,7 +915,7 @@ inline void updateVideoScannerAddress()
 		(g_pFuncUpdateGraphicsScreen == updateScreenDoubleLores80) ||
 		(g_pFuncUpdateGraphicsScreen == updateScreenText80) ||
 		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && g_pFuncUpdateTextScreen == updateScreenText80))
-		&& (g_eVideoType != VT_COLOR_STANDARD))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
+		&& (g_eVideoType != VT_COLOR_SIMPLIFIED))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
 	{
 		g_pVideoAddress -= 1;
 	}
@@ -1341,7 +1341,7 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 
 //===========================================================================
 
-void updateScreenDoubleHires80Simple (long cycles6502 ) // wsUpdateVideoDblHires
+void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblHires
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1449,7 +1449,7 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 
 //===========================================================================
 
-static void updateScreenDoubleLores80Simple (long cycles6502) // wsUpdateVideoDblLores
+static void updateScreenDoubleLores80Simplified (long cycles6502) // wsUpdateVideoDblLores
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1528,7 +1528,7 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 }
 
 //===========================================================================
-static void updateScreenSingleHires40Simple (long cycles6502)
+static void updateScreenSingleHires40Simplified (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1596,7 +1596,7 @@ void updateScreenSingleHires40 (long cycles6502)
 }
 
 //===========================================================================
-static void updateScreenSingleLores40Simple (long cycles6502)
+static void updateScreenSingleLores40Simplified (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1720,7 +1720,7 @@ void updateScreenText80 (long cycles6502)
 					aux ^= g_nTextFlashMask;
 
 				uint16_t bits = (main << 7) | (aux & 0x7f);
-				if (g_eVideoType != VT_COLOR_STANDARD)				// No extra 14M bit needed for VT_COLOR_STANDARD
+				if (g_eVideoType != VT_COLOR_SIMPLIFIED)				// No extra 14M bit needed for VT_COLOR_SIMPLIFIED
 					bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
 				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
@@ -1849,8 +1849,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if (g_eVideoType == VT_COLOR_STANDARD)
-					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80Simple;
+				if (g_eVideoType == VT_COLOR_SIMPLIFIED)
+					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80Simplified;
 				else
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
 			}
@@ -1861,8 +1861,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 		}
 		else
 		{
-			if (g_eVideoType == VT_COLOR_STANDARD)
-				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Simple;
+			if (g_eVideoType == VT_COLOR_SIMPLIFIED)
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Simplified;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
 		}
@@ -1873,8 +1873,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if (g_eVideoType == VT_COLOR_STANDARD)
-					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simple;
+				if (g_eVideoType == VT_COLOR_SIMPLIFIED)
+					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simplified;
 				else
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
 			}
@@ -1885,8 +1885,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 		}
 		else
 		{
-			if (g_eVideoType == VT_COLOR_STANDARD)
-				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simple;
+			if (g_eVideoType == VT_COLOR_SIMPLIFIED)
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
 		}
@@ -1960,7 +1960,7 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			b = 0x00;
 			goto _mono;
 
-		case VT_COLOR_STANDARD:
+		case VT_COLOR_SIMPLIFIED:
 		case VT_MONO_WHITE:
 			r = 0xFF;
 			g = 0xFF;

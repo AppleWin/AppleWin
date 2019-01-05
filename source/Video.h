@@ -7,10 +7,10 @@
 	enum VideoType_e
 	{
 		  VT_MONO_CUSTOM
+		, VT_COLOR_SIMPLIFIED		// Color rendering from AppleWin 1.25 (GH#357)
 		, VT_COLOR_MONITOR
-		, VT_MONO_TV
 		, VT_COLOR_TV
-		, VT_COLOR_STANDARD		// Color rendering from AppleWin 1.25 (GH#357)
+		, VT_MONO_TV
 		, VT_MONO_AMBER
 		, VT_MONO_GREEN
 		, VT_MONO_WHITE
@@ -26,7 +26,7 @@
 		VF_80COL  = 0x00000001,
 		VF_DHIRES = 0x00000002,
 		VF_HIRES  = 0x00000004,
-		VF_80STORE= 0x00000008, // was called VF_MASK2
+		VF_80STORE= 0x00000008,
 		VF_MIXED  = 0x00000010,
 		VF_PAGE2  = 0x00000020,
 		VF_TEXT   = 0x00000040

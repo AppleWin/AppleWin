@@ -60,6 +60,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 static UINT16 g_AppleWinVersion[4] = {0};
 char VERSIONSTRING[16] = "xx.yy.zz.ww";
+static UINT16 g_OldAppleWinVersion[4] = {0};
 
 const TCHAR *g_pAppTitle = NULL;
 
@@ -164,9 +165,9 @@ void SetApple2Type(eApple2Type type)
 	SetMainCpuDefault(type);
 }
 
-const UINT16* GetAppleWinVersion(void)
+const UINT16* GetOldAppleWinVersion(void)
 {
-	return &g_AppleWinVersion[0];
+	return g_OldAppleWinVersion;
 }
 
 bool GetLoadedSaveStateFlag(void)
@@ -1477,6 +1478,38 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		g_bRestart = false;
 		ResetToLogoMode();
 
+		//
+
+		char szOldAppleWinVersion[sizeof(VERSIONSTRING)] = {0};
+		RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, szOldAppleWinVersion, sizeof(szOldAppleWinVersion));
+
+		const bool bShowAboutDlg = strcmp(szOldAppleWinVersion, VERSIONSTRING) != 0;
+
+		if (bShowAboutDlg)
+		{
+			if (!AboutDlg())
+				bShutdown = true;															// Close everything down
+			else
+				RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, VERSIONSTRING);	// Only save version after user accepts license
+		}
+
+		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
+		// version: xx.yy.zz.ww
+		// offset : 0123456789
+		char* p0 = szOldAppleWinVersion;
+		szOldAppleWinVersion[strlen(szOldAppleWinVersion)] = '.';	// Overwrite null terminator with '.'
+		for (UINT i=0; i<4; i++)
+		{
+			char* p1 = strstr(p0, ".");
+			if (!p1)
+				break;
+			*p1 = 0;
+			g_OldAppleWinVersion[i] = atoi(p0);
+			p0 = p1+1;
+		}
+
+		//
+
 		LoadConfiguration();
 		LogFileOutput("Main: LoadConfiguration()\n");
 
@@ -1530,18 +1563,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		MemInitialize();
 		LogFileOutput("Main: MemInitialize()\n");
-
-		char szOldAppleWinVersion[sizeof(VERSIONSTRING)] = {0};
-		RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, szOldAppleWinVersion, sizeof(szOldAppleWinVersion));
-
-		const bool bShowAboutDlg = strcmp(szOldAppleWinVersion, VERSIONSTRING) != 0;
-		if (bShowAboutDlg)
-		{
-			if (!AboutDlg())
-				bShutdown = true;															// Close everything down
-			else
-				RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, VERSIONSTRING);	// Only save version after user accepts license
-		}
 
 		if (g_bCapturePrintScreenKey)
 		{
