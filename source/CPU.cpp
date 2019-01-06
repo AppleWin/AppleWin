@@ -427,6 +427,13 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles)
 	}
 }
 
+// GH#605: IRQ needs to occur within 17 cycles (6 opcodes) of configuring the timer interrupt
+void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
+{
+	if (uCyclesUntilInterrupt < IRQ_CHECK_TIMEOUT)
+		g_nIrqCheckTimeout = uCyclesUntilInterrupt;
+}
+
 //===========================================================================
 
 #include "CPU/cpu6502.h"  // MOS 6502
