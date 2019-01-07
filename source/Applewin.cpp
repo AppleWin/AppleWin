@@ -1135,6 +1135,29 @@ static void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBo
 		MessageBox(g_hFrameWindow, "Failed to insert harddisk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
+static bool CheckOldAppleWinVersion(void)
+{
+	char szOldAppleWinVersion[sizeof(VERSIONSTRING)] = {0};
+	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, szOldAppleWinVersion, sizeof(szOldAppleWinVersion));
+	const bool bShowAboutDlg = strcmp(szOldAppleWinVersion, VERSIONSTRING) != 0;
+
+	// version: xx.yy.zz.ww
+	// offset : 0123456789
+	char* p0 = szOldAppleWinVersion;
+	szOldAppleWinVersion[strlen(szOldAppleWinVersion)] = '.';	// Overwrite null terminator with '.'
+	for (UINT i=0; i<4; i++)
+	{
+		char* p1 = strstr(p0, ".");
+		if (!p1)
+			break;
+		*p1 = 0;
+		g_OldAppleWinVersion[i] = atoi(p0);
+		p0 = p1+1;
+	}
+
+	return bShowAboutDlg;
+}
+
 //---------------------------------------------------------------------------
 
 int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
@@ -1478,37 +1501,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		g_bRestart = false;
 		ResetToLogoMode();
 
-		//
-
-		char szOldAppleWinVersion[sizeof(VERSIONSTRING)] = {0};
-		RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, szOldAppleWinVersion, sizeof(szOldAppleWinVersion));
-
-		const bool bShowAboutDlg = strcmp(szOldAppleWinVersion, VERSIONSTRING) != 0;
-
-		if (bShowAboutDlg)
-		{
-			if (!AboutDlg())
-				bShutdown = true;															// Close everything down
-			else
-				RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, VERSIONSTRING);	// Only save version after user accepts license
-		}
-
 		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
-		// version: xx.yy.zz.ww
-		// offset : 0123456789
-		char* p0 = szOldAppleWinVersion;
-		szOldAppleWinVersion[strlen(szOldAppleWinVersion)] = '.';	// Overwrite null terminator with '.'
-		for (UINT i=0; i<4; i++)
-		{
-			char* p1 = strstr(p0, ".");
-			if (!p1)
-				break;
-			*p1 = 0;
-			g_OldAppleWinVersion[i] = atoi(p0);
-			p0 = p1+1;
-		}
-
-		//
+		const bool bShowAboutDlg = CheckOldAppleWinVersion();	// Post: g_OldAppleWinVersion
 
 		LoadConfiguration();
 		LogFileOutput("Main: LoadConfiguration()\n");
@@ -1563,6 +1557,15 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		MemInitialize();
 		LogFileOutput("Main: MemInitialize()\n");
+
+		// Show About dialog after creating main window (need g_hFrameWindow)
+		if (bShowAboutDlg)
+		{
+			if (!AboutDlg())
+				bShutdown = true;															// Close everything down
+			else
+				RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, VERSIONSTRING);	// Only save version after user accepts license
+		}
 
 		if (g_bCapturePrintScreenKey)
 		{
