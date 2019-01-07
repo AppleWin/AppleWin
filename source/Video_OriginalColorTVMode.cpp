@@ -254,7 +254,7 @@ static void V_CreateLookup_Hires()
 					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
 					{
 						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
-						// VT_COLOR_SIMPLIFIED = Fill in colors in between white pixels
+						// VT_COLOR_MONITOR_RGB = Fill in colors in between white pixels
 						// VT_COLOR_TVEMU    = Fill in colors in between white pixels  (Post Processing will mix/merge colors)
 						// VT_COLOR_TEXT_OPTIMIZED --> !(aPixels[iPixel-2] && aPixels[iPixel+2]) = Don't fill in colors in between white
 						if ((g_eVideoType == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
@@ -424,7 +424,7 @@ Legend:
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_ORANGE );
 						}
 #else
-						if ((g_eVideoType == VT_COLOR_SIMPLIFIED) || ( !aPixels[3] ))
+						if ((g_eVideoType == VT_COLOR_MONITOR_RGB) || ( !aPixels[3] ))
 						{ // "Text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
@@ -457,7 +457,7 @@ Legend:
 					{
 						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
 						if (
-							(g_eVideoType == VT_COLOR_SIMPLIFIED) // Fill in colors in between white pixels
+							(g_eVideoType == VT_COLOR_MONITOR_RGB) // Fill in colors in between white pixels
 //						||	(g_eVideoType == VT_COLOR_TVEMU)    // Fill in colors in between white pixels (Post Processing will mix/merge colors)
 						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
 						{

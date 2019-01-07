@@ -902,8 +902,8 @@ inline void updateVideoScannerAddress()
 	g_pVideoAddress = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
 
 	// Adjust, as these video styles have 2x 14M pixels of pre-render
-	// NB. For VT_COLOR_MONITOR, also check color-burst so that TEXT and MIXED(HGR+TEXT) render the TEXT at the same offset (GH#341)
-	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV || (g_eVideoType == VT_COLOR_MONITOR && GetColorBurst()))
+	// NB. For VT_COLOR_MONITOR_NTSC, also check color-burst so that TEXT and MIXED(HGR+TEXT) render the TEXT at the same offset (GH#341)
+	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV || (g_eVideoType == VT_COLOR_MONITOR_NTSC && GetColorBurst()))
 		g_pVideoAddress -= 2;
 
 	// GH#555: For the 14M video modes (DHGR,DGR,80COL), start rendering 1x 14M pixel early to account for these video modes being shifted right by 1 pixel
@@ -915,7 +915,7 @@ inline void updateVideoScannerAddress()
 		(g_pFuncUpdateGraphicsScreen == updateScreenDoubleLores80) ||
 		(g_pFuncUpdateGraphicsScreen == updateScreenText80) ||
 		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && g_pFuncUpdateTextScreen == updateScreenText80))
-		&& (g_eVideoType != VT_COLOR_SIMPLIFIED))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
+		&& (g_eVideoType != VT_COLOR_MONITOR_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
 	{
 		g_pVideoAddress -= 1;
 	}
@@ -1292,8 +1292,8 @@ inline void zeroPixel0_14M(void)	// GH#555
 	if (g_nVideoClockHorz == VIDEO_SCANNER_HORZ_START)
 	{
 		UINT32* p = ((UINT32*)g_pVideoAddress) - 14;	// Point back to pixel-0
-		// NB. For VT_COLOR_MONITOR, also check color-burst so that TEXT and MIXED(HGR+TEXT) render the TEXT at the same offset (GH#341)
-		if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV || (g_eVideoType == VT_COLOR_MONITOR && GetColorBurst()))
+		// NB. For VT_COLOR_MONITOR_NTSC, also check color-burst so that TEXT and MIXED(HGR+TEXT) render the TEXT at the same offset (GH#341)
+		if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV || (g_eVideoType == VT_COLOR_MONITOR_NTSC && GetColorBurst()))
 		{
 			p[2] = 0;
 			p[g_kFrameBufferWidth+2] = 0;	// Next line (there are 2 lines per Apple II scanline)
@@ -1720,7 +1720,7 @@ void updateScreenText80 (long cycles6502)
 					aux ^= g_nTextFlashMask;
 
 				uint16_t bits = (main << 7) | (aux & 0x7f);
-				if (g_eVideoType != VT_COLOR_SIMPLIFIED)				// No extra 14M bit needed for VT_COLOR_SIMPLIFIED
+				if (g_eVideoType != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
 					bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
 				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
@@ -1849,7 +1849,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if (g_eVideoType == VT_COLOR_SIMPLIFIED)
+				if (g_eVideoType == VT_COLOR_MONITOR_RGB)
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80Simplified;
 				else
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
@@ -1861,7 +1861,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 		}
 		else
 		{
-			if (g_eVideoType == VT_COLOR_SIMPLIFIED)
+			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Simplified;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
@@ -1873,7 +1873,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if (g_eVideoType == VT_COLOR_SIMPLIFIED)
+				if (g_eVideoType == VT_COLOR_MONITOR_RGB)
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simplified;
 				else
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
@@ -1885,7 +1885,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 		}
 		else
 		{
-			if (g_eVideoType == VT_COLOR_SIMPLIFIED)
+			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
@@ -1917,7 +1917,7 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			}
 			break;
 
-		case VT_COLOR_MONITOR:
+		case VT_COLOR_MONITOR_NTSC:
 		default:
 			r = 0xFF;
 			g = 0xFF;
@@ -1960,7 +1960,7 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			b = 0x00;
 			goto _mono;
 
-		case VT_COLOR_SIMPLIFIED:
+		case VT_COLOR_MONITOR_RGB:
 		case VT_MONO_WHITE:
 			r = 0xFF;
 			g = 0xFF;
