@@ -300,7 +300,7 @@ void V_CreateLookup_Lores()
 #define HALF_PIXEL_SOLID 1
 #define HALF_PIXEL_BLEED 0
 
-void V_CreateLookup_HiResHalfPixel_Authentic() // Colors are solid (100% coverage)
+void V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType) // Colors are solid (100% coverage)
 {
 	// 2-bits from previous byte, 2-bits from next byte = 2^4 = 16 total permutations
 	for (int iColumn = 0; iColumn < 16; iColumn++)
@@ -424,7 +424,7 @@ Legend:
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_ORANGE );
 						}
 #else
-						if ((g_eVideoType == VT_COLOR_MONITOR_RGB) || ( !aPixels[3] ))
+						if ((videoType == VT_COLOR_MONITOR_RGB) || ( !aPixels[3] ))
 						{ // "Text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
@@ -457,8 +457,8 @@ Legend:
 					{
 						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
 						if (
-							(g_eVideoType == VT_COLOR_MONITOR_RGB) // Fill in colors in between white pixels
-//						||	(g_eVideoType == VT_COLOR_TVEMU)    // Fill in colors in between white pixels (Post Processing will mix/merge colors)
+							(videoType == VT_COLOR_MONITOR_RGB) // Fill in colors in between white pixels
+//						||	(videoType == VT_COLOR_TVEMU)       // Fill in colors in between white pixels (Post Processing will mix/merge colors)
 						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
 						{
 							// Test Pattern: Ultima 4 Logo - Castle
@@ -631,7 +631,7 @@ static void V_CreateDIBSections(void)
 //	if ( g_eVideoType == VT_COLOR_TVEMU )
 //		V_CreateLookup_Hires();
 //	else
-		V_CreateLookup_HiResHalfPixel_Authentic();
+		V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
 
 	V_CreateLookup_DoubleHires();
 }
