@@ -1219,9 +1219,8 @@ void Config_Load_Video()
 	REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&g_uHalfScanLines);
 	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&g_nMonochromeRGB);
 
-#if 0	/// TODO: Enable after bumping version in master to 1.28
 	const UINT16* pOldVersion = GetOldAppleWinVersion();
-	if (pOldVersion[0] == 1 && pOldVersion[2] <= 27)
+	if (pOldVersion[0] == 1 && pOldVersion[1] <= 27 && pOldVersion[2] <= 13)
 	{
 		switch (g_eVideoType)
 		{
@@ -1235,7 +1234,6 @@ void Config_Load_Video()
 		default:						g_eVideoType = VT_DEFAULT; break;
 		}
 	}
-#endif
 
 	if (g_eVideoType >= NUM_VIDEO_MODES)
 		g_eVideoType = VT_DEFAULT;
