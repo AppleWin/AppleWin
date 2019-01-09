@@ -9,7 +9,7 @@ void LogFileTimeUntilFirstKeyRead(void);
 void SetCurrentCLK6502();
 bool SetCurrentImageDir(const char* pszImageDir);
 
-extern const UINT16* GetAppleWinVersion(void);
+extern const UINT16* GetOldAppleWinVersion(void);
 extern char VERSIONSTRING[];	// Constructed in WinMain()
 
 extern const TCHAR     *g_pAppTitle;

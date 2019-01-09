@@ -7,13 +7,15 @@
 	enum VideoType_e
 	{
 		  VT_MONO_CUSTOM
-		, VT_COLOR_MONITOR
-		, VT_MONO_TV
+		, VT_COLOR_MONITOR_RGB		// Color rendering from AppleWin 1.25 (GH#357)
+		, VT_COLOR_MONITOR_NTSC
 		, VT_COLOR_TV
+		, VT_MONO_TV
 		, VT_MONO_AMBER
 		, VT_MONO_GREEN
 		, VT_MONO_WHITE
 		, NUM_VIDEO_MODES
+		, VT_DEFAULT = VT_COLOR_TV
 	};
 
 	extern TCHAR g_aVideoChoices[];
@@ -24,7 +26,7 @@
 		VF_80COL  = 0x00000001,
 		VF_DHIRES = 0x00000002,
 		VF_HIRES  = 0x00000004,
-		VF_80STORE= 0x00000008, // was called VF_MASK2
+		VF_80STORE= 0x00000008,
 		VF_MIXED  = 0x00000010,
 		VF_PAGE2  = 0x00000020,
 		VF_TEXT   = 0x00000040
@@ -61,6 +63,7 @@
 	#define PACKED // TODO: FIXME: gcc/clang __attribute__
 #endif
 
+// TODO: Replace with WinGDI.h / RGBQUAD
 struct bgra_t
 {
 	uint8_t b;
