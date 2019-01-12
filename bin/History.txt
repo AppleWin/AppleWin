@@ -9,9 +9,9 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.28.0.0 - 13 Jan 2019
+1.28.0.0 - 12 Jan 2019
 ----------------------
-. [Change #357] Resurrected the AppleWin 1.25 "Color (Standard)" video mode as "Color (TBD)".
+. [Change #357] Resurrected the AppleWin 1.25 "Color (Standard)" video mode as "Color (RGB Monitor)".
 	- This is equivalent to emulating RGB video, ie. a video mode with sharp text and pixels.
 	- NB. Unlike AppleWin 1.25, this is now cycle-accurate, so demos that synchronise with the video scanner will work correctly.
 . [Change #603] Removed support for v1 save-state files.
