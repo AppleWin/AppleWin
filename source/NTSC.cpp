@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "Frame.h"
 	#include "Memory.h" // MemGetMainPtr() MemGetAuxPtr()
 	#include "Video.h"  // g_pFramebufferbits
-	#include "Video_OriginalColorTVMode.h"
+	#include "RGBMonitor.h"
 
 	#include "NTSC.h"
 	#include "NTSC_CharSet.h"

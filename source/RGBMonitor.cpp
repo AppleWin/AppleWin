@@ -5,7 +5,7 @@
 #include "Frame.h"
 #include "Memory.h" // MemGetMainPtr() MemGetAuxPtr()
 #include "Video.h"
-#include "Video_OriginalColorTVMode.h"
+#include "RGBMonitor.h"
 
 const int SRCOFFS_LORES   = 0;                       //    0
 const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //   16
