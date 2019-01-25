@@ -674,7 +674,11 @@ void RGB_SetVideoMode(WORD address)
 		return;
 
 	if ((g_uVideoMode & (VF_TEXT|VF_MIXED|VF_HIRES|VF_80STORE)) != (VF_HIRES|VF_80STORE))
+	{
 		g_rgbMixedMode = false;
+		g_rgbPrevAN3Addr = 0;
+		return;
+	}
 
 	if (g_rgbPrevAN3Addr == address)	// Ensure we only watch for AN3 toggles
 		return;
