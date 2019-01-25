@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Registry.h"
 #include "Video.h"
 #include "NTSC.h"
+#include "RGBMonitor.h"
 
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
@@ -641,8 +642,9 @@ void VideoResetState ()
 
 	NTSC_SetVideoTextMode( 40 );
 	NTSC_SetVideoMode( g_uVideoMode );
-}
 
+	RGB_ResetState();
+}
 
 //===========================================================================
 
@@ -670,6 +672,7 @@ BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
 
+	RGB_SetVideoMode(address);
 	NTSC_SetVideoMode( g_uVideoMode );
 
 	return MemReadFloatingBus(uExecutedCycles);

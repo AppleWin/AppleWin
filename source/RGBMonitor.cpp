@@ -542,30 +542,38 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 
 //===========================================================================
 
-void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
+#define COLOR  ((xpixel + PIXEL) & 3)
+#define VALUE  (dwordval >> (4 + PIXEL - COLOR))
+
+void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool updateAux, bool updateMain)
 {
 	const int xpixel = x*14;
 
-	uint8_t *pAux  = MemGetAuxPtr(addr);
+	uint8_t *pAux = MemGetAuxPtr(addr);
 	uint8_t *pMain = MemGetMainPtr(addr);
 
-    BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
+	BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
     BYTE byteval2 = *pAux;
     BYTE byteval3 = *pMain;
     BYTE byteval4 = (x < 39) ? *(pAux+1) : 0;
 
 	DWORD dwordval = (byteval1 & 0x70)        | ((byteval2 & 0x7F) << 7) |
 					((byteval3 & 0x7F) << 14) | ((byteval4 & 0x07) << 21);
+
 #define PIXEL  0
-#define COLOR  ((xpixel + PIXEL) & 3)
-#define VALUE  (dwordval >> (4 + PIXEL - COLOR))
+	if (updateAux)
+	{
 		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+		pVideoAddress += 7;
+	}
 #undef PIXEL
+
 #define PIXEL  7
-		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress+7);
+	if (updateMain)
+	{
+		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+	}
 #undef PIXEL
-#undef COLOR
-#undef VALUE
 }
 
 //===========================================================================
@@ -592,7 +600,7 @@ void UpdateLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 // Tested with FT's Ansi Story
 void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 {
-	BYTE auxval  = *MemGetAuxPtr(addr);
+	BYTE auxval = *MemGetAuxPtr(addr);
 	const BYTE mainval = *MemGetMainPtr(addr);
 
 	const BYTE auxval_h = auxval >> 4;
@@ -648,4 +656,49 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 	PalIndex2RGB[HGR_GREEN]  = PalIndex2RGB[GREEN];
 	PalIndex2RGB[HGR_VIOLET] = PalIndex2RGB[MAGENTA];
 #endif
+}
+
+//===========================================================================
+
+static UINT g_rgbFlags = 0;
+static bool g_rgbMixedMode = false;
+static WORD g_rgbPrevAN3Addr = 0;
+
+// Video7 RGB card:
+// . Clock in the !80COL state to define the 2 flags: F2, F1
+// . Clock by toggling AN3
+// . There's a 5th clock transition for the final AN3 access to set DHGR mode
+void RGB_SetVideoMode(WORD address)
+{
+	if ((address&~1) != 0x5E)	// 0x5E or 0x5F?
+		return;
+
+	if (g_rgbPrevAN3Addr == address)
+		return;
+	g_rgbPrevAN3Addr = address;
+
+	if ((g_uVideoMode & (VF_TEXT|VF_MIXED|VF_HIRES|VF_80STORE)) == (VF_HIRES|VF_80STORE))
+	{
+		g_rgbFlags = (g_rgbFlags<<1) & 0x1f;	// F2 | x | F1 | x | x
+
+		if (address == 0x5E)
+			g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);
+	}
+
+	if (address == 0x5E)
+		g_rgbMixedMode = (g_rgbFlags & 0x14) == 0x10;	// F2=1 and F1=0
+	else
+		g_rgbMixedMode = false;
+}
+
+bool RGB_GetMixedMode(void)
+{
+	return g_rgbMixedMode;
+}
+
+void RGB_ResetState(void)
+{
+	g_rgbFlags = 0;
+	g_rgbMixedMode = false;
+	g_rgbPrevAN3Addr = 0;
 }
