@@ -1383,7 +1383,7 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 					UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
 					g_pVideoAddress += 14;
 				}
-				else
+				else	// Support RGB mixed-mode: mixing RGB color and monochrome
 				{
 					if (a & 0x80)
 					{

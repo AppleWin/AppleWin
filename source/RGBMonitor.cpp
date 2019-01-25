@@ -666,29 +666,30 @@ static WORD g_rgbPrevAN3Addr = 0;
 
 // Video7 RGB card:
 // . Clock in the !80COL state to define the 2 flags: F2, F1
-// . Clock by toggling AN3
-// . There's a 5th clock transition for the final AN3 access to set DHGR mode
+// . Clocking done by toggling AN3
+// . NB. There's a final 5th AN3 transition to set DHGR mode
 void RGB_SetVideoMode(WORD address)
 {
-	if ((address&~1) != 0x5E)	// 0x5E or 0x5F?
+	if ((address&~1) != 0x5E)			// 0x5E or 0x5F?
 		return;
 
-	if (g_rgbPrevAN3Addr == address)
+	if ((g_uVideoMode & (VF_TEXT|VF_MIXED|VF_HIRES|VF_80STORE)) != (VF_HIRES|VF_80STORE))
+		g_rgbMixedMode = false;
+
+	if (g_rgbPrevAN3Addr == address)	// Ensure we only watch for AN3 toggles
 		return;
+
 	g_rgbPrevAN3Addr = address;
 
-	if ((g_uVideoMode & (VF_TEXT|VF_MIXED|VF_HIRES|VF_80STORE)) == (VF_HIRES|VF_80STORE))
+	if (address == 0x5E)	// 0x5E: clock in !80COL
 	{
-		g_rgbFlags = (g_rgbFlags<<1) & 0x1f;	// F2 | x | F1 | x | x
-
-		if (address == 0x5E)
-			g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);
+		g_rgbFlags = (g_rgbFlags<<1) & 3;	// F2 | F1
+		g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);
 	}
-
-	if (address == 0x5E)
-		g_rgbMixedMode = (g_rgbFlags & 0x14) == 0x10;	// F2=1 and F1=0
-	else
-		g_rgbMixedMode = false;
+	else					// 0x5F: latch F2 & F1
+	{
+		g_rgbMixedMode = g_rgbFlags == 2;	// MIX MODE: F2=1 and F1=0
+	}
 }
 
 bool RGB_GetMixedMode(void)

@@ -672,7 +672,9 @@ BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
 
-	RGB_SetVideoMode(address);
+	if (!IS_APPLE2)
+		RGB_SetVideoMode(address);
+
 	NTSC_SetVideoMode( g_uVideoMode );
 
 	return MemReadFloatingBus(uExecutedCycles);
