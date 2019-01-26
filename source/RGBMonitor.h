@@ -8,5 +8,7 @@ typedef bgra_t (*baseColors_t)[kNumBaseColors];
 void VideoInitializeOriginal(baseColors_t pBaseNtscColors);
 
 void RGB_SetVideoMode(WORD address);
-bool RGB_GetMixedMode(void);
+bool RGB_Is140Mode(void);
+bool RGB_IsMixMode(void);
+bool RGB_Is560Mode(void);
 void RGB_ResetState(void);

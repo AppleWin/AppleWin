@@ -660,8 +660,10 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 
 //===========================================================================
 
+#define DBG_SUPPORT_A2OSX
+
 static UINT g_rgbFlags = 0;
-static bool g_rgbMixedMode = false;
+static UINT g_rgbMode = 0;
 static WORD g_rgbPrevAN3Addr = 0;
 
 // Video7 RGB card:
@@ -673,15 +675,21 @@ void RGB_SetVideoMode(WORD address)
 	if ((address&~1) != 0x5E)			// 0x5E or 0x5F?
 		return;
 
+#ifndef DBG_SUPPORT_A2OSX
 	if ((g_uVideoMode & (VF_TEXT|VF_MIXED|VF_HIRES|VF_80STORE)) != (VF_HIRES|VF_80STORE))
+#else
+	if ((g_uVideoMode & (VF_TEXT|VF_MIXED|VF_HIRES)) != (VF_HIRES))
+#endif
 	{
-		g_rgbMixedMode = false;
+		g_rgbMode = 0;
 		g_rgbPrevAN3Addr = 0;
 		return;
 	}
 
+#ifndef DBG_SUPPORT_A2OSX
 	if (g_rgbPrevAN3Addr == address)	// Ensure we only watch for AN3 toggles
 		return;
+#endif
 
 	g_rgbPrevAN3Addr = address;
 
@@ -692,18 +700,33 @@ void RGB_SetVideoMode(WORD address)
 	}
 	else					// 0x5F: latch F2 & F1
 	{
-		g_rgbMixedMode = g_rgbFlags == 2;	// MIX MODE: F2=1 and F1=0
+		g_rgbMode = g_rgbFlags;
 	}
 }
 
-bool RGB_GetMixedMode(void)
+bool RGB_Is140Mode(void)
 {
-	return g_rgbMixedMode;
+	return g_rgbMode == 0;
+}
+
+//bool RGB_Is160Mode(void)
+//{
+//	return g_rgbMode == 1;
+//}
+
+bool RGB_IsMixMode(void)
+{
+	return g_rgbMode == 2;
+}
+
+bool RGB_Is560Mode(void)
+{
+	return g_rgbMode == 3;
 }
 
 void RGB_ResetState(void)
 {
 	g_rgbFlags = 0;
-	g_rgbMixedMode = false;
+	g_rgbMode = 0;
 	g_rgbPrevAN3Addr = 0;
 }

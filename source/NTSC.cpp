@@ -1378,7 +1378,12 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 				uint8_t a = *MemGetAuxPtr(addr);
 				uint8_t m = *MemGetMainPtr(addr);
 
-				if (!RGB_GetMixedMode() || (a & m & 0x80))
+				if (RGB_Is560Mode())
+				{
+					update7MonoPixels(a);
+					update7MonoPixels(m);
+				}
+				else if (!RGB_IsMixMode() || (RGB_IsMixMode() && (a & m & 0x80)))
 				{
 					UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
 					g_pVideoAddress += 14;
