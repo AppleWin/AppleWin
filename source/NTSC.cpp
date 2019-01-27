@@ -688,7 +688,7 @@ inline bool GetColorBurst( void )
 
 //===========================================================================
 
-inline void update7MonoPixels( uint16_t bits )
+void update7MonoPixels( uint16_t bits )
 {
 	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
 	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
@@ -1378,7 +1378,7 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 				uint8_t a = *MemGetAuxPtr(addr);
 				uint8_t m = *MemGetMainPtr(addr);
 
-				if (RGB_Is560Mode())
+				if (RGB_Is560Mode() || (RGB_IsMixMode() && !((a | m) & 0x80)))
 				{
 					update7MonoPixels(a);
 					update7MonoPixels(m);
@@ -1388,26 +1388,19 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 					UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
 					g_pVideoAddress += 14;
 				}
-				else	// Support RGB mixed-mode: mixing RGB color and monochrome
+				else	// RGB_IsMixMode() && ((a ^ m) & 0x80)
 				{
-					if (a & 0x80)
+					if (a & 0x80)	// RGB color, then monochrome
 					{
 						UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true ,false);
 						g_pVideoAddress += 7;
+						update7MonoPixels(m);
 					}
-					else
+					else			// monochrome, then RGB color
 					{
 						update7MonoPixels(a);
-					}
-
-					if (m & 0x80)
-					{
 						UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, false, true);
 						g_pVideoAddress += 7;
-					}
-					else
-					{
-						update7MonoPixels(m);
 					}
 				}
 			}
