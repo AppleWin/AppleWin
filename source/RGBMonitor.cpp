@@ -675,51 +675,43 @@ void RGB_SetVideoMode(WORD address)
 	if ((address&~1) != 0x5E)			// 0x5E or 0x5F?
 		return;
 
-#ifndef DBG_SUPPORT_A2OSX
-	if ((g_uVideoMode & (VF_TEXT|VF_MIXED|VF_HIRES|VF_80STORE)) != (VF_HIRES|VF_80STORE))
-#else
-	if ((g_uVideoMode & (VF_TEXT|VF_MIXED|VF_HIRES)) != (VF_HIRES))
-#endif
+	// Precondition before togglng AN3:
+	// . Video7 manual: set 80STORE, but "King's Quest 1"(*) will re-enable RGB card's MIX mode with only VF_TEXT & VF_HIRES set!
+	// . "Extended 80-Column Text/AppleColor Card" manual: TEXT off($C050), MIXED off($C052), HIRES on($C057)
+	// . (*) "King's Quest 1" - see routine at 0x5FD7 (trigger by pressing TAB twice)
+	if ((g_uVideoMode & (VF_MIXED|VF_HIRES)) != (VF_HIRES))
 	{
 		g_rgbMode = 0;
 		g_rgbPrevAN3Addr = 0;
 		return;
 	}
 
-#ifndef DBG_SUPPORT_A2OSX
-	if (g_rgbPrevAN3Addr == address)	// Ensure we only watch for AN3 toggles
-		return;
-#endif
+	if (address == 0x5F && g_rgbPrevAN3Addr == 0x5E)	// Check for AN3 clock transition
+	{
+		g_rgbFlags = (g_rgbFlags<<1) & 3;
+		g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
+		g_rgbMode = g_rgbFlags;								// latch F2,F1
+	}
 
 	g_rgbPrevAN3Addr = address;
-
-	if (address == 0x5E)	// 0x5E: clock in !80COL
-	{
-		g_rgbFlags = (g_rgbFlags<<1) & 3;	// F2 | F1
-		g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);
-	}
-	else					// 0x5F: latch F2 & F1
-	{
-		g_rgbMode = g_rgbFlags;
-	}
 }
 
-bool RGB_Is140Mode(void)
+bool RGB_Is140Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 2
 {
 	return g_rgbMode == 0;
 }
 
-//bool RGB_Is160Mode(void)
+//bool RGB_Is160Mode(void)	// Extended 80-Column Text/AppleColor Card: N/A
 //{
 //	return g_rgbMode == 1;
 //}
 
-bool RGB_IsMixMode(void)
+bool RGB_IsMixMode(void)	// Extended 80-Column Text/AppleColor Card's Mode 3
 {
 	return g_rgbMode == 2;
 }
 
-bool RGB_Is560Mode(void)
+bool RGB_Is560Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 1
 {
 	return g_rgbMode == 3;
 }
