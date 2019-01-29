@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speaker.h"
 #include "Tape.h"
 #include "Video.h"
+#include "RGBMonitor.h"
 
 #include "z80emu.h"
 #include "Z80VICE/z80.h"
@@ -2045,7 +2046,9 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 
 //
 
-static const UINT kUNIT_AUXSLOT_VER = 1;
+// Unit version history:
+// 2: Added: RGB card state
+static const UINT kUNIT_AUXSLOT_VER = 2;
 
 #define SS_YAML_VALUE_CARD_80COL "80 Column"
 #define SS_YAML_VALUE_CARD_EXTENDED80COL "Extended 80 Column"
@@ -2207,6 +2210,8 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.Save("%s: 0x%02X   # [0,1..7F] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
 	yamlSaveHelper.Save("%s: 0x%02X # [  0..7E] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
 
+	RGB_SaveSnapshot(yamlSaveHelper);	// v2
+
 	for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
 	{
 		MemSaveSnapshotMemory(yamlSaveHelper, false, uBank);
@@ -2215,7 +2220,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 
 bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (version != kUNIT_AUXSLOT_VER)
+	if (version < 1 || version > kUNIT_AUXSLOT_VER)
 		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Version mismatch");
 
 	// "State"
@@ -2251,6 +2256,9 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	g_uMaxExPages = numAuxBanks;
 	g_uActiveBank = activeAuxBank;
+
+	if (version >= 2)
+		RGB_LoadSnapshot(yamlLoadHelper);
 
 	//
 

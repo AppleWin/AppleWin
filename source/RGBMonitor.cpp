@@ -6,6 +6,7 @@
 #include "Memory.h" // MemGetMainPtr() MemGetAuxPtr()
 #include "Video.h"
 #include "RGBMonitor.h"
+#include "YamlHelper.h"
 
 const int SRCOFFS_LORES   = 0;                       //    0
 const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //   16
@@ -721,4 +722,34 @@ void RGB_ResetState(void)
 	g_rgbFlags = 0;
 	g_rgbMode = 0;
 	g_rgbPrevAN3Addr = 0;
+}
+
+//===========================================================================
+
+#define SS_YAML_KEY_RGB_CARD "RGB card state"
+// NB. No version - this is determined by the parent "Auxiliary Slot" unit
+
+#define SS_YAML_KEY_RGB_FLAGS "RGB mode flags"
+#define SS_YAML_KEY_RGB_MODE "RGB mode"
+#define SS_YAML_KEY_RGB_PREVIOUS_AN3 "RGB previous AN3"
+
+void RGB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_RGB_CARD);
+
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_FLAGS, g_rgbFlags);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_MODE, g_rgbMode);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_PREVIOUS_AN3, g_rgbPrevAN3Addr);
+}
+
+void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_RGB_CARD))
+		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_RGB_CARD);
+
+	g_rgbFlags = yamlLoadHelper.LoadUint(SS_YAML_KEY_RGB_FLAGS);
+	g_rgbMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_RGB_MODE);
+	g_rgbPrevAN3Addr = yamlLoadHelper.LoadUint(SS_YAML_KEY_RGB_PREVIOUS_AN3);
+
+	yamlLoadHelper.PopMap();
 }
