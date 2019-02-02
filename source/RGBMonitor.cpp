@@ -554,9 +554,9 @@ void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool 
 	uint8_t *pMain = MemGetMainPtr(addr);
 
 	BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
-    BYTE byteval2 = *pAux;
-    BYTE byteval3 = *pMain;
-    BYTE byteval4 = (x < 39) ? *(pAux+1) : 0;
+	BYTE byteval2 = *pAux;
+	BYTE byteval3 = *pMain;
+	BYTE byteval4 = (x < 39) ? *(pAux+1) : 0;
 
 	DWORD dwordval = (byteval1 & 0x70)        | ((byteval2 & 0x7F) << 7) |
 					((byteval3 & 0x7F) << 14) | ((byteval4 & 0x07) << 21);
