@@ -1301,7 +1301,7 @@ static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 
 //===========================================================================
 
-// Unit version history:  
+// Unit version history:
 // 2: Added: Format Track state & DiskLastCycle
 // 3: Added: DiskLastReadLatchCycle
 static const UINT kUNIT_VERSION = 3;

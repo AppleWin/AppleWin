@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speaker.h"
 #include "Tape.h"
 #include "Video.h"
+#include "RGBMonitor.h"
 
 #include "z80emu.h"
 #include "Z80VICE/z80.h"
@@ -2045,7 +2046,13 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 
 //
 
-static const UINT kUNIT_AUXSLOT_VER = 1;
+// Unit version history:
+// 2: Added version field to card's state
+static const UINT kUNIT_AUXSLOT_VER = 2;
+
+// Unit version history:
+// 2: Added: RGB card state
+static const UINT kUNIT_VER = 2;
 
 #define SS_YAML_VALUE_CARD_80COL "80 Column"
 #define SS_YAML_VALUE_CARD_EXTENDED80COL "Extended 80 Column"
@@ -2198,32 +2205,42 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 	}
 
 	yamlSaveHelper.UnitHdr(MemGetSnapshotUnitAuxSlotName(), kUNIT_AUXSLOT_VER);
-	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-	std::string card = 	g_uMaxExPages == 0 ?	SS_YAML_VALUE_CARD_80COL :			// todo: support empty slot
-						g_uMaxExPages == 1 ?	SS_YAML_VALUE_CARD_EXTENDED80COL :
-												SS_YAML_VALUE_CARD_RAMWORKSIII;
-	yamlSaveHelper.SaveString(SS_YAML_KEY_CARD, card.c_str());
-	yamlSaveHelper.Save("%s: 0x%02X   # [0,1..7F] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
-	yamlSaveHelper.Save("%s: 0x%02X # [  0..7E] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
-
-	for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
+	// Unit state
 	{
-		MemSaveSnapshotMemory(yamlSaveHelper, false, uBank);
+		YamlSaveHelper::Label unitState(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+		std::string card = 	g_uMaxExPages == 0 ?	SS_YAML_VALUE_CARD_80COL :			// todo: support empty slot
+							g_uMaxExPages == 1 ?	SS_YAML_VALUE_CARD_EXTENDED80COL :
+													SS_YAML_VALUE_CARD_RAMWORKSIII;
+
+		yamlSaveHelper.SaveString(SS_YAML_KEY_CARD, card.c_str());
+		yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_VERSION, kUNIT_VER);
+
+		// Card state
+		{
+			YamlSaveHelper::Label cardState(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+			yamlSaveHelper.Save("%s: 0x%02X   # [0,1..7F] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
+			yamlSaveHelper.Save("%s: 0x%02X # [  0..7E] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
+
+			for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
+			{
+				MemSaveSnapshotMemory(yamlSaveHelper, false, uBank);
+			}
+
+			RGB_SaveSnapshot(yamlSaveHelper);
+		}
 	}
 }
 
-bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
+static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::string& card)
 {
-	if (version != kUNIT_AUXSLOT_VER)
-		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Version mismatch");
-
 	// "State"
 	UINT numAuxBanks   = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUMAUXBANKS);
 	UINT activeAuxBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVEAUXBANK);
 
 	SS_CARDTYPE type = CT_Empty;
-	std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
 	if (card == SS_YAML_VALUE_CARD_80COL)
 	{
 		type = CT_80Col;
@@ -2282,6 +2299,36 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	memaux = RWpages[g_uActiveBank];
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
+}
+
+static void MemLoadSnapshotAuxVer1(YamlLoadHelper& yamlLoadHelper)
+{
+	std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
+	MemLoadSnapshotAuxCommon(yamlLoadHelper, card);
+}
+
+static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
+{
+	std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
+	UINT cardVersion = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
+
+	if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
+		throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
+
+	MemLoadSnapshotAuxCommon(yamlLoadHelper, card);
+
+	RGB_LoadSnapshot(yamlLoadHelper);
+}
+
+bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
+{
+	if (version < 1 || version > kUNIT_AUXSLOT_VER)
+		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Version mismatch");
+
+	if (version == 1)
+		MemLoadSnapshotAuxVer1(yamlLoadHelper);
+	else
+		MemLoadSnapshotAuxVer2(yamlLoadHelper, version);
 
 	return true;
 }

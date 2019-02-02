@@ -6,6 +6,7 @@
 #include "Memory.h" // MemGetMainPtr() MemGetAuxPtr()
 #include "Video.h"
 #include "RGBMonitor.h"
+#include "YamlHelper.h"
 
 const int SRCOFFS_LORES   = 0;                       //    0
 const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //   16
@@ -542,30 +543,38 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 
 //===========================================================================
 
-void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
+#define COLOR  ((xpixel + PIXEL) & 3)
+#define VALUE  (dwordval >> (4 + PIXEL - COLOR))
+
+void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool updateAux, bool updateMain)
 {
 	const int xpixel = x*14;
 
-	uint8_t *pAux  = MemGetAuxPtr(addr);
+	uint8_t *pAux = MemGetAuxPtr(addr);
 	uint8_t *pMain = MemGetMainPtr(addr);
 
-    BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
-    BYTE byteval2 = *pAux;
-    BYTE byteval3 = *pMain;
-    BYTE byteval4 = (x < 39) ? *(pAux+1) : 0;
+	BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
+	BYTE byteval2 = *pAux;
+	BYTE byteval3 = *pMain;
+	BYTE byteval4 = (x < 39) ? *(pAux+1) : 0;
 
 	DWORD dwordval = (byteval1 & 0x70)        | ((byteval2 & 0x7F) << 7) |
 					((byteval3 & 0x7F) << 14) | ((byteval4 & 0x07) << 21);
+
 #define PIXEL  0
-#define COLOR  ((xpixel + PIXEL) & 3)
-#define VALUE  (dwordval >> (4 + PIXEL - COLOR))
+	if (updateAux)
+	{
 		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+		pVideoAddress += 7;
+	}
 #undef PIXEL
+
 #define PIXEL  7
-		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress+7);
+	if (updateMain)
+	{
+		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+	}
 #undef PIXEL
-#undef COLOR
-#undef VALUE
 }
 
 //===========================================================================
@@ -592,7 +601,7 @@ void UpdateLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 // Tested with FT's Ansi Story
 void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 {
-	BYTE auxval  = *MemGetAuxPtr(addr);
+	BYTE auxval = *MemGetAuxPtr(addr);
 	const BYTE mainval = *MemGetMainPtr(addr);
 
 	const BYTE auxval_h = auxval >> 4;
@@ -648,4 +657,99 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 	PalIndex2RGB[HGR_GREEN]  = PalIndex2RGB[GREEN];
 	PalIndex2RGB[HGR_VIOLET] = PalIndex2RGB[MAGENTA];
 #endif
+}
+
+//===========================================================================
+
+#define DBG_SUPPORT_A2OSX
+
+static UINT g_rgbFlags = 0;
+static UINT g_rgbMode = 0;
+static WORD g_rgbPrevAN3Addr = 0;
+
+// Video7 RGB card:
+// . Clock in the !80COL state to define the 2 flags: F2, F1
+// . Clocking done by toggling AN3
+// . NB. There's a final 5th AN3 transition to set DHGR mode
+void RGB_SetVideoMode(WORD address)
+{
+	if ((address&~1) != 0x5E)			// 0x5E or 0x5F?
+		return;
+
+	// Precondition before togglng AN3:
+	// . Video7 manual: set 80STORE, but "King's Quest 1"(*) will re-enable RGB card's MIX mode with only VF_TEXT & VF_HIRES set!
+	// . "Extended 80-Column Text/AppleColor Card" manual: TEXT off($C050), MIXED off($C052), HIRES on($C057)
+	// . (*) "King's Quest 1" - see routine at 0x5FD7 (trigger by pressing TAB twice)
+	if ((g_uVideoMode & (VF_MIXED|VF_HIRES)) != (VF_HIRES))
+	{
+		g_rgbMode = 0;
+		g_rgbPrevAN3Addr = 0;
+		return;
+	}
+
+	if (address == 0x5F && g_rgbPrevAN3Addr == 0x5E)	// Check for AN3 clock transition
+	{
+		g_rgbFlags = (g_rgbFlags<<1) & 3;
+		g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
+		g_rgbMode = g_rgbFlags;								// latch F2,F1
+	}
+
+	g_rgbPrevAN3Addr = address;
+}
+
+bool RGB_Is140Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 2
+{
+	return g_rgbMode == 0;
+}
+
+//bool RGB_Is160Mode(void)	// Extended 80-Column Text/AppleColor Card: N/A
+//{
+//	return g_rgbMode == 1;
+//}
+
+bool RGB_IsMixMode(void)	// Extended 80-Column Text/AppleColor Card's Mode 3
+{
+	return g_rgbMode == 2;
+}
+
+bool RGB_Is560Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 1
+{
+	return g_rgbMode == 3;
+}
+
+void RGB_ResetState(void)
+{
+	g_rgbFlags = 0;
+	g_rgbMode = 0;
+	g_rgbPrevAN3Addr = 0;
+}
+
+//===========================================================================
+
+#define SS_YAML_KEY_RGB_CARD "AppleColor RGB Adaptor"
+// NB. No version - this is determined by the parent card
+
+#define SS_YAML_KEY_RGB_FLAGS "RGB mode flags"
+#define SS_YAML_KEY_RGB_MODE "RGB mode"
+#define SS_YAML_KEY_RGB_PREVIOUS_AN3 "Previous AN3"
+
+void RGB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_RGB_CARD);
+
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_FLAGS, g_rgbFlags);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_MODE, g_rgbMode);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_PREVIOUS_AN3, g_rgbPrevAN3Addr);
+}
+
+void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_RGB_CARD))
+		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_RGB_CARD);
+
+	g_rgbFlags = yamlLoadHelper.LoadUint(SS_YAML_KEY_RGB_FLAGS);
+	g_rgbMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_RGB_MODE);
+	g_rgbPrevAN3Addr = yamlLoadHelper.LoadUint(SS_YAML_KEY_RGB_PREVIOUS_AN3);
+
+	yamlLoadHelper.PopMap();
 }

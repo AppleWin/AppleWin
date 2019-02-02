@@ -688,6 +688,19 @@ inline bool GetColorBurst( void )
 
 //===========================================================================
 
+void update7MonoPixels( uint16_t bits )
+{
+	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	g_pFuncUpdateBnWPixel(bits & 1);
+}
+
+//===========================================================================
+
 // NB. g_nLastColumnPixelNTSC = bits.b13 will be superseded by these parent funcs which use bits.b14:
 // . updateScreenDoubleHires80(), updateScreenDoubleLores80(), updateScreenText80()
 inline void updatePixels( uint16_t bits )
@@ -1362,8 +1375,34 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				uint16_t addr = getVideoScannerAddressHGR();
-				UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
-				g_pVideoAddress += 14;
+				uint8_t a = *MemGetAuxPtr(addr);
+				uint8_t m = *MemGetMainPtr(addr);
+
+				if (RGB_Is560Mode() || (RGB_IsMixMode() && !((a | m) & 0x80)))
+				{
+					update7MonoPixels(a);
+					update7MonoPixels(m);
+				}
+				else if (!RGB_IsMixMode() || (RGB_IsMixMode() && (a & m & 0x80)))
+				{
+					UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
+					g_pVideoAddress += 14;
+				}
+				else	// RGB_IsMixMode() && ((a ^ m) & 0x80)
+				{
+					if (a & 0x80)	// RGB color, then monochrome
+					{
+						UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true ,false);
+						g_pVideoAddress += 7;
+						update7MonoPixels(m);
+					}
+					else			// monochrome, then RGB color
+					{
+						update7MonoPixels(a);
+						UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, false, true);
+						g_pVideoAddress += 7;
+					}
+				}
 			}
 		}
 		updateVideoScannerHorzEOLSimple();
