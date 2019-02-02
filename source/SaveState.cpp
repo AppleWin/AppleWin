@@ -220,14 +220,14 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
 	VideoReinitialize();	// g_CharsetType changed
-	FrameUpdateApple2Type();
+	FrameUpdateApple2Type();	// Calls VideoRedrawScreen() before the aux mem has been loaded (so if DHGR is enabled, then aux mem will be zeros at this stage)
 }
 
 //---
 
-static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
+static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 {
-	if (version != UNIT_SLOTS_VER)
+	if (unitVersion != UNIT_SLOTS_VER)
 		throw std::string(SS_YAML_KEY_UNIT ": Slots: Version mismatch");
 
 	while (1)
@@ -244,7 +244,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 		yamlLoadHelper.GetSubMap(scalar);
 
 		std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
-		UINT version     = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
+		UINT cardVersion = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 
 		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
 			throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
@@ -254,42 +254,42 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 		if (card == Printer_GetSnapshotCardName())
 		{
-			bRes = Printer_LoadSnapshot(yamlLoadHelper, slot, version);
+			bRes = Printer_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_GenericPrinter;
 		}
 		else if (card == sg_SSC.GetSnapshotCardName())
 		{
-			bRes = sg_SSC.LoadSnapshot(yamlLoadHelper, slot, version);
+			bRes = sg_SSC.LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_SSC;
 		}
 		else if (card == sg_Mouse.GetSnapshotCardName())
 		{
-			bRes = sg_Mouse.LoadSnapshot(yamlLoadHelper, slot, version);
+			bRes = sg_Mouse.LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_MouseInterface;
 		}
 		else if (card == Z80_GetSnapshotCardName())
 		{
-			bRes = Z80_LoadSnapshot(yamlLoadHelper, slot, version);
+			bRes = Z80_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_Z80;
 		}
 		else if (card == MB_GetSnapshotCardName())
 		{
-			bRes = MB_LoadSnapshot(yamlLoadHelper, slot, version);
+			bRes = MB_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_MockingboardC;
 		}
 		else if (card == Phasor_GetSnapshotCardName())
 		{
-			bRes = Phasor_LoadSnapshot(yamlLoadHelper, slot, version);
+			bRes = Phasor_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_Phasor;
 		}
 		else if (card == DiskGetSnapshotCardName())
 		{
-			bRes = DiskLoadSnapshot(yamlLoadHelper, slot, version);
+			bRes = DiskLoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_Disk2;
 		}
 		else if (card == HD_GetSnapshotCardName())
 		{
-			bRes = HD_LoadSnapshot(yamlLoadHelper, slot, version, g_strSaveStatePath);
+			bRes = HD_LoadSnapshot(yamlLoadHelper, slot, cardVersion, g_strSaveStatePath);
 			m_ConfigNew.m_bEnableHDD = true;
 			type = CT_GenericHDD;
 		}
@@ -298,14 +298,14 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT version)
 			type = CT_LanguageCard;
 			SetExpansionMemType(type);
 			CreateLanguageCard();
-			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, version);
+			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == Saturn128K::GetSnapshotCardName())
 		{
 			type = CT_Saturn128K;
 			SetExpansionMemType(type);
 			CreateLanguageCard();
-			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, version);
+			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else
 		{
@@ -331,22 +331,22 @@ static void ParseUnit(void)
 	YamlLoadHelper yamlLoadHelper(yamlHelper);
 
 	std::string unit = yamlLoadHelper.LoadString(SS_YAML_KEY_TYPE);
-	UINT version = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
+	UINT unitVersion = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 
 	if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
 		throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
 
 	if (unit == GetSnapshotUnitApple2Name())
 	{
-		ParseUnitApple2(yamlLoadHelper, version);
+		ParseUnitApple2(yamlLoadHelper, unitVersion);
 	}
 	else if (unit == MemGetSnapshotUnitAuxSlotName())
 	{
-		MemLoadSnapshotAux(yamlLoadHelper, version);
+		MemLoadSnapshotAux(yamlLoadHelper, unitVersion);
 	}
 	else if (unit == GetSnapshotUnitSlotsName())
 	{
-		ParseSlots(yamlLoadHelper, version);
+		ParseSlots(yamlLoadHelper, unitVersion);
 	}
 	else
 	{

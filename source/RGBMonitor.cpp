@@ -726,12 +726,12 @@ void RGB_ResetState(void)
 
 //===========================================================================
 
-#define SS_YAML_KEY_RGB_CARD "RGB card state"
-// NB. No version - this is determined by the parent "Auxiliary Slot" unit
+#define SS_YAML_KEY_RGB_CARD "AppleColor RGB Adaptor"
+// NB. No version - this is determined by the parent card
 
 #define SS_YAML_KEY_RGB_FLAGS "RGB mode flags"
 #define SS_YAML_KEY_RGB_MODE "RGB mode"
-#define SS_YAML_KEY_RGB_PREVIOUS_AN3 "RGB previous AN3"
+#define SS_YAML_KEY_RGB_PREVIOUS_AN3 "Previous AN3"
 
 void RGB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
