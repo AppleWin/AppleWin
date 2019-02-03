@@ -484,7 +484,8 @@ Legend:
 
 //===========================================================================
 
-static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress)
+// Pre: nSrcAdjustment: for 160-color images, src is +1 compared to dst
+static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, const int nSrcAdjustment = 0)
 {
 	UINT32* pDst = (UINT32*) pVideoAddress;
 	LPBYTE pSrc = g_aSourceStartofLine[ sy ] + sx;
@@ -496,6 +497,7 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress)
 		while (nBytes)
 		{
 			--nBytes;
+
 			if (g_uHalfScanLines && !(h & 1))
 			{
 				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
@@ -503,8 +505,8 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress)
 			}
 			else
 			{
-				_ASSERT( *(pSrc+nBytes) < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
-				const RGBQUAD& rRGB = PalIndex2RGB[ *(pSrc+nBytes) ];
+				_ASSERT( *(pSrc+nBytes+nSrcAdjustment) < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
+				const RGBQUAD& rRGB = PalIndex2RGB[ *(pSrc+nBytes+nSrcAdjustment) ];
 				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
 				*(pDst+nBytes) = rgb;
 			}
@@ -576,6 +578,68 @@ void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool 
 	}
 #undef PIXEL
 }
+
+#if 1
+// Squash the 640 pixel image into 560 pixels
+int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
+{
+	const int xpixel = x*16;
+
+	uint8_t *pAux = MemGetAuxPtr(addr);
+	uint8_t *pMain = MemGetMainPtr(addr);
+
+	BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
+	BYTE byteval2 = *pAux;
+	BYTE byteval3 = *pMain;
+	BYTE byteval4 = (x < 39) ? *(pAux+1) : 0;
+
+	DWORD dwordval = (byteval1 & 0xF8)        | ((byteval2 & 0xFF) << 8) |
+					((byteval3 & 0xFF) << 16) | ((byteval4 & 0x1F) << 24);
+	dwordval <<= 2;
+
+#define PIXEL  0
+	CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress, 1);
+	pVideoAddress += 7;
+#undef PIXEL
+
+#define PIXEL  8
+	CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress, 1);
+#undef PIXEL
+
+	return 7*2;
+}
+#else
+// Left align the 640 pixel image, losing the right-hand 80 pixels
+int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
+{
+	const int xpixel = x*16;
+	if (xpixel >= 560)	// clip to our 560px display (losing 80 pixels)
+		return 0;
+
+	uint8_t *pAux = MemGetAuxPtr(addr);
+	uint8_t *pMain = MemGetMainPtr(addr);
+
+	BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
+	BYTE byteval2 = *pAux;
+	BYTE byteval3 = *pMain;
+	BYTE byteval4 = (x < 39) ? *(pAux+1) : 0;
+
+	DWORD dwordval = (byteval1 & 0xFC)        | ((byteval2 & 0xFF) << 8) |	// NB. Needs more bits than above squashed version, to avoid vertical black lines
+					((byteval3 & 0xFF) << 16) | ((byteval4 & 0x3F) << 24);
+	dwordval <<= 2;
+
+#define PIXEL  0
+	CopySource(8,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+	pVideoAddress += 8;
+#undef PIXEL
+
+#define PIXEL  8
+	CopySource(8,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+#undef PIXEL
+
+	return 8*2;
+}
+#endif
 
 //===========================================================================
 
@@ -650,18 +714,14 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 	// CREATE THE SOURCE IMAGE AND DRAW INTO THE SOURCE BIT BUFFER
 	V_CreateDIBSections();
 
-#if 1
 	memcpy(&PalIndex2RGB[BLACK], *pBaseNtscColors, sizeof(RGBQUAD)*kNumBaseColors);
 	PalIndex2RGB[HGR_BLUE]   = PalIndex2RGB[BLUE];
 	PalIndex2RGB[HGR_ORANGE] = PalIndex2RGB[ORANGE];
 	PalIndex2RGB[HGR_GREEN]  = PalIndex2RGB[GREEN];
 	PalIndex2RGB[HGR_VIOLET] = PalIndex2RGB[MAGENTA];
-#endif
 }
 
 //===========================================================================
-
-#define DBG_SUPPORT_A2OSX
 
 static UINT g_rgbFlags = 0;
 static UINT g_rgbMode = 0;
@@ -676,7 +736,7 @@ void RGB_SetVideoMode(WORD address)
 	if ((address&~1) != 0x5E)			// 0x5E or 0x5F?
 		return;
 
-	// Precondition before togglng AN3:
+	// Precondition before toggling AN3:
 	// . Video7 manual: set 80STORE, but "King's Quest 1"(*) will re-enable RGB card's MIX mode with only VF_TEXT & VF_HIRES set!
 	// . "Extended 80-Column Text/AppleColor Card" manual: TEXT off($C050), MIXED off($C052), HIRES on($C057)
 	// . (*) "King's Quest 1" - see routine at 0x5FD7 (trigger by pressing TAB twice)
@@ -702,10 +762,10 @@ bool RGB_Is140Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 2
 	return g_rgbMode == 0;
 }
 
-//bool RGB_Is160Mode(void)	// Extended 80-Column Text/AppleColor Card: N/A
-//{
-//	return g_rgbMode == 1;
-//}
+bool RGB_Is160Mode(void)	// Extended 80-Column Text/AppleColor Card: N/A
+{
+	return g_rgbMode == 1;
+}
 
 bool RGB_IsMixMode(void)	// Extended 80-Column Text/AppleColor Card's Mode 3
 {
