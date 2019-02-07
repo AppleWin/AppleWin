@@ -1,13 +1,13 @@
 /*  Emulador do computador TK3000 //e (Microdigital)
- *  por Fábio Belavenuto - Copyright (C) 2004
+ *  por FÃ¡bio Belavenuto - Copyright (C) 2004
  *
  *  Adaptado do emulador Applewin por Michael O'Brien
  *  Part of code is Copyright (C) 2003-2004 Tom Charlesworth
  *
- *  Este arquivo é distribuido pela Licença Pública Geral GNU.
+ *  Este arquivo Ã© distribuido pela LicenÃ§a PÃºblica Geral GNU.
  *  Veja o arquivo Licenca.txt distribuido com este software.
  *
- *  ESTE SOFTWARE NÃO OFERECE NENHUMA GARANTIA
+ *  ESTE SOFTWARE NÃƒO OFERECE NENHUMA GARANTIA
  *
  */
 
