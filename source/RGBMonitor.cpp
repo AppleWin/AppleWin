@@ -39,6 +39,7 @@ enum Color_Palette_Index_e
 	, HGR_GREEN        // HCOLOR=1 GREEN  , 2400: 02 00 2A 55
 	, HGR_VIOLET       // HCOLOR=2 VIOLET , 2800: 01 00 55 2A
 #endif
+
 // TV emu
 	, HGR_GREY1        
 	, HGR_GREY2        
@@ -203,88 +204,6 @@ static void V_CreateLookup_DoubleHires ()
 #undef SIZE
 #undef OFFSET
 }
-
-//===========================================================================
-
-#if 0
-static void V_CreateLookup_Hires()
-{
-//	int iMonochrome = GetMonochromeIndex();
-
-	// BYTE colorval[6] = {MAGENTA,BLUE,GREEN,ORANGE,BLACK,WHITE};
-	// BYTE colorval[6] = {HGR_MAGENTA,HGR_BLUE,HGR_GREEN,HGR_RED,HGR_BLACK,HGR_WHITE};
-	for (int iColumn = 0; iColumn < 16; iColumn++)
-	{
-		int coloffs = iColumn << 5;
-
-		for (unsigned iByte = 0; iByte < 256; iByte++)
-		{
-			int aPixels[11];
-
-			aPixels[ 0] = iColumn & 4;
-			aPixels[ 1] = iColumn & 8;
-			aPixels[ 9] = iColumn & 1;
-			aPixels[10] = iColumn & 2;
-
-			int nBitMask = 1;
-			int iPixel;
-			for (iPixel  = 2; iPixel < 9; iPixel++) {
-				aPixels[iPixel] = ((iByte & nBitMask) != 0);
-				nBitMask <<= 1;
-			}
-
-			int hibit = ((iByte & 0x80) != 0);
-			int x     = 0;
-			int y     = iByte << 1;
-
-			while (x < 28)
-			{
-				int adj = (x >= 14) << 1;
-				int odd = (x >= 14);
-
-				for (iPixel = 2; iPixel < 9; iPixel++)
-				{
-					int color = CM_Black;
-					if (aPixels[iPixel])
-					{
-						if (aPixels[iPixel-1] || aPixels[iPixel+1])
-							color = CM_White;
-						else
-							color = ((odd ^ (iPixel&1)) << 1) | hibit;
-					}
-					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
-					{
-						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
-						// VT_COLOR_MONITOR_RGB = Fill in colors in between white pixels
-						// VT_COLOR_TVEMU    = Fill in colors in between white pixels  (Post Processing will mix/merge colors)
-						// VT_COLOR_TEXT_OPTIMIZED --> !(aPixels[iPixel-2] && aPixels[iPixel+2]) = Don't fill in colors in between white
-						if ((g_eVideoType == VT_COLOR_TVEMU) || !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
-							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
-					}
-
-					//if (g_eVideoType == VT_MONO_AUTHENTIC) {
-					//	int nMonoColor = (color != CM_Black) ? iMonochrome : BLACK;
-					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , nMonoColor); // buggy
-					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , nMonoColor); // buggy
-					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,BLACK); // BL
-					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,BLACK); // BR
-					//} else
-					{
-						// Colors - Top/Bottom Left/Right
-						// cTL cTR
-						// cBL cBR
-						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  ,HiresToPalIndex[color]); // cTL
-						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
-						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
-						SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
-					}
-					x += 2;
-				}
-			}
-		}
-	}
-}
-#endif
 
 //===========================================================================
 
@@ -484,6 +403,174 @@ Legend:
 
 //===========================================================================
 
+// For AppleWin 1.25 "tv emulation" HGR Video Mode
+
+const UINT FRAMEBUFFER_W = 560;
+const UINT FRAMEBUFFER_H = 384;
+const UINT HGR_MATRIX_YOFFSET = 2;
+
+static BYTE hgrpixelmatrix[FRAMEBUFFER_W/2][FRAMEBUFFER_H/2 + 2 * HGR_MATRIX_YOFFSET];	// 2 extra scan lines on bottom?
+static BYTE colormixbuffer[6];		// 6 hires colours
+static WORD colormixmap[6][6][6];	// top x middle x bottom
+
+BYTE MixColors(BYTE c1, BYTE c2)
+{
+#define COMBINATION(c1,c2,ref1,ref2) (((c1)==(ref1)&&(c2)==(ref2)) || ((c1)==(ref2)&&(c2)==(ref1)))
+
+	if (c1 == c2)
+		return c1;
+	if (COMBINATION(c1,c2,HGR_BLUE,HGR_ORANGE))
+		return HGR_GREY1;
+	else if (COMBINATION(c1,c2,HGR_GREEN,HGR_VIOLET))
+		return HGR_GREY2;
+	else if (COMBINATION(c1,c2,HGR_ORANGE,HGR_GREEN))
+		return HGR_YELLOW;
+	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_GREEN))
+		return HGR_AQUA;
+	else if (COMBINATION(c1,c2,HGR_BLUE,HGR_VIOLET))
+		return HGR_PURPLE;
+	else if (COMBINATION(c1,c2,HGR_ORANGE,HGR_VIOLET))
+		return HGR_PINK;
+	else
+		return WHITE;	// visible failure indicator
+
+#undef COMBINATION
+}
+
+static void CreateColorMixMap(void)
+{
+	const int FROM_NEIGHBOUR = 0x00;
+	const int MIX_THRESHOLD = HGR_BLUE; // (skip) bottom 2 HGR colors
+
+	for (int t=0; t<6; t++)	// Color_Palette_Index_e::HGR_BLACK(0) ... Color_Palette_Index_e::HGR_VIOLET(5)
+	{
+		for (int m=0; m<6; m++)
+		{
+			for (int b=0; b<6; b++)
+			{
+				BYTE cTop = t;
+				BYTE cMid = m;
+				BYTE cBot = b;
+
+				WORD mixTop, mixBot;
+
+				if (cMid < MIX_THRESHOLD)
+				{
+					mixTop = mixBot = cMid;
+				}
+				else
+				{
+					if (cTop < MIX_THRESHOLD)
+						mixTop = FROM_NEIGHBOUR;
+					else
+						mixTop = MixColors(cMid,cTop);
+
+					if (cBot < MIX_THRESHOLD)
+						mixBot = FROM_NEIGHBOUR;
+					else
+						mixBot = MixColors(cMid,cBot);
+
+					if (mixTop == FROM_NEIGHBOUR && mixBot != FROM_NEIGHBOUR)
+						mixTop = mixBot;
+					else if (mixBot == FROM_NEIGHBOUR && mixTop != FROM_NEIGHBOUR)
+						mixBot = mixTop;
+					else if (mixBot == FROM_NEIGHBOUR && mixTop == FROM_NEIGHBOUR)
+						mixBot = mixTop = cMid;
+				}
+
+				colormixmap[t][m][b] = (mixTop << 8) | mixBot;
+			}
+		}
+	}
+}
+
+static void MixColorsVertical(int matx, int maty)
+{
+	int bot1idx, bot2idx;
+
+	if (VideoGetSWMIXED() && maty > 159)
+	{
+		if (maty < 161)
+		{
+			bot1idx = hgrpixelmatrix[matx][maty+1] & 0x0F;
+			bot2idx = 0;
+		}
+		else
+		{
+			bot1idx = bot2idx = 0;
+		}
+	}
+	else
+	{
+		bot1idx = hgrpixelmatrix[matx][maty+1] & 0x0F;
+		bot2idx = hgrpixelmatrix[matx][maty+2] & 0x0F;
+	}
+
+	WORD twoHalfPixel = colormixmap[hgrpixelmatrix[matx][maty-2] & 0x0F]
+								   [hgrpixelmatrix[matx][maty-1] & 0x0F]
+								   [hgrpixelmatrix[matx][maty  ] & 0x0F];
+	colormixbuffer[0] = (twoHalfPixel & 0xFF00) >> 8;
+	colormixbuffer[1] = (twoHalfPixel & 0x00FF);
+
+	twoHalfPixel = colormixmap[hgrpixelmatrix[matx][maty-1] & 0x0F]
+							  [hgrpixelmatrix[matx][maty  ] & 0x0F]
+							  [bot1idx];
+	colormixbuffer[2] = (twoHalfPixel & 0xFF00) >> 8;
+	colormixbuffer[3] = (twoHalfPixel & 0x00FF);
+
+	twoHalfPixel = colormixmap[hgrpixelmatrix[matx][maty  ] & 0x0F]
+							  [bot1idx]
+							  [bot2idx];
+	colormixbuffer[4] = (twoHalfPixel & 0xFF00) >> 8;
+	colormixbuffer[5] = (twoHalfPixel & 0x00FF);
+}
+
+// NB. This operates at the 7M pixel level: 2 identical 14M pixels are written per inner loop (so no support for half-dot-shift, eg. Archon's title)
+static void CopyMixedSource(int x, int y, int sourcex, int sourcey, bgra_t *pVideoAddress)
+{
+	const BYTE* const currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
+	    UINT32* const currdestptr   = (UINT32*) pVideoAddress;
+
+	const int matx = x;
+	const int maty = HGR_MATRIX_YOFFSET + y;
+	const int hgrlinesabove = (y > 0) ? 1 : 0;
+	const int hgrlinesbelow = VideoGetSWMIXED() ? ((y < 159)? 1:0) : ((y < 191)? 1:0);
+	const int istart        = 2 - (hgrlinesabove*2);
+	const int iend          = 3 + (hgrlinesbelow*2);
+
+	// transfer 7 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
+	for (int count = 0, bufxoffset = 0; count < 7; count++, bufxoffset += 2)
+	{
+		hgrpixelmatrix[matx+count][maty] = *(currsourceptr+bufxoffset);
+
+		// color mixing between adjacent scanlines at current x position
+		MixColorsVertical(matx+count, maty);
+
+		// transfer up to 6 mixed (half-)pixels of current column to framebuffer
+		UINT32* currptr = currdestptr+bufxoffset;
+		if (hgrlinesabove)
+			currptr += GetFrameBufferWidth() * 2;
+
+		for (int i = istart; i <= iend; currptr -= GetFrameBufferWidth(), i++)
+		{
+			if (g_uHalfScanLines && (i & 1))
+			{
+				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+				*currptr = *(currptr+1) = 0;
+			}
+			else
+			{
+				_ASSERT( colormixbuffer[i] < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
+				const RGBQUAD& rRGB = PalIndex2RGB[ colormixbuffer[i] ];
+				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
+				*currptr = *(currptr+1) = rgb;
+			}
+		}
+	}
+}
+
+//===========================================================================
+
 // Pre: nSrcAdjustment: for 160-color images, src is +1 compared to dst
 static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, const int nSrcAdjustment = 0)
 {
@@ -527,16 +614,15 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
 
 #define COLOFFS  (((byteval1 & 0x60) << 2) | ((byteval3 & 0x03) << 5))
-#if 0
-	if (g_eVideoType == VT_COLOR_TVEMU)
+	if (GetVideoStyle() & VS_COLOR_VERTICAL_BLEND)
 	{
 		CopyMixedSource(
-			xpixel >> 1, (ypixel+(yoffset >> 9)) >> 1,
-			SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1)
+			x*7, y,
+			SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
+			pVideoAddress
 		);
 	}
 	else
-#endif
 	{
 		CopySource(14,2, SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1), pVideoAddress);
 	}
@@ -701,12 +787,12 @@ static void V_CreateDIBSections(void)
 
 	V_CreateLookup_Lores();
 
-//	if ( g_eVideoType == VT_COLOR_TVEMU )
-//		V_CreateLookup_Hires();
-//	else
-		V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
+	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
 
 	V_CreateLookup_DoubleHires();
+
+	if (GetVideoStyle() & VS_COLOR_VERTICAL_BLEND)
+		CreateColorMixMap();
 }
 
 void VideoInitializeOriginal(baseColors_t pBaseNtscColors)

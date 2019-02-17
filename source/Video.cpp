@@ -89,6 +89,7 @@ COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
 uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
 
 DWORD     g_eVideoType     = VT_DEFAULT;
+static VideoStyle_e g_eVideoStyle = VS_NONE;
 DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
 
 static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
@@ -1215,6 +1216,11 @@ void Config_Load_Video()
 	REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&g_uHalfScanLines);
 	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&g_nMonochromeRGB);
 
+	if (g_uHalfScanLines)
+		g_eVideoStyle = (VideoStyle_e) ((DWORD)g_eVideoStyle | VS_HALF_SCANLINES);
+	else
+		g_eVideoStyle = (VideoStyle_e) ((DWORD)g_eVideoStyle & ~VS_HALF_SCANLINES);
+
 	const UINT16* pOldVersion = GetOldAppleWinVersion();
 	if (pOldVersion[0] == 1 && pOldVersion[1] <= 27 && pOldVersion[2] <= 13)
 	{
@@ -1240,6 +1246,30 @@ void Config_Save_Video()
 	REGSAVE(TEXT(REGVALUE_VIDEO_MODE           ),g_eVideoType);
 	REGSAVE(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),g_uHalfScanLines);
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),g_nMonochromeRGB);
+}
+
+//===========================================================================
+
+VideoType_e GetVideoType(void)
+{
+	return (VideoType_e) g_eVideoType;
+}
+
+// TODO: Can only do this at start-up (mid-emulation requires a more heavy-weight video reinit)
+void SetVideoType(VideoType_e newVideoType)
+{
+	g_eVideoType = newVideoType;
+}
+
+VideoStyle_e GetVideoStyle(void)
+{
+	return g_eVideoStyle;
+}
+
+// TODO: Can only do this at start-up (mid-emulation requires a more heavy-weight video reinit)
+void SetVideoStyle(VideoStyle_e newVideoStyle)
+{
+	g_eVideoStyle = newVideoStyle;
 }
 
 //===========================================================================

@@ -1175,6 +1175,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
 	UINT uRamWorksExPages = 0;
 	UINT uSaturnBanks = 0;
+	int newVideoType = -1;
+	int newVideoStyle = -1;
 
 	while (*lpCmdLine)
 	{
@@ -1395,6 +1397,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			SetAltEnterToggleFullScreen(false);
 		}
+		else if (strcmp(lpCmdLine, "-video-mode=rgb-monitor") == 0)			// GH#616
+		{
+			newVideoType = VT_COLOR_MONITOR_RGB;
+		}
+		else if (strcmp(lpCmdLine, "-video-style=vertical-blend") == 0)		// GH#616
+		{
+			newVideoStyle = VS_COLOR_VERTICAL_BLEND;
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
@@ -1506,6 +1516,11 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		LoadConfiguration();
 		LogFileOutput("Main: LoadConfiguration()\n");
+
+		if (newVideoType >= 0)
+			SetVideoType( (VideoType_e)newVideoType );
+		if (newVideoStyle >= 0)
+			SetVideoStyle( (VideoStyle_e)newVideoStyle );
 
 		// Apply the memory expansion switches after loading the Apple II machine type
 #ifdef RAMWORKS
