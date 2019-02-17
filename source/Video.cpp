@@ -1279,7 +1279,6 @@ VideoStyle_e GetVideoStyle(void)
 	return g_eVideoStyle;
 }
 
-// TODO: Can only do this at start-up (mid-emulation requires a more heavy-weight video reinit)
 void SetVideoStyle(VideoStyle_e newVideoStyle)
 {
 	g_eVideoStyle = newVideoStyle;
