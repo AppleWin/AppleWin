@@ -119,6 +119,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 		case IDC_CHECK_CONFIRM_REBOOT:
 		case IDC_CHECK_HALF_SCAN_LINES:
+		case IDC_CHECK_VERTICAL_BLEND:
 		case IDC_CHECK_FS_SHOW_SUBUNIT_STATUS:
 			// Checked in DlgOK()
 			break;
@@ -139,6 +140,14 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 					// - Set correctly in PageAdvanced.cpp for IDC_CLONETYPE
 					m_PropertySheetHelper.GetConfigNew().m_CpuType = CPU_UNKNOWN;
 				}
+			}
+			break;
+
+		case IDC_VIDEOTYPE:
+			if(HIWORD(wparam) == CBN_SELCHANGE)
+			{
+				const VideoType_e newVideoType = (VideoType_e) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
+				EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (newVideoType == VT_COLOR_MONITOR_RGB) ? TRUE : FALSE);
 			}
 			break;
 
@@ -186,9 +195,12 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 			CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, g_bConfirmReboot ? BST_CHECKED : BST_UNCHECKED );
 
-			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE,g_aVideoChoices,g_eVideoType);
-			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, g_uHalfScanLines ? BST_CHECKED : BST_UNCHECKED);
+			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE, g_aVideoChoices, GetVideoType());
+			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, IsVideoStyle(VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, GetFullScreenShowSubunitStatus() ? BST_CHECKED : BST_UNCHECKED);
+
+			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
+			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (GetVideoType() == VT_COLOR_MONITOR_RGB) ? TRUE : FALSE);
 
 			m_PropertySheetHelper.FillComboBox(hWnd,IDC_SERIALPORT, sg_SSC.GetSerialPortChoices(), sg_SSC.GetSerialPort());
 			EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !sg_SSC.IsActive() ? TRUE : FALSE);
@@ -245,17 +257,32 @@ void CPageConfig::DlgOK(HWND hWnd)
 {
 	bool bVideoReinit = false;
 
-	const DWORD uNewVideoType = (DWORD) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
-	if (g_eVideoType != uNewVideoType)
+	const VideoType_e newVideoType = (VideoType_e) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
+	if (GetVideoType() != newVideoType)
 	{
-		g_eVideoType = uNewVideoType;
+		SetVideoType(newVideoType);
 		bVideoReinit = true;
 	}
 
-	const DWORD uNewHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) ? 1 : 0;
-	if (g_uHalfScanLines != uNewHalfScanLines)
+	const bool newHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) != 0;
+	const bool currentHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	if (currentHalfScanLines != newHalfScanLines)
 	{
-		g_uHalfScanLines = uNewHalfScanLines;
+		if (newHalfScanLines)
+			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() | VS_HALF_SCANLINES) );
+		else
+			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() & ~VS_HALF_SCANLINES) );
+		bVideoReinit = true;
+	}
+
+	const bool newVerticalBlend = IsDlgButtonChecked(hWnd, IDC_CHECK_VERTICAL_BLEND) != 0;
+	const bool currentVerticalBlend = IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
+	if (currentVerticalBlend != newVerticalBlend)
+	{
+		if (newVerticalBlend)
+			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() | VS_COLOR_VERTICAL_BLEND) );
+		else
+			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() & ~VS_COLOR_VERTICAL_BLEND) );
 		bVideoReinit = true;
 	}
 

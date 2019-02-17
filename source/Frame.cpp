@@ -275,7 +275,7 @@ static void GetAppleWindowTitle()
 	// TODO: g_bDisplayVideoModeInTitle
 	_tcscat( g_pAppleWindowTitle, " - " );
 
-	if( g_uHalfScanLines )
+	if( IsVideoStyle(VS_HALF_SCANLINES) )
 	{
 		_tcscat( g_pAppleWindowTitle," 50% " );
 	}
@@ -1289,7 +1289,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			else if ( KeybGetCtrlStatus() && KeybGetShiftStatus() )		// CTRL+SHIFT+F9
 			{
-				g_uHalfScanLines = !g_uHalfScanLines;
+				SetVideoStyle( (VideoStyle_e) (GetVideoStyle() ^ VS_HALF_SCANLINES) );
 			}
 
 			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)

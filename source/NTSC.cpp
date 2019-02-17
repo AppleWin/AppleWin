@@ -1940,7 +1940,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 //===========================================================================
 void NTSC_SetVideoStyle() // (int v, int s)
 {
-    int half = g_uHalfScanLines;
+    int half = IsVideoStyle(VS_HALF_SCANLINES);
 	uint8_t r, g, b;
 
 	switch ( g_eVideoType )

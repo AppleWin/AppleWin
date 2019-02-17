@@ -553,7 +553,7 @@ static void CopyMixedSource(int x, int y, int sourcex, int sourcey, bgra_t *pVid
 
 		for (int i = istart; i <= iend; currptr -= GetFrameBufferWidth(), i++)
 		{
-			if (g_uHalfScanLines && (i & 1))
+			if (IsVideoStyle(VS_HALF_SCANLINES) && (i & 1))
 			{
 				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
 				*currptr = *(currptr+1) = 0;
@@ -585,7 +585,7 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 		{
 			--nBytes;
 
-			if (g_uHalfScanLines && !(h & 1))
+			if (IsVideoStyle(VS_HALF_SCANLINES) && !(h & 1))
 			{
 				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
 				*(pDst+nBytes) = 0;
@@ -614,7 +614,7 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
 
 #define COLOFFS  (((byteval1 & 0x60) << 2) | ((byteval3 & 0x03) << 5))
-	if (GetVideoStyle() & VS_COLOR_VERTICAL_BLEND)
+	if (IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
 	{
 		CopyMixedSource(
 			x*7, y,
@@ -786,13 +786,10 @@ static void V_CreateDIBSections(void)
 	ZeroMemory(g_pSourcePixels, SRCOFFS_TOTAL*MAX_SOURCE_Y); // 32 bytes/pixel * 16 colors = 512 bytes/row
 
 	V_CreateLookup_Lores();
-
 	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
-
 	V_CreateLookup_DoubleHires();
 
-	if (GetVideoStyle() & VS_COLOR_VERTICAL_BLEND)
-		CreateColorMixMap();
+	CreateColorMixMap();
 }
 
 void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
