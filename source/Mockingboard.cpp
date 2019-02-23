@@ -1376,13 +1376,20 @@ static void MB_DSUninit()
 
 //=============================================================================
 
+void MB_InitSoundcardType(void)	// GH#609
+{
+	g_SoundcardType = CT_Empty;	// Use CT_Empty to mean: no soundcard
+	g_bPhasorEnable = false;
+}
+
 void MB_Initialize()
 {
+	MB_InitSoundcardType();
+
 	LogFileOutput("MB_Initialize: g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 	{
 		MockingboardVoice.bMute = true;
-		g_SoundcardType = CT_Empty;
 	}
 	else
 	{
@@ -2108,9 +2115,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 
 	AY8910_InitClock((int)CLK_6502);
 
-	// Setup in MB_InitializeIO() -> MB_SetSoundcardType()
-	g_SoundcardType = CT_Empty;
-	g_bPhasorEnable = false;
+	// NB. g_SoundcardType & g_bPhasorEnable setup in MB_InitializeIO() -> MB_SetSoundcardType()
 
 	return true;
 }
@@ -2233,9 +2238,7 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 
 	AY8910_InitClock((int)(CLK_6502 * g_PhasorClockScaleFactor));
 
-	// Setup in MB_InitializeIO() -> MB_SetSoundcardType()
-	g_SoundcardType = CT_Empty;
-	g_bPhasorEnable = false;
+	// NB. g_SoundcardType & g_bPhasorEnable setup in MB_InitializeIO() -> MB_SetSoundcardType()
 
 	return true;
 }

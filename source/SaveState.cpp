@@ -405,6 +405,7 @@ static void Snapshot_LoadState_v2(void)
 		KeybReset();
 		VideoResetState();
 		MB_Reset();
+		MB_InitSoundcardType();	// GH#609
 		sg_SSC.CommReset();
 #ifdef USE_SPEECH_API
 		g_Speech.Reset();
