@@ -1176,7 +1176,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	UINT uRamWorksExPages = 0;
 	UINT uSaturnBanks = 0;
 	int newVideoType = -1;
-	int newVideoStyle = -1;
+	int newVideoStyleEnableMask = 0;
+	int newVideoStyleDisableMask = 0;
 
 	while (*lpCmdLine)
 	{
@@ -1403,7 +1404,11 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 		else if (strcmp(lpCmdLine, "-video-style=vertical-blend") == 0)		// GH#616
 		{
-			newVideoStyle = VS_COLOR_VERTICAL_BLEND;
+			newVideoStyleEnableMask = VS_COLOR_VERTICAL_BLEND;
+		}
+		else if (strcmp(lpCmdLine, "-video-style=no-vertical-blend") == 0)	// GH#616
+		{
+			newVideoStyleDisableMask = VS_COLOR_VERTICAL_BLEND;
 		}
 		else	// unsupported
 		{
@@ -1519,8 +1524,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if (newVideoType >= 0)
 			SetVideoType( (VideoType_e)newVideoType );
-		if (newVideoStyle >= 0)
-			SetVideoStyle( (VideoStyle_e)newVideoStyle );
+		SetVideoStyle( (VideoStyle_e) ((GetVideoStyle() | newVideoStyleEnableMask) & ~newVideoStyleDisableMask) );
 
 		// Apply the memory expansion switches after loading the Apple II machine type
 #ifdef RAMWORKS
