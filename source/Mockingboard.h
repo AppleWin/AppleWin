@@ -4,7 +4,7 @@ void	MB_Initialize();
 void	MB_Reinitialize();
 void	MB_Destroy();
 void    MB_Reset();
-void	MB_InitSoundcardType(void);
+void	MB_InitializeForLoadingSnapshot(void);
 void    MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5);
 void    MB_Mute();
 void    MB_Demute();

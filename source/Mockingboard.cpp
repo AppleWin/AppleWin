@@ -1376,7 +1376,7 @@ static void MB_DSUninit()
 
 //=============================================================================
 
-void MB_InitSoundcardType(void)	// GH#609
+static void InitSoundcardType(void)
 {
 	g_SoundcardType = CT_Empty;	// Use CT_Empty to mean: no soundcard
 	g_bPhasorEnable = false;
@@ -1384,7 +1384,7 @@ void MB_InitSoundcardType(void)	// GH#609
 
 void MB_Initialize()
 {
-	MB_InitSoundcardType();
+	InitSoundcardType();
 
 	LogFileOutput("MB_Initialize: g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
@@ -1416,6 +1416,12 @@ void MB_Initialize()
 
 	InitializeCriticalSection(&g_CriticalSection);
 	g_bCritSectionValid = true;
+}
+
+void MB_InitializeForLoadingSnapshot()	// GH#609
+{
+	MB_Reset();
+	InitSoundcardType();
 }
 
 //-----------------------------------------------------------------------------
@@ -1460,15 +1466,16 @@ static void ResetState()
 	g_bMB_RegAccessedFlag = false;
 	g_bMB_Active = false;
 
-	//g_bMBAvailable = false;
-
-//	g_SoundcardType = CT_Empty;	// Don't uncomment, else _ASSERT will fire in MB_Read() after an F2->MB_Reset()
-//	g_bPhasorEnable = false;
 	g_nPhasorMode = 0;
 	g_PhasorClockScaleFactor = 1;
+
+	// Not these, as they don't change on a CTRL+RESET or power-cycle:
+//	g_bMBAvailable = false;
+//	g_SoundcardType = CT_Empty;	// Don't uncomment, else _ASSERT will fire in MB_Read() after an F2->MB_Reset()
+//	g_bPhasorEnable = false;
 }
 
-void MB_Reset()
+void MB_Reset()	// CTRL+RESET or power-cycle
 {
 	if(!g_bDSAvailable)
 		return;
