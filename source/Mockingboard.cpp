@@ -1418,10 +1418,15 @@ void MB_Initialize()
 	g_bCritSectionValid = true;
 }
 
+void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType);
+
+// NB. Mockingboard voice is *already* muted because showing 'Select Load State file' dialog
+// . and voice will be demuted when dialog is closed
 void MB_InitializeForLoadingSnapshot()	// GH#609
 {
 	MB_Reset();
 	InitSoundcardType();
+	MockingboardVoice.lpDSBvoice->Stop();	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
 }
 
 //-----------------------------------------------------------------------------
@@ -1629,6 +1634,26 @@ static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 
 //-----------------------------------------------------------------------------
 
+SS_CARDTYPE MB_GetSoundcardType()
+{
+	return g_SoundcardType;
+}
+
+static void MB_SetSoundcardType(const SS_CARDTYPE NewSoundcardType)
+{
+	if (NewSoundcardType == g_SoundcardType)
+		return;
+
+	if (NewSoundcardType == CT_Empty)
+		MB_Mute();	// Call MB_Mute() before setting g_SoundcardType = CT_Empty
+
+	g_SoundcardType = NewSoundcardType;
+
+	g_bPhasorEnable = (g_SoundcardType == CT_Phasor);
+}
+
+//-----------------------------------------------------------------------------
+
 void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 {
 	// Mockingboard: Slot 4 & 5
@@ -1650,6 +1675,12 @@ void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 		RegisterIoHandler(uSlot5, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
 
 	MB_SetSoundcardType(g_Slot4);
+
+	// Sound buffer may have been stopped by MB_InitializeForLoadingSnapshot().
+	// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
+	// - without zeroing, then the previous sound buffer can be heard for a fraction of a second
+	// - eg. when doing Mockingboard playback, then loading a save-state which is also doing Mockingboard playback
+	DSZeroVoiceBuffer(&MockingboardVoice, "MB", g_dwDSBufferSize);
 }
 
 //-----------------------------------------------------------------------------
@@ -1785,26 +1816,6 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 			}
 		}
 	}
-}
-
-//-----------------------------------------------------------------------------
-
-SS_CARDTYPE MB_GetSoundcardType()
-{
-	return g_SoundcardType;
-}
-
-void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType)
-{
-	if (g_SoundcardType == NewSoundcardType)
-		return;
-
-	g_SoundcardType = NewSoundcardType;
-
-	if(g_SoundcardType == CT_Empty)
-		MB_Mute();
-
-	g_bPhasorEnable = (g_SoundcardType == CT_Phasor);
 }
 
 //-----------------------------------------------------------------------------
