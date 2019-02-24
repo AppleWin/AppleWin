@@ -8,6 +8,15 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.28.2.0 - 24 Feb 2019
+----------------------
+. [Change #616] Support vertical blending for 'RGB (Color Monitor)' for hires.
+	- Support the old AppleWin 1.25 vertical blending for hires via a 'Vertical Blend' checkbox.
+. [Change #621] Support RGB AppleColor card's 160-color pixel mode by squashing 640 pixels into 560 pixels.
+	- Squashing is done by losing every 8th pixel.
+. [PR #623] Do not reset on minor state load errors.
+. [Bug #609] Configuration dialog didn't correctly reflect lack of Mockingboard/Phasor when loading a save-state without this sound card.
+
 
 1.28.1.0 - 2 Feb 2019
 ---------------------
