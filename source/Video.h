@@ -21,6 +21,14 @@
 	extern TCHAR g_aVideoChoices[];
 	extern char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
 
+	enum VideoStyle_e
+	{
+		VS_NONE=0,
+		VS_HALF_SCANLINES=1,		// drop 50% scan lines for a more authentic look
+		VS_COLOR_VERTICAL_BLEND=2,	// Color "TV Emu" rendering from AppleWin 1.25 (GH#616)
+//		VS_TEXT_OPTIMIZED=4,
+	};
+
 	enum VideoFlag_e
 	{
 		VF_80COL  = 0x00000001,
@@ -156,7 +164,6 @@ struct WinBmpHeader4_t
 extern COLORREF   g_nMonochromeRGB;	// saved to Registry
 extern uint32_t   g_uVideoMode;
 extern DWORD      g_eVideoType;		// saved to Registry
-extern DWORD      g_uHalfScanLines;	// saved to Registry
 extern uint8_t   *g_pFramebufferbits;
 
 // Prototypes _______________________________________________________
@@ -212,3 +219,9 @@ bool IsVideoRom4K(void);
 
 void Config_Load_Video(void);
 void Config_Save_Video(void);
+
+VideoType_e GetVideoType(void);
+void SetVideoType(VideoType_e newVideoType);
+VideoStyle_e GetVideoStyle(void);
+void SetVideoStyle(VideoStyle_e newVideoStyle);
+bool IsVideoStyle(VideoStyle_e mask);
