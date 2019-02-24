@@ -356,32 +356,19 @@ static void ParseUnit(void)
 
 static void Snapshot_LoadState_v2(void)
 {
+	bool restart = false;	// Only need to restart if any VM state has change
+
 	try
 	{
-		std::string err_msg = "";
-		int res = yamlHelper.InitParser( g_strSaveStatePathname.c_str() );
-		if (!res)
-		{
-			err_msg = "Failed to initialize parser or open file";
-		}
-		else
-		{
-			UINT version = ParseFileHdr();
-			if (version != SS_FILE_VER)
-				err_msg = "Version mismatch";
-		}
+		if (!yamlHelper.InitParser( g_strSaveStatePathname.c_str() ))
+			throw std::string("Failed to initialize parser or open file");
 
-		if (err_msg != "")
-		{
-			MessageBox(g_hFrameWindow,
-				err_msg.c_str(),
-				TEXT("Load State"),
-				MB_ICONEXCLAMATION | MB_SETFOREGROUND);
-
-			return;
-		}
+		if (ParseFileHdr() != SS_FILE_VER)
+			throw std::string("Version mismatch");
 
 		//
+
+		restart = true;
 
 		CConfigNeedingRestart ConfigOld;
 		//ConfigOld.m_Slot[0] = CT_LanguageCard;	// fixme: II/II+=LC, //e=empty
@@ -446,7 +433,8 @@ static void Snapshot_LoadState_v2(void)
 					TEXT("Load State"),
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
-		PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
+		if (restart)
+			PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
 	}
 
 	yamlHelper.FinaliseParser();
