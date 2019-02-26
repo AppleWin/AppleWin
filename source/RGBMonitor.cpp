@@ -10,8 +10,9 @@
 
 const int SRCOFFS_LORES   = 0;                       //    0
 const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //   16
-const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  +  512); //  528
-const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3088
+const int SRCOFFS_HIRES2  = (SRCOFFS_HIRES  +  512); //  528		// Style = Vertical Blend
+const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES2 +  512); // 1040
+const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3600
 
 const int MAX_SOURCE_Y = 512;
 static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
@@ -403,6 +404,86 @@ Legend:
 
 //===========================================================================
 
+void V_CreateLookup_Hires()
+{
+//	int iMonochrome = GetMonochromeIndex();
+
+	// BYTE colorval[6] = {MAGENTA,BLUE,GREEN,ORANGE,BLACK,WHITE};
+	// BYTE colorval[6] = {HGR_VIOLET,HGR_BLUE,HGR_GREEN,HGR_ORANGE,HGR_BLACK,HGR_WHITE};
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		int coloffs = iColumn << 5;
+
+		for (unsigned iByte = 0; iByte < 256; iByte++)
+		{
+			int aPixels[11];
+
+			aPixels[ 0] = iColumn & 4;
+			aPixels[ 1] = iColumn & 8;
+			aPixels[ 9] = iColumn & 1;
+			aPixels[10] = iColumn & 2;
+
+			int nBitMask = 1;
+			int iPixel;
+			for (iPixel  = 2; iPixel < 9; iPixel++) {
+				aPixels[iPixel] = ((iByte & nBitMask) != 0);
+				nBitMask <<= 1;
+			}
+
+			int hibit = ((iByte & 0x80) != 0);
+			int x     = 0;
+			int y     = iByte << 1;
+
+			while (x < 28)
+			{
+				int adj = (x >= 14) << 1;
+				int odd = (x >= 14);
+
+				for (iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color = CM_Black;
+					if (aPixels[iPixel])
+					{
+						if (aPixels[iPixel-1] || aPixels[iPixel+1])
+							color = CM_White;
+						else
+							color = ((odd ^ (iPixel&1)) << 1) | hibit;
+					}
+					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
+					{
+						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
+						// VT_COLOR_STANDARD = Fill in colors in between white pixels
+						// VT_COLOR_TVEMU    = Fill in colors in between white pixels  (Post Processing will mix/merge colors)
+						// VT_COLOR_TEXT_OPTIMIZED --> !(aPixels[iPixel-2] && aPixels[iPixel+2]) = Don't fill in colors in between white
+						if (/*(g_eVideoType == VT_COLOR_TVEMU) ||*/ !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
+							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
+					}
+
+					//if (g_eVideoType == VT_MONO_AUTHENTIC) {
+					//	int nMonoColor = (color != CM_Black) ? iMonochrome : BLACK;
+					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , nMonoColor); // buggy
+					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , nMonoColor); // buggy
+					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,BLACK); // BL
+					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,BLACK); // BR
+					//} else
+					{
+						// Colors - Top/Bottom Left/Right
+						// cTL cTR
+						// cBL cBR
+						SETSOURCEPIXEL(SRCOFFS_HIRES2+coloffs+x+adj  ,y  ,HiresToPalIndex[color]); // cTL
+						SETSOURCEPIXEL(SRCOFFS_HIRES2+coloffs+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
+						SETSOURCEPIXEL(SRCOFFS_HIRES2+coloffs+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
+						SETSOURCEPIXEL(SRCOFFS_HIRES2+coloffs+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
+					}
+					x += 2;
+				}
+			}
+		}
+	}
+}
+
+//===========================================================================
+
 // For AppleWin 1.25 "tv emulation" HGR Video Mode
 
 const UINT FRAMEBUFFER_W = 560;
@@ -618,7 +699,7 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	{
 		CopyMixedSource(
 			x*7, y,
-			SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
+			SRCOFFS_HIRES2+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
 			pVideoAddress
 		);
 	}
@@ -786,6 +867,7 @@ static void V_CreateDIBSections(void)
 	ZeroMemory(g_pSourcePixels, SRCOFFS_TOTAL*MAX_SOURCE_Y); // 32 bytes/pixel * 16 colors = 512 bytes/row
 
 	V_CreateLookup_Lores();
+	V_CreateLookup_Hires();	// For CopyMixedSource() / VS_COLOR_VERTICAL_BLEND
 	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
 	V_CreateLookup_DoubleHires();
 
