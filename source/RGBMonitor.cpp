@@ -10,7 +10,7 @@
 
 const int SRCOFFS_LORES   = 0;                       //    0
 const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //   16
-const int SRCOFFS_HIRES2  = (SRCOFFS_HIRES  +  512); //  528		// Style = Vertical Blend
+const int SRCOFFS_HIRES2  = (SRCOFFS_HIRES  +  512); //  528		// Style = Vertical Blend, 280-pixel (from 1.25)
 const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES2 +  512); // 1040
 const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3600
 
@@ -490,7 +490,7 @@ const UINT FRAMEBUFFER_W = 560;
 const UINT FRAMEBUFFER_H = 384;
 const UINT HGR_MATRIX_YOFFSET = 2;
 
-static BYTE hgrpixelmatrix[FRAMEBUFFER_W/2][FRAMEBUFFER_H/2 + 2 * HGR_MATRIX_YOFFSET];	// 2 extra scan lines on bottom?
+static BYTE hgrpixelmatrix[FRAMEBUFFER_W][FRAMEBUFFER_H/2 + 2 * HGR_MATRIX_YOFFSET];	// 2 extra scan lines on bottom?
 static BYTE colormixbuffer[6];		// 6 hires colours
 static WORD colormixmap[6][6][6];	// top x middle x bottom
 
@@ -606,21 +606,20 @@ static void MixColorsVertical(int matx, int maty)
 	colormixbuffer[5] = (twoHalfPixel & 0x00FF);
 }
 
-// NB. This operates at the 7M pixel level: 2 identical 14M pixels are written per inner loop (so no support for half-dot-shift, eg. Archon's title)
 static void CopyMixedSource(int x, int y, int sourcex, int sourcey, bgra_t *pVideoAddress)
 {
 	const BYTE* const currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
 	    UINT32* const currdestptr   = (UINT32*) pVideoAddress;
 
-	const int matx = x;
+	const int matx = x*2;
 	const int maty = HGR_MATRIX_YOFFSET + y;
 	const int hgrlinesabove = (y > 0) ? 1 : 0;
 	const int hgrlinesbelow = VideoGetSWMIXED() ? ((y < 159)? 1:0) : ((y < 191)? 1:0);
 	const int istart        = 2 - (hgrlinesabove*2);
 	const int iend          = 3 + (hgrlinesbelow*2);
 
-	// transfer 7 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
-	for (int count = 0, bufxoffset = 0; count < 7; count++, bufxoffset += 2)
+	// transfer 14 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
+	for (int count = 0, bufxoffset = 0; count < 14; count++, bufxoffset += 1)
 	{
 		hgrpixelmatrix[matx+count][maty] = *(currsourceptr+bufxoffset);
 
@@ -637,14 +636,14 @@ static void CopyMixedSource(int x, int y, int sourcex, int sourcey, bgra_t *pVid
 			if (IsVideoStyle(VS_HALF_SCANLINES) && (i & 1))
 			{
 				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-				*currptr = *(currptr+1) = 0;
+				*currptr = 0;
 			}
 			else
 			{
 				_ASSERT( colormixbuffer[i] < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
 				const RGBQUAD& rRGB = PalIndex2RGB[ colormixbuffer[i] ];
 				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
-				*currptr = *(currptr+1) = rgb;
+				*currptr = rgb;
 			}
 		}
 	}
@@ -699,7 +698,8 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	{
 		CopyMixedSource(
 			x*7, y,
-			SRCOFFS_HIRES2+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
+//			SRCOFFS_HIRES2+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
+			SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
 			pVideoAddress
 		);
 	}
@@ -867,7 +867,7 @@ static void V_CreateDIBSections(void)
 	ZeroMemory(g_pSourcePixels, SRCOFFS_TOTAL*MAX_SOURCE_Y); // 32 bytes/pixel * 16 colors = 512 bytes/row
 
 	V_CreateLookup_Lores();
-	V_CreateLookup_Hires();	// For CopyMixedSource() / VS_COLOR_VERTICAL_BLEND
+//	V_CreateLookup_Hires();	// For CopyMixedSource() / VS_COLOR_VERTICAL_BLEND, 280-pixel (from 1.25)
 	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
 	V_CreateLookup_DoubleHires();
 
