@@ -11,8 +11,8 @@ Tom Charlesworth
 1.28.3.0 - 3 Mar 2019
 ---------------------
 . [Change #625] AltGr+<key> does not send the <key> value to $C000.
-	- This reverts the default behaviour introduced at 1.27.6 (#558).
-	- Use -altgr-sends-wmchar to work correctly together.
+	- This reverts the default behaviour introduced from 1.27.6 (#558).
+	- Use -altgr-sends-wmchar to allow AltGr+<key> to work correctly together.
 	- NB. The reason for the revert was that it was preventing international keyboards from typing certain characters.
 . [Change #616] Vertical blending now uses 560-pixel granularity for half-dot shift support (consistent with all other video modes).
 
