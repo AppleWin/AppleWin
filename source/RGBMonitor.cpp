@@ -279,12 +279,14 @@ Legend:
  Edge Case for Color Bleed !
    2000:40 00
    2400:40 80
+ Nox Archaist (GH#616)
+   2000:00 40 9E  // Green Black White
 */
 
 			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but cross 14-pixel boundaries.
 			if( hibit )
 			{
-				if ( aPixels[1] ) // preceeding pixel on?
+				if ( aPixels[1] ) // preceding pixel on?
 #if 0 // Optimization: Doesn't seem to matter if we ignore the 2 pixels of the next byte
 					for (iPixel = 0; iPixel < 9; iPixel++) // NOTE: You MUST start with the preceding 2 pixels !!!
 						if (aPixels[iPixel]) // pixel on

@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Frame.h"
 #include "Harddisk.h"
 #include "Joystick.h"
+#include "Keyboard.h"
 #include "LanguageCard.h"
 #include "Log.h"
 #include "Memory.h"
@@ -1355,6 +1356,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if (strcmp(lpCmdLine, "-hook-altgr-control") == 0)		// GH#556
 		{
 			g_bHookAltGrControl = true;
+		}
+		else if (strcmp(lpCmdLine, "-altgr-sends-wmchar") == 0)		// GH#625
+		{
+			KeybSetAltGrSendsWM_CHAR(true);
 		}
 		else if (strcmp(lpCmdLine, "-no-hook-alt") == 0)			// GH#583
 		{
