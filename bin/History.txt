@@ -8,6 +8,15 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.28.3.0 - 3 Mar 2019
+---------------------
+. [Change #625] AltGr+<key> does not send the <key> value to $C000.
+	- This reverts the default behaviour introduced at 1.27.6 (#558).
+	- Use -altgr-sends-wmchar to work correctly together.
+	- NB. The reason for the revert was that it was preventing international keyboards from typing certain characters.
+. [Change #616] Vertical blending now uses 560-pixel granularity for half-dot shift support (consistent with all other video modes).
+
+
 1.28.2.0 - 24 Feb 2019
 ----------------------
 . [Change #616] Support vertical blending for 'RGB (Color Monitor)' for hires.
@@ -86,10 +95,10 @@ Tom Charlesworth
 1.27.7.0 - 6 Aug 2018
 ---------------------
 . [Bug #564] Fixed 'Save State on Exit' not working correctly when there's a Configuration change to the hardware.
-. [Bug #556] Reverted default so that ALT+TAB is not hooked (#556)
+. [Bug #556] Reverted default so that ALT+TAB is not hooked
 	- Support new command line switch: -hook-alt-tab to support hooking ALT+TAB.
-. [Bug #558] Reverted default so that ALT GR's fake LEFT CONTROL is not hooked (#558)
-	- Support new command line switch: -hook-altgr-control to suppess ALR GR's fake LEFT CONTROL.
+. [Bug #558] Reverted default so that ALT GR's fake LEFT CONTROL is not hooked
+	- Support new command line switch: -hook-altgr-control to suppress ALR GR's fake LEFT CONTROL.
 
 
 1.27.6.0 - 28 Jul 2018
