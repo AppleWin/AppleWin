@@ -10,8 +10,9 @@
 
 const int SRCOFFS_LORES   = 0;                       //    0
 const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //   16
-const int SRCOFFS_HIRES2  = (SRCOFFS_HIRES  +  512); //  528		// Style = Vertical Blend, 280-pixel (from 1.25)
-const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES2 +  512); // 1040
+const int SRCOFFS_HIRES2  = (SRCOFFS_HIRES  + (16*32)); //  528
+const int SRCOFFS_HIRES3  = (SRCOFFS_HIRES2 + (32*32)); //  528		// Style = Vertical Blend, 280-pixel (from 1.25)
+const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES3 + (16*32)); // 1040
 const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3600
 
 const int MAX_SOURCE_Y = 512;
@@ -42,12 +43,12 @@ enum Color_Palette_Index_e
 #endif
 
 // TV emu
-	, HGR_GREY1        
-	, HGR_GREY2        
-	, HGR_YELLOW       
-	, HGR_AQUA         
-	, HGR_PURPLE       
-	, HGR_PINK         
+	, HGR_GREY1
+	, HGR_GREY2
+	, HGR_YELLOW
+	, HGR_AQUA
+	, HGR_PURPLE
+	, HGR_PINK
 // lores & dhires
 	, BLACK
 	, DEEP_RED
@@ -218,8 +219,146 @@ void V_CreateLookup_Lores()
 
 //===========================================================================
 
+// Lookup Table:
+// y (0-511) * 32 columns of 32 bytes
+// . each column is: high-bit (prev byte) & 2 pixels from previous byte & 2 pixels from next byte
+// . each 32-byte unit is: 16 bytes for even video byte & 16 bytes for odd video byte
+//   . where 16 bytes represent the 7 Apple pixels, expanded to 14 pixels
+//		hibit=0: {14 pixels + 2 pad} * 2
+//		hibit=1: {1 pad + 14 pixels + 1 pad} * 2
+//   . and each byte is an index into the colour palette
+
+void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
+{
+	// high-bit & 2-bits from previous byte, 2-bits from next byte = 2^5 = 32 total permutations
+//	for (int iColumn = 0; iColumn < 32; iColumn++)
+	for (int iColumn = 0; iColumn < 16; iColumn++)
+	{
+		const int offsetx = iColumn * 32; // every column is 32 bytes wide
+		const int prevHighBit = (iColumn >> 4) & 1;
+
+		int aPixels[11]; // c2 c1 b7 b6 b5 b4 b3 b2 b1 b0 c8 c4
+		aPixels[ 0] = iColumn & 4; // previous byte, 2nd last pixel
+		aPixels[ 1] = iColumn & 8; // previous byte, last pixel
+		aPixels[ 9] = iColumn & 1; // next byte, first pixel
+		aPixels[10] = iColumn & 2; // next byte, second pixel
+
+		for (unsigned int iByte = 0; iByte < 256; iByte++)
+		{
+			// Convert raw pixel iByte value to binary and stuff into bit array of pixels on off
+			int nBitMask = 1;
+			for (int iPixel = 2; iPixel < 9; iPixel++)
+			{
+				aPixels[iPixel] = ((iByte & nBitMask) != 0);
+				nBitMask <<= 1;
+			}
+
+			const int hibit = (iByte >> 7) & 1;
+			int y = iByte * 2;
+			int x = 0;
+
+			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but cross 14-pixel boundaries.
+			if( hibit )
+			{
+				if ( aPixels[1] ) // preceding pixel on?
+				{
+					if (aPixels[2] || aPixels[0]) // White if pixel from previous byte and first pixel of this byte is on
+					{
+						SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y  , HGR_WHITE );
+						SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y+1, HGR_WHITE );
+						SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+16,y  , HGR_WHITE );
+						SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+16,y+1, HGR_WHITE );
+					}
+					else   // Optimization:   odd = (iPixel & 1); if (!odd) case is same as if(odd) !!! // Reference: Gumball - Gumball Machine
+					{
+						if (aPixels[3] == aPixels[4])	// GH#616
+						{
+							// aPixels{0,1,h,2,3,4}, h=half-pixel
+							//         0,1,h,0,0,0 - colour the half-pixel black (was orange - not good for Nox Archaist, eg. 2000:00 40 E0)
+							//         0,1,h,0,1,1 - colour the half-pixel black (was orange - not good for Nox Archaist, eg. 2000:00 40 9E)
+							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y  , HGR_BLACK );
+							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y+1, HGR_BLACK );
+						}
+						else
+						{
+							// aPixels{0,1,h,2,3,4}, h=half-pixel
+							//         0,1,h,0,0,1 - colour the half-pixel orange (perhaps should be black like above too?)
+							//         0,1,h,0,1,0 - colour the half-pixel orange (needed for continuous orange line)
+							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y  , HGR_ORANGE ); // left half of orange pixels
+							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y+1, HGR_ORANGE );
+						}
+						SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+16,y  , HGR_BLUE ); // right half of blue pixels 4, 11, 18, ...
+						SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+16,y+1, HGR_BLUE );
+					}
+				}
+				else if ( aPixels[0] ) // prev prev pixel on
+				{
+					if ( aPixels[2] )
+						if ((videoType == VT_COLOR_MONITOR_RGB) || ( !aPixels[3] ))
+						{ 
+							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y+1, HGR_BLUE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+16,y+1, HGR_ORANGE );
+						}
+				}
+			}
+
+			x += hibit;
+
+			while (x < 28)
+			{
+				int adj = (x >= 14) ? 2 : 0;	// Adjust start of 7 last pixels to be 16-byte aligned!
+				int odd = (x >= 14) ? 1 : 0;	// Even or odd video byte
+
+				for (int iPixel = 2; iPixel < 9; iPixel++)
+				{
+					int color = CM_Black;
+					if (aPixels[iPixel]) // pixel on
+					{
+						color = CM_White; 
+						if (aPixels[iPixel-1] || aPixels[iPixel+1]) // adjacent pixels are always white
+							color = CM_White; 
+						else
+							color = ((odd ^ (iPixel&1)) << 1) | hibit; // map raw color to our hi-res colors
+					}
+					else if (aPixels[iPixel-1] && aPixels[iPixel+1]) // IF prev_pixel && next_pixel THEN
+					{
+						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
+						if (
+							(videoType == VT_COLOR_MONITOR_RGB) // Fill in colors in between white pixels
+						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
+						{
+							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
+						}
+					}
+
+					// Colors - Top/Bottom Left/Right
+					// cTL cTR
+					// cBL cBR
+					SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+adj  ,y  ,HiresToPalIndex[color]); // cTL
+					SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
+					SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
+					SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
+
+					x += 2;
+				}
+			}
+		} // iByte
+	} // iColumn
+}
+
+//===========================================================================
+
 #define HALF_PIXEL_SOLID 1
 #define HALF_PIXEL_BLEED 0
+
+// Lookup Table:
+// y (0-511) * 16 columns of 32 bytes
+// . each column is: 2 pixels from previous byte & 2 pixels from next byte
+// . each 32-byte unit is: 16 bytes for even video byte & 16 bytes for odd video byte
+//   . where 16 bytes represent the 7 Apple pixels, expanded to 14 pixels
+//   . and each byte is an index into the colour palette
 
 void V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType) // Colors are solid (100% coverage)
 {
@@ -299,8 +438,22 @@ Legend:
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_WHITE );
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_WHITE );
 							} else {   // Optimization:   odd = (iPixel & 1); if (!odd) case is same as if(odd) !!! // Reference: Gumball - Gumball Machine
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_ORANGE ); // left half of orange pixels 
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_ORANGE );
+								if (aPixels[3] == aPixels[4])	// GH#616
+								{
+									// aPixels{0,1,h,2,3,4}, h=half-pixel
+									//         0,1,h,0,0,0 - colour the half-pixel black (was orange - not good for Nox Archaist, eg. 2000:00 40 E0)
+									//         0,1,h,0,1,1 - colour the half-pixel black (was orange - not good for Nox Archaist, eg. 2000:00 40 9E)
+									SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLACK );
+									SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLACK );
+								}
+								else
+								{
+									// aPixels{0,1,h,2,3,4}, h=half-pixel
+									//         0,1,h,0,0,1 - colour the half-pixel orange (perhaps should be black like above too?)
+									//         0,1,h,0,1,0 - colour the half-pixel orange (needed for continuous orange line)
+									SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_ORANGE ); // left half of orange pixels
+									SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_ORANGE );
+								}
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_BLUE ); // right half of blue pixels 4, 11, 18, ...
 								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_BLUE );
 							}
@@ -406,6 +559,7 @@ Legend:
 
 //===========================================================================
 
+#if 0
 void V_CreateLookup_Hires()
 {
 //	int iMonochrome = GetMonochromeIndex();
@@ -472,10 +626,10 @@ void V_CreateLookup_Hires()
 						// Colors - Top/Bottom Left/Right
 						// cTL cTR
 						// cBL cBR
-						SETSOURCEPIXEL(SRCOFFS_HIRES2+coloffs+x+adj  ,y  ,HiresToPalIndex[color]); // cTL
-						SETSOURCEPIXEL(SRCOFFS_HIRES2+coloffs+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
-						SETSOURCEPIXEL(SRCOFFS_HIRES2+coloffs+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
-						SETSOURCEPIXEL(SRCOFFS_HIRES2+coloffs+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
+						SETSOURCEPIXEL(SRCOFFS_HIRES3+coloffs+x+adj  ,y  ,HiresToPalIndex[color]); // cTL
+						SETSOURCEPIXEL(SRCOFFS_HIRES3+coloffs+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
+						SETSOURCEPIXEL(SRCOFFS_HIRES3+coloffs+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
+						SETSOURCEPIXEL(SRCOFFS_HIRES3+coloffs+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
 					}
 					x += 2;
 				}
@@ -483,6 +637,7 @@ void V_CreateLookup_Hires()
 		}
 	}
 }
+#endif
 
 //===========================================================================
 
@@ -700,14 +855,16 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	{
 		CopyMixedSource(
 			x*7, y,
-//			SRCOFFS_HIRES2+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
-			SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
+//			SRCOFFS_HIRES3+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
+//			SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
+			SRCOFFS_HIRES2+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
 			pVideoAddress
 		);
 	}
 	else
 	{
-		CopySource(14,2, SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1), pVideoAddress);
+//		CopySource(14,2, SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1), pVideoAddress);
+		CopySource(14,2, SRCOFFS_HIRES2+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1), pVideoAddress);
 	}
 #undef COLOFFS
 }
@@ -870,7 +1027,8 @@ static void V_CreateDIBSections(void)
 
 	V_CreateLookup_Lores();
 //	V_CreateLookup_Hires();	// For CopyMixedSource() / VS_COLOR_VERTICAL_BLEND, 280-pixel (from 1.25)
-	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
+//	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
+	V_CreateLookup_HiResHalfPixel_Authentic2(VT_COLOR_MONITOR_RGB);
 	V_CreateLookup_DoubleHires();
 
 	CreateColorMixMap();
