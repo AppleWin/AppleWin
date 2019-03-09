@@ -222,22 +222,21 @@ void V_CreateLookup_Lores()
 // Lookup Table:
 // y (0-511) * 32 columns of 32 bytes
 // . each column is: high-bit (prev byte) & 2 pixels from previous byte & 2 pixels from next byte
-// . each 32-byte unit is: 16 bytes for even video byte & 16 bytes for odd video byte
+// . each 32-byte unit is 2 * 16-byte sub-units: 16 bytes for even video byte & 16 bytes for odd video byte
 //   . where 16 bytes represent the 7 Apple pixels, expanded to 14 pixels
-//		hibit=0: {14 pixels + 2 pad} * 2
-//		hibit=1: {1 pad + 14 pixels + 1 pad} * 2
+//		currHighBit=0: {14 pixels + 2 pad} * 2
+//		currHighBit=1: {1 pixel + 14 pixels + 1 pad} * 2
 //   . and each byte is an index into the colour palette
 
 void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 {
 	// high-bit & 2-bits from previous byte, 2-bits from next byte = 2^5 = 32 total permutations
-//	for (int iColumn = 0; iColumn < 32; iColumn++)
-	for (int iColumn = 0; iColumn < 16; iColumn++)
+	for (int iColumn = 0; iColumn < 32; iColumn++)
 	{
 		const int offsetx = iColumn * 32; // every column is 32 bytes wide
-		const int prevHighBit = (iColumn >> 4) & 1;
+		const int prevHighBit = (iColumn >= 16) ? 1 : 0;
+		int aPixels[11]; // c2 c3 b6 b5 b4 b3 b2 b1 b0 c0 c1
 
-		int aPixels[11]; // c2 c1 b7 b6 b5 b4 b3 b2 b1 b0 c8 c4
 		aPixels[ 0] = iColumn & 4; // previous byte, 2nd last pixel
 		aPixels[ 1] = iColumn & 8; // previous byte, last pixel
 		aPixels[ 9] = iColumn & 1; // next byte, first pixel
@@ -253,14 +252,15 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 				nBitMask <<= 1;
 			}
 
-			const int hibit = (iByte >> 7) & 1;
+			const int currHighBit = (iByte >> 7) & 1;
 			int y = iByte * 2;
 			int x = 0;
 
-			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but cross 14-pixel boundaries.
-			if( hibit )
+			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but crosses video byte boundaries.
+			// NB. Setup first byte in each 16-byte sub-unit
+			if( currHighBit )
 			{
-				if ( aPixels[1] ) // preceding pixel on?
+				if ( aPixels[1] ) // prev pixel on?
 				{
 					if (aPixels[2] || aPixels[0]) // White if pixel from previous byte and first pixel of this byte is on
 					{
@@ -269,21 +269,16 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 						SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+16,y  , HGR_WHITE );
 						SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+16,y+1, HGR_WHITE );
 					}
-					else   // Optimization:   odd = (iPixel & 1); if (!odd) case is same as if(odd) !!! // Reference: Gumball - Gumball Machine
+					else
 					{
-						if (aPixels[3] == aPixels[4])	// GH#616
+						if ( !prevHighBit )	// GH#616
 						{
-							// aPixels{0,1,h,2,3,4}, h=half-pixel
-							//         0,1,h,0,0,0 - colour the half-pixel black (was orange - not good for Nox Archaist, eg. 2000:00 40 E0)
-							//         0,1,h,0,1,1 - colour the half-pixel black (was orange - not good for Nox Archaist, eg. 2000:00 40 9E)
+							// colour the half-pixel black (was orange - not good for Nox Archaist, eg. 2000:00 40 E0; 2000:00 40 9E)
 							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y  , HGR_BLACK );
 							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y+1, HGR_BLACK );
 						}
 						else
 						{
-							// aPixels{0,1,h,2,3,4}, h=half-pixel
-							//         0,1,h,0,0,1 - colour the half-pixel orange (perhaps should be black like above too?)
-							//         0,1,h,0,1,0 - colour the half-pixel orange (needed for continuous orange line)
 							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y  , HGR_ORANGE ); // left half of orange pixels
 							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y+1, HGR_ORANGE );
 						}
@@ -294,6 +289,7 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 				else if ( aPixels[0] ) // prev prev pixel on
 				{
 					if ( aPixels[2] )
+					{
 						if ((videoType == VT_COLOR_MONITOR_RGB) || ( !aPixels[3] ))
 						{ 
 							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
@@ -301,10 +297,11 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES2+offsetx+x+16,y+1, HGR_ORANGE );
 						}
+					}
 				}
 			}
 
-			x += hibit;
+			x += currHighBit;
 
 			while (x < 28)
 			{
@@ -320,7 +317,7 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 						if (aPixels[iPixel-1] || aPixels[iPixel+1]) // adjacent pixels are always white
 							color = CM_White; 
 						else
-							color = ((odd ^ (iPixel&1)) << 1) | hibit; // map raw color to our hi-res colors
+							color = ((odd ^ (iPixel&1)) << 1) | currHighBit; // map raw color to our hi-res colors
 					}
 					else if (aPixels[iPixel-1] && aPixels[iPixel+1]) // IF prev_pixel && next_pixel THEN
 					{
@@ -329,7 +326,7 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 							(videoType == VT_COLOR_MONITOR_RGB) // Fill in colors in between white pixels
 						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
 						{
-							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
+							color = ((odd ^ !(iPixel&1)) << 1) | currHighBit;	// No white HGR text optimization
 						}
 					}
 
@@ -850,23 +847,23 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	BYTE byteval2 =            *(pMain);
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
 
-#define COLOFFS  (((byteval1 & 0x60) << 2) | ((byteval3 & 0x03) << 5))
+//#define HIRES_COLUMN_OFFSET  (((byteval1 & 0x60) << 2) | ((byteval3 & 0x03) << 5))
+#define HIRES_COLUMN_OFFSET  (((byteval1 & 0xE0) << 2) | ((byteval3 & 0x03) << 5))
 	if (IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
 	{
 		CopyMixedSource(
 			x*7, y,
-//			SRCOFFS_HIRES3+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
-//			SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
-			SRCOFFS_HIRES2+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
+//			SRCOFFS_HIRES3+HIRES_COLUMN_OFFSET+((x & 1) << 4), (((int)byteval2) << 1),
+//			SRCOFFS_HIRES+HIRES_COLUMN_OFFSET+((x & 1) << 4), (((int)byteval2) << 1),
+			SRCOFFS_HIRES2+HIRES_COLUMN_OFFSET+((x & 1) << 4), (((int)byteval2) << 1),
 			pVideoAddress
 		);
 	}
 	else
 	{
-//		CopySource(14,2, SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1), pVideoAddress);
-		CopySource(14,2, SRCOFFS_HIRES2+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1), pVideoAddress);
+//		CopySource(14,2, SRCOFFS_HIRES+HIRES_COLUMN_OFFSET+((x & 1) << 4), (((int)byteval2) << 1), pVideoAddress);
+		CopySource(14,2, SRCOFFS_HIRES2+HIRES_COLUMN_OFFSET+((x & 1) << 4), (((int)byteval2) << 1), pVideoAddress);
 	}
-#undef COLOFFS
 }
 
 //===========================================================================
