@@ -8,9 +8,9 @@
 #include "RGBMonitor.h"
 #include "YamlHelper.h"
 
-#define HIRES_COLUMN_SUBUNIT_SIZE 16
-#define HIRES_COLUMN_UNIT_SIZE (HIRES_COLUMN_SUBUNIT_SIZE)*2
-#define HIRES_NUMBER_COLUMNS (1<<5)	// 5 bits
+const int HIRES_COLUMN_SUBUNIT_SIZE = 16;
+const int HIRES_COLUMN_UNIT_SIZE = (HIRES_COLUMN_SUBUNIT_SIZE)*2;
+const int HIRES_NUMBER_COLUMNS = (1<<5);	// 5 bits
 
 
 const int SRCOFFS_LORES   = 0;							//    0
@@ -18,7 +18,7 @@ const int SRCOFFS_HIRES   = (SRCOFFS_LORES  + 16);		//   16
 const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  + (HIRES_NUMBER_COLUMNS*HIRES_COLUMN_UNIT_SIZE)); // 1040
 const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560);	// 3600
 
-const int MAX_SOURCE_Y = 512;
+const int MAX_SOURCE_Y = 256;
 static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 #define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
 
@@ -199,10 +199,9 @@ static void V_CreateLookup_DoubleHires ()
 	  }
 #endif
 
-      int y = byteval << 1;
+      int y = byteval;
       for (int x = 0; x < SIZE; x++) {
         SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,DoubleHiresPalIndex[ color[x] ]);
-        SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,DoubleHiresPalIndex[ color[x] ]);
       }
     }
   }
@@ -223,7 +222,7 @@ void V_CreateLookup_Lores()
 //===========================================================================
 
 // Lookup Table:
-// y (0-511) * 32 columns of 32 bytes
+// y (0-255) * 32 columns of 32 bytes
 // . each column is: high-bit (prev byte) & 2 pixels from previous byte & 2 pixels from next byte
 // . each 32-byte unit is 2 * 16-byte sub-units: 16 bytes for even video byte & 16 bytes for odd video byte
 //   . where 16 bytes represent the 7 Apple pixels, expanded to 14 pixels
@@ -231,7 +230,7 @@ void V_CreateLookup_Lores()
 //		currHighBit=1: {1 pixel + 14 pixels + 1 pad} * 2
 //   . and each byte is an index into the colour palette
 
-void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
+void V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType)
 {
 	// high-bit & 2-bits from previous byte, 2-bits from next byte = 2^5 = 32 total permutations
 	for (int iColumn = 0; iColumn < HIRES_NUMBER_COLUMNS; iColumn++)
@@ -255,7 +254,7 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 			}
 
 			const int currHighBit = (iByte >> 7) & 1;
-			int y = iByte * 2;
+			const int y = iByte;
 
 			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but crosses video byte boundaries.
 			// NB. Setup first byte in each 16-byte sub-unit
@@ -266,9 +265,7 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 					if (aPixels[2] || aPixels[0]) // White if pixel from previous byte and first pixel of this byte is on
 					{
 						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_WHITE );
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y+1, HGR_WHITE );
 						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y  , HGR_WHITE );
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y+1, HGR_WHITE );
 					}
 					else
 					{
@@ -276,15 +273,12 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 						{
 							// colour the half-pixel black (was orange - not good for Nox Archaist, eg. 2000:00 40 E0; 2000:00 40 9E)
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_BLACK );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y+1, HGR_BLACK );
 						}
 						else
 						{
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_ORANGE ); // left half of orange pixels
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y+1, HGR_ORANGE );
 						}
 						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y  , HGR_BLUE ); // right half of blue pixels 4, 11, 18, ...
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y+1, HGR_BLUE );
 					}
 				}
 				else if ( aPixels[0] ) // prev prev pixel on
@@ -294,9 +288,7 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 						if ((videoType == VT_COLOR_MONITOR_RGB) || ( !aPixels[3] ))
 						{ 
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y+1, HGR_BLUE );
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y  , HGR_ORANGE ); // 2000: AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y+1, HGR_ORANGE );
 						}
 					}
 				}
@@ -333,13 +325,9 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 						}
 					}
 
-					// Colors - Top/Bottom Left/Right
-					// cTL cTR
-					// cBL cBR
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x  ,y  ,HiresToPalIndex[color]); // cTL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+1,y  ,HiresToPalIndex[color]); // cTR
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x  ,y+1,HiresToPalIndex[color]); // cBL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+1,y+1,HiresToPalIndex[color]); // cBR
+					// Each HGR 7M pixel is a left 14M & right 14M DHGR pixel
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x  ,y  ,HiresToPalIndex[color]); // Color for left 14M pixel
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+1,y  ,HiresToPalIndex[color]); // Color for right 14M pixel
 
 					x += 2;
 				}
@@ -546,7 +534,6 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 		}
 
 		pDst -= GetFrameBufferWidth();
-		pSrc -= SRCOFFS_TOTAL;
 	}
 }
 
@@ -563,15 +550,11 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 
 	if (IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
 	{
-		CopyMixedSource(
-			x*7, y,
-			SRCOFFS_HIRES+HIRES_COLUMN_OFFSET+((x & 1) << 4), (((int)byteval2) << 1),
-			pVideoAddress
-		);
+		CopyMixedSource(x*7, y, SRCOFFS_HIRES+HIRES_COLUMN_OFFSET+((x & 1)*HIRES_COLUMN_SUBUNIT_SIZE), (int)byteval2, pVideoAddress);
 	}
 	else
 	{
-		CopySource(14,2, SRCOFFS_HIRES+HIRES_COLUMN_OFFSET+((x & 1) << 4), (((int)byteval2) << 1), pVideoAddress);
+		CopySource(14,2, SRCOFFS_HIRES+HIRES_COLUMN_OFFSET+((x & 1)*HIRES_COLUMN_SUBUNIT_SIZE), (int)byteval2, pVideoAddress);
 	}
 }
 
@@ -598,7 +581,7 @@ void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool 
 #define PIXEL  0
 	if (updateAux)
 	{
-		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress);
 		pVideoAddress += 7;
 	}
 #undef PIXEL
@@ -606,7 +589,7 @@ void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool 
 #define PIXEL  7
 	if (updateMain)
 	{
-		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress);
 	}
 #undef PIXEL
 }
@@ -630,12 +613,12 @@ int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	dwordval <<= 2;
 
 #define PIXEL  0
-	CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress, 1);
+	CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress, 1);
 	pVideoAddress += 7;
 #undef PIXEL
 
 #define PIXEL  8
-	CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress, 1);
+	CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress, 1);
 #undef PIXEL
 
 	return 7*2;
@@ -661,12 +644,12 @@ int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	dwordval <<= 2;
 
 #define PIXEL  0
-	CopySource(8,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+	CopySource(8,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress);
 	pVideoAddress += 8;
 #undef PIXEL
 
 #define PIXEL  8
-	CopySource(8,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+	CopySource(8,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress);
 #undef PIXEL
 
 	return 8*2;
@@ -729,12 +712,10 @@ static void V_CreateDIBSections(void)
 		g_aSourceStartofLine[ y ] = g_pSourcePixels + SRCOFFS_TOTAL*((MAX_SOURCE_Y-1) - y);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory(g_pSourcePixels, SRCOFFS_TOTAL*MAX_SOURCE_Y); // 32 bytes/pixel * 16 colors = 512 bytes/row
+	ZeroMemory(g_pSourcePixels, SRCOFFS_TOTAL*MAX_SOURCE_Y);
 
 	V_CreateLookup_Lores();
-//	V_CreateLookup_Hires();	// For CopyMixedSource() / VS_COLOR_VERTICAL_BLEND, 280-pixel (from 1.25)
-//	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
-	V_CreateLookup_HiResHalfPixel_Authentic2(VT_COLOR_MONITOR_RGB);
+	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
 	V_CreateLookup_DoubleHires();
 
 	CreateColorMixMap();
