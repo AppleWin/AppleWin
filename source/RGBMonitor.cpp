@@ -8,9 +8,14 @@
 #include "RGBMonitor.h"
 #include "YamlHelper.h"
 
+#define HIRES_COLUMN_SUBUNIT_SIZE 16
+#define HIRES_COLUMN_UNIT_SIZE (HIRES_COLUMN_SUBUNIT_SIZE)*2
+#define HIRES_NUMBER_COLUMNS (1<<5)	// 5 bits
+
+
 const int SRCOFFS_LORES   = 0;							//    0
-const int SRCOFFS_HIRES   = (SRCOFFS_LORES  + 16);		//  528
-const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  + (32*32)); // 1040
+const int SRCOFFS_HIRES   = (SRCOFFS_LORES  + 16);		//   16
+const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  + (HIRES_NUMBER_COLUMNS*HIRES_COLUMN_UNIT_SIZE)); // 1040
 const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560);	// 3600
 
 const int MAX_SOURCE_Y = 512;
@@ -229,9 +234,9 @@ void V_CreateLookup_Lores()
 void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 {
 	// high-bit & 2-bits from previous byte, 2-bits from next byte = 2^5 = 32 total permutations
-	for (int iColumn = 0; iColumn < 32; iColumn++)
+	for (int iColumn = 0; iColumn < HIRES_NUMBER_COLUMNS; iColumn++)
 	{
-		const int offsetx = iColumn * 32; // every column is 32 bytes wide
+		const int offsetx = iColumn * HIRES_COLUMN_UNIT_SIZE; // every column is 32 bytes wide
 		const int prevHighBit = (iColumn >= 16) ? 1 : 0;
 		int aPixels[11]; // c2 c3 b6 b5 b4 b3 b2 b1 b0 c0 c1
 
@@ -243,8 +248,7 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 		for (unsigned int iByte = 0; iByte < 256; iByte++)
 		{
 			// Convert raw pixel iByte value to binary and stuff into bit array of pixels on off
-			int nBitMask = 1;
-			for (int iPixel = 2; iPixel < 9; iPixel++)
+			for (int iPixel = 2, nBitMask = 1; iPixel < 9; iPixel++)
 			{
 				aPixels[iPixel] = ((iByte & nBitMask) != 0);
 				nBitMask <<= 1;
@@ -252,7 +256,6 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 
 			const int currHighBit = (iByte >> 7) & 1;
 			int y = iByte * 2;
-			int x = 0;
 
 			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but crosses video byte boundaries.
 			// NB. Setup first byte in each 16-byte sub-unit
@@ -262,26 +265,26 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 				{
 					if (aPixels[2] || aPixels[0]) // White if pixel from previous byte and first pixel of this byte is on
 					{
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_WHITE );
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_WHITE );
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_WHITE );
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_WHITE );
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_WHITE );
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y+1, HGR_WHITE );
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y  , HGR_WHITE );
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y+1, HGR_WHITE );
 					}
 					else
 					{
 						if ( !prevHighBit )	// GH#616
 						{
 							// colour the half-pixel black (was orange - not good for Nox Archaist, eg. 2000:00 40 E0; 2000:00 40 9E)
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLACK );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLACK );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_BLACK );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y+1, HGR_BLACK );
 						}
 						else
 						{
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_ORANGE ); // left half of orange pixels
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_ORANGE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_ORANGE ); // left half of orange pixels
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y+1, HGR_ORANGE );
 						}
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_BLUE ); // right half of blue pixels 4, 11, 18, ...
-						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_BLUE );
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y  , HGR_BLUE ); // right half of blue pixels 4, 11, 18, ...
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y+1, HGR_BLUE );
 					}
 				}
 				else if ( aPixels[0] ) // prev prev pixel on
@@ -290,21 +293,23 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 					{
 						if ((videoType == VT_COLOR_MONITOR_RGB) || ( !aPixels[3] ))
 						{ 
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_ORANGE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y+1, HGR_BLUE );
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y  , HGR_ORANGE ); // 2000: AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y+1, HGR_ORANGE );
 						}
 					}
 				}
 			}
 
-			x += currHighBit;
+			//
 
-			while (x < 28)
+			int x = currHighBit;
+
+			for (int odd = 0; odd < 2; odd++)	// even then odd sub-units
 			{
-				int adj = (x >= 14) ? 2 : 0;	// Adjust start of 7 last pixels to be 16-byte aligned!
-				int odd = (x >= 14) ? 1 : 0;	// Even or odd video byte
+				if (odd)
+					x = HIRES_COLUMN_SUBUNIT_SIZE + currHighBit;
 
 				for (int iPixel = 2; iPixel < 9; iPixel++)
 				{
@@ -331,14 +336,14 @@ void V_CreateLookup_HiResHalfPixel_Authentic2(VideoType_e videoType)
 					// Colors - Top/Bottom Left/Right
 					// cTL cTR
 					// cBL cBR
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y  ,HiresToPalIndex[color]); // cTL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x  ,y  ,HiresToPalIndex[color]); // cTL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+1,y  ,HiresToPalIndex[color]); // cTR
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x  ,y+1,HiresToPalIndex[color]); // cBL
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+1,y+1,HiresToPalIndex[color]); // cBR
 
 					x += 2;
 				}
-			}
+			} // even/odd sub-units
 		} // iByte
 	} // iColumn
 }
@@ -547,7 +552,7 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 
 //===========================================================================
 
-#define HIRES_COLUMN_OFFSET  (((byteval1 & 0xE0) << 2) | ((byteval3 & 0x03) << 5))	// prevHighBit | last 2 pixels | next 2 pixesl
+#define HIRES_COLUMN_OFFSET (((byteval1 & 0xE0) << 2) | ((byteval3 & 0x03) << 5))	// (prevHighBit | last 2 pixels | next 2 pixesl) * HIRES_COLUMN_UNIT_SIZE
 
 void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 {
