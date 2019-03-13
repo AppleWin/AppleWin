@@ -419,11 +419,11 @@ static void CreateColorMixMap(void)
 	}
 }
 
-static void MixColorsVertical(int matx, int maty)
+static void MixColorsVertical(int matx, int maty, bool isSWMIXED)
 {
 	int bot1idx, bot2idx;
 
-	if (VideoGetSWMIXED() && maty > 159)
+	if (isSWMIXED && maty > 159)
 	{
 		if (maty < 161)
 		{
@@ -556,6 +556,7 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 
 	const int matx = x*14;
 	const int maty = HGR_MATRIX_YOFFSET + y;
+	const bool isSWMIXED = VideoGetSWMIXED();
 
 	// transfer 14 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
 	for (int nBytes=13; nBytes>=0; nBytes--)
@@ -563,30 +564,37 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 		hgrpixelmatrix[matx+nBytes][maty] = *(pSrc+nBytes);
 	}
 
-	for (int h=HGR_MATRIX_YOFFSET+1; h>=HGR_MATRIX_YOFFSET; h--)
+	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const UINT frameBufferWidth = GetFrameBufferWidth();
+
+	for (int nBytes=13; nBytes>=0; nBytes--)
 	{
-		const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES) && !(h & 1);	// TC: no speed-up
+		// color mixing between adjacent scanlines at current x position
+		MixColorsVertical(matx+nBytes, maty, isSWMIXED);	//Post: colormixbuffer[]
 
-		for (int nBytes=13; nBytes>=0; nBytes--)
+		// line1
+		int h = HGR_MATRIX_YOFFSET+1;
+
+		_ASSERT( colormixbuffer[h] < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
+		const RGBQUAD& rRGB = PalIndex2RGB[ colormixbuffer[h] ];
+		const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
+		*(pDst+nBytes) = rgb;
+
+		// line2
+		h--;
+
+		if (bIsHalfScanLines)
 		{
-			// color mixing between adjacent scanlines at current x position
-			MixColorsVertical(matx+nBytes, maty);	//Post: colormixbuffer[]
-
-			if (bIsHalfScanLines)
-			{
-				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-				*(pDst+nBytes) = 0;
-			}
-			else
-			{
-				_ASSERT( colormixbuffer[h] < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
-				const RGBQUAD& rRGB = PalIndex2RGB[ colormixbuffer[h] ];
-				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
-				*(pDst+nBytes) = rgb;
-			}
+			// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+			*(pDst-frameBufferWidth+nBytes) = 0;
 		}
-
-		pDst -= GetFrameBufferWidth();
+		else
+		{
+			_ASSERT( colormixbuffer[h] < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
+			const RGBQUAD& rRGB = PalIndex2RGB[ colormixbuffer[h] ];
+			const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
+			*(pDst-frameBufferWidth+nBytes) = rgb;
+		}
 	}
 }
 #endif
