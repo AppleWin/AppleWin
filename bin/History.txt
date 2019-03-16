@@ -8,6 +8,14 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.28.4.0 - 16 Mar 2019
+----------------------
+. [Change #616] Improved accuracy for 'RGB (Color Monitor)' for hires.
+. [Bug #611] Holding down F9 to cycle through the video modes results in occasional flicker with garbage.
+. [Bug #627] Rainbow demo not working correctly when vertical blend is enabled.
+. [Bug #628] Filename suffix check for .gz and .zip needs to be case-insensitive.
+
+
 1.28.3.0 - 3 Mar 2019
 ---------------------
 . [Change #625] AltGr+<key> does not send the <key> value to $C000.
