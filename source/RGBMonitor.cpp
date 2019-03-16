@@ -460,7 +460,7 @@ static void MixColorsVertical(int matx, int maty, bool isSWMIXED)
 	colormixbuffer[5] = (twoHalfPixel & 0x00FF);
 }
 
-#if 0
+#if 0	// next1 == next5 == 1.28.3.1
 static void CopyMixedSource(int x, int y, int sourcex, int sourcey, bgra_t *pVideoAddress)
 {
 	const BYTE* const currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
@@ -475,13 +475,15 @@ static void CopyMixedSource(int x, int y, int sourcex, int sourcey, bgra_t *pVid
 	const int istart        = 2 - (hgrlinesabove*2);
 	const int iend          = 3 + (hgrlinesbelow*2);
 
+	const bool isSWMIXED = VideoGetSWMIXED();
+
 	// transfer 14 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
 	for (int count = 0, bufxoffset = 0; count < 14; count++, bufxoffset++)
 	{
 		hgrpixelmatrix[matx+count][maty] = *(currsourceptr+bufxoffset);
 
 		// color mixing between adjacent scanlines at current x position
-		MixColorsVertical(matx+count, maty);
+		MixColorsVertical(matx+count, maty, isSWMIXED);
 
 //		// transfer up to 6 mixed (half-)pixels of current column to framebuffer
 		UINT32* currptr = currdestptr+bufxoffset;
@@ -507,7 +509,7 @@ static void CopyMixedSource(int x, int y, int sourcex, int sourcey, bgra_t *pVid
 }
 #endif
 
-#if 0
+#if 0	// next2 == next3 == next4
 static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 {
 	UINT32* pDst = (UINT32*) pVideoAddress;
@@ -515,6 +517,8 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 
 	const int matx = x*14;
 	const int maty = HGR_MATRIX_YOFFSET + y;
+
+	const bool isSWMIXED = VideoGetSWMIXED();
 
 	for (int h=HGR_MATRIX_YOFFSET+1; h>=HGR_MATRIX_YOFFSET; h--)
 	{
@@ -527,7 +531,7 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 			hgrpixelmatrix[matx+nBytes][maty] = *(pSrc+nBytes);
 
 			// color mixing between adjacent scanlines at current x position
-			MixColorsVertical(matx+nBytes, maty);
+			MixColorsVertical(matx+nBytes, maty, isSWMIXED);
 
 			if (IsVideoStyle(VS_HALF_SCANLINES) && !(h & 1))
 			{
@@ -548,7 +552,7 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 }
 #endif
 
-#if 0
+#if 0	// next3
 static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 {
 	UINT32* pDst = (UINT32*) pVideoAddress;
@@ -599,7 +603,7 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 }
 #endif
 
-#if 1
+#if 0	// next4
 static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 {
 	const BYTE* const pSrc = g_aSourceStartofLine[ sy ] + sx;
@@ -641,6 +645,50 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 
 			pDst -= frameBufferWidth;
 		}
+	}
+}
+#endif
+
+#if 1	// next5
+static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
+{
+	UINT32* pDst = (UINT32*) pVideoAddress;
+	const BYTE* const pSrc = g_aSourceStartofLine[ sy ] + sx;
+
+	const int matx = x*14;
+	const int maty = HGR_MATRIX_YOFFSET + y;
+
+	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const bool isSWMIXED = VideoGetSWMIXED();
+
+	for (int h=HGR_MATRIX_YOFFSET; h<=HGR_MATRIX_YOFFSET+1; h++)
+	{
+		int nBytes = 14;
+		while (nBytes)
+		{
+			--nBytes;
+
+			// transfer each of the 14 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
+			hgrpixelmatrix[matx+nBytes][maty] = *(pSrc+nBytes);
+
+			// color mixing between adjacent scanlines at current x position
+			MixColorsVertical(matx+nBytes, maty, isSWMIXED);
+
+			if (bIsHalfScanLines && (h & 1))
+			{
+				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+				*(pDst+nBytes) = 0;
+			}
+			else
+			{
+				_ASSERT( colormixbuffer[h] < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
+				const RGBQUAD& rRGB = PalIndex2RGB[ colormixbuffer[h] ];
+				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
+				*(pDst+nBytes) = rgb;
+			}
+		}
+
+		pDst -= GetFrameBufferWidth();
 	}
 }
 #endif
