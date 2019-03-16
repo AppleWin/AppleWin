@@ -2120,14 +2120,15 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 }
 
 //===========================================================================
-void NTSC_VideoReinitialize( DWORD cyclesThisFrame )
+void NTSC_VideoReinitialize( DWORD cyclesThisFrame, bool bInitVideoScannerAddress )
 {
 	_ASSERT(cyclesThisFrame < VIDEO_SCANNER_6502_CYCLES);
 	if (cyclesThisFrame >= VIDEO_SCANNER_6502_CYCLES) cyclesThisFrame = 0;	// error
 	g_nVideoClockVert = (uint16_t) (cyclesThisFrame / VIDEO_SCANNER_MAX_HORZ);
 	g_nVideoClockHorz = cyclesThisFrame % VIDEO_SCANNER_MAX_HORZ;
 
-	updateVideoScannerAddress();	// Pre-condition: g_nVideoClockVert
+	if (bInitVideoScannerAddress)		// GH#611
+		updateVideoScannerAddress();	// Pre-condition: g_nVideoClockVert
 }
 
 //===========================================================================

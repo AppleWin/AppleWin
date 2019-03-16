@@ -625,9 +625,9 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 }
 
 //===========================================================================
-void VideoReinitialize ()
+void VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
 {
-	NTSC_VideoReinitialize( g_dwCyclesThisFrame );
+	NTSC_VideoReinitialize( g_dwCyclesThisFrame, bInitVideoScannerAddress );
 	NTSC_VideoInitAppleType();
 	NTSC_SetVideoStyle();
 	NTSC_SetVideoTextMode( g_uVideoMode &  VF_80COL ? 80 : 40 );

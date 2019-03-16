@@ -1295,7 +1295,8 @@ LRESULT CALLBACK FrameWndProc (
 			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)
 			DrawStatusArea( (HDC)0, DRAW_TITLE );
 
-			VideoReinitialize();
+			VideoReinitialize(false);
+
 			if (g_nAppMode != MODE_LOGO)
 			{
 				if (g_nAppMode == MODE_DEBUG)
