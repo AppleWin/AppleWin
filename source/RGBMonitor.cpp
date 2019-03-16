@@ -652,28 +652,30 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 #if 1	// next5
 static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 {
-	UINT32* pDst = (UINT32*) pVideoAddress;
 	const BYTE* const pSrc = g_aSourceStartofLine[ sy ] + sx;
 
 	const int matx = x*14;
 	const int maty = HGR_MATRIX_YOFFSET + y;
-
-	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
 	const bool isSWMIXED = VideoGetSWMIXED();
 
-	for (int h=HGR_MATRIX_YOFFSET; h<=HGR_MATRIX_YOFFSET+1; h++)
+	// transfer 14 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
+	for (int nBytes=13; nBytes>=0; nBytes--)
 	{
-		int nBytes = 14;
-		while (nBytes)
+		hgrpixelmatrix[matx+nBytes][maty] = *(pSrc+nBytes);
+	}
+
+	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const UINT frameBufferWidth = GetFrameBufferWidth();
+
+	for (int nBytes=13; nBytes>=0; nBytes--)
+	{
+		// color mixing between adjacent scanlines at current x position
+		MixColorsVertical(matx+nBytes, maty, isSWMIXED);	//Post: colormixbuffer[]
+
+		UINT32* pDst = (UINT32*) pVideoAddress;
+
+		for (int h=HGR_MATRIX_YOFFSET; h<=HGR_MATRIX_YOFFSET+1; h++)
 		{
-			--nBytes;
-
-			// transfer each of the 14 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
-			hgrpixelmatrix[matx+nBytes][maty] = *(pSrc+nBytes);
-
-			// color mixing between adjacent scanlines at current x position
-			MixColorsVertical(matx+nBytes, maty, isSWMIXED);
-
 			if (bIsHalfScanLines && (h & 1))
 			{
 				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
@@ -686,9 +688,9 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
 				*(pDst+nBytes) = rgb;
 			}
-		}
 
-		pDst -= GetFrameBufferWidth();
+			pDst -= frameBufferWidth;
+		}
 	}
 }
 #endif
