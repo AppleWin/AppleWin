@@ -8,13 +8,17 @@
 #include "RGBMonitor.h"
 #include "YamlHelper.h"
 
-const int SRCOFFS_LORES   = 0;                       //    0
-const int SRCOFFS_HIRES   = (SRCOFFS_LORES  +   16); //   16
-const int SRCOFFS_HIRES2  = (SRCOFFS_HIRES  +  512); //  528		// Style = Vertical Blend, 280-pixel (from 1.25)
-const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES2 +  512); // 1040
-const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560); // 3600
+const int HIRES_COLUMN_SUBUNIT_SIZE = 16;
+const int HIRES_COLUMN_UNIT_SIZE = (HIRES_COLUMN_SUBUNIT_SIZE)*2;
+const int HIRES_NUMBER_COLUMNS = (1<<5);	// 5 bits
 
-const int MAX_SOURCE_Y = 512;
+
+const int SRCOFFS_LORES   = 0;							//    0
+const int SRCOFFS_HIRES   = (SRCOFFS_LORES  + 16);		//   16
+const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  + (HIRES_NUMBER_COLUMNS*HIRES_COLUMN_UNIT_SIZE)); // 1040
+const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560);	// 3600
+
+const int MAX_SOURCE_Y = 256;
 static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 #define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
 
@@ -42,12 +46,12 @@ enum Color_Palette_Index_e
 #endif
 
 // TV emu
-	, HGR_GREY1        
-	, HGR_GREY2        
-	, HGR_YELLOW       
-	, HGR_AQUA         
-	, HGR_PURPLE       
-	, HGR_PINK         
+	, HGR_GREY1
+	, HGR_GREY2
+	, HGR_YELLOW
+	, HGR_AQUA
+	, HGR_PURPLE
+	, HGR_PINK
 // lores & dhires
 	, BLACK
 	, DEEP_RED
@@ -195,10 +199,9 @@ static void V_CreateLookup_DoubleHires ()
 	  }
 #endif
 
-      int y = byteval << 1;
+      int y = byteval;
       for (int x = 0; x < SIZE; x++) {
         SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y  ,DoubleHiresPalIndex[ color[x] ]);
-        SETSOURCEPIXEL(SRCOFFS_DHIRES+coloffs+x,y+1,DoubleHiresPalIndex[ color[x] ]);
       }
     }
   }
@@ -218,153 +221,89 @@ void V_CreateLookup_Lores()
 
 //===========================================================================
 
-#define HALF_PIXEL_SOLID 1
-#define HALF_PIXEL_BLEED 0
+// Lookup Table:
+// y (0-255) * 32 columns of 32 bytes
+// . each column is: high-bit (prev byte) & 2 pixels from previous byte & 2 pixels from next byte
+// . each 32-byte unit is 2 * 16-byte sub-units: 16 bytes for even video byte & 16 bytes for odd video byte
+//   . where 16 bytes represent the 7 Apple pixels, expanded to 14 pixels
+//		currHighBit=0: {14 pixels + 2 pad} * 2
+//		currHighBit=1: {1 pixel + 14 pixels + 1 pad} * 2
+//   . and each byte is an index into the colour palette
 
-void V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType) // Colors are solid (100% coverage)
+void V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType)
 {
-	// 2-bits from previous byte, 2-bits from next byte = 2^4 = 16 total permutations
-	for (int iColumn = 0; iColumn < 16; iColumn++)
+	// high-bit & 2-bits from previous byte, 2-bits from next byte = 2^5 = 32 total permutations
+	for (int iColumn = 0; iColumn < HIRES_NUMBER_COLUMNS; iColumn++)
 	{
-		int offsetx = iColumn << 5; // every column is 32 bytes wide -- 7 apple pixels = 14 pixels + 2 pad + 14 pixels + 2 pad
+		const int offsetx = iColumn * HIRES_COLUMN_UNIT_SIZE; // every column is 32 bytes wide
+		const int prevHighBit = (iColumn >= 16) ? 1 : 0;
+		int aPixels[11]; // c2 c3 b6 b5 b4 b3 b2 b1 b0 c0 c1
 
-		for (unsigned iByte = 0; iByte < 256; iByte++)
+		aPixels[ 0] = iColumn & 4; // previous byte, 2nd last pixel
+		aPixels[ 1] = iColumn & 8; // previous byte, last pixel
+		aPixels[ 9] = iColumn & 1; // next byte, first pixel
+		aPixels[10] = iColumn & 2; // next byte, second pixel
+
+		for (unsigned int iByte = 0; iByte < 256; iByte++)
 		{
-			int aPixels[11]; // c2 c1 b7 b6 b5 b4 b3 b2 b1 b0 c8 c4
-
-/*
-aPixel[i]
- A 9|8 7 6 5 4 3 2|1 0
- Z W|b b b b b b b|X Y
-----+-------------+----
-prev|  existing   |next
-bits| hi-res byte |bits
-
-Legend:
- XYZW = iColumn in binary
- b = Bytes in binary
-*/
-			// aPixel[] = 48bbbbbbbb12, where b = iByte in binary, # is bit-n of column
-			aPixels[ 0] = iColumn & 4; // previous byte, 2nd last pixel
-			aPixels[ 1] = iColumn & 8; // previous byte, last pixel
-			aPixels[ 9] = iColumn & 1; // next byte, first pixel
-			aPixels[10] = iColumn & 2; // next byte, second pixel
-
-			// Convert raw pixel Byte value to binary and stuff into bit array of pixels on off
-			int nBitMask = 1;
-			int iPixel;
-			for (iPixel  = 2; iPixel < 9; iPixel++)
+			// Convert raw pixel iByte value to binary and stuff into bit array of pixels on off
+			for (int iPixel = 2, nBitMask = 1; iPixel < 9; iPixel++)
 			{
 				aPixels[iPixel] = ((iByte & nBitMask) != 0);
 				nBitMask <<= 1;
 			}
 
-			int hibit = (iByte >> 7) & 1; // ((iByte & 0x80) != 0);
-			int x     = 0;
-			int y     = iByte << 1;
+			const int currHighBit = (iByte >> 7) & 1;
+			const int y = iByte;
 
-/* Test cases
- 81 blue
-   2000:D5 AA D5 AA
- 82 orange
-   2800:AA D5 AA D5
- FF white bleed "thru"
-   3000:7F 80 7F 80
-   3800:FF 80 FF 80
-   2028:80 7F 80 7F
-   2828:80 FF 80 FF
- Edge Case for Half Luminance !
-   2000:C4 00  // Green  HalfLumBlue
-   2400:C4 80  // Green  Green
- Edge Case for Color Bleed !
-   2000:40 00
-   2400:40 80
- Nox Archaist (GH#616)
-   2000:00 40 9E  // Green Black White
-*/
-
-			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but cross 14-pixel boundaries.
-			if( hibit )
+			// Fixup missing pixels that normally have been scan-line shifted -- Apple "half-pixel" -- but crosses video byte boundaries.
+			// NB. Setup first byte in each 16-byte sub-unit
+			if( currHighBit )
 			{
-				if ( aPixels[1] ) // preceding pixel on?
-#if 0 // Optimization: Doesn't seem to matter if we ignore the 2 pixels of the next byte
-					for (iPixel = 0; iPixel < 9; iPixel++) // NOTE: You MUST start with the preceding 2 pixels !!!
-						if (aPixels[iPixel]) // pixel on
-#endif
+				if ( aPixels[1] ) // prev pixel on?
+				{
+					if (aPixels[2] || aPixels[0]) // White if pixel from previous byte and first pixel of this byte is on
+					{
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_WHITE );
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y  , HGR_WHITE );
+					}
+					else
+					{
+						if ( !prevHighBit )	// GH#616
 						{
-							if (aPixels[2] || aPixels[0]) // White if pixel from previous byte and first pixel of this byte is on
-							{
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_WHITE );
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_WHITE );
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_WHITE );
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_WHITE );
-							} else {   // Optimization:   odd = (iPixel & 1); if (!odd) case is same as if(odd) !!! // Reference: Gumball - Gumball Machine
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_ORANGE ); // left half of orange pixels 
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_ORANGE );
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_BLUE ); // right half of blue pixels 4, 11, 18, ...
-								SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_BLUE );
-							}
+							// colour the half-pixel black (was orange - not good for Nox Archaist, eg. 2000:00 40 E0; 2000:00 40 9E)
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_BLACK );
 						}
-#if HALF_PIXEL_SOLID
-// Test Patterns 
-// 81 blue
-//   2000:D5 AA D5 AA -> 2001:AA D5  should not have black gap, should be blue
-// 82 orange
-//   2800:AA D5 AA D5
-// Game: Elite -- Loading Logo 
-//   2444:BB F7 -> 2000:BB F7    // Should not have orange in-between gap -- Elite "Firebird" Logo
-//              -> 2400:00 BB F7 // Should not have blue in-between gap )
-//   21D0:C0 00    -> HalfLumBlue
-//   25D0:C0 D0 88 -> Blue black orange black orange
-//   29D0:C0 90 88 -> Blue black orange
-// Game: Ultima 4 -- Ultima 4 Logo - bottom half of screen has a "mini-game" / demo -- far right has tree and blue border
-//   2176:2A AB green black_gap white blue_border // Should have black gap between green and white
+						else
+						{
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_ORANGE ); // left half of orange pixels
+						}
+						SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y  , HGR_BLUE ); // right half of blue pixels 4, 11, 18, ...
+					}
+				}
 				else if ( aPixels[0] ) // prev prev pixel on
 				{
-// Game: Gumball
-//   218E:AA 97    => 2000: A9 87          orange_white            // Should have no gap between orange and white
-//   229A:AB A9 87 -> 2000: 00 A9 87 white orange black blue_white // Should have no gap between blue and white
-//   2001:BB F7                            white blue white  (Gumball Intermission)
-// Torture Half-Pixel HGR Tests:  This is a real bitch to solve -- we really need to check:
-//     if (hibit_prev_byte && !aPixels[iPixel-3] && aPixels[iPixel-2] && !aPixels[iPixel] && hibit_this_byte) then set first half-pixel of this byte to either blue or orange
-//   2000:A9 87 halfblack blue black black orange black orange black
-//   2400:BB F7 halfblack white white black white white white halfblack
-//  or
-//   2000:A0 83 orange should "bleed" thru
-//   2400:B0 83 should have black gap
-
 					if ( aPixels[2] )
-#if HALF_PIXEL_BLEED // No Half-Pixel Bleed
-						if ( aPixels[3] ) {
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , DARK_BLUE ); // Gumball: 229A: AB A9 87
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, DARK_BLUE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , BROWN ); // half luminance red Elite: 2444: BB F7
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, BROWN ); // half luminance red Gumball: 218E: AA 97
-						} else {
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_ORANGE );
-						}
-#else
+					{
 						if ((videoType == VT_COLOR_MONITOR_RGB) || ( !aPixels[3] ))
-						{ // "Text optimized" IF this pixel on, and adjacent right pixel off, then colorize first half-pixel of this byte
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+0 ,y+1, HGR_BLUE );
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y  , HGR_ORANGE ); // 2000: AA D5
-							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+16,y+1, HGR_ORANGE );
+						{ 
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
+							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y  , HGR_ORANGE ); // 2000: AA D5
 						}
-#endif // HALF_PIXEL_BLEED
+					}
 				}
-#endif // HALF_PIXEL_SOLID
 			}
-			x += hibit;
 
-			while (x < 28)
+			//
+
+			int x = currHighBit;
+
+			for (int odd = 0; odd < 2; odd++)	// even then odd sub-units
 			{
-				int adj = (x >= 14) << 1; // Adjust start of 7 last pixels to be 16-byte aligned!
-				int odd = (x >= 14);
-				for (iPixel = 2; iPixel < 9; iPixel++)
+				if (odd)
+					x = HIRES_COLUMN_SUBUNIT_SIZE + currHighBit;
+
+				for (int iPixel = 2; iPixel < 9; iPixel++)
 				{
 					int color = CM_Black;
 					if (aPixels[iPixel]) // pixel on
@@ -373,115 +312,28 @@ Legend:
 						if (aPixels[iPixel-1] || aPixels[iPixel+1]) // adjacent pixels are always white
 							color = CM_White; 
 						else
-							color = ((odd ^ (iPixel&1)) << 1) | hibit; // map raw color to our hi-res colors
+							color = ((odd ^ (iPixel&1)) << 1) | currHighBit; // map raw color to our hi-res colors
 					}
-#if HALF_PIXEL_SOLID
 					else if (aPixels[iPixel-1] && aPixels[iPixel+1]) // IF prev_pixel && next_pixel THEN
 					{
 						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
 						if (
 							(videoType == VT_COLOR_MONITOR_RGB) // Fill in colors in between white pixels
-//						||	(videoType == VT_COLOR_TVEMU)       // Fill in colors in between white pixels (Post Processing will mix/merge colors)
 						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
 						{
-							// Test Pattern: Ultima 4 Logo - Castle
-							// 3AC8: 36 5B 6D 36
-							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
+							color = ((odd ^ !(iPixel&1)) << 1) | currHighBit;	// No white HGR text optimization
 						}
 					}
-#endif
-					// Colors - Top/Bottom Left/Right
-					// cTL cTR
-					// cBL cBR
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y  ,HiresToPalIndex[color]); // cTL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
-					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
+
+					// Each HGR 7M pixel is a left 14M & right 14M DHGR pixel
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x  ,y  ,HiresToPalIndex[color]); // Color for left 14M pixel
+					SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+x+1,y  ,HiresToPalIndex[color]); // Color for right 14M pixel
+
 					x += 2;
 				}
-			}
-		}
-	}
-}
-
-//===========================================================================
-
-void V_CreateLookup_Hires()
-{
-//	int iMonochrome = GetMonochromeIndex();
-
-	// BYTE colorval[6] = {MAGENTA,BLUE,GREEN,ORANGE,BLACK,WHITE};
-	// BYTE colorval[6] = {HGR_VIOLET,HGR_BLUE,HGR_GREEN,HGR_ORANGE,HGR_BLACK,HGR_WHITE};
-	for (int iColumn = 0; iColumn < 16; iColumn++)
-	{
-		int coloffs = iColumn << 5;
-
-		for (unsigned iByte = 0; iByte < 256; iByte++)
-		{
-			int aPixels[11];
-
-			aPixels[ 0] = iColumn & 4;
-			aPixels[ 1] = iColumn & 8;
-			aPixels[ 9] = iColumn & 1;
-			aPixels[10] = iColumn & 2;
-
-			int nBitMask = 1;
-			int iPixel;
-			for (iPixel  = 2; iPixel < 9; iPixel++) {
-				aPixels[iPixel] = ((iByte & nBitMask) != 0);
-				nBitMask <<= 1;
-			}
-
-			int hibit = ((iByte & 0x80) != 0);
-			int x     = 0;
-			int y     = iByte << 1;
-
-			while (x < 28)
-			{
-				int adj = (x >= 14) << 1;
-				int odd = (x >= 14);
-
-				for (iPixel = 2; iPixel < 9; iPixel++)
-				{
-					int color = CM_Black;
-					if (aPixels[iPixel])
-					{
-						if (aPixels[iPixel-1] || aPixels[iPixel+1])
-							color = CM_White;
-						else
-							color = ((odd ^ (iPixel&1)) << 1) | hibit;
-					}
-					else if (aPixels[iPixel-1] && aPixels[iPixel+1])
-					{
-						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
-						// VT_COLOR_STANDARD = Fill in colors in between white pixels
-						// VT_COLOR_TVEMU    = Fill in colors in between white pixels  (Post Processing will mix/merge colors)
-						// VT_COLOR_TEXT_OPTIMIZED --> !(aPixels[iPixel-2] && aPixels[iPixel+2]) = Don't fill in colors in between white
-						if (/*(g_eVideoType == VT_COLOR_TVEMU) ||*/ !(aPixels[iPixel-2] && aPixels[iPixel+2]) )
-							color = ((odd ^ !(iPixel&1)) << 1) | hibit;	// No white HGR text optimization
-					}
-
-					//if (g_eVideoType == VT_MONO_AUTHENTIC) {
-					//	int nMonoColor = (color != CM_Black) ? iMonochrome : BLACK;
-					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y  , nMonoColor); // buggy
-					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y  , nMonoColor); // buggy
-					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj  ,y+1,BLACK); // BL
-					//	SETSOURCEPIXEL(SRCOFFS_HIRES+coloffs+x+adj+1,y+1,BLACK); // BR
-					//} else
-					{
-						// Colors - Top/Bottom Left/Right
-						// cTL cTR
-						// cBL cBR
-						SETSOURCEPIXEL(SRCOFFS_HIRES2+coloffs+x+adj  ,y  ,HiresToPalIndex[color]); // cTL
-						SETSOURCEPIXEL(SRCOFFS_HIRES2+coloffs+x+adj+1,y  ,HiresToPalIndex[color]); // cTR
-						SETSOURCEPIXEL(SRCOFFS_HIRES2+coloffs+x+adj  ,y+1,HiresToPalIndex[color]); // cBL
-						SETSOURCEPIXEL(SRCOFFS_HIRES2+coloffs+x+adj+1,y+1,HiresToPalIndex[color]); // cBR
-					}
-					x += 2;
-				}
-			}
-		}
-	}
+			} // even/odd sub-units
+		} // iByte
+	} // iColumn
 }
 
 //===========================================================================
@@ -492,7 +344,7 @@ const UINT FRAMEBUFFER_W = 560;
 const UINT FRAMEBUFFER_H = 384;
 const UINT HGR_MATRIX_YOFFSET = 2;
 
-static BYTE hgrpixelmatrix[FRAMEBUFFER_W][FRAMEBUFFER_H/2 + 2 * HGR_MATRIX_YOFFSET];	// 2 extra scan lines on bottom?
+static BYTE hgrpixelmatrix[FRAMEBUFFER_W][FRAMEBUFFER_H/2 + 2 * HGR_MATRIX_YOFFSET];	// 2 extra scan lines on top & bottom
 static BYTE colormixbuffer[6];		// 6 hires colours
 static WORD colormixmap[6][6][6];	// top x middle x bottom
 
@@ -567,11 +419,11 @@ static void CreateColorMixMap(void)
 	}
 }
 
-static void MixColorsVertical(int matx, int maty)
+static void MixColorsVertical(int matx, int maty, bool isSWMIXED)
 {
 	int bot1idx, bot2idx;
 
-	if (VideoGetSWMIXED() && maty > 159)
+	if (isSWMIXED && maty > 159)
 	{
 		if (maty < 161)
 		{
@@ -608,45 +460,46 @@ static void MixColorsVertical(int matx, int maty)
 	colormixbuffer[5] = (twoHalfPixel & 0x00FF);
 }
 
-static void CopyMixedSource(int x, int y, int sourcex, int sourcey, bgra_t *pVideoAddress)
+static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 {
-	const BYTE* const currsourceptr = g_aSourceStartofLine[sourcey]+sourcex;
-	    UINT32* const currdestptr   = (UINT32*) pVideoAddress;
+	const BYTE* const pSrc = g_aSourceStartofLine[ sy ] + sx;
 
-	const int matx = x*2;
+	const int matx = x*14;
 	const int maty = HGR_MATRIX_YOFFSET + y;
-	const int hgrlinesabove = (y > 0) ? 1 : 0;
-	const int hgrlinesbelow = VideoGetSWMIXED() ? ((y < 159)? 1:0) : ((y < 191)? 1:0);
-	const int istart        = 2 - (hgrlinesabove*2);
-	const int iend          = 3 + (hgrlinesbelow*2);
+	const bool isSWMIXED = VideoGetSWMIXED();
 
 	// transfer 14 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
-	for (int count = 0, bufxoffset = 0; count < 14; count++, bufxoffset += 1)
+	for (int nBytes=13; nBytes>=0; nBytes--)
 	{
-		hgrpixelmatrix[matx+count][maty] = *(currsourceptr+bufxoffset);
+		hgrpixelmatrix[matx+nBytes][maty] = *(pSrc+nBytes);
+	}
 
+	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const UINT frameBufferWidth = GetFrameBufferWidth();
+
+	for (int nBytes=13; nBytes>=0; nBytes--)
+	{
 		// color mixing between adjacent scanlines at current x position
-		MixColorsVertical(matx+count, maty);
+		MixColorsVertical(matx+nBytes, maty, isSWMIXED);	//Post: colormixbuffer[]
 
-		// transfer up to 6 mixed (half-)pixels of current column to framebuffer
-		UINT32* currptr = currdestptr+bufxoffset;
-		if (hgrlinesabove)
-			currptr += GetFrameBufferWidth() * 2;
+		UINT32* pDst = (UINT32*) pVideoAddress;
 
-		for (int i = istart; i <= iend; currptr -= GetFrameBufferWidth(), i++)
+		for (int h=HGR_MATRIX_YOFFSET; h<=HGR_MATRIX_YOFFSET+1; h++)
 		{
-			if (IsVideoStyle(VS_HALF_SCANLINES) && (i & 1))
+			if (bIsHalfScanLines && (h & 1))
 			{
 				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-				*currptr = 0;
+				*(pDst+nBytes) = 0;
 			}
 			else
 			{
-				_ASSERT( colormixbuffer[i] < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
-				const RGBQUAD& rRGB = PalIndex2RGB[ colormixbuffer[i] ];
+				_ASSERT( colormixbuffer[h] < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
+				const RGBQUAD& rRGB = PalIndex2RGB[ colormixbuffer[h] ];
 				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
-				*currptr = rgb;
+				*(pDst+nBytes) = rgb;
 			}
+
+			pDst -= frameBufferWidth;
 		}
 	}
 }
@@ -657,12 +510,11 @@ static void CopyMixedSource(int x, int y, int sourcex, int sourcey, bgra_t *pVid
 static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, const int nSrcAdjustment = 0)
 {
 	UINT32* pDst = (UINT32*) pVideoAddress;
-	LPBYTE pSrc = g_aSourceStartofLine[ sy ] + sx;
-	int nBytes;
+	const BYTE* const pSrc = g_aSourceStartofLine[ sy ] + sx;
 
 	while (h--)
 	{
-		nBytes = w;
+		int nBytes = w;
 		while (nBytes)
 		{
 			--nBytes;
@@ -682,11 +534,12 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 		}
 
 		pDst -= GetFrameBufferWidth();
-		pSrc -= SRCOFFS_TOTAL;
 	}
 }
 
 //===========================================================================
+
+#define HIRES_COLUMN_OFFSET (((byteval1 & 0xE0) << 2) | ((byteval3 & 0x03) << 5))	// (prevHighBit | last 2 pixels | next 2 pixesl) * HIRES_COLUMN_UNIT_SIZE
 
 void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 {
@@ -695,21 +548,14 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	BYTE byteval2 =            *(pMain);
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
 
-#define COLOFFS  (((byteval1 & 0x60) << 2) | ((byteval3 & 0x03) << 5))
 	if (IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
 	{
-		CopyMixedSource(
-			x*7, y,
-//			SRCOFFS_HIRES2+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
-			SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1),
-			pVideoAddress
-		);
+		CopyMixedSource(x, y, SRCOFFS_HIRES+HIRES_COLUMN_OFFSET+((x & 1)*HIRES_COLUMN_SUBUNIT_SIZE), (int)byteval2, pVideoAddress);
 	}
 	else
 	{
-		CopySource(14,2, SRCOFFS_HIRES+COLOFFS+((x & 1) << 4), (((int)byteval2) << 1), pVideoAddress);
+		CopySource(14,2, SRCOFFS_HIRES+HIRES_COLUMN_OFFSET+((x & 1)*HIRES_COLUMN_SUBUNIT_SIZE), (int)byteval2, pVideoAddress);
 	}
-#undef COLOFFS
 }
 
 //===========================================================================
@@ -735,7 +581,7 @@ void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool 
 #define PIXEL  0
 	if (updateAux)
 	{
-		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress);
 		pVideoAddress += 7;
 	}
 #undef PIXEL
@@ -743,7 +589,7 @@ void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool 
 #define PIXEL  7
 	if (updateMain)
 	{
-		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress);
 	}
 #undef PIXEL
 }
@@ -767,12 +613,12 @@ int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	dwordval <<= 2;
 
 #define PIXEL  0
-	CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress, 1);
+	CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress, 1);
 	pVideoAddress += 7;
 #undef PIXEL
 
 #define PIXEL  8
-	CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress, 1);
+	CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress, 1);
 #undef PIXEL
 
 	return 7*2;
@@ -798,12 +644,12 @@ int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	dwordval <<= 2;
 
 #define PIXEL  0
-	CopySource(8,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+	CopySource(8,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress);
 	pVideoAddress += 8;
 #undef PIXEL
 
 #define PIXEL  8
-	CopySource(8,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE)<<1, pVideoAddress);
+	CopySource(8,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress);
 #undef PIXEL
 
 	return 8*2;
@@ -866,10 +712,9 @@ static void V_CreateDIBSections(void)
 		g_aSourceStartofLine[ y ] = g_pSourcePixels + SRCOFFS_TOTAL*((MAX_SOURCE_Y-1) - y);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory(g_pSourcePixels, SRCOFFS_TOTAL*MAX_SOURCE_Y); // 32 bytes/pixel * 16 colors = 512 bytes/row
+	ZeroMemory(g_pSourcePixels, SRCOFFS_TOTAL*MAX_SOURCE_Y);
 
 	V_CreateLookup_Lores();
-//	V_CreateLookup_Hires();	// For CopyMixedSource() / VS_COLOR_VERTICAL_BLEND, 280-pixel (from 1.25)
 	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
 	V_CreateLookup_DoubleHires();
 
