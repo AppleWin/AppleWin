@@ -204,7 +204,8 @@ enum VideoScreenShot_e
 	SCREENSHOT_560x384 = 0,
 	SCREENSHOT_280x192
 };
-void Video_TakeScreenShot( VideoScreenShot_e iScreenShotType );
+void Video_TakeScreenShot( VideoScreenShot_e ScreenShotType );
+void Video_RedrawAndTakeScreenShot( const char* pScreenshotFilename );
 void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel );
 
 BYTE VideoSetMode(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);

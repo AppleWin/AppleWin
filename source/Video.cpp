@@ -127,7 +127,7 @@ static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	bool g_bShowPrintScreenWarningDialog = true;
 	void Util_MakeScreenShotFileName( char *pFinalFileName_ );
 	bool Util_TestScreenShotFileName( const char *pFileName );
-	void Video_SaveScreenShot( const char *pScreenShotFileName, const VideoScreenShot_e ScreenShotType );
+	void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const char *pScreenShotFileName );
 	void Video_MakeScreenShot( FILE *pFile, const VideoScreenShot_e ScreenShotType );
 	void videoCreateDIBSection();
 
@@ -959,8 +959,18 @@ void Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 		g_nLastScreenShot++;
 	}
 
-	Video_SaveScreenShot( sScreenShotFileName, ScreenShotType );
+	Video_SaveScreenShot( ScreenShotType, sScreenShotFileName );
 	g_nLastScreenShot++;
+}
+
+void Video_RedrawAndTakeScreenShot( const char* pScreenshotFilename )
+{
+	_ASSERT(pScreenshotFilename);
+	if (!pScreenshotFilename)
+		return;
+
+	VideoRedrawScreen();
+	Video_SaveScreenShot( SCREENSHOT_560x384, pScreenshotFilename );
 }
 
 WinBmpHeader_t g_tBmpHeader;
@@ -1121,7 +1131,7 @@ static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 }
 
 //===========================================================================
-static void Video_SaveScreenShot( const char *pScreenShotFileName, const VideoScreenShot_e ScreenShotType )
+static void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const char *pScreenShotFileName )
 {
 	FILE *pFile = fopen( pScreenShotFileName, "wb" );
 	if( pFile )
