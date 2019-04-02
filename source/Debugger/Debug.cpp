@@ -426,8 +426,8 @@ public:
 	}
 
 private:
-	bool m_bIsVideoModeValid;
-	uint32_t m_uVideoMode;
+	bool m_bIsVideoModeValid {};
+	uint32_t m_uVideoMode {};
 
 	static DebugVideoMode m_Instance;
 };

@@ -55,11 +55,11 @@ static bool g_bLogDisk_NibblesRW = false;	// From VS Debugger, change this to tr
 
 struct Drive_t
 {
-	int		phase;
-	int		track;
-	DWORD	spinning;
-	DWORD	writelight;
-	Disk_t	disk;
+	int		phase {};
+	int		track {};
+	DWORD	spinning {};
+	DWORD	writelight {};
+	Disk_t	disk {};
 
 	Drive_t()
 	{

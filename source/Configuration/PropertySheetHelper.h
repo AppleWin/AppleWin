@@ -52,14 +52,14 @@ private:
 	std::string GetCardName(const SS_CARDTYPE CardType);
 	void GetDiskBaseNameWithAWS(TCHAR* pszFilename);
 
-	PAGETYPE m_LastPage;
-	UINT32 m_bmPages;
-	char m_szNewFilename[MAX_PATH];
-	bool m_bSSNewFilename;
-	char m_szSSNewDirectory[MAX_PATH];
-	char m_szSSNewFilename[MAX_PATH];
-	char m_szSSNewPathname[MAX_PATH];
-	CConfigNeedingRestart m_ConfigOld;
-	CConfigNeedingRestart m_ConfigNew;
-	bool m_bDoBenchmark;
+	PAGETYPE m_LastPage {};
+	UINT32 m_bmPages {};
+	char m_szNewFilename[MAX_PATH] {};
+	bool m_bSSNewFilename {};
+	char m_szSSNewDirectory[MAX_PATH] {};
+	char m_szSSNewFilename[MAX_PATH] {};
+	char m_szSSNewPathname[MAX_PATH] {};
+	CConfigNeedingRestart m_ConfigOld {};
+	CConfigNeedingRestart m_ConfigNew {};
+	bool m_bDoBenchmark {};
 };

@@ -1145,7 +1145,7 @@ bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, std::string& suffix)
 
 #include "CPU.h"	// For g_nCumulativeCycles
 
-static CAY8910 g_AY8910[MAX_8910];
+static CAY8910 g_AY8910[MAX_8910] {};
 static unsigned __int64 g_uLastCumulativeCycles = 0;
 
 

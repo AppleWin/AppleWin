@@ -141,22 +141,22 @@ struct HDD
 	}
 
 	// From Disk_t
-	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)    [not used]
-	TCHAR	fullname[ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>
-	std::string strFilenameInZip;					// ""             or <FILENAME.EXT> [not used]
-	ImageInfo*	imagehandle;			// Init'd by HD_Insert() -> ImageOpen()
-	bool	bWriteProtected;			// Needed for ImageOpen() [otherwise not used]
+	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ] {};	// <FILENAME> (ie. no extension)    [not used]
+	TCHAR	fullname[ MAX_DISK_FULL_NAME  + 1 ] {};	// <FILENAME.EXT> or <FILENAME.zip>
+	std::string strFilenameInZip {};					// ""             or <FILENAME.EXT> [not used]
+	ImageInfo*	imagehandle {};			// Init'd by HD_Insert() -> ImageOpen()
+	bool	bWriteProtected {};			// Needed for ImageOpen() [otherwise not used]
 	//
-	BYTE	hd_error;
-	WORD	hd_memblock;
-	UINT	hd_diskblock;
-	WORD	hd_buf_ptr;
-	bool	hd_imageloaded;
-	BYTE	hd_buf[HD_BLOCK_SIZE+1];	// Why +1? Probably for erroreous reads beyond the block size (ie. reads from I/O addr 0xC0F8)
+	BYTE	hd_error {};
+	WORD	hd_memblock {};
+	UINT	hd_diskblock {};
+	WORD	hd_buf_ptr {};
+	bool	hd_imageloaded {};
+	BYTE	hd_buf[HD_BLOCK_SIZE+1] {};	// Why +1? Probably for erroreous reads beyond the block size (ie. reads from I/O addr 0xC0F8)
 
 #if HD_LED
-	Disk_Status_e hd_status_next;
-	Disk_Status_e hd_status_prev;
+	Disk_Status_e hd_status_next {};
+	Disk_Status_e hd_status_prev {};
 #endif
 };
 

@@ -62,43 +62,43 @@ protected:
 	void SaveSnapshotMC6821(class YamlSaveHelper& yamlSaveHelper, std::string key);
 	void LoadSnapshotMC6821(class YamlLoadHelper& yamlLoadHelper, std::string key);
 
-	C6821	m_6821;
+	C6821	m_6821 {};
 
-	int		m_nDataLen;
-	BYTE	m_byMode;
+	int		m_nDataLen {};
+	BYTE	m_byMode {};
 
-	BYTE	m_by6821B;
-	BYTE	m_by6821A;
-	BYTE	m_byBuff[8];			// m_byBuff[0] is mode byte
-	int		m_nBuffPos;
+	BYTE	m_by6821B {};
+	BYTE	m_by6821A {};
+	BYTE	m_byBuff[8] {};			// m_byBuff[0] is mode byte
+	int		m_nBuffPos {};
 
-	BYTE	m_byState;
-	int		m_nX;
-	int		m_nY;
-	bool	m_bBtn0;
-	bool	m_bBtn1;
+	BYTE	m_byState {};
+	int		m_nX {};
+	int		m_nY {};
+	bool	m_bBtn0 {};
+	bool	m_bBtn1 {};
 
-	bool	m_bVBL;
+	bool	m_bVBL {};
 
 	//
 
-	int		m_iX;
-	int		m_iMinX;
-	int		m_iMaxX;
-	int		m_iY;
-	int		m_iMinY;
-	int		m_iMaxY;
+	int		m_iX {};
+	int		m_iMinX {};
+	int		m_iMaxX {};
+	int		m_iY {};
+	int		m_iMinY {};
+	int		m_iMaxY {};
 
-	bool	m_bButtons[2];
+	bool	m_bButtons[2] {};
 
 	//
 
 	// todo: remove m_bActive:
 	// - instantiate CMouseInterface object when active (and delete when inactive)
-	bool	m_bActive;		// Mouse h/w is active within the Apple][ VM
-	bool	m_bEnabled;		// Windows' mouse events get passed to Apple]['s mouse h/w (m_bEnabled == true implies that m_bActive == true)
-	LPBYTE	m_pSlotRom;
-	UINT	m_uSlot;
+	bool	m_bActive {};		// Mouse h/w is active within the Apple][ VM
+	bool	m_bEnabled {};		// Windows' mouse events get passed to Apple]['s mouse h/w (m_bEnabled == true implies that m_bActive == true)
+	LPBYTE	m_pSlotRom {};
+	UINT	m_uSlot {};
 };
 
 namespace DIMouse

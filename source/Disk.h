@@ -90,17 +90,17 @@ void Disk_SetEnhanceDisk(bool bEnhanceDisk);
 // For sharing with class FormatTrack
 struct Disk_t
 {
-	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
-	TCHAR	fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
-	std::string strFilenameInZip;					// ""             or <FILENAME.EXT>
-	ImageInfo* imagehandle;							// Init'd by DiskInsert() -> ImageOpen()
-	bool	bWriteProtected;
+	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ] {};	// <FILENAME> (ie. no extension)
+	TCHAR	fullname [ MAX_DISK_FULL_NAME  + 1 ] {};	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
+	std::string strFilenameInZip {};					// ""             or <FILENAME.EXT>
+	ImageInfo* imagehandle {};							// Init'd by DiskInsert() -> ImageOpen()
+	bool	bWriteProtected {};
 	//
-	int		byte;
-	int		nibbles;								// Init'd by ReadTrack() -> ImageReadTrack()
-	LPBYTE	trackimage;
-	bool	trackimagedata;
-	bool	trackimagedirty;
+	int		byte {};
+	int		nibbles {};								// Init'd by ReadTrack() -> ImageReadTrack()
+	LPBYTE	trackimage {};
+	bool	trackimagedata {};
+	bool	trackimagedirty {};
 
 	Disk_t()
 	{

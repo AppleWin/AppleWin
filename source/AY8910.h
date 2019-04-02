@@ -58,11 +58,11 @@ private:
 	/* foo_subcycles are fixed-point with low 16 bits as fractional part.
 	 * The other bits count as the chip does.
 	 */
-	unsigned int ay_tone_tick[3], ay_tone_high[3], ay_noise_tick;
-	unsigned int ay_tone_subcycles, ay_env_subcycles;
-	unsigned int ay_env_internal_tick, ay_env_tick;
-	unsigned int ay_tick_incr;
-	unsigned int ay_tone_period[3], ay_noise_period, ay_env_period;
+	unsigned int ay_tone_tick[3] {}, ay_tone_high[3] {}, ay_noise_tick {};
+	unsigned int ay_tone_subcycles {}, ay_env_subcycles {};
+	unsigned int ay_env_internal_tick {}, ay_env_tick {};
+	unsigned int ay_tick_incr {};
+	unsigned int ay_tone_period[3] {}, ay_noise_period {}, ay_env_period {};
 
 	//static int beeper_last_subpos[2] = { 0, 0 };
 
@@ -76,13 +76,13 @@ private:
 		unsigned char reg, val;
 	};
 
-	struct ay_change_tag ay_change[ AY_CHANGE_MAX ];
-	int ay_change_count;
+	struct ay_change_tag ay_change[ AY_CHANGE_MAX ] {};
+	int ay_change_count {};
 
 	// statics from sound_ay_overlay()
-	int rng;
-	int noise_toggle;
-	int env_first, env_rev, env_counter;
+	int rng {};
+	int noise_toggle {};
+	int env_first, env_rev, env_counter {};
 
 	// Vars shared between all AY's
 	static double m_fCurrentCLK_AY8910;
