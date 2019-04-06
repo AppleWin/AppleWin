@@ -163,8 +163,8 @@ enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 #define APPLECLONE_MASK	0x100
 
 #define IS_APPLE2		((g_Apple2Type & (APPLE2E_MASK|APPLE2C_MASK)) == 0)
-#define IS_APPLE2E		(g_Apple2Type & APPLE2E_MASK)
-#define IS_APPLE2C		(g_Apple2Type & APPLE2C_MASK)
+#define IS_APPLE2E()	(g_Apple2Type & APPLE2E_MASK)
+#define IS_APPLE2C()	(g_Apple2Type & APPLE2C_MASK)
 #define IS_CLONE()		(g_Apple2Type & APPLECLONE_MASK)
 
 // NB. These get persisted to the Registry & save-state file, so don't change the values for these enums!
@@ -215,9 +215,14 @@ inline bool IsApple2PlusOrClone(eApple2Type type)	// Apple ][,][+ or clone ][,][
 }
 
 extern eApple2Type g_Apple2Type;
-inline bool IsOriginal2E(void)
+inline bool IsEnhancedIIE(void)
 {
-	return (g_Apple2Type == A2TYPE_APPLE2E);
+	return ( (g_Apple2Type == A2TYPE_APPLE2EENHANCED) || (g_Apple2Type == A2TYPE_TK30002E) );
+}
+
+inline bool IsEnhancedIIEorIIC(void)
+{
+	return ( (g_Apple2Type == A2TYPE_APPLE2EENHANCED) || (g_Apple2Type == A2TYPE_TK30002E) || IS_APPLE2C() );
 }
 
 enum eBUTTON {BUTTON0=0, BUTTON1};

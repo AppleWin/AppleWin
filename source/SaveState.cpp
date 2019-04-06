@@ -64,7 +64,11 @@ static YamlHelper yamlHelper;
 
 #define SS_FILE_VER 2
 
-#define UNIT_APPLE2_VER 2
+// Unit version history:
+// v2: Extended: keyboard (added 'Key Waiting'), memory (LC mem type for II/II+, inverted MF_INTCXROM bit)
+// v3: Extended: memory (added 'AnnunciatorN')
+#define UNIT_APPLE2_VER 3
+
 #define UNIT_SLOTS_VER 1
 
 //-----------------------------------------------------------------------------

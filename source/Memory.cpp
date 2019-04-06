@@ -75,6 +75,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  SW_SLOTC3ROM  (memmode & MF_SLOTC3ROM)
 #define  SW_INTCXROM   (memmode & MF_INTCXROM)
 #define  SW_WRITERAM   (memmode & MF_WRITERAM)
+#define  SW_IOUDIS     (memmode & MF_IOUDIS)
 
 /*
 MEMORY MANAGEMENT SOFT SWITCHES
@@ -90,6 +91,8 @@ MEMORY MANAGEMENT SOFT SWITCHES
  $C009   W       ALTZPON         Enable aux memory from $0000-$01FF & avl BSR
  $C00A   W       SLOTC3ROMOFF    Enable main ROM from $C300-$C3FF
  $C00B   W       SLOTC3ROMON     Enable slot ROM from $C300-$C3FF
+ $C07E   W       IOUDIS          [Enhanced //e] On: disable IOU access for addresses $C058 to $C05F; enable access to DHIRES switch
+ $C07F   W       IOUDIS          [Enhanced //e] Off: enable IOU access for addresses $C058 to $C05F; disable access to DHIRES switch
 
 VIDEO SOFT SWITCHES
  $C00C   W       80COLOFF        Turn off 80 column display
@@ -104,6 +107,8 @@ VIDEO SOFT SWITCHES
  $C055   R/W     PAGE2ON         Select page2 display (or aux video memory)
  $C056   R/W     HIRESOFF        Select low resolution graphics
  $C057   R/W     HIRESON         Select high resolution graphics
+ $C05E   R/W     DHIRESOFF       Select single (7M) resolution graphics
+ $C05F   R/W     DHIRESON        Select double (14M) resolution graphics
 
 SOFT SWITCH STATUS FLAGS
  $C010   R7      AKD             1=key pressed   0=keys free    (clears strobe)
@@ -122,6 +127,8 @@ SOFT SWITCH STATUS FLAGS
  $C01D   R7      HIRES           1=high resolution graphics   0=low resolution
  $C01E   R7      ALTCHARSET      1=alt character set on    0=alt char set off
  $C01F   R7      80COL           1=80 col display on     0=80 col display off
+ $C07E   R7      RDIOUDIS        [Enhanced //e] 1=IOUDIS off     0=IOUDIS on
+ $C07F   R7      RDDHIRES        [Enhanced //e] 1=DHIRES on     0=DHIRES off
 */
 
 
@@ -210,6 +217,9 @@ static UINT		g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux
 static UINT		g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c -- ALSO RAMWORKS
 static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
+
+static const UINT kNumAnnunciators = 4;
+static bool g_Annunciator[kNumAnnunciators] = {};
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
@@ -468,8 +478,9 @@ static BYTE __stdcall IORead_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xB:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xC:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xD:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xE:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xF:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xE:	// fall through...
+	case 0xF:	return (!SW_IOUDIS) ? VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
+									: IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	return 0;
@@ -493,8 +504,9 @@ static BYTE __stdcall IOWrite_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	case 0xB:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xC:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xD:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xE:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xF:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xE:	// fall through...
+	case 0xF:	return (!SW_IOUDIS) ? VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
+									: IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	return 0;
@@ -556,8 +568,10 @@ static BYTE __stdcall IORead_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xB:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xC:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xD:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xE:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xF:	return MemReadFloatingBus(VideoGetSWDHIRES(), nExecutedCycles);
+	case 0xE:	return IsEnhancedIIE()		? MemReadFloatingBus(SW_IOUDIS ? true : false, nExecutedCycles)	// GH#636
+											: IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xF:	return IsEnhancedIIEorIIC()	? MemReadFloatingBus(VideoGetSWDHIRES(), nExecutedCycles)		// GH#636
+											: IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	return 0;
@@ -565,9 +579,12 @@ static BYTE __stdcall IORead_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 
 static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
+	// Apple//e TRM, pg-258: "Reading or writing any address in the range $C070-$C07F also triggers the paddle time and resets the VBLINT(*)." (*) //c only!
+	JoyResetPosition(pc, addr, bWrite, d, nExecutedCycles);
+
 	switch (addr & 0xf)
 	{
-	case 0x0:	return JoyResetPosition(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x0:	break;
 #ifdef RAMWORKS
 	case 0x1:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);	// extended memory card set page
 	case 0x2:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
@@ -587,15 +604,16 @@ static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	case 0xB:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xC:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xD:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
-
-	//http://www.kreativekorp.com/miscpages/a2info/iomemory.shtml
-	//- Apparently Apple//e & //c (but maybe enhanced//e not //e?)
-	//IOUDISON  (W): $C07E  Disable IOU
-	//IOUDISOFF (W): $C07F  Enable IOU
-	//RDIOUDIS (R7): $C07E  Status of IOU Disabling
-	//RDDHIRES (R7): $C07F  Status of Double HiRes
-	case 0xE:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles); // TODO: IOUDIS
-	case 0xF:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles); // TODO: IOUDIS
+	case 0xE:	if (IsEnhancedIIE())
+					SetMemMode(memmode & ~MF_IOUDIS);	// disable IOU access for addresses $C058 to $C05F; enable access to DHIRES switch
+				else
+					return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+				break;
+	case 0xF:	if (IsEnhancedIIE())
+					SetMemMode(memmode | MF_IOUDIS);	// enable IOU access for addresses $C058 to $C05F; disable access to DHIRES switch
+				else
+					return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+				break;
 	}
 
 	return 0;
@@ -649,11 +667,14 @@ BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nExecutedCycles)
 {
 	// Apple//e ROM:
-	// . PC=FA6F: LDA $C058 (SETAN0)
-	// . PC=FA72: LDA $C05A (SETAN1)
-	// . PC=C2B5: LDA $C05D (CLRAN2)
+	// . $FA6F: LDA $C058 (SETAN0) ; AN0 = TTL LO
+	// . $FA72: LDA $C05A (SETAN1) ; AN1 = TTL LO
+	// . $C2B5: LDA $C05D (CLRAN2) ;SETUP
+	// . $C2B8: LDA $C05F (CLRAN3) ; ANNUNCIATORS
 
 	// NB. AN3: For //e & //c these locations are now used to enabled/disabled DHIRES
+
+	g_Annunciator[(address>>1) & 3] = (address&1) ? true : false;
 
 	if (address >= 0xC058 && address <= 0xC05B)
 	{
@@ -1997,7 +2018,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 
 bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
 {
-	if (IS_APPLE2E)
+	if (IS_APPLE2E())
 	{
 		// IF THE EMULATED PROGRAM HAS JUST UPDATED THE MEMORY WRITE MODE AND IS
 		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
@@ -2044,6 +2065,7 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 #define SS_YAML_KEY_IOSELECT_INT "IO_SELECT_InternalROM"	// INTC8ROM
 #define SS_YAML_KEY_EXPANSIONROMTYPE "Expansion ROM Type"
 #define SS_YAML_KEY_PERIPHERALROMSLOT "Peripheral ROM Slot"
+#define SS_YAML_KEY_ANNUNCIATOR "Annunciator"
 
 //
 
@@ -2117,6 +2139,12 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, INTC8ROM ? 1 : 0);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_PERIPHERALROMSLOT, g_uPeripheralRomSlot);
+
+		for (UINT i=0; i<kNumAnnunciators; i++)
+		{
+			std::string annunciator = SS_YAML_KEY_ANNUNCIATOR + std::string(1,'0'+i);
+			yamlSaveHelper.SaveBool(annunciator.c_str(), g_Annunciator[i]);
+		}
 	}
 
 	if (IsApple2PlusOrClone(GetApple2Type()))
@@ -2163,6 +2191,15 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 			SetLastRamWrite( yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE );	// NB. This is set later for II,II+ by slot-0 LC or Saturn
 	}
 
+	if (version == 3)
+	{
+		for (UINT i=0; i<kNumAnnunciators; i++)
+		{
+			std::string annunciator = SS_YAML_KEY_ANNUNCIATOR + std::string(1,'0'+i);
+			g_Annunciator[i] = yamlLoadHelper.LoadBool(annunciator.c_str());
+		}
+	}
+
 	yamlLoadHelper.PopMap();
 
 	//
@@ -2200,7 +2237,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 		return;	// No Aux slot for AppleII
 	}
 
-	if (IS_APPLE2C)
+	if (IS_APPLE2C())
 	{
 		_ASSERT(g_uMaxExPages == 1);
 	}
