@@ -643,7 +643,7 @@ void JoyReset()
 }
 
 //===========================================================================
-BYTE __stdcall JoyResetPosition(WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
+void JoyResetPosition(ULONG nExecutedCycles)
 {
 	CpuCalcCycles(nExecutedCycles);
 	g_nJoyCntrResetCycle = g_nCumulativeCycles;
@@ -652,8 +652,6 @@ BYTE __stdcall JoyResetPosition(WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
 		CheckJoystick0();
 	if((joyinfo[joytype[1]] == DEVICE_JOYSTICK) || (joyinfo[joytype[1]] == DEVICE_JOYSTICK_THUMBSTICK2))
 		CheckJoystick1();
-
-	return MemReadFloatingBus(nExecutedCycles);
 }
 
 //===========================================================================

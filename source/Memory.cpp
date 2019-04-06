@@ -552,12 +552,12 @@ static BYTE __stdcall IOWrite_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 
 static BYTE __stdcall IORead_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	// Apple//e TRM, pg-258: "Reading or writing any address in the range $C070-$C07F also triggers the paddle time and resets the VBLINT(*)." (*) //c only!
-	JoyResetPosition(pc, addr, bWrite, d, nExecutedCycles);  //$C07X Analog input reset
+	// Apple//e TRM, pg-258: "Reading or writing any address in the range $C070-$C07F also triggers the paddle timer and resets the VBLINT(*)." (*) //c only!
+	JoyResetPosition(nExecutedCycles);  //$C07X Analog input reset
 
 	switch (addr & 0xf)
 	{
-	case 0x0:	break;
+	case 0x0:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x1:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x2:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x3:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
@@ -582,8 +582,8 @@ static BYTE __stdcall IORead_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 
 static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	// Apple//e TRM, pg-258: "Reading or writing any address in the range $C070-$C07F also triggers the paddle time and resets the VBLINT(*)." (*) //c only!
-	JoyResetPosition(pc, addr, bWrite, d, nExecutedCycles);  //$C07X Analog input reset
+	// Apple//e TRM, pg-258: "Reading or writing any address in the range $C070-$C07F also triggers the paddle timer and resets the VBLINT(*)." (*) //c only!
+	JoyResetPosition(nExecutedCycles);  //$C07X Analog input reset
 
 	switch (addr & 0xf)
 	{
