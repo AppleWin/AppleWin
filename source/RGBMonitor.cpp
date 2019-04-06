@@ -752,7 +752,9 @@ void RGB_SetVideoMode(WORD address)
 	// . Video7 manual: set 80STORE, but "King's Quest 1"(*) will re-enable RGB card's MIX mode with only VF_TEXT & VF_HIRES set!
 	// . "Extended 80-Column Text/AppleColor Card" manual: TEXT off($C050), MIXED off($C052), HIRES on($C057)
 	// . (*) "King's Quest 1" - see routine at 0x5FD7 (trigger by pressing TAB twice)
-	if ((g_uVideoMode & (VF_MIXED|VF_HIRES)) != (VF_HIRES))
+	// . Apple II desktop sets DHGR B&W mode with HIRES off! (GH#631)
+	// Maybe there is no video-mode precondition?
+	if (g_uVideoMode & VF_MIXED)
 	{
 		g_rgbMode = 0;
 		g_rgbPrevAN3Addr = 0;
