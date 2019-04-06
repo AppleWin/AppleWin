@@ -587,7 +587,7 @@ static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 
 	switch (addr & 0xf)
 	{
-	case 0x0:	break;
+	case 0x0:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 #ifdef RAMWORKS
 	case 0x1:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);	// extended memory card set page
 	case 0x2:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
