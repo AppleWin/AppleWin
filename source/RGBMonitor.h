@@ -16,4 +16,4 @@ bool RGB_Is560Mode(void);
 void RGB_ResetState(void);
 
 void RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
+void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);

@@ -1378,6 +1378,12 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 				uint8_t a = *MemGetAuxPtr(addr);
 				uint8_t m = *MemGetMainPtr(addr);
 
+				if (RGB_IsMixMode() && !MemGetAnnunciator(2))	// AN2 inverts high bit? (GH#633)
+				{
+					a ^= 0x80;
+					m ^= 0x80;
+				}
+
 				if (RGB_Is160Mode())
 				{
 					int width = UpdateDHiRes160Cell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);

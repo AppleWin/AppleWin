@@ -2058,6 +2058,13 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 
 //===========================================================================
 
+bool MemGetAnnunciator(UINT annunciator)
+{
+	return g_Annunciator[annunciator];
+}
+
+//===========================================================================
+
 // NB. Don't need to save 'modechanging', as this is just an optimisation to save calling UpdatePaging() twice.
 // . If we were to save the state when 'modechanging' is set, then on restoring the state, the 6502 code will immediately update the read memory mode.
 // . This will work correctly.
@@ -2078,7 +2085,8 @@ static const UINT kUNIT_AUXSLOT_VER = 2;
 
 // Unit version history:
 // 2: Added: RGB card state
-static const UINT kUNIT_VER = 2;
+// 3: Extended: RGB card state ('80COL changed')
+static const UINT kUNIT_CARD_VER = 3;
 
 #define SS_YAML_VALUE_CARD_80COL "80 Column"
 #define SS_YAML_VALUE_CARD_EXTENDED80COL "Extended 80 Column"
@@ -2156,14 +2164,14 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		MemSaveSnapshotMemory(yamlSaveHelper, true);
 }
 
-bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
+bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 {
 	if (!yamlLoadHelper.GetSubMap(MemGetSnapshotStructName()))
 		return false;
 
 	// Create default LC type for AppleII machine (do prior to loading saved LC state)
 	ResetDefaultMachineMemTypes();
-	if (version == 1)
+	if (unitVersion == 1)
 		g_MemTypeAppleII = CT_LanguageCard;	// version=1: original Apple II always has a LC
 	else
 		g_MemTypeAppleIIPlus = CT_Empty;	// version=2+: Apple II/II+ initially start with slot-0 empty
@@ -2178,7 +2186,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.LoadUint(SS_YAML_KEY_EXPANSIONROMTYPE);
 	g_uPeripheralRomSlot = yamlLoadHelper.LoadUint(SS_YAML_KEY_PERIPHERALROMSLOT);
 
-	if (version == 1)
+	if (unitVersion == 1)
 	{
 		SetMemMode( yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) ^ MF_INTCXROM );	// Convert from SLOTCXROM to INTCXROM
 		SetLastRamWrite( yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE );
@@ -2194,7 +2202,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 			SetLastRamWrite( yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE );	// NB. This is set later for II,II+ by slot-0 LC or Saturn
 	}
 
-	if (version == 3)
+	if (unitVersion == 3)
 	{
 		for (UINT i=0; i<kNumAnnunciators; i++)
 		{
@@ -2213,7 +2221,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	memset(memmain+0xC000, 0, LanguageCardSlot0::kMemBankSize);	// Clear it, as high 16K may not be in the save-state's "Main Memory" (eg. the case of II+ Saturn replacing //e LC)
 
 	yamlLoadHelper.LoadMemory(memmain, _6502_MEM_END+1);
-	if (version == 1 && IsApple2PlusOrClone(GetApple2Type()))
+	if (unitVersion == 1 && IsApple2PlusOrClone(GetApple2Type()))
 	{
 		// v1 for II/II+ doesn't have a dedicated slot-0 LC, instead the 16K is stored as the top 16K of memmain
 		memcpy(g_pMemMainLanguageCard, memmain+0xC000, LanguageCardSlot0::kMemBankSize);
@@ -2256,7 +2264,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 													SS_YAML_VALUE_CARD_RAMWORKSIII;
 
 		yamlSaveHelper.SaveString(SS_YAML_KEY_CARD, card.c_str());
-		yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_VERSION, kUNIT_VER);
+		yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_VERSION, kUNIT_CARD_VER);
 
 		// Card state
 		{
@@ -2348,7 +2356,7 @@ static void MemLoadSnapshotAuxVer1(YamlLoadHelper& yamlLoadHelper)
 	MemLoadSnapshotAuxCommon(yamlLoadHelper, card);
 }
 
-static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
+static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper)
 {
 	std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
 	UINT cardVersion = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
@@ -2358,18 +2366,18 @@ static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper, UINT unitVers
 
 	MemLoadSnapshotAuxCommon(yamlLoadHelper, card);
 
-	RGB_LoadSnapshot(yamlLoadHelper);
+	RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
 }
 
-bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT version)
+bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 {
-	if (version < 1 || version > kUNIT_AUXSLOT_VER)
+	if (unitVersion < 1 || unitVersion > kUNIT_AUXSLOT_VER)
 		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Version mismatch");
 
-	if (version == 1)
+	if (unitVersion == 1)
 		MemLoadSnapshotAuxVer1(yamlLoadHelper);
 	else
-		MemLoadSnapshotAuxVer2(yamlLoadHelper, version);
+		MemLoadSnapshotAuxVer2(yamlLoadHelper);
 
 	return true;
 }
