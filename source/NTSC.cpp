@@ -1378,7 +1378,7 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 				uint8_t a = *MemGetAuxPtr(addr);
 				uint8_t m = *MemGetMainPtr(addr);
 
-				if (RGB_IsMixMode() && !MemGetAnnunciator(2))	// AN2 inverts high bit? (GH#633)
+				if (RGB_IsMixModeInvertBit7())	// Invert high bit? (GH#633)
 				{
 					a ^= 0x80;
 					m ^= 0x80;

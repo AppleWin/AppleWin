@@ -13,7 +13,9 @@ bool RGB_Is140Mode(void);
 bool RGB_Is160Mode(void);
 bool RGB_IsMixMode(void);
 bool RGB_Is560Mode(void);
+bool RGB_IsMixModeInvertBit7(void);
 void RGB_ResetState(void);
+void RGB_SetInvertBit7(bool state);
 
 void RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);

@@ -739,6 +739,7 @@ static UINT g_rgbFlags = 0;
 static UINT g_rgbMode = 0;
 static WORD g_rgbPrevAN3Addr = 0;
 static bool g_rgbSet80COL = false;
+static bool g_rgbInvertBit7 = false;
 
 // Video7 RGB card:
 // . Clock in the !80COL state to define the 2 flags: F2, F1
@@ -801,11 +802,21 @@ bool RGB_Is560Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 1
 	return g_rgbMode == 3;
 }
 
+bool RGB_IsMixModeInvertBit7(void)
+{
+	return RGB_IsMixMode() && g_rgbInvertBit7;
+}
+
 void RGB_ResetState(void)
 {
 	g_rgbFlags = 0;
 	g_rgbMode = 0;
 	g_rgbPrevAN3Addr = 0;
+}
+
+void RGB_SetInvertBit7(bool state)
+{
+	g_rgbInvertBit7 = state;
 }
 
 //===========================================================================
@@ -817,6 +828,7 @@ void RGB_ResetState(void)
 #define SS_YAML_KEY_RGB_MODE "RGB mode"
 #define SS_YAML_KEY_RGB_PREVIOUS_AN3 "Previous AN3"
 #define SS_YAML_KEY_RGB_80COL_CHANGED "80COL changed"
+#define SS_YAML_KEY_RGB_INVERT_BIT7 "Invert bit7"
 
 void RGB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
@@ -826,6 +838,7 @@ void RGB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_MODE, g_rgbMode);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_PREVIOUS_AN3, g_rgbPrevAN3Addr);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_RGB_80COL_CHANGED, g_rgbSet80COL);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_RGB_INVERT_BIT7, g_rgbInvertBit7);
 }
 
 void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
@@ -838,7 +851,10 @@ void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
 	g_rgbPrevAN3Addr = yamlLoadHelper.LoadUint(SS_YAML_KEY_RGB_PREVIOUS_AN3);
 
 	if (cardVersion >= 3)
+	{
 		g_rgbSet80COL = yamlLoadHelper.LoadBool(SS_YAML_KEY_RGB_80COL_CHANGED);
+		g_rgbInvertBit7 = yamlLoadHelper.LoadBool(SS_YAML_KEY_RGB_INVERT_BIT7);
+	}
 
 	yamlLoadHelper.PopMap();
 }
