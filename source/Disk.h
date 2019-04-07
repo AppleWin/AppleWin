@@ -183,29 +183,29 @@ private:
 
 	//
 
-	WORD currdrive;
-	Drive_t g_aFloppyDrive[NUM_DRIVES];
-	BYTE floppylatch;
-	BOOL floppymotoron;
-	BOOL floppyloadmode; // for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)
-	BOOL floppywritemode;
-	WORD phases;								// state bits for stepper magnet phases 0 - 3
-	bool g_bSaveDiskImage;
-	UINT g_uSlot;
-	unsigned __int64 g_uDiskLastCycle;
-	unsigned __int64 g_uDiskLastReadLatchCycle;
-	FormatTrack g_formatTrack;
-	bool enhancedisk;
+	WORD m_currDrive;
+	Drive_t m_floppyDrive[NUM_DRIVES];
+	BYTE m_floppyLatch;
+	BOOL m_floppyMotorOn;
+	BOOL m_floppyLoadMode;	// for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)
+	BOOL m_floppyWriteMode;
+	WORD m_phases;			// state bits for stepper magnet phases 0 - 3
+	bool m_saveDiskImage;
+	UINT m_slot;
+	unsigned __int64 m_diskLastCycle;
+	unsigned __int64 m_diskLastReadLatchCycle;
+	FormatTrack m_formatTrack;
+	bool m_enhanceDisk;
 
 	static const UINT SPINNING_CYCLES = 20000*64;	// 1280000 cycles = 1.25s
 	static const UINT WRITELIGHT_CYCLES = 20000*64;	// 1280000 cycles = 1.25s
 
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
-	bool g_bLogDisk_NibblesRW;	// From VS Debugger, change this to true/false during runtime for precise nibble logging
+	bool m_bLogDisk_NibblesRW;	// From VS Debugger, change this to true/false during runtime for precise nibble logging
 #endif
 #if LOG_DISK_NIBBLES_WRITE
-	UINT64 g_uWriteLastCycle;
-	UINT g_uSyncFFCount;
+	UINT64 m_uWriteLastCycle;
+	UINT m_uSyncFFCount;
 #endif
 };
