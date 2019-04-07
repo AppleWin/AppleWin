@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "DiskImage.h"
 
+extern class DiskIIInterfaceCard sg_DiskIICard;
+
 // Floppy Disk Drives
 
 enum Drive_e
@@ -39,51 +41,85 @@ const bool IMAGE_FORCE_WRITE_PROTECTED = true;
 const bool IMAGE_DONT_CREATE = false;
 const bool IMAGE_CREATE = true;
 
-const char* DiskGetDiskPathFilename(const int iDrive);
+class DiskIIInterfaceCard
+{
+public:
+	DiskIIInterfaceCard(void){};
+	virtual ~DiskIIInterfaceCard(void){};
 
-void    DiskInitialize(void); // DiskIIManagerStartup()
-void    DiskDestroy(void); // no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
+	const char* DiskGetDiskPathFilename(const int iDrive);
 
-void    DiskBoot(void);
-void    DiskEject(const int iDrive);
-void	DiskFlushCurrentTrack(const int iDrive);
+	void    DiskInitialize(void); // DiskIIManagerStartup()
+	void    DiskDestroy(void); // no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
 
-LPCTSTR DiskGetFullName(const int iDrive);
-LPCTSTR DiskGetFullDiskFilename(const int iDrive);
-LPCTSTR DiskGetBaseName(const int iDrive);
+	void    DiskBoot(void);
+	void    DiskEject(const int iDrive);
+	void	DiskFlushCurrentTrack(const int iDrive);
 
-void    DiskGetLightStatus (Disk_Status_e* pDisk1Status, Disk_Status_e* pDisk2Status);
+	LPCTSTR DiskGetFullName(const int iDrive);
+	LPCTSTR DiskGetFullDiskFilename(const int iDrive);
+	LPCTSTR DiskGetBaseName(const int iDrive);
 
-ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
-bool    Disk_IsConditionForFullSpeed(void);
-BOOL    DiskIsSpinning(void);
-void    DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const ImageError_e Error);
-void    DiskReset(const bool bIsPowerCycle=false);
-bool    DiskGetProtect(const int iDrive);
-void    DiskSetProtect(const int iDrive, const bool bWriteProtect);
-int     DiskGetCurrentDrive();
-int     DiskGetCurrentTrack();
-int     DiskGetTrack( int drive );
-int     DiskGetCurrentPhase();
-int     DiskGetCurrentOffset();
-const char*   DiskGetCurrentState();
-bool    DiskSelect(const int iDrive);
-void    DiskUpdateDriveState(DWORD);
-bool    DiskDriveSwap(void);
-void    DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot);
+	void    DiskGetLightStatus (Disk_Status_e* pDisk1Status, Disk_Status_e* pDisk2Status);
 
-std::string DiskGetSnapshotCardName(void);
-void    DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-bool    DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+	ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
+	bool    Disk_IsConditionForFullSpeed(void);
+	BOOL    DiskIsSpinning(void);
+	void    DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const ImageError_e Error);
+	void    DiskReset(const bool bIsPowerCycle=false);
+	bool    DiskGetProtect(const int iDrive);
+	void    DiskSetProtect(const int iDrive, const bool bWriteProtect);
+	int     DiskGetCurrentDrive();
+	int     DiskGetCurrentTrack();
+	int     DiskGetTrack( int drive );
+	int     DiskGetCurrentPhase();
+	int     DiskGetCurrentOffset();
+	const char*   DiskGetCurrentState();
+	bool    DiskSelect(const int iDrive);
+	void    DiskUpdateDriveState(DWORD);
+	bool    DiskDriveSwap(void);
+	void    Initialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 
-void Disk_LoadLastDiskImage(const int iDrive);
-void Disk_SaveLastDiskImage(const int iDrive);
+	std::string DiskGetSnapshotCardName(void);
+	void    DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	bool    DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
-bool Disk_ImageIsWriteProtected(const int iDrive);
-bool Disk_IsDriveEmpty(const int iDrive);
+	void Disk_LoadLastDiskImage(const int iDrive);
+	void Disk_SaveLastDiskImage(const int iDrive);
 
-bool Disk_GetEnhanceDisk(void);
-void Disk_SetEnhanceDisk(bool bEnhanceDisk);
+	bool Disk_ImageIsWriteProtected(const int iDrive);
+	bool Disk_IsDriveEmpty(const int iDrive);
+
+	bool Disk_GetEnhanceDisk(void);
+	void Disk_SetEnhanceDisk(bool bEnhanceDisk);
+
+	static BYTE __stdcall DiskIIInterfaceCard::Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+	static BYTE __stdcall DiskIIInterfaceCard::Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+
+private:
+	void DiskIIInterfaceCard::CheckSpinning(const ULONG nExecutedCycles);
+	Disk_Status_e DiskIIInterfaceCard::GetDriveLightStatus(const int iDrive);
+	bool DiskIIInterfaceCard::IsDriveValid(const int iDrive);
+	void DiskIIInterfaceCard::AllocTrack(const int iDrive);
+	void DiskIIInterfaceCard::ReadTrack(const int iDrive);
+	void DiskIIInterfaceCard::RemoveDisk(const int iDrive);
+	void DiskIIInterfaceCard::WriteTrack(const int iDrive);
+	LPCTSTR DiskIIInterfaceCard::DiskGetFullPathName(const int iDrive);
+	bool DiskIIInterfaceCard::DiskSelectImage(const int iDrive, LPCSTR pszFilename);
+	void DiskIIInterfaceCard::DiskSaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit);
+	void DiskIIInterfaceCard::DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
+
+	void __stdcall DiskIIInterfaceCard::DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
+	void __stdcall DiskIIInterfaceCard::DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
+	void __stdcall DiskIIInterfaceCard::DiskEnable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
+	void __stdcall DiskIIInterfaceCard::DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+	void __stdcall DiskIIInterfaceCard::DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG);
+	void __stdcall DiskIIInterfaceCard::DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG);
+	void __stdcall DiskIIInterfaceCard::DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles);
+
+	//#if LOG_DISK_NIBBLES_WRITE
+	bool DiskIIInterfaceCard::LogWriteCheckSyncFF(ULONG& uCycleDelta);
+};
 
 //
 

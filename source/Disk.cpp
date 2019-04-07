@@ -99,21 +99,21 @@ static bool enhancedisk = true;
 
 //===========================================================================
 
-bool Disk_GetEnhanceDisk(void) { return enhancedisk; }
-void Disk_SetEnhanceDisk(bool bEnhanceDisk) { enhancedisk = bEnhanceDisk; }
+bool DiskIIInterfaceCard::Disk_GetEnhanceDisk(void) { return enhancedisk; }
+void DiskIIInterfaceCard::Disk_SetEnhanceDisk(bool bEnhanceDisk) { enhancedisk = bEnhanceDisk; }
 
-int DiskGetCurrentDrive(void)  { return currdrive; }
-int DiskGetCurrentTrack(void)  { return g_aFloppyDrive[currdrive].track; }
-int DiskGetCurrentPhase(void)  { return g_aFloppyDrive[currdrive].phase; }
-int DiskGetCurrentOffset(void) { return g_aFloppyDrive[currdrive].disk.byte; }
-int DiskGetTrack( int drive )  { return g_aFloppyDrive[ drive   ].track; }
+int DiskIIInterfaceCard::DiskGetCurrentDrive(void)  { return currdrive; }
+int DiskIIInterfaceCard::DiskGetCurrentTrack(void)  { return g_aFloppyDrive[currdrive].track; }
+int DiskIIInterfaceCard::DiskGetCurrentPhase(void)  { return g_aFloppyDrive[currdrive].phase; }
+int DiskIIInterfaceCard::DiskGetCurrentOffset(void) { return g_aFloppyDrive[currdrive].disk.byte; }
+int DiskIIInterfaceCard::DiskGetTrack( int drive )  { return g_aFloppyDrive[ drive   ].track; }
 
-const char* DiskGetDiskPathFilename(const int iDrive)
+const char* DiskIIInterfaceCard::DiskGetDiskPathFilename(const int iDrive)
 {
 	return g_aFloppyDrive[iDrive].disk.fullname;
 }
 
-const char* DiskGetCurrentState(void)
+const char* DiskIIInterfaceCard::DiskGetCurrentState(void)
 {
 	if (g_aFloppyDrive[currdrive].disk.imagehandle == NULL)
 		return "Empty";
@@ -148,7 +148,7 @@ const char* DiskGetCurrentState(void)
 
 //===========================================================================
 
-void Disk_LoadLastDiskImage(const int iDrive)
+void DiskIIInterfaceCard::Disk_LoadLastDiskImage(const int iDrive)
 {
 	_ASSERT(iDrive == DRIVE_1 || iDrive == DRIVE_2);
 
@@ -172,7 +172,7 @@ void Disk_LoadLastDiskImage(const int iDrive)
 
 //===========================================================================
 
-void Disk_SaveLastDiskImage(const int iDrive)
+void DiskIIInterfaceCard::Disk_SaveLastDiskImage(const int iDrive)
 {
 	_ASSERT(iDrive == DRIVE_1 || iDrive == DRIVE_2);
 
@@ -201,7 +201,7 @@ void Disk_SaveLastDiskImage(const int iDrive)
 //===========================================================================
 
 // Called by DiskControlMotor() & DiskEnable()
-static void CheckSpinning(const ULONG nExecutedCycles)
+void DiskIIInterfaceCard::CheckSpinning(const ULONG nExecutedCycles)
 {
 	DWORD modechange = (floppymotoron && !g_aFloppyDrive[currdrive].spinning);
 
@@ -221,7 +221,7 @@ static void CheckSpinning(const ULONG nExecutedCycles)
 
 //===========================================================================
 
-static Disk_Status_e GetDriveLightStatus(const int iDrive)
+Disk_Status_e DiskIIInterfaceCard::GetDriveLightStatus(const int iDrive)
 {
 	if (IsDriveValid( iDrive ))
 	{
@@ -248,14 +248,14 @@ static Disk_Status_e GetDriveLightStatus(const int iDrive)
 
 //===========================================================================
 
-static bool IsDriveValid(const int iDrive)
+bool DiskIIInterfaceCard::IsDriveValid(const int iDrive)
 {
 	return (iDrive >= 0 && iDrive < NUM_DRIVES);
 }
 
 //===========================================================================
 
-static void AllocTrack(const int iDrive)
+void DiskIIInterfaceCard::AllocTrack(const int iDrive)
 {
 	Disk_t* pFloppy = &g_aFloppyDrive[iDrive].disk;
 	pFloppy->trackimage = (LPBYTE)VirtualAlloc(NULL, NIBBLES_PER_TRACK, MEM_COMMIT, PAGE_READWRITE);
@@ -263,7 +263,7 @@ static void AllocTrack(const int iDrive)
 
 //===========================================================================
 
-static void ReadTrack(const int iDrive)
+void DiskIIInterfaceCard::ReadTrack(const int iDrive)
 {
 	if (! IsDriveValid( iDrive ))
 		return;
@@ -290,7 +290,8 @@ static void ReadTrack(const int iDrive)
 			pDrive->track,
 			pDrive->phase,
 			pFloppy->trackimage,
-			&pFloppy->nibbles);
+			&pFloppy->nibbles,
+			enhancedisk);
 
 		pFloppy->byte           = 0;
 		pFloppy->trackimagedata = (pFloppy->nibbles != 0);
@@ -299,7 +300,7 @@ static void ReadTrack(const int iDrive)
 
 //===========================================================================
 
-static void RemoveDisk(const int iDrive)
+void DiskIIInterfaceCard::RemoveDisk(const int iDrive)
 {
 	Disk_t* pFloppy = &g_aFloppyDrive[iDrive].disk;
 
@@ -328,7 +329,7 @@ static void RemoveDisk(const int iDrive)
 
 //===========================================================================
 
-static void WriteTrack(const int iDrive)
+void DiskIIInterfaceCard::WriteTrack(const int iDrive)
 {
 	Drive_t* pDrive = &g_aFloppyDrive[ iDrive ];
 	Disk_t* pFloppy = &pDrive->disk;
@@ -355,7 +356,7 @@ static void WriteTrack(const int iDrive)
 	pFloppy->trackimagedirty = false;
 }
 
-void DiskFlushCurrentTrack(const int iDrive)
+void DiskIIInterfaceCard::DiskFlushCurrentTrack(const int iDrive)
 {
 	Disk_t* pFloppy = &g_aFloppyDrive[iDrive].disk;
 
@@ -363,13 +364,9 @@ void DiskFlushCurrentTrack(const int iDrive)
 		WriteTrack(iDrive);
 }
 
-//
-// ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
-//
-
 //===========================================================================
 
-void DiskBoot(void)
+void DiskIIInterfaceCard::DiskBoot(void)
 {
 	// THIS FUNCTION RELOADS A PROGRAM IMAGE IF ONE IS LOADED IN DRIVE ONE.
 	// IF A DISK IMAGE OR NO IMAGE IS LOADED IN DRIVE ONE, IT DOES NOTHING.
@@ -379,7 +376,7 @@ void DiskBoot(void)
 
 //===========================================================================
 
-static void __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
+void __stdcall DiskIIInterfaceCard::DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	BOOL newState = address & 1;
 
@@ -397,7 +394,7 @@ static void __stdcall DiskControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uEx
 
 //===========================================================================
 
-static void __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
+void __stdcall DiskIIInterfaceCard::DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	Drive_t* pDrive = &g_aFloppyDrive[currdrive];
 	Disk_t* pFloppy = &pDrive->disk;
@@ -484,7 +481,7 @@ static void __stdcall DiskControlStepper(WORD, WORD address, BYTE, BYTE, ULONG u
 
 //===========================================================================
 
-void DiskDestroy(void)
+void DiskIIInterfaceCard::DiskDestroy(void)
 {
 	g_bSaveDiskImage = false;
 	RemoveDisk(DRIVE_1);
@@ -497,7 +494,7 @@ void DiskDestroy(void)
 
 //===========================================================================
 
-static void __stdcall DiskEnable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
+void __stdcall DiskIIInterfaceCard::DiskEnable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	currdrive = address & 1;
 #if LOG_DISK_ENABLE_DRIVE
@@ -510,7 +507,7 @@ static void __stdcall DiskEnable(WORD, WORD address, BYTE, BYTE, ULONG uExecuted
 
 //===========================================================================
 
-void DiskEject(const int iDrive)
+void DiskIIInterfaceCard::DiskEject(const int iDrive)
 {
 	if (IsDriveValid(iDrive))
 	{
@@ -522,14 +519,14 @@ void DiskEject(const int iDrive)
 
 // Return the file or zip name
 // . Used by Property Sheet Page (Disk)
-LPCTSTR DiskGetFullName(const int iDrive)
+LPCTSTR DiskIIInterfaceCard::DiskGetFullName(const int iDrive)
 {
 	return g_aFloppyDrive[iDrive].disk.fullname;
 }
 
 // Return the filename
 // . Used by Drive Buttons' tooltips
-LPCTSTR DiskGetFullDiskFilename(const int iDrive)
+LPCTSTR DiskIIInterfaceCard::DiskGetFullDiskFilename(const int iDrive)
 {
 	if (!g_aFloppyDrive[iDrive].disk.strFilenameInZip.empty())
 		return g_aFloppyDrive[iDrive].disk.strFilenameInZip.c_str();
@@ -537,20 +534,20 @@ LPCTSTR DiskGetFullDiskFilename(const int iDrive)
 	return DiskGetFullName(iDrive);
 }
 
-static LPCTSTR DiskGetFullPathName(const int iDrive)
+LPCTSTR DiskIIInterfaceCard::DiskGetFullPathName(const int iDrive)
 {
 	return ImageGetPathname(g_aFloppyDrive[iDrive].disk.imagehandle);
 }
 
 // Return the imagename
 // . Used by Drive Button's icons & Property Sheet Page (Save snapshot)
-LPCTSTR DiskGetBaseName(const int iDrive)
+LPCTSTR DiskIIInterfaceCard::DiskGetBaseName(const int iDrive)
 {
 	return g_aFloppyDrive[iDrive].disk.imagename;
 }
 //===========================================================================
 
-void DiskGetLightStatus(Disk_Status_e *pDisk1Status, Disk_Status_e *pDisk2Status)
+void DiskIIInterfaceCard::DiskGetLightStatus(Disk_Status_e *pDisk1Status, Disk_Status_e *pDisk2Status)
 {
 	if (pDisk1Status)
 		*pDisk1Status = GetDriveLightStatus(DRIVE_1);
@@ -561,7 +558,7 @@ void DiskGetLightStatus(Disk_Status_e *pDisk1Status, Disk_Status_e *pDisk2Status
 
 //===========================================================================
 
-void DiskInitialize(void)
+void DiskIIInterfaceCard::DiskInitialize(void)
 {
 	int loop = NUM_DRIVES;
 	while (loop--)
@@ -570,7 +567,7 @@ void DiskInitialize(void)
 
 //===========================================================================
 
-ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary)
+ImageError_e DiskIIInterfaceCard::DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary)
 {
 	Drive_t* pDrive = &g_aFloppyDrive[iDrive];
 	Disk_t* pFloppy = &pDrive->disk;
@@ -646,19 +643,19 @@ ImageError_e DiskInsert(const int iDrive, LPCTSTR pszImageFilename, const bool b
 
 //===========================================================================
 
-bool Disk_IsConditionForFullSpeed(void)
+bool DiskIIInterfaceCard::Disk_IsConditionForFullSpeed(void)
 {
 	return floppymotoron && enhancedisk;
 }
 
-BOOL DiskIsSpinning(void)
+BOOL DiskIIInterfaceCard::DiskIsSpinning(void)
 {
 	return floppymotoron;
 }
 
 //===========================================================================
 
-void DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const ImageError_e Error)
+void DiskIIInterfaceCard::DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const ImageError_e Error)
 {
 	TCHAR szBuffer[MAX_PATH+128];
 	szBuffer[sizeof(szBuffer)-1] = 0;
@@ -772,7 +769,7 @@ void DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const Im
 
 //===========================================================================
 
-bool DiskGetProtect(const int iDrive)
+bool DiskIIInterfaceCard::DiskGetProtect(const int iDrive)
 {
 	if (IsDriveValid(iDrive))
 	{
@@ -786,7 +783,7 @@ bool DiskGetProtect(const int iDrive)
 
 //===========================================================================
 
-void DiskSetProtect(const int iDrive, const bool bWriteProtect)
+void DiskIIInterfaceCard::DiskSetProtect(const int iDrive, const bool bWriteProtect)
 {
 	if (IsDriveValid( iDrive ))
 	{
@@ -797,7 +794,7 @@ void DiskSetProtect(const int iDrive, const bool bWriteProtect)
 
 //===========================================================================
 
-bool Disk_ImageIsWriteProtected(const int iDrive)
+bool DiskIIInterfaceCard::Disk_ImageIsWriteProtected(const int iDrive)
 {
 	if (!IsDriveValid(iDrive))
 		return true;
@@ -807,7 +804,7 @@ bool Disk_ImageIsWriteProtected(const int iDrive)
 
 //===========================================================================
 
-bool Disk_IsDriveEmpty(const int iDrive)
+bool DiskIIInterfaceCard::Disk_IsDriveEmpty(const int iDrive)
 {
 	if (!IsDriveValid(iDrive))
 		return true;
@@ -821,7 +818,7 @@ bool Disk_IsDriveEmpty(const int iDrive)
 static UINT64 g_uWriteLastCycle = 0;
 static UINT g_uSyncFFCount = 0;
 
-static bool LogWriteCheckSyncFF(ULONG& uCycleDelta)
+bool DiskIIInterfaceCard::LogWriteCheckSyncFF(ULONG& uCycleDelta)
 {
 	bool bIsSyncFF = false;
 
@@ -851,7 +848,7 @@ static bool LogWriteCheckSyncFF(ULONG& uCycleDelta)
 
 //===========================================================================
 
-static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+void __stdcall DiskIIInterfaceCard::DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	/* floppyloadmode = 0; */
 	Drive_t* pDrive = &g_aFloppyDrive[currdrive];
@@ -965,7 +962,7 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 
 //===========================================================================
 
-void DiskReset(const bool bIsPowerCycle/*=false*/)
+void DiskIIInterfaceCard::DiskReset(const bool bIsPowerCycle/*=false*/)
 {
 	// RESET forces all switches off (UTAIIe Table 9.1)
 	currdrive = 0;
@@ -993,7 +990,7 @@ void DiskReset(const bool bIsPowerCycle/*=false*/)
 
 //===========================================================================
 
-static bool DiskSelectImage(const int iDrive, LPCSTR pszFilename)
+bool DiskIIInterfaceCard::DiskSelectImage(const int iDrive, LPCSTR pszFilename)
 {
 	TCHAR directory[MAX_PATH] = TEXT("");
 	TCHAR filename[MAX_PATH]  = TEXT("");
@@ -1044,14 +1041,14 @@ static bool DiskSelectImage(const int iDrive, LPCSTR pszFilename)
 
 //===========================================================================
 
-bool DiskSelect(const int iDrive)
+bool DiskIIInterfaceCard::DiskSelect(const int iDrive)
 {
 	return DiskSelectImage(iDrive, TEXT(""));
 }
 
 //===========================================================================
 
-static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG)
+void __stdcall DiskIIInterfaceCard::DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG)
 {
 	/* floppyloadmode = 1; */
 
@@ -1077,7 +1074,7 @@ static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, U
 
 //===========================================================================
 
-static void __stdcall DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG)
+void __stdcall DiskIIInterfaceCard::DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG)
 {
 	floppywritemode = 0;
 
@@ -1090,7 +1087,7 @@ static void __stdcall DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG)
 
 //===========================================================================
 
-static void __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
+void __stdcall DiskIIInterfaceCard::DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	floppywritemode = 1;
 
@@ -1112,7 +1109,7 @@ static void __stdcall DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCy
 
 //===========================================================================
 
-void DiskUpdateDriveState(DWORD cycles)
+void DiskIIInterfaceCard::DiskUpdateDriveState(DWORD cycles)
 {
 	int loop = NUM_DRIVES;
 	while (loop--)
@@ -1145,7 +1142,7 @@ void DiskUpdateDriveState(DWORD cycles)
 
 //===========================================================================
 
-bool DiskDriveSwap(void)
+bool DiskIIInterfaceCard::DiskDriveSwap(void)
 {
 	// Refuse to swap if either Disk][ is active
 	// TODO: if Shift-Click then FORCE drive swap to bypass message
@@ -1200,11 +1197,8 @@ bool DiskDriveSwap(void)
 
 //===========================================================================
 
-static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
-static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
-
 // TODO: LoadRom_Disk_Floppy()
-void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
+void DiskIIInterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 {
 	const UINT DISK2_FW_SIZE = APPLE_SLOT_SIZE;
 
@@ -1233,33 +1227,36 @@ void DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot)
 	// . Patching the firmware breaks the ADC checksum used by "The CIA Files" (Tricky Dick)
 	// . In this case we can patch to compensate for an ADC or EOR checksum but not both (nickw)
 
-	RegisterIoHandler(uSlot, Disk_IORead, Disk_IOWrite, NULL, NULL, NULL, NULL);
+	RegisterIoHandler(uSlot, &DiskIIInterfaceCard::Disk_IORead, &DiskIIInterfaceCard::Disk_IOWrite, NULL, NULL, this, NULL);
 
 	g_uSlot = uSlot;
 }
 
 //===========================================================================
 
-static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+BYTE __stdcall DiskIIInterfaceCard::Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
+	UINT uSlot = ((addr & 0xff) >> 4) - 8;
+	DiskIIInterfaceCard* pCard = (DiskIIInterfaceCard*) MemGetSlotParameters(uSlot);
+
 	switch (addr & 0xF)
 	{
-	case 0x0:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x1:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x2:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x3:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x4:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x5:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x6:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x7:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x8:	DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x9:	DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xA:	DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xB:	DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xC:	DiskReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xD:	DiskLoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xE:	DiskSetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x0:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x1:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x2:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x3:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x4:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x5:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x6:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x7:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x8:	pCard->DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x9:	pCard->DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xA:	pCard->DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xB:	pCard->DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xC:	pCard->DiskReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xD:	pCard->DiskLoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xE:	pCard->DiskSetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xF:	pCard->DiskSetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
 	}
 
 	// only even addresses return the latch (UTAIIe Table 9.1)
@@ -1269,26 +1266,29 @@ static BYTE __stdcall Disk_IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 		return MemReadFloatingBus(nExecutedCycles);
 }
 
-static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+BYTE __stdcall DiskIIInterfaceCard::Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
+	UINT uSlot = ((addr & 0xff) >> 4) - 8;
+	DiskIIInterfaceCard* pCard = (DiskIIInterfaceCard*) MemGetSlotParameters(uSlot);
+
 	switch (addr & 0xF)
 	{
-	case 0x0:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x1:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x2:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x3:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x4:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x5:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x6:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x7:	DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x8:	DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0x9:	DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xA:	DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xB:	DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xC:	DiskReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xD:	DiskLoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xE:	DiskSetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xF:	DiskSetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x0:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x1:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x2:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x3:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x4:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x5:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x6:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x7:	pCard->DiskControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x8:	pCard->DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0x9:	pCard->DiskControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xA:	pCard->DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xB:	pCard->DiskEnable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xC:	pCard->DiskReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xD:	pCard->DiskLoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xE:	pCard->DiskSetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xF:	pCard->DiskSetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
 	}
 
 	// any address writes the latch via sequencer LD command (74LS323 datasheet)
@@ -1331,13 +1331,13 @@ static const UINT kUNIT_VERSION = 3;
 #define SS_YAML_KEY_TRACK_IMAGE_DIRTY "Track Image Dirty"
 #define SS_YAML_KEY_TRACK_IMAGE "Track Image"
 
-std::string DiskGetSnapshotCardName(void)
+std::string DiskIIInterfaceCard::DiskGetSnapshotCardName(void)
 {
 	static const std::string name(SS_YAML_VALUE_CARD_DISK2);
 	return name;
 }
 
-static void DiskSaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit)
+void DiskIIInterfaceCard::DiskSaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_DISK2UNIT, unit);
 	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, g_aFloppyDrive[unit].disk.fullname);
@@ -1358,7 +1358,7 @@ static void DiskSaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 	}
 }
 
-void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
+void DiskIIInterfaceCard::DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Slot slot(yamlSaveHelper, DiskGetSnapshotCardName(), g_uSlot, kUNIT_VERSION);
 
@@ -1378,7 +1378,7 @@ void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_2);
 }
 
-static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
+void DiskIIInterfaceCard::DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 {
 	std::string disk2UnitName = std::string(SS_YAML_KEY_DISK2UNIT) + (unit == DRIVE_1 ? std::string("0") : std::string("1"));
 	if (!yamlLoadHelper.GetSubMap(disk2UnitName))
@@ -1455,7 +1455,7 @@ static void DiskLoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 	}
 }
 
-bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool DiskIIInterfaceCard::DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
 	if (slot != 6)	// fixme
 		throw std::string("Card: wrong slot");

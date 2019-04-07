@@ -1692,7 +1692,7 @@ void MemInitializeIO(void)
 		ConfigureSAM(pCxRomPeripheral, 5);			// $C500 : Z80 card
 	}
 
-	DiskLoadRom(pCxRomPeripheral, 6);				// $C600 : Disk][ f/w
+	sg_DiskIICard.Initialize(pCxRomPeripheral, 6);	// $C600 : Disk][ card
 	HD_Load_Rom(pCxRomPeripheral, 7);				// $C700 : HDD f/w
 
 	//
