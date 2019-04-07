@@ -23,6 +23,8 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "DiskLog.h"
+#include "DiskFormatTrack.h"
 #include "DiskImage.h"
 
 extern class DiskIIInterfaceCard sg_DiskIICard;
@@ -41,10 +43,68 @@ const bool IMAGE_FORCE_WRITE_PROTECTED = true;
 const bool IMAGE_DONT_CREATE = false;
 const bool IMAGE_CREATE = true;
 
+struct Disk_t
+{
+	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
+	TCHAR	fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
+	std::string strFilenameInZip;					// ""             or <FILENAME.EXT>
+	ImageInfo* imagehandle;							// Init'd by DiskInsert() -> ImageOpen()
+	bool	bWriteProtected;
+	//
+	int		byte;
+	int		nibbles;								// Init'd by ReadTrack() -> ImageReadTrack()
+	LPBYTE	trackimage;
+	bool	trackimagedata;
+	bool	trackimagedirty;
+
+	Disk_t()
+	{
+		clear();
+	}
+
+	void clear()
+	{
+		ZeroMemory(imagename, sizeof(imagename));
+		ZeroMemory(fullname, sizeof(fullname));
+		strFilenameInZip.clear();
+		imagehandle = NULL;
+		bWriteProtected = false;
+		//
+		byte = 0;
+		nibbles = 0;
+		trackimage = NULL;
+		trackimagedata = false;
+		trackimagedirty = false;
+	}
+};
+
+struct Drive_t
+{
+	int		phase;
+	int		track;
+	DWORD	spinning;
+	DWORD	writelight;
+	Disk_t	disk;
+
+	Drive_t()
+	{
+		clear();
+	}
+
+	void clear()
+	{
+		phase = 0;
+		track = 0;
+		spinning = 0;
+		writelight = 0;
+		disk.clear();
+	}
+};
+
 class DiskIIInterfaceCard
 {
 public:
-	DiskIIInterfaceCard(void){};
+	DiskIIInterfaceCard(void);
 	virtual ~DiskIIInterfaceCard(void){};
 
 	const char* DiskGetDiskPathFilename(const int iDrive);
@@ -117,44 +177,35 @@ private:
 	void __stdcall DiskIIInterfaceCard::DiskSetReadMode(WORD, WORD, BYTE, BYTE, ULONG);
 	void __stdcall DiskIIInterfaceCard::DiskSetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles);
 
-	//#if LOG_DISK_NIBBLES_WRITE
+#if LOG_DISK_NIBBLES_WRITE
 	bool DiskIIInterfaceCard::LogWriteCheckSyncFF(ULONG& uCycleDelta);
-};
+#endif
 
-//
-
-// For sharing with class FormatTrack
-struct Disk_t
-{
-	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
-	TCHAR	fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
-	std::string strFilenameInZip;					// ""             or <FILENAME.EXT>
-	ImageInfo* imagehandle;							// Init'd by DiskInsert() -> ImageOpen()
-	bool	bWriteProtected;
 	//
-	int		byte;
-	int		nibbles;								// Init'd by ReadTrack() -> ImageReadTrack()
-	LPBYTE	trackimage;
-	bool	trackimagedata;
-	bool	trackimagedirty;
 
-	Disk_t()
-	{
-		clear();
-	}
+	WORD currdrive;
+	Drive_t g_aFloppyDrive[NUM_DRIVES];
+	BYTE floppylatch;
+	BOOL floppymotoron;
+	BOOL floppyloadmode; // for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)
+	BOOL floppywritemode;
+	WORD phases;								// state bits for stepper magnet phases 0 - 3
+	bool g_bSaveDiskImage;
+	UINT g_uSlot;
+	unsigned __int64 g_uDiskLastCycle;
+	unsigned __int64 g_uDiskLastReadLatchCycle;
+	FormatTrack g_formatTrack;
+	bool enhancedisk;
 
-	void clear()
-	{
-		ZeroMemory(imagename, sizeof(imagename));
-		ZeroMemory(fullname, sizeof(fullname));
-		strFilenameInZip.clear();
-		imagehandle = NULL;
-		bWriteProtected = false;
-		//
-		byte = 0;
-		nibbles = 0;
-		trackimage = NULL;
-		trackimagedata = false;
-		trackimagedirty = false;
-	}
+	static const UINT SPINNING_CYCLES = 20000*64;	// 1280000 cycles = 1.25s
+	static const UINT WRITELIGHT_CYCLES = 20000*64;	// 1280000 cycles = 1.25s
+
+	// Debug:
+#if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
+	bool g_bLogDisk_NibblesRW;	// From VS Debugger, change this to true/false during runtime for precise nibble logging
+#endif
+#if LOG_DISK_NIBBLES_WRITE
+	UINT64 g_uWriteLastCycle;
+	UINT g_uSyncFFCount;
+#endif
 };

@@ -35,8 +35,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Applewin.h"
 #include "CPU.h"
 #include "Disk.h"
-#include "DiskLog.h"
-#include "DiskFormatTrack.h"
 #include "DiskImage.h"
 #include "Frame.h"
 #include "Log.h"
@@ -47,57 +45,29 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "../resource/resource.h"
 
-#if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
-static bool g_bLogDisk_NibblesRW = false;	// From VS Debugger, change this to true/false during runtime for precise nibble logging
-#endif
-
-// Private ________________________________________________________________________________________
-
-struct Drive_t
+DiskIIInterfaceCard::DiskIIInterfaceCard(void)
 {
-	int		phase;
-	int		track;
-	DWORD	spinning;
-	DWORD	writelight;
-	Disk_t	disk;
+	currdrive = 0;
+	floppylatch = 0;
+	floppymotoron = 0;
+	floppyloadmode = 0;
+	floppywritemode = 0;
+	phases = 0;
+	g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
+	g_uSlot = 0;
+	g_uDiskLastCycle = 0;
+	g_uDiskLastReadLatchCycle = 0;
+	enhancedisk = true;
 
-	Drive_t()
-	{
-		clear();
-	}
-
-	void clear()
-	{
-		phase = 0;
-		track = 0;
-		spinning = 0;
-		writelight = 0;
-		disk.clear();
-	}
-};
-
-static WORD		currdrive       = 0;
-static Drive_t	g_aFloppyDrive[NUM_DRIVES];
-static BYTE		floppylatch     = 0;
-static BOOL		floppymotoron   = 0;
-static BOOL		floppyloadmode  = 0; // for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)
-static BOOL		floppywritemode = 0;
-static WORD		phases = 0;					// state bits for stepper magnet phases 0 - 3
-static bool		g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
-static UINT		g_uSlot = 0;
-static unsigned __int64 g_uDiskLastCycle = 0;
-static unsigned __int64 g_uDiskLastReadLatchCycle = 0;
-static FormatTrack g_formatTrack;
-
-static bool IsDriveValid( const int iDrive );
-static LPCTSTR DiskGetFullPathName(const int iDrive);
-
-#define SPINNING_CYCLES (20000*64)		// 1280000 cycles = 1.25s
-#define WRITELIGHT_CYCLES (20000*64)	// 1280000 cycles = 1.25s
-
-static bool enhancedisk = true;
-
-//===========================================================================
+	// Debug:
+#if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
+	g_bLogDisk_NibblesRW = false;
+#endif
+#if LOG_DISK_NIBBLES_WRITE
+	g_uWriteLastCycle = 0;
+	g_uSyncFFCount = 0;
+#endif
+}
 
 bool DiskIIInterfaceCard::Disk_GetEnhanceDisk(void) { return enhancedisk; }
 void DiskIIInterfaceCard::Disk_SetEnhanceDisk(bool bEnhanceDisk) { enhancedisk = bEnhanceDisk; }
@@ -766,7 +736,6 @@ void DiskIIInterfaceCard::DiskNotifyInvalidImage(const int iDrive, LPCTSTR pszIm
 		MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 }
 
-
 //===========================================================================
 
 bool DiskIIInterfaceCard::DiskGetProtect(const int iDrive)
@@ -780,7 +749,6 @@ bool DiskIIInterfaceCard::DiskGetProtect(const int iDrive)
 	return false;
 }
 
-
 //===========================================================================
 
 void DiskIIInterfaceCard::DiskSetProtect(const int iDrive, const bool bWriteProtect)
@@ -790,7 +758,6 @@ void DiskIIInterfaceCard::DiskSetProtect(const int iDrive, const bool bWriteProt
 		g_aFloppyDrive[iDrive].disk.bWriteProtected = bWriteProtect;
 	}
 }
-
 
 //===========================================================================
 
@@ -815,9 +782,6 @@ bool DiskIIInterfaceCard::Disk_IsDriveEmpty(const int iDrive)
 //===========================================================================
 
 #if LOG_DISK_NIBBLES_WRITE
-static UINT64 g_uWriteLastCycle = 0;
-static UINT g_uSyncFFCount = 0;
-
 bool DiskIIInterfaceCard::LogWriteCheckSyncFF(ULONG& uCycleDelta)
 {
 	bool bIsSyncFF = false;
@@ -1261,7 +1225,7 @@ BYTE __stdcall DiskIIInterfaceCard::Disk_IORead(WORD pc, WORD addr, BYTE bWrite,
 
 	// only even addresses return the latch (UTAIIe Table 9.1)
 	if (!(addr & 1))
-		return floppylatch;
+		return pCard->floppylatch;
 	else
 		return MemReadFloatingBus(nExecutedCycles);
 }
@@ -1292,9 +1256,9 @@ BYTE __stdcall DiskIIInterfaceCard::Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite
 	}
 
 	// any address writes the latch via sequencer LD command (74LS323 datasheet)
-	if (floppywritemode /* && floppyloadmode */)
+	if (pCard->floppywritemode /* && floppyloadmode */)
 	{
-		floppylatch = d;
+		pCard->floppylatch = d;
 	}
 	return 0;
 }
