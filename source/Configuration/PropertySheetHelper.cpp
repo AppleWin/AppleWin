@@ -198,7 +198,7 @@ void CPropertySheetHelper::SaveStateUpdate()
 
 void CPropertySheetHelper::GetDiskBaseNameWithAWS(TCHAR* pszFilename)
 {
-	LPCTSTR pDiskName = sg_DiskIICard.DiskGetBaseName(DRIVE_1);
+	LPCTSTR pDiskName = sg_DiskIICard.GetBaseName(DRIVE_1);
 	if (pDiskName && pDiskName[0])
 	{
 		strcpy(pszFilename, pDiskName);

@@ -286,9 +286,9 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			bRes = Phasor_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_Phasor;
 		}
-		else if (card == sg_DiskIICard.DiskGetSnapshotCardName())
+		else if (card == sg_DiskIICard.GetSnapshotCardName())
 		{
-			bRes = sg_DiskIICard.DiskLoadSnapshot(yamlLoadHelper, slot, cardVersion);
+			bRes = sg_DiskIICard.LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_Disk2;
 		}
 		else if (card == HD_GetSnapshotCardName())
@@ -391,7 +391,7 @@ static void Snapshot_LoadState_v2(void)
 
 		MemReset();
 		PravetsReset();
-		sg_DiskIICard.DiskReset();
+		sg_DiskIICard.Reset();
 		HD_Reset();
 		KeybReset();
 		VideoResetState();
@@ -519,7 +519,7 @@ void Snapshot_SaveState(void)
 			if (g_Slot4 == CT_Phasor)
 				Phasor_SaveSnapshot(yamlSaveHelper, 4);
 
-			sg_DiskIICard.DiskSaveSnapshot(yamlSaveHelper);
+			sg_DiskIICard.SaveSnapshot(yamlSaveHelper);
 
 			HD_SaveSnapshot(yamlSaveHelper);
 		}

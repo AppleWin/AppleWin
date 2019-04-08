@@ -270,7 +270,7 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (sg_DiskIICard.Disk_IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
+					 (sg_DiskIICard.IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -317,7 +317,7 @@ static void ContinueExecution(void)
 	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-	sg_DiskIICard.DiskUpdateDriveState(uActualCyclesExecuted);
+	sg_DiskIICard.UpdateDriveState(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 	PrintUpdate(uActualCyclesExecuted);
 
@@ -625,7 +625,7 @@ void LoadConfiguration(void)
 
 	DWORD dwEnhanceDisk;
 	REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk);
-	sg_DiskIICard.Disk_SetEnhanceDisk(dwEnhanceDisk ? true : false);
+	sg_DiskIICard.SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	Config_Load_Video();
 
@@ -714,8 +714,8 @@ void LoadConfiguration(void)
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
-	sg_DiskIICard.Disk_LoadLastDiskImage(DRIVE_1);
-	sg_DiskIICard.Disk_LoadLastDiskImage(DRIVE_2);
+	sg_DiskIICard.LoadLastDiskImage(DRIVE_1);
+	sg_DiskIICard.LoadLastDiskImage(DRIVE_2);
 
 	//
 
@@ -1062,7 +1062,7 @@ static bool DoDiskInsert(const int nDrive, LPCSTR szFileName)
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	ImageError_e Error = sg_DiskIICard.DiskInsert(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+	ImageError_e Error = sg_DiskIICard.InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 	return Error == eIMAGE_ERROR_NONE;
 }
 
@@ -1522,7 +1522,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	ImageInitialize();
 	LogFileOutput("Init: ImageInitialize()\n");
 
-	sg_DiskIICard.DiskInitialize();
+	sg_DiskIICard.Initialize();
 	LogFileOutput("Init: DiskInitialize()\n");
 
 	//
@@ -1616,7 +1616,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
-		sg_DiskIICard.DiskReset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
+		sg_DiskIICard.Reset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
 		HD_Reset();		// GH#515
 		LogFileOutput("Main: HDDReset()\n");
