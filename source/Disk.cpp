@@ -78,9 +78,9 @@ int DiskIIInterfaceCard::GetCurrentPhase(void)  { return m_floppyDrive[m_currDri
 int DiskIIInterfaceCard::GetCurrentOffset(void) { return m_floppyDrive[m_currDrive].disk.byte; }
 int DiskIIInterfaceCard::GetTrack(const int drive)  { return m_floppyDrive[drive].track; }
 
-LPCTSTR DiskIIInterfaceCard::GetDiskPathFilename(const int iDrive)
+LPCTSTR DiskIIInterfaceCard::GetDiskPathFilename(const int drive)
 {
-	return m_floppyDrive[iDrive].disk.fullname;
+	return m_floppyDrive[drive].disk.fullname;
 }
 
 LPCTSTR DiskIIInterfaceCard::GetCurrentState(void)
@@ -118,14 +118,14 @@ LPCTSTR DiskIIInterfaceCard::GetCurrentState(void)
 
 //===========================================================================
 
-void DiskIIInterfaceCard::LoadLastDiskImage(const int iDrive)
+void DiskIIInterfaceCard::LoadLastDiskImage(const int drive)
 {
-	_ASSERT(iDrive == DRIVE_1 || iDrive == DRIVE_2);
+	_ASSERT(drive == DRIVE_1 || drive == DRIVE_2);
 
 	char sFilePath[ MAX_PATH + 1];
 	sFilePath[0] = 0;
 
-	const char *pRegKey = (iDrive == DRIVE_1)
+	const char *pRegKey = (drive == DRIVE_1)
 		? REGVALUE_PREF_LAST_DISK_1
 		: REGVALUE_PREF_LAST_DISK_2;
 
@@ -135,23 +135,23 @@ void DiskIIInterfaceCard::LoadLastDiskImage(const int iDrive)
 
 		m_saveDiskImage = false;
 		// Pass in ptr to local copy of filepath, since RemoveDisk() sets DiskPathFilename = ""
-		InsertDisk(iDrive, sFilePath, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+		InsertDisk(drive, sFilePath, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 		m_saveDiskImage = true;
 	}
 }
 
 //===========================================================================
 
-void DiskIIInterfaceCard::SaveLastDiskImage(const int iDrive)
+void DiskIIInterfaceCard::SaveLastDiskImage(const int drive)
 {
-	_ASSERT(iDrive == DRIVE_1 || iDrive == DRIVE_2);
+	_ASSERT(drive == DRIVE_1 || drive == DRIVE_2);
 
 	if (!m_saveDiskImage)
 		return;
 
-	const char *pFileName = m_floppyDrive[iDrive].disk.fullname;
+	const char *pFileName = m_floppyDrive[drive].disk.fullname;
 
-	if (iDrive == DRIVE_1)
+	if (drive == DRIVE_1)
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_1, TRUE, pFileName);
 	else
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_2, TRUE, pFileName);
@@ -159,7 +159,7 @@ void DiskIIInterfaceCard::SaveLastDiskImage(const int iDrive)
 	//
 
 	char szPathName[MAX_PATH];
-	strcpy(szPathName, DiskGetFullPathName(iDrive));
+	strcpy(szPathName, DiskGetFullPathName(drive));
 	if (_tcsrchr(szPathName, TEXT('\\')))
 	{
 		char* pPathEnd = _tcsrchr(szPathName, TEXT('\\'))+1;
@@ -191,11 +191,11 @@ void DiskIIInterfaceCard::CheckSpinning(const ULONG nExecutedCycles)
 
 //===========================================================================
 
-Disk_Status_e DiskIIInterfaceCard::GetDriveLightStatus(const int iDrive)
+Disk_Status_e DiskIIInterfaceCard::GetDriveLightStatus(const int drive)
 {
-	if (IsDriveValid( iDrive ))
+	if (IsDriveValid( drive ))
 	{
-		Drive_t* pDrive = &m_floppyDrive[ iDrive ];
+		Drive_t* pDrive = &m_floppyDrive[ drive ];
 
 		if (pDrive->spinning)
 		{
@@ -218,27 +218,27 @@ Disk_Status_e DiskIIInterfaceCard::GetDriveLightStatus(const int iDrive)
 
 //===========================================================================
 
-bool DiskIIInterfaceCard::IsDriveValid(const int iDrive)
+bool DiskIIInterfaceCard::IsDriveValid(const int drive)
 {
-	return (iDrive >= 0 && iDrive < NUM_DRIVES);
+	return (drive >= 0 && drive < NUM_DRIVES);
 }
 
 //===========================================================================
 
-void DiskIIInterfaceCard::AllocTrack(const int iDrive)
+void DiskIIInterfaceCard::AllocTrack(const int drive)
 {
-	Disk_t* pFloppy = &m_floppyDrive[iDrive].disk;
+	Disk_t* pFloppy = &m_floppyDrive[drive].disk;
 	pFloppy->trackimage = (LPBYTE)VirtualAlloc(NULL, NIBBLES_PER_TRACK, MEM_COMMIT, PAGE_READWRITE);
 }
 
 //===========================================================================
 
-void DiskIIInterfaceCard::ReadTrack(const int iDrive)
+void DiskIIInterfaceCard::ReadTrack(const int drive)
 {
-	if (! IsDriveValid( iDrive ))
+	if (! IsDriveValid( drive ))
 		return;
 
-	Drive_t* pDrive = &m_floppyDrive[ iDrive ];
+	Drive_t* pDrive = &m_floppyDrive[ drive ];
 	Disk_t* pFloppy = &pDrive->disk;
 
 	if (pDrive->track >= ImageGetNumTracks(pFloppy->imagehandle))
@@ -248,7 +248,7 @@ void DiskIIInterfaceCard::ReadTrack(const int iDrive)
 	}
 
 	if (!pFloppy->trackimage)
-		AllocTrack( iDrive );
+		AllocTrack( drive );
 
 	if (pFloppy->trackimage && pFloppy->imagehandle)
 	{
@@ -270,13 +270,13 @@ void DiskIIInterfaceCard::ReadTrack(const int iDrive)
 
 //===========================================================================
 
-void DiskIIInterfaceCard::RemoveDisk(const int iDrive)
+void DiskIIInterfaceCard::RemoveDisk(const int drive)
 {
-	Disk_t* pFloppy = &m_floppyDrive[iDrive].disk;
+	Disk_t* pFloppy = &m_floppyDrive[drive].disk;
 
 	if (pFloppy->imagehandle)
 	{
-		FlushCurrentTrack(iDrive);
+		FlushCurrentTrack(drive);
 
 		ImageClose(pFloppy->imagehandle);
 		pFloppy->imagehandle = NULL;
@@ -293,15 +293,15 @@ void DiskIIInterfaceCard::RemoveDisk(const int iDrive)
 	memset( pFloppy->fullname , 0, MAX_DISK_FULL_NAME +1 );
 	pFloppy->strFilenameInZip = "";
 
-	SaveLastDiskImage( iDrive );
+	SaveLastDiskImage( drive );
 	Video_ResetScreenshotCounter( NULL );
 }
 
 //===========================================================================
 
-void DiskIIInterfaceCard::WriteTrack(const int iDrive)
+void DiskIIInterfaceCard::WriteTrack(const int drive)
 {
-	Drive_t* pDrive = &m_floppyDrive[ iDrive ];
+	Drive_t* pDrive = &m_floppyDrive[ drive ];
 	Disk_t* pFloppy = &pDrive->disk;
 
 	if (pDrive->track >= ImageGetNumTracks(pFloppy->imagehandle))
@@ -326,12 +326,12 @@ void DiskIIInterfaceCard::WriteTrack(const int iDrive)
 	pFloppy->trackimagedirty = false;
 }
 
-void DiskIIInterfaceCard::FlushCurrentTrack(const int iDrive)
+void DiskIIInterfaceCard::FlushCurrentTrack(const int drive)
 {
-	Disk_t* pFloppy = &m_floppyDrive[iDrive].disk;
+	Disk_t* pFloppy = &m_floppyDrive[drive].disk;
 
 	if (pFloppy->trackimage && pFloppy->trackimagedirty)
-		WriteTrack(iDrive);
+		WriteTrack(drive);
 }
 
 //===========================================================================
@@ -477,11 +477,11 @@ void __stdcall DiskIIInterfaceCard::Enable(WORD, WORD address, BYTE, BYTE, ULONG
 
 //===========================================================================
 
-void DiskIIInterfaceCard::EjectDisk(const int iDrive)
+void DiskIIInterfaceCard::EjectDisk(const int drive)
 {
-	if (IsDriveValid(iDrive))
+	if (IsDriveValid(drive))
 	{
-		RemoveDisk(iDrive);
+		RemoveDisk(drive);
 	}
 }
 
@@ -489,31 +489,31 @@ void DiskIIInterfaceCard::EjectDisk(const int iDrive)
 
 // Return the file or zip name
 // . Used by Property Sheet Page (Disk)
-LPCTSTR DiskIIInterfaceCard::GetFullName(const int iDrive)
+LPCTSTR DiskIIInterfaceCard::GetFullName(const int drive)
 {
-	return m_floppyDrive[iDrive].disk.fullname;
+	return m_floppyDrive[drive].disk.fullname;
 }
 
 // Return the filename
 // . Used by Drive Buttons' tooltips
-LPCTSTR DiskIIInterfaceCard::GetFullDiskFilename(const int iDrive)
+LPCTSTR DiskIIInterfaceCard::GetFullDiskFilename(const int drive)
 {
-	if (!m_floppyDrive[iDrive].disk.strFilenameInZip.empty())
-		return m_floppyDrive[iDrive].disk.strFilenameInZip.c_str();
+	if (!m_floppyDrive[drive].disk.strFilenameInZip.empty())
+		return m_floppyDrive[drive].disk.strFilenameInZip.c_str();
 
-	return GetFullName(iDrive);
+	return GetFullName(drive);
 }
 
-LPCTSTR DiskIIInterfaceCard::DiskGetFullPathName(const int iDrive)
+LPCTSTR DiskIIInterfaceCard::DiskGetFullPathName(const int drive)
 {
-	return ImageGetPathname(m_floppyDrive[iDrive].disk.imagehandle);
+	return ImageGetPathname(m_floppyDrive[drive].disk.imagehandle);
 }
 
 // Return the imagename
 // . Used by Drive Button's icons & Property Sheet Page (Save snapshot)
-LPCTSTR DiskIIInterfaceCard::GetBaseName(const int iDrive)
+LPCTSTR DiskIIInterfaceCard::GetBaseName(const int drive)
 {
-	return m_floppyDrive[iDrive].disk.imagename;
+	return m_floppyDrive[drive].disk.imagename;
 }
 //===========================================================================
 
@@ -537,13 +537,13 @@ void DiskIIInterfaceCard::Initialize(void)
 
 //===========================================================================
 
-ImageError_e DiskIIInterfaceCard::InsertDisk(const int iDrive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary)
+ImageError_e DiskIIInterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary)
 {
-	Drive_t* pDrive = &m_floppyDrive[iDrive];
+	Drive_t* pDrive = &m_floppyDrive[drive];
 	Disk_t* pFloppy = &pDrive->disk;
 
 	if (pFloppy->imagehandle)
-		RemoveDisk(iDrive);
+		RemoveDisk(drive);
 
 	// Reset the drive's struct, but preserve the physical attributes (bug#18242: Platoon)
 	// . Changing the disk (in the drive) doesn't affect the drive's head etc.
@@ -563,7 +563,7 @@ ImageError_e DiskIIInterfaceCard::InsertDisk(const int iDrive, LPCTSTR pszImageF
 
 	// Check if image is being used by the other drive, and if so remove it in order so it can be swapped
 	{
-		const char* pszOtherPathname = DiskGetFullPathName(!iDrive);
+		const char* pszOtherPathname = DiskGetFullPathName(!drive);
 
 		char szCurrentPathname[MAX_PATH]; 
 		DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, szCurrentPathname, NULL);
@@ -572,7 +572,7 @@ ImageError_e DiskIIInterfaceCard::InsertDisk(const int iDrive, LPCTSTR pszImageF
 
  		if (!strcmp(pszOtherPathname, szCurrentPathname))
 		{
-			EjectDisk(!iDrive);
+			EjectDisk(!drive);
 			FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 		}
 	}
@@ -591,7 +591,7 @@ ImageError_e DiskIIInterfaceCard::InsertDisk(const int iDrive, LPCTSTR pszImageF
 		int nRes = MessageBox(g_hFrameWindow, szText, TEXT("Multi-Zip Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 		{
-			RemoveDisk(iDrive);
+			RemoveDisk(drive);
 			Error = eIMAGE_ERROR_REJECTED_MULTI_ZIP;
 		}
 	}
@@ -606,7 +606,7 @@ ImageError_e DiskIIInterfaceCard::InsertDisk(const int iDrive, LPCTSTR pszImageF
 		Video_ResetScreenshotCounter(NULL);
 	}
 
-	SaveLastDiskImage(iDrive);
+	SaveLastDiskImage(drive);
 	
 	return Error;
 }
@@ -625,7 +625,7 @@ BOOL DiskIIInterfaceCard::IsSpinning(void)
 
 //===========================================================================
 
-void DiskIIInterfaceCard::NotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const ImageError_e Error)
+void DiskIIInterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error)
 {
 	TCHAR szBuffer[MAX_PATH+128];
 	szBuffer[sizeof(szBuffer)-1] = 0;
@@ -687,7 +687,7 @@ void DiskIIInterfaceCard::NotifyInvalidImage(const int iDrive, LPCTSTR pszImageF
 			TEXT("first file (%s) in this multi-zip archive is not recognized.\n")
 			TEXT("Try unzipping and using the disk images directly.\n"),
 			pszImageFilename,
-			m_floppyDrive[iDrive].disk.strFilenameInZip.c_str());
+			m_floppyDrive[drive].disk.strFilenameInZip.c_str());
 		break;
 
 	case eIMAGE_ERROR_GZ:
@@ -738,11 +738,11 @@ void DiskIIInterfaceCard::NotifyInvalidImage(const int iDrive, LPCTSTR pszImageF
 
 //===========================================================================
 
-bool DiskIIInterfaceCard::GetProtect(const int iDrive)
+bool DiskIIInterfaceCard::GetProtect(const int drive)
 {
-	if (IsDriveValid(iDrive))
+	if (IsDriveValid(drive))
 	{
-		if (m_floppyDrive[iDrive].disk.bWriteProtected)
+		if (m_floppyDrive[drive].disk.bWriteProtected)
 			return true;
 	}
 
@@ -751,32 +751,32 @@ bool DiskIIInterfaceCard::GetProtect(const int iDrive)
 
 //===========================================================================
 
-void DiskIIInterfaceCard::SetProtect(const int iDrive, const bool bWriteProtect)
+void DiskIIInterfaceCard::SetProtect(const int drive, const bool bWriteProtect)
 {
-	if (IsDriveValid( iDrive ))
+	if (IsDriveValid( drive ))
 	{
-		m_floppyDrive[iDrive].disk.bWriteProtected = bWriteProtect;
+		m_floppyDrive[drive].disk.bWriteProtected = bWriteProtect;
 	}
 }
 
 //===========================================================================
 
-bool DiskIIInterfaceCard::IsDiskImageWriteProtected(const int iDrive)
+bool DiskIIInterfaceCard::IsDiskImageWriteProtected(const int drive)
 {
-	if (!IsDriveValid(iDrive))
+	if (!IsDriveValid(drive))
 		return true;
 
-	return ImageIsWriteProtected(m_floppyDrive[iDrive].disk.imagehandle);
+	return ImageIsWriteProtected(m_floppyDrive[drive].disk.imagehandle);
 }
 
 //===========================================================================
 
-bool DiskIIInterfaceCard::IsDriveEmpty(const int iDrive)
+bool DiskIIInterfaceCard::IsDriveEmpty(const int drive)
 {
-	if (!IsDriveValid(iDrive))
+	if (!IsDriveValid(drive))
 		return true;
 
-	return m_floppyDrive[iDrive].disk.imagehandle == NULL;
+	return m_floppyDrive[drive].disk.imagehandle == NULL;
 }
 
 //===========================================================================
@@ -954,7 +954,7 @@ void DiskIIInterfaceCard::Reset(const bool bIsPowerCycle/*=false*/)
 
 //===========================================================================
 
-bool DiskIIInterfaceCard::UserSelectNewDiskImage(const int iDrive, LPCSTR pszFilename/*=""*/)
+bool DiskIIInterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilename/*=""*/)
 {
 	TCHAR directory[MAX_PATH] = TEXT("");
 	TCHAR filename[MAX_PATH]  = TEXT("");
@@ -964,7 +964,7 @@ bool DiskIIInterfaceCard::UserSelectNewDiskImage(const int iDrive, LPCSTR pszFil
 
 	RegLoadString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1, directory, MAX_PATH);
 	_tcscpy(title, TEXT("Select Disk Image For Drive "));
-	_tcscat(title, iDrive ? TEXT("2") : TEXT("1"));
+	_tcscat(title, drive ? TEXT("2") : TEXT("1"));
 
 	_ASSERT(sizeof(OPENFILENAME) == sizeof(OPENFILENAME_NT4));	// Required for Win98/ME support (selected by _WIN32_WINNT=0x0400 in stdafx.h)
 
@@ -989,14 +989,14 @@ bool DiskIIInterfaceCard::UserSelectNewDiskImage(const int iDrive, LPCSTR pszFil
 		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
 			_tcscat(filename,TEXT(".dsk"));
 
-		ImageError_e Error = InsertDisk(iDrive, filename, ofn.Flags & OFN_READONLY, IMAGE_CREATE);
+		ImageError_e Error = InsertDisk(drive, filename, ofn.Flags & OFN_READONLY, IMAGE_CREATE);
 		if (Error == eIMAGE_ERROR_NONE)
 		{
 			bRes = true;
 		}
 		else
 		{
-			NotifyInvalidImage(iDrive, filename, Error);
+			NotifyInvalidImage(drive, filename, Error);
 		}
 	}
 

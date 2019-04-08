@@ -112,30 +112,30 @@ public:
 	void Destroy(void);		// no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
 
 	void Boot(void);
-	void FlushCurrentTrack(const int iDrive);
+	void FlushCurrentTrack(const int drive);
 
-	LPCTSTR GetDiskPathFilename(const int iDrive);
-	LPCTSTR GetFullDiskFilename(const int iDrive);
-	LPCTSTR GetFullName(const int iDrive);
-	LPCTSTR GetBaseName(const int iDrive);
+	LPCTSTR GetDiskPathFilename(const int drive);
+	LPCTSTR GetFullDiskFilename(const int drive);
+	LPCTSTR GetFullName(const int drive);
+	LPCTSTR GetBaseName(const int drive);
 	void GetLightStatus (Disk_Status_e* pDisk1Status, Disk_Status_e* pDisk2Status);
 
-	ImageError_e InsertDisk(const int iDrive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
-	void EjectDisk(const int iDrive);
+	ImageError_e InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
+	void EjectDisk(const int drive);
 
 	bool IsConditionForFullSpeed(void);
 	BOOL IsSpinning(void);
-	void NotifyInvalidImage(const int iDrive, LPCTSTR pszImageFilename, const ImageError_e Error);
+	void NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error);
 	void Reset(const bool bIsPowerCycle=false);
-	bool GetProtect(const int iDrive);
-	void SetProtect(const int iDrive, const bool bWriteProtect);
+	bool GetProtect(const int drive);
+	void SetProtect(const int drive, const bool bWriteProtect);
 	int GetCurrentDrive(void);
 	int GetCurrentTrack();
 	int GetTrack(const int drive);
 	int GetCurrentPhase(void);
 	int GetCurrentOffset(void);
 	LPCTSTR GetCurrentState(void);
-	bool UserSelectNewDiskImage(const int iDrive, LPCSTR pszFilename="");
+	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	void UpdateDriveState(DWORD);
 	bool DriveSwap(void);
 
@@ -143,11 +143,11 @@ public:
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
-	void LoadLastDiskImage(const int iDrive);
-	void SaveLastDiskImage(const int iDrive);
+	void LoadLastDiskImage(const int drive);
+	void SaveLastDiskImage(const int drive);
 
-	bool IsDiskImageWriteProtected(const int iDrive);
-	bool IsDriveEmpty(const int iDrive);
+	bool IsDiskImageWriteProtected(const int drive);
+	bool IsDriveEmpty(const int drive);
 
 	bool GetEnhanceDisk(void);
 	void SetEnhanceDisk(bool bEnhanceDisk);
@@ -157,13 +157,13 @@ public:
 
 private:
 	void CheckSpinning(const ULONG nExecutedCycles);
-	Disk_Status_e GetDriveLightStatus(const int iDrive);
-	bool IsDriveValid(const int iDrive);
-	void AllocTrack(const int iDrive);
-	void ReadTrack(const int iDrive);
-	void RemoveDisk(const int iDrive);
-	void WriteTrack(const int iDrive);
-	LPCTSTR DiskGetFullPathName(const int iDrive);
+	Disk_Status_e GetDriveLightStatus(const int drive);
+	bool IsDriveValid(const int drive);
+	void AllocTrack(const int drive);
+	void ReadTrack(const int drive);
+	void RemoveDisk(const int drive);
+	void WriteTrack(const int drive);
+	LPCTSTR DiskGetFullPathName(const int drive);
 	void SaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	void LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
 
