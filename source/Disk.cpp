@@ -528,15 +528,6 @@ void DiskIIInterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status, Disk_Statu
 
 //===========================================================================
 
-void DiskIIInterfaceCard::Initialize(void)
-{
-	int loop = NUM_DRIVES;
-	while (loop--)
-		m_floppyDrive[loop].clear();
-}
-
-//===========================================================================
-
 ImageError_e DiskIIInterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary)
 {
 	Drive_t* pDrive = &m_floppyDrive[drive];

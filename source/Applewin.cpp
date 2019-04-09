@@ -1522,9 +1522,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	ImageInitialize();
 	LogFileOutput("Init: ImageInitialize()\n");
 
-	sg_DiskIICard.Initialize();
-	LogFileOutput("Init: DiskInitialize()\n");
-
 	//
 
 	do

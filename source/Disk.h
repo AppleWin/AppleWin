@@ -107,7 +107,6 @@ public:
 	DiskIIInterfaceCard(void);
 	virtual ~DiskIIInterfaceCard(void){};
 
-	void Initialize(void);	// 2x Initialize() funcs!
 	void Initialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void Destroy(void);		// no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
 
@@ -136,7 +135,7 @@ public:
 	int GetCurrentOffset(void);
 	LPCTSTR GetCurrentState(void);
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
-	void UpdateDriveState(DWORD);
+	void UpdateDriveState(DWORD cycles);
 	bool DriveSwap(void);
 
 	std::string GetSnapshotCardName(void);
