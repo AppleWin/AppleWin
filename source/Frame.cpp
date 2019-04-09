@@ -2057,7 +2057,7 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
 
 	std::string filename1= "\"";
-	filename1.append( sg_DiskIICard.GetDiskPathFilename(iDrive) );
+	filename1.append( sg_DiskIICard.GetFullName(iDrive) );
 	filename1.append("\"");
 	std::string sFileNameEmpty = "\"";
 	sFileNameEmpty.append("\"");

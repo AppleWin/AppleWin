@@ -78,11 +78,6 @@ int DiskIIInterfaceCard::GetCurrentPhase(void)  { return m_floppyDrive[m_currDri
 int DiskIIInterfaceCard::GetCurrentOffset(void) { return m_floppyDrive[m_currDrive].disk.byte; }
 int DiskIIInterfaceCard::GetTrack(const int drive)  { return m_floppyDrive[drive].track; }
 
-LPCTSTR DiskIIInterfaceCard::GetDiskPathFilename(const int drive)
-{
-	return m_floppyDrive[drive].disk.fullname;
-}
-
 LPCTSTR DiskIIInterfaceCard::GetCurrentState(void)
 {
 	if (m_floppyDrive[m_currDrive].disk.imagehandle == NULL)
@@ -487,13 +482,6 @@ void DiskIIInterfaceCard::EjectDisk(const int drive)
 
 //===========================================================================
 
-// Return the file or zip name
-// . Used by Property Sheet Page (Disk)
-LPCTSTR DiskIIInterfaceCard::GetFullName(const int drive)
-{
-	return m_floppyDrive[drive].disk.fullname;
-}
-
 // Return the filename
 // . Used by Drive Buttons' tooltips
 LPCTSTR DiskIIInterfaceCard::GetFullDiskFilename(const int drive)
@@ -504,9 +492,11 @@ LPCTSTR DiskIIInterfaceCard::GetFullDiskFilename(const int drive)
 	return GetFullName(drive);
 }
 
-LPCTSTR DiskIIInterfaceCard::DiskGetFullPathName(const int drive)
+// Return the file or zip name
+// . Used by Property Sheet Page (Disk)
+LPCTSTR DiskIIInterfaceCard::GetFullName(const int drive)
 {
-	return ImageGetPathname(m_floppyDrive[drive].disk.imagehandle);
+	return m_floppyDrive[drive].disk.fullname;
 }
 
 // Return the imagename
@@ -515,6 +505,12 @@ LPCTSTR DiskIIInterfaceCard::GetBaseName(const int drive)
 {
 	return m_floppyDrive[drive].disk.imagename;
 }
+
+LPCTSTR DiskIIInterfaceCard::DiskGetFullPathName(const int drive)
+{
+	return ImageGetPathname(m_floppyDrive[drive].disk.imagehandle);
+}
+
 //===========================================================================
 
 void DiskIIInterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status, Disk_Status_e *pDisk2Status)

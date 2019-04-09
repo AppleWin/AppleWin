@@ -113,7 +113,6 @@ public:
 	void Boot(void);
 	void FlushCurrentTrack(const int drive);
 
-	LPCTSTR GetDiskPathFilename(const int drive);
 	LPCTSTR GetFullDiskFilename(const int drive);
 	LPCTSTR GetFullName(const int drive);
 	LPCTSTR GetBaseName(const int drive);
