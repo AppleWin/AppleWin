@@ -3727,15 +3727,15 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs > 2)
 			goto _Help;
 
-		int drive = DiskGetCurrentDrive() + 1;
+		int drive = sg_DiskIICard.GetCurrentDrive() + 1;
 		char buffer[200] = "";
 		ConsoleBufferPushFormat(buffer, "D%d at T$%X (%d), phase $%X, offset $%X, %s",
 			drive,
-			DiskGetCurrentTrack(),
-			DiskGetCurrentTrack(),
-			DiskGetCurrentPhase(),
-			DiskGetCurrentOffset(),
-			DiskGetCurrentState());
+			sg_DiskIICard.GetCurrentTrack(),
+			sg_DiskIICard.GetCurrentTrack(),
+			sg_DiskIICard.GetCurrentPhase(),
+			sg_DiskIICard.GetCurrentOffset(),
+			sg_DiskIICard.GetCurrentState());
 
 		return ConsoleUpdate();
 	}
@@ -3762,7 +3762,7 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs > 2)
 			goto _Help;
 
-		DiskEject( iDrive );
+		sg_DiskIICard.EjectDisk( iDrive );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
@@ -3776,7 +3776,7 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs == 3)
 			bProtect = g_aArgs[ 3 ].nValue ? true : false;
 
-		DiskSetProtect( iDrive, bProtect );
+		sg_DiskIICard.SetProtect( iDrive, bProtect );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
@@ -3787,7 +3787,7 @@ Update_t CmdDisk ( int nArgs)
 		LPCTSTR pDiskName = g_aArgs[ 3 ].sArg;
 
 		// DISK # "Diskname"
-		DiskInsert( iDrive, pDiskName, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE );
+		sg_DiskIICard.InsertDisk( iDrive, pDiskName, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 

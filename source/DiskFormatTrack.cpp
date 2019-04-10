@@ -45,8 +45,6 @@ Writes the following: (in 1 continuous write operation)
 #include "StdAfx.h"
 
 #include "Disk.h"
-#include "DiskLog.h"
-#include "DiskFormatTrack.h"
 #include "Log.h"
 #include "YamlHelper.h"
 

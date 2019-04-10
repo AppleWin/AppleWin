@@ -1692,7 +1692,16 @@ void MemInitializeIO(void)
 		ConfigureSAM(pCxRomPeripheral, 5);			// $C500 : Z80 card
 	}
 
-	DiskLoadRom(pCxRomPeripheral, 6);				// $C600 : Disk][ f/w
+#if 0	// debug test
+	if (g_Slot5 == CT_EMPTY)
+	{
+		DiskIIInterfaceCard* pDiskIISlot5 = new DiskIIInterfaceCard;
+		pDiskIISlot5->Initialize(pCxRomPeripheral, 5);
+		pDiskIISlot5->InsertDisk(0, "C:\\Work\\Personal\\Images\\lady tut PRODOS (san inc pack).dsk", false, false);
+	}
+#endif
+
+	sg_DiskIICard.Initialize(pCxRomPeripheral, 6);	// $C600 : Disk][ card
 	HD_Load_Rom(pCxRomPeripheral, 7);				// $C700 : HDD f/w
 
 	//
