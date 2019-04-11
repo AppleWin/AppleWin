@@ -45,6 +45,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "../resource/resource.h"
 
+// About m_enhanceDisk:
+// . In general m_enhanceDisk==false is used for authentic disk access speed, whereas m_enhanceDisk==true is for enhanced speed.
+// Details:
+// . if false: Used by ImageReadTrack() to skew the sectors in a track (for .do, .dsk, .po 5.25" images).
+// . if true && m_floppyMotorOn, then this is a condition for full-speed (unthrottled) emulation mode.
+// . if false && I/O ReadWrite($C0EC) && drive is spinning, then advance the track buffer's nibble index (to simulate spinning).
+// . if I/O ReadWrite($C0EC) && read, then depending on true/false support partial nibble reads for different gaps between consecutive accesses.
+// Also m_enhanceDisk is persisted to the save-state, so it's an attribute of the DiskII interface card.
+
 DiskIIInterfaceCard::DiskIIInterfaceCard(void)
 {
 	m_currDrive = 0;

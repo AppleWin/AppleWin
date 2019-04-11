@@ -1693,7 +1693,7 @@ void MemInitializeIO(void)
 	}
 
 #if 0	// debug test
-	if (g_Slot5 == CT_EMPTY)
+	if (g_Slot5 == CT_Empty)
 	{
 		DiskIIInterfaceCard* pDiskIISlot5 = new DiskIIInterfaceCard;
 		pDiskIISlot5->Initialize(pCxRomPeripheral, 5);

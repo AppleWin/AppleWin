@@ -630,11 +630,11 @@ public:
 		return ePossibleMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhancedisk)
+	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhanceDisk)
 	{
 		ReadTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		*pNibbles = NibblizeTrack(pTrackImageBuffer, eDOSOrder, nTrack);
-		if (!enhancedisk)
+		if (!enhanceDisk)
 			SkewTrack(nTrack, *pNibbles, pTrackImageBuffer);
 	}
 
@@ -696,11 +696,11 @@ public:
 		return ePossibleMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhancedisk)
+	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhanceDisk)
 	{
 		ReadTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		*pNibbles = NibblizeTrack(pTrackImageBuffer, eProDOSOrder, nTrack);
-		if (!enhancedisk)
+		if (!enhanceDisk)
 			SkewTrack(nTrack, *pNibbles, pTrackImageBuffer);
 	}
 
@@ -735,7 +735,7 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhancedisk)
+	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhanceDisk)
 	{
 		ReadTrack(pImageInfo, nTrack, pTrackImageBuffer, NIB1_TRACK_SIZE);
 		*pNibbles = NIB1_TRACK_SIZE;
@@ -775,7 +775,7 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhancedisk)
+	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhanceDisk)
 	{
 		ReadTrack(pImageInfo, nTrack, pTrackImageBuffer, NIB2_TRACK_SIZE);
 		*pNibbles = NIB2_TRACK_SIZE;
@@ -851,7 +851,7 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhancedisk)
+	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhanceDisk)
 	{
 		// IF WE HAVEN'T ALREADY DONE SO, READ THE IMAGE FILE HEADER
 		if (!m_pHeader)
