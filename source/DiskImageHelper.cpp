@@ -1214,41 +1214,53 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 		return eIMAGE_ERROR_UNABLE_TO_OPEN_ZIP;
 
 	unz_global_info global_info;
-	int nRes = unzGetGlobalInfo(hZipFile, &global_info);
-	if (nRes != UNZ_OK)
-		return eIMAGE_ERROR_ZIP;
-
-	nRes = unzGoToFirstFile(hZipFile);	// Only support 1st file in zip archive for now
-	if (nRes != UNZ_OK)
-		return eIMAGE_ERROR_ZIP;
-
 	unz_file_info file_info;
 	char szFilename[MAX_PATH];
 	memset(szFilename, 0, sizeof(szFilename));
-	nRes = unzGetCurrentFileInfo(hZipFile, &file_info, szFilename, MAX_PATH, NULL, 0, NULL, 0);
-	if (nRes != UNZ_OK)
-		return eIMAGE_ERROR_ZIP;
+	int nRes = 0, nLen = 0;
 
-	const UINT uFileSize = file_info.uncompressed_size;
-	if (uFileSize > GetMaxImageSize())
-		return eIMAGE_ERROR_BAD_SIZE;
-
-	pImageInfo->pImageBuffer = new BYTE[uFileSize];
-
-	nRes = unzOpenCurrentFile(hZipFile);
-	if (nRes != UNZ_OK)
-		return eIMAGE_ERROR_ZIP;
-
-	int nLen = unzReadCurrentFile(hZipFile, pImageInfo->pImageBuffer, uFileSize);
-	if (nLen < 0)
+	try
 	{
-		unzCloseCurrentFile(hZipFile);	// Must CloseCurrentFile before Close
-		return eIMAGE_ERROR_UNSUPPORTED;
-	}
+		nRes = unzGetGlobalInfo(hZipFile, &global_info);
+		if (nRes != UNZ_OK)
+			throw eIMAGE_ERROR_ZIP;
 
-	nRes = unzCloseCurrentFile(hZipFile);
-	if (nRes != UNZ_OK)
-		return eIMAGE_ERROR_ZIP;
+		nRes = unzGoToFirstFile(hZipFile);	// Only support 1st file in zip archive for now
+		if (nRes != UNZ_OK)
+			throw eIMAGE_ERROR_ZIP;
+
+		nRes = unzGetCurrentFileInfo(hZipFile, &file_info, szFilename, MAX_PATH, NULL, 0, NULL, 0);
+		if (nRes != UNZ_OK)
+			throw eIMAGE_ERROR_ZIP;
+
+		const UINT uFileSize = file_info.uncompressed_size;
+		if (uFileSize > GetMaxImageSize())
+			throw eIMAGE_ERROR_BAD_SIZE;
+
+		pImageInfo->pImageBuffer = new BYTE[uFileSize];
+
+		nRes = unzOpenCurrentFile(hZipFile);
+		if (nRes != UNZ_OK)
+			throw eIMAGE_ERROR_ZIP;
+
+		nLen = unzReadCurrentFile(hZipFile, pImageInfo->pImageBuffer, uFileSize);
+		if (nLen < 0)
+		{
+			unzCloseCurrentFile(hZipFile);	// Must CloseCurrentFile before Close
+			throw eIMAGE_ERROR_UNSUPPORTED;
+		}
+
+		nRes = unzCloseCurrentFile(hZipFile);
+		if (nRes != UNZ_OK)
+			throw eIMAGE_ERROR_ZIP;
+	}
+	catch (ImageError_e error)
+	{
+		if (hZipFile)
+			unzClose(hZipFile);
+
+		return error;
+	}
 
 	nRes = unzClose(hZipFile);
 	hZipFile = NULL;
@@ -1256,6 +1268,7 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 		return eIMAGE_ERROR_ZIP;
 
 	strncpy(pImageInfo->szFilenameInZip, szFilename, MAX_PATH);
+	pImageInfo->szFilenameInZip[MAX_PATH-1] = 0;
 	memcpy(&pImageInfo->zipFileInfo.tmz_date, &file_info.tmu_date, sizeof(file_info.tmu_date));
 	pImageInfo->zipFileInfo.dosDate     = file_info.dosDate;
 	pImageInfo->zipFileInfo.internal_fa = file_info.internal_fa;
@@ -1445,11 +1458,11 @@ ImageError_e CImageHelperBase::Open(	LPCTSTR pszImageFilename,
 	ImageError_e Err;
     const size_t uStrLen = strlen(pszImageFilename);
 
-    if (uStrLen > GZ_SUFFIX_LEN && strcmp(pszImageFilename+uStrLen-GZ_SUFFIX_LEN, GZ_SUFFIX) == 0)
+    if (uStrLen > GZ_SUFFIX_LEN && _stricmp(pszImageFilename+uStrLen-GZ_SUFFIX_LEN, GZ_SUFFIX) == 0)
 	{
 		Err = CheckGZipFile(pszImageFilename, pImageInfo);
 	}
-    else if (uStrLen > ZIP_SUFFIX_LEN && strcmp(pszImageFilename+uStrLen-ZIP_SUFFIX_LEN, ZIP_SUFFIX) == 0)
+    else if (uStrLen > ZIP_SUFFIX_LEN && _stricmp(pszImageFilename+uStrLen-ZIP_SUFFIX_LEN, ZIP_SUFFIX) == 0)
 	{
 		Err = CheckZipFile(pszImageFilename, pImageInfo, strFilenameInZip);
 	}

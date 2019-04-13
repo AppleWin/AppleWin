@@ -71,6 +71,7 @@
     <ClInclude Include="source\Harddisk.h" />
     <ClInclude Include="source\Joystick.h" />
     <ClInclude Include="source\Keyboard.h" />
+    <ClInclude Include="source\LanguageCard.h" />
     <ClInclude Include="source\Log.h" />
     <ClInclude Include="source\Memory.h" />
     <ClInclude Include="source\Mockingboard.h" />
@@ -81,6 +82,7 @@
     <ClInclude Include="source\ParallelPrinter.h" />
     <ClInclude Include="source\Pravets.h" />
     <ClInclude Include="source\Registry.h" />
+    <ClInclude Include="source\RGBMonitor.h" />
     <ClInclude Include="source\Riff.h" />
     <ClInclude Include="source\SAM.h" />
     <ClInclude Include="source\SaveState.h" />
@@ -133,6 +135,7 @@
     <ClCompile Include="source\Configuration\PropertySheet.cpp" />
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CPU.cpp" />
+    <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />
     <ClCompile Include="source\Debugger\Debug.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Assembler.cpp" />
@@ -154,6 +157,7 @@
     <ClCompile Include="source\Harddisk.cpp" />
     <ClCompile Include="source\Joystick.cpp" />
     <ClCompile Include="source\Keyboard.cpp" />
+    <ClCompile Include="source\LanguageCard.cpp" />
     <ClCompile Include="source\Log.cpp" />
     <ClCompile Include="source\Memory.cpp" />
     <ClCompile Include="source\Mockingboard.cpp" />
@@ -369,8 +373,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;Advapi32.lib;shell32.lib;Comdlg32.lib;ole32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalManifestDependencies>"type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='X86' publicKeyToken='6595b64144ccf1df' language='*'"</AdditionalManifestDependencies>
+      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;advapi32.lib;shell32.lib;comdlg32.lib;ole32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalManifestDependencies>"type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'"</AdditionalManifestDependencies>
+      <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
       <Command>echo Performing unit-test: TestCPU6502
@@ -393,8 +398,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;Advapi32.lib;shell32.lib;Comdlg32.lib;ole32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalManifestDependencies>"type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='X86' publicKeyToken='6595b64144ccf1df' language='*'"</AdditionalManifestDependencies>
+      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;advapi32.lib;shell32.lib;comdlg32.lib;ole32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalManifestDependencies>"type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'"</AdditionalManifestDependencies>
+      <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
       <Command>echo Performing unit-test: TestCPU6502
@@ -422,9 +428,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;Advapi32.lib;shell32.lib;Comdlg32.lib;ole32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;advapi32.lib;shell32.lib;comdlg32.lib;ole32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalManifestDependencies>"type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='X86' publicKeyToken='6595b64144ccf1df' language='*'"</AdditionalManifestDependencies>
+      <AdditionalManifestDependencies>"type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'"</AdditionalManifestDependencies>
+      <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
       <Command>echo Performing unit-test: TestCPU6502
@@ -452,9 +459,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;Advapi32.lib;shell32.lib;Comdlg32.lib;ole32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;advapi32.lib;shell32.lib;comdlg32.lib;ole32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalManifestDependencies>"type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='X86' publicKeyToken='6595b64144ccf1df' language='*'"</AdditionalManifestDependencies>
+      <AdditionalManifestDependencies>"type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'"</AdditionalManifestDependencies>
+      <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
       <Command>echo Performing unit-test: TestCPU6502

@@ -427,6 +427,13 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles)
 	}
 }
 
+// GH#608: IRQ needs to occur within 17 cycles (6 opcodes) of configuring the timer interrupt
+void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
+{
+	if (uCyclesUntilInterrupt < IRQ_CHECK_TIMEOUT)
+		g_nIrqCheckTimeout = uCyclesUntilInterrupt;
+}
+
 //===========================================================================
 
 #include "CPU/cpu6502.h"  // MOS 6502
@@ -649,22 +656,6 @@ void CpuReset()
 }
 
 //===========================================================================
-
-void CpuSetSnapshot_v1(const BYTE A, const BYTE X, const BYTE Y, const BYTE P, const BYTE SP, const USHORT PC, const unsigned __int64 CumulativeCycles)
-{
-	regs.a  = A;
-	regs.x  = X;
-	regs.y  = Y;
-	regs.ps = P | (AF_RESERVED | AF_BREAK);
-	regs.sp = ((USHORT)SP) | 0x100;
-	regs.pc = PC;
-
-	CpuIrqReset();
-	CpuNmiReset();
-	g_nCumulativeCycles = CumulativeCycles;
-}
-
-//
 
 #define SS_YAML_KEY_CPU_TYPE "Type"
 #define SS_YAML_KEY_REGA "A"

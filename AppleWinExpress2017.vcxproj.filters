@@ -76,6 +76,9 @@
     <ClCompile Include="source\Keyboard.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\LanguageCard.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
     <ClCompile Include="source\Log.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
@@ -186,6 +189,9 @@
     </ClCompile>
     <ClCompile Include="source\YamlHelper.cpp">
       <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
+    <ClCompile Include="source\RGBMonitor.cpp">
+      <Filter>Source Files\Video</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -310,6 +316,9 @@
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\Keyboard.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\LanguageCard.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\Log.h">
@@ -458,6 +467,9 @@
     </ClInclude>
     <ClInclude Include="source\SaveState_Structs_v1.h">
       <Filter>Source Files\_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\RGBMonitor.h">
+      <Filter>Source Files\Video</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

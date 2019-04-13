@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	// 1.19.0.0 Hard Disk Status/Indicator Light
 	void HD_GetLightStatus (Disk_Status_e *pDisk1Status_);
+	bool HD_ImageSwap(void);
 
 	std::string HD_GetSnapshotCardName(void);
 	void HD_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);

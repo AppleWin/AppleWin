@@ -86,6 +86,7 @@ static WORD		phases = 0;					// state bits for stepper magnet phases 0 - 3
 static bool		g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT		g_uSlot = 0;
 static unsigned __int64 g_uDiskLastCycle = 0;
+static unsigned __int64 g_uDiskLastReadLatchCycle = 0;
 static FormatTrack g_formatTrack;
 
 static bool IsDriveValid( const int iDrive );
@@ -891,11 +892,31 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 		}
 	}
 
-	// Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
-	// but Sherwood Forest sets shift mode and reads with the drive off, so don't check for now
 	if (!floppywritemode)
 	{
+		// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
+		// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
+		// Note: Sherwood Forest sets shift mode and reads with the drive off.
+		if (!pDrive->spinning)	// GH#599
+			return;
+
+		const ULONG nReadCycleDiff = (ULONG) (g_nCumulativeCycles - g_uDiskLastReadLatchCycle);
+
+		// Support partial nibble read if disk reads are very close: (GH#582)
+		// . 6 cycles (1st->2nd read) for DOS 3.3 / $BD34: "read with delays to see if disk is spinning." (Beneath Apple DOS)
+		// . 6 cycles (1st->2nd read) for Curse of the Azure Bonds (loop to see if disk is spinning)
+		// . 31 cycles is the max for a partial 8-bit nibble
+		const ULONG kReadAccessThreshold = enhancedisk ? 6 : 31;
+
+		if (nReadCycleDiff <= kReadAccessThreshold)
+		{
+			UINT invalidBits = 8 - (nReadCycleDiff / 4);	// 4 cycles per bit-cell
+			floppylatch = *(pFloppy->trackimage + pFloppy->byte) >> invalidBits;
+			return;	// Early return so don't update: g_uDiskLastReadLatchCycle & pFloppy->byte
+		}
+
 		floppylatch = *(pFloppy->trackimage + pFloppy->byte);
+		g_uDiskLastReadLatchCycle = g_nCumulativeCycles;
 
 #if LOG_DISK_NIBBLES_READ
   #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
@@ -937,10 +958,8 @@ static void __stdcall DiskReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULO
 	if (++pFloppy->byte >= pFloppy->nibbles)
 		pFloppy->byte = 0;
 
-	// Feature Request #201 Show track status
-	// https://github.com/AppleWin/AppleWin/issues/201
-	// NB. Prevent flooding of forcing UI to redraw!!!
-	if( ((pFloppy->byte) & 0xFF) == 0 )
+	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
+	if ((pFloppy->byte & 0xFF) == 0)
 		FrameDrawDiskStatus( (HDC)0 );
 }
 
@@ -959,6 +978,10 @@ void DiskReset(const bool bIsPowerCycle/*=false*/)
 
 	if (bIsPowerCycle)	// GH#460
 	{
+		// NB. This doesn't affect the drive head (ie. drive's track position)
+		// . The initial machine start-up state is track=0, but after a power-cycle the track could be any value.
+		// . (For DiskII firmware, this results in a subtle extra latch read in this latter case, for the track!=0 case)
+
 		g_aFloppyDrive[DRIVE_1].spinning   = 0;
 		g_aFloppyDrive[DRIVE_1].writelight = 0;
 		g_aFloppyDrive[DRIVE_2].spinning   = 0;
@@ -1031,11 +1054,16 @@ bool DiskSelect(const int iDrive)
 static void __stdcall DiskLoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG)
 {
 	/* floppyloadmode = 1; */
+
+	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
+	// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
+	// Note: Gemstone Warrior sets load mode with the drive off.
+	if (!g_aFloppyDrive[currdrive].spinning)	// GH#599
+		return;
+
 	if (!write)
 	{
 		// Notes:
-		// . Should really test for drive off - after 1 second drive off delay (UTAIIe page 9-13)
-		//   but Gemstone Warrior sets load mode with the drive off, so don't check for now
 		// . Phase 1 on also forces write protect in the Disk II drive (UTAIIe page 9-7) but we don't implement that
 		// . write mode doesn't prevent reading write protect (GH#537):
 		//   "If for some reason the above write protect check were entered with the READ/WRITE switch in WRITE, 
@@ -1273,97 +1301,10 @@ static BYTE __stdcall Disk_IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 
 //===========================================================================
 
-int DiskSetSnapshot_v1(const SS_CARD_DISK2* const pSS)
-{
-	if(pSS->Hdr.UnitHdr.hdr.v1.dwVersion > MAKE_VERSION(1,0,0,2))
-		return -1;
-
-	phases  		= pSS->phases;
-	currdrive		= pSS->currdrive;
-	//diskaccessed	= pSS->diskaccessed;	// deprecated
-	enhancedisk		= pSS->enhancedisk ? true : false;
-	floppylatch		= pSS->floppylatch;
-	floppymotoron	= pSS->floppymotoron;
-	floppywritemode	= pSS->floppywritemode;
-
-	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
-	for(UINT i=0; i<NUM_DRIVES; i++)
-	{
-		DiskEject(i);	// Remove any disk & update Registry to reflect empty drive
-		g_aFloppyDrive[i].clear();
-	}
-
-	for(UINT i=0; i<NUM_DRIVES; i++)
-	{
-		if(pSS->Unit[i].szFileName[0] == 0x00)
-			continue;
-
-		DWORD dwAttributes = GetFileAttributes(pSS->Unit[i].szFileName);
-		if(dwAttributes == INVALID_FILE_ATTRIBUTES)
-		{
-			// Get user to browse for file
-			DiskSelectImage(i, pSS->Unit[i].szFileName);
-
-			dwAttributes = GetFileAttributes(pSS->Unit[i].szFileName);
-		}
-
-		bool bImageError = false;
-		if(dwAttributes != INVALID_FILE_ATTRIBUTES)
-		{
-			if(DiskInsert(i, pSS->Unit[i].szFileName, dwAttributes & FILE_ATTRIBUTE_READONLY, IMAGE_DONT_CREATE) != eIMAGE_ERROR_NONE)
-				bImageError = true;
-
-			// DiskInsert() sets up:
-			// . imagename
-			// . fullname
-			// . writeprotected
-		}
-
-		//
-
-//		strcpy(g_aFloppyDrive[i].fullname, pSS->Unit[i].szFileName);
-		g_aFloppyDrive[i].track				= pSS->Unit[i].track;
-		g_aFloppyDrive[i].phase				= pSS->Unit[i].phase;
-		g_aFloppyDrive[i].spinning			= pSS->Unit[i].spinning;
-		g_aFloppyDrive[i].writelight		= pSS->Unit[i].writelight;
-
-		g_aFloppyDrive[i].disk.byte				= pSS->Unit[i].byte;
-//		g_aFloppyDrive[i].disk.writeprotected	= pSS->Unit[i].writeprotected;
-		g_aFloppyDrive[i].disk.trackimagedata	= pSS->Unit[i].trackimagedata ? true : false;
-		g_aFloppyDrive[i].disk.trackimagedirty	= pSS->Unit[i].trackimagedirty ? true : false;
-		g_aFloppyDrive[i].disk.nibbles			= pSS->Unit[i].nibbles;
-
-		//
-
-		if(!bImageError)
-		{
-			if((g_aFloppyDrive[i].disk.trackimage == NULL) && g_aFloppyDrive[i].disk.nibbles)
-				AllocTrack(i);
-
-			if(g_aFloppyDrive[i].disk.trackimage == NULL)
-				bImageError = true;
-			else
-				memcpy(g_aFloppyDrive[i].disk.trackimage, pSS->Unit[i].nTrack, NIBBLES_PER_TRACK);
-		}
-
-		if(bImageError)
-		{
-			g_aFloppyDrive[i].disk.trackimagedata	= false;
-			g_aFloppyDrive[i].disk.trackimagedirty	= false;
-			g_aFloppyDrive[i].disk.nibbles			= 0;
-		}
-	}
-
-	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
-
-	return 0;
-}
-
-//===========================================================================
-
-// Unit version history:  
+// Unit version history:
 // 2: Added: Format Track state & DiskLastCycle
-static const UINT kUNIT_VERSION = 2;
+// 3: Added: DiskLastReadLatchCycle
+static const UINT kUNIT_VERSION = 3;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
 
@@ -1375,6 +1316,7 @@ static const UINT kUNIT_VERSION = 2;
 #define SS_YAML_KEY_FLOPPY_MOTOR_ON "Floppy Motor On"
 #define SS_YAML_KEY_FLOPPY_WRITE_MODE "Floppy Write Mode"
 #define SS_YAML_KEY_LAST_CYCLE "Last Cycle"
+#define SS_YAML_KEY_LAST_READ_LATCH_CYCLE "Last Read Latch Cycle"
 
 #define SS_YAML_KEY_DISK2UNIT "Unit"
 #define SS_YAML_KEY_FILENAME "Filename"
@@ -1429,6 +1371,7 @@ void DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_MOTOR_ON, floppymotoron == TRUE);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_WRITE_MODE, floppywritemode == TRUE);
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_CYCLE, g_uDiskLastCycle);	// v2
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_READ_LATCH_CYCLE, g_uDiskLastReadLatchCycle);	// v3
 	g_formatTrack.SaveSnapshot(yamlSaveHelper);	// v2
 
 	DiskSaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_1);
@@ -1532,6 +1475,11 @@ bool DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 	{
 		g_uDiskLastCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LAST_CYCLE);
 		g_formatTrack.LoadSnapshot(yamlLoadHelper);
+	}
+
+	if (version >= 3)
+	{
+		g_uDiskLastReadLatchCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LAST_READ_LATCH_CYCLE);
 	}
 
 	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1

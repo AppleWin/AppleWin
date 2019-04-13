@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Applewin.h"
 #include "../CPU.h"
 #include "../Frame.h"
+#include "../LanguageCard.h"
 #include "../Memory.h"
 #include "../Mockingboard.h"
 #include "../Video.h"
@@ -1493,7 +1494,7 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 
 			if (! (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
 			{
-					pTarget = FormatAddress( nTarget, nOpbyte );
+				pTarget = FormatAddress( nTarget, (iOpmode != AM_R) ? nOpbyte : 3 );	// GH#587: For Bcc opcodes, pretend it's a 3-byte opcode to print a 16-bit target addr
 			}				
 
 //			sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, pTarget );
@@ -1517,7 +1518,7 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 			{
 				bDisasmFormatFlags |= DISASM_FORMAT_TARGET_POINTER;
 
-				nTargetValue = *(LPWORD)(mem+nTargetPointer);
+				nTargetValue = *(mem + nTargetPointer) | (*(mem + ((nTargetPointer + 1) & 0xffff)) << 8);
 
 //				if (((iOpmode >= AM_A) && (iOpmode <= AM_NZ)) && (iOpmode != AM_R))
 				// nTargetBytes refers to size of pointer, not size of value
@@ -1791,7 +1792,8 @@ void FormatDisassemblyLine( const DisasmLine_t & line, char * sDisassembly, cons
 		if (line.bTargetImmediate)
 		{
 			strcat( sDisassembly, "#" );
-			strcpy( sTarget, line.sTarget ); // sTarget
+			strncpy( sTarget, line.sTarget, sizeof(sTarget) );
+			sTarget[sizeof(sTarget)-1] = 0;
 		}
 		else
 			sprintf( sTarget, g_aOpmodes[ line.iOpmode ].m_sFormat, line.nTarget );
@@ -2459,7 +2461,7 @@ void DrawMemory ( int line, int iMemDump )
 	char sText[ MAX_MEM_VIEW_TXT * 2 ];
 	char sData[ MAX_MEM_VIEW_TXT * 2 ];
 
-	char sType   [ 4 ] = "Mem";
+	char sType   [ 6 ] = "Mem";
 	char sAddress[ 8 ] = "";
 
 	int iForeground = FG_INFO_OPCODE;
@@ -2891,11 +2893,9 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, int iBankDisplay, int bg_defa
 		int iActiveBank = -1;
 		char sText[ 4 ] = "?"; // Default to RAMWORKS
 #ifdef RAMWORKS
-		if (g_eMemType == MEM_TYPE_RAMWORKS) { sText[0] = 'r'; iActiveBank = g_uActiveBank; } // RAMWORKS
+		if (GetCurrentExpansionMemType() == CT_RamWorksIII) { sText[0] = 'r'; iActiveBank = GetRamWorksActiveBank(); } // RAMWORKS
 #endif
-#ifdef SATURN
-		if (g_eMemType == MEM_TYPE_SATURN  ) { sText[0] = 's'; iActiveBank = g_uSaturnActiveBank; } // SATURN 64K 128K
-#endif // SATURN
+		if (GetCurrentExpansionMemType() == CT_Saturn128K)  { sText[0] = 's'; iActiveBank = GetLanguageCard()->GetActiveBank(); } // SATURN 64K 128K
 
 		if (iActiveBank >= 0)
 		{
@@ -3089,7 +3089,7 @@ void DrawSoftSwitches( int iSoftSwitch )
 		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80", NULL, bgMemory );
 
 		// C00E = off, C00F = on
-		bSet = VideoGetSWAltCharSet();
+		bSet = !VideoGetSWAltCharSet();
 		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS", NULL, bgMemory ); // ASCII/MouseText
 
 #if SOFTSWITCH_LANGCARD

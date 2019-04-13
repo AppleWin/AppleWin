@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Applewin.h"
+#include "Frame.h"	// g_hFrameWindow
 #include "Memory.h"
 #include "ParallelPrinter.h"
 #include "Registry.h"
@@ -160,9 +161,9 @@ static BYTE __stdcall PrintTransmit(WORD, WORD, BYTE, BYTE value, ULONG)
 {
 	         char Lat8A[]= "abwgdevzijklmnoprstufhc~{}yx`q|]";
              char Lat82[]= "abwgdevzijklmnoprstufhc^[]yx@q{}~`"; 
-			 char Kir82[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÜŞß[]^@";
-	  char Kir8ACapital[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÜŞßİ";
-	char Kir8ALowerCase[]= "àáâãäåæçèéêëìíîïğñòóôõö÷øùúüşÿı";
+			 char Kir82[]= "Ã€ÃÃ‚ÃƒÃ„Ã…Ã†Ã‡ÃˆÃ‰ÃŠÃ‹ÃŒÃÃÃÃÃ‘Ã’Ã“Ã”Ã•Ã–Ã—Ã˜Ã™ÃšÃœÃÃŸ[]^@";
+	  char Kir8ACapital[]= "Ã€ÃÃ‚ÃƒÃ„Ã…Ã†Ã‡ÃˆÃ‰ÃŠÃ‹ÃŒÃÃÃÃÃ‘Ã’Ã“Ã”Ã•Ã–Ã—Ã˜Ã™ÃšÃœÃÃŸÃ";
+	char Kir8ALowerCase[]= "Ã Ã¡Ã¢Ã£Ã¤Ã¥Ã¦Ã§Ã¨Ã©ÃªÃ«Ã¬Ã­Ã®Ã¯Ã°Ã±Ã²Ã³Ã´ÃµÃ¶Ã·Ã¸Ã¹ÃºÃ¼Ã¾Ã¿Ã½";
 	bool Pres = false;
     if (!CheckPrint())
     {
@@ -234,14 +235,26 @@ char* Printer_GetFilename()
 
 void Printer_SetFilename(char* prtFilename)
 {
-	if(*prtFilename)
+	if (*prtFilename)
+	{
 		strcpy(g_szPrintFilename, (const char *) prtFilename);
+	}
 	else  //No registry entry is available
 	{
 		_tcsncpy(g_szPrintFilename, g_sProgramDir, MAX_PATH);
 		g_szPrintFilename[MAX_PATH - 1] = 0;
-        _tcsncat(g_szPrintFilename, _T(DEFAULT_PRINT_FILENAME), MAX_PATH);		
-		RegSaveString(TEXT("Configuration"),REGVALUE_PRINTER_FILENAME,1,g_szPrintFilename);
+
+		// NB. _tcsncat_s() terminates program if buffer is too small! So continue to use manual buffer check & _tcsncat()
+
+		int nLen = sizeof(g_szPrintFilename) - strlen(g_szPrintFilename) - (sizeof(DEFAULT_PRINT_FILENAME)-1) - 1;
+		if (nLen < 0)
+		{
+			MessageBox(g_hFrameWindow, "Printer - SetFilename(): folder too deep", "Warning", MB_ICONWARNING | MB_OK);
+			return;
+		}
+
+		_tcsncat(g_szPrintFilename, DEFAULT_PRINT_FILENAME, sizeof(DEFAULT_PRINT_FILENAME)-1);
+		RegSaveString(REG_CONFIG, REGVALUE_PRINTER_FILENAME, 1, g_szPrintFilename);
 	}
 }
 
@@ -302,6 +315,7 @@ bool Printer_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT 
 	inactivity					= yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);
 	g_PrinterIdleLimit			= yamlLoadHelper.LoadUint(SS_YAML_KEY_IDLELIMIT);
 	strncpy(g_szPrintFilename, yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME).c_str(), sizeof(g_szPrintFilename));
+	g_szPrintFilename[sizeof(g_szPrintFilename)-1] = 0;
 
 	if (yamlLoadHelper.LoadBool(SS_YAML_KEY_FILEOPEN))
 	{

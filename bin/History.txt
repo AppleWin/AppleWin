@@ -9,11 +9,149 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.27.3.0 - 14 Apr 2018
+1.28.5.0 - 6 Apr 2019
+---------------------
+. [Change #631] Improvements for the RGB AppleColor card:
+	- Relax the video-mode precondition to just ignore if VF_MIXED (previously required HIRES on) for Apple II Desktop.
+	- Changing from DHGR B&W mode to HGR remains in B&W (color burst is off).
+	- For '50% scan lines', don't blend in NTSC B&W mode, as this was inconsistent with the RGB colour rendering.
+. [Change #633] Improvements for the RGB AppleColor card:
+	- Improved the video-mode precondition to ignore if 80COL ($C00C/D) occurs before DHIRESON ($C05F) for Renegade.
+	- Support new switch -rgb-card-invert-bit7 to invert bit7 for Dragon Wars.
+
+
+1.28.4.0 - 16 Mar 2019
 ----------------------
+. [Change #616] Improved accuracy for 'RGB (Color Monitor)' for hires.
+. [Bug #611] Holding down F9 to cycle through the video modes results in occasional flicker with garbage.
+. [Bug #627] Rainbow demo not working correctly when vertical blend is enabled.
+. [Bug #628] Filename suffix check for .gz and .zip needs to be case-insensitive.
+
+
+1.28.3.0 - 3 Mar 2019
+---------------------
+. [Change #625] AltGr+<key> does not send the <key> value to $C000.
+	- This reverts the default behaviour introduced from 1.27.6 (#558).
+	- Use -altgr-sends-wmchar to allow AltGr+<key> to work correctly together.
+	- NB. The reason for the revert was that it was preventing international keyboards from typing certain characters.
+. [Change #616] Vertical blending now uses 560-pixel granularity for half-dot shift support (consistent with all other video modes).
+
+
+1.28.2.0 - 24 Feb 2019
+----------------------
+. [Change #616] Support vertical blending for 'RGB (Color Monitor)' for hires.
+	- Support the old AppleWin 1.25 vertical blending for hires via a 'Vertical Blend' checkbox.
+. [Change #621] Support RGB AppleColor card's 160-color pixel mode by squashing 640 pixels into 560 pixels.
+	- Squashing is done by losing every 8th pixel.
+. [PR #623] Do not reset on minor state load errors.
+. [Bug #609] Configuration dialog didn't correctly reflect lack of Mockingboard/Phasor when loading a save-state without this sound card.
+
+
+1.28.1.0 - 2 Feb 2019
+---------------------
+. [Change #523] Support Extended 80-Column Text/AppleColor Card's DHGR Mixed mode and 560x192 Mono mode.
+. [PR #620] Corrected a few symbol names in APPLE2E.SYM for the 80STORE and 80COL I/O addresses.
+. [Bug #617] Apple II,II+ keyboard: up/down arrow keys are now ignored.
+
+
+1.28.0.0 - 12 Jan 2019
+----------------------
+. [Change #357] Resurrected the AppleWin 1.25 "Color (Standard)" video mode as "Color (RGB Monitor)".
+	- This is equivalent to emulating RGB video, ie. a video mode with sharp text and pixels.
+	- NB. Unlike AppleWin 1.25, this is now cycle-accurate, so demos that synchronise with the video scanner will work correctly.
+. [Change #603] Removed support for v1 save-state files.
+	- Any v1 save-state files should be loaded into AppleWin 1.27, and then re-saved to a v2 save-state file.
+. [Change #597] Removed the functionality for CTRL+F10 to reveal the mouse cursor.
+. [Change #585] Added a 'Swap' HDD button to the Configuration->Input property sheet.
+. [Bug #608] Mockingboard's 6522 TIMER1 wasn't generating an interrupt quickly enough for Broadside's detection routine.
+
+
+1.27.13.0 - 8 Dec 2018
+----------------------
+. [Bug #303, #599] Fix for Ultima V not loading in Authentic Speed mode (regression introduced at 1.27.9.0).
+. [Change #205] Added support for Apple II/II+ custom 2K video ROMs.
+	- Extended command line switch: -videorom <file>
+	- If the ROM size is 2K, then it replaces the video ROM for the Apple II/II+.
+
+
+1.27.12.0 - 17 Nov 2018
+-----------------------
+. [Change #574] Added support for PAL/European or custom 8K video ROMs:
+	- Added new command line switch: -videorom <file>
+		- Replaces the video ROM for the Enhanced //e.
+		- Support video ROM sizes of 4K, 8K and 16K (top 8K only).
+		- NB. The rocker switch is set to the European video ROM position.
+	- F10 (for //e or Enhanced //e models) emulates the PAL //e's rocker switch (under the keyboard).
+		- Use to toggle between European or US video ROM.
+. [Change #583] Added new switch: '-no-hook-alt':
+	- Used to prevent left/right ALT from emulating Open/Solid Apple keys.
+	- For European keyboards where AltGr is needed to type keys like '[',']'.
+
+
+1.27.10.0 - 4 Nov 2018
+----------------------
+. [Change #590] Apple II original: default to 48K (so no LC installed in slot-0).
+	- Added new command line switch: -s0 <languagecard|lc>
+	('lc' is an alias for 'languagecard')
+	- When LC is in slot-0, it now use the Apple II+'s F8 (auto-start) ROM
+. [Change #408] Support Saturn 64K and 128K cards in slot-0.
+	- Added new command line switch: -s0 <saturn|saturn64|saturn128>
+	('saturn' is an alias for 'saturn128')
+. [Bug #591] Save-state wasn't preserving the 'key-waiting' flag.
+. [Bug #587] Debugger: disassembly for branch targets < $1000 were missing the leading '0'.
+
+
+1.27.9.0 - 2 Oct 2018
+---------------------
+. [Bug #582] Support for partial disk II latch reads when accesses are very close.
+	- Fixes Curse of the Azure Bonds & Pool of Radiance (saving characters and creating disks).
+
+
+1.27.8.0 - 9 Sep 2018
+---------------------
+. [Bug #555] Fix for showing 559th DHGR/DGR/TEXT80 vertical column (retaining 560-pixel display width).
+
+
+1.27.7.0 - 6 Aug 2018
+---------------------
+. [Bug #564] Fixed 'Save State on Exit' not working correctly when there's a Configuration change to the hardware.
+. [Bug #556] Reverted default so that ALT+TAB is not hooked
+	- Support new command line switch: -hook-alt-tab to support hooking ALT+TAB.
+. [Bug #558] Reverted default so that ALT GR's fake LEFT CONTROL is not hooked
+	- Support new command line switch: -hook-altgr-control to suppress ALR GR's fake LEFT CONTROL.
+
+
+1.27.6.0 - 28 Jul 2018
+----------------------
+. [Bug #570] Fixed lag when repeat-stepping in debugger.
+. [Bug #558] Fixed ClosedApple + <key> not working (when using right ALT key).
+
+
+1.27.5.0 - 24 Jun 2018
+----------------------
+. [Bug #567] Fixed Mockingboard/6522: Reading the 6522's IER now returns 0x80|IER.
+. [Bug #556] Allow system key combinations to be read: Open Apple (left ALT) + ESC/SPACE/TAB.
+	- Also fixes #145, #198, #448.
+	- Support new command line switches: -no-hook-system-key, -alt-enter=<open-apple-enter|toggle-full-screen>
+	- Fix for save-state which wasn't correctly saving last key.
+. [Bug #555] Reverted 1.27.4's "Fix for showing 559th DHGR vertical column".
+	- So 559th DHGR vertical column remains hidden (this is still a bug).
+. [Bug #330] Any Key Down (AKD) wasn't working for the multi-key case.
+
+
+1.27.4.0 - 26 May 2018
+----------------------
+. [Bug #555] Fix for showing 559th DHGR vertical column.
+	- But now an HGR HCOLOR=2 vertical line at column 0 is only 1 DHGR pixel wide.
+	- Fix TEXT80 to be aligned with DHGR.
+	- Fix FLASH in TEXT80 (the inverse aux-memory char would overwrite the main-memory char).
+. [Change #554] Help: Added a new help page about AppleWin's SSC emulation.
+. [Change #522] SSC: ZLINK not starting unless DCD is set.
+	- DCD state is now a mirror of DSR unless -dcd switch is used.
+	- Removed -dsr,-dtr switches, so -modem is now an alias for -dcd.
 . [Bug #308] SSC: For TCP mode, support DSR, DCD & CTS status bits.
 . SSC: Now DTR must also be set to enable interrupts (in addition to the respective Tx/Rx interrupt bit).
-. SSC: When reading the Status register, throttle calls to GetCommModemStatus() to a maximum of once every 8ms.
+. SSC: Change DIPSW1's baud rate to 9600 (was 19200).
 
 
 1.27.2.0 - 12 Apr 2018
@@ -614,8 +752,8 @@ Beta builds for specific testers
 . Support for Pravets 82. Caps Lock serves as Lat/Cyr lock. The charset still needs a little fix (all characters have to be one row down).
 . Some partial support for Pravets 8A. Caps Lock serves as Lat/Cyr lock, and F10 serves as Caps Lock.
 In Pravets 8A mode the former behaviour of the F10 key is preserved as Ctrl+F10 (see Help/Keyboard for details).
-Extended Basic and Miniassembler work, but there are still problems with the 8 bit charset (œ‡ËÒ [Parris] does not switch to latin characters).
-Some keys have to be remapped, because currently they are not available (i.e. ›). There is still the problem that there is not enough space for this key on the keyboard.
+Extended Basic and Miniassembler work, but there are still problems with the 8 bit charset (√è√†√∞√®√± [Parris] does not switch to latin characters).
+Some keys have to be remapped, because currently they are not available (i.e. √ù). There is still the problem that there is not enough space for this key on the keyboard.
 . Added Send to CiderPress function via the popup menu of the drive buttons.
 
 1.14.1.2 - 2 Dec 2007 (beta)

@@ -20,7 +20,6 @@ const DWORD dwClksPerFrame			= uCyclesPerLine * uLinesPerFrame;	// 17030
 #define  MIN(a,b)          (((a) < (b)) ? (a) : (b))
 
 #define  RAMWORKS			// 8MB RamWorks III support
-//#define  SATURN				// SATURN 128K
 
 // Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 // Assume base freqs are 44.1KHz & 48KHz
@@ -105,13 +104,15 @@ enum AppMode_e
 #define  REGVALUE_PRINTER_APPEND     "Append to printer file"
 #define  REGVALUE_PRINTER_IDLE_LIMIT "Printer idle limit"
 #define  REGVALUE_VIDEO_MODE         "Video Emulation"
-#define  REGVALUE_VIDEO_HALF_SCAN_LINES "Half Scan Lines"
+#define  REGVALUE_VIDEO_STYLE         "Video Style"			// GH#616: Added at 1.28.2
+#define  REGVALUE_VIDEO_HALF_SCAN_LINES "Half Scan Lines"	// GH#616: Deprecated from 1.28.2
 #define  REGVALUE_VIDEO_MONO_COLOR      "Monochrome Color"
 #define  REGVALUE_SERIAL_PORT_NAME   "Serial Port Name"
 #define  REGVALUE_ENHANCE_DISK_SPEED "Enhance Disk Speed"
 #define  REGVALUE_CUSTOM_SPEED       "Custom Speed"
 #define  REGVALUE_EMULATION_SPEED    "Emulation Speed"
 #define  REGVALUE_WINDOW_SCALE       "Window Scale"
+#define  REGVALUE_SLOT0					"Slot 0"
 #define  REGVALUE_SLOT1					"Slot 1"
 #define  REGVALUE_SLOT2					"Slot 2"
 #define  REGVALUE_SLOT3					"Slot 3"
@@ -162,8 +163,8 @@ enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 #define APPLECLONE_MASK	0x100
 
 #define IS_APPLE2		((g_Apple2Type & (APPLE2E_MASK|APPLE2C_MASK)) == 0)
-#define IS_APPLE2E		(g_Apple2Type & APPLE2E_MASK)
-#define IS_APPLE2C		(g_Apple2Type & APPLE2C_MASK)
+#define IS_APPLE2E()	(g_Apple2Type & APPLE2E_MASK)
+#define IS_APPLE2C()	(g_Apple2Type & APPLE2C_MASK)
 #define IS_CLONE()		(g_Apple2Type & APPLECLONE_MASK)
 
 // NB. These get persisted to the Registry & save-state file, so don't change the values for these enums!
@@ -193,9 +194,14 @@ enum eApple2Type {
 					A2TYPE_MAX
 				};
 
-inline bool IsApple2(eApple2Type type)
+inline bool IsApple2Original(eApple2Type type)		// Apple ][
 {
-	return (type & (APPLE2E_MASK|APPLE2C_MASK)) == 0;
+	return type == A2TYPE_APPLE2;
+}
+
+inline bool IsApple2Plus(eApple2Type type)			// Apple ][,][+
+{
+	return ((type & (APPLE2E_MASK|APPLE2C_MASK)) == 0) && !(type & APPLECLONE_MASK);
 }
 
 inline bool IsClone(eApple2Type type)
@@ -203,10 +209,20 @@ inline bool IsClone(eApple2Type type)
 	return (type & APPLECLONE_MASK) != 0;
 }
 
-extern eApple2Type g_Apple2Type;
-inline bool IsOriginal2E(void)
+inline bool IsApple2PlusOrClone(eApple2Type type)	// Apple ][,][+ or clone ][,][+
 {
-	return (g_Apple2Type == A2TYPE_APPLE2E);
+	return (type & (APPLE2E_MASK|APPLE2C_MASK)) == 0;
+}
+
+extern eApple2Type g_Apple2Type;
+inline bool IsEnhancedIIE(void)
+{
+	return ( (g_Apple2Type == A2TYPE_APPLE2EENHANCED) || (g_Apple2Type == A2TYPE_TK30002E) );
+}
+
+inline bool IsEnhancedIIEorIIC(void)
+{
+	return ( (g_Apple2Type == A2TYPE_APPLE2EENHANCED) || (g_Apple2Type == A2TYPE_TK30002E) || IS_APPLE2C() );
 }
 
 enum eBUTTON {BUTTON0=0, BUTTON1};

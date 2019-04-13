@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
+#include "NTSC.h"
 #include "ParallelPrinter.h"
 #include "Pravets.h"
 #include "Registry.h"
@@ -57,6 +58,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debugger/Debug.h"
 
 //#define ENABLE_MENU 0
+#define DEBUG_KEY_MESSAGES 0
 
 // 3D border around the 560x384 Apple II display
 #define  VIEWPORTX   5
@@ -177,6 +179,15 @@ void FrameResizeWindow(int nNewScale);
 
 // ==========================================================================
 
+static bool g_bAltEnter_ToggleFullScreen = true; // Default for ALT+ENTER is to toggle between windowed and full-screen modes
+
+void SetAltEnterToggleFullScreen(bool mode)
+{
+	g_bAltEnter_ToggleFullScreen = mode;
+}
+
+// ==========================================================================
+
 // Display construction:
 // . Apple II video gets rendered to the framebuffer (maybe with some preliminary/final NTSC data in the border areas)
 // . The *borderless* framebuffer is stretchblt() copied to the frame DC, in VideoRefreshScreen()
@@ -189,7 +200,7 @@ void FrameResizeWindow(int nNewScale);
 
 UINT GetFrameBufferBorderlessWidth(void)
 {
-	static const UINT uFrameBufferBorderlessW = 560;	// 560 = Double Hi-Res
+	static const UINT uFrameBufferBorderlessW = NTSC_GetFrameBufferBorderlessWidth();	// 560 = Double Hi-Res, +1 for GH#555
 	return uFrameBufferBorderlessW;
 }
 
@@ -264,7 +275,7 @@ static void GetAppleWindowTitle()
 	// TODO: g_bDisplayVideoModeInTitle
 	_tcscat( g_pAppleWindowTitle, " - " );
 
-	if( g_uHalfScanLines )
+	if( IsVideoStyle(VS_HALF_SCANLINES) )
 	{
 		_tcscat( g_pAppleWindowTitle," 50% " );
 	}
@@ -1082,25 +1093,32 @@ LRESULT CALLBACK FrameWndProc (
         g_TimerIDEvent_100msec = 0;
       }
       LogFileOutput("WM_CLOSE (done)\n");
+	  // Exit via DefWindowProc(), which does the default action for WM_CLOSE, which is to call DestroyWindow(), posting WM_DESTROY
       break;
 
-		case WM_CHAR:
-			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_LOGO))
-			{
-				if( !g_bDebuggerEatKey )
-				{
-					KeybQueueKeypress((int)wparam, ASCII);
-				}
-				else
-				{
-					g_bDebuggerEatKey = false;
-				}
-			}
-			else if (g_nAppMode == MODE_DEBUG)
-			{
-				DebuggerInputConsoleChar((TCHAR)wparam);
-			}
-			break;
+    case WM_DESTROY:
+      LogFileOutput("WM_DESTROY\n");
+      DragAcceptFiles(window,0);
+	  if (!g_bRestart)	// GH#564: Only save-state on shutdown (not on a restart)
+		Snapshot_Shutdown();
+      DebugDestroy();
+      if (!g_bRestart) {
+        DiskDestroy();
+        ImageDestroy();
+        HD_Destroy();
+      }
+      PrintDestroy();
+      sg_SSC.CommDestroy();
+      CpuDestroy();
+      MemDestroy();
+      SpkrDestroy();
+      VideoDestroy();
+      MB_Destroy();
+      DeleteGdiObjects();
+      DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
+      PostQuitMessage(0);	// Post WM_QUIT message to the thread's message queue
+      LogFileOutput("WM_DESTROY (done)\n");
+      break;
 
     case WM_CREATE:
       LogFileOutput("WM_CREATE\n");
@@ -1159,29 +1177,6 @@ LRESULT CALLBACK FrameWndProc (
       LogFileOutput("WM_DDE_EXECUTE (done)\n");
       break;
     }
-
-    case WM_DESTROY:
-      LogFileOutput("WM_DESTROY\n");
-      DragAcceptFiles(window,0);
-	  Snapshot_Shutdown();
-      DebugDestroy();
-      if (!g_bRestart) {
-        DiskDestroy();
-        ImageDestroy();
-        HD_Destroy();
-      }
-      PrintDestroy();
-      sg_SSC.CommDestroy();
-      CpuDestroy();
-      MemDestroy();
-      SpkrDestroy();
-      VideoDestroy();
-      MB_Destroy();
-      DeleteGdiObjects();
-      DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
-      PostQuitMessage(0);	// Post WM_QUIT message to the thread's message queue
-      LogFileOutput("WM_DESTROY (done)\n");
-      break;
 
     case WM_DISPLAYCHANGE:
       VideoReinitialize();
@@ -1280,27 +1275,28 @@ LRESULT CALLBACK FrameWndProc (
 			// CTRL+SHIFT+F9 Toggle 50% Scan Lines
 			// ALT+F9        Can't use Alt-F9 as Alt is Open-Apple = Joystick Button #1
 
-			if ( !g_bCtrlKey && !g_bShiftKey )		// F9
+			if ( !KeybGetCtrlStatus() && !KeybGetShiftStatus() )		// F9
 			{
 				g_eVideoType++;
 				if (g_eVideoType >= NUM_VIDEO_MODES)
 					g_eVideoType = 0;
 			}
-			else if ( !g_bCtrlKey && g_bShiftKey )	// SHIFT+F9
+			else if ( !KeybGetCtrlStatus() && KeybGetShiftStatus() )	// SHIFT+F9
 			{
 				if (g_eVideoType <= 0)
 					g_eVideoType = NUM_VIDEO_MODES;
 				g_eVideoType--;
 			}
-			else if ( g_bCtrlKey && g_bShiftKey )	// CTRL+SHIFT+F9
+			else if ( KeybGetCtrlStatus() && KeybGetShiftStatus() )		// CTRL+SHIFT+F9
 			{
-				g_uHalfScanLines = !g_uHalfScanLines;
+				SetVideoStyle( (VideoStyle_e) (GetVideoStyle() ^ VS_HALF_SCANLINES) );
 			}
 
 			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)
 			DrawStatusArea( (HDC)0, DRAW_TITLE );
 
-			VideoReinitialize();
+			VideoReinitialize(false);
+
 			if (g_nAppMode != MODE_LOGO)
 			{
 				if (g_nAppMode == MODE_DEBUG)
@@ -1319,7 +1315,19 @@ LRESULT CALLBACK FrameWndProc (
 
 			Config_Save_Video();
 		}
-		else if ((wparam == VK_F11) && (GetKeyState(VK_CONTROL) >= 0))	// Save state (F11)
+		else if (wparam == VK_F10)
+		{
+			if (g_Apple2Type == A2TYPE_APPLE2E || g_Apple2Type == A2TYPE_APPLE2EENHANCED)
+			{
+				SetVideoRomRockerSwitch( !GetVideoRomRockerSwitch() );	// F10: toggle rocker switch
+				NTSC_VideoInitAppleType();
+			}
+			else if (g_Apple2Type == A2TYPE_PRAVETS8A)
+			{
+				KeybToggleP8ACapsLock ();	// F10: Toggles Pravets8A Capslock
+			}
+		}
+		else if (wparam == VK_F11 && !KeybGetCtrlStatus())	// Save state (F11)
 		{
 			SoundCore_SetFade(FADE_OUT);
 			if(sg_PropertySheet.SaveStateSelectImage(window, true))
@@ -1328,7 +1336,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			SoundCore_SetFade(FADE_IN);
 		}
-		else if (wparam == VK_F12)										// Load state (F12 or Ctrl+F12)
+		else if (wparam == VK_F12)					// Load state (F12 or Ctrl+F12)
 		{
 			SoundCore_SetFade(FADE_OUT);
 			if(sg_PropertySheet.SaveStateSelectImage(window, false))
@@ -1371,32 +1379,50 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_LOGO) || (g_nAppMode == MODE_STEPPING))
 		{
-			// Note about Alt Gr (Right-Alt):
-			// . WM_KEYDOWN[Left-Control], then:
-			// . WM_KEYDOWN[Right-Alt]
-			BOOL extended = ((lparam & 0x01000000) != 0);
-			BOOL down     = 1;
-			BOOL autorep  = ((lparam & 0x40000000) != 0);
-			if ((!JoyProcessKey((int)wparam,extended,down,autorep)) && (g_nAppMode != MODE_LOGO))
-				KeybQueueKeypress((int)wparam,NOT_ASCII);
+			// NB. Alt Gr (Right-Alt): this normally send 2 WM_KEYDOWN messages for: VK_LCONTROL, then VK_RMENU
+			// . NB. The keyboard hook filter will suppress VK_LCONTROL (if -hook-altgr-control is passed on the cmd-line)
+			bool extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
+			bool down     = true;
+			bool autorep  = (HIWORD(lparam) & KF_REPEAT) != 0;
+			BOOL IsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
+
+#if DEBUG_KEY_MESSAGES
+			LogOutput("WM_KEYDOWN: %08X (scanCode=%04X)\n", wparam, (lparam>>16)&0xfff);
+#endif
+			if (!IsJoyKey &&
+				(g_nAppMode != MODE_LOGO))	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
+			{
+				KeybQueueKeypress(wparam, NOT_ASCII);
+
+				if (!autorep)
+					KeybAnyKeyDown(WM_KEYDOWN, wparam, extended);
+			}
 		}
 		else if (g_nAppMode == MODE_DEBUG)
 		{		
 			DebuggerProcessKey(wparam); // Debugger already active, re-direct key to debugger
 		}
-
-		if (wparam == VK_F10)
-		{
-			if ((g_Apple2Type == A2TYPE_PRAVETS8A) && (GetKeyState(VK_CONTROL) >= 0))
-			{
-				KeybToggleP8ACapsLock ();//Toggles P8 Capslock
-			}
-			else 
-			{
-				SetUsingCursor(FALSE);
-			}
-		}
 		break;
+
+		case WM_CHAR:
+			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_LOGO))
+			{
+				if (!g_bDebuggerEatKey)
+				{
+#if DEBUG_KEY_MESSAGES
+					LogOutput("WM_CHAR: %08X\n", wparam);
+#endif
+					if (g_nAppMode != MODE_LOGO)	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
+						KeybQueueKeypress(wparam, ASCII);
+				}
+
+				g_bDebuggerEatKey = false;
+			}
+			else if (g_nAppMode == MODE_DEBUG)
+			{
+				DebuggerInputConsoleChar((TCHAR)wparam);
+			}
+			break;
 
 	case WM_KEYUP:
 		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
@@ -1411,10 +1437,16 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else
 		{
-			BOOL extended = ((lparam & 0x01000000) != 0);
-			BOOL down     = 0;
-			BOOL autorep  = 0;
-			JoyProcessKey((int)wparam,extended,down,autorep);
+			bool extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
+			bool down     = false;
+			bool autorep  = false;
+			BOOL bIsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
+
+#if DEBUG_KEY_MESSAGES
+			LogOutput("WM_KEYUP: %08X\n", wparam);
+#endif
+			if (!bIsJoyKey)
+				KeybAnyKeyDown(WM_KEYUP, wparam, extended);
 		}
 		break;
 
@@ -1724,29 +1756,36 @@ LRESULT CALLBACK FrameWndProc (
       }
       break;
 
-	case WM_SYSKEYDOWN:
+	case WM_SYSKEYDOWN:	// ALT + any key; or F10
 		KeybUpdateCtrlShiftStatus();
 
 		// http://msdn.microsoft.com/en-us/library/windows/desktop/gg153546(v=vs.85).aspx
-		// v1.25.0: Alt-Return Alt-Enter toggle fullscreen
-		if (g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
+		if (g_bAltEnter_ToggleFullScreen && KeybGetAltStatus() && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
 			return 0; // NOP -- eat key
-		else
-			PostMessage(window,WM_KEYDOWN,wparam,lparam);
+
+		PostMessage(window,WM_KEYDOWN,wparam,lparam);
 
 		if ((wparam == VK_F10) || (wparam == VK_MENU))	// VK_MENU == ALT Key
 			return 0;
+
 		break;
 
 	case WM_SYSKEYUP:
 		KeybUpdateCtrlShiftStatus();
 
-		// v1.25.0: Alt-Return Alt-Enter toggle fullscreen
-		if (g_bAltKey && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
+		// F10: no WM_KEYUP handler for VK_F10. Don't allow WM_KEYUP to pass to default handler which will show the app window's "menu" (and lose focus)
+		if (wparam == VK_F10)
+			return 0;
+
+		if (g_bAltEnter_ToggleFullScreen && KeybGetAltStatus() && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
 			ScreenWindowResize(false);
 		else
 			PostMessage(window,WM_KEYUP,wparam,lparam);
+
 		break;
+
+	case WM_MENUCHAR:	// GH#556 - Suppress the Windows Default Beep (ie. Ding) whenever ALT+<key> is pressed
+		return (MNC_CLOSE << 16) | (wparam & 0xffff);
 
     case WM_USER_BENCHMARK: {
       UpdateWindow(window);
@@ -1761,10 +1800,7 @@ LRESULT CALLBACK FrameWndProc (
     }
 
     case WM_USER_RESTART:
-	  // . Changed Apple computer type (][+ or //e)
-	  // . Changed slot configuration
-	  // . Changed disk speed (normal or enhanced)
-	  // . Changed Freeze F8 rom setting
+	  // Changed h/w config, eg. Apple computer type (][+ or //e), slot configuration, etc.
       g_bRestart = true;
       PostMessage(window,WM_CLOSE,0,0);
       break;
@@ -1921,7 +1957,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_RUN:
 		KeybUpdateCtrlShiftStatus();
-		if( g_bCtrlKey )
+		if( KeybGetCtrlStatus() )
 		{
 			CtrlReset();
 			if (g_nAppMode == MODE_DEBUG)
@@ -1965,7 +2001,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_FULLSCR:
 		KeybUpdateCtrlShiftStatus();
-		ScreenWindowResize(g_bCtrlKey);
+		ScreenWindowResize( KeybGetCtrlStatus() );
       break;
 
     case BTN_DEBUG:
@@ -2366,14 +2402,33 @@ static void SetupTooltipControls(void)
 
 // SM_CXPADDEDBORDER is not supported on 2000 & XP, but GetSystemMetrics() returns 0 for unknown values, so this use of SM_CXPADDEDBORDER works on 2000 & XP too:
 // http://msdn.microsoft.com/en-nz/library/windows/desktop/ms724385(v=vs.85).aspx
+// NB. GetSystemMetrics(SM_CXPADDEDBORDER) returns 0 for Win7, when built with VS2008 (see GH#571)
 static void GetWidthHeight(int& nWidth, int& nHeight)
 {
 	nWidth  = g_nViewportCX + VIEWPORTX*2
 						    + BUTTONCX
-						    + (GetSystemMetrics(SM_CYFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2;
+						    + (GetSystemMetrics(SM_CXFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2;
 	nHeight = g_nViewportCY + VIEWPORTY*2
 						    + (GetSystemMetrics(SM_CYFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2	// NB. No SM_CYPADDEDBORDER
 						    + GetSystemMetrics(SM_CYCAPTION);
+
+#if 0	// GH#571
+	LogOutput("g_nViewportCX                       = %d\n", g_nViewportCX);
+	LogOutput("VIEWPORTX                           = %d (const)\n", VIEWPORTX);
+	LogOutput("BUTTONCX                            = %d (const)\n", BUTTONCX);
+	LogOutput("GetSystemMetrics(SM_CXFRAME)        = %d (unused)\n", GetSystemMetrics(SM_CXFRAME));
+	LogOutput("GetSystemMetrics(SM_CXFIXEDFRAME)   = %d\n", GetSystemMetrics(SM_CXFIXEDFRAME));
+	LogOutput("GetSystemMetrics(SM_CXBORDER)       = %d (unused)\n", GetSystemMetrics(SM_CXBORDER));
+	LogOutput("GetSystemMetrics(SM_CXPADDEDBORDER) = %d\n", GetSystemMetrics(SM_CXPADDEDBORDER));
+	LogOutput("nWidth                              = %d\n", nWidth);
+	LogOutput("g_nViewportCY                       = %d\n", g_nViewportCY);
+	LogOutput("VIEWPORTY                           = %d (const)\n", VIEWPORTY);
+	LogOutput("GetSystemMetrics(SM_CYFRAME)        = %d (unused)\n", GetSystemMetrics(SM_CYFRAME));
+	LogOutput("GetSystemMetrics(SM_CYFIXEDFRAME)   = %d\n", GetSystemMetrics(SM_CYFIXEDFRAME));
+	LogOutput("GetSystemMetrics(SM_CYBORDER)       = %d (unused)\n", GetSystemMetrics(SM_CYBORDER));
+	LogOutput("GetSystemMetrics(SM_CYCAPTION)      = %d\n", GetSystemMetrics(SM_CYCAPTION));
+	LogOutput("nHeight                             = %d\n\n", nHeight);
+#endif
 }
 
 static void FrameResizeWindow(int nNewScale)

@@ -13,13 +13,15 @@
 		<p>The complete<sub style="FONT-WEIGHT: bold">1</sub> Apple //e state can be saved 
 			to a PC file at any time. This can be useful for continuity across AppleWin 
 			sessions or to help with games that don't have a save option.</p>
-		<p>This is controlled by the AppleWin Configuration tab labelled <em>Advanced</em>.</p>
+		<p>The state can optionally be automatically saved on AppleWin exit, and (automatically) restored on AppleWin restart.</p>
+		<p>This is all controlled by the AppleWin <a href="cfg-advanced.html">Configuration</a> tab labeled <em>Advanced</em>.</p>
 		<p style="FONT-WEIGHT: bold">Details:</p>
 		<p>The entire Apple //e state is saved to a human-readable (.yaml) file.</p>
 		<p><span style="FONT-WEIGHT: bold">1</span>
 		    The following are persisted to the file:
 		    <ul>
 		        <li>Apple model: ][, ][+, //e, Enhanced //e or clone (eg. Pravets)</li>
+		        <li>Apple ]['s slot-0 language card: 16K Language Card, Saturn 64K or Saturn 128K</li>
 		        <li>Apple //e's auxiliary card: 80 Column, Extended 80 Column or RamWorks III</li>
 		        <li>Disk][ (even during r/w operation)</li>
 		        <li>Hard disk (even during r/w operation)</li>
@@ -28,12 +30,16 @@
 		        <li>Mouse card</li>
 		        <li>CP/M SoftCard</li>
 		        <li>Parallel Printer card</li>
+		        <li>Super Serial card</li>
 		    </ul>
 		    The following are not yet persisted to the file:
 		    <ul>
 		        <li>Uthernet card</li>
 		        <li>SAM card</li>
 		        <li>No-Slot clock (there's nothing to persist)</li>
+				<li>Using The Freeze's F8 ROM</li>
+				<li>Alternate F8 ROM</li>
+				<li>Alternate video ROM</li>
 		    </ul>
 		<p>Note: Only the file names of the disk images are stored in the .yaml file (not the 
 			full path). This allows you to move your disk image around or distribute them. 

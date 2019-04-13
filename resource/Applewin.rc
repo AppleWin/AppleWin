@@ -1,6 +1,7 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
+#include "version.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -88,16 +89,17 @@ CAPTION "Configuration"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     LTEXT           "&Model:",IDC_STATIC,5,7,40,8
-    COMBOBOX        IDC_COMPUTER,45,5,95,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Confirm reboot",IDC_CHECK_CONFIRM_REBOOT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,8,62,10
+    COMBOBOX        IDC_COMPUTER,45,5,90,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Confirm reboot",IDC_CHECK_CONFIRM_REBOOT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,8,62,10
     GROUPBOX        "Video",IDC_STATIC,5,22,200,56
     LTEXT           "Mo&de:",IDC_STATIC,12,33,33,8
-    COMBOBOX        IDC_VIDEOTYPE,45,30,95,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_VIDEOTYPE,45,30,90,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Monochrome &Color...",IDC_MONOCOLOR,12,46,80,14
-    CONTROL         "50% Scan lines",IDC_CHECK_HALF_SCAN_LINES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,103,48,62,10
+    CONTROL         "50% Scan lines",IDC_CHECK_HALF_SCAN_LINES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,33,62,10
+    CONTROL         "Vertical blend",IDC_CHECK_VERTICAL_BLEND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,48,62,10
     CONTROL         "Full-Screen: Show drive/keyboard status",IDC_CHECK_FS_SHOW_SUBUNIT_STATUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,64,140,10
     LTEXT           "&Serial Port:",IDC_STATIC,5,89,40,8
-    COMBOBOX        IDC_SERIALPORT,45,87,95,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_SERIALPORT,45,87,90,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "&Ethernet Settings...",IDC_ETHERNET,4,105,80,14
     GROUPBOX        "Emulation Speed Control",IDC_STATIC,5,130,200,85
     CONTROL         "Use &Authentic Machine Speed",IDC_AUTHENTIC_SPEED,
@@ -174,6 +176,7 @@ BEGIN
     GROUPBOX        "Hard Disk Drives",IDC_STATIC,5,83,200,64
     CONTROL         "&Enable hard disk controller in slot 7",IDC_HDD_ENABLE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,96,122,10
+    PUSHBUTTON      "Swap",IDC_HDD_SWAP,156,92,40,14
     LTEXT           "&Path to CiderPress:",IDC_STATIC,7,155,74,8
     EDITTEXT        IDC_CIDERPRESS_FILENAME,7,165,143,12,ES_AUTOHSCROLL | ES_READONLY
     PUSHBUTTON      "&Browse...",IDC_CIDERPRESS_BROWSE,156,164,50,14
@@ -252,8 +255,8 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,27,3,0
- PRODUCTVERSION 1,27,3,0
+ FILEVERSION APPLEWIN_VERSION
+ PRODUCTVERSION APPLEWIN_VERSION
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -271,12 +274,12 @@ BEGIN
             VALUE "Comments", "https://github.com/AppleWin"
             VALUE "CompanyName", "AppleWin"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1, 27, 3, 0"
+            VALUE "FileVersion", APPLEWIN_VERSION_STR
             VALUE "InternalName", "APPLEWIN"
-            VALUE "LegalCopyright", " 1994-2018 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
+            VALUE "LegalCopyright", " 1994-2019 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1, 27, 3, 0"
+            VALUE "ProductVersion", APPLEWIN_VERSION_STR
         END
     END
     BLOCK "VarFileInfo"

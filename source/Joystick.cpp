@@ -111,6 +111,15 @@ static UINT g_bJoyportEnabled = 0;	// Set to use Joyport to drive the 3 button i
 static UINT g_uJoyportActiveStick = 0;
 static UINT g_uJoyportReadMode = JOYPORT_LEFTRIGHT;
 
+static bool g_bHookAltKeys = true;
+
+//===========================================================================
+
+void JoySetHookAltKeys(bool hook)
+{
+	g_bHookAltKeys = hook;
+}
+
 //===========================================================================
 void CheckJoystick0()
 {
@@ -296,7 +305,7 @@ void JoyInitialize()
 
 #define SUPPORT_CURSOR_KEYS
 
-BOOL JoyProcessKey(int virtkey, BOOL extended, BOOL down, BOOL autorep)
+BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 {
 	static struct
 	{
@@ -313,6 +322,9 @@ BOOL JoyProcessKey(int virtkey, BOOL extended, BOOL down, BOOL autorep)
 	{
 		return 0;
 	}
+
+	if (!g_bHookAltKeys && virtkey == VK_MENU)				// GH#583
+		return 0;
 
 	//
 
@@ -631,7 +643,7 @@ void JoyReset()
 }
 
 //===========================================================================
-BYTE __stdcall JoyResetPosition(WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
+void JoyResetPosition(ULONG nExecutedCycles)
 {
 	CpuCalcCycles(nExecutedCycles);
 	g_nJoyCntrResetCycle = g_nCumulativeCycles;
@@ -640,8 +652,6 @@ BYTE __stdcall JoyResetPosition(WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
 		CheckJoystick0();
 	if((joyinfo[joytype[1]] == DEVICE_JOYSTICK) || (joyinfo[joytype[1]] == DEVICE_JOYSTICK_THUMBSTICK2))
 		CheckJoystick1();
-
-	return MemReadFloatingBus(nExecutedCycles);
 }
 
 //===========================================================================
@@ -918,13 +928,6 @@ void JoyportControl(const UINT uControl)
 }
 
 //===========================================================================
-
-void JoySetSnapshot_v1(const unsigned __int64 JoyCntrResetCycle)
-{
-	g_nJoyCntrResetCycle = JoyCntrResetCycle;
-}
-
-//
 
 #define SS_YAML_KEY_COUNTERRESETCYCLE "Counter Reset Cycle"
 #define SS_YAML_KEY_JOY0TRIMX "Joystick0 TrimX"

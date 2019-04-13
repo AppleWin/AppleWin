@@ -29,7 +29,7 @@
 			The Solid Apple key was introduced on the Apple //e and later renamed to the 
 			Option key. This key is emulated with the PC's
 			<span style="font-style: italic;">Right Alt</span>
-			key, which is in the same position as the Solid Apple key on the original //e.
+			key (or <span style="font-style: italic;">Alt Gr</span> key), which is in the same position as the Solid Apple key on the original //e.
 		</p>
 		<p><span style="font-weight: bold;">Numeric Keypad:</span><br>
 			The numeric keypad, introduced on the Extended Keyboard //e, is emulated 
@@ -73,7 +73,9 @@
 		<p><span style="font-weight: bold;">Ctrl+PrintScrn:</span><br>
 		    Copy the text screen (auto detect 40/80 columns) to the clipboard.</p>
 		<p><span style="font-weight: bold;">Alt+Enter:</span><br>
-		    Toggle between windowed and full screen video modes. (NB. Will conflict with emulation when doing Open Apple + Enter.)</p>
+		    Default: Toggle between windowed and full screen video modes. (NB. Will conflict with emulation and prevent Open Apple + Enter from being readable. Use the <a href="CommandLine.html">Command Line</a> switch to allow Open Apple + Enter to be readable.)</p>
+		<p><span style="font-weight: bold;">Ctrl+Left Mouse Button:</span><br>
+			This will show the Windows mouse cursor when emulating an Apple joystick with the PC's mouse or using a Mouse card.<br>
 		<p><span style="font-weight: bold;">Function Keys F1-F8:</span><br>
 			These PC function keys correspond to buttons on the <a href="toolbar.html">toolbar</a>.</p>
 		<p><span style="font-weight: bold;">Function Key F2 + Ctrl:</span><br>
@@ -86,11 +88,9 @@
 			through the configuration dialog. <br>NB. Use Shift+F9 to reverse-cycle the display modes.</p>
 		<p><span style="font-weight: bold;">Function Key F9 + Ctrl + Shift:</span><br>
 		    This PC function key combo will toggle 50% scanline mode</p>
-		<p><span style="font-weight: bold;">Function Key F10 (or Ctrl+left mouse button):</span><br>
-			This PC function key will stop emulating an Apple joystick with the PC's mouse.<br>
-            In Pravets 8A emulation mode it servers as Caps Lock and Ctrl+F10 shall
-            be used to stop emulating an Apple joystick with the PC's mouse.</p>
+		<p><span style="font-weight: bold;">Function Key F10:</span><br>
+			In //e or Enhanced //e emulation mode it will emulate the rocker switch for European video ROM selection. Use the <a href="CommandLine.html">Command Line</a> switch to use an alternate European video ROM file.<br>
+            In Pravets 8A emulation mode it servers as Caps Lock.</p>
 		<p><span style="font-weight: bold;">Function Keys F11-F12:</span><br>
-			These PC function keys correspond to saving/loading a <a href="savestate.html">save-state</a>
-			file.</p>
+			These PC function keys correspond to saving/loading a <a href="savestate.html">save-state</a> file.</p>
 	</body></html>

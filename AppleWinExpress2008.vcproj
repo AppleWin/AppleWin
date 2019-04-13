@@ -626,6 +626,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\LanguageCard.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\LanguageCard.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Log.cpp"
 					>
 				</File>
@@ -895,6 +903,14 @@
 				</File>
 				<File
 					RelativePath=".\source\NTSC_CharSet.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\RGBMonitor.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\RGBMonitor.h"
 					>
 				</File>
 				<File
@@ -1275,6 +1291,10 @@
 			</File>
 			<File
 				RelativePath=".\resource\TKClock.rom"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\version.h"
 				>
 			</File>
 			<File

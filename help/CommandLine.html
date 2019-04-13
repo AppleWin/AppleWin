@@ -19,14 +19,20 @@
 		Start with hard disk 1 plugged-in (and auto power-on the Apple II). NB. Hard disk controller card gets enabled.<br><br>
 		-h2 &lt;pathname&gt;<br>
 		Start with hard disk 2 plugged-in. NB. Hard disk controller card gets enabled.<br><br>
+		-s0 &lt;saturn|saturn64|saturn128&gt;<br>
+		Insert a Saturn 64K or Saturn 128K card into slot 0 in the Apple II or II+ machines (or similar clone).<br>
+		Where -s0 saturn is an alias for -s0 saturn128.<br><br>
+		-s0 &lt;languagecard|lc&gt;<br>
+		Insert an Apple 16K Language Card into slot 0 in the original Apple II and use the F8 auto-start ROM.<br>
+		NB. The Apple II+ already defaults to having a Language Card, so this switch is not required.<br><br>
 		-s7 empty<br>
 		Remove the hard disk controller card from slot 7.<br>
 		Useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br><br>
 		-r &lt;number of pages&gt;<br>
-		Emulate a RAMworks III card with 1 to 127 pages (each page is 64K, giving a max of 8MB)<br><br>
+		Emulate a RamWorks III card with 1 to 127 pages (each page is 64K, giving a max of 8MB) in the auxiliary slot in an Apple //e machine.<br><br>
 		-load-state &lt;savestate&gt;<br>
 		Load a save-state file<br>
-		NB. This takes precedent over the -d1,d2,h1,h2,s7 and -r switches.<br><br>
+		NB. This takes precedent over the -d1,d2,h1,h2,s0,s7 and -r switches.<br><br>
 		-f<br>
 		Start in full-screen mode<br><br>
 		-fs-height=&lt;best|nnnn&gt;<br>
@@ -36,12 +42,29 @@
 			<li>nnnn: select a specific resolution with height=nnnn pixels</li>
 		</ul>
 		NB. This changes the display resolution (and restores on exit).<br><br>
-		-f8rom &lt;rom-file&gt;<br>
-		Use custom 2K ROM at [$F800..$FFFF]. &lt;rom-file&gt; must be 2048 bytes long<br><br>
+		-f8rom &lt;file&gt;<br>
+		Use custom 2K ROM for any Apple II machine at [$F800..$FFFF]. &lt;file&gt; must be 2048 bytes long<br><br>
+		-videorom &lt;file&gt;<br>
+		Use an alternate custom 2K video ROM for Apple II or II+ machines (but not clones).<br>
+		Use an alternate European or custom 4K, 8K or 16K (top 8K only) video ROM for the original or Enhanced //e (but not clones).<br><br>
 		-printscreen<br>
 		Enable the dialog box to display the last file saved to<br><br>
 		-no-printscreen-key<br>
 		Prevent the PrintScreen key from being registered<br><br>
+		-no-hook-system-key<br>
+		Prevent certain system key combinations from being hooked (to prevent the emulator from trapping ALT+ESC, ALT+SPACE, ALT+TAB and CTRL+ESC). This means that the equivalent Open Apple+&lt;key&gt; combinations won't work within the emulator.<br>
+		NB. This switch takes precedence over -hook-alt-tab and -hook-altgr-control.<br><br>
+		-no-hook-alt<br>
+		Prevent the left and right ALT keys from being hooked (eg. to prevent emulation of Open/Solid Apple keys via the ALT keys).<br><br>
+		-hook-alt-tab<br>
+		By default the emulator doesn't hook ALT+TAB. Use this to allow Open Apple+TAB to be readable by the emulated machine.<br><br>
+		-hook-altgr-control<br>
+		By default the emulator doesn't suppress AltGr's (Right Alt's) fake LEFT CONTROL. Use this to suppress this fake LEFT CONTROL to allow Solid Apple+CTRL+&lt;key&gt; to be readable by the emulated machine.<br>
+		NB. Suppressing this fake LEFT CONTROL seems to prevent international keyboards from being able to type certain keys.<br><br>
+		-altgr-sends-wmchar<br>
+		Use this switch to allow Solid Apple (AltGr) to be used in combination with regular keys.<br>
+		When AltGr is pressed, Windows only sends a WM_CHAR message for (eg) international key codes; and so by default the emulator doesn't explicitly send a WM_CHAR message for regular keys when AltGr is being pressed.<br>
+		NB. Using this switch may prevent international keyboards from being able to type certain keys.<br><br>
 		-use-real-printer<br>
 		Enables Advanced configuration control to allow dumping to a real printer<br><br>
 		-noreg<br>
@@ -63,25 +86,30 @@
 						i.e. 00:20 20 20 20 ... for page $20</li>
 		</ul>
 		-modem<br>
-		Shorthand for passing -dtr -dcd -dsr<br>
+		Shorthand for passing -dcd<br>
 		Use with GBBS Pro (or any other BBS package). See the <a href="http://www.callapple.org/documentation/books/gbbs-pro-2-2/">GBBS Pro 2.2</a> book from Call-A.P.P.L.E.
 		<br><br>
-		-dtr<br>
-		Support SSC's DTR (Data Terminal Ready) control bit<br><br>
 		-dcd<br>
-		Support SSC's DCD (Data Carrier Detect) status bit<br><br>
-		-dtr<br>
-		Support SSC's DSR (Data Set Ready) status bit<br><br>
+		For the SSC's 6551's Status register's DCD bit, use this switch to force AppleWin to use the state of the MS_RLSD_ON bit from GetCommModemStatus().<br><br>
+		-alt-enter=&lt;toggle-full-screen|open-apple-enter&gt;<br>
+		Define the behavior of Alt+Enter:
+		<ul>
+			<li>Either: Toggle between windowed and full screen video modes (default).
+			<li>Or: Allow the emulated Apple II to read the Enter key state when Alt (Open Apple key) is pressed.
+		</ul>
+		-rgb-card-invert-bit7<br>
+		Force the RGB card (in "Color (RGB Monitor)" video mode) to invert bit7 in MIX mode. Enables the correct rendering for Dragon Wars.
 
-		<br>
 		<br>
 		<P style="FONT-WEIGHT: bold">Debug arguments:
 		</P>
 		-l or -log<br>
-		Enable logging. Creates an AppleWin.log file<br><br>
+		Enable logging. Creates an AppleWin.log file.<br><br>
 		-m<br>
-		Disable DirectSound support<br><br>
+		Disable DirectSound support.<br><br>
 		-no-printscreen-dlg<br>
-		Suppress the warning message-box if AppleWin fails to capture the PrintScreen key<br><br>
+		Suppress the warning message-box if AppleWin fails to capture the PrintScreen key.<br><br>
+		-screenshot-and-exit<br>
+		For testing. Use in combination with -load-state.<br><br>
 	</body>
 </html>

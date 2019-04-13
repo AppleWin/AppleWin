@@ -3,10 +3,6 @@
 // 1.19.0.0 Hard Disk Status/Indicator Light
 #define HD_LED 1
 
-	// Keyboard -- keystroke type
-	enum {NOT_ASCII=0, ASCII};
-
-
 // Win32
 	extern HWND       g_hFrameWindow;
 	extern int        g_nViewportCX;
@@ -61,3 +57,5 @@
 	UINT GetFrameBufferHeight(void);
 	UINT Get3DBorderWidth(void);
 	UINT Get3DBorderHeight(void);
+
+	void SetAltEnterToggleFullScreen(bool mode);

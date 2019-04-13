@@ -427,6 +427,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
 
 			StartTimer1(pMB);
+			CpuAdjustIrqCheck(pMB->sy6522.TIMER1_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
 			break;
 		case 0x07:	// TIMER1H_LATCH
 			// Clear Timer1 Interrupt Flag.
@@ -444,6 +445,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			pMB->sy6522.TIMER2_COUNTER.w = pMB->sy6522.TIMER2_LATCH.w;
 
 			StartTimer2(pMB);
+			CpuAdjustIrqCheck(pMB->sy6522.TIMER1_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
 			break;
 		case 0x0a:	// SERIAL_SHIFT
 			break;
@@ -480,11 +482,11 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				pMB->sy6522.IER |= nValue;
 				UpdateIFR(pMB, 0);
 
-				// Check if active timer changed from non-interrupt (polling IFR) to interrupt:
-				if ((pMB->sy6522.IER & IxR_TIMER1) && pMB->bTimer1Active)
+				// Check if a timer interrupt has been enabled (regardless of if there's an active timer or not): GH#567
+				if (pMB->sy6522.IER & IxR_TIMER1)
 					StartTimer1(pMB);
 
-				if ((pMB->sy6522.IER & IxR_TIMER2) && pMB->bTimer2Active)
+				if (pMB->sy6522.IER & IxR_TIMER2)
 					StartTimer2(pMB);
 			}
 			break;
@@ -549,7 +551,7 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 			nValue = pMB->sy6522.IFR;
 			break;
 		case 0x0e:	// IER
-			nValue = 0x80;	// Datasheet says this is 0x80|IER
+			nValue = 0x80 | pMB->sy6522.IER;	// GH#567
 			break;
 		case 0x0f:	// ORA_NO_HS
 			nValue = pMB->sy6522.ORA;
@@ -1374,13 +1376,20 @@ static void MB_DSUninit()
 
 //=============================================================================
 
+static void InitSoundcardType(void)
+{
+	g_SoundcardType = CT_Empty;	// Use CT_Empty to mean: no soundcard
+	g_bPhasorEnable = false;
+}
+
 void MB_Initialize()
 {
+	InitSoundcardType();
+
 	LogFileOutput("MB_Initialize: g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 	{
 		MockingboardVoice.bMute = true;
-		g_SoundcardType = CT_Empty;
 	}
 	else
 	{
@@ -1407,6 +1416,17 @@ void MB_Initialize()
 
 	InitializeCriticalSection(&g_CriticalSection);
 	g_bCritSectionValid = true;
+}
+
+void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType);
+
+// NB. Mockingboard voice is *already* muted because showing 'Select Load State file' dialog
+// . and voice will be demuted when dialog is closed
+void MB_InitializeForLoadingSnapshot()	// GH#609
+{
+	MB_Reset();
+	InitSoundcardType();
+	MockingboardVoice.lpDSBvoice->Stop();	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
 }
 
 //-----------------------------------------------------------------------------
@@ -1451,15 +1471,16 @@ static void ResetState()
 	g_bMB_RegAccessedFlag = false;
 	g_bMB_Active = false;
 
-	//g_bMBAvailable = false;
-
-//	g_SoundcardType = CT_Empty;	// Don't uncomment, else _ASSERT will fire in MB_Read() after an F2->MB_Reset()
-//	g_bPhasorEnable = false;
 	g_nPhasorMode = 0;
 	g_PhasorClockScaleFactor = 1;
+
+	// Not these, as they don't change on a CTRL+RESET or power-cycle:
+//	g_bMBAvailable = false;
+//	g_SoundcardType = CT_Empty;	// Don't uncomment, else _ASSERT will fire in MB_Read() after an F2->MB_Reset()
+//	g_bPhasorEnable = false;
 }
 
-void MB_Reset()
+void MB_Reset()	// CTRL+RESET or power-cycle
 {
 	if(!g_bDSAvailable)
 		return;
@@ -1613,6 +1634,26 @@ static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 
 //-----------------------------------------------------------------------------
 
+SS_CARDTYPE MB_GetSoundcardType()
+{
+	return g_SoundcardType;
+}
+
+static void MB_SetSoundcardType(const SS_CARDTYPE NewSoundcardType)
+{
+	if (NewSoundcardType == g_SoundcardType)
+		return;
+
+	if (NewSoundcardType == CT_Empty)
+		MB_Mute();	// Call MB_Mute() before setting g_SoundcardType = CT_Empty
+
+	g_SoundcardType = NewSoundcardType;
+
+	g_bPhasorEnable = (g_SoundcardType == CT_Phasor);
+}
+
+//-----------------------------------------------------------------------------
+
 void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 {
 	// Mockingboard: Slot 4 & 5
@@ -1634,6 +1675,12 @@ void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 		RegisterIoHandler(uSlot5, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
 
 	MB_SetSoundcardType(g_Slot4);
+
+	// Sound buffer may have been stopped by MB_InitializeForLoadingSnapshot().
+	// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
+	// - without zeroing, then the previous sound buffer can be heard for a fraction of a second
+	// - eg. when doing Mockingboard playback, then loading a save-state which is also doing Mockingboard playback
+	DSZeroVoiceBuffer(&MockingboardVoice, "MB", g_dwDSBufferSize);
 }
 
 //-----------------------------------------------------------------------------
@@ -1773,26 +1820,6 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 
 //-----------------------------------------------------------------------------
 
-SS_CARDTYPE MB_GetSoundcardType()
-{
-	return g_SoundcardType;
-}
-
-void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType)
-{
-	if (g_SoundcardType == NewSoundcardType)
-		return;
-
-	g_SoundcardType = NewSoundcardType;
-
-	if(g_SoundcardType == CT_Empty)
-		MB_Mute();
-
-	g_bPhasorEnable = (g_SoundcardType == CT_Phasor);
-}
-
-//-----------------------------------------------------------------------------
-
 static double MB_GetFramePeriod(void)
 {
 	// TODO: Ideally remove this (slot-4) Phasor-IFR check: [*1]
@@ -1869,52 +1896,6 @@ void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
 		nDeviceNum++;
 		pMB++;
 	}
-}
-
-int MB_SetSnapshot_v1(const SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD /*dwSlot*/)
-{
-	if(pSS->Hdr.UnitHdr.hdr.v1.dwVersion != MAKE_VERSION(1,0,0,0))
-		return -1;
-
-	UINT nMbCardNum = pSS->Hdr.Slot - SLOT4;
-	UINT nDeviceNum = nMbCardNum*2;
-	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
-
-	g_nSSI263Device = 0;
-	g_nCurrentActivePhoneme = -1;
-
-	for(UINT i=0; i<MB_UNITS_PER_CARD_v1; i++)
-	{
-		memcpy(&pMB->sy6522, &pSS->Unit[i].RegsSY6522, sizeof(SY6522));
-		memcpy(AY8910_GetRegsPtr(nDeviceNum), &pSS->Unit[i].RegsAY8910, 16);
-		memcpy(&pMB->SpeechChip, &pSS->Unit[i].RegsSSI263, sizeof(SSI263A));
-		pMB->nAYCurrentRegister = pSS->Unit[i].nAYCurrentRegister;
-		pMB->state = AY_INACTIVE;
-
-		StartTimer1_LoadStateV1(pMB);	// Attempt to start timer
-
-		//
-
-		// Crude - currently only support a single speech chip
-		// FIX THIS:
-		// . Speech chip could be Votrax instead
-		// . Is this IRQ compatible with Phasor?
-		if(pMB->SpeechChip.DurationPhoneme)
-		{
-			g_nSSI263Device = nDeviceNum;
-
-			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
-			{
-				UpdateIFR(pMB, 0, IxR_PERIPHERAL);
-				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
-			}
-		}
-
-		nDeviceNum++;
-		pMB++;
-	}
-
-	return 0;
 }
 
 //===========================================================================
@@ -2152,9 +2133,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 
 	AY8910_InitClock((int)CLK_6502);
 
-	// Setup in MB_InitializeIO() -> MB_SetSoundcardType()
-	g_SoundcardType = CT_Empty;
-	g_bPhasorEnable = false;
+	// NB. g_SoundcardType & g_bPhasorEnable setup in MB_InitializeIO() -> MB_SetSoundcardType()
 
 	return true;
 }
@@ -2277,9 +2256,7 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 
 	AY8910_InitClock((int)(CLK_6502 * g_PhasorClockScaleFactor));
 
-	// Setup in MB_InitializeIO() -> MB_SetSoundcardType()
-	g_SoundcardType = CT_Empty;
-	g_bPhasorEnable = false;
+	// NB. g_SoundcardType & g_bPhasorEnable setup in MB_InitializeIO() -> MB_SetSoundcardType()
 
 	return true;
 }

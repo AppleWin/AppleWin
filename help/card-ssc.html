@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+	<head>
+		<title>Super Serial Card</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+	</head>
+	<body style="FONT-FAMILY: verdana; BACKGROUND-COLOR: rgb(255,255,255)" alink="#008000"
+		link="#008000" vlink="#008000">
+		<h2 style="COLOR: rgb(0,128,0)">Super Serial Card</h2>
+		<hr size="4">
+		<h3>Super Serial Card:</h3>
+		<p>AppleWin emulates a Super Serial Card (aka SSC) in slot-2, with the jumper block in the MODEM position.</p>
+		<p>The SSC can be configured to communicate externally either via the host PC's COM serial port or TCP port 1977.</p>
+
+		<p>See the <a href="cfg-config.html">Configuration</a> tab's 'Serial Port' menu to select a COM serial port or the TCP port.</p>
+		
+		<p>The SSC currently has these <strong>hardcoded</strong> DIP switch settings:</p>
+		<ul>
+			<li>DIP SW1:
+			<ul>
+				<li>Baud rate = 9600
+				<li>Mode = CIC (ie. SSC's Communication Mode)
+			</ul>
+			<li>DIP SW2:
+			<ul>
+				<li>1 stop-bit
+				<li>8-bit byte size
+				<li>No parity
+				<li>Linefeed off
+				<li>Interrupts enabled
+			</ul>
+		</ul>
+
+		<p>Notes:</p>
+		<ul>
+			<li>The SSC emulation supports both Rx and Tx interrupts (for both COM and TCP modes), RTS/CTS, DSR/DTR, and the undocumented 115200 baud rate.
+			<li>For the TCP mode it doesn't matter what baud rate, stop-bit, byte size and parity are set to.
+			<ul>
+				<li>It always uses an unthrottled data-rate of 8-bit bytes (no stop-bit, no parity).
+				<li>When there's an active TCP connection, then the 6551's Status register has DCD,DSR bits clear (active low), and DIPSW2 has CTS bit clear (active low). When there's no TCP connection, then all these bits are set (inactive).
+			</ul>
+			<li>The TCP mode can expose buggy Rx interrupt handling code where the 6551's Status register is read more than once in the Interrupt Service Routine (ISR).
+			<ul>
+				<li>Details: TCP mode doesn't throttle the serial data-rate, so after reading the Status register (to clear the Rx interrupt) the Rx interrupt may get asserted immediately if there is more data in the TCP receive buffer, resulting in a missed interrupt (and therefore missed Rx data).
+			</ul>
+			<li>The 6551's Command register's DSR (bit0) must be set, to enable interrupts (Rx, Tx) along with the respective Rx and/or Tx bits (bit3:1). This is part of the 6551 specification, but (DSR bit) has only been enforced by AppleWin since 1.27.4.
+		</ul>
+
+		<p>Unsupported features are:</p>
+		<ul>
+			<li>Can't configure the DIP switches (not a problem, since most functions can be set in software).
+			<li>6551 ACIA Command register: Echo mode(bit4=1) and Transmit BRK (bit3:2=3).
+			<li>6551 ACIA Control register: external clock (bit4=0).
+			<li>6551 ACIA baud rates: 50, 75, 109.92, 134.58, 150 all map to 110 baud.
+			<li>6551 ACIA baud rate: 1800 maps to 2400 baud.
+			<li>6551 ACIA baud rate: 3600 maps to 4800 baud.
+			<li>6551 ACIA baud rate: 7200 maps to 9600 baud.
+			<li>6551 ACIA Status register's error bits: overrun, framing and parity (these are all hardcoded to 0).
+			<li>6551 ACIA Status register's DCD bit (Data Carrier Detect). This is just set the same as DSR.
+			<ul>
+				<li>NB. For COM mode, use command line -dcd to force AppleWin to use the state of the MS_RLSD_ON bit from GetCommModemStatus().
+			</ul>
+			<li>NMOS 6551 ACIA CTS bug: transmission of an already-started frame will stop immediately when CTS is taken false, the byte will be lost, and the TxD line will go to marking.
+			<ul>
+				<li>NB. The CMOS 6551's will finish the frame, so assume that AppleWin emulates a CMOS 6551.
+			</ul>
+			<li>AppleWin's 6502/65C02 emulation doesn't emulate the false read for STA $C088,X (where X=$20).
+			<ul>
+				<li>Don't do this to write to the 6551's Transmit register.
+				<li>On AppleWin this is fine, but on real hardware (in full duplex mode) you may falsely read (and clear) the 6551's Receive register.
+				<li>Instead (like the SSC's firmware) do this: STA $BFFF,Y (where Y=$A9).
+			</ul>
+		</ul>
+		<br>
+		<br>
+
+		<h4>Using TCP mode with the Apple // Game Server:</h4>		
+		The TCP interface to the SSC can be used by the <a href="https://sourceforge.net/projects/a2gameserver">Apple // Game Server</a> (AGS).<br>
+		For details see the notes that comes with AGS, but in summary:<br>
+		<ul>
+			<li>Boot the Apple II to AppleSoft (ie. power on and hit Ctrl-Reset) and type IN#2.
+			<li>From a Windows DOS box, start AGS with "localhost 1977 apple2e". This will boot the emulated Apple II from AGS.
+			<li>Nb. Only Enhanced Apple //e is working at the moment.
+		</ul>
+	</body>
+</html>

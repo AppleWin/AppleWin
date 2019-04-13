@@ -36,6 +36,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Frame.h"
 #include "Harddisk.h"
 #include "Joystick.h"
+#include "Keyboard.h"
+#include "LanguageCard.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
@@ -51,6 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 #include "Video.h"
+#include "RGBMonitor.h"
 #include "NTSC.h"
 
 #include "Configuration/About.h"
@@ -59,6 +62,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 static UINT16 g_AppleWinVersion[4] = {0};
 char VERSIONSTRING[16] = "xx.yy.zz.ww";
+static UINT16 g_OldAppleWinVersion[4] = {0};
 
 const TCHAR *g_pAppTitle = NULL;
 
@@ -78,6 +82,10 @@ TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin exe
 TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
 bool      g_bCapturePrintScreenKey = true;
+static bool g_bHookSystemKey = true;
+static bool g_bHookAltTab = false;
+static bool g_bHookAltGrControl = false;
+
 TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
 bool      g_bRestart = false;
 bool      g_bRestartFullScreen = false;
@@ -98,8 +106,10 @@ IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 
-SS_CARDTYPE	g_Slot4 = CT_Empty;
-SS_CARDTYPE	g_Slot5 = CT_Empty;
+SS_CARDTYPE g_Slot0 = CT_LanguageCard;	// Just for Apple II or II+ or similar clones
+SS_CARDTYPE g_Slot4 = CT_Empty;
+SS_CARDTYPE g_Slot5 = CT_Empty;
+SS_CARDTYPE g_SlotAux = CT_Extended80Col;	// For Apple //e and above
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
@@ -125,13 +135,16 @@ void LogFileTimeUntilFirstKeyReadReset(void)
 }
 
 // Log the time from emulation restart/reboot until the first key read: BIT $C000
-// . NB. AZTEC.DSK does prior LDY $C000 reads, but the BIT $C000 is at the "Press any key" message
+// . AZTEC.DSK (DOS 3.3) does prior LDY $C000 reads, but the BIT $C000 is at the "Press any key" message
+// . Phasor1.dsk / ProDOS 1.1.1: PC=E797: B1 50: LDA ($50),Y / "Select an Option:" message
 void LogFileTimeUntilFirstKeyRead(void)
 {
 	if (!g_fh || bLogKeyReadDone)
 		return;
 
-	if (mem[regs.pc-3] != 0x2C)	// bit $c000
+	if ( (mem[regs.pc-3] != 0x2C)	// AZTEC: bit $c000
+		&& !((regs.pc-2) == 0xE797 && mem[regs.pc-2] == 0xB1 && mem[regs.pc-1] == 0x50)	// Phasor1: lda ($50),y
+		)
 		return;
 
 	DWORD dwTime = GetTickCount() - dwLogKeyReadTickStart;
@@ -154,9 +167,9 @@ void SetApple2Type(eApple2Type type)
 	SetMainCpuDefault(type);
 }
 
-const UINT16* GetAppleWinVersion(void)
+const UINT16* GetOldAppleWinVersion(void)
 {
-	return &g_AppleWinVersion[0];
+	return g_OldAppleWinVersion;
 }
 
 bool GetLoadedSaveStateFlag(void)
@@ -167,6 +180,11 @@ bool GetLoadedSaveStateFlag(void)
 void SetLoadedSaveStateFlag(const bool bFlag)
 {
 	g_bLoadedSaveState = bFlag;
+}
+
+bool GetHookAltGrControl(void)
+{
+	return g_bHookAltGrControl;
 }
 
 static void ResetToLogoMode(void)
@@ -433,7 +451,7 @@ void EnterMessageLoop(void)
 			else if (g_nAppMode == MODE_PAUSED)
 				Sleep(1);		// Stop process hogging CPU - 1ms, as need to fade-out speaker sound buffer
 			else if (g_nAppMode == MODE_LOGO)
-				Sleep(100);		// Stop process hogging CPU
+				Sleep(1);		// Stop process hogging CPU (NB. don't delay for too long otherwise key input can be slow in other apps - GH#569)
 		}
 	}
 }
@@ -821,7 +839,7 @@ void RegisterExtensions(void)
 //===========================================================================
 
 // NB. On a restart, it's OK to call RegisterHotKey() again since the old g_hFrameWindow has been destroyed
-static void AppleWin_RegisterHotKeys(void)
+static void RegisterHotKeys(void)
 {
 	BOOL bStatus[3] = {0,0,0};
 
@@ -862,6 +880,115 @@ static void AppleWin_RegisterHotKeys(void)
 
 		msg += "\n";
 		LogFileOutput(msg.c_str());
+	}
+}
+
+//---------------------------------------------------------------------------
+
+static HINSTANCE g_hinstDLL = 0;
+static HHOOK g_hhook = 0;
+
+static HANDLE g_hHookThread = NULL;
+static DWORD g_HookThreadId = 0;
+
+// Pre: g_hFrameWindow must be valid
+static bool HookFilterForKeyboard()
+{
+	g_hinstDLL = LoadLibrary(TEXT("HookFilter.dll"));
+
+	_ASSERT(g_hFrameWindow);
+
+	typedef void (*RegisterHWNDProc)(HWND, bool, bool);
+	RegisterHWNDProc RegisterHWND = (RegisterHWNDProc) GetProcAddress(g_hinstDLL, "RegisterHWND");
+	if (RegisterHWND)
+		RegisterHWND(g_hFrameWindow, g_bHookAltTab, g_bHookAltGrControl);
+
+	HOOKPROC hkprcLowLevelKeyboardProc = (HOOKPROC) GetProcAddress(g_hinstDLL, "LowLevelKeyboardProc");
+
+	g_hhook = SetWindowsHookEx(
+						WH_KEYBOARD_LL,
+						hkprcLowLevelKeyboardProc,
+						g_hinstDLL,
+						0);
+
+	if (g_hhook != 0 && g_hFrameWindow != 0)
+		return true;
+
+	std::string msg("Failed to install hook filter for system keys");
+
+	DWORD dwErr = GetLastError();
+	MessageBox(GetDesktopWindow(), msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK);
+
+	msg += "\n";
+	LogFileOutput(msg.c_str());
+	return false;
+}
+
+static void UnhookFilterForKeyboard()
+{
+	UnhookWindowsHookEx(g_hhook);
+	FreeLibrary(g_hinstDLL);
+}
+
+static DWORD WINAPI HookThread(LPVOID lpParameter)
+{
+	if (!HookFilterForKeyboard())
+		return -1;
+
+	MSG msg;
+	while(GetMessage(&msg, NULL, 0, 0) > 0)
+	{
+		if (msg.message == WM_QUIT)
+			break;
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	UnhookFilterForKeyboard();
+	return 0;
+}
+
+static bool InitHookThread()
+{
+	g_hHookThread = CreateThread(NULL,			// lpThreadAttributes
+								0,				// dwStackSize
+								(LPTHREAD_START_ROUTINE) HookThread,
+								0,				// lpParameter
+								0,				// dwCreationFlags : 0 = Run immediately
+								&g_HookThreadId);	// lpThreadId
+	if (g_hHookThread == NULL)
+		return false;
+
+	return true;
+}
+
+static void UninitHookThread()
+{
+	if (g_hHookThread)
+	{
+		if (!PostThreadMessage(g_HookThreadId, WM_QUIT, 0, 0))
+		{
+			_ASSERT(0);
+			return;
+		}
+
+		do
+		{
+			DWORD dwExitCode;
+			if (GetExitCodeThread(g_hHookThread, &dwExitCode))
+			{
+				if(dwExitCode == STILL_ACTIVE)
+					Sleep(10);
+				else
+					break;
+			}
+		}
+		while(1);
+
+		CloseHandle(g_hHookThread);
+		g_hHookThread = NULL;
+		g_HookThreadId = 0;
 	}
 }
 
@@ -1010,6 +1137,29 @@ static void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBo
 		MessageBox(g_hFrameWindow, "Failed to insert harddisk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
+static bool CheckOldAppleWinVersion(void)
+{
+	char szOldAppleWinVersion[sizeof(VERSIONSTRING)] = {0};
+	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, szOldAppleWinVersion, sizeof(szOldAppleWinVersion));
+	const bool bShowAboutDlg = strcmp(szOldAppleWinVersion, VERSIONSTRING) != 0;
+
+	// version: xx.yy.zz.ww
+	// offset : 0123456789
+	char* p0 = szOldAppleWinVersion;
+	szOldAppleWinVersion[strlen(szOldAppleWinVersion)] = '.';	// Overwrite null terminator with '.'
+	for (UINT i=0; i<4; i++)
+	{
+		char* p1 = strstr(p0, ".");
+		if (!p1)
+			break;
+		*p1 = 0;
+		g_OldAppleWinVersion[i] = atoi(p0);
+		p0 = p1+1;
+	}
+
+	return bShowAboutDlg;
+}
+
 //---------------------------------------------------------------------------
 
 int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
@@ -1018,12 +1168,19 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bSetFullScreen = false;
 	bool bBoot = false;
 	bool bChangedDisplayResolution = false;
+	bool bSlot0LanguageCard = false;
 	bool bSlot7Empty = false;
 	UINT bestWidth = 0, bestHeight = 0;
 	LPSTR szImageName_drive[NUM_DRIVES] = {NULL,NULL};
 	LPSTR szImageName_harddisk[NUM_HARDDISKS] = {NULL,NULL};
 	LPSTR szSnapshotName = NULL;
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
+	UINT uRamWorksExPages = 0;
+	UINT uSaturnBanks = 0;
+	int newVideoType = -1;
+	int newVideoStyleEnableMask = 0;
+	int newVideoStyleDisableMask = 0;
+	LPSTR szScreenshotFilename = NULL;
 
 	while (*lpCmdLine)
 	{
@@ -1031,12 +1188,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if (((strcmp(lpCmdLine, "-l") == 0) || (strcmp(lpCmdLine, "-log") == 0)) && (g_fh == NULL))
 		{
-			g_fh = fopen("AppleWin.log", "a+t");	// Open log file (append & text mode)
-			setvbuf(g_fh, NULL, _IONBF, 0);			// No buffering (so implicit fflush after every fprintf)
-			CHAR aDateStr[80], aTimeStr[80];
-			GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aDateStr, sizeof(aDateStr));
-			GetTimeFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aTimeStr, sizeof(aTimeStr));
-			fprintf(g_fh, "*** Logging started: %s %s\n", aDateStr, aTimeStr);
+			LogInit();
 		}
 		else if (strcmp(lpCmdLine, "-noreg") == 0)
 		{
@@ -1133,44 +1285,55 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 #ifdef RAMWORKS
 		else if (strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..127]
 		{
-			g_eMemType = MEM_TYPE_RAMWORKS;
-
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
-			    g_uMaxExPages = atoi(lpCmdLine);
-			if (g_uMaxExPages > kMaxExMemoryBanks)
-				g_uMaxExPages = kMaxExMemoryBanks;
+			uRamWorksExPages = atoi(lpCmdLine);
+			if (uRamWorksExPages > kMaxExMemoryBanks)
+				uRamWorksExPages = kMaxExMemoryBanks;
 			else
-			if (g_uMaxExPages < 1)
-				g_uMaxExPages = 1;
+			if (uRamWorksExPages < 1)
+				uRamWorksExPages = 1;
 		}
 #endif
-#ifdef SATURN
-		else if (strcmp(lpCmdLine, "-saturn") == 0)		// 64 = Saturn 64K (4 banks), 128 = Saturn 128K (8 banks)
+		else if (strcmp(lpCmdLine, "-s0") == 0)
 		{
-			g_eMemType = MEM_TYPE_SATURN;
-
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
-			// " The  boards  consist  of 16K  banks  of  memory
-			//  (4  banks  for  the  64K  board,
-			//  8  banks  for  the  128K),  accessed  one  at  a  time"
-			    g_uSaturnTotalBanks = atoi(lpCmdLine) / 16; // number of 16K Banks [1..8]
-			if (g_uSaturnTotalBanks > 8)
-				g_uSaturnTotalBanks = 8;
-			else
-			if (g_uSaturnTotalBanks < 1)
-				g_uSaturnTotalBanks = 1;
+			if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)
+				uSaturnBanks = Saturn128K::kMaxSaturnBanks;
+			else if (strcmp(lpCmdLine, "saturn64") == 0)
+				uSaturnBanks = Saturn128K::kMaxSaturnBanks/2;
+			else if (strcmp(lpCmdLine, "languagecard") == 0 || strcmp(lpCmdLine, "lc") == 0)
+				bSlot0LanguageCard = true;
 		}
-#endif
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
+
+			if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)	// Stop resource leak if -f8rom is specified twice!
+				CloseHandle(g_hCustomRomF8);
+
 			g_hCustomRomF8 = CreateFile(lpCmdLine, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 			if ((g_hCustomRomF8 == INVALID_HANDLE_VALUE) || (GetFileSize(g_hCustomRomF8, NULL) != 0x800))
 				g_bCustomRomF8Failed = true;
+		}
+		else if (strcmp(lpCmdLine, "-videorom") == 0)			// Use 2K (for II/II+). Use 4K,8K or 16K video ROM (for Enhanced //e)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			if (!ReadVideoRomFile(lpCmdLine))
+			{
+				std::string msg = "Failed to load video rom (not found or not exactly 2/4/8/16KiB)\n";
+				LogFileOutput("%s", msg.c_str());
+				MessageBox(g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
+			}
+			else
+			{
+				SetVideoRomRockerSwitch(true);	// Use PAL char set
+			}
 		}
 		else if (strcmp(lpCmdLine, "-printscreen") == 0)		// Turn on display of the last filename print screen was saved to
 		{
@@ -1183,6 +1346,26 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if (strcmp(lpCmdLine, "-no-printscreen-dlg") == 0)		// Turn off the PrintScreen warning message dialog (if PrintScreen key can't be grabbed)
 		{
 			g_bShowPrintScreenWarningDialog = false;
+		}
+		else if (strcmp(lpCmdLine, "-no-hook-system-key") == 0)		// Don't hook the System keys (eg. Left-ALT+ESC/SPACE/TAB) GH#556
+		{
+			g_bHookSystemKey = false;
+		}
+		else if (strcmp(lpCmdLine, "-hook-alt-tab") == 0)			// GH#556
+		{
+			g_bHookAltTab = true;
+		}
+		else if (strcmp(lpCmdLine, "-hook-altgr-control") == 0)		// GH#556
+		{
+			g_bHookAltGrControl = true;
+		}
+		else if (strcmp(lpCmdLine, "-altgr-sends-wmchar") == 0)		// GH#625
+		{
+			KeybSetAltGrSendsWM_CHAR(true);
+		}
+		else if (strcmp(lpCmdLine, "-no-hook-alt") == 0)			// GH#583
+		{
+			JoySetHookAltKeys(false);
 		}
 		else if (strcmp(lpCmdLine, "-spkr-inc") == 0)
 		{
@@ -1210,23 +1393,38 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			g_bMultiMon = true;
 		}
-		else if (strcmp(lpCmdLine, "-dcd") == 0)	// GH#386
+		else if ((strcmp(lpCmdLine, "-dcd") == 0) || (strcmp(lpCmdLine, "-modem") == 0))	// GH#386
 		{
 			sg_SSC.SupportDCD(true);
 		}
-		else if (strcmp(lpCmdLine, "-dsr") == 0)	// GH#386
+		else if (strcmp(lpCmdLine, "-alt-enter=toggle-full-screen") == 0)	// GH#556
 		{
-			sg_SSC.SupportDSR(true);
+			SetAltEnterToggleFullScreen(true);
 		}
-		else if (strcmp(lpCmdLine, "-dtr") == 0)	// GH#386
+		else if (strcmp(lpCmdLine, "-alt-enter=open-apple-enter") == 0)		// GH#556
 		{
-			sg_SSC.SupportDTR(true);
+			SetAltEnterToggleFullScreen(false);
 		}
-		else if (strcmp(lpCmdLine, "-modem") == 0)	// GH#386
+		else if (strcmp(lpCmdLine, "-video-mode=rgb-monitor") == 0)			// GH#616
 		{
-			sg_SSC.SupportDCD(true);
-			sg_SSC.SupportDSR(true);
-			sg_SSC.SupportDTR(true);
+			newVideoType = VT_COLOR_MONITOR_RGB;
+		}
+		else if (strcmp(lpCmdLine, "-video-style=vertical-blend") == 0)		// GH#616
+		{
+			newVideoStyleEnableMask = VS_COLOR_VERTICAL_BLEND;
+		}
+		else if (strcmp(lpCmdLine, "-video-style=no-vertical-blend") == 0)	// GH#616
+		{
+			newVideoStyleDisableMask = VS_COLOR_VERTICAL_BLEND;
+		}
+		else if (strcmp(lpCmdLine, "-rgb-card-invert-bit7") == 0)	// GH#633
+		{
+			RGB_SetInvertBit7(true);
+		}
+		else if (strcmp(lpCmdLine, "-screenshot-and-exit") == 0)	// GH#616: For testing - Use in combination with -load-state
+		{
+			szScreenshotFilename = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
 		}
 		else	// unsupported
 		{
@@ -1280,6 +1478,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			unsigned long fix_minor = g_AppleWinVersion[3] = pFixedFileInfo->dwFileVersionLS & 0xffff;
 			sprintf(VERSIONSTRING, "%d.%d.%d.%d", major, minor, fix, fix_minor); // potential buffer overflow
 		}
+
+		delete [] pVerInfoBlock;
     }
 
 	LogFileOutput("AppleWin version: %s\n",  VERSIONSTRING);
@@ -1332,8 +1532,37 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		g_bRestart = false;
 		ResetToLogoMode();
 
+		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
+		const bool bShowAboutDlg = CheckOldAppleWinVersion();	// Post: g_OldAppleWinVersion
+
 		LoadConfiguration();
 		LogFileOutput("Main: LoadConfiguration()\n");
+
+		if (newVideoType >= 0)
+			SetVideoType( (VideoType_e)newVideoType );
+		SetVideoStyle( (VideoStyle_e) ((GetVideoStyle() | newVideoStyleEnableMask) & ~newVideoStyleDisableMask) );
+
+		// Apply the memory expansion switches after loading the Apple II machine type
+#ifdef RAMWORKS
+		if (uRamWorksExPages)
+		{
+			SetRamWorksMemorySize(uRamWorksExPages);
+			SetExpansionMemType(CT_RamWorksIII);
+			uRamWorksExPages = 0;	// Don't reapply after a restart
+		}
+#endif
+		if (uSaturnBanks)
+		{
+			SetSaturnMemorySize(uSaturnBanks);	// Set number of banks before constructing Saturn card
+			SetExpansionMemType(CT_Saturn128K);
+			uSaturnBanks = 0;		// Don't reapply after a restart
+		}
+
+		if (bSlot0LanguageCard)
+		{
+			SetExpansionMemType(CT_LanguageCard);
+			bSlot0LanguageCard = false;	// Don't reapply after a restart
+		}
 
 		DebugInitialize();
 		LogFileOutput("Main: DebugInitialize()\n");
@@ -1364,10 +1593,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		MemInitialize();
 		LogFileOutput("Main: MemInitialize()\n");
 
-		char szOldAppleWinVersion[sizeof(VERSIONSTRING)] = {0};
-		RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, szOldAppleWinVersion, sizeof(szOldAppleWinVersion));
-
-		const bool bShowAboutDlg = strcmp(szOldAppleWinVersion, VERSIONSTRING) != 0;
+		// Show About dialog after creating main window (need g_hFrameWindow)
 		if (bShowAboutDlg)
 		{
 			if (!AboutDlg())
@@ -1376,10 +1602,17 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, VERSIONSTRING);	// Only save version after user accepts license
 		}
 
-		// PrintScrn support
 		if (g_bCapturePrintScreenKey)
-			AppleWin_RegisterHotKeys(); // needs valid g_hFrameWindow
-		LogFileOutput("Main: AppleWin_RegisterHotKeys()\n");
+		{
+			RegisterHotKeys();		// needs valid g_hFrameWindow
+			LogFileOutput("Main: RegisterHotKeys()\n");
+		}
+
+		if (g_bHookSystemKey)
+		{
+			if (InitHookThread())	// needs valid g_hFrameWindow (for message pump)
+				LogFileOutput("Main: HookFilterForKeyboard()\n");
+		}
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
 		DiskReset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
@@ -1395,7 +1628,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		if (g_bCustomRomF8Failed)
 		{
-			MessageBox(g_hFrameWindow, "Failed to load custom F8 rom (not found or not exactly 2KB)", TEXT("AppleWin Error"), MB_OK);
+			std::string msg = "Failed to load custom F8 rom (not found or not exactly 2KiB)\n";
+			LogFileOutput("%s", msg.c_str());
+			MessageBox(g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			bShutdown = true;
 		}
 
@@ -1429,6 +1664,12 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			Snapshot_Startup();		// Do this after everything has been init'ed
 			LogFileOutput("Main: Snapshot_Startup()\n");
+		}
+
+		if (szScreenshotFilename)
+		{
+			Video_RedrawAndTakeScreenShot(szScreenshotFilename);
+			bShutdown = true;
 		}
 
 		if (bShutdown)
@@ -1486,6 +1727,12 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		DSUninit();
 		LogFileOutput("Main: DSUninit()\n");
+
+		if (g_bHookSystemKey)
+		{
+			UninitHookThread();
+			LogFileOutput("Main: UnhookFilterForKeyboard()\n");
+		}
 	}
 	while (g_bRestart);
 
@@ -1502,12 +1749,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	tfe_shutdown();
 	LogFileOutput("Exit: tfe_shutdown()\n");
 
-	if (g_fh)
-	{
-		fprintf(g_fh,"*** Logging ended\n\n");
-		fclose(g_fh);
-		g_fh = NULL;
-	}
+	LogDone();
 
 	RiffFinishWriteFile();
 

@@ -7,24 +7,34 @@
 	enum VideoType_e
 	{
 		  VT_MONO_CUSTOM
-		, VT_COLOR_MONITOR
-		, VT_MONO_TV
+		, VT_COLOR_MONITOR_RGB		// Color rendering from AppleWin 1.25 (GH#357)
+		, VT_COLOR_MONITOR_NTSC
 		, VT_COLOR_TV
+		, VT_MONO_TV
 		, VT_MONO_AMBER
 		, VT_MONO_GREEN
 		, VT_MONO_WHITE
 		, NUM_VIDEO_MODES
+		, VT_DEFAULT = VT_COLOR_TV
 	};
 
 	extern TCHAR g_aVideoChoices[];
 	extern char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
+
+	enum VideoStyle_e
+	{
+		VS_NONE=0,
+		VS_HALF_SCANLINES=1,		// drop 50% scan lines for a more authentic look
+		VS_COLOR_VERTICAL_BLEND=2,	// Color "TV Emu" rendering from AppleWin 1.25 (GH#616)
+//		VS_TEXT_OPTIMIZED=4,
+	};
 
 	enum VideoFlag_e
 	{
 		VF_80COL  = 0x00000001,
 		VF_DHIRES = 0x00000002,
 		VF_HIRES  = 0x00000004,
-		VF_80STORE= 0x00000008, // was called VF_MASK2
+		VF_80STORE= 0x00000008,
 		VF_MIXED  = 0x00000010,
 		VF_PAGE2  = 0x00000020,
 		VF_TEXT   = 0x00000040
@@ -61,6 +71,7 @@
 	#define PACKED // TODO: FIXME: gcc/clang __attribute__
 #endif
 
+// TODO: Replace with WinGDI.h / RGBQUAD
 struct bgra_t
 {
 	uint8_t b;
@@ -153,7 +164,6 @@ struct WinBmpHeader4_t
 extern COLORREF   g_nMonochromeRGB;	// saved to Registry
 extern uint32_t   g_uVideoMode;
 extern DWORD      g_eVideoType;		// saved to Registry
-extern DWORD      g_uHalfScanLines;	// saved to Registry
 extern uint8_t   *g_pFramebufferbits;
 
 // Prototypes _______________________________________________________
@@ -167,9 +177,10 @@ void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = f
 void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 void    VideoRedrawScreen (void);
 void    VideoRefreshScreen (uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false);
-void    VideoReinitialize ();
+void    VideoReinitialize (bool bInitVideoScannerAddress = true);
 void    VideoResetState ();
-WORD    VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles);
+enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
+WORD    VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr = VS_FullAddr);
 bool    VideoGetVblBar(DWORD uExecutedCycles);
 
 bool    VideoGetSW80COL(void);
@@ -181,7 +192,6 @@ bool    VideoGetSWPAGE2(void);
 bool    VideoGetSWTEXT(void);
 bool    VideoGetSWAltCharSet(void);
 
-void    VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode);
 void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
@@ -194,14 +204,25 @@ enum VideoScreenShot_e
 	SCREENSHOT_560x384 = 0,
 	SCREENSHOT_280x192
 };
-void Video_TakeScreenShot( VideoScreenShot_e iScreenShotType );
+void Video_TakeScreenShot( VideoScreenShot_e ScreenShotType );
+void Video_RedrawAndTakeScreenShot( const char* pScreenshotFilename );
 void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel );
 
+BYTE VideoSetMode(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 
-// Win32/MSVC: __stdcall 
-BYTE VideoCheckMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
-BYTE VideoCheckVbl ( ULONG uExecutedCycles );
-BYTE VideoSetMode (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+const UINT kVideoRomSize2K = 1024*2;
+const UINT kVideoRomSize4K = kVideoRomSize2K*2;
+bool ReadVideoRomFile(const char* pRomFile);
+UINT GetVideoRom(const BYTE*& pVideoRom);
+bool GetVideoRomRockerSwitch(void);
+void SetVideoRomRockerSwitch(bool state);
+bool IsVideoRom4K(void);
 
 void Config_Load_Video(void);
 void Config_Save_Video(void);
+
+VideoType_e GetVideoType(void);
+void SetVideoType(VideoType_e newVideoType);
+VideoStyle_e GetVideoStyle(void);
+void SetVideoStyle(VideoStyle_e newVideoStyle);
+bool IsVideoStyle(VideoStyle_e mask);

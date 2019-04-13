@@ -81,16 +81,21 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 //	tData_.nArraySize = 0;
 
 	char *pSymbolName = "";
-	char aSymbolName[ 32 ];
+	char aSymbolName[ MAX_SYMBOLS_LEN+1 ];
 	SymbolTable_Index_e eSymbolTable = SYMBOLS_ASSEMBLY;
 	bool bAutoDefineName = false; // 2.7.0.34
 
 	if( nArgs > 1 )
 	{
 		if( g_aArgs[ 2 ].eToken == TOKEN_COLON ) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:174F
+		{
 			bAutoDefineName = true;
+		}
 		else
+		{
 			pSymbolName = g_aArgs[ 1 ].sArg;
+			pSymbolName[MAX_SYMBOLS_LEN] = 0;	// truncate to max symbol length
+		}
 	}
 	else
 	{

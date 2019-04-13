@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Registry.h"
 #include "Video.h"
 #include "NTSC.h"
+#include "RGBMonitor.h"
 
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
@@ -83,26 +84,24 @@ static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
        HBITMAP       g_hLogoBitmap;
 
-const int MAX_SOURCE_Y = 512;
-static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
-
 COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
 
 uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
 
-DWORD     g_eVideoType     = VT_COLOR_TV;
-DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
+DWORD     g_eVideoType     = VT_DEFAULT;
+static VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
 
-static const bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
+static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 //-------------------------------------
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	TCHAR g_aVideoChoices[] =
 		TEXT("Monochrome (Custom)\0")
-		TEXT("Color Monitor\0")
-		TEXT("B&W TV\0")
+		TEXT("Color (RGB Monitor)\0")
+		TEXT("Color (NTSC Monitor)\0")
 		TEXT("Color TV\0")
+		TEXT("B&W TV\0")
 		TEXT("Monochrome (Amber)\0")
 		TEXT("Monochrome (Green)\0")
 		TEXT("Monochrome (White)\0")
@@ -113,9 +112,10 @@ static const bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
 		  "Monochrome Monitor (Custom)"
-		, "Color Monitor"
-		, "B&W TV"
+		, "Color (RGB Monitor)"
+		, "Color (NTSC Monitor)"
 		, "Color TV"
+		, "B&W TV"
 		, "Amber Monitor"
 		, "Green Monitor"
 		, "White Monitor"
@@ -127,7 +127,7 @@ static const bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 	bool g_bShowPrintScreenWarningDialog = true;
 	void Util_MakeScreenShotFileName( char *pFinalFileName_ );
 	bool Util_TestScreenShotFileName( const char *pFileName );
-	void Video_SaveScreenShot( const char *pScreenShotFileName, const VideoScreenShot_e ScreenShotType );
+	void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const char *pScreenShotFileName );
 	void Video_MakeScreenShot( FILE *pFile, const VideoScreenShot_e ScreenShotType );
 	void videoCreateDIBSection();
 
@@ -338,34 +338,6 @@ void VideoBenchmark () {
              MB_ICONINFORMATION | MB_SETFOREGROUND);
 }
             
-//===========================================================================
-BYTE VideoCheckMode (WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
-{
-  address &= 0xFF;
-  if (address == 0x7F)
-    return MemReadFloatingBus(SW_DHIRES != 0, uExecutedCycles);
-  else {
-    BOOL result = 0;
-    switch (address) {
-      case 0x1A: result = SW_TEXT;    break;
-      case 0x1B: result = SW_MIXED;   break;
-      case 0x1D: result = SW_HIRES;   break;
-      case 0x1E: result = g_nAltCharSetOffset;   break;
-      case 0x1F: result = SW_80COL;   break;
-      case 0x7F: result = SW_DHIRES;  break;
-    }
-    return KeybGetKeycode() | (result ? 0x80 : 0);
-  }
-}
-
-//===========================================================================
-BYTE VideoCheckVbl ( ULONG uExecutedCycles )
-{
-	bool bVblBar = VideoGetVblBar(uExecutedCycles);
-	BYTE r = KeybGetKeycode();
-	return (r & ~0x80) | (bVblBar ? 0x80 : 0);
- }
-
 // This is called from PageConfig
 //===========================================================================
 void VideoChooseMonochromeColor ()
@@ -570,7 +542,7 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 
 void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
-	if (bVideoScannerNTSC)
+	if (g_bVideoScannerNTSC)
 	{
 		NTSC_VideoClockResync(dwCyclesThisFrame);
 	}
@@ -595,6 +567,7 @@ void VideoRedrawScreen (void)
 //===========================================================================
 
 // TC: Hacky-fix for GH#341 - better to draw to the correct position in the framebuffer to start with! (in NTSC.cpp)
+// . NB. Now the dx is corrected in NTSC.cpp, updateVideoScannerAddress()
 static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 {
 	int dx=0, dy=0;
@@ -602,14 +575,7 @@ static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
 	{
 		// Adjust the src locations for the NTSC video modes
-		dx = 2;
 		dy = -1;
-	}
-	else if (g_eVideoType == VT_COLOR_MONITOR)
-	{
-		//if ((g_uVideoMode & VF_TEXT) == 0)	// NB. Not sufficient, eg. ANSI STORY...
-		if ( NTSC_GetColorBurst() == true )	// ANSI STORY (end credits): split DGR/TEXT80/DGR on scanline
-			dx = 2;
 	}
 
 	if (bInvertY)
@@ -659,9 +625,9 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 }
 
 //===========================================================================
-void VideoReinitialize ()
+void VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
 {
-	NTSC_VideoReinitialize( g_dwCyclesThisFrame );
+	NTSC_VideoReinitialize( g_dwCyclesThisFrame, bInitVideoScannerAddress );
 	NTSC_VideoInitAppleType();
 	NTSC_SetVideoStyle();
 	NTSC_SetVideoTextMode( g_uVideoMode &  VF_80COL ? 80 : 40 );
@@ -676,12 +642,13 @@ void VideoResetState ()
 
 	NTSC_SetVideoTextMode( 40 );
 	NTSC_SetVideoMode( g_uVideoMode );
-}
 
+	RGB_ResetState();
+}
 
 //===========================================================================
 
-BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
+BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
 
@@ -704,6 +671,9 @@ BYTE VideoSetMode (WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 		case 0x5E: if (!IS_APPLE2) g_uVideoMode |=  VF_DHIRES;  break;
 		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
+
+	if (!IS_APPLE2)
+		RGB_SetVideoMode(address);
 
 	NTSC_SetVideoMode( g_uVideoMode );
 
@@ -754,15 +724,6 @@ bool VideoGetSWAltCharSet(void)
 
 //===========================================================================
 
-void VideoSetSnapshot_v1(const UINT AltCharSet, const UINT VideoMode)
-{
-	g_nAltCharSetOffset = !AltCharSet ? 0 : 256;
-	g_uVideoMode = VideoMode;
-	g_dwCyclesThisFrame = 0;
-}
-
-//
-
 #define SS_YAML_KEY_ALTCHARSET "Alt Char Set"
 #define SS_YAML_KEY_VIDEOMODE "Video Mode"
 #define SS_YAML_KEY_CYCLESTHISFRAME "Cycles This Frame"
@@ -798,24 +759,20 @@ void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 // References to Jim Sather's books are given as eg:
 // UTAIIe:5-7,P3 (Understanding the Apple IIe, chapter 5, page 7, Paragraph 3)
 //
-WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
+WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= VS_FullAddr*/)
 {
-    // get video scanner position
-    //
-    int nCycles = CpuGetCyclesThisVideoFrame(uExecutedCycles);
-
     // machine state switches
     //
-    int nHires   = (SW_HIRES && !SW_TEXT) ? 1 : 0;
-    int nPage2   = SW_PAGE2 ? 1 : 0;
-    int n80Store = SW_80STORE ? 1 : 0;
+    bool bHires   = VideoGetSWHIRES() && !VideoGetSWTEXT();
+    bool bPage2   = VideoGetSWPAGE2();
+    bool b80Store = VideoGetSW80STORE();
 
     // calculate video parameters according to display standard
     //
-    int nScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
-    int nVSyncLine  = bVideoScannerNTSC ? kNTSCVSyncLine : kPALVSyncLine;
-    int nScanCycles = nScanLines * kHClocks;
-    nCycles %= nScanCycles;
+    const int kScanLines  = g_bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+    const int kScanCycles = kScanLines * kHClocks;
+    _ASSERT(nCycles < kScanCycles);
+    nCycles %= kScanCycles;
 
     // calculate horizontal scanning state
     //
@@ -836,9 +793,9 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
     //
     int nVLine  = nCycles / kHClocks; // which vertical scanning line
     int nVState = kVLine0State + nVLine; // V state bits
-    if ((nVLine >= kVPresetLine)) // check for previous vertical state preset
+    if (nVLine >= kVPresetLine) // check for previous vertical state preset
     {
-        nVState -= nScanLines; // compensate for preset
+        nVState -= kScanLines; // compensate for preset
     }
     int v_A = (nVState >> 0) & 1; // get vertical state bits
     int v_B = (nVState >> 1) & 1;
@@ -852,9 +809,9 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
 
     // calculate scanning memory address
     //
-    if (nHires && SW_MIXED && v_4 && v_2) // HIRES TIME signal (UTAIIe:5-7,P3)
+    if (bHires && SW_MIXED && v_4 && v_2) // HIRES TIME signal (UTAIIe:5-7,P3)
     {
-        nHires = 0; // address is in text memory for mixed hires
+        bHires = false; // address is in text memory for mixed hires
     }
 
     int nAddend0 = 0x0D; // 1            1            0            1
@@ -862,51 +819,58 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
     int nAddend2 = (v_4 << 3) | (v_3 << 2) | (v_4 << 1) | (v_3 << 0);
     int nSum     = (nAddend0 + nAddend1 + nAddend2) & 0x0F; // SUM (UTAIIe:5-9)
 
-    int nAddress = 0; // build address from video scanner equations (UTAIIe:5-8,T5.1)
-    nAddress |= h_0  << 0; // a0
-    nAddress |= h_1  << 1; // a1
-    nAddress |= h_2  << 2; // a2
-    nAddress |= nSum << 3; // a3 - a6
-    nAddress |= v_0  << 7; // a7
-    nAddress |= v_1  << 8; // a8
-    nAddress |= v_2  << 9; // a9
+    WORD nAddressH = 0; // build address from video scanner equations (UTAIIe:5-8,T5.1)
+    nAddressH |= h_0  << 0; // a0
+    nAddressH |= h_1  << 1; // a1
+    nAddressH |= h_2  << 2; // a2
+    nAddressH |= nSum << 3; // a3 - a6
+    if (!bHires)
+    {
+        // Apple ][ (not //e) and HBL?
+        //
+        if (IS_APPLE2 && // Apple II only (UTAIIe:I-4,#5)
+            !h_5 && (!h_4 || !h_3)) // HBL (UTAIIe:8-10,F8.5)
+        {
+            nAddressH |= 1 << 12; // Y: a12 (add $1000 to address!)
+        }
+    }
 
-    int p2a = !(nPage2 && !n80Store);
-    int p2b = nPage2 && !n80Store;
+    WORD nAddressV = 0;
+    nAddressV |= v_0  << 7; // a7
+    nAddressV |= v_1  << 8; // a8
+    nAddressV |= v_2  << 9; // a9
 
-    if (nHires) // hires?
+    int p2a = !(bPage2 && !b80Store) ? 1 : 0;
+    int p2b =  (bPage2 && !b80Store) ? 1 : 0;
+
+    WORD nAddressP = 0;	// Page bits
+    if (bHires) // hires?
     {
         // Y: insert hires-only address bits
         //
-        nAddress |= v_A << 10; // a10
-        nAddress |= v_B << 11; // a11
-        nAddress |= v_C << 12; // a12
-        nAddress |= p2a << 13; // a13
-        nAddress |= p2b << 14; // a14
+        nAddressV |= v_A << 10; // a10
+        nAddressV |= v_B << 11; // a11
+        nAddressV |= v_C << 12; // a12
+        nAddressP |= p2a << 13; // a13
+        nAddressP |= p2b << 14; // a14
     }
     else
     {
         // N: insert text-only address bits
         //
-        nAddress |= p2a << 10; // a10
-        nAddress |= p2b << 11; // a11
-
-        // Apple ][ (not //e) and HBL?
-		//
-		if (IS_APPLE2 && // Apple II only (UTAIIe:I-4,#5)
-			!h_5 && (!h_4 || !h_3)) // HBL (UTAIIe:8-10,F8.5)
-        {
-            nAddress |= 1 << 12; // Y: a12 (add $1000 to address!)
-        }
-    }
-
-    // update VBL' state
-    //
-	if (pbVblBar_OUT != NULL)
-	{
-		*pbVblBar_OUT = !v_4 || !v_3; // VBL' = (v_4 & v_3)' (UTAIIe:5-10,#3)
+        nAddressP |= p2a << 10; // a10
+        nAddressP |= p2b << 11; // a11
 	}
-    return static_cast<WORD>(nAddress);
+
+	// VBL' = v_4' | v_3' = (v_4 & v_3)' (UTAIIe:5-10,#3)
+
+	if (videoScannerAddr == VS_PartialAddrH)
+		return nAddressH;
+
+	if (videoScannerAddr == VS_PartialAddrV)
+		return nAddressV;
+
+    return nAddressP | nAddressV | nAddressH;
 }
 
 //===========================================================================
@@ -917,7 +881,7 @@ bool VideoGetVblBar(const DWORD uExecutedCycles)
 	int nCycles = CpuGetCyclesThisVideoFrame(uExecutedCycles);
 
 	// calculate video parameters according to display standard
-	const int kScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+	const int kScanLines  = g_bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
 	const int kScanCycles = kScanLines * kHClocks;
 	nCycles %= kScanCycles;
 
@@ -995,8 +959,18 @@ void Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 		g_nLastScreenShot++;
 	}
 
-	Video_SaveScreenShot( sScreenShotFileName, ScreenShotType );
+	Video_SaveScreenShot( ScreenShotType, sScreenShotFileName );
 	g_nLastScreenShot++;
+}
+
+void Video_RedrawAndTakeScreenShot( const char* pScreenshotFilename )
+{
+	_ASSERT(pScreenshotFilename);
+	if (!pScreenshotFilename)
+		return;
+
+	VideoRedrawScreen();
+	Video_SaveScreenShot( SCREENSHOT_560x384, pScreenshotFilename );
 }
 
 WinBmpHeader_t g_tBmpHeader;
@@ -1157,7 +1131,7 @@ static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 }
 
 //===========================================================================
-static void Video_SaveScreenShot( const char *pScreenShotFileName, const VideoScreenShot_e ScreenShotType )
+static void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const char *pScreenShotFileName )
 {
 	FILE *pFile = fopen( pScreenShotFileName, "wb" );
 	if( pFile )
@@ -1172,26 +1146,158 @@ static void Video_SaveScreenShot( const char *pScreenShotFileName, const VideoSc
 	}
 }
 
+
 //===========================================================================
+
+static const UINT kVideoRomSize8K = kVideoRomSize4K*2;
+static const UINT kVideoRomSize16K = kVideoRomSize8K*2;
+static const UINT kVideoRomSizeMax = kVideoRomSize16K;
+static BYTE g_videoRom[kVideoRomSizeMax];
+static UINT g_videoRomSize = 0;
+static bool g_videoRomRockerSwitch = false;
+
+bool ReadVideoRomFile(const char* pRomFile)
+{
+	g_videoRomSize = 0;
+
+	HANDLE h = CreateFile(pRomFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+	if (h == INVALID_HANDLE_VALUE)
+		return false;
+
+	const ULONG size = GetFileSize(h, NULL);
+	if (size == kVideoRomSize2K || size == kVideoRomSize4K || size == kVideoRomSize8K || size == kVideoRomSize16K)
+	{
+		DWORD bytesRead;
+		if (ReadFile(h, g_videoRom, size, &bytesRead, NULL) && bytesRead == size)
+			g_videoRomSize = size;
+	}
+
+	if (g_videoRomSize == kVideoRomSize16K)
+	{
+		// Use top 8K (assume bottom 8K is all 0xFF's)
+		memcpy(&g_videoRom[0], &g_videoRom[kVideoRomSize8K], kVideoRomSize8K);
+		g_videoRomSize = kVideoRomSize8K;
+	}
+
+	CloseHandle(h);
+
+	return g_videoRomSize != 0;
+}
+
+UINT GetVideoRom(const BYTE*& pVideoRom)
+{
+	pVideoRom = &g_videoRom[0];
+	return g_videoRomSize;
+}
+
+bool GetVideoRomRockerSwitch(void)
+{
+	return g_videoRomRockerSwitch;
+}
+
+void SetVideoRomRockerSwitch(bool state)
+{
+	g_videoRomRockerSwitch = state;
+}
+
+bool IsVideoRom4K(void)
+{
+	return g_videoRomSize <= kVideoRomSize4K;
+}
+
+//===========================================================================
+
+enum VideoType127_e
+{
+	  VT127_MONO_CUSTOM
+	, VT127_COLOR_MONITOR_NTSC
+	, VT127_MONO_TV
+	, VT127_COLOR_TV
+	, VT127_MONO_AMBER
+	, VT127_MONO_GREEN
+	, VT127_MONO_WHITE
+	, VT127_NUM_VIDEO_MODES
+};
 
 void Config_Load_Video()
 {
-	REGLOAD(TEXT(REGVALUE_VIDEO_MODE           ),&g_eVideoType);
-	REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&g_uHalfScanLines);
-	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),&g_nMonochromeRGB);
+	REGLOAD(TEXT(REGVALUE_VIDEO_MODE)      ,&g_eVideoType);
+	REGLOAD(TEXT(REGVALUE_VIDEO_STYLE)     ,(DWORD*)&g_eVideoStyle);
+	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR),&g_nMonochromeRGB);
+
+	//
+
+	const UINT16* pOldVersion = GetOldAppleWinVersion();
+	if (pOldVersion[0] == 1 && pOldVersion[1] <= 28 && pOldVersion[2] <= 1)
+	{
+		DWORD halfScanLines = 0;
+		REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&halfScanLines);
+
+		if (halfScanLines)
+			g_eVideoStyle = (VideoStyle_e) ((DWORD)g_eVideoStyle | VS_HALF_SCANLINES);
+		else
+			g_eVideoStyle = (VideoStyle_e) ((DWORD)g_eVideoStyle & ~VS_HALF_SCANLINES);
+
+		REGSAVE(TEXT(REGVALUE_VIDEO_STYLE), g_eVideoStyle);
+	}
+
+	//
+
+	if (pOldVersion[0] == 1 && pOldVersion[1] <= 27 && pOldVersion[2] <= 13)
+	{
+		switch (g_eVideoType)
+		{
+		case VT127_MONO_CUSTOM:			g_eVideoType = VT_MONO_CUSTOM; break;
+		case VT127_COLOR_MONITOR_NTSC:	g_eVideoType = VT_COLOR_MONITOR_NTSC; break;
+		case VT127_MONO_TV:				g_eVideoType = VT_MONO_TV; break;
+		case VT127_COLOR_TV:			g_eVideoType = VT_COLOR_TV; break;
+		case VT127_MONO_AMBER:			g_eVideoType = VT_MONO_AMBER; break;
+		case VT127_MONO_GREEN:			g_eVideoType = VT_MONO_GREEN; break;
+		case VT127_MONO_WHITE:			g_eVideoType = VT_MONO_WHITE; break;
+		default:						g_eVideoType = VT_DEFAULT; break;
+		}
+
+		REGSAVE(TEXT(REGVALUE_VIDEO_MODE), g_eVideoType);
+	}
 
 	if (g_eVideoType >= NUM_VIDEO_MODES)
-		g_eVideoType = VT_COLOR_MONITOR;
+		g_eVideoType = VT_DEFAULT;
 }
 
 void Config_Save_Video()
 {
-	REGSAVE(TEXT(REGVALUE_VIDEO_MODE           ),g_eVideoType);
-	REGSAVE(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),g_uHalfScanLines);
-	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR     ),g_nMonochromeRGB);
+	REGSAVE(TEXT(REGVALUE_VIDEO_MODE)      ,g_eVideoType);
+	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     ,g_eVideoStyle);
+	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR),g_nMonochromeRGB);
 }
 
-// ____________________________________________________________________
+//===========================================================================
+
+VideoType_e GetVideoType(void)
+{
+	return (VideoType_e) g_eVideoType;
+}
+
+// TODO: Can only do this at start-up (mid-emulation requires a more heavy-weight video reinit)
+void SetVideoType(VideoType_e newVideoType)
+{
+	g_eVideoType = newVideoType;
+}
+
+VideoStyle_e GetVideoStyle(void)
+{
+	return g_eVideoStyle;
+}
+
+void SetVideoStyle(VideoStyle_e newVideoStyle)
+{
+	g_eVideoStyle = newVideoStyle;
+}
+
+bool IsVideoStyle(VideoStyle_e mask)
+{
+	return (g_eVideoStyle & mask) != 0;
+}
 
 //===========================================================================
 static void videoCreateDIBSection()
@@ -1216,9 +1322,9 @@ static void videoCreateDIBSection()
 		);
 	SelectObject(g_hDeviceDC,g_hDeviceBitmap);
 
-	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
 	ZeroMemory( g_pFramebufferbits, GetFrameBufferWidth()*GetFrameBufferHeight()*sizeof(bgra_t) );
 
+	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	NTSC_VideoInit( g_pFramebufferbits );
 }

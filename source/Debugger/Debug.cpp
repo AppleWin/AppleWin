@@ -780,7 +780,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 	DWORD currtime = GetTickCount();
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
-	KeybQueueKeypress(TEXT(' '),1);
+	KeybQueueKeypress(TEXT(' ') ,ASCII);
 
 	return UPDATE_ALL; // 0;
 }
@@ -2096,7 +2096,7 @@ Update_t CmdUnassemble (int nArgs)
 Update_t CmdKey (int nArgs)
 {
 	KeybQueueKeypress(
-		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : TEXT(' '), 1); // FIXME!!!
+		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : TEXT(' '), ASCII); // FIXME!!!
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
@@ -3639,7 +3639,7 @@ Update_t CmdFlagClear (int nArgs)
 {
 	int iFlag = (g_iCommand - CMD_FLAG_CLR_C);
 
-	if (g_iCommand == CMD_FLAG_CLEAR)
+	if (g_iCommand == CMD_FLAG_CLEAR)	// Undocumented: "cl f f ... f", eg: "se n v c" (TODO: Conflicts with monitor command #L -> 000CL)
 	{
 		int iArg = nArgs;
 		while (iArg)
@@ -3648,9 +3648,10 @@ Update_t CmdFlagClear (int nArgs)
 			while (iFlag < _6502_NUM_FLAGS)
 			{
 //				if (g_aFlagNames[iFlag] == g_aArgs[iArg].sArg[0])
-				if (g_aBreakpointSource[ BP_SRC_FLAG_N + iFlag ][0] == g_aArgs[iArg].sArg[0])
+				if (g_aBreakpointSource[ BP_SRC_FLAG_N - iFlag ][0] == toupper(g_aArgs[iArg].sArg[0]))
 				{
-					regs.ps &= ~(1 << iFlag);
+					regs.ps &= ~(1 << (7-iFlag));
+					break;
 				}
 				iFlag++;
 			}
@@ -3670,7 +3671,7 @@ Update_t CmdFlagSet (int nArgs)
 {
 	int iFlag = (g_iCommand - CMD_FLAG_SET_C);
 
-	if (g_iCommand == CMD_FLAG_SET)
+	if (g_iCommand == CMD_FLAG_SET)	// Undocumented: "se f f ... f", eg: "se n v c"
 	{
 		int iArg = nArgs;
 		while (iArg)
@@ -3679,9 +3680,10 @@ Update_t CmdFlagSet (int nArgs)
 			while (iFlag < _6502_NUM_FLAGS)
 			{
 //				if (g_aFlagNames[iFlag] == g_aArgs[iArg].sArg[0])
-				if (g_aBreakpointSource[ BP_SRC_FLAG_N + iFlag ][0] == g_aArgs[iArg].sArg[0])
+				if (g_aBreakpointSource[ BP_SRC_FLAG_N - iFlag ][0] == toupper(g_aArgs[iArg].sArg[0]))
 				{
-					regs.ps |= (1 << iFlag);
+					regs.ps |= (1 << (7-iFlag));
+					break;
 				}
 				iFlag++;
 			}
@@ -4151,8 +4153,12 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 		{
 			_tcsncpy( sPath, g_sCurrentDir, 2 );	// Prefix with drive letter & colon
 			sPath[2] = 0;
+			_tcscat( sPath, g_aArgs[1].sArg );
 		}
-		_tcscat( sPath, g_aArgs[1].sArg );
+		else
+		{
+			_tcscpy( sPath, g_aArgs[1].sArg );
+		}
 	}
 	else									// Relative
 	{
@@ -6464,7 +6470,8 @@ Update_t CmdOutputRun (int nArgs)
 
 //	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 
-	_tcscpy( sMiniFileName, pFileName );
+	_tcsncpy( sMiniFileName, pFileName, sizeof(sMiniFileName) );
+	sMiniFileName[sizeof(sMiniFileName)-1] = 0;
 //	_tcscat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
 	if (pFileName[0] == '\\' || pFileName[1] == ':')	// NB. Any prefix quote has already been stripped
@@ -7626,7 +7633,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 //	int nPtrNum = g_aArgs[0].sArg[1] - '0'; // HACK: hard-coded to command length
 	int iZP = g_iCommand - CMD_ZEROPAGE_POINTER_0;
 
-	if( (iZP < 0) || (iZP > MAX_ZEROPAGE_POINTERS) )
+	if( (iZP < 0) || (iZP >= MAX_ZEROPAGE_POINTERS) )
 		return Help_Arg_1( g_iCommand );
 
 	if (nArgs == 0)
@@ -9364,7 +9371,7 @@ void DebuggerProcessKey( int keycode )
 		}		
 	}
 	else if (( keycode == VK_OEM_3 ) ||	// US: Tilde ~ (key to the immediate left of numeral 1)
-			 ( keycode == VK_OEM_8 ))	// UK: Logical NOT ¬ (key to the immediate left of numeral 1)
+			 ( keycode == VK_OEM_8 ))	// UK: Logical NOT Â¬ (key to the immediate left of numeral 1)
 	{
 		if (KeybGetCtrlStatus())
 		{
@@ -9690,7 +9697,7 @@ void DebuggerCursorUpdate()
 	}
 	else
 	{
-		Sleep(10);		// Stop process hogging CPU
+		Sleep(1);		// Stop process hogging CPU
 	}
 }
 
@@ -9719,11 +9726,11 @@ void DebuggerMouseClick( int x, int y )
 	if (g_nAppMode != MODE_DEBUG)
 		return;
 
-	// NOTE: KeybUpdateCtrlShiftStatus() should be called before
+	KeybUpdateCtrlShiftStatus();
 	int iAltCtrlShift  = 0;
-	iAltCtrlShift |= (g_bAltKey   & 1) << 0;
-	iAltCtrlShift |= (g_bCtrlKey  & 1) << 1;
-	iAltCtrlShift |= (g_bShiftKey & 1) << 2;
+	iAltCtrlShift |= KeybGetAltStatus()   ? 1<<0 : 0;
+	iAltCtrlShift |= KeybGetCtrlStatus()  ? 1<<1 : 0;
+	iAltCtrlShift |= KeybGetShiftStatus() ? 1<<2 : 0;
 
 	// GH#462 disasm click #
 	if (iAltCtrlShift != g_bConfigDisasmClick)

@@ -47,11 +47,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define TCP_SERIAL_PORT 1977
 
-// Default: 19200-8-N-1
+// Default: 9600-8-N-1
 SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 {
 	// DIPSW1:
-	CBR_19200,
+	CBR_9600,		// Use 9600, as a 1MHz Apple II can only handle up to 9600 bps [Ref.1]
 	FWMODE_CIC,
 
 	// DIPSW2:
@@ -68,9 +68,7 @@ CSuperSerialCard::CSuperSerialCard() :
 	m_aySerialPortChoices(NULL),
 	m_uTCPChoiceItemIdx(0),
 	m_uSlot(0),
-	m_bCfgSupportDCD(false),
-	m_bCfgSupportDSR(false),
-	m_bCfgSupportDTR(false)
+	m_bCfgSupportDCD(false)
 {
 	memset(m_ayCurrentSerialPortName, 0, sizeof(m_ayCurrentSerialPortName));
 	m_dwSerialPortItem = 0;
@@ -93,32 +91,25 @@ void CSuperSerialCard::InternalReset()
 {
 	GetDIPSW();
 
-	// SY6551 datasheet: Hardware reset sets Control register to 0 - the DIPSW settings are not used by h/w to setup this register
-	m_uControlByte = 0;
-
 	// SY6551 datasheet: Hardware reset sets Command register to 0
 	// . NB. MOS6551 datasheet: Hardware reset: b#00000010 (so ACIA not init'd on IN#2!)
-	UpdateCommandReg(0);
-
-	m_uBaudRate	= CBR_19200;	// Undefined, as CONTROL.CLK_SOURCE=0=External clock is not supported for SSC - so nominally use 19200
-	m_uStopBits	= ONESTOPBIT;
-	m_uByteSize	= 8;
-	m_uParity	= NOPARITY;
+	// SY6551 datasheet: Hardware reset sets Control register to 0 - the DIPSW settings are not used by h/w to setup this register
+	UpdateCommandAndControlRegs(0, 0);	// Baud=External clock! 8-N-1
 
 	//
-
-	m_vuRxCurrBuffer = 0;
 
 	m_vbTxIrqPending = false;
 	m_vbRxIrqPending = false;
 	m_vbTxEmpty = true;
 
+	m_vuRxCurrBuffer = 0;
 	m_qComSerialBuffer[0].clear();
 	m_qComSerialBuffer[1].clear();
 	m_qTcpSerialBuffer.clear();
 
 	m_uDTR = DTR_CONTROL_DISABLE;
 	m_uRTS = RTS_CONTROL_DISABLE;
+	m_dwModemStatus = m_kDefaultModemStatus;
 }
 
 CSuperSerialCard::~CSuperSerialCard()
@@ -172,7 +163,7 @@ UINT CSuperSerialCard::BaudRateToIndex(UINT uBaudRate)
 
 	_ASSERT(0);
 	LogFileOutput("SSC: BaudRateToIndex(): unsupported rate: %d\n", uBaudRate);
-	return BaudRateToIndex(CBR_19200);	// nominally use 19200
+	return BaudRateToIndex(m_kDefaultBaudRate);	// nominally use AppleWin default
 }
 
 //===========================================================================
@@ -225,6 +216,7 @@ bool CSuperSerialCard::CheckComm()
 
 			// have socket so attempt to bind it
 			SOCKADDR_IN saAddress;
+			memset(&saAddress, 0, sizeof(SOCKADDR_IN));
 			saAddress.sin_family = AF_INET;
 			saAddress.sin_port = htons(TCP_SERIAL_PORT); // TODO: get from registry / GUI
 			saAddress.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -469,6 +461,13 @@ BYTE __stdcall CSuperSerialCard::CommProgramReset(WORD, WORD, BYTE, BYTE, ULONG)
 
 //===========================================================================
 
+void CSuperSerialCard::UpdateCommandAndControlRegs(BYTE uCommandByte, BYTE uControlByte)
+{
+	// UpdateCommandReg() first to initialise m_uParity, before calling UpdateControlReg()
+	UpdateCommandReg(uCommandByte);
+	UpdateControlReg(uControlByte);
+}
+
 void CSuperSerialCard::UpdateCommandReg(BYTE command)
 {
 	m_uCommandByte = command;
@@ -515,6 +514,10 @@ void CSuperSerialCard::UpdateCommandReg(BYTE command)
 
 	if (m_DIPSWCurrent.bInterrupts && m_uCommandByte & CMD_DTR)
 	{
+		// Assume enabling Rx IRQ if STATUS.ST_RX_FULL *does not* trigger an IRQ
+		// . EG. Disable Rx IRQ, receive a byte (don't read STATUS or RX_DATA register), enable Rx IRQ
+		// Assume enabling Tx IRQ if STATUS.ST_TX_EMPTY *does not* trigger an IRQ
+		// . otherwise there'd be a "false" TX Empty IRQ even if nothing had ever been transferred!
 		m_bTxIrqEnabled = (m_uCommandByte & CMD_TX_MASK) == CMD_TX_IRQ_ENA_RTS_LOW;
 		m_bRxIrqEnabled = (m_uCommandByte & CMD_RX_IRQ_DIS) == 0;
 	}
@@ -524,11 +527,8 @@ void CSuperSerialCard::UpdateCommandReg(BYTE command)
 		m_bRxIrqEnabled = false;
 	}
 
-	if (m_bCfgSupportDTR)	// GH#386
-	{
-		// Data Terminal Ready (DTR) setting (0=set DTR high (indicates 'not ready'))
-		m_uDTR = (m_uCommandByte & CMD_DTR) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
-	}
+	// Data Terminal Ready (DTR) setting (0=set DTR high (indicates 'not ready')) (GH#386)
+	m_uDTR = (m_uCommandByte & CMD_DTR) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
 }
 
 BYTE __stdcall CSuperSerialCard::CommCommand(WORD, WORD, BYTE write, BYTE value, ULONG)
@@ -547,6 +547,67 @@ BYTE __stdcall CSuperSerialCard::CommCommand(WORD, WORD, BYTE write, BYTE value,
 
 //===========================================================================
 
+void CSuperSerialCard::UpdateControlReg(BYTE control)
+{
+	m_uControlByte = control;
+
+	// UPDATE THE BAUD RATE
+	switch (m_uControlByte & 0x0F)
+	{
+		// Note that 1 MHz Apples (everything other than the Apple IIgs and //c
+		// Plus running in "fast" mode) cannot handle 19.2 kbps, and even 9600
+		// bps on these machines requires either some highly optimised code or
+		// a decent buffer in the device being accessed.  The faster Apples
+		// have no difficulty with this speed, however. [Ref.1]
+
+		case 0x00: m_uBaudRate = CBR_115200;	break;	// Internal clk: undoc'd 115.2K (or 16x external clock)
+		case 0x01: // fall through [50 bps]
+		case 0x02: // fall through [75 bps]
+		case 0x03: // fall through [109.92 bps]
+		case 0x04: // fall through [134.58 bps]
+		case 0x05: m_uBaudRate = CBR_110;		break;	// [150 bps]
+		case 0x06: m_uBaudRate = CBR_300;		break;
+		case 0x07: m_uBaudRate = CBR_600;		break;
+		case 0x08: m_uBaudRate = CBR_1200;		break;
+		case 0x09: // fall through [1800 bps]
+		case 0x0A: m_uBaudRate = CBR_2400;		break;
+		case 0x0B: // fall through [3600 bps]
+		case 0x0C: m_uBaudRate = CBR_4800;		break;
+		case 0x0D: // fall through [7200 bps]
+		case 0x0E: m_uBaudRate = CBR_9600;		break;
+		case 0x0F: m_uBaudRate = CBR_19200;		break;
+	}
+
+	if (m_uControlByte & 0x10)
+	{
+		// receiver clock source [0= external, 1= internal]
+	}
+
+	// UPDATE THE BYTE SIZE
+	switch (m_uControlByte & 0x60)
+	{
+		case 0x00: m_uByteSize = 8; break;
+		case 0x20: m_uByteSize = 7; break;
+		case 0x40: m_uByteSize = 6; break;
+		case 0x60: m_uByteSize = 5; break;
+	}
+
+	// UPDATE THE NUMBER OF STOP BITS
+	if (m_uControlByte & 0x80)
+	{
+		if ((m_uByteSize == 8) && (m_uParity != NOPARITY))
+			m_uStopBits = ONESTOPBIT;
+		else if ((m_uByteSize == 5) && (m_uParity == NOPARITY))
+			m_uStopBits = ONE5STOPBITS;
+		else
+			m_uStopBits = TWOSTOPBITS;
+	}
+	else
+	{
+		m_uStopBits = ONESTOPBIT;
+	}
+}
+
 BYTE __stdcall CSuperSerialCard::CommControl(WORD, WORD, BYTE write, BYTE value, ULONG)
 {
 	if (!CheckComm())
@@ -554,64 +615,7 @@ BYTE __stdcall CSuperSerialCard::CommControl(WORD, WORD, BYTE write, BYTE value,
 
 	if (write && (value != m_uControlByte))
 	{
-		m_uControlByte = value;
-
-		// UPDATE THE BAUD RATE
-		switch (m_uControlByte & 0x0F)
-		{
-			// Note that 1 MHz Apples (everything other than the Apple IIgs and //c
-			// Plus running in "fast" mode) cannot handle 19.2 kbps, and even 9600
-			// bps on these machines requires either some highly optimised code or
-			// a decent buffer in the device being accessed.  The faster Apples
-			// have no difficulty with this speed, however.
-
-			case 0x00: m_uBaudRate = CBR_115200;	break;	// Internal clk: undoc'd 115.2K (or 16x external clock)
-			case 0x01: // fall through [50 bps]
-			case 0x02: // fall through [75 bps]
-			case 0x03: // fall through [109.92 bps]
-			case 0x04: // fall through [134.58 bps]
-			case 0x05: m_uBaudRate = CBR_110;		break;	// [150 bps]
-			case 0x06: m_uBaudRate = CBR_300;		break;
-			case 0x07: m_uBaudRate = CBR_600;		break;
-			case 0x08: m_uBaudRate = CBR_1200;		break;
-			case 0x09: // fall through [1800 bps]
-			case 0x0A: m_uBaudRate = CBR_2400;		break;
-			case 0x0B: // fall through [3600 bps]
-			case 0x0C: m_uBaudRate = CBR_4800;		break;
-			case 0x0D: // fall through [7200 bps]
-			case 0x0E: m_uBaudRate = CBR_9600;		break;
-			case 0x0F: m_uBaudRate = CBR_19200;		break;
-		}
-
-		if (m_uControlByte & 0x10)
-		{
-			// receiver clock source [0= external, 1= internal]
-		}
-
-		// UPDATE THE BYTE SIZE
-		switch (m_uControlByte & 0x60)
-		{
-			case 0x00: m_uByteSize = 8; break;
-			case 0x20: m_uByteSize = 7; break;
-			case 0x40: m_uByteSize = 6; break;
-			case 0x60: m_uByteSize = 5; break;
-		}
-
-		// UPDATE THE NUMBER OF STOP BITS
-		if (m_uControlByte & 0x80)
-		{
-			if ((m_uByteSize == 8) && (m_uParity != NOPARITY))
-				m_uStopBits = ONESTOPBIT;
-			else if ((m_uByteSize == 5) && (m_uParity == NOPARITY))
-				m_uStopBits = ONE5STOPBITS;
-			else
-				m_uStopBits = TWOSTOPBITS;
-		}
-		else
-		{
-			m_uStopBits = ONESTOPBIT;
-		}
-
+		UpdateControlReg(value);
 		UpdateCommState();
 	}
 
@@ -754,28 +758,20 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	if (!CheckComm())
 		return ST_DSR | ST_DCD | ST_TX_EMPTY;
 
-	static DWORD modemStatus = 0;
-	if (m_bCfgSupportDCD || m_bCfgSupportDSR)
+	DWORD modemStatus = m_kDefaultModemStatus;
+	if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
-		if (m_hCommHandle != INVALID_HANDLE_VALUE)
+		modemStatus = m_dwModemStatus;	// Take a copy of this volatile variable
+		if (!m_bCfgSupportDCD)			// Default: DSR state is mirrored to DCD (GH#553)
 		{
-			// Call GetCommModemStatus() outside of the critical section. For Win7-64: takes 1-2msecs!
-			static DWORD dwLastTimeGettingModemStatus = 0;
-			DWORD dwCurrTime = GetTickCount();
-			if (dwCurrTime - dwLastTimeGettingModemStatus > 8)		// Limit reading status to twice a 16.6ms video frame (arbitrary throttle limit)
-			{
-				// Only permit periodic reading, otherwise a tight 6502 polling loop can kill emulator performance!
-				GetCommModemStatus(m_hCommHandle, &modemStatus);	// Returns 0x30 = MS_DSR_ON|MS_CTS_ON
-				dwLastTimeGettingModemStatus = dwCurrTime;
-			}
+			modemStatus &= ~MS_RLSD_ON;
+			if (modemStatus & MS_DSR_ON)
+				modemStatus |= MS_RLSD_ON;
 		}
-		else if (m_hCommListenSocket != INVALID_SOCKET)
-		{
-			if (m_hCommAcceptSocket != INVALID_SOCKET)
-				modemStatus = MS_RLSD_ON | MS_DSR_ON | MS_CTS_ON;
-			else
-				modemStatus = 0;
-		}
+	}
+	else if (m_hCommListenSocket != INVALID_SOCKET && m_hCommAcceptSocket != INVALID_SOCKET)
+	{
+		modemStatus = MS_RLSD_ON | MS_DSR_ON | MS_CTS_ON;
 	}
 
 	//
@@ -803,17 +799,8 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 
 	//
 
-	BYTE DSR = 0;
-	BYTE DCD = 0;
-
-	if ((m_hCommHandle != INVALID_HANDLE_VALUE) && (m_bCfgSupportDCD || m_bCfgSupportDSR))	// GH#386
-	{
-		if (m_bCfgSupportDSR)
-			DSR = (modemStatus & MS_DSR_ON)	 ? 0x00 : ST_DSR;
-
-		if (m_bCfgSupportDCD)
-			DCD = (modemStatus & MS_RLSD_ON) ? 0x00 : ST_DCD;
-	}
+	BYTE DSR = (modemStatus & MS_DSR_ON)  ? 0x00 : ST_DSR;	// DSR is active low (see SY6551 datasheet) (GH#386)
+	BYTE DCD = (modemStatus & MS_RLSD_ON) ? 0x00 : ST_DCD;	// DCD is active low (see SY6551 datasheet) (GH#386)
 
 	//
 
@@ -825,7 +812,7 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 	BYTE uStatus =
 		  IRQ
 		| DSR
-		| DCD	// Need 0x00 (ie. DCD is active) to allow ZLink to start up
+		| DCD
 		| TX_EMPTY
 		| RX_FULL;
 
@@ -882,17 +869,11 @@ BYTE __stdcall CSuperSerialCard::CommDipSw(WORD, WORD addr, BYTE, BYTE, ULONG)
 
 		BYTE SW2_5 = m_DIPSWCurrent.bLinefeed ? 0 : 1;					// SW2-5 (LF: yes-ON(0); no-OFF(1))
 
-		BYTE CTS = 0;	// GH#311
+		BYTE CTS = 1;	// Default to CTS being false. (Support CTS in DIPSW: GH#311)
 		if (CheckComm() && m_hCommHandle != INVALID_HANDLE_VALUE)
-		{
-			DWORD modemStatus = 0;
-			if (GetCommModemStatus(m_hCommHandle, &modemStatus))
-				CTS = (modemStatus & MS_CTS_ON) ? 0 : 1;	// CTS is true when 0
-		}
+			CTS = (m_dwModemStatus & MS_CTS_ON) ? 0 : 1;	// CTS active low (see SY6551 datasheet)
 		else if (m_hCommListenSocket != INVALID_SOCKET)
-		{
 			CTS = (m_hCommAcceptSocket != INVALID_SOCKET) ? 0 : 1;
-		}
 
 		// SSC-54:
 		sw =	SW2_1<<7 |	// b7 : SW2-1
@@ -1070,9 +1051,17 @@ void CSuperSerialCard::CheckCommEvent(DWORD dwEvtMask)
 			LeaveCriticalSection(&m_CriticalSection);
 		}
 	}
-	else if (dwEvtMask & EV_TXEMPTY)
+
+	if (dwEvtMask & EV_TXEMPTY)
 	{
 		TransmitDone();
+	}
+
+	if (dwEvtMask & (EV_RLSD|EV_DSR|EV_CTS))
+	{
+		// For Win7-64: takes 1-2msecs!
+		// Don't read from main emulation thread, otherwise a tight 6502 polling loop can kill emulator performance!
+		GetCommModemStatus(m_hCommHandle, const_cast<DWORD*>(&m_dwModemStatus));
 	}
 }
 
@@ -1081,8 +1070,7 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 	CSuperSerialCard* pSSC = (CSuperSerialCard*) lpParameter;
 	char szDbg[100];
 
-	BOOL bRes = SetCommMask(pSSC->m_hCommHandle, EV_TXEMPTY | EV_RXCHAR);
-//	BOOL bRes = SetCommMask(pSSC->m_hCommHandle, EV_RXCHAR);		// Just RX
+	BOOL bRes = SetCommMask(pSSC->m_hCommHandle, EV_RLSD | EV_DSR | EV_CTS | EV_TXEMPTY | EV_RXCHAR);
 	if (!bRes)
 	{
 		sprintf(szDbg, "SSC: CommThread(): SetCommMask() failed\n");
@@ -1328,6 +1316,7 @@ char* CSuperSerialCard::GetSerialPortChoices()
 void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 {
 	strncpy(m_ayCurrentSerialPortName, pSerialPortName, SIZEOF_SERIALCHOICE_ITEM);
+	m_ayCurrentSerialPortName[SIZEOF_SERIALCHOICE_ITEM-1] = 0;
 
 	// Init m_aySerialPortChoices, so that we have choices to show if serial is active when we 1st open Config dialog
 	GetSerialPortChoices();
@@ -1366,27 +1355,10 @@ void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 
 //===========================================================================
 
-void CSuperSerialCard::SetSnapshot_v1(	const DWORD  baudrate,
-										const BYTE   bytesize,
-										const BYTE   commandbyte,
-										const DWORD  comminactivity,
-										const BYTE   controlbyte,
-										const BYTE   parity,
-										const BYTE   stopbits)
-{
-	m_uBaudRate			= baudrate;
-	m_uStopBits			= stopbits;
-	m_uByteSize			= bytesize;
-//	m_dwCommInactivity	= comminactivity;	// Obsolete
-	m_uControlByte		= controlbyte;
-//	m_uParity			= parity;			// Redundant: derived from commandbyte in UpdateCommandReg()
-//	memcpy(m_RecvBuffer, pSS->recvbuffer, uRecvBufferSize);
-//	m_vRecvBytes		= recvbytes;
-
-	UpdateCommandReg(commandbyte);
-}
-
-//===========================================================================
+// Unit version history:
+// 2: Added: Support DCD flag
+//    Removed: redundant data (encapsulated in Command & Control bytes)
+static const UINT kUNIT_VERSION = 2;
 
 #define SS_YAML_VALUE_CARD_SSC "Super Serial Card"
 
@@ -1409,6 +1381,7 @@ void CSuperSerialCard::SetSnapshot_v1(	const DWORD  baudrate,
 #define SS_YAML_KEY_RXIRQPENDING "RX IRQ Pending"
 #define SS_YAML_KEY_WRITTENTX "Written TX"
 #define SS_YAML_KEY_SERIALPORTNAME "Serial Port Name"
+#define SS_YAML_KEY_SUPPORT_DCD "Support DCD"
 
 std::string CSuperSerialCard::GetSnapshotCardName(void)
 {
@@ -1430,23 +1403,17 @@ void CSuperSerialCard::SaveSnapshotDIPSW(YamlSaveHelper& yamlSaveHelper, std::st
 
 void CSuperSerialCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_uSlot, 1);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_uSlot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	SaveSnapshotDIPSW(yamlSaveHelper, SS_YAML_KEY_DIPSWDEFAULT, m_DIPSWDefault);
 	SaveSnapshotDIPSW(yamlSaveHelper, SS_YAML_KEY_DIPSWCURRENT, m_DIPSWCurrent);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_BAUDRATE, m_uBaudRate);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_STOPBITS, m_uStopBits);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_BYTESIZE, m_uByteSize);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_PARITY, m_uParity);				// Redundant
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_CONTROL, m_uControlByte);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_COMMAND, m_uCommandByte);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, 0);					// Obsolete
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_TXIRQENABLED, m_bTxIrqEnabled);	// Redundant
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_RXIRQENABLED, m_bRxIrqEnabled);	// Redundant
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_TXIRQPENDING, m_vbTxIrqPending);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_RXIRQPENDING, m_vbRxIrqPending);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITTENTX, m_vbTxEmpty);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SUPPORT_DCD, m_bCfgSupportDCD);
 	yamlSaveHelper.SaveString(SS_YAML_KEY_SERIALPORTNAME, GetSerialPortName());
 }
 
@@ -1471,26 +1438,36 @@ bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, U
 	if (slot != 2)	// fixme
 		throw std::string("Card: wrong slot");
 
-	if (version != 1)
+	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
 	LoadSnapshotDIPSW(yamlLoadHelper, SS_YAML_KEY_DIPSWDEFAULT, m_DIPSWDefault);
 	LoadSnapshotDIPSW(yamlLoadHelper, SS_YAML_KEY_DIPSWCURRENT, m_DIPSWCurrent);
 
-	m_uBaudRate			= yamlLoadHelper.LoadUint(SS_YAML_KEY_BAUDRATE);
-	m_uStopBits			= yamlLoadHelper.LoadUint(SS_YAML_KEY_STOPBITS); 
-	m_uByteSize			= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTESIZE);
-						  yamlLoadHelper.LoadUint(SS_YAML_KEY_PARITY);			// Redundant: derived from uCommandByte in UpdateCommandReg()
-	m_uControlByte		= yamlLoadHelper.LoadUint(SS_YAML_KEY_CONTROL);
+	if (version == 1)	// Consume redundant/obsolete data
+	{
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_PARITY);		// Redundant: derived from uCommandByte in UpdateCommandReg()
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQENABLED);	// Redundant: derived from uCommandByte in UpdateCommandReg()
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQENABLED);	// Redundant: derived from uCommandByte in UpdateCommandReg()
+
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_BAUDRATE);		// Redundant: derived from uControlByte in UpdateControlReg()
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_STOPBITS);		// Redundant: derived from uControlByte in UpdateControlReg()
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTESIZE);		// Redundant: derived from uControlByte in UpdateControlReg()
+
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);	// Obsolete (so just consume)
+	}
+	else if (version >= 2)
+	{
+		SupportDCD( yamlLoadHelper.LoadBool(SS_YAML_KEY_SUPPORT_DCD) );
+	}
+
 	UINT uCommandByte	= yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
-						  yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);		// Obsolete (so just consume)
-						  yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQENABLED);	// Redundant: derived from uCommandByte in UpdateCommandReg()
-						  yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQENABLED);	// Redundant: derived from uCommandByte in UpdateCommandReg()
+	UINT uControlByte	= yamlLoadHelper.LoadUint(SS_YAML_KEY_CONTROL);
+	UpdateCommandAndControlRegs(uCommandByte, uControlByte);
+
 	m_vbTxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_TXIRQPENDING);
 	m_vbRxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQPENDING);
 	m_vbTxEmpty			= yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITTENTX);
-
-	UpdateCommandReg(uCommandByte);
 
 	std::string serialPortName = yamlLoadHelper.LoadString(SS_YAML_KEY_SERIALPORTNAME);
 	SetSerialPortName(serialPortName.c_str());

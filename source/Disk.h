@@ -72,7 +72,6 @@ void    DiskUpdateDriveState(DWORD);
 bool    DiskDriveSwap(void);
 void    DiskLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot);
 
-int     DiskSetSnapshot_v1(const struct SS_CARD_DISK2* const pSS);
 std::string DiskGetSnapshotCardName(void);
 void    DiskSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 bool    DiskLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);

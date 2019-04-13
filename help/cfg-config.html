@@ -16,8 +16,8 @@
 		the predecessors of the Apple //e: the Apple ][ and Apple ][+. Besides running 
 		with a different Apple system ROM, some differences are discussed below.<br>
 		<ul>
-			<li>Apple ][ : Non-autobooting, 64K machine, no lower-case, no 80-column, 6502 CPU
-			<li>Apple ][+ : Autobooting version of the Apple ][
+			<li>Apple ][ : 48K non-autostarting, Integer BASIC, no lower-case, no 80-column, 6502 CPU
+			<li>Apple ][+ : 64K autostarting, Applesoft BASIC version of the Apple ][
 			<li>Apple //e : 128K machine, lower-case, 80-column, 6502 CPU</li>
 			<li>Enhanced Apple //e : 128K machine, lower-case, 80-column, 65C02 CPU</li>
 			<li>Clone (specific model selectable from Advanced page)</li>
@@ -33,12 +33,15 @@
 		video emulation to be used for the emulator. The differences are 
 		discussed below.<br>
 		<ul>
-			<li><strong>Monochrome (custom) :</strong>&nbsp;This mode emulates a monochrome 
-				monitor. You can choose your monochrome color from the <em>Monochrome Color</em>
-			button described below.
-			<li><strong>Color Monitor :</strong>&nbsp;This mode emulates a standard color monitor.
-			<li><strong>B&W TV :</strong>&nbsp;This mode emulates an NTSC black and white TV.
+			<li><strong>Monochrome (custom) :</strong>&nbsp;This mode emulates a monochrome monitor.<br>
+			You can choose your monochrome color from the <em>Monochrome Color</em>	button described below.
+			<li><strong>Color (RGB Monitor) :</strong>&nbsp;This mode emulates a standard RBG color monitor.
+			<br>Text is sharp like a white monochrome monitor. Color graphics has only 16 colors (with no blurring or ringing).
+			<li><strong>Color (NTSC Monitor) :</strong>&nbsp;This mode emulates a standard NTSC color monitor.
+			<br>Text is sharp, but contains color artifacts. Color graphics has visible alternating color and black pixels.
 			<li><strong>Color TV :</strong>&nbsp;This mode emulates an NTSC color TV.
+			<br>All text and color graphics modes are blurry and have visible ringing.
+			<li><strong>B&W TV :</strong>&nbsp;This mode emulates an NTSC black and white TV.
 			<li><strong>Monochrome (Amber/Green/White) :</strong>&nbsp;Monochrome with specified color.
 		</ul>
 
@@ -46,8 +49,12 @@
 		This is the color to use when you choose a monochrome video mode.<br>
 		<br>
 
-		<strong>50% Scan line:</strong><br>
+		<strong>50% Scan lines:</strong><br>
 		Only draw alternate scanline (for better monitor authenticity).<br>
+		<br>
+
+		<strong>Vertical blend:</strong><br>
+		When video mode is 'Color (RGB Monitor)' then vertically blend the hires screen.<br>
 		<br>
 
 		<strong>Full-Screen: Show drive/keyboard status:</strong><br>
@@ -55,14 +62,8 @@
 		<br>
 
 		<strong>Serial Port:</strong><br>
-		This option will remap the emulated Apple's serial port to your PC's 
-		serial port (or TCP port 1977). The Apple Super Serial Card (SSC) is emulated in slot-2.<br>
-		The TCP interface to the Apple SSC can be used by the <a href="http://sourceforge.net/projects/a2gameserver">Apple // Game Server</a>.
-		For details see the notes that comes with AGS:<br>
-		<li>Boot the Apple II to AppleSoft (ie. power on and hit Ctrl-Reset) and type IN#2.
-		<li>From a Windows DOS box, start AGS with "localhost 1977 apple2e". This will boot the emulated Apple II from AGS.
-		<li>Nb. Only Enhanced Apple //e is working at the moment.
-		<br>
+		This option will remap the emulated Apple's serial port to your PC's serial port (or TCP port 1977).<br>
+		See <a href="card-ssc.html">Super Serial Card</a> for more details.<br>
 		<br>
 
 		<strong>Ethernet Settings...:</strong><br>

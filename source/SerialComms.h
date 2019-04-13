@@ -32,7 +32,6 @@ public:
 	void    CommReset();
 	void    CommDestroy();
 	void    CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem);
-	void    SetSnapshot_v1(const DWORD baudrate, const BYTE bytesize, const BYTE commandbyte, const DWORD comminactivity, const BYTE controlbyte, const BYTE parity, const BYTE stopbits);
 	std::string GetSnapshotCardName(void);
 	void	SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	bool	LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
@@ -43,8 +42,6 @@ public:
 	void	SetSerialPortName(const char* pSerialPortName);
 	bool	IsActive() { return (m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET); }
 	void	SupportDCD(bool bEnable) { m_bCfgSupportDCD = bEnable; }	// Status
-	void	SupportDSR(bool bEnable) { m_bCfgSupportDSR = bEnable; }	// Status
-	void	SupportDTR(bool bEnable) { m_bCfgSupportDTR = bEnable; }	// Control
 
 	void	CommTcpSerialAccept();
 	void	CommTcpSerialReceive();
@@ -64,7 +61,9 @@ private:
 	BYTE __stdcall CommProgramReset(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 	void	InternalReset();
+	void	UpdateCommandAndControlRegs(BYTE command, BYTE control);
 	void	UpdateCommandReg(BYTE command);
+	void	UpdateControlReg(BYTE control);
 	void	GetDIPSW();
 	void	SetDIPSWDefaults();
 	UINT	BaudRateToIndex(UINT uBaudRate);
@@ -98,6 +97,7 @@ private:
 	static SSC_DIPSW	m_DIPSWDefault;
 	SSC_DIPSW			m_DIPSWCurrent;
 
+	static const UINT m_kDefaultBaudRate = CBR_9600;
 	UINT	m_uBaudRate;
 	UINT	m_uStopBits;
 	UINT	m_uByteSize;
@@ -139,12 +139,11 @@ private:
 	BYTE* m_pExpansionRom;
 	UINT m_uSlot;
 
-	// Modem
 	bool m_bCfgSupportDCD;
-	bool m_bCfgSupportDSR;
-	bool m_bCfgSupportDTR;
 	UINT m_uDTR;
-	// Modem (end)
+
+	static const DWORD m_kDefaultModemStatus = 0;	// MS_RLSD_OFF(=DCD_OFF), MS_DSR_OFF, MS_CTS_OFF
+	volatile DWORD m_dwModemStatus;	// Updated by CommThread when any of RLSD|DSR|CTS changes / Read by main thread - CommStatus()& CommDipSw()
 
 	UINT m_uRTS;
 };

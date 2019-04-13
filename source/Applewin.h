@@ -9,7 +9,7 @@ void LogFileTimeUntilFirstKeyRead(void);
 void SetCurrentCLK6502();
 bool SetCurrentImageDir(const char* pszImageDir);
 
-extern const UINT16* GetAppleWinVersion(void);
+extern const UINT16* GetOldAppleWinVersion(void);
 extern char VERSIONSTRING[];	// Constructed in WinMain()
 
 extern const TCHAR     *g_pAppTitle;
@@ -30,6 +30,7 @@ extern HINSTANCE  g_hInstance;
 extern AppMode_e g_nAppMode;
 bool GetLoadedSaveStateFlag(void);
 void SetLoadedSaveStateFlag(const bool bFlag);
+bool GetHookAltGrControl(void);
 
 extern TCHAR      g_sProgramDir[MAX_PATH];
 extern TCHAR      g_sCurrentDir[MAX_PATH];
@@ -48,8 +49,10 @@ extern bool       g_bDisableDirectSound;				// Cmd line switch: don't init DS (s
 extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't init MB support
 extern int        g_nMemoryClearType;					// Cmd line switch: use specific MIP (Memory Initialization Pattern)
 
+extern SS_CARDTYPE g_Slot0;	// LC or Saturn in slot0
 extern SS_CARDTYPE g_Slot4;	// Mockingboard, Z80, Mouse in slot4
 extern SS_CARDTYPE g_Slot5;	// Mockingboard, Z80,       in slot5
+extern SS_CARDTYPE g_SlotAux;
 
 extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom
 

@@ -1,27 +1,23 @@
 #pragma once
 
+enum	Keystroke_e {NOT_ASCII=0, ASCII};
+
 void    ClipboardInitiatePaste();
 
 void    KeybReset();
-bool    KeybGetAltStatus();
+void    KeybSetAltGrSendsWM_CHAR(bool state);
 bool    KeybGetCapsStatus();
 bool    KeybGetP8CapsStatus();
+bool    KeybGetAltStatus();
 bool    KeybGetCtrlStatus();
 bool    KeybGetShiftStatus();
-bool    KeybGetCapsAllowed(); //For Pravets8A/C only
 void    KeybUpdateCtrlShiftStatus();
 BYTE    KeybGetKeycode ();
-void    KeybQueueKeypress (int,BOOL);
+void    KeybQueueKeypress(WPARAM key, Keystroke_e bASCII);
 void    KeybToggleCapsLock ();
 void    KeybToggleP8ACapsLock ();
-void    KeybSetSnapshot_v1(const BYTE LastKey);
+void    KeybAnyKeyDown(UINT message, WPARAM wparam, bool bIsExtended);
+BYTE    KeybReadData (void);
+BYTE    KeybReadFlag (void);
 void    KeybSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-void    KeybLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
-
-BYTE __stdcall KeybReadData (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
-BYTE __stdcall KeybReadFlag (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
-BYTE __stdcall KbdAllow8Bit (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles); //For Pravets A/C only
-
-extern bool g_bShiftKey;
-extern bool g_bCtrlKey;
-extern bool g_bAltKey;
+void    KeybLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
