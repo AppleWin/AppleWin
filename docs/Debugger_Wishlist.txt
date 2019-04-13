@@ -1,6 +1,24 @@
 Requests (Wishlist):
 ====================
 
+* [ ] HELP BPM on read/write
+  Nail down syntax:
+    BPM A7 = R
+    BPM A7 = W
+    BPM R A7
+    BPM W A7
+  Add support 65D02 to break on read/write memory location
+
+* [ ] HELP BPM
+  Add help document and examples
+
+* [ ] Fix BUG: (partial) symbols starting with E not parsed propery
+    sym ErasePlayer1   = 65D3
+    sym ErasePlayer
+       Address not found: $000E
+
+* [ ] Color code error messages in red foreground
+
 - HELP CD: Document examples
   Helps needs to list:
      SEE: HELP PWD
