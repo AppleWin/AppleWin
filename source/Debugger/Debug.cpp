@@ -6150,6 +6150,12 @@ Update_t CmdOutputCalc (int nArgs)
 			nBit |= (1 << (iBit * 4)); // 4 bits per hex digit
 	}
 
+	// TODO: Colorize output
+	//    CHC_NUM_HEX
+	//    CHC_NUM_BIN -- doesn't exist, use CHC_INFO
+	//    CHC_NUM_DEC
+	//    CHC_ARG_
+	//    CHC_STRING
 	wsprintf( sText, TEXT("$%04X  0z%08X  %5d  '%c' "),
 		nAddress, nBit, nAddress, c );
 
@@ -6169,6 +6175,10 @@ Update_t CmdOutputCalc (int nArgs)
 		_tcscat( sText, TEXT(")") );
 
 	ConsoleBufferPush( sText );
+
+// If we colorize then w must also guard against character ouput $60
+//	ConsolePrint( sText );
+
 	return ConsoleUpdate();
 }
 
