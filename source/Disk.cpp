@@ -257,7 +257,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive)
 	if (pFloppy->m_trackimage && pFloppy->m_imagehandle)
 	{
 #if LOG_DISK_TRACKS
-		LOG_DISK("track $%02X%s read\r\n", pDrive->track, (pDrive->phase & 1) ? ".5" : "  ");
+		LOG_DISK("track $%02X%s read\r\n", pDrive->m_track, (pDrive->m_phase & 1) ? ".5" : "  ");
 #endif
 		ImageReadTrack(
 			pFloppy->m_imagehandle,
@@ -441,8 +441,8 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 
 #if LOG_DISK_PHASES
 	LOG_DISK("track $%02X%s phases %d%d%d%d phase %d %s address $%4X\r\n",
-		pDrive->phase >> 1,
-		(pDrive->phase & 1) ? ".5" : "  ",
+		pDrive->m_phase >> 1,
+		(pDrive->m_phase & 1) ? ".5" : "  ",
 		(m_phases >> 3) & 1,
 		(m_phases >> 2) & 1,
 		(m_phases >> 1) & 1,
