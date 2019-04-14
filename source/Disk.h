@@ -78,26 +78,26 @@ struct Disk_t
 	}
 };
 
-struct Drive_t
+struct FloppyDrive
 {
-	int		phase;
-	int		track;
-	DWORD	spinning;
-	DWORD	writelight;
-	Disk_t	disk;
+	int		m_phase;
+	int		m_track;
+	DWORD	m_spinning;
+	DWORD	m_writelight;
+	Disk_t	m_disk;
 
-	Drive_t()
+	FloppyDrive()
 	{
 		clear();
 	}
 
 	void clear()
 	{
-		phase = 0;
-		track = 0;
-		spinning = 0;
-		writelight = 0;
-		disk.clear();
+		m_phase = 0;
+		m_track = 0;
+		m_spinning = 0;
+		m_writelight = 0;
+		m_disk.clear();
 	}
 };
 
@@ -180,7 +180,7 @@ private:
 	//
 
 	WORD m_currDrive;
-	Drive_t m_floppyDrive[NUM_DRIVES];
+	FloppyDrive m_floppyDrive[NUM_DRIVES];
 	BYTE m_floppyLatch;
 	BOOL m_floppyMotorOn;
 	BOOL m_floppyLoadMode;	// for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)

@@ -82,26 +82,26 @@ bool DiskIIInterfaceCard::GetEnhanceDisk(void) { return m_enhanceDisk; }
 void DiskIIInterfaceCard::SetEnhanceDisk(bool bEnhanceDisk) { m_enhanceDisk = bEnhanceDisk; }
 
 int DiskIIInterfaceCard::GetCurrentDrive(void)  { return m_currDrive; }
-int DiskIIInterfaceCard::GetCurrentTrack(void)  { return m_floppyDrive[m_currDrive].track; }
-int DiskIIInterfaceCard::GetCurrentPhase(void)  { return m_floppyDrive[m_currDrive].phase; }
-int DiskIIInterfaceCard::GetCurrentOffset(void) { return m_floppyDrive[m_currDrive].disk.byte; }
-int DiskIIInterfaceCard::GetTrack(const int drive)  { return m_floppyDrive[drive].track; }
+int DiskIIInterfaceCard::GetCurrentTrack(void)  { return m_floppyDrive[m_currDrive].m_track; }
+int DiskIIInterfaceCard::GetCurrentPhase(void)  { return m_floppyDrive[m_currDrive].m_phase; }
+int DiskIIInterfaceCard::GetCurrentOffset(void) { return m_floppyDrive[m_currDrive].m_disk.byte; }
+int DiskIIInterfaceCard::GetTrack(const int drive)  { return m_floppyDrive[drive].m_track; }
 
 LPCTSTR DiskIIInterfaceCard::GetCurrentState(void)
 {
-	if (m_floppyDrive[m_currDrive].disk.imagehandle == NULL)
+	if (m_floppyDrive[m_currDrive].m_disk.imagehandle == NULL)
 		return "Empty";
 
 	if (!m_floppyMotorOn)
 	{
-		if (m_floppyDrive[m_currDrive].spinning > 0)
+		if (m_floppyDrive[m_currDrive].m_spinning > 0)
 			return "Off (spinning)";
 		else
 			return "Off";
 	}
 	else if (m_floppyWriteMode)
 	{
-		if (m_floppyDrive[m_currDrive].disk.bWriteProtected)
+		if (m_floppyDrive[m_currDrive].m_disk.bWriteProtected)
 			return "Writing (write protected)";
 		else
 			return "Writing";
@@ -153,7 +153,7 @@ void DiskIIInterfaceCard::SaveLastDiskImage(const int drive)
 	if (!m_saveDiskImage)
 		return;
 
-	const char *pFileName = m_floppyDrive[drive].disk.fullname;
+	const char *pFileName = m_floppyDrive[drive].m_disk.fullname;
 
 	if (drive == DRIVE_1)
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_1, TRUE, pFileName);
@@ -177,10 +177,10 @@ void DiskIIInterfaceCard::SaveLastDiskImage(const int drive)
 // Called by DiskControlMotor() & DiskEnable()
 void DiskIIInterfaceCard::CheckSpinning(const ULONG nExecutedCycles)
 {
-	DWORD modechange = (m_floppyMotorOn && !m_floppyDrive[m_currDrive].spinning);
+	DWORD modechange = (m_floppyMotorOn && !m_floppyDrive[m_currDrive].m_spinning);
 
 	if (m_floppyMotorOn)
-		m_floppyDrive[m_currDrive].spinning = SPINNING_CYCLES;
+		m_floppyDrive[m_currDrive].m_spinning = SPINNING_CYCLES;
 
 	if (modechange)
 		FrameDrawDiskLEDS( (HDC)0 );
@@ -199,14 +199,14 @@ Disk_Status_e DiskIIInterfaceCard::GetDriveLightStatus(const int drive)
 {
 	if (IsDriveValid( drive ))
 	{
-		Drive_t* pDrive = &m_floppyDrive[ drive ];
+		FloppyDrive* pDrive = &m_floppyDrive[ drive ];
 
-		if (pDrive->spinning)
+		if (pDrive->m_spinning)
 		{
-			if (pDrive->disk.bWriteProtected)
+			if (pDrive->m_disk.bWriteProtected)
 				return DISK_STATUS_PROT;
 
-			if (pDrive->writelight)
+			if (pDrive->m_writelight)
 				return DISK_STATUS_WRITE;
 			else
 				return DISK_STATUS_READ;
@@ -231,7 +231,7 @@ bool DiskIIInterfaceCard::IsDriveValid(const int drive)
 
 void DiskIIInterfaceCard::AllocTrack(const int drive)
 {
-	Disk_t* pFloppy = &m_floppyDrive[drive].disk;
+	Disk_t* pFloppy = &m_floppyDrive[drive].m_disk;
 	pFloppy->trackimage = (LPBYTE)VirtualAlloc(NULL, NIBBLES_PER_TRACK, MEM_COMMIT, PAGE_READWRITE);
 }
 
@@ -242,10 +242,10 @@ void DiskIIInterfaceCard::ReadTrack(const int drive)
 	if (! IsDriveValid( drive ))
 		return;
 
-	Drive_t* pDrive = &m_floppyDrive[ drive ];
-	Disk_t* pFloppy = &pDrive->disk;
+	FloppyDrive* pDrive = &m_floppyDrive[ drive ];
+	Disk_t* pFloppy = &pDrive->m_disk;
 
-	if (pDrive->track >= ImageGetNumTracks(pFloppy->imagehandle))
+	if (pDrive->m_track >= ImageGetNumTracks(pFloppy->imagehandle))
 	{
 		pFloppy->trackimagedata = false;
 		return;
@@ -261,8 +261,8 @@ void DiskIIInterfaceCard::ReadTrack(const int drive)
 #endif
 		ImageReadTrack(
 			pFloppy->imagehandle,
-			pDrive->track,
-			pDrive->phase,
+			pDrive->m_track,
+			pDrive->m_phase,
 			pFloppy->trackimage,
 			&pFloppy->nibbles,
 			m_enhanceDisk);
@@ -276,7 +276,7 @@ void DiskIIInterfaceCard::ReadTrack(const int drive)
 
 void DiskIIInterfaceCard::RemoveDisk(const int drive)
 {
-	Disk_t* pFloppy = &m_floppyDrive[drive].disk;
+	Disk_t* pFloppy = &m_floppyDrive[drive].m_disk;
 
 	if (pFloppy->imagehandle)
 	{
@@ -305,10 +305,10 @@ void DiskIIInterfaceCard::RemoveDisk(const int drive)
 
 void DiskIIInterfaceCard::WriteTrack(const int drive)
 {
-	Drive_t* pDrive = &m_floppyDrive[ drive ];
-	Disk_t* pFloppy = &pDrive->disk;
+	FloppyDrive* pDrive = &m_floppyDrive[ drive ];
+	Disk_t* pFloppy = &pDrive->m_disk;
 
-	if (pDrive->track >= ImageGetNumTracks(pFloppy->imagehandle))
+	if (pDrive->m_track >= ImageGetNumTracks(pFloppy->imagehandle))
 		return;
 
 	if (pFloppy->bWriteProtected)
@@ -321,8 +321,8 @@ void DiskIIInterfaceCard::WriteTrack(const int drive)
 #endif
 		ImageWriteTrack(
 			pFloppy->imagehandle,
-			pDrive->track,
-			pDrive->phase, // TODO: this should never be used; it's the current phase (half-track), not that of the track to be written (nickw)
+			pDrive->m_track,
+			pDrive->m_phase, // TODO: this should never be used; it's the current phase (half-track), not that of the track to be written (nickw)
 			pFloppy->trackimage,
 			pFloppy->nibbles);
 	}
@@ -332,7 +332,7 @@ void DiskIIInterfaceCard::WriteTrack(const int drive)
 
 void DiskIIInterfaceCard::FlushCurrentTrack(const int drive)
 {
-	Disk_t* pFloppy = &m_floppyDrive[drive].disk;
+	Disk_t* pFloppy = &m_floppyDrive[drive].m_disk;
 
 	if (pFloppy->trackimage && pFloppy->trackimagedirty)
 		WriteTrack(drive);
@@ -344,7 +344,7 @@ void DiskIIInterfaceCard::Boot(void)
 {
 	// THIS FUNCTION RELOADS A PROGRAM IMAGE IF ONE IS LOADED IN DRIVE ONE.
 	// IF A DISK IMAGE OR NO IMAGE IS LOADED IN DRIVE ONE, IT DOES NOTHING.
-	if (m_floppyDrive[0].disk.imagehandle && ImageBoot(m_floppyDrive[0].disk.imagehandle))
+	if (m_floppyDrive[0].m_disk.imagehandle && ImageBoot(m_floppyDrive[0].m_disk.imagehandle))
 		m_floppyMotorOn = 0;
 }
 
@@ -370,12 +370,12 @@ void __stdcall DiskIIInterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE,
 
 void __stdcall DiskIIInterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
-	Drive_t* pDrive = &m_floppyDrive[m_currDrive];
-	Disk_t* pFloppy = &pDrive->disk;
+	FloppyDrive* pDrive = &m_floppyDrive[m_currDrive];
+	Disk_t* pFloppy = &pDrive->m_disk;
 
 	if (!m_floppyMotorOn)	// GH#525
 	{
-		if (!pDrive->spinning)
+		if (!pDrive->m_spinning)
 		{
 #if LOG_DISK_PHASES
 			LOG_DISK("stepper accessed whilst motor is off and not spinning\r\n");
@@ -410,22 +410,22 @@ void __stdcall DiskIIInterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYT
 	// - do not move if both adjacent magnets are on
 	// momentum and timing are not accounted for ... maybe one day!
 	int direction = 0;
-	if (m_phases & (1 << ((pDrive->phase + 1) & 3)))
+	if (m_phases & (1 << ((pDrive->m_phase + 1) & 3)))
 		direction += 1;
-	if (m_phases & (1 << ((pDrive->phase + 3) & 3)))
+	if (m_phases & (1 << ((pDrive->m_phase + 3) & 3)))
 		direction -= 1;
 
 	// apply magnet step, if any
 	if (direction)
 	{
-		pDrive->phase = MAX(0, MIN(79, pDrive->phase + direction));
+		pDrive->m_phase = MAX(0, MIN(79, pDrive->m_phase + direction));
 		const int nNumTracksInImage = ImageGetNumTracks(pFloppy->imagehandle);
 		const int newtrack = (nNumTracksInImage == 0)	? 0
-														: MIN(nNumTracksInImage-1, pDrive->phase >> 1); // (round half tracks down)
-		if (newtrack != pDrive->track)
+														: MIN(nNumTracksInImage-1, pDrive->m_phase >> 1); // (round half tracks down)
+		if (newtrack != pDrive->m_track)
 		{
 			FlushCurrentTrack(m_currDrive);
-			pDrive->track = newtrack;
+			pDrive->m_track = newtrack;
 			pFloppy->trackimagedata = false;
 
 			m_formatTrack.DriveNotWritingTrack();
@@ -474,8 +474,8 @@ void __stdcall DiskIIInterfaceCard::Enable(WORD, WORD address, BYTE, BYTE, ULONG
 #if LOG_DISK_ENABLE_DRIVE
 	LOG_DISK("enable drive: %d\r\n", m_currDrive);
 #endif
-	m_floppyDrive[!m_currDrive].spinning   = 0;
-	m_floppyDrive[!m_currDrive].writelight = 0;
+	m_floppyDrive[!m_currDrive].m_spinning   = 0;
+	m_floppyDrive[!m_currDrive].m_writelight = 0;
 	CheckSpinning(uExecutedCycles);
 }
 
@@ -495,8 +495,8 @@ void DiskIIInterfaceCard::EjectDisk(const int drive)
 // . Used by Drive Buttons' tooltips
 LPCTSTR DiskIIInterfaceCard::GetFullDiskFilename(const int drive)
 {
-	if (!m_floppyDrive[drive].disk.strFilenameInZip.empty())
-		return m_floppyDrive[drive].disk.strFilenameInZip.c_str();
+	if (!m_floppyDrive[drive].m_disk.strFilenameInZip.empty())
+		return m_floppyDrive[drive].m_disk.strFilenameInZip.c_str();
 
 	return GetFullName(drive);
 }
@@ -505,19 +505,19 @@ LPCTSTR DiskIIInterfaceCard::GetFullDiskFilename(const int drive)
 // . Used by Property Sheet Page (Disk)
 LPCTSTR DiskIIInterfaceCard::GetFullName(const int drive)
 {
-	return m_floppyDrive[drive].disk.fullname;
+	return m_floppyDrive[drive].m_disk.fullname;
 }
 
 // Return the imagename
 // . Used by Drive Button's icons & Property Sheet Page (Save snapshot)
 LPCTSTR DiskIIInterfaceCard::GetBaseName(const int drive)
 {
-	return m_floppyDrive[drive].disk.imagename;
+	return m_floppyDrive[drive].m_disk.imagename;
 }
 
 LPCTSTR DiskIIInterfaceCard::DiskGetFullPathName(const int drive)
 {
-	return ImageGetPathname(m_floppyDrive[drive].disk.imagehandle);
+	return ImageGetPathname(m_floppyDrive[drive].m_disk.imagehandle);
 }
 
 //===========================================================================
@@ -535,8 +535,8 @@ void DiskIIInterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status, Disk_Statu
 
 ImageError_e DiskIIInterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary)
 {
-	Drive_t* pDrive = &m_floppyDrive[drive];
-	Disk_t* pFloppy = &pDrive->disk;
+	FloppyDrive* pDrive = &m_floppyDrive[drive];
+	Disk_t* pFloppy = &pDrive->m_disk;
 
 	if (pFloppy->imagehandle)
 		RemoveDisk(drive);
@@ -544,11 +544,11 @@ ImageError_e DiskIIInterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFi
 	// Reset the drive's struct, but preserve the physical attributes (bug#18242: Platoon)
 	// . Changing the disk (in the drive) doesn't affect the drive's head etc.
 	{
-		int track = pDrive->track;
-		int phase = pDrive->phase;
+		int track = pDrive->m_track;
+		int phase = pDrive->m_phase;
 		pDrive->clear();
-		pDrive->track = track;
-		pDrive->phase = phase;
+		pDrive->m_track = track;
+		pDrive->m_phase = phase;
 	}
 
 	const DWORD dwAttributes = GetFileAttributes(pszImageFilename);
@@ -683,7 +683,7 @@ void DiskIIInterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFi
 			TEXT("first file (%s) in this multi-zip archive is not recognized.\n")
 			TEXT("Try unzipping and using the disk images directly.\n"),
 			pszImageFilename,
-			m_floppyDrive[drive].disk.strFilenameInZip.c_str());
+			m_floppyDrive[drive].m_disk.strFilenameInZip.c_str());
 		break;
 
 	case eIMAGE_ERROR_GZ:
@@ -738,7 +738,7 @@ bool DiskIIInterfaceCard::GetProtect(const int drive)
 {
 	if (IsDriveValid(drive))
 	{
-		if (m_floppyDrive[drive].disk.bWriteProtected)
+		if (m_floppyDrive[drive].m_disk.bWriteProtected)
 			return true;
 	}
 
@@ -751,7 +751,7 @@ void DiskIIInterfaceCard::SetProtect(const int drive, const bool bWriteProtect)
 {
 	if (IsDriveValid( drive ))
 	{
-		m_floppyDrive[drive].disk.bWriteProtected = bWriteProtect;
+		m_floppyDrive[drive].m_disk.bWriteProtected = bWriteProtect;
 	}
 }
 
@@ -762,7 +762,7 @@ bool DiskIIInterfaceCard::IsDiskImageWriteProtected(const int drive)
 	if (!IsDriveValid(drive))
 		return true;
 
-	return ImageIsWriteProtected(m_floppyDrive[drive].disk.imagehandle);
+	return ImageIsWriteProtected(m_floppyDrive[drive].m_disk.imagehandle);
 }
 
 //===========================================================================
@@ -772,7 +772,7 @@ bool DiskIIInterfaceCard::IsDriveEmpty(const int drive)
 	if (!IsDriveValid(drive))
 		return true;
 
-	return m_floppyDrive[drive].disk.imagehandle == NULL;
+	return m_floppyDrive[drive].m_disk.imagehandle == NULL;
 }
 
 //===========================================================================
@@ -811,8 +811,8 @@ bool DiskIIInterfaceCard::LogWriteCheckSyncFF(ULONG& uCycleDelta)
 void __stdcall DiskIIInterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	/* m_floppyLoadMode = 0; */
-	Drive_t* pDrive = &m_floppyDrive[m_currDrive];
-	Disk_t* pFloppy = &pDrive->disk;
+	FloppyDrive* pDrive = &m_floppyDrive[m_currDrive];
+	Disk_t* pFloppy = &pDrive->m_disk;
 
 	if (!pFloppy->trackimagedata && pFloppy->imagehandle)
 		ReadTrack(m_currDrive);
@@ -827,7 +827,7 @@ void __stdcall DiskIIInterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, B
 	UINT uSpinNibbleCount = 0;
 	CpuCalcCycles(nExecutedCycles);	// g_nCumulativeCycles required for uSpinNibbleCount & LogWriteCheckSyncFF()
 
-	if (!m_enhanceDisk && pDrive->spinning)
+	if (!m_enhanceDisk && pDrive->m_spinning)
 	{
 		const ULONG nCycleDiff = (ULONG) (g_nCumulativeCycles - m_diskLastCycle);
 		m_diskLastCycle = g_nCumulativeCycles;
@@ -854,7 +854,7 @@ void __stdcall DiskIIInterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, B
 		// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
 		// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
 		// Note: Sherwood Forest sets shift mode and reads with the drive off.
-		if (!pDrive->spinning)	// GH#599
+		if (!pDrive->m_spinning)	// GH#599
 			return;
 
 		const ULONG nReadCycleDiff = (ULONG) (g_nCumulativeCycles - m_diskLastReadLatchCycle);
@@ -939,10 +939,10 @@ void DiskIIInterfaceCard::Reset(const bool bIsPowerCycle/*=false*/)
 		// . The initial machine start-up state is track=0, but after a power-cycle the track could be any value.
 		// . (For DiskII firmware, this results in a subtle extra latch read in this latter case, for the track!=0 case)
 
-		m_floppyDrive[DRIVE_1].spinning   = 0;
-		m_floppyDrive[DRIVE_1].writelight = 0;
-		m_floppyDrive[DRIVE_2].spinning   = 0;
-		m_floppyDrive[DRIVE_2].writelight = 0;
+		m_floppyDrive[DRIVE_1].m_spinning   = 0;
+		m_floppyDrive[DRIVE_1].m_writelight = 0;
+		m_floppyDrive[DRIVE_2].m_spinning   = 0;
+		m_floppyDrive[DRIVE_2].m_writelight = 0;
 
 		FrameRefreshStatus(DRAW_LEDS, false);
 	}
@@ -1008,7 +1008,7 @@ void __stdcall DiskIIInterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYT
 	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
 	// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
 	// Note: Gemstone Warrior sets load mode with the drive off.
-	if (!m_floppyDrive[m_currDrive].spinning)	// GH#599
+	if (!m_floppyDrive[m_currDrive].m_spinning)	// GH#599
 		return;
 
 	if (!write)
@@ -1018,7 +1018,7 @@ void __stdcall DiskIIInterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYT
 		// . write mode doesn't prevent reading write protect (GH#537):
 		//   "If for some reason the above write protect check were entered with the READ/WRITE switch in WRITE, 
 		//    the write protect switch would still be read correctly" (UTAIIe page 9-21)
-		if (m_floppyDrive[m_currDrive].disk.bWriteProtected)
+		if (m_floppyDrive[m_currDrive].m_disk.bWriteProtected)
 			m_floppyLatch |= 0x80;
 		else
 			m_floppyLatch &= 0x7F;
@@ -1031,7 +1031,7 @@ void __stdcall DiskIIInterfaceCard::SetReadMode(WORD, WORD, BYTE, BYTE, ULONG)
 {
 	m_floppyWriteMode = 0;
 
-	m_formatTrack.DriveSwitchedToReadMode(&m_floppyDrive[m_currDrive].disk);
+	m_formatTrack.DriveSwitchedToReadMode(&m_floppyDrive[m_currDrive].m_disk);
 
 #if LOG_DISK_RW_MODE
 	LOG_DISK("rw mode: read\r\n");
@@ -1044,9 +1044,9 @@ void __stdcall DiskIIInterfaceCard::SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG u
 {
 	m_floppyWriteMode = 1;
 
-	m_formatTrack.DriveSwitchedToWriteMode(m_floppyDrive[m_currDrive].disk.byte);
+	m_formatTrack.DriveSwitchedToWriteMode(m_floppyDrive[m_currDrive].m_disk.byte);
 
-	BOOL modechange = !m_floppyDrive[m_currDrive].writelight;
+	BOOL modechange = !m_floppyDrive[m_currDrive].m_writelight;
 #if LOG_DISK_RW_MODE
 	LOG_DISK("rw mode: write (mode changed=%d)\r\n", modechange ? 1 : 0);
 #endif
@@ -1054,7 +1054,7 @@ void __stdcall DiskIIInterfaceCard::SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG u
 	m_uWriteLastCycle = 0;
 #endif
 
-	m_floppyDrive[m_currDrive].writelight = WRITELIGHT_CYCLES;
+	m_floppyDrive[m_currDrive].m_writelight = WRITELIGHT_CYCLES;
 
 	if (modechange)
 		FrameDrawDiskLEDS( (HDC)0 );
@@ -1067,24 +1067,24 @@ void DiskIIInterfaceCard::UpdateDriveState(DWORD cycles)
 	int loop = NUM_DRIVES;
 	while (loop--)
 	{
-		Drive_t* pDrive = &m_floppyDrive[loop];
+		FloppyDrive* pDrive = &m_floppyDrive[loop];
 
-		if (pDrive->spinning && !m_floppyMotorOn)
+		if (pDrive->m_spinning && !m_floppyMotorOn)
 		{
-			if (!(pDrive->spinning -= MIN(pDrive->spinning, cycles)))
+			if (!(pDrive->m_spinning -= MIN(pDrive->m_spinning, cycles)))
 			{
 				FrameDrawDiskLEDS( (HDC)0 );
 				FrameDrawDiskStatus( (HDC)0 );
 			}
 		}
 
-		if (m_floppyWriteMode && (m_currDrive == loop) && pDrive->spinning)
+		if (m_floppyWriteMode && (m_currDrive == loop) && pDrive->m_spinning)
 		{
-			pDrive->writelight = WRITELIGHT_CYCLES;
+			pDrive->m_writelight = WRITELIGHT_CYCLES;
 		}
-		else if (pDrive->writelight)
+		else if (pDrive->m_writelight)
 		{
-			if (!(pDrive->writelight -= MIN(pDrive->writelight, cycles)))
+			if (!(pDrive->m_writelight -= MIN(pDrive->m_writelight, cycles)))
 			{
 				FrameDrawDiskLEDS( (HDC)0 );
 				FrameDrawDiskStatus( (HDC)0 );
@@ -1099,7 +1099,7 @@ bool DiskIIInterfaceCard::DriveSwap(void)
 {
 	// Refuse to swap if either Disk][ is active
 	// TODO: if Shift-Click then FORCE drive swap to bypass message
-	if (m_floppyDrive[DRIVE_1].spinning || m_floppyDrive[DRIVE_2].spinning)
+	if (m_floppyDrive[DRIVE_1].m_spinning || m_floppyDrive[DRIVE_2].m_spinning)
 	{
 		// 1.26.2.4 Prompt when trying to swap disks while drive is on instead of silently failing
 		int status = MessageBox(
@@ -1134,11 +1134,11 @@ bool DiskIIInterfaceCard::DriveSwap(void)
 
 	// Swap disks between drives
 	// . NB. We swap trackimage ptrs (so don't need to swap the buffers' data)
-	std::swap(m_floppyDrive[DRIVE_1].disk, m_floppyDrive[DRIVE_2].disk);
+	std::swap(m_floppyDrive[DRIVE_1].m_disk, m_floppyDrive[DRIVE_2].m_disk);
 
 	// Invalidate the trackimage so that a read latch will re-read the track for the new floppy (GH#543)
-	m_floppyDrive[DRIVE_1].disk.trackimagedata = false;
-	m_floppyDrive[DRIVE_2].disk.trackimagedata = false;
+	m_floppyDrive[DRIVE_1].m_disk.trackimagedata = false;
+	m_floppyDrive[DRIVE_2].m_disk.trackimagedata = false;
 
 	SaveLastDiskImage(DRIVE_1);
 	SaveLastDiskImage(DRIVE_2);
@@ -1293,21 +1293,21 @@ std::string DiskIIInterfaceCard::GetSnapshotCardName(void)
 void DiskIIInterfaceCard::SaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_DISK2UNIT, unit);
-	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, m_floppyDrive[unit].disk.fullname);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK, m_floppyDrive[unit].track);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, m_floppyDrive[unit].phase);
-	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_BYTE, m_floppyDrive[unit].disk.byte);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITE_PROTECTED, m_floppyDrive[unit].disk.bWriteProtected);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_SPINNING, m_floppyDrive[unit].spinning);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_WRITE_LIGHT, m_floppyDrive[unit].writelight);
-	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_NIBBLES, m_floppyDrive[unit].disk.nibbles);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DATA, m_floppyDrive[unit].disk.trackimagedata);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY, m_floppyDrive[unit].disk.trackimagedirty);
+	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, m_floppyDrive[unit].m_disk.fullname);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK, m_floppyDrive[unit].m_track);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, m_floppyDrive[unit].m_phase);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_BYTE, m_floppyDrive[unit].m_disk.byte);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITE_PROTECTED, m_floppyDrive[unit].m_disk.bWriteProtected);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SPINNING, m_floppyDrive[unit].m_spinning);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_WRITE_LIGHT, m_floppyDrive[unit].m_writelight);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_NIBBLES, m_floppyDrive[unit].m_disk.nibbles);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DATA, m_floppyDrive[unit].m_disk.trackimagedata);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY, m_floppyDrive[unit].m_disk.trackimagedirty);
 
-	if (m_floppyDrive[unit].disk.trackimage)
+	if (m_floppyDrive[unit].m_disk.trackimage)
 	{
 		YamlSaveHelper::Label image(yamlSaveHelper, "%s:\n", SS_YAML_KEY_TRACK_IMAGE);
-		yamlSaveHelper.SaveMemory(m_floppyDrive[unit].disk.trackimage, NIBBLES_PER_TRACK);
+		yamlSaveHelper.SaveMemory(m_floppyDrive[unit].m_disk.trackimage, NIBBLES_PER_TRACK);
 	}
 }
 
@@ -1339,9 +1339,9 @@ void DiskIIInterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, 
 
 	bool bImageError = false;
 
-	m_floppyDrive[unit].disk.fullname[0] = 0;
-	m_floppyDrive[unit].disk.imagename[0] = 0;
-	m_floppyDrive[unit].disk.bWriteProtected = false;	// Default to false (until image is successfully loaded below)
+	m_floppyDrive[unit].m_disk.fullname[0] = 0;
+	m_floppyDrive[unit].m_disk.imagename[0] = 0;
+	m_floppyDrive[unit].m_disk.bWriteProtected = false;	// Default to false (until image is successfully loaded below)
 
 	std::string filename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
 	if (!filename.empty())
@@ -1368,15 +1368,15 @@ void DiskIIInterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, 
 		}
 	}
 
-	m_floppyDrive[unit].track			= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);
-	m_floppyDrive[unit].phase			= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
-	m_floppyDrive[unit].disk.byte		= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTE);
+	m_floppyDrive[unit].m_track			= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);
+	m_floppyDrive[unit].m_phase			= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
+	m_floppyDrive[unit].m_disk.byte		= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTE);
 	yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITE_PROTECTED);	// Consume
-	m_floppyDrive[unit].spinning		= yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
-	m_floppyDrive[unit].writelight		= yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
-	m_floppyDrive[unit].disk.nibbles			= yamlLoadHelper.LoadUint(SS_YAML_KEY_NIBBLES);
-	m_floppyDrive[unit].disk.trackimagedata		= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DATA) ? true : false;
-	m_floppyDrive[unit].disk.trackimagedirty	= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY) ? true : false;
+	m_floppyDrive[unit].m_spinning		= yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
+	m_floppyDrive[unit].m_writelight	= yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
+	m_floppyDrive[unit].m_disk.nibbles			= yamlLoadHelper.LoadUint(SS_YAML_KEY_NIBBLES);
+	m_floppyDrive[unit].m_disk.trackimagedata	= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DATA) ? true : false;
+	m_floppyDrive[unit].m_disk.trackimagedirty	= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY) ? true : false;
 
 	std::vector<BYTE> track(NIBBLES_PER_TRACK);
 	if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
@@ -1391,20 +1391,20 @@ void DiskIIInterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, 
 
 	if (!filename.empty() && !bImageError)
 	{
-		if ((m_floppyDrive[unit].disk.trackimage == NULL) && m_floppyDrive[unit].disk.nibbles)
+		if ((m_floppyDrive[unit].m_disk.trackimage == NULL) && m_floppyDrive[unit].m_disk.nibbles)
 			AllocTrack(unit);
 
-		if (m_floppyDrive[unit].disk.trackimage == NULL)
+		if (m_floppyDrive[unit].m_disk.trackimage == NULL)
 			bImageError = true;
 		else
-			memcpy(m_floppyDrive[unit].disk.trackimage, &track[0], NIBBLES_PER_TRACK);
+			memcpy(m_floppyDrive[unit].m_disk.trackimage, &track[0], NIBBLES_PER_TRACK);
 	}
 
 	if (bImageError)
 	{
-		m_floppyDrive[unit].disk.trackimagedata		= false;
-		m_floppyDrive[unit].disk.trackimagedirty	= false;
-		m_floppyDrive[unit].disk.nibbles			= 0;
+		m_floppyDrive[unit].m_disk.trackimagedata	= false;
+		m_floppyDrive[unit].m_disk.trackimagedirty	= false;
+		m_floppyDrive[unit].m_disk.nibbles			= 0;
 	}
 }
 
