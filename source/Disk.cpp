@@ -174,7 +174,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 
 //===========================================================================
 
-// Called by DiskControlMotor() & DiskEnable()
+// Called by ControlMotor() & Enable()
 void Disk2InterfaceCard::CheckSpinning(const ULONG nExecutedCycles)
 {
 	DWORD modechange = (m_floppyMotorOn && !m_floppyDrive[m_currDrive].m_spinning);

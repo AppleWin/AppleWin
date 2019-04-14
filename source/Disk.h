@@ -29,8 +29,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 extern class Disk2InterfaceCard sg_Disk2Card;
 
-// Floppy Disk Drives
-
 enum Drive_e
 {
 	DRIVE_1 = 0,
@@ -45,17 +43,17 @@ const bool IMAGE_CREATE = true;
 
 struct FloppyDisk
 {
-	TCHAR	m_imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
-	TCHAR	m_fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
+	TCHAR m_imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
+	TCHAR m_fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
 	std::string m_strFilenameInZip;					// ""             or <FILENAME.EXT>
-	ImageInfo* m_imagehandle;						// Init'd by DiskInsert() -> ImageOpen()
-	bool	m_bWriteProtected;
+	ImageInfo* m_imagehandle;						// Init'd by InsertDisk() -> ImageOpen()
+	bool m_bWriteProtected;
 	//
-	int		m_byte;
-	int		m_nibbles;								// Init'd by ReadTrack() -> ImageReadTrack()
-	LPBYTE	m_trackimage;
-	bool	m_trackimagedata;
-	bool	m_trackimagedirty;
+	int m_byte;
+	int m_nibbles;									// Init'd by ReadTrack() -> ImageReadTrack()
+	LPBYTE m_trackimage;
+	bool m_trackimagedata;
+	bool m_trackimagedirty;
 
 	FloppyDisk()
 	{
@@ -80,11 +78,11 @@ struct FloppyDisk
 
 struct FloppyDrive
 {
-	int		m_phase;
-	int		m_track;
-	DWORD	m_spinning;
-	DWORD	m_writelight;
-	FloppyDisk	m_disk;
+	int m_phase;
+	int m_track;
+	DWORD m_spinning;
+	DWORD m_writelight;
+	FloppyDisk m_disk;
 
 	FloppyDrive()
 	{
