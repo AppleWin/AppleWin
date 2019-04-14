@@ -43,38 +43,38 @@ const bool IMAGE_FORCE_WRITE_PROTECTED = true;
 const bool IMAGE_DONT_CREATE = false;
 const bool IMAGE_CREATE = true;
 
-struct Disk_t
+struct FloppyDisk
 {
-	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
-	TCHAR	fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
-	std::string strFilenameInZip;					// ""             or <FILENAME.EXT>
-	ImageInfo* imagehandle;							// Init'd by DiskInsert() -> ImageOpen()
-	bool	bWriteProtected;
+	TCHAR	m_imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
+	TCHAR	m_fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
+	std::string m_strFilenameInZip;					// ""             or <FILENAME.EXT>
+	ImageInfo* m_imagehandle;						// Init'd by DiskInsert() -> ImageOpen()
+	bool	m_bWriteProtected;
 	//
-	int		byte;
-	int		nibbles;								// Init'd by ReadTrack() -> ImageReadTrack()
-	LPBYTE	trackimage;
-	bool	trackimagedata;
-	bool	trackimagedirty;
+	int		m_byte;
+	int		m_nibbles;								// Init'd by ReadTrack() -> ImageReadTrack()
+	LPBYTE	m_trackimage;
+	bool	m_trackimagedata;
+	bool	m_trackimagedirty;
 
-	Disk_t()
+	FloppyDisk()
 	{
 		clear();
 	}
 
 	void clear()
 	{
-		ZeroMemory(imagename, sizeof(imagename));
-		ZeroMemory(fullname, sizeof(fullname));
-		strFilenameInZip.clear();
-		imagehandle = NULL;
-		bWriteProtected = false;
+		ZeroMemory(m_imagename, sizeof(m_imagename));
+		ZeroMemory(m_fullname, sizeof(m_fullname));
+		m_strFilenameInZip.clear();
+		m_imagehandle = NULL;
+		m_bWriteProtected = false;
 		//
-		byte = 0;
-		nibbles = 0;
-		trackimage = NULL;
-		trackimagedata = false;
-		trackimagedirty = false;
+		m_byte = 0;
+		m_nibbles = 0;
+		m_trackimage = NULL;
+		m_trackimagedata = false;
+		m_trackimagedirty = false;
 	}
 };
 
@@ -84,7 +84,7 @@ struct FloppyDrive
 	int		m_track;
 	DWORD	m_spinning;
 	DWORD	m_writelight;
-	Disk_t	m_disk;
+	FloppyDisk	m_disk;
 
 	FloppyDrive()
 	{
