@@ -105,7 +105,7 @@ int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.c
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
-Disk2InterfaceCard sg_DiskIICard;
+Disk2InterfaceCard sg_Disk2Card;
 
 SS_CARDTYPE g_Slot0 = CT_LanguageCard;	// Just for Apple II or II+ or similar clones
 SS_CARDTYPE g_Slot4 = CT_Empty;
@@ -270,7 +270,7 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (sg_DiskIICard.IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
+					 (sg_Disk2Card.IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -317,7 +317,7 @@ static void ContinueExecution(void)
 	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-	sg_DiskIICard.UpdateDriveState(uActualCyclesExecuted);
+	sg_Disk2Card.UpdateDriveState(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 	PrintUpdate(uActualCyclesExecuted);
 
@@ -625,7 +625,7 @@ void LoadConfiguration(void)
 
 	DWORD dwEnhanceDisk;
 	REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk);
-	sg_DiskIICard.SetEnhanceDisk(dwEnhanceDisk ? true : false);
+	sg_Disk2Card.SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	Config_Load_Video();
 
@@ -714,8 +714,8 @@ void LoadConfiguration(void)
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
-	sg_DiskIICard.LoadLastDiskImage(DRIVE_1);
-	sg_DiskIICard.LoadLastDiskImage(DRIVE_2);
+	sg_Disk2Card.LoadLastDiskImage(DRIVE_1);
+	sg_Disk2Card.LoadLastDiskImage(DRIVE_2);
 
 	//
 
@@ -1062,7 +1062,7 @@ static bool DoDiskInsert(const int nDrive, LPCSTR szFileName)
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	ImageError_e Error = sg_DiskIICard.InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+	ImageError_e Error = sg_Disk2Card.InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 	return Error == eIMAGE_ERROR_NONE;
 }
 
@@ -1613,7 +1613,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
-		sg_DiskIICard.Reset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
+		sg_Disk2Card.Reset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
 		HD_Reset();		// GH#515
 		LogFileOutput("Main: HDDReset()\n");

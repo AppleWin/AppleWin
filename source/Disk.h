@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskFormatTrack.h"
 #include "DiskImage.h"
 
-extern class Disk2InterfaceCard sg_DiskIICard;
+extern class Disk2InterfaceCard sg_Disk2Card;
 
 // Floppy Disk Drives
 

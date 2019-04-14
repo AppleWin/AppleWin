@@ -304,7 +304,7 @@ void VideoBenchmark () {
       while (cycles > 0) {
         DWORD executedcycles = CpuExecute(103, true);
         cycles -= executedcycles;
-        sg_DiskIICard.UpdateDriveState(executedcycles);
+        sg_Disk2Card.UpdateDriveState(executedcycles);
         JoyUpdateButtonLatch(executedcycles);
 	  }
     }

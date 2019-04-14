@@ -1701,7 +1701,7 @@ void MemInitializeIO(void)
 	}
 #endif
 
-	sg_DiskIICard.Initialize(pCxRomPeripheral, 6);	// $C600 : Disk][ card
+	sg_Disk2Card.Initialize(pCxRomPeripheral, 6);	// $C600 : Disk][ card
 	HD_Load_Rom(pCxRomPeripheral, 7);				// $C700 : HDD f/w
 
 	//
