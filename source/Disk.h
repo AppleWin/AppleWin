@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskFormatTrack.h"
 #include "DiskImage.h"
 
-extern class DiskIIInterfaceCard sg_DiskIICard;
+extern class Disk2InterfaceCard sg_DiskIICard;
 
 // Floppy Disk Drives
 
@@ -101,11 +101,11 @@ struct FloppyDrive
 	}
 };
 
-class DiskIIInterfaceCard
+class Disk2InterfaceCard
 {
 public:
-	DiskIIInterfaceCard(void);
-	virtual ~DiskIIInterfaceCard(void){};
+	Disk2InterfaceCard(void);
+	virtual ~Disk2InterfaceCard(void){};
 
 	void Initialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void Destroy(void);		// no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()

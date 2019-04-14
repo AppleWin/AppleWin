@@ -105,7 +105,7 @@ int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.c
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
-DiskIIInterfaceCard sg_DiskIICard;
+Disk2InterfaceCard sg_DiskIICard;
 
 SS_CARDTYPE g_Slot0 = CT_LanguageCard;	// Just for Apple II or II+ or similar clones
 SS_CARDTYPE g_Slot4 = CT_Empty;

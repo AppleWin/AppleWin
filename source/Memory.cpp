@@ -1695,7 +1695,7 @@ void MemInitializeIO(void)
 #if 0	// debug test
 	if (g_Slot5 == CT_Empty)
 	{
-		DiskIIInterfaceCard* pDiskIISlot5 = new DiskIIInterfaceCard;
+		Disk2InterfaceCard* pDiskIISlot5 = new Disk2InterfaceCard;
 		pDiskIISlot5->Initialize(pCxRomPeripheral, 5);
 		pDiskIISlot5->InsertDisk(0, "C:\\Work\\Personal\\Images\\lady tut PRODOS (san inc pack).dsk", false, false);
 	}
