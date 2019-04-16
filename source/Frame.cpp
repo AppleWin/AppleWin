@@ -2189,6 +2189,7 @@ void ResetMachineState ()
   PravetsReset();
   sg_Disk2Card.Boot();
   VideoResetState();
+  KeybReset();
   sg_SSC.CommReset();
   PrintReset();
   JoyReset();
