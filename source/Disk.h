@@ -41,24 +41,15 @@ const bool IMAGE_FORCE_WRITE_PROTECTED = true;
 const bool IMAGE_DONT_CREATE = false;
 const bool IMAGE_CREATE = true;
 
-struct FloppyDisk
+class FloppyDisk
 {
-	TCHAR m_imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
-	TCHAR m_fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
-	std::string m_strFilenameInZip;					// ""             or <FILENAME.EXT>
-	ImageInfo* m_imagehandle;						// Init'd by InsertDisk() -> ImageOpen()
-	bool m_bWriteProtected;
-	//
-	int m_byte;
-	int m_nibbles;									// Init'd by ReadTrack() -> ImageReadTrack()
-	LPBYTE m_trackimage;
-	bool m_trackimagedata;
-	bool m_trackimagedirty;
-
+public:
 	FloppyDisk()
 	{
 		clear();
 	}
+
+	~FloppyDisk(){}
 
 	void clear()
 	{
@@ -74,20 +65,29 @@ struct FloppyDisk
 		m_trackimagedata = false;
 		m_trackimagedirty = false;
 	}
+
+public:
+	TCHAR m_imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
+	TCHAR m_fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
+	std::string m_strFilenameInZip;					// ""             or <FILENAME.EXT>
+	ImageInfo* m_imagehandle;						// Init'd by InsertDisk() -> ImageOpen()
+	bool m_bWriteProtected;
+	int m_byte;
+	int m_nibbles;									// Init'd by ReadTrack() -> ImageReadTrack()
+	LPBYTE m_trackimage;
+	bool m_trackimagedata;
+	bool m_trackimagedirty;
 };
 
-struct FloppyDrive
+class FloppyDrive
 {
-	int m_phase;
-	int m_track;
-	DWORD m_spinning;
-	DWORD m_writelight;
-	FloppyDisk m_disk;
-
+public:
 	FloppyDrive()
 	{
 		clear();
 	}
+
+	~FloppyDrive(){}
 
 	void clear()
 	{
@@ -97,13 +97,20 @@ struct FloppyDrive
 		m_writelight = 0;
 		m_disk.clear();
 	}
+
+public:
+	int m_phase;
+	int m_track;
+	DWORD m_spinning;
+	DWORD m_writelight;
+	FloppyDisk m_disk;
 };
 
 class Disk2InterfaceCard
 {
 public:
 	Disk2InterfaceCard(void);
-	virtual ~Disk2InterfaceCard(void){};
+	virtual ~Disk2InterfaceCard(void){}
 
 	void Initialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void Destroy(void);		// no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
