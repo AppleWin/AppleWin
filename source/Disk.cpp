@@ -541,15 +541,9 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	if (pFloppy->m_imagehandle)
 		RemoveDisk(drive);
 
-	// Reset the drive's struct, but preserve the physical attributes (bug#18242: Platoon)
-	// . Changing the disk (in the drive) doesn't affect the drive's head etc.
-	{
-		int track = pDrive->m_track;
-		int phase = pDrive->m_phase;
-		pDrive->clear();
-		pDrive->m_track = track;
-		pDrive->m_phase = phase;
-	}
+	// Reset the disk's attributes, but preserve the drive's attributes (GH#138/Platoon, GH#640)
+	// . Changing the disk (in the drive) doesn't affect the drive's attributes.
+	pDrive->m_disk.clear();
 
 	const DWORD dwAttributes = GetFileAttributes(pszImageFilename);
 	if(dwAttributes == INVALID_FILE_ATTRIBUTES)
