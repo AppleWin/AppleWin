@@ -512,7 +512,7 @@ static void DrawButton (HDC passdc, int number) {
     SetTextColor(dc,RGB(0,0,0));
     SetTextAlign(dc,TA_CENTER | TA_TOP);
     SetBkMode(dc,TRANSPARENT);
-	LPCTSTR pszBaseName = DiskGetBaseName(number-BTN_DRIVE1);
+	LPCTSTR pszBaseName = sg_Disk2Card.GetBaseName(number-BTN_DRIVE1);
     ExtTextOut(dc,x+offset+22,rect.top,ETO_CLIPPED,&rect,
                pszBaseName,
                MIN(8,_tcslen(pszBaseName)),
@@ -702,7 +702,7 @@ void FrameDrawDiskLEDS( HDC passdc )
 {
 	Disk_Status_e eDrive1Status;
 	Disk_Status_e eDrive2Status;
-	DiskGetLightStatus(&eDrive1Status, &eDrive2Status);
+	sg_Disk2Card.GetLightStatus(&eDrive1Status, &eDrive2Status);
 
 	g_eStatusDrive1 = eDrive1Status;
 	g_eStatusDrive2 = eDrive2Status;
@@ -755,11 +755,11 @@ void FrameDrawDiskStatus( HDC passdc )
 	// Track  $B7EC    LC1 $D356
 	// Sector $B7ED    LC1 $D357
 	// RWTS            LC1 $D300
-	int nActiveFloppy = DiskGetCurrentDrive();
+	int nActiveFloppy = sg_Disk2Card.GetCurrentDrive();
 
-	int nDisk1Track  = DiskGetTrack(0);
-	int nDisk2Track  = DiskGetTrack(1);
-	
+	int nDisk1Track  = sg_Disk2Card.GetTrack(DRIVE_1);
+	int nDisk2Track  = sg_Disk2Card.GetTrack(DRIVE_2);
+
 	// Probe known OS's for Track/Sector
 	int  isProDOS = mem[ 0xBF00 ] == 0x4C;
 	bool isValid  = true;
@@ -1103,7 +1103,7 @@ LRESULT CALLBACK FrameWndProc (
 		Snapshot_Shutdown();
       DebugDestroy();
       if (!g_bRestart) {
-        DiskDestroy();
+        sg_Disk2Card.Destroy();
         ImageDestroy();
         HD_Destroy();
       }
@@ -1161,7 +1161,7 @@ LRESULT CALLBACK FrameWndProc (
       LogFileOutput("WM_DDE_EXECUTE\n");
       LPTSTR filename = (LPTSTR)GlobalLock((HGLOBAL)lparam);
 //MessageBox( g_hFrameWindow, filename, "DDE Exec", MB_OK );
-      ImageError_e Error = DiskInsert(DRIVE_1, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+      ImageError_e Error = sg_Disk2Card.InsertDisk(DRIVE_1, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
       if (Error == eIMAGE_ERROR_NONE)
 	  {
         if (!g_bIsFullScreen)
@@ -1171,7 +1171,7 @@ LRESULT CALLBACK FrameWndProc (
       }
       else
       {
-        DiskNotifyInvalidImage(DRIVE_1, filename, Error);
+        sg_Disk2Card.NotifyInvalidImage(DRIVE_1, filename, Error);
       }
       GlobalUnlock((HGLOBAL)lparam);
       LogFileOutput("WM_DDE_EXECUTE (done)\n");
@@ -1193,7 +1193,7 @@ LRESULT CALLBACK FrameWndProc (
       rect.top    = buttony+BTN_DRIVE2*BUTTONCY+1;
       rect.bottom = rect.top+BUTTONCY;
 	  const int iDrive = PtInRect(&rect,point) ? DRIVE_2 : DRIVE_1;
-      ImageError_e Error = DiskInsert(iDrive, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+      ImageError_e Error = sg_Disk2Card.InsertDisk(iDrive, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
       if (Error == eIMAGE_ERROR_NONE)
 	  {
         if (!g_bIsFullScreen)
@@ -1207,7 +1207,7 @@ LRESULT CALLBACK FrameWndProc (
       }
       else
 	  {
-        DiskNotifyInvalidImage(iDrive, filename, Error);
+        sg_Disk2Card.NotifyInvalidImage(iDrive, filename, Error);
 	  }
       DragFinish((HDROP)wparam);
       break;
@@ -1653,7 +1653,7 @@ LRESULT CALLBACK FrameWndProc (
       if(((LPNMTTDISPINFO)lparam)->hdr.hwndFrom == tooltipwindow &&
          ((LPNMTTDISPINFO)lparam)->hdr.code == TTN_GETDISPINFO)
         ((LPNMTTDISPINFO)lparam)->lpszText =
-          (LPTSTR)DiskGetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom);
+          (LPTSTR)sg_Disk2Card.GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom);
       break;
 
     case WM_PAINT:
@@ -1967,7 +1967,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
 		if (g_nAppMode == MODE_LOGO)
 		{
-			DiskBoot();
+			sg_Disk2Card.Boot();
 			LogFileTimeUntilFirstKeyReadReset();
 			g_nAppMode = MODE_RUNNING;
 		}
@@ -1990,13 +1990,13 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_DRIVE1:
     case BTN_DRIVE2:
-      DiskSelect(button-BTN_DRIVE1);
+      sg_Disk2Card.UserSelectNewDiskImage(button-BTN_DRIVE1);
       if (!g_bIsFullScreen)
         DrawButton((HDC)0,button);
       break;
 
     case BTN_DRIVESWAP:
-      DiskDriveSwap();
+      sg_Disk2Card.DriveSwap();
       break;
 
     case BTN_FULLSCR:
@@ -2057,7 +2057,7 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
 
 	std::string filename1= "\"";
-	filename1.append( DiskGetDiskPathFilename(iDrive) );
+	filename1.append( sg_Disk2Card.GetFullName(iDrive) );
 	filename1.append("\"");
 	std::string sFileNameEmpty = "\"";
 	sFileNameEmpty.append("\"");
@@ -2079,16 +2079,16 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	// Check menu depending on current floppy protection
 	{
 		int iMenuItem = ID_DISKMENU_WRITEPROTECTION_OFF;
-		if (DiskGetProtect( iDrive ))
+		if (sg_Disk2Card.GetProtect( iDrive ))
 			iMenuItem = ID_DISKMENU_WRITEPROTECTION_ON;
 
 		CheckMenuItem(hmenu, iMenuItem, MF_CHECKED);
 	}
 
-	if (Disk_IsDriveEmpty(iDrive))
+	if (sg_Disk2Card.IsDriveEmpty(iDrive))
 		EnableMenuItem(hmenu, ID_DISKMENU_EJECT, MF_GRAYED);
 
-	if (Disk_ImageIsWriteProtected(iDrive))
+	if (sg_Disk2Card.IsDiskImageWriteProtected(iDrive))
 	{
 		// If image-file is read-only (or a gzip) then disable these menu items
 		EnableMenuItem(hmenu, ID_DISKMENU_WRITEPROTECTION_ON, MF_GRAYED);
@@ -2104,13 +2104,13 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		, hwnd, NULL );
 
 	if (iCommand == ID_DISKMENU_EJECT)
-		DiskEject( iDrive );
+		sg_Disk2Card.EjectDisk( iDrive );
 	else
 	if (iCommand == ID_DISKMENU_WRITEPROTECTION_ON)
-		DiskSetProtect( iDrive, true );
+		sg_Disk2Card.SetProtect( iDrive, true );
 	else
 	if (iCommand == ID_DISKMENU_WRITEPROTECTION_OFF)
-		DiskSetProtect( iDrive, false );
+		sg_Disk2Card.SetProtect( iDrive, false );
 	else
 	if (iCommand == ID_DISKMENU_SENDTO_CIDERPRESS)
 	{
@@ -2119,7 +2119,7 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 													"Please install CiderPress.\n"
 													"Otherwise set the path to CiderPress from Configuration->Disk.";
 
-		DiskFlushCurrentTrack(iDrive);
+		sg_Disk2Card.FlushCurrentTrack(iDrive);
 
 		//if(!filename1.compare("\"\"") == false) //Do not use this, for some reason it does not work!!!
 		if(!filename1.compare(sFileNameEmpty) )
@@ -2181,13 +2181,13 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 // todo: consolidate CtrlReset() and ResetMachineState()
 void ResetMachineState ()
 {
-  DiskReset(true);
+  sg_Disk2Card.Reset(true);
   HD_Reset();
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
   MemReset();	// calls CpuInitialize()
   PravetsReset();
-  DiskBoot();
+  sg_Disk2Card.Boot();
   VideoResetState();
   sg_SSC.CommReset();
   PrintReset();
@@ -2225,7 +2225,7 @@ void CtrlReset()
 	}
 
 	PravetsReset();
-	DiskReset();
+	sg_Disk2Card.Reset();
 	HD_Reset();
 	KeybReset();
 	sg_SSC.CommReset();
