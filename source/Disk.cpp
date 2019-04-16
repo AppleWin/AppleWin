@@ -543,7 +543,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 
 	// Reset the disk's attributes, but preserve the drive's attributes (GH#138/Platoon, GH#640)
 	// . Changing the disk (in the drive) doesn't affect the drive's attributes.
-	pDrive->m_disk.clear();
+	pFloppy->clear();
 
 	const DWORD dwAttributes = GetFileAttributes(pszImageFilename);
 	if(dwAttributes == INVALID_FILE_ATTRIBUTES)
