@@ -4,7 +4,7 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2015, Tom Charlesworth, Michael Pohoreski, Nick Westgate
+Copyright (C) 2006-2019, Tom Charlesworth, Michael Pohoreski, Nick Westgate
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -612,11 +612,6 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 bool Disk2InterfaceCard::IsConditionForFullSpeed(void)
 {
 	return m_floppyMotorOn && m_enhanceDisk;
-}
-
-BOOL Disk2InterfaceCard::IsSpinning(void)
-{
-	return m_floppyMotorOn;
 }
 
 //===========================================================================
