@@ -85,10 +85,8 @@ BYTE __stdcall JoyReadPosition(WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG
   return MemReadFloatingBus(nPdlCntrActive, uExecutedCycles);
 }
 
-BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
+void JoyResetPosition(ULONG uExecutedCycles)
 {
   CpuCalcCycles(uExecutedCycles);
   g_nJoyCntrResetCycle = g_nCumulativeCycles;
-
-  return MemReadFloatingBus(uExecutedCycles);
 }
