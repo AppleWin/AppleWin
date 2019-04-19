@@ -53,10 +53,16 @@ static bool  g_bCapsLock = true; //Caps lock key for Apple2 and Lat/Cyr lock for
 static bool  g_bP8CapsLock = true; //Caps lock key of Pravets 8A/C
 static BYTE  keycode         = 0;	// Current Apple keycode
 static BOOL  keywaiting      = 0;
+static bool  g_bAltGrSendsWM_CHAR = false;
 
 //
 // ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
 //
+
+void KeybSetAltGrSendsWM_CHAR(bool state)
+{
+	g_bAltGrSendsWM_CHAR = state;
+}
 
 //===========================================================================
 
@@ -306,7 +312,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 				return;
 			keycode = n;
 		}
-		else if ((GetKeyState(VK_RMENU) < 0))	// Right Alt (aka Alt Gr) - GH#558
+		else if (g_bAltGrSendsWM_CHAR && (GetKeyState(VK_RMENU) < 0))	// Right Alt (aka Alt Gr) - GH#558, GH#625
 		{
 			if (IsVirtualKeyAnAppleIIKey(key))
 			{

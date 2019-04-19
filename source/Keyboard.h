@@ -5,6 +5,7 @@ enum	Keystroke_e {NOT_ASCII=0, ASCII};
 void    ClipboardInitiatePaste();
 
 void    KeybReset();
+void    KeybSetAltGrSendsWM_CHAR(bool state);
 bool    KeybGetCapsStatus();
 bool    KeybGetP8CapsStatus();
 bool    KeybGetAltStatus();
