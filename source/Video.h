@@ -177,7 +177,7 @@ void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = f
 void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 void    VideoRedrawScreen (void);
 void    VideoRefreshScreen (uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false);
-void    VideoReinitialize ();
+void    VideoReinitialize (bool bInitVideoScannerAddress = true);
 void    VideoResetState ();
 enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
 WORD    VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr = VS_FullAddr);

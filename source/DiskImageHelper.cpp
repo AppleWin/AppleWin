@@ -1458,11 +1458,11 @@ ImageError_e CImageHelperBase::Open(	LPCTSTR pszImageFilename,
 	ImageError_e Err;
     const size_t uStrLen = strlen(pszImageFilename);
 
-    if (uStrLen > GZ_SUFFIX_LEN && strcmp(pszImageFilename+uStrLen-GZ_SUFFIX_LEN, GZ_SUFFIX) == 0)
+    if (uStrLen > GZ_SUFFIX_LEN && _stricmp(pszImageFilename+uStrLen-GZ_SUFFIX_LEN, GZ_SUFFIX) == 0)
 	{
 		Err = CheckGZipFile(pszImageFilename, pImageInfo);
 	}
-    else if (uStrLen > ZIP_SUFFIX_LEN && strcmp(pszImageFilename+uStrLen-ZIP_SUFFIX_LEN, ZIP_SUFFIX) == 0)
+    else if (uStrLen > ZIP_SUFFIX_LEN && _stricmp(pszImageFilename+uStrLen-ZIP_SUFFIX_LEN, ZIP_SUFFIX) == 0)
 	{
 		Err = CheckZipFile(pszImageFilename, pImageInfo, strFilenameInZip);
 	}
