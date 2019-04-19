@@ -250,6 +250,7 @@ typedef struct tagPOINT
 #define wsprintf sprintf
 #define _strdup strdup
 #define _strtoui64 strtoull
+#define _stricmp strcasecmp
 
 typedef void * HINSTANCE;
 typedef int HRESULT;

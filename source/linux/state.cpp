@@ -6,7 +6,7 @@
 #include "YamlHelper.h"
 #include "Video.h"
 
-void VideoReinitialize() { }
+void VideoReinitialize(bool bInitVideoScannerAddress) { }
 void KeybLoadSnapshot(YamlLoadHelper&, unsigned int) { }
 std::string GetSnapshotCardName() { return ""; }
 void SpkrLoadSnapshot(YamlLoadHelper&) { }
