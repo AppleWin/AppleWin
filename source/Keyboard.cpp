@@ -544,13 +544,6 @@ void KeybToggleP8ACapsLock ()
 
 //===========================================================================
 
-void KeybSetSnapshot_v1(const BYTE LastKey)
-{
-	keycode = LastKey;
-}
-
-//
-
 #define SS_YAML_KEY_LASTKEY "Last Key"
 #define SS_YAML_KEY_KEYWAITING "Key Waiting"
 

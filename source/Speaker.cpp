@@ -931,13 +931,6 @@ void Spkr_DSUninit()
 
 //=============================================================================
 
-void SpkrSetSnapshot_v1(const unsigned __int64 SpkrLastCycle)
-{
-	g_nSpkrLastCycle = SpkrLastCycle;
-}
-
-//
-
 #define SS_YAML_KEY_LASTCYCLE "Last Cycle"
 
 static std::string SpkrGetSnapshotStructName(void)

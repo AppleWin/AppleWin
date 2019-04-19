@@ -8,9 +8,22 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+
+1.28.0.0 - 12 Jan 2019
+----------------------
+. [Change #357] Resurrected the AppleWin 1.25 "Color (Standard)" video mode as "Color (RGB Monitor)".
+	- This is equivalent to emulating RGB video, ie. a video mode with sharp text and pixels.
+	- NB. Unlike AppleWin 1.25, this is now cycle-accurate, so demos that synchronise with the video scanner will work correctly.
+. [Change #603] Removed support for v1 save-state files.
+	- Any v1 save-state files should be loaded into AppleWin 1.27, and then re-saved to a v2 save-state file.
+. [Change #597] Removed the functionality for CTRL+F10 to reveal the mouse cursor.
+. [Change #585] Added a 'Swap' HDD button to the Configuration->Input property sheet.
+. [Bug #608] Mockingboard's 6522 TIMER1 wasn't generating an interrupt quickly enough for Broadside's detection routine.
+
+
 1.27.13.0 - 8 Dec 2018
 ----------------------
-. [Bug #599] Fix for Ultima V not loading in Authentic Speed mode (regression introduced at 1.27.9.0).
+. [Bug #303, #599] Fix for Ultima V not loading in Authentic Speed mode (regression introduced at 1.27.9.0).
 . [Change #205] Added support for Apple II/II+ custom 2K video ROMs.
 	- Extended command line switch: -videorom <file>
 	- If the ROM size is 2K, then it replaces the video ROM for the Apple II/II+.

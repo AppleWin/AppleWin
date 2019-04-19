@@ -1316,11 +1316,7 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if (wparam == VK_F10)
 		{
-			if (KeybGetCtrlStatus())
-			{
-				SetUsingCursor(FALSE);		// Ctrl+F10
-			}
-			else if (g_Apple2Type == A2TYPE_APPLE2E || g_Apple2Type == A2TYPE_APPLE2EENHANCED)
+			if (g_Apple2Type == A2TYPE_APPLE2E || g_Apple2Type == A2TYPE_APPLE2EENHANCED)
 			{
 				SetVideoRomRockerSwitch( !GetVideoRomRockerSwitch() );	// F10: toggle rocker switch
 				NTSC_VideoInitAppleType();

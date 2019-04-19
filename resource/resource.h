@@ -66,6 +66,7 @@
 #define IDC_EDIT_HDD1                   1019
 #define IDC_EDIT_HDD2                   1020
 #define IDC_HDD_ENABLE                  1021
+#define IDC_HDD_SWAP                    1022
 #define IDC_SPIN_XTRIM                  1026
 #define IDC_SPIN_YTRIM                  1027
 #define IDC_PHASOR_ENABLE               1029

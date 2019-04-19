@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "NTSC_CharSet.h"
 
 unsigned char csbits_enhanced2e[2][256][8];	// Enhanced //e (2732 4K video ROM)
-static unsigned char csbits_enhanced2e_pal[2][256][8];	// PAL Enhanced //e (2764 8K video ROM - top 4K) via rocker switch under keyboard
+static unsigned char csbits_2e_pal[2][256][8];	// PAL Original or Enhanced //e (2764 8K video ROM - low 4K) via rocker switch under keyboard
 unsigned char csbits_2e[2][256][8];			// Original //e (no mousetext)
 unsigned char csbits_a2[1][256][8];			// ][ and ][+
 unsigned char csbits_pravets82[1][256][8];	// Pravets 82
@@ -164,11 +164,15 @@ void userVideoRomForIIe(void)
 	if (size == kVideoRomSize4K)
 	{
 		userVideoRom4K(&csbits_enhanced2e[0], pVideoRom);
-		return;
+	}
+	else
+	{
+		userVideoRom4K(&csbits_2e_pal[0], pVideoRom);
+		userVideoRom4K(&csbits_enhanced2e[0], &pVideoRom[4*1024]);
 	}
 
-	userVideoRom4K(&csbits_enhanced2e_pal[0], pVideoRom);
-	userVideoRom4K(&csbits_enhanced2e[0], &pVideoRom[4*1024]);
+	// NB. Same *custom* US video ROM for Original & Enhanced //e
+	memcpy(csbits_2e, csbits_enhanced2e, sizeof(csbits_enhanced2e));
 }
 
 //-------------------------------------
@@ -224,17 +228,19 @@ void make_csbits(void)
 	memcpy(csbits_2e, csbits_enhanced2e, sizeof(csbits_enhanced2e));
 	memcpy(&csbits_2e[1][64], &csbits_2e[0][64], 32*8);
 
-	// Try to use any user-provided video ROM for Enhanced //e
+	// Try to use any user-provided video ROM for Original/Enhanced //e
 	userVideoRomForIIe();
 
 	// Try to use any user-provided video ROM for II/II+
 	userVideoRomForIIPlus();
 }
 
-csbits_t GetEnhanced2e_csbits(void)
+csbits_t Get2e_csbits(void)
 {
-	if (IsVideoRom4K())
-		return csbits_enhanced2e;
+	const csbits_t videoRom4K = (GetApple2Type() == A2TYPE_APPLE2E) ? csbits_2e : csbits_enhanced2e;
 
-	return GetVideoRomRockerSwitch() == false ? csbits_enhanced2e : csbits_enhanced2e_pal;
+	if (IsVideoRom4K())	// 4K means US-only, so no secondary PAL video ROM
+		return videoRom4K;
+
+	return GetVideoRomRockerSwitch() == false ? videoRom4K : csbits_2e_pal;	// NB. Same PAL video ROM for Original & Enhanced //e
 }

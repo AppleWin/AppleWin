@@ -175,6 +175,7 @@ BEGIN
     GROUPBOX        "Hard Disk Drives",IDC_STATIC,5,83,200,64
     CONTROL         "&Enable hard disk controller in slot 7",IDC_HDD_ENABLE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,96,122,10
+    PUSHBUTTON      "Swap",IDC_HDD_SWAP,156,92,40,14
     LTEXT           "&Path to CiderPress:",IDC_STATIC,7,155,74,8
     EDITTEXT        IDC_CIDERPRESS_FILENAME,7,165,143,12,ES_AUTOHSCROLL | ES_READONLY
     PUSHBUTTON      "&Browse...",IDC_CIDERPRESS_BROWSE,156,164,50,14
@@ -274,7 +275,7 @@ BEGIN
             VALUE "FileDescription", "Apple //e Emulator for Windows"
             VALUE "FileVersion", APPLEWIN_VERSION_STR
             VALUE "InternalName", "APPLEWIN"
-            VALUE "LegalCopyright", " 1994-2018 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
+            VALUE "LegalCopyright", " 1994-2019 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
             VALUE "ProductVersion", APPLEWIN_VERSION_STR

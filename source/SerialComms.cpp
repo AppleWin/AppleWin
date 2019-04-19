@@ -1355,25 +1355,6 @@ void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 
 //===========================================================================
 
-void CSuperSerialCard::SetSnapshot_v1(	const DWORD  baudrate,
-										const BYTE   bytesize,
-										const BYTE   commandbyte,
-										const DWORD  comminactivity,
-										const BYTE   controlbyte,
-										const BYTE   parity,
-										const BYTE   stopbits)
-{
-	// Redundant:
-	// . baudrate, stopbits, bytesize (encapsulated in controlbyte)
-	// . parity (encapsulated in commandbyte)
-	// Obsolete:
-	// . comminactivity
-
-	UpdateCommandAndControlRegs(commandbyte, controlbyte);
-}
-
-//===========================================================================
-
 // Unit version history:
 // 2: Added: Support DCD flag
 //    Removed: redundant data (encapsulated in Command & Control bytes)

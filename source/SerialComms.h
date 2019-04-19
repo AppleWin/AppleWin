@@ -32,7 +32,6 @@ public:
 	void    CommReset();
 	void    CommDestroy();
 	void    CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem);
-	void    SetSnapshot_v1(const DWORD baudrate, const BYTE bytesize, const BYTE commandbyte, const DWORD comminactivity, const BYTE controlbyte, const BYTE parity, const BYTE stopbits);
 	std::string GetSnapshotCardName(void);
 	void	SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	bool	LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);

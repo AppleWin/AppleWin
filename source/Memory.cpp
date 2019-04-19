@@ -229,7 +229,7 @@ static void ResetDefaultMachineMemTypes(void)
 	g_MemTypeAppleIIe = CT_Extended80Col;
 }
 
-// Called from MemInitialize(), MemLoadSnapshot(), MemSetSnapshot_v1()
+// Called from MemInitialize(), MemLoadSnapshot()
 static void SetExpansionMemTypeDefault(void)
 {
 	SS_CARDTYPE defaultType = IsApple2Original(GetApple2Type()) ? g_MemTypeAppleII
@@ -1702,7 +1702,6 @@ inline DWORD getRandomTime()
 // Called by:
 // . MemInitialize()
 // . ResetMachineState()	eg. Power-cycle ('Apple-Go' button)
-// . Snapshot_LoadState_v1()
 // . Snapshot_LoadState_v2()
 void MemReset()
 {
@@ -2036,29 +2035,6 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 // NB. Don't need to save 'modechanging', as this is just an optimisation to save calling UpdatePaging() twice.
 // . If we were to save the state when 'modechanging' is set, then on restoring the state, the 6502 code will immediately update the read memory mode.
 // . This will work correctly.
-
-void MemSetSnapshot_v1(const DWORD MemMode, const BOOL LastWriteRam, const BYTE* const pMemMain, const BYTE* const pMemAux)
-{
-	// Create default LC type for AppleII machine (do prior to loading saved LC state)
-	ResetDefaultMachineMemTypes();
-	g_MemTypeAppleII = CT_LanguageCard;	// SSv1 doesn't save machine type - so if current machine is Apple II then give it 64K + LC
-	SetExpansionMemTypeDefault();
-	CreateLanguageCard();				// Create LC here, as for SSv1 there is no slot-0 state
-
-	SetMemMode(MemMode ^ MF_INTCXROM);	// Convert from SLOTCXROM to INTCXROM
-	SetLastRamWrite(LastWriteRam);
-
-	memcpy(memmain, pMemMain, nMemMainSize);
-	memcpy(memaux, pMemAux, nMemAuxSize);
-	memset(memdirty, 0, 0x100);
-
-	//
-
-	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v1()
-	UpdatePaging(1);	// Initialize=1
-}
-
-//
 
 #define SS_YAML_KEY_MEMORYMODE "Memory Mode"
 #define SS_YAML_KEY_LASTRAMWRITE "Last RAM Write"

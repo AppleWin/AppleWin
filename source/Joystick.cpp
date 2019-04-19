@@ -931,13 +931,6 @@ void JoyportControl(const UINT uControl)
 
 //===========================================================================
 
-void JoySetSnapshot_v1(const unsigned __int64 JoyCntrResetCycle)
-{
-	g_nJoyCntrResetCycle = JoyCntrResetCycle;
-}
-
-//
-
 #define SS_YAML_KEY_COUNTERRESETCYCLE "Counter Reset Cycle"
 #define SS_YAML_KEY_JOY0TRIMX "Joystick0 TrimX"
 #define SS_YAML_KEY_JOY0TRIMY "Joystick0 TrimY"
