@@ -266,6 +266,8 @@ void LoadConfiguration(void)
     sg_PropertySheet.SetMouseRestrictToWindow(dwTmp);
 #endif
 
+  if(REGLOAD(TEXT(REGVALUE_SLOT0), &dwTmp))
+    g_Slot0 = (SS_CARDTYPE) dwTmp;
   if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
     g_Slot4 = (SS_CARDTYPE) dwTmp;
   if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))

@@ -55,6 +55,12 @@ namespace
         }
     }
 
+    void setSlot0(const SS_CARDTYPE newCardType)
+    {
+        g_Slot0 = newCardType;
+        REGSAVE(TEXT(REGVALUE_SLOT0), (DWORD)g_Slot0);
+    }
+
     void setSlot4(const SS_CARDTYPE newCardType)
     {
         g_Slot4 = newCardType;
@@ -122,6 +128,7 @@ Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad)
         }
     }
 
+    currentOptions.languageCardInSlot0 = g_Slot0 == CT_LanguageCard;
     currentOptions.mouseInSlot4 = g_Slot4 == CT_MouseInterface;
     currentOptions.cpmInSlot5 = g_Slot5 == CT_Z80;
     currentOptions.hdInSlot7 = HD_CardIsEnabled();
@@ -160,7 +167,11 @@ void setNewOptions(const Preferences::Data & currentOptions, const Preferences::
         SetMainCpu(cpu);
         REGSAVE(TEXT(REGVALUE_CPU_TYPE), cpu);
     }
-
+    if (currentOptions.languageCardInSlot0 != newOptions.languageCardInSlot0)
+    {
+        const SS_CARDTYPE card = newOptions.languageCardInSlot0 ? CT_LanguageCard : CT_Empty;
+        setSlot0(card);
+    }
     if (currentOptions.mouseInSlot4 != newOptions.mouseInSlot4)
     {
         const SS_CARDTYPE card = newOptions.mouseInSlot4 ? CT_MouseInterface : CT_Empty;

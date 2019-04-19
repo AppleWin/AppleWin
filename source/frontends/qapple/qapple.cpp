@@ -61,6 +61,10 @@ namespace
 
         FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
+        if (g_Slot0 == CT_LanguageCard)
+        {
+            SetExpansionMemType(g_Slot0);
+        }
         MemInitialize();
         VideoInitialize();
         DiskReset();
