@@ -8,6 +8,18 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+
+1.28.5.0 - 6 Apr 2019
+---------------------
+. [Change #631] Improvements for the RGB AppleColor card:
+	- Relax the video-mode precondition to just ignore if VF_MIXED (previously required HIRES on) for Apple II Desktop.
+	- Changing from DHGR B&W mode to HGR remains in B&W (color burst if off).
+	- For '50% scan lines', don't blend in NTSC B&W mode, as this was inconsistent with the RGB colour rendering.
+. [Change #633] Improvements for the RGB AppleColor card:
+	- Improved the video-mode precondition to ignore if 80COL ($C00C/D) occurs before DHIRESON ($C05F) for Renegade.
+	- Support new switch -rgb-card-invert-bit7 to invert bit7 for Dragon Wars.
+
+
 1.28.4.0 - 16 Mar 2019
 ----------------------
 . [Change #616] Improved accuracy for 'RGB (Color Monitor)' for hires.

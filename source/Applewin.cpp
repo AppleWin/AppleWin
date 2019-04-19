@@ -53,6 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 #include "Video.h"
+#include "RGBMonitor.h"
 #include "NTSC.h"
 
 #include "Configuration/About.h"
@@ -1179,6 +1180,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	int newVideoType = -1;
 	int newVideoStyleEnableMask = 0;
 	int newVideoStyleDisableMask = 0;
+	LPSTR szScreenshotFilename = NULL;
 
 	while (*lpCmdLine)
 	{
@@ -1414,6 +1416,15 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		else if (strcmp(lpCmdLine, "-video-style=no-vertical-blend") == 0)	// GH#616
 		{
 			newVideoStyleDisableMask = VS_COLOR_VERTICAL_BLEND;
+		}
+		else if (strcmp(lpCmdLine, "-rgb-card-invert-bit7") == 0)	// GH#633
+		{
+			RGB_SetInvertBit7(true);
+		}
+		else if (strcmp(lpCmdLine, "-screenshot-and-exit") == 0)	// GH#616: For testing - Use in combination with -load-state
+		{
+			szScreenshotFilename = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
 		}
 		else	// unsupported
 		{
@@ -1653,6 +1664,12 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			Snapshot_Startup();		// Do this after everything has been init'ed
 			LogFileOutput("Main: Snapshot_Startup()\n");
+		}
+
+		if (szScreenshotFilename)
+		{
+			Video_RedrawAndTakeScreenShot(szScreenshotFilename);
+			bShutdown = true;
 		}
 
 		if (bShutdown)

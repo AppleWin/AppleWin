@@ -659,8 +659,8 @@ inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTa
 	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
 	/* */ uint32_t *pLine1Address = getScanlineNext1Address();
 	const uint32_t color0 = getScanlineColor( signal, pTable );
-	const uint32_t color1 = ((color0 & 0x00fcfcfc) >> 2); // 25% Blend (original)
-//	const uint32_t color1 = ((color0 & 0x00fefefe) >> 1); // 50% Blend -- looks OK most of the time; Archon looks poor
+	const uint32_t color1 = 0;	// Remove blending for consistent DHGR MIX mode (GH#631)
+//	const uint32_t color1 = ((color0 & 0x00fcfcfc) >> 2); // 25% Blend (original)
 
 	/* */  *pLine1Address = color1 | ALPHA32_MASK;
 	/* */  *pLine0Address = color0;
@@ -1378,6 +1378,12 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 				uint8_t a = *MemGetAuxPtr(addr);
 				uint8_t m = *MemGetMainPtr(addr);
 
+				if (RGB_IsMixModeInvertBit7())	// Invert high bit? (GH#633)
+				{
+					a ^= 0x80;
+					m ^= 0x80;
+				}
+
 				if (RGB_Is160Mode())
 				{
 					int width = UpdateDHiRes160Cell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
@@ -1591,8 +1597,24 @@ static void updateScreenSingleHires40Simplified (long cycles6502)
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				uint16_t addr = getVideoScannerAddressHGR();
-				UpdateHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
-				g_pVideoAddress += 14;
+
+				if (!RGB_Is560Mode())
+				{
+					UpdateHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+					g_pVideoAddress += 14;
+				}
+				else	// Color Burst is off - duplicate code from updateScreenSingleHires40() (GH#631)
+				{
+					uint8_t *pMain = MemGetMainPtr(addr);
+					uint8_t  m     = pMain[0];
+					uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
+					if (m & 0x80)
+						bits = (bits << 1) | g_nLastColumnPixelNTSC;
+					updatePixels( bits );
+
+					if (g_nVideoClockHorz == (VIDEO_SCANNER_MAX_HORZ-1))
+						g_nLastColumnPixelNTSC = 0;
+				}
 			}
 		}
 		updateVideoScannerHorzEOLSimple();
