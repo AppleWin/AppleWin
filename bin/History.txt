@@ -9,6 +9,13 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.28.1.0 - 2 Feb 2019
+---------------------
+. [Change #523] Support Extended 80-Column Text/AppleColor Card's DHGR Mixed mode and 560x192 Mono mode.
+. [PR #620] Corrected a few symbol names in APPLE2E.SYM for the 80STORE and 80COL I/O addresses.
+. [Bug #617] Apple II,II+ keyboard: up/down arrow keys are now ignored.
+
+
 1.28.0.0 - 12 Jan 2019
 ----------------------
 . [Change #357] Resurrected the AppleWin 1.25 "Color (Standard)" video mode as "Color (RGB Monitor)".

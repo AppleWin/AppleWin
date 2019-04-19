@@ -906,19 +906,19 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\RGBMonitor.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\RGBMonitor.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Video.cpp"
 					>
 				</File>
 				<File
 					RelativePath=".\source\Video.h"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Video_OriginalColorTVMode.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Video_OriginalColorTVMode.h"
 					>
 				</File>
 			</Filter>

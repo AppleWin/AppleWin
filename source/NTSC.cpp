@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "Frame.h"
 	#include "Memory.h" // MemGetMainPtr() MemGetAuxPtr()
 	#include "Video.h"  // g_pFramebufferbits
-	#include "Video_OriginalColorTVMode.h"
+	#include "RGBMonitor.h"
 
 	#include "NTSC.h"
 	#include "NTSC_CharSet.h"
@@ -684,6 +684,19 @@ inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTa
 inline bool GetColorBurst( void )
 {
 	return g_nColorBurstPixels >= 2;
+}
+
+//===========================================================================
+
+void update7MonoPixels( uint16_t bits )
+{
+	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	g_pFuncUpdateBnWPixel(bits & 1);
 }
 
 //===========================================================================
@@ -1362,8 +1375,34 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				uint16_t addr = getVideoScannerAddressHGR();
-				UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
-				g_pVideoAddress += 14;
+				uint8_t a = *MemGetAuxPtr(addr);
+				uint8_t m = *MemGetMainPtr(addr);
+
+				if (RGB_Is560Mode() || (RGB_IsMixMode() && !((a | m) & 0x80)))
+				{
+					update7MonoPixels(a);
+					update7MonoPixels(m);
+				}
+				else if (!RGB_IsMixMode() || (RGB_IsMixMode() && (a & m & 0x80)))
+				{
+					UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
+					g_pVideoAddress += 14;
+				}
+				else	// RGB_IsMixMode() && ((a ^ m) & 0x80)
+				{
+					if (a & 0x80)	// RGB color, then monochrome
+					{
+						UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true ,false);
+						g_pVideoAddress += 7;
+						update7MonoPixels(m);
+					}
+					else			// monochrome, then RGB color
+					{
+						update7MonoPixels(a);
+						UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, false, true);
+						g_pVideoAddress += 7;
+					}
+				}
 			}
 		}
 		updateVideoScannerHorzEOLSimple();
