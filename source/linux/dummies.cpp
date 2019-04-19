@@ -12,6 +12,7 @@
 #include "NTSC.h"
 
 static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
+static VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
 
 // video scanner constants
 int const kHBurstClock      =    53; // clock when Color Burst starts
@@ -145,6 +146,11 @@ int           g_nAltCharSetOffset  = 0; // alternate character set
 UINT GetFrameBufferWidth(void)
 {
   return 0;
+}
+
+bool IsVideoStyle(VideoStyle_e mask)
+{
+	return (g_eVideoStyle & mask) != 0;
 }
 
 bool    VideoGetVblBar(DWORD uExecutedCycles)

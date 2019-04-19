@@ -52,8 +52,6 @@ static IPropertySheet * sg = NULL;
 IPropertySheet&	sg_PropertySheet = *sg;
 static double g_fMHz		= 1.0;			// Affected by Config dialog's speed slider bar
 
-DWORD     g_uHalfScanLines = 1; // drop 50% scan lines for a more authentic look
-
 void SetCurrentCLK6502(void)
 {
   static DWORD dwPrevSpeed = (DWORD) -1;

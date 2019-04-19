@@ -23,6 +23,7 @@ bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int)
 std::string CSuperSerialCard::GetSnapshotCardName() { return ""; }
 std::string MB_GetSnapshotCardName() { return ""; }
 void MB_Reset() { }
+void MB_InitializeForLoadingSnapshot() { }
 void Phasor_LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { }
 void Phasor_SaveSnapshot(YamlSaveHelper&, unsigned int) { }
 std::string Phasor_GetSnapshotCardName() { return ""; }
