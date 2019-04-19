@@ -18,6 +18,7 @@ add_library(appleii SHARED
   ParallelPrinter.cpp
   MouseInterface.cpp
   LanguageCard.cpp
+  RGBMonitor.cpp
 
   linux/data.cpp
   linux/dummies.cpp

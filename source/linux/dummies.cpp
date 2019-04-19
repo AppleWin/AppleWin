@@ -142,6 +142,11 @@ int           g_nAltCharSetOffset  = 0; // alternate character set
 #define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
 #define  SW_TEXT          (g_uVideoMode & VF_TEXT)
 
+UINT GetFrameBufferWidth(void)
+{
+  return 0;
+}
+
 bool    VideoGetVblBar(DWORD uExecutedCycles)
 {
   // get video scanner position

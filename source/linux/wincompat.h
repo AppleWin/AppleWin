@@ -314,6 +314,13 @@ typedef OPENFILENAME OPENFILENAME_NT4;
 
 typedef int LCID;
 
+typedef struct tagRGBQUAD {
+  BYTE rgbBlue;
+  BYTE rgbGreen;
+  BYTE rgbRed;
+  BYTE rgbReserved;
+} RGBQUAD;
+
 #ifdef __cplusplus
 }
 #endif
