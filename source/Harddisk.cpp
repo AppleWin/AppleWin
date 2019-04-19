@@ -140,7 +140,7 @@ struct HDD
 #endif
 	}
 
-	// From Disk_t
+	// From FloppyDisk
 	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)    [not used]
 	TCHAR	fullname[ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>
 	std::string strFilenameInZip;					// ""             or <FILENAME.EXT> [not used]

@@ -68,6 +68,7 @@ void KeybSetAltGrSendsWM_CHAR(bool state)
 
 void KeybReset()
 {
+	keycode = 0;
 	keywaiting = 0;
 }
 
