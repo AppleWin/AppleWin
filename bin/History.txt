@@ -8,6 +8,15 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.28.2.0 - 24 Feb 2019
+----------------------
+. [Change #616] Support vertical blending for 'RGB (Color Monitor)' for hires.
+	- Support the old AppleWin 1.25 vertical blending for hires via a 'Vertical Blend' checkbox.
+. [Change #621] Support RGB AppleColor card's 160-color pixel mode by squashing 640 pixels into 560 pixels.
+	- Squashing is done by losing every 8th pixel.
+. [PR #623] Do not reset on minor state load errors.
+. [Bug #609] Configuration dialog didn't correctly reflect lack of Mockingboard/Phasor when loading a save-state without this sound card.
+
 
 1.28.1.0 - 2 Feb 2019
 ---------------------
@@ -714,8 +723,8 @@ Beta builds for specific testers
 . Support for Pravets 82. Caps Lock serves as Lat/Cyr lock. The charset still needs a little fix (all characters have to be one row down).
 . Some partial support for Pravets 8A. Caps Lock serves as Lat/Cyr lock, and F10 serves as Caps Lock.
 In Pravets 8A mode the former behaviour of the F10 key is preserved as Ctrl+F10 (see Help/Keyboard for details).
-Extended Basic and Miniassembler work, but there are still problems with the 8 bit charset (œ‡ËÒ [Parris] does not switch to latin characters).
-Some keys have to be remapped, because currently they are not available (i.e. ›). There is still the problem that there is not enough space for this key on the keyboard.
+Extended Basic and Miniassembler work, but there are still problems with the 8 bit charset (√è√†√∞√®√± [Parris] does not switch to latin characters).
+Some keys have to be remapped, because currently they are not available (i.e. √ù). There is still the problem that there is not enough space for this key on the keyboard.
 . Added Send to CiderPress function via the popup menu of the drive buttons.
 
 1.14.1.2 - 2 Dec 2007 (beta)

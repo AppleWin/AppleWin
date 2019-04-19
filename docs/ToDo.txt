@@ -36,10 +36,10 @@ To support Bob Bishop's intros, tight-loop page-flipping, etc
 Plans for (1st pass) cleaning up are:
 . Ditch the x86 code to access the PC speaker + ditch PC speaker support
 . [DONE] The arrays ioread[] & iowrite[] in Memory.cpp should be switched from units of 1 byte to 16 bytes.
-  This will yield 256 entries spanning [$C000…$CFFF] – currently it’s only [$C000…$C0FF]. This will mean that:
-	a) cards with I/O mapped above $C0FF (eg Mockingboard, Mouse?) don’t have to be kludged as in the READ/WRITE macros in CPU.cpp
+  This will yield 256 entries spanning [$C000â€¦$CFFF] â€“ currently itâ€™s only [$C000â€¦$C0FF]. This will mean that:
+	a) cards with I/O mapped above $C0FF (eg Mockingboard, Mouse?) donâ€™t have to be kludged as in the READ/WRITE macros in CPU.cpp
 	b) $CFFF (ROMs out) can be emulated
-. Talking of CPU.cpp & those macros: I’d prefer to replace them with inline funcs. Maintenance of these
-  macros is a bitch & they can’t be single-stepped. Inline funs should yield the same code (in release build)
+. Talking of CPU.cpp & those macros: Iâ€™d prefer to replace them with inline funcs. Maintenance of these
+  macros is a bitch & they canâ€™t be single-stepped. Inline funs should yield the same code (in release build)
   as the macros.
 

@@ -1376,13 +1376,20 @@ static void MB_DSUninit()
 
 //=============================================================================
 
+static void InitSoundcardType(void)
+{
+	g_SoundcardType = CT_Empty;	// Use CT_Empty to mean: no soundcard
+	g_bPhasorEnable = false;
+}
+
 void MB_Initialize()
 {
+	InitSoundcardType();
+
 	LogFileOutput("MB_Initialize: g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 	{
 		MockingboardVoice.bMute = true;
-		g_SoundcardType = CT_Empty;
 	}
 	else
 	{
@@ -1409,6 +1416,17 @@ void MB_Initialize()
 
 	InitializeCriticalSection(&g_CriticalSection);
 	g_bCritSectionValid = true;
+}
+
+void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType);
+
+// NB. Mockingboard voice is *already* muted because showing 'Select Load State file' dialog
+// . and voice will be demuted when dialog is closed
+void MB_InitializeForLoadingSnapshot()	// GH#609
+{
+	MB_Reset();
+	InitSoundcardType();
+	MockingboardVoice.lpDSBvoice->Stop();	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
 }
 
 //-----------------------------------------------------------------------------
@@ -1453,15 +1471,16 @@ static void ResetState()
 	g_bMB_RegAccessedFlag = false;
 	g_bMB_Active = false;
 
-	//g_bMBAvailable = false;
-
-//	g_SoundcardType = CT_Empty;	// Don't uncomment, else _ASSERT will fire in MB_Read() after an F2->MB_Reset()
-//	g_bPhasorEnable = false;
 	g_nPhasorMode = 0;
 	g_PhasorClockScaleFactor = 1;
+
+	// Not these, as they don't change on a CTRL+RESET or power-cycle:
+//	g_bMBAvailable = false;
+//	g_SoundcardType = CT_Empty;	// Don't uncomment, else _ASSERT will fire in MB_Read() after an F2->MB_Reset()
+//	g_bPhasorEnable = false;
 }
 
-void MB_Reset()
+void MB_Reset()	// CTRL+RESET or power-cycle
 {
 	if(!g_bDSAvailable)
 		return;
@@ -1615,6 +1634,26 @@ static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 
 //-----------------------------------------------------------------------------
 
+SS_CARDTYPE MB_GetSoundcardType()
+{
+	return g_SoundcardType;
+}
+
+static void MB_SetSoundcardType(const SS_CARDTYPE NewSoundcardType)
+{
+	if (NewSoundcardType == g_SoundcardType)
+		return;
+
+	if (NewSoundcardType == CT_Empty)
+		MB_Mute();	// Call MB_Mute() before setting g_SoundcardType = CT_Empty
+
+	g_SoundcardType = NewSoundcardType;
+
+	g_bPhasorEnable = (g_SoundcardType == CT_Phasor);
+}
+
+//-----------------------------------------------------------------------------
+
 void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 {
 	// Mockingboard: Slot 4 & 5
@@ -1636,6 +1675,12 @@ void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 		RegisterIoHandler(uSlot5, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
 
 	MB_SetSoundcardType(g_Slot4);
+
+	// Sound buffer may have been stopped by MB_InitializeForLoadingSnapshot().
+	// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
+	// - without zeroing, then the previous sound buffer can be heard for a fraction of a second
+	// - eg. when doing Mockingboard playback, then loading a save-state which is also doing Mockingboard playback
+	DSZeroVoiceBuffer(&MockingboardVoice, "MB", g_dwDSBufferSize);
 }
 
 //-----------------------------------------------------------------------------
@@ -1771,26 +1816,6 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 			}
 		}
 	}
-}
-
-//-----------------------------------------------------------------------------
-
-SS_CARDTYPE MB_GetSoundcardType()
-{
-	return g_SoundcardType;
-}
-
-void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType)
-{
-	if (g_SoundcardType == NewSoundcardType)
-		return;
-
-	g_SoundcardType = NewSoundcardType;
-
-	if(g_SoundcardType == CT_Empty)
-		MB_Mute();
-
-	g_bPhasorEnable = (g_SoundcardType == CT_Phasor);
 }
 
 //-----------------------------------------------------------------------------
@@ -2108,9 +2133,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 
 	AY8910_InitClock((int)CLK_6502);
 
-	// Setup in MB_InitializeIO() -> MB_SetSoundcardType()
-	g_SoundcardType = CT_Empty;
-	g_bPhasorEnable = false;
+	// NB. g_SoundcardType & g_bPhasorEnable setup in MB_InitializeIO() -> MB_SetSoundcardType()
 
 	return true;
 }
@@ -2233,9 +2256,7 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 
 	AY8910_InitClock((int)(CLK_6502 * g_PhasorClockScaleFactor));
 
-	// Setup in MB_InitializeIO() -> MB_SetSoundcardType()
-	g_SoundcardType = CT_Empty;
-	g_bPhasorEnable = false;
+	// NB. g_SoundcardType & g_bPhasorEnable setup in MB_InitializeIO() -> MB_SetSoundcardType()
 
 	return true;
 }

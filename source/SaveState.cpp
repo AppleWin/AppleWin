@@ -356,17 +356,19 @@ static void ParseUnit(void)
 
 static void Snapshot_LoadState_v2(void)
 {
+	bool restart = false;	// Only need to restart if any VM state has change
+
 	try
 	{
-		int res = yamlHelper.InitParser( g_strSaveStatePathname.c_str() );
-		if (!res)
-			throw std::string("Failed to initialize parser or open file");	// TODO: disambiguate
+		if (!yamlHelper.InitParser( g_strSaveStatePathname.c_str() ))
+			throw std::string("Failed to initialize parser or open file");
 
-		UINT version = ParseFileHdr();
-		if (version != SS_FILE_VER)
+		if (ParseFileHdr() != SS_FILE_VER)
 			throw std::string("Version mismatch");
 
 		//
+
+		restart = true;
 
 		CConfigNeedingRestart ConfigOld;
 		//ConfigOld.m_Slot[0] = CT_LanguageCard;	// fixme: II/II+=LC, //e=empty
@@ -389,7 +391,7 @@ static void Snapshot_LoadState_v2(void)
 		HD_Reset();
 		KeybReset();
 		VideoResetState();
-		MB_Reset();
+		MB_InitializeForLoadingSnapshot();	// GH#609
 		sg_SSC.CommReset();
 #ifdef USE_SPEECH_API
 		g_Speech.Reset();
@@ -430,7 +432,8 @@ static void Snapshot_LoadState_v2(void)
 					TEXT("Load State"),
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
-		PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
+		if (restart)
+			PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
 	}
 
 	yamlHelper.FinaliseParser();

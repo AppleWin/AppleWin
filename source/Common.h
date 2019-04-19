@@ -104,7 +104,8 @@ enum AppMode_e
 #define  REGVALUE_PRINTER_APPEND     "Append to printer file"
 #define  REGVALUE_PRINTER_IDLE_LIMIT "Printer idle limit"
 #define  REGVALUE_VIDEO_MODE         "Video Emulation"
-#define  REGVALUE_VIDEO_HALF_SCAN_LINES "Half Scan Lines"
+#define  REGVALUE_VIDEO_STYLE         "Video Style"			// GH#616: Added at 1.28.2
+#define  REGVALUE_VIDEO_HALF_SCAN_LINES "Half Scan Lines"	// GH#616: Deprecated from 1.28.2
 #define  REGVALUE_VIDEO_MONO_COLOR      "Monochrome Color"
 #define  REGVALUE_SERIAL_PORT_NAME   "Serial Port Name"
 #define  REGVALUE_ENHANCE_DISK_SPEED "Enhance Disk Speed"

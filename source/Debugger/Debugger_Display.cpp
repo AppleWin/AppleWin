@@ -1518,7 +1518,7 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 			{
 				bDisasmFormatFlags |= DISASM_FORMAT_TARGET_POINTER;
 
-				nTargetValue = *(LPWORD)(mem+nTargetPointer);
+				nTargetValue = *(mem + nTargetPointer) | (*(mem + ((nTargetPointer + 1) & 0xffff)) << 8);
 
 //				if (((iOpmode >= AM_A) && (iOpmode <= AM_NZ)) && (iOpmode != AM_R))
 				// nTargetBytes refers to size of pointer, not size of value

@@ -1378,7 +1378,12 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 				uint8_t a = *MemGetAuxPtr(addr);
 				uint8_t m = *MemGetMainPtr(addr);
 
-				if (RGB_Is560Mode() || (RGB_IsMixMode() && !((a | m) & 0x80)))
+				if (RGB_Is160Mode())
+				{
+					int width = UpdateDHiRes160Cell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+					g_pVideoAddress += width;
+				}
+				else if (RGB_Is560Mode() || (RGB_IsMixMode() && !((a | m) & 0x80)))
 				{
 					update7MonoPixels(a);
 					update7MonoPixels(m);
@@ -1935,7 +1940,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
 //===========================================================================
 void NTSC_SetVideoStyle() // (int v, int s)
 {
-    int half = g_uHalfScanLines;
+    int half = IsVideoStyle(VS_HALF_SCANLINES);
 	uint8_t r, g, b;
 
 	switch ( g_eVideoType )

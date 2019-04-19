@@ -9361,7 +9361,7 @@ void DebuggerProcessKey( int keycode )
 		}		
 	}
 	else if (( keycode == VK_OEM_3 ) ||	// US: Tilde ~ (key to the immediate left of numeral 1)
-			 ( keycode == VK_OEM_8 ))	// UK: Logical NOT ¬ (key to the immediate left of numeral 1)
+			 ( keycode == VK_OEM_8 ))	// UK: Logical NOT Â¬ (key to the immediate left of numeral 1)
 	{
 		if (KeybGetCtrlStatus())
 		{

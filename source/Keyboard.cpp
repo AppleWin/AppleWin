@@ -195,7 +195,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 					if (key == 92) keycode = 96;
 					if (GetCapsLockAllowed() == true)
 					{
-						if ((key == 92) || (key == 124)) keycode = 96; //İ to Ş
+						if ((key == 92) || (key == 124)) keycode = 96; //Ã to Ã
 						//This shall be rewriten, so that enabling CAPS_LOCK (i.e. F10) will not invert these keys values)
 						//The same for latin letters.
 						if ((key == '{') || (key == '}') || (key == '~') || (key == 124) || (key == '^') ||  (key == 95))
@@ -231,24 +231,24 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 				}
 			}
 			// Remap for the TK3000 //e, which had a special |Mode| key for displaying accented chars on screen
-			// Borrowed from Fábio Belavenuto's TK3000e emulator (Copyright (C) 2004) - http://code.google.com/p/tk3000e/
+			// Borrowed from FÃ¡bio Belavenuto's TK3000e emulator (Copyright (C) 2004) - http://code.google.com/p/tk3000e/
 			if (g_bTK3KModeKey)	// We already switch this on only if the the TK3000 is currently being emulated
 			{
 				if ((key >= 0xC0) && (key <= 0xDA)) key += 0x20; // Convert uppercase to lowercase
 				switch (key)
 				{
-					case 0xE0: key = '_';  break; // à
-					case 0xE1: key = '@';  break; // á
-					case 0xE2: key = '\\'; break; // â
-					case 0xE3: key = '[';  break; // ã
-					case 0xE7: key = ']';  break; // ç
-					case 0xE9: key = '`';  break; // é
-					case 0xEA: key = '&';  break; // ê
-					case 0xED: key = '{';  break; // í
-					case 0xF3: key = '~';  break; // ó
-					case 0xF4: key = '}';  break; // ô
-					case 0xF5: key = '#';  break; // õ
-					case 0xFA: key = '|';  break; // ú
+					case 0xE0: key = '_';  break; // Ã 
+					case 0xE1: key = '@';  break; // Ã¡
+					case 0xE2: key = '\\'; break; // Ã¢
+					case 0xE3: key = '[';  break; // Ã£
+					case 0xE7: key = ']';  break; // Ã§
+					case 0xE9: key = '`';  break; // Ã©
+					case 0xEA: key = '&';  break; // Ãª
+					case 0xED: key = '{';  break; // Ã­
+					case 0xF3: key = '~';  break; // Ã³
+					case 0xF4: key = '}';  break; // Ã´
+					case 0xF5: key = '#';  break; // Ãµ
+					case 0xFA: key = '|';  break; // Ãº
 				}
 				if (key > 0x7F) return;	// Get out
 				if ((key >= 'a') && (key <= 'z') && (g_bCapsLock))
