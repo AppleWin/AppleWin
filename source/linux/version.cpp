@@ -1,10 +1,10 @@
 #include "linux/version.h"
-#include "linux/version.hpp"
+#include "../resource/version.h"
 
-#define xstr(a) str(a)
-#define str(a, b, c, d) #a"."#b"."#c"."#d
+#define xstr2(a) str2(a)
+#define str2(a, b, c, d) #a"."#b"."#c"."#d
 
 std::string getVersion()
 {
-  return xstr(FILEVERSION);
+  return xstr2(APPLEWIN_VERSION);
 }

@@ -1,8 +1,3 @@
-add_custom_command(OUTPUT linux/version.hpp
-  COMMAND grep FILEVERSION ${CMAKE_CURRENT_SOURCE_DIR}/../resource/Applewin.rc | sed 's/FILEVERSION/\#define FILEVERSION/' > linux/version.hpp
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../resource/Applewin.rc
-)
-
 add_library(appleii SHARED
   SaveState.cpp
   Pravets.cpp
@@ -31,7 +26,6 @@ add_library(appleii SHARED
   linux/benchmark.cpp
   linux/paddle.cpp
   linux/version.cpp
-  linux/version.hpp
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
