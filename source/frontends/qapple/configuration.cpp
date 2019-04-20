@@ -21,6 +21,9 @@ namespace
     const std::vector<size_t> diskIDs = {DRIVE_1, DRIVE_2};
     const std::vector<size_t> hdIDs = {HARDDISK_1, HARDDISK_2};
 
+    const QString REG_SCREENSHOT_TEMPLATE = QString::fromUtf8("QApple/Screenshot Template");
+    const QString REG_SLOT0_CARD = QString::fromUtf8("QApple/Slot0");
+
     void insertDisk(const QString & filename, const int disk)
     {
         if (filename.isEmpty())
@@ -55,12 +58,6 @@ namespace
         }
     }
 
-    void setSlot0(const SS_CARDTYPE newCardType)
-    {
-        g_Slot0 = newCardType;
-        REGSAVE(TEXT(REGVALUE_SLOT0), (DWORD)g_Slot0);
-    }
-
     void setSlot4(const SS_CARDTYPE newCardType)
     {
         g_Slot4 = newCardType;
@@ -93,15 +90,26 @@ namespace
 
     void setScreenshotTemplate(const QString & filenameTemplate)
     {
-        QSettings().setValue("QApple/Screenshot Template", filenameTemplate);
+        QSettings().setValue(REG_SCREENSHOT_TEMPLATE, filenameTemplate);
+    }
+
+    void setSlot0Card(const int card)
+    {
+        QSettings().setValue(REG_SLOT0_CARD, card);
     }
 
 }
 
 QString getScreenshotTemplate()
 {
-    const QString filenameTemplate = QSettings().value("QApple/Screenshot Template", "/tmp/qapple_%1.png").toString();
+    const QString filenameTemplate = QSettings().value(REG_SCREENSHOT_TEMPLATE, "/tmp/qapple_%1.png").toString();
     return filenameTemplate;
+}
+
+int getSlot0Card()
+{
+    const int slot0Card = QSettings().value(REG_SLOT0_CARD, 0).toInt();
+    return slot0Card;
 }
 
 Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad)
@@ -129,7 +137,7 @@ Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad)
     }
 
     currentOptions.enhancedSpeed = sg_Disk2Card.GetEnhanceDisk();
-    currentOptions.languageCardInSlot0 = g_Slot0 == CT_LanguageCard;
+    currentOptions.cardInSlot0 = getSlot0Card();
     currentOptions.mouseInSlot4 = g_Slot4 == CT_MouseInterface;
     currentOptions.cpmInSlot5 = g_Slot5 == CT_Z80;
     currentOptions.hdInSlot7 = HD_CardIsEnabled();
@@ -168,10 +176,9 @@ void setNewOptions(const Preferences::Data & currentOptions, const Preferences::
         SetMainCpu(cpu);
         REGSAVE(TEXT(REGVALUE_CPU_TYPE), cpu);
     }
-    if (currentOptions.languageCardInSlot0 != newOptions.languageCardInSlot0)
+    if (currentOptions.cardInSlot0 != newOptions.cardInSlot0)
     {
-        const SS_CARDTYPE card = newOptions.languageCardInSlot0 ? CT_LanguageCard : CT_Empty;
-        setSlot0(card);
+        setSlot0Card(newOptions.cardInSlot0);
     }
     if (currentOptions.mouseInSlot4 != newOptions.mouseInSlot4)
     {

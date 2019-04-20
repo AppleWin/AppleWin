@@ -15,7 +15,7 @@ public:
     struct Data
     {
         int apple2Type;
-        bool languageCardInSlot0;
+        int cardInSlot0;
         bool mouseInSlot4;
         bool cpmInSlot5;
         bool hdInSlot7;

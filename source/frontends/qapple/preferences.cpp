@@ -170,7 +170,7 @@ void Preferences::setData(const Data & data)
 
     enhanced_speed->setChecked(data.enhancedSpeed);
     apple2Type->setCurrentIndex(data.apple2Type);
-    lc_0->setChecked(data.languageCardInSlot0);
+    lc_0->setCurrentIndex(data.cardInSlot0);
     mouse_4->setChecked(data.mouseInSlot4);
     cpm_5->setChecked(data.cpmInSlot5);
     hd_7->setChecked(data.hdInSlot7);
@@ -193,7 +193,7 @@ Preferences::Data Preferences::getData() const
 
     data.enhancedSpeed = enhanced_speed->isChecked();
     data.apple2Type = apple2Type->currentIndex();
-    data.languageCardInSlot0 = lc_0->isChecked();
+    data.cardInSlot0 = lc_0->currentIndex();
     data.mouseInSlot4 = mouse_4->isChecked();
     data.cpmInSlot5 = cpm_5->isChecked();
     data.hdInSlot7 = hd_7->isChecked();

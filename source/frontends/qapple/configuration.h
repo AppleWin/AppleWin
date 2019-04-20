@@ -8,6 +8,8 @@
 class QGamepad;
 
 QString getScreenshotTemplate();
+int getSlot0Card();
+
 Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad);
 void setNewOptions(const Preferences::Data & currentOptions, const Preferences::Data & newOptions,
                    std::shared_ptr<QGamepad> & gamepad);

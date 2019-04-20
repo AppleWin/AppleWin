@@ -9,6 +9,7 @@
 #include "CPU.h"
 #include "Frame.h"
 #include "Memory.h"
+#include "LanguageCard.h"
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
 #include "Video.h"
@@ -60,10 +61,20 @@ namespace
 
         FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
-        if (g_Slot0 == CT_LanguageCard)
-        {
-            SetExpansionMemType(g_Slot0);
+        switch (getSlot0Card()) {
+        case 1: // Language Card
+            SetExpansionMemType(CT_LanguageCard);
+            break;
+        case 2: // Saturn 64
+            SetSaturnMemorySize(Saturn128K::kMaxSaturnBanks / 2);
+            SetExpansionMemType(CT_Saturn128K);
+            break;
+        case 3: // Saturn 128
+            SetSaturnMemorySize(Saturn128K::kMaxSaturnBanks);
+            SetExpansionMemType(CT_Saturn128K);
+            break;
         }
+
         MemInitialize();
         VideoInitialize();
         sg_Disk2Card.Reset();
