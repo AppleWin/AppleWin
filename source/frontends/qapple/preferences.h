@@ -23,6 +23,8 @@ public:
         QString joystick;
         int joystickId;   // only putput
 
+        bool enhancedSpeed;
+
         std::vector<QString> disks;
         std::vector<QString> hds;
 

@@ -38,6 +38,7 @@ const TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 bool      g_bRestart = false;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
+Disk2InterfaceCard sg_Disk2Card;
 const short		SPKR_DATA_INIT = (short)0x8000;
 
 short		g_nSpeakerData	= SPKR_DATA_INIT;
@@ -202,7 +203,7 @@ void LoadConfiguration(void)
 
   DWORD dwEnhanceDisk;
   REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk);
-  Disk_SetEnhanceDisk(dwEnhanceDisk ? true : false);
+  sg_Disk2Card.SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 #if 0
   Config_Load_Video();
@@ -293,8 +294,8 @@ void LoadConfiguration(void)
     GetCurrentDirectory(sizeof(szFilename), szFilename);
   SetCurrentImageDir(szFilename);
 
-  Disk_LoadLastDiskImage(DRIVE_1);
-  Disk_LoadLastDiskImage(DRIVE_2);
+  sg_Disk2Card.LoadLastDiskImage(DRIVE_1);
+  sg_Disk2Card.LoadLastDiskImage(DRIVE_2);
 
   //
 

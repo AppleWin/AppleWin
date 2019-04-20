@@ -168,6 +168,7 @@ void Preferences::setData(const Data & data)
     initialiseDisks(myDisks, data.disks);
     initialiseDisks(myHDs, data.hds);
 
+    enhanced_speed->setChecked(data.enhancedSpeed);
     apple2Type->setCurrentIndex(data.apple2Type);
     lc_0->setChecked(data.languageCardInSlot0);
     mouse_4->setChecked(data.mouseInSlot4);
@@ -190,6 +191,7 @@ Preferences::Data Preferences::getData() const
     fillData(myDisks, data.disks);
     fillData(myHDs, data.hds);
 
+    data.enhancedSpeed = enhanced_speed->isChecked();
     data.apple2Type = apple2Type->currentIndex();
     data.languageCardInSlot0 = lc_0->isChecked();
     data.mouseInSlot4 = mouse_4->isChecked();

@@ -37,7 +37,6 @@ namespace
         LogFileOutput("Initialisation\n");
 
         ImageInitialize();
-        DiskInitialize();
     }
 
     /* In AppleWin there are 3 ways to reset the emulator
@@ -67,7 +66,7 @@ namespace
         }
         MemInitialize();
         VideoInitialize();
-        DiskReset();
+        sg_Disk2Card.Reset();
         HD_Reset();
     }
 
@@ -84,7 +83,7 @@ namespace
         PrintDestroy();
         CpuDestroy();
 
-        DiskDestroy();
+        sg_Disk2Card.Destroy();
         ImageDestroy();
         fclose(g_fh);
         g_fh = NULL;
@@ -229,6 +228,7 @@ void QApple::on_timer()
     {
         const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
         g_dwCyclesThisFrame += uActualCyclesExecuted;
+        sg_Disk2Card.UpdateDriveState(uActualCyclesExecuted);
         if (g_dwCyclesThisFrame >= dwClksPerFrame)
         {
             g_dwCyclesThisFrame -= dwClksPerFrame;
@@ -236,7 +236,7 @@ void QApple::on_timer()
         }
         ++count;
     }
-    while (DiskIsSpinning() && (myElapsedTimer.elapsed() < target + full_speed_ms));
+    while (sg_Disk2Card.IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + full_speed_ms));
 
     if (count > 0)
     {
@@ -414,5 +414,5 @@ void QApple::on_actionSwap_disks_triggered()
     PauseEmulator pause(this);
 
     // this might open a file dialog
-    DiskDriveSwap();
+    sg_Disk2Card.DriveSwap();
 }

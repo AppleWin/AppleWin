@@ -25,12 +25,12 @@ namespace
     {
         if (filename.isEmpty())
         {
-            DiskEject(disk);
+            sg_Disk2Card.EjectDisk(disk);
         }
         else
         {
             const bool createMissingDisk = true;
-            const ImageError_e result = DiskInsert(disk, filename.toStdString().c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
+            const ImageError_e result = sg_Disk2Card.InsertDisk(disk, filename.toStdString().c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
             if (result != eIMAGE_ERROR_NONE)
             {
                 const QString message = QString("Error [%1] inserting '%2'").arg(QString::number(result), filename);
@@ -111,7 +111,7 @@ Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad)
     currentOptions.disks.resize(diskIDs.size());
     for (size_t i = 0; i < diskIDs.size(); ++i)
     {
-        const char * diskName = DiskGetFullName(diskIDs[i]);
+        const char * diskName = sg_Disk2Card.GetFullName(diskIDs[i]);
         if (diskName)
         {
             currentOptions.disks[i] = diskName;
@@ -128,6 +128,7 @@ Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad)
         }
     }
 
+    currentOptions.enhancedSpeed = sg_Disk2Card.GetEnhanceDisk();
     currentOptions.languageCardInSlot0 = g_Slot0 == CT_LanguageCard;
     currentOptions.mouseInSlot4 = g_Slot4 == CT_MouseInterface;
     currentOptions.cpmInSlot5 = g_Slot5 == CT_Z80;
@@ -200,6 +201,12 @@ void setNewOptions(const Preferences::Data & currentOptions, const Preferences::
             gamepad.reset(new QGamepad(newOptions.joystickId));
             Paddle::instance() = std::make_shared<GamepadPaddle>(gamepad);
         }
+    }
+
+    if (currentOptions.enhancedSpeed != newOptions.enhancedSpeed)
+    {
+        REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), newOptions.enhancedSpeed ? 1 : 0);
+        sg_Disk2Card.SetEnhanceDisk(newOptions.enhancedSpeed);
     }
 
     for (size_t i = 0; i < diskIDs.size(); ++i)

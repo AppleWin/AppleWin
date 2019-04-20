@@ -144,7 +144,7 @@ namespace
     const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
     g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-    DiskUpdateDriveState(uActualCyclesExecuted);
+    sg_Disk2Card.UpdateDriveState(uActualCyclesExecuted);
 
     const int key = ProcessKeyboard();
 
@@ -180,7 +180,7 @@ namespace
 
     g_relativeSpeed = g_relativeSpeed * coeff + double(us) / double(nExecutionPeriodUsec) * (1.0 - coeff);
 
-    if (!DiskIsSpinning())
+    if (!sg_Disk2Card.IsConditionForFullSpeed())
     {
       if (us < nExecutionPeriodUsec)
       {
@@ -224,7 +224,7 @@ namespace
       strPathName.append(fileName);
     }
 
-    ImageError_e Error = DiskInsert(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
+    ImageError_e Error = sg_Disk2Card.InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
     return Error == eIMAGE_ERROR_NONE;
   }
 
@@ -247,7 +247,6 @@ namespace
     LogFileOutput("Initialisation\n");
 
     ImageInitialize();
-    DiskInitialize();
 
     bool disksOk = true;
     if (!options.disk1.empty())
@@ -277,7 +276,7 @@ namespace
 
 	MemInitialize();
 	VideoInitialize();
-	DiskReset();
+	sg_Disk2Card.Reset();
 	HD_Reset();
 
 	if (!options.snapshot.empty())
@@ -312,7 +311,7 @@ namespace
     PrintDestroy();
     CpuDestroy();
 
-    DiskDestroy();
+    sg_Disk2Card.Destroy();
     ImageDestroy();
 
     fclose(g_fh);

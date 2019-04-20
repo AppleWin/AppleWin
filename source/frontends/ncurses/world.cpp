@@ -275,7 +275,7 @@ void FrameRefresh()
 
 void FrameDrawDiskLEDS(HDC x)
 {
-  DiskGetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
+  sg_Disk2Card.GetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
   FrameRefresh();
 }
 
@@ -290,10 +290,10 @@ void FrameDrawDiskStatus(HDC x)
   // Track  $B7EC    LC1 $D356
   // Sector $B7ED    LC1 $D357
   // RWTS            LC1 $D300
-  int nActiveFloppy = DiskGetCurrentDrive();
+  int nActiveFloppy = sg_Disk2Card.GetCurrentDrive();
 
-  int nDisk1Track  = DiskGetTrack(0);
-  int nDisk2Track  = DiskGetTrack(1);
+  int nDisk1Track  = sg_Disk2Card.GetTrack(0);
+  int nDisk2Track  = sg_Disk2Card.GetTrack(1);
 
   // Probe known OS's for Track/Sector
   int  isProDOS = mem[ 0xBF00 ] == 0x4C;
