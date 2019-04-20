@@ -63,7 +63,7 @@ Tom Charlesworth
 	- Any v1 save-state files should be loaded into AppleWin 1.27, and then re-saved to a v2 save-state file.
 . [Change #597] Removed the functionality for CTRL+F10 to reveal the mouse cursor.
 . [Change #585] Added a 'Swap' HDD button to the Configuration->Input property sheet.
-. [Bug #608] Mockingboard's 6522 TIMER1 wasn't generating an interrupt quickly enough for Broadside's detection routine.
+. [Bug #608,#236] Mockingboard's 6522 TIMER1 wasn't generating an interrupt quickly enough for detection routines for Broadside and Ultima III Jukebox.
 
 
 1.27.13.0 - 8 Dec 2018
