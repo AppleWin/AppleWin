@@ -254,7 +254,7 @@ void output(const char *fmt, ...)
 
   WINDOW * win = frame->getBuffer();
 
-  vwprintw(win, fmt, args);
+  vw_printw(win, fmt, args);
   wrefresh(win);
 }
 
