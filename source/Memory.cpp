@@ -233,7 +233,7 @@ static SS_CARDTYPE g_MemTypeAppleIIe = CT_Extended80Col;	// Keep a copy so it's 
 static UINT g_uSaturnBanksFromCmdLine = 0;
 
 // Called from MemLoadSnapshot()
-static void ResetDefaultMachineMemTypes(void)
+void ResetDefaultMachineMemTypes(void)
 {
 	g_MemTypeAppleII = CT_Empty;
 	g_MemTypeAppleIIPlus = CT_LanguageCard;

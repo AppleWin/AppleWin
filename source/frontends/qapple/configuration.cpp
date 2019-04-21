@@ -22,7 +22,7 @@ namespace
     const std::vector<size_t> hdIDs = {HARDDISK_1, HARDDISK_2};
 
     const QString REG_SCREENSHOT_TEMPLATE = QString::fromUtf8("QApple/Screenshot Template");
-    const QString REG_SLOT0_CARD = QString::fromUtf8("QApple/Slot0");
+    const QString REG_SLOT0_CARD = QString::fromUtf8("QApple/Slot 0");
 
     void insertDisk(const QString & filename, const int disk)
     {

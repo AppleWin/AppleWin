@@ -61,6 +61,8 @@ namespace
 
         FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
+        ResetDefaultMachineMemTypes();
+
         switch (getSlot0Card()) {
         case 1: // Language Card
             SetExpansionMemType(CT_LanguageCard);
