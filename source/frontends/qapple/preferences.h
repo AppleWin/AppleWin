@@ -20,6 +20,8 @@ public:
         bool cpmInSlot5;
         bool hdInSlot7;
 
+        int ramWorksSize;
+
         QString joystick;
         int joystickId;   // only putput
 

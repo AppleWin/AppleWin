@@ -75,6 +75,10 @@ namespace
             SetSaturnMemorySize(Saturn128K::kMaxSaturnBanks);
             SetExpansionMemType(CT_Saturn128K);
             break;
+        case 4: // RamWorks
+            SetRamWorksMemorySize(getRamWorksMemorySize());
+            SetExpansionMemType(CT_RamWorksIII);
+            break;
         }
 
         MemInitialize();

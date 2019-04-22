@@ -1,4 +1,7 @@
 #include "preferences.h"
+#include "StdAfx.h"
+#include "Common.h"
+#include "Memory.h"
 #include <QFileDialog>
 #include <QtGamepad/QGamepad>
 
@@ -175,6 +178,9 @@ void Preferences::setData(const Data & data)
     cpm_5->setChecked(data.cpmInSlot5);
     hd_7->setChecked(data.hdInSlot7);
 
+    rw_size->setMaximum(kMaxExMemoryBanks);
+    rw_size->setValue(data.ramWorksSize);
+
     // synchronise
     on_hd_7_clicked(data.hdInSlot7);
 
@@ -197,6 +203,7 @@ Preferences::Data Preferences::getData() const
     data.mouseInSlot4 = mouse_4->isChecked();
     data.cpmInSlot5 = cpm_5->isChecked();
     data.hdInSlot7 = hd_7->isChecked();
+    data.ramWorksSize = rw_size->value();
 
     // because index = 0 is None
     if (joystick->currentIndex() >= 1)

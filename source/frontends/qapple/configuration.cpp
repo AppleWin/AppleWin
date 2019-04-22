@@ -23,6 +23,7 @@ namespace
 
     const QString REG_SCREENSHOT_TEMPLATE = QString::fromUtf8("QApple/Screenshot Template");
     const QString REG_SLOT0_CARD = QString::fromUtf8("QApple/Slot 0");
+    const QString REG_RAMWORKS_SIZE = QString::fromUtf8("QApple/RamWorks Size");
 
     void insertDisk(const QString & filename, const int disk)
     {
@@ -98,6 +99,11 @@ namespace
         QSettings().setValue(REG_SLOT0_CARD, card);
     }
 
+    void setRamWorksMemorySize(const int memorySize)
+    {
+        QSettings().setValue(REG_RAMWORKS_SIZE, memorySize);
+    }
+
 }
 
 QString getScreenshotTemplate()
@@ -110,6 +116,12 @@ int getSlot0Card()
 {
     const int slot0Card = QSettings().value(REG_SLOT0_CARD, 0).toInt();
     return slot0Card;
+}
+
+int getRamWorksMemorySize()
+{
+    const int ramWorksMemorySize = QSettings().value(REG_RAMWORKS_SIZE, 0).toInt();
+    return ramWorksMemorySize;
 }
 
 Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad)
@@ -141,6 +153,7 @@ Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad)
     currentOptions.mouseInSlot4 = g_Slot4 == CT_MouseInterface;
     currentOptions.cpmInSlot5 = g_Slot5 == CT_Z80;
     currentOptions.hdInSlot7 = HD_CardIsEnabled();
+    currentOptions.ramWorksSize = getRamWorksMemorySize();
 
     currentOptions.apple2Type = getApple2ComputerType();
 
@@ -194,6 +207,10 @@ void setNewOptions(const Preferences::Data & currentOptions, const Preferences::
     {
         REGSAVE(TEXT(REGVALUE_HDD_ENABLED), newOptions.hdInSlot7 ? 1 : 0);
         HD_SetEnabled(newOptions.hdInSlot7);
+    }
+    if (currentOptions.ramWorksSize != newOptions.ramWorksSize)
+    {
+        setRamWorksMemorySize(newOptions.ramWorksSize);
     }
 
     if (newOptions.joystick.isEmpty())
