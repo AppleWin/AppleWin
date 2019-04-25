@@ -958,8 +958,8 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = g_hFrameWindow;
 	ofn.hInstance       = g_hInstance;
-	ofn.lpstrFilter     = TEXT("All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.zip;*.2mg;*.2img;*.iie;*.apl\0")
-						  TEXT("Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.zip;*.2mg;*.2img;*.iie\0")
+	ofn.lpstrFilter     = TEXT("All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie;*.apl\0")
+						  TEXT("Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.woz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie\0")
 						  TEXT("All Files\0*.*\0");
 	ofn.lpstrFile       = filename;
 	ofn.nMaxFile        = MAX_PATH;

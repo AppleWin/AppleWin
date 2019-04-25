@@ -712,7 +712,7 @@ public:
 
 	virtual eImageType GetType(void) { return eImagePO; }
 	virtual const char* GetCreateExtensions(void) { return ".po"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.nib;.prg"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.nib;.prg;.woz"; }
 };
 
 //-------------------------------------
@@ -752,7 +752,7 @@ public:
 
 	virtual eImageType GetType(void) { return eImageNIB1; }
 	virtual const char* GetCreateExtensions(void) { return ".nib"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg;.woz"; }
 };
 
 //-------------------------------------
@@ -789,7 +789,7 @@ public:
 
 	virtual eImageType GetType(void) { return eImageNIB2; }
 	virtual const char* GetCreateExtensions(void) { return ".nb2"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg;.2mg;.2img"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg;.woz;.2mg;.2img"; }
 };
 
 //-------------------------------------
@@ -899,7 +899,7 @@ public:
 
 	virtual eImageType GetType(void) { return eImageIIE; }
 	virtual const char* GetCreateExtensions(void) { return ".iie"; }
-	virtual const char* GetRejectExtensions(void) { return ".do.;.nib;.po;.prg;.2mg;.2img"; }
+	virtual const char* GetRejectExtensions(void) { return ".do.;.nib;.po;.prg;.woz;.2mg;.2img"; }
 
 private:
 	void ConvertSectorOrder(LPBYTE sourceorder)
@@ -973,7 +973,7 @@ public:
 
 	virtual eImageType GetType(void) { return eImageAPL; }
 	virtual const char* GetCreateExtensions(void) { return ".apl"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.2mg;.2img"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.woz;.2mg;.2img"; }
 };
 
 //-------------------------------------
@@ -1024,7 +1024,52 @@ public:
 
 	virtual eImageType GetType(void) { return eImagePRG; }
 	virtual const char* GetCreateExtensions(void) { return ".prg"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.2mg;.2img"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.woz;.2mg;.2img"; }
+};
+
+//-------------------------------------
+
+class CWOZImage : public CImageBase
+{
+public:
+	CWOZImage(void) {}
+	virtual ~CWOZImage(void) {}
+
+	virtual eDetectResult Detect(const LPBYTE pImage, const DWORD dwImageSize, const TCHAR* pszExt)
+	{
+		CWOZHelper::WOZHeader* pWozHdr = (CWOZHelper::WOZHeader*) pImage;
+
+		if (pWozHdr->id1 != CWOZHelper::ID1_WOZ1 || pWozHdr->id2 != CWOZHelper::ID2)
+			return eMismatch;
+
+		if (pWozHdr->crc32)
+		{
+			// TODO: check crc
+		}
+
+		m_uNumTracksInImage = CWOZHelper::MAX_TRACKS_5_25;
+		return eMatch;
+	}
+
+	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhanceDisk)
+	{
+		ReadTrack(pImageInfo, nTrack, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE);
+		*pNibbles = CWOZHelper::WOZ1_TRACK_SIZE;
+	}
+
+	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
+	{
+		// TODO
+		_ASSERT(0);
+	}
+
+	// TODO: Uncomment and fix-up if we want to allow .woz image creation (eg. for INIT or FORMAT)
+//	virtual bool AllowCreate(void) { return true; }
+//	virtual UINT GetImageSizeForCreate(void) { return 0; }//TODO
+
+	virtual eImageType GetType(void) { return eImageWOZ; }
+	virtual const char* GetCreateExtensions(void) { return ".woz"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.nib;.iie;.po;.prg"; }
 };
 
 //-----------------------------------------------------------------------------
@@ -1047,6 +1092,8 @@ eDetectResult CMacBinaryHelper::DetectHdr(LPBYTE& pImage, DWORD& dwImageSize, DW
 
 	return eMismatch;
 }
+
+//-----------------------------------------------------------------------------
 
 eDetectResult C2IMGHelper::DetectHdr(LPBYTE& pImage, DWORD& dwImageSize, DWORD& dwOffset)
 {
@@ -1122,6 +1169,53 @@ BYTE C2IMGHelper::GetVolumeNumber(void)
 bool C2IMGHelper::IsLocked(void)
 {
 	return m_Hdr.Flags.bDiskImageLocked;
+}
+
+//-----------------------------------------------------------------------------
+
+// Pre: already matched the WOZ header
+eDetectResult CWOZHelper::ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset)
+{
+	UINT32* pImage32 = (uint32_t*) (pImage + sizeof(WOZHeader));
+	UINT32 imageSizeRemaining = dwImageSize - sizeof(WOZHeader);
+
+	while(imageSizeRemaining > 8)
+	{
+		UINT32 chunkId = *pImage32++;
+		UINT32 chunkSize = *pImage32++;
+		imageSizeRemaining -= 8;
+
+		switch(chunkId)
+		{
+			case INFO_CHUNK_ID:
+				m_pInfo = (InfoChunk*)(pImage32-2);
+				if (m_pInfo->version != InfoChunk::minVersion)
+					return eMismatch;
+				if (m_pInfo->diskType != InfoChunk::diskType5_25)
+					return eMismatch;
+				break;
+			case TMAP_CHUNK_ID:
+				m_pTrackMap = (uint8_t*)pImage32;
+				break;
+			case TRKS_CHUNK_ID:
+				m_pTracks = (uint8_t*)pImage32;
+				dwOffset = dwImageSize - imageSizeRemaining;
+				break;
+			case META_CHUNK_ID:
+				break;
+			default:	// no idea what this chunk is, so skip it
+				_ASSERT(0);
+				break;
+		}
+
+		pImage32 = (UINT32*) ((BYTE*)pImage32 + chunkSize);
+		imageSizeRemaining -= chunkSize;
+		_ASSERT(imageSizeRemaining >= 0);
+		if (imageSizeRemaining < 0)
+			return eMismatch;
+	}
+
+	return eMatch;
 }
 
 //-----------------------------------------------------------------------------
@@ -1517,6 +1611,7 @@ CDiskImageHelper::CDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CIIeImage );
 	m_vecImageTypes.push_back( new CAplImage );
 	m_vecImageTypes.push_back( new CPrgImage );
+	m_vecImageTypes.push_back( new CWOZImage );
 }
 
 CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool* pWriteProtected_)
@@ -1563,8 +1658,18 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 		ImageType = PossibleType;
 
 	CImageBase* pImageType = GetImage(ImageType);
+	if (!pImageType)
+		return NULL;
 
-	if (pImageType)
+	if (ImageType == eImageWOZ)
+	{
+		if (m_WOZHelper.ProcessChunks(pImage, dwSize, dwOffset) != eMatch)
+			return NULL;
+
+		if (m_WOZHelper.IsWriteProtected() && !*pWriteProtected_)
+			*pWriteProtected_ = 1;
+	}
+	else
 	{
 		if (pImageType->AllowRW())
 		{

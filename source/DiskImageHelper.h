@@ -10,7 +10,7 @@
 #define ZIP_SUFFIX_LEN (sizeof(ZIP_SUFFIX)-1)
 
 
-enum eImageType {eImageUNKNOWN, eImageDO, eImagePO, eImageNIB1, eImageNIB2, eImageHDV, eImageIIE, eImageAPL, eImagePRG};
+enum eImageType {eImageUNKNOWN, eImageDO, eImagePO, eImageNIB1, eImageNIB2, eImageHDV, eImageIIE, eImageAPL, eImagePRG, eImageWOZ};
 enum eDetectResult {eMismatch, ePossibleMatch, eMatch};
 
 class CImageBase;
@@ -122,7 +122,7 @@ private:
 // http://apple2.org.za/gswv/a2zine/Docs/DiskImage_2MG_Info.txt
 
 #pragma pack(push)
-#pragma pack(1)	// Ensure Header2IMG is packed
+#pragma pack(1)	// Ensure Header2IMG & WOZ structs are packed
 
 class C2IMGHelper : public CHdrHelper
 {
@@ -181,6 +181,63 @@ private:
 	bool m_bIsFloppy;
 };
 
+class CWOZHelper : public CHdrHelper
+{
+public:
+	CWOZHelper() :
+		m_pInfo(NULL),
+		m_pTrackMap(NULL),
+		m_pTracks(NULL)
+	{}
+	virtual ~CWOZHelper(void) {}
+	virtual eDetectResult DetectHdr(LPBYTE& pImage, DWORD& dwImageSize, DWORD& dwOffset) { _ASSERT(0); return eMismatch; }
+	virtual UINT GetMaxHdrSize(void) { return sizeof(WOZHeader); }
+	eDetectResult ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset);
+	bool IsWriteProtected(void) { return m_pInfo->writeProtected == 1; }
+
+	static const UINT32 ID1_WOZ1 = '1ZOW';	// 'WOZ1'
+	static const UINT32 ID1_WOZ2 = '2ZOW';	// 'WOZ2'
+	static const UINT32 ID2 = 0x0A0D0AFF;
+
+	struct WOZHeader
+	{
+		UINT32	id1;		// 'WOZ1' or 'WOZ2'
+		UINT32	id2;
+		UINT32	crc32;
+	};
+
+	static const UINT32 MAX_TRACKS_5_25 = 40;
+	static const UINT32 WOZ1_TRACK_SIZE = 6656;	// 0x1A00
+
+private:
+	static const UINT32 INFO_CHUNK_ID = 'OFNI';	// 'INFO'
+	static const UINT32 TMAP_CHUNK_ID = 'PAMT';	// 'TMAP'
+	static const UINT32 TRKS_CHUNK_ID = 'SKRT';	// 'TRKS'
+	static const UINT32 META_CHUNK_ID = 'ATEM';	// 'META'
+
+	struct InfoChunk
+	{
+		UINT32	id;
+		UINT32	size;
+		BYTE	version;
+		BYTE	diskType;
+		BYTE	writeProtected;	// 1 = Floppy is write protected
+		BYTE	synchronized;	// 1 = Cross track sync was used during imaging
+		BYTE	cleaned;		// 1 = MC3470 fake bits have been removed
+		BYTE	creator[32];	// Name of software that created the WOZ file.
+								// String in UTF-8. No BOM. Padded to 32 bytes
+								// using space character (0x20).
+
+		static const BYTE minVersion = 1;
+		static const BYTE diskType5_25 = 1;
+		static const BYTE diskType3_5 = 2;
+	};
+
+	InfoChunk* m_pInfo;
+	BYTE* m_pTrackMap;
+	BYTE* m_pTracks;
+};
+
 #pragma pack(pop)
 
 //-------------------------------------
@@ -190,7 +247,8 @@ class CImageHelperBase
 public:
 	CImageHelperBase(const bool bIsFloppy) :
 		m_2IMGHelper(bIsFloppy),
-		m_Result2IMG(eMismatch)
+		m_Result2IMG(eMismatch),
+		m_WOZHelper()
 	{
 	}
 	virtual ~CImageHelperBase(void)
@@ -233,6 +291,7 @@ protected:
 
 	C2IMGHelper m_2IMGHelper;
 	eDetectResult m_Result2IMG;
+	CWOZHelper m_WOZHelper;
 };
 
 //-------------------------------------
