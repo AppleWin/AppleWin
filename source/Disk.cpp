@@ -981,6 +981,8 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 
 	//
 
+	static UINT latchDelay = 0;
+
 	if (!m_floppyWriteMode)
 	{
 		for (UINT i=0; i<bitCellRemainder; i++)
@@ -1010,12 +1012,18 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 
 			shiftReg <<= 1;
 			shiftReg |= outputBit;
+
+			if (latchDelay)
+				latchDelay--;
+			else
+				m_floppyLatch = shiftReg;
+
+			if (shiftReg & 0x80)
+			{
+				shiftReg = 0;
+				latchDelay = 1;
+			}
 		}
-
-		m_floppyLatch = shiftReg;
-
-		if (shiftReg & 0x80)
-			shiftReg = 0;
 
 		m_diskLastReadLatchCycle = g_nCumulativeCycles;
 	}
