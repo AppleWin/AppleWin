@@ -246,6 +246,11 @@ UINT ImageGetImageSize(ImageInfo* const pImageInfo)
 	return pImageInfo ? pImageInfo->uImageSize : 0;
 }
 
+bool ImageIsWOZ(ImageInfo* const pImageInfo)
+{
+	return pImageInfo ? pImageInfo->pImageType->GetType() == eImageWOZ : false;
+}
+
 void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName)
 {
 	TCHAR   imagetitle[ MAX_DISK_FULL_NAME+1 ];

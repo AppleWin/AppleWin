@@ -173,6 +173,7 @@ private:
 	void __stdcall ControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall Enable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+	void __stdcall ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	void __stdcall LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG);
 	void __stdcall SetReadMode(WORD, WORD, BYTE, BYTE, ULONG);
 	void __stdcall SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles);

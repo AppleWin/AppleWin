@@ -877,6 +877,9 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 	}
 	else if (!pFloppy->m_bWriteProtected) // && m_floppyWriteMode
 	{
+		if (!pDrive->m_spinning)
+			return;		// If not spinning then only 1 bit-cell gets written?
+
 		*(pFloppy->m_trackimage + pFloppy->m_byte) = m_floppyLatch;
 		pFloppy->m_trackimagedirty = true;
 
@@ -906,6 +909,123 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
 	if ((pFloppy->m_byte & 0xFF) == 0)
+		FrameDrawDiskStatus( (HDC)0 );
+}
+
+//===========================================================================
+
+void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+{
+	/* m_floppyLoadMode = 0; */
+	FloppyDrive& drive = m_floppyDrive[m_currDrive];
+	FloppyDisk& floppy = drive.m_disk;
+
+	if (!floppy.m_trackimagedata && floppy.m_imagehandle)
+		ReadTrack(m_currDrive);
+
+	if (!floppy.m_trackimagedata)
+	{
+		m_floppyLatch = 0xFF;	// TODO: Should return rnd()
+		return;
+	}
+
+	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
+	// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
+	// Note: Sherwood Forest sets shift mode and reads with the drive off.
+	// And for a write?
+	if (!drive.m_spinning)	// GH#599
+		return;
+
+	UINT uSpinNibbleCount = 0;
+	CpuCalcCycles(nExecutedCycles);
+
+#if 1	// DEBUG
+	if (!m_diskLastReadLatchCycle)
+	{
+		m_diskLastCycle = g_nCumulativeCycles;
+		m_diskLastReadLatchCycle = g_nCumulativeCycles;
+		return;
+	}
+#endif
+
+	static BYTE shiftReg = 0;
+	static UINT zeroCnt = 0;
+	static UINT bitMask = 1<<7;
+	static UINT extraCycles = 0;
+	const UINT significantBits = 2+8;	// prev 2 bits (in case of consecutive zero bits), then 8 nibble bits
+
+	ULONG cycleDelta = (ULONG) (g_nCumulativeCycles - m_diskLastCycle) + extraCycles;
+	ULONG bitCellDelta = cycleDelta / 4;	// DIV 4 for 4us per bit-cell
+	extraCycles = cycleDelta & 3;			// MOD 4
+
+	UINT bitCellRemainder;
+	if (bitCellDelta <= significantBits)
+	{
+		bitCellRemainder = bitCellDelta;
+	}
+	else
+	{
+		bitCellRemainder = significantBits;
+		bitCellDelta -= significantBits;
+
+		const UINT nibbleDelta = bitCellDelta / 8;
+		floppy.m_byte += nibbleDelta;
+		if (floppy.m_byte >= floppy.m_nibbles)
+			floppy.m_byte %= floppy.m_nibbles;
+
+		const UINT remainder = bitCellDelta % 8;
+		bitMask = 1<<remainder;
+	}
+
+	m_diskLastCycle = g_nCumulativeCycles;
+
+	//
+
+	if (!m_floppyWriteMode)
+	{
+		for (UINT i=0; i<bitCellRemainder; i++)
+		{
+			BYTE n = floppy.m_trackimage[floppy.m_byte];
+			BYTE outputBit = (n & bitMask) ? 1 : 0;
+
+			bitMask >>= 1;
+			if (!bitMask)
+			{
+				bitMask = 1<<7;
+				floppy.m_byte++;
+				if (floppy.m_byte == floppy.m_nibbles)
+					floppy.m_byte = 0;
+			}
+
+			if (!outputBit)
+			{
+				zeroCnt++;
+				if (zeroCnt > 3)
+					outputBit = rand() & 1;
+			}
+			else
+			{
+				zeroCnt = 0;
+			}
+
+			shiftReg <<= 1;
+			shiftReg |= outputBit;
+		}
+
+		m_floppyLatch = shiftReg;
+
+		if (shiftReg & 0x80)
+			shiftReg = 0;
+
+		m_diskLastReadLatchCycle = g_nCumulativeCycles;
+	}
+	else if (!floppy.m_bWriteProtected) // && m_floppyWriteMode
+	{
+		_ASSERT(0);
+	}
+
+	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
+	if ((floppy.m_byte & 0xFF) == 0)
 		FrameDrawDiskStatus( (HDC)0 );
 }
 
@@ -1181,6 +1301,9 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	UINT uSlot = ((addr & 0xff) >> 4) - 8;
 	Disk2InterfaceCard* pCard = (Disk2InterfaceCard*) MemGetSlotParameters(uSlot);
 
+	ImageInfo* pImage = pCard->m_floppyDrive[pCard->m_currDrive].m_disk.m_imagehandle;
+	bool isWOZ = ImageIsWOZ(pImage);
+
 	switch (addr & 0xF)
 	{
 	case 0x0:	pCard->ControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
@@ -1195,7 +1318,9 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	case 0x9:	pCard->ControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xA:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xB:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xC:	pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xC:	if (!isWOZ) pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles);
+				else		pCard->ReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
+				break;
 	case 0xD:	pCard->LoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xE:	pCard->SetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xF:	pCard->SetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
@@ -1213,6 +1338,9 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	UINT uSlot = ((addr & 0xff) >> 4) - 8;
 	Disk2InterfaceCard* pCard = (Disk2InterfaceCard*) MemGetSlotParameters(uSlot);
 
+	ImageInfo* pImage = pCard->m_floppyDrive[pCard->m_currDrive].m_disk.m_imagehandle;
+	bool isWOZ = ImageIsWOZ(pImage);
+
 	switch (addr & 0xF)
 	{
 	case 0x0:	pCard->ControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
@@ -1227,7 +1355,9 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	case 0x9:	pCard->ControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xA:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xB:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xC:	pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xC:	if (!isWOZ) pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles);
+				else		pCard->ReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
+				break;
 	case 0xD:	pCard->LoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xE:	pCard->SetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xF:	pCard->SetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
