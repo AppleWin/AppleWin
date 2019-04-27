@@ -133,14 +133,16 @@ void LoadConfiguration(void)
   }
   else	// Support older AppleWin registry entries
   {
-    REGLOAD(TEXT(REGVALUE_OLD_APPLE2_TYPE), &dwComputerType);
-    switch (dwComputerType)
+    if (REGLOAD(TEXT(REGVALUE_OLD_APPLE2_TYPE), &dwComputerType))
     {
-      // NB. No A2TYPE_APPLE2E (this is correct)
-    case 0:		apple2Type = A2TYPE_APPLE2; break;
-    case 1:		apple2Type = A2TYPE_APPLE2PLUS; break;
-    case 2:		apple2Type = A2TYPE_APPLE2EENHANCED; break;
-    default:	apple2Type = A2TYPE_APPLE2EENHANCED;
+      switch (dwComputerType)
+      {
+	// NB. No A2TYPE_APPLE2E (this is correct)
+      case 0:		apple2Type = A2TYPE_APPLE2; break;
+      case 1:		apple2Type = A2TYPE_APPLE2PLUS; break;
+      case 2:		apple2Type = A2TYPE_APPLE2EENHANCED; break;
+      default:	apple2Type = A2TYPE_APPLE2EENHANCED;
+      }
     }
   }
 
@@ -175,18 +177,20 @@ void LoadConfiguration(void)
     LoadConfigOldJoystick(JN_JOYSTICK1);
 
   DWORD dwSoundType;
-  REGLOAD(TEXT("Sound Emulation"), &dwSoundType);
-  switch (dwSoundType)
+  if (REGLOAD(TEXT("Sound Emulation"), &dwSoundType))
   {
-  case REG_SOUNDTYPE_NONE:
-  case REG_SOUNDTYPE_DIRECT:	// Not supported from 1.26
-  case REG_SOUNDTYPE_SMART:	// Not supported from 1.26
-  default:
-    soundtype = SOUND_NONE;
-    break;
-  case REG_SOUNDTYPE_WAVE:
-    soundtype = SOUND_WAVE;
-    break;
+    switch (dwSoundType)
+    {
+    case REG_SOUNDTYPE_NONE:
+    case REG_SOUNDTYPE_DIRECT:	// Not supported from 1.26
+    case REG_SOUNDTYPE_SMART:	// Not supported from 1.26
+    default:
+      soundtype = SOUND_NONE;
+      break;
+    case REG_SOUNDTYPE_WAVE:
+      soundtype = SOUND_WAVE;
+      break;
+    }
   }
 
   char aySerialPortName[ CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM ];
@@ -202,8 +206,10 @@ void LoadConfiguration(void)
   REGLOAD(TEXT(REGVALUE_EMULATION_SPEED)   ,&g_dwSpeed);
 
   DWORD dwEnhanceDisk;
-  REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk);
-  sg_Disk2Card.SetEnhanceDisk(dwEnhanceDisk ? true : false);
+  if (REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk))
+  {
+    sg_Disk2Card.SetEnhanceDisk(dwEnhanceDisk ? true : false);
+  }
 
 #if 0
   Config_Load_Video();
