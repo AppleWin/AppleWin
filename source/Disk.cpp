@@ -267,7 +267,8 @@ void Disk2InterfaceCard::ReadTrack(const int drive)
 			&pFloppy->m_nibbles,
 			m_enhanceDisk);
 
-		pFloppy->m_byte           = 0;
+		if (!ImageIsWOZ(pFloppy->m_imagehandle))
+			pFloppy->m_byte = 0;
 		pFloppy->m_trackimagedata = (pFloppy->m_nibbles != 0);
 	}
 }
@@ -1026,6 +1027,20 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 		}
 
 		m_diskLastReadLatchCycle = g_nCumulativeCycles;
+
+#if LOG_DISK_NIBBLES_READ
+		if (m_floppyLatch & 0x80)
+		{
+  #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
+			if (m_bLogDisk_NibblesRW)
+  #endif
+			{
+				LOG_DISK("read %04X = %02X\r\n", floppy.m_byte, m_floppyLatch);
+			}
+
+			m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
+		}
+#endif
 	}
 	else if (!floppy.m_bWriteProtected) // && m_floppyWriteMode
 	{

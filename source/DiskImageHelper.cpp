@@ -1054,7 +1054,8 @@ public:
 	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhanceDisk)
 	{
 		ReadTrack(pImageInfo, nTrack, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE);
-		*pNibbles = CWOZHelper::WOZ1_TRACK_SIZE;
+		CWOZHelper::TRK* pTRK = (CWOZHelper::TRK*) &pTrackImageBuffer[CWOZHelper::TRK_OFFSET];
+		*pNibbles = pTRK->bytesUsed;
 	}
 
 	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)

@@ -208,6 +208,17 @@ public:
 
 	static const UINT32 MAX_TRACKS_5_25 = 40;
 	static const UINT32 WOZ1_TRACK_SIZE = 6656;	// 0x1A00
+	static const UINT32 TRK_OFFSET = 6646;
+
+	struct TRK
+	{
+		UINT16 bytesUsed;
+		UINT16 bitCount;
+		UINT16 splicePoint;
+		BYTE spliceNibble;
+		BYTE spliceBitCount;
+		UINT16 reserved;
+	};
 
 private:
 	static const UINT32 INFO_CHUNK_ID = 'OFNI';	// 'INFO'
