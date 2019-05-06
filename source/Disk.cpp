@@ -967,21 +967,21 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 	}
 #endif
 
-	const UINT significantBits = 2+8;	// prev 2 bits (in case of consecutive zero bits), then 8 nibble bits
+	const UINT significantBitCells = 2+8;	// prev 2 bit-cells (in case of consecutive zero bits), then 8 nibble bit-cells
 
 	ULONG cycleDelta = (ULONG) (g_nCumulativeCycles - m_diskLastCycle) + m_extraCycles;
 	ULONG bitCellDelta = cycleDelta / 4;	// DIV 4 for 4us per bit-cell
 	m_extraCycles = cycleDelta & 3;			// MOD 4
 
 	UINT bitCellRemainder;
-	if (bitCellDelta <= significantBits)
+	if (bitCellDelta <= significantBitCells)
 	{
 		bitCellRemainder = bitCellDelta;
 	}
 	else
 	{
-		bitCellRemainder = significantBits;
-		bitCellDelta -= significantBits;
+		bitCellRemainder = significantBitCells;
+		bitCellDelta -= significantBitCells;
 
 		const UINT byteDelta = bitCellDelta / 8;
 		floppy.m_byte += byteDelta;
@@ -990,6 +990,8 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 
 		const UINT remainder = bitCellDelta % 8;
 		m_bitMask = 1<<remainder;
+
+		m_latchDelay = 0;
 	}
 
 	m_diskLastCycle = g_nCumulativeCycles;
@@ -1027,14 +1029,22 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 			m_shiftReg |= outputBit;
 
 			if (m_latchDelay)
-				m_latchDelay--;
-			else
+			{
+				m_latchDelay -= 4;
+				if ((int)m_latchDelay < 0)
+					m_latchDelay = 0;
+			}
+
+			if (!m_latchDelay)
+			{
 				m_floppyLatch = m_shiftReg;
 
-			if (!m_latchDelay && (m_shiftReg & 0x80))
-			{
-				m_shiftReg = 0;
-				m_latchDelay = 1;
+				if (m_shiftReg & 0x80)
+				{
+//					m_latchDelay = 7;
+					m_latchDelay = 7 - m_extraCycles;
+					m_shiftReg = 0;
+				}
 			}
 		}
 
