@@ -2203,7 +2203,6 @@ void ResetMachineState ()
 
   SoundCore_SetFade(FADE_NONE);
   LogFileTimeUntilFirstKeyReadReset();
-  memset(mem+0x4400, 0x0f, 0x100);	// DEBUG: WOZ / Blazing Paddles corruption
 }
 
 
@@ -2238,7 +2237,6 @@ void CtrlReset()
 #endif
 
 	CpuReset();
-	memset(mem+0x4400, 0x0f, 0x100);	// DEBUG: WOZ / Blazing Paddles corruption
 	g_bFreshReset = true;
 }
 
