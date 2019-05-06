@@ -68,6 +68,8 @@ Disk2InterfaceCard::Disk2InterfaceCard(void)
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = true;
 
+	ResetLogicStateSequencer();
+
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
 	m_bLogDisk_NibblesRW = false;
@@ -259,6 +261,9 @@ void Disk2InterfaceCard::ReadTrack(const int drive)
 #if LOG_DISK_TRACKS
 		LOG_DISK("track $%02X%s read\r\n", pDrive->m_track, (pDrive->m_phase & 1) ? ".5" : "  ");
 #endif
+		const UINT32 currentPosition = pFloppy->m_byte;
+		const UINT32 currentTrackLength = pFloppy->m_nibbles;
+
 		ImageReadTrack(
 			pFloppy->m_imagehandle,
 			pDrive->m_track,
@@ -267,8 +272,11 @@ void Disk2InterfaceCard::ReadTrack(const int drive)
 			&pFloppy->m_nibbles,
 			m_enhanceDisk);
 
-		if (!ImageIsWOZ(pFloppy->m_imagehandle))
+		if (!ImageIsWOZ(pFloppy->m_imagehandle) || (currentTrackLength == 0))
 			pFloppy->m_byte = 0;
+		else
+			pFloppy->m_byte = (currentPosition * pFloppy->m_nibbles) / currentTrackLength;	// Ref: WOZ-1.01
+
 		pFloppy->m_trackimagedata = (pFloppy->m_nibbles != 0);
 	}
 }
@@ -915,6 +923,15 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 //===========================================================================
 
+void Disk2InterfaceCard::ResetLogicStateSequencer(void)
+{
+	shiftReg = 0;
+	zeroCnt = 0;
+	bitMask = 1<<7;
+	extraCycles = 0;
+	latchDelay = 0;
+}
+
 void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	/* m_floppyLoadMode = 0; */
@@ -926,6 +943,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 
 	if (!floppy.m_trackimagedata)
 	{
+		_ASSERT(0);
 		m_floppyLatch = 0xFF;	// TODO: Should return rnd()
 		return;
 	}
@@ -933,14 +951,14 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
 	// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
 	// Note: Sherwood Forest sets shift mode and reads with the drive off.
-	// And for a write?
+	// TODO: And same for a write?
 	if (!drive.m_spinning)	// GH#599
 		return;
 
 	UINT uSpinNibbleCount = 0;
 	CpuCalcCycles(nExecutedCycles);
 
-#if 1	// DEBUG
+#if 0	// DEBUG
 	if (!m_diskLastReadLatchCycle)
 	{
 		m_diskLastCycle = g_nCumulativeCycles;
@@ -949,10 +967,6 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 	}
 #endif
 
-	static BYTE shiftReg = 0;
-	static UINT zeroCnt = 0;
-	static UINT bitMask = 1<<7;
-	static UINT extraCycles = 0;
 	const UINT significantBits = 2+8;	// prev 2 bits (in case of consecutive zero bits), then 8 nibble bits
 
 	ULONG cycleDelta = (ULONG) (g_nCumulativeCycles - m_diskLastCycle) + extraCycles;
@@ -969,8 +983,8 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 		bitCellRemainder = significantBits;
 		bitCellDelta -= significantBits;
 
-		const UINT nibbleDelta = bitCellDelta / 8;
-		floppy.m_byte += nibbleDelta;
+		const UINT byteDelta = bitCellDelta / 8;
+		floppy.m_byte += byteDelta;
 		if (floppy.m_byte >= floppy.m_nibbles)
 			floppy.m_byte %= floppy.m_nibbles;
 
@@ -981,8 +995,6 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 	m_diskLastCycle = g_nCumulativeCycles;
 
 	//
-
-	static UINT latchDelay = 0;
 
 	if (!m_floppyWriteMode)
 	{
@@ -1019,7 +1031,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 			else
 				m_floppyLatch = shiftReg;
 
-			if (shiftReg & 0x80)
+			if (!latchDelay && (shiftReg & 0x80))
 			{
 				shiftReg = 0;
 				latchDelay = 1;
@@ -1064,6 +1076,8 @@ void Disk2InterfaceCard::Reset(const bool bIsPowerCycle/*=false*/)
 	m_phases = 0;
 
 	m_formatTrack.Reset();
+
+	ResetLogicStateSequencer();
 
 	if (bIsPowerCycle)	// GH#460
 	{
@@ -1154,6 +1168,10 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 			m_floppyLatch |= 0x80;
 		else
 			m_floppyLatch &= 0x7F;
+
+		// Ref: WOZ-1.01
+		ResetLogicStateSequencer();	// reset sequencer
+		m_floppyLatch &= 0x80;	// clear latch
 	}
 }
 

@@ -1613,7 +1613,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
-		sg_Disk2Card.Reset();	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
+		sg_Disk2Card.Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
 		HD_Reset();		// GH#515
 		LogFileOutput("Main: HDDReset()\n");

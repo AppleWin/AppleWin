@@ -166,6 +166,7 @@ private:
 	void RemoveDisk(const int drive);
 	void WriteTrack(const int drive);
 	LPCTSTR DiskGetFullPathName(const int drive);
+	void ResetLogicStateSequencer(void);
 	void SaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	void LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
 
@@ -200,6 +201,13 @@ private:
 
 	static const UINT SPINNING_CYCLES = 20000*64;	// 1280000 cycles = 1.25s
 	static const UINT WRITELIGHT_CYCLES = 20000*64;	// 1280000 cycles = 1.25s
+
+	// Logic State Sequencer (for WOZ):
+	BYTE shiftReg;
+	UINT zeroCnt;
+	UINT bitMask;
+	UINT extraCycles;
+	UINT latchDelay;
 
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
