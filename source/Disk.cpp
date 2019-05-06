@@ -925,11 +925,11 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 {
-	shiftReg = 0;
-	zeroCnt = 0;
-	bitMask = 1<<7;
-	extraCycles = 0;
-	latchDelay = 0;
+	m_shiftReg = 0;
+	m_zeroCnt = 0;
+	m_bitMask = 1<<7;
+	m_extraCycles = 0;
+	m_latchDelay = 0;
 }
 
 void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
@@ -969,9 +969,9 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 
 	const UINT significantBits = 2+8;	// prev 2 bits (in case of consecutive zero bits), then 8 nibble bits
 
-	ULONG cycleDelta = (ULONG) (g_nCumulativeCycles - m_diskLastCycle) + extraCycles;
+	ULONG cycleDelta = (ULONG) (g_nCumulativeCycles - m_diskLastCycle) + m_extraCycles;
 	ULONG bitCellDelta = cycleDelta / 4;	// DIV 4 for 4us per bit-cell
-	extraCycles = cycleDelta & 3;			// MOD 4
+	m_extraCycles = cycleDelta & 3;			// MOD 4
 
 	UINT bitCellRemainder;
 	if (bitCellDelta <= significantBits)
@@ -989,7 +989,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 			floppy.m_byte %= floppy.m_nibbles;
 
 		const UINT remainder = bitCellDelta % 8;
-		bitMask = 1<<remainder;
+		m_bitMask = 1<<remainder;
 	}
 
 	m_diskLastCycle = g_nCumulativeCycles;
@@ -1001,12 +1001,12 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 		for (UINT i=0; i<bitCellRemainder; i++)
 		{
 			BYTE n = floppy.m_trackimage[floppy.m_byte];
-			BYTE outputBit = (n & bitMask) ? 1 : 0;
+			BYTE outputBit = (n & m_bitMask) ? 1 : 0;
 
-			bitMask >>= 1;
-			if (!bitMask)
+			m_bitMask >>= 1;
+			if (!m_bitMask)
 			{
-				bitMask = 1<<7;
+				m_bitMask = 1<<7;
 				floppy.m_byte++;
 				if (floppy.m_byte == floppy.m_nibbles)
 					floppy.m_byte = 0;
@@ -1014,27 +1014,27 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 
 			if (!outputBit)
 			{
-				zeroCnt++;
-				if (zeroCnt > 3)
+				m_zeroCnt++;
+				if (m_zeroCnt > 3)
 					outputBit = rand() & 1;
 			}
 			else
 			{
-				zeroCnt = 0;
+				m_zeroCnt = 0;
 			}
 
-			shiftReg <<= 1;
-			shiftReg |= outputBit;
+			m_shiftReg <<= 1;
+			m_shiftReg |= outputBit;
 
-			if (latchDelay)
-				latchDelay--;
+			if (m_latchDelay)
+				m_latchDelay--;
 			else
-				m_floppyLatch = shiftReg;
+				m_floppyLatch = m_shiftReg;
 
-			if (!latchDelay && (shiftReg & 0x80))
+			if (!m_latchDelay && (m_shiftReg & 0x80))
 			{
-				shiftReg = 0;
-				latchDelay = 1;
+				m_shiftReg = 0;
+				m_latchDelay = 1;
 			}
 		}
 

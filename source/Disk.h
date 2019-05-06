@@ -203,11 +203,11 @@ private:
 	static const UINT WRITELIGHT_CYCLES = 20000*64;	// 1280000 cycles = 1.25s
 
 	// Logic State Sequencer (for WOZ):
-	BYTE shiftReg;
-	UINT zeroCnt;
-	UINT bitMask;
-	UINT extraCycles;
-	UINT latchDelay;
+	BYTE m_shiftReg;
+	UINT m_zeroCnt;
+	UINT m_bitMask;
+	UINT m_extraCycles;
+	UINT m_latchDelay;
 
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
