@@ -61,6 +61,8 @@ public:
 		//
 		m_byte = 0;
 		m_nibbles = 0;
+		m_bitOffset = 0;
+		m_bitCount = 0;
 		m_trackimage = NULL;
 		m_trackimagedata = false;
 		m_trackimagedirty = false;
@@ -74,6 +76,8 @@ public:
 	bool m_bWriteProtected;
 	int m_byte;
 	int m_nibbles;									// Init'd by ReadTrack() -> ImageReadTrack()
+	UINT m_bitOffset;
+	UINT m_bitCount;
 	LPBYTE m_trackimage;
 	bool m_trackimagedata;
 	bool m_trackimagedirty;

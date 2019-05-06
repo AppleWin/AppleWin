@@ -270,12 +270,24 @@ void Disk2InterfaceCard::ReadTrack(const int drive)
 			pDrive->m_phase,
 			pFloppy->m_trackimage,
 			&pFloppy->m_nibbles,
+			&pFloppy->m_bitCount,
 			m_enhanceDisk);
 
 		if (!ImageIsWOZ(pFloppy->m_imagehandle) || (currentTrackLength == 0))
+		{
 			pFloppy->m_byte = 0;
+		}
 		else
+		{
 			pFloppy->m_byte = (currentPosition * pFloppy->m_nibbles) / currentTrackLength;	// Ref: WOZ-1.01
+
+			if (pFloppy->m_byte == (pFloppy->m_nibbles-1))	// Last nibble may not be complete, so advance by 1 nibble
+				pFloppy->m_byte = 0;
+
+			pFloppy->m_bitOffset = pFloppy->m_byte*8;
+
+			m_bitMask = 1<<7;
+		}
 
 		pFloppy->m_trackimagedata = (pFloppy->m_nibbles != 0);
 	}
@@ -927,7 +939,7 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 {
 	m_shiftReg = 0;
 	m_zeroCnt = 0;
-	m_bitMask = 1<<7;
+//	m_bitMask = 1<<7;	// TODO: floppy attribute
 	m_extraCycles = 0;
 	m_latchDelay = 0;
 }
@@ -983,12 +995,12 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 		bitCellRemainder = significantBitCells;
 		bitCellDelta -= significantBitCells;
 
-		const UINT byteDelta = bitCellDelta / 8;
-		floppy.m_byte += byteDelta;
-		if (floppy.m_byte >= floppy.m_nibbles)
-			floppy.m_byte %= floppy.m_nibbles;
+		floppy.m_bitOffset += bitCellDelta;
+		if (floppy.m_bitOffset >= floppy.m_bitCount)
+			floppy.m_bitOffset %= floppy.m_bitCount;
 
-		const UINT remainder = bitCellDelta % 8;
+		floppy.m_byte = floppy.m_bitOffset / 8;
+		const UINT remainder = 7 - (floppy.m_bitOffset & 7);	// MOD 8
 		m_bitMask = 1<<remainder;
 
 		m_latchDelay = 0;
@@ -1010,8 +1022,16 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 			{
 				m_bitMask = 1<<7;
 				floppy.m_byte++;
-				if (floppy.m_byte == floppy.m_nibbles)
-					floppy.m_byte = 0;
+				if (floppy.m_byte == floppy.m_nibbles)	// Not required
+					floppy.m_byte = 0;					// Not required
+			}
+
+			floppy.m_bitOffset++;
+			if (floppy.m_bitOffset == floppy.m_bitCount)
+			{
+				m_bitMask = 1<<7;
+				floppy.m_bitOffset = 0;
+				floppy.m_byte = 0;
 			}
 
 			if (!outputBit)

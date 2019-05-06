@@ -156,6 +156,7 @@ void ImageReadTrack(	ImageInfo* const pImageInfo,
 						const int nQuarterTrack,
 						LPBYTE pTrackImageBuffer,
 						int* pNibbles,
+						UINT* pBitCount,
 						bool enhanceDisk)
 {
 	_ASSERT(nTrack >= 0);
@@ -164,7 +165,7 @@ void ImageReadTrack(	ImageInfo* const pImageInfo,
 
 	if (pImageInfo->pImageType->AllowRW() && pImageInfo->ValidTrack[nTrack])
 	{
-		pImageInfo->pImageType->Read(pImageInfo, nTrack, nQuarterTrack, pTrackImageBuffer, pNibbles, enhanceDisk);
+		pImageInfo->pImageType->Read(pImageInfo, nTrack, nQuarterTrack, pTrackImageBuffer, pNibbles, pBitCount, enhanceDisk);
 	}
 	else
 	{

@@ -71,7 +71,7 @@ BOOL ImageBoot(ImageInfo* const pImageInfo);
 void ImageDestroy(void);
 void ImageInitialize(void);
 
-void ImageReadTrack(ImageInfo* const pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, bool enhanceDisk);
+void ImageReadTrack(ImageInfo* const pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk);
 void ImageWriteTrack(ImageInfo* const pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles);
 bool ImageReadBlock(ImageInfo* const pImageInfo, UINT nBlock, LPBYTE pBlockBuffer);
 bool ImageWriteBlock(ImageInfo* const pImageInfo, UINT nBlock, LPBYTE pBlockBuffer);
