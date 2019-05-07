@@ -1061,8 +1061,8 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 
 				if (m_shiftReg & 0x80)
 				{
-//					m_latchDelay = 7;
-					m_latchDelay = 7 - m_extraCycles;
+					m_latchDelay = 7;
+//					m_latchDelay = 7 - m_extraCycles;
 					m_shiftReg = 0;
 				}
 			}
