@@ -170,7 +170,11 @@ private:
 	void RemoveDisk(const int drive);
 	void WriteTrack(const int drive);
 	LPCTSTR DiskGetFullPathName(const int drive);
+	void ResetFloppyWOZ(void);
 	void ResetLogicStateSequencer(void);
+	void UpdateBitStreamPositionAndDiskCycle(const ULONG nExecutedCycles);
+	UINT GetBitCellDelta(void);
+	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
 	void SaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	void LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
 

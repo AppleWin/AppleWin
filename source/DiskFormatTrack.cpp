@@ -264,17 +264,18 @@ void FormatTrack::DecodeLatchNibble(BYTE floppylatch, bool bIsWrite, bool bIsSyn
 				m_VolTrkSecChk[i] = ((m_VolTrkSecChk4and4[i*2] & 0x55) << 1) | (m_VolTrkSecChk4and4[i*2+1] & 0x55);
 
 #if LOG_DISK_NIBBLES_READ
+			const bool chk = (m_VolTrkSecChk[0] ^ m_VolTrkSecChk[1] ^ m_VolTrkSecChk[2] ^ m_VolTrkSecChk[3]) == 0;
 			if (!bIsWrite)
 			{
 				BYTE addrPrologue = m_bAddressPrologueIsDOS3_2 ? (BYTE)kADDR_PROLOGUE_DOS3_2 : (BYTE)kADDR_PROLOGUE_DOS3_3;
-				LOG_DISK("read D5AA%02X detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X\r\n", addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3]);
+				LOG_DISK("read D5AA%02X detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X %s\r\n", addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3], chk?"":"(bad)");
 			}
 #endif
 #if LOG_DISK_NIBBLES_WRITE
 			if (bIsWrite)
 			{
 				BYTE addrPrologue = m_bAddressPrologueIsDOS3_2 ? (BYTE)kADDR_PROLOGUE_DOS3_2 : (BYTE)kADDR_PROLOGUE_DOS3_3;
-				LOG_DISK("write D5AA%02X detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X\r\n", addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3]);
+				LOG_DISK("write D5AA%02X detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X %s\r\n", addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3], chk?"":"(bad)");
 			}
 #endif
 
