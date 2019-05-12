@@ -1025,7 +1025,11 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 	}
 #endif
 
-	const UINT significantBitCells = 2+8;	// prev 2 bit-cells (in case of consecutive zero bits), then 8 nibble bit-cells
+	// Skipping forward a large amount of bitcells means the bitstream will very likely be out-of-sync.
+	// The first 1-bit will produce a latch nibble, and this 1-bit is unlikely to be the nibble's high bit.
+	// So we need to ensure we run enough bits through the sequencer to re-sync.
+	// NB. For Planetfall 13 bitcells(NG) / 14 bitcells(OK)
+	const UINT significantBitCells = 50;	// 5x 10-bit sync FF nibbles
 	UINT bitCellDelta = GetBitCellDelta();
 
 	UINT bitCellRemainder;
