@@ -35,6 +35,7 @@ struct ImageInfo
 	BYTE			ValidTrack[TRACKS_MAX];
 	UINT			uNumTracks;
 	BYTE*			pImageBuffer;
+	BYTE*			pTrackMap;	// WOZ only
 };
 
 //-------------------------------------
@@ -185,16 +186,13 @@ class CWOZHelper : public CHdrHelper
 {
 public:
 	CWOZHelper() :
-		m_pInfo(NULL),
-		m_pTrackMap(NULL),
-		m_pTracks(NULL)
+		m_pInfo(NULL)
 	{}
 	virtual ~CWOZHelper(void) {}
 	virtual eDetectResult DetectHdr(LPBYTE& pImage, DWORD& dwImageSize, DWORD& dwOffset) { _ASSERT(0); return eMismatch; }
 	virtual UINT GetMaxHdrSize(void) { return sizeof(WOZHeader); }
-	eDetectResult ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset);
+	eDetectResult ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset, BYTE*& pTrackMap);
 	bool IsWriteProtected(void) { return m_pInfo->writeProtected == 1; }
-	BYTE* GetTrackMap(void) { return m_pTrackMap; }
 
 	static const UINT32 ID1_WOZ1 = '1ZOW';	// 'WOZ1'
 	static const UINT32 ID1_WOZ2 = '2ZOW';	// 'WOZ2'
@@ -246,8 +244,6 @@ private:
 	};
 
 	InfoChunk* m_pInfo;
-	BYTE* m_pTrackMap;
-	BYTE* m_pTracks;
 };
 
 #pragma pack(pop)
@@ -271,9 +267,8 @@ public:
 
 	ImageError_e Open(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, const bool bCreateIfNecessary, std::string& strFilenameInZip);
 	void Close(ImageInfo* pImageInfo, const bool bDeleteFile);
-	BYTE* GetWOZTrackMap(void) { return m_WOZHelper.GetTrackMap(); }
 
-	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool* pWriteProtected_) = 0;
+	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap) = 0;
 	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize) = 0;
 	virtual UINT GetMaxImageSize(void) = 0;
 	virtual UINT GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer) = 0;
@@ -282,6 +277,7 @@ protected:
 	ImageError_e CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo);
 	ImageError_e CheckZipFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, std::string& strFilenameInZip);
 	ImageError_e CheckNormalFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, const bool bCreateIfNecessary);
+	void SetImageInfo(ImageInfo* pImageInfo, FileType_e eFileGZip, DWORD dwOffset, CImageBase* pImageType, DWORD dwSize);
 
 	UINT GetNumImages(void) { return m_vecImageTypes.size(); };
 	CImageBase* GetImage(UINT uIndex) { _ASSERT(uIndex<GetNumImages()); return m_vecImageTypes[uIndex]; }
@@ -315,7 +311,7 @@ public:
 	CDiskImageHelper(void);
 	virtual ~CDiskImageHelper(void) {}
 
-	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool* pWriteProtected_);
+	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap);
 	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize);
 	virtual UINT GetMaxImageSize(void);
 	virtual UINT GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer);
@@ -341,7 +337,7 @@ public:
 	CHardDiskImageHelper(void);
 	virtual ~CHardDiskImageHelper(void) {}
 
-	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool* pWriteProtected_);
+	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap);
 	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize);
 	virtual UINT GetMaxImageSize(void);
 	virtual UINT GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer);

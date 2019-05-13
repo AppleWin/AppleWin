@@ -1053,7 +1053,12 @@ public:
 
 	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
-		ReadTrack(pImageInfo, nTrack, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE);
+		BYTE*& pTrackMap = pImageInfo->pTrackMap;
+		_ASSERT(pTrackMap);
+		int trackFromTMAP = pTrackMap[nTrack * 4];
+		_ASSERT(trackFromTMAP != 0xFF);
+
+		ReadTrack(pImageInfo, trackFromTMAP, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE);
 		CWOZHelper::TRK* pTRK = (CWOZHelper::TRK*) &pTrackImageBuffer[CWOZHelper::TRK_OFFSET];
 		*pNibbles = pTRK->bytesUsed;
 		*pBitCount = pTRK->bitCount;
@@ -1176,7 +1181,7 @@ bool C2IMGHelper::IsLocked(void)
 //-----------------------------------------------------------------------------
 
 // Pre: already matched the WOZ header
-eDetectResult CWOZHelper::ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset)
+eDetectResult CWOZHelper::ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset, BYTE*& pTrackMap)
 {
 	UINT32* pImage32 = (uint32_t*) (pImage + sizeof(WOZHeader));
 	UINT32 imageSizeRemaining = dwImageSize - sizeof(WOZHeader);
@@ -1197,11 +1202,10 @@ eDetectResult CWOZHelper::ProcessChunks(const LPBYTE pImage, const DWORD dwImage
 					return eMismatch;
 				break;
 			case TMAP_CHUNK_ID:
-				m_pTrackMap = (uint8_t*)pImage32;
+				pTrackMap = (uint8_t*)pImage32;
 				break;
 			case TRKS_CHUNK_ID:
-				m_pTracks = (uint8_t*)pImage32;
-				dwOffset = dwImageSize - imageSizeRemaining;
+				dwOffset = dwImageSize - imageSizeRemaining;	// offset into image of track data
 				break;
 			case META_CHUNK_ID:
 				break;
@@ -1283,7 +1287,7 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 
 	DWORD dwSize = nLen;
 	DWORD dwOffset = 0;
-	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, &pImageInfo->bWriteProtected);
+	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap);
 
 	if (!pImageType)
 		return eIMAGE_ERROR_UNSUPPORTED;
@@ -1292,11 +1296,7 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 	if (Type == eImageAPL || Type == eImageIIE || Type == eImagePRG)
 		return eIMAGE_ERROR_UNSUPPORTED;
 
-	pImageInfo->FileType = eFileGZip;
-	pImageInfo->uOffset = dwOffset;
-	pImageInfo->pImageType = pImageType;
-	pImageInfo->uImageSize = dwSize;
-
+	SetImageInfo(pImageInfo, eFileGZip, dwOffset, pImageType, dwSize);
 	return eIMAGE_ERROR_NONE;
 }
 
@@ -1379,7 +1379,7 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 
 	DWORD dwSize = nLen;
 	DWORD dwOffset = 0;
-	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, &pImageInfo->bWriteProtected);
+	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap);
 
 	if (!pImageType)
 	{
@@ -1396,11 +1396,7 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 	if (global_info.number_entry > 1)
 		pImageInfo->bWriteProtected = 1;	// Zip archives with multiple files are read-only (for now)
 
-	pImageInfo->FileType = eFileZip;
-	pImageInfo->uOffset = dwOffset;
-	pImageInfo->pImageType = pImageType;
-	pImageInfo->uImageSize = dwSize;
-
+	SetImageInfo(pImageInfo, eFileZip, dwOffset, pImageType, dwSize);
 	return eIMAGE_ERROR_NONE;
 }
 
@@ -1480,7 +1476,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			return eIMAGE_ERROR_BAD_SIZE;
 		}
 
-		pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, &pImageInfo->bWriteProtected);
+		pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap);
 		if (bTempDetectBuffer)
 		{
 			delete [] pImageInfo->pImageBuffer;
@@ -1533,12 +1529,18 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 		return eIMAGE_ERROR_UNSUPPORTED;
 	}
 
-	pImageInfo->FileType = eFileNormal;
+	SetImageInfo(pImageInfo, eFileNormal, dwOffset, pImageType, dwSize);
+	return eIMAGE_ERROR_NONE;
+}
+
+//-------------------------------------
+
+void CImageHelperBase::SetImageInfo(ImageInfo* pImageInfo, FileType_e eFileGZip, DWORD dwOffset, CImageBase* pImageType, DWORD dwSize)
+{
+	pImageInfo->FileType = eFileGZip;
 	pImageInfo->uOffset = dwOffset;
 	pImageInfo->pImageType = pImageType;
 	pImageInfo->uImageSize = dwSize;
-
-	return eIMAGE_ERROR_NONE;
 }
 
 //-------------------------------------
@@ -1616,60 +1618,60 @@ CDiskImageHelper::CDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CWOZImage );
 }
 
-CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool* pWriteProtected_)
+CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap)
 {
 	dwOffset = 0;
 	m_MacBinaryHelper.DetectHdr(pImage, dwSize, dwOffset);
 	m_Result2IMG = m_2IMGHelper.DetectHdr(pImage, dwSize, dwOffset);
 
 	// CALL THE DETECTION FUNCTIONS IN ORDER, LOOKING FOR A MATCH
-	eImageType ImageType = eImageUNKNOWN;
-	eImageType PossibleType = eImageUNKNOWN;
+	eImageType imageType = eImageUNKNOWN;
+	eImageType possibleType = eImageUNKNOWN;
 
 	if (m_Result2IMG == eMatch)
 	{
 		if (m_2IMGHelper.IsImageFormatDOS33())
-			ImageType = eImageDO;
+			imageType = eImageDO;
 		else if (m_2IMGHelper.IsImageFormatProDOS())
-			ImageType = eImagePO;
+			imageType = eImagePO;
 
-		if (ImageType != eImageUNKNOWN)
+		if (imageType != eImageUNKNOWN)
 		{
-			CImageBase* pImageType = GetImage(ImageType);
+			CImageBase* pImageType = GetImage(imageType);
 			if (!pImageType || !pImageType->IsValidImageSize(dwSize))
-				ImageType = eImageUNKNOWN;
+				imageType = eImageUNKNOWN;
 		}
 	}
 
-	if (ImageType == eImageUNKNOWN)
+	if (imageType == eImageUNKNOWN)
 	{
-		for (UINT uLoop=0; uLoop < GetNumImages() && ImageType == eImageUNKNOWN; uLoop++)
+		for (UINT uLoop=0; uLoop < GetNumImages() && imageType == eImageUNKNOWN; uLoop++)
 		{
 			if (*pszExt && _tcsstr(GetImage(uLoop)->GetRejectExtensions(), pszExt))
 				continue;
 
 			eDetectResult Result = GetImage(uLoop)->Detect(pImage, dwSize, pszExt);
 			if (Result == eMatch)
-				ImageType = GetImage(uLoop)->GetType();
-			else if ((Result == ePossibleMatch) && (PossibleType == eImageUNKNOWN))
-				PossibleType = GetImage(uLoop)->GetType();
+				imageType = GetImage(uLoop)->GetType();
+			else if ((Result == ePossibleMatch) && (possibleType == eImageUNKNOWN))
+				possibleType = GetImage(uLoop)->GetType();
 		}
 	}
 
-	if (ImageType == eImageUNKNOWN)
-		ImageType = PossibleType;
+	if (imageType == eImageUNKNOWN)
+		imageType = possibleType;
 
-	CImageBase* pImageType = GetImage(ImageType);
+	CImageBase* pImageType = GetImage(imageType);
 	if (!pImageType)
 		return NULL;
 
-	if (ImageType == eImageWOZ)
+	if (imageType == eImageWOZ)
 	{
-		if (m_WOZHelper.ProcessChunks(pImage, dwSize, dwOffset) != eMatch)
+		if (m_WOZHelper.ProcessChunks(pImage, dwSize, dwOffset, pTrackMap) != eMatch)
 			return NULL;
 
-		if (m_WOZHelper.IsWriteProtected() && !*pWriteProtected_)
-			*pWriteProtected_ = 1;
+		if (m_WOZHelper.IsWriteProtected() && !writeProtected)
+			writeProtected = true;
 	}
 	else
 	{
@@ -1685,8 +1687,8 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 		{
 			pImageType->SetVolumeNumber( m_2IMGHelper.GetVolumeNumber() );
 
-			if (m_2IMGHelper.IsLocked() && !*pWriteProtected_)
-				*pWriteProtected_ = 1;
+			if (m_2IMGHelper.IsLocked() && !writeProtected)
+				writeProtected = true;
 		}
 		else
 		{
@@ -1741,7 +1743,7 @@ CHardDiskImageHelper::CHardDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CHDVImage );
 }
 
-CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool* pWriteProtected_)
+CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap)
 {
 	dwOffset = 0;
 	m_Result2IMG = m_2IMGHelper.DetectHdr(pImage, dwSize, dwOffset);
@@ -1766,10 +1768,12 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHA
 	{
 		if (m_Result2IMG == eMatch)
 		{
-			if (m_2IMGHelper.IsLocked() && !*pWriteProtected_)
-				*pWriteProtected_ = 1;
+			if (m_2IMGHelper.IsLocked() && !writeProtected)
+				writeProtected = true;
 		}
 	}
+
+	pTrackMap = 0;	// TODO: WOZ
 
 	return pImageType;
 }
