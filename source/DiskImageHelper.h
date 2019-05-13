@@ -194,6 +194,7 @@ public:
 	virtual UINT GetMaxHdrSize(void) { return sizeof(WOZHeader); }
 	eDetectResult ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset);
 	bool IsWriteProtected(void) { return m_pInfo->writeProtected == 1; }
+	BYTE* GetTrackMap(void) { return m_pTrackMap; }
 
 	static const UINT32 ID1_WOZ1 = '1ZOW';	// 'WOZ1'
 	static const UINT32 ID1_WOZ2 = '2ZOW';	// 'WOZ2'
@@ -270,6 +271,7 @@ public:
 
 	ImageError_e Open(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, const bool bCreateIfNecessary, std::string& strFilenameInZip);
 	void Close(ImageInfo* pImageInfo, const bool bDeleteFile);
+	BYTE* GetWOZTrackMap(void) { return m_WOZHelper.GetTrackMap(); }
 
 	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool* pWriteProtected_) = 0;
 	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize) = 0;

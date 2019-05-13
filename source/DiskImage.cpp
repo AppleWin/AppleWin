@@ -163,7 +163,14 @@ void ImageReadTrack(	ImageInfo* const pImageInfo,
 	if (nTrack < 0)
 		return;
 
-	if (pImageInfo->pImageType->AllowRW() && pImageInfo->ValidTrack[nTrack])
+	if (ImageIsWOZ(pImageInfo))
+	{
+		BYTE* trackMap = sg_DiskImageHelper.GetWOZTrackMap();
+		int trackFromTMAP = trackMap[nTrack*4];
+		_ASSERT(trackFromTMAP != 0xFF);
+		pImageInfo->pImageType->Read(pImageInfo, trackFromTMAP, nQuarterTrack, pTrackImageBuffer, pNibbles, pBitCount, enhanceDisk);
+	}
+	else if (pImageInfo->pImageType->AllowRW() && pImageInfo->ValidTrack[nTrack])
 	{
 		pImageInfo->pImageType->Read(pImageInfo, nTrack, nQuarterTrack, pTrackImageBuffer, pNibbles, pBitCount, enhanceDisk);
 	}
