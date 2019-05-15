@@ -1253,15 +1253,18 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 			m_floppyLatch |= 0x80;
 		else
 			m_floppyLatch &= 0x7F;
-
-		if (ImageIsWOZ(m_floppyDrive[m_currDrive].m_disk.m_imagehandle))
-		{
-			ResetLogicStateSequencer();	// reset sequencer (Ref: WOZ-1.01)
-			UpdateBitStreamPositionAndDiskCycle(nExecutedCycles);	// Fix E7-copy protection
-		}
-
-		m_floppyLatch &= 0x80;		// clear latch
 	}
+
+	if (ImageIsWOZ(m_floppyDrive[m_currDrive].m_disk.m_imagehandle))
+	{
+#if LOG_DISK_NIBBLES_READ
+		LOG_DISK("reset LSS: ~PC=%04X\r\n", regs.pc);
+#endif
+		ResetLogicStateSequencer();	// reset sequencer (Ref: WOZ-1.01)
+		UpdateBitStreamPositionAndDiskCycle(nExecutedCycles);	// Fix E7-copy protection
+	}
+
+	m_floppyLatch &= 0x80;		// clear latch
 }
 
 //===========================================================================
