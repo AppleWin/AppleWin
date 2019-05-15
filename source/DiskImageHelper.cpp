@@ -1032,7 +1032,22 @@ public:
 class CWOZImage : public CImageBase
 {
 public:
-	CWOZImage(void) {}
+	CWOZImage(void)
+	{
+		m_pWOZEmptyTrack = new BYTE[CWOZHelper::EMPTY_TRACK_SIZE];
+
+		srand(1);	// Use a fixed seed for determinism
+		for (UINT i = 0; i < CWOZHelper::EMPTY_TRACK_SIZE; i++)
+		{
+			BYTE n = 0;
+			for (UINT j = 0; j < 8; j++)
+			{
+				if (rand() < ((RAND_MAX * 3) / 10))	// ~30% of buffer are 1 bits
+					n |= 1 << j;
+			}
+			m_pWOZEmptyTrack[i] = n;
+		}
+	}
 	virtual ~CWOZImage(void) {}
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const DWORD dwImageSize, const TCHAR* pszExt)
@@ -1054,9 +1069,14 @@ public:
 	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
-		_ASSERT(pTrackMap);
-		int trackFromTMAP = pTrackMap[nTrack * 4];
-		_ASSERT(trackFromTMAP != 0xFF);
+		int trackFromTMAP = pTrackMap[nQuarterTrack * 2];
+		if (trackFromTMAP == 0xFF)
+		{
+			memcpy(pTrackImageBuffer, m_pWOZEmptyTrack, CWOZHelper::EMPTY_TRACK_SIZE);
+			*pNibbles = CWOZHelper::EMPTY_TRACK_SIZE;
+			*pBitCount = CWOZHelper::EMPTY_TRACK_SIZE*8;
+			return;
+		}
 
 		ReadTrack(pImageInfo, trackFromTMAP, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE);
 		CWOZHelper::TRK* pTRK = (CWOZHelper::TRK*) &pTrackImageBuffer[CWOZHelper::TRK_OFFSET];
@@ -1077,6 +1097,8 @@ public:
 	virtual eImageType GetType(void) { return eImageWOZ; }
 	virtual const char* GetCreateExtensions(void) { return ".woz"; }
 	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.nib;.iie;.po;.prg"; }
+
+	BYTE* m_pWOZEmptyTrack;
 };
 
 //-----------------------------------------------------------------------------
@@ -1230,7 +1252,7 @@ eDetectResult CWOZHelper::ProcessChunks(const LPBYTE pImage, const DWORD dwImage
 // - harddisk-normal-create also doesn't create a max size image-buffer
 
 // DETERMINE THE FILE'S EXTENSION AND CONVERT IT TO LOWERCASE
-void GetCharLowerExt(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize)
+void CImageHelperBase::GetCharLowerExt(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize)
 {
 	LPCTSTR pImageFileExt = pszImageFilename;
 
@@ -1246,7 +1268,7 @@ void GetCharLowerExt(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSiz
 	CharLowerBuff(pszExt, _tcslen(pszExt));
 }
 
-void GetCharLowerExt2(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize)
+void CImageHelperBase::GetCharLowerExt2(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize)
 {
 	TCHAR szFilename[MAX_PATH];
 	_tcsncpy(szFilename, pszImageFilename, MAX_PATH);

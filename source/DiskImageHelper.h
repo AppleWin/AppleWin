@@ -208,6 +208,7 @@ public:
 	static const UINT32 MAX_TRACKS_5_25 = 40;
 	static const UINT32 WOZ1_TRACK_SIZE = 6656;	// 0x1A00
 	static const UINT32 TRK_OFFSET = 6646;
+	static const UINT32 EMPTY_TRACK_SIZE = 6400;
 
 	struct TRK
 	{
@@ -277,6 +278,8 @@ protected:
 	ImageError_e CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo);
 	ImageError_e CheckZipFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, std::string& strFilenameInZip);
 	ImageError_e CheckNormalFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, const bool bCreateIfNecessary);
+	void GetCharLowerExt(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize);
+	void GetCharLowerExt2(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize);
 	void SetImageInfo(ImageInfo* pImageInfo, FileType_e eFileGZip, DWORD dwOffset, CImageBase* pImageType, DWORD dwSize);
 
 	UINT GetNumImages(void) { return m_vecImageTypes.size(); };
