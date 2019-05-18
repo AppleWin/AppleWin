@@ -1090,24 +1090,28 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 			m_shiftReg <<= 1;
 			m_shiftReg |= outputBit;
 
-			if (m_latchDelay && m_shiftReg)
-//			if (m_latchDelay)
+			if (m_latchDelay)
 			{
 				m_latchDelay -= 4;
 				if (m_latchDelay < 0)
 					m_latchDelay = 0;
-				m_dbgLatchDelayedCnt = 0;
-			}
-#if 1
-			else if (m_latchDelay) // && m_shiftReg==0
-			{
-				m_dbgLatchDelayedCnt++;
-				if (m_dbgLatchDelayedCnt >= 3)
+
+				if (m_shiftReg)
 				{
-					LOG_DISK("read: latch held due to 0: PC=%04X, cnt=%02X\r\n", regs.pc, m_dbgLatchDelayedCnt);
+					m_dbgLatchDelayedCnt = 0;
+				}
+				else // m_shiftReg==0
+				{
+					if (m_latchDelay == 0)
+						m_latchDelay = 4;	// extend for another 4us
+
+					m_dbgLatchDelayedCnt++;
+					if (m_dbgLatchDelayedCnt >= 3)
+					{
+						LOG_DISK("read: latch held due to 0: PC=%04X, cnt=%02X\r\n", regs.pc, m_dbgLatchDelayedCnt);
+					}
 				}
 			}
-#endif
 
 			if (!m_latchDelay)
 			{
