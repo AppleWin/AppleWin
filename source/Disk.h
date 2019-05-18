@@ -137,9 +137,11 @@ public:
 	void SetProtect(const int drive, const bool bWriteProtect);
 	int GetCurrentDrive(void);
 	int GetCurrentTrack();
-	int GetTrack(const int drive);
 	int GetCurrentPhase(void);
 	int GetCurrentOffset(void);
+	BYTE GetCurrentLSSBitMask(void);
+	BYTE GetCurrentLSSExtraCycles(void);
+	int GetTrack(const int drive);
 	LPCTSTR GetCurrentState(void);
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	void UpdateDriveState(DWORD cycles);
@@ -213,9 +215,10 @@ private:
 	// Logic State Sequencer (for WOZ):
 	BYTE m_shiftReg;
 	UINT m_zeroCnt;
-	UINT m_bitMask;
-	UINT m_extraCycles;
-	UINT m_latchDelay;
+	BYTE m_bitMask;
+	BYTE m_extraCycles;
+	int m_latchDelay;
+	UINT m_dbgLatchDelayedCnt;
 
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR

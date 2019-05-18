@@ -3729,13 +3729,16 @@ Update_t CmdDisk ( int nArgs)
 
 		int drive = sg_Disk2Card.GetCurrentDrive() + 1;
 		char buffer[200] = "";
-		ConsoleBufferPushFormat(buffer, "D%d at T$%X (%d), phase $%X, offset $%X, %s",
+		ConsoleBufferPushFormat(buffer, "D%d at T$%X (%d), phase $%X, offset $%X, mask $%02X, extraCycles %d, %s",
 			drive,
 			sg_Disk2Card.GetCurrentTrack(),
 			sg_Disk2Card.GetCurrentTrack(),
 			sg_Disk2Card.GetCurrentPhase(),
 			sg_Disk2Card.GetCurrentOffset(),
-			sg_Disk2Card.GetCurrentState());
+			sg_Disk2Card.GetCurrentLSSBitMask(),
+			sg_Disk2Card.GetCurrentLSSExtraCycles(),
+			sg_Disk2Card.GetCurrentState()
+		);
 
 		return ConsoleUpdate();
 	}

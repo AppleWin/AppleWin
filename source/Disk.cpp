@@ -88,6 +88,8 @@ int Disk2InterfaceCard::GetCurrentDrive(void)  { return m_currDrive; }
 int Disk2InterfaceCard::GetCurrentTrack(void)  { return m_floppyDrive[m_currDrive].m_track; }
 int Disk2InterfaceCard::GetCurrentPhase(void)  { return m_floppyDrive[m_currDrive].m_phase; }
 int Disk2InterfaceCard::GetCurrentOffset(void) { return m_floppyDrive[m_currDrive].m_disk.m_byte; }
+BYTE Disk2InterfaceCard::GetCurrentLSSBitMask(void) { return m_bitMask; }
+BYTE Disk2InterfaceCard::GetCurrentLSSExtraCycles(void) { return m_extraCycles; }
 int Disk2InterfaceCard::GetTrack(const int drive)  { return m_floppyDrive[drive].m_track; }
 
 LPCTSTR Disk2InterfaceCard::GetCurrentState(void)
@@ -955,6 +957,8 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 {
 	m_shiftReg = 0;
 	m_latchDelay = 0;
+	m_dbgLatchDelayedCnt = 0;
+//	m_extraCycles = 0;	// TODO?
 }
 
 void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG nExecutedCycles)
@@ -1016,15 +1020,6 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 
 	CpuCalcCycles(nExecutedCycles);
 
-#if 0	// DEBUG
-	if (!m_diskLastReadLatchCycle)
-	{
-		m_diskLastCycle = g_nCumulativeCycles;
-		m_diskLastReadLatchCycle = g_nCumulativeCycles;
-		return;
-	}
-#endif
-
 	// Skipping forward a large amount of bitcells means the bitstream will very likely be out-of-sync.
 	// The first 1-bit will produce a latch nibble, and this 1-bit is unlikely to be the nibble's high bit.
 	// So we need to ensure we run enough bits through the sequencer to re-sync.
@@ -1085,20 +1080,34 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 				if (m_zeroCnt > 3)
 					outputBit = rand() & 1;
 			}
-			else
+
+			if (outputBit)
 			{
+				// TODO: if we get a random 1 bit then reset zeroCnt?
 				m_zeroCnt = 0;
 			}
 
 			m_shiftReg <<= 1;
 			m_shiftReg |= outputBit;
 
-			if (m_latchDelay)
+			if (m_latchDelay && m_shiftReg)
+//			if (m_latchDelay)
 			{
 				m_latchDelay -= 4;
-				if ((int)m_latchDelay < 0)
+				if (m_latchDelay < 0)
 					m_latchDelay = 0;
+				m_dbgLatchDelayedCnt = 0;
 			}
+#if 1
+			else if (m_latchDelay) // && m_shiftReg==0
+			{
+				m_dbgLatchDelayedCnt++;
+				if (m_dbgLatchDelayedCnt >= 3)
+				{
+					LOG_DISK("read: latch held due to 0: PC=%04X, cnt=%02X\r\n", regs.pc, m_dbgLatchDelayedCnt);
+				}
+			}
+#endif
 
 			if (!m_latchDelay)
 			{
@@ -1125,7 +1134,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 			}
 		}
 
-		m_diskLastReadLatchCycle = g_nCumulativeCycles;
+//		m_diskLastReadLatchCycle = g_nCumulativeCycles;	// Not used by WOZ (only by NIB)
 
 #if LOG_DISK_NIBBLES_READ
 		if (m_floppyLatch & 0x80)
@@ -1261,7 +1270,9 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 		LOG_DISK("reset LSS: ~PC=%04X\r\n", regs.pc);
 #endif
 		ResetLogicStateSequencer();	// reset sequencer (Ref: WOZ-1.01)
+//		m_latchDelay = 7;	// TODO: Treat like a regular $C0EC latch load?
 		UpdateBitStreamPositionAndDiskCycle(nExecutedCycles);	// Fix E7-copy protection
+//		m_extraCycles = 0;	// TODO?
 	}
 
 	m_floppyLatch &= 0x80;		// clear latch
