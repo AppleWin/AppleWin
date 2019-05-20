@@ -958,7 +958,6 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 	m_shiftReg = 0;
 	m_latchDelay = 0;
 	m_dbgLatchDelayedCnt = 0;
-//	m_extraCycles = 0;	// TODO?
 }
 
 void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG nExecutedCycles)
@@ -967,14 +966,15 @@ void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG nExecut
 
 	CpuCalcCycles(nExecutedCycles);
 	const UINT bitCellDelta = GetBitCellDelta();
-	UpdateBitStreamPosition(floppy, bitCellDelta);
+	UpdateBitStreamPosition(floppy, bitCellDelta+1);	// +1 as LSS takes some cycles to reset (ref?)
 
 	m_diskLastCycle = g_nCumulativeCycles;
 }
 
 UINT Disk2InterfaceCard::GetBitCellDelta(void)
 {
-	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + m_extraCycles;
+	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + m_extraCycles;	// Reqd for Sammy Lightfoot only
+//	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle);
 	const UINT bitCellDelta = cycleDelta / 4;	// DIV 4 for 4us per bit-cell
 	m_extraCycles = cycleDelta & 3;				// MOD 4
 	return bitCellDelta;
@@ -1127,7 +1127,6 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 				if (m_shiftReg & 0x80)
 				{
 					m_latchDelay = 7;
-//					m_latchDelay = 7 - m_extraCycles;
 					m_shiftReg = 0;
 #if LOG_DISK_NIBBLES_READ
 					// May not actually be read by 6502 (eg. Prologue's CHKSUM 4&4 nibble pair), but still pass to the log's nibble reader
@@ -1262,6 +1261,7 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 		// . write mode doesn't prevent reading write protect (GH#537):
 		//   "If for some reason the above write protect check were entered with the READ/WRITE switch in WRITE, 
 		//    the write protect switch would still be read correctly" (UTAIIe page 9-21)
+		// . Sequencer "SR" (Shift Right) command only loads QA (bit7) of data register (UTAIIe page 9-21)
 		if (m_floppyDrive[m_currDrive].m_disk.m_bWriteProtected)
 			m_floppyLatch |= 0x80;
 		else
@@ -1276,10 +1276,7 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 		ResetLogicStateSequencer();	// reset sequencer (Ref: WOZ-1.01)
 //		m_latchDelay = 7;	// TODO: Treat like a regular $C0EC latch load?
 		UpdateBitStreamPositionAndDiskCycle(nExecutedCycles);	// Fix E7-copy protection
-//		m_extraCycles = 0;	// TODO?
 	}
-
-	m_floppyLatch &= 0x80;		// clear latch
 }
 
 //===========================================================================
