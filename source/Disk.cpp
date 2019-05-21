@@ -946,6 +946,8 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 //===========================================================================
 
+#define DO_LSS_STATES
+
 void Disk2InterfaceCard::ResetFloppyWOZ(void)
 {
 	m_zeroCnt = 0;
@@ -957,6 +959,7 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 {
 	m_shiftReg = 0;
 	m_latchDelay = 0;
+	m_state = LSS_RESET;
 	m_dbgLatchDelayedCnt = 0;
 }
 
@@ -966,17 +969,25 @@ void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG nExecut
 
 	CpuCalcCycles(nExecutedCycles);
 	const UINT bitCellDelta = GetBitCellDelta();
-	UpdateBitStreamPosition(floppy, bitCellDelta+1);	// +1 as LSS takes some cycles to reset (ref?)
+#ifdef DO_LSS_STATES
+	UpdateBitStreamPosition(floppy, bitCellDelta);
+#else
+	UpdateBitStreamPosition(floppy, bitCellDelta + 1);	// +1 as LSS takes some cycles to reset (ref?)
+#endif
 
 	m_diskLastCycle = g_nCumulativeCycles;
 }
 
 UINT Disk2InterfaceCard::GetBitCellDelta(void)
 {
-	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + m_extraCycles;	// Reqd for Sammy Lightfoot only
-//	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle);
+	// m_extraCycles, needed to retain accuracy:
+	// .  0-> 9: cycleDelta= 9, bitCellDelta=2, extraCycles=1
+	// . 11->20: cycleDelta=11, bitCellDelta=2, extraCycles=3
+	// Overall:
+	// .  0->20: cycleDelta=20, bitCellDelta=5, extraCycles=0
+	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + m_extraCycles;
 	const UINT bitCellDelta = cycleDelta / 4;	// DIV 4 for 4us per bit-cell
-	m_extraCycles = cycleDelta & 3;				// MOD 4
+	m_extraCycles = cycleDelta & 3;				// MOD 4 : remainder carried forward for next time
 	return bitCellDelta;
 }
 
@@ -1052,7 +1063,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 		bool newLatchData = false;
 #endif
 
-		for (UINT i=0; i<bitCellRemainder; i++)
+		for (UINT i = 0; i < bitCellRemainder; i++)
 		{
 			BYTE n = floppy.m_trackimage[floppy.m_byte];
 			BYTE outputBit = (n & m_bitMask) ? 1 : 0;
@@ -1060,7 +1071,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 			m_bitMask >>= 1;
 			if (!m_bitMask)
 			{
-				m_bitMask = 1<<7;
+				m_bitMask = 1 << 7;
 				floppy.m_byte++;
 				if (floppy.m_byte == floppy.m_nibbles)	// Not required
 					floppy.m_byte = 0;					// Not required
@@ -1069,7 +1080,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 			floppy.m_bitOffset++;
 			if (floppy.m_bitOffset == floppy.m_bitCount)
 			{
-				m_bitMask = 1<<7;
+				m_bitMask = 1 << 7;
 				floppy.m_bitOffset = 0;
 				floppy.m_byte = 0;
 			}
@@ -1087,6 +1098,73 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 				m_zeroCnt = 0;
 			}
 
+			//
+
+#ifdef DO_LSS_STATES
+			if (m_state == LSS_RESET)
+			{
+				m_state = LSS_WAIT_BYTE_FLAG;
+				continue;
+			}
+
+			if (m_state == LSS_CLEAR)
+			{
+				m_floppyLatch = 0;
+				m_state = LSS_WAIT_BYTE_FLAG;
+			}
+
+			if (m_state == LSS_WAIT_BYTE_FLAG)
+			{
+				if (outputBit)
+				{
+					m_dbgLatchDelayedCnt = 0;
+					m_state = LSS_WAIT_BIT7;
+				}
+				else
+				{
+					m_dbgLatchDelayedCnt++;
+					if (m_dbgLatchDelayedCnt >= 3)
+					{
+						LOG_DISK("read: latch held due to 0: PC=%04X, cnt=%02X\r\n", regs.pc, m_dbgLatchDelayedCnt);
+					}
+				}
+				continue;
+			}
+
+			if (m_state == LSS_WAIT_BIT7)
+			{
+				m_state = !outputBit ? LSS_SL0 : LSS_SL1;
+				continue;
+			}
+
+			if (m_state == LSS_SL0 || m_state == LSS_SL1)
+			{
+#if LOG_DISK_NIBBLES_READ
+				if (newLatchData)
+				{
+					LOG_DISK("read skipped latch data: %04X = %02X\r\n", floppy.m_byte, m_floppyLatch);
+					newLatchData = false;
+				}
+#endif
+				m_floppyLatch = (1<<1) | m_state;
+				m_state = LSS_SHIFTING;
+			}
+
+			_ASSERT(m_state == LSS_SHIFTING);
+
+			m_floppyLatch <<= 1;
+			m_floppyLatch |= outputBit;
+
+			if (m_floppyLatch & 0x80)	// QA set?
+			{
+#if LOG_DISK_NIBBLES_READ
+				// May not actually be read by 6502 (eg. Prologue's CHKSUM 4&4 nibble pair), but still pass to the log's nibble reader
+				m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
+				newLatchData = true;
+#endif
+				m_state = LSS_WAIT_BYTE_FLAG;
+			}
+#else
 			m_shiftReg <<= 1;
 			m_shiftReg |= outputBit;
 
@@ -1135,7 +1213,15 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 #endif
 				}
 			}
+#endif
 		}
+
+#ifdef DO_LSS_STATES
+		if ((m_floppyLatch & 0x80) && (m_state == LSS_WAIT_BYTE_FLAG))
+		{
+			m_state = LSS_CLEAR;	// Only clear if CPU has read latch
+		}
+#endif
 
 //		m_diskLastReadLatchCycle = g_nCumulativeCycles;	// Not used by WOZ (only by NIB)
 
