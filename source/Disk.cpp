@@ -946,7 +946,7 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 //===========================================================================
 
-#define DO_LSS_STATES
+//#define DO_LSS_STATES
 
 void Disk2InterfaceCard::ResetFloppyWOZ(void)
 {
@@ -960,6 +960,7 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 	m_shiftReg = 0;
 	m_latchDelay = 0;
 	m_state = LSS_RESET;
+	m_resetSequencer = true;
 	m_dbgLatchDelayedCnt = 0;
 }
 
@@ -969,22 +970,17 @@ void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG nExecut
 
 	CpuCalcCycles(nExecutedCycles);
 	const UINT bitCellDelta = GetBitCellDelta();
-#ifdef DO_LSS_STATES
 	UpdateBitStreamPosition(floppy, bitCellDelta);
-#else
-	UpdateBitStreamPosition(floppy, bitCellDelta + 1);	// +1 as LSS takes some cycles to reset (ref?)
-#endif
 
 	m_diskLastCycle = g_nCumulativeCycles;
 }
 
 UINT Disk2InterfaceCard::GetBitCellDelta(void)
 {
-	// m_extraCycles, needed to retain accuracy:
-	// .  0-> 9: cycleDelta= 9, bitCellDelta=2, extraCycles=1
-	// . 11->20: cycleDelta=11, bitCellDelta=2, extraCycles=3
-	// Overall:
-	// .  0->20: cycleDelta=20, bitCellDelta=5, extraCycles=0
+	// NB. m_extraCycles is needed to retain accuracy:
+	// . Read latch #1:  0-> 9: cycleDelta= 9, bitCellDelta=2, extraCycles=1
+	// . Read latch #2: 11->20: cycleDelta=11, bitCellDelta=2, extraCycles=3
+	// . Overall:        0->20: cycleDelta=20, bitCellDelta=5, extraCycles=0
 	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + m_extraCycles;
 	const UINT bitCellDelta = cycleDelta / 4;	// DIV 4 for 4us per bit-cell
 	m_extraCycles = cycleDelta & 3;				// MOD 4 : remainder carried forward for next time
@@ -1083,6 +1079,12 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 				m_bitMask = 1 << 7;
 				floppy.m_bitOffset = 0;
 				floppy.m_byte = 0;
+			}
+
+			if (m_resetSequencer)
+			{
+				m_resetSequencer = false;	// LSS takes some cycles to reset (ref?)
+				continue;
 			}
 
 			if (!outputBit)

@@ -214,12 +214,13 @@ private:
 
 	// Logic State Sequencer (for WOZ):
 	enum LSS_STATE {LSS_SL0=0, LSS_SL1=1, LSS_RESET, LSS_CLEAR, LSS_WAIT_BYTE_FLAG, LSS_WAIT_BIT7, LSS_SHIFTING};
+	LSS_STATE m_state;
 	BYTE m_shiftReg;
 	UINT m_zeroCnt;
 	BYTE m_bitMask;
 	BYTE m_extraCycles;
 	int m_latchDelay;
-	LSS_STATE m_state;
+	bool m_resetSequencer;
 	UINT m_dbgLatchDelayedCnt;
 
 	// Debug:
