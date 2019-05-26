@@ -1071,10 +1071,7 @@ public:
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
 		static int qtCnt = 0;
 		if (nQuarterTrack)
-		{
 			qtCnt++;
-			nHalfTrack--;
-		}
 
 		int trackFromTMAP = pTrackMap[nHalfTrack * 2 + nQuarterTrack];
 		if (trackFromTMAP == 0xFF)
