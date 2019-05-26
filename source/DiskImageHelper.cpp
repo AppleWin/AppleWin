@@ -70,8 +70,8 @@ LPBYTE CImageBase::ms_pWorkBuffer = NULL;
 
 bool CImageBase::ReadTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTrackBuffer, const UINT uTrackSize)
 {
-	const long Offset = pImageInfo->uOffset + nTrack * uTrackSize;
-	memcpy(pTrackBuffer, &pImageInfo->pImageBuffer[Offset], uTrackSize);
+	const long offset = pImageInfo->uOffset + nTrack * uTrackSize;
+	memcpy(pTrackBuffer, &pImageInfo->pImageBuffer[offset], uTrackSize);
 
 	return true;
 }
@@ -1048,14 +1048,27 @@ public:
 			m_pWOZEmptyTrack[i] = n;
 		}
 	}
-	virtual ~CWOZImage(void) {}
+	virtual ~CWOZImage(void) { delete m_pWOZEmptyTrack; }
+
+	BYTE* m_pWOZEmptyTrack;
+};
+
+//-------------------------------------
+
+class CWOZ1Image : public CWOZImage
+{
+public:
+	CWOZ1Image(void) {}
+	virtual ~CWOZ1Image(void) {}
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const DWORD dwImageSize, const TCHAR* pszExt)
 	{
 		CWOZHelper::WOZHeader* pWozHdr = (CWOZHelper::WOZHeader*) pImage;
 
+		m_uWozImageVersion = 0;
 		if (pWozHdr->id1 != CWOZHelper::ID1_WOZ1 || pWozHdr->id2 != CWOZHelper::ID2)
 			return eMismatch;
+		m_uWozImageVersion = 1;
 
 		if (pWozHdr->crc32)
 		{
@@ -1083,7 +1096,7 @@ public:
 		}
 
 		ReadTrack(pImageInfo, trackFromTMAP, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE);
-		CWOZHelper::TRK* pTRK = (CWOZHelper::TRK*) &pTrackImageBuffer[CWOZHelper::TRK_OFFSET];
+		CWOZHelper::TRKv1* pTRK = (CWOZHelper::TRKv1*) &pTrackImageBuffer[CWOZHelper::WOZ1_TRK_OFFSET];
 		*pNibbles = pTRK->bytesUsed;
 		*pBitCount = pTRK->bitCount;
 	}
@@ -1098,7 +1111,72 @@ public:
 //	virtual bool AllowCreate(void) { return true; }
 //	virtual UINT GetImageSizeForCreate(void) { return 0; }//TODO
 
-	virtual eImageType GetType(void) { return eImageWOZ; }
+	virtual eImageType GetType(void) { return eImageWOZ1; }
+	virtual const char* GetCreateExtensions(void) { return ".woz"; }
+	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.nib;.iie;.po;.prg"; }
+};
+
+//-------------------------------------
+
+class CWOZ2Image : public CWOZImage
+{
+public:
+	CWOZ2Image(void) {}
+	virtual ~CWOZ2Image(void) {}
+
+	virtual eDetectResult Detect(const LPBYTE pImage, const DWORD dwImageSize, const TCHAR* pszExt)
+	{
+		CWOZHelper::WOZHeader* pWozHdr = (CWOZHelper::WOZHeader*) pImage;
+
+		m_uWozImageVersion = 0;
+		if (pWozHdr->id1 != CWOZHelper::ID1_WOZ2 || pWozHdr->id2 != CWOZHelper::ID2)
+			return eMismatch;
+		m_uWozImageVersion = 2;
+
+		if (pWozHdr->crc32)
+		{
+			// TODO: check crc
+		}
+
+		m_uNumTracksInImage = CWOZHelper::MAX_TRACKS_5_25;
+		return eMatch;
+	}
+
+	virtual void Read(ImageInfo* pImageInfo, int nHalfTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	{
+		BYTE*& pTrackMap = pImageInfo->pTrackMap;
+		static int qtCnt = 0;
+		if (nQuarterTrack)
+			qtCnt++;
+
+		int trackFromTMAP = pTrackMap[nHalfTrack * 2 + nQuarterTrack];
+		if (trackFromTMAP == 0xFF)
+		{
+			memcpy(pTrackImageBuffer, m_pWOZEmptyTrack, CWOZHelper::EMPTY_TRACK_SIZE);
+			*pNibbles = CWOZHelper::EMPTY_TRACK_SIZE;
+			*pBitCount = CWOZHelper::EMPTY_TRACK_SIZE * 8;
+			return;
+		}
+
+		CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
+		CWOZHelper::TRKv2* pTRK = &pTRKS[trackFromTMAP];
+		*pBitCount = pTRK->bitCount;
+		*pNibbles = pTRK->bitCount / 8;
+
+		memcpy(pTrackImageBuffer, &pImageInfo->pImageBuffer[pTRK->startBlock*512], *pNibbles);
+	}
+
+	virtual void Write(ImageInfo* pImageInfo, int nHalfTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
+	{
+		// TODO
+		_ASSERT(0);
+	}
+
+	// TODO: Uncomment and fix-up if we want to allow .woz image creation (eg. for INIT or FORMAT)
+	//	virtual bool AllowCreate(void) { return true; }
+	//	virtual UINT GetImageSizeForCreate(void) { return 0; }//TODO
+
+	virtual eImageType GetType(void) { return eImageWOZ2; }
 	virtual const char* GetCreateExtensions(void) { return ".woz"; }
 	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.nib;.iie;.po;.prg"; }
 
@@ -1221,10 +1299,10 @@ eDetectResult CWOZHelper::ProcessChunks(const LPBYTE pImage, const DWORD dwImage
 		switch(chunkId)
 		{
 			case INFO_CHUNK_ID:
-				m_pInfo = (InfoChunk*)(pImage32-2);
-				if (m_pInfo->version != InfoChunk::minVersion)
+				m_pInfo = (InfoChunkv2*)(pImage32-2);
+				if (m_pInfo->v1.version > InfoChunk::maxSupportedVersion)
 					return eMismatch;
-				if (m_pInfo->diskType != InfoChunk::diskType5_25)
+				if (m_pInfo->v1.diskType != InfoChunk::diskType5_25)
 					return eMismatch;
 				break;
 			case TMAP_CHUNK_ID:
@@ -1233,7 +1311,9 @@ eDetectResult CWOZHelper::ProcessChunks(const LPBYTE pImage, const DWORD dwImage
 			case TRKS_CHUNK_ID:
 				dwOffset = dwImageSize - imageSizeRemaining;	// offset into image of track data
 				break;
-			case META_CHUNK_ID:
+			case WRIT_CHUNK_ID:	// WOZ v2 (optional)
+				break;
+			case META_CHUNK_ID:	// (optional)
 				break;
 			default:	// no idea what this chunk is, so skip it
 				_ASSERT(0);
@@ -1641,7 +1721,8 @@ CDiskImageHelper::CDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CIIeImage );
 	m_vecImageTypes.push_back( new CAplImage );
 	m_vecImageTypes.push_back( new CPrgImage );
-	m_vecImageTypes.push_back( new CWOZImage );
+	m_vecImageTypes.push_back( new CWOZ1Image );
+	m_vecImageTypes.push_back( new CWOZ2Image );
 }
 
 CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap)
@@ -1691,7 +1772,7 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 	if (!pImageType)
 		return NULL;
 
-	if (imageType == eImageWOZ)
+	if (imageType == eImageWOZ1 || imageType == eImageWOZ2)
 	{
 		if (m_WOZHelper.ProcessChunks(pImage, dwSize, dwOffset, pTrackMap) != eMatch)
 			return NULL;

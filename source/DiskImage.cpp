@@ -252,7 +252,7 @@ UINT ImageGetImageSize(ImageInfo* const pImageInfo)
 
 bool ImageIsWOZ(ImageInfo* const pImageInfo)
 {
-	return pImageInfo ? pImageInfo->pImageType->GetType() == eImageWOZ : false;
+	return pImageInfo ? (pImageInfo->pImageType->GetType() == eImageWOZ1 || pImageInfo->pImageType->GetType() == eImageWOZ2) : false;
 }
 
 void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName)

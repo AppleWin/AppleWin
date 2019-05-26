@@ -10,7 +10,7 @@
 #define ZIP_SUFFIX_LEN (sizeof(ZIP_SUFFIX)-1)
 
 
-enum eImageType {eImageUNKNOWN, eImageDO, eImagePO, eImageNIB1, eImageNIB2, eImageHDV, eImageIIE, eImageAPL, eImagePRG, eImageWOZ};
+enum eImageType {eImageUNKNOWN, eImageDO, eImagePO, eImageNIB1, eImageNIB2, eImageHDV, eImageIIE, eImageAPL, eImagePRG, eImageWOZ1, eImageWOZ2};
 enum eDetectResult {eMismatch, ePossibleMatch, eMatch};
 
 class CImageBase;
@@ -50,7 +50,7 @@ struct ImageInfo
 class CImageBase
 {
 public:
-	CImageBase(void) : m_uNumTracksInImage(0), m_uVolumeNumber(DEFAULT_VOLUME_NUMBER) {}
+	CImageBase(void) : m_uNumTracksInImage(0), m_uWozImageVersion(0), m_uVolumeNumber(DEFAULT_VOLUME_NUMBER) {}
 	virtual ~CImageBase(void) {}
 
 	virtual bool Boot(ImageInfo* pImageInfo) { return false; }
@@ -89,6 +89,7 @@ protected:
 public:
 	static LPBYTE ms_pWorkBuffer;
 	UINT m_uNumTracksInImage;	// Init'd by CDiskImageHelper.Detect()/GetImageForCreation() & possibly updated by IsValidImageSize()
+	UINT m_uWozImageVersion;
 
 protected:
 	static BYTE ms_DiskByte[0x40];
@@ -192,7 +193,7 @@ public:
 	virtual eDetectResult DetectHdr(LPBYTE& pImage, DWORD& dwImageSize, DWORD& dwOffset) { _ASSERT(0); return eMismatch; }
 	virtual UINT GetMaxHdrSize(void) { return sizeof(WOZHeader); }
 	eDetectResult ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset, BYTE*& pTrackMap);
-	bool IsWriteProtected(void) { return m_pInfo->writeProtected == 1; }
+	bool IsWriteProtected(void) { return m_pInfo->v1.writeProtected == 1; }
 
 	static const UINT32 ID1_WOZ1 = '1ZOW';	// 'WOZ1'
 	static const UINT32 ID1_WOZ2 = '2ZOW';	// 'WOZ2'
@@ -207,10 +208,10 @@ public:
 
 	static const UINT32 MAX_TRACKS_5_25 = 40;
 	static const UINT32 WOZ1_TRACK_SIZE = 6656;	// 0x1A00
-	static const UINT32 TRK_OFFSET = 6646;
+	static const UINT32 WOZ1_TRK_OFFSET = 6646;
 	static const UINT32 EMPTY_TRACK_SIZE = 6400;
 
-	struct TRK
+	struct TRKv1
 	{
 		UINT16 bytesUsed;
 		UINT16 bitCount;
@@ -220,10 +221,18 @@ public:
 		UINT16 reserved;
 	};
 
+	struct TRKv2
+	{
+		UINT16 startBlock;	// relative to start of file
+		UINT16 blockCount;	// number of blocks for this BITS data
+		UINT32 bitCount;
+	};
+
 private:
 	static const UINT32 INFO_CHUNK_ID = 'OFNI';	// 'INFO'
 	static const UINT32 TMAP_CHUNK_ID = 'PAMT';	// 'TMAP'
 	static const UINT32 TRKS_CHUNK_ID = 'SKRT';	// 'TRKS'
+	static const UINT32 WRIT_CHUNK_ID = 'TIRW';	// 'WRIT' - WOZv2
 	static const UINT32 META_CHUNK_ID = 'ATEM';	// 'META'
 
 	struct InfoChunk
@@ -239,12 +248,28 @@ private:
 								// String in UTF-8. No BOM. Padded to 32 bytes
 								// using space character (0x20).
 
-		static const BYTE minVersion = 1;
+		static const BYTE maxSupportedVersion = 2;
 		static const BYTE diskType5_25 = 1;
 		static const BYTE diskType3_5 = 2;
 	};
 
-	InfoChunk* m_pInfo;
+	struct InfoChunkv2
+	{
+		InfoChunk v1;
+		BYTE diskSides;			// 5.25 will always be 1; 3.5 can be 1 or 2
+		BYTE bootSectorFormat;
+		BYTE optimalBitTiming;	// in 125ns increments (And a standard bit rate for 5.25 disk would be 32 (4us))
+		UINT16 compatibleHardware;
+		UINT16 requiredRAM;		// in K (1024 bytes)
+		UINT16 largestTrack;	// in blocks (512 bytes)
+
+		static const BYTE bootUnknown = 0;
+		static const BYTE bootSector16 = 1;
+		static const BYTE bootSector13 = 2;
+		static const BYTE bootSectorBoth = 3;
+	};
+
+	InfoChunkv2* m_pInfo;
 };
 
 #pragma pack(pop)
