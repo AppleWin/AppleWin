@@ -1066,10 +1066,17 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, int nHalfTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
-		int trackFromTMAP = pTrackMap[nQuarterTrack * 2];
+		static int qtCnt = 0;
+		if (nQuarterTrack)
+		{
+			qtCnt++;
+			nHalfTrack--;
+		}
+
+		int trackFromTMAP = pTrackMap[nHalfTrack * 2 + nQuarterTrack];
 		if (trackFromTMAP == 0xFF)
 		{
 			memcpy(pTrackImageBuffer, m_pWOZEmptyTrack, CWOZHelper::EMPTY_TRACK_SIZE);
@@ -1084,7 +1091,7 @@ public:
 		*pBitCount = pTRK->bitCount;
 	}
 
-	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
+	virtual void Write(ImageInfo* pImageInfo, int nHalfTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
 	{
 		// TODO
 		_ASSERT(0);

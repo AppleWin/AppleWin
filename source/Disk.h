@@ -97,6 +97,8 @@ public:
 	{
 		m_phase = 0;
 		m_track = 0;
+		m_quarter = 0;
+		m_lastStepperCycle = 0;
 		m_spinning = 0;
 		m_writelight = 0;
 		m_disk.clear();
@@ -105,6 +107,8 @@ public:
 public:
 	int m_phase;
 	int m_track;
+	int m_quarter;
+	unsigned __int64 m_lastStepperCycle;
 	DWORD m_spinning;
 	DWORD m_writelight;
 	FloppyDisk m_disk;
@@ -164,17 +168,17 @@ public:
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 private:
-	void CheckSpinning(const ULONG nExecutedCycles);
+	void CheckSpinning(const ULONG uExecutedCycles);
 	Disk_Status_e GetDriveLightStatus(const int drive);
 	bool IsDriveValid(const int drive);
 	void AllocTrack(const int drive);
-	void ReadTrack(const int drive);
+	void ReadTrack(const int drive, ULONG uExecutedCycles);
 	void RemoveDisk(const int drive);
 	void WriteTrack(const int drive);
 	LPCTSTR DiskGetFullPathName(const int drive);
 	void ResetFloppyWOZ(void);
 	void ResetLogicStateSequencer(void);
-	void UpdateBitStreamPositionAndDiskCycle(const ULONG nExecutedCycles);
+	void UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles);
 	UINT GetBitCellDelta(void);
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
 	void SaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit);
@@ -183,8 +187,8 @@ private:
 	void __stdcall ControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall ControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall Enable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
-	void __stdcall ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
-	void __stdcall ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+	void __stdcall ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+	void __stdcall ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 	void __stdcall LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG);
 	void __stdcall SetReadMode(WORD, WORD, BYTE, BYTE, ULONG);
 	void __stdcall SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles);

@@ -152,7 +152,8 @@ void ImageInitialize(void)
 //===========================================================================
 
 void ImageReadTrack(	ImageInfo* const pImageInfo,
-						const int nTrack,
+						const int nTrack,			// track [0..39]
+						const int nHalfTrack,		// phase [0..79]
 						const int nQuarterTrack,
 						LPBYTE pTrackImageBuffer,
 						int* pNibbles,
@@ -165,7 +166,8 @@ void ImageReadTrack(	ImageInfo* const pImageInfo,
 
 	if (pImageInfo->pImageType->AllowRW() && pImageInfo->ValidTrack[nTrack])
 	{
-		pImageInfo->pImageType->Read(pImageInfo, nTrack, nQuarterTrack, pTrackImageBuffer, pNibbles, pBitCount, enhanceDisk);
+		const int trackOrPhase = !ImageIsWOZ(pImageInfo) ? nTrack : nHalfTrack;
+		pImageInfo->pImageType->Read(pImageInfo, trackOrPhase, nQuarterTrack, pTrackImageBuffer, pNibbles, pBitCount, enhanceDisk);
 	}
 	else
 	{
@@ -177,7 +179,8 @@ void ImageReadTrack(	ImageInfo* const pImageInfo,
 //===========================================================================
 
 void ImageWriteTrack(	ImageInfo* const pImageInfo,
-						const int nTrack,
+						const int nTrack,			// track [0..39]
+						const int nHalfTrack,		// phase [0..79]
 						const int nQuarterTrack,
 						LPBYTE pTrackImage,
 						const int nNibbles)

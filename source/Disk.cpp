@@ -180,7 +180,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 //===========================================================================
 
 // Called by ControlMotor() & Enable()
-void Disk2InterfaceCard::CheckSpinning(const ULONG nExecutedCycles)
+void Disk2InterfaceCard::CheckSpinning(const ULONG uExecutedCycles)
 {
 	DWORD modechange = (m_floppyMotorOn && !m_floppyDrive[m_currDrive].m_spinning);
 
@@ -193,7 +193,7 @@ void Disk2InterfaceCard::CheckSpinning(const ULONG nExecutedCycles)
 	if (modechange)
 	{
 		// Set m_diskLastCycle when motor changes: not spinning (ie. off for 1 sec) -> on
-		CpuCalcCycles(nExecutedCycles);
+		CpuCalcCycles(uExecutedCycles);
 		m_diskLastCycle = g_nCumulativeCycles;
 	}
 }
@@ -242,7 +242,7 @@ void Disk2InterfaceCard::AllocTrack(const int drive)
 
 //===========================================================================
 
-void Disk2InterfaceCard::ReadTrack(const int drive)
+void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 {
 	if (! IsDriveValid( drive ))
 		return;
@@ -262,7 +262,15 @@ void Disk2InterfaceCard::ReadTrack(const int drive)
 	if (pFloppy->m_trackimage && pFloppy->m_imagehandle)
 	{
 #if LOG_DISK_TRACKS
-		LOG_DISK("track $%02X%s read\r\n", pDrive->m_track, (pDrive->m_phase & 1) ? ".5" : "  ");
+		const char* szQuarterNone  = "";
+		const char* szQuarterPlus  = "+.25";
+		const char* szQuarterMinus = "-.25";
+		const char* pQuarter = (pDrive->m_quarter == 0) ? szQuarterNone : (pDrive->m_quarter > 0) ? szQuarterPlus : szQuarterMinus;
+
+		CpuCalcCycles(uExecutedCycles);
+		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
+
+		LOG_DISK("track $%02X%s%s read (last-stepper %.3fms)\r\n", pDrive->m_track, (pDrive->m_phase & 1) ? ".5" : "  ", pQuarter, ((float)cycleDelta) / (CLK_6502 / 1000.0));
 #endif
 		const UINT32 currentPosition = pFloppy->m_byte;
 		const UINT32 currentTrackLength = pFloppy->m_nibbles;
@@ -271,6 +279,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive)
 			pFloppy->m_imagehandle,
 			pDrive->m_track,
 			pDrive->m_phase,
+			pDrive->m_quarter,
 			pFloppy->m_trackimage,
 			&pFloppy->m_nibbles,
 			&pFloppy->m_bitCount,
@@ -354,6 +363,7 @@ void Disk2InterfaceCard::WriteTrack(const int drive)
 			pFloppy->m_imagehandle,
 			pDrive->m_track,
 			pDrive->m_phase, // TODO: this should never be used; it's the current phase (half-track), not that of the track to be written (nickw)
+			pDrive->m_quarter,
 			pFloppy->m_trackimage,
 			pFloppy->m_nibbles);
 	}
@@ -421,6 +431,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 
 	int phase = (address >> 1) & 3;
 	int phase_bit = (1 << phase);
+	int oldPhases = m_phases;
 
 #if 1
 	// update the magnet states
@@ -435,6 +446,42 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		m_phases &= ~phase_bit;
 	}
 
+	CpuCalcCycles(uExecutedCycles);
+	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
+
+	int quarterDirection = 0;
+	if (((oldPhases == 0x8 ||	// 1000
+			oldPhases == 0x4 ||	// 0100
+			oldPhases == 0x2 ||	// 0010
+			oldPhases == 0x1))	// 0001
+		&& ((m_phases == 0xC ||	// 1100
+			m_phases == 0x6 ||	// 0110
+			m_phases == 0x3 ||	// 0011
+			m_phases == 0x9)))	// 1001
+	{
+		int newPhases = oldPhases ^ m_phases;
+		int oldBit = 0;
+		while (oldPhases != 1)
+		{
+			oldPhases >>= 1;
+			oldBit++;
+		}
+		int newBit = 0;
+		while (newPhases != 1)
+		{
+			newPhases >>= 1;
+			newBit++;
+		}
+		if (oldBit == 3 && newBit == 0)
+			newBit = 4;
+		else if (oldBit == 0 && newBit == 0)
+			newBit = -1;
+		quarterDirection = newBit - oldBit;
+		_ASSERT(quarterDirection);
+	}
+
+	pDrive->m_lastStepperCycle = g_nCumulativeCycles;
+
 	// check for any stepping effect from a magnet
 	// - move only when the magnet opposite the cog is off
 	// - move in the direction of an adjacent magnet if one is on
@@ -447,13 +494,19 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		direction -= 1;
 
 	// apply magnet step, if any
-	if (direction)
+//	if (direction || quarterDirection)
+	if (direction || pDrive->m_quarter != quarterDirection)
 	{
+		int oldPhase = pDrive->m_phase;
+		int oldQuarter = pDrive->m_quarter;
 		pDrive->m_phase = MAX(0, MIN(79, pDrive->m_phase + direction));
+		pDrive->m_quarter = quarterDirection;
 		const int nNumTracksInImage = ImageGetNumTracks(pFloppy->m_imagehandle);
 		const int newtrack = (nNumTracksInImage == 0)	? 0
 														: MIN(nNumTracksInImage-1, pDrive->m_phase >> 1); // (round half tracks down)
-		if (newtrack != pDrive->m_track)
+
+//		if (newtrack != pDrive->m_track)
+		if (oldPhase != pDrive->m_phase || oldQuarter != pDrive->m_quarter)
 		{
 			FlushCurrentTrack(m_currDrive);
 			pDrive->m_track = newtrack;
@@ -471,7 +524,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 #endif
 
 #if LOG_DISK_PHASES
-	LOG_DISK("track $%02X%s phases %d%d%d%d phase %d %s address $%4X\r\n",
+	LOG_DISK("track $%02X%s phases %d%d%d%d phase %d %s address $%4X last-stepper %.3fms\r\n",
 		pDrive->m_phase >> 1,
 		(pDrive->m_phase & 1) ? ".5" : "  ",
 		(m_phases >> 3) & 1,
@@ -480,7 +533,8 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		(m_phases >> 0) & 1,
 		phase,
 		(address & 1) ? "on " : "off",
-		address);
+		address,
+		((float)cycleDelta)/(CLK_6502/1000.0));
 #endif
 }
 
@@ -829,14 +883,14 @@ bool Disk2InterfaceCard::LogWriteCheckSyncFF(ULONG& uCycleDelta)
 
 //===========================================================================
 
-void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
 	/* m_floppyLoadMode = 0; */
 	FloppyDrive* pDrive = &m_floppyDrive[m_currDrive];
 	FloppyDisk* pFloppy = &pDrive->m_disk;
 
 	if (!pFloppy->m_trackimagedata && pFloppy->m_imagehandle)
-		ReadTrack(m_currDrive);
+		ReadTrack(m_currDrive, uExecutedCycles);
 
 	if (!pFloppy->m_trackimagedata)
 	{
@@ -846,7 +900,7 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 	// Improve precision of "authentic" drive mode - GH#125
 	UINT uSpinNibbleCount = 0;
-	CpuCalcCycles(nExecutedCycles);	// g_nCumulativeCycles required for uSpinNibbleCount & LogWriteCheckSyncFF()
+	CpuCalcCycles(uExecutedCycles);	// g_nCumulativeCycles required for uSpinNibbleCount & LogWriteCheckSyncFF()
 
 	if (!m_enhanceDisk && pDrive->m_spinning)
 	{
@@ -964,11 +1018,11 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 	m_dbgLatchDelayedCnt = 0;
 }
 
-void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG nExecutedCycles)
+void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles)
 {
 	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
 
-	CpuCalcCycles(nExecutedCycles);
+	CpuCalcCycles(uExecutedCycles);
 	const UINT bitCellDelta = GetBitCellDelta();
 	UpdateBitStreamPosition(floppy, bitCellDelta);
 
@@ -1002,14 +1056,14 @@ void Disk2InterfaceCard::UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG
 	m_bitMask = 1 << remainder;
 }
 
-void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
 	/* m_floppyLoadMode = 0; */
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
 
 	if (!floppy.m_trackimagedata && floppy.m_imagehandle)
-		ReadTrack(m_currDrive);
+		ReadTrack(m_currDrive, uExecutedCycles);
 
 	if (!floppy.m_trackimagedata)
 	{
@@ -1025,7 +1079,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 	if (!drive.m_spinning)	// GH#599
 		return;
 
-	CpuCalcCycles(nExecutedCycles);
+	CpuCalcCycles(uExecutedCycles);
 
 	// Skipping forward a large amount of bitcells means the bitstream will very likely be out-of-sync.
 	// The first 1-bit will produce a latch nibble, and this 1-bit is unlikely to be the nibble's high bit.
@@ -1332,7 +1386,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 //===========================================================================
 
-void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG nExecutedCycles)
+void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG uExecutedCycles)
 {
 	/* m_floppyLoadMode = 1; */
 
@@ -1363,7 +1417,7 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 #endif
 		ResetLogicStateSequencer();	// reset sequencer (Ref: WOZ-1.01)
 //		m_latchDelay = 7;	// TODO: Treat like a regular $C0EC latch load?
-		UpdateBitStreamPositionAndDiskCycle(nExecutedCycles);	// Fix E7-copy protection
+		UpdateBitStreamPositionAndDiskCycle(uExecutedCycles);	// Fix E7-copy protection
 	}
 }
 
