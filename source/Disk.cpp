@@ -450,6 +450,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
 
 	int quarterDirection = 0;
+#if 0
 	if (((oldPhases == 0x8 ||	// 1000
 			oldPhases == 0x4 ||	// 0100
 			oldPhases == 0x2 ||	// 0010
@@ -479,24 +480,28 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		quarterDirection = newBit - oldBit;
 		_ASSERT(quarterDirection);
 	}
+#endif
 
 	pDrive->m_lastStepperCycle = g_nCumulativeCycles;
 
 	int direction = 0;
-	if ((m_phases == 0x8 ||	// 1000
-		m_phases == 0x4 ||	// 0100
-		m_phases == 0x2 ||	// 0010
-		m_phases == 0x1))	// 0001
+	// check for any stepping effect from a magnet
+	// - move only when the magnet opposite the cog is off
+	// - move in the direction of an adjacent magnet if one is on
+	// - do not move if both adjacent magnets are on
+	// momentum and timing are not accounted for ... maybe one day!
+	if (m_phases & (1 << ((pDrive->m_phase + 1) & 3)))
+		direction += 1;
+	if (m_phases & (1 << ((pDrive->m_phase + 3) & 3)))
+		direction -= 1;
+
+	if ((m_phases == 0xC ||	// 1100
+		m_phases == 0x6 ||	// 0110
+		m_phases == 0x3 ||	// 0011
+		m_phases == 0x9))	// 1001
 	{
-		// check for any stepping effect from a magnet
-		// - move only when the magnet opposite the cog is off
-		// - move in the direction of an adjacent magnet if one is on
-		// - do not move if both adjacent magnets are on
-		// momentum and timing are not accounted for ... maybe one day!
-		if (m_phases & (1 << ((pDrive->m_phase + 1) & 3)))
-			direction += 1;
-		if (m_phases & (1 << ((pDrive->m_phase + 3) & 3)))
-			direction -= 1;
+		quarterDirection = direction;
+		direction = 0;
 	}
 
 	// apply magnet step, if any
