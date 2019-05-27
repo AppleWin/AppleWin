@@ -1029,10 +1029,10 @@ public:
 
 //-------------------------------------
 
-class CWOZImage : public CImageBase
+class CWOZEmptyTrack
 {
 public:
-	CWOZImage(void)
+	CWOZEmptyTrack(void)
 	{
 		m_pWOZEmptyTrack = new BYTE[CWOZHelper::EMPTY_TRACK_SIZE];
 
@@ -1048,7 +1048,7 @@ public:
 			m_pWOZEmptyTrack[i] = n;
 		}
 	}
-	virtual ~CWOZImage(void) { delete m_pWOZEmptyTrack; }
+	virtual ~CWOZEmptyTrack(void) { delete m_pWOZEmptyTrack; }
 
 	void ReadEmptyTrack(LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount)
 	{
@@ -1064,7 +1064,7 @@ private:
 
 //-------------------------------------
 
-class CWOZ1Image : public CWOZImage
+class CWOZ1Image : public CImageBase, private CWOZEmptyTrack
 {
 public:
 	CWOZ1Image(void) {}
@@ -1120,7 +1120,7 @@ public:
 
 //-------------------------------------
 
-class CWOZ2Image : public CWOZImage
+class CWOZ2Image : public CImageBase, private CWOZEmptyTrack
 {
 public:
 	CWOZ2Image(void) {}
