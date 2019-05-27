@@ -1050,6 +1050,15 @@ public:
 	}
 	virtual ~CWOZImage(void) { delete m_pWOZEmptyTrack; }
 
+	void ReadEmptyTrack(LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount)
+	{
+		memcpy(pTrackImageBuffer, m_pWOZEmptyTrack, CWOZHelper::EMPTY_TRACK_SIZE);
+		*pNibbles = CWOZHelper::EMPTY_TRACK_SIZE;
+		*pBitCount = CWOZHelper::EMPTY_TRACK_SIZE * 8;
+		return;
+	}
+
+private:
 	BYTE* m_pWOZEmptyTrack;
 };
 
@@ -1086,12 +1095,7 @@ public:
 
 		int trackFromTMAP = pTrackMap[nHalfTrack * 2 + nQuarterTrack];
 		if (trackFromTMAP == 0xFF)
-		{
-			memcpy(pTrackImageBuffer, m_pWOZEmptyTrack, CWOZHelper::EMPTY_TRACK_SIZE);
-			*pNibbles = CWOZHelper::EMPTY_TRACK_SIZE;
-			*pBitCount = CWOZHelper::EMPTY_TRACK_SIZE*8;
-			return;
-		}
+			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);
 
 		ReadTrack(pImageInfo, trackFromTMAP, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE);
 		CWOZHelper::TRKv1* pTRK = (CWOZHelper::TRKv1*) &pTrackImageBuffer[CWOZHelper::WOZ1_TRK_OFFSET];
@@ -1147,19 +1151,16 @@ public:
 
 		int trackFromTMAP = pTrackMap[nHalfTrack * 2 + nQuarterTrack];
 		if (trackFromTMAP == 0xFF)
-		{
-			memcpy(pTrackImageBuffer, m_pWOZEmptyTrack, CWOZHelper::EMPTY_TRACK_SIZE);
-			*pNibbles = CWOZHelper::EMPTY_TRACK_SIZE;
-			*pBitCount = CWOZHelper::EMPTY_TRACK_SIZE * 8;
-			return;
-		}
+			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);
 
 		CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
 		CWOZHelper::TRKv2* pTRK = &pTRKS[trackFromTMAP];
 		*pBitCount = pTRK->bitCount;
 		*pNibbles = (pTRK->bitCount+7) / 8;
 
-		_ASSERT(*pNibbles <= NIBBLES_PER_TRACK);
+		_ASSERT(*pNibbles <= NIBBLES_PER_TRACK_WOZ2);
+		if (*pNibbles > NIBBLES_PER_TRACK_WOZ2)
+			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);	// TODO: Enlarge track buffer, but for now just return an empty track
 
 		memcpy(pTrackImageBuffer, &pImageInfo->pImageBuffer[pTRK->startBlock*512], *pNibbles);
 	}

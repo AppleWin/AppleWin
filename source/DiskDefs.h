@@ -1,5 +1,6 @@
 #pragma once
 
 #define NIBBLES_PER_TRACK 0x1A00
+#define NIBBLES_PER_TRACK_WOZ2 0x1A18	// 6680
 
 const UINT NUM_SECTORS = 16;
