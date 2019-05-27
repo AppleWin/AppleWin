@@ -237,7 +237,7 @@ bool Disk2InterfaceCard::IsDriveValid(const int drive)
 void Disk2InterfaceCard::AllocTrack(const int drive)
 {
 	FloppyDisk* pFloppy = &m_floppyDrive[drive].m_disk;
-	const UINT trackSize = !ImageIsWOZ(pFloppy->m_imagehandle) ? NIBBLES_PER_TRACK : NIBBLES_PER_TRACK_WOZ2;
+	const UINT trackSize = MAX(NIBBLES_PER_TRACK, NIBBLES_PER_TRACK_WOZ2);
 	pFloppy->m_trackimage = (LPBYTE)VirtualAlloc(NULL, trackSize, MEM_COMMIT, PAGE_READWRITE);
 }
 
