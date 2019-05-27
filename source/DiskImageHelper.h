@@ -50,7 +50,7 @@ struct ImageInfo
 class CImageBase
 {
 public:
-	CImageBase(void) : m_uNumTracksInImage(0), m_uWozImageVersion(0), m_uVolumeNumber(DEFAULT_VOLUME_NUMBER) {}
+	CImageBase(void) : m_uNumTracksInImage(0), m_uVolumeNumber(DEFAULT_VOLUME_NUMBER) {}
 	virtual ~CImageBase(void) {}
 
 	virtual bool Boot(ImageInfo* pImageInfo) { return false; }
@@ -89,7 +89,6 @@ protected:
 public:
 	static LPBYTE ms_pWorkBuffer;
 	UINT m_uNumTracksInImage;	// Init'd by CDiskImageHelper.Detect()/GetImageForCreation() & possibly updated by IsValidImageSize()
-	UINT m_uWozImageVersion;
 
 protected:
 	static BYTE ms_DiskByte[0x40];

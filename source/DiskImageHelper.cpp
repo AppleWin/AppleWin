@@ -1065,10 +1065,8 @@ public:
 	{
 		CWOZHelper::WOZHeader* pWozHdr = (CWOZHelper::WOZHeader*) pImage;
 
-		m_uWozImageVersion = 0;
 		if (pWozHdr->id1 != CWOZHelper::ID1_WOZ1 || pWozHdr->id2 != CWOZHelper::ID2)
 			return eMismatch;
-		m_uWozImageVersion = 1;
 
 		if (pWozHdr->crc32)
 		{
@@ -1128,10 +1126,8 @@ public:
 	{
 		CWOZHelper::WOZHeader* pWozHdr = (CWOZHelper::WOZHeader*) pImage;
 
-		m_uWozImageVersion = 0;
 		if (pWozHdr->id1 != CWOZHelper::ID1_WOZ2 || pWozHdr->id2 != CWOZHelper::ID2)
 			return eMismatch;
-		m_uWozImageVersion = 2;
 
 		if (pWozHdr->crc32)
 		{
@@ -1161,7 +1157,9 @@ public:
 		CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
 		CWOZHelper::TRKv2* pTRK = &pTRKS[trackFromTMAP];
 		*pBitCount = pTRK->bitCount;
-		*pNibbles = pTRK->bitCount / 8;
+		*pNibbles = (pTRK->bitCount+7) / 8;
+
+		_ASSERT(*pNibbles <= NIBBLES_PER_TRACK);
 
 		memcpy(pTrackImageBuffer, &pImageInfo->pImageBuffer[pTRK->startBlock*512], *pNibbles);
 	}
@@ -1179,8 +1177,6 @@ public:
 	virtual eImageType GetType(void) { return eImageWOZ2; }
 	virtual const char* GetCreateExtensions(void) { return ".woz"; }
 	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.nib;.iie;.po;.prg"; }
-
-	BYTE* m_pWOZEmptyTrack;
 };
 
 //-----------------------------------------------------------------------------
