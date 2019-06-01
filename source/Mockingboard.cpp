@@ -1797,11 +1797,19 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 			{
 				// Free-running mode
 				// - Ultima4/5 change ACCESS_TIMER1 after a couple of IRQs into tune
-				pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
+				pMB->sy6522.TIMER1_COUNTER.w += pMB->sy6522.TIMER1_LATCH.w;	// GH#651: account for underflowed cycles too
+				if (pMB->sy6522.TIMER1_COUNTER.w > pMB->sy6522.TIMER1_LATCH.w)
+				{
+					if (pMB->sy6522.TIMER1_LATCH.w)
+						pMB->sy6522.TIMER1_COUNTER.w %= pMB->sy6522.TIMER1_LATCH.w;	// Only occurs if LATCH.w<0x0007 (# cycles for longest opcode)
+					else
+						pMB->sy6522.TIMER1_COUNTER.w = 0;
+				}
 				StartTimer1(pMB);
 			}
 		}
-		else if (pMB->bTimer2Active && bTimer2Underflow)
+
+		if (pMB->bTimer2Active && bTimer2Underflow)
 		{
 			UpdateIFR(pMB, 0, IxR_TIMER2);
 
@@ -1811,7 +1819,14 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 			}
 			else
 			{
-				pMB->sy6522.TIMER2_COUNTER.w = pMB->sy6522.TIMER2_LATCH.w;
+				pMB->sy6522.TIMER2_COUNTER.w += pMB->sy6522.TIMER2_LATCH.w;
+				if (pMB->sy6522.TIMER2_COUNTER.w > pMB->sy6522.TIMER2_LATCH.w)
+				{
+					if (pMB->sy6522.TIMER2_LATCH.w)
+						pMB->sy6522.TIMER2_COUNTER.w %= pMB->sy6522.TIMER2_LATCH.w;
+					else
+						pMB->sy6522.TIMER2_COUNTER.w = 0;
+				}
 				StartTimer2(pMB);
 			}
 		}
