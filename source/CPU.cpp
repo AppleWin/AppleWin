@@ -133,7 +133,6 @@ static ULONG g_nCyclesExecuted;	// # of cycles executed up to last IO access
 
 //static signed long g_uInternalExecutedCycles;
 // Use IRQ_CHECK_TIMEOUT=128 when running at full-speed; else use IRQ_CHECK_TIMEOUT=1 (GH#651)
-// - What about when running benchmark?
 static const int IRQ_CHECK_TIMEOUT_FULL_SPEED = 128;
 static const int IRQ_CHECK_TIMEOUT_NORMAL_SPEED = 1;
 static signed int g_nIrqCheckTimeout = IRQ_CHECK_TIMEOUT_NORMAL_SPEED;
