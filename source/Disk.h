@@ -179,7 +179,7 @@ private:
 	void ResetFloppyWOZ(void);
 	void ResetLogicStateSequencer(void);
 	void UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles);
-	UINT GetBitCellDelta(void);
+	UINT GetBitCellDelta(const BYTE optimalBitTiming);
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
 	void SaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	void LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
@@ -223,6 +223,7 @@ private:
 	UINT m_zeroCnt;
 	BYTE m_bitMask;
 	BYTE m_extraCycles;
+	double m_extraCyclesF;
 	int m_latchDelay;
 	bool m_resetSequencer;
 	UINT m_dbgLatchDelayedCnt;

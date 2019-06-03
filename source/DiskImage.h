@@ -82,5 +82,6 @@ bool ImageIsMultiFileZip(ImageInfo* const pImageInfo);
 const char* ImageGetPathname(ImageInfo* const pImageInfo);
 UINT ImageGetImageSize(ImageInfo* const pImageInfo);
 bool ImageIsWOZ(ImageInfo* const pImageInfo);
+BYTE ImageGetOptimalBitTiming(ImageInfo* const pImageInfo);
 
 void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName);

@@ -1390,7 +1390,7 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 
 	DWORD dwSize = nLen;
 	DWORD dwOffset = 0;
-	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap);
+	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap, pImageInfo->optimalBitTiming);
 
 	if (!pImageType)
 		return eIMAGE_ERROR_UNSUPPORTED;
@@ -1482,7 +1482,7 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 
 	DWORD dwSize = nLen;
 	DWORD dwOffset = 0;
-	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap);
+	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap, pImageInfo->optimalBitTiming);
 
 	if (!pImageType)
 	{
@@ -1579,7 +1579,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			return eIMAGE_ERROR_BAD_SIZE;
 		}
 
-		pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap);
+		pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap, pImageInfo->optimalBitTiming);
 		if (bTempDetectBuffer)
 		{
 			delete [] pImageInfo->pImageBuffer;
@@ -1722,7 +1722,7 @@ CDiskImageHelper::CDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CWOZ2Image );
 }
 
-CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap)
+CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming)
 {
 	dwOffset = 0;
 	m_MacBinaryHelper.DetectHdr(pImage, dwSize, dwOffset);
@@ -1776,6 +1776,8 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 
 		if (m_WOZHelper.IsWriteProtected() && !writeProtected)
 			writeProtected = true;
+
+		optimalBitTiming = m_WOZHelper.GetOptimalBitTiming();
 	}
 	else
 	{
@@ -1847,7 +1849,7 @@ CHardDiskImageHelper::CHardDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CHDVImage );
 }
 
-CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap)
+CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming)
 {
 	dwOffset = 0;
 	m_Result2IMG = m_2IMGHelper.DetectHdr(pImage, dwSize, dwOffset);
@@ -1878,6 +1880,7 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHA
 	}
 
 	pTrackMap = 0;	// TODO: WOZ
+	optimalBitTiming = 0;	// TODO: WOZ
 
 	return pImageType;
 }

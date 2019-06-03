@@ -1019,6 +1019,7 @@ void Disk2InterfaceCard::ResetFloppyWOZ(void)
 	m_zeroCnt = 0;
 	m_bitMask = 1<<7;
 	m_extraCycles = 0;
+	m_extraCyclesF = 0.0;
 }
 
 void Disk2InterfaceCard::ResetLogicStateSequencer(void)
@@ -1035,21 +1036,32 @@ void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG uExecut
 	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
 
 	CpuCalcCycles(uExecutedCycles);
-	const UINT bitCellDelta = GetBitCellDelta();
+	const UINT bitCellDelta = GetBitCellDelta(ImageGetOptimalBitTiming(floppy.m_imagehandle));
 	UpdateBitStreamPosition(floppy, bitCellDelta);
 
 	m_diskLastCycle = g_nCumulativeCycles;
 }
 
-UINT Disk2InterfaceCard::GetBitCellDelta(void)
+UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
 {
 	// NB. m_extraCycles is needed to retain accuracy:
 	// . Read latch #1:  0-> 9: cycleDelta= 9, bitCellDelta=2, extraCycles=1
 	// . Read latch #2: 11->20: cycleDelta=11, bitCellDelta=2, extraCycles=3
 	// . Overall:        0->20: cycleDelta=20, bitCellDelta=5, extraCycles=0
-	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + m_extraCycles;
-	const UINT bitCellDelta = cycleDelta / 4;	// DIV 4 for 4us per bit-cell
-	m_extraCycles = cycleDelta & 3;				// MOD 4 : remainder carried forward for next time
+	UINT bitCellDelta;
+	if (optimalBitTiming == 32)
+	{
+		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + m_extraCycles;
+		bitCellDelta = cycleDelta / 4;	// DIV 4 for 4us per bit-cell
+		m_extraCycles = cycleDelta & 3;	// MOD 4 : remainder carried forward for next time
+	}
+	else
+	{
+		const double cycleDelta = (double)(g_nCumulativeCycles - m_diskLastCycle) + m_extraCyclesF;
+		const double bitTime = 0.125 * (double)optimalBitTiming;	// 125ns units
+		bitCellDelta = (UINT) trunc( cycleDelta / bitTime );
+		m_extraCyclesF = (double)cycleDelta - ((double)bitCellDelta * bitTime);
+	}
 	return bitCellDelta;
 }
 
@@ -1098,7 +1110,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 	// So we need to ensure we run enough bits through the sequencer to re-sync.
 	// NB. For Planetfall 13 bitcells(NG) / 14 bitcells(OK)
 	const UINT significantBitCells = 50;	// 5x 10-bit sync FF nibbles
-	UINT bitCellDelta = GetBitCellDelta();
+	UINT bitCellDelta = GetBitCellDelta(ImageGetOptimalBitTiming(floppy.m_imagehandle));
 
 	UINT bitCellRemainder;
 	if (bitCellDelta <= significantBitCells)
