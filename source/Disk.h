@@ -63,6 +63,7 @@ public:
 		m_nibbles = 0;
 		m_bitOffset = 0;
 		m_bitCount = 0;
+		m_bitMask = 1 << 7;
 		m_trackimage = NULL;
 		m_trackimagedata = false;
 		m_trackimagedirty = false;
@@ -78,6 +79,7 @@ public:
 	int m_nibbles;									// Init'd by ReadTrack() -> ImageReadTrack()
 	UINT m_bitOffset;
 	UINT m_bitCount;
+	BYTE m_bitMask;
 	LPBYTE m_trackimage;
 	bool m_trackimagedata;
 	bool m_trackimagedirty;
@@ -181,8 +183,9 @@ private:
 	void UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles);
 	UINT GetBitCellDelta(const BYTE optimalBitTiming);
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
+	void UpdateBitStreamOffsets(FloppyDisk& floppy);
 	void SaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit);
-	void LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
+	void LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version);
 
 	void __stdcall ControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall ControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
@@ -217,13 +220,11 @@ private:
 	static const UINT WRITELIGHT_CYCLES = 20000*64;	// 1280000 cycles = 1.25s
 
 	// Logic State Sequencer (for WOZ):
-	enum LSS_STATE {LSS_SL0=0, LSS_SL1=1, LSS_RESET, LSS_CLEAR, LSS_WAIT_BYTE_FLAG, LSS_WAIT_BIT7, LSS_SHIFTING};
-	LSS_STATE m_state;
+//	enum LSS_STATE {LSS_SL0=0, LSS_SL1=1, LSS_RESET, LSS_CLEAR, LSS_WAIT_BYTE_FLAG, LSS_WAIT_BIT7, LSS_SHIFTING};
+//	LSS_STATE m_state;
 	BYTE m_shiftReg;
 	UINT m_zeroCnt;
-	BYTE m_bitMask;
-	BYTE m_extraCycles;
-	double m_extraCyclesF;
+	double m_extraCycles;
 	int m_latchDelay;
 	bool m_resetSequencer;
 	UINT m_dbgLatchDelayedCnt;

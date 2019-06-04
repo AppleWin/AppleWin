@@ -342,6 +342,18 @@ std::string YamlLoadHelper::LoadString(const std::string& key)
 	return value;
 }
 
+double YamlLoadHelper::LoadDouble(const std::string key)
+{
+	bool bFound;
+	std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
+	if (value == "")
+	{
+		m_bDoGetMapRemainder = false;
+		throw std::string(m_currentMapName + ": Missing: " + key);
+	}
+	return strtod(value.c_str(), NULL);
+}
+
 void YamlLoadHelper::LoadMemory(const LPBYTE pMemBase, const size_t size)
 {
 	m_yamlHelper.LoadMemory(*m_pMapYaml, pMemBase, size);
@@ -412,6 +424,11 @@ void YamlSaveHelper::SaveBool(const char* key, bool value)
 void YamlSaveHelper::SaveString(const char* key,  const char* value)
 {
 	Save("%s: %s\n", key, (value[0] != 0) ? value : "\"\"");
+}
+
+void YamlSaveHelper::SaveDouble(const char* key, double value)
+{
+	Save("%s: %f\n", key, value);
 }
 
 // Pre: uMemSize must be multiple of 8
