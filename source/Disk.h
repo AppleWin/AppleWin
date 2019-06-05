@@ -184,7 +184,10 @@ private:
 	UINT GetBitCellDelta(const BYTE optimalBitTiming);
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
 	void UpdateBitStreamOffsets(FloppyDisk& floppy);
-	void SaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit);
+	void SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT unit);
+	void SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
+	void LoadSnapshotDriveUnitv3(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version);
+	bool LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version, std::vector<BYTE>& track);
 	void LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version);
 
 	void __stdcall ControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
