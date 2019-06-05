@@ -1794,88 +1794,8 @@ void Disk2InterfaceCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	SaveSnapshotDriveUnit(yamlSaveHelper, DRIVE_2);
 }
 
-void Disk2InterfaceCard::LoadSnapshotDriveUnitv3(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version)
-{
-	_ASSERT(version <= 3);
-
-	std::string disk2UnitName = std::string(SS_YAML_KEY_DISK2UNIT) + (unit == DRIVE_1 ? std::string("0") : std::string("1"));
-	if (!yamlLoadHelper.GetSubMap(disk2UnitName))
-		throw std::string("Card: Expected key: ") + disk2UnitName;
-
-	bool bImageError = false;
-
-	std::string filename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
-	if (!filename.empty())
-	{
-		DWORD dwAttributes = GetFileAttributes(filename.c_str());
-		if (dwAttributes == INVALID_FILE_ATTRIBUTES)
-		{
-			// Get user to browse for file
-			UserSelectNewDiskImage(unit, filename.c_str());
-
-			dwAttributes = GetFileAttributes(filename.c_str());
-		}
-
-		bImageError = (dwAttributes == INVALID_FILE_ATTRIBUTES);
-		if (!bImageError)
-		{
-			if (InsertDisk(unit, filename.c_str(), dwAttributes & FILE_ATTRIBUTE_READONLY, IMAGE_DONT_CREATE) != eIMAGE_ERROR_NONE)
-				bImageError = true;
-
-			// DiskInsert() zeros m_floppyDrive[unit], then sets up:
-			// . m_imagename
-			// . m_fullname
-			// . m_bWriteProtected
-		}
-	}
-
-	m_floppyDrive[unit].m_track			= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);
-	m_floppyDrive[unit].m_phase			= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
-	yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITE_PROTECTED);	// Consume
-	m_floppyDrive[unit].m_spinning		= yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
-	m_floppyDrive[unit].m_writelight	= yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
-	m_floppyDrive[unit].m_disk.m_byte				= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTE);
-	m_floppyDrive[unit].m_disk.m_nibbles			= yamlLoadHelper.LoadUint(SS_YAML_KEY_NIBBLES);
-	m_floppyDrive[unit].m_disk.m_trackimagedata		= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DATA) ? true : false;
-	m_floppyDrive[unit].m_disk.m_trackimagedirty	= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY) ? true : false;
-
-	std::vector<BYTE> track(NIBBLES_PER_TRACK);
-	if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
-	{
-		yamlLoadHelper.LoadMemory(&track[0], NIBBLES_PER_TRACK);
-		yamlLoadHelper.PopMap();
-	}
-
-	yamlLoadHelper.PopMap();
-
-	//
-
-	if (!filename.empty() && !bImageError)
-	{
-		if ((m_floppyDrive[unit].m_disk.m_trackimage == NULL) && m_floppyDrive[unit].m_disk.m_nibbles)
-			AllocTrack(unit);
-
-		if (m_floppyDrive[unit].m_disk.m_trackimage == NULL)
-			bImageError = true;
-		else
-			memcpy(m_floppyDrive[unit].m_disk.m_trackimage, &track[0], NIBBLES_PER_TRACK);
-	}
-
-	if (bImageError)
-	{
-		m_floppyDrive[unit].m_disk.m_trackimagedata	= false;
-		m_floppyDrive[unit].m_disk.m_trackimagedirty	= false;
-		m_floppyDrive[unit].m_disk.m_nibbles			= 0;
-	}
-}
-
 bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version, std::vector<BYTE>& track)
 {
-	_ASSERT(version >= 4);
-
-	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_FLOPPY))
-		throw std::string("Card: Expected key: ") + SS_YAML_KEY_FLOPPY;
-
 	std::string filename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
 	bool bImageError = filename.empty();
 
@@ -1906,16 +1826,20 @@ bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT
 	yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITE_PROTECTED);	// Consume
 	m_floppyDrive[unit].m_disk.m_byte = yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTE);
 	m_floppyDrive[unit].m_disk.m_nibbles = yamlLoadHelper.LoadUint(SS_YAML_KEY_NIBBLES);
-	m_floppyDrive[unit].m_disk.m_bitOffset = yamlLoadHelper.LoadUint(SS_YAML_KEY_BIT_OFFSET);
-	m_floppyDrive[unit].m_disk.m_bitCount = yamlLoadHelper.LoadUint(SS_YAML_KEY_BIT_COUNT);
 	m_floppyDrive[unit].m_disk.m_trackimagedata = yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DATA) ? true : false;
 	m_floppyDrive[unit].m_disk.m_trackimagedirty = yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY) ? true : false;
 
-	if (m_floppyDrive[unit].m_disk.m_bitCount && (m_floppyDrive[unit].m_disk.m_bitOffset >= m_floppyDrive[unit].m_disk.m_bitCount))
-		throw std::string("Disk image: bitOffset >= bitCount");
+	if (version >= 4)
+	{
+		m_floppyDrive[unit].m_disk.m_bitOffset = yamlLoadHelper.LoadUint(SS_YAML_KEY_BIT_OFFSET);
+		m_floppyDrive[unit].m_disk.m_bitCount = yamlLoadHelper.LoadUint(SS_YAML_KEY_BIT_COUNT);
 
-	if (ImageIsWOZ(m_floppyDrive[unit].m_disk.m_imagehandle))
-		UpdateBitStreamOffsets(m_floppyDrive[unit].m_disk);	// overwrites m_byte, inits m_bitMask
+		if (m_floppyDrive[unit].m_disk.m_bitCount && (m_floppyDrive[unit].m_disk.m_bitOffset >= m_floppyDrive[unit].m_disk.m_bitCount))
+			throw std::string("Disk image: bitOffset >= bitCount");
+
+		if (ImageIsWOZ(m_floppyDrive[unit].m_disk.m_imagehandle))
+			UpdateBitStreamOffsets(m_floppyDrive[unit].m_disk);	// overwrites m_byte, inits m_bitMask
+	}
 
 	if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
 	{
@@ -1923,9 +1847,46 @@ bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT
 		yamlLoadHelper.PopMap();
 	}
 
+	return bImageError;
+}
+
+void Disk2InterfaceCard::LoadSnapshotDriveUnitv3(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version)
+{
+	_ASSERT(version <= 3);
+
+	std::string disk2UnitName = std::string(SS_YAML_KEY_DISK2UNIT) + (unit == DRIVE_1 ? std::string("0") : std::string("1"));
+	if (!yamlLoadHelper.GetSubMap(disk2UnitName))
+		throw std::string("Card: Expected key: ") + disk2UnitName;
+
+	std::vector<BYTE> track(NIBBLES_PER_TRACK);
+	bool bImageError = LoadSnapshotFloppy(yamlLoadHelper, unit, version, track);
+
+	m_floppyDrive[unit].m_track = yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);
+	m_floppyDrive[unit].m_phase = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
+	m_floppyDrive[unit].m_spinning = yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
+	m_floppyDrive[unit].m_writelight = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
+
 	yamlLoadHelper.PopMap();
 
-	return bImageError;
+	//
+
+	if (!bImageError)
+	{
+		if ((m_floppyDrive[unit].m_disk.m_trackimage == NULL) && m_floppyDrive[unit].m_disk.m_nibbles)
+			AllocTrack(unit);
+
+		if (m_floppyDrive[unit].m_disk.m_trackimage == NULL)
+			bImageError = true;
+		else
+			memcpy(m_floppyDrive[unit].m_disk.m_trackimage, &track[0], NIBBLES_PER_TRACK);
+	}
+
+	if (bImageError)
+	{
+		m_floppyDrive[unit].m_disk.m_trackimagedata	= false;
+		m_floppyDrive[unit].m_disk.m_trackimagedirty	= false;
+		m_floppyDrive[unit].m_disk.m_nibbles			= 0;
+	}
 }
 
 void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version)
@@ -1936,8 +1897,15 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 	if (!yamlLoadHelper.GetSubMap(disk2UnitName))
 		throw std::string("Card: Expected key: ") + disk2UnitName;
 
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_FLOPPY))
+		throw std::string("Card: Expected key: ") + SS_YAML_KEY_FLOPPY;
+
 	std::vector<BYTE> track(NIBBLES_PER_TRACK);
 	bool bImageError = LoadSnapshotFloppy(yamlLoadHelper, unit, version, track);
+
+	yamlLoadHelper.PopMap();
+
+	//
 
 	m_floppyDrive[unit].m_phase = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
 	m_floppyDrive[unit].m_track = yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);
