@@ -1011,8 +1011,6 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 //===========================================================================
 
-//#define DO_LSS_STATES
-
 void Disk2InterfaceCard::ResetFloppyWOZ(void)
 {
 	m_zeroCnt = 0;
@@ -1023,7 +1021,6 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 {
 	m_shiftReg = 0;
 	m_latchDelay = 0;
-//	m_state = LSS_RESET;
 	m_resetSequencer = true;
 	m_dbgLatchDelayedCnt = 0;
 }
@@ -1184,71 +1181,6 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 
 			//
 
-#ifdef DO_LSS_STATES
-			if (m_state == LSS_RESET)
-			{
-				m_state = LSS_WAIT_BYTE_FLAG;
-				continue;
-			}
-
-			if (m_state == LSS_CLEAR)
-			{
-				m_floppyLatch = 0;
-				m_state = LSS_WAIT_BYTE_FLAG;
-			}
-
-			if (m_state == LSS_WAIT_BYTE_FLAG)
-			{
-				if (outputBit)
-				{
-					m_dbgLatchDelayedCnt = 0;
-					m_state = LSS_WAIT_BIT7;
-				}
-				else
-				{
-					m_dbgLatchDelayedCnt++;
-					if (m_dbgLatchDelayedCnt >= 3)
-					{
-						LOG_DISK("read: latch held due to 0: PC=%04X, cnt=%02X\r\n", regs.pc, m_dbgLatchDelayedCnt);
-					}
-				}
-				continue;
-			}
-
-			if (m_state == LSS_WAIT_BIT7)
-			{
-				m_state = !outputBit ? LSS_SL0 : LSS_SL1;
-				continue;
-			}
-
-			if (m_state == LSS_SL0 || m_state == LSS_SL1)
-			{
-#if LOG_DISK_NIBBLES_READ
-				if (newLatchData)
-				{
-					LOG_DISK("read skipped latch data: %04X = %02X\r\n", floppy.m_byte, m_floppyLatch);
-					newLatchData = false;
-				}
-#endif
-				m_floppyLatch = (1<<1) | m_state;
-				m_state = LSS_SHIFTING;
-			}
-
-			_ASSERT(m_state == LSS_SHIFTING);
-
-			m_floppyLatch <<= 1;
-			m_floppyLatch |= outputBit;
-
-			if (m_floppyLatch & 0x80)	// QA set?
-			{
-#if LOG_DISK_NIBBLES_READ
-				// May not actually be read by 6502 (eg. Prologue's CHKSUM 4&4 nibble pair), but still pass to the log's nibble reader
-				m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
-				newLatchData = true;
-#endif
-				m_state = LSS_WAIT_BYTE_FLAG;
-			}
-#else
 			m_shiftReg <<= 1;
 			m_shiftReg |= outputBit;
 
@@ -1297,15 +1229,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 #endif
 				}
 			}
-#endif
 		}
-
-#ifdef DO_LSS_STATES
-		if ((m_floppyLatch & 0x80) && (m_state == LSS_WAIT_BYTE_FLAG))
-		{
-			m_state = LSS_CLEAR;	// Only clear if CPU has read latch
-		}
-#endif
 
 //		m_diskLastReadLatchCycle = g_nCumulativeCycles;	// Not used by WOZ (only by NIB)
 
