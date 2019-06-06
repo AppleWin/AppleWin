@@ -225,7 +225,7 @@ private:
 
 	// Logic State Sequencer (for WOZ):
 	BYTE m_shiftReg;
-	UINT m_zeroCnt;
+	BYTE m_headWindow;
 	double m_extraCycles;
 	int m_latchDelay;
 	bool m_resetSequencer;

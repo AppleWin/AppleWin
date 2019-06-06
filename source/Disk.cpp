@@ -1013,7 +1013,7 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 void Disk2InterfaceCard::ResetFloppyWOZ(void)
 {
-	m_zeroCnt = 0;
+	m_headWindow = 0;
 	m_extraCycles = 0.0;
 }
 
@@ -1141,7 +1141,11 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 		for (UINT i = 0; i < bitCellRemainder; i++)
 		{
 			BYTE n = floppy.m_trackimage[floppy.m_byte];
-			BYTE outputBit = (n & floppy.m_bitMask) ? 1 : 0;
+
+			m_headWindow <<= 1;
+			m_headWindow |= (n & floppy.m_bitMask) ? 1 : 0;
+			BYTE outputBit = (m_headWindow & 0xf)	? (m_headWindow >> 1) & 1
+													: rand() & 1;
 
 			floppy.m_bitMask >>= 1;
 			if (!floppy.m_bitMask)
@@ -1164,19 +1168,6 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 			{
 				m_resetSequencer = false;	// LSS takes some cycles to reset (ref?)
 				continue;
-			}
-
-			if (!outputBit)
-			{
-				m_zeroCnt++;
-				if (m_zeroCnt > 3)
-					outputBit = rand() & 1;
-			}
-
-			if (outputBit)
-			{
-				// TODO: if we get a random 1 bit then reset zeroCnt?
-				m_zeroCnt = 0;
 			}
 
 			//
@@ -1631,7 +1622,7 @@ static const UINT kUNIT_VERSION = 4;
 #define SS_YAML_KEY_LAST_CYCLE "Last Cycle"
 #define SS_YAML_KEY_LAST_READ_LATCH_CYCLE "Last Read Latch Cycle"
 #define SS_YAML_KEY_LSS_SHIFT_REG "LSS Shift Reg"
-#define SS_YAML_KEY_LSS_ZERO_COUNT "LSS Zero Count"
+#define SS_YAML_KEY_LSS_HEAD_WINDOW "LSS Head Window"
 #define SS_YAML_KEY_LSS_EXTRA_CYCLES "LSS Extra Cycles"
 #define SS_YAML_KEY_LSS_LATCH_DELAY "LSS Latch Delay"
 #define SS_YAML_KEY_LSS_RESET_SEQUENCER "LSS Reset Sequencer"
@@ -1708,7 +1699,7 @@ void Disk2InterfaceCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_CYCLE, m_diskLastCycle);	// v2
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_READ_LATCH_CYCLE, m_diskLastReadLatchCycle);	// v3
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LSS_SHIFT_REG, m_shiftReg);			// v4
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_LSS_ZERO_COUNT, m_zeroCnt);				// v4
+	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_LSS_HEAD_WINDOW, m_headWindow);		// v4
 	yamlSaveHelper.SaveDouble(SS_YAML_KEY_LSS_EXTRA_CYCLES, m_extraCycles);		// v4
 	yamlSaveHelper.SaveInt(SS_YAML_KEY_LSS_LATCH_DELAY, m_latchDelay);			// v4
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_LSS_RESET_SEQUENCER, m_resetSequencer);	// v4
@@ -1883,7 +1874,7 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 	if (version >= 4)
 	{
 		m_shiftReg			= yamlLoadHelper.LoadUint(SS_YAML_KEY_LSS_SHIFT_REG) & 0xff;
-		m_zeroCnt			= yamlLoadHelper.LoadUint(SS_YAML_KEY_LSS_ZERO_COUNT);
+		m_headWindow		= yamlLoadHelper.LoadUint(SS_YAML_KEY_LSS_HEAD_WINDOW) & 0xf;
 		m_extraCycles		= yamlLoadHelper.LoadDouble(SS_YAML_KEY_LSS_EXTRA_CYCLES);
 		m_latchDelay		= yamlLoadHelper.LoadInt(SS_YAML_KEY_LSS_LATCH_DELAY);
 		m_resetSequencer	= yamlLoadHelper.LoadBool(SS_YAML_KEY_LSS_RESET_SEQUENCER);
