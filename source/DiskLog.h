@@ -1,4 +1,4 @@
-#define LOG_DISK_ENABLED 1	// Master enable
+#define LOG_DISK_ENABLED 0	// Master enable
 
 #define LOG_DISK_TRACKS 1
 #define LOG_DISK_MOTOR 1

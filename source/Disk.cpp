@@ -431,9 +431,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 
 	int phase = (address >> 1) & 3;
 	int phase_bit = (1 << phase);
-	int oldPhases = m_phases;
 
-#if 1
 	// update the magnet states
 	if (address & 1)
 	{
@@ -449,52 +447,20 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	CpuCalcCycles(uExecutedCycles);
 	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
 
-	int quarterDirection = 0;
-#if 0
-	if (((oldPhases == 0x8 ||	// 1000
-			oldPhases == 0x4 ||	// 0100
-			oldPhases == 0x2 ||	// 0010
-			oldPhases == 0x1))	// 0001
-		&& ((m_phases == 0xC ||	// 1100
-			m_phases == 0x6 ||	// 0110
-			m_phases == 0x3 ||	// 0011
-			m_phases == 0x9)))	// 1001
-	{
-		int newPhases = oldPhases ^ m_phases;
-		int oldBit = 0;
-		while (oldPhases != 1)
-		{
-			oldPhases >>= 1;
-			oldBit++;
-		}
-		int newBit = 0;
-		while (newPhases != 1)
-		{
-			newPhases >>= 1;
-			newBit++;
-		}
-		if (oldBit == 3 && newBit == 0)
-			newBit = 4;
-		else if (oldBit == 0 && newBit == 0)
-			newBit = -1;
-		quarterDirection = newBit - oldBit;
-		_ASSERT(quarterDirection);
-	}
-#endif
-
 	pDrive->m_lastStepperCycle = g_nCumulativeCycles;
 
 	int direction = 0;
 	// check for any stepping effect from a magnet
 	// - move only when the magnet opposite the cog is off
 	// - move in the direction of an adjacent magnet if one is on
-	// - do not move if both adjacent magnets are on
+	// - do not move if both adjacent magnets are on (ie. quarter track)
 	// momentum and timing are not accounted for ... maybe one day!
 	if (m_phases & (1 << ((pDrive->m_phase + 1) & 3)))
 		direction += 1;
 	if (m_phases & (1 << ((pDrive->m_phase + 3) & 3)))
 		direction -= 1;
 
+	int quarterDirection = 0;
 	if ((m_phases == 0xC ||	// 1100
 		m_phases == 0x6 ||	// 0110
 		m_phases == 0x3 ||	// 0011
@@ -505,7 +471,6 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	}
 
 	// apply magnet step, if any
-//	if (direction || quarterDirection)
 	if (direction || pDrive->m_quarter != quarterDirection)
 	{
 		int oldPhase = pDrive->m_phase;
@@ -516,7 +481,6 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		const int newtrack = (nNumTracksInImage == 0)	? 0
 														: MIN(nNumTracksInImage-1, pDrive->m_phase >> 1); // (round half tracks down)
 
-//		if (newtrack != pDrive->m_track)
 		if (oldPhase != pDrive->m_phase || oldQuarter != pDrive->m_quarter)
 		{
 			FlushCurrentTrack(m_currDrive);
@@ -530,9 +494,6 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		// https://github.com/AppleWin/AppleWin/issues/201
 		FrameDrawDiskStatus( (HDC)0 );
 	}
-#else
-	// substitute alternate stepping code here to test
-#endif
 
 #if LOG_DISK_PHASES
 	LOG_DISK("track $%02X%s phases %d%d%d%d phase %d %s address $%4X last-stepper %.3fms\r\n",
