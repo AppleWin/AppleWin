@@ -445,16 +445,17 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	}
 
 	CpuCalcCycles(uExecutedCycles);
+#if LOG_DISK_PHASES
 	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
-
+#endif
 	pDrive->m_lastStepperCycle = g_nCumulativeCycles;
 
-	int direction = 0;
 	// check for any stepping effect from a magnet
 	// - move only when the magnet opposite the cog is off
 	// - move in the direction of an adjacent magnet if one is on
 	// - do not move if both adjacent magnets are on (ie. quarter track)
 	// momentum and timing are not accounted for ... maybe one day!
+	int direction = 0;
 	if (m_phases & (1 << ((pDrive->m_phase + 1) & 3)))
 		direction += 1;
 	if (m_phases & (1 << ((pDrive->m_phase + 3) & 3)))
