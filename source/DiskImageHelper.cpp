@@ -1774,7 +1774,7 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 		if (m_WOZHelper.ProcessChunks(pImage, dwSize, dwOffset, pTrackMap) != eMatch)
 			return NULL;
 
-		if (m_WOZHelper.IsWriteProtected() && !writeProtected)
+//		if (m_WOZHelper.IsWriteProtected() && !writeProtected)	// Force write-protected until writing is supported
 			writeProtected = true;
 
 		optimalBitTiming = m_WOZHelper.GetOptimalBitTiming();

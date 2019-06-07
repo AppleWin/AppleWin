@@ -1092,8 +1092,8 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 
 	if (!floppy.m_trackimagedata)
 	{
-		_ASSERT(0);
-		m_floppyLatch = 0xFF;	// TODO: Should return rnd()
+		_ASSERT(0);		// Can't happen for WOZ - ReadTrack() should return an empty track
+		m_floppyLatch = 0xFF;
 		return;
 	}
 
@@ -1134,6 +1134,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 
 	if (!m_floppyWriteMode)
 	{
+		// m_diskLastReadLatchCycle = g_nCumulativeCycles;	// Not used by WOZ (only by NIB)
 #if LOG_DISK_NIBBLES_READ
 		bool newLatchData = false;
 #endif
@@ -1152,8 +1153,6 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 			{
 				floppy.m_bitMask = 1 << 7;
 				floppy.m_byte++;
-				if (floppy.m_byte == floppy.m_nibbles)	// Not required
-					floppy.m_byte = 0;					// Not required
 			}
 
 			floppy.m_bitOffset++;
@@ -1222,8 +1221,6 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 			}
 		}
 
-//		m_diskLastReadLatchCycle = g_nCumulativeCycles;	// Not used by WOZ (only by NIB)
-
 #if LOG_DISK_NIBBLES_READ
 		if (m_floppyLatch & 0x80)
 		{
@@ -1238,7 +1235,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 	}
 	else if (!floppy.m_bWriteProtected) // && m_floppyWriteMode
 	{
-		_ASSERT(0);
+		//TODO
 	}
 
 	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
