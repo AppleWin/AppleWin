@@ -9,6 +9,13 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.28.6.0 - 1 Jun 2019
+---------------------
+. [Bug #651] Cycle-accurate interrupts:
+	- Interrupts sources are checked after every opcode (full-speed after every 40 opcodes).
+	- 6522 TIMERs in free-running mode now account for the underflowed cycles when resetting the count.
+
+
 1.28.5.0 - 6 Apr 2019
 ---------------------
 . [Change #631] Improvements for the RGB AppleColor card:

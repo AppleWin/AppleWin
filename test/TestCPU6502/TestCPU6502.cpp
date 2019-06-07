@@ -54,7 +54,7 @@ static __forceinline void DoIrqProfiling(DWORD uCycles)
 {
 }
 
-static __forceinline void CheckInterruptSources(ULONG uExecutedCycles)
+static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const bool bVideoUpdate)
 {
 }
 
