@@ -1017,7 +1017,7 @@ UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
 	{
 		const double cycleDelta = (double)(g_nCumulativeCycles - m_diskLastCycle) + m_extraCycles;
 		const double bitTime = 0.125 * (double)optimalBitTiming;	// 125ns units
-		bitCellDelta = (UINT) trunc( cycleDelta / bitTime );
+		bitCellDelta = (UINT) floor( cycleDelta / bitTime );
 		m_extraCycles = (double)cycleDelta - ((double)bitCellDelta * bitTime);
 	}
 	return bitCellDelta;
