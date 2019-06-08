@@ -724,7 +724,7 @@ public:
 	CNib1Image(void) {}
 	virtual ~CNib1Image(void) {}
 
-	static const UINT NIB1_TRACK_SIZE = NIBBLES_PER_TRACK;
+	static const UINT NIB1_TRACK_SIZE = NIBBLES_PER_TRACK_NIB;
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const DWORD dwImageSize, const TCHAR* pszExt)
 	{
@@ -1254,7 +1254,7 @@ eDetectResult C2IMGHelper::DetectHdr(LPBYTE& pImage, DWORD& dwImageSize, DWORD& 
 		break;
 	case e2IMGFormatNIBData:
 		{
-			if (pHdr->DiskDataLength != TRACKS_STANDARD*NIBBLES_PER_TRACK)
+			if (pHdr->DiskDataLength != TRACKS_STANDARD*NIBBLES_PER_TRACK_NIB)
 				return eMismatch;
 		}
 		break;
