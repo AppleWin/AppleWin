@@ -275,11 +275,13 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 		const UINT32 currentPosition = pFloppy->m_byte;
 		const UINT32 currentTrackLength = pFloppy->m_nibbles;
 
+		float phase = (float)(pDrive->m_phase) + (float)(pDrive->m_quarter) * 0.5f;
+		if (phase < 0.0)
+			phase = 0.0;
+
 		ImageReadTrack(
 			pFloppy->m_imagehandle,
-			pDrive->m_track,
-			pDrive->m_phase,
-			pDrive->m_quarter,
+			phase,
 			pFloppy->m_trackimage,
 			&pFloppy->m_nibbles,
 			&pFloppy->m_bitCount,
@@ -428,19 +430,16 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 #endif
 	}
 
-	int phase = (address >> 1) & 3;
-	int phase_bit = (1 << phase);
+	// update phases (magnet states)
+	{
+		const int phase = (address >> 1) & 3;
+		const int phase_bit = (1 << phase);
 
-	// update the magnet states
-	if (address & 1)
-	{
-		// phase on
-		m_phases |= phase_bit;
-	}
-	else
-	{
-		// phase off
-		m_phases &= ~phase_bit;
+		// update the magnet states
+		if (address & 1)
+			m_phases |= phase_bit;	// phase on
+		else
+			m_phases &= ~phase_bit;	// phase off
 	}
 
 	CpuCalcCycles(uExecutedCycles);
@@ -460,14 +459,18 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	if (m_phases & (1 << ((pDrive->m_phase + 3) & 3)))
 		direction -= 1;
 
+	// Only calculate quarterDirection for WOZ, as NIB/DSK don't support half phases.
 	int quarterDirection = 0;
-	if ((m_phases == 0xC ||	// 1100
-		m_phases == 0x6 ||	// 0110
-		m_phases == 0x3 ||	// 0011
-		m_phases == 0x9))	// 1001
+	if (ImageIsWOZ(pFloppy->m_imagehandle))
 	{
-		quarterDirection = direction;
-		direction = 0;
+		if ((m_phases == 0xC ||	// 1100
+			m_phases == 0x6 ||	// 0110
+			m_phases == 0x3 ||	// 0011
+			m_phases == 0x9))	// 1001
+		{
+			quarterDirection = direction;
+			direction = 0;
+		}
 	}
 
 	// apply magnet step, if any

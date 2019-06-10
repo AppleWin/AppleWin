@@ -212,7 +212,7 @@ private:
 	BOOL m_floppyMotorOn;
 	BOOL m_floppyLoadMode;	// for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)
 	BOOL m_floppyWriteMode;
-	WORD m_phases;			// state bits for stepper magnet phases 0 - 3
+	WORD m_phases;			// state bits for stepper magnet phases 0 - 3 // TODO: move to FloppyDrive
 	bool m_saveDiskImage;
 	UINT m_slot;
 	unsigned __int64 m_diskLastCycle;

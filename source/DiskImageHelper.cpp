@@ -630,12 +630,13 @@ public:
 		return ePossibleMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
-		ReadTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
-		*pNibbles = NibblizeTrack(pTrackImageBuffer, eDOSOrder, nTrack);
+		const UINT track = PhaseToTrack(phase);
+		ReadTrack(pImageInfo, track, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
+		*pNibbles = NibblizeTrack(pTrackImageBuffer, eDOSOrder, track);
 		if (!enhanceDisk)
-			SkewTrack(nTrack, *pNibbles, pTrackImageBuffer);
+			SkewTrack(track, *pNibbles, pTrackImageBuffer);
 	}
 
 	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
@@ -696,12 +697,13 @@ public:
 		return ePossibleMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
-		ReadTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
-		*pNibbles = NibblizeTrack(pTrackImageBuffer, eProDOSOrder, nTrack);
+		const UINT track = PhaseToTrack(phase);
+		ReadTrack(pImageInfo, track, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
+		*pNibbles = NibblizeTrack(pTrackImageBuffer, eProDOSOrder, track);
 		if (!enhanceDisk)
-			SkewTrack(nTrack, *pNibbles, pTrackImageBuffer);
+			SkewTrack(track, *pNibbles, pTrackImageBuffer);
 	}
 
 	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
@@ -735,9 +737,10 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
-		ReadTrack(pImageInfo, nTrack, pTrackImageBuffer, NIB1_TRACK_SIZE);
+		const UINT track = PhaseToTrack(phase);
+		ReadTrack(pImageInfo, track, pTrackImageBuffer, NIB1_TRACK_SIZE);
 		*pNibbles = NIB1_TRACK_SIZE;
 	}
 
@@ -775,9 +778,10 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
-		ReadTrack(pImageInfo, nTrack, pTrackImageBuffer, NIB2_TRACK_SIZE);
+		const UINT track = PhaseToTrack(phase);
+		ReadTrack(pImageInfo, track, pTrackImageBuffer, NIB2_TRACK_SIZE);
 		*pNibbles = NIB2_TRACK_SIZE;
 	}
 
@@ -851,8 +855,10 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
+		UINT track = PhaseToTrack(phase);
+
 		// IF WE HAVEN'T ALREADY DONE SO, READ THE IMAGE FILE HEADER
 		if (!m_pHeader)
 		{
@@ -872,19 +878,19 @@ public:
 		if (*(m_pHeader+13) <= 2)
 		{
 			ConvertSectorOrder(m_pHeader+14);
-			SetFilePointer(pImageInfo->hFile, nTrack*TRACK_DENIBBLIZED_SIZE+30, NULL, FILE_BEGIN);
+			SetFilePointer(pImageInfo->hFile, track*TRACK_DENIBBLIZED_SIZE+30, NULL, FILE_BEGIN);
 			ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 			DWORD bytesread;
 			ReadFile(pImageInfo->hFile, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE, &bytesread, NULL);
-			*pNibbles = NibblizeTrack(pTrackImageBuffer, eSIMSYSTEMOrder, nTrack);
+			*pNibbles = NibblizeTrack(pTrackImageBuffer, eSIMSYSTEMOrder, track);
 		}
 		// OTHERWISE, IF THIS IMAGE CONTAINS NIBBLE INFORMATION, READ IT DIRECTLY INTO THE TRACK BUFFER
 		else 
 		{
-			*pNibbles = *(LPWORD)(m_pHeader+nTrack*2+14);
+			*pNibbles = *(LPWORD)(m_pHeader+track*2+14);
 			LONG Offset = 88;
-			while (nTrack--)
-				Offset += *(LPWORD)(m_pHeader+nTrack*2+14);
+			while (track--)
+				Offset += *(LPWORD)(m_pHeader+track*2+14);
 			SetFilePointer(pImageInfo->hFile, Offset, NULL,FILE_BEGIN);
 			ZeroMemory(pTrackImageBuffer, *pNibbles);
 			DWORD dwBytesRead;
@@ -1086,14 +1092,11 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nHalfTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
-		static int qtCnt = 0;
-		if (nQuarterTrack)
-			qtCnt++;
 
-		int trackFromTMAP = pTrackMap[nHalfTrack * 2 + nQuarterTrack];
+		const int trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
 		if (trackFromTMAP == 0xFF)
 			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);
 
@@ -1142,14 +1145,11 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, int nHalfTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
-		static int qtCnt = 0;
-		if (nQuarterTrack)
-			qtCnt++;
 
-		int trackFromTMAP = pTrackMap[nHalfTrack * 2 + nQuarterTrack];
+		const int trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
 		if (trackFromTMAP == 0xFF)
 			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);
 
