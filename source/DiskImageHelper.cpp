@@ -639,10 +639,11 @@ public:
 			SkewTrack(track, *pNibbles, pTrackImageBuffer);
 	}
 
-	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
+	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
-		DenibblizeTrack(pTrackImage, eDOSOrder, nNibbles);
-		WriteTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
+		const UINT track = PhaseToTrack(phase);
+		DenibblizeTrack(pTrackImageBuffer, eDOSOrder, nNibbles);
+		WriteTrack(pImageInfo, track, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
 
 	virtual bool AllowCreate(void) { return true; }
@@ -706,10 +707,11 @@ public:
 			SkewTrack(track, *pNibbles, pTrackImageBuffer);
 	}
 
-	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
+	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
-		DenibblizeTrack(pTrackImage, eProDOSOrder, nNibbles);
-		WriteTrack(pImageInfo, nTrack, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
+		const UINT track = PhaseToTrack(phase);
+		DenibblizeTrack(pTrackImageBuffer, eProDOSOrder, nNibbles);
+		WriteTrack(pImageInfo, track, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
 
 	virtual eImageType GetType(void) { return eImagePO; }
@@ -744,10 +746,11 @@ public:
 		*pNibbles = NIB1_TRACK_SIZE;
 	}
 
-	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
+	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
 		_ASSERT(nNibbles == NIB1_TRACK_SIZE);	// Must be true - as nNibbles gets init'd by ImageReadTrace()
-		WriteTrack(pImageInfo, nTrack, pTrackImage, nNibbles);
+		const UINT track = PhaseToTrack(phase);
+		WriteTrack(pImageInfo, track, pTrackImageBuffer, nNibbles);
 	}
 
 	virtual bool AllowCreate(void) { return true; }
@@ -785,10 +788,11 @@ public:
 		*pNibbles = NIB2_TRACK_SIZE;
 	}
 
-	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
+	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
 		_ASSERT(nNibbles == NIB2_TRACK_SIZE);	// Must be true - as nNibbles gets init'd by ImageReadTrace()
-		WriteTrack(pImageInfo, nTrack, pTrackImage, nNibbles);
+		const UINT track = PhaseToTrack(phase);
+		WriteTrack(pImageInfo, track, pTrackImageBuffer, nNibbles);
 	}
 
 	virtual eImageType GetType(void) { return eImageNIB2; }
@@ -898,7 +902,7 @@ public:
 		}
 	}
 
-	virtual void Write(ImageInfo* pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
+	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
 		// note: unimplemented
 	}
@@ -1106,7 +1110,7 @@ public:
 		*pBitCount = pTRK->bitCount;
 	}
 
-	virtual void Write(ImageInfo* pImageInfo, int nHalfTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
+	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
 		// TODO
 		_ASSERT(0);
@@ -1165,7 +1169,7 @@ public:
 		memcpy(pTrackImageBuffer, &pImageInfo->pImageBuffer[pTRK->startBlock*512], *pNibbles);
 	}
 
-	virtual void Write(ImageInfo* pImageInfo, int nHalfTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles)
+	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
 		// TODO
 		_ASSERT(0);

@@ -179,20 +179,20 @@ void ImageReadTrack(	ImageInfo* const pImageInfo,
 //===========================================================================
 
 void ImageWriteTrack(	ImageInfo* const pImageInfo,
-						const int nTrack,			// track [0..39]
-						const int nHalfTrack,		// phase [0..79]
-						const int nQuarterTrack,
-						LPBYTE pTrackImage,
+						float phase,			// phase [0..79] +/- 0.5
+						LPBYTE pTrackImageBuffer,
 						const int nNibbles)
 {
-	_ASSERT(nTrack >= 0);
-	if (nTrack < 0)
-		return;
+	_ASSERT(phase >= 0);
+	if (phase < 0)
+		phase = 0;
+
+	const UINT track = pImageInfo->pImageType->PhaseToTrack(phase);
 
 	if (pImageInfo->pImageType->AllowRW() && !pImageInfo->bWriteProtected)
 	{
-		pImageInfo->pImageType->Write(pImageInfo, nTrack, nQuarterTrack, pTrackImage, nNibbles);
-		pImageInfo->ValidTrack[nTrack] = 1;
+		pImageInfo->pImageType->Write(pImageInfo, phase, pTrackImageBuffer, nNibbles);
+		pImageInfo->ValidTrack[track] = 1;
 	}
 }
 
@@ -224,7 +224,7 @@ bool ImageWriteBlock(	ImageInfo* const pImageInfo,
 
 //===========================================================================
 
-int ImageGetNumTracks(ImageInfo* const pImageInfo)
+UINT ImageGetNumTracks(ImageInfo* const pImageInfo)
 {
 	return pImageInfo ? pImageInfo->uNumTracks : 0;
 }
@@ -260,17 +260,21 @@ BYTE ImageGetOptimalBitTiming(ImageInfo* const pImageInfo)
 	return pImageInfo ? pImageInfo->optimalBitTiming : 32;
 }
 
-UINT ImagePhaseToTrack(ImageInfo* const pImageInfo, const float phase)
+UINT ImagePhaseToTrack(ImageInfo* const pImageInfo, const float phase, const bool limit/*=true*/)
 {
 	if (!pImageInfo)
 		return 0;
 
 	UINT track = pImageInfo->pImageType->PhaseToTrack(phase);
 
-	const UINT nNumTracksInImage = ImageGetNumTracks(pImageInfo);
-	const UINT newTrack = (nNumTracksInImage == 0) ? 0
-												   : MIN(nNumTracksInImage - 1, track);
-	return newTrack;
+	if (limit)
+	{
+		const UINT numTracksInImage = ImageGetNumTracks(pImageInfo);
+		track = (numTracksInImage == 0) ? 0
+										: MIN(numTracksInImage - 1, track);
+	}
+
+	return track;
 }
 
 void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName)

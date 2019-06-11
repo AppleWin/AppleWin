@@ -3729,11 +3729,27 @@ Update_t CmdDisk ( int nArgs)
 
 		int drive = sg_Disk2Card.GetCurrentDrive() + 1;
 		char buffer[200] = "";
-		ConsoleBufferPushFormat(buffer, "D%d at T$%X (%d), phase $%X, offset $%X, mask $%02X, extraCycles %d, %s",
+
+		const float phase = sg_Disk2Card.GetCurrentPhase();
+
+		const UINT trackInt = (UINT)(phase / 2);
+		const float trackFrac = (phase / 2) - (float)trackInt;
+		char szTrackInt[8] = "";
+		char szTrackFrac[8] = "";
+		sprintf(szTrackInt, "%02X", trackInt);		// "$NN"
+		sprintf(szTrackFrac, "%.02f", trackFrac);	// "0.nn"
+
+		const UINT phaseInt = (UINT) phase;
+		const float phaseFrac = phase - (float)phaseInt;
+		char szPhaseInt[8] = "";
+		char szPhaseFrac[8] = "";
+		sprintf(szPhaseInt, "%02X", phaseInt);		// "$NN"
+		sprintf(szPhaseFrac, "%.02f", phaseFrac);	// "0.nn"
+
+		ConsoleBufferPushFormat(buffer, "D%d at T$%s%s, phase $%s%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
 			drive,
-			sg_Disk2Card.GetCurrentTrack(),
-			sg_Disk2Card.GetCurrentTrack(),
-			sg_Disk2Card.GetCurrentPhase(),
+			szTrackInt, szTrackFrac+1,
+			szPhaseInt, szPhaseFrac+1,
 			sg_Disk2Card.GetCurrentOffset(),
 			sg_Disk2Card.GetCurrentLSSBitMask(),
 			sg_Disk2Card.GetCurrentLSSExtraCycles(),

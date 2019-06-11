@@ -99,8 +99,8 @@ public:
 	{
 		m_phasePrecise = 0;
 		m_phase = 0;
-		m_track = 0;
-		m_quarter = 0;
+//		m_track = 0;
+//		m_quarter = 0;
 		m_lastStepperCycle = 0;
 		m_spinning = 0;
 		m_writelight = 0;
@@ -108,10 +108,10 @@ public:
 	}
 
 public:
-	float m_phasePrecise;
-	int m_phase;
-	int m_track;
-	int m_quarter;
+	float m_phasePrecise;	// Phase precise to half a phase (aka quarter track)
+	int m_phase;	// Integral phase number
+//	int m_track;
+//	int m_quarter;
 	unsigned __int64 m_lastStepperCycle;
 	DWORD m_spinning;
 	DWORD m_writelight;
@@ -145,10 +145,10 @@ public:
 	void SetProtect(const int drive, const bool bWriteProtect);
 	int GetCurrentDrive(void);
 	int GetCurrentTrack();
-	int GetCurrentPhase(void);
+	float GetCurrentPhase(void);
 	int GetCurrentOffset(void);
 	BYTE GetCurrentLSSBitMask(void);
-	BYTE GetCurrentLSSExtraCycles(void);
+	double GetCurrentLSSExtraCycles(void);
 	int GetTrack(const int drive);
 	LPCTSTR GetCurrentState(void);
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");

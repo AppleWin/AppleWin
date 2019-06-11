@@ -85,12 +85,12 @@ bool Disk2InterfaceCard::GetEnhanceDisk(void) { return m_enhanceDisk; }
 void Disk2InterfaceCard::SetEnhanceDisk(bool bEnhanceDisk) { m_enhanceDisk = bEnhanceDisk; }
 
 int Disk2InterfaceCard::GetCurrentDrive(void)  { return m_currDrive; }
-int Disk2InterfaceCard::GetCurrentTrack(void)  { return m_floppyDrive[m_currDrive].m_track; }
-int Disk2InterfaceCard::GetCurrentPhase(void)  { return m_floppyDrive[m_currDrive].m_phase; }
+int Disk2InterfaceCard::GetCurrentTrack(void)  { return ImagePhaseToTrack(m_floppyDrive[m_currDrive].m_disk.m_imagehandle, m_floppyDrive[m_currDrive].m_phasePrecise, false); }
+float Disk2InterfaceCard::GetCurrentPhase(void)  { return m_floppyDrive[m_currDrive].m_phasePrecise; }
 int Disk2InterfaceCard::GetCurrentOffset(void) { return m_floppyDrive[m_currDrive].m_disk.m_byte; }
 BYTE Disk2InterfaceCard::GetCurrentLSSBitMask(void) { return m_floppyDrive[m_currDrive].m_disk.m_bitMask; }
-BYTE Disk2InterfaceCard::GetCurrentLSSExtraCycles(void) { return (BYTE) m_extraCycles; }
-int Disk2InterfaceCard::GetTrack(const int drive)  { return m_floppyDrive[drive].m_track; }
+double Disk2InterfaceCard::GetCurrentLSSExtraCycles(void) { return m_extraCycles; }
+int Disk2InterfaceCard::GetTrack(const int drive)  { return ImagePhaseToTrack(m_floppyDrive[drive].m_disk.m_imagehandle, m_floppyDrive[m_currDrive].m_phasePrecise, false); }
 
 LPCTSTR Disk2InterfaceCard::GetCurrentState(void)
 {
@@ -250,8 +250,9 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 	FloppyDrive* pDrive = &m_floppyDrive[ drive ];
 	FloppyDisk* pFloppy = &pDrive->m_disk;
 
-	if (pDrive->m_track >= ImageGetNumTracks(pFloppy->m_imagehandle))
+	if (ImagePhaseToTrack(pFloppy->m_imagehandle, pDrive->m_phasePrecise, false) >= ImageGetNumTracks(pFloppy->m_imagehandle))
 	{
+		_ASSERT(0);	// What can cause this? Add a comment to replace this assert.
 		pFloppy->m_trackimagedata = false;
 		return;
 	}
@@ -262,15 +263,15 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 	if (pFloppy->m_trackimage && pFloppy->m_imagehandle)
 	{
 #if LOG_DISK_TRACKS
-		const char* szQuarterNone  = "";
-		const char* szQuarterPlus  = "+.25";
-		const char* szQuarterMinus = "-.25";
-		const char* pQuarter = (pDrive->m_quarter == 0) ? szQuarterNone : (pDrive->m_quarter > 0) ? szQuarterPlus : szQuarterMinus;
-
 		CpuCalcCycles(uExecutedCycles);
 		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
-
-		LOG_DISK("track $%02X%s%s read (last-stepper %.3fms)\r\n", pDrive->m_track, (pDrive->m_phase & 1) ? ".5" : "  ", pQuarter, ((float)cycleDelta) / (CLK_6502 / 1000.0));
+		const UINT trackInt = (UINT)(pDrive->m_phasePrecise / 2);
+		const float trackFrac = (pDrive->m_phasePrecise / 2) - (float)trackInt;
+		char szTrackInt[8] = "";
+		char szTrackFrac[8] = "";
+		sprintf(szTrackInt, "%02X", trackInt);		// "$NN"
+		sprintf(szTrackFrac, "%.02f", trackFrac);	// "0.nn"
+		LOG_DISK("track $%s%s read (last-stepper %.3fms)\r\n", szTrackInt, szTrackFrac+1, ((float)cycleDelta) / (CLK_6502 / 1000.0));
 #endif
 		const UINT32 currentPosition = pFloppy->m_byte;
 		const UINT32 currentTrackLength = pFloppy->m_nibbles;
@@ -353,8 +354,11 @@ void Disk2InterfaceCard::WriteTrack(const int drive)
 	FloppyDrive* pDrive = &m_floppyDrive[ drive ];
 	FloppyDisk* pFloppy = &pDrive->m_disk;
 
-	if (pDrive->m_track >= ImageGetNumTracks(pFloppy->m_imagehandle))
+	if (ImagePhaseToTrack(pFloppy->m_imagehandle, pDrive->m_phasePrecise, false) >= ImageGetNumTracks(pFloppy->m_imagehandle))
+	{
+		_ASSERT(0);	// What can cause this? Add a comment to replace this assert.
 		return;
+	}
 
 	if (pFloppy->m_bWriteProtected)
 		return;
@@ -362,13 +366,17 @@ void Disk2InterfaceCard::WriteTrack(const int drive)
 	if (pFloppy->m_trackimage && pFloppy->m_imagehandle)
 	{
 #if LOG_DISK_TRACKS
-		LOG_DISK("track $%02X%s write\r\n", pDrive->m_track, (pDrive->m_phase & 0) ? ".5" : "  "); // TODO: hard-coded to whole tracks - see below (nickw)
+		const UINT trackInt = (UINT)(pDrive->m_phasePrecise / 2);
+		const float trackFrac = (pDrive->m_phasePrecise / 2) - (float)trackInt;
+		char szTrackInt[8] = "";
+		char szTrackFrac[8] = "";
+		sprintf(szTrackInt, "%02X", trackInt);		// "$NN"
+		sprintf(szTrackFrac, "%.02f", trackFrac);	// "0.nn"
+		LOG_DISK("track $%s%s write\r\n", szTrackInt, szTrackFrac+1);
 #endif
 		ImageWriteTrack(
 			pFloppy->m_imagehandle,
-			pDrive->m_track,
-			pDrive->m_phase, // TODO: this should never be used; it's the current phase (half-track), not that of the track to be written (nickw)
-			pDrive->m_quarter,
+			pDrive->m_phasePrecise,
 			pFloppy->m_trackimage,
 			pFloppy->m_nibbles);
 	}
@@ -488,7 +496,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	{
 		FlushCurrentTrack(m_currDrive);
 		pDrive->m_phasePrecise = newPhasePrecise;
-		pDrive->m_track = ImagePhaseToTrack(pFloppy->m_imagehandle, newPhasePrecise);
+//		pDrive->m_track = ImagePhaseToTrack(pFloppy->m_imagehandle, newPhasePrecise);
 		pFloppy->m_trackimagedata = false;
 		m_formatTrack.DriveNotWritingTrack();
 	}
@@ -1175,10 +1183,12 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 						m_latchDelay = 4;	// extend for another 4us
 
 					m_dbgLatchDelayedCnt++;
+#if LOG_DISK_NIBBLES_READ
 					if (m_dbgLatchDelayedCnt >= 3)
 					{
 						LOG_DISK("read: latch held due to 0: PC=%04X, cnt=%02X\r\n", regs.pc, m_dbgLatchDelayedCnt);
 					}
+#endif
 				}
 			}
 
@@ -1612,6 +1622,7 @@ static const UINT kUNIT_VERSION = 4;
 #define SS_YAML_KEY_DISK2UNIT "Unit"
 #define SS_YAML_KEY_FILENAME "Filename"
 #define SS_YAML_KEY_PHASE "Phase"
+#define SS_YAML_KEY_PHASE_PRECISE "Phase (precise)"
 #define SS_YAML_KEY_TRACK "Track"
 #define SS_YAML_KEY_QUARTER "Quarter"
 #define SS_YAML_KEY_LAST_STEPPER_CYCLE "Last Stepper Cycle"
@@ -1657,8 +1668,7 @@ void Disk2InterfaceCard::SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, U
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_DISK2UNIT, unit);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, m_floppyDrive[unit].m_phase);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK, m_floppyDrive[unit].m_track);
-	yamlSaveHelper.SaveInt(SS_YAML_KEY_QUARTER, m_floppyDrive[unit].m_quarter);	// v4
+	yamlSaveHelper.SaveDouble(SS_YAML_KEY_PHASE_PRECISE, m_floppyDrive[unit].m_phasePrecise);	// v4
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_STEPPER_CYCLE, m_floppyDrive[unit].m_lastStepperCycle);	// v4
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_SPINNING, m_floppyDrive[unit].m_spinning);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_WRITE_LIGHT, m_floppyDrive[unit].m_writelight);
@@ -1757,8 +1767,9 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv3(YamlLoadHelper& yamlLoadHelper,
 
 	bool bImageError = LoadSnapshotFloppy(yamlLoadHelper, unit, version, track);
 
-	m_floppyDrive[unit].m_track = yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);
+	yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);	// consume
 	m_floppyDrive[unit].m_phase = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
+	m_floppyDrive[unit].m_phasePrecise = (float) m_floppyDrive[unit].m_phase;
 	m_floppyDrive[unit].m_spinning = yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
 	m_floppyDrive[unit].m_writelight = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
 
@@ -1785,8 +1796,9 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper,
 	//
 
 	m_floppyDrive[unit].m_phase = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
-	m_floppyDrive[unit].m_track = yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);
-	m_floppyDrive[unit].m_quarter = yamlLoadHelper.LoadUint(SS_YAML_KEY_QUARTER);
+//	m_floppyDrive[unit].m_phasePrecise = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE_PRECISE);
+	yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);		// remove
+	yamlLoadHelper.LoadUint(SS_YAML_KEY_QUARTER);	// remove
 	m_floppyDrive[unit].m_lastStepperCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LAST_STEPPER_CYCLE);
 	m_floppyDrive[unit].m_spinning = yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
 	m_floppyDrive[unit].m_writelight = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
