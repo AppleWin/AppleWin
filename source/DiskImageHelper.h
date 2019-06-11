@@ -73,7 +73,7 @@ public:
 	void SetVolumeNumber(const BYTE uVolumeNumber) { m_uVolumeNumber = uVolumeNumber; }
 	bool IsValidImageSize(const DWORD uImageSize);
 
-	// To accurately convert a half phase (quarter track) back to a track, use: ceil(phase)/2, eg:
+	// To accurately convert a half phase (quarter track) back to a track (round half tracks down), use: ceil(phase)/2, eg:
 	// . phase=4,+1 half phase = phase 4.5 => ceil(4.5)/2 = track 2 (OK)
 	// . phase=4,-1 half phase = phase 3.5 => ceil(3.5)/2 = track 2 (OK)
 	UINT PhaseToTrack(const float phase) { return ((UINT)ceil(phase)) >> 1; }

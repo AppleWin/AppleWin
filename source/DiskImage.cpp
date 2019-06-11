@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "Common.h"
 #include "DiskImage.h"
 #include "DiskImageHelper.h"
 
@@ -257,6 +258,19 @@ bool ImageIsWOZ(ImageInfo* const pImageInfo)
 BYTE ImageGetOptimalBitTiming(ImageInfo* const pImageInfo)
 {
 	return pImageInfo ? pImageInfo->optimalBitTiming : 32;
+}
+
+UINT ImagePhaseToTrack(ImageInfo* const pImageInfo, const float phase)
+{
+	if (!pImageInfo)
+		return 0;
+
+	UINT track = pImageInfo->pImageType->PhaseToTrack(phase);
+
+	const UINT nNumTracksInImage = ImageGetNumTracks(pImageInfo);
+	const UINT newTrack = (nNumTracksInImage == 0) ? 0
+												   : MIN(nNumTracksInImage - 1, track);
+	return newTrack;
 }
 
 void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName)

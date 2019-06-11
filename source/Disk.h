@@ -97,6 +97,7 @@ public:
 
 	void clear()
 	{
+		m_phasePrecise = 0;
 		m_phase = 0;
 		m_track = 0;
 		m_quarter = 0;
@@ -107,6 +108,7 @@ public:
 	}
 
 public:
+	float m_phasePrecise;
 	int m_phase;
 	int m_track;
 	int m_quarter;

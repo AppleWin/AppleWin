@@ -275,9 +275,13 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 		const UINT32 currentPosition = pFloppy->m_byte;
 		const UINT32 currentTrackLength = pFloppy->m_nibbles;
 
+#if 1
+		float phase = pDrive->m_phasePrecise;
+#else
 		float phase = (float)(pDrive->m_phase) + (float)(pDrive->m_quarter) * 0.5f;
 		if (phase < 0.0)
 			phase = 0.0;
+#endif
 
 		ImageReadTrack(
 			pFloppy->m_imagehandle,
@@ -473,6 +477,22 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		}
 	}
 
+#if 1
+	pDrive->m_phase = MAX(0, MIN(79, pDrive->m_phase + direction));
+	float newPhasePrecise = (float)(pDrive->m_phase) + (float)quarterDirection * 0.5f;
+	if (newPhasePrecise < 0)
+		newPhasePrecise = 0;
+
+	// apply magnet step, if any
+	if (newPhasePrecise != pDrive->m_phasePrecise)
+	{
+		FlushCurrentTrack(m_currDrive);
+		pDrive->m_phasePrecise = newPhasePrecise;
+		pDrive->m_track = ImagePhaseToTrack(pFloppy->m_imagehandle, newPhasePrecise);
+		pFloppy->m_trackimagedata = false;
+		m_formatTrack.DriveNotWritingTrack();
+	}
+#else
 	// apply magnet step, if any
 	if (direction || pDrive->m_quarter != quarterDirection)
 	{
@@ -497,6 +517,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		// https://github.com/AppleWin/AppleWin/issues/201
 		FrameDrawDiskStatus( (HDC)0 );
 	}
+#endif
 
 #if LOG_DISK_PHASES
 	LOG_DISK("track $%02X%s phases %d%d%d%d phase %d %s address $%4X last-stepper %.3fms\r\n",
