@@ -125,6 +125,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static int g_nHiresPage    = 1;
 	static int g_nTextPage     = 1;
 
+	static bool g_bDelayVideoMode = false;
+	static uint32_t g_uNewVideoModeFlags = 0;
+
 	// Understanding the Apple II, Timing Generation and the Video Scanner, Pg 3-11
 	// Vertical Scanning
 	// Horizontal Scanning
@@ -1852,7 +1855,7 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 	const uint16_t currVideoClockHorz = g_nVideoClockHorz;
 
 	// Required for ANSI STORY (end credits) vert scrolling mid-scanline mixed mode: DGR80, TEXT80, DGR80
-	g_nVideoClockHorz -= 2;
+	g_nVideoClockHorz -= 1;
 	if ((SHORT)g_nVideoClockHorz < 0)
 	{
 		g_nVideoClockHorz += VIDEO_SCANNER_MAX_HORZ;
@@ -1884,8 +1887,15 @@ void NTSC_SetVideoTextMode( int cols )
 }
 
 //===========================================================================
-void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
+void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 {
+	if (bDelay)
+	{
+		g_bDelayVideoMode = true;
+		g_uNewVideoModeFlags = uVideoModeFlags;
+		return;
+	}
+
 	g_nVideoMixed   = uVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = VideoGetSWAltCharSet() ? 1 : 0;
 
@@ -2227,7 +2237,19 @@ static void VideoUpdateCycles( int cyclesLeftToUpdate )
 //===========================================================================
 void NTSC_VideoUpdateCycles( long cycles6502 )
 {
-	_ASSERT(cycles6502 < VIDEO_SCANNER_6502_CYCLES);	// Use NTSC_VideoRedrawWholeScreen() instead
+	_ASSERT(cycles6502 && cycles6502 < VIDEO_SCANNER_6502_CYCLES);	// Use NTSC_VideoRedrawWholeScreen() instead
+
+	if (g_bDelayVideoMode)
+	{
+		VideoUpdateCycles(1);	// Video mode change is delayed by 1 cycle
+
+		g_bDelayVideoMode = false;
+		NTSC_SetVideoMode(g_uNewVideoModeFlags);
+
+		cycles6502--;
+		if (!cycles6502)
+			return;
+	}
 
 	VideoUpdateCycles(cycles6502);
 }
