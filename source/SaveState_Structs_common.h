@@ -115,6 +115,8 @@ struct SY6522
 	IWORD TIMER1_LATCH;
 	IWORD TIMER2_COUNTER;
 	IWORD TIMER2_LATCH;
+	int timer1IrqDelay;
+	int timer2IrqDelay;
 	//
 	BYTE SERIAL_SHIFT;		// $0A
 	BYTE ACR;				// $0B - Auxiliary Control Register
