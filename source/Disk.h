@@ -97,6 +97,7 @@ public:
 
 	void clear()
 	{
+		m_magnetStates = 0;
 		m_phasePrecise = 0;
 		m_phase = 0;
 //		m_track = 0;
@@ -108,6 +109,7 @@ public:
 	}
 
 public:
+	WORD m_magnetStates;			// state bits for stepper magnet phases 0 - 3 // TODO: move to FloppyDrive
 	float m_phasePrecise;	// Phase precise to half a phase (aka quarter track)
 	int m_phase;	// Integral phase number
 //	int m_track;
@@ -214,7 +216,6 @@ private:
 	BOOL m_floppyMotorOn;
 	BOOL m_floppyLoadMode;	// for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)
 	BOOL m_floppyWriteMode;
-	WORD m_phases;			// state bits for stepper magnet phases 0 - 3 // TODO: move to FloppyDrive
 	bool m_saveDiskImage;
 	UINT m_slot;
 	unsigned __int64 m_diskLastCycle;
