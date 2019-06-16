@@ -276,17 +276,9 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 		const UINT32 currentPosition = pFloppy->m_byte;
 		const UINT32 currentTrackLength = pFloppy->m_nibbles;
 
-#if 1
-		float phase = pDrive->m_phasePrecise;
-#else
-		float phase = (float)(pDrive->m_phase) + (float)(pDrive->m_quarter) * 0.5f;
-		if (phase < 0.0)
-			phase = 0.0;
-#endif
-
 		ImageReadTrack(
 			pFloppy->m_imagehandle,
-			phase,
+			pDrive->m_phasePrecise,
 			pFloppy->m_trackimage,
 			&pFloppy->m_nibbles,
 			&pFloppy->m_bitCount,
@@ -485,7 +477,6 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		}
 	}
 
-#if 1
 	pDrive->m_phase = MAX(0, MIN(79, pDrive->m_phase + direction));
 	float newPhasePrecise = (float)(pDrive->m_phase) + (float)quarterDirection * 0.5f;
 	if (newPhasePrecise < 0)
@@ -496,36 +487,10 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	{
 		FlushCurrentTrack(m_currDrive);
 		pDrive->m_phasePrecise = newPhasePrecise;
-//		pDrive->m_track = ImagePhaseToTrack(pFloppy->m_imagehandle, newPhasePrecise);
 		pFloppy->m_trackimagedata = false;
 		m_formatTrack.DriveNotWritingTrack();
+		FrameDrawDiskStatus((HDC)0);	// Show track status (GH#201)
 	}
-#else
-	// apply magnet step, if any
-	if (direction || pDrive->m_quarter != quarterDirection)
-	{
-		int oldPhase = pDrive->m_phase;
-		int oldQuarter = pDrive->m_quarter;
-		pDrive->m_phase = MAX(0, MIN(79, pDrive->m_phase + direction));
-		pDrive->m_quarter = quarterDirection;
-		const int nNumTracksInImage = ImageGetNumTracks(pFloppy->m_imagehandle);
-		const int newtrack = (nNumTracksInImage == 0)	? 0
-														: MIN(nNumTracksInImage-1, pDrive->m_phase >> 1); // (round half tracks down)
-
-		if (oldPhase != pDrive->m_phase || oldQuarter != pDrive->m_quarter)
-		{
-			FlushCurrentTrack(m_currDrive);
-			pDrive->m_track = newtrack;
-			pFloppy->m_trackimagedata = false;
-
-			m_formatTrack.DriveNotWritingTrack();
-		}
-
-		// Feature Request #201 Show track status
-		// https://github.com/AppleWin/AppleWin/issues/201
-		FrameDrawDiskStatus( (HDC)0 );
-	}
-#endif
 
 #if LOG_DISK_PHASES
 	LOG_DISK("track $%02X%s magnet-states %d%d%d%d phase %d %s address $%4X last-stepper %.3fms\r\n",

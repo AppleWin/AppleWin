@@ -100,8 +100,6 @@ public:
 		m_magnetStates = 0;
 		m_phasePrecise = 0;
 		m_phase = 0;
-//		m_track = 0;
-//		m_quarter = 0;
 		m_lastStepperCycle = 0;
 		m_spinning = 0;
 		m_writelight = 0;
@@ -109,11 +107,9 @@ public:
 	}
 
 public:
-	WORD m_magnetStates;			// state bits for stepper magnet phases 0 - 3 // TODO: move to FloppyDrive
+	WORD m_magnetStates;	// state bits for stepper magnet phases 0 - 3
 	float m_phasePrecise;	// Phase precise to half a phase (aka quarter track)
-	int m_phase;	// Integral phase number
-//	int m_track;
-//	int m_quarter;
+	int m_phase;			// Integral phase number
 	unsigned __int64 m_lastStepperCycle;
 	DWORD m_spinning;
 	DWORD m_writelight;
