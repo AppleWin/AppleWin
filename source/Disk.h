@@ -97,7 +97,6 @@ public:
 
 	void clear()
 	{
-		m_magnetStates = 0;
 		m_phasePrecise = 0;
 		m_phase = 0;
 		m_lastStepperCycle = 0;
@@ -107,7 +106,6 @@ public:
 	}
 
 public:
-	WORD m_magnetStates;	// state bits for stepper magnet phases 0 - 3
 	float m_phasePrecise;	// Phase precise to half a phase (aka quarter track)
 	int m_phase;			// Integral phase number
 	unsigned __int64 m_lastStepperCycle;
@@ -170,6 +168,7 @@ public:
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 private:
+	void ResetSwitches(void);
 	void CheckSpinning(const ULONG uExecutedCycles);
 	Disk_Status_e GetDriveLightStatus(const int drive);
 	bool IsDriveValid(const int drive);
@@ -212,6 +211,11 @@ private:
 	BOOL m_floppyMotorOn;
 	BOOL m_floppyLoadMode;	// for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)
 	BOOL m_floppyWriteMode;
+
+	// Although the magnets are a property of the drive, their state is a property of the controller card,
+	// since the magnets will only be on for whichever of the 2 drives is currently selected.
+	WORD m_magnetStates;	// state bits for stepper magnet phases 0 - 3
+
 	bool m_saveDiskImage;
 	UINT m_slot;
 	unsigned __int64 m_diskLastCycle;

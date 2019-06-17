@@ -56,10 +56,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 Disk2InterfaceCard::Disk2InterfaceCard(void)
 {
-	m_currDrive = 0;
-	m_floppyMotorOn = 0;
-	m_floppyLoadMode = 0;
-	m_floppyWriteMode = 0;
+	ResetSwitches();
 
 	m_floppyLatch = 0;
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
@@ -441,9 +438,9 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 
 		// update the magnet states
 		if (address & 1)
-			pDrive->m_magnetStates |= phase_bit;	// phase on
+			m_magnetStates |= phase_bit;	// phase on
 		else
-			pDrive->m_magnetStates &= ~phase_bit;	// phase off
+			m_magnetStates &= ~phase_bit;	// phase off
 	}
 
 	CpuCalcCycles(uExecutedCycles);
@@ -458,19 +455,19 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	// - do not move if both adjacent magnets are on (ie. quarter track)
 	// momentum and timing are not accounted for ... maybe one day!
 	int direction = 0;
-	if (pDrive->m_magnetStates & (1 << ((pDrive->m_phase + 1) & 3)))
+	if (m_magnetStates & (1 << ((pDrive->m_phase + 1) & 3)))
 		direction += 1;
-	if (pDrive->m_magnetStates & (1 << ((pDrive->m_phase + 3) & 3)))
+	if (m_magnetStates & (1 << ((pDrive->m_phase + 3) & 3)))
 		direction -= 1;
 
 	// Only calculate quarterDirection for WOZ, as NIB/DSK don't support half phases.
 	int quarterDirection = 0;
 	if (ImageIsWOZ(pFloppy->m_imagehandle))
 	{
-		if ((pDrive->m_magnetStates == 0xC ||	// 1100
-			pDrive->m_magnetStates == 0x6 ||	// 0110
-			pDrive->m_magnetStates == 0x3 ||	// 0011
-			pDrive->m_magnetStates == 0x9))		// 1001
+		if ((m_magnetStates == 0xC ||	// 1100
+			m_magnetStates == 0x6 ||	// 0110
+			m_magnetStates == 0x3 ||	// 0011
+			m_magnetStates == 0x9))		// 1001
 		{
 			quarterDirection = direction;
 			direction = 0;
@@ -496,10 +493,10 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	LOG_DISK("track $%02X%s magnet-states %d%d%d%d phase %d %s address $%4X last-stepper %.3fms\r\n",
 		pDrive->m_phase >> 1,
 		(pDrive->m_phase & 1) ? ".5" : "  ",
-		(pDrive->m_magnetStates >> 3) & 1,
-		(pDrive->m_magnetStates >> 2) & 1,
-		(pDrive->m_magnetStates >> 1) & 1,
-		(pDrive->m_magnetStates >> 0) & 1,
+		(m_magnetStates >> 3) & 1,
+		(m_magnetStates >> 2) & 1,
+		(m_magnetStates >> 1) & 1,
+		(m_magnetStates >> 0) & 1,
 		phase,
 		(address & 1) ? "on " : "off",
 		address,
@@ -1208,10 +1205,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 void Disk2InterfaceCard::Reset(const bool bIsPowerCycle/*=false*/)
 {
 	// RESET forces all switches off (UTAIIe Table 9.1)
-	m_currDrive = 0;
-	m_floppyMotorOn = 0;
-	m_floppyLoadMode = 0;
-	m_floppyWriteMode = 0;
+	ResetSwitches();
 
 	m_formatTrack.Reset();
 
@@ -1230,6 +1224,15 @@ void Disk2InterfaceCard::Reset(const bool bIsPowerCycle/*=false*/)
 
 		FrameRefreshStatus(DRAW_LEDS, false);
 	}
+}
+
+void Disk2InterfaceCard::ResetSwitches(void)
+{
+	m_currDrive = 0;
+	m_floppyMotorOn = 0;
+	m_floppyLoadMode = 0;
+	m_floppyWriteMode = 0;
+	m_magnetStates = 0;
 }
 
 //===========================================================================
@@ -1564,12 +1567,11 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 // 3: Added: DiskLastReadLatchCycle
 // 4: Added: WOZ state
 //    Split up 'Unit' putting some state into a new 'Floppy'
-//    Moved 'Phases' (in Disk][ interface) to 'Magnet States' (in Floppy Drive unit)
 static const UINT kUNIT_VERSION = 4;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
 
-#define SS_YAML_KEY_PHASES "Phases"	// deprecated at v4
+#define SS_YAML_KEY_PHASES "Phases"
 #define SS_YAML_KEY_CURRENT_DRIVE "Current Drive"
 #define SS_YAML_KEY_DISK_ACCESSED "Disk Accessed"
 #define SS_YAML_KEY_ENHANCE_DISK "Enhance Disk"
@@ -1586,11 +1588,9 @@ static const UINT kUNIT_VERSION = 4;
 
 #define SS_YAML_KEY_DISK2UNIT "Unit"
 #define SS_YAML_KEY_FILENAME "Filename"
-#define SS_YAML_KEY_MAGNET_STATES "Magnet States"
 #define SS_YAML_KEY_PHASE "Phase"
 #define SS_YAML_KEY_PHASE_PRECISE "Phase (precise)"
-#define SS_YAML_KEY_TRACK "Track"
-#define SS_YAML_KEY_QUARTER "Quarter"
+#define SS_YAML_KEY_TRACK "Track"	// deprecated at v4
 #define SS_YAML_KEY_LAST_STEPPER_CYCLE "Last Stepper Cycle"
 
 #define SS_YAML_KEY_FLOPPY "Floppy"
@@ -1633,7 +1633,6 @@ void Disk2InterfaceCard::SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT
 void Disk2InterfaceCard::SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_DISK2UNIT, unit);
-	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MAGNET_STATES, m_floppyDrive[unit].m_magnetStates);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, m_floppyDrive[unit].m_phase);
 	yamlSaveHelper.SaveFloat(SS_YAML_KEY_PHASE_PRECISE, m_floppyDrive[unit].m_phasePrecise);	// v4
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_STEPPER_CYCLE, m_floppyDrive[unit].m_lastStepperCycle);	// v4
@@ -1649,6 +1648,7 @@ void Disk2InterfaceCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_CURRENT_DRIVE, m_currDrive);
+	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_PHASES, m_magnetStates);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_DISK_ACCESSED, false);	// deprecated
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_ENHANCE_DISK, m_enhanceDisk);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_FLOPPY_LATCH, m_floppyLatch);
@@ -1734,7 +1734,6 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv3(YamlLoadHelper& yamlLoadHelper,
 	bool bImageError = LoadSnapshotFloppy(yamlLoadHelper, unit, version, track);
 
 	yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);	// consume
-	m_floppyDrive[unit].m_magnetStates = 0;	// v3 state is loaded from Disk][ unit - so set later
 	m_floppyDrive[unit].m_phase = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
 	m_floppyDrive[unit].m_phasePrecise = (float) m_floppyDrive[unit].m_phase;
 	m_floppyDrive[unit].m_spinning = yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
@@ -1762,7 +1761,6 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper,
 
 	//
 
-	m_floppyDrive[unit].m_magnetStates = yamlLoadHelper.LoadUint(SS_YAML_KEY_MAGNET_STATES);
 	m_floppyDrive[unit].m_phase = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
 	m_floppyDrive[unit].m_phasePrecise = yamlLoadHelper.LoadFloat(SS_YAML_KEY_PHASE_PRECISE);
 	m_floppyDrive[unit].m_lastStepperCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LAST_STEPPER_CYCLE);
@@ -1813,6 +1811,7 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 		throw std::string("Card: wrong version");
 
 	m_currDrive = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_DRIVE);
+	m_magnetStates		= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASES);
 	(void)				  yamlLoadHelper.LoadBool(SS_YAML_KEY_DISK_ACCESSED);	// deprecated - but retrieve the value to avoid the "State: Unknown key (Disk Accessed)" warning
 	m_enhanceDisk		= yamlLoadHelper.LoadBool(SS_YAML_KEY_ENHANCE_DISK);
 	m_floppyLatch		= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_LATCH);
@@ -1828,12 +1827,6 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 	if (version >= 3)
 	{
 		m_diskLastReadLatchCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LAST_READ_LATCH_CYCLE);
-	}
-
-	UINT phases_v3 = 0;
-	if (version <= 3)
-	{
-		phases_v3 = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASES);
 	}
 
 	if (version >= 4)
@@ -1854,11 +1847,6 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 
 	LoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_1, version);
 	LoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_2, version);
-
-	if (version <= 3)
-	{
-		m_floppyDrive[m_currDrive].m_magnetStates = phases_v3;
-	}
 
 	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
