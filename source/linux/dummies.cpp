@@ -403,7 +403,7 @@ uint16_t NTSC_VideoGetScannerAddress( const ULONG uExecutedCycles )
   return VideoGetScannerAddress(NULL, uExecutedCycles);
 }
 
-void NTSC_SetVideoMode( uint32_t uVideoModeFlags )
+void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay )
 {
 }
 
