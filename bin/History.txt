@@ -8,8 +8,13 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.28.7.0 - 15 Jun 2019
+----------------------
+. [Bug #654] Fix for Sather's "Little Text Window" not rendering correctly.
+. [Bug #654] Fix for 6522 TIMER1's period to be N+2 cycles.
 
-1.28.6.0 - 1 Jun 2019
+
+1.28.6.0 - 2 Jun 2019
 ---------------------
 . [Bug #651] Cycle-accurate interrupts:
 	- Interrupts sources are checked after every opcode (full-speed after every 40 opcodes).
