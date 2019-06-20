@@ -345,6 +345,7 @@ static void ContinueExecution(void)
 
 	//
 
+	const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
@@ -1426,6 +1427,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			szScreenshotFilename = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
+		}
+		else if (_stricmp(lpCmdLine, "-50hz") == 0)	// (case-insensitive)
+		{
+			VideoSet50Hz();
 		}
 		else	// unsupported
 		{

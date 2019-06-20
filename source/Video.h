@@ -226,3 +226,5 @@ void SetVideoType(VideoType_e newVideoType);
 VideoStyle_e GetVideoStyle(void);
 void SetVideoStyle(VideoStyle_e newVideoStyle);
 bool IsVideoStyle(VideoStyle_e mask);
+
+void VideoSet50Hz(void);

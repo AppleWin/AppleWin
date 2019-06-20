@@ -91,7 +91,7 @@ uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last se
 DWORD     g_eVideoType     = VT_DEFAULT;
 static VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
 
-static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
+static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 //-------------------------------------
 
@@ -542,6 +542,9 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 
 void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
+#if 1
+	NTSC_VideoClockResync(dwCyclesThisFrame);
+#else
 	if (g_bVideoScannerNTSC)
 	{
 		NTSC_VideoClockResync(dwCyclesThisFrame);
@@ -552,6 +555,7 @@ void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 		g_nVideoClockVert = (uint16_t) (dwCyclesThisFrame / kHClocks) % kPALScanLines;
 		g_nVideoClockHorz = (uint16_t) (dwCyclesThisFrame % kHClocks);
 	}
+#endif
 
 	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
 }
@@ -771,7 +775,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
     //
     const int kScanLines  = g_bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
     const int kScanCycles = kScanLines * kHClocks;
-    _ASSERT(nCycles < kScanCycles);
+    _ASSERT(nCycles < (UINT)kScanCycles);
     nCycles %= kScanCycles;
 
     // calculate horizontal scanning state
@@ -1297,6 +1301,14 @@ void SetVideoStyle(VideoStyle_e newVideoStyle)
 bool IsVideoStyle(VideoStyle_e mask)
 {
 	return (g_eVideoStyle & mask) != 0;
+}
+
+//===========================================================================
+
+void VideoSet50Hz(void)
+{
+	g_bVideoScannerNTSC = false;
+	NTSC_Set50Hz();
 }
 
 //===========================================================================

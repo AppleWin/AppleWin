@@ -9,10 +9,10 @@ const double CLK_6502 = ((_M14 * 65.0) / 912.0); // 65 cycles per 912 14M clocks
 const double CLK_Z80 = (CLK_6502 * 2);
 
 // TODO: Clean up from Common.h, Video.cpp, and NTSC.h !!!
-const UINT uCyclesPerLine			= 65;	// 25 cycles of HBL & 40 cycles of HBL'
-const UINT uVisibleLinesPerFrame	= 64*3;	// 192
-const UINT uLinesPerFrame			= 262;	// 64 in each third of the screen & 70 in VBL
-const DWORD dwClksPerFrame			= uCyclesPerLine * uLinesPerFrame;	// 17030
+//const UINT uCyclesPerLine			= 65;	// 25 cycles of HBL & 40 cycles of HBL'
+//const UINT uVisibleLinesPerFrame	= 64*3;	// 192
+//const UINT uLinesPerFrame			= 262;	// 64 in each third of the screen & 70 in VBL
+//const DWORD dwClksPerFrame			= uCyclesPerLine * uLinesPerFrame;	// 17030
 
 #define NUM_SLOTS 8
 
