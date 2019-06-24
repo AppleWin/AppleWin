@@ -652,6 +652,8 @@ BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
 
+	const uint32_t oldVideoMode = g_uVideoMode;
+
 	switch (address)
 	{
 		case 0x00:                 g_uVideoMode &= ~VF_80STORE;                            break;
@@ -675,7 +677,11 @@ BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 	if (!IS_APPLE2)
 		RGB_SetVideoMode(address);
 
-	NTSC_SetVideoMode( g_uVideoMode, true );
+	bool delay = true;
+	if ((oldVideoMode ^ g_uVideoMode) & VF_PAGE2)
+		delay = false;	// PAGE2 flag changed state, so no 1 cycle delay (GH#656)
+
+	NTSC_SetVideoMode( g_uVideoMode, delay );
 
 	return MemReadFloatingBus(uExecutedCycles);
 }
