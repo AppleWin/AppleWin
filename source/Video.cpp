@@ -793,7 +793,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
     int h_4 = (nHState >> 4) & 1;
     int h_5 = (nHState >> 5) & 1;
 
-    // calculate vertical scanning state
+    // calculate vertical scanning state (UTAIIe:3-15,T3.2)
     //
     int nVLine  = nCycles / kHClocks; // which vertical scanning line
     int nVState = kVLine0State + nVLine; // V state bits
@@ -866,7 +866,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
         nAddressP |= p2b << 11; // a11
 	}
 
-	// VBL' = v_4' | v_3' = (v_4 & v_3)' (UTAIIe:5-10,#3)
+	// VBL' = v_4' | v_3' = (v_4 & v_3)' (UTAIIe:5-10,#3),  (UTAIIe:3-15,T3.2)
 
 	if (videoScannerAddr == VS_PartialAddrH)
 		return nAddressH;
