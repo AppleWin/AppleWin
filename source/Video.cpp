@@ -1305,10 +1305,15 @@ bool IsVideoStyle(VideoStyle_e mask)
 
 //===========================================================================
 
-void VideoSet50Hz(void)
+VideoRefreshRate_e GetVideoRefreshRate(void)
 {
-	g_bVideoScannerNTSC = false;
-	NTSC_Set50Hz();
+	return (g_bVideoScannerNTSC == false) ? VR_50HZ : VR_60HZ;
+}
+
+void SetVideoRefreshRate(VideoRefreshRate_e rate)
+{
+	g_bVideoScannerNTSC = (rate == VR_60HZ);
+	NTSC_SetRefreshRate(rate);
 }
 
 //===========================================================================

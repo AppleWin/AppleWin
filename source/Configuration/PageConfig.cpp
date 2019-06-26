@@ -121,6 +121,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 		case IDC_CHECK_HALF_SCAN_LINES:
 		case IDC_CHECK_VERTICAL_BLEND:
 		case IDC_CHECK_FS_SHOW_SUBUNIT_STATUS:
+		case IDC_CHECK_50HZ_VIDEO:
 			// Checked in DlgOK()
 			break;
 
@@ -205,6 +206,8 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 			m_PropertySheetHelper.FillComboBox(hWnd,IDC_SERIALPORT, sg_SSC.GetSerialPortChoices(), sg_SSC.GetSerialPort());
 			EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !sg_SSC.IsActive() ? TRUE : FALSE);
 
+			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
+
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETTICFREQ,10,0);
@@ -284,6 +287,14 @@ void CPageConfig::DlgOK(HWND hWnd)
 		else
 			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() & ~VS_COLOR_VERTICAL_BLEND) );
 		bVideoReinit = true;
+	}
+
+	const bool isNewVideoRate50Hz = IsDlgButtonChecked(hWnd, IDC_CHECK_50HZ_VIDEO) != 0;
+	const bool isCurrentVideoRate50Hz = GetVideoRefreshRate() == VR_50HZ;
+	if (isCurrentVideoRate50Hz != isNewVideoRate50Hz)
+	{
+		SetVideoRefreshRate(isNewVideoRate50Hz ? VR_50HZ : VR_60HZ);
+		REGSAVE(TEXT(REGVALUE_50HZ_VIDEO), isNewVideoRate50Hz ? 1 : 0);
 	}
 
 	if (bVideoReinit)

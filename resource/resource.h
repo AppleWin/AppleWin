@@ -116,6 +116,7 @@
 #define IDC_COMBO_DISK2                 1081
 #define IDC_CHECK_FS_SHOW_SUBUNIT_STATUS 1082
 #define IDC_CHECK_VERTICAL_BLEND        1083
+#define IDC_CHECK_50HZ_VIDEO            1084
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003

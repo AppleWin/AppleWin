@@ -641,6 +641,9 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
 		SetFullScreenShowSubunitStatus(dwTmp ? true : false);
 
+	if(REGLOAD(TEXT(REGVALUE_50HZ_VIDEO), &dwTmp))
+		SetVideoRefreshRate(dwTmp ? VR_50HZ : VR_60HZ);
+
 	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
 		sg_PropertySheet.SetTheFreezesF8Rom(dwTmp);
 
@@ -1182,6 +1185,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	int newVideoType = -1;
 	int newVideoStyleEnableMask = 0;
 	int newVideoStyleDisableMask = 0;
+	VideoRefreshRate_e newVideoRefreshRate = VR_NONE;
 	LPSTR szScreenshotFilename = NULL;
 
 	while (*lpCmdLine)
@@ -1430,7 +1434,11 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 		else if (_stricmp(lpCmdLine, "-50hz") == 0)	// (case-insensitive)
 		{
-			VideoSet50Hz();
+			newVideoRefreshRate = VR_50HZ;
+		}
+		else if (_stricmp(lpCmdLine, "-60hz") == 0)	// (case-insensitive)
+		{
+			newVideoRefreshRate = VR_60HZ;
 		}
 		else	// unsupported
 		{
@@ -1544,6 +1552,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		if (newVideoType >= 0)
 			SetVideoType( (VideoType_e)newVideoType );
 		SetVideoStyle( (VideoStyle_e) ((GetVideoStyle() | newVideoStyleEnableMask) & ~newVideoStyleDisableMask) );
+
+		if (newVideoRefreshRate != VR_NONE)
+			SetVideoRefreshRate(newVideoRefreshRate);
 
 		// Apply the memory expansion switches after loading the Apple II machine type
 #ifdef RAMWORKS

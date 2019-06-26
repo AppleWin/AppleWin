@@ -29,6 +29,13 @@
 //		VS_TEXT_OPTIMIZED=4,
 	};
 
+	enum VideoRefreshRate_e
+	{
+		VR_NONE,
+		VR_50HZ,
+		VR_60HZ
+	};
+
 	enum VideoFlag_e
 	{
 		VF_80COL  = 0x00000001,
@@ -227,4 +234,5 @@ VideoStyle_e GetVideoStyle(void);
 void SetVideoStyle(VideoStyle_e newVideoStyle);
 bool IsVideoStyle(VideoStyle_e mask);
 
-void VideoSet50Hz(void);
+VideoRefreshRate_e GetVideoRefreshRate(void);
+void SetVideoRefreshRate(VideoRefreshRate_e rate);

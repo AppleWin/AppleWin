@@ -17,5 +17,7 @@
 	extern void     NTSC_VideoUpdateCycles( UINT cycles6502 );
 	extern void     NTSC_VideoRedrawWholeScreen( void );
 	extern UINT     NTSC_GetFrameBufferBorderlessWidth( void );
-	void NTSC_Set50Hz(void);
+
+	enum VideoRefreshRate_e;
+	void NTSC_SetRefreshRate(VideoRefreshRate_e rate);
 	UINT NTSC_GetCyclesPerFrame(void);

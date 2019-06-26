@@ -2338,6 +2338,11 @@ static bool IsNTSC(void)
 static void GenerateVideoTables( void )
 {
 	eApple2Type currentApple2Type = GetApple2Type();
+	uint32_t currentVideoMode = g_uVideoMode;
+	int currentHiresPage = g_nHiresPage;
+	int currentTextPage = g_nTextPage;
+
+	g_nHiresPage = g_nTextPage = 1;
 
 	//
 	// g_aClockVertOffsetsHGR[]
@@ -2411,8 +2416,12 @@ static void GenerateVideoTables( void )
 
 	CheckVideoTables();
 
-	VideoResetState();
+//	VideoResetState();
+
 	SetApple2Type(currentApple2Type);
+	g_uVideoMode = currentVideoMode;
+	g_nHiresPage = currentHiresPage;
+	g_nTextPage = currentTextPage;
 }
 
 static void GenerateBaseColors(baseColors_t pBaseNtscColors)
@@ -2445,10 +2454,20 @@ static void GenerateBaseColors(baseColors_t pBaseNtscColors)
 
 //===========================================================================
 
-void NTSC_Set50Hz(void)
+void NTSC_SetRefreshRate(VideoRefreshRate_e rate)
 {
-	g_videoScannerMaxVert = VIDEO_SCANNER_MAX_VERT_PAL;
-	g_videoScanner6502Cycles = VIDEO_SCANNER_6502_CYCLES_PAL;
+	if (rate == VR_50HZ)
+	{
+		g_videoScannerMaxVert = VIDEO_SCANNER_MAX_VERT_PAL;
+		g_videoScanner6502Cycles = VIDEO_SCANNER_6502_CYCLES_PAL;
+	}
+	else
+	{
+		g_videoScannerMaxVert = VIDEO_SCANNER_MAX_VERT;
+		g_videoScanner6502Cycles = VIDEO_SCANNER_6502_CYCLES;
+	}
+
+	GenerateVideoTables();
 }
 
 UINT NTSC_GetCyclesPerFrame(void)
