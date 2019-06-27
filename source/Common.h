@@ -75,7 +75,6 @@ enum AppMode_e
 #define  REGVALUE_OLD_APPLE2_TYPE    "Computer Emulation"	// Deprecated
 #define  REGVALUE_CONFIRM_REBOOT     "Confirm Reboot" // Added at 1.24.1 PageConfig
 #define  REGVALUE_FS_SHOW_SUBUNIT_STATUS "Full-screen show subunit status"
-#define  REGVALUE_50HZ_VIDEO         "50Hz video"
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
@@ -108,6 +107,7 @@ enum AppMode_e
 #define  REGVALUE_VIDEO_STYLE         "Video Style"			// GH#616: Added at 1.28.2
 #define  REGVALUE_VIDEO_HALF_SCAN_LINES "Half Scan Lines"	// GH#616: Deprecated from 1.28.2
 #define  REGVALUE_VIDEO_MONO_COLOR      "Monochrome Color"
+#define  REGVALUE_VIDEO_REFRESH_RATE    "Video Refresh Rate"
 #define  REGVALUE_SERIAL_PORT_NAME   "Serial Port Name"
 #define  REGVALUE_ENHANCE_DISK_SPEED "Enhance Disk Speed"
 #define  REGVALUE_CUSTOM_SPEED       "Custom Speed"

@@ -641,9 +641,6 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
 		SetFullScreenShowSubunitStatus(dwTmp ? true : false);
 
-	if(REGLOAD(TEXT(REGVALUE_50HZ_VIDEO), &dwTmp))
-		SetVideoRefreshRate(dwTmp ? VR_50HZ : VR_60HZ);
-
 	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
 		sg_PropertySheet.SetTheFreezesF8Rom(dwTmp);
 

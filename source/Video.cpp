@@ -728,9 +728,10 @@ bool VideoGetSWAltCharSet(void)
 
 //===========================================================================
 
-#define SS_YAML_KEY_ALTCHARSET "Alt Char Set"
-#define SS_YAML_KEY_VIDEOMODE "Video Mode"
-#define SS_YAML_KEY_CYCLESTHISFRAME "Cycles This Frame"
+#define SS_YAML_KEY_ALT_CHARSET "Alt Char Set"
+#define SS_YAML_KEY_VIDEO_MODE "Video Mode"
+#define SS_YAML_KEY_CYCLES_THIS_FRAME "Cycles This Frame"
+#define SS_YAML_KEY_VIDEO_REFRESH_RATE "Video Refresh Rate"
 
 static std::string VideoGetSnapshotStructName(void)
 {
@@ -741,19 +742,26 @@ static std::string VideoGetSnapshotStructName(void)
 void VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALTCHARSET, g_nAltCharSetOffset ? true : false);
-	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEOMODE, g_uVideoMode);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLESTHISFRAME, g_dwCyclesThisFrame);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALT_CHARSET, g_nAltCharSetOffset ? true : false);
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEO_MODE, g_uVideoMode);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLES_THIS_FRAME, g_dwCyclesThisFrame);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_VIDEO_REFRESH_RATE, (UINT)GetVideoRefreshRate());
 }
 
-void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (!yamlLoadHelper.GetSubMap(VideoGetSnapshotStructName()))
 		return;
 
-	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALTCHARSET) ? 256 : 0;
-	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEOMODE);
-	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLESTHISFRAME);
+	if (version >= 4)
+	{
+		VideoRefreshRate_e rate = (VideoRefreshRate_e)yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEO_REFRESH_RATE);
+		SetVideoRefreshRate(rate);	// Trashes: g_dwCyclesThisFrame
+	}
+
+	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALT_CHARSET) ? 256 : 0;
+	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEO_MODE);
+	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLES_THIS_FRAME);
 
 	yamlLoadHelper.PopMap();
 }
@@ -1229,6 +1237,10 @@ void Config_Load_Video()
 	REGLOAD(TEXT(REGVALUE_VIDEO_STYLE)     ,(DWORD*)&g_eVideoStyle);
 	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR),&g_nMonochromeRGB);
 
+	DWORD rate = VR_60HZ;
+	REGLOAD(TEXT(REGVALUE_VIDEO_REFRESH_RATE), &rate);
+	SetVideoRefreshRate((VideoRefreshRate_e)rate);
+
 	//
 
 	const UINT16* pOldVersion = GetOldAppleWinVersion();
@@ -1273,6 +1285,7 @@ void Config_Save_Video()
 	REGSAVE(TEXT(REGVALUE_VIDEO_MODE)      ,g_eVideoType);
 	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     ,g_eVideoStyle);
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR),g_nMonochromeRGB);
+	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), GetVideoRefreshRate());
 }
 
 //===========================================================================
@@ -1312,6 +1325,9 @@ VideoRefreshRate_e GetVideoRefreshRate(void)
 
 void SetVideoRefreshRate(VideoRefreshRate_e rate)
 {
+	if (rate != VR_50HZ)
+		rate = VR_60HZ;
+
 	g_bVideoScannerNTSC = (rate == VR_60HZ);
 	NTSC_SetRefreshRate(rate);
 }

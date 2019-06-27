@@ -200,7 +200,7 @@ bool    VideoGetSWTEXT(void);
 bool    VideoGetSWAltCharSet(void);
 
 void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
+void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
 
 extern bool g_bDisplayPrintScreenFileName;
 extern bool g_bShowPrintScreenWarningDialog;
