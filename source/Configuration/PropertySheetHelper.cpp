@@ -410,7 +410,6 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 
 	if (CONFIG_CHANGED_LOCAL(m_videoRefreshRate))
 	{
-//		SetVideoRefreshRate(ConfigNew.m_videoRefreshRate);
 		REGSAVE(TEXT(REGVALUE_50HZ_VIDEO), ConfigNew.m_videoRefreshRate == VR_50HZ ? 1 : 0);
 	}
 }
