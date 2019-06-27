@@ -1550,11 +1550,17 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: LoadConfiguration()\n");
 
 		if (newVideoType >= 0)
+		{
 			SetVideoType( (VideoType_e)newVideoType );
+			newVideoType = -1;	// Don't reapply after a restart
+		}
 		SetVideoStyle( (VideoStyle_e) ((GetVideoStyle() | newVideoStyleEnableMask) & ~newVideoStyleDisableMask) );
 
 		if (newVideoRefreshRate != VR_NONE)
+		{
 			SetVideoRefreshRate(newVideoRefreshRate);
+			newVideoRefreshRate = VR_NONE;	// Don't reapply after a restart
+		}
 
 		// Apply the memory expansion switches after loading the Apple II machine type
 #ifdef RAMWORKS

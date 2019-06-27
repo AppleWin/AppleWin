@@ -407,6 +407,12 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 	{
 		REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), ConfigNew.m_bEnableTheFreezesF8Rom);
 	}
+
+	if (CONFIG_CHANGED_LOCAL(m_videoRefreshRate))
+	{
+//		SetVideoRefreshRate(ConfigNew.m_videoRefreshRate);
+		REGSAVE(TEXT(REGVALUE_50HZ_VIDEO), ConfigNew.m_videoRefreshRate == VR_50HZ ? 1 : 0);
+	}
 }
 
 void CPropertySheetHelper::ApplyNewConfig(void)
@@ -423,6 +429,7 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	m_ConfigOld.m_Slot[5] = g_Slot5;
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = sg_PropertySheet.GetTheFreezesF8Rom();
+	m_ConfigOld.m_videoRefreshRate = GetVideoRefreshRate();
 
 	// Reset flags each time:
 	m_ConfigOld.m_uSaveLoadStateMsg = 0;
@@ -441,6 +448,7 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	g_Slot5 = m_ConfigOld.m_Slot[5];
 	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
 	sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
+	SetVideoRefreshRate(m_ConfigOld.m_videoRefreshRate);
 }
 
 bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged)
@@ -490,6 +498,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_CpuType))
 			strMsgMain += ". Emulated main CPU has changed\n";
+
+		if (CONFIG_CHANGED(m_videoRefreshRate))
+			strMsgMain += ". Video refresh rate has changed\n";
 
 		if (CONFIG_CHANGED(m_Slot[4]))
 			strMsgMain += GetSlot(4);

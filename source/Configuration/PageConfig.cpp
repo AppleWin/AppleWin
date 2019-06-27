@@ -293,8 +293,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 	const bool isCurrentVideoRate50Hz = GetVideoRefreshRate() == VR_50HZ;
 	if (isCurrentVideoRate50Hz != isNewVideoRate50Hz)
 	{
-		SetVideoRefreshRate(isNewVideoRate50Hz ? VR_50HZ : VR_60HZ);
-		REGSAVE(TEXT(REGVALUE_50HZ_VIDEO), isNewVideoRate50Hz ? 1 : 0);
+		m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = isNewVideoRate50Hz ? VR_50HZ : VR_60HZ;
 	}
 
 	if (bVideoReinit)
