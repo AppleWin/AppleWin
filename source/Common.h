@@ -1,13 +1,10 @@
 #pragma once
 
-const double _14M = (157500000.0 / 11.0); // 14.3181818... * 10^6
+const double _14M_NTSC = (157500000.0 / 11.0);	// 14.3181818... * 10^6
 const double _14M_PAL = 14.25045e6;				// UTAIIe:3-17
-const double CLK_6502 = ((_14M * 65.0) / 912.0); // 65 cycles per 912 14M clocks
+const double CLK_6502_NTSC = ((_14M_NTSC * 65.0) / 912.0); // 65 cycles per 912 14M clocks
+const double CLK_6502_PAL = _14M_PAL / 14.0;
 //const double CLK_6502 = 23 * 44100;			// 1014300
-
-// The effective Z-80 clock rate is 2.041MHz
-// See: http://www.apple2info.net/hardware/softcard/SC-SWHW_a2in.pdf
-const double CLK_Z80 = (CLK_6502 * 2);
 
 #define NUM_SLOTS 8
 

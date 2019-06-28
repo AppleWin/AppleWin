@@ -757,6 +757,7 @@ void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	{
 		VideoRefreshRate_e rate = (VideoRefreshRate_e)yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEO_REFRESH_RATE);
 		SetVideoRefreshRate(rate);	// Trashes: g_dwCyclesThisFrame
+		SetCurrentCLK6502();
 	}
 
 	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALT_CHARSET) ? 256 : 0;

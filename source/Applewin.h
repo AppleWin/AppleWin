@@ -6,7 +6,6 @@
 void LogFileTimeUntilFirstKeyReadReset(void);
 void LogFileTimeUntilFirstKeyRead(void);
 
-void SetCurrentCLK6502();
 bool SetCurrentImageDir(const char* pszImageDir);
 
 extern const UINT16* GetOldAppleWinVersion(void);
@@ -17,6 +16,9 @@ extern const TCHAR     *g_pAppTitle;
 extern eApple2Type g_Apple2Type;
 eApple2Type GetApple2Type(void);
 void SetApple2Type(eApple2Type type);
+
+double Get6502BaseClock(void);
+void SetCurrentCLK6502(void);
 
 void SingleStep(bool bReinit);
 
