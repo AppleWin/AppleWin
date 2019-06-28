@@ -91,7 +91,7 @@ uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last se
 DWORD     g_eVideoType     = VT_DEFAULT;
 static VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
 
-static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
+static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 //-------------------------------------
 
@@ -542,6 +542,9 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 
 void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
+#if 1
+	NTSC_VideoClockResync(dwCyclesThisFrame);
+#else
 	if (g_bVideoScannerNTSC)
 	{
 		NTSC_VideoClockResync(dwCyclesThisFrame);
@@ -552,6 +555,7 @@ void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 		g_nVideoClockVert = (uint16_t) (dwCyclesThisFrame / kHClocks) % kPALScanLines;
 		g_nVideoClockHorz = (uint16_t) (dwCyclesThisFrame % kHClocks);
 	}
+#endif
 
 	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
 }
@@ -730,9 +734,10 @@ bool VideoGetSWAltCharSet(void)
 
 //===========================================================================
 
-#define SS_YAML_KEY_ALTCHARSET "Alt Char Set"
-#define SS_YAML_KEY_VIDEOMODE "Video Mode"
-#define SS_YAML_KEY_CYCLESTHISFRAME "Cycles This Frame"
+#define SS_YAML_KEY_ALT_CHARSET "Alt Char Set"
+#define SS_YAML_KEY_VIDEO_MODE "Video Mode"
+#define SS_YAML_KEY_CYCLES_THIS_FRAME "Cycles This Frame"
+#define SS_YAML_KEY_VIDEO_REFRESH_RATE "Video Refresh Rate"
 
 static std::string VideoGetSnapshotStructName(void)
 {
@@ -743,19 +748,27 @@ static std::string VideoGetSnapshotStructName(void)
 void VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALTCHARSET, g_nAltCharSetOffset ? true : false);
-	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEOMODE, g_uVideoMode);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLESTHISFRAME, g_dwCyclesThisFrame);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALT_CHARSET, g_nAltCharSetOffset ? true : false);
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEO_MODE, g_uVideoMode);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLES_THIS_FRAME, g_dwCyclesThisFrame);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_VIDEO_REFRESH_RATE, (UINT)GetVideoRefreshRate());
 }
 
-void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (!yamlLoadHelper.GetSubMap(VideoGetSnapshotStructName()))
 		return;
 
-	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALTCHARSET) ? 256 : 0;
-	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEOMODE);
-	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLESTHISFRAME);
+	if (version >= 4)
+	{
+		VideoRefreshRate_e rate = (VideoRefreshRate_e)yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEO_REFRESH_RATE);
+		SetVideoRefreshRate(rate);	// Trashes: g_dwCyclesThisFrame
+		SetCurrentCLK6502();
+	}
+
+	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALT_CHARSET) ? 256 : 0;
+	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEO_MODE);
+	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLES_THIS_FRAME);
 
 	yamlLoadHelper.PopMap();
 }
@@ -777,7 +790,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
     //
     const int kScanLines  = g_bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
     const int kScanCycles = kScanLines * kHClocks;
-    _ASSERT(nCycles < kScanCycles);
+    _ASSERT(nCycles < (UINT)kScanCycles);
     nCycles %= kScanCycles;
 
     // calculate horizontal scanning state
@@ -795,7 +808,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
     int h_4 = (nHState >> 4) & 1;
     int h_5 = (nHState >> 5) & 1;
 
-    // calculate vertical scanning state
+    // calculate vertical scanning state (UTAIIe:3-15,T3.2)
     //
     int nVLine  = nCycles / kHClocks; // which vertical scanning line
     int nVState = kVLine0State + nVLine; // V state bits
@@ -868,7 +881,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
         nAddressP |= p2b << 11; // a11
 	}
 
-	// VBL' = v_4' | v_3' = (v_4 & v_3)' (UTAIIe:5-10,#3)
+	// VBL' = v_4' | v_3' = (v_4 & v_3)' (UTAIIe:5-10,#3),  (UTAIIe:3-15,T3.2)
 
 	if (videoScannerAddr == VS_PartialAddrH)
 		return nAddressH;
@@ -1231,6 +1244,10 @@ void Config_Load_Video()
 	REGLOAD(TEXT(REGVALUE_VIDEO_STYLE)     ,(DWORD*)&g_eVideoStyle);
 	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR),&g_nMonochromeRGB);
 
+	DWORD rate = VR_60HZ;
+	REGLOAD(TEXT(REGVALUE_VIDEO_REFRESH_RATE), &rate);
+	SetVideoRefreshRate((VideoRefreshRate_e)rate);
+
 	//
 
 	const UINT16* pOldVersion = GetOldAppleWinVersion();
@@ -1275,6 +1292,7 @@ void Config_Save_Video()
 	REGSAVE(TEXT(REGVALUE_VIDEO_MODE)      ,g_eVideoType);
 	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     ,g_eVideoStyle);
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR),g_nMonochromeRGB);
+	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), GetVideoRefreshRate());
 }
 
 //===========================================================================
@@ -1303,6 +1321,22 @@ void SetVideoStyle(VideoStyle_e newVideoStyle)
 bool IsVideoStyle(VideoStyle_e mask)
 {
 	return (g_eVideoStyle & mask) != 0;
+}
+
+//===========================================================================
+
+VideoRefreshRate_e GetVideoRefreshRate(void)
+{
+	return (g_bVideoScannerNTSC == false) ? VR_50HZ : VR_60HZ;
+}
+
+void SetVideoRefreshRate(VideoRefreshRate_e rate)
+{
+	if (rate != VR_50HZ)
+		rate = VR_60HZ;
+
+	g_bVideoScannerNTSC = (rate == VR_60HZ);
+	NTSC_SetRefreshRate(rate);
 }
 
 //===========================================================================

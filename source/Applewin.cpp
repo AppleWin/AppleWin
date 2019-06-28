@@ -91,7 +91,7 @@ bool      g_bRestart = false;
 bool      g_bRestartFullScreen = false;
 
 DWORD		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar
-double		g_fCurrentCLK6502 = CLK_6502;	// Affected by Config dialog's speed slider bar
+double		g_fCurrentCLK6502 = CLK_6502_NTSC;	// Affected by Config dialog's speed slider bar
 static double g_fMHz		= 1.0;			// Affected by Config dialog's speed slider bar
 
 int			g_nCpuCyclesFeedback = 0;
@@ -345,6 +345,7 @@ static void ContinueExecution(void)
 
 	//
 
+	const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
@@ -376,14 +377,21 @@ void SingleStep(bool bReinit)
 
 //===========================================================================
 
+double Get6502BaseClock(void)
+{
+	return (GetVideoRefreshRate() == VR_50HZ) ? CLK_6502_PAL : CLK_6502_NTSC;
+}
+
 void SetCurrentCLK6502(void)
 {
 	static DWORD dwPrevSpeed = (DWORD) -1;
+	static VideoRefreshRate_e prevVideoRefreshRate = VR_NONE;
 
-	if(dwPrevSpeed == g_dwSpeed)
+	if (dwPrevSpeed == g_dwSpeed && GetVideoRefreshRate() == prevVideoRefreshRate)
 		return;
 
 	dwPrevSpeed = g_dwSpeed;
+	prevVideoRefreshRate = GetVideoRefreshRate();
 
 	// SPEED_MIN    =  0 = 0.50 MHz
 	// SPEED_NORMAL = 10 = 1.00 MHz
@@ -396,7 +404,7 @@ void SetCurrentCLK6502(void)
 	else
 		g_fMHz = (double)g_dwSpeed / 10.0;
 
-	g_fCurrentCLK6502 = CLK_6502 * g_fMHz;
+	g_fCurrentCLK6502 = Get6502BaseClock() * g_fMHz;
 
 	//
 	// Now re-init modules that are dependent on /g_fCurrentCLK6502/
@@ -622,16 +630,14 @@ void LoadConfiguration(void)
 	}
 
 	REGLOAD(TEXT(REGVALUE_EMULATION_SPEED)   ,&g_dwSpeed);
+	Config_Load_Video();
+	SetCurrentCLK6502();	// Pre: g_dwSpeed && Config_Load_Video()->SetVideoRefreshRate()
 
 	DWORD dwEnhanceDisk;
 	REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk);
 	sg_Disk2Card.SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
-	Config_Load_Video();
-
 	REGLOAD(TEXT("Uthernet Active")   ,(DWORD *)&tfe_enabled);
-
-	SetCurrentCLK6502();
 
 	//
 
@@ -1181,6 +1187,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	int newVideoType = -1;
 	int newVideoStyleEnableMask = 0;
 	int newVideoStyleDisableMask = 0;
+	VideoRefreshRate_e newVideoRefreshRate = VR_NONE;
 	LPSTR szScreenshotFilename = NULL;
 
 	while (*lpCmdLine)
@@ -1427,6 +1434,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			szScreenshotFilename = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 		}
+		else if (_stricmp(lpCmdLine, "-50hz") == 0)	// (case-insensitive)
+		{
+			newVideoRefreshRate = VR_50HZ;
+		}
+		else if (_stricmp(lpCmdLine, "-60hz") == 0)	// (case-insensitive)
+		{
+			newVideoRefreshRate = VR_60HZ;
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
@@ -1537,8 +1552,18 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: LoadConfiguration()\n");
 
 		if (newVideoType >= 0)
+		{
 			SetVideoType( (VideoType_e)newVideoType );
+			newVideoType = -1;	// Don't reapply after a restart
+		}
 		SetVideoStyle( (VideoStyle_e) ((GetVideoStyle() | newVideoStyleEnableMask) & ~newVideoStyleDisableMask) );
+
+		if (newVideoRefreshRate != VR_NONE)
+		{
+			SetVideoRefreshRate(newVideoRefreshRate);
+			newVideoRefreshRate = VR_NONE;	// Don't reapply after a restart
+			SetCurrentCLK6502();
+		}
 
 		// Apply the memory expansion switches after loading the Apple II machine type
 #ifdef RAMWORKS

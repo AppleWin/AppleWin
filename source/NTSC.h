@@ -14,6 +14,10 @@
 	extern void     NTSC_VideoReinitialize( DWORD cyclesThisFrame, bool bInitVideoScannerAddress );
 	extern void     NTSC_VideoInitAppleType();
 	extern void     NTSC_VideoInitChroma();
-	extern void     NTSC_VideoUpdateCycles( long cycles6502 );
+	extern void     NTSC_VideoUpdateCycles( UINT cycles6502 );
 	extern void     NTSC_VideoRedrawWholeScreen( void );
 	extern UINT     NTSC_GetFrameBufferBorderlessWidth( void );
+
+	enum VideoRefreshRate_e;
+	void NTSC_SetRefreshRate(VideoRefreshRate_e rate);
+	UINT NTSC_GetCyclesPerFrame(void);

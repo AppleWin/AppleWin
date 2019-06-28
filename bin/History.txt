@@ -8,10 +8,17 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.28.8.0 - 28 Jun 2019
+----------------------
+. [Change #648] Support 50Hz(PAL) video refresh rate and implicitly PAL 1.018MHz.
+	- NB. TV video modes still use NTSC rendering.
+. [Bug #656] Fix for PAGE1/2 ($C054/55) not having a 1 cycle delay.
+
+
 1.28.7.0 - 15 Jun 2019
 ----------------------
 . [Bug #654] Fix for Sather's "Little Text Window" not rendering correctly.
-. [Bug #654] Fix for 6522 TIMER1's period to be N+2 cycles.
+. [Bug #652] Fix for 6522 TIMER1's period to be N+2 cycles.
 
 
 1.28.6.0 - 2 Jun 2019

@@ -2202,7 +2202,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			SetLastRamWrite( yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE );	// NB. This is set later for II,II+ by slot-0 LC or Saturn
 	}
 
-	if (unitVersion == 3)
+	if (unitVersion >= 3)
 	{
 		for (UINT i=0; i<kNumAnnunciators; i++)
 		{

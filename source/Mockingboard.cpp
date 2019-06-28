@@ -205,7 +205,8 @@ static HANDLE g_hSSI263Event[g_nNumEvents] = {NULL};	// 1: Phoneme finished play
 static DWORD g_dwMaxPhonemeLen = 0;
 
 // When 6522 IRQ is *not* active use 60Hz update freq for MB voices
-static const double g_f6522TimerPeriod_NoIRQ = CLK_6502 / 60.0;		// Constant whatever the CLK is set to
+// NB. Not important if NTSC or PAL - just need to pick a sensible period
+static const double g_f6522TimerPeriod_NoIRQ = CLK_6502_NTSC / 60.0;	// Constant whatever the CLK is set to
 
 static bool g_bCritSectionValid = false;	// Deleting CritialSection when not valid causes crash on Win98
 static CRITICAL_SECTION g_CriticalSection;	// To guard 6522's IFR
@@ -1627,7 +1628,7 @@ static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 
 	g_PhasorClockScaleFactor = (nAddr & 4) ? 2 : 1;
 
-	AY8910_InitClock((int)(CLK_6502 * g_PhasorClockScaleFactor));
+	AY8910_InitClock((int)(Get6502BaseClock() * g_PhasorClockScaleFactor));
 
 	return MemReadFloatingBus(nExecutedCycles);
 }
@@ -2189,7 +2190,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 		pMB++;
 	}
 
-	AY8910_InitClock((int)CLK_6502);
+	AY8910_InitClock((int)Get6502BaseClock());
 
 	// NB. g_SoundcardType & g_bPhasorEnable setup in MB_InitializeIO() -> MB_SetSoundcardType()
 
@@ -2312,7 +2313,7 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 		pMB++;
 	}
 
-	AY8910_InitClock((int)(CLK_6502 * g_PhasorClockScaleFactor));
+	AY8910_InitClock((int)(Get6502BaseClock() * g_PhasorClockScaleFactor));
 
 	// NB. g_SoundcardType & g_bPhasorEnable setup in MB_InitializeIO() -> MB_SetSoundcardType()
 
