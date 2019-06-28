@@ -10,7 +10,7 @@ Tom Charlesworth
 
 1.28.8.0 - 28 Jun 2019
 ----------------------
-. [Change #648] Support 50Hz(PAL) video refresh rate and implicitly PAL 1.018MHz.
+. [Change #648] Support 50Hz(PAL) video refresh rate and implicitly PAL 1.016MHz.
 	- NB. TV video modes still use NTSC rendering.
 . [Bug #656] Fix for PAGE1/2 ($C054/55) not having a 1 cycle delay.
 

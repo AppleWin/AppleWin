@@ -2,8 +2,8 @@
 
 const double _14M_NTSC = (157500000.0 / 11.0);	// 14.3181818... * 10^6
 const double _14M_PAL = 14.25045e6;				// UTAIIe:3-17
-const double CLK_6502_NTSC = ((_14M_NTSC * 65.0) / 912.0); // 65 cycles per 912 14M clocks
-const double CLK_6502_PAL = _14M_PAL / 14.0;
+const double CLK_6502_NTSC = (_14M_NTSC * 65.0) / (65.0*14.0+2.0); // 65 cycles per 912 14M clocks
+const double CLK_6502_PAL  = (_14M_PAL  * 65.0) / (65.0*14.0+2.0);
 //const double CLK_6502 = 23 * 44100;			// 1014300
 
 #define NUM_SLOTS 8
