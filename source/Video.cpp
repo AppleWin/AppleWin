@@ -542,21 +542,7 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 
 void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
-#if 1
 	NTSC_VideoClockResync(dwCyclesThisFrame);
-#else
-	if (g_bVideoScannerNTSC)
-	{
-		NTSC_VideoClockResync(dwCyclesThisFrame);
-	}
-	else	// PAL
-	{
-		_ASSERT(0);
-		g_nVideoClockVert = (uint16_t) (dwCyclesThisFrame / kHClocks) % kPALScanLines;
-		g_nVideoClockHorz = (uint16_t) (dwCyclesThisFrame % kHClocks);
-	}
-#endif
-
 	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
 }
 
@@ -894,6 +880,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
 
 //===========================================================================
 
+// TODO: Consider replacing simply with: return g_nVideoClockVert < kVDisplayableScanLines
 bool VideoGetVblBar(const DWORD uExecutedCycles)
 {
 	// get video scanner position
