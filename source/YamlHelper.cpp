@@ -351,7 +351,11 @@ float YamlLoadHelper::LoadFloat(const std::string key)
 		m_bDoGetMapRemainder = false;
 		throw std::string(m_currentMapName + ": Missing: " + key);
 	}
-	return strtof(value.c_str(), NULL);
+#if (_MSC_VER >= 1900)
+	return strtof(value.c_str(), NULL);			// MSVC++ 14.0  _MSC_VER == 1900 (Visual Studio 2015 version 14.0)
+#else
+	return (float) strtod(value.c_str(), NULL);	// NB. strtof() requires VS2015
+#endif
 }
 
 double YamlLoadHelper::LoadDouble(const std::string key)
