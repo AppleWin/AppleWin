@@ -75,10 +75,10 @@ public:
 	std::string m_strFilenameInZip;					// ""             or <FILENAME.EXT>
 	ImageInfo* m_imagehandle;						// Init'd by InsertDisk() -> ImageOpen()
 	bool m_bWriteProtected;
-	int m_byte;
-	int m_nibbles;									// Init'd by ReadTrack() -> ImageReadTrack()
-	UINT m_bitOffset;
-	UINT m_bitCount;
+	int m_byte;					// byte offset
+	int m_nibbles;				// # nibbles in track / Init'd by ReadTrack() -> ImageReadTrack()
+	UINT m_bitOffset;			// bit offset
+	UINT m_bitCount;			// # bits in track
 	BYTE m_bitMask;
 	LPBYTE m_trackimage;
 	bool m_trackimagedata;
@@ -214,7 +214,7 @@ private:
 
 	// Although the magnets are a property of the drive, their state is a property of the controller card,
 	// since the magnets will only be on for whichever of the 2 drives is currently selected.
-	WORD m_magnetStates;	// state bits for stepper magnet phases 0 - 3
+	WORD m_magnetStates;	// state bits for stepper motor magnet states (phases 0 - 3)
 
 	bool m_saveDiskImage;
 	UINT m_slot;
@@ -223,8 +223,8 @@ private:
 	FormatTrack m_formatTrack;
 	bool m_enhanceDisk;
 
-	static const UINT SPINNING_CYCLES = 20000*64;	// 1280000 cycles = 1.25s
-	static const UINT WRITELIGHT_CYCLES = 20000*64;	// 1280000 cycles = 1.25s
+	static const UINT SPINNING_CYCLES = 1000*1000;		// 1M cycles = ~1.000s
+	static const UINT WRITELIGHT_CYCLES = 1000*1000;	// 1M cycles = ~1.000s
 
 	// Logic State Sequencer (for WOZ):
 	BYTE m_shiftReg;
