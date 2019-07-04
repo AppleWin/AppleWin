@@ -65,7 +65,6 @@ Disk2InterfaceCard::Disk2InterfaceCard(void)
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = true;
 
-	ResetFloppyWOZ();
 	ResetLogicStateSequencer();
 
 	// Debug:
@@ -86,7 +85,7 @@ int Disk2InterfaceCard::GetCurrentTrack(void)  { return ImagePhaseToTrack(m_flop
 float Disk2InterfaceCard::GetCurrentPhase(void)  { return m_floppyDrive[m_currDrive].m_phasePrecise; }
 int Disk2InterfaceCard::GetCurrentOffset(void) { return m_floppyDrive[m_currDrive].m_disk.m_byte; }
 BYTE Disk2InterfaceCard::GetCurrentLSSBitMask(void) { return m_floppyDrive[m_currDrive].m_disk.m_bitMask; }
-double Disk2InterfaceCard::GetCurrentLSSExtraCycles(void) { return m_extraCycles; }
+double Disk2InterfaceCard::GetCurrentLSSExtraCycles(void) { return m_floppyDrive[m_currDrive].m_disk.m_extraCycles; }
 int Disk2InterfaceCard::GetTrack(const int drive)  { return ImagePhaseToTrack(m_floppyDrive[drive].m_disk.m_imagehandle, m_floppyDrive[m_currDrive].m_phasePrecise, false); }
 
 LPCTSTR Disk2InterfaceCard::GetCurrentState(void)
@@ -301,6 +300,8 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 			pFloppy->m_bitOffset = pFloppy->m_byte*8;
 			pFloppy->m_bitMask = 1 << 7;
+			pFloppy->m_extraCycles = 0.0;
+			pDrive->m_headWindow = 0;
 		}
 
 		pFloppy->m_trackimagedata = (pFloppy->m_nibbles != 0);
@@ -595,7 +596,6 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	// Reset the disk's attributes, but preserve the drive's attributes (GH#138/Platoon, GH#640)
 	// . Changing the disk (in the drive) doesn't affect the drive's attributes.
 	pFloppy->clear();
-	//ResetFloppyWOZ();	// don't want loading save-state to reset these disk-ii interface vars!
 
 	const DWORD dwAttributes = GetFileAttributes(pszImageFilename);
 	if(dwAttributes == INVALID_FILE_ATTRIBUTES)
@@ -966,12 +966,6 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 //===========================================================================
 
-void Disk2InterfaceCard::ResetFloppyWOZ(void)
-{
-	m_headWindow = 0;
-	m_extraCycles = 0.0;
-}
-
 void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 {
 	m_shiftReg = 0;
@@ -993,6 +987,8 @@ void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG uExecut
 
 UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
 {
+	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
+
 	// NB. m_extraCycles is needed to retain accuracy:
 	// . Read latch #1:  0-> 9: cycleDelta= 9, bitCellDelta=2, extraCycles=1
 	// . Read latch #2: 11->20: cycleDelta=11, bitCellDelta=2, extraCycles=3
@@ -1008,10 +1004,10 @@ UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
 	else
 #endif
 	{
-		const double cycleDelta = (double)(g_nCumulativeCycles - m_diskLastCycle) + m_extraCycles;
+		const double cycleDelta = (double)(g_nCumulativeCycles - m_diskLastCycle) + floppy.m_extraCycles;
 		const double bitTime = 0.125 * (double)optimalBitTiming;	// 125ns units
 		bitCellDelta = (UINT) floor( cycleDelta / bitTime );
-		m_extraCycles = (double)cycleDelta - ((double)bitCellDelta * bitTime);
+		floppy.m_extraCycles = (double)cycleDelta - ((double)bitCellDelta * bitTime);
 	}
 	return bitCellDelta;
 }
@@ -1098,10 +1094,10 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 		{
 			BYTE n = floppy.m_trackimage[floppy.m_byte];
 
-			m_headWindow <<= 1;
-			m_headWindow |= (n & floppy.m_bitMask) ? 1 : 0;
-			BYTE outputBit = (m_headWindow & 0xf)	? (m_headWindow >> 1) & 1
-													: rand() & 1;
+			drive.m_headWindow <<= 1;
+			drive.m_headWindow |= (n & floppy.m_bitMask) ? 1 : 0;
+			BYTE outputBit = (drive.m_headWindow & 0xf)	? (drive.m_headWindow >> 1) & 1
+														: rand() & 1;
 
 			floppy.m_bitMask >>= 1;
 			if (!floppy.m_bitMask)
@@ -1581,8 +1577,6 @@ static const UINT kUNIT_VERSION = 4;
 #define SS_YAML_KEY_LAST_CYCLE "Last Cycle"
 #define SS_YAML_KEY_LAST_READ_LATCH_CYCLE "Last Read Latch Cycle"
 #define SS_YAML_KEY_LSS_SHIFT_REG "LSS Shift Reg"
-#define SS_YAML_KEY_LSS_HEAD_WINDOW "LSS Head Window"
-#define SS_YAML_KEY_LSS_EXTRA_CYCLES "LSS Extra Cycles"
 #define SS_YAML_KEY_LSS_LATCH_DELAY "LSS Latch Delay"
 #define SS_YAML_KEY_LSS_RESET_SEQUENCER "LSS Reset Sequencer"
 
@@ -1591,6 +1585,7 @@ static const UINT kUNIT_VERSION = 4;
 #define SS_YAML_KEY_PHASE "Phase"
 #define SS_YAML_KEY_PHASE_PRECISE "Phase (precise)"
 #define SS_YAML_KEY_TRACK "Track"	// deprecated at v4
+#define SS_YAML_KEY_HEAD_WINDOW "Head Window"
 #define SS_YAML_KEY_LAST_STEPPER_CYCLE "Last Stepper Cycle"
 
 #define SS_YAML_KEY_FLOPPY "Floppy"
@@ -1598,6 +1593,7 @@ static const UINT kUNIT_VERSION = 4;
 #define SS_YAML_KEY_NIBBLES "Nibbles"
 #define SS_YAML_KEY_BIT_OFFSET "Bit Offset"
 #define SS_YAML_KEY_BIT_COUNT "Bit Count"
+#define SS_YAML_KEY_EXTRA_CYCLES "Extra Cycles"
 #define SS_YAML_KEY_WRITE_PROTECTED "Write Protected"
 #define SS_YAML_KEY_SPINNING "Spinning"
 #define SS_YAML_KEY_WRITE_LIGHT "Write Light"
@@ -1618,7 +1614,8 @@ void Disk2InterfaceCard::SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_BYTE, m_floppyDrive[unit].m_disk.m_byte);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_NIBBLES, m_floppyDrive[unit].m_disk.m_nibbles);
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_BIT_OFFSET, m_floppyDrive[unit].m_disk.m_bitOffset);	// v4
-	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_BIT_COUNT, m_floppyDrive[unit].m_disk.m_bitCount);	// v4
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_BIT_COUNT, m_floppyDrive[unit].m_disk.m_bitCount);		// v4
+	yamlSaveHelper.SaveDouble(SS_YAML_KEY_EXTRA_CYCLES, m_floppyDrive[unit].m_disk.m_extraCycles);	// v4
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITE_PROTECTED, m_floppyDrive[unit].m_disk.m_bWriteProtected);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DATA, m_floppyDrive[unit].m_disk.m_trackimagedata);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY, m_floppyDrive[unit].m_disk.m_trackimagedirty);
@@ -1635,6 +1632,7 @@ void Disk2InterfaceCard::SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, U
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_DISK2UNIT, unit);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, m_floppyDrive[unit].m_phase);
 	yamlSaveHelper.SaveFloat(SS_YAML_KEY_PHASE_PRECISE, m_floppyDrive[unit].m_phasePrecise);	// v4
+	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_HEAD_WINDOW, m_floppyDrive[unit].m_headWindow);		// v4
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_STEPPER_CYCLE, m_floppyDrive[unit].m_lastStepperCycle);	// v4
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_SPINNING, m_floppyDrive[unit].m_spinning);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_WRITE_LIGHT, m_floppyDrive[unit].m_writelight);
@@ -1657,8 +1655,6 @@ void Disk2InterfaceCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_CYCLE, m_diskLastCycle);	// v2
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_READ_LATCH_CYCLE, m_diskLastReadLatchCycle);	// v3
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LSS_SHIFT_REG, m_shiftReg);			// v4
-	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_LSS_HEAD_WINDOW, m_headWindow);		// v4
-	yamlSaveHelper.SaveDouble(SS_YAML_KEY_LSS_EXTRA_CYCLES, m_extraCycles);		// v4
 	yamlSaveHelper.SaveInt(SS_YAML_KEY_LSS_LATCH_DELAY, m_latchDelay);			// v4
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_LSS_RESET_SEQUENCER, m_resetSequencer);	// v4
 	m_formatTrack.SaveSnapshot(yamlSaveHelper);	// v2
@@ -1706,6 +1702,7 @@ bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT
 	{
 		m_floppyDrive[unit].m_disk.m_bitOffset = yamlLoadHelper.LoadUint(SS_YAML_KEY_BIT_OFFSET);
 		m_floppyDrive[unit].m_disk.m_bitCount = yamlLoadHelper.LoadUint(SS_YAML_KEY_BIT_COUNT);
+		m_floppyDrive[unit].m_disk.m_extraCycles = yamlLoadHelper.LoadDouble(SS_YAML_KEY_EXTRA_CYCLES);
 
 		if (m_floppyDrive[unit].m_disk.m_bitCount && (m_floppyDrive[unit].m_disk.m_bitOffset >= m_floppyDrive[unit].m_disk.m_bitCount))
 			throw std::string("Disk image: bitOffset >= bitCount");
@@ -1763,6 +1760,7 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper,
 
 	m_floppyDrive[unit].m_phase = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
 	m_floppyDrive[unit].m_phasePrecise = yamlLoadHelper.LoadFloat(SS_YAML_KEY_PHASE_PRECISE);
+	m_floppyDrive[unit].m_headWindow = yamlLoadHelper.LoadUint(SS_YAML_KEY_HEAD_WINDOW) & 0xf;
 	m_floppyDrive[unit].m_lastStepperCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LAST_STEPPER_CYCLE);
 	m_floppyDrive[unit].m_spinning = yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
 	m_floppyDrive[unit].m_writelight = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
@@ -1832,8 +1830,6 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 	if (version >= 4)
 	{
 		m_shiftReg			= yamlLoadHelper.LoadUint(SS_YAML_KEY_LSS_SHIFT_REG) & 0xff;
-		m_headWindow		= yamlLoadHelper.LoadUint(SS_YAML_KEY_LSS_HEAD_WINDOW) & 0xf;
-		m_extraCycles		= yamlLoadHelper.LoadDouble(SS_YAML_KEY_LSS_EXTRA_CYCLES);
 		m_latchDelay		= yamlLoadHelper.LoadInt(SS_YAML_KEY_LSS_LATCH_DELAY);
 		m_resetSequencer	= yamlLoadHelper.LoadBool(SS_YAML_KEY_LSS_RESET_SEQUENCER);
 	}

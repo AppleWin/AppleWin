@@ -64,6 +64,7 @@ public:
 		m_bitOffset = 0;
 		m_bitCount = 0;
 		m_bitMask = 1 << 7;
+		m_extraCycles = 0.0;
 		m_trackimage = NULL;
 		m_trackimagedata = false;
 		m_trackimagedirty = false;
@@ -80,6 +81,7 @@ public:
 	UINT m_bitOffset;			// bit offset
 	UINT m_bitCount;			// # bits in track
 	BYTE m_bitMask;
+	double m_extraCycles;
 	LPBYTE m_trackimage;
 	bool m_trackimagedata;
 	bool m_trackimagedirty;
@@ -100,6 +102,7 @@ public:
 		m_phasePrecise = 0;
 		m_phase = 0;
 		m_lastStepperCycle = 0;
+		m_headWindow = 0;
 		m_spinning = 0;
 		m_writelight = 0;
 		m_disk.clear();
@@ -109,6 +112,7 @@ public:
 	float m_phasePrecise;	// Phase precise to half a phase (aka quarter track)
 	int m_phase;			// Integral phase number
 	unsigned __int64 m_lastStepperCycle;
+	BYTE m_headWindow;
 	DWORD m_spinning;
 	DWORD m_writelight;
 	FloppyDisk m_disk;
@@ -177,7 +181,6 @@ private:
 	void RemoveDisk(const int drive);
 	void WriteTrack(const int drive);
 	LPCTSTR DiskGetFullPathName(const int drive);
-	void ResetFloppyWOZ(void);
 	void ResetLogicStateSequencer(void);
 	void UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles);
 	UINT GetBitCellDelta(const BYTE optimalBitTiming);
@@ -228,8 +231,6 @@ private:
 
 	// Logic State Sequencer (for WOZ):
 	BYTE m_shiftReg;
-	BYTE m_headWindow;
-	double m_extraCycles;
 	int m_latchDelay;
 	bool m_resetSequencer;
 	UINT m_dbgLatchDelayedCnt;
