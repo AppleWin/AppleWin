@@ -1745,6 +1745,8 @@ void MemReset()
 	g_eExpansionRomType = eExpRomNull;
 	g_uPeripheralRomSlot = 0;
 
+	ZeroMemory(memdirty, 0x100);
+
 	//
 
 	int iByte;

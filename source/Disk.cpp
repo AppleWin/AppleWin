@@ -56,17 +56,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 Disk2InterfaceCard::Disk2InterfaceCard(void)
 {
-	m_currDrive = 0;
+	ResetSwitches();
+
 	m_floppyLatch = 0;
-	m_floppyMotorOn = 0;
-	m_floppyLoadMode = 0;
-	m_floppyWriteMode = 0;
-	m_phases = 0;
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
 	m_slot = 0;
 	m_diskLastCycle = 0;
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = true;
+
+	ResetLogicStateSequencer();
 
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
@@ -82,11 +81,40 @@ bool Disk2InterfaceCard::GetEnhanceDisk(void) { return m_enhanceDisk; }
 void Disk2InterfaceCard::SetEnhanceDisk(bool bEnhanceDisk) { m_enhanceDisk = bEnhanceDisk; }
 
 int Disk2InterfaceCard::GetCurrentDrive(void)  { return m_currDrive; }
-int Disk2InterfaceCard::GetCurrentTrack(void)  { return m_floppyDrive[m_currDrive].m_track; }
-int Disk2InterfaceCard::GetCurrentPhase(void)  { return m_floppyDrive[m_currDrive].m_phase; }
+int Disk2InterfaceCard::GetCurrentTrack(void)  { return ImagePhaseToTrack(m_floppyDrive[m_currDrive].m_disk.m_imagehandle, m_floppyDrive[m_currDrive].m_phasePrecise, false); }
+float Disk2InterfaceCard::GetCurrentPhase(void)  { return m_floppyDrive[m_currDrive].m_phasePrecise; }
 int Disk2InterfaceCard::GetCurrentOffset(void) { return m_floppyDrive[m_currDrive].m_disk.m_byte; }
-int Disk2InterfaceCard::GetTrack(const int drive)  { return m_floppyDrive[drive].m_track; }
+BYTE Disk2InterfaceCard::GetCurrentLSSBitMask(void) { return m_floppyDrive[m_currDrive].m_disk.m_bitMask; }
+double Disk2InterfaceCard::GetCurrentExtraCycles(void) { return m_floppyDrive[m_currDrive].m_disk.m_extraCycles; }
+int Disk2InterfaceCard::GetTrack(const int drive)  { return ImagePhaseToTrack(m_floppyDrive[drive].m_disk.m_imagehandle, m_floppyDrive[m_currDrive].m_phasePrecise, false); }
 
+std::string Disk2InterfaceCard::GetCurrentTrackString(void)
+{
+	const UINT trackInt = (UINT)(m_floppyDrive[m_currDrive].m_phasePrecise / 2);
+	const float trackFrac = (m_floppyDrive[m_currDrive].m_phasePrecise / 2) - (float)trackInt;
+
+	char szInt[8] = "";
+	sprintf(szInt, "%02X", trackInt);		// "$NN"
+
+	char szFrac[8] = "";
+	sprintf(szFrac, "%.02f", trackFrac);	// "0.nn"
+
+	return std::string(szInt) + std::string(szFrac+1);
+}
+
+std::string Disk2InterfaceCard::GetCurrentPhaseString(void)
+{
+	const UINT phaseInt = (UINT)(m_floppyDrive[m_currDrive].m_phasePrecise);
+	const float phaseFrac = m_floppyDrive[m_currDrive].m_phasePrecise - (float)phaseInt;
+
+	char szInt[8] = "";
+	sprintf(szInt, "%02X", phaseInt);		// "$NN"
+
+	char szFrac[8] = "";
+	sprintf(szFrac, "%.02f", phaseFrac);	// "0.nn"
+
+	return std::string(szInt) + std::string(szFrac+1);
+}
 LPCTSTR Disk2InterfaceCard::GetCurrentState(void)
 {
 	if (m_floppyDrive[m_currDrive].m_disk.m_imagehandle == NULL)
@@ -175,7 +203,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 //===========================================================================
 
 // Called by ControlMotor() & Enable()
-void Disk2InterfaceCard::CheckSpinning(const ULONG nExecutedCycles)
+void Disk2InterfaceCard::CheckSpinning(const ULONG uExecutedCycles)
 {
 	DWORD modechange = (m_floppyMotorOn && !m_floppyDrive[m_currDrive].m_spinning);
 
@@ -188,7 +216,7 @@ void Disk2InterfaceCard::CheckSpinning(const ULONG nExecutedCycles)
 	if (modechange)
 	{
 		// Set m_diskLastCycle when motor changes: not spinning (ie. off for 1 sec) -> on
-		CpuCalcCycles(nExecutedCycles);
+		CpuCalcCycles(uExecutedCycles);
 		m_diskLastCycle = g_nCumulativeCycles;
 	}
 }
@@ -237,7 +265,7 @@ void Disk2InterfaceCard::AllocTrack(const int drive)
 
 //===========================================================================
 
-void Disk2InterfaceCard::ReadTrack(const int drive)
+void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 {
 	if (! IsDriveValid( drive ))
 		return;
@@ -245,8 +273,9 @@ void Disk2InterfaceCard::ReadTrack(const int drive)
 	FloppyDrive* pDrive = &m_floppyDrive[ drive ];
 	FloppyDisk* pFloppy = &pDrive->m_disk;
 
-	if (pDrive->m_track >= ImageGetNumTracks(pFloppy->m_imagehandle))
+	if (ImagePhaseToTrack(pFloppy->m_imagehandle, pDrive->m_phasePrecise, false) >= ImageGetNumTracks(pFloppy->m_imagehandle))
 	{
+		_ASSERT(0);	// What can cause this? Add a comment to replace this assert.
 		pFloppy->m_trackimagedata = false;
 		return;
 	}
@@ -257,17 +286,45 @@ void Disk2InterfaceCard::ReadTrack(const int drive)
 	if (pFloppy->m_trackimage && pFloppy->m_imagehandle)
 	{
 #if LOG_DISK_TRACKS
-		LOG_DISK("track $%02X%s read\r\n", pDrive->m_track, (pDrive->m_phase & 1) ? ".5" : "  ");
+		CpuCalcCycles(uExecutedCycles);
+		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
+		LOG_DISK("track $%s read (time since last stepper %.3fms)\r\n", GetCurrentTrackString().c_str(), ((float)cycleDelta) / (CLK_6502 / 1000.0));
 #endif
+		const UINT32 currentPosition = pFloppy->m_byte;
+		const UINT32 currentTrackLength = pFloppy->m_nibbles;
+
 		ImageReadTrack(
 			pFloppy->m_imagehandle,
-			pDrive->m_track,
-			pDrive->m_phase,
+			pDrive->m_phasePrecise,
 			pFloppy->m_trackimage,
 			&pFloppy->m_nibbles,
+			&pFloppy->m_bitCount,
 			m_enhanceDisk);
 
-		pFloppy->m_byte           = 0;
+		if (!ImageIsWOZ(pFloppy->m_imagehandle) || (currentTrackLength == 0))
+		{
+			pFloppy->m_byte = 0;
+		}
+		else
+		{
+			_ASSERT(pFloppy->m_nibbles && pFloppy->m_bitCount);
+			if (pFloppy->m_nibbles == 0 || pFloppy->m_bitCount == 0)
+			{
+				pFloppy->m_nibbles = 1;
+				pFloppy->m_bitCount = 8;
+			}
+
+			pFloppy->m_byte = (currentPosition * pFloppy->m_nibbles) / currentTrackLength;	// Ref: WOZ-1.01
+
+			if (pFloppy->m_byte == (pFloppy->m_nibbles-1))	// Last nibble may not be complete, so advance by 1 nibble
+				pFloppy->m_byte = 0;
+
+			pFloppy->m_bitOffset = pFloppy->m_byte*8;
+			pFloppy->m_bitMask = 1 << 7;
+			pFloppy->m_extraCycles = 0.0;
+			pDrive->m_headWindow = 0;
+		}
+
 		pFloppy->m_trackimagedata = (pFloppy->m_nibbles != 0);
 	}
 }
@@ -308,8 +365,11 @@ void Disk2InterfaceCard::WriteTrack(const int drive)
 	FloppyDrive* pDrive = &m_floppyDrive[ drive ];
 	FloppyDisk* pFloppy = &pDrive->m_disk;
 
-	if (pDrive->m_track >= ImageGetNumTracks(pFloppy->m_imagehandle))
+	if (ImagePhaseToTrack(pFloppy->m_imagehandle, pDrive->m_phasePrecise, false) >= ImageGetNumTracks(pFloppy->m_imagehandle))
+	{
+		_ASSERT(0);	// What can cause this? Add a comment to replace this assert.
 		return;
+	}
 
 	if (pFloppy->m_bWriteProtected)
 		return;
@@ -317,12 +377,11 @@ void Disk2InterfaceCard::WriteTrack(const int drive)
 	if (pFloppy->m_trackimage && pFloppy->m_imagehandle)
 	{
 #if LOG_DISK_TRACKS
-		LOG_DISK("track $%02X%s write\r\n", pDrive->m_track, (pDrive->m_phase & 0) ? ".5" : "  "); // TODO: hard-coded to whole tracks - see below (nickw)
+		LOG_DISK("track $%s write\r\n", GetCurrentTrackString().c_str());
 #endif
 		ImageWriteTrack(
 			pFloppy->m_imagehandle,
-			pDrive->m_track,
-			pDrive->m_phase, // TODO: this should never be used; it's the current phase (half-track), not that of the track to be written (nickw)
+			pDrive->m_phasePrecise,
 			pFloppy->m_trackimage,
 			pFloppy->m_nibbles);
 	}
@@ -359,7 +418,7 @@ void __stdcall Disk2InterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE, 
 
 	m_floppyMotorOn = newState;
 	// NB. Motor off doesn't reset the Command Decoder like reset. (UTAIIe figures 9.7 & 9.8 chip C2)
-	// - so it doesn't reset this state: m_floppyLoadMode, m_floppyWriteMode, m_phases
+	// - so it doesn't reset this state: m_floppyLoadMode, m_floppyWriteMode, m_magnetStates
 #if LOG_DISK_MOTOR
 	LOG_DISK("motor %s\r\n", (m_floppyMotorOn) ? "on" : "off");
 #endif
@@ -388,68 +447,75 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 #endif
 	}
 
-	int phase = (address >> 1) & 3;
-	int phase_bit = (1 << phase);
+	// update phases (magnet states)
+	{
+		const int phase = (address >> 1) & 3;
+		const int phase_bit = (1 << phase);
 
-#if 1
-	// update the magnet states
-	if (address & 1)
-	{
-		// phase on
-		m_phases |= phase_bit;
+		// update the magnet states
+		if (address & 1)
+			m_magnetStates |= phase_bit;	// phase on
+		else
+			m_magnetStates &= ~phase_bit;	// phase off
 	}
-	else
-	{
-		// phase off
-		m_phases &= ~phase_bit;
-	}
+
+	CpuCalcCycles(uExecutedCycles);
+#if LOG_DISK_PHASES
+	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
+#endif
+	pDrive->m_lastStepperCycle = g_nCumulativeCycles;
 
 	// check for any stepping effect from a magnet
 	// - move only when the magnet opposite the cog is off
 	// - move in the direction of an adjacent magnet if one is on
-	// - do not move if both adjacent magnets are on
+	// - do not move if both adjacent magnets are on (ie. quarter track)
 	// momentum and timing are not accounted for ... maybe one day!
 	int direction = 0;
-	if (m_phases & (1 << ((pDrive->m_phase + 1) & 3)))
+	if (m_magnetStates & (1 << ((pDrive->m_phase + 1) & 3)))
 		direction += 1;
-	if (m_phases & (1 << ((pDrive->m_phase + 3) & 3)))
+	if (m_magnetStates & (1 << ((pDrive->m_phase + 3) & 3)))
 		direction -= 1;
 
-	// apply magnet step, if any
-	if (direction)
+	// Only calculate quarterDirection for WOZ, as NIB/DSK don't support half phases.
+	int quarterDirection = 0;
+	if (ImageIsWOZ(pFloppy->m_imagehandle))
 	{
-		pDrive->m_phase = MAX(0, MIN(79, pDrive->m_phase + direction));
-		const int nNumTracksInImage = ImageGetNumTracks(pFloppy->m_imagehandle);
-		const int newtrack = (nNumTracksInImage == 0)	? 0
-														: MIN(nNumTracksInImage-1, pDrive->m_phase >> 1); // (round half tracks down)
-		if (newtrack != pDrive->m_track)
+		if ((m_magnetStates == 0xC ||	// 1100
+			m_magnetStates == 0x6 ||	// 0110
+			m_magnetStates == 0x3 ||	// 0011
+			m_magnetStates == 0x9))		// 1001
 		{
-			FlushCurrentTrack(m_currDrive);
-			pDrive->m_track = newtrack;
-			pFloppy->m_trackimagedata = false;
-
-			m_formatTrack.DriveNotWritingTrack();
+			quarterDirection = direction;
+			direction = 0;
 		}
-
-		// Feature Request #201 Show track status
-		// https://github.com/AppleWin/AppleWin/issues/201
-		FrameDrawDiskStatus( (HDC)0 );
 	}
-#else
-	// substitute alternate stepping code here to test
-#endif
+
+	pDrive->m_phase = MAX(0, MIN(79, pDrive->m_phase + direction));
+	float newPhasePrecise = (float)(pDrive->m_phase) + (float)quarterDirection * 0.5f;
+	if (newPhasePrecise < 0)
+		newPhasePrecise = 0;
+
+	// apply magnet step, if any
+	if (newPhasePrecise != pDrive->m_phasePrecise)
+	{
+		FlushCurrentTrack(m_currDrive);
+		pDrive->m_phasePrecise = newPhasePrecise;
+		pFloppy->m_trackimagedata = false;
+		m_formatTrack.DriveNotWritingTrack();
+		FrameDrawDiskStatus((HDC)0);	// Show track status (GH#201)
+	}
 
 #if LOG_DISK_PHASES
-	LOG_DISK("track $%02X%s phases %d%d%d%d phase %d %s address $%4X\r\n",
-		pDrive->m_phase >> 1,
-		(pDrive->m_phase & 1) ? ".5" : "  ",
-		(m_phases >> 3) & 1,
-		(m_phases >> 2) & 1,
-		(m_phases >> 1) & 1,
-		(m_phases >> 0) & 1,
-		phase,
+	LOG_DISK("track $%s magnet-states %d%d%d%d phase %d %s address $%4X last-stepper %.3fms\r\n",
+		GetCurrentTrackString().c_str(),
+		(m_magnetStates >> 3) & 1,
+		(m_magnetStates >> 2) & 1,
+		(m_magnetStates >> 1) & 1,
+		(m_magnetStates >> 0) & 1,
+		m_magnetStates,
 		(address & 1) ? "on " : "off",
-		address);
+		address,
+		((float)cycleDelta)/(CLK_6502/1000.0));
 #endif
 }
 
@@ -797,14 +863,14 @@ bool Disk2InterfaceCard::LogWriteCheckSyncFF(ULONG& uCycleDelta)
 
 //===========================================================================
 
-void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
 	/* m_floppyLoadMode = 0; */
 	FloppyDrive* pDrive = &m_floppyDrive[m_currDrive];
 	FloppyDisk* pFloppy = &pDrive->m_disk;
 
 	if (!pFloppy->m_trackimagedata && pFloppy->m_imagehandle)
-		ReadTrack(m_currDrive);
+		ReadTrack(m_currDrive, uExecutedCycles);
 
 	if (!pFloppy->m_trackimagedata)
 	{
@@ -814,7 +880,7 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 	// Improve precision of "authentic" drive mode - GH#125
 	UINT uSpinNibbleCount = 0;
-	CpuCalcCycles(nExecutedCycles);	// g_nCumulativeCycles required for uSpinNibbleCount & LogWriteCheckSyncFF()
+	CpuCalcCycles(uExecutedCycles);	// g_nCumulativeCycles required for uSpinNibbleCount & LogWriteCheckSyncFF()
 
 	if (!m_enhanceDisk && pDrive->m_spinning)
 	{
@@ -877,6 +943,9 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 	}
 	else if (!pFloppy->m_bWriteProtected) // && m_floppyWriteMode
 	{
+		if (!pDrive->m_spinning)
+			return;		// If not spinning then only 1 bit-cell gets written?
+
 		*(pFloppy->m_trackimage + pFloppy->m_byte) = m_floppyLatch;
 		pFloppy->m_trackimagedirty = true;
 
@@ -911,16 +980,246 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 //===========================================================================
 
+void Disk2InterfaceCard::ResetLogicStateSequencer(void)
+{
+	m_shiftReg = 0;
+	m_latchDelay = 0;
+	m_resetSequencer = true;
+	m_dbgLatchDelayedCnt = 0;
+}
+
+void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles)
+{
+	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
+
+	CpuCalcCycles(uExecutedCycles);
+	const UINT bitCellDelta = GetBitCellDelta(ImageGetOptimalBitTiming(floppy.m_imagehandle));
+	UpdateBitStreamPosition(floppy, bitCellDelta);
+
+	m_diskLastCycle = g_nCumulativeCycles;
+}
+
+UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
+{
+	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
+
+	// NB. m_extraCycles is needed to retain accuracy:
+	// . Read latch #1:  0-> 9: cycleDelta= 9, bitCellDelta=2, extraCycles=1
+	// . Read latch #2: 11->20: cycleDelta=11, bitCellDelta=2, extraCycles=3
+	// . Overall:        0->20: cycleDelta=20, bitCellDelta=5, extraCycles=0
+	UINT bitCellDelta;
+#if 0
+	if (optimalBitTiming == 32)
+	{
+		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + (BYTE) m_extraCycles;
+		bitCellDelta = cycleDelta / 4;	// DIV 4 for 4us per bit-cell
+		m_extraCycles = cycleDelta & 3;	// MOD 4 : remainder carried forward for next time
+	}
+	else
+#endif
+	{
+		const double cycleDelta = (double)(g_nCumulativeCycles - m_diskLastCycle) + floppy.m_extraCycles;
+		const double bitTime = 0.125 * (double)optimalBitTiming;	// 125ns units
+		bitCellDelta = (UINT) floor( cycleDelta / bitTime );
+		floppy.m_extraCycles = (double)cycleDelta - ((double)bitCellDelta * bitTime);
+	}
+	return bitCellDelta;
+}
+
+void Disk2InterfaceCard::UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta)
+{
+	_ASSERT(floppy.m_bitCount);	// Should never happen - ReadTrack() will handle this
+	if (floppy.m_bitCount == 0)
+		return;
+
+	floppy.m_bitOffset += bitCellDelta;
+	if (floppy.m_bitOffset >= floppy.m_bitCount)
+		floppy.m_bitOffset %= floppy.m_bitCount;
+
+	UpdateBitStreamOffsets(floppy);
+}
+
+void Disk2InterfaceCard::UpdateBitStreamOffsets(FloppyDisk& floppy)
+{
+	floppy.m_byte = floppy.m_bitOffset / 8;
+	const UINT remainder = 7 - (floppy.m_bitOffset & 7);
+	floppy.m_bitMask = 1 << remainder;
+}
+
+void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
+{
+	/* m_floppyLoadMode = 0; */
+	FloppyDrive& drive = m_floppyDrive[m_currDrive];
+	FloppyDisk& floppy = drive.m_disk;
+
+	if (!floppy.m_trackimagedata && floppy.m_imagehandle)
+		ReadTrack(m_currDrive, uExecutedCycles);
+
+	if (!floppy.m_trackimagedata)
+	{
+		_ASSERT(0);		// Can't happen for WOZ - ReadTrack() should return an empty track
+		m_floppyLatch = 0xFF;
+		return;
+	}
+
+	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
+	// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
+	// Note: Sherwood Forest sets shift mode and reads with the drive off.
+	// TODO: And same for a write?
+	if (!drive.m_spinning)	// GH#599
+		return;
+
+	CpuCalcCycles(uExecutedCycles);
+
+	// Skipping forward a large amount of bitcells means the bitstream will very likely be out-of-sync.
+	// The first 1-bit will produce a latch nibble, and this 1-bit is unlikely to be the nibble's high bit.
+	// So we need to ensure we run enough bits through the sequencer to re-sync.
+	// NB. For Planetfall 13 bitcells(NG) / 14 bitcells(OK)
+	const UINT significantBitCells = 50;	// 5x 10-bit sync FF nibbles
+	UINT bitCellDelta = GetBitCellDelta(ImageGetOptimalBitTiming(floppy.m_imagehandle));
+
+	UINT bitCellRemainder;
+	if (bitCellDelta <= significantBitCells)
+	{
+		bitCellRemainder = bitCellDelta;
+	}
+	else
+	{
+		bitCellRemainder = significantBitCells;
+		bitCellDelta -= significantBitCells;
+
+		UpdateBitStreamPosition(floppy, bitCellDelta);
+
+		m_latchDelay = 0;
+	}
+
+	m_diskLastCycle = g_nCumulativeCycles;
+
+	//
+
+	if (!m_floppyWriteMode)
+	{
+		// m_diskLastReadLatchCycle = g_nCumulativeCycles;	// Not used by WOZ (only by NIB)
+#if LOG_DISK_NIBBLES_READ
+		bool newLatchData = false;
+#endif
+
+		for (UINT i = 0; i < bitCellRemainder; i++)
+		{
+			BYTE n = floppy.m_trackimage[floppy.m_byte];
+
+			drive.m_headWindow <<= 1;
+			drive.m_headWindow |= (n & floppy.m_bitMask) ? 1 : 0;
+			BYTE outputBit = (drive.m_headWindow & 0xf)	? (drive.m_headWindow >> 1) & 1
+														: rand() & 1;
+
+			floppy.m_bitMask >>= 1;
+			if (!floppy.m_bitMask)
+			{
+				floppy.m_bitMask = 1 << 7;
+				floppy.m_byte++;
+			}
+
+			floppy.m_bitOffset++;
+			if (floppy.m_bitOffset == floppy.m_bitCount)
+			{
+				floppy.m_bitMask = 1 << 7;
+				floppy.m_bitOffset = 0;
+				floppy.m_byte = 0;
+			}
+
+			if (m_resetSequencer)
+			{
+				m_resetSequencer = false;	// LSS takes some cycles to reset (ref?)
+				continue;
+			}
+
+			//
+
+			m_shiftReg <<= 1;
+			m_shiftReg |= outputBit;
+
+			if (m_latchDelay)
+			{
+				m_latchDelay -= 4;
+				if (m_latchDelay < 0)
+					m_latchDelay = 0;
+
+				if (m_shiftReg)
+				{
+					m_dbgLatchDelayedCnt = 0;
+				}
+				else // m_shiftReg==0
+				{
+					if (m_latchDelay == 0)
+						m_latchDelay = 4;	// extend for another 4us
+
+					m_dbgLatchDelayedCnt++;
+#if LOG_DISK_NIBBLES_READ
+					if (m_dbgLatchDelayedCnt >= 3)
+					{
+						LOG_DISK("read: latch held due to 0: PC=%04X, cnt=%02X\r\n", regs.pc, m_dbgLatchDelayedCnt);
+					}
+#endif
+				}
+			}
+
+			if (!m_latchDelay)
+			{
+#if LOG_DISK_NIBBLES_READ
+				if (newLatchData)
+				{
+					LOG_DISK("read skipped latch data: %04X = %02X\r\n", floppy.m_byte, m_floppyLatch);
+					newLatchData = false;
+				}
+#endif
+				m_floppyLatch = m_shiftReg;
+
+				if (m_shiftReg & 0x80)
+				{
+					m_latchDelay = 7;
+					m_shiftReg = 0;
+#if LOG_DISK_NIBBLES_READ
+					// May not actually be read by 6502 (eg. Prologue's CHKSUM 4&4 nibble pair), but still pass to the log's nibble reader
+					m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
+					newLatchData = true;
+#endif
+				}
+			}
+		}
+
+#if LOG_DISK_NIBBLES_READ
+		if (m_floppyLatch & 0x80)
+		{
+  #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
+			if (m_bLogDisk_NibblesRW)
+  #endif
+			{
+				LOG_DISK("read %04X = %02X\r\n", floppy.m_byte, m_floppyLatch);
+			}
+		}
+#endif
+	}
+	else if (!floppy.m_bWriteProtected) // && m_floppyWriteMode
+	{
+		//TODO
+	}
+
+	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
+	if ((floppy.m_byte & 0xFF) == 0)
+		FrameDrawDiskStatus( (HDC)0 );
+}
+
+//===========================================================================
+
 void Disk2InterfaceCard::Reset(const bool bIsPowerCycle/*=false*/)
 {
 	// RESET forces all switches off (UTAIIe Table 9.1)
-	m_currDrive = 0;
-	m_floppyMotorOn = 0;
-	m_floppyLoadMode = 0;
-	m_floppyWriteMode = 0;
-	m_phases = 0;
+	ResetSwitches();
 
 	m_formatTrack.Reset();
+
+	ResetLogicStateSequencer();
 
 	if (bIsPowerCycle)	// GH#460
 	{
@@ -935,6 +1234,15 @@ void Disk2InterfaceCard::Reset(const bool bIsPowerCycle/*=false*/)
 
 		FrameRefreshStatus(DRAW_LEDS, false);
 	}
+}
+
+void Disk2InterfaceCard::ResetSwitches(void)
+{
+	m_currDrive = 0;
+	m_floppyMotorOn = 0;
+	m_floppyLoadMode = 0;
+	m_floppyWriteMode = 0;
+	m_magnetStates = 0;
 }
 
 //===========================================================================
@@ -958,8 +1266,8 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = g_hFrameWindow;
 	ofn.hInstance       = g_hInstance;
-	ofn.lpstrFilter     = TEXT("All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.zip;*.2mg;*.2img;*.iie;*.apl\0")
-						  TEXT("Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.zip;*.2mg;*.2img;*.iie\0")
+	ofn.lpstrFilter     = TEXT("All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie;*.apl\0")
+						  TEXT("Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.woz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie\0")
 						  TEXT("All Files\0*.*\0");
 	ofn.lpstrFile       = filename;
 	ofn.nMaxFile        = MAX_PATH;
@@ -990,7 +1298,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 //===========================================================================
 
-void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG)
+void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG uExecutedCycles)
 {
 	/* m_floppyLoadMode = 1; */
 
@@ -1007,10 +1315,21 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 		// . write mode doesn't prevent reading write protect (GH#537):
 		//   "If for some reason the above write protect check were entered with the READ/WRITE switch in WRITE, 
 		//    the write protect switch would still be read correctly" (UTAIIe page 9-21)
+		// . Sequencer "SR" (Shift Right) command only loads QA (bit7) of data register (UTAIIe page 9-21)
 		if (m_floppyDrive[m_currDrive].m_disk.m_bWriteProtected)
 			m_floppyLatch |= 0x80;
 		else
 			m_floppyLatch &= 0x7F;
+	}
+
+	if (ImageIsWOZ(m_floppyDrive[m_currDrive].m_disk.m_imagehandle))
+	{
+#if LOG_DISK_NIBBLES_READ
+		LOG_DISK("reset LSS: ~PC=%04X\r\n", regs.pc);
+#endif
+		ResetLogicStateSequencer();	// reset sequencer (Ref: WOZ-1.01)
+//		m_latchDelay = 7;	// TODO: Treat like a regular $C0EC latch load?
+		UpdateBitStreamPositionAndDiskCycle(uExecutedCycles);	// Fix E7-copy protection
 	}
 }
 
@@ -1181,6 +1500,9 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	UINT uSlot = ((addr & 0xff) >> 4) - 8;
 	Disk2InterfaceCard* pCard = (Disk2InterfaceCard*) MemGetSlotParameters(uSlot);
 
+	ImageInfo* pImage = pCard->m_floppyDrive[pCard->m_currDrive].m_disk.m_imagehandle;
+	bool isWOZ = ImageIsWOZ(pImage);
+
 	switch (addr & 0xF)
 	{
 	case 0x0:	pCard->ControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
@@ -1195,7 +1517,9 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	case 0x9:	pCard->ControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xA:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xB:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xC:	pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xC:	if (!isWOZ) pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles);
+				else		pCard->ReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
+				break;
 	case 0xD:	pCard->LoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xE:	pCard->SetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xF:	pCard->SetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
@@ -1213,6 +1537,9 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	UINT uSlot = ((addr & 0xff) >> 4) - 8;
 	Disk2InterfaceCard* pCard = (Disk2InterfaceCard*) MemGetSlotParameters(uSlot);
 
+	ImageInfo* pImage = pCard->m_floppyDrive[pCard->m_currDrive].m_disk.m_imagehandle;
+	bool isWOZ = ImageIsWOZ(pImage);
+
 	switch (addr & 0xF)
 	{
 	case 0x0:	pCard->ControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
@@ -1227,7 +1554,9 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	case 0x9:	pCard->ControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xA:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xB:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xC:	pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xC:	if (!isWOZ) pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles);
+				else		pCard->ReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
+				break;
 	case 0xD:	pCard->LoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xE:	pCard->SetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xF:	pCard->SetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
@@ -1246,7 +1575,9 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 // Unit version history:
 // 2: Added: Format Track state & DiskLastCycle
 // 3: Added: DiskLastReadLatchCycle
-static const UINT kUNIT_VERSION = 3;
+// 4: Added: WOZ state
+//    Split up 'Unit' putting some state into a new 'Floppy'
+static const UINT kUNIT_VERSION = 4;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
 
@@ -1259,16 +1590,27 @@ static const UINT kUNIT_VERSION = 3;
 #define SS_YAML_KEY_FLOPPY_WRITE_MODE "Floppy Write Mode"
 #define SS_YAML_KEY_LAST_CYCLE "Last Cycle"
 #define SS_YAML_KEY_LAST_READ_LATCH_CYCLE "Last Read Latch Cycle"
+#define SS_YAML_KEY_LSS_SHIFT_REG "LSS Shift Reg"
+#define SS_YAML_KEY_LSS_LATCH_DELAY "LSS Latch Delay"
+#define SS_YAML_KEY_LSS_RESET_SEQUENCER "LSS Reset Sequencer"
 
 #define SS_YAML_KEY_DISK2UNIT "Unit"
 #define SS_YAML_KEY_FILENAME "Filename"
-#define SS_YAML_KEY_TRACK "Track"
 #define SS_YAML_KEY_PHASE "Phase"
+#define SS_YAML_KEY_PHASE_PRECISE "Phase (precise)"
+#define SS_YAML_KEY_TRACK "Track"	// deprecated at v4
+#define SS_YAML_KEY_HEAD_WINDOW "Head Window"
+#define SS_YAML_KEY_LAST_STEPPER_CYCLE "Last Stepper Cycle"
+
+#define SS_YAML_KEY_FLOPPY "Floppy"
 #define SS_YAML_KEY_BYTE "Byte"
+#define SS_YAML_KEY_NIBBLES "Nibbles"
+#define SS_YAML_KEY_BIT_OFFSET "Bit Offset"
+#define SS_YAML_KEY_BIT_COUNT "Bit Count"
+#define SS_YAML_KEY_EXTRA_CYCLES "Extra Cycles"
 #define SS_YAML_KEY_WRITE_PROTECTED "Write Protected"
 #define SS_YAML_KEY_SPINNING "Spinning"
 #define SS_YAML_KEY_WRITE_LIGHT "Write Light"
-#define SS_YAML_KEY_NIBBLES "Nibbles"
 #define SS_YAML_KEY_TRACK_IMAGE_DATA "Track Image Data"
 #define SS_YAML_KEY_TRACK_IMAGE_DIRTY "Track Image Dirty"
 #define SS_YAML_KEY_TRACK_IMAGE "Track Image"
@@ -1279,17 +1621,16 @@ std::string Disk2InterfaceCard::GetSnapshotCardName(void)
 	return name;
 }
 
-void Disk2InterfaceCard::SaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit)
+void Disk2InterfaceCard::SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT unit)
 {
-	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_DISK2UNIT, unit);
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_FLOPPY);
 	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, m_floppyDrive[unit].m_disk.m_fullname);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK, m_floppyDrive[unit].m_track);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, m_floppyDrive[unit].m_phase);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_BYTE, m_floppyDrive[unit].m_disk.m_byte);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITE_PROTECTED, m_floppyDrive[unit].m_disk.m_bWriteProtected);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_SPINNING, m_floppyDrive[unit].m_spinning);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_WRITE_LIGHT, m_floppyDrive[unit].m_writelight);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_NIBBLES, m_floppyDrive[unit].m_disk.m_nibbles);
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_BIT_OFFSET, m_floppyDrive[unit].m_disk.m_bitOffset);	// v4
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_BIT_COUNT, m_floppyDrive[unit].m_disk.m_bitCount);		// v4
+	yamlSaveHelper.SaveDouble(SS_YAML_KEY_EXTRA_CYCLES, m_floppyDrive[unit].m_disk.m_extraCycles);	// v4
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITE_PROTECTED, m_floppyDrive[unit].m_disk.m_bWriteProtected);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DATA, m_floppyDrive[unit].m_disk.m_trackimagedata);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY, m_floppyDrive[unit].m_disk.m_trackimagedirty);
 
@@ -1300,13 +1641,26 @@ void Disk2InterfaceCard::SaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, U
 	}
 }
 
+void Disk2InterfaceCard::SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit)
+{
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_DISK2UNIT, unit);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, m_floppyDrive[unit].m_phase);
+	yamlSaveHelper.SaveFloat(SS_YAML_KEY_PHASE_PRECISE, m_floppyDrive[unit].m_phasePrecise);	// v4
+	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_HEAD_WINDOW, m_floppyDrive[unit].m_headWindow);		// v4
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_STEPPER_CYCLE, m_floppyDrive[unit].m_lastStepperCycle);	// v4
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SPINNING, m_floppyDrive[unit].m_spinning);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_WRITE_LIGHT, m_floppyDrive[unit].m_writelight);
+
+	SaveSnapshotFloppy(yamlSaveHelper, unit);
+}
+
 void Disk2InterfaceCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
-	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_PHASES, m_phases);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_CURRENT_DRIVE, m_currDrive);
+	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_PHASES, m_magnetStates);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_DISK_ACCESSED, false);	// deprecated
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_ENHANCE_DISK, m_enhanceDisk);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_FLOPPY_LATCH, m_floppyLatch);
@@ -1314,29 +1668,24 @@ void Disk2InterfaceCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_WRITE_MODE, m_floppyWriteMode == TRUE);
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_CYCLE, m_diskLastCycle);	// v2
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_READ_LATCH_CYCLE, m_diskLastReadLatchCycle);	// v3
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LSS_SHIFT_REG, m_shiftReg);			// v4
+	yamlSaveHelper.SaveInt(SS_YAML_KEY_LSS_LATCH_DELAY, m_latchDelay);			// v4
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_LSS_RESET_SEQUENCER, m_resetSequencer);	// v4
 	m_formatTrack.SaveSnapshot(yamlSaveHelper);	// v2
 
-	SaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_1);
-	SaveSnapshotDisk2Unit(yamlSaveHelper, DRIVE_2);
+	SaveSnapshotDriveUnit(yamlSaveHelper, DRIVE_1);
+	SaveSnapshotDriveUnit(yamlSaveHelper, DRIVE_2);
 }
 
-void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
+bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version, std::vector<BYTE>& track)
 {
-	std::string disk2UnitName = std::string(SS_YAML_KEY_DISK2UNIT) + (unit == DRIVE_1 ? std::string("0") : std::string("1"));
-	if (!yamlLoadHelper.GetSubMap(disk2UnitName))
-		throw std::string("Card: Expected key: ") + disk2UnitName;
-
-	bool bImageError = false;
-
-	m_floppyDrive[unit].m_disk.m_fullname[0] = 0;
-	m_floppyDrive[unit].m_disk.m_imagename[0] = 0;
-	m_floppyDrive[unit].m_disk.m_bWriteProtected = false;	// Default to false (until image is successfully loaded below)
-
 	std::string filename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
-	if (!filename.empty())
+	bool bImageError = filename.empty();
+
+	if (!bImageError)
 	{
 		DWORD dwAttributes = GetFileAttributes(filename.c_str());
-		if(dwAttributes == INVALID_FILE_ATTRIBUTES)
+		if (dwAttributes == INVALID_FILE_ATTRIBUTES)
 		{
 			// Get user to browse for file
 			UserSelectNewDiskImage(unit, filename.c_str());
@@ -1347,38 +1696,106 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 		bImageError = (dwAttributes == INVALID_FILE_ATTRIBUTES);
 		if (!bImageError)
 		{
-			if(InsertDisk(unit, filename.c_str(), dwAttributes & FILE_ATTRIBUTE_READONLY, IMAGE_DONT_CREATE) != eIMAGE_ERROR_NONE)
+			if (InsertDisk(unit, filename.c_str(), dwAttributes & FILE_ATTRIBUTE_READONLY, IMAGE_DONT_CREATE) != eIMAGE_ERROR_NONE)
 				bImageError = true;
 
 			// DiskInsert() zeros m_floppyDrive[unit], then sets up:
-			// . imagename
-			// . fullname
-			// . writeprotected
+			// . m_imagename
+			// . m_fullname
+			// . m_bWriteProtected
 		}
 	}
 
-	m_floppyDrive[unit].m_track			= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);
-	m_floppyDrive[unit].m_phase			= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
-	m_floppyDrive[unit].m_disk.m_byte	= yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTE);
 	yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITE_PROTECTED);	// Consume
-	m_floppyDrive[unit].m_spinning		= yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
-	m_floppyDrive[unit].m_writelight	= yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
-	m_floppyDrive[unit].m_disk.m_nibbles			= yamlLoadHelper.LoadUint(SS_YAML_KEY_NIBBLES);
-	m_floppyDrive[unit].m_disk.m_trackimagedata		= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DATA) ? true : false;
-	m_floppyDrive[unit].m_disk.m_trackimagedirty	= yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY) ? true : false;
+	m_floppyDrive[unit].m_disk.m_byte = yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTE);
+	m_floppyDrive[unit].m_disk.m_nibbles = yamlLoadHelper.LoadUint(SS_YAML_KEY_NIBBLES);
+	m_floppyDrive[unit].m_disk.m_trackimagedata = yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DATA) ? true : false;
+	m_floppyDrive[unit].m_disk.m_trackimagedirty = yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY) ? true : false;
 
-	std::vector<BYTE> track(NIBBLES_PER_TRACK);
+	if (version >= 4)
+	{
+		m_floppyDrive[unit].m_disk.m_bitOffset = yamlLoadHelper.LoadUint(SS_YAML_KEY_BIT_OFFSET);
+		m_floppyDrive[unit].m_disk.m_bitCount = yamlLoadHelper.LoadUint(SS_YAML_KEY_BIT_COUNT);
+		m_floppyDrive[unit].m_disk.m_extraCycles = yamlLoadHelper.LoadDouble(SS_YAML_KEY_EXTRA_CYCLES);
+
+		if (m_floppyDrive[unit].m_disk.m_bitCount && (m_floppyDrive[unit].m_disk.m_bitOffset >= m_floppyDrive[unit].m_disk.m_bitCount))
+			throw std::string("Disk image: bitOffset >= bitCount");
+
+		if (ImageIsWOZ(m_floppyDrive[unit].m_disk.m_imagehandle))
+			UpdateBitStreamOffsets(m_floppyDrive[unit].m_disk);	// overwrites m_byte, inits m_bitMask
+	}
+
 	if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
 	{
 		yamlLoadHelper.LoadMemory(&track[0], NIBBLES_PER_TRACK);
 		yamlLoadHelper.PopMap();
 	}
 
+	return bImageError;
+}
+
+bool Disk2InterfaceCard::LoadSnapshotDriveUnitv3(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version, std::vector<BYTE>& track)
+{
+	_ASSERT(version <= 3);
+
+	std::string disk2UnitName = std::string(SS_YAML_KEY_DISK2UNIT) + (unit == DRIVE_1 ? std::string("0") : std::string("1"));
+	if (!yamlLoadHelper.GetSubMap(disk2UnitName))
+		throw std::string("Card: Expected key: ") + disk2UnitName;
+
+	bool bImageError = LoadSnapshotFloppy(yamlLoadHelper, unit, version, track);
+
+	yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK);	// consume
+	m_floppyDrive[unit].m_phase = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
+	m_floppyDrive[unit].m_phasePrecise = (float) m_floppyDrive[unit].m_phase;
+	m_floppyDrive[unit].m_spinning = yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
+	m_floppyDrive[unit].m_writelight = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
+
+	yamlLoadHelper.PopMap();
+
+	return bImageError;
+}
+
+bool Disk2InterfaceCard::LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version, std::vector<BYTE>& track)
+{
+	_ASSERT(version >= 4);
+
+	std::string disk2UnitName = std::string(SS_YAML_KEY_DISK2UNIT) + (unit == DRIVE_1 ? std::string("0") : std::string("1"));
+	if (!yamlLoadHelper.GetSubMap(disk2UnitName))
+		throw std::string("Card: Expected key: ") + disk2UnitName;
+
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_FLOPPY))
+		throw std::string("Card: Expected key: ") + SS_YAML_KEY_FLOPPY;
+
+	bool bImageError = LoadSnapshotFloppy(yamlLoadHelper, unit, version, track);
+
 	yamlLoadHelper.PopMap();
 
 	//
 
-	if (!filename.empty() && !bImageError)
+	m_floppyDrive[unit].m_phase = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASE);
+	m_floppyDrive[unit].m_phasePrecise = yamlLoadHelper.LoadFloat(SS_YAML_KEY_PHASE_PRECISE);
+	m_floppyDrive[unit].m_headWindow = yamlLoadHelper.LoadUint(SS_YAML_KEY_HEAD_WINDOW) & 0xf;
+	m_floppyDrive[unit].m_lastStepperCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LAST_STEPPER_CYCLE);
+	m_floppyDrive[unit].m_spinning = yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
+	m_floppyDrive[unit].m_writelight = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
+
+	yamlLoadHelper.PopMap();
+
+	return bImageError;
+}
+
+void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version)
+{
+	bool bImageError = false;
+	std::vector<BYTE> track(NIBBLES_PER_TRACK);
+
+	if (version <= 3)
+		bImageError = LoadSnapshotDriveUnitv3(yamlLoadHelper, unit, version, track);
+	else
+		bImageError = LoadSnapshotDriveUnitv4(yamlLoadHelper, unit, version, track);
+
+
+	if (!bImageError)
 	{
 		if ((m_floppyDrive[unit].m_disk.m_trackimage == NULL) && m_floppyDrive[unit].m_disk.m_nibbles)
 			AllocTrack(unit);
@@ -1391,9 +1808,9 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 
 	if (bImageError)
 	{
-		m_floppyDrive[unit].m_disk.m_trackimagedata	= false;
-		m_floppyDrive[unit].m_disk.m_trackimagedirty	= false;
-		m_floppyDrive[unit].m_disk.m_nibbles			= 0;
+		m_floppyDrive[unit].m_disk.m_trackimagedata = false;
+		m_floppyDrive[unit].m_disk.m_trackimagedirty = false;
+		m_floppyDrive[unit].m_disk.m_nibbles = 0;
 	}
 }
 
@@ -1405,8 +1822,8 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
-	m_phases  			= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASES);
-	m_currDrive			= yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_DRIVE);
+	m_currDrive = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_DRIVE);
+	m_magnetStates		= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASES);
 	(void)				  yamlLoadHelper.LoadBool(SS_YAML_KEY_DISK_ACCESSED);	// deprecated - but retrieve the value to avoid the "State: Unknown key (Disk Accessed)" warning
 	m_enhanceDisk		= yamlLoadHelper.LoadBool(SS_YAML_KEY_ENHANCE_DISK);
 	m_floppyLatch		= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_LATCH);
@@ -1424,6 +1841,13 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 		m_diskLastReadLatchCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LAST_READ_LATCH_CYCLE);
 	}
 
+	if (version >= 4)
+	{
+		m_shiftReg			= yamlLoadHelper.LoadUint(SS_YAML_KEY_LSS_SHIFT_REG) & 0xff;
+		m_latchDelay		= yamlLoadHelper.LoadInt(SS_YAML_KEY_LSS_LATCH_DELAY);
+		m_resetSequencer	= yamlLoadHelper.LoadBool(SS_YAML_KEY_LSS_RESET_SEQUENCER);
+	}
+
 	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
 	for (UINT i=0; i<NUM_DRIVES; i++)
 	{
@@ -1431,8 +1855,8 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 		m_floppyDrive[i].clear();
 	}
 
-	LoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_1);
-	LoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_2);
+	LoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_1, version);
+	LoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_2, version);
 
 	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
