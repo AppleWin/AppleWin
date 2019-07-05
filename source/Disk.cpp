@@ -85,9 +85,36 @@ int Disk2InterfaceCard::GetCurrentTrack(void)  { return ImagePhaseToTrack(m_flop
 float Disk2InterfaceCard::GetCurrentPhase(void)  { return m_floppyDrive[m_currDrive].m_phasePrecise; }
 int Disk2InterfaceCard::GetCurrentOffset(void) { return m_floppyDrive[m_currDrive].m_disk.m_byte; }
 BYTE Disk2InterfaceCard::GetCurrentLSSBitMask(void) { return m_floppyDrive[m_currDrive].m_disk.m_bitMask; }
-double Disk2InterfaceCard::GetCurrentLSSExtraCycles(void) { return m_floppyDrive[m_currDrive].m_disk.m_extraCycles; }
+double Disk2InterfaceCard::GetCurrentExtraCycles(void) { return m_floppyDrive[m_currDrive].m_disk.m_extraCycles; }
 int Disk2InterfaceCard::GetTrack(const int drive)  { return ImagePhaseToTrack(m_floppyDrive[drive].m_disk.m_imagehandle, m_floppyDrive[m_currDrive].m_phasePrecise, false); }
 
+std::string Disk2InterfaceCard::GetCurrentTrackString(void)
+{
+	const UINT trackInt = (UINT)(m_floppyDrive[m_currDrive].m_phasePrecise / 2);
+	const float trackFrac = (m_floppyDrive[m_currDrive].m_phasePrecise / 2) - (float)trackInt;
+
+	char szInt[8] = "";
+	sprintf(szInt, "%02X", trackInt);		// "$NN"
+
+	char szFrac[8] = "";
+	sprintf(szFrac, "%.02f", trackFrac);	// "0.nn"
+
+	return std::string(szInt) + std::string(szFrac+1);
+}
+
+std::string Disk2InterfaceCard::GetCurrentPhaseString(void)
+{
+	const UINT phaseInt = (UINT)(m_floppyDrive[m_currDrive].m_phasePrecise);
+	const float phaseFrac = m_floppyDrive[m_currDrive].m_phasePrecise - (float)phaseInt;
+
+	char szInt[8] = "";
+	sprintf(szInt, "%02X", phaseInt);		// "$NN"
+
+	char szFrac[8] = "";
+	sprintf(szFrac, "%.02f", phaseFrac);	// "0.nn"
+
+	return std::string(szInt) + std::string(szFrac+1);
+}
 LPCTSTR Disk2InterfaceCard::GetCurrentState(void)
 {
 	if (m_floppyDrive[m_currDrive].m_disk.m_imagehandle == NULL)
@@ -261,13 +288,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 #if LOG_DISK_TRACKS
 		CpuCalcCycles(uExecutedCycles);
 		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
-		const UINT trackInt = (UINT)(pDrive->m_phasePrecise / 2);
-		const float trackFrac = (pDrive->m_phasePrecise / 2) - (float)trackInt;
-		char szTrackInt[8] = "";
-		char szTrackFrac[8] = "";
-		sprintf(szTrackInt, "%02X", trackInt);		// "$NN"
-		sprintf(szTrackFrac, "%.02f", trackFrac);	// "0.nn"
-		LOG_DISK("track $%s%s read (last-stepper %.3fms)\r\n", szTrackInt, szTrackFrac+1, ((float)cycleDelta) / (CLK_6502 / 1000.0));
+		LOG_DISK("track $%s read (time since last stepper %.3fms)\r\n", GetCurrentTrackString().c_str(), ((float)cycleDelta) / (CLK_6502 / 1000.0));
 #endif
 		const UINT32 currentPosition = pFloppy->m_byte;
 		const UINT32 currentTrackLength = pFloppy->m_nibbles;
@@ -356,13 +377,7 @@ void Disk2InterfaceCard::WriteTrack(const int drive)
 	if (pFloppy->m_trackimage && pFloppy->m_imagehandle)
 	{
 #if LOG_DISK_TRACKS
-		const UINT trackInt = (UINT)(pDrive->m_phasePrecise / 2);
-		const float trackFrac = (pDrive->m_phasePrecise / 2) - (float)trackInt;
-		char szTrackInt[8] = "";
-		char szTrackFrac[8] = "";
-		sprintf(szTrackInt, "%02X", trackInt);		// "$NN"
-		sprintf(szTrackFrac, "%.02f", trackFrac);	// "0.nn"
-		LOG_DISK("track $%s%s write\r\n", szTrackInt, szTrackFrac+1);
+		LOG_DISK("track $%s write\r\n", GetCurrentTrackString().c_str());
 #endif
 		ImageWriteTrack(
 			pFloppy->m_imagehandle,
@@ -491,14 +506,13 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	}
 
 #if LOG_DISK_PHASES
-	LOG_DISK("track $%02X%s magnet-states %d%d%d%d phase %d %s address $%4X last-stepper %.3fms\r\n",
-		pDrive->m_phase >> 1,
-		(pDrive->m_phase & 1) ? ".5" : "  ",
+	LOG_DISK("track $%s magnet-states %d%d%d%d phase %d %s address $%4X last-stepper %.3fms\r\n",
+		GetCurrentTrackString().c_str(),
 		(m_magnetStates >> 3) & 1,
 		(m_magnetStates >> 2) & 1,
 		(m_magnetStates >> 1) & 1,
 		(m_magnetStates >> 0) & 1,
-		phase,
+		m_magnetStates,
 		(address & 1) ? "on " : "off",
 		address,
 		((float)cycleDelta)/(CLK_6502/1000.0));

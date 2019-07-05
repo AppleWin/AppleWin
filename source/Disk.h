@@ -144,12 +144,14 @@ public:
 	bool GetProtect(const int drive);
 	void SetProtect(const int drive, const bool bWriteProtect);
 	int GetCurrentDrive(void);
-	int GetCurrentTrack();
+	int GetCurrentTrack(void);
 	float GetCurrentPhase(void);
 	int GetCurrentOffset(void);
 	BYTE GetCurrentLSSBitMask(void);
-	double GetCurrentLSSExtraCycles(void);
+	double GetCurrentExtraCycles(void);
 	int GetTrack(const int drive);
+	std::string GetCurrentTrackString(void);
+	std::string GetCurrentPhaseString(void);
 	LPCTSTR GetCurrentState(void);
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	void UpdateDriveState(DWORD cycles);
