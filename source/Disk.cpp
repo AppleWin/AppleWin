@@ -288,7 +288,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 #if LOG_DISK_TRACKS
 		CpuCalcCycles(uExecutedCycles);
 		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
-		LOG_DISK("track $%s read (time since last stepper %.3fms)\r\n", GetCurrentTrackString().c_str(), ((float)cycleDelta) / (CLK_6502 / 1000.0));
+		LOG_DISK("track $%s read (time since last stepper %.3fms)\r\n", GetCurrentTrackString().c_str(), ((float)cycleDelta) / (CLK_6502_NTSC / 1000.0));
 #endif
 		const UINT32 currentPosition = pFloppy->m_byte;
 		const UINT32 currentTrackLength = pFloppy->m_nibbles;
@@ -515,7 +515,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		m_magnetStates,
 		(address & 1) ? "on " : "off",
 		address,
-		((float)cycleDelta)/(CLK_6502/1000.0));
+		((float)cycleDelta)/(CLK_6502_NTSC/1000.0));
 #endif
 }
 
