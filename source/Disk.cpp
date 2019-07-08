@@ -512,7 +512,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		(m_magnetStates >> 2) & 1,
 		(m_magnetStates >> 1) & 1,
 		(m_magnetStates >> 0) & 1,
-		m_magnetStates,
+		(address >> 1) & 3,	// phase
 		(address & 1) ? "on " : "off",
 		address,
 		((float)cycleDelta)/(CLK_6502_NTSC/1000.0));
@@ -1004,9 +1004,9 @@ UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
 	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
 
 	// NB. m_extraCycles is needed to retain accuracy:
-	// . Read latch #1:  0-> 9: cycleDelta= 9, bitCellDelta=2, extraCycles=1
-	// . Read latch #2: 11->20: cycleDelta=11, bitCellDelta=2, extraCycles=3
-	// . Overall:        0->20: cycleDelta=20, bitCellDelta=5, extraCycles=0
+	// . Read latch #1: 0-> 9: cycleDelta= 9, bitCellDelta=2, extraCycles=1
+	// . Read latch #2: 9->20: cycleDelta=11, bitCellDelta=2, extraCycles=3
+	// . Overall:       0->20: cycleDelta=20, bitCellDelta=5, extraCycles=0
 	UINT bitCellDelta;
 #if 0
 	if (optimalBitTiming == 32)
