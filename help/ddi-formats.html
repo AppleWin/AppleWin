@@ -57,7 +57,7 @@ successfully detect the format. Otherwise, it will revert to DOS
 order, which is by far the most common format. To force ProDOS
 order, give the file an extension of ".PO". </p>
 
-<p style="font-weight: bold;">Nibble Images :</p>
+<p style="font-weight: bold;">Nibble Images:</p>
 
 <p>Nibble images contain all of the data on a
 disk; not just the data in sectors but also the sector headers
@@ -66,11 +66,16 @@ that would be recorded on a real disk's surface. At 232,960
 bytes, nibble images are bigger than other images, but they can
 be useful for making images of copy protected software. </p>
 
-<p style="font-weight: bold;">2mg Images :</p>
+<p style="font-weight: bold;">2mg Images:</p>
 
 <p>2mg (or 2img) images are a wrapper around DOS, ProDOS or Nibble images.
 They contain extra meta-data describing for example, DOS volume number and
 write-protection.
+</p>
+
+<p style="font-weight: bold;">WOZ Images:</p>
+
+<p>The WOZ Disk Image format is an offshoot of the <A href="https://applesaucefdc.com/woz">Applesauce project</A>. Capturing highly accurate bit data is of no use if you don't have a container to hold the data. The WOZ format was designed to be able to contain every possible Apple ][ disk structure and layout. It can be so accurate that even copy protected software can't tell that it isn't an original disk.
 </p>
 
 <p style="font-weight: bold;">Compressed Images :</p>
@@ -80,8 +85,8 @@ contains multiple files, then AppleWin only supports using the first file. For b
 with hard disk images, uncompress first, as writing back to the image requires a full
 image re-compression after every block write. Examples of typical extensions are:
 <ul>
-<li>.gz, .dsk.gz, .nib.gz, .2mg.gz</li>
-<li>.zip, .dsk.zip, .nib.zip, .2mg.zip</li>
+<li>.gz, .dsk.gz, .nib.gz, .2mg.gz, .woz.gz</li>
+<li>.zip, .dsk.zip, .nib.zip, .2mg.zip, .woz.zip</li>
 </ul>
 </p>
 

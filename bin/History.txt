@@ -8,6 +8,15 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.29.0.0 - 8 Jul 2019
+---------------------
+. [Change #544] Support for .woz disk images.
+	- WOZ1 and WOZ2 formats supported.
+	- read-only: images forced to write-protected (so 'Stickybear Town Builder' doesn't work).
+	- only 5.25" (not 3.5").
+	- known issues: 'Wizardry III' not booting.
+
+
 1.28.8.0 - 28 Jun 2019
 ----------------------
 . [Change #648] Support 50Hz(PAL) video refresh rate and implicitly PAL 1.016MHz.
