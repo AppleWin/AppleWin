@@ -27,6 +27,7 @@ MSVC 2017 Community
   * [x] Graphics debugger and GPU profiler for DirectX
   * [x] Static analysis tools
   * [x] VC++ 2017 v141 toolset (x86,x64)
+  * [x] Windows Universal CRT SDK
   * [x] Visual Studio C++ core features
   * [x] Windows 8.1 SDK
   * [x] Windows 10 SDK (10.0.15063.0) for Desktop C++ x86 and x64
