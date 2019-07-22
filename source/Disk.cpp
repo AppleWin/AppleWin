@@ -1151,8 +1151,7 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 				}
 				else // m_shiftReg==0
 				{
-					if (m_latchDelay == 0)
-						m_latchDelay = 4;	// extend for another 4us
+					m_latchDelay += 4;	// extend by 4us (so 7us again) - GH#662
 
 					m_dbgLatchDelayedCnt++;
 #if LOG_DISK_NIBBLES_READ
