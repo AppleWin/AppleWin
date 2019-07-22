@@ -4,7 +4,7 @@
 	extern uint32_t g_nChromaSize;
 
 // Prototypes (Public) ________________________________________________
-	extern void     NTSC_SetVideoMode( uint32_t uVideoModeFlags );
+	extern void     NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay=false );
 	extern void     NTSC_SetVideoStyle();
 	extern void     NTSC_SetVideoTextMode( int cols );
 	extern uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeColorTV );
@@ -14,6 +14,10 @@
 	extern void     NTSC_VideoReinitialize( DWORD cyclesThisFrame, bool bInitVideoScannerAddress );
 	extern void     NTSC_VideoInitAppleType();
 	extern void     NTSC_VideoInitChroma();
-	extern void     NTSC_VideoUpdateCycles( long cycles6502 );
+	extern void     NTSC_VideoUpdateCycles( UINT cycles6502 );
 	extern void     NTSC_VideoRedrawWholeScreen( void );
 	extern UINT     NTSC_GetFrameBufferBorderlessWidth( void );
+
+	enum VideoRefreshRate_e;
+	void NTSC_SetRefreshRate(VideoRefreshRate_e rate);
+	UINT NTSC_GetCyclesPerFrame(void);

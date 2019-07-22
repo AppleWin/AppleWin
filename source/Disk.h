@@ -61,6 +61,10 @@ public:
 		//
 		m_byte = 0;
 		m_nibbles = 0;
+		m_bitOffset = 0;
+		m_bitCount = 0;
+		m_bitMask = 1 << 7;
+		m_extraCycles = 0.0;
 		m_trackimage = NULL;
 		m_trackimagedata = false;
 		m_trackimagedirty = false;
@@ -72,8 +76,12 @@ public:
 	std::string m_strFilenameInZip;					// ""             or <FILENAME.EXT>
 	ImageInfo* m_imagehandle;						// Init'd by InsertDisk() -> ImageOpen()
 	bool m_bWriteProtected;
-	int m_byte;
-	int m_nibbles;									// Init'd by ReadTrack() -> ImageReadTrack()
+	int m_byte;					// byte offset
+	int m_nibbles;				// # nibbles in track / Init'd by ReadTrack() -> ImageReadTrack()
+	UINT m_bitOffset;			// bit offset
+	UINT m_bitCount;			// # bits in track
+	BYTE m_bitMask;
+	double m_extraCycles;
 	LPBYTE m_trackimage;
 	bool m_trackimagedata;
 	bool m_trackimagedirty;
@@ -91,16 +99,20 @@ public:
 
 	void clear()
 	{
+		m_phasePrecise = 0;
 		m_phase = 0;
-		m_track = 0;
+		m_lastStepperCycle = 0;
+		m_headWindow = 0;
 		m_spinning = 0;
 		m_writelight = 0;
 		m_disk.clear();
 	}
 
 public:
-	int m_phase;
-	int m_track;
+	float m_phasePrecise;	// Phase precise to half a phase (aka quarter track)
+	int m_phase;			// Integral phase number
+	unsigned __int64 m_lastStepperCycle;
+	BYTE m_headWindow;
 	DWORD m_spinning;
 	DWORD m_writelight;
 	FloppyDisk m_disk;
@@ -132,10 +144,14 @@ public:
 	bool GetProtect(const int drive);
 	void SetProtect(const int drive, const bool bWriteProtect);
 	int GetCurrentDrive(void);
-	int GetCurrentTrack();
-	int GetTrack(const int drive);
-	int GetCurrentPhase(void);
+	int GetCurrentTrack(void);
+	float GetCurrentPhase(void);
 	int GetCurrentOffset(void);
+	BYTE GetCurrentLSSBitMask(void);
+	double GetCurrentExtraCycles(void);
+	int GetTrack(const int drive);
+	std::string GetCurrentTrackString(void);
+	std::string GetCurrentPhaseString(void);
 	LPCTSTR GetCurrentState(void);
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	void UpdateDriveState(DWORD cycles);
@@ -158,21 +174,32 @@ public:
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 private:
-	void CheckSpinning(const ULONG nExecutedCycles);
+	void ResetSwitches(void);
+	void CheckSpinning(const ULONG uExecutedCycles);
 	Disk_Status_e GetDriveLightStatus(const int drive);
 	bool IsDriveValid(const int drive);
 	void AllocTrack(const int drive);
-	void ReadTrack(const int drive);
+	void ReadTrack(const int drive, ULONG uExecutedCycles);
 	void RemoveDisk(const int drive);
 	void WriteTrack(const int drive);
 	LPCTSTR DiskGetFullPathName(const int drive);
-	void SaveSnapshotDisk2Unit(YamlSaveHelper& yamlSaveHelper, UINT unit);
-	void LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
+	void ResetLogicStateSequencer(void);
+	void UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles);
+	UINT GetBitCellDelta(const BYTE optimalBitTiming);
+	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
+	void UpdateBitStreamOffsets(FloppyDisk& floppy);
+	void SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT unit);
+	void SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
+	bool LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version, std::vector<BYTE>& track);
+	bool LoadSnapshotDriveUnitv3(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version, std::vector<BYTE>& track);
+	bool LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version, std::vector<BYTE>& track);
+	void LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version);
 
 	void __stdcall ControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall ControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall Enable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
-	void __stdcall ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+	void __stdcall ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+	void __stdcall ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 	void __stdcall LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG);
 	void __stdcall SetReadMode(WORD, WORD, BYTE, BYTE, ULONG);
 	void __stdcall SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles);
@@ -189,7 +216,11 @@ private:
 	BOOL m_floppyMotorOn;
 	BOOL m_floppyLoadMode;	// for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)
 	BOOL m_floppyWriteMode;
-	WORD m_phases;			// state bits for stepper magnet phases 0 - 3
+
+	// Although the magnets are a property of the drive, their state is a property of the controller card,
+	// since the magnets will only be on for whichever of the 2 drives is currently selected.
+	WORD m_magnetStates;	// state bits for stepper motor magnet states (phases 0 - 3)
+
 	bool m_saveDiskImage;
 	UINT m_slot;
 	unsigned __int64 m_diskLastCycle;
@@ -197,8 +228,14 @@ private:
 	FormatTrack m_formatTrack;
 	bool m_enhanceDisk;
 
-	static const UINT SPINNING_CYCLES = 20000*64;	// 1280000 cycles = 1.25s
-	static const UINT WRITELIGHT_CYCLES = 20000*64;	// 1280000 cycles = 1.25s
+	static const UINT SPINNING_CYCLES = 1000*1000;		// 1M cycles = ~1.000s
+	static const UINT WRITELIGHT_CYCLES = 1000*1000;	// 1M cycles = ~1.000s
+
+	// Logic State Sequencer (for WOZ):
+	BYTE m_shiftReg;
+	int m_latchDelay;
+	bool m_resetSequencer;
+	UINT m_dbgLatchDelayedCnt;
 
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR

@@ -8,6 +8,34 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.29.0.0 - 8 Jul 2019
+---------------------
+. [Change #544] Support for .woz disk images.
+	- WOZ1 and WOZ2 formats supported.
+	- read-only: images forced to write-protected (so 'Stickybear Town Builder' doesn't work).
+	- only 5.25" (not 3.5").
+	- known issues: 'Wizardry III' not booting.
+
+
+1.28.8.0 - 28 Jun 2019
+----------------------
+. [Change #648] Support 50Hz(PAL) video refresh rate and implicitly PAL 1.016MHz.
+	- NB. TV video modes still use NTSC rendering.
+. [Bug #656] Fix for PAGE1/2 ($C054/55) not having a 1 cycle delay.
+
+
+1.28.7.0 - 15 Jun 2019
+----------------------
+. [Bug #654] Fix for Sather's "Little Text Window" not rendering correctly.
+. [Bug #652] Fix for 6522 TIMER1's period to be N+2 cycles.
+
+
+1.28.6.0 - 2 Jun 2019
+---------------------
+. [Bug #651] Cycle-accurate interrupts:
+	- Interrupts sources are checked after every opcode (full-speed after every 40 opcodes).
+	- 6522 TIMERs in free-running mode now account for the underflowed cycles when resetting the count.
+
 
 1.28.5.0 - 6 Apr 2019
 ---------------------
@@ -63,7 +91,7 @@ Tom Charlesworth
 	- Any v1 save-state files should be loaded into AppleWin 1.27, and then re-saved to a v2 save-state file.
 . [Change #597] Removed the functionality for CTRL+F10 to reveal the mouse cursor.
 . [Change #585] Added a 'Swap' HDD button to the Configuration->Input property sheet.
-. [Bug #608] Mockingboard's 6522 TIMER1 wasn't generating an interrupt quickly enough for Broadside's detection routine.
+. [Bug #608,#236] Mockingboard's 6522 TIMER1 wasn't generating an interrupt quickly enough for detection routines for Broadside and Ultima III Jukebox.
 
 
 1.27.13.0 - 8 Dec 2018

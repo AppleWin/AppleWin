@@ -97,6 +97,8 @@ public:
 	bool LoadBool(const std::string key);
 	std::string LoadString_NoThrow(const std::string& key, bool& bFound);
 	std::string LoadString(const std::string& key);
+	float LoadFloat(const std::string key);
+	double LoadDouble(const std::string key);
 	void LoadMemory(const LPBYTE pMemBase, const size_t size);
 
 	bool GetSubMap(const std::string key)
@@ -213,7 +215,9 @@ public:
 	void SaveHexUint32(const char* key, UINT value);
 	void SaveHexUint64(const char* key, UINT64 value);
 	void SaveBool(const char* key, bool value);
-	void SaveString(const char* key,  const char* value);
+	void SaveString(const char* key, const char* value);
+	void SaveFloat(const char* key, float value);
+	void SaveDouble(const char* key, double value);
 	void SaveMemory(const LPBYTE pMemBase, const UINT uMemSize);
 
 	class Label
