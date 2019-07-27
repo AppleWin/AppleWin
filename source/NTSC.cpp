@@ -1895,8 +1895,10 @@ void NTSC_SetVideoTextMode( int cols )
 //===========================================================================
 void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 {
-	if (bDelay)
+	if (bDelay && !g_bFullSpeed)
 	{
+		// (GH#670) NB. if g_bFullSpeed then NTSC_VideoUpdateCycles() won't be called on the next 6502 opcode.
+		//  - Instead it's called when !g_bFullSpeed (eg. drive motor off), then the stale g_uNewVideoModeFlags will get used for NTSC_SetVideoMode()!
 		g_bDelayVideoMode = true;
 		g_uNewVideoModeFlags = uVideoModeFlags;
 		return;
