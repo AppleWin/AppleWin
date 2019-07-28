@@ -773,25 +773,12 @@ bool SetCurrentImageDir(const char* pszImageDir)
 
 // TODO: Added dialog option of which file extensions to registry
 static bool g_bRegisterFileTypes = true;
-//static bool g_bRegistryFileBin = false;
-static bool g_bRegistryFileDo  = true;
-static bool g_bRegistryFileDsk = true;
-static bool g_bRegistryFileNib = true;
-static bool g_bRegistryFilePo  = true;
 
 
 void RegisterExtensions(void)
 {
 	TCHAR szCommandTmp[MAX_PATH];
 	GetModuleFileName((HMODULE)0,szCommandTmp,MAX_PATH);
-
-#ifdef TEST_REG_BUG
-	TCHAR command[MAX_PATH];
-	wsprintf(command, "%s",	szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
-
-	TCHAR icon[MAX_PATH];
-	wsprintf(icon,TEXT("\"%s,1\""),(LPCTSTR)command);
-#endif
 
 	TCHAR command[MAX_PATH];
 	wsprintf(command, "\"%s\"",	szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
@@ -803,46 +790,80 @@ void RegisterExtensions(void)
 //	_tcscat(command,TEXT("-d1 %1\""));			// Append "%1"
 //	sprintf(command, "\"%s\" \"-d1 %%1\"", szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
 
+	// NB. Registry access to HKLM typically results in ErrorCode 5(ACCESS DENIED), as UAC requires elevated permissions (Run as administrator).
+	// . HKEY_CLASSES_ROOT\CLSID is a merged view of HKLM\SOFTWARE\Classes and HKCU\SOFTWARE\Classes
+
 	// NB. Reflect extensions in DELREG.INF
 //	RegSetValue(HKEY_CLASSES_ROOT,".bin",REG_SZ,"DiskImage",0);	// Removed as .bin is too generic
-	long Res = RegDeleteValue(HKEY_CLASSES_ROOT, ".bin");			// TODO: This isn't working :-/
 
-	RegSetValue(HKEY_CLASSES_ROOT,".do"	,REG_SZ,"DiskImage",0);
-	RegSetValue(HKEY_CLASSES_ROOT,".dsk",REG_SZ,"DiskImage",0);
-	RegSetValue(HKEY_CLASSES_ROOT,".nib",REG_SZ,"DiskImage",0);
-	RegSetValue(HKEY_CLASSES_ROOT,".po"	,REG_SZ,"DiskImage",0);
+	const char* pValueName = ".bin";
+	LSTATUS res = RegDeleteValue(HKEY_CLASSES_ROOT, pValueName);
+	if (res != NOERROR && res != ERROR_FILE_NOT_FOUND) LogFileOutput("RegDeleteValue(%s) failed (0x%08X)\n", pValueName, res);
+
+	pValueName = ".do";
+	res = RegSetValue(HKEY_CLASSES_ROOT, pValueName ,REG_SZ,"DiskImage",0);
+	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
+
+	pValueName = ".dsk";
+	res = RegSetValue(HKEY_CLASSES_ROOT, pValueName, REG_SZ,"DiskImage",0);
+	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
+
+	pValueName = ".nib";
+	res = RegSetValue(HKEY_CLASSES_ROOT, pValueName, REG_SZ,"DiskImage",0);
+	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
+
+	pValueName = ".po";
+	res = RegSetValue(HKEY_CLASSES_ROOT, pValueName, REG_SZ,"DiskImage",0);
+	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
+
+	pValueName = ".woz";
+	res = RegSetValue(HKEY_CLASSES_ROOT, pValueName, REG_SZ,"DiskImage",0);
+	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
+
 //	RegSetValue(HKEY_CLASSES_ROOT,".2mg",REG_SZ,"DiskImage",0);	// Don't grab this, as not all .2mg images are supported (so defer to CiderPress)
 //	RegSetValue(HKEY_CLASSES_ROOT,".2img",REG_SZ,"DiskImage",0);	// Don't grab this, as not all .2mg images are supported (so defer to CiderPress)
-//	RegSetValue(HKEY_CLASSES_ROOT,".aws",REG_SZ,"DiskImage",0);	// TO DO
+//	RegSetValue(HKEY_CLASSES_ROOT,".aws.yaml",REG_SZ,"DiskImage",0);	// NB. Can't grab this extension (even though it returns 0!) with embedded period (and .yaml is too generic) - GH#548
 //	RegSetValue(HKEY_CLASSES_ROOT,".hdv",REG_SZ,"DiskImage",0);	// TO DO
 
-	RegSetValue(HKEY_CLASSES_ROOT,
-				"DiskImage",
+	pValueName = "DiskImage";
+	res = RegSetValue(HKEY_CLASSES_ROOT,
+				pValueName,
 				REG_SZ,"Disk Image",0);
+	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
-	RegSetValue(HKEY_CLASSES_ROOT,
-				"DiskImage\\DefaultIcon",
+	pValueName = "DiskImage\\DefaultIcon";
+	res = RegSetValue(HKEY_CLASSES_ROOT,
+				pValueName,
 				REG_SZ,icon,0);
+	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
 // This key can interfere....
 // HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExt\.dsk
 
-	RegSetValue(HKEY_CLASSES_ROOT,
-				"DiskImage\\shell\\open\\command",
+	pValueName = "DiskImage\\shell\\open\\command";
+	res = RegSetValue(HKEY_CLASSES_ROOT,
+				pValueName,
 				REG_SZ,command,_tcslen(command)+1);
+	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
-	RegSetValue(HKEY_CLASSES_ROOT,
-				"DiskImage\\shell\\open\\ddeexec",
+	pValueName = "DiskImage\\shell\\open\\ddeexec";
+	res = RegSetValue(HKEY_CLASSES_ROOT,
+				pValueName,
 				REG_SZ,"%1",3);
+	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
-	RegSetValue(HKEY_CLASSES_ROOT,
-				"DiskImage\\shell\\open\\ddeexec\\application",
+	pValueName = "DiskImage\\shell\\open\\ddeexec\\application";
+	res = RegSetValue(HKEY_CLASSES_ROOT,
+				pValueName,
 				REG_SZ,"applewin",_tcslen("applewin")+1);
 //				REG_SZ,szCommandTmp,_tcslen(szCommandTmp)+1);
+	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
-	RegSetValue(HKEY_CLASSES_ROOT,
-				"DiskImage\\shell\\open\\ddeexec\\topic",
+	pValueName = "DiskImage\\shell\\open\\ddeexec\\topic";
+	res = RegSetValue(HKEY_CLASSES_ROOT,
+				pValueName,
 				REG_SZ,"system",_tcslen("system")+1);
+	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 }
 
 //===========================================================================
