@@ -1098,12 +1098,8 @@ UINT Disk2InterfaceCard::DataLatchReadWriteCommonWOZ(ULONG uExecutedCycles)
 	return bitCellRemainder;
 }
 
-void __stdcall Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, BYTE d, ULONG uExecutedCycles)
+void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder)
 {
-	const UINT bitCellRemainder = DataLatchReadWriteCommonWOZ(uExecutedCycles);
-	if (!bitCellRemainder)
-		return;
-
 	// m_diskLastReadLatchCycle = g_nCumulativeCycles;	// Not used by WOZ (only by NIB)
 
 #if LOG_DISK_NIBBLES_READ
@@ -1216,19 +1212,11 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, BYTE d, 
 		}
 	}
 #endif
-
-	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
-	if ((floppy.m_byte & 0xFF) == 0)
-		FrameDrawDiskStatus((HDC)0);
 }
 
-void __stdcall Disk2InterfaceCard::DataLatchWriteWOZ(WORD pc, WORD addr, BYTE d, ULONG uExecutedCycles)
+void Disk2InterfaceCard::DataLatchWriteWOZ(WORD pc, WORD addr, BYTE d, UINT bitCellRemainder)
 {
 	_ASSERT(m_floppyWriteMode);
-
-	const UINT bitCellRemainder = DataLatchReadWriteCommonWOZ(uExecutedCycles);
-	if (!bitCellRemainder)
-		return;
 
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
@@ -1237,9 +1225,21 @@ void __stdcall Disk2InterfaceCard::DataLatchWriteWOZ(WORD pc, WORD addr, BYTE d,
 	{
 		//TODO
 	}
+}
+
+void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
+{
+	const UINT bitCellRemainder = DataLatchReadWriteCommonWOZ(uExecutedCycles);
+	if (!bitCellRemainder)
+		return;
+
+	if (!bWrite)
+		DataLatchReadWOZ(pc, addr, bitCellRemainder);
+	else
+		DataLatchWriteWOZ(pc, addr, d, bitCellRemainder);
 
 	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
-	if ((floppy.m_byte & 0xFF) == 0)
+	if ((m_floppyDrive[m_currDrive].m_disk.m_byte & 0xFF) == 0)
 		FrameDrawDiskStatus((HDC)0);
 }
 
@@ -1687,7 +1687,7 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	if (!(addr & 1))
 	{
 		if (isWOZ)
-			pCard->DataLatchReadWOZ(pc, addr, d, nExecutedCycles);
+			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
 
 		return pCard->m_floppyLatch;
 	}
@@ -1729,7 +1729,7 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 		pCard->m_floppyLatch = d;
 
 		if (isWOZ)
-			pCard->DataLatchWriteWOZ(pc, addr, d, nExecutedCycles);
+			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	return 0;
