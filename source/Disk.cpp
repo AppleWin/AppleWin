@@ -1046,7 +1046,7 @@ void Disk2InterfaceCard::UpdateBitStreamOffsets(FloppyDisk& floppy)
 	floppy.m_bitMask = 1 << remainder;
 }
 
-UINT Disk2InterfaceCard::DataLatchReadWriteCommonWOZ(ULONG uExecutedCycles)
+void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
 	/* m_floppyLoadMode = 0; */
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
@@ -1059,7 +1059,7 @@ UINT Disk2InterfaceCard::DataLatchReadWriteCommonWOZ(ULONG uExecutedCycles)
 	{
 		_ASSERT(0);		// Can't happen for WOZ - ReadTrack() should return an empty track
 		m_floppyLatch = 0xFF;
-		return 0;
+		return;
 	}
 
 	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
@@ -1067,7 +1067,7 @@ UINT Disk2InterfaceCard::DataLatchReadWriteCommonWOZ(ULONG uExecutedCycles)
 	// Note: Sherwood Forest sets shift mode and reads with the drive off.
 	// TODO: And same for a write?
 	if (!drive.m_spinning)	// GH#599
-		return 0;
+		return;
 
 	CpuCalcCycles(uExecutedCycles);
 
@@ -1095,7 +1095,14 @@ UINT Disk2InterfaceCard::DataLatchReadWriteCommonWOZ(ULONG uExecutedCycles)
 
 	m_diskLastCycle = g_nCumulativeCycles;
 
-	return bitCellRemainder;
+	if (!bWrite)
+		DataLatchReadWOZ(pc, addr, bitCellRemainder);
+	else
+		DataLatchWriteWOZ(pc, addr, d, bitCellRemainder);
+
+	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
+	if ((floppy.m_byte & 0xFF) == 0)
+		FrameDrawDiskStatus((HDC)0);
 }
 
 void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder)
@@ -1225,22 +1232,6 @@ void Disk2InterfaceCard::DataLatchWriteWOZ(WORD pc, WORD addr, BYTE d, UINT bitC
 	{
 		//TODO
 	}
-}
-
-void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
-{
-	const UINT bitCellRemainder = DataLatchReadWriteCommonWOZ(uExecutedCycles);
-	if (!bitCellRemainder)
-		return;
-
-	if (!bWrite)
-		DataLatchReadWOZ(pc, addr, bitCellRemainder);
-	else
-		DataLatchWriteWOZ(pc, addr, d, bitCellRemainder);
-
-	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
-	if ((m_floppyDrive[m_currDrive].m_disk.m_byte & 0xFF) == 0)
-		FrameDrawDiskStatus((HDC)0);
 }
 
 //===========================================================================
