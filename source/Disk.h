@@ -189,6 +189,9 @@ private:
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
 	void UpdateBitStreamOffsets(FloppyDisk& floppy);
 	UINT DataLatchReadWriteCommonWOZ(ULONG uExecutedCycles);
+	void DumpSectorWOZ(FloppyDisk floppy);
+	void DumpTrackWOZ(FloppyDisk floppy);
+
 	void SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	void SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	bool LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version, std::vector<BYTE>& track);
