@@ -125,9 +125,9 @@ static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 	bool g_bDisplayPrintScreenFileName = false;
 	bool g_bShowPrintScreenWarningDialog = true;
-	void Util_MakeScreenShotFileName( char *pFinalFileName_ );
-	bool Util_TestScreenShotFileName( const char *pFileName );
-	void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const char *pScreenShotFileName );
+	void Util_MakeScreenShotFileName( TCHAR *pFinalFileName_, DWORD chars );
+	bool Util_TestScreenShotFileName( const TCHAR *pFileName );
+	void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName );
 	void Video_MakeScreenShot( FILE *pFile, const VideoScreenShot_e ScreenShotType );
 	void videoCreateDIBSection();
 
@@ -439,8 +439,8 @@ void VideoDisplayLogo ()
 	SetTextAlign(hFrameDC,TA_RIGHT | TA_TOP);
 	SetBkMode(hFrameDC,TRANSPARENT);
 
-	char szVersion[ 64 ] = "";
-	sprintf( szVersion, "Version %s", VERSIONSTRING );
+	TCHAR szVersion[ 64 ];
+	StringCbPrintf(szVersion, 64, "Version %s", VERSIONSTRING);
 	int xoff = GetFullScreenOffsetX(), yoff = GetFullScreenOffsetY();
 
 #define  DRAWVERSION(x,y,c)                 \
@@ -461,7 +461,7 @@ void VideoDisplayLogo ()
 	}
 
 #if _DEBUG
-	sprintf( szVersion, "DEBUG" );
+	StringCbPrintf(szVersion, 64, "DEBUG");
 	DRAWVERSION( 2, -358*scale,RGB(0x00,0x00,0x00));
 	DRAWVERSION( 1, -357*scale,RGB(0x00,0x00,0x00));
 	DRAWVERSION( 0, -356*scale,RGB(0xFF,0x00,0xFF));
@@ -902,32 +902,32 @@ bool VideoGetVblBar(const DWORD uExecutedCycles)
 	
 static int  g_nLastScreenShot = 0;
 const  int nMaxScreenShot = 999999999;
-static char *g_pLastDiskImageName = NULL;
+static TCHAR *g_pLastDiskImageName = NULL;
 
 //===========================================================================
-void Video_ResetScreenshotCounter( char *pImageName )
+void Video_ResetScreenshotCounter( TCHAR *pImageName )
 {
 	g_nLastScreenShot = 0;
 	g_pLastDiskImageName = pImageName;
 }
 
 //===========================================================================
-void Util_MakeScreenShotFileName( char *pFinalFileName_ )
+void Util_MakeScreenShotFileName( TCHAR *pFinalFileName_, DWORD chars )
 {
-	char sPrefixScreenShotFileName[ 256 ] = "AppleWin_ScreenShot";
+	const TCHAR * sPrefixScreenShotFileName = "AppleWin_ScreenShot";
 	// TODO: g_sScreenshotDir
-	char *pPrefixFileName = g_pLastDiskImageName ? g_pLastDiskImageName : sPrefixScreenShotFileName;
+	const TCHAR *pPrefixFileName = g_pLastDiskImageName ? g_pLastDiskImageName : sPrefixScreenShotFileName;
 #if SCREENSHOT_BMP
-	sprintf( pFinalFileName_, "%s_%09d.bmp", pPrefixFileName, g_nLastScreenShot );
+	StringCbPrintf( pFinalFileName_, chars, TEXT("%s_%09d.bmp"), pPrefixFileName, g_nLastScreenShot );
 #endif
 #if SCREENSHOT_TGA
-	sprintf( pFinalFileName_, "%s%09d.tga", pPrefixFileName, g_nLastScreenShot );
+	StringCbPrintf( pFinalFileName_, chars, TEXT("%s%09d.tga"), pPrefixFileName, g_nLastScreenShot );
 #endif
 }
 
 // Returns TRUE if file exists, else FALSE
 //===========================================================================
-bool Util_TestScreenShotFileName( const char *pFileName )
+bool Util_TestScreenShotFileName( const TCHAR *pFileName )
 {
 	bool bFileExists = false;
 	FILE *pFile = fopen( pFileName, "rt" );
@@ -942,7 +942,7 @@ bool Util_TestScreenShotFileName( const char *pFileName )
 //===========================================================================
 void Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 {
-	char sScreenShotFileName[ MAX_PATH ];
+	TCHAR sScreenShotFileName[ MAX_PATH ];
 
 	// find last screenshot filename so we don't overwrite the existing user ones
 	bool bExists = true;
@@ -950,13 +950,14 @@ void Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 	{
 		if (g_nLastScreenShot > nMaxScreenShot) // Holy Crap! User has maxed the number of screenshots!?
 		{
-			sprintf( sScreenShotFileName, "You have more then %d screenshot filenames!  They will no longer be saved.\n\nEither move some of your screenshots or increase the maximum in video.cpp\n", nMaxScreenShot );
-			MessageBox( g_hFrameWindow, sScreenShotFileName, "Warning", MB_OK );
+			TCHAR msg[512];
+			StringCbPrintf( msg, 512, "You have more then %d screenshot filenames!  They will no longer be saved.\n\nEither move some of your screenshots or increase the maximum in video.cpp\n", nMaxScreenShot );
+			MessageBox( g_hFrameWindow, msg, "Warning", MB_OK );
 			g_nLastScreenShot = 0;
 			return;
 		}
 
-		Util_MakeScreenShotFileName( sScreenShotFileName );
+		Util_MakeScreenShotFileName( sScreenShotFileName, MAX_PATH );
 		bExists = Util_TestScreenShotFileName( sScreenShotFileName );
 		if( !bExists )
 		{
@@ -969,7 +970,7 @@ void Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 	g_nLastScreenShot++;
 }
 
-void Video_RedrawAndTakeScreenShot( const char* pScreenshotFilename )
+void Video_RedrawAndTakeScreenShot( const TCHAR* pScreenshotFilename )
 {
 	_ASSERT(pScreenshotFilename);
 	if (!pScreenshotFilename)
@@ -1137,7 +1138,7 @@ static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 }
 
 //===========================================================================
-static void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const char *pScreenShotFileName )
+static void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName )
 {
 	FILE *pFile = fopen( pScreenShotFileName, "wb" );
 	if( pFile )
@@ -1162,7 +1163,7 @@ static BYTE g_videoRom[kVideoRomSizeMax];
 static UINT g_videoRomSize = 0;
 static bool g_videoRomRockerSwitch = false;
 
-bool ReadVideoRomFile(const char* pRomFile)
+bool ReadVideoRomFile(const TCHAR* pRomFile)
 {
 	g_videoRomSize = 0;
 
@@ -1227,23 +1228,29 @@ enum VideoType127_e
 
 void Config_Load_Video()
 {
-	REGLOAD(TEXT(REGVALUE_VIDEO_MODE)      ,&g_eVideoType);
-	REGLOAD(TEXT(REGVALUE_VIDEO_STYLE)     ,(DWORD*)&g_eVideoStyle);
-	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR),&g_nMonochromeRGB);
+	DWORD dwTmp;
 
-	DWORD rate = VR_60HZ;
-	REGLOAD(TEXT(REGVALUE_VIDEO_REFRESH_RATE), &rate);
-	SetVideoRefreshRate((VideoRefreshRate_e)rate);
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MODE), &dwTmp, (DWORD)VT_DEFAULT);
+	g_eVideoType = dwTmp;
+
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_STYLE), &dwTmp, (DWORD)VS_HALF_SCANLINES);
+	g_eVideoStyle = (VideoStyle_e)dwTmp;
+
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MONO_COLOR), &dwTmp, (DWORD)RGB(0xC0, 0xC0, 0xC0));
+	g_nMonochromeRGB = (COLORREF)dwTmp;
+
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_REFRESH_RATE), &dwTmp, (DWORD)VR_60HZ);
+	SetVideoRefreshRate((VideoRefreshRate_e)dwTmp);
 
 	//
 
 	const UINT16* pOldVersion = GetOldAppleWinVersion();
 	if (pOldVersion[0] == 1 && pOldVersion[1] <= 28 && pOldVersion[2] <= 1)
 	{
-		DWORD halfScanLines = 0;
-		REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&halfScanLines);
+		DWORD dwHalfScanLines;
+		REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES), &dwHalfScanLines, 0);
 
-		if (halfScanLines)
+		if (dwHalfScanLines)
 			g_eVideoStyle = (VideoStyle_e) ((DWORD)g_eVideoStyle | VS_HALF_SCANLINES);
 		else
 			g_eVideoStyle = (VideoStyle_e) ((DWORD)g_eVideoStyle & ~VS_HALF_SCANLINES);

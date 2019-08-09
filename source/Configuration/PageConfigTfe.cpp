@@ -143,10 +143,10 @@ int CPageConfigTfe::gray_ungray_items(HWND hwnd)
 	int enable;
 	int number;
 
-	int disabled = 0;
-
 	//resources_get_value("ETHERNET_DISABLED", (void *)&disabled);
-	REGLOAD(TEXT("Uthernet Disabled")  ,(DWORD *)&disabled);
+	DWORD dwDisabled;
+	REGLOAD_DEFAULT(TEXT("Uthernet Disabled"), &dwDisabled, 0);
+	int disabled = dwDisabled ? 1 : 0;
 	get_disabled_state(&disabled);
 
 	if (disabled)
