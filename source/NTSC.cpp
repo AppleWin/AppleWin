@@ -624,7 +624,7 @@ inline void updateFlashRate() // TODO: Flash rate should be constant (regardless
 inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable )
 {
 	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
-	/* */ uint32_t *pLine1Address = getScanlinePrev1Address();
+	/* */ uint32_t *pLine1Address = getScanlinePrev1Address();	// NB. TV mode uses previous 2 lines
 	/* */ uint32_t *pLine2Address = getScanlinePrev2Address();
 
 	const uint32_t color0 = getScanlineColor( signal, pTable );
@@ -650,7 +650,7 @@ inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTa
 inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
 	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
-	/* */ uint32_t *pLine1Address = getScanlinePrev1Address();
+	/* */ uint32_t *pLine1Address = getScanlinePrev1Address();	// NB. TV mode uses previous 2 lines
 	const uint32_t *pLine2Address = getScanlinePrev2Address();
 
 	const uint32_t color0 = getScanlineColor( signal, pTable );
@@ -666,7 +666,7 @@ inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTa
 inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable )
 {
 	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
-	/* */ uint32_t *pLine1Address = getScanlineNext1Address();
+	/* */ uint32_t *pLine1Address = getScanlineNext1Address();	// NB. Monitor mode just uses next line
 	const uint32_t color0 = getScanlineColor( signal, pTable );
 	const uint32_t color1 = 0;	// Remove blending for consistent DHGR MIX mode (GH#631)
 //	const uint32_t color1 = ((color0 & 0x00fcfcfc) >> 2); // 25% Blend (original)
@@ -680,7 +680,7 @@ inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTa
 inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
 	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
-	/* */ uint32_t *pLine1Address = getScanlineNext1Address();
+	/* */ uint32_t *pLine1Address = getScanlineNext1Address();	// NB. Monitor mode just uses next line
 	const uint32_t color0 = getScanlineColor( signal, pTable );
 
 	/* */  *pLine1Address = color0;
@@ -1978,6 +1978,15 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 }
 
 //===========================================================================
+
+// TV modes don't write to the last line, so when switching from another (Monitor) mode there may be stale data left behind
+void ClearLastLine(void)
+{
+	uint32_t* p = (uint32_t*)g_pScanLines[VIDEO_SCANNER_Y_DISPLAY * 2 - 1];
+	for (UINT x = 0; x < NTSC_GetFrameBufferBorderlessWidth(); x++)
+		p[x] = 0;
+}
+
 void NTSC_SetVideoStyle() // (int v, int s)
 {
     int half = IsVideoStyle(VS_HALF_SCANLINES);
@@ -1999,6 +2008,7 @@ void NTSC_SetVideoStyle() // (int v, int s)
 				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVDoubleScanline;
 				g_pFuncUpdateHuePixel = updatePixelHueColorTVDoubleScanline;
 			}
+			ClearLastLine();
 			break;
 
 		case VT_COLOR_MONITOR_NTSC:
@@ -2030,6 +2040,7 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			else {
 				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWColorTVDoubleScanline;
 			}
+			ClearLastLine();
 			break;
 
 		case VT_MONO_AMBER:
