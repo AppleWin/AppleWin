@@ -67,7 +67,8 @@ static YamlHelper yamlHelper;
 // Unit version history:
 // v2: Extended: keyboard (added 'Key Waiting'), memory (LC mem type for II/II+, inverted MF_INTCXROM bit)
 // v3: Extended: memory (added 'AnnunciatorN')
-#define UNIT_APPLE2_VER 3
+// v4: Extended: video (added 'Video Refresh Rate')
+#define UNIT_APPLE2_VER 4
 
 #define UNIT_SLOTS_VER 1
 
@@ -219,7 +220,7 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	JoyLoadSnapshot(yamlLoadHelper);
 	KeybLoadSnapshot(yamlLoadHelper, version);
 	SpkrLoadSnapshot(yamlLoadHelper);
-	VideoLoadSnapshot(yamlLoadHelper);
+	VideoLoadSnapshot(yamlLoadHelper, version);
 	MemLoadSnapshot(yamlLoadHelper, version);
 
 	// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
@@ -395,6 +396,7 @@ static void Snapshot_LoadState_v2(void)
 		HD_Reset();
 		KeybReset();
 		VideoResetState();
+		SetVideoRefreshRate(VR_60HZ);		// Default to 60Hz as older save-states won't contain refresh rate
 		MB_InitializeForLoadingSnapshot();	// GH#609
 		sg_SSC.CommReset();
 #ifdef USE_SPEECH_API
@@ -420,7 +422,7 @@ static void Snapshot_LoadState_v2(void)
 		// . A change in h/w via loading a save-state avoids this VM restart
 		// The latter is the desired approach (as the former needs a "power-on" / F2 to start things again)
 
-		sg_PropertySheet.ApplyNewConfig(m_ConfigNew, ConfigOld);
+		sg_PropertySheet.ApplyNewConfig(m_ConfigNew, ConfigOld);	// Mainly just saves (some) new state to Registry
 
 		MemInitializeROM();
 		MemInitializeCustomF8ROM();

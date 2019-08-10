@@ -3727,15 +3727,16 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs > 2)
 			goto _Help;
 
-		int drive = sg_Disk2Card.GetCurrentDrive() + 1;
 		char buffer[200] = "";
-		ConsoleBufferPushFormat(buffer, "D%d at T$%X (%d), phase $%X, offset $%X, %s",
-			drive,
-			sg_Disk2Card.GetCurrentTrack(),
-			sg_Disk2Card.GetCurrentTrack(),
-			sg_Disk2Card.GetCurrentPhase(),
+		ConsoleBufferPushFormat(buffer, "D%d at T$%s, phase $%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
+			sg_Disk2Card.GetCurrentDrive() + 1,
+			sg_Disk2Card.GetCurrentTrackString().c_str(),
+			sg_Disk2Card.GetCurrentPhaseString().c_str(),
 			sg_Disk2Card.GetCurrentOffset(),
-			sg_Disk2Card.GetCurrentState());
+			sg_Disk2Card.GetCurrentLSSBitMask(),
+			sg_Disk2Card.GetCurrentExtraCycles(),
+			sg_Disk2Card.GetCurrentState()
+		);
 
 		return ConsoleUpdate();
 	}

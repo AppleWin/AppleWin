@@ -5510,7 +5510,10 @@ static void opcode_fd(BYTE ip1, BYTE ip2, BYTE ip3, WORD ip12, WORD ip23)
 
 /* Z80 mainloop.  */
 
-static const double uZ80ClockMultiplier = CLK_Z80 / CLK_6502;
+// The effective Z-80 clock rate is 2.041MHz
+// See: http://www.apple2info.net/hardware/softcard/SC-SWHW_a2in.pdf
+static const double uZ80ClockMultiplier = 2;
+
 inline static ULONG ConvertZ80TStatesTo6502Cycles(UINT uTStates)
 {
 	return (uTStates < 0) ? 0 : (ULONG) ((double)uTStates / uZ80ClockMultiplier);
