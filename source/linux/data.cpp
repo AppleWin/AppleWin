@@ -20,7 +20,7 @@
 #include "SaveState.h"
 
 DWORD		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar
-double		g_fCurrentCLK6502 = CLK_6502;	// Affected by Config dialog's speed slider bar
+double		g_fCurrentCLK6502 = CLK_6502_NTSC;	// Affected by Config dialog's speed slider bar
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.cpp MemReset()
 DWORD       g_dwCyclesThisFrame = 0;
@@ -73,7 +73,7 @@ void SetCurrentCLK6502(void)
   else
     g_fMHz = (double)g_dwSpeed / 10.0;
 
-  g_fCurrentCLK6502 = CLK_6502 * g_fMHz;
+  g_fCurrentCLK6502 = CLK_6502_NTSC * g_fMHz;
 }
 
 void SetWindowTitle()

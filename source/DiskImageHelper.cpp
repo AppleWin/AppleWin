@@ -1052,7 +1052,7 @@ public:
 			BYTE n = 0;
 			for (UINT j = 0; j < 8; j++)
 			{
-				if (rand() < ((RAND_MAX * 3) / 10))	// ~30% of buffer are 1 bits
+				if (rand() < (RAND_MAX / 10 * 3))	// ~30% of buffer are 1 bits
 					n |= 1 << j;
 			}
 			m_pWOZEmptyTrack[i] = n;

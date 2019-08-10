@@ -13,6 +13,7 @@
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
 #include "Video.h"
+#include "NTSC.h"
 #include "SaveState.h"
 
 #include "linux/data.h"
@@ -141,7 +142,10 @@ BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecu
     return 0;
 }
 
-void VideoInitialize() {}
+void VideoInitialize()
+{
+    VideoReinitialize();
+}
 
 // MessageBox
 
@@ -241,6 +245,7 @@ void QApple::on_timer()
     const bool bVideoUpdate = false;
 
     int count = 0;
+    const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
     do
     {
         const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);

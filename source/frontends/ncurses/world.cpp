@@ -11,6 +11,7 @@
 #include "Log.h"
 #include "DiskImageHelper.h"
 #include "Memory.h"
+#include "Applewin.h"
 
 #include "linux/interface.h"
 #include "linux/paddle.h"
@@ -141,7 +142,7 @@ namespace
   void updateSpeaker()
   {
     const ULONG dCycles = g_nCumulativeCycles - lastUpdate;
-    const double dt = dCycles / CLK_6502;
+    const double dt = dCycles / g_fCurrentCLK6502;
     const double coeff = exp(- alpha * dt);
     F = F * coeff;
     lastUpdate = g_nCumulativeCycles;
@@ -367,6 +368,8 @@ void FrameRefreshStatus(int x, bool)
 
 void VideoInitialize()
 {
+  VideoReinitialize();
+
   setlocale(LC_ALL, "");
   initscr();
 

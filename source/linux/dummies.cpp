@@ -7,6 +7,7 @@
 #include "Configuration/IPropertySheet.h"
 #include "Video.h"
 #include "CPU.h"
+#include "Applewin.h"
 #include "Memory.h"
 #include "Keyboard.h"
 #include "NTSC.h"
@@ -31,6 +32,8 @@ int const kVLine0State      = 0x100; // V[543210CBA] = 100000000
 int const kVPresetLine      =   256; // line when V state presets
 int const kVSyncLines       =     4; // lines per VSync duration
 int const kVDisplayableScanLines = 192; // max displayable scanlines
+
+static bool g_bVideoScannerNTSC = true;
 
 eApple2Type GetApple2Type(void)
 {
@@ -111,6 +114,11 @@ void FrameSetCursorPosByMousePos()
 {
 }
 
+UINT GetFrameBufferWidth(void)
+{
+  return 0;
+}
+
 // Joystick
 
 void JoyportControl(const UINT uControl)
@@ -142,11 +150,6 @@ int           g_nAltCharSetOffset  = 0; // alternate character set
 #define  SW_MIXED         (g_uVideoMode & VF_MIXED)
 #define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
 #define  SW_TEXT          (g_uVideoMode & VF_TEXT)
-
-UINT GetFrameBufferWidth(void)
-{
-  return 0;
-}
 
 bool IsVideoStyle(VideoStyle_e mask)
 {
@@ -236,12 +239,17 @@ void Video_ResetScreenshotCounter( char *pImageName )
 {
 }
 
+VideoRefreshRate_e GetVideoRefreshRate(void)
+{
+	return (g_bVideoScannerNTSC == false) ? VR_50HZ : VR_60HZ;
+}
+
 //===========================================================================
 //
 // References to Jim Sather's books are given as eg:
 // UTAIIe:5-7,P3 (Understanding the Apple IIe, chapter 5, page 7, Paragraph 3)
 //
-WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
+WORD VideoGetScannerAddress(DWORD uExecutedCycles, VideoScanner_e videoScannerAddr)
 {
   // get video scanner position
   //
@@ -343,12 +351,6 @@ WORD VideoGetScannerAddress(bool* pbVblBar_OUT, const DWORD uExecutedCycles)
     }
   }
 
-  // update VBL' state
-  //
-  if (pbVblBar_OUT != NULL)
-  {
-    *pbVblBar_OUT = !v_4 || !v_3; // VBL' = (v_4 & v_3)' (UTAIIe:5-10,#3)
-  }
   return static_cast<WORD>(nAddress);
 }
 
@@ -392,15 +394,31 @@ bool VideoGetSWAltCharSet(void)
 	return g_nAltCharSetOffset != 0;
 }
 
+void SetVideoRefreshRate(VideoRefreshRate_e rate)
+{
+  // This version of AppleWin only works at 50Hz
+}
+
+void VideoReinitialize(bool bInitVideoScannerAddress)
+{
+  g_dwCyclesThisFrame = 0;
+}
+
+
 // NTSC
 
-void NTSC_VideoUpdateCycles( long cyclesLeftToUpdate )
+#define VIDEO_SCANNER_MAX_HORZ   65 // TODO: use Video.cpp: kHClocks
+#define VIDEO_SCANNER_MAX_VERT  262 // TODO: use Video.cpp: kNTSCScanLines
+static const UINT VIDEO_SCANNER_6502_CYCLES = VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_MAX_VERT;
+static UINT g_videoScanner6502Cycles = VIDEO_SCANNER_6502_CYCLES;	// default to NTSC
+
+void NTSC_VideoUpdateCycles( UINT cycles6502 )
 {
 }
 
 uint16_t NTSC_VideoGetScannerAddress( const ULONG uExecutedCycles )
 {
-  return VideoGetScannerAddress(NULL, uExecutedCycles);
+  return VideoGetScannerAddress(uExecutedCycles);
 }
 
 void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay )
@@ -409,4 +427,9 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay )
 
 void NTSC_SetVideoTextMode( int cols )
 {
+}
+
+UINT NTSC_GetCyclesPerFrame(void)
+{
+	return g_videoScanner6502Cycles;
 }

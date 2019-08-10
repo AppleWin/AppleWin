@@ -15,8 +15,9 @@
 #include "CPU.h"
 #include "Frame.h"
 #include "Memory.h"
-#include "ParallelPrinter.h"
 #include "Video.h"
+#include "NTSC.h"
+#include "ParallelPrinter.h"
 #include "SaveState.h"
 #include "MouseInterface.h"
 
@@ -166,6 +167,7 @@ namespace
 
     ProcessInput();
 
+    const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
     if (g_dwCyclesThisFrame >= dwClksPerFrame)
     {
       g_dwCyclesThisFrame -= dwClksPerFrame;
