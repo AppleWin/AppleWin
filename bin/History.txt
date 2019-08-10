@@ -12,7 +12,7 @@ Tom Charlesworth
 ----------------------
 . [Bug #662] Fixed WOZ 'Wizardry III' not booting.
 . [Bug #669] Fixed WOZ 'Space Quest I' not booting reliably.
-. [Bug #670] Fixed PAGE2 not displaying correctly when in full-speed mode.
+. [Bug #670] Fixed PAGE2 not displaying correctly when in full-speed mode (regression introduced at 1.28.8.0).
 
 
 1.29.0.0 - 8 Jul 2019
