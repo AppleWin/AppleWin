@@ -25,7 +25,7 @@ public:
 	}
 	virtual ~CPageInput(){}
 
-	static BOOL CALLBACK DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
+	static INT_PTR CALLBACK DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
 
 	UINT GetScrollLockToggle(void){ return m_uScrollLockToggle; }
 	void SetScrollLockToggle(UINT uValue){ m_uScrollLockToggle = uValue; }
@@ -44,7 +44,7 @@ public:
 
 protected:
 	// IPropertySheetPage
-	virtual BOOL DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	virtual INT_PTR DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	virtual void DlgOK(HWND hWnd);
 	virtual void DlgCANCEL(HWND hWnd){}
 

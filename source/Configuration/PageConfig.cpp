@@ -44,13 +44,13 @@ const TCHAR CPageConfig::m_ComputerChoices[] =
 				TEXT("Enhanced Apple //e\0")
 				TEXT("Clone\0");
 
-BOOL CALLBACK CPageConfig::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageConfig::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
 	return CPageConfig::ms_this->DlgProcInternal(hWnd, message, wparam, lparam);
 }
 
-BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{

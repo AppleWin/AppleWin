@@ -19,13 +19,13 @@ public:
 	}
 	virtual ~CPageSound(){}
 
-	static BOOL CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
 	DWORD GetVolumeMax(void){ return VOLUME_MAX; }
 
 protected:
 	// IPropertySheetPage
-	virtual BOOL DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	virtual INT_PTR DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	virtual void DlgOK(HWND hWnd);
 	virtual void DlgCANCEL(HWND hWnd){}
 

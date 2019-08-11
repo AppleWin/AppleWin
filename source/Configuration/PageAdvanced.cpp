@@ -43,13 +43,13 @@ const TCHAR CPageAdvanced::m_CloneChoices[] =
 				TEXT("Base 64A\0"); 	// Taiwanese
 
 
-BOOL CALLBACK CPageAdvanced::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageAdvanced::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
 	return CPageAdvanced::ms_this->DlgProcInternal(hWnd, message, wparam, lparam);
 }
 
-BOOL CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{

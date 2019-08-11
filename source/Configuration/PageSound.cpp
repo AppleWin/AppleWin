@@ -40,13 +40,13 @@ const TCHAR CPageSound::m_soundchoices[] =	TEXT("Disabled\0")
 											TEXT("Sound Card\0");
 
 
-BOOL CALLBACK CPageSound::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageSound::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
 	return CPageSound::ms_this->DlgProcInternal(hWnd, message, wparam, lparam);
 }
 
-BOOL CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{
