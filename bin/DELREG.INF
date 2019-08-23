@@ -8,11 +8,11 @@ DelReg=RegChange
 DelReg=RegChange
 
 [RegChange]
-HKCR,.bin 
 HKCR,.do
 HKCR,.dsk
 HKCR,.nib
 HKCR,.po
+HKCR,.woz
 HKCR,DiskImage
 HKCU,Software\AppleWin
 HKLM,Software\AppleWin

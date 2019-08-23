@@ -1046,7 +1046,7 @@ void Disk2InterfaceCard::UpdateBitStreamOffsets(FloppyDisk& floppy)
 	floppy.m_bitMask = 1 << remainder;
 }
 
-void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
+void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
 	/* m_floppyLoadMode = 0; */
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
@@ -1095,119 +1095,271 @@ void __stdcall Disk2InterfaceCard::ReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite,
 
 	m_diskLastCycle = g_nCumulativeCycles;
 
-	//
-
-	if (!m_floppyWriteMode)
-	{
-		// m_diskLastReadLatchCycle = g_nCumulativeCycles;	// Not used by WOZ (only by NIB)
-#if LOG_DISK_NIBBLES_READ
-		bool newLatchData = false;
-#endif
-
-		for (UINT i = 0; i < bitCellRemainder; i++)
-		{
-			BYTE n = floppy.m_trackimage[floppy.m_byte];
-
-			drive.m_headWindow <<= 1;
-			drive.m_headWindow |= (n & floppy.m_bitMask) ? 1 : 0;
-			BYTE outputBit = (drive.m_headWindow & 0xf)	? (drive.m_headWindow >> 1) & 1
-														: rand() & 1;
-
-			floppy.m_bitMask >>= 1;
-			if (!floppy.m_bitMask)
-			{
-				floppy.m_bitMask = 1 << 7;
-				floppy.m_byte++;
-			}
-
-			floppy.m_bitOffset++;
-			if (floppy.m_bitOffset == floppy.m_bitCount)
-			{
-				floppy.m_bitMask = 1 << 7;
-				floppy.m_bitOffset = 0;
-				floppy.m_byte = 0;
-			}
-
-			if (m_resetSequencer)
-			{
-				m_resetSequencer = false;	// LSS takes some cycles to reset (ref?)
-				continue;
-			}
-
-			//
-
-			m_shiftReg <<= 1;
-			m_shiftReg |= outputBit;
-
-			if (m_latchDelay)
-			{
-				m_latchDelay -= 4;
-				if (m_latchDelay < 0)
-					m_latchDelay = 0;
-
-				if (m_shiftReg)
-				{
-					m_dbgLatchDelayedCnt = 0;
-				}
-				else // m_shiftReg==0
-				{
-					m_latchDelay += 4;	// extend by 4us (so 7us again) - GH#662
-
-					m_dbgLatchDelayedCnt++;
-#if LOG_DISK_NIBBLES_READ
-					if (m_dbgLatchDelayedCnt >= 3)
-					{
-						LOG_DISK("read: latch held due to 0: PC=%04X, cnt=%02X\r\n", regs.pc, m_dbgLatchDelayedCnt);
-					}
-#endif
-				}
-			}
-
-			if (!m_latchDelay)
-			{
-#if LOG_DISK_NIBBLES_READ
-				if (newLatchData)
-				{
-					LOG_DISK("read skipped latch data: %04X = %02X\r\n", floppy.m_byte, m_floppyLatch);
-					newLatchData = false;
-				}
-#endif
-				m_floppyLatch = m_shiftReg;
-
-				if (m_shiftReg & 0x80)
-				{
-					m_latchDelay = 7;
-					m_shiftReg = 0;
-#if LOG_DISK_NIBBLES_READ
-					// May not actually be read by 6502 (eg. Prologue's CHKSUM 4&4 nibble pair), but still pass to the log's nibble reader
-					m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
-					newLatchData = true;
-#endif
-				}
-			}
-		}
-
-#if LOG_DISK_NIBBLES_READ
-		if (m_floppyLatch & 0x80)
-		{
-  #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
-			if (m_bLogDisk_NibblesRW)
-  #endif
-			{
-				LOG_DISK("read %04X = %02X\r\n", floppy.m_byte, m_floppyLatch);
-			}
-		}
-#endif
-	}
-	else if (!floppy.m_bWriteProtected) // && m_floppyWriteMode
-	{
-		//TODO
-	}
+	if (!bWrite)
+		DataLatchReadWOZ(pc, addr, bitCellRemainder);
+	else
+		DataLatchWriteWOZ(pc, addr, d, bitCellRemainder);
 
 	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
 	if ((floppy.m_byte & 0xFF) == 0)
-		FrameDrawDiskStatus( (HDC)0 );
+		FrameDrawDiskStatus((HDC)0);
 }
+
+void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder)
+{
+	// m_diskLastReadLatchCycle = g_nCumulativeCycles;	// Not used by WOZ (only by NIB)
+
+#if LOG_DISK_NIBBLES_READ
+	bool newLatchData = false;
+#endif
+
+	FloppyDrive& drive = m_floppyDrive[m_currDrive];
+	FloppyDisk& floppy = drive.m_disk;
+
+#if _DEBUG
+	static int dbgWOZ = 0;
+	if (dbgWOZ)
+	{
+		DumpSectorWOZ(floppy);
+		//DumpTrackWOZ(floppy);	// Enable as necessary
+	}
+#endif
+
+	for (UINT i = 0; i < bitCellRemainder; i++)
+	{
+		BYTE n = floppy.m_trackimage[floppy.m_byte];
+
+		drive.m_headWindow <<= 1;
+		drive.m_headWindow |= (n & floppy.m_bitMask) ? 1 : 0;
+		BYTE outputBit = (drive.m_headWindow & 0xf)	? (drive.m_headWindow >> 1) & 1
+													: rand() & 1;
+
+		floppy.m_bitMask >>= 1;
+		if (!floppy.m_bitMask)
+		{
+			floppy.m_bitMask = 1 << 7;
+			floppy.m_byte++;
+		}
+
+		floppy.m_bitOffset++;
+		if (floppy.m_bitOffset == floppy.m_bitCount)
+		{
+			floppy.m_bitMask = 1 << 7;
+			floppy.m_bitOffset = 0;
+			floppy.m_byte = 0;
+		}
+
+		if (m_resetSequencer)
+		{
+			m_resetSequencer = false;	// LSS takes some cycles to reset (ref?)
+			continue;
+		}
+
+		//
+
+		m_shiftReg <<= 1;
+		m_shiftReg |= outputBit;
+
+		if (m_latchDelay)
+		{
+			m_latchDelay -= 4;
+			if (m_latchDelay < 0)
+				m_latchDelay = 0;
+
+			if (m_shiftReg)
+			{
+				m_dbgLatchDelayedCnt = 0;
+			}
+			else // m_shiftReg==0
+			{
+				m_latchDelay += 4;	// extend by 4us (so 7us again) - GH#662
+
+				m_dbgLatchDelayedCnt++;
+#if LOG_DISK_NIBBLES_READ
+				if (m_dbgLatchDelayedCnt >= 3)
+				{
+					LOG_DISK("read: latch held due to 0: PC=%04X, cnt=%02X\r\n", regs.pc, m_dbgLatchDelayedCnt);
+				}
+#endif
+			}
+		}
+
+		if (!m_latchDelay)
+		{
+#if LOG_DISK_NIBBLES_READ
+			if (newLatchData)
+			{
+				LOG_DISK("read skipped latch data: %04X = %02X\r\n", floppy.m_byte, m_floppyLatch);
+				newLatchData = false;
+			}
+#endif
+			m_floppyLatch = m_shiftReg;
+
+			if (m_shiftReg & 0x80)
+			{
+				m_latchDelay = 7;
+				m_shiftReg = 0;
+#if LOG_DISK_NIBBLES_READ
+				// May not actually be read by 6502 (eg. Prologue's CHKSUM 4&4 nibble pair), but still pass to the log's nibble reader
+				m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
+				newLatchData = true;
+#endif
+			}
+		}
+	}
+
+#if LOG_DISK_NIBBLES_READ
+	if (m_floppyLatch & 0x80)
+	{
+#if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
+		if (m_bLogDisk_NibblesRW)
+#endif
+		{
+			LOG_DISK("read %04X = %02X\r\n", floppy.m_byte, m_floppyLatch);
+		}
+	}
+#endif
+}
+
+void Disk2InterfaceCard::DataLatchWriteWOZ(WORD pc, WORD addr, BYTE d, UINT bitCellRemainder)
+{
+	_ASSERT(m_floppyWriteMode);
+
+	FloppyDrive& drive = m_floppyDrive[m_currDrive];
+	FloppyDisk& floppy = drive.m_disk;
+
+	if (!floppy.m_bWriteProtected)
+	{
+		//TODO
+	}
+}
+
+//===========================================================================
+
+#ifdef _DEBUG
+// Dump nibbles from current position until 0xDEAA (ie. data epilogue)
+void Disk2InterfaceCard::DumpSectorWOZ(FloppyDisk floppy)	// pass a copy of m_floppy
+{
+	BYTE shiftReg = 0;
+	UINT32 lastNibbles = 0;
+	UINT zeroCount = 0;
+	UINT nibbleCount = 0;
+
+	while (1)
+	{
+		BYTE n = floppy.m_trackimage[floppy.m_byte];
+		BYTE outputBit = (n & floppy.m_bitMask) ? 1 : 0;
+
+		floppy.m_bitMask >>= 1;
+		if (!floppy.m_bitMask)
+		{
+			floppy.m_bitMask = 1 << 7;
+			floppy.m_byte++;
+		}
+
+		floppy.m_bitOffset++;
+		if (floppy.m_bitOffset == floppy.m_bitCount)
+		{
+			floppy.m_bitMask = 1 << 7;
+			floppy.m_bitOffset = 0;
+			floppy.m_byte = 0;
+		}
+
+		if (shiftReg == 0 && outputBit == 0)
+		{
+			zeroCount++;
+			continue;
+		}
+
+		shiftReg <<= 1;
+		shiftReg |= outputBit;
+
+		if ((shiftReg & 0x80) == 0)
+			continue;
+
+		nibbleCount++;
+
+		char str[10];
+		sprintf(str, "%02X ", shiftReg);
+		OutputDebugString(str);
+		if ((nibbleCount & 0xf) == 0)
+			OutputDebugString("\n");
+
+		lastNibbles <<= 8;
+		lastNibbles |= shiftReg;
+
+		if ((lastNibbles & 0xffff) == 0xDEAA)
+			break;
+
+		shiftReg = 0;
+		zeroCount = 0;
+	}
+}
+
+// Dump nibbles from current position bitstream wraps to same position
+void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_floppy
+{
+#ifdef LOG_DISK_NIBBLES_READ
+	FormatTrack formatTrack;
+#endif
+
+	BYTE shiftReg = 0;
+	UINT nibbleCount = 0;
+
+	floppy.m_bitMask = 1 << 7;
+	floppy.m_bitOffset = 0;
+	floppy.m_byte = 0;
+
+	const UINT startBitOffset = floppy.m_bitOffset;
+
+	while (1)
+	{
+		BYTE n = floppy.m_trackimage[floppy.m_byte];
+		BYTE outputBit = (n & floppy.m_bitMask) ? 1 : 0;
+
+		floppy.m_bitMask >>= 1;
+		if (!floppy.m_bitMask)
+		{
+			floppy.m_bitMask = 1 << 7;
+			floppy.m_byte++;
+		}
+
+		floppy.m_bitOffset++;
+		if (floppy.m_bitOffset == floppy.m_bitCount)
+		{
+			floppy.m_bitMask = 1 << 7;
+			floppy.m_bitOffset = 0;
+			floppy.m_byte = 0;
+		}
+
+		if (startBitOffset == floppy.m_bitOffset)
+			break;
+
+		if (shiftReg == 0 && outputBit == 0)
+			continue;
+
+		shiftReg <<= 1;
+		shiftReg |= outputBit;
+
+		if ((shiftReg & 0x80) == 0)
+			continue;
+
+		nibbleCount++;
+
+		char str[10];
+		sprintf(str, "%02X ", shiftReg);
+		OutputDebugString(str);
+		if ((nibbleCount % 32) == 0)
+			OutputDebugString("\n");
+
+#ifdef LOG_DISK_NIBBLES_READ
+		formatTrack.DecodeLatchNibbleRead(shiftReg);
+#endif
+
+		shiftReg = 0;
+	}
+}
+#endif
 
 //===========================================================================
 
@@ -1516,9 +1668,7 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	case 0x9:	pCard->ControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xA:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xB:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xC:	if (!isWOZ) pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles);
-				else		pCard->ReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
-				break;
+	case 0xC:	if (!isWOZ) pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xD:	pCard->LoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xE:	pCard->SetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xF:	pCard->SetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
@@ -1526,9 +1676,14 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 
 	// only even addresses return the latch (UTAIIe Table 9.1)
 	if (!(addr & 1))
+	{
+		if (isWOZ)
+			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
+
 		return pCard->m_floppyLatch;
-	else
-		return MemReadFloatingBus(nExecutedCycles);
+	}
+
+	return MemReadFloatingBus(nExecutedCycles);
 }
 
 BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
@@ -1553,9 +1708,7 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	case 0x9:	pCard->ControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xA:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xB:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xC:	if (!isWOZ) pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles);
-				else		pCard->ReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
-				break;
+	case 0xC:	if (!isWOZ) pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xD:	pCard->LoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xE:	pCard->SetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xF:	pCard->SetWriteMode(pc, addr, bWrite, d, nExecutedCycles); break;
@@ -1565,7 +1718,11 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	if (pCard->m_floppyWriteMode /* && m_floppyLoadMode */)
 	{
 		pCard->m_floppyLatch = d;
+
+		if (isWOZ)
+			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
 	}
+
 	return 0;
 }
 
