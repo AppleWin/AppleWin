@@ -1392,7 +1392,28 @@ LRESULT CALLBACK FrameWndProc (
 			if (!IsJoyKey &&
 				(g_nAppMode != MODE_LOGO))	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
 			{
-				KeybQueueKeypress(wparam, NOT_ASCII);
+				// GH#678 Alternate key(s) to toggle max speed
+				// Ctrl-0 Speed fastest
+				// Ctrl-1 Speed 100%
+				// Ctrl-3 Toggle speed fastest / 100%
+				if( KeybGetCtrlStatus() && wparam >= '0' && wparam <= '9' )
+				{
+					switch (wparam)
+					{
+						case '0': g_dwSpeed = SPEED_MAX   ; break; // Don't use g_bScrollLock_FullSpeed but g_dwSpeed
+						case '1': g_dwSpeed = SPEED_NORMAL; break;
+						case '3': g_dwSpeed = (g_dwSpeed != SPEED_MAX)
+											? SPEED_MAX
+											: SPEED_NORMAL
+											;
+							break;
+						default:
+							KeybQueueKeypress(wparam, NOT_ASCII);
+							break;
+					}
+				}
+				else
+					KeybQueueKeypress(wparam, NOT_ASCII);
 
 				if (!autorep)
 					KeybAnyKeyDown(WM_KEYDOWN, wparam, extended);
@@ -1407,6 +1428,7 @@ LRESULT CALLBACK FrameWndProc (
 		case WM_CHAR:
 			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_LOGO))
 			{
+				// Ctrl-1 is NOT handled here but in WM_KEYDOWN
 				if (!g_bDebuggerEatKey)
 				{
 #if DEBUG_KEY_MESSAGES
