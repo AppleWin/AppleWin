@@ -1428,7 +1428,6 @@ LRESULT CALLBACK FrameWndProc (
 		case WM_CHAR:
 			if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_LOGO))
 			{
-				// Ctrl-1 is NOT handled here but in WM_KEYDOWN
 				if (!g_bDebuggerEatKey)
 				{
 #if DEBUG_KEY_MESSAGES
