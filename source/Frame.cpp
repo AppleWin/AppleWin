@@ -1393,20 +1393,20 @@ LRESULT CALLBACK FrameWndProc (
 				(g_nAppMode != MODE_LOGO))	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
 			{
 				// GH#678 Alternate key(s) to toggle max speed
-				// Ctrl-0 Speed fastest
+				// Ctrl-0 Toggle speed fastest / 100%
 				// Ctrl-1 Speed 100%
-				// Ctrl-3 Toggle speed fastest / 100%
+				// Ctrl-3 Speed fastest
 				if( KeybGetCtrlStatus() && wparam >= '0' && wparam <= '9' )
 				{
 					switch (wparam)
 					{
-						case '0': g_dwSpeed = SPEED_MAX   ; break; // Don't use g_bScrollLock_FullSpeed but g_dwSpeed
-						case '1': g_dwSpeed = SPEED_NORMAL; break;
-						case '3': g_dwSpeed = (g_dwSpeed != SPEED_MAX)
+						case '0': g_dwSpeed = (g_dwSpeed != SPEED_MAX)
 											? SPEED_MAX
 											: SPEED_NORMAL
 											;
 							break;
+						case '1': g_dwSpeed = SPEED_NORMAL; break;
+						case '3': g_dwSpeed = SPEED_MAX   ; break; // Don't use g_bScrollLock_FullSpeed but g_dwSpeed
 						default:
 							KeybQueueKeypress(wparam, NOT_ASCII);
 							break;
