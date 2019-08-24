@@ -1393,9 +1393,9 @@ LRESULT CALLBACK FrameWndProc (
 				(g_nAppMode != MODE_LOGO))	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
 			{
 				// GH#678 Alternate key(s) to toggle max speed
-				// Ctrl-0 Toggle speed fastest / 100%
-				// Ctrl-1 Speed 100%
-				// Ctrl-3 Speed fastest
+				// Ctrl-0 Toggle speed 1 MHz / Full-Speed
+				// Ctrl-1 Speed 1 MHz
+				// Ctrl-3 Speed Full-Speed
 				if( KeybGetCtrlStatus() && wparam >= '0' && wparam <= '9' )
 				{
 					switch (wparam)
