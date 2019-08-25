@@ -154,17 +154,13 @@ void Disk2InterfaceCard::LoadLastDiskImage(const int drive)
 {
 	_ASSERT(drive == DRIVE_1 || drive == DRIVE_2);
 
-	char sFilePath[ MAX_PATH + 1];
-	sFilePath[0] = 0;
+	const TCHAR *pRegKey = (drive == DRIVE_1)
+		? TEXT(REGVALUE_PREF_LAST_DISK_1)
+		: TEXT(REGVALUE_PREF_LAST_DISK_2);
 
-	const char *pRegKey = (drive == DRIVE_1)
-		? REGVALUE_PREF_LAST_DISK_1
-		: REGVALUE_PREF_LAST_DISK_2;
-
-	if (RegLoadString(TEXT(REG_PREFS), pRegKey, 1, sFilePath, MAX_PATH))
+	TCHAR sFilePath[MAX_PATH];
+	if (RegLoadString(TEXT(REG_PREFS), pRegKey, 1, sFilePath, MAX_PATH, TEXT("")))
 	{
-		sFilePath[ MAX_PATH ] = 0;
-
 		m_saveDiskImage = false;
 		// Pass in ptr to local copy of filepath, since RemoveDisk() sets DiskPathFilename = ""
 		InsertDisk(drive, sFilePath, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
@@ -181,21 +177,21 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 	if (!m_saveDiskImage)
 		return;
 
-	const char *pFileName = m_floppyDrive[drive].m_disk.m_fullname;
+	const TCHAR *pFileName = m_floppyDrive[drive].m_disk.m_fullname;
 
 	if (drive == DRIVE_1)
-		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_1, TRUE, pFileName);
+		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_DISK_1), TRUE, pFileName);
 	else
-		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_DISK_2, TRUE, pFileName);
+		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_DISK_2), TRUE, pFileName);
 
 	//
 
-	char szPathName[MAX_PATH];
-	strcpy(szPathName, DiskGetFullPathName(drive));
-	if (_tcsrchr(szPathName, TEXT('\\')))
+	TCHAR szPathName[MAX_PATH];
+	StringCbCopy(szPathName, MAX_PATH, DiskGetFullPathName(drive));
+	TCHAR* slash = _tcsrchr(szPathName, TEXT('\\'));
+	if (slash != NULL)
 	{
-		char* pPathEnd = _tcsrchr(szPathName, TEXT('\\'))+1;
-		*pPathEnd = 0;
+		slash[1] = '\0';
 		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szPathName);
 	}
 }
@@ -678,52 +674,51 @@ bool Disk2InterfaceCard::IsConditionForFullSpeed(void)
 
 void Disk2InterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error)
 {
-	TCHAR szBuffer[MAX_PATH+128];
-	szBuffer[sizeof(szBuffer)-1] = 0;
+	TCHAR szBuffer[MAX_PATH + 128];
 
 	switch (Error)
 	{
 	case eIMAGE_ERROR_UNABLE_TO_OPEN:
 	case eIMAGE_ERROR_UNABLE_TO_OPEN_GZ:
 	case eIMAGE_ERROR_UNABLE_TO_OPEN_ZIP:
-		_snprintf(
+		StringCbPrintf(
 			szBuffer,
-			sizeof(szBuffer)-1,
+			MAX_PATH + 128,
 			TEXT("Unable to open the file %s."),
 			pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_BAD_SIZE:
-		_snprintf(
+		StringCbPrintf(
 			szBuffer,
-			sizeof(szBuffer)-1,
+			MAX_PATH + 128,
 			TEXT("Unable to use the file %s\nbecause the ")
 			TEXT("disk image is an unsupported size."),
 			pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_BAD_FILE:
-		_snprintf(
+		StringCbPrintf(
 			szBuffer,
-			sizeof(szBuffer)-1,
+			MAX_PATH + 128,
 			TEXT("Unable to use the file %s\nbecause the ")
 			TEXT("OS can't access it."),
 			pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_UNSUPPORTED:
-		_snprintf(
+		StringCbPrintf(
 			szBuffer,
-			sizeof(szBuffer)-1,
+			MAX_PATH + 128,
 			TEXT("Unable to use the file %s\nbecause the ")
 			TEXT("disk image format is not recognized."),
 			pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_UNSUPPORTED_HDV:
-		_snprintf(
+		StringCbPrintf(
 			szBuffer,
-			sizeof(szBuffer)-1,
+			MAX_PATH + 128,
 			TEXT("Unable to use the file %s\n")
 			TEXT("because this UniDisk 3.5/Apple IIGS/hard-disk image is not supported.\n")
 			TEXT("Try inserting as a hard-disk image instead."),
@@ -731,9 +726,9 @@ void Disk2InterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFil
 		break;
 
 	case eIMAGE_ERROR_UNSUPPORTED_MULTI_ZIP:
-		_snprintf(
+		StringCbPrintf(
 			szBuffer,
-			sizeof(szBuffer)-1,
+			MAX_PATH + 128,
 			TEXT("Unable to use the file %s\nbecause the ")
 			TEXT("first file (%s) in this multi-zip archive is not recognized.\n")
 			TEXT("Try unzipping and using the disk images directly.\n"),
@@ -743,34 +738,34 @@ void Disk2InterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFil
 
 	case eIMAGE_ERROR_GZ:
 	case eIMAGE_ERROR_ZIP:
-		_snprintf(
+		StringCbPrintf(
 			szBuffer,
-			sizeof(szBuffer)-1,
+			MAX_PATH + 128,
 			TEXT("Unable to use the compressed file %s\nbecause the ")
 			TEXT("compressed disk image is corrupt/unsupported."),
 			pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_FAILED_TO_GET_PATHNAME:
-		_snprintf(
+		StringCbPrintf(
 			szBuffer,
-			sizeof(szBuffer)-1,
+			MAX_PATH + 128,
 			TEXT("Unable to GetFullPathName() for the file: %s."),
 			pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_ZEROLENGTH_WRITEPROTECTED:
-		_snprintf(
+		StringCbPrintf(
 			szBuffer,
-			sizeof(szBuffer)-1,
+			MAX_PATH + 128,
 			TEXT("Unsupported zero-length write-protected file: %s."),
 			pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_FAILED_TO_INIT_ZEROLENGTH:
-		_snprintf(
+		StringCbPrintf(
 			szBuffer,
-			sizeof(szBuffer)-1,
+			MAX_PATH + 128,
 			TEXT("Failed to resize the zero-length file: %s."),
 			pszImageFilename);
 		break;
@@ -1346,8 +1341,8 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 		nibbleCount++;
 
-		char str[10];
-		sprintf(str, "%02X ", shiftReg);
+		TCHAR str[10];
+		StringCbPrintf(str, 10, "%02X ", shiftReg);
 		OutputDebugString(str);
 		if ((nibbleCount % 32) == 0)
 			OutputDebugString("\n");
@@ -1400,15 +1395,14 @@ void Disk2InterfaceCard::ResetSwitches(void)
 
 bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilename/*=""*/)
 {
-	TCHAR directory[MAX_PATH] = TEXT("");
-	TCHAR filename[MAX_PATH]  = TEXT("");
+	TCHAR directory[MAX_PATH];
+	TCHAR filename[MAX_PATH];
 	TCHAR title[40];
 
-	strcpy(filename, pszFilename);
+	StringCbCopy(filename, MAX_PATH, pszFilename);
 
-	RegLoadString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1, directory, MAX_PATH);
-	_tcscpy(title, TEXT("Select Disk Image For Drive "));
-	_tcscat(title, drive ? TEXT("2") : TEXT("1"));
+	RegLoadString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1, directory, MAX_PATH, TEXT(""));
+	StringCbPrintf(title, 40, TEXT("Select Disk Image For Drive %d"), drive + 1);
 
 	_ASSERT(sizeof(OPENFILENAME) == sizeof(OPENFILENAME_NT4));	// Required for Win98/ME support (selected by _WIN32_WINNT=0x0400 in stdafx.h)
 
@@ -1431,7 +1425,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 	if (GetOpenFileName(&ofn))
 	{
 		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
-			_tcscat(filename,TEXT(".dsk"));
+			StringCbCat(filename, MAX_PATH, TEXT(".dsk"));
 
 		ImageError_e Error = InsertDisk(drive, filename, ofn.Flags & OFN_READONLY, IMAGE_CREATE);
 		if (Error == eIMAGE_ERROR_NONE)
