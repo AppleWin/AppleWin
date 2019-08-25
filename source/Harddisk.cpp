@@ -413,17 +413,16 @@ BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
 	return g_HardDisk[iDrive].hd_imageloaded;
 }
 
-static bool HD_SelectImage(const int iDrive, LPCSTR pszFilename)
+static bool HD_SelectImage(const int drive, LPCSTR pszFilename)
 {
 	TCHAR directory[MAX_PATH];
 	TCHAR filename[MAX_PATH];
 	TCHAR title[40];
 
-	strcpy(filename, pszFilename);
+	StringCbCopy(filename, MAX_PATH, pszFilename);
 
 	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, directory, MAX_PATH, TEXT(""));
-	_tcscpy(title, TEXT("Select HDV Image For HDD "));
-	_tcscat(title, iDrive ? TEXT("2") : TEXT("1"));
+	StringCbPrintf(title, 40, TEXT("Select HDV Image For HDD %d"), drive + 1);
 
 	_ASSERT(sizeof(OPENFILENAME) == sizeof(OPENFILENAME_NT4));	// Required for Win98/ME support (selected by _WIN32_WINNT=0x0400 in stdafx.h)
 
@@ -445,9 +444,9 @@ static bool HD_SelectImage(const int iDrive, LPCSTR pszFilename)
 	if (GetOpenFileName(&ofn))
 	{
 		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
-			_tcscat(filename,TEXT(".hdv"));
+			StringCbCat(filename, MAX_PATH, TEXT(".hdv"));
 		
-		if (HD_Insert(iDrive, filename))
+		if (HD_Insert(drive, filename))
 		{
 			bRes = true;
 		}
