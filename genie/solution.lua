@@ -77,6 +77,7 @@ solution("AppleWin")
 
     platforms {
         "x32",
+        "x64",
     }
 
     flags {

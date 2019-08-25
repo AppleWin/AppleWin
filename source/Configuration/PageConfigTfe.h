@@ -12,7 +12,7 @@ public:
 	}
 	virtual ~CPageConfigTfe(){}
 
-	static BOOL CALLBACK DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
+	static INT_PTR CALLBACK DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
 
 protected:
 	// IPropertySheetPage

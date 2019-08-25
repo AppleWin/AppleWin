@@ -42,7 +42,7 @@ const TCHAR CPageConfig::m_ComputerChoices[] =
 				TEXT("Enhanced Apple //e\0")
 				TEXT("Clone\0");
 
-BOOL CALLBACK CPageConfig::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageConfig::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
 	return CPageConfig::ms_this->DlgProcInternal(hWnd, message, wparam, lparam);
@@ -67,12 +67,12 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				// About to stop being active page
 				{
 					DWORD NewComputerMenuItem = (DWORD) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
-					SetWindowLong(hWnd, DWL_MSGRESULT, FALSE);		// Changes are valid
+					SetWindowLong(hWnd, DWLP_MSGRESULT, FALSE);		// Changes are valid
 				}
 				break;
 			case PSN_APPLY:
 				DlgOK(hWnd);
-				SetWindowLong(hWnd, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
+				SetWindowLong(hWnd, DWLP_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
 				// Can use this to ask user to confirm cancel
