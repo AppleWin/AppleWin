@@ -210,17 +210,13 @@ void HD_LoadLastDiskImage(const int iDrive)
 {
 	_ASSERT(iDrive == HARDDISK_1 || iDrive == HARDDISK_2);
 
-	char sFilePath[ MAX_PATH + 1];
-	sFilePath[0] = 0;
-
 	const char *pRegKey = (iDrive == HARDDISK_1)
 		? REGVALUE_PREF_LAST_HARDDISK_1
 		: REGVALUE_PREF_LAST_HARDDISK_2;
 
-	if (RegLoadString(TEXT(REG_PREFS), pRegKey, 1, sFilePath, MAX_PATH))
+	TCHAR sFilePath[MAX_PATH];
+	if (RegLoadString(TEXT(REG_PREFS), pRegKey, 1, sFilePath, MAX_PATH, TEXT("")))
 	{
-		sFilePath[ MAX_PATH ] = 0;
-
 		g_bSaveDiskImage = false;
 		// Pass in ptr to local copy of filepath, since RemoveDisk() sets DiskPathFilename = ""		// todo: update comment for HD func
 		HD_Insert(iDrive, sFilePath);
@@ -419,13 +415,13 @@ BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
 
 static bool HD_SelectImage(const int iDrive, LPCSTR pszFilename)
 {
-	TCHAR directory[MAX_PATH] = TEXT("");
-	TCHAR filename[MAX_PATH]  = TEXT("");
+	TCHAR directory[MAX_PATH];
+	TCHAR filename[MAX_PATH];
 	TCHAR title[40];
 
 	strcpy(filename, pszFilename);
 
-	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, directory, MAX_PATH);
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, directory, MAX_PATH, TEXT(""));
 	_tcscpy(title, TEXT("Select HDV Image For HDD "));
 	_tcscat(title, iDrive ? TEXT("2") : TEXT("1"));
 

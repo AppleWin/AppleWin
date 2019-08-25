@@ -141,8 +141,7 @@ std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TC
 	strcpy(PathToFile, Snapshot_GetFilename()); //RAPCS, line 2.
 	TCHAR szDirectory[MAX_PATH] = TEXT("");
 	TCHAR szFilename[MAX_PATH];
-	strcpy(szFilename, "");
-	RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename ,MAX_PATH);
+	RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
 	std::string PathName = szFilename;
 
 	OPENFILENAME ofn;
@@ -175,7 +174,7 @@ std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TC
 	}
 	else		// Cancel is pressed
 	{
-		RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename,MAX_PATH);
+		RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
 		PathName = szFilename;
 	}
 

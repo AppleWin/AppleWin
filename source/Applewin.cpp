@@ -60,9 +60,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration/PropertySheet.h"
 #include "Tfe/Tfe.h"
 
+#define VERSIONSTRING_SIZE 16
+
 static UINT16 g_AppleWinVersion[4] = {0};
-char VERSIONSTRING[16] = "xx.yy.zz.ww";
 static UINT16 g_OldAppleWinVersion[4] = {0};
+TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
 
 const TCHAR *g_pAppTitle = NULL;
 
@@ -522,7 +524,7 @@ static void LoadConfigOldJoystick_v1(const UINT uJoyNum)
 //Reads configuration from the registry entries
 void LoadConfiguration(void)
 {
-	DWORD dwComputerType;
+	DWORD dwComputerType = 0;
 	eApple2Type apple2Type = A2TYPE_APPLE2EENHANCED;
 
 	if (REGLOAD(TEXT(REGVALUE_APPLE2_TYPE), &dwComputerType))
@@ -559,16 +561,15 @@ void LoadConfiguration(void)
 
 		apple2Type = (eApple2Type) dwComputerType;
 	}
-	else	// Support older AppleWin registry entries
+	else if (REGLOAD(TEXT(REGVALUE_OLD_APPLE2_TYPE), &dwComputerType))	// Support older AppleWin registry entries
 	{
-		REGLOAD(TEXT(REGVALUE_OLD_APPLE2_TYPE), &dwComputerType);
 		switch (dwComputerType)
 		{
 			// NB. No A2TYPE_APPLE2E (this is correct)
 		case 0:		apple2Type = A2TYPE_APPLE2; break;
 		case 1:		apple2Type = A2TYPE_APPLE2PLUS; break;
 		case 2:		apple2Type = A2TYPE_APPLE2EENHANCED; break;
-		default:	apple2Type = A2TYPE_APPLE2EENHANCED;
+		default:	apple2Type = A2TYPE_APPLE2EENHANCED; break;
 		}
 	}
 
@@ -576,18 +577,11 @@ void LoadConfiguration(void)
 
 	//
 
-	DWORD dwCpuType;
-	eCpuType cpu = CPU_65C02;
-
-	if (REGLOAD(TEXT(REGVALUE_CPU_TYPE), &dwCpuType))
-	{
-		if (dwCpuType != CPU_6502 && dwCpuType != CPU_65C02)
-			dwCpuType = CPU_65C02;
-
-		cpu = (eCpuType) dwCpuType;
-	}
-
-	SetMainCpu(cpu);
+	DWORD dwMainCpuType;
+	REGLOAD_DEFAULT(TEXT(REGVALUE_CPU_TYPE), &dwMainCpuType, CPU_65C02);
+	if (dwMainCpuType != CPU_6502 && dwMainCpuType != CPU_65C02)
+		dwMainCpuType = CPU_65C02;
+	SetMainCpu((eCpuType)dwMainCpuType);
 
 	//
 
@@ -607,7 +601,7 @@ void LoadConfiguration(void)
 		LoadConfigOldJoystick_v1(JN_JOYSTICK1);
 
 	DWORD dwSoundType;
-	REGLOAD(TEXT("Sound Emulation"), &dwSoundType);
+	REGLOAD_DEFAULT(TEXT("Sound Emulation"), &dwSoundType, REG_SOUNDTYPE_NONE);
 	switch (dwSoundType)
 	{
 	case REG_SOUNDTYPE_NONE:
@@ -621,29 +615,32 @@ void LoadConfiguration(void)
 		break;
 	}
 
-	char aySerialPortName[ CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM ];
-	if (RegLoadString(	TEXT(REG_CONFIG),
+	TCHAR serialPortName[CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM];
+	if (RegLoadString(
+		TEXT(REG_CONFIG),
 		TEXT(REGVALUE_SERIAL_PORT_NAME),
 		TRUE,
-		aySerialPortName,
-		sizeof(aySerialPortName) ) )
+		serialPortName,
+		CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM))
 	{
-		sg_SSC.SetSerialPortName(aySerialPortName);
+		sg_SSC.SetSerialPortName(serialPortName);
 	}
 
-	REGLOAD(TEXT(REGVALUE_EMULATION_SPEED)   ,&g_dwSpeed);
+	REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
 	Config_Load_Video();
 	SetCurrentCLK6502();	// Pre: g_dwSpeed && Config_Load_Video()->SetVideoRefreshRate()
 
 	DWORD dwEnhanceDisk;
-	REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk);
+	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
 	sg_Disk2Card.SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
-	REGLOAD(TEXT("Uthernet Active")   ,(DWORD *)&tfe_enabled);
+	DWORD dwTfeEnabled;
+	REGLOAD_DEFAULT(TEXT("Uthernet Active"), &dwTfeEnabled, 0);
+	tfe_enabled = dwTfeEnabled ? 1 : 0;
 
 	//
 
-	DWORD dwTmp;
+	DWORD dwTmp = 0;
 
 	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
 		SetFullScreenShowSubunitStatus(dwTmp ? true : false);
@@ -704,10 +701,10 @@ void LoadConfiguration(void)
 
 	//
 
-	char szFilename[MAX_PATH] = {0};
+	TCHAR szFilename[MAX_PATH];
 
-	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH);
-	if (szFilename[0] == 0)
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH, TEXT(""));
+	if (szFilename[0] == '\0')
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
@@ -717,8 +714,8 @@ void LoadConfiguration(void)
 	//
 
 	// Current/Starting Dir is the "root" of where the user keeps his disk images
-	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH);
-	if (szFilename[0] == 0)
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH, TEXT(""));
+	if (szFilename[0] == '\0')
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
@@ -727,21 +724,17 @@ void LoadConfiguration(void)
 
 	//
 
-	szFilename[0] = 0;
-	RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_SAVESTATE_FILENAME),1,szFilename,sizeof(szFilename));
+	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));
 	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
 
-	szFilename[0] = 0;
-	RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_PRINTER_FILENAME),1,szFilename,sizeof(szFilename));
+	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_PRINTER_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));
 	Printer_SetFilename(szFilename);	// If not in Registry than default will be used
 
-	dwTmp = 10;
-	REGLOAD(TEXT(REGVALUE_PRINTER_IDLE_LIMIT), &dwTmp);
+	REGLOAD_DEFAULT(TEXT(REGVALUE_PRINTER_IDLE_LIMIT), &dwTmp, 10);
 	Printer_SetIdleLimit(dwTmp);
 
-	char szUthernetInt[MAX_PATH] = {0};
-	RegLoadString(TEXT(REG_CONFIG),TEXT("Uthernet Interface"),1,szUthernetInt,MAX_PATH);  
-	update_tfe_interface(szUthernetInt,NULL);
+	RegLoadString(TEXT(REG_CONFIG), TEXT("Uthernet Interface"), 1, szFilename, MAX_PATH, TEXT(""));
+	update_tfe_interface(szFilename, NULL);
 
 	if (REGLOAD(TEXT(REGVALUE_WINDOW_SCALE), &dwTmp))
 		SetViewportScale(dwTmp);
@@ -1169,14 +1162,15 @@ static void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBo
 
 static bool CheckOldAppleWinVersion(void)
 {
-	char szOldAppleWinVersion[sizeof(VERSIONSTRING)] = {0};
-	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, szOldAppleWinVersion, sizeof(szOldAppleWinVersion));
+	TCHAR szOldAppleWinVersion[VERSIONSTRING_SIZE + 1];
+	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, szOldAppleWinVersion, VERSIONSTRING_SIZE, TEXT(""));
 	const bool bShowAboutDlg = strcmp(szOldAppleWinVersion, VERSIONSTRING) != 0;
 
 	// version: xx.yy.zz.ww
-	// offset : 0123456789
 	char* p0 = szOldAppleWinVersion;
-	szOldAppleWinVersion[strlen(szOldAppleWinVersion)] = '.';	// Overwrite null terminator with '.'
+	int len = strlen(szOldAppleWinVersion);
+	szOldAppleWinVersion[len] = '.';	// append a null terminator
+	szOldAppleWinVersion[len + 1] = '\0';
 	for (UINT i=0; i<4; i++)
 	{
 		char* p1 = strstr(p0, ".");
@@ -1515,7 +1509,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
             unsigned long minor     = g_AppleWinVersion[1] = pFixedFileInfo->dwFileVersionMS & 0xffff;
             unsigned long fix       = g_AppleWinVersion[2] = pFixedFileInfo->dwFileVersionLS >> 16;
 			unsigned long fix_minor = g_AppleWinVersion[3] = pFixedFileInfo->dwFileVersionLS & 0xffff;
-			sprintf(VERSIONSTRING, "%d.%d.%d.%d", major, minor, fix, fix_minor); // potential buffer overflow
+			StringCbPrintf(VERSIONSTRING, VERSIONSTRING_SIZE, "%d.%d.%d.%d", major, minor, fix, fix_minor);
 		}
 
 		delete [] pVerInfoBlock;
