@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Disk.h"		// DiskUpdateDriveState()
 #include "Frame.h"
 #include "Keyboard.h"
+#include "Log.h"
 #include "Memory.h"
 #include "Registry.h"
 #include "Video.h"
@@ -92,6 +93,8 @@ DWORD     g_eVideoType     = VT_DEFAULT;
 static VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
 
 static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
+
+static LPDIRECTDRAW g_lpDD = NULL;
 
 //-------------------------------------
 
@@ -591,6 +594,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			SRCCOPY);
 	}
 
+	//if (g_lpDD) g_lpDD->WaitForVerticalBlank(DDWAITVB_BLOCKBEGIN, NULL);
 	GdiFlush();
 }
 
@@ -874,6 +878,73 @@ bool VideoGetVblBar(const DWORD uExecutedCycles)
 	// VBL'
 	return nCycles < kVDisplayableScanLines * kHClocks;
 }
+
+//===========================================================================
+
+#define MAX_DRAW_DEVICES 10
+
+static char *draw_devices[MAX_DRAW_DEVICES];
+static GUID draw_device_guid[MAX_DRAW_DEVICES];
+static int num_draw_devices = 0;
+
+static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName,  LPVOID lpContext)
+{
+	int i = num_draw_devices;
+	if (i == MAX_DRAW_DEVICES)
+		return TRUE;
+	if (lpGUID != NULL)
+		memcpy(&draw_device_guid[i], lpGUID, sizeof (GUID));
+	draw_devices[i] = _strdup(lpszDesc);
+
+	if (g_fh) fprintf(g_fh, "%d: %s - %s\n",i,lpszDesc,lpszDrvName);
+
+	num_draw_devices++;
+	return TRUE;
+}
+
+bool DDInit(void)
+{
+	HRESULT hr = DirectDrawEnumerate((LPDDENUMCALLBACK)DDEnumProc, NULL);
+	if (FAILED(hr))
+	{
+		LogFileOutput("DSEnumerate failed (%08X)\n", hr);
+		return false;
+	}
+
+	LogFileOutput("Number of draw devices = %d\n", num_draw_devices);
+
+	bool bCreatedOK = false;
+	for (int x=0; x<num_draw_devices; x++)
+	{
+		hr = DirectDrawCreate(&draw_device_guid[x], &g_lpDD, NULL);
+		if (SUCCEEDED(hr))
+		{
+			LogFileOutput("DSCreate succeeded for draw device #%d\n", x);
+			bCreatedOK = true;
+			break;
+		}
+
+		LogFileOutput("DSCreate failed for draw device #%d (%08X)\n", x, hr);
+	}
+
+	if (!bCreatedOK)
+	{
+		LogFileOutput("DSCreate failed for all draw devices\n");
+		return false;
+	}
+
+	return true;
+}
+
+// From SoundCore.h
+#define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
+
+void DDUninit(void)
+{
+	SAFE_RELEASE(g_lpDD);
+}
+
+#undef SAFE_RELEASE
 
 //===========================================================================
 

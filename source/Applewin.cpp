@@ -1539,6 +1539,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Init: SysClk_InitTimer(), res=%d\n", bSpeechOK ? 1:0);
 	}
 #endif
+#if 0
+	DDInit();	// For WaitForVerticalBlank()
+#endif
 
 	// DO ONE-TIME INITIALIZATION
 	g_hInstance = passinstance;
@@ -1786,6 +1789,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		ChangeDisplaySettings(NULL, 0);	// restore default
 
 	// Release COM
+	DDUninit();
 	SysClk_UninitTimer();
 	LogFileOutput("Exit: SysClk_UninitTimer()\n");
 

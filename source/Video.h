@@ -236,3 +236,6 @@ bool IsVideoStyle(VideoStyle_e mask);
 
 VideoRefreshRate_e GetVideoRefreshRate(void);
 void SetVideoRefreshRate(VideoRefreshRate_e rate);
+
+bool DDInit(void);
+void DDUninit(void);
