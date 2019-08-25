@@ -9,7 +9,7 @@ void LogFileTimeUntilFirstKeyRead(void);
 bool SetCurrentImageDir(const char* pszImageDir);
 
 extern const UINT16* GetOldAppleWinVersion(void);
-extern char VERSIONSTRING[];	// Constructed in WinMain()
+extern TCHAR VERSIONSTRING[];	// Constructed in WinMain()
 
 extern const TCHAR     *g_pAppTitle;
 

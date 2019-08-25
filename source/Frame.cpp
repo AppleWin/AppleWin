@@ -2050,10 +2050,17 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 // http://www.codeproject.com/menu/MenusForBeginners.asp?df=100&forumid=67645&exp=0&select=903061
 
 void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
-{		
-	//This is the default installation path of CiderPress. It shall not be left blank, otherwise  an explorer window will be open.
-	TCHAR PathToCiderPress[MAX_PATH] = "C:\\Program Files\\faddenSoft\\CiderPress\\CiderPress.exe";
-	RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress,MAX_PATH);
+{
+	// This is the default installation path of CiderPress. 
+	// It shall not be left blank, otherwise  an explorer window will be open.
+	TCHAR PathToCiderPress[MAX_PATH];
+	RegLoadString(
+		TEXT("Configuration"),
+		REGVALUE_CIDERPRESSLOC,
+		1,
+		PathToCiderPress,
+		MAX_PATH,
+		TEXT("C:\\Program Files\\faddenSoft\\CiderPress\\CiderPress.exe"));
 	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
 
 	std::string filename1= "\"";
