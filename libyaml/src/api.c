@@ -839,7 +839,7 @@ yaml_scalar_event_initialize(yaml_event_t *event,
     }
 
     if (length < 0) {
-        length = strlen((char *)value);
+        length = (int)strlen((char *)value);
     }
 
     if (!yaml_check_utf8(value, length)) goto error;
@@ -1215,7 +1215,7 @@ yaml_document_add_scalar(yaml_document_t *document,
     if (!tag_copy) goto error;
 
     if (length < 0) {
-        length = strlen((char *)value);
+        length = (int)strlen((char *)value);
     }
 
     if (!yaml_check_utf8(value, length)) goto error;
@@ -1227,7 +1227,7 @@ yaml_document_add_scalar(yaml_document_t *document,
     SCALAR_NODE_INIT(node, tag_copy, value_copy, length, style, mark, mark);
     if (!PUSH(&context, document->nodes, node)) goto error;
 
-    return document->nodes.top - document->nodes.start;
+    return (int)(document->nodes.top - document->nodes.start);
 
 error:
     yaml_free(tag_copy);
@@ -1272,7 +1272,7 @@ yaml_document_add_sequence(yaml_document_t *document,
             style, mark, mark);
     if (!PUSH(&context, document->nodes, node)) goto error;
 
-    return document->nodes.top - document->nodes.start;
+    return (int)(document->nodes.top - document->nodes.start);
 
 error:
     STACK_DEL(&context, items);
@@ -1317,7 +1317,7 @@ yaml_document_add_mapping(yaml_document_t *document,
             style, mark, mark);
     if (!PUSH(&context, document->nodes, node)) goto error;
 
-    return document->nodes.top - document->nodes.start;
+    return (int)(document->nodes.top - document->nodes.start);
 
 error:
     STACK_DEL(&context, pairs);

@@ -283,7 +283,7 @@ void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize /* = 0 */
 {
 	// Common case is to use/calc the table size
 	bool bActive = (g_bDisplaySymbolTables & (1 << iTable)) ? true : false;
-	int nSymbols  = nDisplaySize ? nDisplaySize : g_aSymbols[ iTable ].size();
+	int nSymbols  = nDisplaySize ? nDisplaySize : (int)g_aSymbols[ iTable ].size();
 
 	// Short Desc: `MAIN`: `1000`
 	// // 2.6.2.19 Color for name of symbol table: _CmdPrintSymbol() "SYM HOME" _CmdSymbolsInfoHeader "SYM"
@@ -490,7 +490,7 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 			{
 				if( bTable & bSymbolTables )
 				{
-					int nSymbols = g_aSymbols[iTable].size();
+					int nSymbols = (int)g_aSymbols[iTable].size();
 					if (nSymbols)
 					{
 						SymbolTable_t :: iterator  iSymbol = g_aSymbols[iTable].begin();
@@ -622,7 +622,7 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 				p = strstr(szLine, ";");		// Optional
 				if(p) *p = 0;
 				p = strstr(szLine, " ");		// 1st space between name & value
-				int nLen = p - szLine;
+				int nLen = (int)(p - szLine);
 				if (nLen > MAX_SYMBOLS_LEN)
 				{
 					memset(&szLine[MAX_SYMBOLS_LEN], ' ', nLen-MAX_SYMBOLS_LEN);	// sscanf fails for nAddress if string too long
@@ -641,7 +641,7 @@ int ParseSymbolTable( TCHAR *pPathFileName, SymbolTable_Index_e eSymbolTableWrit
 			int  iTable;
 
 			// 2.9.0.11 Bug #479
-			int nLen = strlen( sName );
+			int nLen = (int)strlen( sName );
 			if (nLen > nMaxLen)
 			{
 				ConsolePrintFormat( sText, " %sWarn.: %s%s (%d > %d)"

@@ -515,7 +515,7 @@ static void DrawButton (HDC passdc, int number) {
 	LPCTSTR pszBaseName = sg_Disk2Card.GetBaseName(number-BTN_DRIVE1);
     ExtTextOut(dc,x+offset+22,rect.top,ETO_CLIPPED,&rect,
                pszBaseName,
-               MIN(8,_tcslen(pszBaseName)),
+               (UINT)MIN(8, _tcslen(pszBaseName)),
                NULL);
   }
   if (!passdc)
@@ -858,7 +858,7 @@ void FrameDrawDiskStatus( HDC passdc )
 			sprintf( text, "%s/%s    ", g_sTrackDrive2, g_sSectorDrive2 );
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ DISK_STATUS_READ ] );
-		TextOut(dc,x+dx,y-12,text, strlen(text) ); // original: y+2; y-12 puts status in the Configuration Button Icon
+		TextOut(dc,x+dx,y-12,text, (int)strlen(text)); // original: y+2; y-12 puts status in the Configuration Button Icon
 	}
 	else
 	{
@@ -875,14 +875,14 @@ void FrameDrawDiskStatus( HDC passdc )
 		SetBkMode(dc,TRANSPARENT);
 
 		sprintf( text, "T%s", g_sTrackDrive1 );
-		TextOut(dc,x+6, y+32, text, strlen(text) );
+		TextOut(dc,x+6, y+32, text, (int)strlen(text) );
 		sprintf( text, "S%s", g_sSectorDrive1 );
-		TextOut(dc,x+6, y+42, text, strlen(text) );
+		TextOut(dc,x+6, y+42, text, (int)strlen(text) );
 
 		sprintf( text, "T%s", g_sTrackDrive2 );
-		TextOut(dc,x+26,y+32, text, strlen(text) );
+		TextOut(dc,x+26,y+32, text, (int)strlen(text) );
 		sprintf( text, "S%s", g_sSectorDrive2 );
-		TextOut(dc,x+26,y+42, text, strlen(text) );
+		TextOut(dc,x+26,y+42, text, (int)strlen(text) );
 	}
 }
 
@@ -956,14 +956,14 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 			if (pCurrentAppModeText && pNewAppModeText != pCurrentAppModeText)
 			{
 				SetTextColor(dc, RGB(0,0,0));
-				TextOut(dc, x+BUTTONCX/2, y+13, pCurrentAppModeText, strlen(pCurrentAppModeText));
+				TextOut(dc, x+BUTTONCX/2, y+13, pCurrentAppModeText, (int)strlen(pCurrentAppModeText));
 				pCurrentAppModeText = NULL;
 			}
 
 			if (pNewAppModeText)
 			{
 				SetTextColor(dc, RGB(255,255,255));
-				TextOut(dc, x+BUTTONCX/2, y+13, pNewAppModeText, strlen(pNewAppModeText));
+				TextOut(dc, x+BUTTONCX/2, y+13, pNewAppModeText, (int)strlen(pNewAppModeText));
 				pCurrentAppModeText = pNewAppModeText;
 			}
 		}
@@ -1260,7 +1260,7 @@ LRESULT CALLBACK FrameWndProc (
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
 		{
 			SetUsingCursor(FALSE);
-			buttondown = wparam-VK_F1;
+			buttondown = (int)(wparam-VK_F1);
 			if (g_bIsFullScreen && (buttonover != -1)) {
 				if (buttonover != buttondown)
 				EraseButton(buttonover);
@@ -1400,7 +1400,7 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if (g_nAppMode == MODE_DEBUG)
 		{		
-			DebuggerProcessKey(wparam); // Debugger already active, re-direct key to debugger
+			DebuggerProcessKey((int)wparam); // Debugger already active, re-direct key to debugger
 		}
 		break;
 
@@ -1430,10 +1430,10 @@ LRESULT CALLBACK FrameWndProc (
 		{
 			buttondown = -1;
 			if (g_bIsFullScreen)
-				EraseButton(wparam-VK_F1);
+				EraseButton((int)(wparam-VK_F1));
 			else
-				DrawButton((HDC)0,wparam-VK_F1);
-			ProcessButtonClick(wparam-VK_F1, true);
+				DrawButton((HDC)0,(int)(wparam-VK_F1));
+			ProcessButtonClick((int)(wparam-VK_F1), true);
 		}
 		else
 		{
@@ -1653,7 +1653,7 @@ LRESULT CALLBACK FrameWndProc (
       if(((LPNMTTDISPINFO)lparam)->hdr.hwndFrom == tooltipwindow &&
          ((LPNMTTDISPINFO)lparam)->hdr.code == TTN_GETDISPINFO)
         ((LPNMTTDISPINFO)lparam)->lpszText =
-          (LPTSTR)sg_Disk2Card.GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom);
+          (LPTSTR)sg_Disk2Card.GetFullDiskFilename((int)((LPNMTTDISPINFO)lparam)->hdr.idFrom);
       break;
 
     case WM_PAINT:

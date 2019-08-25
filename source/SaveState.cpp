@@ -93,7 +93,7 @@ void Snapshot_SetFilename(std::string strPathname)
 	std::string strFilename = strPathname;	// Set default, as maybe there's no path
 	g_strSaveStatePath.clear();
 
-	int nIdx = strPathname.find_last_of('\\');
+	int nIdx = (int)strPathname.find_last_of('\\');
 	if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())
 	{
 		strFilename = &strPathname[nIdx+1];

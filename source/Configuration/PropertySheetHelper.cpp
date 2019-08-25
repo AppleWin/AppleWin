@@ -272,10 +272,10 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 			const char szAWS_EXT1[] = ".aws";
 			const char szAWS_EXT2[] = ".yaml";
 			const char szAWS_EXT3[] = ".aws.yaml";
-			const UINT uStrLenFile  = strlen(&szFilename[ofn.nFileOffset]);
-			const UINT uStrLenExt1  = strlen(szAWS_EXT1);
-			const UINT uStrLenExt2  = strlen(szAWS_EXT2);
-			const UINT uStrLenExt3  = strlen(szAWS_EXT3);
+			const UINT uStrLenFile  = (UINT)strlen(&szFilename[ofn.nFileOffset]);
+			const UINT uStrLenExt1  = (UINT)strlen(szAWS_EXT1);
+			const UINT uStrLenExt2  = (UINT)strlen(szAWS_EXT2);
+			const UINT uStrLenExt3  = (UINT)strlen(szAWS_EXT3);
 			if (uStrLenFile <= uStrLenExt1)
 			{
 				strcpy(&szFilename[ofn.nFileOffset+uStrLenFile], szAWS_EXT3);					// "file" += ".aws.yaml"

@@ -171,7 +171,7 @@ int CPageConfigTfe::gray_ungray_items(HWND hwnd)
 		char *pname = NULL;
 		char *pdescription = NULL;
 
-		number = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), CB_GETCURSEL, 0, 0);
+		number = (int)SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), CB_GETCURSEL, 0, 0);
 
 		if (get_tfename(number, &pname, &pdescription))
 		{
@@ -284,7 +284,7 @@ void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 	{
 		RegSaveString(TEXT("Configuration"), TEXT("Uthernet Interface"), 1, buffer);
 
-		active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
+		active_value = (int)SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
 
 		tfe_enabled = active_value >= 1 ? 1 : 0;
 		REGSAVE(TEXT("Uthernet Active")  ,tfe_enabled);

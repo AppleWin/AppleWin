@@ -158,7 +158,7 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 		memset(szFilename, 0, sizeof(szFilename));
 		* (USHORT*) szFilename = sizeof(szFilename);
 
-		UINT nLineLength = SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, EM_LINELENGTH, 0, 0);
+		UINT nLineLength = (UINT)SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, EM_LINELENGTH, 0, 0);
 
 		SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, EM_GETLINE, 0, (LPARAM)szFilename);
 
@@ -174,7 +174,7 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 		memset(szFilename, 0, sizeof(szFilename));
 		* (USHORT*) szFilename = sizeof(szFilename);
 
-		UINT nLineLength = SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, EM_LINELENGTH, 0, 0);
+		UINT nLineLength = (UINT)SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, EM_LINELENGTH, 0, 0);
 
 		SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, EM_GETLINE, 0, (LPARAM)szFilename);
 

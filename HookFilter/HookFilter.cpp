@@ -6,13 +6,15 @@ static bool g_bHookAltGrControl = false;
 
 // NB. __stdcall (or WINAPI) and extern "C":
 // . symbol is decorated as _<symbol>@bytes
-// . so use the #pragma to create an undecorated alias for our symbol
+// . so use the #pragma to create an undecorated alias for our symbol (only in 32-bit mode)
 extern "C" __declspec(dllexport) LRESULT CALLBACK LowLevelKeyboardProc(
   _In_ int    nCode,
   _In_ WPARAM wParam,
   _In_ LPARAM lParam)
 {
+#ifndef _WIN64
 	#pragma comment(linker, "/EXPORT:" __FUNCTION__ "=" __FUNCDNAME__)
+#endif
 
 	if (nCode == HC_ACTION)
 	{

@@ -541,7 +541,7 @@ DWORD CImageBase::NibblizeTrack(LPBYTE trackimagebuffer, SectorOrder_e SectorOrd
 		sector++;
 	}
 
-	return imageptr-trackimagebuffer;
+	return (DWORD)(imageptr-trackimagebuffer);
 }
 
 //-------------------------------------
@@ -1350,7 +1350,7 @@ void CImageHelperBase::GetCharLowerExt(TCHAR* pszExt, LPCTSTR pszImageFilename, 
 	_tcsncpy(pszExt, pImageFileExt, uExtSize);
 	pszExt[uExtSize - 1] = 0;
 
-	CharLowerBuff(pszExt, _tcslen(pszExt));
+	CharLowerBuff(pszExt, (DWORD)_tcslen(pszExt));
 }
 
 void CImageHelperBase::GetCharLowerExt2(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize)

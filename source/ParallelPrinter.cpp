@@ -246,7 +246,7 @@ void Printer_SetFilename(char* prtFilename)
 
 		// NB. _tcsncat_s() terminates program if buffer is too small! So continue to use manual buffer check & _tcsncat()
 
-		int nLen = sizeof(g_szPrintFilename) - strlen(g_szPrintFilename) - (sizeof(DEFAULT_PRINT_FILENAME)-1) - 1;
+		int nLen = (int)(sizeof(g_szPrintFilename) - strlen(g_szPrintFilename) - (sizeof(DEFAULT_PRINT_FILENAME)-1) - 1);
 		if (nLen < 0)
 		{
 			MessageBox(g_hFrameWindow, "Printer - SetFilename(): folder too deep", "Warning", MB_ICONWARNING | MB_OK);

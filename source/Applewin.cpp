@@ -473,7 +473,7 @@ void GetProgramDirectory(void)
 	GetModuleFileName((HINSTANCE)0, g_sProgramDir, MAX_PATH);
 	g_sProgramDir[MAX_PATH-1] = 0;
 
-	int loop = _tcslen(g_sProgramDir);
+	int loop = (int)_tcslen(g_sProgramDir);
 	while (loop--)
 	{
 		if ((g_sProgramDir[loop] == TEXT('\\')) || (g_sProgramDir[loop] == TEXT(':')))
@@ -756,7 +756,7 @@ bool SetCurrentImageDir(const char* pszImageDir)
 {
 	strcpy(g_sCurrentDir, pszImageDir);
 
-	int nLen = strlen( g_sCurrentDir );
+	int nLen = (int)strlen( g_sCurrentDir );
 	if ((nLen > 0) && (g_sCurrentDir[ nLen - 1 ] != '\\'))
 	{
 		g_sCurrentDir[ nLen + 0 ] = '\\';
@@ -843,7 +843,7 @@ void RegisterExtensions(void)
 	pValueName = "DiskImage\\shell\\open\\command";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ,command,_tcslen(command)+1);
+				REG_SZ,command, (DWORD)_tcslen(command)+1);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
 	pValueName = "DiskImage\\shell\\open\\ddeexec";
@@ -855,14 +855,14 @@ void RegisterExtensions(void)
 	pValueName = "DiskImage\\shell\\open\\ddeexec\\application";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ,"applewin",_tcslen("applewin")+1);
+				REG_SZ,"applewin", (DWORD)_tcslen("applewin")+1);
 //				REG_SZ,szCommandTmp,_tcslen(szCommandTmp)+1);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
 	pValueName = "DiskImage\\shell\\open\\ddeexec\\topic";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ,"system",_tcslen("system")+1);
+				REG_SZ,"system", (DWORD)_tcslen("system")+1);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 }
 
@@ -1686,7 +1686,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		if (szSnapshotName)
 		{
 			std::string strPathname(szSnapshotName);
-			int nIdx = strPathname.find_last_of('\\');
+			int nIdx = (int)strPathname.find_last_of('\\');
 			if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())
 			{
 				std::string strPath = strPathname.substr(0, nIdx+1);

@@ -315,7 +315,7 @@ protected:
 	void GetCharLowerExt2(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize);
 	void SetImageInfo(ImageInfo* pImageInfo, FileType_e eFileGZip, DWORD dwOffset, CImageBase* pImageType, DWORD dwSize);
 
-	UINT GetNumImages(void) { return m_vecImageTypes.size(); };
+	UINT GetNumImages(void) { return (UINT)m_vecImageTypes.size(); };
 	CImageBase* GetImage(UINT uIndex) { _ASSERT(uIndex<GetNumImages()); return m_vecImageTypes[uIndex]; }
 	CImageBase* GetImage(eImageType Type)
 	{

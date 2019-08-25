@@ -301,7 +301,7 @@ void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName)
 	}
 
 	if ((!found) && (loop > 2))
-		CharLowerBuff(imagetitle+1, _tcslen(imagetitle+1));
+		CharLowerBuff(imagetitle+1, (DWORD)_tcslen(imagetitle+1));
 
 	// pFullName = <FILENAME.EXT>
 	_tcsncpy( pFullName, imagetitle, MAX_DISK_FULL_NAME );

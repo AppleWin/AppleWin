@@ -100,7 +100,7 @@ int ConsoleLineLength( const conchar_t * pText )
 		{
 			pSrc++;
 		}
-		nLen = pSrc - pText;
+		nLen = (int)(pSrc - pText);
 	}
 	return nLen;
 }
@@ -429,7 +429,7 @@ void ConsoleDisplayPause ()
 			g_aConsoleInput,
 			"...press SPACE continue, ESC skip..."
 		);
-		g_nConsolePromptLen = strlen( g_pConsoleInput ) + 1;
+		g_nConsolePromptLen = (int)strlen( g_pConsoleInput ) + 1;
 #endif
 		g_nConsoleInputChars = 0;
 		g_bConsoleBufferPaused = true;
@@ -527,7 +527,7 @@ void ConsoleInputReset ()
 #if CONSOLE_INPUT_CHAR16
 	int nLen = ConsoleLineLength( g_aConsoleInput );
 #else
-	int nLen = strlen( g_aConsoleInput );
+	int nLen = (int)strlen( g_aConsoleInput );
 #endif
 
 	g_pConsoleInput = &g_aConsoleInput[ g_nConsolePromptLen ];

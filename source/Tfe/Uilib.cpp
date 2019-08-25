@@ -55,7 +55,7 @@ void uilib_get_general_window_extents(HWND hwnd, int *xsize, int *ysize)
     SIZE  size;
 
     hFont = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
-    strlen = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
+    strlen = (int)SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
 	/* RGJ added cast for AppleWin */
     buffer = (char *) malloc(strlen + 1);
 	if (buffer == NULL)	// TC: add null check for AppleWin

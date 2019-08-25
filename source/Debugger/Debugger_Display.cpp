@@ -810,7 +810,7 @@ int PrintText ( const char * pText, RECT & rRect )
 		MessageBox( g_hFrameWindow, "pText = NULL!", "DrawText()", MB_OK );
 #endif
 
-	int nLen = strlen( pText );
+	int nLen = (int)strlen( pText );
 
 #if !DEBUG_FONT_NO_BACKGROUND_TEXT
 	FillRect( GetDebuggerMemDC(), &rRect, g_hConsoleBrushBG );
@@ -1595,7 +1595,7 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 		strcpy( line_.sMnemonic, g_aOpcodes[ line_.iOpcode ].sMnemonic );
 	}
 
-	int nSpaces = strlen( line_.sOpCodes );
+	int nSpaces = (int)strlen( line_.sOpCodes );
     while (nSpaces < (int)nMinBytesLen)
 	{
 		strcat( line_.sOpCodes, " " );
@@ -2077,7 +2077,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	}
 
 	char *pTarget = line.sTarget;
-	int nLen = strlen( pTarget );
+	int nLen = (int)strlen( pTarget );
 
 	if (*pTarget == '$') // BUG? if ASC #:# starts with '$' ? // && (iOpcode != OPCODE_NOP)
 	{
@@ -2130,7 +2130,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		if (line.nTargetOffset != 0)
 			nOverflow++;
 
-		nOverflow += strlen( line.sTargetOffset );
+		nOverflow += (int)strlen( line.sTargetOffset );
 	}
 
 	if (line.bTargetIndirect || line.bTargetX || line.bTargetY)
@@ -2153,15 +2153,15 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 
 	if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER)
 	{
-		nOverflow += strlen( line.sTargetPointer ); // '####'
-		nOverflow ++  ;                             //     ':'
-		nOverflow += 2;                             //      '##'
-		nOverflow ++  ;                             //         ' '
+		nOverflow += (int)strlen( line.sTargetPointer ); // '####'
+		nOverflow ++  ;                                  //     ':'
+		nOverflow += 2;                                  //      '##'
+		nOverflow ++  ;                                  //         ' '
 	}
 
 	if (bDisasmFormatFlags & DISASM_FORMAT_CHAR)
 	{
-		nOverflow += strlen( line.sImmediate );
+		nOverflow += (int)strlen( line.sImmediate );
 	}
 
 	if (nLen >=  (nMaxLen - nOverflow))
@@ -3408,8 +3408,8 @@ void DrawZeroPagePointers ( int line )
 			const char* pSymbol2 = GetSymbol(nZPAddr2, 2);		// 2:8-bit value (if symbol not found)
 			const char* pSymbol1 = GetSymbol(nZPAddr1, 2);		// 2:8-bit value (if symbol not found)
 
-			int nLen1 = strlen( pSymbol1 );
-			int nLen2 = strlen( pSymbol2 );
+			int nLen1 = (int)strlen( pSymbol1 );
+			int nLen2 = (int)strlen( pSymbol2 );
 
 
 //			if ((nLen1 == 1) && (nLen2 == 1))
@@ -3770,7 +3770,7 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 	char sTitle[ CONSOLE_WIDTH ];
 	char sText [ CONSOLE_WIDTH ];
 	strcpy ( sTitle, "   Source: " );
-	int maxSizeToCopy = g_nConsoleDisplayWidth - strlen(sTitle) - 1;
+	int maxSizeToCopy = g_nConsoleDisplayWidth - (int)strlen(sTitle) - 1;
 	strncpy( sText , g_aSourceFileName, maxSizeToCopy );
 	sText[ maxSizeToCopy - 1 ] = 0;
 	strcat ( sTitle, sText );

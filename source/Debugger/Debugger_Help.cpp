@@ -57,8 +57,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //===========================================================================
 bool TestStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
 {
-	int nLenDst = _tcslen( pDst );
-	int nLenSrc = _tcslen( pSrc );
+	int nLenDst = (int)_tcslen( pDst );
+	int nLenSrc = (int)_tcslen( pSrc );
 	int nSpcDst = nDstSize - nLenDst;
 	int nChars  = MIN( nLenSrc, nSpcDst );
 
@@ -76,8 +76,8 @@ bool TestStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
 //===========================================================================
 bool TryStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
 {
-	int nLenDst = _tcslen( pDst );
-	int nLenSrc = _tcslen( pSrc );
+	int nLenDst = (int)_tcslen( pDst );
+	int nLenSrc = (int)_tcslen( pSrc );
 	int nSpcDst = nDstSize - nLenDst;
 	int nChars  = MIN( nLenSrc, nSpcDst );
 
@@ -96,8 +96,8 @@ bool TryStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
 //===========================================================================
 int StringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
 {
-	int nLenDst = _tcslen( pDst );
-	int nLenSrc = _tcslen( pSrc );
+	int nLenDst = (int)_tcslen( pDst );
+	int nLenSrc = (int)_tcslen( pSrc );
 	int nSpcDst = nDstSize - nLenDst;
 	int nChars  = MIN( nLenSrc, nSpcDst );
 
@@ -301,7 +301,7 @@ void _ColorizeHeader(
 {
 	int nLen;
 	
-	nLen = strlen( CHC_USAGE );
+	nLen = (int)strlen( CHC_USAGE );
 	strcpy( pDst, CHC_USAGE );
 	pDst += nLen;
 
@@ -311,14 +311,14 @@ void _ColorizeHeader(
 
 	pSrc += nHeaderLen;
 
-	nLen = strlen( CHC_ARG_SEP );
+	nLen = (int)strlen( CHC_ARG_SEP );
 	strcpy( pDst, CHC_ARG_SEP );
 	pDst += nLen;
 
 	*pDst = ':';
 	pDst++;
 
-	nLen = strlen( CHC_DEFAULT );
+	nLen = (int)strlen( CHC_DEFAULT );
 	strcpy( pDst, CHC_DEFAULT );
 	pDst += nLen;
 }
@@ -340,14 +340,14 @@ void _ColorizeOperator(
 {
 	int nLen;
 	
-	nLen = strlen( pOperator );
+	nLen = (int)strlen( pOperator );
 	strcpy( pDst, pOperator );
 	pDst += nLen;
 
 	*pDst = *pSrc;
 	pDst++;
 
-	nLen = strlen( CHC_DEFAULT );
+	nLen = (int)strlen( CHC_DEFAULT );
 	strcpy( pDst, CHC_DEFAULT );
 	pDst += nLen;
 
@@ -1498,7 +1498,7 @@ Update_t CmdHelpList (int nArgs)
 
 	char sText[ nBuf ] = "";
 	
-	int nLenLine = strlen( sText );
+	int nLenLine = (int)strlen( sText );
 	int y = 0;
 	int nLinesScrolled = 0;
 
@@ -1515,7 +1515,7 @@ Update_t CmdHelpList (int nArgs)
 		}
 		std::sort( g_vSortedCommands.begin(), g_vSortedCommands.end(), commands_functor_compare() );
 	}
-	int nCommands = g_vSortedCommands.size();
+	int nCommands = (int)g_vSortedCommands.size();
 
 	int nLen = 0;
 //		Colorize( sText, "Commands: " );
@@ -1534,7 +1534,7 @@ Update_t CmdHelpList (int nArgs)
 		if (! pCommand->pFunction)
 			continue; // not implemented function
 
-		int nLenCmd = strlen( pName );
+		int nLenCmd = (int)strlen( pName );
 		if ((nLen + nLenCmd) < (nMaxWidth))
 		{
 			        StringCat( sText, CHC_COMMAND, nBuf );

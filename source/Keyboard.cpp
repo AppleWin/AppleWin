@@ -140,11 +140,11 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 			if (g_bCapsLock && (key >= 'a') && (key <='z'))
 			{
 				P8Shift = true;
-				keycode = key - 32;
+				keycode = (BYTE)(key - 32);
 			}
 			else
 			{
-				keycode = key;
+				keycode = (BYTE)key;
 			}			
 
 			//The latter line should be applied for Pravtes 8A/C only, but not for Pravets 82/M !!!			
@@ -152,7 +152,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 			{
 				P8Shift = true;
 				if (g_Apple2Type == A2TYPE_PRAVETS8A) 
-					keycode = key + 32;
+					keycode = (BYTE)(key + 32);
 			}
 
 			//Remap some keys for Pravets82/M
@@ -259,9 +259,9 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 				}
 				if (key > 0x7F) return;	// Get out
 				if ((key >= 'a') && (key <= 'z') && (g_bCapsLock))
-					keycode = key - ('a'-'A');
+					keycode = (BYTE)(key - ('a'-'A'));
 				else
-					keycode = key;
+					keycode = (BYTE)key;
 			}
 		}
 		else
@@ -272,9 +272,9 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 			else
 			{
 				if (key >= '`')
-					keycode = key - 32;
+					keycode = (BYTE)(key - 32);
 				else
-					keycode = key;
+					keycode = (BYTE)key;
 			}
 		}
 	} 
@@ -459,7 +459,7 @@ void KeybAnyKeyDown(UINT message, WPARAM wparam, bool bIsExtended)
 
 	if (IsVirtualKeyAnAppleIIKey(wparam))
 	{
-		UINT offset = wparam >> 6;
+		UINT offset = (UINT)(wparam >> 6);
 		UINT bit    = wparam & 0x3f;
 		UINT idx    = !bIsExtended ? 0 : 1;
 

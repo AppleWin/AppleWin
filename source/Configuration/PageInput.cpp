@@ -211,10 +211,10 @@ BOOL CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM 
 
 void CPageInput::DlgOK(HWND hWnd)
 {
-	UINT uNewJoyType0 = SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
+	UINT uNewJoyType0 = (UINT)SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
 	if (uNewJoyType0 >= J0C_MAX) uNewJoyType0 = 0;	// GH#434
 
-	UINT uNewJoyType1 = SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
+	UINT uNewJoyType1 = (UINT)SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
 	if (uNewJoyType1 >= J1C_MAX) uNewJoyType1 = 0;	// GH#434
 
 	const bool bIsSlot4Mouse = m_PropertySheetHelper.GetConfigNew().m_Slot[4] == CT_MouseInterface;
@@ -386,7 +386,7 @@ void CPageInput::InitCPMChoices(HWND hWnd)
 
 	if (bIsSlot4Empty || bIsSlot4CPM)
 	{
-		const UINT uStrLen = strlen(m_szCPMSlotChoice_Slot4)+1;
+		const UINT uStrLen = (UINT)strlen(m_szCPMSlotChoice_Slot4)+1;
 		memcpy(&m_szCPMSlotChoices[uStringOffset], m_szCPMSlotChoice_Slot4, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -395,7 +395,7 @@ void CPageInput::InitCPMChoices(HWND hWnd)
 
 	if (bIsSlot5Empty || bIsSlot5CPM)
 	{
-		const UINT uStrLen = strlen(m_szCPMSlotChoice_Slot5)+1;
+		const UINT uStrLen = (UINT)strlen(m_szCPMSlotChoice_Slot5)+1;
 		memcpy(&m_szCPMSlotChoices[uStringOffset], m_szCPMSlotChoice_Slot5, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -404,7 +404,7 @@ void CPageInput::InitCPMChoices(HWND hWnd)
 
 	if (uStringOffset)
 	{
-		const UINT uStrLen = strlen(m_szCPMSlotChoice_Unplugged)+1;
+		const UINT uStrLen = (UINT)strlen(m_szCPMSlotChoice_Unplugged)+1;
 		memcpy(&m_szCPMSlotChoices[uStringOffset], m_szCPMSlotChoice_Unplugged, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -412,7 +412,7 @@ void CPageInput::InitCPMChoices(HWND hWnd)
 	}
 	else
 	{
-		const UINT uStrLen = strlen(m_szCPMSlotChoice_Unavailable)+1;
+		const UINT uStrLen = (UINT)strlen(m_szCPMSlotChoice_Unavailable)+1;
 		memcpy(&m_szCPMSlotChoices[uStringOffset], m_szCPMSlotChoice_Unavailable, uStrLen);
 		uStringOffset += uStrLen;
 

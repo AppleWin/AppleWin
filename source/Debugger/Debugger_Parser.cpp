@@ -104,7 +104,7 @@ int _Arg_1( int nValue )
 //===========================================================================
 int _Arg_1( LPTSTR pName )
 {
-	int nLen = _tcslen( g_aArgs[1].sArg );
+	int nLen = (int)_tcslen( g_aArgs[1].sArg );
 	if (nLen < MAX_ARG_LEN)
 	{
 		_tcscpy( g_aArgs[1].sArg, pName );
@@ -303,7 +303,7 @@ int	ArgsGet ( TCHAR * pInput )
 
 			if (pEnd)
 			{
-				nBuf = pEnd - pSrc;
+				nBuf = (int)(pEnd - pSrc);
 			}
 
 			if (nBuf > 0)
@@ -663,7 +663,7 @@ int ArgsCook ( const int nArgs )
 					pArg->nValue   = 0; // nAddressRHS;
 					pArg->bSymbol = false;
 
-					int nPointers = g_vMemorySearchResults.size();
+					int nPointers = (int)g_vMemorySearchResults.size();
 					if ((nPointers) &&
 						(nAddressRHS < nPointers))
 					{
@@ -869,7 +869,7 @@ const TCHAR * FindTokenOrAlphaNumeric ( const TCHAR *pSrc, const TokenTable_t *a
 //===========================================================================
 void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDstSize, int nTabStop )
 {
-	int nLen = _tcslen( pText );
+	int nLen = (int)_tcslen( pText );
 
 	int TAB_SPACING = 8;
 	int TAB_SPACING_1 = 16;
@@ -943,7 +943,7 @@ void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDst
 //===========================================================================
 int RemoveWhiteSpaceReverse ( TCHAR *pSrc )
 {
-	int   nLen = _tcslen( pSrc );
+	int   nLen = (int)_tcslen( pSrc );
 	char *pDst = pSrc + nLen;
 	while (nLen--)
 	{

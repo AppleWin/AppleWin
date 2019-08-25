@@ -201,7 +201,7 @@ Update_t CmdDisasmDataList (int nArgs)
 	{
 		if (pData->iDirective != _NOP_REMOVED)
 		{
-			int nLen = strlen( pData->sSymbol );
+			int nLen = (int)strlen( pData->sSymbol );
 
 			char sText[CONSOLE_WIDTH * 2];
 			// <smbol> <type> <start>:<end>
@@ -462,7 +462,7 @@ Update_t CmdDisasmDataDefString ( int nArgs )
 DisasmData_t* Disassembly_Enumerate( DisasmData_t *pCurrent )
 {
 	DisasmData_t *pData = NULL; // bIsNopcode = false
-	int nDataTargets = g_aDisassemblerData.size();
+	int nDataTargets = (int)g_aDisassemblerData.size();
 
 	if( nDataTargets )
 	{
@@ -486,7 +486,7 @@ DisasmData_t* Disassembly_Enumerate( DisasmData_t *pCurrent )
 DisasmData_t* Disassembly_IsDataAddress ( WORD nAddress )
 {
 	DisasmData_t *pData = NULL; // bIsNopcode = false
-	int nDataTargets = g_aDisassemblerData.size();
+	int nDataTargets = (int)g_aDisassemblerData.size();
 
 	if( nDataTargets )
 	{
@@ -535,7 +535,7 @@ void Disassembly_DelData( DisasmData_t tData)
 	WORD nAddress = tData.nStartAddress;
 
 	DisasmData_t *pData = NULL; // bIsNopcode = false
-	int nDataTargets = g_aDisassemblerData.size();
+	int nDataTargets = (int)g_aDisassemblerData.size();
 
 	if( nDataTargets )
 	{

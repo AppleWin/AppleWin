@@ -879,7 +879,7 @@ int AssemblerHashMnemonic ( const TCHAR * pMnemonic )
 	const int    NUM_MSK_BITS =  5; //  4 ->  5 prime
 	const Hash_t BIT_MSK_HIGH = ((1 << NUM_MSK_BITS) - 1) << NUM_LOW_BITS;
 
-	int nLen = strlen( pMnemonic );
+	int nLen = (int)strlen( pMnemonic );
 
 #if DEBUG_ASSEMBLER
 	static int nMaxLen = 0;
@@ -1030,7 +1030,7 @@ bool AssemblerPokeOpcodeAddress( const WORD nBaseAddress )
 	int nTargetValue = m_nAsmTargetValue;
 
 	int iOpcode;
-	int nOpcodes = m_vAsmOpcodes.size();
+	int nOpcodes = (int)m_vAsmOpcodes.size();
 
 	for( iOpcode = 0; iOpcode < nOpcodes; iOpcode++ )
 	{
@@ -1044,7 +1044,7 @@ bool AssemblerPokeOpcodeAddress( const WORD nBaseAddress )
 
 			if (m_bDelayedTargetsDirty)
 			{			
-				int nDelayedTargets = m_vDelayedTargets.size();
+				int nDelayedTargets = (int)m_vDelayedTargets.size();
 				DelayedTarget_t *pTarget = & m_vDelayedTargets.at( nDelayedTargets - 1 );
 
 				pTarget->m_nOpcode = nOpcode;
@@ -1397,7 +1397,7 @@ bool AssemblerUpdateAddressingMode()
 //===========================================================================
 int AssemblerDelayedTargetsSize()
 {
-	int nSize = m_vDelayedTargets.size();
+	int nSize = (int)m_vDelayedTargets.size();
 	return nSize;
 }
 
@@ -1507,7 +1507,7 @@ bool Assemble( int iArg, int nArgs, WORD nAddress )
 		}
 	}
 
-	int nOpcodes = m_vAsmOpcodes.size();
+	int nOpcodes = (int)m_vAsmOpcodes.size();
 	if (! nOpcodes)
 	{
 		// Check for assembler directive

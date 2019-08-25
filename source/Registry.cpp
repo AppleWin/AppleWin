@@ -86,7 +86,7 @@ void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPCTSTR buffer) 
                   0,
                   REG_SZ,
                   (CONST BYTE *)buffer,
-                  (_tcslen(buffer)+1)*sizeof(TCHAR));
+                  (DWORD)(_tcslen(buffer)+1)*sizeof(TCHAR));
     RegCloseKey(keyhandle);
   }
 }

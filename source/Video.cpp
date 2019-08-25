@@ -448,23 +448,23 @@ void VideoDisplayLogo ()
 	TextOut(hFrameDC,                       \
 		scale*540+x+xoff,scale*358+y+yoff,  \
 		szVersion,                          \
-		strlen(szVersion));
+		(int)strlen(szVersion));
 
 	if (GetDeviceCaps(hFrameDC,PLANES) * GetDeviceCaps(hFrameDC,BITSPIXEL) <= 4) {
-		DRAWVERSION( 2, 2,RGB(0x00,0x00,0x00));
-		DRAWVERSION( 1, 1,RGB(0x00,0x00,0x00));
-		DRAWVERSION( 0, 0,RGB(0xFF,0x00,0xFF));
+		DRAWVERSION( 2, 2, RGB(0x00,0x00,0x00));
+		DRAWVERSION( 1, 1, RGB(0x00,0x00,0x00));
+		DRAWVERSION( 0, 0, RGB(0xFF,0x00,0xFF));
 	} else {
-		DRAWVERSION( 1, 1,PALETTERGB(0x30,0x30,0x70));
-		DRAWVERSION(-1,-1,PALETTERGB(0xC0,0x70,0xE0));
-		DRAWVERSION( 0, 0,PALETTERGB(0x70,0x30,0xE0));
+		DRAWVERSION( 1, 1, PALETTERGB(0x30,0x30,0x70));
+		DRAWVERSION(-1,-1, PALETTERGB(0xC0,0x70,0xE0));
+		DRAWVERSION( 0, 0, PALETTERGB(0x70,0x30,0xE0));
 	}
 
 #if _DEBUG
 	sprintf( szVersion, "DEBUG" );
-	DRAWVERSION( 2, -358*scale,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 1, -357*scale,RGB(0x00,0x00,0x00));
-	DRAWVERSION( 0, -356*scale,RGB(0xFF,0x00,0xFF));
+	DRAWVERSION( 2, -358*scale, RGB(0x00,0x00,0x00));
+	DRAWVERSION( 1, -357*scale, RGB(0x00,0x00,0x00));
+	DRAWVERSION( 0, -356*scale, RGB(0xFF,0x00,0xFF));
 #endif
 
 #undef  DRAWVERSION

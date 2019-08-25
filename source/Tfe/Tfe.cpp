@@ -505,7 +505,7 @@ int tfe_activate_i(void)
 
 #ifdef TFE_DEBUG_INIT
     if(g_fh) fprintf(g_fh, "tfe_activate: Allocated memory successfully.\n");
-    if(g_fh) fprintf(g_fh, "\ttfe at $%08X, tfe_packetpage at $%08X\n", uintptr_t(tfe), uintptr_t(tfe_packetpage) );
+    if(g_fh) fprintf(g_fh, "\ttfe at $%016p, tfe_packetpage at $%016p\n", tfe, tfe_packetpage );
 #endif
 
 #ifdef DOS_TFE
@@ -1361,7 +1361,7 @@ int set_tfe_enabled(void *v, void *param)
 {
     if (!tfe_cannot_use) {
 
-        if (!(int)v) {
+        if (!v) {
             /* TFE should be deactived */
             if (tfe_enabled) {
                 tfe_enabled = 0;

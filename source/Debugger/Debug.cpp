@@ -3334,7 +3334,7 @@ Update_t CmdCursorLineUp (int nArgs)
 			}
 		} while (iTop < MAX_LOOK_AHEAD);
 
-		int nCandidates = aTopCandidates.size();
+		int nCandidates = (int)aTopCandidates.size();
 		if (nCandidates)
 		{
 			int iBest = NO_6502_TARGET;
@@ -4381,7 +4381,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	const KnownFileType_t *pFileType = NULL;
 
 	char *pFileName = g_aArgs[ 1 ].sArg;
-	int   nLen = strlen( pFileName );
+	int   nLen = (int)strlen( pFileName );
 	char *pEnd = pFileName + nLen - 1;
 	while( pEnd > pFileName )
 	{
@@ -4925,7 +4925,7 @@ size_t Util_GetDebuggerText( char* &pText_ )
 	}
 
 	*pEnd = 0;
-	g_nTextScreen = pEnd - pBeg;
+	g_nTextScreen = (int)(pEnd - pBeg);
 	
 	pText_ = pBeg;
 	return g_nTextScreen;
@@ -4976,7 +4976,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 	}
 	*pEnd = 0;
 
-	g_nTextScreen = pEnd - pBeg;
+	g_nTextScreen = (int)(pEnd - pBeg);
 	
 	pText_ = pBeg;
 	return g_nTextScreen;
@@ -5032,7 +5032,7 @@ Update_t CmdNTSC (int nArgs)
 #endif
 
 	char *pFileName = (nArgs > 1) ? g_aArgs[ 2 ].sArg : "";
-	int   nLen = strlen( pFileName );
+	int   nLen = (int)strlen( pFileName );
 	char *pEnd = pFileName + nLen - 1;
 	while( pEnd > pFileName )
 	{
@@ -5078,9 +5078,9 @@ Update_t CmdNTSC (int nArgs)
 						ConsoleBufferPush( pPrefixText );	// TODO: Add a ": " separator
 
 #if _DEBUG
-						sprintf( text, "Filename.length.1: %d\n", len1 );
+						sprintf( text, "Filename.length.1: %d\n", (int)len1 );
 						OutputDebugString( text );
-						sprintf( text, "Filename.length.2: %d\n", len2 );
+						sprintf( text, "Filename.length.2: %d\n", (int)len2 );
 						OutputDebugString( text );
 						OutputDebugString( sPaletteFilePath );
 #endif
@@ -5693,7 +5693,7 @@ int _SearchMemoryFind(
 
 		WORD nAddress2 = nAddress;
 
-		int nMemBlocks = vMemorySearchValues.size();
+		int nMemBlocks = (int)vMemorySearchValues.size();
 		for (int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
 		{
 			MemorySearch_t ms = vMemorySearchValues.at( iBlock );
@@ -5785,7 +5785,7 @@ Update_t _SearchMemoryDisplay (int nArgs)
 {
 	const UINT nBuf = CONSOLE_WIDTH * 2;
 
-	int nFound = g_vMemorySearchResults.size() - 1;
+	int nFound = (int)g_vMemorySearchResults.size() - 1;
 
 	int nLen = 0; // temp
 	int nLineLen = 0; // string length of matches for this line, for word-wrap
@@ -6238,7 +6238,7 @@ Update_t CmdOutputPrint (int nArgs)
 		if (g_aArgs[ iArg ].bType & TYPE_QUOTED_2)
 		{
 			int iChar;
-			int nChar = _tcslen( g_aArgs[ iArg ].sArg );
+			int nChar = (int)_tcslen( g_aArgs[ iArg ].sArg );
 			for( iChar = 0; iChar < nChar; iChar++ )
 			{
 				TCHAR c = g_aArgs[ iArg ].sArg[ iChar ];
@@ -6329,7 +6329,7 @@ Update_t CmdOutputPrintf (int nArgs)
 		if (g_aArgs[ iArg ].bType & TYPE_QUOTED_2)
 		{
 			int iChar;
-			int nChar = _tcslen( g_aArgs[ iArg ].sArg );
+			int nChar = (int)_tcslen( g_aArgs[ iArg ].sArg );
 			for( iChar = 0; iChar < nChar; iChar++ )
 			{
 				TCHAR c = g_aArgs[ iArg ].sArg[ iChar ];
@@ -6487,7 +6487,7 @@ Update_t CmdOutputRun (int nArgs)
 		for( int iLine = 0; iLine < nLine; iLine++ )
 		{
 			script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
-			g_nConsoleInputChars = _tcslen( g_pConsoleInput );
+			g_nConsoleInputChars = (int)_tcslen( g_pConsoleInput );
 			bUpdateDisplay |= DebuggerProcessCommand( false );
 		}
 	}
@@ -6638,7 +6638,7 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 					// start
 					pStart = pEnd + 1;
 					pEnd = const_cast<char*>( SkipUntilWhiteSpace( pStart ));
-					int nLen = (pEnd - pStart);
+					int nLen = (int)(pEnd - pStart);
 					if (nLen != 2)
 					{
 						break;
@@ -6681,7 +6681,7 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 					pLabelEnd++;
 					pLabelStart++;
 					
-					int nLen = pLabelEnd - pLabelStart;
+					int nLen = (int)(pLabelEnd - pLabelStart);
 					nLen = MIN( nLen, MAX_SYMBOLS_LEN );
 					strncpy( sName, pLabelStart, nLen );
 					sName[ nLen - 1 ] = 0;
@@ -7652,7 +7652,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 int FindParam( LPTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd )
 {
 	int nFound = 0;
-	int nLen     = _tcslen( pLookupName );
+	int nLen     = (int)_tcslen( pLookupName );
 	int iParam = 0;
 
 	if (! nLen)
@@ -7718,7 +7718,7 @@ int FindCommand( LPTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 	g_vPotentialCommands.erase( g_vPotentialCommands.begin(), g_vPotentialCommands.end() );
 
 	int nFound   = 0;
-	int nLen     = _tcslen( pName );
+	int nLen     = (int)_tcslen( pName );
 	int iCommand = 0;
 
 	if (! nLen)
@@ -7787,12 +7787,12 @@ void DisplayAmbigiousCommands( int nFound )
 		char sPotentialCommands[ CONSOLE_WIDTH ];
 		sprintf( sPotentialCommands, "%s ", CHC_COMMAND );
 
-		int iWidth = strlen( sPotentialCommands );
+		int iWidth = (int)strlen( sPotentialCommands );
 		while ((iCommand < nFound) && (iWidth < g_nConsoleDisplayWidth))
 		{
 			int   nCommand = g_vPotentialCommands[ iCommand ];
 			char *pName = g_aCommands[ nCommand ].m_sName;
-			int   nLen = strlen( pName );
+			int   nLen = (int)strlen( pName );
 
 			if ((iWidth + nLen) >= (CONSOLE_WIDTH - 1))
 				break;
@@ -7888,7 +7888,7 @@ Update_t ExecuteCommand (int nArgs)
 					// with:    comamnd addr
 					pArg[1] = pArg[0];
 					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
-					pArg->nArgLen = strlen( pArg->sArg );
+					pArg->nArgLen = (int)strlen( pArg->sArg );
 
 					pArg++;
 					pArg->nValue = nAddress;
@@ -7907,7 +7907,7 @@ Update_t ExecuteCommand (int nArgs)
 					pArg[1] = pArg[0];
 
 					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
-					pArg->nArgLen = strlen( pArg->sArg );
+					pArg->nArgLen = (int)strlen( pArg->sArg );
 
 //					nCookMask &= ~ (1 << TOKEN_COLON);
 //					nArgs++;
@@ -9059,7 +9059,7 @@ void DebugInitialize ()
 		char *pHelp = g_aCommands[ iCmd ].pHelpSummary;
 		if (pHelp)
 		{
-			int nLen = _tcslen( pHelp ) + 2;
+			int nLen = (int)_tcslen( pHelp ) + 2;
 			if (nLen > (CONSOLE_WIDTH-1))
 			{
 				ConsoleBufferPushFormat( sText, TEXT("Warning: %s help is %d chars"),
