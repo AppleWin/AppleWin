@@ -1979,14 +1979,6 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 //===========================================================================
 
-// TV modes don't write to the last line, so when switching from another (Monitor) mode there may be stale data left behind
-void ClearLastLine(void)
-{
-	uint32_t* p = (uint32_t*)g_pScanLines[VIDEO_SCANNER_Y_DISPLAY * 2 - 1];
-	for (UINT x = 0; x < NTSC_GetFrameBufferBorderlessWidth(); x++)
-		p[x] = 0;
-}
-
 void NTSC_SetVideoStyle() // (int v, int s)
 {
     int half = IsVideoStyle(VS_HALF_SCANLINES);
@@ -2008,7 +2000,6 @@ void NTSC_SetVideoStyle() // (int v, int s)
 				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVDoubleScanline;
 				g_pFuncUpdateHuePixel = updatePixelHueColorTVDoubleScanline;
 			}
-			ClearLastLine();
 			break;
 
 		case VT_COLOR_MONITOR_NTSC:
@@ -2040,7 +2031,6 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			else {
 				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWColorTVDoubleScanline;
 			}
-			ClearLastLine();
 			break;
 
 		case VT_MONO_AMBER:
