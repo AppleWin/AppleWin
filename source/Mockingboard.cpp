@@ -2139,7 +2139,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 			throw std::string("Card: Expected key: ") + std::string(unit);
 
 		LoadSnapshotSY6522(yamlLoadHelper, pMB->sy6522, version);
-		UpdateIFR(pMB, 0, pMB->sy6522.IFR);					// Assert any pending IRQs
+		UpdateIFR(pMB, 0, pMB->sy6522.IFR);					// Assert any pending IRQs (GH#677)
 		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum, std::string(""));
 		LoadSnapshotSSI263(yamlLoadHelper, pMB->SpeechChip);
 
@@ -2262,7 +2262,7 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 			throw std::string("Card: Expected key: ") + std::string(unit);
 
 		LoadSnapshotSY6522(yamlLoadHelper, pMB->sy6522, version);
-		UpdateIFR(pMB, 0, pMB->sy6522.IFR);					// Assert any pending IRQs
+		UpdateIFR(pMB, 0, pMB->sy6522.IFR);					// Assert any pending IRQs (GH#677)
 		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+0, std::string("-A"));
 		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+1, std::string("-B"));
 		LoadSnapshotSSI263(yamlLoadHelper, pMB->SpeechChip);

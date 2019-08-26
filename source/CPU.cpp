@@ -426,7 +426,8 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const boo
 	}
 
 	MB_UpdateCycles(uExecutedCycles);
-	sg_Mouse.SetVBlank( !VideoGetVblBar(uExecutedCycles) );
+	if (sg_Mouse.IsActive())
+		sg_Mouse.SetVBlank( !VideoGetVblBar(uExecutedCycles) );
 }
 
 // GH#608: IRQ needs to occur within 17 cycles (6 opcodes) of configuring the timer interrupt

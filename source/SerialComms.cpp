@@ -1469,6 +1469,9 @@ bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, U
 	m_vbRxIrqPending	= yamlLoadHelper.LoadBool(SS_YAML_KEY_RXIRQPENDING);
 	m_vbTxEmpty			= yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITTENTX);
 
+	if (m_vbTxIrqPending || m_vbRxIrqPending)	// GH#677
+		CpuIrqAssert(IS_SSC);
+
 	std::string serialPortName = yamlLoadHelper.LoadString(SS_YAML_KEY_SERIALPORTNAME);
 	SetSerialPortName(serialPortName.c_str());
 
