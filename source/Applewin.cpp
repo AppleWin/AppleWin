@@ -1551,7 +1551,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 	// DO ONE-TIME INITIALIZATION
 	g_hInstance = passinstance;
-	GdiSetBatchLimit(512);
+//	GdiSetBatchLimit(512);
 	LogFileOutput("Init: GdiSetBatchLimit()\n");
 
 	GetProgramDirectory();

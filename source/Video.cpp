@@ -616,7 +616,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			SRCCOPY);
 	}
 
-	GdiFlush();
+//	GdiFlush();
 }
 
 //===========================================================================
