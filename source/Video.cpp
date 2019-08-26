@@ -568,7 +568,7 @@ static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
 	{
 		// Adjust the src locations for the NTSC video modes
-//		dy = -1;
+		dy = -1;
 	}
 
 	if (bInvertY)
