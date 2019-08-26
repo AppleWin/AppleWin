@@ -1393,26 +1393,36 @@ LRESULT CALLBACK FrameWndProc (
 				(g_nAppMode != MODE_LOGO))	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
 			{
 				// GH#678 Alternate key(s) to toggle max speed
-				// Ctrl-0 Toggle speed 1 MHz / Full-Speed
-				// Ctrl-1 Speed 1 MHz
-				// Ctrl-3 Speed Full-Speed
+				// . Ctrl-0: Toggle speed: custom speed / Full-Speed
+				// . Ctrl-1: Speed = 1 MHz
+				// . Ctrl-3: Speed = Full-Speed
+				bool keyHandled = false;
 				if( KeybGetCtrlStatus() && wparam >= '0' && wparam <= '9' )
 				{
 					switch (wparam)
 					{
-						case '0': g_dwSpeed = (g_dwSpeed != SPEED_MAX)
-											? SPEED_MAX
-											: SPEED_NORMAL
-											;
-							break;
-						case '1': g_dwSpeed = SPEED_NORMAL; break;
-						case '3': g_dwSpeed = SPEED_MAX   ; break; // Don't use g_bScrollLock_FullSpeed but g_dwSpeed
+						case '0':	// Toggle speed: custom speed / Full-Speed
+							if (g_dwSpeed == SPEED_MAX)
+								REGLOAD(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed);
+							else
+								g_dwSpeed = SPEED_MAX;
+							keyHandled = true; break;
+						case '1':	// Speed = 1 MHz
+							g_dwSpeed = SPEED_NORMAL;
+							REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
+							keyHandled = true; break;
+						case '3':	// Speed = Full-Speed
+							g_dwSpeed = SPEED_MAX;
+							keyHandled = true; break;
 						default:
-							KeybQueueKeypress(wparam, NOT_ASCII);
 							break;
 					}
+
+					if (keyHandled)
+						SetCurrentCLK6502();
 				}
-				else
+
+				if (!keyHandled)
 					KeybQueueKeypress(wparam, NOT_ASCII);
 
 				if (!autorep)
