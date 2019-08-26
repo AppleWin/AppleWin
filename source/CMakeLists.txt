@@ -27,6 +27,8 @@ add_library(appleii SHARED
   linux/benchmark.cpp
   linux/paddle.cpp
   linux/version.cpp
+  linux/stringcb.cpp
+  linux/registry.cpp
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp

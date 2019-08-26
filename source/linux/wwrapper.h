@@ -5,6 +5,7 @@
 
 #include "linux/wincompat.h"
 #include "linux/dummies.h"
+#include "linux/stringcb.h"
 #include "minizip/unzip.h"
 
 #define FILE_BEGIN 	SEEK_SET
