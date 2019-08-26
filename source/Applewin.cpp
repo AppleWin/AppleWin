@@ -352,12 +352,24 @@ static void ContinueExecution(void)
 	const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 	if (g_dwCyclesThisFrame >= dwClksPerFrame)
 	{
+#if 0
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
 		if (g_bFullSpeed)
 			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		else
 			VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
+#else
+		if (g_nVideoClockVert >= 192)
+		{
+			g_dwCyclesThisFrame %= dwClksPerFrame;
+
+			if (g_bFullSpeed)
+				VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
+			else
+				VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
+		}
+#endif
 
 		MB_EndOfVideoFrame();
 	}
@@ -1533,7 +1545,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Init: SysClk_InitTimer(), res=%d\n", bSpeechOK ? 1:0);
 	}
 #endif
-#if 0
+#if 1
 	DDInit();	// For WaitForVerticalBlank()
 #endif
 

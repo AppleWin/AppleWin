@@ -603,6 +603,8 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 		int wdest = g_nViewportCX;
 		int hdest = g_nViewportCY;
 
+		if (!bRedrawWholeScreen && g_lpDD) g_lpDD->WaitForVerticalBlank(DDWAITVB_BLOCKBEGIN, NULL);
+
 		SetStretchBltMode(hFrameDC, COLORONCOLOR);
 		StretchBlt(
 			hFrameDC, 
@@ -614,7 +616,6 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			SRCCOPY);
 	}
 
-	//if (g_lpDD) g_lpDD->WaitForVerticalBlank(DDWAITVB_BLOCKBEGIN, NULL);
 	GdiFlush();
 }
 
