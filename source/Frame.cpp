@@ -200,7 +200,7 @@ void SetAltEnterToggleFullScreen(bool mode)
 
 UINT GetFrameBufferBorderlessWidth(void)
 {
-	static const UINT uFrameBufferBorderlessW = NTSC_GetFrameBufferBorderlessWidth();	// 560 = Double Hi-Res, +1 for GH#555
+	static const UINT uFrameBufferBorderlessW = 560;	// 560 = Double Hi-Res
 	return uFrameBufferBorderlessW;
 }
 
