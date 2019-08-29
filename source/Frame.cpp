@@ -1403,7 +1403,7 @@ LRESULT CALLBACK FrameWndProc (
 					{
 						case '0':	// Toggle speed: custom speed / Full-Speed
 							if (g_dwSpeed == SPEED_MAX)
-								REGLOAD(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed);
+								REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
 							else
 								g_dwSpeed = SPEED_MAX;
 							keyHandled = true; break;
