@@ -8,6 +8,18 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.29.2.0 - ?? Sep 2019
+----------------------
+. [Change #678] Hotkeys to change emulation speed:
+	- Ctrl-0 Toggles between custom speed and Full-Speed
+	- Ctrl-1 Sets 1 MHz
+	- Ctrl-3 Sets Full-Speed
+. [Change #671] Register .woz extension with AppleWin. Updated AppleWin.chm & DELREG.INF.
+. [Bug #677] Loading a save-state wasn't restoring the pending IRQ.
+. [Bug #677] For WOZ images: all even disk I/O read accesses will now read the data latch.
+. [PR #674] Prevent uninitialized value bugs and improve string safety.
+
+
 1.29.1.0 - 27 Jul 2019
 ----------------------
 . [Bug #662] Fixed WOZ 'Wizardry III' not booting.
