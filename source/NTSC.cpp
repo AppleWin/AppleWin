@@ -406,16 +406,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static csbits_t csbits;		// charset, optionally followed by alt charset
 
 // Prototypes
-	INLINE float     clampZeroOne( const float & x );
-	INLINE uint8_t   getCharSetBits( const int iChar );
-	INLINE uint16_t  getLoResBits( uint8_t iByte );
-	INLINE uint32_t  getScanlineColor( const uint16_t signal, const bgra_t *pTable );
-	INLINE uint32_t* getScanlineNext1Address();
-	INLINE uint32_t* getScanlinePrev1Address();
-	INLINE uint32_t* getScanlinePrev2Address();
-	INLINE uint32_t* getScanlineThis0Address();
-	INLINE void      updateColorPhase();
-	INLINE void      updateFlashRate();
 	INLINE void      updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable );
 	INLINE void      updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable );
 	INLINE void      updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable );
@@ -498,25 +488,25 @@ inline uint32_t getScanlineColor( const uint16_t signal, const bgra_t *pTable )
 }
 
 //===========================================================================
-inline uint32_t* getScanlineNext1Address()
+inline uint32_t* getScanlineNextInbetween()
 {
 	return (uint32_t*) (g_pVideoAddress - 1*g_kFrameBufferWidth);
 }
 
 //===========================================================================
-inline uint32_t* getScanlinePrev1Address()
+inline uint32_t* getScanlinePreviousInbetween()
 {
 	return (uint32_t*) (g_pVideoAddress + 1*g_kFrameBufferWidth);
 }
 
 //===========================================================================
-inline uint32_t* getScanlinePrev2Address()
+inline uint32_t* getScanlinePrevious()
 {
 	return (uint32_t*) (g_pVideoAddress + 2*g_kFrameBufferWidth);
 }
 
 //===========================================================================
-inline uint32_t* getScanlineThis0Address()
+inline uint32_t* getScanlineCurrent()
 {
 	return (uint32_t*) g_pVideoAddress;
 }
@@ -603,12 +593,12 @@ inline void updateFlashRate() // TODO: Flash rate should be constant (regardless
 //===========================================================================
 inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable )
 {
-	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
-	/* */ uint32_t *pLine1Address = getScanlinePrev1Address();	// NB. TV mode uses previous 2 lines
-	/* */ uint32_t *pLine2Address = getScanlinePrev2Address();
+	uint32_t *pLine0Curr = getScanlineCurrent();
+	uint32_t *pLine1Prev = getScanlinePreviousInbetween();	// NB. TV mode uses previous 2 lines
+	const uint32_t *pLine2Prev = getScanlinePrevious();
 
 	const uint32_t color0 = getScanlineColor( signal, pTable );
-	const uint32_t color2 = *pLine2Address;
+	const uint32_t color2 = *pLine2Prev;
 //	const uint32_t color1 = color0 - ((color2 & 0x00fcfcfc) >> 2); // BUG? color0 - color0? not color0-color2?
 	// TC: The above operation "color0 - ((color2 & 0x00fcfcfc) >> 2)" causes underflow, so I've recoded to clamp on underflow:
 	uint32_t color1;
@@ -621,51 +611,51 @@ inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTa
 		color1 = (r<<16)|(g<<8)|(b);
 	}
 
-	/* */  *pLine1Address = color1 | ALPHA32_MASK;
-	/* */  *pLine0Address = color0;
-	/* */ g_pVideoAddress++;
+	*pLine1Prev = color1 | ALPHA32_MASK;
+	*pLine0Curr = color0;
+	g_pVideoAddress++;
 }
 
 //===========================================================================
 inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
-	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
-	/* */ uint32_t *pLine1Address = getScanlinePrev1Address();	// NB. TV mode uses previous 2 lines
-	const uint32_t *pLine2Address = getScanlinePrev2Address();
+	uint32_t *pLine0Curr = getScanlineCurrent();
+	uint32_t *pLine1Prev = getScanlinePreviousInbetween();	// NB. TV mode uses previous 2 lines
+	const uint32_t *pLine2Prev = getScanlinePrevious();
 
 	const uint32_t color0 = getScanlineColor( signal, pTable );
-	const uint32_t color2 = *pLine2Address;
+	const uint32_t color2 = *pLine2Prev;
 	const uint32_t color1 = ((color0 & 0x00fefefe) >> 1) + ((color2 & 0x00fefefe) >> 1); // 50% Blend
 
-	/* */  *pLine1Address = color1 | ALPHA32_MASK;
-	/* */  *pLine0Address = color0;
-	/* */ g_pVideoAddress++;
+	*pLine1Prev = color1 | ALPHA32_MASK;
+	*pLine0Curr = color0;
+	g_pVideoAddress++;
 }
 
 //===========================================================================
 inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable )
 {
-	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
-	/* */ uint32_t *pLine1Address = getScanlineNext1Address();	// NB. Monitor mode just uses next line
+	uint32_t *pLine0Curr = getScanlineCurrent();
+	uint32_t *pLine1Next = getScanlineNextInbetween();	// NB. Monitor mode just uses next (inbetween) line
 	const uint32_t color0 = getScanlineColor( signal, pTable );
 	const uint32_t color1 = 0;	// Remove blending for consistent DHGR MIX mode (GH#631)
 //	const uint32_t color1 = ((color0 & 0x00fcfcfc) >> 2); // 25% Blend (original)
 
-	/* */  *pLine1Address = color1 | ALPHA32_MASK;
-	/* */  *pLine0Address = color0;
-	/* */ g_pVideoAddress++;
+	*pLine1Next = color1 | ALPHA32_MASK;
+	*pLine0Curr = color0;
+	g_pVideoAddress++;
 }
 
 //===========================================================================
 inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
-	/* */ uint32_t *pLine0Address = getScanlineThis0Address();
-	/* */ uint32_t *pLine1Address = getScanlineNext1Address();	// NB. Monitor mode just uses next line
+	uint32_t *pLine0Curr = getScanlineCurrent();
+	uint32_t *pLine1Next = getScanlineNextInbetween();	// NB. Monitor mode just uses next (inbetween) line
 	const uint32_t color0 = getScanlineColor( signal, pTable );
 
-	/* */  *pLine1Address = color0;
-	/* */  *pLine0Address = color0;
-	/* */ g_pVideoAddress++;
+	*pLine1Next = color0;
+	*pLine0Curr = color0;
+	g_pVideoAddress++;
 }
 #endif
 
