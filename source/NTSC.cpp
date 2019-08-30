@@ -493,13 +493,17 @@ inline uint32_t* getScanlineNextInbetween()
 	return (uint32_t*) (g_pVideoAddress - 1*g_kFrameBufferWidth);
 }
 
+inline uint32_t* getScanlineNext()
+{
+	return (uint32_t*) (g_pVideoAddress - 2*g_kFrameBufferWidth);
+}
+
 //===========================================================================
 inline uint32_t* getScanlinePreviousInbetween()
 {
 	return (uint32_t*) (g_pVideoAddress + 1*g_kFrameBufferWidth);
 }
 
-//===========================================================================
 inline uint32_t* getScanlinePrevious()
 {
 	return (uint32_t*) (g_pVideoAddress + 2*g_kFrameBufferWidth);
@@ -551,13 +555,13 @@ inline void updateFlashRate() // TODO: Flash rate should be constant (regardless
 // prevp is never used nor blended with!
 #define updateFramebufferColorTVSingleScanline(signal,table) \
 	do { \
-		uint32_t ntscp, prevp, betwp; \
+		uint32_t ntscp, /*prevp,*/ betwp; \
 		uint32_t *prevlin, *between; \
 		g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; \
-		prevlin = (uint32_t*)(g_pVideoAddress + 2*FRAMEBUFFER_W); \
+		/*prevlin = (uint32_t*)(g_pVideoAddress + 2*FRAMEBUFFER_W);*/ \
 		between = (uint32_t*)(g_pVideoAddress + 1*FRAMEBUFFER_W); \
 		ntscp = *(uint32_t*) &table[g_nSignalBitsNTSC]; /* raw current NTSC color */ \
-		prevp = *prevlin; \
+		/*prevp = *prevlin;*/ \
 		betwp = ntscp - ((ntscp & 0x00fcfcfc) >> 2); \
 		*between = betwp | ALPHA32_MASK; \
 		*(uint32_t*)g_pVideoAddress = ntscp; \
@@ -591,9 +595,11 @@ inline void updateFlashRate() // TODO: Flash rate should be constant (regardless
 #else
 
 //===========================================================================
+extern bool g_VideoTVMode1_29_1_0;
 inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
+	if (g_VideoTVMode1_29_1_0) {
 	uint32_t *pLine1Prev = getScanlinePreviousInbetween();	// NB. TV mode uses previous 2 lines
 	const uint32_t *pLine2Prev = getScanlinePrevious();
 
@@ -613,6 +619,17 @@ inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTa
 
 	*pLine1Prev = color1 | ALPHA32_MASK;
 	*pLine0Curr = color0;
+	} else {
+	uint32_t *pLine1Next = getScanlineNextInbetween();
+	uint32_t *pLine2Next = getScanlineNext();
+	const uint32_t color0 = getScanlineColor( signal, pTable );
+	const uint32_t color2 = *pLine2Next;
+	uint32_t color1 = ((color0 & 0x00fefefe) >> 1) + ((color2 & 0x00fefefe) >> 1); // 50% Blend
+	color1 = (color1 & 0x00fefefe) >> 1;	// ... then 50% brightness for inbetween line
+
+	*pLine1Next = color1 | ALPHA32_MASK;
+	*pLine0Curr = color0;
+	}
 	g_pVideoAddress++;
 }
 
@@ -620,6 +637,7 @@ inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTa
 inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
+	if (g_VideoTVMode1_29_1_0) {
 	uint32_t *pLine1Prev = getScanlinePreviousInbetween();	// NB. TV mode uses previous 2 lines
 	const uint32_t *pLine2Prev = getScanlinePrevious();
 
@@ -629,6 +647,16 @@ inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTa
 
 	*pLine1Prev = color1 | ALPHA32_MASK;
 	*pLine0Curr = color0;
+	} else {
+	uint32_t *pLine1Next = getScanlineNextInbetween();
+	uint32_t *pLine2Next = getScanlineNext();
+	const uint32_t color0 = getScanlineColor( signal, pTable );
+	const uint32_t color2 = *pLine2Next;
+	const uint32_t color1 = ((color0 & 0x00fefefe) >> 1) + ((color2 & 0x00fefefe) >> 1); // 50% Blend
+
+	*pLine1Next = color1 | ALPHA32_MASK;
+	*pLine0Curr = color0;
+	}
 	g_pVideoAddress++;
 }
 

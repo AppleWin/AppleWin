@@ -246,6 +246,7 @@ UINT Get3DBorderHeight(void)
 }
 
 // ==========================================================================
+extern bool g_VideoTVMode1_29_1_0;
 static void GetAppleWindowTitle()
 {
 	static TCHAR g_pAppleWindowTitle[ 128 ] = "";
@@ -268,6 +269,7 @@ static void GetAppleWindowTitle()
 #if _DEBUG
 	_tcscat( g_pAppleWindowTitle, " *DEBUG* " );
 #endif
+	if (g_VideoTVMode1_29_1_0) _tcscat( g_pAppleWindowTitle, " 1.29.1 " );
 
 	if (g_nAppMode == MODE_LOGO)
 		return;
@@ -1414,6 +1416,9 @@ LRESULT CALLBACK FrameWndProc (
 						case '3':	// Speed = Full-Speed
 							g_dwSpeed = SPEED_MAX;
 							keyHandled = true; break;
+						case '9':
+							g_VideoTVMode1_29_1_0 = !g_VideoTVMode1_29_1_0;
+							DrawStatusArea( (HDC)0, DRAW_TITLE );
 						default:
 							break;
 					}

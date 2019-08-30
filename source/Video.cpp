@@ -96,6 +96,8 @@ static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 static LPDIRECTDRAW g_lpDD = NULL;
 
+bool g_VideoTVMode1_29_1_0 = false;
+
 //-------------------------------------
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
@@ -568,6 +570,7 @@ static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
 	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
 	{
 		// Adjust the src locations for the NTSC video modes
+		if (g_VideoTVMode1_29_1_0)
 		dy = -1;
 	}
 
@@ -588,6 +591,11 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 		if (bRedrawWholeScreen)
 			NTSC_SetVideoMode( uRedrawWholeScreenVideoMode );
 		NTSC_VideoRedrawWholeScreen();
+
+		// MODE_DEBUG|PAUSED: Need to refresh a 2nd time if changing video-type, otherwise could have residue from prev image!
+		// . eg. Amber -> B&W TV
+		if (g_nAppMode == MODE_DEBUG || g_nAppMode == MODE_PAUSED)
+			NTSC_VideoRedrawWholeScreen();
 	}
 
 	HDC hFrameDC = FrameGetDC();
