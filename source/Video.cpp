@@ -96,8 +96,6 @@ static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 static LPDIRECTDRAW g_lpDD = NULL;
 
-bool g_VideoTVMode1_29_1_0 = false;
-
 //-------------------------------------
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
@@ -561,26 +559,6 @@ void VideoRedrawScreen (void)
 
 //===========================================================================
 
-// TC: Hacky-fix for GH#341 - better to draw to the correct position in the framebuffer to start with! (in NTSC.cpp)
-// . NB. Now the dx is corrected in NTSC.cpp, updateVideoScannerAddress()
-static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
-{
-	int dx=0, dy=0;
-
-	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
-	{
-		// Adjust the src locations for the NTSC video modes
-		if (g_VideoTVMode1_29_1_0)
-		dy = -1;
-	}
-
-	if (bInvertY)
-		dy =- dy;
-
-	xSrc += dx;
-	ySrc += dy;
-}
-
 void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
 {
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
@@ -604,7 +582,6 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 	{
 		int xSrc = GetFrameBufferBorderWidth();
 		int ySrc = GetFrameBufferBorderHeight();
-		VideoFrameBufferAdjust(xSrc, ySrc);	// TC: Hacky-fix for GH#341
 
 		int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 		int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
@@ -1165,8 +1142,6 @@ static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 
 	int xSrc = GetFrameBufferBorderWidth();
 	int ySrc = GetFrameBufferBorderHeight();
-	VideoFrameBufferAdjust(xSrc, ySrc, true);	// TC: Hacky-fix for GH#341 & GH#356
-												// Lines stored in reverse, so invert the y-adjust value
 
 	pSrc += xSrc;								// Skip left border
 	pSrc += ySrc * GetFrameBufferWidth();		// Skip top border

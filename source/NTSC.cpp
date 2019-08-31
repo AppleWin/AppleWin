@@ -499,6 +499,7 @@ inline uint32_t* getScanlineNext()
 }
 
 //===========================================================================
+#if 0
 inline uint32_t* getScanlinePreviousInbetween()
 {
 	return (uint32_t*) (g_pVideoAddress + 1*g_kFrameBufferWidth);
@@ -508,7 +509,7 @@ inline uint32_t* getScanlinePrevious()
 {
 	return (uint32_t*) (g_pVideoAddress + 2*g_kFrameBufferWidth);
 }
-
+#endif
 //===========================================================================
 inline uint32_t* getScanlineCurrent()
 {
@@ -595,31 +596,13 @@ inline void updateFlashRate() // TODO: Flash rate should be constant (regardless
 #else
 
 //===========================================================================
-extern bool g_VideoTVMode1_29_1_0;
+// GH#650: Changed TV-Single/Double to use next scanline for blending (was previous).
+
+// Original: Prev1(inbetween) = current - 25% of previous AppleII scanline
+// GH#650:   Next1(inbetween) = 50% of (50% current + 50% of next AppleII scanline)
 inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
-	if (g_VideoTVMode1_29_1_0) {
-	uint32_t *pLine1Prev = getScanlinePreviousInbetween();	// NB. TV mode uses previous 2 lines
-	const uint32_t *pLine2Prev = getScanlinePrevious();
-
-	const uint32_t color0 = getScanlineColor( signal, pTable );
-	const uint32_t color2 = *pLine2Prev;
-//	const uint32_t color1 = color0 - ((color2 & 0x00fcfcfc) >> 2); // BUG? color0 - color0? not color0-color2?
-	// TC: The above operation "color0 - ((color2 & 0x00fcfcfc) >> 2)" causes underflow, so I've recoded to clamp on underflow:
-	uint32_t color1;
-	{
-		int r=(color0>>16)&0xff, g=(color0>>8)&0xff, b=color0&0xff;
-		uint32_t color2_prime = (color2 & 0x00fcfcfc) >> 2;
-		r -= (color2_prime>>16)&0xff; if (r<0) r=0;	// clamp to 0 on underflow
-		g -= (color2_prime>>8)&0xff;  if (g<0) g=0;	// clamp to 0 on underflow
-		b -= (color2_prime)&0xff;     if (b<0) b=0;	// clamp to 0 on underflow
-		color1 = (r<<16)|(g<<8)|(b);
-	}
-
-	*pLine1Prev = color1 | ALPHA32_MASK;
-	*pLine0Curr = color0;
-	} else {
 	uint32_t *pLine1Next = getScanlineNextInbetween();
 	uint32_t *pLine2Next = getScanlineNext();
 	const uint32_t color0 = getScanlineColor( signal, pTable );
@@ -629,25 +612,16 @@ inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTa
 
 	*pLine1Next = color1 | ALPHA32_MASK;
 	*pLine0Curr = color0;
-	}
 	g_pVideoAddress++;
 }
 
 //===========================================================================
+
+// Original: Prev1(inbetween) = 50% current + 50% of previous AppleII scanline
+// GH#650:   Next1(inbetween) = 50% current + 50% of next AppleII scanline
 inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
-	if (g_VideoTVMode1_29_1_0) {
-	uint32_t *pLine1Prev = getScanlinePreviousInbetween();	// NB. TV mode uses previous 2 lines
-	const uint32_t *pLine2Prev = getScanlinePrevious();
-
-	const uint32_t color0 = getScanlineColor( signal, pTable );
-	const uint32_t color2 = *pLine2Prev;
-	const uint32_t color1 = ((color0 & 0x00fefefe) >> 1) + ((color2 & 0x00fefefe) >> 1); // 50% Blend
-
-	*pLine1Prev = color1 | ALPHA32_MASK;
-	*pLine0Curr = color0;
-	} else {
 	uint32_t *pLine1Next = getScanlineNextInbetween();
 	uint32_t *pLine2Next = getScanlineNext();
 	const uint32_t color0 = getScanlineColor( signal, pTable );
@@ -656,7 +630,6 @@ inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTa
 
 	*pLine1Next = color1 | ALPHA32_MASK;
 	*pLine0Curr = color0;
-	}
 	g_pVideoAddress++;
 }
 
@@ -664,7 +637,7 @@ inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTa
 inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
-	uint32_t *pLine1Next = getScanlineNextInbetween();	// NB. Monitor mode just uses next (inbetween) line
+	uint32_t *pLine1Next = getScanlineNextInbetween();
 	const uint32_t color0 = getScanlineColor( signal, pTable );
 	const uint32_t color1 = 0;	// Remove blending for consistent DHGR MIX mode (GH#631)
 //	const uint32_t color1 = ((color0 & 0x00fcfcfc) >> 2); // 25% Blend (original)
@@ -678,7 +651,7 @@ inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTa
 inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
-	uint32_t *pLine1Next = getScanlineNextInbetween();	// NB. Monitor mode just uses next (inbetween) line
+	uint32_t *pLine1Next = getScanlineNextInbetween();
 	const uint32_t color0 = getScanlineColor( signal, pTable );
 
 	*pLine1Next = color0;
