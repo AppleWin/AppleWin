@@ -619,7 +619,7 @@ inline void updateFramebufferTVSingleScanline( uint16_t signal, bgra_t *pTable )
 
 //===========================================================================
 
-// Original: Next1(inbetween) = 50% current + 50% of next AppleII scanline
+// Original: Prev1(inbetween) = 50% current + 50% of previous AppleII scanline
 inline void updateFramebufferTVDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
