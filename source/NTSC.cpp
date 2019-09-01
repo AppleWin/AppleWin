@@ -493,13 +493,13 @@ inline uint32_t* getScanlineNextInbetween()
 	return (uint32_t*) (g_pVideoAddress - 1*g_kFrameBufferWidth);
 }
 
+#if 0	// don't use this pixel, as it's from the previous video-frame!
 inline uint32_t* getScanlineNext()
 {
 	return (uint32_t*) (g_pVideoAddress - 2*g_kFrameBufferWidth);
 }
-
+#endif
 //===========================================================================
-#if 0
 inline uint32_t* getScanlinePreviousInbetween()
 {
 	return (uint32_t*) (g_pVideoAddress + 1*g_kFrameBufferWidth);
@@ -509,7 +509,6 @@ inline uint32_t* getScanlinePrevious()
 {
 	return (uint32_t*) (g_pVideoAddress + 2*g_kFrameBufferWidth);
 }
-#endif
 //===========================================================================
 inline uint32_t* getScanlineCurrent()
 {
@@ -594,42 +593,49 @@ inline void updateFlashRate() // TODO: Flash rate should be constant (regardless
 		g_pVideoAddress++; \
 	} while(0)
 #else
-
 //===========================================================================
-// GH#650: Changed TV-Single/Double to use next scanline for blending (was previous).
 
 // Original: Prev1(inbetween) = current - 25% of previous AppleII scanline
-// GH#650:   Next1(inbetween) = 50% of (50% current + 50% of next AppleII scanline)
+// GH#650:   Prev1(inbetween) = 50% of (50% current + 50% of previous AppleII scanline)
 inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
-	uint32_t *pLine1Next = getScanlineNextInbetween();
-	uint32_t *pLine2Next = getScanlineNext();
+	uint32_t *pLine1Prev = getScanlinePreviousInbetween();
+	uint32_t *pLine2Prev = getScanlinePrevious();
 	const uint32_t color0 = getScanlineColor( signal, pTable );
-	const uint32_t color2 = *pLine2Next;
+	const uint32_t color2 = *pLine2Prev;
 	uint32_t color1 = ((color0 & 0x00fefefe) >> 1) + ((color2 & 0x00fefefe) >> 1); // 50% Blend
 	color1 = (color1 & 0x00fefefe) >> 1;	// ... then 50% brightness for inbetween line
 
-	*pLine1Next = color1 | ALPHA32_MASK;
+	*pLine1Prev = color1 | ALPHA32_MASK;
 	*pLine0Curr = color0;
+
+	// GH#650: Draw to final inbetween scanline to avoid residue from other video modes (eg. Amber->TV B&W)
+	if (g_nVideoClockVert == (VIDEO_SCANNER_Y_DISPLAY-1))
+		*getScanlineNextInbetween() = ((color0 & 0x00fcfcfc) >> 2) | ALPHA32_MASK;	// 50% of (50% current + black)) = 25% of current
+
 	g_pVideoAddress++;
 }
 
 //===========================================================================
 
-// Original: Prev1(inbetween) = 50% current + 50% of previous AppleII scanline
-// GH#650:   Next1(inbetween) = 50% current + 50% of next AppleII scanline
+// Original: Next1(inbetween) = 50% current + 50% of next AppleII scanline
 inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
-	uint32_t *pLine1Next = getScanlineNextInbetween();
-	uint32_t *pLine2Next = getScanlineNext();
+	uint32_t *pLine1Prev = getScanlinePreviousInbetween();
+	uint32_t *pLine2Prev = getScanlinePrevious();
 	const uint32_t color0 = getScanlineColor( signal, pTable );
-	const uint32_t color2 = *pLine2Next;
+	const uint32_t color2 = *pLine2Prev;
 	const uint32_t color1 = ((color0 & 0x00fefefe) >> 1) + ((color2 & 0x00fefefe) >> 1); // 50% Blend
 
-	*pLine1Next = color1 | ALPHA32_MASK;
+	*pLine1Prev = color1 | ALPHA32_MASK;
 	*pLine0Curr = color0;
+
+	// GH#650: Draw to final inbetween scanline to avoid residue from other video modes (eg. Amber->TV B&W)
+	if (g_nVideoClockVert == (VIDEO_SCANNER_Y_DISPLAY-1))
+		*getScanlineNextInbetween() = ((color0 & 0x00fefefe) >> 1) | ALPHA32_MASK;	// (50% current + black)) = 50% of current
+
 	g_pVideoAddress++;
 }
 
