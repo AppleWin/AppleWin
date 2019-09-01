@@ -406,8 +406,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static csbits_t csbits;		// charset, optionally followed by alt charset
 
 // Prototypes
-	INLINE void      updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable );
-	INLINE void      updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable );
+	INLINE void      updateFramebufferTVSingleScanline( uint16_t signal, bgra_t *pTable );
+	INLINE void      updateFramebufferTVDoubleScanline( uint16_t signal, bgra_t *pTable );
 	INLINE void      updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable );
 	INLINE void      updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable );
 	INLINE void      updatePixels( uint16_t bits );
@@ -553,7 +553,7 @@ inline void updateFlashRate() // TODO: Flash rate should be constant (regardless
 	} while(0)
 
 // prevp is never used nor blended with!
-#define updateFramebufferColorTVSingleScanline(signal,table) \
+#define updateFramebufferTVSingleScanline(signal,table) \
 	do { \
 		uint32_t ntscp, /*prevp,*/ betwp; \
 		uint32_t *prevlin, *between; \
@@ -578,7 +578,7 @@ inline void updateFlashRate() // TODO: Flash rate should be constant (regardless
 		g_pVideoAddress++; \
 	} while(0)
 
-#define updateFramebufferColorTVDoubleScanline(signal,table) \
+#define updateFramebufferTVDoubleScanline(signal,table) \
 	do { \
 		uint32_t ntscp, prevp, betwp; \
 		uint32_t *prevlin, *between; \
@@ -597,7 +597,7 @@ inline void updateFlashRate() // TODO: Flash rate should be constant (regardless
 
 // Original: Prev1(inbetween) = current - 25% of previous AppleII scanline
 // GH#650:   Prev1(inbetween) = 50% of (50% current + 50% of previous AppleII scanline)
-inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTable )
+inline void updateFramebufferTVSingleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
 	uint32_t *pLine1Prev = getScanlinePreviousInbetween();
@@ -620,7 +620,7 @@ inline void updateFramebufferColorTVSingleScanline( uint16_t signal, bgra_t *pTa
 //===========================================================================
 
 // Original: Next1(inbetween) = 50% current + 50% of next AppleII scanline
-inline void updateFramebufferColorTVDoubleScanline( uint16_t signal, bgra_t *pTable )
+inline void updateFramebufferTVDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
 	uint32_t *pLine1Prev = getScanlinePreviousInbetween();
@@ -1152,26 +1152,26 @@ static void updatePixelBnWMonitorDoubleScanline (uint16_t compositeSignal)
 //===========================================================================
 static void updatePixelBnWColorTVSingleScanline (uint16_t compositeSignal)
 {
-	updateFramebufferColorTVSingleScanline(compositeSignal, g_aBnWColorTVCustom);
+	updateFramebufferTVSingleScanline(compositeSignal, g_aBnWColorTVCustom);
 }
 
 //===========================================================================
 static void updatePixelBnWColorTVDoubleScanline (uint16_t compositeSignal)
 {
-	updateFramebufferColorTVDoubleScanline(compositeSignal, g_aBnWColorTVCustom);
+	updateFramebufferTVDoubleScanline(compositeSignal, g_aBnWColorTVCustom);
 }
 
 //===========================================================================
 static void updatePixelHueColorTVSingleScanline (uint16_t compositeSignal)
 {
-	updateFramebufferColorTVSingleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
+	updateFramebufferTVSingleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
 static void updatePixelHueColorTVDoubleScanline (uint16_t compositeSignal)
 {
-	updateFramebufferColorTVDoubleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
+	updateFramebufferTVDoubleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
