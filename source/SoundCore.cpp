@@ -226,9 +226,14 @@ void DSReleaseSoundBuffer(VOICE* pVoice)
 
 bool DSZeroVoiceBuffer(PVOICE Voice, char* pszDevName, DWORD dwBufferSize)
 {
+#ifdef NO_DIRECT_X
+
+	return false;
+
+#else
+
 	DWORD dwDSLockedBufferSize = 0;    // Size of the locked DirectSound buffer
 	SHORT* pDSLockedBuffer;
-
 
 	HRESULT hr = Voice->lpDSBvoice->Stop();
 	if(FAILED(hr))
@@ -262,6 +267,7 @@ bool DSZeroVoiceBuffer(PVOICE Voice, char* pszDevName, DWORD dwBufferSize)
 	}
 
 	return true;
+#endif // NO_DIRECT_X
 }
 
 //-----------------------------------------------------------------------------

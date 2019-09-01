@@ -599,7 +599,11 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			SRCCOPY);
 	}
 
+#ifdef NO_DIRECT_X
+#else
 	//if (g_lpDD) g_lpDD->WaitForVerticalBlank(DDWAITVB_BLOCKBEGIN, NULL);
+#endif // NO_DIRECT_X
+
 	GdiFlush();
 }
 
@@ -909,6 +913,11 @@ static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrv
 
 bool DDInit(void)
 {
+#ifdef NO_DIRECT_X
+
+	return false;
+
+#else
 	HRESULT hr = DirectDrawEnumerate((LPDDENUMCALLBACK)DDEnumProc, NULL);
 	if (FAILED(hr))
 	{
@@ -939,6 +948,7 @@ bool DDInit(void)
 	}
 
 	return true;
+#endif // NO_DIRECT_X
 }
 
 // From SoundCore.h
