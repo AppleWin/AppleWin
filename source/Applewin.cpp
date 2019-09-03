@@ -522,7 +522,7 @@ static void LoadConfigOldJoystick_v1(const UINT uJoyNum)
 //Reads configuration from the registry entries
 void LoadConfiguration(void)
 {
-	DWORD dwComputerType;
+	DWORD dwComputerType = A2TYPE_APPLE2EENHANCED;
 	eApple2Type apple2Type = A2TYPE_APPLE2EENHANCED;
 
 	if (REGLOAD(TEXT(REGVALUE_APPLE2_TYPE), &dwComputerType))
