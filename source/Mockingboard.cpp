@@ -211,12 +211,18 @@ static const double g_f6522TimerPeriod_NoIRQ = CLK_6502_NTSC / 60.0;	// Constant
 static bool g_bCritSectionValid = false;	// Deleting CritialSection when not valid causes crash on Win98
 static CRITICAL_SECTION g_CriticalSection;	// To guard 6522's IFR
 
+// If we have 2 timer ints: 50Hz and 60Hz, then need to be able to determine the AY8910 reg update freq
+static bool g_waitFirstAYWriteAfterTimer1Int = false;
+static UINT64 g_lastAY8910cycleAccess = 0;
+static UINT64 g_AYWriteAccessTimer1IntPeriod = 0;
+
 //---------------------------------------------------------------------------
 
 // Forward refs:
 static DWORD WINAPI SSI263Thread(LPVOID);
 static void Votrax_Write(BYTE nDevice, BYTE nValue);
 static double MB_GetFramePeriod(void);
+static void MB_Update(void);
 
 //---------------------------------------------------------------------------
 
@@ -229,7 +235,7 @@ static void StartTimer1(SY6522_AY8910* pMB)
 
 	if (pMB->sy6522.IER & IxR_TIMER1)			// Using 6522 interrupt
 		g_nMBTimerDevice = pMB->nAY8910Number;
-	else if (pMB->sy6522.ACR & RM_FREERUNNING)	// Polling 6522 IFR
+	else if (pMB->sy6522.ACR & RM_FREERUNNING)	// Polling 6522 IFR (GH#496)
 		g_nMBTimerDevice = pMB->nAY8910Number;
 }
 
@@ -401,6 +407,19 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				else
 				{
 					AY8910_Write(nDevice, nReg, nValue, 0);
+				}
+
+				if (g_waitFirstAYWriteAfterTimer1Int)	// GH#685: Multiple TIMER1 interrupts
+				{
+					g_waitFirstAYWriteAfterTimer1Int = false;
+					//CpuCalcCycles(uExecutedCycles);	// Done in parent MB_Write() via MB_UpdateCycles()
+
+					g_AYWriteAccessTimer1IntPeriod = g_nCumulativeCycles - g_lastAY8910cycleAccess;
+					if (g_AYWriteAccessTimer1IntPeriod > 0xffff)
+						g_AYWriteAccessTimer1IntPeriod = (UINT64) g_f6522TimerPeriod_NoIRQ;
+					g_lastAY8910cycleAccess = g_nCumulativeCycles;
+
+					MB_Update();
 				}
 
 				break;
@@ -769,7 +788,8 @@ static void Votrax_Write(BYTE nDevice, BYTE nValue)
 // Called by:
 // . MB_UpdateCycles()    - when g_nMBTimerDevice == {0,1,2,3}
 // . MB_EndOfVideoFrame() - when g_nMBTimerDevice == kTIMERDEVICE_INVALID
-static void MB_Update()
+// . SY6522_Write()       - when multiple TIMER1s (interrupt sources) are active
+static void MB_Update(void)
 {
 	//char szDbg[200];
 
@@ -1475,6 +1495,10 @@ static void ResetState()
 	g_nPhasorMode = 0;
 	g_PhasorClockScaleFactor = 1;
 
+	g_waitFirstAYWriteAfterTimer1Int = false;
+	g_lastAY8910cycleAccess = 0;
+	g_AYWriteAccessTimer1IntPeriod = 0;
+
 	// Not these, as they don't change on a CTRL+RESET or power-cycle:
 //	g_bMBAvailable = false;
 //	g_SoundcardType = CT_Empty;	// Don't uncomment, else _ASSERT will fire in MB_Read() after an F2->MB_Reset()
@@ -1786,6 +1810,10 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 	_ASSERT(uCycles < 0x10000);
 	USHORT nClocks = (USHORT) uCycles;
 
+	UINT numActiveTimer1s = 0;
+	for (int i=0; i<NUM_SY6522; i++)
+		numActiveTimer1s += g_MB[i].bTimer1Active ? 1 : 0;
+
 	for (int i=0; i<NUM_SY6522; i++)
 	{
 		SY6522_AY8910* pMB = &g_MB[i];
@@ -1811,9 +1839,16 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 		{
 			UpdateIFR(pMB, 0, IxR_TIMER1);
 
-			// Do MB_Update() before StopTimer1()
-			if (g_nMBTimerDevice == i)
-				MB_Update();
+			if (numActiveTimer1s == 1)
+			{
+				// Do MB_Update() before StopTimer1()
+				if (g_nMBTimerDevice == i)
+					MB_Update();
+			}
+			else	// GH#685: Multiple TIMER1 interrupts
+			{
+				g_waitFirstAYWriteAfterTimer1Int = true;	// Defer MB_Update() until MB_Write()
+			}
 
 			if ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
 			{
@@ -1876,6 +1911,9 @@ static double MB_GetFramePeriod(void)
 	//   -> MB_Update()
 	//      -> MB_GetFramePeriod()
 	// NB. Removing this Phasor-IFR check means the occasional 'g_f6522TimerPeriod_NoIRQ' gets returned.
+
+	if (g_AYWriteAccessTimer1IntPeriod)
+		return (double)g_AYWriteAccessTimer1IntPeriod;
 
 	if ((g_nMBTimerDevice != kTIMERDEVICE_INVALID) ||
 		(g_bPhasorEnable && (g_MB[0].sy6522.IFR & IxR_TIMER1)))	// [*1]
