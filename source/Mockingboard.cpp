@@ -394,6 +394,19 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 					break;
 				}
 
+				if (g_waitFirstAYWriteAfterTimer1Int)	// GH#685: Multiple TIMER1 interrupts
+				{
+					g_waitFirstAYWriteAfterTimer1Int = false;
+					//CpuCalcCycles(uExecutedCycles);	// Done in parent MB_Write() via MB_UpdateCycles()
+
+					g_AYWriteAccessTimer1IntPeriod = g_nCumulativeCycles - g_lastAY8910cycleAccess;
+					if (g_AYWriteAccessTimer1IntPeriod > 0xffff)
+						g_AYWriteAccessTimer1IntPeriod = (UINT64)g_f6522TimerPeriod_NoIRQ;
+					g_lastAY8910cycleAccess = g_nCumulativeCycles;
+
+					MB_Update();
+				}
+
 				if(g_bPhasorEnable)
 				{
 					int nAY_CS = (g_nPhasorMode & 1) ? (~(nValue >> 3) & 3) : 1;
@@ -407,19 +420,6 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				else
 				{
 					AY8910_Write(nDevice, nReg, nValue, 0);
-				}
-
-				if (g_waitFirstAYWriteAfterTimer1Int)	// GH#685: Multiple TIMER1 interrupts
-				{
-					g_waitFirstAYWriteAfterTimer1Int = false;
-					//CpuCalcCycles(uExecutedCycles);	// Done in parent MB_Write() via MB_UpdateCycles()
-
-					g_AYWriteAccessTimer1IntPeriod = g_nCumulativeCycles - g_lastAY8910cycleAccess;
-					if (g_AYWriteAccessTimer1IntPeriod > 0xffff)
-						g_AYWriteAccessTimer1IntPeriod = (UINT64) g_f6522TimerPeriod_NoIRQ;
-					g_lastAY8910cycleAccess = g_nCumulativeCycles;
-
-					MB_Update();
 				}
 
 				break;
