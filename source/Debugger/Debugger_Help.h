@@ -14,8 +14,8 @@
 
 	void DisplayAmbigiousCommands ( int nFound );
 
-	int FindParam( LPTSTR pLookupName, Match_e eMatch, int & iParam_, const int iParamBegin = 0, const int iParamEnd = NUM_PARAMS - 1 );
-	int FindCommand( LPTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ = NULL );
+	int FindParam( LPCTSTR pLookupName, Match_e eMatch, int & iParam_, const int iParamBegin = 0, const int iParamEnd = NUM_PARAMS - 1 );
+	int FindCommand( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ = NULL );
 
 inline void  UnpackVersion( const unsigned int nVersion,
 		int & nMajor_, int & nMinor_, int & nFixMajor_ , int & nFixMinor_ )

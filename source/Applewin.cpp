@@ -80,7 +80,7 @@ HINSTANCE g_hInstance          = (HINSTANCE)0;
 AppMode_e	g_nAppMode = MODE_LOGO;
 static bool g_bLoadedSaveState = false;
 
-TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin executable resides
+std::string g_sProgramDir; // Directory of where AppleWin executable resides
 TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
 TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
 bool      g_bCapturePrintScreenKey = true;
@@ -472,15 +472,18 @@ void EnterMessageLoop(void)
 //===========================================================================
 void GetProgramDirectory(void)
 {
-	GetModuleFileName((HINSTANCE)0, g_sProgramDir, MAX_PATH);
-	g_sProgramDir[MAX_PATH-1] = 0;
+	TCHAR programDir[MAX_PATH];
+	GetModuleFileName((HINSTANCE)0, programDir, MAX_PATH);
+	programDir[MAX_PATH-1] = 0;
 
-	int loop = _tcslen(g_sProgramDir);
+	g_sProgramDir = programDir;
+
+	int loop = g_sProgramDir.size();
 	while (loop--)
 	{
 		if ((g_sProgramDir[loop] == TEXT('\\')) || (g_sProgramDir[loop] == TEXT(':')))
 		{
-			g_sProgramDir[loop+1] = 0;
+			g_sProgramDir.resize(loop);  // this reduces the size
 			break;
 		}
 	}

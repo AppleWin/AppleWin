@@ -225,7 +225,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	ProfileOpmode_t g_aProfileOpmodes[ NUM_OPMODES ];
 	unsigned __int64 g_nProfileBeginCycles = 0; // g_nCumulativeCycles // PROFILE RESET
 
-	TCHAR g_FileNameProfile[] = TEXT("Profile.txt"); // changed from .csv to .txt since Excel doesn't give import options.
+	const std::string g_FileNameProfile = TEXT("Profile.txt"); // changed from .csv to .txt since Excel doesn't give import options.
 	int   g_nProfileLine = 0;
 	char  g_aProfileLine[ NUM_PROFILE_LINES ][ CONSOLE_WIDTH ];
 
@@ -245,7 +245,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool  g_bSourceAddSymbols     = false;
 	bool  g_bSourceAddMemory      = false;
 
-	char   g_aSourceFileName[ MAX_PATH ] = "";
+	std::string g_aSourceFileName;
 
 	MemoryTextFile_t g_AssemblerSourceBuffer;
 
@@ -285,7 +285,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Misc. __________________________________________________________________________________________
 
-	char      g_sFileNameConfig     [] = 
+	std::string g_sFileNameConfig     =
 #ifdef MSDOS
 		"AWDEBUGR.CFG";
 #else
@@ -347,7 +347,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	void _UpdateWindowFontHeights (int nFontHeight);
 
 // Source Level Debugging
-	static	bool BufferAssemblyListing ( char * pFileName );
+	static	bool BufferAssemblyListing ( const std::string & pFileName );
 	static	bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols );
 
 
@@ -2394,9 +2394,7 @@ void ConfigSave_PrepareHeader ( const Parameters_e eCategory, const Commands_e e
 //===========================================================================
 Update_t CmdConfigSave (int nArgs)
 {
-	TCHAR sFilename[ MAX_PATH ];
-	_tcscpy( sFilename, g_sProgramDir ); // TODO: g_sDebugDir
-	_tcscat( sFilename, g_sFileNameConfig );
+	const std::string sFilename = g_sProgramDir + g_sFileNameConfig;
 
 /*
 	HANDLE hFile = CreateFile( sfilename,
@@ -4768,8 +4766,7 @@ Update_t CmdMemorySave (int nArgs)
 //			(g_aArgs[ iArgComma2 ].eToken != TOKEN_COLON))
 //			return Help_Arg_1( CMD_MEMORY_SAVE );
 
-		TCHAR sLoadSaveFilePath[ MAX_PATH ];
-		_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
+		std::string sLoadSaveFilePath = g_sCurrentDir; // g_sProgramDir
 
 		RangeType_t eRange;
 		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
@@ -4791,7 +4788,7 @@ Update_t CmdMemorySave (int nArgs)
 			{
 				_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
 			}
-			_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
+			sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 
 			const BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
 			if (!pMemBankBase)
@@ -4800,7 +4797,7 @@ Update_t CmdMemorySave (int nArgs)
 				return ConsoleUpdate();
 			}
 
-			FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
+			FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 			if (hFile)
 			{
 				ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
@@ -4808,7 +4805,7 @@ Update_t CmdMemorySave (int nArgs)
 				// TODO: BUG: Is this a bug/feature that we can over-write files and the user has no control over that?
 			}
 
-			hFile = fopen( sLoadSaveFilePath, "wb" );
+			hFile = fopen( sLoadSaveFilePath.c_str(), "wb" );
 			if (hFile)
 			{
 				size_t nWrote = fwrite( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
@@ -5631,8 +5628,7 @@ int CmdTextSave (int nArgs)
 	char  *pText;
 	size_t nSize = Util_GetTextScreen( pText );
 
-	TCHAR sLoadSaveFilePath[ MAX_PATH ];
-	_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
+	std::string sLoadSaveFilePath = g_sCurrentDir; // g_sProgramDir
 
 	if( bHaveFileName )
 		_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
@@ -5644,16 +5640,16 @@ int CmdTextSave (int nArgs)
 			sprintf( g_sMemoryLoadSaveFileName, "AppleWin_Text40.txt" );
 	}
 
-	_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
+	sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 
-	FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
+	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
 		ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
 		fclose( hFile );
 	}
 
-	hFile = fopen( sLoadSaveFilePath, "wb" );
+	hFile = fopen( sLoadSaveFilePath.c_str(), "wb" );
 	if (hFile)
 	{
 		size_t nWrote = fwrite( pText, nSize, 1, hFile );
@@ -6518,11 +6514,11 @@ Update_t CmdOutputRun (int nArgs)
 // Source Level Debugging _________________________________________________________________________
 
 //===========================================================================
-bool BufferAssemblyListing( char *pFileName )
+bool BufferAssemblyListing( const std::string & pFileName )
 {
 	bool bStatus = false; // true = loaded
 
-	if (! pFileName)
+	if (pFileName.empty())
 		return bStatus;
 
 	g_AssemblerSourceBuffer.Reset();
@@ -6740,10 +6736,10 @@ Update_t CmdSource (int nArgs)
 
 		for( int iArg = 1; iArg <= nArgs; iArg++ )
 		{	
-			TCHAR *pFileName = g_aArgs[ iArg ].sArg;
+			const std::string pFileName = g_aArgs[ iArg ].sArg;
 
 			int iParam;
-			bool bFound = FindParam( pFileName, MATCH_EXACT, iParam, _PARAM_SOURCE_BEGIN, _PARAM_SOURCE_END ) > 0 ? true : false;
+			bool bFound = FindParam( pFileName.c_str(), MATCH_EXACT, iParam, _PARAM_SOURCE_BEGIN, _PARAM_SOURCE_END ) > 0 ? true : false;
 			if (bFound && (iParam == PARAM_SRC_SYMBOLS))
 			{
 				g_bSourceAddSymbols = true;
@@ -6755,35 +6751,32 @@ Update_t CmdSource (int nArgs)
 			}
 			else
 			{
-				TCHAR  sFileName[MAX_PATH];
-				_tcscpy(sFileName,g_sProgramDir);
-				_tcscat(sFileName, pFileName);
+				const std::string sFileName = g_sProgramDir + pFileName;
 
-				const int MAX_MINI_FILENAME = 20;
-				TCHAR sMiniFileName[ MAX_MINI_FILENAME + 1 ];
-				_tcsncpy( sMiniFileName, pFileName, MAX_MINI_FILENAME - 1 );
-				sMiniFileName[ MAX_MINI_FILENAME ] = 0;
+				const int MAX_MINI_FILENAME = 20; 
+				const std::string sMiniFileName = sFileName.substr(0, min(MAX_MINI_FILENAME, sFileName.size()));
 
+				TCHAR buffer[MAX_PATH] = { 0 };
 
 				if (BufferAssemblyListing( sFileName ))
 				{
-					_tcscpy( g_aSourceFileName, pFileName );
+					g_aSourceFileName = pFileName;
 
 					if (! ParseAssemblyListing( g_bSourceAddMemory, g_bSourceAddSymbols ))
 					{
-						ConsoleBufferPushFormat( sFileName, "Couldn't load filename: %s", sMiniFileName );
+						ConsoleBufferPushFormat( buffer, "Couldn't load filename: %s", sMiniFileName.c_str() );
 					}
 					else
 					{
 						if (g_nSourceAssembleBytes)
 						{
-							ConsoleBufferPushFormat( sFileName, "  Read: %d lines, %d symbols, %d bytes"
+							ConsoleBufferPushFormat( buffer, "  Read: %d lines, %d symbols, %d bytes"
 								, g_AssemblerSourceBuffer.GetNumLines() // g_nSourceAssemblyLines
 								, g_nSourceAssemblySymbols, g_nSourceAssembleBytes );
 						}
 						else
 						{
-							ConsoleBufferPushFormat( sFileName, "  Read: %d lines, %d symbols"
+							ConsoleBufferPushFormat( buffer, "  Read: %d lines, %d symbols"
 								, g_AssemblerSourceBuffer.GetNumLines() // g_nSourceAssemblyLines
 								, g_nSourceAssemblySymbols );
 						}
@@ -6791,7 +6784,7 @@ Update_t CmdSource (int nArgs)
 				}
 				else
 				{
-					ConsoleBufferPushFormat( sFileName, "Error reading: %s", sMiniFileName );
+					ConsoleBufferPushFormat( buffer, "Error reading: %s", sMiniFileName.c_str() );
 				}
 			}
 		}
@@ -7659,7 +7652,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 
 // Note: Range is [iParamBegin,iParamEnd], not the usually (STL) expected [iParamBegin,iParamEnd)
 //===========================================================================
-int FindParam( LPTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd )
+int FindParam(LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd )
 {
 	int nFound = 0;
 	int nLen     = _tcslen( pLookupName );
@@ -7723,7 +7716,7 @@ int FindParam( LPTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegi
 }
 
 //===========================================================================
-int FindCommand( LPTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
+int FindCommand( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 {
 	g_vPotentialCommands.erase( g_vPotentialCommands.begin(), g_vPotentialCommands.end() );
 
@@ -8446,11 +8439,9 @@ bool ProfileSave()
 {
 	bool bStatus = false;
 
-	char sFilename[MAX_PATH];
-	strcpy( sFilename, g_sProgramDir ); // TODO: Allow user to decide?
-	strcat( sFilename, g_FileNameProfile );
+	const std::string sFilename = g_sProgramDir + g_FileNameProfile; // TODO: Allow user to decide?
 
-	FILE *hFile = fopen( sFilename, "wt" );
+	FILE *hFile = fopen( sFilename.c_str(), "wt" );
 
 	if (hFile)
 	{

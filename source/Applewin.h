@@ -34,7 +34,7 @@ bool GetLoadedSaveStateFlag(void);
 void SetLoadedSaveStateFlag(const bool bFlag);
 bool GetHookAltGrControl(void);
 
-extern TCHAR      g_sProgramDir[MAX_PATH];
+extern std::string g_sProgramDir;
 extern TCHAR      g_sCurrentDir[MAX_PATH];
 
 extern bool       g_bRestart;

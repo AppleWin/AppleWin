@@ -1969,20 +1969,16 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_HELP:
       {
-        TCHAR filename[MAX_PATH];
-        _tcscpy(filename,g_sProgramDir);
-        _tcscat(filename,TEXT("APPLEWIN.CHM"));
+        const std::string filename = g_sProgramDir + TEXT("APPLEWIN.CHM");
 
 		// (GH#437) For any internet downloaded AppleWin.chm files (stored on an NTFS drive) there may be an Alt Data Stream containing a Zone Identifier
 		// - try to delete it, otherwise the content won't be displayed unless it's unblock (via File Properties)
 		{
-			TCHAR filename_with_zone_identifier[MAX_PATH];
-			_tcscpy(filename_with_zone_identifier,filename);
-			_tcscat(filename_with_zone_identifier,TEXT(":Zone.Identifier"));
-			DeleteFile(filename_with_zone_identifier);
+			const std::string filename_with_zone_identifier = filename + TEXT(":Zone.Identifier");
+			DeleteFile(filename_with_zone_identifier.c_str());
 		}
 
-        HtmlHelp(g_hFrameWindow,filename,HH_DISPLAY_TOC,0);
+        HtmlHelp(g_hFrameWindow,filename.c_str(),HH_DISPLAY_TOC,0);
         helpquit = 1;
       }
       break;

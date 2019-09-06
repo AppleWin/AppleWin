@@ -31,10 +31,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 const int EOL_NULL = 0;
 
 //===========================================================================
-bool MemoryTextFile_t::Read( char *pFileName )
+bool MemoryTextFile_t::Read( const std::string & pFileName )
 {
 	bool bStatus = false;
-	FILE *hFile = fopen( pFileName, "rb" );
+	FILE *hFile = fopen( pFileName.c_str(), "rb" );
 
 	if (hFile)
 	{
