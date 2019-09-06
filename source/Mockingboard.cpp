@@ -1797,7 +1797,7 @@ static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, 
 
 // Called by:
 // . CpuExecute() every ~1000 @ 1MHz
-// . CheckInterruptSources() every 128 cycles
+// . CheckInterruptSources() every opcode (or every 40 opcodes at full-speed)
 // . MB_Read() / MB_Write()
 void MB_UpdateCycles(ULONG uExecutedCycles)
 {
@@ -1847,7 +1847,9 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 			}
 			else	// GH#685: Multiple TIMER1 interrupts
 			{
-				g_waitFirstAYWriteAfterTimer1Int = true;	// Defer MB_Update() until MB_Write()
+				// Only allow when not in interrupt handler (ie. only allow when interrupts are enabled)
+				if (Is6502InterruptEnabled())
+					g_waitFirstAYWriteAfterTimer1Int = true;	// Defer MB_Update() until MB_Write()
 			}
 
 			if ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)

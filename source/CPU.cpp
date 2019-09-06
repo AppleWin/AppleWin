@@ -188,6 +188,11 @@ void SetActiveCpu(eCpuType cpu)
 	g_ActiveCPU = cpu;
 }
 
+bool Is6502InterruptEnabled(void)
+{
+	return !(regs.ps & AF_INTERRUPT);
+}
+
 //
 
 #include "CPU/cpu_general.inl"
