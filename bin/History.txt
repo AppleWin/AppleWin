@@ -8,15 +8,17 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
-1.29.2.0 - ?? Sep 2019
-----------------------
+1.29.2.0 - 6 Sep 2019
+---------------------
 . [Change #678] Hotkeys to change emulation speed:
 	- Ctrl-0 Toggles between custom speed and Full-Speed
 	- Ctrl-1 Sets 1 MHz
 	- Ctrl-3 Sets Full-Speed
 . [Change #671] Register .woz extension with AppleWin. Updated AppleWin.chm & DELREG.INF.
+. [Bug #685] Fixed support for French Touch's "CHIP" demo (Mockingboard / multi-TIMER interrupt support).
 . [Bug #677] Loading a save-state wasn't restoring the pending IRQ.
-. [Bug #677] For WOZ images: all even disk I/O read accesses will now read the data latch.
+. [Bug #672] For WOZ images: all even disk I/O read accesses will now read the data latch.
+. [Bug #650] NTSC TV (Color and B&W): image was half an Apple II scanline vertically shifted down.
 . [PR #674] Prevent uninitialized value bugs and improve string safety.
 
 
