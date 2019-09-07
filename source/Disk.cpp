@@ -177,7 +177,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 	if (!m_saveDiskImage)
 		return;
 
-	const TCHAR *pFileName = m_floppyDrive[drive].m_disk.m_fullname;
+	const TCHAR *pFileName = m_floppyDrive[drive].m_disk.m_fullname.c_str();
 
 	if (drive == DRIVE_1)
 		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_DISK_1), TRUE, pFileName);
@@ -187,7 +187,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 	//
 
 	TCHAR szPathName[MAX_PATH];
-	StringCbCopy(szPathName, MAX_PATH, DiskGetFullPathName(drive));
+	StringCbCopy(szPathName, MAX_PATH, DiskGetFullPathName(drive).c_str());
 	TCHAR* slash = _tcsrchr(szPathName, TEXT('\\'));
 	if (slash != NULL)
 	{
@@ -346,12 +346,12 @@ void Disk2InterfaceCard::RemoveDisk(const int drive)
 		pFloppy->m_trackimagedata = false;
 	}
 
-	memset( pFloppy->m_imagename, 0, MAX_DISK_IMAGE_NAME+1 );
-	memset( pFloppy->m_fullname , 0, MAX_DISK_FULL_NAME +1 );
+	pFloppy->m_imagename.clear();
+	pFloppy->m_fullname.clear();
 	pFloppy->m_strFilenameInZip = "";
 
 	SaveLastDiskImage( drive );
-	Video_ResetScreenshotCounter( NULL );
+	Video_ResetScreenshotCounter( "" );
 }
 
 //===========================================================================
@@ -555,29 +555,29 @@ void Disk2InterfaceCard::EjectDisk(const int drive)
 
 // Return the filename
 // . Used by Drive Buttons' tooltips
-LPCTSTR Disk2InterfaceCard::GetFullDiskFilename(const int drive)
+const std::string & Disk2InterfaceCard::GetFullDiskFilename(const int drive)
 {
 	if (!m_floppyDrive[drive].m_disk.m_strFilenameInZip.empty())
-		return m_floppyDrive[drive].m_disk.m_strFilenameInZip.c_str();
+		return m_floppyDrive[drive].m_disk.m_strFilenameInZip;
 
 	return GetFullName(drive);
 }
 
 // Return the file or zip name
 // . Used by Property Sheet Page (Disk)
-LPCTSTR Disk2InterfaceCard::GetFullName(const int drive)
+const std::string & Disk2InterfaceCard::GetFullName(const int drive)
 {
 	return m_floppyDrive[drive].m_disk.m_fullname;
 }
 
 // Return the imagename
 // . Used by Drive Button's icons & Property Sheet Page (Save snapshot)
-LPCTSTR Disk2InterfaceCard::GetBaseName(const int drive)
+const std::string & Disk2InterfaceCard::GetBaseName(const int drive)
 {
 	return m_floppyDrive[drive].m_disk.m_imagename;
 }
 
-LPCTSTR Disk2InterfaceCard::DiskGetFullPathName(const int drive)
+const std::string & Disk2InterfaceCard::DiskGetFullPathName(const int drive)
 {
 	return ImageGetPathname(m_floppyDrive[drive].m_disk.m_imagehandle);
 }
@@ -615,14 +615,14 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 
 	// Check if image is being used by the other drive, and if so remove it in order so it can be swapped
 	{
-		const char* pszOtherPathname = DiskGetFullPathName(!drive);
+		const std::string & pszOtherPathname = DiskGetFullPathName(!drive);
 
 		char szCurrentPathname[MAX_PATH]; 
 		DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, szCurrentPathname, NULL);
 		if (uNameLen == 0 || uNameLen >= MAX_PATH)
 			strcpy_s(szCurrentPathname, MAX_PATH, pszImageFilename);
 
- 		if (!strcmp(pszOtherPathname, szCurrentPathname))
+		if (!strcmp(pszOtherPathname.c_str(), szCurrentPathname))
 		{
 			EjectDisk(!drive);
 			FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
@@ -654,7 +654,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	}
 	else
 	{
-		Video_ResetScreenshotCounter(NULL);
+		Video_ResetScreenshotCounter("");
 	}
 
 	SaveLastDiskImage(drive);

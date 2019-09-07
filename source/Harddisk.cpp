@@ -123,8 +123,8 @@ struct HDD
 	{
 		// This is not a POD (there is a std::string)
 		// ZeroMemory does not work
-		ZeroMemory(imagename, sizeof(imagename));
-		ZeroMemory(fullname, sizeof(fullname));
+		imagename.clear();
+		fullname.clear();
 		strFilenameInZip.clear();
 		imagehandle = NULL;
 		bWriteProtected = false;
@@ -141,8 +141,8 @@ struct HDD
 	}
 
 	// From FloppyDisk
-	TCHAR	imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)    [not used]
-	TCHAR	fullname[ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>
+	std::string	imagename;	// <FILENAME> (ie. no extension)    [not used]
+	std::string fullname;	// <FILENAME.EXT> or <FILENAME.zip>
 	std::string strFilenameInZip;					// ""             or <FILENAME.EXT> [not used]
 	ImageInfo*	imagehandle;			// Init'd by HD_Insert() -> ImageOpen()
 	bool	bWriteProtected;			// Needed for ImageOpen() [otherwise not used]
@@ -204,7 +204,7 @@ static void NotifyInvalidImage(TCHAR* pszImageFilename)
 
 //===========================================================================
 
-BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename);
+BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename);
 
 void HD_LoadLastDiskImage(const int iDrive)
 {
@@ -233,7 +233,7 @@ static void HD_SaveLastDiskImage(const int iDrive)
 	if (!g_bSaveDiskImage)
 		return;
 
-	const char *pFileName = g_HardDisk[iDrive].fullname;
+	const char *pFileName = g_HardDisk[iDrive].fullname.c_str();
 
 	if (iDrive == HARDDISK_1)
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_HARDDISK_1, TRUE, pFileName);
@@ -243,7 +243,7 @@ static void HD_SaveLastDiskImage(const int iDrive)
 	//
 
 	char szPathName[MAX_PATH];
-	strcpy(szPathName, HD_GetFullPathName(iDrive));
+	strcpy(szPathName, HD_GetFullPathName(iDrive).c_str());
 	if (_tcsrchr(szPathName, TEXT('\\')))
 	{
 		char* pPathEnd = _tcsrchr(szPathName, TEXT('\\'))+1;
@@ -296,17 +296,17 @@ void HD_SetEnabled(const bool bEnabled)
 
 //-------------------------------------
 
-LPCTSTR HD_GetFullName(const int iDrive)
+const std::string & HD_GetFullName(const int iDrive)
 {
 	return g_HardDisk[iDrive].fullname;
 }
 
-LPCTSTR HD_GetFullPathName(const int iDrive)
+const std::string & HD_GetFullPathName(const int iDrive)
 {
 	return ImageGetPathname(g_HardDisk[iDrive].imagehandle);
 }
 
-static LPCTSTR HD_DiskGetBaseName(const int iDrive)	// Not used
+static const std::string & HD_DiskGetBaseName(const int iDrive)	// Not used
 {
 	return g_HardDisk[iDrive].imagename;
 }
@@ -362,9 +362,9 @@ void HD_Destroy(void)
 }
 
 // Pre: pszImageFilename is qualified with path
-BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
+BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename)
 {
-	if (*pszImageFilename == 0x00)
+	if (pszImageFilename.empty())
 		return FALSE;
 
 	if (g_HardDisk[iDrive].hd_imageloaded)
@@ -372,14 +372,14 @@ BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
 
 	// Check if image is being used by the other HDD, and unplug it in order to be swapped
 	{
-		const char* pszOtherPathname = HD_GetFullPathName(!iDrive);
+		const std::string & pszOtherPathname = HD_GetFullPathName(!iDrive);
 
 		char szCurrentPathname[MAX_PATH]; 
-		DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, szCurrentPathname, NULL);
+		DWORD uNameLen = GetFullPathName(pszImageFilename.c_str(), MAX_PATH, szCurrentPathname, NULL);
 		if (uNameLen == 0 || uNameLen >= MAX_PATH)
-			strcpy_s(szCurrentPathname, MAX_PATH, pszImageFilename);
+			strcpy_s(szCurrentPathname, MAX_PATH, pszImageFilename.c_str());
 
- 		if (!strcmp(pszOtherPathname, szCurrentPathname))
+		if (!strcmp(pszOtherPathname.c_str(), szCurrentPathname))
 		{
 			HD_Unplug(!iDrive);
 			FrameRefreshStatus(DRAW_LEDS);
@@ -405,7 +405,7 @@ BOOL HD_Insert(const int iDrive, LPCTSTR pszImageFilename)
 
 	if (Error == eIMAGE_ERROR_NONE)
 	{
-		GetImageTitle(pszImageFilename, g_HardDisk[iDrive].imagename, g_HardDisk[iDrive].fullname);
+		GetImageTitle(pszImageFilename.c_str(), g_HardDisk[iDrive].imagename, g_HardDisk[iDrive].fullname);
 	}
 
 	HD_SaveLastDiskImage(iDrive);

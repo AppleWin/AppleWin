@@ -39,7 +39,7 @@ static CHardDiskImageHelper sg_HardDiskImageHelper;
 //===========================================================================
 
 // Pre: *pWriteProtected_ already set to file's r/w status - see DiskInsert()
-ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
+ImageError_e ImageOpen(	const std::string & pszImageFilename,
 						ImageInfo** ppImageInfo,
 						bool* pWriteProtected,
 						const bool bCreateIfNecessary,
@@ -49,7 +49,7 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 	if (bExpectFloppy && sg_DiskImageHelper.GetWorkBuffer() == NULL)
 		return eIMAGE_ERROR_BAD_POINTER;
 
-	if (! (pszImageFilename && ppImageInfo && pWriteProtected))
+	if (! (ppImageInfo && pWriteProtected))
 		return eIMAGE_ERROR_BAD_POINTER;
 
 	// CREATE A RECORD FOR THE FILE
@@ -63,7 +63,7 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 	if (bExpectFloppy)	pImageInfo->pImageHelper = &sg_DiskImageHelper;
 	else				pImageInfo->pImageHelper = &sg_HardDiskImageHelper;
 
-	ImageError_e Err = pImageInfo->pImageHelper->Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip);
+	ImageError_e Err = pImageInfo->pImageHelper->Open(pszImageFilename.c_str(), pImageInfo, bCreateIfNecessary, strFilenameInZip);
 	if (Err != eIMAGE_ERROR_NONE)
 	{
 		ImageClose(*ppImageInfo, true);
@@ -239,9 +239,9 @@ bool ImageIsMultiFileZip(ImageInfo* const pImageInfo)
 	return pImageInfo ? (pImageInfo->uNumEntriesInZip > 1) : false;
 }
 
-const char* ImageGetPathname(ImageInfo* const pImageInfo)
+const std::string & ImageGetPathname(ImageInfo* const pImageInfo)
 {
-	static const char* szEmpty = "";
+	static const std::string szEmpty;
 	return pImageInfo ? pImageInfo->szFilename : szEmpty;
 }
 
@@ -277,7 +277,7 @@ UINT ImagePhaseToTrack(ImageInfo* const pImageInfo, const float phase, const boo
 	return track;
 }
 
-void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName)
+void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName)
 {
 	TCHAR   imagetitle[ MAX_DISK_FULL_NAME+1 ];
 	LPCTSTR startpos = pPathname;
@@ -304,8 +304,7 @@ void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName)
 		CharLowerBuff(imagetitle+1, _tcslen(imagetitle+1));
 
 	// pFullName = <FILENAME.EXT>
-	_tcsncpy( pFullName, imagetitle, MAX_DISK_FULL_NAME );
-	pFullName[ MAX_DISK_FULL_NAME ] = 0;
+	pFullName = imagetitle;
 
 	if (imagetitle[0])
 	{
@@ -317,6 +316,5 @@ void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName)
 	}
 
 	// pImageName = <FILENAME> (ie. no extension)
-	_tcsncpy( pImageName, imagetitle, MAX_DISK_IMAGE_NAME );
-	pImageName[ MAX_DISK_IMAGE_NAME ] = 0;
+	pImageName = imagetitle;
 }

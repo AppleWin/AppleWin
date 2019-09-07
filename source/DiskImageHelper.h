@@ -20,7 +20,7 @@ enum FileType_e {eFileNormal, eFileGZip, eFileZip};
 
 struct ImageInfo
 {
-	TCHAR			szFilename[MAX_PATH];
+	std::string 	szFilename;
 	CImageBase*		pImageType;
 	CImageHelperBase* pImageHelper;
 	FileType_e		FileType;

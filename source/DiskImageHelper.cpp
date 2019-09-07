@@ -99,7 +99,7 @@ bool CImageBase::WriteTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTra
 	else if (pImageInfo->FileType == eFileGZip)
 	{
 		// Write entire compressed image each time (dirty track change or dirty disk removal)
-		gzFile hGZFile = gzopen(pImageInfo->szFilename, "wb");
+		gzFile hGZFile = gzopen(pImageInfo->szFilename.c_str(), "wb");
 		if (hGZFile == NULL)
 			return false;
 
@@ -116,7 +116,7 @@ bool CImageBase::WriteTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTra
 	{
 		// Write entire compressed image each time (dirty track change or dirty disk removal)
 		// NB. Only support Zip archives with a single file
-		zipFile hZipFile = zipOpen(pImageInfo->szFilename, APPEND_STATUS_CREATE);
+		zipFile hZipFile = zipOpen(pImageInfo->szFilename.c_str(), APPEND_STATUS_CREATE);
 		if (hZipFile == NULL)
 			return false;
 
@@ -220,7 +220,7 @@ bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlo
 	else if (pImageInfo->FileType == eFileGZip)
 	{
 		// Write entire compressed image each time a block is written
-		gzFile hGZFile = gzopen(pImageInfo->szFilename, "wb");
+		gzFile hGZFile = gzopen(pImageInfo->szFilename.c_str(), "wb");
 		if (hGZFile == NULL)
 			return false;
 
@@ -237,7 +237,7 @@ bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlo
 	{
 		// Write entire compressed image each time a block is written
 		// NB. Only support Zip archives with a single file
-		zipFile hZipFile = zipOpen(pImageInfo->szFilename, APPEND_STATUS_CREATE);
+		zipFile hZipFile = zipOpen(pImageInfo->szFilename.c_str(), APPEND_STATUS_CREATE);
 		if (hZipFile == NULL)
 			return false;
 
@@ -1681,7 +1681,9 @@ ImageError_e CImageHelperBase::Open(	LPCTSTR pszImageFilename,
 	if (Err != eIMAGE_ERROR_NONE)
 		return Err;
 
-	DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, pImageInfo->szFilename, NULL);
+	TCHAR szFilename[MAX_PATH] = { 0 };
+	DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, szFilename, NULL);
+	pImageInfo->szFilename = szFilename;
 	if (uNameLen == 0 || uNameLen >= MAX_PATH)
 		Err = eIMAGE_ERROR_FAILED_TO_GET_PATHNAME;
 
@@ -1700,7 +1702,7 @@ void CImageHelperBase::Close(ImageInfo* pImageInfo, const bool bDeleteFile)
 
 	if (bDeleteFile)
 	{
-		DeleteFile(pImageInfo->szFilename);
+		DeleteFile(pImageInfo->szFilename.c_str());
 	}
 
 	pImageInfo->szFilename[0] = 0;

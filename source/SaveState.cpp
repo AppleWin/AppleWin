@@ -104,14 +104,14 @@ void Snapshot_SetFilename(std::string strPathname)
 	g_strSaveStatePathname = strPathname;
 }
 
-const char* Snapshot_GetFilename()
+const std::string & Snapshot_GetFilename()
 {
-	return g_strSaveStateFilename.c_str();
+	return g_strSaveStateFilename;
 }
 
-const char* Snapshot_GetPath()
+const std::string & Snapshot_GetPath()
 {
-	return g_strSaveStatePath.c_str();
+	return g_strSaveStatePath;
 }
 
 //-----------------------------------------------------------------------------
