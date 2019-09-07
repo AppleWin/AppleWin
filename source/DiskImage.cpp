@@ -49,7 +49,7 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 	if (bExpectFloppy && sg_DiskImageHelper.GetWorkBuffer() == NULL)
 		return eIMAGE_ERROR_BAD_POINTER;
 
-	if (! (ppImageInfo && pWriteProtected))
+	if (!(!pszImageFilename.empty() && ppImageInfo && pWriteProtected))
 		return eIMAGE_ERROR_BAD_POINTER;
 
 	// CREATE A RECORD FOR THE FILE

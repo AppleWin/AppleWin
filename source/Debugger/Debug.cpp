@@ -2024,7 +2024,7 @@ Update_t CmdTraceFile (int nArgs)
 	}
 	else
 	{
-		std::string sFileName;;
+		std::string sFileName;
 
 		if (nArgs)
 			sFileName = g_aArgs[1].sArg;

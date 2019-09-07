@@ -483,7 +483,7 @@ void GetProgramDirectory(void)
 	{
 		if ((g_sProgramDir[loop] == TEXT('\\')) || (g_sProgramDir[loop] == TEXT(':')))
 		{
-			g_sProgramDir.resize(loop);  // this reduces the size
+			g_sProgramDir.resize(loop + 1);  // this reduces the size
 			break;
 		}
 	}
