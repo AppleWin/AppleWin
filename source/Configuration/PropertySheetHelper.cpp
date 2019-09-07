@@ -137,8 +137,8 @@ void CPropertySheetHelper::SetSlot5(SS_CARDTYPE NewCardType)
 // . CPageAdvanced:	IDC_PRINTER_DUMP_FILENAME_BROWSE
 std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE, TCHAR* FILEMASKS)
 {
-	static char PathToFile[MAX_PATH] = {0}; //This is a really awkward way to prevent mixing CiderPress and SaveStated values (RAPCS), but it seem the quickest. Here is its Line 1.
-	strcpy(PathToFile, Snapshot_GetFilename().c_str()); //RAPCS, line 2.
+	static std::string PathToFile; //This is a really awkward way to prevent mixing CiderPress and SaveStated values (RAPCS), but it seem the quickest. Here is its Line 1.
+	PathToFile = Snapshot_GetFilename(); //RAPCS, line 2.
 	TCHAR szDirectory[MAX_PATH] = TEXT("");
 	TCHAR szFilename[MAX_PATH];
 	RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
@@ -163,11 +163,11 @@ std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TC
 	int nRes = GetOpenFileName(&ofn);
 	if(nRes)	// Okay is pressed
 	{
-		strcpy(m_szNewFilename, &szFilename[ofn.nFileOffset]);	// TODO:TC: m_szNewFilename not used! (Was g_szNewFilename)
+		m_szNewFilename = &szFilename[ofn.nFileOffset];	// TODO:TC: m_szNewFilename not used! (Was g_szNewFilename)
 
 		szFilename[ofn.nFileOffset] = 0;
 		if (_tcsicmp(szDirectory, szFilename))
-			strcpy(m_szSSNewDirectory, szFilename);				// TODO:TC: m_szSSNewDirectory looks dodgy! (Was g_szSSNewDirectory)
+			m_szSSNewDirectory = szFilename;				// TODO:TC: m_szSSNewDirectory looks dodgy! (Was g_szSSNewDirectory)
 
 		PathName = szFilename;
 		PathName.append (m_szNewFilename);	
@@ -178,7 +178,7 @@ std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TC
 		PathName = szFilename;
 	}
 
-	strcpy(m_szNewFilename, PathToFile); //RAPCS, line 3 (last).
+	m_szNewFilename = PathToFile; //RAPCS, line 3 (last).
 	return PathName;
 }
 
@@ -190,7 +190,7 @@ void CPropertySheetHelper::SaveStateUpdate()
 
 		RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, m_szSSNewPathname);
 
-		if(m_szSSNewDirectory[0])
+		if(!m_szSSNewDirectory.empty())
 			RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1, m_szSSNewDirectory);
 	}
 }
@@ -208,26 +208,26 @@ void CPropertySheetHelper::GetDiskBaseNameWithAWS(std::string & pszFilename)
 int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 {
 	std::string szDirectory;
-	std::string szFilename;
+	std::string tempFilename;
 
 	if (bSave)
 	{
 		// Attempt to use drive1's image name as the name for the .aws file
 		// Else Attempt to use the Prop Sheet's filename
-		GetDiskBaseNameWithAWS(szFilename);
-		if (szFilename.empty())
+		GetDiskBaseNameWithAWS(tempFilename);
+		if (tempFilename.empty())
 		{
-			szFilename = Snapshot_GetFilename();
+			tempFilename = Snapshot_GetFilename();
 		}
 	}
 	else	// Load (or Browse)
 	{
 		// Attempt to use the Prop Sheet's filename first
 		// Else attempt to use drive1's image name as the name for the .aws file
-		szFilename = Snapshot_GetFilename();
-		if (szFilename.empty())
+		tempFilename = Snapshot_GetFilename();
+		if (tempFilename.empty())
 		{
-			GetDiskBaseNameWithAWS(szFilename);
+			GetDiskBaseNameWithAWS(tempFilename);
 		}
 
 		szDirectory = Snapshot_GetPath();
@@ -236,14 +236,16 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	if (szDirectory.empty())
 		szDirectory = g_sCurrentDir;
 
+	// convert tempFilename to char * for the rest of the function
+	TCHAR szFilename[MAX_PATH] = {0};
+	strcpy(szFilename, tempFilename.c_str());
+	tempFilename.clear(); // do NOT use this any longer
+
 	//
 	
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn,sizeof(OPENFILENAME));
 	
-	TCHAR localFilename[MAX_PATH];
-	strcpy(localFilename, szFilename.c_str());
-
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
 	ofn.hInstance       = g_hInstance;
@@ -257,7 +259,7 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 		ofn.lpstrFilter = TEXT("Save State files (*.aws,*.aws.yaml)\0*.aws;*.aws.yaml\0");
 						  TEXT("All Files\0*.*\0");
 	}
-	ofn.lpstrFile       = localFilename;	// Dialog strips the last .EXT from this string (eg. file.aws.yaml is displayed as: file.aws
+	ofn.lpstrFile       = szFilename;	// Dialog strips the last .EXT from this string (eg. file.aws.yaml is displayed as: file.aws
 	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrInitialDir = szDirectory.c_str();
 	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
@@ -299,12 +301,12 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 			}
 		}
 
-		strcpy(m_szSSNewFilename, &szFilename[ofn.nFileOffset]);
-		strcpy(m_szSSNewPathname, szFilename.c_str());
+		m_szSSNewFilename = &szFilename[ofn.nFileOffset];
+		m_szSSNewPathname = szFilename;
 
 		szFilename[ofn.nFileOffset] = 0;
-		if (_tcsicmp(szDirectory.c_str(), szFilename.c_str()))
-			strcpy(m_szSSNewDirectory, szFilename.c_str());
+		if (_tcsicmp(szDirectory.c_str(), szFilename))
+			m_szSSNewDirectory = szFilename;
 	}
 
 	m_bSSNewFilename = nRes ? true : false;

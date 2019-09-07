@@ -74,7 +74,7 @@ static YamlHelper yamlHelper;
 
 //-----------------------------------------------------------------------------
 
-void Snapshot_SetFilename(std::string strPathname)
+void Snapshot_SetFilename(const std::string & strPathname)
 {
 	if (strPathname.empty())
 	{

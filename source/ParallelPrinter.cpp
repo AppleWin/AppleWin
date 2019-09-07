@@ -242,7 +242,7 @@ void Printer_SetFilename(const std::string & prtFilename)
 	else  //No registry entry is available
 	{
 		g_szPrintFilename = g_sProgramDir + DEFAULT_PRINT_FILENAME;
-		RegSaveString(REG_CONFIG, REGVALUE_PRINTER_FILENAME, 1, g_szPrintFilename.c_str());
+		RegSaveString(REG_CONFIG, REGVALUE_PRINTER_FILENAME, 1, g_szPrintFilename);
 	}
 }
 

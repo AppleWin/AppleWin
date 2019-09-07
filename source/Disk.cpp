@@ -177,7 +177,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 	if (!m_saveDiskImage)
 		return;
 
-	const TCHAR *pFileName = m_floppyDrive[drive].m_disk.m_fullname.c_str();
+	const std::string & pFileName = m_floppyDrive[drive].m_disk.m_fullname;
 
 	if (drive == DRIVE_1)
 		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_DISK_1), TRUE, pFileName);

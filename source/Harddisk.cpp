@@ -233,7 +233,7 @@ static void HD_SaveLastDiskImage(const int iDrive)
 	if (!g_bSaveDiskImage)
 		return;
 
-	const char *pFileName = g_HardDisk[iDrive].fullname.c_str();
+	const std::string & pFileName = g_HardDisk[iDrive].fullname;
 
 	if (iDrive == HARDDISK_1)
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_HARDDISK_1, TRUE, pFileName);
@@ -846,7 +846,7 @@ bool HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, co
 	bool bResSelectImage2 = HD_LoadSnapshotHDDUnit(yamlLoadHelper, HARDDISK_2);
 
 	if (!bResSelectImage1 && !bResSelectImage2)
-		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, strSaveStatePath.c_str());
+		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, strSaveStatePath);
 
 	HD_SetEnabled(true);
 

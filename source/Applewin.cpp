@@ -81,8 +81,8 @@ AppMode_e	g_nAppMode = MODE_LOGO;
 static bool g_bLoadedSaveState = false;
 
 std::string g_sProgramDir; // Directory of where AppleWin executable resides
-TCHAR     g_sDebugDir  [MAX_PATH] = TEXT(""); // TODO: Not currently used
-TCHAR     g_sScreenShotDir[MAX_PATH] = TEXT(""); // TODO: Not currently used
+std::string g_sDebugDir; // TODO: Not currently used
+std::string g_sScreenShotDir; // TODO: Not currently used
 bool      g_bCapturePrintScreenKey = true;
 static bool g_bHookSystemKey = true;
 static bool g_bHookAltTab = false;
@@ -1689,8 +1689,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			int nIdx = strPathname.find_last_of('\\');
 			if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())
 			{
-				std::string strPath = strPathname.substr(0, nIdx+1);
-				SetCurrentImageDir(strPath.c_str());
+				const std::string strPath = strPathname.substr(0, nIdx+1);
+				SetCurrentImageDir(strPath);
 			}
 
 			// Override value just loaded from Registry by LoadConfiguration()
