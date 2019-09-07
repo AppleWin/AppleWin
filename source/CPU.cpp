@@ -188,6 +188,11 @@ void SetActiveCpu(eCpuType cpu)
 	g_ActiveCPU = cpu;
 }
 
+bool Is6502InterruptEnabled(void)
+{
+	return !(regs.ps & AF_INTERRUPT);
+}
+
 //
 
 #include "CPU/cpu_general.inl"
@@ -426,7 +431,8 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const boo
 	}
 
 	MB_UpdateCycles(uExecutedCycles);
-	sg_Mouse.SetVBlank( !VideoGetVblBar(uExecutedCycles) );
+	if (sg_Mouse.IsActive())
+		sg_Mouse.SetVBlank( !VideoGetVblBar(uExecutedCycles) );
 }
 
 // GH#608: IRQ needs to occur within 17 cycles (6 opcodes) of configuring the timer interrupt

@@ -60,7 +60,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration/PropertySheet.h"
 #include "Tfe/Tfe.h"
 
-#define VERSIONSTRING_SIZE 16
+static const UINT VERSIONSTRING_SIZE = 16;
 
 static UINT16 g_AppleWinVersion[4] = {0};
 static UINT16 g_OldAppleWinVersion[4] = {0};
@@ -545,8 +545,8 @@ void LoadConfiguration(void)
 
 		if (dwLoadedComputerType != dwComputerType)
 		{
-			char sText[ 100 ];
-			_snprintf( sText, sizeof(sText)-1, "Unsupported Apple2Type(%d). Changing to %d", dwLoadedComputerType, dwComputerType);
+			char sText[100];
+			StringCbPrintf(sText, sizeof(sText), "Unsupported Apple2Type(%d). Changing to %d", dwLoadedComputerType, dwComputerType);
 
 			LogFileOutput("%s\n", sText);
 

@@ -363,19 +363,16 @@ void CPageDisk::HandleHDDSwap(HWND hWnd)
 UINT CPageDisk::RemovalConfirmation(UINT uCommand)
 {
 	TCHAR szText[100];
-	const size_t strLen = sizeof(szText)-1;
 	bool bMsgBox = true;
 
 	if (uCommand == IDC_COMBO_DISK1 || uCommand == IDC_COMBO_DISK2)
-		_snprintf(szText, strLen, "Do you really want to eject the disk in drive-%c ?", '1' + uCommand - IDC_COMBO_DISK1);
+		StringCbPrintf(szText, sizeof(szText), "Do you really want to eject the disk in drive-%c ?", '1' + uCommand - IDC_COMBO_DISK1);
 	else if (uCommand == IDC_COMBO_HDD1 || uCommand == IDC_COMBO_HDD2)
-		_snprintf(szText, strLen, "Do you really want to unplug harddisk-%c ?", '1' + uCommand - IDC_COMBO_HDD1);
+		StringCbPrintf(szText, sizeof(szText), "Do you really want to unplug harddisk-%c ?", '1' + uCommand - IDC_COMBO_HDD1);
 	else if (uCommand == IDC_HDD_SWAP)
-		_snprintf(szText, strLen, "Do you really want to swap the harddisk images?");
+		StringCbPrintf(szText, sizeof(szText), "Do you really want to swap the harddisk images?");
 	else
 		bMsgBox = false;
-
-	szText[strLen] = 0;
 
 	if (bMsgBox)
 	{

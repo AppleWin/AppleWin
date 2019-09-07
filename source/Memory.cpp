@@ -1528,7 +1528,7 @@ void MemInitializeROM(void)
 		}
 
 		TCHAR sText[MAX_PATH];
-		_snprintf(sText, sizeof(sText)-1, TEXT("Unable to open the required firmware ROM data file.\n\nFile: %s"), sRomFileName);
+		StringCbPrintf(sText, sizeof(sText), TEXT("Unable to open the required firmware ROM data file.\n\nFile: %s"), sRomFileName);
 
 		LogFileOutput("%s\n", sText);
 

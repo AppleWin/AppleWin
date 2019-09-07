@@ -16,7 +16,6 @@
 	extern void     NTSC_VideoInitChroma();
 	extern void     NTSC_VideoUpdateCycles( UINT cycles6502 );
 	extern void     NTSC_VideoRedrawWholeScreen( void );
-	extern UINT     NTSC_GetFrameBufferBorderlessWidth( void );
 
 	enum VideoRefreshRate_e;
 	void NTSC_SetRefreshRate(VideoRefreshRate_e rate);

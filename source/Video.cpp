@@ -569,6 +569,11 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 		if (bRedrawWholeScreen)
 			NTSC_SetVideoMode( uRedrawWholeScreenVideoMode );
 		NTSC_VideoRedrawWholeScreen();
+
+		// MODE_DEBUG|PAUSED: Need to refresh a 2nd time if changing video-type, otherwise could have residue from prev image!
+		// . eg. Amber -> B&W TV
+		if (g_nAppMode == MODE_DEBUG || g_nAppMode == MODE_PAUSED)
+			NTSC_VideoRedrawWholeScreen();
 	}
 
 	HDC hFrameDC = FrameGetDC();
@@ -594,7 +599,11 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			SRCCOPY);
 	}
 
+#ifdef NO_DIRECT_X
+#else
 	//if (g_lpDD) g_lpDD->WaitForVerticalBlank(DDWAITVB_BLOCKBEGIN, NULL);
+#endif // NO_DIRECT_X
+
 	GdiFlush();
 }
 
@@ -904,6 +913,11 @@ static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrv
 
 bool DDInit(void)
 {
+#ifdef NO_DIRECT_X
+
+	return false;
+
+#else
 	HRESULT hr = DirectDrawEnumerate((LPDDENUMCALLBACK)DDEnumProc, NULL);
 	if (FAILED(hr))
 	{
@@ -934,6 +948,7 @@ bool DDInit(void)
 	}
 
 	return true;
+#endif // NO_DIRECT_X
 }
 
 // From SoundCore.h

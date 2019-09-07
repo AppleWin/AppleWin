@@ -473,8 +473,7 @@ void CMouseInterface::OnMouseEvent(bool bEventVBL)
 
 void CMouseInterface::SetVBlank(bool bVBL)
 {
-	if (!m_bActive)
-		return;
+	_ASSERT(m_bActive);	// Only called from CheckInterruptSources(), which is guarded by an: if (sg_Mouse.IsActive())
 
 	if ( m_bVBL != bVBL )
 	{
@@ -750,6 +749,9 @@ bool CMouseInterface::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT sl
 	m_bButtons[0] = yamlLoadHelper.LoadBool(SS_YAML_KEY_BUTTON0);
 	m_bButtons[1] = yamlLoadHelper.LoadBool(SS_YAML_KEY_BUTTON1);
 	m_bEnabled = yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED);	// MemInitializeIO() calls Initialize() which sets true
+
+	if (m_byState & STAT_INT_ALL)	// GH#677
+		CpuIrqAssert(IS_MOUSE);
 
 	return true;
 }

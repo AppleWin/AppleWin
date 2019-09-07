@@ -638,8 +638,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	if (Error == eIMAGE_ERROR_NONE && ImageIsMultiFileZip(pFloppy->m_imagehandle))
 	{
 		TCHAR szText[100+MAX_PATH];
-		szText[sizeof(szText)-1] = 0;
-		_snprintf(szText, sizeof(szText)-1, "Only the first file in a multi-file zip is supported\nUse disk image '%s' ?", pFloppy->m_strFilenameInZip.c_str());
+		StringCbPrintf(szText, sizeof(szText), "Only the first file in a multi-file zip is supported\nUse disk image '%s' ?", pFloppy->m_strFilenameInZip.c_str());
 		int nRes = MessageBox(g_hFrameWindow, szText, TEXT("Multi-Zip Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 		{
