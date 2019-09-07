@@ -66,7 +66,7 @@ static UINT16 g_AppleWinVersion[4] = {0};
 static UINT16 g_OldAppleWinVersion[4] = {0};
 TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
 
-const TCHAR *g_pAppTitle = NULL;
+std::string g_pAppTitle;
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
@@ -88,7 +88,7 @@ static bool g_bHookSystemKey = true;
 static bool g_bHookAltTab = false;
 static bool g_bHookAltGrControl = false;
 
-TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
+std::string g_sCurrentDir; // Also Starting Dir.  Debugger uses this when load/save
 bool      g_bRestart = false;
 bool      g_bRestartFullScreen = false;
 
@@ -748,18 +748,18 @@ void LoadConfiguration(void)
 
 //===========================================================================
 
-bool SetCurrentImageDir(const char* pszImageDir)
+bool SetCurrentImageDir(const std::string & pszImageDir)
 {
-	strcpy(g_sCurrentDir, pszImageDir);
+	g_sCurrentDir = pszImageDir;
 
-	int nLen = strlen( g_sCurrentDir );
+	int nLen = g_sCurrentDir.size();
 	if ((nLen > 0) && (g_sCurrentDir[ nLen - 1 ] != '\\'))
 	{
 		g_sCurrentDir[ nLen + 0 ] = '\\';
-		g_sCurrentDir[ nLen + 1 ] = 0;
+		g_sCurrentDir.resize(nLen + 1);
 	}
 
-	if( SetCurrentDirectory(g_sCurrentDir) )
+	if( SetCurrentDirectory(g_sCurrentDir.c_str()) )
 		return true;
 
 	return false;

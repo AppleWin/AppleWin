@@ -338,7 +338,7 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 
 	if (m_ConfigNew.m_Apple2Type == A2TYPE_CLONE)
 	{
-		MessageBox(hWnd, "Error - Unable to change configuration\n\nReason: A specific clone wasn't selected from the Advanced tab", g_pAppTitle, MB_ICONSTOP | MB_SETFOREGROUND);
+		MessageBox(hWnd, "Error - Unable to change configuration\n\nReason: A specific clone wasn't selected from the Advanced tab", g_pAppTitle.c_str(), MB_ICONSTOP | MB_SETFOREGROUND);
 		return;
 	}
 

@@ -28,7 +28,7 @@ struct ImageInfo
 	DWORD			uOffset;
 	bool			bWriteProtected;
 	UINT			uImageSize;
-	char			szFilenameInZip[MAX_PATH];
+	std::string		szFilenameInZip;
 	zip_fileinfo	zipFileInfo;
 	UINT			uNumEntriesInZip;
 	// Floppy only

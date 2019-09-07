@@ -120,7 +120,7 @@ bool CImageBase::WriteTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTra
 		if (hZipFile == NULL)
 			return false;
 
-		int nRes = zipOpenNewFileInZip(hZipFile, pImageInfo->szFilenameInZip, &pImageInfo->zipFileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_SPEED);
+		int nRes = zipOpenNewFileInZip(hZipFile, pImageInfo->szFilenameInZip.c_str(), &pImageInfo->zipFileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_SPEED);
 		if (nRes != ZIP_OK)
 			return false;
 
@@ -241,7 +241,7 @@ bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlo
 		if (hZipFile == NULL)
 			return false;
 
-		int nRes = zipOpenNewFileInZip(hZipFile, pImageInfo->szFilenameInZip, &pImageInfo->zipFileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_SPEED);
+		int nRes = zipOpenNewFileInZip(hZipFile, pImageInfo->szFilenameInZip.c_str(), &pImageInfo->zipFileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_SPEED);
 		if (nRes != ZIP_OK)
 			return false;
 
@@ -1469,8 +1469,7 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 	if (nRes != UNZ_OK)
 		return eIMAGE_ERROR_ZIP;
 
-	strncpy(pImageInfo->szFilenameInZip, szFilename, MAX_PATH);
-	pImageInfo->szFilenameInZip[MAX_PATH-1] = 0;
+	pImageInfo->szFilenameInZip = szFilename;
 	memcpy(&pImageInfo->zipFileInfo.tmz_date, &file_info.tmu_date, sizeof(file_info.tmu_date));
 	pImageInfo->zipFileInfo.dosDate     = file_info.dosDate;
 	pImageInfo->zipFileInfo.internal_fa = file_info.internal_fa;

@@ -1438,7 +1438,7 @@ void MemInitialize()
 			GetDesktopWindow(),
 			TEXT("The emulator was unable to allocate the memory it ")
 			TEXT("requires.  Further execution is not possible."),
-			g_pAppTitle,
+			g_pAppTitle.c_str(),
 			MB_ICONSTOP | MB_SETFOREGROUND);
 		ExitProcess(1);
 	}
@@ -1451,7 +1451,7 @@ void MemInitialize()
 			TEXT("system.  While changing the attributes of a memory ")
 			TEXT("object, the operating system also changed its ")
 			TEXT("location."),
-			g_pAppTitle,
+			g_pAppTitle.c_str(),
 			MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
 	// memimage has been freed
@@ -1535,7 +1535,7 @@ void MemInitializeROM(void)
 		MessageBox(
 			GetDesktopWindow(),
 			sText,
-			g_pAppTitle,
+			g_pAppTitle.c_str(),
 			MB_ICONSTOP | MB_SETFOREGROUND);
 
 		ExitProcess(1);

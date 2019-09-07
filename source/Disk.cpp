@@ -777,7 +777,7 @@ void Disk2InterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFil
 	MessageBox(
 		g_hFrameWindow,
 		szBuffer,
-		g_pAppTitle,
+		g_pAppTitle.c_str(),
 		MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 }
 

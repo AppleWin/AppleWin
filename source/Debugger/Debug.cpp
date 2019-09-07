@@ -337,7 +337,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	void _ConfigColorsReset ( BYTE *pPalDst = 0 );
 
 // Config - Save
-	bool ConfigSave_BufferToDisk ( char *pFileName, ConfigSave_t eConfigSave );
+	bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave );
 	void ConfigSave_PrepareHeader ( const Parameters_e eCategory, const Commands_e eCommandClear );
 
 // Drawing
@@ -2024,31 +2024,29 @@ Update_t CmdTraceFile (int nArgs)
 	}
 	else
 	{
-		char sFileName[MAX_PATH];
+		std::string sFileName;;
 
 		if (nArgs)
-			strcpy( sFileName, g_aArgs[1].sArg );
+			sFileName = g_aArgs[1].sArg;
 		else
-			strcpy( sFileName, g_sFileNameTrace );
+			sFileName = g_sFileNameTrace;
 
 		g_bTraceFileWithVideoScanner = (nArgs >= 2);
 
-		char sFilePath[ MAX_PATH ];
-		strcpy(sFilePath, g_sCurrentDir); // TODO: g_sDebugDir
-		strcat(sFilePath, sFileName );
+		const std::string sFilePath = g_sCurrentDir + sFileName;
 
-		g_hTraceFile = fopen( sFilePath, "wt" );
+		g_hTraceFile = fopen( sFilePath.c_str(), "wt" );
 
 		if (g_hTraceFile)
 		{
 			const char* pTextHdr = g_bTraceFileWithVideoScanner ? "Trace (with video info) started: %s"
 																: "Trace started: %s";
-			ConsoleBufferPushFormat( sText, pTextHdr, sFilePath );
+			ConsoleBufferPushFormat( sText, pTextHdr, sFilePath.c_str() );
 			g_bTraceHeader = true;
 		}
 		else
 		{
-			ConsoleBufferPushFormat( sText, "Trace ERROR: %s", sFilePath );
+			ConsoleBufferPushFormat( sText, "Trace ERROR: %s", sFilePath.c_str() );
 		}
 	}
 
@@ -2324,7 +2322,7 @@ Update_t CmdConfigLoad (int nArgs)
 
 
 //===========================================================================
-bool ConfigSave_BufferToDisk ( char *pFileName, ConfigSave_t eConfigSave )
+bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave )
 {
 	bool bStatus = false;
 
@@ -2337,10 +2335,7 @@ bool ConfigSave_BufferToDisk ( char *pFileName, ConfigSave_t eConfigSave )
 	if (eConfigSave == CONFIG_SAVE_FILE_APPEND)
 		pMode = sModeAppend;
 
-	char sFileName[ MAX_PATH ];
-
-	_tcscpy(sFileName, g_sCurrentDir); // TODO: g_sDebugDir
-	_tcscat(sFileName, pFileName    );
+	const std::string sFileName = g_sCurrentDir + pFileName; // TODO: g_sDebugDir
 
 	FILE *hFile = fopen( pFileName, pMode );
 
@@ -4106,7 +4101,7 @@ Update_t CmdMemoryFill (int nArgs)
 }
 
 
-static TCHAR g_sMemoryLoadSaveFileName[ MAX_PATH ] = TEXT("");
+static std::string g_sMemoryLoadSaveFileName;
 
 
 // "PWD"
@@ -4118,7 +4113,7 @@ Update_t CmdConfigGetDebugDir (int nArgs)
 
 	TCHAR sPath[ MAX_PATH + 8 ];
 	// TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
-	ConsoleBufferPushFormat( sPath, "Path: %s", g_sCurrentDir );
+	ConsoleBufferPushFormat( sPath, "Path: %s", g_sCurrentDir.c_str() );
 
 	return ConsoleUpdate();
 }
@@ -4140,30 +4135,27 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 	if (strncmp("\\\\?\\", g_aArgs[1].sArg, 4) == 0)
 		return Help_Arg_1( CMD_CONFIG_SET_DEBUG_DIR );
 
-	TCHAR sPath[ MAX_PATH + 1 ];
+	std::string sPath;
 
 	if (g_aArgs[1].sArg[1] == ':')			// Absolute
 	{
-		_tcscpy( sPath, g_aArgs[1].sArg );
+		sPath = g_aArgs[1].sArg;
 	}
 	else if (g_aArgs[1].sArg[0] == '\\')	// Absolute
 	{
 		if (g_sCurrentDir[1] == ':')
 		{
-			_tcsncpy( sPath, g_sCurrentDir, 2 );	// Prefix with drive letter & colon
-			sPath[2] = 0;
-			_tcscat( sPath, g_aArgs[1].sArg );
+			sPath = g_sCurrentDir.substr(0, 2) + g_aArgs[1].sArg;	// Prefix with drive letter & colon
 		}
 		else
 		{
-			_tcscpy( sPath, g_aArgs[1].sArg );
+			sPath = g_aArgs[1].sArg;
 		}
 	}
 	else									// Relative
 	{
 		// TODO: Support ".." - currently just appends (which still works)
-		_tcscpy( sPath, g_sCurrentDir ); // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
-		_tcscat( sPath, g_aArgs[1].sArg );
+		sPath = g_sCurrentDir + g_aArgs[1].sArg; // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
 	}
 
 	if ( SetCurrentImageDir( sPath ) )
@@ -4405,9 +4397,6 @@ Update_t CmdMemoryLoad (int nArgs)
 		if (g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA)
 			return Help_Arg_1( CMD_MEMORY_LOAD );
 
-	TCHAR sLoadSaveFilePath[ MAX_PATH ];
-	_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // TODO: g_sDebugDir
-
 	WORD nAddressStart = 0;
 	WORD nAddress2     = 0;
 	WORD nAddressEnd   = 0;
@@ -4441,9 +4430,9 @@ Update_t CmdMemoryLoad (int nArgs)
 
 	if (bHaveFileName)
 	{
-		_tcscpy( g_sMemoryLoadSaveFileName, pFileName );
+		g_sMemoryLoadSaveFileName = pFileName;
 	}
-	_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
+	const std::string sLoadSaveFilePath = g_sCurrentDir + g_sMemoryLoadSaveFileName; // TODO: g_sDebugDir
 	
 	BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
 	if (!pMemBankBase)
@@ -4452,7 +4441,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		return ConsoleUpdate();
 	}
 
-	FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
+	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
 		int nFileBytes = _GetFileSize( hFile );
@@ -4497,7 +4486,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		CmdConfigGetDebugDir( 0 );
 
 		TCHAR sFile[ MAX_PATH + 8 ];
-		ConsoleBufferPushFormat( sFile, "File: ", g_sMemoryLoadSaveFileName );
+		ConsoleBufferPushFormat( sFile, "File: ", g_sMemoryLoadSaveFileName.c_str() );
 	}
 	
 	return ConsoleUpdate();
@@ -4779,14 +4768,16 @@ Update_t CmdMemorySave (int nArgs)
 		{
 			if (! bHaveFileName)
 			{
+				TCHAR temp[MAX_PATH];
 				if (! bBankSpecified)
-					sprintf( g_sMemoryLoadSaveFileName, "%04X.%04X.bin", nAddressStart, nAddressLen );
+					sprintf( temp, "%04X.%04X.bin", nAddressStart, nAddressLen );
 				else
-					sprintf( g_sMemoryLoadSaveFileName, "%04X.%04X.bank%02X.bin", nAddressStart, nAddressLen, nBank );
+					sprintf( temp, "%04X.%04X.bank%02X.bin", nAddressStart, nAddressLen, nBank );
+				g_sMemoryLoadSaveFileName = temp;
 			}
 			else
 			{
-				_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
+				g_sMemoryLoadSaveFileName = g_aArgs[ 1 ].sArg;
 			}
 			sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 
@@ -5055,9 +5046,8 @@ Update_t CmdNTSC (int nArgs)
 	if( nLen == 0 )
 		pFileName = "AppleWinNTSC4096x4@32.data";
 
-	static TCHAR sPaletteFilePath[ MAX_PATH ];
-	_tcscpy( sPaletteFilePath, g_sCurrentDir );
-	_tcscat( sPaletteFilePath, pFileName );
+	static std::string sPaletteFilePath;
+	sPaletteFilePath = g_sCurrentDir + pFileName;
 
 	class ConsoleFilename
 	{
@@ -5067,7 +5057,7 @@ Update_t CmdNTSC (int nArgs)
 					TCHAR text[ CONSOLE_WIDTH*2 ] = TEXT("");
 
 					size_t len1 = strlen( pPrefixText      );
-					size_t len2 = strlen( sPaletteFilePath );
+					size_t len2 = sPaletteFilePath.size();
 					size_t len  = len1 + len2;
 
 					if (len >= CONSOLE_WIDTH)
@@ -5083,12 +5073,12 @@ Update_t CmdNTSC (int nArgs)
 #endif
 						// File path is too long
 						// TODO: Need to split very long path names
-						strncpy( text, sPaletteFilePath, CONSOLE_WIDTH );
+						strncpy( text, sPaletteFilePath.c_str(), CONSOLE_WIDTH );
 						ConsoleBufferPush( text );	// TODO: Switch ConsoleBufferPush() to ConsoleBufferPushFormat()
 					}
 					else
 					{
-						ConsoleBufferPushFormat( text, "%s: %s", pPrefixText, sPaletteFilePath );
+						ConsoleBufferPushFormat( text, "%s: %s", pPrefixText, sPaletteFilePath.c_str() );
 					}
 			}
 	};
@@ -5450,7 +5440,7 @@ Update_t CmdNTSC (int nArgs)
 		else
 		if (iParam == PARAM_SAVE)
 		{
-			FILE *pFile = fopen( sPaletteFilePath, "w+b" );
+			FILE *pFile = fopen( sPaletteFilePath.c_str(), "w+b" );
 			if( pFile )
 			{
 				size_t nWrote = 0;
@@ -5493,7 +5483,7 @@ Update_t CmdNTSC (int nArgs)
 		else
 		if (iParam == PARAM_LOAD)
 		{
-			FILE *pFile = fopen( sPaletteFilePath, "rb" );
+			FILE *pFile = fopen( sPaletteFilePath.c_str(), "rb" );
 			if( pFile )
 			{
 				strcpy( aStatusText, "Loaded" );
@@ -5631,13 +5621,13 @@ int CmdTextSave (int nArgs)
 	std::string sLoadSaveFilePath = g_sCurrentDir; // g_sProgramDir
 
 	if( bHaveFileName )
-		_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
+		g_sMemoryLoadSaveFileName = g_aArgs[ 1 ].sArg;
 	else
 	{
 		if( VideoGetSW80COL() )
-			sprintf( g_sMemoryLoadSaveFileName, "AppleWin_Text80.txt" );
+			g_sMemoryLoadSaveFileName = "AppleWin_Text80.txt";
 		else
-			sprintf( g_sMemoryLoadSaveFileName, "AppleWin_Text40.txt" );
+			g_sMemoryLoadSaveFileName = "AppleWin_Text40.txt";
 	}
 
 	sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
@@ -5656,7 +5646,7 @@ int CmdTextSave (int nArgs)
 		if (nWrote == 1)
 		{
 			TCHAR text[ CONSOLE_WIDTH ] = TEXT("");
-			ConsoleBufferPushFormat( text, "Saved: %s", g_sMemoryLoadSaveFileName );
+			ConsoleBufferPushFormat( text, "Saved: %s", g_sMemoryLoadSaveFileName.c_str() );
 		}
 		else
 		{
@@ -6460,27 +6450,25 @@ Update_t CmdOutputRun (int nArgs)
 	// IF @ON ....
 	MemoryTextFile_t script; 
 
-	TCHAR * pFileName = g_aArgs[ 1 ].sArg;
+	const std::string pFileName = g_aArgs[ 1 ].sArg;
 
-	TCHAR sFileName[ MAX_PATH ];
-	TCHAR sMiniFileName[ CONSOLE_WIDTH ];
+	std::string sFileName;
+	std::string sMiniFileName; // [CONSOLE_WIDTH];
 
 //	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 
-	_tcsncpy( sMiniFileName, pFileName, sizeof(sMiniFileName) );
-	sMiniFileName[sizeof(sMiniFileName)-1] = 0;
+	sMiniFileName = pFileName.substr(0, min(pFileName.size(), CONSOLE_WIDTH));
 //	_tcscat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
 	if (pFileName[0] == '\\' || pFileName[1] == ':')	// NB. Any prefix quote has already been stripped
 	{
 		// Abs pathname
-		_tcscpy(sFileName, sMiniFileName);
+		sFileName = sMiniFileName;
 	}
 	else
 	{
 		// Rel pathname
-		_tcscpy(sFileName, g_sCurrentDir);
-		_tcscat(sFileName, sMiniFileName);
+		sFileName = g_sCurrentDir + sMiniFileName;
 	}
 
 	if (script.Read( sFileName ))
@@ -6503,7 +6491,7 @@ Update_t CmdOutputRun (int nArgs)
 		ConsolePrintFormat( sText, "%sCouldn't load filename: %s%s"
 			, CHC_ERROR
 			, CHC_STRING
-			, sFileName
+			, sFileName.c_str()
 		);
 	}	
 
