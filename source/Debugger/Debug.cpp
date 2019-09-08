@@ -4768,12 +4768,12 @@ Update_t CmdMemorySave (int nArgs)
 		{
 			if (! bHaveFileName)
 			{
-				TCHAR temp[MAX_PATH];
+				TCHAR sMemoryLoadSaveFileName[MAX_PATH];
 				if (! bBankSpecified)
-					sprintf( temp, "%04X.%04X.bin", nAddressStart, nAddressLen );
+					sprintf( sMemoryLoadSaveFileName, "%04X.%04X.bin", nAddressStart, nAddressLen );
 				else
-					sprintf( temp, "%04X.%04X.bank%02X.bin", nAddressStart, nAddressLen, nBank );
-				g_sMemoryLoadSaveFileName = temp;
+					sprintf( sMemoryLoadSaveFileName, "%04X.%04X.bank%02X.bin", nAddressStart, nAddressLen, nBank );
+				g_sMemoryLoadSaveFileName = sMemoryLoadSaveFileName;
 			}
 			else
 			{
