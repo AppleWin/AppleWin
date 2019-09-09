@@ -110,6 +110,7 @@ CMouseInterface		sg_Mouse;
 Disk2InterfaceCard sg_Disk2Card;
 
 SS_CARDTYPE g_Slot0 = CT_LanguageCard;	// Just for Apple II or II+ or similar clones
+SS_CARDTYPE g_Slot2 = CT_SSC;
 SS_CARDTYPE g_Slot4 = CT_Empty;
 SS_CARDTYPE g_Slot5 = CT_Empty;
 SS_CARDTYPE g_SlotAux = CT_Extended80Col;	// For Apple //e and above
@@ -1193,6 +1194,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bBoot = false;
 	bool bChangedDisplayResolution = false;
 	bool bSlot0LanguageCard = false;
+	bool bSlot2Empty = false;
 	bool bSlot7Empty = false;
 	UINT bestWidth = 0, bestHeight = 0;
 	LPSTR szImageName_drive[NUM_DRIVES] = {NULL,NULL};
@@ -1242,6 +1244,13 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			szImageName_harddisk[HARDDISK_2] = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-s2") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			if (strcmp(lpCmdLine, "empty") == 0)
+				bSlot2Empty = true;
 		}
 		else if (strcmp(lpCmdLine, "-s7") == 0)
 		{
@@ -1619,6 +1628,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
 		FrameCreateWindow();	// g_hFrameWindow is now valid
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
+
+		if (bSlot2Empty)
+			g_Slot2 = CT_Empty;
 
 		// Pre: may need g_hFrameWindow for MessageBox errors
 		// Post: may enable HDD, required for MemInitialize()->MemInitializeIO()

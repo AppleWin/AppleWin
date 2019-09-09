@@ -52,6 +52,7 @@ extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't i
 extern int        g_nMemoryClearType;					// Cmd line switch: use specific MIP (Memory Initialization Pattern)
 
 extern SS_CARDTYPE g_Slot0;	// LC or Saturn in slot0
+extern SS_CARDTYPE g_Slot2;	// SSC in slot2
 extern SS_CARDTYPE g_Slot4;	// Mockingboard, Z80, Mouse in slot4
 extern SS_CARDTYPE g_Slot5;	// Mockingboard, Z80,       in slot5
 extern SS_CARDTYPE g_SlotAux;

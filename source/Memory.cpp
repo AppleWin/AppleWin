@@ -1657,7 +1657,8 @@ void MemInitializeIO(void)
 	// TODO: Cleanup peripheral setup!!!
 	PrintLoadRom(pCxRomPeripheral, 1);				// $C100 : Parallel printer f/w
 
-	sg_SSC.CommInitialize(pCxRomPeripheral, 2);		// $C200 : SSC
+	if (g_Slot2 == CT_SSC)
+		sg_SSC.CommInitialize(pCxRomPeripheral, 2);		// $C200 : SSC
 
 	// Slot 3 contains the Uthernet card (which can coexist with an 80-col+Ram card in AUX slot)
 	// . Uthernet card has no ROM and only IO mapped at $C0Bx
