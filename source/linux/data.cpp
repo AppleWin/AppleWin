@@ -27,6 +27,7 @@ DWORD       g_dwCyclesThisFrame = 0;
 bool      g_bFullSpeed      = false;
 
 SS_CARDTYPE	g_Slot0 = CT_LanguageCard;
+SS_CARDTYPE	g_Slot2 = CT_SSC;
 SS_CARDTYPE	g_Slot4 = CT_Empty;
 SS_CARDTYPE	g_Slot5 = CT_Empty;
 SS_CARDTYPE	g_SlotAux = CT_Extended80Col;
