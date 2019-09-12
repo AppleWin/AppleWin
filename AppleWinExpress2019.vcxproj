@@ -249,13 +249,13 @@
     <None Include="source\CPU\cpu_instructions.inl" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="zip_lib\zip_lib2017.vcxproj">
+    <ProjectReference Include="zip_lib\zip_lib2019.vcxproj">
       <Project>{509739e7-0af3-4c09-a1a9-f0b1bc31b39d}</Project>
     </ProjectReference>
-    <ProjectReference Include="zlib\zlib-Express2017.vcxproj">
+    <ProjectReference Include="zlib\zlib-Express2019.vcxproj">
       <Project>{9b32a6e7-1237-4f36-8903-a3fd51df9c4e}</Project>
     </ProjectReference>
-    <ProjectReference Include="libyaml\win32\yaml2017.vcxproj">
+    <ProjectReference Include="libyaml\win32\yaml2019.vcxproj">
       <Project>{0212e0df-06da-4080-bd1d-f3b01599f70f}</Project>
     </ProjectReference>
   </ItemGroup>
@@ -309,26 +309,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
