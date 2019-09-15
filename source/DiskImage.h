@@ -65,7 +65,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 struct ImageInfo;
 
-ImageError_e ImageOpen(LPCTSTR pszImageFilename, ImageInfo** ppImageInfo, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true);
+ImageError_e ImageOpen(const std::string & pszImageFilename, ImageInfo** ppImageInfo, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true);
 void ImageClose(ImageInfo* const pImageInfo, const bool bOpenError=false);
 BOOL ImageBoot(ImageInfo* const pImageInfo);
 void ImageDestroy(void);
@@ -79,10 +79,10 @@ bool ImageWriteBlock(ImageInfo* const pImageInfo, UINT nBlock, LPBYTE pBlockBuff
 UINT ImageGetNumTracks(ImageInfo* const pImageInfo);
 bool ImageIsWriteProtected(ImageInfo* const pImageInfo);
 bool ImageIsMultiFileZip(ImageInfo* const pImageInfo);
-const char* ImageGetPathname(ImageInfo* const pImageInfo);
+const std::string & ImageGetPathname(ImageInfo* const pImageInfo);
 UINT ImageGetImageSize(ImageInfo* const pImageInfo);
 bool ImageIsWOZ(ImageInfo* const pImageInfo);
 BYTE ImageGetOptimalBitTiming(ImageInfo* const pImageInfo);
 UINT ImagePhaseToTrack(ImageInfo* const pImageInfo, const float phase, const bool limit=true);
 
-void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName);
+void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName);

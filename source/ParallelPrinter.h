@@ -4,8 +4,8 @@ void			PrintDestroy();
 void			PrintLoadRom(LPBYTE pCxRomPeripheral, UINT uSlot);
 void			PrintReset();
 void			PrintUpdate(DWORD);
-void			Printer_SetFilename(char* pszFilename);
-char*			Printer_GetFilename();
+void			Printer_SetFilename(const std::string & pszFilename);
+const std::string &	Printer_GetFilename();
 void			Printer_SetIdleLimit(unsigned int Duration);
 unsigned int	Printer_GetIdleLimit();
 

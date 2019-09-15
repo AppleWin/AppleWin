@@ -3767,17 +3767,12 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 	rect.right = DISPLAY_DISASM_RIGHT; // HACK: MAGIC #: 7
 
 // Draw Title
-	char sTitle[ CONSOLE_WIDTH ];
-	char sText [ CONSOLE_WIDTH ];
-	strcpy ( sTitle, "   Source: " );
-	int maxSizeToCopy = g_nConsoleDisplayWidth - strlen(sTitle) - 1;
-	strncpy( sText , g_aSourceFileName, maxSizeToCopy );
-	sText[ maxSizeToCopy - 1 ] = 0;
-	strcat ( sTitle, sText );
+	std::string sTitle = "   Source: " + g_aSourceFileName;
+	sTitle.resize(min(sTitle.size(), size_t(g_nConsoleDisplayWidth)));
 
 	DebuggerSetColorBG( DebuggerGetColor( BG_SOURCE_TITLE ));
 	DebuggerSetColorFG( DebuggerGetColor( FG_SOURCE_TITLE ));
-	PrintText( sTitle, rect );
+	PrintText( sTitle.c_str(), rect );
 	rect.top += g_nFontHeight;
 
 // Draw Source Lines

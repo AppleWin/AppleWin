@@ -442,6 +442,11 @@ void YamlSaveHelper::SaveString(const char* key,  const char* value)
 	Save("%s: %s\n", key, (value[0] != 0) ? value : "\"\"");
 }
 
+void YamlSaveHelper::SaveString(const char* key, const std::string & value)
+{
+	SaveString(key, value.c_str());
+}
+
 void YamlSaveHelper::SaveFloat(const char* key, float value)
 {
 	Save("%s: %f\n", key, value);
