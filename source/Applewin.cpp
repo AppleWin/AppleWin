@@ -109,10 +109,15 @@ CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 Disk2InterfaceCard sg_Disk2Card;
 
-SS_CARDTYPE g_Slot0 = CT_LanguageCard;	// Just for Apple II or II+ or similar clones
-SS_CARDTYPE g_Slot2 = CT_SSC;
-SS_CARDTYPE g_Slot4 = CT_Empty;
-SS_CARDTYPE g_Slot5 = CT_Empty;
+SS_CARDTYPE g_Slot[8] = {
+	/*0*/ CT_LanguageCard,	// Just for Apple II or II+ or similar clones
+	/*1*/ CT_GenericPrinter,
+	/*2*/ CT_SSC,
+	/*3*/ CT_Uthernet,
+	/*4*/ CT_Empty,
+	/*5*/ CT_Empty,
+	/*6*/ CT_Disk2,
+	/*7*/ CT_Empty };
 SS_CARDTYPE g_SlotAux = CT_Extended80Col;	// For Apple //e and above
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
@@ -635,10 +640,6 @@ void LoadConfiguration(void)
 	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
 	sg_Disk2Card.SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
-	DWORD dwTfeEnabled;
-	REGLOAD_DEFAULT(TEXT("Uthernet Active"), &dwTfeEnabled, 0);
-	tfe_enabled = dwTfeEnabled ? 1 : 0;
-
 	//
 
 	DWORD dwTmp = 0;
@@ -696,9 +697,9 @@ void LoadConfiguration(void)
 		sg_PropertySheet.SetMouseRestrictToWindow(dwTmp);
 
 	if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
-		g_Slot4 = (SS_CARDTYPE) dwTmp;
+		g_Slot[4] = (SS_CARDTYPE) dwTmp;
 	if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
-		g_Slot5 = (SS_CARDTYPE) dwTmp;
+		g_Slot[5] = (SS_CARDTYPE) dwTmp;
 
 	//
 
@@ -725,6 +726,15 @@ void LoadConfiguration(void)
 
 	//
 
+	DWORD dwTfeEnabled;
+	REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &dwTfeEnabled, 0);
+	tfe_enabled = dwTfeEnabled ? 1 : 0;
+
+	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
+	update_tfe_interface(szFilename, NULL);
+
+	//
+
 	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));
 	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
 
@@ -733,9 +743,6 @@ void LoadConfiguration(void)
 
 	REGLOAD_DEFAULT(TEXT(REGVALUE_PRINTER_IDLE_LIMIT), &dwTmp, 10);
 	Printer_SetIdleLimit(dwTmp);
-
-	RegLoadString(TEXT(REG_CONFIG), TEXT("Uthernet Interface"), 1, szFilename, MAX_PATH, TEXT(""));
-	update_tfe_interface(szFilename, NULL);
 
 	if (REGLOAD(TEXT(REGVALUE_WINDOW_SCALE), &dwTmp))
 		SetViewportScale(dwTmp);
@@ -1194,8 +1201,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bBoot = false;
 	bool bChangedDisplayResolution = false;
 	bool bSlot0LanguageCard = false;
-	bool bSlot2Empty = false;
-	bool bSlot7Empty = false;
+	bool bSlotEmpty[NUM_SLOTS] = {false,false,false,false,false,false,false,false};
 	UINT bestWidth = 0, bestHeight = 0;
 	LPSTR szImageName_drive[NUM_DRIVES] = {NULL,NULL};
 	LPSTR szImageName_harddisk[NUM_HARDDISKS] = {NULL,NULL};
@@ -1245,19 +1251,13 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpNextArg = GetNextArg(lpNextArg);
 			szImageName_harddisk[HARDDISK_2] = lpCmdLine;
 		}
-		else if (strcmp(lpCmdLine, "-s2") == 0)
+		else if (lpCmdLine[0] == '-' && lpCmdLine[1] == 's' && lpCmdLine[2] >= '1' && lpCmdLine[2] <= '7' && lpCmdLine[3] == 0)
 		{
+			const UINT slot = lpCmdLine[2] - '0';
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			if (strcmp(lpCmdLine, "empty") == 0)
-				bSlot2Empty = true;
-		}
-		else if (strcmp(lpCmdLine, "-s7") == 0)
-		{
-			lpCmdLine = GetCurrArg(lpNextArg);
-			lpNextArg = GetNextArg(lpNextArg);
-			if (strcmp(lpCmdLine, "empty") == 0)
-				bSlot7Empty = true;
+				bSlotEmpty[slot] = true;
 		}
 		else if (strcmp(lpCmdLine, "-load-state") == 0)
 		{
@@ -1629,8 +1629,15 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		FrameCreateWindow();	// g_hFrameWindow is now valid
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
 
-		if (bSlot2Empty)
-			g_Slot2 = CT_Empty;
+		// Allow the 4 hardcoded slots to be configurated as empty
+		if (bSlotEmpty[1])
+			g_Slot[1] = CT_Empty;
+		if (bSlotEmpty[2])
+			g_Slot[2] = CT_Empty;
+		if (bSlotEmpty[3])
+			g_Slot[3] = CT_Empty;
+		if (bSlotEmpty[6])
+			g_Slot[6] = CT_Empty;
 
 		// Pre: may need g_hFrameWindow for MessageBox errors
 		// Post: may enable HDD, required for MemInitialize()->MemInitializeIO()
@@ -1641,7 +1648,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			InsertHardDisks(szImageName_harddisk, bBoot);
 			szImageName_harddisk[HARDDISK_1] = szImageName_harddisk[HARDDISK_2] = NULL;	// Don't insert on a restart
 
-			if (bSlot7Empty)
+			if (bSlotEmpty[7])
 				HD_SetEnabled(false);
 		}
 

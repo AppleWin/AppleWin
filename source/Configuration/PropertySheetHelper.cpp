@@ -120,14 +120,14 @@ void CPropertySheetHelper::SaveCpuType(eCpuType NewCpuType)
 
 void CPropertySheetHelper::SetSlot4(SS_CARDTYPE NewCardType)
 {
-	g_Slot4 = NewCardType;
-	REGSAVE(TEXT(REGVALUE_SLOT4),(DWORD)g_Slot4);
+	g_Slot[4] = NewCardType;
+	REGSAVE(TEXT(REGVALUE_SLOT4), (DWORD)g_Slot[4]);
 }
 
 void CPropertySheetHelper::SetSlot5(SS_CARDTYPE NewCardType)
 {
-	g_Slot5 = NewCardType;
-	REGSAVE(TEXT(REGVALUE_SLOT5),(DWORD)g_Slot5);
+	g_Slot[5] = NewCardType;
+	REGSAVE(TEXT(REGVALUE_SLOT5), (DWORD)g_Slot[5]);
 }
 
 // Looks like a (bad) C&P from SaveStateSelectImage()
@@ -423,8 +423,8 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	m_ConfigOld.m_Apple2Type = GetApple2Type();
 	m_ConfigOld.m_CpuType = GetMainCpu();
-	m_ConfigOld.m_Slot[4] = g_Slot4;
-	m_ConfigOld.m_Slot[5] = g_Slot5;
+	m_ConfigOld.m_Slot[4] = g_Slot[4];
+	m_ConfigOld.m_Slot[5] = g_Slot[5];
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = sg_PropertySheet.GetTheFreezesF8Rom();
 	m_ConfigOld.m_videoRefreshRate = GetVideoRefreshRate();
@@ -442,8 +442,8 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	SetApple2Type(m_ConfigOld.m_Apple2Type);
 	SetMainCpu(m_ConfigOld.m_CpuType);
-	g_Slot4 = m_ConfigOld.m_Slot[4];
-	g_Slot5 = m_ConfigOld.m_Slot[5];
+	g_Slot[4] = m_ConfigOld.m_Slot[4];
+	g_Slot[5] = m_ConfigOld.m_Slot[5];
 	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
 	sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
 	SetVideoRefreshRate(m_ConfigOld.m_videoRefreshRate);

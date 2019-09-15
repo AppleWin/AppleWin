@@ -497,31 +497,37 @@ void Snapshot_SaveState(void)
 			yamlSaveHelper.UnitHdr(GetSnapshotUnitSlotsName(), UNIT_SLOTS_VER);
 			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-			if (g_Slot0 != CT_Empty && IsApple2PlusOrClone(GetApple2Type()))
+			if (g_Slot[0] != CT_Empty && IsApple2PlusOrClone(GetApple2Type()))
 				GetLanguageCard()->SaveSnapshot(yamlSaveHelper);	// Language Card or Saturn 128K
 
-			Printer_SaveSnapshot(yamlSaveHelper);
+			if (g_Slot[1] == CT_GenericPrinter)
+				Printer_SaveSnapshot(yamlSaveHelper);
 
-			sg_SSC.SaveSnapshot(yamlSaveHelper);
+			if (g_Slot[2] == CT_SSC)
+				sg_SSC.SaveSnapshot(yamlSaveHelper);
+
+//			if (g_Slot[3] == CT_Uthernet)
+//				sg_Uthernet.SaveSnapshot(yamlSaveHelper);
 
 			sg_Mouse.SaveSnapshot(yamlSaveHelper);
 
-			if (g_Slot4 == CT_Z80)
+			if (g_Slot[4] == CT_Z80)
 				Z80_SaveSnapshot(yamlSaveHelper, 4);
 
-			if (g_Slot5 == CT_Z80)
+			if (g_Slot[5] == CT_Z80)
 				Z80_SaveSnapshot(yamlSaveHelper, 5);
 
-			if (g_Slot4 == CT_MockingboardC)
+			if (g_Slot[4] == CT_MockingboardC)
 				MB_SaveSnapshot(yamlSaveHelper, 4);
 
-			if (g_Slot5 == CT_MockingboardC)
+			if (g_Slot[5] == CT_MockingboardC)
 				MB_SaveSnapshot(yamlSaveHelper, 5);
 
-			if (g_Slot4 == CT_Phasor)
+			if (g_Slot[4] == CT_Phasor)
 				Phasor_SaveSnapshot(yamlSaveHelper, 4);
 
-			sg_Disk2Card.SaveSnapshot(yamlSaveHelper);
+			if (g_Slot[6] == CT_Disk2)
+				sg_Disk2Card.SaveSnapshot(yamlSaveHelper);
 
 			HD_SaveSnapshot(yamlSaveHelper);
 		}

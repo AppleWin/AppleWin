@@ -19,8 +19,8 @@ public:
 		m_bEnableTheFreezesF8Rom = bEnableTheFreezesF8Rom;
 		memset(&m_Slot, 0, sizeof(m_Slot));
 		m_SlotAux = CT_Empty;
-		m_Slot[4] = g_Slot4;
-		m_Slot[5] = g_Slot5;
+		m_Slot[4] = g_Slot[4];
+		m_Slot[5] = g_Slot[5];
 	}
 
 	const CConfigNeedingRestart& operator= (const CConfigNeedingRestart& other)

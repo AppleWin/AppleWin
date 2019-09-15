@@ -51,10 +51,7 @@ extern bool       g_bDisableDirectSound;				// Cmd line switch: don't init DS (s
 extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't init MB support
 extern int        g_nMemoryClearType;					// Cmd line switch: use specific MIP (Memory Initialization Pattern)
 
-extern SS_CARDTYPE g_Slot0;	// LC or Saturn in slot0
-extern SS_CARDTYPE g_Slot2;	// SSC in slot2
-extern SS_CARDTYPE g_Slot4;	// Mockingboard, Z80, Mouse in slot4
-extern SS_CARDTYPE g_Slot5;	// Mockingboard, Z80,       in slot5
+extern SS_CARDTYPE g_Slot[NUM_SLOTS];
 extern SS_CARDTYPE g_SlotAux;
 
 extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom
