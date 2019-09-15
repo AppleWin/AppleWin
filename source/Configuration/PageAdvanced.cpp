@@ -85,7 +85,7 @@ BOOL CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			break;
 		case IDC_SAVESTATE_BROWSE:
 			if(m_PropertySheetHelper.SaveStateSelectImage(hWnd, TEXT("Select Save State file"), true))
-				SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)m_PropertySheetHelper.GetSSNewFilename());
+				SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)m_PropertySheetHelper.GetSSNewFilename().c_str());
 			break;
 		case IDC_PRINTER_DUMP_FILENAME_BROWSE:
 			{				
@@ -125,7 +125,7 @@ BOOL CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 
 	case WM_INITDIALOG:
 		{
-			SendDlgItemMessage(hWnd,IDC_SAVESTATE_FILENAME,WM_SETTEXT,0,(LPARAM)Snapshot_GetFilename());
+			SendDlgItemMessage(hWnd,IDC_SAVESTATE_FILENAME,WM_SETTEXT,0,(LPARAM)Snapshot_GetFilename().c_str());
 
 			CheckDlgButton(hWnd, IDC_SAVESTATE_ON_EXIT, g_bSaveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_DUMPTOPRINTER, g_bDumpToPrinter ? BST_CHECKED : BST_UNCHECKED);
@@ -134,7 +134,7 @@ BOOL CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			CheckDlgButton(hWnd, IDC_PRINTER_APPEND, g_bPrinterAppend ? BST_CHECKED : BST_UNCHECKED);
 			SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETRANGE, 0, MAKELONG(999,0));
 			SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETPOS, 0, MAKELONG(Printer_GetIdleLimit (),0));
-			SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)Printer_GetFilename());
+			SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)Printer_GetFilename().c_str());
 
 			InitOptions(hWnd);
 

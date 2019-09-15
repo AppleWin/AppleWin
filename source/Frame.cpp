@@ -249,48 +249,48 @@ UINT Get3DBorderHeight(void)
 
 static void GetAppleWindowTitle()
 {
-	static TCHAR g_pAppleWindowTitle[ 128 ] = "";
+	static std::string g_pAppleWindowTitle;
 
 	g_pAppTitle = g_pAppleWindowTitle;
 
 	switch (g_Apple2Type)
 	{
 		default:
-		case A2TYPE_APPLE2:			_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2          ); break;
-		case A2TYPE_APPLE2PLUS:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2_PLUS     ); break;
-		case A2TYPE_APPLE2E:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E         ); break;
-		case A2TYPE_APPLE2EENHANCED:_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E_ENHANCED); break;
-		case A2TYPE_PRAVETS82:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_82       ); break;
-		case A2TYPE_PRAVETS8M:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8M       ); break;
-		case A2TYPE_PRAVETS8A:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8A       ); break;
-		case A2TYPE_TK30002E:		_tcscpy(g_pAppleWindowTitle, TITLE_TK3000_2E        ); break;
+		case A2TYPE_APPLE2:			 g_pAppleWindowTitle = TITLE_APPLE_2          ; break;
+		case A2TYPE_APPLE2PLUS:		 g_pAppleWindowTitle = TITLE_APPLE_2_PLUS     ; break;
+		case A2TYPE_APPLE2E:		 g_pAppleWindowTitle = TITLE_APPLE_2E         ; break;
+		case A2TYPE_APPLE2EENHANCED: g_pAppleWindowTitle = TITLE_APPLE_2E_ENHANCED; break;
+		case A2TYPE_PRAVETS82:		 g_pAppleWindowTitle = TITLE_PRAVETS_82       ; break;
+		case A2TYPE_PRAVETS8M:		 g_pAppleWindowTitle = TITLE_PRAVETS_8M       ; break;
+		case A2TYPE_PRAVETS8A:		 g_pAppleWindowTitle = TITLE_PRAVETS_8A       ; break;
+		case A2TYPE_TK30002E:		 g_pAppleWindowTitle = TITLE_TK3000_2E        ; break;
 	}
 
 #if _DEBUG
-	_tcscat( g_pAppleWindowTitle, " *DEBUG* " );
+	g_pAppleWindowTitle += " *DEBUG* ";
 #endif
 
 	if (g_nAppMode == MODE_LOGO)
 		return;
 
 	// TODO: g_bDisplayVideoModeInTitle
-	_tcscat( g_pAppleWindowTitle, " - " );
+	g_pAppleWindowTitle += " - ";
 
 	if( IsVideoStyle(VS_HALF_SCANLINES) )
 	{
-		_tcscat( g_pAppleWindowTitle," 50% " );
+		g_pAppleWindowTitle += " 50% ";
 	}
-	_tcscat( g_pAppleWindowTitle, g_apVideoModeDesc[ g_eVideoType ] );
+	g_pAppleWindowTitle += g_apVideoModeDesc[ g_eVideoType ];
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
-		_tcscat(g_pAppleWindowTitle,TEXT(" (custom rom)"));
+		g_pAppleWindowTitle += TEXT(" (custom rom)");
 	else if (sg_PropertySheet.GetTheFreezesF8Rom() && IS_APPLE2)
-		_tcscat(g_pAppleWindowTitle,TEXT(" (The Freeze's non-autostart F8 rom)"));
+		g_pAppleWindowTitle += TEXT(" (The Freeze's non-autostart F8 rom)");
 
 	switch (g_nAppMode)
 	{
-		case MODE_PAUSED  : _tcscat(g_pAppleWindowTitle,TEXT(" [")); _tcscat(g_pAppleWindowTitle,TITLE_PAUSED  ); _tcscat(g_pAppleWindowTitle,TEXT("]")); break;
-		case MODE_STEPPING: _tcscat(g_pAppleWindowTitle,TEXT(" [")); _tcscat(g_pAppleWindowTitle,TITLE_STEPPING); _tcscat(g_pAppleWindowTitle,TEXT("]")); break;
+		case MODE_PAUSED  : g_pAppleWindowTitle += std::string(TEXT(" [")) + TITLE_PAUSED   + TEXT("]"); break;
+		case MODE_STEPPING: g_pAppleWindowTitle += std::string(TEXT(" [")) + TITLE_STEPPING + TEXT("]"); break;
 	}
 }
 
@@ -513,7 +513,7 @@ static void DrawButton (HDC passdc, int number) {
     SetTextColor(dc,RGB(0,0,0));
     SetTextAlign(dc,TA_CENTER | TA_TOP);
     SetBkMode(dc,TRANSPARENT);
-	LPCTSTR pszBaseName = sg_Disk2Card.GetBaseName(number-BTN_DRIVE1);
+	LPCTSTR pszBaseName = sg_Disk2Card.GetBaseName(number-BTN_DRIVE1).c_str();
     ExtTextOut(dc,x+offset+22,rect.top,ETO_CLIPPED,&rect,
                pszBaseName,
                MIN(8,_tcslen(pszBaseName)),
@@ -1022,7 +1022,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		if (drawflags & DRAW_TITLE)
 		{
 			GetAppleWindowTitle(); // SetWindowText() // WindowTitle
-			SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)g_pAppTitle);
+			SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)g_pAppTitle.c_str());
 		}
 
 		if (drawflags & DRAW_BUTTON_DRIVES)
@@ -1685,7 +1685,7 @@ LRESULT CALLBACK FrameWndProc (
       if(((LPNMTTDISPINFO)lparam)->hdr.hwndFrom == tooltipwindow &&
          ((LPNMTTDISPINFO)lparam)->hdr.code == TTN_GETDISPINFO)
         ((LPNMTTDISPINFO)lparam)->lpszText =
-          (LPTSTR)sg_Disk2Card.GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom);
+          (LPTSTR)sg_Disk2Card.GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom).c_str();
       break;
 
     case WM_PAINT:
@@ -1969,20 +1969,16 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_HELP:
       {
-        TCHAR filename[MAX_PATH];
-        _tcscpy(filename,g_sProgramDir);
-        _tcscat(filename,TEXT("APPLEWIN.CHM"));
+        const std::string filename = g_sProgramDir + TEXT("APPLEWIN.CHM");
 
 		// (GH#437) For any internet downloaded AppleWin.chm files (stored on an NTFS drive) there may be an Alt Data Stream containing a Zone Identifier
 		// - try to delete it, otherwise the content won't be displayed unless it's unblock (via File Properties)
 		{
-			TCHAR filename_with_zone_identifier[MAX_PATH];
-			_tcscpy(filename_with_zone_identifier,filename);
-			_tcscat(filename_with_zone_identifier,TEXT(":Zone.Identifier"));
-			DeleteFile(filename_with_zone_identifier);
+			const std::string filename_with_zone_identifier = filename + TEXT(":Zone.Identifier");
+			DeleteFile(filename_with_zone_identifier.c_str());
 		}
 
-        HtmlHelp(g_hFrameWindow,filename,HH_DISPLAY_TOC,0);
+        HtmlHelp(g_hFrameWindow,filename.c_str(),HH_DISPLAY_TOC,0);
         helpquit = 1;
       }
       break;
@@ -2592,7 +2588,7 @@ void FrameCreateWindow(void)
 	// NB. g_hFrameWindow also set by WM_CREATE - NB. CreateWindow() must synchronously send WM_CREATE
 	g_hFrameWindow = CreateWindow(
 		TEXT("APPLE2FRAME"),
-		g_pAppTitle,
+		g_pAppTitle.c_str(),
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 		WS_MINIMIZEBOX | WS_VISIBLE,
 		nXPos, nYPos, nWidth, nHeight,

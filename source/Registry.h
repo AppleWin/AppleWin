@@ -8,5 +8,5 @@ BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, D
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, DWORD chars, LPCTSTR defaultValue);
 BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD* value);
 BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD* value, DWORD defaultValue);
-void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPCTSTR buffer);
+void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::string & buffer);
 void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value);

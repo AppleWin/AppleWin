@@ -6,12 +6,12 @@
 void LogFileTimeUntilFirstKeyReadReset(void);
 void LogFileTimeUntilFirstKeyRead(void);
 
-bool SetCurrentImageDir(const char* pszImageDir);
+bool SetCurrentImageDir(const std::string & pszImageDir);
 
 extern const UINT16* GetOldAppleWinVersion(void);
 extern TCHAR VERSIONSTRING[];	// Constructed in WinMain()
 
-extern const TCHAR     *g_pAppTitle;
+extern std::string g_pAppTitle;
 
 extern eApple2Type g_Apple2Type;
 eApple2Type GetApple2Type(void);
@@ -34,8 +34,8 @@ bool GetLoadedSaveStateFlag(void);
 void SetLoadedSaveStateFlag(const bool bFlag);
 bool GetHookAltGrControl(void);
 
-extern TCHAR      g_sProgramDir[MAX_PATH];
-extern TCHAR      g_sCurrentDir[MAX_PATH];
+extern std::string g_sProgramDir;
+extern std::string g_sCurrentDir;
 
 extern bool       g_bRestart;
 extern bool       g_bRestartFullScreen;

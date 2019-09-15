@@ -205,7 +205,7 @@ void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
 extern bool g_bDisplayPrintScreenFileName;
 extern bool g_bShowPrintScreenWarningDialog;
 
-void Video_ResetScreenshotCounter( char *pDiskImageFileName );
+void Video_ResetScreenshotCounter( const std::string & pDiskImageFileName );
 enum VideoScreenShot_e
 {
 	SCREENSHOT_560x384 = 0,

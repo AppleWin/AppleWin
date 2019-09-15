@@ -53,8 +53,8 @@ public:
 
 	void clear()
 	{
-		ZeroMemory(m_imagename, sizeof(m_imagename));
-		ZeroMemory(m_fullname, sizeof(m_fullname));
+		m_imagename.clear();
+		m_fullname.clear();
 		m_strFilenameInZip.clear();
 		m_imagehandle = NULL;
 		m_bWriteProtected = false;
@@ -71,8 +71,8 @@ public:
 	}
 
 public:
-	TCHAR m_imagename[ MAX_DISK_IMAGE_NAME + 1 ];	// <FILENAME> (ie. no extension)
-	TCHAR m_fullname [ MAX_DISK_FULL_NAME  + 1 ];	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
+	std::string m_imagename;	// <FILENAME> (ie. no extension)
+	std::string m_fullname;	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
 	std::string m_strFilenameInZip;					// ""             or <FILENAME.EXT>
 	ImageInfo* m_imagehandle;						// Init'd by InsertDisk() -> ImageOpen()
 	bool m_bWriteProtected;
@@ -130,9 +130,9 @@ public:
 	void Boot(void);
 	void FlushCurrentTrack(const int drive);
 
-	LPCTSTR GetFullDiskFilename(const int drive);
-	LPCTSTR GetFullName(const int drive);
-	LPCTSTR GetBaseName(const int drive);
+	const std::string & GetFullDiskFilename(const int drive);
+	const std::string & GetFullName(const int drive);
+	const std::string & GetBaseName(const int drive);
 	void GetLightStatus (Disk_Status_e* pDisk1Status, Disk_Status_e* pDisk2Status);
 
 	ImageError_e InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
@@ -182,7 +182,7 @@ private:
 	void ReadTrack(const int drive, ULONG uExecutedCycles);
 	void RemoveDisk(const int drive);
 	void WriteTrack(const int drive);
-	LPCTSTR DiskGetFullPathName(const int drive);
+	const std::string & DiskGetFullPathName(const int drive);
 	void ResetLogicStateSequencer(void);
 	void UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles);
 	UINT GetBitCellDelta(const BYTE optimalBitTiming);

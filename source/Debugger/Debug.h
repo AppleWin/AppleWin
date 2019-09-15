@@ -66,7 +66,7 @@
 	};
 
 // Config - FileName
-	extern char      g_sFileNameConfig[];
+	extern std::string g_sFileNameConfig;
 
 // Cursor
 	extern WORD g_nDisasmTopAddress ;
@@ -107,7 +107,7 @@
 	extern std::vector<int> g_vMemorySearchResults;
 
 // Source Level Debugging
-	extern TCHAR  g_aSourceFileName[ MAX_PATH ];
+	extern std::string g_aSourceFileName;
 	extern MemoryTextFile_t g_AssemblerSourceBuffer;
 
 	extern int    g_iSourceDisplayStart   ;
