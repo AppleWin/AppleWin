@@ -249,48 +249,43 @@ UINT Get3DBorderHeight(void)
 
 static void GetAppleWindowTitle()
 {
-	static std::string g_pAppleWindowTitle;
-
-	g_pAppTitle = g_pAppleWindowTitle;
-
 	switch (g_Apple2Type)
 	{
 		default:
-		case A2TYPE_APPLE2:			 g_pAppleWindowTitle = TITLE_APPLE_2          ; break;
-		case A2TYPE_APPLE2PLUS:		 g_pAppleWindowTitle = TITLE_APPLE_2_PLUS     ; break;
-		case A2TYPE_APPLE2E:		 g_pAppleWindowTitle = TITLE_APPLE_2E         ; break;
-		case A2TYPE_APPLE2EENHANCED: g_pAppleWindowTitle = TITLE_APPLE_2E_ENHANCED; break;
-		case A2TYPE_PRAVETS82:		 g_pAppleWindowTitle = TITLE_PRAVETS_82       ; break;
-		case A2TYPE_PRAVETS8M:		 g_pAppleWindowTitle = TITLE_PRAVETS_8M       ; break;
-		case A2TYPE_PRAVETS8A:		 g_pAppleWindowTitle = TITLE_PRAVETS_8A       ; break;
-		case A2TYPE_TK30002E:		 g_pAppleWindowTitle = TITLE_TK3000_2E        ; break;
+		case A2TYPE_APPLE2:			 g_pAppTitle = TITLE_APPLE_2          ; break;
+		case A2TYPE_APPLE2PLUS:		 g_pAppTitle = TITLE_APPLE_2_PLUS     ; break;
+		case A2TYPE_APPLE2E:		 g_pAppTitle = TITLE_APPLE_2E         ; break;
+		case A2TYPE_APPLE2EENHANCED: g_pAppTitle = TITLE_APPLE_2E_ENHANCED; break;
+		case A2TYPE_PRAVETS82:		 g_pAppTitle = TITLE_PRAVETS_82       ; break;
+		case A2TYPE_PRAVETS8M:		 g_pAppTitle = TITLE_PRAVETS_8M       ; break;
+		case A2TYPE_PRAVETS8A:		 g_pAppTitle = TITLE_PRAVETS_8A       ; break;
+		case A2TYPE_TK30002E:		 g_pAppTitle = TITLE_TK3000_2E        ; break;
 	}
 
 #if _DEBUG
-	g_pAppleWindowTitle += " *DEBUG* ";
+	g_pAppTitle += " *DEBUG* ";
 #endif
 
 	if (g_nAppMode == MODE_LOGO)
 		return;
 
-	// TODO: g_bDisplayVideoModeInTitle
-	g_pAppleWindowTitle += " - ";
+	g_pAppTitle += " - ";
 
 	if( IsVideoStyle(VS_HALF_SCANLINES) )
 	{
-		g_pAppleWindowTitle += " 50% ";
+		g_pAppTitle += " 50% ";
 	}
-	g_pAppleWindowTitle += g_apVideoModeDesc[ g_eVideoType ];
+	g_pAppTitle += g_apVideoModeDesc[ g_eVideoType ];
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
-		g_pAppleWindowTitle += TEXT(" (custom rom)");
+		g_pAppTitle += TEXT(" (custom rom)");
 	else if (sg_PropertySheet.GetTheFreezesF8Rom() && IS_APPLE2)
-		g_pAppleWindowTitle += TEXT(" (The Freeze's non-autostart F8 rom)");
+		g_pAppTitle += TEXT(" (The Freeze's non-autostart F8 rom)");
 
 	switch (g_nAppMode)
 	{
-		case MODE_PAUSED  : g_pAppleWindowTitle += std::string(TEXT(" [")) + TITLE_PAUSED   + TEXT("]"); break;
-		case MODE_STEPPING: g_pAppleWindowTitle += std::string(TEXT(" [")) + TITLE_STEPPING + TEXT("]"); break;
+		case MODE_PAUSED  : g_pAppTitle += std::string(TEXT(" [")) + TITLE_PAUSED   + TEXT("]"); break;
+		case MODE_STEPPING: g_pAppTitle += std::string(TEXT(" [")) + TITLE_STEPPING + TEXT("]"); break;
 	}
 }
 

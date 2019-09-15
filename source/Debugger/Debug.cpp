@@ -5069,7 +5069,7 @@ Update_t CmdNTSC (int nArgs)
 						OutputDebugString( text );
 						sprintf( text, "Filename.length.2: %d\n", len2 );
 						OutputDebugString( text );
-						OutputDebugString( sPaletteFilePath );
+						OutputDebugString( sPaletteFilePath.c_str() );
 #endif
 						// File path is too long
 						// TODO: Need to split very long path names
