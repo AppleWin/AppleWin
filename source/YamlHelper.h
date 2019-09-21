@@ -216,6 +216,7 @@ public:
 	void SaveHexUint64(const char* key, UINT64 value);
 	void SaveBool(const char* key, bool value);
 	void SaveString(const char* key, const char* value);
+	void SaveString(const char* key, const std::string & value);
 	void SaveFloat(const char* key, float value);
 	void SaveDouble(const char* key, double value);
 	void SaveMemory(const LPBYTE pMemBase, const UINT uMemSize);

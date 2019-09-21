@@ -6,12 +6,12 @@
 void LogFileTimeUntilFirstKeyReadReset(void);
 void LogFileTimeUntilFirstKeyRead(void);
 
-bool SetCurrentImageDir(const char* pszImageDir);
+bool SetCurrentImageDir(const std::string & pszImageDir);
 
 extern const UINT16* GetOldAppleWinVersion(void);
 extern TCHAR VERSIONSTRING[];	// Constructed in WinMain()
 
-extern const TCHAR     *g_pAppTitle;
+extern std::string g_pAppTitle;
 
 extern eApple2Type g_Apple2Type;
 eApple2Type GetApple2Type(void);
@@ -34,8 +34,8 @@ bool GetLoadedSaveStateFlag(void);
 void SetLoadedSaveStateFlag(const bool bFlag);
 bool GetHookAltGrControl(void);
 
-extern TCHAR      g_sProgramDir[MAX_PATH];
-extern TCHAR      g_sCurrentDir[MAX_PATH];
+extern std::string g_sProgramDir;
+extern std::string g_sCurrentDir;
 
 extern bool       g_bRestart;
 extern bool       g_bRestartFullScreen;
@@ -51,10 +51,7 @@ extern bool       g_bDisableDirectSound;				// Cmd line switch: don't init DS (s
 extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't init MB support
 extern int        g_nMemoryClearType;					// Cmd line switch: use specific MIP (Memory Initialization Pattern)
 
-extern SS_CARDTYPE g_Slot0;	// LC or Saturn in slot0
-extern SS_CARDTYPE g_Slot2;	// SSC in slot2
-extern SS_CARDTYPE g_Slot4;	// Mockingboard, Z80, Mouse in slot4
-extern SS_CARDTYPE g_Slot5;	// Mockingboard, Z80,       in slot5
+extern SS_CARDTYPE g_Slot[NUM_SLOTS];
 extern SS_CARDTYPE g_SlotAux;
 
 extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom

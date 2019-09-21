@@ -87,7 +87,7 @@ BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD* value, DWO
 }
 
 //===========================================================================
-void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPCTSTR buffer) {
+void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::string & buffer) {
 	TCHAR fullkeyname[256];
 	StringCbPrintf(fullkeyname, 256, TEXT("Software\\AppleWin\\CurrentVersion\\%s"), section);
 
@@ -110,8 +110,8 @@ void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPCTSTR buffer) 
 			key,
 			0,
 			REG_SZ,
-			(CONST LPBYTE)buffer,
-			(_tcslen(buffer) + 1) * sizeof(TCHAR));
+			(CONST LPBYTE)buffer.c_str(),
+			(buffer.size() + 1) * sizeof(TCHAR));
 		RegCloseKey(keyhandle);
 	}
 }

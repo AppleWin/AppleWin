@@ -105,6 +105,8 @@ enum AppMode_e
 #define  REGVALUE_CUSTOM_SPEED       "Custom Speed"
 #define  REGVALUE_EMULATION_SPEED    "Emulation Speed"
 #define  REGVALUE_WINDOW_SCALE       "Window Scale"
+#define  REGVALUE_UTHERNET_ACTIVE       "Uthernet Active"
+#define  REGVALUE_UTHERNET_INTERFACE    "Uthernet Interface"
 #define  REGVALUE_SLOT0					"Slot 0"
 #define  REGVALUE_SLOT1					"Slot 1"
 #define  REGVALUE_SLOT2					"Slot 2"

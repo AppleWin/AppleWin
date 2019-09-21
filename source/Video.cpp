@@ -968,10 +968,10 @@ void DDUninit(void)
 	
 static int  g_nLastScreenShot = 0;
 const  int nMaxScreenShot = 999999999;
-static TCHAR *g_pLastDiskImageName = NULL;
+static std::string g_pLastDiskImageName;
 
 //===========================================================================
-void Video_ResetScreenshotCounter( TCHAR *pImageName )
+void Video_ResetScreenshotCounter( const std::string & pImageName )
 {
 	g_nLastScreenShot = 0;
 	g_pLastDiskImageName = pImageName;
@@ -980,14 +980,14 @@ void Video_ResetScreenshotCounter( TCHAR *pImageName )
 //===========================================================================
 void Util_MakeScreenShotFileName( TCHAR *pFinalFileName_, DWORD chars )
 {
-	const TCHAR * sPrefixScreenShotFileName = "AppleWin_ScreenShot";
+	const std::string sPrefixScreenShotFileName = "AppleWin_ScreenShot";
 	// TODO: g_sScreenshotDir
-	const TCHAR *pPrefixFileName = g_pLastDiskImageName ? g_pLastDiskImageName : sPrefixScreenShotFileName;
+	const std::string pPrefixFileName = !g_pLastDiskImageName.empty() ? g_pLastDiskImageName : sPrefixScreenShotFileName;
 #if SCREENSHOT_BMP
-	StringCbPrintf( pFinalFileName_, chars, TEXT("%s_%09d.bmp"), pPrefixFileName, g_nLastScreenShot );
+	StringCbPrintf( pFinalFileName_, chars, TEXT("%s_%09d.bmp"), pPrefixFileName.c_str(), g_nLastScreenShot );
 #endif
 #if SCREENSHOT_TGA
-	StringCbPrintf( pFinalFileName_, chars, TEXT("%s%09d.tga"), pPrefixFileName, g_nLastScreenShot );
+	StringCbPrintf( pFinalFileName_, chars, TEXT("%s%09d.tga"), pPrefixFileName.c_str(), g_nLastScreenShot );
 #endif
 }
 
