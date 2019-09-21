@@ -29,7 +29,7 @@ void Phasor_SaveSnapshot(YamlSaveHelper&, unsigned int) { }
 std::string Phasor_GetSnapshotCardName() { return ""; }
 void IPropertySheet::ApplyNewConfig(CConfigNeedingRestart const&, CConfigNeedingRestart const&) { }
 void FrameUpdateApple2Type() { }
-bool SetCurrentImageDir(char const*) { return true; }
+bool SetCurrentImageDir(const std::string & ) { return true; }
 void CSuperSerialCard::SaveSnapshot(YamlSaveHelper&) { }
 
 // Copied from Video.cpp as it is too complicated to compile and use Video.cpp

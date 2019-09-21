@@ -118,10 +118,10 @@ BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, BOOL *value)
   return result;
 }
 
-void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPCTSTR buffer)
+void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::string & buffer)
 {
   Configuration::instance->putValue(section, key, buffer);
-  LogFileOutput("RegSaveString: %s - %s = %s\n", section, key, buffer);
+  LogFileOutput("RegSaveString: %s - %s = %s\n", section, key, buffer.c_str());
 }
 
 void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value)

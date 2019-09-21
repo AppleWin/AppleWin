@@ -17,10 +17,10 @@ namespace
     }
 }
 
-void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPCTSTR buffer)
+void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::string & buffer)
 {
     Q_UNUSED(peruser)
-    const QString s = QString::fromUtf8(buffer);
+    const QString s = QString::fromStdString(buffer);
     getOurSettings().setValue(getKey(section, key), QVariant::fromValue(s));
 }
 

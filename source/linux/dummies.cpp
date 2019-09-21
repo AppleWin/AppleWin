@@ -235,7 +235,7 @@ BYTE VideoSetMode (WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG uExecutedCy
   return MemReadFloatingBus(uExecutedCycles);
 }
 
-void Video_ResetScreenshotCounter( char *pImageName )
+void Video_ResetScreenshotCounter( const std::string & pImageName )
 {
 }
 

@@ -61,14 +61,14 @@ namespace
 
     void setSlot4(const SS_CARDTYPE newCardType)
     {
-        g_Slot4 = newCardType;
-        REGSAVE(TEXT(REGVALUE_SLOT4), (DWORD)g_Slot4);
+        g_Slot[4] = newCardType;
+        REGSAVE(TEXT(REGVALUE_SLOT4), (DWORD)g_Slot[4]);
     }
 
     void setSlot5(const SS_CARDTYPE newCardType)
     {
-        g_Slot5 = newCardType;
-        REGSAVE(TEXT(REGVALUE_SLOT5), (DWORD)g_Slot5);
+        g_Slot[5] = newCardType;
+        REGSAVE(TEXT(REGVALUE_SLOT5), (DWORD)g_Slot[5]);
     }
 
     const std::vector<eApple2Type> computerTypes = {A2TYPE_APPLE2, A2TYPE_APPLE2PLUS, A2TYPE_APPLE2E, A2TYPE_APPLE2EENHANCED,
@@ -131,27 +131,27 @@ Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad)
     currentOptions.disks.resize(diskIDs.size());
     for (size_t i = 0; i < diskIDs.size(); ++i)
     {
-        const char * diskName = sg_Disk2Card.GetFullName(diskIDs[i]);
-        if (diskName)
+        const std::string & diskName = sg_Disk2Card.GetFullName(diskIDs[i]);
+        if (!diskName.empty())
         {
-            currentOptions.disks[i] = diskName;
+            currentOptions.disks[i] = QString::fromStdString(diskName);
         }
     }
 
     currentOptions.hds.resize(hdIDs.size());
     for (size_t i = 0; i < hdIDs.size(); ++i)
     {
-        const char * diskName = HD_GetFullName(hdIDs[i]);
-        if (diskName)
+        const std::string & diskName = HD_GetFullName(hdIDs[i]);
+        if (!diskName.empty())
         {
-            currentOptions.hds[i] = diskName;
+            currentOptions.hds[i] = QString::fromStdString(diskName);
         }
     }
 
     currentOptions.enhancedSpeed = sg_Disk2Card.GetEnhanceDisk();
     currentOptions.cardInSlot0 = getSlot0Card();
-    currentOptions.mouseInSlot4 = g_Slot4 == CT_MouseInterface;
-    currentOptions.cpmInSlot5 = g_Slot5 == CT_Z80;
+    currentOptions.mouseInSlot4 = g_Slot[4] == CT_MouseInterface;
+    currentOptions.cpmInSlot5 = g_Slot[5] == CT_Z80;
     currentOptions.hdInSlot7 = HD_CardIsEnabled();
     currentOptions.ramWorksSize = getRamWorksMemorySize();
 
@@ -167,10 +167,10 @@ Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad)
         currentOptions.joystickId = 0;
     }
 
-    const char* saveState = Snapshot_GetFilename();
-    if (saveState)
+    const std::string & saveState = Snapshot_GetFilename();
+    if (!saveState.empty())
     {
-        currentOptions.saveState = QString::fromUtf8(saveState);;
+        currentOptions.saveState = QString::fromStdString(saveState);
     }
 
     currentOptions.screenshotTemplate = getScreenshotTemplate();
@@ -253,7 +253,7 @@ void setNewOptions(const Preferences::Data & currentOptions, const Preferences::
     {
         const std::string name = newOptions.saveState.toStdString();
         Snapshot_SetFilename(name);
-        RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, name.c_str());
+        RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, name);
     }
 
     if (currentOptions.screenshotTemplate != newOptions.screenshotTemplate)

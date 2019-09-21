@@ -34,7 +34,7 @@ BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCycle
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, DWORD chars) { return FALSE; }
 BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD *value) { return FALSE; }
 BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, BOOL *value) { return FALSE; }
-void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPCTSTR buffer) { }
+void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::string & buffer) { }
 void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value) { }
 
 // MessageBox

@@ -26,16 +26,21 @@ int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.c
 DWORD       g_dwCyclesThisFrame = 0;
 bool      g_bFullSpeed      = false;
 
-SS_CARDTYPE	g_Slot0 = CT_LanguageCard;
-SS_CARDTYPE	g_Slot2 = CT_SSC;
-SS_CARDTYPE	g_Slot4 = CT_Empty;
-SS_CARDTYPE	g_Slot5 = CT_Empty;
+SS_CARDTYPE g_Slot[8] = {
+	/*0*/ CT_LanguageCard,	// Just for Apple II or II+ or similar clones
+	/*1*/ CT_GenericPrinter,
+	/*2*/ CT_SSC,
+	/*3*/ CT_Uthernet,
+	/*4*/ CT_Empty,
+	/*5*/ CT_Empty,
+	/*6*/ CT_Disk2,
+	/*7*/ CT_Empty };
 SS_CARDTYPE	g_SlotAux = CT_Extended80Col;
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
-TCHAR     g_sProgramDir[MAX_PATH] = TEXT(""); // Directory of where AppleWin executable resides
-TCHAR     g_sCurrentDir[MAX_PATH] = TEXT(""); // Also Starting Dir.  Debugger uses this when load/save
-const TCHAR *g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
+std::string     g_sProgramDir; // Directory of where AppleWin executable resides
+std::string     g_sCurrentDir; // Also Starting Dir.  Debugger uses this when load/save
+std::string     g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 bool      g_bRestart = false;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
@@ -275,11 +280,11 @@ void LoadConfiguration(void)
 #endif
 
   if(REGLOAD(TEXT(REGVALUE_SLOT0), &dwTmp))
-    g_Slot0 = (SS_CARDTYPE) dwTmp;
+    g_Slot[0] = (SS_CARDTYPE) dwTmp;
   if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
-    g_Slot4 = (SS_CARDTYPE) dwTmp;
+    g_Slot[4] = (SS_CARDTYPE) dwTmp;
   if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
-    g_Slot5 = (SS_CARDTYPE) dwTmp;
+    g_Slot[5] = (SS_CARDTYPE) dwTmp;
 
   //
 

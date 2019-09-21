@@ -58,7 +58,7 @@ namespace
         CheckCpu();
 
         SetWindowTitle();
-        window->setWindowTitle(g_pAppTitle);
+        window->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
         FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
@@ -317,7 +317,7 @@ void QApple::on_actionReboot_triggered()
     emit endEmulator();
     stopEmulator();
     startEmulator(myEmulatorWindow);
-    myEmulatorWindow->setWindowTitle(g_pAppTitle);
+    myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
     myEmulator->updateVideo();
     restartTimeCounters();
 }
@@ -378,7 +378,7 @@ void QApple::on_actionLoad_state_triggered()
 {
     emit endEmulator();
     Snapshot_LoadState();
-    myEmulatorWindow->setWindowTitle(g_pAppTitle);
+    myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
     myEmulator->updateVideo();
 }
 
