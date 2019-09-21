@@ -665,7 +665,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 					// TODO: Must check for buffer overflow !
 					ConsolePrintFormat( sText, "%s%s"
 						, CHC_PATH
-						, pPathFileName
+						, pPathFileName.c_str()
 					);
 				}
 
@@ -721,7 +721,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 						, CHC_STRING
 						, g_aSymbolTableNames[ iTable ]
 						, CHC_DEFAULT
-						, pPathFileName
+						, pPathFileName.c_str()
 					);
 				}
 
