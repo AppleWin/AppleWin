@@ -10,6 +10,7 @@
 	extern uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeColorTV );
 	extern void     NTSC_VideoClockResync( const DWORD dwCyclesThisFrame );
 	extern uint16_t NTSC_VideoGetScannerAddress( const ULONG uExecutedCycles );
+	extern uint16_t NTSC_VideoGetScannerAddressForDebugger(void);
 	extern void     NTSC_VideoInit( uint8_t *pFramebuffer );
 	extern void     NTSC_VideoReinitialize( DWORD cyclesThisFrame, bool bInitVideoScannerAddress );
 	extern void     NTSC_VideoInitAppleType();
@@ -20,3 +21,5 @@
 	enum VideoRefreshRate_e;
 	void NTSC_SetRefreshRate(VideoRefreshRate_e rate);
 	UINT NTSC_GetCyclesPerFrame(void);
+	UINT NTSC_GetVideoLines(void);
+	bool NTSC_IsVisible(void);

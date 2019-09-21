@@ -105,3 +105,14 @@
 
 	extern char g_aDebuggerVirtualTextScreen[ DEBUG_VIRTUAL_TEXT_HEIGHT ][ DEBUG_VIRTUAL_TEXT_WIDTH ];
 	extern size_t Util_GetDebuggerText( char* &pText_ ); // Same API as Util_GetTextScreen()
+
+	class VideoScannerDisplayInfo
+	{
+	public:
+		VideoScannerDisplayInfo() : isDecimal(true), isHorzReal(true) {}
+
+		bool isDecimal;
+		bool isHorzReal;
+	};
+
+	extern VideoScannerDisplayInfo g_videoScannerDisplayInfo;

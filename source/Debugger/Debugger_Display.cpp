@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../LanguageCard.h"
 #include "../Memory.h"
 #include "../Mockingboard.h"
+#include "../NTSC.h"
 #include "../Video.h"
 
 // NEW UI debugging - force display ALL meta-info (regs, stack, bp, watches, zp) for debugging purposes
@@ -58,6 +59,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //#define WATCH_ZERO_BG BG_DATA_1
 #define WATCH_ZERO_BG BG_INFO
+
+#define VIDEO_INFO_BG BG_INFO
 
 	#define DISPLAY_MEMORY_TITLE     1
 //	#define DISPLAY_BREAKPOINT_TITLE 1
@@ -161,6 +164,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_BP_COLUMN      = INFO_COL_2;
 		const int DISPLAY_WATCHES_COLUMN = INFO_COL_2;
 		const int DISPLAY_MINIMEM_COLUMN = INFO_COL_2;
+		const int DISPLAY_VIDEO_SCANNER_COLUMN = INFO_COL_2;
 #else
 		const int DISPLAY_CPU_INFO_LEFT_COLUMN = SCREENSPLIT1	// TC: SCREENSPLIT1 is not defined anywhere in the .sln!
 
@@ -196,6 +200,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		const int DEFAULT_HEIGHT = 16;
 
 //	static HDC g_hDC = 0;
+
+		VideoScannerDisplayInfo g_videoScannerDisplayInfo;
 
 
 static	void SetupColorsHiLoBits ( bool bHiBit, bool bLoBit, 
@@ -3665,6 +3671,69 @@ void DrawSubWindow_Data (Update_t bUpdate)
 }
 
 //===========================================================================
+void DrawBeamValue(int line, LPCTSTR name, int nValue, bool isVisible)
+{
+	if (!((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
+		return;
+
+	int nFontWidth = g_aFontConfig[FONT_INFO]._nFontWidthAvg;
+
+	RECT rect;
+	rect.top = line * g_nFontHeight;
+	rect.bottom = rect.top + g_nFontHeight;
+	rect.left = DISPLAY_VIDEO_SCANNER_COLUMN;
+	rect.right = rect.left + (5 * nFontWidth);
+
+	DebuggerSetColorFG(DebuggerGetColor(FG_INFO_CHAR_HI));
+	DebuggerSetColorBG(DebuggerGetColor(VIDEO_INFO_BG));
+	PrintText(name, rect);
+
+
+	char sValue[8];
+	if (g_videoScannerDisplayInfo.isDecimal)
+		sprintf_s(sValue, sizeof(sValue), "%03u", nValue);
+	else
+		sprintf_s(sValue, sizeof(sValue), "%03X", nValue);
+
+	// Needs to be far enough over, since 4 chars of ZeroPage symbol also calls us
+	int nOffset = 2;
+	rect.left = DISPLAY_VIDEO_SCANNER_COLUMN + (nOffset * nFontWidth);
+
+	if (!isVisible)
+		DebuggerSetColorFG(DebuggerGetColor(FG_DISASM_BP_S_X));	// red
+	else
+		DebuggerSetColorFG(DebuggerGetColor(FG_DISASM_BRANCH));	// green
+	PrintText(sValue, rect);
+}
+
+//===========================================================================
+void DrawBeamInfo (int line)
+{
+	NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
+
+	int v = g_nVideoClockVert;
+	int h = g_nVideoClockHorz;
+
+	if (g_videoScannerDisplayInfo.isHorzReal)
+	{
+		h -= 13;	// UTA2e ref?
+
+		if (h < 0)
+		{
+			h = h + 65;
+			v = v - 1;
+			if (v < 0)
+				v = v + NTSC_GetVideoLines();
+		}
+	}
+
+	const bool isVisible = NTSC_IsVisible();
+
+	DrawBeamValue(line++, "h:", h, isVisible);
+	DrawBeamValue(line++, "v:", v, isVisible);
+}
+
+//===========================================================================
 void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 {
 	if (g_iWindowThis == WINDOW_CONSOLE)
@@ -3676,6 +3745,10 @@ void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 		int yTarget   = yStack + MAX_DISPLAY_STACK_LINES - 1; // 9
 		int yZeroPage = 16; // yTarget 
 		int ySoft = yZeroPage + (2 * MAX_DISPLAY_ZEROPAGE_LINES) + !SOFTSWITCH_LANGCARD;
+		int yBeam = ySoft - 3;
+
+		if (bUpdate & UPDATE_REGS)
+			DrawBeamInfo(yBeam);
 
 		if ((bUpdate & UPDATE_REGS) || (bUpdate & UPDATE_FLAGS))
 			DrawRegisters( yRegs );
@@ -3705,7 +3778,8 @@ void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 	// Right Side
 		int yBreakpoints = 0;
 		int yWatches     = yBreakpoints + MAX_BREAKPOINTS; // MAX_DISPLAY_BREAKPOINTS_LINES; // 7
-		int yMemory      = yWatches     + (MAX_WATCHES*2); // MAX_DISPLAY_WATCHES_LINES    ; // 14 // 2.7.0.15 Fixed: Memory Dump was over-writing watches
+		const UINT numVideoScannerInfoLines = 4;		// There used to be 2 extra watches (and each watch is 2 lines)
+		int yMemory      = yWatches + numVideoScannerInfoLines + (MAX_WATCHES*2); // MAX_DISPLAY_WATCHES_LINES    ; // 14 // 2.7.0.15 Fixed: Memory Dump was over-writing watches
 
 	//	if ((MAX_DISPLAY_BREAKPOINTS_LINES + MAX_DISPLAY_WATCHES_LINES) < 12)
 	//		yWatches++;

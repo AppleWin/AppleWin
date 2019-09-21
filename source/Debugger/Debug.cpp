@@ -6811,6 +6811,38 @@ Update_t CmdStackPopPseudo (int nArgs)
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
+// Video __________________________________________________________________________________________
+
+Update_t CmdVideoScannerInfo(int nArgs)
+{
+	if (nArgs != 1)
+	{
+		ConsoleBufferPush("Video-scanner display config: <dec|hex|real|apple>");
+	}
+	else
+	{
+		if (strcmp(g_aArgs[1].sArg, "dec") == 0)
+		{
+			g_videoScannerDisplayInfo.isDecimal = true;
+		}
+		else if (strcmp(g_aArgs[1].sArg, "hex") == 0)
+		{
+			g_videoScannerDisplayInfo.isDecimal = false;
+		}
+		else if (strcmp(g_aArgs[1].sArg, "real") == 0)
+		{
+			g_videoScannerDisplayInfo.isHorzReal = true;
+		}
+		else if (strcmp(g_aArgs[1].sArg, "apple") == 0)
+		{
+			g_videoScannerDisplayInfo.isHorzReal = false;
+		}
+	}
+
+	ConsoleBufferToDisplay();
+
+	return UPDATE_ALL;
+}
 
 // View ___________________________________________________________________________________________
 
@@ -8068,7 +8100,7 @@ void OutputTraceLine ()
 
 	if (g_bTraceFileWithVideoScanner)
 	{
-		uint16_t addr = NTSC_VideoGetScannerAddress(0);	// NB. uExecutedCycles==0 as SingleStep() called afterwards
+		uint16_t addr = NTSC_VideoGetScannerAddressForDebugger();
 		BYTE data = mem[addr];
 
 		fprintf( g_hTraceFile,

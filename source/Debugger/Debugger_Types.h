@@ -473,6 +473,8 @@
 //		, CMD_SYMBOLS_LOAD_1
 //		, CMD_SYMBOLS_LOAD_2
 //		, CMD_SYMBOLS_SAVE
+// Video-scanner info
+		, CMD_VIDEO_SCANNER_INFO
 // View
 		, CMD_VIEW_TEXT4X
 		, CMD_VIEW_TEXT41
@@ -718,6 +720,9 @@
 //	Update_t CmdSymbolsUser        (int nArgs);
 //	Update_t CmdSymbolsAssembly    (int nArgs);
 //	Update_t CmdSymbolsSource      (int nArgs);
+
+// Video-scanner info
+	Update_t CmdVideoScannerInfo   (int nArgs);
 
 // View
 	Update_t CmdViewOutput_Text4X  (int nArgs);
@@ -1482,7 +1487,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 	enum
 	{
-		MAX_WATCHES = 8
+		MAX_WATCHES = 6
 	};
 
 

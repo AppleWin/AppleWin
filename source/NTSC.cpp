@@ -1717,6 +1717,12 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 	return addr;
 }
 
+uint16_t NTSC_VideoGetScannerAddressForDebugger(void)
+{
+	ResetCyclesExecutedForDebugger();		// if in full-speed, then reset cycles so that CpuCalcCycles() doesn't ASSERT
+	return NTSC_VideoGetScannerAddress(0);
+}
+
 //===========================================================================
 void NTSC_SetVideoTextMode( int cols )
 {
@@ -2310,4 +2316,14 @@ void NTSC_SetRefreshRate(VideoRefreshRate_e rate)
 UINT NTSC_GetCyclesPerFrame(void)
 {
 	return g_videoScanner6502Cycles;
+}
+
+UINT NTSC_GetVideoLines(void)
+{
+	return (GetVideoRefreshRate() == VR_50HZ) ? VIDEO_SCANNER_MAX_VERT_PAL : VIDEO_SCANNER_MAX_VERT;
+}
+
+bool NTSC_IsVisible(void)
+{
+	return (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START);
 }
