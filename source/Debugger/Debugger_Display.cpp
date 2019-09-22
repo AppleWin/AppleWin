@@ -3673,7 +3673,7 @@ void DrawVideoScannerValue(int line, LPCTSTR name, int nValue, bool isVisible)
 	if (!((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
 
-	int nFontWidth = g_aFontConfig[FONT_INFO]._nFontWidthAvg;
+	const int nFontWidth = g_aFontConfig[FONT_INFO]._nFontWidthAvg;
 
 	RECT rect;
 	rect.top = line * g_nFontHeight;
@@ -3681,8 +3681,8 @@ void DrawVideoScannerValue(int line, LPCTSTR name, int nValue, bool isVisible)
 	rect.left = DISPLAY_VIDEO_SCANNER_COLUMN;
 	rect.right = rect.left + (5 * nFontWidth);
 
-	DebuggerSetColorFG(DebuggerGetColor(FG_INFO_CHAR_HI));
-	DebuggerSetColorBG(DebuggerGetColor(VIDEO_INFO_BG));
+	DebuggerSetColorBG(DebuggerGetColor(BG_VIDEOSCANNER_TITLE));
+	DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_TITLE));
 	PrintText(name, rect);
 
 
@@ -3693,13 +3693,13 @@ void DrawVideoScannerValue(int line, LPCTSTR name, int nValue, bool isVisible)
 		sprintf_s(sValue, sizeof(sValue), "%03X", nValue);
 
 	// Needs to be far enough over, since 4 chars of ZeroPage symbol also calls us
-	int nOffset = 2;
+	const int nOffset = 2;
 	rect.left = DISPLAY_VIDEO_SCANNER_COLUMN + (nOffset * nFontWidth);
 
 	if (!isVisible)
-		DebuggerSetColorFG(DebuggerGetColor(FG_DISASM_BP_S_X));	// red
+		DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_INVISIBLE));	// red
 	else
-		DebuggerSetColorFG(DebuggerGetColor(FG_DISASM_BRANCH));	// green
+		DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_VISIBLE));	// green
 	PrintText(sValue, rect);
 }
 

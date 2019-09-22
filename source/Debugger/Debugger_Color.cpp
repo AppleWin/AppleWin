@@ -126,7 +126,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		W8,   // FG_SOURCE_TITLE
 		W2,   // BG_SOURCE_1 // C2 W2 for "Paper Look"
 		W3,   // BG_SOURCE_2
-		W8    // FG_SOURCE
+		W8,   // FG_SOURCE
+
+		C3,   // BG_VIDEOSCANNER_TITLE
+		W8,   // FG_VIDEOSCANNER_TITLE
+		R8,   // FG_VIDEOSCANNER_INVISIBLE
+		G8,   // FG_VIDEOSCANNER_VISIBLE
 	};
 
 
