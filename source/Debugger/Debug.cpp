@@ -334,7 +334,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	void _BWZ_Clear( Breakpoint_t * aBreakWatchZero, int iSlot );
 
 // Config - Colors
-	static	void _ConfigColorsReset ( BYTE *pPalDst = 0 );
+	static	void _ConfigColorsReset ( void );
 
 // Config - Save
 	bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave );
@@ -8804,27 +8804,15 @@ void _SetupColorRamp( const int iPrimary, int & iColor_ )
 }
 #endif // _DEBUG
 
-// Full Screen uses the palette from g_pFramebufferinfo
-// BUT DebutInitialize() is called before VideoInitialize()
-// THUS this is called post-initialize to set up the global palette
-//
-// pPalDst is the first color in the palette that we can stick our custom debug colors in
-//===========================================================================
-void Debug_UpdatePalette( BYTE *pPalDst )
-{
-	_ConfigColorsReset( pPalDst );
-}
 
 //===========================================================================
-void _ConfigColorsReset( BYTE *pPalDst )
+void _ConfigColorsReset( void )
 {
 //	int iColor = 1; // black only has one level, skip it, since black levels same as white levels
 //	for (int iPrimary = 1; iPrimary < 8; iPrimary++ )
 //	{
 //		_SetupColorRamp( iPrimary, iColor );
 //	}
-
-	BYTE *pDst = pPalDst;
 
 	// Setup default colors
 	int iColor;
@@ -8835,15 +8823,6 @@ void _ConfigColorsReset( BYTE *pPalDst )
 		int R = (nColor >>  0) & 0xFF;
 		int G = (nColor >>  8) & 0xFF;
 		int B = (nColor >> 16) & 0xFF;
-
-		if( pDst )
-		{
-			*(pDst + 0) = B;
-			*(pDst + 1) = G;
-			*(pDst + 2) = R;
-			*(pDst + 3) = 0;
-			pDst += 4;
-		}
 
 		// There are many, many ways of shifting the color domain to the monochrome domain
 		// NTSC uses 3x3 matrix, could map RGB -> wavelength, etc.

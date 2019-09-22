@@ -89,8 +89,6 @@
 	void DrawWatches          ( int line);
 	void DrawZeroPagePointers ( int line);
 
-	void Debug_UpdatePalette( BYTE *pPalDst );
-
 	//
 
 	extern HDC GetDebuggerMemDC(void);

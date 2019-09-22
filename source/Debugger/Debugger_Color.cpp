@@ -131,7 +131,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	COLORREF g_aColors[ NUM_COLOR_SCHEMES ][ NUM_DEBUG_COLORS ];
 
-	COLORREF DebuggerGetColor ( int iColor );
+//	COLORREF DebuggerGetColor ( int iColor );
 
 
 //===========================================================================
