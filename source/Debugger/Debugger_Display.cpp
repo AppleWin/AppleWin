@@ -3702,7 +3702,7 @@ void DrawVideoScannerInfo (int line)
 
 		if (h < 0)
 		{
-			h = h + 65;
+			h = h + NTSC_GetCyclesPerLine();
 			v = v - 1;
 			if (v < 0)
 				v = v + NTSC_GetVideoLines();

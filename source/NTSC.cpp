@@ -2318,6 +2318,11 @@ UINT NTSC_GetCyclesPerFrame(void)
 	return g_videoScanner6502Cycles;
 }
 
+UINT NTSC_GetCyclesPerLine(void)
+{
+	return VIDEO_SCANNER_MAX_HORZ;
+}
+
 UINT NTSC_GetVideoLines(void)
 {
 	return (GetVideoRefreshRate() == VR_50HZ) ? VIDEO_SCANNER_MAX_VERT_PAL : VIDEO_SCANNER_MAX_VERT;

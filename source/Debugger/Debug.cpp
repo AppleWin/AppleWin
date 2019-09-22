@@ -6814,26 +6814,20 @@ Update_t CmdVideoScannerInfo(int nArgs)
 {
 	if (nArgs != 1)
 	{
-		ConsoleBufferPush("Video-scanner display config: <dec|hex|real|apple>");
+		Help_Arg_1(CMD_VIDEO_SCANNER_INFO);
 	}
 	else
 	{
 		if (strcmp(g_aArgs[1].sArg, "dec") == 0)
-		{
 			g_videoScannerDisplayInfo.isDecimal = true;
-		}
 		else if (strcmp(g_aArgs[1].sArg, "hex") == 0)
-		{
 			g_videoScannerDisplayInfo.isDecimal = false;
-		}
 		else if (strcmp(g_aArgs[1].sArg, "real") == 0)
-		{
 			g_videoScannerDisplayInfo.isHorzReal = true;
-		}
 		else if (strcmp(g_aArgs[1].sArg, "apple") == 0)
-		{
 			g_videoScannerDisplayInfo.isHorzReal = false;
-		}
+		else
+			Help_Arg_1(CMD_VIDEO_SCANNER_INFO);
 	}
 
 	ConsoleBufferToDisplay();

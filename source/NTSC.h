@@ -21,5 +21,6 @@
 	enum VideoRefreshRate_e;
 	void NTSC_SetRefreshRate(VideoRefreshRate_e rate);
 	UINT NTSC_GetCyclesPerFrame(void);
+	UINT NTSC_GetCyclesPerLine(void);
 	UINT NTSC_GetVideoLines(void);
 	bool NTSC_IsVisible(void);
