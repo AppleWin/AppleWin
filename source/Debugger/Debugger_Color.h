@@ -91,6 +91,8 @@
 		, FG_DISASM_BRANCH   // Green                                   ^ = v
 
 		, BG_INFO            // Cyan    Regs/Stack/BP/Watch/ZP
+		, BG_INFO_WATCH      // Cyan
+		, BG_INFO_ZEROPAGE   // Cyan
 		, FG_INFO_TITLE      // White   Regs/Stack/BP/Watch/ZP
 		, FG_INFO_BULLET     //         1
 		, FG_INFO_OPERATOR   // Gray192  :    -

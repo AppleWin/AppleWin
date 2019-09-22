@@ -57,11 +57,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#define DEBUG_BACKGROUND 0
 #endif
 
-//#define WATCH_ZERO_BG BG_DATA_1
-#define WATCH_ZERO_BG BG_INFO
-
-#define VIDEO_INFO_BG BG_INFO
-
 	#define DISPLAY_MEMORY_TITLE     1
 //	#define DISPLAY_BREAKPOINT_TITLE 1
 //	#define DISPLAY_WATCH_TITLE      1
@@ -2590,16 +2585,7 @@ void DrawMemory ( int line, int iMemDump )
 						DebuggerSetColorFG( DebuggerGetColor( FG_INFO_IO_BYTE ));
 					}
 
-
-					if (nCols == 6)
-					{
-						if ((iCol & 1) == 1)
-							DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_DATA_2
-						else
-							DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 ));
-						sprintf(sText, "%02X", nData );
-					} else
-						sprintf(sText, "%02X ", nData );
+					sprintf(sText, "%02X ", nData );
 				}
 				else
 				{
@@ -3266,7 +3252,7 @@ void DrawWatches (int line)
 
 	char sText[16] = "Watches";
 
-	DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
+	DebuggerSetColorBG(DebuggerGetColor( BG_INFO_WATCH ));
 
 #if DISPLAY_WATCH_TITLE
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
@@ -3284,7 +3270,7 @@ void DrawWatches (int line)
 		{
 			RECT rect2 = rect;
 
-			DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
+			DebuggerSetColorBG( DebuggerGetColor( BG_INFO_WATCH ));
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ) );
 			PrintTextCursorX( "W", rect2 );
 
@@ -3343,12 +3329,12 @@ void DrawWatches (int line)
 			for( int iByte = 0; iByte < 8; iByte++ )
 			{
 				if  ((iByte & 3) == 0) {
-					DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
+					DebuggerSetColorBG( DebuggerGetColor( BG_INFO_WATCH ));
 					PrintTextCursorX( " ", rect2 );
 				}
 
 				if ((iByte & 1) == 1)
-					DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_DATA_2
+					DebuggerSetColorBG( DebuggerGetColor( BG_INFO_WATCH ));
 				else
 					DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 ));
 
@@ -3377,7 +3363,7 @@ void DrawZeroPagePointers ( int line )
 	rect.left   = DISPLAY_ZEROPAGE_COLUMN;
 	rect.right  = rect.left + (10 * nFontWidth);
 
-	DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
+	DebuggerSetColorBG( DebuggerGetColor( BG_INFO_ZEROPAGE ));
 
 	const int nMaxSymbolLen = 7;
 	char sText[nMaxSymbolLen+1] = "";
@@ -3685,7 +3671,6 @@ void DrawVideoScannerValue(int line, LPCTSTR name, int nValue, bool isVisible)
 	DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_TITLE));
 	PrintText(name, rect);
 
-
 	char sValue[8];
 	if (g_videoScannerDisplayInfo.isDecimal)
 		sprintf_s(sValue, sizeof(sValue), "%03u", nValue);
@@ -3699,7 +3684,7 @@ void DrawVideoScannerValue(int line, LPCTSTR name, int nValue, bool isVisible)
 	if (!isVisible)
 		DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_INVISIBLE));	// red
 	else
-		DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_VISIBLE));	// green
+		DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_VISIBLE));		// green
 	PrintText(sValue, rect);
 }
 

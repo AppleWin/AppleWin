@@ -96,7 +96,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		C8,                  //                     FG_DISASM_CHAR
 		G8,                  //                     FG_DISASM_BRANCH
 
-		C3,                  //                     BG_INFO (C4, C2 too dark)
+		C3,                  // BG_INFO (C4, C2 too dark)
+		C3,                  // BG_INFO_WATCH
+		C3,                  // BG_INFO_ZEROPAGE
 		W8,                  //                     FG_INFO_TITLE (or W8)
 		Y7,                  //                     FG_INFO_BULLET (W8)
 		G192,                //                     FG_INFO_OPERATOR
