@@ -179,6 +179,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_BP_COLUMN      = SCREENSPLIT2;
 		const int DISPLAY_WATCHES_COLUMN = SCREENSPLIT2;
 		const int DISPLAY_MINIMEM_COLUMN = SCREENSPLIT2; // nFontWidth
+		const int DISPLAY_VIDEO_SCANNER_COLUMN = SCREENSPLIT2;
 #endif
 
 		int MAX_DISPLAY_REGS_LINES        = 7;
@@ -199,16 +200,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		// 384 = 16 * 24 very bottom
 //		const int DEFAULT_HEIGHT = 16;
 
-//	static HDC g_hDC = 0;
-
 		VideoScannerDisplayInfo g_videoScannerDisplayInfo;
 
-
-static	void SetupColorsHiLoBits ( bool bHiBit, bool bLoBit, 
-			const int iBackground, const int iForeground,
-			const int iColorHiBG , /*const int iColorHiFG,
-			const int iColorLoBG , */const int iColorLoFG );
-static	char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
+static char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
 			const int iTxtBackground  = BG_INFO     , const int iTxtForeground  = FG_DISASM_CHAR,
 			const int iHighBackground = BG_INFO_CHAR, const int iHighForeground = FG_INFO_CHAR_HI,
 			const int iLowBackground  = BG_INFO_CHAR, const int iLowForeground  = FG_INFO_CHAR_LO );
@@ -217,7 +211,7 @@ static	char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iV
 
 	void DrawSubWindow_Code ( int iWindow );
 	void DrawSubWindow_IO       (Update_t bUpdate);
-	void DrawSubWindow_Source1  (Update_t bUpdate);
+	void DrawSubWindow_Source   (Update_t bUpdate);
 	void DrawSubWindow_Source2  (Update_t bUpdate);
 	void DrawSubWindow_Symbols  (Update_t bUpdate);
 	void DrawSubWindow_ZeroPage (Update_t bUpdate);
@@ -229,6 +223,9 @@ static	char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iV
 	char  FormatCharTxtCtrl( const BYTE b, bool * pWasCtrl_ = NULL );
 	char  FormatCharTxtHigh( const BYTE b, bool *pWasHi_ = NULL );
 	char  FormatChar4Font  ( const BYTE b, bool *pWasHi_, bool *pWasLo_ );
+
+	void DrawRegister(int line, LPCTSTR name, int bytes, WORD value, int iSource = 0);
+
 
 // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/gdi/pantdraw_6n77.asp
 enum WinROP4_e
@@ -3671,7 +3668,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 }
 
 //===========================================================================
-void DrawBeamValue(int line, LPCTSTR name, int nValue, bool isVisible)
+void DrawVideoScannerValue(int line, LPCTSTR name, int nValue, bool isVisible)
 {
 	if (!((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
@@ -3707,7 +3704,7 @@ void DrawBeamValue(int line, LPCTSTR name, int nValue, bool isVisible)
 }
 
 //===========================================================================
-void DrawBeamInfo (int line)
+void DrawVideoScannerInfo (int line)
 {
 	NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
 
@@ -3729,8 +3726,8 @@ void DrawBeamInfo (int line)
 
 	const bool isVisible = NTSC_IsVisible();
 
-	DrawBeamValue(line++, "h:", h, isVisible);
-	DrawBeamValue(line++, "v:", v, isVisible);
+	DrawVideoScannerValue(line++, "h:", h, isVisible);
+	DrawVideoScannerValue(line++, "v:", v, isVisible);
 }
 
 //===========================================================================
@@ -3747,8 +3744,8 @@ void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 		int ySoft = yZeroPage + (2 * MAX_DISPLAY_ZEROPAGE_LINES) + !SOFTSWITCH_LANGCARD;
 		int yBeam = ySoft - 3;
 
-		if (bUpdate & UPDATE_REGS)
-			DrawBeamInfo(yBeam);
+		if (bUpdate & UPDATE_VIDEOSCANNER)
+			DrawVideoScannerInfo(yBeam);
 
 		if ((bUpdate & UPDATE_REGS) || (bUpdate & UPDATE_FLAGS))
 			DrawRegisters( yRegs );
