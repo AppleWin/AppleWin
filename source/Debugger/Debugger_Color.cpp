@@ -129,9 +129,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		W8    // FG_SOURCE
 	};
 
-	COLORREF g_aColors[ NUM_COLOR_SCHEMES ][ NUM_DEBUG_COLORS ];
 
-//	COLORREF DebuggerGetColor ( int iColor );
+static COLORREF g_aColors[ NUM_COLOR_SCHEMES ][ NUM_DEBUG_COLORS ];
 
 
 //===========================================================================
@@ -167,3 +166,82 @@ bool DebuggerSetColor( const int iScheme, const int iColor, const COLORREF nColo
 	return bStatus;
 }
 
+
+#if _DEBUG
+#define DEBUG_COLOR_RAMP 0
+//===========================================================================
+static void _SetupColorRamp(const int iPrimary, int & iColor_)
+{
+	TCHAR sRamp[CONSOLE_WIDTH * 2] = TEXT("");
+#if DEBUG_COLOR_RAMP
+	TCHAR sText[CONSOLE_WIDTH];
+#endif
+
+	bool bR = (iPrimary & 1) ? true : false;
+	bool bG = (iPrimary & 2) ? true : false;
+	bool bB = (iPrimary & 4) ? true : false;
+	int dStep = 32;
+	int nLevels = 256 / dStep;
+	for (int iLevel = nLevels; iLevel > 0; iLevel--)
+	{
+		int nC = ((iLevel * dStep) - 1);
+		int nR = bR ? nC : 0;
+		int nG = bG ? nC : 0;
+		int nB = bB ? nC : 0;
+		DWORD nColor = RGB(nR, nG, nB);
+		g_aColorPalette[iColor_] = nColor;
+#if DEBUG_COLOR_RAMP
+		wsprintf(sText, TEXT("RGB(%3d,%3d,%3d), "), nR, nG, nB);
+		_tcscat(sRamp, sText);
+#endif
+		iColor_++;
+	}
+#if DEBUG_COLOR_RAMP
+	wsprintf(sText, TEXT(" // %d%d%d\n"), bB, bG, bR);
+	_tcscat(sRamp, sText);
+	OutputDebugString(sRamp);
+	sRamp[0] = 0;
+#endif
+}
+#endif // _DEBUG
+
+
+//===========================================================================
+void ConfigColorsReset(void)
+{
+	//	int iColor = 1; // black only has one level, skip it, since black levels same as white levels
+	//	for (int iPrimary = 1; iPrimary < 8; iPrimary++ )
+	//	{
+	//		_SetupColorRamp( iPrimary, iColor );
+	//	}
+
+	// Setup default colors
+	int iColor;
+	for (iColor = 0; iColor < NUM_DEBUG_COLORS; iColor++)
+	{
+		COLORREF nColor = g_aColorPalette[g_aColorIndex[iColor]];
+
+		int R = (nColor >> 0) & 0xFF;
+		int G = (nColor >> 8) & 0xFF;
+		int B = (nColor >> 16) & 0xFF;
+
+		// There are many, many ways of shifting the color domain to the monochrome domain
+		// NTSC uses 3x3 matrix, could map RGB -> wavelength, etc.
+		int M = (R + G + B) / 3; // Monochrome component
+
+		int nThreshold = 64;
+
+		int BW;
+		if (M < nThreshold)
+			BW = 0;
+		else
+			BW = 255;
+
+		COLORREF nMono = RGB(M, M, M);
+		COLORREF nBW = RGB(BW, BW, BW);
+
+		DebuggerSetColor(SCHEME_COLOR, iColor, nColor);
+		DebuggerSetColor(SCHEME_MONO, iColor, nMono);
+		DebuggerSetColor(SCHEME_BW, iColor, nBW);
+	}
+}
