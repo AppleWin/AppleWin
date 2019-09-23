@@ -6814,7 +6814,7 @@ Update_t CmdVideoScannerInfo(int nArgs)
 {
 	if (nArgs != 1)
 	{
-		Help_Arg_1(CMD_VIDEO_SCANNER_INFO);
+		return Help_Arg_1(CMD_VIDEO_SCANNER_INFO);
 	}
 	else
 	{
@@ -6827,9 +6827,11 @@ Update_t CmdVideoScannerInfo(int nArgs)
 		else if (strcmp(g_aArgs[1].sArg, "apple") == 0)
 			g_videoScannerDisplayInfo.isHorzReal = false;
 		else
-			Help_Arg_1(CMD_VIDEO_SCANNER_INFO);
+			return Help_Arg_1(CMD_VIDEO_SCANNER_INFO);
 	}
 
+	TCHAR sText[CONSOLE_WIDTH];
+	ConsoleBufferPushFormat(sText, "Video-scanner display updated: %s", g_aArgs[1].sArg);
 	ConsoleBufferToDisplay();
 
 	return UPDATE_ALL;
