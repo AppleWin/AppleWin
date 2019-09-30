@@ -1149,6 +1149,9 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 			continue;
 		}
 
+		if (m_seqFunc != readSequencing)
+			continue;
+
 		//
 
 		m_shiftReg <<= 1;
@@ -1395,6 +1398,7 @@ void Disk2InterfaceCard::ResetSwitches(void)
 	m_floppyLoadMode = 0;
 	m_floppyWriteMode = 0;
 	m_magnetStates = 0;
+	m_seqFunc = readSequencing;
 }
 
 //===========================================================================
@@ -1459,19 +1463,17 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 	if (!m_floppyDrive[m_currDrive].m_spinning)	// GH#599
 		return;
 
-	if (!write)
-	{
-		// Notes:
-		// . Phase 1 on also forces write protect in the Disk II drive (UTAIIe page 9-7) but we don't implement that
-		// . write mode doesn't prevent reading write protect (GH#537):
-		//   "If for some reason the above write protect check were entered with the READ/WRITE switch in WRITE, 
-		//    the write protect switch would still be read correctly" (UTAIIe page 9-21)
-		// . Sequencer "SR" (Shift Right) command only loads QA (bit7) of data register (UTAIIe page 9-21)
-		if (m_floppyDrive[m_currDrive].m_disk.m_bWriteProtected)
-			m_floppyLatch |= 0x80;
-		else
-			m_floppyLatch &= 0x7F;
-	}
+	// Notes:
+	// . Phase 1 on also forces write protect in the Disk II drive (UTAIIe page 9-7) but we don't implement that.
+	// . write mode doesn't prevent reading write protect (GH#537):
+	//   "If for some reason the above write protect check were entered with the READ/WRITE switch in WRITE, 
+	//    the write protect switch would still be read correctly" (UTAIIe page 9-21)
+	// . Sequencer "SR" (Shift Right) command only loads QA (bit7) of data register (UTAIIe page 9-21)
+	// . A read or write will read write protect in QA.
+	if (m_floppyDrive[m_currDrive].m_disk.m_bWriteProtected)
+		m_floppyLatch |= 0x80;
+	else
+		m_floppyLatch &= 0x7F;
 
 	if (ImageIsWOZ(m_floppyDrive[m_currDrive].m_disk.m_imagehandle))
 	{
@@ -1648,6 +1650,24 @@ void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 
 //===========================================================================
 
+void Disk2InterfaceCard::SetSequencerFunction(WORD addr)
+{
+	if ((addr & 0xf) < 0xc)
+		return;
+
+	UINT A3A2 = m_seqFunc;
+
+	switch (addr & 3)
+	{
+	case 0: A3A2 &= ~(1<<0); break;	// $C08E,X (sequence addr A3 input)
+	case 1: A3A2 |= (1<<0); break;	// $C08F,X (sequence addr A3 input)
+	case 2: A3A2 &= ~(1<<1); break;	// $C08C,X (sequence addr A2 input)
+	case 3: A3A2 |= (1<<1); break;	// $C08D,X (sequence addr A2 input)
+	}
+
+	m_seqFunc = (SEQFUNC) A3A2;
+}
+
 BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	UINT uSlot = ((addr & 0xff) >> 4) - 8;
@@ -1655,6 +1675,8 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 
 	ImageInfo* pImage = pCard->m_floppyDrive[pCard->m_currDrive].m_disk.m_imagehandle;
 	bool isWOZ = ImageIsWOZ(pImage);
+
+	pCard->SetSequencerFunction(addr);
 
 	switch (addr & 0xF)
 	{
@@ -1695,6 +1717,8 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 
 	ImageInfo* pImage = pCard->m_floppyDrive[pCard->m_currDrive].m_disk.m_imagehandle;
 	bool isWOZ = ImageIsWOZ(pImage);
+
+	pCard->SetSequencerFunction(addr);
 
 	switch (addr & 0xF)
 	{
