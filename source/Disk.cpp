@@ -263,7 +263,7 @@ void Disk2InterfaceCard::AllocTrack(const int drive)
 
 void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 {
-	if (! IsDriveValid( drive ))
+	if (!IsDriveValid( drive ))
 		return;
 
 	FloppyDrive* pDrive = &m_floppyDrive[ drive ];
@@ -281,11 +281,6 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 	if (pFloppy->m_trackimage && pFloppy->m_imagehandle)
 	{
-#if LOG_DISK_TRACKS
-		CpuCalcCycles(uExecutedCycles);
-		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
-		LOG_DISK("track $%s read (time since last stepper %.3fms)\r\n", GetCurrentTrackString().c_str(), ((float)cycleDelta) / (CLK_6502_NTSC / 1000.0));
-#endif
 		const UINT32 currentPosition = pFloppy->m_byte;
 		const UINT32 currentTrackLength = pFloppy->m_nibbles;
 
@@ -416,7 +411,8 @@ void __stdcall Disk2InterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE, 
 	// NB. Motor off doesn't reset the Command Decoder like reset. (UTAIIe figures 9.7 & 9.8 chip C2)
 	// - so it doesn't reset this state: m_floppyLoadMode, m_floppyWriteMode, m_magnetStates
 #if LOG_DISK_MOTOR
-	LOG_DISK("motor %s\r\n", (m_floppyMotorOn) ? "on" : "off");
+	CpuCalcCycles(uExecutedCycles);
+	LOG_DISK("%08X: motor %s\r\n", (UINT32)g_nCumulativeCycles, (m_floppyMotorOn) ? "on" : "off");
 #endif
 	CheckSpinning(uExecutedCycles);
 }
@@ -502,7 +498,8 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	}
 
 #if LOG_DISK_PHASES
-	LOG_DISK("track $%s magnet-states %d%d%d%d phase %d %s address $%4X last-stepper %.3fms\r\n",
+	LOG_DISK("%08X: track $%s magnet-states %d%d%d%d phase %d %s address $%4X last-stepper %.3fms\r\n",
+		(UINT32)g_nCumulativeCycles,
 		GetCurrentTrackString().c_str(),
 		(m_magnetStates >> 3) & 1,
 		(m_magnetStates >> 2) & 1,
@@ -534,7 +531,7 @@ void __stdcall Disk2InterfaceCard::Enable(WORD, WORD address, BYTE, BYTE, ULONG 
 {
 	m_currDrive = address & 1;
 #if LOG_DISK_ENABLE_DRIVE
-	LOG_DISK("enable drive: %d\r\n", m_currDrive);
+	LOG_DISK("%08X: enable drive: %d\r\n", (UINT32)g_nCumulativeCycles, m_currDrive);
 #endif
 	m_floppyDrive[!m_currDrive].m_spinning   = 0;
 	m_floppyDrive[!m_currDrive].m_writelight = 0;
@@ -1085,6 +1082,7 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 		UpdateBitStreamPosition(floppy, bitCellDelta);
 
 		m_latchDelay = 0;
+		drive.m_headWindow = 0;
 	}
 
 	m_diskLastCycle = g_nCumulativeCycles;
@@ -1112,10 +1110,12 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 #if _DEBUG
 	static int dbgWOZ = 0;
+
 	if (dbgWOZ)
 	{
+		dbgWOZ = 0;
 		DumpSectorWOZ(floppy);
-		//DumpTrackWOZ(floppy);	// Enable as necessary
+//		DumpTrackWOZ(floppy);	// Enable as necessary
 	}
 #endif
 
@@ -1126,7 +1126,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 		drive.m_headWindow <<= 1;
 		drive.m_headWindow |= (n & floppy.m_bitMask) ? 1 : 0;
 		BYTE outputBit = (drive.m_headWindow & 0xf)	? (drive.m_headWindow >> 1) & 1
-													: rand() & 1;
+													: (rand() < ((RAND_MAX * 3) / 10)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
 
 		floppy.m_bitMask >>= 1;
 		if (!floppy.m_bitMask)
@@ -1298,6 +1298,7 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 #endif
 
 	BYTE shiftReg = 0;
+	UINT zeroCount = 0;
 	UINT nibbleCount = 0;
 
 	floppy.m_bitMask = 1 << 7;
@@ -1330,7 +1331,10 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 			break;
 
 		if (shiftReg == 0 && outputBit == 0)
+		{
+			zeroCount++;
 			continue;
+		}
 
 		shiftReg <<= 1;
 		shiftReg |= outputBit;
@@ -1341,7 +1345,9 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 		nibbleCount++;
 
 		TCHAR str[10];
-		StringCbPrintf(str, 10, "%02X ", shiftReg);
+		char syncBits = zeroCount <= 9 ? '0'+zeroCount : '+';
+		if (zeroCount == 0)	StringCbPrintf(str, 10, "   %02X", shiftReg);
+		else				StringCbPrintf(str, 10, "(%c)%02X", syncBits, shiftReg);
 		OutputDebugString(str);
 		if ((nibbleCount % 32) == 0)
 			OutputDebugString("\n");
@@ -1351,6 +1357,7 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 #endif
 
 		shiftReg = 0;
+		zeroCount = 0;
 	}
 }
 #endif
@@ -1469,9 +1476,10 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 	if (ImageIsWOZ(m_floppyDrive[m_currDrive].m_disk.m_imagehandle))
 	{
 #if LOG_DISK_NIBBLES_READ
-		LOG_DISK("reset LSS: ~PC=%04X\r\n", regs.pc);
+		CpuCalcCycles(uExecutedCycles);
+		LOG_DISK("%08X: reset LSS: ~PC=%04X\r\n", (UINT32)g_nCumulativeCycles, regs.pc);
 #endif
-		ResetLogicStateSequencer();	// reset sequencer (Ref: WOZ-1.01)
+		ResetLogicStateSequencer();	// reset sequencer (UTAIIe page 9-21)
 //		m_latchDelay = 7;	// TODO: Treat like a regular $C0EC latch load?
 		UpdateBitStreamPositionAndDiskCycle(uExecutedCycles);	// Fix E7-copy protection
 	}
@@ -1479,14 +1487,15 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 
 //===========================================================================
 
-void __stdcall Disk2InterfaceCard::SetReadMode(WORD, WORD, BYTE, BYTE, ULONG)
+void __stdcall Disk2InterfaceCard::SetReadMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	m_floppyWriteMode = 0;
 
 	m_formatTrack.DriveSwitchedToReadMode(&m_floppyDrive[m_currDrive].m_disk);
 
 #if LOG_DISK_RW_MODE
-	LOG_DISK("rw mode: read\r\n");
+	CpuCalcCycles(uExecutedCycles);
+	LOG_DISK("%08X: rw mode: read\r\n", (UINT32)g_nCumulativeCycles);
 #endif
 }
 
