@@ -190,6 +190,7 @@ private:
 	void UpdateBitStreamOffsets(FloppyDisk& floppy);
 	void DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataLatchWriteWOZ(WORD pc, WORD addr, BYTE d, UINT bitCellRemainder);
+	void SetSequencerFunction(WORD addr);
 	void DumpSectorWOZ(FloppyDisk floppy);
 	void DumpTrackWOZ(FloppyDisk floppy);
 
@@ -240,6 +241,8 @@ private:
 	BYTE m_shiftReg;
 	int m_latchDelay;
 	bool m_resetSequencer;
+	enum SEQFUNC {readSequencing, checkWriteProtAndInitWrite, dataShiftWrite, dataLoadWrite};	// UTAIIe 9-14
+	SEQFUNC m_seqFunc;
 	UINT m_dbgLatchDelayedCnt;
 
 	// Debug:

@@ -44,3 +44,4 @@ eCpuType GetActiveCpu(void);
 void     SetActiveCpu(eCpuType cpu);
 
 bool Is6502InterruptEnabled(void);
+void ResetCyclesExecutedForDebugger(void);

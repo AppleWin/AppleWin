@@ -193,6 +193,11 @@ bool Is6502InterruptEnabled(void)
 	return !(regs.ps & AF_INTERRUPT);
 }
 
+void ResetCyclesExecutedForDebugger(void)
+{
+	g_nCyclesExecuted = 0;
+}
+
 //
 
 #include "CPU/cpu_general.inl"

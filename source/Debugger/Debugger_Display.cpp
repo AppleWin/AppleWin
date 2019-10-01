@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../LanguageCard.h"
 #include "../Memory.h"
 #include "../Mockingboard.h"
+#include "../NTSC.h"
 #include "../Video.h"
 
 // NEW UI debugging - force display ALL meta-info (regs, stack, bp, watches, zp) for debugging purposes
@@ -55,9 +56,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// no top console line
 	#define DEBUG_BACKGROUND 0
 #endif
-
-//#define WATCH_ZERO_BG BG_DATA_1
-#define WATCH_ZERO_BG BG_INFO
 
 	#define DISPLAY_MEMORY_TITLE     1
 //	#define DISPLAY_BREAKPOINT_TITLE 1
@@ -161,6 +159,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_BP_COLUMN      = INFO_COL_2;
 		const int DISPLAY_WATCHES_COLUMN = INFO_COL_2;
 		const int DISPLAY_MINIMEM_COLUMN = INFO_COL_2;
+		const int DISPLAY_VIDEO_SCANNER_COLUMN = INFO_COL_2;
 #else
 		const int DISPLAY_CPU_INFO_LEFT_COLUMN = SCREENSPLIT1	// TC: SCREENSPLIT1 is not defined anywhere in the .sln!
 
@@ -175,6 +174,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_BP_COLUMN      = SCREENSPLIT2;
 		const int DISPLAY_WATCHES_COLUMN = SCREENSPLIT2;
 		const int DISPLAY_MINIMEM_COLUMN = SCREENSPLIT2; // nFontWidth
+		const int DISPLAY_VIDEO_SCANNER_COLUMN = SCREENSPLIT2;
 #endif
 
 		int MAX_DISPLAY_REGS_LINES        = 7;
@@ -195,14 +195,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		// 384 = 16 * 24 very bottom
 //		const int DEFAULT_HEIGHT = 16;
 
-//	static HDC g_hDC = 0;
+		VideoScannerDisplayInfo g_videoScannerDisplayInfo;
 
-
-static	void SetupColorsHiLoBits ( bool bHiBit, bool bLoBit, 
-			const int iBackground, const int iForeground,
-			const int iColorHiBG , /*const int iColorHiFG,
-			const int iColorLoBG , */const int iColorLoFG );
-static	char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
+static char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
 			const int iTxtBackground  = BG_INFO     , const int iTxtForeground  = FG_DISASM_CHAR,
 			const int iHighBackground = BG_INFO_CHAR, const int iHighForeground = FG_INFO_CHAR_HI,
 			const int iLowBackground  = BG_INFO_CHAR, const int iLowForeground  = FG_INFO_CHAR_LO );
@@ -211,7 +206,7 @@ static	char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iV
 
 	void DrawSubWindow_Code ( int iWindow );
 	void DrawSubWindow_IO       (Update_t bUpdate);
-	void DrawSubWindow_Source1  (Update_t bUpdate);
+	void DrawSubWindow_Source   (Update_t bUpdate);
 	void DrawSubWindow_Source2  (Update_t bUpdate);
 	void DrawSubWindow_Symbols  (Update_t bUpdate);
 	void DrawSubWindow_ZeroPage (Update_t bUpdate);
@@ -223,6 +218,9 @@ static	char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iV
 	char  FormatCharTxtCtrl( const BYTE b, bool * pWasCtrl_ = NULL );
 	char  FormatCharTxtHigh( const BYTE b, bool *pWasHi_ = NULL );
 	char  FormatChar4Font  ( const BYTE b, bool *pWasHi_, bool *pWasLo_ );
+
+	void DrawRegister(int line, LPCTSTR name, int bytes, WORD value, int iSource = 0);
+
 
 // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/gdi/pantdraw_6n77.asp
 enum WinROP4_e
@@ -2587,16 +2585,7 @@ void DrawMemory ( int line, int iMemDump )
 						DebuggerSetColorFG( DebuggerGetColor( FG_INFO_IO_BYTE ));
 					}
 
-
-					if (nCols == 6)
-					{
-						if ((iCol & 1) == 1)
-							DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_DATA_2
-						else
-							DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 ));
-						sprintf(sText, "%02X", nData );
-					} else
-						sprintf(sText, "%02X ", nData );
+					sprintf(sText, "%02X ", nData );
 				}
 				else
 				{
@@ -3263,7 +3252,7 @@ void DrawWatches (int line)
 
 	char sText[16] = "Watches";
 
-	DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
+	DebuggerSetColorBG(DebuggerGetColor( BG_INFO_WATCH ));
 
 #if DISPLAY_WATCH_TITLE
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
@@ -3281,7 +3270,7 @@ void DrawWatches (int line)
 		{
 			RECT rect2 = rect;
 
-			DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
+			DebuggerSetColorBG( DebuggerGetColor( BG_INFO_WATCH ));
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ) );
 			PrintTextCursorX( "W", rect2 );
 
@@ -3340,12 +3329,12 @@ void DrawWatches (int line)
 			for( int iByte = 0; iByte < 8; iByte++ )
 			{
 				if  ((iByte & 3) == 0) {
-					DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
+					DebuggerSetColorBG( DebuggerGetColor( BG_INFO_WATCH ));
 					PrintTextCursorX( " ", rect2 );
 				}
 
 				if ((iByte & 1) == 1)
-					DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_DATA_2
+					DebuggerSetColorBG( DebuggerGetColor( BG_INFO_WATCH ));
 				else
 					DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 ));
 
@@ -3374,7 +3363,7 @@ void DrawZeroPagePointers ( int line )
 	rect.left   = DISPLAY_ZEROPAGE_COLUMN;
 	rect.right  = rect.left + (10 * nFontWidth);
 
-	DebuggerSetColorBG( DebuggerGetColor( WATCH_ZERO_BG )); // BG_INFO
+	DebuggerSetColorBG( DebuggerGetColor( BG_INFO_ZEROPAGE ));
 
 	const int nMaxSymbolLen = 7;
 	char sText[nMaxSymbolLen+1] = "";
@@ -3665,6 +3654,68 @@ void DrawSubWindow_Data (Update_t bUpdate)
 }
 
 //===========================================================================
+void DrawVideoScannerValue(int line, LPCTSTR name, int nValue, bool isVisible)
+{
+	if (!((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
+		return;
+
+	const int nFontWidth = g_aFontConfig[FONT_INFO]._nFontWidthAvg;
+
+	RECT rect;
+	rect.top = line * g_nFontHeight;
+	rect.bottom = rect.top + g_nFontHeight;
+	rect.left = DISPLAY_VIDEO_SCANNER_COLUMN;
+	rect.right = rect.left + (5 * nFontWidth);
+
+	DebuggerSetColorBG(DebuggerGetColor(BG_VIDEOSCANNER_TITLE));
+	DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_TITLE));
+	PrintText(name, rect);
+
+	char sValue[8];
+	if (g_videoScannerDisplayInfo.isDecimal)
+		sprintf_s(sValue, sizeof(sValue), "%03u", nValue);
+	else
+		sprintf_s(sValue, sizeof(sValue), "%03X", nValue);
+
+	// Needs to be far enough over, since 4 chars of ZeroPage symbol also calls us
+	const int nOffset = 2;
+	rect.left = DISPLAY_VIDEO_SCANNER_COLUMN + (nOffset * nFontWidth);
+
+	if (!isVisible)
+		DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_INVISIBLE));	// red
+	else
+		DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_VISIBLE));		// green
+	PrintText(sValue, rect);
+}
+
+//===========================================================================
+void DrawVideoScannerInfo (int line)
+{
+	NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
+
+	int v = g_nVideoClockVert;
+	int h = g_nVideoClockHorz;
+
+	if (g_videoScannerDisplayInfo.isHorzReal)
+	{
+		h -= 13;	// UTA2e ref?
+
+		if (h < 0)
+		{
+			h = h + NTSC_GetCyclesPerLine();
+			v = v - 1;
+			if (v < 0)
+				v = v + NTSC_GetVideoLines();
+		}
+	}
+
+	const bool isVisible = NTSC_IsVisible();
+
+	DrawVideoScannerValue(line++, "h:", h, isVisible);
+	DrawVideoScannerValue(line++, "v:", v, isVisible);
+}
+
+//===========================================================================
 void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 {
 	if (g_iWindowThis == WINDOW_CONSOLE)
@@ -3676,6 +3727,10 @@ void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 		int yTarget   = yStack + MAX_DISPLAY_STACK_LINES - 1; // 9
 		int yZeroPage = 16; // yTarget 
 		int ySoft = yZeroPage + (2 * MAX_DISPLAY_ZEROPAGE_LINES) + !SOFTSWITCH_LANGCARD;
+		int yBeam = ySoft - 3;
+
+		if (bUpdate & UPDATE_VIDEOSCANNER)
+			DrawVideoScannerInfo(yBeam);
 
 		if ((bUpdate & UPDATE_REGS) || (bUpdate & UPDATE_FLAGS))
 			DrawRegisters( yRegs );
@@ -3705,7 +3760,8 @@ void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 	// Right Side
 		int yBreakpoints = 0;
 		int yWatches     = yBreakpoints + MAX_BREAKPOINTS; // MAX_DISPLAY_BREAKPOINTS_LINES; // 7
-		int yMemory      = yWatches     + (MAX_WATCHES*2); // MAX_DISPLAY_WATCHES_LINES    ; // 14 // 2.7.0.15 Fixed: Memory Dump was over-writing watches
+		const UINT numVideoScannerInfoLines = 4;		// There used to be 2 extra watches (and each watch is 2 lines)
+		int yMemory      = yWatches + numVideoScannerInfoLines + (MAX_WATCHES*2); // MAX_DISPLAY_WATCHES_LINES    ; // 14 // 2.7.0.15 Fixed: Memory Dump was over-writing watches
 
 	//	if ((MAX_DISPLAY_BREAKPOINTS_LINES + MAX_DISPLAY_WATCHES_LINES) < 12)
 	//		yWatches++;

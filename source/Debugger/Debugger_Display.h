@@ -82,14 +82,6 @@
 	void FormatNopcodeBytes   ( WORD nBaseAddress, DisasmLine_t & line_ );
 
 	void DrawFlags            ( int line, WORD nRegFlags, LPTSTR pFlagNames_);
-	void DrawMemory           ( int line, int iMem );
-	void DrawRegister         ( int line, LPCTSTR name, int bytes, WORD value, int iSource = 0 );
-	void DrawStack            ( int line);
-	void DrawTargets          ( int line);
-	void DrawWatches          ( int line);
-	void DrawZeroPagePointers ( int line);
-
-	void Debug_UpdatePalette( BYTE *pPalDst );
 
 	//
 
@@ -105,3 +97,14 @@
 
 	extern char g_aDebuggerVirtualTextScreen[ DEBUG_VIRTUAL_TEXT_HEIGHT ][ DEBUG_VIRTUAL_TEXT_WIDTH ];
 	extern size_t Util_GetDebuggerText( char* &pText_ ); // Same API as Util_GetTextScreen()
+
+	class VideoScannerDisplayInfo
+	{
+	public:
+		VideoScannerDisplayInfo() : isDecimal(true), isHorzReal(true) {}
+
+		bool isDecimal;
+		bool isHorzReal;
+	};
+
+	extern VideoScannerDisplayInfo g_videoScannerDisplayInfo;
