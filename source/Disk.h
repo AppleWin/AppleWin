@@ -220,8 +220,6 @@ private:
 	FloppyDrive m_floppyDrive[NUM_DRIVES];
 	BYTE m_floppyLatch;
 	BOOL m_floppyMotorOn;
-	BOOL m_floppyLoadMode;	// for efficiency this is not used; it's extremely unlikely to affect emulation (nickw)
-	BOOL m_floppyWriteMode;
 
 	// Although the magnets are a property of the drive, their state is a property of the controller card,
 	// since the magnets will only be on for whichever of the 2 drives is currently selected.
@@ -241,8 +239,22 @@ private:
 	BYTE m_shiftReg;
 	int m_latchDelay;
 	bool m_resetSequencer;
-	enum SEQFUNC {readSequencing, checkWriteProtAndInitWrite, dataShiftWrite, dataLoadWrite};	// UTAIIe 9-14
-	SEQFUNC m_seqFunc;
+
+	enum SEQFUNC {readSequencing=0, checkWriteProtAndInitWrite, dataShiftWrite, dataLoadWrite};	// UTAIIe 9-14
+	struct SEQUENCER_FUNCTION
+	{
+		union
+		{
+			struct
+			{
+				UINT writeMode : 1;	// $C08E/F,X
+				UINT loadMode : 1;	// $C08C/D,X
+			};
+			SEQFUNC function;
+		};
+	};
+
+	SEQUENCER_FUNCTION m_seqFunc;
 	UINT m_dbgLatchDelayedCnt;
 
 	// Debug:

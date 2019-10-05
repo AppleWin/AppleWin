@@ -127,7 +127,7 @@ LPCTSTR Disk2InterfaceCard::GetCurrentState(void)
 		else
 			return "Off";
 	}
-	else if (m_floppyWriteMode)
+	else if (m_seqFunc.writeMode)
 	{
 		if (m_floppyDrive[m_currDrive].m_disk.m_bWriteProtected)
 			return "Writing (write protected)";
@@ -136,7 +136,7 @@ LPCTSTR Disk2InterfaceCard::GetCurrentState(void)
 	}
 	else
 	{
-		/*if (m_floppyLoadMode)
+		/*if (m_seqFunc.loadMode)
 		{
 			if (m_floppyDrive[m_currDrive].disk.bWriteProtected)
 				return "Reading write protect state (write protected)";
@@ -409,7 +409,7 @@ void __stdcall Disk2InterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE, 
 
 	m_floppyMotorOn = newState;
 	// NB. Motor off doesn't reset the Command Decoder like reset. (UTAIIe figures 9.7 & 9.8 chip C2)
-	// - so it doesn't reset this state: m_floppyLoadMode, m_floppyWriteMode, m_magnetStates
+	// - so it doesn't reset this state: m_seqFunc, m_magnetStates
 #if LOG_DISK_MOTOR
 	CpuCalcCycles(uExecutedCycles);
 	LOG_DISK("%08X: motor %s\r\n", (UINT32)g_nCumulativeCycles, (m_floppyMotorOn) ? "on" : "off");
@@ -856,7 +856,6 @@ bool Disk2InterfaceCard::LogWriteCheckSyncFF(ULONG& uCycleDelta)
 
 void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
-	/* m_floppyLoadMode = 0; */
 	FloppyDrive* pDrive = &m_floppyDrive[m_currDrive];
 	FloppyDisk* pFloppy = &pDrive->m_disk;
 
@@ -895,7 +894,7 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 		}
 	}
 
-	if (!m_floppyWriteMode)
+	if (!m_seqFunc.writeMode)
 	{
 		// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
 		// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
@@ -932,7 +931,7 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 		m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
 #endif
 	}
-	else if (!pFloppy->m_bWriteProtected) // && m_floppyWriteMode
+	else if (!pFloppy->m_bWriteProtected) // && m_seqFunc.writeMode
 	{
 		if (!pDrive->m_spinning)
 			return;		// If not spinning then only 1 bit-cell gets written?
@@ -1039,7 +1038,6 @@ void Disk2InterfaceCard::UpdateBitStreamOffsets(FloppyDisk& floppy)
 
 void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
-	/* m_floppyLoadMode = 0; */
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
 
@@ -1088,9 +1086,16 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	m_diskLastCycle = g_nCumulativeCycles;
 
 	if (!bWrite)
+	{
+		if (m_seqFunc.function != readSequencing)
+			return;
+
 		DataLatchReadWOZ(pc, addr, bitCellRemainder);
+	}
 	else
+	{
 		DataLatchWriteWOZ(pc, addr, d, bitCellRemainder);
+	}
 
 	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
 	if ((floppy.m_byte & 0xFF) == 0)
@@ -1148,9 +1153,6 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 			m_resetSequencer = false;	// LSS takes some cycles to reset (ref?)
 			continue;
 		}
-
-		if (m_seqFunc != readSequencing)
-			continue;
 
 		//
 
@@ -1220,7 +1222,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 void Disk2InterfaceCard::DataLatchWriteWOZ(WORD pc, WORD addr, BYTE d, UINT bitCellRemainder)
 {
-	_ASSERT(m_floppyWriteMode);
+	_ASSERT(m_seqFunc.writeMode);
 
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
@@ -1395,10 +1397,8 @@ void Disk2InterfaceCard::ResetSwitches(void)
 {
 	m_currDrive = 0;
 	m_floppyMotorOn = 0;
-	m_floppyLoadMode = 0;
-	m_floppyWriteMode = 0;
 	m_magnetStates = 0;
-	m_seqFunc = readSequencing;
+	m_seqFunc.function = readSequencing;
 }
 
 //===========================================================================
@@ -1455,7 +1455,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG uExecutedCycles)
 {
-	/* m_floppyLoadMode = 1; */
+	_ASSERT(m_seqFunc.function == checkWriteProtAndInitWrite);
 
 	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
 	// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
@@ -1469,7 +1469,7 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 	//   "If for some reason the above write protect check were entered with the READ/WRITE switch in WRITE, 
 	//    the write protect switch would still be read correctly" (UTAIIe page 9-21)
 	// . Sequencer "SR" (Shift Right) command only loads QA (bit7) of data register (UTAIIe page 9-21)
-	// . A read or write will read write protect in QA.
+	// . A read or write will shift 'write protect' in QA.
 	if (m_floppyDrive[m_currDrive].m_disk.m_bWriteProtected)
 		m_floppyLatch |= 0x80;
 	else
@@ -1491,8 +1491,6 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 
 void __stdcall Disk2InterfaceCard::SetReadMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 {
-	m_floppyWriteMode = 0;
-
 	m_formatTrack.DriveSwitchedToReadMode(&m_floppyDrive[m_currDrive].m_disk);
 
 #if LOG_DISK_RW_MODE
@@ -1505,8 +1503,6 @@ void __stdcall Disk2InterfaceCard::SetReadMode(WORD, WORD, BYTE, BYTE, ULONG uEx
 
 void __stdcall Disk2InterfaceCard::SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles)
 {
-	m_floppyWriteMode = 1;
-
 	m_formatTrack.DriveSwitchedToWriteMode(m_floppyDrive[m_currDrive].m_disk.m_byte);
 
 	BOOL modechange = !m_floppyDrive[m_currDrive].m_writelight;
@@ -1541,7 +1537,7 @@ void Disk2InterfaceCard::UpdateDriveState(DWORD cycles)
 			}
 		}
 
-		if (m_floppyWriteMode && (m_currDrive == loop) && pDrive->m_spinning)
+		if (m_seqFunc.writeMode && (m_currDrive == loop) && pDrive->m_spinning)
 		{
 			pDrive->m_writelight = WRITELIGHT_CYCLES;
 		}
@@ -1655,17 +1651,13 @@ void Disk2InterfaceCard::SetSequencerFunction(WORD addr)
 	if ((addr & 0xf) < 0xc)
 		return;
 
-	UINT A3A2 = m_seqFunc;
-
 	switch (addr & 3)
 	{
-	case 0: A3A2 &= ~(1<<0); break;	// $C08E,X (sequence addr A3 input)
-	case 1: A3A2 |= (1<<0); break;	// $C08F,X (sequence addr A3 input)
-	case 2: A3A2 &= ~(1<<1); break;	// $C08C,X (sequence addr A2 input)
-	case 3: A3A2 |= (1<<1); break;	// $C08D,X (sequence addr A2 input)
+	case 0: m_seqFunc.writeMode = 0; break;	// $C08E,X (sequence addr A2 input)
+	case 1: m_seqFunc.writeMode = 1; break;	// $C08F,X (sequence addr A2 input)
+	case 2: m_seqFunc.loadMode = 0; break;	// $C08C,X (sequence addr A3 input)
+	case 3: m_seqFunc.loadMode = 1; break;	// $C08D,X (sequence addr A3 input)
 	}
-
-	m_seqFunc = (SEQFUNC) A3A2;
 }
 
 BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
@@ -1741,7 +1733,8 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	}
 
 	// any address writes the latch via sequencer LD command (74LS323 datasheet)
-	if (pCard->m_floppyWriteMode /* && m_floppyLoadMode */)
+//	if (pCard->m_seqFunc.writeMode /* && m_seqFunc.loadMode */)
+	if (pCard->m_seqFunc.function == dataLoadWrite)
 	{
 		pCard->m_floppyLatch = d;
 
@@ -1759,7 +1752,8 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 // 3: Added: DiskLastReadLatchCycle
 // 4: Added: WOZ state
 //    Split up 'Unit' putting some state into a new 'Floppy'
-static const UINT kUNIT_VERSION = 4;
+// 5: Added: Sequencer Function
+static const UINT kUNIT_VERSION = 5;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
 
@@ -1769,12 +1763,13 @@ static const UINT kUNIT_VERSION = 4;
 #define SS_YAML_KEY_ENHANCE_DISK "Enhance Disk"
 #define SS_YAML_KEY_FLOPPY_LATCH "Floppy Latch"
 #define SS_YAML_KEY_FLOPPY_MOTOR_ON "Floppy Motor On"
-#define SS_YAML_KEY_FLOPPY_WRITE_MODE "Floppy Write Mode"
+#define SS_YAML_KEY_FLOPPY_WRITE_MODE "Floppy Write Mode"	// deprecated at v5
 #define SS_YAML_KEY_LAST_CYCLE "Last Cycle"
 #define SS_YAML_KEY_LAST_READ_LATCH_CYCLE "Last Read Latch Cycle"
 #define SS_YAML_KEY_LSS_SHIFT_REG "LSS Shift Reg"
 #define SS_YAML_KEY_LSS_LATCH_DELAY "LSS Latch Delay"
 #define SS_YAML_KEY_LSS_RESET_SEQUENCER "LSS Reset Sequencer"
+#define SS_YAML_KEY_LSS_SEQUENCER_FUNCTION "LSS Sequencer Function"
 
 #define SS_YAML_KEY_DISK2UNIT "Unit"
 #define SS_YAML_KEY_FILENAME "Filename"
@@ -1847,12 +1842,12 @@ void Disk2InterfaceCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_ENHANCE_DISK, m_enhanceDisk);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_FLOPPY_LATCH, m_floppyLatch);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_MOTOR_ON, m_floppyMotorOn == TRUE);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_WRITE_MODE, m_floppyWriteMode == TRUE);
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_CYCLE, m_diskLastCycle);	// v2
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_READ_LATCH_CYCLE, m_diskLastReadLatchCycle);	// v3
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LSS_SHIFT_REG, m_shiftReg);			// v4
 	yamlSaveHelper.SaveInt(SS_YAML_KEY_LSS_LATCH_DELAY, m_latchDelay);			// v4
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_LSS_RESET_SEQUENCER, m_resetSequencer);	// v4
+	yamlSaveHelper.SaveInt(SS_YAML_KEY_LSS_SEQUENCER_FUNCTION, m_seqFunc.function);	// v5
 	m_formatTrack.SaveSnapshot(yamlSaveHelper);	// v2
 
 	SaveSnapshotDriveUnit(yamlSaveHelper, DRIVE_1);
@@ -2010,7 +2005,8 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 	m_enhanceDisk		= yamlLoadHelper.LoadBool(SS_YAML_KEY_ENHANCE_DISK);
 	m_floppyLatch		= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_LATCH);
 	m_floppyMotorOn		= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_MOTOR_ON);
-	m_floppyWriteMode	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_WRITE_MODE);
+	m_seqFunc.writeMode	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_WRITE_MODE) ? 1 : 0;
+	m_seqFunc.loadMode = 0;	// Wasn't saved until v5 -  overwritten later if v5
 
 	if (version >= 2)
 	{
@@ -2028,6 +2024,11 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 		m_shiftReg			= yamlLoadHelper.LoadUint(SS_YAML_KEY_LSS_SHIFT_REG) & 0xff;
 		m_latchDelay		= yamlLoadHelper.LoadInt(SS_YAML_KEY_LSS_LATCH_DELAY);
 		m_resetSequencer	= yamlLoadHelper.LoadBool(SS_YAML_KEY_LSS_RESET_SEQUENCER);
+	}
+
+	if (version >= 5)
+	{
+		m_seqFunc.function = (SEQFUNC) yamlLoadHelper.LoadInt(SS_YAML_KEY_LSS_SEQUENCER_FUNCTION);
 	}
 
 	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
