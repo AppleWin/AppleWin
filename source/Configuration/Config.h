@@ -21,6 +21,7 @@ public:
 		m_SlotAux = CT_Empty;
 		m_Slot[4] = g_Slot[4];
 		m_Slot[5] = g_Slot[5];
+		m_Slot[7] = g_Slot[7];
 	}
 
 	const CConfigNeedingRestart& operator= (const CConfigNeedingRestart& other)

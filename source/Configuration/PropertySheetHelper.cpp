@@ -118,16 +118,28 @@ void CPropertySheetHelper::SaveCpuType(eCpuType NewCpuType)
 	REGSAVE(TEXT(REGVALUE_CPU_TYPE), NewCpuType);
 }
 
-void CPropertySheetHelper::SetSlot4(SS_CARDTYPE NewCardType)
+void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 {
-	g_Slot[4] = NewCardType;
-	REGSAVE(TEXT(REGVALUE_SLOT4), (DWORD)g_Slot[4]);
-}
+	_ASSERT(slot < NUM_SLOTS);
+	if (slot >= NUM_SLOTS)
+		return;
 
-void CPropertySheetHelper::SetSlot5(SS_CARDTYPE NewCardType)
-{
-	g_Slot[5] = NewCardType;
-	REGSAVE(TEXT(REGVALUE_SLOT5), (DWORD)g_Slot[5]);
+	g_Slot[slot] = newCardType;
+
+	std::string slotText;
+	switch (slot)
+	{
+	case 0: slotText = REGVALUE_SLOT0; break;
+	case 1: slotText = REGVALUE_SLOT1; break;
+	case 2: slotText = REGVALUE_SLOT2; break;
+	case 3: slotText = REGVALUE_SLOT3; break;
+	case 4: slotText = REGVALUE_SLOT4; break;
+	case 5: slotText = REGVALUE_SLOT5; break;
+	case 6: slotText = REGVALUE_SLOT6; break;
+	case 7: slotText = REGVALUE_SLOT7; break;
+	}
+
+	REGSAVE(slotText.c_str(), (DWORD)g_Slot[slot]);
 }
 
 // Looks like a (bad) C&P from SaveStateSelectImage()
@@ -395,15 +407,21 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		SaveCpuType(ConfigNew.m_CpuType);
 	}
 
-	if (CONFIG_CHANGED_LOCAL(m_Slot[4]))
-		SetSlot4(ConfigNew.m_Slot[4]);
+	UINT slot = 4;
+	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
-	if (CONFIG_CHANGED_LOCAL(m_Slot[5]))
-		SetSlot5(ConfigNew.m_Slot[5]);
+	slot = 5;
+	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+		SetSlot(slot, ConfigNew.m_Slot[slot]);
+
+//	slot = 7;
+//	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+//		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
 	if (CONFIG_CHANGED_LOCAL(m_bEnableHDD))
 	{
-		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), ConfigNew.m_bEnableHDD ? 1 : 0);
+		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), ConfigNew.m_bEnableHDD ? 1 : 0);	// TODO: Change to REGVALUE_SLOT7
 	}
 
 	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))

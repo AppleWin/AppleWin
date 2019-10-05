@@ -14,8 +14,7 @@ public:
 	virtual ~CPropertySheetHelper(){}
 
 	void FillComboBox(HWND window, int controlid, LPCTSTR choices, int currentchoice);
-	void SetSlot4(SS_CARDTYPE NewCardType);
-	void SetSlot5(SS_CARDTYPE NewCardType);
+	void SetSlot(UINT slot, SS_CARDTYPE newCardType);
 	std::string BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE,TCHAR* FILEMASKS);
 	void SaveStateUpdate();
 	int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave);

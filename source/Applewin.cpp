@@ -676,7 +676,7 @@ void LoadConfiguration(void)
 		g_bPrinterAppend = dwTmp ? true : false;
 
 
-	if(REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))	// TODO: Change to REGVALUE_SLOT7
 		HD_SetEnabled(dwTmp ? true : false);
 
 	if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
