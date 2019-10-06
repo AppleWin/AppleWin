@@ -762,10 +762,7 @@ bool SetCurrentImageDir(const std::string & pszImageDir)
 
 	int nLen = g_sCurrentDir.size();
 	if ((nLen > 0) && (g_sCurrentDir[ nLen - 1 ] != '\\'))
-	{
-		g_sCurrentDir[ nLen + 0 ] = '\\';
-		g_sCurrentDir.resize(nLen + 1);
-	}
+		g_sCurrentDir += '\\';
 
 	if( SetCurrentDirectory(g_sCurrentDir.c_str()) )
 		return true;
