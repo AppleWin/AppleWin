@@ -154,12 +154,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_ZEROPAGE_COLUMN   = INFO_COL_1;
 		const int DISPLAY_SOFTSWITCH_COLUMN = INFO_COL_1 - (CONSOLE_FONT_WIDTH/2) + 1; // 1/2 char width padding around soft switches
 
-		// Horizontal Column (pixels) of BPs, Watches & Mem
+		// Horizontal Column (pixels) of BPs, Watches
 		const int INFO_COL_2 = (62 * 7); // nFontWidth
 		const int DISPLAY_BP_COLUMN      = INFO_COL_2;
 		const int DISPLAY_WATCHES_COLUMN = INFO_COL_2;
-		const int DISPLAY_MINIMEM_COLUMN = INFO_COL_2;
-		const int DISPLAY_VIDEO_SCANNER_COLUMN = INFO_COL_2;
+
+		// Horizontal Column (pixels) of VideoScannerInfo & Mem
+		const int INFO_COL_3 = (63 * 7); // nFontWidth
+		const int DISPLAY_MINIMEM_COLUMN = INFO_COL_3;
+		const int DISPLAY_VIDEO_SCANNER_COLUMN = INFO_COL_3;
 #else
 		const int DISPLAY_CPU_INFO_LEFT_COLUMN = SCREENSPLIT1	// TC: SCREENSPLIT1 is not defined anywhere in the .sln!
 
@@ -3654,38 +3657,48 @@ void DrawSubWindow_Data (Update_t bUpdate)
 }
 
 //===========================================================================
-void DrawVideoScannerValue(int line, LPCTSTR name, int nValue, bool isVisible)
+void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 {
 	if (!((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
 
 	const int nFontWidth = g_aFontConfig[FONT_INFO]._nFontWidthAvg;
 
+	const int nameWidth = 2;	// 2 chars
+	const int numberWidth = 3;	// 3 chars
+	const int gapWidth = 1;		// 1 space
+	const int totalWidth = (nameWidth + numberWidth) * 2 + gapWidth;
+
 	RECT rect;
 	rect.top = line * g_nFontHeight;
 	rect.bottom = rect.top + g_nFontHeight;
 	rect.left = DISPLAY_VIDEO_SCANNER_COLUMN;
-	rect.right = rect.left + (5 * nFontWidth);
+	rect.right = rect.left + (totalWidth * nFontWidth);
 
-	DebuggerSetColorBG(DebuggerGetColor(BG_VIDEOSCANNER_TITLE));
-	DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_TITLE));
-	PrintText(name, rect);
+	for (int i = 0; i < 2; i++)
+	{
+		DebuggerSetColorBG(DebuggerGetColor(BG_VIDEOSCANNER_TITLE));
+		DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_TITLE));
 
-	char sValue[8];
-	if (g_videoScannerDisplayInfo.isDecimal)
-		sprintf_s(sValue, sizeof(sValue), "%03u", nValue);
-	else
-		sprintf_s(sValue, sizeof(sValue), "%03X", nValue);
+		const int nValue = (i == 0) ? vert : horz;
 
-	// Needs to be far enough over, since 4 chars of ZeroPage symbol also calls us
-	const int nOffset = 2;
-	rect.left = DISPLAY_VIDEO_SCANNER_COLUMN + (nOffset * nFontWidth);
+		if (i == 0) PrintText("v:", rect);
+		else        PrintText("h:", rect);
+		rect.left += nameWidth * nFontWidth;
 
-	if (!isVisible)
-		DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_INVISIBLE));	// red
-	else
-		DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_VISIBLE));		// green
-	PrintText(sValue, rect);
+		char sValue[8];
+		if (g_videoScannerDisplayInfo.isDecimal)
+			sprintf_s(sValue, sizeof(sValue), "%03u", nValue);
+		else
+			sprintf_s(sValue, sizeof(sValue), "%03X", nValue);
+
+		if (!isVisible)
+			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_INVISIBLE));	// red
+		else
+			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_VISIBLE));		// green
+		PrintText(sValue, rect);
+		rect.left += (numberWidth+gapWidth) * nFontWidth;
+	}
 }
 
 //===========================================================================
@@ -3709,10 +3722,31 @@ void DrawVideoScannerInfo (int line)
 		}
 	}
 
-	const bool isVisible = NTSC_IsVisible();
+	DrawVideoScannerValue(line, v, h, NTSC_IsVisible());
+	line++;
 
-	DrawVideoScannerValue(line++, "h:", h, isVisible);
-	DrawVideoScannerValue(line++, "v:", v, isVisible);
+	//
+
+	const int nFontWidth = g_aFontConfig[FONT_INFO]._nFontWidthAvg;
+	const int nameWidth = 7;
+	const int numberWidth = 8;
+	const int totalWidth = nameWidth + numberWidth;
+
+	RECT rect;
+	rect.top = line * g_nFontHeight;
+	rect.bottom = rect.top + g_nFontHeight;
+	rect.left = DISPLAY_VIDEO_SCANNER_COLUMN;
+	rect.right = rect.left + (totalWidth * nFontWidth);
+
+	DebuggerSetColorBG(DebuggerGetColor(BG_VIDEOSCANNER_TITLE));
+	DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_TITLE));
+
+	PrintText("cycles:", rect);
+	rect.left += nameWidth * nFontWidth;
+
+	char sValue[10];
+	sprintf_s(sValue, sizeof(sValue), "%08X", (UINT32)g_nCumulativeCycles);
+	PrintText(sValue, rect);
 }
 
 //===========================================================================
