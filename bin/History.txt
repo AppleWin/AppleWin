@@ -11,6 +11,8 @@ Tom Charlesworth
 1.29.3.0 - 12 Oct 2019
 ----------------------
 . [Bug #700] Fixed ProDOS8 2.5.0 alpha6 (support INC $C08B to set LC to write mode).
+. [Bug #695] Fixed WOZ 'Taipan' not booting.
+	- fixed reading write protect on a write access & support Sequencer Function.
 . [Bug #668] Fixed WOZ 'Seafox' not booting.
 	- set machine = Unenhanced Apple //e or lower & need slot2 empty.
 	- disable SSC in slot-2 using: '-s2 empty' command line.
