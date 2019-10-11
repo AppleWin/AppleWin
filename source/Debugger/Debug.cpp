@@ -6485,12 +6485,9 @@ Update_t CmdOutputRun (int nArgs)
 	else
 	{
 		char sText[ CONSOLE_WIDTH ];
-		ConsolePrintFormat( sText, "%sCouldn't load filename: %s%s"
-			, CHC_ERROR
-			, CHC_STRING
-			, sFileName.c_str()
-		);
-	}	
+		ConsolePrintFormat(sText, "%sCouldn't load filename:", CHC_ERROR);
+		ConsolePrintFormat(sText, "%s%s", CHC_STRING, sFileName.c_str());
+	}
 
 	return ConsoleUpdate();
 }
@@ -8986,6 +8983,15 @@ void DebugInitialize ()
 #endif
 
 	_Bookmark_Reset();
+
+	static bool doneAutoRun = false;
+	if (!doneAutoRun)	// Don't re-run on a VM restart
+	{
+		doneAutoRun = true;
+		std::string pathname = g_sProgramDir + "DebuggerAutoRun.txt";
+		strcpy_s(g_aArgs[1].sArg, MAX_ARG_LEN, pathname.c_str());
+		CmdOutputRun(1);
+	}
 
 	CmdMOTD(0);
 }
