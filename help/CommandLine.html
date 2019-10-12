@@ -19,6 +19,10 @@
 		Start with hard disk 1 plugged-in (and auto power-on the Apple II). NB. Hard disk controller card gets enabled.<br><br>
 		-h2 &lt;pathname&gt;<br>
 		Start with hard disk 2 plugged-in. NB. Hard disk controller card gets enabled.<br><br>
+		-model &lt;apple2|apple2p|apple2e|apple2ee&gt;<br>
+		Select the machine model: Apple II, Apple II+, Apple //e, Enhanced Apple //e.<br><br>
+		-clock-multiplier &lt;value&gt;<br>
+		Where value is between 0.5 and 3.9, and is a base-clock multiplier, roughly mapping to 0.5MHz - 3.9MHz<br><br>
 		-s0 &lt;saturn|saturn64|saturn128&gt;<br>
 		Insert a Saturn 64K or Saturn 128K card into slot 0 in the Apple II or II+ machines (or similar clone).<br>
 		Where -s0 saturn is an alias for -s0 saturn128.<br><br>
@@ -36,6 +40,8 @@
 		-s7 empty<br>
 		Remove the hard disk controller card from slot 7.<br>
 		Useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br><br>
+		-s7-empty-on-exit<br>
+		Remove the hard disk controller card from slot 7 on AppleWin exit.<br><br>
 		-r &lt;number of pages&gt;<br>
 		Emulate a RamWorks III card with 1 to 127 pages (each page is 64K, giving a max of 8MB) in the auxiliary slot in an Apple //e machine.<br><br>
 		-load-state &lt;savestate&gt;<br>
