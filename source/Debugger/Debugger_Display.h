@@ -101,7 +101,7 @@
 	class VideoScannerDisplayInfo
 	{
 	public:
-		VideoScannerDisplayInfo() : isDecimal(true), isHorzReal(true) {}
+		VideoScannerDisplayInfo() : isDecimal(false), isHorzReal(false) {}
 
 		bool isDecimal;
 		bool isHorzReal;

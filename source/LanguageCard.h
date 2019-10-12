@@ -19,6 +19,7 @@ public:
 	BOOL GetLastRamWrite(void) { return m_uLastRamWrite; }
 	void SetLastRamWrite(BOOL count) { m_uLastRamWrite = count; }
 	SS_CARDTYPE GetMemoryType(void) { return m_type; }
+	bool IsOpcodeRMWabs(WORD addr);
 
 	static BYTE __stdcall IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 

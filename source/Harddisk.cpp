@@ -147,7 +147,7 @@ struct HDD
 	ImageInfo*	imagehandle;			// Init'd by HD_Insert() -> ImageOpen()
 	bool	bWriteProtected;			// Needed for ImageOpen() [otherwise not used]
 	//
-	BYTE	hd_error;
+	BYTE	hd_error;		// NB. Firmware requires that b0=0 (OK) or b0=1 (Error)
 	WORD	hd_memblock;
 	UINT	hd_diskblock;
 	WORD	hd_buf_ptr;
@@ -275,6 +275,7 @@ void HD_SetEnabled(const bool bEnabled)
 		return;
 
 	g_bHD_Enabled = bEnabled;
+	g_Slot[7] = bEnabled ? CT_GenericHDD : CT_Empty;
 
 #if 0
 	// FIXME: For LoadConfiguration(), g_uSlot=7 (see definition at start of file)
@@ -595,6 +596,12 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 #if HD_LED
 			pHDD->hd_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
 #endif
+			if (pHDD->hd_error)
+			{
+				_ASSERT(pHDD->hd_error & 1);
+				pHDD->hd_error |= 1;	// Firmware requires that b0=1 for an error
+			}
+
 			r = pHDD->hd_error;
 			break;
 		case 0xF2:

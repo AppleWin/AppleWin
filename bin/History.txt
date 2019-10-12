@@ -8,6 +8,22 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.29.3.0 - 12 Oct 2019
+----------------------
+. [Bug #700] Fixed ProDOS8 2.5.0 alpha6 (support INC $C08B to set LC to write mode).
+. [Bug #695] Fixed WOZ 'Taipan' not booting.
+	- fixed reading write protect on a write access & support Sequencer Function.
+. [Bug #668] Fixed WOZ 'Seafox' not booting.
+	- set machine = Unenhanced Apple //e or lower & need slot2 empty.
+	- disable SSC in slot-2 using: '-s2 empty' command line.
+	- added '-s1 empty', '-s3 empty' and '-s6 empty' too.
+. [Bug #666] Debugger: support showing video v,h and cycle count.
+	- videoinfo <dec|hex|apple|real> to configure display.
+	- added auto-run of DebuggerAutoRun.txt on AppleWin initial start-up.
+. [Bug #319] SmartPort return address was wrong when crossing page (fix to slot-7 HDD's firmware).
+. [PR #687] Replace char * with std::string.
+
+
 1.29.2.0 - 6 Sep 2019
 ---------------------
 . [Change #678] Hotkeys to change emulation speed:

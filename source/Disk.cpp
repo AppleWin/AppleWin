@@ -2005,8 +2005,6 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 	m_enhanceDisk		= yamlLoadHelper.LoadBool(SS_YAML_KEY_ENHANCE_DISK);
 	m_floppyLatch		= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_LATCH);
 	m_floppyMotorOn		= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_MOTOR_ON);
-	m_seqFunc.writeMode	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_WRITE_MODE) ? 1 : 0;
-	m_seqFunc.loadMode = 0;	// Wasn't saved until v5 -  overwritten later if v5
 
 	if (version >= 2)
 	{
@@ -2029,6 +2027,11 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 	if (version >= 5)
 	{
 		m_seqFunc.function = (SEQFUNC) yamlLoadHelper.LoadInt(SS_YAML_KEY_LSS_SEQUENCER_FUNCTION);
+	}
+	else
+	{
+		m_seqFunc.writeMode	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_WRITE_MODE) ? 1 : 0;
+		m_seqFunc.loadMode = 0;	// Wasn't saved until v5
 	}
 
 	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1

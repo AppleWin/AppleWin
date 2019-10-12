@@ -676,7 +676,7 @@ void LoadConfiguration(void)
 		g_bPrinterAppend = dwTmp ? true : false;
 
 
-	if(REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))	// TODO: Change to REGVALUE_SLOT7
 		HD_SetEnabled(dwTmp ? true : false);
 
 	if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
@@ -762,10 +762,7 @@ bool SetCurrentImageDir(const std::string & pszImageDir)
 
 	int nLen = g_sCurrentDir.size();
 	if ((nLen > 0) && (g_sCurrentDir[ nLen - 1 ] != '\\'))
-	{
-		g_sCurrentDir[ nLen + 0 ] = '\\';
-		g_sCurrentDir.resize(nLen + 1);
-	}
+		g_sCurrentDir += '\\';
 
 	if( SetCurrentDirectory(g_sCurrentDir.c_str()) )
 		return true;
