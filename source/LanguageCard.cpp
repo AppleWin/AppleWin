@@ -106,6 +106,9 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 // GH#700: INC $C083/C08B (RMW) to write enable the LC
 bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 {
+	if (GetMainCpu() != CPU_65C02)
+		return false;
+
 	BYTE param1 = mem[(regs.pc - 2) & 0xffff];
 	BYTE param2 = mem[(regs.pc - 1) & 0xffff];
 	if (param1 != (addr & 0xff) || param2 != 0xC0)
@@ -120,9 +123,8 @@ bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 		opcode == 0x0E)		// ASL abs
 		return true;
 
-	if ((GetMainCpu() == CPU_65C02) && (
-		opcode == 0x1C ||	// TRB abs
-		opcode == 0x0C))	// TSB abs
+	if (opcode == 0x1C ||	// TRB abs
+		opcode == 0x0C)		// TSB abs
 		return true;
 
 	return false;
