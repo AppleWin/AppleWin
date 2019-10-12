@@ -392,6 +392,27 @@ double Get6502BaseClock(void)
 	return (GetVideoRefreshRate() == VR_50HZ) ? CLK_6502_PAL : CLK_6502_NTSC;
 }
 
+void UseClockMultiplier(double clockMultiplier)
+{
+	if (clockMultiplier == 0.0)
+		return;
+
+	if (clockMultiplier < 1.0)
+	{
+		if (clockMultiplier < 0.5)
+			clockMultiplier = 0.5;
+		g_dwSpeed = (ULONG)((clockMultiplier - 0.5) * 20);	// [0.5..0.9] -> [0..9]
+	}
+	else
+	{
+		g_dwSpeed = (ULONG)(clockMultiplier * 10);
+		if (g_dwSpeed >= SPEED_MAX)
+			g_dwSpeed = SPEED_MAX - 1;
+	}
+
+	SetCurrentCLK6502();
+}
+
 void SetCurrentCLK6502(void)
 {
 	static DWORD dwPrevSpeed = (DWORD) -1;
@@ -1227,6 +1248,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	int newVideoStyleDisableMask = 0;
 	VideoRefreshRate_e newVideoRefreshRate = VR_NONE;
 	LPSTR szScreenshotFilename = NULL;
+	double clockMultiplier = 0.0;	// 0 => not set from cmd-line
 
 	while (*lpCmdLine)
 	{
@@ -1477,6 +1499,12 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			szScreenshotFilename = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 		}
+		else if (strcmp(lpCmdLine, "-clock-multiplier") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			clockMultiplier = atof(lpCmdLine);
+		}
 		else if (_stricmp(lpCmdLine, "-50hz") == 0)	// (case-insensitive)
 		{
 			newVideoRefreshRate = VR_50HZ;
@@ -1610,6 +1638,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			newVideoRefreshRate = VR_NONE;	// Don't reapply after a restart
 			SetCurrentCLK6502();
 		}
+
+		UseClockMultiplier(clockMultiplier);
+		clockMultiplier = 0.0;
 
 		// Apply the memory expansion switches after loading the Apple II machine type
 #ifdef RAMWORKS
