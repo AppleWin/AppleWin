@@ -1168,6 +1168,18 @@ static void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBo
 		MessageBox(g_hFrameWindow, "Failed to insert harddisk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
+static void UnplugHardDiskControllerCard(void)
+{
+	HD_SetEnabled(false);
+
+	DWORD dwTmp;
+	if (REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
+	{
+		if (dwTmp)
+			REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 0);	// Config: HDD Disabled
+	}
+}
+
 static bool CheckOldAppleWinVersion(void)
 {
 	TCHAR szOldAppleWinVersion[VERSIONSTRING_SIZE + 1];
@@ -1202,6 +1214,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bChangedDisplayResolution = false;
 	bool bSlot0LanguageCard = false;
 	bool bSlotEmpty[NUM_SLOTS] = {false,false,false,false,false,false,false,false};
+	bool bSlot7EmptyOnExit = false;
 	UINT bestWidth = 0, bestHeight = 0;
 	LPSTR szImageName_drive[NUM_DRIVES] = {NULL,NULL};
 	LPSTR szImageName_harddisk[NUM_HARDDISKS] = {NULL,NULL};
@@ -1258,6 +1271,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpNextArg = GetNextArg(lpNextArg);
 			if (strcmp(lpCmdLine, "empty") == 0)
 				bSlotEmpty[slot] = true;
+		}
+		else if (strcmp(lpCmdLine, "-s7-empty-on-exit") == 0)
+		{
+			bSlot7EmptyOnExit = true;
 		}
 		else if (strcmp(lpCmdLine, "-load-state") == 0)
 		{
@@ -1818,6 +1835,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 		CloseHandle(g_hCustomRomF8);
+
+	if (bSlot7EmptyOnExit)
+		UnplugHardDiskControllerCard();
 
 	return 0;
 }
