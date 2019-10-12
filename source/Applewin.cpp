@@ -1249,6 +1249,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	VideoRefreshRate_e newVideoRefreshRate = VR_NONE;
 	LPSTR szScreenshotFilename = NULL;
 	double clockMultiplier = 0.0;	// 0 => not set from cmd-line
+	eApple2Type model = A2TYPE_MAX;
 
 	while (*lpCmdLine)
 	{
@@ -1505,6 +1506,22 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpNextArg = GetNextArg(lpNextArg);
 			clockMultiplier = atof(lpCmdLine);
 		}
+		else if (strcmp(lpCmdLine, "-model") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			if (strcmp(lpCmdLine, "apple2") == 0)
+				model = A2TYPE_APPLE2;
+			else if (strcmp(lpCmdLine, "apple2p") == 0)
+				model = A2TYPE_APPLE2PLUS;
+			else if (strcmp(lpCmdLine, "apple2e") == 0)
+				model = A2TYPE_APPLE2E;
+			else if (strcmp(lpCmdLine, "apple2ee") == 0)
+				model = A2TYPE_APPLE2EENHANCED;
+			else
+				LogFileOutput("-model: unsupported type: %s\n", lpCmdLine);
+		}
 		else if (_stricmp(lpCmdLine, "-50hz") == 0)	// (case-insensitive)
 		{
 			newVideoRefreshRate = VR_50HZ;
@@ -1624,6 +1641,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		LoadConfiguration();
 		LogFileOutput("Main: LoadConfiguration()\n");
+
+		if (model != A2TYPE_MAX)
+			SetApple2Type(model);
 
 		if (newVideoType >= 0)
 		{
