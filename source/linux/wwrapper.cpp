@@ -14,8 +14,6 @@
 #include <iomanip>
 #include <ctime>
 
-#include "minizip/mz_os.h"
-
 #include "../resource/resource.h"
 #include "Log.h"
 
@@ -274,14 +272,4 @@ int GetTimeFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpTime, LPCSTR l
   const std::string str = ss.str();
   strncpy(lpTimeStr, str.c_str(), cchTime);
   return cchTime; // not 100% sure, but it is never used
-}
-
-// function missing from minizip 2.8.8
-int zipOpenNewFileInZip(zipFile file, const char *filename, const zip_fileinfo *zipfi,
-    const void *extrafield_local, uint16_t size_extrafield_local, const void *extrafield_global,
-    uint16_t size_extrafield_global, const char *comment, uint16_t compression_method, int level)
-{
-    return zipOpenNewFileInZip4_64(file, filename, zipfi, extrafield_local, size_extrafield_local,
-        extrafield_global, size_extrafield_global, comment, compression_method, level, 0, 0,
-        0, 0, NULL, 0, MZ_VERSION_MADEBY, 0, 0);
 }

@@ -6,7 +6,6 @@
 #include "linux/wincompat.h"
 #include "linux/dummies.h"
 #include "linux/stringcb.h"
-#include "minizip/unzip.h"
 
 #define FILE_BEGIN 	SEEK_SET
 #define FILE_CURRENT	SEEK_CUR
@@ -143,7 +142,3 @@ int MessageBox(HWND, const char *, const char *, UINT);
 
 int GetDateFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpDate, LPCSTR lpFormat, LPSTR lpDateStr, int cchDate);
 int GetTimeFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpTime, LPCSTR lpFormat, LPSTR lpTimeStr, int cchTime);
-
-int zipOpenNewFileInZip(zipFile file, const char *filename, const zip_fileinfo *zipfi,
-			const void *extrafield_local, uint16_t size_extrafield_local, const void *extrafield_global,
-			uint16_t size_extrafield_global, const char *comment, uint16_t compression_method, int level);
