@@ -103,18 +103,22 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
 }
 
-// GH#700: INC $C083/C08B (RMW) to write enable the LC
 bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 {
-	if (GetMainCpu() != CPU_65C02)
-		return false;
-
 	BYTE param1 = mem[(regs.pc - 2) & 0xffff];
 	BYTE param2 = mem[(regs.pc - 1) & 0xffff];
 	if (param1 != (addr & 0xff) || param2 != 0xC0)
 		return false;
 
+	// GH#404, GH#700: INC $C083,X/C08B,X (RMW) to write enable the LC (any 6502/65C02/816)
 	BYTE opcode = mem[(regs.pc - 3) & 0xffff];
+	if (opcode == 0xFE && regs.x == 0)	// INC abs,x
+		return true;
+
+	// GH#700: INC $C083/C08B (RMW) to write enable the LC (65C02 only)
+	if (GetMainCpu() != CPU_65C02)
+		return false;
+
 	if (opcode == 0xEE ||	// INC abs
 		opcode == 0xCE ||	// DEC abs
 		opcode == 0x6E ||	// ROR abs
