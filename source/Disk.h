@@ -241,17 +241,14 @@ private:
 	bool m_resetSequencer;
 
 	enum SEQFUNC {readSequencing=0, checkWriteProtAndInitWrite, dataShiftWrite, dataLoadWrite};	// UTAIIe 9-14
-	struct SEQUENCER_FUNCTION
+	union SEQUENCER_FUNCTION
 	{
-		union
+		struct
 		{
-			struct
-			{
-				UINT writeMode : 1;	// $C08E/F,X
-				UINT loadMode : 1;	// $C08C/D,X
-			};
-			SEQFUNC function;
+			UINT writeMode : 1;	// $C08E/F,X
+			UINT loadMode : 1;	// $C08C/D,X
 		};
+		SEQFUNC function;
 	};
 
 	SEQUENCER_FUNCTION m_seqFunc;

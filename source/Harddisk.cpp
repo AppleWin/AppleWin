@@ -845,7 +845,7 @@ bool HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, co
 		throw std::string("Card: wrong version");
 
 	if (version == 1 && (regs.pc >> 8) == (0xC0|slot))
-			throw std::string("HDD card: 6502 is running old HDD firmware");
+		throw std::string("HDD card: 6502 is running old HDD firmware");
 
 	g_nHD_UnitNum = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_UNIT);	// b7=unit
 	g_nHD_Command = yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
