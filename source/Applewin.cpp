@@ -392,6 +392,27 @@ double Get6502BaseClock(void)
 	return (GetVideoRefreshRate() == VR_50HZ) ? CLK_6502_PAL : CLK_6502_NTSC;
 }
 
+void UseClockMultiplier(double clockMultiplier)
+{
+	if (clockMultiplier == 0.0)
+		return;
+
+	if (clockMultiplier < 1.0)
+	{
+		if (clockMultiplier < 0.5)
+			clockMultiplier = 0.5;
+		g_dwSpeed = (ULONG)((clockMultiplier - 0.5) * 20);	// [0.5..0.9] -> [0..9]
+	}
+	else
+	{
+		g_dwSpeed = (ULONG)(clockMultiplier * 10);
+		if (g_dwSpeed >= SPEED_MAX)
+			g_dwSpeed = SPEED_MAX - 1;
+	}
+
+	SetCurrentCLK6502();
+}
+
 void SetCurrentCLK6502(void)
 {
 	static DWORD dwPrevSpeed = (DWORD) -1;
@@ -1168,6 +1189,18 @@ static void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBo
 		MessageBox(g_hFrameWindow, "Failed to insert harddisk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
+static void UnplugHardDiskControllerCard(void)
+{
+	HD_SetEnabled(false);
+
+	DWORD dwTmp;
+	if (REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
+	{
+		if (dwTmp)
+			REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 0);	// Config: HDD Disabled
+	}
+}
+
 static bool CheckOldAppleWinVersion(void)
 {
 	TCHAR szOldAppleWinVersion[VERSIONSTRING_SIZE + 1];
@@ -1202,6 +1235,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bChangedDisplayResolution = false;
 	bool bSlot0LanguageCard = false;
 	bool bSlotEmpty[NUM_SLOTS] = {false,false,false,false,false,false,false,false};
+	bool bSlot7EmptyOnExit = false;
 	UINT bestWidth = 0, bestHeight = 0;
 	LPSTR szImageName_drive[NUM_DRIVES] = {NULL,NULL};
 	LPSTR szImageName_harddisk[NUM_HARDDISKS] = {NULL,NULL};
@@ -1214,6 +1248,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	int newVideoStyleDisableMask = 0;
 	VideoRefreshRate_e newVideoRefreshRate = VR_NONE;
 	LPSTR szScreenshotFilename = NULL;
+	double clockMultiplier = 0.0;	// 0 => not set from cmd-line
+	eApple2Type model = A2TYPE_MAX;
 
 	while (*lpCmdLine)
 	{
@@ -1258,6 +1294,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpNextArg = GetNextArg(lpNextArg);
 			if (strcmp(lpCmdLine, "empty") == 0)
 				bSlotEmpty[slot] = true;
+		}
+		else if (strcmp(lpCmdLine, "-s7-empty-on-exit") == 0)
+		{
+			bSlot7EmptyOnExit = true;
 		}
 		else if (strcmp(lpCmdLine, "-load-state") == 0)
 		{
@@ -1460,6 +1500,28 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			szScreenshotFilename = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 		}
+		else if (strcmp(lpCmdLine, "-clock-multiplier") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			clockMultiplier = atof(lpCmdLine);
+		}
+		else if (strcmp(lpCmdLine, "-model") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			if (strcmp(lpCmdLine, "apple2") == 0)
+				model = A2TYPE_APPLE2;
+			else if (strcmp(lpCmdLine, "apple2p") == 0)
+				model = A2TYPE_APPLE2PLUS;
+			else if (strcmp(lpCmdLine, "apple2e") == 0)
+				model = A2TYPE_APPLE2E;
+			else if (strcmp(lpCmdLine, "apple2ee") == 0)
+				model = A2TYPE_APPLE2EENHANCED;
+			else
+				LogFileOutput("-model: unsupported type: %s\n", lpCmdLine);
+		}
 		else if (_stricmp(lpCmdLine, "-50hz") == 0)	// (case-insensitive)
 		{
 			newVideoRefreshRate = VR_50HZ;
@@ -1580,6 +1642,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LoadConfiguration();
 		LogFileOutput("Main: LoadConfiguration()\n");
 
+		if (model != A2TYPE_MAX)
+			SetApple2Type(model);
+
 		if (newVideoType >= 0)
 		{
 			SetVideoType( (VideoType_e)newVideoType );
@@ -1593,6 +1658,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			newVideoRefreshRate = VR_NONE;	// Don't reapply after a restart
 			SetCurrentCLK6502();
 		}
+
+		UseClockMultiplier(clockMultiplier);
+		clockMultiplier = 0.0;
 
 		// Apply the memory expansion switches after loading the Apple II machine type
 #ifdef RAMWORKS
@@ -1818,6 +1886,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 		CloseHandle(g_hCustomRomF8);
+
+	if (bSlot7EmptyOnExit)
+		UnplugHardDiskControllerCard();
 
 	return 0;
 }
