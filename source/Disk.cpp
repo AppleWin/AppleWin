@@ -1455,7 +1455,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG uExecutedCycles)
 {
-	_ASSERT(m_seqFunc.function == checkWriteProtAndInitWrite);
+	// NB. m_seqFunc.function == checkWriteProtAndInitWrite or shiftWrite (both OK)
 
 	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
 	// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
@@ -1651,7 +1651,7 @@ void Disk2InterfaceCard::SetSequencerFunction(WORD addr)
 	if ((addr & 0xf) < 0xc)
 		return;
 
-	switch (addr & 3)
+	switch ((addr & 3) ^ 2)
 	{
 	case 0: m_seqFunc.writeMode = 0; break;	// $C08E,X (sequence addr A2 input)
 	case 1: m_seqFunc.writeMode = 1; break;	// $C08F,X (sequence addr A2 input)
