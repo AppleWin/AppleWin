@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Applewin.h"
+#include "CPU.h"
 #include "DiskImage.h"	// ImageError_e, Disk_Status_e
 #include "DiskImageHelper.h"
 #include "Frame.h"
@@ -711,6 +712,10 @@ bool HD_ImageSwap(void)
 
 //===========================================================================
 
+// Unit version history:
+// 2: Updated $Csnn firmware to fix GH#319
+static const UINT kUNIT_VERSION = 2;
+
 #define SS_YAML_VALUE_CARD_HDD "Generic HDD"
 
 #define SS_YAML_KEY_CURRENT_UNIT "Current Unit"
@@ -757,7 +762,7 @@ void HD_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	if (!HD_CardIsEnabled())
 		return;
 
-	YamlSaveHelper::Slot slot(yamlSaveHelper, HD_GetSnapshotCardName(), g_uSlot, 1);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, HD_GetSnapshotCardName(), g_uSlot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.Save("%s: %d # b7=unit\n", SS_YAML_KEY_CURRENT_UNIT, g_nHD_UnitNum);
@@ -836,8 +841,11 @@ bool HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, co
 	if (slot != 7)	// fixme
 		throw std::string("Card: wrong slot");
 
-	if (version != 1)
+	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
+
+	if (version == 1 && (regs.pc >> 8) == (0xC0|slot))
+			throw std::string("HDD card: 6502 is running old HDD firmware");
 
 	g_nHD_UnitNum = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_UNIT);	// b7=unit
 	g_nHD_Command = yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
