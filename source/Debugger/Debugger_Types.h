@@ -198,6 +198,13 @@
 		NUM_BREAKPOINT_OPERATORS
 	};
 
+	enum BreakpointMemAccess_t
+	{
+		BPM_ALL = 0,
+		BPM_READ_ONLY,
+		BPM_WRITE_ONLY
+	};
+
 	struct Breakpoint_t
 	{
 		WORD                 nAddress; // for registers, functions as nValue
@@ -207,7 +214,7 @@
 		bool                 bSet    ; // used to be called enabled pre 2.0
 		bool                 bEnabled;
 		bool                 bTemp;    // If true then remove BP when hit or stepping cancelled (eg. G xxxx)
-		int					 uMemAccess;  // 0 if all / 1 if read only  / 2 if write only
+		BreakpointMemAccess_t	eMemAccess;
 	};
 
 	typedef Breakpoint_t Bookmark_t;

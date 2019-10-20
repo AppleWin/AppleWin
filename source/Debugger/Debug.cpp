@@ -62,7 +62,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	Bookmark_t g_aBookmarks[ MAX_BOOKMARKS ];
 
 // Breakpoints ________________________________________________________________
-	int uMemAccess = 0;
+	static BreakpointMemAccess_t g_memAccess = BPM_ALL;
 
 	// Any Speed Breakpoints
 	int  g_nDebugBreakOnInvalid  = 0; // Bit Flags of Invalid Opcode to break on: // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
@@ -1149,10 +1149,12 @@ int CheckBreakpointsIO ()
 								g_uBreakMemoryAddress = (WORD) nAddress;
 								// mod DEBUGGER
 								int opcode = *(mem + regs.pc);
-								if (!pBP->uMemAccess)			// all
+								if (pBP->eMemAccess == BPM_ALL)
+								{
 									return BP_HIT_MEM;
-								else if (pBP->uMemAccess == 1)	// read
-									{
+								}
+								else if (pBP->eMemAccess == BPM_READ_ONLY)
+								{
 									if (opcode != 0x06 && opcode != 0x16 && opcode != 0x0E && opcode != 0x1E && // ASL
 										opcode != 0xC6 && opcode != 0xD6 && opcode != 0xCE && opcode != 0xDE && // DEC
 										opcode != 0xE6 && opcode != 0xF6 && opcode != 0xEE && opcode != 0xFE && // INC
@@ -1170,9 +1172,9 @@ int CheckBreakpointsIO ()
 										opcode != 0x87 && opcode != 0x97 && opcode != 0xA7 && opcode != 0xB7 && opcode != 0xC7 && opcode != 0xD7 && opcode != 0xE7 && opcode != 0xF7 // SMBx (Rock 65C02/WDC 65C02)
 										)
 										return BP_HIT_MEMR;
-									}
-								else if (pBP->uMemAccess == 2)	// write
-									{
+								}
+								else if (pBP->eMemAccess == BPM_WRITE_ONLY)
+								{
 									if (opcode == 0x06 || opcode == 0x16 || opcode == 0x0E || opcode == 0x1E || // ASL
 										opcode == 0xC6 || opcode == 0xD6 || opcode == 0xCE || opcode == 0xDE || // DEC
 										opcode == 0xE6 || opcode == 0xF6 || opcode == 0xEE || opcode == 0xFE || // INC
@@ -1190,7 +1192,7 @@ int CheckBreakpointsIO ()
 										opcode == 0x87 || opcode == 0x97 || opcode == 0xA7 || opcode == 0xB7 || opcode == 0xC7 || opcode == 0xD7 || opcode == 0xE7 || opcode != 0xF7 // SMBx (Rock 65C02/WDC 65C02)
 										)
 										return BP_HIT_MEMW;
-									}
+								}
 							}
 						}
 					}
@@ -1387,9 +1389,9 @@ bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoin
 		pBP->bEnabled  = true;
 		pBP->bTemp     = bIsTempBreakpoint;
 		bStatus = true;
-		pBP->uMemAccess = uMemAccess;
+		pBP->eMemAccess = g_memAccess;
 
-		uMemAccess = 0; // reinit BPM status
+		g_memAccess = BPM_ALL; // reinit BPM status
 	}
 
 	return bStatus;
@@ -1520,19 +1522,19 @@ Update_t CmdBreakpointAddIO   (int nArgs)
 //===========================================================================
 Update_t CmdBreakpointAddMemA(int nArgs)
 {
-	uMemAccess = 0;  // all access
+	g_memAccess = BPM_ALL;
 	return CmdBreakpointAddMem(nArgs);
 }
 //===========================================================================
 Update_t CmdBreakpointAddMemR(int nArgs)
 {
-	uMemAccess = 1;  // read
+	g_memAccess = BPM_READ_ONLY;
 	return CmdBreakpointAddMem(nArgs);
 }
 //===========================================================================
 Update_t CmdBreakpointAddMemW(int nArgs)
 {
-	uMemAccess = 2;  // Write
+	g_memAccess = BPM_WRITE_ONLY;
 	return CmdBreakpointAddMem(nArgs);
 }
 //===========================================================================
@@ -1717,7 +1719,7 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 		iBWZ,
 		sFlags[ (int) aBreakWatchZero[ iBWZ ].bEnabled ],
 		aBreakWatchZero[ iBWZ ].nAddress,
-		sModeBPM[(int)aBreakWatchZero[iBWZ].uMemAccess],
+		sModeBPM[(int)aBreakWatchZero[iBWZ].eMemAccess],
 		pSymbol
 	);
 }
