@@ -2844,10 +2844,14 @@ void _DrawTriStateSoftSwitch( RECT & rect, int nAddress, const int iBankDisplay,
 void _DrawSoftSwitchLanguageCardBank( RECT & rect, const int iBankDisplay, int bg_default = BG_INFO )
 {
 	const int w  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
-	const int dx80 = 7 * w; // "80:L#/MxR/W"
+	const int dx80 = 7 * w; // "80:B2/MxR/W"
 	//                          ^------^
-	const int dx88 = 8 * w; // "88:L#/M    "
+	const int dx88 = 8 * w; // "88:B1/M    "
 	//                          ^-------^
+
+#ifdef _DEBUG
+	const int finalRectRight = rect.left + 11 * w;
+#endif
 
 	rect.right = rect.left + dx80;
 
@@ -2863,7 +2867,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, const int iBankDisplay, int b
 		;
 	bool bBankOn = (iBankActive == iBankDisplay);
 
-	// Bn/[M]
+	// B#/[M]
 	char sOn [ 4 ] = "B#"; // LC# but one char too wide :-/
 	char sOff[ 4 ] = "M";
 	// C080 LC2
@@ -2882,39 +2886,30 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, const int iBankDisplay, int b
 	if (iBankDisplay == 2)
 	{
 		rect.left   += dx80;
-		rect.right  += w;
+		rect.right  += 4*w;
 
-		if (GetMemMode() & MF_ALTZP)
-		{
-			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_BP_S_X )); // Red
-			DebuggerSetColorBG( DebuggerGetColor( bg_default       ));
-			PrintText( "x", rect );
-		}
+		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_BP_S_X )); // Red
+		DebuggerSetColorBG( DebuggerGetColor( bg_default       ));
+		PrintTextCursorX( (GetMemMode() & MF_ALTZP) ? "x" : " ", rect );
 
-		rect.left   += w;
-		rect.right  += 3*w;
-
-		// [B2]/M  R/[W]
-		// [B2]/M  [R]/W
+		// [B2]/M R/[W]
+		// [B2]/M [R]/W
 		const char *pOn  = "R";
 		const char *pOff = "W";
 
 		_DrawSoftSwitchHighlight( rect, !bBankWritable, pOn, pOff, bg_default );
 	}
-#if defined(RAMWORKS) || defined(SATURN)
 	else
 	{
 		_ASSERT(iBankDisplay == 1);
 
 		rect.left   += dx88;
-		rect.right  += 3*w;
+		rect.right  += 4*w;
 
 		int iActiveBank = -1;
 		char sText[ 4 ] = "?"; // Default to RAMWORKS
-#ifdef RAMWORKS
-		if (GetCurrentExpansionMemType() == CT_RamWorksIII) { sText[0] = 'r'; iActiveBank = GetRamWorksActiveBank(); } // RAMWORKS
-#endif
-		if (GetCurrentExpansionMemType() == CT_Saturn128K)  { sText[0] = 's'; iActiveBank = GetLanguageCard()->GetActiveBank(); } // SATURN 64K 128K
+		if (GetCurrentExpansionMemType() == CT_RamWorksIII) { sText[0] = 'r'; iActiveBank = GetRamWorksActiveBank(); }
+		if (GetCurrentExpansionMemType() == CT_Saturn128K)  { sText[0] = 's'; iActiveBank = GetLanguageCard()->GetActiveBank(); }
 
 		if (iActiveBank >= 0)
 		{
@@ -2922,13 +2917,16 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, const int iBankDisplay, int b
 			PrintTextCursorX( sText, rect );
 
 			sprintf( sText, "%02X", (iActiveBank & 0x7F) );
-			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));	// orange
 			PrintTextCursorX( sText, rect );
 		}
 		else
-			PrintTextCursorX( "   ", rect );
+		{
+			PrintTextCursorX("   ", rect);
+		}
 	}
-#endif // SATURN
+
+	_ASSERT(rect.right == finalRectRight);
 
 	rect.top    += g_nFontHeight;
 	rect.bottom += g_nFontHeight;
