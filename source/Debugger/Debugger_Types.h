@@ -207,6 +207,7 @@
 		bool                 bSet    ; // used to be called enabled pre 2.0
 		bool                 bEnabled;
 		bool                 bTemp;    // If true then remove BP when hit or stepping cancelled (eg. G xxxx)
+		int					 uMemAccess;  // 0 if all / 1 if read only  / 2 if write only
 	};
 
 	typedef Breakpoint_t Bookmark_t;
@@ -323,6 +324,8 @@
 //		,	CMD_BREAKPOINT_EXEC = CMD_BREAKPOINT_ADD_ADDR // alias
 		, CMD_BREAKPOINT_ADD_IO  // break on: [$C000-$C7FF] Load/Store 
 		, CMD_BREAKPOINT_ADD_MEM // break on: [$0000-$FFFF], excluding IO
+		, CMD_BREAKPOINT_ADD_MEMR // break on read on: [$0000-$FFFF], excluding IO
+		, CMD_BREAKPOINT_ADD_MEMW // break on write on: [$0000-$FFFF], excluding IO
 
 		, CMD_BREAKPOINT_CLEAR
 //		,	CMD_BREAKPOINT_REMOVE = CMD_BREAKPOINT_CLEAR // alias
@@ -614,6 +617,9 @@
 	Update_t CmdBreakpointAddPC    (int nArgs);
 	Update_t CmdBreakpointAddIO    (int nArgs);
 	Update_t CmdBreakpointAddMem   (int nArgs);
+	Update_t CmdBreakpointAddMemA  (int nArgs);
+	Update_t CmdBreakpointAddMemR  (int nArgs);
+	Update_t CmdBreakpointAddMemW  (int nArgs);
 	Update_t CmdBreakpointClear    (int nArgs);
 	Update_t CmdBreakpointDisable  (int nArgs);
 	Update_t CmdBreakpointEdit     (int nArgs);

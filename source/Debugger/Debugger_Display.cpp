@@ -1179,6 +1179,11 @@ void DrawBreakpoints ( int line )
 			sprintf( sText, "%04X", nAddress1 );
 			PrintTextCursorX( sText, rect2 );
 
+			if (pBP->uMemAccess == 1)			// read only
+				PrintTextCursorX("R", rect2);
+			else if (pBP->uMemAccess == 2)		// write only
+				PrintTextCursorX("W", rect2);
+
 			if (nLength > 1)
 			{
 				DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
@@ -1211,6 +1216,11 @@ void DrawBreakpoints ( int line )
 #endif
 				sprintf( sText, "%04X", nAddress2 );
 				PrintTextCursorX( sText, rect2 );
+
+				if (pBP->uMemAccess == 1)			// read only
+					PrintTextCursorX("R", rect2);
+				else if (pBP->uMemAccess == 2)		// write only
+					PrintTextCursorX("W", rect2);
 			}
 
 #if !USE_APPLE_FONT

@@ -62,6 +62,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	Bookmark_t g_aBookmarks[ MAX_BOOKMARKS ];
 
 // Breakpoints ________________________________________________________________
+	int uMemAccess = 0;
 
 	// Any Speed Breakpoints
 	int  g_nDebugBreakOnInvalid  = 0; // Bit Flags of Invalid Opcode to break on: // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
@@ -1146,7 +1147,50 @@ int CheckBreakpointsIO ()
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
 								g_uBreakMemoryAddress = (WORD) nAddress;
-								return BP_HIT_MEM;
+								// mod DEBUGGER
+								int opcode = *(mem + regs.pc);
+								if (!pBP->uMemAccess)			// all
+									return BP_HIT_MEM;
+								else if (pBP->uMemAccess == 1)	// read
+									{
+									if (opcode != 0x06 && opcode != 0x16 && opcode != 0x0E && opcode != 0x1E && // ASL
+										opcode != 0xC6 && opcode != 0xD6 && opcode != 0xCE && opcode != 0xDE && // DEC
+										opcode != 0xE6 && opcode != 0xF6 && opcode != 0xEE && opcode != 0xFE && // INC
+										opcode != 0x46 && opcode != 0x56 && opcode != 0x4E && opcode != 0x5E && // LSR
+										opcode != 0x26 && opcode != 0x36 && opcode != 0x2E && opcode != 0x3E && // ROL
+										opcode != 0x66 && opcode != 0x76 && opcode != 0x6E && opcode != 0x7E && // ROR
+										opcode != 0x85 && opcode != 0x95 && opcode != 0x8D && opcode != 0x9D && opcode != 0x99 && opcode != 0x81 && // STA (note: STA (xx),Y (0x91) => not a writing access to xx)
+										opcode != 0x99 && // STA (Zp) (65C02)
+										opcode != 0x86 && opcode != 0x96 && opcode != 0x8E && // STX
+										opcode != 0x84 && opcode != 0x94 && opcode != 0x8C && // STY
+										opcode != 0x64 && opcode != 0x74 && opcode != 0x9C && opcode != 0x9E && // STZ (65C02)
+										opcode != 0x14 && opcode != 0x1C && // TRB (65C02)
+										opcode != 0x04 && opcode != 0x0C && // TSB (65C02)
+										opcode != 0x07 && opcode != 0x17 && opcode != 0x27 && opcode != 0x37 && opcode != 0x47 && opcode != 0x57 && opcode != 0x67 && opcode != 0x77 && // RMBx (Rock 65C02/WDC 65C02)
+										opcode != 0x87 && opcode != 0x97 && opcode != 0xA7 && opcode != 0xB7 && opcode != 0xC7 && opcode != 0xD7 && opcode != 0xE7 && opcode != 0xF7 // SMBx (Rock 65C02/WDC 65C02)
+										)
+										return BP_HIT_MEMR;
+									}
+								else if (pBP->uMemAccess == 2)	// write
+									{
+									if (opcode == 0x06 || opcode == 0x16 || opcode == 0x0E || opcode == 0x1E || // ASL
+										opcode == 0xC6 || opcode == 0xD6 || opcode == 0xCE || opcode == 0xDE || // DEC
+										opcode == 0xE6 || opcode == 0xF6 || opcode == 0xEE || opcode == 0xFE || // INC
+										opcode == 0x46 || opcode == 0x56 || opcode == 0x4E || opcode == 0x5E || // LSR
+										opcode == 0x26 || opcode == 0x36 || opcode == 0x2E || opcode == 0x3E || // ROL
+										opcode == 0x66 || opcode == 0x76 || opcode == 0x6E || opcode == 0x7E || // ROR
+										opcode == 0x85 || opcode == 0x95 || opcode == 0x8D || opcode == 0x9D || opcode == 0x99 || opcode == 0x81 && // STA (note: STA (xx),Y (0x91) => not a writing access to xx)
+										opcode == 0x99 || // STA (Zp) (65C02)
+										opcode == 0x86 || opcode == 0x96 || opcode == 0x8E || // STX
+										opcode == 0x84 || opcode == 0x94 || opcode == 0x8C || // STY
+										opcode == 0x64 || opcode == 0x74 || opcode == 0x9C || opcode == 0x9E || // STZ (65C02)
+										opcode == 0x14 || opcode == 0x1C || // TRB (65C02)
+										opcode == 0x04 || opcode == 0x0C || // TSB (65C02)
+										opcode == 0x07 || opcode == 0x17 || opcode == 0x27 || opcode == 0x37 || opcode == 0x47 || opcode == 0x57 || opcode == 0x67 || opcode == 0x77 || // RMBx (Rock 65C02/WDC 65C02)
+										opcode == 0x87 || opcode == 0x97 || opcode == 0xA7 || opcode == 0xB7 || opcode == 0xC7 || opcode == 0xD7 || opcode == 0xE7 || opcode != 0xF7 // SMBx (Rock 65C02/WDC 65C02)
+										)
+										return BP_HIT_MEMW;
+									}
 							}
 						}
 					}
@@ -1343,6 +1387,9 @@ bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoin
 		pBP->bEnabled  = true;
 		pBP->bTemp     = bIsTempBreakpoint;
 		bStatus = true;
+		pBP->uMemAccess = uMemAccess;
+
+		uMemAccess = 0; // reinit BPM status
 	}
 
 	return bStatus;
@@ -1470,7 +1517,24 @@ Update_t CmdBreakpointAddIO   (int nArgs)
 //	return UPDATE_BREAKPOINTS | UPDATE_CONSOLE_DISPLAY;
 }
 
-
+//===========================================================================
+Update_t CmdBreakpointAddMemA(int nArgs)
+{
+	uMemAccess = 0;  // all access
+	return CmdBreakpointAddMem(nArgs);
+}
+//===========================================================================
+Update_t CmdBreakpointAddMemR(int nArgs)
+{
+	uMemAccess = 1;  // read
+	return CmdBreakpointAddMem(nArgs);
+}
+//===========================================================================
+Update_t CmdBreakpointAddMemW(int nArgs)
+{
+	uMemAccess = 2;  // Write
+	return CmdBreakpointAddMem(nArgs);
+}
 //===========================================================================
 Update_t CmdBreakpointAddMem  (int nArgs)
 {
@@ -1637,6 +1701,7 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 {
 	static       char sText[ CONSOLE_WIDTH ];
 	static const char sFlags[] = "-*";
+	static const char sModeBPM[] = " RW";
 	static       char sName[ MAX_SYMBOLS_LEN+1 ];
 
 	WORD nAddress = aBreakWatchZero[ iBWZ ].nAddress;
@@ -1647,11 +1712,12 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 		pSymbol = sName;
 	}
 
-	ConsoleBufferPushFormat( sText, "  #%d %c %04X %s",
+	ConsoleBufferPushFormat( sText, "  #%d %c %04X %c %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
 		sFlags[ (int) aBreakWatchZero[ iBWZ ].bEnabled ],
 		aBreakWatchZero[ iBWZ ].nAddress,
+		sModeBPM[(int)aBreakWatchZero[iBWZ].uMemAccess],
 		pSymbol
 	);
 }
@@ -8658,6 +8724,10 @@ void DebugContinueStepping ()
 				pszStopReason = TEXT("Register matches value");
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
 				sprintf_s(szStopMessage, sizeof(szStopMessage), "Memory accessed at $%04X", g_uBreakMemoryAddress);
+			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "Writing access at $%04X", g_uBreakMemoryAddress);
+			else if (g_bDebugBreakpointHit & BP_HIT_MEMR)
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "Reading access at $%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				pszStopReason = TEXT("PC reads from floating bus or I/O memory");
 			else
