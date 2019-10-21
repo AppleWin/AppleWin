@@ -1148,52 +1148,19 @@ int CheckBreakpointsIO ()
 							{
 								g_uBreakMemoryAddress = (WORD) nAddress;
 								// mod DEBUGGER
-								int opcode = *(mem + regs.pc);
+								BYTE opcode = mem[regs.pc];
 								if (pBP->eMemAccess == BPM_ALL)
 								{
 									return BP_HIT_MEM;
 								}
 								else if (pBP->eMemAccess == BPM_READ_ONLY)
 								{
-									if (opcode != 0x06 && opcode != 0x16 && opcode != 0x0E && opcode != 0x1E && // ASL
-										opcode != 0xC6 && opcode != 0xD6 && opcode != 0xCE && opcode != 0xDE && // DEC
-										opcode != 0xE6 && opcode != 0xF6 && opcode != 0xEE && opcode != 0xFE && // INC
-										opcode != 0x46 && opcode != 0x56 && opcode != 0x4E && opcode != 0x5E && // LSR
-										opcode != 0x26 && opcode != 0x36 && opcode != 0x2E && opcode != 0x3E && // ROL
-										opcode != 0x66 && opcode != 0x76 && opcode != 0x6E && opcode != 0x7E && // ROR
-										opcode != 0x85 && opcode != 0x95 && opcode != 0x8D && opcode != 0x9D && opcode != 0x99 && opcode != 0x81 && // STA (note: STA (xx),Y (0x91) => not a writing access to xx)
-										opcode != 0x99 && // STA (Zp) (65C02)
-										opcode != 0x86 && opcode != 0x96 && opcode != 0x8E && // STX
-										opcode != 0x84 && opcode != 0x94 && opcode != 0x8C && // STY
-										opcode != 0x64 && opcode != 0x74 && opcode != 0x9C && opcode != 0x9E && // STZ (65C02)
-										opcode != 0x14 && opcode != 0x1C && // TRB (65C02)
-										opcode != 0x04 && opcode != 0x0C && // TSB (65C02)
-										opcode != 0x07 && opcode != 0x17 && opcode != 0x27 && opcode != 0x37 && opcode != 0x47 && opcode != 0x57 && opcode != 0x67 && opcode != 0x77 && // RMBx (Rock 65C02/WDC 65C02)
-										opcode != 0x87 && opcode != 0x97 && opcode != 0xA7 && opcode != 0xB7 && opcode != 0xC7 && opcode != 0xD7 && opcode != 0xE7 && opcode != 0xF7 && // SMBx (Rock 65C02/WDC 65C02)
-										opcode != 0x20 && opcode != 0x48 && opcode != 0x08 && opcode != 0xDA && opcode != 0x5A && opcode != 0x00 // Stack modifiers: JSR/PHA/PHP + PHX/PHY (65C02) + BRK
-
-										)
+									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_RI|MEM_R))
 										return BP_HIT_MEMR;
 								}
 								else if (pBP->eMemAccess == BPM_WRITE_ONLY)
 								{
-									if (opcode == 0x06 || opcode == 0x16 || opcode == 0x0E || opcode == 0x1E || // ASL
-										opcode == 0xC6 || opcode == 0xD6 || opcode == 0xCE || opcode == 0xDE || // DEC
-										opcode == 0xE6 || opcode == 0xF6 || opcode == 0xEE || opcode == 0xFE || // INC
-										opcode == 0x46 || opcode == 0x56 || opcode == 0x4E || opcode == 0x5E || // LSR
-										opcode == 0x26 || opcode == 0x36 || opcode == 0x2E || opcode == 0x3E || // ROL
-										opcode == 0x66 || opcode == 0x76 || opcode == 0x6E || opcode == 0x7E || // ROR
-										opcode == 0x85 || opcode == 0x95 || opcode == 0x8D || opcode == 0x9D || opcode == 0x99 || opcode == 0x81 && // STA (note: STA (xx),Y (0x91) => not a writing access to xx)
-										opcode == 0x99 || // STA (Zp) (65C02)
-										opcode == 0x86 || opcode == 0x96 || opcode == 0x8E || // STX
-										opcode == 0x84 || opcode == 0x94 || opcode == 0x8C || // STY
-										opcode == 0x64 || opcode == 0x74 || opcode == 0x9C || opcode == 0x9E || // STZ (65C02)
-										opcode == 0x14 || opcode == 0x1C || // TRB (65C02)
-										opcode == 0x04 || opcode == 0x0C || // TSB (65C02)
-										opcode == 0x07 || opcode == 0x17 || opcode == 0x27 || opcode == 0x37 || opcode == 0x47 || opcode == 0x57 || opcode == 0x67 || opcode == 0x77 || // RMBx (Rock 65C02/WDC 65C02)
-										opcode == 0x87 || opcode == 0x97 || opcode == 0xA7 || opcode == 0xB7 || opcode == 0xC7 || opcode == 0xD7 || opcode == 0xE7 || opcode != 0xF7 || // SMBx (Rock 65C02/WDC 65C02)
-										opcode == 0x20 || opcode == 0x48 || opcode == 0x08 || opcode == 0xDA || opcode == 0x5A || opcode == 0x00 // Stack modifiers: JSR/PHA/PHP + PHX/PHY (65C02) + BRK
-										)
+									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_WI|MEM_W))
 										return BP_HIT_MEMW;
 								}
 							}
