@@ -86,8 +86,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("BPX")         , CmdBreakpointAddPC   , CMD_BREAKPOINT_ADD_PC    , "Add breakpoint at current instruction" },
 		{TEXT("BPIO")        , CmdBreakpointAddIO   , CMD_BREAKPOINT_ADD_IO    , "Add breakpoint for IO address $C0xx"   },
 		{TEXT("BPM")         , CmdBreakpointAddMemA , CMD_BREAKPOINT_ADD_MEM   , "Add breakpoint on memory access"       },  // SoftICE
-		{TEXT("BPMR")        , CmdBreakpointAddMemR , CMD_BREAKPOINT_ADD_MEMR  , "Add breakpoint on memory READING access"  },  
-		{TEXT("BPMW")        , CmdBreakpointAddMemW , CMD_BREAKPOINT_ADD_MEMW  , "Add breakpoint on memory WRITING access" },  
+		{TEXT("BPMR")        , CmdBreakpointAddMemR , CMD_BREAKPOINT_ADD_MEMR  , "Add breakpoint on memory read access"  },
+		{TEXT("BPMW")        , CmdBreakpointAddMemW , CMD_BREAKPOINT_ADD_MEMW  , "Add breakpoint on memory write access" },
 
 		{TEXT("BPC")         , CmdBreakpointClear   , CMD_BREAKPOINT_CLEAR     , "Clear (remove) breakpoint"             }, // SoftICE
 		{TEXT("BPD")         , CmdBreakpointDisable , CMD_BREAKPOINT_DISABLE   , "Disable breakpoint- it is still in the list, just not active" }, // SoftICE

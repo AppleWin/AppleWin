@@ -1058,6 +1058,12 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 		case CMD_BREAKPOINT_LIST:
 			break;
+		case CMD_BREAKPOINT_ADD_MEM:
+		case CMD_BREAKPOINT_ADD_MEMR:
+		case CMD_BREAKPOINT_ADD_MEMW:
+			ConsoleColorizePrint(sText, " Usage: <range>");
+			Help_Range();
+			break;
 	// Config - Load / Save
 		case CMD_CONFIG_LOAD:
 			ConsoleColorizePrint( sText, " Usage: [\"filename\"]" );
