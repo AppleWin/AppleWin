@@ -208,7 +208,7 @@
 	struct Breakpoint_t
 	{
 		WORD                 nAddress; // for registers, functions as nValue
-		WORD                 nLength ;
+		UINT                 nLength ;
 		BreakpointSource_t   eSource;
 		BreakpointOperator_t eOperator;
 		bool                 bSet    ; // used to be called enabled pre 2.0

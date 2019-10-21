@@ -1088,11 +1088,11 @@ bool _CheckBreakpointValue( Breakpoint_t *pBP, int nVal )
 				bStatus = true;
 			break;
 		case BP_OP_EQUAL        : // Range is like C++ STL: [,)  (inclusive,not-inclusive)
-			 if ((nVal >= pBP->nAddress) && (nVal < (pBP->nAddress + pBP->nLength)))
+			 if ((nVal >= pBP->nAddress) && ((UINT)nVal < (pBP->nAddress + pBP->nLength)))
 			 	bStatus = true;
 			break;
 		case BP_OP_NOT_EQUAL    : // Rnage is: (,] (not-inclusive, inclusive)
-			 if ((nVal < pBP->nAddress) || (nVal >= (pBP->nAddress + pBP->nLength)))
+			 if ((nVal < pBP->nAddress) || ((UINT)nVal >= (pBP->nAddress + pBP->nLength)))
 			 	bStatus = true;
 			break;
 		case BP_OP_GREATER_THAN :
@@ -1351,6 +1351,9 @@ bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoin
 
 	if (pBP)
 	{
+		_ASSERT(nLen <= _6502_MEM_LEN);
+		if (nLen > _6502_MEM_LEN) nLen = _6502_MEM_LEN;
+
 		pBP->eSource   = iSrc;
 		pBP->eOperator = iCmp;
 		pBP->nAddress  = nAddress;

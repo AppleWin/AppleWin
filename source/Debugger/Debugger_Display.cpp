@@ -1078,7 +1078,7 @@ void DrawBreakpoints ( int line )
 	for (iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++ )
 	{
 		Breakpoint_t *pBP = &g_aBreakpoints[iBreakpoint];
-		WORD nLength   = pBP->nLength;
+		UINT nLength = pBP->nLength;
 
 #if DEBUG_FORCE_DISPLAY
 		nLength = 2;
