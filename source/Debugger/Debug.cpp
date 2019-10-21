@@ -1169,7 +1169,9 @@ int CheckBreakpointsIO ()
 										opcode != 0x14 && opcode != 0x1C && // TRB (65C02)
 										opcode != 0x04 && opcode != 0x0C && // TSB (65C02)
 										opcode != 0x07 && opcode != 0x17 && opcode != 0x27 && opcode != 0x37 && opcode != 0x47 && opcode != 0x57 && opcode != 0x67 && opcode != 0x77 && // RMBx (Rock 65C02/WDC 65C02)
-										opcode != 0x87 && opcode != 0x97 && opcode != 0xA7 && opcode != 0xB7 && opcode != 0xC7 && opcode != 0xD7 && opcode != 0xE7 && opcode != 0xF7 // SMBx (Rock 65C02/WDC 65C02)
+										opcode != 0x87 && opcode != 0x97 && opcode != 0xA7 && opcode != 0xB7 && opcode != 0xC7 && opcode != 0xD7 && opcode != 0xE7 && opcode != 0xF7 && // SMBx (Rock 65C02/WDC 65C02)
+										opcode != 0x20 && opcode != 0x48 && opcode != 0x08 && opcode != 0xDA && opcode != 0x5A && opcode != 0x00 // Stack modifiers: JSR/PHA/PHP + PHX/PHY (65C02) + BRK
+
 										)
 										return BP_HIT_MEMR;
 								}
@@ -1189,7 +1191,8 @@ int CheckBreakpointsIO ()
 										opcode == 0x14 || opcode == 0x1C || // TRB (65C02)
 										opcode == 0x04 || opcode == 0x0C || // TSB (65C02)
 										opcode == 0x07 || opcode == 0x17 || opcode == 0x27 || opcode == 0x37 || opcode == 0x47 || opcode == 0x57 || opcode == 0x67 || opcode == 0x77 || // RMBx (Rock 65C02/WDC 65C02)
-										opcode == 0x87 || opcode == 0x97 || opcode == 0xA7 || opcode == 0xB7 || opcode == 0xC7 || opcode == 0xD7 || opcode == 0xE7 || opcode != 0xF7 // SMBx (Rock 65C02/WDC 65C02)
+										opcode == 0x87 || opcode == 0x97 || opcode == 0xA7 || opcode == 0xB7 || opcode == 0xC7 || opcode == 0xD7 || opcode == 0xE7 || opcode != 0xF7 || // SMBx (Rock 65C02/WDC 65C02)
+										opcode == 0x20 || opcode == 0x48 || opcode == 0x08 || opcode == 0xDA || opcode == 0x5A || opcode == 0x00 // Stack modifiers: JSR/PHA/PHP + PHX/PHY (65C02) + BRK
 										)
 										return BP_HIT_MEMW;
 								}
