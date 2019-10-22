@@ -1181,9 +1181,9 @@ void DrawBreakpoints ( int line )
 
 			if (nLength == 1)
 			{
-				if (pBP->eMemAccess == BPM_READ_ONLY)
+				if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
 					PrintTextCursorX("R", rect2);
-				else if (pBP->eMemAccess == BPM_WRITE_ONLY)
+				else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
 					PrintTextCursorX("W", rect2);
 			}
 
@@ -1220,9 +1220,9 @@ void DrawBreakpoints ( int line )
 				sprintf( sText, "%04X", nAddress2 );
 				PrintTextCursorX( sText, rect2 );
 
-				if (pBP->eMemAccess == BPM_READ_ONLY)
+				if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
 					PrintTextCursorX("R", rect2);
-				else if (pBP->eMemAccess == BPM_WRITE_ONLY)
+				else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
 					PrintTextCursorX("W", rect2);
 			}
 
