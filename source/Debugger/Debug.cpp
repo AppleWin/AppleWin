@@ -62,7 +62,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	Bookmark_t g_aBookmarks[ MAX_BOOKMARKS ];
 
 // Breakpoints ________________________________________________________________
-
 	// Any Speed Breakpoints
 	int  g_nDebugBreakOnInvalid  = 0; // Bit Flags of Invalid Opcode to break on: // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
 	int  g_iDebugBreakOnOpcode   = 0;
@@ -72,7 +71,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int  g_nBreakpoints          = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
-	// NOTE: Breakpoint_Source_t and g_aBreakpointSource must match!
+	// NOTE: BreakpointSource_t and g_aBreakpointSource must match!
 	const char *g_aBreakpointSource[ NUM_BREAKPOINT_SOURCES ] =
 	{	// Used to be one char, since ArgsCook also uses // TODO/FIXME: Parser use Param[] ?
 		// Used for both Input & Output!
@@ -95,8 +94,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"N", // 1--- ---- Sign
 		// Misc
 		"OP", // Opcode/Instruction/Mnemonic
-		// Memory
-		"M" // Main
+		"M", // Mem RW
+		"M", // Mem READ_ONLY
+		"M", // Mem WRITE_ONLY
 		// TODO: M0 ram bank 0, M1 aux ram ?
 	};
 
@@ -1087,11 +1087,11 @@ bool _CheckBreakpointValue( Breakpoint_t *pBP, int nVal )
 				bStatus = true;
 			break;
 		case BP_OP_EQUAL        : // Range is like C++ STL: [,)  (inclusive,not-inclusive)
-			 if ((nVal >= pBP->nAddress) && (nVal < (pBP->nAddress + pBP->nLength)))
+			 if ((nVal >= pBP->nAddress) && ((UINT)nVal < (pBP->nAddress + pBP->nLength)))
 			 	bStatus = true;
 			break;
 		case BP_OP_NOT_EQUAL    : // Rnage is: (,] (not-inclusive, inclusive)
-			 if ((nVal < pBP->nAddress) || (nVal >= (pBP->nAddress + pBP->nLength)))
+			 if ((nVal < pBP->nAddress) || ((UINT)nVal >= (pBP->nAddress + pBP->nLength)))
 			 	bStatus = true;
 			break;
 		case BP_OP_GREATER_THAN :
@@ -1141,12 +1141,31 @@ int CheckBreakpointsIO ()
 					Breakpoint_t *pBP = &g_aBreakpoints[iBreakpoint];
 					if (_BreakpointValid( pBP ))
 					{
-						if (pBP->eSource == BP_SRC_MEM_1)
+						if (pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_READ_ONLY || pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
 								g_uBreakMemoryAddress = (WORD) nAddress;
-								return BP_HIT_MEM;
+								BYTE opcode = mem[regs.pc];
+
+								if (pBP->eSource == BP_SRC_MEM_RW)
+								{
+									return BP_HIT_MEM;
+								}
+								else if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
+								{
+									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_RI|MEM_R))
+										return BP_HIT_MEMR;
+								}
+								else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
+								{
+									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_WI|MEM_W))
+										return BP_HIT_MEMW;
+								}
+								else
+								{
+									_ASSERT(0);
+								}
 							}
 						}
 					}
@@ -1335,6 +1354,9 @@ bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoin
 
 	if (pBP)
 	{
+		_ASSERT(nLen <= _6502_MEM_LEN);
+		if (nLen > _6502_MEM_LEN) nLen = _6502_MEM_LEN;
+
 		pBP->eSource   = iSrc;
 		pBP->eOperator = iCmp;
 		pBP->nAddress  = nAddress;
@@ -1470,12 +1492,26 @@ Update_t CmdBreakpointAddIO   (int nArgs)
 //	return UPDATE_BREAKPOINTS | UPDATE_CONSOLE_DISPLAY;
 }
 
-
 //===========================================================================
-Update_t CmdBreakpointAddMem  (int nArgs)
+Update_t CmdBreakpointAddMemA(int nArgs)
 {
-	BreakpointSource_t   iSrc = BP_SRC_MEM_1;
-	BreakpointOperator_t iCmp = BP_OP_EQUAL  ;
+	return CmdBreakpointAddMem(nArgs);
+}
+//===========================================================================
+Update_t CmdBreakpointAddMemR(int nArgs)
+{
+	return CmdBreakpointAddMem(nArgs, BP_SRC_MEM_READ_ONLY);
+}
+//===========================================================================
+Update_t CmdBreakpointAddMemW(int nArgs)
+{
+	return CmdBreakpointAddMem(nArgs, BP_SRC_MEM_WRITE_ONLY);
+}
+//===========================================================================
+Update_t CmdBreakpointAddMem  (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM_RW*/)
+{
+	BreakpointSource_t   iSrc = bpSrc;
+	BreakpointOperator_t iCmp = BP_OP_EQUAL;
 
 	int iArg = 0;
 	
@@ -1647,11 +1683,16 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 		pSymbol = sName;
 	}
 
-	ConsoleBufferPushFormat( sText, "  #%d %c %04X %s",
+	char cBPM = aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_READ_ONLY ? 'R'
+				: aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_WRITE_ONLY ? 'W'
+				: ' ';
+
+	ConsoleBufferPushFormat( sText, "  #%d %c %04X %c %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
 		sFlags[ (int) aBreakWatchZero[ iBWZ ].bEnabled ],
 		aBreakWatchZero[ iBWZ ].nAddress,
+		cBPM,
 		pSymbol
 	);
 }
@@ -8657,7 +8698,11 @@ void DebugContinueStepping ()
 			else if (g_bDebugBreakpointHit & BP_HIT_REG)
 				pszStopReason = TEXT("Register matches value");
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
-				sprintf_s(szStopMessage, sizeof(szStopMessage), "Memory accessed at $%04X", g_uBreakMemoryAddress);
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "Memory access at $%04X", g_uBreakMemoryAddress);
+			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "Write access at $%04X", g_uBreakMemoryAddress);
+			else if (g_bDebugBreakpointHit & BP_HIT_MEMR)
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "Read access at $%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				pszStopReason = TEXT("PC reads from floating bus or I/O memory");
 			else

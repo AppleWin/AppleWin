@@ -153,7 +153,7 @@
 			-    ?        no, not listed
 	*/
 	// NOTE: Order must match _PARAM_REGS_*
-	// NOTE: Order must match Breakpoint_Source_t
+	// NOTE: Order must match BreakpointSource_t
 	// NOTE: Order must match g_aBreakpointSource
 	enum BreakpointSource_t
 	{
@@ -175,7 +175,9 @@
 		BP_SRC_FLAG_N, // Sign
 
 		BP_SRC_OPCODE,
-		BP_SRC_MEM_1 ,
+		BP_SRC_MEM_RW,
+		BP_SRC_MEM_READ_ONLY,
+		BP_SRC_MEM_WRITE_ONLY,
 
 		NUM_BREAKPOINT_SOURCES
 	};
@@ -201,7 +203,7 @@
 	struct Breakpoint_t
 	{
 		WORD                 nAddress; // for registers, functions as nValue
-		WORD                 nLength ;
+		UINT                 nLength ;
 		BreakpointSource_t   eSource;
 		BreakpointOperator_t eOperator;
 		bool                 bSet    ; // used to be called enabled pre 2.0
@@ -323,6 +325,8 @@
 //		,	CMD_BREAKPOINT_EXEC = CMD_BREAKPOINT_ADD_ADDR // alias
 		, CMD_BREAKPOINT_ADD_IO  // break on: [$C000-$C7FF] Load/Store 
 		, CMD_BREAKPOINT_ADD_MEM // break on: [$0000-$FFFF], excluding IO
+		, CMD_BREAKPOINT_ADD_MEMR // break on read on: [$0000-$FFFF], excluding IO
+		, CMD_BREAKPOINT_ADD_MEMW // break on write on: [$0000-$FFFF], excluding IO
 
 		, CMD_BREAKPOINT_CLEAR
 //		,	CMD_BREAKPOINT_REMOVE = CMD_BREAKPOINT_CLEAR // alias
@@ -613,7 +617,10 @@
 	Update_t CmdBreakpointAddReg   (int nArgs);
 	Update_t CmdBreakpointAddPC    (int nArgs);
 	Update_t CmdBreakpointAddIO    (int nArgs);
-	Update_t CmdBreakpointAddMem   (int nArgs);
+	Update_t CmdBreakpointAddMem   (int nArgs, BreakpointSource_t bpSrc = BP_SRC_MEM_RW);
+	Update_t CmdBreakpointAddMemA  (int nArgs);
+	Update_t CmdBreakpointAddMemR  (int nArgs);
+	Update_t CmdBreakpointAddMemW  (int nArgs);
 	Update_t CmdBreakpointClear    (int nArgs);
 	Update_t CmdBreakpointDisable  (int nArgs);
 	Update_t CmdBreakpointEdit     (int nArgs);
@@ -1117,7 +1124,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 	extern const unsigned int _6502_BRK_VECTOR      ;//= 0xFFFE;
 	extern const unsigned int _6502_MEM_BEGIN       ;//= 0x0000;
 	extern const unsigned int _6502_MEM_END         ;//= 0xFFFF;
-
+	extern const unsigned int _6502_MEM_LEN			;//= 0x10000;
 
 	enum DEVICE_e
 	{
@@ -1301,7 +1308,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 //		, PARAM_SIZE  // TODO: used by FONT SIZE
 
-	// Note: Order must match Breakpoint_Source_t
+	// Note: Order must match BreakpointSource_t
 	, _PARAM_REGS_BEGIN = _PARAM_BREAKPOINT_END // Daisy Chain
 // Regs
 		, PARAM_REG_A = _PARAM_REGS_BEGIN
