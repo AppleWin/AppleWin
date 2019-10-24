@@ -622,10 +622,13 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 				p = strstr(szLine, ";");		// Optional
 				if(p) *p = 0;
 				p = strstr(szLine, " ");		// 1st space between name & value
-				int nLen = p - szLine;
-				if (nLen > MAX_SYMBOLS_LEN)
+				if (p)
 				{
-					memset(&szLine[MAX_SYMBOLS_LEN], ' ', nLen-MAX_SYMBOLS_LEN);	// sscanf fails for nAddress if string too long
+					int nLen = p - szLine;
+					if (nLen > MAX_SYMBOLS_LEN)
+					{
+						memset(&szLine[MAX_SYMBOLS_LEN], ' ', nLen - MAX_SYMBOLS_LEN);	// sscanf fails for nAddress if string too long
+					}
 				}
 				sscanf(szLine, sFormat2, sName, &nAddress);
 			}
