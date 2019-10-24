@@ -252,7 +252,7 @@ bool CSuperSerialCard::CheckComm()
 	{
 		_ASSERT(m_dwSerialPortItem < m_vecSerialPortsItems.size()-1);	// size()-1 is TCP item
 		TCHAR portname[SIZEOF_SERIALCHOICE_ITEM];
-		wsprintf(portname, TEXT("COM%u"), m_vecSerialPortsItems[m_dwSerialPortItem]);
+		wsprintf(portname, TEXT("\\\\.\\COM%u"), m_vecSerialPortsItems[m_dwSerialPortItem]);
 
 		m_hCommHandle = CreateFile(portname,
 								GENERIC_READ | GENERIC_WRITE,
@@ -1258,7 +1258,7 @@ void CSuperSerialCard::ScanCOMPorts()
 	for (UINT i=1; i<32; i++)	// Arbitrary upper limit
 	{
 		TCHAR portname[SIZEOF_SERIALCHOICE_ITEM];
-		wsprintf(portname, TEXT("COM%u"), i);
+		wsprintf(portname, TEXT("\\\\.\\COM%u"), i);
 
 		HANDLE hCommHandle = CreateFile(portname,
 								GENERIC_READ | GENERIC_WRITE,
