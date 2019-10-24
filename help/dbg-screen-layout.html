@@ -38,6 +38,9 @@
 			<li>0C: $C00C - Col40/80 (inverse indicates state of 80COL)
 			<li>0E: $C00E - ASC/MOUS (inverse indicates state of ALTCHARSET)
 			<li>80: $C080-C087: B2/M R/W (Language Card Bank2)
+			<ul>
+				<li>A red 'x' if ALTZP (and Alt Language Card) is set by a write to $C009.
+			</ul>
 			<li>88: $C088-C08F: B1/M rNN (Language Card Bank1 and RamWorks 64K bank number)
 			<ul>
 				<li>'B2' or 'B1' is inverse when that LC bank is enabled.
