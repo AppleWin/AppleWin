@@ -200,7 +200,7 @@ void SetAltEnterToggleFullScreen(bool mode)
 
 UINT GetFrameBufferBorderlessWidth(void)
 {
-	static const UINT uFrameBufferBorderlessW = NTSC_GetFrameBufferBorderlessWidth();	// 560 = Double Hi-Res, +1 for GH#555
+	static const UINT uFrameBufferBorderlessW = 560;	// 560 = Double Hi-Res
 	return uFrameBufferBorderlessW;
 }
 
@@ -246,50 +246,46 @@ UINT Get3DBorderHeight(void)
 }
 
 // ==========================================================================
+
 static void GetAppleWindowTitle()
 {
-	static TCHAR g_pAppleWindowTitle[ 128 ] = "";
-
-	g_pAppTitle = g_pAppleWindowTitle;
-
 	switch (g_Apple2Type)
 	{
 		default:
-		case A2TYPE_APPLE2:			_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2          ); break;
-		case A2TYPE_APPLE2PLUS:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2_PLUS     ); break;
-		case A2TYPE_APPLE2E:		_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E         ); break;
-		case A2TYPE_APPLE2EENHANCED:_tcscpy(g_pAppleWindowTitle, TITLE_APPLE_2E_ENHANCED); break;
-		case A2TYPE_PRAVETS82:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_82       ); break;
-		case A2TYPE_PRAVETS8M:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8M       ); break;
-		case A2TYPE_PRAVETS8A:		_tcscpy(g_pAppleWindowTitle, TITLE_PRAVETS_8A       ); break;
-		case A2TYPE_TK30002E:		_tcscpy(g_pAppleWindowTitle, TITLE_TK3000_2E        ); break;
+		case A2TYPE_APPLE2:			 g_pAppTitle = TITLE_APPLE_2          ; break;
+		case A2TYPE_APPLE2PLUS:		 g_pAppTitle = TITLE_APPLE_2_PLUS     ; break;
+		case A2TYPE_APPLE2E:		 g_pAppTitle = TITLE_APPLE_2E         ; break;
+		case A2TYPE_APPLE2EENHANCED: g_pAppTitle = TITLE_APPLE_2E_ENHANCED; break;
+		case A2TYPE_PRAVETS82:		 g_pAppTitle = TITLE_PRAVETS_82       ; break;
+		case A2TYPE_PRAVETS8M:		 g_pAppTitle = TITLE_PRAVETS_8M       ; break;
+		case A2TYPE_PRAVETS8A:		 g_pAppTitle = TITLE_PRAVETS_8A       ; break;
+		case A2TYPE_TK30002E:		 g_pAppTitle = TITLE_TK3000_2E        ; break;
 	}
 
 #if _DEBUG
-	_tcscat( g_pAppleWindowTitle, " *DEBUG* " );
+	g_pAppTitle += " *DEBUG* ";
 #endif
 
 	if (g_nAppMode == MODE_LOGO)
 		return;
 
-	// TODO: g_bDisplayVideoModeInTitle
-	_tcscat( g_pAppleWindowTitle, " - " );
+	g_pAppTitle += " - ";
 
 	if( IsVideoStyle(VS_HALF_SCANLINES) )
 	{
-		_tcscat( g_pAppleWindowTitle," 50% " );
+		g_pAppTitle += " 50% ";
 	}
-	_tcscat( g_pAppleWindowTitle, g_apVideoModeDesc[ g_eVideoType ] );
+	g_pAppTitle += g_apVideoModeDesc[ g_eVideoType ];
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
-		_tcscat(g_pAppleWindowTitle,TEXT(" (custom rom)"));
+		g_pAppTitle += TEXT(" (custom rom)");
 	else if (sg_PropertySheet.GetTheFreezesF8Rom() && IS_APPLE2)
-		_tcscat(g_pAppleWindowTitle,TEXT(" (The Freeze's non-autostart F8 rom)"));
+		g_pAppTitle += TEXT(" (The Freeze's non-autostart F8 rom)");
 
 	switch (g_nAppMode)
 	{
-		case MODE_PAUSED  : _tcscat(g_pAppleWindowTitle,TEXT(" [")); _tcscat(g_pAppleWindowTitle,TITLE_PAUSED  ); _tcscat(g_pAppleWindowTitle,TEXT("]")); break;
-		case MODE_STEPPING: _tcscat(g_pAppleWindowTitle,TEXT(" [")); _tcscat(g_pAppleWindowTitle,TITLE_STEPPING); _tcscat(g_pAppleWindowTitle,TEXT("]")); break;
+		case MODE_PAUSED  : g_pAppTitle += std::string(TEXT(" [")) + TITLE_PAUSED   + TEXT("]"); break;
+		case MODE_STEPPING: g_pAppTitle += std::string(TEXT(" [")) + TITLE_STEPPING + TEXT("]"); break;
 	}
 }
 
@@ -512,7 +508,7 @@ static void DrawButton (HDC passdc, int number) {
     SetTextColor(dc,RGB(0,0,0));
     SetTextAlign(dc,TA_CENTER | TA_TOP);
     SetBkMode(dc,TRANSPARENT);
-	LPCTSTR pszBaseName = DiskGetBaseName(number-BTN_DRIVE1);
+	LPCTSTR pszBaseName = sg_Disk2Card.GetBaseName(number-BTN_DRIVE1).c_str();
     ExtTextOut(dc,x+offset+22,rect.top,ETO_CLIPPED,&rect,
                pszBaseName,
                MIN(8,_tcslen(pszBaseName)),
@@ -702,7 +698,7 @@ void FrameDrawDiskLEDS( HDC passdc )
 {
 	Disk_Status_e eDrive1Status;
 	Disk_Status_e eDrive2Status;
-	DiskGetLightStatus(&eDrive1Status, &eDrive2Status);
+	sg_Disk2Card.GetLightStatus(&eDrive1Status, &eDrive2Status);
 
 	g_eStatusDrive1 = eDrive1Status;
 	g_eStatusDrive2 = eDrive2Status;
@@ -755,11 +751,11 @@ void FrameDrawDiskStatus( HDC passdc )
 	// Track  $B7EC    LC1 $D356
 	// Sector $B7ED    LC1 $D357
 	// RWTS            LC1 $D300
-	int nActiveFloppy = DiskGetCurrentDrive();
+	int nActiveFloppy = sg_Disk2Card.GetCurrentDrive();
 
-	int nDisk1Track  = DiskGetTrack(0);
-	int nDisk2Track  = DiskGetTrack(1);
-	
+	int nDisk1Track  = sg_Disk2Card.GetTrack(DRIVE_1);
+	int nDisk2Track  = sg_Disk2Card.GetTrack(DRIVE_2);
+
 	// Probe known OS's for Track/Sector
 	int  isProDOS = mem[ 0xBF00 ] == 0x4C;
 	bool isValid  = true;
@@ -1021,7 +1017,7 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 		if (drawflags & DRAW_TITLE)
 		{
 			GetAppleWindowTitle(); // SetWindowText() // WindowTitle
-			SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)g_pAppTitle);
+			SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)g_pAppTitle.c_str());
 		}
 
 		if (drawflags & DRAW_BUTTON_DRIVES)
@@ -1103,7 +1099,7 @@ LRESULT CALLBACK FrameWndProc (
 		Snapshot_Shutdown();
       DebugDestroy();
       if (!g_bRestart) {
-        DiskDestroy();
+        sg_Disk2Card.Destroy();
         ImageDestroy();
         HD_Destroy();
       }
@@ -1161,7 +1157,7 @@ LRESULT CALLBACK FrameWndProc (
       LogFileOutput("WM_DDE_EXECUTE\n");
       LPTSTR filename = (LPTSTR)GlobalLock((HGLOBAL)lparam);
 //MessageBox( g_hFrameWindow, filename, "DDE Exec", MB_OK );
-      ImageError_e Error = DiskInsert(DRIVE_1, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+      ImageError_e Error = sg_Disk2Card.InsertDisk(DRIVE_1, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
       if (Error == eIMAGE_ERROR_NONE)
 	  {
         if (!g_bIsFullScreen)
@@ -1171,7 +1167,7 @@ LRESULT CALLBACK FrameWndProc (
       }
       else
       {
-        DiskNotifyInvalidImage(DRIVE_1, filename, Error);
+        sg_Disk2Card.NotifyInvalidImage(DRIVE_1, filename, Error);
       }
       GlobalUnlock((HGLOBAL)lparam);
       LogFileOutput("WM_DDE_EXECUTE (done)\n");
@@ -1193,7 +1189,7 @@ LRESULT CALLBACK FrameWndProc (
       rect.top    = buttony+BTN_DRIVE2*BUTTONCY+1;
       rect.bottom = rect.top+BUTTONCY;
 	  const int iDrive = PtInRect(&rect,point) ? DRIVE_2 : DRIVE_1;
-      ImageError_e Error = DiskInsert(iDrive, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+      ImageError_e Error = sg_Disk2Card.InsertDisk(iDrive, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
       if (Error == eIMAGE_ERROR_NONE)
 	  {
         if (!g_bIsFullScreen)
@@ -1207,7 +1203,7 @@ LRESULT CALLBACK FrameWndProc (
       }
       else
 	  {
-        DiskNotifyInvalidImage(iDrive, filename, Error);
+        sg_Disk2Card.NotifyInvalidImage(iDrive, filename, Error);
 	  }
       DragFinish((HDROP)wparam);
       break;
@@ -1392,7 +1388,38 @@ LRESULT CALLBACK FrameWndProc (
 			if (!IsJoyKey &&
 				(g_nAppMode != MODE_LOGO))	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
 			{
-				KeybQueueKeypress(wparam, NOT_ASCII);
+				// GH#678 Alternate key(s) to toggle max speed
+				// . Ctrl-0: Toggle speed: custom speed / Full-Speed
+				// . Ctrl-1: Speed = 1 MHz
+				// . Ctrl-3: Speed = Full-Speed
+				bool keyHandled = false;
+				if( KeybGetCtrlStatus() && wparam >= '0' && wparam <= '9' )
+				{
+					switch (wparam)
+					{
+						case '0':	// Toggle speed: custom speed / Full-Speed
+							if (g_dwSpeed == SPEED_MAX)
+								REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
+							else
+								g_dwSpeed = SPEED_MAX;
+							keyHandled = true; break;
+						case '1':	// Speed = 1 MHz
+							g_dwSpeed = SPEED_NORMAL;
+							REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
+							keyHandled = true; break;
+						case '3':	// Speed = Full-Speed
+							g_dwSpeed = SPEED_MAX;
+							keyHandled = true; break;
+						default:
+							break;
+					}
+
+					if (keyHandled)
+						SetCurrentCLK6502();
+				}
+
+				if (!keyHandled)
+					KeybQueueKeypress(wparam, NOT_ASCII);
 
 				if (!autorep)
 					KeybAnyKeyDown(WM_KEYDOWN, wparam, extended);
@@ -1653,7 +1680,7 @@ LRESULT CALLBACK FrameWndProc (
       if(((LPNMTTDISPINFO)lparam)->hdr.hwndFrom == tooltipwindow &&
          ((LPNMTTDISPINFO)lparam)->hdr.code == TTN_GETDISPINFO)
         ((LPNMTTDISPINFO)lparam)->lpszText =
-          (LPTSTR)DiskGetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom);
+          (LPTSTR)sg_Disk2Card.GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom).c_str();
       break;
 
     case WM_PAINT:
@@ -1937,20 +1964,16 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_HELP:
       {
-        TCHAR filename[MAX_PATH];
-        _tcscpy(filename,g_sProgramDir);
-        _tcscat(filename,TEXT("APPLEWIN.CHM"));
+        const std::string filename = g_sProgramDir + TEXT("APPLEWIN.CHM");
 
 		// (GH#437) For any internet downloaded AppleWin.chm files (stored on an NTFS drive) there may be an Alt Data Stream containing a Zone Identifier
 		// - try to delete it, otherwise the content won't be displayed unless it's unblock (via File Properties)
 		{
-			TCHAR filename_with_zone_identifier[MAX_PATH];
-			_tcscpy(filename_with_zone_identifier,filename);
-			_tcscat(filename_with_zone_identifier,TEXT(":Zone.Identifier"));
-			DeleteFile(filename_with_zone_identifier);
+			const std::string filename_with_zone_identifier = filename + TEXT(":Zone.Identifier");
+			DeleteFile(filename_with_zone_identifier.c_str());
 		}
 
-        HtmlHelp(g_hFrameWindow,filename,HH_DISPLAY_TOC,0);
+        HtmlHelp(g_hFrameWindow,filename.c_str(),HH_DISPLAY_TOC,0);
         helpquit = 1;
       }
       break;
@@ -1967,7 +1990,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
 		if (g_nAppMode == MODE_LOGO)
 		{
-			DiskBoot();
+			sg_Disk2Card.Boot();
 			LogFileTimeUntilFirstKeyReadReset();
 			g_nAppMode = MODE_RUNNING;
 		}
@@ -1990,13 +2013,13 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_DRIVE1:
     case BTN_DRIVE2:
-      DiskSelect(button-BTN_DRIVE1);
+      sg_Disk2Card.UserSelectNewDiskImage(button-BTN_DRIVE1);
       if (!g_bIsFullScreen)
         DrawButton((HDC)0,button);
       break;
 
     case BTN_DRIVESWAP:
-      DiskDriveSwap();
+      sg_Disk2Card.DriveSwap();
       break;
 
     case BTN_FULLSCR:
@@ -2050,14 +2073,21 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 // http://www.codeproject.com/menu/MenusForBeginners.asp?df=100&forumid=67645&exp=0&select=903061
 
 void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
-{		
-	//This is the default installation path of CiderPress. It shall not be left blank, otherwise  an explorer window will be open.
-	TCHAR PathToCiderPress[MAX_PATH] = "C:\\Program Files\\faddenSoft\\CiderPress\\CiderPress.exe";
-	RegLoadString(TEXT("Configuration"), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress,MAX_PATH);
+{
+	// This is the default installation path of CiderPress. 
+	// It shall not be left blank, otherwise  an explorer window will be open.
+	TCHAR PathToCiderPress[MAX_PATH];
+	RegLoadString(
+		TEXT("Configuration"),
+		REGVALUE_CIDERPRESSLOC,
+		1,
+		PathToCiderPress,
+		MAX_PATH,
+		TEXT("C:\\Program Files\\faddenSoft\\CiderPress\\CiderPress.exe"));
 	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
 
 	std::string filename1= "\"";
-	filename1.append( DiskGetDiskPathFilename(iDrive) );
+	filename1.append( sg_Disk2Card.GetFullName(iDrive) );
 	filename1.append("\"");
 	std::string sFileNameEmpty = "\"";
 	sFileNameEmpty.append("\"");
@@ -2079,16 +2109,16 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	// Check menu depending on current floppy protection
 	{
 		int iMenuItem = ID_DISKMENU_WRITEPROTECTION_OFF;
-		if (DiskGetProtect( iDrive ))
+		if (sg_Disk2Card.GetProtect( iDrive ))
 			iMenuItem = ID_DISKMENU_WRITEPROTECTION_ON;
 
 		CheckMenuItem(hmenu, iMenuItem, MF_CHECKED);
 	}
 
-	if (Disk_IsDriveEmpty(iDrive))
+	if (sg_Disk2Card.IsDriveEmpty(iDrive))
 		EnableMenuItem(hmenu, ID_DISKMENU_EJECT, MF_GRAYED);
 
-	if (Disk_ImageIsWriteProtected(iDrive))
+	if (sg_Disk2Card.IsDiskImageWriteProtected(iDrive))
 	{
 		// If image-file is read-only (or a gzip) then disable these menu items
 		EnableMenuItem(hmenu, ID_DISKMENU_WRITEPROTECTION_ON, MF_GRAYED);
@@ -2104,13 +2134,13 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		, hwnd, NULL );
 
 	if (iCommand == ID_DISKMENU_EJECT)
-		DiskEject( iDrive );
+		sg_Disk2Card.EjectDisk( iDrive );
 	else
 	if (iCommand == ID_DISKMENU_WRITEPROTECTION_ON)
-		DiskSetProtect( iDrive, true );
+		sg_Disk2Card.SetProtect( iDrive, true );
 	else
 	if (iCommand == ID_DISKMENU_WRITEPROTECTION_OFF)
-		DiskSetProtect( iDrive, false );
+		sg_Disk2Card.SetProtect( iDrive, false );
 	else
 	if (iCommand == ID_DISKMENU_SENDTO_CIDERPRESS)
 	{
@@ -2119,7 +2149,7 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 													"Please install CiderPress.\n"
 													"Otherwise set the path to CiderPress from Configuration->Disk.";
 
-		DiskFlushCurrentTrack(iDrive);
+		sg_Disk2Card.FlushCurrentTrack(iDrive);
 
 		//if(!filename1.compare("\"\"") == false) //Do not use this, for some reason it does not work!!!
 		if(!filename1.compare(sFileNameEmpty) )
@@ -2181,14 +2211,15 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 // todo: consolidate CtrlReset() and ResetMachineState()
 void ResetMachineState ()
 {
-  DiskReset(true);
+  sg_Disk2Card.Reset(true);
   HD_Reset();
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
   MemReset();	// calls CpuInitialize()
   PravetsReset();
-  DiskBoot();
+  sg_Disk2Card.Boot();
   VideoResetState();
+  KeybReset();
   sg_SSC.CommReset();
   PrintReset();
   JoyReset();
@@ -2225,7 +2256,7 @@ void CtrlReset()
 	}
 
 	PravetsReset();
-	DiskReset();
+	sg_Disk2Card.Reset();
 	HD_Reset();
 	KeybReset();
 	sg_SSC.CommReset();
@@ -2552,7 +2583,7 @@ void FrameCreateWindow(void)
 	// NB. g_hFrameWindow also set by WM_CREATE - NB. CreateWindow() must synchronously send WM_CREATE
 	g_hFrameWindow = CreateWindow(
 		TEXT("APPLE2FRAME"),
-		g_pAppTitle,
+		g_pAppTitle.c_str(),
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 		WS_MINIMIZEBOX | WS_VISIBLE,
 		nXPos, nYPos, nWidth, nHeight,

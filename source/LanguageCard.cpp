@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Applewin.h"
+#include "CPU.h"		// GH#700
 #include "LanguageCard.h"
 #include "Log.h"
 #include "Memory.h"
@@ -74,6 +75,10 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 		{
 			memmode |= MF_WRITERAM; // UTAIIe:5-23
 		}
+		else if (bWrite && pLC->GetLastRamWrite() && pLC->IsOpcodeRMWabs(uAddr))	// GH#700
+		{
+			memmode |= MF_WRITERAM;
+		}
 	}
 	else
 	{
@@ -96,6 +101,37 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	}
 
 	return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
+}
+
+bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
+{
+	BYTE param1 = mem[(regs.pc - 2) & 0xffff];
+	BYTE param2 = mem[(regs.pc - 1) & 0xffff];
+	if (param1 != (addr & 0xff) || param2 != 0xC0)
+		return false;
+
+	// GH#404, GH#700: INC $C083,X/C08B,X (RMW) to write enable the LC (any 6502/65C02/816)
+	BYTE opcode = mem[(regs.pc - 3) & 0xffff];
+	if (opcode == 0xFE && regs.x == 0)	// INC abs,x
+		return true;
+
+	// GH#700: INC $C083/C08B (RMW) to write enable the LC (65C02 only)
+	if (GetMainCpu() != CPU_65C02)
+		return false;
+
+	if (opcode == 0xEE ||	// INC abs
+		opcode == 0xCE ||	// DEC abs
+		opcode == 0x6E ||	// ROR abs
+		opcode == 0x4E ||	// LSR abs
+		opcode == 0x2E ||	// ROL abs
+		opcode == 0x0E)		// ASL abs
+		return true;
+
+	if (opcode == 0x1C ||	// TRB abs
+		opcode == 0x0C)		// TSB abs
+		return true;
+
+	return false;
 }
 
 //-------------------------------------

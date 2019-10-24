@@ -68,6 +68,7 @@ void KeybSetAltGrSendsWM_CHAR(bool state)
 
 void KeybReset()
 {
+	keycode = 0;
 	keywaiting = 0;
 }
 
@@ -573,7 +574,7 @@ void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	keycode = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTKEY);
 
-	if (version == 2)
+	if (version >= 2)
 		keywaiting = (BOOL) yamlLoadHelper.LoadBool(SS_YAML_KEY_KEYWAITING);
 
 	yamlLoadHelper.PopMap();

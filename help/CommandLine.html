@@ -19,15 +19,29 @@
 		Start with hard disk 1 plugged-in (and auto power-on the Apple II). NB. Hard disk controller card gets enabled.<br><br>
 		-h2 &lt;pathname&gt;<br>
 		Start with hard disk 2 plugged-in. NB. Hard disk controller card gets enabled.<br><br>
+		-model &lt;apple2|apple2p|apple2e|apple2ee&gt;<br>
+		Select the machine model: Apple II, Apple II+, Apple //e, Enhanced Apple //e.<br><br>
+		-clock-multiplier &lt;value&gt;<br>
+		Where value is between 0.5 and 3.9, and is a base-clock multiplier, roughly mapping to 0.5MHz - 3.9MHz<br><br>
 		-s0 &lt;saturn|saturn64|saturn128&gt;<br>
 		Insert a Saturn 64K or Saturn 128K card into slot 0 in the Apple II or II+ machines (or similar clone).<br>
 		Where -s0 saturn is an alias for -s0 saturn128.<br><br>
 		-s0 &lt;languagecard|lc&gt;<br>
 		Insert an Apple 16K Language Card into slot 0 in the original Apple II and use the F8 auto-start ROM.<br>
 		NB. The Apple II+ already defaults to having a Language Card, so this switch is not required.<br><br>
+		-s1 empty<br>
+		Remove the printer card from slot 1.<br><br>
+		-s2 empty<br>
+		Remove the SSC card from slot 2.<br><br>
+		-s3 empty<br>
+		Remove the Uthernet card from slot 3.<br><br>
+		-s6 empty<br>
+		Remove the Disk II controller card from slot 6.<br><br>
 		-s7 empty<br>
 		Remove the hard disk controller card from slot 7.<br>
 		Useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br><br>
+		-s7-empty-on-exit<br>
+		Remove the hard disk controller card from slot 7 on AppleWin exit.<br><br>
 		-r &lt;number of pages&gt;<br>
 		Emulate a RamWorks III card with 1 to 127 pages (each page is 64K, giving a max of 8MB) in the auxiliary slot in an Apple //e machine.<br><br>
 		-load-state &lt;savestate&gt;<br>
@@ -97,15 +111,23 @@
 			<li>Either: Toggle between windowed and full screen video modes (default).
 			<li>Or: Allow the emulated Apple II to read the Enter key state when Alt (Open Apple key) is pressed.
 		</ul>
+		-rgb-card-invert-bit7<br>
+		Force the RGB card (in "Color (RGB Monitor)" video mode) to invert bit7 in MIX mode. Enables the correct rendering for Dragon Wars.<br><br>
+		-50hz<br>
+		Support 50Hz(PAL) video refresh rate and PAL 1.016MHz base CPU clock.<br><br>
+		-60hz<br>
+		Support 60Hz(NTSC) video refresh rate and NTSC 1.020MHz base CPU clock (default).<br>
 
 		<br>
 		<P style="FONT-WEIGHT: bold">Debug arguments:
 		</P>
 		-l or -log<br>
-		Enable logging. Creates an AppleWin.log file<br><br>
+		Enable logging. Creates an AppleWin.log file.<br><br>
 		-m<br>
-		Disable DirectSound support<br><br>
+		Disable DirectSound support.<br><br>
 		-no-printscreen-dlg<br>
-		Suppress the warning message-box if AppleWin fails to capture the PrintScreen key<br><br>
+		Suppress the warning message-box if AppleWin fails to capture the PrintScreen key.<br><br>
+		-screenshot-and-exit<br>
+		For testing. Use in combination with -load-state.<br><br>
 	</body>
 </html>

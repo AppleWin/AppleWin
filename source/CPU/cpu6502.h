@@ -318,7 +318,7 @@ static DWORD Cpu6502(DWORD uTotalCycles, const bool bVideoUpdate)
 #undef $
 		}
 
-		CheckInterruptSources(uExecutedCycles);
+		CheckInterruptSources(uExecutedCycles, bVideoUpdate);
 		NMI(uExecutedCycles, flagc, flagn, flagv, flagz);
 		IRQ(uExecutedCycles, flagc, flagn, flagv, flagz);
 

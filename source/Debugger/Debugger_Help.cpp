@@ -1058,6 +1058,12 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 		case CMD_BREAKPOINT_LIST:
 			break;
+		case CMD_BREAKPOINT_ADD_MEM:
+		case CMD_BREAKPOINT_ADD_MEMR:
+		case CMD_BREAKPOINT_ADD_MEMW:
+			ConsoleColorizePrint(sText, " Usage: <range>");
+			Help_Range();
+			break;
 	// Config - Load / Save
 		case CMD_CONFIG_LOAD:
 			ConsoleColorizePrint( sText, " Usage: [\"filename\"]" );
@@ -1400,7 +1406,21 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleColorizePrint( sText, " Usage: symbol" );
 			ConsoleBufferPush( "  Looks up symbol in all 3 symbol tables: main, user, source" );
 			break;
-	// View
+// Video-Scanner
+		case CMD_VIDEO_SCANNER_INFO:
+			ConsoleColorizePrint(sText, " Usage: <dec|hex|real|apple>");
+			ConsoleBufferPush("  Where:");
+			ConsoleBufferPush("    <dec|hex> changes output to dec/hex");
+			ConsoleBufferPush("    <real|apple> alters horz value to hbl-l,visible,hbl-r or hbl-r+l,visible");
+			{
+				char sText2[CONSOLE_WIDTH];
+				ConsolePrintFormat(sText2, "    %sRed%s=invisible (hbl or vbl active) / %sGreen%s=visible"
+					,CHC_KEY    , CHC_DEFAULT	// red
+					,CHC_COMMAND, CHC_DEFAULT	// green
+				);
+			}
+			break;
+// View
 		case CMD_VIEW_TEXT4X:
 		case CMD_VIEW_TEXT41:
 		case CMD_VIEW_TEXT42:

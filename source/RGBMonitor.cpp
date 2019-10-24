@@ -738,6 +738,8 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 static UINT g_rgbFlags = 0;
 static UINT g_rgbMode = 0;
 static WORD g_rgbPrevAN3Addr = 0;
+static bool g_rgbSet80COL = false;
+static bool g_rgbInvertBit7 = false;
 
 // Video7 RGB card:
 // . Clock in the !80COL state to define the 2 flags: F2, F1
@@ -745,17 +747,27 @@ static WORD g_rgbPrevAN3Addr = 0;
 // . NB. There's a final 5th AN3 transition to set DHGR mode
 void RGB_SetVideoMode(WORD address)
 {
-	if ((address&~1) != 0x5E)			// 0x5E or 0x5F?
+	if ((address&~1) == 0x0C)			// 0x0C or 0x0D? (80COL)
+	{
+		g_rgbSet80COL = true;
+		return;
+	}
+
+	if ((address&~1) != 0x5E)			// 0x5E or 0x5F? (DHIRES)
 		return;
 
 	// Precondition before toggling AN3:
 	// . Video7 manual: set 80STORE, but "King's Quest 1"(*) will re-enable RGB card's MIX mode with only VF_TEXT & VF_HIRES set!
 	// . "Extended 80-Column Text/AppleColor Card" manual: TEXT off($C050), MIXED off($C052), HIRES on($C057)
 	// . (*) "King's Quest 1" - see routine at 0x5FD7 (trigger by pressing TAB twice)
-	if ((g_uVideoMode & (VF_MIXED|VF_HIRES)) != (VF_HIRES))
+	// . Apple II desktop sets DHGR B&W mode with HIRES off! (GH#631)
+	// Maybe there is no video-mode precondition?
+	// . After setting 80COL on/off then need a 0x5E->0x5F toggle. So if we see a 0x5F then reset (GH#633)
+	if ((g_uVideoMode & VF_MIXED) || (g_rgbSet80COL && address == 0x5F))
 	{
 		g_rgbMode = 0;
 		g_rgbPrevAN3Addr = 0;
+		g_rgbSet80COL = false;
 		return;
 	}
 
@@ -767,6 +779,7 @@ void RGB_SetVideoMode(WORD address)
 	}
 
 	g_rgbPrevAN3Addr = address;
+	g_rgbSet80COL = false;
 }
 
 bool RGB_Is140Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 2
@@ -789,11 +802,21 @@ bool RGB_Is560Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 1
 	return g_rgbMode == 3;
 }
 
+bool RGB_IsMixModeInvertBit7(void)
+{
+	return RGB_IsMixMode() && g_rgbInvertBit7;
+}
+
 void RGB_ResetState(void)
 {
 	g_rgbFlags = 0;
 	g_rgbMode = 0;
 	g_rgbPrevAN3Addr = 0;
+}
+
+void RGB_SetInvertBit7(bool state)
+{
+	g_rgbInvertBit7 = state;
 }
 
 //===========================================================================
@@ -804,6 +827,8 @@ void RGB_ResetState(void)
 #define SS_YAML_KEY_RGB_FLAGS "RGB mode flags"
 #define SS_YAML_KEY_RGB_MODE "RGB mode"
 #define SS_YAML_KEY_RGB_PREVIOUS_AN3 "Previous AN3"
+#define SS_YAML_KEY_RGB_80COL_CHANGED "80COL changed"
+#define SS_YAML_KEY_RGB_INVERT_BIT7 "Invert bit7"
 
 void RGB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
@@ -812,9 +837,11 @@ void RGB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_FLAGS, g_rgbFlags);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_MODE, g_rgbMode);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_PREVIOUS_AN3, g_rgbPrevAN3Addr);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_RGB_80COL_CHANGED, g_rgbSet80COL);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_RGB_INVERT_BIT7, g_rgbInvertBit7);
 }
 
-void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
 {
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_RGB_CARD))
 		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_RGB_CARD);
@@ -822,6 +849,12 @@ void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	g_rgbFlags = yamlLoadHelper.LoadUint(SS_YAML_KEY_RGB_FLAGS);
 	g_rgbMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_RGB_MODE);
 	g_rgbPrevAN3Addr = yamlLoadHelper.LoadUint(SS_YAML_KEY_RGB_PREVIOUS_AN3);
+
+	if (cardVersion >= 3)
+	{
+		g_rgbSet80COL = yamlLoadHelper.LoadBool(SS_YAML_KEY_RGB_80COL_CHANGED);
+		g_rgbInvertBit7 = yamlLoadHelper.LoadBool(SS_YAML_KEY_RGB_INVERT_BIT7);
+	}
 
 	yamlLoadHelper.PopMap();
 }

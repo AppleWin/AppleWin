@@ -13,5 +13,5 @@
 	bool _CmdSymbolList_Symbol2Address ( LPCTSTR pSymbol, int bSymbolTables );
 
 	// SymbolOffset
-	int ParseSymbolTable ( TCHAR *pFileName, SymbolTable_Index_e eWhichTableToLoad, int nSymbolOffset = 0 );
+	int ParseSymbolTable ( const std::string & pFileName, SymbolTable_Index_e eWhichTableToLoad, int nSymbolOffset = 0 );
 

@@ -42,3 +42,6 @@ eCpuType ProbeMainCpuDefault(eApple2Type apple2Type);
 void     SetMainCpuDefault(eApple2Type apple2Type);
 eCpuType GetActiveCpu(void);
 void     SetActiveCpu(eCpuType cpu);
+
+bool Is6502InterruptEnabled(void);
+void ResetCyclesExecutedForDebugger(void);

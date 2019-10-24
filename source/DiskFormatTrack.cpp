@@ -45,8 +45,6 @@ Writes the following: (in 1 continuous write operation)
 #include "StdAfx.h"
 
 #include "Disk.h"
-#include "DiskLog.h"
-#include "DiskFormatTrack.h"
 #include "Log.h"
 #include "YamlHelper.h"
 
@@ -84,15 +82,15 @@ void FormatTrack::DriveNotWritingTrack(void)
 #endif
 }
 
-void FormatTrack::UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const pFloppy)
+void FormatTrack::UpdateOnWriteLatch(UINT uSpinNibbleCount, const FloppyDisk* const pFloppy)
 {
-	if (pFloppy->bWriteProtected)
+	if (pFloppy->m_bWriteProtected)
 		return;
 
 	if (m_bmWrittenSectorAddrFields == 0x0000)
 	{
 		if (m_WriteTrackStartIndex == (UINT)-1)		// waiting for 1st write?
-			m_WriteTrackStartIndex = pFloppy->byte;
+			m_WriteTrackStartIndex = pFloppy->m_byte;
 		return;
 	}
 
@@ -108,8 +106,8 @@ void FormatTrack::UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const 
 		return;
 	}
 
-	UINT uTrackIndex = pFloppy->byte;
-	const UINT& kTrackMaxNibbles = pFloppy->nibbles;
+	UINT uTrackIndex = pFloppy->m_byte;
+	const UINT& kTrackMaxNibbles = pFloppy->m_nibbles;
 
 	// NB. spin in write mode is only max 1-2 bytes
 	do
@@ -128,7 +126,7 @@ void FormatTrack::UpdateOnWriteLatch(UINT uSpinNibbleCount, const Disk_t* const 
 	while (uSpinNibbleCount--);
 }
 
-void FormatTrack::DriveSwitchedToReadMode(Disk_t* const pFloppy)
+void FormatTrack::DriveSwitchedToReadMode(FloppyDisk* const pFloppy)
 {
 	if (m_bAddressPrologueIsDOS3_2)
 	{
@@ -154,10 +152,10 @@ void FormatTrack::DriveSwitchedToReadMode(Disk_t* const pFloppy)
 	// So need a track size between 0x18B0 (rounding down) and 0x182F
 	const UINT kShortTrackLen = 0x18B0;
 
-	LPBYTE TrackBuffer = pFloppy->trackimage;
-	const UINT kLongTrackLen = pFloppy->nibbles;
+	LPBYTE TrackBuffer = pFloppy->m_trackimage;
+	const UINT kLongTrackLen = pFloppy->m_nibbles;
 
-	UINT uWriteTrackEndIndex = pFloppy->byte;
+	UINT uWriteTrackEndIndex = pFloppy->m_byte;
 	UINT uWrittenTrackSize = m_WriteTrackHasWrapped ? kLongTrackLen : 0;
 
 	if (m_WriteTrackStartIndex <= uWriteTrackEndIndex)
@@ -216,7 +214,7 @@ void FormatTrack::DecodeLatchNibbleRead(BYTE floppylatch)
 	DecodeLatchNibble(floppylatch, false, false);
 }
 
-void FormatTrack::DecodeLatchNibbleWrite(BYTE floppylatch, UINT uSpinNibbleCount, const Disk_t* const pFloppy, bool bIsSyncFF)
+void FormatTrack::DecodeLatchNibbleWrite(BYTE floppylatch, UINT uSpinNibbleCount, const FloppyDisk* const pFloppy, bool bIsSyncFF)
 {
 	DecodeLatchNibble(floppylatch, true, bIsSyncFF);
 	UpdateOnWriteLatch(uSpinNibbleCount, pFloppy);
@@ -266,17 +264,18 @@ void FormatTrack::DecodeLatchNibble(BYTE floppylatch, bool bIsWrite, bool bIsSyn
 				m_VolTrkSecChk[i] = ((m_VolTrkSecChk4and4[i*2] & 0x55) << 1) | (m_VolTrkSecChk4and4[i*2+1] & 0x55);
 
 #if LOG_DISK_NIBBLES_READ
+			const bool chk = (m_VolTrkSecChk[0] ^ m_VolTrkSecChk[1] ^ m_VolTrkSecChk[2] ^ m_VolTrkSecChk[3]) == 0;
 			if (!bIsWrite)
 			{
 				BYTE addrPrologue = m_bAddressPrologueIsDOS3_2 ? (BYTE)kADDR_PROLOGUE_DOS3_2 : (BYTE)kADDR_PROLOGUE_DOS3_3;
-				LOG_DISK("read D5AA%02X detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X\r\n", addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3]);
+				LOG_DISK("read D5AA%02X detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X %s\r\n", addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3], chk?"":"(bad)");
 			}
 #endif
 #if LOG_DISK_NIBBLES_WRITE
 			if (bIsWrite)
 			{
 				BYTE addrPrologue = m_bAddressPrologueIsDOS3_2 ? (BYTE)kADDR_PROLOGUE_DOS3_2 : (BYTE)kADDR_PROLOGUE_DOS3_3;
-				LOG_DISK("write D5AA%02X detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X\r\n", addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3]);
+				LOG_DISK("write D5AA%02X detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X %s\r\n", addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3], chk?"":"(bad)");
 			}
 #endif
 

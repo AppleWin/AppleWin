@@ -36,6 +36,7 @@ typedef UINT64 uint64_t;
 
 #include <windows.h>
 #include <winuser.h> // WM_MOUSEWHEEL
+#include <strsafe.h>
 #include <commctrl.h>
 #include <ddraw.h>
 #include <htmlhelp.h>

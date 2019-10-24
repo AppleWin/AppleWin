@@ -112,7 +112,7 @@ const Opcodes_t g_aOpcodes65C02[ NUM_OPCODES ] =
 	{"SEC", 0     ,  0}, {"AND", AM_AY , R_}, {"DEC", 0     ,  0}, {"nop", 0  , 0 }, // 38 .. 3B
 	{"BIT", AM_AX , R_}, {"AND", AM_AX , R_}, {"ROL", AM_AX , RW}, {"nop", 0  , 0 }, // 3C .. 3F
 
-	{"RTI", 0     ,  0}, {"EOR", AM_IZX, R_}, {"nop", AM_M  , im}, {"nop", 0  , 0 }, // 40 .. 43
+	{"RTI", 0     , SR}, {"EOR", AM_IZX, R_}, {"nop", AM_M  , im}, {"nop", 0  , 0 }, // 40 .. 43
 	{"nop", AM_Z  ,  0}, {"EOR", AM_Z  , R_}, {"LSR", AM_Z  , _W}, {"nop", 0  , 0 }, // 44 .. 47
 	{"PHA", 0     , SW}, {"EOR", AM_M  , im}, {"LSR", 0     ,  0}, {"nop", 0  , 0 }, // 48 .. 4B
 	{"JMP", AM_A  ,  0}, {"EOR", AM_A  , R_}, {"LSR", AM_A  , _W}, {"nop", 0  , 0 }, // 4C .. 4F
@@ -234,7 +234,7 @@ Fx	BEQ r  SBC (d),Y  sbc (z)  ---  ---      SBC d,X  INC z,X  ---  SED  SBC a,Y 
 	{"SEC", 0     ,  0}, {"AND", AM_AY , R_}, {"nop", 0     ,  0}, {"rla", AM_AY , RW}, // 38 .. 3B
 	{"nop", AM_AX ,  0}, {"AND", AM_AX , R_}, {"ROL", AM_AX , RW}, {"rla", AM_AX , RW}, // 3C .. 3F
 
-	{"RTI", 0     ,  0}, {"EOR", AM_IZX, R_}, {"hlt", 0     ,  0}, {"lse", AM_IZX, RW}, // 40 .. 43
+	{"RTI", 0     , SR}, {"EOR", AM_IZX, R_}, {"hlt", 0     ,  0}, {"lse", AM_IZX, RW}, // 40 .. 43
 	{"nop", AM_Z  ,  0}, {"EOR", AM_Z  , R_}, {"LSR", AM_Z  , RW}, {"lse", AM_Z  , RW}, // 44 .. 47
 	{"PHA", 0     , SW}, {"EOR", AM_M  , im}, {"LSR", 0     ,  0}, {"alr", AM_M  , im}, // 48 .. 4B
 	{"JMP", AM_A  ,  0}, {"EOR", AM_A  , R_}, {"LSR", AM_A  , RW}, {"lse", AM_A  , RW}, // 4C .. 4F

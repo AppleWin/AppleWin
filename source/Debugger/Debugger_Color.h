@@ -91,6 +91,8 @@
 		, FG_DISASM_BRANCH   // Green                                   ^ = v
 
 		, BG_INFO            // Cyan    Regs/Stack/BP/Watch/ZP
+		, BG_INFO_WATCH      // Cyan
+		, BG_INFO_ZEROPAGE   // Cyan
 		, FG_INFO_TITLE      // White   Regs/Stack/BP/Watch/ZP
 		, FG_INFO_BULLET     //         1
 		, FG_INFO_OPERATOR   // Gray192  :    -
@@ -122,6 +124,11 @@
 		, BG_SOURCE_2        // even
 		, FG_SOURCE
 
+		, BG_VIDEOSCANNER_TITLE
+		, FG_VIDEOSCANNER_TITLE
+		, FG_VIDEOSCANNER_INVISIBLE	// yellow
+		, FG_VIDEOSCANNER_VISIBLE	// green
+
 		, NUM_DEBUG_COLORS
 	};
 
@@ -132,3 +139,4 @@
 // Color
 	COLORREF DebuggerGetColor( int iColor );
 	bool DebuggerSetColor ( const int iScheme, const int iColor, const COLORREF nColor );
+	void ConfigColorsReset(void);

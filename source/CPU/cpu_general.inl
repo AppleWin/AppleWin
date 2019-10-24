@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			      | (flagz ? AF_ZERO     : 0)		    \
 			      | AF_RESERVED | AF_BREAK;
 // CYC(a): This can be optimised, as only certain opcodes will affect uExtraCycles
-#define CYC(a)	 uExecutedCycles += (a)+uExtraCycles; g_nIrqCheckTimeout -= (a)+uExtraCycles;
+#define CYC(a)	 uExecutedCycles += (a)+uExtraCycles;
 #define POP	 (*(mem+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp)))
 #define PUSH(a)	 *(mem+regs.sp--) = (a);				    \
 		 if (regs.sp < 0x100)					    \

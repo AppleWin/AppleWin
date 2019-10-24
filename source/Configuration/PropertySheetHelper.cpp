@@ -118,16 +118,28 @@ void CPropertySheetHelper::SaveCpuType(eCpuType NewCpuType)
 	REGSAVE(TEXT(REGVALUE_CPU_TYPE), NewCpuType);
 }
 
-void CPropertySheetHelper::SetSlot4(SS_CARDTYPE NewCardType)
+void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 {
-	g_Slot4 = NewCardType;
-	REGSAVE(TEXT(REGVALUE_SLOT4),(DWORD)g_Slot4);
-}
+	_ASSERT(slot < NUM_SLOTS);
+	if (slot >= NUM_SLOTS)
+		return;
 
-void CPropertySheetHelper::SetSlot5(SS_CARDTYPE NewCardType)
-{
-	g_Slot5 = NewCardType;
-	REGSAVE(TEXT(REGVALUE_SLOT5),(DWORD)g_Slot5);
+	g_Slot[slot] = newCardType;
+
+	std::string slotText;
+	switch (slot)
+	{
+	case 0: slotText = REGVALUE_SLOT0; break;
+	case 1: slotText = REGVALUE_SLOT1; break;
+	case 2: slotText = REGVALUE_SLOT2; break;
+	case 3: slotText = REGVALUE_SLOT3; break;
+	case 4: slotText = REGVALUE_SLOT4; break;
+	case 5: slotText = REGVALUE_SLOT5; break;
+	case 6: slotText = REGVALUE_SLOT6; break;
+	case 7: slotText = REGVALUE_SLOT7; break;
+	}
+
+	REGSAVE(slotText.c_str(), (DWORD)g_Slot[slot]);
 }
 
 // Looks like a (bad) C&P from SaveStateSelectImage()
@@ -137,12 +149,11 @@ void CPropertySheetHelper::SetSlot5(SS_CARDTYPE NewCardType)
 // . CPageAdvanced:	IDC_PRINTER_DUMP_FILENAME_BROWSE
 std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE, TCHAR* FILEMASKS)
 {
-	static char PathToFile[MAX_PATH] = {0}; //This is a really awkward way to prevent mixing CiderPress and SaveStated values (RAPCS), but it seem the quickest. Here is its Line 1.
-	strcpy(PathToFile, Snapshot_GetFilename()); //RAPCS, line 2.
+	static std::string PathToFile; //This is a really awkward way to prevent mixing CiderPress and SaveStated values (RAPCS), but it seem the quickest. Here is its Line 1.
+	PathToFile = Snapshot_GetFilename(); //RAPCS, line 2.
 	TCHAR szDirectory[MAX_PATH] = TEXT("");
 	TCHAR szFilename[MAX_PATH];
-	strcpy(szFilename, "");
-	RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename ,MAX_PATH);
+	RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
 	std::string PathName = szFilename;
 
 	OPENFILENAME ofn;
@@ -164,22 +175,22 @@ std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TC
 	int nRes = GetOpenFileName(&ofn);
 	if(nRes)	// Okay is pressed
 	{
-		strcpy(m_szNewFilename, &szFilename[ofn.nFileOffset]);	// TODO:TC: m_szNewFilename not used! (Was g_szNewFilename)
+		m_szNewFilename = &szFilename[ofn.nFileOffset];	// TODO:TC: m_szNewFilename not used! (Was g_szNewFilename)
 
 		szFilename[ofn.nFileOffset] = 0;
 		if (_tcsicmp(szDirectory, szFilename))
-			strcpy(m_szSSNewDirectory, szFilename);				// TODO:TC: m_szSSNewDirectory looks dodgy! (Was g_szSSNewDirectory)
+			m_szSSNewDirectory = szFilename;				// TODO:TC: m_szSSNewDirectory looks dodgy! (Was g_szSSNewDirectory)
 
 		PathName = szFilename;
 		PathName.append (m_szNewFilename);	
 	}
 	else		// Cancel is pressed
 	{
-		RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename,MAX_PATH);
+		RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
 		PathName = szFilename;
 	}
 
-	strcpy(m_szNewFilename, PathToFile); //RAPCS, line 3 (last).
+	m_szNewFilename = PathToFile; //RAPCS, line 3 (last).
 	return PathName;
 }
 
@@ -191,52 +202,56 @@ void CPropertySheetHelper::SaveStateUpdate()
 
 		RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, m_szSSNewPathname);
 
-		if(m_szSSNewDirectory[0])
+		if(!m_szSSNewDirectory.empty())
 			RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1, m_szSSNewDirectory);
 	}
 }
 
-void CPropertySheetHelper::GetDiskBaseNameWithAWS(TCHAR* pszFilename)
+void CPropertySheetHelper::GetDiskBaseNameWithAWS(std::string & pszFilename)
 {
-	LPCTSTR pDiskName = DiskGetBaseName(DRIVE_1);
-	if (pDiskName && pDiskName[0])
+	const std::string & pDiskName = sg_Disk2Card.GetBaseName(DRIVE_1);
+	if (!pDiskName.empty())
 	{
-		strcpy(pszFilename, pDiskName);
-		strcpy(&pszFilename[strlen(pDiskName)], ".aws.yaml");
+		pszFilename = pDiskName + ".aws.yaml";
 	}
 }
 
 // NB. OK'ing this property sheet will call Snapshot_SetFilename() with this new filename
 int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 {
-	TCHAR szDirectory[MAX_PATH] = TEXT("");
-	TCHAR szFilename[MAX_PATH] = {0};
+	std::string szDirectory;
+	std::string tempFilename;
 
 	if (bSave)
 	{
 		// Attempt to use drive1's image name as the name for the .aws file
 		// Else Attempt to use the Prop Sheet's filename
-		GetDiskBaseNameWithAWS(szFilename);
-		if (szFilename[0] == 0)
+		GetDiskBaseNameWithAWS(tempFilename);
+		if (tempFilename.empty())
 		{
-			strcpy(szFilename, Snapshot_GetFilename());
+			tempFilename = Snapshot_GetFilename();
 		}
 	}
 	else	// Load (or Browse)
 	{
 		// Attempt to use the Prop Sheet's filename first
 		// Else attempt to use drive1's image name as the name for the .aws file
-		strcpy(szFilename, Snapshot_GetFilename());
-		if (szFilename[0] == 0)
+		tempFilename = Snapshot_GetFilename();
+		if (tempFilename.empty())
 		{
-			GetDiskBaseNameWithAWS(szFilename);
+			GetDiskBaseNameWithAWS(tempFilename);
 		}
 
-		strcpy(szDirectory, Snapshot_GetPath());
+		szDirectory = Snapshot_GetPath();
 	}
 	
-	if (szDirectory[0] == 0)
-		strcpy(szDirectory, g_sCurrentDir);
+	if (szDirectory.empty())
+		szDirectory = g_sCurrentDir;
+
+	// convert tempFilename to char * for the rest of the function
+	TCHAR szFilename[MAX_PATH] = {0};
+	strcpy(szFilename, tempFilename.c_str());
+	tempFilename.clear(); // do NOT use this any longer
 
 	//
 	
@@ -258,7 +273,7 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	}
 	ofn.lpstrFile       = szFilename;	// Dialog strips the last .EXT from this string (eg. file.aws.yaml is displayed as: file.aws
 	ofn.nMaxFile        = MAX_PATH;
-	ofn.lpstrInitialDir = szDirectory;
+	ofn.lpstrInitialDir = szDirectory.c_str();
 	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.lpstrTitle      = pszTitle;
 
@@ -298,12 +313,12 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 			}
 		}
 
-		strcpy(m_szSSNewFilename, &szFilename[ofn.nFileOffset]);
-		strcpy(m_szSSNewPathname, szFilename);
+		m_szSSNewFilename = &szFilename[ofn.nFileOffset];
+		m_szSSNewPathname = szFilename;
 
 		szFilename[ofn.nFileOffset] = 0;
-		if (_tcsicmp(szDirectory, szFilename))
-			strcpy(m_szSSNewDirectory, szFilename);
+		if (_tcsicmp(szDirectory.c_str(), szFilename))
+			m_szSSNewDirectory = szFilename;
 	}
 
 	m_bSSNewFilename = nRes ? true : false;
@@ -337,7 +352,7 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 
 	if (m_ConfigNew.m_Apple2Type == A2TYPE_CLONE)
 	{
-		MessageBox(hWnd, "Error - Unable to change configuration\n\nReason: A specific clone wasn't selected from the Advanced tab", g_pAppTitle, MB_ICONSTOP | MB_SETFOREGROUND);
+		MessageBox(hWnd, "Error - Unable to change configuration\n\nReason: A specific clone wasn't selected from the Advanced tab", g_pAppTitle.c_str(), MB_ICONSTOP | MB_SETFOREGROUND);
 		return;
 	}
 
@@ -392,20 +407,31 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		SaveCpuType(ConfigNew.m_CpuType);
 	}
 
-	if (CONFIG_CHANGED_LOCAL(m_Slot[4]))
-		SetSlot4(ConfigNew.m_Slot[4]);
+	UINT slot = 4;
+	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
-	if (CONFIG_CHANGED_LOCAL(m_Slot[5]))
-		SetSlot5(ConfigNew.m_Slot[5]);
+	slot = 5;
+	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+		SetSlot(slot, ConfigNew.m_Slot[slot]);
+
+//	slot = 7;
+//	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+//		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
 	if (CONFIG_CHANGED_LOCAL(m_bEnableHDD))
 	{
-		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), ConfigNew.m_bEnableHDD ? 1 : 0);
+		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), ConfigNew.m_bEnableHDD ? 1 : 0);	// TODO: Change to REGVALUE_SLOT7
 	}
 
 	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
 	{
 		REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), ConfigNew.m_bEnableTheFreezesF8Rom);
+	}
+
+	if (CONFIG_CHANGED_LOCAL(m_videoRefreshRate))
+	{
+		REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), ConfigNew.m_videoRefreshRate);
 	}
 }
 
@@ -419,10 +445,11 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	m_ConfigOld.m_Apple2Type = GetApple2Type();
 	m_ConfigOld.m_CpuType = GetMainCpu();
-	m_ConfigOld.m_Slot[4] = g_Slot4;
-	m_ConfigOld.m_Slot[5] = g_Slot5;
+	m_ConfigOld.m_Slot[4] = g_Slot[4];
+	m_ConfigOld.m_Slot[5] = g_Slot[5];
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = sg_PropertySheet.GetTheFreezesF8Rom();
+	m_ConfigOld.m_videoRefreshRate = GetVideoRefreshRate();
 
 	// Reset flags each time:
 	m_ConfigOld.m_uSaveLoadStateMsg = 0;
@@ -437,10 +464,11 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	SetApple2Type(m_ConfigOld.m_Apple2Type);
 	SetMainCpu(m_ConfigOld.m_CpuType);
-	g_Slot4 = m_ConfigOld.m_Slot[4];
-	g_Slot5 = m_ConfigOld.m_Slot[5];
+	g_Slot[4] = m_ConfigOld.m_Slot[4];
+	g_Slot[5] = m_ConfigOld.m_Slot[5];
 	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
 	sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
+	SetVideoRefreshRate(m_ConfigOld.m_videoRefreshRate);
 }
 
 bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged)
@@ -490,6 +518,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_CpuType))
 			strMsgMain += ". Emulated main CPU has changed\n";
+
+		if (CONFIG_CHANGED(m_videoRefreshRate))
+			strMsgMain += ". Video refresh rate has changed\n";
 
 		if (CONFIG_CHANGED(m_Slot[4]))
 			strMsgMain += GetSlot(4);

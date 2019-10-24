@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Disk.h"		// DiskUpdateDriveState()
 #include "Frame.h"
 #include "Keyboard.h"
+#include "Log.h"
 #include "Memory.h"
 #include "Registry.h"
 #include "Video.h"
@@ -91,7 +92,9 @@ uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last se
 DWORD     g_eVideoType     = VT_DEFAULT;
 static VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
 
-static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
+static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
+
+static LPDIRECTDRAW g_lpDD = NULL;
 
 //-------------------------------------
 
@@ -125,9 +128,9 @@ static const bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 	bool g_bDisplayPrintScreenFileName = false;
 	bool g_bShowPrintScreenWarningDialog = true;
-	void Util_MakeScreenShotFileName( char *pFinalFileName_ );
-	bool Util_TestScreenShotFileName( const char *pFileName );
-	void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const char *pScreenShotFileName );
+	void Util_MakeScreenShotFileName( TCHAR *pFinalFileName_, DWORD chars );
+	bool Util_TestScreenShotFileName( const TCHAR *pFileName );
+	void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName );
 	void Video_MakeScreenShot( FILE *pFile, const VideoScreenShot_e ScreenShotType );
 	void videoCreateDIBSection();
 
@@ -304,7 +307,7 @@ void VideoBenchmark () {
       while (cycles > 0) {
         DWORD executedcycles = CpuExecute(103, true);
         cycles -= executedcycles;
-        DiskUpdateDriveState(executedcycles);
+        sg_Disk2Card.UpdateDriveState(executedcycles);
         JoyUpdateButtonLatch(executedcycles);
 	  }
     }
@@ -439,8 +442,8 @@ void VideoDisplayLogo ()
 	SetTextAlign(hFrameDC,TA_RIGHT | TA_TOP);
 	SetBkMode(hFrameDC,TRANSPARENT);
 
-	char szVersion[ 64 ] = "";
-	sprintf( szVersion, "Version %s", VERSIONSTRING );
+	TCHAR szVersion[ 64 ];
+	StringCbPrintf(szVersion, 64, "Version %s", VERSIONSTRING);
 	int xoff = GetFullScreenOffsetX(), yoff = GetFullScreenOffsetY();
 
 #define  DRAWVERSION(x,y,c)                 \
@@ -461,7 +464,7 @@ void VideoDisplayLogo ()
 	}
 
 #if _DEBUG
-	sprintf( szVersion, "DEBUG" );
+	StringCbPrintf(szVersion, 64, "DEBUG");
 	DRAWVERSION( 2, -358*scale,RGB(0x00,0x00,0x00));
 	DRAWVERSION( 1, -357*scale,RGB(0x00,0x00,0x00));
 	DRAWVERSION( 0, -356*scale,RGB(0xFF,0x00,0xFF));
@@ -542,17 +545,7 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 
 void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
-	if (g_bVideoScannerNTSC)
-	{
-		NTSC_VideoClockResync(dwCyclesThisFrame);
-	}
-	else	// PAL
-	{
-		_ASSERT(0);
-		g_nVideoClockVert = (uint16_t) (dwCyclesThisFrame / kHClocks) % kPALScanLines;
-		g_nVideoClockHorz = (uint16_t) (dwCyclesThisFrame % kHClocks);
-	}
-
+	NTSC_VideoClockResync(dwCyclesThisFrame);
 	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
 }
 
@@ -566,25 +559,6 @@ void VideoRedrawScreen (void)
 
 //===========================================================================
 
-// TC: Hacky-fix for GH#341 - better to draw to the correct position in the framebuffer to start with! (in NTSC.cpp)
-// . NB. Now the dx is corrected in NTSC.cpp, updateVideoScannerAddress()
-static void VideoFrameBufferAdjust(int& xSrc, int& ySrc, bool bInvertY=false)
-{
-	int dx=0, dy=0;
-
-	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV)
-	{
-		// Adjust the src locations for the NTSC video modes
-		dy = -1;
-	}
-
-	if (bInvertY)
-		dy =- dy;
-
-	xSrc += dx;
-	ySrc += dy;
-}
-
 void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
 {
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
@@ -595,6 +569,11 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 		if (bRedrawWholeScreen)
 			NTSC_SetVideoMode( uRedrawWholeScreenVideoMode );
 		NTSC_VideoRedrawWholeScreen();
+
+		// MODE_DEBUG|PAUSED: Need to refresh a 2nd time if changing video-type, otherwise could have residue from prev image!
+		// . eg. Amber -> B&W TV
+		if (g_nAppMode == MODE_DEBUG || g_nAppMode == MODE_PAUSED)
+			NTSC_VideoRedrawWholeScreen();
 	}
 
 	HDC hFrameDC = FrameGetDC();
@@ -603,7 +582,6 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 	{
 		int xSrc = GetFrameBufferBorderWidth();
 		int ySrc = GetFrameBufferBorderHeight();
-		VideoFrameBufferAdjust(xSrc, ySrc);	// TC: Hacky-fix for GH#341
 
 		int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 		int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
@@ -620,6 +598,11 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),
 			SRCCOPY);
 	}
+
+#ifdef NO_DIRECT_X
+#else
+	//if (g_lpDD) g_lpDD->WaitForVerticalBlank(DDWAITVB_BLOCKBEGIN, NULL);
+#endif // NO_DIRECT_X
 
 	GdiFlush();
 }
@@ -652,6 +635,8 @@ BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
 
+	const uint32_t oldVideoMode = g_uVideoMode;
+
 	switch (address)
 	{
 		case 0x00:                 g_uVideoMode &= ~VF_80STORE;                            break;
@@ -675,7 +660,11 @@ BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 	if (!IS_APPLE2)
 		RGB_SetVideoMode(address);
 
-	NTSC_SetVideoMode( g_uVideoMode );
+	bool delay = true;
+	if ((oldVideoMode ^ g_uVideoMode) & VF_PAGE2)
+		delay = false;	// PAGE2 flag changed state, so no 1 cycle delay (GH#656)
+
+	NTSC_SetVideoMode( g_uVideoMode, delay );
 
 	return MemReadFloatingBus(uExecutedCycles);
 }
@@ -724,9 +713,10 @@ bool VideoGetSWAltCharSet(void)
 
 //===========================================================================
 
-#define SS_YAML_KEY_ALTCHARSET "Alt Char Set"
-#define SS_YAML_KEY_VIDEOMODE "Video Mode"
-#define SS_YAML_KEY_CYCLESTHISFRAME "Cycles This Frame"
+#define SS_YAML_KEY_ALT_CHARSET "Alt Char Set"
+#define SS_YAML_KEY_VIDEO_MODE "Video Mode"
+#define SS_YAML_KEY_CYCLES_THIS_FRAME "Cycles This Frame"
+#define SS_YAML_KEY_VIDEO_REFRESH_RATE "Video Refresh Rate"
 
 static std::string VideoGetSnapshotStructName(void)
 {
@@ -737,19 +727,27 @@ static std::string VideoGetSnapshotStructName(void)
 void VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALTCHARSET, g_nAltCharSetOffset ? true : false);
-	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEOMODE, g_uVideoMode);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLESTHISFRAME, g_dwCyclesThisFrame);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALT_CHARSET, g_nAltCharSetOffset ? true : false);
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEO_MODE, g_uVideoMode);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLES_THIS_FRAME, g_dwCyclesThisFrame);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_VIDEO_REFRESH_RATE, (UINT)GetVideoRefreshRate());
 }
 
-void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (!yamlLoadHelper.GetSubMap(VideoGetSnapshotStructName()))
 		return;
 
-	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALTCHARSET) ? 256 : 0;
-	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEOMODE);
-	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLESTHISFRAME);
+	if (version >= 4)
+	{
+		VideoRefreshRate_e rate = (VideoRefreshRate_e)yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEO_REFRESH_RATE);
+		SetVideoRefreshRate(rate);	// Trashes: g_dwCyclesThisFrame
+		SetCurrentCLK6502();
+	}
+
+	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALT_CHARSET) ? 256 : 0;
+	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEO_MODE);
+	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLES_THIS_FRAME);
 
 	yamlLoadHelper.PopMap();
 }
@@ -771,7 +769,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
     //
     const int kScanLines  = g_bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
     const int kScanCycles = kScanLines * kHClocks;
-    _ASSERT(nCycles < kScanCycles);
+    _ASSERT(nCycles < (UINT)kScanCycles);
     nCycles %= kScanCycles;
 
     // calculate horizontal scanning state
@@ -789,7 +787,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
     int h_4 = (nHState >> 4) & 1;
     int h_5 = (nHState >> 5) & 1;
 
-    // calculate vertical scanning state
+    // calculate vertical scanning state (UTAIIe:3-15,T3.2)
     //
     int nVLine  = nCycles / kHClocks; // which vertical scanning line
     int nVState = kVLine0State + nVLine; // V state bits
@@ -862,7 +860,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
         nAddressP |= p2b << 11; // a11
 	}
 
-	// VBL' = v_4' | v_3' = (v_4 & v_3)' (UTAIIe:5-10,#3)
+	// VBL' = v_4' | v_3' = (v_4 & v_3)' (UTAIIe:5-10,#3),  (UTAIIe:3-15,T3.2)
 
 	if (videoScannerAddr == VS_PartialAddrH)
 		return nAddressH;
@@ -875,6 +873,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
 
 //===========================================================================
 
+// TODO: Consider replacing simply with: return g_nVideoClockVert < kVDisplayableScanLines
 bool VideoGetVblBar(const DWORD uExecutedCycles)
 {
 	// get video scanner position
@@ -891,37 +890,110 @@ bool VideoGetVblBar(const DWORD uExecutedCycles)
 
 //===========================================================================
 
+#define MAX_DRAW_DEVICES 10
+
+static char *draw_devices[MAX_DRAW_DEVICES];
+static GUID draw_device_guid[MAX_DRAW_DEVICES];
+static int num_draw_devices = 0;
+
+static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName,  LPVOID lpContext)
+{
+	int i = num_draw_devices;
+	if (i == MAX_DRAW_DEVICES)
+		return TRUE;
+	if (lpGUID != NULL)
+		memcpy(&draw_device_guid[i], lpGUID, sizeof (GUID));
+	draw_devices[i] = _strdup(lpszDesc);
+
+	if (g_fh) fprintf(g_fh, "%d: %s - %s\n",i,lpszDesc,lpszDrvName);
+
+	num_draw_devices++;
+	return TRUE;
+}
+
+bool DDInit(void)
+{
+#ifdef NO_DIRECT_X
+
+	return false;
+
+#else
+	HRESULT hr = DirectDrawEnumerate((LPDDENUMCALLBACK)DDEnumProc, NULL);
+	if (FAILED(hr))
+	{
+		LogFileOutput("DSEnumerate failed (%08X)\n", hr);
+		return false;
+	}
+
+	LogFileOutput("Number of draw devices = %d\n", num_draw_devices);
+
+	bool bCreatedOK = false;
+	for (int x=0; x<num_draw_devices; x++)
+	{
+		hr = DirectDrawCreate(&draw_device_guid[x], &g_lpDD, NULL);
+		if (SUCCEEDED(hr))
+		{
+			LogFileOutput("DSCreate succeeded for draw device #%d\n", x);
+			bCreatedOK = true;
+			break;
+		}
+
+		LogFileOutput("DSCreate failed for draw device #%d (%08X)\n", x, hr);
+	}
+
+	if (!bCreatedOK)
+	{
+		LogFileOutput("DSCreate failed for all draw devices\n");
+		return false;
+	}
+
+	return true;
+#endif // NO_DIRECT_X
+}
+
+// From SoundCore.h
+#define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
+
+void DDUninit(void)
+{
+	SAFE_RELEASE(g_lpDD);
+}
+
+#undef SAFE_RELEASE
+
+//===========================================================================
+
 #define SCREENSHOT_BMP 1
 #define SCREENSHOT_TGA 0
 	
 static int  g_nLastScreenShot = 0;
 const  int nMaxScreenShot = 999999999;
-static char *g_pLastDiskImageName = NULL;
+static std::string g_pLastDiskImageName;
 
 //===========================================================================
-void Video_ResetScreenshotCounter( char *pImageName )
+void Video_ResetScreenshotCounter( const std::string & pImageName )
 {
 	g_nLastScreenShot = 0;
 	g_pLastDiskImageName = pImageName;
 }
 
 //===========================================================================
-void Util_MakeScreenShotFileName( char *pFinalFileName_ )
+void Util_MakeScreenShotFileName( TCHAR *pFinalFileName_, DWORD chars )
 {
-	char sPrefixScreenShotFileName[ 256 ] = "AppleWin_ScreenShot";
+	const std::string sPrefixScreenShotFileName = "AppleWin_ScreenShot";
 	// TODO: g_sScreenshotDir
-	char *pPrefixFileName = g_pLastDiskImageName ? g_pLastDiskImageName : sPrefixScreenShotFileName;
+	const std::string pPrefixFileName = !g_pLastDiskImageName.empty() ? g_pLastDiskImageName : sPrefixScreenShotFileName;
 #if SCREENSHOT_BMP
-	sprintf( pFinalFileName_, "%s_%09d.bmp", pPrefixFileName, g_nLastScreenShot );
+	StringCbPrintf( pFinalFileName_, chars, TEXT("%s_%09d.bmp"), pPrefixFileName.c_str(), g_nLastScreenShot );
 #endif
 #if SCREENSHOT_TGA
-	sprintf( pFinalFileName_, "%s%09d.tga", pPrefixFileName, g_nLastScreenShot );
+	StringCbPrintf( pFinalFileName_, chars, TEXT("%s%09d.tga"), pPrefixFileName.c_str(), g_nLastScreenShot );
 #endif
 }
 
 // Returns TRUE if file exists, else FALSE
 //===========================================================================
-bool Util_TestScreenShotFileName( const char *pFileName )
+bool Util_TestScreenShotFileName( const TCHAR *pFileName )
 {
 	bool bFileExists = false;
 	FILE *pFile = fopen( pFileName, "rt" );
@@ -936,7 +1008,7 @@ bool Util_TestScreenShotFileName( const char *pFileName )
 //===========================================================================
 void Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 {
-	char sScreenShotFileName[ MAX_PATH ];
+	TCHAR sScreenShotFileName[ MAX_PATH ];
 
 	// find last screenshot filename so we don't overwrite the existing user ones
 	bool bExists = true;
@@ -944,13 +1016,14 @@ void Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 	{
 		if (g_nLastScreenShot > nMaxScreenShot) // Holy Crap! User has maxed the number of screenshots!?
 		{
-			sprintf( sScreenShotFileName, "You have more then %d screenshot filenames!  They will no longer be saved.\n\nEither move some of your screenshots or increase the maximum in video.cpp\n", nMaxScreenShot );
-			MessageBox( g_hFrameWindow, sScreenShotFileName, "Warning", MB_OK );
+			TCHAR msg[512];
+			StringCbPrintf( msg, 512, "You have more then %d screenshot filenames!  They will no longer be saved.\n\nEither move some of your screenshots or increase the maximum in video.cpp\n", nMaxScreenShot );
+			MessageBox( g_hFrameWindow, msg, "Warning", MB_OK );
 			g_nLastScreenShot = 0;
 			return;
 		}
 
-		Util_MakeScreenShotFileName( sScreenShotFileName );
+		Util_MakeScreenShotFileName( sScreenShotFileName, MAX_PATH );
 		bExists = Util_TestScreenShotFileName( sScreenShotFileName );
 		if( !bExists )
 		{
@@ -963,7 +1036,7 @@ void Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 	g_nLastScreenShot++;
 }
 
-void Video_RedrawAndTakeScreenShot( const char* pScreenshotFilename )
+void Video_RedrawAndTakeScreenShot( const TCHAR* pScreenshotFilename )
 {
 	_ASSERT(pScreenshotFilename);
 	if (!pScreenshotFilename)
@@ -1079,8 +1152,6 @@ static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 
 	int xSrc = GetFrameBufferBorderWidth();
 	int ySrc = GetFrameBufferBorderHeight();
-	VideoFrameBufferAdjust(xSrc, ySrc, true);	// TC: Hacky-fix for GH#341 & GH#356
-												// Lines stored in reverse, so invert the y-adjust value
 
 	pSrc += xSrc;								// Skip left border
 	pSrc += ySrc * GetFrameBufferWidth();		// Skip top border
@@ -1131,7 +1202,7 @@ static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 }
 
 //===========================================================================
-static void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const char *pScreenShotFileName )
+static void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName )
 {
 	FILE *pFile = fopen( pScreenShotFileName, "wb" );
 	if( pFile )
@@ -1156,7 +1227,7 @@ static BYTE g_videoRom[kVideoRomSizeMax];
 static UINT g_videoRomSize = 0;
 static bool g_videoRomRockerSwitch = false;
 
-bool ReadVideoRomFile(const char* pRomFile)
+bool ReadVideoRomFile(const TCHAR* pRomFile)
 {
 	g_videoRomSize = 0;
 
@@ -1221,19 +1292,29 @@ enum VideoType127_e
 
 void Config_Load_Video()
 {
-	REGLOAD(TEXT(REGVALUE_VIDEO_MODE)      ,&g_eVideoType);
-	REGLOAD(TEXT(REGVALUE_VIDEO_STYLE)     ,(DWORD*)&g_eVideoStyle);
-	REGLOAD(TEXT(REGVALUE_VIDEO_MONO_COLOR),&g_nMonochromeRGB);
+	DWORD dwTmp;
+
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MODE), &dwTmp, (DWORD)VT_DEFAULT);
+	g_eVideoType = dwTmp;
+
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_STYLE), &dwTmp, (DWORD)VS_HALF_SCANLINES);
+	g_eVideoStyle = (VideoStyle_e)dwTmp;
+
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MONO_COLOR), &dwTmp, (DWORD)RGB(0xC0, 0xC0, 0xC0));
+	g_nMonochromeRGB = (COLORREF)dwTmp;
+
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_REFRESH_RATE), &dwTmp, (DWORD)VR_60HZ);
+	SetVideoRefreshRate((VideoRefreshRate_e)dwTmp);
 
 	//
 
 	const UINT16* pOldVersion = GetOldAppleWinVersion();
 	if (pOldVersion[0] == 1 && pOldVersion[1] <= 28 && pOldVersion[2] <= 1)
 	{
-		DWORD halfScanLines = 0;
-		REGLOAD(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES),&halfScanLines);
+		DWORD dwHalfScanLines;
+		REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES), &dwHalfScanLines, 0);
 
-		if (halfScanLines)
+		if (dwHalfScanLines)
 			g_eVideoStyle = (VideoStyle_e) ((DWORD)g_eVideoStyle | VS_HALF_SCANLINES);
 		else
 			g_eVideoStyle = (VideoStyle_e) ((DWORD)g_eVideoStyle & ~VS_HALF_SCANLINES);
@@ -1269,6 +1350,7 @@ void Config_Save_Video()
 	REGSAVE(TEXT(REGVALUE_VIDEO_MODE)      ,g_eVideoType);
 	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     ,g_eVideoStyle);
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR),g_nMonochromeRGB);
+	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), GetVideoRefreshRate());
 }
 
 //===========================================================================
@@ -1297,6 +1379,22 @@ void SetVideoStyle(VideoStyle_e newVideoStyle)
 bool IsVideoStyle(VideoStyle_e mask)
 {
 	return (g_eVideoStyle & mask) != 0;
+}
+
+//===========================================================================
+
+VideoRefreshRate_e GetVideoRefreshRate(void)
+{
+	return (g_bVideoScannerNTSC == false) ? VR_50HZ : VR_60HZ;
+}
+
+void SetVideoRefreshRate(VideoRefreshRate_e rate)
+{
+	if (rate != VR_50HZ)
+		rate = VR_60HZ;
+
+	g_bVideoScannerNTSC = (rate == VR_60HZ);
+	NTSC_SetRefreshRate(rate);
 }
 
 //===========================================================================

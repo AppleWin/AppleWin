@@ -26,20 +26,25 @@
 ;
 
 ; Modified by Tom Charlesworth:
-; . Fixed so it can be assembled by a65 v1.06
+; . Updated so it can be assembled by ACME 0.96.4
 ; . Fixed so that ProDOS entrypoint is $c70a (26 Dev 2007) (Bug #12723)
 ; . Modified to support Apple Oasis' entrypoint: $c761 (8 Sept 2012) (Feature #5557)
 ; . Added support for SmartPort entrypoint (20 Oct 2012)
 ;   - EG. "Prince of Persia (Original 3.5 floppy for IIc+).2mg"
 ; . GH#370 (Robert Hoem, 27 Oct 2016):
-    . Added a check against open-apple during boot to route boot to slot 6
-    . This happens after the first two blocks are loaded from the HD.
+;   . Added a check against open-apple during boot to route boot to slot 6
+;   . This happens after the first two blocks are loaded from the HD.
+; . GH#319: smartport return address wrong when crossing page
 ; TODO:
 ; . Make code relocatable (so HDD controller card can go into any slot)
 ; . Remove support for Entrypoint_C746 (old AppleWin) & Entrypoint_C761 (Apple Oasis)
 ;   - provide a utility to convert these to use Entrypoint_ProDOS
 ; . Check SmartPort: Is it OK to trash Y and $42,..,$47 ?
 ;
+
+!cpu 6502	; Compatible with all Apple2's
+!to "hddrvr.bin", plain
+!sl "hddrvr.labels"
 
 ; constants
 hd_execute = $c0f0
@@ -64,6 +69,8 @@ BUTTON0 = $C061
 
 ;; code
 *= $c700	; org $c700
+
+!zone code
 
 start
 
@@ -102,14 +109,7 @@ Bootstrap
 ; error capturing code.  Applewin is picky
 ; about code assigning data to registers and
 ; memory.  The safest method is via I/O port
- pha
- lda hd_error
- clc
- cmp #1
- bne noerr0
- sec
-noerr0
- pla
+ ror hd_error	; Post: C=0 or 1
  bcc hdboot
 
 ; no image ready, boot diskette image instead
@@ -123,12 +123,14 @@ BootSlot6
 SmartPort
  pla
  sta $46
+ adc #3         ; Pre: C=0, Post: C=0 or 1
+ tay
  pla
- sta $47		; ($47) = &cmd_hdr
+ sta $47        ; ($46) = &cmd_hdr
+ adc #0
  pha
- lda $46
- adc #3			; Pre: C=0, Post: assume C=0
- pha			; (sp).w += 3
+ tya
+ pha            ; (sp).w += 3
 
  ldy #1
  lda ($46),y	; cmd
@@ -137,7 +139,7 @@ SmartPort
  bne SmartPort2
 
 ;======================================
-; 2 unused bytes
+; 8 unused bytes
 
 *= $c746	; org $c746
 
@@ -231,12 +233,7 @@ cmdproc
  bne skipSread
  jsr sread
 skipSread
- lda hd_error
- clc
- cmp #1
- bne noerr2
- sec
-noerr2
+ ror hd_error	; Post: C=0 or 1
  pla
  rts
 
@@ -247,7 +244,7 @@ noerr2
 ; the emulated code increments the buffer by 1 on each read) to (memblock),y
 ; increment memblock+1 and read the second 256 bytes via hd_nextbyte.
 ;
-; if I could figure out how to consistantly get applewin to update it's memory regions all
+; if I could figure out how to consistently get applewin to update it's memory regions all
 ; this code can be moved into the emulation code (although, this is how I'd build the hardware
 ; anyway...)
 
@@ -293,7 +290,9 @@ SmartPort3
  bne cmdproc
 
 ;======================================
-; 12 unused bytes
+; 18 unused bytes
+
+!zone data
 
 ; $CsFE = status bits (BAP p7-14)
 ;  7 = medium is removable
@@ -308,12 +307,9 @@ SmartPort3
 ; $D7 = Removable, Interruptable, #Volumes=2, Supports write/read/status
 ; $BF = Removable, Interruptable, #Volumes=4, Supports format/write/read/status (KEGS / IIGS)
 
-
 ; datablock.  This starts near the end of the firmware (at offset $FC)
 ;; data
 *= $c7fc	; org $c7fc
- .word $7fff ; how many blocks are on the device.
- .byte $D7 ; specifics about the device (number of drives, read/write/format capability, etc)
- .byte <Entrypoint_ProDOS ; entry point offset for ProDOS (must be $0a)
-
- .end
+ !word $7fff ; how many blocks are on the device.
+ !byte $D7 ; specifics about the device (number of drives, read/write/format capability, etc)
+ !byte <Entrypoint_ProDOS ; entry point offset for ProDOS (must be $0a)

@@ -1,18 +1,10 @@
 #pragma once
 
-const double _M14 = (157500000.0 / 11.0); // 14.3181818... * 10^6
-const double CLK_6502 = ((_M14 * 65.0) / 912.0); // 65 cycles per 912 14M clocks
+const double _14M_NTSC = (157500000.0 / 11.0);	// 14.3181818... * 10^6
+const double _14M_PAL = 14.25045e6;				// UTAIIe:3-17
+const double CLK_6502_NTSC = (_14M_NTSC * 65.0) / (65.0*14.0+2.0); // 65 cycles per 912 14M clocks
+const double CLK_6502_PAL  = (_14M_PAL  * 65.0) / (65.0*14.0+2.0);
 //const double CLK_6502 = 23 * 44100;			// 1014300
-
-// The effective Z-80 clock rate is 2.041MHz
-// See: http://www.apple2info.net/hardware/softcard/SC-SWHW_a2in.pdf
-const double CLK_Z80 = (CLK_6502 * 2);
-
-// TODO: Clean up from Common.h, Video.cpp, and NTSC.h !!!
-const UINT uCyclesPerLine			= 65;	// 25 cycles of HBL & 40 cycles of HBL'
-const UINT uVisibleLinesPerFrame	= 64*3;	// 192
-const UINT uLinesPerFrame			= 262;	// 64 in each third of the screen & 70 in VBL
-const DWORD dwClksPerFrame			= uCyclesPerLine * uLinesPerFrame;	// 17030
 
 #define NUM_SLOTS 8
 
@@ -107,11 +99,14 @@ enum AppMode_e
 #define  REGVALUE_VIDEO_STYLE         "Video Style"			// GH#616: Added at 1.28.2
 #define  REGVALUE_VIDEO_HALF_SCAN_LINES "Half Scan Lines"	// GH#616: Deprecated from 1.28.2
 #define  REGVALUE_VIDEO_MONO_COLOR      "Monochrome Color"
+#define  REGVALUE_VIDEO_REFRESH_RATE    "Video Refresh Rate"
 #define  REGVALUE_SERIAL_PORT_NAME   "Serial Port Name"
 #define  REGVALUE_ENHANCE_DISK_SPEED "Enhance Disk Speed"
 #define  REGVALUE_CUSTOM_SPEED       "Custom Speed"
 #define  REGVALUE_EMULATION_SPEED    "Emulation Speed"
 #define  REGVALUE_WINDOW_SCALE       "Window Scale"
+#define  REGVALUE_UTHERNET_ACTIVE       "Uthernet Active"
+#define  REGVALUE_UTHERNET_INTERFACE    "Uthernet Interface"
 #define  REGVALUE_SLOT0					"Slot 0"
 #define  REGVALUE_SLOT1					"Slot 1"
 #define  REGVALUE_SLOT2					"Slot 2"
@@ -163,8 +158,8 @@ enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 #define APPLECLONE_MASK	0x100
 
 #define IS_APPLE2		((g_Apple2Type & (APPLE2E_MASK|APPLE2C_MASK)) == 0)
-#define IS_APPLE2E		(g_Apple2Type & APPLE2E_MASK)
-#define IS_APPLE2C		(g_Apple2Type & APPLE2C_MASK)
+#define IS_APPLE2E()	(g_Apple2Type & APPLE2E_MASK)
+#define IS_APPLE2C()	(g_Apple2Type & APPLE2C_MASK)
 #define IS_CLONE()		(g_Apple2Type & APPLECLONE_MASK)
 
 // NB. These get persisted to the Registry & save-state file, so don't change the values for these enums!
@@ -215,9 +210,14 @@ inline bool IsApple2PlusOrClone(eApple2Type type)	// Apple ][,][+ or clone ][,][
 }
 
 extern eApple2Type g_Apple2Type;
-inline bool IsOriginal2E(void)
+inline bool IsEnhancedIIE(void)
 {
-	return (g_Apple2Type == A2TYPE_APPLE2E);
+	return ( (g_Apple2Type == A2TYPE_APPLE2EENHANCED) || (g_Apple2Type == A2TYPE_TK30002E) );
+}
+
+inline bool IsEnhancedIIEorIIC(void)
+{
+	return ( (g_Apple2Type == A2TYPE_APPLE2EENHANCED) || (g_Apple2Type == A2TYPE_TK30002E) || IS_APPLE2C() );
 }
 
 enum eBUTTON {BUTTON0=0, BUTTON1};

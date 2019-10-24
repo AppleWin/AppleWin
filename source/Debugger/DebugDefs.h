@@ -10,3 +10,4 @@
 	const unsigned int _6502_BRK_VECTOR      = 0xFFFE;
 	const unsigned int _6502_MEM_BEGIN = 0x0000;
 	const unsigned int _6502_MEM_END   = 0xFFFF;
+	const unsigned int _6502_MEM_LEN   = _6502_MEM_END + 1;

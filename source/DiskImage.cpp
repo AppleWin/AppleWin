@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "Common.h"
 #include "DiskImage.h"
 #include "DiskImageHelper.h"
 
@@ -38,7 +39,7 @@ static CHardDiskImageHelper sg_HardDiskImageHelper;
 //===========================================================================
 
 // Pre: *pWriteProtected_ already set to file's r/w status - see DiskInsert()
-ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
+ImageError_e ImageOpen(	const std::string & pszImageFilename,
 						ImageInfo** ppImageInfo,
 						bool* pWriteProtected,
 						const bool bCreateIfNecessary,
@@ -48,7 +49,7 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 	if (bExpectFloppy && sg_DiskImageHelper.GetWorkBuffer() == NULL)
 		return eIMAGE_ERROR_BAD_POINTER;
 
-	if (! (pszImageFilename && ppImageInfo && pWriteProtected))
+	if (!(!pszImageFilename.empty() && ppImageInfo && pWriteProtected))
 		return eIMAGE_ERROR_BAD_POINTER;
 
 	// CREATE A RECORD FOR THE FILE
@@ -62,7 +63,7 @@ ImageError_e ImageOpen(	LPCTSTR pszImageFilename,
 	if (bExpectFloppy)	pImageInfo->pImageHelper = &sg_DiskImageHelper;
 	else				pImageInfo->pImageHelper = &sg_HardDiskImageHelper;
 
-	ImageError_e Err = pImageInfo->pImageHelper->Open(pszImageFilename, pImageInfo, bCreateIfNecessary, strFilenameInZip);
+	ImageError_e Err = pImageInfo->pImageHelper->Open(pszImageFilename.c_str(), pImageInfo, bCreateIfNecessary, strFilenameInZip);
 	if (Err != eIMAGE_ERROR_NONE)
 	{
 		ImageClose(*ppImageInfo, true);
@@ -152,18 +153,21 @@ void ImageInitialize(void)
 //===========================================================================
 
 void ImageReadTrack(	ImageInfo* const pImageInfo,
-						const int nTrack,
-						const int nQuarterTrack,
+						float phase,			// phase [0..79] +/- 0.5
 						LPBYTE pTrackImageBuffer,
-						int* pNibbles)
+						int* pNibbles,
+						UINT* pBitCount,
+						bool enhanceDisk)
 {
-	_ASSERT(nTrack >= 0);
-	if (nTrack < 0)
-		return;
+	_ASSERT(phase >= 0);
+	if (phase < 0)
+		phase = 0;
 
-	if (pImageInfo->pImageType->AllowRW() && pImageInfo->ValidTrack[nTrack])
+	const UINT track = pImageInfo->pImageType->PhaseToTrack(phase);
+
+	if (pImageInfo->pImageType->AllowRW() && pImageInfo->ValidTrack[track])
 	{
-		pImageInfo->pImageType->Read(pImageInfo, nTrack, nQuarterTrack, pTrackImageBuffer, pNibbles);
+		pImageInfo->pImageType->Read(pImageInfo, phase, pTrackImageBuffer, pNibbles, pBitCount, enhanceDisk);
 	}
 	else
 	{
@@ -175,19 +179,20 @@ void ImageReadTrack(	ImageInfo* const pImageInfo,
 //===========================================================================
 
 void ImageWriteTrack(	ImageInfo* const pImageInfo,
-						const int nTrack,
-						const int nQuarterTrack,
-						LPBYTE pTrackImage,
+						float phase,			// phase [0..79] +/- 0.5
+						LPBYTE pTrackImageBuffer,
 						const int nNibbles)
 {
-	_ASSERT(nTrack >= 0);
-	if (nTrack < 0)
-		return;
+	_ASSERT(phase >= 0);
+	if (phase < 0)
+		phase = 0;
+
+	const UINT track = pImageInfo->pImageType->PhaseToTrack(phase);
 
 	if (pImageInfo->pImageType->AllowRW() && !pImageInfo->bWriteProtected)
 	{
-		pImageInfo->pImageType->Write(pImageInfo, nTrack, nQuarterTrack, pTrackImage, nNibbles);
-		pImageInfo->ValidTrack[nTrack] = 1;
+		pImageInfo->pImageType->Write(pImageInfo, phase, pTrackImageBuffer, nNibbles);
+		pImageInfo->ValidTrack[track] = 1;
 	}
 }
 
@@ -219,7 +224,7 @@ bool ImageWriteBlock(	ImageInfo* const pImageInfo,
 
 //===========================================================================
 
-int ImageGetNumTracks(ImageInfo* const pImageInfo)
+UINT ImageGetNumTracks(ImageInfo* const pImageInfo)
 {
 	return pImageInfo ? pImageInfo->uNumTracks : 0;
 }
@@ -234,9 +239,9 @@ bool ImageIsMultiFileZip(ImageInfo* const pImageInfo)
 	return pImageInfo ? (pImageInfo->uNumEntriesInZip > 1) : false;
 }
 
-const char* ImageGetPathname(ImageInfo* const pImageInfo)
+const std::string & ImageGetPathname(ImageInfo* const pImageInfo)
 {
-	static const char* szEmpty = "";
+	static const std::string szEmpty;
 	return pImageInfo ? pImageInfo->szFilename : szEmpty;
 }
 
@@ -245,7 +250,34 @@ UINT ImageGetImageSize(ImageInfo* const pImageInfo)
 	return pImageInfo ? pImageInfo->uImageSize : 0;
 }
 
-void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName)
+bool ImageIsWOZ(ImageInfo* const pImageInfo)
+{
+	return pImageInfo ? (pImageInfo->pImageType->GetType() == eImageWOZ1 || pImageInfo->pImageType->GetType() == eImageWOZ2) : false;
+}
+
+BYTE ImageGetOptimalBitTiming(ImageInfo* const pImageInfo)
+{
+	return pImageInfo ? pImageInfo->optimalBitTiming : 32;
+}
+
+UINT ImagePhaseToTrack(ImageInfo* const pImageInfo, const float phase, const bool limit/*=true*/)
+{
+	if (!pImageInfo)
+		return 0;
+
+	UINT track = pImageInfo->pImageType->PhaseToTrack(phase);
+
+	if (limit)
+	{
+		const UINT numTracksInImage = ImageGetNumTracks(pImageInfo);
+		track = (numTracksInImage == 0) ? 0
+										: MIN(numTracksInImage - 1, track);
+	}
+
+	return track;
+}
+
+void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName)
 {
 	TCHAR   imagetitle[ MAX_DISK_FULL_NAME+1 ];
 	LPCTSTR startpos = pPathname;
@@ -272,8 +304,7 @@ void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName)
 		CharLowerBuff(imagetitle+1, _tcslen(imagetitle+1));
 
 	// pFullName = <FILENAME.EXT>
-	_tcsncpy( pFullName, imagetitle, MAX_DISK_FULL_NAME );
-	pFullName[ MAX_DISK_FULL_NAME ] = 0;
+	pFullName = imagetitle;
 
 	if (imagetitle[0])
 	{
@@ -285,6 +316,5 @@ void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName)
 	}
 
 	// pImageName = <FILENAME> (ie. no extension)
-	_tcsncpy( pImageName, imagetitle, MAX_DISK_IMAGE_NAME );
-	pImageName[ MAX_DISK_IMAGE_NAME ] = 0;
+	pImageName = imagetitle;
 }

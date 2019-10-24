@@ -8,6 +8,92 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.29.3.0 - 13 Oct 2019
+----------------------
+. [Change #692] Added command line switch to unplug HDD controller card on exit:
+	- -s7-empty-on-exit
+. [Change #689] Added command line switches to set CPU speed and machine type:
+	- -clock-multiplier <value>, where value is a [0.5-3.9] base-clock multiplier (ie. same as the Config UI's slider)
+	- -model <apple2|apple2p|apple2e|apple2ee>
+. [Change #666] Debugger: support showing video v,h and cycle count.
+	- added debugger command: videoinfo <dec|hex|apple|real> to configure display.
+	- added auto-run of DebuggerAutoRun.txt on AppleWin initial start-up.
+. [Bug #700] Fixed ProDOS8 2.5.0 alpha6:
+	- support INC $C08B (and similar) to set LC to write mode - 65C02 only.
+	- support INC $C08B,X (X=0) to set LC to write mode - 6502/65C02/816. (Fixes #404)
+. [Bug #695] Fixed WOZ 'Taipan' not booting.
+	- fixed reading write protect on a write access & support Sequencer Function.
+. [Bug #668] Fixed WOZ 'Seafox' not booting.
+	- set machine = Unenhanced Apple //e or lower & need slot2 empty.
+	- disable SSC in slot-2 using: '-s2 empty' command line switch.
+	- added '-s1 empty', '-s3 empty' and '-s6 empty' too.
+. [Bug #404] a2audit.dsk 1.06 now working. (See #700)
+. [Bug #319] SmartPort return address was wrong when crossing page (fix to slot-7 HDD's firmware).
+	- NB. Old save-states where the 6502's PC is in the old firmware now can't be loaded. (AppleWin will show an error)
+. [PR #687] Replace char * with std::string.
+
+
+1.29.2.0 - 6 Sep 2019
+---------------------
+. [Change #678] Hotkeys to change emulation speed:
+	- Ctrl-0 Toggles between custom speed and Full-Speed
+	- Ctrl-1 Sets 1 MHz
+	- Ctrl-3 Sets Full-Speed
+. [Change #671] Register .woz extension with AppleWin. Updated AppleWin.chm & DELREG.INF.
+. [Bug #685] Fixed support for French Touch's "CHIP" demo (Mockingboard / multi-TIMER interrupt support).
+. [Bug #677] Loading a save-state wasn't restoring the pending IRQ.
+. [Bug #672] For WOZ images: all even disk I/O read accesses will now read the data latch.
+. [Bug #650] NTSC TV (Color and B&W): image was half an Apple II scanline vertically shifted down.
+. [PR #674] Prevent uninitialized value bugs and improve string safety.
+
+
+1.29.1.0 - 27 Jul 2019
+----------------------
+. [Bug #662] Fixed WOZ 'Wizardry III' not booting.
+. [Bug #669] Fixed WOZ 'Space Quest I' not booting reliably.
+. [Bug #670] Fixed PAGE2 not displaying correctly when in full-speed mode (regression introduced at 1.28.8.0).
+
+
+1.29.0.0 - 8 Jul 2019
+---------------------
+. [Change #544] Support for .woz disk images.
+	- WOZ1 and WOZ2 formats supported.
+	- read-only: images forced to write-protected (so 'Stickybear Town Builder' doesn't work).
+	- only 5.25" (not 3.5").
+	- known issues: 'Wizardry III' not booting.
+
+
+1.28.8.0 - 28 Jun 2019
+----------------------
+. [Change #648] Support 50Hz(PAL) video refresh rate and implicitly PAL 1.016MHz.
+	- NB. TV video modes still use NTSC rendering.
+. [Bug #656] Fix for PAGE1/2 ($C054/55) not having a 1 cycle delay.
+
+
+1.28.7.0 - 15 Jun 2019
+----------------------
+. [Bug #654] Fix for Sather's "Little Text Window" not rendering correctly.
+. [Bug #652] Fix for 6522 TIMER1's period to be N+2 cycles.
+
+
+1.28.6.0 - 2 Jun 2019
+---------------------
+. [Bug #651] Cycle-accurate interrupts:
+	- Interrupts sources are checked after every opcode (full-speed after every 40 opcodes).
+	- 6522 TIMERs in free-running mode now account for the underflowed cycles when resetting the count.
+
+
+1.28.5.0 - 6 Apr 2019
+---------------------
+. [Change #631] Improvements for the RGB AppleColor card:
+	- Relax the video-mode precondition to just ignore if VF_MIXED (previously required HIRES on) for Apple II Desktop.
+	- Changing from DHGR B&W mode to HGR remains in B&W (color burst is off).
+	- For '50% scan lines', don't blend in NTSC B&W mode, as this was inconsistent with the RGB colour rendering.
+. [Change #633] Improvements for the RGB AppleColor card:
+	- Improved the video-mode precondition to ignore if 80COL ($C00C/D) occurs before DHIRESON ($C05F) for Renegade.
+	- Support new switch -rgb-card-invert-bit7 to invert bit7 for Dragon Wars.
+
+
 1.28.4.0 - 16 Mar 2019
 ----------------------
 . [Change #616] Improved accuracy for 'RGB (Color Monitor)' for hires.
@@ -51,7 +137,7 @@ Tom Charlesworth
 	- Any v1 save-state files should be loaded into AppleWin 1.27, and then re-saved to a v2 save-state file.
 . [Change #597] Removed the functionality for CTRL+F10 to reveal the mouse cursor.
 . [Change #585] Added a 'Swap' HDD button to the Configuration->Input property sheet.
-. [Bug #608] Mockingboard's 6522 TIMER1 wasn't generating an interrupt quickly enough for Broadside's detection routine.
+. [Bug #608,#236] Mockingboard's 6522 TIMER1 wasn't generating an interrupt quickly enough for detection routines for Broadside and Ultima III Jukebox.
 
 
 1.27.13.0 - 8 Dec 2018

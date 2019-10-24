@@ -30,4 +30,4 @@ void    JoyLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
 BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
-BYTE __stdcall JoyResetPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+void JoyResetPosition(ULONG nExecutedCycles);

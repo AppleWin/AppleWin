@@ -12,6 +12,7 @@
 #define  MF_SLOTC3ROM  0x00000100
 #define  MF_INTCXROM   0x00000200
 #define  MF_WRITERAM   0x00000400   // Language Card RAM is Write Enabled
+#define  MF_IOUDIS     0x00000800	// Disable IOU access for addresses $C058 to $C05F; enable access to DHIRES switch (0=on) (Enhanced //e only)
 #define  MF_IMAGEMASK  0x000003F7
 #define  MF_LANGCARD_MASK	(MF_WRITERAM|MF_HIGHRAM|MF_BANK2)
 
@@ -79,11 +80,12 @@ void    MemReset ();
 void    MemResetPaging ();
 void    MemUpdatePaging(BOOL initialize);
 LPVOID	MemGetSlotParameters (UINT uSlot);
+bool    MemGetAnnunciator(UINT annunciator);
 std::string MemGetSnapshotUnitAuxSlotName(void);
 void    MemSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-bool    MemLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
+bool    MemLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT unitVersion);
 void    MemSaveSnapshotAux(class YamlSaveHelper& yamlSaveHelper);
-bool    MemLoadSnapshotAux(class YamlLoadHelper& yamlLoadHelper, UINT version);
+bool    MemLoadSnapshotAux(class YamlLoadHelper& yamlLoadHelper, UINT unitVersion);
 
 BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 

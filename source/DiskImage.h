@@ -65,21 +65,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 struct ImageInfo;
 
-ImageError_e ImageOpen(LPCTSTR pszImageFilename, ImageInfo** ppImageInfo, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true);
+ImageError_e ImageOpen(const std::string & pszImageFilename, ImageInfo** ppImageInfo, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true);
 void ImageClose(ImageInfo* const pImageInfo, const bool bOpenError=false);
 BOOL ImageBoot(ImageInfo* const pImageInfo);
 void ImageDestroy(void);
 void ImageInitialize(void);
 
-void ImageReadTrack(ImageInfo* const pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImageBuffer, int* pNibbles);
-void ImageWriteTrack(ImageInfo* const pImageInfo, int nTrack, int nQuarterTrack, LPBYTE pTrackImage, int nNibbles);
+void ImageReadTrack(ImageInfo* const pImageInfo, float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk);
+void ImageWriteTrack(ImageInfo* const pImageInfo, float phase, LPBYTE pTrackImageBuffer, int nNibbles);
 bool ImageReadBlock(ImageInfo* const pImageInfo, UINT nBlock, LPBYTE pBlockBuffer);
 bool ImageWriteBlock(ImageInfo* const pImageInfo, UINT nBlock, LPBYTE pBlockBuffer);
 
-int ImageGetNumTracks(ImageInfo* const pImageInfo);
+UINT ImageGetNumTracks(ImageInfo* const pImageInfo);
 bool ImageIsWriteProtected(ImageInfo* const pImageInfo);
 bool ImageIsMultiFileZip(ImageInfo* const pImageInfo);
-const char* ImageGetPathname(ImageInfo* const pImageInfo);
+const std::string & ImageGetPathname(ImageInfo* const pImageInfo);
 UINT ImageGetImageSize(ImageInfo* const pImageInfo);
+bool ImageIsWOZ(ImageInfo* const pImageInfo);
+BYTE ImageGetOptimalBitTiming(ImageInfo* const pImageInfo);
+UINT ImagePhaseToTrack(ImageInfo* const pImageInfo, const float phase, const bool limit=true);
 
-void GetImageTitle(LPCTSTR pPathname, TCHAR* pImageName, TCHAR* pFullName);
+void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName);

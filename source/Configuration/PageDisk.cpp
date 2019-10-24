@@ -121,7 +121,7 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 		case IDC_CIDERPRESS_BROWSE:
 			{
 				std::string CiderPressLoc = m_PropertySheetHelper.BrowseToFile(hWnd, TEXT("Select path to CiderPress"), REGVALUE_CIDERPRESSLOC, TEXT("Applications (*.exe)\0*.exe\0") TEXT("All Files\0*.*\0") );
-				RegSaveString(TEXT(REG_CONFIG), REGVALUE_CIDERPRESSLOC, 1, CiderPressLoc.c_str());
+				RegSaveString(TEXT(REG_CONFIG), REGVALUE_CIDERPRESSLOC, 1, CiderPressLoc);
 				SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM) CiderPressLoc.c_str());
 			}
 			break;
@@ -130,26 +130,26 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 
 	case WM_INITDIALOG:
 		{
-			m_PropertySheetHelper.FillComboBox(hWnd, IDC_DISKTYPE, m_discchoices, Disk_GetEnhanceDisk() ? 1 : 0);
+			m_PropertySheetHelper.FillComboBox(hWnd, IDC_DISKTYPE, m_discchoices, sg_Disk2Card.GetEnhanceDisk() ? 1 : 0);
 			m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_DISK1, m_defaultDiskOptions, -1);
 			m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_DISK2, m_defaultDiskOptions, -1);
 
-			if (strlen(DiskGetFullName(DRIVE_1)) > 0)
+			if (!sg_Disk2Card.GetFullName(DRIVE_1).empty())
 			{
-				SendDlgItemMessage(hWnd, IDC_COMBO_DISK1, CB_INSERTSTRING, 0, (LPARAM)DiskGetFullName(DRIVE_1));
+				SendDlgItemMessage(hWnd, IDC_COMBO_DISK1, CB_INSERTSTRING, 0, (LPARAM)sg_Disk2Card.GetFullName(DRIVE_1).c_str());
 				SendDlgItemMessage(hWnd, IDC_COMBO_DISK1, CB_SETCURSEL, 0, 0);
 			}
 
-			if (strlen(DiskGetFullName(DRIVE_2)) > 0)
+			if (!sg_Disk2Card.GetFullName(DRIVE_2).empty())
 			{ 
-				SendDlgItemMessage(hWnd, IDC_COMBO_DISK2, CB_INSERTSTRING, 0, (LPARAM)DiskGetFullName(DRIVE_2));
+				SendDlgItemMessage(hWnd, IDC_COMBO_DISK2, CB_INSERTSTRING, 0, (LPARAM)sg_Disk2Card.GetFullName(DRIVE_2).c_str());
 				SendDlgItemMessage(hWnd, IDC_COMBO_DISK2, CB_SETCURSEL, 0, 0);
 			}
 
 			InitComboHDD(hWnd);
 
-			TCHAR PathToCiderPress[MAX_PATH] = "";
-			RegLoadString(TEXT(REG_CONFIG), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress,MAX_PATH);
+			TCHAR PathToCiderPress[MAX_PATH];
+			RegLoadString(TEXT(REG_CONFIG), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress, MAX_PATH, TEXT(""));
 			SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME ,WM_SETTEXT, 0, (LPARAM)PathToCiderPress);
 
 			CheckDlgButton(hWnd, IDC_HDD_ENABLE, HD_CardIsEnabled() ? BST_CHECKED : BST_UNCHECKED);
@@ -171,15 +171,15 @@ void CPageDisk::InitComboHDD(HWND hWnd)
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_HDD1, m_defaultHDDOptions, -1);
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_HDD2, m_defaultHDDOptions, -1);
 
-	if (strlen(HD_GetFullName(HARDDISK_1)) > 0)
+	if (!HD_GetFullName(HARDDISK_1).empty())
 	{
-		SendDlgItemMessage(hWnd, IDC_COMBO_HDD1, CB_INSERTSTRING, 0, (LPARAM)HD_GetFullName(HARDDISK_1));
+		SendDlgItemMessage(hWnd, IDC_COMBO_HDD1, CB_INSERTSTRING, 0, (LPARAM)HD_GetFullName(HARDDISK_1).c_str());
 		SendDlgItemMessage(hWnd, IDC_COMBO_HDD1, CB_SETCURSEL, 0, 0);
 	}
 
-	if (strlen(HD_GetFullName(HARDDISK_2)) > 0)
+	if (!HD_GetFullName(HARDDISK_2).empty())
 	{
-		SendDlgItemMessage(hWnd, IDC_COMBO_HDD2, CB_INSERTSTRING, 0, (LPARAM)HD_GetFullName(HARDDISK_2));
+		SendDlgItemMessage(hWnd, IDC_COMBO_HDD2, CB_INSERTSTRING, 0, (LPARAM)HD_GetFullName(HARDDISK_2).c_str());
 		SendDlgItemMessage(hWnd, IDC_COMBO_HDD2, CB_SETCURSEL, 0, 0);
 	}
 }
@@ -187,9 +187,9 @@ void CPageDisk::InitComboHDD(HWND hWnd)
 void CPageDisk::DlgOK(HWND hWnd)
 {
 	const bool bNewEnhanceDisk = SendDlgItemMessage(hWnd, IDC_DISKTYPE,CB_GETCURSEL, 0, 0) ? true : false;
-	if (bNewEnhanceDisk != Disk_GetEnhanceDisk())
+	if (bNewEnhanceDisk != sg_Disk2Card.GetEnhanceDisk())
 	{
-		Disk_SetEnhanceDisk(bNewEnhanceDisk);
+		sg_Disk2Card.SetEnhanceDisk(bNewEnhanceDisk);
 		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (DWORD)bNewEnhanceDisk);
 	}
 
@@ -255,13 +255,13 @@ void CPageDisk::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected
 			SendDlgItemMessage(hWnd, comboSelected, CB_DELETESTRING, 0, 0);
 		}
 
-		SendDlgItemMessage(hWnd, comboSelected, CB_INSERTSTRING, 0, (LPARAM)HD_GetFullName(driveSelected));
+		SendDlgItemMessage(hWnd, comboSelected, CB_INSERTSTRING, 0, (LPARAM)HD_GetFullName(driveSelected).c_str());
 		SendDlgItemMessage(hWnd, comboSelected, CB_SETCURSEL, 0, 0);
 
 		// If the HD was in the other combo, remove now
 		DWORD comboOther = (comboSelected == IDC_COMBO_HDD1) ? IDC_COMBO_HDD2 : IDC_COMBO_HDD1;
 
-		DWORD duplicated = (DWORD)SendDlgItemMessage(hWnd, comboOther, CB_FINDSTRINGEXACT, -1, (LPARAM)HD_GetFullName(driveSelected));
+		DWORD duplicated = (DWORD)SendDlgItemMessage(hWnd, comboOther, CB_FINDSTRINGEXACT, -1, (LPARAM)HD_GetFullName(driveSelected).c_str());
 		if (duplicated != CB_ERR)
 		{
 			SendDlgItemMessage(hWnd, comboOther, CB_DELETESTRING, duplicated, 0);
@@ -299,7 +299,7 @@ void CPageDisk::HandleDiskCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 	if (dwComboSelection == dwOpenDialogIndex)
 	{
 		EnableDisk(hWnd, FALSE);	// Prevent multiple Selection dialogs to be triggered
-		bool bRes = DiskSelect(driveSelected);
+		bool bRes = sg_Disk2Card.UserSelectNewDiskImage(driveSelected);
 		EnableDisk(hWnd, TRUE);
 
 		if (!bRes)
@@ -316,13 +316,13 @@ void CPageDisk::HandleDiskCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 			SendDlgItemMessage(hWnd, comboSelected, CB_DELETESTRING, 0, 0);
 		}
 
-		SendDlgItemMessage(hWnd, comboSelected, CB_INSERTSTRING, 0, (LPARAM)DiskGetFullName(driveSelected));
+		SendDlgItemMessage(hWnd, comboSelected, CB_INSERTSTRING, 0, (LPARAM)sg_Disk2Card.GetFullName(driveSelected).c_str());
 		SendDlgItemMessage(hWnd, comboSelected, CB_SETCURSEL, 0, 0);
 
 		// If the FD was in the other combo, remove now
 		DWORD comboOther = (comboSelected == IDC_COMBO_DISK1) ? IDC_COMBO_DISK2 : IDC_COMBO_DISK1;
 
-		DWORD duplicated = (DWORD)SendDlgItemMessage(hWnd, comboOther, CB_FINDSTRINGEXACT, -1, (LPARAM)DiskGetFullName(driveSelected));
+		DWORD duplicated = (DWORD)SendDlgItemMessage(hWnd, comboOther, CB_FINDSTRINGEXACT, -1, (LPARAM)sg_Disk2Card.GetFullName(driveSelected).c_str());
 		if (duplicated != CB_ERR)
 		{
 			SendDlgItemMessage(hWnd, comboOther, CB_DELETESTRING, duplicated, 0);
@@ -337,7 +337,7 @@ void CPageDisk::HandleDiskCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 			if (RemovalConfirmation(uCommand))
 			{
 				// Eject selected disk
-				DiskEject(driveSelected);
+				sg_Disk2Card.EjectDisk(driveSelected);
 				// Remove drive from list
 				SendDlgItemMessage(hWnd, comboSelected, CB_DELETESTRING, 0, 0);
 			}
@@ -363,19 +363,16 @@ void CPageDisk::HandleHDDSwap(HWND hWnd)
 UINT CPageDisk::RemovalConfirmation(UINT uCommand)
 {
 	TCHAR szText[100];
-	const size_t strLen = sizeof(szText)-1;
 	bool bMsgBox = true;
 
 	if (uCommand == IDC_COMBO_DISK1 || uCommand == IDC_COMBO_DISK2)
-		_snprintf(szText, strLen, "Do you really want to eject the disk in drive-%c ?", '1' + uCommand - IDC_COMBO_DISK1);
+		StringCbPrintf(szText, sizeof(szText), "Do you really want to eject the disk in drive-%c ?", '1' + uCommand - IDC_COMBO_DISK1);
 	else if (uCommand == IDC_COMBO_HDD1 || uCommand == IDC_COMBO_HDD2)
-		_snprintf(szText, strLen, "Do you really want to unplug harddisk-%c ?", '1' + uCommand - IDC_COMBO_HDD1);
+		StringCbPrintf(szText, sizeof(szText), "Do you really want to unplug harddisk-%c ?", '1' + uCommand - IDC_COMBO_HDD1);
 	else if (uCommand == IDC_HDD_SWAP)
-		_snprintf(szText, strLen, "Do you really want to swap the harddisk images?");
+		StringCbPrintf(szText, sizeof(szText), "Do you really want to swap the harddisk images?");
 	else
 		bMsgBox = false;
-
-	szText[strLen] = 0;
 
 	if (bMsgBox)
 	{

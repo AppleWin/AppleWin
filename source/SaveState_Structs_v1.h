@@ -92,7 +92,7 @@ struct DISK2_Unit
 	DWORD	spinning;
 	DWORD	writelight;
 	int		nibbles;
-	BYTE	nTrack[NIBBLES_PER_TRACK];
+	BYTE	nTrack[NIBBLES_PER_TRACK_NIB];
 };
 
 struct SS_CARD_DISK2

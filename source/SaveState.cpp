@@ -64,12 +64,17 @@ static YamlHelper yamlHelper;
 
 #define SS_FILE_VER 2
 
-#define UNIT_APPLE2_VER 2
+// Unit version history:
+// v2: Extended: keyboard (added 'Key Waiting'), memory (LC mem type for II/II+, inverted MF_INTCXROM bit)
+// v3: Extended: memory (added 'AnnunciatorN')
+// v4: Extended: video (added 'Video Refresh Rate')
+#define UNIT_APPLE2_VER 4
+
 #define UNIT_SLOTS_VER 1
 
 //-----------------------------------------------------------------------------
 
-void Snapshot_SetFilename(std::string strPathname)
+void Snapshot_SetFilename(const std::string & strPathname)
 {
 	if (strPathname.empty())
 	{
@@ -99,14 +104,14 @@ void Snapshot_SetFilename(std::string strPathname)
 	g_strSaveStatePathname = strPathname;
 }
 
-const char* Snapshot_GetFilename()
+const std::string & Snapshot_GetFilename()
 {
-	return g_strSaveStateFilename.c_str();
+	return g_strSaveStateFilename;
 }
 
-const char* Snapshot_GetPath()
+const std::string & Snapshot_GetPath()
 {
-	return g_strSaveStatePath.c_str();
+	return g_strSaveStatePath;
 }
 
 //-----------------------------------------------------------------------------
@@ -215,7 +220,7 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	JoyLoadSnapshot(yamlLoadHelper);
 	KeybLoadSnapshot(yamlLoadHelper, version);
 	SpkrLoadSnapshot(yamlLoadHelper);
-	VideoLoadSnapshot(yamlLoadHelper);
+	VideoLoadSnapshot(yamlLoadHelper, version);
 	MemLoadSnapshot(yamlLoadHelper, version);
 
 	// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
@@ -282,9 +287,9 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			bRes = Phasor_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_Phasor;
 		}
-		else if (card == DiskGetSnapshotCardName())
+		else if (card == sg_Disk2Card.GetSnapshotCardName())
 		{
-			bRes = DiskLoadSnapshot(yamlLoadHelper, slot, cardVersion);
+			bRes = sg_Disk2Card.LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_Disk2;
 		}
 		else if (card == HD_GetSnapshotCardName())
@@ -387,10 +392,11 @@ static void Snapshot_LoadState_v2(void)
 
 		MemReset();
 		PravetsReset();
-		DiskReset();
+		sg_Disk2Card.Reset();
 		HD_Reset();
 		KeybReset();
 		VideoResetState();
+		SetVideoRefreshRate(VR_60HZ);		// Default to 60Hz as older save-states won't contain refresh rate
 		MB_InitializeForLoadingSnapshot();	// GH#609
 		sg_SSC.CommReset();
 #ifdef USE_SPEECH_API
@@ -416,7 +422,7 @@ static void Snapshot_LoadState_v2(void)
 		// . A change in h/w via loading a save-state avoids this VM restart
 		// The latter is the desired approach (as the former needs a "power-on" / F2 to start things again)
 
-		sg_PropertySheet.ApplyNewConfig(m_ConfigNew, ConfigOld);
+		sg_PropertySheet.ApplyNewConfig(m_ConfigNew, ConfigOld);	// Mainly just saves (some) new state to Registry
 
 		MemInitializeROM();
 		MemInitializeCustomF8ROM();
@@ -491,31 +497,37 @@ void Snapshot_SaveState(void)
 			yamlSaveHelper.UnitHdr(GetSnapshotUnitSlotsName(), UNIT_SLOTS_VER);
 			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-			if (g_Slot0 != CT_Empty && IsApple2PlusOrClone(GetApple2Type()))
+			if (g_Slot[0] != CT_Empty && IsApple2PlusOrClone(GetApple2Type()))
 				GetLanguageCard()->SaveSnapshot(yamlSaveHelper);	// Language Card or Saturn 128K
 
-			Printer_SaveSnapshot(yamlSaveHelper);
+			if (g_Slot[1] == CT_GenericPrinter)
+				Printer_SaveSnapshot(yamlSaveHelper);
 
-			sg_SSC.SaveSnapshot(yamlSaveHelper);
+			if (g_Slot[2] == CT_SSC)
+				sg_SSC.SaveSnapshot(yamlSaveHelper);
+
+//			if (g_Slot[3] == CT_Uthernet)
+//				sg_Uthernet.SaveSnapshot(yamlSaveHelper);
 
 			sg_Mouse.SaveSnapshot(yamlSaveHelper);
 
-			if (g_Slot4 == CT_Z80)
+			if (g_Slot[4] == CT_Z80)
 				Z80_SaveSnapshot(yamlSaveHelper, 4);
 
-			if (g_Slot5 == CT_Z80)
+			if (g_Slot[5] == CT_Z80)
 				Z80_SaveSnapshot(yamlSaveHelper, 5);
 
-			if (g_Slot4 == CT_MockingboardC)
+			if (g_Slot[4] == CT_MockingboardC)
 				MB_SaveSnapshot(yamlSaveHelper, 4);
 
-			if (g_Slot5 == CT_MockingboardC)
+			if (g_Slot[5] == CT_MockingboardC)
 				MB_SaveSnapshot(yamlSaveHelper, 5);
 
-			if (g_Slot4 == CT_Phasor)
+			if (g_Slot[4] == CT_Phasor)
 				Phasor_SaveSnapshot(yamlSaveHelper, 4);
 
-			DiskSaveSnapshot(yamlSaveHelper);
+			if (g_Slot[6] == CT_Disk2)
+				sg_Disk2Card.SaveSnapshot(yamlSaveHelper);
 
 			HD_SaveSnapshot(yamlSaveHelper);
 		}

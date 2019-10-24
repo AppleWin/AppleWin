@@ -29,6 +29,13 @@
 //		VS_TEXT_OPTIMIZED=4,
 	};
 
+	enum VideoRefreshRate_e
+	{
+		VR_NONE,
+		VR_50HZ,
+		VR_60HZ
+	};
+
 	enum VideoFlag_e
 	{
 		VF_80COL  = 0x00000001,
@@ -193,12 +200,12 @@ bool    VideoGetSWTEXT(void);
 bool    VideoGetSWAltCharSet(void);
 
 void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
+void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
 
 extern bool g_bDisplayPrintScreenFileName;
 extern bool g_bShowPrintScreenWarningDialog;
 
-void Video_ResetScreenshotCounter( char *pDiskImageFileName );
+void Video_ResetScreenshotCounter( const std::string & pDiskImageFileName );
 enum VideoScreenShot_e
 {
 	SCREENSHOT_560x384 = 0,
@@ -226,3 +233,9 @@ void SetVideoType(VideoType_e newVideoType);
 VideoStyle_e GetVideoStyle(void);
 void SetVideoStyle(VideoStyle_e newVideoStyle);
 bool IsVideoStyle(VideoStyle_e mask);
+
+VideoRefreshRate_e GetVideoRefreshRate(void);
+void SetVideoRefreshRate(VideoRefreshRate_e rate);
+
+bool DDInit(void);
+void DDUninit(void);

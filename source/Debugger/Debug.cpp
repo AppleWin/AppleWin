@@ -62,7 +62,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	Bookmark_t g_aBookmarks[ MAX_BOOKMARKS ];
 
 // Breakpoints ________________________________________________________________
-
 	// Any Speed Breakpoints
 	int  g_nDebugBreakOnInvalid  = 0; // Bit Flags of Invalid Opcode to break on: // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
 	int  g_iDebugBreakOnOpcode   = 0;
@@ -72,7 +71,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int  g_nBreakpoints          = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
-	// NOTE: Breakpoint_Source_t and g_aBreakpointSource must match!
+	// NOTE: BreakpointSource_t and g_aBreakpointSource must match!
 	const char *g_aBreakpointSource[ NUM_BREAKPOINT_SOURCES ] =
 	{	// Used to be one char, since ArgsCook also uses // TODO/FIXME: Parser use Param[] ?
 		// Used for both Input & Output!
@@ -95,8 +94,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"N", // 1--- ---- Sign
 		// Misc
 		"OP", // Opcode/Instruction/Mnemonic
-		// Memory
-		"M" // Main
+		"M", // Mem RW
+		"M", // Mem READ_ONLY
+		"M", // Mem WRITE_ONLY
 		// TODO: M0 ram bank 0, M1 aux ram ?
 	};
 
@@ -225,7 +225,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	ProfileOpmode_t g_aProfileOpmodes[ NUM_OPMODES ];
 	unsigned __int64 g_nProfileBeginCycles = 0; // g_nCumulativeCycles // PROFILE RESET
 
-	TCHAR g_FileNameProfile[] = TEXT("Profile.txt"); // changed from .csv to .txt since Excel doesn't give import options.
+	const std::string g_FileNameProfile = TEXT("Profile.txt"); // changed from .csv to .txt since Excel doesn't give import options.
 	int   g_nProfileLine = 0;
 	char  g_aProfileLine[ NUM_PROFILE_LINES ][ CONSOLE_WIDTH ];
 
@@ -245,7 +245,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool  g_bSourceAddSymbols     = false;
 	bool  g_bSourceAddMemory      = false;
 
-	char   g_aSourceFileName[ MAX_PATH ] = "";
+	std::string g_aSourceFileName;
 
 	MemoryTextFile_t g_AssemblerSourceBuffer;
 
@@ -285,7 +285,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Misc. __________________________________________________________________________________________
 
-	char      g_sFileNameConfig     [] = 
+	std::string g_sFileNameConfig     =
 #ifdef MSDOS
 		"AWDEBUGR.CFG";
 #else
@@ -333,11 +333,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int  _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint=false );
 	void _BWZ_Clear( Breakpoint_t * aBreakWatchZero, int iSlot );
 
-// Config - Colors
-	static	void _ConfigColorsReset ( BYTE *pPalDst = 0 );
-
 // Config - Save
-	bool ConfigSave_BufferToDisk ( char *pFileName, ConfigSave_t eConfigSave );
+	bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave );
 	void ConfigSave_PrepareHeader ( const Parameters_e eCategory, const Commands_e eCommandClear );
 
 // Drawing
@@ -347,7 +344,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	void _UpdateWindowFontHeights (int nFontHeight);
 
 // Source Level Debugging
-	static	bool BufferAssemblyListing ( char * pFileName );
+	static	bool BufferAssemblyListing ( const std::string & pFileName );
 	static	bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols );
 
 
@@ -1090,11 +1087,11 @@ bool _CheckBreakpointValue( Breakpoint_t *pBP, int nVal )
 				bStatus = true;
 			break;
 		case BP_OP_EQUAL        : // Range is like C++ STL: [,)  (inclusive,not-inclusive)
-			 if ((nVal >= pBP->nAddress) && (nVal < (pBP->nAddress + pBP->nLength)))
+			 if ((nVal >= pBP->nAddress) && ((UINT)nVal < (pBP->nAddress + pBP->nLength)))
 			 	bStatus = true;
 			break;
 		case BP_OP_NOT_EQUAL    : // Rnage is: (,] (not-inclusive, inclusive)
-			 if ((nVal < pBP->nAddress) || (nVal >= (pBP->nAddress + pBP->nLength)))
+			 if ((nVal < pBP->nAddress) || ((UINT)nVal >= (pBP->nAddress + pBP->nLength)))
 			 	bStatus = true;
 			break;
 		case BP_OP_GREATER_THAN :
@@ -1144,12 +1141,31 @@ int CheckBreakpointsIO ()
 					Breakpoint_t *pBP = &g_aBreakpoints[iBreakpoint];
 					if (_BreakpointValid( pBP ))
 					{
-						if (pBP->eSource == BP_SRC_MEM_1)
+						if (pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_READ_ONLY || pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
 								g_uBreakMemoryAddress = (WORD) nAddress;
-								return BP_HIT_MEM;
+								BYTE opcode = mem[regs.pc];
+
+								if (pBP->eSource == BP_SRC_MEM_RW)
+								{
+									return BP_HIT_MEM;
+								}
+								else if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
+								{
+									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_RI|MEM_R))
+										return BP_HIT_MEMR;
+								}
+								else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
+								{
+									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_WI|MEM_W))
+										return BP_HIT_MEMW;
+								}
+								else
+								{
+									_ASSERT(0);
+								}
 							}
 						}
 					}
@@ -1338,6 +1354,9 @@ bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoin
 
 	if (pBP)
 	{
+		_ASSERT(nLen <= _6502_MEM_LEN);
+		if (nLen > _6502_MEM_LEN) nLen = _6502_MEM_LEN;
+
 		pBP->eSource   = iSrc;
 		pBP->eOperator = iCmp;
 		pBP->nAddress  = nAddress;
@@ -1473,12 +1492,26 @@ Update_t CmdBreakpointAddIO   (int nArgs)
 //	return UPDATE_BREAKPOINTS | UPDATE_CONSOLE_DISPLAY;
 }
 
-
 //===========================================================================
-Update_t CmdBreakpointAddMem  (int nArgs)
+Update_t CmdBreakpointAddMemA(int nArgs)
 {
-	BreakpointSource_t   iSrc = BP_SRC_MEM_1;
-	BreakpointOperator_t iCmp = BP_OP_EQUAL  ;
+	return CmdBreakpointAddMem(nArgs);
+}
+//===========================================================================
+Update_t CmdBreakpointAddMemR(int nArgs)
+{
+	return CmdBreakpointAddMem(nArgs, BP_SRC_MEM_READ_ONLY);
+}
+//===========================================================================
+Update_t CmdBreakpointAddMemW(int nArgs)
+{
+	return CmdBreakpointAddMem(nArgs, BP_SRC_MEM_WRITE_ONLY);
+}
+//===========================================================================
+Update_t CmdBreakpointAddMem  (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM_RW*/)
+{
+	BreakpointSource_t   iSrc = bpSrc;
+	BreakpointOperator_t iCmp = BP_OP_EQUAL;
 
 	int iArg = 0;
 	
@@ -1650,11 +1683,16 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 		pSymbol = sName;
 	}
 
-	ConsoleBufferPushFormat( sText, "  #%d %c %04X %s",
+	char cBPM = aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_READ_ONLY ? 'R'
+				: aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_WRITE_ONLY ? 'W'
+				: ' ';
+
+	ConsoleBufferPushFormat( sText, "  #%d %c %04X %c %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
 		sFlags[ (int) aBreakWatchZero[ iBWZ ].bEnabled ],
 		aBreakWatchZero[ iBWZ ].nAddress,
+		cBPM,
 		pSymbol
 	);
 }
@@ -2024,31 +2062,29 @@ Update_t CmdTraceFile (int nArgs)
 	}
 	else
 	{
-		char sFileName[MAX_PATH];
+		std::string sFileName;
 
 		if (nArgs)
-			strcpy( sFileName, g_aArgs[1].sArg );
+			sFileName = g_aArgs[1].sArg;
 		else
-			strcpy( sFileName, g_sFileNameTrace );
+			sFileName = g_sFileNameTrace;
 
 		g_bTraceFileWithVideoScanner = (nArgs >= 2);
 
-		char sFilePath[ MAX_PATH ];
-		strcpy(sFilePath, g_sCurrentDir); // TODO: g_sDebugDir
-		strcat(sFilePath, sFileName );
+		const std::string sFilePath = g_sCurrentDir + sFileName;
 
-		g_hTraceFile = fopen( sFilePath, "wt" );
+		g_hTraceFile = fopen( sFilePath.c_str(), "wt" );
 
 		if (g_hTraceFile)
 		{
 			const char* pTextHdr = g_bTraceFileWithVideoScanner ? "Trace (with video info) started: %s"
 																: "Trace started: %s";
-			ConsoleBufferPushFormat( sText, pTextHdr, sFilePath );
+			ConsoleBufferPushFormat( sText, pTextHdr, sFilePath.c_str() );
 			g_bTraceHeader = true;
 		}
 		else
 		{
-			ConsoleBufferPushFormat( sText, "Trace ERROR: %s", sFilePath );
+			ConsoleBufferPushFormat( sText, "Trace ERROR: %s", sFilePath.c_str() );
 		}
 	}
 
@@ -2241,7 +2277,7 @@ Update_t CmdConfigColorMono (int nArgs)
 	{
 		if (iParam == PARAM_RESET)
 		{
-			_ConfigColorsReset();
+			ConfigColorsReset();
 			ConsoleBufferPush( TEXT(" Resetting colors." ) );
 		}
 		else
@@ -2324,7 +2360,7 @@ Update_t CmdConfigLoad (int nArgs)
 
 
 //===========================================================================
-bool ConfigSave_BufferToDisk ( char *pFileName, ConfigSave_t eConfigSave )
+bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave )
 {
 	bool bStatus = false;
 
@@ -2337,10 +2373,7 @@ bool ConfigSave_BufferToDisk ( char *pFileName, ConfigSave_t eConfigSave )
 	if (eConfigSave == CONFIG_SAVE_FILE_APPEND)
 		pMode = sModeAppend;
 
-	char sFileName[ MAX_PATH ];
-
-	_tcscpy(sFileName, g_sCurrentDir); // TODO: g_sDebugDir
-	_tcscat(sFileName, pFileName    );
+	const std::string sFileName = g_sCurrentDir + pFileName; // TODO: g_sDebugDir
 
 	FILE *hFile = fopen( pFileName, pMode );
 
@@ -2394,9 +2427,7 @@ void ConfigSave_PrepareHeader ( const Parameters_e eCategory, const Commands_e e
 //===========================================================================
 Update_t CmdConfigSave (int nArgs)
 {
-	TCHAR sFilename[ MAX_PATH ];
-	_tcscpy( sFilename, g_sProgramDir ); // TODO: g_sDebugDir
-	_tcscat( sFilename, g_sFileNameConfig );
+	const std::string sFilename = g_sProgramDir + g_sFileNameConfig;
 
 /*
 	HANDLE hFile = CreateFile( sfilename,
@@ -3727,15 +3758,16 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs > 2)
 			goto _Help;
 
-		int drive = DiskGetCurrentDrive() + 1;
 		char buffer[200] = "";
-		ConsoleBufferPushFormat(buffer, "D%d at T$%X (%d), phase $%X, offset $%X, %s",
-			drive,
-			DiskGetCurrentTrack(),
-			DiskGetCurrentTrack(),
-			DiskGetCurrentPhase(),
-			DiskGetCurrentOffset(),
-			DiskGetCurrentState());
+		ConsoleBufferPushFormat(buffer, "D%d at T$%s, phase $%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
+			sg_Disk2Card.GetCurrentDrive() + 1,
+			sg_Disk2Card.GetCurrentTrackString().c_str(),
+			sg_Disk2Card.GetCurrentPhaseString().c_str(),
+			sg_Disk2Card.GetCurrentOffset(),
+			sg_Disk2Card.GetCurrentLSSBitMask(),
+			sg_Disk2Card.GetCurrentExtraCycles(),
+			sg_Disk2Card.GetCurrentState()
+		);
 
 		return ConsoleUpdate();
 	}
@@ -3762,7 +3794,7 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs > 2)
 			goto _Help;
 
-		DiskEject( iDrive );
+		sg_Disk2Card.EjectDisk( iDrive );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
@@ -3776,7 +3808,7 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs == 3)
 			bProtect = g_aArgs[ 3 ].nValue ? true : false;
 
-		DiskSetProtect( iDrive, bProtect );
+		sg_Disk2Card.SetProtect( iDrive, bProtect );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
@@ -3787,7 +3819,7 @@ Update_t CmdDisk ( int nArgs)
 		LPCTSTR pDiskName = g_aArgs[ 3 ].sArg;
 
 		// DISK # "Diskname"
-		DiskInsert( iDrive, pDiskName, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE );
+		sg_Disk2Card.InsertDisk( iDrive, pDiskName, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 
@@ -4107,7 +4139,7 @@ Update_t CmdMemoryFill (int nArgs)
 }
 
 
-static TCHAR g_sMemoryLoadSaveFileName[ MAX_PATH ] = TEXT("");
+static std::string g_sMemoryLoadSaveFileName;
 
 
 // "PWD"
@@ -4119,7 +4151,7 @@ Update_t CmdConfigGetDebugDir (int nArgs)
 
 	TCHAR sPath[ MAX_PATH + 8 ];
 	// TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
-	ConsoleBufferPushFormat( sPath, "Path: %s", g_sCurrentDir );
+	ConsoleBufferPushFormat( sPath, "Path: %s", g_sCurrentDir.c_str() );
 
 	return ConsoleUpdate();
 }
@@ -4141,30 +4173,27 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 	if (strncmp("\\\\?\\", g_aArgs[1].sArg, 4) == 0)
 		return Help_Arg_1( CMD_CONFIG_SET_DEBUG_DIR );
 
-	TCHAR sPath[ MAX_PATH + 1 ];
+	std::string sPath;
 
 	if (g_aArgs[1].sArg[1] == ':')			// Absolute
 	{
-		_tcscpy( sPath, g_aArgs[1].sArg );
+		sPath = g_aArgs[1].sArg;
 	}
 	else if (g_aArgs[1].sArg[0] == '\\')	// Absolute
 	{
 		if (g_sCurrentDir[1] == ':')
 		{
-			_tcsncpy( sPath, g_sCurrentDir, 2 );	// Prefix with drive letter & colon
-			sPath[2] = 0;
-			_tcscat( sPath, g_aArgs[1].sArg );
+			sPath = g_sCurrentDir.substr(0, 2) + g_aArgs[1].sArg;	// Prefix with drive letter & colon
 		}
 		else
 		{
-			_tcscpy( sPath, g_aArgs[1].sArg );
+			sPath = g_aArgs[1].sArg;
 		}
 	}
 	else									// Relative
 	{
 		// TODO: Support ".." - currently just appends (which still works)
-		_tcscpy( sPath, g_sCurrentDir ); // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
-		_tcscat( sPath, g_aArgs[1].sArg );
+		sPath = g_sCurrentDir + g_aArgs[1].sArg; // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
 	}
 
 	if ( SetCurrentImageDir( sPath ) )
@@ -4406,9 +4435,6 @@ Update_t CmdMemoryLoad (int nArgs)
 		if (g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA)
 			return Help_Arg_1( CMD_MEMORY_LOAD );
 
-	TCHAR sLoadSaveFilePath[ MAX_PATH ];
-	_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // TODO: g_sDebugDir
-
 	WORD nAddressStart = 0;
 	WORD nAddress2     = 0;
 	WORD nAddressEnd   = 0;
@@ -4442,9 +4468,9 @@ Update_t CmdMemoryLoad (int nArgs)
 
 	if (bHaveFileName)
 	{
-		_tcscpy( g_sMemoryLoadSaveFileName, pFileName );
+		g_sMemoryLoadSaveFileName = pFileName;
 	}
-	_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
+	const std::string sLoadSaveFilePath = g_sCurrentDir + g_sMemoryLoadSaveFileName; // TODO: g_sDebugDir
 	
 	BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
 	if (!pMemBankBase)
@@ -4453,7 +4479,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		return ConsoleUpdate();
 	}
 
-	FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
+	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
 		int nFileBytes = _GetFileSize( hFile );
@@ -4498,7 +4524,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		CmdConfigGetDebugDir( 0 );
 
 		TCHAR sFile[ MAX_PATH + 8 ];
-		ConsoleBufferPushFormat( sFile, "File: ", g_sMemoryLoadSaveFileName );
+		ConsoleBufferPushFormat( sFile, "File: ", g_sMemoryLoadSaveFileName.c_str() );
 	}
 	
 	return ConsoleUpdate();
@@ -4767,8 +4793,7 @@ Update_t CmdMemorySave (int nArgs)
 //			(g_aArgs[ iArgComma2 ].eToken != TOKEN_COLON))
 //			return Help_Arg_1( CMD_MEMORY_SAVE );
 
-		TCHAR sLoadSaveFilePath[ MAX_PATH ];
-		_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
+		std::string sLoadSaveFilePath = g_sCurrentDir; // g_sProgramDir
 
 		RangeType_t eRange;
 		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
@@ -4781,16 +4806,18 @@ Update_t CmdMemorySave (int nArgs)
 		{
 			if (! bHaveFileName)
 			{
+				TCHAR sMemoryLoadSaveFileName[MAX_PATH];
 				if (! bBankSpecified)
-					sprintf( g_sMemoryLoadSaveFileName, "%04X.%04X.bin", nAddressStart, nAddressLen );
+					sprintf( sMemoryLoadSaveFileName, "%04X.%04X.bin", nAddressStart, nAddressLen );
 				else
-					sprintf( g_sMemoryLoadSaveFileName, "%04X.%04X.bank%02X.bin", nAddressStart, nAddressLen, nBank );
+					sprintf( sMemoryLoadSaveFileName, "%04X.%04X.bank%02X.bin", nAddressStart, nAddressLen, nBank );
+				g_sMemoryLoadSaveFileName = sMemoryLoadSaveFileName;
 			}
 			else
 			{
-				_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
+				g_sMemoryLoadSaveFileName = g_aArgs[ 1 ].sArg;
 			}
-			_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
+			sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 
 			const BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
 			if (!pMemBankBase)
@@ -4799,7 +4826,7 @@ Update_t CmdMemorySave (int nArgs)
 				return ConsoleUpdate();
 			}
 
-			FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
+			FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 			if (hFile)
 			{
 				ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
@@ -4807,7 +4834,7 @@ Update_t CmdMemorySave (int nArgs)
 				// TODO: BUG: Is this a bug/feature that we can over-write files and the user has no control over that?
 			}
 
-			hFile = fopen( sLoadSaveFilePath, "wb" );
+			hFile = fopen( sLoadSaveFilePath.c_str(), "wb" );
 			if (hFile)
 			{
 				size_t nWrote = fwrite( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
@@ -5057,9 +5084,8 @@ Update_t CmdNTSC (int nArgs)
 	if( nLen == 0 )
 		pFileName = "AppleWinNTSC4096x4@32.data";
 
-	static TCHAR sPaletteFilePath[ MAX_PATH ];
-	_tcscpy( sPaletteFilePath, g_sCurrentDir );
-	_tcscat( sPaletteFilePath, pFileName );
+	static std::string sPaletteFilePath;
+	sPaletteFilePath = g_sCurrentDir + pFileName;
 
 	class ConsoleFilename
 	{
@@ -5069,7 +5095,7 @@ Update_t CmdNTSC (int nArgs)
 					TCHAR text[ CONSOLE_WIDTH*2 ] = TEXT("");
 
 					size_t len1 = strlen( pPrefixText      );
-					size_t len2 = strlen( sPaletteFilePath );
+					size_t len2 = sPaletteFilePath.size();
 					size_t len  = len1 + len2;
 
 					if (len >= CONSOLE_WIDTH)
@@ -5081,16 +5107,16 @@ Update_t CmdNTSC (int nArgs)
 						OutputDebugString( text );
 						sprintf( text, "Filename.length.2: %d\n", len2 );
 						OutputDebugString( text );
-						OutputDebugString( sPaletteFilePath );
+						OutputDebugString( sPaletteFilePath.c_str() );
 #endif
 						// File path is too long
 						// TODO: Need to split very long path names
-						strncpy( text, sPaletteFilePath, CONSOLE_WIDTH );
+						strncpy( text, sPaletteFilePath.c_str(), CONSOLE_WIDTH );
 						ConsoleBufferPush( text );	// TODO: Switch ConsoleBufferPush() to ConsoleBufferPushFormat()
 					}
 					else
 					{
-						ConsoleBufferPushFormat( text, "%s: %s", pPrefixText, sPaletteFilePath );
+						ConsoleBufferPushFormat( text, "%s: %s", pPrefixText, sPaletteFilePath.c_str() );
 					}
 			}
 	};
@@ -5452,7 +5478,7 @@ Update_t CmdNTSC (int nArgs)
 		else
 		if (iParam == PARAM_SAVE)
 		{
-			FILE *pFile = fopen( sPaletteFilePath, "w+b" );
+			FILE *pFile = fopen( sPaletteFilePath.c_str(), "w+b" );
 			if( pFile )
 			{
 				size_t nWrote = 0;
@@ -5495,7 +5521,7 @@ Update_t CmdNTSC (int nArgs)
 		else
 		if (iParam == PARAM_LOAD)
 		{
-			FILE *pFile = fopen( sPaletteFilePath, "rb" );
+			FILE *pFile = fopen( sPaletteFilePath.c_str(), "rb" );
 			if( pFile )
 			{
 				strcpy( aStatusText, "Loaded" );
@@ -5630,36 +5656,35 @@ int CmdTextSave (int nArgs)
 	char  *pText;
 	size_t nSize = Util_GetTextScreen( pText );
 
-	TCHAR sLoadSaveFilePath[ MAX_PATH ];
-	_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
+	std::string sLoadSaveFilePath = g_sCurrentDir; // g_sProgramDir
 
 	if( bHaveFileName )
-		_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
+		g_sMemoryLoadSaveFileName = g_aArgs[ 1 ].sArg;
 	else
 	{
 		if( VideoGetSW80COL() )
-			sprintf( g_sMemoryLoadSaveFileName, "AppleWin_Text80.txt" );
+			g_sMemoryLoadSaveFileName = "AppleWin_Text80.txt";
 		else
-			sprintf( g_sMemoryLoadSaveFileName, "AppleWin_Text40.txt" );
+			g_sMemoryLoadSaveFileName = "AppleWin_Text40.txt";
 	}
 
-	_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
+	sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 
-	FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
+	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
 		ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
 		fclose( hFile );
 	}
 
-	hFile = fopen( sLoadSaveFilePath, "wb" );
+	hFile = fopen( sLoadSaveFilePath.c_str(), "wb" );
 	if (hFile)
 	{
 		size_t nWrote = fwrite( pText, nSize, 1, hFile );
 		if (nWrote == 1)
 		{
 			TCHAR text[ CONSOLE_WIDTH ] = TEXT("");
-			ConsoleBufferPushFormat( text, "Saved: %s", g_sMemoryLoadSaveFileName );
+			ConsoleBufferPushFormat( text, "Saved: %s", g_sMemoryLoadSaveFileName.c_str() );
 		}
 		else
 		{
@@ -6156,6 +6181,12 @@ Update_t CmdOutputCalc (int nArgs)
 			nBit |= (1 << (iBit * 4)); // 4 bits per hex digit
 	}
 
+	// TODO: Colorize output
+	//    CHC_NUM_HEX
+	//    CHC_NUM_BIN -- doesn't exist, use CHC_INFO
+	//    CHC_NUM_DEC
+	//    CHC_ARG_
+	//    CHC_STRING
 	wsprintf( sText, TEXT("$%04X  0z%08X  %5d  '%c' "),
 		nAddress, nBit, nAddress, c );
 
@@ -6175,6 +6206,10 @@ Update_t CmdOutputCalc (int nArgs)
 		_tcscat( sText, TEXT(")") );
 
 	ConsoleBufferPush( sText );
+
+// If we colorize then w must also guard against character ouput $60
+//	ConsolePrint( sText );
+
 	return ConsoleUpdate();
 }
 
@@ -6453,27 +6488,25 @@ Update_t CmdOutputRun (int nArgs)
 	// IF @ON ....
 	MemoryTextFile_t script; 
 
-	TCHAR * pFileName = g_aArgs[ 1 ].sArg;
+	const std::string pFileName = g_aArgs[ 1 ].sArg;
 
-	TCHAR sFileName[ MAX_PATH ];
-	TCHAR sMiniFileName[ CONSOLE_WIDTH ];
+	std::string sFileName;
+	std::string sMiniFileName; // [CONSOLE_WIDTH];
 
 //	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 
-	_tcsncpy( sMiniFileName, pFileName, sizeof(sMiniFileName) );
-	sMiniFileName[sizeof(sMiniFileName)-1] = 0;
+	sMiniFileName = pFileName.substr(0, min(pFileName.size(), CONSOLE_WIDTH));
 //	_tcscat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
 	if (pFileName[0] == '\\' || pFileName[1] == ':')	// NB. Any prefix quote has already been stripped
 	{
 		// Abs pathname
-		_tcscpy(sFileName, sMiniFileName);
+		sFileName = sMiniFileName;
 	}
 	else
 	{
 		// Rel pathname
-		_tcscpy(sFileName, g_sCurrentDir);
-		_tcscat(sFileName, sMiniFileName);
+		sFileName = g_sCurrentDir + sMiniFileName;
 	}
 
 	if (script.Read( sFileName ))
@@ -6493,12 +6526,9 @@ Update_t CmdOutputRun (int nArgs)
 	else
 	{
 		char sText[ CONSOLE_WIDTH ];
-		ConsolePrintFormat( sText, "%sCouldn't load filename: %s%s"
-			, CHC_ERROR
-			, CHC_STRING
-			, sFileName
-		);
-	}	
+		ConsolePrintFormat(sText, "%sCouldn't load filename:", CHC_ERROR);
+		ConsolePrintFormat(sText, "%s%s", CHC_STRING, sFileName.c_str());
+	}
 
 	return ConsoleUpdate();
 }
@@ -6507,11 +6537,11 @@ Update_t CmdOutputRun (int nArgs)
 // Source Level Debugging _________________________________________________________________________
 
 //===========================================================================
-bool BufferAssemblyListing( char *pFileName )
+bool BufferAssemblyListing( const std::string & pFileName )
 {
 	bool bStatus = false; // true = loaded
 
-	if (! pFileName)
+	if (pFileName.empty())
 		return bStatus;
 
 	g_AssemblerSourceBuffer.Reset();
@@ -6729,10 +6759,10 @@ Update_t CmdSource (int nArgs)
 
 		for( int iArg = 1; iArg <= nArgs; iArg++ )
 		{	
-			TCHAR *pFileName = g_aArgs[ iArg ].sArg;
+			const std::string pFileName = g_aArgs[ iArg ].sArg;
 
 			int iParam;
-			bool bFound = FindParam( pFileName, MATCH_EXACT, iParam, _PARAM_SOURCE_BEGIN, _PARAM_SOURCE_END ) > 0 ? true : false;
+			bool bFound = FindParam( pFileName.c_str(), MATCH_EXACT, iParam, _PARAM_SOURCE_BEGIN, _PARAM_SOURCE_END ) > 0 ? true : false;
 			if (bFound && (iParam == PARAM_SRC_SYMBOLS))
 			{
 				g_bSourceAddSymbols = true;
@@ -6744,35 +6774,32 @@ Update_t CmdSource (int nArgs)
 			}
 			else
 			{
-				TCHAR  sFileName[MAX_PATH];
-				_tcscpy(sFileName,g_sProgramDir);
-				_tcscat(sFileName, pFileName);
+				const std::string sFileName = g_sProgramDir + pFileName;
 
-				const int MAX_MINI_FILENAME = 20;
-				TCHAR sMiniFileName[ MAX_MINI_FILENAME + 1 ];
-				_tcsncpy( sMiniFileName, pFileName, MAX_MINI_FILENAME - 1 );
-				sMiniFileName[ MAX_MINI_FILENAME ] = 0;
+				const int MAX_MINI_FILENAME = 20; 
+				const std::string sMiniFileName = sFileName.substr(0, min(MAX_MINI_FILENAME, sFileName.size()));
 
+				TCHAR buffer[MAX_PATH] = { 0 };
 
 				if (BufferAssemblyListing( sFileName ))
 				{
-					_tcscpy( g_aSourceFileName, pFileName );
+					g_aSourceFileName = pFileName;
 
 					if (! ParseAssemblyListing( g_bSourceAddMemory, g_bSourceAddSymbols ))
 					{
-						ConsoleBufferPushFormat( sFileName, "Couldn't load filename: %s", sMiniFileName );
+						ConsoleBufferPushFormat( buffer, "Couldn't load filename: %s", sMiniFileName.c_str() );
 					}
 					else
 					{
 						if (g_nSourceAssembleBytes)
 						{
-							ConsoleBufferPushFormat( sFileName, "  Read: %d lines, %d symbols, %d bytes"
+							ConsoleBufferPushFormat( buffer, "  Read: %d lines, %d symbols, %d bytes"
 								, g_AssemblerSourceBuffer.GetNumLines() // g_nSourceAssemblyLines
 								, g_nSourceAssemblySymbols, g_nSourceAssembleBytes );
 						}
 						else
 						{
-							ConsoleBufferPushFormat( sFileName, "  Read: %d lines, %d symbols"
+							ConsoleBufferPushFormat( buffer, "  Read: %d lines, %d symbols"
 								, g_AssemblerSourceBuffer.GetNumLines() // g_nSourceAssemblyLines
 								, g_nSourceAssemblySymbols );
 						}
@@ -6780,7 +6807,7 @@ Update_t CmdSource (int nArgs)
 				}
 				else
 				{
-					ConsoleBufferPushFormat( sFileName, "Error reading: %s", sMiniFileName );
+					ConsoleBufferPushFormat( buffer, "Error reading: %s", sMiniFileName.c_str() );
 				}
 			}
 		}
@@ -6819,6 +6846,34 @@ Update_t CmdStackPopPseudo (int nArgs)
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
+// Video __________________________________________________________________________________________
+
+Update_t CmdVideoScannerInfo(int nArgs)
+{
+	if (nArgs != 1)
+	{
+		return Help_Arg_1(CMD_VIDEO_SCANNER_INFO);
+	}
+	else
+	{
+		if (strcmp(g_aArgs[1].sArg, "dec") == 0)
+			g_videoScannerDisplayInfo.isDecimal = true;
+		else if (strcmp(g_aArgs[1].sArg, "hex") == 0)
+			g_videoScannerDisplayInfo.isDecimal = false;
+		else if (strcmp(g_aArgs[1].sArg, "real") == 0)
+			g_videoScannerDisplayInfo.isHorzReal = true;
+		else if (strcmp(g_aArgs[1].sArg, "apple") == 0)
+			g_videoScannerDisplayInfo.isHorzReal = false;
+		else
+			return Help_Arg_1(CMD_VIDEO_SCANNER_INFO);
+	}
+
+	TCHAR sText[CONSOLE_WIDTH];
+	ConsoleBufferPushFormat(sText, "Video-scanner display updated: %s", g_aArgs[1].sArg);
+	ConsoleBufferToDisplay();
+
+	return UPDATE_ALL;
+}
 
 // View ___________________________________________________________________________________________
 
@@ -7648,7 +7703,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 
 // Note: Range is [iParamBegin,iParamEnd], not the usually (STL) expected [iParamBegin,iParamEnd)
 //===========================================================================
-int FindParam( LPTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd )
+int FindParam(LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd )
 {
 	int nFound = 0;
 	int nLen     = _tcslen( pLookupName );
@@ -7712,7 +7767,7 @@ int FindParam( LPTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegi
 }
 
 //===========================================================================
-int FindCommand( LPTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
+int FindCommand( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 {
 	g_vPotentialCommands.erase( g_vPotentialCommands.begin(), g_vPotentialCommands.end() );
 
@@ -8076,7 +8131,7 @@ void OutputTraceLine ()
 
 	if (g_bTraceFileWithVideoScanner)
 	{
-		uint16_t addr = NTSC_VideoGetScannerAddress(0);	// NB. uExecutedCycles==0 as SingleStep() called afterwards
+		uint16_t addr = NTSC_VideoGetScannerAddressForDebugger();
 		BYTE data = mem[addr];
 
 		fprintf( g_hTraceFile,
@@ -8435,11 +8490,9 @@ bool ProfileSave()
 {
 	bool bStatus = false;
 
-	char sFilename[MAX_PATH];
-	strcpy( sFilename, g_sProgramDir ); // TODO: Allow user to decide?
-	strcat( sFilename, g_FileNameProfile );
+	const std::string sFilename = g_sProgramDir + g_FileNameProfile; // TODO: Allow user to decide?
 
-	FILE *hFile = fopen( sFilename, "wt" );
+	FILE *hFile = fopen( sFilename.c_str(), "wt" );
 
 	if (hFile)
 	{
@@ -8645,7 +8698,11 @@ void DebugContinueStepping ()
 			else if (g_bDebugBreakpointHit & BP_HIT_REG)
 				pszStopReason = TEXT("Register matches value");
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
-				sprintf_s(szStopMessage, sizeof(szStopMessage), "Memory accessed at $%04X", g_uBreakMemoryAddress);
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "Memory access at $%04X", g_uBreakMemoryAddress);
+			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "Write access at $%04X", g_uBreakMemoryAddress);
+			else if (g_bDebugBreakpointHit & BP_HIT_MEMR)
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "Read access at $%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				pszStopReason = TEXT("PC reads from floating bus or I/O memory");
 			else
@@ -8744,107 +8801,6 @@ static void DebugEnd ()
 }
 
 
-#if _DEBUG
-#define DEBUG_COLOR_RAMP 0
-//===========================================================================
-void _SetupColorRamp( const int iPrimary, int & iColor_ )
-{
-	TCHAR sRamp[ CONSOLE_WIDTH*2 ] = TEXT("");
-#if DEBUG_COLOR_RAMP
-	TCHAR sText[ CONSOLE_WIDTH ];
-#endif
-
-	bool bR = (iPrimary & 1) ? true : false;
-	bool bG = (iPrimary & 2) ? true : false;
-	bool bB = (iPrimary & 4) ? true : false;
-	int dStep = 32;
-	int nLevels = 256 / dStep;
-	for (int iLevel = nLevels; iLevel > 0; iLevel-- )
-	{
-		int nC = ((iLevel * dStep) - 1);
-		int nR = bR ? nC : 0;
-		int nG = bG ? nC : 0;
-		int nB = bB ? nC : 0;
-		DWORD nColor = RGB(nR,nG,nB);
-		g_aColorPalette[ iColor_ ] = nColor;
-#if DEBUG_COLOR_RAMP
-	wsprintf( sText, TEXT("RGB(%3d,%3d,%3d), "), nR, nG, nB );
-	_tcscat( sRamp, sText );
-#endif
-		iColor_++;
-	}
-#if DEBUG_COLOR_RAMP
-	wsprintf( sText, TEXT(" // %d%d%d\n"), bB, bG, bR );
-	_tcscat( sRamp, sText );
-	OutputDebugString( sRamp );
-	sRamp[0] = 0;
-#endif
-}
-#endif // _DEBUG
-
-// Full Screen uses the palette from g_pFramebufferinfo
-// BUT DebutInitialize() is called before VideoInitialize()
-// THUS this is called post-initialize to set up the global palette
-//
-// pPalDst is the first color in the palette that we can stick our custom debug colors in
-//===========================================================================
-void Debug_UpdatePalette( BYTE *pPalDst )
-{
-	_ConfigColorsReset( pPalDst );
-}
-
-//===========================================================================
-void _ConfigColorsReset( BYTE *pPalDst )
-{
-//	int iColor = 1; // black only has one level, skip it, since black levels same as white levels
-//	for (int iPrimary = 1; iPrimary < 8; iPrimary++ )
-//	{
-//		_SetupColorRamp( iPrimary, iColor );
-//	}
-
-	BYTE *pDst = pPalDst;
-
-	// Setup default colors
-	int iColor;
-	for (iColor = 0; iColor < NUM_DEBUG_COLORS; iColor++ )
-	{
-		COLORREF nColor = g_aColorPalette[ g_aColorIndex[ iColor ] ];
-
-		int R = (nColor >>  0) & 0xFF;
-		int G = (nColor >>  8) & 0xFF;
-		int B = (nColor >> 16) & 0xFF;
-
-		if( pDst )
-		{
-			*(pDst + 0) = B;
-			*(pDst + 1) = G;
-			*(pDst + 2) = R;
-			*(pDst + 3) = 0;
-			pDst += 4;
-		}
-
-		// There are many, many ways of shifting the color domain to the monochrome domain
-		// NTSC uses 3x3 matrix, could map RGB -> wavelength, etc.
-		int M = (R + G + B) / 3; // Monochrome component
-
-		int nThreshold = 64;
-		
-		int BW;
-		if (M < nThreshold)
-			BW = 0;
-		else
-			BW = 255;
-
-		COLORREF nMono = RGB(M,M,M);
-		COLORREF nBW   = RGB(BW,BW,BW);
-
-		DebuggerSetColor( SCHEME_COLOR, iColor, nColor );
-		DebuggerSetColor( SCHEME_MONO , iColor, nMono );
-		DebuggerSetColor( SCHEME_BW   , iColor, nBW );
-	}
-}
-
-
 //===========================================================================
 void DebugInitialize ()
 {
@@ -8938,7 +8894,7 @@ void DebugInitialize ()
 
 	WindowUpdateDisasmSize();
 
-	_ConfigColorsReset();
+	ConfigColorsReset();
 
 	WindowUpdateConsoleDisplayedSize();
 
@@ -9072,6 +9028,15 @@ void DebugInitialize ()
 #endif
 
 	_Bookmark_Reset();
+
+	static bool doneAutoRun = false;
+	if (!doneAutoRun)	// Don't re-run on a VM restart
+	{
+		doneAutoRun = true;
+		std::string pathname = g_sProgramDir + "DebuggerAutoRun.txt";
+		strcpy_s(g_aArgs[1].sArg, MAX_ARG_LEN, pathname.c_str());
+		CmdOutputRun(1);
+	}
 
 	CmdMOTD(0);
 }

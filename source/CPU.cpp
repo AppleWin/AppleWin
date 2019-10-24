@@ -130,12 +130,7 @@ regsrec regs;
 unsigned __int64 g_nCumulativeCycles = 0;
 
 static ULONG g_nCyclesExecuted;	// # of cycles executed up to last IO access
-
 //static signed long g_uInternalExecutedCycles;
-// TODO: Use IRQ_CHECK_TIMEOUT=128 when running at full-speed else with IRQ_CHECK_TIMEOUT=1
-// - What about when running benchmark?
-static const int IRQ_CHECK_TIMEOUT = 128;
-static signed int g_nIrqCheckTimeout = IRQ_CHECK_TIMEOUT;
 
 //
 
@@ -191,6 +186,16 @@ eCpuType GetActiveCpu(void)
 void SetActiveCpu(eCpuType cpu)
 {
 	g_ActiveCPU = cpu;
+}
+
+bool Is6502InterruptEnabled(void)
+{
+	return !(regs.ps & AF_INTERRUPT);
+}
+
+void ResetCyclesExecutedForDebugger(void)
+{
+	g_nCyclesExecuted = 0;
 }
 
 //
@@ -417,21 +422,30 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 	}
 }
 
-static __forceinline void CheckInterruptSources(ULONG uExecutedCycles)
+const int IRQ_CHECK_OPCODE_FULL_SPEED = 40;	// ~128 cycles (assume 3 cycles per opcode)
+static int g_fullSpeedOpcodeCount = IRQ_CHECK_OPCODE_FULL_SPEED;
+
+static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const bool bVideoUpdate)
 {
-	if (g_nIrqCheckTimeout < 0)
+	if (!bVideoUpdate)
 	{
-		MB_UpdateCycles(uExecutedCycles);
-		sg_Mouse.SetVBlank( !VideoGetVblBar(uExecutedCycles) );
-		g_nIrqCheckTimeout = IRQ_CHECK_TIMEOUT;
+		g_fullSpeedOpcodeCount--;
+		if (g_fullSpeedOpcodeCount >= 0)
+			return;
+		g_fullSpeedOpcodeCount = IRQ_CHECK_OPCODE_FULL_SPEED;
 	}
+
+	MB_UpdateCycles(uExecutedCycles);
+	if (sg_Mouse.IsActive())
+		sg_Mouse.SetVBlank( !VideoGetVblBar(uExecutedCycles) );
 }
 
 // GH#608: IRQ needs to occur within 17 cycles (6 opcodes) of configuring the timer interrupt
 void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 {
-	if (uCyclesUntilInterrupt < IRQ_CHECK_TIMEOUT)
-		g_nIrqCheckTimeout = uCyclesUntilInterrupt;
+	const UINT opcodesUntilInterrupt = uCyclesUntilInterrupt/3;	// assume 3 cycles per opcode
+	if (g_bFullSpeed && opcodesUntilInterrupt < IRQ_CHECK_OPCODE_FULL_SPEED)
+		g_fullSpeedOpcodeCount = opcodesUntilInterrupt;
 }
 
 //===========================================================================
