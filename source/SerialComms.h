@@ -83,7 +83,7 @@ private:
 	//
 
 public:
-	static const UINT SIZEOF_SERIALCHOICE_ITEM = 8*sizeof(char);
+	static const UINT SIZEOF_SERIALCHOICE_ITEM = 12*sizeof(char);
 
 private:
 	std::string m_ayCurrentSerialPortName;
