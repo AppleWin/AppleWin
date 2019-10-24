@@ -8,6 +8,14 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+
+1.29.4.0 - 24 Oct 2019
+----------------------
+. [Change #702] Debugger: In soft-switch display (row-80), show a red 'x' when AltZP (and AltLC) is enabled.
+. [Change #666] Debugger: When video-scanner position is off-screen then show v,h as yellow (was red).
+. [PR #710] Debugger: Added BPMR and BPMW to break on a read or write (respectively) to a memory address or range.
+
+
 1.29.3.0 - 13 Oct 2019
 ----------------------
 . [Change #692] Added command line switch to unplug HDD controller card on exit:
@@ -15,7 +23,7 @@ Tom Charlesworth
 . [Change #689] Added command line switches to set CPU speed and machine type:
 	- -clock-multiplier <value>, where value is a [0.5-3.9] base-clock multiplier (ie. same as the Config UI's slider)
 	- -model <apple2|apple2p|apple2e|apple2ee>
-. [Change #666] Debugger: support showing video v,h and cycle count.
+. [Change #666] Debugger: support showing video-scanner v,h position and cycle count.
 	- added debugger command: videoinfo <dec|hex|apple|real> to configure display.
 	- added auto-run of DebuggerAutoRun.txt on AppleWin initial start-up.
 . [Bug #700] Fixed ProDOS8 2.5.0 alpha6:
