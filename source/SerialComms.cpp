@@ -264,6 +264,8 @@ bool CSuperSerialCard::CheckComm()
 
 		if (m_hCommHandle != INVALID_HANDLE_VALUE)
 		{
+			GetCommModemStatus(m_hCommHandle, const_cast<DWORD*>(&m_dwModemStatus));
+
 			//BOOL bRes = SetupComm(m_hCommHandle, 8192, 8192);
 			//_ASSERT(bRes);
 
@@ -1085,9 +1087,7 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 	//
 
 	const UINT nNumEvents = 2;
-
 	HANDLE hCommEvent_Wait[nNumEvents] = {pSSC->m_hCommEvent[COMMEVT_WAIT], pSSC->m_hCommEvent[COMMEVT_TERM]};
-	HANDLE hCommEvent_Ack[nNumEvents]  = {pSSC->m_hCommEvent[COMMEVT_ACK],  pSSC->m_hCommEvent[COMMEVT_TERM]};
 
 	while(1)
 	{
@@ -1095,7 +1095,6 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 		DWORD dwWaitResult;
 
 		bRes = WaitCommEvent(pSSC->m_hCommHandle, &dwEvtMask, &pSSC->m_o);	// Will return immediately (probably with ERROR_IO_PENDING)
-		_ASSERT(!bRes);
 		if (!bRes)
 		{
 			DWORD dwRet = GetLastError();
