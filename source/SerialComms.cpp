@@ -181,8 +181,23 @@ void CSuperSerialCard::UpdateCommState()
 	dcb.ByteSize = m_uByteSize;
 	dcb.Parity   = m_uParity;
 	dcb.StopBits = m_uStopBits;
-	dcb.fDtrControl = m_uDTR;	// GH#386
-	dcb.fRtsControl = m_uRTS;	// GH#311
+
+// Specifies the DTR (data-terminal-ready) input flow control.
+// 2. Comment DTR out for ADTPro Receive to work (hmmm... not always)
+//	dcb.fDtrControl = m_uDTR;	// GH#386									// dir OK - hold down RETURN & recv OK
+//	dcb.fDtrControl = DTR_CONTROL_ENABLE;									// dir OK - hold down RETURN & recv OK
+//	dcb.fDtrControl = m_uDTR ? DTR_CONTROL_HANDSHAKE : DTR_CONTROL_DISABLE;	// dir OK - hold down RETURN & recv OK
+
+// Specifies the RTS (request-to-send) input flow control.
+// 1. Comment RTS out for all ADTPro dir to work (hmmm... not always - hold down RETURN)
+	dcb.fRtsControl = m_uRTS;	// GH#311									// dir OK - hold down RETURN & recv OK
+//	dcb.fRtsControl = RTS_CONTROL_DISABLE;									// dir NG - "HOST TIMEOUT"
+//	dcb.fRtsControl = m_uRTS ? RTS_CONTROL_ENABLE : RTS_CONTROL_DISABLE;	// dir OK - hold down RETURN & recv OK
+//	dcb.fRtsControl = m_uRTS ? RTS_CONTROL_HANDSHAKE : RTS_CONTROL_DISABLE;	// dir OK - hold down RETURN & recv OK
+//	dcb.fRtsControl = m_uRTS ? RTS_CONTROL_TOGGLE : RTS_CONTROL_DISABLE;	// dir NG - "HOST TIMEOUT"
+
+//	dcb.fOutxCtsFlow = 1;
+//	dcb.fOutxDsrFlow = 1;
 
 	SetCommState(m_hCommHandle,&dcb);
 }
@@ -531,6 +546,7 @@ void CSuperSerialCard::UpdateCommandReg(BYTE command)
 
 	// Data Terminal Ready (DTR) setting (0=set DTR high (indicates 'not ready')) (GH#386)
 	m_uDTR = (m_uCommandByte & CMD_DTR) ? DTR_CONTROL_ENABLE : DTR_CONTROL_DISABLE;
+//	_ASSERT(m_uDTR);	// debug!
 }
 
 BYTE __stdcall CSuperSerialCard::CommCommand(WORD, WORD, BYTE write, BYTE value, ULONG)
@@ -713,6 +729,7 @@ BYTE __stdcall CSuperSerialCard::CommTransmit(WORD, WORD, BYTE, BYTE value, ULON
 			data &= ~(1 << m_uByteSize);
 		}
 		int sent = send(m_hCommAcceptSocket, (const char*)&data, 1, 0);
+		_ASSERT(sent == 1);
 		if (sent == 1)
 		{
 			m_vbTxEmpty = false;
@@ -723,9 +740,17 @@ BYTE __stdcall CSuperSerialCard::CommTransmit(WORD, WORD, BYTE, BYTE value, ULON
 	else if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
 		DWORD uBytesWritten;
-		WriteFile(m_hCommHandle, &value, 1, &uBytesWritten, &m_o);
-		m_vbTxEmpty = false;
-		// NB. Now CommThread() determines when transmit buffer is empty and calls TransmitDone()
+		BOOL res = WriteFile(m_hCommHandle, &value, 1, &uBytesWritten, &m_o);
+//		_ASSERT(res);
+//		if (res)
+		{
+			m_vbTxEmpty = false;
+			// NB. Now CommThread() determines when transmit buffer is empty and calls TransmitDone()
+		}
+//		else
+//		{
+//			DWORD error = GetLastError();
+//		}
 	}
 
 	return 0;
@@ -803,10 +828,16 @@ BYTE __stdcall CSuperSerialCard::CommStatus(WORD, WORD, BYTE, BYTE, ULONG)
 
 	BYTE DSR = (modemStatus & MS_DSR_ON)  ? 0x00 : ST_DSR;	// DSR is active low (see SY6551 datasheet) (GH#386)
 	BYTE DCD = (modemStatus & MS_RLSD_ON) ? 0x00 : ST_DCD;	// DCD is active low (see SY6551 datasheet) (GH#386)
+	_ASSERT(DSR == 0 && DCD == 0);
+	DSR = 0;
+	DCD = 0;
 
 	//
 
 	BYTE TX_EMPTY = m_vbTxEmpty ? ST_TX_EMPTY : 0;
+//	_ASSERT(TX_EMPTY == ST_TX_EMPTY);
+	TX_EMPTY = ST_TX_EMPTY;
+
 	BYTE RX_FULL  = (!bComSerialBufferEmpty || !m_qTcpSerialBuffer.empty()) ? ST_RX_FULL : 0;
 
 	//
