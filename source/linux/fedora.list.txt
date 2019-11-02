@@ -1,0 +1,9 @@
+cmake
+gcc-c++
+qt5-devel
+qt5-qtgamepad-devel
+libyaml-devel
+minizip-devel
+boost-devel
+ncurses-devel
+libevdev-devel

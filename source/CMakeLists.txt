@@ -1,3 +1,5 @@
+include(FindPkgConfig)
+
 add_library(appleii SHARED
   SaveState.cpp
   Pravets.cpp
@@ -35,8 +37,17 @@ add_library(appleii SHARED
   Z80VICE/daa.cpp
   )
 
+pkg_check_modules(YAML REQUIRED yaml-0.1)
+pkg_check_modules(MINIZIP REQUIRED minizip)
+find_package(Boost REQUIRED)
+
+target_include_directories(appleii PRIVATE
+  ${YAML_INCLUDE_DIRS}
+  ${MINIZIP_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+  )
+
 target_link_libraries(appleii
-  yaml
-  z
-  minizip
+  ${YAML_LIBRARIES}
+  ${MINIZIP_LIBRARIES}
   )

@@ -4,9 +4,6 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5Widgets)
-find_package(Qt5Gamepad)
-
 add_executable(qapple
   main.cpp
   qapple.qrc
@@ -24,6 +21,10 @@ add_executable(qapple
   commands.cpp
   chunks.cpp
   qhexedit.cpp
+  )
+
+find_package(Qt5 REQUIRED
+  COMPONENTS Widgets Gamepad
   )
 
 target_link_libraries(qapple
