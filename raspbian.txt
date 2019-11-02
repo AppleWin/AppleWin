@@ -1,0 +1,10 @@
+cmake
+libncurses-dev
+libevdev-dev
+qtbase5-dev
+libqt5gamepad5-dev
+
+libminizip-dev
+libyaml-dev
+libboost-dev
+libboost-program-options-dev
