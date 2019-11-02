@@ -57,7 +57,7 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 	if (*ppImageInfo == NULL)
 		return eIMAGE_ERROR_BAD_POINTER;
 
-	ZeroMemory(*ppImageInfo, sizeof(ImageInfo));
+	new (*ppImageInfo) ImageInfo();
 	ImageInfo* pImageInfo = *ppImageInfo;
 	pImageInfo->bWriteProtected = *pWriteProtected;
 	if (bExpectFloppy)	pImageInfo->pImageHelper = &sg_DiskImageHelper;

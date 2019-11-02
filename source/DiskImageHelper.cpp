@@ -38,6 +38,25 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskImageHelper.h"
 #include "Memory.h"
 
+ImageInfo::ImageInfo()
+{
+	// this is not a POD as it contains c++ strings
+	// simply zeroing is not going to work
+	pImageType = NULL;
+	pImageHelper = NULL;
+	FileType = eFileNormal;
+	hFile = INVALID_HANDLE_VALUE;
+	uOffset = 0;
+	bWriteProtected = false;
+	uImageSize = 0;
+	ZeroMemory(&zipFileInfo, sizeof(zipFileInfo));
+	uNumEntriesInZip = 0;
+	ZeroMemory(&ValidTrack, sizeof(ValidTrack));
+	uNumTracks = 0;
+	pImageBuffer = NULL;
+	pTrackMap = NULL;
+	optimalBitTiming = 0;
+}
 
 /* DO logical order  0 1 2 3 4 5 6 7 8 9 A B C D E F */
 /*    physical order 0 D B 9 7 5 3 1 E C A 8 6 4 2 F */
@@ -1704,7 +1723,7 @@ void CImageHelperBase::Close(ImageInfo* pImageInfo, const bool bDeleteFile)
 		DeleteFile(pImageInfo->szFilename.c_str());
 	}
 
-	pImageInfo->szFilename[0] = 0;
+	pImageInfo->szFilename.clear();
 
 	delete [] pImageInfo->pImageBuffer;
 	pImageInfo->pImageBuffer = NULL;

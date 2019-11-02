@@ -37,6 +37,8 @@ struct ImageInfo
 	BYTE*			pImageBuffer;
 	BYTE*			pTrackMap;	// WOZ only
 	BYTE			optimalBitTiming;	// WOZ only
+
+	ImageInfo();
 };
 
 //-------------------------------------
