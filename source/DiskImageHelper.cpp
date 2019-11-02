@@ -1077,7 +1077,7 @@ public:
 			m_pWOZEmptyTrack[i] = n;
 		}
 	}
-	virtual ~CWOZEmptyTrack(void) { delete m_pWOZEmptyTrack; }
+	virtual ~CWOZEmptyTrack(void) { delete [] m_pWOZEmptyTrack; }
 
 	void ReadEmptyTrack(LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount)
 	{
