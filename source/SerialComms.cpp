@@ -181,7 +181,11 @@ void CSuperSerialCard::UpdateCommState()
 	dcb.ByteSize = m_uByteSize;
 	dcb.Parity   = m_uParity;
 	dcb.StopBits = m_uStopBits;
+
+	// Specifies the DTR (data-terminal-ready) input flow control (use dcb.fOutxCtsFlow for output)
 	dcb.fDtrControl = m_uDTR;	// GH#386
+
+	// Specifies the RTS (request-to-send) input flow control (use dcb.fOutxDsrFlow for output)
 	dcb.fRtsControl = m_uRTS;	// GH#311
 
 	SetCommState(m_hCommHandle,&dcb);
@@ -687,7 +691,21 @@ BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 
 void CSuperSerialCard::TransmitDone(void)
 {
-	m_vbTxEmpty = true;	// Transmit done
+	if (m_hCommHandle != INVALID_HANDLE_VALUE)
+	{
+		// Use CriticalSection to ensure that write to m_vbTxEmpty is atomic w.r.t CommTransmit() (GH#707)
+		EnterCriticalSection(&m_CriticalSection);
+
+		_ASSERT(m_vbTxEmpty == false);
+		m_vbTxEmpty = true;	// Transmit done (COM)
+
+		LeaveCriticalSection(&m_CriticalSection);
+	}
+	else
+	{
+		_ASSERT(m_vbTxEmpty == false);
+		m_vbTxEmpty = true;	// Transmit done (TCP)
+	}
 
 	if (m_bTxIrqEnabled)	// GH#522
 	{
@@ -713,6 +731,7 @@ BYTE __stdcall CSuperSerialCard::CommTransmit(WORD, WORD, BYTE, BYTE value, ULON
 			data &= ~(1 << m_uByteSize);
 		}
 		int sent = send(m_hCommAcceptSocket, (const char*)&data, 1, 0);
+		_ASSERT(sent == 1);
 		if (sent == 1)
 		{
 			m_vbTxEmpty = false;
@@ -722,10 +741,30 @@ BYTE __stdcall CSuperSerialCard::CommTransmit(WORD, WORD, BYTE, BYTE value, ULON
 	}
 	else if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
+		BOOL res = false;
+		DWORD error = 0;
+
+		// Use CriticalSection to keep WriteFile() & m_vbTxEmpty in sync (GH#707)
+		EnterCriticalSection(&m_CriticalSection);
+
+		_ASSERT(m_vbTxEmpty == true);
 		DWORD uBytesWritten;
-		WriteFile(m_hCommHandle, &value, 1, &uBytesWritten, &m_o);
-		m_vbTxEmpty = false;
-		// NB. Now CommThread() determines when transmit buffer is empty and calls TransmitDone()
+		res = WriteFile(m_hCommHandle, &value, 1, &uBytesWritten, &m_o);
+		_ASSERT(res);
+		if (res)
+		{
+			m_vbTxEmpty = false;
+			// NB. Now CommThread() determines when transmit buffer is empty and calls TransmitDone()
+		}
+		else
+		{
+			error = GetLastError();
+		}
+
+		LeaveCriticalSection(&m_CriticalSection);
+
+		if (!res)
+			LogFileOutput("SSC: CommTransmit(): WriteFile() failed: 0x%08X\n", error);
 	}
 
 	return 0;
@@ -999,8 +1038,6 @@ void CSuperSerialCard::CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem
 // . COMSTAT::InQueue = 0x1000
 //
 
-static UINT g_uDbgTotalCOMRx = 0;
-
 void CSuperSerialCard::CheckCommEvent(DWORD dwEvtMask)
 {
 	if (dwEvtMask & EV_RXCHAR)
@@ -1015,8 +1052,6 @@ void CSuperSerialCard::CheckCommEvent(DWORD dwEvtMask)
 		{
 			if (!ReadFile(m_hCommHandle, Data, sizeof(Data), &dwReceived, &m_o) || !dwReceived)
 				break;
-
-			g_uDbgTotalCOMRx += dwReceived;
 
 			bGotData = true;
 
