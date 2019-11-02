@@ -1,5 +1,13 @@
 # Linux
 
+* [Structure](#structure)
+* [What works](#what-works)
+* [Executables](#executables)
+  * [applen](#applen)
+  * [qapple](#qapple)
+* [Build](#build)
+  * [Fedora](#fedora)
+
 ## Structure
 
 There are 3 projects
@@ -39,6 +47,8 @@ Some features totally ignored:
 
 The rest is in a usable state.
 
+## Executables
+
 ### applen
 
 Frontend based on ncurses, with a ASCII art graphic mode.
@@ -71,6 +81,13 @@ This is based on Qt, currently tested with 5.10
 
 ## Build
 
-The project can be built using cmake.
+The project can be built using cmake from the top level directory.
 
 qapple can be managed from Qt Creator as well and the 2 have coexisted so far, but YMMV.
+
+### Fedora
+
+On Fedora 31, from a fresh installation, install all packages from [fedora.list.txt](source/linux/fedora.list.txt).
+
+Building with cmake works.
+
