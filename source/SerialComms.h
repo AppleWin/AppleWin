@@ -115,7 +115,7 @@ private:
 
 	//
 
-	CRITICAL_SECTION	m_CriticalSection;	// To guard /g_vRecvBytes/
+	CRITICAL_SECTION	m_CriticalSection;	// To guard /m_vuRxCurrBuffer/ and /m_vbTxEmpty/
 	std::deque<BYTE>	m_qComSerialBuffer[2];
 	volatile UINT		m_vuRxCurrBuffer;	// Written to on COM recv. SSC reads from other one
 	std::deque<BYTE>	m_qTcpSerialBuffer;
