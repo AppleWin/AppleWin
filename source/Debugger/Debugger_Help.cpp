@@ -1414,8 +1414,8 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleBufferPush("    <real|apple> alters horz value to hbl-l,visible,hbl-r or hbl-r+l,visible");
 			{
 				char sText2[CONSOLE_WIDTH];
-				ConsolePrintFormat(sText2, "    %sRed%s=invisible (hbl or vbl active) / %sGreen%s=visible"
-					,CHC_KEY    , CHC_DEFAULT	// red
+				ConsolePrintFormat(sText2, "    %sYellow%s=invisible (hbl or vbl active) / %sGreen%s=visible"
+					,CHC_INFO   , CHC_DEFAULT	// yellow
 					,CHC_COMMAND, CHC_DEFAULT	// green
 				);
 			}
