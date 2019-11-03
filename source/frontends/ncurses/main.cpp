@@ -326,5 +326,13 @@ namespace
 
 int main(int argc, const char * argv [])
 {
-  return foo(argc, argv);
+  try
+  {
+    return foo(argc, argv);
+  }
+  catch (const std::exception & e)
+  {
+    std::cerr << e.what() << std::endl;
+    return 1;
+  }
 }

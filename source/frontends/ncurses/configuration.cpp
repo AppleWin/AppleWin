@@ -4,6 +4,7 @@
 #include "Log.h"
 
 #include <boost/property_tree/ini_parser.hpp>
+#include <filesystem>
 
 class Configuration
 {
@@ -31,7 +32,14 @@ std::shared_ptr<Configuration> Configuration::instance;
 
 Configuration::Configuration(const std::string & filename) : myFilename(filename)
 {
-  boost::property_tree::ini_parser::read_ini(myFilename, myINI);
+  if (std::filesystem::exists(filename))
+  {
+    boost::property_tree::ini_parser::read_ini(myFilename, myINI);
+  }
+  else
+  {
+    LogFileOutput("Registry: configuration file '%s' not found\n", filename.c_str());
+  }
 }
 
 Configuration::~Configuration()

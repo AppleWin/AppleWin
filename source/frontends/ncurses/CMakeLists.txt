@@ -34,3 +34,6 @@ target_link_libraries(applen
   Boost::program_options
   appleii
   )
+
+add_custom_target(copy-resources ALL
+    COMMAND cmake -E copy_directory ${CMAKE_SOURCE_DIR}/resource ${CMAKE_BINARY_DIR}/resource)
