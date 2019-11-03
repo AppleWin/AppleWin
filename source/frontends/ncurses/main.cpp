@@ -38,6 +38,7 @@ namespace
     std::string snapshot;
     int memclear;
     bool benchmark;
+    bool headless;
     bool saveConfigurationOnExit;
 
     bool run;  // false if options include "-h"
@@ -69,6 +70,7 @@ namespace
 
     po::options_description emulatorDesc("Emulator");
     emulatorDesc.add_options()
+      ("headless,hl", "Headless: disable video")
       ("benchmark,b", "Benchmark emulator");
     desc.add(emulatorDesc);
 
@@ -110,6 +112,7 @@ namespace
       }
 
       options.benchmark = vm.count("benchmark") > 0;
+      options.headless = vm.count("headless") > 0;
 
       return true;
     }
@@ -125,7 +128,7 @@ namespace
     }
   }
 
-  bool ContinueExecution()
+  bool ContinueExecution(const bool updateVideo)
   {
     const auto start = std::chrono::steady_clock::now();
 
@@ -171,7 +174,10 @@ namespace
     if (g_dwCyclesThisFrame >= dwClksPerFrame)
     {
       g_dwCyclesThisFrame -= dwClksPerFrame;
-      VideoRedrawScreen();
+      if (updateVideo)
+      {
+	VideoRedrawScreen();
+      }
     }
 
     const auto end = std::chrono::steady_clock::now();
@@ -193,9 +199,9 @@ namespace
     return true;
   }
 
-  void EnterMessageLoop()
+  void EnterMessageLoop(const bool updateVideo)
   {
-    while (ContinueExecution())
+    while (ContinueExecution(updateVideo))
     {
     }
   }
@@ -294,7 +300,7 @@ namespace
 	}
 	else
 	{
-	  EnterMessageLoop();
+	  EnterMessageLoop(!options.headless);
 	}
 	sg_Mouse.Uninitialize();
 	sg_Mouse.Reset();
