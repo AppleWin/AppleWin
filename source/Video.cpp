@@ -874,6 +874,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
 //===========================================================================
 
 // TODO: Consider replacing simply with: return g_nVideoClockVert < kVDisplayableScanLines
+// - will this work in full-speed mode?
 bool VideoGetVblBar(const DWORD uExecutedCycles)
 {
 	// get video scanner position
@@ -886,6 +887,11 @@ bool VideoGetVblBar(const DWORD uExecutedCycles)
 
 	// VBL'
 	return nCycles < kVDisplayableScanLines * kHClocks;
+}
+
+bool VideoGetVblBar(void)
+{
+	return g_nVideoClockVert < kVDisplayableScanLines;
 }
 
 //===========================================================================
