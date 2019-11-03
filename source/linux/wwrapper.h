@@ -65,7 +65,14 @@
 #define FillMemory(Destination,Length,Fill) memset((Destination),(Fill),(Length))
 #define EqualMemory(Destination,Source,Length) (!memcmp((Destination),(Source),(Length)))
 #define CopyMemory(Destination,Source,Length) memcpy((Destination),(Source),(Length))
-#define ZeroMemory(Destination,Length) memset((Destination),0,(Length))
+
+template <typename T>
+void ZeroMemory(T * dest, const size_t size)
+{
+  // never zero a C++ complex type requiring a constructor call.
+  static_assert(std::is_pod<T>::value || std::is_void<T>::value, "POD required for ZeroMemory()");
+  memset(dest, 0, size);
+}
 
 void _tzset();
 errno_t ctime_s(char * buf, size_t size, const time_t *time);
