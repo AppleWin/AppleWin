@@ -1447,6 +1447,11 @@ void MB_InitializeForLoadingSnapshot()	// GH#609
 {
 	MB_Reset();
 	InitSoundcardType();
+
+	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
+		return;
+
+	_ASSERT(MockingboardVoice.lpDSBvoice);
 	MockingboardVoice.lpDSBvoice->Stop();	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
 }
 
@@ -1700,6 +1705,9 @@ void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 		RegisterIoHandler(uSlot5, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
 
 	MB_SetSoundcardType(g_Slot[4]);
+
+	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
+		return;
 
 	// Sound buffer may have been stopped by MB_InitializeForLoadingSnapshot().
 	// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
