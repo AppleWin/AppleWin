@@ -1928,6 +1928,9 @@ static double MB_GetFramePeriod(void)
 	if ((g_nMBTimerDevice != kTIMERDEVICE_INVALID) ||
 		(g_bPhasorEnable && (g_MB[0].sy6522.IFR & IxR_TIMER1)))	// [*1]
 	{
+		if (!g_n6522TimerPeriod)
+			return (double)0x10000;
+
 		return (double)g_n6522TimerPeriod;
 	}
 	else
