@@ -223,15 +223,15 @@ Preferences::Data Preferences::getData() const
     return data;
 }
 
-void Preferences::browseDisk(const std::vector<QComboBox *> & disks, const size_t id)
+void Preferences::browseDisk(const std::vector<QComboBox *> & vdisks, const size_t id)
 {
     QFileDialog diskFileDialog(this);
     diskFileDialog.setFileMode(QFileDialog::AnyFile);
 
     // because index = 0 is None
-    if (disks[id]->currentIndex() >= 1)
+    if (vdisks[id]->currentIndex() >= 1)
     {
-        diskFileDialog.selectFile(disks[id]->currentText());
+        diskFileDialog.selectFile(vdisks[id]->currentText());
     }
 
     if (diskFileDialog.exec())
@@ -240,9 +240,9 @@ void Preferences::browseDisk(const std::vector<QComboBox *> & disks, const size_
         if (files.size() == 1)
         {
             const QString & filename = files[0];
-            const int selection = addDiskItem(disks[id], filename);
+            const int selection = addDiskItem(vdisks[id], filename);
             // and now make sure there are no duplicates
-            checkDuplicates(disks, id, selection);
+            checkDuplicates(vdisks, id, selection);
         }
     }
 }

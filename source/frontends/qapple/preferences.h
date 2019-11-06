@@ -61,7 +61,7 @@ private:
     void setSettings(QSettings & settings);
     void setData(const Data & data);
     void populateJoysticks();
-    void browseDisk(const std::vector<QComboBox *> & disks, const size_t id);
+    void browseDisk(const std::vector<QComboBox *> & vdisks, const size_t id);
 
 };
 

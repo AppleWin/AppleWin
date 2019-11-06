@@ -34,7 +34,7 @@ namespace
     void initialiseEmulator()
     {
         g_fh = fopen("/tmp/applewin.txt", "w");
-        setbuf(g_fh, NULL);
+        setbuf(g_fh, nullptr);
 
         LogFileOutput("Initialisation\n");
 
@@ -104,7 +104,7 @@ namespace
         sg_Disk2Card.Destroy();
         ImageDestroy();
         fclose(g_fh);
-        g_fh = NULL;
+        g_fh = nullptr;
     }
 
     qint64 emulatorTimeInMS()
@@ -238,9 +238,9 @@ void QApple::on_timer()
 
     const qint64 full_speed_ms      = 5;
     const double fUsecPerSec        = 1.e6;
-    const UINT nExecutionPeriodUsec = 1000 * elapsed;
+    const qint64 nExecutionPeriodUsec = 1000 * elapsed;
 
-    const double fExecutionPeriodClks = g_fCurrentCLK6502 * ((double)nExecutionPeriodUsec / fUsecPerSec);
+    const double fExecutionPeriodClks = g_fCurrentCLK6502 * (double(nExecutionPeriodUsec) / fUsecPerSec);
     const DWORD uCyclesToExecute = fExecutionPeriodClks;
 
     const bool bVideoUpdate = false;
