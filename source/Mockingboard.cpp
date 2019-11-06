@@ -1447,6 +1447,11 @@ void MB_InitializeForLoadingSnapshot()	// GH#609
 {
 	MB_Reset();
 	InitSoundcardType();
+
+	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
+		return;
+
+	_ASSERT(MockingboardVoice.lpDSBvoice);
 	MockingboardVoice.lpDSBvoice->Stop();	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
 }
 
@@ -1701,6 +1706,9 @@ void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 
 	MB_SetSoundcardType(g_Slot[4]);
 
+	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
+		return;
+
 	// Sound buffer may have been stopped by MB_InitializeForLoadingSnapshot().
 	// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
 	// - without zeroing, then the previous sound buffer can be heard for a fraction of a second
@@ -1920,6 +1928,9 @@ static double MB_GetFramePeriod(void)
 	if ((g_nMBTimerDevice != kTIMERDEVICE_INVALID) ||
 		(g_bPhasorEnable && (g_MB[0].sy6522.IFR & IxR_TIMER1)))	// [*1]
 	{
+		if (!g_n6522TimerPeriod)
+			return (double)0x10000;
+
 		return (double)g_n6522TimerPeriod;
 	}
 	else

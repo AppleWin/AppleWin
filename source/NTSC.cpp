@@ -2003,8 +2003,12 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 //===========================================================================
 void NTSC_VideoReinitialize( DWORD cyclesThisFrame, bool bInitVideoScannerAddress )
 {
-	_ASSERT(cyclesThisFrame < g_videoScanner6502Cycles);
-	if (cyclesThisFrame >= g_videoScanner6502Cycles) cyclesThisFrame = 0;	// error
+	if (cyclesThisFrame >= g_videoScanner6502Cycles)
+	{
+		// Possible, since ContinueExecution() loop waits until: cycles > g_videoScanner6502Cycles && VBL
+		cyclesThisFrame %= g_videoScanner6502Cycles;
+	}
+
 	g_nVideoClockVert = (uint16_t) (cyclesThisFrame / VIDEO_SCANNER_MAX_HORZ);
 	g_nVideoClockHorz = cyclesThisFrame % VIDEO_SCANNER_MAX_HORZ;
 
