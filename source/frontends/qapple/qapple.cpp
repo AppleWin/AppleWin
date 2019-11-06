@@ -211,7 +211,8 @@ QApple::QApple(QWidget *parent) :
     myEmulator = new Emulator(mdiArea);
     myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
 
-    myMSGap = 5;
+    const int fps = 60;
+    myMSGap = 1000 / fps;
 
     on_actionPause_triggered();
     initialiseEmulator();
@@ -251,16 +252,17 @@ void QApple::on_timer()
         const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
         g_dwCyclesThisFrame += uActualCyclesExecuted;
         sg_Disk2Card.UpdateDriveState(uActualCyclesExecuted);
-        if (g_dwCyclesThisFrame >= dwClksPerFrame)
-        {
-            g_dwCyclesThisFrame -= dwClksPerFrame;
-            myEmulator->updateVideo();
-        }
+        // in case we run more than 1 frame
+        g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
         ++count;
     }
     while (sg_Disk2Card.IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + full_speed_ms));
 
-    if (count > 0)
+    // just repaint each time, to make it simpler
+    // we run @ 60 fps anyway
+    myEmulator->updateVideo();
+
+    if (count > 1)  // 1 is the non-full speed case
     {
         restartTimeCounters();
     }
