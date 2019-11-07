@@ -228,11 +228,20 @@ void QApple::closeEvent(QCloseEvent *)
 
 void QApple::on_timer()
 {
-    const qint64 target = myElapsedTimer.elapsed();
+    if (!myElapsedTimer.isValid())
+    {
+        myElapsedTimer.start();
+        myCpuTimeReference = emulatorTimeInMS();
+    }
+
+    // target x ms ahead of where we are now, which is when the timer should be called again
+    const qint64 target = myElapsedTimer.elapsed() + myMSGap;
     const qint64 current = emulatorTimeInMS() - myCpuTimeReference;
     const qint64 elapsed = target - current;
     if (elapsed <= 0)
     {
+        // we got ahead of the timer by a lot
+        // wait next call
         return;
     }
 
@@ -279,8 +288,7 @@ void QApple::stopTimer()
 
 void QApple::restartTimeCounters()
 {
-    myElapsedTimer.start();
-    myCpuTimeReference = emulatorTimeInMS();
+    myElapsedTimer.invalidate();
 }
 
 void QApple::on_actionStart_triggered()
