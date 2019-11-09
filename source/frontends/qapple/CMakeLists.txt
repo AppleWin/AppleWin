@@ -17,6 +17,8 @@ add_executable(qapple
   video.cpp
   settings.cpp
   configuration.cpp
+  audio.cpp
+  loggingcategory.cpp
 
   commands.cpp
   chunks.cpp
@@ -24,11 +26,12 @@ add_executable(qapple
   )
 
 find_package(Qt5 REQUIRED
-  COMPONENTS Widgets Gamepad
+  COMPONENTS Widgets Gamepad Multimedia
   )
 
 target_link_libraries(qapple
   Qt5::Widgets
   Qt5::Gamepad
+  Qt5::Multimedia
   appleii
   )

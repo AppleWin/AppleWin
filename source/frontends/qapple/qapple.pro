@@ -4,16 +4,16 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets gamepad
+QT       += core gui multimedia widgets gamepad
 
 TARGET = qapple
 TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        qapple.cpp \
+    audio.cpp \
+    loggingcategory.cpp \
+    qapple.cpp \
     qresources.cpp \
     emulator.cpp \
     video.cpp \
@@ -28,7 +28,9 @@ SOURCES += main.cpp\
     configuration.cpp
 
 HEADERS  += qapple.h \
+    audio.h \
     emulator.h \
+    loggingcategory.h \
     video.h \
     graphicscache.h \
     chunks.h \
