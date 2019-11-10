@@ -188,8 +188,7 @@ void    VideoReinitialize (bool bInitVideoScannerAddress = true);
 void    VideoResetState ();
 enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
 WORD    VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr = VS_FullAddr);
-bool    VideoGetVblBar(DWORD uExecutedCycles);
-bool    VideoGetVblBar(void);
+bool    VideoGetVblBar(const DWORD uExecutedCycles);
 
 bool    VideoGetSW80COL(void);
 bool    VideoGetSWDHIRES(void);
