@@ -11,7 +11,7 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-    audio.cpp \
+    audiogenerator.cpp \
     loggingcategory.cpp \
     qapple.cpp \
     qresources.cpp \
@@ -28,7 +28,7 @@ SOURCES += main.cpp\
     configuration.cpp
 
 HEADERS  += qapple.h \
-    audio.h \
+    audiogenerator.h \
     emulator.h \
     loggingcategory.h \
     video.h \

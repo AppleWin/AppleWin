@@ -23,7 +23,7 @@
 #include "emulator.h"
 #include "memorycontainer.h"
 #include "configuration.h"
-#include "audio.h"
+#include "audiogenerator.h"
 
 #include <QMdiSubWindow>
 #include <QMessageBox>

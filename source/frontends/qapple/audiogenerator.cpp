@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 
-#include "audio.h"
+#include "audiogenerator.h"
 
 #include "Common.h"
 #include "CPU.h"

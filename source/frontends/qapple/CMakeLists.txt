@@ -17,7 +17,7 @@ add_executable(qapple
   video.cpp
   settings.cpp
   configuration.cpp
-  audio.cpp
+  audiogenerator.cpp
   loggingcategory.cpp
 
   commands.cpp

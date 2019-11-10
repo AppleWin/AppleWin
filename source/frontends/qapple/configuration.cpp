@@ -8,7 +8,7 @@
 #include "Registry.h"
 #include "SaveState.h"
 #include "CPU.h"
-#include "audio.h"
+#include "audiogenerator.h"
 
 #include "linux/paddle.h"
 
