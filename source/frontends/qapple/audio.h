@@ -21,6 +21,9 @@ public:
     void writeAudio();
     void stateChanged(QAudio::State state);
 
+    void getOptions(qint32 & initialSilence, qint32 & silenceDelay, qint32 & physical) const;
+    void setOptions(const qint32 initialSilence, const qint32 silenceDelay, const qint32 physical);
+
 private:
     typedef short int audio_t;
 
@@ -30,6 +33,11 @@ private:
     QAudioFormat myAudioFormat;
     QIODevice * myDevice;
     std::vector<audio_t> myBuffer;
+
+    // options
+    qint32 myInitialSilence;
+    qint32 mySilenceDelay;
+    qint16 myPhysicalReference;
 
     qint64 myStartCPUCycles;
     qint64 myPreviousFrameTime;

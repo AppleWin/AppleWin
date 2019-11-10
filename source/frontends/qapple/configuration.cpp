@@ -8,6 +8,7 @@
 #include "Registry.h"
 #include "SaveState.h"
 #include "CPU.h"
+#include "audio.h"
 
 #include "linux/paddle.h"
 
@@ -175,6 +176,8 @@ Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad)
 
     currentOptions.screenshotTemplate = getScreenshotTemplate();
 
+    AudioGenerator::instance().getOptions(currentOptions.audioLatency, currentOptions.silenceDelay, currentOptions.physical);
+
     return currentOptions;
 }
 
@@ -259,6 +262,11 @@ void setNewOptions(const Preferences::Data & currentOptions, const Preferences::
     if (currentOptions.screenshotTemplate != newOptions.screenshotTemplate)
     {
         setScreenshotTemplate(newOptions.screenshotTemplate);
+    }
+
+    if (currentOptions.audioLatency != newOptions.audioLatency)
+    {
+        AudioGenerator::instance().setOptions(newOptions.audioLatency, newOptions.silenceDelay, newOptions.physical);
     }
 
 }
