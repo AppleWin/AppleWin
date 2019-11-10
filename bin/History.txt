@@ -9,6 +9,19 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.29.5.0 - 11 Nov 2019
+----------------------
+. [Bug #711] Fixed Mockingboard initial "stretched" music playback (regression introduced at 1.28.7.0).
+. [Bug #707] Fixed ADTPro (running under AppleWin) not working with real COM ports.
+. [Bug #680] Fixed video tearing (eg. for FT's "Scroll Scroll Scroll" & "Mad Effect #2").
+. [Bug #652] Fixed 6522's TIMER to underflow at 0x0000 -> 0xFFFF
+	- and T1C=0x0000 now correctly underflows on next cycle.
+. [Bug #435] COM ports above COM9 weren't available from the UI.
+. [Change #716] Help's troubleshooting section: added an item for no Apple II speaker sound.
+. [PR #694] Debugger: Symbol loading: Fix random crash upon start up.
+. Fixed crash with debug command line switches: -m and -no-mb.
+
+
 1.29.4.0 - 24 Oct 2019
 ----------------------
 . [Change #702] Debugger: In soft-switch display (row-80), show a red 'x' when AltZP (and AltLC) is enabled.
