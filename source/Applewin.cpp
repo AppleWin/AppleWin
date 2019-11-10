@@ -330,6 +330,7 @@ static void ContinueExecution(void)
 	sg_Disk2Card.UpdateDriveState(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 	PrintUpdate(uActualCyclesExecuted);
+	MB_PeriodicUpdate(uActualCyclesExecuted);
 
 	//
 
@@ -364,8 +365,6 @@ static void ContinueExecution(void)
 			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		else
 			VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
-
-		MB_EndOfVideoFrame();
 	}
 
 	if ((g_nAppMode == MODE_RUNNING && !g_bFullSpeed) || bModeStepping_WaitTimer)

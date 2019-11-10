@@ -204,24 +204,16 @@ static const int g_nNumEvents = 2;
 static HANDLE g_hSSI263Event[g_nNumEvents] = {NULL};	// 1: Phoneme finished playing, 2: Exit thread
 static DWORD g_dwMaxPhonemeLen = 0;
 
-// When 6522 IRQ is *not* active use 60Hz update freq for MB voices
-// NB. Not important if NTSC or PAL - just need to pick a sensible period
-static const double g_f6522TimerPeriod_NoIRQ = CLK_6502_NTSC / 60.0;	// Constant whatever the CLK is set to
-
 static bool g_bCritSectionValid = false;	// Deleting CritialSection when not valid causes crash on Win98
 static CRITICAL_SECTION g_CriticalSection;	// To guard 6522's IFR
 
-// If we have 2 timer ints: 50Hz and 60Hz, then need to be able to determine the AY8910 reg update freq
-static bool g_waitFirstAYWriteAfterTimer1Int = false;
-static UINT64 g_lastAY8910cycleAccess = 0;
-static UINT64 g_AYWriteAccessTimer1IntPeriod = 0;
+static UINT g_cyclesThisAudioFrame = 0;
 
 //---------------------------------------------------------------------------
 
 // Forward refs:
 static DWORD WINAPI SSI263Thread(LPVOID);
 static void Votrax_Write(BYTE nDevice, BYTE nValue);
-static double MB_GetFramePeriod(void);
 static void MB_Update(void);
 
 //---------------------------------------------------------------------------
@@ -392,19 +384,6 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 					// Votrax speech data
 					Votrax_Write(nDevice, nValue);
 					break;
-				}
-
-				if (g_waitFirstAYWriteAfterTimer1Int)	// GH#685: Multiple TIMER1 interrupts
-				{
-					g_waitFirstAYWriteAfterTimer1Int = false;
-					//CpuCalcCycles(uExecutedCycles);	// Done in parent MB_Write() via MB_UpdateCycles()
-
-					g_AYWriteAccessTimer1IntPeriod = g_nCumulativeCycles - g_lastAY8910cycleAccess;
-					if (g_AYWriteAccessTimer1IntPeriod > 0xffff)
-						g_AYWriteAccessTimer1IntPeriod = (UINT64)g_f6522TimerPeriod_NoIRQ;
-					g_lastAY8910cycleAccess = g_nCumulativeCycles;
-
-					MB_Update();
 				}
 
 				if(g_bPhasorEnable)
@@ -785,14 +764,15 @@ static void Votrax_Write(BYTE nDevice, BYTE nValue)
 
 //===========================================================================
 
+//#define DBG_MB_UPDATE
+static UINT64 g_uLastMBUpdateCycle = 0;
+
 // Called by:
 // . MB_UpdateCycles()    - when g_nMBTimerDevice == {0,1,2,3}
-// . MB_EndOfVideoFrame() - when g_nMBTimerDevice == kTIMERDEVICE_INVALID
+// . MB_PeriodicUpdate()  - when g_nMBTimerDevice == kTIMERDEVICE_INVALID
 // . SY6522_Write()       - when multiple TIMER1s (interrupt sources) are active
 static void MB_Update(void)
 {
-	//char szDbg[200];
-
 	if (!MockingboardVoice.bActive)
 		return;
 
@@ -835,18 +815,35 @@ static void MB_Update(void)
 
 	//
 
-	static DWORD dwByteOffset = (DWORD)-1;
-	static int nNumSamplesError = 0;
+	// For small timer periods, wait for a period of 500cy before updating DirectSound ring-buffer.
+	// NB. A timer period of less than 24cy will yield nNumSamplesPerPeriod=0.
+	const double kMinimumUpdateInterval = 500.0;	// Arbitary (500 cycles = 21 samples)
+	const double kMaximumUpdateInterval = (double)(0xFFFF+2);	// Max 6522 timer interval (2756 samples)
 
-	const double n6522TimerPeriod = MB_GetFramePeriod();
+	if (g_uLastMBUpdateCycle == 0)
+		g_uLastMBUpdateCycle = g_uLastCumulativeCycles;		// Initial call to MB_Update() after reset/power-cycle
 
-	const double nIrqFreq = g_fCurrentCLK6502 / n6522TimerPeriod + 0.5;			// Round-up
+	_ASSERT(g_uLastCumulativeCycles >= g_uLastMBUpdateCycle);
+	double updateInterval = (double)(g_uLastCumulativeCycles - g_uLastMBUpdateCycle);
+	if (updateInterval < kMinimumUpdateInterval)
+		return;
+	if (updateInterval > kMaximumUpdateInterval)
+		updateInterval = kMaximumUpdateInterval;
+
+	g_uLastMBUpdateCycle = g_uLastCumulativeCycles;
+
+	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
 	const int nNumSamplesPerPeriod = (int) ((double)SAMPLE_RATE / nIrqFreq);	// Eg. For 60Hz this is 735
+
+	static int nNumSamplesError = 0;
 	int nNumSamples = nNumSamplesPerPeriod + nNumSamplesError;					// Apply correction
 	if(nNumSamples <= 0)
 		nNumSamples = 0;
 	if(nNumSamples > 2*nNumSamplesPerPeriod)
 		nNumSamples = 2*nNumSamplesPerPeriod;
+
+	if (nNumSamples > SAMPLE_RATE)
+		nNumSamples = SAMPLE_RATE;	// Clamp to prevent buffer overflow (bufferSize = SAMPLE_RATE)
 
 	if(nNumSamples)
 		for(int nChip=0; nChip<NUM_AY8910; nChip++)
@@ -854,14 +851,12 @@ static void MB_Update(void)
 
 	//
 
-	DWORD dwDSLockedBufferSize0, dwDSLockedBufferSize1;
-	SHORT *pDSLockedBuffer0, *pDSLockedBuffer1;
-
 	DWORD dwCurrentPlayCursor, dwCurrentWriteCursor;
 	HRESULT hr = MockingboardVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
 	if(FAILED(hr))
 		return;
 
+	static DWORD dwByteOffset = (DWORD)-1;
 	if(dwByteOffset == (DWORD)-1)
 	{
 		// First time in this func
@@ -877,12 +872,12 @@ static void MB_Update(void)
 			// |-----PxxxxxW-----|
 			if((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
 			{
+#ifdef DBG_MB_UPDATE
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				//sprintf(szDbg, "%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
-				//OutputDebugString(szDbg);
-				//if (g_fh) fprintf(g_fh, "%s", szDbg);
-
+				LogOutput("%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
+#endif
 				dwByteOffset = dwCurrentWriteCursor;
+				nNumSamplesError = 0;
 			}
 		}
 		else
@@ -890,12 +885,12 @@ static void MB_Update(void)
 			// |xxW----------Pxxx|
 			if((dwByteOffset > dwCurrentPlayCursor) || (dwByteOffset < dwCurrentWriteCursor))
 			{
+#ifdef DBG_MB_UPDATE
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				//sprintf(szDbg, "%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
-				//OutputDebugString(szDbg);
-				//if (g_fh) fprintf(g_fh, "%s", szDbg);
-
+				LogOutput("%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
+#endif
 				dwByteOffset = dwCurrentWriteCursor;
+				nNumSamplesError = 0;
 			}
 		}
 	}
@@ -912,6 +907,11 @@ static void MB_Update(void)
 		nNumSamplesError -= nErrorInc;				// > 0.50 of buffer remaining
 	else
 		nNumSamplesError = 0;						// Acceptable amount of data in buffer
+
+#ifdef DBG_MB_UPDATE
+	double fTicksSecs = (double)GetTickCount() / 1000.0;
+	LogOutput("%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X, NSE=%08X, Interval=%f\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset, nNumSamples, nNumSamplesError, updateInterval);
+#endif
 
 	if(nNumSamples == 0)
 		return;
@@ -953,6 +953,9 @@ static void MB_Update(void)
 	}
 
 	//
+
+	DWORD dwDSLockedBufferSize0, dwDSLockedBufferSize1;
+	SHORT *pDSLockedBuffer0, *pDSLockedBuffer1;
 
 	if(!DSGetLock(MockingboardVoice.lpDSBvoice,
 						dwByteOffset, (DWORD)nNumSamples*sizeof(short)*g_nMB_NumChannels,
@@ -1500,9 +1503,8 @@ static void ResetState()
 	g_nPhasorMode = 0;
 	g_PhasorClockScaleFactor = 1;
 
-	g_waitFirstAYWriteAfterTimer1Int = false;
-	g_lastAY8910cycleAccess = 0;
-	g_AYWriteAccessTimer1IntPeriod = 0;
+	g_uLastMBUpdateCycle = 0;
+	g_cyclesThisAudioFrame = 0;
 
 	// Not these, as they don't change on a CTRL+RESET or power-cycle:
 //	g_bMBAvailable = false;
@@ -1758,21 +1760,31 @@ void MB_StartOfCpuExecute()
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 }
 
-// Called by ContinueExecution() at the end of every video frame
-void MB_EndOfVideoFrame()
+// Called by ContinueExecution() at the end of every execution period (~1000 cycles or ~3 cycle when MODE_STEPPING)
+// NB. Required for FT's TEST LAB #1 player
+void MB_PeriodicUpdate(UINT executedCycles)
 {
 	if (g_SoundcardType == CT_Empty)
 		return;
 
-	if (g_nMBTimerDevice == kTIMERDEVICE_INVALID)
-		MB_Update();
+	if (g_nMBTimerDevice != kTIMERDEVICE_INVALID)
+		return;
+
+	const UINT kCyclesPerAudioFrame = 1000;
+	g_cyclesThisAudioFrame += executedCycles;
+	if (g_cyclesThisAudioFrame < kCyclesPerAudioFrame)
+		return;
+
+	g_cyclesThisAudioFrame %= kCyclesPerAudioFrame;
+
+	MB_Update();
 }
 
 //-----------------------------------------------------------------------------
 
 static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, const USHORT nClocks, bool* pTimerUnderflow=NULL)
 {
-	int oldTimer = timerCounter;	// Catch the case for 0x0000 -> -ve, as this isn't an underflow
+	int oldTimer = timerCounter;
 	int timer = timerCounter;
 	timer -= nClocks;
 	timerCounter = (USHORT)timer;
@@ -1787,17 +1799,17 @@ static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, 
 			timerIrqDelay = 0;
 			timerIrq = true;
 		}
-		// don't re-underflow if TIMER = 0x0000 or 0xFFFF (so just return)
+		// don't re-underflow if TIMER = 0xFFFF or 0xFFFE (so just return)
 	}
-	else if (oldTimer > 0 && timer <= 0)	// Underflow occurs for 0x0001 -> 0x0000
+	else if (oldTimer >= 0 && timer < 0)	// Underflow occurs for 0x0000 -> 0xFFFF
 	{
 		if (pTimerUnderflow)
 			*pTimerUnderflow = true;	// Just for Willy Byte!
 
-		if (timer <= -2)
+		if (timer < -2)
 			timerIrq = true;
-		else							// TIMER = 0x0000 or 0xFFFF
-			timerIrqDelay = 2 + timer;	// ...so 2 or 1 cycles until IRQ
+		else							// TIMER = 0xFFFF or 0xFFFE
+			timerIrqDelay = 3 + timer;	// ...so 2 or 1 cycles until IRQ
 	}
 
 	return timerIrq;
@@ -1817,10 +1829,6 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 	_ASSERT(uCycles < 0x10000);
 	USHORT nClocks = (USHORT) uCycles;
-
-	UINT numActiveTimer1s = 0;
-	for (int i=0; i<NUM_SY6522; i++)
-		numActiveTimer1s += g_MB[i].bTimer1Active ? 1 : 0;
 
 	for (int i=0; i<NUM_SY6522; i++)
 	{
@@ -1847,18 +1855,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 		{
 			UpdateIFR(pMB, 0, IxR_TIMER1);
 
-			if (numActiveTimer1s == 1)
-			{
-				// Do MB_Update() before StopTimer1()
-				if (g_nMBTimerDevice == i)
-					MB_Update();
-			}
-			else	// GH#685: Multiple TIMER1 interrupts
-			{
-				// Only allow when not in interrupt handler (ie. only allow when interrupts are enabled)
-				if (Is6502InterruptEnabled())
-					g_waitFirstAYWriteAfterTimer1Int = true;	// Defer MB_Update() until MB_Write()
-			}
+			MB_Update();
 
 			if ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
 			{
@@ -1873,7 +1870,6 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 				// - Ultima4/5 change ACCESS_TIMER1 after a couple of IRQs into tune
 				pMB->sy6522.TIMER1_COUNTER.w += pMB->sy6522.TIMER1_LATCH.w;	// GH#651: account for underflowed cycles too
 				pMB->sy6522.TIMER1_COUNTER.w += 2;							// GH#652: account for extra 2 cycles (Rockwell, Fig.16: period=N+2cycles)
-																			// - or maybe the counter doesn't count down during these 2 cycles?
 				if (pMB->sy6522.TIMER1_COUNTER.w > pMB->sy6522.TIMER1_LATCH.w)
 				{
 					if (pMB->sy6522.TIMER1_LATCH.w)
@@ -1910,34 +1906,6 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 }
 
 //-----------------------------------------------------------------------------
-
-static double MB_GetFramePeriod(void)
-{
-	// TODO: Ideally remove this (slot-4) Phasor-IFR check: [*1]
-	// . It's for Phasor music player, which runs in one-shot mode:
-	// . MB_UpdateCycles()
-	//   -> Timer1 underflows & StopTimer1() is called, which sets g_nMBTimerDevice == kTIMERDEVICE_INVALID
-	// . MB_EndOfVideoFrame(), and g_nMBTimerDevice == kTIMERDEVICE_INVALID
-	//   -> MB_Update()
-	//      -> MB_GetFramePeriod()
-	// NB. Removing this Phasor-IFR check means the occasional 'g_f6522TimerPeriod_NoIRQ' gets returned.
-
-	if (g_AYWriteAccessTimer1IntPeriod)
-		return (double)g_AYWriteAccessTimer1IntPeriod;
-
-	if ((g_nMBTimerDevice != kTIMERDEVICE_INVALID) ||
-		(g_bPhasorEnable && (g_MB[0].sy6522.IFR & IxR_TIMER1)))	// [*1]
-	{
-		if (!g_n6522TimerPeriod)
-			return (double)0x10000;
-
-		return (double)g_n6522TimerPeriod;
-	}
-	else
-	{
-		return g_f6522TimerPeriod_NoIRQ;
-	}
-}
 
 bool MB_IsActive()
 {
