@@ -20,9 +20,9 @@ add_executable(qapple
   audiogenerator.cpp
   loggingcategory.cpp
 
-  commands.cpp
-  chunks.cpp
-  qhexedit.cpp
+  qhexedit2/commands.cpp
+  qhexedit2/chunks.cpp
+  qhexedit2/qhexedit.cpp
   )
 
 find_package(Qt5 REQUIRED

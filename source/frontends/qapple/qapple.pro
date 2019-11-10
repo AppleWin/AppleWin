@@ -18,14 +18,14 @@ SOURCES += main.cpp\
     emulator.cpp \
     video.cpp \
     graphicscache.cpp \
-    chunks.cpp \
-    commands.cpp \
-    qhexedit.cpp \
     memorycontainer.cpp \
     preferences.cpp \
     gamepadpaddle.cpp \
     settings.cpp \
-    configuration.cpp
+    configuration.cpp \
+    qhexedit2/chunks.cpp \
+    qhexedit2/commands.cpp \
+    qhexedit2/qhexedit.cpp
 
 HEADERS  += qapple.h \
     audiogenerator.h \
@@ -33,14 +33,14 @@ HEADERS  += qapple.h \
     loggingcategory.h \
     video.h \
     graphicscache.h \
-    chunks.h \
-    commands.h \
-    qhexedit.h \
     memorycontainer.h \
     preferences.h \
     gamepadpaddle.h \
     settings.h \
-    configuration.h
+    configuration.h \
+    qhexedit2/chunks.h \
+    qhexedit2/commands.h \
+    qhexedit2/qhexedit.h
 
 FORMS    += qapple.ui \
     emulator.ui \

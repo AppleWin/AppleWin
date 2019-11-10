@@ -41,7 +41,7 @@
   <customwidget>
    <class>QHexEdit</class>
    <extends>QWidget</extends>
-   <header>qhexedit.h</header>
+   <header>qhexedit2/qhexedit.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
