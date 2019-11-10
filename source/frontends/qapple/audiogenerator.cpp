@@ -37,7 +37,7 @@ AudioGenerator::AudioGenerator()
     myDevice = nullptr;
     myInitialSilence = 200;
     mySilenceDelay = 10000;
-    myPhysicalReference = 0x0fff;
+    myVolume = 0x0fff;
 
     QAudioFormat audioFormat;
     audioFormat.setSampleRate(44100);
@@ -56,18 +56,18 @@ QAudioOutput * AudioGenerator::getAudioOutput()
     return myAudioOutput.get();
 }
 
-void AudioGenerator::getOptions(qint32 & initialSilence, qint32 & silenceDelay, qint32 & physical) const
+void AudioGenerator::getOptions(qint32 & initialSilence, qint32 & silenceDelay, qint32 & volume) const
 {
     initialSilence = myInitialSilence;
     silenceDelay = mySilenceDelay;
-    physical = myPhysicalReference;
+    volume = myVolume;
 }
 
-void AudioGenerator::setOptions(const qint32 initialSilence, const qint32 silenceDelay, const qint32 physical)
+void AudioGenerator::setOptions(const qint32 initialSilence, const qint32 silenceDelay, const qint32 volume)
 {
     myInitialSilence = std::max(0, initialSilence);
     mySilenceDelay = std::max(0, silenceDelay);
-    myPhysicalReference = std::max(0, physical);
+    myVolume = std::max(0, volume);
 }
 
 void AudioGenerator::stateChanged(QAudio::State state)
@@ -128,7 +128,7 @@ void AudioGenerator::start()
     mySilence = 0;
     myMaximum = 0;
     myValue = 0;
-    myPhysical = myPhysicalReference;
+    myPhysical = myVolume;
     myTicks = std::queue<qint64>();
 
     writeEnoughSilence(myInitialSilence); // ms

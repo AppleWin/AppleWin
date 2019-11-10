@@ -176,7 +176,7 @@ Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad)
 
     currentOptions.screenshotTemplate = getScreenshotTemplate();
 
-    AudioGenerator::instance().getOptions(currentOptions.audioLatency, currentOptions.silenceDelay, currentOptions.physical);
+    AudioGenerator::instance().getOptions(currentOptions.audioLatency, currentOptions.silenceDelay, currentOptions.volume);
 
     return currentOptions;
 }
@@ -264,9 +264,6 @@ void setNewOptions(const Preferences::Data & currentOptions, const Preferences::
         setScreenshotTemplate(newOptions.screenshotTemplate);
     }
 
-    if (currentOptions.audioLatency != newOptions.audioLatency)
-    {
-        AudioGenerator::instance().setOptions(newOptions.audioLatency, newOptions.silenceDelay, newOptions.physical);
-    }
+    AudioGenerator::instance().setOptions(newOptions.audioLatency, newOptions.silenceDelay, newOptions.volume);
 
 }

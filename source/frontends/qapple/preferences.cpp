@@ -191,7 +191,7 @@ void Preferences::setData(const Data & data)
 
     audio_latency->setValue(data.audioLatency);
     silence_delay->setValue(data.silenceDelay);
-    physical->setValue(data.physical);
+    volume->setValue(data.volume);
 }
 
 Preferences::Data Preferences::getData() const
@@ -226,7 +226,7 @@ Preferences::Data Preferences::getData() const
 
     data.audioLatency = audio_latency->value();
     data.silenceDelay = silence_delay->value();
-    data.physical = physical->value();
+    data.volume = volume->value();
 
     return data;
 }

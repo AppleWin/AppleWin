@@ -29,7 +29,7 @@ public:
 
         int audioLatency;
         int silenceDelay;
-        int physical;
+        int volume;
 
         std::vector<QString> disks;
         std::vector<QString> hds;
