@@ -77,7 +77,7 @@ This is based on Qt, currently tested with 5.10
 * Qt timers are very coarse: the emulator needs to dynamically adapt the cycles to execute
 * the app runs at 60FPS with correction for uneven timer deltas.
 * full speed when disk spins execute up to 5 ms real wall clock of emulator code (then returns to Qt)
-* audio is supported and there are a few configuration options to tune the latency (default very conservative 200ms)
+* (standard) audio is supported and there are a few configuration options to tune the latency (default very conservative 200ms)
 
 ## Build
 
