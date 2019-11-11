@@ -127,7 +127,8 @@ struct SY6522_AY8910
 	bool bTimer1Active;
 	bool bTimer2Active;
 	SSI263A SpeechChip;
-	MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair (or for Phasor: 6522+2xAY8910)
+	MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair
+	MockingboardUnitState_e stateB;	// Phasor: 6522 & 2nd AY8910
 };
 
 
@@ -278,11 +279,12 @@ static void ResetSY6522(SY6522_AY8910* pMB)
 
 	pMB->nAYCurrentRegister = 0;
 	pMB->state = AY_INACTIVE;
+	pMB->stateB = AY_INACTIVE;
 }
 
 //-----------------------------------------------------------------------------
 
-static void AY8910_Write(BYTE nDevice, BYTE nReg, BYTE nValue, BYTE nAYDevice)
+static void AY8910_Write(BYTE nDevice, BYTE /*nReg*/, BYTE nValue, BYTE nAYDevice)
 {
 	g_bMB_RegAccessedFlag = true;
 	SY6522_AY8910* pMB = &g_MB[nDevice];
@@ -300,8 +302,16 @@ static void AY8910_Write(BYTE nDevice, BYTE nReg, BYTE nValue, BYTE nAYDevice)
 		int nBC1 = nValue & 1;
 
 		MockingboardUnitState_e nAYFunc = (MockingboardUnitState_e) ((nBDIR<<2) | (nBC2<<1) | nBC1);
+		MockingboardUnitState_e& state = (nAYDevice == 0) ? pMB->state : pMB->stateB;	// GH#659
 
-		if (pMB->state == AY_INACTIVE)	// GH#320: functions only work from inactive state
+#if _DEBUG
+		if (!g_bPhasorEnable)
+			_ASSERT(nAYDevice == 0);
+		if (nAYFunc == AY_WRITE || nAYFunc == AY_LATCH)
+			_ASSERT(state == AY_INACTIVE);
+#endif
+
+		if (state == AY_INACTIVE)	// GH#320: functions only work from inactive state
 		{
 			switch (nAYFunc)
 			{
@@ -327,7 +337,7 @@ static void AY8910_Write(BYTE nDevice, BYTE nReg, BYTE nValue, BYTE nAYDevice)
 			}
 		}
 
-		pMB->state = nAYFunc;
+		state = nAYFunc;
 	}
 }
 
@@ -1967,9 +1977,10 @@ void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
 
 // Unit version history:
 // 2: Added: Timer1 & Timer2 active
-// 3: Added: Unit state
-// 4: Added: 6522 timerIrqDelay
-const UINT kUNIT_VERSION = 4;
+// 3: Added: Unit state - GH#320
+// 4: Added: 6522 timerIrqDelay - GH#652
+// 5: Added: Unit state-B (Phasor only) - GH#659
+const UINT kUNIT_VERSION = 5;
 
 const UINT NUM_MB_UNITS = 2;
 const UINT NUM_PHASOR_UNITS = 2;
@@ -1998,6 +2009,7 @@ const UINT NUM_PHASOR_UNITS = 2;
 #define SS_YAML_KEY_SSI263_REG_CURRENT_MODE "Current Mode"
 #define SS_YAML_KEY_AY_CURR_REG "AY Current Register"
 #define SS_YAML_KEY_MB_UNIT_STATE "Unit State"
+#define SS_YAML_KEY_MB_UNIT_STATE_B "Unit State-B"	// Phasor only
 #define SS_YAML_KEY_TIMER1_IRQ "Timer1 IRQ Pending"
 #define SS_YAML_KEY_TIMER2_IRQ "Timer2 IRQ Pending"
 #define SS_YAML_KEY_SPEECH_IRQ "Speech IRQ Pending"
@@ -2174,6 +2186,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 		}
 
 		pMB->state = AY_INACTIVE;
+		pMB->stateB = AY_INACTIVE;
 		if (version >= 3)
 			pMB->state = (MockingboardUnitState_e) (yamlLoadHelper.LoadUint(SS_YAML_KEY_MB_UNIT_STATE) & 7);
 
@@ -2242,6 +2255,7 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 		SaveSnapshotSSI263(yamlSaveHelper, pMB->SpeechChip);
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state);
+		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE_B, pMB->stateB);
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
 		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER1_IRQ, "false");
 		yamlSaveHelper.Save("%s: %s # Not supported\n", SS_YAML_KEY_TIMER2_IRQ, "false");
@@ -2298,8 +2312,11 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 		}
 
 		pMB->state = AY_INACTIVE;
+		pMB->stateB = AY_INACTIVE;
 		if (version >= 3)
 			pMB->state = (MockingboardUnitState_e) (yamlLoadHelper.LoadUint(SS_YAML_KEY_MB_UNIT_STATE) & 7);
+		if (version >= 5)
+			pMB->stateB = (MockingboardUnitState_e) (yamlLoadHelper.LoadUint(SS_YAML_KEY_MB_UNIT_STATE_B) & 7);
 
 		yamlLoadHelper.PopMap();
 
