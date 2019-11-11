@@ -27,6 +27,10 @@ public:
 
         bool enhancedSpeed;
 
+        int audioLatency;
+        int silenceDelay;
+        int volume;
+
         std::vector<QString> disks;
         std::vector<QString> hds;
 

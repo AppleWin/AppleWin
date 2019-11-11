@@ -23,6 +23,7 @@
 #include "emulator.h"
 #include "memorycontainer.h"
 #include "configuration.h"
+#include "audiogenerator.h"
 
 #include <QMdiSubWindow>
 #include <QMessageBox>
@@ -130,18 +131,6 @@ void FrameRefreshStatus(int, bool)
 
 }
 
-// Speaker
-
-BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
-{
-    Q_UNUSED(pc)
-    Q_UNUSED(addr)
-    Q_UNUSED(bWrite)
-    Q_UNUSED(d)
-    Q_UNUSED(uExecutedCycles)
-    return 0;
-}
-
 void VideoInitialize()
 {
     VideoReinitialize();
@@ -211,8 +200,11 @@ QApple::QApple(QWidget *parent) :
     myEmulator = new Emulator(mdiArea);
     myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
 
+    connect(AudioGenerator::instance().getAudioOutput(), SIGNAL(stateChanged(QAudio::State)), this, SLOT(on_stateChanged(QAudio::State)));
+
     const int fps = 60;
     myMSGap = 1000 / fps;
+    myFullSpeedMS = 5;
 
     on_actionPause_triggered();
     initialiseEmulator();
@@ -226,8 +218,15 @@ void QApple::closeEvent(QCloseEvent *)
     uninitialiseEmulator();
 }
 
+void QApple::on_stateChanged(QAudio::State state)
+{
+    AudioGenerator::instance().stateChanged(state);
+}
+
 void QApple::on_timer()
 {
+    AudioGenerator::instance().start();
+
     if (!myElapsedTimer.isValid())
     {
         myElapsedTimer.start();
@@ -237,17 +236,20 @@ void QApple::on_timer()
     // target x ms ahead of where we are now, which is when the timer should be called again
     const qint64 target = myElapsedTimer.elapsed() + myMSGap;
     const qint64 current = emulatorTimeInMS() - myCpuTimeReference;
-    const qint64 elapsed = target - current;
-    if (elapsed <= 0)
+    if (current > target)
     {
         // we got ahead of the timer by a lot
+
+        // just check if we got something to write
+        AudioGenerator::instance().writeAudio();
+
         // wait next call
         return;
     }
 
-    const qint64 full_speed_ms      = 5;
+    const qint64 toRun = target - current;
     const double fUsecPerSec        = 1.e6;
-    const qint64 nExecutionPeriodUsec = 1000 * elapsed;
+    const qint64 nExecutionPeriodUsec = 1000 * toRun;
 
     const double fExecutionPeriodClks = g_fCurrentCLK6502 * (double(nExecutionPeriodUsec) / fUsecPerSec);
     const DWORD uCyclesToExecute = fExecutionPeriodClks;
@@ -265,7 +267,7 @@ void QApple::on_timer()
         g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
         ++count;
     }
-    while (sg_Disk2Card.IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + full_speed_ms));
+    while (sg_Disk2Card.IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + myFullSpeedMS));
 
     // just repaint each time, to make it simpler
     // we run @ 60 fps anyway
@@ -275,12 +277,17 @@ void QApple::on_timer()
     {
         restartTimeCounters();
     }
+    else
+    {
+        AudioGenerator::instance().writeAudio();
+    }
 }
 
 void QApple::stopTimer()
 {
     if (myTimerID)
     {
+        restartTimeCounters();
         killTimer(myTimerID);
         myTimerID = 0;
     }
@@ -288,6 +295,8 @@ void QApple::stopTimer()
 
 void QApple::restartTimeCounters()
 {
+    // let them restart next time
+    AudioGenerator::instance().stop();
     myElapsedTimer.invalidate();
 }
 

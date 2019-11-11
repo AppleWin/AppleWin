@@ -5,6 +5,8 @@
 
 #include <QElapsedTimer>
 #include <QGamepad>
+#include <QAudio>
+
 #include <memory>
 #include "preferences.h"
 
@@ -58,6 +60,8 @@ private slots:
 
     void on_actionSwap_disks_triggered();
 
+    void on_stateChanged(QAudio::State state);
+
 private:
 
     // helper class to pause the emulator and restart at the end of the block
@@ -86,6 +90,7 @@ private:
     qint64 myCpuTimeReference;
 
     int myMSGap;
+    qint64 myFullSpeedMS;
 };
 
 #endif // QAPPLE_H

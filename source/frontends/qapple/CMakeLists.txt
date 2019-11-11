@@ -17,18 +17,21 @@ add_executable(qapple
   video.cpp
   settings.cpp
   configuration.cpp
+  audiogenerator.cpp
+  loggingcategory.cpp
 
-  commands.cpp
-  chunks.cpp
-  qhexedit.cpp
+  qhexedit2/commands.cpp
+  qhexedit2/chunks.cpp
+  qhexedit2/qhexedit.cpp
   )
 
 find_package(Qt5 REQUIRED
-  COMPONENTS Widgets Gamepad
+  COMPONENTS Widgets Gamepad Multimedia
   )
 
 target_link_libraries(qapple
   Qt5::Widgets
   Qt5::Gamepad
+  Qt5::Multimedia
   appleii
   )
