@@ -53,11 +53,8 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 		return eIMAGE_ERROR_BAD_POINTER;
 
 	// CREATE A RECORD FOR THE FILE
-	*ppImageInfo = (ImageInfo*) VirtualAlloc(NULL, sizeof(ImageInfo), MEM_COMMIT, PAGE_READWRITE);
-	if (*ppImageInfo == NULL)
-		return eIMAGE_ERROR_BAD_POINTER;
+	*ppImageInfo = new ImageInfo();
 
-	ZeroMemory(*ppImageInfo, sizeof(ImageInfo));
 	ImageInfo* pImageInfo = *ppImageInfo;
 	pImageInfo->bWriteProtected = *pWriteProtected;
 	if (bExpectFloppy)	pImageInfo->pImageHelper = &sg_DiskImageHelper;
@@ -116,7 +113,7 @@ void ImageClose(ImageInfo* const pImageInfo, const bool bOpenError /*=false*/)
 
 	pImageInfo->pImageHelper->Close(pImageInfo, bDeleteFile);
 
-	VirtualFree(pImageInfo, 0, MEM_RELEASE);
+	delete pImageInfo;
 }
 
 //===========================================================================
