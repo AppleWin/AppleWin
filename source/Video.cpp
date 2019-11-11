@@ -873,12 +873,24 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
 
 //===========================================================================
 
+// Called when *outside* of CpuExecute()
+bool VideoGetVblBarEx(const DWORD dwCyclesThisFrame)
+{
+	if (g_bFullSpeed)
+	{
+		// Ensure that NTSC video-scanner gets updated during full-speed, so video screen can be redrawn during Apple II VBL
+		NTSC_VideoClockResync(dwCyclesThisFrame);
+	}
+
+	return g_nVideoClockVert < kVDisplayableScanLines;
+}
+
+// Called when *inside* CpuExecute()
 bool VideoGetVblBar(const DWORD uExecutedCycles)
 {
 	if (g_bFullSpeed)
 	{
-		// Ensure that NTSC video-scanner gets updated during full-speed:
-		// so that video-dependent Apple II code doesn't hang & video screen can be redraw during VBL
+		// Ensure that NTSC video-scanner gets updated during full-speed, so video-dependent Apple II code doesn't hang
 		NTSC_VideoClockResync(CpuGetCyclesThisVideoFrame(uExecutedCycles));
 	}
 

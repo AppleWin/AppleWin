@@ -357,7 +357,7 @@ static void ContinueExecution(void)
 	//
 
 	const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-	if (g_dwCyclesThisFrame >= dwClksPerFrame && !VideoGetVblBar(g_dwCyclesThisFrame))
+	if (g_dwCyclesThisFrame >= dwClksPerFrame && !VideoGetVblBarEx(g_dwCyclesThisFrame))
 	{
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
