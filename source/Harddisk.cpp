@@ -189,9 +189,9 @@ static void HD_CleanupDrive(const int iDrive)
 
 	g_HardDisk[iDrive].hd_imageloaded = false;
 
-	g_HardDisk[iDrive].imagename[0] = 0;
-	g_HardDisk[iDrive].fullname[0] = 0;
-	g_HardDisk[iDrive].strFilenameInZip = "";
+	g_HardDisk[iDrive].imagename.clear();
+	g_HardDisk[iDrive].fullname.clear();
+	g_HardDisk[iDrive].strFilenameInZip.clear();
 
 	HD_SaveLastDiskImage(iDrive);
 }
@@ -778,8 +778,8 @@ static bool HD_LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 	if (!yamlLoadHelper.GetSubMap(hddUnitName))
 		throw std::string("Card: Expected key: ") + hddUnitName;
 
-	g_HardDisk[unit].fullname[0] = 0;
-	g_HardDisk[unit].imagename[0] = 0;
+	g_HardDisk[unit].fullname.clear();
+	g_HardDisk[unit].imagename.clear();
 	g_HardDisk[unit].hd_imageloaded = false;	// Default to false (until image is successfully loaded below)
 	g_HardDisk[unit].hd_status_next = DISK_STATUS_OFF;
 	g_HardDisk[unit].hd_status_prev = DISK_STATUS_OFF;
