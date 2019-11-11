@@ -873,24 +873,27 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
 
 //===========================================================================
 
-// TODO: Consider replacing simply with: return g_nVideoClockVert < kVDisplayableScanLines
-// - will this work in full-speed mode?
-bool VideoGetVblBar(const DWORD uExecutedCycles)
+// Called when *outside* of CpuExecute()
+bool VideoGetVblBarEx(const DWORD dwCyclesThisFrame)
 {
-	// get video scanner position
-	int nCycles = CpuGetCyclesThisVideoFrame(uExecutedCycles);
+	if (g_bFullSpeed)
+	{
+		// Ensure that NTSC video-scanner gets updated during full-speed, so video screen can be redrawn during Apple II VBL
+		NTSC_VideoClockResync(dwCyclesThisFrame);
+	}
 
-	// calculate video parameters according to display standard
-	const int kScanLines  = g_bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
-	const int kScanCycles = kScanLines * kHClocks;
-	nCycles %= kScanCycles;
-
-	// VBL'
-	return nCycles < kVDisplayableScanLines * kHClocks;
+	return g_nVideoClockVert < kVDisplayableScanLines;
 }
 
-bool VideoGetVblBar(void)
+// Called when *inside* CpuExecute()
+bool VideoGetVblBar(const DWORD uExecutedCycles)
 {
+	if (g_bFullSpeed)
+	{
+		// Ensure that NTSC video-scanner gets updated during full-speed, so video-dependent Apple II code doesn't hang
+		NTSC_VideoClockResync(CpuGetCyclesThisVideoFrame(uExecutedCycles));
+	}
+
 	return g_nVideoClockVert < kVDisplayableScanLines;
 }
 

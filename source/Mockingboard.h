@@ -9,7 +9,7 @@ void    MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5);
 void    MB_Mute();
 void    MB_Demute();
 void    MB_StartOfCpuExecute();
-void    MB_EndOfVideoFrame();
+void    MB_PeriodicUpdate(UINT executedCycles);
 void    MB_CheckIRQ();
 void    MB_UpdateCycles(ULONG uExecutedCycles);
 SS_CARDTYPE MB_GetSoundcardType();
