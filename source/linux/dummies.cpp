@@ -11,6 +11,7 @@
 #include "Memory.h"
 #include "Keyboard.h"
 #include "NTSC.h"
+#include <unistd.h>
 
 static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 static VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
@@ -60,6 +61,11 @@ void EnterCriticalSection(CRITICAL_SECTION * criticalSection)
 
 void LeaveCriticalSection(CRITICAL_SECTION * criticalSection)
 {
+}
+
+bool SetCurrentImageDir(const std::string & dir ) {
+  chdir(dir.c_str());
+  return true;
 }
 
 void OutputDebugString(const char * str)

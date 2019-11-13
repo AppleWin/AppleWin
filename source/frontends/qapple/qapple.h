@@ -62,6 +62,8 @@ private slots:
 
     void on_stateChanged(QAudio::State state);
 
+    void on_actionLoad_state_from_triggered();
+
 private:
 
     // helper class to pause the emulator and restart at the end of the block

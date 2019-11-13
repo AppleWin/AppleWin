@@ -397,6 +397,7 @@ void QApple::on_actionLoad_state_triggered()
 {
     emit endEmulator();
     Snapshot_LoadState();
+    SetWindowTitle();
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
     myEmulator->updateVideo();
 }
@@ -456,4 +457,30 @@ void QApple::on_actionSwap_disks_triggered()
 
     // this might open a file dialog
     sg_Disk2Card.DriveSwap();
+}
+
+void QApple::on_actionLoad_state_from_triggered()
+{
+    PauseEmulator pause(this);
+
+    QFileDialog stateFileDialog(this);
+    stateFileDialog.setFileMode(QFileDialog::AnyFile);
+
+    if (stateFileDialog.exec())
+    {
+        QStringList files = stateFileDialog.selectedFiles();
+        if (files.size() == 1)
+        {
+            const QString & filename = files[0];
+            const QFileInfo file(filename);
+            const QString path = file.absoluteDir().canonicalPath();
+
+            // this is useful as snapshots from the test
+            // have relative disk location
+            SetCurrentImageDir(path.toStdString().c_str());
+
+            Snapshot_SetFilename(filename.toStdString().c_str());
+            actionLoad_state->trigger();
+        }
+    }
 }

@@ -42,7 +42,7 @@
      <x>0</x>
      <y>0</y>
      <width>1032</width>
-     <height>25</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSystem">
@@ -79,6 +79,7 @@
      <string>File</string>
     </property>
     <addaction name="actionLoad_state"/>
+    <addaction name="actionLoad_state_from"/>
     <addaction name="actionSave_state"/>
     <addaction name="actionSwap_disks"/>
    </widget>
@@ -211,6 +212,11 @@
    </property>
    <property name="shortcut">
     <string>F5</string>
+   </property>
+  </action>
+  <action name="actionLoad_state_from">
+   <property name="text">
+    <string>Load state...</string>
    </property>
   </action>
  </widget>

@@ -8,7 +8,6 @@
 
 void VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version) { }
 void KeybLoadSnapshot(YamlLoadHelper&, unsigned int) { }
-std::string GetSnapshotCardName() { return ""; }
 void SpkrLoadSnapshot(YamlLoadHelper&) { }
 void KeybReset() { }
 void MB_SaveSnapshot(YamlSaveHelper&, unsigned int) { }
@@ -20,17 +19,28 @@ void SetLoadedSaveStateFlag(bool) { }
 void KeybSaveSnapshot(YamlSaveHelper&) { }
 void SpkrSaveSnapshot(YamlSaveHelper&) { }
 bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { return true; }
-std::string CSuperSerialCard::GetSnapshotCardName() { return ""; }
-std::string MB_GetSnapshotCardName() { return ""; }
 void MB_Reset() { }
 void MB_InitializeForLoadingSnapshot() { }
 void Phasor_LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { }
 void Phasor_SaveSnapshot(YamlSaveHelper&, unsigned int) { }
-std::string Phasor_GetSnapshotCardName() { return ""; }
 void IPropertySheet::ApplyNewConfig(CConfigNeedingRestart const&, CConfigNeedingRestart const&) { }
 void FrameUpdateApple2Type() { }
-bool SetCurrentImageDir(const std::string & ) { return true; }
 void CSuperSerialCard::SaveSnapshot(YamlSaveHelper&) { }
+
+std::string MB_GetSnapshotCardName()
+{
+  return "Mockingboard C";
+}
+
+std::string CSuperSerialCard::GetSnapshotCardName()
+{
+  return "Super Serial Card";
+}
+
+std::string Phasor_GetSnapshotCardName()
+{
+  return "Phasor";
+}
 
 // Copied from Video.cpp as it is too complicated to compile and use Video.cpp
 
