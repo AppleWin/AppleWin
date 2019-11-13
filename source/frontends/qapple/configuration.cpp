@@ -39,7 +39,7 @@ namespace
             if (result != eIMAGE_ERROR_NONE)
             {
                 const QString message = QString("Error [%1] inserting '%2'").arg(QString::number(result), filename);
-                QMessageBox::warning(NULL, "Disk error", message);
+                QMessageBox::warning(nullptr, "Disk error", message);
             }
         }
     }
@@ -52,10 +52,10 @@ namespace
         }
         else
         {
-            if (!HD_Insert(disk, filename.toStdString().c_str()))
+            if (!HD_Insert(disk, filename.toStdString()))
             {
                 const QString message = QString("Error inserting '%1'").arg(filename);
-                QMessageBox::warning(NULL, "Hard Disk error", message);
+                QMessageBox::warning(nullptr, "Hard Disk error", message);
             }
         }
     }
