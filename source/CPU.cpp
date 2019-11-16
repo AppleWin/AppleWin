@@ -403,10 +403,23 @@ static __forceinline void NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #endif
 }
 
+static bool g_irqOnLastOpcodeCycle = false;
+static bool g_irqDefer1Opcode = false;
+
 static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
 	if(g_bmIRQ && !(regs.ps & AF_INTERRUPT))
 	{
+		// if 6522 interrupt occurs on opcode's last cycle, then defer IRQ by 1 opcode
+		if (g_irqOnLastOpcodeCycle && !g_irqDefer1Opcode)
+		{
+			g_irqOnLastOpcodeCycle = false;
+			g_irqDefer1Opcode = true;	// if INT occurs again on next opcode, then do NOT defer
+			return;
+		}
+
+		g_irqDefer1Opcode = false;
+
 		// IRQ signals are deasserted when a specific r/w operation is done on device
 #ifdef _DEBUG
 		g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
@@ -420,6 +433,8 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7)
 	}
+
+	g_irqOnLastOpcodeCycle = false;
 }
 
 const int IRQ_CHECK_OPCODE_FULL_SPEED = 40;	// ~128 cycles (assume 3 cycles per opcode)
@@ -435,7 +450,9 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const boo
 		g_fullSpeedOpcodeCount = IRQ_CHECK_OPCODE_FULL_SPEED;
 	}
 
-	MB_UpdateCycles(uExecutedCycles);
+	if (MB_UpdateCycles(uExecutedCycles))
+		g_irqOnLastOpcodeCycle = true;
+
 	if (sg_Mouse.IsActive())
 		sg_Mouse.SetVBlank( !VideoGetVblBar(uExecutedCycles) );
 }
@@ -536,10 +553,9 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 	//  >0  : Do multi-opcode emulation
 	const DWORD uExecutedCycles = InternalCpuExecute(uCycles, bVideoUpdate);
 
+	// NB. Required for normal-speed (even though 6522 is updated after every opcode), as may've finished on IRQ()
 	MB_UpdateCycles(uExecutedCycles);	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
 										// NB. Ensures that 6522 regs are up-to-date for any potential save-state
-
-	//
 
 	const UINT nRemainingCycles = uExecutedCycles - g_nCyclesExecuted;
 	g_nCumulativeCycles	+= nRemainingCycles;
