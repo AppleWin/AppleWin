@@ -437,17 +437,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			UpdateIFR(pMB, IxR_TIMER1);
 
 			pMB->sy6522.TIMER1_LATCH.h = nValue;
-#ifdef DEFER_T1C_LOAD
 			pMB->bLoadT1C = true;	// OMT is stable
-#else
- #if 1
-			pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;	// OMT is stable
- #else
-			pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
-			pMB->sy6522.TIMER1_COUNTER.w += 4;	// account for decrementing T1C at end of this STA $C405
-			//pMB->sy6522.TIMER1_COUNTER.w += 2;	// ? - same as for T1C reload (search for GH#652)
- #endif
-#endif
 
 			StartTimer1(pMB);
 			CpuAdjustIrqCheck(pMB->sy6522.TIMER1_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
@@ -543,18 +533,8 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 			nValue = pMB->sy6522.DDRA;
 			break;
 		case 0x04:	// TIMER1L_COUNTER
-//			nValue = pMB->sy6522.TIMER1_COUNTER.l;
-#if 0
-			nValue = (pMB->sy6522.TIMER1_COUNTER.w - 5) & 0xff;		// -3 to compensate for the +4 on write
-																	// -2 to compensate for the +2 on write
-#endif
-#if 1		// GH#701 (T1C:=0xFFFF, LDA T1C_L, A==0xFC)
-			nValue = (pMB->sy6522.TIMER1_COUNTER.w - 3) & 0xff;		// -3 to compensate for the +4 on write
-#endif
-#if 0		// MADEF2
-			nValue = (pMB->sy6522.TIMER1_COUNTER.w - 4) & 0xff;		// OK
-//			nValue = (pMB->sy6522.TIMER1_COUNTER.w - 5) & 0xff;		// OK
-#endif
+			// NB. GH#701 (T1C:=0xFFFF, LDA T1C_L, A==0xFC)
+			nValue = (pMB->sy6522.TIMER1_COUNTER.w - 3) & 0xff;		// -3 to compensate for the (assumed) 4-cycle STA 6522.T1C_H
 			UpdateIFR(pMB, IxR_TIMER1);
 			break;
 		case 0x05:	// TIMER1H_COUNTER
@@ -1943,13 +1923,11 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 			}
 		}
 
-#ifdef DEFER_T1C_LOAD
 		if (pMB->bLoadT1C)
 		{
 			pMB->bLoadT1C = false;
 			pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
 		}
-#endif
 
 		if (pMB->bTimer2Active && bTimer2Irq)
 		{
