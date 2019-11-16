@@ -32,6 +32,13 @@ add_library(appleii SHARED
   linux/stringcb.cpp
   linux/registry.cpp
 
+  linux/duplicates/NTSC.cpp
+  linux/duplicates/Video.cpp
+  linux/duplicates/Mockingboard.cpp
+  linux/duplicates/Joystick.cpp
+  linux/duplicates/Frame.cpp
+  linux/duplicates/SerialComms.cpp
+
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
   Z80VICE/daa.cpp
