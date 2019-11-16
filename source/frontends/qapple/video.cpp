@@ -3,7 +3,7 @@
 #include <QPainter>
 #include <QKeyEvent>
 
-#include "graphicscache.h"
+#include "graphics/graphicscache.h"
 
 #include "StdAfx.h"
 #include "Video.h"
@@ -34,15 +34,14 @@ namespace
     {
         return ((x << 1) & 0x0F) | ((x >> 3) & 0x01);
     }
-
 }
 
-bool Video::Update40ColCell (QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
+bool Video::Update40ColCell (ScreenPainter_t & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
     Q_UNUSED(x)
     Q_UNUSED(y)
 
-    const QPixmap & text40Col = myGraphicsCache->text40Col();
+    const GraphicsCache::Image_t & text40Col = myGraphicsCache->text40Col();
 
     const BYTE ch = *(g_pTextBank0 + offset);
 
@@ -54,17 +53,17 @@ bool Video::Update40ColCell (QPainter & painter, int x, int y, int xpixel, int y
     const int sx = 16 * column;
     const int sy = 16 * (base + row);
 
-    painter.drawPixmap(xpixel, ypixel, text40Col, sx, sy, 14, 16);
+    painter.draw(xpixel, ypixel, text40Col, sx, sy, 14, 16);
 
     return true;
 }
 
-bool Video::Update80ColCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
+bool Video::Update80ColCell(ScreenPainter_t & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
     Q_UNUSED(x)
     Q_UNUSED(y)
 
-    const QPixmap & text80Col = myGraphicsCache->text80Col();
+    const GraphicsCache::Image_t & text80Col = myGraphicsCache->text80Col();
 
     const int base = g_nAltCharSetOffset ? 16 : 0;
 
@@ -76,7 +75,7 @@ bool Video::Update80ColCell(QPainter & painter, int x, int y, int xpixel, int yp
 
         const int sx = 8 * column;
         const int sy = 16 * (row + base);
-        painter.drawPixmap(xpixel, ypixel, text80Col, sx, sy, 7, 16);
+        painter.draw(xpixel, ypixel, text80Col, sx, sy, 7, 16);
     }
 
     {
@@ -87,35 +86,35 @@ bool Video::Update80ColCell(QPainter & painter, int x, int y, int xpixel, int yp
 
         const int sx = 8 * column;
         const int sy = 16 * (row + base);
-        painter.drawPixmap(xpixel + 7, ypixel, text80Col, sx, sy, 7, 16);
+        painter.draw(xpixel + 7, ypixel, text80Col, sx, sy, 7, 16);
     }
 
     return true;
 }
 
-bool Video::UpdateLoResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
+bool Video::UpdateLoResCell(ScreenPainter_t & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
     Q_UNUSED(x)
     Q_UNUSED(y)
 
-    const QPixmap & lores = myGraphicsCache->lores40();
+    const GraphicsCache::Image_t & lores = myGraphicsCache->lores40();
 
     const BYTE ch = *(g_pTextBank0 + offset);
 
     const int sx = 0;
     const int sy = ch * 16;
 
-    painter.drawPixmap(xpixel, ypixel, lores, sx, sy, 14, 16);
+    painter.draw(xpixel, ypixel, lores, sx, sy, 14, 16);
 
     return true;
 }
 
-bool Video::UpdateDLoResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
+bool Video::UpdateDLoResCell(ScreenPainter_t & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
     Q_UNUSED(x)
     Q_UNUSED(y)
 
-    const QPixmap & lores = myGraphicsCache->lores80();
+    const GraphicsCache::Image_t & lores = myGraphicsCache->lores80();
 
     {
         BYTE ch = *(g_pTextBank1 + offset);
@@ -127,7 +126,7 @@ bool Video::UpdateDLoResCell(QPainter & painter, int x, int y, int xpixel, int y
         const int sx = 0;
         const int sy = ch * 16;
 
-        painter.drawPixmap(xpixel, ypixel, lores, sx, sy, 7, 16);
+        painter.draw(xpixel, ypixel, lores, sx, sy, 7, 16);
     }
 
     {
@@ -136,19 +135,19 @@ bool Video::UpdateDLoResCell(QPainter & painter, int x, int y, int xpixel, int y
         const int sx = 0;
         const int sy = ch * 16;
 
-        painter.drawPixmap(xpixel + 7, ypixel, lores, sx, sy, 7, 16);
+        painter.draw(xpixel + 7, ypixel, lores, sx, sy, 7, 16);
     }
 
     return true;
 }
 
-bool Video::UpdateHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
+bool Video::UpdateHiResCell(ScreenPainter_t & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
     Q_UNUSED(x)
     Q_UNUSED(y)
 
     const BYTE * base = g_pHiresBank0 + offset;
-    const QPixmap & hires = myGraphicsCache->hires40();
+    const GraphicsCache::Image_t & hires = myGraphicsCache->hires40();
 
     for (size_t i = 0; i < 8; ++i)
     {
@@ -157,18 +156,18 @@ bool Video::UpdateHiResCell(QPainter & painter, int x, int y, int xpixel, int yp
 
         const int row = value & 0x7f;
 
-        painter.drawPixmap(xpixel, ypixel + i * 2, hires, 0, row * 2, 14, 2);
+        painter.draw(xpixel, ypixel + i * 2, hires, 0, row * 2, 14, 2);
     }
 
     return true;
 }
 
-bool Video::UpdateDHiResCell(QPainter & painter, int x, int y, int xpixel, int ypixel, int offset)
+bool Video::UpdateDHiResCell(ScreenPainter_t & painter, int x, int y, int xpixel, int ypixel, int offset)
 {
     Q_UNUSED(x)
     Q_UNUSED(y)
 
-    const QPixmap & dhires = myGraphicsCache->hires80();
+    const GraphicsCache::Image_t & dhires = myGraphicsCache->hires80();
 
     {
         const BYTE * base = g_pHiresBank1 + offset;
@@ -180,7 +179,7 @@ bool Video::UpdateDHiResCell(QPainter & painter, int x, int y, int xpixel, int y
 
             const int row = value & 0x7f;
 
-            painter.drawPixmap(xpixel, ypixel + i * 2, dhires, 0, row * 2, 7, 2);
+            painter.draw(xpixel, ypixel + i * 2, dhires, 0, row * 2, 7, 2);
         }
     }
 
@@ -194,7 +193,7 @@ bool Video::UpdateDHiResCell(QPainter & painter, int x, int y, int xpixel, int y
 
             const int row = value & 0x7f;
 
-            painter.drawPixmap(xpixel + 7, ypixel + i * 2, dhires, 0, row * 2, 7, 2);
+            painter.draw(xpixel + 7, ypixel + i * 2, dhires, 0, row * 2, 7, 2);
         }
     }
 
@@ -206,8 +205,7 @@ Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
     myGraphicsCache.reset(new GraphicsCache());
     setMouseTracking(true);
 
-    const QSize standard(40 * 7 * 2, 24 * 8 * 2);
-    myOffscreen = QPixmap(standard);
+    myOffscreen = GraphicsCache::createBlackScreenImage();
 }
 
 void Video::paintEvent(QPaintEvent *)
@@ -231,7 +229,7 @@ void Video::paintEvent(QPaintEvent *)
 
     // first draw the image offscreen 1:1
     {
-        QPainter painter(&myOffscreen);
+        ScreenPainter_t painter(&myOffscreen);
         paint(painter);
     }
 
@@ -239,16 +237,16 @@ void Video::paintEvent(QPaintEvent *)
     {
         QPainter painter(this);
         painter.scale(sx, sy);
-        painter.drawPixmap(0, 0, myOffscreen);
+        drawAny(painter, myOffscreen);
     }
 }
 
-const QPixmap & Video::getScreen() const
+GraphicsCache::Image_t Video::getScreen() const
 {
     return myOffscreen;
 }
 
-void Video::paint(QPainter & painter)
+void Video::paint(ScreenPainter_t & painter)
 {
     const int displaypage2 = (SW_PAGE2) == 0 ? 0 : 1;
 
@@ -257,7 +255,7 @@ void Video::paint(QPainter & painter)
     g_pTextBank1  = MemGetAuxPtr (0x400  << displaypage2);
     g_pTextBank0  = MemGetMainPtr(0x400  << displaypage2);
 
-    typedef bool (Video::*VideoUpdateFuncPtr_t)(QPainter&,int,int,int,int,int);
+    typedef bool (Video::*VideoUpdateFuncPtr_t)(ScreenPainter_t&,int,int,int,int,int);
 
     VideoUpdateFuncPtr_t update = SW_TEXT
         ? SW_80COL

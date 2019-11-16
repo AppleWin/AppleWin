@@ -1,11 +1,11 @@
-#include "graphicscache.h"
+#include "graphics/graphicscache.h"
 
 #include <QPainter>
 
 namespace
 {
 
-    void halfScanLines(QPixmap & charset, const QColor & black)
+    void halfScanLines(QPaintDevice & charset, const QColor & black)
     {
         const int height = charset.height();
         const int width = charset.width();
@@ -13,18 +13,18 @@ namespace
         QPainter paint(&charset);
         paint.setPen(black);
 
-        for (int i = 0; i < height; i += 2)
+        for (int i = 1; i < height; i += 2)
         {
             paint.drawLine(0, i, width - 1, i);
         }
     }
 
-    QPixmap buildHiResMono80()
+    GraphicsCache::Image_t buildHiResMono80()
     {
         const QColor black(Qt::black);
         const QColor white(Qt::white);
 
-        QPixmap hires(7, 128 * 2); // 128 values 2 lines each
+        GraphicsCache::Image_t hires(GraphicsCache::ScreenPainter_t::create(7, 128 * 2)); // 128 values 2 lines each
 
         QPainter painter(&hires);
 
@@ -59,9 +59,9 @@ namespace
       WHITE
     };
 
-#define SETFRAMECOLOR(c, r, g, b) colors[c].setRgb(r, g, b);
+#define SETFRAMECOLOR(c, r, g, b) colors[c].setRgb(r, g, b)
 
-    QPixmap buildLoResColor80()
+    GraphicsCache::Image_t buildLoResColor80()
     {
         std::vector<QColor> colors(16);
 
@@ -86,7 +86,7 @@ namespace
         SETFRAMECOLOR(WHITE,       0xFF,0xFF,0xFF); // FF
 
 
-        QPixmap lores(7, 256 * 16);  // 256 values 16 lines each
+        GraphicsCache::Image_t lores(GraphicsCache::ScreenPainter_t::create(7, 256 * 16)); // 128 values 2 lines each
 
         QPainter painter(&lores);
 
@@ -101,15 +101,15 @@ namespace
 
         return lores;
     }
-
 }
-
 
 GraphicsCache::GraphicsCache()
 {
     const QColor black(Qt::black);
 
     myCharset40.load(":/resources/CHARSET4.BMP");
+    GraphicsCache::ScreenPainter_t::convert(myCharset40);
+
     halfScanLines(myCharset40, black);
 
     myCharset80 = myCharset40.scaled(myCharset40.width() / 2, myCharset40.height());
@@ -126,4 +126,11 @@ GraphicsCache::GraphicsCache()
 
     myLoResColor40 = myLoResColor80.scaled(myLoResColor80.width() * 2, myLoResColor80.height());
     // it was already half scan
+}
+
+GraphicsCache::Image_t GraphicsCache::createBlackScreenImage()
+{
+    GraphicsCache::Image_t screen = GraphicsCache::ScreenPainter_t::create(40 * 7 * 2, 24 * 8 * 2);
+    screen.fill(Qt::black);
+    return screen;
 }

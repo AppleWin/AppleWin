@@ -10,12 +10,12 @@ class Emulator : public QFrame, private Ui::Emulator
     Q_OBJECT
 
 public:
-    explicit Emulator(QWidget *parent = 0);
+    explicit Emulator(QWidget *parent = nullptr);
 
     void updateVideo();
     void repaintVideo();
 
-    const QPixmap & getScreen() const;
+    bool saveScreen(const QString & filename) const;
 
     void setZoom(QMdiSubWindow * window, const int x);
     void set43AspectRatio(QMdiSubWindow * window);

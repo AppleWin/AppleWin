@@ -442,7 +442,7 @@ void QApple::on_actionScreenshot_triggered()
     }
     else
     {
-        const bool ok = myEmulator->getScreen().save(filename);
+        const bool ok = myEmulator->saveScreen(filename);
         if (!ok)
         {
             const QString message = QString::fromUtf8("Cannot save screenshot to %1").arg(filename);

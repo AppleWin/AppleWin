@@ -12,13 +12,14 @@ add_executable(qapple
   preferences.cpp
   emulator.cpp
   memorycontainer.cpp
-  graphicscache.cpp
   gamepadpaddle.cpp
   video.cpp
   settings.cpp
   configuration.cpp
   audiogenerator.cpp
   loggingcategory.cpp
+
+  graphics/graphicscache.cpp
 
   qhexedit2/commands.cpp
   qhexedit2/chunks.cpp

@@ -12,12 +12,12 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
     audiogenerator.cpp \
+    graphics/graphicscache.cpp \
     loggingcategory.cpp \
     qapple.cpp \
     qresources.cpp \
     emulator.cpp \
     video.cpp \
-    graphicscache.cpp \
     memorycontainer.cpp \
     preferences.cpp \
     gamepadpaddle.cpp \
@@ -30,6 +30,8 @@ SOURCES += main.cpp\
 HEADERS  += qapple.h \
     audiogenerator.h \
     emulator.h \
+    graphics/graphicscache.h \
+    graphics/painters.h \
     loggingcategory.h \
     video.h \
     graphicscache.h \
