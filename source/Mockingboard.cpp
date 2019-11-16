@@ -437,7 +437,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			UpdateIFR(pMB, IxR_TIMER1);
 
 			pMB->sy6522.TIMER1_LATCH.h = nValue;
-			pMB->bLoadT1C = true;	// OMT is stable
+			pMB->bLoadT1C = true;
 
 			StartTimer1(pMB);
 			CpuAdjustIrqCheck(pMB->sy6522.TIMER1_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
