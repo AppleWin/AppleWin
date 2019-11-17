@@ -1,15 +1,56 @@
+/*
+AppleWin : An Apple //e emulator for Windows
+
+Copyright (C) 1994-1996, Michael O'Brien
+Copyright (C) 1999-2001, Oliver Schmidt
+Copyright (C) 2002-2005, Tom Charlesworth
+Copyright (C) 2006-2010, Tom Charlesworth, Michael Pohoreski, Nick Westgate
+
+AppleWin is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+AppleWin is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with AppleWin; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+/* Description: Emulation of video modes
+ *
+ * Author: Various
+ */
+
 #include "StdAfx.h"
 
 #include "Applewin.h"
-#include "Common.h"
-#include "Video.h"
 #include "CPU.h"
-#include "Keyboard.h"
-#include "Memory.h"
-#include "NTSC.h"
 
-static bool bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
-static VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
+#include "Memory.h"
+#include "Registry.h"
+#include "Video.h"
+#include "NTSC.h"
+#include "RGBMonitor.h"
+
+#define  SW_80COL         (g_uVideoMode & VF_80COL)
+#define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
+#define  SW_HIRES         (g_uVideoMode & VF_HIRES)
+#define  SW_80STORE       (g_uVideoMode & VF_80STORE)
+#define  SW_MIXED         (g_uVideoMode & VF_MIXED)
+#define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
+#define  SW_TEXT          (g_uVideoMode & VF_TEXT)
+
+// Globals (Public)
+
+uint8_t      *g_pFramebufferbits = NULL; // last drawn frame
+int           g_nAltCharSetOffset  = 0; // alternate character set
+
+// Globals (Private)
 
 // video scanner constants
 int const kHBurstClock      =    53; // clock when Color Burst starts
@@ -29,220 +70,72 @@ int const kVPresetLine      =   256; // line when V state presets
 int const kVSyncLines       =     4; // lines per VSync duration
 int const kVDisplayableScanLines = 192; // max displayable scanlines
 
-static bool g_bVideoScannerNTSC = true;
+static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
-int           g_nAltCharSetOffset  = 0; // alternate character set
+static HBITMAP       g_hDeviceBitmap;
+static HDC           g_hDeviceDC;
 
-#define  SW_80COL         (g_uVideoMode & VF_80COL)
-#define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
-#define  SW_HIRES         (g_uVideoMode & VF_HIRES)
-#define  SW_80STORE       (g_uVideoMode & VF_80STORE)
-#define  SW_MIXED         (g_uVideoMode & VF_MIXED)
-#define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
-#define  SW_TEXT          (g_uVideoMode & VF_TEXT)
+HBITMAP       g_hLogoBitmap;
 
-bool IsVideoStyle(VideoStyle_e mask)
+COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
+
+uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
+
+DWORD     g_eVideoType     = VT_DEFAULT;
+static VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
+
+static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
+
+static LPDIRECTDRAW g_lpDD = NULL;
+
+void VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
 {
-	return (g_eVideoStyle & mask) != 0;
+	NTSC_VideoReinitialize( g_dwCyclesThisFrame, bInitVideoScannerAddress );
+	NTSC_VideoInitAppleType();
+	NTSC_SetVideoStyle();
+	NTSC_SetVideoTextMode( g_uVideoMode &  VF_80COL ? 80 : 40 );
+	NTSC_SetVideoMode( g_uVideoMode );	// Pre-condition: g_nVideoClockHorz (derived from g_dwCyclesThisFrame)
 }
 
-bool    VideoGetVblBar(DWORD uExecutedCycles)
+BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
-  // get video scanner position
-  int nCycles = CpuGetCyclesThisVideoFrame(uExecutedCycles);
+	address &= 0xFF;
 
-  // calculate video parameters according to display standard
-  const int kScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
-  const int kScanCycles = kScanLines * kHClocks;
-  nCycles %= kScanCycles;
+	const uint32_t oldVideoMode = g_uVideoMode;
 
-  // VBL'
-  return nCycles < kVDisplayableScanLines * kHClocks;
-}
+	switch (address)
+	{
+		case 0x00:                 g_uVideoMode &= ~VF_80STORE;                            break;
+		case 0x01:                 g_uVideoMode |=  VF_80STORE;                            break;
+		case 0x0C: if (!IS_APPLE2){g_uVideoMode &= ~VF_80COL; NTSC_SetVideoTextMode(40);}; break;
+		case 0x0D: if (!IS_APPLE2){g_uVideoMode |=  VF_80COL; NTSC_SetVideoTextMode(80);}; break;
+		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
+		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
+		case 0x50: g_uVideoMode &= ~VF_TEXT;    break;
+		case 0x51: g_uVideoMode |=  VF_TEXT;    break;
+		case 0x52: g_uVideoMode &= ~VF_MIXED;   break;
+		case 0x53: g_uVideoMode |=  VF_MIXED;   break;
+		case 0x54: g_uVideoMode &= ~VF_PAGE2;   break;
+		case 0x55: g_uVideoMode |=  VF_PAGE2;   break;
+		case 0x56: g_uVideoMode &= ~VF_HIRES;   break;
+		case 0x57: g_uVideoMode |=  VF_HIRES;   break;
+		case 0x5E: if (!IS_APPLE2) g_uVideoMode |=  VF_DHIRES;  break;
+		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
+	}
 
-BYTE VideoCheckMode (WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
-{
-  address &= 0xFF;
-  if (address == 0x7F)
-  {
-    return MemReadFloatingBus(SW_DHIRES != 0, uExecutedCycles);
-  }
-  else
-  {
-    BOOL result = 0;
-    switch (address) {
-    case 0x1A: result = SW_TEXT;    break;
-    case 0x1B: result = SW_MIXED;   break;
-    case 0x1D: result = SW_HIRES;   break;
-    case 0x1E: result = g_nAltCharSetOffset;   break;
-    case 0x1F: result = SW_80COL;   break;
-    case 0x7F: result = SW_DHIRES;  break;
-    }
-    return KeybGetKeycode() | (result ? 0x80 : 0);
-  }
-}
+	if (!IS_APPLE2)
+		RGB_SetVideoMode(address);
 
-BYTE VideoCheckVbl ( ULONG uExecutedCycles )
-{
-  bool bVblBar = VideoGetVblBar(uExecutedCycles);
-  BYTE r = KeybGetKeycode();
-  return (r & ~0x80) | (bVblBar ? 0x80 : 0);
-}
+	bool delay = true;
+	if ((oldVideoMode ^ g_uVideoMode) & VF_PAGE2)
+		delay = false;	// PAGE2 flag changed state, so no 1 cycle delay (GH#656)
 
-BYTE VideoSetMode (WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
-{
-  address &= 0xFF;
+	NTSC_SetVideoMode( g_uVideoMode, delay );
 
-  switch (address)
-  {
-  case 0x00:                 g_uVideoMode &= ~VF_80STORE;                            break;
-  case 0x01:                 g_uVideoMode |=  VF_80STORE;                            break;
-  case 0x0C: if (!IS_APPLE2){g_uVideoMode &= ~VF_80COL; NTSC_SetVideoTextMode(40);}; break;
-  case 0x0D: if (!IS_APPLE2){g_uVideoMode |=  VF_80COL; NTSC_SetVideoTextMode(80);}; break;
-  case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
-  case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
-  case 0x50: g_uVideoMode &= ~VF_TEXT;    break;
-  case 0x51: g_uVideoMode |=  VF_TEXT;    break;
-  case 0x52: g_uVideoMode &= ~VF_MIXED;   break;
-  case 0x53: g_uVideoMode |=  VF_MIXED;   break;
-  case 0x54: g_uVideoMode &= ~VF_PAGE2;   break;
-  case 0x55: g_uVideoMode |=  VF_PAGE2;   break;
-  case 0x56: g_uVideoMode &= ~VF_HIRES;   break;
-  case 0x57: g_uVideoMode |=  VF_HIRES;   break;
-  case 0x5E: if (!IS_APPLE2) g_uVideoMode |=  VF_DHIRES;  break;
-  case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
-  }
-
-  // Apple IIe, Technical Notes, #3: Double High-Resolution Graphics
-  // 80STORE must be OFF to display page 2
-  if (SW_80STORE)
-    g_uVideoMode &= ~VF_PAGE2;
-
-  // NTSC_BEGIN
-  NTSC_SetVideoMode( g_uVideoMode );
-  // NTSC_END
-
-  return MemReadFloatingBus(uExecutedCycles);
-}
-
-void Video_ResetScreenshotCounter( const std::string & pImageName )
-{
-}
-
-VideoRefreshRate_e GetVideoRefreshRate(void)
-{
-	return (g_bVideoScannerNTSC == false) ? VR_50HZ : VR_60HZ;
+	return MemReadFloatingBus(uExecutedCycles);
 }
 
 //===========================================================================
-//
-// References to Jim Sather's books are given as eg:
-// UTAIIe:5-7,P3 (Understanding the Apple IIe, chapter 5, page 7, Paragraph 3)
-//
-WORD VideoGetScannerAddress(DWORD uExecutedCycles, VideoScanner_e videoScannerAddr)
-{
-  // get video scanner position
-  //
-  int nCycles = CpuGetCyclesThisVideoFrame(uExecutedCycles);
-
-  // machine state switches
-  //
-  int nHires   = (SW_HIRES && !SW_TEXT) ? 1 : 0;
-  int nPage2   = SW_PAGE2 ? 1 : 0;
-  int n80Store = SW_80STORE ? 1 : 0;
-
-  // calculate video parameters according to display standard
-  //
-  int nScanLines  = bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
-  int nVSyncLine  = bVideoScannerNTSC ? kNTSCVSyncLine : kPALVSyncLine;
-  int nScanCycles = nScanLines * kHClocks;
-  nCycles %= nScanCycles;
-
-  // calculate horizontal scanning state
-  //
-  int nHClock = (nCycles + kHPEClock) % kHClocks; // which horizontal scanning clock
-  int nHState = kHClock0State + nHClock; // H state bits
-  if (nHClock >= kHPresetClock) // check for horizontal preset
-  {
-    nHState -= 1; // correct for state preset (two 0 states)
-  }
-  int h_0 = (nHState >> 0) & 1; // get horizontal state bits
-  int h_1 = (nHState >> 1) & 1;
-  int h_2 = (nHState >> 2) & 1;
-  int h_3 = (nHState >> 3) & 1;
-  int h_4 = (nHState >> 4) & 1;
-  int h_5 = (nHState >> 5) & 1;
-
-  // calculate vertical scanning state
-  //
-  int nVLine  = nCycles / kHClocks; // which vertical scanning line
-  int nVState = kVLine0State + nVLine; // V state bits
-  if ((nVLine >= kVPresetLine)) // check for previous vertical state preset
-  {
-    nVState -= nScanLines; // compensate for preset
-  }
-  int v_A = (nVState >> 0) & 1; // get vertical state bits
-  int v_B = (nVState >> 1) & 1;
-  int v_C = (nVState >> 2) & 1;
-  int v_0 = (nVState >> 3) & 1;
-  int v_1 = (nVState >> 4) & 1;
-  int v_2 = (nVState >> 5) & 1;
-  int v_3 = (nVState >> 6) & 1;
-  int v_4 = (nVState >> 7) & 1;
-  int v_5 = (nVState >> 8) & 1;
-
-  // calculate scanning memory address
-  //
-  if (nHires && SW_MIXED && v_4 && v_2) // HIRES TIME signal (UTAIIe:5-7,P3)
-  {
-    nHires = 0; // address is in text memory for mixed hires
-  }
-
-  int nAddend0 = 0x0D; // 1            1            0            1
-  int nAddend1 =              (h_5 << 2) | (h_4 << 1) | (h_3 << 0);
-  int nAddend2 = (v_4 << 3) | (v_3 << 2) | (v_4 << 1) | (v_3 << 0);
-  int nSum     = (nAddend0 + nAddend1 + nAddend2) & 0x0F; // SUM (UTAIIe:5-9)
-
-  int nAddress = 0; // build address from video scanner equations (UTAIIe:5-8,T5.1)
-  nAddress |= h_0  << 0; // a0
-  nAddress |= h_1  << 1; // a1
-  nAddress |= h_2  << 2; // a2
-  nAddress |= nSum << 3; // a3 - a6
-  nAddress |= v_0  << 7; // a7
-  nAddress |= v_1  << 8; // a8
-  nAddress |= v_2  << 9; // a9
-
-  int p2a = !(nPage2 && !n80Store);
-  int p2b = nPage2 && !n80Store;
-
-  if (nHires) // hires?
-  {
-    // Y: insert hires-only address bits
-    //
-    nAddress |= v_A << 10; // a10
-    nAddress |= v_B << 11; // a11
-    nAddress |= v_C << 12; // a12
-    nAddress |= p2a << 13; // a13
-    nAddress |= p2b << 14; // a14
-  }
-  else
-  {
-    // N: insert text-only address bits
-    //
-    nAddress |= p2a << 10; // a10
-    nAddress |= p2b << 11; // a11
-
-    // Apple ][ (not //e) and HBL?
-    //
-    if (IS_APPLE2 && // Apple II only (UTAIIe:I-4,#5)
-	!h_5 && (!h_4 || !h_3)) // HBL (UTAIIe:8-10,F8.5)
-    {
-      nAddress |= 1 << 12; // Y: a12 (add $1000 to address!)
-    }
-  }
-
-  return static_cast<WORD>(nAddress);
-}
 
 bool VideoGetSW80COL(void)
 {
@@ -284,12 +177,275 @@ bool VideoGetSWAltCharSet(void)
 	return g_nAltCharSetOffset != 0;
 }
 
-void SetVideoRefreshRate(VideoRefreshRate_e rate)
+//===========================================================================
+//
+// References to Jim Sather's books are given as eg:
+// UTAIIe:5-7,P3 (Understanding the Apple IIe, chapter 5, page 7, Paragraph 3)
+//
+WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= VS_FullAddr*/)
 {
-  // This version of AppleWin only works at 50Hz
+    // machine state switches
+    //
+    bool bHires   = VideoGetSWHIRES() && !VideoGetSWTEXT();
+    bool bPage2   = VideoGetSWPAGE2();
+    bool b80Store = VideoGetSW80STORE();
+
+    // calculate video parameters according to display standard
+    //
+    const int kScanLines  = g_bVideoScannerNTSC ? kNTSCScanLines : kPALScanLines;
+    const int kScanCycles = kScanLines * kHClocks;
+    _ASSERT(nCycles < (UINT)kScanCycles);
+    nCycles %= kScanCycles;
+
+    // calculate horizontal scanning state
+    //
+    int nHClock = (nCycles + kHPEClock) % kHClocks; // which horizontal scanning clock
+    int nHState = kHClock0State + nHClock; // H state bits
+    if (nHClock >= kHPresetClock) // check for horizontal preset
+    {
+        nHState -= 1; // correct for state preset (two 0 states)
+    }
+    int h_0 = (nHState >> 0) & 1; // get horizontal state bits
+    int h_1 = (nHState >> 1) & 1;
+    int h_2 = (nHState >> 2) & 1;
+    int h_3 = (nHState >> 3) & 1;
+    int h_4 = (nHState >> 4) & 1;
+    int h_5 = (nHState >> 5) & 1;
+
+    // calculate vertical scanning state (UTAIIe:3-15,T3.2)
+    //
+    int nVLine  = nCycles / kHClocks; // which vertical scanning line
+    int nVState = kVLine0State + nVLine; // V state bits
+    if (nVLine >= kVPresetLine) // check for previous vertical state preset
+    {
+        nVState -= kScanLines; // compensate for preset
+    }
+    int v_A = (nVState >> 0) & 1; // get vertical state bits
+    int v_B = (nVState >> 1) & 1;
+    int v_C = (nVState >> 2) & 1;
+    int v_0 = (nVState >> 3) & 1;
+    int v_1 = (nVState >> 4) & 1;
+    int v_2 = (nVState >> 5) & 1;
+    int v_3 = (nVState >> 6) & 1;
+    int v_4 = (nVState >> 7) & 1;
+    int v_5 = (nVState >> 8) & 1;
+
+    // calculate scanning memory address
+    //
+    if (bHires && SW_MIXED && v_4 && v_2) // HIRES TIME signal (UTAIIe:5-7,P3)
+    {
+        bHires = false; // address is in text memory for mixed hires
+    }
+
+    int nAddend0 = 0x0D; // 1            1            0            1
+    int nAddend1 =              (h_5 << 2) | (h_4 << 1) | (h_3 << 0);
+    int nAddend2 = (v_4 << 3) | (v_3 << 2) | (v_4 << 1) | (v_3 << 0);
+    int nSum     = (nAddend0 + nAddend1 + nAddend2) & 0x0F; // SUM (UTAIIe:5-9)
+
+    WORD nAddressH = 0; // build address from video scanner equations (UTAIIe:5-8,T5.1)
+    nAddressH |= h_0  << 0; // a0
+    nAddressH |= h_1  << 1; // a1
+    nAddressH |= h_2  << 2; // a2
+    nAddressH |= nSum << 3; // a3 - a6
+    if (!bHires)
+    {
+        // Apple ][ (not //e) and HBL?
+        //
+        if (IS_APPLE2 && // Apple II only (UTAIIe:I-4,#5)
+            !h_5 && (!h_4 || !h_3)) // HBL (UTAIIe:8-10,F8.5)
+        {
+            nAddressH |= 1 << 12; // Y: a12 (add $1000 to address!)
+        }
+    }
+
+    WORD nAddressV = 0;
+    nAddressV |= v_0  << 7; // a7
+    nAddressV |= v_1  << 8; // a8
+    nAddressV |= v_2  << 9; // a9
+
+    int p2a = !(bPage2 && !b80Store) ? 1 : 0;
+    int p2b =  (bPage2 && !b80Store) ? 1 : 0;
+
+    WORD nAddressP = 0;	// Page bits
+    if (bHires) // hires?
+    {
+        // Y: insert hires-only address bits
+        //
+        nAddressV |= v_A << 10; // a10
+        nAddressV |= v_B << 11; // a11
+        nAddressV |= v_C << 12; // a12
+        nAddressP |= p2a << 13; // a13
+        nAddressP |= p2b << 14; // a14
+    }
+    else
+    {
+        // N: insert text-only address bits
+        //
+        nAddressP |= p2a << 10; // a10
+        nAddressP |= p2b << 11; // a11
+	}
+
+	// VBL' = v_4' | v_3' = (v_4 & v_3)' (UTAIIe:5-10,#3),  (UTAIIe:3-15,T3.2)
+
+	if (videoScannerAddr == VS_PartialAddrH)
+		return nAddressH;
+
+	if (videoScannerAddr == VS_PartialAddrV)
+		return nAddressV;
+
+    return nAddressP | nAddressV | nAddressH;
 }
 
-void VideoReinitialize(bool bInitVideoScannerAddress)
+//===========================================================================
+
+// Called when *inside* CpuExecute()
+bool VideoGetVblBar(const DWORD uExecutedCycles)
 {
-  g_dwCyclesThisFrame = 0;
+	if (g_bFullSpeed)
+	{
+		// Ensure that NTSC video-scanner gets updated during full-speed, so video-dependent Apple II code doesn't hang
+		NTSC_VideoClockResync(CpuGetCyclesThisVideoFrame(uExecutedCycles));
+	}
+
+	return g_nVideoClockVert < kVDisplayableScanLines;
+}
+
+//===========================================================================
+
+static const UINT kVideoRomSize8K = kVideoRomSize4K*2;
+static const UINT kVideoRomSize16K = kVideoRomSize8K*2;
+static const UINT kVideoRomSizeMax = kVideoRomSize16K;
+static BYTE g_videoRom[kVideoRomSizeMax];
+static UINT g_videoRomSize = 0;
+static bool g_videoRomRockerSwitch = false;
+
+bool ReadVideoRomFile(const TCHAR* pRomFile)
+{
+	g_videoRomSize = 0;
+
+	HANDLE h = CreateFile(pRomFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+	if (h == INVALID_HANDLE_VALUE)
+		return false;
+
+	const ULONG size = GetFileSize(h, NULL);
+	if (size == kVideoRomSize2K || size == kVideoRomSize4K || size == kVideoRomSize8K || size == kVideoRomSize16K)
+	{
+		DWORD bytesRead;
+		if (ReadFile(h, g_videoRom, size, &bytesRead, NULL) && bytesRead == size)
+			g_videoRomSize = size;
+	}
+
+	if (g_videoRomSize == kVideoRomSize16K)
+	{
+		// Use top 8K (assume bottom 8K is all 0xFF's)
+		memcpy(&g_videoRom[0], &g_videoRom[kVideoRomSize8K], kVideoRomSize8K);
+		g_videoRomSize = kVideoRomSize8K;
+	}
+
+	CloseHandle(h);
+
+	return g_videoRomSize != 0;
+}
+
+UINT GetVideoRom(const BYTE*& pVideoRom)
+{
+	pVideoRom = &g_videoRom[0];
+	return g_videoRomSize;
+}
+
+bool GetVideoRomRockerSwitch(void)
+{
+	return g_videoRomRockerSwitch;
+}
+
+void SetVideoRomRockerSwitch(bool state)
+{
+	g_videoRomRockerSwitch = state;
+}
+
+bool IsVideoRom4K(void)
+{
+	return g_videoRomSize <= kVideoRomSize4K;
+}
+
+//===========================================================================
+
+enum VideoType127_e
+{
+	  VT127_MONO_CUSTOM
+	, VT127_COLOR_MONITOR_NTSC
+	, VT127_MONO_TV
+	, VT127_COLOR_TV
+	, VT127_MONO_AMBER
+	, VT127_MONO_GREEN
+	, VT127_MONO_WHITE
+	, VT127_NUM_VIDEO_MODES
+};
+
+void Config_Load_Video()
+{
+	DWORD dwTmp;
+
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MODE), &dwTmp, (DWORD)VT_DEFAULT);
+	g_eVideoType = dwTmp;
+
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_STYLE), &dwTmp, (DWORD)VS_HALF_SCANLINES);
+	g_eVideoStyle = (VideoStyle_e)dwTmp;
+
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MONO_COLOR), &dwTmp, (DWORD)RGB(0xC0, 0xC0, 0xC0));
+	g_nMonochromeRGB = (COLORREF)dwTmp;
+
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_REFRESH_RATE), &dwTmp, (DWORD)VR_60HZ);
+	SetVideoRefreshRate((VideoRefreshRate_e)dwTmp);
+
+	if (g_eVideoType >= NUM_VIDEO_MODES)
+		g_eVideoType = VT_DEFAULT;
+}
+
+//===========================================================================
+
+VideoType_e GetVideoType(void)
+{
+	return (VideoType_e) g_eVideoType;
+}
+
+// TODO: Can only do this at start-up (mid-emulation requires a more heavy-weight video reinit)
+void SetVideoType(VideoType_e newVideoType)
+{
+	g_eVideoType = newVideoType;
+}
+
+VideoStyle_e GetVideoStyle(void)
+{
+	return g_eVideoStyle;
+}
+
+void SetVideoStyle(VideoStyle_e newVideoStyle)
+{
+	g_eVideoStyle = newVideoStyle;
+}
+
+bool IsVideoStyle(VideoStyle_e mask)
+{
+	return (g_eVideoStyle & mask) != 0;
+}
+
+//===========================================================================
+
+VideoRefreshRate_e GetVideoRefreshRate(void)
+{
+	return (g_bVideoScannerNTSC == false) ? VR_50HZ : VR_60HZ;
+}
+
+void SetVideoRefreshRate(VideoRefreshRate_e rate)
+{
+	if (rate != VR_50HZ)
+		rate = VR_60HZ;
+
+	g_bVideoScannerNTSC = (rate == VR_60HZ);
+	NTSC_SetRefreshRate(rate);
+}
+
+void Video_ResetScreenshotCounter( const std::string & pImageName )
+{
 }

@@ -41,7 +41,12 @@
 
 #define _MAX_EXT MAX_PATH
 
-#define _ASSERT	assert
+#ifdef _DEBUG
+#define _ASSERT(expr)	assert(expr)
+#else
+#define _ASSERT(expr)
+#endif
+
 #define WINAPI
 
 #define INVALID_SOCKET NULL
@@ -149,3 +154,9 @@ int MessageBox(HWND, const char *, const char *, UINT);
 
 int GetDateFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpDate, LPCSTR lpFormat, LPSTR lpDateStr, int cchDate);
 int GetTimeFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpTime, LPCSTR lpFormat, LPSTR lpTimeStr, int cchTime);
+
+// Bitmap
+
+HBITMAP LoadBitmap(HINSTANCE hInstance, LPCSTR lpBitmapName);
+LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits);
+BOOL DeleteObject(HGDIOBJ ho);

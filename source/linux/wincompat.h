@@ -133,6 +133,7 @@ typedef unsigned int        *PUINT;
 typedef DWORD   COLORREF;
 typedef DWORD   *LPCOLORREF;
 
+#define RGB(r, g, b) 0
 
 ////////////////////////// WINNT ///////////////////////////////
 #ifndef VOID
@@ -264,6 +265,7 @@ typedef void * LPDIRECTDRAWSURFACE;
 typedef void * LRESULT;
 typedef void * LPARAM;
 typedef void * WPARAM;
+typedef void * HGDIOBJ;
 
 typedef const char * HGLOBAL;
 
@@ -273,7 +275,7 @@ typedef int errno_t;
 
 typedef unsigned char byte;
 
-typedef int LPSECURITY_ATTRIBUTES;
+typedef void * LPSECURITY_ATTRIBUTES;
 
 struct HRSRC
 {

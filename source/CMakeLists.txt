@@ -21,6 +21,8 @@ add_library(appleii SHARED
   MouseInterface.cpp
   LanguageCard.cpp
   RGBMonitor.cpp
+  NTSC.cpp
+  NTSC_CharSet.cpp
 
   linux/data.cpp
   linux/dummies.cpp
@@ -32,7 +34,6 @@ add_library(appleii SHARED
   linux/stringcb.cpp
   linux/registry.cpp
 
-  linux/duplicates/NTSC.cpp
   linux/duplicates/Video.cpp
   linux/duplicates/Mockingboard.cpp
   linux/duplicates/Joystick.cpp

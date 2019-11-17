@@ -24,7 +24,11 @@ double		g_fCurrentCLK6502 = CLK_6502_NTSC;	// Affected by Config dialog's speed 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.cpp MemReset()
 DWORD       g_dwCyclesThisFrame = 0;
-bool      g_bFullSpeed      = false;
+
+// this is workaround to force Video to update h&v clock
+// which should be done by NTSC_VideoUpdateCycles
+// but it is not at the moment
+bool      g_bFullSpeed      = true;
 
 SS_CARDTYPE g_Slot[8] = {
 	/*0*/ CT_LanguageCard,	// Just for Apple II or II+ or similar clones
@@ -50,8 +54,6 @@ const short		SPKR_DATA_INIT = (short)0x8000;
 short		g_nSpeakerData	= SPKR_DATA_INIT;
 bool			g_bQuieterSpeaker = false;
 SoundType_e		soundtype		= SOUND_WAVE;
-
-uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
 
 HINSTANCE g_hInstance = NULL;
 HWND g_hFrameWindow = NULL;
