@@ -378,8 +378,6 @@ static void UpdateIFR(SY6522_AY8910* pMB, BYTE clr_ifr, BYTE set_ifr=0)
 	    CpuIrqDeassert(IS_6522);
 }
 
-#define DEFER_T1C_LOAD
-
 static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 {
 	g_bMB_Active = true;
@@ -1801,6 +1799,9 @@ void MB_PeriodicUpdate(UINT executedCycles)
 
 static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, const USHORT nClocks, bool* pTimerUnderflow=NULL)
 {
+	if (nClocks == 0)
+		return false;
+
 	int oldTimer = timerCounter;
 	int timer = timerCounter;
 	timer -= nClocks;
@@ -1810,23 +1811,20 @@ static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, 
 
 	if (timerIrqDelay)	// Deal with any previous counter underflow which didn't yet result in an IRQ
 	{
-		timerIrqDelay -= nClocks;
-		if (timerIrqDelay <= 0)
-		{
-			timerIrqDelay = 0;
-			timerIrq = true;
-		}
-		// don't re-underflow if TIMER = 0xFFFF or 0xFFFE (so just return)
+		_ASSERT(timerIrqDelay == 1);
+		timerIrqDelay = 0;
+		timerIrq = true;
+		// don't re-underflow if TIMER = 0x0000 (so just return)
 	}
 	else if (oldTimer >= 0 && timer < 0)	// Underflow occurs for 0x0000 -> 0xFFFF
 	{
 		if (pTimerUnderflow)
 			*pTimerUnderflow = true;	// Just for Willy Byte!
 
-		if (timer < -2)
+		if (timer <= -2)				// TIMER = 0xFFFE (or less)
 			timerIrq = true;
-		else							// TIMER = 0xFFFF or 0xFFFE
-			timerIrqDelay = 3 + timer;	// ...so 2 or 1 cycles until IRQ
+		else							// TIMER = 0xFFFF
+			timerIrqDelay = 1;			// ...so 1 cycle until IRQ
 	}
 
 	return timerIrq;
