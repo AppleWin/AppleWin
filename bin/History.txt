@@ -21,6 +21,7 @@ Tom Charlesworth
 . [Bug #659] Fix for Applied Engineering's Phasor song player (noisy playback) (regression introduced at 1.26.3.4).
 . [Bug #656] Changed so only TEXT ($C050/1) and MIXED ($C052/3) have a 1 cycle delay (extension to 1.28.8.0).
 	- fixes French Touch's "Mad Effect" demo.
+	- fixed Deater's "Cycle-count Megademo" (vertical GR grey line shouldn't be visible between GR & HGR video).
 . [Bug #652] Fixed 6522's TIMER to underflow at 0x0000 -> 0xFFFF
 	- and T1C=0x0000 now correctly underflows on next cycle.
 . [Bug #435] COM ports above COM9 weren't available from the UI.
