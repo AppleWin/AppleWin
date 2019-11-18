@@ -129,8 +129,10 @@ struct SY6522_AY8910
 	SSI263A SpeechChip;
 	MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair
 	MockingboardUnitState_e stateB;	// Phasor: 6522 & 2nd AY8910
-	bool bLoadT1C;
-	bool bLoadT2C;
+
+	// NB. No need to save to save-state, as it will be done immediately after opcode completes in MB_UpdateCycles()
+	bool bLoadT1C;					// Load T1C with T1L after opcode completes
+	bool bLoadT2C;					// Load T2C with T2L after opcode completes
 };
 
 
@@ -1814,9 +1816,10 @@ static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, 
 		_ASSERT(timerIrqDelay == 1);
 		timerIrqDelay = 0;
 		timerIrq = true;
-		// don't re-underflow if TIMER = 0x0000 (so just return)
+		// if LATCH is very small then could underflow for every opcode...
 	}
-	else if (oldTimer >= 0 && timer < 0)	// Underflow occurs for 0x0000 -> 0xFFFF
+
+	if (oldTimer >= 0 && timer < 0)	// Underflow occurs for 0x0000 -> 0xFFFF
 	{
 		if (pTimerUnderflow)
 			*pTimerUnderflow = true;	// Just for Willy Byte!

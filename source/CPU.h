@@ -29,7 +29,7 @@ void	CpuNmiAssert(eIRQSRC Device);
 void	CpuNmiDeassert(eIRQSRC Device);
 void    CpuReset ();
 void    CpuSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-void    CpuLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
+void    CpuLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
 
 BYTE	CpuRead(USHORT addr, ULONG uExecutedCycles);
 void	CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles);

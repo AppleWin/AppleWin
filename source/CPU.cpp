@@ -143,6 +143,8 @@ static volatile UINT32 g_bmIRQ = 0;
 static volatile UINT32 g_bmNMI = 0;
 static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
 
+static bool g_irqDefer1Opcode = false;
+
 //
 
 static eCpuType g_MainCPU = CPU_65C02;
@@ -403,8 +405,8 @@ static __forceinline void NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #endif
 }
 
+// NB. No need to save to save-state, as IRQ() follows CheckInterruptSources(), and IRQ() always sets it to false.
 static bool g_irqOnLastOpcodeCycle = false;
-static bool g_irqDefer1Opcode = false;
 
 static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
@@ -681,6 +683,8 @@ void CpuReset()
 
 	regs.bJammed = 0;
 
+	g_irqDefer1Opcode = false;
+
 	SetActiveCpu( GetMainCpu() );
 	z80_reset();
 }
@@ -694,7 +698,8 @@ void CpuReset()
 #define SS_YAML_KEY_REGP "P"
 #define SS_YAML_KEY_REGS "S"
 #define SS_YAML_KEY_REGPC "PC"
-#define SS_YAML_KEY_CUMULATIVECYCLES "Cumulative Cycles"
+#define SS_YAML_KEY_CUMULATIVE_CYCLES "Cumulative Cycles"
+#define SS_YAML_KEY_IRQ_DEFER_1_OPCODE "Defer IRQ By 1 Opcode"
 
 #define SS_YAML_VALUE_6502 "6502"
 #define SS_YAML_VALUE_65C02 "65C02"
@@ -717,10 +722,11 @@ void CpuSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGP, regs.ps);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGS, (BYTE) regs.sp);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_REGPC, regs.pc);
-	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_CUMULATIVECYCLES, g_nCumulativeCycles);
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_CUMULATIVE_CYCLES, g_nCumulativeCycles);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_IRQ_DEFER_1_OPCODE, g_irqDefer1Opcode);
 }
 
-void CpuLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+void CpuLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (!yamlLoadHelper.GetSubMap(CpuGetSnapshotStructName()))
 		return;
@@ -741,7 +747,10 @@ void CpuLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 
 	CpuIrqReset();
 	CpuNmiReset();
-	g_nCumulativeCycles = yamlLoadHelper.LoadUint64(SS_YAML_KEY_CUMULATIVECYCLES);
+	g_nCumulativeCycles = yamlLoadHelper.LoadUint64(SS_YAML_KEY_CUMULATIVE_CYCLES);
+
+	if (version >= 5)
+		g_irqDefer1Opcode = yamlLoadHelper.LoadBool(SS_YAML_KEY_IRQ_DEFER_1_OPCODE);
 
 	yamlLoadHelper.PopMap();
 }
