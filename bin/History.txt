@@ -9,12 +9,18 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.29.5.0 - 11 Nov 2019
+1.29.6.0 - 18 Nov 2019
 ----------------------
+. [Bug #724] Fixed so that 6502 interrupt is delayed by 1 opcode when interrupt occurs on last cycle of opcode.
+	- fixes French Touch's "Mad Effect" & "Mad Effect #2" demos.
 . [Bug #711] Fixed Mockingboard initial "stretched" music playback (regression introduced at 1.28.7.0).
 . [Bug #707] Fixed ADTPro (running under AppleWin) not working with real COM ports.
+. [Bug #701] Fixed 6522's TIMER being out-of-sync with 6502.
+. [Bug #699] Fixed French Touch's "Mad Effect". See #656, #701, #724.
 . [Bug #680] Fixed video tearing (eg. for FT's "Scroll Scroll Scroll" & "Mad Effect #2").
 . [Bug #659] Fix for Applied Engineering's Phasor song player (noisy playback) (regression introduced at 1.26.3.4).
+. [Bug #656] Changed so only TEXT ($C050/1) and MIXED ($C052/3) have a 1 cycle delay (extension to 1.28.8.0).
+	- fixes French Touch's "Mad Effect" demo.
 . [Bug #652] Fixed 6522's TIMER to underflow at 0x0000 -> 0xFFFF
 	- and T1C=0x0000 now correctly underflows on next cycle.
 . [Bug #435] COM ports above COM9 weren't available from the UI.
@@ -23,6 +29,7 @@ Tom Charlesworth
 . [PR #694] Debugger: Symbol loading: Fix random crash upon start up.
 . Fixed crash with debug command line switches: -m and -no-mb.
 
+(1.29.5.0 - skipped)
 
 1.29.4.0 - 24 Oct 2019
 ----------------------
