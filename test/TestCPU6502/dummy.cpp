@@ -40,3 +40,20 @@ void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value) { }
 // MessageBox
 
 int MessageBox(HWND, const char * text, const char * caption, UINT type) { return 0; }
+
+// Bitmap
+
+HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename)
+{
+  return nullptr;
+}
+
+LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits)
+{
+  return 0;
+}
+
+BOOL DeleteObject(HGDIOBJ ho)
+{
+  return TRUE;
+}

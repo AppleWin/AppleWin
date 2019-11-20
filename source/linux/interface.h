@@ -6,6 +6,10 @@
 // Resources
 
 HRSRC FindResource(void *, const std::string & filename, const char *);
+HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename);
+LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits);
+BOOL DeleteObject(HGDIOBJ ho);
+
 
 // Frame
 

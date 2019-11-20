@@ -2,7 +2,7 @@
 
 int ProcessKeyboard();
 void ProcessInput();
-void VideoInitialize();
+void NVideoInitialize();
 void VideoUninitialize();
 void VideoRedrawScreen();
 

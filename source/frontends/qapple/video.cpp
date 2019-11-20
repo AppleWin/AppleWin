@@ -8,6 +8,7 @@
 #include "StdAfx.h"
 #include "Video.h"
 #include "Memory.h"
+#include "linux/data.h"
 #include "MouseInterface.h"
 
 namespace
@@ -210,11 +211,39 @@ Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
 
 void Video::paintEvent(QPaintEvent *)
 {
-    const QSize min = minimumSize();
-    const QSize actual = size();
-    const double sx = double(actual.width()) / double(min.width());
-    const double sy = double(actual.height()) / double(min.height());
+    paintEventNTSC();
+}
 
+void Video::paintEventNTSC()
+{
+    const uint8_t * data;
+    int width;
+    int height;
+    int sx, sy;
+    int sw, sh;
+
+    getScreenData(data, width, height, sx, sy, sw, sh);
+
+    myFrameBuffer = QImage(data, width, height, QImage::Format_RGB32);
+
+    const QSize actual = size();
+    const double scaleX = double(actual.width()) / sw;
+    const double scaleY = double(actual.height()) / sh;
+
+    // then paint it on the widget with scale
+    {
+        QPainter painter(this);
+
+        // scale and flip vertically
+        const QTransform transform(scaleX, 0.0, 0.0, -scaleY, 0.0, actual.height());
+        painter.setTransform(transform);
+
+        painter.drawImage(0, 0, myFrameBuffer, sx, sy, sw, sh);
+    }
+}
+
+void Video::paintEventInternal()
+{
     /* How to make this faster
      * 1) Do not call Video::paint() with a scale != 1:1
      * 2) For this reason we need to draw elsewhere
@@ -232,6 +261,11 @@ void Video::paintEvent(QPaintEvent *)
         ScreenPainter_t painter(&myOffscreen);
         paint(painter);
     }
+
+    const QSize min = myOffscreen.size();
+    const QSize actual = size();
+    const double sx = double(actual.width()) / double(min.width());
+    const double sy = double(actual.height()) / double(min.height());
 
     // then paint it on the widget with scale
     {

@@ -273,18 +273,3 @@ int GetTimeFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpTime, LPCSTR l
   strncpy(lpTimeStr, str.c_str(), cchTime);
   return cchTime; // not 100% sure, but it is never used
 }
-
-HBITMAP LoadBitmap(HINSTANCE hInstance, LPCSTR lpBitmapName)
-{
-  return nullptr;
-}
-
-LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits)
-{
-  return 0;
-}
-
-BOOL DeleteObject(HGDIOBJ ho)
-{
-  return TRUE;
-}

@@ -45,8 +45,13 @@ private:
     // no scale applied
     void paint(ScreenPainter_t & painter);
 
+    void paintEventInternal();
+    void paintEventNTSC();
+
     std::shared_ptr<const GraphicsCache> myGraphicsCache;
     Image_t myOffscreen;
+
+    QImage myFrameBuffer;
 };
 
 #endif // VIDEO_H

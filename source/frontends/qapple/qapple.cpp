@@ -40,6 +40,7 @@ namespace
         LogFileOutput("Initialisation\n");
 
         ImageInitialize();
+        g_bFullSpeed = false;
     }
 
     /* In AppleWin there are 3 ways to reset the emulator
@@ -129,11 +130,6 @@ void FrameDrawDiskStatus(HDC)
 void FrameRefreshStatus(int, bool)
 {
 
-}
-
-void VideoInitialize()
-{
-    VideoReinitialize();
 }
 
 // MessageBox
@@ -254,7 +250,7 @@ void QApple::on_timer()
     const double fExecutionPeriodClks = g_fCurrentCLK6502 * (double(nExecutionPeriodUsec) / fUsecPerSec);
     const DWORD uCyclesToExecute = fExecutionPeriodClks;
 
-    const bool bVideoUpdate = false;
+    const bool bVideoUpdate = true;
 
     int count = 0;
     const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();

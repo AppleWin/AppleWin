@@ -157,6 +157,6 @@ int GetTimeFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpTime, LPCSTR l
 
 // Bitmap
 
-HBITMAP LoadBitmap(HINSTANCE hInstance, LPCSTR lpBitmapName);
+HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename);
 LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits);
 BOOL DeleteObject(HGDIOBJ ho);

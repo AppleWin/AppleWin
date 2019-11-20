@@ -324,6 +324,34 @@ typedef struct tagRGBQUAD {
   BYTE rgbReserved;
 } RGBQUAD;
 
+typedef struct tagBITMAPINFOHEADER {
+  DWORD biSize;
+  LONG  biWidth;
+  LONG  biHeight;
+  WORD  biPlanes;
+  WORD  biBitCount;
+  DWORD biCompression;
+  DWORD biSizeImage;
+  LONG  biXPelsPerMeter;
+  LONG  biYPelsPerMeter;
+  DWORD biClrUsed;
+  DWORD biClrImportant;
+} BITMAPINFOHEADER, *LPBITMAPINFOHEADER, *PBITMAPINFOHEADER;
+
+typedef struct tagBITMAPINFO {
+  BITMAPINFOHEADER bmiHeader;
+  RGBQUAD          bmiColors[1];
+} BITMAPINFO, *LPBITMAPINFO, *PBITMAPINFO;
+
+
+/* constants for the biCompression field */
+#define BI_RGB        0L
+#define BI_RLE8       1L
+#define BI_RLE4       2L
+#define BI_BITFIELDS  3L
+#define BI_JPEG       4L
+#define BI_PNG        5L
+
 #ifdef __cplusplus
 }
 #endif

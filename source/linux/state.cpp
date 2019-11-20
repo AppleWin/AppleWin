@@ -12,16 +12,15 @@ void SpkrLoadSnapshot(YamlLoadHelper&) { }
 void KeybReset() { }
 void MB_SaveSnapshot(YamlSaveHelper&, unsigned int) { }
 void JoySaveSnapshot(YamlSaveHelper&) { }
-void VideoResetState() { }
 void JoyLoadSnapshot(YamlLoadHelper&) { }
-void MB_LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { }
+bool MB_LoadSnapshot(class YamlLoadHelper&, UINT, UINT) { return true; }
 void SetLoadedSaveStateFlag(bool) { }
 void KeybSaveSnapshot(YamlSaveHelper&) { }
 void SpkrSaveSnapshot(YamlSaveHelper&) { }
 bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { return true; }
 void MB_Reset() { }
 void MB_InitializeForLoadingSnapshot() { }
-void Phasor_LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { }
+bool Phasor_LoadSnapshot(class YamlLoadHelper&, UINT, UINT) { return true; }
 void Phasor_SaveSnapshot(YamlSaveHelper&, unsigned int) { }
 void IPropertySheet::ApplyNewConfig(CConfigNeedingRestart const&, CConfigNeedingRestart const&) { }
 void FrameUpdateApple2Type() { }

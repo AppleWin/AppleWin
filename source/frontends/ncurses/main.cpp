@@ -283,7 +283,7 @@ namespace
 	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
 	MemInitialize();
-	VideoInitialize();
+	NVideoInitialize();
 	sg_Disk2Card.Reset();
 	HD_Reset();
 

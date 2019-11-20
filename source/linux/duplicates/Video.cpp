@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Video.h"
 #include "NTSC.h"
 #include "RGBMonitor.h"
+#include "Frame.h"
 
 #define  SW_80COL         (g_uVideoMode & VF_80COL)
 #define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
@@ -74,8 +75,7 @@ static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
 static HBITMAP       g_hDeviceBitmap;
 static HDC           g_hDeviceDC;
-
-HBITMAP       g_hLogoBitmap;
+static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
 COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
 
@@ -88,6 +88,33 @@ static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 static LPDIRECTDRAW g_lpDD = NULL;
 
+static void videoCreateDIBSection();
+
+
+void VideoInitialize ()
+{
+	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
+	VideoResetState();
+
+	g_pFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
+		NULL,
+		sizeof(BITMAPINFOHEADER) + 256*sizeof(RGBQUAD),
+		MEM_COMMIT,
+		PAGE_READWRITE);
+
+	ZeroMemory(g_pFramebufferinfo,sizeof(BITMAPINFOHEADER)+256*sizeof(RGBQUAD));
+	g_pFramebufferinfo->bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
+	g_pFramebufferinfo->bmiHeader.biWidth       = GetFrameBufferWidth();
+	g_pFramebufferinfo->bmiHeader.biHeight      = GetFrameBufferHeight();
+	g_pFramebufferinfo->bmiHeader.biPlanes      = 1;
+	g_pFramebufferinfo->bmiHeader.biBitCount    = 32;
+	g_pFramebufferinfo->bmiHeader.biCompression = BI_RGB;
+	g_pFramebufferinfo->bmiHeader.biClrUsed     = 0;
+
+	videoCreateDIBSection();
+}
+
+
 void VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
 {
 	NTSC_VideoReinitialize( g_dwCyclesThisFrame, bInitVideoScannerAddress );
@@ -95,6 +122,17 @@ void VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
 	NTSC_SetVideoStyle();
 	NTSC_SetVideoTextMode( g_uVideoMode &  VF_80COL ? 80 : 40 );
 	NTSC_SetVideoMode( g_uVideoMode );	// Pre-condition: g_nVideoClockHorz (derived from g_dwCyclesThisFrame)
+}
+
+void VideoResetState ()
+{
+	g_nAltCharSetOffset    = 0;
+	g_uVideoMode           = VF_TEXT;
+
+	NTSC_SetVideoTextMode( 40 );
+	NTSC_SetVideoMode( g_uVideoMode );
+
+	RGB_ResetState();
 }
 
 BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
@@ -298,6 +336,18 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
 
 //===========================================================================
 
+// Called when *outside* of CpuExecute()
+bool VideoGetVblBarEx(const DWORD dwCyclesThisFrame)
+{
+	if (g_bFullSpeed)
+	{
+		// Ensure that NTSC video-scanner gets updated during full-speed, so video screen can be redrawn during Apple II VBL
+		NTSC_VideoClockResync(dwCyclesThisFrame);
+	}
+
+	return g_nVideoClockVert < kVDisplayableScanLines;
+}
+
 // Called when *inside* CpuExecute()
 bool VideoGetVblBar(const DWORD uExecutedCycles)
 {
@@ -448,4 +498,28 @@ void SetVideoRefreshRate(VideoRefreshRate_e rate)
 
 void Video_ResetScreenshotCounter( const std::string & pImageName )
 {
+}
+
+static void videoCreateDIBSection()
+{
+        const size_t size = GetFrameBufferWidth()*GetFrameBufferHeight()*sizeof(bgra_t);
+	void * memory = malloc(size);
+        g_pFramebufferbits = static_cast<uint8_t *>(memory);
+
+	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
+	ZeroMemory( g_pFramebufferbits, size);
+
+	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
+	NTSC_VideoInit( g_pFramebufferbits );
+}
+
+void getScreenData(const uint8_t * & data, int & width, int & height, int & sx, int & sy, int & sw, int & sh)
+{
+  data = g_pFramebufferbits;
+  width = GetFrameBufferWidth();
+  height = GetFrameBufferHeight();
+  sx = GetFrameBufferBorderWidth();
+  sy = GetFrameBufferBorderHeight();
+  sw = GetFrameBufferBorderlessWidth();
+  sh = GetFrameBufferBorderlessHeight();
 }

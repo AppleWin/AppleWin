@@ -366,7 +366,7 @@ void FrameRefreshStatus(int x, bool)
   // std::cerr << "Status: " << x << std::endl;
 }
 
-void VideoInitialize()
+void NVideoInitialize()
 {
   VideoReinitialize();
 
