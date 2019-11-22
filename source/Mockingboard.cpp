@@ -129,6 +129,10 @@ struct SY6522_AY8910
 	SSI263A SpeechChip;
 	MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair
 	MockingboardUnitState_e stateB;	// Phasor: 6522 & 2nd AY8910
+
+	// NB. No need to save to save-state, as it will be done immediately after opcode completes in MB_UpdateCycles()
+	bool bLoadT1C;					// Load T1C with T1L after opcode completes
+	bool bLoadT2C;					// Load T2C with T2L after opcode completes
 };
 
 
@@ -433,7 +437,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			UpdateIFR(pMB, IxR_TIMER1);
 
 			pMB->sy6522.TIMER1_LATCH.h = nValue;
-			pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
+			pMB->bLoadT1C = true;
 
 			StartTimer1(pMB);
 			CpuAdjustIrqCheck(pMB->sy6522.TIMER1_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
@@ -529,7 +533,8 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 			nValue = pMB->sy6522.DDRA;
 			break;
 		case 0x04:	// TIMER1L_COUNTER
-			nValue = pMB->sy6522.TIMER1_COUNTER.l;
+			// NB. GH#701 (T1C:=0xFFFF, LDA T1C_L, A==0xFC)
+			nValue = (pMB->sy6522.TIMER1_COUNTER.w - 3) & 0xff;		// -3 to compensate for the (assumed) 4-cycle STA 6522.T1C_H
 			UpdateIFR(pMB, IxR_TIMER1);
 			break;
 		case 0x05:	// TIMER1H_COUNTER
@@ -1541,7 +1546,8 @@ void MB_Reset()	// CTRL+RESET or power-cycle
 
 static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	MB_UpdateCycles(nExecutedCycles);
+	if (g_bFullSpeed)
+		MB_UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
 	if(!IS_APPLE2 && MemCheckINTCXROM())
@@ -1604,7 +1610,8 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 
 static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	MB_UpdateCycles(nExecutedCycles);
+	if (g_bFullSpeed)
+		MB_UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
 	if(!IS_APPLE2 && MemCheckINTCXROM())
@@ -1794,6 +1801,9 @@ void MB_PeriodicUpdate(UINT executedCycles)
 
 static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, const USHORT nClocks, bool* pTimerUnderflow=NULL)
 {
+	if (nClocks == 0)
+		return false;
+
 	int oldTimer = timerCounter;
 	int timer = timerCounter;
 	timer -= nClocks;
@@ -1803,23 +1813,21 @@ static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, 
 
 	if (timerIrqDelay)	// Deal with any previous counter underflow which didn't yet result in an IRQ
 	{
-		timerIrqDelay -= nClocks;
-		if (timerIrqDelay <= 0)
-		{
-			timerIrqDelay = 0;
-			timerIrq = true;
-		}
-		// don't re-underflow if TIMER = 0xFFFF or 0xFFFE (so just return)
+		_ASSERT(timerIrqDelay == 1);
+		timerIrqDelay = 0;
+		timerIrq = true;
+		// if LATCH is very small then could underflow for every opcode...
 	}
-	else if (oldTimer >= 0 && timer < 0)	// Underflow occurs for 0x0000 -> 0xFFFF
+
+	if (oldTimer >= 0 && timer < 0)	// Underflow occurs for 0x0000 -> 0xFFFF
 	{
 		if (pTimerUnderflow)
 			*pTimerUnderflow = true;	// Just for Willy Byte!
 
-		if (timer < -2)
+		if (timer <= -2)				// TIMER = 0xFFFE (or less)
 			timerIrq = true;
-		else							// TIMER = 0xFFFF or 0xFFFE
-			timerIrqDelay = 3 + timer;	// ...so 2 or 1 cycles until IRQ
+		else							// TIMER = 0xFFFF
+			timerIrqDelay = 1;			// ...so 1 cycle until IRQ
 	}
 
 	return timerIrq;
@@ -1828,24 +1836,45 @@ static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, 
 // Called by:
 // . CpuExecute() every ~1000 @ 1MHz
 // . CheckInterruptSources() every opcode (or every 40 opcodes at full-speed)
-// . MB_Read() / MB_Write()
-void MB_UpdateCycles(ULONG uExecutedCycles)
+// . MB_Read() / MB_Write() (only for full-speed)
+bool MB_UpdateCycles(ULONG uExecutedCycles)
 {
 	if (g_SoundcardType == CT_Empty)
-		return;
+		return false;
 
 	CpuCalcCycles(uExecutedCycles);
 	UINT64 uCycles = g_nCumulativeCycles - g_uLastCumulativeCycles;
+	if (uCycles == 0)
+		return false;		// Likely when called from CpuExecute()
+	_ASSERT(uCycles > 1);
+
+	const bool isOpcode = (uCycles > 1 && uCycles <= 7);		// todo: better to pass in a flag?
+
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 	_ASSERT(uCycles < 0x10000);
 	USHORT nClocks = (USHORT) uCycles;
+
+	bool bIrqOnLastOpcodeCycle = false;
 
 	for (int i=0; i<NUM_SY6522; i++)
 	{
 		SY6522_AY8910* pMB = &g_MB[i];
 
 		bool bTimer1Underflow = false;	// Just for Willy Byte!
-		const bool bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks, &bTimer1Underflow);
+		bool bTimer1Irq = false;
+		bool bTimer1IrqOnLastCycle = false;
+
+		if (isOpcode)
+		{
+			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks-1, &bTimer1Underflow);
+			bTimer1IrqOnLastCycle  = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, 1, &bTimer1Underflow);
+			bTimer1Irq = bTimer1Irq || bTimer1IrqOnLastCycle;
+		}
+		else
+		{
+			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks, &bTimer1Underflow);
+		}
+
 		const bool bTimer2Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
 
 		if (!pMB->bTimer1Active && bTimer1Underflow)
@@ -1864,6 +1893,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 		if (pMB->bTimer1Active && bTimer1Irq)
 		{
 			UpdateIFR(pMB, 0, IxR_TIMER1);
+			bIrqOnLastOpcodeCycle = true;
 
 			MB_Update();
 
@@ -1880,6 +1910,9 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 				// - Ultima4/5 change ACCESS_TIMER1 after a couple of IRQs into tune
 				pMB->sy6522.TIMER1_COUNTER.w += pMB->sy6522.TIMER1_LATCH.w;	// GH#651: account for underflowed cycles too
 				pMB->sy6522.TIMER1_COUNTER.w += 2;							// GH#652: account for extra 2 cycles (Rockwell, Fig.16: period=N+2cycles)
+																			// EG. T1C=0xFFFE, T1L=0x0001
+																			// . T1C += T1L = 0xFFFF
+																			// . T1C +=   2 = 0x0001
 				if (pMB->sy6522.TIMER1_COUNTER.w > pMB->sy6522.TIMER1_LATCH.w)
 				{
 					if (pMB->sy6522.TIMER1_LATCH.w)
@@ -1889,6 +1922,12 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 				}
 				StartTimer1(pMB);
 			}
+		}
+
+		if (pMB->bLoadT1C)
+		{
+			pMB->bLoadT1C = false;
+			pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
 		}
 
 		if (pMB->bTimer2Active && bTimer2Irq)
@@ -1913,6 +1952,8 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 			}
 		}
 	}
+
+	return bIrqOnLastOpcodeCycle;
 }
 
 //-----------------------------------------------------------------------------

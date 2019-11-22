@@ -11,7 +11,7 @@ void    MB_Demute();
 void    MB_StartOfCpuExecute();
 void    MB_PeriodicUpdate(UINT executedCycles);
 void    MB_CheckIRQ();
-void    MB_UpdateCycles(ULONG uExecutedCycles);
+bool    MB_UpdateCycles(ULONG uExecutedCycles);
 SS_CARDTYPE MB_GetSoundcardType();
 bool    MB_IsActive();
 DWORD   MB_GetVolume();

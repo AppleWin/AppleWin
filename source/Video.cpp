@@ -660,9 +660,10 @@ BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 	if (!IS_APPLE2)
 		RGB_SetVideoMode(address);
 
-	bool delay = true;
-	if ((oldVideoMode ^ g_uVideoMode) & VF_PAGE2)
-		delay = false;	// PAGE2 flag changed state, so no 1 cycle delay (GH#656)
+	// Only 1-cycle delay for VF_TEXT & VF_MIXED mode changes (GH#656)
+	bool delay = false;
+	if ((oldVideoMode ^ g_uVideoMode) & (VF_TEXT|VF_MIXED))
+		delay = true;
 
 	NTSC_SetVideoMode( g_uVideoMode, delay );
 

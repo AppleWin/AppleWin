@@ -68,7 +68,8 @@ static YamlHelper yamlHelper;
 // v2: Extended: keyboard (added 'Key Waiting'), memory (LC mem type for II/II+, inverted MF_INTCXROM bit)
 // v3: Extended: memory (added 'AnnunciatorN')
 // v4: Extended: video (added 'Video Refresh Rate')
-#define UNIT_APPLE2_VER 4
+// v5: Extended: cpu (added 'Defer IRQ By 1 Opcode')
+#define UNIT_APPLE2_VER 5
 
 #define UNIT_SLOTS_VER 1
 
@@ -214,7 +215,7 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	SetApple2Type( ParseApple2Type(model) );	// NB. Sets default main CPU type
 	m_ConfigNew.m_Apple2Type = GetApple2Type();
 
-	CpuLoadSnapshot(yamlLoadHelper);			// NB. Overrides default main CPU type
+	CpuLoadSnapshot(yamlLoadHelper, version);	// NB. Overrides default main CPU type
 	m_ConfigNew.m_CpuType = GetMainCpu();
 
 	JoyLoadSnapshot(yamlLoadHelper);
@@ -390,7 +391,7 @@ static void Snapshot_LoadState_v2(void)
 		m_ConfigNew.m_bEnableHDD = false;
 		//m_ConfigNew.m_bEnableTheFreezesF8Rom = ?;	// todo: when support saving config
 
-		MemReset();
+		MemReset();							// Also calls CpuInitialize()
 		PravetsReset();
 		sg_Disk2Card.Reset();
 		HD_Reset();

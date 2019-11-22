@@ -116,7 +116,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static int g_nHiresPage    = 1;
 	static int g_nTextPage     = 1;
 
-	static bool g_bDelayVideoMode = false;
+	static bool g_bDelayVideoMode = false;	// NB. No need to save to save-state, as it will be done immediately after opcode completes in NTSC_VideoUpdateCycles()
 	static uint32_t g_uNewVideoModeFlags = 0;
 
 	// Understanding the Apple II, Timing Generation and the Video Scanner, Pg 3-11
