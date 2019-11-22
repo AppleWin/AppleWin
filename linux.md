@@ -31,19 +31,17 @@ been modified, mostly for
 Some key files have been completely reimplemented or discarded:
 
 * AppleWin.cpp
-* Video.cpp
 * Frame.cpp
-* NTSC.cpp
+* Video.cpp (partially)
 
 Some features totally ignored:
 
-* NSTC colors
 * ethernet
 * serial port
 * debugger
 * speech
 
-The rest is in a usable state.
+The rest is in a very usable state.
 
 ## Executables
 
@@ -69,9 +67,7 @@ The joystick uses evdev (currently the device name is hardcoded).
 This is based on Qt, currently tested with 5.10
 
 * keyboard shortcuts are listed in the menu entries
-* graphics: code borrowed from linapple, no NTSC color
-  * lo res in color
-  * hi res in BW
+* graphics: runs the native NTSC code
 * joystick: it uses QtGamepad (correct names will only be displayed with 5.11)
 * emulator runs in the main UI thread
 * Qt timers are very coarse: the emulator needs to dynamically adapt the cycles to execute
