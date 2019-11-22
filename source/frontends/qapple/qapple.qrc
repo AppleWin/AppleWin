@@ -7,6 +7,7 @@
         <file alias="resources/CHARSET82.BMP">resources/CHARSET82.bmp</file>
         <file alias="resources/CHARSET8M.BMP">resources/CHARSET8M.bmp</file>
         <file alias="resources/CHARSET8C.BMP">resources/CHARSET8C.bmp</file>
+        <file alias="resources/APPLEWINLOGO.BMP">resources/ApplewinLogo.bmp</file>
         <file>resources/DISK2.rom</file>
         <file>resources/Hddrvr.bin</file>
         <file>resources/Parallel.rom</file>

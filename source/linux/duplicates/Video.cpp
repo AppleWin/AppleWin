@@ -513,7 +513,7 @@ static void videoCreateDIBSection()
 	NTSC_VideoInit( g_pFramebufferbits );
 }
 
-void getScreenData(const uint8_t * & data, int & width, int & height, int & sx, int & sy, int & sw, int & sh)
+void getScreenData(uint8_t * & data, int & width, int & height, int & sx, int & sy, int & sw, int & sh)
 {
   data = g_pFramebufferbits;
   width = GetFrameBufferWidth();

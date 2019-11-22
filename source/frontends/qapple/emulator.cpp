@@ -25,6 +25,11 @@ bool Emulator::saveScreen(const QString & filename) const
     return video->getScreen().save(filename);
 }
 
+void Emulator::displayLogo()
+{
+    video->displayLogo();
+}
+
 void Emulator::setVideoSize(QMdiSubWindow * window, const QSize & size)
 {
     window->showNormal();

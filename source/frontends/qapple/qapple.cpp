@@ -53,7 +53,7 @@ namespace
      *
      */
 
-    void startEmulator(QWidget * window)
+    void startEmulator(QWidget * window, Emulator * emulator)
     {
         LoadConfiguration();
 
@@ -86,6 +86,9 @@ namespace
 
         MemInitialize();
         VideoInitialize();
+
+        emulator->displayLogo();
+
         sg_Disk2Card.Reset();
         HD_Reset();
     }
@@ -204,7 +207,7 @@ QApple::QApple(QWidget *parent) :
 
     on_actionPause_triggered();
     initialiseEmulator();
-    startEmulator(myEmulatorWindow);
+    startEmulator(myEmulatorWindow, myEmulator);
 }
 
 void QApple::closeEvent(QCloseEvent *)
@@ -331,7 +334,7 @@ void QApple::on_actionReboot_triggered()
 {
     emit endEmulator();
     stopEmulator();
-    startEmulator(myEmulatorWindow);
+    startEmulator(myEmulatorWindow, myEmulator);
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
     myEmulator->updateVideo();
     restartTimeCounters();

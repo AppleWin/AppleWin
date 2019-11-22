@@ -19,8 +19,6 @@ add_executable(qapple
   audiogenerator.cpp
   loggingcategory.cpp
 
-  graphics/graphicscache.cpp
-
   qhexedit2/commands.cpp
   qhexedit2/chunks.cpp
   qhexedit2/qhexedit.cpp

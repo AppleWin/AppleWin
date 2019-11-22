@@ -3,228 +3,66 @@
 #include <QPainter>
 #include <QKeyEvent>
 
-#include "graphics/graphicscache.h"
-
 #include "StdAfx.h"
-#include "Video.h"
-#include "Memory.h"
 #include "linux/data.h"
 #include "MouseInterface.h"
 
 namespace
 {
-    LPBYTE        g_pTextBank1; // Aux
-    LPBYTE        g_pTextBank0; // Main
-    LPBYTE        g_pHiresBank1;
-    LPBYTE        g_pHiresBank0;
-
-    #define  SW_80COL         (g_uVideoMode & VF_80COL)
-    #define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
-    #define  SW_HIRES         (g_uVideoMode & VF_HIRES)
-    #define  SW_80STORE       (g_uVideoMode & VF_80STORE)
-    #define  SW_MIXED         (g_uVideoMode & VF_MIXED)
-    #define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
-    #define  SW_TEXT          (g_uVideoMode & VF_TEXT)
-
-//    bool g_bTextFlashState = false;
 
     BYTE keyCode = 0;
     bool keyWaiting = false;
 
-    BYTE ROL_NIB(BYTE x)
-    {
-        return ((x << 1) & 0x0F) | ((x >> 3) & 0x01);
-    }
-}
-
-bool Video::Update40ColCell (ScreenPainter_t & painter, int x, int y, int xpixel, int ypixel, int offset)
-{
-    Q_UNUSED(x)
-    Q_UNUSED(y)
-
-    const GraphicsCache::Image_t & text40Col = myGraphicsCache->text40Col();
-
-    const BYTE ch = *(g_pTextBank0 + offset);
-
-    const int base = g_nAltCharSetOffset ? 16 : 0;
-
-    const int row = ch / 16;
-    const int column = ch % 16;
-
-    const int sx = 16 * column;
-    const int sy = 16 * (base + row);
-
-    painter.draw(xpixel, ypixel, text40Col, sx, sy, 14, 16);
-
-    return true;
-}
-
-bool Video::Update80ColCell(ScreenPainter_t & painter, int x, int y, int xpixel, int ypixel, int offset)
-{
-    Q_UNUSED(x)
-    Q_UNUSED(y)
-
-    const GraphicsCache::Image_t & text80Col = myGraphicsCache->text80Col();
-
-    const int base = g_nAltCharSetOffset ? 16 : 0;
-
-    {
-        const BYTE ch1 = *(g_pTextBank1 + offset);
-
-        const int row = ch1 / 16;
-        const int column = ch1 % 16;
-
-        const int sx = 8 * column;
-        const int sy = 16 * (row + base);
-        painter.draw(xpixel, ypixel, text80Col, sx, sy, 7, 16);
-    }
-
-    {
-        const BYTE ch2 = *(g_pTextBank0 + offset);
-
-        const int row = ch2 / 16;
-        const int column = ch2 % 16;
-
-        const int sx = 8 * column;
-        const int sy = 16 * (row + base);
-        painter.draw(xpixel + 7, ypixel, text80Col, sx, sy, 7, 16);
-    }
-
-    return true;
-}
-
-bool Video::UpdateLoResCell(ScreenPainter_t & painter, int x, int y, int xpixel, int ypixel, int offset)
-{
-    Q_UNUSED(x)
-    Q_UNUSED(y)
-
-    const GraphicsCache::Image_t & lores = myGraphicsCache->lores40();
-
-    const BYTE ch = *(g_pTextBank0 + offset);
-
-    const int sx = 0;
-    const int sy = ch * 16;
-
-    painter.draw(xpixel, ypixel, lores, sx, sy, 14, 16);
-
-    return true;
-}
-
-bool Video::UpdateDLoResCell(ScreenPainter_t & painter, int x, int y, int xpixel, int ypixel, int offset)
-{
-    Q_UNUSED(x)
-    Q_UNUSED(y)
-
-    const GraphicsCache::Image_t & lores = myGraphicsCache->lores80();
-
-    {
-        BYTE ch = *(g_pTextBank1 + offset);
-
-        const BYTE ch_high = ch >> 4;
-        const BYTE ch_low = ch & 0x0F;
-        ch = (ROL_NIB(ch_high) << 4) | ROL_NIB(ch_low);
-
-        const int sx = 0;
-        const int sy = ch * 16;
-
-        painter.draw(xpixel, ypixel, lores, sx, sy, 7, 16);
-    }
-
-    {
-        const BYTE ch = *(g_pTextBank0 + offset);
-
-        const int sx = 0;
-        const int sy = ch * 16;
-
-        painter.draw(xpixel + 7, ypixel, lores, sx, sy, 7, 16);
-    }
-
-    return true;
-}
-
-bool Video::UpdateHiResCell(ScreenPainter_t & painter, int x, int y, int xpixel, int ypixel, int offset)
-{
-    Q_UNUSED(x)
-    Q_UNUSED(y)
-
-    const BYTE * base = g_pHiresBank0 + offset;
-    const GraphicsCache::Image_t & hires = myGraphicsCache->hires40();
-
-    for (size_t i = 0; i < 8; ++i)
-    {
-        const int line = 0x0400 * i;
-        const BYTE value = *(base + line);
-
-        const int row = value & 0x7f;
-
-        painter.draw(xpixel, ypixel + i * 2, hires, 0, row * 2, 14, 2);
-    }
-
-    return true;
-}
-
-bool Video::UpdateDHiResCell(ScreenPainter_t & painter, int x, int y, int xpixel, int ypixel, int offset)
-{
-    Q_UNUSED(x)
-    Q_UNUSED(y)
-
-    const GraphicsCache::Image_t & dhires = myGraphicsCache->hires80();
-
-    {
-        const BYTE * base = g_pHiresBank1 + offset;
-
-        for (size_t i = 0; i < 8; ++i)
-        {
-            const int line = 0x0400 * i;
-            const BYTE value = *(base + line);
-
-            const int row = value & 0x7f;
-
-            painter.draw(xpixel, ypixel + i * 2, dhires, 0, row * 2, 7, 2);
-        }
-    }
-
-    {
-        const BYTE * base = g_pHiresBank0 + offset;
-
-        for (size_t i = 0; i < 8; ++i)
-        {
-            const int line = 0x0400 * i;
-            const BYTE value = *(base + line);
-
-            const int row = value & 0x7f;
-
-            painter.draw(xpixel + 7, ypixel + i * 2, dhires, 0, row * 2, 7, 2);
-        }
-    }
-
-    return true;
 }
 
 Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
 {
-    myGraphicsCache.reset(new GraphicsCache());
     setMouseTracking(true);
 
-    myOffscreen = GraphicsCache::createBlackScreenImage();
+    myLogo = QImage(":/resources/APPLEWINLOGO.BMP").mirrored(false, true);
 }
 
-void Video::paintEvent(QPaintEvent *)
+QImage Video::getScreen() const
 {
-    paintEventNTSC();
-}
-
-void Video::paintEventNTSC()
-{
-    const uint8_t * data;
+    uint8_t * data;
     int width;
     int height;
     int sx, sy;
     int sw, sh;
 
     getScreenData(data, width, height, sx, sy, sw, sh);
+    QImage frameBuffer(data, width, height, QImage::Format_RGB32);
 
-    myFrameBuffer = QImage(data, width, height, QImage::Format_RGB32);
+    QImage screen = frameBuffer.copy(sx, sy, sw, sh);
+
+    return screen;
+}
+
+void Video::displayLogo()
+{
+    uint8_t * data;
+    int width;
+    int height;
+    int sx, sy;
+    int sw, sh;
+
+    getScreenData(data, width, height, sx, sy, sw, sh);
+    QImage frameBuffer(data, width, height, QImage::Format_RGB32);
+
+    QPainter painter(&frameBuffer);
+    painter.drawImage(sx, sy, myLogo);
+}
+
+void Video::paintEvent(QPaintEvent *)
+{
+    uint8_t * data;
+    int width;
+    int height;
+    int sx, sy;
+    int sw, sh;
+
+    getScreenData(data, width, height, sx, sy, sw, sh);
+    QImage frameBuffer(data, width, height, QImage::Format_RGB32);
 
     const QSize actual = size();
     const double scaleX = double(actual.width()) / sw;
@@ -238,104 +76,7 @@ void Video::paintEventNTSC()
         const QTransform transform(scaleX, 0.0, 0.0, -scaleY, 0.0, actual.height());
         painter.setTransform(transform);
 
-        painter.drawImage(0, 0, myFrameBuffer, sx, sy, sw, sh);
-    }
-}
-
-void Video::paintEventInternal()
-{
-    /* How to make this faster
-     * 1) Do not call Video::paint() with a scale != 1:1
-     * 2) For this reason we need to draw elsewhere
-     * 3) and finally scale the whole thing just once to the widget
-     * 4) QPixmap vs QImage: cant see the difference
-     * 5) QOpenGLWidget is 2x faster than QWidget but it has some flickering when resizing
-     *
-     * On my i5-4460  CPU @ 3.20GHz with x2 zoom
-     * TEXT: 4-5% CPU usage
-     * HGR: 6-7% CPU usage
-     */
-
-    // first draw the image offscreen 1:1
-    {
-        ScreenPainter_t painter(&myOffscreen);
-        paint(painter);
-    }
-
-    const QSize min = myOffscreen.size();
-    const QSize actual = size();
-    const double sx = double(actual.width()) / double(min.width());
-    const double sy = double(actual.height()) / double(min.height());
-
-    // then paint it on the widget with scale
-    {
-        QPainter painter(this);
-        painter.scale(sx, sy);
-        drawAny(painter, myOffscreen);
-    }
-}
-
-GraphicsCache::Image_t Video::getScreen() const
-{
-    return myOffscreen;
-}
-
-void Video::paint(ScreenPainter_t & painter)
-{
-    const int displaypage2 = (SW_PAGE2) == 0 ? 0 : 1;
-
-    g_pHiresBank1 = MemGetAuxPtr (0x2000 << displaypage2);
-    g_pHiresBank0 = MemGetMainPtr(0x2000 << displaypage2);
-    g_pTextBank1  = MemGetAuxPtr (0x400  << displaypage2);
-    g_pTextBank0  = MemGetMainPtr(0x400  << displaypage2);
-
-    typedef bool (Video::*VideoUpdateFuncPtr_t)(ScreenPainter_t&,int,int,int,int,int);
-
-    VideoUpdateFuncPtr_t update = SW_TEXT
-        ? SW_80COL
-        ? &Video::Update80ColCell
-        : &Video::Update40ColCell
-        : SW_HIRES
-        ? (SW_DHIRES && SW_80COL)
-        ? &Video::UpdateDHiResCell
-        : &Video::UpdateHiResCell
-        : (SW_DHIRES && SW_80COL)
-        ? &Video::UpdateDLoResCell
-        : &Video::UpdateLoResCell;
-
-    int  y        = 0;
-    int  ypixel   = 0;
-    while (y < 20)
-    {
-        int offset = ((y & 7) << 7) + ((y >> 3) * 40);
-        int x      = 0;
-        int xpixel = 0;
-        while (x < 40)
-        {
-            (this->*update)(painter, x, y, xpixel, ypixel, offset + x);
-            ++x;
-            xpixel += 14;
-        }
-        ++y;
-        ypixel += 16;
-    }
-
-    if (SW_MIXED)
-        update = SW_80COL ? &Video::Update80ColCell : &Video::Update40ColCell;
-
-    while (y < 24)
-    {
-        int offset = ((y & 7) << 7) + ((y >> 3) * 40);
-        int x      = 0;
-        int xpixel = 0;
-        while (x < 40)
-        {
-            (this->*update)(painter, x, y, xpixel, ypixel, offset + x);
-            ++x;
-            xpixel += 14;
-        }
-        ++y;
-        ypixel += 16;
+        painter.drawImage(0, 0, frameBuffer, sx, sy, sw, sh);
     }
 }
 

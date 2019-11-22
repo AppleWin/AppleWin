@@ -16,6 +16,7 @@ public:
     void repaintVideo();
 
     bool saveScreen(const QString & filename) const;
+    void displayLogo();
 
     void setZoom(QMdiSubWindow * window, const int x);
     void set43AspectRatio(QMdiSubWindow * window);
