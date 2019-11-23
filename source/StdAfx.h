@@ -31,8 +31,9 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <cstdarg>
 
-#include <linux/wwrapper.h>
+#include "linux/win.h"
 
 // SM_CXPADDEDBORDER is not supported on 2000 & XP:
 // http://msdn.microsoft.com/en-nz/library/windows/desktop/ms724385(v=vs.85).aspx

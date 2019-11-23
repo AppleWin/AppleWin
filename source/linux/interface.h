@@ -1,14 +1,18 @@
 #pragma once
 
-#include "linux/wincompat.h"
+#include "linux/windows/wincompat.h"
+#include "linux/windows/resources.h"
+#include "linux/windows/bitmap.h"
+
 #include <string>
 
 // Resources
 
 HRSRC FindResource(void *, const std::string & filename, const char *);
+
+// Bitmap
 HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename);
 LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits);
-BOOL DeleteObject(HGDIOBJ ho);
 
 
 // Frame

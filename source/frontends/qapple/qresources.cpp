@@ -29,28 +29,38 @@ HRSRC FindResource(void *, const std::string & filename, const char *)
     return result;
 }
 
+struct CBITMAP : public CHANDLE
+{
+    QImage image;
+};
+
 HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename)
 {
-    QImage * image = nullptr;
+    QImage image;
     if (!filename.empty())
     {
         const std::string path = ":/resources/" + filename + ".BMP";
-
-        image = new QImage(QString::fromStdString(path));
+        image = QImage(QString::fromStdString(path));
     }
 
-    if (!image || image->isNull())
+    if (image.isNull())
     {
         LogFileOutput("LoadBitmap: could not load resource %s\n", filename.c_str());
+        return nullptr;
     }
-    return image;
+    else
+    {
+        CBITMAP * bitmap = new CBITMAP;
+        bitmap->image = image;
+        return bitmap;
+    }
 }
 
 LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits)
 {
-    const QImage * image = static_cast<QImage *>(hbit);
-    const uchar * bits = image->bits();
-    const qsizetype size = image->sizeInBytes();
+    const CBITMAP & bitmap = dynamic_cast<CBITMAP&>(*hbit);
+    const uchar * bits = bitmap.image.bits();
+    const qsizetype size = bitmap.image.sizeInBytes();
     const qsizetype requested = cb;
 
     const qsizetype copied = std::min(requested, size);
@@ -61,11 +71,4 @@ LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits)
         dest[i] = ~bits[i];
     }
     return copied;
-}
-
-BOOL DeleteObject(HGDIOBJ ho)
-{
-    QImage * image = static_cast<QImage *>(ho);
-    delete image;
-    return TRUE;
 }

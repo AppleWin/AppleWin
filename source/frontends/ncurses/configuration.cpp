@@ -1,5 +1,4 @@
 #include "frontends/ncurses/configuration.h"
-#include "linux/wincompat.h"
 
 #include "Log.h"
 

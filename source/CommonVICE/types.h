@@ -30,6 +30,8 @@
 #ifndef _TYPES_H
 #define _TYPES_H
 
+#ifdef _MSC_VER
+
 #ifndef BYTE
 #define BYTE unsigned char
 #endif
@@ -55,6 +57,18 @@ typedef unsigned long ULONG;
 typedef void *LPVOID;
 #endif
 
+#else
+
+// these are the same as windef.h
+
+typedef void                                   *LPVOID;
+typedef unsigned char   BYTE,       *PBYTE,    *LPBYTE;
+typedef unsigned short  WORD,       *PWORD,    *LPWORD;
+typedef unsigned int    DWORD,      *PDWORD,   *LPDWORD;
+typedef unsigned int    ULONG,      *PULONG;
+
+#endif
+
 typedef signed char SIGNED_CHAR;
 typedef signed short SWORD;
 typedef signed int SDWORD;
@@ -74,4 +88,3 @@ typedef DWORD CLOCK;
 #endif
 
 #endif
-

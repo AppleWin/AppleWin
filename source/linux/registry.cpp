@@ -1,5 +1,5 @@
-#include "linux/wincompat.h"
-#include "linux/stringcb.h"
+#include "linux/windows/wincompat.h"
+#include "linux/windows/stringcb.h"
 #include "linux/interface.h"
 
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, DWORD chars, LPCTSTR defaultValue)

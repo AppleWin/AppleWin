@@ -15,6 +15,7 @@
 
 #include "linux/interface.h"
 #include "linux/paddle.h"
+#include "linux/data.h"
 
 #include "frontends/ncurses/nframe.h"
 #include "frontends/ncurses/colors.h"

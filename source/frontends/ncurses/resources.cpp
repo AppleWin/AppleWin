@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #include "Log.h"
-#include "linux/wwrapper.h"
 
 HRSRC FindResource(void *, const std::string & filename, const char *)
 {
@@ -46,10 +45,6 @@ HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename)
 
 LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits)
 {
-  return 0;
-}
-
-BOOL DeleteObject(HGDIOBJ ho)
-{
-  return TRUE;
+  memset(lpvBits, 0, cb);
+  return cb;
 }

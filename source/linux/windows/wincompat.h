@@ -17,15 +17,13 @@
 #ifndef _WINDEF_
 #define _WINDEF_
 
-#include <vector>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef BASETYPES
 #define BASETYPES
-typedef unsigned long ULONG;
+typedef unsigned /*long*/int ULONG;
 typedef ULONG *PULONG;
 typedef unsigned short USHORT;
 typedef USHORT *PUSHORT;
@@ -35,7 +33,6 @@ typedef char *PSZ;
 #endif  /* !BASETYPES */
 
 
-typedef void *HANDLE;
 typedef signed short INT16;		// why there was char instead of short? --bb ??????????????????
 typedef unsigned short UINT16;		// why there was char instead of short? --bb ??????????????????? 0_0
 #define __int64 long long
@@ -96,7 +93,7 @@ typedef int INT32;
 #define CONST               const
 #endif
 
-typedef unsigned long       DWORD;
+typedef unsigned /*long*/int       DWORD;
 typedef int                 BOOL;
 typedef unsigned char       BYTE;
 typedef unsigned short      WORD;
@@ -120,9 +117,6 @@ typedef int                 INT;
 typedef unsigned int        UINT;
 typedef unsigned int        *PUINT;
 
-//#define LPSTR				(char*)
-
-
 #define MAKEWORD(a, b)      ((WORD)(((BYTE)(a)) | ((WORD)((BYTE)(b))) << 8))
 #define MAKELONG(a, b)      ((LONG)(((WORD)(a)) | ((DWORD)((WORD)(b))) << 16))
 #define LOWORD(l)           ((WORD)(l))
@@ -133,7 +127,6 @@ typedef unsigned int        *PUINT;
 typedef DWORD   COLORREF;
 typedef DWORD   *LPCOLORREF;
 
-#define RGB(r, g, b) 0
 
 ////////////////////////// WINNT ///////////////////////////////
 #ifndef VOID
@@ -145,6 +138,12 @@ typedef SHORT *PSHORT;
 typedef LONG *PLONG;
 #endif
 
+typedef LONG            HRESULT;
+typedef long            LONG_PTR;
+typedef unsigned long   ULONG_PTR;
+typedef LONG_PTR        LRESULT;
+
+typedef DWORD           LCID,       *PLCID;
 
 typedef char WCHAR;    // wc,   16-bit UNICODE character
 typedef WCHAR *PWCHAR;
@@ -155,7 +154,7 @@ typedef WCHAR *LPWSTR, *PWSTR;
 
 typedef CONST WCHAR *LPCWSTR, *PCWSTR;
 
-
+typedef unsigned __int64 UINT64, *PUINT64;
 
 //
 // ANSI (Multi-byte Character) types
@@ -175,182 +174,33 @@ typedef LPWSTR LP;
 
 
 #ifndef _TCHAR_DEFINED
-typedef char TCHAR, *PTCHAR;
+typedef char TCHAR, _TCHAR, *PTCHAR;
 typedef unsigned char TBYTE , *PTBYTE ;
-typedef TCHAR _TCHAR;
 #define _TCHAR_DEFINED
 #endif /* !_TCHAR_DEFINED */
-
-////////////////////////////////////////////////////
-typedef struct _OVERLAPPED {
-	DWORD   Internal;
-	DWORD   InternalHigh;
-	DWORD   Offset;
-	DWORD   OffsetHigh;
-	HANDLE  hEvent;
-} OVERLAPPED, *LPOVERLAPPED;
-
-typedef struct tagPOINT
-{
-	LONG  x;
-	LONG  y;
-} POINT, *PPOINT, NEAR *NPPOINT, FAR *LPPOINT;
 
 // TCHAR support
 #define __TEXT(quote) quote         // r_winnt
 #define TEXT(quote) __TEXT(quote)   // r_winnt
 
-#define _tcschr strchr
-#define _tcscspn strcspn
-#define _tcsncat strncat
-#define _tcsncpy strncpy
-#define _tcspbrk strpbrk
-#define _tcsrchr strrchr
-#define _tcsspn strspn
-#define _tcsstr strstr
-#define _tcstok strtok
-
-// not ANSI????
-#define _tcsnset strnset
-#define _tcsrev strrev
-#define _tcsset strset
-
-#define _tcscmp strcmp
-#define _tcsicmp stricmp
-//#define _tcsnccmp(const char *, const char *, size_t);
-#define _tcsncmp strncmp
-//#define _tcsncicmp(const char *, const char *, size_t);
-#define _tcsnicmp strnicmp
-
-// #define _tcscoll(const char *, const char *);
-// #define _tcsicoll(const char *, const char *);
-// #define _tcsnccoll(const char *, const char *, size_t);
-// #define _tcsncoll(const char *, const char *, size_t);
-// #define _tcsncicoll(const char *, const char *, size_t);
-// #define _tcsnicoll(const char *, const char *, size_t);
-
-/* Note that _mbscat, _mbscpy and _mbsdup are functionally equivalent to
-		strcat, strcpy and strdup, respectively. */
-
+#define WINAPI
+#define __stdcall
 #define CALLBACK
 
-#define WM_USER 0x0400
+#ifdef _DEBUG
+#define _ASSERT(expr)	assert(expr)
+#else
+#define _ASSERT(expr)
+#endif
 
-#define _tcscat     strcat
-#define _tcscpy     strcpy
-#define _tcsdup     strdup
-
-#define _tcslen     strlen
-#define _tcsxfrm    strxfrm
-
-#define __stdcall
 #define __interface struct
 #define __forceinline inline
-#define _vsntprintf vsnprintf
-#define _snprintf snprintf
-#define wsprintf sprintf
-#define _strdup strdup
-#define _strtoui64 strtoull
-#define _stricmp strcasecmp
 
-typedef void * HINSTANCE;
-typedef int HRESULT;
+#define _tmain main
+
 typedef void * HWND;
-typedef void * HDC;
-typedef void * HBITMAP;
-typedef void * CRITICAL_SECTION;
-typedef void * SOCKET;
-typedef void * LPDIRECTDRAW;
-typedef void * LPDIRECTDRAWSURFACE;
-typedef void * LRESULT;
 typedef void * LPARAM;
 typedef void * WPARAM;
-typedef void * HGDIOBJ;
-
-typedef const char * HGLOBAL;
-
-typedef unsigned __int64 UINT64, *PUINT64;
-
-typedef int errno_t;
-
-typedef unsigned char byte;
-
-typedef void * LPSECURITY_ATTRIBUTES;
-
-struct HRSRC
-{
-  std::vector<char> data;
-  HRSRC(const void * = NULL)
-  {
-  }
-  operator const void * () const
-  {
-    return data.data();
-  }
-};
-
-typedef struct _SYSTEMTIME {
-  WORD wYear;
-  WORD wMonth;
-  WORD wDayOfWeek;
-  WORD wDay;
-  WORD wHour;
-  WORD wMinute;
-  WORD wSecond;
-  WORD wMilliseconds;
-} SYSTEMTIME, *PSYSTEMTIME;
-
-typedef struct tagOFN {
-  DWORD         lStructSize;
-  HWND          hwndOwner;
-  HINSTANCE     hInstance;
-  LPCTSTR       lpstrFilter;
-  LPTSTR        lpstrFile;
-  DWORD         nMaxFile;
-  LPCTSTR       lpstrInitialDir;
-  LPCTSTR       lpstrTitle;
-  DWORD         Flags;
-  WORD          nFileExtension;
-} OPENFILENAME, *LPOPENFILENAME;
-
-typedef OPENFILENAME OPENFILENAME_NT4;
-
-typedef int LCID;
-
-typedef struct tagRGBQUAD {
-  BYTE rgbBlue;
-  BYTE rgbGreen;
-  BYTE rgbRed;
-  BYTE rgbReserved;
-} RGBQUAD;
-
-typedef struct tagBITMAPINFOHEADER {
-  DWORD biSize;
-  LONG  biWidth;
-  LONG  biHeight;
-  WORD  biPlanes;
-  WORD  biBitCount;
-  DWORD biCompression;
-  DWORD biSizeImage;
-  LONG  biXPelsPerMeter;
-  LONG  biYPelsPerMeter;
-  DWORD biClrUsed;
-  DWORD biClrImportant;
-} BITMAPINFOHEADER, *LPBITMAPINFOHEADER, *PBITMAPINFOHEADER;
-
-typedef struct tagBITMAPINFO {
-  BITMAPINFOHEADER bmiHeader;
-  RGBQUAD          bmiColors[1];
-} BITMAPINFO, *LPBITMAPINFO, *PBITMAPINFO;
-
-
-/* constants for the biCompression field */
-#define BI_RGB        0L
-#define BI_RLE8       1L
-#define BI_RLE4       2L
-#define BI_BITFIELDS  3L
-#define BI_JPEG       4L
-#define BI_PNG        5L
 
 #ifdef __cplusplus
 }

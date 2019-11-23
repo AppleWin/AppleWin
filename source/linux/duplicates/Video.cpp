@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "NTSC.h"
 #include "RGBMonitor.h"
 #include "Frame.h"
+#include "YamlHelper.h"
 
 #define  SW_80COL         (g_uVideoMode & VF_80COL)
 #define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
@@ -522,4 +523,38 @@ void getScreenData(uint8_t * & data, int & width, int & height, int & sx, int & 
   sy = GetFrameBufferBorderHeight();
   sw = GetFrameBufferBorderlessWidth();
   sh = GetFrameBufferBorderlessHeight();
+}
+
+#define SS_YAML_KEY_ALTCHARSET "Alt Char Set"
+#define SS_YAML_KEY_VIDEOMODE "Video Mode"
+#define SS_YAML_KEY_CYCLESTHISFRAME "Cycles This Frame"
+
+void VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
+{
+}
+
+static std::string VideoGetSnapshotStructName(void)
+{
+	static const std::string name("Video");
+	return name;
+}
+
+void VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALTCHARSET, g_nAltCharSetOffset ? true : false);
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEOMODE, g_uVideoMode);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLESTHISFRAME, g_dwCyclesThisFrame);
+}
+
+void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap(VideoGetSnapshotStructName()))
+		return;
+
+	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALTCHARSET) ? 256 : 0;
+	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEOMODE);
+	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLESTHISFRAME);
+
+	yamlLoadHelper.PopMap();
 }

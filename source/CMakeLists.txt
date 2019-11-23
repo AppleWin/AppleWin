@@ -24,14 +24,22 @@ add_library(appleii SHARED
   NTSC.cpp
   NTSC_CharSet.cpp
 
+  linux/windows/memory.cpp
+  linux/windows/handles.cpp
+  linux/windows/files.cpp
+  linux/windows/resources.cpp
+  linux/windows/bitmap.cpp
+  linux/windows/time.cpp
+  linux/windows/stringcb.cpp
+  linux/windows/strings.cpp
+  linux/windows/misc.cpp
+
   linux/data.cpp
   linux/dummies.cpp
-  linux/wwrapper.cpp
   linux/state.cpp
   linux/benchmark.cpp
   linux/paddle.cpp
   linux/version.cpp
-  linux/stringcb.cpp
   linux/registry.cpp
 
   linux/duplicates/Video.cpp

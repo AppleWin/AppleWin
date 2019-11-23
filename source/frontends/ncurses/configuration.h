@@ -1,7 +1,8 @@
 #pragma once
 
-#include "linux/wincompat.h"
+#include "linux/windows/wincompat.h"
 #include <boost/property_tree/ptree.hpp>
+#include <string>
 
 void InitializeRegistry(const std::string & filename);
 
