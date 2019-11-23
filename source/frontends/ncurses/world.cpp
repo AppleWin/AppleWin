@@ -369,7 +369,7 @@ void FrameRefreshStatus(int x, bool)
 
 void NVideoInitialize()
 {
-  VideoReinitialize();
+  VideoInitialize();
 
   setlocale(LC_ALL, "");
   initscr();
@@ -540,6 +540,7 @@ BYTE    KeybGetKeycode ()
 
 BYTE KeybReadData()
 {
+  LogFileTimeUntilFirstKeyRead();
   return nextKey;
 }
 

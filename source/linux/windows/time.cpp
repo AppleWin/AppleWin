@@ -19,6 +19,15 @@ DWORD timeGetTime()
   return now.tv_usec / 1000;
 }
 
+/// Returns the number of ticks since an undefined time (usually system startup).
+DWORD GetTickCount()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    const uint64_t ticks = (uint64_t)(ts.tv_nsec / 1000000) + ((uint64_t)ts.tv_sec * 1000ull);
+    return ticks;
+}
+
 void GetLocalTime(SYSTEMTIME *t)
 {
   timespec ts;

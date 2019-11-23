@@ -26,4 +26,5 @@ int GetDateFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpDate, LPCSTR l
 int GetTimeFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpTime, LPCSTR lpFormat, LPSTR lpTimeStr, int cchTime);
 
 DWORD timeGetTime();
+DWORD GetTickCount();
 void GetLocalTime(SYSTEMTIME *t);

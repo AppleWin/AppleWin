@@ -2,7 +2,6 @@
 
 #include <chrono>
 #include <iostream>
-#include <unistd.h>
 #include <ncurses.h>
 
 #include <boost/program_options.hpp>
@@ -37,8 +36,10 @@ namespace
     bool createMissingDisks;
     std::string snapshot;
     int memclear;
+    bool log;
     bool benchmark;
     bool headless;
+    bool ntsc;
     bool saveConfigurationOnExit;
 
     bool run;  // false if options include "-h"
@@ -70,7 +71,9 @@ namespace
 
     po::options_description emulatorDesc("Emulator");
     emulatorDesc.add_options()
+      ("log", "Log to AppleWin.log")
       ("headless,hl", "Headless: disable video")
+      ("ntsc,nt", "NTSC: execute NTSC code")
       ("benchmark,b", "Benchmark emulator");
     desc.add(emulatorDesc);
 
@@ -113,6 +116,8 @@ namespace
 
       options.benchmark = vm.count("benchmark") > 0;
       options.headless = vm.count("headless") > 0;
+      options.log = vm.count("log") > 0;
+      options.ntsc = vm.count("ntsc") > 0;
 
       return true;
     }
@@ -128,7 +133,7 @@ namespace
     }
   }
 
-  bool ContinueExecution(const bool updateVideo)
+  bool ContinueExecution(const EmulatorOptions & options)
   {
     const auto start = std::chrono::steady_clock::now();
 
@@ -144,7 +149,9 @@ namespace
 
     const DWORD uCyclesToExecute = fExecutionPeriodClks;
 
-    const bool bVideoUpdate = false;
+    const bool bVideoUpdate = options.ntsc;
+    g_bFullSpeed = !bVideoUpdate;
+
     const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
     g_dwCyclesThisFrame += uActualCyclesExecuted;
 
@@ -156,6 +163,12 @@ namespace
     {
     case KEY_F(2):
       {
+	g_bRestart = false;
+	return false;
+      }
+    case KEY_F(3):
+      {
+	g_bRestart = true;
 	return false;
       }
     case KEY_F(12):
@@ -173,35 +186,39 @@ namespace
     const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
     if (g_dwCyclesThisFrame >= dwClksPerFrame)
     {
-      g_dwCyclesThisFrame -= dwClksPerFrame;
-      if (updateVideo)
+      g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
+      if (!options.headless)
       {
 	VideoRedrawScreen();
       }
     }
 
-    const auto end = std::chrono::steady_clock::now();
-    const auto diff = end - start;
-    const long us = std::chrono::duration_cast<std::chrono::microseconds>(diff).count();
-
-    const double coeff = exp(-0.000001 * nExecutionPeriodUsec);  // 0.36 after 1 second
-
-    g_relativeSpeed = g_relativeSpeed * coeff + double(us) / double(nExecutionPeriodUsec) * (1.0 - coeff);
-
-    if (!sg_Disk2Card.IsConditionForFullSpeed())
+    if (!options.headless)
     {
-      if (us < nExecutionPeriodUsec)
+      const auto end = std::chrono::steady_clock::now();
+      const auto diff = end - start;
+      const long us = std::chrono::duration_cast<std::chrono::microseconds>(diff).count();
+
+      const double coeff = exp(-0.000001 * nExecutionPeriodUsec);  // 0.36 after 1 second
+
+      g_relativeSpeed = g_relativeSpeed * coeff + double(us) / double(nExecutionPeriodUsec) * (1.0 - coeff);
+
+      if (!sg_Disk2Card.IsConditionForFullSpeed())
       {
-	usleep(nExecutionPeriodUsec - us);
+	if (us < nExecutionPeriodUsec)
+	{
+	  usleep(nExecutionPeriodUsec - us);
+	}
       }
     }
 
     return true;
   }
 
-  void EnterMessageLoop(const bool updateVideo)
+  void EnterMessageLoop(const EmulatorOptions & options)
   {
-    while (ContinueExecution(updateVideo))
+    LogFileTimeUntilFirstKeyReadReset();
+    while (ContinueExecution(options))
     {
     }
   }
@@ -238,15 +255,17 @@ namespace
 
   int foo(int argc, const char * argv [])
   {
-    g_fh = fopen("/tmp/applewin.txt", "w");
-    setbuf(g_fh, NULL);
-
     EmulatorOptions options;
     options.memclear = g_nMemoryClearType;
     const bool run = getEmulatorOptions(argc, argv, options);
 
     if (!run)
       return 1;
+
+    if (options.log)
+    {
+      LogInit();
+    }
 
     InitializeRegistry("applen.conf");
 
@@ -296,11 +315,10 @@ namespace
 	if (options.benchmark)
 	{
 	  VideoBenchmark(&VideoRedrawScreen);
-	  g_bRestart = false;
 	}
 	else
 	{
-	  EnterMessageLoop(!options.headless);
+	  EnterMessageLoop(options);
 	}
 	sg_Mouse.Uninitialize();
 	sg_Mouse.Reset();

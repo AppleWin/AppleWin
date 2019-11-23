@@ -47,6 +47,7 @@ add_library(appleii SHARED
   linux/duplicates/Joystick.cpp
   linux/duplicates/Frame.cpp
   linux/duplicates/SerialComms.cpp
+  linux/duplicates/Applewin.cpp
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
