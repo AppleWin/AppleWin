@@ -501,6 +501,25 @@ void Video_ResetScreenshotCounter( const std::string & pImageName )
 {
 }
 
+void VideoRedrawScreen (void)
+{
+	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
+	VideoRefreshScreen( g_uVideoMode, true );
+}
+
+void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
+{
+	if (bRedrawWholeScreen)
+	{
+		// uVideoModeForWholeScreen set if:
+		// . MODE_DEBUG   : always
+		// . MODE_RUNNING : called from VideoRedrawScreen(), eg. during full-speed
+		if (bRedrawWholeScreen)
+			NTSC_SetVideoMode( uRedrawWholeScreenVideoMode );
+		NTSC_VideoRedrawWholeScreen();
+	}
+}
+
 static void videoCreateDIBSection()
 {
         const size_t size = GetFrameBufferWidth()*GetFrameBufferHeight()*sizeof(bgra_t);
@@ -557,4 +576,12 @@ void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLESTHISFRAME);
 
 	yamlLoadHelper.PopMap();
+}
+
+void Config_Save_Video()
+{
+	REGSAVE(TEXT(REGVALUE_VIDEO_MODE)      ,g_eVideoType);
+	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     ,g_eVideoStyle);
+	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR),g_nMonochromeRGB);
+	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), GetVideoRefreshRate());
 }

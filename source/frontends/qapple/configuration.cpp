@@ -8,6 +8,7 @@
 #include "Registry.h"
 #include "SaveState.h"
 #include "CPU.h"
+#include "Video.h"
 
 #include <QMessageBox>
 #include <QGamepad>
@@ -198,6 +199,10 @@ void getAppleWinPreferences(Preferences::Data & data)
     {
         data.saveState = QString::fromStdString(saveState);
     }
+
+    data.videoType = GetVideoType();
+    data.scanLines = IsVideoStyle(VS_HALF_SCANLINES);
+    data.verticalBlend = IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
 }
 
 void setAppleWinPreferences(const Preferences::Data & currentData, const Preferences::Data & newData)
@@ -255,4 +260,22 @@ void setAppleWinPreferences(const Preferences::Data & currentData, const Prefere
         Snapshot_SetFilename(name);
         RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, name);
     }
+
+    if (currentData.videoType != newData.videoType || currentData.scanLines != newData.scanLines || currentData.verticalBlend != newData.verticalBlend)
+    {
+        const VideoType_e videoType = VideoType_e(newData.videoType);
+        SetVideoType(videoType);
+
+        VideoStyle_e videoStyle = VS_NONE;
+        if (newData.scanLines)
+            videoStyle = VideoStyle_e(videoStyle | VS_HALF_SCANLINES);
+        if (newData.verticalBlend)
+            videoStyle = VideoStyle_e(videoStyle | VS_COLOR_VERTICAL_BLEND);
+        SetVideoStyle(videoStyle);
+
+        Config_Save_Video();
+        VideoReinitialize();
+        VideoRedrawScreen();
+    }
+
 }

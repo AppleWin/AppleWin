@@ -30,6 +30,10 @@ public:
         int silenceDelay;
         int volume;
 
+        int videoType;
+        bool scanLines;
+        bool verticalBlend;
+
         std::vector<QString> disks;
         std::vector<QString> hds;
 

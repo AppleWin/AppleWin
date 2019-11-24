@@ -493,3 +493,14 @@ void QApple::on_actionLoad_state_from_triggered()
         }
     }
 }
+
+void QApple::on_actionNext_video_mode_triggered()
+{
+    g_eVideoType++;
+    if (g_eVideoType >= NUM_VIDEO_MODES)
+        g_eVideoType = 0;
+
+    Config_Save_Video();
+    VideoReinitialize();
+    VideoRedrawScreen();
+}

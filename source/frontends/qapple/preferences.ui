@@ -385,6 +385,90 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="video">
+      <attribute name="title">
+       <string>Video</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_8">
+       <item row="0" column="0">
+        <widget class="QFrame" name="frame_2">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QFormLayout" name="formLayout_3">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_17">
+            <property name="text">
+             <string>Mode</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="video_type">
+            <item>
+             <property name="text">
+              <string>Monochrome (Custom)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Color (RGB Monitor)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Color (NTSC Monitor)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Color TV</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>B&amp;W TV</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Monochrome (Amber)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Monochrome (Green)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Monochtome (White)</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QCheckBox" name="scan_lines">
+            <property name="text">
+             <string>50% Scan lines</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QCheckBox" name="vertical_blend">
+            <property name="text">
+             <string>Vertical blend</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="audio">
       <attribute name="title">
        <string>Audio</string>

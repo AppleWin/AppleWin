@@ -188,6 +188,10 @@ void Preferences::setData(const Data & data)
     audio_latency->setValue(data.audioLatency);
     silence_delay->setValue(data.silenceDelay);
     volume->setValue(data.volume);
+
+    video_type->setCurrentIndex(data.videoType);
+    scan_lines->setChecked(data.scanLines);
+    vertical_blend->setChecked(data.verticalBlend);
 }
 
 Preferences::Data Preferences::getData() const
@@ -217,6 +221,10 @@ Preferences::Data Preferences::getData() const
     data.audioLatency = audio_latency->value();
     data.silenceDelay = silence_delay->value();
     data.volume = volume->value();
+
+    data.videoType = video_type->currentIndex();
+    data.scanLines = scan_lines->isChecked();
+    data.verticalBlend = vertical_blend->isChecked();
 
     return data;
 }

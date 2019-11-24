@@ -59,6 +59,7 @@
     </property>
     <addaction name="actionScreenshot"/>
     <addaction name="actionBenchmark"/>
+    <addaction name="actionNext_video_mode"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -217,6 +218,17 @@
   <action name="actionLoad_state_from">
    <property name="text">
     <string>Load state...</string>
+   </property>
+  </action>
+  <action name="actionNext_video_mode">
+   <property name="text">
+    <string>Next video mode</string>
+   </property>
+   <property name="toolTip">
+    <string>Next video mode</string>
+   </property>
+   <property name="shortcut">
+    <string>F9</string>
    </property>
   </action>
  </widget>
