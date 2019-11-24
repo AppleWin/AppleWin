@@ -1,18 +1,30 @@
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
-#include <memory>
-
 #include "preferences.h"
 
-class QGamepad;
+class GlobalOptions
+{
+public:
+    GlobalOptions();  // initialise from QSettings
 
-QString getScreenshotTemplate();
-int getSlot0Card();
-int getRamWorksMemorySize();
+    QString screenshotTemplate;
+    QString gamepadName;
 
-Preferences::Data getCurrentPreferenceData(const std::shared_ptr<QGamepad> & gamepad);
-void setNewPreferenceData(const Preferences::Data & currentData, const Preferences::Data & newData,
-                          std::shared_ptr<QGamepad> & gamepad);
+    int slot0Card;
+    int ramWorksMemorySize;
+    int msGap;
+    int msFullSpeed;
+
+    int audioLatency;
+    int silenceDelay;
+    int volume;
+
+    void getData(Preferences::Data & data) const;
+    void setData(const Preferences::Data & data);
+};
+
+void getAppleWinPreferences(Preferences::Data & data);
+void setAppleWinPreferences(const Preferences::Data & currentData, const Preferences::Data & newData);
 
 #endif // CONFIGURATION_H

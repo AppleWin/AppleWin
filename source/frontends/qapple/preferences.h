@@ -23,7 +23,6 @@ public:
         int ramWorksSize;
 
         QString joystick;
-        int joystickId;   // only putput
 
         bool enhancedSpeed;
 

@@ -1,5 +1,28 @@
 #include "gamepadpaddle.h"
 
+std::shared_ptr<Paddle> GamepadPaddle::fromName(const QString & name)
+{
+    if (name.isEmpty())
+    {
+        return nullptr;
+    }
+
+    QGamepadManager * manager = QGamepadManager::instance();
+    const QList<int> gamepads = manager->connectedGamepads();
+
+    for (int id : gamepads)
+    {
+        if (name == manager->gamepadName(id))
+        {
+            const std::shared_ptr<QGamepad> gamepad(new QGamepad(id));
+            std::shared_ptr<Paddle> paddle(new GamepadPaddle(gamepad));
+            return paddle;
+        }
+    }
+
+    return nullptr;
+}
+
 GamepadPaddle::GamepadPaddle(const std::shared_ptr<QGamepad> & gamepad) : myGamepad(gamepad)
 {
 

@@ -21,7 +21,6 @@ public:
     void writeAudio();
     void stateChanged(QAudio::State state);
 
-    void getOptions(qint32 & initialSilence, qint32 & silenceDelay, qint32 & volume) const;
     void setOptions(const qint32 initialSilence, const qint32 silenceDelay, const qint32 volume);
 
 private:

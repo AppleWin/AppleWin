@@ -19,11 +19,13 @@
 #include "linux/data.h"
 #include "linux/benchmark.h"
 #include "linux/version.h"
+#include "linux/paddle.h"
 
 #include "emulator.h"
 #include "memorycontainer.h"
 #include "configuration.h"
 #include "audiogenerator.h"
+#include "gamepadpaddle.h"
 
 #include <QMdiSubWindow>
 #include <QMessageBox>
@@ -53,7 +55,7 @@ namespace
      *
      */
 
-    void startEmulator(QWidget * window, Emulator * emulator)
+    void startEmulator(QWidget * window, Emulator * emulator, const GlobalOptions & options)
     {
         LoadConfiguration();
 
@@ -66,7 +68,7 @@ namespace
 
         ResetDefaultMachineMemTypes();
 
-        switch (getSlot0Card()) {
+        switch (options.slot0Card) {
         case 1: // Language Card
             SetExpansionMemType(CT_LanguageCard);
             break;
@@ -79,7 +81,7 @@ namespace
             SetExpansionMemType(CT_Saturn128K);
             break;
         case 4: // RamWorks
-            SetRamWorksMemorySize(getRamWorksMemorySize());
+            SetRamWorksMemorySize(options.ramWorksMemorySize);
             SetExpansionMemType(CT_RamWorksIII);
             break;
         }
@@ -201,13 +203,12 @@ QApple::QApple(QWidget *parent) :
 
     connect(AudioGenerator::instance().getAudioOutput(), SIGNAL(stateChanged(QAudio::State)), this, SLOT(on_stateChanged(QAudio::State)));
 
-    const int fps = 60;
-    myMSGap = 1000 / fps;
-    myFullSpeedMS = 5;
+    myOptions.reset(new GlobalOptions());
+    reloadOptions();
 
     on_actionPause_triggered();
     initialiseEmulator();
-    startEmulator(myEmulatorWindow, myEmulator);
+    startEmulator(myEmulatorWindow, myEmulator, *myOptions);
 }
 
 void QApple::closeEvent(QCloseEvent *)
@@ -233,7 +234,7 @@ void QApple::on_timer()
     }
 
     // target x ms ahead of where we are now, which is when the timer should be called again
-    const qint64 target = myElapsedTimer.elapsed() + myMSGap;
+    const qint64 target = myElapsedTimer.elapsed() + myOptions->msGap;
     const qint64 current = emulatorTimeInMS() - myCpuTimeReference;
     if (current > target)
     {
@@ -266,7 +267,7 @@ void QApple::on_timer()
         g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
         ++count;
     }
-    while (sg_Disk2Card.IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + myFullSpeedMS));
+    while (sg_Disk2Card.IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + myOptions->msFullSpeed));
 
     // just repaint each time, to make it simpler
     // we run @ 60 fps anyway
@@ -302,7 +303,7 @@ void QApple::restartTimeCounters()
 void QApple::on_actionStart_triggered()
 {
     // always restart with the same timer gap that was last used
-    myTimerID = startTimer(myMSGap, Qt::PreciseTimer);
+    myTimerID = startTimer(myOptions->msGap, Qt::PreciseTimer);
     actionPause->setEnabled(true);
     actionStart->setEnabled(false);
     restartTimeCounters();
@@ -334,7 +335,7 @@ void QApple::on_actionReboot_triggered()
 {
     emit endEmulator();
     stopEmulator();
-    startEmulator(myEmulatorWindow, myEmulator);
+    startEmulator(myEmulatorWindow, myEmulator, *myOptions);
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
     myEmulator->updateVideo();
     restartTimeCounters();
@@ -374,7 +375,9 @@ void QApple::on_actionOptions_triggered()
     // but often it forces to terminate the emulator
     PauseEmulator pause(this);
 
-    const Preferences::Data currentData = getCurrentPreferenceData(myGamepad);
+    Preferences::Data currentData;
+    getAppleWinPreferences(currentData);
+    myOptions->getData(currentData);
 
     QSettings settings; // the function will "modify" it
     myPreferences.setup(currentData, settings);
@@ -382,9 +385,17 @@ void QApple::on_actionOptions_triggered()
     if (myPreferences.exec())
     {
         const Preferences::Data newData = myPreferences.getData();
-        setNewPreferenceData(currentData, newData, myGamepad);
+        setAppleWinPreferences(currentData, newData);
+        myOptions->setData(newData);
+        reloadOptions();
     }
 
+}
+
+void QApple::reloadOptions()
+{
+    Paddle::instance() = GamepadPaddle::fromName(myOptions->gamepadName);
+    AudioGenerator::instance().setOptions(myOptions->audioLatency, myOptions->silenceDelay, myOptions->volume);
 }
 
 void QApple::on_actionSave_state_triggered()
@@ -413,15 +424,14 @@ void QApple::on_actionAbout_triggered()
     QMessageBox::about(this, QApplication::applicationName(), message);
 }
 
-QString getImageFilename()
+QString getImageFilename(const GlobalOptions & options)
 {
-    QString filenameTemplate = getScreenshotTemplate();
     static size_t counter = 0;
 
     const size_t maximum = 10000;
     while (counter < maximum)
     {
-        const QString filename = filenameTemplate.arg(counter, 5, 10, QChar('0'));
+        const QString filename = options.screenshotTemplate.arg(counter, 5, 10, QChar('0'));
         if (!QFile(filename).exists())
         {
             return filename;
@@ -434,7 +444,7 @@ QString getImageFilename()
 
 void QApple::on_actionScreenshot_triggered()
 {
-    const QString filename = getImageFilename();
+    const QString filename = getImageFilename(*myOptions);
     if (filename.isEmpty())
     {
         QMessageBox::warning(this, "Screenshot", "Cannot determine the screenshot filename.");

@@ -8,11 +8,6 @@
 #include "Registry.h"
 #include "SaveState.h"
 #include "CPU.h"
-#include "audiogenerator.h"
-
-#include "linux/paddle.h"
-
-#include "gamepadpaddle.h"
 
 #include <QMessageBox>
 #include <QGamepad>
@@ -23,8 +18,14 @@ namespace
     const std::vector<size_t> hdIDs = {HARDDISK_1, HARDDISK_2};
 
     const QString REG_SCREENSHOT_TEMPLATE = QString::fromUtf8("QApple/Screenshot Template");
-    const QString REG_SLOT0_CARD = QString::fromUtf8("QApple/Slot 0");
-    const QString REG_RAMWORKS_SIZE = QString::fromUtf8("QApple/RamWorks Size");
+    const QString REG_SLOT0_CARD = QString::fromUtf8("QApple/Hardware/Slot 0");
+    const QString REG_RAMWORKS_SIZE = QString::fromUtf8("QApple/Hardware/RamWorks Size");
+    const QString REG_GAMEPAD_NAME = QString::fromUtf8("QApple/Hardware/Gamepad");
+    const QString REG_AUDIO_LATENCY = QString::fromUtf8("QApple/Audio/Latency");
+    const QString REG_SILENCE_DELAY = QString::fromUtf8("QApple/Audio/Silence Delay");
+    const QString REG_VOLUME = QString::fromUtf8("QApple/Audio/Volume");
+    const QString REG_TIMER = QString::fromUtf8("QApple/Emulator/Timer");
+    const QString REG_FULL_SPEED = QString::fromUtf8("QApple/Emulator/Full Speed");
 
     void insertDisk(const QString & filename, const int disk)
     {
@@ -90,98 +91,116 @@ namespace
         }
     }
 
-    void setScreenshotTemplate(const QString & filenameTemplate)
+}
+
+GlobalOptions::GlobalOptions()
+{
+    QSettings settings;
+    this->screenshotTemplate = settings.value(REG_SCREENSHOT_TEMPLATE, "/tmp/qapple_%1.png").toString();
+    this->gamepadName = settings.value(REG_GAMEPAD_NAME, QString()).toString();
+    this->slot0Card = settings.value(REG_SLOT0_CARD, 0).toInt();
+    this->ramWorksMemorySize = settings.value(REG_RAMWORKS_SIZE, 0).toInt();
+
+    this->msGap = settings.value(REG_TIMER, 5).toInt();
+    this->msFullSpeed = settings.value(REG_FULL_SPEED, 5).toInt();
+    this->audioLatency = settings.value(REG_AUDIO_LATENCY, 200).toInt();
+    this->silenceDelay = settings.value(REG_SILENCE_DELAY, 10000).toInt();
+    this->volume = settings.value(REG_VOLUME, 0x0fff).toInt();
+}
+
+void GlobalOptions::setData(const Preferences::Data & data)
+{
+    if (this->screenshotTemplate != data.screenshotTemplate)
     {
-        QSettings().setValue(REG_SCREENSHOT_TEMPLATE, filenameTemplate);
+        this->screenshotTemplate = data.screenshotTemplate;
+        QSettings().setValue(REG_SCREENSHOT_TEMPLATE, this->screenshotTemplate);
     }
 
-    void setSlot0Card(const int card)
+    if (this->slot0Card != data.cardInSlot0)
     {
-        QSettings().setValue(REG_SLOT0_CARD, card);
+        this->slot0Card = data.cardInSlot0;
+        QSettings().setValue(REG_SLOT0_CARD, this->slot0Card);
     }
 
-    void setRamWorksMemorySize(const int memorySize)
+    if (this->ramWorksMemorySize != data.ramWorksSize)
     {
-        QSettings().setValue(REG_RAMWORKS_SIZE, memorySize);
+        this->ramWorksMemorySize = data.ramWorksSize;
+        QSettings().setValue(REG_RAMWORKS_SIZE, this->ramWorksMemorySize);
     }
 
+    if (this->gamepadName != data.joystick)
+    {
+        this->gamepadName = data.joystick;
+        QSettings().setValue(REG_GAMEPAD_NAME, this->gamepadName);
+    }
+
+    if (this->audioLatency != data.audioLatency)
+    {
+        this->audioLatency = data.audioLatency;
+        QSettings().setValue(REG_AUDIO_LATENCY, this->audioLatency);
+    }
+
+    if (this->silenceDelay != data.silenceDelay)
+    {
+        this->silenceDelay = data.silenceDelay;
+        QSettings().setValue(REG_SILENCE_DELAY, this->silenceDelay);
+    }
+
+    if (this->volume != data.volume)
+    {
+        this->volume = data.volume;
+        QSettings().setValue(REG_VOLUME, this->volume);
+    }
 }
 
-QString getScreenshotTemplate()
+void GlobalOptions::getData(Preferences::Data & data) const
 {
-    const QString filenameTemplate = QSettings().value(REG_SCREENSHOT_TEMPLATE, "/tmp/qapple_%1.png").toString();
-    return filenameTemplate;
+    data.cardInSlot0 = this->slot0Card;
+    data.ramWorksSize = this->ramWorksMemorySize;
+    data.screenshotTemplate = this->screenshotTemplate;
+    data.joystick = this->gamepadName;
+    data.audioLatency = this->audioLatency;
+    data.silenceDelay = this->silenceDelay;
+    data.volume = this->volume;
 }
 
-int getSlot0Card()
+void getAppleWinPreferences(Preferences::Data & data)
 {
-    const int slot0Card = QSettings().value(REG_SLOT0_CARD, 0).toInt();
-    return slot0Card;
-}
-
-int getRamWorksMemorySize()
-{
-    const int ramWorksMemorySize = QSettings().value(REG_RAMWORKS_SIZE, 0).toInt();
-    return ramWorksMemorySize;
-}
-
-Preferences::Data getCurrentPreferenceData(const std::shared_ptr<QGamepad> & gamepad)
-{
-    Preferences::Data currentData;
-
-    currentData.disks.resize(diskIDs.size());
+    data.disks.resize(diskIDs.size());
     for (size_t i = 0; i < diskIDs.size(); ++i)
     {
         const std::string & diskName = sg_Disk2Card.GetFullName(diskIDs[i]);
         if (!diskName.empty())
         {
-            currentData.disks[i] = QString::fromStdString(diskName);
+            data.disks[i] = QString::fromStdString(diskName);
         }
     }
 
-    currentData.hds.resize(hdIDs.size());
+    data.hds.resize(hdIDs.size());
     for (size_t i = 0; i < hdIDs.size(); ++i)
     {
         const std::string & diskName = HD_GetFullName(hdIDs[i]);
         if (!diskName.empty())
         {
-            currentData.hds[i] = QString::fromStdString(diskName);
+            data.hds[i] = QString::fromStdString(diskName);
         }
     }
 
-    currentData.enhancedSpeed = sg_Disk2Card.GetEnhanceDisk();
-    currentData.cardInSlot0 = getSlot0Card();
-    currentData.mouseInSlot4 = g_Slot[4] == CT_MouseInterface;
-    currentData.cpmInSlot5 = g_Slot[5] == CT_Z80;
-    currentData.hdInSlot7 = HD_CardIsEnabled();
-    currentData.ramWorksSize = getRamWorksMemorySize();
+    data.enhancedSpeed = sg_Disk2Card.GetEnhanceDisk();
+    data.mouseInSlot4 = g_Slot[4] == CT_MouseInterface;
+    data.cpmInSlot5 = g_Slot[5] == CT_Z80;
+    data.hdInSlot7 = HD_CardIsEnabled();
 
-    currentData.apple2Type = getApple2ComputerType();
-
-    if (gamepad)
-    {
-        currentData.joystick = gamepad->name();
-        currentData.joystickId = gamepad->deviceId();
-    }
-    else
-    {
-        currentData.joystickId = 0;
-    }
+    data.apple2Type = getApple2ComputerType();
 
     const std::string & saveState = Snapshot_GetFilename();
     if (!saveState.empty())
     {
-        currentData.saveState = QString::fromStdString(saveState);
+        data.saveState = QString::fromStdString(saveState);
     }
-
-    currentData.screenshotTemplate = getScreenshotTemplate();
-
-    AudioGenerator::instance().getOptions(currentData.audioLatency, currentData.silenceDelay, currentData.volume);
-
-    return currentData;
 }
 
-void setNewPreferenceData(const Preferences::Data & currentData, const Preferences::Data & newData, std::shared_ptr<QGamepad> & gamepad)
+void setAppleWinPreferences(const Preferences::Data & currentData, const Preferences::Data & newData)
 {
     if (currentData.apple2Type != newData.apple2Type)
     {
@@ -191,10 +210,6 @@ void setNewPreferenceData(const Preferences::Data & currentData, const Preferenc
         const eCpuType cpu = ProbeMainCpuDefault(type);
         SetMainCpu(cpu);
         REGSAVE(TEXT(REGVALUE_CPU_TYPE), cpu);
-    }
-    if (currentData.cardInSlot0 != newData.cardInSlot0)
-    {
-        setSlot0Card(newData.cardInSlot0);
     }
     if (currentData.mouseInSlot4 != newData.mouseInSlot4)
     {
@@ -210,24 +225,6 @@ void setNewPreferenceData(const Preferences::Data & currentData, const Preferenc
     {
         REGSAVE(TEXT(REGVALUE_HDD_ENABLED), newData.hdInSlot7 ? 1 : 0);
         HD_SetEnabled(newData.hdInSlot7);
-    }
-    if (currentData.ramWorksSize != newData.ramWorksSize)
-    {
-        setRamWorksMemorySize(newData.ramWorksSize);
-    }
-
-    if (newData.joystick.isEmpty())
-    {
-        gamepad.reset();
-        Paddle::instance() = std::make_shared<Paddle>();
-    }
-    else
-    {
-        if (newData.joystickId != currentData.joystickId)
-        {
-            gamepad.reset(new QGamepad(newData.joystickId));
-            Paddle::instance() = std::make_shared<GamepadPaddle>(gamepad);
-        }
     }
 
     if (currentData.enhancedSpeed != newData.enhancedSpeed)
@@ -258,12 +255,4 @@ void setNewPreferenceData(const Preferences::Data & currentData, const Preferenc
         Snapshot_SetFilename(name);
         RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, name);
     }
-
-    if (currentData.screenshotTemplate != newData.screenshotTemplate)
-    {
-        setScreenshotTemplate(newData.screenshotTemplate);
-    }
-
-    AudioGenerator::instance().setOptions(newData.audioLatency, newData.silenceDelay, newData.volume);
-
 }

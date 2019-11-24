@@ -137,17 +137,13 @@ void Preferences::populateJoysticks()
     joystick->clear();
     joystick->addItem("None"); // index = 0
 
-    const QList<int> gamepads = QGamepadManager::instance()->connectedGamepads();
+    QGamepadManager * manager = QGamepadManager::instance();
+    const QList<int> gamepads = manager->connectedGamepads();
 
     for (int id : gamepads)
     {
-        QGamepad gp(id);
-        QString name = gp.name();
-        if (name.isEmpty())
-        {
-            name = QString::number(id);
-        }
-        joystick->addItem(name, QVariant::fromValue(id));
+        const QString name = manager->gamepadName(id);
+        joystick->addItem(name);
     }
 }
 
@@ -212,13 +208,7 @@ Preferences::Data Preferences::getData() const
     // because index = 0 is None
     if (joystick->currentIndex() >= 1)
     {
-        const QVariant & device = joystick->itemData(joystick->currentIndex());
         data.joystick = joystick->currentText();
-        data.joystickId = device.toInt();
-    }
-    else
-    {
-        data.joystickId = 0;
     }
 
     data.saveState = save_state->text();

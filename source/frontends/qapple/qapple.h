@@ -4,20 +4,20 @@
 #include "ui_qapple.h"
 
 #include <QElapsedTimer>
-#include <QGamepad>
 #include <QAudio>
 
 #include <memory>
 #include "preferences.h"
 
 class Emulator;
+class GlobalOptions;
 
 class QApple : public QMainWindow, private Ui::QApple
 {
     Q_OBJECT
 
 public:
-    explicit QApple(QWidget *parent = 0);
+    explicit QApple(QWidget *parent = nullptr);
 
 signals:
     void endEmulator();
@@ -81,18 +81,17 @@ private:
 
     void stopTimer();
     void restartTimeCounters();
+    void reloadOptions();
 
     int myTimerID;
     Preferences myPreferences;
 
     QElapsedTimer myElapsedTimer;
     QMdiSubWindow * myEmulatorWindow;
-    std::shared_ptr<QGamepad> myGamepad;
     Emulator * myEmulator;
     qint64 myCpuTimeReference;
 
-    int myMSGap;
-    qint64 myFullSpeedMS;
+    std::shared_ptr<GlobalOptions> myOptions;
 };
 
 #endif // QAPPLE_H

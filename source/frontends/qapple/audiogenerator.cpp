@@ -56,13 +56,6 @@ QAudioOutput * AudioGenerator::getAudioOutput()
     return myAudioOutput.get();
 }
 
-void AudioGenerator::getOptions(qint32 & initialSilence, qint32 & silenceDelay, qint32 & volume) const
-{
-    initialSilence = myInitialSilence;
-    silenceDelay = mySilenceDelay;
-    volume = myVolume;
-}
-
 void AudioGenerator::setOptions(const qint32 initialSilence, const qint32 silenceDelay, const qint32 volume)
 {
     myInitialSilence = std::max(0, initialSilence);
