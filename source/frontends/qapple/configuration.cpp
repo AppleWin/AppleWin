@@ -125,145 +125,145 @@ int getRamWorksMemorySize()
     return ramWorksMemorySize;
 }
 
-Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad)
+Preferences::Data getCurrentPreferenceData(const std::shared_ptr<QGamepad> & gamepad)
 {
-    Preferences::Data currentOptions;
+    Preferences::Data currentData;
 
-    currentOptions.disks.resize(diskIDs.size());
+    currentData.disks.resize(diskIDs.size());
     for (size_t i = 0; i < diskIDs.size(); ++i)
     {
         const std::string & diskName = sg_Disk2Card.GetFullName(diskIDs[i]);
         if (!diskName.empty())
         {
-            currentOptions.disks[i] = QString::fromStdString(diskName);
+            currentData.disks[i] = QString::fromStdString(diskName);
         }
     }
 
-    currentOptions.hds.resize(hdIDs.size());
+    currentData.hds.resize(hdIDs.size());
     for (size_t i = 0; i < hdIDs.size(); ++i)
     {
         const std::string & diskName = HD_GetFullName(hdIDs[i]);
         if (!diskName.empty())
         {
-            currentOptions.hds[i] = QString::fromStdString(diskName);
+            currentData.hds[i] = QString::fromStdString(diskName);
         }
     }
 
-    currentOptions.enhancedSpeed = sg_Disk2Card.GetEnhanceDisk();
-    currentOptions.cardInSlot0 = getSlot0Card();
-    currentOptions.mouseInSlot4 = g_Slot[4] == CT_MouseInterface;
-    currentOptions.cpmInSlot5 = g_Slot[5] == CT_Z80;
-    currentOptions.hdInSlot7 = HD_CardIsEnabled();
-    currentOptions.ramWorksSize = getRamWorksMemorySize();
+    currentData.enhancedSpeed = sg_Disk2Card.GetEnhanceDisk();
+    currentData.cardInSlot0 = getSlot0Card();
+    currentData.mouseInSlot4 = g_Slot[4] == CT_MouseInterface;
+    currentData.cpmInSlot5 = g_Slot[5] == CT_Z80;
+    currentData.hdInSlot7 = HD_CardIsEnabled();
+    currentData.ramWorksSize = getRamWorksMemorySize();
 
-    currentOptions.apple2Type = getApple2ComputerType();
+    currentData.apple2Type = getApple2ComputerType();
 
     if (gamepad)
     {
-        currentOptions.joystick = gamepad->name();
-        currentOptions.joystickId = gamepad->deviceId();
+        currentData.joystick = gamepad->name();
+        currentData.joystickId = gamepad->deviceId();
     }
     else
     {
-        currentOptions.joystickId = 0;
+        currentData.joystickId = 0;
     }
 
     const std::string & saveState = Snapshot_GetFilename();
     if (!saveState.empty())
     {
-        currentOptions.saveState = QString::fromStdString(saveState);
+        currentData.saveState = QString::fromStdString(saveState);
     }
 
-    currentOptions.screenshotTemplate = getScreenshotTemplate();
+    currentData.screenshotTemplate = getScreenshotTemplate();
 
-    AudioGenerator::instance().getOptions(currentOptions.audioLatency, currentOptions.silenceDelay, currentOptions.volume);
+    AudioGenerator::instance().getOptions(currentData.audioLatency, currentData.silenceDelay, currentData.volume);
 
-    return currentOptions;
+    return currentData;
 }
 
-void setNewOptions(const Preferences::Data & currentOptions, const Preferences::Data & newOptions, std::shared_ptr<QGamepad> & gamepad)
+void setNewPreferenceData(const Preferences::Data & currentData, const Preferences::Data & newData, std::shared_ptr<QGamepad> & gamepad)
 {
-    if (currentOptions.apple2Type != newOptions.apple2Type)
+    if (currentData.apple2Type != newData.apple2Type)
     {
-        const eApple2Type type = computerTypes[newOptions.apple2Type];
+        const eApple2Type type = computerTypes[newData.apple2Type];
         SetApple2Type(type);
         REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), type);
         const eCpuType cpu = ProbeMainCpuDefault(type);
         SetMainCpu(cpu);
         REGSAVE(TEXT(REGVALUE_CPU_TYPE), cpu);
     }
-    if (currentOptions.cardInSlot0 != newOptions.cardInSlot0)
+    if (currentData.cardInSlot0 != newData.cardInSlot0)
     {
-        setSlot0Card(newOptions.cardInSlot0);
+        setSlot0Card(newData.cardInSlot0);
     }
-    if (currentOptions.mouseInSlot4 != newOptions.mouseInSlot4)
+    if (currentData.mouseInSlot4 != newData.mouseInSlot4)
     {
-        const SS_CARDTYPE card = newOptions.mouseInSlot4 ? CT_MouseInterface : CT_Empty;
+        const SS_CARDTYPE card = newData.mouseInSlot4 ? CT_MouseInterface : CT_Empty;
         setSlot4(card);
     }
-    if (currentOptions.cpmInSlot5 != newOptions.cpmInSlot5)
+    if (currentData.cpmInSlot5 != newData.cpmInSlot5)
     {
-        const SS_CARDTYPE card = newOptions.cpmInSlot5 ? CT_Z80 : CT_Empty;
+        const SS_CARDTYPE card = newData.cpmInSlot5 ? CT_Z80 : CT_Empty;
         setSlot5(card);
     }
-    if (currentOptions.hdInSlot7 != newOptions.hdInSlot7)
+    if (currentData.hdInSlot7 != newData.hdInSlot7)
     {
-        REGSAVE(TEXT(REGVALUE_HDD_ENABLED), newOptions.hdInSlot7 ? 1 : 0);
-        HD_SetEnabled(newOptions.hdInSlot7);
+        REGSAVE(TEXT(REGVALUE_HDD_ENABLED), newData.hdInSlot7 ? 1 : 0);
+        HD_SetEnabled(newData.hdInSlot7);
     }
-    if (currentOptions.ramWorksSize != newOptions.ramWorksSize)
+    if (currentData.ramWorksSize != newData.ramWorksSize)
     {
-        setRamWorksMemorySize(newOptions.ramWorksSize);
+        setRamWorksMemorySize(newData.ramWorksSize);
     }
 
-    if (newOptions.joystick.isEmpty())
+    if (newData.joystick.isEmpty())
     {
         gamepad.reset();
         Paddle::instance() = std::make_shared<Paddle>();
     }
     else
     {
-        if (newOptions.joystickId != currentOptions.joystickId)
+        if (newData.joystickId != currentData.joystickId)
         {
-            gamepad.reset(new QGamepad(newOptions.joystickId));
+            gamepad.reset(new QGamepad(newData.joystickId));
             Paddle::instance() = std::make_shared<GamepadPaddle>(gamepad);
         }
     }
 
-    if (currentOptions.enhancedSpeed != newOptions.enhancedSpeed)
+    if (currentData.enhancedSpeed != newData.enhancedSpeed)
     {
-        REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), newOptions.enhancedSpeed ? 1 : 0);
-        sg_Disk2Card.SetEnhanceDisk(newOptions.enhancedSpeed);
+        REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), newData.enhancedSpeed ? 1 : 0);
+        sg_Disk2Card.SetEnhanceDisk(newData.enhancedSpeed);
     }
 
     for (size_t i = 0; i < diskIDs.size(); ++i)
     {
-        if (currentOptions.disks[i] != newOptions.disks[i])
+        if (currentData.disks[i] != newData.disks[i])
         {
-            insertDisk(newOptions.disks[i], diskIDs[i]);
+            insertDisk(newData.disks[i], diskIDs[i]);
         }
     }
 
     for (size_t i = 0; i < hdIDs.size(); ++i)
     {
-        if (currentOptions.hds[i] != newOptions.hds[i])
+        if (currentData.hds[i] != newData.hds[i])
         {
-            insertHD(newOptions.hds[i], hdIDs[i]);
+            insertHD(newData.hds[i], hdIDs[i]);
         }
     }
 
-    if (currentOptions.saveState != newOptions.saveState)
+    if (currentData.saveState != newData.saveState)
     {
-        const std::string name = newOptions.saveState.toStdString();
+        const std::string name = newData.saveState.toStdString();
         Snapshot_SetFilename(name);
         RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, name);
     }
 
-    if (currentOptions.screenshotTemplate != newOptions.screenshotTemplate)
+    if (currentData.screenshotTemplate != newData.screenshotTemplate)
     {
-        setScreenshotTemplate(newOptions.screenshotTemplate);
+        setScreenshotTemplate(newData.screenshotTemplate);
     }
 
-    AudioGenerator::instance().setOptions(newOptions.audioLatency, newOptions.silenceDelay, newOptions.volume);
+    AudioGenerator::instance().setOptions(newData.audioLatency, newData.silenceDelay, newData.volume);
 
 }

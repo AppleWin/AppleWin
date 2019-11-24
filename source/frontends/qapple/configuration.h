@@ -11,8 +11,8 @@ QString getScreenshotTemplate();
 int getSlot0Card();
 int getRamWorksMemorySize();
 
-Preferences::Data getCurrentOptions(const std::shared_ptr<QGamepad> & gamepad);
-void setNewOptions(const Preferences::Data & currentOptions, const Preferences::Data & newOptions,
-                   std::shared_ptr<QGamepad> & gamepad);
+Preferences::Data getCurrentPreferenceData(const std::shared_ptr<QGamepad> & gamepad);
+void setNewPreferenceData(const Preferences::Data & currentData, const Preferences::Data & newData,
+                          std::shared_ptr<QGamepad> & gamepad);
 
 #endif // CONFIGURATION_H

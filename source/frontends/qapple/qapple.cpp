@@ -374,15 +374,15 @@ void QApple::on_actionOptions_triggered()
     // but often it forces to terminate the emulator
     PauseEmulator pause(this);
 
-    const Preferences::Data currentOptions = getCurrentOptions(myGamepad);
+    const Preferences::Data currentData = getCurrentPreferenceData(myGamepad);
 
     QSettings settings; // the function will "modify" it
-    myPreferences.setup(currentOptions, settings);
+    myPreferences.setup(currentData, settings);
 
     if (myPreferences.exec())
     {
-        const Preferences::Data newOptions = myPreferences.getData();
-        setNewOptions(currentOptions, newOptions, myGamepad);
+        const Preferences::Data newData = myPreferences.getData();
+        setNewPreferenceData(currentData, newData, myGamepad);
     }
 
 }
