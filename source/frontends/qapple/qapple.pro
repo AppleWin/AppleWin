@@ -16,11 +16,11 @@ SOURCES += main.cpp\
     qapple.cpp \
     qresources.cpp \
     emulator.cpp \
+    registry.cpp \
     video.cpp \
     memorycontainer.cpp \
     preferences.cpp \
     gamepadpaddle.cpp \
-    settings.cpp \
     configuration.cpp \
     qhexedit2/chunks.cpp \
     qhexedit2/commands.cpp \
@@ -30,12 +30,12 @@ HEADERS  += qapple.h \
     audiogenerator.h \
     emulator.h \
     loggingcategory.h \
+    registry.h \
     video.h \
     graphicscache.h \
     memorycontainer.h \
     preferences.h \
     gamepadpaddle.h \
-    settings.h \
     configuration.h \
     qhexedit2/chunks.h \
     qhexedit2/commands.h \

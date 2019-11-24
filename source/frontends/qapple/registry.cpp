@@ -1,4 +1,4 @@
-#include "settings.h"
+#include "registry.h"
 
 #include <QSettings>
 
