@@ -36,6 +36,8 @@ struct CBITMAP : public CHANDLE
 
 HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename)
 {
+    Q_UNUSED(hInstance)
+
     QImage image;
     if (!filename.empty())
     {
