@@ -140,7 +140,7 @@ void CPageSound::DlgOK(HWND hWnd)
 	if (SpkrSetEmulationType(hWnd, newSoundType))
 	{
 		DWORD dwSoundType = (soundtype == SOUND_NONE) ? REG_SOUNDTYPE_NONE : REG_SOUNDTYPE_WAVE;
-		REGSAVE(TEXT("Sound Emulation"), dwSoundType);
+		REGSAVE(TEXT(REGVALUE_SOUND_EMULATION), dwSoundType);
 	}
 
 	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence
