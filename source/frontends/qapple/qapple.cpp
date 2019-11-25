@@ -346,7 +346,7 @@ void QApple::on_actionBenchmark_triggered()
     // call repaint as we really want to for a paintEvent() so we can time it properly
     // if video is based on OpenGLWidget, this is not enough though,
     // and benchmark results are bad.
-    VideoBenchmark([this]() { myEmulator->repaintVideo(); });
+    VideoBenchmark([this]() { myEmulator->redrawScreen(); }, [this]() { myEmulator->refreshScreen(); });
     on_actionReboot_triggered();
 }
 

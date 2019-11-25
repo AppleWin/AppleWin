@@ -314,7 +314,7 @@ namespace
 
 	if (options.benchmark)
 	{
-	  VideoBenchmark(&VideoRedrawScreen);
+	  VideoBenchmark(&VideoRedrawScreen, &VideoRedrawScreen);
 	}
 	else
 	{

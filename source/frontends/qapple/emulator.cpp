@@ -1,6 +1,10 @@
 #include "emulator.h"
 
 #include <QMdiSubWindow>
+#include "StdAfx.h"
+#include "Common.h"
+#include "Video.h"
+#include "NTSC.h"
 
 #include <cmath>
 
@@ -15,7 +19,14 @@ void Emulator::updateVideo()
     video->update();
 }
 
-void Emulator::repaintVideo()
+void Emulator::redrawScreen()
+{
+    NTSC_SetVideoMode( g_uVideoMode );
+    NTSC_VideoRedrawWholeScreen();
+    refreshScreen();
+}
+
+void Emulator::refreshScreen()
 {
     video->repaint();
 }

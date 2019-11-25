@@ -1,7 +1,5 @@
 #include "StdAfx.h"
 
-#include <chrono>
-
 #include "Video.h"
 #include "Memory.h"
 #include "Common.h"
@@ -11,7 +9,7 @@
 
 #include "linux/benchmark.h"
 
-void VideoBenchmark(std::function<void()> VideoRedrawScreen)
+void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
 {
   // PREPARE TWO DIFFERENT FRAME BUFFERS, EACH OF WHICH HAVE HALF OF THE
   // BYTES SET TO 0x14 AND THE OTHER HALF SET TO 0xAA
@@ -31,24 +29,21 @@ void VideoBenchmark(std::function<void()> VideoRedrawScreen)
 
   g_uVideoMode            = VF_TEXT;
   FillMemory(mem+0x400,0x400,0x14);
-  VideoRedrawScreen();
-
-  auto start = std::chrono::steady_clock::now();
-  long elapsed;
-
+  redraw();
+  DWORD milliseconds = GetTickCount();
+  while (GetTickCount() == milliseconds) ;
+  milliseconds = GetTickCount();
   DWORD cycle = 0;
   do {
     if (cycle & 1)
       FillMemory(mem+0x400,0x400,0x14);
     else
       CopyMemory(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
-    VideoRedrawScreen();
+    refresh();
     if (cycle++ >= 3)
       cycle = 0;
     totaltextfps++;
-    const auto end = std::chrono::steady_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-  } while (elapsed < 1000);
+  } while (GetTickCount() - milliseconds < 1000);
 
   // SEE HOW MANY HIRES FRAMES PER SECOND WE CAN PRODUCE WITH NOTHING ELSE
   // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
@@ -56,38 +51,36 @@ void VideoBenchmark(std::function<void()> VideoRedrawScreen)
   DWORD totalhiresfps = 0;
   g_uVideoMode             = VF_HIRES;
   FillMemory(mem+0x2000,0x2000,0x14);
-  VideoRedrawScreen();
-
-  start = std::chrono::steady_clock::now();
-
+  redraw();
+  milliseconds = GetTickCount();
+  while (GetTickCount() == milliseconds) ;
+  milliseconds = GetTickCount();
   cycle = 0;
   do {
     if (cycle & 1)
       FillMemory(mem+0x2000,0x2000,0x14);
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRedrawScreen();
+    refresh();
     if (cycle++ >= 3)
       cycle = 0;
     totalhiresfps++;
-    const auto end = std::chrono::steady_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-  } while (elapsed < 1000);
+  } while (GetTickCount() - milliseconds < 1000);
 
   // DETERMINE HOW MANY 65C02 CLOCK CYCLES WE CAN EMULATE PER SECOND WITH
   // NOTHING ELSE GOING ON
-  CpuSetupBenchmark();
-  DWORD totalmhz10 = 0;
-
-  start = std::chrono::steady_clock::now();
-
-  cycle = 0;
-  do {
-    CpuExecute(100000, true);
-    totalmhz10++;
-    const auto end = std::chrono::steady_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-  } while (elapsed < 1000);
+  DWORD totalmhz10[2] = {0,0};	// bVideoUpdate & !bVideoUpdate
+  for (UINT i=0; i<2; i++)
+  {
+	  CpuSetupBenchmark();
+	  milliseconds = GetTickCount();
+	  while (GetTickCount() == milliseconds) ;
+	  milliseconds = GetTickCount();
+	  do {
+		  CpuExecute(100000, i==0 ? true : false);
+		totalmhz10[i]++;
+	  } while (GetTickCount() - milliseconds < 1000);
+  }
 
   // IF THE PROGRAM COUNTER IS NOT IN THE EXPECTED RANGE AT THE END OF THE
   // CPU BENCHMARK, REPORT AN ERROR AND OPTIONALLY TRACK IT DOWN
@@ -142,9 +135,10 @@ void VideoBenchmark(std::function<void()> VideoRedrawScreen)
   // THE SAME TIME
   DWORD realisticfps = 0;
   FillMemory(mem+0x2000,0x2000,0xAA);
-  VideoRedrawScreen();
-  start = std::chrono::steady_clock::now();
-
+  redraw();
+  milliseconds = GetTickCount();
+  while (GetTickCount() == milliseconds) ;
+  milliseconds = GetTickCount();
   cycle = 0;
   do {
     if (realisticfps < 10) {
@@ -156,32 +150,30 @@ void VideoBenchmark(std::function<void()> VideoRedrawScreen)
 #if 0
         JoyUpdateButtonLatch(executedcycles);
 #endif
-      }
+	  }
     }
     if (cycle & 1)
       FillMemory(mem+0x2000,0x2000,0xAA);
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRedrawScreen();
+    redraw();
     if (cycle++ >= 3)
       cycle = 0;
     realisticfps++;
-    const auto end = std::chrono::steady_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-  } while (elapsed < 1000);
+  } while (GetTickCount() - milliseconds < 1000);
 
   // DISPLAY THE RESULTS
   TCHAR outstr[256];
   wsprintf(outstr,
            TEXT("Pure Video FPS:\t%u hires, %u text\n")
-           TEXT("Pure CPU MHz:\t%u.%u%s\n\n")
-           TEXT("EXPECTED AVERAGE VIDEO GAME")
+           TEXT("Pure CPU MHz:\t%u.%u%s (video update)\n")
+           TEXT("Pure CPU MHz:\t%u.%u%s (full-speed)\n\n")
+           TEXT("EXPECTED AVERAGE VIDEO GAME\n")
            TEXT("PERFORMANCE: %u FPS"),
            (unsigned)totalhiresfps,
            (unsigned)totaltextfps,
-           (unsigned)(totalmhz10/10),
-           (unsigned)(totalmhz10 % 10),
-           (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
+           (unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
+           (unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
            (unsigned)realisticfps);
   MessageBox(g_hFrameWindow,
              outstr,

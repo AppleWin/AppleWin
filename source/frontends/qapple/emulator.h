@@ -13,7 +13,8 @@ public:
     explicit Emulator(QWidget *parent = nullptr);
 
     void updateVideo();
-    void repaintVideo();
+    void redrawScreen();    // regenerate image and repaint
+    void refreshScreen();   // just repaint
 
     bool saveScreen(const QString & filename) const;
     void displayLogo();
