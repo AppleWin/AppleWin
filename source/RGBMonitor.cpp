@@ -509,6 +509,9 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 // Pre: nSrcAdjustment: for 160-color images, src is +1 compared to dst
 static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, const int nSrcAdjustment = 0)
 {
+	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const UINT frameBufferWidth = GetFrameBufferWidth();
+
 	UINT32* pDst = (UINT32*) pVideoAddress;
 	const BYTE* const pSrc = g_aSourceStartofLine[ sy ] + sx;
 
@@ -519,7 +522,7 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 		{
 			--nBytes;
 
-			if (IsVideoStyle(VS_HALF_SCANLINES) && !(h & 1))
+			if (bIsHalfScanLines && !(h & 1))
 			{
 				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
 				*(pDst+nBytes) = 0;
@@ -533,7 +536,7 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 			}
 		}
 
-		pDst -= GetFrameBufferWidth();
+		pDst -= frameBufferWidth;
 	}
 }
 
