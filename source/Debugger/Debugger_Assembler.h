@@ -194,7 +194,7 @@ extern	int g_aAssemblerFirstDirective[ NUM_ASSEMBLERS ];
 	void _6502_GetOpcodeOpmodeOpbyte( int & iOpcode_, int & iOpmode_, int & nOpbytes_ );
 	bool _6502_GetStackReturnAddress( WORD & nAddress_ );
 	bool _6502_GetTargets( WORD nAddress, int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int * pBytes_
-		, const bool bIgnoreJSRJMP = true, bool bIgnoreBranch = true );
+		, const bool bIgnoreJSRJMP = true, bool bIgnoreBranch = true, bool bIgnoreNextOpcodeAddress = false );
 	bool _6502_GetTargetAddress( const WORD & nAddress, WORD & nTarget_ );
 	bool _6502_IsOpcodeBranch( int nOpcode );
 	bool _6502_IsOpcodeValid( int nOpcode );
