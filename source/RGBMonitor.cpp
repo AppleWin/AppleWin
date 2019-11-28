@@ -516,17 +516,14 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 
 	while (h--)
 	{
-		int nBytes = w;
-		while (nBytes)
+		if (bIsHalfScanLines && !(h & 1))
 		{
-			--nBytes;
-
-			if (bIsHalfScanLines && !(h & 1))
-			{
-				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-				*(pDst+nBytes) = 0;
-			}
-			else
+			// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+			std::fill(pDst, pDst + w, 0);
+		}
+		else
+		{
+			for (int nBytes=0; nBytes<w; ++nBytes)
 			{
 				_ASSERT( *(pSrc+nBytes+nSrcAdjustment) < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
 				const RGBQUAD& rRGB = PalIndex2RGB[ *(pSrc+nBytes+nSrcAdjustment) ];
