@@ -31,7 +31,7 @@ QImage Video::getScreen() const
     int sw, sh;
 
     getScreenData(data, width, height, sx, sy, sw, sh);
-    QImage frameBuffer(data, width, height, QImage::Format_RGB32);
+    QImage frameBuffer(data, width, height, QImage::Format_ARGB32_Premultiplied);
 
     QImage screen = frameBuffer.copy(sx, sy, sw, sh);
 
@@ -47,7 +47,7 @@ void Video::displayLogo()
     int sw, sh;
 
     getScreenData(data, width, height, sx, sy, sw, sh);
-    QImage frameBuffer(data, width, height, QImage::Format_RGB32);
+    QImage frameBuffer(data, width, height, QImage::Format_ARGB32_Premultiplied);
 
     QPainter painter(&frameBuffer);
     painter.drawImage(sx, sy, myLogo);
@@ -62,7 +62,7 @@ void Video::paintEvent(QPaintEvent *)
     int sw, sh;
 
     getScreenData(data, width, height, sx, sy, sw, sh);
-    QImage frameBuffer(data, width, height, QImage::Format_RGB32);
+    QImage frameBuffer(data, width, height, QImage::Format_ARGB32_Premultiplied);
 
     const QSize actual = size();
     const double scaleX = double(actual.width()) / sw;
