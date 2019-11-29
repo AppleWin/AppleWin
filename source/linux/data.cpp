@@ -98,6 +98,14 @@ void SetWindowTitle()
   case A2TYPE_PRAVETS8A:		g_pAppTitle = TITLE_PRAVETS_8A; break;
   case A2TYPE_TK30002E:                 g_pAppTitle = TITLE_TK3000_2E; break;
   }
+
+  g_pAppTitle += " - ";
+
+  if( IsVideoStyle(VS_HALF_SCANLINES) )
+  {
+          g_pAppTitle += " 50% ";
+  }
+  g_pAppTitle += g_apVideoModeDesc[ g_eVideoType ];
 }
 
 void LoadConfiguration(void)
@@ -219,8 +227,8 @@ void LoadConfiguration(void)
     sg_Disk2Card.SetEnhanceDisk(dwEnhanceDisk ? true : false);
   }
 
-#if 0
   Config_Load_Video();
+#if 0
   REGLOAD(TEXT("Uthernet Active"), &tfe_enabled);
 #endif
   SetCurrentCLK6502();

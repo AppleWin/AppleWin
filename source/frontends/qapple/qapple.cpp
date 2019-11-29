@@ -394,6 +394,9 @@ void QApple::on_actionOptions_triggered()
 
 void QApple::reloadOptions()
 {
+    SetWindowTitle();
+    myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
+
     Paddle::instance() = GamepadPaddle::fromName(myOptions->gamepadName);
     AudioGenerator::instance().setOptions(myOptions->audioLatency, myOptions->silenceDelay, myOptions->volume);
 }
@@ -499,6 +502,9 @@ void QApple::on_actionNext_video_mode_triggered()
     g_eVideoType++;
     if (g_eVideoType >= NUM_VIDEO_MODES)
         g_eVideoType = 0;
+
+    SetWindowTitle();
+    myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
     Config_Save_Video();
     VideoReinitialize();

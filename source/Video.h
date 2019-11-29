@@ -19,7 +19,7 @@
 	};
 
 	extern TCHAR g_aVideoChoices[];
-	extern char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
+	extern const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
 
 	enum VideoStyle_e
 	{

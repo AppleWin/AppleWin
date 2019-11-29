@@ -87,7 +87,19 @@ static VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
 
 static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
-static LPDIRECTDRAW g_lpDD = NULL;
+// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
+// The window title will be set to this.
+const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
+  {
+   "Monochrome Monitor (Custom)"
+   , "Color (RGB Monitor)"
+   , "Color (NTSC Monitor)"
+   , "Color TV"
+   , "B&W TV"
+   , "Amber Monitor"
+   , "Green Monitor"
+   , "White Monitor"
+  };
 
 static void videoCreateDIBSection();
 
