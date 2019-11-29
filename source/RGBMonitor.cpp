@@ -107,7 +107,7 @@ const BYTE DoubleHiresPalIndex[16] = {
 		ORANGE,  PINK,      YELLOW,    WHITE
 	};
 
-#define  SETRGBCOLOR(r,g,b) {b,g,r,0}
+#define  SETRGBCOLOR(r,g,b) {b,g,r,0xFF}
 
 static RGBQUAD PalIndex2RGB[] =
 {
@@ -489,7 +489,7 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 			if (bIsHalfScanLines && (h & 1))
 			{
 				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-				*(pDst+nBytes) = 0;
+				*(pDst+nBytes) = 0xFF000000;
 			}
 			else
 			{
@@ -519,7 +519,7 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 		if (bIsHalfScanLines && !(h & 1))
 		{
 			// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-			std::fill(pDst, pDst + w, 0);
+			std::fill(pDst, pDst + w, 0xFF000000);
 		}
 		else
 		{
