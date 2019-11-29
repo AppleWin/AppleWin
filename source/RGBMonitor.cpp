@@ -495,8 +495,7 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 			{
 				_ASSERT( colormixbuffer[h] < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
 				const RGBQUAD& rRGB = PalIndex2RGB[ colormixbuffer[h] ];
-				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
-				*(pDst+nBytes) = rgb;
+				*(pDst+nBytes) = *reinterpret_cast<const UINT32 *>(&rRGB);
 			}
 
 			pDst -= frameBufferWidth;
@@ -509,30 +508,26 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 // Pre: nSrcAdjustment: for 160-color images, src is +1 compared to dst
 static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, const int nSrcAdjustment = 0)
 {
-	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
-	const UINT frameBufferWidth = GetFrameBufferWidth();
-
 	UINT32* pDst = (UINT32*) pVideoAddress;
 	const BYTE* const pSrc = g_aSourceStartofLine[ sy ] + sx;
 
+	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const UINT frameBufferWidth = GetFrameBufferWidth();
+
 	while (h--)
 	{
-		int nBytes = w;
-		while (nBytes)
+		if (bIsHalfScanLines && !(h & 1))
 		{
-			--nBytes;
-
-			if (bIsHalfScanLines && !(h & 1))
-			{
-				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-				*(pDst+nBytes) = 0;
-			}
-			else
+			// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+			std::fill(pDst, pDst + w, 0);
+		}
+		else
+		{
+			for (int nBytes=0; nBytes<w; ++nBytes)
 			{
 				_ASSERT( *(pSrc+nBytes+nSrcAdjustment) < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
 				const RGBQUAD& rRGB = PalIndex2RGB[ *(pSrc+nBytes+nSrcAdjustment) ];
-				const UINT32 rgb = (((UINT32)rRGB.rgbRed)<<16) | (((UINT32)rRGB.rgbGreen)<<8) | ((UINT32)rRGB.rgbBlue);
-				*(pDst+nBytes) = rgb;
+				*(pDst+nBytes) = *reinterpret_cast<const UINT32 *>(&rRGB);
 			}
 		}
 

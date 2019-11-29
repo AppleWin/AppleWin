@@ -630,7 +630,7 @@ void LoadConfiguration(void)
 		LoadConfigOldJoystick_v1(JN_JOYSTICK1);
 
 	DWORD dwSoundType;
-	REGLOAD_DEFAULT(TEXT("Sound Emulation"), &dwSoundType, REG_SOUNDTYPE_NONE);
+	REGLOAD_DEFAULT(TEXT(REGVALUE_SOUND_EMULATION), &dwSoundType, REG_SOUNDTYPE_WAVE);
 	switch (dwSoundType)
 	{
 	case REG_SOUNDTYPE_NONE:

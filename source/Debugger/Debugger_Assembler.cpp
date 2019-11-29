@@ -583,7 +583,8 @@ bool _6502_GetStackReturnAddress ( WORD & nAddress_ )
 
 
 //===========================================================================
-bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int * pTargetBytes_, bool bIgnoreJSRJMP, bool bIgnoreBranch )
+bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int * pTargetBytes_,
+						bool bIgnoreJSRJMP /*= true*/, bool bIgnoreBranch /*= true*/, bool bIgnoreNextOpcodeAddress /*= false*/ )
 {
 	bool bStatus = false;
 
@@ -781,6 +782,13 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 			if (pTargetBytes_)
 				*pTargetBytes_ = 0;
 		}
+	}
+
+	if (bIgnoreNextOpcodeAddress)
+	{
+		*pTargetPointer_ = NO_6502_TARGET;
+		if (pTargetBytes_)
+			*pTargetBytes_ = 0;
 	}
 	
 	return bStatus;
