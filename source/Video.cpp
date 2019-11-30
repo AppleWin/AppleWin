@@ -183,49 +183,19 @@ void VideoBenchmark () {
     *(mem32+loop) = ((loop & 1) ^ ((loop & 0x40) >> 6)) ? 0xAAAAAAAA
                                                         : 0x14141414;
 
-  // SEE HOW MANY TEXT FRAMES PER SECOND WE CAN PRODUCE WITH NOTHING ELSE
-  // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
-  // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
-  DWORD totaltextfps = 0;
+  // SEE HOW MANY FRAMES PER SECOND WE CAN PRODUCE WITH NOTHING ELSE GOING ON
+  // THIS IS CHECKING ONLY THE SPEED OF FRAME BUFFER TO SCREEN COPY
+  DWORD totalpurefps = 0;
 
-  g_uVideoMode            = VF_TEXT;
-  FillMemory(mem+0x400,0x400,0x14);
+  g_uVideoMode            = VF_HIRES;
+  FillMemory(mem+0x2000,0x2000,0x14);
   VideoRedrawScreen();
   DWORD milliseconds = GetTickCount();
   while (GetTickCount() == milliseconds) ;
   milliseconds = GetTickCount();
-  DWORD cycle = 0;
   do {
-    if (cycle & 1)
-      FillMemory(mem+0x400,0x400,0x14);
-    else
-      CopyMemory(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
     VideoRefreshScreen();
-    if (cycle++ >= 3)
-      cycle = 0;
-    totaltextfps++;
-  } while (GetTickCount() - milliseconds < 1000);
-
-  // SEE HOW MANY HIRES FRAMES PER SECOND WE CAN PRODUCE WITH NOTHING ELSE
-  // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
-  // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
-  DWORD totalhiresfps = 0;
-  g_uVideoMode             = VF_HIRES;
-  FillMemory(mem+0x2000,0x2000,0x14);
-  VideoRedrawScreen();
-  milliseconds = GetTickCount();
-  while (GetTickCount() == milliseconds) ;
-  milliseconds = GetTickCount();
-  cycle = 0;
-  do {
-    if (cycle & 1)
-      FillMemory(mem+0x2000,0x2000,0x14);
-    else
-      CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRefreshScreen();
-    if (cycle++ >= 3)
-      cycle = 0;
-    totalhiresfps++;
+    totalpurefps++;
   } while (GetTickCount() - milliseconds < 1000);
 
   // DETERMINE HOW MANY 65C02 CLOCK CYCLES WE CAN EMULATE PER SECOND WITH
@@ -294,44 +264,50 @@ void VideoBenchmark () {
   // DO A REALISTIC TEST OF HOW MANY FRAMES PER SECOND WE CAN PRODUCE
   // WITH FULL EMULATION OF THE CPU, JOYSTICK, AND DISK HAPPENING AT
   // THE SAME TIME
-  DWORD realisticfps = 0;
+  const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
+  const UINT cyclesPerMs = UINT(g_fCurrentCLK6502 / 1000);
+
   FillMemory(mem+0x2000,0x2000,0xAA);
   VideoRedrawScreen();
   milliseconds = GetTickCount();
   while (GetTickCount() == milliseconds) ;
   milliseconds = GetTickCount();
-  cycle = 0;
+
+  DWORD realisticfps = 0;
+  DWORD cyclesThisFrame = 0;
   do {
-    if (realisticfps < 10) {
-      int cycles = 100000;
-      while (cycles > 0) {
-        DWORD executedcycles = CpuExecute(103, true);
-        cycles -= executedcycles;
-        sg_Disk2Card.UpdateDriveState(executedcycles);
-        JoyUpdateButtonLatch(executedcycles);
-	  }
+    // this is a simplified version of AppleWin.cpp::ContinueExecution()
+    const DWORD uActualCyclesExecuted = CpuExecute(cyclesPerMs, true);
+    // in this simplified loop we ignore the fact that we might have executed a few more cycles
+    cyclesThisFrame += uActualCyclesExecuted;
+
+    // every ms disk and joystick are updated
+    sg_Disk2Card.UpdateDriveState(uActualCyclesExecuted);
+    JoyUpdateButtonLatch(uActualCyclesExecuted);
+
+    if (cyclesThisFrame >= dwClksPerFrame)
+    {
+      cyclesThisFrame -= dwClksPerFrame;
+      // video has already been updated in CpuExecute(..., true)
+      VideoRefreshScreen();
+      realisticfps++;
+      if (realisticfps & 1)
+        FillMemory(mem+0x2000,0x2000,0xAA);
+      else
+        CopyMemory(mem+0x2000,mem+((realisticfps & 2) ? 0x4000 : 0x6000),0x2000);
     }
-    if (cycle & 1)
-      FillMemory(mem+0x2000,0x2000,0xAA);
-    else
-      CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRedrawScreen();
-    if (cycle++ >= 3)
-      cycle = 0;
-    realisticfps++;
   } while (GetTickCount() - milliseconds < 1000);
 
   // DISPLAY THE RESULTS
   VideoDisplayLogo();
   TCHAR outstr[256];
   wsprintf(outstr,
-           TEXT("Pure Video FPS:\t%u hires, %u text\n")
+           TEXT("Pure Video FPS:\t%u\n")
            TEXT("Pure CPU MHz:\t%u.%u%s (video update)\n")
            TEXT("Pure CPU MHz:\t%u.%u%s (full-speed)\n\n")
            TEXT("EXPECTED AVERAGE VIDEO GAME\n")
            TEXT("PERFORMANCE: %u FPS"),
-           (unsigned)totalhiresfps,
-           (unsigned)totaltextfps,
+           (unsigned)totalpurefps,
            (unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
            (unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
            (unsigned)realisticfps);
