@@ -1,9 +1,10 @@
 #ifndef GAMEPADPADDLE_H
 #define GAMEPADPADDLE_H
 
-#include <QGamepad>
-
 #include "linux/paddle.h"
+
+class QGamepad;
+class QString;
 
 class GamepadPaddle : public Paddle
 {

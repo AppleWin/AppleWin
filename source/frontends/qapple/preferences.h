@@ -1,12 +1,18 @@
 #ifndef PREFERENCES_H
 #define PREFERENCES_H
 
-#include "ui_preferences.h"
+#include <QDialog>
 
 #include <vector>
-#include <QSettings>
 
-class Preferences : public QDialog, private Ui::Preferences
+class QComboBox;
+class QSettings;
+
+namespace Ui {
+class Preferences;
+}
+
+class Preferences : public QDialog
 {
     Q_OBJECT
 
@@ -70,6 +76,8 @@ private:
     void populateJoysticks();
     void browseDisk(const std::vector<QComboBox *> & vdisks, const size_t id);
 
+private:
+    Ui::Preferences *ui;
 };
 
 #endif // PREFERENCES_H

@@ -1,9 +1,13 @@
 #include "preferences.h"
+#include "ui_preferences.h"
+
 #include "StdAfx.h"
 #include "Common.h"
 #include "Memory.h"
+
 #include <QFileDialog>
-#include <QtGamepad/QGamepad>
+#include <QGamepadManager>
+#include <QSettings>
 
 namespace
 {
@@ -114,15 +118,16 @@ namespace
 }
 
 Preferences::Preferences(QWidget *parent) :
-    QDialog(parent)
+    QDialog(parent),
+    ui(new Ui::Preferences)
 {
-    setupUi(this);
+    ui->setupUi(this);
 
     // easier to handle in a vector
-    myDisks.push_back(disk1);
-    myDisks.push_back(disk2);
-    myHDs.push_back(hd1);
-    myHDs.push_back(hd2);
+    myDisks.push_back(ui->disk1);
+    myDisks.push_back(ui->disk2);
+    myHDs.push_back(ui->hd1);
+    myHDs.push_back(ui->hd2);
 }
 
 void Preferences::setup(const Data & data, QSettings & settings)
@@ -134,8 +139,8 @@ void Preferences::setup(const Data & data, QSettings & settings)
 
 void Preferences::populateJoysticks()
 {
-    joystick->clear();
-    joystick->addItem("None"); // index = 0
+    ui->joystick->clear();
+    ui->joystick->addItem("None"); // index = 0
 
     QGamepadManager * manager = QGamepadManager::instance();
     const QList<int> gamepads = manager->connectedGamepads();
@@ -143,23 +148,23 @@ void Preferences::populateJoysticks()
     for (int id : gamepads)
     {
         const QString name = manager->gamepadName(id);
-        joystick->addItem(name);
+        ui->joystick->addItem(name);
     }
 }
 
 void Preferences::setSettings(QSettings & settings)
 {
-    registryTree->clear();
+    ui->registryTree->clear();
 
     QStringList columns;
     columns.append(QString::fromUtf8("Registry")); // the name
     columns.append(settings.fileName()); // the value
 
-    QTreeWidgetItem * newItem = new QTreeWidgetItem(registryTree, columns);
+    QTreeWidgetItem * newItem = new QTreeWidgetItem(ui->registryTree, columns);
     processSettingsGroup(settings, newItem);
 
-    registryTree->addTopLevelItem(newItem);
-    registryTree->expandAll();
+    ui->registryTree->addTopLevelItem(newItem);
+    ui->registryTree->expandAll();
 }
 
 void Preferences::setData(const Data & data)
@@ -167,31 +172,31 @@ void Preferences::setData(const Data & data)
     initialiseDisks(myDisks, data.disks);
     initialiseDisks(myHDs, data.hds);
 
-    enhanced_speed->setChecked(data.enhancedSpeed);
-    apple2Type->setCurrentIndex(data.apple2Type);
-    lc_0->setCurrentIndex(data.cardInSlot0);
-    mouse_4->setChecked(data.mouseInSlot4);
-    cpm_5->setChecked(data.cpmInSlot5);
-    hd_7->setChecked(data.hdInSlot7);
+    ui->enhanced_speed->setChecked(data.enhancedSpeed);
+    ui->apple2Type->setCurrentIndex(data.apple2Type);
+    ui->lc_0->setCurrentIndex(data.cardInSlot0);
+    ui->mouse_4->setChecked(data.mouseInSlot4);
+    ui->cpm_5->setChecked(data.cpmInSlot5);
+    ui->hd_7->setChecked(data.hdInSlot7);
 
-    rw_size->setMaximum(kMaxExMemoryBanks);
-    rw_size->setValue(data.ramWorksSize);
+    ui->rw_size->setMaximum(kMaxExMemoryBanks);
+    ui->rw_size->setValue(data.ramWorksSize);
 
     // synchronise
     on_hd_7_clicked(data.hdInSlot7);
 
-    joystick->setCurrentText(data.joystick);
+    ui->joystick->setCurrentText(data.joystick);
 
-    save_state->setText(data.saveState);
-    screenshot->setText(data.screenshotTemplate);
+    ui->save_state->setText(data.saveState);
+    ui->screenshot->setText(data.screenshotTemplate);
 
-    audio_latency->setValue(data.audioLatency);
-    silence_delay->setValue(data.silenceDelay);
-    volume->setValue(data.volume);
+    ui->audio_latency->setValue(data.audioLatency);
+    ui->silence_delay->setValue(data.silenceDelay);
+    ui->volume->setValue(data.volume);
 
-    video_type->setCurrentIndex(data.videoType);
-    scan_lines->setChecked(data.scanLines);
-    vertical_blend->setChecked(data.verticalBlend);
+    ui->video_type->setCurrentIndex(data.videoType);
+    ui->scan_lines->setChecked(data.scanLines);
+    ui->vertical_blend->setChecked(data.verticalBlend);
 }
 
 Preferences::Data Preferences::getData() const
@@ -201,30 +206,30 @@ Preferences::Data Preferences::getData() const
     fillData(myDisks, data.disks);
     fillData(myHDs, data.hds);
 
-    data.enhancedSpeed = enhanced_speed->isChecked();
-    data.apple2Type = apple2Type->currentIndex();
-    data.cardInSlot0 = lc_0->currentIndex();
-    data.mouseInSlot4 = mouse_4->isChecked();
-    data.cpmInSlot5 = cpm_5->isChecked();
-    data.hdInSlot7 = hd_7->isChecked();
-    data.ramWorksSize = rw_size->value();
+    data.enhancedSpeed = ui->enhanced_speed->isChecked();
+    data.apple2Type = ui->apple2Type->currentIndex();
+    data.cardInSlot0 = ui->lc_0->currentIndex();
+    data.mouseInSlot4 = ui->mouse_4->isChecked();
+    data.cpmInSlot5 = ui->cpm_5->isChecked();
+    data.hdInSlot7 = ui->hd_7->isChecked();
+    data.ramWorksSize = ui->rw_size->value();
 
     // because index = 0 is None
-    if (joystick->currentIndex() >= 1)
+    if (ui->joystick->currentIndex() >= 1)
     {
-        data.joystick = joystick->currentText();
+        data.joystick = ui->joystick->currentText();
     }
 
-    data.saveState = save_state->text();
-    data.screenshotTemplate = screenshot->text();
+    data.saveState = ui->save_state->text();
+    data.screenshotTemplate = ui->screenshot->text();
 
-    data.audioLatency = audio_latency->value();
-    data.silenceDelay = silence_delay->value();
-    data.volume = volume->value();
+    data.audioLatency = ui->audio_latency->value();
+    data.silenceDelay = ui->silence_delay->value();
+    data.volume = ui->volume->value();
 
-    data.videoType = video_type->currentIndex();
-    data.scanLines = scan_lines->isChecked();
-    data.verticalBlend = vertical_blend->isChecked();
+    data.videoType = ui->video_type->currentIndex();
+    data.scanLines = ui->scan_lines->isChecked();
+    data.verticalBlend = ui->vertical_blend->isChecked();
 
     return data;
 }
@@ -295,17 +300,17 @@ void Preferences::on_browse_hd2_clicked()
 
 void Preferences::on_hd_7_clicked(bool checked)
 {
-    hd1->setEnabled(checked);
-    hd2->setEnabled(checked);
-    browse_hd1->setEnabled(checked);
-    browse_hd2->setEnabled(checked);
+    ui->hd1->setEnabled(checked);
+    ui->hd2->setEnabled(checked);
+    ui->browse_hd1->setEnabled(checked);
+    ui->browse_hd2->setEnabled(checked);
 }
 
 void Preferences::on_browse_ss_clicked()
 {
-    const QString name = QFileDialog::getSaveFileName(this, QString(), save_state->text());
+    const QString name = QFileDialog::getSaveFileName(this, QString(), ui->save_state->text());
     if (!name.isEmpty())
     {
-        save_state->setText(name);
+        ui->save_state->setText(name);
     }
 }

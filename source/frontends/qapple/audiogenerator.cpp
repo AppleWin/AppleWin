@@ -9,6 +9,7 @@
 #include "loggingcategory.h"
 
 #include <QDebug>
+#include <QAudioOutput>
 
 // Speaker
 

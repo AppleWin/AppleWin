@@ -12,6 +12,7 @@
 
 #include <QMessageBox>
 #include <QGamepad>
+#include <QSettings>
 
 namespace
 {

@@ -6,7 +6,6 @@
 #define VIDEO_BASECLASS QOpenGLWidget
 //#define VIDEO_BASECLASS QWidget
 
-
 class Video : public VIDEO_BASECLASS
 {
     Q_OBJECT
@@ -28,7 +27,6 @@ protected:
     virtual void mouseReleaseEvent(QMouseEvent *event);
 
 private:
-
     QImage myLogo;
 };
 

@@ -1,4 +1,5 @@
 #include "qapple.h"
+#include "ui_qapple.h"
 
 #include "StdAfx.h"
 #include "Common.h"
@@ -26,10 +27,14 @@
 #include "configuration.h"
 #include "audiogenerator.h"
 #include "gamepadpaddle.h"
+#include "preferences.h"
 
 #include <QMdiSubWindow>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QStyle>
+#include <QSettings>
+#include <QAudioOutput>
 
 namespace
 {
@@ -171,10 +176,10 @@ int MessageBox(HWND, const char * text, const char * caption, UINT type)
 
 QApple::PauseEmulator::PauseEmulator(QApple * qapple) : myQApple(qapple)
 {
-    myWasRunning = myQApple->actionPause->isEnabled();
+    myWasRunning = myQApple->ui->actionPause->isEnabled();
     if (myWasRunning)
     {
-        myQApple->actionPause->trigger();
+        myQApple->ui->actionPause->trigger();
     }
 }
 
@@ -182,24 +187,28 @@ QApple::PauseEmulator::~PauseEmulator()
 {
     if (myWasRunning)
     {
-        myQApple->actionStart->trigger();
+        myQApple->ui->actionStart->trigger();
     }
 }
 
 QApple::QApple(QWidget *parent) :
-    QMainWindow(parent), myTimerID(0), myPreferences(this)
+    QMainWindow(parent),
+    myTimerID(0),
+    ui(new Ui::QApple)
 {
-    setupUi(this);
+    ui->setupUi(this);
 
-    actionStart->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
-    actionPause->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
-    actionReboot->setIcon(style()->standardIcon(QStyle::SP_MediaSkipBackward));
+    ui->actionStart->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    ui->actionPause->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
+    ui->actionReboot->setIcon(style()->standardIcon(QStyle::SP_MediaSkipBackward));
 
-    actionSave_state->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
-    actionLoad_state->setIcon(style()->standardIcon(QStyle::SP_DialogOpenButton));
+    ui->actionSave_state->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
+    ui->actionLoad_state->setIcon(style()->standardIcon(QStyle::SP_DialogOpenButton));
 
-    myEmulator = new Emulator(mdiArea);
-    myEmulatorWindow = mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
+    myPreferences = new Preferences(this);
+
+    myEmulator = new Emulator(ui->mdiArea);
+    myEmulatorWindow = ui->mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
 
     connect(AudioGenerator::instance().getAudioOutput(), SIGNAL(stateChanged(QAudio::State)), this, SLOT(on_stateChanged(QAudio::State)));
 
@@ -304,16 +313,16 @@ void QApple::on_actionStart_triggered()
 {
     // always restart with the same timer gap that was last used
     myTimerID = startTimer(myOptions->msGap, Qt::PreciseTimer);
-    actionPause->setEnabled(true);
-    actionStart->setEnabled(false);
+    ui->actionPause->setEnabled(true);
+    ui->actionStart->setEnabled(false);
     restartTimeCounters();
 }
 
 void QApple::on_actionPause_triggered()
 {
     stopTimer();
-    actionPause->setEnabled(false);
-    actionStart->setEnabled(true);
+    ui->actionPause->setEnabled(false);
+    ui->actionStart->setEnabled(true);
 }
 
 void QApple::on_actionX1_triggered()
@@ -357,8 +366,8 @@ void QApple::timerEvent(QTimerEvent *)
 
 void QApple::on_actionMemory_triggered()
 {
-    MemoryContainer * container = new MemoryContainer(mdiArea);
-    QMdiSubWindow * window = mdiArea->addSubWindow(container);
+    MemoryContainer * container = new MemoryContainer(ui->mdiArea);
+    QMdiSubWindow * window = ui->mdiArea->addSubWindow(container);
 
     // need to close as it points to old memory
     connect(this, SIGNAL(endEmulator()), window, SLOT(close()));
@@ -380,11 +389,11 @@ void QApple::on_actionOptions_triggered()
     myOptions->getData(currentData);
 
     QSettings settings; // the function will "modify" it
-    myPreferences.setup(currentData, settings);
+    myPreferences->setup(currentData, settings);
 
-    if (myPreferences.exec())
+    if (myPreferences->exec())
     {
-        const Preferences::Data newData = myPreferences.getData();
+        const Preferences::Data newData = myPreferences->getData();
         setAppleWinPreferences(currentData, newData);
         myOptions->setData(newData);
         reloadOptions();
@@ -492,7 +501,7 @@ void QApple::on_actionLoad_state_from_triggered()
             SetCurrentImageDir(path.toStdString().c_str());
 
             Snapshot_SetFilename(filename.toStdString().c_str());
-            actionLoad_state->trigger();
+            ui->actionLoad_state->trigger();
         }
     }
 }

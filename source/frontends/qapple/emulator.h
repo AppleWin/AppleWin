@@ -1,11 +1,15 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
-#include "ui_emulator.h"
+#include <QFrame>
 
 class QMdiSubWindow;
 
-class Emulator : public QFrame, private Ui::Emulator
+namespace Ui {
+class Emulator;
+}
+
+class Emulator : public QFrame
 {
     Q_OBJECT
 
@@ -25,6 +29,8 @@ public:
 private:
     void setVideoSize(QMdiSubWindow * window, const QSize & size);
 
+private:
+    Ui::Emulator *ui;
 };
 
 #endif // EMULATOR_H

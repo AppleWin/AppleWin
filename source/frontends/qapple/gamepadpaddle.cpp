@@ -1,5 +1,7 @@
 #include "gamepadpaddle.h"
 
+#include <QGamepad>
+
 std::shared_ptr<Paddle> GamepadPaddle::fromName(const QString & name)
 {
     if (name.isEmpty())

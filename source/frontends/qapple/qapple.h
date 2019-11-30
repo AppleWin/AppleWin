@@ -1,18 +1,24 @@
 #ifndef QAPPLE_H
 #define QAPPLE_H
 
-#include "ui_qapple.h"
 
+#include <QMainWindow>
 #include <QElapsedTimer>
 #include <QAudio>
 
 #include <memory>
-#include "preferences.h"
 
+
+class QMdiSubWindow;
 class Emulator;
+class Preferences;
 class GlobalOptions;
 
-class QApple : public QMainWindow, private Ui::QApple
+namespace Ui {
+class QApple;
+}
+
+class QApple : public QMainWindow
 {
     Q_OBJECT
 
@@ -86,7 +92,7 @@ private:
     void reloadOptions();
 
     int myTimerID;
-    Preferences myPreferences;
+    Preferences * myPreferences;
 
     QElapsedTimer myElapsedTimer;
     QMdiSubWindow * myEmulatorWindow;
@@ -94,6 +100,9 @@ private:
     qint64 myCpuTimeReference;
 
     std::shared_ptr<GlobalOptions> myOptions;
+
+private:
+    Ui::QApple *ui;
 };
 
 #endif // QAPPLE_H

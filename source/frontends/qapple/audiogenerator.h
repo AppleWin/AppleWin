@@ -1,12 +1,14 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
-#include <QIODevice>
 #include <QAudioFormat>
-#include <QAudioOutput>
+#include <QAudio>
 #include <queue>
 #include <memory>
 #include <vector>
+
+class QIODevice;
+class QAudioOutput;
 
 class AudioGenerator {
 public:

@@ -1,14 +1,21 @@
 #ifndef MEMORYCONTAINER_H
 #define MEMORYCONTAINER_H
 
-#include "ui_memorycontainer.h"
+#include <QTabWidget>
 
-class MemoryContainer : public QTabWidget, private Ui::MemoryContainer
+namespace Ui {
+class MemoryContainer;
+}
+
+class MemoryContainer : public QTabWidget
 {
     Q_OBJECT
 
 public:
     explicit MemoryContainer(QWidget *parent = nullptr);
+
+private:
+    Ui::MemoryContainer *ui;
 };
 
 #endif // MEMORYCONTAINER_H
