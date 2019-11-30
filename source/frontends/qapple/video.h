@@ -11,7 +11,7 @@ class Video : public VIDEO_BASECLASS
 {
     Q_OBJECT
 public:
-    explicit Video(QWidget *parent = 0);
+    explicit Video(QWidget *parent = nullptr);
 
     QImage getScreen() const;
     void displayLogo();

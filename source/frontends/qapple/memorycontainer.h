@@ -8,7 +8,7 @@ class MemoryContainer : public QTabWidget, private Ui::MemoryContainer
     Q_OBJECT
 
 public:
-    explicit MemoryContainer(QWidget *parent = 0);
+    explicit MemoryContainer(QWidget *parent = nullptr);
 };
 
 #endif // MEMORYCONTAINER_H
