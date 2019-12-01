@@ -22,7 +22,7 @@
    </attribute>
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
-     <widget class="QHexEdit" name="main" native="true"/>
+     <widget class="QHexView" name="main" native="true"/>
     </item>
    </layout>
   </widget>
@@ -32,16 +32,16 @@
    </attribute>
    <layout class="QGridLayout" name="gridLayout_2">
     <item row="0" column="0">
-     <widget class="QHexEdit" name="aux" native="true"/>
+     <widget class="QHexView" name="aux" native="true"/>
     </item>
    </layout>
   </widget>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QHexEdit</class>
+   <class>QHexView</class>
    <extends>QWidget</extends>
-   <header>qhexedit2/qhexedit.h</header>
+   <header>QHexView/qhexview.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -1,0 +1,3 @@
+[submodule "source/frontends/qapple/QHexView"]
+	path = source/frontends/qapple/QHexView
+	url = ../QHexView.git

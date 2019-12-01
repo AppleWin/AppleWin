@@ -4,6 +4,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
+add_subdirectory(QHexView)
+
 add_executable(qapple
   main.cpp
   qapple.qrc
@@ -18,10 +20,9 @@ add_executable(qapple
   configuration.cpp
   audiogenerator.cpp
   loggingcategory.cpp
+  viewbuffer.cpp
 
-  qhexedit2/commands.cpp
-  qhexedit2/chunks.cpp
-  qhexedit2/qhexedit.cpp
+  ${QHEXVIEW_SOURCES}
   )
 
 find_package(Qt5 REQUIRED
