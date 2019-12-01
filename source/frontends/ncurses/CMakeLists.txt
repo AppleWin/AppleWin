@@ -27,8 +27,9 @@ target_compile_options(applen PRIVATE
   ${NCURSESW_CFLAGS_OTHER}
   ${LIBEVDEV_CFLAGS_OTHER}
   )
+target_compile_features(applen PUBLIC cxx_std_17)
 
-target_link_libraries(applen
+target_link_libraries(applen PRIVATE
   ${NCURSESW_LIBRARIES}
   ${LIBEVDEV_LIBRARIES}
   Boost::program_options

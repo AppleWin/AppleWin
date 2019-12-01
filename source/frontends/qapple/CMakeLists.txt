@@ -29,7 +29,7 @@ find_package(Qt5 REQUIRED
   COMPONENTS Widgets Gamepad Multimedia
   )
 
-target_link_libraries(qapple
+target_link_libraries(qapple PRIVATE
   Qt5::Widgets
   Qt5::Gamepad
   Qt5::Multimedia

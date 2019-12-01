@@ -68,7 +68,7 @@ FORMS    += qapple.ui \
 RESOURCES += \
     qapple.qrc
 
-unix: LIBS += -L$$PWD/../../ -lappleii
+unix: LIBS += -L$$PWD/../../../build/source -lappleii
 
 INCLUDEPATH += $$PWD/../../../source
 DEPENDPATH += $$PWD/../../../source

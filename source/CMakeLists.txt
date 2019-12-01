@@ -64,7 +64,7 @@ target_include_directories(appleii PRIVATE
   ${Boost_INCLUDE_DIRS}
   )
 
-target_link_libraries(appleii
+target_link_libraries(appleii PRIVATE
   ${YAML_LIBRARIES}
   ${MINIZIP_LIBRARIES}
   )
