@@ -35,6 +35,8 @@
 #include <QSettings>
 #include <QAudioOutput>
 
+#include <algorithm>
+
 namespace
 {
 
@@ -255,7 +257,8 @@ void QApple::on_timer()
         return;
     }
 
-    const qint64 toRun = target - current;
+    const qint64 maximumToRum = 10 * myOptions.msGap;  // just to avoid crazy times (e.g. debugging)
+    const qint64 toRun = std::min(target - current, maximumToRum);
     const double fUsecPerSec        = 1.e6;
     const qint64 nExecutionPeriodUsec = 1000 * toRun;
 
