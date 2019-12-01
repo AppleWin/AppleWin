@@ -696,12 +696,19 @@ void SetFullScreenShowSubunitStatus(bool bShow)
 //===========================================================================
 void FrameDrawDiskLEDS( HDC passdc )
 {
-	Disk_Status_e eDrive1Status;
-	Disk_Status_e eDrive2Status;
-	sg_Disk2Card.GetLightStatus(&eDrive1Status, &eDrive2Status);
+	{
+		Disk_Status_e eDrive1Status;
+		Disk_Status_e eDrive2Status;
+		sg_Disk2Card.GetLightStatus(&eDrive1Status, &eDrive2Status);
 
-	g_eStatusDrive1 = eDrive1Status;
-	g_eStatusDrive2 = eDrive2Status;
+		Disk_Status_e eDrive1StatusSlot5 = DISK_STATUS_OFF;
+		Disk_Status_e eDrive2StatusSlot5 = DISK_STATUS_OFF;
+		if (sg_pDisk2CardSlot5) sg_pDisk2CardSlot5->GetLightStatus(&eDrive1StatusSlot5, &eDrive2StatusSlot5);
+
+		// Slot6 drive takes priority unless it's off:
+		g_eStatusDrive1 = eDrive1Status != DISK_STATUS_OFF ? eDrive1Status : eDrive1StatusSlot5;
+		g_eStatusDrive2 = eDrive2Status != DISK_STATUS_OFF ? eDrive2Status : eDrive2StatusSlot5;
+	}
 
 	// Draw Track/Sector
 	FrameReleaseDC();
@@ -720,17 +727,17 @@ void FrameDrawDiskLEDS( HDC passdc )
 		SetBkColor(dc,RGB(0,0,0));
 		SetTextAlign(dc,TA_LEFT | TA_TOP);
 
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive1Status ] );
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[g_eStatusDrive1] );
 		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
 
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ eDrive2Status ] );
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[g_eStatusDrive2] );
 		TextOut(dc,x+13,y+2,TEXT("2"),1);
 	}
 	else
 	{
 		RECT rDiskLed = {0,0,8,8};
-		DrawBitmapRect(dc,x+12,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive1Status]);
-		DrawBitmapRect(dc,x+31,y+6,&rDiskLed,g_hDiskWindowedLED[eDrive2Status]);
+		DrawBitmapRect(dc,x+12,y+6,&rDiskLed,g_hDiskWindowedLED[g_eStatusDrive1]);
+		DrawBitmapRect(dc,x+31,y+6,&rDiskLed,g_hDiskWindowedLED[g_eStatusDrive2]);
 	}
 }
 

@@ -1696,6 +1696,11 @@ void MemInitializeIO(void)
 	{
 		ConfigureSAM(pCxRomPeripheral, 5);			// $C500 : Z80 card
 	}
+	else if (g_Slot[5] == CT_Disk2)
+	{
+		_ASSERT(sg_pDisk2CardSlot5);
+		sg_pDisk2CardSlot5->Initialize(pCxRomPeripheral, 5);	// $C500 : Disk][ card
+	}
 
 	if (g_Slot[6] == CT_Disk2)
 		sg_Disk2Card.Initialize(pCxRomPeripheral, 6);	// $C600 : Disk][ card

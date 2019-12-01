@@ -290,7 +290,16 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		}
 		else if (card == sg_Disk2Card.GetSnapshotCardName())
 		{
-			bRes = sg_Disk2Card.LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+			if (slot == 5)
+			{
+				delete sg_pDisk2CardSlot5;
+				sg_pDisk2CardSlot5 = new Disk2InterfaceCard;
+				bRes = sg_pDisk2CardSlot5->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+			}
+			else
+			{
+				bRes = sg_Disk2Card.LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+			}
 			type = CT_Disk2;
 		}
 		else if (card == HD_GetSnapshotCardName())
@@ -393,6 +402,7 @@ static void Snapshot_LoadState_v2(void)
 
 		MemReset();							// Also calls CpuInitialize()
 		PravetsReset();
+		delete sg_pDisk2CardSlot5; sg_pDisk2CardSlot5 = NULL;
 		sg_Disk2Card.Reset();
 		HD_Reset();
 		KeybReset();
@@ -526,6 +536,9 @@ void Snapshot_SaveState(void)
 
 			if (g_Slot[4] == CT_Phasor)
 				Phasor_SaveSnapshot(yamlSaveHelper, 4);
+
+			if (g_Slot[5] == CT_Disk2 && sg_pDisk2CardSlot5)
+				sg_pDisk2CardSlot5->SaveSnapshot(yamlSaveHelper);
 
 			if (g_Slot[6] == CT_Disk2)
 				sg_Disk2Card.SaveSnapshot(yamlSaveHelper);

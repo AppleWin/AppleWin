@@ -108,6 +108,7 @@ IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 Disk2InterfaceCard sg_Disk2Card;
+Disk2InterfaceCard* sg_pDisk2CardSlot5 = NULL;
 
 SS_CARDTYPE g_Slot[8] = {
 	/*0*/ CT_LanguageCard,	// Just for Apple II or II+ or similar clones
@@ -328,6 +329,7 @@ static void ContinueExecution(void)
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
 	sg_Disk2Card.UpdateDriveState(uActualCyclesExecuted);
+	if (sg_pDisk2CardSlot5) sg_pDisk2CardSlot5->UpdateDriveState(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 	PrintUpdate(uActualCyclesExecuted);
 	MB_PeriodicUpdate(uActualCyclesExecuted);
@@ -1107,12 +1109,15 @@ static std::string GetFullPath(LPCSTR szFileName)
 	return strPathName;
 }
 
-static bool DoDiskInsert(const int nDrive, LPCSTR szFileName)
+static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 {
+	Disk2InterfaceCard* pDisk2Card = slot == 5 ? sg_pDisk2CardSlot5 : &sg_Disk2Card;
+	if (!pDisk2Card) return false;
+
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	ImageError_e Error = sg_Disk2Card.InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+	ImageError_e Error = pDisk2Card->InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 	return Error == eIMAGE_ERROR_NONE;
 }
 
@@ -1125,8 +1130,10 @@ static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
 	return bRes ? true : false;
 }
 
-static void InsertFloppyDisks(LPSTR szImageName_drive[NUM_DRIVES], bool& bBoot)
+static void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], bool& bBoot)
 {
+	_ASSERT(slot == 5 || slot == 6);
+
 	if (!szImageName_drive[DRIVE_1] && !szImageName_drive[DRIVE_2])
 		return;
 
@@ -1134,16 +1141,16 @@ static void InsertFloppyDisks(LPSTR szImageName_drive[NUM_DRIVES], bool& bBoot)
 
 	if (szImageName_drive[DRIVE_1])
 	{
-		bRes = DoDiskInsert(DRIVE_1, szImageName_drive[DRIVE_1]);
-		LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", bRes);
+		bRes = DoDiskInsert(slot, DRIVE_1, szImageName_drive[DRIVE_1]);
+		LogFileOutput("Init: S%d, DoDiskInsert(D1), res=%d\n", slot, bRes);
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);	// floppy activity LEDs and floppy buttons
 		bBoot = true;
 	}
 
 	if (szImageName_drive[DRIVE_2])
 	{
-		bRes |= DoDiskInsert(DRIVE_2, szImageName_drive[DRIVE_2]);
-		LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", bRes);
+		bRes |= DoDiskInsert(slot, DRIVE_2, szImageName_drive[DRIVE_2]);
+		LogFileOutput("Init: S%d, DoDiskInsert(D2), res=%d\n", slot, bRes);
 	}
 
 	if (!bRes)
@@ -1224,6 +1231,19 @@ static bool CheckOldAppleWinVersion(void)
 	return bShowAboutDlg;
 }
 
+static bool InsertCard(UINT slot, SS_CARDTYPE type)
+{
+	if (slot == 5 && type == CT_Disk2)
+	{
+		delete sg_pDisk2CardSlot5;
+		sg_pDisk2CardSlot5 = new Disk2InterfaceCard;
+		g_Slot[slot] = type;
+		return true;
+	}
+
+	return false;
+}
+
 //---------------------------------------------------------------------------
 
 int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
@@ -1233,10 +1253,13 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bBoot = false;
 	bool bChangedDisplayResolution = false;
 	bool bSlot0LanguageCard = false;
-	bool bSlotEmpty[NUM_SLOTS] = {false,false,false,false,false,false,false,false};
+	bool bSlotEmpty[NUM_SLOTS] = {};
 	bool bSlot7EmptyOnExit = false;
+	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	UINT bestWidth = 0, bestHeight = 0;
-	LPSTR szImageName_drive[NUM_DRIVES] = {NULL,NULL};
+	const UINT SLOT5 = 5;
+	const UINT SLOT6 = 6;
+	LPSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES] = {};
 	LPSTR szImageName_harddisk[NUM_HARDDISKS] = {NULL,NULL};
 	LPSTR szSnapshotName = NULL;
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
@@ -1249,6 +1272,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	LPSTR szScreenshotFilename = NULL;
 	double clockMultiplier = 0.0;	// 0 => not set from cmd-line
 	eApple2Type model = A2TYPE_MAX;
+
+	for (UINT i = 0; i < NUM_SLOTS; i++)
+	{
+		bSlotEmpty[i] = false;
+		slotInsert[i] = CT_Empty;
+		szImageName_drive[i][DRIVE_1] = NULL;
+		szImageName_drive[i][DRIVE_2] = NULL;
+	}
 
 	while (*lpCmdLine)
 	{
@@ -1266,13 +1297,13 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
-			szImageName_drive[DRIVE_1] = lpCmdLine;
+			szImageName_drive[SLOT6][DRIVE_1] = lpCmdLine;
 		}
 		else if (strcmp(lpCmdLine, "-d2") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
-			szImageName_drive[DRIVE_2] = lpCmdLine;
+			szImageName_drive[SLOT6][DRIVE_2] = lpCmdLine;
 		}
 		else if (strcmp(lpCmdLine, "-h1") == 0)
 		{
@@ -1286,13 +1317,38 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpNextArg = GetNextArg(lpNextArg);
 			szImageName_harddisk[HARDDISK_2] = lpCmdLine;
 		}
-		else if (lpCmdLine[0] == '-' && lpCmdLine[1] == 's' && lpCmdLine[2] >= '1' && lpCmdLine[2] <= '7' && lpCmdLine[3] == 0)
+		else if (lpCmdLine[0] == '-' && lpCmdLine[1] == 's' && lpCmdLine[2] >= '1' && lpCmdLine[2] <= '7')
 		{
 			const UINT slot = lpCmdLine[2] - '0';
-			lpCmdLine = GetCurrArg(lpNextArg);
-			lpNextArg = GetNextArg(lpNextArg);
-			if (strcmp(lpCmdLine, "empty") == 0)
-				bSlotEmpty[slot] = true;
+
+			if (lpCmdLine[3] == 0)	// -s[1..7] <card>
+			{
+				lpCmdLine = GetCurrArg(lpNextArg);
+				lpNextArg = GetNextArg(lpNextArg);
+				if (strcmp(lpCmdLine, "empty") == 0)
+					bSlotEmpty[slot] = true;
+				if (strcmp(lpCmdLine, "diskii") == 0)
+					slotInsert[slot] = CT_Disk2;
+			}
+			else if (lpCmdLine[3] == 'd' && (lpCmdLine[4] == '1' || lpCmdLine[4] == '2'))	// -s[1..7]d[1|2] <dsk-image>
+			{
+				const UINT drive = lpCmdLine[4] == '1' ? DRIVE_1 : DRIVE_2;
+
+				if (slot != 5 && slot != 6)
+				{
+					LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
+				}
+				else
+				{
+					lpCmdLine = GetCurrArg(lpNextArg);
+					lpNextArg = GetNextArg(lpNextArg);
+					szImageName_drive[slot][drive] = lpCmdLine;
+				}
+			}
+			else
+			{
+				LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
+			}
 		}
 		else if (strcmp(lpCmdLine, "-s7-empty-on-exit") == 0)
 		{
@@ -1706,11 +1762,23 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		if (bSlotEmpty[6])
 			g_Slot[6] = CT_Empty;
 
+		if (slotInsert[5] != CT_Empty)
+		{
+			InsertCard(5, slotInsert[5]);
+//			if (g_Slot[4] == CT_MockingboardC || g_Slot[4] == CT_Phasor)	// Currently MB/Phasor occupy slot4+5 when enabled
+			if (g_Slot[4] == CT_MockingboardC)		// Currently MB occupies slot4+5 when enabled
+					g_Slot[4] = CT_Empty;
+		}
+
 		// Pre: may need g_hFrameWindow for MessageBox errors
 		// Post: may enable HDD, required for MemInitialize()->MemInitializeIO()
 		{
-			InsertFloppyDisks(szImageName_drive, bBoot);
-			szImageName_drive[DRIVE_1] = szImageName_drive[DRIVE_2] = NULL;	// Don't insert on a restart
+			bool temp = false;
+			InsertFloppyDisks(SLOT5, szImageName_drive[SLOT5], temp);
+			szImageName_drive[SLOT5][DRIVE_1] = szImageName_drive[SLOT5][DRIVE_2] = NULL;	// Don't insert on a restart
+
+			InsertFloppyDisks(SLOT6, szImageName_drive[SLOT6], bBoot);
+			szImageName_drive[SLOT6][DRIVE_1] = szImageName_drive[SLOT6][DRIVE_2] = NULL;	// Don't insert on a restart
 
 			InsertHardDisks(szImageName_harddisk, bBoot);
 			szImageName_harddisk[HARDDISK_1] = szImageName_harddisk[HARDDISK_2] = NULL;	// Don't insert on a restart
@@ -1743,7 +1811,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				LogFileOutput("Main: HookFilterForKeyboard()\n");
 		}
 
-		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
+		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call Disk2Card's Reset():
+		if (sg_pDisk2CardSlot5) sg_pDisk2CardSlot5->Reset(true);
 		sg_Disk2Card.Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
 		HD_Reset();		// GH#515
@@ -1888,6 +1957,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 	if (bSlot7EmptyOnExit)
 		UnplugHardDiskControllerCard();
+
+	delete sg_pDisk2CardSlot5;
 
 	return 0;
 }

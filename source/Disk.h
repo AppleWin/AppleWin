@@ -122,7 +122,7 @@ class Disk2InterfaceCard
 {
 public:
 	Disk2InterfaceCard(void);
-	virtual ~Disk2InterfaceCard(void){}
+	virtual ~Disk2InterfaceCard(void);
 
 	void Initialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void Destroy(void);		// no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
@@ -178,9 +178,9 @@ private:
 	void CheckSpinning(const ULONG uExecutedCycles);
 	Disk_Status_e GetDriveLightStatus(const int drive);
 	bool IsDriveValid(const int drive);
+	void EjectDiskInternal(const int drive);
 	void AllocTrack(const int drive);
 	void ReadTrack(const int drive, ULONG uExecutedCycles);
-	void RemoveDisk(const int drive);
 	void WriteTrack(const int drive);
 	const std::string & DiskGetFullPathName(const int drive);
 	void ResetLogicStateSequencer(void);

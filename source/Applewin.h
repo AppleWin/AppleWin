@@ -62,3 +62,5 @@ extern CSpeech g_Speech;
 #endif
 
 extern __interface IPropertySheet& sg_PropertySheet;
+class Disk2InterfaceCard;
+extern Disk2InterfaceCard* sg_pDisk2CardSlot5;
