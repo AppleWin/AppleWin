@@ -25,6 +25,7 @@ SOURCES += main.cpp\
     QHexView/qhexview.cpp \
     audiogenerator.cpp \
     loggingcategory.cpp \
+    options.cpp \
     qapple.cpp \
     qresources.cpp \
     emulator.cpp \
@@ -33,7 +34,6 @@ SOURCES += main.cpp\
     memorycontainer.cpp \
     preferences.cpp \
     gamepadpaddle.cpp \
-    configuration.cpp \
     viewbuffer.cpp
 
 HEADERS  += qapple.h \
@@ -52,12 +52,12 @@ HEADERS  += qapple.h \
     audiogenerator.h \
     emulator.h \
     loggingcategory.h \
+    options.h \
     registry.h \
     video.h \
     memorycontainer.h \
     preferences.h \
     gamepadpaddle.h \
-    configuration.h \
     viewbuffer.h
 
 FORMS    += qapple.ui \

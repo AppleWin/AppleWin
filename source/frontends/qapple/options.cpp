@@ -1,4 +1,4 @@
-#include "configuration.h"
+#include "options.h"
 
 #include "StdAfx.h"
 #include "Common.h"
@@ -97,17 +97,25 @@ namespace
 
 GlobalOptions::GlobalOptions()
 {
-    QSettings settings;
-    this->screenshotTemplate = settings.value(REG_SCREENSHOT_TEMPLATE, "/tmp/qapple_%1.png").toString();
-    this->gamepadName = settings.value(REG_GAMEPAD_NAME, QString()).toString();
-    this->slot0Card = settings.value(REG_SLOT0_CARD, 0).toInt();
-    this->ramWorksMemorySize = settings.value(REG_RAMWORKS_SIZE, 0).toInt();
+}
 
-    this->msGap = settings.value(REG_TIMER, 5).toInt();
-    this->msFullSpeed = settings.value(REG_FULL_SPEED, 5).toInt();
-    this->audioLatency = settings.value(REG_AUDIO_LATENCY, 200).toInt();
-    this->silenceDelay = settings.value(REG_SILENCE_DELAY, 10000).toInt();
-    this->volume = settings.value(REG_VOLUME, 0x0fff).toInt();
+GlobalOptions GlobalOptions::fromQSettings()
+{
+    QSettings settings;
+    GlobalOptions options;
+
+    options.screenshotTemplate = settings.value(REG_SCREENSHOT_TEMPLATE, "/tmp/qapple_%1.png").toString();
+    options.gamepadName = settings.value(REG_GAMEPAD_NAME, QString()).toString();
+    options.slot0Card = settings.value(REG_SLOT0_CARD, 0).toInt();
+    options.ramWorksMemorySize = settings.value(REG_RAMWORKS_SIZE, 0).toInt();
+
+    options.msGap = settings.value(REG_TIMER, 5).toInt();
+    options.msFullSpeed = settings.value(REG_FULL_SPEED, 5).toInt();
+    options.audioLatency = settings.value(REG_AUDIO_LATENCY, 200).toInt();
+    options.silenceDelay = settings.value(REG_SILENCE_DELAY, 10000).toInt();
+    options.volume = settings.value(REG_VOLUME, 0x0fff).toInt();
+
+    return options;
 }
 
 void GlobalOptions::setData(const Preferences::Data & data)

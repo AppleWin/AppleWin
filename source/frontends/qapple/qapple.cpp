@@ -24,7 +24,6 @@
 
 #include "emulator.h"
 #include "memorycontainer.h"
-#include "configuration.h"
 #include "audiogenerator.h"
 #include "gamepadpaddle.h"
 #include "preferences.h"
@@ -212,12 +211,12 @@ QApple::QApple(QWidget *parent) :
 
     connect(AudioGenerator::instance().getAudioOutput(), SIGNAL(stateChanged(QAudio::State)), this, SLOT(on_stateChanged(QAudio::State)));
 
-    myOptions.reset(new GlobalOptions());
+    myOptions = GlobalOptions::fromQSettings();
     reloadOptions();
 
     on_actionPause_triggered();
     initialiseEmulator();
-    startEmulator(myEmulatorWindow, myEmulator, *myOptions);
+    startEmulator(myEmulatorWindow, myEmulator, myOptions);
 }
 
 void QApple::closeEvent(QCloseEvent *)
@@ -243,7 +242,7 @@ void QApple::on_timer()
     }
 
     // target x ms ahead of where we are now, which is when the timer should be called again
-    const qint64 target = myElapsedTimer.elapsed() + myOptions->msGap;
+    const qint64 target = myElapsedTimer.elapsed() + myOptions.msGap;
     const qint64 current = emulatorTimeInMS() - myCpuTimeReference;
     if (current > target)
     {
@@ -276,7 +275,7 @@ void QApple::on_timer()
         g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
         ++count;
     }
-    while (sg_Disk2Card.IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + myOptions->msFullSpeed));
+    while (sg_Disk2Card.IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + myOptions.msFullSpeed));
 
     // just repaint each time, to make it simpler
     // we run @ 60 fps anyway
@@ -312,7 +311,7 @@ void QApple::restartTimeCounters()
 void QApple::on_actionStart_triggered()
 {
     // always restart with the same timer gap that was last used
-    myTimerID = startTimer(myOptions->msGap, Qt::PreciseTimer);
+    myTimerID = startTimer(myOptions.msGap, Qt::PreciseTimer);
     ui->actionPause->setEnabled(true);
     ui->actionStart->setEnabled(false);
     restartTimeCounters();
@@ -344,7 +343,7 @@ void QApple::on_actionReboot_triggered()
 {
     emit endEmulator();
     stopEmulator();
-    startEmulator(myEmulatorWindow, myEmulator, *myOptions);
+    startEmulator(myEmulatorWindow, myEmulator, myOptions);
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
     myEmulator->updateVideo();
     restartTimeCounters();
@@ -386,7 +385,7 @@ void QApple::on_actionOptions_triggered()
 
     Preferences::Data currentData;
     getAppleWinPreferences(currentData);
-    myOptions->getData(currentData);
+    myOptions.getData(currentData);
 
     QSettings settings; // the function will "modify" it
     myPreferences->setup(currentData, settings);
@@ -395,7 +394,7 @@ void QApple::on_actionOptions_triggered()
     {
         const Preferences::Data newData = myPreferences->getData();
         setAppleWinPreferences(currentData, newData);
-        myOptions->setData(newData);
+        myOptions.setData(newData);
         reloadOptions();
     }
 
@@ -406,8 +405,8 @@ void QApple::reloadOptions()
     SetWindowTitle();
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
-    Paddle::instance() = GamepadPaddle::fromName(myOptions->gamepadName);
-    AudioGenerator::instance().setOptions(myOptions->audioLatency, myOptions->silenceDelay, myOptions->volume);
+    Paddle::instance() = GamepadPaddle::fromName(myOptions.gamepadName);
+    AudioGenerator::instance().setOptions(myOptions.audioLatency, myOptions.silenceDelay, myOptions.volume);
 }
 
 void QApple::on_actionSave_state_triggered()
@@ -456,7 +455,7 @@ QString getImageFilename(const GlobalOptions & options)
 
 void QApple::on_actionScreenshot_triggered()
 {
-    const QString filename = getImageFilename(*myOptions);
+    const QString filename = getImageFilename(myOptions);
     if (filename.isEmpty())
     {
         QMessageBox::warning(this, "Screenshot", "Cannot determine the screenshot filename.");

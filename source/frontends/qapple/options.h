@@ -6,7 +6,9 @@
 class GlobalOptions
 {
 public:
-    GlobalOptions();  // initialise from QSettings
+    GlobalOptions();  // empty, uninitialised
+
+    static GlobalOptions fromQSettings();
 
     QString screenshotTemplate;
     QString gamepadName;

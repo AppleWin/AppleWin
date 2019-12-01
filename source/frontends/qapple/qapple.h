@@ -8,11 +8,12 @@
 
 #include <memory>
 
+#include "options.h"
+
 
 class QMdiSubWindow;
 class Emulator;
 class Preferences;
-class GlobalOptions;
 
 namespace Ui {
 class QApple;
@@ -99,7 +100,7 @@ private:
     Emulator * myEmulator;
     qint64 myCpuTimeReference;
 
-    std::shared_ptr<GlobalOptions> myOptions;
+    GlobalOptions myOptions;
 
 private:
     Ui::QApple *ui;
