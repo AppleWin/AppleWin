@@ -118,7 +118,7 @@ GlobalOptions GlobalOptions::fromQSettings()
     return options;
 }
 
-void GlobalOptions::setData(const Preferences::Data & data)
+void GlobalOptions::setData(const GlobalOptions & data)
 {
     if (this->msGap != data.msGap)
     {
@@ -126,10 +126,10 @@ void GlobalOptions::setData(const Preferences::Data & data)
         QSettings().setValue(REG_TIMER, this->msGap);
     }
 
-    if (this->msFullSpeed != data.fullSpeedMs)
+    if (this->msFullSpeed != data.msFullSpeed)
     {
-        this->msFullSpeed = data.fullSpeedMs;
-        QSettings().setValue(REG_FULL_SPEED, this->msGap);
+        this->msFullSpeed = data.msFullSpeed;
+        QSettings().setValue(REG_FULL_SPEED, this->msFullSpeed);
     }
 
     if (this->screenshotTemplate != data.screenshotTemplate)
@@ -138,21 +138,21 @@ void GlobalOptions::setData(const Preferences::Data & data)
         QSettings().setValue(REG_SCREENSHOT_TEMPLATE, this->screenshotTemplate);
     }
 
-    if (this->slot0Card != data.cardInSlot0)
+    if (this->slot0Card != data.slot0Card)
     {
-        this->slot0Card = data.cardInSlot0;
+        this->slot0Card = data.slot0Card;
         QSettings().setValue(REG_SLOT0_CARD, this->slot0Card);
     }
 
-    if (this->ramWorksMemorySize != data.ramWorksSize)
+    if (this->ramWorksMemorySize != data.ramWorksMemorySize)
     {
-        this->ramWorksMemorySize = data.ramWorksSize;
+        this->ramWorksMemorySize = data.ramWorksMemorySize;
         QSettings().setValue(REG_RAMWORKS_SIZE, this->ramWorksMemorySize);
     }
 
-    if (this->gamepadName != data.joystick)
+    if (this->gamepadName != data.gamepadName)
     {
-        this->gamepadName = data.joystick;
+        this->gamepadName = data.gamepadName;
         QSettings().setValue(REG_GAMEPAD_NAME, this->gamepadName);
     }
 
@@ -175,20 +175,7 @@ void GlobalOptions::setData(const Preferences::Data & data)
     }
 }
 
-void GlobalOptions::getData(Preferences::Data & data) const
-{
-    data.msGap = this->msGap;
-    data.fullSpeedMs = this->msFullSpeed;
-    data.cardInSlot0 = this->slot0Card;
-    data.ramWorksSize = this->ramWorksMemorySize;
-    data.screenshotTemplate = this->screenshotTemplate;
-    data.joystick = this->gamepadName;
-    data.audioLatency = this->audioLatency;
-    data.silenceDelay = this->silenceDelay;
-    data.volume = this->volume;
-}
-
-void getAppleWinPreferences(Preferences::Data & data)
+void getAppleWinPreferences(PreferenceData & data)
 {
     data.disks.resize(diskIDs.size());
     for (size_t i = 0; i < diskIDs.size(); ++i)
@@ -228,7 +215,7 @@ void getAppleWinPreferences(Preferences::Data & data)
     data.verticalBlend = IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
 }
 
-void setAppleWinPreferences(const Preferences::Data & currentData, const Preferences::Data & newData)
+void setAppleWinPreferences(const PreferenceData & currentData, const PreferenceData & newData)
 {
     if (currentData.apple2Type != newData.apple2Type)
     {

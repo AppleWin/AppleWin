@@ -5,6 +5,8 @@
 #include "Common.h"
 #include "Memory.h"
 
+#include "options.h"
+
 #include <QFileDialog>
 #include <QGamepadManager>
 #include <QSettings>
@@ -130,7 +132,7 @@ Preferences::Preferences(QWidget *parent) :
     myHDs.push_back(ui->hd2);
 }
 
-void Preferences::setup(const Data & data, QSettings & settings)
+void Preferences::setup(const PreferenceData & data, QSettings & settings)
 {
     populateJoysticks();
     setData(data);
@@ -167,69 +169,66 @@ void Preferences::setSettings(QSettings & settings)
     ui->registryTree->expandAll();
 }
 
-void Preferences::setData(const Data & data)
+void Preferences::setData(const PreferenceData & data)
 {
+    ui->lc_0->setCurrentIndex(data.options.slot0Card);
+    ui->timer_gap->setValue(data.options.msGap);
+    ui->full_ms->setValue(data.options.msFullSpeed);
+    ui->rw_size->setMaximum(kMaxExMemoryBanks);
+    ui->rw_size->setValue(data.options.ramWorksMemorySize);
+    ui->joystick->setCurrentText(data.options.gamepadName);
+    ui->screenshot->setText(data.options.screenshotTemplate);
+    ui->audio_latency->setValue(data.options.audioLatency);
+    ui->silence_delay->setValue(data.options.silenceDelay);
+    ui->volume->setValue(data.options.volume);
+
     initialiseDisks(myDisks, data.disks);
     initialiseDisks(myHDs, data.hds);
 
     ui->enhanced_speed->setChecked(data.enhancedSpeed);
     ui->apple2Type->setCurrentIndex(data.apple2Type);
-    ui->lc_0->setCurrentIndex(data.cardInSlot0);
     ui->mouse_4->setChecked(data.mouseInSlot4);
     ui->cpm_5->setChecked(data.cpmInSlot5);
     ui->hd_7->setChecked(data.hdInSlot7);
-    ui->timer_gap->setValue(data.msGap);
-    ui->full_ms->setValue(data.fullSpeedMs);
-
-    ui->rw_size->setMaximum(kMaxExMemoryBanks);
-    ui->rw_size->setValue(data.ramWorksSize);
 
     // synchronise
     on_hd_7_clicked(data.hdInSlot7);
 
-    ui->joystick->setCurrentText(data.joystick);
-
     ui->save_state->setText(data.saveState);
-    ui->screenshot->setText(data.screenshotTemplate);
-
-    ui->audio_latency->setValue(data.audioLatency);
-    ui->silence_delay->setValue(data.silenceDelay);
-    ui->volume->setValue(data.volume);
-
     ui->video_type->setCurrentIndex(data.videoType);
     ui->scan_lines->setChecked(data.scanLines);
     ui->vertical_blend->setChecked(data.verticalBlend);
 }
 
-Preferences::Data Preferences::getData() const
+PreferenceData Preferences::getData() const
 {
-    Data data;
+    PreferenceData data;
+
+    data.options.slot0Card = ui->lc_0->currentIndex();
+    data.options.ramWorksMemorySize = ui->rw_size->value();
+    data.options.msGap = ui->timer_gap->value();
+    data.options.msFullSpeed = ui->full_ms->value();
+    data.options.screenshotTemplate = ui->screenshot->text();
+    data.options.audioLatency = ui->audio_latency->value();
+    data.options.silenceDelay = ui->silence_delay->value();
+    data.options.volume = ui->volume->value();
+
+    // because index = 0 is None
+    if (ui->joystick->currentIndex() >= 1)
+    {
+        data.options.gamepadName = ui->joystick->currentText();
+    }
 
     fillData(myDisks, data.disks);
     fillData(myHDs, data.hds);
 
     data.enhancedSpeed = ui->enhanced_speed->isChecked();
     data.apple2Type = ui->apple2Type->currentIndex();
-    data.cardInSlot0 = ui->lc_0->currentIndex();
     data.mouseInSlot4 = ui->mouse_4->isChecked();
     data.cpmInSlot5 = ui->cpm_5->isChecked();
     data.hdInSlot7 = ui->hd_7->isChecked();
-    data.ramWorksSize = ui->rw_size->value();
-    data.msGap = ui->timer_gap->value();
-    data.fullSpeedMs = ui->full_ms->value();
-
-    // because index = 0 is None
-    if (ui->joystick->currentIndex() >= 1)
-    {
-        data.joystick = ui->joystick->currentText();
-    }
 
     data.saveState = ui->save_state->text();
-    data.screenshotTemplate = ui->screenshot->text();
-
-    data.audioLatency = ui->audio_latency->value();
-    data.silenceDelay = ui->silence_delay->value();
-    data.volume = ui->volume->value();
 
     data.videoType = ui->video_type->currentIndex();
     data.scanLines = ui->scan_lines->isChecked();

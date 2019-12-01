@@ -386,18 +386,18 @@ void QApple::on_actionOptions_triggered()
     // but often it forces to terminate the emulator
     PauseEmulator pause(this);
 
-    Preferences::Data currentData;
+    PreferenceData currentData;
     getAppleWinPreferences(currentData);
-    myOptions.getData(currentData);
+    currentData.options = myOptions;
 
     QSettings settings; // the function will "modify" it
     myPreferences->setup(currentData, settings);
 
     if (myPreferences->exec())
     {
-        const Preferences::Data newData = myPreferences->getData();
+        const PreferenceData newData = myPreferences->getData();
         setAppleWinPreferences(currentData, newData);
-        myOptions.setData(newData);
+        myOptions.setData(newData.options);
         reloadOptions();
     }
 

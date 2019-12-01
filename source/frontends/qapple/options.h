@@ -22,11 +22,31 @@ public:
     int silenceDelay;
     int volume;
 
-    void getData(Preferences::Data & data) const;
-    void setData(const Preferences::Data & data);
+    void setData(const GlobalOptions & data);
 };
 
-void getAppleWinPreferences(Preferences::Data & data);
-void setAppleWinPreferences(const Preferences::Data & currentData, const Preferences::Data & newData);
+struct PreferenceData
+{
+    GlobalOptions options;
+
+    int apple2Type;
+    bool mouseInSlot4;
+    bool cpmInSlot5;
+    bool hdInSlot7;
+
+    bool enhancedSpeed;
+
+    int videoType;
+    bool scanLines;
+    bool verticalBlend;
+
+    std::vector<QString> disks;
+    std::vector<QString> hds;
+
+    QString saveState;
+};
+
+void getAppleWinPreferences(PreferenceData & data);
+void setAppleWinPreferences(const PreferenceData & currentData, const PreferenceData & newData);
 
 #endif // CONFIGURATION_H
