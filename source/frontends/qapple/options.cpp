@@ -120,6 +120,18 @@ GlobalOptions GlobalOptions::fromQSettings()
 
 void GlobalOptions::setData(const Preferences::Data & data)
 {
+    if (this->msGap != data.msGap)
+    {
+        this->msGap = data.msGap;
+        QSettings().setValue(REG_TIMER, this->msGap);
+    }
+
+    if (this->msFullSpeed != data.fullSpeedMs)
+    {
+        this->msFullSpeed = data.fullSpeedMs;
+        QSettings().setValue(REG_FULL_SPEED, this->msGap);
+    }
+
     if (this->screenshotTemplate != data.screenshotTemplate)
     {
         this->screenshotTemplate = data.screenshotTemplate;
@@ -165,6 +177,8 @@ void GlobalOptions::setData(const Preferences::Data & data)
 
 void GlobalOptions::getData(Preferences::Data & data) const
 {
+    data.msGap = this->msGap;
+    data.fullSpeedMs = this->msFullSpeed;
     data.cardInSlot0 = this->slot0Card;
     data.ramWorksSize = this->ramWorksMemorySize;
     data.screenshotTemplate = this->screenshotTemplate;

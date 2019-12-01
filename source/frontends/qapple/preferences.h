@@ -25,6 +25,8 @@ public:
         bool mouseInSlot4;
         bool cpmInSlot5;
         bool hdInSlot7;
+        int msGap;
+        int fullSpeedMs;
 
         int ramWorksSize;
 

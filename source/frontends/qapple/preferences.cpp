@@ -178,6 +178,8 @@ void Preferences::setData(const Data & data)
     ui->mouse_4->setChecked(data.mouseInSlot4);
     ui->cpm_5->setChecked(data.cpmInSlot5);
     ui->hd_7->setChecked(data.hdInSlot7);
+    ui->timer_gap->setValue(data.msGap);
+    ui->full_ms->setValue(data.fullSpeedMs);
 
     ui->rw_size->setMaximum(kMaxExMemoryBanks);
     ui->rw_size->setValue(data.ramWorksSize);
@@ -213,6 +215,8 @@ Preferences::Data Preferences::getData() const
     data.cpmInSlot5 = ui->cpm_5->isChecked();
     data.hdInSlot7 = ui->hd_7->isChecked();
     data.ramWorksSize = ui->rw_size->value();
+    data.msGap = ui->timer_gap->value();
+    data.fullSpeedMs = ui->full_ms->value();
 
     // because index = 0 is None
     if (ui->joystick->currentIndex() >= 1)
