@@ -189,6 +189,7 @@ void CPageDisk::DlgOK(HWND hWnd)
 	const bool bNewEnhanceDisk = SendDlgItemMessage(hWnd, IDC_DISKTYPE,CB_GETCURSEL, 0, 0) ? true : false;
 	if (bNewEnhanceDisk != sg_Disk2Card.GetEnhanceDisk())
 	{
+		if (sg_pDisk2CardSlot5) sg_pDisk2CardSlot5->SetEnhanceDisk(bNewEnhanceDisk);
 		sg_Disk2Card.SetEnhanceDisk(bNewEnhanceDisk);
 		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (DWORD)bNewEnhanceDisk);
 	}

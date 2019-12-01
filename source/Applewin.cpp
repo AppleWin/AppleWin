@@ -279,9 +279,10 @@ static void ContinueExecution(void)
 	}
 
 	const bool bWasFullSpeed = g_bFullSpeed;
+	const bool bDisk2CardSlot5_FullSpeed = sg_pDisk2CardSlot5 && sg_pDisk2CardSlot5->IsConditionForFullSpeed();
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (sg_Disk2Card.IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
+					 ((sg_Disk2Card.IsConditionForFullSpeed() || bDisk2CardSlot5_FullSpeed) && !Spkr_IsActive() && !MB_IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -1765,9 +1766,11 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		if (slotInsert[5] != CT_Empty)
 		{
 			InsertCard(5, slotInsert[5]);
-//			if (g_Slot[4] == CT_MockingboardC || g_Slot[4] == CT_Phasor)	// Currently MB/Phasor occupy slot4+5 when enabled
 			if (g_Slot[4] == CT_MockingboardC)		// Currently MB occupies slot4+5 when enabled
-					g_Slot[4] = CT_Empty;
+			{
+				g_Slot[4] = CT_Empty;
+				g_Slot[5] = CT_Empty;
+			}
 		}
 
 		// Pre: may need g_hFrameWindow for MessageBox errors
@@ -1775,7 +1778,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			bool temp = false;
 			InsertFloppyDisks(SLOT5, szImageName_drive[SLOT5], temp);
-			szImageName_drive[SLOT5][DRIVE_1] = szImageName_drive[SLOT5][DRIVE_2] = NULL;	// Don't insert on a restart
+			//szImageName_drive[SLOT5][DRIVE_1] = szImageName_drive[SLOT5][DRIVE_2] = NULL;	// *Do* insert on a restart (since no way they could have changed)
 
 			InsertFloppyDisks(SLOT6, szImageName_drive[SLOT6], bBoot);
 			szImageName_drive[SLOT6][DRIVE_1] = szImageName_drive[SLOT6][DRIVE_2] = NULL;	// Don't insert on a restart

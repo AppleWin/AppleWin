@@ -170,6 +170,8 @@ static int						g_win_fullscreen_offsety = 0;
 
 static bool g_bFrameActive = false;
 
+static std::string driveTooltip;
+
 // __ Prototypes __________________________________________________________________________________
 void DrawCrosshairs (int x, int y);
 void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
@@ -1684,11 +1686,19 @@ LRESULT CALLBACK FrameWndProc (
 		break;
 
     case WM_NOTIFY:	// Tooltips for Drive buttons
-      if(((LPNMTTDISPINFO)lparam)->hdr.hwndFrom == tooltipwindow &&
-         ((LPNMTTDISPINFO)lparam)->hdr.code == TTN_GETDISPINFO)
-        ((LPNMTTDISPINFO)lparam)->lpszText =
-          (LPTSTR)sg_Disk2Card.GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom).c_str();
-      break;
+		if (((LPNMTTDISPINFO)lparam)->hdr.hwndFrom == tooltipwindow && ((LPNMTTDISPINFO)lparam)->hdr.code == TTN_GETDISPINFO)
+		{
+			LPNMTTDISPINFO pInfo = (LPNMTTDISPINFO)lparam;
+			SendMessage(pInfo->hdr.hwndFrom, TTM_SETMAXTIPWIDTH, 0, 150);
+
+			std::string slot6 = sg_Disk2Card.GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom);
+			std::string slot5 = sg_pDisk2CardSlot5 ? sg_pDisk2CardSlot5->GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom) : "";
+			if (!slot5.empty()) slot5 = std::string("Slot5: ") + slot5;
+			std::string join = (!slot6.empty() && !slot5.empty()) ? "\r\n" : "";
+			driveTooltip = slot6 + join + slot5;
+			((LPNMTTDISPINFO)lparam)->lpszText = (LPTSTR)driveTooltip.c_str();
+		}
+		break;
 
     case WM_PAINT:
       if (GetUpdateRect(window,NULL,0)) {
@@ -2218,6 +2228,7 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 // todo: consolidate CtrlReset() and ResetMachineState()
 void ResetMachineState ()
 {
+  if (sg_pDisk2CardSlot5) sg_pDisk2CardSlot5->Reset(true);
   sg_Disk2Card.Reset(true);
   HD_Reset();
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
@@ -2263,6 +2274,7 @@ void CtrlReset()
 	}
 
 	PravetsReset();
+	if (sg_pDisk2CardSlot5) sg_pDisk2CardSlot5->Reset(true);
 	sg_Disk2Card.Reset();
 	HD_Reset();
 	KeybReset();
