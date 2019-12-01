@@ -61,7 +61,11 @@ MemoryContainer::MemoryContainer(QWidget *parent) :
     setComment(mainMetadata, 0x0400, 0x0800, Qt::blue, Qt::yellow, "Text Video Page 1");
     setComment(mainMetadata, 0x0800, 0x0C00, Qt::black, Qt::yellow, "Text Video Page 2");
     setComment(mainMetadata, 0x2000, 0x4000, Qt::blue, Qt::yellow, "HiRes Video Page 1");
-    setComment(mainMetadata, 0x4000, 0x6000, Qt::black, Qt::yellow, "hiRes Video Page 2");
+    setComment(mainMetadata, 0x4000, 0x6000, Qt::black, Qt::yellow, "HiRes Video Page 2");
+
+    setComment(mainMetadata, 0xC000, 0xC100, Qt::white, Qt::blue, "Soft Switches");
+    setComment(mainMetadata, 0xC100, 0xC800, Qt::white, Qt::red, "Peripheral Card Memory");
+    setComment(mainMetadata, 0xF800, 0x10000, Qt::white, Qt::red, "System Monitor");
 
     char * auxBase = reinterpret_cast<char *>(MemGetAuxPtr(0));
     QHexDocument * auxDocument = QHexDocument::fromMemory<ViewBuffer>(auxBase, 0x10000, this);
@@ -72,5 +76,5 @@ MemoryContainer::MemoryContainer(QWidget *parent) :
     setComment(auxMetadata, 0x0400, 0x0800, Qt::blue, Qt::yellow, "Text Video Page 1");
     setComment(auxMetadata, 0x0800, 0x0C00, Qt::black, Qt::yellow, "Text Video Page 2");
     setComment(auxMetadata, 0x2000, 0x4000, Qt::blue, Qt::yellow, "HiRes Video Page 1");
-    setComment(auxMetadata, 0x4000, 0x6000, Qt::black, Qt::yellow, "hiRes Video Page 2");
+    setComment(auxMetadata, 0x4000, 0x6000, Qt::black, Qt::yellow, "HiRes Video Page 2");
 }
