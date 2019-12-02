@@ -33,6 +33,7 @@ struct PreferenceData
     bool mouseInSlot4;
     bool cpmInSlot5;
     bool hdInSlot7;
+    bool hz50;
 
     bool enhancedSpeed;
 

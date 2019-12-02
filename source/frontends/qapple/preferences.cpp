@@ -198,6 +198,8 @@ void Preferences::setData(const PreferenceData & data)
     ui->video_type->setCurrentIndex(data.videoType);
     ui->scan_lines->setChecked(data.scanLines);
     ui->vertical_blend->setChecked(data.verticalBlend);
+
+    ui->hz_50->setChecked(data.hz50);
 }
 
 PreferenceData Preferences::getData() const
@@ -233,6 +235,7 @@ PreferenceData Preferences::getData() const
     data.videoType = ui->video_type->currentIndex();
     data.scanLines = ui->scan_lines->isChecked();
     data.verticalBlend = ui->vertical_blend->isChecked();
+    data.hz50 = ui->hz_50->isChecked();
 
     return data;
 }

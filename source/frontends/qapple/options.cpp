@@ -213,6 +213,7 @@ void getAppleWinPreferences(PreferenceData & data)
     data.videoType = GetVideoType();
     data.scanLines = IsVideoStyle(VS_HALF_SCANLINES);
     data.verticalBlend = IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
+    data.hz50 = GetVideoRefreshRate() == VR_50HZ;
 }
 
 void setAppleWinPreferences(const PreferenceData & currentData, const PreferenceData & newData)
@@ -271,7 +272,8 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
         RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, name);
     }
 
-    if (currentData.videoType != newData.videoType || currentData.scanLines != newData.scanLines || currentData.verticalBlend != newData.verticalBlend)
+    if (currentData.videoType != newData.videoType || currentData.scanLines != newData.scanLines || currentData.verticalBlend != newData.verticalBlend
+            || currentData.hz50 != newData.hz50)
     {
         const VideoType_e videoType = VideoType_e(newData.videoType);
         SetVideoType(videoType);
@@ -282,6 +284,9 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
         if (newData.verticalBlend)
             videoStyle = VideoStyle_e(videoStyle | VS_COLOR_VERTICAL_BLEND);
         SetVideoStyle(videoStyle);
+
+        const VideoRefreshRate_e videoRefreshRate = newData.hz50 ? VR_50HZ : VR_60HZ;
+        SetVideoRefreshRate(videoRefreshRate);
 
         Config_Save_Video();
         VideoReinitialize();
