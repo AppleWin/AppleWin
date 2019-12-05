@@ -100,7 +100,7 @@ HANDLE CreateFile(LPCTSTR               lpFileName,
   }
   else
   {
-    return nullptr;
+    return INVALID_HANDLE_VALUE;
   }
 }
 
