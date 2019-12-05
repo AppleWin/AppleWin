@@ -39,9 +39,13 @@ private slots:
 
     void on_browse_ss_clicked();
 
+    void on_colorButton_clicked();
+
 private:
     std::vector<QComboBox *> myDisks;
     std::vector<QComboBox *> myHDs;
+
+    QColor myMonochromeColor;
 
     void setSettings(QSettings & settings);
     void setData(const PreferenceData & data);

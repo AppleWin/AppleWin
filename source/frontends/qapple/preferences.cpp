@@ -8,6 +8,7 @@
 #include "options.h"
 
 #include <QFileDialog>
+#include <QColorDialog>
 #include <QGamepadManager>
 #include <QSettings>
 
@@ -200,6 +201,8 @@ void Preferences::setData(const PreferenceData & data)
     ui->vertical_blend->setChecked(data.verticalBlend);
 
     ui->hz_50->setChecked(data.hz50);
+
+    myMonochromeColor = data.monochromeColor;
 }
 
 PreferenceData Preferences::getData() const
@@ -236,6 +239,7 @@ PreferenceData Preferences::getData() const
     data.scanLines = ui->scan_lines->isChecked();
     data.verticalBlend = ui->vertical_blend->isChecked();
     data.hz50 = ui->hz_50->isChecked();
+    data.monochromeColor = myMonochromeColor;
 
     return data;
 }
@@ -318,5 +322,14 @@ void Preferences::on_browse_ss_clicked()
     if (!name.isEmpty())
     {
         ui->save_state->setText(name);
+    }
+}
+
+void Preferences::on_colorButton_clicked()
+{
+    QColorDialog dialog(myMonochromeColor);
+    if (dialog.exec())
+    {
+        myMonochromeColor = dialog.currentColor();
     }
 }

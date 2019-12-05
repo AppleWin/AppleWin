@@ -44,6 +44,8 @@ struct PreferenceData
     std::vector<QString> disks;
     std::vector<QString> hds;
 
+    QColor monochromeColor;
+
     QString saveState;
 };
 

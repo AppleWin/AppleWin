@@ -214,6 +214,7 @@ void getAppleWinPreferences(PreferenceData & data)
     data.scanLines = IsVideoStyle(VS_HALF_SCANLINES);
     data.verticalBlend = IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
     data.hz50 = GetVideoRefreshRate() == VR_50HZ;
+    data.monochromeColor.setRgb(g_nMonochromeRGB);
 }
 
 void setAppleWinPreferences(const PreferenceData & currentData, const PreferenceData & newData)
@@ -273,7 +274,7 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
     }
 
     if (currentData.videoType != newData.videoType || currentData.scanLines != newData.scanLines || currentData.verticalBlend != newData.verticalBlend
-            || currentData.hz50 != newData.hz50)
+            || currentData.hz50 != newData.hz50 || currentData.monochromeColor != newData.monochromeColor)
     {
         const VideoType_e videoType = VideoType_e(newData.videoType);
         SetVideoType(videoType);
@@ -287,6 +288,10 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
 
         const VideoRefreshRate_e videoRefreshRate = newData.hz50 ? VR_50HZ : VR_60HZ;
         SetVideoRefreshRate(videoRefreshRate);
+
+        QColor color = newData.monochromeColor;
+        // be careful QRgb is opposite way round to COLORREF
+        g_nMonochromeRGB = RGB(color.red(), color.green(), color.blue());
 
         Config_Save_Video();
         VideoReinitialize();
