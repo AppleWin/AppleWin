@@ -289,7 +289,7 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
         const VideoRefreshRate_e videoRefreshRate = newData.hz50 ? VR_50HZ : VR_60HZ;
         SetVideoRefreshRate(videoRefreshRate);
 
-        QColor color = newData.monochromeColor;
+        const QColor color = newData.monochromeColor;
         // be careful QRgb is opposite way round to COLORREF
         g_nMonochromeRGB = RGB(color.red(), color.green(), color.blue());
 
