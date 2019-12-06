@@ -133,6 +133,11 @@ Preferences::Preferences(QWidget *parent) :
     myHDs.push_back(ui->hd2);
 }
 
+Preferences::~Preferences()
+{
+    delete ui;
+}
+
 void Preferences::setup(const PreferenceData & data, QSettings & settings)
 {
     populateJoysticks();

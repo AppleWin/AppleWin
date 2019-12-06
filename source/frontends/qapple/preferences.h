@@ -20,6 +20,7 @@ class Preferences : public QDialog
 public:
 
     explicit Preferences(QWidget *parent);
+    ~Preferences();
 
     void setup(const PreferenceData & data, QSettings & settings);
     PreferenceData getData() const;

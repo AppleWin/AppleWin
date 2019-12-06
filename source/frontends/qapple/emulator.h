@@ -15,6 +15,7 @@ class Emulator : public QFrame
 
 public:
     explicit Emulator(QWidget *parent = nullptr);
+    ~Emulator();
 
     void updateVideo();
     void redrawScreen();    // regenerate image and repaint

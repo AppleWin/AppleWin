@@ -16,6 +16,11 @@ Emulator::Emulator(QWidget *parent) :
     ui->setupUi(this);
 }
 
+Emulator::~Emulator()
+{
+    delete ui;
+}
+
 void Emulator::updateVideo()
 {
     ui->video->update();

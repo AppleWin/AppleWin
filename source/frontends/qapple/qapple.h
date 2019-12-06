@@ -25,6 +25,7 @@ class QApple : public QMainWindow
 
 public:
     explicit QApple(QWidget *parent = nullptr);
+    ~QApple();
 
 signals:
     void endEmulator();

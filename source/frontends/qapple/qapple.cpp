@@ -221,6 +221,11 @@ QApple::QApple(QWidget *parent) :
     startEmulator(myEmulatorWindow, myEmulator, myOptions);
 }
 
+QApple::~QApple()
+{
+    delete ui;
+}
+
 void QApple::closeEvent(QCloseEvent *)
 {
     stopTimer();

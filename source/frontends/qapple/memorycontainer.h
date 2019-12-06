@@ -13,6 +13,7 @@ class MemoryContainer : public QTabWidget
 
 public:
     explicit MemoryContainer(QWidget *parent = nullptr);
+    ~MemoryContainer();
 
 private:
     Ui::MemoryContainer *ui;

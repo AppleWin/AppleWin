@@ -78,3 +78,8 @@ MemoryContainer::MemoryContainer(QWidget *parent) :
     setComment(auxMetadata, 0x2000, 0x4000, Qt::blue, Qt::yellow, "HiRes Video Page 1");
     setComment(auxMetadata, 0x4000, 0x6000, Qt::black, Qt::yellow, "HiRes Video Page 2");
 }
+
+MemoryContainer::~MemoryContainer()
+{
+    delete ui;
+}
