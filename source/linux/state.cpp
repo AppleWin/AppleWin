@@ -5,7 +5,6 @@
 #include "Configuration/IPropertySheet.h"
 #include "YamlHelper.h"
 
-void KeybLoadSnapshot(YamlLoadHelper&, unsigned int) { }
 void SpkrLoadSnapshot(YamlLoadHelper&) { }
 void KeybReset() { }
 void MB_SaveSnapshot(YamlSaveHelper&, unsigned int) { }
@@ -13,7 +12,6 @@ void JoySaveSnapshot(YamlSaveHelper&) { }
 void JoyLoadSnapshot(YamlLoadHelper&) { }
 bool MB_LoadSnapshot(class YamlLoadHelper&, UINT, UINT) { return true; }
 void SetLoadedSaveStateFlag(bool) { }
-void KeybSaveSnapshot(YamlSaveHelper&) { }
 void SpkrSaveSnapshot(YamlSaveHelper&) { }
 bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper&, unsigned int, unsigned int) { return true; }
 void MB_Reset() { }
