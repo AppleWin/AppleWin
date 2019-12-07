@@ -16,6 +16,7 @@
 #include "linux/interface.h"
 #include "linux/paddle.h"
 #include "linux/data.h"
+#include "linux/keyboard.h"
 
 #include "frontends/ncurses/nframe.h"
 #include "frontends/ncurses/colors.h"
@@ -54,9 +55,6 @@ namespace
 #define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
 #define  SW_TEXT          (g_uVideoMode & VF_TEXT)
 
-  BYTE nextKey = 0;
-  bool keyReady = false;
-
   bool g_bTextFlashState = false;
 
   double alpha = 10.0;
@@ -67,8 +65,7 @@ namespace
     // Ctrl-C
     // is there a race condition here?
     // is it a problem?
-    nextKey = 0x83;
-    keyReady = true;
+    addKeyToBuffer(0x03);
   }
 
   chtype mapCharacter(BYTE ch)
@@ -517,8 +514,7 @@ int ProcessKeyboard()
 
   if (ch != ERR)
   {
-    nextKey = ch | 0x80;
-    keyReady = true;
+    addKeyToBuffer(ch);
     return ERR;
   }
   else
@@ -533,23 +529,6 @@ void ProcessInput()
   paddle->poll();
 }
 
-BYTE    KeybGetKeycode ()
-{
-  return 0;
-}
-
-BYTE KeybReadData()
-{
-  LogFileTimeUntilFirstKeyRead();
-  return nextKey;
-}
-
-BYTE KeybReadFlag()
-{
-  BYTE result = keyReady ? nextKey : 0;
-  nextKey = 0;
-  return result;
-}
 
 // Speaker
 

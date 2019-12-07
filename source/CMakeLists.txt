@@ -41,6 +41,7 @@ add_library(appleii SHARED
   linux/paddle.cpp
   linux/version.cpp
   linux/registry.cpp
+  linux/keyboard.cpp
 
   linux/duplicates/Video.cpp
   linux/duplicates/Mockingboard.cpp

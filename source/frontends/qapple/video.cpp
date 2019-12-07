@@ -5,15 +5,8 @@
 
 #include "StdAfx.h"
 #include "linux/data.h"
+#include "linux/keyboard.h"
 #include "MouseInterface.h"
-
-namespace
-{
-
-    BYTE keyCode = 0;
-    bool keyWaiting = false;
-
-}
 
 Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
 {
@@ -128,8 +121,7 @@ void Video::keyPressEvent(QKeyEvent *event)
 
     if (ch)
     {
-        keyCode = ch;
-        keyWaiting = true;
+        addKeyToBuffer(ch);
         event->accept();
     }
 }
@@ -197,22 +189,4 @@ void Video::mouseReleaseEvent(QMouseEvent *event)
         }
         event->accept();
     }
-}
-
-// Keyboard
-
-BYTE    KeybGetKeycode ()
-{
-  return keyCode;
-}
-
-BYTE KeybReadData()
-{
-    return keyCode | (keyWaiting ? 0x80 : 0x00);
-}
-
-BYTE KeybReadFlag()
-{
-    keyWaiting = false;
-    return keyCode;
 }
