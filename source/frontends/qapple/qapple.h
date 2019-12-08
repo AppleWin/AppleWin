@@ -19,6 +19,8 @@ namespace Ui {
 class QApple;
 }
 
+class QLabel;
+
 class QApple : public QMainWindow
 {
     Q_OBJECT
@@ -27,8 +29,13 @@ public:
     explicit QApple(QWidget *parent = nullptr);
     ~QApple();
 
+    void loadStateFile(const QString & stateFile);
+
 signals:
     void endEmulator();
+
+public slots:
+    void startEmulator();
 
 protected:
     virtual void closeEvent(QCloseEvent * event);
@@ -95,6 +102,8 @@ private:
 
     int myTimerID;
     Preferences * myPreferences;
+
+    QLabel * mySaveStateLabel;
 
     QElapsedTimer myElapsedTimer;
     QMdiSubWindow * myEmulatorWindow;

@@ -34,6 +34,7 @@
 #include <QStyle>
 #include <QSettings>
 #include <QAudioOutput>
+#include <QLabel>
 
 #include <algorithm>
 
@@ -61,7 +62,7 @@ namespace
      *
      */
 
-    void startEmulator(QWidget * window, Emulator * emulator, const GlobalOptions & options)
+    void loadEmulator(QWidget * window, Emulator * emulator, const GlobalOptions & options)
     {
         LoadConfiguration();
 
@@ -206,6 +207,9 @@ QApple::QApple(QWidget *parent) :
     ui->actionSave_state->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
     ui->actionLoad_state->setIcon(style()->standardIcon(QStyle::SP_DialogOpenButton));
 
+    mySaveStateLabel = new QLabel;
+    statusBar()->addPermanentWidget(mySaveStateLabel);
+
     myPreferences = new Preferences(this);
 
     myEmulator = new Emulator(ui->mdiArea);
@@ -218,7 +222,7 @@ QApple::QApple(QWidget *parent) :
 
     on_actionPause_triggered();
     initialiseEmulator();
-    startEmulator(myEmulatorWindow, myEmulator, myOptions);
+    loadEmulator(myEmulatorWindow, myEmulator, myOptions);
 }
 
 QApple::~QApple()
@@ -231,6 +235,11 @@ void QApple::closeEvent(QCloseEvent *)
     stopTimer();
     stopEmulator();
     uninitialiseEmulator();
+}
+
+void QApple::startEmulator()
+{
+    ui->actionStart->trigger();
 }
 
 void QApple::on_stateChanged(QAudio::State state)
@@ -350,8 +359,9 @@ void QApple::on_action4_3_triggered()
 void QApple::on_actionReboot_triggered()
 {
     emit endEmulator();
+    mySaveStateLabel->clear();
     stopEmulator();
-    startEmulator(myEmulatorWindow, myEmulator, myOptions);
+    loadEmulator(myEmulatorWindow, myEmulator, myOptions);
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
     myEmulator->updateVideo();
     restartTimeCounters();
@@ -428,6 +438,9 @@ void QApple::on_actionLoad_state_triggered()
     Snapshot_LoadState();
     SetWindowTitle();
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
+    const std::string & filename = Snapshot_GetFilename();
+    QString message = QString("State file: %1").arg(QString::fromStdString(filename));
+    mySaveStateLabel->setText(message);
     myEmulator->updateVideo();
 }
 
@@ -500,15 +513,7 @@ void QApple::on_actionLoad_state_from_triggered()
         if (files.size() == 1)
         {
             const QString & filename = files[0];
-            const QFileInfo file(filename);
-            const QString path = file.absoluteDir().canonicalPath();
-
-            // this is useful as snapshots from the test
-            // have relative disk location
-            SetCurrentImageDir(path.toStdString().c_str());
-
-            Snapshot_SetFilename(filename.toStdString().c_str());
-            ui->actionLoad_state->trigger();
+            loadStateFile(filename);
         }
     }
 }
@@ -525,4 +530,17 @@ void QApple::on_actionNext_video_mode_triggered()
     Config_Save_Video();
     VideoReinitialize();
     VideoRedrawScreen();
+}
+
+void QApple::loadStateFile(const QString & filename)
+{
+    const QFileInfo file(filename);
+    const QString path = file.absoluteDir().canonicalPath();
+
+    // this is useful as snapshots from the test
+    // have relative disk location
+    SetCurrentImageDir(path.toStdString().c_str());
+
+    Snapshot_SetFilename(filename.toStdString().c_str());
+    ui->actionLoad_state->trigger();
 }
