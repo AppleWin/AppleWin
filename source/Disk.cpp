@@ -51,7 +51,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // . if false: Used by ImageReadTrack() to skew the sectors in a track (for .do, .dsk, .po 5.25" images).
 // . if true && m_floppyMotorOn, then this is a condition for full-speed (unthrottled) emulation mode.
 // . if false && I/O ReadWrite($C0EC) && drive is spinning, then advance the track buffer's nibble index (to simulate spinning).
-// . if I/O ReadWrite($C0EC) && read, then depending on true/false support partial nibble reads for different gaps between consecutive accesses.
 // Also m_enhanceDisk is persisted to the save-state, so it's an attribute of the DiskII interface card.
 
 Disk2InterfaceCard::Disk2InterfaceCard(void)
@@ -907,8 +906,9 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 		// Support partial nibble read if disk reads are very close: (GH#582)
 		// . 6 cycles (1st->2nd read) for DOS 3.3 / $BD34: "read with delays to see if disk is spinning." (Beneath Apple DOS)
 		// . 6 cycles (1st->2nd read) for Curse of the Azure Bonds (loop to see if disk is spinning)
+		// . 25 cycles or higher fails for Legacy of the Ancients (GH#733)
 		// . 31 cycles is the max for a partial 8-bit nibble
-		const ULONG kReadAccessThreshold = m_enhanceDisk ? 6 : 31;
+		const ULONG kReadAccessThreshold = 6;	// Same for enhanced/authentic modes
 
 		if (nReadCycleDiff <= kReadAccessThreshold)
 		{
@@ -1124,6 +1124,8 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 	}
 #endif
 
+	UINT extraLatchDelay = (UINT)floppy.m_extraCycles ? 1 : 0;	// GH#733
+
 	for (UINT i = 0; i < bitCellRemainder; i++)
 	{
 		BYTE n = floppy.m_trackimage[floppy.m_byte];
@@ -1161,6 +1163,9 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 		if (m_latchDelay)
 		{
+			m_latchDelay += extraLatchDelay;
+			extraLatchDelay = 0;
+
 			m_latchDelay -= 4;
 			if (m_latchDelay < 0)
 				m_latchDelay = 0;
