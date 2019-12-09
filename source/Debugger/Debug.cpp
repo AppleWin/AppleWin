@@ -1127,11 +1127,11 @@ int CheckBreakpointsIO ()
 	int  iTarget;
 	int  nAddress;
 
-	// bIgnoreNextOpcodeAddress = true:
+	// bIncludeNextOpcodeAddress == false:
 	// . JSR addr16: ignore addr16 as a target
-	// . RTS/RTI   : ignore return as a target
-	_6502_GetTargets( regs.pc, &aTarget[0], &aTarget[1], &aTarget[2], &nBytes, true, true, true );
-	
+	// . BRK/RTS/RTI: ignore return (or vector) addr16 as a target
+	_6502_GetTargets( regs.pc, &aTarget[0], &aTarget[1], &aTarget[2], &nBytes, true, true, false );
+
 	if (nBytes)
 	{
 		for (iTarget = 0; iTarget < NUM_TARGETS; iTarget++ )

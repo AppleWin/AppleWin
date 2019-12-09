@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Addressing _____________________________________________________________________________________
 
 	AddressingMode_t g_aOpmodes[ NUM_ADDRESSING_MODES ] =
-	{ // Outut, but eventually used for Input when Assembler is working.
+	{ // Output, but eventually used for Input when Assembler is working.
 		{TEXT("")        , 1 , "(implied)"              }, // (implied)
         {TEXT("")        , 1 , "n/a 1"         }, // INVALID1
         {TEXT("")        , 2 , "n/a 2"         }, // INVALID2
@@ -584,7 +584,7 @@ bool _6502_GetStackReturnAddress ( WORD & nAddress_ )
 
 //===========================================================================
 bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int * pTargetBytes_,
-						bool bIgnoreJSRJMP /*= true*/, bool bIgnoreBranch /*= true*/, bool bIgnoreNextOpcodeAddress /*= false*/ )
+						bool bIgnoreJSRJMP /*= true*/, bool bIgnoreBranch /*= true*/, bool bIncludeNextOpcodeAddress /*= true*/ )
 {
 	bool bStatus = false;
 
@@ -657,29 +657,35 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 						nTarget16 = _6502_STACK_BEGIN + ((regs.sp+1) & 0xFF);
 				}
 
-				*pTargetPointer_ = nTarget16;
+				if (bIncludeNextOpcodeAddress || (nOpcode != OPCODE_RTI && nOpcode != OPCODE_RTS && nOpcode != OPCODE_BRK))
+					*pTargetPointer_ = nTarget16;
 
 				if (pTargetBytes_)
 					*pTargetBytes_ = 1;
 			}
 			break;
 
-		case AM_A: // $Absolute
+		case AM_A: // Absolute
 			if (nOpcode == OPCODE_JSR)	// JSR?
 			{
 				*pTargetPartial_  = _6502_STACK_BEGIN + ((regs.sp+0) & 0xFF);
 				*pTargetPartial2_ = _6502_STACK_BEGIN + ((regs.sp-1) & 0xFF);
 			}
 
-			*pTargetPointer_ = nTarget16;
+			if (bIncludeNextOpcodeAddress || (nOpcode != OPCODE_JSR))
+				*pTargetPointer_ = nTarget16;
+
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
 
-		case AM_IAX: // Indexed (Absolute) Indirect
+		case AM_IAX: // Indexed (Absolute) Indirect - ie. JMP (abs,x)
+			_ASSERT(nOpcode == OPCODE_JMP_IAX);
 			nTarget16 += regs.x;
 			*pTargetPartial_    = nTarget16;
-			*pTargetPointer_    = *(LPWORD)(mem + nTarget16);
+			*pTargetPartial2_   = nTarget16+1;
+			if (bIncludeNextOpcodeAddress)
+				*pTargetPointer_ = *(LPWORD)(mem + nTarget16);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
@@ -698,9 +704,12 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 				*pTargetBytes_ = 2;
 			break;
 
-		case AM_NA: // Indirect (Absolute) i.e. JMP
+		case AM_NA: // Indirect (Absolute) - ie. JMP (abs)
+			_ASSERT(nOpcode == OPCODE_JMP_NA);
 			*pTargetPartial_    = nTarget16;
-			*pTargetPointer_    = *(LPWORD)(mem + nTarget16);
+			*pTargetPartial2_   = nTarget16+1;
+			if (bIncludeNextOpcodeAddress)
+				*pTargetPointer_ = *(LPWORD)(mem + nTarget16);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
@@ -728,7 +737,7 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 			break;
 
 		case AM_R:
-			if (! bIgnoreBranch)
+			if (!bIgnoreBranch)
 			{
 				*pTargetPartial_  = nTarget8;
 				*pTargetPointer_ = nAddress + 2;
@@ -784,13 +793,6 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 		}
 	}
 
-	if (bIgnoreNextOpcodeAddress)
-	{
-		*pTargetPointer_ = NO_6502_TARGET;
-		if (pTargetBytes_)
-			*pTargetBytes_ = 0;
-	}
-	
 	return bStatus;
 }
 

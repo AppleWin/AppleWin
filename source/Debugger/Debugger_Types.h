@@ -1069,6 +1069,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		OPCODE_RTS     = 0x60,
 		OPCODE_JMP_NA  = 0x6C, // Indirect Absolute
 		OPCODE_JMP_IAX = 0x7C, // Indexed (Absolute Indirect, X)
+		OPCODE_LDA_A   = 0xAD, // Absolute
 
 		OPCODE_NOP     = 0xEA, // No operation
 	};
