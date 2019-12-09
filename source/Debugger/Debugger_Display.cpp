@@ -1528,6 +1528,13 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 			int nTargetBytes;
 			_6502_GetTargets( nBaseAddress, &nTargetPartial, &nTargetPartial2, &nTargetPointer, &nTargetBytes );
 
+			// For *direct* JSR/JMP, don't show 'addr16:byte char'
+			if (iOpcode == OPCODE_JSR || iOpcode == OPCODE_JMP_A)
+			{
+				nTargetPointer = NO_6502_TARGET;
+				nTargetBytes = 0;
+			}
+
 			if (nTargetPointer != NO_6502_TARGET)
 			{
 				bDisasmFormatFlags |= DISASM_FORMAT_TARGET_POINTER;
@@ -1541,7 +1548,7 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 				if (g_iConfigDisasmTargets & DISASM_TARGET_ADDR)
 					sprintf( line_.sTargetPointer, "%04X", nTargetPointer & 0xFFFF );
 
-				if (iOpmode != AM_NA ) // Indirect Absolute
+				if (iOpcode != OPCODE_JMP_NA && iOpcode != OPCODE_JMP_IAX)
 				{
 					bDisasmFormatFlags |= DISASM_FORMAT_TARGET_VALUE;
 					if (g_iConfigDisasmTargets & DISASM_TARGET_VAL)
@@ -3214,6 +3221,12 @@ void DrawTargets ( int line)
 
 	int aTarget[3];
 	_6502_GetTargets( regs.pc, &aTarget[0],&aTarget[1],&aTarget[2], NULL );
+
+	const BYTE iOpcode = mem[regs.pc];
+	if (iOpcode == OPCODE_JSR || iOpcode == OPCODE_JMP_A)
+	{
+		aTarget[2] = NO_6502_TARGET;
+	}
 
 	aTarget[1] = aTarget[2];	// Move down as we only have 2 lines
 

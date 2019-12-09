@@ -145,7 +145,6 @@ int GH445_test_abs(BYTE op)
 	return 0;
 }
 
-// NB. bIgnoreJSRJMP == false, ie. TargetAddr[2] gets set
 int GH445_test_jsr(void)
 {
 	bool bRes;
@@ -159,15 +158,15 @@ int GH445_test_jsr(void)
 	mem[(regs.pc+2)&0xFFFF] = (BYTE) ((target2>>8)&0xff);
 
 	regs.sp = 0x1FF;
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes);
 	if (!bRes || TargetAddr[0] != regs.sp || TargetAddr[1] != regs.sp-1 || TargetAddr[2] != target2) return 1;
 
 	regs.sp = 0x100;
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes);
 	if (!bRes || TargetAddr[0] != regs.sp || TargetAddr[1] != 0x1FF || TargetAddr[2] != target2) return 1;
 
 	regs.sp = 0x101;
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes);
 	if (!bRes || TargetAddr[0] != regs.sp || TargetAddr[1] != regs.sp-1 || TargetAddr[2] != target2) return 1;
 
 	return 0;
@@ -232,7 +231,6 @@ int GH445_test_rti_rts(WORD sp, const bool isRTI)
 	return 0;
 }
 
-// NB. bIgnoreJSRJMP == false, ie. TargetAddr[2] gets set
 int GH445_test_jmp(BYTE op)
 {
 	bool bRes;
@@ -268,7 +266,7 @@ int GH445_test_jmp(BYTE op)
 	mem[regs.pc] = op;
 	mem[(regs.pc+1)&0xFFFF] = (BYTE) (target16&0xff);
 	mem[(regs.pc+2)&0xFFFF] = (BYTE) ((target16>>8)&0xff);
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes);
 	if (!bRes || TargetAddr[0] != target0 || TargetAddr[1] != target1 || TargetAddr[2] != target2) return 1;
 
 	return 0;
@@ -448,7 +446,7 @@ int GH451_test_abs(BYTE op)
 	mem[regs.pc] = op;
 	mem[(regs.pc+1)&0xFFFF] = (BYTE) (target2&0xff);
 	mem[(regs.pc+2)&0xFFFF] = (BYTE) ((target2>>8)&0xff);
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, true, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, false);
 	if (!bRes || TargetAddr[2] != target2) return 1;
 
 	return 0;
@@ -463,15 +461,15 @@ int GH451_test_jsr(void)
 	mem[regs.pc] = OPCODE_JSR;
 
 	regs.sp = 0x1FF;
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, true, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, false);
 	if (!bRes || TargetAddr[0] != regs.sp || TargetAddr[1] != regs.sp-1 || TargetAddr[2] != NO_6502_TARGET) return 1;
 
 	regs.sp = 0x100;
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, true, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, false);
 	if (!bRes || TargetAddr[0] != regs.sp || TargetAddr[1] != 0x1FF || TargetAddr[2] != NO_6502_TARGET) return 1;
 
 	regs.sp = 0x101;
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, true, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, false);
 	if (!bRes || TargetAddr[0] != regs.sp || TargetAddr[1] != regs.sp-1 || TargetAddr[2] != NO_6502_TARGET) return 1;
 
 	return 0;
@@ -486,15 +484,15 @@ int GH451_test_brk(void)
 	mem[regs.pc] = OPCODE_BRK;
 
 	regs.sp = 0x1FF;
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, true, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, false);
 	if (!bRes || TargetAddr[0] != regs.sp || TargetAddr[1] != regs.sp-1 || TargetAddr[2] != NO_6502_TARGET) return 1;
 
 	regs.sp = 0x100;
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, true, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, false);
 	if (!bRes || TargetAddr[0] != regs.sp || TargetAddr[1] != 0x1FF || TargetAddr[2] != NO_6502_TARGET) return 1;
 
 	regs.sp = 0x101;
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, true, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, false);
 	if (!bRes || TargetAddr[0] != regs.sp || TargetAddr[1] != regs.sp-1 || TargetAddr[2] != NO_6502_TARGET) return 1;
 
 	return 0;
@@ -530,13 +528,12 @@ int GH451_test_rti_rts(WORD sp, const bool isRTI)
 	if (!isRTI)
 		ret_addr++;		// NB. return addr from stack is incremented before being transferred to PC
 
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, true, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, false);
 	if (!bRes || TargetAddr[0] != sp_addr_l || TargetAddr[1] != sp_addr_h || TargetAddr[2] != NO_6502_TARGET) return 1;
 
 	return 0;
 }
 
-// bIgnoreJSRJMP == true
 int GH451_test_jmp(BYTE op)
 {
 	bool bRes;
@@ -565,7 +562,7 @@ int GH451_test_jmp(BYTE op)
 	mem[regs.pc] = op;
 	mem[(regs.pc+1)&0xFFFF] = (BYTE) (target16&0xff);
 	mem[(regs.pc+2)&0xFFFF] = (BYTE) ((target16>>8)&0xff);
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, true, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, false);
 	if (!bRes || TargetAddr[0] != target0 || TargetAddr[1] != target1 || TargetAddr[2] != NO_6502_TARGET) return 1;
 
 	return 0;
@@ -581,13 +578,13 @@ int GH451_test_Bcc(void)
 	mem[regs.pc] = 0x10;	// BPL next-op
 	mem[regs.pc+1] = 0;
 
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, true, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, false);
 	if (!bRes || TargetAddr[0] != NO_6502_TARGET || TargetAddr[1] != NO_6502_TARGET || TargetAddr[2] != NO_6502_TARGET) return 1;
 
 	mem[regs.pc] = 0x10;	// BPL this-op
 	mem[regs.pc+1] = 0xfe;
 
-	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, true, false);
+	bRes = _6502_GetTargets(regs.pc, &TargetAddr[0], &TargetAddr[1], &TargetAddr[2], &TargetBytes, true, false);
 	if (!bRes || TargetAddr[0] != NO_6502_TARGET || TargetAddr[1] != NO_6502_TARGET || TargetAddr[2] != NO_6502_TARGET) return 1;
 
 	return 0;

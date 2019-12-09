@@ -584,21 +584,19 @@ bool _6502_GetStackReturnAddress ( WORD & nAddress_ )
 
 //===========================================================================
 bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int * pTargetBytes_,
-						bool bIgnoreJSRJMP /*= true*/, bool bIgnoreBranch /*= true*/, bool bIncludeNextOpcodeAddress /*= true*/ )
+						bool bIgnoreBranch /*= true*/, bool bIncludeNextOpcodeAddress /*= true*/ )
 {
-	bool bStatus = false;
-
 	if (! pTargetPartial_)
-		return bStatus;
+		return false;
 
 	if (! pTargetPartial2_)
-		return bStatus;
+		return false;
 
 	if (! pTargetPointer_)
-		return bStatus;
+		return false;
 
 //	if (! pTargetBytes_)
-//		return bStatus;
+//		return false;
 
 	*pTargetPartial_  = NO_6502_TARGET;
 	*pTargetPartial2_ = NO_6502_TARGET;
@@ -606,8 +604,6 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 
 	if (pTargetBytes_)
 		*pTargetBytes_  = 0;	
-
-	bStatus   = true;
 
 	BYTE nOpcode   = mem[nAddress];
 	BYTE nTarget8  = mem[(nAddress+1)&0xFFFF];
@@ -666,13 +662,13 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 			break;
 
 		case AM_A: // Absolute
-			if (nOpcode == OPCODE_JSR)	// JSR?
+			if (nOpcode == OPCODE_JSR)
 			{
 				*pTargetPartial_  = _6502_STACK_BEGIN + ((regs.sp+0) & 0xFF);
 				*pTargetPartial2_ = _6502_STACK_BEGIN + ((regs.sp-1) & 0xFF);
 			}
 
-			if (bIncludeNextOpcodeAddress || (nOpcode != OPCODE_JSR))
+			if (bIncludeNextOpcodeAddress || (nOpcode != OPCODE_JSR && nOpcode != OPCODE_JMP_A))
 				*pTargetPointer_ = nTarget16;
 
 			if (pTargetBytes_)
@@ -778,22 +774,7 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 			break;
 	}
 
-	if (bIgnoreJSRJMP)
-	{	
-		// If 6502 is jumping, don't show byte [nAddressTarget]
-		if ((*pTargetPointer_ >= 0) && (
-			(nOpcode == OPCODE_JSR    ) || // 0x20
-			(nOpcode == OPCODE_JMP_A  )))  // 0x4C
-//			(nOpcode == OPCODE_JMP_NA ) || // 0x6C
-//			(nOpcode == OPCODE_JMP_IAX)))  // 0x7C
-		{
-			*pTargetPointer_ = NO_6502_TARGET;
-			if (pTargetBytes_)
-				*pTargetBytes_ = 0;
-		}
-	}
-
-	return bStatus;
+	return true;
 }
 
 
@@ -818,7 +799,7 @@ bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 		int nTargetPointer;
 		WORD nTargetValue = 0; // de-ref
 		int nTargetBytes;
-		_6502_GetTargets( nAddress, &nTargetPartial, &nTargetPointer, &nTargetBytes, false, false );
+		_6502_GetTargets( nAddress, &nTargetPartial, &nTargetPointer, &nTargetBytes, false );
 
 //		if (nTargetPointer == NO_6502_TARGET)
 //		{
