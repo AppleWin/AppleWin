@@ -124,11 +124,11 @@ const Opcodes_t g_aOpcodes65C02[ NUM_OPCODES ] =
 	{"RTS", 0     , SR}, {"ADC", AM_IZX, R_}, {"nop", AM_M  , im}, {"nop", 0  , 0 }, // 60 .. 63
 	{"STZ", AM_Z  , _W}, {"ADC", AM_Z  , R_}, {"ROR", AM_Z  , RW}, {"nop", 0  , 0 }, // 64 .. 67
 	{"PLA", 0     , SR}, {"ADC", AM_M  , im}, {"ROR", 0     ,  0}, {"nop", 0  , 0 }, // 68 .. 6B
-	{"JMP", AM_NA ,  0}, {"ADC", AM_A  , R_}, {"ROR", AM_A  , RW}, {"nop", 0  , 0 }, // 6C .. 6F
+	{"JMP", AM_NA , R_}, {"ADC", AM_A  , R_}, {"ROR", AM_A  , RW}, {"nop", 0  , 0 }, // 6C .. 6F
 	{"BVS", AM_R  ,  0}, {"ADC", AM_NZY, R_}, {"ADC", AM_NZ , R_}, {"nop", 0  , 0 }, // 70 .. 73
 	{"STZ", AM_ZX , _W}, {"ADC", AM_ZX , R_}, {"ROR", AM_ZX , RW}, {"nop", 0  , 0 }, // 74 .. 77
 	{"SEI", 0     ,  0}, {"ADC", AM_AY , R_}, {"PLY", 0     , SR}, {"nop", 0  , 0 }, // 78 .. 7B
-	{"JMP", AM_IAX,  0}, {"ADC", AM_AX , R_}, {"ROR", AM_AX , RW}, {"nop", 0  , 0 }, // 7C .. 7F
+	{"JMP", AM_IAX, R_}, {"ADC", AM_AX , R_}, {"ROR", AM_AX , RW}, {"nop", 0  , 0 }, // 7C .. 7F
 
 	{"BRA", AM_R  ,  0}, {"STA", AM_IZX, _W}, {"nop", AM_M  , im}, {"nop", 0  , 0 }, // 80 .. 83
 	{"STY", AM_Z  , _W}, {"STA", AM_Z  , _W}, {"STX", AM_Z  , _W}, {"nop", 0  , 0 }, // 84 .. 87
@@ -246,7 +246,7 @@ Fx	BEQ r  SBC (d),Y  sbc (z)  ---  ---      SBC d,X  INC z,X  ---  SED  SBC a,Y 
 	{"RTS", 0     , SR}, {"ADC", AM_IZX, R_}, {"hlt", 0     ,  0}, {"rra", AM_IZX, RW}, // 60 .. 63
 	{"nop", AM_Z  ,  0}, {"ADC", AM_Z  , R_}, {"ROR", AM_Z  , RW}, {"rra", AM_Z  , RW}, // 64 .. 67
 	{"PLA", 0     , SR}, {"ADC", AM_M  , im}, {"ROR", 0     ,  0}, {"arr", AM_M  , im}, // 68 .. 6B
-	{"JMP", AM_NA ,  0}, {"ADC", AM_A  , R_}, {"ROR", AM_A  , RW}, {"rra", AM_A  , RW}, // 6C .. 6F
+	{"JMP", AM_NA , R_}, {"ADC", AM_A  , R_}, {"ROR", AM_A  , RW}, {"rra", AM_A  , RW}, // 6C .. 6F
 	{"BVS", AM_R  ,  0}, {"ADC", AM_NZY, R_}, {"hlt", 0     ,  0}, {"rra", AM_NZY, RW}, // 70 .. 73
 	{"nop", AM_ZX ,  0}, {"ADC", AM_ZX , R_}, {"ROR", AM_ZX , RW}, {"rra", AM_ZX , RW}, // 74 .. 77
 	{"SEI", 0     ,  0}, {"ADC", AM_AY , R_}, {"nop", 0     ,  0}, {"rra", AM_AY , RW}, // 78 .. 7B
