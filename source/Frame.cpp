@@ -1693,7 +1693,13 @@ LRESULT CALLBACK FrameWndProc (
 
 			std::string slot6 = sg_Disk2Card.GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom);
 			std::string slot5 = sg_pDisk2CardSlot5 ? sg_pDisk2CardSlot5->GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom) : "";
-			if (!slot5.empty()) slot5 = std::string("Slot5: ") + slot5;
+			if (sg_pDisk2CardSlot5)
+			{
+				if (slot6.empty()) slot6 = "<empty>";
+				if (slot5.empty()) slot5 = "<empty>";
+				slot6 = std::string("Slot6: ") + slot6;
+				slot5 = std::string("Slot5: ") + slot5;
+			}
 			std::string join = (!slot6.empty() && !slot5.empty()) ? "\r\n" : "";
 			driveTooltip = slot6 + join + slot5;
 			((LPNMTTDISPINFO)lparam)->lpszText = (LPTSTR)driveTooltip.c_str();
