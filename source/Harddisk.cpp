@@ -142,22 +142,22 @@ struct HDD
 	}
 
 	// From FloppyDisk
-	std::string	imagename;	// <FILENAME> (ie. no extension)    [not used]
-	std::string fullname;	// <FILENAME.EXT> or <FILENAME.zip>
-	std::string strFilenameInZip;					// ""             or <FILENAME.EXT> [not used]
-	ImageInfo*	imagehandle;			// Init'd by HD_Insert() -> ImageOpen()
-	bool	bWriteProtected;			// Needed for ImageOpen() [otherwise not used]
+	std::string	imagename {};	// <FILENAME> (ie. no extension)    [not used]
+	std::string fullname {};	// <FILENAME.EXT> or <FILENAME.zip>
+	std::string strFilenameInZip {};					// ""             or <FILENAME.EXT> [not used]
+	ImageInfo*	imagehandle {};			// Init'd by HD_Insert() -> ImageOpen()
+	bool	bWriteProtected {};			// Needed for ImageOpen() [otherwise not used]
 	//
-	BYTE	hd_error;		// NB. Firmware requires that b0=0 (OK) or b0=1 (Error)
-	WORD	hd_memblock;
-	UINT	hd_diskblock;
-	WORD	hd_buf_ptr;
-	bool	hd_imageloaded;
-	BYTE	hd_buf[HD_BLOCK_SIZE+1];	// Why +1? Probably for erroreous reads beyond the block size (ie. reads from I/O addr 0xC0F8)
+	BYTE	hd_error {};		// NB. Firmware requires that b0=0 (OK) or b0=1 (Error)
+	WORD	hd_memblock {};
+	UINT	hd_diskblock {};
+	WORD	hd_buf_ptr {};
+	bool	hd_imageloaded {};
+	BYTE	hd_buf[HD_BLOCK_SIZE+1] {};	// Why +1? Probably for erroreous reads beyond the block size (ie. reads from I/O addr 0xC0F8)
 
 #if HD_LED
-	Disk_Status_e hd_status_next;
-	Disk_Status_e hd_status_prev;
+	Disk_Status_e hd_status_next {};
+	Disk_Status_e hd_status_prev {};
 #endif
 };
 
@@ -168,9 +168,9 @@ static BYTE	g_nHD_UnitNum = HARDDISK_1<<7;	// b7=unit
 
 // The HDD interface has a single Command register for both drives:
 // . ProDOS will write to Command before switching drives
-static BYTE	g_nHD_Command;
+static BYTE	g_nHD_Command {};
 
-static HDD g_HardDisk[NUM_HARDDISKS];
+static HDD g_HardDisk[NUM_HARDDISKS] {};
 
 static bool g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 static UINT g_uSlot = 7;

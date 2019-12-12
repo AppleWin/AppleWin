@@ -71,20 +71,20 @@ public:
 	}
 
 public:
-	std::string m_imagename;	// <FILENAME> (ie. no extension)
-	std::string m_fullname;	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
-	std::string m_strFilenameInZip;					// ""             or <FILENAME.EXT>
-	ImageInfo* m_imagehandle;						// Init'd by InsertDisk() -> ImageOpen()
-	bool m_bWriteProtected;
-	int m_byte;					// byte offset
-	int m_nibbles;				// # nibbles in track / Init'd by ReadTrack() -> ImageReadTrack()
-	UINT m_bitOffset;			// bit offset
-	UINT m_bitCount;			// # bits in track
-	BYTE m_bitMask;
-	double m_extraCycles;
-	LPBYTE m_trackimage;
-	bool m_trackimagedata;
-	bool m_trackimagedirty;
+	std::string m_imagename {};	// <FILENAME> (ie. no extension)
+	std::string m_fullname {};	// <FILENAME.EXT> or <FILENAME.zip>  : This is persisted to the snapshot file
+	std::string m_strFilenameInZip {};					// ""             or <FILENAME.EXT>
+	ImageInfo* m_imagehandle {};						// Init'd by InsertDisk() -> ImageOpen()
+	bool m_bWriteProtected {};
+	int m_byte {};					// byte offset
+	int m_nibbles {};				// # nibbles in track / Init'd by ReadTrack() -> ImageReadTrack()
+	UINT m_bitOffset {};			// bit offset
+	UINT m_bitCount {};			// # bits in track
+	BYTE m_bitMask {};
+	double m_extraCycles {};
+	LPBYTE m_trackimage {};
+	bool m_trackimagedata {};
+	bool m_trackimagedirty {};
 };
 
 class FloppyDrive
@@ -109,13 +109,13 @@ public:
 	}
 
 public:
-	float m_phasePrecise;	// Phase precise to half a phase (aka quarter track)
-	int m_phase;			// Integral phase number
-	unsigned __int64 m_lastStepperCycle;
-	BYTE m_headWindow;
-	DWORD m_spinning;
-	DWORD m_writelight;
-	FloppyDisk m_disk;
+	float m_phasePrecise {};	// Phase precise to half a phase (aka quarter track)
+	int m_phase {};			// Integral phase number
+	unsigned __int64 m_lastStepperCycle {};
+	BYTE m_headWindow {};
+	DWORD m_spinning {};
+	DWORD m_writelight {};
+	FloppyDisk m_disk {};
 };
 
 class Disk2InterfaceCard
@@ -216,29 +216,29 @@ private:
 
 	//
 
-	WORD m_currDrive;
-	FloppyDrive m_floppyDrive[NUM_DRIVES];
-	BYTE m_floppyLatch;
-	BOOL m_floppyMotorOn;
+	WORD m_currDrive {};
+	FloppyDrive m_floppyDrive[NUM_DRIVES] {};
+	BYTE m_floppyLatch {};
+	BOOL m_floppyMotorOn {};
 
 	// Although the magnets are a property of the drive, their state is a property of the controller card,
 	// since the magnets will only be on for whichever of the 2 drives is currently selected.
-	WORD m_magnetStates;	// state bits for stepper motor magnet states (phases 0 - 3)
+	WORD m_magnetStates {};	// state bits for stepper motor magnet states (phases 0 - 3)
 
-	bool m_saveDiskImage;
-	UINT m_slot;
-	unsigned __int64 m_diskLastCycle;
-	unsigned __int64 m_diskLastReadLatchCycle;
-	FormatTrack m_formatTrack;
-	bool m_enhanceDisk;
+	bool m_saveDiskImage {};
+	UINT m_slot {};
+	unsigned __int64 m_diskLastCycle {};
+	unsigned __int64 m_diskLastReadLatchCycle {};
+	FormatTrack m_formatTrack {};
+	bool m_enhanceDisk {};
 
 	static const UINT SPINNING_CYCLES = 1000*1000;		// 1M cycles = ~1.000s
 	static const UINT WRITELIGHT_CYCLES = 1000*1000;	// 1M cycles = ~1.000s
 
 	// Logic State Sequencer (for WOZ):
-	BYTE m_shiftReg;
-	int m_latchDelay;
-	bool m_resetSequencer;
+	BYTE m_shiftReg {};
+	int m_latchDelay {};
+	bool m_resetSequencer {};
 
 	enum SEQFUNC {readSequencing=0, checkWriteProtAndInitWrite, dataShiftWrite, dataLoadWrite};	// UTAIIe 9-14
 	union SEQUENCER_FUNCTION
@@ -251,15 +251,15 @@ private:
 		SEQFUNC function;
 	};
 
-	SEQUENCER_FUNCTION m_seqFunc;
-	UINT m_dbgLatchDelayedCnt;
+	SEQUENCER_FUNCTION m_seqFunc {};
+	UINT m_dbgLatchDelayedCnt {};
 
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
-	bool m_bLogDisk_NibblesRW;	// From VS Debugger, change this to true/false during runtime for precise nibble logging
+	bool m_bLogDisk_NibblesRW {};	// From VS Debugger, change this to true/false during runtime for precise nibble logging
 #endif
 #if LOG_DISK_NIBBLES_WRITE
-	UINT64 m_uWriteLastCycle;
-	UINT m_uSyncFFCount;
+	UINT64 m_uWriteLastCycle {};
+	UINT m_uSyncFFCount {};
 #endif
 };

@@ -69,23 +69,23 @@ private:
 	static const TCHAR m_szCPMSlotChoice_Unplugged[];
 	static const TCHAR m_szCPMSlotChoice_Unavailable[];
 
-	int m_nJoy0ChoiceTranlationTbl[J0C_MAX];
-	TCHAR m_joystick0choices[J0C_MAX * MaxMenuChoiceLen];
-	int m_nJoy1ChoiceTranlationTbl[J1C_MAX];
-	TCHAR m_joystick1choices[J1C_MAX * MaxMenuChoiceLen];
+	int m_nJoy0ChoiceTranlationTbl[J0C_MAX] {};
+	TCHAR m_joystick0choices[J0C_MAX * MaxMenuChoiceLen] {};
+	int m_nJoy1ChoiceTranlationTbl[J1C_MAX] {};
+	TCHAR m_joystick1choices[J1C_MAX * MaxMenuChoiceLen] {};
 
-	const PAGETYPE m_Page;
+	const PAGETYPE m_Page {};
 	CPropertySheetHelper& m_PropertySheetHelper;
 
-	UINT m_uScrollLockToggle;
-	UINT m_uCursorControl;		// 1 = Allow AppleII to read cursor keys from $C000 (when using keyboard for joystick emu)
-	UINT m_uCenteringControl;	// 1 = Centering, 0=Floating (when using keyboard for joystick emu)
-	UINT m_bmAutofire;			// bitmask b2:0
-	UINT m_uMouseShowCrosshair;
-	UINT m_uMouseRestrictToWindow;
+	UINT m_uScrollLockToggle {};
+	UINT m_uCursorControl {};		// 1 = Allow AppleII to read cursor keys from $C000 (when using keyboard for joystick emu)
+	UINT m_uCenteringControl {};	// 1 = Centering, 0=Floating (when using keyboard for joystick emu)
+	UINT m_bmAutofire {};			// bitmask b2:0
+	UINT m_uMouseShowCrosshair {};
+	UINT m_uMouseRestrictToWindow {};
 
 	enum CPMCHOICE {CPM_SLOT4=0, CPM_SLOT5, CPM_UNPLUGGED, CPM_UNAVAILABLE, _CPM_MAX_CHOICES};
-	TCHAR m_szCPMSlotChoices[_CPM_MAX_CHOICES * MaxMenuChoiceLen];
-	CPMCHOICE m_CPMChoice; 
-	CPMCHOICE m_CPMComboItemToChoice[_CPM_MAX_CHOICES];
+	TCHAR m_szCPMSlotChoices[_CPM_MAX_CHOICES * MaxMenuChoiceLen] {};
+	CPMCHOICE m_CPMChoice {};
+	CPMCHOICE m_CPMComboItemToChoice[_CPM_MAX_CHOICES] {};
 };

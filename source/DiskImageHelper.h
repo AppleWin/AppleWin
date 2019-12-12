@@ -186,8 +186,8 @@ private:
 		BYTE	Padding[16];
 	};
 
-	Header2IMG m_Hdr;
-	bool m_bIsFloppy;
+	Header2IMG m_Hdr {};
+	bool m_bIsFloppy {};
 };
 
 class CWOZHelper : public CHdrHelper

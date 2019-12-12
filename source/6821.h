@@ -126,13 +126,13 @@ private:
 
 private:
 	// AppleWin:TC
-	STWriteHandler m_stOutA;
-	STWriteHandler m_stOutB;
-	BYTE	m_byIA;	// InputA from 285
-	BYTE	m_byIB;	// InputB from 285
+	STWriteHandler m_stOutA {};
+	STWriteHandler m_stOutB {};
+	BYTE	m_byIA {};	// InputA from 285
+	BYTE	m_byIB {};	// InputB from 285
 	// AppleWin:TC END
 
 	/* mc6821 structure.  */
 	#define DRIVE_NUM 1		// AppleWin:TC
-	mc6821_t mc6821[DRIVE_NUM];
+	mc6821_t mc6821[DRIVE_NUM] {};
 };

@@ -17,8 +17,8 @@ typedef std::map<std::string, MapValue> MapYaml;
 
 struct MapValue
 {
-	std::string value;
-	MapYaml* subMap;
+	std::string value {};
+	MapYaml* subMap {};
 };
 
 class YamlHelper
@@ -54,13 +54,13 @@ private:
 
 	void MakeAsciiToHexTable(void);
 
-	yaml_parser_t m_parser;
-	yaml_event_t m_newEvent;
+	yaml_parser_t m_parser {};
+	yaml_event_t m_newEvent {};
 
 	std::string m_scalarName;
 
 	FILE* m_hFile;
-	char m_AsciiToHex[256];
+	char m_AsciiToHex[256] {};
 
 	MapYaml m_mapYaml;
 };

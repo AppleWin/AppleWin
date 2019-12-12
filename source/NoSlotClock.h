@@ -44,8 +44,8 @@ class CNoSlotClock
 		bool CompareBit(int data);
 		bool NextBit();
 
-		UINT64 m_Mask;
-		UINT64 m_Register;
+		UINT64 m_Mask {};
+		UINT64 m_Register {};
 	};
 
 public:
@@ -57,10 +57,10 @@ public:
 	bool ClockRead(int& data);
 	void ClockWrite(int address);
 
-	bool m_bClockRegisterEnabled;
-	bool m_bWriteEnabled;
-	RingRegister64 m_ClockRegister;
-	RingRegister64 m_ComparisonRegister;
+	bool m_bClockRegisterEnabled {};
+	bool m_bWriteEnabled {};
+	RingRegister64 m_ClockRegister {};
+	RingRegister64 m_ComparisonRegister {};
 
 private:
 	void PopulateClockRegister();
