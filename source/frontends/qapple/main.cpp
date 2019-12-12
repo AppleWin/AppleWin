@@ -20,10 +20,10 @@ int main(int argc, char *argv[])
     parser.addHelpOption();
     parser.addVersionOption();
 
-    QCommandLineOption runOption("r", "start immeditaely");
+    const QCommandLineOption runOption("r", "start immeditaely");
     parser.addOption(runOption);
 
-    QCommandLineOption logStateOption("load-state", "load state file", "file");
+    const QCommandLineOption logStateOption("load-state", "load state file", "file");
     parser.addOption(logStateOption);
 
     parser.process(app);
