@@ -173,6 +173,7 @@ void Preferences::setSettings(QSettings & settings)
 
     ui->registryTree->addTopLevelItem(newItem);
     ui->registryTree->expandAll();
+    ui->registryTree->resizeColumnToContents(0);
 }
 
 void Preferences::setData(const PreferenceData & data)
