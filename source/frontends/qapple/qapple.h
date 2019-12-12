@@ -96,6 +96,7 @@ private:
         QApple * myQApple;
     };
 
+    void readSettings();
     void stopTimer();
     void restartTimeCounters();
     void reloadOptions();

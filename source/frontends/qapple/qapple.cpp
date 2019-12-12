@@ -217,6 +217,8 @@ QApple::QApple(QWidget *parent) :
 
     connect(AudioGenerator::instance().getAudioOutput(), SIGNAL(stateChanged(QAudio::State)), this, SLOT(on_stateChanged(QAudio::State)));
 
+    readSettings();
+
     myOptions = GlobalOptions::fromQSettings();
     reloadOptions();
 
@@ -230,11 +232,27 @@ QApple::~QApple()
     delete ui;
 }
 
-void QApple::closeEvent(QCloseEvent *)
+void QApple::closeEvent(QCloseEvent * event)
 {
     stopTimer();
     stopEmulator();
     uninitialiseEmulator();
+
+    QSettings settings;
+    settings.setValue("QApple/window/geometry", saveGeometry().toBase64());
+    settings.setValue("QApple/window/windowState", saveState().toBase64());
+    QMainWindow::closeEvent(event);
+}
+
+void QApple::readSettings()
+{
+    // this does not work completely in wayland
+    // position is not restored
+    QSettings settings;
+    const QByteArray geometry = QByteArray::fromBase64(settings.value("QApple/window/geometry").toByteArray());
+    const QByteArray state = QByteArray::fromBase64(settings.value("QApple/window/state").toByteArray());
+    restoreGeometry(geometry);
+    restoreState(state);
 }
 
 void QApple::startEmulator()
