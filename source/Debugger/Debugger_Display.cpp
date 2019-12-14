@@ -1341,6 +1341,11 @@ void DrawConsoleInput ()
 
 // Disassembly ____________________________________________________________________________________
 
+void GetTargets_IgnoreDirectJSRJMP(const BYTE iOpcode, int& nTargetPointer)
+{
+	if (iOpcode == OPCODE_JSR || iOpcode == OPCODE_JMP_A)
+		nTargetPointer = NO_6502_TARGET;
+}
 
 // Get the data needed to disassemble one line of opcodes. Fills in the DisasmLine info.
 // Disassembly formatting flags returned
@@ -1525,8 +1530,8 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 			int nTargetPartial2;
 			int nTargetPointer;
 			WORD nTargetValue = 0; // de-ref
-			int nTargetBytes;
-			_6502_GetTargets( nBaseAddress, &nTargetPartial, &nTargetPartial2, &nTargetPointer, &nTargetBytes );
+			_6502_GetTargets( nBaseAddress, &nTargetPartial, &nTargetPartial2, &nTargetPointer, NULL );
+			GetTargets_IgnoreDirectJSRJMP(iOpcode, nTargetPointer);	// For *direct* JSR/JMP, don't show 'addr16:byte char'
 
 			if (nTargetPointer != NO_6502_TARGET)
 			{
@@ -1535,13 +1540,12 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 				nTargetValue = *(mem + nTargetPointer) | (*(mem + ((nTargetPointer + 1) & 0xffff)) << 8);
 
 //				if (((iOpmode >= AM_A) && (iOpmode <= AM_NZ)) && (iOpmode != AM_R))
-				// nTargetBytes refers to size of pointer, not size of value
 //					sprintf( sTargetValue_, "%04X", nTargetValue ); // & 0xFFFF
 
 				if (g_iConfigDisasmTargets & DISASM_TARGET_ADDR)
 					sprintf( line_.sTargetPointer, "%04X", nTargetPointer & 0xFFFF );
 
-				if (iOpmode != AM_NA ) // Indirect Absolute
+				if (iOpcode != OPCODE_JMP_NA && iOpcode != OPCODE_JMP_IAX)
 				{
 					bDisasmFormatFlags |= DISASM_FORMAT_TARGET_VALUE;
 					if (g_iConfigDisasmTargets & DISASM_TARGET_VAL)
@@ -3214,6 +3218,7 @@ void DrawTargets ( int line)
 
 	int aTarget[3];
 	_6502_GetTargets( regs.pc, &aTarget[0],&aTarget[1],&aTarget[2], NULL );
+	GetTargets_IgnoreDirectJSRJMP(mem[regs.pc], aTarget[2]);
 
 	aTarget[1] = aTarget[2];	// Move down as we only have 2 lines
 
