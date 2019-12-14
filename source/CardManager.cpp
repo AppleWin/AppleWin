@@ -31,7 +31,109 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "AppleWin.h"
 #include "CardManager.h"
+
 #include "Disk.h"
+#include "MouseInterface.h"
+#include "SerialComms.h"
+
+void CardManager::Insert(UINT slot, SS_CARDTYPE type)
+{
+	delete m_slot[slot];
+	m_slot[slot] = NULL;
+
+	switch (type)
+	{
+	case CT_Disk2:
+		m_slot[slot] = new Disk2InterfaceCard;
+		break;
+	case CT_SSC:
+		m_slot[slot] = new CSuperSerialCard;
+		break;
+	case CT_MockingboardC:
+		m_slot[slot] = new DummyCard(type);
+		break;
+	case CT_GenericPrinter:
+		m_slot[slot] = new DummyCard(type);
+		break;
+	case CT_GenericHDD:
+		m_slot[slot] = new DummyCard(type);
+		break;
+	case CT_GenericClock:
+		m_slot[slot] = new DummyCard(type);
+		break;
+	case CT_MouseInterface:
+		m_slot[slot] = new CMouseInterface;
+		break;
+	case CT_Z80:
+		m_slot[slot] = new DummyCard(type);
+		break;
+	case CT_Phasor:
+		m_slot[slot] = new DummyCard(type);
+		break;
+	case CT_Echo:
+		m_slot[slot] = new DummyCard(type);
+		break;
+	case CT_SAM:
+		m_slot[slot] = new DummyCard(type);
+		break;
+	case CT_Uthernet:
+		m_slot[slot] = new DummyCard(type);
+		break;
+
+	case CT_LanguageCard:
+	case CT_LanguageCardIIe:
+	case CT_Saturn128K:
+		{
+			if (slot != 0)
+			{
+				_ASSERT(0);
+				break;
+			}
+		}
+		m_slot[slot] = new DummyCard(type);
+		break;
+
+	default:
+		_ASSERT(0);
+		break;
+	}
+
+	if (m_slot[slot] == NULL)
+		m_slot[slot] = new EmptyCard;
+}
+
+void CardManager::Remove(UINT slot)
+{
+	delete m_slot[slot];
+	m_slot[slot] = new EmptyCard;
+}
+
+void CardManager::InsertAux(SS_CARDTYPE type)
+{
+	switch (type)
+	{
+	case CT_80Col:
+		m_aux = new DummyCard(type);
+		break;
+	case CT_Extended80Col:
+		m_aux = new DummyCard(type);
+		break;
+	case CT_RamWorksIII:
+		m_aux = new DummyCard(type);
+		break;
+	default:
+		_ASSERT(0);
+		break;
+	}
+}
+
+void CardManager::RemoveAux(void)
+{
+	delete m_aux;
+	m_aux = new EmptyCard;
+}
+
+//
 
 bool CardManager::Disk2IsConditionForFullSpeed(void)
 {
@@ -57,7 +159,7 @@ void CardManager::Disk2UpdateDriveState(UINT cycles)
 		sg_Disk2Card.UpdateDriveState(cycles);
 }
 
-void CardManager::Disk2Reset(bool powerCycle /*=false*/)
+void CardManager::Disk2Reset(const bool powerCycle /*=false*/)
 {
 	if (g_Slot[5] == CT_Disk2)
 		sg_pDisk2CardSlot5->Reset(powerCycle);

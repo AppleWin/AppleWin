@@ -610,6 +610,18 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Card.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CardManager.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\CardManager.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Joystick.cpp"
 					>
 				</File>

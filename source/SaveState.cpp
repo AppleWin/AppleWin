@@ -403,7 +403,7 @@ static void Snapshot_LoadState_v2(void)
 		MemReset();							// Also calls CpuInitialize()
 		PravetsReset();
 		delete sg_pDisk2CardSlot5; sg_pDisk2CardSlot5 = NULL;
-		sg_Disk2Card.Reset();
+		sg_Disk2Card.Reset(false);
 		HD_Reset();
 		KeybReset();
 		VideoResetState();

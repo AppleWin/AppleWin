@@ -1376,7 +1376,7 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 //===========================================================================
 
-void Disk2InterfaceCard::Reset(const bool bIsPowerCycle/*=false*/)
+void Disk2InterfaceCard::Reset(const bool bIsPowerCycle)
 {
 	// RESET forces all switches off (UTAIIe Table 9.1)
 	ResetSwitches();

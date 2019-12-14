@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Card.h"
+
 extern class CSuperSerialCard sg_SSC;
 
 enum {COMMEVT_WAIT=0, COMMEVT_ACK, COMMEVT_TERM, COMMEVT_MAX};
@@ -22,11 +24,14 @@ typedef struct
 #define TEXT_SERIAL_COM TEXT("COM")
 #define TEXT_SERIAL_TCP TEXT("TCP")
 
-class CSuperSerialCard
+class CSuperSerialCard : public Card
 {
 public:
 	CSuperSerialCard();
 	virtual ~CSuperSerialCard();
+
+	virtual void Init(void) {};
+	virtual void Reset(const bool powerCycle) {};
 
 	void	CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void    CommReset();

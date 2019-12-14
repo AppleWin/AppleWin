@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Card.h"
+
 void	MB_Initialize();
 void	MB_Reinitialize();
 void	MB_Destroy();

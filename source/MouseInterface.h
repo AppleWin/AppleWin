@@ -1,13 +1,17 @@
 #include "6821.h"
 #include "Common.h"
+#include "Card.h"
 
 extern class CMouseInterface sg_Mouse;
 
-class CMouseInterface
+class CMouseInterface : public Card
 {
 public:
 	CMouseInterface();
 	virtual ~CMouseInterface();
+
+	virtual void Init(void) {};
+	virtual void Reset(const bool powerCycle) {};
 
 	void Initialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void Uninitialize();

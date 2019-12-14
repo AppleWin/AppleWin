@@ -120,7 +120,7 @@ SS_CARDTYPE g_Slot[NUM_SLOTS] = {
 	/*5*/ CT_Empty,
 	/*6*/ CT_Disk2,
 	/*7*/ CT_Empty };
-SS_CARDTYPE g_SlotAux = CT_Extended80Col;	// For Apple //e and above
+//SS_CARDTYPE g_SlotAux = CT_Extended80Col;	// For Apple //e and above
 
 CardManager g_CardMgr;
 
