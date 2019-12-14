@@ -104,10 +104,15 @@ void AudioGenerator::start()
         return;
     }
 
-    qDebug(appleAudio) << "Restarting the AudioGenerator";
-
     // restart as we are either starting or recovering from underrun
     myDevice = myAudioOutput->start();
+
+    if (!myDevice)
+    {
+        return;
+    }
+
+    qDebug(appleAudio) << "Restarting the AudioGenerator";
 
     const int bytesSize = myAudioOutput->bufferSize();
     const qint32 frameSize = myAudioFormat.framesForBytes(bytesSize);

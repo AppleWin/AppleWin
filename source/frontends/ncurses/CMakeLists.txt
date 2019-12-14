@@ -36,5 +36,11 @@ target_link_libraries(applen PRIVATE
   appleii
   )
 
+if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+  target_link_libraries(applen PRIVATE
+    stdc++fs
+    )
+endif()
+
 add_custom_target(copy-resources ALL
     COMMAND cmake -E copy_directory ${CMAKE_SOURCE_DIR}/resource ${CMAKE_BINARY_DIR}/resource)
