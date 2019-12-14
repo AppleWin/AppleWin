@@ -193,6 +193,9 @@
     <ClCompile Include="source\RGBMonitor.cpp">
       <Filter>Source Files\Video</Filter>
     </ClCompile>
+    <ClCompile Include="source\CardManager.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -470,6 +473,9 @@
     </ClInclude>
     <ClInclude Include="source\RGBMonitor.h">
       <Filter>Source Files\Video</Filter>
+    </ClInclude>
+    <ClInclude Include="source\CardManager.h">
+      <Filter>Source Files\Emulator</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

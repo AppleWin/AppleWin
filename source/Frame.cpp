@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <sys/stat.h>
 
 #include "Applewin.h"
+#include "CardManager.h"
 #include "CPU.h"
 #include "Disk.h"
 #include "DiskImage.h"
@@ -2234,8 +2235,7 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 // todo: consolidate CtrlReset() and ResetMachineState()
 void ResetMachineState ()
 {
-  if (sg_pDisk2CardSlot5) sg_pDisk2CardSlot5->Reset(true);
-  sg_Disk2Card.Reset(true);
+  g_CardMgr.Disk2Reset(true);
   HD_Reset();
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
@@ -2280,8 +2280,7 @@ void CtrlReset()
 	}
 
 	PravetsReset();
-	if (sg_pDisk2CardSlot5) sg_pDisk2CardSlot5->Reset(true);
-	sg_Disk2Card.Reset();
+	g_CardMgr.Disk2Reset();
 	HD_Reset();
 	KeybReset();
 	sg_SSC.CommReset();

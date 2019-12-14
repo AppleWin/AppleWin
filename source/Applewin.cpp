@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Applewin.h"
+#include "CardManager.h"
 #include "CPU.h"
 #include "Debug.h"
 #include "Disk.h"
@@ -110,7 +111,7 @@ CMouseInterface		sg_Mouse;
 Disk2InterfaceCard sg_Disk2Card;
 Disk2InterfaceCard* sg_pDisk2CardSlot5 = NULL;
 
-SS_CARDTYPE g_Slot[8] = {
+SS_CARDTYPE g_Slot[NUM_SLOTS] = {
 	/*0*/ CT_LanguageCard,	// Just for Apple II or II+ or similar clones
 	/*1*/ CT_GenericPrinter,
 	/*2*/ CT_SSC,
@@ -120,6 +121,8 @@ SS_CARDTYPE g_Slot[8] = {
 	/*6*/ CT_Disk2,
 	/*7*/ CT_Empty };
 SS_CARDTYPE g_SlotAux = CT_Extended80Col;	// For Apple //e and above
+
+CardManager g_CardMgr;
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
@@ -279,10 +282,9 @@ static void ContinueExecution(void)
 	}
 
 	const bool bWasFullSpeed = g_bFullSpeed;
-	const bool bDisk2CardSlot5_FullSpeed = sg_pDisk2CardSlot5 && sg_pDisk2CardSlot5->IsConditionForFullSpeed();
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 ((sg_Disk2Card.IsConditionForFullSpeed() || bDisk2CardSlot5_FullSpeed) && !Spkr_IsActive() && !MB_IsActive()) ||
+					 (g_CardMgr.Disk2IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -329,8 +331,7 @@ static void ContinueExecution(void)
 	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-	sg_Disk2Card.UpdateDriveState(uActualCyclesExecuted);
-	if (sg_pDisk2CardSlot5) sg_pDisk2CardSlot5->UpdateDriveState(uActualCyclesExecuted);
+	g_CardMgr.Disk2UpdateDriveState(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 	PrintUpdate(uActualCyclesExecuted);
 	MB_PeriodicUpdate(uActualCyclesExecuted);
@@ -1815,8 +1816,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call Disk2Card's Reset():
-		if (sg_pDisk2CardSlot5) sg_pDisk2CardSlot5->Reset(true);
-		sg_Disk2Card.Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
+		g_CardMgr.Disk2Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
 		HD_Reset();		// GH#515
 		LogFileOutput("Main: HDDReset()\n");

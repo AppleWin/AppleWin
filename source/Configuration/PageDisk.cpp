@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "../Applewin.h"
+#include "../CardManager.h"
 #include "../Disk.h"	// Drive_e, Disk_Status_e
 #include "../Frame.h"
 #include "../Registry.h"
@@ -189,8 +190,7 @@ void CPageDisk::DlgOK(HWND hWnd)
 	const bool bNewEnhanceDisk = SendDlgItemMessage(hWnd, IDC_DISKTYPE,CB_GETCURSEL, 0, 0) ? true : false;
 	if (bNewEnhanceDisk != sg_Disk2Card.GetEnhanceDisk())
 	{
-		if (sg_pDisk2CardSlot5) sg_pDisk2CardSlot5->SetEnhanceDisk(bNewEnhanceDisk);
-		sg_Disk2Card.SetEnhanceDisk(bNewEnhanceDisk);
+		g_CardMgr.Disk2SetEnhanceDisk(bNewEnhanceDisk);
 		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (DWORD)bNewEnhanceDisk);
 	}
 

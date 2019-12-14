@@ -54,6 +54,9 @@ extern int        g_nMemoryClearType;					// Cmd line switch: use specific MIP (
 extern SS_CARDTYPE g_Slot[NUM_SLOTS];
 extern SS_CARDTYPE g_SlotAux;
 
+class CardManager;
+extern CardManager g_CardMgr;
+
 extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom
 
 #ifdef USE_SPEECH_API
