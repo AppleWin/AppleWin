@@ -583,24 +583,20 @@ bool _6502_GetStackReturnAddress ( WORD & nAddress_ )
 
 
 //===========================================================================
-bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int * pTargetBytes_,
-						bool bIgnoreBranch /*= true*/, bool bIncludeNextOpcodeAddress /*= true*/ )
+bool _6502_GetTargets ( WORD nAddress,
+					    int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int *pTargetAfterControlFlow,
+						int * pTargetBytes_ /*=NULL*/, bool bIgnoreBranch /*= true*/, bool bIncludeNextOpcodeAddress /*= true*/ )
 {
-	if (! pTargetPartial_)
+	_ASSERT(pTargetPartial_ && pTargetPartial2_ && pTargetPointer_ && pTargetAfterControlFlow);
+	if (!pTargetPartial_ || !pTargetPartial2_ || !pTargetPointer_ || !pTargetAfterControlFlow)
 		return false;
 
-	if (! pTargetPartial2_)
-		return false;
-
-	if (! pTargetPointer_)
-		return false;
-
-//	if (! pTargetBytes_)
-//		return false;
+	// NB. pTargetBytes_ can be NULL
 
 	*pTargetPartial_  = NO_6502_TARGET;
 	*pTargetPartial2_ = NO_6502_TARGET;
 	*pTargetPointer_  = NO_6502_TARGET;
+	*pTargetAfterControlFlow = NO_6502_TARGET;
 
 	if (pTargetBytes_)
 		*pTargetBytes_  = 0;	
@@ -625,25 +621,25 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 
 					if (nOpcode == OPCODE_RTI)
 					{
-						//*pTargetPartial3_ = _6502_STACK_BEGIN + ((sp+1) & 0xFF);	// TODO: PLP
+						*pTargetPointer_ = _6502_STACK_BEGIN + ((sp+1) & 0xFF);
 						++sp;
 					}
 
 					*pTargetPartial_  = _6502_STACK_BEGIN + ((sp+1) & 0xFF);
 					*pTargetPartial2_ = _6502_STACK_BEGIN + ((sp+2) & 0xFF);
-					nTarget16 = mem[*pTargetPartial_] + (mem[*pTargetPartial2_]<<8);
+					*pTargetAfterControlFlow = mem[*pTargetPartial_] + (mem[*pTargetPartial2_]<<8);
 
 					if (nOpcode == OPCODE_RTS)
-						++nTarget16;
+						++(*pTargetAfterControlFlow);
 				}
 				else if (nOpcode == OPCODE_BRK)	// BRK?
 				{
 					*pTargetPartial_  = _6502_STACK_BEGIN + ((regs.sp+0) & 0xFF);
 					*pTargetPartial2_ = _6502_STACK_BEGIN + ((regs.sp-1) & 0xFF);
-					//*pTargetPartial3_ = _6502_STACK_BEGIN + ((regs.sp-2) & 0xFF);	// TODO: PHP
-					//*pTargetPartial4_ = _6502_BRK_VECTOR + 0;	// TODO
+					//*pTargetPartial3_ = _6502_STACK_BEGIN + ((regs.sp-2) & 0xFF);
+					*pTargetPointer_ = _6502_BRK_VECTOR + 0;
 					//*pTargetPartial5_ = _6502_BRK_VECTOR + 1;	// TODO
-					nTarget16 = *(LPWORD)(mem + _6502_BRK_VECTOR);
+					*pTargetAfterControlFlow = *(LPWORD)(mem + _6502_BRK_VECTOR);
 				}
 				else	// PHn/PLn
 				{
@@ -651,10 +647,11 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 						nTarget16 = _6502_STACK_BEGIN + ((regs.sp+0) & 0xFF);
 					else
 						nTarget16 = _6502_STACK_BEGIN + ((regs.sp+1) & 0xFF);
+					*pTargetPointer_ = nTarget16;
 				}
 
-				if (bIncludeNextOpcodeAddress || (nOpcode != OPCODE_RTI && nOpcode != OPCODE_RTS && nOpcode != OPCODE_BRK))
-					*pTargetPointer_ = nTarget16;
+//				if (bIncludeNextOpcodeAddress || (nOpcode != OPCODE_RTI && nOpcode != OPCODE_RTS && nOpcode != OPCODE_BRK))
+//					*pTargetPointer_ = nTarget16;
 
 				if (pTargetBytes_)
 					*pTargetBytes_ = 1;
@@ -668,8 +665,13 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 				*pTargetPartial2_ = _6502_STACK_BEGIN + ((regs.sp-1) & 0xFF);
 			}
 
-			if (bIncludeNextOpcodeAddress || (nOpcode != OPCODE_JSR && nOpcode != OPCODE_JMP_A))
+			if (nOpcode == OPCODE_JSR && nOpcode == OPCODE_JMP_A)
+				*pTargetAfterControlFlow = nTarget16;
+			else
 				*pTargetPointer_ = nTarget16;
+
+//			if (bIncludeNextOpcodeAddress || (nOpcode != OPCODE_JSR && nOpcode != OPCODE_JMP_A))
+//				*pTargetPointer_ = nTarget16;
 
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
@@ -677,24 +679,25 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 
 		case AM_IAX: // Indexed (Absolute) Indirect - ie. JMP (abs,x)
 			_ASSERT(nOpcode == OPCODE_JMP_IAX);
-			nTarget16 += regs.x;
+			nTarget16 = (nTarget16 + regs.x) & _6502_MEM_END;
 			*pTargetPartial_    = nTarget16;
 			*pTargetPartial2_   = nTarget16+1;
-			if (bIncludeNextOpcodeAddress)
-				*pTargetPointer_ = *(LPWORD)(mem + nTarget16);
+			*pTargetAfterControlFlow = *(LPWORD)(mem + nTarget16);
+//			if (bIncludeNextOpcodeAddress)
+//				*pTargetPointer_ = *(LPWORD)(mem + nTarget16);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
 
 		case AM_AX: // Absolute, X
-			nTarget16 += regs.x;
+			nTarget16 = (nTarget16 + regs.x) & _6502_MEM_END;
 			*pTargetPointer_   = nTarget16;
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
 
 		case AM_AY: // Absolute, Y
-			nTarget16 += regs.y;
+			nTarget16 = (nTarget16 + regs.y) & _6502_MEM_END;
 			*pTargetPointer_   = nTarget16;
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
@@ -703,9 +706,10 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 		case AM_NA: // Indirect (Absolute) - ie. JMP (abs)
 			_ASSERT(nOpcode == OPCODE_JMP_NA);
 			*pTargetPartial_    = nTarget16;
-			*pTargetPartial2_   = nTarget16+1;
-			if (bIncludeNextOpcodeAddress)
-				*pTargetPointer_ = *(LPWORD)(mem + nTarget16);
+			*pTargetPartial2_   = (nTarget16+1) & _6502_MEM_END;
+			*pTargetAfterControlFlow = *(LPWORD)(mem + nTarget16);
+//			if (bIncludeNextOpcodeAddress)
+//				*pTargetPointer_ = *(LPWORD)(mem + nTarget16);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
@@ -736,7 +740,7 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 			if (!bIgnoreBranch)
 			{
 				*pTargetPartial_  = nTarget8;
-				*pTargetPointer_ = nAddress + 2;
+				*pTargetPointer_ = (nAddress + 2) & _6502_MEM_END;
 
 				if (nTarget8 <= _6502_BRANCH_POS)
 					*pTargetPointer_ += nTarget8; // +
@@ -769,6 +773,7 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 			break;
 
 		default:
+			_ASSERT(0);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 0;
 			break;
@@ -779,6 +784,8 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 
 
 //===========================================================================
+
+// TODO-TC: What is this func for? Specifically how does it use _6502_GetTargets()?
 bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 {
 	int iOpcode;
@@ -787,7 +794,6 @@ bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 	iOpcode = _6502_GetOpmodeOpbyte( nAddress, iOpmode, nOpbytes );
 
 	// Composite string that has the target nAddress
-//	WORD nTarget = 0;
 	int nTargetOffset_ = 0;
 
 	if ((iOpmode != AM_IMPLIED) &&
@@ -796,20 +802,12 @@ bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 		(iOpmode != AM_3))
 	{
 		int nTargetPartial;
+		int nTargetPartial2;
 		int nTargetPointer;
-		WORD nTargetValue = 0; // de-ref
-		int nTargetBytes;
-		_6502_GetTargets( nAddress, &nTargetPartial, &nTargetPointer, &nTargetBytes, false );
+		int nTargetAfterControlFlow;
+		_6502_GetTargets( nAddress, &nTargetPartial, &nTargetPartial2, &nTargetPointer, &nTargetAfterControlFlow, /*pTargetBytes_=*/NULL, /*bIgnoreBranch=*/false );
 
-//		if (nTargetPointer == NO_6502_TARGET)
-//		{
-//			if (_6502_IsOpcodeBranch( nOpcode )
-//			{
-//				return true;
-//			}
-//		}
 		if (nTargetPointer != NO_6502_TARGET)
-//		else
 		{
 			nTarget_ = nTargetPointer & _6502_MEM_END;
 			return true;

@@ -1113,10 +1113,11 @@ bool _CheckBreakpointValue( Breakpoint_t *pBP, int nVal )
 //===========================================================================
 int CheckBreakpointsIO ()
 {
-	const int NUM_TARGETS = 3;
+	const int NUM_TARGETS = 4;
 
 	int aTarget[ NUM_TARGETS ] =
 	{
+		NO_6502_TARGET,
 		NO_6502_TARGET,
 		NO_6502_TARGET,
 		NO_6502_TARGET
@@ -1130,7 +1131,7 @@ int CheckBreakpointsIO ()
 	// bIncludeNextOpcodeAddress == false:
 	// . JSR addr16: ignore addr16 as a target
 	// . BRK/RTS/RTI: ignore return (or vector) addr16 as a target
-	_6502_GetTargets( regs.pc, &aTarget[0], &aTarget[1], &aTarget[2], &nBytes, true, false );
+	_6502_GetTargets( regs.pc, &aTarget[0], &aTarget[1], &aTarget[2], &aTarget[3], &nBytes, true, false );
 
 	if (nBytes)
 	{

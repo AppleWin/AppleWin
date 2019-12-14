@@ -100,10 +100,10 @@
 		, AM_ZY   // 10 Zeropage, Y
 		, AM_R    // 11 Relative
 		, AM_IZX  // 12 Indexed (Zeropage Indirect, X)
-		, AM_IAX  // 13 Indexed (Absolute Indirect, X)
+		, AM_IAX  // 13 Indexed (Absolute Indirect, X) - ie. JMP (abs,x)
 		, AM_NZY  // 14 Indirect (Zeropage) Indexed, Y
 		, AM_NZ   // 15 Indirect (Zeropage)
-		, AM_NA   // 16 Indirect (Absolute) i.e. JMP
+		, AM_NA   // 16 Indirect (Absolute) - ie. JMP (abs)
 		, AM_DATA // Not an opcode! Markup as data
 		, NUM_ADDRESSING_MODES
 		, NUM_OPMODES = NUM_ADDRESSING_MODES
