@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "../Applewin.h"	// g_nAppMode, g_uScrollLockToggle, sg_PropertySheet
+#include "../CardManager.h"
 #include "../Disk.h"
 #include "../Frame.h"
 #include "../Log.h"
@@ -124,7 +125,7 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 	if (slot >= NUM_SLOTS)
 		return;
 
-	g_Slot[slot] = newCardType;
+	g_CardMgr.Insert(slot, newCardType);
 
 	std::string slotText;
 	switch (slot)
@@ -139,7 +140,7 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 	case 7: slotText = REGVALUE_SLOT7; break;
 	}
 
-	REGSAVE(slotText.c_str(), (DWORD)g_Slot[slot]);
+	REGSAVE(slotText.c_str(), (DWORD)newCardType);
 }
 
 // Looks like a (bad) C&P from SaveStateSelectImage()
@@ -445,8 +446,8 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	m_ConfigOld.m_Apple2Type = GetApple2Type();
 	m_ConfigOld.m_CpuType = GetMainCpu();
-	m_ConfigOld.m_Slot[4] = g_Slot[4];
-	m_ConfigOld.m_Slot[5] = g_Slot[5];
+	m_ConfigOld.m_Slot[4] = g_CardMgr.QuerySlot(4);
+	m_ConfigOld.m_Slot[5] = g_CardMgr.QuerySlot(5);
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = sg_PropertySheet.GetTheFreezesF8Rom();
 	m_ConfigOld.m_videoRefreshRate = GetVideoRefreshRate();
@@ -464,8 +465,8 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	SetApple2Type(m_ConfigOld.m_Apple2Type);
 	SetMainCpu(m_ConfigOld.m_CpuType);
-	g_Slot[4] = m_ConfigOld.m_Slot[4];
-	g_Slot[5] = m_ConfigOld.m_Slot[5];
+	g_CardMgr.Insert(4, m_ConfigOld.m_Slot[4]);
+	g_CardMgr.Insert(5, m_ConfigOld.m_Slot[5]);
 	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
 	sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
 	SetVideoRefreshRate(m_ConfigOld.m_videoRefreshRate);

@@ -65,6 +65,7 @@ SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 //===========================================================================
 
 CSuperSerialCard::CSuperSerialCard() :
+	Card(CT_SSC),
 	m_aySerialPortChoices(NULL),
 	m_uTCPChoiceItemIdx(0),
 	m_uSlot(0),

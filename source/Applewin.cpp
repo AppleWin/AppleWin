@@ -105,24 +105,11 @@ bool		g_bDisableDirectSound = false;
 bool		g_bDisableDirectSoundMockingboard = false;
 int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.cpp MemReset()
 
+CardManager g_CardMgr;
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
 Disk2InterfaceCard sg_Disk2Card;
-Disk2InterfaceCard* sg_pDisk2CardSlot5 = NULL;
-
-SS_CARDTYPE g_Slot[NUM_SLOTS] = {
-	/*0*/ CT_LanguageCard,	// Just for Apple II or II+ or similar clones
-	/*1*/ CT_GenericPrinter,
-	/*2*/ CT_SSC,
-	/*3*/ CT_Uthernet,
-	/*4*/ CT_Empty,
-	/*5*/ CT_Empty,
-	/*6*/ CT_Disk2,
-	/*7*/ CT_Empty };
-//SS_CARDTYPE g_SlotAux = CT_Extended80Col;	// For Apple //e and above
-
-CardManager g_CardMgr;
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
@@ -724,9 +711,9 @@ void LoadConfiguration(void)
 		sg_PropertySheet.SetMouseRestrictToWindow(dwTmp);
 
 	if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
-		g_Slot[4] = (SS_CARDTYPE) dwTmp;
+		g_CardMgr.Insert(4, (SS_CARDTYPE)dwTmp);
 	if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
-		g_Slot[5] = (SS_CARDTYPE) dwTmp;
+		g_CardMgr.Insert(5, (SS_CARDTYPE)dwTmp);
 
 	//
 
@@ -1113,8 +1100,7 @@ static std::string GetFullPath(LPCSTR szFileName)
 
 static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 {
-	Disk2InterfaceCard* pDisk2Card = slot == 5 ? sg_pDisk2CardSlot5 : &sg_Disk2Card;
-	if (!pDisk2Card) return false;
+	Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*> (g_CardMgr.GetObj(slot));
 
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
@@ -1231,19 +1217,6 @@ static bool CheckOldAppleWinVersion(void)
 	}
 
 	return bShowAboutDlg;
-}
-
-static bool InsertCard(UINT slot, SS_CARDTYPE type)
-{
-	if (slot == 5 && type == CT_Disk2)
-	{
-		delete sg_pDisk2CardSlot5;
-		sg_pDisk2CardSlot5 = new Disk2InterfaceCard;
-		g_Slot[slot] = type;
-		return true;
-	}
-
-	return false;
 }
 
 //---------------------------------------------------------------------------
@@ -1756,22 +1729,23 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 		// Allow the 4 hardcoded slots to be configurated as empty
 		if (bSlotEmpty[1])
-			g_Slot[1] = CT_Empty;
+			g_CardMgr.Remove(1);
 		if (bSlotEmpty[2])
-			g_Slot[2] = CT_Empty;
+			g_CardMgr.Remove(2);
 		if (bSlotEmpty[3])
-			g_Slot[3] = CT_Empty;
+			g_CardMgr.Remove(3);
 		if (bSlotEmpty[6])
-			g_Slot[6] = CT_Empty;
+			g_CardMgr.Remove(6);
 
 		if (slotInsert[5] != CT_Empty)
 		{
-			InsertCard(5, slotInsert[5]);
-			if (g_Slot[4] == CT_MockingboardC)		// Currently MB occupies slot4+5 when enabled
+			if (g_CardMgr.QuerySlot(4) == CT_MockingboardC && slotInsert[5] != CT_MockingboardC)	// Currently MB occupies slot4+5 when enabled
 			{
-				g_Slot[4] = CT_Empty;
-				g_Slot[5] = CT_Empty;
+				g_CardMgr.Remove(4);
+				g_CardMgr.Remove(5);
 			}
+
+			g_CardMgr.Insert(5, slotInsert[5]);
 		}
 
 		// Pre: may need g_hFrameWindow for MessageBox errors
@@ -1960,8 +1934,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 	if (bSlot7EmptyOnExit)
 		UnplugHardDiskControllerCard();
-
-	delete sg_pDisk2CardSlot5;
 
 	return 0;
 }

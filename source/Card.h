@@ -26,17 +26,13 @@ enum SS_CARDTYPE
 class Card
 {
 public:
-	Card(void) :
-	  m_type(CT_Empty)
-	{}
+	Card(void) : m_type(CT_Empty) {}
+	Card(SS_CARDTYPE type) : m_type(type) {}
 	virtual ~Card(void) {}
 
 	virtual void Init(void) = 0;
 	virtual void Reset(const bool powerCycle) = 0;
 	SS_CARDTYPE QueryType(void) { return m_type; }
-
-protected:
-	void DummyCardSetType(SS_CARDTYPE type) { m_type = type; }
 
 private:
 	SS_CARDTYPE m_type;
@@ -59,7 +55,7 @@ public:
 class DummyCard : public Card	// For cards that currently can't be instantiated (ie. don't exist as a class)
 {
 public:
-	DummyCard(SS_CARDTYPE type) { DummyCardSetType(type); }
+	DummyCard(SS_CARDTYPE type) : Card(type) {}
 	virtual ~DummyCard(void) {}
 
 	virtual void Init(void) {};

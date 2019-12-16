@@ -130,6 +130,7 @@ void M6821_Listener_A( void* objTo, BYTE byData )
 //===========================================================================
 
 CMouseInterface::CMouseInterface() :
+	Card(CT_MouseInterface),
 	m_pSlotRom(NULL)
 {
 	m_6821.SetListenerB( this, M6821_Listener_B );

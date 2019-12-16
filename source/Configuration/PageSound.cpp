@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../SaveState_Structs_common.h"
 #include "../Common.h"
 
+#include "../CardManager.h"
 #include "../Mockingboard.h"
 #include "../Registry.h"
 #include "../Speaker.h"
@@ -116,7 +117,7 @@ BOOL CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM 
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETTICFREQ,10,0);
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPOS,1,MB_GetVolume());
 
-			if (g_Slot[5] == CT_SAM)
+			if (g_CardMgr.QuerySlot(5) == CT_SAM)
 				m_NewCardType = CT_SAM;
 			else
 				m_NewCardType = MB_GetSoundcardType();	// Reinit 1st time page is activated (fires before PSN_SETACTIVE)

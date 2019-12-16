@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Applewin.h"
+#include "CardManager.h"
 #include "CPU.h"
 #include "DiskImage.h"	// ImageError_e, Disk_Status_e
 #include "DiskImageHelper.h"
@@ -276,7 +277,11 @@ void HD_SetEnabled(const bool bEnabled)
 		return;
 
 	g_bHD_Enabled = bEnabled;
-	g_Slot[7] = bEnabled ? CT_GenericHDD : CT_Empty;
+
+	if (bEnabled)
+		g_CardMgr.Insert(7, CT_GenericHDD);
+	else
+		g_CardMgr.Remove(7);
 
 #if 0
 	// FIXME: For LoadConfiguration(), g_uSlot=7 (see definition at start of file)

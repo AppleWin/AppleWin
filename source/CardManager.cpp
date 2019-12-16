@@ -38,6 +38,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 {
+	if (type == CT_Empty)
+		return Remove(slot);
+
 	delete m_slot[slot];
 	m_slot[slot] = NULL;
 
@@ -139,12 +142,10 @@ bool CardManager::Disk2IsConditionForFullSpeed(void)
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
-		if (g_Slot[i] == CT_Disk2)
+		if (m_slot[i]->QueryType() == CT_Disk2)
 		{
-			if (i == 5 && sg_pDisk2CardSlot5->IsConditionForFullSpeed())
-				return true;
-			if (i == 6 && sg_Disk2Card.IsConditionForFullSpeed())
-				return true;
+			dynamic_cast<Disk2InterfaceCard*>(GetObj(i))->IsConditionForFullSpeed();
+			return true;	// if any card is true then the condition for full-speed is true
 		}
 	}
 
@@ -153,24 +154,33 @@ bool CardManager::Disk2IsConditionForFullSpeed(void)
 
 void CardManager::Disk2UpdateDriveState(UINT cycles)
 {
-	if (g_Slot[5] == CT_Disk2)
-		sg_pDisk2CardSlot5->UpdateDriveState(cycles);
-	if (g_Slot[6] == CT_Disk2)
-		sg_Disk2Card.UpdateDriveState(cycles);
+	for (UINT i = 0; i < NUM_SLOTS; i++)
+	{
+		if (m_slot[i]->QueryType() == CT_Disk2)
+		{
+			dynamic_cast<Disk2InterfaceCard*>(GetObj(i))->UpdateDriveState(cycles);
+		}
+	}
 }
 
 void CardManager::Disk2Reset(const bool powerCycle /*=false*/)
 {
-	if (g_Slot[5] == CT_Disk2)
-		sg_pDisk2CardSlot5->Reset(powerCycle);
-	if (g_Slot[6] == CT_Disk2)
-		sg_Disk2Card.Reset(powerCycle);
+	for (UINT i = 0; i < NUM_SLOTS; i++)
+	{
+		if (m_slot[i]->QueryType() == CT_Disk2)
+		{
+			dynamic_cast<Disk2InterfaceCard*>(GetObj(i))->Reset(powerCycle);
+		}
+	}
 }
 
 void CardManager::Disk2SetEnhanceDisk(bool enhanceDisk)
 {
-	if (g_Slot[5] == CT_Disk2)
-		sg_pDisk2CardSlot5->SetEnhanceDisk(enhanceDisk);
-	if (g_Slot[6] == CT_Disk2)
-		sg_Disk2Card.SetEnhanceDisk(enhanceDisk);
+	for (UINT i = 0; i < NUM_SLOTS; i++)
+	{
+		if (m_slot[i]->QueryType() == CT_Disk2)
+		{
+			dynamic_cast<Disk2InterfaceCard*>(GetObj(i))->SetEnhanceDisk(enhanceDisk);
+		}
+	}
 }

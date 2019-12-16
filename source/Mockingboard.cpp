@@ -80,6 +80,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SaveState_Structs_v1.h"
 
 #include "Applewin.h"
+#include "CardManager.h"
 #include "CPU.h"
 #include "Log.h"
 #include "Memory.h"
@@ -1709,21 +1710,21 @@ void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 	// Phasor      : Slot 4
 	// <other>     : Slot 4 & 5
 
-	if (g_Slot[4] != CT_MockingboardC && g_Slot[4] != CT_Phasor)
+	if (g_CardMgr.QuerySlot(4) != CT_MockingboardC && g_CardMgr.QuerySlot(4) != CT_Phasor)
 	{
 		MB_SetSoundcardType(CT_Empty);
 		return;
 	}
 
-	if (g_Slot[4] == CT_MockingboardC)
+	if (g_CardMgr.QuerySlot(4) == CT_MockingboardC)
 		RegisterIoHandler(uSlot4, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
 	else	// Phasor
 		RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
 
-	if (g_Slot[5] == CT_MockingboardC)
+	if (g_CardMgr.QuerySlot(5) == CT_MockingboardC)
 		RegisterIoHandler(uSlot5, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
 
-	MB_SetSoundcardType(g_Slot[4]);
+	MB_SetSoundcardType(g_CardMgr.QuerySlot(4));
 
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;

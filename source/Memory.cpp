@@ -303,9 +303,9 @@ void CreateLanguageCard(void)
 
 	if (IsApple2PlusOrClone(GetApple2Type()))
 	{
-		if (g_Slot[0] == CT_Saturn128K)
+		if (g_CardMgr.QuerySlot(0) == CT_Saturn128K)
 			g_pLanguageCard = new Saturn128K(g_uSaturnBanksFromCmdLine);
-		else if (g_Slot[0] == CT_LanguageCard)
+		else if (g_CardMgr.QuerySlot(0) == CT_LanguageCard)
 			g_pLanguageCard = new LanguageCardSlot0;
 		else
 			g_pLanguageCard = NULL;
@@ -1659,7 +1659,7 @@ void MemInitializeIO(void)
 		PrintLoadRom(pCxRomPeripheral, 1);				// $C100 : Parallel printer f/w
 
 	if (g_CardMgr.QuerySlot(2) == CT_SSC)
-		sg_SSC.CommInitialize(pCxRomPeripheral, 2);		// $C200 : SSC
+		dynamic_cast<CSuperSerialCard*>(g_CardMgr.GetObj(2))->CommInitialize(pCxRomPeripheral, 2);	// $C200 : SSC
 
 	if (g_CardMgr.QuerySlot(3) == CT_Uthernet)
 	{
@@ -1672,7 +1672,7 @@ void MemInitializeIO(void)
 
 	if (g_CardMgr.QuerySlot(4) == CT_MouseInterface)
 	{
-		sg_Mouse.Initialize(pCxRomPeripheral, 4);	// $C400 : Mouse f/w
+		dynamic_cast<CMouseInterface*>(g_CardMgr.GetObj(4))->Initialize(pCxRomPeripheral, 4);	// $C400 : Mouse f/w
 	}
 	else if (g_CardMgr.QuerySlot(4) == CT_MockingboardC || g_CardMgr.QuerySlot(4) == CT_Phasor)
 	{
@@ -1699,12 +1699,11 @@ void MemInitializeIO(void)
 	}
 	else if (g_CardMgr.QuerySlot(5) == CT_Disk2)
 	{
-		_ASSERT(sg_pDisk2CardSlot5);
-		sg_pDisk2CardSlot5->Initialize(pCxRomPeripheral, 5);	// $C500 : Disk][ card
+		dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(5))->Initialize(pCxRomPeripheral, 5);	// $C500 : Disk][ card
 	}
 
 	if (g_CardMgr.QuerySlot(6) == CT_Disk2)
-		sg_Disk2Card.Initialize(pCxRomPeripheral, 6);	// $C600 : Disk][ card
+		dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(6))->Initialize(pCxRomPeripheral, 6);	// $C600 : Disk][ card
 
 	if (g_CardMgr.QuerySlot(7) == CT_GenericHDD)
 		HD_Load_Rom(pCxRomPeripheral, 7);			// $C700 : HDD f/w

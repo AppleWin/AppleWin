@@ -699,18 +699,22 @@ void SetFullScreenShowSubunitStatus(bool bShow)
 //===========================================================================
 void FrameDrawDiskLEDS( HDC passdc )
 {
-	{
-		Disk_Status_e eDrive1Status;
-		Disk_Status_e eDrive2Status;
-		sg_Disk2Card.GetLightStatus(&eDrive1Status, &eDrive2Status);
+	g_eStatusDrive1 = DISK_STATUS_OFF;
+	g_eStatusDrive2 = DISK_STATUS_OFF;
 
+	// Slot6 drive takes priority unless it's off:
+	if (g_CardMgr.QuerySlot(6) == CT_Disk2)
+		dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(6))->GetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
+
+	// Slot5:
+	{
 		Disk_Status_e eDrive1StatusSlot5 = DISK_STATUS_OFF;
 		Disk_Status_e eDrive2StatusSlot5 = DISK_STATUS_OFF;
-		if (sg_pDisk2CardSlot5) sg_pDisk2CardSlot5->GetLightStatus(&eDrive1StatusSlot5, &eDrive2StatusSlot5);
+		if (g_CardMgr.QuerySlot(5) == CT_Disk2)
+			dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(5))->GetLightStatus(&eDrive1StatusSlot5, &eDrive2StatusSlot5);
 
-		// Slot6 drive takes priority unless it's off:
-		g_eStatusDrive1 = eDrive1Status != DISK_STATUS_OFF ? eDrive1Status : eDrive1StatusSlot5;
-		g_eStatusDrive2 = eDrive2Status != DISK_STATUS_OFF ? eDrive2Status : eDrive2StatusSlot5;
+		if (g_eStatusDrive1 == DISK_STATUS_OFF) g_eStatusDrive1 = eDrive1StatusSlot5;
+		if (g_eStatusDrive2 == DISK_STATUS_OFF) g_eStatusDrive2 = eDrive2StatusSlot5;
 	}
 
 	// Draw Track/Sector
@@ -1692,15 +1696,24 @@ LRESULT CALLBACK FrameWndProc (
 			LPNMTTDISPINFO pInfo = (LPNMTTDISPINFO)lparam;
 			SendMessage(pInfo->hdr.hwndFrom, TTM_SETMAXTIPWIDTH, 0, 150);
 
-			std::string slot6 = sg_Disk2Card.GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom);
-			std::string slot5 = sg_pDisk2CardSlot5 ? sg_pDisk2CardSlot5->GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom) : "";
-			if (sg_pDisk2CardSlot5)
+			Disk2InterfaceCard *pDisk2Slot5 = NULL, *pDisk2Slot6 = NULL;
+
+			if (g_CardMgr.QuerySlot(5) == CT_Disk2)
+				pDisk2Slot5 = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(5));
+			if (g_CardMgr.QuerySlot(6) == CT_Disk2)
+				pDisk2Slot6 = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(6));
+
+			std::string slot5 = pDisk2Slot5 ? pDisk2Slot5->GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom) : "";
+			std::string slot6 = pDisk2Slot6 ? pDisk2Slot6->GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom) : "";
+
+			if (pDisk2Slot5)
 			{
 				if (slot6.empty()) slot6 = "<empty>";
 				if (slot5.empty()) slot5 = "<empty>";
 				slot6 = std::string("Slot6: ") + slot6;
 				slot5 = std::string("Slot5: ") + slot5;
 			}
+
 			std::string join = (!slot6.empty() && !slot5.empty()) ? "\r\n" : "";
 			driveTooltip = slot6 + join + slot5;
 			((LPNMTTDISPINFO)lparam)->lpszText = (LPTSTR)driveTooltip.c_str();
