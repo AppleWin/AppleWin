@@ -6,8 +6,9 @@
 class CardManager
 {
 public:
-	CardManager(void)
-		: m_pMouseCard(NULL)
+	CardManager(void) :
+		m_pMouseCard(NULL),
+		m_pSSC(NULL)
 	{
 		Insert(0, CT_Empty);
 		Insert(1, CT_GenericPrinter);

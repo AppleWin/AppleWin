@@ -196,6 +196,9 @@
     <ClCompile Include="source\CardManager.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\Disk2CardManager.cpp">
+      <Filter>Source Files\Disk</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -475,6 +478,12 @@
       <Filter>Source Files\Video</Filter>
     </ClInclude>
     <ClInclude Include="source\CardManager.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Disk2CardManager.h">
+      <Filter>Source Files\Disk</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Card.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
   </ItemGroup>
