@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DebugDefs.h"
 
 #include "../Applewin.h"
+#include "../CardManager.h"
 #include "../CPU.h"
 #include "../Disk.h"
 #include "../Frame.h"
@@ -3752,6 +3753,11 @@ Update_t CmdDisk ( int nArgs)
 	if (! nArgs)
 		goto _Help;
 
+	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+		return ConsoleDisplayError("No DiskII card in slot-6");
+
+	Disk2InterfaceCard* pDiskCard = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+
 	// check for info command
 	int iParam = 0;
 	FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
@@ -3763,13 +3769,13 @@ Update_t CmdDisk ( int nArgs)
 
 		char buffer[200] = "";
 		ConsoleBufferPushFormat(buffer, "D%d at T$%s, phase $%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
-			sg_Disk2Card.GetCurrentDrive() + 1,
-			sg_Disk2Card.GetCurrentTrackString().c_str(),
-			sg_Disk2Card.GetCurrentPhaseString().c_str(),
-			sg_Disk2Card.GetCurrentOffset(),
-			sg_Disk2Card.GetCurrentLSSBitMask(),
-			sg_Disk2Card.GetCurrentExtraCycles(),
-			sg_Disk2Card.GetCurrentState()
+			pDiskCard->GetCurrentDrive() + 1,
+			pDiskCard->GetCurrentTrackString().c_str(),
+			pDiskCard->GetCurrentPhaseString().c_str(),
+			pDiskCard->GetCurrentOffset(),
+			pDiskCard->GetCurrentLSSBitMask(),
+			pDiskCard->GetCurrentExtraCycles(),
+			pDiskCard->GetCurrentState()
 		);
 
 		return ConsoleUpdate();
@@ -3797,7 +3803,7 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs > 2)
 			goto _Help;
 
-		sg_Disk2Card.EjectDisk( iDrive );
+		pDiskCard->EjectDisk( iDrive );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
@@ -3811,7 +3817,7 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs == 3)
 			bProtect = g_aArgs[ 3 ].nValue ? true : false;
 
-		sg_Disk2Card.SetProtect( iDrive, bProtect );
+		pDiskCard->SetProtect( iDrive, bProtect );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
@@ -3822,7 +3828,7 @@ Update_t CmdDisk ( int nArgs)
 		LPCTSTR pDiskName = g_aArgs[ 3 ].sArg;
 
 		// DISK # "Diskname"
-		sg_Disk2Card.InsertDisk( iDrive, pDiskName, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE );
+		pDiskCard->InsertDisk( iDrive, pDiskName, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 

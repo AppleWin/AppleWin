@@ -117,7 +117,7 @@ BOOL CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM 
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETTICFREQ,10,0);
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPOS,1,MB_GetVolume());
 
-			if (g_CardMgr.QuerySlot(5) == CT_SAM)
+			if (g_CardMgr.QuerySlot(SLOT5) == CT_SAM)
 				m_NewCardType = CT_SAM;
 			else
 				m_NewCardType = MB_GetSoundcardType();	// Reinit 1st time page is activated (fires before PSN_SETACTIVE)

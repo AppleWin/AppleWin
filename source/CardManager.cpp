@@ -144,8 +144,8 @@ bool CardManager::Disk2IsConditionForFullSpeed(void)
 	{
 		if (m_slot[i]->QueryType() == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard*>(GetObj(i))->IsConditionForFullSpeed();
-			return true;	// if any card is true then the condition for full-speed is true
+			if (dynamic_cast<Disk2InterfaceCard*>(GetObj(i))->IsConditionForFullSpeed())
+				return true;	// if any card is true then the condition for full-speed is true
 		}
 	}
 
@@ -174,6 +174,19 @@ void CardManager::Disk2Reset(const bool powerCycle /*=false*/)
 	}
 }
 
+bool CardManager::Disk2GetEnhanceDisk(void)
+{
+	for (UINT i = 0; i < NUM_SLOTS; i++)
+	{
+		if (m_slot[i]->QueryType() == CT_Disk2)
+		{
+			// All Disk2 cards should have the same setting, so just return the state of the first card
+			return dynamic_cast<Disk2InterfaceCard*>(GetObj(i))->GetEnhanceDisk();
+		}
+	}
+	return false;
+}
+
 void CardManager::Disk2SetEnhanceDisk(bool enhanceDisk)
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
@@ -181,6 +194,31 @@ void CardManager::Disk2SetEnhanceDisk(bool enhanceDisk)
 		if (m_slot[i]->QueryType() == CT_Disk2)
 		{
 			dynamic_cast<Disk2InterfaceCard*>(GetObj(i))->SetEnhanceDisk(enhanceDisk);
+		}
+	}
+}
+
+void CardManager::Disk2LoadLastDiskImage(void)
+{
+	for (UINT i = 0; i < NUM_SLOTS; i++)
+	{
+		if (i != SLOT6) continue;	// FIXME
+
+		if (m_slot[i]->QueryType() == CT_Disk2)
+		{
+			dynamic_cast<Disk2InterfaceCard*>(GetObj(i))->LoadLastDiskImage(DRIVE_1);
+			dynamic_cast<Disk2InterfaceCard*>(GetObj(i))->LoadLastDiskImage(DRIVE_2);
+		}
+	}
+}
+
+void CardManager::Disk2Destroy(void)
+{
+	for (UINT i = 0; i < NUM_SLOTS; i++)
+	{
+		if (m_slot[i]->QueryType() == CT_Disk2)
+		{
+			dynamic_cast<Disk2InterfaceCard*>(GetObj(i))->Destroy();
 		}
 	}
 }

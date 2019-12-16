@@ -289,7 +289,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			bRes = Phasor_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_Phasor;
 		}
-		else if (card == sg_Disk2Card.GetSnapshotCardName())
+		else if (card == Disk2InterfaceCard::GetSnapshotCardName())
 		{
 			type = CT_Disk2;
 			g_CardMgr.Insert(slot, type);
@@ -395,8 +395,8 @@ static void Snapshot_LoadState_v2(void)
 
 		MemReset();							// Also calls CpuInitialize()
 		PravetsReset();
-		g_CardMgr.Remove(5);				// Remove Disk2 card from slot-5
-		sg_Disk2Card.Reset(false);
+		g_CardMgr.Remove(SLOT5);			// Remove Disk2 card from slot-5
+		g_CardMgr.Disk2Reset(false);
 		HD_Reset();
 		KeybReset();
 		VideoResetState();
@@ -501,43 +501,43 @@ void Snapshot_SaveState(void)
 			yamlSaveHelper.UnitHdr(GetSnapshotUnitSlotsName(), UNIT_SLOTS_VER);
 			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-			if (g_CardMgr.QuerySlot(0) != CT_Empty && IsApple2PlusOrClone(GetApple2Type()))
+			if (g_CardMgr.QuerySlot(SLOT0) != CT_Empty && IsApple2PlusOrClone(GetApple2Type()))
 				GetLanguageCard()->SaveSnapshot(yamlSaveHelper);	// Language Card or Saturn 128K
 
-			if (g_CardMgr.QuerySlot(1) == CT_GenericPrinter)
+			if (g_CardMgr.QuerySlot(SLOT1) == CT_GenericPrinter)
 				Printer_SaveSnapshot(yamlSaveHelper);
 
-			if (g_CardMgr.QuerySlot(2) == CT_SSC)
+			if (g_CardMgr.QuerySlot(SLOT2) == CT_SSC)
 				sg_SSC.SaveSnapshot(yamlSaveHelper);
 
-//			if (g_CardMgr.QuerySlot(3) == CT_Uthernet)
+//			if (g_CardMgr.QuerySlot(SLOT3) == CT_Uthernet)
 //				sg_Uthernet.SaveSnapshot(yamlSaveHelper);
 
-			if (g_CardMgr.QuerySlot(4) == CT_MouseInterface)
+			if (g_CardMgr.QuerySlot(SLOT4) == CT_MouseInterface)
 				sg_Mouse.SaveSnapshot(yamlSaveHelper);
 
-			if (g_CardMgr.QuerySlot(4) == CT_Z80)
-				Z80_SaveSnapshot(yamlSaveHelper, 4);
+			if (g_CardMgr.QuerySlot(SLOT4) == CT_Z80)
+				Z80_SaveSnapshot(yamlSaveHelper, SLOT4);
 
-			if (g_CardMgr.QuerySlot(5) == CT_Z80)
-				Z80_SaveSnapshot(yamlSaveHelper, 5);
+			if (g_CardMgr.QuerySlot(SLOT5) == CT_Z80)
+				Z80_SaveSnapshot(yamlSaveHelper, SLOT5);
 
-			if (g_CardMgr.QuerySlot(4) == CT_MockingboardC)
-				MB_SaveSnapshot(yamlSaveHelper, 4);
+			if (g_CardMgr.QuerySlot(SLOT4) == CT_MockingboardC)
+				MB_SaveSnapshot(yamlSaveHelper, SLOT4);
 
-			if (g_CardMgr.QuerySlot(5) == CT_MockingboardC)
-				MB_SaveSnapshot(yamlSaveHelper, 5);
+			if (g_CardMgr.QuerySlot(SLOT5) == CT_MockingboardC)
+				MB_SaveSnapshot(yamlSaveHelper, SLOT5);
 
-			if (g_CardMgr.QuerySlot(4) == CT_Phasor)
-				Phasor_SaveSnapshot(yamlSaveHelper, 4);
+			if (g_CardMgr.QuerySlot(SLOT4) == CT_Phasor)
+				Phasor_SaveSnapshot(yamlSaveHelper, SLOT4);
 
-			if (g_CardMgr.QuerySlot(5) == CT_Disk2)
-				dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(5))->SaveSnapshot(yamlSaveHelper);
+			if (g_CardMgr.QuerySlot(SLOT5) == CT_Disk2)
+				dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT5))->SaveSnapshot(yamlSaveHelper);
 
-			if (g_CardMgr.QuerySlot(6) == CT_Disk2)
-				dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(6))->SaveSnapshot(yamlSaveHelper);
+			if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+				dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->SaveSnapshot(yamlSaveHelper);
 
-			if (g_CardMgr.QuerySlot(7) == CT_GenericHDD)
+			if (g_CardMgr.QuerySlot(SLOT7) == CT_GenericHDD)
 				HD_SaveSnapshot(yamlSaveHelper);
 		}
 	}

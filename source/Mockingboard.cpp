@@ -1710,21 +1710,21 @@ void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 	// Phasor      : Slot 4
 	// <other>     : Slot 4 & 5
 
-	if (g_CardMgr.QuerySlot(4) != CT_MockingboardC && g_CardMgr.QuerySlot(4) != CT_Phasor)
+	if (g_CardMgr.QuerySlot(SLOT4) != CT_MockingboardC && g_CardMgr.QuerySlot(SLOT4) != CT_Phasor)
 	{
 		MB_SetSoundcardType(CT_Empty);
 		return;
 	}
 
-	if (g_CardMgr.QuerySlot(4) == CT_MockingboardC)
+	if (g_CardMgr.QuerySlot(SLOT4) == CT_MockingboardC)
 		RegisterIoHandler(uSlot4, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
 	else	// Phasor
 		RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
 
-	if (g_CardMgr.QuerySlot(5) == CT_MockingboardC)
+	if (g_CardMgr.QuerySlot(SLOT5) == CT_MockingboardC)
 		RegisterIoHandler(uSlot5, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
 
-	MB_SetSoundcardType(g_CardMgr.QuerySlot(4));
+	MB_SetSoundcardType(g_CardMgr.QuerySlot(SLOT4));
 
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;

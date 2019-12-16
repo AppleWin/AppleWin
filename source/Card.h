@@ -23,6 +23,8 @@ enum SS_CARDTYPE
 	CT_Saturn128K,		// Saturn 128K (but may be populated with less RAM, in multiples of 16K)
 };
 
+enum SLOTS { SLOT0=0, SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6, SLOT7 };
+
 class Card
 {
 public:

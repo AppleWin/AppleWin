@@ -511,7 +511,11 @@ static void DrawButton (HDC passdc, int number) {
     SetTextColor(dc,RGB(0,0,0));
     SetTextAlign(dc,TA_CENTER | TA_TOP);
     SetBkMode(dc,TRANSPARENT);
-	LPCTSTR pszBaseName = sg_Disk2Card.GetBaseName(number-BTN_DRIVE1).c_str();
+
+	LPCTSTR pszBaseName = (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+		? dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->GetBaseName(number-BTN_DRIVE1).c_str()
+		: "";
+
     ExtTextOut(dc,x+offset+22,rect.top,ETO_CLIPPED,&rect,
                pszBaseName,
                MIN(8,_tcslen(pszBaseName)),
@@ -703,15 +707,15 @@ void FrameDrawDiskLEDS( HDC passdc )
 	g_eStatusDrive2 = DISK_STATUS_OFF;
 
 	// Slot6 drive takes priority unless it's off:
-	if (g_CardMgr.QuerySlot(6) == CT_Disk2)
-		dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(6))->GetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
+	if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+		dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->GetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
 
 	// Slot5:
 	{
 		Disk_Status_e eDrive1StatusSlot5 = DISK_STATUS_OFF;
 		Disk_Status_e eDrive2StatusSlot5 = DISK_STATUS_OFF;
-		if (g_CardMgr.QuerySlot(5) == CT_Disk2)
-			dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(5))->GetLightStatus(&eDrive1StatusSlot5, &eDrive2StatusSlot5);
+		if (g_CardMgr.QuerySlot(SLOT5) == CT_Disk2)
+			dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT5))->GetLightStatus(&eDrive1StatusSlot5, &eDrive2StatusSlot5);
 
 		if (g_eStatusDrive1 == DISK_STATUS_OFF) g_eStatusDrive1 = eDrive1StatusSlot5;
 		if (g_eStatusDrive2 == DISK_STATUS_OFF) g_eStatusDrive2 = eDrive2StatusSlot5;
@@ -765,10 +769,14 @@ void FrameDrawDiskStatus( HDC passdc )
 	// Track  $B7EC    LC1 $D356
 	// Sector $B7ED    LC1 $D357
 	// RWTS            LC1 $D300
-	int nActiveFloppy = sg_Disk2Card.GetCurrentDrive();
 
-	int nDisk1Track  = sg_Disk2Card.GetTrack(DRIVE_1);
-	int nDisk2Track  = sg_Disk2Card.GetTrack(DRIVE_2);
+	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+		return;
+
+	Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+	int nActiveFloppy = pDisk2Card->GetCurrentDrive();
+	int nDisk1Track  = pDisk2Card->GetTrack(DRIVE_1);
+	int nDisk2Track  = pDisk2Card->GetTrack(DRIVE_2);
 
 	// Probe known OS's for Track/Sector
 	int  isProDOS = mem[ 0xBF00 ] == 0x4C;
@@ -1113,7 +1121,7 @@ LRESULT CALLBACK FrameWndProc (
 		Snapshot_Shutdown();
       DebugDestroy();
       if (!g_bRestart) {
-        sg_Disk2Card.Destroy();
+		g_CardMgr.Disk2Destroy();
         ImageDestroy();
         HD_Destroy();
       }
@@ -1167,61 +1175,70 @@ LRESULT CALLBACK FrameWndProc (
       break;
     }
 
-    case WM_DDE_EXECUTE: {
-      LogFileOutput("WM_DDE_EXECUTE\n");
-      LPTSTR filename = (LPTSTR)GlobalLock((HGLOBAL)lparam);
-//MessageBox( g_hFrameWindow, filename, "DDE Exec", MB_OK );
-      ImageError_e Error = sg_Disk2Card.InsertDisk(DRIVE_1, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
-      if (Error == eIMAGE_ERROR_NONE)
-	  {
-        if (!g_bIsFullScreen)
-          DrawButton((HDC)0,BTN_DRIVE1);
+    case WM_DDE_EXECUTE:
+	{
+		LogFileOutput("WM_DDE_EXECUTE\n");
+		if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+		{
+			Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+			LPTSTR filename = (LPTSTR)GlobalLock((HGLOBAL)lparam);
+			ImageError_e Error = pDisk2Card->InsertDisk(DRIVE_1, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+			if (Error == eIMAGE_ERROR_NONE)
+			{
+				if (!g_bIsFullScreen)
+					DrawButton((HDC)0,BTN_DRIVE1);
 
-		PostMessage(window, WM_USER_BOOT, 0, 0);
-      }
-      else
-      {
-        sg_Disk2Card.NotifyInvalidImage(DRIVE_1, filename, Error);
-      }
-      GlobalUnlock((HGLOBAL)lparam);
-      LogFileOutput("WM_DDE_EXECUTE (done)\n");
-      break;
-    }
+				PostMessage(window, WM_USER_BOOT, 0, 0);
+			}
+			else
+			{
+				pDisk2Card->NotifyInvalidImage(DRIVE_1, filename, Error);
+			}
+		}
+		GlobalUnlock((HGLOBAL)lparam);
+		LogFileOutput("WM_DDE_EXECUTE (done)\n");
+		break;
+	}
 
     case WM_DISPLAYCHANGE:
       VideoReinitialize();
       break;
 
-    case WM_DROPFILES: {
-      TCHAR filename[MAX_PATH];
-      DragQueryFile((HDROP)wparam,0,filename,sizeof(filename));
-      POINT point;
-      DragQueryPoint((HDROP)wparam,&point);
-      RECT rect;
-      rect.left   = buttonx;
-      rect.right  = rect.left+BUTTONCX+1;
-      rect.top    = buttony+BTN_DRIVE2*BUTTONCY+1;
-      rect.bottom = rect.top+BUTTONCY;
-	  const int iDrive = PtInRect(&rect,point) ? DRIVE_2 : DRIVE_1;
-      ImageError_e Error = sg_Disk2Card.InsertDisk(iDrive, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
-      if (Error == eIMAGE_ERROR_NONE)
-	  {
-        if (!g_bIsFullScreen)
-          DrawButton((HDC)0,PtInRect(&rect,point) ? BTN_DRIVE2 : BTN_DRIVE1);
-        rect.top = buttony+BTN_DRIVE1*BUTTONCY+1;
-        if (!PtInRect(&rect,point))
+    case WM_DROPFILES:
+	{
+		if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
 		{
-          SetForegroundWindow(window);
-          ProcessButtonClick(BTN_RUN);
-        }
-      }
-      else
-	  {
-        sg_Disk2Card.NotifyInvalidImage(iDrive, filename, Error);
-	  }
-      DragFinish((HDROP)wparam);
-      break;
-    }
+			Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+			TCHAR filename[MAX_PATH];
+			DragQueryFile((HDROP)wparam,0,filename,sizeof(filename));
+			POINT point;
+			DragQueryPoint((HDROP)wparam,&point);
+			RECT rect;
+			rect.left   = buttonx;
+			rect.right  = rect.left+BUTTONCX+1;
+			rect.top    = buttony+BTN_DRIVE2*BUTTONCY+1;
+			rect.bottom = rect.top+BUTTONCY;
+			const int iDrive = PtInRect(&rect,point) ? DRIVE_2 : DRIVE_1;
+			ImageError_e Error = pDisk2Card->InsertDisk(iDrive, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+			if (Error == eIMAGE_ERROR_NONE)
+			{
+				if (!g_bIsFullScreen)
+					DrawButton((HDC)0,PtInRect(&rect,point) ? BTN_DRIVE2 : BTN_DRIVE1);
+				rect.top = buttony+BTN_DRIVE1*BUTTONCY+1;
+				if (!PtInRect(&rect,point))
+				{
+					SetForegroundWindow(window);
+					ProcessButtonClick(BTN_RUN);
+				}
+			}
+			else
+			{
+				pDisk2Card->NotifyInvalidImage(iDrive, filename, Error);
+			}
+		}
+		DragFinish((HDROP)wparam);
+		break;
+	}
 
 	// @see: http://answers.google.com/answers/threadview?id=133059
 	// Win32 doesn't pass the PrintScreen key via WM_CHAR
@@ -1698,10 +1715,10 @@ LRESULT CALLBACK FrameWndProc (
 
 			Disk2InterfaceCard *pDisk2Slot5 = NULL, *pDisk2Slot6 = NULL;
 
-			if (g_CardMgr.QuerySlot(5) == CT_Disk2)
-				pDisk2Slot5 = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(5));
-			if (g_CardMgr.QuerySlot(6) == CT_Disk2)
-				pDisk2Slot6 = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(6));
+			if (g_CardMgr.QuerySlot(SLOT5) == CT_Disk2)
+				pDisk2Slot5 = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT5));
+			if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+				pDisk2Slot6 = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
 
 			std::string slot5 = pDisk2Slot5 ? pDisk2Slot5->GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom) : "";
 			std::string slot6 = pDisk2Slot6 ? pDisk2Slot6->GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom) : "";
@@ -2027,7 +2044,9 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
 		if (g_nAppMode == MODE_LOGO)
 		{
-			sg_Disk2Card.Boot();
+			if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+				dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->Boot();
+
 			LogFileTimeUntilFirstKeyReadReset();
 			g_nAppMode = MODE_RUNNING;
 		}
@@ -2050,14 +2069,20 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_DRIVE1:
     case BTN_DRIVE2:
-      sg_Disk2Card.UserSelectNewDiskImage(button-BTN_DRIVE1);
-      if (!g_bIsFullScreen)
-        DrawButton((HDC)0,button);
-      break;
+		if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+		{
+			dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->UserSelectNewDiskImage(button-BTN_DRIVE1);
+			if (!g_bIsFullScreen)
+				DrawButton((HDC)0,button);
+		}
+		break;
 
     case BTN_DRIVESWAP:
-      sg_Disk2Card.DriveSwap();
-      break;
+		if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+		{
+			dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->DriveSwap();
+		}
+		break;
 
     case BTN_FULLSCR:
 		KeybUpdateCtrlShiftStatus();
@@ -2111,6 +2136,11 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
 void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 {
+	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+		return;
+
+	Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+
 	// This is the default installation path of CiderPress. 
 	// It shall not be left blank, otherwise  an explorer window will be open.
 	TCHAR PathToCiderPress[MAX_PATH];
@@ -2124,7 +2154,7 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
 
 	std::string filename1= "\"";
-	filename1.append( sg_Disk2Card.GetFullName(iDrive) );
+	filename1.append( pDisk2Card->GetFullName(iDrive) );
 	filename1.append("\"");
 	std::string sFileNameEmpty = "\"";
 	sFileNameEmpty.append("\"");
@@ -2146,16 +2176,16 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	// Check menu depending on current floppy protection
 	{
 		int iMenuItem = ID_DISKMENU_WRITEPROTECTION_OFF;
-		if (sg_Disk2Card.GetProtect( iDrive ))
+		if (pDisk2Card->GetProtect( iDrive ))
 			iMenuItem = ID_DISKMENU_WRITEPROTECTION_ON;
 
 		CheckMenuItem(hmenu, iMenuItem, MF_CHECKED);
 	}
 
-	if (sg_Disk2Card.IsDriveEmpty(iDrive))
+	if (pDisk2Card->IsDriveEmpty(iDrive))
 		EnableMenuItem(hmenu, ID_DISKMENU_EJECT, MF_GRAYED);
 
-	if (sg_Disk2Card.IsDiskImageWriteProtected(iDrive))
+	if (pDisk2Card->IsDiskImageWriteProtected(iDrive))
 	{
 		// If image-file is read-only (or a gzip) then disable these menu items
 		EnableMenuItem(hmenu, ID_DISKMENU_WRITEPROTECTION_ON, MF_GRAYED);
@@ -2171,13 +2201,13 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		, hwnd, NULL );
 
 	if (iCommand == ID_DISKMENU_EJECT)
-		sg_Disk2Card.EjectDisk( iDrive );
+		pDisk2Card->EjectDisk( iDrive );
 	else
 	if (iCommand == ID_DISKMENU_WRITEPROTECTION_ON)
-		sg_Disk2Card.SetProtect( iDrive, true );
+		pDisk2Card->SetProtect( iDrive, true );
 	else
 	if (iCommand == ID_DISKMENU_WRITEPROTECTION_OFF)
-		sg_Disk2Card.SetProtect( iDrive, false );
+		pDisk2Card->SetProtect( iDrive, false );
 	else
 	if (iCommand == ID_DISKMENU_SENDTO_CIDERPRESS)
 	{
@@ -2186,7 +2216,7 @@ void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 													"Please install CiderPress.\n"
 													"Otherwise set the path to CiderPress from Configuration->Disk.";
 
-		sg_Disk2Card.FlushCurrentTrack(iDrive);
+		pDisk2Card->FlushCurrentTrack(iDrive);
 
 		//if(!filename1.compare("\"\"") == false) //Do not use this, for some reason it does not work!!!
 		if(!filename1.compare(sFileNameEmpty) )
@@ -2254,7 +2284,8 @@ void ResetMachineState ()
 
   MemReset();	// calls CpuInitialize()
   PravetsReset();
-  sg_Disk2Card.Boot();
+  if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+	  dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->Boot();
   VideoResetState();
   KeybReset();
   sg_SSC.CommReset();

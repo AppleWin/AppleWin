@@ -109,7 +109,6 @@ CardManager g_CardMgr;
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 CSuperSerialCard	sg_SSC;
 CMouseInterface		sg_Mouse;
-Disk2InterfaceCard sg_Disk2Card;
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
@@ -652,7 +651,7 @@ void LoadConfiguration(void)
 
 	DWORD dwEnhanceDisk;
 	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
-	sg_Disk2Card.SetEnhanceDisk(dwEnhanceDisk ? true : false);
+	g_CardMgr.Disk2SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	//
 
@@ -735,8 +734,7 @@ void LoadConfiguration(void)
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
-	sg_Disk2Card.LoadLastDiskImage(DRIVE_1);
-	sg_Disk2Card.LoadLastDiskImage(DRIVE_2);
+	g_CardMgr.Disk2LoadLastDiskImage();
 
 	//
 
@@ -1728,24 +1726,24 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
 
 		// Allow the 4 hardcoded slots to be configurated as empty
-		if (bSlotEmpty[1])
-			g_CardMgr.Remove(1);
-		if (bSlotEmpty[2])
-			g_CardMgr.Remove(2);
-		if (bSlotEmpty[3])
-			g_CardMgr.Remove(3);
-		if (bSlotEmpty[6])
-			g_CardMgr.Remove(6);
+		if (bSlotEmpty[SLOT1])
+			g_CardMgr.Remove(SLOT1);
+		if (bSlotEmpty[SLOT2])
+			g_CardMgr.Remove(SLOT2);
+		if (bSlotEmpty[SLOT3])
+			g_CardMgr.Remove(SLOT3);
+		if (bSlotEmpty[SLOT6])
+			g_CardMgr.Remove(SLOT6);
 
 		if (slotInsert[5] != CT_Empty)
 		{
-			if (g_CardMgr.QuerySlot(4) == CT_MockingboardC && slotInsert[5] != CT_MockingboardC)	// Currently MB occupies slot4+5 when enabled
+			if (g_CardMgr.QuerySlot(SLOT4) == CT_MockingboardC && slotInsert[SLOT5] != CT_MockingboardC)	// Currently MB occupies slot4+5 when enabled
 			{
-				g_CardMgr.Remove(4);
-				g_CardMgr.Remove(5);
+				g_CardMgr.Remove(SLOT4);
+				g_CardMgr.Remove(SLOT5);
 			}
 
-			g_CardMgr.Insert(5, slotInsert[5]);
+			g_CardMgr.Insert(SLOT5, slotInsert[SLOT5]);
 		}
 
 		// Pre: may need g_hFrameWindow for MessageBox errors

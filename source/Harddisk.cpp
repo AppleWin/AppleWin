@@ -279,9 +279,9 @@ void HD_SetEnabled(const bool bEnabled)
 	g_bHD_Enabled = bEnabled;
 
 	if (bEnabled)
-		g_CardMgr.Insert(7, CT_GenericHDD);
+		g_CardMgr.Insert(SLOT7, CT_GenericHDD);
 	else
-		g_CardMgr.Remove(7);
+		g_CardMgr.Remove(SLOT7);
 
 #if 0
 	// FIXME: For LoadConfiguration(), g_uSlot=7 (see definition at start of file)

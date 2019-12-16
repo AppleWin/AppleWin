@@ -39,7 +39,10 @@ public:
 	bool Disk2IsConditionForFullSpeed(void);
 	void Disk2UpdateDriveState(UINT cycles);
 	void Disk2Reset(const bool powerCycle = false);
+	bool Disk2GetEnhanceDisk(void);
 	void Disk2SetEnhanceDisk(bool enhanceDisk);
+	void Disk2LoadLastDiskImage(void);
+	void Disk2Destroy(void);
 
 private:
 	Card* m_slot[NUM_SLOTS];

@@ -210,7 +210,10 @@ void CPropertySheetHelper::SaveStateUpdate()
 
 void CPropertySheetHelper::GetDiskBaseNameWithAWS(std::string & pszFilename)
 {
-	const std::string & pDiskName = sg_Disk2Card.GetBaseName(DRIVE_1);
+	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+		return;
+
+	const std::string & pDiskName = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->GetBaseName(DRIVE_1);
 	if (!pDiskName.empty())
 	{
 		pszFilename = pDiskName + ".aws.yaml";
@@ -446,8 +449,8 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	m_ConfigOld.m_Apple2Type = GetApple2Type();
 	m_ConfigOld.m_CpuType = GetMainCpu();
-	m_ConfigOld.m_Slot[4] = g_CardMgr.QuerySlot(4);
-	m_ConfigOld.m_Slot[5] = g_CardMgr.QuerySlot(5);
+	m_ConfigOld.m_Slot[SLOT4] = g_CardMgr.QuerySlot(SLOT4);
+	m_ConfigOld.m_Slot[SLOT5] = g_CardMgr.QuerySlot(SLOT5);
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = sg_PropertySheet.GetTheFreezesF8Rom();
 	m_ConfigOld.m_videoRefreshRate = GetVideoRefreshRate();
@@ -465,8 +468,8 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	SetApple2Type(m_ConfigOld.m_Apple2Type);
 	SetMainCpu(m_ConfigOld.m_CpuType);
-	g_CardMgr.Insert(4, m_ConfigOld.m_Slot[4]);
-	g_CardMgr.Insert(5, m_ConfigOld.m_Slot[5]);
+	g_CardMgr.Insert(SLOT4, m_ConfigOld.m_Slot[SLOT4]);
+	g_CardMgr.Insert(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
 	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
 	sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
 	SetVideoRefreshRate(m_ConfigOld.m_videoRefreshRate);

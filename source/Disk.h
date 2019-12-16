@@ -28,8 +28,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskFormatTrack.h"
 #include "DiskImage.h"
 
-extern class Disk2InterfaceCard sg_Disk2Card;
-
 enum Drive_e
 {
 	DRIVE_1 = 0,
@@ -160,7 +158,7 @@ public:
 	void UpdateDriveState(DWORD cycles);
 	bool DriveSwap(void);
 
-	std::string GetSnapshotCardName(void);
+	static std::string GetSnapshotCardName(void);
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
