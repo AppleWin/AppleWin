@@ -270,7 +270,7 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (g_CardMgr.Disk2IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
+					 (g_CardMgr.GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -317,7 +317,7 @@ static void ContinueExecution(void)
 	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-	g_CardMgr.Disk2UpdateDriveState(uActualCyclesExecuted);
+	g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 	PrintUpdate(uActualCyclesExecuted);
 	MB_PeriodicUpdate(uActualCyclesExecuted);
@@ -651,7 +651,7 @@ void LoadConfiguration(void)
 
 	DWORD dwEnhanceDisk;
 	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
-	g_CardMgr.Disk2SetEnhanceDisk(dwEnhanceDisk ? true : false);
+	g_CardMgr.GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	//
 
@@ -734,7 +734,7 @@ void LoadConfiguration(void)
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
-	g_CardMgr.Disk2LoadLastDiskImage();
+	g_CardMgr.GetDisk2CardMgr().LoadLastDiskImage();
 
 	//
 
@@ -1788,7 +1788,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call Disk2Card's Reset():
-		g_CardMgr.Disk2Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
+		g_CardMgr.GetDisk2CardMgr().Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
 		HD_Reset();		// GH#515
 		LogFileOutput("Main: HDDReset()\n");

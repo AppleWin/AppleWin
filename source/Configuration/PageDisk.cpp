@@ -131,7 +131,7 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 
 	case WM_INITDIALOG:
 		{
-			m_PropertySheetHelper.FillComboBox(hWnd, IDC_DISKTYPE, m_discchoices, g_CardMgr.Disk2GetEnhanceDisk() ? 1 : 0);
+			m_PropertySheetHelper.FillComboBox(hWnd, IDC_DISKTYPE, m_discchoices, g_CardMgr.GetDisk2CardMgr().GetEnhanceDisk() ? 1 : 0);
 
 			if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
 				InitComboFloppyDrive(hWnd, SLOT6);
@@ -197,9 +197,9 @@ void CPageDisk::InitComboHDD(HWND hWnd, UINT /*slot*/)
 void CPageDisk::DlgOK(HWND hWnd)
 {
 	const bool bNewEnhanceDisk = SendDlgItemMessage(hWnd, IDC_DISKTYPE,CB_GETCURSEL, 0, 0) ? true : false;
-	if (bNewEnhanceDisk != g_CardMgr.Disk2GetEnhanceDisk())
+	if (bNewEnhanceDisk != g_CardMgr.GetDisk2CardMgr().GetEnhanceDisk())
 	{
-		g_CardMgr.Disk2SetEnhanceDisk(bNewEnhanceDisk);
+		g_CardMgr.GetDisk2CardMgr().SetEnhanceDisk(bNewEnhanceDisk);
 		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (DWORD)bNewEnhanceDisk);
 	}
 

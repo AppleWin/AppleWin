@@ -850,6 +850,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Disk2CardManager.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Disk2CardManager.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\DiskDefs.h"
 					>
 				</File>

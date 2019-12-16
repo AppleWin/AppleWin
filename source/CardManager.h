@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Card.h"
+#include "Disk2CardManager.h"
 
 class CardManager
 {
@@ -36,15 +37,10 @@ public:
 
 	//
 
-	bool Disk2IsConditionForFullSpeed(void);
-	void Disk2UpdateDriveState(UINT cycles);
-	void Disk2Reset(const bool powerCycle = false);
-	bool Disk2GetEnhanceDisk(void);
-	void Disk2SetEnhanceDisk(bool enhanceDisk);
-	void Disk2LoadLastDiskImage(void);
-	void Disk2Destroy(void);
+	Disk2CardManager& GetDisk2CardMgr(void) { return m_disk2CardMgr; }
 
 private:
 	Card* m_slot[NUM_SLOTS];
 	Card* m_aux;
+	Disk2CardManager m_disk2CardMgr;
 };

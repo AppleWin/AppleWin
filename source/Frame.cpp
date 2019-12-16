@@ -1121,7 +1121,7 @@ LRESULT CALLBACK FrameWndProc (
 		Snapshot_Shutdown();
       DebugDestroy();
       if (!g_bRestart) {
-		g_CardMgr.Disk2Destroy();
+		g_CardMgr.GetDisk2CardMgr().Destroy();
         ImageDestroy();
         HD_Destroy();
       }
@@ -2278,7 +2278,7 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 // todo: consolidate CtrlReset() and ResetMachineState()
 void ResetMachineState ()
 {
-  g_CardMgr.Disk2Reset(true);
+  g_CardMgr.GetDisk2CardMgr().Reset(true);
   HD_Reset();
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
@@ -2324,7 +2324,7 @@ void CtrlReset()
 	}
 
 	PravetsReset();
-	g_CardMgr.Disk2Reset();
+	g_CardMgr.GetDisk2CardMgr().Reset();
 	HD_Reset();
 	KeybReset();
 	sg_SSC.CommReset();

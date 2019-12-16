@@ -396,7 +396,7 @@ static void Snapshot_LoadState_v2(void)
 		MemReset();							// Also calls CpuInitialize()
 		PravetsReset();
 		g_CardMgr.Remove(SLOT5);			// Remove Disk2 card from slot-5
-		g_CardMgr.Disk2Reset(false);
+		g_CardMgr.GetDisk2CardMgr().Reset(false);
 		HD_Reset();
 		KeybReset();
 		VideoResetState();
