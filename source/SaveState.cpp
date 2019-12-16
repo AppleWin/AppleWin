@@ -525,7 +525,7 @@ void Snapshot_SaveState(void)
 				Printer_SaveSnapshot(yamlSaveHelper);
 
 			if (g_CardMgr.QuerySlot(SLOT2) == CT_SSC)
-				sg_SSC.SaveSnapshot(yamlSaveHelper);
+				dynamic_cast<CSuperSerialCard*>(g_CardMgr.GetObj(SLOT2))->SaveSnapshot(yamlSaveHelper);
 
 //			if (g_CardMgr.QuerySlot(SLOT3) == CT_Uthernet)
 //				sg_Uthernet.SaveSnapshot(yamlSaveHelper);

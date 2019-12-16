@@ -107,7 +107,6 @@ int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.c
 
 CardManager g_CardMgr;
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
-CSuperSerialCard	sg_SSC;
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
@@ -641,7 +640,8 @@ void LoadConfiguration(void)
 		serialPortName,
 		CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM))
 	{
-		sg_SSC.SetSerialPortName(serialPortName);
+		if (g_CardMgr.IsSSCInstalled())
+			g_CardMgr.GetSSC()->SetSerialPortName(serialPortName);
 	}
 
 	REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
@@ -1496,7 +1496,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 		else if ((strcmp(lpCmdLine, "-dcd") == 0) || (strcmp(lpCmdLine, "-modem") == 0))	// GH#386
 		{
-			sg_SSC.SupportDCD(true);
+			if (g_CardMgr.IsSSCInstalled())
+				g_CardMgr.GetSSC()->SupportDCD(true);
 		}
 		else if (strcmp(lpCmdLine, "-alt-enter=toggle-full-screen") == 0)	// GH#556
 		{

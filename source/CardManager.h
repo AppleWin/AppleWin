@@ -29,7 +29,7 @@ public:
 	void Insert(UINT slot, SS_CARDTYPE type);
 	void Remove(UINT slot);
 	SS_CARDTYPE QuerySlot(UINT slot) { return m_slot[slot]->QueryType(); }
-	Card* GetObj(UINT slot) { SS_CARDTYPE t=QuerySlot(slot); _ASSERT(t==CT_SSC || t==CT_MouseInterface || t== CT_Disk2); return m_slot[slot]; }
+	Card* GetObj(UINT slot) { SS_CARDTYPE t=QuerySlot(slot); _ASSERT(t==CT_SSC || t==CT_MouseInterface || t==CT_Disk2); return m_slot[slot]; }
 
 	void InsertAux(SS_CARDTYPE type);
 	void RemoveAux(void);
@@ -41,10 +41,15 @@ public:
 	Disk2CardManager& GetDisk2CardMgr(void) { return m_disk2CardMgr; }
 	class CMouseInterface* GetMouseCard(void) { return m_pMouseCard; }
 	bool IsMouseCardInstalled(void) { return m_pMouseCard != NULL; }
+	class CSuperSerialCard* GetSSC(void) { return m_pSSC; }
+	bool IsSSCInstalled(void) { return m_pSSC != NULL; }
 
 private:
+	void RemoveInternal(UINT slot);
+
 	Card* m_slot[NUM_SLOTS];
 	Card* m_aux;
 	Disk2CardManager m_disk2CardMgr;
 	class CMouseInterface* m_pMouseCard;
+	class CSuperSerialCard* m_pSSC;
 };

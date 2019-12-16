@@ -41,8 +41,7 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 	if (type == CT_Empty)
 		return Remove(slot);
 
-	delete m_slot[slot];
-	m_slot[slot] = NULL;
+	RemoveInternal(slot);
 
 	switch (type)
 	{
@@ -50,7 +49,9 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = new Disk2InterfaceCard;
 		break;
 	case CT_SSC:
-		m_slot[slot] = new CSuperSerialCard;
+		_ASSERT(m_pSSC == NULL);
+		if (m_pSSC) break;	// Only support one SSC
+		m_slot[slot] = m_pSSC = new CSuperSerialCard;
 		break;
 	case CT_MockingboardC:
 		m_slot[slot] = new DummyCard(type);
@@ -107,16 +108,29 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = new EmptyCard;
 }
 
-void CardManager::Remove(UINT slot)
+void CardManager::RemoveInternal(UINT slot)
 {
 	if (m_slot[slot] && m_slot[slot]->QueryType() == CT_MouseInterface)
 		m_pMouseCard = NULL;
+
+	if (m_slot[slot] && m_slot[slot]->QueryType() == CT_SSC)
+		m_pSSC = NULL;
+
 	delete m_slot[slot];
+	m_slot[slot] = NULL;
+}
+
+void CardManager::Remove(UINT slot)
+{
+	RemoveInternal(slot);
 	m_slot[slot] = new EmptyCard;
 }
 
 void CardManager::InsertAux(SS_CARDTYPE type)
 {
+	if (type == CT_Empty)
+		return RemoveAux();
+
 	switch (type)
 	{
 	case CT_80Col:

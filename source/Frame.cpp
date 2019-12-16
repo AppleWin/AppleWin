@@ -1128,7 +1128,8 @@ LRESULT CALLBACK FrameWndProc (
         HD_Destroy();
       }
       PrintDestroy();
-      sg_SSC.CommDestroy();
+      if (g_CardMgr.IsSSCInstalled())
+		g_CardMgr.GetSSC()->CommDestroy();
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();
@@ -1914,11 +1915,13 @@ LRESULT CALLBACK FrameWndProc (
 			case WSAECONNRESET:
 			case WSAENOTCONN:
 			case WSAETIMEDOUT:
-				sg_SSC.CommTcpSerialClose();
+				if (g_CardMgr.IsSSCInstalled())
+					g_CardMgr.GetSSC()->CommTcpSerialClose();
 				break;
 
 			default:
-				sg_SSC.CommTcpSerialCleanup();
+				if (g_CardMgr.IsSSCInstalled())
+					g_CardMgr.GetSSC()->CommTcpSerialCleanup();
 				break;
 			}
 		}
@@ -1928,15 +1931,18 @@ LRESULT CALLBACK FrameWndProc (
 			switch(wSelectEvent)
 			{
 				case FD_ACCEPT:
-					sg_SSC.CommTcpSerialAccept();
+					if (g_CardMgr.IsSSCInstalled())
+						g_CardMgr.GetSSC()->CommTcpSerialAccept();
 					break;
 
 				case FD_CLOSE:
-					sg_SSC.CommTcpSerialClose();
+					if (g_CardMgr.IsSSCInstalled())
+						g_CardMgr.GetSSC()->CommTcpSerialClose();
 					break;
 
 				case FD_READ:
-					sg_SSC.CommTcpSerialReceive();
+					if (g_CardMgr.IsSSCInstalled())
+						g_CardMgr.GetSSC()->CommTcpSerialReceive();
 					break;
 			}
 		}
@@ -2295,7 +2301,8 @@ void ResetMachineState ()
 	dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->Boot();
   VideoResetState();
   KeybReset();
-  sg_SSC.CommReset();
+  if (g_CardMgr.IsSSCInstalled())
+	g_CardMgr.GetSSC()->CommReset();
   PrintReset();
   JoyReset();
   MB_Reset();
@@ -2335,7 +2342,8 @@ void CtrlReset()
 	g_CardMgr.GetDisk2CardMgr().Reset();
 	HD_Reset();
 	KeybReset();
-	sg_SSC.CommReset();
+	if (g_CardMgr.IsSSCInstalled())
+		g_CardMgr.GetSSC()->CommReset();
 	MB_Reset();
 	if (g_CardMgr.IsMouseCardInstalled())
 		g_CardMgr.GetMouseCard()->Reset();		// Deassert any pending IRQs - GH#514

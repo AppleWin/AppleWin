@@ -203,8 +203,16 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
 			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (GetVideoType() == VT_COLOR_MONITOR_RGB) ? TRUE : FALSE);
 
-			m_PropertySheetHelper.FillComboBox(hWnd,IDC_SERIALPORT, sg_SSC.GetSerialPortChoices(), sg_SSC.GetSerialPort());
-			EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !sg_SSC.IsActive() ? TRUE : FALSE);
+			if (g_CardMgr.IsSSCInstalled())
+			{
+				CSuperSerialCard* pSSC = g_CardMgr.GetSSC();
+				m_PropertySheetHelper.FillComboBox(hWnd, IDC_SERIALPORT, pSSC->GetSerialPortChoices(), pSSC->GetSerialPort());
+				EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !pSSC->IsActive() ? TRUE : FALSE);
+			}
+			else
+			{
+				EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), FALSE);
+			}
 
 			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
 
@@ -333,12 +341,16 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	//
 
-	const DWORD uNewSerialPort = (DWORD) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
-	sg_SSC.CommSetSerialPort(hWnd, uNewSerialPort);
-	RegSaveString(	TEXT(REG_CONFIG),
-					TEXT(REGVALUE_SERIAL_PORT_NAME),
-					TRUE,
-					sg_SSC.GetSerialPortName() );
+	if (g_CardMgr.IsSSCInstalled())
+	{
+		CSuperSerialCard* pSSC = g_CardMgr.GetSSC();
+		const DWORD uNewSerialPort = (DWORD) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
+		pSSC->CommSetSerialPort(hWnd, uNewSerialPort);
+		RegSaveString(	TEXT(REG_CONFIG),
+						TEXT(REGVALUE_SERIAL_PORT_NAME),
+						TRUE,
+						pSSC->GetSerialPortName() );
+	}
 
 	//
 

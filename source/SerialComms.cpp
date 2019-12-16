@@ -66,10 +66,11 @@ SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 
 CSuperSerialCard::CSuperSerialCard() :
 	Card(CT_SSC),
+	m_uSlot(0),
 	m_aySerialPortChoices(NULL),
 	m_uTCPChoiceItemIdx(0),
-	m_uSlot(0),
-	m_bCfgSupportDCD(false)
+	m_bCfgSupportDCD(false),
+	m_pExpansionRom(NULL)
 {
 	m_ayCurrentSerialPortName.clear();
 	m_dwSerialPortItem = 0;
