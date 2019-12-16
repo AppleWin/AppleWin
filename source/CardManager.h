@@ -7,6 +7,7 @@ class CardManager
 {
 public:
 	CardManager(void)
+		: m_pMouseCard(NULL)
 	{
 		Insert(0, CT_Empty);
 		Insert(1, CT_GenericPrinter);
@@ -38,9 +39,12 @@ public:
 	//
 
 	Disk2CardManager& GetDisk2CardMgr(void) { return m_disk2CardMgr; }
+	class CMouseInterface* GetMouseCard(void) { return m_pMouseCard; }
+	bool IsMouseCardInstalled(void) { return m_pMouseCard != NULL; }
 
 private:
 	Card* m_slot[NUM_SLOTS];
 	Card* m_aux;
 	Disk2CardManager m_disk2CardMgr;
+	class CMouseInterface* m_pMouseCard;
 };

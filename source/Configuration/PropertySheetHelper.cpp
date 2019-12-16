@@ -125,7 +125,11 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 	if (slot >= NUM_SLOTS)
 		return;
 
-	g_CardMgr.Insert(slot, newCardType);
+	// Two paths:
+	// 1) Via Config dialog: card not inserted yet
+	// 2) Snapshot_LoadState_v2(): card already inserted
+	if (g_CardMgr.QuerySlot(slot) != newCardType)
+		g_CardMgr.Insert(slot, newCardType);
 
 	std::string slotText;
 	switch (slot)

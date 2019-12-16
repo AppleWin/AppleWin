@@ -65,7 +65,9 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = new DummyCard(type);
 		break;
 	case CT_MouseInterface:
-		m_slot[slot] = new CMouseInterface;
+		_ASSERT(m_pMouseCard == NULL);
+		if (m_pMouseCard) break;	// Only support one Mouse card
+		m_slot[slot] = m_pMouseCard = new CMouseInterface(slot);
 		break;
 	case CT_Z80:
 		m_slot[slot] = new DummyCard(type);
@@ -107,6 +109,8 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 
 void CardManager::Remove(UINT slot)
 {
+	if (m_slot[slot] && m_slot[slot]->QueryType() == CT_MouseInterface)
+		m_pMouseCard = NULL;
 	delete m_slot[slot];
 	m_slot[slot] = new EmptyCard;
 }

@@ -324,10 +324,12 @@ static void FrameShowCursor(BOOL bShow)
 // . AppleWin's main window is activated/deactivated
 static void RevealCursor()
 {
-	if (!sg_Mouse.IsActiveAndEnabled())
+	CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
+
+	if (!pMouseCard || !pMouseCard->IsActiveAndEnabled())
 		return;
 
-	sg_Mouse.SetEnabled(false);
+	pMouseCard->SetEnabled(false);
 
 	FrameShowCursor(TRUE);
 
@@ -349,7 +351,7 @@ static void FullScreenRevealCursor(void)
 	if (!g_bIsFullScreen)
 		return;
 
-	if (sg_Mouse.IsActive())
+	if (g_CardMgr.IsMouseCardInstalled())
 		return;
 
 	if (!g_bUsingCursor && !g_bShowingCursor)
@@ -1523,7 +1525,7 @@ LRESULT CALLBACK FrameWndProc (
           DrawButton((HDC)0,buttonactive);
           SetCapture(window);
         }
-        else if (g_bUsingCursor && !sg_Mouse.IsActive())
+        else if (g_bUsingCursor && !g_CardMgr.IsMouseCardInstalled())
 		{
           if (wparam & (MK_CONTROL | MK_SHIFT))
 		  {
@@ -1538,7 +1540,7 @@ LRESULT CALLBACK FrameWndProc (
 		{
           SetUsingCursor(TRUE);
 		}
-		else if (sg_Mouse.IsActive())
+		else if (g_CardMgr.IsMouseCardInstalled())
 		{
 			if (wparam & (MK_CONTROL | MK_SHIFT))
 			{
@@ -1546,21 +1548,26 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			else if (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING)
 			{
-				if (!sg_Mouse.IsEnabled())
-				{
-					sg_Mouse.SetEnabled(true);
+				CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
 
-					POINT Point;
-					GetCursorPos(&Point);
-					ScreenToClient(g_hFrameWindow, &Point);
-					const int iOutOfBoundsX=0, iOutOfBoundsY=0;
-					UpdateMouseInAppleViewport(iOutOfBoundsX, iOutOfBoundsY, Point.x, Point.y);
-
-					// Don't call SetButton() when 1st enabled (else get the confusing action of both enabling & an Apple mouse click)
-				}
-				else
+				if (pMouseCard)
 				{
-					sg_Mouse.SetButton(BUTTON0, BUTTON_DOWN);
+					if (!pMouseCard->IsEnabled())
+					{
+						pMouseCard->SetEnabled(true);
+
+						POINT Point;
+						GetCursorPos(&Point);
+						ScreenToClient(g_hFrameWindow, &Point);
+						const int iOutOfBoundsX=0, iOutOfBoundsY=0;
+						UpdateMouseInAppleViewport(iOutOfBoundsX, iOutOfBoundsY, Point.x, Point.y);
+
+						// Don't call SetButton() when 1st enabled (else get the confusing action of both enabling & an Apple mouse click)
+					}
+					else
+					{
+						pMouseCard->SetButton(BUTTON0, BUTTON_DOWN);
+					}
 				}
 			}
 		}
@@ -1583,13 +1590,13 @@ LRESULT CALLBACK FrameWndProc (
         }
         buttonactive = -1;
       }
-      else if (g_bUsingCursor && !sg_Mouse.IsActive())
+      else if (g_bUsingCursor && !g_CardMgr.IsMouseCardInstalled())
 	  {
 	    JoySetButton(BUTTON0, BUTTON_UP);
 	  }
-	  else if (sg_Mouse.IsActive())
+	  else if (g_CardMgr.IsMouseCardInstalled())
 	  {
-		sg_Mouse.SetButton(BUTTON0, BUTTON_UP);
+		g_CardMgr.GetMouseCard()->SetButton(BUTTON0, BUTTON_UP);
 	  }
       RelayEvent(WM_LBUTTONUP,wparam,lparam);
       break;
@@ -1617,12 +1624,12 @@ LRESULT CALLBACK FrameWndProc (
         if (buttonover != -1)
           DrawButton((HDC)0,buttonover);
       }
-      else if (g_bUsingCursor && !sg_Mouse.IsActive())
+      else if (g_bUsingCursor && !g_CardMgr.IsMouseCardInstalled())
 	  {
         DrawCrosshairs(x,y);
 	    JoySetPosition(x-viewportx-2, g_nViewportCX-4, y-viewporty-2, g_nViewportCY-4);
       }
-	  else if (sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
+	  else if (g_CardMgr.IsMouseCardInstalled() && g_CardMgr.GetMouseCard()->IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
 	  {
 			if (g_bLastCursorInAppleViewport)
 				break;
@@ -1655,7 +1662,7 @@ LRESULT CALLBACK FrameWndProc (
 		if (wparam == IDEVENT_TIMER_MOUSE)
 		{
 			// NB. Need to check /g_bAppActive/ since WM_TIMER events still occur after AppleWin app has lost focus
-			if (g_bAppActive && sg_Mouse.IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
+			if (g_bAppActive && g_CardMgr.IsMouseCardInstalled() && g_CardMgr.GetMouseCard()->IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
 			{
 				if (!g_bLastCursorInAppleViewport)
 					break;
@@ -1666,7 +1673,7 @@ LRESULT CALLBACK FrameWndProc (
 
 				long dX,dY;
 				if (DIMouse::ReadImmediateData(&dX, &dY) == S_OK)
-					sg_Mouse.SetPositionRel(dX, dY, &iOutOfBoundsX, &iOutOfBoundsY);
+					g_CardMgr.GetMouseCard()->SetPositionRel(dX, dY, &iOutOfBoundsX, &iOutOfBoundsY);
 
 				UpdateMouseInAppleViewport(iOutOfBoundsX, iOutOfBoundsY);
 			}
@@ -1674,7 +1681,7 @@ LRESULT CALLBACK FrameWndProc (
 		else if (wparam == IDEVENT_TIMER_100MSEC)	// GH#504
 		{
 			if (g_bIsFullScreen
-				&& !sg_Mouse.IsActive()		// Don't interfere if there's a mousecard present!
+				&& !g_CardMgr.IsMouseCardInstalled()	// Don't interfere if there's a mousecard present!
 				&& !g_bUsingCursor			// Using mouse for joystick emulation (or mousecard restricted to window)
 				&& g_bShowingCursor
 				&& g_bFrameActive)			// Frame inactive when eg. Config or 'Select Disk Image' dialogs are opened
@@ -1805,10 +1812,10 @@ LRESULT CALLBACK FrameWndProc (
 			}
 		}
 
-		if (g_bUsingCursor && !sg_Mouse.IsActive())
+		if (g_bUsingCursor && !g_CardMgr.IsMouseCardInstalled())
 			JoySetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
-		else if (sg_Mouse.IsActive())
-			sg_Mouse.SetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
+		else if (g_CardMgr.IsMouseCardInstalled())
+			g_CardMgr.GetMouseCard()->SetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
 
 		RelayEvent(message,wparam,lparam);
 		break;
@@ -2285,7 +2292,7 @@ void ResetMachineState ()
   MemReset();	// calls CpuInitialize()
   PravetsReset();
   if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
-	  dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->Boot();
+	dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->Boot();
   VideoResetState();
   KeybReset();
   sg_SSC.CommReset();
@@ -2293,7 +2300,8 @@ void ResetMachineState ()
   JoyReset();
   MB_Reset();
   SpkrReset();
-  sg_Mouse.Reset();
+  if (g_CardMgr.IsMouseCardInstalled())
+	g_CardMgr.GetMouseCard()->Reset();
   SetActiveCpu( GetMainCpu() );
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
@@ -2329,7 +2337,8 @@ void CtrlReset()
 	KeybReset();
 	sg_SSC.CommReset();
 	MB_Reset();
-	sg_Mouse.Reset();		// Deassert any pending IRQs - GH#514
+	if (g_CardMgr.IsMouseCardInstalled())
+		g_CardMgr.GetMouseCard()->Reset();		// Deassert any pending IRQs - GH#514
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
 #endif
@@ -2735,12 +2744,16 @@ static bool FileExists(std::string strFilename)
 // . UpdateMouseInAppleViewport() is called and inside Apple screen
 void FrameSetCursorPosByMousePos()
 {
+//	_ASSERT(g_CardMgr.IsMouseCardInstalled());	// CMouseInterface::ctor calls this function, ie. before g_CardMgr::m_pMouseCard is setup
+	if (!g_CardMgr.IsMouseCardInstalled())
+		return;
+
 	if (!g_hFrameWindow || g_bShowingCursor)
 		return;
 
 	int iX, iMinX, iMaxX;
 	int iY, iMinY, iMaxY;
-	sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
+	g_CardMgr.GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 
 	float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));
 	float fScaleY = (float)(iY-iMinY) / ((float)(iMaxY-iMinY));
@@ -2770,13 +2783,17 @@ void FrameSetCursorPosByMousePos()
 // . NB. Not called when leaving & mouse clipped to Apple screen area
 static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen)
 {
+	_ASSERT(g_CardMgr.IsMouseCardInstalled());
+	if (!g_CardMgr.IsMouseCardInstalled())
+		return;
+
 //	char szDbg[200];
 	if (!g_hFrameWindow || (g_bShowingCursor && bLeavingAppleScreen) || (!g_bShowingCursor && !bLeavingAppleScreen))
 		return;
 
 	int iX, iMinX, iMaxX;
 	int iY, iMinY, iMaxY;
-	sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
+	g_CardMgr.GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 
 	if (bLeavingAppleScreen)
 	{
@@ -2814,7 +2831,7 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 		int iAppleX = iMinX + (int)(fScaleX * (float)(iMaxX-iMinX));
 		int iAppleY = iMinY + (int)(fScaleY * (float)(iMaxY-iMinY));
 
-		sg_Mouse.SetCursorPos(iAppleX, iAppleY);	// Set new entry position
+		g_CardMgr.GetMouseCard()->SetCursorPos(iAppleX, iAppleY);	// Set new entry position
 
 		// Dump initial deltas (otherwise can get big deltas since last read when entering Apple screen area)
 		DIMouse::ReadImmediateData();
@@ -2823,12 +2840,16 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 
 static void DrawCrosshairsMouse()
 {
+	_ASSERT(g_CardMgr.IsMouseCardInstalled());
+	if (!g_CardMgr.IsMouseCardInstalled())
+		return;
+
 	if (!sg_PropertySheet.GetMouseShowCrosshair())
 		return;
 
 	int iX, iMinX, iMaxX;
 	int iY, iMinY, iMaxY;
-	sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
+	g_CardMgr.GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 	_ASSERT(iMinX == 0 && iMinY == 0);
 
 	float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));

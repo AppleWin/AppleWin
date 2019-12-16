@@ -108,7 +108,6 @@ int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.c
 CardManager g_CardMgr;
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 CSuperSerialCard	sg_SSC;
-CMouseInterface		sg_Mouse;
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
@@ -1880,6 +1879,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			}
 		}
 
+		SetMouseCardInstalled( g_CardMgr.IsMouseCardInstalled() );
+
 		// ENTER THE MAIN MESSAGE LOOP
 		LogFileOutput("Main: EnterMessageLoop()\n");
 		EnterMessageLoop();
@@ -1894,9 +1895,13 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		MB_Reset();
 		LogFileOutput("Main: MB_Reset()\n");
 
-		sg_Mouse.Uninitialize();	// Maybe restarting due to switching slot-4 card from MouseCard to Mockingboard
-		sg_Mouse.Reset();			// Deassert any pending IRQs - GH#514
-		LogFileOutput("Main: sg_Mouse.Uninitialize()\n");
+		CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
+		if (pMouseCard)
+		{
+//			pMouseCard->Uninitialize();	// Maybe restarting due to switching slot-4 card from MouseCard to Mockingboard
+			pMouseCard->Reset();		// Deassert any pending IRQs - GH#514
+			LogFileOutput("Main: CMouseInterface::Uninitialize()\n");
+		}
 
 		DSUninit();
 		LogFileOutput("Main: DSUninit()\n");
