@@ -25,3 +25,9 @@ target_link_libraries(sa2 PRIVATE
   ${SDL2_LIBRARIES}
   appleii
   )
+
+if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+  target_link_libraries(sa2 PRIVATE
+    stdc++fs
+    )
+endif()
