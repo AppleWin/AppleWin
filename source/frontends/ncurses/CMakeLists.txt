@@ -9,6 +9,7 @@ add_executable(applen
   asciiart.cpp
   resources.cpp
   configuration.cpp
+  bitmaps.cpp
   )
 
 pkg_search_module(NCURSESW REQUIRED ncursesw)

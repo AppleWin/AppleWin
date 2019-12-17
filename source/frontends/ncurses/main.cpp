@@ -345,8 +345,11 @@ namespace
     g_CardMgr.GetDisk2CardMgr().Destroy();
     ImageDestroy();
 
-    fclose(g_fh);
-    g_fh = NULL;
+    if (g_fh)
+    {
+      fclose(g_fh);
+      g_fh = NULL;
+    }
 
     return 0;
   }
