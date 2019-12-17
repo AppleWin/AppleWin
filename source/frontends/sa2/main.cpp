@@ -142,6 +142,8 @@ void run_sdl()
   const int sw = GetFrameBufferBorderlessWidth();
   const int sh = GetFrameBufferBorderlessHeight();
 
+  int multiplier = 1;
+
   std::shared_ptr<SDL_Window> win(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, sw, sh, SDL_WINDOW_SHOWN), SDL_DestroyWindow);
   if (!win)
   {
@@ -171,6 +173,35 @@ void run_sdl()
       }
       else if (e.type == SDL_KEYDOWN)
       {
+	if (!e.key.repeat)
+	{
+	  switch (e.key.keysym.scancode)
+	  {
+	  case SDL_SCANCODE_F9:
+	    {
+	      g_eVideoType++;
+	      if (g_eVideoType >= NUM_VIDEO_MODES)
+		g_eVideoType = 0;
+
+	      SetWindowTitle();
+	      SDL_SetWindowTitle(win.get(), g_pAppTitle.c_str());
+
+	      Config_Save_Video();
+	      VideoReinitialize();
+	      VideoRedrawScreen();
+	      break;
+	    }
+	  case SDL_SCANCODE_F6:
+	    {
+	      if (e.key.keysym.mod & KMOD_CTRL)
+	      {
+		multiplier = multiplier == 1 ? 2 : 1;
+		SDL_SetWindowSize(win.get(), sw * multiplier, sh * multiplier);
+		break;
+	      }
+	    }
+	  }
+	}
 	std::cerr << e.key.keysym.scancode << "," << e.key.keysym.sym << "," << e.key.keysym.mod << "," << bool(e.key.repeat) << ",AAA" << std::endl;
       }
     }
