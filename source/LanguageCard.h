@@ -1,14 +1,19 @@
 #pragma once
 
+#include "Card.h"
+
 //
 // Language Card (base unit) for Apple //e and above
 //
 
-class LanguageCardUnit
+class LanguageCardUnit : public Card
 {
 public:
-	LanguageCardUnit(void);
+	LanguageCardUnit(SS_CARDTYPE type = CT_LanguageCardIIe);
 	virtual ~LanguageCardUnit(void);
+
+	virtual void Init(void) {};
+	virtual void Reset(const bool powerCycle) {};
 
 	virtual void InitializeIO(void);
 	virtual void SetMemorySize(UINT banks) {}		// No-op for //e and slot-0 16K LC
@@ -18,16 +23,13 @@ public:
 
 	BOOL GetLastRamWrite(void) { return m_uLastRamWrite; }
 	void SetLastRamWrite(BOOL count) { m_uLastRamWrite = count; }
-	SS_CARDTYPE GetMemoryType(void) { return m_type; }
+	SS_CARDTYPE GetMemoryType(void) { return QueryType(); }
 	bool IsOpcodeRMWabs(WORD addr);
 
 	static BYTE __stdcall IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 
 	static const UINT kMemModeInitialState;
 	static const UINT kSlot0 = 0;
-
-protected:
-	SS_CARDTYPE m_type;
 
 private:
 	UINT m_uLastRamWrite;
@@ -40,7 +42,7 @@ private:
 class LanguageCardSlot0 : public LanguageCardUnit
 {
 public:
-	LanguageCardSlot0(void);
+	LanguageCardSlot0(SS_CARDTYPE = CT_LanguageCard);
 	virtual ~LanguageCardSlot0(void);
 
 	virtual void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);

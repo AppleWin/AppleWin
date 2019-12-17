@@ -87,7 +87,6 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 		break;
 
 	case CT_LanguageCard:
-	case CT_LanguageCardIIe:
 	case CT_Saturn128K:
 		{
 			if (slot != 0)
@@ -99,6 +98,7 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = new DummyCard(type);
 		break;
 
+	case CT_LanguageCardIIe:	// not a card
 	default:
 		_ASSERT(0);
 		break;
