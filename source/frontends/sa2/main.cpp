@@ -103,6 +103,36 @@ namespace
     SDL_RenderCopyEx(ren.get(), tex.get(), &srect, nullptr, 0.0, nullptr, SDL_FLIP_VERTICAL);
     SDL_RenderPresent(ren.get());
   }
+
+  void cycleVideoType(const std::shared_ptr<SDL_Window> & win)
+  {
+    g_eVideoType++;
+    if (g_eVideoType >= NUM_VIDEO_MODES)
+      g_eVideoType = 0;
+
+    SetWindowTitle();
+    SDL_SetWindowTitle(win.get(), g_pAppTitle.c_str());
+
+    Config_Save_Video();
+    VideoReinitialize();
+    VideoRedrawScreen();
+  }
+
+  void cycle50ScanLines(const std::shared_ptr<SDL_Window> & win)
+  {
+    VideoStyle_e videoStyle = GetVideoStyle();
+    videoStyle = VideoStyle_e(videoStyle ^ VS_HALF_SCANLINES);
+
+    SetVideoStyle(videoStyle);
+
+    SetWindowTitle();
+    SDL_SetWindowTitle(win.get(), g_pAppTitle.c_str());
+
+    Config_Save_Video();
+    VideoReinitialize();
+    VideoRedrawScreen();
+  }
+
 }
 
 int MessageBox(HWND, const char * text, const char * caption, UINT type)
@@ -179,26 +209,21 @@ void run_sdl()
 	  {
 	  case SDL_SCANCODE_F9:
 	    {
-	      g_eVideoType++;
-	      if (g_eVideoType >= NUM_VIDEO_MODES)
-		g_eVideoType = 0;
-
-	      SetWindowTitle();
-	      SDL_SetWindowTitle(win.get(), g_pAppTitle.c_str());
-
-	      Config_Save_Video();
-	      VideoReinitialize();
-	      VideoRedrawScreen();
+	      cycleVideoType(win);
 	      break;
 	    }
 	  case SDL_SCANCODE_F6:
 	    {
-	      if (e.key.keysym.mod & KMOD_CTRL)
+	      if ((e.key.keysym.mod & KMOD_CTRL) && (e.key.keysym.mod & KMOD_SHIFT))
+	      {
+		cycle50ScanLines(win);
+	      }
+	      else if (e.key.keysym.mod & KMOD_CTRL)
 	      {
 		multiplier = multiplier == 1 ? 2 : 1;
 		SDL_SetWindowSize(win.get(), sw * multiplier, sh * multiplier);
-		break;
 	      }
+	      break;
 	    }
 	  }
 	}
