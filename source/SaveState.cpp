@@ -398,9 +398,9 @@ static void Snapshot_LoadState_v2(void)
 		MemReset();							// Also calls CpuInitialize()
 		PravetsReset();
 
-		if (g_CardMgr.QuerySlot(SLOT2) == CT_SSC)
+		if (g_CardMgr.IsSSCInstalled())
 		{
-			dynamic_cast<CSuperSerialCard*>(g_CardMgr.GetObj(SLOT2))->CommReset();
+			g_CardMgr.GetSSC()->CommReset();
 		}
 		else
 		{
@@ -411,7 +411,7 @@ static void Snapshot_LoadState_v2(void)
 		if (g_CardMgr.QuerySlot(SLOT4) == CT_MouseInterface)
 			g_CardMgr.Remove(SLOT4);		// Remove Mouse card from slot-4
 
-		if (g_CardMgr.QuerySlot(SLOT4) == CT_Disk2)
+		if (g_CardMgr.QuerySlot(SLOT5) == CT_Disk2)
 			g_CardMgr.Remove(SLOT5);		// Remove Disk2 card from slot-5
 
 		g_CardMgr.GetDisk2CardMgr().Reset(false);
@@ -451,6 +451,8 @@ static void Snapshot_LoadState_v2(void)
 		MemInitializeCardExpansionRomFromSnapshot();
 
 		MemUpdatePaging(TRUE);
+
+		SetMouseCardInstalled( g_CardMgr.IsMouseCardInstalled() );
 	}
 	catch(std::string szMessage)
 	{
