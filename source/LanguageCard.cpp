@@ -38,9 +38,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 const UINT LanguageCardUnit::kMemModeInitialState = MF_BANK2 | MF_WRITERAM;	// !INTCXROM
 
-LanguageCardUnit::LanguageCardUnit(void) :
-	m_uLastRamWrite(0),
-	m_type(CT_LanguageCardIIe)
+LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type/*=CT_LanguageCardIIe*/) :
+	Card(type),
+	m_uLastRamWrite(0)
 {
 	SetMemMainLanguageCard(NULL, true);
 }
@@ -136,10 +136,10 @@ bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 
 //-------------------------------------
 
-LanguageCardSlot0::LanguageCardSlot0(void)
+LanguageCardSlot0::LanguageCardSlot0(SS_CARDTYPE type/*=CT_LanguageCard*/)
+	: LanguageCardUnit(type)
 {
-	m_type = CT_LanguageCard;
-	m_pMemory = (LPBYTE) VirtualAlloc(NULL, kMemBankSize, MEM_COMMIT, PAGE_READWRITE);
+	m_pMemory = (LPBYTE)VirtualAlloc(NULL, kMemBankSize, MEM_COMMIT, PAGE_READWRITE);
 	SetMemMainLanguageCard(m_pMemory);
 }
 
@@ -238,8 +238,8 @@ bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, 
 //-------------------------------------
 
 Saturn128K::Saturn128K(UINT banks)
+	: LanguageCardSlot0(CT_Saturn128K)
 {
-	m_type = CT_Saturn128K;
 	m_uSaturnTotalBanks = (banks == 0) ? kMaxSaturnBanks : banks;
 	m_uSaturnActiveBank = 0;
 

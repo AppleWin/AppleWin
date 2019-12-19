@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Card.h"
 #include "SaveState_Structs_common.h"
 #include "Common.h"
 
@@ -51,8 +52,7 @@ extern bool       g_bDisableDirectSound;				// Cmd line switch: don't init DS (s
 extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't init MB support
 extern int        g_nMemoryClearType;					// Cmd line switch: use specific MIP (Memory Initialization Pattern)
 
-extern SS_CARDTYPE g_Slot[NUM_SLOTS];
-extern SS_CARDTYPE g_SlotAux;
+extern class CardManager g_CardMgr;
 
 extern HANDLE	g_hCustomRomF8;		// NULL if no custom rom
 

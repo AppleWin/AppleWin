@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "YamlHelper.h"
 
 #include "Applewin.h"
+#include "CardManager.h"
 #include "CPU.h"
 #include "Disk.h"
 #include "Frame.h"
@@ -263,15 +264,17 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			bRes = Printer_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_GenericPrinter;
 		}
-		else if (card == sg_SSC.GetSnapshotCardName())
+		else if (card == CSuperSerialCard::GetSnapshotCardName())
 		{
-			bRes = sg_SSC.LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_SSC;
+			g_CardMgr.Insert(slot, type);
+			bRes = dynamic_cast<CSuperSerialCard*>(g_CardMgr.GetObj(slot))->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
-		else if (card == sg_Mouse.GetSnapshotCardName())
+		else if (card == CMouseInterface::GetSnapshotCardName())
 		{
-			bRes = sg_Mouse.LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_MouseInterface;
+			g_CardMgr.Insert(slot, type);
+			bRes = dynamic_cast<CMouseInterface*>(g_CardMgr.GetObj(slot))->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == Z80_GetSnapshotCardName())
 		{
@@ -288,10 +291,11 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			bRes = Phasor_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_Phasor;
 		}
-		else if (card == sg_Disk2Card.GetSnapshotCardName())
+		else if (card == Disk2InterfaceCard::GetSnapshotCardName())
 		{
-			bRes = sg_Disk2Card.LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_Disk2;
+			g_CardMgr.Insert(slot, type);
+			bRes = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(slot))->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == HD_GetSnapshotCardName())
 		{
@@ -393,19 +397,35 @@ static void Snapshot_LoadState_v2(void)
 
 		MemReset();							// Also calls CpuInitialize()
 		PravetsReset();
-		sg_Disk2Card.Reset();
+
+		if (g_CardMgr.IsSSCInstalled())
+		{
+			g_CardMgr.GetSSC()->CommReset();
+		}
+		else
+		{
+			_ASSERT(g_CardMgr.QuerySlot(SLOT2) == CT_Empty);
+			ConfigOld.m_Slot[2] = CT_Empty;
+		}
+
+		if (g_CardMgr.QuerySlot(SLOT4) == CT_MouseInterface)
+			g_CardMgr.Remove(SLOT4);		// Remove Mouse card from slot-4
+
+		if (g_CardMgr.QuerySlot(SLOT5) == CT_Disk2)
+			g_CardMgr.Remove(SLOT5);		// Remove Disk2 card from slot-5
+
+		g_CardMgr.GetDisk2CardMgr().Reset(false);
+
 		HD_Reset();
+		HD_SetEnabled(false);
+
 		KeybReset();
 		VideoResetState();
 		SetVideoRefreshRate(VR_60HZ);		// Default to 60Hz as older save-states won't contain refresh rate
 		MB_InitializeForLoadingSnapshot();	// GH#609
-		sg_SSC.CommReset();
 #ifdef USE_SPEECH_API
 		g_Speech.Reset();
 #endif
-		sg_Mouse.Uninitialize();
-		sg_Mouse.Reset();
-		HD_SetEnabled(false);
 
 		std::string scalar;
 		while(yamlHelper.GetScalar(scalar))
@@ -431,6 +451,8 @@ static void Snapshot_LoadState_v2(void)
 		MemInitializeCardExpansionRomFromSnapshot();
 
 		MemUpdatePaging(TRUE);
+
+		SetMouseCardInstalled( g_CardMgr.IsMouseCardInstalled() );
 	}
 	catch(std::string szMessage)
 	{
@@ -498,39 +520,44 @@ void Snapshot_SaveState(void)
 			yamlSaveHelper.UnitHdr(GetSnapshotUnitSlotsName(), UNIT_SLOTS_VER);
 			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-			if (g_Slot[0] != CT_Empty && IsApple2PlusOrClone(GetApple2Type()))
+			if (g_CardMgr.QuerySlot(SLOT0) != CT_Empty && IsApple2PlusOrClone(GetApple2Type()))
 				GetLanguageCard()->SaveSnapshot(yamlSaveHelper);	// Language Card or Saturn 128K
 
-			if (g_Slot[1] == CT_GenericPrinter)
+			if (g_CardMgr.QuerySlot(SLOT1) == CT_GenericPrinter)
 				Printer_SaveSnapshot(yamlSaveHelper);
 
-			if (g_Slot[2] == CT_SSC)
-				sg_SSC.SaveSnapshot(yamlSaveHelper);
+			if (g_CardMgr.QuerySlot(SLOT2) == CT_SSC)
+				dynamic_cast<CSuperSerialCard*>(g_CardMgr.GetObj(SLOT2))->SaveSnapshot(yamlSaveHelper);
 
-//			if (g_Slot[3] == CT_Uthernet)
+//			if (g_CardMgr.QuerySlot(SLOT3) == CT_Uthernet)
 //				sg_Uthernet.SaveSnapshot(yamlSaveHelper);
 
-			sg_Mouse.SaveSnapshot(yamlSaveHelper);
+			if (g_CardMgr.QuerySlot(SLOT4) == CT_MouseInterface)
+				dynamic_cast<CMouseInterface*>(g_CardMgr.GetObj(SLOT4))->SaveSnapshot(yamlSaveHelper);
 
-			if (g_Slot[4] == CT_Z80)
-				Z80_SaveSnapshot(yamlSaveHelper, 4);
+			if (g_CardMgr.QuerySlot(SLOT4) == CT_Z80)
+				Z80_SaveSnapshot(yamlSaveHelper, SLOT4);
 
-			if (g_Slot[5] == CT_Z80)
-				Z80_SaveSnapshot(yamlSaveHelper, 5);
+			if (g_CardMgr.QuerySlot(SLOT5) == CT_Z80)
+				Z80_SaveSnapshot(yamlSaveHelper, SLOT5);
 
-			if (g_Slot[4] == CT_MockingboardC)
-				MB_SaveSnapshot(yamlSaveHelper, 4);
+			if (g_CardMgr.QuerySlot(SLOT4) == CT_MockingboardC)
+				MB_SaveSnapshot(yamlSaveHelper, SLOT4);
 
-			if (g_Slot[5] == CT_MockingboardC)
-				MB_SaveSnapshot(yamlSaveHelper, 5);
+			if (g_CardMgr.QuerySlot(SLOT5) == CT_MockingboardC)
+				MB_SaveSnapshot(yamlSaveHelper, SLOT5);
 
-			if (g_Slot[4] == CT_Phasor)
-				Phasor_SaveSnapshot(yamlSaveHelper, 4);
+			if (g_CardMgr.QuerySlot(SLOT4) == CT_Phasor)
+				Phasor_SaveSnapshot(yamlSaveHelper, SLOT4);
 
-			if (g_Slot[6] == CT_Disk2)
-				sg_Disk2Card.SaveSnapshot(yamlSaveHelper);
+			if (g_CardMgr.QuerySlot(SLOT5) == CT_Disk2)
+				dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT5))->SaveSnapshot(yamlSaveHelper);
 
-			HD_SaveSnapshot(yamlSaveHelper);
+			if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+				dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->SaveSnapshot(yamlSaveHelper);
+
+			if (g_CardMgr.QuerySlot(SLOT7) == CT_GenericHDD)
+				HD_SaveSnapshot(yamlSaveHelper);
 		}
 	}
 	catch(std::string szMessage)

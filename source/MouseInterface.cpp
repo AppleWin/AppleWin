@@ -129,13 +129,16 @@ void M6821_Listener_A( void* objTo, BYTE byData )
 
 //===========================================================================
 
-CMouseInterface::CMouseInterface() :
+CMouseInterface::CMouseInterface(UINT slot) :
+	Card(CT_MouseInterface),
+	m_uSlot(slot),
 	m_pSlotRom(NULL)
 {
 	m_6821.SetListenerB( this, M6821_Listener_B );
 	m_6821.SetListenerA( this, M6821_Listener_A );
 
-	Uninitialize();
+//	Uninitialize();
+	InitializeROM();
 	Reset();
 }
 
@@ -146,8 +149,12 @@ CMouseInterface::~CMouseInterface()
 
 //===========================================================================
 
-void CMouseInterface::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+void CMouseInterface::InitializeROM(void)
 {
+	_ASSERT(m_pSlotRom == NULL);
+	if (m_pSlotRom)
+		return;
+
 	const UINT FW_SIZE = 2*1024;
 
 	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_MOUSEINTERFACE_FW), "FIRMWARE");
@@ -166,28 +173,24 @@ void CMouseInterface::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	if(pData == NULL)
 		return;
 
-	m_uSlot = uSlot;
+	m_pSlotRom = new BYTE [FW_SIZE];
+	memcpy(m_pSlotRom, pData, FW_SIZE);
+}
 
-	if (m_pSlotRom == NULL)
-	{
-		m_pSlotRom = new BYTE [FW_SIZE];
-
-		if (m_pSlotRom)
-			memcpy(m_pSlotRom, pData, FW_SIZE);
-	}
-
-	//
-
-	m_bActive = true;
-	SetEnabled(true);
+void CMouseInterface::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+{
+//	m_bActive = true;
+	m_bEnabled = true;
 	SetSlotRom();	// Pre: m_bActive == true
 	RegisterIoHandler(uSlot, &CMouseInterface::IORead, &CMouseInterface::IOWrite, NULL, NULL, this, NULL);
 }
 
+#if 0
 void CMouseInterface::Uninitialize()
 {
-	m_bActive = false;
+//	m_bActive = false;
 }
+#endif
 
 void CMouseInterface::Reset()
 {
@@ -221,8 +224,8 @@ void CMouseInterface::Reset()
 
 void CMouseInterface::SetSlotRom()
 {
-	if (!m_bActive)
-		return;
+//	if (!m_bActive)
+//		return;
 
 	LPBYTE pCxRomPeripheral = MemGetCxRomPeripheral();
 	if (pCxRomPeripheral == NULL)
@@ -473,7 +476,7 @@ void CMouseInterface::OnMouseEvent(bool bEventVBL)
 
 void CMouseInterface::SetVBlank(bool bVBL)
 {
-	_ASSERT(m_bActive);	// Only called from CheckInterruptSources(), which is guarded by an: if (sg_Mouse.IsActive())
+//	_ASSERT(m_bActive);	// Only called from CheckInterruptSources()
 
 	if ( m_bVBL != bVBL )
 	{
@@ -656,8 +659,8 @@ void CMouseInterface::SaveSnapshotMC6821(YamlSaveHelper& yamlSaveHelper, std::st
 
 void CMouseInterface::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 {
-	if (!m_bActive)
-		return;
+//	if (!m_bActive)
+//		return;
 
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_uSlot, 1);
 

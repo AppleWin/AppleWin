@@ -53,7 +53,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // . if false && I/O ReadWrite($C0EC) && drive is spinning, then advance the track buffer's nibble index (to simulate spinning).
 // Also m_enhanceDisk is persisted to the save-state, so it's an attribute of the DiskII interface card.
 
-Disk2InterfaceCard::Disk2InterfaceCard(void)
+Disk2InterfaceCard::Disk2InterfaceCard(void) :
+	Card(CT_Disk2)
 {
 	ResetSwitches();
 
@@ -74,6 +75,12 @@ Disk2InterfaceCard::Disk2InterfaceCard(void)
 	m_uWriteLastCycle = 0;
 	m_uSyncFFCount = 0;
 #endif
+}
+
+Disk2InterfaceCard::~Disk2InterfaceCard(void)
+{
+	EjectDiskInternal(DRIVE_1);
+	EjectDiskInternal(DRIVE_2);
 }
 
 bool Disk2InterfaceCard::GetEnhanceDisk(void) { return m_enhanceDisk; }
@@ -172,6 +179,9 @@ void Disk2InterfaceCard::LoadLastDiskImage(const int drive)
 void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 {
 	_ASSERT(drive == DRIVE_1 || drive == DRIVE_2);
+
+	if (m_slot != 6)	// DiskII cards in other slots don't save image to Registry
+		return;
 
 	if (!m_saveDiskImage)
 		return;
@@ -321,7 +331,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 //===========================================================================
 
-void Disk2InterfaceCard::RemoveDisk(const int drive)
+void Disk2InterfaceCard::EjectDiskInternal(const int drive)
 {
 	FloppyDisk* pFloppy = &m_floppyDrive[drive].m_disk;
 
@@ -336,16 +346,24 @@ void Disk2InterfaceCard::RemoveDisk(const int drive)
 	if (pFloppy->m_trackimage)
 	{
 		VirtualFree(pFloppy->m_trackimage, 0, MEM_RELEASE);
-		pFloppy->m_trackimage     = NULL;
+		pFloppy->m_trackimage = NULL;
 		pFloppy->m_trackimagedata = false;
 	}
 
 	pFloppy->m_imagename.clear();
 	pFloppy->m_fullname.clear();
 	pFloppy->m_strFilenameInZip = "";
+}
 
-	SaveLastDiskImage( drive );
-	Video_ResetScreenshotCounter( "" );
+void Disk2InterfaceCard::EjectDisk(const int drive)
+{
+	if (!IsDriveValid(drive))
+		return;
+
+	EjectDiskInternal(drive);
+
+	SaveLastDiskImage(drive);
+	Video_ResetScreenshotCounter("");
 }
 
 //===========================================================================
@@ -516,10 +534,10 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 void Disk2InterfaceCard::Destroy(void)
 {
 	m_saveDiskImage = false;
-	RemoveDisk(DRIVE_1);
+	EjectDisk(DRIVE_1);
 
 	m_saveDiskImage = false;
-	RemoveDisk(DRIVE_2);
+	EjectDisk(DRIVE_2);
 
 	m_saveDiskImage = true;
 }
@@ -535,16 +553,6 @@ void __stdcall Disk2InterfaceCard::Enable(WORD, WORD address, BYTE, BYTE, ULONG 
 	m_floppyDrive[!m_currDrive].m_spinning   = 0;
 	m_floppyDrive[!m_currDrive].m_writelight = 0;
 	CheckSpinning(uExecutedCycles);
-}
-
-//===========================================================================
-
-void Disk2InterfaceCard::EjectDisk(const int drive)
-{
-	if (IsDriveValid(drive))
-	{
-		RemoveDisk(drive);
-	}
 }
 
 //===========================================================================
@@ -597,7 +605,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	FloppyDisk* pFloppy = &pDrive->m_disk;
 
 	if (pFloppy->m_imagehandle)
-		RemoveDisk(drive);
+		EjectDisk(drive);
 
 	// Reset the disk's attributes, but preserve the drive's attributes (GH#138/Platoon, GH#640)
 	// . Changing the disk (in the drive) doesn't affect the drive's attributes.
@@ -638,7 +646,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 		int nRes = MessageBox(g_hFrameWindow, szText, TEXT("Multi-Zip Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 		{
-			RemoveDisk(drive);
+			EjectDisk(drive);
 			Error = eIMAGE_ERROR_REJECTED_MULTI_ZIP;
 		}
 	}
@@ -1374,7 +1382,7 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 //===========================================================================
 
-void Disk2InterfaceCard::Reset(const bool bIsPowerCycle/*=false*/)
+void Disk2InterfaceCard::Reset(const bool bIsPowerCycle)
 {
 	// RESET forces all switches off (UTAIIe Table 9.1)
 	ResetSwitches();
@@ -1998,7 +2006,7 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 
 bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
-	if (slot != 6)	// fixme
+	if (slot != 5 && slot != 6)	// fixme
 		throw std::string("Card: wrong slot");
 
 	if (version < 1 || version > kUNIT_VERSION)

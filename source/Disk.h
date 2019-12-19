@@ -23,11 +23,10 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "Card.h"
 #include "DiskLog.h"
 #include "DiskFormatTrack.h"
 #include "DiskImage.h"
-
-extern class Disk2InterfaceCard sg_Disk2Card;
 
 enum Drive_e
 {
@@ -118,11 +117,14 @@ public:
 	FloppyDisk m_disk;
 };
 
-class Disk2InterfaceCard
+class Disk2InterfaceCard : public Card
 {
 public:
 	Disk2InterfaceCard(void);
-	virtual ~Disk2InterfaceCard(void){}
+	virtual ~Disk2InterfaceCard(void);
+
+	virtual void Init(void) {};
+	virtual void Reset(const bool powerCycle);
 
 	void Initialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void Destroy(void);		// no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
@@ -140,7 +142,6 @@ public:
 
 	bool IsConditionForFullSpeed(void);
 	void NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error);
-	void Reset(const bool bIsPowerCycle=false);
 	bool GetProtect(const int drive);
 	void SetProtect(const int drive, const bool bWriteProtect);
 	int GetCurrentDrive(void);
@@ -157,7 +158,7 @@ public:
 	void UpdateDriveState(DWORD cycles);
 	bool DriveSwap(void);
 
-	std::string GetSnapshotCardName(void);
+	static std::string GetSnapshotCardName(void);
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
@@ -178,9 +179,9 @@ private:
 	void CheckSpinning(const ULONG uExecutedCycles);
 	Disk_Status_e GetDriveLightStatus(const int drive);
 	bool IsDriveValid(const int drive);
+	void EjectDiskInternal(const int drive);
 	void AllocTrack(const int drive);
 	void ReadTrack(const int drive, ULONG uExecutedCycles);
-	void RemoveDisk(const int drive);
 	void WriteTrack(const int drive);
 	const std::string & DiskGetFullPathName(const int drive);
 	void ResetLogicStateSequencer(void);

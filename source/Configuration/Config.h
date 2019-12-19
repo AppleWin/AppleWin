@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Applewin.h"
+#include "../CardManager.h"
 #include "../CPU.h"
 #include "../DiskImage.h"	// Disk_Status_e
 #include "../Harddisk.h"	// HD_CardIsEnabled()
@@ -19,9 +20,9 @@ public:
 		m_bEnableTheFreezesF8Rom = bEnableTheFreezesF8Rom;
 		memset(&m_Slot, 0, sizeof(m_Slot));
 		m_SlotAux = CT_Empty;
-		m_Slot[4] = g_Slot[4];
-		m_Slot[5] = g_Slot[5];
-		m_Slot[7] = g_Slot[7];
+		m_Slot[SLOT4] = g_CardMgr.QuerySlot(SLOT4);
+		m_Slot[SLOT5] = g_CardMgr.QuerySlot(SLOT5);
+		m_Slot[SLOT7] = g_CardMgr.QuerySlot(SLOT7);
 	}
 
 	const CConfigNeedingRestart& operator= (const CConfigNeedingRestart& other)
