@@ -24,6 +24,8 @@
     <ClInclude Include="source\6821.h" />
     <ClInclude Include="source\Applewin.h" />
     <ClInclude Include="source\AY8910.h" />
+    <ClInclude Include="source\Card.h" />
+    <ClInclude Include="source\CardManager.h" />
     <ClInclude Include="source\Common.h" />
     <ClInclude Include="source\CommonVICE\6510core.h" />
     <ClInclude Include="source\CommonVICE\alarm.h" />
@@ -62,6 +64,7 @@
     <ClInclude Include="source\Debugger\Util_MemoryTextFile.h" />
     <ClInclude Include="source\Debugger\Util_Text.h" />
     <ClInclude Include="source\Disk.h" />
+    <ClInclude Include="source\Disk2CardManager.h" />
     <ClInclude Include="source\DiskDefs.h" />
     <ClInclude Include="source\DiskFormatTrack.h" />
     <ClInclude Include="source\DiskImage.h" />
@@ -125,6 +128,7 @@
     <ClCompile Include="source\6821.cpp" />
     <ClCompile Include="source\Applewin.cpp" />
     <ClCompile Include="source\AY8910.cpp" />
+    <ClCompile Include="source\CardManager.cpp" />
     <ClCompile Include="source\Configuration\About.cpp" />
     <ClCompile Include="source\Configuration\PageAdvanced.cpp" />
     <ClCompile Include="source\Configuration\PageConfig.cpp" />
@@ -135,6 +139,7 @@
     <ClCompile Include="source\Configuration\PropertySheet.cpp" />
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CPU.cpp" />
+    <ClCompile Include="source\Disk2CardManager.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />
     <ClCompile Include="source\Debugger\Debug.cpp" />
@@ -302,7 +307,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0A960136-A00A-4D4B-805F-664D9950D2CA}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>AppleWinExpress2013</RootNamespace>
+    <RootNamespace>AppleWin</RootNamespace>
     <ProjectName>AppleWin</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -373,7 +378,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;advapi32.lib;shell32.lib;comdlg32.lib;ole32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;advapi32.lib;shell32.lib;comdlg32.lib;ole32.lib;wsock32.lib;ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalManifestDependencies>"type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'"</AdditionalManifestDependencies>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
@@ -428,7 +433,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;advapi32.lib;shell32.lib;comdlg32.lib;ole32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;winmm.lib;dsound.lib;dxguid.lib;version.lib;strmiids.lib;dinput8.lib;user32.lib;gdi32.lib;advapi32.lib;shell32.lib;comdlg32.lib;ole32.lib;wsock32.lib;ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalManifestDependencies>"type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'"</AdditionalManifestDependencies>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
