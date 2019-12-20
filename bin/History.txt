@@ -9,6 +9,20 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.29.7.0 - 20 Dec 2019
+----------------------
+. [Change #726] Disk II card: supported in slot 5 via '-s5 diskii' command line.
+	- use in conjunction with -s5d1 <pathname>.
+	- NB. No support via Configuration GUI for insert/ejecting images.
+. [Change #737] Debugger: Changed 'cycles' to show the cycle delta since the step/breakpoint etc.
+	- NB. Since 1.29.3.0 this has been the absolute cumulative cycle count.
+. [Bug #740] Debugger: gr/hgr/dgr/dhgr commands will honour the state of the MIXED mode.
+. [Bug #733] Fixed WOZ 'Wasteland' and also NIB 'Wasteland'.
+. [Bug #451] Debugger: fix for BPM[R|W] triggering on control-flow instructions' target address.
+. [Bug #355] For first-time installs of AppleWin, soundtype now defaults to WAVE (was NONE).
+. [PR #730] Speed-up for 'Color (RGB Monitor)' video mode.
+
+
 1.29.6.0 - 18 Nov 2019
 ----------------------
 . [Bug #724] Fixed so that 6502 interrupt is delayed by 1 opcode when interrupt occurs on last cycle of opcode.

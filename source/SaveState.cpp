@@ -455,7 +455,8 @@ static void Snapshot_LoadState_v2(void)
 
 		SetMouseCardInstalled( g_CardMgr.IsMouseCardInstalled() );
 		DebugReset();
-		DebugDisplay(TRUE);
+		if (g_nAppMode == MODE_DEBUG)
+			DebugDisplay(TRUE);
 	}
 	catch(std::string szMessage)
 	{
