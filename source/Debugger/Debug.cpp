@@ -2015,7 +2015,7 @@ Update_t CmdStepOver (int nArgs)
 			CmdStepOut(0);
 			g_nDebugSteps = 0xFFFF;
 			while (g_nDebugSteps != 0)
-				DebugContinueStepping();
+				DebugContinueStepping(true);
 		}
 	}
 
@@ -2047,7 +2047,7 @@ Update_t CmdTrace (int nArgs)
 	g_nDebugStepUntil = -1;
 	g_nAppMode = MODE_STEPPING;
 	FrameRefreshStatus(DRAW_TITLE);
-	DebugContinueStepping();
+	DebugContinueStepping(true);
 
 	return UPDATE_ALL; // TODO: Verify // 0
 }
@@ -2107,7 +2107,7 @@ Update_t CmdTraceLine (int nArgs)
 
 	g_nAppMode = MODE_STEPPING;
 	FrameRefreshStatus(DRAW_TITLE);
-	DebugContinueStepping();
+	DebugContinueStepping(true);
 
 	return UPDATE_ALL; // TODO: Verify // 0
 }
@@ -8629,7 +8629,7 @@ static void CheckBreakOpcode( int iOpcode )
 		g_bDebugBreakpointHit |= BP_HIT_OPCODE;
 }
 
-void DebugContinueStepping ()
+void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 {
 	static bool bForceSingleStepNext = false; // Allow at least one instruction to execute so we don't trigger on the same invalid opcode
 
@@ -8743,8 +8743,8 @@ void DebugContinueStepping ()
 
 		DisasmCalcTopBotAddress();
 
-		Update_t bUpdate = UPDATE_ALL;
-		UpdateDisplay( bUpdate );
+		if (!bCallerWillUpdateDisplay)
+			UpdateDisplay( UPDATE_ALL );
 	}
 }
 
@@ -9052,6 +9052,12 @@ void DebugInitialize ()
 	}
 
 	CmdMOTD(0);
+}
+
+//===========================================================================
+void DebugReset(void)
+{
+	g_videoScannerDisplayInfo.Reset();
 }
 
 // Add character to the input line

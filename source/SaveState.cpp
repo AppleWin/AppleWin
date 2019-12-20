@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Applewin.h"
 #include "CardManager.h"
 #include "CPU.h"
+#include "Debug.h"
 #include "Disk.h"
 #include "Frame.h"
 #include "Joystick.h"
@@ -453,6 +454,8 @@ static void Snapshot_LoadState_v2(void)
 		MemUpdatePaging(TRUE);
 
 		SetMouseCardInstalled( g_CardMgr.IsMouseCardInstalled() );
+		DebugReset();
+		DebugDisplay(TRUE);
 	}
 	catch(std::string szMessage)
 	{

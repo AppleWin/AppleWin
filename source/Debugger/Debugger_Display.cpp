@@ -3735,6 +3735,7 @@ void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 }
 
 //===========================================================================
+
 void DrawVideoScannerInfo (int line)
 {
 	NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
@@ -3753,6 +3754,12 @@ void DrawVideoScannerInfo (int line)
 			if (v < 0)
 				v = v + NTSC_GetVideoLines();
 		}
+	}
+
+	if (g_nCumulativeCycles != g_videoScannerDisplayInfo.lastCumulativeCycles)
+	{
+		g_videoScannerDisplayInfo.cycleDelta = (UINT) (g_nCumulativeCycles - g_videoScannerDisplayInfo.lastCumulativeCycles);
+		g_videoScannerDisplayInfo.lastCumulativeCycles = g_nCumulativeCycles;
 	}
 
 	DrawVideoScannerValue(line, v, h, NTSC_IsVisible());
@@ -3778,7 +3785,7 @@ void DrawVideoScannerInfo (int line)
 	rect.left += nameWidth * nFontWidth;
 
 	char sValue[10];
-	sprintf_s(sValue, sizeof(sValue), "%08X", (UINT32)g_nCumulativeCycles);
+	sprintf_s(sValue, sizeof(sValue), "%08X", g_videoScannerDisplayInfo.cycleDelta);
 	PrintText(sValue, rect);
 }
 

@@ -168,11 +168,12 @@
 
 	void	DebugBegin ();
 	void	DebugExitDebugger ();
-	void	DebugContinueStepping ();
+	void	DebugContinueStepping(const bool bCallerWillUpdateDisplay = false);
 	void    DebugStopStepping(void);
 	void	DebugDestroy ();
 	void	DebugDisplay ( BOOL bInitDisasm = FALSE );
 	void	DebugInitialize ();
+	void	DebugReset(void);
 
 	void	DebuggerInputConsoleChar( TCHAR ch );
 	void	DebuggerProcessKey( int keycode );
