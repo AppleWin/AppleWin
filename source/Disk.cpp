@@ -1325,8 +1325,18 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 	const UINT startBitOffset = floppy.m_bitOffset;
 
+	bool newLine = true;
+
 	while (1)
 	{
+		TCHAR str[10];
+		if (newLine)
+		{
+			newLine = false;
+			StringCbPrintf(str, sizeof(str), "%04X:", floppy.m_bitOffset & 0xffff);
+			OutputDebugString(str);
+		}
+
 		BYTE n = floppy.m_trackimage[floppy.m_byte];
 		BYTE outputBit = (n & floppy.m_bitMask) ? 1 : 0;
 
@@ -1362,13 +1372,15 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 		nibbleCount++;
 
-		TCHAR str[10];
 		char syncBits = zeroCount <= 9 ? '0'+zeroCount : '+';
-		if (zeroCount == 0)	StringCbPrintf(str, 10, "   %02X", shiftReg);
-		else				StringCbPrintf(str, 10, "(%c)%02X", syncBits, shiftReg);
+		if (zeroCount == 0)	StringCbPrintf(str, sizeof(str), "   %02X", shiftReg);
+		else				StringCbPrintf(str, sizeof(str), "(%c)%02X", syncBits, shiftReg);
 		OutputDebugString(str);
 		if ((nibbleCount % 32) == 0)
+		{
 			OutputDebugString("\n");
+			newLine = true;
+		}
 
 #ifdef LOG_DISK_NIBBLES_READ
 		formatTrack.DecodeLatchNibbleRead(shiftReg);
