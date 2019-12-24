@@ -161,7 +161,6 @@ struct SY6522_AY8910
 static SY6522_AY8910 g_MB[NUM_AY8910];
 
 // Timer vars
-static ULONG g_n6522TimerPeriod = 0;
 static const UINT kTIMERDEVICE_INVALID = -1;
 static UINT g_nMBTimerDevice = kTIMERDEVICE_INVALID;	// SY6522 device# which is generating timer IRQ
 static UINT64 g_uLastCumulativeCycles = 0;
@@ -227,9 +226,6 @@ static void StartTimer1(SY6522_AY8910* pMB)
 {
 	pMB->bTimer1Active = true;
 
-	// 6522 CLK runs at same speed as 6502 CLK
-	g_n6522TimerPeriod = pMB->sy6522.TIMER1_LATCH.w;
-
 	if (pMB->sy6522.IER & IxR_TIMER1)			// Using 6522 interrupt
 		g_nMBTimerDevice = pMB->nAY8910Number;
 	else if (pMB->sy6522.ACR & RM_FREERUNNING)	// Polling 6522 IFR (GH#496)
@@ -244,10 +240,6 @@ static void StartTimer1_LoadStateV1(SY6522_AY8910* pMB)
 		return;
 
 	pMB->bTimer1Active = true;
-
-	// 6522 CLK runs at same speed as 6502 CLK
-	g_n6522TimerPeriod = pMB->sy6522.TIMER1_LATCH.w;
-
 	g_nMBTimerDevice = pMB->nAY8910Number;
 }
 
@@ -1501,7 +1493,6 @@ void MB_Destroy()
 
 static void ResetState()
 {
-	g_n6522TimerPeriod = 0;
 	g_nMBTimerDevice = kTIMERDEVICE_INVALID;
 	g_uLastCumulativeCycles = 0;
 
