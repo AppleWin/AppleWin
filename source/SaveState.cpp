@@ -437,6 +437,7 @@ static void Snapshot_LoadState_v2(void)
 				throw std::string("Unknown top-level scalar: " + scalar);
 		}
 
+		MB_SetCumulativeCycles();
 		SetLoadedSaveStateFlag(true);
 
 		// NB. The following disparity should be resolved:

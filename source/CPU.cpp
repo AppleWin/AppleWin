@@ -556,7 +556,9 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 {
 	g_nCyclesExecuted =	0;
 
-	MB_StartOfCpuExecute();
+#ifdef _DEBUG
+	MB_CheckCumulativeCycles();
+#endif
 
 	// uCycles:
 	//  =0  : Do single step

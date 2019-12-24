@@ -10,7 +10,10 @@ void	MB_InitializeForLoadingSnapshot(void);
 void    MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5);
 void    MB_Mute();
 void    MB_Demute();
-void    MB_StartOfCpuExecute();
+#ifdef _DEBUG
+void    MB_CheckCumulativeCycles();	// DEBUG
+#endif
+void    MB_SetCumulativeCycles();
 void    MB_PeriodicUpdate(UINT executedCycles);
 void    MB_CheckIRQ();
 bool    MB_UpdateCycles(ULONG uExecutedCycles);

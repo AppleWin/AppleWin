@@ -1494,7 +1494,7 @@ void MB_Destroy()
 static void ResetState()
 {
 	g_nMBTimerDevice = kTIMERDEVICE_INVALID;
-	g_uLastCumulativeCycles = 0;
+	MB_SetCumulativeCycles();
 
 	g_nSSI263Device = 0;
 	g_nCurrentActivePhoneme = -1;
@@ -1761,8 +1761,19 @@ void MB_Demute()
 
 //-----------------------------------------------------------------------------
 
-// Called by CpuExecute() before doing CPU emulation
-void MB_StartOfCpuExecute()
+#ifdef _DEBUG
+void MB_CheckCumulativeCycles()
+{
+	if (g_SoundcardType == CT_Empty)
+		return;
+
+	_ASSERT(g_uLastCumulativeCycles == g_nCumulativeCycles);
+	g_uLastCumulativeCycles = g_nCumulativeCycles;
+}
+#endif
+
+// Called by: ResetState() and Snapshot_LoadState_v2()
+void MB_SetCumulativeCycles()
 {
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 }
