@@ -220,7 +220,6 @@ static UINT g_cyclesThisAudioFrame = 0;
 // Forward refs:
 static DWORD WINAPI SSI263Thread(LPVOID);
 static void Votrax_Write(BYTE nDevice, BYTE nValue);
-static void MB_Update(void);
 
 //---------------------------------------------------------------------------
 
@@ -786,7 +785,6 @@ static UINT64 g_uLastMBUpdateCycle = 0;
 // Called by:
 // . MB_UpdateCycles()    - when g_nMBTimerDevice == {0,1,2,3}
 // . MB_PeriodicUpdate()  - when g_nMBTimerDevice == kTIMERDEVICE_INVALID
-// . SY6522_Write()       - when multiple TIMER1s (interrupt sources) are active
 static void MB_Update(void)
 {
 	if (!MockingboardVoice.bActive)
@@ -1847,9 +1845,8 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 	UINT64 uCycles = g_nCumulativeCycles - g_uLastCumulativeCycles;
 	if (uCycles == 0)
 		return false;		// Likely when called from CpuExecute()
-	_ASSERT(uCycles > 1);
 
-	const bool isOpcode = (uCycles > 1 && uCycles <= 7);		// todo: better to pass in a flag?
+	const bool isOpcode = (uCycles <= 7);		// todo: better to pass in a flag?
 
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 	_ASSERT(uCycles < 0x10000);
