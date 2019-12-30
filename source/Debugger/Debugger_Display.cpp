@@ -3785,7 +3785,8 @@ void DrawVideoScannerInfo (int line)
 	rect.left += nameWidth * nFontWidth;
 
 	char sValue[10];
-	sprintf_s(sValue, sizeof(sValue), "%08X", g_videoScannerDisplayInfo.cycleDelta);
+	const UINT cycles = g_videoScannerDisplayInfo.isAbsCycle ? (UINT)g_nCumulativeCycles : g_videoScannerDisplayInfo.cycleDelta;
+	sprintf_s(sValue, sizeof(sValue), "%08X", cycles);
 	PrintText(sValue, rect);
 }
 

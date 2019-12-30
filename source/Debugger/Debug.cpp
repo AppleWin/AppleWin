@@ -6873,6 +6873,10 @@ Update_t CmdVideoScannerInfo(int nArgs)
 			g_videoScannerDisplayInfo.isHorzReal = true;
 		else if (strcmp(g_aArgs[1].sArg, "apple") == 0)
 			g_videoScannerDisplayInfo.isHorzReal = false;
+		else if (strcmp(g_aArgs[1].sArg, "abs") == 0)
+			g_videoScannerDisplayInfo.isAbsCycle = true;
+		else if (strcmp(g_aArgs[1].sArg, "rel") == 0)
+			g_videoScannerDisplayInfo.isAbsCycle = false;
 		else
 			return Help_Arg_1(CMD_VIDEO_SCANNER_INFO);
 	}

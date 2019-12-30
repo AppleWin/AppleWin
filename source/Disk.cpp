@@ -1091,6 +1091,8 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 		drive.m_headWindow = 0;
 	}
 
+	// NB. actual m_diskLastCycle for the last bitCell is minus floppy.m_extraCycles
+	// - but don't need this value; and it's correctly accounted for in GetBitCellDelta()
 	m_diskLastCycle = g_nCumulativeCycles;
 
 	if (!bWrite)
@@ -1127,12 +1129,13 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 	if (dbgWOZ)
 	{
 		dbgWOZ = 0;
-		DumpSectorWOZ(floppy);
-//		DumpTrackWOZ(floppy);	// Enable as necessary
+//		DumpSectorWOZ(floppy);
+		DumpTrackWOZ(floppy);	// Enable as necessary
 	}
 #endif
 
-	UINT extraLatchDelay = (UINT)floppy.m_extraCycles ? 1 : 0;	// GH#733
+	// Only extraCycles of 2 & 3 can hold the latch for another bitCell period, eg. m_latchDelay: 3->5 or 7->9
+	UINT extraLatchDelay = ((UINT)floppy.m_extraCycles >= 2) ? 2 : 0;	// GH#733 (0,1->0; 2,3->2)
 
 	for (UINT i = 0; i < bitCellRemainder; i++)
 	{
@@ -1171,8 +1174,9 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 		if (m_latchDelay)
 		{
-			m_latchDelay += extraLatchDelay;
-			extraLatchDelay = 0;
+			if (i == bitCellRemainder-1)			// On last bitCell
+				m_latchDelay += extraLatchDelay;	// +0 or +2
+			extraLatchDelay = 0;					// and always clear (even when not last bitCell)
 
 			m_latchDelay -= 4;
 			if (m_latchDelay < 0)
@@ -1218,7 +1222,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 #endif
 			}
 		}
-	}
+	} // for
 
 #if LOG_DISK_NIBBLES_READ
 	if (m_floppyLatch & 0x80)

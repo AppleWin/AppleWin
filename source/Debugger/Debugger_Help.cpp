@@ -1408,10 +1408,11 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 // Video-Scanner
 		case CMD_VIDEO_SCANNER_INFO:
-			ConsoleColorizePrint(sText, " Usage: <dec|hex|real|apple>");
+			ConsoleColorizePrint(sText, " Usage: <dec|hex|real|apple|abs|rel>");
 			ConsoleBufferPush("  Where:");
 			ConsoleBufferPush("    <dec|hex> changes output to dec/hex");
 			ConsoleBufferPush("    <real|apple> alters horz value to hbl-l,visible,hbl-r or hbl-r+l,visible");
+			ConsoleBufferPush("    <abs|rel> changes cycle output to absolute/relative");
 			{
 				char sText2[CONSOLE_WIDTH];
 				ConsolePrintFormat(sText2, "    %sYellow%s=invisible (hbl or vbl active) / %sGreen%s=visible"

@@ -102,12 +102,13 @@
 	class VideoScannerDisplayInfo
 	{
 	public:
-		VideoScannerDisplayInfo(void) : isDecimal(false), isHorzReal(false),
+		VideoScannerDisplayInfo(void) : isDecimal(false), isHorzReal(false), isAbsCycle(false),
 										lastCumulativeCycles(0), cycleDelta(0) {}
 		void Reset(void) { lastCumulativeCycles = g_nCumulativeCycles; cycleDelta = 0; }
 
 		bool isDecimal;
 		bool isHorzReal;
+		bool isAbsCycle;
 
 		unsigned __int64 lastCumulativeCycles;
 		UINT cycleDelta;
