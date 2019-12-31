@@ -99,7 +99,8 @@ public:
 	std::string LoadString(const std::string& key);
 	float LoadFloat(const std::string key);
 	double LoadDouble(const std::string key);
-	UINT LoadMemory(const LPBYTE pMemBase, const size_t size);
+	void LoadMemory(const LPBYTE pMemBase, const size_t size);
+	void LoadMemory(std::vector<BYTE>& memory, const size_t size);
 
 	bool GetSubMap(const std::string key)
 	{

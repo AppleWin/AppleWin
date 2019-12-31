@@ -1934,10 +1934,7 @@ bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT
 
 	if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
 	{
-		const UINT maxNibblesPerTrack = ImageGetMaxNibblesPerTrack(m_floppyDrive[unit].m_disk.m_imagehandle);
-		track.reserve(maxNibblesPerTrack);	// expand (but don't shrink) vector's capacity (NB. vector's size doesn't change)
-		UINT bytes = yamlLoadHelper.LoadMemory(&track[0], maxNibblesPerTrack);
-		track.resize(bytes);				// resize so that vector contains /bytes/ elements
+		yamlLoadHelper.LoadMemory(track, ImageGetMaxNibblesPerTrack(m_floppyDrive[unit].m_disk.m_imagehandle));
 		yamlLoadHelper.PopMap();
 	}
 

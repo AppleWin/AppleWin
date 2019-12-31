@@ -375,9 +375,16 @@ double YamlLoadHelper::LoadDouble(const std::string key)
 	return strtod(value.c_str(), NULL);
 }
 
-UINT YamlLoadHelper::LoadMemory(const LPBYTE pMemBase, const size_t size)
+void YamlLoadHelper::LoadMemory(const LPBYTE pMemBase, const size_t size)
 {
-	return m_yamlHelper.LoadMemory(*m_pMapYaml, pMemBase, size);
+	m_yamlHelper.LoadMemory(*m_pMapYaml, pMemBase, size);
+}
+
+void YamlLoadHelper::LoadMemory(std::vector<BYTE>& memory, const size_t size)
+{
+	memory.reserve(size);	// expand (but don't shrink) vector's capacity (NB. vector's size doesn't change)
+	const UINT bytes = m_yamlHelper.LoadMemory(*m_pMapYaml, &memory[0], size);
+	memory.resize(bytes);	// resize so that vector contains /bytes/ elements - so that size() gives correct value.
 }
 
 //-------------------------------------
