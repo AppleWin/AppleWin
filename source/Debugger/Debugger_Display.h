@@ -98,13 +98,20 @@
 	extern char g_aDebuggerVirtualTextScreen[ DEBUG_VIRTUAL_TEXT_HEIGHT ][ DEBUG_VIRTUAL_TEXT_WIDTH ];
 	extern size_t Util_GetDebuggerText( char* &pText_ ); // Same API as Util_GetTextScreen()
 
+	extern unsigned __int64 g_nCumulativeCycles;
 	class VideoScannerDisplayInfo
 	{
 	public:
-		VideoScannerDisplayInfo() : isDecimal(false), isHorzReal(false) {}
+		VideoScannerDisplayInfo(void) : isDecimal(false), isHorzReal(false), isAbsCycle(false),
+										lastCumulativeCycles(0), cycleDelta(0) {}
+		void Reset(void) { lastCumulativeCycles = g_nCumulativeCycles; cycleDelta = 0; }
 
 		bool isDecimal;
 		bool isHorzReal;
+		bool isAbsCycle;
+
+		unsigned __int64 lastCumulativeCycles;
+		UINT cycleDelta;
 	};
 
 	extern VideoScannerDisplayInfo g_videoScannerDisplayInfo;

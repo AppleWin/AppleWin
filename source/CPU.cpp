@@ -87,6 +87,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Applewin.h"
+#include "CardManager.h"
 #include "CPU.h"
 #include "Frame.h"
 #include "Memory.h"
@@ -145,6 +146,8 @@ static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
 
 static bool g_irqDefer1Opcode = false;
 
+static bool g_isMouseCardInstalled = false;
+
 //
 
 static eCpuType g_MainCPU = CPU_65C02;
@@ -198,6 +201,11 @@ bool Is6502InterruptEnabled(void)
 void ResetCyclesExecutedForDebugger(void)
 {
 	g_nCyclesExecuted = 0;
+}
+
+void SetMouseCardInstalled(bool installed)
+{
+	g_isMouseCardInstalled = installed;
 }
 
 //
@@ -455,8 +463,8 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const boo
 	if (MB_UpdateCycles(uExecutedCycles))
 		g_irqOnLastOpcodeCycle = true;
 
-	if (sg_Mouse.IsActive())
-		sg_Mouse.SetVBlank( !VideoGetVblBar(uExecutedCycles) );
+	if (g_isMouseCardInstalled)
+		g_CardMgr.GetMouseCard()->SetVBlank( !VideoGetVblBar(uExecutedCycles) );
 }
 
 // GH#608: IRQ needs to occur within 17 cycles (6 opcodes) of configuring the timer interrupt
@@ -548,7 +556,9 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 {
 	g_nCyclesExecuted =	0;
 
-	MB_StartOfCpuExecute();
+#ifdef _DEBUG
+	MB_CheckCumulativeCycles();
+#endif
 
 	// uCycles:
 	//  =0  : Do single step

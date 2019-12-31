@@ -1,6 +1,6 @@
 #pragma once
 
-extern class CSuperSerialCard sg_SSC;
+#include "Card.h"
 
 enum {COMMEVT_WAIT=0, COMMEVT_ACK, COMMEVT_TERM, COMMEVT_MAX};
 enum eFWMODE {FWMODE_CIC=0, FWMODE_SIC_P8, FWMODE_PPC, FWMODE_SIC_P8A};	// NB. CIC = SSC
@@ -22,17 +22,20 @@ typedef struct
 #define TEXT_SERIAL_COM TEXT("COM")
 #define TEXT_SERIAL_TCP TEXT("TCP")
 
-class CSuperSerialCard
+class CSuperSerialCard : public Card
 {
 public:
 	CSuperSerialCard();
 	virtual ~CSuperSerialCard();
 
+	virtual void Init(void) {};
+	virtual void Reset(const bool powerCycle) {};
+
 	void	CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void    CommReset();
 	void    CommDestroy();
 	void    CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem);
-	std::string GetSnapshotCardName(void);
+	static std::string GetSnapshotCardName(void);
 	void	SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	bool	LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 

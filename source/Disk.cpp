@@ -53,7 +53,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // . if false && I/O ReadWrite($C0EC) && drive is spinning, then advance the track buffer's nibble index (to simulate spinning).
 // Also m_enhanceDisk is persisted to the save-state, so it's an attribute of the DiskII interface card.
 
-Disk2InterfaceCard::Disk2InterfaceCard(void)
+Disk2InterfaceCard::Disk2InterfaceCard(void) :
+	Card(CT_Disk2)
 {
 	ResetSwitches();
 
@@ -74,6 +75,12 @@ Disk2InterfaceCard::Disk2InterfaceCard(void)
 	m_uWriteLastCycle = 0;
 	m_uSyncFFCount = 0;
 #endif
+}
+
+Disk2InterfaceCard::~Disk2InterfaceCard(void)
+{
+	EjectDiskInternal(DRIVE_1);
+	EjectDiskInternal(DRIVE_2);
 }
 
 bool Disk2InterfaceCard::GetEnhanceDisk(void) { return m_enhanceDisk; }
@@ -173,6 +180,9 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 {
 	_ASSERT(drive == DRIVE_1 || drive == DRIVE_2);
 
+	if (m_slot != 6)	// DiskII cards in other slots don't save image to Registry
+		return;
+
 	if (!m_saveDiskImage)
 		return;
 
@@ -252,10 +262,11 @@ bool Disk2InterfaceCard::IsDriveValid(const int drive)
 
 //===========================================================================
 
-void Disk2InterfaceCard::AllocTrack(const int drive)
+void Disk2InterfaceCard::AllocTrack(const int drive, const UINT minSize/*=NIBBLES_PER_TRACK*/)
 {
 	FloppyDisk* pFloppy = &m_floppyDrive[drive].m_disk;
-	pFloppy->m_trackimage = (LPBYTE)VirtualAlloc(NULL, NIBBLES_PER_TRACK, MEM_COMMIT, PAGE_READWRITE);
+	const UINT maxNibblesPerTrack = ImageGetMaxNibblesPerTrack(m_floppyDrive[drive].m_disk.m_imagehandle);
+	pFloppy->m_trackimage = new BYTE[ MAX(minSize,maxNibblesPerTrack) ];
 }
 
 //===========================================================================
@@ -321,7 +332,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 //===========================================================================
 
-void Disk2InterfaceCard::RemoveDisk(const int drive)
+void Disk2InterfaceCard::EjectDiskInternal(const int drive)
 {
 	FloppyDisk* pFloppy = &m_floppyDrive[drive].m_disk;
 
@@ -335,17 +346,25 @@ void Disk2InterfaceCard::RemoveDisk(const int drive)
 
 	if (pFloppy->m_trackimage)
 	{
-		VirtualFree(pFloppy->m_trackimage, 0, MEM_RELEASE);
-		pFloppy->m_trackimage     = NULL;
+		delete [] pFloppy->m_trackimage;
+		pFloppy->m_trackimage = NULL;
 		pFloppy->m_trackimagedata = false;
 	}
 
 	pFloppy->m_imagename.clear();
 	pFloppy->m_fullname.clear();
 	pFloppy->m_strFilenameInZip = "";
+}
 
-	SaveLastDiskImage( drive );
-	Video_ResetScreenshotCounter( "" );
+void Disk2InterfaceCard::EjectDisk(const int drive)
+{
+	if (!IsDriveValid(drive))
+		return;
+
+	EjectDiskInternal(drive);
+
+	SaveLastDiskImage(drive);
+	Video_ResetScreenshotCounter("");
 }
 
 //===========================================================================
@@ -516,10 +535,10 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 void Disk2InterfaceCard::Destroy(void)
 {
 	m_saveDiskImage = false;
-	RemoveDisk(DRIVE_1);
+	EjectDisk(DRIVE_1);
 
 	m_saveDiskImage = false;
-	RemoveDisk(DRIVE_2);
+	EjectDisk(DRIVE_2);
 
 	m_saveDiskImage = true;
 }
@@ -535,16 +554,6 @@ void __stdcall Disk2InterfaceCard::Enable(WORD, WORD address, BYTE, BYTE, ULONG 
 	m_floppyDrive[!m_currDrive].m_spinning   = 0;
 	m_floppyDrive[!m_currDrive].m_writelight = 0;
 	CheckSpinning(uExecutedCycles);
-}
-
-//===========================================================================
-
-void Disk2InterfaceCard::EjectDisk(const int drive)
-{
-	if (IsDriveValid(drive))
-	{
-		RemoveDisk(drive);
-	}
 }
 
 //===========================================================================
@@ -597,7 +606,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	FloppyDisk* pFloppy = &pDrive->m_disk;
 
 	if (pFloppy->m_imagehandle)
-		RemoveDisk(drive);
+		EjectDisk(drive);
 
 	// Reset the disk's attributes, but preserve the drive's attributes (GH#138/Platoon, GH#640)
 	// . Changing the disk (in the drive) doesn't affect the drive's attributes.
@@ -638,7 +647,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 		int nRes = MessageBox(g_hFrameWindow, szText, TEXT("Multi-Zip Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 		{
-			RemoveDisk(drive);
+			EjectDisk(drive);
 			Error = eIMAGE_ERROR_REJECTED_MULTI_ZIP;
 		}
 	}
@@ -1083,6 +1092,8 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 		drive.m_headWindow = 0;
 	}
 
+	// NB. actual m_diskLastCycle for the last bitCell is minus floppy.m_extraCycles
+	// - but don't need this value; and it's correctly accounted for in GetBitCellDelta()
 	m_diskLastCycle = g_nCumulativeCycles;
 
 	if (!bWrite)
@@ -1119,12 +1130,13 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 	if (dbgWOZ)
 	{
 		dbgWOZ = 0;
-		DumpSectorWOZ(floppy);
-//		DumpTrackWOZ(floppy);	// Enable as necessary
+//		DumpSectorWOZ(floppy);
+		DumpTrackWOZ(floppy);	// Enable as necessary
 	}
 #endif
 
-	UINT extraLatchDelay = (UINT)floppy.m_extraCycles ? 1 : 0;	// GH#733
+	// Only extraCycles of 2 & 3 can hold the latch for another bitCell period, eg. m_latchDelay: 3->5 or 7->9
+	UINT extraLatchDelay = ((UINT)floppy.m_extraCycles >= 2) ? 2 : 0;	// GH#733 (0,1->0; 2,3->2)
 
 	for (UINT i = 0; i < bitCellRemainder; i++)
 	{
@@ -1163,8 +1175,9 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 		if (m_latchDelay)
 		{
-			m_latchDelay += extraLatchDelay;
-			extraLatchDelay = 0;
+			if (i == bitCellRemainder-1)			// On last bitCell
+				m_latchDelay += extraLatchDelay;	// +0 or +2
+			extraLatchDelay = 0;					// and always clear (even when not last bitCell)
 
 			m_latchDelay -= 4;
 			if (m_latchDelay < 0)
@@ -1210,7 +1223,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 #endif
 			}
 		}
-	}
+	} // for
 
 #if LOG_DISK_NIBBLES_READ
 	if (m_floppyLatch & 0x80)
@@ -1317,8 +1330,18 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 	const UINT startBitOffset = floppy.m_bitOffset;
 
+	bool newLine = true;
+
 	while (1)
 	{
+		TCHAR str[10];
+		if (newLine)
+		{
+			newLine = false;
+			StringCbPrintf(str, sizeof(str), "%04X:", floppy.m_bitOffset & 0xffff);
+			OutputDebugString(str);
+		}
+
 		BYTE n = floppy.m_trackimage[floppy.m_byte];
 		BYTE outputBit = (n & floppy.m_bitMask) ? 1 : 0;
 
@@ -1354,13 +1377,15 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 		nibbleCount++;
 
-		TCHAR str[10];
 		char syncBits = zeroCount <= 9 ? '0'+zeroCount : '+';
-		if (zeroCount == 0)	StringCbPrintf(str, 10, "   %02X", shiftReg);
-		else				StringCbPrintf(str, 10, "(%c)%02X", syncBits, shiftReg);
+		if (zeroCount == 0)	StringCbPrintf(str, sizeof(str), "   %02X", shiftReg);
+		else				StringCbPrintf(str, sizeof(str), "(%c)%02X", syncBits, shiftReg);
 		OutputDebugString(str);
 		if ((nibbleCount % 32) == 0)
+		{
 			OutputDebugString("\n");
+			newLine = true;
+		}
 
 #ifdef LOG_DISK_NIBBLES_READ
 		formatTrack.DecodeLatchNibbleRead(shiftReg);
@@ -1374,7 +1399,7 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 //===========================================================================
 
-void Disk2InterfaceCard::Reset(const bool bIsPowerCycle/*=false*/)
+void Disk2InterfaceCard::Reset(const bool bIsPowerCycle)
 {
 	// RESET forces all switches off (UTAIIe Table 9.1)
 	ResetSwitches();
@@ -1819,7 +1844,7 @@ void Disk2InterfaceCard::SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT
 	if (m_floppyDrive[unit].m_disk.m_trackimage)
 	{
 		YamlSaveHelper::Label image(yamlSaveHelper, "%s:\n", SS_YAML_KEY_TRACK_IMAGE);
-		yamlSaveHelper.SaveMemory(m_floppyDrive[unit].m_disk.m_trackimage, NIBBLES_PER_TRACK);
+		yamlSaveHelper.SaveMemory(m_floppyDrive[unit].m_disk.m_trackimage, ImageGetMaxNibblesPerTrack(m_floppyDrive[unit].m_disk.m_imagehandle));
 	}
 }
 
@@ -1881,7 +1906,7 @@ bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT
 			if (InsertDisk(unit, filename.c_str(), dwAttributes & FILE_ATTRIBUTE_READONLY, IMAGE_DONT_CREATE) != eIMAGE_ERROR_NONE)
 				bImageError = true;
 
-			// DiskInsert() zeros m_floppyDrive[unit], then sets up:
+			// InsertDisk() zeros m_floppyDrive[unit], then sets up:
 			// . m_imagename
 			// . m_fullname
 			// . m_bWriteProtected
@@ -1909,7 +1934,7 @@ bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT
 
 	if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
 	{
-		yamlLoadHelper.LoadMemory(&track[0], NIBBLES_PER_TRACK);
+		yamlLoadHelper.LoadMemory(track, ImageGetMaxNibblesPerTrack(m_floppyDrive[unit].m_disk.m_imagehandle));
 		yamlLoadHelper.PopMap();
 	}
 
@@ -1969,7 +1994,7 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper,
 void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version)
 {
 	bool bImageError = false;
-	std::vector<BYTE> track(NIBBLES_PER_TRACK);
+	std::vector<BYTE> track(NIBBLES_PER_TRACK);	// Default size - may expand vector after loading disk image (eg. WOZ Info.largestTrack)
 
 	if (version <= 3)
 		bImageError = LoadSnapshotDriveUnitv3(yamlLoadHelper, unit, version, track);
@@ -1980,12 +2005,12 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 	if (!bImageError)
 	{
 		if ((m_floppyDrive[unit].m_disk.m_trackimage == NULL) && m_floppyDrive[unit].m_disk.m_nibbles)
-			AllocTrack(unit);
+			AllocTrack(unit, track.size());
 
 		if (m_floppyDrive[unit].m_disk.m_trackimage == NULL)
 			bImageError = true;
 		else
-			memcpy(m_floppyDrive[unit].m_disk.m_trackimage, &track[0], NIBBLES_PER_TRACK);
+			memcpy(m_floppyDrive[unit].m_disk.m_trackimage, &track[0], track.size());
 	}
 
 	if (bImageError)
@@ -1998,7 +2023,7 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 
 bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
-	if (slot != 6)	// fixme
+	if (slot != 5 && slot != 6)	// fixme
 		throw std::string("Card: wrong slot");
 
 	if (version < 1 || version > kUNIT_VERSION)

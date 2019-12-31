@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Applewin.h"
+#include "CardManager.h"
 #include "CPU.h"
 #include "Debug.h"
 #include "Disk.h"
@@ -104,21 +105,8 @@ bool		g_bDisableDirectSound = false;
 bool		g_bDisableDirectSoundMockingboard = false;
 int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.cpp MemReset()
 
+CardManager g_CardMgr;
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
-CSuperSerialCard	sg_SSC;
-CMouseInterface		sg_Mouse;
-Disk2InterfaceCard sg_Disk2Card;
-
-SS_CARDTYPE g_Slot[8] = {
-	/*0*/ CT_LanguageCard,	// Just for Apple II or II+ or similar clones
-	/*1*/ CT_GenericPrinter,
-	/*2*/ CT_SSC,
-	/*3*/ CT_Uthernet,
-	/*4*/ CT_Empty,
-	/*5*/ CT_Empty,
-	/*6*/ CT_Disk2,
-	/*7*/ CT_Empty };
-SS_CARDTYPE g_SlotAux = CT_Extended80Col;	// For Apple //e and above
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
@@ -280,7 +268,7 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (sg_Disk2Card.IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
+					 (g_CardMgr.GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -327,7 +315,7 @@ static void ContinueExecution(void)
 	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-	sg_Disk2Card.UpdateDriveState(uActualCyclesExecuted);
+	g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 	PrintUpdate(uActualCyclesExecuted);
 	MB_PeriodicUpdate(uActualCyclesExecuted);
@@ -652,7 +640,8 @@ void LoadConfiguration(void)
 		serialPortName,
 		CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM))
 	{
-		sg_SSC.SetSerialPortName(serialPortName);
+		if (g_CardMgr.IsSSCInstalled())
+			g_CardMgr.GetSSC()->SetSerialPortName(serialPortName);
 	}
 
 	REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
@@ -661,7 +650,7 @@ void LoadConfiguration(void)
 
 	DWORD dwEnhanceDisk;
 	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
-	sg_Disk2Card.SetEnhanceDisk(dwEnhanceDisk ? true : false);
+	g_CardMgr.GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	//
 
@@ -720,9 +709,9 @@ void LoadConfiguration(void)
 		sg_PropertySheet.SetMouseRestrictToWindow(dwTmp);
 
 	if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
-		g_Slot[4] = (SS_CARDTYPE) dwTmp;
+		g_CardMgr.Insert(4, (SS_CARDTYPE)dwTmp);
 	if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
-		g_Slot[5] = (SS_CARDTYPE) dwTmp;
+		g_CardMgr.Insert(5, (SS_CARDTYPE)dwTmp);
 
 	//
 
@@ -744,8 +733,7 @@ void LoadConfiguration(void)
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
-	sg_Disk2Card.LoadLastDiskImage(DRIVE_1);
-	sg_Disk2Card.LoadLastDiskImage(DRIVE_2);
+	g_CardMgr.GetDisk2CardMgr().LoadLastDiskImage();
 
 	//
 
@@ -1107,12 +1095,14 @@ static std::string GetFullPath(LPCSTR szFileName)
 	return strPathName;
 }
 
-static bool DoDiskInsert(const int nDrive, LPCSTR szFileName)
+static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 {
+	Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*> (g_CardMgr.GetObj(slot));
+
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	ImageError_e Error = sg_Disk2Card.InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+	ImageError_e Error = pDisk2Card->InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 	return Error == eIMAGE_ERROR_NONE;
 }
 
@@ -1125,8 +1115,10 @@ static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
 	return bRes ? true : false;
 }
 
-static void InsertFloppyDisks(LPSTR szImageName_drive[NUM_DRIVES], bool& bBoot)
+static void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], bool& bBoot)
 {
+	_ASSERT(slot == 5 || slot == 6);
+
 	if (!szImageName_drive[DRIVE_1] && !szImageName_drive[DRIVE_2])
 		return;
 
@@ -1134,16 +1126,16 @@ static void InsertFloppyDisks(LPSTR szImageName_drive[NUM_DRIVES], bool& bBoot)
 
 	if (szImageName_drive[DRIVE_1])
 	{
-		bRes = DoDiskInsert(DRIVE_1, szImageName_drive[DRIVE_1]);
-		LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", bRes);
+		bRes = DoDiskInsert(slot, DRIVE_1, szImageName_drive[DRIVE_1]);
+		LogFileOutput("Init: S%d, DoDiskInsert(D1), res=%d\n", slot, bRes);
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);	// floppy activity LEDs and floppy buttons
 		bBoot = true;
 	}
 
 	if (szImageName_drive[DRIVE_2])
 	{
-		bRes |= DoDiskInsert(DRIVE_2, szImageName_drive[DRIVE_2]);
-		LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", bRes);
+		bRes |= DoDiskInsert(slot, DRIVE_2, szImageName_drive[DRIVE_2]);
+		LogFileOutput("Init: S%d, DoDiskInsert(D2), res=%d\n", slot, bRes);
 	}
 
 	if (!bRes)
@@ -1233,10 +1225,13 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	bool bBoot = false;
 	bool bChangedDisplayResolution = false;
 	bool bSlot0LanguageCard = false;
-	bool bSlotEmpty[NUM_SLOTS] = {false,false,false,false,false,false,false,false};
+	bool bSlotEmpty[NUM_SLOTS] = {};
 	bool bSlot7EmptyOnExit = false;
+	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	UINT bestWidth = 0, bestHeight = 0;
-	LPSTR szImageName_drive[NUM_DRIVES] = {NULL,NULL};
+	const UINT SLOT5 = 5;
+	const UINT SLOT6 = 6;
+	LPSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES] = {};
 	LPSTR szImageName_harddisk[NUM_HARDDISKS] = {NULL,NULL};
 	LPSTR szSnapshotName = NULL;
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
@@ -1249,6 +1244,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	LPSTR szScreenshotFilename = NULL;
 	double clockMultiplier = 0.0;	// 0 => not set from cmd-line
 	eApple2Type model = A2TYPE_MAX;
+
+	for (UINT i = 0; i < NUM_SLOTS; i++)
+	{
+		bSlotEmpty[i] = false;
+		slotInsert[i] = CT_Empty;
+		szImageName_drive[i][DRIVE_1] = NULL;
+		szImageName_drive[i][DRIVE_2] = NULL;
+	}
 
 	while (*lpCmdLine)
 	{
@@ -1266,13 +1269,13 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
-			szImageName_drive[DRIVE_1] = lpCmdLine;
+			szImageName_drive[SLOT6][DRIVE_1] = lpCmdLine;
 		}
 		else if (strcmp(lpCmdLine, "-d2") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
-			szImageName_drive[DRIVE_2] = lpCmdLine;
+			szImageName_drive[SLOT6][DRIVE_2] = lpCmdLine;
 		}
 		else if (strcmp(lpCmdLine, "-h1") == 0)
 		{
@@ -1286,13 +1289,38 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			lpNextArg = GetNextArg(lpNextArg);
 			szImageName_harddisk[HARDDISK_2] = lpCmdLine;
 		}
-		else if (lpCmdLine[0] == '-' && lpCmdLine[1] == 's' && lpCmdLine[2] >= '1' && lpCmdLine[2] <= '7' && lpCmdLine[3] == 0)
+		else if (lpCmdLine[0] == '-' && lpCmdLine[1] == 's' && lpCmdLine[2] >= '1' && lpCmdLine[2] <= '7')
 		{
 			const UINT slot = lpCmdLine[2] - '0';
-			lpCmdLine = GetCurrArg(lpNextArg);
-			lpNextArg = GetNextArg(lpNextArg);
-			if (strcmp(lpCmdLine, "empty") == 0)
-				bSlotEmpty[slot] = true;
+
+			if (lpCmdLine[3] == 0)	// -s[1..7] <card>
+			{
+				lpCmdLine = GetCurrArg(lpNextArg);
+				lpNextArg = GetNextArg(lpNextArg);
+				if (strcmp(lpCmdLine, "empty") == 0)
+					bSlotEmpty[slot] = true;
+				if (strcmp(lpCmdLine, "diskii") == 0)
+					slotInsert[slot] = CT_Disk2;
+			}
+			else if (lpCmdLine[3] == 'd' && (lpCmdLine[4] == '1' || lpCmdLine[4] == '2'))	// -s[1..7]d[1|2] <dsk-image>
+			{
+				const UINT drive = lpCmdLine[4] == '1' ? DRIVE_1 : DRIVE_2;
+
+				if (slot != 5 && slot != 6)
+				{
+					LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
+				}
+				else
+				{
+					lpCmdLine = GetCurrArg(lpNextArg);
+					lpNextArg = GetNextArg(lpNextArg);
+					szImageName_drive[slot][drive] = lpCmdLine;
+				}
+			}
+			else
+			{
+				LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
+			}
 		}
 		else if (strcmp(lpCmdLine, "-s7-empty-on-exit") == 0)
 		{
@@ -1468,7 +1496,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		}
 		else if ((strcmp(lpCmdLine, "-dcd") == 0) || (strcmp(lpCmdLine, "-modem") == 0))	// GH#386
 		{
-			sg_SSC.SupportDCD(true);
+			if (g_CardMgr.IsSSCInstalled())
+				g_CardMgr.GetSSC()->SupportDCD(true);
 		}
 		else if (strcmp(lpCmdLine, "-alt-enter=toggle-full-screen") == 0)	// GH#556
 		{
@@ -1697,20 +1726,35 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
 
 		// Allow the 4 hardcoded slots to be configurated as empty
-		if (bSlotEmpty[1])
-			g_Slot[1] = CT_Empty;
-		if (bSlotEmpty[2])
-			g_Slot[2] = CT_Empty;
-		if (bSlotEmpty[3])
-			g_Slot[3] = CT_Empty;
-		if (bSlotEmpty[6])
-			g_Slot[6] = CT_Empty;
+		if (bSlotEmpty[SLOT1])
+			g_CardMgr.Remove(SLOT1);
+		if (bSlotEmpty[SLOT2])
+			g_CardMgr.Remove(SLOT2);
+		if (bSlotEmpty[SLOT3])
+			g_CardMgr.Remove(SLOT3);
+		if (bSlotEmpty[SLOT6])
+			g_CardMgr.Remove(SLOT6);
+
+		if (slotInsert[5] != CT_Empty)
+		{
+			if (g_CardMgr.QuerySlot(SLOT4) == CT_MockingboardC && slotInsert[SLOT5] != CT_MockingboardC)	// Currently MB occupies slot4+5 when enabled
+			{
+				g_CardMgr.Remove(SLOT4);
+				g_CardMgr.Remove(SLOT5);
+			}
+
+			g_CardMgr.Insert(SLOT5, slotInsert[SLOT5]);
+		}
 
 		// Pre: may need g_hFrameWindow for MessageBox errors
 		// Post: may enable HDD, required for MemInitialize()->MemInitializeIO()
 		{
-			InsertFloppyDisks(szImageName_drive, bBoot);
-			szImageName_drive[DRIVE_1] = szImageName_drive[DRIVE_2] = NULL;	// Don't insert on a restart
+			bool temp = false;
+			InsertFloppyDisks(SLOT5, szImageName_drive[SLOT5], temp);
+			//szImageName_drive[SLOT5][DRIVE_1] = szImageName_drive[SLOT5][DRIVE_2] = NULL;	// *Do* insert on a restart (since no way they could have changed)
+
+			InsertFloppyDisks(SLOT6, szImageName_drive[SLOT6], bBoot);
+			szImageName_drive[SLOT6][DRIVE_1] = szImageName_drive[SLOT6][DRIVE_2] = NULL;	// Don't insert on a restart
 
 			InsertHardDisks(szImageName_harddisk, bBoot);
 			szImageName_harddisk[HARDDISK_1] = szImageName_harddisk[HARDDISK_2] = NULL;	// Don't insert on a restart
@@ -1743,8 +1787,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				LogFileOutput("Main: HookFilterForKeyboard()\n");
 		}
 
-		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call DiskReset():
-		sg_Disk2Card.Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
+		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call Disk2Card's Reset():
+		g_CardMgr.GetDisk2CardMgr().Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
 		HD_Reset();		// GH#515
 		LogFileOutput("Main: HDDReset()\n");
@@ -1836,6 +1880,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			}
 		}
 
+		SetMouseCardInstalled( g_CardMgr.IsMouseCardInstalled() );
+
 		// ENTER THE MAIN MESSAGE LOOP
 		LogFileOutput("Main: EnterMessageLoop()\n");
 		EnterMessageLoop();
@@ -1850,9 +1896,13 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 		MB_Reset();
 		LogFileOutput("Main: MB_Reset()\n");
 
-		sg_Mouse.Uninitialize();	// Maybe restarting due to switching slot-4 card from MouseCard to Mockingboard
-		sg_Mouse.Reset();			// Deassert any pending IRQs - GH#514
-		LogFileOutput("Main: sg_Mouse.Uninitialize()\n");
+		CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
+		if (pMouseCard)
+		{
+//			pMouseCard->Uninitialize();	// Maybe restarting due to switching slot-4 card from MouseCard to Mockingboard
+			pMouseCard->Reset();		// Deassert any pending IRQs - GH#514
+			LogFileOutput("Main: CMouseInterface::Uninitialize()\n");
+		}
 
 		DSUninit();
 		LogFileOutput("Main: DSUninit()\n");

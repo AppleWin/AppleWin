@@ -25,11 +25,12 @@ protected:
 
 private:
 	void InitOptions(HWND hWnd);
-	void InitComboHDD(HWND hWnd);
+	void InitComboFloppyDrive(HWND hWnd, UINT slot);
+	void InitComboHDD(HWND hWnd, UINT slot);
 	void EnableHDD(HWND hWnd, BOOL bEnable);
 	void EnableDisk(HWND hWnd, BOOL bEnable);
 	void HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected);
-	void HandleDiskCombo(HWND hWnd, UINT driveSelected, UINT comboSelected);
+	void HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected);
 	void HandleHDDSwap(HWND hWnd);
 	UINT RemovalConfirmation(UINT uCommand);
 

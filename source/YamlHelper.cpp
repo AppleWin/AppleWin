@@ -237,8 +237,10 @@ void YamlHelper::MakeAsciiToHexTable(void)
 		m_AsciiToHex[i] = i - 'a' + 0xA;
 }
 
-void YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize)
+UINT YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize)
 {
+	UINT bytes = 0;
+
 	for (MapYaml::iterator it = mapYaml.begin(); it != mapYaml.end(); ++it)
 	{
 		const char* pKey = it->first.c_str();
@@ -268,10 +270,13 @@ void YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_
 				throw std::string("Memory: hex data contains illegal character on line address: " + it->first);
 
 			*pDst++ = (ah<<4) | al;
+			bytes++;
 		}
 	}
 
 	mapYaml.clear();
+
+	return bytes;
 }
 
 //-------------------------------------
@@ -373,6 +378,13 @@ double YamlLoadHelper::LoadDouble(const std::string key)
 void YamlLoadHelper::LoadMemory(const LPBYTE pMemBase, const size_t size)
 {
 	m_yamlHelper.LoadMemory(*m_pMapYaml, pMemBase, size);
+}
+
+void YamlLoadHelper::LoadMemory(std::vector<BYTE>& memory, const size_t size)
+{
+	memory.reserve(size);	// expand (but don't shrink) vector's capacity (NB. vector's size doesn't change)
+	const UINT bytes = m_yamlHelper.LoadMemory(*m_pMapYaml, &memory[0], size);
+	memory.resize(bytes);	// resize so that vector contains /bytes/ elements - so that size() gives correct value.
 }
 
 //-------------------------------------

@@ -80,6 +80,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SaveState_Structs_v1.h"
 
 #include "Applewin.h"
+#include "CardManager.h"
 #include "CPU.h"
 #include "Log.h"
 #include "Memory.h"
@@ -160,7 +161,6 @@ struct SY6522_AY8910
 static SY6522_AY8910 g_MB[NUM_AY8910];
 
 // Timer vars
-static ULONG g_n6522TimerPeriod = 0;
 static const UINT kTIMERDEVICE_INVALID = -1;
 static UINT g_nMBTimerDevice = kTIMERDEVICE_INVALID;	// SY6522 device# which is generating timer IRQ
 static UINT64 g_uLastCumulativeCycles = 0;
@@ -219,16 +219,12 @@ static UINT g_cyclesThisAudioFrame = 0;
 // Forward refs:
 static DWORD WINAPI SSI263Thread(LPVOID);
 static void Votrax_Write(BYTE nDevice, BYTE nValue);
-static void MB_Update(void);
 
 //---------------------------------------------------------------------------
 
 static void StartTimer1(SY6522_AY8910* pMB)
 {
 	pMB->bTimer1Active = true;
-
-	// 6522 CLK runs at same speed as 6502 CLK
-	g_n6522TimerPeriod = pMB->sy6522.TIMER1_LATCH.w;
 
 	if (pMB->sy6522.IER & IxR_TIMER1)			// Using 6522 interrupt
 		g_nMBTimerDevice = pMB->nAY8910Number;
@@ -244,10 +240,6 @@ static void StartTimer1_LoadStateV1(SY6522_AY8910* pMB)
 		return;
 
 	pMB->bTimer1Active = true;
-
-	// 6522 CLK runs at same speed as 6502 CLK
-	g_n6522TimerPeriod = pMB->sy6522.TIMER1_LATCH.w;
-
 	g_nMBTimerDevice = pMB->nAY8910Number;
 }
 
@@ -785,7 +777,6 @@ static UINT64 g_uLastMBUpdateCycle = 0;
 // Called by:
 // . MB_UpdateCycles()    - when g_nMBTimerDevice == {0,1,2,3}
 // . MB_PeriodicUpdate()  - when g_nMBTimerDevice == kTIMERDEVICE_INVALID
-// . SY6522_Write()       - when multiple TIMER1s (interrupt sources) are active
 static void MB_Update(void)
 {
 	if (!MockingboardVoice.bActive)
@@ -1502,9 +1493,8 @@ void MB_Destroy()
 
 static void ResetState()
 {
-	g_n6522TimerPeriod = 0;
 	g_nMBTimerDevice = kTIMERDEVICE_INVALID;
-	g_uLastCumulativeCycles = 0;
+	MB_SetCumulativeCycles();
 
 	g_nSSI263Device = 0;
 	g_nCurrentActivePhoneme = -1;
@@ -1709,21 +1699,21 @@ void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 	// Phasor      : Slot 4
 	// <other>     : Slot 4 & 5
 
-	if (g_Slot[4] != CT_MockingboardC && g_Slot[4] != CT_Phasor)
+	if (g_CardMgr.QuerySlot(SLOT4) != CT_MockingboardC && g_CardMgr.QuerySlot(SLOT4) != CT_Phasor)
 	{
 		MB_SetSoundcardType(CT_Empty);
 		return;
 	}
 
-	if (g_Slot[4] == CT_MockingboardC)
+	if (g_CardMgr.QuerySlot(SLOT4) == CT_MockingboardC)
 		RegisterIoHandler(uSlot4, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
 	else	// Phasor
 		RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
 
-	if (g_Slot[5] == CT_MockingboardC)
+	if (g_CardMgr.QuerySlot(SLOT5) == CT_MockingboardC)
 		RegisterIoHandler(uSlot5, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
 
-	MB_SetSoundcardType(g_Slot[4]);
+	MB_SetSoundcardType(g_CardMgr.QuerySlot(SLOT4));
 
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
@@ -1771,8 +1761,19 @@ void MB_Demute()
 
 //-----------------------------------------------------------------------------
 
-// Called by CpuExecute() before doing CPU emulation
-void MB_StartOfCpuExecute()
+#ifdef _DEBUG
+void MB_CheckCumulativeCycles()
+{
+	if (g_SoundcardType == CT_Empty)
+		return;
+
+	_ASSERT(g_uLastCumulativeCycles == g_nCumulativeCycles);
+	g_uLastCumulativeCycles = g_nCumulativeCycles;
+}
+#endif
+
+// Called by: ResetState() and Snapshot_LoadState_v2()
+void MB_SetCumulativeCycles()
 {
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 }
@@ -1846,9 +1847,8 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 	UINT64 uCycles = g_nCumulativeCycles - g_uLastCumulativeCycles;
 	if (uCycles == 0)
 		return false;		// Likely when called from CpuExecute()
-	_ASSERT(uCycles > 1);
 
-	const bool isOpcode = (uCycles > 1 && uCycles <= 7);		// todo: better to pass in a flag?
+	const bool isOpcode = (uCycles <= 7);		// todo: better to pass in a flag?
 
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 	_ASSERT(uCycles < 0x10000);

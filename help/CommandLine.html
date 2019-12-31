@@ -12,9 +12,15 @@
 			follows:
 		</p>
 		-d1 &lt;pathname&gt;<br>
-		Start with a floppy disk in drive-1 (and auto power-on the Apple II)<br><br>
+		Start with a floppy disk in slot 6 drive-1 (and auto power-on the Apple II).<br>
+		NB. -s6d1 has the meaning same as -d1.<br><br>
 		-d2 &lt;pathname&gt;<br>
-		Start with a floppy disk in drive-2<br><br>
+		Start with a floppy disk in slot 6 drive-2.<br>
+		NB. -s6d2 has the meaning same as -d2.<br><br>
+		-s5d1 &lt;pathname&gt;<br>
+		Start with a floppy disk in slot 5 drive-1 (must be used with '-s5 diskii').<br><br>
+		-s5d2 &lt;pathname&gt;<br>
+		Start with a floppy disk in slot 5 drive-2 (must be used with '-s5 diskii').<br><br>
 		-h1 &lt;pathname&gt;<br>
 		Start with hard disk 1 plugged-in (and auto power-on the Apple II). NB. Hard disk controller card gets enabled.<br><br>
 		-h2 &lt;pathname&gt;<br>
@@ -35,6 +41,8 @@
 		Remove the SSC card from slot 2.<br><br>
 		-s3 empty<br>
 		Remove the Uthernet card from slot 3.<br><br>
+		-s5 diskii<br>
+		Insert a 2nd Disk II controller card into slot 5.<br><br>
 		-s6 empty<br>
 		Remove the Disk II controller card from slot 6.<br><br>
 		-s7 empty<br>
@@ -46,7 +54,7 @@
 		Emulate a RamWorks III card with 1 to 127 pages (each page is 64K, giving a max of 8MB) in the auxiliary slot in an Apple //e machine.<br><br>
 		-load-state &lt;savestate&gt;<br>
 		Load a save-state file<br>
-		NB. This takes precedent over the -d1,d2,h1,h2,s0,s7 and -r switches.<br><br>
+		NB. This takes precedent over the -d1, -d2, -d#s#, -h1, -h2, s0-7, -model and -r switches.<br><br>
 		-f<br>
 		Start in full-screen mode<br><br>
 		-fs-height=&lt;best|nnnn&gt;<br>

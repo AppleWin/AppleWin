@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DebugDefs.h"
 
 #include "../Applewin.h"
+#include "../CardManager.h"
 #include "../CPU.h"
 #include "../Disk.h"
 #include "../Frame.h"
@@ -2014,7 +2015,7 @@ Update_t CmdStepOver (int nArgs)
 			CmdStepOut(0);
 			g_nDebugSteps = 0xFFFF;
 			while (g_nDebugSteps != 0)
-				DebugContinueStepping();
+				DebugContinueStepping(true);
 		}
 	}
 
@@ -2046,7 +2047,7 @@ Update_t CmdTrace (int nArgs)
 	g_nDebugStepUntil = -1;
 	g_nAppMode = MODE_STEPPING;
 	FrameRefreshStatus(DRAW_TITLE);
-	DebugContinueStepping();
+	DebugContinueStepping(true);
 
 	return UPDATE_ALL; // TODO: Verify // 0
 }
@@ -2106,7 +2107,7 @@ Update_t CmdTraceLine (int nArgs)
 
 	g_nAppMode = MODE_STEPPING;
 	FrameRefreshStatus(DRAW_TITLE);
-	DebugContinueStepping();
+	DebugContinueStepping(true);
 
 	return UPDATE_ALL; // TODO: Verify // 0
 }
@@ -3752,6 +3753,11 @@ Update_t CmdDisk ( int nArgs)
 	if (! nArgs)
 		goto _Help;
 
+	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+		return ConsoleDisplayError("No DiskII card in slot-6");
+
+	Disk2InterfaceCard* pDiskCard = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+
 	// check for info command
 	int iParam = 0;
 	FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
@@ -3763,13 +3769,13 @@ Update_t CmdDisk ( int nArgs)
 
 		char buffer[200] = "";
 		ConsoleBufferPushFormat(buffer, "D%d at T$%s, phase $%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
-			sg_Disk2Card.GetCurrentDrive() + 1,
-			sg_Disk2Card.GetCurrentTrackString().c_str(),
-			sg_Disk2Card.GetCurrentPhaseString().c_str(),
-			sg_Disk2Card.GetCurrentOffset(),
-			sg_Disk2Card.GetCurrentLSSBitMask(),
-			sg_Disk2Card.GetCurrentExtraCycles(),
-			sg_Disk2Card.GetCurrentState()
+			pDiskCard->GetCurrentDrive() + 1,
+			pDiskCard->GetCurrentTrackString().c_str(),
+			pDiskCard->GetCurrentPhaseString().c_str(),
+			pDiskCard->GetCurrentOffset(),
+			pDiskCard->GetCurrentLSSBitMask(),
+			pDiskCard->GetCurrentExtraCycles(),
+			pDiskCard->GetCurrentState()
 		);
 
 		return ConsoleUpdate();
@@ -3797,7 +3803,7 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs > 2)
 			goto _Help;
 
-		sg_Disk2Card.EjectDisk( iDrive );
+		pDiskCard->EjectDisk( iDrive );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
@@ -3811,7 +3817,7 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs == 3)
 			bProtect = g_aArgs[ 3 ].nValue ? true : false;
 
-		sg_Disk2Card.SetProtect( iDrive, bProtect );
+		pDiskCard->SetProtect( iDrive, bProtect );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
@@ -3822,7 +3828,7 @@ Update_t CmdDisk ( int nArgs)
 		LPCTSTR pDiskName = g_aArgs[ 3 ].sArg;
 
 		// DISK # "Diskname"
-		sg_Disk2Card.InsertDisk( iDrive, pDiskName, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE );
+		pDiskCard->InsertDisk( iDrive, pDiskName, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 
@@ -6867,6 +6873,10 @@ Update_t CmdVideoScannerInfo(int nArgs)
 			g_videoScannerDisplayInfo.isHorzReal = true;
 		else if (strcmp(g_aArgs[1].sArg, "apple") == 0)
 			g_videoScannerDisplayInfo.isHorzReal = false;
+		else if (strcmp(g_aArgs[1].sArg, "abs") == 0)
+			g_videoScannerDisplayInfo.isAbsCycle = true;
+		else if (strcmp(g_aArgs[1].sArg, "rel") == 0)
+			g_videoScannerDisplayInfo.isAbsCycle = false;
 		else
 			return Help_Arg_1(CMD_VIDEO_SCANNER_INFO);
 	}
@@ -6892,10 +6902,14 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 {
 	switch( iPage ) 
 	{
-		case VIEW_PAGE_X: bVideoModeFlags |= !VideoGetSWPAGE2() ? 0 : VF_PAGE2; break; // Page Current
+		case VIEW_PAGE_X:
+			bVideoModeFlags |= !VideoGetSWPAGE2() ? 0 : VF_PAGE2;
+			bVideoModeFlags |= !VideoGetSWMIXED() ? 0 : VF_MIXED;
+			break; // Page Current & current MIXED state
 		case VIEW_PAGE_1: bVideoModeFlags |= 0; break; // Page 1
 		case VIEW_PAGE_2: bVideoModeFlags |= VF_PAGE2; break; // Page 2
 		default:
+			_ASSERT(0);
 			break;
 	}
 
@@ -8619,7 +8633,7 @@ static void CheckBreakOpcode( int iOpcode )
 		g_bDebugBreakpointHit |= BP_HIT_OPCODE;
 }
 
-void DebugContinueStepping ()
+void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 {
 	static bool bForceSingleStepNext = false; // Allow at least one instruction to execute so we don't trigger on the same invalid opcode
 
@@ -8733,8 +8747,8 @@ void DebugContinueStepping ()
 
 		DisasmCalcTopBotAddress();
 
-		Update_t bUpdate = UPDATE_ALL;
-		UpdateDisplay( bUpdate );
+		if (!bCallerWillUpdateDisplay)
+			UpdateDisplay( UPDATE_ALL );
 	}
 }
 
@@ -9042,6 +9056,12 @@ void DebugInitialize ()
 	}
 
 	CmdMOTD(0);
+}
+
+//===========================================================================
+void DebugReset(void)
+{
+	g_videoScannerDisplayInfo.Reset();
 }
 
 // Add character to the input line

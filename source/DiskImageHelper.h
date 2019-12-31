@@ -37,6 +37,7 @@ struct ImageInfo
 	BYTE*			pImageBuffer;
 	BYTE*			pTrackMap;	// WOZ only
 	BYTE			optimalBitTiming;	// WOZ only
+	UINT			maxNibblesPerTrack;
 
 	ImageInfo();
 };
@@ -202,6 +203,7 @@ public:
 	eDetectResult ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset, BYTE*& pTrackMap);
 	bool IsWriteProtected(void) { return m_pInfo->v1.writeProtected == 1; }
 	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v1.version == 1) ? CWOZHelper::InfoChunkv2::optimalBitTiming5_25 : m_pInfo->optimalBitTiming; }
+	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v1.version == 1) ? CWOZHelper::WOZ1_TRACK_SIZE : m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE; }
 
 	static const UINT32 ID1_WOZ1 = '1ZOW';	// 'WOZ1'
 	static const UINT32 ID1_WOZ2 = '2ZOW';	// 'WOZ2'
@@ -218,6 +220,7 @@ public:
 	static const UINT32 WOZ1_TRACK_SIZE = 6656;	// 0x1A00
 	static const UINT32 WOZ1_TRK_OFFSET = 6646;
 	static const UINT32 EMPTY_TRACK_SIZE = 6400;
+	static const UINT32 BLOCK_SIZE = 512;
 
 	struct TRKv1
 	{
@@ -304,7 +307,7 @@ public:
 	ImageError_e Open(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, const bool bCreateIfNecessary, std::string& strFilenameInZip);
 	void Close(ImageInfo* pImageInfo, const bool bDeleteFile);
 
-	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming) = 0;
+	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming, UINT& maxNibblesPerTrack) = 0;
 	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize) = 0;
 	virtual UINT GetMaxImageSize(void) = 0;
 	virtual UINT GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer) = 0;
@@ -349,7 +352,7 @@ public:
 	CDiskImageHelper(void);
 	virtual ~CDiskImageHelper(void) {}
 
-	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming);
+	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming, UINT& maxNibblesPerTrack);
 	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize);
 	virtual UINT GetMaxImageSize(void);
 	virtual UINT GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer);
@@ -375,7 +378,7 @@ public:
 	CHardDiskImageHelper(void);
 	virtual ~CHardDiskImageHelper(void) {}
 
-	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming);
+	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming, UINT& maxNibblesPerTrack);
 	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize);
 	virtual UINT GetMaxImageSize(void);
 	virtual UINT GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer);

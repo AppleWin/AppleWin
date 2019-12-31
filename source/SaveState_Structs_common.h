@@ -53,29 +53,6 @@ struct SS_CARD_HDR
 	DWORD Slot;			// [1..7], 0=Language card, 8=Aux
 };
 
-enum SS_CARDTYPE
-{
-	CT_Empty = 0,
-	CT_Disk2,			// Apple Disk][
-	CT_SSC,				// Apple Super Serial Card
-	CT_MockingboardC,	// Soundcard
-	CT_GenericPrinter,
-	CT_GenericHDD,		// Hard disk
-	CT_GenericClock,
-	CT_MouseInterface,
-	CT_Z80,
-	CT_Phasor,			// Soundcard
-	CT_Echo,			// Soundcard
-	CT_SAM,				// Soundcard: Software Automated Mouth
-	CT_80Col,			// 80 column card (1K)
-	CT_Extended80Col,	// Extended 80-col card (64K)
-	CT_RamWorksIII,		// RamWorksIII (up to 8MB)
-	CT_Uthernet,
-	CT_LanguageCard,	// Apple][ or ][+ in slot-0
-	CT_LanguageCardIIe,	// Apple//e LC instance (not a card)
-	CT_Saturn128K,		// Saturn 128K (but may be populated with less RAM, in multiples of 16K)
-};
-
 /////////////////////////////////////////////////////////////////////////////////
 
 struct SS_CARD_EMPTY
