@@ -45,6 +45,7 @@ add_library(appleii SHARED
   linux/registry.cpp
   linux/keyboard.cpp
 
+  linux/duplicates/Debug.cpp
   linux/duplicates/Video.cpp
   linux/duplicates/Mockingboard.cpp
   linux/duplicates/Joystick.cpp
@@ -65,6 +66,7 @@ target_include_directories(appleii PRIVATE
   ${YAML_INCLUDE_DIRS}
   ${MINIZIP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
+  Debugger
   )
 
 target_link_libraries(appleii PRIVATE

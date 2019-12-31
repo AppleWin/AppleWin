@@ -11,3 +11,4 @@
 #include "linux/windows/misc.h"
 #include "linux/windows/stringcb.h"
 #include "linux/windows/strings.h"
+#include "linux/windows/gdi.h"

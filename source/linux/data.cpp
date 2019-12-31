@@ -31,6 +31,8 @@ DWORD       g_dwCyclesThisFrame = 0;
 // but it is not at the moment
 bool      g_bFullSpeed      = true;
 
+AppMode_e	g_nAppMode = MODE_LOGO;
+
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 std::string     g_sProgramDir; // Directory of where AppleWin executable resides
 std::string     g_sCurrentDir; // Also Starting Dir.  Debugger uses this when load/save
