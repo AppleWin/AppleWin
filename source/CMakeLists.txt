@@ -23,6 +23,8 @@ add_library(appleii SHARED
   RGBMonitor.cpp
   NTSC.cpp
   NTSC_CharSet.cpp
+  CardManager.cpp
+  Disk2CardManager.cpp
 
   linux/windows/memory.cpp
   linux/windows/handles.cpp

@@ -13,3 +13,7 @@ void    MB_UpdateCycles(ULONG uExecutedCycles)
 void    MB_StartOfCpuExecute()
 {
 }
+
+void MB_SetCumulativeCycles()
+{
+}

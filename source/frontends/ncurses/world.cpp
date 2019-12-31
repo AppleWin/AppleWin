@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "Common.h"
+#include "CardManager.h"
 #include "Disk.h"
 #include "Video.h"
 #include "CPU.h"
@@ -274,7 +275,9 @@ void FrameRefresh()
 
 void FrameDrawDiskLEDS(HDC x)
 {
-  sg_Disk2Card.GetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
+  if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+    dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->GetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
+
   FrameRefresh();
 }
 
@@ -283,16 +286,19 @@ void FrameDrawDiskStatus(HDC x)
   if (mem == NULL)
     return;
 
+  Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+
   // We use the actual drive since probing from memory doesn't tell us anything we don't already know.
   //        DOS3.3   ProDOS
   // Drive  $B7EA    $BE3D
   // Track  $B7EC    LC1 $D356
   // Sector $B7ED    LC1 $D357
   // RWTS            LC1 $D300
-  int nActiveFloppy = sg_Disk2Card.GetCurrentDrive();
 
-  int nDisk1Track  = sg_Disk2Card.GetTrack(0);
-  int nDisk2Track  = sg_Disk2Card.GetTrack(1);
+  int nActiveFloppy = pDisk2Card->GetCurrentDrive();
+
+  int nDisk1Track  = pDisk2Card->GetTrack(0);
+  int nDisk2Track  = pDisk2Card->GetTrack(1);
 
   // Probe known OS's for Track/Sector
   int  isProDOS = mem[ 0xBF00 ] == 0x4C;

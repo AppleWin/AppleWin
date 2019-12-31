@@ -3,6 +3,7 @@
 
 #include "StdAfx.h"
 #include "Common.h"
+#include "CardManager.h"
 #include "Applewin.h"
 #include "Disk.h"
 #include "Harddisk.h"
@@ -98,14 +99,17 @@ namespace
 
         emulator->displayLogo();
 
-        sg_Disk2Card.Reset();
+        g_CardMgr.GetDisk2CardMgr().Reset();
         HD_Reset();
     }
 
     void stopEmulator()
     {
-        sg_Mouse.Uninitialize();
-        sg_Mouse.Reset();
+        CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
+        if (pMouseCard)
+        {
+            pMouseCard->Reset();
+        }
         MemDestroy();
     }
 
@@ -115,7 +119,7 @@ namespace
         PrintDestroy();
         CpuDestroy();
 
-        sg_Disk2Card.Destroy();
+        g_CardMgr.GetDisk2CardMgr().Destroy();
         ImageDestroy();
         fclose(g_fh);
         g_fh = nullptr;
@@ -305,12 +309,12 @@ void QApple::on_timer()
     {
         const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
         g_dwCyclesThisFrame += uActualCyclesExecuted;
-        sg_Disk2Card.UpdateDriveState(uActualCyclesExecuted);
+        g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
         // in case we run more than 1 frame
         g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
         ++count;
     }
-    while (sg_Disk2Card.IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + myOptions.msFullSpeed));
+    while (g_CardMgr.GetDisk2CardMgr().IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + myOptions.msFullSpeed));
 
     // just repaint each time, to make it simpler
     // we run @ 60 fps anyway
@@ -513,9 +517,10 @@ void QApple::on_actionScreenshot_triggered()
 void QApple::on_actionSwap_disks_triggered()
 {
     PauseEmulator pause(this);
-
-    // this might open a file dialog
-    sg_Disk2Card.DriveSwap();
+    if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+    {
+        dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->DriveSwap();
+    }
 }
 
 void QApple::on_actionLoad_state_from_triggered()

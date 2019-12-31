@@ -1,6 +1,8 @@
 #include "StdAfx.h"
 
 #include "Video.h"
+#include "Common.h"
+#include "CardManager.h"
 #include "Applewin.h"
 #include "Memory.h"
 #include "Common.h"
@@ -130,7 +132,7 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
     const DWORD executedcycles = CpuExecute(cyclesPerMs, true);
     cyclesThisFrame += executedcycles;
     // every ms disk and joystick are updated
-    sg_Disk2Card.UpdateDriveState(executedcycles);
+    g_CardMgr.GetDisk2CardMgr().UpdateDriveState(executedcycles);
 #if 0
     JoyUpdateButtonLatch(executedcycles);
 #endif

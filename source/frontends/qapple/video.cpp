@@ -6,7 +6,10 @@
 #include "StdAfx.h"
 #include "linux/data.h"
 #include "linux/keyboard.h"
+#include "Common.h"
+#include "CardManager.h"
 #include "MouseInterface.h"
+#include "Applewin.h"
 
 Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
 {
@@ -128,11 +131,11 @@ void Video::keyPressEvent(QKeyEvent *event)
 
 void Video::mouseMoveEvent(QMouseEvent *event)
 {
-    if (sg_Mouse.IsActiveAndEnabled())
+    if (g_CardMgr.IsMouseCardInstalled() && g_CardMgr.GetMouseCard()->IsActiveAndEnabled())
     {
         int iX, iMinX, iMaxX;
         int iY, iMinY, iMaxY;
-        sg_Mouse.GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
+        g_CardMgr.GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 
         const QPointF p = event->localPos();
         const QSize s = size();
@@ -145,7 +148,7 @@ void Video::mouseMoveEvent(QMouseEvent *event)
 
         int outOfBoundsX;
         int outOfBoundsY;
-        sg_Mouse.SetPositionRel(dx, dy, &outOfBoundsX, &outOfBoundsY);
+        g_CardMgr.GetMouseCard()->SetPositionRel(dx, dy, &outOfBoundsX, &outOfBoundsY);
 
         event->accept();
     }
@@ -153,16 +156,16 @@ void Video::mouseMoveEvent(QMouseEvent *event)
 
 void Video::mousePressEvent(QMouseEvent *event)
 {
-    if (sg_Mouse.IsActiveAndEnabled())
+    if (g_CardMgr.IsMouseCardInstalled() && g_CardMgr.GetMouseCard()->IsActiveAndEnabled())
     {
         Qt::MouseButton button = event->button();
         switch (button)
         {
         case Qt::LeftButton:
-            sg_Mouse.SetButton(BUTTON0, BUTTON_DOWN);
+            g_CardMgr.GetMouseCard()->SetButton(BUTTON0, BUTTON_DOWN);
             break;
         case Qt::RightButton:
-            sg_Mouse.SetButton(BUTTON1, BUTTON_DOWN);
+            g_CardMgr.GetMouseCard()->SetButton(BUTTON1, BUTTON_DOWN);
             break;
         default:
             break;
@@ -173,16 +176,16 @@ void Video::mousePressEvent(QMouseEvent *event)
 
 void Video::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (sg_Mouse.IsActiveAndEnabled())
+    if (g_CardMgr.IsMouseCardInstalled() && g_CardMgr.GetMouseCard()->IsActiveAndEnabled())
     {
         Qt::MouseButton button = event->button();
         switch (button)
         {
         case Qt::LeftButton:
-            sg_Mouse.SetButton(BUTTON0, BUTTON_UP);
+            g_CardMgr.GetMouseCard()->SetButton(BUTTON0, BUTTON_UP);
             break;
         case Qt::RightButton:
-            sg_Mouse.SetButton(BUTTON1, BUTTON_UP);
+            g_CardMgr.GetMouseCard()->SetButton(BUTTON1, BUTTON_UP);
             break;
         default:
             break;

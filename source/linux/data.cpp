@@ -3,6 +3,7 @@
 
 #include "Memory.h"
 #include "SerialComms.h"
+#include "CardManager.h"
 #include "MouseInterface.h"
 #include "Speaker.h"
 #include "Video.h"
@@ -30,25 +31,12 @@ DWORD       g_dwCyclesThisFrame = 0;
 // but it is not at the moment
 bool      g_bFullSpeed      = true;
 
-SS_CARDTYPE g_Slot[8] = {
-	/*0*/ CT_LanguageCard,	// Just for Apple II or II+ or similar clones
-	/*1*/ CT_GenericPrinter,
-	/*2*/ CT_SSC,
-	/*3*/ CT_Uthernet,
-	/*4*/ CT_Empty,
-	/*5*/ CT_Empty,
-	/*6*/ CT_Disk2,
-	/*7*/ CT_Empty };
-SS_CARDTYPE	g_SlotAux = CT_Extended80Col;
-
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
 std::string     g_sProgramDir; // Directory of where AppleWin executable resides
 std::string     g_sCurrentDir; // Also Starting Dir.  Debugger uses this when load/save
 std::string     g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 bool      g_bRestart = false;
-CSuperSerialCard	sg_SSC;
-CMouseInterface		sg_Mouse;
-Disk2InterfaceCard sg_Disk2Card;
+CardManager g_CardMgr;
 const short		SPKR_DATA_INIT = (short)0x8000;
 
 short		g_nSpeakerData	= SPKR_DATA_INIT;
@@ -222,10 +210,8 @@ void LoadConfiguration(void)
   REGLOAD(TEXT(REGVALUE_EMULATION_SPEED)   ,&g_dwSpeed);
 
   DWORD dwEnhanceDisk;
-  if (REGLOAD(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk))
-  {
-    sg_Disk2Card.SetEnhanceDisk(dwEnhanceDisk ? true : false);
-  }
+  REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
+  g_CardMgr.GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
   Config_Load_Video();
 #if 0
@@ -289,12 +275,10 @@ void LoadConfiguration(void)
     sg_PropertySheet.SetMouseRestrictToWindow(dwTmp);
 #endif
 
-  if(REGLOAD(TEXT(REGVALUE_SLOT0), &dwTmp))
-    g_Slot[0] = (SS_CARDTYPE) dwTmp;
   if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
-    g_Slot[4] = (SS_CARDTYPE) dwTmp;
+    g_CardMgr.Insert(4, (SS_CARDTYPE)dwTmp);
   if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
-    g_Slot[5] = (SS_CARDTYPE) dwTmp;
+    g_CardMgr.Insert(5, (SS_CARDTYPE)dwTmp);
 
   //
 
@@ -316,8 +300,7 @@ void LoadConfiguration(void)
     GetCurrentDirectory(sizeof(szFilename), szFilename);
   SetCurrentImageDir(szFilename);
 
-  sg_Disk2Card.LoadLastDiskImage(DRIVE_1);
-  sg_Disk2Card.LoadLastDiskImage(DRIVE_2);
+  g_CardMgr.GetDisk2CardMgr().LoadLastDiskImage();
 
   //
 

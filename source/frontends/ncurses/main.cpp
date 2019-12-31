@@ -7,6 +7,7 @@
 #include <boost/program_options.hpp>
 
 #include "Common.h"
+#include "CardManager.h"
 #include "Applewin.h"
 #include "Disk.h"
 #include "Harddisk.h"
@@ -155,7 +156,7 @@ namespace
     const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
     g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-    sg_Disk2Card.UpdateDriveState(uActualCyclesExecuted);
+    g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
 
     const int key = ProcessKeyboard();
 
@@ -203,7 +204,7 @@ namespace
 
       g_relativeSpeed = g_relativeSpeed * coeff + double(us) / double(nExecutionPeriodUsec) * (1.0 - coeff);
 
-      if (!sg_Disk2Card.IsConditionForFullSpeed())
+      if (!g_CardMgr.GetDisk2CardMgr().IsConditionForFullSpeed())
       {
 	if (us < nExecutionPeriodUsec)
 	{
@@ -223,7 +224,7 @@ namespace
     }
   }
 
-  bool DoDiskInsert(const int nDrive, const std::string & fileName, const bool createMissingDisk)
+  bool DoDiskInsert(const UINT slot, const int nDrive, const std::string & fileName, const bool createMissingDisk)
   {
     std::string strPathName;
 
@@ -249,7 +250,8 @@ namespace
       strPathName.append(fileName);
     }
 
-    ImageError_e Error = sg_Disk2Card.InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
+    Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*> (g_CardMgr.GetObj(slot));
+    ImageError_e Error = pDisk2Card->InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
     return Error == eIMAGE_ERROR_NONE;
   }
 
@@ -278,14 +280,14 @@ namespace
     bool disksOk = true;
     if (!options.disk1.empty())
     {
-      const bool ok = DoDiskInsert(DRIVE_1, options.disk1, options.createMissingDisks);
+      const bool ok = DoDiskInsert(SLOT6, DRIVE_1, options.disk1, options.createMissingDisks);
       disksOk = disksOk && ok;
       LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", ok);
     }
 
     if (!options.disk2.empty())
     {
-      const bool ok = DoDiskInsert(DRIVE_2, options.disk2, options.createMissingDisks);
+      const bool ok = DoDiskInsert(SLOT6, DRIVE_2, options.disk2, options.createMissingDisks);
       disksOk = disksOk && ok;
       LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
     }
@@ -303,7 +305,7 @@ namespace
 
 	MemInitialize();
 	NVideoInitialize();
-	sg_Disk2Card.Reset();
+	g_CardMgr.GetDisk2CardMgr().Reset();
 	HD_Reset();
 
 	if (!options.snapshot.empty())
@@ -320,8 +322,11 @@ namespace
 	{
 	  EnterMessageLoop(options);
 	}
-	sg_Mouse.Uninitialize();
-	sg_Mouse.Reset();
+	CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
+	if (pMouseCard)
+	{
+	  pMouseCard->Reset();
+	}
 	MemDestroy();
       }
       while (g_bRestart);
@@ -337,7 +342,7 @@ namespace
     PrintDestroy();
     CpuDestroy();
 
-    sg_Disk2Card.Destroy();
+    g_CardMgr.GetDisk2CardMgr().Destroy();
     ImageDestroy();
 
     fclose(g_fh);

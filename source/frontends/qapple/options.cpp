@@ -2,6 +2,7 @@
 
 #include "StdAfx.h"
 #include "Common.h"
+#include "CardManager.h"
 #include "Applewin.h"
 #include "Disk.h"
 #include "Harddisk.h"
@@ -31,14 +32,18 @@ namespace
 
     void insertDisk(const QString & filename, const int disk)
     {
+        if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+            return;
+
+        Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
         if (filename.isEmpty())
         {
-            sg_Disk2Card.EjectDisk(disk);
+            pDisk2Card->EjectDisk(disk);
         }
         else
         {
             const bool createMissingDisk = true;
-            const ImageError_e result = sg_Disk2Card.InsertDisk(disk, filename.toStdString().c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
+            const ImageError_e result = pDisk2Card->InsertDisk(disk, filename.toStdString().c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
             if (result != eIMAGE_ERROR_NONE)
             {
                 const QString message = QString("Error [%1] inserting '%2'").arg(QString::number(result), filename);
@@ -63,16 +68,32 @@ namespace
         }
     }
 
-    void setSlot4(const SS_CARDTYPE newCardType)
+    void SetSlot(UINT slot, SS_CARDTYPE newCardType)
     {
-        g_Slot[4] = newCardType;
-        REGSAVE(TEXT(REGVALUE_SLOT4), (DWORD)g_Slot[4]);
-    }
+        _ASSERT(slot < NUM_SLOTS);
+        if (slot >= NUM_SLOTS)
+            return;
 
-    void setSlot5(const SS_CARDTYPE newCardType)
-    {
-        g_Slot[5] = newCardType;
-        REGSAVE(TEXT(REGVALUE_SLOT5), (DWORD)g_Slot[5]);
+        // Two paths:
+        // 1) Via Config dialog: card not inserted yet
+        // 2) Snapshot_LoadState_v2(): card already inserted
+        if (g_CardMgr.QuerySlot(slot) != newCardType)
+            g_CardMgr.Insert(slot, newCardType);
+
+        std::string slotText;
+        switch (slot)
+        {
+        case 0: slotText = REGVALUE_SLOT0; break;
+        case 1: slotText = REGVALUE_SLOT1; break;
+        case 2: slotText = REGVALUE_SLOT2; break;
+        case 3: slotText = REGVALUE_SLOT3; break;
+        case 4: slotText = REGVALUE_SLOT4; break;
+        case 5: slotText = REGVALUE_SLOT5; break;
+        case 6: slotText = REGVALUE_SLOT6; break;
+        case 7: slotText = REGVALUE_SLOT7; break;
+        }
+
+        REGSAVE(slotText.c_str(), (DWORD)newCardType);
     }
 
     const std::vector<eApple2Type> computerTypes = {A2TYPE_APPLE2, A2TYPE_APPLE2PLUS, A2TYPE_APPLE2E, A2TYPE_APPLE2EENHANCED,
@@ -177,10 +198,12 @@ void GlobalOptions::setData(const GlobalOptions & data)
 
 void getAppleWinPreferences(PreferenceData & data)
 {
+    Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+
     data.disks.resize(diskIDs.size());
     for (size_t i = 0; i < diskIDs.size(); ++i)
     {
-        const std::string & diskName = sg_Disk2Card.GetFullName(diskIDs[i]);
+        const std::string & diskName = pDisk2Card->GetFullName(diskIDs[i]);
         if (!diskName.empty())
         {
             data.disks[i] = QString::fromStdString(diskName);
@@ -197,9 +220,9 @@ void getAppleWinPreferences(PreferenceData & data)
         }
     }
 
-    data.enhancedSpeed = sg_Disk2Card.GetEnhanceDisk();
-    data.mouseInSlot4 = g_Slot[4] == CT_MouseInterface;
-    data.cpmInSlot5 = g_Slot[5] == CT_Z80;
+    data.enhancedSpeed = pDisk2Card->GetEnhanceDisk();
+    data.mouseInSlot4 = g_CardMgr.QuerySlot(SLOT4) == CT_MouseInterface;
+    data.cpmInSlot5 = g_CardMgr.QuerySlot(SLOT5) == CT_Z80;
     data.hdInSlot7 = HD_CardIsEnabled();
 
     data.apple2Type = getApple2ComputerType();
@@ -219,6 +242,8 @@ void getAppleWinPreferences(PreferenceData & data)
 
 void setAppleWinPreferences(const PreferenceData & currentData, const PreferenceData & newData)
 {
+    Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+
     if (currentData.apple2Type != newData.apple2Type)
     {
         const eApple2Type type = computerTypes[newData.apple2Type];
@@ -231,12 +256,12 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
     if (currentData.mouseInSlot4 != newData.mouseInSlot4)
     {
         const SS_CARDTYPE card = newData.mouseInSlot4 ? CT_MouseInterface : CT_Empty;
-        setSlot4(card);
+        SetSlot(SLOT4, card);
     }
     if (currentData.cpmInSlot5 != newData.cpmInSlot5)
     {
         const SS_CARDTYPE card = newData.cpmInSlot5 ? CT_Z80 : CT_Empty;
-        setSlot5(card);
+        SetSlot(SLOT5, card);
     }
     if (currentData.hdInSlot7 != newData.hdInSlot7)
     {
@@ -247,7 +272,7 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
     if (currentData.enhancedSpeed != newData.enhancedSpeed)
     {
         REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), newData.enhancedSpeed ? 1 : 0);
-        sg_Disk2Card.SetEnhanceDisk(newData.enhancedSpeed);
+        pDisk2Card->SetEnhanceDisk(newData.enhancedSpeed);
     }
 
     for (size_t i = 0; i < diskIDs.size(); ++i)
