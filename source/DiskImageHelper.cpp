@@ -1181,11 +1181,12 @@ public:
 		*pBitCount = pTRK->bitCount;
 		*pNibbles = (pTRK->bitCount+7) / 8;
 
-		_ASSERT(*pNibbles <= NIBBLES_PER_TRACK_WOZ2);
-		if (*pNibbles > NIBBLES_PER_TRACK_WOZ2)
+		const UINT maxNibblesPerTrack = pImageInfo->maxNibblesPerTrack;
+		_ASSERT(*pNibbles <= (int)maxNibblesPerTrack);
+		if (*pNibbles > (int)maxNibblesPerTrack)
 			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);	// TODO: Enlarge track buffer, but for now just return an empty track
 
-		memcpy(pTrackImageBuffer, &pImageInfo->pImageBuffer[pTRK->startBlock*512], *pNibbles);
+		memcpy(pTrackImageBuffer, &pImageInfo->pImageBuffer[pTRK->startBlock*CWOZHelper::BLOCK_SIZE], *pNibbles);
 	}
 
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
@@ -1413,7 +1414,7 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 
 	DWORD dwSize = nLen;
 	DWORD dwOffset = 0;
-	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap, pImageInfo->optimalBitTiming);
+	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap, pImageInfo->optimalBitTiming, pImageInfo->maxNibblesPerTrack);
 
 	if (!pImageType)
 		return eIMAGE_ERROR_UNSUPPORTED;
@@ -1504,7 +1505,7 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 
 	DWORD dwSize = nLen;
 	DWORD dwOffset = 0;
-	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap, pImageInfo->optimalBitTiming);
+	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap, pImageInfo->optimalBitTiming, pImageInfo->maxNibblesPerTrack);
 
 	if (!pImageType)
 	{
@@ -1601,7 +1602,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			return eIMAGE_ERROR_BAD_SIZE;
 		}
 
-		pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap, pImageInfo->optimalBitTiming);
+		pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap, pImageInfo->optimalBitTiming, pImageInfo->maxNibblesPerTrack);
 		if (bTempDetectBuffer)
 		{
 			delete [] pImageInfo->pImageBuffer;
@@ -1746,11 +1747,13 @@ CDiskImageHelper::CDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CWOZ2Image );
 }
 
-CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming)
+CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset,
+									 bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming, UINT& maxNibblesPerTrack)
 {
 	dwOffset = 0;
 	m_MacBinaryHelper.DetectHdr(pImage, dwSize, dwOffset);
 	m_Result2IMG = m_2IMGHelper.DetectHdr(pImage, dwSize, dwOffset);
+	maxNibblesPerTrack = NIBBLES_PER_TRACK;	// Start with the default size (for all types). May get changed below.
 
 	// CALL THE DETECTION FUNCTIONS IN ORDER, LOOKING FOR A MATCH
 	eImageType imageType = eImageUNKNOWN;
@@ -1802,6 +1805,7 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 			writeProtected = true;
 
 		optimalBitTiming = m_WOZHelper.GetOptimalBitTiming();
+		maxNibblesPerTrack = m_WOZHelper.GetMaxNibblesPerTrack();
 	}
 	else
 	{
@@ -1873,7 +1877,8 @@ CHardDiskImageHelper::CHardDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CHDVImage );
 }
 
-CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming)
+CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset,
+										 bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming, UINT& maxNibblesPerTrack)
 {
 	dwOffset = 0;
 	m_Result2IMG = m_2IMGHelper.DetectHdr(pImage, dwSize, dwOffset);
@@ -1905,6 +1910,7 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHA
 
 	pTrackMap = 0;	// TODO: WOZ
 	optimalBitTiming = 0;	// TODO: WOZ
+	maxNibblesPerTrack = 0;	// TODO
 
 	return pImageType;
 }

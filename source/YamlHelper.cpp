@@ -237,8 +237,10 @@ void YamlHelper::MakeAsciiToHexTable(void)
 		m_AsciiToHex[i] = i - 'a' + 0xA;
 }
 
-void YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize)
+UINT YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize)
 {
+	UINT bytes = 0;
+
 	for (MapYaml::iterator it = mapYaml.begin(); it != mapYaml.end(); ++it)
 	{
 		const char* pKey = it->first.c_str();
@@ -268,10 +270,13 @@ void YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_
 				throw std::string("Memory: hex data contains illegal character on line address: " + it->first);
 
 			*pDst++ = (ah<<4) | al;
+			bytes++;
 		}
 	}
 
 	mapYaml.clear();
+
+	return bytes;
 }
 
 //-------------------------------------
@@ -370,9 +375,9 @@ double YamlLoadHelper::LoadDouble(const std::string key)
 	return strtod(value.c_str(), NULL);
 }
 
-void YamlLoadHelper::LoadMemory(const LPBYTE pMemBase, const size_t size)
+UINT YamlLoadHelper::LoadMemory(const LPBYTE pMemBase, const size_t size)
 {
-	m_yamlHelper.LoadMemory(*m_pMapYaml, pMemBase, size);
+	return m_yamlHelper.LoadMemory(*m_pMapYaml, pMemBase, size);
 }
 
 //-------------------------------------

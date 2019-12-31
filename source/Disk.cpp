@@ -262,10 +262,11 @@ bool Disk2InterfaceCard::IsDriveValid(const int drive)
 
 //===========================================================================
 
-void Disk2InterfaceCard::AllocTrack(const int drive)
+void Disk2InterfaceCard::AllocTrack(const int drive, const UINT minSize/*=NIBBLES_PER_TRACK*/)
 {
 	FloppyDisk* pFloppy = &m_floppyDrive[drive].m_disk;
-	pFloppy->m_trackimage = (LPBYTE)VirtualAlloc(NULL, NIBBLES_PER_TRACK, MEM_COMMIT, PAGE_READWRITE);
+	const UINT maxNibblesPerTrack = ImageGetMaxNibblesPerTrack(m_floppyDrive[drive].m_disk.m_imagehandle);
+	pFloppy->m_trackimage = new BYTE[ MAX(minSize,maxNibblesPerTrack) ];
 }
 
 //===========================================================================
@@ -345,7 +346,7 @@ void Disk2InterfaceCard::EjectDiskInternal(const int drive)
 
 	if (pFloppy->m_trackimage)
 	{
-		VirtualFree(pFloppy->m_trackimage, 0, MEM_RELEASE);
+		delete [] pFloppy->m_trackimage;
 		pFloppy->m_trackimage = NULL;
 		pFloppy->m_trackimagedata = false;
 	}
@@ -1843,7 +1844,7 @@ void Disk2InterfaceCard::SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT
 	if (m_floppyDrive[unit].m_disk.m_trackimage)
 	{
 		YamlSaveHelper::Label image(yamlSaveHelper, "%s:\n", SS_YAML_KEY_TRACK_IMAGE);
-		yamlSaveHelper.SaveMemory(m_floppyDrive[unit].m_disk.m_trackimage, NIBBLES_PER_TRACK);
+		yamlSaveHelper.SaveMemory(m_floppyDrive[unit].m_disk.m_trackimage, ImageGetMaxNibblesPerTrack(m_floppyDrive[unit].m_disk.m_imagehandle));
 	}
 }
 
@@ -1905,7 +1906,7 @@ bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT
 			if (InsertDisk(unit, filename.c_str(), dwAttributes & FILE_ATTRIBUTE_READONLY, IMAGE_DONT_CREATE) != eIMAGE_ERROR_NONE)
 				bImageError = true;
 
-			// DiskInsert() zeros m_floppyDrive[unit], then sets up:
+			// InsertDisk() zeros m_floppyDrive[unit], then sets up:
 			// . m_imagename
 			// . m_fullname
 			// . m_bWriteProtected
@@ -1933,7 +1934,10 @@ bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT
 
 	if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
 	{
-		yamlLoadHelper.LoadMemory(&track[0], NIBBLES_PER_TRACK);
+		const UINT maxNibblesPerTrack = ImageGetMaxNibblesPerTrack(m_floppyDrive[unit].m_disk.m_imagehandle);
+		track.reserve(maxNibblesPerTrack);	// expand (but don't shrink) vector's capacity (NB. vector's size doesn't change)
+		UINT bytes = yamlLoadHelper.LoadMemory(&track[0], maxNibblesPerTrack);
+		track.resize(bytes);				// resize so that vector contains /bytes/ elements
 		yamlLoadHelper.PopMap();
 	}
 
@@ -1993,7 +1997,7 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper,
 void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version)
 {
 	bool bImageError = false;
-	std::vector<BYTE> track(NIBBLES_PER_TRACK);
+	std::vector<BYTE> track(NIBBLES_PER_TRACK);	// Default size - may expand vector after loading disk image (eg. WOZ Info.largestTrack)
 
 	if (version <= 3)
 		bImageError = LoadSnapshotDriveUnitv3(yamlLoadHelper, unit, version, track);
@@ -2004,12 +2008,12 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 	if (!bImageError)
 	{
 		if ((m_floppyDrive[unit].m_disk.m_trackimage == NULL) && m_floppyDrive[unit].m_disk.m_nibbles)
-			AllocTrack(unit);
+			AllocTrack(unit, track.size());
 
 		if (m_floppyDrive[unit].m_disk.m_trackimage == NULL)
 			bImageError = true;
 		else
-			memcpy(m_floppyDrive[unit].m_disk.m_trackimage, &track[0], NIBBLES_PER_TRACK);
+			memcpy(m_floppyDrive[unit].m_disk.m_trackimage, &track[0], track.size());
 	}
 
 	if (bImageError)

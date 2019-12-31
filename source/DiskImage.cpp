@@ -168,8 +168,9 @@ void ImageReadTrack(	ImageInfo* const pImageInfo,
 	}
 	else
 	{
-		for (*pNibbles = 0; *pNibbles < NIBBLES_PER_TRACK; (*pNibbles)++)
-			pTrackImageBuffer[*pNibbles] = (BYTE)(rand() & 0xFF);
+		*pNibbles = (int) ImageGetMaxNibblesPerTrack(pImageInfo);
+		for (int i = 0; i < *pNibbles; i++)
+			pTrackImageBuffer[i] = (BYTE)(rand() & 0xFF);
 	}
 }
 
@@ -272,6 +273,11 @@ UINT ImagePhaseToTrack(ImageInfo* const pImageInfo, const float phase, const boo
 	}
 
 	return track;
+}
+
+UINT ImageGetMaxNibblesPerTrack(ImageInfo* const pImageInfo)
+{
+	return pImageInfo ? pImageInfo->maxNibblesPerTrack : NIBBLES_PER_TRACK;
 }
 
 void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName)

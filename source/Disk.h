@@ -180,7 +180,7 @@ private:
 	Disk_Status_e GetDriveLightStatus(const int drive);
 	bool IsDriveValid(const int drive);
 	void EjectDiskInternal(const int drive);
-	void AllocTrack(const int drive);
+	void AllocTrack(const int drive, const UINT minSize=NIBBLES_PER_TRACK);
 	void ReadTrack(const int drive, ULONG uExecutedCycles);
 	void WriteTrack(const int drive);
 	const std::string & DiskGetFullPathName(const int drive);

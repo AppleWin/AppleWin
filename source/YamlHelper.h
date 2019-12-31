@@ -48,7 +48,7 @@ private:
 	void GetNextEvent(bool bInMap = false);
 	int ParseMap(MapYaml& mapYaml);
 	std::string GetMapValue(MapYaml& mapYaml, const std::string key, bool& bFound);
-	void LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize);
+	UINT LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize);
 	bool GetSubMap(MapYaml** mapYaml, const std::string key);
 	void GetMapRemainder(std::string& mapName, MapYaml& mapYaml);
 
@@ -99,7 +99,7 @@ public:
 	std::string LoadString(const std::string& key);
 	float LoadFloat(const std::string key);
 	double LoadDouble(const std::string key);
-	void LoadMemory(const LPBYTE pMemBase, const size_t size);
+	UINT LoadMemory(const LPBYTE pMemBase, const size_t size);
 
 	bool GetSubMap(const std::string key)
 	{
