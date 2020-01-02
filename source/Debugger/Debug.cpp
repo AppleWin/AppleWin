@@ -9642,6 +9642,14 @@ void DebugDisplay( BOOL bInitDisasm/*=FALSE*/ )
 	if (bInitDisasm)
 		InitDisasm();
 
+	if (DebugVideoMode::Instance().IsSet())
+	{
+		uint32_t mode = 0;
+		DebugVideoMode::Instance().Get(&mode);
+		VideoRefreshScreen(mode, true);
+		return;
+	}
+
 	UpdateDisplay( UPDATE_ALL );
 }
 

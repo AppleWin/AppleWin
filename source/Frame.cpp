@@ -129,7 +129,6 @@ static bool    g_bIsFullScreen  = false;
 		BOOL   g_bMultiMon      = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
 
 static BOOL    helpquit        = 0;
-static BOOL    g_bPaintingWindow        = 0;
 static HFONT   smallfont       = (HFONT)0;
 static HWND    tooltipwindow   = (HWND)0;
 static BOOL    g_bUsingCursor	= FALSE;	// TRUE = AppleWin is using (hiding) the mouse-cursor && restricting cursor to window - see SetUsingCursor()
@@ -623,13 +622,14 @@ static void DrawCrosshairs (int x, int y) {
 }
 
 //===========================================================================
-static void DrawFrameWindow ()
+static void DrawFrameWindow (bool bPaintingWindow = false);
+static void DrawFrameWindow (bool bPaintingWindow/*=false*/)
 {
 	FrameReleaseDC();
 	PAINTSTRUCT ps;
-	HDC         dc = (g_bPaintingWindow
+	HDC         dc = bPaintingWindow
 		? BeginPaint(g_hFrameWindow,&ps)
-		: GetDC(g_hFrameWindow));
+		: GetDC(g_hFrameWindow);
 
 	if (!g_bIsFullScreen)
 	{
@@ -677,7 +677,7 @@ static void DrawFrameWindow ()
 	else
 		VideoRedrawScreen();
 
-	if (g_bPaintingWindow)
+	if (bPaintingWindow)
 		EndPaint(g_hFrameWindow,&ps);
 	else
 		ReleaseDC(g_hFrameWindow,dc);
@@ -1746,10 +1746,8 @@ LRESULT CALLBACK FrameWndProc (
 		break;
 
     case WM_PAINT:
-      if (GetUpdateRect(window,NULL,0)) {
-        g_bPaintingWindow = 1;
-        DrawFrameWindow();
-        g_bPaintingWindow = 0;
+      if (GetUpdateRect(window,NULL,0)){
+        DrawFrameWindow(true);
       }
       break;
 
