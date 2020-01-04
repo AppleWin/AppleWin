@@ -1836,8 +1836,8 @@ void MemReset()
 				for( int i = 0; i < 256; i++ )
 				{
 					clock = getRandomTime();
-					random[ (i+0) & 0xFF ] ^= (clock >>  0) & 0xFF;
-					random[ (i+1) & 0xFF ] ^= (clock >> 11) & 0xFF;
+					random[ (i+0) & 0xFF ] = (clock >>  0) & 0xFF;
+					random[ (i+1) & 0xFF ] = (clock >> 11) & 0xFF;
 				}
 
 				memcpy( &memmain[ iByte ], random, 256 );

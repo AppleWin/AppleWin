@@ -1682,9 +1682,7 @@ static void GetAppleWinVersion(void)
     char szPath[_MAX_PATH];
 
     if (0 == GetModuleFileName(NULL, szPath, sizeof(szPath)))
-    {
-        strcpy(szPath, __argv[0]);
-    }
+        strcpy_s(szPath, sizeof(szPath), __argv[0]);
 
     // Extract application version and store in a global variable
     DWORD dwHandle, dwVerInfoSize;

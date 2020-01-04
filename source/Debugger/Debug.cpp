@@ -7037,7 +7037,7 @@ Update_t CmdWatchAdd (int nArgs)
 		if (iWatch == NO_6502_TARGET)
 		{
 			iWatch = 0;
-			while ((iWatch < MAX_ZEROPAGE_POINTERS) && (g_aWatches[iWatch].bSet))
+			while ((iWatch < MAX_WATCHES) && (g_aWatches[iWatch].bSet))
 			{
 				iWatch++;
 			}

@@ -125,7 +125,7 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 
 	// TODO: Note: need to call ConsoleUpdate(), as may print symbol has been updated
 
-	strcpy( tData_.sSymbol, pSymbolName );
+	strcpy_s( tData_.sSymbol, sizeof(tData_.sSymbol), pSymbolName );
 
 	return nAddress;
 }

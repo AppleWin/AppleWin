@@ -56,6 +56,7 @@ ImageInfo::ImageInfo()
 	pImageBuffer = NULL;
 	pTrackMap = NULL;
 	optimalBitTiming = 0;
+	maxNibblesPerTrack = 0;
 }
 
 /* DO logical order  0 1 2 3 4 5 6 7 8 9 A B C D E F */
@@ -123,11 +124,12 @@ bool CImageBase::WriteTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTra
 			return false;
 
 		int nLen = gzwrite(hGZFile, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
+		int nRes = gzclose(hGZFile);	// close before returning (due to error) to avoid resource leak
+		hGZFile = NULL;
+
 		if (nLen != pImageInfo->uImageSize)
 			return false;
 
-		int nRes = gzclose(hGZFile);
-		hGZFile = NULL;
 		if (nRes != Z_OK)
 			return false;
 	}
@@ -244,11 +246,12 @@ bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlo
 			return false;
 
 		int nLen = gzwrite(hGZFile, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
+		int nRes = gzclose(hGZFile);	// close before returning (due to error) to avoid resource leak
+		hGZFile = NULL;
+
 		if (nLen != pImageInfo->uImageSize)
 			return false;
 
-		int nRes = gzclose(hGZFile);
-		hGZFile = NULL;
 		if (nRes != Z_OK)
 			return false;
 	}
@@ -1398,11 +1401,12 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 	pImageInfo->pImageBuffer = new BYTE[MAX_UNCOMPRESSED_SIZE];
 
 	int nLen = gzread(hGZFile, pImageInfo->pImageBuffer, MAX_UNCOMPRESSED_SIZE);
+	int nRes = gzclose(hGZFile);	// close before returning (due to error) to avoid resource leak
+	hGZFile = NULL;
+
 	if (nLen < 0 || nLen == MAX_UNCOMPRESSED_SIZE)
 		return eIMAGE_ERROR_BAD_SIZE;
 
-	int nRes = gzclose(hGZFile);
-	hGZFile = NULL;
 	if (nRes != Z_OK)
 		return eIMAGE_ERROR_GZ;
 
