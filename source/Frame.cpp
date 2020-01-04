@@ -775,10 +775,10 @@ void FrameDrawDiskStatus( HDC passdc )
 	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
 		return;
 
-	Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
-	int nActiveFloppy = pDisk2Card->GetCurrentDrive();
-	int nDisk1Track  = pDisk2Card->GetTrack(DRIVE_1);
-	int nDisk2Track  = pDisk2Card->GetTrack(DRIVE_2);
+	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6));
+	int nActiveFloppy = disk2Card.GetCurrentDrive();
+	int nDisk1Track = disk2Card.GetTrack(DRIVE_1);
+	int nDisk2Track = disk2Card.GetTrack(DRIVE_2);
 
 	// Probe known OS's for Track/Sector
 	int  isProDOS = mem[ 0xBF00 ] == 0x4C;
