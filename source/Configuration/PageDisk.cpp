@@ -135,6 +135,8 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 
 			if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
 				InitComboFloppyDrive(hWnd, SLOT6);
+			else
+				EnableFloppyDrive(hWnd, FALSE);
 
 			InitComboHDD(hWnd, SLOT7);
 
@@ -158,20 +160,20 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 
 void CPageDisk::InitComboFloppyDrive(HWND hWnd, UINT slot)
 {
-	Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(slot));
+	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(slot));
 
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_DISK1, m_defaultDiskOptions, -1);
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_DISK2, m_defaultDiskOptions, -1);
 
-	if (!pDisk2Card->GetFullName(DRIVE_1).empty())
+	if (!disk2Card.GetFullName(DRIVE_1).empty())
 	{
-		SendDlgItemMessage(hWnd, IDC_COMBO_DISK1, CB_INSERTSTRING, 0, (LPARAM)pDisk2Card->GetFullName(DRIVE_1).c_str());
+		SendDlgItemMessage(hWnd, IDC_COMBO_DISK1, CB_INSERTSTRING, 0, (LPARAM)disk2Card.GetFullName(DRIVE_1).c_str());
 		SendDlgItemMessage(hWnd, IDC_COMBO_DISK1, CB_SETCURSEL, 0, 0);
 	}
 
-	if (!pDisk2Card->GetFullName(DRIVE_2).empty())
+	if (!disk2Card.GetFullName(DRIVE_2).empty())
 	{ 
-		SendDlgItemMessage(hWnd, IDC_COMBO_DISK2, CB_INSERTSTRING, 0, (LPARAM)pDisk2Card->GetFullName(DRIVE_2).c_str());
+		SendDlgItemMessage(hWnd, IDC_COMBO_DISK2, CB_INSERTSTRING, 0, (LPARAM)disk2Card.GetFullName(DRIVE_2).c_str());
 		SendDlgItemMessage(hWnd, IDC_COMBO_DISK2, CB_SETCURSEL, 0, 0);
 	}
 }
@@ -228,7 +230,7 @@ void CPageDisk::EnableHDD(HWND hWnd, BOOL bEnable)
 	EnableWindow(GetDlgItem(hWnd, IDC_HDD_SWAP), bEnable);
 }
 
-void CPageDisk::EnableDisk(HWND hWnd, BOOL bEnable)
+void CPageDisk::EnableFloppyDrive(HWND hWnd, BOOL bEnable)
 {
 	EnableWindow(GetDlgItem(hWnd, IDC_COMBO_DISK1), bEnable);
 	EnableWindow(GetDlgItem(hWnd, IDC_COMBO_DISK2), bEnable);
@@ -300,9 +302,13 @@ void CPageDisk::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected
 
 void CPageDisk::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected)
 {
-	Disk2InterfaceCard* pDisk2Card = (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
-		? dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))
-		: NULL;
+	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+	{
+		_ASSERT(0);	// Shouldn't come here, as the combo is disabled
+		return;
+	}
+
+	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6));
 
 	// Search from "select floppy drive"
 	DWORD dwOpenDialogIndex = (DWORD)SendDlgItemMessage(hWnd, comboSelected, CB_FINDSTRINGEXACT, -1, (LPARAM)&m_defaultDiskOptions[0]);
@@ -312,10 +318,9 @@ void CPageDisk::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT combo
 
 	if (dwComboSelection == dwOpenDialogIndex)
 	{
-		EnableDisk(hWnd, FALSE);	// Prevent multiple Selection dialogs to be triggered
-		bool bRes = false;
-		if (pDisk2Card) bRes = pDisk2Card->UserSelectNewDiskImage(driveSelected);
-		EnableDisk(hWnd, TRUE);
+		EnableFloppyDrive(hWnd, FALSE);	// Prevent multiple Selection dialogs to be triggered
+		bool bRes = disk2Card.UserSelectNewDiskImage(driveSelected);
+		EnableFloppyDrive(hWnd, TRUE);
 
 		if (!bRes)
 		{
@@ -331,8 +336,7 @@ void CPageDisk::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT combo
 			SendDlgItemMessage(hWnd, comboSelected, CB_DELETESTRING, 0, 0);
 		}
 
-		std::string fullname;
-		if (pDisk2Card) fullname = pDisk2Card->GetFullName(driveSelected);
+		std::string fullname = disk2Card.GetFullName(driveSelected);
 		SendDlgItemMessage(hWnd, comboSelected, CB_INSERTSTRING, 0, (LPARAM)fullname.c_str());
 		SendDlgItemMessage(hWnd, comboSelected, CB_SETCURSEL, 0, 0);
 
@@ -354,7 +358,7 @@ void CPageDisk::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT combo
 			if (RemovalConfirmation(uCommand))
 			{
 				// Eject selected disk
-				if (pDisk2Card) pDisk2Card->EjectDisk(driveSelected);
+				disk2Card.EjectDisk(driveSelected);
 				// Remove drive from list
 				SendDlgItemMessage(hWnd, comboSelected, CB_DELETESTRING, 0, 0);
 			}

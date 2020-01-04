@@ -1659,7 +1659,7 @@ void MemInitializeIO(void)
 		PrintLoadRom(pCxRomPeripheral, SLOT1);				// $C100 : Parallel printer f/w
 
 	if (g_CardMgr.QuerySlot(SLOT2) == CT_SSC)
-		dynamic_cast<CSuperSerialCard*>(g_CardMgr.GetObj(SLOT2))->CommInitialize(pCxRomPeripheral, SLOT2);	// $C200 : SSC
+		dynamic_cast<CSuperSerialCard&>(g_CardMgr.GetRef(SLOT2)).CommInitialize(pCxRomPeripheral, SLOT2);	// $C200 : SSC
 
 	if (g_CardMgr.QuerySlot(SLOT3) == CT_Uthernet)
 	{
@@ -1672,7 +1672,7 @@ void MemInitializeIO(void)
 
 	if (g_CardMgr.QuerySlot(SLOT4) == CT_MouseInterface)
 	{
-		dynamic_cast<CMouseInterface*>(g_CardMgr.GetObj(SLOT4))->Initialize(pCxRomPeripheral, SLOT4);	// $C400 : Mouse f/w
+		dynamic_cast<CMouseInterface&>(g_CardMgr.GetRef(SLOT4)).Initialize(pCxRomPeripheral, SLOT4);	// $C400 : Mouse f/w
 	}
 	else if (g_CardMgr.QuerySlot(SLOT4) == CT_MockingboardC || g_CardMgr.QuerySlot(SLOT4) == CT_Phasor)
 	{
@@ -1697,11 +1697,11 @@ void MemInitializeIO(void)
 	}
 	else if (g_CardMgr.QuerySlot(SLOT5) == CT_Disk2)
 	{
-		dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT5))->Initialize(pCxRomPeripheral, SLOT5);	// $C500 : Disk][ card
+		dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT5)).Initialize(pCxRomPeripheral, SLOT5);	// $C500 : Disk][ card
 	}
 
 	if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
-		dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->Initialize(pCxRomPeripheral, SLOT6);	// $C600 : Disk][ card
+		dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).Initialize(pCxRomPeripheral, SLOT6);	// $C600 : Disk][ card
 
 	if (g_CardMgr.QuerySlot(SLOT7) == CT_GenericHDD)
 		HD_Load_Rom(pCxRomPeripheral, SLOT7);			// $C700 : HDD f/w

@@ -3756,7 +3756,7 @@ Update_t CmdDisk ( int nArgs)
 	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
 		return ConsoleDisplayError("No DiskII card in slot-6");
 
-	Disk2InterfaceCard* pDiskCard = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+	Disk2InterfaceCard& diskCard = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6));
 
 	// check for info command
 	int iParam = 0;
@@ -3769,13 +3769,13 @@ Update_t CmdDisk ( int nArgs)
 
 		char buffer[200] = "";
 		ConsoleBufferPushFormat(buffer, "D%d at T$%s, phase $%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
-			pDiskCard->GetCurrentDrive() + 1,
-			pDiskCard->GetCurrentTrackString().c_str(),
-			pDiskCard->GetCurrentPhaseString().c_str(),
-			pDiskCard->GetCurrentOffset(),
-			pDiskCard->GetCurrentLSSBitMask(),
-			pDiskCard->GetCurrentExtraCycles(),
-			pDiskCard->GetCurrentState()
+			diskCard.GetCurrentDrive() + 1,
+			diskCard.GetCurrentTrackString().c_str(),
+			diskCard.GetCurrentPhaseString().c_str(),
+			diskCard.GetCurrentOffset(),
+			diskCard.GetCurrentLSSBitMask(),
+			diskCard.GetCurrentExtraCycles(),
+			diskCard.GetCurrentState()
 		);
 
 		return ConsoleUpdate();
@@ -3803,7 +3803,7 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs > 2)
 			goto _Help;
 
-		pDiskCard->EjectDisk( iDrive );
+		diskCard.EjectDisk( iDrive );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
@@ -3817,7 +3817,7 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs == 3)
 			bProtect = g_aArgs[ 3 ].nValue ? true : false;
 
-		pDiskCard->SetProtect( iDrive, bProtect );
+		diskCard.SetProtect( iDrive, bProtect );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
@@ -3828,7 +3828,7 @@ Update_t CmdDisk ( int nArgs)
 		LPCTSTR pDiskName = g_aArgs[ 3 ].sArg;
 
 		// DISK # "Diskname"
-		pDiskCard->InsertDisk( iDrive, pDiskName, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE );
+		diskCard.InsertDisk( iDrive, pDiskName, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 
