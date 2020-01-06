@@ -49,6 +49,7 @@ typedef UINT64 uint64_t;
 #include <string>
 #include <vector>
 #include <memory>
+#include <stdexcept>
 
 // SM_CXPADDEDBORDER is not supported on 2000 & XP:
 // http://msdn.microsoft.com/en-nz/library/windows/desktop/ms724385(v=vs.85).aspx
