@@ -25,6 +25,8 @@ void    JoySetTrim(short nValue, bool bAxisX);
 short   JoyGetTrim(bool bAxisX);
 void	JoyportControl(const UINT uControl);
 void	JoySetHookAltKeys(bool hook);
+void	JoySwapButton0and1(bool swap);
+void	JoySetButtonVirtualKey(UINT button, UINT virtKey);
 void    JoySaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    JoyLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 

@@ -1576,6 +1576,20 @@ static void ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			JoySetHookAltKeys(false);
 		}
+		else if (strcmp(lpCmdLine, "-left-control-alt-buttons") == 0)
+		{
+			JoySetButtonVirtualKey(0, VK_CONTROL);
+			JoySetButtonVirtualKey(1, VK_MENU);
+		}
+		else if (strcmp(lpCmdLine, "-right-alt-control-buttons") == 0)
+		{
+			JoySetButtonVirtualKey(0, VK_MENU | KF_EXTENDED);
+			JoySetButtonVirtualKey(1, VK_CONTROL | KF_EXTENDED);
+		}
+		else if (strcmp(lpCmdLine, "-swap-buttons") == 0)
+		{
+			JoySwapButton0and1(true);
+		}
 		else if (strcmp(lpCmdLine, "-spkr-inc") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);

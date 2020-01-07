@@ -303,6 +303,24 @@ void JoyInitialize()
 
 //===========================================================================
 
+static bool g_swapButton0and1 = false;
+
+void JoySwapButton0and1(bool swap)
+{
+	g_swapButton0and1 = swap;
+}
+
+static UINT g_buttonVirtKey[2] = { VK_MENU, VK_MENU | KF_EXTENDED };
+
+void JoySetButtonVirtualKey(UINT button, UINT virtKey)
+{
+	_ASSERT(button < 2);
+	if (button >= 2) return;
+	g_buttonVirtKey[button] = virtKey;
+}
+
+//===========================================================================
+
 #define SUPPORT_CURSOR_KEYS
 
 BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
@@ -330,11 +348,17 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 
 	BOOL keychange = 0;
 	bool bIsCursorKey = false;
+	UINT virtKeyWithExtended = ((UINT)virtkey) | (extended ? KF_EXTENDED : 0);
 
-	if (virtkey == VK_MENU)	// VK_MENU == ALT Key (Button #0 or #1)
+	if (virtKeyWithExtended == g_buttonVirtKey[!g_swapButton0and1 ? 0 : 1])
 	{
 		keychange = 1;
-		keydown[JK_OPENAPPLE+(extended != 0)] = down;
+		keydown[JK_OPENAPPLE] = down;
+	}
+	else if (virtKeyWithExtended == g_buttonVirtKey[!g_swapButton0and1 ? 1 : 0])
+	{
+		keychange = 1;
+		keydown[JK_CLOSEDAPPLE] = down;
 	}
 	else if (!extended)
 	{
