@@ -217,10 +217,10 @@ void CPropertySheetHelper::GetDiskBaseNameWithAWS(std::string & pszFilename)
 	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
 		return;
 
-	const std::string & pDiskName = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->GetBaseName(DRIVE_1);
-	if (!pDiskName.empty())
+	const std::string& diskName = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).GetBaseName(DRIVE_1);
+	if (!diskName.empty())
 	{
-		pszFilename = pDiskName + ".aws.yaml";
+		pszFilename = diskName + ".aws.yaml";
 	}
 }
 

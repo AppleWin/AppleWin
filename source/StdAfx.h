@@ -31,6 +31,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <stdexcept>
 #include <cstdarg>
 
 #include "linux/win.h"

@@ -9,6 +9,12 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.29.8.0 - ?
+----------------------
+. Debugger: Changed 'cycles' to be configurable (either absolute or relative).
+	- extended debugger commmand: videoinfo <dec|hex|apple|real|abs|rel>
+
+
 1.29.7.0 - 20 Dec 2019
 ----------------------
 . [Change #726] Disk II card: supported in slot 5 via '-s5 diskii' command line.

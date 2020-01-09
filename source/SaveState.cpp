@@ -269,13 +269,13 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		{
 			type = CT_SSC;
 			g_CardMgr.Insert(slot, type);
-			bRes = dynamic_cast<CSuperSerialCard*>(g_CardMgr.GetObj(slot))->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+			bRes = dynamic_cast<CSuperSerialCard&>(g_CardMgr.GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == CMouseInterface::GetSnapshotCardName())
 		{
 			type = CT_MouseInterface;
 			g_CardMgr.Insert(slot, type);
-			bRes = dynamic_cast<CMouseInterface*>(g_CardMgr.GetObj(slot))->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+			bRes = dynamic_cast<CMouseInterface&>(g_CardMgr.GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == Z80_GetSnapshotCardName())
 		{
@@ -296,7 +296,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		{
 			type = CT_Disk2;
 			g_CardMgr.Insert(slot, type);
-			bRes = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(slot))->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+			bRes = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == HD_GetSnapshotCardName())
 		{
@@ -532,13 +532,13 @@ void Snapshot_SaveState(void)
 				Printer_SaveSnapshot(yamlSaveHelper);
 
 			if (g_CardMgr.QuerySlot(SLOT2) == CT_SSC)
-				dynamic_cast<CSuperSerialCard*>(g_CardMgr.GetObj(SLOT2))->SaveSnapshot(yamlSaveHelper);
+				dynamic_cast<CSuperSerialCard&>(g_CardMgr.GetRef(SLOT2)).SaveSnapshot(yamlSaveHelper);
 
 //			if (g_CardMgr.QuerySlot(SLOT3) == CT_Uthernet)
 //				sg_Uthernet.SaveSnapshot(yamlSaveHelper);
 
 			if (g_CardMgr.QuerySlot(SLOT4) == CT_MouseInterface)
-				dynamic_cast<CMouseInterface*>(g_CardMgr.GetObj(SLOT4))->SaveSnapshot(yamlSaveHelper);
+				dynamic_cast<CMouseInterface&>(g_CardMgr.GetRef(SLOT4)).SaveSnapshot(yamlSaveHelper);
 
 			if (g_CardMgr.QuerySlot(SLOT4) == CT_Z80)
 				Z80_SaveSnapshot(yamlSaveHelper, SLOT4);
@@ -556,10 +556,10 @@ void Snapshot_SaveState(void)
 				Phasor_SaveSnapshot(yamlSaveHelper, SLOT4);
 
 			if (g_CardMgr.QuerySlot(SLOT5) == CT_Disk2)
-				dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT5))->SaveSnapshot(yamlSaveHelper);
+				dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT5)).SaveSnapshot(yamlSaveHelper);
 
 			if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
-				dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->SaveSnapshot(yamlSaveHelper);
+				dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).SaveSnapshot(yamlSaveHelper);
 
 			if (g_CardMgr.QuerySlot(SLOT7) == CT_GenericHDD)
 				HD_SaveSnapshot(yamlSaveHelper);

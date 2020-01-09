@@ -40,7 +40,7 @@ bool Disk2CardManager::IsConditionForFullSpeed(void)
 	{
 		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
 		{
-			if (dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(i))->IsConditionForFullSpeed())
+			if (dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).IsConditionForFullSpeed())
 				return true;	// if any card is true then the condition for full-speed is true
 		}
 	}
@@ -54,7 +54,7 @@ void Disk2CardManager::UpdateDriveState(UINT cycles)
 	{
 		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(i))->UpdateDriveState(cycles);
+			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).UpdateDriveState(cycles);
 		}
 	}
 }
@@ -65,7 +65,7 @@ void Disk2CardManager::Reset(const bool powerCycle /*=false*/)
 	{
 		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(i))->Reset(powerCycle);
+			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).Reset(powerCycle);
 		}
 	}
 }
@@ -77,7 +77,7 @@ bool Disk2CardManager::GetEnhanceDisk(void)
 		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
 		{
 			// All Disk2 cards should have the same setting, so just return the state of the first card
-			return dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(i))->GetEnhanceDisk();
+			return dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).GetEnhanceDisk();
 		}
 	}
 	return false;
@@ -89,7 +89,7 @@ void Disk2CardManager::SetEnhanceDisk(bool enhanceDisk)
 	{
 		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(i))->SetEnhanceDisk(enhanceDisk);
+			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).SetEnhanceDisk(enhanceDisk);
 		}
 	}
 }
@@ -102,8 +102,8 @@ void Disk2CardManager::LoadLastDiskImage(void)
 
 		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(i))->LoadLastDiskImage(DRIVE_1);
-			dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(i))->LoadLastDiskImage(DRIVE_2);
+			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).LoadLastDiskImage(DRIVE_1);
+			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).LoadLastDiskImage(DRIVE_2);
 		}
 	}
 }
@@ -114,7 +114,7 @@ void Disk2CardManager::Destroy(void)
 	{
 		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(i))->Destroy();
+			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).Destroy();
 		}
 	}
 }

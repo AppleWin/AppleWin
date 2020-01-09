@@ -56,6 +56,7 @@ ImageInfo::ImageInfo()
 	pImageBuffer = NULL;
 	pTrackMap = NULL;
 	optimalBitTiming = 0;
+	maxNibblesPerTrack = 0;
 }
 
 /* DO logical order  0 1 2 3 4 5 6 7 8 9 A B C D E F */
@@ -123,11 +124,12 @@ bool CImageBase::WriteTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTra
 			return false;
 
 		int nLen = gzwrite(hGZFile, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
+		int nRes = gzclose(hGZFile);	// close before returning (due to error) to avoid resource leak
+		hGZFile = NULL;
+
 		if (nLen != pImageInfo->uImageSize)
 			return false;
 
-		int nRes = gzclose(hGZFile);
-		hGZFile = NULL;
 		if (nRes != Z_OK)
 			return false;
 	}
@@ -244,11 +246,12 @@ bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlo
 			return false;
 
 		int nLen = gzwrite(hGZFile, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
+		int nRes = gzclose(hGZFile);	// close before returning (due to error) to avoid resource leak
+		hGZFile = NULL;
+
 		if (nLen != pImageInfo->uImageSize)
 			return false;
 
-		int nRes = gzclose(hGZFile);
-		hGZFile = NULL;
 		if (nRes != Z_OK)
 			return false;
 	}
@@ -1398,11 +1401,12 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 	pImageInfo->pImageBuffer = new BYTE[MAX_UNCOMPRESSED_SIZE];
 
 	int nLen = gzread(hGZFile, pImageInfo->pImageBuffer, MAX_UNCOMPRESSED_SIZE);
+	int nRes = gzclose(hGZFile);	// close before returning (due to error) to avoid resource leak
+	hGZFile = NULL;
+
 	if (nLen < 0 || nLen == MAX_UNCOMPRESSED_SIZE)
 		return eIMAGE_ERROR_BAD_SIZE;
 
-	int nRes = gzclose(hGZFile);
-	hGZFile = NULL;
 	if (nRes != Z_OK)
 		return eIMAGE_ERROR_GZ;
 
@@ -1414,7 +1418,7 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 
 	DWORD dwSize = nLen;
 	DWORD dwOffset = 0;
-	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap, pImageInfo->optimalBitTiming, pImageInfo->maxNibblesPerTrack);
+	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo);
 
 	if (!pImageType)
 		return eIMAGE_ERROR_UNSUPPORTED;
@@ -1505,7 +1509,7 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 
 	DWORD dwSize = nLen;
 	DWORD dwOffset = 0;
-	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap, pImageInfo->optimalBitTiming, pImageInfo->maxNibblesPerTrack);
+	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo);
 
 	if (!pImageType)
 	{
@@ -1602,7 +1606,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			return eIMAGE_ERROR_BAD_SIZE;
 		}
 
-		pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo->bWriteProtected, pImageInfo->pTrackMap, pImageInfo->optimalBitTiming, pImageInfo->maxNibblesPerTrack);
+		pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo);
 		if (bTempDetectBuffer)
 		{
 			delete [] pImageInfo->pImageBuffer;
@@ -1747,13 +1751,12 @@ CDiskImageHelper::CDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CWOZ2Image );
 }
 
-CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset,
-									 bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming, UINT& maxNibblesPerTrack)
+CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, ImageInfo* pImageInfo)
 {
 	dwOffset = 0;
 	m_MacBinaryHelper.DetectHdr(pImage, dwSize, dwOffset);
 	m_Result2IMG = m_2IMGHelper.DetectHdr(pImage, dwSize, dwOffset);
-	maxNibblesPerTrack = NIBBLES_PER_TRACK;	// Start with the default size (for all types). May get changed below.
+	pImageInfo->maxNibblesPerTrack = NIBBLES_PER_TRACK;	// Start with the default size (for all types). May get changed below.
 
 	// CALL THE DETECTION FUNCTIONS IN ORDER, LOOKING FOR A MATCH
 	eImageType imageType = eImageUNKNOWN;
@@ -1798,14 +1801,14 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 
 	if (imageType == eImageWOZ1 || imageType == eImageWOZ2)
 	{
-		if (m_WOZHelper.ProcessChunks(pImage, dwSize, dwOffset, pTrackMap) != eMatch)
+		if (m_WOZHelper.ProcessChunks(pImage, dwSize, dwOffset, pImageInfo->pTrackMap) != eMatch)
 			return NULL;
 
-//		if (m_WOZHelper.IsWriteProtected() && !writeProtected)	// Force write-protected until writing is supported
-			writeProtected = true;
+//		if (m_WOZHelper.IsWriteProtected() && !pImageInfo->writeProtected)	// Force write-protected until writing is supported
+			pImageInfo->bWriteProtected = true;
 
-		optimalBitTiming = m_WOZHelper.GetOptimalBitTiming();
-		maxNibblesPerTrack = m_WOZHelper.GetMaxNibblesPerTrack();
+		pImageInfo->optimalBitTiming = m_WOZHelper.GetOptimalBitTiming();
+		pImageInfo->maxNibblesPerTrack = m_WOZHelper.GetMaxNibblesPerTrack();
 	}
 	else
 	{
@@ -1821,8 +1824,8 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 		{
 			pImageType->SetVolumeNumber( m_2IMGHelper.GetVolumeNumber() );
 
-			if (m_2IMGHelper.IsLocked() && !writeProtected)
-				writeProtected = true;
+			if (m_2IMGHelper.IsLocked() && !pImageInfo->bWriteProtected)
+				pImageInfo->bWriteProtected = true;
 		}
 		else
 		{
@@ -1877,8 +1880,7 @@ CHardDiskImageHelper::CHardDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CHDVImage );
 }
 
-CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset,
-										 bool& writeProtected, BYTE*& pTrackMap, BYTE& optimalBitTiming, UINT& maxNibblesPerTrack)
+CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, ImageInfo* pImageInfo)
 {
 	dwOffset = 0;
 	m_Result2IMG = m_2IMGHelper.DetectHdr(pImage, dwSize, dwOffset);
@@ -1903,14 +1905,14 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHA
 	{
 		if (m_Result2IMG == eMatch)
 		{
-			if (m_2IMGHelper.IsLocked() && !writeProtected)
-				writeProtected = true;
+			if (m_2IMGHelper.IsLocked() && !pImageInfo->bWriteProtected)
+				pImageInfo->bWriteProtected = true;
 		}
 	}
 
-	pTrackMap = 0;	// TODO: WOZ
-	optimalBitTiming = 0;	// TODO: WOZ
-	maxNibblesPerTrack = 0;	// TODO
+	pImageInfo->pTrackMap = 0;	// TODO: WOZ
+	pImageInfo->optimalBitTiming = 0;	// TODO: WOZ
+	pImageInfo->maxNibblesPerTrack = 0;	// TODO
 
 	return pImageType;
 }

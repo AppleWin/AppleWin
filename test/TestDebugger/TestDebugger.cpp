@@ -239,7 +239,7 @@ int GH445_test_jmp(BYTE op)
 
 	const WORD target16 = 0x1234;
 
-	int target0, target1, target2;
+	int target0=0, target1=0, target2=0;
 	if (op == OPCODE_JMP_A)
 	{
 		target0 = NO_6502_TARGET;
@@ -261,6 +261,10 @@ int GH445_test_jmp(BYTE op)
 		target2 = 0xABCD;
 		mem[target0] = target2 & 0xff;
 		mem[target1] = (target2>>8) & 0xff;
+	}
+	else
+	{
+		_ASSERT(0);
 	}
 
 	mem[regs.pc] = op;
@@ -542,7 +546,7 @@ int GH451_test_jmp(BYTE op)
 
 	const WORD target16 = 0x1234;
 
-	int target0, target1;
+	int target0=0, target1=0;
 	if (op == OPCODE_JMP_A)
 	{
 		target0 = NO_6502_TARGET;
@@ -557,6 +561,10 @@ int GH451_test_jmp(BYTE op)
 	{
 		target0 = (target16+regs.x)&0xffff;
 		target1 = (target16+regs.x+1)&0xffff;
+	}
+	else
+	{
+		_ASSERT(0);
 	}
 
 	mem[regs.pc] = op;
