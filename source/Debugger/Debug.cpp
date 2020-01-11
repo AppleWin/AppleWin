@@ -6873,16 +6873,37 @@ Update_t CmdVideoScannerInfo(int nArgs)
 			g_videoScannerDisplayInfo.isHorzReal = true;
 		else if (strcmp(g_aArgs[1].sArg, "apple") == 0)
 			g_videoScannerDisplayInfo.isHorzReal = false;
-		else if (strcmp(g_aArgs[1].sArg, "abs") == 0)
-			g_videoScannerDisplayInfo.isAbsCycle = true;
-		else if (strcmp(g_aArgs[1].sArg, "rel") == 0)
-			g_videoScannerDisplayInfo.isAbsCycle = false;
 		else
 			return Help_Arg_1(CMD_VIDEO_SCANNER_INFO);
 	}
 
 	TCHAR sText[CONSOLE_WIDTH];
 	ConsoleBufferPushFormat(sText, "Video-scanner display updated: %s", g_aArgs[1].sArg);
+	ConsoleBufferToDisplay();
+
+	return UPDATE_ALL;
+}
+
+// Cycles __________________________________________________________________________________________
+
+Update_t CmdCyclesInfo(int nArgs)
+{
+	if (nArgs != 1)
+	{
+		return Help_Arg_1(CMD_CYCLES_INFO);
+	}
+	else
+	{
+		if (strcmp(g_aArgs[1].sArg, "abs") == 0)
+			g_videoScannerDisplayInfo.isAbsCycle = true;
+		else if (strcmp(g_aArgs[1].sArg, "rel") == 0)
+			g_videoScannerDisplayInfo.isAbsCycle = false;
+		else
+			return Help_Arg_1(CMD_CYCLES_INFO);
+	}
+
+	TCHAR sText[CONSOLE_WIDTH];
+	ConsoleBufferPushFormat(sText, "Cycles display updated: %s", g_aArgs[1].sArg);
 	ConsoleBufferToDisplay();
 
 	return UPDATE_ALL;
