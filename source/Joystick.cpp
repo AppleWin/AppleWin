@@ -310,7 +310,7 @@ void JoySwapButton0and1(bool swap)
 	g_swapButton0and1 = swap;
 }
 
-static UINT g_buttonVirtKey[2] = { VK_MENU, VK_MENU | KF_EXTENDED };
+static UINT g_buttonVirtKey[2] = { VK_MENU, VK_MENU | KF_EXTENDED };	// VK_MENU == ALT Key
 
 void JoySetButtonVirtualKey(UINT button, UINT virtKey)
 {
@@ -333,10 +333,12 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 		UINT32 Down:1;
 	} CursorKeys = {0};
 
+	const UINT virtKeyWithExtended = ((UINT)virtkey) | (extended ? KF_EXTENDED : 0);
+
 	if ( (joyinfo[joytype[0]] != DEVICE_KEYBOARD) &&
 		 (joyinfo[joytype[1]] != DEVICE_KEYBOARD) &&
-		 (virtkey != VK_MENU)								// VK_MENU == ALT Key
-	   )
+		 (virtKeyWithExtended != g_buttonVirtKey[0]) &&
+		 (virtKeyWithExtended != g_buttonVirtKey[1]) )
 	{
 		return 0;
 	}
@@ -348,7 +350,6 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 
 	BOOL keychange = 0;
 	bool bIsCursorKey = false;
-	UINT virtKeyWithExtended = ((UINT)virtkey) | (extended ? KF_EXTENDED : 0);
 
 	if (virtKeyWithExtended == g_buttonVirtKey[!g_swapButton0and1 ? 0 : 1])
 	{
