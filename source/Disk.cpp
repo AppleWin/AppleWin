@@ -872,7 +872,7 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 	if (!pFloppy->m_trackimagedata)
 	{
-		m_floppyLatch = 0xFF;
+		m_floppyLatch = rand() & 0xFF;	// GH#748
 		return;
 	}
 
@@ -1056,7 +1056,7 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	if (!floppy.m_trackimagedata)
 	{
 		_ASSERT(0);		// Can't happen for WOZ - ReadTrack() should return an empty track
-		m_floppyLatch = 0xFF;
+		m_floppyLatch = rand() & 0xFF;	// GH#748
 		return;
 	}
 
