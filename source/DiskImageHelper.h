@@ -202,8 +202,8 @@ public:
 	virtual UINT GetMaxHdrSize(void) { return sizeof(WOZHeader); }
 	eDetectResult ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset, BYTE*& pTrackMap);
 	bool IsWriteProtected(void) { return m_pInfo->v1.writeProtected == 1; }
-	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v1.version == 1) ? CWOZHelper::InfoChunkv2::optimalBitTiming5_25 : m_pInfo->optimalBitTiming; }
-	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v1.version == 1) ? CWOZHelper::WOZ1_TRACK_SIZE : m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE; }
+	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->optimalBitTiming : CWOZHelper::InfoChunkv2::optimalBitTiming5_25; }
+	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE : CWOZHelper::WOZ1_TRACK_SIZE; }
 
 	static const UINT32 ID1_WOZ1 = '1ZOW';	// 'WOZ1'
 	static const UINT32 ID1_WOZ2 = '2ZOW';	// 'WOZ2'
@@ -259,7 +259,6 @@ private:
 								// String in UTF-8. No BOM. Padded to 32 bytes
 								// using space character (0x20).
 
-		static const BYTE maxSupportedVersion = 2;
 		static const BYTE diskType5_25 = 1;
 		static const BYTE diskType3_5 = 2;
 	};
