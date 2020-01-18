@@ -18,6 +18,8 @@ __interface IPropertySheet
 	void SetJoystickCenteringControl(UINT uValue);
 	UINT GetAutofire(UINT uButton);
 	void SetAutofire(UINT uValue);
+	bool GetButtonsSwapState(void);
+	void SetButtonsSwapState(bool value);
 	UINT GetMouseShowCrosshair(void);
 	void SetMouseShowCrosshair(UINT uValue);
 	UINT GetMouseRestrictToWindow(void);

@@ -130,8 +130,9 @@ BEGIN
     LTEXT           "&Y-trim:",IDC_STATIC,115,56,28,8
     CTEXT           "0",IDC_STATIC,137,49,24,20,SS_CENTERIMAGE
     CONTROL         "Spin1",IDC_SPIN_YTRIM,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY,161,53,10,14
-    CONTROL         "Allow cursor keys to be read from keyboard ",IDC_CURSORCONTROL,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,75,155,10
+    CONTROL         "Allow cursor keys to be read from keyboard",IDC_CURSORCONTROL,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,75,150,10
+    CONTROL         "Swap 0/1",IDC_SWAPBUTTONS0AND1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,162,75,41,10
     CONTROL         "Auto-fire (all 3 buttons)",IDC_AUTOFIRE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,90,89,10
     CONTROL         "Keyboard auto-centering",IDC_CENTERINGCONTROL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,102,90,96,10
     CONTROL         "&Scroll Lock acts as toggle for full-speed CPU",IDC_SCROLLLOCK_TOGGLE,

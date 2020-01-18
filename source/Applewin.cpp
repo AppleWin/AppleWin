@@ -702,6 +702,8 @@ void LoadConfiguration(void)
 		sg_PropertySheet.SetJoystickCursorControl(dwTmp);
 	if(REGLOAD(TEXT(REGVALUE_AUTOFIRE), &dwTmp))
 		sg_PropertySheet.SetAutofire(dwTmp);
+	if(REGLOAD(TEXT(REGVALUE_SWAP_BUTTONS_0_AND_1), &dwTmp))
+		sg_PropertySheet.SetButtonsSwapState(dwTmp ? true : false);
 	if(REGLOAD(TEXT(REGVALUE_CENTERING_CONTROL), &dwTmp))
 		sg_PropertySheet.SetJoystickCenteringControl(dwTmp);
 
@@ -1591,7 +1593,7 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-swap-buttons") == 0)
 		{
-			JoySwapButton0and1(true);
+			sg_PropertySheet.SetButtonsSwapState(true);
 		}
 		else if (strcmp(lpCmdLine, "-spkr-inc") == 0)
 		{
