@@ -702,6 +702,8 @@ void LoadConfiguration(void)
 		sg_PropertySheet.SetJoystickCursorControl(dwTmp);
 	if(REGLOAD(TEXT(REGVALUE_AUTOFIRE), &dwTmp))
 		sg_PropertySheet.SetAutofire(dwTmp);
+	if(REGLOAD(TEXT(REGVALUE_SWAP_BUTTONS_0_AND_1), &dwTmp))
+		sg_PropertySheet.SetButtonsSwapState(dwTmp ? true : false);
 	if(REGLOAD(TEXT(REGVALUE_CENTERING_CONTROL), &dwTmp))
 		sg_PropertySheet.SetJoystickCenteringControl(dwTmp);
 
@@ -1232,7 +1234,7 @@ static void ExceptionHandler(const char* pError)
 
 //---------------------------------------------------------------------------
 
-static void ProcessCmdLine(LPSTR lpCmdLine);
+static bool ProcessCmdLine(LPSTR lpCmdLine);
 static void GetAppleWinVersion(void);
 static void OneTimeInitialization(HINSTANCE passinstance);
 static void RepeatInitialization(void);
@@ -1300,7 +1302,9 @@ static CmdLine g_cmdLine;
 
 int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 {
-	ProcessCmdLine(lpCmdLine);
+	if (!ProcessCmdLine(lpCmdLine))
+		return 0;
+
 	GetAppleWinVersion();
 	OneTimeInitialization(passinstance);
 
@@ -1357,9 +1361,10 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	return 0;
 }
 
-static void ProcessCmdLine(LPSTR lpCmdLine)
+static bool ProcessCmdLine(LPSTR lpCmdLine)
 {
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
+	std::string strUnsupported;
 
 	while (*lpCmdLine)
 	{
@@ -1576,19 +1581,19 @@ static void ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			JoySetHookAltKeys(false);
 		}
-		else if (strcmp(lpCmdLine, "-left-control-alt-buttons") == 0)
+		else if (strcmp(lpCmdLine, "-left-alt-control-buttons") == 0)	// GH#743
 		{
 			JoySetButtonVirtualKey(0, VK_CONTROL);
 			JoySetButtonVirtualKey(1, VK_MENU);
 		}
-		else if (strcmp(lpCmdLine, "-right-alt-control-buttons") == 0)
+		else if (strcmp(lpCmdLine, "-right-alt-control-buttons") == 0)	// GH#743
 		{
 			JoySetButtonVirtualKey(0, VK_MENU | KF_EXTENDED);
 			JoySetButtonVirtualKey(1, VK_CONTROL | KF_EXTENDED);
 		}
 		else if (strcmp(lpCmdLine, "-swap-buttons") == 0)
 		{
-			JoySwapButton0and1(true);
+			sg_PropertySheet.SetButtonsSwapState(true);
 		}
 		else if (strcmp(lpCmdLine, "-spkr-inc") == 0)
 		{
@@ -1683,12 +1688,31 @@ static void ProcessCmdLine(LPSTR lpCmdLine)
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
+			strUnsupported += lpCmdLine;
+			strUnsupported += "\n";
 		}
 
 		lpCmdLine = lpNextArg;
 	}
 
 	LogFileOutput("CmdLine: %s\n",  strCmdLine.c_str());
+
+	bool ok = true;
+
+	if (!strUnsupported.empty())
+	{
+		std::string msg("Unsupported commands:\n\n");
+		msg += strUnsupported;
+		msg += "\n";
+		msg += "Continue running AppleWin?";
+		int res = MessageBox(GetDesktopWindow(),		// NB. g_hFrameWindow is not yet valid
+				msg.c_str(),
+				"AppleWin Command Line",
+				MB_ICONSTOP | MB_SETFOREGROUND | MB_YESNO);
+		ok = (res != IDNO);
+	}
+
+	return ok;
 }
 
 static void GetAppleWinVersion(void)

@@ -16,6 +16,7 @@ public:
 		m_uCursorControl(1),
 		m_uCenteringControl(JOYSTICK_MODE_CENTERING),
 		m_bmAutofire(0),
+		m_bSwapButtons0and1(false),
 		m_uMouseShowCrosshair(0),
 		m_uMouseRestrictToWindow(0),
 		m_CPMChoice(CPM_UNPLUGGED)
@@ -34,6 +35,8 @@ public:
 	void SetJoystickCenteringControl(UINT uValue){ m_uCenteringControl = uValue; }
 	UINT GetAutofire(UINT uButton) { return (m_bmAutofire >> uButton) & 1; }	// Get a specific button
 	void SetAutofire(UINT uValue) { m_bmAutofire = uValue; }					// Set all buttons
+	bool GetButtonsSwapState(void){ return m_bSwapButtons0and1; }
+	void SetButtonsSwapState(bool value){ m_bSwapButtons0and1 = value; }
 	UINT GetMouseShowCrosshair(void){ return m_uMouseShowCrosshair; }
 	void SetMouseShowCrosshair(UINT uValue){ m_uMouseShowCrosshair = uValue; }
 	UINT GetMouseRestrictToWindow(void){ return m_uMouseRestrictToWindow; }
@@ -81,6 +84,7 @@ private:
 	UINT m_uCursorControl;		// 1 = Allow AppleII to read cursor keys from $C000 (when using keyboard for joystick emu)
 	UINT m_uCenteringControl;	// 1 = Centering, 0=Floating (when using keyboard for joystick emu)
 	UINT m_bmAutofire;			// bitmask b2:0
+	bool m_bSwapButtons0and1;
 	UINT m_uMouseShowCrosshair;
 	UINT m_uMouseRestrictToWindow;
 

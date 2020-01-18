@@ -303,13 +303,6 @@ void JoyInitialize()
 
 //===========================================================================
 
-static bool g_swapButton0and1 = false;
-
-void JoySwapButton0and1(bool swap)
-{
-	g_swapButton0and1 = swap;
-}
-
 static UINT g_buttonVirtKey[2] = { VK_MENU, VK_MENU | KF_EXTENDED };	// VK_MENU == ALT Key
 
 void JoySetButtonVirtualKey(UINT button, UINT virtKey)
@@ -350,13 +343,14 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 
 	BOOL keychange = 0;
 	bool bIsCursorKey = false;
+	const bool swapButtons0and1 = sg_PropertySheet.GetButtonsSwapState();
 
-	if (virtKeyWithExtended == g_buttonVirtKey[!g_swapButton0and1 ? 0 : 1])
+	if (virtKeyWithExtended == g_buttonVirtKey[!swapButtons0and1 ? 0 : 1])
 	{
 		keychange = 1;
 		keydown[JK_OPENAPPLE] = down;
 	}
-	else if (virtKeyWithExtended == g_buttonVirtKey[!g_swapButton0and1 ? 1 : 0])
+	else if (virtKeyWithExtended == g_buttonVirtKey[!swapButtons0and1 ? 1 : 0])
 	{
 		keychange = 1;
 		keydown[JK_CLOSEDAPPLE] = down;

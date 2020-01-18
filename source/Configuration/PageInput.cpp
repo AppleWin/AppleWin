@@ -197,6 +197,7 @@ BOOL CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM 
 
 			CheckDlgButton(hWnd, IDC_CURSORCONTROL, m_uCursorControl ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_AUTOFIRE, m_bmAutofire ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_SWAPBUTTONS0AND1, m_bSwapButtons0and1 ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_CENTERINGCONTROL, m_uCenteringControl == JOYSTICK_MODE_CENTERING ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_SCROLLLOCK_TOGGLE, m_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
 
@@ -234,6 +235,7 @@ void CPageInput::DlgOK(HWND hWnd)
 
 	m_uCursorControl = IsDlgButtonChecked(hWnd, IDC_CURSORCONTROL) ? 1 : 0;
 	m_bmAutofire = IsDlgButtonChecked(hWnd, IDC_AUTOFIRE) ? 7 : 0;	// bitmap of 3 bits
+	m_bSwapButtons0and1 = IsDlgButtonChecked(hWnd, IDC_SWAPBUTTONS0AND1) ? true : false;
 	m_uCenteringControl = IsDlgButtonChecked(hWnd, IDC_CENTERINGCONTROL) ? 1 : 0;
 	m_uMouseShowCrosshair = IsDlgButtonChecked(hWnd, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
 	m_uMouseRestrictToWindow = IsDlgButtonChecked(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
@@ -243,6 +245,7 @@ void CPageInput::DlgOK(HWND hWnd)
 	REGSAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), m_uScrollLockToggle);
 	REGSAVE(TEXT(REGVALUE_CURSOR_CONTROL), m_uCursorControl);
 	REGSAVE(TEXT(REGVALUE_AUTOFIRE), m_bmAutofire);
+	REGSAVE(TEXT(REGVALUE_SWAP_BUTTONS_0_AND_1), m_bSwapButtons0and1);
 	REGSAVE(TEXT(REGVALUE_CENTERING_CONTROL), m_uCenteringControl);
 	REGSAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR), m_uMouseShowCrosshair);
 	REGSAVE(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), m_uMouseRestrictToWindow);

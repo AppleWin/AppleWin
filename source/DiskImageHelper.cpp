@@ -1324,8 +1324,6 @@ eDetectResult CWOZHelper::ProcessChunks(const LPBYTE pImage, const DWORD dwImage
 		{
 			case INFO_CHUNK_ID:
 				m_pInfo = (InfoChunkv2*)(pImage32-2);
-				if (m_pInfo->v1.version > InfoChunk::maxSupportedVersion)
-					return eMismatch;
 				if (m_pInfo->v1.diskType != InfoChunk::diskType5_25)
 					return eMismatch;
 				break;

@@ -108,8 +108,8 @@ VIDEO SOFT SWITCHES
  $C055   R/W     PAGE2ON         Select page2 display (or aux video memory)
  $C056   R/W     HIRESOFF        Select low resolution graphics
  $C057   R/W     HIRESON         Select high resolution graphics
- $C05E   R/W     DHIRESOFF       Select single (7M) resolution graphics
- $C05F   R/W     DHIRESON        Select double (14M) resolution graphics
+ $C05E   R/W     DHIRESON        Select double (14M) resolution graphics
+ $C05F   R/W     DHIRESOFF       Select single (7M) resolution graphics
 
 SOFT SWITCH STATUS FLAGS
  $C010   R7      AKD             1=key pressed   0=keys free    (clears strobe)

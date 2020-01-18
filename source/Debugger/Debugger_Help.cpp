@@ -1406,13 +1406,18 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleColorizePrint( sText, " Usage: symbol" );
 			ConsoleBufferPush( "  Looks up symbol in all 3 symbol tables: main, user, source" );
 			break;
+// Cycles
+		case CMD_CYCLES_INFO:
+			ConsoleColorizePrint(sText, " Usage: <abs|rel>");
+			ConsoleBufferPush("  Where:");
+			ConsoleBufferPush("    <abs|rel> changes cycle output to absolute/relative");
+			break;
 // Video-Scanner
 		case CMD_VIDEO_SCANNER_INFO:
-			ConsoleColorizePrint(sText, " Usage: <dec|hex|real|apple|abs|rel>");
+			ConsoleColorizePrint(sText, " Usage: <dec|hex|real|apple>");
 			ConsoleBufferPush("  Where:");
 			ConsoleBufferPush("    <dec|hex> changes output to dec/hex");
 			ConsoleBufferPush("    <real|apple> alters horz value to hbl-l,visible,hbl-r or hbl-r+l,visible");
-			ConsoleBufferPush("    <abs|rel> changes cycle output to absolute/relative");
 			{
 				char sText2[CONSOLE_WIDTH];
 				ConsolePrintFormat(sText2, "    %sYellow%s=invisible (hbl or vbl active) / %sGreen%s=visible"

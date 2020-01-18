@@ -110,6 +110,7 @@
 #define IDC_CURSORCONTROL               1066
 #define IDC_AUTOFIRE                    1067
 #define IDC_CENTERINGCONTROL            1068
+#define IDC_SWAPBUTTONS0AND1            1069
 #define IDC_COMBO_HDD1                  1078
 #define IDC_COMBO_HDD2                  1079
 #define IDC_COMBO_DISK1                 1080
