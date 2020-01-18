@@ -1420,6 +1420,7 @@ LRESULT CALLBACK FrameWndProc (
 			LogOutput("WM_KEYDOWN: %08X (scanCode=%04X)\n", wparam, (lparam>>16)&0xfff);
 #endif
 			if (!IsJoyKey &&
+				!KeybGetAltStatus() &&		// GH#749 - AltGr also fakes CTRL being pressed!
 				(g_nAppMode != MODE_LOGO))	// !MODE_LOGO - not emulating so don't pass to the VM's keyboard
 			{
 				// GH#678 Alternate key(s) to toggle max speed
