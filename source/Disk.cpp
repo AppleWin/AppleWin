@@ -1073,7 +1073,7 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	// The first 1-bit will produce a latch nibble, and this 1-bit is unlikely to be the nibble's high bit.
 	// So we need to ensure we run enough bits through the sequencer to re-sync.
 	// NB. For Planetfall 13 bitcells(NG) / 14 bitcells(OK)
-	const UINT significantBitCells = 50;	// 5x 10-bit sync FF nibbles
+	const UINT significantBitCells = floppy.m_bitCount;
 	UINT bitCellDelta = GetBitCellDelta(ImageGetOptimalBitTiming(floppy.m_imagehandle));
 
 	UINT bitCellRemainder;
@@ -1113,6 +1113,8 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 		FrameDrawDiskStatus((HDC)0);
 }
 
+static int g_zeroFieldFlag = 1;
+static int g_zeroFieldCount = 0;
 void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder)
 {
 	// m_diskLastReadLatchCycle = g_nCumulativeCycles;	// Not used by WOZ (only by NIB)
@@ -1136,7 +1138,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 #endif
 
 	// Only extraCycles of 2 & 3 can hold the latch for another bitCell period, eg. m_latchDelay: 3->5 or 7->9
-	UINT extraLatchDelay = ((UINT)floppy.m_extraCycles >= 2) ? 2 : 0;	// GH#733 (0,1->0; 2,3->2)
+//	UINT extraLatchDelay = ((UINT)floppy.m_extraCycles >= 2) ? 2 : 0;	// GH#733 (0,1->0; 2,3->2)
 
 	for (UINT i = 0; i < bitCellRemainder; i++)
 	{
@@ -1147,6 +1149,23 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 		BYTE outputBit = (drive.m_headWindow & 0xf)	? (drive.m_headWindow >> 1) & 1
 													: (rand() < ((RAND_MAX * 3) / 10)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
 
+#if 0	// DEBUG: insert an extra 0-bit into the field of 317 zero bits
+		bool doInc = true;
+		if (drive.m_phase == 0 && floppy.m_bitOffset == (0x5811 + 92))
+		{
+			g_zeroFieldCount++;
+			if (regs.pc < 0x8ff)
+			{
+				if (g_zeroFieldFlag)
+				{
+					g_zeroFieldFlag = 0;
+					doInc = false;
+				}
+			}
+		}
+		if (doInc)
+#endif
+		{
 		floppy.m_bitMask >>= 1;
 		if (!floppy.m_bitMask)
 		{
@@ -1160,6 +1179,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 			floppy.m_bitMask = 1 << 7;
 			floppy.m_bitOffset = 0;
 			floppy.m_byte = 0;
+		}
 		}
 
 		if (m_resetSequencer)
@@ -1175,9 +1195,9 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 		if (m_latchDelay)
 		{
-			if (i == bitCellRemainder-1)			// On last bitCell
-				m_latchDelay += extraLatchDelay;	// +0 or +2
-			extraLatchDelay = 0;					// and always clear (even when not last bitCell)
+//			if (i == bitCellRemainder-1)			// On last bitCell
+//				m_latchDelay += extraLatchDelay;	// +0 or +2
+//			extraLatchDelay = 0;					// and always clear (even when not last bitCell)
 
 			m_latchDelay -= 4;
 			if (m_latchDelay < 0)

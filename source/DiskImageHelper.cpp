@@ -1190,6 +1190,23 @@ public:
 			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);	// TODO: Enlarge track buffer, but for now just return an empty track
 
 		memcpy(pTrackImageBuffer, &pImageInfo->pImageBuffer[pTRK->startBlock*CWOZHelper::BLOCK_SIZE], *pNibbles);
+#if 0	// DEBUG: insert an extra 0-bit into the field of 317 zero bits
+		if (phase == 0)
+		{
+			UINT offset = 0x5870/8;	//0x5811 + 92 = 0x586D
+			BYTE c = 0;
+			while (offset < (UINT)*pNibbles)
+			{
+				BYTE d = pTrackImageBuffer[offset];
+				BYTE n = (c<<7) | (d>>1);
+				c = d&1;
+				pTrackImageBuffer[offset] = n;
+				offset++;
+			}
+			(*pBitCount)++;
+			*pNibbles = (pTRK->bitCount+7) / 8;
+		}
+#endif
 	}
 
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
