@@ -230,6 +230,7 @@ private:
 	UINT m_slot;
 	unsigned __int64 m_diskLastCycle;
 	unsigned __int64 m_diskLastReadLatchCycle;
+	unsigned __int64 m_clk;
 	FormatTrack m_formatTrack;
 	bool m_enhanceDisk;
 

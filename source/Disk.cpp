@@ -63,6 +63,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(void) :
 	m_slot = 0;
 	m_diskLastCycle = 0;
 	m_diskLastReadLatchCycle = 0;
+	m_clk = 0;
 	m_enhanceDisk = true;
 
 	ResetLogicStateSequencer();
@@ -223,6 +224,8 @@ void Disk2InterfaceCard::CheckSpinning(const ULONG uExecutedCycles)
 		// Set m_diskLastCycle when motor changes: not spinning (ie. off for 1 sec) -> on
 		CpuCalcCycles(uExecutedCycles);
 		m_diskLastCycle = g_nCumulativeCycles;
+		m_clk = g_nCumulativeCycles;
+		m_floppyDrive[m_currDrive].m_disk.m_extraCycles = 0;
 	}
 }
 
@@ -996,6 +999,7 @@ void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG uExecut
 	UpdateBitStreamPosition(floppy, bitCellDelta);
 
 	m_diskLastCycle = g_nCumulativeCycles;
+//	m_clk = g_nCumulativeCycles;	// updated above in UpdateBitStreamPosition()
 }
 
 UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
@@ -1010,9 +1014,9 @@ UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
 #if 0
 	if (optimalBitTiming == 32)
 	{
-		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + (BYTE) m_extraCycles;
+		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + (BYTE)floppy.m_extraCycles;
 		bitCellDelta = cycleDelta / 4;	// DIV 4 for 4us per bit-cell
-		m_extraCycles = cycleDelta & 3;	// MOD 4 : remainder carried forward for next time
+		floppy.m_extraCycles = cycleDelta & 3;	// MOD 4 : remainder carried forward for next time
 	}
 	else
 #endif
@@ -1036,6 +1040,7 @@ void Disk2InterfaceCard::UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG
 		floppy.m_bitOffset %= floppy.m_bitCount;
 
 	UpdateBitStreamOffsets(floppy);
+	m_clk += bitCellDelta * 4;
 }
 
 void Disk2InterfaceCard::UpdateBitStreamOffsets(FloppyDisk& floppy)
@@ -1073,7 +1078,8 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	// The first 1-bit will produce a latch nibble, and this 1-bit is unlikely to be the nibble's high bit.
 	// So we need to ensure we run enough bits through the sequencer to re-sync.
 	// NB. For Planetfall 13 bitcells(NG) / 14 bitcells(OK)
-	const UINT significantBitCells = 50;	// 5x 10-bit sync FF nibbles
+//	const UINT significantBitCells = 50;	// 5x 10-bit sync FF nibbles
+	const UINT significantBitCells = floppy.m_bitCount;
 	UINT bitCellDelta = GetBitCellDelta(ImageGetOptimalBitTiming(floppy.m_imagehandle));
 
 	UINT bitCellRemainder;
@@ -1099,9 +1105,32 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	if (!bWrite)
 	{
 		if (m_seqFunc.function != readSequencing)
+		{
+			UpdateBitStreamPosition(floppy, bitCellRemainder);
+			m_latchDelay = 0;
+			drive.m_headWindow = 0;
 			return;
+		}
 
+		int delta1 = (int)(g_nCumulativeCycles - m_clk);
+		unsigned __int64 oldClk = m_clk;
+		unsigned __int64 newClk = m_clk + 4 * bitCellRemainder;
+		int delta2 = (int)(g_nCumulativeCycles - newClk);
+		if (delta2 < 0)
+		{
+			int fix = -(delta2 - 3) / 4;
+			_ASSERT(fix == 1);
+			bitCellRemainder -= fix;
+		}
+		else if (delta2 >= 4)
+		{
+			int fix = delta2 / 4;	// 0..3 is OK
+			_ASSERT(fix == 1);
+			bitCellRemainder += fix;
+		}
+		_ASSERT(bitCellRemainder > 0);
 		DataLatchReadWOZ(pc, addr, bitCellRemainder);
+		_ASSERT(oldClk + 4 * bitCellRemainder == m_clk);
 	}
 	else
 	{
@@ -1141,7 +1170,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 	UINT extraLatchDelay = ((UINT)floppy.m_extraCycles >= 2) ? 2 : 0;	// GH#733 (0,1->0; 2,3->2)
 #endif
 
-	for (UINT i = 0; i < bitCellRemainder; i++)
+	for (UINT i = 0; i < bitCellRemainder; i++, m_clk += 4)
 	{
 		BYTE n = floppy.m_trackimage[floppy.m_byte];
 
@@ -1229,9 +1258,29 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 			}
 		}
 	} // for
-	static int dbg=0;
 #ifdef WOZ_ALT2
-#if 0		// NG: LOA2 (not tested others)
+#if 1	// WL OK, LOA1/2 NG
+	if (m_latchDelay)
+	{
+		int delta = (int)(g_nCumulativeCycles - m_clk);
+		_ASSERT(delta >= 0 && delta < 4);
+
+		m_latchDelay -= delta;
+		if (m_latchDelay == 0)
+		{
+			m_latchDelay += delta;
+			//m_floppyLatch = m_shiftReg;
+		}
+		else if (m_latchDelay < 0)
+		{
+			//_ASSERT(m_latchDelay == 0);	// NB. "< 0" occurs for all 3
+			_ASSERT(m_shiftReg);
+			_ASSERT((m_shiftReg & 0x80) == 0);
+			m_latchDelay = 0;
+			m_floppyLatch = m_shiftReg;
+		}
+	}
+#elif (0)		// NG: LOA2 (not tested others)
 	if (m_latchDelay && m_shiftReg)	// if m_shiftReg==0, then it was a zero bitCell, so hold latch
 	{
 		if (m_latchDelay <= (int)floppy.m_extraCycles)	// "< 0" never occurs
@@ -1251,25 +1300,66 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 			_ASSERT((m_shiftReg & 0x80) == 0);
 		}
 	}
+#elif (0)	// NG: all
+	if (m_latchDelay && m_shiftReg)	// if m_shiftReg==0, then it was a zero bitCell, so hold latch
+	{
+		m_latchDelay -= (UINT)floppy.m_extraCycles;
+		if (m_latchDelay == 0)
+		{
+			_ASSERT((m_shiftReg & 0x80) == 0);
+			//m_latchDelay = 7;
+			m_latchDelay += (UINT)floppy.m_extraCycles;
+			//m_floppyLatch = m_shiftReg;
+		}
+		else if (m_latchDelay < 0)	// never executes
+		{
+			//_ASSERT(m_latchDelay == 0);	// NB. "< 0" occurs for all 3
+			_ASSERT((m_shiftReg & 0x80) == 0);
+			m_latchDelay = 0;
+			m_floppyLatch = m_shiftReg;
+		}
+	}
+#elif (0)	// OK: Wasteland, NG: LOA1/2
+	if (m_latchDelay)
+	{
+		m_latchDelay -= (UINT)floppy.m_extraCycles;
+		if (m_latchDelay == 0)
+		{
+			_ASSERT(m_shiftReg);
+			_ASSERT((m_shiftReg & 0x80) == 0);
+			//m_latchDelay = 7;
+			m_latchDelay += (UINT)floppy.m_extraCycles;
+			//m_floppyLatch = m_shiftReg;
+		}
+		else if (m_latchDelay < 0)
+		{
+			//_ASSERT(m_latchDelay == 0);	// NB. "< 0" occurs for all 3
+			_ASSERT(m_shiftReg);
+			_ASSERT((m_shiftReg & 0x80) == 0);
+			m_latchDelay = 0;
+			m_floppyLatch = m_shiftReg;
+		}
+	}
 #elif (0)	// NG: LOA2 (not tested others)
 	if (m_latchDelay)
 	{
 		if (m_latchDelay <= (int)floppy.m_extraCycles)	// "< 0" never occurs
 		{
-			m_floppyLatch = m_shiftReg;
 			_ASSERT((m_shiftReg & 0x80) == 0);
+			m_floppyLatch = m_shiftReg;
 		}
 	}
-#else
+#else		// NG: Wasteland, OK: LOA1/2
 	if (m_latchDelay)
 	{
 		m_latchDelay -= (UINT)floppy.m_extraCycles;
-		if (m_latchDelay <= 0)	// NG: Wasteland, OK: LOA1/2
+		if (m_latchDelay <= 0)
 		{
+			//_ASSERT(m_latchDelay == 0);	// NB. "< 0" occurs for all 3
 			_ASSERT(m_shiftReg);
+			_ASSERT((m_shiftReg & 0x80) == 0);
 			m_latchDelay = 0;
 			m_floppyLatch = m_shiftReg;
-			_ASSERT((m_shiftReg & 0x80) == 0);
 		}
 	}
 #endif
