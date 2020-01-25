@@ -186,13 +186,13 @@ private:
 	const std::string & DiskGetFullPathName(const int drive);
 	void ResetLogicStateSequencer(void);
 	void UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles);
-	UINT GetBitCellDelta(const BYTE optimalBitTiming);
+	UINT GetBitCellDelta(const ULONG uExecutedCycles);
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
 	void UpdateBitStreamOffsets(FloppyDisk& floppy);
 	void DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataLatchWriteWOZ(WORD pc, WORD addr, BYTE d, UINT bitCellRemainder);
 	void DataLatchWriteWOZ2(WORD pc, WORD addr);
-	void DataLatchWriteWOZContinue(WORD pc, WORD addr);
+	void DataLatchWriteWOZContinue(WORD pc, WORD addr, ULONG uExecutedCycles);
 	void DataLatchWriteWOZContinue2(WORD pc, WORD addr, UINT bitCellRemainder);
 	void SetSequencerFunction(WORD addr);
 	void DumpSectorWOZ(FloppyDisk floppy);

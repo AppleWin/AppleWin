@@ -992,16 +992,17 @@ void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG uExecut
 {
 	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
 
-	CpuCalcCycles(uExecutedCycles);
-	const UINT bitCellDelta = GetBitCellDelta(ImageGetOptimalBitTiming(floppy.m_imagehandle));
+	UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
 	UpdateBitStreamPosition(floppy, bitCellDelta);
-
-	m_diskLastCycle = g_nCumulativeCycles;
 }
 
-UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
+UINT Disk2InterfaceCard::GetBitCellDelta(const ULONG uExecutedCycles)
 {
+	CpuCalcCycles(uExecutedCycles);
+
 	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
+
+	const BYTE optimalBitTiming = ImageGetOptimalBitTiming(floppy.m_imagehandle);
 
 	// NB. m_extraCycles is needed to retain accuracy:
 	// . Read latch #1: 0-> 9: cycleDelta= 9, bitCellDelta=2, extraCycles=1
@@ -1018,20 +1019,24 @@ UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
 	else
 #endif
 	{
+#if 0
 		if (m_writeStarted)
 		{
 			UINT d = (UINT)(g_nCumulativeCycles - m_diskLastCycle);
 			UINT t = d + (UINT)floppy.m_extraCycles;
-//			LogOutput("cycle delta = %d + %d = %d (bits=%f)\n", d, (UINT)floppy.m_extraCycles, t, (float)t/4.0);
-
-//			floppy.m_extraCycles = 0;
-//			return d / 4;
+			LogOutput("cycle delta = %d + %d = %d (bits=%f)\n", d, (UINT)floppy.m_extraCycles, t, (float)t/4.0);
 		}
+#endif
 		const double cycleDelta = (double)(g_nCumulativeCycles - m_diskLastCycle) + floppy.m_extraCycles;
 		const double bitTime = 0.125 * (double)optimalBitTiming;	// 125ns units
 		bitCellDelta = (UINT) floor( cycleDelta / bitTime );
 		floppy.m_extraCycles = (double)cycleDelta - ((double)bitCellDelta * bitTime);
 	}
+
+	// NB. actual m_diskLastCycle for the last bitCell is minus floppy.m_extraCycles
+	// - but don't need this value; and it's correctly accounted for in this function.
+	m_diskLastCycle = g_nCumulativeCycles;
+
 	return bitCellDelta;
 }
 
@@ -1082,14 +1087,12 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	if (!drive.m_spinning)	// GH#599
 		return;
 
-	CpuCalcCycles(uExecutedCycles);
-
 	// Skipping forward a large amount of bitcells means the bitstream will very likely be out-of-sync.
 	// The first 1-bit will produce a latch nibble, and this 1-bit is unlikely to be the nibble's high bit.
 	// So we need to ensure we run enough bits through the sequencer to re-sync.
 	// NB. For Planetfall 13 bitcells(NG) / 14 bitcells(OK)
 	const UINT significantBitCells = 50;	// 5x 10-bit sync FF nibbles
-	UINT bitCellDelta = GetBitCellDelta(ImageGetOptimalBitTiming(floppy.m_imagehandle));
+	UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
 
 	UINT bitCellRemainder;
 	if (bitCellDelta <= significantBitCells)
@@ -1106,10 +1109,6 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 		m_latchDelay = 0;
 		drive.m_headWindow = 0;
 	}
-
-	// NB. actual m_diskLastCycle for the last bitCell is minus floppy.m_extraCycles
-	// - but don't need this value; and it's correctly accounted for in GetBitCellDelta()
-	m_diskLastCycle = g_nCumulativeCycles;
 
 	if (!bWrite)
 	{
@@ -1296,7 +1295,7 @@ void Disk2InterfaceCard::DataLatchWriteWOZ2(WORD pc, WORD addr)
 }
 
 // dataShiftWrite
-void Disk2InterfaceCard::DataLatchWriteWOZContinue(WORD pc, WORD addr)
+void Disk2InterfaceCard::DataLatchWriteWOZContinue(WORD pc, WORD addr, ULONG uExecutedCycles)
 {
 	_ASSERT(m_seqFunc.function == dataShiftWrite);
 	//_ASSERT(m_writeStarted);
@@ -1304,10 +1303,8 @@ void Disk2InterfaceCard::DataLatchWriteWOZContinue(WORD pc, WORD addr)
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
 
-	UINT bitCellRemainder = GetBitCellDelta(ImageGetOptimalBitTiming(floppy.m_imagehandle));
-	m_diskLastCycle = g_nCumulativeCycles;
-
-	DataLatchWriteWOZContinue2(pc, addr, bitCellRemainder);
+	UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
+	DataLatchWriteWOZContinue2(pc, addr, bitCellDelta);
 }
 
 // dataShiftWrite-2
@@ -1813,14 +1810,9 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	bool isWOZ = ImageIsWOZ(pImage);
 
 	if (isWOZ && pCard->m_seqFunc.function == dataShiftWrite)	// Occurs at end of sector write ($C0EE)
-		pCard->DataLatchWriteWOZContinue(pc, addr);	// Finish any previous write
+		pCard->DataLatchWriteWOZContinue(pc, addr, nExecutedCycles);	// Finish any previous write
 
 	pCard->SetSequencerFunction(addr);
-
-#if 0
-	if (isWOZ  && pCard->m_seqFunc.function == dataShiftWrite)	// && pCard->m_writeStarted && addr == 0xC0EC)
-		pCard->DataLatchWriteWOZContinue(pc, addr);	// Finish any previous write
-#endif
 
 	switch (addr & 0xF)
 	{
@@ -1863,7 +1855,7 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	bool isWOZ = ImageIsWOZ(pImage);
 
 	if (isWOZ && pCard->m_seqFunc.function == dataShiftWrite)
-		pCard->DataLatchWriteWOZContinue(pc, addr);	// Finish any previous write
+		pCard->DataLatchWriteWOZContinue(pc, addr, nExecutedCycles);	// Finish any previous write
 
 	pCard->SetSequencerFunction(addr);
 
