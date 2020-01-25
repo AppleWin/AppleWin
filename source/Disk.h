@@ -191,6 +191,7 @@ private:
 	void UpdateBitStreamOffsets(FloppyDisk& floppy);
 	void DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataLatchWriteWOZ(WORD pc, WORD addr, BYTE d, UINT bitCellRemainder);
+	void DataLatchWriteWOZ2(WORD pc, WORD addr);
 	void DataLatchWriteWOZContinue(WORD pc, WORD addr);
 	void DataLatchWriteWOZContinue2(WORD pc, WORD addr, UINT bitCellRemainder);
 	void SetSequencerFunction(WORD addr);
