@@ -9,8 +9,21 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.29.8.0 - ?
+1.29.8.0 - 19 Jan 2020
 ----------------------
+. [Bug #749] Hotkeys to change emulation speed using Ctrl+n: now ignored if ALT is pressed.
+. [Bug #748] DiskII: data latch returns a rand() value when no disk is in drive.
+. [Bug #746] Debugger: correctly repaint Apple II screen when showing it from debugger.
+. [Bug #745] WOZ: Support for large tracks.
+. [Bug #743] Added new command line switches:
+	-left-alt-control-buttons : left-ctrl=button0, left-alt=button1
+	-right-alt-control-buttons : right-alt=button0, right-ctrl=button1
+	-swap-buttons : for swapping buttons 0 & 1
+. [Bug #733] Alternate fix for WOZ 'Wasteland'.
+. [PR #723] Fixed way to clear a std::string.
+. Configuration->Input: Added 'Swap 0/1' toggle for swapping buttons 0 & 1.
+. WOZ support: Removed version check on INFO section.
+. Display MessageBox with all unsupported commands that were passed in (can choose to continue or exit).
 . Debugger: Added new 'cycles <abs|rel>' command to show cycles as absolute or relative.
 
 
@@ -186,7 +199,7 @@ Tom Charlesworth
 . [Change #603] Removed support for v1 save-state files.
 	- Any v1 save-state files should be loaded into AppleWin 1.27, and then re-saved to a v2 save-state file.
 . [Change #597] Removed the functionality for CTRL+F10 to reveal the mouse cursor.
-. [Change #585] Added a 'Swap' HDD button to the Configuration->Input property sheet.
+. [Change #585] Added a 'Swap' HDD button to the Configuration->Disk property sheet.
 . [Bug #608,#236] Mockingboard's 6522 TIMER1 wasn't generating an interrupt quickly enough for detection routines for Broadside and Ultima III Jukebox.
 
 

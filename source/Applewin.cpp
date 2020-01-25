@@ -1250,6 +1250,7 @@ struct CmdLine
 		bChangedDisplayResolution = false;
 		bSlot0LanguageCard = false;
 		bSlot7EmptyOnExit = false;
+		bSwapButtons0and1 = false;
 		bestWidth = 0;
 		bestHeight = 0;
 		szImageName_harddisk[HARDDISK_1] = NULL;
@@ -1281,6 +1282,7 @@ struct CmdLine
 	bool bSlot0LanguageCard;
 	bool bSlotEmpty[NUM_SLOTS];
 	bool bSlot7EmptyOnExit;
+	bool bSwapButtons0and1;
 	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	UINT bestWidth;
 	UINT bestHeight;
@@ -1593,7 +1595,7 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-swap-buttons") == 0)
 		{
-			sg_PropertySheet.SetButtonsSwapState(true);
+			g_cmdLine.bSwapButtons0and1 = true;
 		}
 		else if (strcmp(lpCmdLine, "-spkr-inc") == 0)
 		{
@@ -1854,6 +1856,12 @@ static void RepeatInitialization(void)
 		{
 			SetExpansionMemType(CT_LanguageCard);
 			g_cmdLine.bSlot0LanguageCard = false;	// Don't reapply after a restart
+		}
+
+		if (g_cmdLine.bSwapButtons0and1)
+		{
+			sg_PropertySheet.SetButtonsSwapState(true);
+			// Reapply after a restart - TODO: grey-out the Config UI for "Swap 0/1" when this cmd line is passed in
 		}
 
 		DebugInitialize();
