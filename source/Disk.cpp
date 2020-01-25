@@ -1100,7 +1100,14 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	if (!bWrite)
 	{
 		if (m_seqFunc.function != readSequencing)
+		{
+			if (m_seqFunc.function == dataShiftWrite)
+				DataLatchWriteWOZContinue2(pc, addr, bitCellRemainder);
+			else
+				UpdateBitStreamPosition(floppy, bitCellRemainder);
+
 			return;
+		}
 
 		DataLatchReadWOZ(pc, addr, bitCellRemainder);
 	}
@@ -1261,16 +1268,27 @@ void Disk2InterfaceCard::DataLatchWriteWOZ(WORD pc, WORD addr, BYTE /*d*/, UINT 
 
 void Disk2InterfaceCard::DataLatchWriteWOZContinue(WORD pc, WORD addr)
 {
-	_ASSERT(m_writeStarted);
+	_ASSERT(m_seqFunc.function == dataShiftWrite);
+	//_ASSERT(m_writeStarted);
 
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
 
 	UINT bitCellRemainder = GetBitCellDelta(ImageGetOptimalBitTiming(floppy.m_imagehandle));
+	DataLatchWriteWOZContinue2(pc, addr, bitCellRemainder);
+}
+
+void Disk2InterfaceCard::DataLatchWriteWOZContinue2(WORD pc, WORD addr, UINT bitCellRemainder)
+{
+	_ASSERT(m_seqFunc.function == dataShiftWrite);
+
+	FloppyDrive& drive = m_floppyDrive[m_currDrive];
+	FloppyDisk& floppy = drive.m_disk;
 
 	if (floppy.m_bWriteProtected)
 	{
 		//UpdateBitStreamPosition(floppy, bitCellRemainder);	// needed?
+		_ASSERT(0);
 		return;
 	}
 
@@ -1300,8 +1318,10 @@ void Disk2InterfaceCard::DataLatchWriteWOZContinue(WORD pc, WORD addr)
 		}
 	}
 
-	if (!m_seqFunc.writeMode)
-		m_writeStarted = false;
+	floppy.m_trackimagedirty = true;
+
+//	if (!m_seqFunc.writeMode)
+//		m_writeStarted = false;
 }
 
 //===========================================================================
@@ -1538,7 +1558,9 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG uExecutedCycles)
 {
-	// NB. m_seqFunc.function == checkWriteProtAndInitWrite or shiftWrite (both OK)
+	// NB. Only reads in LOAD mode can issue the SR (shift write-protect) operation - UTAIIe page 9-20, fig 9.11
+	if (write || m_seqFunc.writeMode)
+		return;
 
 	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
 	// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
@@ -1741,6 +1763,9 @@ void Disk2InterfaceCard::SetSequencerFunction(WORD addr)
 	case 2: m_seqFunc.loadMode = 0; break;	// $C08C,X (sequence addr A3 input)
 	case 3: m_seqFunc.loadMode = 1; break;	// $C08D,X (sequence addr A3 input)
 	}
+
+	if (!m_seqFunc.writeMode)
+		m_writeStarted = false;
 }
 
 BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
@@ -1751,10 +1776,10 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	ImageInfo* pImage = pCard->m_floppyDrive[pCard->m_currDrive].m_disk.m_imagehandle;
 	bool isWOZ = ImageIsWOZ(pImage);
 
-	pCard->SetSequencerFunction(addr);
-
-	if (isWOZ && pCard->m_writeStarted)
+	if (isWOZ && pCard->m_seqFunc.function == dataShiftWrite)
 		pCard->DataLatchWriteWOZContinue(pc, addr);	// Finish any previous write
+
+	pCard->SetSequencerFunction(addr);
 
 	switch (addr & 0xF)
 	{
@@ -1796,10 +1821,10 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	ImageInfo* pImage = pCard->m_floppyDrive[pCard->m_currDrive].m_disk.m_imagehandle;
 	bool isWOZ = ImageIsWOZ(pImage);
 
-	pCard->SetSequencerFunction(addr);
-
-	if (isWOZ && pCard->m_writeStarted)
+	if (isWOZ && pCard->m_seqFunc.function == dataShiftWrite)
 		pCard->DataLatchWriteWOZContinue(pc, addr);	// Finish any previous write
+
+	pCard->SetSequencerFunction(addr);
 
 	switch (addr & 0xF)
 	{
