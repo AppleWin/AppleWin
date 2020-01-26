@@ -9,6 +9,12 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.29.9.0 - 26 Jan 2020
+----------------------
+. [Bug #752] Fixed double-clicking a registered file-type issue (regression introduced at 1.29.8.0).
+. [Bug #750] Fixed Ctrl+Alt+Break wasn't emulating CTRL+OA+RESET (regression introduced at 1.29.8.0).
+
+
 1.29.8.0 - 19 Jan 2020
 ----------------------
 . [Bug #749] Hotkeys to change emulation speed using Ctrl+n: now ignored if ALT is pressed.
