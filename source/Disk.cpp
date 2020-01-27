@@ -1062,7 +1062,7 @@ void Disk2InterfaceCard::UpdateBitStreamOffsets(FloppyDisk& floppy)
 	floppy.m_bitMask = 1 << remainder;
 }
 
-void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
+void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, ULONG uExecutedCycles)
 {
 	if (m_seqFunc.function == dataShiftWrite)
 		return;
@@ -1114,12 +1114,8 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	{
 		if (m_seqFunc.function != readSequencing)
 		{
-//			if (m_seqFunc.function == dataShiftWrite)
-//				DataLatchWriteWOZContinue2(pc, addr, bitCellRemainder);
-//			else
 			_ASSERT(m_seqFunc.function == checkWriteProtAndInitWrite);
 			UpdateBitStreamPosition(floppy, bitCellRemainder);
-
 			return;
 		}
 
@@ -1128,7 +1124,7 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	else
 	{
 		_ASSERT(m_seqFunc.function == dataLoadWrite);
-		DataLatchWriteWOZ(pc, addr, d, bitCellRemainder);
+		DataLoadWriteWOZ(pc, addr, bitCellRemainder);
 	}
 
 	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
@@ -1261,10 +1257,8 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 #endif
 }
 
-// dataLoadWrite
-void Disk2InterfaceCard::DataLatchWriteWOZ(WORD pc, WORD addr, BYTE /*d*/, UINT bitCellRemainder)
+void Disk2InterfaceCard::DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder)
 {
-	_ASSERT(m_seqFunc.writeMode);
 	_ASSERT(m_seqFunc.function == dataLoadWrite);
 
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
@@ -1279,42 +1273,19 @@ void Disk2InterfaceCard::DataLatchWriteWOZ(WORD pc, WORD addr, BYTE /*d*/, UINT 
 	if (!m_writeStarted)
 		UpdateBitStreamPosition(floppy, bitCellRemainder);	// skip over bitCells before switching to write mode
 
-	DataLatchWriteWOZ2(pc, addr);
-}
-
-// dataLoadWrite
-// only called from DataLatchWriteWOZ() - TODO: coalesce
-void Disk2InterfaceCard::DataLatchWriteWOZ2(WORD pc, WORD addr)
-{
-	_ASSERT(m_seqFunc.writeMode);
-	_ASSERT(m_seqFunc.function == dataLoadWrite);
-
 	m_writeStarted = true;
 //	LogOutput("load shiftReg with %02X (was: %02X)\n", m_floppyLatch, m_shiftReg);
 	m_shiftReg = m_floppyLatch;
 }
 
-// dataShiftWrite
-void Disk2InterfaceCard::DataLatchWriteWOZContinue(WORD pc, WORD addr, ULONG uExecutedCycles)
-{
-	_ASSERT(m_seqFunc.function == dataShiftWrite);
-	//_ASSERT(m_writeStarted);
-
-	FloppyDrive& drive = m_floppyDrive[m_currDrive];
-	FloppyDisk& floppy = drive.m_disk;
-
-	UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
-	DataLatchWriteWOZContinue2(pc, addr, bitCellDelta);
-}
-
-// dataShiftWrite-2
-// only called from DataLatchWriteWOZContinue() - TODO: coalesce
-void Disk2InterfaceCard::DataLatchWriteWOZContinue2(WORD pc, WORD addr, UINT bitCellRemainder)
+void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCycles)
 {
 	_ASSERT(m_seqFunc.function == dataShiftWrite);
 
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
+
+	const UINT bitCellRemainder = GetBitCellDelta(uExecutedCycles);
 
 	if (floppy.m_bWriteProtected)
 	{
@@ -1810,7 +1781,7 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	bool isWOZ = ImageIsWOZ(pImage);
 
 	if (isWOZ && pCard->m_seqFunc.function == dataShiftWrite)	// Occurs at end of sector write ($C0EE)
-		pCard->DataLatchWriteWOZContinue(pc, addr, nExecutedCycles);	// Finish any previous write
+		pCard->DataShiftWriteWOZ(pc, addr, nExecutedCycles);	// Finish any previous write
 
 	pCard->SetSequencerFunction(addr);
 
@@ -1838,7 +1809,7 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	if (!(addr & 1))
 	{
 		if (isWOZ)
-			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
+			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, nExecutedCycles);
 
 		return pCard->m_floppyLatch;
 	}
@@ -1855,7 +1826,7 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	bool isWOZ = ImageIsWOZ(pImage);
 
 	if (isWOZ && pCard->m_seqFunc.function == dataShiftWrite)
-		pCard->DataLatchWriteWOZContinue(pc, addr, nExecutedCycles);	// Finish any previous write
+		pCard->DataShiftWriteWOZ(pc, addr, nExecutedCycles);	// Finish any previous write
 
 	pCard->SetSequencerFunction(addr);
 
@@ -1885,8 +1856,7 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 		pCard->m_floppyLatch = d;
 
 		if (isWOZ)
-			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
-//			pCard->DataLatchWriteWOZ2(pc, addr);
+			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, nExecutedCycles);
 	}
 
 	return 0;
