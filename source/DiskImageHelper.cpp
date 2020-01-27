@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "DiskImage.h"
 #include "DiskImageHelper.h"
+#include "Log.h"
 #include "Memory.h"
 
 ImageInfo::ImageInfo()
@@ -100,15 +101,24 @@ bool CImageBase::ReadTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTrac
 
 bool CImageBase::WriteTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTrackBuffer, const UINT uTrackSize)
 {
-	const long Offset = pImageInfo->uOffset + nTrack * uTrackSize;
-	memcpy(&pImageInfo->pImageBuffer[Offset], pTrackBuffer, uTrackSize);
+	const long offset = pImageInfo->uOffset + nTrack * uTrackSize;
+	memcpy(&pImageInfo->pImageBuffer[offset], pTrackBuffer, uTrackSize);
 
+	return WriteTrackInternal(pImageInfo, pTrackBuffer, uTrackSize, offset);
+}
+
+bool CImageBase::WriteTrackInternal(ImageInfo* pImageInfo, LPBYTE pTrackBuffer, const UINT uTrackSize, const long offset)
+{
 	if (pImageInfo->FileType == eFileNormal)
 	{
 		if (pImageInfo->hFile == INVALID_HANDLE_VALUE)
 			return false;
 
-		SetFilePointer(pImageInfo->hFile, Offset, NULL, FILE_BEGIN);
+		if (SetFilePointer(pImageInfo->hFile, offset, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
+		{
+			DWORD err = GetLastError();
+			return false;
+		}
 
 		DWORD dwBytesWritten;
 		BOOL bRes = WriteFile(pImageInfo->hFile, pTrackBuffer, uTrackSize, &dwBytesWritten, NULL);
@@ -1194,9 +1204,6 @@ public:
 
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
-//		const UINT track = PhaseToTrack(phase);
-//		WriteTrack(pImageInfo, track, pTrackImageBuffer, nNibbles);
-
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
 
 		const int trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
@@ -1204,6 +1211,7 @@ public:
 		{
 			// TODO
 			_ASSERT(0);
+			LogFileOutput("WOZ Write Track: attempting to write to a blank track (phase=%f)\n", phase);
 			return;
 		}
 
@@ -1211,29 +1219,19 @@ public:
 		CWOZHelper::TRKv2* pTRK = &pTRKS[trackFromTMAP];
 		{
 			UINT bitCount = pTRK->bitCount;
-			UINT nibbles = (pTRK->bitCount + 7) / 8;
-			_ASSERT(nibbles == nNibbles);
+			UINT trackSize = (pTRK->bitCount + 7) / 8;
+			_ASSERT(trackSize == nNibbles);
+			if (trackSize != nNibbles)
+			{
+				LogFileOutput("WOZ Write Track: attempting to write %08X when trackSize is %08X (phase=%f)\n", nNibbles, trackSize, phase);
+				return;
+			}
 		}
 
-//		const long Offset = pImageInfo->uOffset + nTrack * uTrackSize;
-//		memcpy(&pImageInfo->pImageBuffer[Offset], pTrackBuffer, uTrackSize);
-		const long Offset = pTRK->startBlock * CWOZHelper::BLOCK_SIZE;
-		memcpy(&pImageInfo->pImageBuffer[Offset], pTrackImageBuffer, nNibbles);
+		const long offset = pTRK->startBlock * CWOZHelper::BLOCK_SIZE;
+		memcpy(&pImageInfo->pImageBuffer[offset], pTrackImageBuffer, nNibbles);
 
-		if (pImageInfo->hFile == INVALID_HANDLE_VALUE)
-			return;
-
-		if (SetFilePointer(pImageInfo->hFile, Offset, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
-		{
-			DWORD err = GetLastError();
-			return;
-		}
-
-		DWORD dwBytesWritten;
-		BOOL bRes = WriteFile(pImageInfo->hFile, pTrackImageBuffer, nNibbles, &dwBytesWritten, NULL);
-		_ASSERT(dwBytesWritten == nNibbles);
-		if (!bRes || dwBytesWritten != nNibbles)
-			return;
+		WriteTrackInternal(pImageInfo, pTrackImageBuffer, nNibbles, offset);
 	}
 
 	// TODO: Uncomment and fix-up if we want to allow .woz image creation (eg. for INIT or FORMAT)

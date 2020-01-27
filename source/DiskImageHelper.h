@@ -86,6 +86,7 @@ public:
 protected:
 	bool ReadTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTrackBuffer, const UINT uTrackSize);
 	bool WriteTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTrackBuffer, const UINT uTrackSize);
+	bool WriteTrackInternal(ImageInfo* pImageInfo, LPBYTE pTrackBuffer, const UINT uTrackSize, const long offset);
 	bool ReadBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlockBuffer);
 	bool WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlockBuffer);
 
