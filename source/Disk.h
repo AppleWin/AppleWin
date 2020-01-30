@@ -185,10 +185,10 @@ private:
 	void WriteTrack(const int drive);
 	const std::string & DiskGetFullPathName(const int drive);
 	void ResetLogicStateSequencer(void);
-	void UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles);
 	UINT GetBitCellDelta(const ULONG uExecutedCycles);
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
 	void UpdateBitStreamOffsets(FloppyDisk& floppy);
+	__forceinline void IncBitStream(FloppyDisk& floppy);
 	void DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCycles);

@@ -988,14 +988,6 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 	m_dbgLatchDelayedCnt = 0;
 }
 
-void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles)
-{
-	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
-
-	UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
-	UpdateBitStreamPosition(floppy, bitCellDelta);
-}
-
 UINT Disk2InterfaceCard::GetBitCellDelta(const ULONG uExecutedCycles)
 {
 	CpuCalcCycles(uExecutedCycles);
@@ -1019,14 +1011,6 @@ UINT Disk2InterfaceCard::GetBitCellDelta(const ULONG uExecutedCycles)
 	else
 #endif
 	{
-#if 0
-		if (m_writeStarted)
-		{
-			UINT d = (UINT)(g_nCumulativeCycles - m_diskLastCycle);
-			UINT t = d + (UINT)floppy.m_extraCycles;
-			LogOutput("cycle delta = %d + %d = %d (bits=%f)\n", d, (UINT)floppy.m_extraCycles, t, (float)t/4.0);
-		}
-#endif
 		const double cycleDelta = (double)(g_nCumulativeCycles - m_diskLastCycle) + floppy.m_extraCycles;
 		const double bitTime = 0.125 * (double)optimalBitTiming;	// 125ns units
 		bitCellDelta = (UINT) floor( cycleDelta / bitTime );
@@ -1060,6 +1044,24 @@ void Disk2InterfaceCard::UpdateBitStreamOffsets(FloppyDisk& floppy)
 	floppy.m_byte = floppy.m_bitOffset / 8;
 	const UINT remainder = 7 - (floppy.m_bitOffset & 7);
 	floppy.m_bitMask = 1 << remainder;
+}
+
+__forceinline void Disk2InterfaceCard::IncBitStream(FloppyDisk& floppy)
+{
+	floppy.m_bitMask >>= 1;
+	if (!floppy.m_bitMask)
+	{
+		floppy.m_bitMask = 1 << 7;
+		floppy.m_byte++;
+	}
+
+	floppy.m_bitOffset++;
+	if (floppy.m_bitOffset == floppy.m_bitCount)
+	{
+		floppy.m_bitMask = 1 << 7;
+		floppy.m_bitOffset = 0;
+		floppy.m_byte = 0;
+	}
 }
 
 void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, ULONG uExecutedCycles)
@@ -1164,20 +1166,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 		BYTE outputBit = (drive.m_headWindow & 0xf)	? (drive.m_headWindow >> 1) & 1
 													: (rand() < ((RAND_MAX * 3) / 10)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
 
-		floppy.m_bitMask >>= 1;
-		if (!floppy.m_bitMask)
-		{
-			floppy.m_bitMask = 1 << 7;
-			floppy.m_byte++;
-		}
-
-		floppy.m_bitOffset++;
-		if (floppy.m_bitOffset == floppy.m_bitCount)
-		{
-			floppy.m_bitMask = 1 << 7;
-			floppy.m_bitOffset = 0;
-			floppy.m_byte = 0;
-		}
+		IncBitStream(floppy);
 
 		if (m_resetSequencer)
 		{
@@ -1273,7 +1262,9 @@ void Disk2InterfaceCard::DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemain
 		UpdateBitStreamPosition(floppy, bitCellRemainder);	// skip over bitCells before switching to write mode
 
 	m_writeStarted = true;
-//	LogOutput("load shiftReg with %02X (was: %02X)\n", m_floppyLatch, m_shiftReg);
+#if LOG_DISK_WOZ_LOADWRITE
+	LogOutput("load shiftReg with %02X (was: %02X)\n", m_floppyLatch, m_shiftReg);
+#endif
 	m_shiftReg = m_floppyLatch;
 }
 
@@ -1293,7 +1284,9 @@ void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCy
 		return;
 	}
 
-//	LogOutput("T$%02X, bitOffset=%04X: %02X (%d bits)\n", drive.m_phase/2, floppy.m_bitOffset, m_shiftReg, bitCellRemainder);
+#if LOG_DISK_WOZ_SHIFTWRITE
+	LogOutput("T$%02X, bitOffset=%04X: %02X (%d bits)\n", drive.m_phase/2, floppy.m_bitOffset, m_shiftReg, bitCellRemainder);
+#endif
 
 	for (UINT i = 0; i < bitCellRemainder; i++)
 	{
@@ -1305,20 +1298,7 @@ void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCy
 		if (outputBit) n |= floppy.m_bitMask;
 		floppy.m_trackimage[floppy.m_byte] = n;
 
-		floppy.m_bitMask >>= 1;
-		if (!floppy.m_bitMask)
-		{
-			floppy.m_bitMask = 1 << 7;
-			floppy.m_byte++;
-		}
-
-		floppy.m_bitOffset++;
-		if (floppy.m_bitOffset == floppy.m_bitCount)
-		{
-			floppy.m_bitMask = 1 << 7;
-			floppy.m_bitOffset = 0;
-			floppy.m_byte = 0;
-		}
+		IncBitStream(floppy);
 	}
 
 	floppy.m_trackimagedirty = true;
@@ -1575,7 +1555,8 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 	//    the write protect switch would still be read correctly" (UTAIIe page 9-21)
 	// . Sequencer "SR" (Shift Right) command only loads QA (bit7) of data register (UTAIIe page 9-21)
 	// . A read or write will shift 'write protect' in QA.
-	if (m_floppyDrive[m_currDrive].m_disk.m_bWriteProtected)
+	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
+	if (floppy.m_bWriteProtected)
 		m_floppyLatch |= 0x80;
 	else
 		m_floppyLatch &= 0x7F;
@@ -1583,15 +1564,16 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 	if (m_writeStarted)	// Prevent ResetLogicStateSequencer() from resetting m_writeStarted
 		return;
 
-	if (ImageIsWOZ(m_floppyDrive[m_currDrive].m_disk.m_imagehandle))
+	if (ImageIsWOZ(floppy.m_imagehandle))
 	{
 #if LOG_DISK_NIBBLES_READ
 		CpuCalcCycles(uExecutedCycles);
 		LOG_DISK("%08X: reset LSS: ~PC=%04X\r\n", (UINT32)g_nCumulativeCycles, regs.pc);
 #endif
 		ResetLogicStateSequencer();	// reset sequencer (UTAIIe page 9-21)
-//		m_latchDelay = 7;	// TODO: Treat like a regular $C0EC latch load?
-		UpdateBitStreamPositionAndDiskCycle(uExecutedCycles);	// Fix E7-copy protection
+
+		const UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
+		UpdateBitStreamPosition(floppy, bitCellDelta);	// Fix E7-copy protection
 	}
 }
 
