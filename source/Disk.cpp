@@ -1012,9 +1012,9 @@ UINT Disk2InterfaceCard::GetBitCellDelta(const ULONG uExecutedCycles)
 #if 0
 	if (optimalBitTiming == 32)
 	{
-		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + (BYTE) m_extraCycles;
+		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + (BYTE) floppy.m_extraCycles;
 		bitCellDelta = cycleDelta / 4;	// DIV 4 for 4us per bit-cell
-		m_extraCycles = cycleDelta & 3;	// MOD 4 : remainder carried forward for next time
+		floppy.m_extraCycles = cycleDelta & 3;	// MOD 4 : remainder carried forward for next time
 	}
 	else
 #endif
@@ -1064,8 +1064,7 @@ void Disk2InterfaceCard::UpdateBitStreamOffsets(FloppyDisk& floppy)
 
 void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, ULONG uExecutedCycles)
 {
-	if (m_seqFunc.function == dataShiftWrite)
-		return;
+	_ASSERT(m_seqFunc.function != dataShiftWrite);
 
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
@@ -1090,7 +1089,6 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	// Skipping forward a large amount of bitcells means the bitstream will very likely be out-of-sync.
 	// The first 1-bit will produce a latch nibble, and this 1-bit is unlikely to be the nibble's high bit.
 	// So we need to ensure we run enough bits through the sequencer to re-sync.
-	// NB. For Planetfall 13 bitcells(NG) / 14 bitcells(OK)
 	const UINT significantBitCells = 50;	// 5x 10-bit sync FF nibbles
 	UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
 
@@ -1266,7 +1264,8 @@ void Disk2InterfaceCard::DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 	if (floppy.m_bWriteProtected)
 	{
-		UpdateBitStreamPosition(floppy, bitCellRemainder);	// skip over bitCells
+		_ASSERT(0);	// Must be a bug in the 6502 code for this to occur!
+		UpdateBitStreamPosition(floppy, bitCellRemainder);
 		return;
 	}
 
@@ -1289,8 +1288,8 @@ void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCy
 
 	if (floppy.m_bWriteProtected)
 	{
-		//UpdateBitStreamPosition(floppy, bitCellRemainder);	// needed?
-		_ASSERT(0);
+		_ASSERT(0);	// Must be a bug in the 6502 code for this to occur!
+		UpdateBitStreamPosition(floppy, bitCellRemainder);
 		return;
 	}
 
@@ -1808,7 +1807,7 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	// only even addresses return the latch (UTAIIe Table 9.1)
 	if (!(addr & 1))
 	{
-		if (isWOZ)
+		if (isWOZ && pCard->m_seqFunc.function != dataShiftWrite)
 			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, nExecutedCycles);
 
 		return pCard->m_floppyLatch;
