@@ -983,7 +983,7 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 {
 	m_shiftReg = 0;
 	m_latchDelay = 0;
-	m_resetSequencer = true;
+//	m_resetSequencer = true;	// interestingly, this isn't needed! it's "m_shiftReg = 0" that's important
 	m_writeStarted = false;
 	m_dbgLatchDelayedCnt = 0;
 }

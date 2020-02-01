@@ -73,6 +73,7 @@ public:
 	virtual const char* GetCreateExtensions(void) = 0;
 	virtual const char* GetRejectExtensions(void) = 0;
 
+	bool WriteImageHeader(ImageInfo* pImageInfo, LPBYTE pHdr, const UINT hdrSize);
 	void SetVolumeNumber(const BYTE uVolumeNumber) { m_uVolumeNumber = uVolumeNumber; }
 	bool IsValidImageSize(const DWORD uImageSize);
 
@@ -86,9 +87,9 @@ public:
 protected:
 	bool ReadTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTrackBuffer, const UINT uTrackSize);
 	bool WriteTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTrackBuffer, const UINT uTrackSize);
-	bool WriteTrackInternal(ImageInfo* pImageInfo, LPBYTE pTrackBuffer, const UINT uTrackSize, const long offset);
 	bool ReadBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlockBuffer);
 	bool WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlockBuffer);
+	bool WriteImageData(ImageInfo* pImageInfo, LPBYTE pSrcBuffer, const UINT uSrcSize, const long offset);
 
 	LPBYTE Code62(int sector);
 	void Decode62(LPBYTE imageptr);

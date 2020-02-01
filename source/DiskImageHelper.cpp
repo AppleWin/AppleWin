@@ -89,6 +89,13 @@ LPBYTE CImageBase::ms_pWorkBuffer = NULL;
 
 //-----------------------------------------------------------------------------
 
+bool CImageBase::WriteImageHeader(ImageInfo* pImageInfo, LPBYTE pHdr, const UINT hdrSize)
+{
+	return WriteImageData(pImageInfo, pHdr, hdrSize, 0);
+}
+
+//-----------------------------------------------------------------------------
+
 bool CImageBase::ReadTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTrackBuffer, const UINT uTrackSize)
 {
 	const long offset = pImageInfo->uOffset + nTrack * uTrackSize;
@@ -104,76 +111,7 @@ bool CImageBase::WriteTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTra
 	const long offset = pImageInfo->uOffset + nTrack * uTrackSize;
 	memcpy(&pImageInfo->pImageBuffer[offset], pTrackBuffer, uTrackSize);
 
-	return WriteTrackInternal(pImageInfo, pTrackBuffer, uTrackSize, offset);
-}
-
-bool CImageBase::WriteTrackInternal(ImageInfo* pImageInfo, LPBYTE pTrackBuffer, const UINT uTrackSize, const long offset)
-{
-	if (pImageInfo->FileType == eFileNormal)
-	{
-		if (pImageInfo->hFile == INVALID_HANDLE_VALUE)
-			return false;
-
-		if (SetFilePointer(pImageInfo->hFile, offset, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
-		{
-			DWORD err = GetLastError();
-			return false;
-		}
-
-		DWORD dwBytesWritten;
-		BOOL bRes = WriteFile(pImageInfo->hFile, pTrackBuffer, uTrackSize, &dwBytesWritten, NULL);
-		_ASSERT(dwBytesWritten == uTrackSize);
-		if (!bRes || dwBytesWritten != uTrackSize)
-			return false;
-	}
-	else if (pImageInfo->FileType == eFileGZip)
-	{
-		// Write entire compressed image each time (dirty track change or dirty disk removal)
-		gzFile hGZFile = gzopen(pImageInfo->szFilename.c_str(), "wb");
-		if (hGZFile == NULL)
-			return false;
-
-		int nLen = gzwrite(hGZFile, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
-		int nRes = gzclose(hGZFile);	// close before returning (due to error) to avoid resource leak
-		hGZFile = NULL;
-
-		if (nLen != pImageInfo->uImageSize)
-			return false;
-
-		if (nRes != Z_OK)
-			return false;
-	}
-	else if (pImageInfo->FileType == eFileZip)
-	{
-		// Write entire compressed image each time (dirty track change or dirty disk removal)
-		// NB. Only support Zip archives with a single file
-		zipFile hZipFile = zipOpen(pImageInfo->szFilename.c_str(), APPEND_STATUS_CREATE);
-		if (hZipFile == NULL)
-			return false;
-
-		int nRes = zipOpenNewFileInZip(hZipFile, pImageInfo->szFilenameInZip.c_str(), &pImageInfo->zipFileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_SPEED);
-		if (nRes != ZIP_OK)
-			return false;
-
-		nRes = zipWriteInFileInZip(hZipFile, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
-		if (nRes != ZIP_OK)
-			return false;
-
-		nRes = zipCloseFileInZip(hZipFile);
-		if (nRes != ZIP_OK)
-			return false;
-
-		nRes = zipClose(hZipFile, NULL);
-		if (nRes != ZIP_OK)
-			return false;
-	}
-	else
-	{
-		_ASSERT(0);
-		return false;
-	}
-
-	return true;
+	return WriteImageData(pImageInfo, pTrackBuffer, uTrackSize, offset);
 }
 
 //-----------------------------------------------------------------------------
@@ -211,15 +149,15 @@ bool CImageBase::ReadBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBloc
 
 bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlockBuffer)
 {
-	long Offset = pImageInfo->uOffset + nBlock * HD_BLOCK_SIZE;
-	const bool bGrowImageBuffer = (UINT)Offset+HD_BLOCK_SIZE > pImageInfo->uImageSize;
+	long offset = pImageInfo->uOffset + nBlock * HD_BLOCK_SIZE;
+	const bool bGrowImageBuffer = (UINT)offset+HD_BLOCK_SIZE > pImageInfo->uImageSize;
 
 	if (pImageInfo->FileType == eFileGZip || pImageInfo->FileType == eFileZip)
 	{
 		if (bGrowImageBuffer)
 		{
 			// Horribly inefficient! (Unzip to a normal file if you want better performance!)
-			const UINT uNewImageSize = Offset+HD_BLOCK_SIZE;
+			const UINT uNewImageSize = offset+HD_BLOCK_SIZE;
 			BYTE* pNewImageBuffer = new BYTE [uNewImageSize];
 
 			memcpy(pNewImageBuffer, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
@@ -230,27 +168,48 @@ bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlo
 			pImageInfo->uImageSize = uNewImageSize;
 		}
 
-		memcpy(&pImageInfo->pImageBuffer[Offset], pBlockBuffer, HD_BLOCK_SIZE);
+		memcpy(&pImageInfo->pImageBuffer[offset], pBlockBuffer, HD_BLOCK_SIZE);
 	}
 
+	if (!WriteImageData(pImageInfo, pBlockBuffer, HD_BLOCK_SIZE, offset))
+	{
+		_ASSERT(0);
+		return false;
+	}
+
+	if (pImageInfo->FileType == eFileNormal)
+	{
+		if (bGrowImageBuffer)
+			pImageInfo->uImageSize += HD_BLOCK_SIZE;
+	}
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CImageBase::WriteImageData(ImageInfo* pImageInfo, LPBYTE pSrcBuffer, const UINT uSrcSize, const long offset)
+{
 	if (pImageInfo->FileType == eFileNormal)
 	{
 		if (pImageInfo->hFile == INVALID_HANDLE_VALUE)
 			return false;
 
-		SetFilePointer(pImageInfo->hFile, Offset, NULL, FILE_BEGIN);
+		if (SetFilePointer(pImageInfo->hFile, offset, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
+		{
+			DWORD err = GetLastError();
+			return false;
+		}
 
 		DWORD dwBytesWritten;
-		BOOL bRes = WriteFile(pImageInfo->hFile, pBlockBuffer, HD_BLOCK_SIZE, &dwBytesWritten, NULL);
-		if (!bRes || dwBytesWritten != HD_BLOCK_SIZE)
+		BOOL bRes = WriteFile(pImageInfo->hFile, pSrcBuffer, uSrcSize, &dwBytesWritten, NULL);
+		_ASSERT(dwBytesWritten == uSrcSize);
+		if (!bRes || dwBytesWritten != uSrcSize)
 			return false;
-
-		if (bGrowImageBuffer)
-			pImageInfo->uImageSize += HD_BLOCK_SIZE;
 	}
 	else if (pImageInfo->FileType == eFileGZip)
 	{
-		// Write entire compressed image each time a block is written
+		// Write entire compressed image each time (dirty track change or dirty disk removal or a HDD block is written)
 		gzFile hGZFile = gzopen(pImageInfo->szFilename.c_str(), "wb");
 		if (hGZFile == NULL)
 			return false;
@@ -267,7 +226,7 @@ bool CImageBase::WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlo
 	}
 	else if (pImageInfo->FileType == eFileZip)
 	{
-		// Write entire compressed image each time a block is written
+		// Write entire compressed image each time (dirty track change or dirty disk removal or a HDD block is written)
 		// NB. Only support Zip archives with a single file
 		zipFile hZipFile = zipOpen(pImageInfo->szFilename.c_str(), APPEND_STATUS_CREATE);
 		if (hZipFile == NULL)
@@ -1071,10 +1030,10 @@ public:
 
 //-------------------------------------
 
-class CWOZEmptyTrack
+class CWOZImageHelper
 {
 public:
-	CWOZEmptyTrack(void)
+	CWOZImageHelper(void)
 	{
 		m_pWOZEmptyTrack = new BYTE[CWOZHelper::EMPTY_TRACK_SIZE];
 
@@ -1090,7 +1049,7 @@ public:
 			m_pWOZEmptyTrack[i] = n;
 		}
 	}
-	virtual ~CWOZEmptyTrack(void) { delete [] m_pWOZEmptyTrack; }
+	virtual ~CWOZImageHelper(void) { delete [] m_pWOZEmptyTrack; }
 
 	void ReadEmptyTrack(LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount)
 	{
@@ -1100,13 +1059,21 @@ public:
 		return;
 	}
 
+	bool UpdateWOZHeaderCRC(ImageInfo* pImageInfo, CImageBase* pImageBase)
+	{
+		BYTE* pImage = pImageInfo->pImageBuffer;
+		CWOZHelper::WOZHeader* pWozHdr = (CWOZHelper::WOZHeader*) pImage;
+		pWozHdr->crc32 = crc32(0, pImage+sizeof(CWOZHelper::WOZHeader), pImageInfo->uImageSize-sizeof(CWOZHelper::WOZHeader));
+		return pImageBase->WriteImageHeader(pImageInfo, pImage, sizeof(CWOZHelper::WOZHeader));
+	}
+
 private:
 	BYTE* m_pWOZEmptyTrack;
 };
 
 //-------------------------------------
 
-class CWOZ1Image : public CImageBase, private CWOZEmptyTrack
+class CWOZ1Image : public CImageBase, private CWOZImageHelper
 {
 public:
 	CWOZ1Image(void) {}
@@ -1118,11 +1085,6 @@ public:
 
 		if (pWozHdr->id1 != CWOZHelper::ID1_WOZ1 || pWozHdr->id2 != CWOZHelper::ID2)
 			return eMismatch;
-
-		if (pWozHdr->crc32)
-		{
-			// TODO: check crc
-		}
 
 		m_uNumTracksInImage = CWOZHelper::MAX_TRACKS_5_25;
 		return eMatch;
@@ -1144,8 +1106,48 @@ public:
 
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
-		// TODO
-		_ASSERT(0);
+		BYTE*& pTrackMap = pImageInfo->pTrackMap;
+
+		const int trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
+		if (trackFromTMAP == 0xFF)
+		{
+			// TODO
+			_ASSERT(0);
+			LogFileOutput("WOZ1 Write Track: attempting to write to a blank track (phase=%f)\n", phase);
+			return;
+		}
+
+		CWOZHelper::TRKv1* pTRK = (CWOZHelper::TRKv1*) &pTrackImageBuffer[CWOZHelper::WOZ1_TRK_OFFSET];
+		{
+			UINT bitCount = pTRK->bitCount;
+			UINT trackSize = pTRK->bytesUsed;
+			_ASSERT(trackSize == nNibbles);
+			if (trackSize != nNibbles)
+			{
+				_ASSERT(0);
+				LogFileOutput("WOZ1 Write Track: (warning) attempting to write %08X when trackSize is %08X (phase=%f)\n", nNibbles, trackSize, phase);
+				// NB. just a warning, not a failure
+			}
+			if (nNibbles > CWOZHelper::WOZ1_TRACK_SIZE)
+			{
+				_ASSERT(0);
+				LogFileOutput("WOZ1 Write Track: (failure) attempting to write %08X when max trackSize is %08X (phase=%f)\n", nNibbles, CWOZHelper::WOZ1_TRACK_SIZE, phase);
+				return;
+			}
+		}
+
+		if (!WriteTrack(pImageInfo, trackFromTMAP, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE))
+		{
+			_ASSERT(0);
+			LogFileOutput("WOZ1 Write Track: failed to write track (phase=%f) for file: %s\n", phase, pImageInfo->szFilename.c_str());
+			return;
+		}
+
+		if (!UpdateWOZHeaderCRC(pImageInfo, this))
+		{
+			_ASSERT(0);
+			LogFileOutput("WOZ1 Write Track: failed to write header CRC for file: %s\n", pImageInfo->szFilename.c_str());
+		}
 	}
 
 	// TODO: Uncomment and fix-up if we want to allow .woz image creation (eg. for INIT or FORMAT)
@@ -1159,7 +1161,7 @@ public:
 
 //-------------------------------------
 
-class CWOZ2Image : public CImageBase, private CWOZEmptyTrack
+class CWOZ2Image : public CImageBase, private CWOZImageHelper
 {
 public:
 	CWOZ2Image(void) {}
@@ -1171,11 +1173,6 @@ public:
 
 		if (pWozHdr->id1 != CWOZHelper::ID1_WOZ2 || pWozHdr->id2 != CWOZHelper::ID2)
 			return eMismatch;
-
-		if (pWozHdr->crc32)
-		{
-			// TODO: check crc
-		}
 
 		m_uNumTracksInImage = CWOZHelper::MAX_TRACKS_5_25;
 		return eMatch;
@@ -1195,9 +1192,12 @@ public:
 		*pNibbles = (pTRK->bitCount+7) / 8;
 
 		const UINT maxNibblesPerTrack = pImageInfo->maxNibblesPerTrack;
-		_ASSERT(*pNibbles <= (int)maxNibblesPerTrack);
 		if (*pNibbles > (int)maxNibblesPerTrack)
+		{
+			_ASSERT(0);
+			LogFileOutput("WOZ2 Read Track: attempting to read more than max nibbles! (phase=%f)\n", phase);
 			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);	// TODO: Enlarge track buffer, but for now just return an empty track
+		}
 
 		memcpy(pTrackImageBuffer, &pImageInfo->pImageBuffer[pTRK->startBlock*CWOZHelper::BLOCK_SIZE], *pNibbles);
 	}
@@ -1211,7 +1211,7 @@ public:
 		{
 			// TODO
 			_ASSERT(0);
-			LogFileOutput("WOZ Write Track: attempting to write to a blank track (phase=%f)\n", phase);
+			LogFileOutput("WOZ2 Write Track: attempting to write to a blank track (phase=%f)\n", phase);
 			return;
 		}
 
@@ -1223,7 +1223,8 @@ public:
 			_ASSERT(trackSize == nNibbles);
 			if (trackSize != nNibbles)
 			{
-				LogFileOutput("WOZ Write Track: attempting to write %08X when trackSize is %08X (phase=%f)\n", nNibbles, trackSize, phase);
+				_ASSERT(0);
+				LogFileOutput("WOZ2 Write Track: attempting to write %08X when trackSize is %08X (phase=%f)\n", nNibbles, trackSize, phase);
 				return;
 			}
 		}
@@ -1231,7 +1232,18 @@ public:
 		const long offset = pTRK->startBlock * CWOZHelper::BLOCK_SIZE;
 		memcpy(&pImageInfo->pImageBuffer[offset], pTrackImageBuffer, nNibbles);
 
-		WriteTrackInternal(pImageInfo, pTrackImageBuffer, nNibbles, offset);
+		if (!WriteImageData(pImageInfo, pTrackImageBuffer, nNibbles, offset))
+		{
+			_ASSERT(0);
+			LogFileOutput("WOZ2 Write Track: failed to write track (phase=%f) for file: %s\n", phase, pImageInfo->szFilename.c_str());
+			return;
+		}
+
+		if (!UpdateWOZHeaderCRC(pImageInfo, this))
+		{
+			_ASSERT(0);
+			LogFileOutput("WOZ2 Write Track: failed to write header CRC for file: %s\n", pImageInfo->szFilename.c_str());
+		}
 	}
 
 	// TODO: Uncomment and fix-up if we want to allow .woz image creation (eg. for INIT or FORMAT)
@@ -1835,12 +1847,20 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 
 	if (imageType == eImageWOZ1 || imageType == eImageWOZ2)
 	{
+		CWOZHelper::WOZHeader* pWozHdr = (CWOZHelper::WOZHeader*) pImage;
+		if (pWozHdr->crc32 && // WOZ spec: CRC of 0 should be ignored
+			pWozHdr->crc32 != crc32(0, pImage+sizeof(CWOZHelper::WOZHeader), dwSize-sizeof(CWOZHelper::WOZHeader)))
+		{
+			int res = MessageBox(GetDesktopWindow(), "CRC mismatch\nContinue using image?", "AppleWin: WOZ Header", MB_ICONSTOP | MB_SETFOREGROUND | MB_YESNO);
+			if (res == IDNO)
+				return NULL;
+		}
+
 		if (m_WOZHelper.ProcessChunks(pImage, dwSize, dwOffset, pImageInfo->pTrackMap) != eMatch)
 			return NULL;
 
-		if (m_WOZHelper.IsWriteProtected() && !pImageInfo->bWriteProtected)	// Force write-protected until writing is supported
+		if (m_WOZHelper.IsWriteProtected())
 			pImageInfo->bWriteProtected = true;
-		pImageInfo->bWriteProtected = false;	// DEBUG
 
 		pImageInfo->optimalBitTiming = m_WOZHelper.GetOptimalBitTiming();
 		pImageInfo->maxNibblesPerTrack = m_WOZHelper.GetMaxNibblesPerTrack();
@@ -1859,7 +1879,7 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 		{
 			pImageType->SetVolumeNumber( m_2IMGHelper.GetVolumeNumber() );
 
-			if (m_2IMGHelper.IsLocked() && !pImageInfo->bWriteProtected)
+			if (m_2IMGHelper.IsLocked())
 				pImageInfo->bWriteProtected = true;
 		}
 		else
@@ -1940,7 +1960,7 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHA
 	{
 		if (m_Result2IMG == eMatch)
 		{
-			if (m_2IMGHelper.IsLocked() && !pImageInfo->bWriteProtected)
+			if (m_2IMGHelper.IsLocked())
 				pImageInfo->bWriteProtected = true;
 		}
 	}
