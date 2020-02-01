@@ -1263,7 +1263,7 @@ void Disk2InterfaceCard::DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 	m_writeStarted = true;
 #if LOG_DISK_WOZ_LOADWRITE
-	LogOutput("load shiftReg with %02X (was: %02X)\n", m_floppyLatch, m_shiftReg);
+	LOG_DISK("load shiftReg with %02X (was: %02X)\n", m_floppyLatch, m_shiftReg);
 #endif
 	m_shiftReg = m_floppyLatch;
 }
@@ -1285,7 +1285,7 @@ void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCy
 	}
 
 #if LOG_DISK_WOZ_SHIFTWRITE
-	LogOutput("T$%02X, bitOffset=%04X: %02X (%d bits)\n", drive.m_phase/2, floppy.m_bitOffset, m_shiftReg, bitCellRemainder);
+	LOG_DISK("T$%02X, bitOffset=%04X: %02X (%d bits)\n", drive.m_phase/2, floppy.m_bitOffset, m_shiftReg, bitCellRemainder);
 #endif
 
 	for (UINT i = 0; i < bitCellRemainder; i++)
