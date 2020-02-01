@@ -232,19 +232,34 @@ bool CImageBase::WriteImageData(ImageInfo* pImageInfo, LPBYTE pSrcBuffer, const 
 		if (hZipFile == NULL)
 			return false;
 
-		int nRes = zipOpenNewFileInZip(hZipFile, pImageInfo->szFilenameInZip.c_str(), &pImageInfo->zipFileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_SPEED);
-		if (nRes != ZIP_OK)
-			return false;
+		int nOpenedFileInZip = ZIP_BADZIPFILE;
 
-		nRes = zipWriteInFileInZip(hZipFile, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
-		if (nRes != ZIP_OK)
-			return false;
+		try
+		{
+			nOpenedFileInZip = zipOpenNewFileInZip(hZipFile, pImageInfo->szFilenameInZip.c_str(), &pImageInfo->zipFileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_SPEED);
+			if (nOpenedFileInZip != ZIP_OK)
+				throw false;
 
-		nRes = zipCloseFileInZip(hZipFile);
-		if (nRes != ZIP_OK)
-			return false;
+			int nRes = zipWriteInFileInZip(hZipFile, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
+			if (nRes != ZIP_OK)
+				throw false;
 
-		nRes = zipClose(hZipFile, NULL);
+			nOpenedFileInZip = ZIP_BADZIPFILE;
+			nRes = zipCloseFileInZip(hZipFile);
+			if (nRes != ZIP_OK)
+				throw false;
+		}
+		catch (bool)
+		{
+			if (nOpenedFileInZip == ZIP_OK)
+				zipCloseFileInZip(hZipFile);
+
+			zipClose(hZipFile, NULL);
+
+			return false;
+		}
+
+		int nRes = zipClose(hZipFile, NULL);
 		if (nRes != ZIP_OK)
 			return false;
 	}
