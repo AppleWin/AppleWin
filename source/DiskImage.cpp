@@ -214,7 +214,7 @@ bool ImageIsWriteProtected(ImageInfo* const pImageInfo)
 
 bool ImageIsMultiFileZip(ImageInfo* const pImageInfo)
 {
-	return pImageInfo ? (pImageInfo->uNumEntriesInZip > 1) : false;
+	return pImageInfo ? (pImageInfo->uNumValidImagesInZip > 1) : false;
 }
 
 const std::string & ImageGetPathname(ImageInfo* const pImageInfo)

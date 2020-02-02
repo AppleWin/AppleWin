@@ -52,6 +52,7 @@ ImageInfo::ImageInfo()
 	uImageSize = 0;
 	ZeroMemory(&zipFileInfo, sizeof(zipFileInfo));
 	uNumEntriesInZip = 0;
+	uNumValidImagesInZip = 0;
 	uNumTracks = 0;
 	pImageBuffer = NULL;
 	pTrackMap = NULL;
@@ -227,6 +228,11 @@ bool CImageBase::WriteImageData(ImageInfo* pImageInfo, LPBYTE pSrcBuffer, const 
 	{
 		// Write entire compressed image each time (dirty track change or dirty disk removal or a HDD block is written)
 		// NB. Only support Zip archives with a single file
+		// - there is no delete in a zipfile, so would need to copy files from old to new zip file!
+		_ASSERT(pImageInfo->uNumEntriesInZip == 1);	// Should never occur, since image will be write-protected in CheckZipFile()
+		if (pImageInfo->uNumEntriesInZip > 1)
+			return false;
+
 		zipFile hZipFile = zipOpen(pImageInfo->szFilename.c_str(), APPEND_STATUS_CREATE);
 		if (hZipFile == NULL)
 			return false;
@@ -1501,90 +1507,130 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 	unz_file_info file_info;
 	char szFilename[MAX_PATH];
 	memset(szFilename, 0, sizeof(szFilename));
-	int nRes = 0, nLen = 0;
+	BYTE* pImageBuffer = NULL;
+	ImageInfo* pImageInfo2 = NULL;
+	CImageBase* pImageType = NULL;
+	UINT numValidImages = 0;
 
 	try
 	{
-		nRes = unzGetGlobalInfo(hZipFile, &global_info);
+		int nRes = unzGetGlobalInfo(hZipFile, &global_info);
 		if (nRes != UNZ_OK)
 			throw eIMAGE_ERROR_ZIP;
 
-		nRes = unzGoToFirstFile(hZipFile);	// Only support 1st file in zip archive for now
+		nRes = unzGoToFirstFile(hZipFile);
 		if (nRes != UNZ_OK)
 			throw eIMAGE_ERROR_ZIP;
 
-		nRes = unzGetCurrentFileInfo(hZipFile, &file_info, szFilename, MAX_PATH, NULL, 0, NULL, 0);
-		if (nRes != UNZ_OK)
-			throw eIMAGE_ERROR_ZIP;
-
-		const UINT uFileSize = file_info.uncompressed_size;
-		if (uFileSize > GetMaxImageSize())
-			throw eIMAGE_ERROR_BAD_SIZE;
-
-		pImageInfo->pImageBuffer = new BYTE[uFileSize];
-
-		nRes = unzOpenCurrentFile(hZipFile);
-		if (nRes != UNZ_OK)
-			throw eIMAGE_ERROR_ZIP;
-
-		nLen = unzReadCurrentFile(hZipFile, pImageInfo->pImageBuffer, uFileSize);
-		if (nLen < 0)
+		for (UINT n=0; n<global_info.number_entry; n++)
 		{
-			unzCloseCurrentFile(hZipFile);	// Must CloseCurrentFile before Close
-			throw eIMAGE_ERROR_UNSUPPORTED;
-		}
+			if (n)
+			{
+				nRes = unzGoToNextFile(hZipFile);
+				if (nRes == UNZ_END_OF_LIST_OF_FILE)
+					break;
+				if (nRes != UNZ_OK)
+					throw eIMAGE_ERROR_ZIP;
+			}
 
-		nRes = unzCloseCurrentFile(hZipFile);
-		if (nRes != UNZ_OK)
-			throw eIMAGE_ERROR_ZIP;
+			nRes = unzGetCurrentFileInfo(hZipFile, &file_info, szFilename, MAX_PATH, NULL, 0, NULL, 0);
+			if (nRes != UNZ_OK)
+				throw eIMAGE_ERROR_ZIP;
+
+			const UINT uFileSize = file_info.uncompressed_size;
+			if (uFileSize > GetMaxImageSize())
+				throw eIMAGE_ERROR_BAD_SIZE;
+
+			if (uFileSize == 0)	// skip directories or empty files
+				continue;
+
+			//
+
+			nRes = unzOpenCurrentFile(hZipFile);
+			if (nRes != UNZ_OK)
+				throw eIMAGE_ERROR_ZIP;
+
+			BYTE* pImageBuffer = new BYTE[uFileSize];
+			int nLen = unzReadCurrentFile(hZipFile, pImageBuffer, uFileSize);
+			if (nLen < 0)
+			{
+				unzCloseCurrentFile(hZipFile);	// Must CloseCurrentFile before Close
+				throw eIMAGE_ERROR_UNSUPPORTED;
+			}
+
+			nRes = unzCloseCurrentFile(hZipFile);
+			if (nRes != UNZ_OK)
+				throw eIMAGE_ERROR_ZIP;
+
+			// Determine the file's extension and convert it to lowercase
+			TCHAR szExt[_MAX_EXT] = "";
+			GetCharLowerExt(szExt, szFilename, _MAX_EXT);
+
+			DWORD dwSize = nLen;
+			DWORD dwOffset = 0;
+			CImageBase* pNewImageType = Detect(pImageBuffer, dwSize, szExt, dwOffset, !pImageInfo2 ? pImageInfo : pImageInfo2);
+
+			if (pNewImageType)
+			{
+				numValidImages++;
+
+				if (numValidImages == 1)
+				{
+					pImageType = pNewImageType;
+
+					pImageInfo->szFilenameInZip = szFilename;
+					memcpy(&pImageInfo->zipFileInfo.tmz_date, &file_info.tmu_date, sizeof(file_info.tmu_date));
+					pImageInfo->zipFileInfo.dosDate     = file_info.dosDate;
+					pImageInfo->zipFileInfo.internal_fa = file_info.internal_fa;
+					pImageInfo->zipFileInfo.external_fa = file_info.external_fa;
+					pImageInfo->uNumEntriesInZip = global_info.number_entry;
+					pImageInfo->pImageBuffer = pImageBuffer;
+
+					pImageBuffer = NULL;
+					strFilenameInZip = szFilename;
+
+					SetImageInfo(pImageInfo, eFileZip, dwOffset, pImageType, dwSize);
+
+					pImageInfo2 = new ImageInfo();	// use this dummy one, as some members get overwritten during Detect()
+				}
+			}
+
+			delete [] pImageBuffer;
+			pImageBuffer = NULL;
+		}
 	}
 	catch (ImageError_e error)
 	{
 		if (hZipFile)
 			unzClose(hZipFile);
 
+		delete [] pImageBuffer;
+		delete pImageInfo2;
+
 		return error;
 	}
 
-	nRes = unzClose(hZipFile);
+	delete pImageInfo2;
+
+	int nRes = unzClose(hZipFile);
 	hZipFile = NULL;
 	if (nRes != UNZ_OK)
 		return eIMAGE_ERROR_ZIP;
 
-	pImageInfo->szFilenameInZip = szFilename;
-	memcpy(&pImageInfo->zipFileInfo.tmz_date, &file_info.tmu_date, sizeof(file_info.tmu_date));
-	pImageInfo->zipFileInfo.dosDate     = file_info.dosDate;
-	pImageInfo->zipFileInfo.internal_fa = file_info.internal_fa;
-	pImageInfo->zipFileInfo.external_fa = file_info.external_fa;
-	pImageInfo->uNumEntriesInZip = global_info.number_entry;
-	strFilenameInZip = szFilename;
-
 	//
 
-	// Determine the file's extension and convert it to lowercase
-	TCHAR szExt[_MAX_EXT] = "";
-	GetCharLowerExt(szExt, szFilename, _MAX_EXT);
-
-	DWORD dwSize = nLen;
-	DWORD dwOffset = 0;
-	CImageBase* pImageType = Detect(pImageInfo->pImageBuffer, dwSize, szExt, dwOffset, pImageInfo);
-
 	if (!pImageType)
-	{
-		if (global_info.number_entry > 1)
-			return eIMAGE_ERROR_UNSUPPORTED_MULTI_ZIP;
-
 		return eIMAGE_ERROR_UNSUPPORTED;
-	}
 
 	const eImageType Type = pImageType->GetType();
 	if (Type == eImageAPL || Type == eImageIIE || Type == eImagePRG)
 		return eIMAGE_ERROR_UNSUPPORTED;
 
 	if (global_info.number_entry > 1)
-		pImageInfo->bWriteProtected = 1;	// Zip archives with multiple files are read-only (for now)
+		pImageInfo->bWriteProtected = 1;	// Zip archives with multiple files are read-only (for now) - see WriteImageData() for zipfile
 
-	SetImageInfo(pImageInfo, eFileZip, dwOffset, pImageType, dwSize);
+	pImageInfo->uNumValidImagesInZip = numValidImages;
+
 	return eIMAGE_ERROR_NONE;
 }
 

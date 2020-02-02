@@ -31,6 +31,7 @@ struct ImageInfo
 	std::string		szFilenameInZip;
 	zip_fileinfo	zipFileInfo;
 	UINT			uNumEntriesInZip;
+	UINT			uNumValidImagesInZip;
 	// Floppy only
 	UINT			uNumTracks;
 	BYTE*			pImageBuffer;

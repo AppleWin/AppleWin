@@ -729,17 +729,6 @@ void Disk2InterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFil
 			pszImageFilename);
 		break;
 
-	case eIMAGE_ERROR_UNSUPPORTED_MULTI_ZIP:
-		StringCbPrintf(
-			szBuffer,
-			MAX_PATH + 128,
-			TEXT("Unable to use the file %s\nbecause the ")
-			TEXT("first file (%s) in this multi-zip archive is not recognized.\n")
-			TEXT("Try unzipping and using the disk images directly.\n"),
-			pszImageFilename,
-			m_floppyDrive[drive].m_disk.m_strFilenameInZip.c_str());
-		break;
-
 	case eIMAGE_ERROR_GZ:
 	case eIMAGE_ERROR_ZIP:
 		StringCbPrintf(
