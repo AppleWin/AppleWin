@@ -63,7 +63,7 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 	ImageError_e Err = pImageInfo->pImageHelper->Open(pszImageFilename.c_str(), pImageInfo, bCreateIfNecessary, strFilenameInZip);
 	if (Err != eIMAGE_ERROR_NONE)
 	{
-		ImageClose(*ppImageInfo, true);
+		ImageClose(*ppImageInfo);
 		*ppImageInfo = NULL;
 		return Err;
 	}
@@ -83,9 +83,6 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 
 	pImageInfo->uNumTracks = sg_DiskImageHelper.GetNumTracksInImage(pImageInfo->pImageType);
 
-	for (UINT uTrack = 0; uTrack < pImageInfo->uNumTracks; uTrack++)
-		pImageInfo->ValidTrack[uTrack] = (pImageInfo->uImageSize > 0) ? 1 : 0;
-
 	*pWriteProtected = pImageInfo->bWriteProtected;
 
 	return eIMAGE_ERROR_NONE;
@@ -93,25 +90,9 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 
 //===========================================================================
 
-void ImageClose(ImageInfo* const pImageInfo, const bool bOpenError /*=false*/)
+void ImageClose(ImageInfo* const pImageInfo)
 {
-	bool bDeleteFile = false;
-
-	if (!bOpenError)
-	{
-		for (UINT uTrack = 0; uTrack < pImageInfo->uNumTracks; uTrack++)
-		{
-			if (!pImageInfo->ValidTrack[uTrack])
-			{
-				// TODO: Comment using info from this URL:
-				// http://groups.google.de/group/comp.emulators.apple2/msg/7a1b9317e7905152
-				bDeleteFile = true;
-				break;
-			}
-		}
-	}
-
-	pImageInfo->pImageHelper->Close(pImageInfo, bDeleteFile);
+	pImageInfo->pImageHelper->Close(pImageInfo);
 
 	delete pImageInfo;
 }
@@ -162,7 +143,7 @@ void ImageReadTrack(	ImageInfo* const pImageInfo,
 
 	const UINT track = pImageInfo->pImageType->PhaseToTrack(phase);
 
-	if (pImageInfo->pImageType->AllowRW() && pImageInfo->ValidTrack[track])
+	if (pImageInfo->pImageType->AllowRW())
 	{
 		pImageInfo->pImageType->Read(pImageInfo, phase, pTrackImageBuffer, pNibbles, pBitCount, enhanceDisk);
 	}
@@ -190,7 +171,6 @@ void ImageWriteTrack(	ImageInfo* const pImageInfo,
 	if (pImageInfo->pImageType->AllowRW() && !pImageInfo->bWriteProtected)
 	{
 		pImageInfo->pImageType->Write(pImageInfo, phase, pTrackImageBuffer, nNibbles);
-		pImageInfo->ValidTrack[track] = 1;
 	}
 }
 

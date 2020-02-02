@@ -52,7 +52,6 @@ ImageInfo::ImageInfo()
 	uImageSize = 0;
 	ZeroMemory(&zipFileInfo, sizeof(zipFileInfo));
 	uNumEntriesInZip = 0;
-	ZeroMemory(&ValidTrack, sizeof(ValidTrack));
 	uNumTracks = 0;
 	pImageBuffer = NULL;
 	pTrackMap = NULL;
@@ -1115,8 +1114,8 @@ public:
 
 		ReadTrack(pImageInfo, trackFromTMAP, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE);
 		CWOZHelper::TRKv1* pTRK = (CWOZHelper::TRKv1*) &pTrackImageBuffer[CWOZHelper::WOZ1_TRK_OFFSET];
-		*pNibbles = pTRK->bytesUsed;
 		*pBitCount = pTRK->bitCount;
+		*pNibbles = pTRK->bytesUsed;
 	}
 
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
@@ -1158,16 +1157,13 @@ public:
 			return;
 		}
 
+		// TODO: zip/gzip: combine the track & hdr writes so that the file is only compressed & written once
 		if (!UpdateWOZHeaderCRC(pImageInfo, this))
 		{
 			_ASSERT(0);
 			LogFileOutput("WOZ1 Write Track: failed to write header CRC for file: %s\n", pImageInfo->szFilename.c_str());
 		}
 	}
-
-	// TODO: Uncomment and fix-up if we want to allow .woz image creation (eg. for INIT or FORMAT)
-//	virtual bool AllowCreate(void) { return true; }
-//	virtual UINT GetImageSizeForCreate(void) { return 0; }//TODO
 
 	virtual eImageType GetType(void) { return eImageWOZ1; }
 	virtual const char* GetCreateExtensions(void) { return ".woz"; }
@@ -1254,6 +1250,7 @@ public:
 			return;
 		}
 
+		// TODO: zip/gzip: combine the track & hdr writes so that the file is only compressed & written once
 		if (!UpdateWOZHeaderCRC(pImageInfo, this))
 		{
 			_ASSERT(0);
@@ -1776,17 +1773,12 @@ ImageError_e CImageHelperBase::Open(	LPCTSTR pszImageFilename,
 
 //-------------------------------------
 
-void CImageHelperBase::Close(ImageInfo* pImageInfo, const bool bDeleteFile)
+void CImageHelperBase::Close(ImageInfo* pImageInfo)
 {
 	if (pImageInfo->hFile != INVALID_HANDLE_VALUE)
 	{
 		CloseHandle(pImageInfo->hFile);
 		pImageInfo->hFile = INVALID_HANDLE_VALUE;
-	}
-
-	if (bDeleteFile)
-	{
-		DeleteFile(pImageInfo->szFilename.c_str());
 	}
 
 	pImageInfo->szFilename.clear();

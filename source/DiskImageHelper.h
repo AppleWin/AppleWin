@@ -32,7 +32,6 @@ struct ImageInfo
 	zip_fileinfo	zipFileInfo;
 	UINT			uNumEntriesInZip;
 	// Floppy only
-	BYTE			ValidTrack[TRACKS_MAX];
 	UINT			uNumTracks;
 	BYTE*			pImageBuffer;
 	BYTE*			pTrackMap;	// WOZ only
@@ -306,7 +305,7 @@ public:
 	}
 
 	ImageError_e Open(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, const bool bCreateIfNecessary, std::string& strFilenameInZip);
-	void Close(ImageInfo* pImageInfo, const bool bDeleteFile);
+	void Close(ImageInfo* pImageInfo);
 
 	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, ImageInfo* pImageInfo) = 0;
 	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize) = 0;
