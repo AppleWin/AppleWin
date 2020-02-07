@@ -2095,7 +2095,7 @@ BYTE* CWOZHelper::CreateEmptyDisk(DWORD& size)
 	pWOZ->info.v1.cleaned = 1;
 	std::string creator("AppleWin v");
 	creator += std::string(VERSIONSTRING);
-	memset(&pWOZ->info.v1.creator[0], ' ', sizeof(InfoChunk::creator));
+	memset(&pWOZ->info.v1.creator[0], ' ', sizeof(pWOZ->info.v1.creator));
 	memcpy(&pWOZ->info.v1.creator[0], creator.c_str(), creator.size());	// don't include null
 	pWOZ->info.diskSides = 1;
 	pWOZ->info.bootSectorFormat = InfoChunkv2::bootUnknown;	// could be INIT'd to 13 or 16 sector
@@ -2107,14 +2107,14 @@ BYTE* CWOZHelper::CreateEmptyDisk(DWORD& size)
 	// TMAP
 	ASSERT_OFFSET(tmapHdr, 80);
 	pWOZ->tmapHdr.id = TMAP_CHUNK_ID;
-	pWOZ->tmapHdr.size = sizeof(WOZEmptyImage525::tmap);
-	memset(&pWOZ->tmap[0], TMAP_TRACK_EMPTY, sizeof(WOZEmptyImage525::tmap));	// all tracks empty
+	pWOZ->tmapHdr.size = sizeof(pWOZ->tmap);
+	memset(&pWOZ->tmap[0], TMAP_TRACK_EMPTY, sizeof(pWOZ->tmap));	// all tracks empty
 
 	// TRKS
 	ASSERT_OFFSET(trksHdr, 248);
 	pWOZ->trksHdr.id = TRKS_CHUNK_ID;
-	pWOZ->trksHdr.size = sizeof(WOZEmptyImage525::trks);
-	for (UINT i = 0; i < sizeof(Trks::trks) / sizeof(Trks::trks[0]); i++)
+	pWOZ->trksHdr.size = sizeof(pWOZ->trks);
+	for (UINT i = 0; i < sizeof(pWOZ->trks.trks) / sizeof(pWOZ->trks.trks[0]); i++)
 	{
 		pWOZ->trks.trks[i].startBlock = 3;	// minimum startBlock (at end of file!)
 		pWOZ->trks.trks[i].blockCount = 0;
