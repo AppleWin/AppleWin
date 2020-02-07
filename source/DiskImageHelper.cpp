@@ -1115,7 +1115,7 @@ public:
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
 
 		const int trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
-		if (trackFromTMAP == 0xFF)
+		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);
 
 		ReadTrack(pImageInfo, trackFromTMAP, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE);
@@ -1129,7 +1129,7 @@ public:
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
 
 		const int trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
-		if (trackFromTMAP == 0xFF)
+		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 		{
 			// TODO
 			_ASSERT(0);
@@ -1200,7 +1200,7 @@ public:
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
 
 		const int trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
-		if (trackFromTMAP == 0xFF)
+		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);
 
 		CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
@@ -1224,7 +1224,7 @@ public:
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
 
 		const int trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
-		if (trackFromTMAP == 0xFF)
+		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 		{
 			// TODO
 			_ASSERT(0);
@@ -1264,9 +1264,8 @@ public:
 		}
 	}
 
-	// TODO: Uncomment and fix-up if we want to allow .woz image creation (eg. for INIT or FORMAT)
-	//	virtual bool AllowCreate(void) { return true; }
-	//	virtual UINT GetImageSizeForCreate(void) { return 0; }//TODO
+	virtual bool AllowCreate(void) { return true; }
+	virtual UINT GetImageSizeForCreate(void) { return sizeof(CWOZHelper::WOZHeader); }	// Just return a non-zero value
 
 	virtual eImageType GetType(void) { return eImageWOZ2; }
 	virtual const char* GetCreateExtensions(void) { return ".woz"; }
@@ -1389,7 +1388,7 @@ eDetectResult CWOZHelper::ProcessChunks(const LPBYTE pImage, const DWORD dwImage
 		switch(chunkId)
 		{
 			case INFO_CHUNK_ID:
-				m_pInfo = (InfoChunkv2*)(pImage32-2);
+				m_pInfo = (InfoChunkv2*)pImage32;
 				if (m_pInfo->v1.diskType != InfoChunk::diskType5_25)
 					return eMismatch;
 				break;
@@ -1725,19 +1724,26 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 		pImageType = GetImageForCreation(szExt, &dwSize);
 		if (pImageType && dwSize)
 		{
-			pImageInfo->pImageBuffer = new BYTE [dwSize];
-
-			if (pImageType->GetType() != eImageNIB1)
+			if (pImageType->GetType() == eImageWOZ2)
 			{
-				ZeroMemory(pImageInfo->pImageBuffer, dwSize);
+				pImageInfo->pImageBuffer = m_WOZHelper.CreateEmptyDisk(dwSize);
 			}
 			else
 			{
-				// Fill zero-length image buffer with alternating high-bit-set nibbles (GH#196, GH#338)
-				for (UINT i=0; i<dwSize; i+=2)
+				pImageInfo->pImageBuffer = new BYTE[dwSize];
+
+				if (pImageType->GetType() == eImageNIB1)
 				{
-					pImageInfo->pImageBuffer[i+0] = 0x80;	// bit7 set, but 0x80 is an invalid nibble
-					pImageInfo->pImageBuffer[i+1] = 0x81;	// bit7 set, but 0x81 is an invalid nibble
+					// Fill zero-length image buffer with alternating high-bit-set nibbles (GH#196, GH#338)
+					for (UINT i=0; i<dwSize; i+=2)
+					{
+						pImageInfo->pImageBuffer[i+0] = 0x80;	// bit7 set, but 0x80 is an invalid nibble
+						pImageInfo->pImageBuffer[i+1] = 0x81;	// bit7 set, but 0x81 is an invalid nibble
+					}
+				}
+				else
+				{
+					ZeroMemory(pImageInfo->pImageBuffer, dwSize);
 				}
 			}
 
@@ -1946,7 +1952,7 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 
 CImageBase* CDiskImageHelper::GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize)
 {
-	// WE CREATE ONLY DOS ORDER (DO) OR 6656-NIBBLE (NIB) FORMAT FILES
+	// WE CREATE ONLY DOS ORDER (DO), 6656-NIBBLE (NIB) OR WOZ2 (WOZ) FORMAT FILES
 	for (UINT uLoop = 0; uLoop < GetNumImages(); uLoop++)
 	{
 		if (!GetImage(uLoop)->AllowCreate())
@@ -2060,4 +2066,61 @@ UINT CHardDiskImageHelper::GetMinDetectSize(const UINT uImageSize, bool* pTempDe
 {
 	*pTempDetectBuffer = true;
 	return m_2IMGHelper.GetMaxHdrSize();
+}
+
+//-----------------------------------------------------------------------------
+
+#define ASSERT_OFFSET(x, offset) _ASSERT( ((BYTE*)&pWOZ->x - (BYTE*)pWOZ) == offset )
+
+extern TCHAR VERSIONSTRING[];	// AppleWin.h
+
+BYTE* CWOZHelper::CreateEmptyDisk(DWORD& size)
+{
+	WOZEmptyImage525* pWOZ = new WOZEmptyImage525;
+	memset(pWOZ, 0, sizeof(WOZEmptyImage525));
+	size = sizeof(WOZEmptyImage525);
+	_ASSERT(size == 3*BLOCK_SIZE);
+
+	pWOZ->hdr.id1 = ID1_WOZ2;
+	pWOZ->hdr.id2 = ID2;
+	// hdr.crc32 done at end
+
+	// INFO
+	ASSERT_OFFSET(infoHdr, 12);
+	pWOZ->infoHdr.id = INFO_CHUNK_ID;
+	pWOZ->infoHdr.size = (BYTE*)&pWOZ->tmapHdr - (BYTE*)&pWOZ->info;
+	_ASSERT(pWOZ->infoHdr.size == 60);
+	pWOZ->info.v1.version = 2;
+	pWOZ->info.v1.diskType = InfoChunk::diskType5_25;
+	pWOZ->info.v1.cleaned = 1;
+	std::string creator("AppleWin v");
+	creator += std::string(VERSIONSTRING);
+	memset(&pWOZ->info.v1.creator[0], ' ', sizeof(InfoChunk::creator));
+	memcpy(&pWOZ->info.v1.creator[0], creator.c_str(), creator.size());	// don't include null
+	pWOZ->info.diskSides = 1;
+	pWOZ->info.bootSectorFormat = InfoChunkv2::bootUnknown;	// could be INIT'd to 13 or 16 sector
+	pWOZ->info.optimalBitTiming = InfoChunkv2::optimalBitTiming5_25;
+	pWOZ->info.compatibleHardware = 0;	// unknown
+	pWOZ->info.requiredRAM = 0;			// unknown
+	pWOZ->info.largestTrack = TRK_DEFAULT_BLOCK_COUNT_5_25;		// unknown - but use default
+
+	// TMAP
+	ASSERT_OFFSET(tmapHdr, 80);
+	pWOZ->tmapHdr.id = TMAP_CHUNK_ID;
+	pWOZ->tmapHdr.size = sizeof(WOZEmptyImage525::tmap);
+	memset(&pWOZ->tmap[0], TMAP_TRACK_EMPTY, sizeof(WOZEmptyImage525::tmap));	// all tracks empty
+
+	// TRKS
+	ASSERT_OFFSET(trksHdr, 248);
+	pWOZ->trksHdr.id = TRKS_CHUNK_ID;
+	pWOZ->trksHdr.size = sizeof(WOZEmptyImage525::trks);
+	for (UINT i = 0; i < sizeof(Trks::trks) / sizeof(Trks::trks[0]); i++)
+	{
+		pWOZ->trks.trks[i].startBlock = 3;	// minimum startBlock (at end of file!)
+		pWOZ->trks.trks[i].blockCount = 0;
+		pWOZ->trks.trks[i].bitCount = 0;
+	}
+
+	pWOZ->hdr.crc32 = crc32(0, (BYTE*)&pWOZ->infoHdr, sizeof(WOZEmptyImage525) - sizeof(WOZHeader));
+	return (BYTE*) pWOZ;
 }

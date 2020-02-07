@@ -136,6 +136,10 @@ private:
 #pragma pack(push)
 #pragma pack(1)	// Ensure Header2IMG & WOZ structs are packed
 
+#pragma warning(push)
+#pragma warning(disable: 4200)	// Allow zero-sized array in struct
+
+
 class C2IMGHelper : public CHdrHelper
 {
 public:
@@ -204,8 +208,9 @@ public:
 	virtual UINT GetMaxHdrSize(void) { return sizeof(WOZHeader); }
 	eDetectResult ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset, BYTE*& pTrackMap);
 	bool IsWriteProtected(void) { return m_pInfo->v1.writeProtected == 1; }
-	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->optimalBitTiming : CWOZHelper::InfoChunkv2::optimalBitTiming5_25; }
-	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE : CWOZHelper::WOZ1_TRACK_SIZE; }
+	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->optimalBitTiming : InfoChunkv2::optimalBitTiming5_25; }
+	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
+	BYTE* CreateEmptyDisk(DWORD& size);
 
 	static const UINT32 ID1_WOZ1 = '1ZOW';	// 'WOZ1'
 	static const UINT32 ID1_WOZ2 = '2ZOW';	// 'WOZ2'
@@ -223,6 +228,8 @@ public:
 	static const UINT32 WOZ1_TRK_OFFSET = 6646;
 	static const UINT32 EMPTY_TRACK_SIZE = 6400;
 	static const UINT32 BLOCK_SIZE = 512;
+	static const BYTE TMAP_TRACK_EMPTY = 0xFF;
+	static const UINT16 TRK_DEFAULT_BLOCK_COUNT_5_25 = 13;	// default for TRKv2.blockCount
 
 	struct TRKv1
 	{
@@ -250,8 +257,6 @@ private:
 
 	struct InfoChunk
 	{
-		UINT32	id;
-		UINT32	size;
 		BYTE	version;
 		BYTE	diskType;
 		BYTE	writeProtected;	// 1 = Floppy is write protected
@@ -284,8 +289,38 @@ private:
 	};
 
 	InfoChunkv2* m_pInfo;
+
+	//
+
+	struct WOZChunkHdr
+	{
+		UINT32 id;
+		UINT32 size;
+	};
+
+	struct Trks
+	{
+		TRKv2 trks[MAX_TRACKS_5_25 * 4];
+		BYTE bits[0];	// bits[] starts at offset 3 x BLOCK_SIZE = 1536
+	};
+
+	struct WOZEmptyImage525	// 5.25"
+	{
+		WOZHeader hdr;
+
+		WOZChunkHdr infoHdr;
+		InfoChunkv2 info;
+		BYTE infoPadding[80-66];
+
+		WOZChunkHdr tmapHdr;
+		BYTE tmap[MAX_TRACKS_5_25 * 4];
+
+		WOZChunkHdr trksHdr;
+		Trks trks;
+	};
 };
 
+#pragma warning(pop)
 #pragma pack(pop)
 
 //-------------------------------------
