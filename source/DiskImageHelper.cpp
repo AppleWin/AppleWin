@@ -1250,7 +1250,7 @@ public:
 			memcpy(pNewImageBuffer, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
 			memset(pNewImageBuffer+pImageInfo->uImageSize, 0, trackSizeRoundedUp);
 
-			// NB. delete old pImageBuffer: m_pInfo & pTrackMap updated in WOZUpdateInfo() by calling function
+			// NB. delete old pImageBuffer: pWOZInfo & pWOZTrackMap updated in WOZUpdateInfo() by calling function
 
 			delete [] pImageInfo->pImageBuffer;
 			pImageInfo->pImageBuffer = pNewImageBuffer;
