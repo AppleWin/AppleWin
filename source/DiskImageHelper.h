@@ -35,7 +35,8 @@ struct ImageInfo
 	// Floppy only
 	UINT			uNumTracks;
 	BYTE*			pImageBuffer;
-	BYTE*			pTrackMap;	// WOZ only
+	BYTE*			pWOZInfo;			// WOZ only (points into pImageBuffer)
+	BYTE*			pWOZTrackMap;		// WOZ only (points into pImageBuffer)
 	BYTE			optimalBitTiming;	// WOZ only
 	UINT			maxNibblesPerTrack;
 
@@ -206,10 +207,11 @@ public:
 	virtual ~CWOZHelper(void) {}
 	virtual eDetectResult DetectHdr(LPBYTE& pImage, DWORD& dwImageSize, DWORD& dwOffset) { _ASSERT(0); return eMismatch; }
 	virtual UINT GetMaxHdrSize(void) { return sizeof(WOZHeader); }
-	eDetectResult ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset, BYTE*& pTrackMap);
+	eDetectResult ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset);
 	bool IsWriteProtected(void) { return m_pInfo->v1.writeProtected == 1; }
 	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->optimalBitTiming : InfoChunkv2::optimalBitTiming5_25; }
 	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
+	void InvalidateInfo(void) { m_pInfo = NULL; }
 	BYTE* CreateEmptyDisk(DWORD& size);
 
 	static const UINT32 ID1_WOZ1 = '1ZOW';	// 'WOZ1'
@@ -305,7 +307,7 @@ private:
 		static const BYTE optimalBitTiming5_25 = 32;
 	};
 
-	InfoChunkv2* m_pInfo;
+	InfoChunkv2* m_pInfo;	// NB. image-specific - only valid during Detect(), which calls InvalidateInfo() when done
 
 	//
 
@@ -348,7 +350,7 @@ public:
 
 	ImageError_e Open(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, const bool bCreateIfNecessary, std::string& strFilenameInZip);
 	void Close(ImageInfo* pImageInfo);
-	bool WOZUpdateInfo(ImageInfo* pImageInfo);
+	bool WOZUpdateInfo(ImageInfo* pImageInfo, DWORD& dwOffset);
 
 	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, ImageInfo* pImageInfo) = 0;
 	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize) = 0;

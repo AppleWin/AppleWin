@@ -55,7 +55,8 @@ ImageInfo::ImageInfo()
 	uNumValidImagesInZip = 0;
 	uNumTracks = 0;
 	pImageBuffer = NULL;
-	pTrackMap = NULL;
+	pWOZInfo = NULL;
+	pWOZTrackMap = NULL;
 	optimalBitTiming = 0;
 	maxNibblesPerTrack = 0;
 }
@@ -1112,7 +1113,7 @@ public:
 
 	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
-		BYTE*& pTrackMap = pImageInfo->pTrackMap;
+		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
 
 		const BYTE trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
 		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
@@ -1126,7 +1127,7 @@ public:
 
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
-		BYTE*& pTrackMap = pImageInfo->pTrackMap;
+		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
 
 		const BYTE trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
 		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
@@ -1197,7 +1198,7 @@ public:
 
 	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
-		BYTE*& pTrackMap = pImageInfo->pTrackMap;
+		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
 
 		const BYTE trackFromTMAP = pTrackMap[(BYTE)(phase * 2)];
 		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
@@ -1222,7 +1223,7 @@ public:
 	// TODO: support writing a bitCount (ie. fractional nibbles)
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
-		BYTE*& pTrackMap = pImageInfo->pTrackMap;
+		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
 
 		BYTE trackFromTMAP = pTrackMap[(BYTE)(phase * 2)];
 		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
@@ -1232,7 +1233,7 @@ public:
 			if (track-1 >= 0)	pTrackMap[track-1] = track;	// WOZ spec: track is also visible from neighboring quarter tracks
 			if (track+1 <= 159)	pTrackMap[track+1] = track;
 			trackFromTMAP = track;
-			const long offsetTMAP = pTrackMap - pImageInfo->pImageBuffer;	// do before pImageBuffer gets deleted!
+			const long offsetTMAP = (BYTE*)pTrackMap - pImageInfo->pImageBuffer;	// do before pImageBuffer gets deleted!
 
 			const UINT trackSizeRoundedUp = (nNibbles + CWOZHelper::BLOCK_SIZE-1) & ~(CWOZHelper::BLOCK_SIZE-1);
 			const UINT newImageSize = pImageInfo->uImageSize + trackSizeRoundedUp;
@@ -1429,10 +1430,10 @@ bool C2IMGHelper::IsLocked(void)
 //-----------------------------------------------------------------------------
 
 // Pre: already matched the WOZ header
-eDetectResult CWOZHelper::ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset, BYTE*& pTrackMap)
+eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 {
-	UINT32* pImage32 = (uint32_t*) (pImage + sizeof(WOZHeader));
-	int imageSizeRemaining = dwImageSize - sizeof(WOZHeader);
+	UINT32* pImage32 = (uint32_t*) (pImageInfo->pImageBuffer + sizeof(WOZHeader));
+	int imageSizeRemaining = pImageInfo->uImageSize - sizeof(WOZHeader);
 	_ASSERT(imageSizeRemaining >= 0);
 	if (imageSizeRemaining < 0)
 		return eMismatch;
@@ -1449,12 +1450,13 @@ eDetectResult CWOZHelper::ProcessChunks(const LPBYTE pImage, const DWORD dwImage
 				m_pInfo = (InfoChunkv2*)pImage32;
 				if (m_pInfo->v1.diskType != InfoChunk::diskType5_25)
 					return eMismatch;
+				pImageInfo->pWOZInfo = (BYTE*) pImage32;
 				break;
 			case TMAP_CHUNK_ID:
-				pTrackMap = (uint8_t*)pImage32;
+				pImageInfo->pWOZTrackMap = (BYTE*) pImage32;
 				break;
 			case TRKS_CHUNK_ID:
-				dwOffset = dwImageSize - imageSizeRemaining;	// offset into image of track data
+				dwOffset = pImageInfo->uOffset = pImageInfo->uImageSize - imageSizeRemaining;	// offset into image of track data
 				break;
 			case WRIT_CHUNK_ID:	// WOZ v2 (optional)
 				break;
@@ -1786,7 +1788,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			{
 				pImageInfo->pImageBuffer = m_WOZHelper.CreateEmptyDisk(dwSize);
 				pImageInfo->uImageSize = dwSize;
-				bool res = WOZUpdateInfo(pImageInfo);
+				bool res = WOZUpdateInfo(pImageInfo, dwOffset);
 				_ASSERT(res);
 			}
 			else
@@ -1902,9 +1904,22 @@ void CImageHelperBase::Close(ImageInfo* pImageInfo)
 
 //-------------------------------------
 
-bool CImageHelperBase::WOZUpdateInfo(ImageInfo* pImageInfo)
+bool CImageHelperBase::WOZUpdateInfo(ImageInfo* pImageInfo, DWORD& dwOffset)
 {
-	return m_WOZHelper.ProcessChunks(pImageInfo->pImageBuffer, pImageInfo->uImageSize, pImageInfo->uOffset, pImageInfo->pTrackMap) == eMatch;
+	if (m_WOZHelper.ProcessChunks(pImageInfo, dwOffset) != eMatch)
+	{
+		_ASSERT(0);
+		return false;
+	}
+
+	if (m_WOZHelper.IsWriteProtected())
+		pImageInfo->bWriteProtected = true;
+
+	pImageInfo->optimalBitTiming = m_WOZHelper.GetOptimalBitTiming();
+	pImageInfo->maxNibblesPerTrack = m_WOZHelper.GetMaxNibblesPerTrack();
+
+	m_WOZHelper.InvalidateInfo();
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -1983,14 +1998,9 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 				return NULL;
 		}
 
-		if (m_WOZHelper.ProcessChunks(pImage, dwSize, dwOffset, pImageInfo->pTrackMap) != eMatch)
+		pImageInfo->uImageSize = dwSize;
+		if (!WOZUpdateInfo(pImageInfo, dwOffset))
 			return NULL;
-
-		if (m_WOZHelper.IsWriteProtected())
-			pImageInfo->bWriteProtected = true;
-
-		pImageInfo->optimalBitTiming = m_WOZHelper.GetOptimalBitTiming();
-		pImageInfo->maxNibblesPerTrack = m_WOZHelper.GetMaxNibblesPerTrack();
 	}
 	else
 	{
@@ -2092,7 +2102,8 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHA
 		}
 	}
 
-	pImageInfo->pTrackMap = 0;	// TODO: WOZ
+	pImageInfo->pWOZInfo = 0;		// TODO: WOZ
+	pImageInfo->pWOZTrackMap = 0;	// TODO: WOZ
 	pImageInfo->optimalBitTiming = 0;	// TODO: WOZ
 	pImageInfo->maxNibblesPerTrack = 0;	// TODO
 
