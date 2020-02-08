@@ -226,10 +226,21 @@ public:
 	static const UINT32 MAX_TRACKS_5_25 = 40;
 	static const UINT32 WOZ1_TRACK_SIZE = 6656;	// 0x1A00
 	static const UINT32 WOZ1_TRK_OFFSET = 6646;
-	static const UINT32 EMPTY_TRACK_SIZE = 6400;
+	static const UINT32 EMPTY_TRACK_SIZE = 6400;	// $C.5 blocks
 	static const UINT32 BLOCK_SIZE = 512;
 	static const BYTE TMAP_TRACK_EMPTY = 0xFF;
-	static const UINT16 TRK_DEFAULT_BLOCK_COUNT_5_25 = 13;	// default for TRKv2.blockCount
+	static const UINT16 TRK_DEFAULT_BLOCK_COUNT_5_25 = 13;	// $D is default for TRKv2.blockCount
+
+	struct WOZChunkHdr
+	{
+		UINT32 id;
+		UINT32 size;
+	};
+
+	struct Tmap
+	{
+		BYTE tmap[MAX_TRACKS_5_25 * 4];
+	};
 
 	struct TRKv1
 	{
@@ -246,6 +257,12 @@ public:
 		UINT16 startBlock;	// relative to start of file
 		UINT16 blockCount;	// number of blocks for this BITS data
 		UINT32 bitCount;
+	};
+
+	struct Trks
+	{
+		TRKv2 trks[MAX_TRACKS_5_25 * 4];
+		BYTE bits[0];	// bits[] starts at offset 3 x BLOCK_SIZE = 1536
 	};
 
 private:
@@ -292,18 +309,6 @@ private:
 
 	//
 
-	struct WOZChunkHdr
-	{
-		UINT32 id;
-		UINT32 size;
-	};
-
-	struct Trks
-	{
-		TRKv2 trks[MAX_TRACKS_5_25 * 4];
-		BYTE bits[0];	// bits[] starts at offset 3 x BLOCK_SIZE = 1536
-	};
-
 	struct WOZEmptyImage525	// 5.25"
 	{
 		WOZHeader hdr;
@@ -313,7 +318,8 @@ private:
 		BYTE infoPadding[80-66];
 
 		WOZChunkHdr tmapHdr;
-		BYTE tmap[MAX_TRACKS_5_25 * 4];
+		//BYTE tmap[MAX_TRACKS_5_25 * 4];
+		Tmap tmap;
 
 		WOZChunkHdr trksHdr;
 		Trks trks;
@@ -342,6 +348,7 @@ public:
 
 	ImageError_e Open(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, const bool bCreateIfNecessary, std::string& strFilenameInZip);
 	void Close(ImageInfo* pImageInfo);
+	bool WOZUpdateInfo(ImageInfo* pImageInfo);
 
 	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, ImageInfo* pImageInfo) = 0;
 	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize) = 0;
@@ -354,7 +361,7 @@ protected:
 	ImageError_e CheckNormalFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, const bool bCreateIfNecessary);
 	void GetCharLowerExt(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize);
 	void GetCharLowerExt2(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize);
-	void SetImageInfo(ImageInfo* pImageInfo, FileType_e eFileGZip, DWORD dwOffset, CImageBase* pImageType, DWORD dwSize);
+	void SetImageInfo(ImageInfo* pImageInfo, FileType_e fileType, DWORD dwOffset, CImageBase* pImageType, DWORD dwSize);
 
 	UINT GetNumImages(void) { return m_vecImageTypes.size(); };
 	CImageBase* GetImage(UINT uIndex) { _ASSERT(uIndex<GetNumImages()); return m_vecImageTypes[uIndex]; }

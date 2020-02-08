@@ -171,6 +171,13 @@ void ImageWriteTrack(	ImageInfo* const pImageInfo,
 	if (pImageInfo->pImageType->AllowRW() && !pImageInfo->bWriteProtected)
 	{
 		pImageInfo->pImageType->Write(pImageInfo, phase, pTrackImageBuffer, nNibbles);
+
+		eImageType imageType = pImageInfo->pImageType->GetType();
+		if (imageType == eImageWOZ1 || imageType == eImageWOZ2)
+		{
+			bool res = sg_DiskImageHelper.WOZUpdateInfo(pImageInfo);
+			_ASSERT(res);
+		}
 	}
 }
 

@@ -1114,7 +1114,7 @@ public:
 	{
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
 
-		const int trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
+		const BYTE trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
 		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);
 
@@ -1128,7 +1128,7 @@ public:
 	{
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
 
-		const int trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
+		const BYTE trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
 		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 		{
 			// TODO
@@ -1199,7 +1199,7 @@ public:
 	{
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
 
-		const int trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
+		const BYTE trackFromTMAP = pTrackMap[(BYTE)(phase * 2)];
 		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);
 
@@ -1219,41 +1219,96 @@ public:
 		memcpy(pTrackImageBuffer, &pImageInfo->pImageBuffer[pTRK->startBlock*CWOZHelper::BLOCK_SIZE], *pNibbles);
 	}
 
+	// TODO: support writing a bitCount (ie. fractional nibbles)
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
 		BYTE*& pTrackMap = pImageInfo->pTrackMap;
 
-		const int trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
+		BYTE trackFromTMAP = pTrackMap[(BYTE)(phase * 2)];
 		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 		{
-			// TODO
-			_ASSERT(0);
-			LogFileOutput("WOZ2 Write Track: attempting to write to a blank track (phase=%f)\n", phase);
-			return;
-		}
+			const BYTE track = (BYTE)(phase * 2);
+			pTrackMap[track] = track;
+			if (track-1 >= 0)	pTrackMap[track-1] = track;	// WOZ spec: track is also visible from neighboring quarter tracks
+			if (track+1 <= 159)	pTrackMap[track+1] = track;
+			trackFromTMAP = track;
+			const long offsetTMAP = pTrackMap - pImageInfo->pImageBuffer;	// do before pImageBuffer gets deleted!
 
-		CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) & pImageInfo->pImageBuffer[pImageInfo->uOffset];
-		CWOZHelper::TRKv2* pTRK = &pTRKS[trackFromTMAP];
-		{
-			UINT bitCount = pTRK->bitCount;
-			UINT trackSize = (pTRK->bitCount + 7) / 8;
-			_ASSERT(trackSize == nNibbles);
-			if (trackSize != nNibbles)
+			const UINT trackSizeRoundedUp = (nNibbles + CWOZHelper::BLOCK_SIZE-1) & ~(CWOZHelper::BLOCK_SIZE-1);
+			const UINT newImageSize = pImageInfo->uImageSize + trackSizeRoundedUp;
+			BYTE* pNewImageBuffer = new BYTE[newImageSize];
+
+			memcpy(pNewImageBuffer, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
+			memset(pNewImageBuffer+pImageInfo->uImageSize, 0, trackSizeRoundedUp);
+
+			// NB. delete old pImageBuffer: m_pInfo & pTrackMap update by calling function
+
+			delete [] pImageInfo->pImageBuffer;
+			pImageInfo->pImageBuffer = pNewImageBuffer;
+			pImageInfo->uImageSize = newImageSize;
+
+			CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
+			CWOZHelper::TRKv2* pTRK = &pTRKS[trackFromTMAP];
+			pTRK->blockCount = trackSizeRoundedUp / CWOZHelper::BLOCK_SIZE;
+			pTRK->startBlock = 3;
+			for (UINT i=0; i<trackFromTMAP; i++)
+				pTRK->startBlock += pTRKS[i].blockCount;
+			pTRK->bitCount = nNibbles * 8;
+
+			if (!WriteImageData(pImageInfo, (BYTE*)&pImageInfo->pImageBuffer[offsetTMAP], sizeof(CWOZHelper::Tmap), offsetTMAP))
 			{
 				_ASSERT(0);
-				LogFileOutput("WOZ2 Write Track: attempting to write %08X when trackSize is %08X (phase=%f)\n", nNibbles, trackSize, phase);
+				LogFileOutput("WOZ2 Write Track: failed to write track (phase=%f) for file: %s\n", phase, pImageInfo->szFilename.c_str());
+				return;
+			}
+
+			CWOZHelper::WOZChunkHdr* pTrksHdr = (CWOZHelper::WOZChunkHdr*) (&pImageInfo->pImageBuffer[pImageInfo->uOffset] - sizeof(CWOZHelper::WOZChunkHdr));
+			//_ASSERT(pTrksHdr->id == CWOZHelper::TRKS_CHUNK_ID);
+			pTrksHdr->size += trackSizeRoundedUp;
+
+			const long offsetTRKS = (BYTE*)pTrksHdr - pNewImageBuffer;
+			if (!WriteImageData(pImageInfo, (BYTE*)pTrksHdr, sizeof(CWOZHelper::WOZChunkHdr)+sizeof(CWOZHelper::Trks), offsetTRKS))
+			{
+				_ASSERT(0);
+				LogFileOutput("WOZ2 Write Track: failed to write track (phase=%f) for file: %s\n", phase, pImageInfo->szFilename.c_str());
+				return;
+			}
+
+			const long offset = pTRK->startBlock * CWOZHelper::BLOCK_SIZE;
+			memcpy(&pImageInfo->pImageBuffer[offset], pTrackImageBuffer, nNibbles);
+
+			if (!WriteImageData(pImageInfo, &pImageInfo->pImageBuffer[offset], trackSizeRoundedUp, offset))	// write rounded-up track data
+			{
+				_ASSERT(0);
+				LogFileOutput("WOZ2 Write Track: failed to write track (phase=%f) for file: %s\n", phase, pImageInfo->szFilename.c_str());
 				return;
 			}
 		}
-
-		const long offset = pTRK->startBlock * CWOZHelper::BLOCK_SIZE;
-		memcpy(&pImageInfo->pImageBuffer[offset], pTrackImageBuffer, nNibbles);
-
-		if (!WriteImageData(pImageInfo, pTrackImageBuffer, nNibbles, offset))
+		else
 		{
-			_ASSERT(0);
-			LogFileOutput("WOZ2 Write Track: failed to write track (phase=%f) for file: %s\n", phase, pImageInfo->szFilename.c_str());
-			return;
+			CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
+			CWOZHelper::TRKv2* pTRK = &pTRKS[trackFromTMAP];
+			{
+				UINT bitCount = pTRK->bitCount;
+				UINT trackSize = (pTRK->bitCount + 7) / 8;
+				_ASSERT(trackSize == nNibbles);
+				if (trackSize != nNibbles)
+				{
+					_ASSERT(0);
+					LogFileOutput("WOZ2 Write Track: attempting to write %08X when trackSize is %08X (phase=%f)\n", nNibbles, trackSize, phase);
+					return;
+				}
+			}
+
+			const long offset = pTRK->startBlock * CWOZHelper::BLOCK_SIZE;
+			memcpy(&pImageInfo->pImageBuffer[offset], pTrackImageBuffer, nNibbles);
+
+			if (!WriteImageData(pImageInfo, pTrackImageBuffer, nNibbles, offset))
+			{
+				_ASSERT(0);
+				LogFileOutput("WOZ2 Write Track: failed to write track (phase=%f) for file: %s\n", phase, pImageInfo->szFilename.c_str());
+				return;
+			}
 		}
 
 		// TODO: zip/gzip: combine the track & hdr writes so that the file is only compressed & written once
@@ -1377,7 +1432,10 @@ bool C2IMGHelper::IsLocked(void)
 eDetectResult CWOZHelper::ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset, BYTE*& pTrackMap)
 {
 	UINT32* pImage32 = (uint32_t*) (pImage + sizeof(WOZHeader));
-	UINT32 imageSizeRemaining = dwImageSize - sizeof(WOZHeader);
+	int imageSizeRemaining = dwImageSize - sizeof(WOZHeader);
+	_ASSERT(imageSizeRemaining >= 0);
+	if (imageSizeRemaining < 0)
+		return eMismatch;
 
 	while(imageSizeRemaining > 8)
 	{
@@ -1727,6 +1785,9 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			if (pImageType->GetType() == eImageWOZ2)
 			{
 				pImageInfo->pImageBuffer = m_WOZHelper.CreateEmptyDisk(dwSize);
+				pImageInfo->uImageSize = dwSize;
+				bool res = WOZUpdateInfo(pImageInfo);
+				_ASSERT(res);
 			}
 			else
 			{
@@ -1775,9 +1836,9 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 
 //-------------------------------------
 
-void CImageHelperBase::SetImageInfo(ImageInfo* pImageInfo, FileType_e eFileGZip, DWORD dwOffset, CImageBase* pImageType, DWORD dwSize)
+void CImageHelperBase::SetImageInfo(ImageInfo* pImageInfo, FileType_e fileType, DWORD dwOffset, CImageBase* pImageType, DWORD dwSize)
 {
-	pImageInfo->FileType = eFileGZip;
+	pImageInfo->FileType = fileType;
 	pImageInfo->uOffset = dwOffset;
 	pImageInfo->pImageType = pImageType;
 	pImageInfo->uImageSize = dwSize;
@@ -1837,6 +1898,13 @@ void CImageHelperBase::Close(ImageInfo* pImageInfo)
 
 	delete [] pImageInfo->pImageBuffer;
 	pImageInfo->pImageBuffer = NULL;
+}
+
+//-------------------------------------
+
+bool CImageHelperBase::WOZUpdateInfo(ImageInfo* pImageInfo)
+{
+	return m_WOZHelper.ProcessChunks(pImageInfo->pImageBuffer, pImageInfo->uImageSize, pImageInfo->uOffset, pImageInfo->pTrackMap) == eMatch;
 }
 
 //-----------------------------------------------------------------------------
@@ -2108,7 +2176,7 @@ BYTE* CWOZHelper::CreateEmptyDisk(DWORD& size)
 	ASSERT_OFFSET(tmapHdr, 80);
 	pWOZ->tmapHdr.id = TMAP_CHUNK_ID;
 	pWOZ->tmapHdr.size = sizeof(pWOZ->tmap);
-	memset(&pWOZ->tmap[0], TMAP_TRACK_EMPTY, sizeof(pWOZ->tmap));	// all tracks empty
+	memset(&pWOZ->tmap, TMAP_TRACK_EMPTY, sizeof(pWOZ->tmap));	// all tracks empty
 
 	// TRKS
 	ASSERT_OFFSET(trksHdr, 248);
