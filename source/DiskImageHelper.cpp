@@ -1080,12 +1080,12 @@ public:
 		return;
 	}
 
-	bool UpdateWOZHeaderCRC(ImageInfo* pImageInfo, CImageBase* pImageBase)
+	bool UpdateWOZHeaderCRC(ImageInfo* pImageInfo, CImageBase* pImageBase, UINT extendedSize=0)
 	{
 		BYTE* pImage = pImageInfo->pImageBuffer;
 		CWOZHelper::WOZHeader* pWozHdr = (CWOZHelper::WOZHeader*) pImage;
 		pWozHdr->crc32 = crc32(0, pImage+sizeof(CWOZHelper::WOZHeader), pImageInfo->uImageSize-sizeof(CWOZHelper::WOZHeader));
-		return pImageBase->WriteImageHeader(pImageInfo, pImage, sizeof(CWOZHelper::WOZHeader));
+		return pImageBase->WriteImageHeader(pImageInfo, pImage, sizeof(CWOZHelper::WOZHeader)+extendedSize);
 	}
 
 private:
@@ -1223,6 +1223,7 @@ public:
 	// TODO: support writing a bitCount (ie. fractional nibbles)
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
+		UINT extendedSize = 0;
 		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
 
 		BYTE trackFromTMAP = pTrackMap[(BYTE)(phase * 2)];
@@ -1242,7 +1243,7 @@ public:
 			memcpy(pNewImageBuffer, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
 			memset(pNewImageBuffer+pImageInfo->uImageSize, 0, trackSizeRoundedUp);
 
-			// NB. delete old pImageBuffer: m_pInfo & pTrackMap update by calling function
+			// NB. delete old pImageBuffer: m_pInfo & pTrackMap updated in WOZUpdateInfo() by calling function
 
 			delete [] pImageInfo->pImageBuffer;
 			pImageInfo->pImageBuffer = pNewImageBuffer;
@@ -1256,24 +1257,8 @@ public:
 				pTRK->startBlock += pTRKS[i].blockCount;
 			pTRK->bitCount = nNibbles * 8;
 
-			if (!WriteImageData(pImageInfo, (BYTE*)&pImageInfo->pImageBuffer[offsetTMAP], sizeof(CWOZHelper::Tmap), offsetTMAP))
-			{
-				_ASSERT(0);
-				LogFileOutput("WOZ2 Write Track: failed to write track (phase=%f) for file: %s\n", phase, pImageInfo->szFilename.c_str());
-				return;
-			}
-
 			CWOZHelper::WOZChunkHdr* pTrksHdr = (CWOZHelper::WOZChunkHdr*) (&pImageInfo->pImageBuffer[pImageInfo->uOffset] - sizeof(CWOZHelper::WOZChunkHdr));
-			//_ASSERT(pTrksHdr->id == CWOZHelper::TRKS_CHUNK_ID);
 			pTrksHdr->size += trackSizeRoundedUp;
-
-			const long offsetTRKS = (BYTE*)pTrksHdr - pNewImageBuffer;
-			if (!WriteImageData(pImageInfo, (BYTE*)pTrksHdr, sizeof(CWOZHelper::WOZChunkHdr)+sizeof(CWOZHelper::Trks), offsetTRKS))
-			{
-				_ASSERT(0);
-				LogFileOutput("WOZ2 Write Track: failed to write track (phase=%f) for file: %s\n", phase, pImageInfo->szFilename.c_str());
-				return;
-			}
 
 			const long offset = pTRK->startBlock * CWOZHelper::BLOCK_SIZE;
 			memcpy(&pImageInfo->pImageBuffer[offset], pTrackImageBuffer, nNibbles);
@@ -1284,6 +1269,8 @@ public:
 				LogFileOutput("WOZ2 Write Track: failed to write track (phase=%f) for file: %s\n", phase, pImageInfo->szFilename.c_str());
 				return;
 			}
+
+			extendedSize = ((BYTE*)pTRKS + sizeof(CWOZHelper::Trks) - pNewImageBuffer) - sizeof(CWOZHelper::WOZHeader);
 		}
 		else
 		{
@@ -1313,7 +1300,7 @@ public:
 		}
 
 		// TODO: zip/gzip: combine the track & hdr writes so that the file is only compressed & written once
-		if (!UpdateWOZHeaderCRC(pImageInfo, this))
+		if (!UpdateWOZHeaderCRC(pImageInfo, this, extendedSize))
 		{
 			_ASSERT(0);
 			LogFileOutput("WOZ2 Write Track: failed to write header CRC for file: %s\n", pImageInfo->szFilename.c_str());
