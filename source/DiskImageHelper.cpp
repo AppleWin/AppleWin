@@ -1200,12 +1200,12 @@ public:
 	{
 		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
 
-		const BYTE trackFromTMAP = pTrackMap[(BYTE)(phase * 2)];
-		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
+		const BYTE indexFromTMAP = pTrackMap[(BYTE)(phase * 2)];
+		if (indexFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);
 
 		CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
-		CWOZHelper::TRKv2* pTRK = &pTRKS[trackFromTMAP];
+		CWOZHelper::TRKv2* pTRK = &pTRKS[indexFromTMAP];
 		*pBitCount = pTRK->bitCount;
 		*pNibbles = (pTRK->bitCount+7) / 8;
 
@@ -1226,14 +1226,22 @@ public:
 		UINT extendedSize = 0;
 		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
 
-		BYTE trackFromTMAP = pTrackMap[(BYTE)(phase * 2)];
-		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
+		BYTE indexFromTMAP = pTrackMap[(BYTE)(phase * 2)];
+		if (indexFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 		{
-			const BYTE track = (BYTE)(phase * 2);
-			pTrackMap[track] = track;
-			if (track-1 >= 0)	pTrackMap[track-1] = track;	// WOZ spec: track is also visible from neighboring quarter tracks
-			if (track+1 <= 159)	pTrackMap[track+1] = track;
-			trackFromTMAP = track;
+			const BYTE track = (BYTE)(phase*2);
+			{
+				int highestIdx = -1;
+				for (UINT i=0; i<CWOZHelper::MAX_QUARTER_TRACKS_5_25; i++)
+				{
+					if (pTrackMap[i] != CWOZHelper::TMAP_TRACK_EMPTY && pTrackMap[i] > highestIdx)
+						highestIdx = pTrackMap[i];
+				}
+				indexFromTMAP = (highestIdx == -1) ? 0 : highestIdx+1;
+			}
+			pTrackMap[track] = indexFromTMAP;
+			if (track-1 >= 0) pTrackMap[track-1] = indexFromTMAP;	// WOZ spec: track is also visible from neighboring quarter tracks
+			if (track+1 < CWOZHelper::MAX_QUARTER_TRACKS_5_25)	pTrackMap[track+1] = indexFromTMAP;
 
 			const UINT trackSizeRoundedUp = (nNibbles + CWOZHelper::BLOCK_SIZE-1) & ~(CWOZHelper::BLOCK_SIZE-1);
 			const UINT newImageSize = pImageInfo->uImageSize + trackSizeRoundedUp;
@@ -1249,10 +1257,10 @@ public:
 			pImageInfo->uImageSize = newImageSize;
 
 			CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
-			CWOZHelper::TRKv2* pTRK = &pTRKS[trackFromTMAP];
+			CWOZHelper::TRKv2* pTRK = &pTRKS[indexFromTMAP];
 			pTRK->blockCount = trackSizeRoundedUp / CWOZHelper::BLOCK_SIZE;
 			pTRK->startBlock = 3;
-			for (UINT i=0; i<trackFromTMAP; i++)
+			for (UINT i=0; i<indexFromTMAP; i++)
 				pTRK->startBlock += pTRKS[i].blockCount;
 			pTRK->bitCount = nNibbles * 8;
 
@@ -1274,7 +1282,7 @@ public:
 		else
 		{
 			CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
-			CWOZHelper::TRKv2* pTRK = &pTRKS[trackFromTMAP];
+			CWOZHelper::TRKv2* pTRK = &pTRKS[indexFromTMAP];
 			{
 				UINT bitCount = pTRK->bitCount;
 				UINT trackSize = (pTRK->bitCount + 7) / 8;

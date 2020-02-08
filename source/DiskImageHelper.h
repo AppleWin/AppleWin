@@ -226,6 +226,7 @@ public:
 	};
 
 	static const UINT32 MAX_TRACKS_5_25 = 40;
+	static const UINT32 MAX_QUARTER_TRACKS_5_25 = MAX_TRACKS_5_25 * 4;
 	static const UINT32 WOZ1_TRACK_SIZE = 6656;	// 0x1A00
 	static const UINT32 WOZ1_TRK_OFFSET = 6646;
 	static const UINT32 EMPTY_TRACK_SIZE = 6400;	// $C.5 blocks
@@ -241,7 +242,7 @@ public:
 
 	struct Tmap
 	{
-		BYTE tmap[MAX_TRACKS_5_25 * 4];
+		BYTE tmap[MAX_QUARTER_TRACKS_5_25];
 	};
 
 	struct TRKv1
@@ -263,7 +264,7 @@ public:
 
 	struct Trks
 	{
-		TRKv2 trks[MAX_TRACKS_5_25 * 4];
+		TRKv2 trks[MAX_QUARTER_TRACKS_5_25];
 		BYTE bits[0];	// bits[] starts at offset 3 x BLOCK_SIZE = 1536
 	};
 
