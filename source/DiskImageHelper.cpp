@@ -1234,7 +1234,6 @@ public:
 			if (track-1 >= 0)	pTrackMap[track-1] = track;	// WOZ spec: track is also visible from neighboring quarter tracks
 			if (track+1 <= 159)	pTrackMap[track+1] = track;
 			trackFromTMAP = track;
-			const long offsetTMAP = (BYTE*)pTrackMap - pImageInfo->pImageBuffer;	// do before pImageBuffer gets deleted!
 
 			const UINT trackSizeRoundedUp = (nNibbles + CWOZHelper::BLOCK_SIZE-1) & ~(CWOZHelper::BLOCK_SIZE-1);
 			const UINT newImageSize = pImageInfo->uImageSize + trackSizeRoundedUp;
@@ -2181,7 +2180,7 @@ BYTE* CWOZHelper::CreateEmptyDisk(DWORD& size)
 	pWOZ->trksHdr.size = sizeof(pWOZ->trks);
 	for (UINT i = 0; i < sizeof(pWOZ->trks.trks) / sizeof(pWOZ->trks.trks[0]); i++)
 	{
-		pWOZ->trks.trks[i].startBlock = 3;	// minimum startBlock (at end of file!)
+		pWOZ->trks.trks[i].startBlock = 0;	// minimum startBlock (at end of file!)
 		pWOZ->trks.trks[i].blockCount = 0;
 		pWOZ->trks.trks[i].bitCount = 0;
 	}
