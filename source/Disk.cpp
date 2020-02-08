@@ -286,7 +286,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 		// Create a blank disk in D2
 		// INIT HELLO,D2
 		// RUN HELLO
-		// Reboot DOS 3.3 Master
+		// F2 to reboot DOS 3.3 Master
 		// RUN HELLO,D2
 		pFloppy->m_trackimagedata = false;
 		return;
