@@ -659,7 +659,7 @@ public:
 	}
 
 	virtual bool AllowCreate(void) { return true; }
-	virtual UINT GetImageSizeForCreate(void) { return TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD; }
+	virtual UINT GetImageSizeForCreate(void) { m_uNumTracksInImage = TRACKS_STANDARD; return TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD; }
 
 	virtual eImageType GetType(void) { return eImageDO; }
 	virtual const char* GetCreateExtensions(void) { return ".do;.dsk"; }
@@ -766,7 +766,7 @@ public:
 	}
 
 	virtual bool AllowCreate(void) { return true; }
-	virtual UINT GetImageSizeForCreate(void) { return NIB1_TRACK_SIZE * TRACKS_STANDARD; }
+	virtual UINT GetImageSizeForCreate(void) { m_uNumTracksInImage = TRACKS_STANDARD; return NIB1_TRACK_SIZE * TRACKS_STANDARD; }
 
 	virtual eImageType GetType(void) { return eImageNIB1; }
 	virtual const char* GetCreateExtensions(void) { return ".nib"; }
@@ -1321,7 +1321,7 @@ public:
 	}
 
 	virtual bool AllowCreate(void) { return true; }
-	virtual UINT GetImageSizeForCreate(void) { return sizeof(CWOZHelper::WOZHeader); }	// Just return a non-zero value
+	virtual UINT GetImageSizeForCreate(void) { m_uNumTracksInImage = CWOZHelper::MAX_TRACKS_5_25; return sizeof(CWOZHelper::WOZHeader); }
 
 	virtual eImageType GetType(void) { return eImageWOZ2; }
 	virtual const char* GetCreateExtensions(void) { return ".woz"; }
@@ -2039,9 +2039,8 @@ CImageBase* CDiskImageHelper::GetImageForCreation(const TCHAR* pszExt, DWORD* pC
 		if (*pszExt && _tcsstr(GetImage(uLoop)->GetCreateExtensions(), pszExt))
 		{
 			CImageBase* pImageType = GetImage(uLoop);
-			SetNumTracksInImage(pImageType, TRACKS_STANDARD);	// Assume default # tracks
 
-			*pCreateImageSize = pImageType->GetImageSizeForCreate();
+			*pCreateImageSize = pImageType->GetImageSizeForCreate();	// Also sets m_uNumTracksInImage
 			if (*pCreateImageSize == (UINT)-1)
 				return NULL;
 
