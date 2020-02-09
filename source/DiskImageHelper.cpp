@@ -1656,7 +1656,10 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 
 			DWORD dwSize = nLen;
 			DWORD dwOffset = 0;
-			CImageBase* pNewImageType = Detect(pImageBuffer, dwSize, szExt, dwOffset, !pImageInfo2 ? pImageInfo : pImageInfo2);
+
+			ImageInfo*& pImageInfoForDetect = !pImageInfo2 ? pImageInfo : pImageInfo2;
+			pImageInfoForDetect->pImageBuffer = pImageBuffer;
+			CImageBase* pNewImageType = Detect(pImageBuffer, dwSize, szExt, dwOffset, pImageInfoForDetect);
 
 			if (pNewImageType)
 			{
