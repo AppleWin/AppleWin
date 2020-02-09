@@ -55,7 +55,6 @@ ImageInfo::ImageInfo()
 	uNumValidImagesInZip = 0;
 	uNumTracks = 0;
 	pImageBuffer = NULL;
-	pWOZInfo = NULL;
 	pWOZTrackMap = NULL;
 	optimalBitTiming = 0;
 	maxNibblesPerTrack = 0;
@@ -1250,7 +1249,7 @@ public:
 			memcpy(pNewImageBuffer, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
 			memset(pNewImageBuffer+pImageInfo->uImageSize, 0, trackSizeRoundedUp);
 
-			// NB. delete old pImageBuffer: pWOZInfo & pWOZTrackMap updated in WOZUpdateInfo() by calling function
+			// NB. delete old pImageBuffer: pWOZTrackMap updated in WOZUpdateInfo() by parent function
 
 			delete [] pImageInfo->pImageBuffer;
 			pImageInfo->pImageBuffer = pNewImageBuffer;
@@ -1444,7 +1443,6 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 				m_pInfo = (InfoChunkv2*)pImage32;
 				if (m_pInfo->v1.diskType != InfoChunk::diskType5_25)
 					return eMismatch;
-				pImageInfo->pWOZInfo = (BYTE*) pImage32;
 				break;
 			case TMAP_CHUNK_ID:
 				pImageInfo->pWOZTrackMap = (BYTE*) pImage32;
@@ -2095,7 +2093,6 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHA
 		}
 	}
 
-	pImageInfo->pWOZInfo = 0;		// TODO: WOZ
 	pImageInfo->pWOZTrackMap = 0;	// TODO: WOZ
 	pImageInfo->optimalBitTiming = 0;	// TODO: WOZ
 	pImageInfo->maxNibblesPerTrack = 0;	// TODO

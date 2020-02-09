@@ -35,7 +35,6 @@ struct ImageInfo
 	// Floppy only
 	UINT			uNumTracks;
 	BYTE*			pImageBuffer;
-	BYTE*			pWOZInfo;			// WOZ only (points into pImageBuffer) - unused
 	BYTE*			pWOZTrackMap;		// WOZ only (points into pImageBuffer)
 	BYTE			optimalBitTiming;	// WOZ only
 	UINT			maxNibblesPerTrack;
