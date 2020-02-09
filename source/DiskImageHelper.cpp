@@ -1079,7 +1079,7 @@ public:
 		return;
 	}
 
-	bool UpdateWOZHeaderCRC(ImageInfo* pImageInfo, CImageBase* pImageBase, UINT extendedSize=0)
+	bool UpdateWOZHeaderCRC(ImageInfo* pImageInfo, CImageBase* pImageBase, UINT extendedSize)
 	{
 		BYTE* pImage = pImageInfo->pImageBuffer;
 		CWOZHelper::WOZHeader* pWozHdr = (CWOZHelper::WOZHeader*) pImage;
@@ -1114,31 +1114,73 @@ public:
 	{
 		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
 
-		const BYTE trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
-		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
+		const BYTE indexFromTMAP = pTrackMap[(UINT)(phase * 2)];
+		if (indexFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);
 
-		ReadTrack(pImageInfo, trackFromTMAP, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE);
+		ReadTrack(pImageInfo, indexFromTMAP, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE);
 		CWOZHelper::TRKv1* pTRK = (CWOZHelper::TRKv1*) &pTrackImageBuffer[CWOZHelper::WOZ1_TRK_OFFSET];
 		*pBitCount = pTRK->bitCount;
 		*pNibbles = pTRK->bytesUsed;
 	}
 
+	// TODO: support writing a bitCount (ie. fractional nibbles)
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles)
 	{
-		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
-
-		const BYTE trackFromTMAP = pTrackMap[(UINT)(phase * 2)];
-		if (trackFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
+		if (nNibbles > CWOZHelper::WOZ1_TRK_OFFSET)
 		{
-			// TODO
 			_ASSERT(0);
-			LogFileOutput("WOZ1 Write Track: attempting to write to a blank track (phase=%f)\n", phase);
+			LogFileOutput("WOZ1 Write Track: failed - track too big (%08X, phase=%f) for file: %s\n", nNibbles, phase, pImageInfo->szFilename.c_str());
 			return;
 		}
 
-		CWOZHelper::TRKv1* pTRK = (CWOZHelper::TRKv1*) &pTrackImageBuffer[CWOZHelper::WOZ1_TRK_OFFSET];
+		UINT extendedSize = 0;
+		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
+
+		BYTE indexFromTMAP = pTrackMap[(UINT)(phase * 2)];
+		if (indexFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 		{
+			const BYTE track = (BYTE)(phase*2);
+			{
+				int highestIdx = -1;
+				for (UINT i=0; i<CWOZHelper::MAX_QUARTER_TRACKS_5_25; i++)
+				{
+					if (pTrackMap[i] != CWOZHelper::TMAP_TRACK_EMPTY && pTrackMap[i] > highestIdx)
+						highestIdx = pTrackMap[i];
+				}
+				indexFromTMAP = (highestIdx == -1) ? 0 : highestIdx+1;
+			}
+			pTrackMap[track] = indexFromTMAP;
+			if (track-1 >= 0) pTrackMap[track-1] = indexFromTMAP;	// WOZ spec: track is also visible from neighboring quarter tracks
+			if (track+1 < CWOZHelper::MAX_QUARTER_TRACKS_5_25)	pTrackMap[track+1] = indexFromTMAP;
+
+			const UINT trackSizeRoundedUp = CWOZHelper::WOZ1_TRACK_SIZE;
+			const UINT newImageSize = pImageInfo->uImageSize + trackSizeRoundedUp;
+			BYTE* pNewImageBuffer = new BYTE[newImageSize];
+			memcpy(pNewImageBuffer, pImageInfo->pImageBuffer, pImageInfo->uImageSize);
+
+			// NB. delete old pImageBuffer: pWOZTrackMap updated in WOZUpdateInfo() by parent function
+
+			delete [] pImageInfo->pImageBuffer;
+			pTrackMap = NULL;	// invalidate
+			pImageInfo->pImageBuffer = pNewImageBuffer;
+			pImageInfo->uImageSize = newImageSize;
+
+			// NB. pTrackImageBuffer[] is at least WOZ1_TRACK_SIZE in size
+			memset(&pTrackImageBuffer[nNibbles], 0, CWOZHelper::WOZ1_TRACK_SIZE-nNibbles);
+			CWOZHelper::TRKv1* pTRK = (CWOZHelper::TRKv1*) &pTrackImageBuffer[CWOZHelper::WOZ1_TRK_OFFSET];
+			pTRK->bytesUsed = nNibbles;
+			pTRK->bitCount = nNibbles * 8;
+
+			CWOZHelper::WOZChunkHdr* pTrksHdr = (CWOZHelper::WOZChunkHdr*) &pImageInfo->pImageBuffer[pImageInfo->uOffset - sizeof(CWOZHelper::WOZChunkHdr)];
+			pTrksHdr->size += trackSizeRoundedUp;
+
+			extendedSize = pImageInfo->uOffset - sizeof(CWOZHelper::WOZHeader);
+		}
+
+		// NB. pTrackImageBuffer[] is at least WOZ1_TRACK_SIZE in size
+		{
+			CWOZHelper::TRKv1* pTRK = (CWOZHelper::TRKv1*) &pTrackImageBuffer[CWOZHelper::WOZ1_TRK_OFFSET];
 			UINT bitCount = pTRK->bitCount;
 			UINT trackSize = pTRK->bytesUsed;
 			_ASSERT(trackSize == nNibbles);
@@ -1146,17 +1188,11 @@ public:
 			{
 				_ASSERT(0);
 				LogFileOutput("WOZ1 Write Track: (warning) attempting to write %08X when trackSize is %08X (phase=%f)\n", nNibbles, trackSize, phase);
-				// NB. just a warning, not a failure
-			}
-			if (nNibbles > CWOZHelper::WOZ1_TRACK_SIZE)
-			{
-				_ASSERT(0);
-				LogFileOutput("WOZ1 Write Track: (failure) attempting to write %08X when max trackSize is %08X (phase=%f)\n", nNibbles, CWOZHelper::WOZ1_TRACK_SIZE, phase);
-				return;
+				// NB. just a warning, not a failure (therefore nNibbles < WOZ1_TRK_OFFSET, due to check at start of function)
 			}
 		}
 
-		if (!WriteTrack(pImageInfo, trackFromTMAP, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE))
+		if (!WriteTrack(pImageInfo, indexFromTMAP, pTrackImageBuffer, CWOZHelper::WOZ1_TRACK_SIZE))
 		{
 			_ASSERT(0);
 			LogFileOutput("WOZ1 Write Track: failed to write track (phase=%f) for file: %s\n", phase, pImageInfo->szFilename.c_str());
@@ -1164,7 +1200,7 @@ public:
 		}
 
 		// TODO: zip/gzip: combine the track & hdr writes so that the file is only compressed & written once
-		if (!UpdateWOZHeaderCRC(pImageInfo, this))
+		if (!UpdateWOZHeaderCRC(pImageInfo, this, extendedSize))
 		{
 			_ASSERT(0);
 			LogFileOutput("WOZ1 Write Track: failed to write header CRC for file: %s\n", pImageInfo->szFilename.c_str());
@@ -1252,6 +1288,7 @@ public:
 			// NB. delete old pImageBuffer: pWOZTrackMap updated in WOZUpdateInfo() by parent function
 
 			delete [] pImageInfo->pImageBuffer;
+			pTrackMap = NULL;	// invalidate
 			pImageInfo->pImageBuffer = pNewImageBuffer;
 			pImageInfo->uImageSize = newImageSize;
 
@@ -1431,11 +1468,11 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 	if (imageSizeRemaining < 0)
 		return eMismatch;
 
-	while(imageSizeRemaining > 8)
+	while(imageSizeRemaining >= sizeof(WOZChunkHdr))
 	{
 		UINT32 chunkId = *pImage32++;
 		UINT32 chunkSize = *pImage32++;
-		imageSizeRemaining -= 8;
+		imageSizeRemaining -= sizeof(WOZChunkHdr);
 
 		switch(chunkId)
 		{
@@ -2195,7 +2232,7 @@ BYTE* CWOZHelper::CreateEmptyDisk(DWORD& size)
 }
 
 #if _DEBUG
-// Replace the call in CheckNormalFile() to CreateEmptyDiskv1() to generate a WOZ v1 empty image-file
+// Replace the call in CheckNormalFile() to CreateEmptyDiskv1() to generate a WOZv1 empty image-file
 BYTE* CWOZHelper::CreateEmptyDiskv1(DWORD& size)
 {
 	WOZv1EmptyImage525* pWOZ = new WOZv1EmptyImage525;
