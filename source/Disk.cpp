@@ -978,7 +978,7 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 {
 	m_shiftReg = 0;
 	m_latchDelay = 0;
-//	m_resetSequencer = true;	// interestingly, this isn't needed! it's "m_shiftReg = 0" that's important
+	m_resetSequencer = true;
 	m_writeStarted = false;
 	m_dbgLatchDelayedCnt = 0;
 }
@@ -1565,10 +1565,12 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 		CpuCalcCycles(uExecutedCycles);
 		LOG_DISK("%08X: reset LSS: ~PC=%04X\r\n", (UINT32)g_nCumulativeCycles, regs.pc);
 #endif
-		ResetLogicStateSequencer();	// reset sequencer (UTAIIe page 9-21)
 
 		const UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
 		UpdateBitStreamPosition(floppy, bitCellDelta);	// Fix E7-copy protection
+
+		// UpdateBitStreamPosition() must be done below ResetLSS, as the former clears m_resetSequencer. (Commando.woz is sensitive to this)
+		ResetLogicStateSequencer();	// reset sequencer (UTAIIe page 9-21)
 	}
 }
 
