@@ -31,11 +31,11 @@ struct ImageInfo
 	std::string		szFilenameInZip;
 	zip_fileinfo	zipFileInfo;
 	UINT			uNumEntriesInZip;
+	UINT			uNumValidImagesInZip;
 	// Floppy only
-	BYTE			ValidTrack[TRACKS_MAX];
 	UINT			uNumTracks;
 	BYTE*			pImageBuffer;
-	BYTE*			pTrackMap;	// WOZ only
+	BYTE*			pWOZTrackMap;		// WOZ only (points into pImageBuffer)
 	BYTE			optimalBitTiming;	// WOZ only
 	UINT			maxNibblesPerTrack;
 
@@ -73,6 +73,7 @@ public:
 	virtual const char* GetCreateExtensions(void) = 0;
 	virtual const char* GetRejectExtensions(void) = 0;
 
+	bool WriteImageHeader(ImageInfo* pImageInfo, LPBYTE pHdr, const UINT hdrSize);
 	void SetVolumeNumber(const BYTE uVolumeNumber) { m_uVolumeNumber = uVolumeNumber; }
 	bool IsValidImageSize(const DWORD uImageSize);
 
@@ -88,6 +89,7 @@ protected:
 	bool WriteTrack(ImageInfo* pImageInfo, const int nTrack, LPBYTE pTrackBuffer, const UINT uTrackSize);
 	bool ReadBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlockBuffer);
 	bool WriteBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBlockBuffer);
+	bool WriteImageData(ImageInfo* pImageInfo, LPBYTE pSrcBuffer, const UINT uSrcSize, const long offset);
 
 	LPBYTE Code62(int sector);
 	void Decode62(LPBYTE imageptr);
@@ -133,6 +135,10 @@ private:
 
 #pragma pack(push)
 #pragma pack(1)	// Ensure Header2IMG & WOZ structs are packed
+
+#pragma warning(push)
+#pragma warning(disable: 4200)	// Allow zero-sized array in struct
+
 
 class C2IMGHelper : public CHdrHelper
 {
@@ -200,10 +206,15 @@ public:
 	virtual ~CWOZHelper(void) {}
 	virtual eDetectResult DetectHdr(LPBYTE& pImage, DWORD& dwImageSize, DWORD& dwOffset) { _ASSERT(0); return eMismatch; }
 	virtual UINT GetMaxHdrSize(void) { return sizeof(WOZHeader); }
-	eDetectResult ProcessChunks(const LPBYTE pImage, const DWORD dwImageSize, DWORD& dwOffset, BYTE*& pTrackMap);
+	eDetectResult ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset);
 	bool IsWriteProtected(void) { return m_pInfo->v1.writeProtected == 1; }
-	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->optimalBitTiming : CWOZHelper::InfoChunkv2::optimalBitTiming5_25; }
-	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE : CWOZHelper::WOZ1_TRACK_SIZE; }
+	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->optimalBitTiming : InfoChunkv2::optimalBitTiming5_25; }
+	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
+	void InvalidateInfo(void) { m_pInfo = NULL; }
+	BYTE* CreateEmptyDisk(DWORD& size);
+#if _DEBUG
+	BYTE* CreateEmptyDiskv1(DWORD& size);
+#endif
 
 	static const UINT32 ID1_WOZ1 = '1ZOW';	// 'WOZ1'
 	static const UINT32 ID1_WOZ2 = '2ZOW';	// 'WOZ2'
@@ -217,10 +228,24 @@ public:
 	};
 
 	static const UINT32 MAX_TRACKS_5_25 = 40;
+	static const UINT32 MAX_QUARTER_TRACKS_5_25 = MAX_TRACKS_5_25 * 4;
 	static const UINT32 WOZ1_TRACK_SIZE = 6656;	// 0x1A00
 	static const UINT32 WOZ1_TRK_OFFSET = 6646;
-	static const UINT32 EMPTY_TRACK_SIZE = 6400;
+	static const UINT32 EMPTY_TRACK_SIZE = 6400;	// $C.5 blocks
 	static const UINT32 BLOCK_SIZE = 512;
+	static const BYTE TMAP_TRACK_EMPTY = 0xFF;
+	static const UINT16 TRK_DEFAULT_BLOCK_COUNT_5_25 = 13;	// $D is default for TRKv2.blockCount
+
+	struct WOZChunkHdr
+	{
+		UINT32 id;
+		UINT32 size;
+	};
+
+	struct Tmap
+	{
+		BYTE tmap[MAX_QUARTER_TRACKS_5_25];
+	};
 
 	struct TRKv1
 	{
@@ -239,17 +264,22 @@ public:
 		UINT32 bitCount;
 	};
 
+	struct Trks
+	{
+		TRKv2 trks[MAX_QUARTER_TRACKS_5_25];
+		BYTE bits[0];	// bits[] starts at offset 3 x BLOCK_SIZE = 1536
+	};
+
 private:
 	static const UINT32 INFO_CHUNK_ID = 'OFNI';	// 'INFO'
 	static const UINT32 TMAP_CHUNK_ID = 'PAMT';	// 'TMAP'
 	static const UINT32 TRKS_CHUNK_ID = 'SKRT';	// 'TRKS'
 	static const UINT32 WRIT_CHUNK_ID = 'TIRW';	// 'WRIT' - WOZv2
 	static const UINT32 META_CHUNK_ID = 'ATEM';	// 'META'
+	static const UINT32 INFO_CHUNK_SIZE = 60;	// Fixed size for both WOZv1 & WOZv2
 
 	struct InfoChunk
 	{
-		UINT32	id;
-		UINT32	size;
 		BYTE	version;
 		BYTE	diskType;
 		BYTE	writeProtected;	// 1 = Floppy is write protected
@@ -281,9 +311,41 @@ private:
 		static const BYTE optimalBitTiming5_25 = 32;
 	};
 
-	InfoChunkv2* m_pInfo;
+	InfoChunkv2* m_pInfo;	// NB. image-specific - only valid during Detect(), which calls InvalidateInfo() when done
+
+	//
+
+	struct WOZEmptyImage525	// 5.25"
+	{
+		WOZHeader hdr;
+
+		WOZChunkHdr infoHdr;
+		InfoChunkv2 info;
+		BYTE infoPadding[INFO_CHUNK_SIZE-sizeof(InfoChunkv2)];
+
+		WOZChunkHdr tmapHdr;
+		Tmap tmap;
+
+		WOZChunkHdr trksHdr;
+		Trks trks;
+	};
+
+	struct WOZv1EmptyImage525	// 5.25"
+	{
+		WOZHeader hdr;
+
+		WOZChunkHdr infoHdr;
+		InfoChunk info;
+		BYTE infoPadding[INFO_CHUNK_SIZE-sizeof(InfoChunk)];
+
+		WOZChunkHdr tmapHdr;
+		Tmap tmap;
+
+		WOZChunkHdr trksHdr;
+	};
 };
 
+#pragma warning(pop)
 #pragma pack(pop)
 
 //-------------------------------------
@@ -304,7 +366,8 @@ public:
 	}
 
 	ImageError_e Open(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, const bool bCreateIfNecessary, std::string& strFilenameInZip);
-	void Close(ImageInfo* pImageInfo, const bool bDeleteFile);
+	void Close(ImageInfo* pImageInfo);
+	bool WOZUpdateInfo(ImageInfo* pImageInfo, DWORD& dwOffset);
 
 	virtual CImageBase* Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, ImageInfo* pImageInfo) = 0;
 	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, DWORD* pCreateImageSize) = 0;
@@ -317,7 +380,7 @@ protected:
 	ImageError_e CheckNormalFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, const bool bCreateIfNecessary);
 	void GetCharLowerExt(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize);
 	void GetCharLowerExt2(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize);
-	void SetImageInfo(ImageInfo* pImageInfo, FileType_e eFileGZip, DWORD dwOffset, CImageBase* pImageType, DWORD dwSize);
+	void SetImageInfo(ImageInfo* pImageInfo, FileType_e fileType, DWORD dwOffset, CImageBase* pImageType, DWORD dwSize);
 
 	UINT GetNumImages(void) { return m_vecImageTypes.size(); };
 	CImageBase* GetImage(UINT uIndex) { _ASSERT(uIndex<GetNumImages()); return m_vecImageTypes[uIndex]; }

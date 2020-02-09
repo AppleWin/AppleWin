@@ -185,12 +185,13 @@ private:
 	void WriteTrack(const int drive);
 	const std::string & DiskGetFullPathName(const int drive);
 	void ResetLogicStateSequencer(void);
-	void UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles);
-	UINT GetBitCellDelta(const BYTE optimalBitTiming);
+	UINT GetBitCellDelta(const ULONG uExecutedCycles);
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
 	void UpdateBitStreamOffsets(FloppyDisk& floppy);
+	__forceinline void IncBitStream(FloppyDisk& floppy);
 	void DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
-	void DataLatchWriteWOZ(WORD pc, WORD addr, BYTE d, UINT bitCellRemainder);
+	void DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
+	void DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCycles);
 	void SetSequencerFunction(WORD addr);
 	void DumpSectorWOZ(FloppyDisk floppy);
 	void DumpTrackWOZ(FloppyDisk floppy);
@@ -206,7 +207,7 @@ private:
 	void __stdcall ControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall Enable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
-	void __stdcall DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+	void __stdcall DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, ULONG uExecutedCycles);
 	void __stdcall LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG);
 	void __stdcall SetReadMode(WORD, WORD, BYTE, BYTE, ULONG);
 	void __stdcall SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles);
@@ -240,8 +241,9 @@ private:
 	BYTE m_shiftReg;
 	int m_latchDelay;
 	bool m_resetSequencer;
+	bool m_writeStarted;
 
-	enum SEQFUNC {readSequencing=0, checkWriteProtAndInitWrite, dataShiftWrite, dataLoadWrite};	// UTAIIe 9-14
+	enum SEQFUNC {readSequencing=0, dataShiftWrite, checkWriteProtAndInitWrite, dataLoadWrite};	// UTAIIe 9-14
 	union SEQUENCER_FUNCTION
 	{
 		struct

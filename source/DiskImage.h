@@ -51,7 +51,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		eIMAGE_ERROR_GZ,
 		eIMAGE_ERROR_ZIP,
 		eIMAGE_ERROR_REJECTED_MULTI_ZIP,
-		eIMAGE_ERROR_UNSUPPORTED_MULTI_ZIP,
 		eIMAGE_ERROR_UNABLE_TO_OPEN,
 		eIMAGE_ERROR_UNABLE_TO_OPEN_GZ,
 		eIMAGE_ERROR_UNABLE_TO_OPEN_ZIP,
@@ -66,7 +65,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 struct ImageInfo;
 
 ImageError_e ImageOpen(const std::string & pszImageFilename, ImageInfo** ppImageInfo, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true);
-void ImageClose(ImageInfo* const pImageInfo, const bool bOpenError=false);
+void ImageClose(ImageInfo* const pImageInfo);
 BOOL ImageBoot(ImageInfo* const pImageInfo);
 void ImageDestroy(void);
 void ImageInitialize(void);
