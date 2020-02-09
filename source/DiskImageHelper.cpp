@@ -2196,3 +2196,45 @@ BYTE* CWOZHelper::CreateEmptyDisk(DWORD& size)
 	pWOZ->hdr.crc32 = crc32(0, (BYTE*)&pWOZ->infoHdr, sizeof(WOZEmptyImage525) - sizeof(WOZHeader));
 	return (BYTE*) pWOZ;
 }
+
+#if _DEBUG
+// Replace the call in CheckNormalFile() to CreateEmptyDiskv1() to generate a WOZ v1 empty image-file
+BYTE* CWOZHelper::CreateEmptyDiskv1(DWORD& size)
+{
+	WOZv1EmptyImage525* pWOZ = new WOZv1EmptyImage525;
+	memset(pWOZ, 0, sizeof(WOZv1EmptyImage525));
+	size = sizeof(WOZv1EmptyImage525);
+	_ASSERT(size == 256);
+
+	pWOZ->hdr.id1 = ID1_WOZ1;
+	pWOZ->hdr.id2 = ID2;
+	// hdr.crc32 done at end
+
+	// INFO
+	ASSERT_OFFSET(infoHdr, 12);
+	pWOZ->infoHdr.id = INFO_CHUNK_ID;
+	pWOZ->infoHdr.size = (BYTE*)&pWOZ->tmapHdr - (BYTE*)&pWOZ->info;
+	_ASSERT(pWOZ->infoHdr.size == 60);
+	pWOZ->info.version = 1;
+	pWOZ->info.diskType = InfoChunk::diskType5_25;
+	pWOZ->info.cleaned = 1;
+	std::string creator("AppleWin v");
+	creator += std::string(VERSIONSTRING);
+	memset(&pWOZ->info.creator[0], ' ', sizeof(pWOZ->info.creator));
+	memcpy(&pWOZ->info.creator[0], creator.c_str(), creator.size());	// don't include null
+
+	// TMAP
+	ASSERT_OFFSET(tmapHdr, 80);
+	pWOZ->tmapHdr.id = TMAP_CHUNK_ID;
+	pWOZ->tmapHdr.size = sizeof(pWOZ->tmap);
+	memset(&pWOZ->tmap, TMAP_TRACK_EMPTY, sizeof(pWOZ->tmap));	// all tracks empty
+
+	// TRKS
+	ASSERT_OFFSET(trksHdr, 248);
+	pWOZ->trksHdr.id = TRKS_CHUNK_ID;
+	pWOZ->trksHdr.size = 0;
+
+	pWOZ->hdr.crc32 = crc32(0, (BYTE*)&pWOZ->infoHdr, sizeof(WOZv1EmptyImage525) - sizeof(WOZHeader));
+	return (BYTE*) pWOZ;
+}
+#endif

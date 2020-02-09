@@ -35,7 +35,7 @@ struct ImageInfo
 	// Floppy only
 	UINT			uNumTracks;
 	BYTE*			pImageBuffer;
-	BYTE*			pWOZInfo;			// WOZ only (points into pImageBuffer)
+	BYTE*			pWOZInfo;			// WOZ only (points into pImageBuffer) - unused
 	BYTE*			pWOZTrackMap;		// WOZ only (points into pImageBuffer)
 	BYTE			optimalBitTiming;	// WOZ only
 	UINT			maxNibblesPerTrack;
@@ -213,6 +213,9 @@ public:
 	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
 	void InvalidateInfo(void) { m_pInfo = NULL; }
 	BYTE* CreateEmptyDisk(DWORD& size);
+#if _DEBUG
+	BYTE* CreateEmptyDiskv1(DWORD& size);
+#endif
 
 	static const UINT32 ID1_WOZ1 = '1ZOW';	// 'WOZ1'
 	static const UINT32 ID1_WOZ2 = '2ZOW';	// 'WOZ2'
@@ -318,14 +321,27 @@ private:
 
 		WOZChunkHdr infoHdr;
 		InfoChunkv2 info;
-		BYTE infoPadding[80-66];
+		BYTE infoPadding[60-sizeof(InfoChunkv2)];
 
 		WOZChunkHdr tmapHdr;
-		//BYTE tmap[MAX_TRACKS_5_25 * 4];
 		Tmap tmap;
 
 		WOZChunkHdr trksHdr;
 		Trks trks;
+	};
+
+	struct WOZv1EmptyImage525	// 5.25"
+	{
+		WOZHeader hdr;
+
+		WOZChunkHdr infoHdr;
+		InfoChunk info;
+		BYTE infoPadding[60-sizeof(InfoChunk)];
+
+		WOZChunkHdr tmapHdr;
+		Tmap tmap;
+
+		WOZChunkHdr trksHdr;
 	};
 };
 
