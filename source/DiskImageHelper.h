@@ -276,6 +276,7 @@ private:
 	static const UINT32 TRKS_CHUNK_ID = 'SKRT';	// 'TRKS'
 	static const UINT32 WRIT_CHUNK_ID = 'TIRW';	// 'WRIT' - WOZv2
 	static const UINT32 META_CHUNK_ID = 'ATEM';	// 'META'
+	static const UINT32 INFO_CHUNK_SIZE = 60;	// Fixed size for both WOZv1 & WOZv2
 
 	struct InfoChunk
 	{
@@ -320,7 +321,7 @@ private:
 
 		WOZChunkHdr infoHdr;
 		InfoChunkv2 info;
-		BYTE infoPadding[60-sizeof(InfoChunkv2)];
+		BYTE infoPadding[INFO_CHUNK_SIZE-sizeof(InfoChunkv2)];
 
 		WOZChunkHdr tmapHdr;
 		Tmap tmap;
@@ -335,7 +336,7 @@ private:
 
 		WOZChunkHdr infoHdr;
 		InfoChunk info;
-		BYTE infoPadding[60-sizeof(InfoChunk)];
+		BYTE infoPadding[INFO_CHUNK_SIZE-sizeof(InfoChunk)];
 
 		WOZChunkHdr tmapHdr;
 		Tmap tmap;

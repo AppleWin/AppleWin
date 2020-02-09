@@ -2158,7 +2158,7 @@ BYTE* CWOZHelper::CreateEmptyDisk(DWORD& size)
 	ASSERT_OFFSET(infoHdr, 12);
 	pWOZ->infoHdr.id = INFO_CHUNK_ID;
 	pWOZ->infoHdr.size = (BYTE*)&pWOZ->tmapHdr - (BYTE*)&pWOZ->info;
-	_ASSERT(pWOZ->infoHdr.size == 60);
+	_ASSERT(pWOZ->infoHdr.size == INFO_CHUNK_SIZE);
 	pWOZ->info.v1.version = 2;
 	pWOZ->info.v1.diskType = InfoChunk::diskType5_25;
 	pWOZ->info.v1.cleaned = 1;
@@ -2211,7 +2211,7 @@ BYTE* CWOZHelper::CreateEmptyDiskv1(DWORD& size)
 	ASSERT_OFFSET(infoHdr, 12);
 	pWOZ->infoHdr.id = INFO_CHUNK_ID;
 	pWOZ->infoHdr.size = (BYTE*)&pWOZ->tmapHdr - (BYTE*)&pWOZ->info;
-	_ASSERT(pWOZ->infoHdr.size == 60);
+	_ASSERT(pWOZ->infoHdr.size == INFO_CHUNK_SIZE);
 	pWOZ->info.version = 1;
 	pWOZ->info.diskType = InfoChunk::diskType5_25;
 	pWOZ->info.cleaned = 1;
