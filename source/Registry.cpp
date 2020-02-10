@@ -28,10 +28,30 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+extern std::string g_sConfigFile;
+
+namespace _ini {
+	//===========================================================================
+	BOOL RegLoadString(LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, DWORD chars)
+	{
+		DWORD n = GetPrivateProfileString(section, key, NULL, buffer, chars, g_sConfigFile.c_str());
+		return n > 0;
+	}
+
+	//===========================================================================
+	void RegSaveString(LPCTSTR section, LPCTSTR key, BOOL peruser, const std::string& buffer)
+	{
+		BOOL updated = WritePrivateProfileString(section, key, buffer.c_str(), g_sConfigFile.c_str());
+		_ASSERT(updated || GetLastError() == 0);
+	}
+}
 
 //===========================================================================
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, DWORD chars)
 {
+	if (!g_sConfigFile.empty())
+		return _ini::RegLoadString(section, key, peruser, buffer, chars);
+
 	TCHAR fullkeyname[256];
 	StringCbPrintf(fullkeyname, 256, TEXT("Software\\AppleWin\\CurrentVersion\\%s"), section);
 
@@ -88,6 +108,9 @@ BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD* value, DWO
 
 //===========================================================================
 void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::string & buffer) {
+	if (!g_sConfigFile.empty())
+		return _ini::RegSaveString(section, key, peruser, buffer);
+
 	TCHAR fullkeyname[256];
 	StringCbPrintf(fullkeyname, 256, TEXT("Software\\AppleWin\\CurrentVersion\\%s"), section);
 
@@ -122,3 +145,4 @@ void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value) {
 	StringCbPrintf(buffer, 32, "%d", value);
 	RegSaveString(section, key, peruser, buffer);
 }
+
