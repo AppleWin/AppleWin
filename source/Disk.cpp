@@ -619,8 +619,8 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	pFloppy->clear();
 
 	const DWORD dwAttributes = GetFileAttributes(pszImageFilename);
-	if(dwAttributes == INVALID_FILE_ATTRIBUTES)
-		pFloppy->m_bWriteProtected = false;	// Assume this is a new file to create
+	if (dwAttributes == INVALID_FILE_ATTRIBUTES)
+		pFloppy->m_bWriteProtected = false;	// Assume this is a new file to create (so it must be write-enabled to allow it to be formatted)
 	else
 		pFloppy->m_bWriteProtected = bForceWriteProtected ? true : (dwAttributes & FILE_ATTRIBUTE_READONLY);
 
