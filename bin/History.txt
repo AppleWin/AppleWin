@@ -9,8 +9,8 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.29.10.0 - ? Feb 2020
-----------------------
+1.29.10.0 - 13 Feb 2020
+-----------------------
 . [PR #756] Write support for WOZ1/WOZ2 images.
 	- Fixes titles that need write support (see: #686, #704, #705).
 	- Allow creation of a blank (WOZ2) image (see AppleWin.chm: 'Creating Disk Images').

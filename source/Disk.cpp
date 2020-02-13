@@ -1569,7 +1569,8 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 		const UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
 		UpdateBitStreamPosition(floppy, bitCellDelta);	// Fix E7-copy protection
 
-		// UpdateBitStreamPosition() must be done below ResetLSS, as the former clears m_resetSequencer. (Commando.woz is sensitive to this)
+		// UpdateBitStreamPosition() must be done below ResetLSS, as the former clears m_resetSequencer.
+		// . Commando.woz is sensitive to this. EG. It can crash after pressing 'J' (1 failure in 20 reboot repeats)
 		ResetLogicStateSequencer();	// reset sequencer (UTAIIe page 9-21)
 	}
 }
