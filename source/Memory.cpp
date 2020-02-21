@@ -372,6 +372,12 @@ LanguageCardUnit* GetLanguageCard(void)
 	return g_pLanguageCard;
 }
 
+LPBYTE GetCxRomPeripheral(void)
+{
+	_ASSERT(pCxRomPeripheral);
+	return pCxRomPeripheral;
+}
+
 //=============================================================================
 
 static BYTE __stdcall IORead_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)

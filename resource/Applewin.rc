@@ -308,7 +308,8 @@ END
 // FIRMWARE
 //
 
-IDR_DISK2_FW            FIRMWARE                "Disk2.rom"
+IDR_DISK2_13SECTOR_FW   FIRMWARE                "Disk2-13sector.rom"
+IDR_DISK2_16SECTOR_FW   FIRMWARE                "Disk2.rom"
 IDR_SSC_FW              FIRMWARE                "SSC.rom"
 IDR_HDDRVR_FW           FIRMWARE                "Hddrvr.bin"
 IDR_PRINTDRVR_FW        FIRMWARE                "Parallel.rom"

@@ -57,6 +57,7 @@ ImageInfo::ImageInfo()
 	pImageBuffer = NULL;
 	pWOZTrackMap = NULL;
 	optimalBitTiming = 0;
+	bootSectorFormat = CWOZHelper::bootUnknown;
 	maxNibblesPerTrack = 0;
 }
 
@@ -1938,6 +1939,7 @@ bool CImageHelperBase::WOZUpdateInfo(ImageInfo* pImageInfo, DWORD& dwOffset)
 
 	pImageInfo->optimalBitTiming = m_WOZHelper.GetOptimalBitTiming();
 	pImageInfo->maxNibblesPerTrack = m_WOZHelper.GetMaxNibblesPerTrack();
+	pImageInfo->bootSectorFormat = m_WOZHelper.GetBootSectorFormat();
 
 	m_WOZHelper.InvalidateInfo();
 	return true;
@@ -2196,7 +2198,7 @@ BYTE* CWOZHelper::CreateEmptyDisk(DWORD& size)
 	memset(&pWOZ->info.v1.creator[0], ' ', sizeof(pWOZ->info.v1.creator));
 	memcpy(&pWOZ->info.v1.creator[0], creator.c_str(), creator.size());	// don't include null
 	pWOZ->info.diskSides = 1;
-	pWOZ->info.bootSectorFormat = InfoChunkv2::bootUnknown;	// could be INIT'd to 13 or 16 sector
+	pWOZ->info.bootSectorFormat = bootUnknown;	// could be INIT'd to 13 or 16 sector
 	pWOZ->info.optimalBitTiming = InfoChunkv2::optimalBitTiming5_25;
 	pWOZ->info.compatibleHardware = 0;	// unknown
 	pWOZ->info.requiredRAM = 0;			// unknown

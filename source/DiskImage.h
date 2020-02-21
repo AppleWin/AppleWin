@@ -84,5 +84,6 @@ bool ImageIsWOZ(ImageInfo* const pImageInfo);
 BYTE ImageGetOptimalBitTiming(ImageInfo* const pImageInfo);
 UINT ImagePhaseToTrack(ImageInfo* const pImageInfo, const float phase, const bool limit=true);
 UINT ImageGetMaxNibblesPerTrack(ImageInfo* const pImageInfo);
+bool ImageIsBootTrackFormatSector13(ImageInfo* const pImageInfo);
 
 void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName);

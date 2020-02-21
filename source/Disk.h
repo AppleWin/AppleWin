@@ -195,6 +195,8 @@ private:
 	void SetSequencerFunction(WORD addr);
 	void DumpSectorWOZ(FloppyDisk floppy);
 	void DumpTrackWOZ(FloppyDisk floppy);
+	bool GetFirmware(LPCSTR lpName, BYTE* pDst);
+	void InitFirmware(LPBYTE pCxRomPeripheral);
 
 	void SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	void SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
@@ -217,6 +219,10 @@ private:
 #endif
 
 	//
+
+	static const UINT DISK2_FW_SIZE = 256;
+	BYTE m_13SectorFirmware[DISK2_FW_SIZE];
+	BYTE m_16SectorFirmware[DISK2_FW_SIZE];
 
 	WORD m_currDrive;
 	FloppyDrive m_floppyDrive[NUM_DRIVES];

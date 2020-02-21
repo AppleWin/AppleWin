@@ -1469,6 +1469,8 @@ void Disk2InterfaceCard::Reset(const bool bIsPowerCycle)
 
 		FrameRefreshStatus(DRAW_LEDS, false);
 	}
+
+	InitFirmware(GetCxRomPeripheral());
 }
 
 void Disk2InterfaceCard::ResetSwitches(void)
@@ -1697,28 +1699,46 @@ bool Disk2InterfaceCard::DriveSwap(void)
 
 //===========================================================================
 
-// TODO: LoadRom_Disk_Floppy()
-void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+bool Disk2InterfaceCard::GetFirmware(LPCSTR lpName, BYTE* pDst)
 {
-	const UINT DISK2_FW_SIZE = APPLE_SLOT_SIZE;
-
-	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_DISK2_FW), "FIRMWARE");
+	HRSRC hResInfo = FindResource(NULL, lpName, "FIRMWARE");
 	if(hResInfo == NULL)
-		return;
+		return false;
 
 	DWORD dwResSize = SizeofResource(NULL, hResInfo);
 	if(dwResSize != DISK2_FW_SIZE)
-		return;
+		return false;
 
 	HGLOBAL hResData = LoadResource(NULL, hResInfo);
 	if(hResData == NULL)
-		return;
+		return false;
 
 	BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
-	if(pData == NULL)
-		return;
+	if (!pData)
+		return false;
 
-	memcpy(pCxRomPeripheral + uSlot*APPLE_SLOT_SIZE, pData, DISK2_FW_SIZE);
+	memcpy(pDst, pData, DISK2_FW_SIZE);
+	return true;
+}
+
+void Disk2InterfaceCard::InitFirmware(LPBYTE pCxRomPeripheral)
+{
+	ImageInfo* pImage = m_floppyDrive[DRIVE_1].m_disk.m_imagehandle;
+
+	if (ImageIsBootTrackFormatSector13(pImage))
+		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_13SectorFirmware, DISK2_FW_SIZE);
+	else
+		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_16SectorFirmware, DISK2_FW_SIZE);
+}
+
+// TODO: LoadRom_Disk_Floppy()
+void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+{
+	bool res = GetFirmware(MAKEINTRESOURCE(IDR_DISK2_13SECTOR_FW), m_13SectorFirmware);
+	_ASSERT(res);
+
+	res = GetFirmware(MAKEINTRESOURCE(IDR_DISK2_16SECTOR_FW), m_16SectorFirmware);
+	_ASSERT(res);
 
 	// Note: We used to disable the track stepping delay in the Disk II controller firmware by
 	// patching $C64C with $A9,$00,$EA. Now not doing this since:
@@ -1730,6 +1750,8 @@ void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	RegisterIoHandler(uSlot, &Disk2InterfaceCard::IORead, &Disk2InterfaceCard::IOWrite, NULL, NULL, this, NULL);
 
 	m_slot = uSlot;
+
+	InitFirmware(pCxRomPeripheral);
 }
 
 //===========================================================================
