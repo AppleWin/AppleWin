@@ -374,8 +374,7 @@ LanguageCardUnit* GetLanguageCard(void)
 
 LPBYTE GetCxRomPeripheral(void)
 {
-	_ASSERT(pCxRomPeripheral);
-	return pCxRomPeripheral;
+	return pCxRomPeripheral;	// Can be NULL if at MODE_LOGO
 }
 
 //=============================================================================

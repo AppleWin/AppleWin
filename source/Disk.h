@@ -144,6 +144,7 @@ public:
 	void NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error);
 	bool GetProtect(const int drive);
 	void SetProtect(const int drive, const bool bWriteProtect);
+	UINT GetCurrentFirmware(void) { return m_is13SectorFirmware ? 13 : 16; }
 	int GetCurrentDrive(void);
 	int GetCurrentTrack(void);
 	float GetCurrentPhase(void);
@@ -223,6 +224,7 @@ private:
 	static const UINT DISK2_FW_SIZE = 256;
 	BYTE m_13SectorFirmware[DISK2_FW_SIZE];
 	BYTE m_16SectorFirmware[DISK2_FW_SIZE];
+	bool m_is13SectorFirmware;
 
 	WORD m_currDrive;
 	FloppyDrive m_floppyDrive[NUM_DRIVES];

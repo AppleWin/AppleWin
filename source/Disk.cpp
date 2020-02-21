@@ -64,6 +64,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(void) :
 	m_diskLastCycle = 0;
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = true;
+	m_is13SectorFirmware = false;
 
 	ResetLogicStateSequencer();
 
@@ -662,6 +663,9 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	{
 		GetImageTitle(pszImageFilename, pFloppy->m_imagename, pFloppy->m_fullname);
 		Video_ResetScreenshotCounter(pFloppy->m_imagename);
+
+		if (g_nAppMode == MODE_LOGO)
+			InitFirmware(GetCxRomPeripheral());
 	}
 	else
 	{
@@ -1723,9 +1727,14 @@ bool Disk2InterfaceCard::GetFirmware(LPCSTR lpName, BYTE* pDst)
 
 void Disk2InterfaceCard::InitFirmware(LPBYTE pCxRomPeripheral)
 {
+	if (pCxRomPeripheral == NULL)
+		return;
+
 	ImageInfo* pImage = m_floppyDrive[DRIVE_1].m_disk.m_imagehandle;
 
-	if (ImageIsBootSectorFormatSector13(pImage))
+	m_is13SectorFirmware = ImageIsBootSectorFormatSector13(pImage);
+
+	if (m_is13SectorFirmware)
 		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_13SectorFirmware, DISK2_FW_SIZE);
 	else
 		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_16SectorFirmware, DISK2_FW_SIZE);
