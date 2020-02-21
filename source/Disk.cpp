@@ -1725,7 +1725,7 @@ void Disk2InterfaceCard::InitFirmware(LPBYTE pCxRomPeripheral)
 {
 	ImageInfo* pImage = m_floppyDrive[DRIVE_1].m_disk.m_imagehandle;
 
-	if (ImageIsBootTrackFormatSector13(pImage))
+	if (ImageIsBootSectorFormatSector13(pImage))
 		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_13SectorFirmware, DISK2_FW_SIZE);
 	else
 		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_16SectorFirmware, DISK2_FW_SIZE);

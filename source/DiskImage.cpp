@@ -246,7 +246,7 @@ BYTE ImageGetOptimalBitTiming(ImageInfo* const pImageInfo)
 	return pImageInfo ? pImageInfo->optimalBitTiming : 32;
 }
 
-bool ImageIsBootTrackFormatSector13(ImageInfo* const pImageInfo)
+bool ImageIsBootSectorFormatSector13(ImageInfo* const pImageInfo)
 {
 	return pImageInfo ? pImageInfo->bootSectorFormat == CWOZHelper::bootSector13 : false;
 }
