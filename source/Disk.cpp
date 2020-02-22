@@ -229,33 +229,6 @@ void Disk2InterfaceCard::CheckSpinning(const ULONG uExecutedCycles)
 
 //===========================================================================
 
-Disk_Status_e Disk2InterfaceCard::GetDriveLightStatus(const int drive)
-{
-	if (IsDriveValid( drive ))
-	{
-		FloppyDrive* pDrive = &m_floppyDrive[ drive ];
-
-		if (pDrive->m_spinning)
-		{
-			if (pDrive->m_disk.m_bWriteProtected)
-				return DISK_STATUS_PROT;
-
-			if (pDrive->m_writelight)
-				return DISK_STATUS_WRITE;
-			else
-				return DISK_STATUS_READ;
-		}
-		else
-		{
-			return DISK_STATUS_OFF;
-		}
-	}
-
-	return DISK_STATUS_OFF;
-}
-
-//===========================================================================
-
 bool Disk2InterfaceCard::IsDriveValid(const int drive)
 {
 	return (drive >= 0 && drive < NUM_DRIVES);
@@ -595,6 +568,31 @@ const std::string & Disk2InterfaceCard::DiskGetFullPathName(const int drive)
 }
 
 //===========================================================================
+
+Disk_Status_e Disk2InterfaceCard::GetDriveLightStatus(const int drive)
+{
+	if (IsDriveValid( drive ))
+	{
+		FloppyDrive* pDrive = &m_floppyDrive[ drive ];
+
+		if (pDrive->m_spinning)
+		{
+			if (pDrive->m_disk.m_bWriteProtected)
+				return DISK_STATUS_PROT;
+
+			if (pDrive->m_writelight)
+				return DISK_STATUS_WRITE;
+			else
+				return DISK_STATUS_READ;
+		}
+		else
+		{
+			return DISK_STATUS_OFF;
+		}
+	}
+
+	return DISK_STATUS_OFF;
+}
 
 void Disk2InterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status, Disk_Status_e *pDisk2Status)
 {
@@ -1475,6 +1473,7 @@ void Disk2InterfaceCard::Reset(const bool bIsPowerCycle)
 	}
 
 	InitFirmware(GetCxRomPeripheral());
+	FrameRefreshStatus(DRAW_TITLE, false);
 }
 
 void Disk2InterfaceCard::ResetSwitches(void)

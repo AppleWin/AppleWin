@@ -118,3 +118,17 @@ void Disk2CardManager::Destroy(void)
 		}
 	}
 }
+
+bool Disk2CardManager::IsAnyFirmware13Sector(void)
+{
+	for (UINT i = 0; i < NUM_SLOTS; i++)
+	{
+		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
+		{
+			// If any Disk2 card has 13-sector firmware then return true
+			if (dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).GetCurrentFirmware() == 13)
+				return true;
+		}
+	}
+	return false;
+}
