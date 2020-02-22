@@ -1023,8 +1023,7 @@ UINT Disk2InterfaceCard::GetBitCellDelta(const ULONG uExecutedCycles)
 
 void Disk2InterfaceCard::UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta)
 {
-	_ASSERT(floppy.m_bitCount);	// Should never happen - ReadTrack() will handle this
-	if (floppy.m_bitCount == 0)
+	if (floppy.m_bitCount == 0)	// Repro: Boot DOS3.3(WOZ), eject+reinsert disk, CALL-151, C0E9 N C0ED ; motor-on & LoadWriteProtect()
 		return;
 
 	floppy.m_bitOffset += bitCellDelta;
