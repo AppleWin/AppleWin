@@ -4,6 +4,9 @@
 #include "Common.h"
 #include "CPU.h"
 
+static const UINT VERSIONSTRING_SIZE = 16;
+TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
+
 static bool bLogKeyReadDone = false;
 static DWORD dwLogKeyReadTickStart;
 

@@ -35,6 +35,7 @@ add_library(appleii SHARED
   linux/windows/stringcb.cpp
   linux/windows/strings.cpp
   linux/windows/misc.cpp
+  linux/windows/winbase.cpp
 
   linux/data.cpp
   linux/dummies.cpp

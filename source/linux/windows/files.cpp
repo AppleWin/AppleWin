@@ -26,8 +26,15 @@ DWORD SetFilePointer(HANDLE hFile, LONG lDistanceToMove,
 {
   const FILE_HANDLE & file_handle = dynamic_cast<FILE_HANDLE &>(*hFile);
 
-  fseek(file_handle.f, lDistanceToMove, dwMoveMethod);
-  return ftell(file_handle.f);
+  const int res = fseek(file_handle.f, lDistanceToMove, dwMoveMethod);
+  if (res)
+  {
+    return INVALID_SET_FILE_POINTER;
+  }
+  else
+  {
+    return ftell(file_handle.f);
+  }
 }
 
 BOOL ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead,

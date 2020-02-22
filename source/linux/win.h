@@ -12,3 +12,4 @@
 #include "linux/windows/stringcb.h"
 #include "linux/windows/strings.h"
 #include "linux/windows/gdi.h"
+#include "linux/windows/winbase.h"

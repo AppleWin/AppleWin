@@ -18,7 +18,7 @@ struct HRSRC : public CHANDLE
   }
 };
 
-std::string MAKEINTRESOURCE(int x);
+const char * MAKEINTRESOURCE(int x);
 HRSRC FindResource(void *, const std::string & filename, const char *);
 DWORD SizeofResource(void *, const HRSRC &);
 HGLOBAL LoadResource(void *, HRSRC &);

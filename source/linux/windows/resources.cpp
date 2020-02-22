@@ -5,7 +5,7 @@
 // forward declared
 HRSRC FindResource(void *, const std::string & filename, const char *);
 
-std::string MAKEINTRESOURCE(int x)
+const char * MAKEINTRESOURCE(int x)
 {
   switch (x)
   {
@@ -18,7 +18,8 @@ std::string MAKEINTRESOURCE(int x)
   case IDR_PRAVETS_8M_ROM: return "PRAVETS8M.ROM";
   case IDR_TK3000_2E_ROM: return "TK3000e.rom";
 
-  case IDR_DISK2_FW: return "DISK2.rom";
+  case IDR_DISK2_16SECTOR_FW: return "DISK2.rom";
+  case IDR_DISK2_13SECTOR_FW: return "DISK2-13sector.rom";
   case IDR_SSC_FW: return "SSC.rom";
   case IDR_HDDRVR_FW: return "Hddrvr.bin";
   case IDR_PRINTDRVR_FW: return "Parallel.rom";
@@ -29,7 +30,7 @@ std::string MAKEINTRESOURCE(int x)
   }
 
   LogFileOutput("Unknown resource %d\n", x);
-  return std::string();
+  return nullptr;
 }
 
 DWORD SizeofResource(void *, const HRSRC & res)

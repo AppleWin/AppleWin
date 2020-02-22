@@ -4,6 +4,7 @@
 #include "linux/windows/handles.h"
 
 #define INVALID_FILE_ATTRIBUTES  (~0u)
+#define INVALID_SET_FILE_POINTER (~0u)
 
 typedef struct tagOFN {
   DWORD         lStructSize;
