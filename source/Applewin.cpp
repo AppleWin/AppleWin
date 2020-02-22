@@ -1368,6 +1368,12 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
 	std::string strUnsupported;
 
+	// If 1st param looks like an abs pathname then assume that an associated filetype has been double-clicked
+	// NB. Handled by WM_DDE_INITIATE & WM_DDE_EXECUTE msgs
+	if ((lpCmdLine[0] >= '\"' && lpCmdLine[1] >= 'A' && lpCmdLine[1] <= 'Z' && lpCmdLine[2] == ':')	// always in quotes
+		|| strncmp("\\\\?\\", lpCmdLine, 4) == 0)
+		return true;
+
 	while (*lpCmdLine)
 	{
 		LPSTR lpNextArg = GetNextArg(lpCmdLine);

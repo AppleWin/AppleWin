@@ -44,10 +44,21 @@ To do this, click the checkbox for "Open as Read Only" in the Select
 Disk Image dialog.&nbsp; This works like the physical
 write-protection mechanism on a real Apple //e floppy disk.</p>
 
-<p>If a Disk Image name is to
+<p>If a Disk Image name is too
 long to read in the Toolbar,
 simply pause the mouse cursor over a drive button to get a
 tool-tip with the full name.</p>
+
+<p>Under the vertical Toolbar, are 2 LEDs, one for each floppy disk drive. The colors indicate drive status:
+	<li>Black: drive is off
+	<li>Green: drive is reading
+	<li>Red: drive is writing
+	<li>Orange: drive is reading (and floppy is write-protected)
+</p>
+
+<p>By default the Disk II Controller card has the 16-sector firmware (as used by DOS 3.3 and ProDOS). But if a WOZ image that internally identifies as 13-sector format (eg. DOS 3.2) is put into drive 1, then from the start-up/logo screen (or the next reset), the Disk II Controller card's firmware will automatically be switched to the old 13-sector firmware, allowing the disk to boot. And it will automatically switch back if a non-13-sector WOZ (or any non-WOZ) image is put into drive 1 and the machine is reset.<br>
+NB. There is no support for this feature for non-WOZ images.
+</p>
 
 <p><sub style="FONT-WEIGHT: bold">1</sub>&nbsp;To register the file types in Windows Vista, Windows 7 and Windows 10,
 you will need to run AppleWin with elevated privileges. This only needs to be done once.

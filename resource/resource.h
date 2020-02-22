@@ -34,7 +34,6 @@
 #define IDD_TFE_SETTINGS_DIALOG         131
 #define IDR_PRINTDRVR_FW                132
 #define IDD_PROPPAGE_ADVANCED           132
-#define IDR_DISK2_FW                    133
 #define IDR_SSC_FW                      134
 #define IDR_MOCKINGBOARD_D_FW           135
 #define IDR_MOUSEINTERFACE_FW           136
@@ -48,6 +47,8 @@
 #define IDC_CHECK_CONFIRM_REBOOT        146
 #define IDR_TK3000_2E_ROM               147
 #define IDR_TKCLOCK_FW                  148
+#define IDR_DISK2_13SECTOR_FW           149
+#define IDR_DISK2_16SECTOR_FW           150
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007

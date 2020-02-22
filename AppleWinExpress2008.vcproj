@@ -1182,6 +1182,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\Disk2-13sector.rom"
+				>
+			</File>
+			<File
 				RelativePath="RESOURCE\DISKOFF.BMP"
 				>
 			</File>

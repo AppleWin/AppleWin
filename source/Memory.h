@@ -103,3 +103,5 @@ UINT	GetRamWorksActiveBank(void);
 void	SetSaturnMemorySize(UINT banks);
 void	SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain=false);
 class LanguageCardUnit* GetLanguageCard(void);
+
+LPBYTE GetCxRomPeripheral(void);

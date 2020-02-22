@@ -9,6 +9,22 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.29.10.0 - 13 Feb 2020
+-----------------------
+. [PR #756] Write support for WOZ1/WOZ2 images.
+	- Fixes titles that need write support (see: #686, #704, #705).
+	- Allow creation of a blank (WOZ2) image (see AppleWin.chm: 'Creating Disk Images').
+	- multi-file zip support extended to scan for the first valid image.
+		- useful for most woz-a-day multi-file zips which have at least 2 entries and previously needed unzipping.
+. NB. files in multi-file zips are still write-protected (same for all image types, not just woz).
+
+
+1.29.9.0 - 26 Jan 2020
+----------------------
+. [Bug #752] Fixed double-clicking a registered file-type issue (regression introduced at 1.29.8.0).
+. [Bug #750] Fixed Ctrl+Alt+Break wasn't emulating CTRL+OA+RESET (regression introduced at 1.29.8.0).
+
+
 1.29.8.0 - 19 Jan 2020
 ----------------------
 . [Bug #749] Hotkeys to change emulation speed using Ctrl+n: now ignored if ALT is pressed.
