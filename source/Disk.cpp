@@ -64,6 +64,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(void) :
 	m_diskLastCycle = 0;
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = true;
+	m_is13SectorFirmware = false;
 
 	ResetLogicStateSequencer();
 
@@ -224,33 +225,6 @@ void Disk2InterfaceCard::CheckSpinning(const ULONG uExecutedCycles)
 		CpuCalcCycles(uExecutedCycles);
 		m_diskLastCycle = g_nCumulativeCycles;
 	}
-}
-
-//===========================================================================
-
-Disk_Status_e Disk2InterfaceCard::GetDriveLightStatus(const int drive)
-{
-	if (IsDriveValid( drive ))
-	{
-		FloppyDrive* pDrive = &m_floppyDrive[ drive ];
-
-		if (pDrive->m_spinning)
-		{
-			if (pDrive->m_disk.m_bWriteProtected)
-				return DISK_STATUS_PROT;
-
-			if (pDrive->m_writelight)
-				return DISK_STATUS_WRITE;
-			else
-				return DISK_STATUS_READ;
-		}
-		else
-		{
-			return DISK_STATUS_OFF;
-		}
-	}
-
-	return DISK_STATUS_OFF;
 }
 
 //===========================================================================
@@ -595,6 +569,31 @@ const std::string & Disk2InterfaceCard::DiskGetFullPathName(const int drive)
 
 //===========================================================================
 
+Disk_Status_e Disk2InterfaceCard::GetDriveLightStatus(const int drive)
+{
+	if (IsDriveValid( drive ))
+	{
+		FloppyDrive* pDrive = &m_floppyDrive[ drive ];
+
+		if (pDrive->m_spinning)
+		{
+			if (pDrive->m_disk.m_bWriteProtected)
+				return DISK_STATUS_PROT;
+
+			if (pDrive->m_writelight)
+				return DISK_STATUS_WRITE;
+			else
+				return DISK_STATUS_READ;
+		}
+		else
+		{
+			return DISK_STATUS_OFF;
+		}
+	}
+
+	return DISK_STATUS_OFF;
+}
+
 void Disk2InterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status, Disk_Status_e *pDisk2Status)
 {
 	if (pDisk1Status)
@@ -662,6 +661,9 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	{
 		GetImageTitle(pszImageFilename, pFloppy->m_imagename, pFloppy->m_fullname);
 		Video_ResetScreenshotCounter(pFloppy->m_imagename);
+
+		if (g_nAppMode == MODE_LOGO)
+			InitFirmware(GetCxRomPeripheral());
 	}
 	else
 	{
@@ -1469,6 +1471,9 @@ void Disk2InterfaceCard::Reset(const bool bIsPowerCycle)
 
 		FrameRefreshStatus(DRAW_LEDS, false);
 	}
+
+	InitFirmware(GetCxRomPeripheral());
+	FrameRefreshStatus(DRAW_TITLE, false);
 }
 
 void Disk2InterfaceCard::ResetSwitches(void)
@@ -1697,28 +1702,51 @@ bool Disk2InterfaceCard::DriveSwap(void)
 
 //===========================================================================
 
-// TODO: LoadRom_Disk_Floppy()
-void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+bool Disk2InterfaceCard::GetFirmware(LPCSTR lpName, BYTE* pDst)
 {
-	const UINT DISK2_FW_SIZE = APPLE_SLOT_SIZE;
-
-	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_DISK2_FW), "FIRMWARE");
+	HRSRC hResInfo = FindResource(NULL, lpName, "FIRMWARE");
 	if(hResInfo == NULL)
-		return;
+		return false;
 
 	DWORD dwResSize = SizeofResource(NULL, hResInfo);
 	if(dwResSize != DISK2_FW_SIZE)
-		return;
+		return false;
 
 	HGLOBAL hResData = LoadResource(NULL, hResInfo);
 	if(hResData == NULL)
-		return;
+		return false;
 
 	BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
-	if(pData == NULL)
+	if (!pData)
+		return false;
+
+	memcpy(pDst, pData, DISK2_FW_SIZE);
+	return true;
+}
+
+void Disk2InterfaceCard::InitFirmware(LPBYTE pCxRomPeripheral)
+{
+	if (pCxRomPeripheral == NULL)
 		return;
 
-	memcpy(pCxRomPeripheral + uSlot*APPLE_SLOT_SIZE, pData, DISK2_FW_SIZE);
+	ImageInfo* pImage = m_floppyDrive[DRIVE_1].m_disk.m_imagehandle;
+
+	m_is13SectorFirmware = ImageIsBootSectorFormatSector13(pImage);
+
+	if (m_is13SectorFirmware)
+		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_13SectorFirmware, DISK2_FW_SIZE);
+	else
+		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_16SectorFirmware, DISK2_FW_SIZE);
+}
+
+// TODO: LoadRom_Disk_Floppy()
+void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+{
+	bool res = GetFirmware(MAKEINTRESOURCE(IDR_DISK2_13SECTOR_FW), m_13SectorFirmware);
+	_ASSERT(res);
+
+	res = GetFirmware(MAKEINTRESOURCE(IDR_DISK2_16SECTOR_FW), m_16SectorFirmware);
+	_ASSERT(res);
 
 	// Note: We used to disable the track stepping delay in the Disk II controller firmware by
 	// patching $C64C with $A9,$00,$EA. Now not doing this since:
@@ -1730,6 +1758,8 @@ void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	RegisterIoHandler(uSlot, &Disk2InterfaceCard::IORead, &Disk2InterfaceCard::IOWrite, NULL, NULL, this, NULL);
 
 	m_slot = uSlot;
+
+	InitFirmware(pCxRomPeripheral);
 }
 
 //===========================================================================

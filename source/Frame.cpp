@@ -274,10 +274,11 @@ static void GetAppleWindowTitle()
 	g_pAppTitle += " - ";
 
 	if( IsVideoStyle(VS_HALF_SCANLINES) )
-	{
 		g_pAppTitle += " 50% ";
-	}
 	g_pAppTitle += g_apVideoModeDesc[ g_eVideoType ];
+
+	if (g_CardMgr.GetDisk2CardMgr().IsAnyFirmware13Sector())
+		g_pAppTitle += " (S6-13) ";
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 		g_pAppTitle += TEXT(" (custom rom)");

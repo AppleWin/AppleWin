@@ -37,6 +37,7 @@ struct ImageInfo
 	BYTE*			pImageBuffer;
 	BYTE*			pWOZTrackMap;		// WOZ only (points into pImageBuffer)
 	BYTE			optimalBitTiming;	// WOZ only
+	BYTE			bootSectorFormat;	// WOZ only
 	UINT			maxNibblesPerTrack;
 
 	ImageInfo();
@@ -210,6 +211,7 @@ public:
 	bool IsWriteProtected(void) { return m_pInfo->v1.writeProtected == 1; }
 	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->optimalBitTiming : InfoChunkv2::optimalBitTiming5_25; }
 	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
+	BYTE GetBootSectorFormat(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->bootSectorFormat : bootUnknown; }
 	void InvalidateInfo(void) { m_pInfo = NULL; }
 	BYTE* CreateEmptyDisk(DWORD& size);
 #if _DEBUG
@@ -235,6 +237,11 @@ public:
 	static const UINT32 BLOCK_SIZE = 512;
 	static const BYTE TMAP_TRACK_EMPTY = 0xFF;
 	static const UINT16 TRK_DEFAULT_BLOCK_COUNT_5_25 = 13;	// $D is default for TRKv2.blockCount
+
+	static const BYTE bootUnknown = 0;
+	static const BYTE bootSector16 = 1;
+	static const BYTE bootSector13 = 2;
+	static const BYTE bootSectorBoth = 3;
 
 	struct WOZChunkHdr
 	{
@@ -302,11 +309,6 @@ private:
 		UINT16 compatibleHardware;
 		UINT16 requiredRAM;		// in K (1024 bytes)
 		UINT16 largestTrack;	// in blocks (512 bytes)
-
-		static const BYTE bootUnknown = 0;
-		static const BYTE bootSector16 = 1;
-		static const BYTE bootSector13 = 2;
-		static const BYTE bootSectorBoth = 3;
 
 		static const BYTE optimalBitTiming5_25 = 32;
 	};
