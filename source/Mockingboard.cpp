@@ -446,7 +446,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			// Clear Timer2 Interrupt Flag.
 			UpdateIFR(pMB, IxR_TIMER2);
 
-			pMB->sy6522.TIMER2_LATCH.h = nValue;
+			pMB->sy6522.TIMER2_LATCH.h = nValue;			// NB. Real 6522 doesn't have TIMER2_LATCH.h
 			pMB->sy6522.TIMER2_COUNTER.w = pMB->sy6522.TIMER2_LATCH.w;
 
 			StartTimer2(pMB);
@@ -488,11 +488,9 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				UpdateIFR(pMB, 0);
 
 				// Check if a timer interrupt has been enabled (regardless of if there's an active timer or not): GH#567
+				// . NB. Not Timer2 - only TIMER2H can make it active (GH#765)
 				if (pMB->sy6522.IER & IxR_TIMER1)
 					StartTimer1(pMB);
-
-				if (pMB->sy6522.IER & IxR_TIMER2)
-					StartTimer2(pMB);
 			}
 			break;
 		case 0x0f:	// ORA_NO_HS
@@ -1934,22 +1932,8 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 		{
 			UpdateIFR(pMB, 0, IxR_TIMER2);
 
-			if((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
-			{
-				StopTimer2(pMB);
-			}
-			else
-			{
-				pMB->sy6522.TIMER2_COUNTER.w += pMB->sy6522.TIMER2_LATCH.w;
-				if (pMB->sy6522.TIMER2_COUNTER.w > pMB->sy6522.TIMER2_LATCH.w)
-				{
-					if (pMB->sy6522.TIMER2_LATCH.w)
-						pMB->sy6522.TIMER2_COUNTER.w %= pMB->sy6522.TIMER2_LATCH.w;
-					else
-						pMB->sy6522.TIMER2_COUNTER.w = 0;
-				}
-				StartTimer2(pMB);
-			}
+			// TIMER2 only runs in one-shot mode
+			StopTimer2(pMB);
 		}
 	}
 
