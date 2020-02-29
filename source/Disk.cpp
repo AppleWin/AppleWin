@@ -1365,19 +1365,18 @@ void Disk2InterfaceCard::DumpSectorWOZ(FloppyDisk floppy)	// pass a copy of m_fl
 // Dump nibbles from current position bitstream wraps to same position
 void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_floppy
 {
-#ifdef LOG_DISK_NIBBLES_READ
-	FormatTrack formatTrack;
-#endif
+	FormatTrack formatTrack(true);
 
 	BYTE shiftReg = 0;
 	UINT zeroCount = 0;
 	UINT nibbleCount = 0;
 
-	floppy.m_bitMask = 1 << 7;
-	floppy.m_bitOffset = 0;
-	floppy.m_byte = 0;
+	const UINT startBitOffset = 0;
+	floppy.m_bitOffset = startBitOffset;
 
-	const UINT startBitOffset = floppy.m_bitOffset;
+	floppy.m_byte = floppy.m_bitOffset / 8;
+	const UINT remainder = 7 - (floppy.m_bitOffset & 7);
+	floppy.m_bitMask = 1 << remainder;
 
 	bool newLine = true;
 
@@ -1430,18 +1429,35 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 		if (zeroCount == 0)	StringCbPrintf(str, sizeof(str), "   %02X", shiftReg);
 		else				StringCbPrintf(str, sizeof(str), "(%c)%02X", syncBits, shiftReg);
 		OutputDebugString(str);
+
+		formatTrack.DecodeLatchNibbleRead(shiftReg);
+
 		if ((nibbleCount % 32) == 0)
 		{
+			std::string strReadDetected = formatTrack.GetReadD5AAxxDetectedString();
+			if (!strReadDetected.empty())
+			{
+				OutputDebugString("\t; ");
+				OutputDebugString(strReadDetected.c_str());
+			}
 			OutputDebugString("\n");
 			newLine = true;
 		}
 
-#ifdef LOG_DISK_NIBBLES_READ
-		formatTrack.DecodeLatchNibbleRead(shiftReg);
-#endif
-
 		shiftReg = 0;
 		zeroCount = 0;
+	}
+
+	// Output any remaining "read D5AAxx detected"
+	if (nibbleCount % 32)
+	{
+		std::string strReadDetected = formatTrack.GetReadD5AAxxDetectedString();
+		if (!strReadDetected.empty())
+		{
+			OutputDebugString("\t; ");
+			OutputDebugString(strReadDetected.c_str());
+		}
+		OutputDebugString("\n");
 	}
 }
 #endif

@@ -26,8 +26,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 class FormatTrack	// Monitor for formatting of track
 {
 public:
-	FormatTrack(void)
+	FormatTrack(bool bSuppressOutput=false)
 	{
+		m_bSuppressReadD5AAxxDetected = bSuppressOutput;
 		Reset();
 	};
 
@@ -39,6 +40,7 @@ public:
 	void DriveSwitchedToWriteMode(UINT uTrackIndex);
 	void DecodeLatchNibbleRead(BYTE floppylatch);
 	void DecodeLatchNibbleWrite(BYTE floppylatch, UINT uSpinNibbleCount, const class FloppyDisk* const pFloppy, bool bIsSyncFF);
+	std::string GetReadD5AAxxDetectedString(void) { std::string tmp = m_strReadD5AAxxDetected; m_strReadD5AAxxDetected = ""; return tmp; }
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
@@ -59,6 +61,9 @@ private:
 	UINT32 m_uLast3Bytes;
 	BYTE m_VolTrkSecChk4and4[8];
 	UINT m_4and4idx;
+
+	std::string m_strReadD5AAxxDetected;
+	bool m_bSuppressReadD5AAxxDetected;
 
 #if LOG_DISK_NIBBLES_WRITE_TRACK_GAPS
 	UINT m_DbgGap1Size;
