@@ -7,6 +7,8 @@
 
 void strcpy_s(char * dest, size_t size, const char * source);
 
+#define sprintf_s snprintf
+
 #define _strdup strdup
 #define _strtoui64 strtoull
 #define _vsntprintf vsnprintf

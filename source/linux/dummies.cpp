@@ -37,8 +37,10 @@ void LeaveCriticalSection(CRITICAL_SECTION * criticalSection)
 }
 
 bool SetCurrentImageDir(const std::string & dir ) {
-  chdir(dir.c_str());
-  return true;
+  if (chdir(dir.c_str()) == 0)
+    return true;
+  else
+    return false;
 }
 
 void OutputDebugString(const char * str)
