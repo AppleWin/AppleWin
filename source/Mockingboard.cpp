@@ -471,27 +471,14 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				// Clear those bits which are set in the lower 7 bits.
 				nValue ^= 0x7F;
 				pMB->sy6522.IER &= nValue;
-				UpdateIFR(pMB, 0);
-				
-				// Check if active timer has been disabled:
-				if (((pMB->sy6522.IER & IxR_TIMER1) == 0) && pMB->bTimer1Active)
-					StopTimer1(pMB);
-
-				if (((pMB->sy6522.IER & IxR_TIMER2) == 0) && pMB->bTimer2Active)
-					StopTimer2(pMB);
 			}
 			else
 			{
 				// Set those bits which are set in the lower 7 bits.
 				nValue &= 0x7F;
 				pMB->sy6522.IER |= nValue;
-				UpdateIFR(pMB, 0);
-
-				// Check if a timer interrupt has been enabled (regardless of if there's an active timer or not): GH#567
-				// . NB. Not Timer2 - only TIMER2H can make it active (GH#765)
-				if (pMB->sy6522.IER & IxR_TIMER1)
-					StartTimer1(pMB);
 			}
+			UpdateIFR(pMB, 0);
 			break;
 		case 0x0f:	// ORA_NO_HS
 			break;
