@@ -471,6 +471,9 @@ sound_write_buf_pstereo( libspectrum_signed_word * out, int c )
 #define AY_ENV_HOLD	1
 
 #define HZ_COMMON_DENOMINATOR 50
+static bool g_dbg = false;
+#include "Log.h"
+extern int g_nDbgNumSamplesError;	// DBG
 
 void CAY8910::sound_ay_overlay( void )
 {
@@ -495,8 +498,25 @@ void CAY8910::sound_ay_overlay( void )
   sfreq = sound_generator_freq / HZ_COMMON_DENOMINATOR;
 //  cpufreq = machine_current->timings.processor_speed / HZ_COMMON_DENOMINATOR;
   cpufreq = (libspectrum_dword) (m_fCurrentCLK_AY8910 / HZ_COMMON_DENOMINATOR);	// [TC]
+  int dbgCount=0;
   for( f = 0; f < ay_change_count; f++ )
+  {
     ay_change[f].ofs = (USHORT) (( ay_change[f].tstates * sfreq ) / cpufreq);	// [TC] Added cast
+#if 1
+	if (ay_change[f].ofs >= sound_generator_framesiz)	// [TC] Ensure that all ay_change's get processed
+	{
+		if (g_dbg)
+			ay_change[f].ofs = sound_generator_framesiz-1;	// [TC] - parent, sound_frame(), just dumps outstanding changes (ay_change_count=0)
+		else
+			dbgCount++;
+	}
+#endif
+  }
+  if (dbgCount)
+  {
+	  LogOutput("ay_change: dropped %d, numSamplesError=%d\n", dbgCount, g_nDbgNumSamplesError);
+	  //_ASSERT(g_nDbgNumSamplesError != 0);
+  }
 
   libspectrum_signed_word* pBuf1 = g_ppSoundBuffers[0];
   libspectrum_signed_word* pBuf2 = g_ppSoundBuffers[1];

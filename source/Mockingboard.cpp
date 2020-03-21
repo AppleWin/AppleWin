@@ -756,6 +756,8 @@ static void Votrax_Write(BYTE nDevice, BYTE nValue)
 
 //===========================================================================
 
+int g_nDbgNumSamplesError = 0;	// DBG
+
 //#define DBG_MB_UPDATE
 static UINT64 g_uLastMBUpdateCycle = 0;
 
@@ -823,8 +825,8 @@ static void MB_Update(void)
 
 	g_uLastMBUpdateCycle = g_uLastCumulativeCycles;
 
-	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
-	const int nNumSamplesPerPeriod = (int) ((double)SAMPLE_RATE / nIrqFreq);	// Eg. For 60Hz this is 735
+	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval;
+	const int nNumSamplesPerPeriod = (int) ceil((double)SAMPLE_RATE / nIrqFreq);	// Eg. For 60Hz this is 735
 
 	static int nNumSamplesError = 0;
 	int nNumSamples = nNumSamplesPerPeriod + nNumSamplesError;					// Apply correction
@@ -898,6 +900,7 @@ static void MB_Update(void)
 		nNumSamplesError -= nErrorInc;				// > 0.50 of buffer remaining
 	else
 		nNumSamplesError = 0;						// Acceptable amount of data in buffer
+	g_nDbgNumSamplesError = nNumSamplesError;	// DBG
 
 #ifdef DBG_MB_UPDATE
 	double fTicksSecs = (double)GetTickCount() / 1000.0;
