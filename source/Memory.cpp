@@ -1651,20 +1651,13 @@ void MemInitializeCustomROM(void)
 	if (g_hCustomRom == INVALID_HANDLE_VALUE)
 		return;
 
-	std::vector<BYTE> oldRom;
-	oldRom.resize(Apple2RomSize);
-	memcpy(&oldRom[0], memrom, Apple2RomSize);
-
-	std::vector<BYTE> oldRomC0;
-	oldRomC0.resize(CxRomSize);
-	memcpy(&oldRomC0[0], pCxRomInternal, CxRomSize);
-
 	SetFilePointer(g_hCustomRom, 0, NULL, FILE_BEGIN);
 	DWORD uNumBytesRead;
 	BOOL bRes = TRUE;
 
 	if (GetFileSize(g_hCustomRom, NULL) == Apple2eRomSize)
 	{
+		std::vector<BYTE> oldRomC0(pCxRomInternal, pCxRomInternal+CxRomSize);	// range ctor: [first,last)
 		bRes = ReadFile(g_hCustomRom, pCxRomInternal, CxRomSize, &uNumBytesRead, NULL);
 		if (uNumBytesRead != CxRomSize)
 		{
@@ -1675,6 +1668,7 @@ void MemInitializeCustomROM(void)
 
 	if (bRes)
 	{
+		std::vector<BYTE> oldRom(memrom, memrom+Apple2RomSize);	// range ctor: [first,last)
 		bRes = ReadFile(g_hCustomRom, memrom, Apple2RomSize, &uNumBytesRead, NULL);
 		if (uNumBytesRead != Apple2RomSize)
 		{
