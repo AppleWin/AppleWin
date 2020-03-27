@@ -1609,15 +1609,14 @@ void MemInitializeCustomF8ROM(void)
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 	{
-		BYTE OldRom[Apple2RomSize];	// NB. 12KB on stack
-		memcpy(OldRom, memrom, Apple2RomSize);
+		std::vector<BYTE> oldRom(memrom, memrom+Apple2RomSize);	// range ctor: [first,last)
 
 		SetFilePointer(g_hCustomRomF8, 0, NULL, FILE_BEGIN);
 		DWORD uNumBytesRead;
 		BOOL bRes = ReadFile(g_hCustomRomF8, memrom+F8RomOffset, F8RomSize, &uNumBytesRead, NULL);
 		if (uNumBytesRead != F8RomSize)
 		{
-			memcpy(memrom, OldRom, Apple2RomSize);	// ROM at $D000...$FFFF
+			memcpy(memrom, &oldRom[0], Apple2RomSize);	// ROM at $D000...$FFFF
 			bRes = FALSE;
 		}
 
