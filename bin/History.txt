@@ -13,7 +13,7 @@ Tom Charlesworth
 -----------------------
 . [Bug #771] Added new command line switch to load custom ROM: -rom <file>.
 	- Supports 12KiB (at $D000) and 16KiB (at $C000) rom files.
-. [Bug #762] Lancaster (Total Replay) hangs when starting second game.
+. [Bug #765] Lancaster (Total Replay) hangs when starting second game.
 . [Bug #734] DiskII controller card: support 13-sector firmware.
 	- The card auto-selects the firmware based on the .woz (v2 or higher) image properties.
 	- Only change the firmware at reset/reboot to avoid changing whilst running in $C6xx space!
@@ -32,8 +32,8 @@ Tom Charlesworth
 
 1.29.9.0 - 26 Jan 2020
 ----------------------
-. [Bug #752] Fixed double-clicking a registered file-type issue (regression introduced at 1.29.8.0).
-. [Bug #750] Fixed Ctrl+Alt+Break wasn't emulating CTRL+OA+RESET (regression introduced at 1.29.8.0).
+. [Bug #750] Fixed double-clicking a registered file-type issue (regression introduced at 1.29.8.0).
+. [Bug #752] Fixed Ctrl+Alt+Break wasn't emulating CTRL+OA+RESET (regression introduced at 1.29.8.0).
 
 
 1.29.8.0 - 19 Jan 2020
