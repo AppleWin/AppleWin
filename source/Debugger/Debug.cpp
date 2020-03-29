@@ -3661,7 +3661,7 @@ Update_t CmdCursorPageUp4K (int nArgs)
 //===========================================================================
 Update_t CmdCursorSetPC( int nArgs) // TODO rename
 {
-	regs.pc = nArgs; // HACK:
+	regs.pc = g_nDisasmCurAddress; // set PC to current cursor address
 	return UPDATE_DISASM;
 }
 
