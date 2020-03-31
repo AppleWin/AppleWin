@@ -1092,6 +1092,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\Apple2_JPlus.rom"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\Apple2_JPlus_Video.rom"
+				>
+			</File>
+			<File
 				RelativePath=".\resource\Apple2e.rom"
 				>
 			</File>

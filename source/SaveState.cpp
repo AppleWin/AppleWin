@@ -138,6 +138,7 @@ static std::string GetSnapshotUnitSlotsName(void)
 
 #define SS_YAML_VALUE_APPLE2			"Apple]["
 #define SS_YAML_VALUE_APPLE2PLUS		"Apple][+"
+#define SS_YAML_VALUE_APPLE2JPLUS		"Apple][ J-Plus"
 #define SS_YAML_VALUE_APPLE2E			"Apple//e"
 #define SS_YAML_VALUE_APPLE2EENHANCED	"Enhanced Apple//e"
 #define SS_YAML_VALUE_APPLE2C			"Apple2c"
@@ -150,6 +151,7 @@ static eApple2Type ParseApple2Type(std::string type)
 {
 	if (type == SS_YAML_VALUE_APPLE2)				return A2TYPE_APPLE2;
 	else if (type == SS_YAML_VALUE_APPLE2PLUS)		return A2TYPE_APPLE2PLUS;
+	else if (type == SS_YAML_VALUE_APPLE2JPLUS)		return A2TYPE_APPLE2JPLUS;
 	else if (type == SS_YAML_VALUE_APPLE2E)			return A2TYPE_APPLE2E;
 	else if (type == SS_YAML_VALUE_APPLE2EENHANCED)	return A2TYPE_APPLE2EENHANCED;
 	else if (type == SS_YAML_VALUE_APPLE2C)			return A2TYPE_APPLE2C;
@@ -167,6 +169,7 @@ static std::string GetApple2TypeAsString(void)
 	{
 		case A2TYPE_APPLE2:			return SS_YAML_VALUE_APPLE2;
 		case A2TYPE_APPLE2PLUS:		return SS_YAML_VALUE_APPLE2PLUS;
+		case A2TYPE_APPLE2JPLUS:	return SS_YAML_VALUE_APPLE2JPLUS;
 		case A2TYPE_APPLE2E:		return SS_YAML_VALUE_APPLE2E;
 		case A2TYPE_APPLE2EENHANCED:return SS_YAML_VALUE_APPLE2EENHANCED;
 		case A2TYPE_APPLE2C:		return SS_YAML_VALUE_APPLE2C;

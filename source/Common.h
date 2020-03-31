@@ -168,6 +168,7 @@ enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 enum eApple2Type {
 					A2TYPE_APPLE2=0,
 					A2TYPE_APPLE2PLUS,
+					A2TYPE_APPLE2JPLUS,
 					A2TYPE_APPLE2E=APPLE2E_MASK,
 					A2TYPE_APPLE2EENHANCED,
 					A2TYPE_UNDEFINED,
@@ -196,9 +197,14 @@ inline bool IsApple2Original(eApple2Type type)		// Apple ][
 	return type == A2TYPE_APPLE2;
 }
 
-inline bool IsApple2Plus(eApple2Type type)			// Apple ][,][+
+inline bool IsApple2Plus(eApple2Type type)			// Apple ][,][+,][J-Plus
 {
 	return ((type & (APPLE2E_MASK|APPLE2C_MASK)) == 0) && !(type & APPLECLONE_MASK);
+}
+
+inline bool IsApple2JPlus(eApple2Type type)			// Apple ][J-Plus
+{
+	return type == A2TYPE_APPLE2JPLUS;
 }
 
 inline bool IsClone(eApple2Type type)
@@ -206,7 +212,7 @@ inline bool IsClone(eApple2Type type)
 	return (type & APPLECLONE_MASK) != 0;
 }
 
-inline bool IsApple2PlusOrClone(eApple2Type type)	// Apple ][,][+ or clone ][,][+
+inline bool IsApple2PlusOrClone(eApple2Type type)	// Apple ][,][+,][J-Plus or clone ][,][+
 {
 	return (type & (APPLE2E_MASK|APPLE2C_MASK)) == 0;
 }
