@@ -448,6 +448,7 @@ static void Snapshot_LoadState_v2(void)
 		sg_PropertySheet.ApplyNewConfig(m_ConfigNew, ConfigOld);	// Mainly just saves (some) new state to Registry
 
 		MemInitializeROM();
+		MemInitializeCustomROM();
 		MemInitializeCustomF8ROM();
 		MemInitializeIO();
 		MemInitializeCardExpansionRomFromSnapshot();

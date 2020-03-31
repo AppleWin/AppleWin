@@ -1491,6 +1491,7 @@ void MemInitialize()
 	CreateLanguageCard();
 
 	MemInitializeROM();
+	MemInitializeCustomROM();
 	MemInitializeCustomF8ROM();
 	MemInitializeIO();
 	MemReset();
@@ -1608,15 +1609,14 @@ void MemInitializeCustomF8ROM(void)
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 	{
-		BYTE OldRom[Apple2RomSize];	// NB. 12KB on stack
-		memcpy(OldRom, memrom, Apple2RomSize);
+		std::vector<BYTE> oldRom(memrom, memrom+Apple2RomSize);	// range ctor: [first,last)
 
 		SetFilePointer(g_hCustomRomF8, 0, NULL, FILE_BEGIN);
 		DWORD uNumBytesRead;
 		BOOL bRes = ReadFile(g_hCustomRomF8, memrom+F8RomOffset, F8RomSize, &uNumBytesRead, NULL);
 		if (uNumBytesRead != F8RomSize)
 		{
-			memcpy(memrom, OldRom, Apple2RomSize);	// ROM at $D000...$FFFF
+			memcpy(memrom, &oldRom[0], Apple2RomSize);	// ROM at $D000...$FFFF
 			bRes = FALSE;
 		}
 
@@ -1642,6 +1642,48 @@ void MemInitializeCustomF8ROM(void)
 		{
 			memcpy(memrom+Apple2RomSize-F8RomSize, pData, F8RomSize);
 		}
+	}
+}
+
+void MemInitializeCustomROM(void)
+{
+	if (g_hCustomRom == INVALID_HANDLE_VALUE)
+		return;
+
+	SetFilePointer(g_hCustomRom, 0, NULL, FILE_BEGIN);
+	DWORD uNumBytesRead;
+	BOOL bRes = TRUE;
+
+	if (GetFileSize(g_hCustomRom, NULL) == Apple2eRomSize)
+	{
+		std::vector<BYTE> oldRomC0(pCxRomInternal, pCxRomInternal+CxRomSize);	// range ctor: [first,last)
+		bRes = ReadFile(g_hCustomRom, pCxRomInternal, CxRomSize, &uNumBytesRead, NULL);
+		if (uNumBytesRead != CxRomSize)
+		{
+			memcpy(pCxRomInternal, &oldRomC0[0], CxRomSize);	// ROM at $C000...$CFFF
+			bRes = FALSE;
+		}
+	}
+
+	if (bRes)
+	{
+		std::vector<BYTE> oldRom(memrom, memrom+Apple2RomSize);	// range ctor: [first,last)
+		bRes = ReadFile(g_hCustomRom, memrom, Apple2RomSize, &uNumBytesRead, NULL);
+		if (uNumBytesRead != Apple2RomSize)
+		{
+			memcpy(memrom, &oldRom[0], Apple2RomSize);	// ROM at $D000...$FFFF
+			bRes = FALSE;
+		}
+	}
+
+	// NB. If succeeded, then keep g_hCustomRom handle open - so that any next restart can load it again
+
+	if (!bRes)
+	{
+		MessageBox( g_hFrameWindow, "Failed to read custom rom", TEXT("AppleWin Error"), MB_OK );
+		CloseHandle(g_hCustomRom);
+		g_hCustomRom = INVALID_HANDLE_VALUE;
+		// Failed, so use default rom...
 	}
 }
 

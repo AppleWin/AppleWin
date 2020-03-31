@@ -109,8 +109,10 @@ int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.c
 CardManager g_CardMgr;
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 
-HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
-static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
+HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom F8 ROM at $F800..$FFFF
+static bool	g_bCustomRomF8Failed = false;			// Set if custom F8 ROM file failed
+HANDLE		g_hCustomRom = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $C000..$FFFF(16KiB) or $D000..$FFFF(12KiB)
+static bool	g_bCustomRomFailed = false;				// Set if custom ROM file failed
 
 static bool	g_bEnableSpeech = false;
 #ifdef USE_SPEECH_API
@@ -1541,6 +1543,18 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 			if ((g_hCustomRomF8 == INVALID_HANDLE_VALUE) || (GetFileSize(g_hCustomRomF8, NULL) != 0x800))
 				g_bCustomRomF8Failed = true;
 		}
+		else if (strcmp(lpCmdLine, "-rom") == 0)		// Use custom 16K at [$C000..$FFFF] or 12K ROM at [$D000..$FFFF]
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			if (g_hCustomRom != INVALID_HANDLE_VALUE)	// Stop resource leak if -rom is specified twice!
+				CloseHandle(g_hCustomRom);
+
+			g_hCustomRom = CreateFile(lpCmdLine, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+			if ((g_hCustomRom == INVALID_HANDLE_VALUE) || ((GetFileSize(g_hCustomRom, NULL) != 0x4000) && (GetFileSize(g_hCustomRom, NULL) != 0x3000)))
+				g_bCustomRomFailed = true;
+		}
 		else if (strcmp(lpCmdLine, "-videorom") == 0)			// Use 2K (for II/II+). Use 4K,8K or 16K video ROM (for Enhanced //e)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
@@ -1957,9 +1971,12 @@ static void RepeatInitialization(void)
 			g_cmdLine.bShutdown = true;
 		}
 
-		if (g_bCustomRomF8Failed)
+		if (g_bCustomRomF8Failed || g_bCustomRomFailed || (g_hCustomRomF8 != INVALID_HANDLE_VALUE && g_hCustomRom != INVALID_HANDLE_VALUE))
 		{
-			std::string msg = "Failed to load custom F8 rom (not found or not exactly 2KiB)\n";
+			std::string msg = g_bCustomRomF8Failed ? "Failed to load custom F8 rom (not found or not exactly 2KiB)\n"
+							: g_bCustomRomFailed ? "Failed to load custom rom (not found or not exactly 12KiB or 16KiB)\n"
+							: "Unsupported -rom and -f8rom being used at the same time\n";
+
 			LogFileOutput("%s", msg.c_str());
 			MessageBox(g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			g_cmdLine.bShutdown = true;
@@ -2063,6 +2080,9 @@ static void Shutdown(void)
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 		CloseHandle(g_hCustomRomF8);
+
+	if (g_hCustomRom != INVALID_HANDLE_VALUE)
+		CloseHandle(g_hCustomRom);
 
 	if (g_cmdLine.bSlot7EmptyOnExit)
 		UnplugHardDiskControllerCard();

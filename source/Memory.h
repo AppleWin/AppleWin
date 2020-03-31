@@ -72,6 +72,7 @@ bool	MemOptimizeForModeChanging(WORD programcounter, WORD address);
 bool    MemIsAddrCodeMemory(const USHORT addr);
 void    MemInitialize ();
 void    MemInitializeROM(void);
+void    MemInitializeCustomROM(void);
 void    MemInitializeCustomF8ROM(void);
 void    MemInitializeIO(void);
 void    MemInitializeCardExpansionRomFromSnapshot(void);
