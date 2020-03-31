@@ -7,6 +7,8 @@
 static const UINT VERSIONSTRING_SIZE = 16;
 TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
 
+HANDLE		g_hCustomRom = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $C000..$FFFF(16KiB) or $D000..$FFFF(12KiB)
+
 static bool bLogKeyReadDone = false;
 static DWORD dwLogKeyReadTickStart;
 
