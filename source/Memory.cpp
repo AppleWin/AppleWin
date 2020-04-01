@@ -485,8 +485,11 @@ static BYTE __stdcall IORead_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xC:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xD:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xE:	// fall through...
-	case 0xF:	return (!SW_IOUDIS) ? VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
-									: IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xF:	if (IsApple2PlusOrClone(GetApple2Type()))
+					IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+				else
+					return (!SW_IOUDIS) ? VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
+										: IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	return 0;
@@ -511,8 +514,11 @@ static BYTE __stdcall IOWrite_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	case 0xC:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xD:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xE:	// fall through...
-	case 0xF:	return (!SW_IOUDIS) ? VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
-									: IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	case 0xF:	if (IsApple2PlusOrClone(GetApple2Type()))
+					IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+				else
+					return (!SW_IOUDIS) ? VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
+										: IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	return 0;
