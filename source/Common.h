@@ -48,6 +48,7 @@ enum AppMode_e
 // TODO: Move to StringTable.h
 #define	TITLE_APPLE_2			TEXT("Apple ][ Emulator")
 #define	TITLE_APPLE_2_PLUS		TEXT("Apple ][+ Emulator")
+#define	TITLE_APPLE_2_JPLUS		TEXT("Apple ][ J-Plus Emulator")
 #define	TITLE_APPLE_2E			TEXT("Apple //e Emulator")
 #define	TITLE_APPLE_2E_ENHANCED	TEXT("Enhanced Apple //e Emulator")
 #define TITLE_APPLE_2C          TEXT("Apple //e Emulator")
