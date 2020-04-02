@@ -201,12 +201,14 @@ static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const int AN2
 		{
 			BYTE n = pVideoRom[RA+y];
 
-			const bool jpInvert = isApple2JPlus && ((i & 0xC0) == 0);	// DL7=0 && DL6=0 (UTAII 8-12, Fig 8.6)
-
 			// UTAII:8-30 "Bit 7 of your EPROM fonts will control flashing in the lower 1024 bytes of the EPROM"
 			// UTAII:8-31 "If you leave O7 (EPROM Output7) reset in these patterns, the resulting characters will be inversions..."
-			if ((!(n & 0x80) && RA < 1024) || jpInvert)
-				n = n ^ 0x7f;
+			// Apple II J-Plus: simplest logic is just invert if reading low 1K of video ROM
+			if (RA < 1024)
+			{
+				if (!(n & 0x80) || isApple2JPlus)
+					n = n ^ 0x7f;
+			}
 
 			// UTAII:8-30 "TEXT ROM pattern is ... reversed"
 			BYTE d = 0;
