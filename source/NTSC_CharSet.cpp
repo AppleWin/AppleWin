@@ -179,12 +179,10 @@ static void userVideoRomForIIe(void)
 
 //-------------------------------------
 
-static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const int AN2=0);
+static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const bool isApple2JPlus=false, const int AN2=0);
 
-static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const int AN2/*=0*/)
+static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const bool isApple2JPlus/*=false*/, const int AN2/*=0*/)
 {
-	const bool isApple2JPlus = IsApple2JPlus(GetApple2Type());	// GH#773
-
 	for (int i=0; i<256; i++)
 	{
 		int RA = i*8;	// rom address
@@ -250,8 +248,8 @@ static void VideoRomForIIJPlus(void)
 	if (pVideoRom == NULL)
 		return;
 
-	userVideoRom2K(&csbits_a2j[0], pVideoRom, 0);
-	userVideoRom2K(&csbits_a2j[1], pVideoRom, 1);
+	userVideoRom2K(&csbits_a2j[0], pVideoRom, true, 0);
+	userVideoRom2K(&csbits_a2j[1], pVideoRom, true, 1);
 }
 
 //-------------------------------------
@@ -270,7 +268,7 @@ void make_csbits(void)
 	memcpy(csbits_2e, csbits_enhanced2e, sizeof(csbits_enhanced2e));
 	memcpy(&csbits_2e[1][64], &csbits_2e[0][64], 32*8);
 
-	VideoRomForIIJPlus();
+	VideoRomForIIJPlus();	// GH#773
 
 	// Try to use any user-provided video ROM for Original/Enhanced //e
 	userVideoRomForIIe();
