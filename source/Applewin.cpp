@@ -1692,6 +1692,8 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 				g_cmdLine.model = A2TYPE_APPLE2;
 			else if (strcmp(lpCmdLine, "apple2p") == 0)
 				g_cmdLine.model = A2TYPE_APPLE2PLUS;
+			else if (strcmp(lpCmdLine, "apple2jp") == 0)
+				g_cmdLine.model = A2TYPE_APPLE2JPLUS;
 			else if (strcmp(lpCmdLine, "apple2e") == 0)
 				g_cmdLine.model = A2TYPE_APPLE2E;
 			else if (strcmp(lpCmdLine, "apple2ee") == 0)
