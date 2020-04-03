@@ -85,6 +85,8 @@ static bool g_bSysClkOK = false;
 std::string g_sProgramDir; // Directory of where AppleWin executable resides
 std::string g_sDebugDir; // TODO: Not currently used
 std::string g_sScreenShotDir; // TODO: Not currently used
+std::string g_sConfigFile; // INI file to use instead of Registry
+
 bool      g_bCapturePrintScreenKey = true;
 static bool g_bHookSystemKey = true;
 static bool g_bHookAltTab = false;
@@ -1387,6 +1389,17 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		else if (strcmp(lpCmdLine, "-noreg") == 0)
 		{
 			g_bRegisterFileTypes = false;
+		}
+		else if (strcmp(lpCmdLine, "-conf") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			char buf[MAX_PATH];
+			DWORD res = GetFullPathName(lpCmdLine, MAX_PATH, buf, NULL);
+			if (res == 0)
+				LogFileOutput("Failed to open configuration file: %s\n", lpCmdLine);
+			else
+				g_sConfigFile = buf;
 		}
 		else if (strcmp(lpCmdLine, "-d1") == 0)
 		{
