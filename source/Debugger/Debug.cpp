@@ -3659,9 +3659,9 @@ Update_t CmdCursorPageUp4K (int nArgs)
 }
 
 //===========================================================================
-Update_t CmdCursorSetPC( int nArgs) // TODO rename
+Update_t CmdCursorSetPC(int)
 {
-	regs.pc = nArgs; // HACK:
+	regs.pc = g_nDisasmCurAddress; // set PC to current cursor address
 	return UPDATE_DISASM;
 }
 
@@ -9610,7 +9610,7 @@ void DebuggerProcessKey( int keycode )
 
 			case VK_RIGHT:
 				if (KeybGetCtrlStatus())
-					bUpdateDisplay |= CmdCursorSetPC( g_nDisasmCurAddress );		
+					bUpdateDisplay |= CmdCursorSetPC(0/*unused*/);
 				else
 				if (KeybGetShiftStatus())
 					bUpdateDisplay |= CmdCursorJumpPC( CURSOR_ALIGN_TOP );
