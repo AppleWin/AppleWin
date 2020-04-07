@@ -612,14 +612,11 @@ static void SSI263_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 #endif
 
 		// Datasheet is not clear, but a write to DURPHON must clear the IRQ
-		if(g_bPhasorEnable)
-		{
-		    CpuIrqDeassert(IS_SPEECH);
-		}
-		else
-		{
+		if (pMB->sy6522.PCR == 0x0C)
 			UpdateIFR(pMB, IxR_PERIPHERAL);
-		}
+		else	// Phasor's SSI263.IRQ line appears to be wired directly to IRQ (Bypassing the 6522)
+			CpuIrqDeassert(IS_SPEECH);
+
 		pMB->SpeechChip.CurrentMode &= ~1;	// Clear SSI263's D7 pin
 
 		pMB->SpeechChip.DurationPhoneme = nValue;
@@ -627,15 +624,7 @@ static void SSI263_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 		g_nSSI263Device = nDevice;
 
 		// Phoneme output not dependent on CONTROL bit
-		if(g_bPhasorEnable)
-		{
-			if(nValue || (g_nCurrentActivePhoneme<0))
-				SSI263_Play(nValue & PHONEME_MASK);
-		}
-		else
-		{
-			SSI263_Play(nValue & PHONEME_MASK);
-		}
+		SSI263_Play(nValue & PHONEME_MASK);
 		break;
 	case SSI_INFLECT:
 #if LOG_SSI263
@@ -1007,28 +996,19 @@ static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
 		// Phoneme complete, so generate IRQ if necessary
 		SY6522_AY8910* pMB = &g_MB[g_nSSI263Device];
 
-		if(g_bPhasorEnable)
+		if (!g_bVotraxPhoneme && pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED)
 		{
-			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED))
-			{
 				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
 
-				// Phasor's SSI263.IRQ line appears to be wired directly to IRQ (Bypassing the 6522)
-				CpuIrqAssert(IS_SPEECH);
-			}
-		}
-		else
-		{
-			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C))
-			{
-				UpdateIFR(pMB, 0, IxR_PERIPHERAL);
-				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
-			}
+				if (pMB->sy6522.PCR == 0x0C)
+					UpdateIFR(pMB, 0, IxR_PERIPHERAL);
+				else	// Phasor's SSI263.IRQ line appears to be wired directly to IRQ (Bypassing the 6522)
+					CpuIrqAssert(IS_SPEECH);
 		}
 
 		//
 
-		if(g_bVotraxPhoneme && (pMB->sy6522.PCR == 0xB0))
+		if (g_bVotraxPhoneme && pMB->sy6522.PCR == 0xB0)
 		{
 			// !A/R: Time-out of old phoneme (signal goes from low to high)
 
