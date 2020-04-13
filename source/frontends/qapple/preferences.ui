@@ -158,6 +158,11 @@
             </item>
             <item>
              <property name="text">
+              <string>Apple ][ J-Plus</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
               <string>Apple //e</string>
              </property>
             </item>

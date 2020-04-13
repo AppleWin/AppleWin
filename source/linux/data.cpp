@@ -81,6 +81,7 @@ void SetWindowTitle()
   default:
   case A2TYPE_APPLE2:			g_pAppTitle = TITLE_APPLE_2; break;
   case A2TYPE_APPLE2PLUS:		g_pAppTitle = TITLE_APPLE_2_PLUS; break;
+  case A2TYPE_APPLE2JPLUS:		g_pAppTitle = TITLE_APPLE_2_JPLUS; break;
   case A2TYPE_APPLE2E:                  g_pAppTitle = TITLE_APPLE_2E; break;
   case A2TYPE_APPLE2EENHANCED:          g_pAppTitle = TITLE_APPLE_2E_ENHANCED; break;
   case A2TYPE_PRAVETS82:		g_pAppTitle = TITLE_PRAVETS_82; break;
