@@ -85,6 +85,8 @@ static bool g_bSysClkOK = false;
 std::string g_sProgramDir; // Directory of where AppleWin executable resides
 std::string g_sDebugDir; // TODO: Not currently used
 std::string g_sScreenShotDir; // TODO: Not currently used
+std::string g_sConfigFile; // INI file to use instead of Registry
+
 bool      g_bCapturePrintScreenKey = true;
 static bool g_bHookSystemKey = true;
 static bool g_bHookAltTab = false;
@@ -1388,6 +1390,17 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_bRegisterFileTypes = false;
 		}
+		else if (strcmp(lpCmdLine, "-conf") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			char buf[MAX_PATH];
+			DWORD res = GetFullPathName(lpCmdLine, MAX_PATH, buf, NULL);
+			if (res == 0)
+				LogFileOutput("Failed to open configuration file: %s\n", lpCmdLine);
+			else
+				g_sConfigFile = buf;
+		}
 		else if (strcmp(lpCmdLine, "-d1") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
@@ -1692,6 +1705,8 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 				g_cmdLine.model = A2TYPE_APPLE2;
 			else if (strcmp(lpCmdLine, "apple2p") == 0)
 				g_cmdLine.model = A2TYPE_APPLE2PLUS;
+			else if (strcmp(lpCmdLine, "apple2jp") == 0)
+				g_cmdLine.model = A2TYPE_APPLE2JPLUS;
 			else if (strcmp(lpCmdLine, "apple2e") == 0)
 				g_cmdLine.model = A2TYPE_APPLE2E;
 			else if (strcmp(lpCmdLine, "apple2ee") == 0)
