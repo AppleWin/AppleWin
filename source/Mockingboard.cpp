@@ -1601,14 +1601,11 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 		return bAccessedDevice ? nRes : MemReadFloatingBus(nExecutedCycles);
 	}
 
-	if(nOffset <= (SY6522A_Offset+0x0F))
+	// NB. Mockingboard: SSI263.bit7 not readable (TODO: check this with real h/w)
+	if (nOffset < SY6522B_Offset)
 		return SY6522_Read(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_A, nAddr&0xf);
-	else if((nOffset >= SY6522B_Offset) && (nOffset <= (SY6522B_Offset+0x0F)))
-		return SY6522_Read(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf);
-//	else if((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x07)))
-//		return SSI263_Read(nMB*2+1, nExecutedCycles);			// SSI263 only drives bit7 -- TODO confirm with real MB h/w
 	else
-		return MemReadFloatingBus(nExecutedCycles);
+		return SY6522_Read(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf);
 }
 
 //-----------------------------------------------------------------------------
@@ -1669,11 +1666,12 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 		return 0;
 	}
 
-	if(nOffset <= (SY6522A_Offset+0x0F))
+	if (nOffset < SY6522B_Offset)
 		SY6522_Write(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_A, nAddr&0xf, nValue);
-	else if((nOffset >= SY6522B_Offset) && (nOffset <= (SY6522B_Offset+0x0F)))
+	else
 		SY6522_Write(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf, nValue);
-	else if((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x07)))
+
+	if ((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x07)))
 		SSI263_Write(nMB*2+1, nAddr&0x7, nValue);		// Second 6522 is used for speech chip -- TODO confirm with real MB h/w that writes go to 1st 6522
 
 	return 0;
