@@ -1037,11 +1037,14 @@ static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
 
 			if (pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED)
 			{
-				if (pMB->sy6522.PCR == 0x0C && (!g_bPhasorEnable || (g_bPhasorEnable && g_phasorMode == PH_Mockingboard)))
+				if (!g_bPhasorEnable || (g_bPhasorEnable && g_phasorMode == PH_Mockingboard))
 				{
-					UpdateIFR(pMB, 0, IxR_PERIPHERAL);
-					pMB->SpeechChip.CurrentMode &= ~1;	// Clear SSI263's D7 pin (cleared by 6522's PCR CA1/CA2 handshake)
-					// NB. Don't set CTL=1, as Mockingboard(SMS) speech doesn't work (sets MODE_IRQ_DISABLED mode)
+					if ((pMB->sy6522.PCR & 1) == 0)			// CA1 Latch/Input = 0 (Negative active edge)
+						UpdateIFR(pMB, 0, IxR_PERIPHERAL);
+					if (pMB->sy6522.PCR == 0x0C)			// CA2 Control = b#110 (Low output)
+						pMB->SpeechChip.CurrentMode &= ~1;	// Clear SSI263's D7 pin (cleared by 6522's PCR CA1/CA2 handshake)
+
+					// NB. Don't set CTL=1, as Mockingboard(SMS) speech doesn't work (it sets MODE_IRQ_DISABLED mode during ISR)
 					//pMB->SpeechChip.CtrlArtAmp |= CONTROL_MASK;	// 6522's CA2 sets Power Down mode (pin 18), which sets Control bit
 				}
 				else if (g_bPhasorEnable && g_phasorMode == PH_Phasor)	// Phasor's SSI263 IRQ (A/!R) line is *also* wired directly to the 6502's IRQ (as well as the 6522's CA1)
