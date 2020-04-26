@@ -991,6 +991,46 @@ static void MB_Update(void)
 
 //-----------------------------------------------------------------------------
 
+// Called by SSI263Thread(), MB_LoadSnapshot & Phasor_LoadSnapshot
+// Pre: g_bVotraxPhoneme, g_bPhasorEnable, g_phasorMode
+static void SetSpeechIRQ(SY6522_AY8910* pMB)
+{
+	if (!g_bVotraxPhoneme)
+	{
+		// Always set SSI263's D7 pin regardless of SSI263 mode (DR1:0), including MODE_IRQ_DISABLED
+		pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
+
+		if ((pMB->SpeechChip.CurrentMode & DURATION_MODE_MASK) != MODE_IRQ_DISABLED)
+		{
+			if (!g_bPhasorEnable || (g_bPhasorEnable && g_phasorMode == PH_Mockingboard))
+			{
+				if ((pMB->sy6522.PCR & 1) == 0)			// CA1 Latch/Input = 0 (Negative active edge)
+					UpdateIFR(pMB, 0, IxR_PERIPHERAL);
+				if (pMB->sy6522.PCR == 0x0C)			// CA2 Control = b#110 (Low output)
+					pMB->SpeechChip.CurrentMode &= ~1;	// Clear SSI263's D7 pin (cleared by 6522's PCR CA1/CA2 handshake)
+
+				// NB. Don't set CTL=1, as Mockingboard(SMS) speech doesn't work (it sets MODE_IRQ_DISABLED mode during ISR)
+				//pMB->SpeechChip.CtrlArtAmp |= CONTROL_MASK;	// 6522's CA2 sets Power Down mode (pin 18), which sets Control bit
+			}
+			else if (g_bPhasorEnable && g_phasorMode == PH_Phasor)	// Phasor's SSI263 IRQ (A/!R) line is *also* wired directly to the 6502's IRQ (as well as the 6522's CA1)
+			{
+				CpuIrqAssert(IS_SPEECH);
+			}
+		}
+	}
+
+	//
+
+	if (g_bVotraxPhoneme && pMB->sy6522.PCR == 0xB0)
+	{
+		// !A/R: Time-out of old phoneme (signal goes from low to high)
+
+		UpdateIFR(pMB, 0, IxR_VOTRAX);
+
+		g_bVotraxPhoneme = false;
+	}
+}
+
 static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
 {
 	while(1)
@@ -1029,41 +1069,7 @@ static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
 
 		// Phoneme complete, so generate IRQ if necessary
 		SY6522_AY8910* pMB = &g_MB[g_nSSI263Device];
-
-		if (!g_bVotraxPhoneme)
-		{
-			// Always set SSI263's D7 pin regardless of SSI263 mode (DR1:0), including MODE_IRQ_DISABLED
-			pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
-
-			if (pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED)
-			{
-				if (!g_bPhasorEnable || (g_bPhasorEnable && g_phasorMode == PH_Mockingboard))
-				{
-					if ((pMB->sy6522.PCR & 1) == 0)			// CA1 Latch/Input = 0 (Negative active edge)
-						UpdateIFR(pMB, 0, IxR_PERIPHERAL);
-					if (pMB->sy6522.PCR == 0x0C)			// CA2 Control = b#110 (Low output)
-						pMB->SpeechChip.CurrentMode &= ~1;	// Clear SSI263's D7 pin (cleared by 6522's PCR CA1/CA2 handshake)
-
-					// NB. Don't set CTL=1, as Mockingboard(SMS) speech doesn't work (it sets MODE_IRQ_DISABLED mode during ISR)
-					//pMB->SpeechChip.CtrlArtAmp |= CONTROL_MASK;	// 6522's CA2 sets Power Down mode (pin 18), which sets Control bit
-				}
-				else if (g_bPhasorEnable && g_phasorMode == PH_Phasor)	// Phasor's SSI263 IRQ (A/!R) line is *also* wired directly to the 6502's IRQ (as well as the 6522's CA1)
-				{
-					CpuIrqAssert(IS_SPEECH);
-				}
-			}
-		}
-
-		//
-
-		if (g_bVotraxPhoneme && pMB->sy6522.PCR == 0xB0)
-		{
-			// !A/R: Time-out of old phoneme (signal goes from low to high)
-
-			UpdateIFR(pMB, 0, IxR_VOTRAX);
-
-			g_bVotraxPhoneme = false;
-		}
+		SetSpeechIRQ(pMB);
 	}
 
 	return 0;
@@ -2056,6 +2062,8 @@ void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
 // 4: Added: 6522 timerIrqDelay - GH#652
 // 5: Added: Unit state-B (Phasor only) - GH#659
 // 6: Changed SS_YAML_KEY_PHASOR_MODE from (0,1) to (0,5,7)
+//    Added SS_YAML_KEY_VOTRAX_PHONEME
+//    Removed: redundant SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR
 const UINT kUNIT_VERSION = 6;
 
 const UINT NUM_MB_UNITS = 2;
@@ -2095,8 +2103,10 @@ const UINT NUM_PHASOR_UNITS = 2;
 #define SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY "Timer2 IRQ Delay"
 
 #define SS_YAML_KEY_PHASOR_UNIT "Unit"
-#define SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR "Clock Scale Factor"
+#define SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR "Clock Scale Factor"	// Redundant from v6
 #define SS_YAML_KEY_PHASOR_MODE "Mode"
+
+#define SS_YAML_KEY_VOTRAX_PHONEME "Votrax Phoneme"
 
 std::string MB_GetSnapshotCardName(void)
 {
@@ -2153,6 +2163,8 @@ void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 	YamlSaveHelper::Slot slot(yamlSaveHelper, MB_GetSnapshotCardName(), uSlot, kUNIT_VERSION);	// fixme: object should be just 1 Mockingboard card & it will know its slot
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, g_bVotraxPhoneme);
 
 	for(UINT i=0; i<NUM_MB_UNITS; i++)
 	{
@@ -2229,6 +2241,8 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
+	g_bVotraxPhoneme = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
+
 	AY8910UpdateSetCycles();
 
 	const UINT nMbCardNum = slot - SLOT4;
@@ -2280,19 +2294,15 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 				StartTimer1(pMB);			// Attempt to start timer
 		}
 
-		// Crude - currently only support a single speech chip
-		// FIX THIS:
-		// . Speech chip could be Votrax instead
-		// . Is this IRQ compatible with Phasor?
-		if(pMB->SpeechChip.DurationPhoneme)
+		// FIXME: currently only support a single speech chip
+		// NB. g_bVotraxPhoneme is never true, as the phoneme playback completes in SSI263Thread() before this point in the save-state.
+		// NB. SpeechChip.DurationPhoneme will mostly be non-zero during speech playback, as this is the SSI263 register, not whether the phonene is active.
+		// FIXME: So possible race-condition between saving-state & SSI263Thread()
+		if (pMB->SpeechChip.DurationPhoneme || g_bVotraxPhoneme)
 		{
 			g_nSSI263Device = nDeviceNum;
-
-			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
-			{
-				UpdateIFR(pMB, 0, IxR_PERIPHERAL);
-				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
-			}
+			g_bPhasorEnable = false;
+			SetSpeechIRQ(pMB);
 		}
 
 		nDeviceNum++;
@@ -2318,8 +2328,8 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR, g_PhasorClockScaleFactor);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASOR_MODE, g_phasorMode);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, g_bVotraxPhoneme);
 
 	for(UINT i=0; i<NUM_PHASOR_UNITS; i++)
 	{
@@ -2352,7 +2362,8 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
-	g_PhasorClockScaleFactor = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);
+	if (version < 6)
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);	// Consume redundant data
 
 	UINT phasorMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_MODE);
 	if (version < 6)
@@ -2363,6 +2374,9 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 			phasorMode = PH_Phasor;
 	}
 	g_phasorMode = (PHASOR_MODE) phasorMode;
+	g_PhasorClockScaleFactor = (g_phasorMode == PH_Phasor) ? 2 : 1;
+
+	g_bVotraxPhoneme = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
 
 	AY8910UpdateSetCycles();
 
@@ -2417,19 +2431,12 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 				StartTimer1(pMB);			// Attempt to start timer
 		}
 
-		// Crude - currently only support a single speech chip
-		// FIX THIS:
-		// . Speech chip could be Votrax instead
-		// . Is this IRQ compatible with Phasor?
-		if(pMB->SpeechChip.DurationPhoneme)
+		// FIXME: currently only support a single speech chip
+		if (pMB->SpeechChip.DurationPhoneme || g_bVotraxPhoneme)
 		{
 			g_nSSI263Device = nDeviceNum;
-
-			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
-			{
-				UpdateIFR(pMB, 0, IxR_PERIPHERAL);
-				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
-			}
+			g_bPhasorEnable = true;
+			SetSpeechIRQ(pMB);
 		}
 
 		nDeviceNum += 2;
