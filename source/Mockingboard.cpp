@@ -92,6 +92,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SSI263Phonemes.h"
 
 #define LOG_SSI263 0
+#define LOG_SSI263B 0	// Alternate SSI263 logging (use in conjunction with CPU.cpp's LOG_IRQ_TAKEN_AND_RTI)
 
 
 #define SY6522_DEVICE_A 0
@@ -590,6 +591,23 @@ const BYTE CONTROL_MASK = 0x80;
 const BYTE ARTICULATION_MASK = 0x70;
 const BYTE AMPLITUDE_MASK = 0x0F;
 
+#if LOG_SSI263B
+static int ssiRegs[5]={-1,-1,-1,-1,-1};
+
+void SSI_Output(void)
+{
+	LogOutput("SSI: ");
+	for (int i=0; i<=4; i++)
+	{
+		char r[3]="--";
+		if (ssiRegs[i]>=0) sprintf(r,"%02X",ssiRegs[i]);
+		LogOutput("%s ", r);
+		ssiRegs[i] = -1;
+	}
+	LogOutput("\n");
+}
+#endif
+
 static BYTE SSI263_Read(BYTE nDevice, ULONG nExecutedCycles)
 {
 	SY6522_AY8910* pMB = &g_MB[nDevice];
@@ -604,12 +622,22 @@ static void SSI263_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 {
 	SY6522_AY8910* pMB = &g_MB[nDevice];
 
+#if LOG_SSI263B
+	_ASSERT(nReg < 5);
+	if (nReg>4) nReg=4;
+	if (ssiRegs[nReg]>=0) SSI_Output();	// overwriting a reg
+	ssiRegs[nReg] = nValue;
+#endif
+
 	switch(nReg)
 	{
 	case SSI_DURPHON:
 #if LOG_SSI263
 		if(g_fh) fprintf(g_fh, "DUR   = 0x%02X, PHON = 0x%02X\n\n", nValue>>6, nValue&PHONEME_MASK);
 		LogOutput("DUR   = %d, PHON = 0x%02X\n", nValue>>6, nValue&PHONEME_MASK);
+#endif
+#if LOG_SSI263B
+		SSI_Output();
 #endif
 
 		// Notes:
@@ -658,6 +686,10 @@ static void SSI263_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			sprintf_s(newMode, sizeof(newMode), "(new mode=%d)", pMB->SpeechChip.DurationPhoneme>>6);
 			LogOutput("CTRL  = %d->%d, ART = 0x%02X, AMP=0x%02X %s\n", pMB->SpeechChip.CtrlArtAmp>>7, nValue>>7, (nValue&ARTICULATION_MASK)>>4, nValue&AMPLITUDE_MASK, H2L?newMode:"");
 		}
+#endif
+#if LOG_SSI263B
+		if ( ((pMB->SpeechChip.CtrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK)) || ((nValue&0xF) == 0x0) )	// H->L or amp=0
+			SSI_Output();
 #endif
 		if((pMB->SpeechChip.CtrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK))	// H->L
 		{
