@@ -58,6 +58,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration/PropertySheet.h"
 #include "Debugger/Debug.h"
 
+// NOTE: These are in <WinUser.h> HOWEVER they are only defined if _WIN32_WINNT > 0x500
+#ifndef WM_XBUTTONDOWN
+	#define WM_XBUTTONDOWN  0x020B
+#endif
+#ifndef WM_XBUTTONUP
+	#define WM_XBUTTONUP    0x020C
+#endif
+#ifndef MK_XBUTTON1
+	#define MK_XBUTTON1     0x0020
+#endif
+#ifndef MK_XBUTTON2
+	#define MK_XBUTTON2     0x0040
+#endif
+
 //#define ENABLE_MENU 0
 #define DEBUG_KEY_MESSAGES 0
 

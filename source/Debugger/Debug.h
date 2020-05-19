@@ -108,6 +108,18 @@
 //	extern MemorySearchArray_t g_vMemSearchMatches;
 	extern std::vector<int> g_vMemorySearchResults;
 
+// Mouse
+	// NOTE: Keep in sync with MouseButton_t and g_aDebuggerMouseProcessFunc !
+		enum MouseButton_t
+	{
+		 MOUSE_BUTTON_LEFT
+		,MOUSE_BUTTON_MIDDLE
+		,MOUSE_BUTTON_RIGHT
+		,MOUSE_BUTTON_FORWARD
+		,MOUSE_BUTTON_BACKWARD
+		,NUM_MOUSE_BUTTONS
+	};
+
 // Source Level Debugging
 	extern std::string g_aSourceFileName;
 	extern MemoryTextFile_t g_AssemblerSourceBuffer;
