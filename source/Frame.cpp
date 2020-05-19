@@ -1594,7 +1594,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 		}
 
-		DebuggerMouseClick( x, y );
+		DebuggerProcessMouseClick( MOUSE_BUTTON_LEFT, x, y );
       }
       RelayEvent(WM_LBUTTONDOWN,wparam,lparam);
       break;
@@ -1784,6 +1784,33 @@ LRESULT CALLBACK FrameWndProc (
       DrawFrameWindow();
       break;
 
+	case WM_MBUTTONDOWN:
+//	case WM_MBUTTONUP:
+		KeybUpdateCtrlShiftStatus();
+		if (g_nAppMode == MODE_DEBUG)
+		{
+			x = LOWORD(lparam);
+			y = HIWORD(lparam);
+			DebuggerProcessMouseClick( MOUSE_BUTTON_MIDDLE, x, y );
+		}
+		break;
+
+	case WM_XBUTTONDOWN:
+		KeybUpdateCtrlShiftStatus();
+		if (g_nAppMode == MODE_DEBUG)
+		{
+			x = LOWORD(lparam);
+			y = HIWORD(lparam);
+
+			//int button = GET_XBUTTON_WPARAM(wParam);
+			int button = 0;
+			if (wparam & MK_XBUTTON1) button = MOUSE_BUTTON_BACKWARD;
+			if (wparam & MK_XBUTTON2) button = MOUSE_BUTTON_FORWARD;
+			if( button )
+				DebuggerProcessMouseClick( button, x, y );
+		}
+		break;
+
     case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
 		x = LOWORD(lparam);
@@ -1838,6 +1865,13 @@ LRESULT CALLBACK FrameWndProc (
 			JoySetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
 		else if (g_CardMgr.IsMouseCardInstalled())
 			g_CardMgr.GetMouseCard()->SetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
+
+		if ((g_nAppMode == MODE_DEBUG) && (WM_RBUTTONDOWN == message))
+		{
+			x = LOWORD(lparam);
+			y = HIWORD(lparam);
+			DebuggerProcessMouseClick( MOUSE_BUTTON_RIGHT, x, y );
+		}
 
 		RelayEvent(message,wparam,lparam);
 		break;

@@ -1,6 +1,8 @@
 /*
 
-
+.3 Added: Mouse Forward and Backward buttons move to previous and next bookmarks.
+.2 Added: "Ctrl -" and "Ctrl +" now move to previous and next bookmarks respectively.
+.1 Added support for Middle, Forward, and Backward mouse buttons.
 2.9.1.0 Added: Bookmarks now have their own indicator (a number with a box around it) and replace the ":" seperator. Updated Debug_Font.bmp
 
 .18 Fixed: Resetting bookmarks wasn't setting the total bookmarks back to zero.

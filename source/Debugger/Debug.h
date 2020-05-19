@@ -193,6 +193,6 @@
 	void	DebuggerUpdate();
 	void	DebuggerCursorNext();
 
-	void	DebuggerMouseClick( int x, int y );
+	void	DebuggerProcessMouseClick( int button, int x, int y );
 
 	bool	IsDebugSteppingAtFullSpeed(void);

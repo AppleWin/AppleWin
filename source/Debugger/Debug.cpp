@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,0);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,3);
 
 
 // Public _________________________________________________________________________________________
@@ -61,6 +61,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Bookmarks __________________________________________________________________
 	int        g_nBookmarks = 0;
 	Bookmark_t g_aBookmarks[ MAX_BOOKMARKS ];
+	int        g_nDebuggerMouseLastBookmark = 0;
 
 // Breakpoints ________________________________________________________________
 	// Any Speed Breakpoints
@@ -325,6 +326,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	int ParseInput ( LPTSTR pConsoleInput, bool bCook = true );
 	static	Update_t ExecuteCommand ( int nArgs );
 
+// Bookmarks
+	Update_t _CmdBookmarkGotoPrev();
+	Update_t _CmdBookmarkGotoNext();
+
 // Breakpoints
 	void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ); // bool bZeroBased = true );
 	void _BWZ_ListAll ( const Breakpoint_t * aBreakWatchZero, const int nMax );
@@ -463,7 +468,10 @@ bool _Bookmark_Add( const int iBookmark, const WORD nAddress )
 //		g_aBookmarks.at( iBookmark ) = nAddress;
 		g_aBookmarks[ iBookmark ].nAddress = nAddress;
 		g_aBookmarks[ iBookmark ].bSet     = true;
+
 		g_nBookmarks++;
+		g_nDebuggerMouseLastBookmark = iBookmark;
+
 		return true;
 	}
 	
@@ -556,6 +564,69 @@ int _Bookmark_Size()
 	}
 
 	return g_nBookmarks;
+}
+
+//===========================================================================
+Update_t _CmdBookmarkGotoPrev()
+{
+	Update_t bUpdateDisplay = UPDATE_NOTHING;
+
+	if (g_nBookmarks)
+	{
+		WORD nAddressBook;
+		WORD nAddressBest = g_nDisasmTopAddress;
+
+		// Find any bookmark that has an address < the top address
+		for( int iBookmark = 0; iBookmark < MAX_BOOKMARKS; iBookmark++ )
+		{
+			nAddressBook = g_aBookmarks[ iBookmark ].nAddress;
+
+			if ((g_aBookmarks[ iBookmark ].bSet) && (nAddressBook < g_nDisasmTopAddress))   // Can't use g_nDisasmCurAddress as the cursor would never move
+			{
+				// Found a candidate, if better then current keep it
+				if (((g_nDisasmTopAddress -  nAddressBest) == 0)
+				|| (nAddressBest < nAddressBook))
+					nAddressBest = nAddressBook;
+			}
+		}
+
+		int nArgs = 1;
+		g_aArgs[ 1 ].nValue = nAddressBest;
+		bUpdateDisplay = CmdUnassemble( nArgs );
+	}
+
+	return bUpdateDisplay;
+}
+
+//===========================================================================
+Update_t _CmdBookmarkGotoNext()
+{
+	Update_t bUpdateDisplay = UPDATE_NOTHING;
+
+	if (g_nBookmarks)
+	{
+		WORD nAddressBook;
+		WORD nAddressBest = g_nDisasmTopAddress;
+
+		// Find any bookmark that has an address > the top address
+		for( int iBookmark = 0; iBookmark < MAX_BOOKMARKS; iBookmark++ )
+		{
+			nAddressBook = g_aBookmarks[ iBookmark ].nAddress;
+
+			if ((g_aBookmarks[ iBookmark ].bSet) &&  (nAddressBook > g_nDisasmTopAddress))   // Can't use g_nDisasmCurAddress as the cursor would never move
+			{
+				if (((g_nDisasmTopAddress -  nAddressBest) == 0)
+				|| (nAddressBest > nAddressBook))
+					nAddressBest = nAddressBook;
+			}
+		}
+
+		int nArgs = 1;
+		g_aArgs[ 1 ].nValue = nAddressBest;
+		bUpdateDisplay = CmdUnassemble( nArgs );
+	}
+
+	return bUpdateDisplay;
 }
 
 //===========================================================================
@@ -9642,6 +9713,12 @@ void DebuggerProcessKey( int keycode )
 				break;
 
 			default:
+				if ((keycode == VK_OEM_MINUS) && KeybGetCtrlStatus()) // KEY: Ctrl -
+					bUpdateDisplay |=_CmdBookmarkGotoPrev();
+				else
+				if ((keycode == VK_OEM_PLUS) && KeybGetCapsStatus()) // KEY: Ctrl +
+					bUpdateDisplay |= _CmdBookmarkGotoNext();
+				else
 				if ((keycode >= '0') && (keycode <= '9'))
 				{
 					int nArgs = 1;
@@ -9659,7 +9736,7 @@ void DebuggerProcessKey( int keycode )
 					{
 						nArgs = 1;
 						g_aArgs[ 1 ].nValue = iBookmark;
-						bUpdateDisplay |= CmdBookmarkGoto( nArgs );
+						bUpdateDisplay |= CmdBookmarkGoto( nArgs ); // Ctrl-0 .. Ctrl-9
 						g_bIgnoreNextKey = true;
 					}
 				}
@@ -9741,45 +9818,44 @@ void DebuggerCursorNext()
 //}
 
 
-//===========================================================================
-void DebuggerMouseClick( int x, int y )
-{
-	if (g_nAppMode != MODE_DEBUG)
-		return;
 
-	KeybUpdateCtrlShiftStatus();
+
+// Mouse __________________________________________________________________________________________
+
+
+	typedef void (*MouseClick_t)(const int x, const int y);
+
+	int g_nDebuggerMouseCx;
+	int g_nDebuggerMouseCy;
+
+	void onDebuggerMouseClickL( const int cx, const int cy );
+	void onDebuggerMouseClickM( const int cx, const int cy );
+	void onDebuggerMouseClickR( const int cx, const int cy );
+	void onDebuggerMouseClickF( const int cx, const int cy );
+	void onDebuggerMouseClickB( const int cx, const int cy );
+
+	// NOTE: Keep in sync with MouseButton_t and g_aDebuggerMouseProcessFunc !
+MouseClick_t g_aDebuggerMouseProcessFunc[ NUM_MOUSE_BUTTONS ] =
+{
+	  &onDebuggerMouseClickL // MOUSE_BUTTON_LEFT
+	, &onDebuggerMouseClickM // MOUSE_BUTTON_MIDDLE
+	, &onDebuggerMouseClickR // MOUSE_BUTTON_RIGHT
+	, &onDebuggerMouseClickF  // MOUSE_BUTTON_FORWARD
+	, &onDebuggerMouseClickB  // MOUSE_BUTTON_BACKWARD
+};
+
+
+//===========================================================================
+void onDebuggerMouseClickL( const int cx, const int cy )
+{
 	int iAltCtrlShift  = 0;
 	iAltCtrlShift |= KeybGetAltStatus()   ? 1<<0 : 0;
 	iAltCtrlShift |= KeybGetCtrlStatus()  ? 1<<1 : 0;
 	iAltCtrlShift |= KeybGetShiftStatus() ? 1<<2 : 0;
 
-	// GH#462 disasm click #
+		// GH#462 disasm click #
 	if (iAltCtrlShift != g_bConfigDisasmClick)
 		return;
-
-	int nFontWidth  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg * GetViewportScale();
-	int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight * GetViewportScale();
-
-	// do picking
-
-	const int nOffsetX = IsFullScreen() ? GetFullScreenOffsetX() : Get3DBorderWidth();
-	const int nOffsetY = IsFullScreen() ? GetFullScreenOffsetY() : Get3DBorderHeight();
-
-	const int nOffsetInScreenX = x - nOffsetX;
-	const int nOffsetInScreenY = y - nOffsetY;
-
-	if (nOffsetInScreenX < 0 || nOffsetInScreenY < 0)
-		return;
-
-	int cx = nOffsetInScreenX / nFontWidth;
-	int cy = nOffsetInScreenY / nFontHeight;
-
-#if _DEBUG
-	char sText[ CONSOLE_WIDTH ];
-	sprintf( sText, "x:%d y:%d  cx:%d cy:%d", x, y, cx, cy );
-	ConsoleDisplayPush( sText );
-	DebugDisplay();
-#endif
 
 	if (g_iWindowThis == WINDOW_CODE)
 	{
@@ -9867,6 +9943,90 @@ void DebuggerMouseClick( int x, int y )
 			}
 		}
 	}
+}
+
+//===========================================================================
+void onDebuggerMouseClickM( const int cx, const int cy )
+{
+	// Goto next bookmark
+	if (g_nBookmarks)
+	{
+		// Find next available bookmark
+		for( int iBookmark = 0; iBookmark < MAX_BOOKMARKS; iBookmark++ )
+		{
+			g_nDebuggerMouseLastBookmark++;
+			g_nDebuggerMouseLastBookmark %= MAX_BOOKMARKS;
+
+			//g_nDebuggerMouseLastBookmark %= MAX_BOOKMARKS
+			if (g_aBookmarks[ g_nDebuggerMouseLastBookmark ].bSet)
+				break;
+		}
+
+		// Guaranteed to always have at least 1 bookmark
+		int nArgs = 1;
+		g_aArgs[ 1 ].nValue = g_nDebuggerMouseLastBookmark;
+		Update_t bUpdateDisplay = CmdBookmarkGoto( nArgs ); // Ctrl-0 .. Ctrl-9
+		UpdateDisplay( bUpdateDisplay );
+		//g_bIgnoreNextKey = true; ???
+	}
+}
+
+//===========================================================================
+void onDebuggerMouseClickR( const int cx, const int cy )
+{
+}
+
+//===========================================================================
+void onDebuggerMouseClickF( const int cx, const int cy )
+{
+	// Forward = Goto Previous Bookmark
+	Update_t bUpdateDisplay = _CmdBookmarkGotoPrev();
+	UpdateDisplay( bUpdateDisplay );
+}
+
+
+//===========================================================================
+void onDebuggerMouseClickB( const int cx, const int cy )
+{
+	// Back = Goto Next Bookmark
+	Update_t bUpdateDisplay = _CmdBookmarkGotoNext();
+	UpdateDisplay( bUpdateDisplay );
+}
+
+//===========================================================================
+void DebuggerProcessMouseClick( int button, int x, int y )
+{
+	if (g_nAppMode != MODE_DEBUG)
+		return;
+
+	int nFontWidth  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg * GetViewportScale();
+	int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight * GetViewportScale();
+
+	// do picking
+
+	const int nOffsetX = IsFullScreen() ? GetFullScreenOffsetX() : Get3DBorderWidth();
+	const int nOffsetY = IsFullScreen() ? GetFullScreenOffsetY() : Get3DBorderHeight();
+
+	const int nOffsetInScreenX = x - nOffsetX;
+	const int nOffsetInScreenY = y - nOffsetY;
+
+	if (nOffsetInScreenX < 0 || nOffsetInScreenY < 0)
+		return;
+
+	g_nDebuggerMouseCx = nOffsetInScreenX / nFontWidth;
+	g_nDebuggerMouseCy = nOffsetInScreenY / nFontHeight;
+
+#if _DEBUG
+	char sText[ CONSOLE_WIDTH ];
+	sprintf( sText, "#:%d  x:%d y:%d  cx:%d cy:%d", button, x, y, g_nDebuggerMouseCx, g_nDebuggerMouseCy );
+	ConsoleDisplayPush( sText );
+	DebugDisplay();
+#endif
+
+	if( button < NUM_MOUSE_BUTTONS )
+		if (g_aDebuggerMouseProcessFunc[ button ])
+			g_aDebuggerMouseProcessFunc[ button ]( g_nDebuggerMouseCx, g_nDebuggerMouseCy );
+
 }
 
 //===========================================================================
