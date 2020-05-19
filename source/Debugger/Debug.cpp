@@ -538,6 +538,8 @@ void _Bookmark_Reset()
 	{
 		g_aBookmarks[ iBookmark ].bSet = false;
 	}
+
+	g_nBookmarks = 0;
 }
 
 
@@ -647,11 +649,7 @@ Update_t CmdBookmarkClear (int nArgs)
 	{
 		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
-			for (iBookmark = 0; iBookmark < MAX_BOOKMARKS; iBookmark++ )
-			{
-				if (g_aBookmarks[ iBookmark ].bSet)
-					g_aBookmarks[ iBookmark ].bSet = false;
-			}
+			_Bookmark_Reset();
 			break;
 		}
 
