@@ -1090,6 +1090,9 @@ LRESULT CALLBACK FrameWndProc (
 	WPARAM wparam,
 	LPARAM lparam)
 {
+	int x = 0;
+	int y = 0;
+
 	switch (message)
 	{
     case WM_ACTIVATE:		// Sent when window is activated/deactivated. wParam indicates WA_ACTIVE, WA_INACTIVE, etc
@@ -1534,8 +1537,8 @@ LRESULT CALLBACK FrameWndProc (
 
       if (buttondown == -1)
 	  {
-        int x = LOWORD(lparam);
-        int y = HIWORD(lparam);
+        x = LOWORD(lparam);
+        y = HIWORD(lparam);
         if ((x >= buttonx) &&
             (y >= buttony) &&
             (y <= buttony+BUTTONS*BUTTONCY))
@@ -1622,8 +1625,8 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_MOUSEMOVE: {
       // MSDN: "WM_MOUSEMOVE message" : Do not use the LOWORD or HIWORD macros to extract the x- and y- coordinates...
-      int x = GET_X_LPARAM(lparam);
-      int y = GET_Y_LPARAM(lparam);
+      x = GET_X_LPARAM(lparam);
+      y = GET_Y_LPARAM(lparam);
       int newover = (((x >= buttonx) &&
                       (x <= buttonx+BUTTONCX) &&
                       (y >= buttony) &&
@@ -1783,11 +1786,13 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
+		x = LOWORD(lparam);
+		y = HIWORD(lparam);
+		KeybUpdateCtrlShiftStatus();
+
 		// Right Click on Drive Icon -- eject Disk
 		if ((buttonover == -1) && (message == WM_RBUTTONUP)) // HACK: BUTTON_NONE
 		{
-			int x = LOWORD(lparam);
-			int y = HIWORD(lparam);
 
 			if ((x >= buttonx) &&
 				(y >= buttony) &&
