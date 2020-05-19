@@ -1,4 +1,11 @@
 /*
+
+
+2.9.1.0 Added: Bookmarks now have their own indicator (a number with a box around it) and replace the ":" seperator. Updated Debug_Font.bmp
+
+.18 Fixed: Resetting bookmarks wasn't setting the total bookmarks back to zero.
+.17 Fixed: If all bookmarks were used then setting a new one wouldn't update an existing one to the new address.
+.16 Fixed: Replacing an existing bookmark incorrectly increased the total bookmark count.
 .15 Cleanup: HELP CALC examples and See also.
 .14 Fixed: HELP JSR wasn't color-coding syntax.
 .13 Added: PROFILE LIST now shows how many clock cycles were executed.
