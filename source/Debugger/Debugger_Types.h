@@ -1513,11 +1513,10 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		WINDOW_NULL    , // no window data!
 		WINDOW_CONSOLE ,
 		WINDOW_CODE    ,
-		WINDOW_DATA    , // memory view
-
+		WINDOW_DATA    , // hexdump / memory view
 		WINDOW_INFO    , // WINDOW_REGS, WINDOW_STACK, WINDOW_BREAKPOINTS, WINDOW_WATCHES, WINDOW,
-
 		NUM_WINDOWS    ,
+
 // Not implemented yet
 		WINDOW_REGS    ,
 		WINDOW_STACK   ,
@@ -1527,9 +1526,29 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		WINDOW_IO      , // soft switches   $addr  name   state
 		WINDOW_ZEROPAGE,
 		WINDOW_SOURCE  ,
-		WINDOW_OUTPUT  ,
+		WINDOW_OUTPUT
 
+		// Mouse Click -- See: _getMouseClickWindow()
+		,WINDOW_CODE_ADDRESS     // xxxx: xx xx xx   LABEL    MNEMONIC    'E' =
+		,WINDOW_CODE_SEPERATOR
+		,WINDOW_CODE_OPCODES
+		,WINDOW_CODE_LABEL
+		,WINDOW_CODE_MNEMONIC
+		,WINDOW_CODE_TARGET_NAME
+		,WINDOW_CODE_TARGET_BYTE
 
+		,WINDOW_INFO_REG_A_VAL
+		,WINDOW_INFO_REG_X_VAL
+		,WINDOW_INFO_REG_Y_VAL
+		,WINDOW_INFO_REG_P_VAL
+		,WINDOW_INFO_REG_S_VAL
+		,WINDOW_INFO_STACK
+		,WINDOW_INFO_WATCHPOINT
+		,WINDOW_INFO_BREAKPOINT
+		,WINDOW_INFO_MEMORY_1
+		,WINDOW_INFO_MEMORY_2
+
+		,NUM_WINDOW_REGIONS
 	};
 
 	enum WindowSplit_e
