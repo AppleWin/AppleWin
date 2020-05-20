@@ -7,7 +7,7 @@
 #define DEBUG_APPLE_FONT 0
 
 // Win32 Debugger Font
-// 1 = Use Debugger_Font.BMP (7x8)
+// 1 = Use Debug_Font.BMP (7x8)
 // 0 = Use CHARSET40.bmp (fg & bg colors aren't proper)
 #define APPLE_FONT_NEW            1
 
