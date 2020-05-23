@@ -564,6 +564,11 @@ ULONG CpuGetCyclesThisVideoFrame(const ULONG nExecutedCycles)
 
 DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 {
+#ifdef LOG_PERF_TIMINGS
+	extern UINT64 g_timeCpu;
+	PerfMarker perfMarker(g_timeCpu);
+#endif
+
 	g_nCyclesExecuted =	0;
 
 #ifdef _DEBUG

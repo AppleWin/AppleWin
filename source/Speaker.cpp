@@ -415,6 +415,11 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
 // Called by ContinueExecution()
 void SpkrUpdate (DWORD totalcycles)
 {
+#ifdef LOG_PERF_TIMINGS
+	extern UINT64 g_timeSpeaker;
+	PerfMarker perfMarker(g_timeSpeaker);
+#endif
+
   if(!g_bSpkrToggleFlag)
   {
 	  if(!g_nSpkrQuietCycleCount)

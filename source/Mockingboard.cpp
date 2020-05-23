@@ -814,7 +814,7 @@ static UINT64 g_uLastMBUpdateCycle = 0;
 // Called by:
 // . MB_UpdateCycles()    - when g_nMBTimerDevice == {0,1,2,3}
 // . MB_PeriodicUpdate()  - when g_nMBTimerDevice == kTIMERDEVICE_INVALID
-static void MB_Update(void)
+static void MB_UpdateInt(void)
 {
 	if (!MockingboardVoice.bActive)
 		return;
@@ -1019,6 +1019,17 @@ static void MB_Update(void)
 #ifdef RIFF_MB
 	RiffPutSamples(&g_nMixBuffer[0], nNumSamples);
 #endif
+}
+
+static void MB_Update(void)
+{
+#ifdef LOG_PERF_TIMINGS
+	extern UINT64 g_timeMB_NoTimer;
+	extern UINT64 g_timeMB_Timer;
+	PerfMarker perfMarker(g_nMBTimerDevice == kTIMERDEVICE_INVALID ? g_timeMB_NoTimer : g_timeMB_Timer);
+#endif
+
+	MB_UpdateInt();
 }
 
 //-----------------------------------------------------------------------------

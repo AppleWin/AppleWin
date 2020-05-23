@@ -63,3 +63,27 @@ extern CSpeech g_Speech;
 #endif
 
 extern __interface IPropertySheet& sg_PropertySheet;
+
+//
+
+//#define LOG_PERF_TIMINGS
+#ifdef LOG_PERF_TIMINGS
+class PerfMarker
+{
+public:
+	PerfMarker(UINT64& globalCounter)
+		: counter(globalCounter)
+	{
+		QueryPerformanceCounter(&timeStart);
+	}
+	~PerfMarker()
+	{
+		QueryPerformanceCounter(&timeEnd);
+		counter += (UINT64)timeEnd.QuadPart - (UINT64)timeStart.QuadPart;
+	}
+private:
+	UINT64& counter;
+	LARGE_INTEGER timeStart;
+	LARGE_INTEGER timeEnd;
+};
+#endif
