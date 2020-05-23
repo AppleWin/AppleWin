@@ -399,7 +399,9 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
       if (g_bQuieterSpeaker)	// quieten the speaker if 8 bit DAC in use
         speakerDriveLevel /= 4;	// NB. Don't shift -ve number right: undefined behaviour (MSDN says: implementation-dependent)
 
-      ResetDCFilter();
+      // When full-speed: Don't ResetDCFilter(), otherwise get occasional clicks when speaker toggled
+      if (!g_bFullSpeed)
+        ResetDCFilter();
 
       if (g_nSpeakerData == speakerDriveLevel)
         g_nSpeakerData = ~speakerDriveLevel;
