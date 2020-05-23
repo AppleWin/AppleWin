@@ -6909,17 +6909,28 @@ Update_t CmdCyclesInfo(int nArgs)
 	else
 	{
 		if (strcmp(g_aArgs[1].sArg, "abs") == 0)
-			g_videoScannerDisplayInfo.isAbsCycle = true;
+			g_videoScannerDisplayInfo.cycleMode = VideoScannerDisplayInfo::abs;
 		else if (strcmp(g_aArgs[1].sArg, "rel") == 0)
-			g_videoScannerDisplayInfo.isAbsCycle = false;
+			g_videoScannerDisplayInfo.cycleMode = VideoScannerDisplayInfo::rel;
+		else if (strcmp(g_aArgs[1].sArg, "part") == 0)
+			g_videoScannerDisplayInfo.cycleMode = VideoScannerDisplayInfo::part;
 		else
 			return Help_Arg_1(CMD_CYCLES_INFO);
+
+		if (g_videoScannerDisplayInfo.cycleMode == VideoScannerDisplayInfo::part)
+			CmdCyclesReset(0);
 	}
 
 	TCHAR sText[CONSOLE_WIDTH];
 	ConsoleBufferPushFormat(sText, "Cycles display updated: %s", g_aArgs[1].sArg);
 	ConsoleBufferToDisplay();
 
+	return UPDATE_ALL;
+}
+
+Update_t CmdCyclesReset(int /*nArgs*/)
+{
+	g_videoScannerDisplayInfo.savedCumulativeCycles = g_nCumulativeCycles;
 	return UPDATE_ALL;
 }
 

@@ -102,15 +102,17 @@
 	class VideoScannerDisplayInfo
 	{
 	public:
-		VideoScannerDisplayInfo(void) : isDecimal(false), isHorzReal(false), isAbsCycle(false),
+		VideoScannerDisplayInfo(void) : isDecimal(false), isHorzReal(false), cycleMode(rel),
 										lastCumulativeCycles(0), cycleDelta(0) {}
-		void Reset(void) { lastCumulativeCycles = g_nCumulativeCycles; cycleDelta = 0; }
+		void Reset(void) { lastCumulativeCycles = savedCumulativeCycles = g_nCumulativeCycles; cycleDelta = 0; }
 
 		bool isDecimal;
 		bool isHorzReal;
-		bool isAbsCycle;
+		enum CYCLE_MODE {abs=0, rel, part};
+		CYCLE_MODE cycleMode;
 
 		unsigned __int64 lastCumulativeCycles;
+		unsigned __int64 savedCumulativeCycles;
 		UINT cycleDelta;
 	};
 
