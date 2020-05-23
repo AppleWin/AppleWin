@@ -3789,8 +3789,15 @@ void DrawVideoScannerInfo (int line)
 	PrintText("cycles:", rect);
 	rect.left += nameWidth * nFontWidth;
 
+	UINT cycles = 0;
+	if (g_videoScannerDisplayInfo.cycleMode == VideoScannerDisplayInfo::abs)
+		cycles = (UINT)g_nCumulativeCycles;
+	else if (g_videoScannerDisplayInfo.cycleMode == VideoScannerDisplayInfo::rel)
+		cycles = g_videoScannerDisplayInfo.cycleDelta;
+	else // "part"
+		cycles = (UINT)g_videoScannerDisplayInfo.lastCumulativeCycles - (UINT)g_videoScannerDisplayInfo.savedCumulativeCycles;
+
 	char sValue[10];
-	const UINT cycles = g_videoScannerDisplayInfo.isAbsCycle ? (UINT)g_nCumulativeCycles : g_videoScannerDisplayInfo.cycleDelta;
 	sprintf_s(sValue, sizeof(sValue), "%08X", cycles);
 	PrintText(sValue, rect);
 }
