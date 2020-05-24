@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,15);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,0);
 
 
 // Public _________________________________________________________________________________________
@@ -484,13 +484,17 @@ bool _Bookmark_Del( const WORD nAddress )
 		{
 //			g_aBookmarks.at( iBookmark ) = NO_6502_TARGET;
 			g_aBookmarks[ iBookmark ].bSet = false;
+			g_nBookmarks--;
 			bDeleted = true;
 		}
 	}
 	return bDeleted;
 }
 
-bool Bookmark_Find( const WORD nAddress )
+// Returns:
+//     0   if address does not have a bookmark set
+//     N+1 if there is an existing bookmark that has this address
+int Bookmark_Find( const WORD nAddress )
 {
 	// Ugh, linear search
 //	int nSize = g_aBookmarks.size();
@@ -500,10 +504,10 @@ bool Bookmark_Find( const WORD nAddress )
 		if (g_aBookmarks[ iBookmark ].nAddress == nAddress)
 		{
 			if (g_aBookmarks[ iBookmark ].bSet)
-				return true;
+				return iBookmark + 1;
 		}
 	}
-	return false;
+	return 0;
 }
 
 
@@ -534,6 +538,8 @@ void _Bookmark_Reset()
 	{
 		g_aBookmarks[ iBookmark ].bSet = false;
 	}
+
+	g_nBookmarks = 0;
 }
 
 
@@ -598,15 +604,26 @@ Update_t CmdBookmarkAdd (int nArgs )
 			ConsoleDisplayPush( sText );
 			return ConsoleUpdate();
 		}
-		
-		if ((iBookmark < MAX_BOOKMARKS) && (g_nBookmarks < MAX_BOOKMARKS))
+
+		// 2.9.0.16 Fixed: Replacing an existing bookmark incorrectly increased the total bookmark count.
+		int nOldBookmark = Bookmark_Find( nAddress );
+		if (nOldBookmark)
 		{
-			g_aBookmarks[iBookmark].bSet = true;
-			g_aBookmarks[iBookmark].nAddress = nAddress;
-			bAdded = true;
-			g_nBookmarks++;
-			iBookmark++;
+			_Bookmark_Del( nAddress );
 		}
+
+		// 2.9.0.17 Fixed: If all bookmarks were used then setting a new one wouldn't update an existing one to the new address.
+		if (g_aBookmarks[ iBookmark ].bSet)
+		{
+			g_aBookmarks[ iBookmark ].nAddress = nAddress;
+			bAdded = true;
+		}
+		else
+			if (g_nBookmarks < MAX_BOOKMARKS)
+			{
+				bAdded = _Bookmark_Add( iBookmark, nAddress );
+				iBookmark++;
+			}
 	}
 
 	if (!bAdded)
@@ -632,11 +649,7 @@ Update_t CmdBookmarkClear (int nArgs)
 	{
 		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
-			for (iBookmark = 0; iBookmark < MAX_BOOKMARKS; iBookmark++ )
-			{
-				if (g_aBookmarks[ iBookmark ].bSet)
-					g_aBookmarks[ iBookmark ].bSet = false;
-			}
+			_Bookmark_Reset();
 			break;
 		}
 
@@ -6896,17 +6909,28 @@ Update_t CmdCyclesInfo(int nArgs)
 	else
 	{
 		if (strcmp(g_aArgs[1].sArg, "abs") == 0)
-			g_videoScannerDisplayInfo.isAbsCycle = true;
+			g_videoScannerDisplayInfo.cycleMode = VideoScannerDisplayInfo::abs;
 		else if (strcmp(g_aArgs[1].sArg, "rel") == 0)
-			g_videoScannerDisplayInfo.isAbsCycle = false;
+			g_videoScannerDisplayInfo.cycleMode = VideoScannerDisplayInfo::rel;
+		else if (strcmp(g_aArgs[1].sArg, "part") == 0)
+			g_videoScannerDisplayInfo.cycleMode = VideoScannerDisplayInfo::part;
 		else
 			return Help_Arg_1(CMD_CYCLES_INFO);
+
+		if (g_videoScannerDisplayInfo.cycleMode == VideoScannerDisplayInfo::part)
+			CmdCyclesReset(0);
 	}
 
 	TCHAR sText[CONSOLE_WIDTH];
 	ConsoleBufferPushFormat(sText, "Cycles display updated: %s", g_aArgs[1].sArg);
 	ConsoleBufferToDisplay();
 
+	return UPDATE_ALL;
+}
+
+Update_t CmdCyclesReset(int /*nArgs*/)
+{
+	g_videoScannerDisplayInfo.savedCumulativeCycles = g_nCumulativeCycles;
 	return UPDATE_ALL;
 }
 

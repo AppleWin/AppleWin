@@ -2091,6 +2091,11 @@ static void VideoUpdateCycles( int cyclesLeftToUpdate )
 //===========================================================================
 void NTSC_VideoUpdateCycles( UINT cycles6502 )
 {
+#ifdef LOG_PERF_TIMINGS
+	extern UINT64 g_timeVideo;
+	PerfMarker perfMarker(g_timeVideo);
+#endif
+
 	_ASSERT(cycles6502 && cycles6502 < g_videoScanner6502Cycles);	// Use NTSC_VideoRedrawWholeScreen() instead
 
 	if (g_bDelayVideoMode)

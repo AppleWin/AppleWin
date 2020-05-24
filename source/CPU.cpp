@@ -98,12 +98,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #endif
 #include "Video.h"
 #include "NTSC.h"
+#include "Log.h"
 
 #include "z80emu.h"
 #include "Z80VICE/z80.h"
 #include "Z80VICE/z80mem.h"
 
 #include "YamlHelper.h"
+
+#define LOG_IRQ_TAKEN_AND_RTI 0
 
 // 6502 Accumulator Bit Flags
 	#define	 AF_SIGN       0x80
@@ -242,6 +245,10 @@ static __forceinline void DoIrqProfiling(DWORD uCycles)
 #ifdef _DEBUG
 	if(regs.ps & AF_INTERRUPT)
 		return;		// Still in Apple's ROM
+
+#if LOG_IRQ_TAKEN_AND_RTI
+	LogOutput("ISR-end\n\n");
+#endif
 
 	g_nCycleIrqEnd = g_nCumulativeCycles + uCycles;
 	g_nCycleIrqTime = (UINT) (g_nCycleIrqEnd - g_nCycleIrqStart);
@@ -442,6 +449,9 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		regs.pc = * (WORD*) (mem+0xFFFE);
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7)
+#if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
+		LogOutput("IRQ\n");
+#endif
 	}
 
 	g_irqOnLastOpcodeCycle = false;
@@ -554,6 +564,11 @@ ULONG CpuGetCyclesThisVideoFrame(const ULONG nExecutedCycles)
 
 DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 {
+#ifdef LOG_PERF_TIMINGS
+	extern UINT64 g_timeCpu;
+	PerfMarker perfMarker(g_timeCpu);
+#endif
+
 	g_nCyclesExecuted =	0;
 
 #ifdef _DEBUG

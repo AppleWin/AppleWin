@@ -9,6 +9,18 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.29.12.0 - 26 Apr 2020
+-----------------------
+. [PR #757] Allow use of an INI-file for configuration instead of the Registry (fixes #709).
+	- new command line switch: -conf <INI-file>
+. [Change #773] Added Apple II J-Plus support.
+. [Bug #778] Fixed for when Joystick(s) are disabled.
+. [Bug #777] Fixed Phasor speech (SSI263) to match Mockingboard (when in Mockingboard mode).
+	- fixes: #698 (Rescue Raiders), #753 (Bejeweled).
+	- also improvements to Phasor card's native Phasor mode.
+. [PR #775] Debugger: Fixed so that hitting "=" in the debugger sets PC to the current cursor address.
+
+
 1.29.11.0 - 27 Mar 2020
 -----------------------
 . [Bug #771] Added new command line switch to load custom ROM: -rom <file>.

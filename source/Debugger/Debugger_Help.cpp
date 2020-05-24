@@ -1408,11 +1408,17 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 // Cycles
 		case CMD_CYCLES_INFO:
-			ConsoleColorizePrint(sText, " Usage: <abs|rel>");
+			ConsoleColorizePrint(sText, " Usage: <abs|rel|part>");
 			ConsoleBufferPush("  Where:");
-			ConsoleBufferPush("    <abs|rel> changes cycle output to absolute/relative");
+			ConsoleBufferPush("    abs = absolute number of cycles since power-on");
+			ConsoleBufferPush("    rel = number of cycles since last step or breakpoint");
+			ConsoleBufferPush("    part= number of cycles relative to current instruction");
+			break;
+		case CMD_CYCLES_RESET:
+			ConsoleBufferPush("  Use in conjunctioned with 'cycles part' to reset to current instruction");
 			break;
 // Video-Scanner
+
 		case CMD_VIDEO_SCANNER_INFO:
 			ConsoleColorizePrint(sText, " Usage: <dec|hex|real|apple>");
 			ConsoleBufferPush("  Where:");

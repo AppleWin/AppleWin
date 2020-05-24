@@ -123,11 +123,51 @@ CSpeech		g_Speech;
 
 //===========================================================================
 
+#ifdef LOG_PERF_TIMINGS
+static UINT64 g_timeTotal = 0;
+UINT64 g_timeCpu = 0;
+UINT64 g_timeVideo = 0;			// part of timeCpu
+UINT64 g_timeMB_Timer = 0;		// part of timeCpu
+UINT64 g_timeMB_NoTimer = 0;
+UINT64 g_timeSpeaker = 0;
+static UINT64 g_timeVideoRefresh = 0;
+
+void LogPerfTimings(void)
+{
+	if (g_timeTotal)
+	{
+		UINT64 cpu = g_timeCpu - g_timeVideo - g_timeMB_Timer;
+		UINT64 video = g_timeVideo + g_timeVideoRefresh;
+		UINT64 spkr = g_timeSpeaker;
+		UINT64 mb = g_timeMB_Timer + g_timeMB_NoTimer;
+		UINT64 audio = spkr + mb;
+		UINT64 other = g_timeTotal - g_timeCpu - g_timeSpeaker - g_timeMB_NoTimer - g_timeVideoRefresh;
+
+		LogOutput("Perf breakdown:\n");
+		LogOutput(". CPU %%     = %2f.2\n", (double)cpu / (double)g_timeTotal * 100.0);
+		LogOutput(". Video %%   = %2f.2\n", (double)video / (double)g_timeTotal * 100.0);
+		LogOutput("... NTSC %%    = %2f.2\n", (double)g_timeVideo / (double)g_timeTotal * 100.0);
+		LogOutput("... refresh %% = %2f.2\n", (double)g_timeVideoRefresh / (double)g_timeTotal * 100.0);
+		LogOutput(". Audio %%   = %2f.2\n", (double)audio / (double)g_timeTotal * 100.0);
+		LogOutput("... Speaker %% = %2f.2\n", (double)spkr / (double)g_timeTotal * 100.0);
+		LogOutput("... MB %%      = %2f.2\n", (double)mb / (double)g_timeTotal * 100.0);
+		LogOutput(". Other %%   = %2f.2\n", (double)other / (double)g_timeTotal * 100.0);
+		LogOutput(". TOTAL %%   = %2f.2\n", (double)(cpu+video+audio+other) / (double)g_timeTotal * 100.0);
+	}
+}
+#endif
+
+//===========================================================================
+
 static DWORD dwLogKeyReadTickStart;
 static bool bLogKeyReadDone = false;
 
 void LogFileTimeUntilFirstKeyReadReset(void)
 {
+#ifdef LOG_PERF_TIMINGS
+	LogPerfTimings();
+#endif
+
 	if (!g_fh)
 		return;
 
@@ -234,6 +274,10 @@ static bool g_uModeStepping_LastGetKey_ScrollLock = false;
 
 static void ContinueExecution(void)
 {
+#ifdef LOG_PERF_TIMINGS
+	PerfMarker* pPerfMarkerTotal = new PerfMarker(g_timeTotal);
+#endif
+
 	_ASSERT(g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING);
 
 	const double fUsecPerSec        = 1.e6;
@@ -352,6 +396,9 @@ static void ContinueExecution(void)
 	const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 	if (g_dwCyclesThisFrame >= dwClksPerFrame && !VideoGetVblBarEx(g_dwCyclesThisFrame))
 	{
+#ifdef LOG_PERF_TIMINGS
+		PerfMarker perfMarkerVideoRefresh(g_timeVideoRefresh);
+#endif
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
 		if (g_bFullSpeed)
@@ -359,6 +406,10 @@ static void ContinueExecution(void)
 		else
 			VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
 	}
+
+#ifdef LOG_PERF_TIMINGS
+	delete pPerfMarkerTotal;	// Explicitly call dtor *before* SysClk_WaitTimer()
+#endif
 
 	if ((g_nAppMode == MODE_RUNNING && !g_bFullSpeed) || bModeStepping_WaitTimer)
 	{

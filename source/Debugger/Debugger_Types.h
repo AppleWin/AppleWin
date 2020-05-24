@@ -377,6 +377,7 @@
 		, CMD_CURSOR_PAGE_DOWN_4K // Down to nearest 4K boundary
 // Cycles info
 		, CMD_CYCLES_INFO
+		, CMD_CYCLES_RESET
 // Disassembler Data
 		, CMD_DISASM_DATA
 		, CMD_DISASM_CODE
@@ -666,7 +667,8 @@
 	Update_t CmdCursorPageUp4K     (int nArgs);
 
 // Cycles info
-	Update_t CmdCyclesInfo   (int nArgs);
+	Update_t CmdCyclesInfo         (int nArgs);
+	Update_t CmdCyclesReset        (int nArgs);
 
 // Disk
 	Update_t CmdDisk               (int nArgs);

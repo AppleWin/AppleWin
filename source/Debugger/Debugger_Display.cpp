@@ -622,7 +622,7 @@ void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent )
 
 // @param glyph Specifies a native glyph from the 16x16 chars Apple Font Texture.
 //===========================================================================
-void PrintGlyph( const int x, const int y, const char glyph )
+void PrintGlyph( const int x, const int y, const int glyph )
 {	
 	HDC hDstDC = GetDebuggerMemDC();
 
@@ -1935,7 +1935,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	bool bBreakpointEnable;
 	GetBreakpointInfo( nBaseAddress, bBreakpointActive, bBreakpointEnable );
 	bool bAddressAtPC = (nBaseAddress == regs.pc);
-	bool bAddressIsBookmark = Bookmark_Find( nBaseAddress );
+	int  bAddressIsBookmark = Bookmark_Find( nBaseAddress );
 
 	DebugColors_e iBackground = BG_DISASM_1;
 	DebugColors_e iForeground = FG_DISASM_MNEMONIC; // FG_DISASM_TEXT;
@@ -2005,16 +2005,8 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		}
 	}
 
-	if (bAddressIsBookmark)
-	{
-		DebuggerSetColorBG( DebuggerGetColor( BG_DISASM_BOOKMARK ) );
-		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_BOOKMARK ) );
-	}
-	else
-	{
-		DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
-		DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
-	}
+	DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
+	DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
 
 	// Address
 	if (! bCursorLine)
@@ -2030,18 +2022,31 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		PrintTextCursorX( (LPCTSTR) line.sAddress, linerect );
 	}
 
-	if (bAddressIsBookmark)
-	{
-		DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
-		DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
-	}
 
 	// Address Seperator		
 	if (! bCursorLine)
 		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 
 	if (g_bConfigDisasmAddressColon)
-		PrintTextCursorX( ":", linerect );
+	{
+		if (bAddressIsBookmark)
+		{
+			DebuggerSetColorBG( DebuggerGetColor( BG_DISASM_BOOKMARK ) );
+			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_BOOKMARK ) );
+
+			// Can't use PrintTextCursorX() as that clamps chars > 0x7F to Mouse Text
+			//    char bookmark_text[2] = { 0x7F + bAddressIsBookmark, 0 };
+			//    PrintTextCursorX( bookmark_text, linerect );
+			FillRect( GetDebuggerMemDC(), &linerect, g_hConsoleBrushBG );
+			PrintGlyph( linerect.left, linerect.top, 0x7F + bAddressIsBookmark ); // Glyphs 0x80 .. 0x89 = Unicode U+24EA, U+2460 .. U+2468
+			linerect.left += g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
+
+			DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
+			DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
+		}
+		else
+			PrintTextCursorX( ":", linerect );
+	}
 	else
 		PrintTextCursorX( " ", linerect ); // bugfix, not showing "addr:" doesn't alternate color lines
 
@@ -3784,8 +3789,15 @@ void DrawVideoScannerInfo (int line)
 	PrintText("cycles:", rect);
 	rect.left += nameWidth * nFontWidth;
 
+	UINT cycles = 0;
+	if (g_videoScannerDisplayInfo.cycleMode == VideoScannerDisplayInfo::abs)
+		cycles = (UINT)g_nCumulativeCycles;
+	else if (g_videoScannerDisplayInfo.cycleMode == VideoScannerDisplayInfo::rel)
+		cycles = g_videoScannerDisplayInfo.cycleDelta;
+	else // "part"
+		cycles = (UINT)g_videoScannerDisplayInfo.lastCumulativeCycles - (UINT)g_videoScannerDisplayInfo.savedCumulativeCycles;
+
 	char sValue[10];
-	const UINT cycles = g_videoScannerDisplayInfo.isAbsCycle ? (UINT)g_nCumulativeCycles : g_videoScannerDisplayInfo.cycleDelta;
 	sprintf_s(sValue, sizeof(sValue), "%08X", cycles);
 	PrintText(sValue, rect);
 }
