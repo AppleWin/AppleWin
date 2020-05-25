@@ -120,7 +120,7 @@ public:
 class Disk2InterfaceCard : public Card
 {
 public:
-	Disk2InterfaceCard(void);
+	Disk2InterfaceCard(UINT slot);
 	virtual ~Disk2InterfaceCard(void);
 
 	virtual void Init(void) {};

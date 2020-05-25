@@ -181,6 +181,7 @@ void CMouseInterface::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 {
 //	m_bActive = true;
 	m_bEnabled = true;
+	_ASSERT(m_uSlot == uSlot);
 	SetSlotRom();	// Pre: m_bActive == true
 	RegisterIoHandler(uSlot, &CMouseInterface::IORead, &CMouseInterface::IOWrite, NULL, NULL, this, NULL);
 }

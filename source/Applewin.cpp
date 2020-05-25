@@ -1211,11 +1211,9 @@ static void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBo
 	HD_SetEnabled(true);
 
 	DWORD dwTmp;
-	if (REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
-	{
-		if (!dwTmp)
-			REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 1);	// Config: HDD Enabled
-	}
+	BOOL res = REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp);
+	if (!res || !dwTmp)
+		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 1);	// Config: HDD Enabled
 
 	//
 
@@ -1244,11 +1242,9 @@ static void UnplugHardDiskControllerCard(void)
 	HD_SetEnabled(false);
 
 	DWORD dwTmp;
-	if (REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
-	{
-		if (dwTmp)
-			REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 0);	// Config: HDD Disabled
-	}
+	BOOL res = REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp);
+	if (!res || dwTmp)
+		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 0);	// Config: HDD Disabled
 }
 
 static bool CheckOldAppleWinVersion(void)
@@ -1504,14 +1500,14 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.szImageName_drive[slot][drive] = lpCmdLine;
 				}
 			}
+			else if (strcmp(lpCmdLine, "-s7-empty-on-exit") == 0)
+			{
+				g_cmdLine.bSlot7EmptyOnExit = true;
+			}
 			else
 			{
 				LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
 			}
-		}
-		else if (strcmp(lpCmdLine, "-s7-empty-on-exit") == 0)
-		{
-			g_cmdLine.bSlot7EmptyOnExit = true;
 		}
 		else if (strcmp(lpCmdLine, "-load-state") == 0)
 		{
