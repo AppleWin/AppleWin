@@ -1769,6 +1769,10 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.newVideoRefreshRate = VR_60HZ;
 		}
+		else if (strcmp(lpCmdLine, "-power-on") == 0)
+		{
+			g_cmdLine.bBoot = true;
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
