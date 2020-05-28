@@ -1964,6 +1964,8 @@ static void RepeatInitialization(void)
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
 
 		// Allow the 4 hardcoded slots to be configurated as empty
+		// TODO: this state should be reflected in the Registry/conf.ini (just as bSlotEmpty[7] is)
+		// TODO: support bSlotEmpty[] for slots: 0,4,5
 		if (g_cmdLine.bSlotEmpty[SLOT1])
 			g_CardMgr.Remove(SLOT1);
 		if (g_cmdLine.bSlotEmpty[SLOT2])
@@ -1998,7 +2000,7 @@ static void RepeatInitialization(void)
 			g_cmdLine.szImageName_harddisk[HARDDISK_1] = g_cmdLine.szImageName_harddisk[HARDDISK_2] = NULL;	// Don't insert on a restart
 
 			if (g_cmdLine.bSlotEmpty[7])
-				HD_SetEnabled(false);
+				UnplugHardDiskControllerCard();
 		}
 
 		MemInitialize();
