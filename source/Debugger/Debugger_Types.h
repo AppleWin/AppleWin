@@ -274,6 +274,14 @@
 //		Hash_t       m_nHash; // TODO
 	};
 
+	enum Speed_e
+	{
+		RUN_CYCLESLOW,
+		RUN_NORMAL,
+		RUN_FAST,
+		RUN_DEBUG
+	};
+
 	// Commands sorted by Category
 	// NOTE: Commands_e and g_aCommands[] order _MUST_ match !!! Aliases are listed at the end
 	enum Commands_e
@@ -285,6 +293,8 @@
 		, CMD_CURSOR_SET_PC  // Ctrl
 		, CMD_GO_NORMAL_SPEED
 		, CMD_GO_FULL_SPEED
+		, CMD_GO_CYCLE_SPEED
+		, CMD_GO_DEBUG_SPEED
 		, CMD_IN
 		, CMD_INPUT_KEY
 		, CMD_JSR
@@ -595,6 +605,8 @@
 	Update_t CmdBreakOpcode        (int nArgs); // Breakpoint IFF Full-speed!
 	Update_t CmdGoNormalSpeed      (int nArgs);
 	Update_t CmdGoFullSpeed        (int nArgs);
+	Update_t CmdGoCycleSpeed	   (int nArgs);
+	Update_t CmdGoDebugSpeed	   (int nArgs);
 	Update_t CmdIn                 (int nArgs);
 	Update_t CmdKey                (int nArgs);
 	Update_t CmdJSR                (int nArgs);

@@ -11,12 +11,12 @@
 	extern BOOL       g_bMultiMon;
 
 
+
 // Emulator
 	extern bool   g_bFreshReset;
 	extern std::string PathFilename[2];
 	extern bool   g_bScrollLock_FullSpeed;
 	extern int    g_nCharsetType;
-
 
 // Prototypes
 	void CtrlReset();
@@ -27,6 +27,7 @@
 	void    FrameRefreshStatus (int, bool bUpdateDiskStatus = true );
 	void    FrameRegisterClass ();
 	void	FrameSetCursorPosByMousePos();
+	bool    GetDebugMode(void);
 	int		GetViewportScale(void);
 	int     SetViewportScale(int nNewScale, bool bForce = false);
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);

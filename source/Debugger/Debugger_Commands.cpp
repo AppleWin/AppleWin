@@ -47,6 +47,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("=")           , CmdCursorSetPC       , CMD_CURSOR_SET_PC        , "Sets the PC to the current instruction" },
 		{TEXT("G")           , CmdGoNormalSpeed     , CMD_GO_NORMAL_SPEED      , "Run at normal speed [until PC == address]"   },
 		{TEXT("GG")          , CmdGoFullSpeed       , CMD_GO_FULL_SPEED        , "Run at full speed [until PC == address]"   },
+		{TEXT("GC")          , CmdGoCycleSpeed      , CMD_GO_CYCLE_SPEED       , "Run at video cycle-accurate speed [until PC == address]"   },
+		{TEXT("GD")          , CmdGoDebugSpeed      , CMD_GO_DEBUG_SPEED       , "Run at full speed with debugger [until PC == address]"   },
 		{TEXT("IN")          , CmdIn                , CMD_IN                   , "Input byte from IO $C0xx"   },
 		{TEXT("KEY")         , CmdKey               , CMD_INPUT_KEY            , "Feed key into emulator"     },
 		{TEXT("JSR")         , CmdJSR               , CMD_JSR                  , "Call sub-routine"           },
@@ -287,7 +289,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SOURCE1")     , CmdWindowShowSource1 , CMD_WINDOW_SOURCE_1, "Show source on top split screen"             },
 		{TEXT("SOURCE2")     , CmdWindowShowSource2 , CMD_WINDOW_SOURCE_2, "Show source on bottom split screen"          },
 
-		{TEXT("\\")          , CmdWindowViewOutput  , CMD_WINDOW_OUTPUT  , "Display Apple output until key pressed" },
+		{TEXT("*")           , CmdWindowViewOutput  , CMD_WINDOW_OUTPUT  , "Display Apple output until key pressed" },
 //		{TEXT("INFO")        , CmdToggleInfoPanel   , CMD_WINDOW_TOGGLE },
 //		{TEXT("WINSOURCE")   , CmdWindowShowSource  , CMD_WINDOW_SOURCE },
 //		{TEXT("ZEROPAGE")    , CmdWindowShowZeropage, CMD_WINDOW_ZEROPAGE },

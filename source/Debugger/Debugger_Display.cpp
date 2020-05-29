@@ -566,10 +566,13 @@ void StretchBltMemToFrameDC(void)
 	int nViewportCX, nViewportCY;
 	GetViewportCXCY(nViewportCX, nViewportCY);
 
+	int scale = GetViewportScale();
+
 	int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 	int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
-	int wdest = nViewportCX;
-	int hdest = nViewportCY;
+	xdest+= 560 * (scale / 2);
+	int wdest = 560 * scale; //nViewportCX;
+	int hdest = 384 * scale; // nViewportCY;
 
 	BOOL bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
@@ -577,7 +580,7 @@ void StretchBltMemToFrameDC(void)
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerMemDC(),									// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),	// int nWidthSrc,    int nHeightSrc,
+		560, 384,											// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
 }

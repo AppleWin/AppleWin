@@ -184,3 +184,5 @@
 	void	DebuggerMouseClick( int x, int y );
 
 	bool	IsDebugSteppingAtFullSpeed(void);
+	bool	IsDebugSteppingCycleAccurate(void);
+	bool    IsDebugSteppingWithDebugger(void);

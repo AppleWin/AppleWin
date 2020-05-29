@@ -317,8 +317,9 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (g_CardMgr.GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
-					 IsDebugSteppingAtFullSpeed();
+					(g_CardMgr.GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive());
+			// patch to enable refresh of A2 framebuffer even in MODE_STEPPING
+			//		 || IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
 	{
@@ -394,17 +395,21 @@ static void ContinueExecution(void)
 	//
 
 	const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-	if (g_dwCyclesThisFrame >= dwClksPerFrame && !VideoGetVblBarEx(g_dwCyclesThisFrame))
+	if ((g_dwCyclesThisFrame >= dwClksPerFrame && !VideoGetVblBarEx(g_dwCyclesThisFrame)) || IsDebugSteppingCycleAccurate())
 	{
 #ifdef LOG_PERF_TIMINGS
 		PerfMarker perfMarkerVideoRefresh(g_timeVideoRefresh);
 #endif
-		g_dwCyclesThisFrame -= dwClksPerFrame;
-
+		g_dwCyclesThisFrame %= dwClksPerFrame;
 		if (g_bFullSpeed)
 			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		else
 			VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
+
+		if (IsDebugSteppingWithDebugger())
+		{
+			DebugDisplay(false);
+		}
 	}
 
 #ifdef LOG_PERF_TIMINGS
