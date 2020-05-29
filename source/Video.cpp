@@ -81,6 +81,7 @@ static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
 static HBITMAP       g_hDeviceBitmap;
 static HDC           g_hDeviceDC;
+static HDC           g_hDebugExtra1DC;
 static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
        HBITMAP       g_hLogoBitmap;
@@ -554,13 +555,14 @@ void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 void VideoRedrawScreen (void)
 {
 	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
-	VideoRefreshScreen( g_uVideoMode, true );
+	VideoRefreshScreen( g_uVideoMode, true);
 }
 
 //===========================================================================
 
-void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
+void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/)
 {
+
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
 	{
 		// uVideoModeForWholeScreen set if:
@@ -580,13 +582,18 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 
 	if (hFrameDC)
 	{
+		bool isDebugMode = GetDebugMode(); // Debug Mode = composite of two emulator outputs + debugger output
+		int scale = GetViewportScale();
+
+		// Copy emulator output 
+
 		int xSrc = GetFrameBufferBorderWidth();
 		int ySrc = GetFrameBufferBorderHeight();
 
-		int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
-		int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
-		int wdest = g_nViewportCX;
-		int hdest = g_nViewportCY;
+		int xdest = (IsFullScreen() ? GetFullScreenOffsetX() : 0) + (isDebugMode?0:140*scale);
+		int ydest = (IsFullScreen() ? GetFullScreenOffsetY() : 0);
+		int wdest = (560 * scale) / (isDebugMode ? 2 : 1); // g_nViewportCX;
+		int hdest = (384 * scale) / (isDebugMode ? 2 : 1); // g_nViewportCY;
 
 		SetStretchBltMode(hFrameDC, COLORONCOLOR);
 		StretchBlt(
@@ -595,7 +602,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			wdest, hdest,
 			g_hDeviceDC,
 			xSrc, ySrc,
-			GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),
+			560, 384,
 			SRCCOPY);
 	}
 
@@ -1417,10 +1424,15 @@ static void videoCreateDIBSection()
 	{
 		DeleteDC(g_hDeviceDC);
 	}
+	if (g_hDebugExtra1DC)
+	{
+		DeleteDC(g_hDebugExtra1DC);
+	}
 	g_hDeviceDC = CreateCompatibleDC(dc);
+	g_hDebugExtra1DC = CreateCompatibleDC(dc);
 
 	// CREATE THE FRAME BUFFER DIB SECTION
-	if (g_hDeviceBitmap)
+	if (!g_hDeviceBitmap)
 		DeleteObject(g_hDeviceBitmap);
 		g_hDeviceBitmap = CreateDIBSection(
 			dc,

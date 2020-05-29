@@ -202,9 +202,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	MemoryTextFile_t g_ConfigState;
 
-	static bool g_bDebugFullSpeed      = false;
-	static bool g_bLastGoCmdWasFullSpeed = false;
-	static bool g_bGoCmd_ReinitFlag = false;
+	static Speed_e g_nDebugSpeed      = RUN_CYCLESLOW;
+	static Speed_e g_nLastGoCmdSpeed  = RUN_CYCLESLOW;
+	static bool g_bGoCmd_ReinitFlag   = false;
 
 // Display ____________________________________________________________________
 
@@ -1899,7 +1899,7 @@ Update_t CmdAssemble (int nArgs)
 // CPU Step, Trace ________________________________________________________________________________
 
 //===========================================================================
-static Update_t CmdGo (int nArgs, const bool bFullSpeed)
+static Update_t CmdGo (int nArgs, const Speed_e nSpeed)
 {
 	// G StopAddress [SkipAddress,Length]
 	// Example:
@@ -1907,7 +1907,9 @@ static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 	// TODO: G addr1,len   addr3,len
 	// TODO: G addr1:addr2 addr3:addr4
 
-	const int kCmdGo = !bFullSpeed ? CMD_GO_NORMAL_SPEED : CMD_GO_FULL_SPEED;
+	int kCmdGo = CMD_GO_NORMAL_SPEED;
+	if (nSpeed == RUN_CYCLESLOW) kCmdGo = CMD_GO_CYCLE_SPEED;
+	else if (nSpeed == RUN_FAST) kCmdGo = CMD_GO_FULL_SPEED;
 
 	g_nDebugSteps = -1;
 	g_nDebugStepCycles  = 0;
@@ -1985,8 +1987,8 @@ static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 
 	g_bDebuggerEatKey = true;
 
-	g_bDebugFullSpeed = bFullSpeed;
-	g_bLastGoCmdWasFullSpeed = bFullSpeed;
+	g_nDebugSpeed = nSpeed;
+	g_nLastGoCmdSpeed = nSpeed;
 	g_bGoCmd_ReinitFlag = true;
 
 	g_nAppMode = MODE_STEPPING;
@@ -1997,14 +1999,24 @@ static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
+Update_t CmdGoCycleSpeed(int nArgs)
+{
+	return CmdGo(nArgs, RUN_CYCLESLOW);
+}
+
 Update_t CmdGoNormalSpeed (int nArgs)
 {
-	return CmdGo(nArgs, false);
+	return CmdGo(nArgs, RUN_NORMAL);
 }
 
 Update_t CmdGoFullSpeed (int nArgs)
 {
-	return CmdGo(nArgs, true);
+	return CmdGo(nArgs, RUN_FAST);
+}
+
+Update_t CmdGoDebugSpeed(int nArgs)
+{
+	return CmdGo(nArgs, RUN_DEBUG);
 }
 
 //===========================================================================
@@ -2045,7 +2057,7 @@ Update_t CmdStepOut (int nArgs)
 	{
 		nArgs = _Arg_1( nAddress );
 		g_aArgs[1].sArg[0] = 0;
-		CmdGo( 1, true );
+		CmdGo( 1, RUN_CYCLESLOW );
 	}
 
 	return UPDATE_ALL;
@@ -2059,6 +2071,7 @@ Update_t CmdTrace (int nArgs)
 	g_nDebugStepStart = regs.pc;
 	g_nDebugStepUntil = -1;
 	g_nAppMode = MODE_STEPPING;
+	g_nDebugSpeed = RUN_CYCLESLOW;
 	FrameRefreshStatus(DRAW_TITLE);
 	DebugContinueStepping(true);
 
@@ -3497,7 +3510,7 @@ Update_t CmdCursorJumpRetAddr (int nArgs)
 Update_t CmdCursorRunUntil (int nArgs)
 {
 	nArgs = _Arg_1( g_nDisasmCurAddress );
-	return CmdGo( nArgs, true );
+	return CmdGo( nArgs, RUN_FAST );
 }
 
 
@@ -8002,7 +8015,7 @@ Update_t ExecuteCommand (int nArgs)
 					g_iCommand = CMD_UNASSEMBLE;
 
 					// replace: addrL
-					// with:    comamnd addr
+					// with:    command addr
 					pArg[1] = pArg[0];
 					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
 					pArg->nArgLen = strlen( pArg->sArg );
@@ -8012,7 +8025,32 @@ Update_t ExecuteCommand (int nArgs)
 					nArgs++;
 					pFunction = g_aCommands[ g_iCommand ].pFunction;
 					nFound = 1;
-				}					
+
+					CmdWindowViewCode(0);
+				}
+				// ####D -> Memory dump ̂$address
+				else if ((pCommand[nLen - 1] == 'D') ||
+					(pCommand[nLen - 1] == 'd'))
+				{
+					pCommand[nLen - 1] = 0;
+					ArgsGetValue(pArg, &nAddress);
+
+					g_iCommand = CMD_MEM_MINI_DUMP_HEX_1;
+
+					// replace: addrD
+					// with:    command addr
+					pArg[1] = pArg[0];
+					strcpy(pArg->sArg, g_aCommands[g_iCommand].m_sName);
+					pArg->nArgLen = strlen(pArg->sArg);
+
+					pArg++;
+					pArg->nValue = nAddress;
+					nArgs++;
+					pFunction = g_aCommands[g_iCommand].pFunction;
+					nFound = 1;
+
+					CmdWindowViewData(0);
+				}
 				else
 				// address: byte ...
 				if ((pArg+1)->eToken == TOKEN_COLON)
@@ -8667,10 +8705,18 @@ void DebugExitDebugger ()
 
 	// Still have some BPs set or tracing to file, so continue single-stepping
 
-	if (!g_bLastGoCmdWasFullSpeed)
+
+	switch (g_nLastGoCmdSpeed) {
+	case RUN_CYCLESLOW:
+		CmdGoCycleSpeed(0);
+		break;
+	case RUN_NORMAL:
 		CmdGoNormalSpeed(0);
-	else
+		break;
+	case RUN_FAST:
 		CmdGoFullSpeed(0);
+		break;
+	}
 }
 
 //===========================================================================
@@ -9407,7 +9453,8 @@ void DebuggerProcessKey( int keycode )
 		}		
 	}
 	else if (( keycode == VK_OEM_3 ) ||	// US: Tilde ~ (key to the immediate left of numeral 1)
-			 ( keycode == VK_OEM_8 ))	// UK: Logical NOT ¬ (key to the immediate left of numeral 1)
+			 ( keycode == VK_OEM_8 ) ||	// UK: Logical NOT ¬ (key to the immediate left of numeral 1)
+			 ( keycode == 50))   // FR: é (key to the immediate left of numeral 1) (hack since é will then output ~)
 	{
 		if (KeybGetCtrlStatus())
 		{
@@ -9895,5 +9942,15 @@ void DebuggerMouseClick( int x, int y )
 //===========================================================================
 bool IsDebugSteppingAtFullSpeed(void)
 {
-	return (g_nAppMode == MODE_STEPPING) && g_bDebugFullSpeed;
+	return (g_nAppMode == MODE_STEPPING) && (g_nDebugSpeed == RUN_FAST);
+}
+
+bool IsDebugSteppingCycleAccurate(void)
+{
+	return (g_nAppMode == MODE_STEPPING) && (g_nDebugSpeed == RUN_CYCLESLOW);
+}
+
+bool IsDebugSteppingWithDebugger(void)
+{
+	return (g_nAppMode == MODE_STEPPING) && ((g_nDebugSpeed == RUN_DEBUG) || (g_nDebugSpeed == RUN_CYCLESLOW));
 }

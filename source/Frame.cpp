@@ -66,7 +66,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  VIEWPORTY   5
 
 static const int kDEFAULT_VIEWPORT_SCALE = 2;
-       int g_nViewportCX = GetFrameBufferBorderlessWidth()  * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCX = GetFrameBufferBorderlessWidth() * kDEFAULT_VIEWPORT_SCALE;
        int g_nViewportCY = GetFrameBufferBorderlessHeight() * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
 static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
@@ -127,6 +127,8 @@ static RECT    framerect       = {0,0,0,0};
 static bool    g_bIsFullScreen  = false;
 		BOOL   g_bConfirmReboot = 1; // saved PageConfig REGSAVE
 		BOOL   g_bMultiMon      = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
+
+static bool g_bDebugMode = false;
 
 static BOOL    helpquit        = 0;
 static HFONT   smallfont       = (HFONT)0;
@@ -203,7 +205,7 @@ void SetAltEnterToggleFullScreen(bool mode)
 UINT GetFrameBufferBorderlessWidth(void)
 {
 	static const UINT uFrameBufferBorderlessW = 560;	// 560 = Double Hi-Res
-	return uFrameBufferBorderlessW;
+	return uFrameBufferBorderlessW + 280; // +(g_bDebugMode ? uFrameBufferBorderlessW / 2 : 0); // Debug Mode: 50% wider
 }
 
 UINT GetFrameBufferBorderlessHeight(void)
@@ -2121,10 +2123,16 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		else if (g_nAppMode == MODE_DEBUG)
 		{
 			DebugExitDebugger(); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
+			// Resize window
+			g_bDebugMode = false;
+			FrameResizeWindow(g_nViewportScale);
 			g_bDebuggerEatKey = false;	// Don't "eat" the next keypress when leaving the debugger via F7 (or clicking the Debugger button)
 		}
 		else	// MODE_RUNNING, MODE_LOGO, MODE_PAUSED
 		{
+			// Resize window
+			g_bDebugMode = true;
+			FrameResizeWindow(g_nViewportScale);
 			DebugBegin();
 		}
       break;
@@ -2481,6 +2489,11 @@ void SetUsingCursor (BOOL bNewValue)
 	}
 }
 
+bool GetDebugMode(void)
+{
+	return g_bDebugMode;
+}
+
 int GetViewportScale(void)
 {
 	return g_nViewportScale;
@@ -2609,8 +2622,8 @@ void FrameCreateWindow(void)
 		int nOldViewportCX = g_nViewportCX;
 		int nOldViewportCY = g_nViewportCY;
 
-		g_nViewportCX = GetFrameBufferBorderlessWidth() * 2;
-		g_nViewportCY = GetFrameBufferBorderlessHeight() * 2;
+		g_nViewportCX = GetFrameBufferBorderlessWidth() *2;
+		g_nViewportCY = GetFrameBufferBorderlessHeight() *2;
 		GetWidthHeight(nWidth, nHeight);	// Probe with 2x dimensions
 
 		g_nViewportCX = nOldViewportCX;
@@ -2687,6 +2700,7 @@ void FrameCreateWindow(void)
 		g_hInstance,NULL ); 
 
 	SetupTooltipControls();
+
 
 	_ASSERT(g_TimerIDEvent_100msec == 0);
 	g_TimerIDEvent_100msec = SetTimer(g_hFrameWindow, IDEVENT_TIMER_100MSEC, 100, NULL);

@@ -14,6 +14,8 @@
 		, VT_MONO_AMBER
 		, VT_MONO_GREEN
 		, VT_MONO_WHITE
+		, VT_RGB_VIDEOCARD
+		, VT_RGB_EVE
 		, NUM_VIDEO_MODES
 		, VT_DEFAULT = VT_COLOR_TV
 	};
@@ -171,7 +173,8 @@ struct WinBmpHeader4_t
 extern COLORREF   g_nMonochromeRGB;	// saved to Registry
 extern uint32_t   g_uVideoMode;
 extern DWORD      g_eVideoType;		// saved to Registry
-extern uint8_t   *g_pFramebufferbits;
+extern uint8_t* g_pFramebufferbits;
+extern bool   g_bDebugMode;
 
 // Prototypes _______________________________________________________
 
@@ -183,7 +186,7 @@ void    VideoInitialize ();
 void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
 void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 void    VideoRedrawScreen (void);
-void    VideoRefreshScreen (uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false);
+void    VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false);
 void    VideoReinitialize (bool bInitVideoScannerAddress = true);
 void    VideoResetState ();
 enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
