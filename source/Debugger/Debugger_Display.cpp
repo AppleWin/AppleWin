@@ -570,7 +570,7 @@ void StretchBltMemToFrameDC(void)
 
 	int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 	int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
-	xdest+= 560 * (scale / 2);
+	xdest+= (560 * scale) / 2;
 	int wdest = 560 * scale; //nViewportCX;
 	int hdest = 384 * scale; // nViewportCY;
 
