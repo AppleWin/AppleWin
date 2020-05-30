@@ -2340,9 +2340,8 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 }
 
 
-// Optionally copy the flags to pText_
 //===========================================================================
-void DrawFlags ( int line, WORD nRegFlags, LPTSTR pFlagNames_)
+static void DrawFlags ( int line, WORD nRegFlags )
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
@@ -2431,19 +2430,8 @@ void DrawFlags ( int line, WORD nRegFlags, LPTSTR pFlagNames_)
 		rect.top    -= g_nFontHeight;
 		rect.bottom -= g_nFontHeight;
 
-		if (pFlagNames_)
-		{
-			if (!bSet)
-				sFlagNames[nFlag] = '.';
-			else
-				sFlagNames[nFlag] = g_aBreakpointSource[ BP_SRC_FLAG_C + iFlag ][0]; 
-		}
-
 		nRegFlags >>= 1;
 	}
-
-	if (pFlagNames_)
-		strcpy(pFlagNames_,sFlagNames);
 }
 
 //===========================================================================
@@ -2732,7 +2720,7 @@ void DrawRegisters ( int line )
 	DrawRegister( line++, sReg[ BP_SRC_REG_X ] , 1, regs.x , PARAM_REG_X  );
 	DrawRegister( line++, sReg[ BP_SRC_REG_Y ] , 1, regs.y , PARAM_REG_Y  );
 	DrawRegister( line++, sReg[ BP_SRC_REG_PC] , 2, regs.pc, PARAM_REG_PC );
-	DrawFlags   ( line  , regs.ps, NULL);
+	DrawFlags   ( line  , regs.ps);
 	line += 2;
 	DrawRegister( line++, sReg[ BP_SRC_REG_S ] , 2, regs.sp, PARAM_REG_SP );
 }

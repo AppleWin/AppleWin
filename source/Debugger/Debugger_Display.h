@@ -81,8 +81,6 @@
 	void FormatOpcodeBytes    ( WORD nBaseAddress, DisasmLine_t & line_ );
 	void FormatNopcodeBytes   ( WORD nBaseAddress, DisasmLine_t & line_ );
 
-	void DrawFlags            ( int line, WORD nRegFlags, LPTSTR pFlagNames_);
-
 	//
 
 	extern HDC GetDebuggerMemDC(void);
