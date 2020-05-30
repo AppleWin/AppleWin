@@ -8907,6 +8907,7 @@ static void DebugEnd ()
 	g_nAppMode = MODE_RUNNING;
 
 	ReleaseDebuggerMemDC();
+	ReleaseDebuggerExtraDC();
 }
 
 

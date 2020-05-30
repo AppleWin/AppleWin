@@ -87,6 +87,8 @@
 
 	extern HDC GetDebuggerMemDC(void);
 	extern void ReleaseDebuggerMemDC(void);
+	extern HDC GetDebuggerExtraDC(void);
+	extern void ReleaseDebuggerExtraDC(void);
 	extern void StretchBltMemToFrameDC(void);
 
 	enum DebugVirtualTextScreen_e
