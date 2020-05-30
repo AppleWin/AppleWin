@@ -79,6 +79,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Display - Win32
 	static HDC g_hDebuggerMemDC = NULL;
 	static HBITMAP g_hDebuggerMemBM = NULL;
+	static HDC g_hDebuggerExtraDC = NULL;
+	static HBITMAP g_hDebuggerExtraBM = NULL;
 
 	HDC     g_hConsoleFontDC     = NULL;
 	HBRUSH  g_hConsoleFontBrush  = NULL;
@@ -164,7 +166,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_MINIMEM_COLUMN = INFO_COL_3;
 		const int DISPLAY_VIDEO_SCANNER_COLUMN = INFO_COL_3;
 #else
-		const int DISPLAY_CPU_INFO_LEFT_COLUMN = SCREENSPLIT1	// TC: SCREENSPLIT1 is not defined anywhere in the .sln!
+		const int DISPLAY_CPU_INFO_LEFT_COLUMN = SCREENSPLIT1;	// TC: SCREENSPLIT1 is not defined anywhere in the .sln!
 
 		const int DISPLAY_REGS_COLUMN       = DISPLAY_CPU_INFO_LEFT_COLUMN;
 		const int DISPLAY_FLAG_COLUMN       = DISPLAY_CPU_INFO_LEFT_COLUMN;
@@ -213,6 +215,8 @@ static char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iV
 	void DrawSubWindow_Source2  (Update_t bUpdate);
 	void DrawSubWindow_Symbols  (Update_t bUpdate);
 	void DrawSubWindow_ZeroPage (Update_t bUpdate);
+
+	void DrawMemActivity(Update_t bUpdate);
 
 	void DrawWindowBottom ( Update_t bUpdate, int iWindow );
 
@@ -561,6 +565,32 @@ void ReleaseDebuggerMemDC(void)
 	}
 }
 
+HDC GetDebuggerExtraDC(void)
+{
+	if (!g_hDebuggerExtraDC)
+	{
+		HDC hFrameDC = FrameGetDC();
+		g_hDebuggerExtraDC = CreateCompatibleDC(hFrameDC);
+		g_hDebuggerExtraBM = CreateCompatibleBitmap(hFrameDC, 560, 384);
+		SelectObject(g_hDebuggerExtraDC, g_hDebuggerExtraBM);
+	}
+
+	_ASSERT(g_hDebuggerExtraDC);	// TC: Could this be NULL?
+	return g_hDebuggerExtraDC;
+}
+
+void ReleaseDebuggerExtraDC(void)
+{
+	if (g_hDebuggerExtraDC)
+	{
+		DeleteObject(g_hDebuggerExtraBM);
+		g_hDebuggerExtraBM = NULL;
+		DeleteDC(g_hDebuggerExtraDC);
+		g_hDebuggerExtraDC = NULL;
+		FrameReleaseDC();
+	}
+}
+
 void StretchBltMemToFrameDC(void)
 {
 	int nViewportCX, nViewportCY;
@@ -571,14 +601,32 @@ void StretchBltMemToFrameDC(void)
 	int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 	int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
 	xdest+= (560 * scale) / 2;
-	int wdest = 560 * scale; //nViewportCX;
-	int hdest = 384 * scale; // nViewportCY;
+	int wdest = 560 * scale;
+	int hdest = 384 * scale;
 
 	BOOL bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
 		xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerMemDC(),									// HDC hdcSrc,
+		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
+		560, 384,											// int nWidthSrc,    int nHeightSrc,
+		SRCCOPY                                             // DWORD dwRop
+	);
+
+	// Extra display (bottom left)
+
+	xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
+	ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
+	ydest += (384 * scale) / 2;
+	wdest = 560 * (scale / 2);
+	hdest = 384 * (scale / 2);
+
+	bRes = StretchBlt(
+		FrameGetDC(),			                            // HDC hdcDest,
+		xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
+		wdest, hdest,										// int nWidthDest,   int nHeightDest,
+		GetDebuggerExtraDC(),								// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
 		560, 384,											// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
@@ -4142,9 +4190,28 @@ void UpdateDisplay (Update_t bUpdate)
 	if ((bUpdate & UPDATE_CONSOLE_DISPLAY) || (bUpdate & UPDATE_CONSOLE_INPUT))
 		DrawSubWindow_Console( bUpdate );
 
+//	DrawMemActivity( bUpdate );
+
 	StretchBltMemToFrameDC();
 
 	spDrawMutex = false;
+}
+
+//========================================================================================
+// Very slow because GDI is very slow. Unusable unless AW switches to SDL, OpenGL or DX.
+void DrawMemActivity(Update_t bUpdate)
+{
+	HDC dc = GetDebuggerExtraDC();
+	int x = 0;
+	int y = 0;
+	int color;
+	for (int i = 0; i < 65536; i++)
+	{
+		x = i % 256;
+		y = i / 256;
+		color = mem[i];
+		SetPixel(dc, x, y, RGB(color, color, color));
+	}
 }
 
 //===========================================================================

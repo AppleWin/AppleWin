@@ -194,8 +194,8 @@ LPBYTE         mem          = NULL;
 
 //
 
-static LPBYTE  memaux       = NULL;
-static LPBYTE  memmain      = NULL;
+LPBYTE  memaux       = NULL;
+LPBYTE  memmain      = NULL;
 
 LPBYTE         memdirty     = NULL;
 static LPBYTE  memrom       = NULL;
