@@ -8160,7 +8160,17 @@ void OutputTraceLine ()
 	char sDisassembly[ CONSOLE_WIDTH ]; // DrawDisassemblyLine( 0,regs.pc, sDisassembly); // Get Disasm String
 	FormatDisassemblyLine( line, sDisassembly, CONSOLE_WIDTH );
 
-	char sFlags[ _6502_NUM_FLAGS + 1 ]; DrawFlags( 0, regs.ps, sFlags ); // Get Flags String
+	char sFlags[] = "........";
+	WORD nRegFlags = regs.ps;
+	int nFlag = _6502_NUM_FLAGS;
+	while (nFlag--)
+	{
+		int iFlag = (_6502_NUM_FLAGS - nFlag - 1);
+		bool bSet = (nRegFlags & 1);
+		if (bSet)
+			sFlags[nFlag] = g_aBreakpointSource[BP_SRC_FLAG_C + iFlag][0];
+		nRegFlags >>= 1;
+	}
 
 	if (!g_hTraceFile)
 		return;
@@ -8178,8 +8188,8 @@ void OutputTraceLine ()
 		else
 		{
 			fprintf( g_hTraceFile,
-//				"00 00 00 0000 --------  0000:90 90 90  NOP"
-				"A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n");
+//				"00000000 00 00 00 0000 --------  0000:90 90 90  NOP"
+				"Cycles   A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n");
 		}
 	}
 
@@ -8214,8 +8224,10 @@ void OutputTraceLine ()
 	}
 	else
 	{
+		const UINT cycles = (UINT)g_nCumulativeCycles;
 		fprintf( g_hTraceFile,
-			"%02X %02X %02X %04X %s  %s\n",
+			"%08X %02X %02X %02X %04X %s  %s\n",
+			cycles,
 			(unsigned)regs.a,
 			(unsigned)regs.x,
 			(unsigned)regs.y,
