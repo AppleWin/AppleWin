@@ -79,8 +79,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Display - Win32
 	static HDC g_hDebuggerMemDC = NULL;
 	static HBITMAP g_hDebuggerMemBM = NULL;
+	static LPBITMAPINFO  g_pDebuggerMemFramebufferinfo = NULL;
 	static HDC g_hDebuggerExtraDC = NULL;
 	static HBITMAP g_hDebuggerExtraBM = NULL;
+	static LPBITMAPINFO  g_pDebuggerExtraFramebufferinfo = NULL;
+	static bgra_t* g_pDebuggerExtraFramebits = NULL;
 
 	HDC     g_hConsoleFontDC     = NULL;
 	HBRUSH  g_hConsoleFontBrush  = NULL;
@@ -545,7 +548,33 @@ HDC GetDebuggerMemDC(void)
 	{
 		HDC hFrameDC = FrameGetDC();
 		g_hDebuggerMemDC = CreateCompatibleDC(hFrameDC);
-		g_hDebuggerMemBM = CreateCompatibleBitmap(hFrameDC, GetFrameBufferWidth(), GetFrameBufferHeight());
+		//g_hDebuggerMemBM = CreateCompatibleBitmap(hFrameDC, GetFrameBufferWidth(), GetFrameBufferHeight());
+		//SelectObject(g_hDebuggerMemDC, g_hDebuggerMemBM);
+
+		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
+		g_pDebuggerMemFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
+			NULL,
+			sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD),
+			MEM_COMMIT,
+			PAGE_READWRITE);
+
+		ZeroMemory(g_pDebuggerMemFramebufferinfo, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biWidth = 560;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biHeight = 384;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biPlanes = 1;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biBitCount = 32;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biCompression = BI_RGB;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biClrUsed = 0;
+
+
+		// CREATE THE FRAME BUFFER DIB SECTION
+		g_hDebuggerMemBM = CreateDIBSection(
+			hFrameDC,
+			g_pDebuggerMemFramebufferinfo,
+			DIB_RGB_COLORS,
+			(LPVOID*)&g_pDebuggerMemFramebufferinfo, 0, 0
+		);
 		SelectObject(g_hDebuggerMemDC, g_hDebuggerMemBM);
 	}
 
@@ -571,8 +600,39 @@ HDC GetDebuggerExtraDC(void)
 	{
 		HDC hFrameDC = FrameGetDC();
 		g_hDebuggerExtraDC = CreateCompatibleDC(hFrameDC);
-		g_hDebuggerExtraBM = CreateCompatibleBitmap(hFrameDC, 560, 384);
+
+		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
+		g_pDebuggerExtraFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
+			NULL,
+			sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD),
+			MEM_COMMIT,
+			PAGE_READWRITE);
+
+		ZeroMemory(g_pDebuggerExtraFramebufferinfo, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biWidth = 560;
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biHeight = 384;
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biPlanes = 1;
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biBitCount = 32;
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biCompression = BI_RGB;
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biClrUsed = 0;
+
+
+		// CREATE THE FRAME BUFFER DIB SECTION
+		g_hDebuggerExtraBM = CreateDIBSection(
+			hFrameDC,
+			g_pDebuggerExtraFramebufferinfo,
+			DIB_RGB_COLORS,
+			(LPVOID*)&g_pDebuggerExtraFramebits, 0, 0
+		);
 		SelectObject(g_hDebuggerExtraDC, g_hDebuggerExtraBM);
+
+		// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
+		ZeroMemory(g_pFramebufferbits, 560 * 384 * sizeof(bgra_t));
+
+
+		//g_hDebuggerExtraBM = CreateCompatibleBitmap(hFrameDC, 560, 384);
+		//SelectObject(g_hDebuggerExtraDC, g_hDebuggerExtraBM);
 	}
 
 	_ASSERT(g_hDebuggerExtraDC);	// TC: Could this be NULL?
@@ -4190,7 +4250,7 @@ void UpdateDisplay (Update_t bUpdate)
 	if ((bUpdate & UPDATE_CONSOLE_DISPLAY) || (bUpdate & UPDATE_CONSOLE_INPUT))
 		DrawSubWindow_Console( bUpdate );
 
-//	DrawMemActivity( bUpdate );
+	DrawMemActivity( bUpdate );
 
 	StretchBltMemToFrameDC();
 
@@ -4205,12 +4265,46 @@ void DrawMemActivity(Update_t bUpdate)
 	int x = 0;
 	int y = 0;
 	int color;
-	for (int i = 0; i < 65536; i++)
-	{
-		x = i % 256;
-		y = i / 256;
-		color = mem[i];
-		SetPixel(dc, x, y, RGB(color, color, color));
+	int linesize = 560;
+	int index = 0, ramindex = 0;
+	int page = 0, i= 0;
+	LPBYTE _rammain = mem;
+	LPBYTE _ramaux = mem;
+	for (page = 0; page < 256; page++) {
+		if (!memdirty[page]) {
+			// same data in mem and in main or aux
+			_rammain = memmain;
+			_ramaux = memaux;
+		}
+		else {
+			if (memshadow[page] == memmain+(page * 0x100)) {
+				// mem is a shadow of MAIN
+				_rammain = mem;
+				_ramaux = memaux;
+			}
+			else
+			{
+				// mem is a shadow of AUX
+				_rammain = memmain;
+				_ramaux = mem;
+			}
+		}
+		for (i = 0; i < 256; i++)
+		{
+			x = i;
+			y = page;
+			ramindex = y * 256 + i;
+			color = _rammain[ramindex];
+			index = (383 - y) * linesize + x;
+			g_pDebuggerExtraFramebits[index].r = color;
+			g_pDebuggerExtraFramebits[index].g = color;
+			g_pDebuggerExtraFramebits[index].b = color;
+			color = _ramaux[ramindex];
+			index = (383 - y) * linesize + x + 280;
+			g_pDebuggerExtraFramebits[index].r = color;
+			g_pDebuggerExtraFramebits[index].g = color;
+			g_pDebuggerExtraFramebits[index].b = color;
+		}
 	}
 }
 

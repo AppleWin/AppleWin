@@ -51,6 +51,7 @@ extern LPBYTE     mem;
 extern LPBYTE	  memmain;
 extern LPBYTE     memaux;
 extern LPBYTE     memdirty;
+extern LPBYTE     memshadow[0x100];
 
 #ifdef RAMWORKS
 const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB

@@ -81,7 +81,6 @@ static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
 static HBITMAP       g_hDeviceBitmap;
 static HDC           g_hDeviceDC;
-static HDC           g_hDebugExtra1DC;
 static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
        HBITMAP       g_hLogoBitmap;
@@ -1424,12 +1423,8 @@ static void videoCreateDIBSection()
 	{
 		DeleteDC(g_hDeviceDC);
 	}
-	if (g_hDebugExtra1DC)
-	{
-		DeleteDC(g_hDebugExtra1DC);
-	}
+
 	g_hDeviceDC = CreateCompatibleDC(dc);
-	g_hDebugExtra1DC = CreateCompatibleDC(dc);
 
 	// CREATE THE FRAME BUFFER DIB SECTION
 	if (!g_hDeviceBitmap)
