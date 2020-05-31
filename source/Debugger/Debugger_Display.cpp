@@ -687,17 +687,16 @@ void PrintGlyph( const int x, const int y, const int glyph )
 
 #if DEBUG_FONT_ROP
 	SelectObject( hDstDC, g_hConsoleBrushFG );
-	BitBlt(
+/*	BitBlt(
 		hDstDC,
 		xDst, yDst,
 		DEBUG_FONT_WIDTH, DEBUG_FONT_HEIGHT,
 		g_hDebugFontDC,
 		xSrc, ySrc,
 		aROP4[ iRop4 ]
-	);
+	);*/
 #else
 	// Use inverted source as mask (AND)
-	// D & ~S      ->  DSna
 	BitBlt(
 		hDstDC,
 		xDst, yDst,
@@ -718,7 +717,7 @@ void PrintGlyph( const int x, const int y, const int glyph )
 		g_hConsoleFontDC,
 		xSrc, ySrc,
 		DPSao
-	);
+	); 
 #endif
 
 	SelectObject( hDstDC, GetStockObject(NULL_BRUSH) );
