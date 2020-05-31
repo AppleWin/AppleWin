@@ -43,6 +43,8 @@
 	extern HDC     g_hConsoleFontDC;
 	extern HBRUSH  g_hConsoleFontBrush;
 	extern HBITMAP g_hConsoleFontBitmap;
+	extern LPBITMAPINFO  g_hConsoleFontFramebufferinfo;
+	extern bgra_t* g_hConsoleFontFramebits;
 
 	enum
 	{
