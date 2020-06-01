@@ -80,6 +80,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static HDC g_hDebuggerMemDC = NULL;
 	static HBITMAP g_hDebuggerMemBM = NULL;
 	static LPBITMAPINFO  g_pDebuggerMemFramebufferinfo = NULL;
+	static bgra_t* g_pDebuggerMemFramebits = NULL;
 	static HDC g_hDebuggerExtraDC = NULL;
 	static HBITMAP g_hDebuggerExtraBM = NULL;
 	static LPBITMAPINFO  g_pDebuggerExtraFramebufferinfo = NULL;
@@ -88,6 +89,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	HDC     g_hConsoleFontDC     = NULL;
 	HBRUSH  g_hConsoleFontBrush  = NULL;
 	HBITMAP g_hConsoleFontBitmap = NULL;
+	LPBITMAPINFO  g_hConsoleFontFramebufferinfo;
+	bgra_t* g_hConsoleFontFramebits;
+
+	char g_cConsoleBrushFG_r;
+	char g_cConsoleBrushFG_g;
+	char g_cConsoleBrushFG_b;
+	char g_cConsoleBrushBG_r;
+	char g_cConsoleBrushBG_g;
+	char g_cConsoleBrushBG_b;
 
 	HBRUSH g_hConsoleBrushFG = NULL;
 	HBRUSH g_hConsoleBrushBG = NULL;
@@ -573,7 +583,7 @@ HDC GetDebuggerMemDC(void)
 			hFrameDC,
 			g_pDebuggerMemFramebufferinfo,
 			DIB_RGB_COLORS,
-			(LPVOID*)&g_pDebuggerMemFramebufferinfo, 0, 0
+			(LPVOID*)&g_pDebuggerMemFramebits, 0, 0
 		);
 		SelectObject(g_hDebuggerMemDC, g_hDebuggerMemBM);
 	}
@@ -651,6 +661,70 @@ void ReleaseDebuggerExtraDC(void)
 	}
 }
 
+
+HDC GetConsoleFontDC(void)
+{
+	if (!g_hConsoleFontDC)
+	{
+		HDC hFrameDC = FrameGetDC();
+		g_hConsoleFontDC = CreateCompatibleDC(hFrameDC);
+
+		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
+		 g_hConsoleFontFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
+			NULL,
+			sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD),
+			MEM_COMMIT,
+			PAGE_READWRITE);
+
+		ZeroMemory(g_hConsoleFontFramebufferinfo, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
+		g_hConsoleFontFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		g_hConsoleFontFramebufferinfo->bmiHeader.biWidth = 112;
+		g_hConsoleFontFramebufferinfo->bmiHeader.biHeight = 128;
+		g_hConsoleFontFramebufferinfo->bmiHeader.biPlanes = 1;
+		g_hConsoleFontFramebufferinfo->bmiHeader.biBitCount = 32;
+		g_hConsoleFontFramebufferinfo->bmiHeader.biCompression = BI_RGB;
+		g_hConsoleFontFramebufferinfo->bmiHeader.biClrUsed = 0;
+
+
+		// CREATE THE FRAME BUFFER DIB SECTION
+		g_hConsoleFontBitmap = CreateDIBSection(
+			hFrameDC,
+			g_hConsoleFontFramebufferinfo,
+			DIB_RGB_COLORS,
+			(LPVOID*)&g_hConsoleFontFramebits, 0, 0
+		);
+		SelectObject(g_hConsoleFontDC, g_hConsoleFontBitmap);
+
+		// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
+		HDC tmpDC = CreateCompatibleDC(hFrameDC);
+		// Pre-scaled bitmap
+		HBITMAP tmpFont = LoadBitmap(g_hInstance, TEXT("IDB_DEBUG_FONT_7x8"));  // Bitmap must be 112x128 as defined above
+		SelectObject(tmpDC, tmpFont);
+		BitBlt(g_hConsoleFontDC, 0, 0, 112, 128,
+			tmpDC, 0, 0,
+			SRCCOPY);
+		DeleteDC(tmpDC);
+		DeleteObject(tmpFont);
+
+	}
+
+	_ASSERT(g_hConsoleFontDC);
+	return g_hConsoleFontDC;
+}
+
+void ReleaseConsoleFontDC(void)
+{
+	if (g_hDebuggerExtraDC)
+	{
+		DeleteObject(g_hDebuggerExtraBM);
+		g_hDebuggerExtraBM = NULL;
+		DeleteDC(g_hDebuggerExtraDC);
+		g_hDebuggerExtraDC = NULL;
+		FrameReleaseDC();
+	}
+}
+
+
 void StretchBltMemToFrameDC(void)
 {
 	int nViewportCX, nViewportCY;
@@ -705,7 +779,12 @@ void DebuggerSetColorFG( COLORREF nRGB )
 		g_hConsoleBrushFG = NULL;
 	}
 
-	g_hConsoleBrushFG = CreateSolidBrush( nRGB );
+	g_hConsoleBrushFG = CreateSolidBrush(nRGB);
+
+	g_cConsoleBrushFG_r = nRGB & 0xFF;
+	g_cConsoleBrushFG_g = (nRGB>>8) & 0xFF;
+	g_cConsoleBrushFG_b = (nRGB>>16) & 0xFF;
+
 #else
 	SetTextColor( GetDebuggerMemDC(), nRGB );
 #endif
@@ -726,6 +805,12 @@ void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent )
 	{
 		g_hConsoleBrushBG = CreateSolidBrush( nRGB );
 	}
+
+	// Transparency seems to be never used...
+	g_cConsoleBrushBG_r = nRGB & 0xFF;
+	g_cConsoleBrushBG_g = (nRGB >> 8) & 0xFF;
+	g_cConsoleBrushBG_b = (nRGB >> 16) & 0xFF;
+
 #else
 	SetBkColor( GetDebuggerMemDC(), nRGB );
 #endif
@@ -741,8 +826,8 @@ void PrintGlyph( const int x, const int y, const int glyph )
 	int yDst = y;
 
 	// 16x8 chars in bitmap
-	int xSrc = (glyph & 0x0F) * CONSOLE_FONT_GRID_X;
-	int ySrc = (glyph >>   4) * CONSOLE_FONT_GRID_Y;
+	int xSrc = (glyph & 0x0F) *CONSOLE_FONT_GRID_X;
+	int ySrc = (glyph >> 4) *CONSOLE_FONT_GRID_Y;
 
 	// BUG #239 - (Debugger) Save debugger "text screen" to clipboard / file
 	//	if( g_bDebuggerVirtualTextCapture )
@@ -765,73 +850,22 @@ void PrintGlyph( const int x, const int y, const int glyph )
 			g_aDebuggerVirtualTextScreen[ row ][ col ] = glyph;
 	}
 
-#if !DEBUG_FONT_NO_BACKGROUND_CHAR 
-	// Background color
-	if (g_hConsoleBrushBG)
-	{
-		SelectObject( hDstDC, g_hConsoleBrushBG );
-
-		// Draw Background (solid pattern)
-		BitBlt(
-			hDstDC,   // hdcDest
-			xDst, yDst, // nXDest, nYDest
-			CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT, // nWidth, nHeight
-			g_hConsoleFontDC, // hdcSrc
-			0, CONSOLE_FONT_GRID_Y * 2,  // nXSrc, nYSrc // FontTexture[2][0] = Solid (Filled) Space
-			PATCOPY     // dwRop
-		);
+	// Manual print of character. A lot faster than BitBlt, which must be avoided.
+	// (with Bitblt, realtime debug ("gd") is impossible)
+	int xx, yy;
+	char fontpx;
+	int index_src = (127-ySrc) * 16 * CONSOLE_FONT_GRID_X + xSrc;   // font bitmap
+	int index_dst = (383-yDst) * 80 * CONSOLE_FONT_GRID_X + xDst;   // debugger bitmap
+	for (yy = 0; yy < CONSOLE_FONT_GRID_Y; yy++) {
+		for (xx = 0; xx < CONSOLE_FONT_GRID_X; xx++) {
+			fontpx = g_hConsoleFontFramebits[index_src + xx].g;   // Should be same for R/G/B anyway (greyscale)
+			g_pDebuggerMemFramebits[index_dst + xx].r = (g_cConsoleBrushBG_r & ~fontpx) | (g_cConsoleBrushFG_r & fontpx);
+			g_pDebuggerMemFramebits[index_dst + xx].g = (g_cConsoleBrushBG_g & ~fontpx) | (g_cConsoleBrushFG_g & fontpx);
+			g_pDebuggerMemFramebits[index_dst + xx].b = (g_cConsoleBrushBG_b & ~fontpx) | (g_cConsoleBrushFG_b & fontpx);
+		}
+		index_src -= 16 * CONSOLE_FONT_GRID_X;
+		index_dst -= 80 * CONSOLE_FONT_GRID_X;
 	}
-#endif
-
-//	SelectObject( hDstDC, GetStockBrush( WHITE_BRUSH ) );
-
-	// http://kkow.net/etep/docs/rop.html
-	//  P 1 1 1 1 0 0 0 0 (Pen/Pattern)
-	//  S 1 1 0 0 1 1 0 0 (Source)
-	//  D 1 0 1 0 1 0 1 0 (Destination)
-	//  =================
-	//    0 0 1 0 0 0 1 0 0x22 DSna
-	//    1 1 1 0 1 0 1 0 0xEA DPSao
-
-	// Black = Transparent (DC Background)
-	// White = Opaque (DC Text color)
-
-#if DEBUG_FONT_ROP
-	SelectObject( hDstDC, g_hConsoleBrushFG );
-/*	BitBlt(
-		hDstDC,
-		xDst, yDst,
-		DEBUG_FONT_WIDTH, DEBUG_FONT_HEIGHT,
-		g_hDebugFontDC,
-		xSrc, ySrc,
-		aROP4[ iRop4 ]
-	);*/
-#else
-	// Use inverted source as mask (AND)
-	BitBlt(
-		hDstDC,
-		xDst, yDst,
-		CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
-		g_hConsoleFontDC,
-		xSrc, ySrc,
-		DSna
-	);
-
-	SelectObject( hDstDC, g_hConsoleBrushFG );
-
-	// Use Source as mask to make color Pattern mask (AND), then apply to dest (OR)
-	// D | (P & S) ->  DPSao
-	BitBlt(
-		hDstDC,
-		xDst, yDst,
-		CONSOLE_FONT_WIDTH, CONSOLE_FONT_HEIGHT,
-		g_hConsoleFontDC,
-		xSrc, ySrc,
-		DPSao
-	); 
-#endif
-
-	SelectObject( hDstDC, GetStockObject(NULL_BRUSH) );
 }
 
 
@@ -4294,12 +4328,12 @@ void DrawMemActivity(Update_t bUpdate)
 			y = page;
 			ramindex = y * 256 + i;
 			color = _rammain[ramindex];
-			index = (383 - y) * linesize + x;
+			index = (383 - 16 - y) * linesize + x + 16 ;
 			g_pDebuggerExtraFramebits[index].r = color;
 			g_pDebuggerExtraFramebits[index].g = color;
 			g_pDebuggerExtraFramebits[index].b = color;
 			color = _ramaux[ramindex];
-			index = (383 - y) * linesize + x + 280;
+			index = (383 - 16 - y) * linesize + x + 288;
 			g_pDebuggerExtraFramebits[index].r = color;
 			g_pDebuggerExtraFramebits[index].g = color;
 			g_pDebuggerExtraFramebits[index].b = color;

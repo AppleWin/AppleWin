@@ -8937,67 +8937,13 @@ void DebugInitialize ()
 #endif
 
 	// Must select a bitmap into the temp DC !
-	HDC hTmpDC  = CreateCompatibleDC( FrameGetDC() );
+//	HDC hTmpDC  = CreateCompatibleDC( FrameGetDC() );
 
 #if _DEBUG
 	nError = GetLastError();
 #endif
 
-	g_hConsoleFontDC = CreateCompatibleDC( FrameGetDC() );
-#if _DEBUG
-	nError = GetLastError();
-#endif
-
-#if APPLE_FONT_NEW
-	// Pre-scaled bitmap
-	g_hConsoleFontBitmap = LoadBitmap(g_hInstance,TEXT("IDB_DEBUG_FONT_7x8"));
-	SelectObject( g_hConsoleFontDC, g_hConsoleFontBitmap );
-#else
-	// Scale at run-time
-
-	// Black = Transparent
-	// White = Opaque
-	HBITMAP hTmpBitamp = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
-#if _DEBUG
-	nError = GetLastError();
-#endif
-
-	SelectObject( hTmpDC ,hTmpBitamp);
-#if _DEBUG
-	nError = GetLastError();
-#endif
-
-	g_hConsoleFontBrush = GetStockBrush( WHITE_BRUSH );
-	SelectObject(g_hConsoleFontDC, g_hConsoleFontBrush );
-
-//	SelectObject(hTmpDC, g_hDebugFontBrush );
-
-#if _DEBUG
-	nError = GetLastError();
-#endif
-
-	g_hConsoleFontBitmap = CreateCompatibleBitmap(
-		hTmpDC, 
-		APPLE_FONT_X_REGIONSIZE/2, APPLE_FONT_Y_REGIONSIZE/2
-	);
-#if _DEBUG
-	nError = GetLastError();
-#endif
-	SelectObject( g_hConsoleFontDC, g_hConsoleFontBitmap );
-
-	StretchBlt(
-		g_hConsoleFontDC,                                     // HDC hdcDest,                        // handle to destination DC
-		0, 0,                                                 // int nXOriginDest, int nYOriginDest, // y-coord of destination upper-left corner
-		APPLE_FONT_X_REGIONSIZE/2, APPLE_FONT_Y_REGIONSIZE/2, //  int nWidthDest,   int nHeightDest,  
-		hTmpDC,                                               // HDC hdcSrc,                         // handle to source DC
-		0, APPLE_FONT_Y_APPLE_80COL,                          // int nXOriginSrc,  int nYOriginSrc,
-		APPLE_FONT_X_REGIONSIZE, APPLE_FONT_Y_REGIONSIZE,     // int nWidthSrc,    int nHeightSrc,
-		SRCCOPY                                               // DWORD dwRop                         // raster operation code
-	);
-
-	DeleteObject( hTmpBitamp );
-	DeleteObject( hTmpDC );
-#endif
+	GetConsoleFontDC(); // Load font
 
 	ZeroMemory( g_aConsoleDisplay, sizeof( g_aConsoleDisplay ) ); // CONSOLE_WIDTH * CONSOLE_HEIGHT );
 	ConsoleInputReset();
