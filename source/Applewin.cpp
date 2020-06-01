@@ -408,7 +408,7 @@ static void ContinueExecution(void)
 
 		if (IsDebugSteppingWithDebugger())
 		{
-			DebugDisplay(false);
+			DebugDisplay(true);
 		}
 	}
 
