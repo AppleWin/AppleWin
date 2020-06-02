@@ -40,6 +40,8 @@
 	void DebuggerSetColorFG( COLORREF nRGB );
 	void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent = false );
 
+	void FillBackground(long left, long top, long right, long bottom);
+
 	void PrintGlyph      ( const int x, const int y, const int iChar );
 	int  PrintText       ( const char * pText, RECT & rRect );
 	int  PrintTextCursorX( const char * pText, RECT & rRect );

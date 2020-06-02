@@ -846,7 +846,7 @@ int PrintText ( const char * pText, RECT & rRect )
 	int nLen = strlen( pText );
 
 #if !DEBUG_FONT_NO_BACKGROUND_TEXT
-	FillRect( GetDebuggerMemDC(), &rRect, g_hConsoleBrushBG );
+	FillBackground(rRect.left, rRect.top, rRect.right, rRect.bottom);
 #endif
 
 	DebuggerPrint( rRect.left, rRect.top, pText );
@@ -857,10 +857,35 @@ int PrintText ( const char * pText, RECT & rRect )
 void PrintTextColor ( const conchar_t *pText, RECT & rRect )
 {
 #if !DEBUG_FONT_NO_BACKGROUND_TEXT
-	FillRect( GetDebuggerMemDC(), &rRect, g_hConsoleBrushBG );
+	FillBackground(rRect.left, rRect.top, rRect.right, rRect.bottom);
 #endif
 
 	DebuggerPrintColor( rRect.left, rRect.top, pText );
+}
+
+//===========================================================================
+void FillBackground(long left, long top, long right, long bottom)
+{
+	long index_dst = (384-bottom) * 80 * CONSOLE_FONT_GRID_X;
+	//for (long y = top; y < bottom; y++)
+	//{
+		for (long x = left; x < right; x++)
+		{
+			g_pDebuggerMemFramebits[index_dst + x].r = g_cConsoleBrushBG_r;
+			g_pDebuggerMemFramebits[index_dst + x].g = g_cConsoleBrushBG_g;
+			g_pDebuggerMemFramebits[index_dst + x].b = g_cConsoleBrushBG_b;
+		}
+		//index_dst -= 80 * CONSOLE_FONT_GRID_X;
+	//}
+	if (top != bottom) {
+		bgra_t* src = g_pDebuggerMemFramebits + (index_dst + left);
+		bgra_t* dst = src + (80 * CONSOLE_FONT_GRID_X);
+		size_t size = (right - left) * sizeof(bgra_t);
+		for (int i = 0; i < bottom - top - 1; i++) {
+			memcpy((void*)dst, (void*)src, size);
+			dst += 80 * CONSOLE_FONT_GRID_X ;
+		}
+	}
 }
 
 // Updates the horizontal cursor
