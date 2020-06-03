@@ -371,6 +371,7 @@ static void ParseUnit(void)
 static void Snapshot_LoadState_v2(void)
 {
 	bool restart = false;	// Only need to restart if any VM state has change
+	HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
 
 	try
 	{
@@ -474,6 +475,7 @@ static void Snapshot_LoadState_v2(void)
 			PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
 	}
 
+	SetCursor(oldcursor);
 	yamlHelper.FinaliseParser();
 }
 
