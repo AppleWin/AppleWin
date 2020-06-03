@@ -4354,9 +4354,17 @@ void DrawMemActivity(Update_t bUpdate)
 			ramindex = y * 256 + i;
 			color = _rammain[ramindex];
 			index = (383 - 16 - y) * linesize + x + 16 ;
-			g_pDebuggerExtraFramebits[index].r = color;
-			g_pDebuggerExtraFramebits[index].g = color;
-			g_pDebuggerExtraFramebits[index].b = color;
+			g_pDebuggerExtraFramebits[index].r = g_aMemoryHeatmap_W[ramindex] | (color >> 1);
+			g_pDebuggerExtraFramebits[index].g = g_aMemoryHeatmap_R[ramindex] | (color >> 1);
+			g_pDebuggerExtraFramebits[index].b = g_aMemoryHeatmap_X[ramindex] | (color >> 1);
+
+			g_aMemoryHeatmap_W[ramindex]-=4;
+			if (g_aMemoryHeatmap_W[ramindex] == -4) g_aMemoryHeatmap_W[ramindex] = 0;
+			g_aMemoryHeatmap_R[ramindex]-=4;
+			if (g_aMemoryHeatmap_R[ramindex] == -4) g_aMemoryHeatmap_R[ramindex] = 0;
+			g_aMemoryHeatmap_X[ramindex]-=4;
+			if (g_aMemoryHeatmap_X[ramindex] == -4) g_aMemoryHeatmap_X[ramindex] = 0;
+
 			color = _ramaux[ramindex];
 			index = (383 - 16 - y) * linesize + x + 288;
 			g_pDebuggerExtraFramebits[index].r = color;

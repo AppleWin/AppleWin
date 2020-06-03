@@ -27,6 +27,10 @@
 	extern HBRUSH  g_hConsoleFontBrush;
 	extern HBITMAP g_hConsoleFontBitmap;
 
+	extern char g_aMemoryHeatmap_R[65536]; // HEATMAP from cpu65d02.h
+	extern char g_aMemoryHeatmap_W[65536]; // HEATMAP from cpu65d02.h
+	extern char g_aMemoryHeatmap_X[65536]; // HEATMAP from cpu65d02.h
+
 	enum
 	{
 		DISPLAY_HEIGHT = 384,

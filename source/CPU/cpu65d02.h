@@ -49,9 +49,9 @@ inline u8 DecClamp8( u8 x )
 // [2] R Store
 // [3] A n/a
 // RGBA r = write, g = read, b = Program Counter
-const int HEATMAP_W_MASK = 0x00FF0000; // Red   Store
-const int HEATMAP_R_MASK = 0x0000FF00; // Green Load
-const int HEATMAP_X_MASK = 0x000000FF; // Blue  Exec
+//const int HEATMAP_W_MASK = 0x00FF0000; // Red   Store
+//const int HEATMAP_R_MASK = 0x0000FF00; // Green Load
+//const int HEATMAP_X_MASK = 0x000000FF; // Blue  Exec
 
 
 // This is a memory heatmap
@@ -60,11 +60,13 @@ const int HEATMAP_X_MASK = 0x000000FF; // Blue  Exec
 // FD = accessed 2 clock cycles ago
 // etc.
 // Displayed as 256x256 64K memory access
-int g_aMemoryHeatmap[ 65536 ]; // TODO: Change to <stdint.h> int32_t
+char g_aMemoryHeatmap_R[65536];
+char g_aMemoryHeatmap_W[65536];
+char g_aMemoryHeatmap_X[65536];
 
-#define HEATMAP_W(addr) g_aMemoryHeatmap[ addr ] |= HEATMAP_W_MASK
-#define HEATMAP_R(addr) g_aMemoryHeatmap[ addr ] |= HEATMAP_R_MASK
-#define HEATMAP_X(addr) g_aMemoryHeatmap[ addr ] |= HEATMAP_X_MASK
+#define HEATMAP_W(addr) g_aMemoryHeatmap_W[ addr ] = 0xFC
+#define HEATMAP_R(addr) g_aMemoryHeatmap_R[ addr ] = 0xFC
+#define HEATMAP_X(addr) g_aMemoryHeatmap_X[ addr ] = 0xFC
 
 #undef READ
 #define READ ReadByte( addr, uExecutedCycles )

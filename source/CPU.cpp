@@ -498,7 +498,7 @@ static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdat
 	if (GetMainCpu() == CPU_6502)
 		return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
 	else
-		return Cpu65C02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+		return Cpu65D02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
 }
 
 //
