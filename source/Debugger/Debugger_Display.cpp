@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * Author: Copyright (C) 2006-2010 Michael Pohoreski
  */
 
+#include <intrin.h> // For __popcnt() only... not portable
+
 #include "StdAfx.h"
 
 #include "Debug.h"
@@ -229,7 +231,7 @@ static char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iV
 	void DrawSubWindow_Symbols  (Update_t bUpdate);
 	void DrawSubWindow_ZeroPage (Update_t bUpdate);
 
-	void DrawMemActivity(Update_t bUpdate);
+	void DrawMemHeatmap(Update_t bUpdate);
 
 	void DrawWindowBottom ( Update_t bUpdate, int iWindow );
 
@@ -958,7 +960,7 @@ int PrintText ( const char * pText, RECT & rRect )
 	int nLen = strlen( pText );
 
 #if !DEBUG_FONT_NO_BACKGROUND_TEXT
-	FillBackground(rRect.left, rRect.top, rRect.right, rRect.bottom);
+	FillBackground(rRect.left, rRect.top, rRect.right, rRect.bottom, g_pDebuggerMemFramebits);
 #endif
 
 	DebuggerPrint( rRect.left, rRect.top, pText );
@@ -969,33 +971,34 @@ int PrintText ( const char * pText, RECT & rRect )
 void PrintTextColor ( const conchar_t *pText, RECT & rRect )
 {
 #if !DEBUG_FONT_NO_BACKGROUND_TEXT
-	FillBackground(rRect.left, rRect.top, rRect.right, rRect.bottom);
+	FillBackground(rRect.left, rRect.top, rRect.right, rRect.bottom, g_pDebuggerMemFramebits);
 #endif
 
 	DebuggerPrintColor( rRect.left, rRect.top, pText );
 }
 
 //===========================================================================
-void FillBackground(long left, long top, long right, long bottom)
+void FillBackground(long left, long top, long right, long bottom, void *framebuffer)
 {
+	bgra_t* f = (bgra_t*)framebuffer;
 	long index_dst = (384-bottom) * 80 * CONSOLE_FONT_GRID_X;
 	//for (long y = top; y < bottom; y++)
 	//{
 		for (long x = left; x < right; x++)
 		{
-			g_pDebuggerMemFramebits[index_dst + x].r = g_cConsoleBrushBG_r;
-			g_pDebuggerMemFramebits[index_dst + x].g = g_cConsoleBrushBG_g;
-			g_pDebuggerMemFramebits[index_dst + x].b = g_cConsoleBrushBG_b;
+			f[index_dst + x].r = g_cConsoleBrushBG_r;
+			f[index_dst + x].g = g_cConsoleBrushBG_g;
+			f[index_dst + x].b = g_cConsoleBrushBG_b;
 		}
 		//index_dst -= 80 * CONSOLE_FONT_GRID_X;
 	//}
 	if (top != bottom) {
-		bgra_t* src = g_pDebuggerMemFramebits + (index_dst + left);
-		bgra_t* dst = src + (80 * CONSOLE_FONT_GRID_X);
+		bgra_t* src = f + (index_dst + left);
+		bgra_t* dst = src + 560;
 		size_t size = (right - left) * sizeof(bgra_t);
 		for (int i = 0; i < bottom - top - 1; i++) {
 			memcpy((void*)dst, (void*)src, size);
-			dst += 80 * CONSOLE_FONT_GRID_X ;
+			dst += 560;
 		}
 	}
 }
@@ -4308,7 +4311,7 @@ void UpdateDisplay (Update_t bUpdate)
 	if ((bUpdate & UPDATE_CONSOLE_DISPLAY) || (bUpdate & UPDATE_CONSOLE_INPUT))
 		DrawSubWindow_Console( bUpdate );
 
-	DrawMemActivity( bUpdate );
+	DrawMemHeatmap( bUpdate );
 
 	StretchBltMemToFrameDC();
 
@@ -4316,8 +4319,8 @@ void UpdateDisplay (Update_t bUpdate)
 }
 
 //========================================================================================
-// Very slow because GDI is very slow. Unusable unless AW switches to SDL, OpenGL or DX.
-void DrawMemActivity(Update_t bUpdate)
+
+void DrawMemHeatmap(Update_t bUpdate)
 {
 	HDC dc = GetDebuggerExtraDC();
 	int x = 0;
@@ -4328,6 +4331,22 @@ void DrawMemActivity(Update_t bUpdate)
 	int page = 0, i= 0;
 	LPBYTE _rammain = mem;
 	LPBYTE _ramaux = mem;
+
+	// Drawing heatmaps
+
+	// Population count (counting number of 1 in a byte) with luma shift for the map
+	char popcount[256];
+	popcount[0] = 0;
+	for (x = 1; x < 256; x++){
+		popcount[x] = 7;
+		y = x;
+		for (; y != 0; y >>= 1)
+			if (y & 1)
+				popcount[x]++;
+		popcount[x] <<= 3;
+	}
+
+	int heatmap_diff = g_iMemoryHeatmapValue - 0x1FFFF;
 	for (page = 0; page < 256; page++) {
 		if (!memdirty[page]) {
 			// same data in mem and in main or aux
@@ -4352,26 +4371,167 @@ void DrawMemActivity(Update_t bUpdate)
 			x = i;
 			y = page;
 			ramindex = y * 256 + i;
-			color = _rammain[ramindex];
-			index = (383 - 16 - y) * linesize + x + 16 ;
-			g_pDebuggerExtraFramebits[index].r = g_aMemoryHeatmap_W[ramindex] | (color >> 1);
-			g_pDebuggerExtraFramebits[index].g = g_aMemoryHeatmap_R[ramindex] | (color >> 1);
-			g_pDebuggerExtraFramebits[index].b = g_aMemoryHeatmap_X[ramindex] | (color >> 1);
+			color = popcount[_rammain[ramindex]];
+			index = (383 - HEATMAP_TOPMARGIN - y) * linesize + x + HEATMAP_MAIN_LEFTMARGIN;
 
-			g_aMemoryHeatmap_W[ramindex]-=4;
-			if (g_aMemoryHeatmap_W[ramindex] == -4) g_aMemoryHeatmap_W[ramindex] = 0;
-			g_aMemoryHeatmap_R[ramindex]-=4;
-			if (g_aMemoryHeatmap_R[ramindex] == -4) g_aMemoryHeatmap_R[ramindex] = 0;
-			g_aMemoryHeatmap_X[ramindex]-=4;
-			if (g_aMemoryHeatmap_X[ramindex] == -4) g_aMemoryHeatmap_X[ramindex] = 0;
+			g_aMemoryHeatmap_W[ramindex] -= heatmap_diff;
+			if (g_aMemoryHeatmap_W[ramindex] < 0) g_aMemoryHeatmap_W[ramindex] = 0;
+			g_aMemoryHeatmap_R[ramindex] -= heatmap_diff;
+			if (g_aMemoryHeatmap_R[ramindex] < 0) g_aMemoryHeatmap_R[ramindex] = 0;
+			g_aMemoryHeatmap_X[ramindex] -= heatmap_diff;
+			if (g_aMemoryHeatmap_X[ramindex] < 0) g_aMemoryHeatmap_X[ramindex] = 0;
 
-			color = _ramaux[ramindex];
-			index = (383 - 16 - y) * linesize + x + 288;
-			g_pDebuggerExtraFramebits[index].r = color;
-			g_pDebuggerExtraFramebits[index].g = color;
-			g_pDebuggerExtraFramebits[index].b = color;
+			g_pDebuggerExtraFramebits[index].r = ((g_aMemoryHeatmap_W[ramindex])>>9) & 0xFF | color;
+			g_pDebuggerExtraFramebits[index].g = ((g_aMemoryHeatmap_X[ramindex])>>9) & 0xFF | color;
+			g_pDebuggerExtraFramebits[index].b = ((g_aMemoryHeatmap_R[ramindex])>>9) & 0xFF | color;
+
+			color = popcount[_ramaux[ramindex]];
+			index = (383 - HEATMAP_TOPMARGIN - y) * linesize + x + HEATMAP_AUX_LEFTMARGIN;
+			ramindex += 0x10000;
+
+			g_aMemoryHeatmap_W[ramindex] -= heatmap_diff;
+			if (g_aMemoryHeatmap_W[ramindex] < 0) g_aMemoryHeatmap_W[ramindex] = 0;
+			g_aMemoryHeatmap_R[ramindex] -= heatmap_diff;
+			if (g_aMemoryHeatmap_R[ramindex] < 0) g_aMemoryHeatmap_R[ramindex] = 0;
+			g_aMemoryHeatmap_X[ramindex] -= heatmap_diff;
+			if (g_aMemoryHeatmap_X[ramindex] < 0) g_aMemoryHeatmap_X[ramindex] = 0;
+
+			g_pDebuggerExtraFramebits[index].r = ((g_aMemoryHeatmap_W[ramindex]) >> 9) & 0xFF | color;
+			g_pDebuggerExtraFramebits[index].g = ((g_aMemoryHeatmap_X[ramindex]) >> 9) & 0xFF | color;
+			g_pDebuggerExtraFramebits[index].b = ((g_aMemoryHeatmap_R[ramindex]) >> 9) & 0xFF | color;
 		}
 	}
+	g_iMemoryHeatmapValue = 0x1FFFF;
+
+	// Drawing RAM access bars
+
+	int addr,addrR, addrW;
+	addr = 0x0000;
+	addrR = MemGetBank(addr, false);
+	addrW = MemGetBank(addr, true);
+	color = (addrR == 0x0000) * 0x00FF0000 | (addrW == 0x0000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x00, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x02, g_pDebuggerExtraFramebits);
+	color = (addrR == 0x10000) * 0x00FF0000 | (addrW == 0x10000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x00, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x02, g_pDebuggerExtraFramebits);
+
+	addr = 0x0400;
+	addrR = MemGetBank(addr, false);
+	addrW = MemGetBank(addr, true);
+	color = (addrR == 0x0400) * 0x00FF0000 | (addrW == 0x0400) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x04, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x08, g_pDebuggerExtraFramebits);
+	color = (addrR == 0x10400) * 0x00FF0000 | (addrW == 0x10400) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x04, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x08, g_pDebuggerExtraFramebits);
+
+	addr = 0x0200;
+	addrR = MemGetBank(addr, false);
+	addrW = MemGetBank(addr, true);
+	color = (addrR == 0x0200) * 0x00FF0000 | (addrW == 0x0200) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x02, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x04, g_pDebuggerExtraFramebits);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x08, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x20, g_pDebuggerExtraFramebits);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x60, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0xC0, g_pDebuggerExtraFramebits);
+	color = (addrR == 0x10200) * 0x00FF0000 | (addrW == 0x10200) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x02, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x04, g_pDebuggerExtraFramebits);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x08, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x20, g_pDebuggerExtraFramebits);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x60, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0xC0, g_pDebuggerExtraFramebits);
+
+	addr = 0x2000;
+	addrR = MemGetBank(addr, false);
+	addrW = MemGetBank(addr, true);
+	color = (addrR == 0x2000) * 0x00FF0000 | (addrW == 0x2000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x20, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x40, g_pDebuggerExtraFramebits);
+	color = (addrR == 0x12000) * 0x00FF0000 | (addrW == 0x12000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x20, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x40, g_pDebuggerExtraFramebits);
+
+	addr = 0x4000;
+	addrR = MemGetBank(addr, false);
+	addrW = MemGetBank(addr, true);
+	color = (addrR == 0x4000) * 0x00FF0000 | (addrW == 0x4000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x40, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x60, g_pDebuggerExtraFramebits);
+	color = (addrR == 0x14000) * 0x00FF0000 | (addrW == 0x14000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x40, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x60, g_pDebuggerExtraFramebits);
+
+	addr = 0xC000;
+	addrR = MemGetBank(addr, false);
+	addrW = MemGetBank(addr, true);
+	color = (addrR == 0xC000) * 0x00FF0000 | (addrW == 0xC000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0xC0, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0xD0, g_pDebuggerExtraFramebits);
+	color = (addrR == 0x1C000) * 0x00FF0000 | (addrW == 0x1C000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0xC0, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0xD0, g_pDebuggerExtraFramebits);
+
+	addr = 0xD000;
+	addrR = MemGetBank(addr, false);
+	addrW = MemGetBank(addr, true);
+	color = (addrR == 0xC000) * 0x00FF0000 | (addrW == 0xC000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0xC0, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0xD0, g_pDebuggerExtraFramebits);
+	color = (addrR == 0xD000) * 0x00FF0000 | (addrW == 0xD000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0xD0, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0xE0, g_pDebuggerExtraFramebits);
+	color = (addrR == 0x1C000) * 0x00FF0000 | (addrW == 0x1C000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0xC0, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0xD0, g_pDebuggerExtraFramebits);
+	color = (addrR == 0x1D000) * 0x00FF0000 | (addrW == 0x1D000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0xD0, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0xE0, g_pDebuggerExtraFramebits);
+
+	addr = 0xE000;
+	addrR = MemGetBank(addr, false);
+	addrW = MemGetBank(addr, true);
+	color = (addrR == 0xE000) * 0x00FF0000 | (addrW == 0xE000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0xE0, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x100, g_pDebuggerExtraFramebits);
+	color = (addrR == 0x1E000) * 0x00FF0000 | (addrW == 0x1E000) * 0x000000FF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0xE0, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x100, g_pDebuggerExtraFramebits);
+
+	// Drawing Video display bars
+
+	// TEXT or GR + PAGE2OFF or 80STOREON
+	color = ((VideoGetSWTEXT() || !VideoGetSWHIRES()) && (VideoGetSW80STORE() || !VideoGetSWPAGE2())) * 0x00FFFFFF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256+4, HEATMAP_TOPMARGIN + 0x04, HEATMAP_MAIN_LEFTMARGIN + 256 + 8, HEATMAP_TOPMARGIN + 0x08, g_pDebuggerExtraFramebits);
+	// 80COL or DGR + PAGE2OFF or 80STOREON 
+	color = (((VideoGetSWTEXT() && VideoGetSW80COL()) || (!VideoGetSWTEXT() && !VideoGetSWHIRES()) && VideoGetSWDHIRES()) && (VideoGetSW80STORE() || !VideoGetSWPAGE2())) * 0x00FFFFFF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 8, HEATMAP_TOPMARGIN + 0x04, HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x08, g_pDebuggerExtraFramebits);
+	// TEXT or GR + PAGE2ON + 80STOREOFF
+	color = ((VideoGetSWTEXT() || !VideoGetSWHIRES()) && !VideoGetSW80STORE() && VideoGetSWPAGE2()) * 0x00FFFFFF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x08, HEATMAP_MAIN_LEFTMARGIN + 256 + 8, HEATMAP_TOPMARGIN + 0x0C, g_pDebuggerExtraFramebits);
+	// 80COL or DGR + PAGE2ON + 80STOREOFF
+	color = (((VideoGetSWTEXT() && VideoGetSW80COL()) || (!VideoGetSWTEXT() && !VideoGetSWHIRES()) && VideoGetSWDHIRES()) && !VideoGetSW80STORE() && VideoGetSWPAGE2()) * 0x00FFFFFF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 8, HEATMAP_TOPMARGIN + 0x08, HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x0C, g_pDebuggerExtraFramebits);
+
+	// HGR + PAGE2OFF or 80STOREON
+	color = (!VideoGetSWTEXT() && VideoGetSWHIRES() && (VideoGetSW80STORE() || !VideoGetSWPAGE2())) * 0x00FFFFFF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x20, HEATMAP_MAIN_LEFTMARGIN + 256 + 8, HEATMAP_TOPMARGIN + 0x40, g_pDebuggerExtraFramebits);
+	// DHGR + PAGE2OFF or 80STOREON 
+	color = (!VideoGetSWTEXT() && VideoGetSWHIRES() && VideoGetSWDHIRES() && (VideoGetSW80STORE() || !VideoGetSWPAGE2())) * 0x00FFFFFF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 8, HEATMAP_TOPMARGIN + 0x20, HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x40, g_pDebuggerExtraFramebits);
+	// HGR + PAGE2ON + 80STOREOFF
+	color = (!VideoGetSWTEXT() && VideoGetSWHIRES() && !VideoGetSW80STORE() && VideoGetSWPAGE2()) * 0x00FFFFFF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x40, HEATMAP_MAIN_LEFTMARGIN + 256 + 8, HEATMAP_TOPMARGIN + 0x60, g_pDebuggerExtraFramebits);
+	// DHGR + PAGE2ON + 80STOREOFF
+	color = (!VideoGetSWTEXT() && VideoGetSWHIRES() && VideoGetSWDHIRES() && !VideoGetSW80STORE() && VideoGetSWPAGE2()) * 0x00FFFFFF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_AUX_LEFTMARGIN - 8, HEATMAP_TOPMARGIN + 0x40, HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x60, g_pDebuggerExtraFramebits);
+
 }
 
 //===========================================================================

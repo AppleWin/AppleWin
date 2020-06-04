@@ -18,6 +18,8 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+extern int32_t MemGetBank(int32_t addr, bool write);
+
 typedef unsigned char  u8;  // TODO: change to <stdint.h> uint8_t
 typedef unsigned short u16; // TODO: change to <stdint.h> uint16_t
 
@@ -60,13 +62,14 @@ inline u8 DecClamp8( u8 x )
 // FD = accessed 2 clock cycles ago
 // etc.
 // Displayed as 256x256 64K memory access
-char g_aMemoryHeatmap_R[65536];
-char g_aMemoryHeatmap_W[65536];
-char g_aMemoryHeatmap_X[65536];
+int32_t g_aMemoryHeatmap_R[65536*3];
+int32_t g_aMemoryHeatmap_W[65536*3];
+int32_t g_aMemoryHeatmap_X[65536*3];
+int32_t g_iMemoryHeatmapValue = 0x1FFFF;
 
-#define HEATMAP_W(addr) g_aMemoryHeatmap_W[ addr ] = 0xFC
-#define HEATMAP_R(addr) g_aMemoryHeatmap_R[ addr ] = 0xFC
-#define HEATMAP_X(addr) g_aMemoryHeatmap_X[ addr ] = 0xFC
+#define HEATMAP_W(addr) g_aMemoryHeatmap_W[ MemGetBank(addr,true)  ] = g_iMemoryHeatmapValue
+#define HEATMAP_R(addr) g_aMemoryHeatmap_R[ MemGetBank(addr,false) ] = g_iMemoryHeatmapValue
+#define HEATMAP_X(addr) g_aMemoryHeatmap_X[ MemGetBank(addr,false) ] = ++g_iMemoryHeatmapValue
 
 #undef READ
 #define READ ReadByte( addr, uExecutedCycles )

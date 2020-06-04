@@ -27,9 +27,11 @@
 	extern HBRUSH  g_hConsoleFontBrush;
 	extern HBITMAP g_hConsoleFontBitmap;
 
-	extern char g_aMemoryHeatmap_R[65536]; // HEATMAP from cpu65d02.h
-	extern char g_aMemoryHeatmap_W[65536]; // HEATMAP from cpu65d02.h
-	extern char g_aMemoryHeatmap_X[65536]; // HEATMAP from cpu65d02.h
+	extern int32_t g_aMemoryHeatmap_R[65536*3]; // HEATMAP from cpu65d02.h
+	extern int32_t g_aMemoryHeatmap_W[65536*3]; // HEATMAP from cpu65d02.h
+	extern int32_t g_aMemoryHeatmap_X[65536*3]; // HEATMAP from cpu65d02.h
+	extern int32_t g_iMemoryHeatmapValue;
+	extern int32_t MemGetBank(int32_t addr, bool write);
 
 	enum
 	{
@@ -44,7 +46,7 @@
 	void DebuggerSetColorFG( COLORREF nRGB );
 	void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent = false );
 
-	void FillBackground(long left, long top, long right, long bottom);
+	void FillBackground(long left, long top, long right, long bottom, void *framebuffer);
 
 	void PrintGlyph      ( const int x, const int y, const int iChar );
 	int  PrintText       ( const char * pText, RECT & rRect );
@@ -69,6 +71,10 @@
 	void FormatDisassemblyLine( const DisasmLine_t & line, char *sDisassembly_, const int nBufferSize );
 	void FormatOpcodeBytes    ( WORD nBaseAddress, DisasmLine_t & line_ );
 	void FormatNopcodeBytes   ( WORD nBaseAddress, DisasmLine_t & line_ );
+
+#define HEATMAP_MAIN_LEFTMARGIN 16
+#define HEATMAP_AUX_LEFTMARGIN  16+256+16
+#define HEATMAP_TOPMARGIN 16
 
 	//
 
