@@ -4343,7 +4343,7 @@ void DrawMemHeatmap(Update_t bUpdate)
 		for (; y != 0; y >>= 1)
 			if (y & 1)
 				popcount[x]++;
-		popcount[x] <<= 3;
+		popcount[x] <<= 2;
 	}
 
 	// copy back dirty pages into memory banks buffers
@@ -4351,6 +4351,7 @@ void DrawMemHeatmap(Update_t bUpdate)
 	_ramaux = MemGetBankPtr(1);  // AUX only, we don't handle extra RAM cards (AppleWorks etc)
 
 	int heatmap_diff = g_iMemoryHeatmapValue - 0x1FFFF;
+	uint8_t blue;
 	for (page = 0; page < 256; page++) {
 		for (i = 0; i < 256; i++)
 		{
@@ -4367,9 +4368,12 @@ void DrawMemHeatmap(Update_t bUpdate)
 			g_aMemoryHeatmap_X[ramindex] -= heatmap_diff;
 			if (g_aMemoryHeatmap_X[ramindex] < 0) g_aMemoryHeatmap_X[ramindex] = 0;
 
+			blue = ((g_aMemoryHeatmap_R[ramindex]) >> 9) & 0xFF;
+			if (blue > 250)
+				blue++;
 			g_pDebuggerExtraFramebits[index].r = ((g_aMemoryHeatmap_W[ramindex])>>9) & 0xFF | color;
-			g_pDebuggerExtraFramebits[index].g = ((g_aMemoryHeatmap_X[ramindex])>>9) & 0xFF | color;
-			g_pDebuggerExtraFramebits[index].b = ((g_aMemoryHeatmap_R[ramindex])>>9) & 0xFF | color;
+			g_pDebuggerExtraFramebits[index].g = (((g_aMemoryHeatmap_X[ramindex])>>9) & 0xFF) | (blue >> 1) | color;
+			g_pDebuggerExtraFramebits[index].b = blue | color;
 
 			color = popcount[_ramaux[ramindex]];
 			index = (383 - HEATMAP_TOPMARGIN - y) * linesize + x + HEATMAP_AUX_LEFTMARGIN;
@@ -4382,9 +4386,10 @@ void DrawMemHeatmap(Update_t bUpdate)
 			g_aMemoryHeatmap_X[ramindex] -= heatmap_diff;
 			if (g_aMemoryHeatmap_X[ramindex] < 0) g_aMemoryHeatmap_X[ramindex] = 0;
 
+			blue = ((g_aMemoryHeatmap_R[ramindex]) >> 9) & 0xFF;
 			g_pDebuggerExtraFramebits[index].r = ((g_aMemoryHeatmap_W[ramindex]) >> 9) & 0xFF | color;
-			g_pDebuggerExtraFramebits[index].g = ((g_aMemoryHeatmap_X[ramindex]) >> 9) & 0xFF | color;
-			g_pDebuggerExtraFramebits[index].b = ((g_aMemoryHeatmap_R[ramindex]) >> 9) & 0xFF | color;
+			g_pDebuggerExtraFramebits[index].g = (((g_aMemoryHeatmap_X[ramindex]) >> 9) & 0xFF) | (blue >> 1) | color;
+			g_pDebuggerExtraFramebits[index].b = blue | color;
 		}
 	}
 	g_iMemoryHeatmapValue = 0x1FFFF;
@@ -4484,20 +4489,20 @@ void DrawMemHeatmap(Update_t bUpdate)
 
 	// Drawing Video display bars
 
-	// TEXT or GR + PAGE2OFF or 80STOREON
-	color = ((VideoGetSWTEXT() || !VideoGetSWHIRES()) && (VideoGetSW80STORE() || !VideoGetSWPAGE2())) * 0x00FFFFFF;
+	// TEXT or GR or MIXED + PAGE2OFF or 80STOREON
+	color = ((VideoGetSWTEXT() || !VideoGetSWHIRES() || VideoGetSWMIXED()) && (VideoGetSW80STORE() || !VideoGetSWPAGE2())) * 0x00FFFFFF;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256+4, HEATMAP_TOPMARGIN + 0x04, HEATMAP_MAIN_LEFTMARGIN + 256 + 8, HEATMAP_TOPMARGIN + 0x08, g_pDebuggerExtraFramebits);
 	// 80COL or DGR + PAGE2OFF or 80STOREON 
-	color = (((VideoGetSWTEXT() && VideoGetSW80COL()) || (!VideoGetSWTEXT() && !VideoGetSWHIRES()) && VideoGetSWDHIRES()) && (VideoGetSW80STORE() || !VideoGetSWPAGE2())) * 0x00FFFFFF;
+	color = (((VideoGetSWTEXT() && VideoGetSW80COL()) || (!VideoGetSWTEXT() && !VideoGetSWHIRES() || VideoGetSWMIXED()) && VideoGetSWDHIRES()) && (VideoGetSW80STORE() || !VideoGetSWPAGE2())) * 0x00FFFFFF;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 8, HEATMAP_TOPMARGIN + 0x04, HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x08, g_pDebuggerExtraFramebits);
-	// TEXT or GR + PAGE2ON + 80STOREOFF
-	color = ((VideoGetSWTEXT() || !VideoGetSWHIRES()) && !VideoGetSW80STORE() && VideoGetSWPAGE2()) * 0x00FFFFFF;
+	// TEXT or GR or MIXED + PAGE2ON + 80STOREOFF
+	color = ((VideoGetSWTEXT() || !VideoGetSWHIRES() || VideoGetSWMIXED()) && !VideoGetSW80STORE() && VideoGetSWPAGE2()) * 0x00FFFFFF;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x08, HEATMAP_MAIN_LEFTMARGIN + 256 + 8, HEATMAP_TOPMARGIN + 0x0C, g_pDebuggerExtraFramebits);
 	// 80COL or DGR + PAGE2ON + 80STOREOFF
-	color = (((VideoGetSWTEXT() && VideoGetSW80COL()) || (!VideoGetSWTEXT() && !VideoGetSWHIRES()) && VideoGetSWDHIRES()) && !VideoGetSW80STORE() && VideoGetSWPAGE2()) * 0x00FFFFFF;
+	color = (((VideoGetSWTEXT() && VideoGetSW80COL()) || (!VideoGetSWTEXT() && !VideoGetSWHIRES() || VideoGetSWMIXED()) && VideoGetSWDHIRES()) && !VideoGetSW80STORE() && VideoGetSWPAGE2()) * 0x00FFFFFF;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 8, HEATMAP_TOPMARGIN + 0x08, HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x0C, g_pDebuggerExtraFramebits);
 

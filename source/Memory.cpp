@@ -1452,53 +1452,6 @@ int32_t MemGetBank(int32_t addr, bool write)
 			: addr + 0x20000;
 	}
 
-
-
-	//// $C0
-	//if (!(addr ^ 0xC000))
-	//	return addr + 0x20000;  // IO
-
-	//// $D0~
-	//if (addr >= 0xD000) {
-	//	if ((!SW_HIGHRAM && !write) || (!SW_WRITERAM && write))   // read firmware, write firmware (no consequence)
-	//		return addr + 0x20000;  // Firmware
-
-	//	// all other cases: switch bank1/bank2
-	//	if (((addr & 0xFF00) == 0xD000) && !SW_BANK2) addr -= 0x1000; // adjust bank1/bank2 address
-
-	//	// switch LC MAIN/AUX depending on SW_ALTZP
-	//	if (SW_ALTZP) return addr + 0x10000; // AUX
-	//	else return addr; // MAIN
-	//}
-
-	//// $01~$02
-	//if (addr < 0x0200) {
-	//	if (SW_ALTZP) return addr + 0x10000; // AUX
-	//	else return addr; // MAIN
-	//}
-
-	//// $03~$B0
-
-	//// LORES + 80STORE
-	//if ((addr >= 0x0400) && (addr < 0x0800) && (VideoGetSWTEXT() || !SW_HIRES) && SW_80STORE) {
-	//	if (SW_PAGE2) return addr + 0x10000; // AUX
-	//	return addr;
-	//}
-	//// HIRES + 80STORE
-	//if ((addr >= 0x2000) && (addr < 0x4000) && !VideoGetSWTEXT() && SW_HIRES && SW_80STORE) {
-	//	if (SW_PAGE2) return addr + 0x10000; // AUX
-	//	return addr;
-	//}
-
-	//if (write) {
-	//	if (SW_AUXWRITE)
-	//		return addr + 0x10000;
-	//	return addr;
- //	}
-
-	//if (SW_AUXREAD) 
-	//	return addr + 0x10000;
-	//return addr;
 }
 
 
