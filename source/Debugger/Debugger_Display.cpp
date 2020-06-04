@@ -4346,26 +4346,12 @@ void DrawMemHeatmap(Update_t bUpdate)
 		popcount[x] <<= 3;
 	}
 
+	// copy back dirty pages into memory banks buffers
+	_rammain = MemGetBankPtr(0);
+	_ramaux = MemGetBankPtr(1);  // AUX only, we don't handle extra RAM cards (AppleWorks etc)
+
 	int heatmap_diff = g_iMemoryHeatmapValue - 0x1FFFF;
 	for (page = 0; page < 256; page++) {
-		if (!memdirty[page]) {
-			// same data in mem and in main or aux
-			_rammain = memmain;
-			_ramaux = memaux;
-		}
-		else {
-			if (memshadow[page] == memmain+(page * 0x100)) {
-				// mem is a shadow of MAIN
-				_rammain = mem;
-				_ramaux = memaux;
-			}
-			else
-			{
-				// mem is a shadow of AUX
-				_rammain = memmain;
-				_ramaux = mem;
-			}
-		}
 		for (i = 0; i < 256; i++)
 		{
 			x = i;
