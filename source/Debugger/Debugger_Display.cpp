@@ -4370,8 +4370,6 @@ void DrawMemHeatmap(Update_t bUpdate)
 			if (g_aMemoryHeatmap_X[ramindex] < 0) g_aMemoryHeatmap_X[ramindex] = 0;
 
 			blue = ((g_aMemoryHeatmap_R[ramindex]) >> 9) & 0xFF;
-			if (blue > 250)
-				blue++;
 			g_pDebuggerExtraFramebits[index].r = ((g_aMemoryHeatmap_W[ramindex])>>9) & 0xFF | color;
 			g_pDebuggerExtraFramebits[index].g = (((g_aMemoryHeatmap_X[ramindex])>>9) & 0xFF) | (blue >> 1) | color;
 			g_pDebuggerExtraFramebits[index].b = blue | color;

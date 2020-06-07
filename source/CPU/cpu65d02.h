@@ -67,8 +67,8 @@ int32_t g_aMemoryHeatmap_W[65536*3];
 int32_t g_aMemoryHeatmap_X[65536*3];
 int32_t g_iMemoryHeatmapValue = 0x1FFFF;
 
-#define HEATMAP_W(addr) g_aMemoryHeatmap_W[ MemGetBank(addr,true)  ] = ++g_iMemoryHeatmapValue;
-#define HEATMAP_R(addr) g_aMemoryHeatmap_R[ MemGetBank(addr,false) ] = ++g_iMemoryHeatmapValue;
+#define HEATMAP_W(addr) g_aMemoryHeatmap_W[ MemGetBank(addr,true)  ] = g_iMemoryHeatmapValue;
+#define HEATMAP_R(addr) g_aMemoryHeatmap_R[ MemGetBank(addr,false) ] = g_iMemoryHeatmapValue;
 #define HEATMAP_X(addr) g_aMemoryHeatmap_X[ MemGetBank(addr,false) ] = ++g_iMemoryHeatmapValue;
 
 #undef READ
