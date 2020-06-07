@@ -8893,7 +8893,9 @@ void DebugDestroy ()
 	DeleteObject( g_hConsoleBrushBG );
 
 	DeleteDC( g_hConsoleFontDC );
+	g_hConsoleFontDC = NULL;
 	DeleteObject( g_hConsoleFontBitmap );
+	g_hConsoleFontBitmap = NULL;
 }
 
 

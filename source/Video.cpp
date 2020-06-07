@@ -589,7 +589,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 		int xSrc = GetFrameBufferBorderWidth();
 		int ySrc = GetFrameBufferBorderHeight();
 
-		int xdest = (IsFullScreen() ? GetFullScreenOffsetX() : 0) + (isDebugMode?0:140*scale);
+		int xdest = (IsFullScreen() ? GetFullScreenOffsetX() : 0);
 		int ydest = (IsFullScreen() ? GetFullScreenOffsetY() : 0);
 		int wdest = (560 * scale) / (isDebugMode ? 2 : 1); // g_nViewportCX;
 		int hdest = (384 * scale) / (isDebugMode ? 2 : 1); // g_nViewportCY;

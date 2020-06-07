@@ -7,6 +7,8 @@
 void LogFileTimeUntilFirstKeyReadReset(void);
 void LogFileTimeUntilFirstKeyRead(void);
 
+//void SetDebugMode(bool bDebugMode); // Frame.h
+
 bool SetCurrentImageDir(const std::string & pszImageDir);
 
 extern const UINT16* GetOldAppleWinVersion(void);

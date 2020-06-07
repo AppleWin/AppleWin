@@ -1384,6 +1384,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				g_cmdLine.bSetFullScreen = g_bRestartFullScreen;
 				g_bRestartFullScreen = false;
 			}
+			DebugExitDebugger();
+			SetDebugMode(false);
 
 			MB_Reset();
 			LogFileOutput("Main: MB_Reset()\n");

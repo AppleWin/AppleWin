@@ -31,6 +31,7 @@
 	extern int32_t g_aMemoryHeatmap_W[65536*3]; // HEATMAP from cpu65d02.h
 	extern int32_t g_aMemoryHeatmap_X[65536*3]; // HEATMAP from cpu65d02.h
 	extern int32_t g_iMemoryHeatmapValue;
+
 	extern int32_t MemGetBank(int32_t addr, bool write);
 
 	enum

@@ -755,8 +755,8 @@ void StretchBltMemToFrameDC(void)
 	xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 	ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
 	ydest += (384 * scale) / 2;
-	wdest = 560 * (scale / 2);
-	hdest = 384 * (scale / 2);
+	wdest = (560 * scale) / 2;
+	hdest = (384 * scale) / 2;
 
 	bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
@@ -4351,6 +4351,7 @@ void DrawMemHeatmap(Update_t bUpdate)
 	_ramaux = MemGetBankPtr(1);  // AUX only, we don't handle extra RAM cards (AppleWorks etc)
 
 	int heatmap_diff = g_iMemoryHeatmapValue - 0x1FFFF;
+
 	uint8_t blue;
 	for (page = 0; page < 256; page++) {
 		for (i = 0; i < 256; i++)

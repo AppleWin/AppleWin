@@ -28,6 +28,7 @@
 	void    FrameRegisterClass ();
 	void	FrameSetCursorPosByMousePos();
 	bool    GetDebugMode(void);
+	void	SetDebugMode(bool bDebugMode);
 	int		GetViewportScale(void);
 	int     SetViewportScale(int nNewScale, bool bForce = false);
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);

@@ -205,7 +205,7 @@ void SetAltEnterToggleFullScreen(bool mode)
 UINT GetFrameBufferBorderlessWidth(void)
 {
 	static const UINT uFrameBufferBorderlessW = 560;	// 560 = Double Hi-Res
-	return uFrameBufferBorderlessW + 280; // +(g_bDebugMode ? uFrameBufferBorderlessW / 2 : 0); // Debug Mode: 50% wider
+	return uFrameBufferBorderlessW +(g_bDebugMode ? uFrameBufferBorderlessW / 2 : 0); // Debug Mode: 50% wider
 }
 
 UINT GetFrameBufferBorderlessHeight(void)
@@ -2492,6 +2492,12 @@ void SetUsingCursor (BOOL bNewValue)
 bool GetDebugMode(void)
 {
 	return g_bDebugMode;
+}
+
+void SetDebugMode(bool bDebugMode)
+{
+	g_bDebugMode = bDebugMode;
+
 }
 
 int GetViewportScale(void)
