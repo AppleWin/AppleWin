@@ -1499,6 +1499,12 @@ void MemInitialize()
 
 	CreateLanguageCard();
 
+	// Reinit memmode on a restart (eg. h/w config changes)
+	if (IsApple2PlusOrClone(GetApple2Type()) && g_CardMgr.QuerySlot(SLOT0) == CT_Empty)
+		SetMemMode(0);
+	else
+		SetMemMode(LanguageCardUnit::kMemModeInitialState);
+
 	MemInitializeROM();
 	MemInitializeCustomROM();
 	MemInitializeCustomF8ROM();
@@ -1768,7 +1774,7 @@ void MemInitializeIO(void)
 
 	// Finally remove the cards' ROMs at $Csnn if internal ROM is enabled
 	// . required when restoring saved-state
-	if (SW_INTCXROM)
+	if (IsAppleIIeOrAbove(GetApple2Type()) && SW_INTCXROM)
 		IoHandlerCardsOut();
 }
 
@@ -2092,7 +2098,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 
 bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
 {
-	if (IS_APPLE2E())
+	if (IsAppleIIeOrAbove(GetApple2Type()))
 	{
 		// IF THE EMULATED PROGRAM HAS JUST UPDATED THE MEMORY WRITE MODE AND IS
 		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
