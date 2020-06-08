@@ -1801,7 +1801,7 @@ inline DWORD getRandomTime()
 //===========================================================================
 
 // Called by:
-// . MemInitialize()
+// . MemInitialize()		eg. on AppleWin start & restart (eg. h/w config changes)
 // . ResetMachineState()	eg. Power-cycle ('Apple-Go' button)
 // . Snapshot_LoadState_v2()
 void MemReset()
@@ -1956,6 +1956,8 @@ void MemReset()
 	//Sets Caps Lock = false (Pravets 8A/C only)
 
 	z80_reset();	// NB. Also called above in CpuInitialize()
+
+	g_NoSlotClock.Reset();	// NB. Power-cycle, but not RESET signal
 }
 
 //===========================================================================
