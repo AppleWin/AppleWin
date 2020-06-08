@@ -1499,12 +1499,6 @@ void MemInitialize()
 
 	CreateLanguageCard();
 
-	// Reinit memmode on a restart (eg. h/w config changes)
-	if (IsApple2PlusOrClone(GetApple2Type()) && g_CardMgr.QuerySlot(SLOT0) == CT_Empty)
-		SetMemMode(0);
-	else
-		SetMemMode(LanguageCardUnit::kMemModeInitialState);
-
 	MemInitializeROM();
 	MemInitializeCustomROM();
 	MemInitializeCustomF8ROM();
@@ -1769,19 +1763,17 @@ void MemInitializeIO(void)
 
 	if (g_CardMgr.QuerySlot(SLOT7) == CT_GenericHDD)
 		HD_Load_Rom(pCxRomPeripheral, SLOT7);			// $C700 : HDD f/w
-
-	//
-
-	// Finally remove the cards' ROMs at $Csnn if internal ROM is enabled
-	// . required when restoring saved-state
-	if (IsAppleIIeOrAbove(GetApple2Type()) && SW_INTCXROM)
-		IoHandlerCardsOut();
 }
 
 // Called by:
 // . Snapshot_LoadState_v2()
-void MemInitializeCardExpansionRomFromSnapshot(void)
+void MemInitializeCardSlotAndExpansionRomFromSnapshot(void)
 {
+	// Remove all the cards' ROMs at $Csnn if internal ROM is enabled
+	if (IsAppleIIeOrAbove(GetApple2Type()) && SW_INTCXROM)
+		IoHandlerCardsOut();
+
+	// Potentially init a card's expansion ROM
 	const UINT uSlot = g_uPeripheralRomSlot;
 
 	if (ExpansionRom[uSlot] == NULL)
@@ -1948,7 +1940,7 @@ void MemReset()
 	mem = memimage;
 
 	// INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
-	ResetPaging(1);		// Initialize=1
+	ResetPaging(TRUE);		// Initialize=1, init memmode
 
 	// INITIALIZE & RESET THE CPU
 	// . Do this after ROM has been copied back to mem[], so that PC is correctly init'ed from 6502's reset vector

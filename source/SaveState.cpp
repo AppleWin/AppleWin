@@ -400,7 +400,7 @@ static void Snapshot_LoadState_v2(void)
 		m_ConfigNew.m_bEnableHDD = false;
 		//m_ConfigNew.m_bEnableTheFreezesF8Rom = ?;	// todo: when support saving config
 
-		MemReset();							// Also calls CpuInitialize()
+		MemReset();							// Also calls CpuInitialize(), CNoSlotClock.Reset()
 		PravetsReset();
 
 		if (g_CardMgr.IsSSCInstalled())
@@ -455,7 +455,7 @@ static void Snapshot_LoadState_v2(void)
 		MemInitializeCustomROM();
 		MemInitializeCustomF8ROM();
 		MemInitializeIO();
-		MemInitializeCardExpansionRomFromSnapshot();
+		MemInitializeCardSlotAndExpansionRomFromSnapshot();
 
 		MemUpdatePaging(TRUE);
 
