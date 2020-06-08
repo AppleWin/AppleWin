@@ -159,6 +159,8 @@
 	size_t Util_GetTextScreen( char* &pText_ );
 	void   Util_CopyTextToClipboard( const size_t nSize, const char *pText );
 
+
+
 // Main
 	Update_t DebuggerProcessCommand( const bool bEchoConsoleInput );
 

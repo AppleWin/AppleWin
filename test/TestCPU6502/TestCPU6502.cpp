@@ -27,6 +27,14 @@ iofunction		IOWrite[256] = {0};	// TODO: Init
 
 regsrec regs;
 
+// disable Heatmap (CPU.h)
+#undef HEATMAP_W
+#undef HEATMAP_R
+#undef HEATMAP_X
+#define HEATMAP_W(addr)
+#define HEATMAP_R(addr)
+#define HEATMAP_X(addr)
+
 static const int IRQ_CHECK_TIMEOUT = 128;
 static signed int g_nIrqCheckTimeout = IRQ_CHECK_TIMEOUT;
 

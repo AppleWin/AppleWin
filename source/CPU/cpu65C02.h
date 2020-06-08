@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //===========================================================================
 
+
 static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 {
 	// Optimisation:
@@ -55,6 +56,7 @@ static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 		}
 		else
 		{
+			HEATMAP_X(regs.pc);
 			Fetch(iOpcode, uExecutedCycles);
 
 //#define $ INV // INV = Invalid -> Debugger Break

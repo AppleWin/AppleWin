@@ -151,10 +151,15 @@ static bool g_irqDefer1Opcode = false;
 
 static bool g_isMouseCardInstalled = false;
 
-//
-
 static eCpuType g_MainCPU = CPU_65C02;
 static eCpuType g_ActiveCPU = CPU_65C02;
+
+// Memory heatmap for debug purpose
+// Displayed as 256x256 64K memory access
+int32_t g_aMemoryHeatmap_R[65536 * 3];
+int32_t g_aMemoryHeatmap_W[65536 * 3];
+int32_t g_aMemoryHeatmap_X[65536 * 3];
+int32_t g_iMemoryHeatmapValue = 0x1FFFF;
 
 eCpuType GetMainCpu(void)
 {
@@ -498,7 +503,7 @@ static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdat
 	if (GetMainCpu() == CPU_6502)
 		return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
 	else
-		return Cpu65D02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+		return Cpu65C02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
 }
 
 //

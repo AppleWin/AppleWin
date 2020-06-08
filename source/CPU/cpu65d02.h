@@ -18,8 +18,6 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-extern int32_t MemGetBank(int32_t addr, bool write);
-
 typedef unsigned char  u8;  // TODO: change to <stdint.h> uint8_t
 typedef unsigned short u16; // TODO: change to <stdint.h> uint16_t
 
@@ -39,50 +37,10 @@ inline u8 DecClamp8( u8 x )
 	return r;
 }
 
-// TODO: Verify: RGBA or BGRA (.bmp format)
-// 0 A n/a
-// 1 B Exec
-// 2 G Read
-// 3 R Write
-//
-// 0xAARRGGBB
-// [0] B Exec
-// [1] G Load
-// [2] R Store
-// [3] A n/a
-// RGBA r = write, g = read, b = Program Counter
-//const int HEATMAP_W_MASK = 0x00FF0000; // Red   Store
-//const int HEATMAP_R_MASK = 0x0000FF00; // Green Load
-//const int HEATMAP_X_MASK = 0x000000FF; // Blue  Exec
-
-
-// This is a memory heatmap
-// FF = accessed on this clock cycle
-// FE = accessed 1 clock cycles ago
-// FD = accessed 2 clock cycles ago
-// etc.
-// Displayed as 256x256 64K memory access
-int32_t g_aMemoryHeatmap_R[65536*3];
-int32_t g_aMemoryHeatmap_W[65536*3];
-int32_t g_aMemoryHeatmap_X[65536*3];
-int32_t g_iMemoryHeatmapValue = 0x1FFFF;
-
-#define HEATMAP_W(addr) g_aMemoryHeatmap_W[ MemGetBank(addr,true)  ] = g_iMemoryHeatmapValue;
-#define HEATMAP_R(addr) g_aMemoryHeatmap_R[ MemGetBank(addr,false) ] = g_iMemoryHeatmapValue;
-#define HEATMAP_X(addr) g_aMemoryHeatmap_X[ MemGetBank(addr,false) ] = ++g_iMemoryHeatmapValue;
 
 #undef READ
 #define READ ReadByte( addr, uExecutedCycles )
-
-inline u8 ReadByte( u16 addr, int uExecutedCycles )
-{
-    // TODO: We should have a single g_bDebuggerActive so we can have a single implementation across ][+ //e
-	HEATMAP_R(addr);
-
-	return ((addr & 0xF000) == 0xC000)
-		? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)
-		: *(mem+addr);
-}
+// ReadByte moved to cpu_general.inl
 
 #undef WRITE
 #define WRITE(a)                                              \

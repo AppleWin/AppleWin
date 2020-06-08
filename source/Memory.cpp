@@ -1391,12 +1391,14 @@ LPBYTE MemGetCxRomPeripheral()
 
 //===========================================================================
 
-// Used by debugger (Heatmap)
+// Used for the debugger Heatmap, called from CPU.h
 // Get the active memory bank depending on all soft switches and RW mode
 // 0x0000-0xFFFF => main
 // 0x10000-0x1FFFF => aux
 // 0x20000-0x2FFFF => ROM
 // based on UpdatePaging()
+
+// Needed because there's no other way to know what are the exact current bank status for any page
 
 int32_t MemGetBank(int32_t addr, bool write)
 {
