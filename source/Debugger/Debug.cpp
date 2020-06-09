@@ -9899,7 +9899,7 @@ bool IsDebugSteppingCycleAccurate(void)
 	return (g_nAppMode == MODE_STEPPING) && (g_nDebugSpeed == RUN_CYCLESLOW);
 }
 
-bool IsDebugSteppingWithDebugger(void)
+bool IsDebugSteppingWithPCFollow(void)
 {
-	return (g_nAppMode == MODE_STEPPING) && ((g_nDebugSpeed == RUN_DEBUG) || (g_nDebugSpeed == RUN_CYCLESLOW));
+	return (g_nAppMode == MODE_STEPPING) && ((g_nDebugSpeed != RUN_DEBUG) || (g_nDebugSpeed == RUN_CYCLESLOW));
 }

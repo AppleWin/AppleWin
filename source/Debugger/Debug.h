@@ -187,4 +187,4 @@
 
 	bool	IsDebugSteppingAtFullSpeed(void);
 	bool	IsDebugSteppingCycleAccurate(void);
-	bool    IsDebugSteppingWithDebugger(void);
+	bool    IsDebugSteppingWithPCFollow(void);

@@ -45,10 +45,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// CPU (Main)
 		{TEXT(".")           , CmdCursorJumpPC      , CMD_CURSOR_JUMP_PC       , "Locate the cursor in the disasm window" }, // centered
 		{TEXT("=")           , CmdCursorSetPC       , CMD_CURSOR_SET_PC        , "Sets the PC to the current instruction" },
-		{TEXT("G")           , CmdGoNormalSpeed     , CMD_GO_NORMAL_SPEED      , "Run at normal speed [until PC == address]"   },
+		{TEXT("G")           , CmdGoNormalSpeed     , CMD_GO_NORMAL_SPEED      , "Run at normal speed and follow PC [until PC == address]"   },
 		{TEXT("GG")          , CmdGoFullSpeed       , CMD_GO_FULL_SPEED        , "Run at full speed [until PC == address]"   },
-		{TEXT("GC")          , CmdGoCycleSpeed      , CMD_GO_CYCLE_SPEED       , "Run at video cycle-accurate speed [until PC == address]"   },
-		{TEXT("GD")          , CmdGoDebugSpeed      , CMD_GO_DEBUG_SPEED       , "Run at full speed with debugger [until PC == address]"   },
+		{TEXT("GC")          , CmdGoCycleSpeed      , CMD_GO_CYCLE_SPEED       , "Run with video cycle-accurate refresh [until PC == address]"   },
+		{TEXT("GD")          , CmdGoDebugSpeed      , CMD_GO_DEBUG_SPEED       , "Run at normal speed [until PC == address]"   },
 		{TEXT("IN")          , CmdIn                , CMD_IN                   , "Input byte from IO $C0xx"   },
 		{TEXT("KEY")         , CmdKey               , CMD_INPUT_KEY            , "Feed key into emulator"     },
 		{TEXT("JSR")         , CmdJSR               , CMD_JSR                  , "Call sub-routine"           },
