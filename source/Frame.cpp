@@ -229,7 +229,8 @@ UINT GetFrameBufferBorderHeight(void)
 
 UINT GetFrameBufferWidth(void)
 {
-	return GetFrameBufferBorderlessWidth() + 2*GetFrameBufferBorderWidth();
+	//return GetFrameBufferBorderlessWidth() + 2*GetFrameBufferBorderWidth();
+	return 560 + 2 * GetFrameBufferBorderWidth();
 }
 
 UINT GetFrameBufferHeight(void)
