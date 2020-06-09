@@ -63,6 +63,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //	#define DISPLAY_BREAKPOINT_TITLE 1
 //	#define DISPLAY_WATCH_TITLE      1
 
+// From frame.cpp
+extern const UINT FRAMEBUFFER_W;
+extern const UINT FRAMEBUFFER_H;
 
 // Public _________________________________________________________________________________________
 
@@ -157,7 +160,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Drawing
 	// Width
-		const int DISPLAY_WIDTH  = 560;
+		const int DISPLAY_WIDTH  = FRAMEBUFFER_W;
 		// New Font = 50.5 char * 7 px/char = 353.5
 		const int DISPLAY_DISASM_RIGHT   = 353 ;
 
@@ -572,8 +575,8 @@ HDC GetDebuggerMemDC(void)
 
 		ZeroMemory(g_pDebuggerMemFramebufferinfo, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 		g_pDebuggerMemFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		g_pDebuggerMemFramebufferinfo->bmiHeader.biWidth = 560;
-		g_pDebuggerMemFramebufferinfo->bmiHeader.biHeight = 384;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biWidth = FRAMEBUFFER_W;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biHeight = FRAMEBUFFER_H;
 		g_pDebuggerMemFramebufferinfo->bmiHeader.biPlanes = 1;
 		g_pDebuggerMemFramebufferinfo->bmiHeader.biBitCount = 32;
 		g_pDebuggerMemFramebufferinfo->bmiHeader.biCompression = BI_RGB;
@@ -622,8 +625,8 @@ HDC GetDebuggerExtraDC(void)
 
 		ZeroMemory(g_pDebuggerExtraFramebufferinfo, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 		g_pDebuggerExtraFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		g_pDebuggerExtraFramebufferinfo->bmiHeader.biWidth = 560;
-		g_pDebuggerExtraFramebufferinfo->bmiHeader.biHeight = 384;
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biWidth = FRAMEBUFFER_W;
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biHeight = FRAMEBUFFER_H;
 		g_pDebuggerExtraFramebufferinfo->bmiHeader.biPlanes = 1;
 		g_pDebuggerExtraFramebufferinfo->bmiHeader.biBitCount = 32;
 		g_pDebuggerExtraFramebufferinfo->bmiHeader.biCompression = BI_RGB;
@@ -640,11 +643,8 @@ HDC GetDebuggerExtraDC(void)
 		SelectObject(g_hDebuggerExtraDC, g_hDebuggerExtraBM);
 
 		// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-		ZeroMemory(g_pFramebufferbits, 560 * 384 * sizeof(bgra_t));
+		ZeroMemory(g_pFramebufferbits, FRAMEBUFFER_W * FRAMEBUFFER_H * sizeof(bgra_t));
 
-
-		//g_hDebuggerExtraBM = CreateCompatibleBitmap(hFrameDC, 560, 384);
-		//SelectObject(g_hDebuggerExtraDC, g_hDebuggerExtraBM);
 	}
 
 	_ASSERT(g_hDebuggerExtraDC);	// TC: Could this be NULL?
@@ -736,9 +736,9 @@ void StretchBltMemToFrameDC(void)
 
 	int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 	int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
-	xdest+= (560 * scale) / 2;
-	int wdest = 560 * scale;
-	int hdest = 384 * scale;
+	xdest+= (FRAMEBUFFER_W * scale) / 2;
+	int wdest = FRAMEBUFFER_W * scale;
+	int hdest = FRAMEBUFFER_H * scale;
 
 	BOOL bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
@@ -746,7 +746,7 @@ void StretchBltMemToFrameDC(void)
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerMemDC(),									// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		560, 384,											// int nWidthSrc,    int nHeightSrc,
+		FRAMEBUFFER_W, FRAMEBUFFER_H,				// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
 
@@ -755,8 +755,8 @@ void StretchBltMemToFrameDC(void)
 	xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 	ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
 	ydest += (384 * scale) / 2;
-	wdest = (560 * scale) / 2;
-	hdest = (384 * scale) / 2;
+	wdest = (FRAMEBUFFER_W * scale) / 2;
+	hdest = (FRAMEBUFFER_H * scale) / 2;
 
 	bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
@@ -764,7 +764,7 @@ void StretchBltMemToFrameDC(void)
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerExtraDC(),								// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		560, 384,											// int nWidthSrc,    int nHeightSrc,
+		FRAMEBUFFER_W, FRAMEBUFFER_H,											// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
 }
@@ -994,11 +994,11 @@ void FillBackground(long left, long top, long right, long bottom, void *framebuf
 	//}
 	if (top != bottom) {
 		bgra_t* src = f + (index_dst + left);
-		bgra_t* dst = src + 560;
+		bgra_t* dst = src + FRAMEBUFFER_W;
 		size_t size = (right - left) * sizeof(bgra_t);
 		for (int i = 0; i < bottom - top - 1; i++) {
 			memcpy((void*)dst, (void*)src, size);
-			dst += 560;
+			dst += FRAMEBUFFER_W;
 		}
 	}
 }
@@ -4326,7 +4326,7 @@ void DrawMemHeatmap(Update_t bUpdate)
 	int x = 0;
 	int y = 0;
 	int color;
-	int linesize = 560;
+	int linesize = FRAMEBUFFER_W;
 	int index = 0, ramindex = 0;
 	int page = 0, i= 0;
 	LPBYTE _rammain = mem;

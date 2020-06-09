@@ -58,6 +58,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration/PropertySheet.h"
 #include "Debugger/Debug.h"
 
+// All graphic framebuffers have the same size except the emulator's one which has additional internal borders
+extern const UINT FRAMEBUFFER_W = 560;
+extern const UINT FRAMEBUFFER_H = 384;
+
 //#define ENABLE_MENU 0
 #define DEBUG_KEY_MESSAGES 0
 
@@ -128,8 +132,6 @@ static bool    g_bIsFullScreen  = false;
 		BOOL   g_bConfirmReboot = 1; // saved PageConfig REGSAVE
 		BOOL   g_bMultiMon      = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
 
-static bool g_bDebugMode = false;
-
 static BOOL    helpquit        = 0;
 static HFONT   smallfont       = (HFONT)0;
 static HWND    tooltipwindow   = (HWND)0;
@@ -152,6 +154,8 @@ void    SetFullScreenMode ();
 void    SetNormalMode ();
 static void SetUsingCursor(BOOL);
 static bool FileExists(std::string strFilename);
+
+static bool	g_bDebugMode = false;
 
 bool	g_bScrollLock_FullSpeed = false;
 bool	g_bFreshReset = false;
@@ -202,15 +206,16 @@ void SetAltEnterToggleFullScreen(bool mode)
 //   - Optional: Draw status area to frame DC
 //
 
+// Used for main window's size
 UINT GetFrameBufferBorderlessWidth(void)
 {
-	static const UINT uFrameBufferBorderlessW = 560;	// 560 = Double Hi-Res
+	static const UINT uFrameBufferBorderlessW = FRAMEBUFFER_W;	// 560 = Double Hi-Res
 	return uFrameBufferBorderlessW +(g_bDebugMode ? uFrameBufferBorderlessW / 2 : 0); // Debug Mode: 50% wider
 }
 
 UINT GetFrameBufferBorderlessHeight(void)
 {
-	static const UINT uFrameBufferBorderlessH = 384;	// 384 = Double Scan Line
+	static const UINT uFrameBufferBorderlessH = FRAMEBUFFER_H;	// 384 = Double Scan Line
 	return uFrameBufferBorderlessH;
 }
 
@@ -227,15 +232,16 @@ UINT GetFrameBufferBorderHeight(void)
 	return uBorderH;
 }
 
+// Used for emulator's graphic framebuffer
 UINT GetFrameBufferWidth(void)
 {
 	//return GetFrameBufferBorderlessWidth() + 2*GetFrameBufferBorderWidth();
-	return 560 + 2 * GetFrameBufferBorderWidth();
+	return FRAMEBUFFER_W + 2 * GetFrameBufferBorderWidth();
 }
 
 UINT GetFrameBufferHeight(void)
 {
-	return GetFrameBufferBorderlessHeight() + 2*GetFrameBufferBorderHeight();
+	return FRAMEBUFFER_H + 2*GetFrameBufferBorderHeight();
 }
 
 //
@@ -675,7 +681,7 @@ static void DrawFrameWindow (bool bPaintingWindow/*=false*/)
 	DrawStatusArea(dc,DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
 
 	// DRAW THE CONTENTS OF THE EMULATED SCREEN
-	if (g_nAppMode == MODE_LOGO)
+	if (g_nAppMode == MODE_LOGO && !g_bDebugMode)
 		VideoDisplayLogo();
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay();
@@ -1882,6 +1888,7 @@ LRESULT CALLBACK FrameWndProc (
 		return (MNC_CLOSE << 16) | (wparam & 0xffff);
 
     case WM_USER_BENCHMARK: {
+	  SetDebugMode(false);
       UpdateWindow(window);
       ResetMachineState();
       g_nAppMode = MODE_LOGO;
@@ -2119,22 +2126,21 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		{
 			// Allow F7 to enter debugger even when not MODE_RUNNING
 			DebugStopStepping();
+			SetDebugMode(true);
 			bAllowFadeIn = false;
 		}
 		else if (g_nAppMode == MODE_DEBUG)
 		{
-			DebugExitDebugger(); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
-			// Resize window
-			g_bDebugMode = false;
-			FrameResizeWindow(g_nViewportScale);
+			// Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
+			// & resize window
+			SetDebugMode(false);
+
 			g_bDebuggerEatKey = false;	// Don't "eat" the next keypress when leaving the debugger via F7 (or clicking the Debugger button)
 		}
 		else	// MODE_RUNNING, MODE_LOGO, MODE_PAUSED
 		{
 			// Resize window
-			g_bDebugMode = true;
-			FrameResizeWindow(g_nViewportScale);
-			DebugBegin();
+			SetDebugMode(true);
 		}
       break;
 
@@ -2497,8 +2503,19 @@ bool GetDebugMode(void)
 
 void SetDebugMode(bool bDebugMode)
 {
+	if (bDebugMode == g_bDebugMode) return; // No change
+
+	if (!bDebugMode) {
+		DebugExitDebugger();
+	}
+
 	g_bDebugMode = bDebugMode;
 
+	FrameResizeWindow(g_nViewportScale);
+
+	if (bDebugMode) {
+		DebugBegin();
+	}
 }
 
 int GetViewportScale(void)

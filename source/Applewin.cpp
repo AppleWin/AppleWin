@@ -406,7 +406,7 @@ static void ContinueExecution(void)
 		else
 			VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
 
-		if (g_nAppMode == MODE_STEPPING) {
+		if (g_nAppMode == MODE_STEPPING && GetDebugMode()) {
 			DebugDisplay(IsDebugSteppingWithPCFollow());
 		}
 	}
@@ -1383,7 +1383,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				g_cmdLine.bSetFullScreen = g_bRestartFullScreen;
 				g_bRestartFullScreen = false;
 			}
-			DebugExitDebugger();
 			SetDebugMode(false);
 
 			MB_Reset();

@@ -59,6 +59,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Globals (Private)
 
+// From frame.cpp
+extern const UINT FRAMEBUFFER_W;
+extern const UINT FRAMEBUFFER_H;
+
 // video scanner constants
 int const kHBurstClock      =    53; // clock when Color Burst starts
 int const kHBurstClocks     =     4; // clocks per Color Burst duration
@@ -428,7 +432,7 @@ void VideoDisplayLogo ()
 				nLogoY += GetFullScreenOffsetY();
 			}
 
-			VideoDrawLogoBitmap( hFrameDC, nLogoX, nLogoY, bm.bmWidth, bm.bmHeight, scale );
+			VideoDrawLogoBitmap(hFrameDC, nLogoX, nLogoY, bm.bmWidth, bm.bmHeight, scale);
 		}
 	}
 
@@ -591,8 +595,8 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 
 		int xdest = (IsFullScreen() ? GetFullScreenOffsetX() : 0);
 		int ydest = (IsFullScreen() ? GetFullScreenOffsetY() : 0);
-		int wdest = (560 * scale) / (isDebugMode ? 2 : 1); // g_nViewportCX;
-		int hdest = (384 * scale) / (isDebugMode ? 2 : 1); // g_nViewportCY;
+		int wdest = (FRAMEBUFFER_W * scale) / (isDebugMode ? 2 : 1); // g_nViewportCX;
+		int hdest = (FRAMEBUFFER_H * scale) / (isDebugMode ? 2 : 1); // g_nViewportCY;
 
 		SetStretchBltMode(hFrameDC, COLORONCOLOR);
 		StretchBlt(
@@ -601,7 +605,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			wdest, hdest,
 			g_hDeviceDC,
 			xSrc, ySrc,
-			560, 384,
+			FRAMEBUFFER_W, FRAMEBUFFER_H,
 			SRCCOPY);
 	}
 

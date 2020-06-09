@@ -10,7 +10,7 @@
 	extern BOOL       g_bConfirmReboot; // saved PageConfig REGSAVE
 	extern BOOL       g_bMultiMon;
 
-
+	extern bool		g_bDebugMode;
 
 // Emulator
 	extern bool   g_bFreshReset;

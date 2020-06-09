@@ -202,8 +202,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	MemoryTextFile_t g_ConfigState;
 
-	static Speed_e g_nDebugSpeed      = RUN_CYCLESLOW;
-	static Speed_e g_nLastGoCmdSpeed  = RUN_CYCLESLOW;
+	static Speed_e g_nDebugSpeed      = RUN_NORMAL;
+	static Speed_e g_nLastGoCmdSpeed  = RUN_NORMAL;
 	static bool g_bGoCmd_ReinitFlag   = false;
 
 // Display ____________________________________________________________________
@@ -8806,6 +8806,8 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 
 		if (regs.pc == g_nDebugStepUntil || g_bDebugBreakpointHit)
 		{
+			SetDebugMode(true);
+
 			TCHAR sText[ CONSOLE_WIDTH ];
 			char szStopMessage[CONSOLE_WIDTH];
 			char* pszStopReason = szStopMessage;
