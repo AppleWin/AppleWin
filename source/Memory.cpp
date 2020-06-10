@@ -210,7 +210,7 @@ static LPBYTE g_pMemMainLanguageCard = NULL;
 static DWORD   memmode      = LanguageCardUnit::kMemModeInitialState;
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 
-static CNoSlotClock g_NoSlotClock;
+static CNoSlotClock* g_NoSlotClock = new CNoSlotClock;
 static LanguageCardUnit* g_pLanguageCard = NULL;	// For all Apple II, //e and above
 
 #ifdef RAMWORKS
@@ -832,17 +832,17 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 		}
 	}
 
-	if (IsPotentialNoSlotClockAccess(address))
+	if (g_NoSlotClock && IsPotentialNoSlotClockAccess(address))
 	{
 		if (!write)
 		{
 			int data = 0;
-			if (g_NoSlotClock.Read(address, data))
+			if (g_NoSlotClock->Read(address, data))
 				return (BYTE) data;
 		}
 		else
 		{
-			g_NoSlotClock.Write(address);
+			g_NoSlotClock->Write(address);
 			return 0;
 		}
 	}
@@ -1949,7 +1949,8 @@ void MemReset()
 
 	z80_reset();	// NB. Also called above in CpuInitialize()
 
-	g_NoSlotClock.Reset();	// NB. Power-cycle, but not RESET signal
+	if (g_NoSlotClock)
+		g_NoSlotClock->Reset();	// NB. Power-cycle, but not RESET signal
 }
 
 //===========================================================================
@@ -2132,6 +2133,26 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 bool MemGetAnnunciator(UINT annunciator)
 {
 	return g_Annunciator[annunciator];
+}
+
+//===========================================================================
+
+bool MemHasNoSlotClock(void)
+{
+	return g_NoSlotClock != NULL;
+}
+
+void MemInsertNoSlotClock(void)
+{
+	if (!MemHasNoSlotClock())
+		g_NoSlotClock = new CNoSlotClock;
+	g_NoSlotClock->Reset();
+}
+
+void MemRemoveNoSlotClock(void)
+{
+	delete g_NoSlotClock;
+	g_NoSlotClock = NULL;
 }
 
 //===========================================================================
@@ -2451,4 +2472,18 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		MemLoadSnapshotAuxVer2(yamlLoadHelper);
 
 	return true;
+}
+
+void NoSlotClockSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	if (g_NoSlotClock)
+		g_NoSlotClock->SaveSnapshot(yamlSaveHelper);
+}
+
+void NoSlotClockLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!g_NoSlotClock)
+		g_NoSlotClock = new CNoSlotClock;
+
+	g_NoSlotClock->LoadSnapshot(yamlLoadHelper);
 }

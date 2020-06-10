@@ -1318,6 +1318,7 @@ struct CmdLine
 		bSlot0LanguageCard = false;
 		bSlot7EmptyOnExit = false;
 		bSwapButtons0and1 = false;
+		bRemoveNoSlotClock = false;
 		bestWidth = 0;
 		bestHeight = 0;
 		szImageName_harddisk[HARDDISK_1] = NULL;
@@ -1350,6 +1351,7 @@ struct CmdLine
 	bool bSlotEmpty[NUM_SLOTS];
 	bool bSlot7EmptyOnExit;
 	bool bSwapButtons0and1;
+	bool bRemoveNoSlotClock;
 	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	UINT bestWidth;
 	UINT bestHeight;
@@ -1802,6 +1804,10 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.strCurrentDir = lpCmdLine;
 		}
+		else if (strcmp(lpCmdLine, "-no-nsc") == 0)
+		{
+			g_cmdLine.bRemoveNoSlotClock = true;
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
@@ -2035,6 +2041,9 @@ static void RepeatInitialization(void)
 		// Set *after* InsertFloppyDisks() & InsertHardDisks(), which both update g_sCurrentDir
 		if (!g_cmdLine.strCurrentDir.empty())
 			SetCurrentImageDir(g_cmdLine.strCurrentDir);
+
+		if (g_cmdLine.bRemoveNoSlotClock)
+			MemRemoveNoSlotClock();
 
 		MemInitialize();
 		LogFileOutput("Main: MemInitialize()\n");
