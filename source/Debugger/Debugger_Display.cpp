@@ -4335,6 +4335,7 @@ void DrawMemHeatmap(Update_t bUpdate)
 	// Drawing heatmaps
 
 	// Population count (counting number of 1 in a byte) with luma shift for the map
+	// TODO: initialize once when debugger is created
 	char popcount[256];
 	popcount[0] = 0;
 	for (x = 1; x < 256; x++){
@@ -4395,36 +4396,39 @@ void DrawMemHeatmap(Update_t bUpdate)
 
 	// Drawing RAM access bars
 
+	#define COLOR_READ  0x00FF7000  // light blue
+	#define COLOR_WRITE 0x000000FF	// red
+
 	int addr,addrR, addrW;
 	addr = 0x0000;
 	addrR = MemGetBank(addr, false);
 	addrW = MemGetBank(addr, true);
-	color = (addrR == 0x0000) * 0x00FF0000 | (addrW == 0x0000) * 0x000000FF;
+	color = (addrR == 0x0000) * COLOR_READ | (addrW == 0x0000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x00, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x02, g_pDebuggerExtraFramebits);
-	color = (addrR == 0x10000) * 0x00FF0000 | (addrW == 0x10000) * 0x000000FF;
+	color = (addrR == 0x10000) * COLOR_READ | (addrW == 0x10000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x00, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x02, g_pDebuggerExtraFramebits);
 
 	addr = 0x0400;
 	addrR = MemGetBank(addr, false);
 	addrW = MemGetBank(addr, true);
-	color = (addrR == 0x0400) * 0x00FF0000 | (addrW == 0x0400) * 0x000000FF;
+	color = (addrR == 0x0400) * COLOR_READ | (addrW == 0x0400) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x04, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x08, g_pDebuggerExtraFramebits);
-	color = (addrR == 0x10400) * 0x00FF0000 | (addrW == 0x10400) * 0x000000FF;
+	color = (addrR == 0x10400) * COLOR_READ | (addrW == 0x10400) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x04, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x08, g_pDebuggerExtraFramebits);
 
 	addr = 0x0200;
 	addrR = MemGetBank(addr, false);
 	addrW = MemGetBank(addr, true);
-	color = (addrR == 0x0200) * 0x00FF0000 | (addrW == 0x0200) * 0x000000FF;
+	color = (addrR == 0x0200) * COLOR_READ | (addrW == 0x0200) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x02, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x04, g_pDebuggerExtraFramebits);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x08, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x20, g_pDebuggerExtraFramebits);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x60, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0xC0, g_pDebuggerExtraFramebits);
-	color = (addrR == 0x10200) * 0x00FF0000 | (addrW == 0x10200) * 0x000000FF;
+	color = (addrR == 0x10200) * COLOR_READ | (addrW == 0x10200) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x02, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x04, g_pDebuggerExtraFramebits);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x08, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x20, g_pDebuggerExtraFramebits);
@@ -4433,56 +4437,56 @@ void DrawMemHeatmap(Update_t bUpdate)
 	addr = 0x2000;
 	addrR = MemGetBank(addr, false);
 	addrW = MemGetBank(addr, true);
-	color = (addrR == 0x2000) * 0x00FF0000 | (addrW == 0x2000) * 0x000000FF;
+	color = (addrR == 0x2000) * COLOR_READ | (addrW == 0x2000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x20, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x40, g_pDebuggerExtraFramebits);
-	color = (addrR == 0x12000) * 0x00FF0000 | (addrW == 0x12000) * 0x000000FF;
+	color = (addrR == 0x12000) * COLOR_READ | (addrW == 0x12000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x20, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x40, g_pDebuggerExtraFramebits);
 
 	addr = 0x4000;
 	addrR = MemGetBank(addr, false);
 	addrW = MemGetBank(addr, true);
-	color = (addrR == 0x4000) * 0x00FF0000 | (addrW == 0x4000) * 0x000000FF;
+	color = (addrR == 0x4000) * COLOR_READ | (addrW == 0x4000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0x40, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x60, g_pDebuggerExtraFramebits);
-	color = (addrR == 0x14000) * 0x00FF0000 | (addrW == 0x14000) * 0x000000FF;
+	color = (addrR == 0x14000) * COLOR_READ | (addrW == 0x14000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x40, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x60, g_pDebuggerExtraFramebits);
 
 	addr = 0xC000;
 	addrR = MemGetBank(addr, false);
 	addrW = MemGetBank(addr, true);
-	color = (addrR == 0xC000) * 0x00FF0000 | (addrW == 0xC000) * 0x000000FF;
+	color = (addrR == 0xC000) * COLOR_READ | (addrW == 0xC000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0xC0, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0xD0, g_pDebuggerExtraFramebits);
-	color = (addrR == 0x1C000) * 0x00FF0000 | (addrW == 0x1C000) * 0x000000FF;
+	color = (addrR == 0x1C000) * COLOR_READ | (addrW == 0x1C000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0xC0, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0xD0, g_pDebuggerExtraFramebits);
 
 	addr = 0xD000;
 	addrR = MemGetBank(addr, false);
 	addrW = MemGetBank(addr, true);
-	color = (addrR == 0xC000) * 0x00FF0000 | (addrW == 0xC000) * 0x000000FF;
+	color = (addrR == 0xC000) * COLOR_READ | (addrW == 0xC000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0xC0, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0xD0, g_pDebuggerExtraFramebits);
-	color = (addrR == 0xD000) * 0x00FF0000 | (addrW == 0xD000) * 0x000000FF;
+	color = (addrR == 0xD000) * COLOR_READ | (addrW == 0xD000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0xD0, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0xE0, g_pDebuggerExtraFramebits);
-	color = (addrR == 0x1C000) * 0x00FF0000 | (addrW == 0x1C000) * 0x000000FF;
+	color = (addrR == 0x1C000) * COLOR_READ | (addrW == 0x1C000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0xC0, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0xD0, g_pDebuggerExtraFramebits);
-	color = (addrR == 0x1D000) * 0x00FF0000 | (addrW == 0x1D000) * 0x000000FF;
+	color = (addrR == 0x1D000) * COLOR_READ | (addrW == 0x1D000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0xD0, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0xE0, g_pDebuggerExtraFramebits);
 
 	addr = 0xE000;
 	addrR = MemGetBank(addr, false);
 	addrW = MemGetBank(addr, true);
-	color = (addrR == 0xE000) * 0x00FF0000 | (addrW == 0xE000) * 0x000000FF;
+	color = (addrR == 0xE000) * COLOR_READ | (addrW == 0xE000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256, HEATMAP_TOPMARGIN + 0xE0, HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x100, g_pDebuggerExtraFramebits);
-	color = (addrR == 0x1E000) * 0x00FF0000 | (addrW == 0x1E000) * 0x000000FF;
+	color = (addrR == 0x1E000) * COLOR_READ | (addrW == 0x1E000) * COLOR_WRITE;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0xE0, HEATMAP_AUX_LEFTMARGIN, HEATMAP_TOPMARGIN + 0x100, g_pDebuggerExtraFramebits);
 
