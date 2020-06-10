@@ -757,14 +757,14 @@ void StretchBltMemToFrameDC(void)
 	ydest += (384 * scale) / 2;
 	wdest = (FRAMEBUFFER_W * scale) / 2;
 	hdest = (FRAMEBUFFER_H * scale) / 2;
-
+	
 	bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
 		xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerExtraDC(),								// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		FRAMEBUFFER_W, FRAMEBUFFER_H,											// int nWidthSrc,    int nHeightSrc,
+		FRAMEBUFFER_W, FRAMEBUFFER_H,						// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
 }

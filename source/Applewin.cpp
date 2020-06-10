@@ -406,7 +406,7 @@ static void ContinueExecution(void)
 		else
 			VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
 
-		if (g_nAppMode == MODE_STEPPING && GetDebugMode()) {
+		if (g_nAppMode == MODE_STEPPING && GetDebugMode() && !IsDebugSteppingAtFullSpeed()) {
 			DebugDisplay(IsDebugSteppingWithPCFollow());
 		}
 	}
