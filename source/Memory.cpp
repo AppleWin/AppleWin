@@ -1454,6 +1454,8 @@ int32_t MemGetBank(int32_t addr, bool write)
 			: addr + 0x20000;
 	}
 
+	// failover
+	return addr;
 }
 
 

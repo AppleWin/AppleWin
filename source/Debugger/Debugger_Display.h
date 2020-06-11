@@ -27,13 +27,6 @@
 	extern HBRUSH  g_hConsoleFontBrush;
 	extern HBITMAP g_hConsoleFontBitmap;
 
-	//extern int32_t g_aMemoryHeatmap_R[]; // HEATMAP from CPU.h
-	//extern int32_t g_aMemoryHeatmap_W[]; // HEATMAP from CPU.h
-	//extern int32_t g_aMemoryHeatmap_X[]; // HEATMAP from CPU.h
-	//extern int32_t g_iMemoryHeatmapValue;
-
-	//extern int32_t MemGetBank(int32_t addr, bool write);
-
 	enum
 	{
 		DISPLAY_HEIGHT = 384,
@@ -77,7 +70,8 @@
 #define HEATMAP_AUX_LEFTMARGIN  16+256+16
 #define HEATMAP_TOPMARGIN 16
 
-	//
+	// From Video.h
+	struct bgra_t;
 
 	extern HDC GetDebuggerMemDC(void);
 	extern void ReleaseDebuggerMemDC(void);
@@ -86,6 +80,7 @@
 	extern void StretchBltMemToFrameDC(void);
 	extern HDC GetConsoleFontDC(void);
 	extern void ReleaseConsoleFontDC(void);
+	extern bgra_t* GetpDebuggerExtraFramebits(void);
 
 	enum DebugVirtualTextScreen_e
 	{

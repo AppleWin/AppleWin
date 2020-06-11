@@ -59,10 +59,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Globals (Private)
 
-// From frame.cpp
-extern const UINT FRAMEBUFFER_W;
-extern const UINT FRAMEBUFFER_H;
-
 // video scanner constants
 int const kHBurstClock      =    53; // clock when Color Burst starts
 int const kHBurstClocks     =     4; // clocks per Color Burst duration

@@ -340,8 +340,6 @@ void V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType)
 
 // For AppleWin 1.25 "tv emulation" HGR Video Mode
 
-const UINT FRAMEBUFFER_W = 560;
-const UINT FRAMEBUFFER_H = 384;
 const UINT HGR_MATRIX_YOFFSET = 2;
 
 static BYTE hgrpixelmatrix[FRAMEBUFFER_W][FRAMEBUFFER_H/2 + 2 * HGR_MATRIX_YOFFSET];	// 2 extra scan lines on top & bottom
