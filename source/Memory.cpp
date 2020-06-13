@@ -1080,6 +1080,8 @@ void MemUpdatePaging(BOOL initialize)
 
 static void UpdatePaging(BOOL initialize)
 {
+	MemSetBankIndexes();
+
 	modechanging = 0;
 
 	// SAVE THE CURRENT PAGING SHADOW TABLE
@@ -1393,9 +1395,9 @@ LPBYTE MemGetCxRomPeripheral()
 
 // Used for the debugger Heatmap, called from CPU.h
 // Get the active memory bank depending on all soft switches and RW mode
-// 0x0000-0xFFFF => main
+// 0x00000-0x0FFFF => main
 // 0x10000-0x1FFFF => aux
-// 0x20000-0x2FFFF => ROM
+// 0x20000-0x2FFFF => IO/ROM
 // based on UpdatePaging()
 
 // Needed because there's no other way to know what are the exact current bank status for any page
@@ -1456,6 +1458,19 @@ int32_t MemGetBank(int32_t addr, bool write)
 
 	// failover
 	return addr;
+}
+
+// Updates bank indexes
+// This actually checks which banks is active for every 6502's memory page
+// 0x00000-0x0FFFF => main
+// 0x10000-0x1FFFF => aux
+// 0x20000-0x2FFFF => IO/ROM
+void MemSetBankIndexes()
+{
+	for (int bank = 0; bank < 256; bank++) {
+		g_aMemoryHeatmapPtr_R[bank] = MemGetBank(bank << 8, false);
+		g_aMemoryHeatmapPtr_W[bank] = MemGetBank(bank << 8, true);
+	}
 }
 
 

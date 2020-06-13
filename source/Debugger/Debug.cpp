@@ -8647,8 +8647,10 @@ void DebugBegin ()
 	// This is called every time the debugger is entered.
 
 	GetDebuggerMemDC();
+	GetDebuggerExtraDC();
 
 	g_nAppMode = MODE_DEBUG;
+	CpuEnableHeatmapGeneration(true);
 	FrameRefreshStatus(DRAW_TITLE);
 
 	if (GetMainCpu() == CPU_6502)
@@ -8921,6 +8923,7 @@ static void DebugEnd ()
 	g_vMemorySearchResults.erase( g_vMemorySearchResults.begin(), g_vMemorySearchResults.end() );
 
 	g_nAppMode = MODE_RUNNING;
+	CpuEnableHeatmapGeneration(false);
 
 	ReleaseDebuggerMemDC();
 	ReleaseDebuggerExtraDC();

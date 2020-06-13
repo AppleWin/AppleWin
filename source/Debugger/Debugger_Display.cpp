@@ -655,6 +655,7 @@ void ReleaseDebuggerExtraDC(void)
 		DeleteDC(g_hDebuggerExtraDC);
 		g_hDebuggerExtraDC = NULL;
 		FrameReleaseDC();
+		pDebuggerExtraFramebits = NULL;
 	}
 }
 

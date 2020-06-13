@@ -68,6 +68,7 @@ LPBYTE  MemGetAuxPtr(const WORD);
 LPBYTE  MemGetMainPtr(const WORD);
 LPBYTE  MemGetBankPtr(const UINT nBank);
 int32_t MemGetBank(int32_t addr, bool write);
+void	MemSetBankIndexes(void);
 LPBYTE  MemGetCxRomPeripheral();
 DWORD   GetMemMode(void);
 void    SetMemMode(DWORD memmode);

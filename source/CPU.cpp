@@ -155,11 +155,15 @@ static eCpuType g_MainCPU = CPU_65C02;
 static eCpuType g_ActiveCPU = CPU_65C02;
 
 // Memory heatmap for debug purpose
+static bool bMemoryHeatmap = false;
 // Displayed as 256x256 64K memory access
 int32_t g_aMemoryHeatmap_R[65536 * 3];
 int32_t g_aMemoryHeatmap_W[65536 * 3];
 int32_t g_aMemoryHeatmap_X[65536 * 3];
 int32_t g_iMemoryHeatmapValue = 0x1FFFF;
+// Keeps trace of all current active pages
+int32_t g_aMemoryHeatmapPtr_R[256];
+int32_t g_aMemoryHeatmapPtr_W[256];
 
 eCpuType GetMainCpu(void)
 {
@@ -783,4 +787,9 @@ void CpuLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		g_irqDefer1Opcode = yamlLoadHelper.LoadBool(SS_YAML_KEY_IRQ_DEFER_1_OPCODE);
 
 	yamlLoadHelper.PopMap();
+}
+
+void CpuEnableHeatmapGeneration(bool enable)
+{
+	bMemoryHeatmap = enable;
 }
