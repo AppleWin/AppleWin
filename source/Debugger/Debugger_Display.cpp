@@ -884,16 +884,14 @@ void PrintTextColor ( const conchar_t *pText, RECT & rRect )
 void FillBackground(long left, long top, long right, long bottom)
 {
 	long index_dst = (384-bottom) * 80 * CONSOLE_FONT_GRID_X;
-	//for (long y = top; y < bottom; y++)
-	//{
-		for (long x = left; x < right; x++)
-		{
-			g_pDebuggerMemFramebits[index_dst + x].r = g_cConsoleBrushBG_r;
-			g_pDebuggerMemFramebits[index_dst + x].g = g_cConsoleBrushBG_g;
-			g_pDebuggerMemFramebits[index_dst + x].b = g_cConsoleBrushBG_b;
-		}
-		//index_dst -= 80 * CONSOLE_FONT_GRID_X;
-	//}
+
+	for (long x = left; x < right; x++)
+	{
+		g_pDebuggerMemFramebits[index_dst + x].r = g_cConsoleBrushBG_r;
+		g_pDebuggerMemFramebits[index_dst + x].g = g_cConsoleBrushBG_g;
+		g_pDebuggerMemFramebits[index_dst + x].b = g_cConsoleBrushBG_b;
+	}
+
 	if (top != bottom) {
 		bgra_t* src = g_pDebuggerMemFramebits + (index_dst + left);
 		bgra_t* dst = src + (80 * CONSOLE_FONT_GRID_X);
