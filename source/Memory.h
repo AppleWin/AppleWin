@@ -75,7 +75,7 @@ void    MemInitializeROM(void);
 void    MemInitializeCustomROM(void);
 void    MemInitializeCustomF8ROM(void);
 void    MemInitializeIO(void);
-void    MemInitializeCardExpansionRomFromSnapshot(void);
+void    MemInitializeCardSlotAndExpansionRomFromSnapshot(void);
 BYTE    MemReadFloatingBus(const ULONG uExecutedCycles);
 BYTE    MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles);
 void    MemReset ();
@@ -83,11 +83,16 @@ void    MemResetPaging ();
 void    MemUpdatePaging(BOOL initialize);
 LPVOID	MemGetSlotParameters (UINT uSlot);
 bool    MemGetAnnunciator(UINT annunciator);
+bool    MemHasNoSlotClock(void);
+void    MemInsertNoSlotClock(void);
+void    MemRemoveNoSlotClock(void);
 std::string MemGetSnapshotUnitAuxSlotName(void);
 void    MemSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 bool    MemLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT unitVersion);
 void    MemSaveSnapshotAux(class YamlSaveHelper& yamlSaveHelper);
 bool    MemLoadSnapshotAux(class YamlLoadHelper& yamlLoadHelper, UINT unitVersion);
+void    NoSlotClockSaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+void    NoSlotClockLoadSnapshot(YamlLoadHelper& yamlLoadHelper);
 
 BYTE __stdcall IO_Null(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 

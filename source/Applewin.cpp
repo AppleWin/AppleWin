@@ -82,6 +82,7 @@ AppMode_e	g_nAppMode = MODE_LOGO;
 static bool g_bLoadedSaveState = false;
 static bool g_bSysClkOK = false;
 
+std::string g_sStartDir;	// NB. AppleWin.exe maybe relative to this! (GH#663)
 std::string g_sProgramDir; // Directory of where AppleWin executable resides
 std::string g_sDebugDir; // TODO: Not currently used
 std::string g_sScreenShotDir; // TODO: Not currently used
@@ -541,7 +542,8 @@ void EnterMessageLoop(void)
 }
 
 //===========================================================================
-void GetProgramDirectory(void)
+
+static void GetProgramDirectory(void)
 {
 	TCHAR programDir[MAX_PATH];
 	GetModuleFileName((HINSTANCE)0, programDir, MAX_PATH);
@@ -1141,17 +1143,25 @@ static std::string GetFullPath(LPCSTR szFileName)
 	}
 	else
 	{
-		// Rel pathname
-		char szCWD[_MAX_PATH] = {0};
-		if (!GetCurrentDirectory(sizeof(szCWD), szCWD))
-			return "";
-
-		strPathName = szCWD;
-		strPathName.append("\\");
+		// Rel pathname (GH#663)
+		strPathName = g_sStartDir;
 		strPathName.append(szFileName);
 	}
 
 	return strPathName;
+}
+
+static void SetCurrentDir(std::string pathname)
+{
+	// Due to the order HDDs/disks are inserted, then s7 insertions take priority over s6 & s5; and d2 takes priority over d1:
+	// . if -s6[dN] and -hN are specified, then g_sCurrentDir will be set to the HDD image's path
+	// . if -s5[dN] and -s6[dN] are specified, then g_sCurrentDir will be set to the s6 image's path
+	// . if -[sN]d1 and -[sN]d2 are specified, then g_sCurrentDir will be set to the d2 image's path
+	// This is purely dependent on the current order of InsertFloppyDisks() & InsertHardDisks() - ie. very brittle!
+	// . better to use -current-dir to be explicit
+	std::size_t found = pathname.find_last_of("\\");
+	std::string path = pathname.substr(0, found);
+	SetCurrentImageDir(path);
 }
 
 static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
@@ -1162,7 +1172,10 @@ static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 	if (strPathName.empty()) return false;
 
 	ImageError_e Error = disk2Card.InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
-	return Error == eIMAGE_ERROR_NONE;
+	bool res = (Error == eIMAGE_ERROR_NONE);
+	if (res)
+		SetCurrentDir(strPathName);
+	return res;
 }
 
 static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
@@ -1171,7 +1184,10 @@ static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
 	if (strPathName.empty()) return false;
 
 	BOOL bRes = HD_Insert(nDrive, strPathName.c_str());
-	return bRes ? true : false;
+	bool res = (bRes == TRUE);
+	if (res)
+		SetCurrentDir(strPathName);
+	return res;
 }
 
 static void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], bool& bBoot)
@@ -1211,11 +1227,9 @@ static void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBo
 	HD_SetEnabled(true);
 
 	DWORD dwTmp;
-	if (REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
-	{
-		if (!dwTmp)
-			REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 1);	// Config: HDD Enabled
-	}
+	BOOL res = REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp);
+	if (!res || !dwTmp)
+		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 1);	// Config: HDD Enabled
 
 	//
 
@@ -1244,11 +1258,9 @@ static void UnplugHardDiskControllerCard(void)
 	HD_SetEnabled(false);
 
 	DWORD dwTmp;
-	if (REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
-	{
-		if (dwTmp)
-			REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 0);	// Config: HDD Disabled
-	}
+	BOOL res = REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp);
+	if (!res || dwTmp)
+		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 0);	// Config: HDD Disabled
 }
 
 static bool CheckOldAppleWinVersion(void)
@@ -1306,6 +1318,7 @@ struct CmdLine
 		bSlot0LanguageCard = false;
 		bSlot7EmptyOnExit = false;
 		bSwapButtons0and1 = false;
+		bRemoveNoSlotClock = false;
 		bestWidth = 0;
 		bestHeight = 0;
 		szImageName_harddisk[HARDDISK_1] = NULL;
@@ -1338,6 +1351,7 @@ struct CmdLine
 	bool bSlotEmpty[NUM_SLOTS];
 	bool bSlot7EmptyOnExit;
 	bool bSwapButtons0and1;
+	bool bRemoveNoSlotClock;
 	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	UINT bestWidth;
 	UINT bestHeight;
@@ -1353,15 +1367,22 @@ struct CmdLine
 	VideoRefreshRate_e newVideoRefreshRate;
 	double clockMultiplier;
 	eApple2Type model;
+	std::string strCurrentDir;
 };
 
 static CmdLine g_cmdLine;
 
 int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 {
+	char startDir[_MAX_PATH];
+	GetCurrentDirectory(sizeof(startDir), startDir);
+	g_sStartDir = startDir;
+	if (*(g_sStartDir.end()-1) != '\\') g_sStartDir += '\\';
+
 	if (!ProcessCmdLine(lpCmdLine))
 		return 0;
 
+	LogFileOutput("g_sStartDir = %s\n", g_sStartDir.c_str());
 	GetAppleWinVersion();
 	OneTimeInitialization(passinstance);
 
@@ -1504,14 +1525,14 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.szImageName_drive[slot][drive] = lpCmdLine;
 				}
 			}
+			else if (strcmp(lpCmdLine, "-s7-empty-on-exit") == 0)
+			{
+				g_cmdLine.bSlot7EmptyOnExit = true;
+			}
 			else
 			{
 				LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
 			}
-		}
-		else if (strcmp(lpCmdLine, "-s7-empty-on-exit") == 0)
-		{
-			g_cmdLine.bSlot7EmptyOnExit = true;
 		}
 		else if (strcmp(lpCmdLine, "-load-state") == 0)
 		{
@@ -1773,6 +1794,20 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.newVideoRefreshRate = VR_60HZ;
 		}
+		else if (strcmp(lpCmdLine, "-power-on") == 0)
+		{
+			g_cmdLine.bBoot = true;
+		}
+		else if (strcmp(lpCmdLine, "-current-dir") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_cmdLine.strCurrentDir = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-no-nsc") == 0)
+		{
+			g_cmdLine.bRemoveNoSlotClock = true;
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
@@ -1964,6 +1999,8 @@ static void RepeatInitialization(void)
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
 
 		// Allow the 4 hardcoded slots to be configurated as empty
+		// NB. this state is not persisted to the Registry/conf.ini (just as '-s7 empty' isn't)
+		// TODO: support bSlotEmpty[] for slots: 0,4,5
 		if (g_cmdLine.bSlotEmpty[SLOT1])
 			g_CardMgr.Remove(SLOT1);
 		if (g_cmdLine.bSlotEmpty[SLOT2])
@@ -1998,8 +2035,15 @@ static void RepeatInitialization(void)
 			g_cmdLine.szImageName_harddisk[HARDDISK_1] = g_cmdLine.szImageName_harddisk[HARDDISK_2] = NULL;	// Don't insert on a restart
 
 			if (g_cmdLine.bSlotEmpty[7])
-				HD_SetEnabled(false);
+				HD_SetEnabled(false);		// Disable HDD controller, but don't persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
 		}
+
+		// Set *after* InsertFloppyDisks() & InsertHardDisks(), which both update g_sCurrentDir
+		if (!g_cmdLine.strCurrentDir.empty())
+			SetCurrentImageDir(g_cmdLine.strCurrentDir);
+
+		if (g_cmdLine.bRemoveNoSlotClock)
+			MemRemoveNoSlotClock();
 
 		MemInitialize();
 		LogFileOutput("Main: MemInitialize()\n");

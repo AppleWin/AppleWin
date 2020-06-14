@@ -9,6 +9,19 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.29.13.0 - 31 May 2020
+-----------------------
+. [Bug #790] Fixed regression for -d1,-d2 & -s7-empty-on-exit (introduced at 1.29.7.0).
+. [Change #787] Debugger: Extended 'cycles part' command to do timings relative to a user-specified base.
+. [Change #783] Debugger: Extended 'tf' command to include cycle count.
+. [Change #720] Debugger: Added more symbols to APPLE2E.SYM.
+	- NB. LC ($C08n) symbols are now correct for the LC, so 'LDA $C08C,X' will disassemble as 'LDA LCRAMIN1_,X'
+	instead of 'LDA DATASTROBE,X'. So now perhaps less helpful when stepping Disk II code.
+. [PR #785] Debugger: Improvements to Bookmarks.
+	- AppleWin.chm: Added debugger help about Bookmarks.
+. Fixed occasional speaker clicks in full-speed mode.
+
+
 1.29.12.0 - 26 Apr 2020
 -----------------------
 . [PR #757] Allow use of an INI-file for configuration instead of the Registry (fixes #709).
@@ -23,10 +36,10 @@ Tom Charlesworth
 
 1.29.11.0 - 27 Mar 2020
 -----------------------
-. [Bug #771] Added new command line switch to load custom ROM: -rom <file>.
+. [Change #771] Added new command line switch to load custom ROM: -rom <file>.
 	- Supports 12KiB (at $D000) and 16KiB (at $C000) rom files.
 . [Bug #765] Lancaster (Total Replay) hangs when starting second game.
-. [Bug #734] DiskII controller card: support 13-sector firmware.
+. [Change #734] DiskII controller card: support 13-sector firmware.
 	- The card auto-selects the firmware based on the .woz (v2 or higher) image properties.
 	- Only change the firmware at reset/reboot to avoid changing whilst running in $C6xx space!
 	- Fixes 'The Best of MUSE' & 'MicroChess 2.0' (#732)
@@ -54,7 +67,7 @@ Tom Charlesworth
 . [Bug #748] DiskII: data latch returns a rand() value when no disk is in drive.
 . [Bug #746] Debugger: correctly repaint Apple II screen when showing it from debugger.
 . [Bug #745] WOZ: Support for large tracks.
-. [Bug #743] Added new command line switches:
+. [Change #743] Added new command line switches:
 	-left-alt-control-buttons : left-ctrl=button0, left-alt=button1
 	-right-alt-control-buttons : right-alt=button0, right-ctrl=button1
 	-swap-buttons : for swapping buttons 0 & 1

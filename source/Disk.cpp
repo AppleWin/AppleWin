@@ -53,14 +53,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // . if false && I/O ReadWrite($C0EC) && drive is spinning, then advance the track buffer's nibble index (to simulate spinning).
 // Also m_enhanceDisk is persisted to the save-state, so it's an attribute of the DiskII interface card.
 
-Disk2InterfaceCard::Disk2InterfaceCard(void) :
-	Card(CT_Disk2)
+Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
+	Card(CT_Disk2),
+	m_slot(slot)
 {
 	ResetSwitches();
 
 	m_floppyLatch = 0;
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
-	m_slot = 0;
 	m_diskLastCycle = 0;
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = true;
@@ -1770,6 +1770,7 @@ void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	// . Patching the firmware breaks the ADC checksum used by "The CIA Files" (Tricky Dick)
 	// . In this case we can patch to compensate for an ADC or EOR checksum but not both (nickw)
 
+	_ASSERT(m_slot == uSlot);
 	RegisterIoHandler(uSlot, &Disk2InterfaceCard::IORead, &Disk2InterfaceCard::IOWrite, NULL, NULL, this, NULL);
 
 	m_slot = uSlot;

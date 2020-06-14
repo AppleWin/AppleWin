@@ -196,6 +196,10 @@
 				<param name="Local" value="dbg-breakpoints.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Bookmarks">
+				<param name="Local" value="dbg-bookmarks.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Configuration">
 				<param name="Local" value="dbg-configuration.html">
 				</OBJECT>

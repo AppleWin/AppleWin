@@ -52,10 +52,12 @@
 		Useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br><br>
 		-s7-empty-on-exit<br>
 		Remove the hard disk controller card from slot 7 on AppleWin exit.<br><br>
+		-no-nsc<br>
+		Remove the No-Slot clock (NSC).<br><br>
 		-r &lt;number of pages&gt;<br>
 		Emulate a RamWorks III card with 1 to 127 pages (each page is 64K, giving a max of 8MB) in the auxiliary slot in an Apple //e machine.<br><br>
 		-load-state &lt;savestate&gt;<br>
-		Load a save-state file<br>
+		Load a save-state file (and auto power-on the Apple II).<br>
 		NB. This takes precedent over the -d1, -d2, -d#s#, -h1, -h2, s0-7, -model and -r switches.<br><br>
 		-f<br>
 		Start in full-screen mode<br><br>
@@ -138,7 +140,10 @@
 		-50hz<br>
 		Support 50Hz(PAL) video refresh rate and PAL 1.016MHz base CPU clock.<br><br>
 		-60hz<br>
-		Support 60Hz(NTSC) video refresh rate and NTSC 1.020MHz base CPU clock (default).<br>
+		Support 60Hz(NTSC) video refresh rate and NTSC 1.020MHz base CPU clock (default).<br><br>
+		-power-on<br>
+		Force a power-on.<br>
+		Use to auto power-on when not using -d1, -h1 or -load-state.<br>
 
 		<br>
 		<P style="FONT-WEIGHT: bold">Debug arguments:

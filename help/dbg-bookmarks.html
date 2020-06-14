@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+	<head>
+		<title>AppleWin Debugger Tutorial</title>
+		<meta http-equiv="CONTENT-TYPE" content="text/html; charset=windows-1252">
+	</head>
+	<body style="DIRECTION: ltr" lang="en-US">
+		<h1>Bookmarks</h1>
+		<p>Bookmarks allow you to "tag" an address and consequently jump back to them.<br>
+		They appear as a number with a circle around them between where address and opcodes are listed (where the : separator is).
+		</p>
+		
+		<img src="img/debugger-bookmarks-annotated.png" hspace="5" vspace="5">
+
+		<br>
+		<p><font size="4"><b>Notes</b>:</font></p>
+		<ul>
+			<li>Set a bookmark at the current disassembly cursor, use Ctrl-Shift-#, ie:
+			<ul>
+				<li>NB. Ctrl-Shift-0 can't be used, as it's not recognised by Windows
+				<li>Ctrl-Shift-1 set bookmark 1
+				<li>Ctrl-Shift-2 set bookmark 2
+				<li>...
+				<li>Ctrl-Shift-9 set bookmark 9
+			</ul>
+			</li>
+
+			<br>
+
+			<li>To jump to an existing bookmark, if it exists, press Ctrl-#, ie:
+			<ul>
+				<li>Ctrl-0 to jump to bookmark 0
+				<li>Ctrl-1 to jump to bookmark 1
+				<li>Ctrl-2 to jump to bookmark 2
+				<li>...
+				<li>Ctrl-9 to jump to bookmark 9
+			</ul>
+			</li>
+
+			<br>
+
+			<li>NB.
+			<ul>
+				<li>Bookmarks can appear in any order that you set - not just contiguous.
+				<li>An address can only have ONE bookmark assigned to it. If you try setting a new bookmark over an existing one, the old one will become free for use.
+			</ul>
+			</li>
+		</ul>
+
+		<p>
+		</p>
+
+		<p><font size="4"><b>Commands to manipulate bookmarks:</b></font></p>
+		
+		<table border="1" cellpadding="2" cellspacing="0" width="75%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td width="25%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td>
+									<p><font color="#ffffff"><b>Description</b></font></p>
+								</td>
+							</tr>
+							<tr>
+								<td width="25%">
+									<p>help bookmarks</p>
+								</td>
+								<td>
+									<p>Lists all bookmark related commands</p>
+								</td>
+							</tr>
+							<tr>
+								<td width="25%">
+									<p>help bma</p>
+								</td>
+								<td>
+									<p>Lists specific help about the bma command</p>
+								</td>
+							</tr>
+							<tr>
+								<td width="25%">
+									<p>bma &lt;address|label&gt;</p>
+								</td>
+								<td>
+									<p>Add a bookmark at an address or label</p>
+								</td>
+							</tr>
+							<tr>
+								<td width="25%">
+									<p>bmc #</p>
+								</td>
+								<td>
+									<p>Clear a specific bookmarks, for example 'bmc 1' clears bookmark 1</p>
+								</td>
+							</tr>
+							<tr>
+								<td width="25%">
+									<p>bmc *</p>
+								</td>
+								<td>
+									<p>Clears all bookmarks</p>
+								</td>
+							</tr>
+							<tr>
+								<td width="25%">
+									<p>bml</p>
+								</td>
+								<td>
+									<p>Lists all boommarks</p>
+								</td>
+							</tr>
+							<tr>
+								<td width="25%">
+									<p>bmsave</p>
+								</td>
+								<td>
+									<p>Not implemented yet</p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+	</body>
+</html>

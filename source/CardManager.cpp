@@ -46,12 +46,12 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 	switch (type)
 	{
 	case CT_Disk2:
-		m_slot[slot] = new Disk2InterfaceCard;
+		m_slot[slot] = new Disk2InterfaceCard(slot);
 		break;
 	case CT_SSC:
 		_ASSERT(m_pSSC == NULL);
 		if (m_pSSC) break;	// Only support one SSC
-		m_slot[slot] = m_pSSC = new CSuperSerialCard;
+		m_slot[slot] = m_pSSC = new CSuperSerialCard(slot);
 		break;
 	case CT_MockingboardC:
 		m_slot[slot] = new DummyCard(type);

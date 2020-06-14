@@ -25,7 +25,7 @@ typedef struct
 class CSuperSerialCard : public Card
 {
 public:
-	CSuperSerialCard();
+	CSuperSerialCard(UINT slot);
 	virtual ~CSuperSerialCard();
 
 	virtual void Init(void) {};
