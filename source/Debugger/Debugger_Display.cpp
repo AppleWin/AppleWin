@@ -4,7 +4,8 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2019, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2020, Tom Charlesworth, Michael Pohoreski, Cyril Lambin
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,7 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006-2010 Michael Pohoreski
+ * Author: Copyright (C) 2006-2020 Michael Pohoreski, (C) 2020 Cyril Lambin
  */
 
 #include "StdAfx.h"
@@ -79,6 +80,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Display - Win32
 	static HDC g_hDebuggerMemDC = NULL;
 	static HBITMAP g_hDebuggerMemBM = NULL;
+	static LPBITMAPINFO  g_pDebuggerMemFramebufferinfo = NULL;
+	static bgra_t* g_pDebuggerMemFramebits = NULL;
 
 	HDC     g_hConsoleFontDC     = NULL;
 	HBRUSH  g_hConsoleFontBrush  = NULL;
@@ -551,6 +554,31 @@ HDC GetDebuggerMemDC(void)
 	{
 		HDC hFrameDC = FrameGetDC();
 		g_hDebuggerMemDC = CreateCompatibleDC(hFrameDC);
+
+		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
+		g_pDebuggerMemFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
+			NULL,
+			sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD),
+			MEM_COMMIT,
+			PAGE_READWRITE);
+
+		ZeroMemory(g_pDebuggerMemFramebufferinfo, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biWidth = 560;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biHeight = 384;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biPlanes = 1;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biBitCount = 32;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biCompression = BI_RGB;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biClrUsed = 0;
+
+
+		// CREATE THE FRAME BUFFER DIB SECTION
+		g_hDebuggerMemBM = CreateDIBSection(
+			hFrameDC,
+			g_pDebuggerMemFramebufferinfo,
+			DIB_RGB_COLORS,
+			(LPVOID*)&g_pDebuggerMemFramebits, 0, 0
+		);
 		SelectObject(g_hDebuggerMemDC, g_hDebuggerMemBM);
 	}
 
@@ -567,6 +595,8 @@ void ReleaseDebuggerMemDC(void)
 		DeleteDC(g_hDebuggerMemDC);
 		g_hDebuggerMemDC = NULL;
 		FrameReleaseDC();
+		DeleteObject(g_pDebuggerMemFramebufferinfo);
+		g_pDebuggerMemFramebits = NULL;
 	}
 }
 
@@ -727,7 +757,6 @@ void PrintGlyph( const int x, const int y, const int glyph )
 	}
 
 	// Manual print of character. A lot faster than BitBlt, which must be avoided.
-	// (with Bitblt, realtime debug ("gd") is impossible)
 	int xx, yy;
 	char fontpx;
 	int index_src = (127-ySrc) * 16 * CONSOLE_FONT_GRID_X + xSrc;   // font bitmap
