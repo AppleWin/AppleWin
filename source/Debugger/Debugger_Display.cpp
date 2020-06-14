@@ -621,18 +621,6 @@ HDC GetConsoleFontDC(void)
 	return g_hConsoleFontDC;
 }
 
-void ReleaseConsoleFontDC(void)
-{
-	if (g_hDebuggerExtraDC)
-	{
-		DeleteObject(g_hDebuggerExtraBM);
-		g_hDebuggerExtraBM = NULL;
-		DeleteDC(g_hDebuggerExtraDC);
-		g_hDebuggerExtraDC = NULL;
-		FrameReleaseDC();
-	}
-}
-
 
 void StretchBltMemToFrameDC(void)
 {
