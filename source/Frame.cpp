@@ -206,7 +206,7 @@ void SetAltEnterToggleFullScreen(bool mode)
 UINT GetFrameBufferBorderlessWidth(void)
 {
 	static const UINT uFrameBufferBorderlessW = FRAMEBUFFER_W;	// 560 = Double Hi-Res
-	return uFrameBufferBorderlessW +(bDebugMode ? uFrameBufferBorderlessW / 2 : 0); // Debug Mode: 50% wider
+	return uFrameBufferBorderlessW; // +(bDebugMode ? uFrameBufferBorderlessW / 2 : 0); // Debug Mode: 50% wider
 }
 
 UINT GetFrameBufferBorderlessHeight(void)

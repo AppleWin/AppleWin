@@ -733,8 +733,8 @@ void StretchBltMemToFrameDC(void)
 	int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 	int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
 	xdest+= (FRAMEBUFFER_W * scale) / 2;
-	int wdest = FRAMEBUFFER_W * scale;
-	int hdest = FRAMEBUFFER_H * scale;
+	int wdest = (FRAMEBUFFER_W * scale) / 2;
+	int hdest = (FRAMEBUFFER_H * scale) / 2;
 
 	BOOL bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
