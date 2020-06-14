@@ -13,3 +13,4 @@
 #include "linux/windows/strings.h"
 #include "linux/windows/gdi.h"
 #include "linux/windows/winbase.h"
+#include "linux/windows/winuser.h"
