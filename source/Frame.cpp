@@ -58,6 +58,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration/PropertySheet.h"
 #include "Debugger/Debug.h"
 
+// NOTE: These are in <WinUser.h> HOWEVER they are only defined if _WIN32_WINNT > 0x500
+#ifndef WM_XBUTTONDOWN
+	#define WM_XBUTTONDOWN  0x020B
+#endif
+#ifndef WM_XBUTTONUP
+	#define WM_XBUTTONUP    0x020C
+#endif
+#ifndef MK_XBUTTON1
+	#define MK_XBUTTON1     0x0020
+#endif
+#ifndef MK_XBUTTON2
+	#define MK_XBUTTON2     0x0040
+#endif
+
 //#define ENABLE_MENU 0
 #define DEBUG_KEY_MESSAGES 0
 
@@ -1076,6 +1090,9 @@ LRESULT CALLBACK FrameWndProc (
 	WPARAM wparam,
 	LPARAM lparam)
 {
+	int x = 0;
+	int y = 0;
+
 	switch (message)
 	{
     case WM_ACTIVATE:		// Sent when window is activated/deactivated. wParam indicates WA_ACTIVE, WA_INACTIVE, etc
@@ -1520,8 +1537,8 @@ LRESULT CALLBACK FrameWndProc (
 
       if (buttondown == -1)
 	  {
-        int x = LOWORD(lparam);
-        int y = HIWORD(lparam);
+        x = LOWORD(lparam);
+        y = HIWORD(lparam);
         if ((x >= buttonx) &&
             (y >= buttony) &&
             (y <= buttony+BUTTONS*BUTTONCY))
@@ -1577,7 +1594,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 		}
 
-		DebuggerMouseClick( x, y );
+		DebuggerProcessMouseClick( MOUSE_BUTTON_LEFT, x, y );
       }
       RelayEvent(WM_LBUTTONDOWN,wparam,lparam);
       break;
@@ -1608,8 +1625,8 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_MOUSEMOVE: {
       // MSDN: "WM_MOUSEMOVE message" : Do not use the LOWORD or HIWORD macros to extract the x- and y- coordinates...
-      int x = GET_X_LPARAM(lparam);
-      int y = GET_Y_LPARAM(lparam);
+      x = GET_X_LPARAM(lparam);
+      y = GET_Y_LPARAM(lparam);
       int newover = (((x >= buttonx) &&
                       (x <= buttonx+BUTTONCX) &&
                       (y >= buttony) &&
@@ -1767,13 +1784,42 @@ LRESULT CALLBACK FrameWndProc (
       DrawFrameWindow();
       break;
 
+	case WM_MBUTTONDOWN:
+//	case WM_MBUTTONUP:
+		KeybUpdateCtrlShiftStatus();
+		if (g_nAppMode == MODE_DEBUG)
+		{
+			x = LOWORD(lparam);
+			y = HIWORD(lparam);
+			DebuggerProcessMouseClick( MOUSE_BUTTON_MIDDLE, x, y );
+		}
+		break;
+
+	case WM_XBUTTONDOWN:
+		KeybUpdateCtrlShiftStatus();
+		if (g_nAppMode == MODE_DEBUG)
+		{
+			x = LOWORD(lparam);
+			y = HIWORD(lparam);
+
+			//int button = GET_XBUTTON_WPARAM(wParam);
+			int button = 0;
+			if (wparam & MK_XBUTTON1) button = MOUSE_BUTTON_BACKWARD;
+			if (wparam & MK_XBUTTON2) button = MOUSE_BUTTON_FORWARD;
+			if( button )
+				DebuggerProcessMouseClick( button, x, y );
+		}
+		break;
+
     case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
+		x = LOWORD(lparam);
+		y = HIWORD(lparam);
+		KeybUpdateCtrlShiftStatus();
+
 		// Right Click on Drive Icon -- eject Disk
 		if ((buttonover == -1) && (message == WM_RBUTTONUP)) // HACK: BUTTON_NONE
 		{
-			int x = LOWORD(lparam);
-			int y = HIWORD(lparam);
 
 			if ((x >= buttonx) &&
 				(y >= buttony) &&
@@ -1819,6 +1865,13 @@ LRESULT CALLBACK FrameWndProc (
 			JoySetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
 		else if (g_CardMgr.IsMouseCardInstalled())
 			g_CardMgr.GetMouseCard()->SetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
+
+		if ((g_nAppMode == MODE_DEBUG) && (WM_RBUTTONDOWN == message))
+		{
+			x = LOWORD(lparam);
+			y = HIWORD(lparam);
+			DebuggerProcessMouseClick( MOUSE_BUTTON_RIGHT, x, y );
+		}
 
 		RelayEvent(message,wparam,lparam);
 		break;

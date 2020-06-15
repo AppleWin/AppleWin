@@ -67,6 +67,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Font
 	FontConfig_t g_aFontConfig[ NUM_FONTS  ];
 
+// Tabstops -- See TabStops_e
+	static int aDisasmTabStopsMaster[ NUM_TAB_STOPS ] =
+	{ 5, 14, 26, 30, 41, 48, 49, 51, 54, 59, 62 };
+
+	int g_aDisasmTabStops[ NUM_TAB_STOPS ] =
+	{ 5, 14, 26, 30, 41, 48, 49, 51, 54, 59, 62 };
+
+	// sAddress, sOpcodes, sTarget, sTargetOffset, nTargetOffset, sTargetPointer, sTargetValue, sImmediate, nImmediate, sBranch );
+	//> Address Seperator Opcodes   Label Mnemonic Target [Immediate] [Branch]
+	//
+	//> xxxx: xx xx xx   LABEL    MNEMONIC    'E' =
+	//>       ^          ^        ^           ^   ^
+	//>       6          17       27          41  46
+
+	static int g_aDisasmTabStopsPixels[ NUM_TAB_STOPS ];
+
 // Private ________________________________________________________________________________________
 
 	char g_aDebuggerVirtualTextScreen[ DEBUG_VIRTUAL_TEXT_HEIGHT ][ DEBUG_VIRTUAL_TEXT_WIDTH ];
@@ -2023,7 +2039,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	}
 
 
-	// Address Seperator		
+	// Address Seperator
 	if (! bCursorLine)
 		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 

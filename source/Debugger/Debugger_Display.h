@@ -7,7 +7,7 @@
 #define DEBUG_APPLE_FONT 0
 
 // Win32 Debugger Font
-// 1 = Use Debugger_Font.BMP (7x8)
+// 1 = Use Debug_Font.BMP (7x8)
 // 0 = Use CHARSET40.bmp (fg & bg colors aren't proper)
 #define APPLE_FONT_NEW            1
 
@@ -48,8 +48,28 @@
 	{
 		DISPLAY_HEIGHT = 384,
 		MAX_DISPLAY_LINES  = DISPLAY_HEIGHT / CONSOLE_FONT_HEIGHT,
+		MAX_ADDRESS_HISTORY = 32
 	};
-	
+
+	enum TabStop_e
+	{	// First set of tab stops are dynamic
+		  TS_OPCODE
+		, TS_LABEL
+		, TS_INSTRUCTION
+		, TS_TARGET
+		, TS_EFFECTIVE_ADDRESS   // Effective Address : Preview Byte
+		, TS_BRANCH              // Branch Indicator
+		, TS_CHAR                // Preview (and Immediate) Char
+		, _NUM_TAB_STOPS
+		// Second set of tab stops are static
+		, TS_REG_NAME = _NUM_TAB_STOPS
+		, TS_REG_CHAR
+		, TS_REG_HEX
+		, TS_BREAKPOINT
+		, NUM_TAB_STOPS
+	};
+	extern int g_aDisasmTabStops[ NUM_TAB_STOPS ];
+
 	int GetConsoleTopPixels( int y );
 
 	extern FontConfig_t g_aFontConfig[ NUM_FONTS  ];
