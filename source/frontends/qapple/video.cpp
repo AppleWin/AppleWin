@@ -113,7 +113,11 @@ void Video::keyPressEvent(QKeyEvent *event)
             if (ch >= 'A' && ch <= 'Z')
             {
                 const Qt::KeyboardModifiers modifiers = event->modifiers();
-                if (modifiers & Qt::ShiftModifier)
+                if (modifiers & Qt::ControlModifier)
+                {
+                    ch = (ch - 'A') + 1;
+                }
+                else if (modifiers & Qt::ShiftModifier)
                 {
                     ch += 'a' - 'A';
                 }
