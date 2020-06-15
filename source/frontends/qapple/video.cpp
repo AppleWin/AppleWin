@@ -88,6 +88,7 @@ void Video::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Enter:
         ch = 0x0d;
         break;
+    case Qt::Key_Backspace: // same as AppleWin
     case Qt::Key_Left:
         ch = 0x08;
         break;
