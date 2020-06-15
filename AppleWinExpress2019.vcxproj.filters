@@ -661,6 +661,9 @@
     <None Include="resource\TKClock.rom">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="source\CPU\cpu_readwrite.inl">
+      <Filter>Source Files\CPU</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="docs\CodingConventions.txt">

@@ -55,33 +55,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 if (regs.sp < 0x100)					    \
 		   regs.sp = 0x1FF;
 
-#define READ ReadByte( addr, uExecutedCycles )
-
-inline uint8_t ReadByte(uint16_t addr, int uExecutedCycles)
-{
-	HEATMAP_R(addr);
-
-	return  (
-		((addr & 0xF000) == 0xC000)
-		? IORead[(addr >> 4) & 0xFF](regs.pc, addr, 0, 0, uExecutedCycles)
-		: *(mem + addr)
-		);
-}
-
 #define SETNZ(a) {							    \
 		   flagn = ((a) & 0x80);				    \
 		   flagz = !((a) & 0xFF);					    \
 		 }
 #define SETZ(a)	 flagz = !((a) & 0xFF);
-#define WRITE(a) {							    \
-			HEATMAP_W(addr);                   \
-		   memdirty[addr >> 8] = 0xFF;				    \
-		   LPBYTE page = memwrite[addr >> 8];		    \
-		   if (page)						    \
-		     *(page+(addr & 0xFF)) = (BYTE)(a);			    \
-		   else if ((addr & 0xF000) == 0xC000)			    \
-		     IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles); \
-		 }
 
 #define ON_PAGECROSS_REPLACE_HI_ADDR if ((base ^ addr) >> 8) {addr = (val<<8) | (addr&0xff);} /* GH#282 */
 

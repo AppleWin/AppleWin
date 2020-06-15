@@ -255,6 +255,7 @@
     <None Include="resource\TKClock.rom" />
     <None Include="source\CPU\cpu_general.inl" />
     <None Include="source\CPU\cpu_instructions.inl" />
+    <None Include="source\CPU\cpu_readwrite.inl" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="zip_lib\zip_lib2019.vcxproj">
