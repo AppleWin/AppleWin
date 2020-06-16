@@ -757,13 +757,13 @@ void PrintGlyph( const int x, const int y, const int glyph )
 	}
 
 	// Manual print of character. A lot faster than BitBlt, which must be avoided.
-	int xx, yy;
-	char fontpx;
 	int index_src = (127-ySrc) * 16 * CONSOLE_FONT_GRID_X + xSrc;   // font bitmap
 	int index_dst = (383-yDst) * 80 * CONSOLE_FONT_GRID_X + xDst;   // debugger bitmap
-	for (yy = 0; yy < CONSOLE_FONT_GRID_Y; yy++) {
-		for (xx = 0; xx < CONSOLE_FONT_GRID_X; xx++) {
-			fontpx = g_hConsoleFontFramebits[index_src + xx].g;   // Should be same for R/G/B anyway (greyscale)
+	for (int yy = 0; yy < CONSOLE_FONT_GRID_Y; yy++)
+	{
+		for (int xx = 0; xx < CONSOLE_FONT_GRID_X; xx++)
+		{
+			char fontpx = g_hConsoleFontFramebits[index_src + xx].g;   // Should be same for R/G/B anyway (greyscale)
 			g_pDebuggerMemFramebits[index_dst + xx].r = (g_cConsoleBrushBG_r & ~fontpx) | (g_cConsoleBrushFG_r & fontpx);
 			g_pDebuggerMemFramebits[index_dst + xx].g = (g_cConsoleBrushBG_g & ~fontpx) | (g_cConsoleBrushFG_g & fontpx);
 			g_pDebuggerMemFramebits[index_dst + xx].b = (g_cConsoleBrushBG_b & ~fontpx) | (g_cConsoleBrushFG_b & fontpx);
@@ -892,11 +892,13 @@ void FillBackground(long left, long top, long right, long bottom)
 		g_pDebuggerMemFramebits[index_dst + x].b = g_cConsoleBrushBG_b;
 	}
 
-	if (top != bottom) {
+	if (top != bottom)
+	{
 		bgra_t* src = g_pDebuggerMemFramebits + (index_dst + left);
 		bgra_t* dst = src + (80 * CONSOLE_FONT_GRID_X);
 		size_t size = (right - left) * sizeof(bgra_t);
-		for (int i = 0; i < bottom - top - 1; i++) {
+		for (int i = 0; i < bottom - top - 1; i++)
+		{
 			memcpy((void*)dst, (void*)src, size);
 			dst += 80 * CONSOLE_FONT_GRID_X ;
 		}
