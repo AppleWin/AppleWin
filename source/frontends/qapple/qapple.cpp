@@ -245,6 +245,8 @@ void QApple::closeEvent(QCloseEvent * event)
     QSettings settings;
     settings.setValue("QApple/window/geometry", saveGeometry().toBase64());
     settings.setValue("QApple/window/windowState", saveState().toBase64());
+    settings.setValue("QApple/emulator/geometry", myEmulatorWindow->saveGeometry().toBase64());
+
     QMainWindow::closeEvent(event);
 }
 
@@ -253,10 +255,13 @@ void QApple::readSettings()
     // this does not work completely in wayland
     // position is not restored
     QSettings settings;
-    const QByteArray geometry = QByteArray::fromBase64(settings.value("QApple/window/geometry").toByteArray());
-    const QByteArray state = QByteArray::fromBase64(settings.value("QApple/window/state").toByteArray());
-    restoreGeometry(geometry);
-    restoreState(state);
+    const QByteArray windowGeometry = QByteArray::fromBase64(settings.value("QApple/window/geometry").toByteArray());
+    const QByteArray windowState = QByteArray::fromBase64(settings.value("QApple/window/state").toByteArray());
+    const QByteArray emulatorGeometry = QByteArray::fromBase64(settings.value("QApple/emulator/geometry").toByteArray());
+
+    restoreGeometry(windowGeometry);
+    restoreState(windowState);
+    myEmulatorWindow->restoreGeometry(emulatorGeometry);
 }
 
 void QApple::startEmulator()
