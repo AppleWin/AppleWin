@@ -61,7 +61,6 @@
     <ClInclude Include="source\Debugger\Debugger_Range.h" />
     <ClInclude Include="source\Debugger\Debugger_Symbols.h" />
     <ClInclude Include="source\Debugger\Debugger_Types.h" />
-    <ClInclude Include="source\Debugger\StdAfx.h" />
     <ClInclude Include="source\Debugger\Util_MemoryTextFile.h" />
     <ClInclude Include="source\Debugger\Util_Text.h" />
     <ClInclude Include="source\Disk.h" />
@@ -428,7 +427,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source\cpu;source\emulator;source\debugger;zlib;zip_lib;libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;zip_lib;libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
