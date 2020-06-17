@@ -489,9 +489,6 @@
     <ClInclude Include="source\Card.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
-    <ClInclude Include="source\Debugger\StdAfx.h">
-      <Filter>Source Files\Debugger</Filter>
-    </ClInclude>
     <ClInclude Include="source\Debugger\Debugger_Heatmap.h">
       <Filter>Source Files\Debugger</Filter>
     </ClInclude>
