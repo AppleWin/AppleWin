@@ -19,6 +19,7 @@ Tom Charlesworth
 	instead of 'LDA DATASTROBE,X'. So now perhaps less helpful when stepping Disk II code.
 . [PR #785] Debugger: Improvements to Bookmarks.
 	- AppleWin.chm: Added debugger help about Bookmarks.
+. Fixed occasional speaker clicks in full-speed mode.
 
 
 1.29.12.0 - 26 Apr 2020

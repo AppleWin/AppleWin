@@ -161,7 +161,7 @@ enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 #define APPLECLONE_MASK	0x100
 
 #define IS_APPLE2		((g_Apple2Type & (APPLE2E_MASK|APPLE2C_MASK)) == 0)
-#define IS_APPLE2E()	(g_Apple2Type & APPLE2E_MASK)
+//#define IS_APPLE2E()	(g_Apple2Type & APPLE2E_MASK)	// unused
 #define IS_APPLE2C()	(g_Apple2Type & APPLE2C_MASK)
 #define IS_CLONE()		(g_Apple2Type & APPLECLONE_MASK)
 
@@ -216,6 +216,11 @@ inline bool IsClone(eApple2Type type)
 inline bool IsApple2PlusOrClone(eApple2Type type)	// Apple ][,][+,][J-Plus or clone ][,][+
 {
 	return (type & (APPLE2E_MASK|APPLE2C_MASK)) == 0;
+}
+
+inline bool IsAppleIIeOrAbove(eApple2Type type)		// Apple //e,Enhanced//e,//c or clone //e,Enhanced//e
+{
+	return !IsApple2PlusOrClone(type);
 }
 
 extern eApple2Type g_Apple2Type;

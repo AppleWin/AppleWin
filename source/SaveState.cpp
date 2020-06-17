@@ -71,9 +71,12 @@ static YamlHelper yamlHelper;
 // v3: Extended: memory (added 'AnnunciatorN')
 // v4: Extended: video (added 'Video Refresh Rate')
 // v5: Extended: cpu (added 'Defer IRQ By 1 Opcode')
-#define UNIT_APPLE2_VER 5
+// v6: Added 'Unit Miscellaneous' for NoSlotClock(NSC)
+#define UNIT_APPLE2_VER 6
 
 #define UNIT_SLOTS_VER 1
+
+#define UNIT_MISC_VER 1
 
 //-----------------------------------------------------------------------------
 
@@ -131,6 +134,12 @@ static std::string GetSnapshotUnitApple2Name(void)
 static std::string GetSnapshotUnitSlotsName(void)
 {
 	static const std::string name("Slots");
+	return name;
+}
+
+static std::string GetSnapshotUnitMiscName(void)
+{
+	static const std::string name("Miscellaneous");
 	return name;
 }
 
@@ -353,6 +362,9 @@ static void ParseUnit(void)
 	if (unit == GetSnapshotUnitApple2Name())
 	{
 		ParseUnitApple2(yamlLoadHelper, unitVersion);
+
+		if (unitVersion < 6) MemInsertNoSlotClock();	// NSC always inserted
+		else				 MemRemoveNoSlotClock();	// NSC only add if there's a misc unit
 	}
 	else if (unit == MemGetSnapshotUnitAuxSlotName())
 	{
@@ -361,6 +373,11 @@ static void ParseUnit(void)
 	else if (unit == GetSnapshotUnitSlotsName())
 	{
 		ParseSlots(yamlLoadHelper, unitVersion);
+	}
+	else if (unit == GetSnapshotUnitMiscName())
+	{
+		// NB. could extend for other misc devices - see how ParseSlots() calls GetMapNextSlotNumber()
+		NoSlotClockLoadSnapshot(yamlLoadHelper);
 	}
 	else
 	{
@@ -371,6 +388,7 @@ static void ParseUnit(void)
 static void Snapshot_LoadState_v2(void)
 {
 	bool restart = false;	// Only need to restart if any VM state has change
+	HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
 
 	try
 	{
@@ -454,7 +472,7 @@ static void Snapshot_LoadState_v2(void)
 		MemInitializeCustomROM();
 		MemInitializeCustomF8ROM();
 		MemInitializeIO();
-		MemInitializeCardExpansionRomFromSnapshot();
+		MemInitializeCardSlotAndExpansionRomFromSnapshot();
 
 		MemUpdatePaging(TRUE);
 
@@ -474,6 +492,7 @@ static void Snapshot_LoadState_v2(void)
 			PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
 	}
 
+	SetCursor(oldcursor);
 	yamlHelper.FinaliseParser();
 }
 
@@ -567,6 +586,15 @@ void Snapshot_SaveState(void)
 
 			if (g_CardMgr.QuerySlot(SLOT7) == CT_GenericHDD)
 				HD_SaveSnapshot(yamlSaveHelper);
+		}
+
+		// Miscellaneous
+		if (MemHasNoSlotClock())
+		{
+			yamlSaveHelper.UnitHdr(GetSnapshotUnitMiscName(), UNIT_MISC_VER);
+			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+			NoSlotClockSaveSnapshot(yamlSaveHelper);
 		}
 	}
 	catch(std::string szMessage)

@@ -2308,7 +2308,7 @@ void ResetMachineState ()
   HD_Reset();
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
-  MemReset();	// calls CpuInitialize()
+  MemReset();	// calls CpuInitialize(), CNoSlotClock.Reset()
   PravetsReset();
   if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
 	dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).Boot();

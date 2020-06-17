@@ -4,7 +4,8 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2014, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2006-2019, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2020, Tom Charlesworth, Michael Pohoreski, Cyril Lambin
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,7 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006-2010 Michael Pohoreski
+ * Author: Copyright (C) 2006-2020 Michael Pohoreski, (C) 2020 Cyril Lambin
  */
 
 #include <intrin.h> // For __popcnt() only... not portable
@@ -230,6 +231,7 @@ static char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iV
 	void DrawSubWindow_Source2  (Update_t bUpdate);
 	void DrawSubWindow_Symbols  (Update_t bUpdate);
 	void DrawSubWindow_ZeroPage (Update_t bUpdate);
+
 
 	void DrawWindowBottom ( Update_t bUpdate, int iWindow );
 
@@ -558,8 +560,7 @@ HDC GetDebuggerMemDC(void)
 	{
 		HDC hFrameDC = FrameGetDC();
 		g_hDebuggerMemDC = CreateCompatibleDC(hFrameDC);
-		//g_hDebuggerMemBM = CreateCompatibleBitmap(hFrameDC, GetFrameBufferWidth(), GetFrameBufferHeight());
-		//SelectObject(g_hDebuggerMemDC, g_hDebuggerMemBM);
+
 
 		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
 		g_pDebuggerMemFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
@@ -601,6 +602,8 @@ void ReleaseDebuggerMemDC(void)
 		DeleteDC(g_hDebuggerMemDC);
 		g_hDebuggerMemDC = NULL;
 		FrameReleaseDC();
+		DeleteObject(g_pDebuggerMemFramebufferinfo);
+		g_pDebuggerMemFramebits = NULL;
 	}
 }
 
@@ -849,14 +852,13 @@ void PrintGlyph( const int x, const int y, const int glyph )
 	}
 
 	// Manual print of character. A lot faster than BitBlt, which must be avoided.
-	// (with Bitblt, realtime debug ("gd") is impossible)
-	int xx, yy;
-	char fontpx;
 	int index_src = (127-ySrc) * 16 * CONSOLE_FONT_GRID_X + xSrc;   // font bitmap
 	int index_dst = (383-yDst) * 80 * CONSOLE_FONT_GRID_X + xDst;   // debugger bitmap
-	for (yy = 0; yy < CONSOLE_FONT_GRID_Y; yy++) {
-		for (xx = 0; xx < CONSOLE_FONT_GRID_X; xx++) {
-			fontpx = g_hConsoleFontFramebits[index_src + xx].g;   // Should be same for R/G/B anyway (greyscale)
+	for (int yy = 0; yy < CONSOLE_FONT_GRID_Y; yy++)
+	{
+		for (int xx = 0; xx < CONSOLE_FONT_GRID_X; xx++)
+		{
+			char fontpx = g_hConsoleFontFramebits[index_src + xx].g;   // Should be same for R/G/B anyway (greyscale)
 			g_pDebuggerMemFramebits[index_dst + xx].r = (g_cConsoleBrushBG_r & ~fontpx) | (g_cConsoleBrushFG_r & fontpx);
 			g_pDebuggerMemFramebits[index_dst + xx].g = (g_cConsoleBrushBG_g & ~fontpx) | (g_cConsoleBrushFG_g & fontpx);
 			g_pDebuggerMemFramebits[index_dst + xx].b = (g_cConsoleBrushBG_b & ~fontpx) | (g_cConsoleBrushFG_b & fontpx);
@@ -978,16 +980,14 @@ void FillBackground(long left, long top, long right, long bottom, void *framebuf
 {
 	bgra_t* f = (bgra_t*)framebuffer;
 	long index_dst = (384-bottom) * 80 * CONSOLE_FONT_GRID_X;
-	//for (long y = top; y < bottom; y++)
-	//{
+
 		for (long x = left; x < right; x++)
 		{
 			f[index_dst + x].r = g_cConsoleBrushBG_r;
 			f[index_dst + x].g = g_cConsoleBrushBG_g;
 			f[index_dst + x].b = g_cConsoleBrushBG_b;
 		}
-		//index_dst -= 80 * CONSOLE_FONT_GRID_X;
-	//}
+
 	if (top != bottom) {
 		bgra_t* src = f + (index_dst + left);
 		bgra_t* dst = src + FRAMEBUFFER_W;

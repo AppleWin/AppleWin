@@ -57,6 +57,9 @@ public:
 	bool ClockRead(int& data);
 	void ClockWrite(int address);
 
+	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
+
 	bool m_bClockRegisterEnabled;
 	bool m_bWriteEnabled;
 	RingRegister64 m_ClockRegister;
@@ -64,6 +67,7 @@ public:
 
 private:
 	void PopulateClockRegister();
+	std::string GetSnapshotStructName(void);
 
 	static const UINT64 kClockInitSequence = 0x5CA33AC55CA33AC5;
 };

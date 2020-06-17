@@ -210,7 +210,7 @@ static LPBYTE g_pMemMainLanguageCard = NULL;
 static DWORD   memmode      = LanguageCardUnit::kMemModeInitialState;
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 
-static CNoSlotClock g_NoSlotClock;
+static CNoSlotClock* g_NoSlotClock = new CNoSlotClock;
 static LanguageCardUnit* g_pLanguageCard = NULL;	// For all Apple II, //e and above
 
 #ifdef RAMWORKS
@@ -832,17 +832,17 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 		}
 	}
 
-	if (IsPotentialNoSlotClockAccess(address))
+	if (g_NoSlotClock && IsPotentialNoSlotClockAccess(address))
 	{
 		if (!write)
 		{
 			int data = 0;
-			if (g_NoSlotClock.Read(address, data))
+			if (g_NoSlotClock->Read(address, data))
 				return (BYTE) data;
 		}
 		else
 		{
-			g_NoSlotClock.Write(address);
+			g_NoSlotClock->Write(address);
 			return 0;
 		}
 	}
@@ -1848,19 +1848,17 @@ void MemInitializeIO(void)
 
 	if (g_CardMgr.QuerySlot(SLOT7) == CT_GenericHDD)
 		HD_Load_Rom(pCxRomPeripheral, SLOT7);			// $C700 : HDD f/w
-
-	//
-
-	// Finally remove the cards' ROMs at $Csnn if internal ROM is enabled
-	// . required when restoring saved-state
-	if (SW_INTCXROM)
-		IoHandlerCardsOut();
 }
 
 // Called by:
 // . Snapshot_LoadState_v2()
-void MemInitializeCardExpansionRomFromSnapshot(void)
+void MemInitializeCardSlotAndExpansionRomFromSnapshot(void)
 {
+	// Remove all the cards' ROMs at $Csnn if internal ROM is enabled
+	if (IsAppleIIeOrAbove(GetApple2Type()) && SW_INTCXROM)
+		IoHandlerCardsOut();
+
+	// Potentially init a card's expansion ROM
 	const UINT uSlot = g_uPeripheralRomSlot;
 
 	if (ExpansionRom[uSlot] == NULL)
@@ -1880,7 +1878,7 @@ inline DWORD getRandomTime()
 //===========================================================================
 
 // Called by:
-// . MemInitialize()
+// . MemInitialize()		eg. on AppleWin start & restart (eg. h/w config changes)
 // . ResetMachineState()	eg. Power-cycle ('Apple-Go' button)
 // . Snapshot_LoadState_v2()
 void MemReset()
@@ -2027,7 +2025,7 @@ void MemReset()
 	mem = memimage;
 
 	// INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
-	ResetPaging(1);		// Initialize=1
+	ResetPaging(TRUE);		// Initialize=1, init memmode
 
 	// INITIALIZE & RESET THE CPU
 	// . Do this after ROM has been copied back to mem[], so that PC is correctly init'ed from 6502's reset vector
@@ -2035,6 +2033,9 @@ void MemReset()
 	//Sets Caps Lock = false (Pravets 8A/C only)
 
 	z80_reset();	// NB. Also called above in CpuInitialize()
+
+	if (g_NoSlotClock)
+		g_NoSlotClock->Reset();	// NB. Power-cycle, but not RESET signal
 }
 
 //===========================================================================
@@ -2177,7 +2178,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 
 bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
 {
-	if (IS_APPLE2E())
+	if (IsAppleIIeOrAbove(GetApple2Type()))
 	{
 		// IF THE EMULATED PROGRAM HAS JUST UPDATED THE MEMORY WRITE MODE AND IS
 		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
@@ -2217,6 +2218,26 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 bool MemGetAnnunciator(UINT annunciator)
 {
 	return g_Annunciator[annunciator];
+}
+
+//===========================================================================
+
+bool MemHasNoSlotClock(void)
+{
+	return g_NoSlotClock != NULL;
+}
+
+void MemInsertNoSlotClock(void)
+{
+	if (!MemHasNoSlotClock())
+		g_NoSlotClock = new CNoSlotClock;
+	g_NoSlotClock->Reset();
+}
+
+void MemRemoveNoSlotClock(void)
+{
+	delete g_NoSlotClock;
+	g_NoSlotClock = NULL;
 }
 
 //===========================================================================
@@ -2536,4 +2557,18 @@ bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		MemLoadSnapshotAuxVer2(yamlLoadHelper);
 
 	return true;
+}
+
+void NoSlotClockSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	if (g_NoSlotClock)
+		g_NoSlotClock->SaveSnapshot(yamlSaveHelper);
+}
+
+void NoSlotClockLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!g_NoSlotClock)
+		g_NoSlotClock = new CNoSlotClock;
+
+	g_NoSlotClock->LoadSnapshot(yamlLoadHelper);
 }
