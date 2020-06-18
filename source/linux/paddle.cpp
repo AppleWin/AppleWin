@@ -21,8 +21,6 @@ std::shared_ptr<const Paddle> & Paddle::instance()
   return singleton;
 }
 
-const int Paddle::ourOpenApple = 0x61;
-const int Paddle::ourClosedApple = 0x62;
 std::set<int> Paddle::ourButtons;
 
 void Paddle::setButtonPressed(int i)
@@ -73,13 +71,13 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExe
     {
       switch (addr)
       {
-      case 0x61:
+      case Paddle::ourOpenApple:
         pressed = paddle->getButton(0);
         break;
-      case 0x62:
+      case Paddle::ourClosedApple:
         pressed = paddle->getButton(1);
         break;
-      case 0x63:
+      case Paddle::ourThirdApple:
         break;
       }
     }
