@@ -7,8 +7,36 @@
 #include "Common.h"
 #include "CPU.h"
 
-unsigned __int64 g_nJoyCntrResetCycle = 0;	// Abs cycle that joystick counters were reset
-const double PDL_CNTR_INTERVAL = 2816.0 / 255.0;	// 11.04 (From KEGS)
+namespace
+{
+  unsigned __int64 g_nJoyCntrResetCycle = 0;	// Abs cycle that joystick counters were reset
+  const double PDL_CNTR_INTERVAL = 2816.0 / 255.0;	// 11.04 (From KEGS)
+}
+
+
+
+std::shared_ptr<const Paddle> & Paddle::instance()
+{
+  static std::shared_ptr<const Paddle> singleton = std::make_shared<Paddle>();
+  return singleton;
+}
+
+const int Paddle::ourOpenApple = 0x61;
+const int Paddle::ourClosedApple = 0x62;
+std::set<int> Paddle::ourButtons;
+
+void Paddle::setButtonPressed(int i)
+{
+  ourButtons.insert(i);
+}
+
+void Paddle::setButtonReleased(int i)
+{
+  ourButtons.erase(i);
+}
+
+
+
 
 Paddle::Paddle()
 {
@@ -24,12 +52,6 @@ int Paddle::getAxis(int i) const
   return 0;
 }
 
-std::shared_ptr<const Paddle> & Paddle::instance()
-{
-  static std::shared_ptr<const Paddle> singleton = std::make_shared<Paddle>();
-  return singleton;
-}
-
 Paddle::~Paddle()
 {
 }
@@ -39,20 +61,27 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExe
   addr &= 0xFF;
   BOOL pressed = 0;
 
-  const std::shared_ptr<const Paddle> & paddle = Paddle::instance();
-
-  if (paddle)
+  if (Paddle::ourButtons.find(addr) != Paddle::ourButtons.end())
   {
-    switch (addr)
+    pressed = 1;
+  }
+  else
+  {
+    const std::shared_ptr<const Paddle> & paddle = Paddle::instance();
+
+    if (paddle)
     {
-    case 0x61:
-      pressed = paddle->getButton(0);
-      break;
-    case 0x62:
-      pressed = paddle->getButton(1);
-      break;
-    case 0x63:
-      break;
+      switch (addr)
+      {
+      case 0x61:
+        pressed = paddle->getButton(0);
+        break;
+      case 0x62:
+        pressed = paddle->getButton(1);
+        break;
+      case 0x63:
+        break;
+      }
     }
   }
 

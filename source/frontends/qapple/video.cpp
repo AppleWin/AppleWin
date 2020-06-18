@@ -6,6 +6,7 @@
 #include "StdAfx.h"
 #include "linux/data.h"
 #include "linux/keyboard.h"
+#include "linux/paddle.h"
 #include "Common.h"
 #include "CardManager.h"
 #include "MouseInterface.h"
@@ -76,8 +77,63 @@ void Video::paintEvent(QPaintEvent *)
     }
 }
 
+bool Video::event(QEvent *event)
+{
+    if (isEnabled() && (event->type() == QEvent::KeyPress))
+    {
+        // This code bypasses the special QWidget handling of QKeyEvents
+        // Tab and Backtab (?) to move focus
+        // KeyPad Navigation
+        // F1 for whatsthis
+        QKeyEvent *k = (QKeyEvent *)event;
+        keyPressEvent(k);
+        return true;
+    }
+    else
+    {
+        return VIDEO_BASECLASS::event(event);
+    }
+}
+
+void Video::keyReleaseEvent(QKeyEvent *event)
+{
+    if (!event->isAutoRepeat())
+    {
+        // Qt::Key_Alt does not seem to work
+        // Qt::Key_AltGr works well
+        // and Left and Right Ctrl have the same key() value
+        const int vKey = event->nativeVirtualKey();
+        switch (vKey)
+        {
+        case 65507: // Left Ctrl
+            Paddle::setButtonReleased(Paddle::ourOpenApple);
+            break;
+        case 65508: // Right Ctrl
+            Paddle::setButtonReleased(Paddle::ourClosedApple);
+            break;
+        }
+    }
+
+    // should we always call?
+    VIDEO_BASECLASS::keyReleaseEvent(event);
+}
+
 void Video::keyPressEvent(QKeyEvent *event)
 {
+    if (!event->isAutoRepeat())
+    {
+        const int vKey = event->nativeVirtualKey();
+        switch (vKey)
+        {
+        case 65507: // Left Ctrl
+            Paddle::setButtonPressed(Paddle::ourOpenApple);
+            break;
+        case 65508: // Right Ctrl
+            Paddle::setButtonPressed(Paddle::ourClosedApple);
+            break;
+        }
+    }
+
     const int key = event->key();
 
     BYTE ch = 0;
