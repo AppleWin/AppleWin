@@ -163,6 +163,9 @@ void Video::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Escape:
         ch = 0x1b;
         break;
+    case Qt::Key_Tab:
+        ch = 0x09;
+        break;
     default:
         if (key < 0x80)
         {
