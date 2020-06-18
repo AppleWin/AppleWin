@@ -100,15 +100,14 @@ void Video::keyReleaseEvent(QKeyEvent *event)
     if (!event->isAutoRepeat())
     {
         // Qt::Key_Alt does not seem to work
-        // Qt::Key_AltGr works well
-        // and Left and Right Ctrl have the same key() value
-        const int vKey = event->nativeVirtualKey();
-        switch (vKey)
+        // Qt::Key_AltGr & Qt::Key_Menu work well, but are on the same side
+        const int key = event->key();
+        switch (key)
         {
-        case 65507: // Left Ctrl
+        case Qt::Key_AltGr:
             Paddle::setButtonReleased(Paddle::ourOpenApple);
             break;
-        case 65508: // Right Ctrl
+        case Qt::Key_Menu:
             Paddle::setButtonReleased(Paddle::ourClosedApple);
             break;
         }
@@ -122,13 +121,13 @@ void Video::keyPressEvent(QKeyEvent *event)
 {
     if (!event->isAutoRepeat())
     {
-        const int vKey = event->nativeVirtualKey();
-        switch (vKey)
+        const int key = event->key();
+        switch (key)
         {
-        case 65507: // Left Ctrl
+        case Qt::Key_AltGr:
             Paddle::setButtonPressed(Paddle::ourOpenApple);
             break;
-        case 65508: // Right Ctrl
+        case Qt::Key_Menu:
             Paddle::setButtonPressed(Paddle::ourClosedApple);
             break;
         }
