@@ -106,34 +106,32 @@ void Video::keyReleaseEvent(QKeyEvent *event)
         {
         case Qt::Key_AltGr:
             Paddle::setButtonReleased(Paddle::ourOpenApple);
-            break;
+            return;
         case Qt::Key_Menu:
             Paddle::setButtonReleased(Paddle::ourClosedApple);
-            break;
+            return;
         }
     }
 
-    // should we always call?
     VIDEO_BASECLASS::keyReleaseEvent(event);
 }
 
 void Video::keyPressEvent(QKeyEvent *event)
 {
+    const int key = event->key();
+
     if (!event->isAutoRepeat())
     {
-        const int key = event->key();
         switch (key)
         {
         case Qt::Key_AltGr:
             Paddle::setButtonPressed(Paddle::ourOpenApple);
-            break;
+            return;
         case Qt::Key_Menu:
             Paddle::setButtonPressed(Paddle::ourClosedApple);
-            break;
+            return;
         }
     }
-
-    const int key = event->key();
 
     BYTE ch = 0;
 
@@ -165,30 +163,50 @@ void Video::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Tab:
         ch = 0x09;
         break;
-    default:
-        if (key < 0x80)
+    case 'A' ... 'Z':
+    case ']':
+    case '[':
+    case '\\':
+    {
+        ch = key;
+        const Qt::KeyboardModifiers modifiers = event->modifiers();
+        if (modifiers & Qt::ControlModifier)
         {
-            ch = key;
-            if (ch >= 'A' && ch <= 'Z')
-            {
-                const Qt::KeyboardModifiers modifiers = event->modifiers();
-                if (modifiers & Qt::ControlModifier)
-                {
-                    ch = (ch - 'A') + 1;
-                }
-                else if (modifiers & Qt::ShiftModifier)
-                {
-                    ch += 'a' - 'A';
-                }
-            }
+            ch = (ch - 'A') + 1;
+        }
+        else if (modifiers & Qt::ShiftModifier)
+        {
+            ch += 'a' - 'A';
         }
         break;
     }
+    case '-':
+    {
+        ch = key;
+        const Qt::KeyboardModifiers modifiers = event->modifiers();
+        if (modifiers & Qt::ControlModifier)
+        {
+           ch = 0x1f;
+        }
+        break;
+    }
+    default:
+    {
+        if (key < 0x80)
+        {
+            ch = key;
+        }
+    }
+    }
+
 
     if (ch)
     {
         addKeyToBuffer(ch);
-        event->accept();
+    }
+    else
+    {
+        VIDEO_BASECLASS::keyPressEvent(event);
     }
 }
 
