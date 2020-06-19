@@ -122,7 +122,7 @@ static DWORD Cpu6502(DWORD uTotalCycles, const bool bVideoUpdate)
 			case 0x3B: $ ABSY_CONST RLA  CYC(7)  break;
 			case 0x3C: $ ABSX_OPT   NOP  CYC(4)  break;
 			case 0x3D:   ABSX_OPT   AND  CYC(4)  break;
-			case 0x3E:   ABSX_CONST ROLn CYC(6)  break;
+			case 0x3E:   ABSX_CONST ROLn CYC(7)  break;
 			case 0x3F: $ ABSX_CONST RLA  CYC(7)  break;
 			case 0x40:              RTI  CYC(6)  DoIrqProfiling(uExecutedCycles); break;
 			case 0x41:   idx        EOR  CYC(6)  break;
@@ -154,7 +154,7 @@ static DWORD Cpu6502(DWORD uTotalCycles, const bool bVideoUpdate)
 			case 0x5B: $ ABSY_CONST LSE  CYC(7)  break;
 			case 0x5C: $ ABSX_OPT   NOP  CYC(4)  break;
 			case 0x5D:   ABSX_OPT   EOR  CYC(4)  break;
-			case 0x5E:   ABSX_CONST LSRn CYC(6)  break;
+			case 0x5E:   ABSX_CONST LSRn CYC(7)  break;
 			case 0x5F: $ ABSX_CONST LSE  CYC(7)  break;
 			case 0x60:              RTS  CYC(6)  break;
 			case 0x61:   idx        ADCn CYC(6)  break;
@@ -186,7 +186,7 @@ static DWORD Cpu6502(DWORD uTotalCycles, const bool bVideoUpdate)
 			case 0x7B: $ ABSY_CONST RRA  CYC(7)  break;
 			case 0x7C: $ ABSX_OPT   NOP  CYC(4)  break;
 			case 0x7D:   ABSX_OPT   ADCn CYC(4)  break;
-			case 0x7E:   ABSX_CONST RORn CYC(6)  break;
+			case 0x7E:   ABSX_CONST RORn CYC(7)  break;
 			case 0x7F: $ ABSX_CONST RRA  CYC(7)  break;
 			case 0x80: $ IMM        NOP  CYC(2)  break;
 			case 0x81:   idx        STA  CYC(6)  break;
