@@ -853,7 +853,7 @@ void PrintGlyph( const int x, const int y, const int glyph )
 
 	// Manual print of character. A lot faster than BitBlt, which must be avoided.
 	int index_src = (127-ySrc) * 16 * CONSOLE_FONT_GRID_X + xSrc;   // font bitmap
-	int index_dst = (383-yDst) * 80 * CONSOLE_FONT_GRID_X + xDst;   // debugger bitmap
+	int index_dst = (DISPLAY_HEIGHT - 1 - yDst) * DEBUG_VIRTUAL_TEXT_WIDTH * CONSOLE_FONT_GRID_X + xDst;   // debugger bitmap
 	for (int yy = 0; yy < CONSOLE_FONT_GRID_Y; yy++)
 	{
 		for (int xx = 0; xx < CONSOLE_FONT_GRID_X; xx++)
@@ -864,7 +864,7 @@ void PrintGlyph( const int x, const int y, const int glyph )
 			g_pDebuggerMemFramebits[index_dst + xx].b = (g_cConsoleBrushBG_b & ~fontpx) | (g_cConsoleBrushFG_b & fontpx);
 		}
 		index_src -= 16 * CONSOLE_FONT_GRID_X;
-		index_dst -= 80 * CONSOLE_FONT_GRID_X;
+		index_dst -= DEBUG_VIRTUAL_TEXT_WIDTH * CONSOLE_FONT_GRID_X;
 	}
 }
 
