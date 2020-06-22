@@ -7,19 +7,9 @@
 #define DEBUG_APPLE_FONT 0
 
 // Win32 Debugger Font
-// 1 = Use Debugger_Font.BMP (7x8)
-// 0 = Use CHARSET40.bmp (fg & bg colors aren't proper)
-#define APPLE_FONT_NEW            1
-
-#if APPLE_FONT_NEW
-	#define APPLE_FONT_BITMAP_PADDED  0
-#else
-	#define APPLE_FONT_BITMAP_PADDED  1
-#endif
 
 	enum ConsoleFontSize_e
 	{
-#if APPLE_FONT_NEW
 		// Grid Alignment
 		CONSOLE_FONT_GRID_X = 7,
 		CONSOLE_FONT_GRID_Y = 8,
@@ -27,14 +17,7 @@
 		// Font Char Width/Height in pixels
 		CONSOLE_FONT_WIDTH  = 7,
 		CONSOLE_FONT_HEIGHT = 8,
-#else
-		CONSOLE_FONT_GRID_X = 8,
-		CONSOLE_FONT_GRID_Y = 8,
 
-		// Font Char Width/Height in pixels
-		CONSOLE_FONT_WIDTH  = 7,
-		CONSOLE_FONT_HEIGHT = 8,
-#endif
 	};
 
 	extern HBRUSH g_hConsoleBrushFG;
@@ -56,6 +39,8 @@
 
 	void DebuggerSetColorFG( COLORREF nRGB );
 	void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent = false );
+
+	void FillBackground(long left, long top, long right, long bottom);
 
 	void PrintGlyph      ( const int x, const int y, const int iChar );
 	int  PrintText       ( const char * pText, RECT & rRect );
@@ -86,6 +71,8 @@
 	extern HDC GetDebuggerMemDC(void);
 	extern void ReleaseDebuggerMemDC(void);
 	extern void StretchBltMemToFrameDC(void);
+	extern HDC GetConsoleFontDC(void);
+	extern void ReleaseConsoleFontDC(void);
 
 	enum DebugVirtualTextScreen_e
 	{
