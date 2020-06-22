@@ -1,7 +1,6 @@
 include(FindPkgConfig)
 
 add_library(appleii SHARED
-  SaveState.cpp
   Pravets.cpp
   Tape.cpp
   YamlHelper.cpp
@@ -38,7 +37,7 @@ add_library(appleii SHARED
   linux/windows/winbase.cpp
   linux/windows/winuser.cpp
 
-  linux/data.cpp
+  linux/data.cpp  # defines g_CardMgr
   linux/dummies.cpp
   linux/state.cpp
   linux/benchmark.cpp
@@ -54,6 +53,8 @@ add_library(appleii SHARED
   linux/duplicates/Frame.cpp
   linux/duplicates/SerialComms.cpp
   linux/duplicates/Applewin.cpp
+
+  SaveState.cpp  # uses g_CardMgr in m_ConfigNew
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
