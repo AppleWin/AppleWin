@@ -4,7 +4,8 @@
 #include "SerialComms.h"
 
 
-CSuperSerialCard::CSuperSerialCard(UINT slot)
+CSuperSerialCard::CSuperSerialCard(UINT slot) :
+  Card(CT_SSC), m_uSlot(slot)
 {
 }
 
