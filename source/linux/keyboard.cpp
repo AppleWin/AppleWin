@@ -80,3 +80,7 @@ void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
   yamlLoadHelper.PopMap();
 }
+
+void KeybReset()
+{
+}

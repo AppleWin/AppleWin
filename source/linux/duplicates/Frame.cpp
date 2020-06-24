@@ -40,3 +40,7 @@ UINT GetFrameBufferHeight(void)
 {
 	return GetFrameBufferBorderlessHeight() + 2*GetFrameBufferBorderHeight();
 }
+
+void FrameUpdateApple2Type()
+{
+}

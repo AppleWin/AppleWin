@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 
+#include "YamlHelper.h"
 #include "Common.h"
 
 void    MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)

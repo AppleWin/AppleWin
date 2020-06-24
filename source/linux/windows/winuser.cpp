@@ -9,3 +9,8 @@ HCURSOR SetCursor(HCURSOR hCursor)
 {
   return nullptr;
 }
+
+HWND GetDesktopWindow()
+{
+  return NULL;
+}

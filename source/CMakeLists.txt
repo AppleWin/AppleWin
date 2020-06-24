@@ -24,6 +24,7 @@ add_library(appleii SHARED
   NTSC_CharSet.cpp
   CardManager.cpp
   Disk2CardManager.cpp
+  SaveState.cpp  # uses g_CardMgr in m_ConfigNew (reverse order)
 
   linux/windows/memory.cpp
   linux/windows/handles.cpp
@@ -37,9 +38,7 @@ add_library(appleii SHARED
   linux/windows/winbase.cpp
   linux/windows/winuser.cpp
 
-  linux/data.cpp  # defines g_CardMgr
-  linux/dummies.cpp
-  linux/state.cpp
+  linux/data.cpp
   linux/benchmark.cpp
   linux/paddle.cpp
   linux/version.cpp
@@ -52,9 +51,9 @@ add_library(appleii SHARED
   linux/duplicates/Joystick.cpp
   linux/duplicates/Frame.cpp
   linux/duplicates/SerialComms.cpp
-  linux/duplicates/Applewin.cpp
-
-  SaveState.cpp  # uses g_CardMgr in m_ConfigNew
+  linux/duplicates/Speaker.cpp
+  linux/duplicates/IPropertySheet.cpp
+  linux/duplicates/Applewin.cpp   # defines g_CardMgr (reverse order)
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
