@@ -29,8 +29,8 @@ bool DSGetLock(LPDIRECTSOUNDBUFFER pVoice, DWORD dwOffset, DWORD dwBytes,
 HRESULT DSGetSoundBuffer(VOICE* pVoice, DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels);
 void DSReleaseSoundBuffer(VOICE* pVoice);
 
-bool DSZeroVoiceBuffer(PVOICE Voice, char* pszDevName, DWORD dwBufferSize);
-bool DSZeroVoiceWritableBuffer(PVOICE Voice, char* pszDevName, DWORD dwBufferSize);
+bool DSZeroVoiceBuffer(PVOICE Voice, const char* pszDevName, DWORD dwBufferSize);
+bool DSZeroVoiceWritableBuffer(PVOICE Voice, const char* pszDevName, DWORD dwBufferSize);
 
 enum eFADE {FADE_NONE, FADE_IN, FADE_OUT};
 void SoundCore_SetFade(eFADE FadeType);
