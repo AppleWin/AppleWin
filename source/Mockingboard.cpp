@@ -1990,7 +1990,7 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 		if (pMB->bTimer1Active && bTimer1Irq)
 		{
 			UpdateIFR(pMB, 0, IxR_TIMER1);
-			bIrqOnLastOpcodeCycle = true;
+			bIrqOnLastOpcodeCycle = bTimer1IrqOnLastCycle;
 
 			MB_Update();
 
